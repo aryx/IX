@@ -63,6 +63,17 @@ type result = {
   instrs : Il.instr array;
 }
 
+(* a signature's type as the stack holds it (None: void) *)
+val of_sig : Image.t -> Signature.t -> vt option
+
+(* a type's token (newarr T, box T, a TypeDef): its signature, a
+ * value type's ValueType *)
+val token_sig : Image.t -> int -> Signature.t
+
+(* a call's token (MethodDef, MemberRef, MethodSpec): its signature,
+ * the class's arguments put in, and the class when a MemberRef says it *)
+val call_sig : Image.t -> int -> Signature.meth * Signature.t option
+
 (* a MethodDef's row verified: Bad with the offset and why *)
 val method_ : Image.t -> int -> result
 

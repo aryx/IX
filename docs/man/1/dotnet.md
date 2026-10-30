@@ -12,7 +12,7 @@ dotnet – run a .NET assembly
 [ *arg* ... ]
 
 **dotnet**
-**-S** [ **-jit** [ **-m** 5|7 ] ] | **-tables** | **-size**
+**-S** [ **-jit** [ **-m** 5|7 [ **-refs** ] ] ] | **-tables** | **-size**
 *file*`.dll` ...
 
 # DESCRIPTION
@@ -32,13 +32,18 @@ StringBuilder, List, Dictionary, the delegates.
 
 **-jit**
 :    The methods the JIT takes (their arguments, locals and stack of
-     int32s only, calling only such methods) are compiled at the first
-     call of one of them, the assembly's all at once, and run as the
-     machine's code; the others by the interpreter. Only where
-     *dotnet* was built by mini-ml for arm64 on Linux; elsewhere the
-     interpreter runs all. With **-S**, that code as the assembler's
-     text, arm's (**-m 5**, the default) or arm64's (**-m 7**), and
-     why each other method is not compiled.
+     int32s and references, not structs, longs, doubles or pointers;
+     no try) are compiled at the first call of one of them, the
+     assembly's all at once, and run as the machine's code; the
+     others by the interpreter. The code reads fields and array
+     elements itself; for a call into the library or to a virtual
+     method, `new`, a string, a static field or a cast it asks the
+     interpreter, an instruction at a time. Only where *dotnet* was
+     built by mini-ml for arm64 on Linux; elsewhere the interpreter
+     runs all. With **-S**, that code as the assembler's text, arm's
+     (**-m 5**, the default) or arm64's (**-m 7**), of methods of
+     int32s only, and why each other method is not compiled;
+     **-refs**, with **-m 7**, the code **-jit** runs.
 
 **-S**
 :    The assembly's types, their fields and methods, and the
@@ -56,6 +61,7 @@ dotnet /lib/dotnet/hello.dll
 dotnet -s /lib/dotnet/queens.dll
 dotnet -S /lib/dotnet/fib.dll
 dotnet -S -jit -m 7 /lib/dotnet/fib.dll
+dotnet -S -jit -m 7 -refs /lib/dotnet/queens.dll
 tiger -o /tmp/q.dll /lib/tiger/queens.tig; dotnet /tmp/q.dll
 ```
 

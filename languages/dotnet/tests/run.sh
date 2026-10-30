@@ -14,8 +14,9 @@
 #              survey's, ours and the writer's; and writer/Broken.ml's,
 #              each method broken in one way, refused with its offset and
 #              why (writer/broken.verify)
-#   jit        the JIT's code (-S -jit, arm's and arm64's: -m 7) for each
-#              assembly assembled by mini-asm; its text for jit/fib.dll's
+#   jit        the JIT's code (-S -jit, arm's and arm64's: -m 7, and
+#              arm64's with references, -refs, the code -jit runs) for
+#              each assembly assembled by mini-asm; its text for jit/fib.dll's
 #              and jit/ints.dll's methods against jit/*.s (*7.s: arm64's);
 #              that code linked with a C program (jit/*.c) that calls it:
 #              arm's, where Plan 9's libc for arm is built (_mk/5-plan9),
@@ -25,7 +26,9 @@
 #              program run with -jit too (its code run by mini-ml's build
 #              on arm64, the interpreter elsewhere), and jit/*.dll's
 #              (zero: a division by zero in the JIT's code caught by the
-#              interpreter; bench, with -jit only, where it is compiled)
+#              interpreter; objects: objects, arrays, strings in it, made
+#              while the collector moves them, a null and an index out of
+#              range caught; bench, with -jit only, where it is compiled)
 #   run        each program run, what it prints against what Microsoft's
 #              runtime printed: the survey's ten (survey/programs/
 #              *.expected), and ours (programs/*.expected, their exit too;
@@ -86,11 +89,14 @@ check() {
       if cmp -s $W/$s $T/jit/$s; then ok "mini-dotnet -S -jit -m $m $p, by $what"
       else fail "mini-dotnet -S -jit -m $m $p, by $what"; diff $T/jit/$s $W/$s | head -5; fi
     done
-    for f in $P/*.dll $T/programs/*.dll $T/jit/*.dll; do
-      "$@" -S -jit -m $m $f > $W/jit.s 2>&1
-      if _build/default/assembler/Main.exe -m $m -o $W/jit.$m $W/jit.s > $W/jit.err 2>&1; then
-        ok "mini-dotnet -S -jit -m $m $(basename $f): $(tail -1 $W/jit.s | sed 's|^// [^:]*: ||'), assembled, by $what"
-      else fail "mini-dotnet -S -jit -m $m $(basename $f): not assembled, by $what"; head -3 $W/jit.err; fi
+    for r in "" -refs; do
+      [ $m = 5 ] && [ -n "$r" ] && continue
+      for f in $P/*.dll $T/programs/*.dll $T/jit/*.dll; do
+        "$@" -S -jit -m $m $r $f > $W/jit.s 2>&1
+        if _build/default/assembler/Main.exe -m $m -o $W/jit.$m $W/jit.s > $W/jit.err 2>&1; then
+          ok "mini-dotnet -S -jit -m $m $r $(basename $f): $(tail -1 $W/jit.s | sed 's|^// [^:]*: ||'), assembled, by $what"
+        else fail "mini-dotnet -S -jit -m $m $r $(basename $f): not assembled, by $what"; head -3 $W/jit.err; fi
+      done
     done
   done
   for f in $P/*.dll $T/programs/*.dll $W/hello.dll; do
@@ -114,11 +120,13 @@ check() {
     else fail "mini-dotnet $p, by $what"; diff $T/programs/$p.expected $W/$p.out | head -5; head -3 $W/$p.err; fi
   done
   # (with -jit: the JIT's code where it runs, the interpreter elsewhere;
-  # bench's 400 million instructions only where the JIT compiles them)
+  # bench's 400 million instructions only where the JIT compiles them,
+  # objects' 15 million not under mini-5i)
   jit=; "$@" -jit -s $T/jit/zero.dll 2>&1 >/dev/null | grep -q 'methods compiled' && jit=1
   for f in $P/*.dll $T/programs/*.dll $T/jit/*.dll; do
     p=$(basename $f .dll); e=${f%.dll}.expected
     [ $p = bench ] && [ -z "$jit" ] && continue
+    [ $p = objects ] && [ -z "$jit" ] && [ -n "$RUN" ] && continue
     case $f in $T/programs/*) { "$@" -jit $f 2> $W/$p.err; echo "exit $?"; } > $W/$p.out;;
       *) "$@" -jit $f > $W/$p.out 2> $W/$p.err;; esac
     if cmp -s $W/$p.out $e; then ok "mini-dotnet -jit $p${jit:+, its code run}, by $what"

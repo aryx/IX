@@ -194,7 +194,7 @@ and run_method (m : meth) (args : value array) : value =
 
 (* the instructions run, an exception caught by this frame's clauses *)
 and run (f : Frame.frame) : Frame.outcome =
-  match loop f with
+  match loop false f with
   | o -> o
   | exception Thrown exn ->
       let at = f.at in
@@ -239,7 +239,8 @@ and run_filter (f : Frame.frame) (c : clause) (exn : store) : bool =
   f.pc <- pc; f.at <- at; f.sp <- sp;
   r
 
-and loop (f : Frame.frame) : Frame.outcome =
+(* the instructions from f.pc; [once]: the one there alone (exec) *)
+and loop (once : bool) (f : Frame.frame) : Frame.outcome =
   let push v = f.stack.(f.sp) <- v; f.sp <- f.sp + 1 in
   let pop () = f.sp <- f.sp - 1; f.stack.(f.sp) in
   let pop_n n = let a = Array.sub f.stack (f.sp - n) n in f.sp <- f.sp - n; a in
@@ -496,8 +497,19 @@ and loop (f : Frame.frame) : Frame.outcome =
          | Cpblk | Initblk ->
              Frame.error (Printf.sprintf "%s IL_%04x: %s, not in mini-dotnet" (Frame.name_of f.meth) ins.at ins.name)
          | Ret | Endfinally | Endfilter -> assert false);
-        go () in
+        if once then Frame.Returned Null else go () in
   go ()
+
+(* the JIT's call-outs: the instruction at [i] of m's code run on the
+ * operands, its result the value it pushes (Null if none) *)
+let exec (m : meth) (code : code) (i : int) (operands : value array) : value =
+  let n = Array.length operands in
+  let stack = Array.make (n + 1) Null in
+  Array.blit operands 0 stack 0 n;
+  let (f : Frame.frame) = { meth = m; code; args = [||]; locals = [||]; stack; sp = n;
+                            pc = i; at = i; caught = None } in
+  ignore (loop true f);
+  if f.sp > 0 then f.stack.(0) else Null
 
 let call_method (name : string) (v : value) : value =
   let c = class_of_value v in

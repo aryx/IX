@@ -42,16 +42,36 @@
  * encode). That code is the one mini-dotnet runs (Jit_run, `-jit`),
  * each method with an entry mini-ml calls as a closure ([program]).
  *
- * What it refuses is said with the reason: a reference on the stack
- * (a string, an object, an array), a call into the library, an
- * instruction without its template yet, exception clauses. The rest
- * of decision 12 (stage 9): the references on mini-ml's value stack
- * (R10) where its collector finds them, the scalars on the machine's;
- * the library's adapters called as mini-ml calls a closure (ml_vsp
- * stored before, loaded after); a method's entry a cell, a stub that
- * compiles it at its first call; the code in memory both written and
- * run (on mini-9pi a kernel's call yet to choose, the plan's open
- * question; under mini-5i and mini-qemu their caches told).
+ * {b With references} (arm64's, in mini-dotnet: the assembly loaded,
+ * its fields laid out by Types), instance methods too, and methods of
+ * strings, objects, arrays: a reference, the interpreter's value, has
+ * its slot on mini-ml's value stack (R26), where its collector finds
+ * it and moves it, an int32 its slot on the machine's:
+ *
+ *     static int Sum(Node l)         l: a word of the value stack
+ *       ldarg.0; ldfld Node::Value   MOV v(R26), R1; CMP $1, R1 (null?)
+ *                                    MOV 0(R1), R1      Obj's store
+ *                                    MOV 8(R1), R1      its bytes
+ *                                    MOVW 0(R1), R1     the field
+ *       callvirt Shape::Area()       MOV $7, R1 (call-out 3); MOV v, R2
+ *                                    BL jit_out1(SB)    Machine.exec
+ *
+ * A field, an array's element and length are read and written by the
+ * code (a reference stored but by a call-out: the collector's write
+ * barrier); the rest, a call into the library, to a virtual method or
+ * a constructor, new, ldstr, a static field, a cast, a box, throw, is
+ * a call-out: an ML function called with the operands (an int32
+ * tagged), which runs that instruction in the interpreter
+ * (Machine.exec) and returns what it pushes. A call to a static method
+ * compiled is a BL. A null and an index out of range call the
+ * runtime's, which throw.
+ *
+ * What it refuses is said with the reason: a struct, an int64, a
+ * double, a pointer on the stack, an instruction without its template
+ * yet, exception clauses, a generic method or class. The rest of
+ * decision 12: a method's entry a cell, a stub that compiles it at its
+ * first call; the code in memory both written and run on mini-9pi
+ * (segflush; under mini-5i and mini-qemu their caches told).
  *
  * others:
  * .NET's first JIT (2002) compiled a method at its first call through
@@ -68,13 +88,31 @@ exception Refused of string
  * on the low 32 bits, a slot of 8 bytes, no conditional move) *)
 type mach = Arm | Arm64
 
-(* the assembly's methods that are compiled, as mini-asm's text; how
- * many; the others' rows and why not *)
-val assembly : mach -> Image.t -> string * int * (int * string) list
+(* a slot's kind: an int32 (a native int) on the machine's stack, a
+ * reference (the interpreter's value) on mini-ml's *)
+type kind = I | R
 
-(* the text Jit_run encodes and runs, on arm64: the methods, and for
- * each an entry, `Sym_entry`, which mini-ml calls as a closure of one
- * argument, an array of the arguments as ints, and which returns the
- * result as an int; a division by zero calls the ML function whose
- * static closure is at [divide_by_zero]. The rows and their entries. *)
-val program : Image.t -> divide_by_zero:int -> string * (int * string) list
+(* a call-out: an instruction of a method (its row, its index) the
+ * interpreter runs for the code (Machine.exec), its operands' kinds,
+ * the bottom first, and its result's *)
+type site = { srow : int; sat : int; sargs : kind list; sret : kind option }
+
+(* the assembly's methods that are compiled, as mini-asm's text; how
+ * many; the others' rows and why not. With the assembly loaded (and
+ * arm64's), references too, the call-outs by their stubs' names *)
+val assembly : mach -> Image.t -> Value.image option -> string * int * (int * string) list
+
+(* the most operands of a call-out *)
+val outs : int
+
+(* the text Jit_run encodes and runs, on arm64, with references: the
+ * methods, and for each an entry, `Sym_entry`, which mini-ml calls as
+ * a closure of one argument, an array of the arguments (an int32 a
+ * tagged int), and which returns the result likewise; the runtime's
+ * functions by their static closures' addresses: [throws] by name,
+ * jit_divide_by_zero, jit_null, jit_range, of unit, which raise; [out]
+ * the call-outs', by their operands (0 to outs), each taking the
+ * call-out's number then the operands. The rows and their entries,
+ * the call-outs numbered from [base]. *)
+val program : Value.image -> base:int -> throws:(string * int) list -> out:int array ->
+  string * (int * string) list * site list

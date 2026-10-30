@@ -45,8 +45,9 @@ whose assemblies Microsoft's dotnet and mini-dotnet both run; the
 verifier, `-verify`; the JIT's code as text, `-S -jit`, its first
 methods those of int32s, their code run from C under mini-5i); stage 9
 begun on arm64 (Linux): `mini-dotnet -jit` runs the JIT's code for
-those methods, in 97.9% less time than the interpreter on bench.cs. See
-the end.
+those methods, in 97.9% less time than the interpreter on bench.cs,
+and for methods of references too (objects, arrays, strings), the
+interpreter called for the rest. See the end.
 
 ## Its place in `languages/`
 
@@ -733,4 +734,56 @@ the library's adapters called as closures, a method's entry a cell
 compiled at its own first call, the code on arm under mini-5i and on
 mini-9pi (segflush made real, mini-5i's and mini-qemu's caches of
 decoded code told; segattach as mmap and mprotect).
+
+2026-10-30, the references. The author, on the next steps (the
+references, a method compiled at its own first call, arm and
+mini-9pi's segflush and segattach): "let's do it!".
+
+What is done. A method may hold references (arm64's, in mini-dotnet:
+`-S -jit -m 7 -refs` prints that code): instance methods, parameters,
+locals, results and slots of references, not of structs, int64s,
+doubles or pointers; no try; no generic method or class. A reference
+is the interpreter's value (Value.value), a word of mini-ml's: its
+slot is on mini-ml's value stack (R26: the method raises it by its
+words, each set to null, 1, before anything can collect; the
+references given copied there), where the collector finds it and
+moves it; an int32's on the machine's stack, each slot a home in both
+and the verifier's type saying which. The code itself reads an
+object's field (Obj's store, its bytes at the field's offset, its
+references), an array's element (its length checked: the runtime's
+IndexOutOfRangeException) and length, writes an int32 field or
+element, tests a reference (null is 1) and compares two (the same
+word, or the same store: Arith's equality); null dereferenced calls the
+runtime's NullReferenceException. The rest is a call-out (decision
+12's adapters, in the simplest form): the code calls jit_outN, an ML
+function of the call-out's number and its operands (an int32 tagged),
+which runs that one instruction in the interpreter (Machine.exec, its
+loop for one instruction) and returns what it pushes: a call into the
+library, to a virtual method, a constructor, an instance method; new,
+newarr, ldstr, a static field, a cast, a box, throw, and a reference
+stored (so the collector's write barrier is Machine's). A call to a
+static method compiled is a BL, unless its class has a static
+constructor and is not the caller's (the interpreter's call runs it).
+
+Checked (`tests/run.sh`, 215 checks): every assembly's `-refs` text
+assembled by mini-asm; every program with `-jit`, its code run by
+mini-ml's build, prints what Microsoft's runtime prints (Main of fib,
+hello, shapes compiled now, the library called from the code);
+`jit/objects.cs`, new: a list of 300,000 nodes built and walked,
+virtual calls over 30,000 shapes, int and byte arrays, strings joined
+and repeated, references compared, a static counter, a null and an
+index out of range thrown in compiled code and caught by Main (the
+interpreter's try); the collector moves the objects many times while
+the code holds them.
+
+The speed (the author's machine): `jit/objects.cs`, 1.31 s by
+mini-ml's interpreter, 0.97 s with the JIT (26% less; Microsoft's
+0.14 s). Its sections: the list (300,000 `new` and a reference stored
+in each, call-outs) 1.07 s and 0.82 s, the shapes 0.21 s and 0.18 s, a
+static counter called 300,000 times (three call-outs a call) 0.39 s
+and 0.32 s: a call-out costs some 350 ns, the interpreter's loop set
+up for one instruction (its closures), and an object made by the
+interpreter (a store: its record, bytes and references) as much as
+the instructions. So next: call-outs made for their instruction
+(the field, the method resolved once), separately and measured.
 

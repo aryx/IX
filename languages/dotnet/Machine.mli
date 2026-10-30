@@ -65,6 +65,11 @@ val invoke : meth -> value array -> value
  * interpreter's. Jit_run.jit with -jit; by default none *)
 val jit : (meth -> (value array -> value) option) ref
 
+(* the JIT's call-outs (Jit_run): the instruction at index i of a
+ * method's code run alone on its operands (the bottom first), what it
+ * pushes returned, Null if nothing *)
+val exec : meth -> code -> int -> value array -> value
+
 (* the program's entry point run with the command line's arguments:
  * Main's result, 0 if it returns none *)
 val run_main : image -> string list -> int

@@ -46,6 +46,3 @@ let address (v : Obj.t) : int =
   let b = Obj.new_block 255 1 in
   Obj.set_field b 0 v;
   Int64.to_int (Obj.obj b : int64)
-
-exception Divide_by_zero
-let divide_by_zero () : unit = raise Divide_by_zero

@@ -36,7 +36,3 @@ val closure : int -> Obj.t
 
 (* the address of a block (a static closure: it does not move) *)
 val address : Obj.t -> int
-
-(* raised by divide_by_zero, which the JIT's code calls *)
-exception Divide_by_zero
-val divide_by_zero : unit -> unit

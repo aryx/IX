@@ -55,6 +55,7 @@ type proc = {
   mem : Memory.t;
   name : string;
   image : string;                            (* the a.out, as loaded *)
+  image_path : string;                       (* its file (text's stat: the same qid, as acid checks) *)
   heap_base : int;                           (* the page after the bss *)
   bss_end : int;                             (* libc's end: brk's least *)
   files : (int, file) Hashtbl.t;
@@ -112,7 +113,11 @@ let load host mem (a : aout) file argv envp =
     ap := !ap + String.length s + 1) argv;
   Memory.store32 mem (sp + 4 + (4 * List.length argv)) 0;
   let name = Filename.basename (match argv with a :: _ -> a | [] -> "a.out") in
-  let p = { host; mem; name; image = file; heap_base = data_end; bss_end = text_end + a.data + a.bss; files = Hashtbl.create 8; errstr = ""; handler = 0; handling = [];
+  let image_path = match argv with
+    | a :: _ when a <> "" && a.[0] = '/' -> a
+    | a :: _ -> host.Host_calls.getcwd () ^ "/" ^ a
+    | [] -> "" in
+  let p = { host; mem; name; image = file; image_path; heap_base = data_end; bss_end = text_end + a.data + a.bss; files = Hashtbl.create 8; errstr = ""; handler = 0; handling = [];
             notes = Queue.create (); children = Hashtbl.create 4; dir_pending = Hashtbl.create 4 } in
   p, a.entry, sp, tos
 
@@ -160,7 +165,7 @@ let virt_of p path =
   | [ ""; "proc"; pid; "note" ] when int_of_string_opt pid = Some (p.host.getpid ()) -> Some (Note (p.host.getpid ()))
   | [ ""; "proc"; pid; "text" ] when int_of_string_opt pid = Some (p.host.getpid ()) -> Some Text
   | [ ""; "proc"; pid; "ctl" ] when int_of_string_opt pid = Some (p.host.getpid ()) -> Some Ctl
-  | [ ""; "proc"; pid; ("mem" | "regs" | "ctl" | "status" | "text" | "note" as f) ] ->
+  | [ ""; "proc"; pid; ("mem" | "regs" | "ctl" | "status" | "text" | "note" | "segment" as f) ] ->
       (match int_of_string_opt pid with Some n when n <> p.host.getpid () -> Some (Other (n, f)) | _ -> None)
   | _ -> None
 
@@ -275,8 +280,31 @@ let stat_record name (st : Host_calls.stat) =
   Bytes.set_uint16_le r 0 (Bytes.length r - 2);
   Bytes.to_string r
 
-let virt_stat p v =
+(* the processes this one stopped, as their debugger: no signal for
+ * them, they wait for the next request (Proc9) *)
+let debugging : (int, unit) Hashtbl.t = Hashtbl.create 4
+
+let asked p pid request =
+  match Proc9.ask p.host pid ~stopped:(Hashtbl.mem debugging pid) request with
+  | Ok s -> s
+  | Error e -> Hashtbl.remove debugging pid; raise (Error e)
+
+(* the trap a stopped process shows its debugger (the Ureg's type, 5db's
+ * armexcep: 0x17 a breakpoint's prefetch abort, 0x12 an interrupt:
+ * stopped between two instructions) *)
+let trap = ref 0x12
+
+let rec virt_stat p v =
   let now = p.host.now () in
+  let text path = match p.host.stat path with
+    | Ok st -> Some (stat_record "text" st)
+    | Error _ -> None in
+  match v with
+  | Text -> (match text p.image_path with Some r -> r | None -> virt_stat_of p v now)
+  | Other (pid, "text") -> (match text (asked p pid "textpath") with Some r -> r | None -> virt_stat_of p v now)
+  | _ -> virt_stat_of p v now
+
+and virt_stat_of p v now =
   let name = match v with Pid -> "pid" | Bintime -> "bintime" | Env n -> n | Note _ -> "note" | Text -> "text" | Other (_, f) -> f | Ctl -> "ctl" in
   stat_record name { dev = 0; ino = 0; kind = Reg; perm = 0o644; nlink = 1; uid = 0; gid = 0; rdev = 0;
                      size = String.length (content p v); atime = now; mtime = now; ctime = now }
@@ -334,15 +362,6 @@ let read_dir p fd (f : file) n =
 let is_dir p fd = match p.host.fstat fd with Ok st -> st.kind = Dir | Error _ -> false
 
 (* at [off], or at the file's offset when -1 *)
-(* the processes this one stopped, as their debugger: no signal for
- * them, they wait for the next request (Proc9) *)
-let debugging : (int, unit) Hashtbl.t = Hashtbl.create 4
-
-let asked p pid request =
-  match Proc9.ask p.host pid ~stopped:(Hashtbl.mem debugging pid) request with
-  | Ok s -> s
-  | Error e -> Hashtbl.remove debugging pid; raise (Error e)
-
 let slice s at n = if at >= String.length s then "" else String.sub s at (min n (String.length s - at))
 
 let sys_pread p fd buf n off =
@@ -352,7 +371,7 @@ let sys_pread p fd buf n off =
         let at = if off = -1 then fl.offset else off in
         let s = match f with
           | "mem" | "text" -> asked p pid (Printf.sprintf "%s %d %d" f at n)
-          | "regs" | "status" -> slice (asked p pid f) at n
+          | "regs" | "status" | "segment" -> slice (asked p pid f) at n
           | "note" -> slice (asked p pid "rnote") 0 n     (* its first note, taken *)
           | _ -> raise (Error "permission denied") in
         if off = -1 then fl.offset <- at + String.length s;
@@ -504,11 +523,22 @@ let status p =
   field 28 p.name ^ field 28 (user ()) ^ field 12 (if !Proc9.stopped then "Stopped" else "Running")
   ^ String.concat "" (List.map num [ 0; 0; 0; 0; 0; 0; 0; 0; 0 ])
 
+(* /proc/PID/segment, as devproc's: the stack first (libmach's
+ * stacktop reads its top there: acid's map of the stack), then the
+ * text, the data, the bss and the heap above it *)
+let segments p =
+  let line name ro base top = Printf.sprintf "%-6s %c  %08x %08x %4d\n" name (if ro then 'R' else ' ') base top 1 in
+  let text_end = Memory.segment_end p.mem "text" in
+  line "Stack" false (stack_top - stack_size) stack_top
+  ^ line "Text" true utzero text_end
+  ^ line "Data" false text_end p.heap_base
+  ^ line "Bss" false p.heap_base (Memory.segment_end p.mem "heap")
+
 let answer p (st : Arm32_isa.state) r =
   let line, data = match String.index_opt r '\n' with
     | Some i -> String.sub r 0 i, String.sub r (i + 1) (String.length r - i - 1)
     | None -> r, "" in
-  let words () = Array.append (Array.sub st.r 0 15) [| 0; psr st; st.next |] in
+  let words () = Array.append (Array.sub st.r 0 15) [| !trap; psr st; st.next |] in
   let ureg () = String.concat "" (Array.to_list (Array.map (fun w ->
     let b = Bytes.create 4 in Bytes.set_int32_le b 0 (Int32.of_int w); Bytes.to_string b) (words ()))) in
   let fault f = try f () with Memory.Fault _ -> failwith "fault" in
@@ -530,9 +560,11 @@ let answer p (st : Arm32_isa.state) r =
       none
   | [ "status" ] -> (status p, ignore)
   | [ "text"; a; n ] -> (slice p.image (int_of_string a) (int_of_string n), ignore)
+  | [ "textpath" ] -> (p.image_path, ignore)
+  | [ "segment" ] -> (segments p, ignore)
   | [ "ctl"; "stop" ] -> Proc9.stopped := true; none
-  | [ "ctl"; "start" ] -> Proc9.stopped := false; none
-  | [ "ctl"; "startstop" ] -> Proc9.stopped := false; Proc9.traced := true; none
+  | [ "ctl"; "start" ] -> Proc9.stopped := false; trap := 0x12; none
+  | [ "ctl"; "startstop" ] -> Proc9.stopped := false; Proc9.traced := true; trap := 0x12; none
   | [ "ctl"; "waitstop" ] -> none
   | [ "ctl"; "hang" ] -> Proc9.hung := true; none
   | [ "rnote" ] -> ((if Queue.is_empty p.notes then "" else Queue.pop p.notes), ignore)
@@ -549,6 +581,7 @@ let breakpoint_instruction = 0xe1200070
 
 let breakpoint p (st : Arm32_isa.state) ~pc =
   Queue.add "sys: breakpoint" p.notes;
+  trap := 0x17;
   st.next <- pc;
   Linux.signal_waiting := true
 

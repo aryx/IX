@@ -7,6 +7,7 @@ type event = {
   title : string;
   day : Civil.date;
   time : int option;
+  ends : Civil.date option;
   repeat : string;
   with_ : string list;
 }
@@ -97,6 +98,19 @@ let event ~(today : Civil.date) ~(people : Item.t list) (line : string) :
   in
   let ws, repeat = cut_repeat [] ws in
   let title, day = When.ending ~today (String.concat " " ws) in
+  (* "roma nov 3 to nov 7": the day found its last, the one before "to"
+   * (au, -, until, jusqu'au) its first *)
+  let title, day, ends =
+    let words = List.rev (String.split_on_char ' ' title) in
+    match (day, words) with
+    | Some last, ("to" | "au" | "-" | "until" | "jusqu'au") :: rest -> (
+        match When.ending ~today (String.concat " " (List.rev rest)) with
+        | t, Some first
+          when Civil.days_from_civil first < Civil.days_from_civil last ->
+            (t, Some first, Some last)
+        | _ -> (title, day, None))
+    | _ -> (title, day, None)
+  in
   let day, repeat =
     match (day, repeat) with
     | Some d, Some (r, _) -> (d, r)
@@ -128,7 +142,7 @@ let event ~(today : Civil.date) ~(people : Item.t list) (line : string) :
         else None)
       people
   in
-  { title; day; time; repeat;
+  { title; day; time; repeat; ends;
     with_ = List.filter_map who (names (String.split_on_char ' ' title)) }
 
 let to_item ~(id : string) (e : event) : Item.t =
@@ -140,5 +154,8 @@ let to_item ~(id : string) (e : event) : Item.t =
   Item.make ~id ~stamps:[ "event" ]
     (List.concat
        [ [ ("title", e.title); ("when", when_) ]; opt "repeat" e.repeat;
-         opt "with" (String.concat " " e.with_) ])
+         opt "with" (String.concat " " e.with_);
+         (match e.ends with
+         | Some d -> [ ("ends", Civil.to_string d) ]
+         | None -> []) ])
     ""

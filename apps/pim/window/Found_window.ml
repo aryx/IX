@@ -102,7 +102,7 @@ let make (caps : caps) (r : row) : string * string =
       in
       let e =
         Capture.to_item ~id:(fresh "event")
-          { title = topic r.subject; day; time; repeat = ""; with_ }
+          { title = topic r.subject; day; time; ends = None; repeat = ""; with_ }
       in
       let e = Mail.set "re" r.message e in
       Items.save caps (store caps) e;

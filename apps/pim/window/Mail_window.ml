@@ -410,7 +410,8 @@ let command (caps : caps) (m : model) (c : command) : model =
   | Previous -> next caps m (-1)
   | Inbox -> switch caps m "INBOX"
   | List_of p -> switch caps { m with screen = p; unread = false } "INBOX"
-  | Unread_list -> switch caps { m with screen = Screen.Imbox; unread = true } "INBOX"
+  | Unread_list ->
+      switch caps { m with screen = Screen.Imbox; unread = true } "INBOX"
   | Screener_on ->
       Items.save caps (store caps) (Screen.turn_on m.today);
       load caps { m with status = "the Screener on: new senders wait in it" }

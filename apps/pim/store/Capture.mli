@@ -9,6 +9,8 @@
          -> FREQ=WEEKLY;BYDAY=MO, the next Monday, 9:30
        dentist nov 5 at 4pm
          -> November 5, 16:00
+       roma nov 3 to nov 7               <- to, au, -, until: its last
+         -> November 3, ends: November 7    day
        déjeuner avec alice mardi 12h30     <- the author's French
 
    A time: 12:30, 12h30, 12h, 4pm, 11am, noon, midi (an "at" or "à"
@@ -23,6 +25,7 @@ type event = {
   title : string;
   day : Civil.date;
   time : int option; (* minutes after midnight *)
+  ends : Civil.date option; (* its last day, "nov 3 to nov 7" *)
   repeat : string; (* RRULE's text, "" for none *)
   with_ : string list; (* the contacts' ids *)
 }

@@ -25,15 +25,29 @@ val clock : int -> string
 (* an event's first day and its time, from when: *)
 val start : Item.t -> (Civil.date * int option) option
 
+(* how many days it lasts: from its start to its ends: (its last day,
+ * an event of several days: Rome, a trip), 1 without *)
+val length : Item.t -> int
+
+(* [spans items ~from ~upto]: the occurrences of the events of several
+ * days that cover a day of those, each its first day (perhaps before
+ * [from]) and its length: what a week's and a month's bars show *)
+val spans :
+  Item.t list -> from:Civil.date -> upto:Civil.date ->
+  (Civil.date * int * Item.t) list
+
 (* [between items ~from ~upto]: the events' occurrences on those days
- * (both included), by day, the day's events (no time) first, then by
- * time *)
+ * (both included), an event of several days on each of its days (its
+ * time on its first), by day, the day's events (no time) first, then
+ * by time *)
 val between :
   Item.t list -> from:Civil.date -> upto:Civil.date ->
   (Civil.date * int option * Item.t) list
 
 (* [of_ics zone ~message text]: an invitation's or a calendar's events
  * as items, [message] the id of the mail they came in ("" for a file);
+ * one of several days its ends: (a date's DTEND the day after its
+ * last, RFC 5545's);
  * UTC times at [zone]'s clock, a TZID's as written (floating); a
  * cancelled event left out; an occurrence moved its own item
  * (event:uid@its date), the series skipping that date and its

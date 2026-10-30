@@ -20,38 +20,69 @@ let start (i : Item.t) : (Civil.date * int option) option =
   | [ d; t ] -> Option.map (fun d -> (d, minutes t)) (Search.date d)
   | _ -> None
 
+let length (i : Item.t) : int =
+  match (start i, Search.date (Item.field i "ends")) with
+  | Some (d, _), Some e ->
+      max 1 (Civil.days_from_civil e - Civil.days_from_civil d + 1)
+  | _ -> 1
+
+(* each occurrence's first day, of those that cover a day of [from,
+ * upto]: a repeat's computed, those the series skips (except:) left
+ * out; with the item's length in days *)
+let occurrences (i : Item.t) ~(from : Civil.date) ~(upto : Civil.date) :
+    (Civil.date * int option) list =
+  match start i with
+  | None -> []
+  | Some (day, time) ->
+      let n = length i in
+      (* (one begun before [from] that lasts into it) *)
+      let from' = Civil.civil_from_days (Civil.days_from_civil from - n + 1) in
+      let days =
+        match Ics.rule_of_string (Item.field i "repeat") with
+        | Some r when Item.field i "repeat" <> "" ->
+            let at = match time with Some t -> t * 60 | None -> 0 in
+            Recur.occurrences ~at r ~start:day ~from:from' ~upto
+        | _ ->
+            let k = Civil.days_from_civil day in
+            if k >= Civil.days_from_civil from' && k <= Civil.days_from_civil upto
+            then [ day ]
+            else []
+      in
+      let except = String.split_on_char ' ' (Item.field i "except") in
+      List.filter_map
+        (fun d ->
+          if List.mem (Civil.to_string d) except then None else Some (d, time))
+        days
+
+let spans (items : Item.t list) ~(from : Civil.date) ~(upto : Civil.date) :
+    (Civil.date * int * Item.t) list =
+  List.concat_map
+    (fun i ->
+      if (not (Item.has_stamp i "event")) || length i < 2 then []
+      else List.map (fun (d, _) -> (d, length i, i)) (occurrences i ~from ~upto))
+    items
+
 let between (items : Item.t list) ~(from : Civil.date) ~(upto : Civil.date) :
     (Civil.date * int option * Item.t) list =
+  let f = Civil.days_from_civil from and u = Civil.days_from_civil upto in
   let all =
     List.concat_map
       (fun i ->
         if not (Item.has_stamp i "event") then []
         else
-          match start i with
-          | None -> []
-          | Some (day, time) ->
-              let days =
-                match Ics.rule_of_string (Item.field i "repeat") with
-                | Some r when Item.field i "repeat" <> "" ->
-                    let at = match time with Some t -> t * 60 | None -> 0 in
-                    Recur.occurrences ~at r ~start:day ~from ~upto
-                | _ ->
-                    let n = Civil.days_from_civil day in
-                    if
-                      n >= Civil.days_from_civil from
-                      && n <= Civil.days_from_civil upto
-                    then [ day ]
-                    else []
-              in
-              (* (but those the series skips: except:) *)
-              let except =
-                String.split_on_char ' ' (Item.field i "except")
-              in
+          let n = length i in
+          List.concat_map
+            (fun (d, time) ->
+              (* every day it covers in the range; its time on its first *)
               List.filter_map
-                (fun d ->
-                  if List.mem (Civil.to_string d) except then None
-                  else Some (d, time, i))
-                days)
+                (fun k ->
+                  let day = Civil.days_from_civil d + k in
+                  if day < f || day > u then None
+                  else
+                    Some
+                      (Civil.civil_from_days day, (if k = 0 then time else None), i))
+                (List.init n (fun k -> k)))
+            (occurrences i ~from ~upto))
       items
   in
   let key (d, t, _) =
@@ -109,6 +140,21 @@ let of_ics (zone : Zone.t) ~(message : string) (text : string) : Item.t list =
               | None -> [])
           | _ -> []
         in
+        (* its last day when it lasts more than one: a date's DTEND is
+         * the day after (all day, RFC 5545), a time's its own *)
+        let ends =
+          match e.end_ with
+          | Some m ->
+              let m = local zone m in
+              let last =
+                Civil.days_from_civil m.date - if m.time = None then 1 else 0
+              in
+              let first = Civil.days_from_civil (local zone e.start).date in
+              if last > first then
+                [ ("ends", Civil.to_string (Civil.civil_from_days last)) ]
+              else []
+          | None -> []
+        in
         let opt name v = if v = "" then [] else [ (name, v) ] in
         let id, repeat =
           match (e.recurrence_id, e.rrule) with
@@ -124,7 +170,8 @@ let of_ics (zone : Zone.t) ~(message : string) (text : string) : Item.t list =
         Some
           (Item.make ~id ~stamps:[ "event" ]
              (List.concat
-                [ [ ("title", e.summary); ("when", at e.start) ]; end_; repeat;
+                [ [ ("title", e.summary); ("when", at e.start) ]; end_; ends;
+                  repeat;
                   opt "where" e.location; opt "re" message ])
              e.description))
     cal.events

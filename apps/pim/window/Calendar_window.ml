@@ -21,6 +21,9 @@ type model = {
   today : Civil.date;
   (* the occurrences of the days shown *)
   shown : (Civil.date * int option * Item.t) list;
+  (* the events of several days among them, each its first day and its
+   * length: the week's and the month's bars *)
+  spans : (Civil.date * int * Item.t) list;
   selected : int; (* in the day's list *)
   mode : mode;
   field : string; (* an event typed *)
@@ -48,9 +51,11 @@ let range (m : model) : Civil.date * Civil.date =
 
 let load (caps : caps) (m : model) : model =
   let from, upto = range m in
-  let shown = Events.between (Items.all caps (store caps)) ~from ~upto in
+  let items = Items.all caps (store caps) in
+  let shown = Events.between items ~from ~upto in
   let n = List.length (List.filter (fun (d, _, _) -> d = m.cursor) shown) in
-  { m with shown; selected = max 0 (min m.selected (n - 1)) }
+  { m with shown; spans = Events.spans items ~from ~upto;
+    selected = max 0 (min m.selected (n - 1)) }
 
 let initial (caps : caps) (flags : Playground.flags) : model =
   let today =
@@ -60,7 +65,7 @@ let initial (caps : caps) (flags : Playground.flags) : model =
     | None -> When.today caps
   in
   load caps
-    { span = Week; cursor = today; today; shown = []; selected = 0;
+    { span = Week; cursor = today; today; shown = []; spans = []; selected = 0;
       mode = Browsing; field = ""; status = ""; held = Set_.empty }
 
 let refresh (caps : caps) (keys : string Set_.t) (m : model) : model =
@@ -244,6 +249,54 @@ let line (t : int option) (i : Item.t) : string =
 
 let light = rgb 218 220 224
 
+(* a calendar's color, Google Calendar's palette (Peacock, Sage,
+ * Tomato, Grape, Tangerine, Basil, Lavender, Flamingo, Banana,
+ * Blueberry), chosen by its name, the same at each start; the suite's
+ * own events (no calendar:) its blue *)
+let palette =
+  [ rgb 3 155 229; rgb 51 182 121; rgb 213 0 0; rgb 142 36 170;
+    rgb 244 81 30; rgb 11 128 67; rgb 121 134 203; rgb 230 124 115;
+    rgb 246 191 38; rgb 63 81 181 ]
+
+let color (i : Item.t) : color =
+  match Item.field i "calendar" with
+  | "" -> blue
+  | c ->
+      let n = ref 0 in
+      String.iter (fun ch -> n := ((!n * 31) + Char.code ch) mod 1009) c;
+      List.nth palette (!n mod List.length palette)
+
+(* a week's bars: each event of several days in a lane, the first lane
+ * free on its days (the longest first, Google's way); each with its
+ * first and last column (0 Monday .. 6) in the week of [monday] *)
+let lanes (spans : (Civil.date * int * Item.t) list) (monday : Civil.date) :
+    (int * int * int * Item.t) list =
+  let m = days monday in
+  let cut =
+    List.filter_map
+      (fun (d, n, i) ->
+        let a = days d - m and b = days d + n - 1 - m in
+        if b < 0 || a > 6 then None else Some (max 0 a, min 6 b, n, i))
+      spans
+  in
+  let cut =
+    List.stable_sort
+      (fun (a, _, n, _) (a', _, n', _) -> compare (a, -n) (a', -n'))
+      cut
+  in
+  List.fold_left
+    (fun placed (a, b, _, i) ->
+      let rec free lane =
+        if
+          List.exists
+            (fun (l, a', b', _) -> l = lane && not (b' < a || b < a'))
+            placed
+        then free (lane + 1)
+        else lane
+      in
+      placed @ [ (free 0, a, b, i) ])
+    [] cut
+
 let view (computer : computer) (m : model) : shape list =
   let a = area computer in
   let bottom = (-.computer.screen.height /. 2.) +. 10. in
@@ -266,27 +319,37 @@ let view (computer : computer) (m : model) : shape list =
   in
   let right =
     if m.status <> "" then m.status
-    else count (List.length m.shown) "event"
+    else
+      (* (an event of several days once, not once a day) *)
+      count
+        (List.length
+           (List.sort_uniq compare
+              (List.map (fun (_, _, i) -> Item.id i) m.shown)))
+        "event"
   in
   (* a cell: its box's top left, its width and height; its day's number
    * and its events' lines *)
   let cell ~(x : float) ~(y : float) ~(w : float) ~(h : float) ~(head : string)
-      (d : Civil.date) : shape list =
+      ~(bars : int) (d : Civil.date) : shape list =
     let is_cursor = d = m.cursor and is_today = d = m.today in
     let grey_day = m.span = Month && d.month <> m.cursor.month in
     (* (a week's events wrapped in their column, a month's cut) *)
+    (* (an event of several days is its bar's, above) *)
     let lines =
       List.concat_map
         (fun (_, t, i) ->
-          if m.span = Week then wrap (w -. 12.) (line t i) else [ line t i ])
-        (on m d)
+          let ls =
+            if m.span = Week then wrap (w -. 22.) (line t i) else [ line t i ]
+          in
+          List.mapi (fun k l -> ((if k = 0 then Some (color i) else None), l)) ls)
+        (List.filter (fun (_, _, i) -> Events.length i < 2) (on m d))
     in
-    let fits = max 0 (int_of_float ((h -. 30.) /. 20.)) in
+    let fits = max 0 (int_of_float ((h -. 30.) /. 20.)) - bars in
     let lines =
       if List.length lines <= fits then lines
       else
         List.filteri (fun k _ -> k < fits - 1) lines
-        @ [ Printf.sprintf "+%d more" (List.length lines - fits + 1) ]
+        @ [ (None, Printf.sprintf "+%d more" (List.length lines - fits + 1)) ]
     in
     (if is_cursor then
        [ rectangle (rgb 232 240 254) w h |> move (x +. (w /. 2.)) (y -. (h /. 2.)) ]
@@ -296,23 +359,46 @@ let view (computer : computer) (m : model) : shape list =
         text
           (if is_today then blue else if grey_day then light else grey)
           ~bold:is_today ~room:(w -. 8.) (x +. 6.) (y -. 20.) head ]
-    @ List.mapi
-        (fun k l ->
-          text (if grey_day then grey else ink) ~bold:false ~room:(w -. 10.)
-            (x +. 6.) (y -. 42. -. (float_of_int k *. 20.)) l)
-        lines
+    @ List.concat
+        (List.mapi
+           (fun k (dot, l) ->
+             let ly = y -. 42. -. (float_of_int (k + bars) *. 20.) in
+             (* a timed event's dot, its calendar's color *)
+             (match dot with
+             | Some c -> [ circle c 3.5 |> move (x +. 10.) (ly +. 5.) ]
+             | None -> [])
+             @ [ text (if grey_day then grey else ink) ~bold:false
+                   ~room:(w -. 20.) (x +. 17.) ly l ])
+           lines)
+  in
+  (* a week's bars, from its row's top [y], its columns [w] wide *)
+  let bars ~(x0 : float) ~(y : float) ~(w : float) (monday : Civil.date) :
+      int * shape list =
+    let placed = lanes m.spans monday in
+    let n = List.fold_left (fun n (l, _, _, _) -> max n (l + 1)) 0 placed in
+    ( n,
+      List.concat_map
+        (fun (lane, a, b, i) ->
+          let left = x0 +. (float_of_int a *. w) +. 3. in
+          let width = (float_of_int (b - a + 1) *. w) -. 6. in
+          let by = y -. 38. -. (float_of_int lane *. 20.) in
+          [ rectangle (color i) width 17. |> move (left +. (width /. 2.)) (by +. 4.);
+            text white ~bold:false ~room:(width -. 8.) (left +. 5.) by (title i) ])
+        placed )
   in
   let main =
     match m.span with
     | Week ->
         let w = (a.room +. 16.) /. 7. in
+        let n, bar_shapes = bars ~x0:(a.x0 -. 8.) ~y:top ~w (monday m.cursor) in
         List.concat
           (List.init 7 (fun k ->
                let d = date (days (monday m.cursor) + k) in
                cell ~x:(a.x0 -. 8. +. (float_of_int k *. w)) ~y:top ~w
                  ~h:(top -. bottom)
                  ~head:(Printf.sprintf "%s %d" (List.nth short_weekdays k) d.day)
-                 d))
+                 ~bars:n d))
+        @ bar_shapes
     | Month ->
         let w = (a.room +. 16.) /. 7. in
         let head_h = 24. in
@@ -322,13 +408,19 @@ let view (computer : computer) (m : model) : shape list =
             text grey ~bold:false ~room:w
               (a.x0 -. 2. +. (float_of_int k *. w)) (top -. 17.) name)
           short_weekdays
+        (* each of the six weeks: its bars, then its days under them *)
         @ List.concat
-            (List.init 42 (fun k ->
-                 let d = date (days (grid_start m.cursor) + k) in
-                 cell
-                   ~x:(a.x0 -. 8. +. (float_of_int (k mod 7) *. w))
-                   ~y:(top -. head_h -. (float_of_int (k / 7) *. h))
-                   ~w ~h ~head:(string_of_int d.day) d))
+            (List.init 6 (fun r ->
+                 let y = top -. head_h -. (float_of_int r *. h) in
+                 let first = date (days (grid_start m.cursor) + (7 * r)) in
+                 let n, bar_shapes = bars ~x0:(a.x0 -. 8.) ~y ~w first in
+                 List.concat
+                   (List.init 7 (fun c ->
+                        let d = date (days first + c) in
+                        cell
+                          ~x:(a.x0 -. 8. +. (float_of_int c *. w))
+                          ~y ~w ~h ~head:(string_of_int d.day) ~bars:n d))
+                 @ bar_shapes))
     | Day ->
         let events = on m m.cursor in
         if events = [] then
@@ -357,7 +449,8 @@ let view (computer : computer) (m : model) : shape list =
                     match Item.field i name with
                     | "" -> None
                     | v -> Some (label ^ v))
-                  [ ("end", "until "); ("where", "where: ");
+                  [ ("end", "until "); ("ends", "the last day: ");
+                    ("where", "where: ");
                     ("repeat", "repeats: "); ("with", "with: ");
                     ("re", "from the mail: o opens it, ") ]
                 @ wrap a.room (String.trim i.body)

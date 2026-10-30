@@ -69,6 +69,10 @@ fail=0
 while IFS='|' read -r name args sum; do
   [ -z "$name" ] && continue
   mkdir $W/$name
+  # (a session's store made first by tests/seed/<name>.sh, if there is
+  # one: mini-pim's commands, $PIM)
+  [ -f $ROOT/apps/pim/tests/seed/$name.sh ] &&
+    PIM_STORE=$W/$name/store PIM=$PIM sh $ROOT/apps/pim/tests/seed/$name.sh
   eval "set -- $args"; frames=$1; shift
   PIM_STORE=$W/$name/store timeout 30 $PIM -dump-frame $frames $W/$name/f.ppm \
     -fixed-time 1000 "$@" user=erin server=$I smtp=$S plain > /dev/null 2> $W/$name/err ||

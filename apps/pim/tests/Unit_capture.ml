@@ -41,7 +41,15 @@ let tests =
         check "every thursday: today is one"
           "yoga|2026-10-29|-|FREQ=WEEKLY;BYDAY=TH|" (said "yoga every thursday");
         check "an unknown with" "tea with bob|2026-10-30|-||"
-          (said "tea with bob tomorrow"));
+          (said "tea with bob tomorrow");
+        let e = Capture.event ~today ~people:[] "roma nov 3 to nov 7" in
+        check "a trip: its first day" "roma 2026-11-03"
+          (e.title ^ " " ^ Civil.to_string e.day);
+        check "its last" "2026-11-07"
+          (match e.ends with Some d -> Civil.to_string d | None -> "-");
+        let e = Capture.event ~today ~people:[] "vacances 5 nov au 9 nov" in
+        check "French" "2026-11-09"
+          (match e.ends with Some d -> Civil.to_string d | None -> "-"));
     Testo.create "a week's occurrences" (fun () ->
         let items =
           [ event "lunch" "2026-11-03 12:30" [];

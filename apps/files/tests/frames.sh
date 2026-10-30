@@ -24,6 +24,15 @@ cp lib_graphics/pdf/tests/data/shapes.pdf $T/tree/report.pdf
 cp lib_audio/tests/data/bell.mp2 $T/tree/music/bell.mp2
 echo hello > $T/tree/notes.txt
 echo a > $T/tree/docs/a.txt
+# one of each kind, for the icons (the session kinds)
+cp browsers/netscape/tests/pages/colors.png $T/tree/docs/picture.png
+cp browsers/engine/tests/pages/small.html $T/tree/docs/page.html
+cp lib_audio/tests/data/bell.mp2 $T/tree/docs/sound.mp2
+cp lib_graphics/pdf/tests/data/shapes.pdf $T/tree/docs/book.pdf
+cp kernels/9pi/tests/hellodraw.ppm.gz $T/tree/docs/archive.gz
+printf 'YUV4MPEG2 W4 H4' > $T/tree/docs/film.y4m
+printf '#!/bin/sh\n' > $T/tree/docs/program.sh
+printf '\001\002\003' > $T/tree/docs/other.bin
 echo secret > $T/tree/.hidden
 printf '\001\002\003' > $T/tree/data.bin
 for i in $(seq -w 10 69); do echo $i > $T/tree/many/file$i; done

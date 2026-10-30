@@ -1,5 +1,5 @@
 ; lib_mime: what a file is (File_kind), which program takes it (Helpers);
-; mini-netscape's and mini-files' (docs/plans/plan_files.md)
+; mini-netscape's and mini-files' (docs/plans/done/plan_files.md)
 (library
  (name ix_mime)
  (wrapped false)

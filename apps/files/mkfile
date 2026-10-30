@@ -10,7 +10,7 @@ PLATFORM=`{if(~ $OS plan9) echo draw; if not echo ppm}
 LIBDIRS=lib_mime lib_compression lib_graphics lib_playground lib_gui lib_playground/platforms lib_playground/platforms/$PLATFORM
 <$TOP/mkfiles/mklibs
 INCLUDES=-I . -I $D $LIBI $STDI
-LIB=Folder
+LIB=Folder Icons
 LIBOBJS=${LIB:%=$D/%.$O}
 LOCAL=`{ls *.ml *.mli} $LIBSRC
 LIBS=$LIBOBJS $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig

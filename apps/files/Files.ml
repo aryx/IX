@@ -3,7 +3,7 @@
 
 (* mini-files: folders in a window, and a file opened by a double click
  * or Enter without knowing which program reads it
- * (docs/plans/plan_files.md):
+ * (docs/plans/done/plan_files.md):
  *
  *   /  home  pad  docs                   <- the path, the parents a click away
  *   Name                  Size       Day <- a click: sorted by it, again:
@@ -20,8 +20,9 @@
  *                                               v a window of its own
  *
  * Folder says what a directory holds and the history of this kind of
- * program. The kind is asked only of the file selected, a read of
- * 4,096 bytes each move, and not of a whole folder.
+ * program. A file's kind is a read of 4,096 bytes: for its icon, asked of
+ * the rows on the screen and of a few of them a frame (a big folder does
+ * not stop the window), never of a whole folder.
  *
  * A window of its own under mini-rio, and on Linux a process beside; on
  * mini-9pi's bare screen a program would fight this one for the screen
@@ -43,6 +44,7 @@ let usage =
   \  a click on Name, Size, Day  sorted by it; again, the other way\n\
   \  .                           the names that begin with a dot, shown or not\n\
   \  c, x, then v                copied or cut, put in the folder shown\n\
+  \  a row dragged on a folder   moved there (the path's folders too)\n\
   \  r                           renamed;  n  a new folder\n\
   \  d                           deleted, after a question\n\
   \  q                           the end\n"
@@ -57,10 +59,14 @@ type asking = Deleting | Renaming | New_folder
 (* c or x: nothing changes until v, in the folder then shown *)
 type clip = Copied of string | Cut of string
 
+(* the button down on a row: where, and which entry *)
+type press = { row_pressed : int; px : float; py : float }
+
 type model = {
   root : string; (* no folder above it is shown *)
   dir : string;
   entries : Folder.entry array; (* in the order shown *)
+  kinds : string option array; (* of the entries: known once they were on the screen *)
   order : Folder.order;
   reversed : bool;
   dots : bool; (* the names that begin with a dot, shown *)
@@ -71,6 +77,8 @@ type model = {
   asking : asking option;
   field : string; (* what is typed after the question *)
   clip : clip option;
+  press : press option;
+  button_held : bool; (* last frame's: a press is the frame it goes down *)
   rules : Helpers.rule list; (* read once *)
   kind : string; (* the selected file's, and its program's name *)
   last_click : (int * float) option; (* the row, when: for a double click *)
@@ -109,14 +117,14 @@ let with_selected (caps : caps) (m : model) (i : int) : model =
 let read (caps : caps) (m : model) (selected : string option) : model =
   match Folder.list caps m.dir with
   | exception Unix.Unix_error (e, _, _) ->
-      { m with entries = [||]; selected = 0; top = 0; kind = ""; said = m.dir ^ ": " ^ Unix.error_message e }
+      { m with entries = [||]; kinds = [||]; selected = 0; top = 0; kind = ""; said = m.dir ^ ": " ^ Unix.error_message e }
   | all ->
       let shown = if m.dots then all else List.filter (fun (e : Folder.entry) -> e.name.[0] <> '.') all in
       let entries = Array.of_list (Folder.sort m.order ~reversed:m.reversed shown) in
       let rec find (i : int) =
         if i >= Array.length entries then 0 else if Some entries.(i).name = selected then i else find (i + 1)
       in
-      with_kind caps { m with entries; selected = find 0; top = 0 }
+      with_kind caps { m with entries; kinds = Array.make (Array.length entries) None; selected = find 0; top = 0 }
 
 (* the folder one comes up to: selected what one came from *)
 let came_from (dir : string) (old : string) : string option =
@@ -132,8 +140,8 @@ let enter (caps : caps) (m : model) (dir : string) : model =
 
 let initial (caps : caps) (root : string) (dir : string) : model =
   read caps
-    { root; dir; entries = [||]; order = By_name; reversed = false; dots = false; selected = 0; top = 0;
-      before = []; said = ""; asking = None; field = ""; clip = None; rules = Helpers.rules caps; kind = ""; last_click = None; held = Set_.empty }
+    { root; dir; entries = [||]; kinds = [||]; order = By_name; reversed = false; dots = false; selected = 0; top = 0;
+      before = []; said = ""; asking = None; field = ""; clip = None; press = None; button_held = false; rules = Helpers.rules caps; kind = ""; last_click = None; held = Set_.empty }
     None
 
 let open_selected (caps : caps) (m : model) : model =
@@ -158,11 +166,13 @@ let size = 16.
 let row = 24.
 let path_bar = 30.
 let status_bar = 26.
+let icon_room = 22.
 
 let ink = rgb 32 33 36
 let grey = rgb 95 99 104
 let bars = rgb 232 234 237
 let chosen = rgb 26 115 232
+let target = rgb 200 225 250
 
 let advance (c : string) : float =
   let g = Glyph_unicode.glyph c in
@@ -317,6 +327,38 @@ let answer (caps : caps) (computer : computer) (a : area) (m : model) (q : askin
         { m with field = String.concat "" (List.rev (match List.rev (Text.chars m.field) with [] -> [] | _ :: rest -> rest)) }
       else { m with field = m.field ^ String.concat "" (List.filter (fun c -> c >= " ") (Text.chars typed)) }
 
+(*****************************************************************************)
+(* Dragging *)
+(*****************************************************************************)
+
+let moved_enough (computer : computer) (p : press) : bool =
+  abs_float (computer.mouse.mx -. p.px) +. abs_float (computer.mouse.my -. p.py) >= 6.
+
+(* what is under the pointer that a file could be dropped in: a folder's row
+ * (not the one dragged), or a folder of the path, not the one shown *)
+let drop_target (computer : computer) (a : area) (m : model) (p : press) : string option =
+  let x = computer.mouse.mx and y = computer.mouse.my in
+  if y > a.top_y -. path_bar then
+    match List.find_opt (fun (name, _, x0) -> x >= x0 && x < x0 +. width name +. 12.) (path_buttons a m) with
+    | Some (_, path, _) when path <> m.dir -> Some path
+    | _ -> None
+  else
+    match row_at a y with
+    | Some i when i + m.top < Array.length m.entries && i + m.top <> p.row_pressed ->
+        let e = m.entries.(i + m.top) in
+        if e.is_dir then Some (Folder.join m.dir e.name) else None
+    | _ -> None
+
+let drop (caps : caps) (computer : computer) (a : area) (m : model) (p : press) : model =
+  match drop_target computer a m p with
+  | None -> m
+  | Some dir -> (
+      let e = m.entries.(p.row_pressed) in
+      let m = { m with selected = p.row_pressed } in
+      match tried (fun () -> Folder.move caps (Folder.join m.dir e.name) (Folder.join dir e.name)) with
+      | None -> shown caps a m (next_name m) (Printf.sprintf "%s moved to %s" e.name (Filename.basename dir))
+      | Some why -> shown caps a m (Some e.name) why)
+
 let click (caps : caps) (computer : computer) (a : area) (m : model) : model =
   let x = computer.mouse.mx and y = computer.mouse.my in
   let (Time now) = computer.time in
@@ -365,19 +407,42 @@ let browse (caps : caps) (computer : computer) (m : model) : model =
     else m
   in
   let m = if m.selected <> was then keep_shown a m else m in
-  let m = if computer.mouse.mclick then click caps computer a m else m in
+  let m =
+    match m.press with
+    | Some p when computer.mouse.mclick && moved_enough computer p -> drop caps computer a { m with press = None } p
+    | _ when computer.mouse.mclick -> click caps computer a { m with press = None }
+    | None when computer.mouse.mdown && not m.button_held -> (
+        match row_at a computer.mouse.my with
+        | Some i when i + m.top < Array.length m.entries && computer.mouse.my <= a.top_y -. path_bar -. row ->
+            { m with press = Some { row_pressed = i + m.top; px = computer.mouse.mx; py = computer.mouse.my } }
+        | _ -> m)
+    | Some _ when not computer.mouse.mdown -> { m with press = None }
+    | _ -> m
+  in
   let last = max 0 (Array.length m.entries - a.rows) in
   let wheel = int_of_float computer.mouse.mwheel in
   let m = if wheel <> 0 then { m with top = max 0 (min last (m.top - (3 * wheel))) } else m in
   m
 
+(* the kinds of the rows shown, a few a frame: each is a read *)
+let learn_kinds (caps : caps) (a : area) (m : model) : unit =
+  let left = ref 4 in
+  for i = m.top to min (m.top + a.rows) (Array.length m.entries) - 1 do
+    let e = m.entries.(i) in
+    if !left > 0 && (not e.is_dir) && m.kinds.(i) = None then (
+      decr left;
+      m.kinds.(i) <- Some (fst (rule_of caps m e)))
+  done
+
 let update (caps : caps) (computer : computer) (m : model) : model =
+  let a = area computer in
   let m =
     match m.asking with
-    | Some q -> answer caps computer (area computer) m q
+    | Some q -> answer caps computer a m q
     | None -> browse caps computer m
   in
-  { m with held = computer.keyboard.keys }
+  learn_kinds caps a m;
+  { m with held = computer.keyboard.keys; button_held = computer.mouse.mdown }
 
 (*****************************************************************************)
 (* The view *)
@@ -391,6 +456,30 @@ let status (m : model) : string =
   | Some New_folder, _ -> "new folder: " ^ m.field ^ "_"
   | _, Some e when m.said = "" && not e.is_dir -> m.kind
   | _ -> if m.said <> "" then m.said else Printf.sprintf "%d items" (Array.length m.entries)
+
+let look_of (m : model) (i : int) (e : Folder.entry) : Icons.look =
+  if e.is_dir then Icons.Folder
+  else match m.kinds.(i) with Some kind -> Icons.of_kind kind | None -> Icons.Other
+
+(* while a row is dragged: the row it would go in, under the rows' text *)
+let drop_row (computer : computer) (a : area) (m : model) : shape list =
+  match m.press with
+  | Some p when moved_enough computer p -> (
+      match (drop_target computer a m p, row_at a computer.mouse.my) with
+      | Some _, Some i when computer.mouse.my <= a.top_y -. path_bar -. row ->
+          [ move 0. (row_y a i) (rectangle target computer.screen.width row) ]
+      | _ -> [])
+  | _ -> []
+
+(* ... and its name under the pointer *)
+let dragged (computer : computer) (m : model) : shape list =
+  match m.press with
+  | Some p when moved_enough computer p ->
+      let e = m.entries.(p.row_pressed) in
+      let x = computer.mouse.mx and y = computer.mouse.my in
+      [ move (x +. 16.) (y -. 2.) (Icons.draw (look_of m p.row_pressed e));
+        text ink ~bold:true ~room:300. (x +. 28.) (y -. 7.) e.name ]
+  | _ -> []
 
 let view (computer : computer) (m : model) : shape list =
   let a = area computer in
@@ -407,7 +496,8 @@ let view (computer : computer) (m : model) : shape list =
     let color = if selected then white else ink in
     let name = if e.is_dir then e.name ^ "/" else e.name in
     (if selected then [ move 0. y (rectangle chosen w row) ] else [])
-    @ [ text color ~bold:e.is_dir ~room:(a.size_x -. a.left -. 10.) a.left (base y) name ]
+    @ [ move (a.left +. 8.) y (Icons.draw (look_of m i e));
+        text color ~bold:e.is_dir ~room:(a.size_x -. a.left -. 32.) (a.left +. icon_room) (base y) name ]
     @ (if e.is_dir then [] else [ text color ~bold:false ~room:95. a.size_x (base y) (Folder.size_text e.size) ])
     @ [ text color ~bold:false ~room:125. a.day_x (base y) (Folder.day_text e.mtime) ]
   in
@@ -424,8 +514,10 @@ let view (computer : computer) (m : model) : shape list =
       (fun (name, _, x) -> text chosen ~bold:false ~room:(width name +. 1.) x (base (a.top_y -. (path_bar /. 2.))) name)
       (path_buttons a m)
   @ [ header a.left "Name" By_name; header a.size_x "Size" By_size; header a.day_x "Day" By_day ]
+  @ drop_row computer a m
   @ rows
   @ [ text ink ~bold:false ~room:(a.right -. a.left) a.left (base ((-.h /. 2.) +. (status_bar /. 2.))) (status m) ]
+  @ dragged computer m
 
 (*****************************************************************************)
 (* The program *)

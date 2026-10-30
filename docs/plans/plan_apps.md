@@ -16,7 +16,7 @@ money ([`plan_pim.md`](done/plan_pim.md) and
 [`plan_mail.md`](done/plan_mail.md), both done 2026-10-30), in the
 author's daily use on their Gmail, on Linux only so far; the table
 below says what is where. Taken next, by the author:
-[`plan_files.md`](plan_files.md), [`plan_video.md`](plan_video.md) and
+[`plan_files.md`](done/plan_files.md), [`plan_video.md`](plan_video.md) and
 [`plan_maps.md`](plan_maps.md).
 
 ## The measure
@@ -249,7 +249,7 @@ for 1 to 3):
    the card, run on mini-9pi. Not a new program, but until then the
    largest row of the table is Linux only, against the rule that every
    m-ix program runs under mini-9pi.
-1. **The file manager**: [`plan_files.md`](plan_files.md), a file's
+1. **The file manager**: [`plan_files.md`](done/plan_files.md), a file's
    kind leading to its program.
 2. **Video**: [`plan_video.md`](plan_video.md), the historical formats,
    played by `play` and from the file manager.
@@ -306,3 +306,8 @@ maps, their plans written, nothing built.
 
 2026-10-30: mini-maps built (`apps/maps/`), plan_maps.md's stages 1 to 4:
 the map, its cache, finding a place, the weather; on the card as `maps`.
+
+2026-10-31: mini-files built (`apps/files/`, `lib_mime/`), its plan in
+`done/`: a file's kind by its first bytes, its program by rules and a
+mailcap, the list, icons, changing files, dragging; on the card as `files`
+and `open`. Not yet run under mini-rio on mini-9pi. Video next.

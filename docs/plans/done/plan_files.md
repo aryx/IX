@@ -4,7 +4,7 @@ The author (2026-10-30), after plan_apps.md: "I think we could do a
 file manager that would dispatch to the appropriate 'player', and then
 support mpeg and play them with 'play' or via the new file manager."
 
-**Status: stages 1 to 3 done** (`lib_mime/`, `apps/files/`). Its video is
+**Status: done** (`lib_mime/`, `apps/files/`): stages 1 to 4; what is left below. Its video is
 [`plan_video.md`](plan_video.md).
 
 ## What it is for
@@ -119,3 +119,12 @@ the link goes and not its target; a tree holding one is refused a copy or
 a move to another folder, since Plan 9's calls have no links to make.
 Checked by `apps/files/tests/changes.sh` on a scratch tree, by both
 compilers' programs.
+Stage 4 done: `Icons`, ten of them, drawn of shapes, each row's kind read
+when it is on the screen, four a frame; a row dragged onto a folder, or
+onto a folder of the path, is moved there.
+
+Left: mini-files has not been run under mini-rio on mini-9pi (it builds for
+Plan 9, the card lists it). `Sys_plan9.is_device` is false on Plan 9, so
+selecting `/dev/mouse` there would wait (`bugs/ix.md`). A big copy stops the
+window while it runs. No Trash, as planned at the start. GIF and office
+documents have no rule yet; video has none until plan_video.md's stage 5.

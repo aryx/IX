@@ -1,12 +1,12 @@
 ; apps/files: mini-files, folders in a window, and mini-open, each file
-; given to the program for its kind (docs/plans/plan_files.md). Here with
+; given to the program for its kind (docs/plans/done/plan_files.md). Here with
 ; the platform that writes a frame to a file (the tests'); sdl/ is the one
 ; with a window, bin/mini-files
 (library
  (name ix_files)
  (wrapped false)
- (modules Folder)
- (libraries ix_core caps fpath unix))
+ (modules Folder Icons)
+ (libraries ix_core caps fpath unix ix_playground))
 
 (executable
  (name Files)

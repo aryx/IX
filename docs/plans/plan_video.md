@@ -7,7 +7,7 @@ but the historical one, that have great teaching value, we should
 definitely do".
 
 **Status: a plan, nothing built.** The file manager that opens these
-files is [`plan_files.md`](plan_files.md).
+files is [`plan_files.md`](done/plan_files.md).
 
 ## The measure
 

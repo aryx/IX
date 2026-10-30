@@ -114,6 +114,28 @@ run "type(x):2,down:4,return:6,type(v):8"
 same "a tree with a link moved: refused, the source still whole" \
   "$([ -f $T/tree/docs/deep/inner.txt ] && echo whole || echo lost) $([ -e $T/tree/music/docs ] && echo left || echo clean)" 'whole clean'
 
+# dragging: the rows from the top at 434 and 24 less each; pressed at frame 3
+# on the first place, carried to the second at frame 6, released at frame 9
+drag() { echo "at($1):1-5,at($2):6-14,click:3-8"; }
+session "a file dragged onto a folder: moved" "$(drag '-400;386' '-400;410')" \
+  'b.txt docs docs/deep docs/deep/inner.txt music music/a.txt '
+session "a folder dragged onto a folder: moved, what it holds with it" "$(drag '-400;434' '-400;410')" \
+  'a.txt b.txt music music/docs music/docs/deep music/docs/deep/inner.txt '
+session "a folder dragged onto itself: nothing" "$(drag '-400;434' '-300;434')" "$ALL"
+session "a file dragged onto a file: nothing" "$(drag '-400;386' '-400;362')" "$ALL"
+session "a file dragged to where there is no row: nothing" "$(drag '-400;386' '-400;0')" "$ALL"
+session "a file dragged onto the headers: nothing, and not sorted by" "$(drag '-400;386' '-400;458')" "$ALL"
+session "a press that hardly moves is a click: nothing moved" "$(drag '-400;386' '-397;387')" "$ALL"
+session "a press off the rows, carried over a row and a folder: nothing" \
+  "at(-400;0):1-4,at(-400;386):5-6,at(-400;410):7-14,click:3-8" "$ALL"
+session "a folder in a folder dragged on the path's /: moved up" \
+  "return:2,at(-400;434):3-7,at(-490;485):8-16,click:5-10" \
+  'a.txt b.txt deep deep/inner.txt docs music '
+fresh; echo other > $T/tree/music/a.txt
+run "$(drag '-400;386' '-400;410')"
+same "a file dragged where its name is taken: refused, both still there" \
+  "$(cat $T/tree/a.txt $T/tree/music/a.txt | tr '\n' ' ')" 'a other '
+
 # entries that a careless listing hides or waits on
 fresh; ln -s /nothing/there $T/tree/docs/deep/dangling; mkfifo $T/tree/docs/deep/pipe
 run "type(d):2,type(y):4"

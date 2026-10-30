@@ -964,4 +964,21 @@ structs 6 (vec), ldftn 2.
    now compiled: every method with a try in the tests but Corners'
    filter; tests/run.sh 267 checks, mini-tiger's and mini-csc's with
    -jit.
+4. Structs (done). A struct's value is the interpreter's Vt, a
+   reference to the code: its store where Obj has it, so an int or a
+   reference field of a struct value is read by the same templates.
+   Copied where the IL copies it, at a load (ldloc, ldarg, dup of a
+   struct: a call-out, Value.copy), so that no two slots share a store;
+   a struct local its zeros at the method's start (.locals init: a
+   constructor called on its address writes in it); its methods' this,
+   an address, opaque, a field through it a call-out, as a field of a
+   struct type, and ldtoken (typeof(T)'s handle). Checked:
+   tests/jit/structs.cs, new (a copy changed, its original not; passed,
+   returned, by ref, a struct in a class's field, an array's elements
+   changed in place, boxed and unboxed, default, a loop of 10,000 new
+   Points), on arm64 and arm (run.sh -9: 17 of 17, now 4 minutes 42:
+   mini-asm and mini-ld run emulated, structs' 9 methods some 50 s);
+   now compiled: vec's 5, strings' Main, generic's What; left in the
+   tests: Mains with int64 or double locals (vec, corners), Corners'
+   filter. mini-tiger's and mini-csc's with -jit.
 

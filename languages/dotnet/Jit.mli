@@ -108,8 +108,16 @@
  *     } catch (E e) {          (handler: the exception to a call-out,
  *                               caught: on the stack, else raised)
  *
- * What it refuses is said with the reason: a struct, an int64, a
- * double on the stack, an address at a jump or given to the code
+ * {b Structs}: a struct's value is the interpreter's Vt, a reference
+ * to the code (its store where Obj has it: a field read the same),
+ * copied where the IL copies it, a load (ldloc, ldarg, dup: a
+ * call-out, Value.copy), so that two slots never share a store; a
+ * struct local its zeros at the start (.locals init), as a constructor
+ * called on its address writes in it; a field of a struct through its
+ * address (its own methods' this), a struct field, ldtoken: call-outs.
+ *
+ * What it refuses is said with the reason: an int64, a double on the
+ * stack, an address at a jump or given to the code
  * itself, an instruction without its template yet, a filter or a
  * fault clause; and in -S's text a generic method or class (an
  * instance's code is only made at run time).
@@ -162,8 +170,9 @@ type kind = I | R
 type form = Word | Addr | Made of int
 (* what a call-out does: an instruction run; for a try (its clause's
  * index), its frame pushed for the first pass and popped, the
- * exception caught or let go, raised again, rethrown *)
-type op = Run | Enter of int | Leave_try | Catch of int | Reraise | Rethrow
+ * exception caught or let go, raised again, rethrown; a struct copied
+ * (loaded), a struct local's zeros *)
+type op = Run | Enter of int | Leave_try | Catch of int | Reraise | Rethrow | Copy | Init of int
 type site = { srow : int; sat : int; sargs : kind list; sform : form list; sret : kind option; sop : op }
 
 (* the assembly's methods that are compiled, as mini-asm's text; how

@@ -142,6 +142,11 @@ let call_outs (codes : (int, meth * code) Hashtbl.t) (sites : Jit.site list) : u
              | Thrown _, 2, _ -> a.(0)
              | e, _, _ -> raise e)
       | Jit.Reraise -> fun (a : Obj.t array) -> raise (Obj.obj a.(0) : exn)
+      | Jit.Copy ->
+          fun (a : Obj.t array) -> (match (Obj.obj a.(0) : value) with
+            | Vt st -> Obj.repr (Vt (copy st))
+            | _ -> a.(0))
+      | Jit.Init l -> let t = code.locals.(l) in fun _ -> Obj.repr (zero t)
       | Jit.Rethrow ->
           fun (a : Obj.t array) -> match (Obj.obj a.(0) : value) with
             | Obj st -> Frame.throw st
@@ -169,9 +174,12 @@ let ensure_limit (caps : < Cap.open_in; .. >) : unit =
 (* a method's function for the interpreter: its arguments as words
  * (`this` first), its entry at [addr] called, its result back *)
 let native (m : meth) (addr : int) : value array -> value =
-  let ks = Array.of_list ((if m.static then [] else [ Jit.R ])
-                          @ List.map (fun t -> if is_ref t then Jit.R else Jit.I) m.params) in
-  let ret = if is_ref m.ret then Jit.R else Jit.I in
+  (* (a struct a reference to the code, its Vt; an enum an int32) *)
+  let kind t = match t with
+    | T_value c when c.kind = Struct -> Jit.R
+    | t -> if is_ref t then Jit.R else Jit.I in
+  let ks = Array.of_list ((if m.static then [] else [ Jit.R ]) @ List.map kind m.params) in
+  let ret = kind m.ret in
   let (f : Obj.t array -> Obj.t) = Obj.obj (Code_memory.closure addr) in
   fun (args : value array) ->
     let r = f (Array.mapi (fun j v -> to_word ks.(j) v) args) in

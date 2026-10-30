@@ -21,8 +21,10 @@ type form = Word | Addr | Made of int
 (* what a call-out does: an instruction run by the interpreter; or for
  * a try (clause c, by its index in the method's), its frame pushed for
  * the first pass and popped, an exception caught or let go, raised
- * again (a finally's end), rethrown (a catch's rethrow) *)
-type op = Run | Enter of int | Leave_try | Catch of int | Reraise | Rethrow
+ * again (a finally's end), rethrown (a catch's rethrow); a struct
+ * copied (its value loaded: Machine's copy_value), a struct local's
+ * first value (its zeros: .locals init) *)
+type op = Run | Enter of int | Leave_try | Catch of int | Reraise | Rethrow | Copy | Init of int
 
 type site = { srow : int; sat : int; sargs : kind list; sform : form list; sret : kind option; sop : op }
 
@@ -72,7 +74,7 @@ let gen_kind (t : S.t) : kind option =
 let sig_kind (img : Image.t) (refs : bool) (what : string) (t : S.t) : kind =
   if int32_sig t then I
   else match V.of_sig img t with
-    | Some (V.Obj _ | V.Ptr _) when refs -> R
+    | Some (V.Obj _ | V.Ptr _ | V.Value _) when refs -> R
     | Some (V.Gen g) when refs -> (match gen_kind g with Some k -> k | None -> refuse what)
     | _ -> refuse what
 
@@ -84,6 +86,8 @@ let vt_kind (refs : bool) (v : V.vt) : kind option =
   (* (an address: the interpreter's Ptr, opaque, a parameter's ref or
    * out; a local's, ldloca's, is none at run time: addresses) *)
   | V.Ptr _ when refs -> Some R
+  (* (a struct: the interpreter's Vt, copied where the IL copies it) *)
+  | V.Value _ when refs -> Some R
   | V.Gen g when refs -> gen_kind g
   | _ -> None
 
@@ -127,7 +131,7 @@ let own (img : Image.t) (refs : bool) (row : int) : unit =
   if sg.has_this && not refs then refuse "an instance method: this is a reference";
   if !instance = None && sg.generic > 0 then refuse "a generic method";
   if !instance = None && refs && generic_class img (owner img row) then refuse "a generic class's method";
-  if sg.has_this && (match V.token_sig img (M.token M.t_type_def (owner img row)) with
+  if sg.has_this && not refs && (match V.token_sig img (M.token M.t_type_def (owner img row)) with
       | S.ValueType _ -> true | _ -> false) then refuse "a struct's method: this is a pointer";
   ignore (arg_kinds img refs row);
   if sg.ret <> S.Void then ignore (sig_kind img refs "a result not an int32" sg.ret);
@@ -159,7 +163,7 @@ let supported (refs : bool) (op : Il.op) : bool =
   | Il.Castclass _ | Il.Isinst _ | Il.Box _ | Il.Unbox_any _ | Il.Throw
   | Il.Ldloca _ | Il.Ldarga _ | Il.Ldftn _ | Il.Initobj _ | Il.Ldflda _ | Il.Ldsflda _ | Il.Ldelema _
   | Il.Ldelem_any _ | Il.Stelem_any _ | Il.Constrained _ | Il.Ldobj _ | Il.Stobj _
-  | Il.Leave _ | Il.Endfinally | Il.Rethrow -> refs
+  | Il.Leave _ | Il.Endfinally | Il.Rethrow | Il.Ldtoken _ -> refs
   | Il.Ldelem k | Il.Stelem k | Il.Ldind k | Il.Stind k -> refs && (int_kind k || k = Il.K_ref)
   | _ -> false
 
@@ -174,8 +178,16 @@ let outs = 7
 
 (* a call-out's operands and whether it pushes a value; None, done by
  * the code itself *)
-let call_out (img : Image.t) (im : Value.image option) (taken : int -> bool) (caller : int) (op : Il.op) :
-  (int * bool) option =
+let call_out (img : Image.t) (im : Value.image option) (taken : int -> bool) (caller : int) (st : V.vt list)
+    (op : Il.op) : (int * bool) option =
+  (* (a field the code reads and writes itself: an object's, an int32 or
+   * a reference; a struct's through an address, or a struct, is the
+   * interpreter's) *)
+  let by_code tok obj =
+    (match obj with V.Obj _ -> true | _ -> false)
+    && (match im with
+        | Some im -> (match (field im tok).ftype with Value.T_value _ -> false | _ -> true)
+        | None -> true) in
   match op with
   | Il.Call tok | Il.Callvirt tok ->
       let m, _ = V.call_sig img tok in
@@ -204,6 +216,9 @@ let call_out (img : Image.t) (im : Value.image option) (taken : int -> bool) (ca
   | Il.Stind _ -> Some (2, false)
   | Il.Initobj _ -> Some (1, false)
   | Il.Stfld tok when (match im with Some im -> Value.is_ref (field im tok).ftype | None -> false) -> Some (2, false)
+  | Il.Stfld tok when not (by_code tok (match st with _ :: o :: _ -> o | _ -> V.Obj None)) -> Some (2, false)
+  | Il.Ldfld tok when not (by_code tok (match st with o :: _ -> o | _ -> V.Obj None)) -> Some (1, true)
+  | Il.Ldtoken _ -> Some (0, true)
   | _ -> None
 
 (* the operands of an instruction the code does itself (not a
@@ -249,7 +264,7 @@ let addresses (img : Image.t) (im : Value.image option) (row : int) (r : V.resul
           | Il.Ldftn _ -> Hashtbl.replace cur d (Ftn i)
           | Il.Dup -> (match Hashtbl.find_opt cur (d - 1) with Some p -> Hashtbl.replace cur d p | None -> ())
           | op ->
-              let n = match call_out img im (fun _ -> false) row op with
+              let n = match call_out img im (fun _ -> false) row st op with
                 | Some (n, _) ->
                     for k = d - n to d - 1 do
                       match Hashtbl.find_opt cur k with Some p -> Hashtbl.replace t (i, k) p | None -> ()
@@ -302,14 +317,12 @@ let accept (img : Image.t) (im : Value.image option) (row : int) : V.result =
       | Il.Call tok, _ when not refs && M.token_table tok <> M.t_method_def ->
           refuse (sprintf "IL_%04x: a call into the library" ins.at)
       | (Il.Call _ | Il.Callvirt _ | Il.Newobj _), _ when refs ->
-          (match call_out img im (fun _ -> false) row ins.op with
+          (match call_out img im (fun _ -> false) row stack ins.op with
            | Some (n, _) when n > outs -> refuse (sprintf "IL_%04x: a call of %d arguments" ins.at n)
            | _ -> ())
       | (Il.Bcmp ((Il.Eq | Il.Ne), _, _) | Il.Ceq | Il.Cgt true), b :: a :: _ when is_ref a || is_ref b -> ()
       | (Il.Bcmp _ | Il.Cgt _ | Il.Clt _), b :: a :: _ when is_ref a || is_ref b ->
           refuse (sprintf "IL_%04x: %s of references" ins.at ins.name)
-      | Il.Ldfld _, V.Ptr _ :: _ | Il.Stfld _, _ :: V.Ptr _ :: _ ->
-          refuse (sprintf "IL_%04x: %s through an address (a struct's)" ins.at ins.name)
       | (Il.Ldfld tok | Il.Stfld tok), _ ->
           (match im with
            | Some im when (field im tok).fstatic -> refuse (sprintf "IL_%04x: a static field by %s" ins.at ins.name)
@@ -446,7 +459,7 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
   let im = match refs with Some e -> Some e.im | None -> None in
   (* the outgoing arguments' room: the most a call passes, 5c's way *)
   let maxargs = Array.fold_left (fun a (ins : Il.instr) -> match ins.op with
-      | Il.Call tok when refs = None || call_out img im taken row ins.op = None ->
+      | Il.Call tok when refs = None || call_out img im taken row [] ins.op = None ->
           let m, _ = V.call_sig img tok in
           max a (List.length m.params)
       | _ -> a) 1 r.instrs in
@@ -488,6 +501,15 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
   (* a finally's continuations: the places a leave goes on from, by the
    * number in its continuation word *)
   let resumes = Array.make ncl [] in
+  (* the structs: a local's, an argument's, copied when loaded *)
+  let is_struct t = match V.of_sig img t with Some (V.Value _) -> true | _ -> false in
+  let struct_local = Array.of_list (List.map is_struct (local_sigs img body)) in
+  let struct_arg = Array.of_list ((if sg.has_this then [ false ] else []) @ List.map is_struct sg.params) in
+  let copy k =
+    ins "MOV\t%s, R2" (vslot k);
+    ins "MOV\t$%d, R1" (2 * try_site Copy 1 (Some R) + 1);
+    ins "BL\tjit_out1(SB)";
+    ins "MOV\tR0, %s" (vslot k) in
   Buffer.add_string b (sprintf "// %s, %d bytes of IL: %d slots, %d locals\n"
                          (Listing.token_name img (M.token M.t_method_def row)) (String.length body.code) nslots nlocals);
   Buffer.add_string b (sprintf "\tTEXT\t%s(SB), 0, $%d\n" sym frame);
@@ -516,6 +538,13 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
           if i = 0 then ins "MOV\tR0, %s" (varg 0)
           else (ins "MOV\t%s, R1" (arg i); ins "MOV\tR1, %s" (varg i))) args
   end;
+  (* a struct local its zeros, the interpreter's *)
+  Array.iteri (fun l st ->
+      if st then begin
+        ins "MOV\t$%d, R1" (2 * try_site (Init l) 0 (Some R) + 1);
+        ins "BL\tjit_out0(SB)";
+        ins "MOV\tR0, %s" (vlocal l)
+      end) struct_local;
   (* the locals zeroed, as .locals init asks (C#'s always does) *)
   if Array.exists (( = ) I) locals then begin
     ins "MOVW\t$0, R1";
@@ -632,11 +661,12 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
         | Il.K_u2 -> Value.T_u2 | _ -> Value.T_i4 in
       match refs, x.op with
       | Some _, _ when r.stacks.(i) = None -> ()
-      | Some { sites; base; _ }, _ when call_out img im taken row x.op <> None ->
+      | Some { sites; base; _ }, _ when call_out img im taken row (match r.stacks.(i) with Some s -> s | None -> []) x.op <> None ->
           (* the instruction run by the interpreter: its operands, the
            * bottom first, as values of mini-ml's (an int32 tagged), in
            * R2...; the call-out's number in R1 *)
-          let n, pushes = match call_out img im taken row x.op with Some p -> p | None -> assert false in
+          let n, pushes = match call_out img im taken row (match r.stacks.(i) with Some s -> s | None -> []) x.op with
+            | Some p -> p | None -> assert false in
           (* (an operand that is a local's address: the local's value, of
            * its kind, from its place; its new value given back) *)
           let place j = Hashtbl.find_opt addrs (i, top - n + 1 + j) in
@@ -694,13 +724,16 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
            | Some R -> ins "MOV\tR0, %s" (vslot (top - n + 1))
            | None -> ())
       | _, Il.Nop | _, Il.Prefix _ | _, Il.Constrained _ | _, Il.Ldloca _ | _, Il.Ldarga _ | _, Il.Ldftn _ -> ()
-      | _, Il.Ldarg a -> move args.(a) (arg a, varg a) (slot (top + 1), vslot (top + 1))
+      | _, Il.Ldarg a -> move args.(a) (arg a, varg a) (slot (top + 1), vslot (top + 1));
+          if refs <> None && struct_arg.(a) then copy (top + 1)
       | _, Il.Starg a -> move args.(a) (slot top, vslot top) (arg a, varg a)
-      | _, Il.Ldloc l -> move locals.(l) (local l, vlocal l) (slot (top + 1), vslot (top + 1))
+      | _, Il.Ldloc l -> move locals.(l) (local l, vlocal l) (slot (top + 1), vslot (top + 1));
+          if refs <> None && struct_local.(l) then copy (top + 1)
       | _, Il.Stloc l -> move locals.(l) (slot top, vslot top) (local l, vlocal l)
       | _, Il.Ldc_i4 n -> ins "MOVW\t$%ld, R1" n; ins "MOVW\tR1, %s" (slot (top + 1))
       | _, Il.Ldnull -> ins "MOV\t$1, R1"; ins "MOV\tR1, %s" (vslot (top + 1))
-      | _, Il.Dup -> move (before top) (slot top, vslot top) (slot (top + 1), vslot (top + 1))
+      | _, Il.Dup -> move (before top) (slot top, vslot top) (slot (top + 1), vslot (top + 1));
+          if refs <> None && (match r.stacks.(i) with Some (V.Value _ :: _) -> true | _ -> false) then copy (top + 1)
       | _, Il.Pop -> ()
       | Some { im; _ }, (Il.Ldfld tok | Il.Stfld tok) ->
           let fd = field im tok in

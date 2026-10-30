@@ -30,7 +30,8 @@
 #              while the collector moves them, a null and an index out of
 #              range caught; addresses: ref, out, ldflda, ldelema, a
 #              delegate; trys: catch, finally, rethrow in compiled
-#              code; bench, with -jit only, where it is compiled)
+#              code; structs: copied, changed in place, boxed; bench,
+#              with -jit only, where it is compiled)
 #   run        each program run, what it prints against what Microsoft's
 #              runtime printed: the survey's ten (survey/programs/
 #              *.expected), and ours (programs/*.expected, their exit too;
@@ -39,7 +40,8 @@
 # _mk/5-plan9) run by mini-5i, its code in segments (segattach,
 # segflush): every program with -jit but objects and bench (5 and 2
 # minutes there), what Microsoft's runtime prints, some methods
-# compiled (about 2 minutes).
+# compiled (about 5 minutes: mini-asm and mini-ld, the JIT's encoders,
+# run there emulated, structs' 9 methods alone some 50 s).
 # -sdk: Microsoft's own library read whole, its types, methods and bytes
 # of IL (each body decoded) against what System.Reflection.Metadata says
 # (survey/Survey.cs): needs a .NET SDK, so not in make test.

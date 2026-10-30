@@ -28,6 +28,7 @@ type program = {
   arch : string;            (* arm, arm64 *)
   elf : Elf_file.t option;
   bias : int64;
+  dwarf : Dwarf_line.t option;   (* an ELF's lines (gcc's), its addresses the file's *)
 }
 
 let prog : program option ref = ref None
@@ -44,7 +45,7 @@ let elf_header file path (e : Elf_file.t) =
   let txtaddr, txtsz = seg (Elf_file.text_segment e) and dataddr, datsz = seg (Elf_file.data_segment e) in
   let syms = Elf_file.symbols file e in
   let arch = match e.machine with 183 -> "arm64" | 40 -> "arm" | m -> error "%s: an ELF of machine %d, not arm's nor arm64's" path m in
-  { path; file; txtaddr; txtsz; dataddr; datsz; arch; elf = Some e; bias = 0L;
+  { path; file; txtaddr; txtsz; dataddr; datsz; arch; elf = Some e; bias = 0L; dwarf = Dwarf_line.read file e;
     table = Some { syms; text_start = Int64.to_int txtaddr; text_end = Int64.to_int (Int64.add txtaddr txtsz); lines = "" } }
 
 let header file path =
@@ -56,7 +57,7 @@ let header file path =
   let txtaddr = 0x1020L in
   { path; file; txtaddr; txtsz = text;
     dataddr = Int64.logand (Int64.add (Int64.add txtaddr text) 0xfffL) (Int64.lognot 0xfffL);
-    datsz = data; table = Symbols.read file; arch = "arm"; elf = None; bias = 0L }
+    datsz = data; table = Symbols.read file; arch = "arm"; elf = None; bias = 0L; dwarf = None }
 
 let arm64 () = match !prog with Some p -> p.arch = "arm64" | None -> false
 
@@ -352,6 +353,7 @@ let fnbound v =
 
 let file_line v =
   match !prog with
+  | Some { dwarf = Some d; bias; _ } -> Dwarf_line.file_line d (Int64.to_int (Int64.sub v bias))
   | Some { table = Some t; _ } -> Symbols.file_line t (Int64.to_int v)
   | _ -> None
 
@@ -558,6 +560,10 @@ let init (caps : < caps; .. >) =
          | Some i ->
              let file = String.sub w 0 i and line = int_of_string_opt (String.sub w (i + 1) (String.length w - i - 1)) in
              (match !prog, line with
+              | Some { dwarf = Some d; bias; _ }, Some l ->
+                  (match Dwarf_line.file_pc d file l with
+                   | Some pc -> Value.int 'V' (Int64.add (Int64.of_int pc) bias)
+                   | None -> error "filepc: can't find address for: %s" w)
               | Some { table = Some t; _ }, Some l ->
                   (match Symbols.file_pc t file l with
                    | Some pc -> Value.int 'V' (Int64.of_int pc)

@@ -1,0 +1,62 @@
+./target:arm64 linux executable
+acid: PID: Breakpoint/Trace trap	ADDR	?
+PID: Breakpoint/Trace trap	main+0x4	MOV	RSP, R29
+acid: acid: PID: Breakpoint/Trace trap	walk+0x1c	MOVW	40(RSP), R1
+acid: walk()+0x1c W/target.c:37
+main+0x18 W/target.c:43
+acid: W/target.c:37
+ 32	walk(Node *n, int k)
+ 33	{
+ 34		Point q;
+ 35	
+ 36		q = n->p;
+>37		return leaf(q.x + q.y + k);
+ 38	}
+ 39	
+ 40	int
+ 41	main(void)
+ 42	{
+acid: PID: Breakpoint/Trace trap	walk+0x20	MOVW	44(RSP), R0
+PID: Breakpoint/Trace trap	walk+0x24	WORD	$0x0b000021
+PID: Breakpoint/Trace trap	walk+0x28	MOVW	20(RSP), R0
+PID: Breakpoint/Trace trap	walk+0x2c	WORD	$0x0b000020
+PID: Breakpoint/Trace trap	walk+0x30	BL	leaf
+PID: Breakpoint/Trace trap	leaf	SUB	$16, RSP, RSP
+W/target.c:27
+ 22	Node n1 = { "one", { 1, 2 }, &n2, 'a', 7 };
+ 23	static int counter = 3;
+ 24	
+ 25	static int
+ 26	leaf(int a)
+>27	{
+ 28		return a * 2 + counter;
+ 29	}
+ 30	
+ 31	int
+ 32	walk(Node *n, int k)
+PID: Breakpoint/Trace trap	leaf+0x4	MOVW	R0, 12(RSP)
+PID: Breakpoint/Trace trap	leaf+0x8	MOVW	12(RSP), R0
+PID: Breakpoint/Trace trap	leaf+0xc	WORD	$0x531f7801
+PID: Breakpoint/Trace trap	leaf+0x10	WORD	$0x90000100
+PID: Breakpoint/Trace trap	leaf+0x14	ADD	$16, R0, R0
+PID: Breakpoint/Trace trap	leaf+0x18	MOVW	0(R0), R0
+PID: Breakpoint/Trace trap	leaf+0x1c	WORD	$0x0b000020
+PID: Breakpoint/Trace trap	leaf+0x20	ADD	$16, RSP, RSP
+PID: Breakpoint/Trace trap	leaf+0x24	RET
+PID: Breakpoint/Trace trap	walk+0x34	LDP.P	48(RSP), (R29, R30)
+W/target.c:38
+ 33	{
+ 34		Point q;
+ 35	
+ 36		q = n->p;
+ 37		return leaf(q.x + q.y + k);
+>38	}
+ 39	
+ 40	int
+ 41	main(void)
+ 42	{
+ 43		return walk(&n1, 10) + walk(n1.next, 20) == 0;
+acid: walk()+0x34 W/target.c:38
+main+0x18 W/target.c:43
+acid: 
+kill PID

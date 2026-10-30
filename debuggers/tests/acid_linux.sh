@@ -7,8 +7,9 @@
 # this machine (arm64), with ix's library and arm64.acid: new, a
 # breakpoint, stk by the frame pointers, step, cont, values printed by
 # mini-cc -m 7 -a's declarations of the same file (acid/linux/
-# target.c). The addresses are left out of the comparison (gcc's
-# version moves them), the pid too.
+# target.c); lines.acid by DWARF's lines (filepc, pcfile, src, next).
+# The addresses are left out of the comparison (gcc's version moves
+# them), the pid and the directory too.
 #   record: the outputs written as acid/linux/NAME.out
 # usage: debuggers/tests/acid_linux.sh [record]
 
@@ -23,7 +24,7 @@ trap 'rm -rf $W' EXIT
 cp $T/target.c $W/
 (cd $W && gcc -g -O0 -o target target.c && $IX/languages/c/Main.exe -m 7 -a target.c > target.acid) > $W/err 2>&1 \
   || { echo "FAIL the target's build: $(head -2 $W/err)"; exit 1; }
-norm() { sed -E 's/[0-9]{4,8}: /PID: /g; s/0x[0-9a-f]{12,16}/ADDR/g; s/pid=[0-9]+/pid=PID/g; s/^kill [0-9]+/kill PID/'; }
+norm() { sed -E "s|$W|W|g" | sed -E 's/[0-9]{4,8}: /PID: /g; s/0x[0-9a-f]{12,16}/ADDR/g; s/pid=[0-9]+/pid=PID/g; s/^kill [0-9]+/kill PID/'; }
 n=0; failures=0
 for f in $T/*.acid; do
   name=$(basename $f .acid)

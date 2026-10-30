@@ -984,3 +984,15 @@ debuggers/tests/acid_linux.sh (new, when gcc is there on arm64 Linux):
 new, bpset, stk, step, cont, n1 and n2 printed by their types, the
 addresses and pids left out; acid_proc.sh as before (11, and live).
 
+2026-10-30, **DWARF's lines** (stage 8a's third step): lib_executable/
+Dwarf_line reads .debug_line, versions 2 to 5 (gcc 13's is 5, its
+names in .debug_line_str): each unit's header (the line machine's
+constants, the directories and files: v5's by their formats), then
+its program run, the rows an address, a file, a line, a statement or
+not, a sequence's end. mini-acid's pcfile, pcline, filepc (and so src,
+stk's file:line, stmnt and next) read them for an ELF that has them,
+its addresses the file's (a PIE's less its bias). Checked:
+debuggers/tests/acid_linux.sh's lines.acid: a breakpoint at
+filepc("target.c:37"), stk with files and lines, src, next (through
+leaf: port.acid's next, as on arm, steps until back in the function).
+

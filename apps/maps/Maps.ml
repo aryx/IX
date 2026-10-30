@@ -5,10 +5,11 @@
  * (docs/plans/plan_maps.md): the program, the window being Map_window.
  *
  *   mini-maps                       the world
- *   mini-maps lat=47.39 lon=0.69    a place
+ *   mini-maps tours                 a place, found
+ *   mini-maps lat=47.39 lon=0.69    a place, by its numbers
  *
  * Dragging moves the map, as do the arrows; the wheel, a double click,
- * + and - zoom it. *)
+ * + and - zoom it; / finds a place. *)
 
 let () =
   Cap.main (fun caps ->

@@ -5,7 +5,7 @@
 
 open Common
 
-type t = Null | Bool of bool | Int of int | String of string | List of t list | Assoc of (string * t) list
+type t = Null | Bool of bool | Int of int | Float of float | String of string | List of t list | Assoc of (string * t) list
 
 exception Error of string
 
@@ -34,6 +34,7 @@ let rec to_text = function
   | Null -> "null"
   | Bool b -> string_of_bool b
   | Int n -> string_of_int n
+  | Float f -> Printf.sprintf "%.17g" f
   | String s -> quote s
   | List l -> "[" ^ String.concat "," (List.map to_text l) ^ "]"
   | Assoc fs -> "{" ^ String.concat "," (List.map (fun (k, v) -> quote k ^ ":" ^ to_text v) fs) ^ "}"
@@ -101,7 +102,12 @@ let of_text s =
         let start = !i in
         incr i;
         while !i < n && s.[!i] >= '0' && s.[!i] <= '9' do incr i done;
-        Int (int_of_string (String.sub s start (!i - start)))
+        (* a fraction or an exponent: a float (RFC 8259, section 6) *)
+        let is_float = !i < n && String.contains ".eE" s.[!i] in
+        while !i < n && String.contains "0123456789.eE+-" s.[!i] do incr i done;
+        let text = String.sub s start (!i - start) in
+        if is_float then (match float_of_string_opt text with Some f -> Float f | None -> error "bad number %s" text)
+        else Int (int_of_string text)
     | c -> error "unexpected '%c' at %d" c !i
   in
   let v = value () in
@@ -116,5 +122,6 @@ let of_text s =
 let member k = function Assoc fs -> (List.assoc_opt k fs ||| Null) | _ -> error "%s: not an object" k
 let string = function String s -> s | _ -> error "a string expected"
 let int = function Int n -> n | _ -> error "an integer expected"
+let float = function Float f -> f | Int n -> float_of_int n | _ -> error "a number expected"
 let bool = function Bool b -> b | _ -> error "a boolean expected"
 let list = function List l -> l | _ -> error "an array expected"

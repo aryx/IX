@@ -1,4 +1,5 @@
-(* Tile_worker: the tiles fetched beside the window, which does not wait.
+(* Map_worker: what is fetched beside the window, which does not wait: the
+   tiles, and now and then a place or a forecast (a job, before the tiles).
 
    Http_client blocks, and a map cannot: it must move under the mouse
    while a tile is on its way. So one worker (Worker_spawn: a thread)
@@ -40,6 +41,10 @@ val want : Tiles.key list -> unit
 
 (* the tiles done since the last call, with what the fetch gave *)
 val take : unit -> (Tiles.key * (Rgba_image.t, string) result) list
+
+(* [job f]: [f] run by the worker, before any more tiles; it leaves what
+ * it finds where the window looks *)
+val job : (unit -> unit) -> unit
 
 (* something asked and not taken yet? *)
 val out : unit -> bool

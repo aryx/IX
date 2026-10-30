@@ -40,7 +40,7 @@
    tile. The cost is one number a tile, kept in the file index and
    written now and then: a crash loses the last few uses, not a tile.
 
-   Only the worker uses it (Tile_worker), so no lock.
+   Only the worker uses it (Map_worker), so no lock.
 
    cs-history:
    Caches were on the web before there was much of a web: CERN's httpd

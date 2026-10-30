@@ -47,6 +47,36 @@ let cache_tests (caps : < Cap.open_in; Cap.open_out; .. >) =
 let tests =
   Testo.categorize "maps"
     [
+      Testo.create "Json: floats, and what stays an integer" (fun () ->
+          let j = Json.of_text {|{"a": 3, "b": -1.5, "c": 2e3, "d": 1.5E-1, "e": [0.5, 7]}|} in
+          check_int "an integer stays" 3 (Json.int (Json.member "a" j));
+          Alcotest.(check (float 0.)) "a fraction" (-1.5) (Json.float (Json.member "b" j));
+          Alcotest.(check (float 0.)) "an exponent" 2000. (Json.float (Json.member "c" j));
+          Alcotest.(check (float 1e-12)) "and negative" 0.15 (Json.float (Json.member "d" j));
+          Alcotest.(check (float 0.)) "an integer read as a float" 3. (Json.float (Json.member "a" j));
+          Alcotest.(check string) "written back" {|[1.5,2]|} (Json.to_text (Json.List [ Json.Float 1.5; Json.Int 2 ])));
+      Testo.create "Place: Nominatim's answer, numbers as strings" (fun () ->
+          match
+            Place.of_json
+              {|[{"lat":"47.39","lon":"0.68","display_name":"Tours, France","boundingbox":["47.34","47.44","0.65","0.74"]}]|}
+          with
+          | [ p ] ->
+              Alcotest.(check string) "the name" "Tours, France" p.name;
+              Alcotest.(check (float 0.)) "the latitude" 47.39 p.lat;
+              check_int "a town: as near as its box fits" 12 (Place.zoom_for ~at_most:14 p 800 600)
+          | _ -> Alcotest.fail "one place expected");
+      Testo.create "Place: nothing found, and what is no answer" (fun () ->
+          check_int "none" 0 (List.length (Place.of_json "[]"));
+          Alcotest.check_raises "not JSON" (Failure "unexpected '<' at 0") (fun () -> ignore (Place.of_json "<html>")));
+      Testo.create "Place: a line of the file and back" (fun () ->
+          let p : Place.t = { name = "Tours, France"; lat = 47.39; lon = 0.68; box = Some (47.34, 47.44, 0.65, 0.74) } in
+          (match Place.of_line (Place.to_line ("tours", p)) with
+          | Some (q, back) ->
+              Alcotest.(check string) "the query" "tours" q;
+              Alcotest.(check bool) "the place" true (back = p)
+          | None -> Alcotest.fail "not read back");
+          Alcotest.(check bool) "not a line" true (Place.of_line "junk" = None);
+          Alcotest.(check string) "a query compared" "tours" (Place.normal "  Tours "));
       Testo.create "Mercator: known places at zoom 0" (fun () ->
           check_int "the equator" 128 (Mercator.y_of_latitude 0 0.);
           check_int "the prime meridian" 128 (Mercator.x_of_longitude 0 0.);

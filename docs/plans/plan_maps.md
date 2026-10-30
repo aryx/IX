@@ -3,7 +3,7 @@
 The author (2026-10-30), after plan_apps.md: "I would also love to have
 a maps and weather program that fetch data from internet."
 
-**Status: stages 1 and 2 built** (see the end). What is below about the services
+**Status: stages 1 to 3 built** (see the end). What is below about the services
 was tried on 2026-10-30 with ix's own `mini-curl`, a handful of requests.
 
 ## What it is for
@@ -123,3 +123,18 @@ is good and its ETag; `Cache-Control`, `Age`, `Expires`, `no-store`,
 server does not answer; 32 MB, the least recently used going first.
 mini-httpd says `ETag` and answers 304 for it, and `-max-age` says
 `Cache-Control`, which is how `tests/cache.sh` sees what is asked.
+
+2026-10-30: stage 3 built. `Json` has floats (`Float`, `Json.float`, read
+as well from an integer), its other user, `Qmp`, unchanged. `Place`:
+Nominatim's answer; `/` or a click opens the Find box, Enter asks, at most
+once a second and never as one types; a word on the command line asks the
+same; the window goes there, at the zoom the place's box fits (14 at
+most), with a marker; the last 20 in the file `places` of the cache's
+directory, listed in the box, not asked again. `Tile_worker` is now
+`Map_worker`: it runs a job (a place, later a forecast) before more tiles.
+One real search by hand. What OSM's tile servers really say, read that
+day: `max-age=88280, stale-while-revalidate=604800,
+stale-if-error=604800`, `Age: 124344`, so a tile arrives already old, and
+each tile costs one `If-None-Match` a session (a 304 when unchanged).
+`stale-while-revalidate` would allow showing it first and asking after;
+not done, the rule followed being the stricter.

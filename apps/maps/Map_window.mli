@@ -4,7 +4,7 @@
                         |
                         | Tiles.in_view
                         v
-                      the tiles it overlaps --> those missing --> Tile_worker
+                      the tiles it overlaps --> those missing --> Map_worker
                         |                                            |
                         v                                            |
                       the store of tiles  <------- what comes --------
@@ -12,6 +12,10 @@
                         v
                       a Bitmap each, enlarged from an ancestor until its own
                       comes; and the credit, which OSM's licence asks of us
+
+   And a place found (Place), on Enter in the Find box (/, or a click on
+   it): the worker asks, the window goes there and marks it, and the last
+   ones are listed in the box, kept and not asked again.
 
    The store keeps a hundred tiles or so, in memory, the least recently
    shown going first: three screens' worth, what a drag back finds at
@@ -23,9 +27,10 @@ type model
 type caps = < Cap.network; Cap.open_in; Cap.open_out; Cap.env >
 
 (* [initial caps flags]: from the flags lat=, lon=, zoom= (the world, by
- * default), tiles= (the server, OSM's by default), cache= (a directory
+ * default), a word (a place to find), tiles= and places= (the servers,
+ * OSM's by default), cache= (a directory
  * or off; the user's by default), cache-size= (in megabytes), worker=wait
- * (the tests': Tile_worker.Waited). The worker is started. *)
+ * (the tests': Map_worker.Waited). The worker is started. *)
 val initial : caps -> Playground.flags -> model
 
 val update : Playground.computer -> model -> model

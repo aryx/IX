@@ -1,5 +1,5 @@
-(* JSON: objects, arrays, strings, integers, booleans, null; no floats
- * (mini-qemu's QMP, the first user, has none).
+(* JSON: objects, arrays, strings, numbers, booleans, null: what mini-qemu's
+ * QMP, the first user, says, and a forecast's temperatures (mini-maps).
  *
  *   let j = of_text {|{"execute": "send-key", "arguments": {"keys": []}}|}
  *   member "execute" j = String "send-key"
@@ -24,7 +24,7 @@
  * JavaScript engine has its own JSON.parse, over its own values
  * (Js_json, where the history is longer). *)
 
-type t = Null | Bool of bool | Int of int | String of string | List of t list | Assoc of (string * t) list
+type t = Null | Bool of bool | Int of int | Float of float | String of string | List of t list | Assoc of (string * t) list
 
 exception Error of string
 
@@ -40,5 +40,8 @@ val member : string -> t -> t
 (* the value, Error if it is of another kind *)
 val string : t -> string
 val int : t -> int
+
+(* a number, an Int too: 3 is as good a temperature as 3.5 *)
+val float : t -> float
 val bool : t -> bool
 val list : t -> t list

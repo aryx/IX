@@ -24,14 +24,25 @@ type model = {
   failed : (string, float) Hashtbl.t; (* a tile that failed: when to ask again *)
   ticks : int; (* a frame's number, for the least recently used *)
   generation : int; (* changes with what the store has for the view *)
-  said : string; (* what went wrong last *)
+  said : string; (* what went wrong last with a tile *)
+  finding : string option; (* the Find box open, what is typed in it *)
+  place : Place.t option; (* the place found: its marker, its name *)
+  known : (string * Place.t) list; (* the last places, by what was typed: not asked again *)
+  notice : string; (* what the search says, until the map moves *)
+  asked_at : float; (* when the service was last asked *)
+  start : string option; (* the place on the command line, asked at the first frame *)
+  held : string list; (* the keys down at the last frame *)
+  ask : string -> unit; (* a place asked of the service, by the worker *)
+  save : (string * Place.t) list -> unit; (* the last places written down *)
 }
 
 let kept = 120
 let again_after = 30.
 let credit = "\xc2\xa9 OpenStreetMap contributors"
-let user_agent = "mini-maps/0.1 (+https://github.com/aryx/ix)"
 let default_tiles = "https://tile.openstreetmap.org"
+let default_places = "https://nominatim.openstreetmap.org"
+let places_kept = 20
+let rows_shown = 6
 let default_cache_megabytes = 32
 
 (*****************************************************************************)
@@ -45,9 +56,7 @@ let fetch (caps : caps) (base : string) (cache : Tile_cache.t option) (key : Til
   let name = Tiles.name key in
   let now = Unix.gettimeofday () in
   let ask (more : Http.header list) : (Http.response, string) result =
-    let said = ("User-Agent", user_agent) :: more in
-    let options = { Http_client.defaults with said; keep = true } in
-    Result.map snd (Http_client.fetch_with options caps ~post:None (Tiles.url base key))
+    Map_http.get caps ~more (Tiles.url base key)
   in
   let kept (e : Tile_cache.entry) : unit = Option.iter (fun (c : Tile_cache.t) -> Tile_cache.put c name e) cache in
   (* what a server gave: kept if it may be *)
@@ -97,7 +106,7 @@ let trimmed (m : model) : unit =
   end
 
 let collected (now : float) (m : model) : model =
-  match Tile_worker.take () with
+  match Map_worker.take () with
   | [] -> m
   | done_ ->
       let said =
@@ -163,7 +172,7 @@ let in_store (now : float) (m : model) (visible : Tiles.placed list) : model * T
   unique [] missing
 
 (*****************************************************************************)
-(* Update *)
+(* Where the window is *)
 (*****************************************************************************)
 
 let zoomed (dz : int) (px : int) (py : int) (h : int) (m : model) : model =
@@ -174,6 +183,151 @@ let zoomed (dz : int) (px : int) (py : int) (h : int) (m : model) : model =
     let cx, cy = Tiles.centred z cx cy h in
     { m with z; cx; cy; grab = None }
 
+(*****************************************************************************)
+(* A place *)
+(*****************************************************************************)
+
+(* what the worker found: the query and its answer, for the window to take *)
+let found : (string * (Place.t list, string) result) option ref = ref None
+
+let search (caps : caps) (base : string) (query : string) : unit =
+  let r =
+    match Map_http.get caps ~more:[] (Place.search_url base query) with
+    | Error why -> Error why
+    | Ok r when r.status <> 200 -> Error (Printf.sprintf "%d %s" r.status r.reason)
+    | Ok r -> ( try Ok (Place.of_json r.body) with Failure why -> Error why)
+  in
+  found := Some (query, r)
+
+(* the window at the place, the place first among the last ones *)
+let go_to (w : int) (h : int) (query : string) (p : Place.t) (m : model) : model =
+  let z = Place.zoom_for ~at_most:14 p w h in
+  let cx, cy = Tiles.centred z (Mercator.x_of_longitude z p.lon) (Mercator.y_of_latitude z p.lat) h in
+  let others = List.filter (fun ((q, _) : string * Place.t) -> q <> Place.normal query) m.known in
+  let known = List.filteri (fun (i : int) (_ : string * Place.t) -> i < places_kept) ((Place.normal query, p) :: others) in
+  m.save known;
+  { m with z; cx; cy; place = Some p; known; notice = ""; finding = None; grab = None }
+
+(* [query] asked: from the last places if it is there; at most one request
+ * a second, Nominatim's rule (the box stays open, for Enter again) *)
+let asked (now : float) (w : int) (h : int) (query : string) (m : model) : model =
+  match List.assoc_opt (Place.normal query) m.known with
+  | Some p -> go_to w h query p m
+  | None ->
+      if now -. m.asked_at < 1. then { m with notice = "one search a second: the service's rule" }
+      else begin
+        m.ask query;
+        { m with finding = None; asked_at = now; notice = Printf.sprintf "finding %s..." query }
+      end
+
+let took (w : int) (h : int) (m : model) : model =
+  match !found with
+  | None -> m
+  | Some (query, r) -> (
+      found := None;
+      match r with
+      | Ok (p :: _) -> go_to w h query p m
+      | Ok [] -> { m with notice = Printf.sprintf "no place called %s" query }
+      | Error why -> { m with notice = Printf.sprintf "%s: %s" query why })
+
+(*****************************************************************************)
+(* The Find box *)
+(*****************************************************************************)
+
+let text_size = 14.
+let row_height = 22.
+
+(* [s]'s letters from [x] on [baseline], and their width *)
+let text (color : P.color) (x : float) (baseline : float) (s : string) : P.shape * float =
+  let rec place (x0 : float) (acc : (float * string) list) (l : string list) =
+    match l with
+    | [] -> (List.rev acc, x0)
+    | c :: rest ->
+        let g = Glyph_unicode.glyph c in
+        place (x0 +. (float_of_int (g.right - g.left) *. text_size /. Hershey.units_per_em)) ((x0, c) :: acc) rest
+  in
+  let at, x1 = place x [] (Text.chars s) in
+  (P.letters color { size = text_size; bold = false; italic = false; baseline; at }, x1 -. x)
+
+let width_of (s : string) : float = snd (text P.black 0. 0. s)
+
+(* as much of [s] as fits in [room] *)
+let cut (room : float) (s : string) : string =
+  if width_of s <= room then s
+  else
+    let rec go (acc : string) (l : string list) : string =
+      match l with
+      | c :: rest when width_of (acc ^ c ^ "...") <= room -> go (acc ^ c) rest
+      | _ -> acc ^ "..."
+    in
+    go "" (Text.chars s)
+
+(* the box's line, then the last places under it while it is open *)
+let box_lines (fw : float) (m : model) : string list =
+  let room = fw -. 28. in
+  match m.finding with
+  | Some typed ->
+      cut room ("find: " ^ typed ^ "_")
+      :: List.filteri (fun (i : int) (_ : string) -> i < rows_shown)
+           (List.map (fun ((_, p) : string * Place.t) -> cut room p.name) m.known)
+  | None -> [ (match m.place with Some p -> cut room p.name | None -> "/ to find a place") ]
+
+(* which line of the box the mouse is on *)
+let line_at (fw : float) (fh : float) (m : model) (mx : float) (my : float) : int option =
+  let left = (-.fw /. 2.) +. 6. and top = (fh /. 2.) -. 6. in
+  let hit (i : int) (line : string) : bool =
+    let y = top -. (float_of_int i *. row_height) in
+    mx >= left && mx <= left +. width_of line +. 12. && my <= y && my > y -. row_height
+  in
+  let rec find (i : int) (l : string list) : int option =
+    match l with
+    | [] -> None
+    | line :: rest -> if hit i line then Some i else find (i + 1) rest
+  in
+  find 0 (box_lines fw m)
+
+(* the characters typed: in the box when it is open; / opens it, + and - zoom *)
+let typed (h : int) (s : string) (m : model) : model =
+  List.fold_left
+    (fun (m : model) (c : string) ->
+      match (m.finding, c) with
+      | Some t, _ when String.length c > 1 || (c.[0] >= ' ' && c.[0] <> '\127') -> { m with finding = Some (t ^ c) }
+      | Some _, _ -> m
+      | None, "/" -> { m with finding = Some "" }
+      | None, ("+" | "=") -> zoomed 1 0 0 h m
+      | None, "-" -> zoomed (-1) 0 0 h m
+      | None, _ -> m)
+    m (Text.chars s)
+
+(* Enter, Escape, Backspace in the box; a click on it, or on a place in it *)
+let in_box (now : float) (w : int) (h : int) (computer : P.computer) (m : model) : model =
+  let pressed (k : string) : bool = Set_.mem k computer.keyboard.keys && not (List.mem k m.held) in
+  let m =
+    match m.finding with
+    | None -> m
+    | Some t ->
+        if pressed "Escape" then { m with finding = None; notice = "" }
+        else if pressed "Enter" then if String.trim t = "" then { m with finding = None } else asked now w h t m
+        else if pressed "Backspace" then
+          match List.rev (Text.chars t) with
+          | [] -> m
+          | _ :: rest -> { m with finding = Some (String.concat "" (List.rev rest)) }
+        else m
+  in
+  if not computer.mouse.mclick then m
+  else
+    match (line_at (float_of_int w) (float_of_int h) m computer.mouse.mx computer.mouse.my, m.finding) with
+    | Some 0, None -> { m with finding = Some "" }
+    | Some i, Some _ when i > 0 -> (
+        match List.nth_opt m.known (i - 1) with
+        | Some (q, p) -> go_to w h q p m
+        | None -> m)
+    | _ -> m
+
+(*****************************************************************************)
+(* Update *)
+(*****************************************************************************)
+
 let update (computer : P.computer) (m : model) : model =
   let (P.Time now) = computer.time in
   let mouse = computer.mouse and keys = computer.keyboard in
@@ -181,16 +335,16 @@ let update (computer : P.computer) (m : model) : model =
   let px = int_of_float (Float.round mouse.mx) and py = -int_of_float (Float.round mouse.my) in
   let m = { m with ticks = m.ticks + 1 } in
   let m = collected now m in
-  (* the keys typed, each a level: at the window's centre *)
+  let m = took w h m in
   let m =
-    List.fold_left
-      (fun (m : model) (c : string) ->
-        match c with
-        | "+" | "=" -> zoomed 1 0 0 h m
-        | "-" -> zoomed (-1) 0 0 h m
-        | _ -> m)
-      m (Text.chars keys.typed)
+    match m.start with
+    | Some query -> asked now w h query { m with start = None; asked_at = now -. 1. }
+    | None -> m
   in
+  let before = (m.z, m.cx, m.cy) in
+  let m = typed h keys.typed m in
+  let m = in_box now w h computer m in
+  let over = line_at computer.screen.width computer.screen.height m mouse.mx mouse.my <> None in
   (* the wheel and a double click: at the mouse *)
   let notches = m.wheel +. mouse.mwheel in
   let steps = int_of_float notches in
@@ -200,7 +354,7 @@ let update (computer : P.computer) (m : model) : model =
   (* a drag: the map under the mouse; the arrows *)
   let m =
     match (m.grab, mouse.mdown) with
-    | None, true -> { m with grab = Some (mouse.mx, mouse.my, m.cx, m.cy) }
+    | None, true -> if over then m else { m with grab = Some (mouse.mx, mouse.my, m.cx, m.cy) }
     | Some _, false -> { m with grab = None }
     | Some (mx, my, cx, cy), true ->
         let cx, cy =
@@ -220,29 +374,19 @@ let update (computer : P.computer) (m : model) : model =
       let cx, cy = Tiles.centred m.z (m.cx + dx) (m.cy + dy) h in
       { m with cx; cy }
   in
+  (* (what the search said, until the map moves; the keys for next time) *)
+  let m = if (m.z, m.cx, m.cy) <> before then { m with notice = "" } else m in
+  let held = List.filter (fun (k : string) -> Set_.mem k keys.keys) [ "Enter"; "Escape"; "Backspace" ] in
+  let m = { m with held } in
   let m, missing = in_store now m (Tiles.in_view m.z m.cx m.cy w h) in
-  Tile_worker.want missing;
+  Map_worker.want missing;
   (* (mini-ml's threads: the worker's turn) *)
-  if Tile_worker.out () then Thread.yield ();
+  if Map_worker.out () then Thread.yield ();
   m
 
 (*****************************************************************************)
 (* View *)
 (*****************************************************************************)
-
-let text_size = 14.
-
-(* [s]'s letters from [x] on [baseline], and their width *)
-let text (color : P.color) (x : float) (baseline : float) (s : string) : P.shape * float =
-  let rec place (x0 : float) (acc : (float * string) list) (l : string list) =
-    match l with
-    | [] -> (List.rev acc, x0)
-    | c :: rest ->
-        let g = Glyph_unicode.glyph c in
-        place (x0 +. (float_of_int (g.right - g.left) *. text_size /. Hershey.units_per_em)) ((x0, c) :: acc) rest
-  in
-  let at, x1 = place x [] (Text.chars s) in
-  (P.letters color { size = text_size; bold = false; italic = false; baseline; at }, x1 -. x)
 
 (* a line of text on a band at the window's foot, from the left or the right *)
 let band (w : float) (h : float) (from_right : bool) (s : string) : P.shape list =
@@ -257,6 +401,34 @@ let where (m : model) : string =
   let lat = Mercator.latitude_of_y m.z m.cy and lon = Mercator.longitude_of_x m.z m.cx in
   Printf.sprintf "%.3f %c  %.3f %c  zoom %d" (Float.abs lat) (if lat >= 0. then 'N' else 'S')
     (Float.abs lon) (if lon >= 0. then 'E' else 'W') m.z
+
+(* the place's marker, where it is on the window, whichever side of the
+ * world's edge *)
+let marker (fw : float) (fh : float) (m : model) : P.shape list =
+  match m.place with
+  | None -> []
+  | Some p ->
+      let world = Mercator.world_size m.z in
+      let dx = Mercator.x_of_longitude m.z p.lon - m.cx in
+      let dx = if dx > world / 2 then dx - world else if dx < -(world / 2) then dx + world else dx in
+      let dy = Mercator.y_of_latitude m.z p.lat - m.cy in
+      let x = float_of_int dx and y = -.float_of_int dy in
+      if Float.abs x > fw || Float.abs y > fh then []
+      else
+        [ P.circle P.white 8. |> P.move x y; P.circle P.red 6. |> P.move x y ]
+
+(* the Find box, at the window's top left *)
+let box (fw : float) (fh : float) (m : model) : P.shape list =
+  let left = (-.fw /. 2.) +. 6. and top = (fh /. 2.) -. 6. in
+  List.concat
+    (List.mapi
+       (fun (i : int) (line : string) ->
+         let y = top -. (float_of_int i *. row_height) in
+         let t, tw = text P.black (left +. 6.) (y -. 16.) line in
+         let room = tw +. 12. in
+         let back = if i = 0 then P.rgb 255 255 255 else P.rgb 240 240 240 in
+         [ P.rectangle back room row_height |> P.move (left +. (room /. 2.)) (y -. (row_height /. 2.)); t ])
+       (box_lines fw m))
 
 let drawn (w : int) (h : int) (m : model) : P.shape list =
   let fw = float_of_int w and fh = float_of_int h in
@@ -273,16 +445,19 @@ let drawn (w : int) (h : int) (m : model) : P.shape list =
   in
   (P.rectangle (P.rgb 200 200 200) fw fh
   :: List.filter_map tile (Tiles.in_view m.z m.cx m.cy w h))
-  @ band fw fh false (if m.said = "" then where m else m.said)
+  @ marker fw fh m
+  @ box fw fh m
+  @ band fw fh false (if m.notice <> "" then m.notice else if m.said <> "" then m.said else where m)
   @ band fw fh true credit
 
 (* the same list while nothing it shows changed: a window at rest costs no
  * drawing (the same as mini-netscape's) *)
-let last : ((int * int * int * int * int * int * string) * P.shape list) option ref = ref None
+let last : ((int * int * int * int * int * int * string * string * string list * string) * P.shape list) option ref = ref None
 
 let view (computer : P.computer) (m : model) : P.shape list =
   let w = int_of_float computer.screen.width and h = int_of_float computer.screen.height in
-  let now = (w, h, m.z, m.cx, m.cy, m.generation, m.said) in
+  let name = match m.place with Some p -> p.name | None -> "" in
+  let now = (w, h, m.z, m.cx, m.cy, m.generation, m.said, m.notice, box_lines (float_of_int w) m, name) in
   match !last with
   | Some (was, shapes) when was = now -> shapes
   | _ ->
@@ -315,7 +490,7 @@ let initial (caps : caps) (flags : P.flags) : model =
   in
   let at (name : string) : float = match number name with Some v -> v | None -> 0. in
   let cx, cy = (Mercator.x_of_longitude z (at "lon"), Mercator.y_of_latitude z (at "lat")) in
-  if List.assoc_opt "worker" flags = Some "wait" then Tile_worker.mode := Tile_worker.Waited;
+  if List.assoc_opt "worker" flags = Some "wait" then Map_worker.mode := Map_worker.Waited;
   let base = match List.assoc_opt "tiles" flags with Some b -> b | None -> default_tiles in
   let limit =
     match Option.bind (List.assoc_opt "cache-size" flags) int_of_string_opt with
@@ -323,5 +498,24 @@ let initial (caps : caps) (flags : P.flags) : model =
     | None -> default_cache_megabytes * 1_000_000
   in
   let cache = Option.bind (cache_dir caps flags) (fun (dir : string) -> Tile_cache.create caps ~dir ~limit) in
-  Tile_worker.start (fetch caps base cache);
-  { z; cx; cy; grab = None; wheel = 0.; store = Hashtbl.create 200; failed = Hashtbl.create 20; ticks = 0; generation = 0; said = "" }
+  Map_worker.start (fetch caps base cache);
+  let places = match List.assoc_opt "places" flags with Some b -> b | None -> default_places in
+  (* the last places: a file beside the cache's tiles *)
+  let file = Option.map (fun (dir : string) -> Fpath.v (Filename.concat dir "places")) (if cache = None then None else cache_dir caps flags) in
+  let known =
+    match Option.bind file (fun (f : Fpath.t) -> FS.read_opt caps f) with
+    | None -> []
+    | Some lines -> List.filter_map Place.of_line (String.split_on_char '\n' lines)
+  in
+  let save (l : (string * Place.t) list) : unit =
+    let lines = String.concat "" (List.map (fun (e : string * Place.t) -> Place.to_line e ^ "\n") l) in
+    match file with
+    | None -> ()
+    | Some f -> ( try FS.write caps f lines with Sys_error _ | Unix.Unix_error _ -> ())
+  in
+  (* the words on the command line, a place's name *)
+  let words = List.filter_map (fun ((k, v) : string * string) -> if v = "" && k <> "window" then Some k else None) flags in
+  let start = if words = [] then None else Some (String.concat " " words) in
+  { z; cx; cy; grab = None; wheel = 0.; store = Hashtbl.create 200; failed = Hashtbl.create 20; ticks = 0; generation = 0; said = "";
+    finding = None; place = None; known; notice = ""; asked_at = -1000.; start; held = [];
+    ask = (fun (query : string) -> Map_worker.job (fun () -> search caps places query)); save }

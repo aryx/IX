@@ -15,7 +15,7 @@ LIBDIRS=lib_crypto lib_compression lib_networking lib_graphics lib_playground li
 # (the libraries before lib_core: lib_playground's Cmd is Elm's, not commons/'s)
 INCLUDES=-I . -I $D $LIBI $STDI
 # (each before the ones that name it)
-LIB=Mercator Tiles Tile_cache Worker_spawn Tile_worker Map_window
+LIB=Mercator Tiles Tile_cache Place Map_http Worker_spawn Map_worker Map_window
 LIBOBJS=${LIB:%=$D/%.$O}
 LOCAL=`{ls *.ml *.mli} $LIBSRC
 LIBS=$LIBOBJS $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig

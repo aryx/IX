@@ -4,16 +4,20 @@ A map moved and zoomed, fetched from the internet
 ([docs/plans/plan_maps.md](../../docs/plans/plan_maps.md)).
 
     mini-maps                       the world
-    mini-maps lat=47.39 lon=0.69    a place, zoom=12 unless said
+    mini-maps tours                 a place, found
+    mini-maps lat=47.39 lon=0.69    a place by its numbers, zoom=12 unless said
 
-Drag or the arrows move it; the wheel, a double click, `+` and `-` zoom it.
+Drag or the arrows move it; the wheel, a double click, `+` and `-` zoom it;
+`/` (or a click on the box at the top left) finds a place, on Enter.
 
 | Module | What it is |
 |---|---|
 | `Mercator` | a latitude and a longitude to a pixel and back |
 | `Tiles` | the pyramid: which tiles a window needs, zooming about a point |
+| `Place` | a name to a place, asked of Nominatim |
+| `Map_http` | a request, saying who is asking |
 | `Tile_cache` | the tiles on disk, for as long as the server says |
-| `Tile_worker` | the tiles fetched beside the window |
+| `Map_worker` | the tiles, and a place or a forecast, fetched beside the window |
 | `Map_window` | the window: its place, the tiles in memory, the picture |
 
 `Worker_spawn` is mini-netscape's (`browsers/netscape`), copied by the

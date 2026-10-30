@@ -3,7 +3,8 @@
 The author (2026-10-30), after plan_apps.md: "I would also love to have
 a maps and weather program that fetch data from internet."
 
-**Status: stages 1 to 4 built** (see the end); stage 5, a route, not begun. What is below about the services
+**Status: stages 1 to 4 built** (see the end), on Linux and on mini-9pi;
+stage 5, a route, not begun, waiting for a decision (below). What is below about the services
 was tried on 2026-10-30 with ix's own `mini-curl`, a handful of requests.
 
 ## What it is for
@@ -96,7 +97,11 @@ Estimate: 1,000 to 1,500 lines of `.ml`, an estimate, before routes.
 - mini-pim's Home could show today's weather, and its events a place on
   the map. Both are natural once this exists; neither is in this plan.
 - A Pi 1 redrawing a moving map of 256x256 tiles: not measured; a first
-  check in stage 1, on the Pi 2 first.
+  check on the Pi 2 first. QEMU's 60 frames a second say nothing of it.
+- Stage 5 needs the author: OSRM's terms are still to read, and own A*
+  needs a data source (an extract), which is a choice of what to carry.
+- https:// from mini-9pi to the real services: not tried; mini-netscape's
+  and mini-curl's TLS are the same code.
 
 ## Status
 
@@ -110,8 +115,7 @@ ours). Real tiles of Tours from OSM once, by hand, a screen's worth.
 By the tests: its frames by both compilers (`mini-httpd`, tiles of
 `Make_tiles`). The Hershey font has no copyright sign, so the credit
 reads "(c) OpenStreetMap contributors".
-On mini-9pi it is built and on the card, not yet run there: the moving
-map on a Pi (the open question below) is still not measured. The draw
+On mini-9pi it is built and on the card. The draw
 platform now keeps as many pictures as 3 million pixels hold, four at
 least, for those twenty tiles. Under mini-ml's threads a system call
 stops all of them, so the window waits while a tile is fetched, as
@@ -150,3 +154,10 @@ prints the same as lines. The flag for another server is `forecast=`, the
 word `weather` being a flag too. By hand, with real services, once: the
 window and the terminal's lines, by mini-ml's code. Not done: `mini-pim`'s
 Home showing the weather (still the open question below).
+
+2026-10-30: run on mini-9pi once, by hand: the Pi 2 under QEMU, the card's
+own boot with the network, `/progs/net/maps` against `mini-httpd` on the
+host (`http://10.0.2.2`): 25 tiles over Plan 9's TCP, the frame as on Linux,
+`w` and its forecast, the arrows. No recorded session of it (a minute and a
+half, and a keyboard). rc takes `name=value` as an assignment: the flags
+are quoted there, `'zoom=3'`. Lines of `.ml`: 1,309, in the estimate.

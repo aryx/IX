@@ -14,6 +14,9 @@ window's centre.
 
     mini-maps weather tours         the forecast as lines, for a terminal
 
+Under Plan 9's rc, a flag is quoted (`'zoom=3'`): `name=value` is an
+assignment there.
+
 | Module | What it is |
 |---|---|
 | `Mercator` | a latitude and a longitude to a pixel and back |

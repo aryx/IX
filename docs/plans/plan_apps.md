@@ -57,7 +57,7 @@ not the measure.
 | Write to people | mini-pim's Mail (`apps/pim/`), Gmail's; mini-netscape's `mailto:` | **no** | chat |
 | Keep time and people | mini-pim's Calendar, People, Tasks, Notes, Money | **no** | `date` still GMT only |
 | Look at and fix photos | mini-page shows one; mini-office's paint, 1 bit | yes, those two | a viewer of many and an editor |
-| Find a place | | | maps |
+| Find a place, the weather | mini-maps (`apps/maps/`) | yes: `maps` | routes |
 | Look after files | the shell, `ls`, `cp`, `mv` | yes | a file manager |
 | Browse the web | `browsers/` (lynx, netscape) | yes: `lynx`, `netscape` | |
 | Play | `games/` | yes | |
@@ -254,7 +254,7 @@ for 1 to 3):
 2. **Video**: [`plan_video.md`](plan_video.md), the historical formats,
    played by `play` and from the file manager.
 3. **Maps and the weather**: [`plan_maps.md`](plan_maps.md), fetched
-   from the internet.
+   from the internet: built (2026-10-30) but for routes.
 4. **Photos**: the big thing left that nearly every user does and ix
    cannot do, useful for real on the author's own JPEGs. It brings
    compositing, convolution, resampling and dithering, and needs a
@@ -303,3 +303,6 @@ daily use: both its plans in `done/`. Mail's and the calendar's
 sections say what was built. Still first in the order above:
 mini-pim on m-ix (no `mkfile` yet); then the file manager, video and
 maps, their plans written, nothing built.
+
+2026-10-30: mini-maps built (`apps/maps/`), plan_maps.md's stages 1 to 4:
+the map, its cache, finding a place, the weather; on the card as `maps`.

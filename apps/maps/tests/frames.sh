@@ -15,7 +15,8 @@
 #
 # usage: frames.sh [dir]
 #   dir: where mini-maps is, and ../networking/mini-httpd (mini-mk's, as
-#        _mk/7/apps/maps; default: dune's, _build/default/apps/maps)
+#        _mk/7/apps/maps; default: dune's, _build/default/apps/maps, or
+#        DUNE_BUILD's when another build holds _build's lock)
 
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 D=${DUNE_BUILD:-$ROOT/_build/default}

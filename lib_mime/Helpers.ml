@@ -113,7 +113,23 @@ let rules (caps : < Cap.env; Cap.open_in; .. >) : rule list = available caps (ma
 (* the programs started and not yet seen to end *)
 let running : int list ref = ref []
 
-let run (caps : < Cap.exec; Cap.wait; .. >) (command : string list) : unit =
+(* (Plan 9's: its window's wctl, under rio) *)
+let wctl = "/dev/wctl"
+let on_plan9 () : bool = Sys.os_type = "Plan9"
+let windows () : bool = (not (on_plan9 ())) || Sys.file_exists wctl
+
+(* (rc reads the command: mini-rio's Wctl keeps its words, one blank between) *)
+let run_in_window (caps : < Cap.open_out; .. >) (command : string list) : unit =
+  let text = Bytes.of_string ("new " ^ String.concat " " command) in
+  Logs.info (fun m -> m "%s: %s" wctl (Bytes.to_string text));
+  let fd = FS.open_device_fd caps wctl in
+  Fun.protect ~finally:(fun () -> Unix.close fd) (fun () -> ignore (Unix.write fd text 0 (Bytes.length text)))
+
+let run (caps : < Cap.exec; Cap.wait; Cap.open_out; .. >) (command : string list) : unit =
+  if on_plan9 () && windows () then (
+    try run_in_window caps command
+    with Unix.Unix_error (e, _, _) -> Logs.warn (fun m -> m "%s: %s" wctl (Unix.error_message e)))
+  else
   running := List.filter (fun pid -> match CapUnix.waitpid caps [ Unix.WNOHANG ] pid with 0, _ -> true | _ -> false | exception Unix.Unix_error _ -> false) !running;
   match command with
   | prog :: args ->

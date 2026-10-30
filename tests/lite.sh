@@ -261,6 +261,7 @@ job "mini-emacs: unit tests" _build/default/editors/emacs/tests/Test.exe
 job "gui4: unit tests" _build/default/examples/gui4/tests/Test.exe
 job "mini-office: unit tests" _build/default/apps/office/tests/Test.exe
 job "lib_mime, mini-open: a file's kind by its bytes, the program for it" sh_ '_build/default/lib_mime/tests/Test.exe && apps/files/tests/open.sh'
+job "mini-files: the window's recorded frames, what it starts" apps/files/tests/frames.sh
 job "mini-maps: the map's arithmetic, its window's frames against mini-httpd" sh_ '_build/default/apps/maps/tests/Test.exe && apps/maps/tests/frames.sh && apps/maps/tests/cache.sh && apps/maps/tests/weather.sh'
 job "mini-pim: unit tests, a session with mini-maild (SMTP, IMAP, offline)" sh_ '_build/default/apps/pim/tests/Test.exe && apps/pim/tests/session.sh'
 job "mini-pim: the window's recorded frames, against mini-maild" apps/pim/tests/frames.sh

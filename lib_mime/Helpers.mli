@@ -76,6 +76,12 @@ val available : < Cap.env; .. > -> rule list -> rule list
    with no preferences of its own asks (mini-open, mini-files) *)
 val rules : < Cap.env; Cap.open_in; .. > -> rule list
 
+(* whether a program started can have a screen of its own: not on
+   mini-9pi's bare screen, without mini-rio *)
+val windows : unit -> bool
+
 (* [run caps command]: the program started beside this one, not
-   waited for (the ones ended are, when the next one starts) *)
-val run : < Cap.exec; Cap.wait; .. > -> string list -> unit
+   waited for (the ones ended are, when the next one starts); under
+   mini-rio, in a new window, by /dev/wctl (so given whole paths: its
+   directory is rio's) *)
+val run : < Cap.exec; Cap.wait; Cap.open_out; .. > -> string list -> unit

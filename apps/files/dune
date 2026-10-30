@@ -1,7 +1,21 @@
-; apps/files: mini-open, a file given to the program for its kind
-; (docs/plans/plan_files.md)
+; apps/files: mini-files, folders in a window, and mini-open, each file
+; given to the program for its kind (docs/plans/plan_files.md). Here with
+; the platform that writes a frame to a file (the tests'); sdl/ is the one
+; with a window, bin/mini-files
+(library
+ (name ix_files)
+ (wrapped false)
+ (modules Folder)
+ (libraries ix_core caps fpath unix))
+
+(executable
+ (name Files)
+ (modules Files)
+ (libraries ix_files ix_mime ix_gui ix_graphics_software ix_playground ix_playground_render ix_playground_ppm ix_core caps fpath unix))
+
 (executable
  (name Open)
+ (modules Open)
  (public_name mini-open)
  (package ix)
  (libraries ix_mime ix_core caps fpath unix))

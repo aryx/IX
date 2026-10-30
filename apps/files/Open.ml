@@ -11,7 +11,7 @@
  *
  * References: RFC 1524, the mailcap file. *)
 
-type caps = < Cap.env; Cap.open_in; Cap.exec; Cap.wait; Cap.stdout; Cap.stderr >
+type caps = < Cap.env; Cap.open_in; Cap.open_out; Cap.readdir; Cap.exec; Cap.wait; Cap.stdout; Cap.stderr >
 
 let usage = "usage: mini-open [-n] file
   the file given to the program for its kind (~/.mailcap, the built-in rules)
@@ -32,6 +32,8 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
               match Helpers.for_type (Helpers.rules caps) kind with
               | None -> fail caps (Printf.sprintf "%s: no program for %s" file kind)
               | Some rule ->
+                  (* (whole: a window of mini-rio's has another directory) *)
+                  let file = if Sys.os_type = "Plan9" && Filename.is_relative file then Filename.concat (FS.getcwd caps ()) file else file in
                   let command = Helpers.command rule ~url:file ~file:(Some file) in
                   if said then Console.print caps (kind ^ ": " ^ String.concat " " command ^ "\n")
                   else Helpers.run caps command;

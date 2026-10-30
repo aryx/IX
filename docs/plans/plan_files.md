@@ -4,7 +4,7 @@ The author (2026-10-30), after plan_apps.md: "I think we could do a
 file manager that would dispatch to the appropriate 'player', and then
 support mpeg and play them with 'play' or via the new file manager."
 
-**Status: stage 1 done** (`lib_mime/`, `apps/files/Open.ml`). Its video is
+**Status: stages 1 and 2 done** (`lib_mime/`, `apps/files/`). Its video is
 [`plan_video.md`](plan_video.md).
 
 ## What it is for
@@ -57,7 +57,7 @@ mini-emacs or mini-rio's terminal wants to open things too.
 |---|---|
 | Linux | a process beside it (`Browser_helpers.run`) |
 | mini-rio | `new` written to `/dev/wctl`: a window of its own |
-| mini-9pi, the bare screen | to be decided in stage 2: the program takes the screen and mini-files waits for it, or the card always starts rio |
+| mini-9pi, the bare screen | not started: the status line asks for rio first (decided in stage 2: a program there would fight this one for the screen, the mouse and the keys) |
 
 ## What it shows
 
@@ -105,4 +105,9 @@ repository's samples and every other magic in its tests) and `Helpers`
 (`Browser_helpers` moved, its tests unchanged, with rules for what ix's
 programs read); `mini-open`, on the card as `open`. `mini-page` reads
 PNG and JPEG only, so GIF has no rule yet; mini-office takes no file on
-its command line, so its documents have none either (stage 2).
+its command line, so its documents have none either.
+Stage 2 done: `Folder` and `Files`, the list, sorted by a click on a
+column, the path as buttons, Backspace, `b`, Enter and a double click;
+under mini-rio `Helpers.run` writes `new` to `/dev/wctl`. `root=` keeps it
+under a folder, which the frames' fixture needs. Checked by 14 recorded
+frames and 3 sessions of what it starts, on Linux.

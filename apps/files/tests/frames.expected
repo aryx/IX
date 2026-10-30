@@ -1,0 +1,14 @@
+first|3||a2733477120de58800605d972366ca55558941fdc532e69b8382586b546ff88d
+selected|6|down:2,down:4|9975aa67ad1f41fc43d89fe9a40957f34504d9b8c5d369f4b55a268f079752a9
+scrolled-to-selection|90|down:2,return:4,down:6,down:8,down:10,down:12,down:14,down:16,down:18,down:20,down:22,down:24,down:26,down:28,down:30,down:32,down:34,down:36,down:38,down:40,down:42,down:44,down:46,down:48,down:50,down:52,down:54,down:56,down:58,down:60,down:62,down:64,down:66,down:68,down:70,down:72,down:74,down:76,down:78,down:80,down:82,down:84,down:86|3de912cfd96d5349b063ad1af685cbfbc5b03b5d2dd2c41d1f947c39efd358f0
+entered|6|down:2,return:4|a823bfa1235754ebcf43c4a7e697c4443127ff857267156dc57eb62ea033abee
+parent|8|down:2,return:4,backspace:6|c418e4eee751657852b437f964d9640d8a512835ccf0ffe3d183fa187f103258
+not-above-root|4|backspace:2|a2733477120de58800605d972366ca55558941fdc532e69b8382586b546ff88d
+back|10|down:2,return:4,backspace:6,type(b):8|a823bfa1235754ebcf43c4a7e697c4443127ff857267156dc57eb62ea033abee
+by-size|6|at(310;458):1-6,click:3|84b4a45342845210417bfcdbf5fe82de075b5b1f0e01f1a9e370c4f350bf954f
+by-size-reversed|9|at(310;458):1-9,click:3,click:6|38b34b6efa0af8d070c3031d85b4454be93e6aeb555671f5214e5f23c53d13ca
+by-day|6|at(420;458):1-6,click:3|f0585681cb68627cc93e01a018d26ab3b6b1e0e9050ad80122e6cc8645b88cf0
+dots|4|type(.):2|17ab7e89758fa356f73c023905c634369172958f7bfc9bf8305bb4f8e2f5deef
+wheel|8|down:2,return:4,wheel(-2):6|1b75c0b919553a6c494d9afe10e083d60d82bbc0743634872fc882071b2545d4
+path-click|8|at(-490;485):1-3,down:2,return:3,click:6|c418e4eee751657852b437f964d9640d8a512835ccf0ffe3d183fa187f103258
+no-program|10|down:2,down:4,down:6,return:8|54860b21ea44b27a1ca5252c920a2b0f2d56cea6059d91cfefcf6c2710582683

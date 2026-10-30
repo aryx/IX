@@ -1,0 +1,9 @@
+; mini-files in a window on Linux (SDL): ../Files.ml, the same text, linked
+; with the platform that has a window. Dune's alone: SDL is outside what
+; mini-ml compiles, as mini-page's window
+(copy_files ../Files.ml)
+(executable
+ (name Files)
+ (public_name mini-files)
+ (package ix)
+ (libraries ix_files ix_mime ix_gui ix_graphics_software ix_playground ix_playground_render ix_playground_sdl ix_core caps fpath unix))

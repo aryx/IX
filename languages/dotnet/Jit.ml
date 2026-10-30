@@ -18,7 +18,21 @@ type kind = I | R
 
 type form = Word | Addr | Made of int
 
-type site = { srow : int; sat : int; sargs : kind list; sform : form list; sret : kind option }
+(* what a call-out does: an instruction run by the interpreter; or for
+ * a try (clause c, by its index in the method's), its frame pushed for
+ * the first pass and popped, an exception caught or let go, raised
+ * again (a finally's end), rethrown (a catch's rethrow) *)
+type op = Run | Enter of int | Leave_try | Catch of int | Reraise | Rethrow
+
+type site = { srow : int; sat : int; sargs : kind list; sform : form list; sret : kind option; sop : op }
+
+(* a method's clauses, by instructions' indexes: (kind, try's start,
+ * end, handler's start, end); 0 catch, 2 finally *)
+let clauses (img : Image.t) (row : int) (r : V.result) : (int * int * int * int * int) array =
+  let body = Image.body img (Image.get img M.t_method_def row "RVA") in
+  let ix = Il.index r.instrs in
+  Array.of_list (List.map (fun (c : Image.clause) ->
+      (c.kind, ix c.try_start, ix c.try_end, ix c.handler_start, ix c.handler_end)) body.clauses)
 
 (* what an address on the stack names (ldloca, ldarga), or a value
  * the interpreter makes at the call-out that takes it (ldftn's, at
@@ -118,7 +132,10 @@ let own (img : Image.t) (refs : bool) (row : int) : unit =
   ignore (arg_kinds img refs row);
   if sg.ret <> S.Void then ignore (sig_kind img refs "a result not an int32" sg.ret);
   let body = Image.body img (Image.get img t row "RVA") in
-  if body.clauses <> [] then refuse "exception clauses: the interpreter's";
+  if body.clauses <> [] && not refs then refuse "exception clauses: the interpreter's";
+  List.iter (fun (c : Image.clause) ->
+      if c.kind = 1 then refuse "an exception filter: the interpreter's";
+      if c.kind = 4 then refuse "a fault clause: the interpreter's") body.clauses;
   List.iter (fun l -> ignore (sig_kind img refs "a local not an int32" l)) (local_sigs img body)
 
 let int_kind (k : Il.kind) : bool =
@@ -141,7 +158,8 @@ let supported (refs : bool) (op : Il.op) : bool =
   | Il.Callvirt _ | Il.Newobj _ | Il.Newarr _ | Il.Ldstr _ | Il.Ldsfld _ | Il.Stsfld _
   | Il.Castclass _ | Il.Isinst _ | Il.Box _ | Il.Unbox_any _ | Il.Throw
   | Il.Ldloca _ | Il.Ldarga _ | Il.Ldftn _ | Il.Initobj _ | Il.Ldflda _ | Il.Ldsflda _ | Il.Ldelema _
-  | Il.Ldelem_any _ | Il.Stelem_any _ | Il.Constrained _ | Il.Ldobj _ | Il.Stobj _ -> refs
+  | Il.Ldelem_any _ | Il.Stelem_any _ | Il.Constrained _ | Il.Ldobj _ | Il.Stobj _
+  | Il.Leave _ | Il.Endfinally | Il.Rethrow -> refs
   | Il.Ldelem k | Il.Stelem k | Il.Ldind k | Il.Stind k -> refs && (int_kind k || k = Il.K_ref)
   | _ -> false
 
@@ -196,7 +214,7 @@ let pops (img : Image.t) (op : Il.op) (depth : int) : int =
   | Il.Conv _ | Il.Ldlen | Il.Ldfld _ | Il.Dup -> 1
   | Il.Binop _ | Il.Bcmp _ | Il.Ceq | Il.Cgt _ | Il.Clt _ | Il.Ldelem _ | Il.Stfld _ -> 2
   | Il.Stelem _ -> 3
-  | Il.Ret -> depth
+  | Il.Ret | Il.Leave _ -> depth
   | Il.Call tok -> let m, _ = V.call_sig img tok in List.length m.params
   | _ -> 0
 
@@ -212,9 +230,10 @@ let addresses (img : Image.t) (im : Value.image option) (row : int) (r : V.resul
   let t = Hashtbl.create 4 and cur = Hashtbl.create 4 in
   let targets = Hashtbl.create 8 in
   Array.iter (fun (ins : Il.instr) -> match ins.op with
-      | Il.Br x | Il.Brfalse x | Il.Brtrue x | Il.Bcmp (_, _, x) -> Hashtbl.replace targets x ()
+      | Il.Br x | Il.Brfalse x | Il.Brtrue x | Il.Bcmp (_, _, x) | Il.Leave x -> Hashtbl.replace targets x ()
       | Il.Switch xs -> Array.iter (fun x -> Hashtbl.replace targets x ()) xs
       | _ -> ()) r.instrs;
+  Array.iter (fun (_, _, _, h, _) -> Hashtbl.replace targets h ()) (clauses img row r);
   Array.iteri (fun i (ins : Il.instr) ->
       match r.stacks.(i) with
       | None -> ()
@@ -252,10 +271,12 @@ let value_words (img : Image.t) (row : int) (r : V.result) : int =
   let locals = List.map (sig_kind img true "") (local_sigs img body) in
   let args = Array.to_list (arg_kinds img true row) in
   let depth = Array.fold_left (fun d s -> match s with Some s -> max d (List.length s) | None -> d) 0 r.stacks in
-  let any_ref = List.mem R locals || List.mem R args
+  (* (and one a clause: its exception, while its handler runs) *)
+  let nclauses = Array.length (clauses img row r) in
+  let any_ref = List.mem R locals || List.mem R args || nclauses > 0
                 || Array.exists (fun s -> match s with
                     | Some s -> List.exists (fun v -> vt_kind true v = Some R) s | None -> false) r.stacks in
-  if any_ref then depth + 1 + List.length locals + List.length args else 0
+  if any_ref then depth + 1 + List.length locals + List.length args + nclauses else 0
 
 (* the methods the JIT takes: each one's own reasons, its stacks (the
  * verifier's: int32s only, or references), its instructions, and its
@@ -294,6 +315,16 @@ let accept (img : Image.t) (im : Value.image option) (row : int) : V.result =
            | Some im when (field im tok).fstatic -> refuse (sprintf "IL_%04x: a static field by %s" ins.at ins.name)
            | _ -> ())
       | _ -> ()) r.instrs;
+  (* (a try's first instruction pushes its handler: a jump to it from
+   * inside the try would push it twice) *)
+  Array.iter (fun (_, ts, te, _, _) ->
+      Array.iteri (fun i (ins : Il.instr) ->
+          let to_start t = t = ts && i >= ts && i < te in
+          match ins.op with
+          | Il.Br t | Il.Brfalse t | Il.Brtrue t | Il.Bcmp (_, _, t) | Il.Leave t when to_start t ->
+              refuse (sprintf "IL_%04x: a jump to its try's start" ins.at)
+          | Il.Switch ts' when Array.exists to_start ts' -> refuse (sprintf "IL_%04x: a jump to its try's start" ins.at)
+          | _ -> ()) r.instrs) (clauses img row r);
   if refs && value_words img row r > 32 then refuse "more than 32 words on the value stack";
   if refs then ignore (addresses img im row r);
   r
@@ -368,6 +399,7 @@ type env = {
   base : int;
   cell : int -> string;
   limit : int;
+  handler : int;               (* ml_handler's address: the records' chain *)
 }
 
 (* the text with references is written as arm64's; arm's the same but
@@ -418,7 +450,11 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
           let m, _ = V.call_sig img tok in
           max a (List.length m.params)
       | _ -> a) 1 r.instrs in
-  let frame = w * (nslots + nlocals) + w * maxargs in
+  (* a try's clause: its handler's record (4 words: Gen's ml_try's) and
+   * a finally's continuation, in the frame; its exception, a value *)
+  let cls = if refs <> None then clauses img row r else [||] in
+  let ncl = Array.length cls in
+  let frame = w * (nslots + nlocals + 5 * ncl) + w * maxargs in
   (* the value stack's words: the slots, the locals, the arguments *)
   let nv = if refs <> None then value_words img row r else 0 in
   let word j = sprintf "%d(R26)" (-w * (nv - j)) in
@@ -428,13 +464,30 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
   let local i = sprintf "l%d-%d(SP)" i (w * (nslots + i + 1)) in
   let arg i = sprintf "a%d+%d(FP)" i (w * i) in
   let vslot k = word k and vlocal i = word (nslots + i) and varg i = word (nslots + nlocals + i) in
+  let record c j = sprintf "r%d_%d-%d(SP)" c j (w * (nslots + nlocals + (5 * c) + 4 - j)) in
+  let cont c = sprintf "k%d-%d(SP)" c (w * (nslots + nlocals + (5 * c) + 5)) in
+  let vexn c = word (nslots + nlocals + nargs + c) in
   let label i = sprintf "%s_%d" sym i in
   let addrs = if refs <> None then addresses img im row r else Hashtbl.create 1 in
   let targets = Hashtbl.create 8 in
   Array.iter (fun (ins : Il.instr) -> match ins.op with
-      | Il.Br t | Il.Brfalse t | Il.Brtrue t | Il.Bcmp (_, _, t) -> Hashtbl.replace targets t ()
+      | Il.Br t | Il.Brfalse t | Il.Brtrue t | Il.Bcmp (_, _, t) | Il.Leave t -> Hashtbl.replace targets t ()
       | Il.Switch ts -> Array.iter (fun t -> Hashtbl.replace targets t ()) ts
       | _ -> ()) r.instrs;
+  Array.iter (fun (_, _, _, h, _) -> Hashtbl.replace targets h ()) cls;
+  (* a call-out of a try's: its number in R1, an operand in R2 *)
+  let try_site op nargs ret =
+    match refs with
+    | Some e ->
+        let number = e.base + List.length !(e.sites) in
+        e.sites := !(e.sites) @ [ { srow = row; sat = 0; sargs = List.init nargs (fun _ -> R);
+                                     sform = List.init nargs (fun _ -> Word); sret = ret; sop = op } ];
+        number
+    | None -> assert false in
+  let handler = match refs with Some e -> e.handler | None -> 0 in
+  (* a finally's continuations: the places a leave goes on from, by the
+   * number in its continuation word *)
+  let resumes = Array.make ncl [] in
   Buffer.add_string b (sprintf "// %s, %d bytes of IL: %d slots, %d locals\n"
                          (Listing.token_name img (M.token M.t_method_def row)) (String.length body.code) nslots nlocals);
   Buffer.add_string b (sprintf "\tTEXT\t%s(SB), 0, $%d\n" sym frame);
@@ -473,6 +526,21 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
     ins "%s" (if a64 then "RETURN" else "RET") in
   Array.iteri (fun i (x : Il.instr) ->
       if Hashtbl.mem targets i then Buffer.add_string b (label i ^ ":\n");
+      (* a try entered (the outer first): its frame for the first pass,
+       * its record pushed (jit_try returns 0; a raise comes back there
+       * with the exception, to its handler) *)
+      for c = ncl - 1 downto 0 do
+        let _, ts, _, _, _ = cls.(c) in
+        if ts = i then begin
+          Buffer.add_string b (sprintf "\t// a try, clause %d\n" c);
+          ins "MOV\t$%d, R1" (2 * try_site (Enter c) 0 None + 1);
+          ins "BL\tjit_out0(SB)";
+          ins "MOV\t$%s, R0" (record c 0);
+          ins "BL\tjit_try(SB)";
+          ins "CMP\t$0, R0";
+          ins "BNE\t%s_h%d" sym c
+        end
+      done;
       Buffer.add_string b (sprintf "\t// IL_%04x: %s\n" x.at x.name);
       let d = match r.stacks.(i) with Some s -> List.length s | None -> 0 in
       (* the top's slot is d - 1, the one under it d - 2 *)
@@ -582,7 +650,7 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
           let number = base + List.length !sites in
           let sform = List.init n (fun j -> match place j with
               | Some (Local _ | Arg _) -> Addr | Some (Ftn k) -> Made k | None -> Word) in
-          sites := !sites @ [ { srow = row; sat = i; sargs = kinds; sform; sret = ret } ];
+          sites := !sites @ [ { srow = row; sat = i; sargs = kinds; sform; sret = ret; sop = Run } ];
           (* (on arm an int32 past 31 bits boxed first, jit_box, its block
            * in the slot's word of the value stack, where it waits) *)
           if not a64 then
@@ -784,11 +852,65 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
           if sg'.ret <> S.Void then
             if sig_kind img (refs <> None) "" sg'.ret = I then ins "MOVW\tR0, %s" (slot (top - n + 1))
             else ins "MOV\tR0, %s" (vslot (top - n + 1))
+      | _, Il.Leave t ->
+          (* the trys it leaves, the inner first: each record popped (its
+           * previous one the chain's again), its frame; a finally run,
+           * which comes back here *)
+          Array.iteri (fun c (kind, ts, te, hs, _) ->
+              if i >= ts && i < te && not (t >= ts && t < te) then begin
+                ins "MOV\t%s, R1" (record c 3);
+                ins "MOV\t$%d, R16" handler;
+                ins "MOV\tR1, 0(R16)";
+                ins "MOV\t$%d, R1" (2 * try_site Leave_try 0 None + 1);
+                ins "BL\tjit_out0(SB)";
+                if kind = 2 then begin
+                  let k = List.length resumes.(c) in
+                  let back = sprintf "%s_%d_f%d" sym i c in
+                  resumes.(c) <- resumes.(c) @ [ (k, back) ];
+                  ins "MOVW\t$%d, R1" k;
+                  ins "MOVW\tR1, %s" (cont c);
+                  ins "B\t%s" (label hs);
+                  Buffer.add_string b (back ^ ":\n")
+                end
+              end) cls;
+          ins "B\t%s" (label t)
+      | _, Il.Endfinally ->
+          (* where its continuation says, or the exception again *)
+          Array.iteri (fun c (kind, _, _, hs, he) ->
+              if kind = 2 && i >= hs && i < he then begin
+                ins "MOVW\t%s, R1" (cont c);
+                ins "CMP\t$-1, R1";
+                ins "BNE\t%s_e%d_%d" sym i c;
+                ins "MOV\t%s, R2" (vexn c);
+                ins "MOV\t$%d, R1" (2 * try_site Reraise 1 None + 1);
+                ins "BL\tjit_out1(SB)";
+                Buffer.add_string b (sprintf "%s_e%d_%d:\n" sym i c);
+                List.iter (fun (k, back) -> ins "CMP\t$%d, R1" k; ins "BEQ\t%s" back) resumes.(c)
+              end) cls
+      | _, Il.Rethrow ->
+          Array.iteri (fun c (kind, _, _, hs, he) ->
+              if kind = 0 && i >= hs && i < he then begin
+                ins "MOV\t%s, R2" (vexn c);
+                ins "MOV\t$%d, R1" (2 * try_site Rethrow 1 None + 1);
+                ins "BL\tjit_out1(SB)"
+              end) cls
       | _, Il.Ret ->
           if sg.ret <> S.Void then
             if before top = I then ins "MOVW\t%s, R0" (slot top) else ins "MOV\t%s, R0" (vslot top);
           return ()
       | _ -> assert false) r.instrs;
+  (* the handlers: the exception (R0) given to the interpreter's rule
+   * (Machine.run's): a catch's caught, else raised again; a finally's
+   * kept (a .NET exception's) and the finally run *)
+  Array.iteri (fun c (kind, _, _, hs, _) ->
+      Buffer.add_string b (sprintf "%s_h%d:\n" sym c);
+      ins "MOV\tR0, R2";
+      ins "MOV\t$%d, R1" (2 * try_site (Catch c) 1 (Some R) + 1);
+      ins "BL\tjit_out1(SB)";
+      ins "MOV\tR0, %s" (vexn c);
+      if kind = 0 then ins "MOV\tR0, %s" (vslot 0)
+      else (ins "MOVW\t$-1, R1"; ins "MOVW\tR1, %s" (cont c));
+      ins "B\t%s" (label hs)) cls;
   Buffer.contents b
 
 (* the methods' symbols, by their rows *)
@@ -812,7 +934,7 @@ let assembly (m : mach) (img : Image.t) (im : Value.image option) : string * int
   List.iter (fun row ->
       let refs = match im with
         | Some im -> Some { im; taken = Hashtbl.mem taken; sites; base = 0;
-                            cell = (fun r -> sprintf "$%s_cell(SB)" (Hashtbl.find syms r)); limit = 0 }
+                            cell = (fun r -> sprintf "$%s_cell(SB)" (Hashtbl.find syms r)); limit = 0; handler = 0 }
         | None -> None in
       Buffer.add_string b (method_text m img syms row (Hashtbl.find taken row) refs)) rows;
   (Buffer.contents b, List.length rows, refused)
@@ -847,8 +969,8 @@ let refused (p : prepared) : (int * string) list = p.prefused
  * tagged, to [box]) and the unsigned division (R1 / R2: the quotient
  * in R1, the remainder in R2; libc's div.s's binary search for the
  * first bit, then a bit a turn) *)
-let runtime ~(mach : mach) ~(throws : (string * int) list) ~(out : int array) ~(compile : int) ~(box : int) :
-  string =
+let runtime ~(mach : mach) ~(throws : (string * int) list) ~(out : int array) ~(compile : int) ~(box : int)
+    ~(handler : int) : string =
   let a64 = mach = Arm64 in
   let w = if a64 then 8 else 4 in
   let b = Buffer.create 1024 in
@@ -858,6 +980,13 @@ let runtime ~(mach : mach) ~(throws : (string * int) list) ~(out : int array) ~(
   List.iter (fun (name, addr) -> add (sprintf "\tTEXT\t%s(SB), %s\n\tMOV\t$1, R1\n%s" name frame (call addr))) throws;
   Array.iteri (fun n addr -> add (sprintf "\tTEXT\tjit_out%d(SB), %s\n%s" n frame (call addr))) out;
   add (sprintf "\tTEXT\tjit_compile(SB), %s\n%s" frame (call compile));
+  (* a try's record pushed on ML's chain of handlers, at R0 (Gen's
+   * ml_try: the stack pointer, the value stack's top, the return
+   * address, the previous record), 0 returned; a raise returns there
+   * again, the exception in R0 *)
+  Buffer.add_string b
+    (if a64 then sprintf "\tTEXT\tjit_try(SB), $-8\n\tMOV\tRSP, R16\n\tMOV\tR16, 0(R0)\n\tMOV\tR26, 8(R0)\n\tMOV\tR30, 16(R0)\n\tMOV\t$%d, R16\n\tMOV\t0(R16), R17\n\tMOV\tR17, 24(R0)\n\tMOV\tR0, 0(R16)\n\tMOV\t$0, R0\n\tRET\t(R30)\n" handler
+     else sprintf "\tTEXT\tjit_try(SB), $-4\n\tMOVW\tR13, 0(R0)\n\tMOVW\tR10, 4(R0)\n\tMOVW\tR14, 8(R0)\n\tMOVW\t$%d, R9\n\tMOVW\t0(R9), R4\n\tMOVW\tR4, 12(R0)\n\tMOVW\tR0, 0(R9)\n\tMOVW\t$0, R0\n\tRET\n" handler);
   if not a64 then begin
     add (sprintf "\tTEXT\tjit_box(SB), $-4\n\tMOVW\tR1, R2\n\tSLL\t$16, R2\n\tSRL\t$15, R2\n\tORR\t$1, R2\n\tSRA\t$16, R1\n\tSLL\t$1, R1\n\tORR\t$1, R1\n%s" (call box));
     add "\tTEXT\tjit_udiv(SB), $-4\n\tMOVW\t$0, R4\n\tMOVW\t$0, R3\n";
@@ -970,10 +1099,11 @@ let stubs (p : prepared) ~(cell : int -> int) ~(number : int -> int) ~(runtime :
    List.map (fun row -> (row, symbol_of p row ^ "_entry")) p.prows,
    List.map (fun row -> (row, symbol_of p row ^ "_stub")) p.prows)
 
-let method_code (p : prepared) (row : int) ~(cell : int -> int) ~(base : int) ~(limit : int) ~(runtime : string) :
-  string * site list =
+let method_code (p : prepared) (row : int) ~(cell : int -> int) ~(base : int) ~(limit : int) ~(handler : int)
+    ~(runtime : string) : string * site list =
   let sites = ref [] in
-  let env = { im = p.pim; taken = Hashtbl.mem p.ptaken; sites; base; cell = (fun r -> sprintf "$%d" (cell r)); limit } in
+  let env = { im = p.pim; taken = Hashtbl.mem p.ptaken; sites; base; cell = (fun r -> sprintf "$%d" (cell r));
+              limit; handler } in
   let text = method_text p.pmach p.pim.img p.psyms row (Hashtbl.find p.ptaken row) (Some env) in
   (text ^ runtime, !sites)
 
@@ -981,7 +1111,7 @@ let method_code (p : prepared) (row : int) ~(cell : int -> int) ~(base : int) ~(
  * itself), compiled at its first call: the method checked and its text
  * made with its type arguments (instance), an entry calling it by BL,
  * the runtime's; every call it makes a call-out. None if refused. *)
-let instance_code (m : mach) (meth : Value.meth) ~(base : int) ~(limit : int) ~(runtime : string) :
+let instance_code (m : mach) (meth : Value.meth) ~(base : int) ~(limit : int) ~(handler : int) ~(runtime : string) :
   (string * string * site list) option =
   match meth.def with
   | None -> None
@@ -995,7 +1125,7 @@ let instance_code (m : mach) (meth : Value.meth) ~(base : int) ~(limit : int) ~(
             let syms = Hashtbl.create 1 in
             Hashtbl.replace syms row sym;
             let sites = ref [] in
-            let env = { im; taken = (fun _ -> false); sites; base; cell = (fun _ -> "$0"); limit } in
+            let env = { im; taken = (fun _ -> false); sites; base; cell = (fun _ -> "$0"); limit; handler } in
             let text = method_text m im.img syms row r (Some env) in
             Some (text ^ entry m im.img sym row None ^ runtime, sym ^ "_entry", !sites)
         with e -> instance := None; raise e in

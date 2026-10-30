@@ -30,7 +30,8 @@ mini-mkbootdir $b/kernels/9pi/bootdir $P boot=$W/boot.rc rcmain=$P/ROOT/rc/lib/r
   (cd $ROOT/kernels/9pi && MKSHELL=mini-rc NPROC=32 mini-mk O=5 B=$b PRINCIPIA=$P BOOTRC=$W/boot.rc) > $W/mk.log 2>&1 ||
   { echo "the kernel not relinked:"; tail -3 $W/mk.log | cut -c1-200; exit 1; }
 out=$W/out.txt
-mini-qemu -M raspi1ap -device loader,file=$b/kernels/9pi/kernel.img,addr=0x8000,cpu-num=0,force-raw=on -nographic \
+# (timeout: if this script is interrupted, the emulator does not outlive it)
+timeout 120 mini-qemu -M raspi1ap -device loader,file=$b/kernels/9pi/kernel.img,addr=0x8000,cpu-num=0,force-raw=on -nographic \
   < /dev/null > $out 2>&1 &
 pid=$!
 n=0

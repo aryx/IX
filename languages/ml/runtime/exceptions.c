@@ -296,3 +296,14 @@ ml_uncaught(value exn)
 	exit(2);
 	return Val_unit;
 }
+
+/* the address of ml_handler, the latest handler's record (Gen's
+ * ml_try: the stack pointer, the value stack's top, where a raise
+ * returns, the record before): code made at run time pushes records of
+ * its own on that chain, as ML's try does (mini-dotnet's JIT, its
+ * try's: languages/dotnet/Jit) */
+value
+ml_handler_address(value unit)
+{
+	return Val_long((value)&ml_handler);
+}

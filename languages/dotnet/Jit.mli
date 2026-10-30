@@ -87,11 +87,32 @@
  * one code between the instances of references, a dictionary of the
  * types beside it.
  *
+ * {b try, catch, finally}: a try's handler is a record on ML's own
+ * chain of handlers, as ML's try pushes (Gen's ml_try: the stack
+ * pointer, the value stack's top, where a raise comes back, the
+ * record before; ml_handler's address the runtime's), pushed at the
+ * try's start by jit_try, which returns 0, and where a raise returns
+ * again with the exception; and a frame of the method's on
+ * Frame.frames meanwhile, so that the first pass sees the try's
+ * clauses. The handler asks the interpreter (a call-out: Machine.run's
+ * rule) whether its catch takes the exception, else raises it again;
+ * a finally keeps it, runs, and at its endfinally raises it again. A
+ * leave pops the records and frames of the trys it leaves, the inner
+ * first, each finally run on the way and coming back (its continuation
+ * a number in the frame).
+ *
+ *     try {                    MOV $..., R1; BL jit_out0   (its frame)
+ *                              MOV $record, R0; BL jit_try
+ *                              CMP $0, R0; BNE handler
+ *       ...                    the body's code
+ *     } catch (E e) {          (handler: the exception to a call-out,
+ *                               caught: on the stack, else raised)
+ *
  * What it refuses is said with the reason: a struct, an int64, a
  * double on the stack, an address at a jump or given to the code
- * itself, an instruction without its template yet, exception
- * clauses; and in -S's text a generic method or class (an instance's
- * code is only made at run time).
+ * itself, an instruction without its template yet, a filter or a
+ * fault clause; and in -S's text a generic method or class (an
+ * instance's code is only made at run time).
  *
  * {b A method is compiled at its first call} (stubs, method_code): it
  * is called through its cell, a word holding its code's address, at
@@ -139,7 +160,11 @@ type kind = I | R
  * Made: nothing given, the value the instruction at that index makes,
  * ldftn's Fn), and its result's *)
 type form = Word | Addr | Made of int
-type site = { srow : int; sat : int; sargs : kind list; sform : form list; sret : kind option }
+(* what a call-out does: an instruction run; for a try (its clause's
+ * index), its frame pushed for the first pass and popped, the
+ * exception caught or let go, raised again, rethrown *)
+type op = Run | Enter of int | Leave_try | Catch of int | Reraise | Rethrow
+type site = { srow : int; sat : int; sargs : kind list; sform : form list; sret : kind option; sop : op }
 
 (* the assembly's methods that are compiled, as mini-asm's text; how
  * many; the others' rows and why not. With the assembly loaded (and
@@ -169,7 +194,8 @@ val symbol_of : prepared -> int -> string
  * call-out's number then the operands; [compile] the compiler's, of a
  * method's number; on arm [box], of an int32's two halves, tagged,
  * which returns its Int32 (an int32 past 31 bits crosses so) *)
-val runtime : mach:mach -> throws:(string * int) list -> out:int array -> compile:int -> box:int -> string
+val runtime : mach:mach -> throws:(string * int) list -> out:int array -> compile:int -> box:int ->
+  handler:int -> string
 
 (* the code at the start: for each method an entry, `Sym_entry`, which
  * mini-ml calls as a closure of one argument, an array of the
@@ -187,7 +213,8 @@ val sp_code : mach -> string
 (* a method's code, at its first call: its text (`Sym`, then the
  * runtime's), its call-outs numbered from [base]; the machine's stack
  * pointer checked against [limit] (in words: jit_overflow below it) *)
-val method_code : prepared -> int -> cell:(int -> int) -> base:int -> limit:int -> runtime:string -> string * site list
+val method_code : prepared -> int -> cell:(int -> int) -> base:int -> limit:int -> handler:int -> runtime:string ->
+  string * site list
 
 (* an instance of a generic method (of a generic class, or generic
  * itself), its type arguments those of the Value.meth: compiled alone,
@@ -195,5 +222,5 @@ val method_code : prepared -> int -> cell:(int -> int) -> base:int -> limit:int 
  * a reference in another; its fields where the instance has them).
  * Its text (the method, its entry calling it directly, the runtime's),
  * the entry's symbol, its call-outs from [base]; None if refused *)
-val instance_code : mach -> Value.meth -> base:int -> limit:int -> runtime:string ->
+val instance_code : mach -> Value.meth -> base:int -> limit:int -> handler:int -> runtime:string ->
   (string * string * site list) option

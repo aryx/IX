@@ -91,33 +91,68 @@ let pending : (unit -> unit) array ref = ref [||]
 
 let compile (k : int) : unit = (!pending).(k) ()
 
-(* the call-outs of a method's code: the instruction run by the
- * interpreter, in the method's code *)
+(* an instruction run by the interpreter for the code *)
+let run_site (m : meth) (code : code) (s : Jit.site) : Obj.t array -> Obj.t =
+  let kinds = Array.of_list s.sargs and form = Array.of_list s.sform in
+  let run = Machine.call_out m code s.sat in
+  let result v = match s.sret with Some k -> to_word k v | None -> Obj.repr () in
+  let operand j x = match form.(j) with
+    | Jit.Made k -> Machine.exec m code k [||]
+    | _ -> of_word kinds.(j) x in
+  if not (List.mem Jit.Addr s.sform) then
+    fun (a : Obj.t array) -> result (run (Array.mapi operand a))
+  else
+    (* a local's address: an interpreter's cell with its value, its
+     * new value given back after the result *)
+    fun (a : Obj.t array) ->
+      let cells = Array.map (fun x -> [| x |]) (Array.mapi operand a) in
+      let v = run (Array.mapi (fun j (c : value array) -> if form.(j) = Jit.Addr then Ptr (Slot (c, 0)) else c.(0)) cells) in
+      let back = List.filter (fun j -> form.(j) = Jit.Addr) (List.init (Array.length a) (fun j -> j)) in
+      Obj.repr (Array.of_list (result v :: List.map (fun j -> to_word kinds.(j) cells.(j).(0)) back))
+
+(* the call-outs of a method's code: an instruction run by the
+ * interpreter in the method's code, or its trys' *)
 let call_outs (codes : (int, meth * code) Hashtbl.t) (sites : Jit.site list) : unit =
   let calls = List.map (fun (s : Jit.site) ->
       let m, code = Hashtbl.find codes s.srow in
-      let kinds = Array.of_list s.sargs and form = Array.of_list s.sform in
-      let run = Machine.call_out m code s.sat in
-      let result v = match s.sret with Some k -> to_word k v | None -> Obj.repr () in
-      let operand j x = match form.(j) with
-        | Jit.Made k -> Machine.exec m code k [||]
-        | _ -> of_word kinds.(j) x in
-      if not (List.mem Jit.Addr s.sform) then
-        fun (a : Obj.t array) -> result (run (Array.mapi operand a))
-      else
-        (* a local's address: an interpreter's cell with its value, its
-         * new value given back after the result *)
-        fun (a : Obj.t array) ->
-          let cells = Array.map (fun x -> [| x |]) (Array.mapi operand a) in
-          let v = run (Array.mapi (fun j (c : value array) -> if form.(j) = Jit.Addr then Ptr (Slot (c, 0)) else c.(0)) cells) in
-          let back = List.filter (fun j -> form.(j) = Jit.Addr) (List.init (Array.length a) (fun j -> j)) in
-          Obj.repr (Array.of_list (result v :: List.map (fun j -> to_word kinds.(j) cells.(j).(0)) back))) sites in
+      match s.sop with
+      | Jit.Run -> run_site m code s
+      | Jit.Enter c ->
+          (* the try's frame for the first pass (Frame.handled): the
+           * method's clauses, at the try's start *)
+          let at = code.clauses.(c).tstart in
+          fun (_ : Obj.t array) ->
+            let (f : Frame.frame) = { meth = m; code; args = [||]; locals = [||]; stack = [||]; sp = 0;
+                                      pc = at; at; caught = None } in
+            Frame.frames := f :: !Frame.frames;
+            Obj.repr ()
+      | Jit.Leave_try -> fun _ -> Frame.frames := List.tl !Frame.frames; Obj.repr ()
+      | Jit.Catch c ->
+          (* as Machine.run: a catch's class, or the first pass's choice;
+           * a finally's every .NET exception (not the machine's own:
+           * an unhandled one runs no finally) *)
+          let cl = code.clauses.(c) in
+          fun (a : Obj.t array) ->
+            let f = List.hd !Frame.frames in
+            Frame.frames := List.tl !Frame.frames;
+            (match (Obj.obj a.(0) : exn), cl.ckind, cl.catch with
+             | Thrown st, 0, Some k ->
+                 let mine = match !Frame.chosen with Some (g, j) -> g == f && j = c | None -> false in
+                 if subclass st.cls k || mine then Obj.repr (Obj st) else raise (Thrown st)
+             | Thrown _, 2, _ -> a.(0)
+             | e, _, _ -> raise e)
+      | Jit.Reraise -> fun (a : Obj.t array) -> raise (Obj.obj a.(0) : exn)
+      | Jit.Rethrow ->
+          fun (a : Obj.t array) -> match (Obj.obj a.(0) : value) with
+            | Obj st -> Frame.throw st
+            | _ -> Frame.error "rethrow of what is not an exception") sites in
   table := Array.append !table (Array.of_list calls)
+
 
 (* the runtime's text, in each piece of code *)
 let runtime () : string =
   let addr f = Code_memory.address (Obj.repr f) in
-  Jit.runtime ~mach ~box:(addr box)
+  Jit.runtime ~mach ~box:(addr box) ~handler:(Code_memory.handler ())
     ~throws:[ ("jit_divide_by_zero", addr divide_by_zero); ("jit_null", addr null_reference);
               ("jit_range", addr out_of_range); ("jit_overflow", addr stack_overflow) ]
     ~out:[| addr out0; addr out1; addr out2; addr out3; addr out4; addr out5; addr out6; addr out7 |]
@@ -173,7 +208,8 @@ let program (caps : < Cap.open_in; .. >) (im : image) : (int, value array -> val
         let codes = Hashtbl.create 16 in
         List.iter (fun row -> let m = Types.meth_of_def im row in Hashtbl.replace codes row (m, Types.code m)) rows;
         pending := Array.append !pending (Array.of_list (List.map (fun row () ->
-            let text, sites = Jit.method_code prep row ~cell ~base:(Array.length !table) ~limit:!limit ~runtime in
+            let text, sites = Jit.method_code prep row ~cell ~base:(Array.length !table) ~limit:!limit
+                ~handler:(Code_memory.handler ()) ~runtime in
             let code, offset = encode caps text in
             let at = Code_memory.load code in
             Logs.info (fun m -> m "JIT: compiled %s (%d bytes, %d call-outs)" (name row) (String.length code) (List.length sites));
@@ -195,7 +231,8 @@ let instance (caps : < Cap.open_in; .. >) (m : meth) (row : int) : (value array 
   ensure_limit caps;
   let code = Types.code m in
   let name = m.mcls.name ^ "::" ^ m.mname in
-  match Jit.instance_code mach m ~base:(Array.length !table) ~limit:!limit ~runtime:(runtime ()) with
+  match Jit.instance_code mach m ~base:(Array.length !table) ~limit:!limit ~handler:(Code_memory.handler ())
+          ~runtime:(runtime ()) with
   | None -> Logs.debug (fun f -> f "JIT: instance not compiled: %s" name); None
   | Some (text, entry, sites) ->
       let bytes, offset = encode caps text in

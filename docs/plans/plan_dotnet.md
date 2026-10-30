@@ -936,4 +936,32 @@ structs 6 (vec), ldftn 2.
    What (typeof(T): a RuntimeTypeHandle, a struct, on the stack);
    tests/run.sh 257 checks; mini-tiger's and mini-csc's with -jit;
    run.sh -9 on arm.
+3. try, catch, finally (done). The author asked what happened to them
+   before: nothing refused at run time, the methods with a try were
+   the interpreter's, and exceptions crossed the compiled frames as
+   ML's exceptions to the interpreter's catch. Now a try's handler is a
+   record on ML's own chain of handlers, the four words of Gen's
+   ml_try (the stack pointer, the value stack's top, where a raise
+   comes back, the record before), pushed at the try's start by
+   jit_try, ml_try's copy in the runtime's text (ml_handler's address:
+   the runtime's new ml_handler_address, exceptions.c, three lines of
+   C); a raise comes back there with the exception, both stacks as they
+   were. Meanwhile a frame of the method's is on Frame.frames, so that
+   the first pass (Frame.handled) sees the try's clauses. The handler
+   gives the exception to a call-out, Machine.run's rule: a catch's
+   class or the first pass's choice takes it, on the stack at the
+   handler; else it is raised again, to the next record. A finally
+   keeps a .NET exception, runs, and at its endfinally raises it again;
+   the machine's own (unhandled, a stack overflow) run no finally, as
+   the interpreter's. A leave pops the records and frames of the trys
+   it leaves, the inner first, each finally run on the way and back by
+   its continuation (a number in the frame); rethrow throws the caught
+   one again. Refused: filters and fault clauses, a jump to a try's
+   start from inside it. Checked: tests/jit/trys.cs, new (catch by a
+   class and a base class, finally both ways, a leave through two
+   finally blocks, a try entered 100,000 times, rethrow, exceptions
+   from compiled code, the library and a callee), on arm64 and arm (-9);
+   now compiled: every method with a try in the tests but Corners'
+   filter; tests/run.sh 267 checks, mini-tiger's and mini-csc's with
+   -jit.
 

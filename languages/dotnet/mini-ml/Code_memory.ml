@@ -104,6 +104,10 @@ let cells (init : int array) : int * (int -> int -> unit) =
       if check "pwrite64" (call 68 [ Obj.repr fd; Obj.repr (words [| x |]); Obj.repr 8; Obj.repr (8 * i) ]) <> 8
       then failwith "the JIT's cells: a short write")
 
+(* the runtime's (exceptions.c) *)
+external handler_address : unit -> int = "ml_handler_address"
+let handler () : int = handler_address ()
+
 (* An address as a value, and back, through an int64's block (tag 255:
  * its field a word the collector does not look in): the field read
  * is the word itself, untagged. A word that is even and outside the

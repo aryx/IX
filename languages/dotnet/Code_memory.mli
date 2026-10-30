@@ -47,6 +47,10 @@ val load : string -> int
  * the file (pwrite), not the memory *)
 val cells : int array -> int * (int -> int -> unit)
 
+(* the address of the runtime's ml_handler, the latest of ML's
+ * handlers' records, which the code's trys push theirs on *)
+val handler : unit -> int
+
 (* a closure of mini-ml's whose code is at an address *)
 val closure : int -> Obj.t
 

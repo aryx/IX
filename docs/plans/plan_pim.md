@@ -627,3 +627,15 @@ kind of address, by HTTPS: 209 events in 0.5 s, the second sync
 writing nothing. Not yet: two-way (CalDAV, CardDAV: OAuth), several
 TZIDs (a calendar in another zone), birthdays shown in the Calendar.
 
+2026-10-30: GTD's inbox and repeating tasks (the plan's "Also taken"
+and a bill "repeated every month"): To Do begins with what was
+captured without a day ("inbox", to be decided), then by day; s puts
+a task off to Someday (someday:, GTD's someday/maybe), out of To Do
+and of Today; Tab To Do, Someday, Done. A task with repeat: done (x,
+or `mini-pim set id done=...`) makes its next (Today.again: due its
+rule's next day, its id of that day, task:rent.2026-12-01), a monthly
+bill so paid each month and in the books each time. Tests: Unit_today
+(someday out, a bill's next and the next's next), session.sh (the
+rent made monthly, its next; someday out of today), 2 frames (the
+inbox first, Someday); the Tasks frames re-recorded (the sidebar).
+

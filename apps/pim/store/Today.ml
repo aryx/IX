@@ -13,7 +13,9 @@ let to_do (items : Item.t list) (today : Civil.date) : Item.t list =
     | None -> false
   in
   List.filter
-    (fun i -> Item.has_stamp i "task" && Item.field i "done" = "" && not (later i))
+    (fun i ->
+      Item.has_stamp i "task" && Item.field i "done" = ""
+      && Item.field i "someday" = "" && not (later i))
     items
 
 let day (i : Item.t) : int =
@@ -68,3 +70,31 @@ let page (items : Item.t list) (today : Civil.date) : string list =
   | Some i ->
       List.filter (fun l -> String.trim l <> "") (String.split_on_char '\n' i.body)
   | None -> []
+
+let again (i : Item.t) : Item.t option =
+  match (Ics.rule_of_string (Item.field i "repeat"), Search.day i) with
+  | Some r, Some due when Item.field i "repeat" <> "" -> (
+      let d = Civil.days_from_civil due in
+      match
+        Recur.occurrences ~at:0 r ~start:due
+          ~from:(Civil.civil_from_days (d + 1))
+          ~upto:(Civil.civil_from_days (d + 400))
+      with
+      | next :: _ ->
+          (* (the same id and its day: task:rent.2026-12-05) *)
+          let base =
+            let id = Item.id i and n = String.length (Item.id i) in
+            if
+              n > 11 && id.[n - 11] = '.'
+              && Search.date (String.sub id (n - 10) 10) <> None
+            then String.sub id 0 (n - 11)
+            else id
+          in
+          let id = base ^ "." ^ Mail_sync.day next in
+          Some
+            (Mail.set "id" id
+               (Mail.set "due" (Mail_sync.day next)
+                  (Mail.remove "done" (Mail.remove "until" i))))
+      | [] -> None)
+  | _ -> None
+

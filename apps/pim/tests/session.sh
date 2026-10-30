@@ -210,6 +210,9 @@ has '^9:30  *standup$' "today: a repeating event's day"
 has '^12:30  *lunch with carol$' "today: the event, after it by time"
 $PIM set task:answer due=2026-11-05 && $PIM -today 2026-11-06 today > $W/out
 has '^late  *answer Carol$' "today: the task, late"
+$PIM set task:answer someday=yes && $PIM -today 2026-11-06 today > $W/out
+grep -q 'answer Carol' $W/out && { echo "FAIL someday still in the day"; fail=1; }
+$PIM set task:answer someday=
 # remind (plan_pim.md, idea 6): the minute asked, 10 minutes before
 $PIM -today 2026-11-03 -at 12:20 remind > $W/out
 is "12:20  lunch with carol at 12:30" "remind: an event 10 minutes before"
@@ -226,13 +229,15 @@ LGroceries\n^\n' > $W/bank.qif
 $PIM import $W/bank.qif > $W/out
 [ "$(wc -l < $W/out)" = 2 ] || { echo "FAIL import: $(cat $W/out)"; fail=1; }
 $PIM add task:rent title=rent due=2026-11-01 stamp='task money' \
-  'posting=Expenses:Rent  900.00' posting=Assets:Checking
+  'posting=Expenses:Rent  900.00' posting=Assets:Checking \
+  'repeat=FREQ=MONTHLY;BYMONTHDAY=1'
 $PIM -u erin@ix -today 2026-11-01 today > $W/out
 has '^due  *rent   900.00$' "today: a bill due, its amount"
 has '^Carol  *Re: the plan$' "today: unread mail from a person of People"
 $PIM register > $W/out
 grep -q rent $W/out && { echo "FAIL a bill not paid in the books"; fail=1; }
-$PIM set task:rent done=2026-11-01
+$PIM set task:rent done=2026-11-01 > $W/out
+has '^next: task:rent.2026-12-01 ' "a monthly bill paid: its next one"
 $PIM register > $W/out
 has '^2026-10-05 .*EDF .*Utilities .*-62.40 .*1,937.60$' "the register: a line, its balance"
 has '^2026-11-01 .*rent .*Rent .*-900.00 .*995.43$' "a bill paid, its balance"

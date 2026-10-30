@@ -108,6 +108,15 @@ let set (caps : < caps ; .. >) (id : string) (fields : (string * string) list)
           item fields
       in
       Items.save caps (store caps) item;
+      (* (a repeating task done: its next one, Today.again) *)
+      (match List.assoc_opt "done" fields with
+      | Some d when d <> "" -> (
+          match Today.again item with
+          | Some next ->
+              Items.save caps (store caps) next;
+              line caps "next: " next
+          | None -> ())
+      | _ -> ());
       Exit.OK
 
 (*****************************************************************************)

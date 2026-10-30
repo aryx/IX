@@ -12,7 +12,7 @@ type caps = Mail_window.caps
 (* The model *)
 (*****************************************************************************)
 
-type shown = To_do | Done
+type shown = To_do | Someday | Done
 type asking = New | Due | Until
 type mode = Browsing | Page | Asking of asking
 
@@ -45,12 +45,17 @@ let load (caps : caps) (m : model) : model =
        > Civil.days_from_civil m.today
   in
   let to_do = List.filter (fun i -> Item.field i "done" = "") tasks in
+  let someday i = Item.field i "someday" <> "" in
+  (* GTD's inbox first: what was captured and has no day yet, to be
+   * decided (a day, a snooze, someday, done) *)
+  let day i = match Search.day i with None -> min_int | d -> days d in
   let l =
     match m.shown with
     | To_do ->
         List.stable_sort
-          (fun a b -> compare (days (Search.day a)) (days (Search.day b)))
-          (List.filter (fun i -> not (later i)) to_do)
+          (fun a b -> compare (day a) (day b))
+          (List.filter (fun i -> not (later i || someday i)) to_do)
+    | Someday -> List.filter someday to_do
     | Done ->
         List.stable_sort
           (fun a b -> compare (Item.field b "done") (Item.field a "done"))
@@ -80,7 +85,11 @@ let show (caps : caps) (m : model) (id : string) : model =
   match Items.find caps (store caps) id with
   | None -> { m with status = id ^ ": not in the store" }
   | Some i -> (
-      let shown = if Item.field i "done" = "" then To_do else Done in
+      let shown =
+        if Item.field i "done" <> "" then Done
+        else if Item.field i "someday" <> "" then Someday
+        else To_do
+      in
       let m = load caps { m with shown; selected = 0 } in
       let rec find k l =
         match l with
@@ -104,7 +113,9 @@ type command =
   | Snooze_
   | Next
   | Previous
+  | Someday_
   | To_do_list
+  | Someday_list
   | Done_list
 
 let menus : (string * (string * command) list) list =
@@ -112,8 +123,11 @@ let menus : (string * (string * command) list) list =
       [ ("New Task...  (n)", New_); ("Open  (o)", Open_);
         ("Back to List  (u)", Back); ("Mark Done  (x)", Done_);
         ("Due...  (d)", Due_); ("Snooze...  (z)", Snooze_);
+        ("Someday  (s)", Someday_);
         ("Next  (j)", Next); ("Previous  (k)", Previous) ] );
-    ("List", [ ("To Do  (Tab)", To_do_list); ("Done  (Tab)", Done_list) ]) ]
+    ( "List",
+      [ ("To Do  (Tab)", To_do_list); ("Someday  (Tab)", Someday_list);
+        ("Done  (Tab)", Done_list) ] ) ]
 
 let current (m : model) : Item.t option = List.nth_opt m.tasks m.selected
 
@@ -160,8 +174,23 @@ let command (caps : caps) (m : model) (c : command) : model * go option =
   | Done_ -> (
       match (current m, m.shown) with
       | None, _ -> (m, None)
-      | Some _, To_do -> (set caps m "done" (Mail_sync.day m.today) "done: ", None)
+      | Some i, (To_do | Someday) -> (
+          let m = set caps m "done" (Mail_sync.day m.today) "done: " in
+          (* (a repeating task, a monthly bill: its next one) *)
+          match Today.again i with
+          | Some next ->
+              Items.save caps (store caps) next;
+              ( load caps
+                  { m with status = m.status ^ "; next " ^ Item.field next "due" },
+                None )
+          | None -> (m, None))
       | Some _, Done -> (set caps m "done" "" "to do again: ", None))
+  | Someday_ -> (
+      match current m with
+      | Some i when Item.field i "someday" = "" ->
+          (set caps m "someday" "yes" "someday: ", None)
+      | Some _ -> (set caps m "someday" "" "to do: ", None)
+      | None -> (m, None))
   | Due_ when current m <> None ->
       ({ m with mode = Asking Due; field = ""; status = "" }, None)
   | Snooze_ when current m <> None && m.shown = To_do ->
@@ -172,6 +201,8 @@ let command (caps : caps) (m : model) (c : command) : model * go option =
   | Previous -> ({ m with selected = max 0 (m.selected - 1) }, None)
   | To_do_list ->
       (load caps { m with shown = To_do; selected = 0; mode = Browsing }, None)
+  | Someday_list ->
+      (load caps { m with shown = Someday; selected = 0; mode = Browsing }, None)
   | Done_list ->
       (load caps { m with shown = Done; selected = 0; mode = Browsing }, None)
 
@@ -213,8 +244,13 @@ let update (caps : caps) (computer : computer) (m : model) : model * go option =
           else if pressed "x" then Some Done_
           else if pressed "d" then Some Due_
           else if pressed "z" then Some Snooze_
+          else if pressed "s" then Some Someday_
           else if pressed "Tab" then
-            Some (if m.shown = To_do then Done_list else To_do_list)
+            Some
+              (match m.shown with
+              | To_do -> Someday_list
+              | Someday -> Done_list
+              | Done -> To_do_list)
           else None
         in
         match (menu, key) with
@@ -236,7 +272,11 @@ let view (computer : computer) (m : model) : shape list =
     | Asking Due -> "due: " ^ m.field ^ "_"
     | Asking Until -> "snooze until: " ^ m.field ^ "_"
     | Page -> (match current m with Some i -> title i | None -> "")
-    | Browsing -> if m.shown = To_do then "To Do" else "Done"
+    | Browsing -> (
+        match m.shown with
+        | To_do -> "To Do"
+        | Someday -> "Someday"
+        | Done -> "Done")
   in
   let right =
     if m.status <> "" then m.status
@@ -267,9 +307,11 @@ let view (computer : computer) (m : model) : shape list =
           lines
     | _ when m.tasks = [] ->
         [ text grey ~bold:false ~room:a.room a.x0 (row_y a 0)
-            (if m.shown = To_do then
-               "Nothing to do: n adds a task, t in Mail makes one of a message."
-             else "Nothing done yet.") ]
+            (match m.shown with
+            | To_do ->
+                "Nothing to do: n adds a task, t in Mail makes one of a message."
+            | Someday -> "Nothing for someday: s puts a task off to it."
+            | Done -> "Nothing done yet.") ]
     | _ ->
         let fits = int_of_float ((h -. bar -. 12.) /. row) in
         let first = max 0 (m.selected - fits + 1) in
@@ -293,11 +335,15 @@ let view (computer : computer) (m : model) : shape list =
                  (if i = m.selected then [ selected a y ] else [])
                  @ [ text (if late then red else grey) ~bold:false
                        ~room:(width "2026-10-30" +. 4.) a.x0 y
-                       (if day = "" then "-" else day);
+                       (if day <> "" then day
+                    else if m.shown = To_do then "inbox"
+                    else "-");
                      text ink ~bold:false ~room:(a.room -. 130.) (a.x0 +. 130.)
                        y (title t ^ mail) ])
              m.tasks)
   in
   (rectangle white computer.screen.width h :: title_bar computer title_ right)
-  @ sidebar a [ ("To Do", m.shown = To_do); ("Done", m.shown = Done) ]
+  @ sidebar a
+      [ ("To Do", m.shown = To_do); ("Someday", m.shown = Someday);
+        ("Done", m.shown = Done) ]
   @ main

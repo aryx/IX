@@ -18,7 +18,8 @@
  * person *)
 type kind = At of int option | Late | Due | Back | From of string
 
-(* the tasks not done and not snoozed past [today] *)
+(* the tasks not done, not put off to someday (GTD's someday/maybe:
+ * someday:), and not snoozed past [today] *)
 val to_do : Item.t list -> Civil.date -> Item.t list
 
 (* those of to_do whose day is past, is today *)
@@ -31,3 +32,9 @@ val lines :
 
 (* today's page's lines, those not empty *)
 val page : Item.t list -> Civil.date -> string list
+
+(* [again task]: a repeating task done (a bill each month, repeat:
+ * FREQ=MONTHLY;BYMONTHDAY=5), the next one: due its rule's next day
+ * after this one's, an id of its day ("task:rent.2026-12-05") *)
+val again : Item.t -> Item.t option
+

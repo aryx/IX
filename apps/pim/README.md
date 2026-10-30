@@ -39,7 +39,9 @@ window's (`make test`'s two "mini-pim").
                        g Google's calendars fetched (Calendars)
                        Tasks: n a task in a line ("pay the rent by
                        friday"), x done, d its day, z snooze, o open
-                       (a message in Mail), Tab To Do or Done
+                       (a message in Mail), s someday, Tab To Do
+                       (GTD's inbox first), Someday, Done; a repeating
+                       task done makes its next
                        People: n a person (Dan <dan@ix>), o their
                        page, the mail with them (o opens one), c write
                        to them

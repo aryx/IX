@@ -12,12 +12,16 @@
 
    n captures a task in one line, its day at the end as words ("pay
    the electricity by friday": When.ending, the recognizer's first
-   use, plan_pim.md's idea 4); x marks it done (in Done, to do again);
+   use, plan_pim.md's idea 4); x marks it done (in Done, to do again;
+   a repeating one, a monthly bill, makes its next: Today.again);
    d sets its day; z snoozes it (until:, idea 5: hidden until that day,
-   as a snoozed message is); o opens it: a message in Mail, else its
-   page (its fields and its text); Tab shows To Do or Done. Things'
-   and Todoist's list, by day, without projects: a task's context is
-   what it is stamped on. *)
+   as a snoozed message is); s puts it off to Someday (GTD's
+   someday/maybe, someday:; s again back); o opens it: a message in
+   Mail, else its page (its fields and its text); Tab shows To Do,
+   Someday, Done. To Do begins with GTD's inbox: what was captured
+   without a day, "inbox", to be decided (a day, a snooze, someday,
+   done), then the rest by day. Things' and Todoist's list without
+   projects: a task's context is what it is stamped on. *)
 
 type caps = Mail_window.caps
 

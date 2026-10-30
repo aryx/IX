@@ -68,7 +68,13 @@ window's (`make test`'s two "mini-pim").
         import file.ics
                        an iCalendar file's events
         today          the day: its events, the tasks late and due,
-                       the mail back from a snooze
+                       the mail back from a snooze, unread mail from
+                       people, the day's page
+        remind [-every 5]
+                       runs: each reminder as its minute comes (an
+                       event 10 minutes before, remind: says), a line
+                       and notify-send's notification; with -u the
+                       mail every 5 minutes, what is new from people
         import file.qif [-a account], register [-a account], balance
                        a bank's lines, those not there yet; an
                        account's register; every account's balance
@@ -135,6 +141,8 @@ window's (`make test`'s two "mini-pim").
     store/Today        the day: events, tasks late and due, bills,
                        mail from people, the day's page (Home and
                        mini-pim today)
+    store/Remind       when a reminder is said: an event's minutes
+                       before, a task's remind:
     store/Books        the money: double entry, postings in items, an
                        account's register, a bank's lines matched
     money/Money        amounts in cents, and in words

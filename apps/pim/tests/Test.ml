@@ -14,5 +14,5 @@ let () =
           @ Unit_compose.tests @ Unit_store.tests @ Unit_when.tests
           @ Unit_people.tests @ Unit_recur.tests @ Unit_ics.tests
           @ Unit_capture.tests @ Unit_money.tests
-          @ Unit_books.tests @ Unit_zone.tests
+          @ Unit_books.tests @ Unit_zone.tests @ Unit_remind.tests
           @ Unit_items.tests (caps :> Unit_items.caps)))

@@ -62,7 +62,7 @@ let name (s : string) (i : int) : int =
 let number (s : string) (i : int) : int =
   let n = String.length s in
   let rec go j =
-    if j < n && (s.[j] = '+' || s.[j] = '-' || s.[j] = ':' || (s.[j] >= '0' && s.[j] <= '9'))
+    if j < n && (String.contains "+-:" s.[j] || (s.[j] >= '0' && s.[j] <= '9'))
     then go (j + 1)
     else j
   in
@@ -72,7 +72,8 @@ let number (s : string) (i : int) : int =
 let change (s : string) : change option =
   let s, at =
     match String.index_opt s '/' with
-    | Some i -> (String.sub s 0 i, hms (String.sub s (i + 1) (String.length s - i - 1)))
+    | Some i ->
+        (String.sub s 0 i, hms (String.sub s (i + 1) (String.length s - i - 1)))
     | None -> (s, Some 7200)
   in
   match (String.length s > 1 && s.[0] = 'M', at) with

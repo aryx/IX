@@ -550,3 +550,22 @@ test scripts set TZ=UTC, the same on any machine. Not yet: an event's
 own zone (an invitation's TZID, Google's), the times shown in another
 zone.
 
+2026-10-30: reminders (idea 6, stage 5's other half): `mini-pim
+remind`, a process that says each reminder as its minute comes, the
+window open or not: a line on the terminal (with a bell) and, on
+Linux, notify-send's notification if it is there. `store/Remind`: an
+event with a time 10 minutes before, or its remind: minutes (0 at its
+start, no never; one just after midnight said the day before), a task
+at its remind: ("2026-11-03 9:00"), not once done. The minutes are
+the local day's (Zone); each minute it says those since it last
+looked, a new day's from its first. With -u, the mail every -every
+minutes (5): the snoozed back, the Inbox fetched, the new unread
+conversations from people said (Today's). -at hh:mm -today: one
+minute's, for the tests. Tests: Unit_remind, session.sh (the minute
+10 before an event, and the one after); run by hand for 90 s on this
+machine, an event 11 minutes on, said at the next minute's start, in
+the local zone. Not yet: the window's own reminder (a dialog), a
+reminder snoozed, remind on mini-9pi (a window on mini-rio), the mail
+part in a test (tried by hand: a mini-maild, Carol a contact, her
+new message said at the first look).
+

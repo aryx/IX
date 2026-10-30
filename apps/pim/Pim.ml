@@ -20,6 +20,7 @@
  *     mini-pim event words             an event (Capture), import file.ics
  *     mini-pim today                   the day: events, tasks, snoozed
  *     mini-pim register, balance       the money (Books), import file.qif
+ *     mini-pim remind                  what is due said as its minute comes
  *
  * By default to Gmail (smtp.gmail.com:465 to send, imap.gmail.com:993
  * to read, TLS from the first byte), as -u, the whole address, with an
@@ -54,7 +55,10 @@ type caps =
   ; Cap.env
   ; Cap.stdin
   ; Cap.stdout
-  ; Cap.stderr >
+  ; Cap.stderr
+  ; Cap.fork
+  ; Cap.exec
+  ; Cap.wait >
 
 let usage =
   "usage: mini-pim [-s host:port] [-plain] [-u user] command\n\
@@ -76,6 +80,8 @@ let usage =
   \                                    lines, those not there yet (-a account)\n\
   \  register [-a account], balance    the money: a register; every account\n\
   \  today                             the day's events, tasks late and due\n\
+  \  remind [-every 5]                 each reminder as its minute comes, and\n\
+  \                                    with -u new mail from people\n\
   \  -s      the server (smtp.gmail.com:465 to send, imap.gmail.com:993 else)\n\
   \  -plain  no TLS (mini-maild, on this machine)\n\
   \  -offline  list and read what the store has, no server\n\
@@ -95,6 +101,8 @@ type options = {
   all : bool; (* reply to all *)
   today : Civil.date; (* -today, for the tests: else the clock's *)
   account : string; (* -a, the money's: Assets:Checking *)
+  at : int option; (* -at 12:20, remind's one minute, for the tests *)
+  every : int; (* -every, remind's minutes between two looks at the mail *)
   args : string list; (* the command and its arguments *)
 }
 
@@ -121,6 +129,14 @@ let rec options (o : options) (args : string list) : options option =
   | "-offline" :: rest -> options { o with offline = true } rest
   | "-all" :: rest -> options { o with all = true } rest
   | "-a" :: a :: rest -> options { o with account = a } rest
+  | "-at" :: t :: rest -> (
+      match Events.minutes t with
+      | Some m -> options { o with at = Some m } rest
+      | None -> None)
+  | "-every" :: n :: rest -> (
+      match int_of_string_opt n with
+      | Some n when n > 0 -> options { o with every = n } rest
+      | _ -> None)
   | "-today" :: d :: rest -> (
       match Search.date d with
       | Some today -> options { o with today } rest
@@ -388,6 +404,122 @@ let snooze (caps : < caps ; .. >) (o : options) (uid : int) (words : string) :
               Ok ())
         ~offline:(fun _ _ -> Error "snooze: the server's, not -offline")
 
+(*****************************************************************************)
+(* Reminders *)
+(*****************************************************************************)
+
+(* a notification too, on Linux: notify-send's, if it is there *)
+let notify (caps : < caps ; .. >) (text : string) : unit =
+  let path = try CapSys.getenv caps "PATH" with Not_found -> "" in
+  if
+    List.exists
+      (fun d -> d <> "" && Sys.file_exists (Filename.concat d "notify-send"))
+      (String.split_on_char ':' path)
+  then
+    let pid =
+      Procs.spawn caps "notify-send" [ "mini-pim"; text ] ~stdin:Unix.stdin
+        ~stdout:Unix.stdout
+    in
+    ignore (Procs.waitpid caps pid)
+
+(* the reminders of the minutes [from, upto) of [day], each a line *)
+let say_due (caps : < caps ; .. >) (day : Civil.date) ~(from : int)
+    ~(upto : int) ~(bell : bool) : unit =
+  let items = Items.all caps (Items.at (Items.place caps)) in
+  List.iter
+    (fun (m, i) ->
+      let text = Remind.say i in
+      Console.print caps
+        (Printf.sprintf "%s%-6s %s\n" (if bell then "\007" else "")
+           (Events.clock (((m mod 1440) + 1440) mod 1440))
+           text);
+      if bell then notify caps text)
+    (Remind.due items day ~from ~upto)
+
+(* the Inbox fetched (the snoozed back first), and the conversations
+ * from people not read that were not there before said *)
+let new_mail (caps : < caps ; .. >) (o : options) ~(user : string)
+    ~(password : string) (today : Civil.date) : unit =
+  let store = Items.at (Items.place caps) in
+  let server = server o Mail_sync.gmail in
+  let from_people () =
+    List.filter
+      (fun (k, _) -> match k with Today.From _ -> true | _ -> false)
+      (Today.lines (Items.all caps store) ~account:user today)
+  in
+  let before = from_people () in
+  let fetched =
+    match Mail_sync.wake caps store server ~user ~password ~today with
+    | Error e -> Error e
+    | Ok _ ->
+        Mail_sync.session caps server ~user ~password ~mailbox:"INBOX"
+          (fun t ->
+            match
+              Mail_sync.list caps store t ~account:user ~mailbox:"INBOX"
+                ~query:None o.count
+            with
+            | Error e -> Error e
+            | Ok _ -> Ok ())
+  in
+  match fetched with
+  | Error e -> Console.eprint caps ("mail: " ^ e ^ "\n")
+  | Ok () ->
+      List.iter
+        (fun (k, what) ->
+          match (k : Today.kind) with
+          | From who when not (List.mem (k, what) before) ->
+              Console.print caps (Printf.sprintf "\007mail   %s: %s\n" who what);
+              notify caps (who ^ ": " ^ what)
+          | _ -> ())
+        (from_people ())
+
+(* remind: plan_pim.md's idea 6, a process of the suite's that says each
+ * reminder as its minute comes, the window open or not; with -u, the
+ * mail every few minutes, what is new from people said. -at: the
+ * minute -today, said once, for the tests *)
+let remind (caps : < caps ; .. >) (o : options) : Exit.t =
+  match o.at with
+  | Some m ->
+      say_due caps o.today ~from:m ~upto:(m + 1) ~bell:false;
+      Exit.OK
+  | None -> (
+      let password =
+        match o.user with
+        | None -> Ok None
+        | Some _ when o.offline -> Ok None
+        | Some _ -> (
+            match password caps with Ok p -> Ok (Some p) | Error e -> Error e)
+      in
+      match password with
+      | Error e -> fail caps e
+      | Ok password ->
+          let zone = Zone.local caps in
+          let rec loop (day, minute) (looked : float) =
+            let now = Unix.gettimeofday () in
+            let day', minute' = Zone.clock zone now in
+            (* the minutes since the last look, a new day's from its
+             * first *)
+            let from = if day' = day then minute + 1 else 0 in
+            say_due caps day' ~from ~upto:(minute' + 1) ~bell:true;
+            let looked =
+              match (o.user, password) with
+              | Some user, Some password
+                when now -. looked >= float_of_int (o.every * 60) ->
+                  new_mail caps o ~user ~password day';
+                  now
+              | _ -> looked
+            in
+            (* (to just after the next minute's start) *)
+            Unix.sleepf (60. -. Float.rem now 60. +. 0.1);
+            loop (day', minute') looked
+          in
+          let now = Unix.gettimeofday () in
+          let day, minute = Zone.clock zone now in
+          Console.print caps
+            (Printf.sprintf "mini-pim remind: %s %s\n" (Mail_sync.day day)
+               (Events.clock minute));
+          loop (day, minute - 1) 0.)
+
 let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
   let default =
     {
@@ -401,6 +533,8 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
       all = false;
       today = When.today caps;
       account = "Assets:Checking";
+      at = None;
+      every = 5;
       args = [];
     }
   in
@@ -431,6 +565,7 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
   | Some ({ args = [ "register" ]; _ } as o) ->
       Pim_store.register caps o.account
   | Some { args = [ "balance" ]; _ } -> Pim_store.balance caps
+  | Some ({ args = [ "remind" ]; _ } as o) -> remind caps o
   | Some ({ args = [ "today" ]; _ } as o) ->
       let account = match o.user with Some u -> u | None -> "" in
       Pim_store.today caps ~account o.today
@@ -463,7 +598,7 @@ let window (caps : < caps ; Cap.argv ; .. >) : Exit.t =
 let commands =
   [ "send"; "list"; "read"; "reply"; "forward"; "archive"; "snooze"; "search";
     "show"; "add"; "set"; "contact"; "people"; "event"; "import"; "today";
-    "register"; "balance" ]
+    "register"; "balance"; "remind" ]
 
 let () =
   Cap.main (fun caps ->

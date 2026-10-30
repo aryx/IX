@@ -209,6 +209,11 @@ has '^9:30  *standup$' "today: a repeating event's day"
 has '^12:30  *lunch with carol$' "today: the event, after it by time"
 $PIM set task:answer due=2026-11-05 && $PIM -today 2026-11-06 today > $W/out
 has '^late  *answer Carol$' "today: the task, late"
+# remind (plan_pim.md, idea 6): the minute asked, 10 minutes before
+$PIM -today 2026-11-03 -at 12:20 remind > $W/out
+is "12:20  lunch with carol at 12:30" "remind: an event 10 minutes before"
+$PIM -today 2026-11-03 -at 12:21 remind > $W/out
+is "" "remind: nothing the minute after"
 # the money (plan_pim.md, stage 6): a line added as postings, a bank's
 # QIF file imported (its EDF line already there, by amount and day), a
 # bill in the books once done; the register and the balances

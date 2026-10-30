@@ -999,4 +999,16 @@ structs 6 (vec), ldftn 2.
    Mains, every method of the tests' assemblies but Corners::Depth
    (its exception filter); tests/run.sh 287 checks, mini-tiger's and
    mini-csc's with -jit, run.sh -9.
+6. Exception filters: left to the interpreter (a method with one is
+   not compiled). Its code runs in the first pass, while the throw is
+   still in a callee, and reads the method's locals, which the
+   compiled code reaches by its stack pointer; compiling it would mean
+   a frame register through all the templates. The author: "it's fine
+   to skip them; the interpreter can do certain things if that helps
+   keep the code overall simple".
+7. The card's session (done): tests/session-card-dotnet.cmds runs fib,
+   queens (-s: 6 instructions interpreted, where 360,572 were) and
+   shapes with -jit on mini-9pi, their code in segments; recorded under
+   QEMU (whose processor has a Pi's caches: segflush matters there),
+   checked by make check-dotnet under mini-qemu and QEMU (5 minutes).
 

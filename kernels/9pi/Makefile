@@ -1108,9 +1108,10 @@ check-card: card $(IMAGE_CARD)
 #                       second: -wam), goals at the prompt and ; for
 #                       the next answer, the WAM's code, the errors
 #   make check-dotnet   Microsoft's assemblies run (the survey's), one
-#                       listed (-S), an exception no one catches; a
-#                       Tiger program compiled by tiger and run
-#                       (plan_dotnet.md's stage 4)
+#                       listed (-S), an exception no one catches, three
+#                       with -jit (their code in segments: segattach,
+#                       segflush); a Tiger program compiled by tiger and
+#                       run (plan_dotnet.md's stages 4 and 10)
 #   make expected-langs the four records made again (under QEMU)
 langcheck = $(SESSION_PY) $(IXQUIET) --prompt "% " $(2) --timeout 900 --out $(B)/mini-card-$(1).txt --lines tests/session-card-$(1).cmds -- $(MINIQEMU) $(BOOT_IX) $(CARD_SD) & \
 	$(SESSION_PY) $(IXQUIET) --prompt "% " $(2) --timeout 300 --out $(B)/qemu-card-$(1).txt --lines tests/session-card-$(1).cmds -- $(QEMU) $(QEMU_BOOT_IX) $(CARD_SD) & \

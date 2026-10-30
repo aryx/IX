@@ -90,6 +90,24 @@ done
 before
 Unhandled exception. System.InvalidOperationException: nobody catches this
 status: dotnet 64: 134
+% dotnet -jit -s /lib/dotnet/fib.dll
+6765
+102334155
+-1323752223
+0 instructions
+3 methods compiled
+% dotnet -jit -s /lib/dotnet/queens.dll
+15863724
+92 solutions
+6 instructions
+3 methods compiled
+% dotnet -jit /lib/dotnet/shapes.dll
+square of area 9
+shape of area 10
+shape
+True
+2
+19
 % tiger -o /tmp/queens.dll /lib/tiger/queens.tig; dotnet /tmp/queens.dll | sed 9q
  O . . . . . . .
  . . . . O . . .
@@ -108,5 +126,5 @@ exception 1
 out of ex block 2
 % echo 'let var x := 1 in x + "a" end' > /tmp/bad.tig; tiger /tmp/bad.tig; echo status: $status
 /tmp/bad.tig:1.19: an arithmetic's right: int expected, not string
-status: tiger 73: 1
+status: tiger 76: 1
 % 

@@ -10,9 +10,12 @@ softwarica' hardcore aspect; stuff a programmer should know, programs
 that a developer use. but apps/ is different".
 
 **Status: a survey, still a list to choose from** (as plan_gaps.md:
-each application, when taken, gets a plan of its own). Mail, the
-calendar and the address book are built, as mini-pim, on Linux only
-so far; the table below says what is where. Taken next, by the author:
+each application, when taken, gets a plan of its own). Done: mail,
+the calendar and the address book, as mini-pim, with tasks, notes and
+money ([`plan_pim.md`](done/plan_pim.md) and
+[`plan_mail.md`](done/plan_mail.md), both done 2026-10-30), in the
+author's daily use on their Gmail, on Linux only so far; the table
+below says what is where. Taken next, by the author:
 [`plan_files.md`](plan_files.md), [`plan_video.md`](plan_video.md) and
 [`plan_maps.md`](plan_maps.md).
 
@@ -51,7 +54,7 @@ not the measure.
 | Read a document | mini-page (`apps/page/`): PDF and pictures | yes: `page` | |
 | Listen | mini-play (`apps/music/play/`), mini-rebirth | yes: `play`, `rebirth` | a player with a library and playlists |
 | Watch | mini-netscape hands YouTube's films to `mpv` on Linux | no | a video player |
-| Write to people | mini-pim's Mail (`apps/pim/`) | **no** | chat |
+| Write to people | mini-pim's Mail (`apps/pim/`), Gmail's; mini-netscape's `mailto:` | **no** | chat |
 | Keep time and people | mini-pim's Calendar, People, Tasks, Notes, Money | **no** | `date` still GMT only |
 | Look at and fix photos | mini-page shows one; mini-office's paint, 1 bit | yes, those two | a viewer of many and an editor |
 | Find a place | | | maps |
@@ -80,11 +83,15 @@ brings that ix does not show.
 ### Mail
 
 **Done, on Linux**: mini-pim's Mail ([`plan_mail.md`](done/plan_mail.md),
-stages 1 to 8), the author's Gmail by IMAP and SMTP, mini-maild to
-test against. Not as sketched here: a store of items rather than
+stages 1 to 8, done 2026-10-30), the author's Gmail by IMAP and SMTP,
+read every day: conversations, Starred and Unread, search, writing
+with drafts and attachments, snooze, the Screener, a task or an event
+of a message; mini-maild to test against; the formats and protocols
+a library, `lib_networking/mail/`, which mini-netscape's `mailto:`
+uses too. Not as sketched here: a store of items rather than
 upas/fs's file tree, and the Screener (HEY's) rather than a Bayes
-filter, which is still open. plan_mail.md done (2026-10-30); left:
-mini-9pi, OAuth, Gmail's labels (its Status).
+filter, which is still open. Left (its Status): mini-9pi, OAuth,
+Gmail's labels in the sidebar, IDLE.
 
 The survey's text: the largest hole, the oldest thing people do
 between computers, and ix had nothing for it.
@@ -130,9 +137,12 @@ between computers, and ix had nothing for it.
 **Done, on Linux**: mini-pim's Calendar and People
 ([`plan_pim.md`](done/plan_pim.md), which added tasks, notes and
 money): RRULE, iCalendar and vCard, time zones in `time/Zone`, and
-Google's calendars and contacts read. `date` itself is still GMT only.
-Left, in that plan's Status: writing back to Google, and events moved
-or deleted in the window.
+Google's calendars and contacts read (the calendars by their secret
+addresses, the contacts by a vCard export, every card); events of
+several days as bars, a color a calendar, an event clicked for its
+details, the people's birthdays. `date` itself is still GMT only.
+Left, in that plan's Status: writing back to Google (OAuth), and
+events moved or deleted in the window.
 
 The survey's text:
 
@@ -286,3 +296,10 @@ date; slides found to be in mini-office already.
 
 2026-10-30: the author takes the file manager, video's historical
 formats, and maps with the weather. Their plans written, nothing built.
+
+2026-10-30: plan_mail.md done too, after the author's Gmail by hand
+(the author: "I feel like we are mostly done"), and mini-pim in their
+daily use: both its plans in `done/`. Mail's and the calendar's
+sections say what was built. Still first in the order above:
+mini-pim on m-ix (no `mkfile` yet); then the file manager, video and
+maps, their plans written, nothing built.

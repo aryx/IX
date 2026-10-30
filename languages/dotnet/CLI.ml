@@ -93,6 +93,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
           match List.rev !files with
           | [] -> Console.eprint caps (usage ^ "\n"); 1
           | f :: argv ->
+              if !jit && not Code_memory.available then
+                Logs.warn (fun m -> m "-jit ignored: this build has no JIT\n\
+                                       (mini-ml's on arm64 has: _mk/7/languages/dotnet/mini-dotnet)");
               if !jit then Machine.jit := Some (Jit_run.jit caps);
               run caps (read f) argv !tracing !stats
         end

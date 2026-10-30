@@ -133,6 +133,10 @@ check() {
   # bench's 400 million instructions only where the JIT compiles them,
   # objects' 15 million not under mini-5i)
   jit=; "$@" -jit -s $T/jit/zero.dll 2>&1 >/dev/null | grep -q 'methods compiled' && jit=1
+  if [ -z "$jit" ]; then
+    if "$@" -jit $T/jit/zero.dll 2>&1 >/dev/null | grep -q -e '-jit ignored'; then ok "mini-dotnet -jit where there is no JIT says it is ignored, by $what"
+    else fail "mini-dotnet -jit where there is no JIT says nothing, by $what"; fi
+  fi
   for f in $P/*.dll $T/programs/*.dll $T/jit/*.dll; do
     p=$(basename $f .dll); e=${f%.dll}.expected
     [ $p = bench ] && [ -z "$jit" ] && continue

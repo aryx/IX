@@ -184,8 +184,9 @@ let binop op (l : value) (r : value) =
       int (match op with Lt | Gt -> l.fmt | _ -> 'D') (if b then 1L else 0L)
 
 (* acid's indir: what is at an address, read as its format says (a
- * byte, a half, a word, 8 bytes, a string to its NUL), little-endian;
- * an address is 4 bytes on arm (a, A, W: geta) *)
+ * byte, a half, a word, 8 bytes, a string to its NUL, an instruction
+ * as its text), little-endian; an address is 4 bytes on arm (a, A, W:
+ * geta) *)
 let width = function
   | 'c' | 'C' | 'b' -> 1
   | 'x' | 'd' | 'u' | 'o' | 'q' | 'r' -> 2
@@ -200,6 +201,10 @@ let indir core addr fmt =
       let rec go a = if Buffer.length b < 511 then (let c = !load core a 1 in if c <> "\000" then (Buffer.add_string b c; go (Int64.add a 1L))) in
       go addr;
       { kind = String (if Buffer.length b = 0 then "(null)" else Buffer.contents b); fmt = 's' }
+  | 'i' | 'I' ->
+      (match !Value.das core addr with
+       | Some s -> { kind = String s; fmt = 's' }
+       | None -> error "indir: can't read instruction")
   | _ ->
       let n = width fmt in
       let s = !load core addr n in

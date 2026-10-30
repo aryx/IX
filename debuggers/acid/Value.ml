@@ -61,6 +61,10 @@ and cells x y =
 let low bits i = Int64.logand i (Int64.sub (Int64.shift_left 1L bits) 1L)
 let signed32 i = Int64.of_int32 (Int64.to_int32 i)
 
+(* the instruction at an address (Proc's, through Das): from the
+ * process (core) or the program's file; None when it can't be read *)
+let das : (bool -> int64 -> string option) ref = ref (fun _ _ -> None)
+
 (* patom: an atom by its format *)
 let atom ~symbol (v : t) =
   let i = match v.kind with Int i -> i | _ -> 0L in
@@ -89,7 +93,9 @@ let atom ~symbol (v : t) =
   | ('s' | 'g' | 'G' | 'R'), String s -> s
   | ('s' | 'g' | 'G' | 'R'), _ -> wrong ()
   | ('a' | 'A'), _ -> symbol i
-  | ('i' | 'I'), _ -> "no instruction"
+  | ('i' | 'I'), Int a ->
+      (match !das false a with Some s -> s | None -> "no instruction")
+  | ('i' | 'I'), _ -> wrong ()
   | _ -> ""
 
 let rec show ~symbol (v : t) =

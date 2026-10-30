@@ -81,6 +81,15 @@ let init (caps : < caps; .. >) =
     | [ _; _ ] -> error "match(obj, list): need list"
     | _ -> error "match(obj, list): arg count");
   def "access" (fun vs -> Value.int 'X' (match FS.read_opt caps (Fpath.v (str "access" vs)) with Some _ -> 1L | None -> 0L));
+  (* a file's lines, without their newlines; {} when it cannot be read
+   * (port.acid's findsrc) *)
+  def "file" (fun vs ->
+    match FS.read_opt caps (Fpath.v (str "file" vs)) with
+    | Some text ->
+        let lines = String.split_on_char '\n' text in
+        let lines = match List.rev lines with "" :: rest -> List.rev rest | _ -> lines in
+        Value.list (List.map Value.string lines)
+    | None -> Value.empty);
   def "readfile" (fun vs ->
     match FS.read_opt caps (Fpath.v (str "readfile" vs)) with
     | Some s when s <> "" -> Value.string s

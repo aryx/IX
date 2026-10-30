@@ -5,7 +5,7 @@
 (library
  (name ix_acid)
  (wrapped false)
- (modules Ast Code Value Eval Proc Parser Lexer Builtin CLI)
+ (modules Ast Code Value Eval Das Proc Parser Lexer Builtin CLI)
  (libraries ix_executable ix_core fpath unix caps))
 
 (ocamllex Lexer)

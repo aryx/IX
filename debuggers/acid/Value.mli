@@ -38,5 +38,10 @@ val equal : t -> t -> bool
  * address for the a and A formats ("0x..." without symbols) *)
 val show : symbol:(int64 -> string) -> t -> string
 
+(* the instruction at an address, the i format's: [!das core addr],
+ * from the process (core) or the program's file (Proc's, by Das);
+ * None when it can't be read *)
+val das : (bool -> int64 -> string option) ref
+
 (* the formats print and fmt know (acid's vfmt) *)
 val formats : string

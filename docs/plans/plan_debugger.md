@@ -677,3 +677,28 @@ follow's error) the same; make test (159 jobs). Next, the third part:
 the i format, 5db's disassembler in Plan 9's syntax (mini-5i's printer
 is objdump's), then follow complete (step, next), the session in make
 test.
+
+2026-10-30, stage 8's step 4, its third part: **the instructions and
+the steps.** debuggers/acid/Das, 5db's arm disassembler and armfoll in
+OCaml (written by a subagent from 5db.c, checked here): Plan 9's syntax
+(MOVW.W R14,#-0x4(R13), MOVW R0,a+0(FP): a parameter named from the
+table, plocal's), 5db's 128 opcodes, its quirks kept (an unsigned
+compare in plocal, MOVM's popped pc, a long's wraparound), libmach's
+qsort (not stable: of two functions at one address, acid names the
+one it leaves last; the a format's symoff now the same); follow as
+armfoll, its condition from the PSR, one address. The i format prints
+an instruction, indir reads one. The file builtin (port.acid's
+findsrc). Proc9's debugger side no longer waits on a target that died
+(a step into exits hung): its pipes opened without blocking, again
+while the target lives. Checked: the whole text of twelve of
+principia's programs (ls, cat, rc, awk, stats, vi, acid, troff, rio,
+5c, 8c, acme), 459,850 instructions, and random words forced into
+every class, printed as acid prints them (ls and cat again here,
+20,010 lines); debuggers/tests/acid_proc.sh (in make test, skipped
+without principia's library): mini-acid for Plan 9 under mini-5i beside
+a program by mini-cc, a session of new, bpset, cont, step, step, next,
+stk, and one stepping from _main into exits, their outputs principia's
+acid's recorded (live: acid again). Not yet: complex types' . and casts
+(arm.acid's Ureg printing), floats as %g, mini-ml programs' frames
+(their L .frame 0: libmach's walk reads the link, as acid does, not
+their prologue), arm64, mini-9pi (stage 7's #p).

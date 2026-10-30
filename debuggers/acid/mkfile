@@ -3,7 +3,7 @@
 TOP=../..
 DIR=debuggers/acid
 PROG=mini-acid
-SRC=Ast Code Value Eval Proc Parser Lexer Builtin CLI Main
+SRC=Ast Code Value Eval Das Proc Parser Lexer Builtin CLI Main
 LOCAL=`{ls *.ml *.mli *.mly *.mll}
 LIBI=
 LIBUNITS=

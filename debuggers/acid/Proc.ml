@@ -27,6 +27,9 @@ type program = {
 
 let prog : program option ref = ref None
 
+(* the disassembler's symbols, the program's *)
+let das_table = ref (Das.table [])
+
 let be32 s o =
   Int64.logor (Int64.shift_left (Int64.of_int (Char.code s.[o])) 24)
     (Int64.of_int ((Char.code s.[o + 1] lsl 16) lor (Char.code s.[o + 2] lsl 8) lor Char.code s.[o + 3]))
@@ -58,16 +61,8 @@ let findsym v =
     if sv <= v then (match best with Some (b : Symbols.sym) when b.value >= s.value -> best | _ -> Some s) else best)
     None (syms text)
 
-(* libmach's symoff: name+0xoff, the name alone, or the number (no
- * symbol, or a data symbol 4096 bytes or more below) *)
-let symoff v =
-  match (if v = 0L then None else findsym v) with
-  | None -> Printf.sprintf "0x%Lx" v
-  | Some s ->
-      let delta = Int64.sub v (Int64.of_int s.value) in
-      if s.typ <> 't' && s.typ <> 'T' && delta >= 4096L then Printf.sprintf "0x%Lx" v
-      else if delta <> 0L then Printf.sprintf "%s+0x%Lx" s.name delta
-      else s.name
+(* libmach's symoff (the a format): name+0xoff, the name, or the number *)
+let symoff v = Das.symoff !das_table false v
 
 (*****************************************************************************)
 (* The process *)
@@ -193,7 +188,10 @@ let registers () =
 
 let program (caps : < caps; .. >) path =
   let file = match FS.read_opt caps (Fpath.v path) with Some f -> f | None -> error "%s: can't open %s: file does not exist" path path in
-  prog := Some (header file path);
+  let p = header file path in
+  prog := Some p;
+  das_table :=
+    Das.table (match p.table with Some (t : Symbols.t) -> t.syms | None -> []);
   Eval.print [ Value.string (path ^ ":arm plan 9 executable") ];
   set "objtype" (Value.string "arm");
   set "textfile" (Value.string path);
@@ -235,19 +233,30 @@ let file_line v =
   | Some { table = Some t; _ } -> Symbols.file_line t (Int64.to_int v)
   | _ -> None
 
-(* the instructions that may run after the one at an address (machdata's
- * foll): a branch's target and, conditional, the next; the next *)
+(* a word at an address, little-endian, of the process (core) or of
+ * the program's file *)
+let word core a =
+  let w = !Eval.load core a 4 in
+  List.fold_left (fun v k ->
+    Int64.logor (Int64.shift_left v 8) (Int64.of_int (Char.code w.[k])))
+    0L [ 3; 2; 1; 0 ]
+
+let get core a = try Some (word core a) with Eval.Error _ -> None
+
+let instruction core a = Das.instruction !das_table (get core) a
+
+(* the instruction that runs after the one at an address (machdata's
+ * foll, 5db's: its condition evaluated), the registers read from the
+ * Ureg *)
 let follow v =
   if !mem = None then error "follow(addr): can't read instruction: get4: invalid map";
-  let w = !Eval.load true v 4 in
-  let ins = Int64.to_int (be32 (String.init 4 (fun i -> w.[3 - i])) 0) in
-  let next = Int64.add v 4L in
-  if (ins lsr 25) land 7 = 5 then begin
-    let off = ins land 0xffffff in
-    let off = if off land 0x800000 <> 0 then off - 0x1000000 else off in
-    let target = Int64.add v (Int64.of_int (8 + (off * 4))) in
-    if ins lsr 28 = 0xe then [ target ] else [ target; next ]
-  end else [ next ]
+  let reg name =
+    match List.assoc_opt name reglist with
+    | Some off -> word true (Int64.of_int off)
+    | None -> error "rget: %s" name in
+  match Das.follow (get true) reg v with
+  | Some a -> [ a ]
+  | None -> error "follow(addr): can't read instruction"
 
 (* libmach's risctrace: the frames from (pc, sp, link), each the list
  * {its function, where it was called from (the return less 8, arm's
@@ -266,7 +275,7 @@ let strace pc sp link =
     | (s : Symbols.sym) :: rest when String.contains "TtLl" s.typ && Int64.of_int s.value = v -> Some (s, locals rest)
     | _ :: rest -> find_fn v rest
     | [] -> None in
-  let word a = let w = !Eval.load true a 4 in Int64.of_string ("0x" ^ String.concat "" (List.map (fun i -> Printf.sprintf "%02x" (Char.code w.[i])) [ 3; 2; 1; 0 ])) in
+  let word a = word true a in
   let var name v = Value.list [ Value.string name; Value.int 'X' v ] in
   let in_text v = match !prog with Some p -> v >= p.txtaddr && v < Int64.add p.txtaddr p.txtsz | None -> false in
   let rec go pc sp n acc =
@@ -310,6 +319,7 @@ let init (caps : < caps; .. >) =
   Eval.load := load;
   Eval.store := store;
   Eval.symbol := symoff;
+  Value.das := instruction;
   let def name f = Hashtbl.replace Eval.builtins name f in
   let none = Value.empty in
   def "setproc" (fun vs -> attach caps (Int64.to_int (int "setproc" vs)); none);

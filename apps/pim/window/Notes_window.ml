@@ -249,9 +249,23 @@ let update (caps : caps) (computer : computer) (m : model) : model * go option =
             Some (if m.shown = Notes then Days_list else Notes_list)
           else None
         in
-        match (menu, key) with
-        | Some c, _ | None, Some c -> (command caps m c, None)
-        | None, None -> (m, None))
+        let side_ =
+          match sidebar_click computer with
+          | Some 0 -> Some Notes_list
+          | Some 1 -> Some Days_list
+          | _ -> None
+        in
+        let clicked =
+          match row_click computer with
+          | Some i when i < List.length m.notes -> Some i
+          | _ -> None
+        in
+        match (menu, key, side_, clicked) with
+        | Some c, _, _, _ | None, Some c, _, _ | None, None, Some c, _ ->
+            (command caps m c, None)
+        | None, None, None, Some i ->
+            (command caps { m with selected = i } Open_, None)
+        | None, None, None, None -> (m, None))
   in
   ({ m with held = keys }, go)
 

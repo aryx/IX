@@ -347,9 +347,32 @@ let update (caps : caps) (computer : computer) (m : model) : model * go option =
           else if pressed "a" then Some Assign
           else None
         in
-        match (menu, key) with
-        | Some c, _ | None, Some c -> command caps m c
-        | None, None -> m)
+        (* the mouse: an account, the categories, the envelopes of the
+         * sidebar; a line of the register (under its head, row 0) *)
+        let n = List.length m.accounts in
+        let line =
+          match row_click computer with
+          | Some k when k > 0 && (m.mode = Register || m.mode = Reconciling) ->
+              let foot = if m.mode = Reconciling then 7 else 3 in
+              let fits =
+                int_of_float
+                  ((computer.screen.height -. menu_bar -. bar -. 40.) /. row)
+                - foot
+              in
+              let i = max 0 (m.selected - fits + 1) + k - 1 in
+              if i < List.length m.lines then Some i else None
+          | _ -> None
+        in
+        match (menu, key, sidebar_click computer, line) with
+        | Some c, _, _, _ | None, Some c, _, _ -> command caps m c
+        | None, None, Some k, _ when k < n ->
+            load caps
+              { m with account = List.nth m.accounts k; mode = Register;
+                selected = max_int }
+        | None, None, Some k, _ when k = n -> { m with mode = Report }
+        | None, None, Some k, _ when k = n + 1 -> { m with mode = Envelopes }
+        | None, None, _, Some i -> { m with selected = i }
+        | None, None, _, _ -> m)
   in
   ({ m with held = keys }, None)
 

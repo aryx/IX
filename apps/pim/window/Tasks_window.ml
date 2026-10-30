@@ -253,9 +253,28 @@ let update (caps : caps) (computer : computer) (m : model) : model * go option =
               | Done -> To_do_list)
           else None
         in
-        match (menu, key) with
-        | Some c, _ | None, Some c -> command caps m c
-        | None, None -> (m, None))
+        (* the mouse: a list of the sidebar; a task, opened *)
+        let side_ =
+          match sidebar_click computer with
+          | Some 0 -> Some To_do_list
+          | Some 1 -> Some Someday_list
+          | Some 2 -> Some Done_list
+          | _ -> None
+        in
+        let clicked =
+          match (m.mode, row_click computer) with
+          | Browsing, Some k ->
+              let h = computer.screen.height in
+              let fits = int_of_float ((h -. bar -. 12.) /. row) in
+              let i = max 0 (m.selected - fits + 1) + k in
+              if i < List.length m.tasks then Some i else None
+          | _ -> None
+        in
+        match (menu, key, side_, clicked) with
+        | Some c, _, _, _ | None, Some c, _, _ | None, None, Some c, _ ->
+            command caps m c
+        | None, None, None, Some i -> command caps { m with selected = i } Open_
+        | None, None, None, None -> (m, None))
   in
   ({ m with held = keys }, go)
 

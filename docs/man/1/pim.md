@@ -32,7 +32,10 @@ of the day's page. `m c p t n b` or a click opens a view, `d` the day's
 page, `/` the search. In a view, the first menu is the suite's (Pim),
 the others the view's, each item saying its key; Control and a number
 goes to a view (0 Home, 1 Mail, 2 Calendar, 3 People, 4 Tasks, 5 Notes,
-6 Money), as does the list at the foot of the sidebar. Control-E
+6 Money), as does the list at the foot of the sidebar. The mouse does
+what the keys do: a click on the sidebar's place (a mailbox, a list, an
+account), on a row of a list (a conversation or a note opened, a task,
+a line selected). Control-E
 searches every view (Gmail's words: `from:alice`, `is:task`,
 `before:2026-12-01`, `-is:read`): the items found as one types, by the
 view they open in; Up and Down choose, Enter opens one, Tab shows one
@@ -165,6 +168,11 @@ The options:
 
 **-offline**
 :    **list** and **read** from what the store kept, no server.
+
+**-v**, **-debug**, **-quiet**
+:    What it reads (the store, the password's and the calendars'
+     files), connects to and fetches, on standard error; and more; not
+     even the warnings (\man{common}{1}). The window takes them too.
 
 **-today** *day*, **-at** *hh*`:`*mm*
 :    The day it is, and for **remind** the one minute to say, for the

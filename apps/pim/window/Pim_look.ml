@@ -127,6 +127,25 @@ let sidebar (a : area) (entries : (string * bool) list) : shape list =
          @ [ text ink ~bold:shown ~room:(side -. 24.) (a.left +. 16.) y name ])
        entries)
 
+(* the row a point is in, the bands [selected] and [sidebar] draw *)
+let row_at (a : area) (y : float) : int option =
+  let top = row_y a 0 +. 19. in
+  if y > top then None else Some (int_of_float ((top -. y) /. row))
+
+let sidebar_click (computer : computer) : int option =
+  let a = area computer in
+  let mouse = computer.mouse in
+  if (not mouse.mclick) || Gui.modal () || mouse.mx < a.left
+     || mouse.mx > a.left +. side
+  then None
+  else row_at a mouse.my
+
+let row_click (computer : computer) : int option =
+  let a = area computer in
+  let mouse = computer.mouse in
+  if (not mouse.mclick) || Gui.modal () || mouse.mx < a.x0 -. 8. then None
+  else row_at a mouse.my
+
 let count (n : int) (one : string) : string =
   let many =
     if n = 1 then one

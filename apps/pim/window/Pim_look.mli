@@ -92,5 +92,14 @@ val selected : area -> float -> Playground.shape
  * name and whether it is the one shown *)
 val sidebar : area -> (string * bool) list -> Playground.shape list
 
+(* the row ([row_y]'s, [selected]'s band) a height is in, None above
+ * the first *)
+val row_at : area -> float -> int option
+
+(* this frame's click on the sidebar's row, on the list's (right of the
+ * sidebar), if there is one; the views' mouse, beside their keys *)
+val sidebar_click : Playground.computer -> int option
+val row_click : Playground.computer -> int option
+
 (* "3 conversations", "1 task" *)
 val count : int -> string -> string

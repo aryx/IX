@@ -187,7 +187,7 @@ let menus : (string * (string * command) list) list =
       [ ("Send", Send_); ("Save Draft  (Esc)", Save_draft);
         ("Discard", Discard) ] );
     ( "Mailbox",
-      [ ("Inbox  (Tab)", Inbox); ("All Mail  (Tab)", All_mail);
+      [ ("Inbox  (Tab)", List_of Screen.Imbox); ("All Mail  (Tab)", All_mail);
         ("Drafts", Drafts); ("The Screener", List_of Screen.Screener);
         ("The Feed", List_of Screen.Feed); ("Paper Trail", List_of Screen.Paper);
         (* (the Screener's decisions, the sender's: Screen) *)
@@ -359,7 +359,7 @@ let command (caps : caps) (m : model) (c : command) : model =
   | Archive_ -> if current m = [] then m else run caps m Archive
   | Next -> next caps m 1
   | Previous -> next caps m (-1)
-  | Inbox -> switch caps { m with screen = Screen.Imbox } "INBOX"
+  | Inbox -> switch caps m "INBOX"
   | List_of p -> switch caps { m with screen = p } "INBOX"
   | Screener_on ->
       Items.save caps (store caps) (Screen.turn_on m.today);
@@ -514,12 +514,34 @@ let update (caps : caps) (computer : computer) (m : model) : model =
           else if pressed "n" && m.screen = Screen.Screener then
             Some (Sender_to Screen.Out)
           else if pressed "Tab" then
-            Some (if m.mailbox = "INBOX" then All_mail else Inbox)
+            Some (if m.mailbox = "INBOX" then All_mail else List_of Screen.Imbox)
           else None
         in
-        match (menu, key) with
-        | Some c, _ | None, Some c -> command caps m c
-        | None, None ->
+        (* the mouse: a place of the sidebar, a conversation of the list
+         * (opened, as Gmail's click) *)
+        let row =
+          match Pim_look.row_click computer with
+          | Some k when not reading ->
+              let h = computer.screen.height in
+              let fits = int_of_float ((h -. bar -. 12.) /. row) in
+              let i = max 0 (m.selected - fits + 1) + k in
+              let n =
+                if m.mailbox = drafts then List.length m.drafts
+                else List.length m.conversations
+              in
+              if i < n then Some i else None
+          | _ -> None
+        in
+        match (menu, key, Pim_look.sidebar_click computer, row) with
+        | Some c, _, _, _ | None, Some c, _, _ -> command caps m c
+        | None, None, Some k, _ when k < List.length (places m) -> (
+            match List.nth_opt (places m) k with
+            | Some (_, "INBOX", p) -> command caps { m with screen = p } Inbox
+            | Some (_, box, _) when box = drafts -> command caps m Drafts
+            | Some _ -> command caps m All_mail
+            | None -> m)
+        | None, None, _, Some i -> command caps { m with selected = i } Open_
+        | None, None, _, _ ->
             if reading && (pressed "ArrowDown" || pressed "space") then
               { m with scroll = (m.scroll + if pressed "space" then 10 else 1) }
             else if reading && pressed "ArrowUp" then

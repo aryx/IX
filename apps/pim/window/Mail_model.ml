@@ -159,5 +159,15 @@ let initial (caps : caps) (flags : Playground.flags) : model =
       held = Set_.empty;
     }
 
+let places (m : model) : (string * string * Screen.place) list =
+  (if not m.screening then [ ("Inbox", "INBOX", Screen.Imbox) ]
+   else
+     [ ("Imbox", "INBOX", Screen.Imbox);
+       (Printf.sprintf "The Screener (%d)" m.waiting, "INBOX", Screen.Screener);
+       ("The Feed", "INBOX", Screen.Feed);
+       ("Paper Trail", "INBOX", Screen.Paper) ])
+  @ [ ("All Mail", Mail_sync.all_mail, Screen.Imbox);
+      ("Drafts", drafts, Screen.Imbox) ]
+
 let refresh (caps : caps) (keys : string Set_.t) (m : model) : model =
   load caps { m with held = keys }

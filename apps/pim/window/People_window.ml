@@ -92,6 +92,19 @@ let show (caps : caps) (m : model) (id : string) : model =
 
 type command = New_ | Open_ | Back | Write_ | Next | Previous
 
+(* a page's rows: a section's name, an item; each section's name where
+ * it begins *)
+type row = Heading of string | Row of Item.t
+
+let page_rows (page : (string * Item.t) list) : row list =
+  let rec go last l =
+    match l with
+    | [] -> []
+    | (name, i) :: rest ->
+        (if name <> last then [ Heading name ] else []) @ (Row i :: go name rest)
+  in
+  go "" page
+
 let menus : (string * (string * command) list) list =
   [ ( "Person",
       [ ("New Person...  (n)", New_); ("Open  (o)", Open_);
@@ -176,9 +189,29 @@ let update (caps : caps) (computer : computer) (m : model) : model * go option =
           else if pressed "c" then Some Write_
           else None
         in
-        match (menu, key) with
-        | Some c, _ | None, Some c -> command caps m c
-        | None, None -> (m, None))
+        let clicked =
+          match (m.mode, m.person, row_click computer) with
+          | Browsing, _, Some i when i < List.length m.people ->
+              Some { m with selected = i }
+          | Page, Some p, Some k -> (
+              (* (the page's rows: the addresses, a blank, the sections) *)
+              let k0 = List.length (People.emails p) + 1 in
+              match List.nth_opt (page_rows m.page) (k - k0) with
+              | Some (Row i) ->
+                  let rec index j l =
+                    match l with
+                    | (_, x) :: rest -> if x == i then j else index (j + 1) rest
+                    | [] -> -1
+                  in
+                  Some { m with at = index 0 m.page }
+              | _ -> None)
+          | _ -> None
+        in
+        match (menu, key, sidebar_click computer, clicked) with
+        | Some c, _, _, _ | None, Some c, _, _ -> command caps m c
+        | None, None, Some 0, _ -> command caps m Back
+        | None, None, _, Some m' -> command caps m' Open_
+        | None, None, _, None -> (m, None))
   in
   ({ m with held = keys }, go)
 
@@ -186,8 +219,6 @@ let update (caps : caps) (computer : computer) (m : model) : model * go option =
 (* The picture *)
 (*****************************************************************************)
 
-(* a page's rows: a section's name, an item *)
-type row = Heading of string | Row of Item.t
 
 let view (computer : computer) (m : model) : shape list =
   let a = area computer in
@@ -209,16 +240,7 @@ let view (computer : computer) (m : model) : shape list =
          * where it begins *)
         let emails = People.emails p in
         let k0 = List.length emails + 1 in
-        let rows =
-          let rec go last l =
-            match l with
-            | [] -> []
-            | (name, i) :: rest ->
-                (if name <> last then [ Heading name ] else [])
-                @ (Row i :: go name rest)
-          in
-          go "" m.page
-        in
+        let rows = page_rows m.page in
         let shown (i : Item.t) =
           if Item.has_stamp i "message" then
             (Conversations.day i, Conversations.who i ^ "   " ^ title i)

@@ -70,15 +70,7 @@ let view (computer : computer) (m : model) : shape list =
       (List.map
          (fun (name, box, p) ->
            (name, box = m.mailbox && (box <> "INBOX" || p = m.screen)))
-         ((if not m.screening then [ ("Inbox", "INBOX", Screen.Imbox) ]
-           else
-             [ ("Imbox", "INBOX", Screen.Imbox);
-               (Printf.sprintf "The Screener (%d)" m.waiting, "INBOX",
-                Screen.Screener);
-               ("The Feed", "INBOX", Screen.Feed);
-               ("Paper Trail", "INBOX", Screen.Paper) ])
-         @ [ ("All Mail", Mail_sync.all_mail, Screen.Imbox);
-             ("Drafts", drafts, Screen.Imbox) ]))
+         (places m))
     @
     if m.query <> "" then
       [ text blue ~bold:false ~room:(side -. 24.) (a.left +. 16.)

@@ -200,9 +200,24 @@ let update (caps : caps) (computer : computer) (m : model) : model * go option =
           else if pressed "g" then Some Get
           else None
         in
-        match (menu, key) with
-        | Some c, _ | None, Some c -> command caps m c
-        | None, None ->
+        (* the mouse: a span of the sidebar; in a day, an event *)
+        let side_ =
+          match sidebar_click computer with
+          | Some 0 -> Some Day_
+          | Some 1 -> Some Week_
+          | Some 2 -> Some Month_
+          | _ -> None
+        in
+        let clicked =
+          match row_click computer with
+          | Some k when m.span = Day && k < List.length (on m m.cursor) -> Some k
+          | _ -> None
+        in
+        match (menu, key, side_, clicked) with
+        | Some c, _, _, _ | None, Some c, _, _ | None, None, Some c, _ ->
+            command caps m c
+        | None, None, None, Some k -> ({ m with selected = k }, None)
+        | None, None, None, None ->
             (* the arrows: a day, a week; in a day, its events *)
             let n = List.length (on m m.cursor) in
             if m.span = Day && pressed "ArrowDown" then

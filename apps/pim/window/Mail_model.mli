@@ -61,5 +61,9 @@ val load : caps -> model -> model
 (* the flags: user=, server=, smtp=, plain, today= (Mail_window.mli) *)
 val initial : caps -> Playground.flags -> model
 
+(* the sidebar's places, from the top: a name, its mailbox, the
+ * Screener's list when it is the Inbox *)
+val places : model -> (string * string * Screen.place) list
+
 (* the store read again, [keys] those down now *)
 val refresh : caps -> string Set_.t -> model -> model

@@ -35,11 +35,31 @@ let int32_sig (t : S.t) : bool =
   | S.Bool | S.Char | S.I1 | S.U1 | S.I2 | S.U2 | S.I4 | S.U4 -> true
   | _ -> false
 
+(* Generics: a method of a generic class, or a generic method, is
+ * compiled for each instantiation, its type arguments here while it is
+ * (the class's, the method's: Types.ctx_of's); a T an int32 there, or
+ * a reference, as the instantiation has it *)
+let instance : (Value.typ array * Value.typ array) option ref = ref None
+
+let typ_kind (t : Value.typ) : kind option =
+  match t with
+  | Value.T_bool | Value.T_char | Value.T_i1 | Value.T_u1 | Value.T_i2 | Value.T_u2
+  | Value.T_i4 | Value.T_u4 | Value.T_i | Value.T_u -> Some I
+  | Value.T_class _ | Value.T_array _ -> Some R
+  | _ -> None
+
+let gen_kind (t : S.t) : kind option =
+  match t, !instance with
+  | S.Var n, Some (ta, _) when n < Array.length ta -> typ_kind ta.(n)
+  | S.MVar n, Some (_, ma) when n < Array.length ma -> typ_kind ma.(n)
+  | _ -> None
+
 (* a parameter's, a local's, a result's kind; [what] if neither *)
 let sig_kind (img : Image.t) (refs : bool) (what : string) (t : S.t) : kind =
   if int32_sig t then I
   else match V.of_sig img t with
     | Some (V.Obj _ | V.Ptr _) when refs -> R
+    | Some (V.Gen g) when refs -> (match gen_kind g with Some k -> k | None -> refuse what)
     | _ -> refuse what
 
 (* a slot's kind on the stack *)
@@ -50,6 +70,7 @@ let vt_kind (refs : bool) (v : V.vt) : kind option =
   (* (an address: the interpreter's Ptr, opaque, a parameter's ref or
    * out; a local's, ldloca's, is none at run time: addresses) *)
   | V.Ptr _ when refs -> Some R
+  | V.Gen g when refs -> gen_kind g
   | _ -> None
 
 (* the TypeDef a MethodDef is in *)
@@ -90,8 +111,8 @@ let own (img : Image.t) (refs : bool) (row : int) : unit =
   if Image.get img t row "RVA" = 0 then refuse "no body";
   let sg = signature img row in
   if sg.has_this && not refs then refuse "an instance method: this is a reference";
-  if sg.generic > 0 then refuse "a generic method";
-  if refs && generic_class img (owner img row) then refuse "a generic class's method";
+  if !instance = None && sg.generic > 0 then refuse "a generic method";
+  if !instance = None && refs && generic_class img (owner img row) then refuse "a generic class's method";
   if sg.has_this && (match V.token_sig img (M.token M.t_type_def (owner img row)) with
       | S.ValueType _ -> true | _ -> false) then refuse "a struct's method: this is a pointer";
   ignore (arg_kinds img refs row);
@@ -119,13 +140,15 @@ let supported (refs : bool) (op : Il.op) : bool =
   | Il.Ldnull | Il.Ldfld _ | Il.Stfld _ | Il.Ldlen | Il.Prefix _
   | Il.Callvirt _ | Il.Newobj _ | Il.Newarr _ | Il.Ldstr _ | Il.Ldsfld _ | Il.Stsfld _
   | Il.Castclass _ | Il.Isinst _ | Il.Box _ | Il.Unbox_any _ | Il.Throw
-  | Il.Ldloca _ | Il.Ldarga _ | Il.Ldftn _ | Il.Initobj _ | Il.Ldflda _ | Il.Ldsflda _ | Il.Ldelema _ -> refs
+  | Il.Ldloca _ | Il.Ldarga _ | Il.Ldftn _ | Il.Initobj _ | Il.Ldflda _ | Il.Ldsflda _ | Il.Ldelema _
+  | Il.Ldelem_any _ | Il.Stelem_any _ | Il.Constrained _ | Il.Ldobj _ | Il.Stobj _ -> refs
   | Il.Ldelem k | Il.Stelem k | Il.Ldind k | Il.Stind k -> refs && (int_kind k || k = Il.K_ref)
   | _ -> false
 
 (* a field, in the loaded assembly *)
 let field (im : Value.image) (tok : int) : Value.field =
-  Types.field_of_token { im; targs = [||]; margs = [||] } tok
+  let targs, margs = match !instance with Some i -> i | None -> ([||], [||]) in
+  Types.field_of_token { im; targs; margs } tok
 
 (* the most operands of a call-out: on arm, mini-ml's registers of
  * arguments are R1 to R8, the call-out's number in R1 *)
@@ -152,12 +175,14 @@ let call_out (img : Image.t) (im : Value.image option) (taken : int -> bool) (ca
   | Il.Newarr _ | Il.Castclass _ | Il.Isinst _ | Il.Box _ | Il.Unbox_any _ -> Some (1, true)
   | Il.Stsfld _ | Il.Throw -> Some (1, false)
   | Il.Stelem Il.K_ref -> Some (3, false)
-  | Il.Ldind _ -> Some (1, true)
+  | Il.Ldind _ | Il.Ldobj _ -> Some (1, true)
+  | Il.Stobj _ -> Some (2, false)
   (* (a field's or an element's address: the interpreter's Ptr, opaque
    * to the code, given to call-outs) *)
   | Il.Ldsflda _ -> Some (0, true)
   | Il.Ldflda _ -> Some (1, true)
-  | Il.Ldelema _ -> Some (2, true)
+  | Il.Ldelema _ | Il.Ldelem_any _ -> Some (2, true)
+  | Il.Stelem_any _ -> Some (3, false)
   | Il.Stind _ -> Some (2, false)
   | Il.Initobj _ -> Some (1, false)
   | Il.Stfld tok when (match im with Some im -> Value.is_ref (field im tok).ftype | None -> false) -> Some (2, false)
@@ -236,43 +261,49 @@ let value_words (img : Image.t) (row : int) (r : V.result) : int =
  * verifier's: int32s only, or references), its instructions, and its
  * calls, to methods taken too (until no more is dropped); with
  * references, a call to another method is the interpreter's *)
+(* a method the JIT takes, its stacks verified (V.Bad), or Refused
+ * why; for an instance of a generic one, with !instance set *)
+let accept (img : Image.t) (im : Value.image option) (row : int) : V.result =
+  let refs = im <> None in
+  own img refs row;
+  let r = V.method_ img row in
+  Array.iteri (fun i (s : V.vt list option) ->
+      match s with
+      | Some s -> List.iter (fun v -> match vt_kind refs v with
+          | Some _ -> ()
+          | None -> refuse (sprintf "IL_%04x: %s on the stack" r.instrs.(i).at (V.show v))) s
+      | None -> ()) (Array.sub r.stacks 0 (Array.length r.instrs));
+  Array.iteri (fun i (ins : Il.instr) ->
+      if not (supported refs ins.op) then refuse (sprintf "IL_%04x: %s, no template yet" ins.at ins.name);
+      let stack = match r.stacks.(i) with Some s -> s | None -> [] in
+      let is_ref v = vt_kind refs v = Some R in
+      match ins.op, stack with
+      | Il.Call tok, _ when not refs && M.token_table tok <> M.t_method_def ->
+          refuse (sprintf "IL_%04x: a call into the library" ins.at)
+      | (Il.Call _ | Il.Callvirt _ | Il.Newobj _), _ when refs ->
+          (match call_out img im (fun _ -> false) row ins.op with
+           | Some (n, _) when n > outs -> refuse (sprintf "IL_%04x: a call of %d arguments" ins.at n)
+           | _ -> ())
+      | (Il.Bcmp ((Il.Eq | Il.Ne), _, _) | Il.Ceq | Il.Cgt true), b :: a :: _ when is_ref a || is_ref b -> ()
+      | (Il.Bcmp _ | Il.Cgt _ | Il.Clt _), b :: a :: _ when is_ref a || is_ref b ->
+          refuse (sprintf "IL_%04x: %s of references" ins.at ins.name)
+      | Il.Ldfld _, V.Ptr _ :: _ | Il.Stfld _, _ :: V.Ptr _ :: _ ->
+          refuse (sprintf "IL_%04x: %s through an address (a struct's)" ins.at ins.name)
+      | (Il.Ldfld tok | Il.Stfld tok), _ ->
+          (match im with
+           | Some im when (field im tok).fstatic -> refuse (sprintf "IL_%04x: a static field by %s" ins.at ins.name)
+           | _ -> ())
+      | _ -> ()) r.instrs;
+  if refs && value_words img row r > 32 then refuse "more than 32 words on the value stack";
+  if refs then ignore (addresses img im row r);
+  r
+
 let choose (img : Image.t) (im : Value.image option) : (int, V.result) Hashtbl.t * (int * string) list =
   let refs = im <> None in
   let taken = Hashtbl.create 16 and refused = ref [] in
   for row = 1 to img.rows.(M.t_method_def) do
     match
-      own img refs row;
-      let r = V.method_ img row in
-      Array.iteri (fun i (s : V.vt list option) ->
-          match s with
-          | Some s -> List.iter (fun v -> match vt_kind refs v with
-              | Some _ -> ()
-              | None -> refuse (sprintf "IL_%04x: %s on the stack" r.instrs.(i).at (V.show v))) s
-          | None -> ()) (Array.sub r.stacks 0 (Array.length r.instrs));
-      Array.iteri (fun i (ins : Il.instr) ->
-          if not (supported refs ins.op) then refuse (sprintf "IL_%04x: %s, no template yet" ins.at ins.name);
-          let stack = match r.stacks.(i) with Some s -> s | None -> [] in
-          let is_ref v = vt_kind refs v = Some R in
-          match ins.op, stack with
-          | Il.Call tok, _ when not refs && M.token_table tok <> M.t_method_def ->
-              refuse (sprintf "IL_%04x: a call into the library" ins.at)
-          | (Il.Call _ | Il.Callvirt _ | Il.Newobj _), _ when refs ->
-              (match call_out img im (fun _ -> false) row ins.op with
-               | Some (n, _) when n > outs -> refuse (sprintf "IL_%04x: a call of %d arguments" ins.at n)
-               | _ -> ())
-          | (Il.Bcmp ((Il.Eq | Il.Ne), _, _) | Il.Ceq | Il.Cgt true), b :: a :: _ when is_ref a || is_ref b -> ()
-          | (Il.Bcmp _ | Il.Cgt _ | Il.Clt _), b :: a :: _ when is_ref a || is_ref b ->
-              refuse (sprintf "IL_%04x: %s of references" ins.at ins.name)
-          | Il.Ldfld _, V.Ptr _ :: _ | Il.Stfld _, _ :: V.Ptr _ :: _ ->
-              refuse (sprintf "IL_%04x: %s through an address (a struct's)" ins.at ins.name)
-          | (Il.Ldfld tok | Il.Stfld tok), _ ->
-              (match im with
-               | Some im when (field im tok).fstatic -> refuse (sprintf "IL_%04x: a static field by %s" ins.at ins.name)
-               | _ -> ())
-          | _ -> ()) r.instrs;
-      if refs && value_words img row r > 32 then refuse "more than 32 words on the value stack";
-      if refs then ignore (addresses img im row r);
-      r
+      accept img im row
     with
     | r -> Hashtbl.replace taken row r
     | exception Refused why -> if why <> "no body" then refused := (row, why) :: !refused
@@ -594,7 +625,7 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
            | Some I -> unbox (); ins "MOVW\tR0, %s" (slot (top - n + 1))
            | Some R -> ins "MOV\tR0, %s" (vslot (top - n + 1))
            | None -> ())
-      | _, Il.Nop | _, Il.Prefix _ | _, Il.Ldloca _ | _, Il.Ldarga _ | _, Il.Ldftn _ -> ()
+      | _, Il.Nop | _, Il.Prefix _ | _, Il.Constrained _ | _, Il.Ldloca _ | _, Il.Ldarga _ | _, Il.Ldftn _ -> ()
       | _, Il.Ldarg a -> move args.(a) (arg a, varg a) (slot (top + 1), vslot (top + 1))
       | _, Il.Starg a -> move args.(a) (slot top, vslot top) (arg a, varg a)
       | _, Il.Ldloc l -> move locals.(l) (local l, vlocal l) (slot (top + 1), vslot (top + 1))
@@ -843,7 +874,7 @@ let runtime ~(mach : mach) ~(throws : (string * int) list) ~(out : int array) ~(
  * result tagged (2n + 1) or boxed (jit_box), a reference as it is. The
  * value stack's top (R26, R10) is the caller's, which the method
  * raises if it holds references. *)
-let entry (m : mach) (img : Image.t) (sym : string) (row : int) (cell : int) : string =
+let entry (m : mach) (img : Image.t) (sym : string) (row : int) (cell : int option) : string =
   let b = Buffer.create 256 in
   let a64 = m = Arm64 in
   let w = if a64 then 8 else 4 in
@@ -861,9 +892,9 @@ let entry (m : mach) (img : Image.t) (sym : string) (row : int) (cell : int) : s
     else ins "MOV\tR2, %d(R31)" (w + w * k)
   done;
   if n > 0 then (ins "MOV\t0(R1), R0"; if ks.(0) = I then untag "R0");
-  ins "MOV\t$%d, R16" cell;
-  ins "MOV\t0(R16), R16";
-  ins "BL\t(R16)";
+  (match cell with
+   | Some c -> ins "MOV\t$%d, R16" c; ins "MOV\t0(R16), R16"; ins "BL\t(R16)"
+   | None -> ins "BL\t%s(SB)" sym);
   if sg.ret = S.Void then ins "MOV\t$1, R0"
   else if sig_kind img true "" sg.ret = I then begin
     if a64 then (ins "LSL\t$1, R0"; ins "ORR\t$1, R0")
@@ -919,17 +950,18 @@ let stub (m : mach) (img : Image.t) (sym : string) (row : int) (cell : int) (num
 
 let symbol_of (p : prepared) (row : int) : string = Hashtbl.find p.psyms row
 
+(* the stack pointer, in words, tagged: a closure's code of one
+ * argument, unit (the stack's limit is below it) *)
+let sp_code (m : mach) : string =
+  if m = Arm64 then "\tTEXT\tjit_sp(SB), $-8\n\tMOV\tRSP, R0\n\tLSR\t$2, R0\n\tLSL\t$1, R0\n\tORR\t$1, R0\n\tRET\t(R30)\n"
+  else "\tTEXT\tjit_sp(SB), $-4\n\tMOVW\tR13, R0\n\tSRL\t$2, R0\n\tSLL\t$1, R0\n\tORR\t$1, R0\n\tRET\n"
+
 let stubs (p : prepared) ~(cell : int -> int) ~(number : int -> int) ~(runtime : string) :
   string * (int * string) list * (int * string) list =
   let b = Buffer.create 4096 in
-  (* the stack pointer, in words, tagged: a closure's code of one
-   * argument, unit (the stack's limit is below it) *)
-  Buffer.add_string b
-    (if p.pmach = Arm64 then "\tTEXT\tjit_sp(SB), $-8\n\tMOV\tRSP, R0\n\tLSR\t$2, R0\n\tLSL\t$1, R0\n\tORR\t$1, R0\n\tRET\t(R30)\n"
-     else "\tTEXT\tjit_sp(SB), $-4\n\tMOVW\tR13, R0\n\tSRL\t$2, R0\n\tSLL\t$1, R0\n\tORR\t$1, R0\n\tRET\n");
   List.iter (fun row ->
       let sym = symbol_of p row in
-      Buffer.add_string b (entry p.pmach p.pim.img sym row (cell row));
+      Buffer.add_string b (entry p.pmach p.pim.img sym row (Some (cell row)));
       Buffer.add_string b (stub p.pmach p.pim.img sym row (cell row) (number row))) p.prows;
   Buffer.add_string b runtime;
   (Buffer.contents b,
@@ -942,3 +974,28 @@ let method_code (p : prepared) (row : int) ~(cell : int -> int) ~(base : int) ~(
   let env = { im = p.pim; taken = Hashtbl.mem p.ptaken; sites; base; cell = (fun r -> sprintf "$%d" (cell r)); limit } in
   let text = method_text p.pmach p.pim.img p.psyms row (Hashtbl.find p.ptaken row) (Some env) in
   (text ^ runtime, !sites)
+
+(* An instance of a generic method (of a generic class, or generic
+ * itself), compiled at its first call: the method checked and its text
+ * made with its type arguments (instance), an entry calling it by BL,
+ * the runtime's; every call it makes a call-out. None if refused. *)
+let instance_code (m : mach) (meth : Value.meth) ~(base : int) ~(limit : int) ~(runtime : string) :
+  (string * string * site list) option =
+  match meth.def with
+  | None -> None
+  | Some (im, row) ->
+      instance := Some (meth.mcls.args, meth.margs);
+      let made = try
+        match accept im.img (Some im) row with
+        | exception (Refused _ | V.Bad _ | Types.Load_error _) -> None
+        | r ->
+            let sym = symbol im.img row ^ "_inst" in
+            let syms = Hashtbl.create 1 in
+            Hashtbl.replace syms row sym;
+            let sites = ref [] in
+            let env = { im; taken = (fun _ -> false); sites; base; cell = (fun _ -> "$0"); limit } in
+            let text = method_text m im.img syms row r (Some env) in
+            Some (text ^ entry m im.img sym row None ^ runtime, sym ^ "_entry", !sites)
+        with e -> instance := None; raise e in
+      instance := None;
+      made

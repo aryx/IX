@@ -194,7 +194,7 @@ and run_method (m : meth) (args : value array) : value =
 
 (* the instructions run, an exception caught by this frame's clauses *)
 and run (f : Frame.frame) : Frame.outcome =
-  match loop false f with
+  match loop (-1) f with
   | o -> o
   | exception Thrown exn ->
       let at = f.at in
@@ -239,8 +239,9 @@ and run_filter (f : Frame.frame) (c : clause) (exn : store) : bool =
   f.pc <- pc; f.at <- at; f.sp <- sp;
   r
 
-(* the instructions from f.pc; [once]: the one there alone (exec) *)
-and loop (once : bool) (f : Frame.frame) : Frame.outcome =
+(* the instructions from f.pc; [until] (exec's, else -1): to the one
+ * at that index, alone or after its prefix *)
+and loop (until : int) (f : Frame.frame) : Frame.outcome =
   let push v = f.stack.(f.sp) <- v; f.sp <- f.sp + 1 in
   let pop () = f.sp <- f.sp - 1; f.stack.(f.sp) in
   let pop_n n = let a = Array.sub f.stack (f.sp - n) n in f.sp <- f.sp - n; a in
@@ -497,7 +498,7 @@ and loop (once : bool) (f : Frame.frame) : Frame.outcome =
          | Cpblk | Initblk ->
              Frame.error (Printf.sprintf "%s IL_%04x: %s, not in mini-dotnet" (Frame.name_of f.meth) ins.at ins.name)
          | Ret | Endfinally | Endfilter -> assert false);
-        if once then Frame.Returned Null else go () in
+        if until >= 0 && f.at >= until then Frame.Returned Null else go () in
   go ()
 
 (* the JIT's call-outs: the instruction at [i] of m's code run on the
@@ -506,9 +507,11 @@ let exec (m : meth) (code : code) (i : int) (operands : value array) : value =
   let n = Array.length operands in
   let stack = Array.make (n + 1) Null in
   Array.blit operands 0 stack 0 n;
+  (* (a constrained. prefix run first: the callvirt is told its type) *)
+  let start = if i > 0 && (match code.instrs.(i - 1).op with Constrained _ -> true | _ -> false) then i - 1 else i in
   let (f : Frame.frame) = { meth = m; code; args = [||]; locals = [||]; stack; sp = n;
-                            pc = i; at = i; caught = None } in
-  ignore (loop true f);
+                            pc = start; at = start; caught = None } in
+  ignore (loop i f);
   if f.sp > 0 then f.stack.(0) else Null
 
 (* OPTIMIZATION (call-outs): the instructions the JIT's code asks for
@@ -541,6 +544,7 @@ let call_out (m : meth) (code : code) (i : int) : value array -> value =
       let callee = once (fun () -> Types.meth_of_token ctx tok) in
       fun a -> let c = callee () in
         if c.static then (ensure_init c.mcls; invoke c a) else call_virtual_this c a false
+  | Callvirt _ when i > 0 && (match code.instrs.(i - 1).op with Constrained _ -> true | _ -> false) -> exec m code i
   | Callvirt tok ->
       let callee = once (fun () -> Types.meth_of_token ctx tok) in
       fun a -> call_virtual_this (callee ()) a true

@@ -77,10 +77,21 @@
  * call-outs (ldind, stind). A delegate's method (ldftn) is followed
  * the same way to its newobj, the interpreter making it there.
  *
+ * {b Generics}: a method of a generic class, or a generic method, is
+ * compiled for each instance at the instance's first call
+ * (instance_code), its type arguments its own: a T an int32 in
+ * Stack<int>'s code, a reference in Stack<string>'s, the fields where
+ * that instance's class has them; its calls all call-outs, run in its
+ * context (T[]'s ldelem.any, constrained. callvirt, ldobj, stobj too).
+ * So each instance has its code, as .NET's for value types; .NET shares
+ * one code between the instances of references, a dictionary of the
+ * types beside it.
+ *
  * What it refuses is said with the reason: a struct, an int64, a
  * double on the stack, an address at a jump or given to the code
  * itself, an instruction without its template yet, exception
- * clauses, a generic method or class.
+ * clauses; and in -S's text a generic method or class (an instance's
+ * code is only made at run time).
  *
  * {b A method is compiled at its first call} (stubs, method_code): it
  * is called through its cell, a word holding its code's address, at
@@ -163,12 +174,24 @@ val runtime : mach:mach -> throws:(string * int) list -> out:int array -> compil
  * arguments (an int32 a tagged int), and which returns the result
  * likewise; and its stub, `Sym_stub`, which calls jit_compile with the
  * method's [number], then the method through its [cell]. The text, the
- * entries' symbols, the stubs' (and jit_sp, a closure's code of unit
- * returning the stack pointer in words) *)
+ * entries' symbols, the stubs' *)
 val stubs : prepared -> cell:(int -> int) -> number:(int -> int) -> runtime:string ->
   string * (int * string) list * (int * string) list
+
+(* jit_sp, a closure's code of unit returning the stack pointer in
+ * words (a limit of the stack's put below it) *)
+val sp_code : mach -> string
 
 (* a method's code, at its first call: its text (`Sym`, then the
  * runtime's), its call-outs numbered from [base]; the machine's stack
  * pointer checked against [limit] (in words: jit_overflow below it) *)
 val method_code : prepared -> int -> cell:(int -> int) -> base:int -> limit:int -> runtime:string -> string * site list
+
+(* an instance of a generic method (of a generic class, or generic
+ * itself), its type arguments those of the Value.meth: compiled alone,
+ * at its own first call, each instance its code (a T an int32 in one,
+ * a reference in another; its fields where the instance has them).
+ * Its text (the method, its entry calling it directly, the runtime's),
+ * the entry's symbol, its call-outs from [base]; None if refused *)
+val instance_code : mach -> Value.meth -> base:int -> limit:int -> runtime:string ->
+  (string * string * site list) option

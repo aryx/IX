@@ -114,6 +114,34 @@ let call_outs (codes : (int, meth * code) Hashtbl.t) (sites : Jit.site list) : u
           Obj.repr (Array.of_list (result v :: List.map (fun j -> to_word kinds.(j) cells.(j).(0)) back))) sites in
   table := Array.append !table (Array.of_list calls)
 
+(* the runtime's text, in each piece of code *)
+let runtime () : string =
+  let addr f = Code_memory.address (Obj.repr f) in
+  Jit.runtime ~mach ~box:(addr box)
+    ~throws:[ ("jit_divide_by_zero", addr divide_by_zero); ("jit_null", addr null_reference);
+              ("jit_range", addr out_of_range); ("jit_overflow", addr stack_overflow) ]
+    ~out:[| addr out0; addr out1; addr out2; addr out3; addr out4; addr out5; addr out6; addr out7 |]
+    ~compile:(addr compile)
+
+(* the stack's limit, once: below the stack pointer of now *)
+let ensure_limit (caps : < Cap.open_in; .. >) : unit =
+  if !limit = 0 then begin
+    let code, offset = encode caps (Jit.sp_code mach) in
+    let (sp : unit -> int) = Obj.obj (Code_memory.closure (Code_memory.load code + offset "jit_sp")) in
+    limit := sp () - (if Sys.word_size = 64 then 4 * 1024 * 1024 else 512 * 1024) / 4
+  end
+
+(* a method's function for the interpreter: its arguments as words
+ * (`this` first), its entry at [addr] called, its result back *)
+let native (m : meth) (addr : int) : value array -> value =
+  let ks = Array.of_list ((if m.static then [] else [ Jit.R ])
+                          @ List.map (fun t -> if is_ref t then Jit.R else Jit.I) m.params) in
+  let ret = if is_ref m.ret then Jit.R else Jit.I in
+  let (f : Obj.t array -> Obj.t) = Obj.obj (Code_memory.closure addr) in
+  fun (args : value array) ->
+    let r = f (Array.mapi (fun j v -> to_word ks.(j) v) args) in
+    if m.ret = T_void then Null else of_word ret r
+
 (* each assembly's methods, by its name: a row's function *)
 let programs : (string, (int, value array -> value) Hashtbl.t) Hashtbl.t = Hashtbl.create 4
 
@@ -126,12 +154,8 @@ let program (caps : < Cap.open_in; .. >) (im : image) : (int, value array -> val
       let prep = Jit.prepare mach im in
       let rows = Jit.rows prep in
       if rows <> [] then begin
-        let addr f = Code_memory.address (Obj.repr f) in
-        let runtime = Jit.runtime ~mach ~box:(addr box)
-            ~throws:[ ("jit_divide_by_zero", addr divide_by_zero); ("jit_null", addr null_reference);
-                      ("jit_range", addr out_of_range); ("jit_overflow", addr stack_overflow) ]
-            ~out:[| addr out0; addr out1; addr out2; addr out3; addr out4; addr out5; addr out6; addr out7 |]
-            ~compile:(addr compile) in
+        let runtime = runtime () in
+        ensure_limit caps;
         let index = Hashtbl.create 16 in
         List.iteri (fun i row -> Hashtbl.replace index row i) rows;
         let cells, set = Code_memory.cells (Array.make (List.length rows) 0) in
@@ -141,10 +165,6 @@ let program (caps : < Cap.open_in; .. >) (im : image) : (int, value array -> val
         let code, offset = encode caps text in
         let base = Code_memory.load code in
         List.iter (fun (row, sym) -> set (Hashtbl.find index row) (base + offset sym)) stubs;
-        if !limit = 0 then begin
-          let (sp : unit -> int) = Obj.obj (Code_memory.closure (base + offset "jit_sp")) in
-          limit := sp () - (if Sys.word_size = 64 then 4 * 1024 * 1024 else 512 * 1024) / 4
-        end;
         (* each method's IL decoded now, before its body is Native: its
          * call-outs' *)
         let codes = Hashtbl.create 16 in
@@ -158,19 +178,31 @@ let program (caps : < Cap.open_in; .. >) (im : image) : (int, value array -> val
             set (Hashtbl.find index row) (at + offset (Jit.symbol_of prep row))) rows));
         List.iter (fun (row, sym) ->
             let m, _ = Hashtbl.find codes row in
-            let ks = Array.of_list ((if m.static then [] else [ Jit.R ])
-                                    @ List.map (fun t -> if is_ref t then Jit.R else Jit.I) m.params) in
-            let ret = if is_ref m.ret then Jit.R else Jit.I in
-            let (f : Obj.t array -> Obj.t) = Obj.obj (Code_memory.closure (base + offset sym)) in
-            let call (args : value array) : value =
-              let r = f (Array.mapi (fun j v -> to_word ks.(j) v) args) in
-              if m.ret = T_void then Null else of_word ret r in
+            let call = native m (base + offset sym) in
             Hashtbl.replace p row call;
             m.body <- Native call) entries
       end;
       p
 
+(* an instance of a generic method, compiled at its first call
+ * (Jit.instance_code), its code its own *)
+let instance (caps : < Cap.open_in; .. >) (m : meth) (row : int) : (value array -> value) option =
+  ensure_limit caps;
+  let code = Types.code m in
+  match Jit.instance_code mach m ~base:(Array.length !table) ~limit:!limit ~runtime:(runtime ()) with
+  | None -> None
+  | Some (text, entry, sites) ->
+      let bytes, offset = encode caps text in
+      let at = Code_memory.load bytes in
+      let codes = Hashtbl.create 1 in
+      Hashtbl.replace codes row (m, code);
+      call_outs codes sites;
+      incr compiled;
+      Some (native m (at + offset entry))
+
 let jit (caps : < Cap.open_in; .. >) (m : meth) : (value array -> value) option =
   match m.def with
-  | Some (im, row) when Code_memory.available -> Hashtbl.find_opt (program caps im) row
+  | Some (im, row) when Code_memory.available ->
+      if m.mcls.args <> [||] || m.margs <> [||] then instance caps m row
+      else Hashtbl.find_opt (program caps im) row
   | _ -> None

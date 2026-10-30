@@ -920,4 +920,20 @@ structs 6 (vec), ldftn 2.
    queens, closures, ints, Shape's ToString, closures' Counter; left
    in the survey's: structs (vec, strings' interpolation), try,
    generics.
+2. Generics (done). A method of a generic class, or a generic method,
+   is compiled for each instance, at the instance's first call
+   (Machine asks the JIT for that meth, its own record:
+   Jit.instance_code), its type arguments set while it is checked and
+   made (Jit.instance: a T an int32 or a reference as the instance has
+   it, its fields where the instance's class has them); its calls all
+   call-outs, which run in its context (Machine.call_out's ctx_of). New
+   call-outs for generic code: ldelem.any and stelem.any (T[]),
+   constrained. callvirt (exec runs the prefix with it), ldobj, stobj.
+   So each instance its code, as .NET does for value types (.NET shares
+   the code of reference instances, a dictionary of types beside it).
+   Checked: generic.dll, 12 methods compiled, Stack<int>'s and
+   Stack<string>'s, Pair's two constructors, Swap<string>, Flip; left:
+   What (typeof(T): a RuntimeTypeHandle, a struct, on the stack);
+   tests/run.sh 257 checks; mini-tiger's and mini-csc's with -jit;
+   run.sh -9 on arm.
 

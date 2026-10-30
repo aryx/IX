@@ -1,0 +1,3 @@
+; mini-ml/Code_memory.ml is the mkfile's (the JIT's memory, mini-ml's
+; build); Code_memory.ml here dune's, which has no JIT
+(dirs :standard \ mini-ml)

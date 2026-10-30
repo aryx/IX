@@ -2,3 +2,6 @@
 (executables
  (names Hello Broken)
  (libraries ix_dotnet ix_core caps fpath))
+
+; (not of mini-dotnet's library, whose folders the parent includes)
+(include_subdirs no)

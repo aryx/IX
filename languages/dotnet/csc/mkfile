@@ -8,8 +8,8 @@ DIR=languages/dotnet/csc
 PROG=mini-csc
 N=..
 SRC=Csc_ast Metadata Image Signature Il Value Library Writer Csc_lexer Csc_parser Csc_types Csc_emit Csc_compile CLI Main
-LOCAL=`{ls *.ml *.mli *.mll ../Metadata.ml* ../Image.ml* ../Signature.ml* ../Il.ml* ../Value.ml* ../Library.ml* ../Writer.ml*}
-LIBI=-I ..
+LOCAL=`{ls *.ml *.mli *.mll ../assembly/Metadata.ml* ../assembly/Image.ml* ../assembly/Signature.ml* ../assembly/Il.ml* ../runtime/Value.ml* ../runtime/Library.ml* ../assembly/Writer.ml*}
+LIBI=-I ../assembly -I ../runtime
 LIBUNITS=
 <$TOP/mkfiles/mkconfig
 GEN=$B/languages/dotnet/csc/Csc_lexer.ml
@@ -19,24 +19,24 @@ LIBOBJS=
 $D/Csc_lexer.$O: $D/Csc_lexer.ml $LOCAL
 	$ML $INCLUDES -o $target $D/Csc_lexer.ml
 # languages/dotnet's units, by their names
-$D/Metadata.$O: $N/Metadata.ml $LOCAL
+$D/Metadata.$O: $N/assembly/Metadata.ml $LOCAL
 	mkdir -p $D
-	$ML $INCLUDES -o $target $N/Metadata.ml
-$D/Image.$O: $N/Image.ml $LOCAL
+	$ML $INCLUDES -o $target $N/assembly/Metadata.ml
+$D/Image.$O: $N/assembly/Image.ml $LOCAL
 	mkdir -p $D
-	$ML $INCLUDES -o $target $N/Image.ml
-$D/Signature.$O: $N/Signature.ml $LOCAL
+	$ML $INCLUDES -o $target $N/assembly/Image.ml
+$D/Signature.$O: $N/assembly/Signature.ml $LOCAL
 	mkdir -p $D
-	$ML $INCLUDES -o $target $N/Signature.ml
-$D/Il.$O: $N/Il.ml $LOCAL
+	$ML $INCLUDES -o $target $N/assembly/Signature.ml
+$D/Il.$O: $N/assembly/Il.ml $LOCAL
 	mkdir -p $D
-	$ML $INCLUDES -o $target $N/Il.ml
-$D/Value.$O: $N/Value.ml $LOCAL
+	$ML $INCLUDES -o $target $N/assembly/Il.ml
+$D/Value.$O: $N/runtime/Value.ml $LOCAL
 	mkdir -p $D
-	$ML $INCLUDES -o $target $N/Value.ml
-$D/Library.$O: $N/Library.ml $LOCAL
+	$ML $INCLUDES -o $target $N/runtime/Value.ml
+$D/Library.$O: $N/runtime/Library.ml $LOCAL
 	mkdir -p $D
-	$ML $INCLUDES -o $target $N/Library.ml
-$D/Writer.$O: $N/Writer.ml $LOCAL
+	$ML $INCLUDES -o $target $N/runtime/Library.ml
+$D/Writer.$O: $N/assembly/Writer.ml $LOCAL
 	mkdir -p $D
-	$ML $INCLUDES -o $target $N/Writer.ml
+	$ML $INCLUDES -o $target $N/assembly/Writer.ml

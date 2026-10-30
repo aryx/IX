@@ -70,8 +70,11 @@ check() {
   for od in $(awk '{ sub("/[^/]*$", "", $1); print $1 }' $o.cc | sort -u); do
     awk -v od=$od '{ x = $1; sub("/[^/]*$", "", x) } x == od' $o.cc > $o.g
     units=$(awk '{ u = $2; sub(".*/", "", u); sub("\\.ml$", "", u); print u }' $o.g)
-    srcs=$(awk '{ s = $2; if (s !~ /\//) s = "./" s
-                  sub("/[^/]*$", "", s); print "-I " s }' $o.g | awk '!seen[$0]++')
+    # (the directory itself first, as mkprog's compiles have -I . first:
+    # else a unit named as one of another directory's, mini-dotnet's CLI
+    # as the linker's, could be read from there)
+    srcs=$( { echo "-I ."; awk '{ s = $2; if (s !~ /\//) s = "./" s
+                  sub("/[^/]*$", "", s); print "-I " s }' $o.g; } | awk '!seen[$0]++')
     incs=$(awk '{ $1 = ""; $2 = ""; print }' $o.g | head -1)
     # (its lines on another directory's summary, a library's X.inline,
     # left out: the top mkfile builds the libraries first, by another mk)

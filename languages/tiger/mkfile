@@ -4,10 +4,10 @@
 TOP=../..
 DIR=languages/tiger
 PROG=mini-tiger
-N=../dotnet
+N=../dotnet/assembly
 SRC=Metadata Signature Il Writer Tiger_ast Tiger_parser Tiger_lexer Tiger_tree Tiger_semant Tiger_emit CLI Main
-LOCAL=`{ls *.ml *.mli *.mly *.mll ../dotnet/Metadata.ml* ../dotnet/Signature.ml* ../dotnet/Il.ml* ../dotnet/Writer.ml*}
-LIBI=-I ../dotnet
+LOCAL=`{ls *.ml *.mli *.mly *.mll ../dotnet/assembly/Metadata.ml* ../dotnet/assembly/Signature.ml* ../dotnet/assembly/Il.ml* ../dotnet/assembly/Writer.ml*}
+LIBI=-I ../dotnet/assembly
 LIBUNITS=
 <$TOP/mkfiles/mkconfig
 GEN=$B/languages/tiger/Tiger_parser.ml $B/languages/tiger/Tiger_lexer.ml

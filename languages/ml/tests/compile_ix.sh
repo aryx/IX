@@ -75,7 +75,7 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
   # (mini-play: over lib_audio, and Lehmer under it)
   apps/music/*) root=apps/music; incs[$root]="$(dirs apps/music) $(dirs lib_audio) -I lib_playground/random";;
   # (mini-tiger: over languages/dotnet's Writer)
-  languages/tiger/*) root=languages/tiger; incs[$root]="$(dirs languages/tiger) -I languages/dotnet";;
+  languages/tiger/*) root=languages/tiger; incs[$root]="$(dirs languages/tiger) -I languages/dotnet/assembly";;
   # (mini-turbopascal: a Tui program of lib_terminal's, over mini-pascal)
   editors/turbopascal/*) root=editors/turbopascal; incs[$root]="$(dirs editors/turbopascal) $(dirs lib_terminal) $(dirs languages/pascal) -I lib_playground/random";;
   # (mini-emacs: a Tui program of lib_terminal's too)

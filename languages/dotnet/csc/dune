@@ -25,3 +25,6 @@
  (package ix)
  (modules Main)
  (libraries ix_csc_cli ix_core caps))
+
+; (not of mini-dotnet's library, whose folders the parent includes)
+(include_subdirs no)

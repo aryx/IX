@@ -1,16 +1,24 @@
-; mini-dotnet (docs/plans/done/plan_dotnet.md): a runtime for the assemblies
-; Microsoft's C# compiler writes. Metadata (the 45 tables' shapes),
-; Image (the PE file read: heaps, tables, a method's body), Signature
-; (the blobs' types), Il (the opcodes, a body decoded and encoded),
-; Listing (-tables, -S); Value (the runtime's types and values: an
-; object's numbers in bytes, its references apart), Library (System's
-; classes, ix's own, over lib_core), Types (the loader: classes laid
-; out, vtables, tokens resolved, generics instantiated), Frame (a call's
-; frame, an exception's first pass), Arith (the instructions' numbers),
-; Machine (the IL run), Verifier, Jit (its code as text), Jit_run (that
-; code run: mini-asm's parser, mini-ld's encoders), Code_memory (here
-; dune's, no JIT: mini-ml/'s is the mkfile's), Writer (an assembly
-; written: mini-tiger's).
+; mini-dotnet (docs/plans/done/plan_dotnet.md): a runtime for the
+; assemblies Microsoft's C# compiler writes. Its modules in folders:
+;   assembly/  the file: Metadata (the 45 tables' shapes), Image (the PE
+;              file read: heaps, tables, a method's body), Signature (the
+;              blobs' types), Il (the opcodes, a body decoded and
+;              encoded), Listing (-tables, -S), Writer (an assembly
+;              written: mini-tiger's, mini-csc's)
+;   runtime/   what the interpreter and the JIT stand on: Value (the
+;              types and values: an object's numbers in bytes, its
+;              references apart), Library (System's classes, ix's own:
+;              the adapters over lib_core), Types (the loader: classes
+;              laid out, vtables, tokens resolved, generics instantiated)
+;   interpreter/  Frame (a call's frame, an exception's first pass),
+;              Arith (the instructions' numbers), Machine (the IL run)
+;   jit/       Verifier (each slot's type: the JIT's input), Jit (its
+;              code as text), Jit_run (that code run: mini-asm's parser,
+;              mini-ld's encoders), Code_memory (here dune's, no JIT:
+;              jit/mini-ml/'s is the mkfile's)
+; CLI and Main here; csc/ and tests/ have their own stanzas.
+(include_subdirs unqualified)
+
 (library
  (name ix_dotnet)
  (wrapped false)

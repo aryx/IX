@@ -1,14 +1,14 @@
 # mini-dotnet, built by ix's tools; the JIT's encoders are the linker's
 # (Program Link Arm Arm64), compiled here from its sources (the linker is
-# made beside this directory, not before), and its memory mini-ml/'s
+# made beside this directory, not before), and its memory jit/mini-ml/'s
 # Code_memory, not dune's
 TOP=../..
 DIR=languages/dotnet
 PROG=mini-dotnet
 SRC=Metadata Image Signature Il Listing Value Library Types Frame Arith Machine Verifier Jit Program Link Arm Arm64 Code_memory Jit_run Writer CLI Main
-LOCAL=`{ls *.ml *.mli mini-ml/*.ml}
+LOCAL=`{ls *.ml *.mli assembly/*.ml* runtime/*.ml* interpreter/*.ml* jit/*.ml* jit/mini-ml/*.ml}
 GEN=
-LIBI=-I ../../assembler -I ../../linker
+LIBI=-I assembly -I runtime -I interpreter -I jit -I ../../assembler -I ../../linker
 LIBUNITS=Asm Show_asm Lexer_asm Parser_asm
 <$TOP/mkfiles/mkconfig
 LIBOBJS=$B/assembler/Asm.$O $B/assembler/Show_asm.$O $B/assembler/Lexer_asm.$O $B/assembler/Parser_asm.$O
@@ -23,6 +23,16 @@ $D/Arm.$O: $TOP/linker/Arm.ml
 	$ML $INCLUDES -o $target $TOP/linker/Arm.ml
 $D/Arm64.$O: $TOP/linker/Arm64.ml
 	$ML $INCLUDES -o $target $TOP/linker/Arm64.ml
-# the JIT's memory: mini-ml's (Code_memory.ml here is dune's)
-$D/Code_memory.$O: mini-ml/Code_memory.ml
-	$ML $INCLUDES -o $target mini-ml/Code_memory.ml
+# the JIT's memory: mini-ml's (jit/Code_memory.ml is dune's)
+$D/Code_memory.$O: jit/mini-ml/Code_memory.ml
+	$ML $INCLUDES -o $target jit/mini-ml/Code_memory.ml
+# the units in folders (dune's comment says which): the folder that has
+# it, mkprog's rule (a unit here) dropped for them
+$D/%.$O: assembly/%.ml
+	$ML $INCLUDES -o $target assembly/$stem.ml
+$D/%.$O: runtime/%.ml
+	$ML $INCLUDES -o $target runtime/$stem.ml
+$D/%.$O: interpreter/%.ml
+	$ML $INCLUDES -o $target interpreter/$stem.ml
+$D/%.$O: jit/%.ml
+	$ML $INCLUDES -o $target jit/$stem.ml

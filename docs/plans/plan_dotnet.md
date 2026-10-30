@@ -889,3 +889,35 @@ Left: the methods the JIT refuses (structs, int64s, doubles, try,
 generics), a register cache of the stack's top, and dotnet -jit in a
 recorded session of the card (session-card-dotnet).
 
+## Stage 10: what the JIT refused, one at a time
+
+The author (2026-10-30), offered try/catch, generics and byrefs, the
+card's session and a register cache: "I like all the proposed items.
+Note that being 2x slower than microsoft is more than ok!". So the
+refusals first, the register cache last.
+
+The refusals over the tests' assemblies then: exception clauses 9
+methods, generic classes and methods 8, an address on the stack 4,
+structs 6 (vec), ldftn 2.
+
+1. Addresses (done). A local's or an argument's address (ldloca,
+   ldarga: ref x, out x, x.ToString() on an int) is nothing at run
+   time: Jit.addresses follows it, by its slot, from where it is pushed
+   to the call-out that takes it; the call-out is given the local's
+   value, the interpreter makes it a cell (Ptr (Slot ...)), runs the
+   instruction, and answers with the result and the cell's new value,
+   which the code puts back in the local. Taken by the code itself, or
+   on the stack at a jump's target, it refuses the method. A field's,
+   a static field's, an element's address (ldflda, ldsflda, ldelema)
+   and a ref parameter are the interpreter's Ptr, a reference to the
+   code, read and written by call-outs (ldind, stind, initobj). ldftn
+   is followed the same way to the newobj of its delegate, which the
+   interpreter makes. Checked: tests/jit/addresses.cs, new (ref, out,
+   a generic Swap of two locals, a field's, a static's and an
+   element's address, an int past 31 bits through a cell on arm, a
+   lambda), by both machines (tests/run.sh, run.sh -9); 247 checks;
+   mini-tiger's and mini-csc's with -jit. Now compiled: the Mains of
+   queens, closures, ints, Shape's ToString, closures' Counter; left
+   in the survey's: structs (vec, strings' interpolation), try,
+   generics.
+

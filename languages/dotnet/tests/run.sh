@@ -28,7 +28,8 @@
 #              (zero: a division by zero in the JIT's code caught by the
 #              interpreter; objects: objects, arrays, strings in it, made
 #              while the collector moves them, a null and an index out of
-#              range caught; bench, with -jit only, where it is compiled)
+#              range caught; addresses: ref, out, ldflda, ldelema, a
+#              delegate; bench, with -jit only, where it is compiled)
 #   run        each program run, what it prints against what Microsoft's
 #              runtime printed: the survey's ten (survey/programs/
 #              *.expected), and ours (programs/*.expected, their exit too;

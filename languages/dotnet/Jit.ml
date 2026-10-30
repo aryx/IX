@@ -16,7 +16,14 @@ type mach = Arm | Arm64
 
 type kind = I | R
 
-type site = { srow : int; sat : int; sargs : kind list; sret : kind option }
+type form = Word | Addr | Made of int
+
+type site = { srow : int; sat : int; sargs : kind list; sform : form list; sret : kind option }
+
+(* what an address on the stack names (ldloca, ldarga), or a value
+ * the interpreter makes at the call-out that takes it (ldftn's, at
+ * that instruction) *)
+type place = Local of int | Arg of int | Ftn of int
 
 (* ------------------------------------------------------------------ *)
 (* Which methods: static, of int32s only, calling only such methods;
@@ -32,7 +39,7 @@ let int32_sig (t : S.t) : bool =
 let sig_kind (img : Image.t) (refs : bool) (what : string) (t : S.t) : kind =
   if int32_sig t then I
   else match V.of_sig img t with
-    | Some (V.Obj _) when refs -> R
+    | Some (V.Obj _ | V.Ptr _) when refs -> R
     | _ -> refuse what
 
 (* a slot's kind on the stack *)
@@ -40,6 +47,9 @@ let vt_kind (refs : bool) (v : V.vt) : kind option =
   match v with
   | V.Int32 | V.Native -> Some I
   | V.Obj _ when refs -> Some R
+  (* (an address: the interpreter's Ptr, opaque, a parameter's ref or
+   * out; a local's, ldloca's, is none at run time: addresses) *)
+  | V.Ptr _ when refs -> Some R
   | _ -> None
 
 (* the TypeDef a MethodDef is in *)
@@ -108,8 +118,9 @@ let supported (refs : bool) (op : Il.op) : bool =
   | Il.Conv ((Il.K_i1 | Il.K_u1 | Il.K_i2 | Il.K_u2 | Il.K_i4 | Il.K_u4 | Il.K_i | Il.K_u), false, _) -> true
   | Il.Ldnull | Il.Ldfld _ | Il.Stfld _ | Il.Ldlen | Il.Prefix _
   | Il.Callvirt _ | Il.Newobj _ | Il.Newarr _ | Il.Ldstr _ | Il.Ldsfld _ | Il.Stsfld _
-  | Il.Castclass _ | Il.Isinst _ | Il.Box _ | Il.Unbox_any _ | Il.Throw -> refs
-  | Il.Ldelem k | Il.Stelem k -> refs && (int_kind k || k = Il.K_ref)
+  | Il.Castclass _ | Il.Isinst _ | Il.Box _ | Il.Unbox_any _ | Il.Throw
+  | Il.Ldloca _ | Il.Ldarga _ | Il.Ldftn _ | Il.Initobj _ | Il.Ldflda _ | Il.Ldsflda _ | Il.Ldelema _ -> refs
+  | Il.Ldelem k | Il.Stelem k | Il.Ldind k | Il.Stind k -> refs && (int_kind k || k = Il.K_ref)
   | _ -> false
 
 (* a field, in the loaded assembly *)
@@ -132,6 +143,7 @@ let call_out (img : Image.t) (im : Value.image option) (taken : int -> bool) (ca
        * caller's or has no static constructor to run first *)
       if (match op with Il.Call _ -> true | _ -> false) && M.token_table tok = M.t_method_def
          && not m.has_this && taken callee
+         && not (List.exists (fun p -> match p with S.ByRef _ -> true | _ -> false) m.params)
          && (owner img callee = owner img caller || not (has_cctor img (owner img callee)))
       then None
       else Some (List.length m.params + (if m.has_this then 1 else 0), m.ret <> S.Void)
@@ -140,8 +152,73 @@ let call_out (img : Image.t) (im : Value.image option) (taken : int -> bool) (ca
   | Il.Newarr _ | Il.Castclass _ | Il.Isinst _ | Il.Box _ | Il.Unbox_any _ -> Some (1, true)
   | Il.Stsfld _ | Il.Throw -> Some (1, false)
   | Il.Stelem Il.K_ref -> Some (3, false)
+  | Il.Ldind _ -> Some (1, true)
+  (* (a field's or an element's address: the interpreter's Ptr, opaque
+   * to the code, given to call-outs) *)
+  | Il.Ldsflda _ -> Some (0, true)
+  | Il.Ldflda _ -> Some (1, true)
+  | Il.Ldelema _ -> Some (2, true)
+  | Il.Stind _ -> Some (2, false)
+  | Il.Initobj _ -> Some (1, false)
   | Il.Stfld tok when (match im with Some im -> Value.is_ref (field im tok).ftype | None -> false) -> Some (2, false)
   | _ -> None
+
+(* the operands of an instruction the code does itself (not a
+ * call-out): Ret's, the stack's depth *)
+let pops (img : Image.t) (op : Il.op) (depth : int) : int =
+  match op with
+  | Il.Starg _ | Il.Stloc _ | Il.Pop | Il.Brfalse _ | Il.Brtrue _ | Il.Switch _ | Il.Neg | Il.Not
+  | Il.Conv _ | Il.Ldlen | Il.Ldfld _ | Il.Dup -> 1
+  | Il.Binop _ | Il.Bcmp _ | Il.Ceq | Il.Cgt _ | Il.Clt _ | Il.Ldelem _ | Il.Stfld _ -> 2
+  | Il.Stelem _ -> 3
+  | Il.Ret -> depth
+  | Il.Call tok -> let m, _ = V.call_sig img tok in List.length m.params
+  | _ -> 0
+
+(* The addresses of locals and arguments (ldloca, ldarga: an int's
+ * x.ToString(), out x, ref x): nothing at run time, the local is the
+ * code's, not the interpreter's; followed from where it is pushed to
+ * the call-out that takes it, which is given the local's value, and
+ * gives back its new one (Jit_run: an interpreter's cell meanwhile).
+ * At each call-out, its operands that are such addresses, by
+ * (instruction, slot). An address taken by the code itself, or on the
+ * stack at a jump's target, refuses the method. *)
+let addresses (img : Image.t) (im : Value.image option) (row : int) (r : V.result) : (int * int, place) Hashtbl.t =
+  let t = Hashtbl.create 4 and cur = Hashtbl.create 4 in
+  let targets = Hashtbl.create 8 in
+  Array.iter (fun (ins : Il.instr) -> match ins.op with
+      | Il.Br x | Il.Brfalse x | Il.Brtrue x | Il.Bcmp (_, _, x) -> Hashtbl.replace targets x ()
+      | Il.Switch xs -> Array.iter (fun x -> Hashtbl.replace targets x ()) xs
+      | _ -> ()) r.instrs;
+  Array.iteri (fun i (ins : Il.instr) ->
+      match r.stacks.(i) with
+      | None -> ()
+      | Some st ->
+          let d = List.length st in
+          if Hashtbl.mem targets i then begin
+            if Hashtbl.length cur > 0 then refuse (sprintf "IL_%04x: an address on the stack at a jump" ins.at);
+            Hashtbl.reset cur
+          end;
+          match ins.op with
+          | Il.Ldloca l -> Hashtbl.replace cur d (Local l)
+          | Il.Ldarga a -> Hashtbl.replace cur d (Arg a)
+          | Il.Ldftn _ -> Hashtbl.replace cur d (Ftn i)
+          | Il.Dup -> (match Hashtbl.find_opt cur (d - 1) with Some p -> Hashtbl.replace cur d p | None -> ())
+          | op ->
+              let n = match call_out img im (fun _ -> false) row op with
+                | Some (n, _) ->
+                    for k = d - n to d - 1 do
+                      match Hashtbl.find_opt cur k with Some p -> Hashtbl.replace t (i, k) p | None -> ()
+                    done;
+                    n
+                | None ->
+                    let n = pops img op d in
+                    for k = d - n to d - 1 do
+                      if Hashtbl.mem cur k then refuse (sprintf "IL_%04x: an address to %s" ins.at ins.name)
+                    done;
+                    n in
+              for k = d - n to d + 16 do Hashtbl.remove cur k done) r.instrs;
+  t
 
 (* the words a method has on mini-ml's value stack: its slots', its
  * locals', its arguments', when one may be a reference; else none *)
@@ -186,12 +263,15 @@ let choose (img : Image.t) (im : Value.image option) : (int, V.result) Hashtbl.t
           | (Il.Bcmp ((Il.Eq | Il.Ne), _, _) | Il.Ceq | Il.Cgt true), b :: a :: _ when is_ref a || is_ref b -> ()
           | (Il.Bcmp _ | Il.Cgt _ | Il.Clt _), b :: a :: _ when is_ref a || is_ref b ->
               refuse (sprintf "IL_%04x: %s of references" ins.at ins.name)
+          | Il.Ldfld _, V.Ptr _ :: _ | Il.Stfld _, _ :: V.Ptr _ :: _ ->
+              refuse (sprintf "IL_%04x: %s through an address (a struct's)" ins.at ins.name)
           | (Il.Ldfld tok | Il.Stfld tok), _ ->
               (match im with
                | Some im when (field im tok).fstatic -> refuse (sprintf "IL_%04x: a static field by %s" ins.at ins.name)
                | _ -> ())
           | _ -> ()) r.instrs;
       if refs && value_words img row r > 32 then refuse "more than 32 words on the value stack";
+      if refs then ignore (addresses img im row r);
       r
     with
     | r -> Hashtbl.replace taken row r
@@ -318,6 +398,7 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
   let arg i = sprintf "a%d+%d(FP)" i (w * i) in
   let vslot k = word k and vlocal i = word (nslots + i) and varg i = word (nslots + nlocals + i) in
   let label i = sprintf "%s_%d" sym i in
+  let addrs = if refs <> None then addresses img im row r else Hashtbl.create 1 in
   let targets = Hashtbl.create 8 in
   Array.iter (fun (ins : Il.instr) -> match ins.op with
       | Il.Br t | Il.Brfalse t | Il.Brtrue t | Il.Bcmp (_, _, t) -> Hashtbl.replace targets t ()
@@ -414,9 +495,10 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
         Buffer.add_string b (fin ^ ":\n") in
       (* R0 an int32 from ML: tagged; on arm, tagged or boxed (an Int32's
        * block, its bits at 0) *)
-      let unbox () =
-        if a64 then ins "ASR\t$1, R0"
-        else (ins "TST\t$1, R0"; ins "MOVW.EQ\t0(R0), R0"; ins "SRA.NE\t$1, R0") in
+      let unbox_reg r =
+        if a64 then ins "ASR\t$1, %s" r
+        else (ins "TST\t$1, %s" r; ins "MOVW.EQ\t0(%s), %s" r r; ins "SRA.NE\t$1, %s" r) in
+      let unbox () = unbox_reg "R0" in
       (* an object's store in R1, from a reference in a slot: null
        * thrown as NullReferenceException *)
       let store_of k =
@@ -456,17 +538,28 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
            * bottom first, as values of mini-ml's (an int32 tagged), in
            * R2...; the call-out's number in R1 *)
           let n, pushes = match call_out img im taken row x.op with Some p -> p | None -> assert false in
-          let kinds = List.init n (fun j -> before (top - n + 1 + j)) in
+          (* (an operand that is a local's address: the local's value, of
+           * its kind, from its place; its new value given back) *)
+          let place j = Hashtbl.find_opt addrs (i, top - n + 1 + j) in
+          let home j = match place j with
+            | Some (Local l) -> (locals.(l), local l, vlocal l)
+            | Some (Arg a) -> (args.(a), arg a, varg a)
+            | Some (Ftn _) -> (R, "", "$1")
+            | None -> let s = top - n + 1 + j in (before s, slot s, vslot s) in
+          let kinds = List.init n (fun j -> let k, _, _ = home j in k) in
           let ret = if pushes then Some (after (top - n + 1)) else None in
           let number = base + List.length !sites in
-          sites := !sites @ [ { srow = row; sat = i; sargs = kinds; sret = ret } ];
+          let sform = List.init n (fun j -> match place j with
+              | Some (Local _ | Arg _) -> Addr | Some (Ftn k) -> Made k | None -> Word) in
+          sites := !sites @ [ { srow = row; sat = i; sargs = kinds; sform; sret = ret } ];
           (* (on arm an int32 past 31 bits boxed first, jit_box, its block
            * in the slot's word of the value stack, where it waits) *)
           if not a64 then
             List.iteri (fun j k ->
                 let s = top - n + 1 + j in
+                let _, src, _ = home j in
                 if k = I then begin
-                  ins "MOVW\t%s, R1" (slot s);
+                  ins "MOVW\t%s, R1" src;
                   ins "ADD.S\tR1, R1, R2";
                   ins "BVC\t3(PC)";
                   ins "BL\tjit_box(SB)";
@@ -475,20 +568,33 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
           ins "MOV\t$%d, R1" (2 * number + 1);
           List.iteri (fun j k ->
               let s = top - n + 1 + j in
-              if k = R then ins "MOV\t%s, R%d" (vslot s) (j + 2)
-              else if a64 then (ins "MOVW\t%s, R%d" (slot s) (j + 2); ins "LSL\t$1, R%d" (j + 2); ins "ORR\t$1, R%d" (j + 2))
+              let _, src, vsrc = home j in
+              if k = R then ins "MOV\t%s, R%d" vsrc (j + 2)
+              else if a64 then (ins "MOVW\t%s, R%d" src (j + 2); ins "LSL\t$1, R%d" (j + 2); ins "ORR\t$1, R%d" (j + 2))
               else begin
-                ins "MOVW\t%s, R%d" (slot s) (j + 2);
+                ins "MOVW\t%s, R%d" src (j + 2);
                 ins "ADD.S\tR%d, R%d, R%d" (j + 2) (j + 2) (j + 2);
                 ins "ORR.VC\t$1, R%d" (j + 2);
                 ins "MOVW.VS\t%s, R%d" (vslot s) (j + 2)
               end) kinds;
           ins "BL\tjit_out%d(SB)" n;
+          (* the locals' new values, then the result: an array of them *)
+          if List.mem Addr sform then begin
+            let m = ref 0 in
+            List.iteri (fun j k ->
+                if List.nth sform j = Addr then begin
+                  incr m;
+                  let _, src, vsrc = home j in
+                  ins "MOV\t%d(R0), R1" (w * !m);
+                  if k = I then (unbox_reg "R1"; ins "MOVW\tR1, %s" src) else ins "MOV\tR1, %s" vsrc
+                end) kinds;
+            ins "MOV\t0(R0), R0"
+          end;
           (match ret with
            | Some I -> unbox (); ins "MOVW\tR0, %s" (slot (top - n + 1))
            | Some R -> ins "MOV\tR0, %s" (vslot (top - n + 1))
            | None -> ())
-      | _, Il.Nop | _, Il.Prefix _ -> ()
+      | _, Il.Nop | _, Il.Prefix _ | _, Il.Ldloca _ | _, Il.Ldarga _ | _, Il.Ldftn _ -> ()
       | _, Il.Ldarg a -> move args.(a) (arg a, varg a) (slot (top + 1), vslot (top + 1))
       | _, Il.Starg a -> move args.(a) (slot top, vslot top) (arg a, varg a)
       | _, Il.Ldloc l -> move locals.(l) (local l, vlocal l) (slot (top + 1), vslot (top + 1))

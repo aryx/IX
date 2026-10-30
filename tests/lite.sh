@@ -494,7 +494,8 @@ pi1_by_ix() {
     { echo "mini-mk O=5 failed in libs:"; tail -3 $W/mk5.libs.log | cut -c1-200; return 1; }
   (cd kernels/9pi && NPROC=32 mini-mk O=5 B=$b PRINCIPIA=$P) > $W/mk5.9pi.log 2>&1 ||
     { echo "mini-mk O=5 failed in kernels/9pi:"; tail -3 $W/mk5.9pi.log | cut -c1-200; return 1; }
-  mini-qemu -M raspi1ap -device loader,file=$b/kernels/9pi/kernel.img,addr=0x8000,cpu-num=0,force-raw=on -nographic \
+  # (timeout: an interrupted run leaves no emulator spinning; one did, 1 h 47)
+  timeout 120 mini-qemu -M raspi1ap -device loader,file=$b/kernels/9pi/kernel.img,addr=0x8000,cpu-num=0,force-raw=on -nographic \
     -drive file=$P/qemu-sd.img,if=sd,format=raw,snapshot=on < /dev/null > $out 2>&1 &
   pid=$!
   until grep -aq '^%' $out || [ $n -ge 600 ]; do sleep 0.1; n=$((n + 1)); done

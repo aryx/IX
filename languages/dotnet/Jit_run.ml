@@ -96,11 +96,22 @@ let compile (k : int) : unit = (!pending).(k) ()
 let call_outs (codes : (int, meth * code) Hashtbl.t) (sites : Jit.site list) : unit =
   let calls = List.map (fun (s : Jit.site) ->
       let m, code = Hashtbl.find codes s.srow in
-      let kinds = Array.of_list s.sargs in
+      let kinds = Array.of_list s.sargs and form = Array.of_list s.sform in
       let run = Machine.call_out m code s.sat in
-      fun (a : Obj.t array) ->
-        let v = run (Array.mapi (fun j x -> of_word kinds.(j) x) a) in
-        match s.sret with Some k -> to_word k v | None -> Obj.repr ()) sites in
+      let result v = match s.sret with Some k -> to_word k v | None -> Obj.repr () in
+      let operand j x = match form.(j) with
+        | Jit.Made k -> Machine.exec m code k [||]
+        | _ -> of_word kinds.(j) x in
+      if not (List.mem Jit.Addr s.sform) then
+        fun (a : Obj.t array) -> result (run (Array.mapi operand a))
+      else
+        (* a local's address: an interpreter's cell with its value, its
+         * new value given back after the result *)
+        fun (a : Obj.t array) ->
+          let cells = Array.map (fun x -> [| x |]) (Array.mapi operand a) in
+          let v = run (Array.mapi (fun j (c : value array) -> if form.(j) = Jit.Addr then Ptr (Slot (c, 0)) else c.(0)) cells) in
+          let back = List.filter (fun j -> form.(j) = Jit.Addr) (List.init (Array.length a) (fun j -> j)) in
+          Obj.repr (Array.of_list (result v :: List.map (fun j -> to_word kinds.(j) cells.(j).(0)) back))) sites in
   table := Array.append !table (Array.of_list calls)
 
 (* each assembly's methods, by its name: a row's function *)

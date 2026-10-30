@@ -66,9 +66,21 @@
  * compiled is a BL. A null and an index out of range call the
  * runtime's, which throw.
  *
+ * {b Addresses}: a local's or an argument's (ldloca, ldarga: ref x,
+ * out x, an int's x.ToString()) is nothing at run time, the local
+ * being the code's and not the interpreter's: it is followed from
+ * where it is pushed to the call-out that takes it, which is given the
+ * local's value (the interpreter makes it a cell, Ptr (Slot ...)) and
+ * gives back the new one, which the code puts in the local. A field's,
+ * an element's (ldflda, ldelema) and a ref parameter are the
+ * interpreter's Ptr, a reference to the code, read and written by
+ * call-outs (ldind, stind). A delegate's method (ldftn) is followed
+ * the same way to its newobj, the interpreter making it there.
+ *
  * What it refuses is said with the reason: a struct, an int64, a
- * double, a pointer on the stack, an instruction without its template
- * yet, exception clauses, a generic method or class.
+ * double on the stack, an address at a jump or given to the code
+ * itself, an instruction without its template yet, exception
+ * clauses, a generic method or class.
  *
  * {b A method is compiled at its first call} (stubs, method_code): it
  * is called through its cell, a word holding its code's address, at
@@ -110,8 +122,13 @@ type kind = I | R
 
 (* a call-out: an instruction of a method (its row, its index) the
  * interpreter runs for the code (Machine.exec), its operands' kinds,
- * the bottom first, and its result's *)
-type site = { srow : int; sat : int; sargs : kind list; sret : kind option }
+ * the bottom first, the form of each (Word: its value; Addr: a local's
+ * address, its value given, to be put in a cell, and given back: the
+ * call-out's answer then an array, the result, then their new values;
+ * Made: nothing given, the value the instruction at that index makes,
+ * ldftn's Fn), and its result's *)
+type form = Word | Addr | Made of int
+type site = { srow : int; sat : int; sargs : kind list; sform : form list; sret : kind option }
 
 (* the assembly's methods that are compiled, as mini-asm's text; how
  * many; the others' rows and why not. With the assembly loaded (and

@@ -9,8 +9,12 @@ programmer)"; then "plan_gaps is really for the 'principia
 softwarica' hardcore aspect; stuff a programmer should know, programs
 that a developer use. but apps/ is different".
 
-**Status: a survey, nothing built.** As plan_gaps.md, a list to
-choose from: each application, when taken, gets a plan of its own.
+**Status: a survey, still a list to choose from** (as plan_gaps.md:
+each application, when taken, gets a plan of its own). Mail, the
+calendar and the address book are built, as mini-pim, on Linux only
+so far; the table below says what is where. Taken next, by the author:
+[`plan_files.md`](plan_files.md), [`plan_video.md`](plan_video.md) and
+[`plan_maps.md`](plan_maps.md).
 
 ## The measure
 
@@ -41,24 +45,32 @@ not the measure.
 
 ## What a user does, and what ix has
 
-| What | In ix | Missing |
-|---|---|---|
-| Write, calculate, draw | mini-office (`apps/office/`) | slides; spelling |
-| Read a document | mini-page (`apps/page/`): PDF and pictures | |
-| Listen | mini-play (`apps/music/play/`), mini-rebirth | a player with a library and playlists |
-| Watch | | a video player |
-| Write to people | | mail; chat |
-| Look at and fix photos | mini-page shows one; mini-office's paint, 1 bit | a viewer of many and an editor |
-| Keep time and people | `cal` and `date` (`utilities/time/`), GMT only | a calendar, an address book |
-| Find a place | | maps |
-| Look after files | the shell, `ls`, `cp`, `mv` | a file manager |
-| Browse the web | `browsers/` (lynx, netscape) | |
-| Play | `games/` | |
+| What | In ix | On m-ix (the card) | Missing |
+|---|---|---|---|
+| Write, calculate, draw, present | mini-office (`apps/office/`), slides and their show included | yes: `office` | spelling |
+| Read a document | mini-page (`apps/page/`): PDF and pictures | yes: `page` | |
+| Listen | mini-play (`apps/music/play/`), mini-rebirth | yes: `play`, `rebirth` | a player with a library and playlists |
+| Watch | mini-netscape hands YouTube's films to `mpv` on Linux | no | a video player |
+| Write to people | mini-pim's Mail (`apps/pim/`) | **no** | chat |
+| Keep time and people | mini-pim's Calendar, People, Tasks, Notes, Money | **no** | `date` still GMT only |
+| Look at and fix photos | mini-page shows one; mini-office's paint, 1 bit | yes, those two | a viewer of many and an editor |
+| Find a place | | | maps |
+| Look after files | the shell, `ls`, `cp`, `mv` | yes | a file manager |
+| Browse the web | `browsers/` (lynx, netscape) | yes: `lynx`, `netscape` | |
+| Play | `games/` | yes | |
 
 Surveyed (2026-10-29) from the directories and the headers of
 `apps/`'s programs, `utilities/`, `lib_networking/`,
 `lib_audio/formats/`, `lib_graphics/images/` and `lib_crypto/`;
-what is marked *checked* below was read in the code.
+what is marked *checked* below was read in the code. Brought up to
+date 2026-10-30, from `kernels/9pi/Makefile`'s `CARD_*` lists and each
+directory's `mkfile`.
+
+mini-pim is the one row built for Linux only: `apps/pim/` has dune's
+build and no `mkfile`, so mini-mk does not make it and it is not on
+the card. mini-ml compiles its files (`compile_ix.sh`), but the
+program has not been run on mini-9pi (plan_pim.md's Status). t-IX has
+office, play, a browser and a calculator, and no mail or calendar.
 
 ## The applications, by what a person does
 
@@ -67,8 +79,15 @@ brings that ix does not show.
 
 ### Mail
 
-The largest hole: the oldest thing people do between computers, and
-ix has nothing for it.
+**Done, on Linux**: mini-pim's Mail ([`plan_mail.md`](plan_mail.md),
+stages 1 to 5), the author's Gmail by IMAP and SMTP, mini-maild to
+test against. Not as sketched here: a store of items rather than
+upas/fs's file tree, and the Screener (HEY's) rather than a Bayes
+filter, which is still open. Left: plan_mail.md's stage 6 and
+mini-9pi.
+
+The survey's text: the largest hole, the oldest thing people do
+between computers, and ix had nothing for it.
 
 - **What**: a reader (the mailboxes, a message, its parts, a reply),
   sending by SMTP and reading by IMAP or POP3, over TLS.
@@ -92,7 +111,11 @@ ix has nothing for it.
 - **Under it in ix**: the decoders (`lib_graphics/images/`: JPEG
   baseline and progressive, PNG, GIF, XPM), mini-page's way of
   showing a picture (`Pageview.ml`, *checked*), mini-office's paint
-  and `Part_image`.
+  and `Part_image`, PNG's encoder (`Png.encode`, *checked*).
+- **Missing under it**: a JPEG encoder (`Jpeg.mli` only decodes,
+  *checked*); without it a photo edited is saved as a PNG, many times
+  larger. Exif is skipped (*checked*), so a phone's photo taken upright
+  would show on its side.
 - **What it brings**: compositing with alpha (Porter and Duff,
   1984), the pair of mini-office's paint, which has one bit; a
   convolution; resampling (a thumbnail made well, not by dropping
@@ -103,6 +126,15 @@ ix has nothing for it.
 - **Source**: the playground's TinyPhotoshop, TinyDeluxePaint.
 
 ### A calendar and an address book
+
+**Done, on Linux**: mini-pim's Calendar and People
+([`plan_pim.md`](done/plan_pim.md), which added tasks, notes and
+money): RRULE, iCalendar and vCard, time zones in `time/Zone`, and
+Google's calendars and contacts read. `date` itself is still GMT only.
+Left, in that plan's Status: writing back to Google, and events moved
+or deleted in the window.
+
+The survey's text:
 
 - **What**: a month and a week, events that come back (every Tuesday,
   the last Friday of a month), reminders; people, with their
@@ -130,6 +162,11 @@ ix has nothing for it.
   stream that interleaves sound and picture; keeping the two in step
   by the sound's clock. MPEG-1 is old enough to be simple and is
   JPEG's next chapter.
+- **The catch**: a user's films are H.264 and later, not MPEG-1, so
+  they would have to be converted first. It teaches a lot and plays
+  little of what a user has, and whether a Pi 1 or 2 keeps up in OCaml
+  has not been measured. The author's answer (2026-10-30): the
+  historical formats, for their teaching value; `plan_video.md`.
 
 ### Spelling, in mini-office
 
@@ -144,12 +181,10 @@ ix has nothing for it.
 
 ### Slides, in mini-office
 
-- **What**: a document of slides, shown on the whole screen, a key a
-  slide.
-- **Under it in ix**: mini-office's pages and parts are most of it.
-- **What it brings**: little new; a mode of mini-office rather than a
-  program. Worth it for the user, cheap.
-- **Source**: the playground's TinyPowerPoint.
+**Done, and already there when the survey was written, which missed
+it**: a presentation is one of mini-office's kinds, Slide > Show its
+show (`Office.ml`'s header). It has no master, transitions or builds,
+on purpose.
 
 ### Music, as a library
 
@@ -170,6 +205,8 @@ ix has nothing for it.
   keyboard and the network waited on together: a process each, Plan
   9's way, against one loop over both. Smaller than mail and much of
   its plumbing.
+- **The catch**: people chat on closed services an IRC client does not
+  reach, so this teaches more than it serves.
 - **Source**: the playground's TinyIRC.
 
 ### A file manager
@@ -188,22 +225,34 @@ ix has nothing for it.
 - **What it brings**: projections (Mercator's, the web's), tiles at
   zoom levels, a spatial index (quadtree, R-tree), shortest paths
   (Dijkstra, A*).
-- **Later**: the data is the problem (an OpenStreetMap extract on the
-  card), not the code.
+- **Taken** (2026-10-30), with the weather: `plan_maps.md`. The data is
+  fetched from the internet rather than kept on the card; OSM's tile
+  policy forbids saving an area, so offline would need an extract.
 
 ## Proposed, by value for the cost
 
-1. **Mail**, reader and SMTP and IMAP: the largest hole, on the TLS
-   and TCP ix has; upas/fs's file tree its Plan 9 lesson. Then its
-   spam filter.
-2. **Spelling** in mini-office: small, in the program already there.
-3. **Photos**: compositing, convolution, dithering, on the decoders
-   already there.
-4. **The calendar and the address book**, the address book shared with
-   mail.
-5. **Video**: MPEG-1, after the photos (the DCT and the colours).
-6. **Slides** and **music's library**: small, mostly what exists.
-7. **Chat**, **the file manager**; **maps** later.
+Done: mail, the calendar and the address book (mini-pim), and slides
+(mini-office). What is left, in order (2026-10-30, the author's choice
+for 1 to 3):
+
+0. **mini-pim on m-ix**, before any new application: a `mkfile`, on
+   the card, run on mini-9pi. Not a new program, but until then the
+   largest row of the table is Linux only, against the rule that every
+   m-ix program runs under mini-9pi.
+1. **The file manager**: [`plan_files.md`](plan_files.md), a file's
+   kind leading to its program.
+2. **Video**: [`plan_video.md`](plan_video.md), the historical formats,
+   played by `play` and from the file manager.
+3. **Maps and the weather**: [`plan_maps.md`](plan_maps.md), fetched
+   from the internet.
+4. **Photos**: the big thing left that nearly every user does and ix
+   cannot do, useful for real on the author's own JPEGs. It brings
+   compositing, convolution, resampling and dithering, and needs a
+   JPEG encoder, DCT's other half; the file manager's thumbnails come
+   with it.
+5. **Spelling** in mini-office: small, in the program already there.
+6. **Music's library**: small, mostly what exists.
+7. **Chat**.
 
 ## Moved to plan_gaps.md
 
@@ -218,11 +267,10 @@ and symbolic algebra (beside hoc, bc and dc).
 - Is the measure right: what a user does first, the technique as the
   way to choose among them?
 - Mail on mini-9pi: against a real server outside (QEMU's network,
-  the board's), or a small one of ix's own to test against, as
-  mini-httpd is for the browsers?
-- Where they live: `apps/mail/`, `apps/photos/`... beside office,
-  music and page, or by what they do (`apps/internet/` as the
-  playground)?
+  the board's), or mini-maild, ix's own? (mini-maild now exists; which
+  one to run there is still open.)
+- Where they live: decided by what was built, each suite or program
+  under `apps/` beside the others (`apps/pim/`, so `apps/photos/`).
 
 ## Status
 
@@ -231,3 +279,10 @@ and symbolic algebra (beside hoc, bc and dc).
 2026-10-29: mail, the calendar and the address book taken together,
 with tasks, notes and money, as one suite: [`plan_pim.md`](done/plan_pim.md),
 its mail [`plan_mail.md`](plan_mail.md). Nothing built.
+
+2026-10-30: mini-pim built (plan_pim.md done, plan_mail.md's stages 1
+to 5), on Linux only. The table and the order above brought up to
+date; slides found to be in mini-office already.
+
+2026-10-30: the author takes the file manager, video's historical
+formats, and maps with the weather. Their plans written, nothing built.

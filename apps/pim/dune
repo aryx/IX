@@ -1,5 +1,5 @@
 ; apps/pim: mini-pim, a suite for organizing a life
-; (docs/plans/plan_pim.md), in folders (folders only: one library,
+; (docs/plans/done/plan_pim.md), in folders (folders only: one library,
 ; ix_pim):
 ;   mail/  the mail (docs/plans/plan_mail.md): its formats, Mail (a
 ;          message, RFC 5322), Mime (its parts, its encodings, its
@@ -16,7 +16,7 @@
 ;          Pim_look what they share;
 ;          Mail_sync (mail/) what Mail and the terminal's commands do
 ;          with the server, Conversations what they show
-;   store/ the suite's store (docs/plans/plan_pim.md, ideas 1 and 3):
+;   store/ the suite's store (docs/plans/done/plan_pim.md, ideas 1 and 3):
 ;          Item (lines of name: value, Mail's syntax, stamped) and
 ;          Items (a directory, a file an item, and the mail's cache);
 ;          the rest of the suite's kinds and words: When, Search,
@@ -40,8 +40,8 @@
  (wrapped false)
  (modules :standard \ Pim Maild)
  (flags (:standard -w -32-37-69))
- (libraries ix_html ix_http ix_playground ix_gui ix_graphics_software ix_tls ix_tcp ix_core
-   caps unix))
+ (libraries ix_html ix_http ix_playground ix_gui ix_graphics_software ix_tls
+   ix_tcp ix_core caps unix))
 
 ; the program, with the platform that writes a frame to a file (the
 ; tests'); sdl/ is the one with a window, bin/mini-pim

@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-pim (docs/plans/plan_pim.md): with no command, its window
+(* mini-pim (docs/plans/done/plan_pim.md): with no command, its window
  * (Pim_window: the suite, Home and its views); with one, from a
  * terminal ("the same store from a terminal, for real use and for the
  * tests"), its mail, of plan_mail.md's stages 2 to 4 and 7, here, and

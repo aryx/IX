@@ -13,11 +13,34 @@ something well integrated, like a suite, powerful, and useful for
 real, but also small, like we did a bit with mini-office (and
 mini-netscape)."
 
-**Status: begun: mail (plan_mail.md, stages 1 to 7, 8 begun) and the
-suite's window, a Home and six views; the store, calendar, people,
-tasks, money and notes each begun (stages 2 to 7: the Status below
-says what each has and lacks).**
-Mail, the first part, has its own plan, [`plan_mail.md`](plan_mail.md).
+**Status: done** (2026-10-30; the author: "Should we move the plan
+to done/ then?", then "let's do it"), and this file kept as its
+record. Stages 1 to 7 built, and the six ideas of the design: one store
+of stamped items, links both ways, plain text, one agenda, one search
+and one line to capture (with the recognizer over mail), snooze, and
+reminders by a process of their own. Of the ideas sorted above, all
+the proven and the innovative ones are in (Gmail's search, snooze,
+dates as words, data detectors, the agenda, no Save, Quicken's
+register, invitations; HEY's Screener, backlinks and the daily note,
+YNAB's envelopes, ledger's double entry, BBDB); Chandler's stamps are
+the store, and its warning holds only in part: 9,879 lines of `.ml`
+against the 6,500 planned. Google's side is read (Gmail by IMAP, the
+calendars by their secret addresses, the contacts by a vCard export).
+
+Left, for a plan of their own if they are wanted:
+- two-way with Google (CalDAV, CardDAV: OAuth, postponed by the
+  author), or with another ix by mini-git (stage 8);
+- mini-9pi: the suite never run there (a window on mini-rio, its
+  remind, /env/timezone read by Zone but not tried);
+- the calendar: events moved or deleted in the window, an event's own
+  zone (TZID), birthdays from People shown in it and in Today;
+- money: CSV and OFX bank files, a split line in the window, a
+  receipt of the Paper Trail made a line, a bill's category guessed;
+- mail: plan_mail.md's stage 6, the author's Gmail tried by hand;
+  `Mail_window` split (870 lines, past the 700), x in a menu;
+- `Pim.ml` at 666 lines, near the 700 again.
+
+Mail, the first part, has its own plan, [`plan_mail.md`](../plan_mail.md).
 
 ## What it is for
 

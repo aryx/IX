@@ -10,7 +10,7 @@ mini-office (and mini-netscape)."
 
 **Status: stages 1 to 5 built (the formats; sending and reading, and
 mini-maild; the cache and the items; the window; `apps/pim/`).** Mail is the first part of the suite
-[`plan_pim.md`](plan_pim.md): its messages are the suite's first
+[`plan_pim.md`](done/plan_pim.md): its messages are the suite's first
 items, and its design follows the suite's (one store, stamps, links,
 plain text). This plan says what is mail's own.
 

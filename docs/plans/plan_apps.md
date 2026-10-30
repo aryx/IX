@@ -229,5 +229,5 @@ and symbolic algebra (beside hoc, bc and dc).
 2026-10-29: survey written. Nothing built.
 
 2026-10-29: mail, the calendar and the address book taken together,
-with tasks, notes and money, as one suite: [`plan_pim.md`](plan_pim.md),
+with tasks, notes and money, as one suite: [`plan_pim.md`](done/plan_pim.md),
 its mail [`plan_mail.md`](plan_mail.md). Nothing built.

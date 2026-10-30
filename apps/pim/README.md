@@ -2,7 +2,7 @@
 
 A suite for organizing a life: mail, calendar, people, tasks, notes
 and money, one store, each referring to the others. The plan:
-[`plan_pim.md`](../../docs/plans/plan_pim.md); its mail,
+[`plan_pim.md`](../../docs/plans/done/plan_pim.md); its mail,
 [`plan_mail.md`](../../docs/plans/plan_mail.md), the first part.
 
 So far, plan_mail.md's stages 1 to 7, and 8 begun: the mail's

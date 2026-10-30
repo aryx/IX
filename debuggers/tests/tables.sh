@@ -7,7 +7,7 @@
 # mini-asm and linked by mini-ld -g, its names and lines as recorded
 # here; with live, mini-nm against principia's nm under mini-5i too
 # (not -n: equal values in nm.c's qsort's order, which mini-nm does not
-# copy).
+# copy); a program of gcc's, an ELF, against binutils' nm.
 # usage: debuggers/tests/tables.sh [live]
 
 ROOT=$(cd $(dirname $0)/../.. && pwd)
@@ -56,6 +56,17 @@ same "mini-where: functions, offsets, lines" "$(cat <<'END'
 2000 ?
 END
 )" "$($IX/debuggers/where/Where.exe hello 1020 0x1030 lr=0x105c 2000)"
+# (an ELF's: gcc's program, mini-nm's values and names those of
+# binutils' nm, its letters Plan 9's: lib_executable's Elf_file)
+if command -v gcc > /dev/null && command -v nm > /dev/null; then
+  printf 'static int counter = 3;\nint table[100];\nstatic int leaf(int a) { return a * 2 + counter; }\nint main(void) { return leaf(table[0]); }\n' > elf.c
+  gcc -g -O0 -o elf elf.c
+  same "mini-nm: an ELF's values and names, as binutils' nm" \
+    "$(nm --defined-only elf | awk '$2 ~ /^[TtDdBbRrWV]$/ {printf "%x %s\n", strtonum("0x"$1), $3}' | sort)" \
+    "$($IX/linker/tools/Nm.exe elf | awk '{printf "%x %s\n", strtonum("0x"$1), $3}' | sort)"
+  same "mini-nm: an ELF's letters" "$(printf 'D counter\nT leaf\nT main\nB table\n')" \
+    "$($IX/linker/tools/Nm.exe elf | awk '$3 ~ /^(counter|leaf|main|table)$/ {print toupper($2), $3}')"
+fi
 if [ "$1" = live ]; then
   P=$HOME/principia/ROOT/arch/arm/bin
   if [ -x $P/nm ]; then

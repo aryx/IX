@@ -4,5 +4,5 @@
 (library
  (name ix_executable)
  (wrapped false)
- (modules Symbols Frames)
+ (modules Symbols Elf_file Frames)
  (libraries ix_core fpath caps))

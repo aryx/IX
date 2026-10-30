@@ -939,3 +939,16 @@ name. Checked: debuggers/tests/acid_proc.sh, acid/mlvalues/Values.ml
 by -g (a tree, an abbreviation, an inline record, a char more) and
 typed.acid; 11 sessions, live.
 
+2026-10-30, **an ELF read** (stage 8a's first step; the author, away:
+"go forward while I'm not there, ideally reaching the point where I can
+use mini-acid also on Linux! to debug programs compiled by mini-c,
+mini-ml, mini-asm, and ideally compiled by gcc using DWARF too as a
+stretch goal"): lib_executable/Elf_file (Elf is machine's and
+raspberry's name): an ELF's headers, 32 or 64 bits, its loads, its
+sections by name, and .symtab as Plan 9's letters (T a function, D or
+B an object, lower case when local; nm's r and W are D or T, an
+undefined one left out). mini-nm lists an ELF so. Checked:
+debuggers/tests/tables.sh, a program of gcc's: mini-nm's values and
+names those of binutils' nm (when gcc and nm are there); mini-nm built
+by mini-ml (arm64) prints what dune's does.
+

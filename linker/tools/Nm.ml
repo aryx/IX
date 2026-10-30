@@ -17,6 +17,9 @@
  * objects have none). The names starting with . or $ are left out but
  * with -a.
  *
+ * An ELF executable (Linux's: gcc's, mini-ld -H6 and -H7's) by its
+ * .symtab, nm's letters (Elf_file).
+ *
  * wib:
  * An object or a library is ix's (mini-asm's, mini-cc's, mini-ml's),
  * not Plan 9's format: its names are listed with no value, as nm does
@@ -93,6 +96,10 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
       | bytes ->
           match Symbols.read bytes with
           | Some t -> print caps o ~prefix:(prefix f) (Some t) t.syms; ok
+          | None when Elf_file.is_elf bytes ->
+              (match Elf_file.read bytes with
+               | Some e -> print caps o ~prefix:(prefix f) None (Elf_file.symbols bytes e); ok
+               | None -> Console.eprint caps (Printf.sprintf "nm: %s: no symbol table\n" f); false)
           | None when Fpath.has_ext ".a" (Fpath.v f) ->
               List.iter (fun ((name, member, _) : Link.member) -> print caps o ~prefix:(prefix name) None (of_object (Asm.of_bytes member)))
                 (Link.read_library caps (Fpath.v f));

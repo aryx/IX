@@ -125,6 +125,7 @@ fnhead:
        | Some t when t.etype = Tfunc -> ()
        | _ -> ignore (diag None "not a function"));
       Declare.thisfn := !Declare.lastdcl;
+      Declare.fnline := !Declare.nameline;
       Declare.markdcl ();
       Declare.argmark $2 ~declared:false;
       Option.get s, $2 }

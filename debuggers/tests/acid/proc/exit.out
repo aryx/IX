@@ -36,8 +36,8 @@ acid: PID: Prefetch Abort/Breakpoint	middle+0x1c	MOVW	R0,y-4(SP)
 acid: {0x0000105c}
 acid: PID: Prefetch Abort/Breakpoint	middle+0x20	MOVW	y-4(SP),R0
 acid: {0x00001060}
-acid: middle(x=0x3)+0x20 ?file?:0
-main()+0x8 ?file?:0
+acid: middle(x=0x3)+0x20 target.c:17
+main()+0x8 target.c:26
 _main+0x20 libc/arch/arm/rt0.s:17
 acid: 
 echo kill > /proc/PID/ctl

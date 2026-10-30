@@ -34,8 +34,9 @@ trap 'rm -rf $W' EXIT
 (cd $ROOT/lib_executable && MKSHELL=mini-rc PATH=$ROOT/bin:$PATH mini-mk O=5 OS=plan9 > $W/acid.log 2>&1 &&
    cd $ROOT/debuggers/acid && MKSHELL=mini-rc PATH=$ROOT/bin:$PATH mini-mk O=5 OS=plan9 >> $W/acid.log 2>&1) ||
   { echo "mini-acid not built"; tail -3 $W/acid.log; exit 1; }
-$IX/languages/c/Main.exe -m 5 -I$L/include -I$L/include/utf -I$L -I$L/include/arch/arm -Darm -Dplan9 \
-  -o $W/target.5 $ROOT/debuggers/tests/acid/proc/target.c && $IX/linker/Main.exe -m 5 -g -H2 -o $W/target $W/target.5 $M/lib_core/libc.a ||
+cp $ROOT/debuggers/tests/acid/proc/target.c $W/
+(cd $W && $IX/languages/c/Main.exe -m 5 -I$L/include -I$L/include/utf -I$L -I$L/include/arch/arm -Darm -Dplan9 \
+  -o target.5 target.c) && $IX/linker/Main.exe -m 5 -g -H2 -o $W/target $W/target.5 $M/lib_core/libc.a ||
   { echo "the target not built"; exit 1; }
 printf '#!/boot/rc -m /boot/rcmain\n/boot/bind %s /proc\n/boot/echo acid:\n/boot/acid -l /boot/port.acid -l /boot/arm.acid /boot/target < /boot/s.acid\n/boot/echo acid done\n' "'#p'" > $W/boot.rc
 mini-mkbootdir $b/$K/bootdir $P boot=$W/boot.rc rcmain=$P/ROOT/rc/lib/rcmain rc=$BIN/rc echo=$BIN/echo bind=$BIN/bind \

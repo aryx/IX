@@ -156,8 +156,9 @@ let compile (caps : < caps; .. >) (mach : Tree.machine) (be : backend) ~show:(du
   match FS.read_opt caps file with
   | None -> Error (Printf.sprintf "cannot open %s" (Fpath.to_string file))
   | Some text ->
-      Pre.push text;
       Tree_helpers.lineno := 1;
+      Pre.history := [];
+      Pre.push_file (Fpath.to_string file) text;
       (match Parser.prog Lexer.token (Lexer.lexbuf ()) with
        | () ->
            be.finish ();

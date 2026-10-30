@@ -54,6 +54,14 @@
 (* a function's name and its body, parsed: to the code generator *)
 val on_function : (Tree.sym -> Tree.stmt -> unit) ref
 
+(* the line of the function being defined (its head's: the line table's
+ * for its instructions, a function's line, not yet a statement's) *)
+val fnline : int ref
+
+(* the line of the last name the lexer read (fnline's: a function's
+ * name, not its { read after it) *)
+val nameline : int ref
+
 (* the back end's, set by the command (CLI): an initializer's data (swt.c's gextern) *)
 val gextern : (Tree.sym -> Tree.expr -> int -> int -> unit) ref
 

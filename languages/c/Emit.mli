@@ -72,6 +72,7 @@ type prog = {
   mutable to_ : Asm.operand option;     (* Target is a pc until the end *)
   mutable pseudo : pseudo;
   ppc : int;                          (* the next one's, for DATA and GLOBL *)
+  line : int;                         (* its source's (the function's, Declare.fnline) *)
 }
 
 (* the instructions, the last first; the next's pc *)

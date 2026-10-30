@@ -40,7 +40,10 @@ cleanup() {
 }
 trap 'cleanup; rm -rf $W' EXIT
 mkdir $W/c $W/ml
-(cd $W/c && $IX/languages/c/Main.exe -m 5 -I$L/include -I$L/include/utf -I$L -I$L/include/arch/arm -Darm -Dplan9 -o target.5 $T/proc/target.c \
+# (compiled by its name, in its directory: its tables say target.c, as
+# 5a's -r, and src() finds it there)
+cp $T/proc/target.c $W/c/
+(cd $W/c && $IX/languages/c/Main.exe -m 5 -I$L/include -I$L/include/utf -I$L -I$L/include/arch/arm -Darm -Dplan9 -o target.5 target.c \
    && $IX/linker/Main.exe -m 5 -g -H2 -o target target.5 $M/lib_core/libc.a) > $W/err 2>&1 \
   || { echo "FAIL the C target's build: $(head -2 $W/err)"; exit 1; }
 I="-I $W/ml -I $LC/system/plan9 -I $LC/core -I $LC/base -I $LC/collections -I $LC/printing -I $LC/parsing -I $LC/system -I $LC/concurrency -I $LC/commons"

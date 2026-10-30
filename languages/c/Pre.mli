@@ -67,8 +67,17 @@ val eof : char
 (* the next byte, eof at the end *)
 val raw : unit -> char
 
-(* the text, read next *)
+(* the text, read next (a macro's) *)
 val push : string -> unit
+
+(* a file's text, read next: its start in the history, its end too
+ * when it is read through *)
+val push_file : string -> string -> unit
+
+(* the files read, as 5c's history: (Some name, the global line it
+ * starts at), (None, the line after its end); the last first (the
+ * object's, after mini-ld's z entries: Symbols's fline) *)
+val history : (string option * int) list ref
 
 (* the character put back, or the next *)
 val read : unit -> char

@@ -2,15 +2,15 @@
 acid: 7: SVC/SWI Exception	_main	MOVW.W	R14,#-0x4(R13)
 7: Prefetch Abort/Breakpoint	main+0x4	MOVW	$#0x3,R0
 acid: acid: 7: Prefetch Abort/Breakpoint	leaf	MOVW	R0,a+0(FP)
-acid: leaf(a=0x0,b=0x4)+0x0 ?file?:0
-middle(x=0x3)+0x18 ?file?:0
-main()+0x8 ?file?:0
+acid: leaf(a=0x0,b=0x4)+0x0 target.c:11
+middle(x=0x3)+0x18 target.c:17
+main()+0x8 target.c:26
 _main+0x20 libc/arch/arm/rt0.s:17
 acid: 0
 acid: 7: Prefetch Abort/Breakpoint	leaf+0x4	MOVW	a+0(FP),R0
-acid: leaf(a=0x3,b=0x4)+0x4 ?file?:0
-middle(x=0x3)+0x18 ?file?:0
-main()+0x8 ?file?:0
+acid: leaf(a=0x3,b=0x4)+0x4 target.c:11
+middle(x=0x3)+0x18 target.c:17
+main()+0x8 target.c:26
 _main+0x20 libc/arch/arm/rt0.s:17
 acid: 
 echo kill > /proc/7/ctl

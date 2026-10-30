@@ -281,10 +281,10 @@ defn next()
 	sp = *SP;
 	f = fnbound(*PC);
 	stmnt();
+	if *PC >= f[0] && *PC < f[1] then
+		return {};
 	while (*PC < f[0] || *PC >= f[1]) && sp >= *SP do
 		step();
-	if *PC < f[0] || *PC >= f[1] then
-		return {};
 	src(*PC);
 }
 

@@ -142,7 +142,13 @@ let word lexbuf again name =
     again lexbuf
   end
   else if s.sclass = Ctypedef || s.sclass = Ctypestr then P.LTYPE s
-  else if s.lexical > 0 then snd (List.nth keywords (s.lexical - 1)) else P.LNAME s
+  else if s.lexical > 0 then snd (List.nth keywords (s.lexical - 1))
+  else begin
+    (* (a name's line: a function's, its head's name, Declare.fnline:
+     * the head is reduced when its { is read, maybe a line later) *)
+    Declare.nameline := !Tree_helpers.lineno;
+    P.LNAME s
+  end
 }
 
 let digit = ['0'-'9']

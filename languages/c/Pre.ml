@@ -11,9 +11,14 @@ open Tree_helpers
 (* The input: files and macro expansions, stacked (lex.c's Io) *)
 (*****************************************************************************)
 
-type input = { text : string; mutable pos : int }
+type input = { text : string; mutable pos : int; file : bool }
 
 let stack : input list ref = ref []
+
+(* the files read, as 5c's history (Hist): a file's start, its name and
+ * the global line it starts at; a file's end (None), the line after it.
+ * The last first *)
+let history : (string option * int) list ref = ref []
 let includes : Fpath.t list ref = ref []
 let peekc : char option ref = ref None
 
@@ -26,9 +31,20 @@ let rec raw () =
   | [] -> eof
   | i :: rest ->
       if i.pos < String.length i.text then (let c = i.text.[i.pos] in i.pos <- i.pos + 1; c)
-      else (stack := rest; raw ())
+      else begin
+        (* a file's end: in the history (5c's linehist(0, 0) at EOF) *)
+        if i.file then history := (None, !lineno) :: !history;
+        stack := rest;
+        raw ()
+      end
 
-let push text = stack := { text; pos = 0 } :: !stack
+let push text = stack := { text; pos = 0; file = false } :: !stack
+
+(* a file read: its start in the history, at the global line (5c's
+ * newfile, linehist(f, 0)) *)
+let push_file name text =
+  history := (Some name, !lineno) :: !history;
+  stack := { text; pos = 0; file = true } :: !stack
 
 (* the character put back, or the next *)
 let read () = match !peekc with Some c -> peekc := None; c | None -> raw ()
@@ -266,9 +282,12 @@ let macinc () =
   let f = Buffer.contents b in
   let dirs = List.filteri (fun i _ -> not (i = 0 && close = '>')) !includes in
   let text = List.find_map (fun d -> !read_file (Fpath.append d (Fpath.v f))) dirs in
+  (* in the history by its name as written, not the path found (5c's):
+   * an object the same whatever the -I's directories, the card's and the
+   * host's (kernels/9pi/tests/smoke.sh compares them) *)
   match text with
-  | Some t -> push t
-  | None -> (match !read_file (Fpath.v f) with Some t -> push t | None -> error_at !lineno "cannot open include file %s" f)
+  | Some t -> push_file f t
+  | None -> (match !read_file (Fpath.v f) with Some t -> push_file f t | None -> error_at !lineno "cannot open include file %s" f)
 
 type cond = Ifdef | Ifndef | Else
 

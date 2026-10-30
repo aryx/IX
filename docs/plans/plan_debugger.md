@@ -794,3 +794,19 @@ first (mini-mk takes a library's archive as it is: a stale one lacked
 file_pc). A line is still a function's in mini-ml's tables (its body's
 line, decision 3), so next and stmnt on mini-ml's code go a function
 at a time; a statement's line is stage 1b's rest.
+
+2026-10-30, **mini-cc's line tables**: a C frame said ?file?:0, mini-cc's
+objects carrying no history; now as 5c's (Hist): Pre records each file
+read, its start (its name, the global line) and its end (the line
+after it), the command line's file first, an #include by its name as
+written, not the path found (5c's): an object the same whatever the
+-I's directories, the card's and the host's (kernels/9pi/tests/smoke.sh
+compares them: pow.5 differed). Each function's code takes its name's
+line (the lexer's last name, Declare.nameline, kept at the function's
+head), as mini-ml's (decision 3); data none. A statement's line is
+next (the compat back end's, then ssa's). port.acid's next as acid's:
+src printed once out of the function, not on a line inside it.
+Checked: debuggers/tests/acid_proc.sh (4 sessions, the C frames now
+target.c:11, :17, :26, re-recorded) and live (principia's acid: the
+same); kernels/9pi/tests/acid.out re-recorded (the same three lines);
+make test (161 jobs, 118 s).

@@ -1024,3 +1024,20 @@ ix's, `mini-acid -l prog.acid ./gccprog` one of gcc's with mini-cc -m 7
 -a's declarations. ld(1) and nm(1) say the ELF's sections.
 Checked: acid_linux.sh's sessions without -l (5).
 
+2026-10-30, **DWARF's types** (stage 8a's last step for gcc's
+programs): lib_executable/Dwarf_info reads .debug_info with
+.debug_abbrev (v2 to 5: the forms gcc 13 writes, implicit constants,
+references made absolute), a tree of entries per unit;
+debuggers/acid/Acid_dwarf makes 5c -a's text of it: a structure's aggr
+(its own name, or a typedef's of an unnamed one), its members' formats
+by their base types' encodings and sizes, a pointer to a structure 'A'
+T, a structure in it T; a global of a structure type, or a pointer to
+one, complex T v. mini-acid runs it as an ELF's declarations when it
+has no .acid: print(n1) on gcc's program with no -l. And an 'a' or 'A'
+is read as the machine's address (Eval.addr_size, 8 on arm64): n1.next
+of a PIE (0xaaaaaaac0018) was cut to 4 bytes. Not done: a local's type
+(f:v: DWARF's locations are expressions on the frame's base), bit
+fields, 5c's printing functions. Checked: acid_linux.sh's
+dwarf/types.acid (n1 before and after new(), n1.next, n1.next.p, a
+string member), 6 sessions; acid_proc.sh (11).
+

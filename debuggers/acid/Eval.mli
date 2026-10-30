@@ -23,6 +23,10 @@ val builtins : (string, Ast.value list -> Ast.value) Hashtbl.t
 val load : (bool -> int64 -> int -> string) ref
 val store : (int64 -> string -> unit) ref
 
+(* the machine's address, what * reads of an a or an A: 4 bytes on
+ * arm, 8 on arm64 (Proc's program sets it) *)
+val addr_size : int ref
+
 (* an address as the a format says it: a symbol and an offset *)
 val symbol : (int64 -> string) ref
 

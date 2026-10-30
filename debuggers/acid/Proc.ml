@@ -306,6 +306,7 @@ let program (caps : < caps; .. >) path =
     Das.table (match p.table with Some (t : Symbols.t) -> t.syms | None -> []);
   Eval.print [ Value.string (path ^ (if p.elf <> None then ":" ^ p.arch ^ " linux executable" else ":arm plan 9 executable")) ];
   set "objtype" (Value.string p.arch);
+  Eval.addr_size := (if p.arch = "arm64" then 8 else 4);
   set "textfile" (Value.string path);
   registers ()
 
@@ -314,6 +315,10 @@ let program (caps : < caps; .. >) path =
  * its file *)
 let declarations () =
   match !prog with
+  (* (an ELF of gcc's: its DWARF types as acid's, Acid_dwarf) *)
+  | Some ({ elf = Some e; table = Some t; _ } as p)
+    when not (List.exists (fun (s : Symbols.sym) -> s.name = ".acid") t.syms) && Elf_file.section e ".debug_info" <> None ->
+      (match Acid_dwarf.decls (Dwarf_info.read p.file e) with "" -> None | text -> Some text)
   | Some ({ table = Some t; _ } as p) ->
       (match List.find_opt (fun (s : Symbols.sym) -> s.name = ".acid" && String.contains "Dd" s.typ) t.syms with
        | Some s ->

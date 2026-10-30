@@ -9,7 +9,7 @@
 (library
  (name ix_acid)
  (wrapped false)
- (modules Ast Code Value Eval Das Das_arm64 Ptrace Proc Parser Lexer Builtin CLI)
+ (modules Ast Code Value Eval Das Das_arm64 Ptrace Acid_dwarf Proc Parser Lexer Builtin CLI)
  (foreign_stubs (language c) (names ptrace))
  (libraries ix_executable ix_core fpath unix caps))
 

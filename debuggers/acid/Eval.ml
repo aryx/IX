@@ -206,11 +206,14 @@ let binop op (l : value) (r : value) =
 (* acid's indir: what is at an address, read as its format says (a
  * byte, a half, a word, 8 bytes, a string to its NUL, an instruction
  * as its text), little-endian; an address is 4 bytes on arm (a, A, W:
- * geta) *)
+ * geta), 8 on arm64 (a, A: addr_size) *)
+let addr_size = ref 4
+
 let width = function
   | 'c' | 'C' | 'b' -> 1
   | 'x' | 'd' | 'u' | 'o' | 'q' | 'r' -> 2
-  | 'a' | 'A' | 'W' | 'B' | 'X' | 'D' | 'U' | 'O' | 'Q' -> 4
+  | 'a' | 'A' -> !addr_size
+  | 'W' | 'B' | 'X' | 'D' | 'U' | 'O' | 'Q' -> 4
   | 'V' | 'Y' | 'Z' -> 8
   | c -> error "bad pointer format '%c' for *" c
 

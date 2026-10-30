@@ -9,7 +9,8 @@
 #   acid/linux/*.acid      gcc's (acid/linux/target.c): new, a
 #                          breakpoint, stk by the frame pointers, step,
 #                          cont, values by mini-cc -m 7 -a's declarations
-#                          of the same file; lines.acid by DWARF's lines
+#                          of the same file; lines.acid by DWARF's lines;
+#                          dwarf/*.acid with no -l: its types DWARF's
 #   acid/linux/cc/*.acid   the same file by mini-cc -g and mini-ld -g -H7:
 #                          its names, lines and types in its sections
 #   acid/linux/ml/*.acid   acid/mlvalues/Values.ml by mini-ml -g: its
@@ -48,9 +49,10 @@ U=$($ROOT/bin/mini-ar t $M/lib_core/lib_core.a | sed 's,.*/,,; s,\.ml$,,' | tr '
 ) > $W/err 2>&1 || { echo "FAIL the targets' build: $(head -2 $W/err)"; exit 1; }
 norm() { sed -E "s|$W|W|g" | sed -E 's/[0-9]{4,8}: /PID: /g; s/0x[0-9a-f]{12,16}/ADDR/g; s/pid=[0-9]+/pid=PID/g; s/^kill [0-9]+/kill PID/'; }
 n=0; failures=0
-for d in gcc:. cc:cc ml:ml asm:asm; do
-  # (gcc's program its types from mini-cc -a's file; the others' their own)
-  decls=; [ ${d%:*} = gcc ] && decls="-l target.acid"
+for d in gcc:. gcc:dwarf cc:cc ml:ml asm:asm; do
+  # (gcc's program its types from mini-cc -a's file, or from its DWARF;
+  # the others' their own)
+  decls=; [ $d = gcc:. ] && decls="-l target.acid"
   for f in $T/${d#*:}/*.acid; do
     name=${d#*:}/$(basename $f .acid)
     n=$((n + 1))

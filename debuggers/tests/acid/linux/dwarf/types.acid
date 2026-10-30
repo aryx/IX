@@ -1,0 +1,10 @@
+n1
+whatis n1
+new()
+bpset(leaf)
+cont()
+n1
+n2
+n1.next
+n1.next.p
+*(n1.next.name\s)

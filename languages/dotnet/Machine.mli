@@ -60,6 +60,11 @@ open Value
 (* a method called with its arguments (`this` first), its result *)
 val invoke : meth -> value array -> value
 
+(* asked at a method's first call (its body still Il_body) for its
+ * code by the JIT, which then is its body (Native); None, the
+ * interpreter's. Jit_run.jit with -jit; by default none *)
+val jit : (meth -> (value array -> value) option) ref
+
 (* the program's entry point run with the command line's arguments:
  * Main's result, 0 if it returns none *)
 val run_main : image -> string list -> int

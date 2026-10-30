@@ -43,9 +43,10 @@ machine: objects, value types, generics, delegates; `dotnet` and
 `languages/tiger/`, and the reduced mini-csc, `languages/dotnet/csc/`,
 whose assemblies Microsoft's dotnet and mini-dotnet both run; the
 verifier, `-verify`; the JIT's code as text, `-S -jit`, its first
-methods those of int32s, their code run from C under mini-5i); stage 9,
-the JIT run in mini-dotnet, waits on the open question of its
-executable memory. See the end.
+methods those of int32s, their code run from C under mini-5i); stage 9
+begun on arm64 (Linux): `mini-dotnet -jit` runs the JIT's code for
+those methods, in 97.9% less time than the interpreter on bench.cs. See
+the end.
 
 ## Its place in `languages/`
 
@@ -449,7 +450,9 @@ reader, Partition III the machine.
 - mini-tiger's place: `languages/tiger/` (decision 9), or
   `languages/dotnet/tiger/` beside `csc/`?
 - The JIT's executable memory on mini-9pi (decision 12): which call
-  of the kernel?
+  of the kernel? The author (2026-10-30): segflush, Plan 9's, made
+  real, and segattach as a general mechanism, as Linux's mmap and
+  mprotect.
 
 ## Status
 
@@ -656,3 +659,78 @@ calls a closure, a method's entry a cell and its first call a stub,
 and the code written into memory and run, which on mini-9pi wants a
 kernel's call, the open question below, and mini-5i's and mini-qemu's
 caches of decoded code told. Left for the author's answer.
+
+2026-10-30, stage 9 begun, on arm64 first. The author, asked which
+call of mini-9pi gives the JIT its memory: "let's do segflush then,
+but seems also useful to implement segattach as a general mechnaism a
+la mmap and mprotect. But first does the JIT work on linux before
+mini-9pi? So I can test on the host first?"; then "hopefully we can
+measure the speed increase of the JIT approach vs the pure
+interpreter approach". So the order of stages 9 and 10 changed for
+the code generator: arm64's templates first, run where mini-ml builds
+mini-dotnet for Linux on arm64 (the author's machine), then arm under
+mini-5i and on mini-9pi with segflush.
+
+What is done. Jit's templates for both machines (`-S -jit -m 7`:
+arm64's, 7c's convention, W instructions on the low 32 bits, a slot
+of 8 bytes, a branch over a move where arm has a conditional move:
+mini-ld encodes no CSET); arm's text unchanged. `Jit_run`: at the
+first call of a method the JIT takes, its assembly's methods are all
+compiled at once (Jit.program: the methods, and an entry for each),
+the text read by mini-asm's parser and encoded by mini-ld's passes
+used as a library (Link.load_objects, new: objects in memory; then
+Arm64's prepare, rewrite, layout, encode), at address 0: the code has
+none of its own, branches and the literal pool being relative to the
+pc. `Code_memory`: the bytes made executable by three system calls of
+Linux and no C (memfd_create, write, mmap PROT_READ|PROT_EXEC: W^X,
+the kernel making the instruction cache see the bytes as it maps
+them); its file for dune's build has no JIT (ocamlopt's conventions
+are not mini-ml's), mini-ml/'s is the mkfile's. A method's entry is
+called as mini-ml calls a closure of one argument (Gen: R0 the
+closure, R1 the argument, field 0 the code): a block of two fields,
+the code's address in both, made through an int64's block, whose
+field is a word the collector does not look in. The entry takes an
+array of ints, untags them into 7c's places, calls the method, tags
+its result. A division by zero calls an ML function by its static
+closure's address (Code_memory.divide_by_zero, a top-level function:
+its closure does not move), which raises; the entry's caller turns
+that into DivideByZeroException. Machine asks the JIT at a method's
+first call (Machine.jit, its body still Il_body), and the method's
+body is then Native. The value stack (R26) is not touched: the
+methods' slots are all int32s, on the machine's stack.
+
+Checked (`tests/run.sh`, 177 checks): the arm64 text recorded for
+Fib and Ints (`jit/fib7.s`, `jit/ints7.s`), assembled by mini-asm
+for every assembly; linked with the same C programs against Linux's
+libc for arm64 and run on this machine, they print what the
+interpreter prints; every program run with `-jit` by dune's build
+(the interpreter) and mini-ml's (the JIT's code: Fib's, Ints', a
+lambda of closures.dll, `jit/zero.cs`'s division by zero in compiled
+code caught by the interpreter's catch, `jit/bench.cs`), what
+Microsoft's runtime prints. All of languages/dotnet compiles by
+mini-ml (26 files).
+
+The speed (Linux on arm64, the author's machine; `jit/bench.cs`'s
+methods each in a program of its own, the time of the whole process,
+the JIT's compilation in it):
+
+| | interpreter, mini-ml's build | interpreter, ocamlopt's (dune) | JIT | Microsoft's dotnet 8 |
+|---|---|---|---|---|
+| Fib(27), calls (5.7 M IL instructions) | 0.53 s | 0.35 s | 0.02 s | 0.08 s |
+| Collatz's steps to 100,000 (174 M) | 7.17 s | 3.84 s | 0.16 s | 0.10 s |
+| bits counted to 1,000,000 (239 M) | 9.64 s | 5.39 s | 0.20 s | 0.07 s |
+| bench.cs, the three | 17.29 s | 9.45 s | 0.37 s | 0.13 s |
+
+So the JIT's code takes 97.9% less time than the interpreter of the
+same build (2.1% of it), and the interpreter itself goes about 24
+million IL instructions a second. Microsoft's, which keeps values in
+registers where these templates keep each slot in memory, takes 65%
+less time than ours on bench.cs (0.13 s against 0.37), its start
+(some 0.06 s) included.
+
+Left: the references (decision 12: on mini-ml's value stack, R26),
+the library's adapters called as closures, a method's entry a cell
+compiled at its own first call, the code on arm under mini-5i and on
+mini-9pi (segflush made real, mini-5i's and mini-qemu's caches of
+decoded code told; segattach as mmap and mprotect).
+

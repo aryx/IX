@@ -5,6 +5,8 @@
 
 open Value
 
+let jit : (meth -> (value array -> value) option) ref = ref (fun _ -> None)
+
 (* ------------------------------------------------------------------ *)
 (* Places: fields, elements, pointers *)
 (* ------------------------------------------------------------------ *)
@@ -144,6 +146,7 @@ and statics (f : field) : store =
 and invoke (m : meth) (args : value array) : value =
   match m.body with
   | Native f -> f args
+  | Il_body _ when (match !jit m with Some f -> m.body <- Native f; true | None -> false) -> invoke m args
   | Runtime ->
       if m.mname = "Invoke" then begin
         let st = match args.(0) with Obj st -> st | Null -> Frame.null_ref () | _ -> Frame.error "a delegate" in

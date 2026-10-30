@@ -7,11 +7,12 @@ dotnet – run a .NET assembly
 **dotnet**
 [ **-trace** ]
 [ **-s** ]
+[ **-jit** ]
 *file*`.dll`
 [ *arg* ... ]
 
 **dotnet**
-**-S** | **-tables** | **-size**
+**-S** [ **-jit** [ **-m** 5|7 ] ] | **-tables** | **-size**
 *file*`.dll` ...
 
 # DESCRIPTION
@@ -26,7 +27,18 @@ StringBuilder, List, Dictionary, the delegates.
 :    Each instruction is said as it runs, on the standard error.
 
 **-s**
-:    At the end, the instructions run.
+:    At the end, the instructions run, and with **-jit** the methods
+     compiled.
+
+**-jit**
+:    The methods the JIT takes (their arguments, locals and stack of
+     int32s only, calling only such methods) are compiled at the first
+     call of one of them, the assembly's all at once, and run as the
+     machine's code; the others by the interpreter. Only where
+     *dotnet* was built by mini-ml for arm64 on Linux; elsewhere the
+     interpreter runs all. With **-S**, that code as the assembler's
+     text, arm's (**-m 5**, the default) or arm64's (**-m 7**), and
+     why each other method is not compiled.
 
 **-S**
 :    The assembly's types, their fields and methods, and the
@@ -43,6 +55,7 @@ StringBuilder, List, Dictionary, the delegates.
 dotnet /lib/dotnet/hello.dll
 dotnet -s /lib/dotnet/queens.dll
 dotnet -S /lib/dotnet/fib.dll
+dotnet -S -jit -m 7 /lib/dotnet/fib.dll
 tiger -o /tmp/q.dll /lib/tiger/queens.tig; dotnet /tmp/q.dll
 ```
 

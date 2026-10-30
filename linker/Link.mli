@@ -131,6 +131,10 @@ val sym_of : 'm t -> int -> Asm.name -> sym
  * (5l's needsdiv) *)
 val load : < Cap.open_in; .. > -> 'm t -> decode:(string -> 'm option) -> needs:('m prog list -> string list) -> Fpath.t list -> unit
 
+(* objects already in memory, and only them: mini-dotnet's JIT, which
+ * assembles its text and encodes it with the passes after load *)
+val load_objects : 'm t -> decode:(string -> 'm option) -> Asm.obj list -> unit
+
 (* A library (lib.a): objects, each with the names it defines, from
  * which load takes those that define what is undefined. ix's own
  * file, a marshalled value as an object is, not ar's; mini-ar makes it

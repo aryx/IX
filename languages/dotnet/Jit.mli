@@ -36,6 +36,12 @@
  * interpreter prints (tests/jit). A division by zero calls
  * jit_divide_by_zero, the runtime's (the test's C).
  *
+ * {b Arm64's} (-m 7) are the same templates in 7c's convention: W
+ * instructions on an int32 (ADDW...), a slot of 8 bytes, and a branch
+ * over a move where arm has a conditional one (CSET mini-ld does not
+ * encode). That code is the one mini-dotnet runs (Jit_run, `-jit`),
+ * each method with an entry mini-ml calls as a closure ([program]).
+ *
  * What it refuses is said with the reason: a reference on the stack
  * (a string, an object, an array), a call into the library, an
  * instruction without its template yet, exception clauses. The rest
@@ -58,6 +64,17 @@
 (* why a method is not compiled *)
 exception Refused of string
 
+(* arm's (5c's), or arm64's (7c's: the same templates, W instructions
+ * on the low 32 bits, a slot of 8 bytes, no conditional move) *)
+type mach = Arm | Arm64
+
 (* the assembly's methods that are compiled, as mini-asm's text; how
  * many; the others' rows and why not *)
-val assembly : Image.t -> string * int * (int * string) list
+val assembly : mach -> Image.t -> string * int * (int * string) list
+
+(* the text Jit_run encodes and runs, on arm64: the methods, and for
+ * each an entry, `Sym_entry`, which mini-ml calls as a closure of one
+ * argument, an array of the arguments as ints, and which returns the
+ * result as an int; a division by zero calls the ML function whose
+ * static closure is at [divide_by_zero]. The rows and their entries. *)
+val program : Image.t -> divide_by_zero:int -> string * (int * string) list

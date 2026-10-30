@@ -106,6 +106,8 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
   [ $root = browsers ] && incs[$root]="$(dirs browsers) -I lib_playground -I lib_playground/core -I lib_playground/random -I lib_networking/http $(dirs lib_graphics)"
   # (mini-nm: the linker's objects and libraries)
   [ $root = debuggers ] && incs[$root]="$(dirs debuggers) $(dirs linker)"
+  # (mini-dotnet: its JIT's encoders are the linker's)
+  [ $root = languages/dotnet ] && incs[$root]="$(dirs languages/dotnet) $(dirs linker)"
   # (mini-datalog: over mini-prolog's terms and its reader)
   [ $root = languages/datalog ] && incs[$root]="$(dirs languages/datalog) $(dirs languages/prolog)"
   [ $root = languages/pascal ] && incs[$root]="$(dirs languages/pascal) -I lib_terminal -I lib_playground/random"

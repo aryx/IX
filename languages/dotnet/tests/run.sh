@@ -14,12 +14,18 @@
 #              survey's, ours and the writer's; and writer/Broken.ml's,
 #              each method broken in one way, refused with its offset and
 #              why (writer/broken.verify)
-#   jit        the JIT's code (-S -jit) for each assembly assembled by
-#              mini-asm; its text for jit/fib.dll's and jit/ints.dll's
-#              methods against jit/*.s; and, where Plan 9's libc for arm
-#              is built (_mk/5-plan9), that code linked with a C program
-#              (jit/*.c) that calls it, run under mini-5i: what the
-#              interpreter prints (fib.expected, ints.expected)
+#   jit        the JIT's code (-S -jit, arm's and arm64's: -m 7) for each
+#              assembly assembled by mini-asm; its text for jit/fib.dll's
+#              and jit/ints.dll's methods against jit/*.s (*7.s: arm64's);
+#              that code linked with a C program (jit/*.c) that calls it:
+#              arm's, where Plan 9's libc for arm is built (_mk/5-plan9),
+#              run under mini-5i, and arm64's, on an arm64 machine where
+#              Linux's libc is built (_mk/7), run there: what the
+#              interpreter prints (fib.expected, ints.expected); each
+#              program run with -jit too (its code run by mini-ml's build
+#              on arm64, the interpreter elsewhere), and jit/*.dll's
+#              (zero: a division by zero in the JIT's code caught by the
+#              interpreter; bench, with -jit only, where it is compiled)
 #   run        each program run, what it prints against what Microsoft's
 #              runtime printed: the survey's ten (survey/programs/
 #              *.expected), and ours (programs/*.expected, their exit too;
@@ -66,22 +72,26 @@ check() {
   if [ -n "$record" ]; then
     cp $W/hello.S $W/hello.out $W/broken.verify $T/writer/
     "$@" -S -jit $P/fib.dll > $T/jit/fib.s; "$@" -S -jit $T/jit/ints.dll > $T/jit/ints.s
+    "$@" -S -jit -m 7 $P/fib.dll > $T/jit/fib7.s; "$@" -S -jit -m 7 $T/jit/ints.dll > $T/jit/ints7.s
     return
   fi
   if cmp -s $W/broken.verify $T/writer/broken.verify; then ok "mini-dotnet -verify: Broken.ml's methods refused, by $what"
   else fail "mini-dotnet -verify: Broken.ml's methods refused, by $what"; diff $T/writer/broken.verify $W/broken.verify | head -5; fi
   # (the JIT's text: recorded for two, assembled for all)
-  for p in fib ints; do
-    f=$P/$p.dll; [ $p = ints ] && f=$T/jit/ints.dll
-    "$@" -S -jit $f > $W/$p.s 2>&1
-    if cmp -s $W/$p.s $T/jit/$p.s; then ok "mini-dotnet -S -jit $p, by $what"
-    else fail "mini-dotnet -S -jit $p, by $what"; diff $T/jit/$p.s $W/$p.s | head -5; fi
-  done
-  for f in $P/*.dll $T/programs/*.dll $T/jit/ints.dll; do
-    "$@" -S -jit $f > $W/jit.s 2>&1
-    if _build/default/assembler/Main.exe -m 5 -o $W/jit.5 $W/jit.s > $W/jit.err 2>&1; then
-      ok "mini-dotnet -S -jit $(basename $f): $(tail -1 $W/jit.s | sed 's|^// [^:]*: ||'), assembled, by $what"
-    else fail "mini-dotnet -S -jit $(basename $f): not assembled, by $what"; head -3 $W/jit.err; fi
+  for m in 5 7; do
+    for p in fib ints; do
+      f=$P/$p.dll; [ $p = ints ] && f=$T/jit/ints.dll
+      s=$p.s; [ $m = 7 ] && s=${p}7.s
+      "$@" -S -jit -m $m $f > $W/$s 2>&1
+      if cmp -s $W/$s $T/jit/$s; then ok "mini-dotnet -S -jit -m $m $p, by $what"
+      else fail "mini-dotnet -S -jit -m $m $p, by $what"; diff $T/jit/$s $W/$s | head -5; fi
+    done
+    for f in $P/*.dll $T/programs/*.dll $T/jit/*.dll; do
+      "$@" -S -jit -m $m $f > $W/jit.s 2>&1
+      if _build/default/assembler/Main.exe -m $m -o $W/jit.$m $W/jit.s > $W/jit.err 2>&1; then
+        ok "mini-dotnet -S -jit -m $m $(basename $f): $(tail -1 $W/jit.s | sed 's|^// [^:]*: ||'), assembled, by $what"
+      else fail "mini-dotnet -S -jit -m $m $(basename $f): not assembled, by $what"; head -3 $W/jit.err; fi
+    done
   done
   for f in $P/*.dll $T/programs/*.dll $W/hello.dll; do
     v=$("$@" -verify $f 2>&1 | tail -1)
@@ -102,6 +112,17 @@ check() {
     { "$@" $f 2> $W/$p.err; echo "exit $?"; } > $W/$p.out
     if cmp -s $W/$p.out $T/programs/$p.expected; then ok "mini-dotnet $p, by $what"
     else fail "mini-dotnet $p, by $what"; diff $T/programs/$p.expected $W/$p.out | head -5; head -3 $W/$p.err; fi
+  done
+  # (with -jit: the JIT's code where it runs, the interpreter elsewhere;
+  # bench's 400 million instructions only where the JIT compiles them)
+  jit=; "$@" -jit -s $T/jit/zero.dll 2>&1 >/dev/null | grep -q 'methods compiled' && jit=1
+  for f in $P/*.dll $T/programs/*.dll $T/jit/*.dll; do
+    p=$(basename $f .dll); e=${f%.dll}.expected
+    [ $p = bench ] && [ -z "$jit" ] && continue
+    case $f in $T/programs/*) { "$@" -jit $f 2> $W/$p.err; echo "exit $?"; } > $W/$p.out;;
+      *) "$@" -jit $f > $W/$p.out 2> $W/$p.err;; esac
+    if cmp -s $W/$p.out $e; then ok "mini-dotnet -jit $p${jit:+, its code run}, by $what"
+    else fail "mini-dotnet -jit $p, by $what"; diff $e $W/$p.out | head -5; head -3 $W/$p.err; fi
   done
 }
 if [ -n "$sdk" ]; then
@@ -143,9 +164,24 @@ jit_run() {
   then ok "the JIT's code for $p's methods, called from C under mini-5i: what the interpreter prints"
   else fail "the JIT's code for $p's methods, called from C under mini-5i"; diff $want $W/${p}jit.out | head -5; fi
 }
+# and arm64's, linked with Linux's libc, run here on an arm64 machine
+jit_run7() {
+  local p=$1 want=$2 IX=_build/default M=_mk/7 L=lib_core/libc
+  [ "$(uname -m)" = aarch64 ] || { echo "skipped: the JIT's arm64 code run (not an arm64 machine)"; return; }
+  [ -f $M/lib_core/libc.a ] || { echo "skipped: the JIT's arm64 code run (no $M/lib_core/libc.a)"; return; }
+  if $IX/assembler/Main.exe -m 7 -o $W/${p}jit.7 $T/jit/${p}7.s &&
+     $IX/languages/c/Main.exe -m 7 -I$L/include -I$L/include/utf -I$L -I$L/include/arch/arm64 -Darm64 \
+       -o $W/${p}c.7 $T/jit/$p.c &&
+     $IX/linker/Main.exe -m 7 -o $W/${p}jit7 $W/${p}c.7 $W/${p}jit.7 $M/lib_core/libc.a > $W/link.err 2>&1 &&
+     timeout 60 $W/${p}jit7 > $W/${p}jit7.out 2>&1 && cmp -s $W/${p}jit7.out $want
+  then ok "the JIT's arm64 code for $p's methods, called from C on this machine: what the interpreter prints"
+  else fail "the JIT's arm64 code for $p's methods, called from C on this machine"; diff $want $W/${p}jit7.out | head -5; fi
+}
 if [ -z "$RUN" ] && [ "$only" != mini ]; then
   jit_run fib $P/fib.expected
   jit_run ints $T/jit/ints.expected
+  jit_run7 fib $P/fib.expected
+  jit_run7 ints $T/jit/ints.expected
 fi
 [ -z "$RUN" ] && [ "$only" != mini ] && check dune $NATIVE
 [ "$only" != dune ] && check "mini-ml ($O)" $RUN $MINI

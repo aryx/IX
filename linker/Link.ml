@@ -252,6 +252,10 @@ let load caps t ~decode ~needs files =
   (* (the first instruction first, from here on: see add_object) *)
   t.progs <- List.rev t.progs
 
+let load_objects t ~decode objs =
+  List.iteri (fun i o -> add_object t ~decode (i + 1) o) objs;
+  t.progs <- List.rev t.progs
+
 (*****************************************************************************)
 (* Branches *)
 (*****************************************************************************)

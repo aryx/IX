@@ -5,7 +5,7 @@
 
 type caps = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr >
 
-let usage = "usage: mini-dotnet [-trace] [-s] file.dll [arg...] | -S [-jit] | -tables | -size | -verify file.dll..."
+let usage = "usage: mini-dotnet [-trace] [-s] [-jit] file.dll [arg...] | -S [-jit [-m 5|7]] | -tables | -size | -verify file.dll..."
 
 (* a program run: its output by the console's channel, its input
  * read a byte at a time; an exception no one catches said as .NET says
@@ -21,7 +21,9 @@ let run (caps : < caps; .. >) (img : Image.t) (argv : string list) (tracing : bo
   let im = Types.load img in
   let finish () =
     flush out;
-    if stats then Console.eprint caps (Printf.sprintf "%d instructions\n" !Frame.steps) in
+    if stats then Console.eprint caps (Printf.sprintf "%d instructions\n" !Frame.steps);
+    if stats && !Jit_run.compiled > 0 then
+      Console.eprint caps (Printf.sprintf "%d methods compiled\n" !Jit_run.compiled) in
   match Machine.run_main im argv with
   | n -> finish (); n
   | exception Library.Exit n -> finish (); n
@@ -38,14 +40,15 @@ let run (caps : < caps; .. >) (img : Image.t) (argv : string list) (tracing : bo
 let main (caps : < caps; .. >) (argv : string array) : int =
   let mode = ref "run" in
   let files = ref [] in
-  let tracing = ref false and stats = ref false and jit = ref false in
+  let tracing = ref false and stats = ref false and jit = ref false and mach = ref 5 in
   let options =
     [ ("-trace", Arg.Set tracing, " each instruction said as it runs, to the standard error");
       ("-s", Arg.Set stats, " the instructions run, said at the end"); ("-tables", Arg.Unit (fun () -> mode := "tables"), " the metadata's tables, a row a line");
       ("-S", Arg.Unit (fun () -> mode := "S"), " the types and their methods' IL, as ildasm");
       ("-size", Arg.Unit (fun () -> mode := "size"), " its types, methods and bytes of IL (each body decoded)");
       ("-verify", Arg.Unit (fun () -> mode := "verify"), " each method's stack typed at each instruction: those refused, and why");
-      ("-jit", Arg.Set jit, " with -S: the JIT's code (arm's, mini-asm's text) for the methods it compiles, why not the others") ] in
+      ("-jit", Arg.Set jit, " the methods the JIT takes run as the machine's code (mini-ml's build, arm64); with -S, that code as mini-asm's text, why not the others");
+      ("-m", Arg.Set_int mach, " with -S -jit: the machine, 5 (arm, the default) or 7 (arm64)") ] in
   match Arg.parse_argv argv options (fun (f : string) -> files := f :: !files) usage with
   | exception Arg.Help _ -> Console.print caps (usage ^ "\n"); 0
   | exception Arg.Bad msg -> Console.eprint caps msg; 1
@@ -61,7 +64,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         match !mode with
         | "tables" -> Console.print caps (Listing.tables img)
         | "S" when !jit ->
-            let text, n, refused = Jit.assembly img in
+            let text, n, refused = Jit.assembly (if !mach = 7 then Jit.Arm64 else Jit.Arm) img in
             Console.print caps text;
             List.iter (fun (row, why) ->
                 Console.print caps (Printf.sprintf "// not compiled: %s: %s\n"
@@ -84,7 +87,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         if !mode = "run" then begin
           match List.rev !files with
           | [] -> Console.eprint caps (usage ^ "\n"); 1
-          | f :: argv -> run caps (read f) argv !tracing !stats
+          | f :: argv ->
+              if !jit then Machine.jit := Jit_run.jit caps;
+              run caps (read f) argv !tracing !stats
         end
         else (List.iter one (List.rev !files); 0)
       with

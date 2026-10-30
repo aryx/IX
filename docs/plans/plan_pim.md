@@ -521,3 +521,16 @@ line re-recorded. Not yet: the terminal's search grouped the same way
 (it lists items, one a line), a search kept as a view (Gmail's
 labels, Outlook's search folders).
 
+2026-10-30: Today as idea 4 says it: `store/Today`, the day's lines
+for Home and the terminal's `today` alike (they computed it twice):
+the events, the tasks late and due, a bill with its amount (a task
+with postings), what is back from a snooze, and the conversations not
+read whose last message is from a person of the address book (not
+every newsletter); then the day's page, its first lines on Home, d
+writing it in Notes (`Notes_window.day_note`). Tests: session.sh (a
+bill due with its amount, Carol's unread mail once she is a contact),
+a frame (the page written, then shown on Home); Home's frames
+re-recorded (its hint line). Not yet: the page written on Home itself
+(its keys open the views), unread mail in the frames (the shared test
+server's messages are read by the sessions before).
+

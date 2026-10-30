@@ -19,7 +19,8 @@ window's (`make test`'s two "mini-pim").
             [view=mail|calendar|people|tasks|notes|money]
                        the window, on Home: a tile a view (m c p t n
                        b, or a click), the day's events, what is late
-                       or due today; in a view, the Pim menu and
+                       or due today, unread mail from people, d the
+                       day's page; in a view, the Pim menu and
                        Ctrl+0 to 6 (Home, Mail, Calendar, People,
                        Tasks, Notes, Money), the switcher at the
                        sidebar's foot; Ctrl+E (/ on Home) searches
@@ -131,6 +132,9 @@ window's (`make test`'s two "mini-pim").
                        invitation's made items
     store/Capture      a line made an event: its day, time, repeat,
                        people
+    store/Today        the day: events, tasks late and due, bills,
+                       mail from people, the day's page (Home and
+                       mini-pim today)
     store/Books        the money: double entry, postings in items, an
                        account's register, a bank's lines matched
     money/Money        amounts in cents, and in words

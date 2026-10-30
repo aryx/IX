@@ -149,35 +149,29 @@ let import (caps : < caps ; .. >) (account : string) (file : string) : Exit.t
     Exit.OK
   end
 
-let today (caps : < caps ; .. >) (today : Civil.date) : Exit.t =
+let today (caps : < caps ; .. >) ~(account : string) (today : Civil.date) :
+    Exit.t =
   let items = Items.all caps (store caps) in
-  let t = Civil.days_from_civil today in
-  let day (i : Item.t) =
-    match Search.day i with Some d -> Civil.days_from_civil d | None -> max_int
-  in
-  let later (i : Item.t) =
-    match Search.date (Item.field i "until") with
-    | Some d -> Civil.days_from_civil d > t
-    | None -> false
-  in
-  let to_do =
-    List.filter
-      (fun i ->
-        Item.has_stamp i "task" && Item.field i "done" = "" && not (later i))
-      items
-  in
-  let say (what : string) (i : Item.t) =
-    Console.print caps (Printf.sprintf "%-10s %s\n" what (Search.title i))
-  in
   Console.print caps (Mail_sync.day today ^ "\n");
   List.iter
-    (fun (_, time, i) ->
-      say (match time with Some m -> Events.clock m | None -> "all day") i)
-    (Events.between items ~from:today ~upto:today);
-  List.iter (say "late") (List.filter (fun i -> day i < t) to_do);
-  List.iter (say "due") (List.filter (fun i -> day i = t) to_do);
-  List.iter (fun i -> if Item.field i "woke" <> "" then say "back" i) items;
-  Exit.OK
+    (fun (k, what) ->
+      let label =
+        match (k : Today.kind) with
+        | At (Some m) -> Events.clock m
+        | At None -> "all day"
+        | Late -> "late"
+        | Due -> "due"
+        | Back -> "back"
+        | From who -> who
+      in
+      Console.print caps (Printf.sprintf "%-10s %s\n" label what))
+    (Today.lines items ~account today);
+  match Today.page items today with
+  | [] -> Exit.OK
+  | l ->
+      Console.print caps "\ntoday's page\n";
+      List.iter (fun l -> Console.print caps ("  " ^ l ^ "\n")) l;
+      Exit.OK
 
 (*****************************************************************************)
 (* The money *)

@@ -41,6 +41,9 @@ val refresh : caps -> string Set_.t -> model -> model
 val show : caps -> model -> string -> model
 
 (* a frame; and what it asks of the suite: an item a link names opened *)
+(* today's page, made if it was not *)
+val day_note : caps -> model -> model
+
 val update : caps -> Playground.computer -> model -> model * Pim_look.go option
 
 (* the view, under the menu bar and the menus, which the suite draws *)

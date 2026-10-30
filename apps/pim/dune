@@ -19,8 +19,8 @@
 ;          Item (lines of name: value, Mail's syntax, stamped) and
 ;          Items (a directory, a file an item, and the mail's cache);
 ;          the rest of the suite's kinds and words: When, Search,
-;          Links, People, Events, Capture, Books (the money's double
-;          entry)
+;          Links, People, Events, Capture, Today (the day's agenda),
+;          Books (the money's double entry)
 ;   time/  Recur (a repeat's rule) and Ics (iCalendar's files), the
 ;          author's playground's
 ;   money/ Money (cents), Ledger (a register), Reconcile, Qif, the

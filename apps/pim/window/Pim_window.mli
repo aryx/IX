@@ -17,11 +17,17 @@
        Today
        12:30 lunch with alice
        late: answer Carol                                 <- in red
-       due today: pay the electricity
+       due today: pay the electricity   62.40             <- a bill
        back from snooze: the plan
+       from Alice: lunch?                <- unread, from the address book
+       Today's page
+       call the bank about the card                       <- d writes it
 
-   Home is the beginning of the plan's Today (idea 4): what is late,
-   due, back from a snooze, the day's events first. The suite opens
+   Home is the plan's Today (idea 4): the day's events first, what is
+   late or due (a bill with its amount), back from a snooze, the
+   unread mail from people of the address book (not every newsletter),
+   and under them the day's page, the daily note, d to write it in
+   Notes. The suite opens
    on it (view=mail, calendar, people, tasks, notes or money opens a
    view: the tests').
 

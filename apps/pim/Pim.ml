@@ -431,7 +431,9 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
   | Some ({ args = [ "register" ]; _ } as o) ->
       Pim_store.register caps o.account
   | Some { args = [ "balance" ]; _ } -> Pim_store.balance caps
-  | Some ({ args = [ "today" ]; _ } as o) -> Pim_store.today caps o.today
+  | Some ({ args = [ "today" ]; _ } as o) ->
+      let account = match o.user with Some u -> u | None -> "" in
+      Pim_store.today caps ~account o.today
   | Some ({ args = "add" :: id :: l; _ } as o) when assignments l <> None -> (
       match Pim_store.days o.today (Option.get (assignments l)) with
       | Ok fields -> Pim_store.add caps id fields

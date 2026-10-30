@@ -54,9 +54,10 @@ val event : < caps ; .. > -> Civil.date -> string -> Exit.t
  * register (Books), those already there left out *)
 val import : < caps ; .. > -> string -> string -> Exit.t
 
-(* the day's events, the tasks late and due, the mail back from a
- * snooze *)
-val today : < caps ; .. > -> Civil.date -> Exit.t
+(* [today caps ~account day]: the day (Today): its events, the tasks
+ * late and due, what is back from a snooze, the unread mail of
+ * [account] from people; then the day's page *)
+val today : < caps ; .. > -> account:string -> Civil.date -> Exit.t
 
 (* register: an account's lines, the balance after each; balance: every
  * account's *)

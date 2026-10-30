@@ -27,6 +27,7 @@ type home = {
   day_written : bool; (* today's page has a text *)
   (* the late tasks and today's, the mail back from a snooze *)
   today_list : (bool * string) list; (* late?, what *)
+  page : string list; (* today's page's first lines *)
 }
 
 type model = {
@@ -53,34 +54,14 @@ let home (caps : caps) ~(account : string) ~(today : Civil.date) : home =
   let cs =
     Conversations.group (Mail_item.listed items ~account ~mailbox:"INBOX")
   in
-  let t = Civil.days_from_civil today in
-  let day (i : Item.t) =
-    match Search.day i with Some d -> Civil.days_from_civil d | None -> max_int
-  in
-  let later (i : Item.t) =
-    match Search.date (Item.field i "until") with
-    | Some d -> Civil.days_from_civil d > t
-    | None -> false
-  in
-  let to_do =
-    List.filter
-      (fun i ->
-        Item.has_stamp i "task" && Item.field i "done" = "" && not (later i))
-      items
-  in
-  let late = List.filter (fun i -> day i < t) to_do in
-  let due = List.filter (fun i -> day i = t) to_do in
-  let woke = List.filter (fun i -> Item.field i "woke" <> "") items in
   let events = Events.between items ~from:today ~upto:today in
-  let at (time : int option) (i : Item.t) =
-    match time with Some t -> Events.clock t ^ " " ^ title i | None -> title i
-  in
+  let page = List.filteri (fun k _ -> k < 4) (Today.page items today) in
   {
     unread = List.length (List.filter Conversations.unread cs);
     inbox = List.length cs;
-    late = List.length late;
-    due_today = List.length due;
-    to_do = List.length to_do;
+    late = List.length (Today.late items today);
+    due_today = List.length (Today.due items today);
+    to_do = List.length (Today.to_do items today);
     people = List.length (People.contacts items);
     notes = List.length (List.filter (fun i -> Item.has_stamp i "note") items);
     events_today = List.length events;
@@ -93,17 +74,23 @@ let home (caps : caps) ~(account : string) ~(today : Civil.date) : home =
              else None)
            (Books.accounts items));
     next_event =
-      (match events with (_, t, i) :: _ -> at t i | [] -> "");
-    day_written =
-      List.exists
-        (fun i ->
-          Item.id i = "day:" ^ Mail_sync.day today && String.trim i.body <> "")
-        items;
+      (match events with
+       | (_, Some t, i) :: _ -> Events.clock t ^ " " ^ title i
+       | (_, None, i) :: _ -> title i
+       | [] -> "");
+    day_written = page <> [];
+    page;
     today_list =
-      List.map (fun (_, t, i) -> (false, at t i)) events
-      @ List.map (fun i -> (true, "late: " ^ title i)) late
-      @ List.map (fun i -> (false, "due today: " ^ title i)) due
-      @ List.map (fun i -> (false, "back from snooze: " ^ title i)) woke;
+      List.map
+        (fun (k, what) ->
+          match (k : Today.kind) with
+          | At (Some t) -> (false, Events.clock t ^ " " ^ what)
+          | At None -> (false, what)
+          | Late -> (true, "late: " ^ what)
+          | Due -> (false, "due today: " ^ what)
+          | Back -> (false, "back from snooze: " ^ what)
+          | From who -> (false, "from " ^ who ^ ": " ^ what))
+        (Today.lines items ~account today);
   }
 
 let initial (caps : caps) (flags : Playground.flags) : model =
@@ -271,9 +258,13 @@ let update (caps : caps) (computer : computer) (s : model) : model =
     || (s.view = Home && (not s.finding) && pressed "/")
   in
   let menu = if menu = None && find then Some Find else menu in
+  let day_page = s.view = Home && (not s.finding) && pressed "d" in
   let s =
     match (menu, by_key, clicked, home_key) with
     | Some Exit, _, _, _ -> CapStdlib.exit caps 0
+    | None, None, None, None when day_page ->
+        let s = switch caps s keys Notes in
+        { s with notes = Notes_window.day_note caps s.notes }
     | Some Find, _, _, _ ->
         { s with finding = true;
           search = Search_window.start caps keys s.search s.view }
@@ -411,7 +402,17 @@ let home_view (computer : computer) (s : model) : shape list =
   let today =
     if h.today_list = [] then
       [ (false, "Nothing today: no event, nothing late or due.") ]
-    else List.filteri (fun i _ -> i < 8) h.today_list
+    else List.filteri (fun i _ -> i < 7) h.today_list
+  in
+  (* today's page under the list, d to write in it (Notes) *)
+  let page_y = -110. -. (float_of_int (List.length today) *. 24.) -. 30. in
+  let page =
+    text ink ~bold:true ~room:500. (-390.) page_y "Today's page"
+    :: List.mapi
+         (fun k l ->
+           text grey ~bold:false ~room:780. (-390.)
+             (page_y -. 30. -. (float_of_int k *. 24.)) l)
+         (if h.page = [] then [ "Nothing written yet: d writes it." ] else h.page)
   in
   [ rectangle (rgb 241 243 244) computer.screen.width computer.screen.height;
     text ink ~bold:true ~room:500. (a.left +. 40.) (a.top -. 50.) "mini-pim";
@@ -425,10 +426,11 @@ let home_view (computer : computer) (s : model) : shape list =
         text (if late then red else ink) ~bold:false ~room:780. (-390.)
           (-110. -. (float_of_int k *. 24.)) l)
       today
+  @ page
   @ [ text grey ~bold:false ~room:900. (-390.)
         ((-.computer.screen.height /. 2.) +. 24.)
-        ("m, c, p, t, n, b or a click opens a view, / searches them all; "
-         ^ "Ctrl and its number goes to it.") ]
+        ("m, c, p, t, n, b or a click opens a view, d today's page, / "
+         ^ "searches; Ctrl+0 to 6 goes to one.") ]
 
 (* the switcher: the views, the one shown marked *)
 let switcher_view (computer : computer) (s : model) : shape list =

@@ -219,6 +219,9 @@ $PIM import $W/bank.qif > $W/out
 [ "$(wc -l < $W/out)" = 2 ] || { echo "FAIL import: $(cat $W/out)"; fail=1; }
 $PIM add task:rent title=rent due=2026-11-01 stamp='task money' \
   'posting=Expenses:Rent  900.00' posting=Assets:Checking
+$PIM -u erin@ix -today 2026-11-01 today > $W/out
+has '^due  *rent   900.00$' "today: a bill due, its amount"
+has '^Carol  *Re: the plan$' "today: unread mail from a person of People"
 $PIM register > $W/out
 grep -q rent $W/out && { echo "FAIL a bill not paid in the books"; fail=1; }
 $PIM set task:rent done=2026-11-01

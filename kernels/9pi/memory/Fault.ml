@@ -28,6 +28,15 @@ let read_image c off n =
 
 let map pgdir pg pa = if not (Mmu.map pgdir pg pa) then raise (Error enovmem)
 
+(* SG_RONLY, segattach's attribute: the segment's pages mapped to be
+ * read only, a write the program's trap *)
+let sg_ronly = 0o40
+
+let map_seg pgdir s pg pa =
+  match s.kind with
+  | Attached a when a land sg_ronly <> 0 -> if not (Mmu.map_ro pgdir pg pa) then raise (Error enovmem)
+  | _ -> map pgdir pg pa
+
 (* a page of s made: zeroed, or read from the image; recorded, mapped *)
 let make pgdir s pg =
   (* the image read first: a read may sleep, another sharer make it *)
@@ -39,10 +48,10 @@ let make pgdir s pg =
     (match data with Some d -> Machine.Phys.write pa d | None -> ());
     Hashtbl.add s.pages pg pa
   end;
-  map pgdir pg (Hashtbl.find s.pages pg)
+  map_seg pgdir s pg (Hashtbl.find s.pages pg)
 
 let fill pgdir s pg =
-  try map pgdir pg (Hashtbl.find s.pages pg) with Not_found -> make pgdir s pg
+  try map_seg pgdir s pg (Hashtbl.find s.pages pg) with Not_found -> make pgdir s pg
 
 (* Copy on write (Plan 9's fork and fixfault): a fork gives the child
  * the data and bss pages of its parent, mapped to be read only in
@@ -146,7 +155,7 @@ let dup s from pgdir share =
       List.iter (fun pg -> if held (Hashtbl.find s.pages pg) > 1 then own from s pg) pgs
     end;
     s.sref <- s.sref + 1;
-    Hashtbl.iter (fun pg pa -> map pgdir pg pa) s.pages;
+    Hashtbl.iter (fun pg pa -> map_seg pgdir s pg pa) s.pages;
     s
   end else if shareable s && s.sref = 1 then begin
     (match s.image with Some c -> Kchan.incref c | None -> ());
@@ -176,3 +185,36 @@ let shrink (p : proc) s newtop =
   List.iter (fun (pg, pa) -> Hashtbl.remove s.pages pg; Mmu.unmap p.pgdir pg; let_go pa) !gone;
   (* the TLB flushed *)
   Machine.mmu_switch p.pgdir
+
+(* segdetach: the segment out of the process, its pages out of its
+ * table, freed by the segment's last process *)
+let detach (p : proc) s =
+  Hashtbl.iter (fun pg _ -> Mmu.unmap p.pgdir pg) s.pages;
+  p.segs <- List.filter (fun x -> x != s) p.segs;
+  release 0 [ s ];
+  Machine.mmu_switch p.pgdir
+
+(* segfree: the pages wholly in [lo, hi) freed, zeros at their next
+ * touch (Error einuse when shared) *)
+let free_range (p : proc) s lo hi =
+  if s.sref > 1 then raise (Error einuse);
+  let gone = ref [] in
+  Hashtbl.iter (fun pg pa -> if pg >= lo && pg + pgsize <= hi then gone := (pg, pa) :: !gone) s.pages;
+  List.iter (fun (pg, pa) -> Hashtbl.remove s.pages pg; Mmu.unmap p.pgdir pg; let_go pa) !gone;
+  Machine.mmu_switch p.pgdir
+
+(* segflush: the bytes of [va, va+len) the process wrote, through to
+ * the memory and out of the instructions' cache, page by page (a page
+ * not touched yet has nothing to tell); Error ebadarg outside the
+ * process's segments *)
+let sync (p : proc) va len =
+  let rec go a =
+    if a < va + len then begin
+      let pg = a land lnot (pgsize - 1) in
+      let n = min (pg + pgsize) (va + len) - a in
+      (match segment p a with
+       | Some s -> (try Machine.Phys.sync (Hashtbl.find s.pages pg + (a - pg)) n with Not_found -> ())
+       | None -> raise (Error ebadarg));
+      go (pg + pgsize)
+    end in
+  go va

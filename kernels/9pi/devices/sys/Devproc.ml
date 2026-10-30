@@ -82,7 +82,8 @@ let procargs p =
  * touched; what mini-free adds up. old: the line ended at the 1) *)
 let segment p =
   String.concat "" (List.map (fun s ->
-    let name = match s.kind with Text -> "Text" | Data -> "Data" | Bss -> "Bss" | Stack -> "Stack" in
+    let name = match s.kind with Text -> "Text" | Data -> "Data" | Bss -> "Bss" | Stack -> "Stack"
+                                  | Attached _ -> "Memory" in
     Printf.sprintf "%-6s %c %s %s %4d %6d\n" name (if s.kind = Text then 'R' else ' ') (hex 8 s.base) (hex 8 s.top) 1 (Hashtbl.length s.pages)) p.segs)
 
 let fds p =

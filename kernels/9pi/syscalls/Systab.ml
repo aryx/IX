@@ -69,4 +69,8 @@ let call (p : proc) c a words =
   | Semrelease -> Syssema.syssemrelease p a.(0) a.(1)
   | Pipe -> Sysfile.syspipe p a.(0)
   | Errstr -> Sysproc.syserrstr p a.(0) a.(1)
+  | Segattach -> let cls = str 1 in Sysseg.syssegattach p a.(0) cls a.(2) a.(3)
+  | Segdetach -> Sysseg.syssegdetach p a.(0)
+  | Segfree -> Sysseg.syssegfree p a.(0) a.(1)
+  | Segflush -> Sysseg.syssegflush p a.(0) a.(1)
   | _ -> raise (Error "not yet")

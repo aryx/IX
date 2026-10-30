@@ -71,6 +71,14 @@ value phys_write_sub(value pa, value s, value off, value n)
   written(Long_val(pa), Long_val(n), 1);
   return Val_unit;
 }
+/* code written at [pa], [n] bytes, by a process in its memory (a
+ * JIT's: segflush): through to the memory and out of the instructions'
+ * cache, as the kernel's own writes of a program's page are */
+value phys_sync(value pa, value n)
+{
+  written(Long_val(pa), Long_val(n), 1);
+  return Val_unit;
+}
 /* The images' memory (runtime.c): the arena, [n] bytes of physical
  * memory at [pa]; and an image's rows written to the framebuffer
  * (mini-9pi's flush), a = [| pa; pitch; off; bw; n; rows |]: n bytes

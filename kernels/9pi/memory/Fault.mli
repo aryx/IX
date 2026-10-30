@@ -78,6 +78,9 @@ open Errors
  * length) *)
 val create : seg_kind -> int -> int -> chan option -> int -> int -> segment
 
+(* the segment of p holding va *)
+val segment : proc -> int -> segment option
+
 (* [fault p va]: the page at va mapped, made if need be, or copied if
  * written while shared since a fork (true), or not in a segment, or
  * mapped and refused (false: the process's trap) *)
@@ -105,6 +108,19 @@ val release : int -> segment list -> unit
 (* [shrink p s newtop]: the pages from newtop up freed (brk; Error
  * einuse when shared) *)
 val shrink : proc -> segment -> int -> unit
+
+(* [detach p s]: segdetach's: s out of p, its pages out of p's table,
+ * freed by its last process *)
+val detach : proc -> segment -> unit
+
+(* [free_range p s lo hi]: segfree's: the pages of s wholly in [lo, hi)
+ * freed, zeros at their next touch (Error einuse when s is shared) *)
+val free_range : proc -> segment -> int -> int -> unit
+
+(* [sync p va len]: segflush's: the bytes the process wrote there in
+ * memory and out of the instructions' cache (Machine.Phys.sync), so
+ * that it may run them; Error ebadarg outside its segments *)
+val sync : proc -> int -> int -> unit
 
 (* [read_image c off n]: n bytes of an image's file from off, fewer at
  * its end: a page's (page), a dying process's symbol table (Syscall's

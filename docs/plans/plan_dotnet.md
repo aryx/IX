@@ -453,7 +453,8 @@ reader, Partition III the machine.
 - The JIT's executable memory on mini-9pi (decision 12): which call
   of the kernel? The author (2026-10-30): segflush, Plan 9's, made
   real, and segattach as a general mechanism, as Linux's mmap and
-  mprotect.
+  mprotect. Done so (memory/Sysseg): Plan 9's segattach, its
+  attributes the protections, given at the attach.
 
 ## Status
 
@@ -810,4 +811,26 @@ calls the method with its arguments. Each piece of code has its own
 copy of the runtime's stubs (jit_out, jit_null...). Checked: tests/run.sh's
 215 checks; a method never called is not compiled (fib.dll: 3 of 4,
 objects.cs 21 of 22); bench.cs 0.37 s, objects.cs 0.66 s, as before.
+
+Then the segments, the JIT's memory on Plan 9 (the author, after the
+proposal of Plan 9's own segattach, its attributes as mmap's
+protections given at the attach, no mprotect: "go"). In mini-5i
+(machine/process/Plan9): segattach (zeros, class "memory" or
+"shared", at va or below the stack), segdetach, segfree, segflush,
+which drops the processor's decoded instructions (Memory.code_written,
+as a debugger's write). In mini-9pi (memory/Sysseg, Fault): a segment
+kind Attached of its attributes, its pages zeros at their first touch,
+shared at a fork, mapped read only for SG_RONLY, gone at an exec;
+segflush writes the bytes through to the memory and empties the
+instructions' cache (lib_machine's new Phys.sync, the cache_sync_range
+a program's page read in already had), which mini-qemu's decode cache
+follows. libc: the four stubs, os/plan9/seg.h. Checked: machine/
+tests/plan9/seg.c, code (ADD, RET) written in a segment, flushed,
+called, 43; another ADD written there, flushed, 8; and without that
+segflush 43 again, the old instruction, under mini-5i and under
+mini-qemu alike, as a Pi's caches would; segfree's zeros, a class
+refused, segdetach. machine/tests/seg.sh (mini-5i) and
+kernels/9pi/tests/seg.sh (mini-9pi built by ix, relinked with a boot
+that runs it, 17 s) in make test. Not checked: SG_RONLY's trap (mini-5i
+has no rights to enforce it), a segment shared with a child.
 

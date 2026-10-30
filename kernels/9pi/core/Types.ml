@@ -146,8 +146,10 @@ type fgrp = { fds : chan option array; mutable fref : int }
  * bytes' offset and length there) or zero (bss, stack). A segment may be
  * shared (text always, data and bss by rfork's RFMEM: how many
  * processes have it); the processes' tables map its pages as they
- * touch them. *)
-type seg_kind = Text | Data | Bss | Stack
+ * touch them. A segment attached (segattach: Sysseg) is zeros, shared
+ * at a fork, its attributes Plan 9's (SG_RONLY: its pages mapped to be
+ * read only). *)
+type seg_kind = Text | Data | Bss | Stack | Attached of int
 
 type segment = {
   kind : seg_kind;

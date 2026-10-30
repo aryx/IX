@@ -17,6 +17,7 @@ module Phys = struct
   external write : int -> string -> unit = "phys_write"
   external write_sub : int -> string -> int -> int -> unit = "phys_write_sub"
   external read : int -> int -> string = "phys_read"
+  external sync : int -> int -> unit = "phys_sync"
 end
 
 (* the running process's trap frame, by word: r0-r12, sp 13, lr 14, the

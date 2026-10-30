@@ -89,7 +89,8 @@ let sysrfork (p : proc) flag =
     let pgdir = match Mmu.create () with Some d -> d | None -> raise (Error enovmem) in
     (* the memory (dupseg): text shared, data and bss too with RFMEM, else
      * shared until written (Fault's copy on write), the stack copied *)
-    let share s = s.kind = Text || (flag land rfmem <> 0 && s.kind <> Stack) in
+    let share s = s.kind = Text || (flag land rfmem <> 0 && s.kind <> Stack)
+                  || (match s.kind with Attached _ -> true | _ -> false) in
     let segs = List.fold_left (fun acc s ->
       match acc with
       | None -> None

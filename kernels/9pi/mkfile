@@ -27,12 +27,12 @@ KML=$UREG/Ureg core/Errors core/Types files/Dev processes/Proc files/Kchan proce
  $GFX/lib_memlayer/Memlayer $GFX/lib_memlayer/Memshape $GFX/ocaml/Kdraw \
  devices/screen/Swcursor devices/screen/Swconsole devices/keyboard/Devkbin devices/mouse/Devmouse devices/audio/Devaudio \
  buses/lib_usb/Usbdesc buses/lib_usb/Hid buses/lib_usb/Usbbus buses/Kusb devices/web/Kweb devices/screen/Devdraw \
- devices/Devstub network/Etherusb network/Devether network/ip/Ip network/ip/Icmp network/ip/Udp network/ip/Tcp network/ip/Devip memory/Fault processes/Exec \
+ devices/Devstub network/Etherusb network/Devether network/ip/Ip network/ip/Icmp network/ip/Udp network/ip/Tcp network/ip/Devip memory/Fault memory/Sysseg processes/Exec \
  ../../lib_executable/Symbols ../../lib_executable/Frames syscalls/Usermem processes/Sysproc processes/Syssema files/Sysfile security/Auth syscalls/Systab \
  syscalls/arm/Syscall init/Main
 KNAMES=Ureg Errors Types Dev Proc Kchan Kproc Devroot Rng Devcons Devenv Devsys Devarch Devdup Devsrv Devpipe Devproc Emmc Devsd Fat Kdos Xv6fs Kfs P9 P9_wire Devmnt \
  Usb Usbdwc Devusb Latin1 Kbd Memdata Memchan Memimage Memgeneral Memdraw Memfont Memlayer Memshape Kdraw Swcursor Swconsole Devkbin Devmouse Devaudio Usbdesc Hid Usbbus Kusb Kweb \
- Devdraw Devstub Etherusb Devether Ip Icmp Udp Tcp Devip Fault Exec Symbols Frames Usermem Sysproc Syssema Sysfile Auth Systab Syscall Main
+ Devdraw Devstub Etherusb Devether Ip Icmp Udp Tcp Devip Fault Sysseg Exec Symbols Frames Usermem Sysproc Syssema Sysfile Auth Systab Syscall Main
 # (syscalls before its arm/: Ureg's interface there, not the Pi 1's Ureg.ml)
 KI=-I syscalls -I $UREG -I core -I files -I processes -I devices -I devices/sys -I console \
  -I devices/storage -I devices/storage/arm -I buses -I buses/arm -I buses/lib_usb -I filesystems -I filesystems/lib_fat -I filesystems/lib_xv6fs -I devices/keyboard -I devices/mouse -I devices/audio -I devices/web -I devices/screen \

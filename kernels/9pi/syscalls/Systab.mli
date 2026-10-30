@@ -1,8 +1,8 @@
 (* The system calls' table (principia's systab.c): their numbers as
  * sys.h has them, their names as /proc/n/status shows them (sysctab),
  * and each one's function called with its arguments (the words the
- * arch's Syscall took from the user). The segments' calls (segattach,
- * ...) are not yet: "not yet", named on the console.
+ * arch's Syscall took from the user). segbrk is not yet: "not yet",
+ * named on the console.
  *
  * All of them, by number:
  *
@@ -25,7 +25,8 @@
  *                 fd2path                                    Sysfile
  *     name space  bind mount unmount                         Sysfile
  *     a server    fversion fauth                             Auth
- *     memory      the five seg calls                         (not yet)
+ *     memory      segattach segdetach segfree segflush       Sysseg
+ *                 (segbrk not yet)
  *
  * plan9-is-cleaner:
  * Forty calls is the whole interface of the system, and the list is

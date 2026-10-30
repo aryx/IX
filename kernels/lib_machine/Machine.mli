@@ -88,6 +88,9 @@ module Phys : sig
   (* [write_sub pa s off n]: s's n bytes at off, no String.sub *)
   external write_sub : int -> string -> int -> int -> unit = "phys_write_sub"
   external read : int -> int -> string = "phys_read"
+  (* [sync pa n]: n bytes a process wrote at pa, which it will run: in
+   * memory, and not in the instructions' cache (segflush) *)
+  external sync : int -> int -> unit = "phys_sync"
 end
 
 (* The trap frame: the user's registers as they were when its program

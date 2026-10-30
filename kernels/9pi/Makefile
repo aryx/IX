@@ -69,7 +69,7 @@ ML = syscalls/$(ARCH)/Ureg core/Errors core/Types files/Dev processes/Proc files
   devices/sys/Devproc devices/storage/arm/Emmc devices/storage/Devsd filesystems/lib_fat/Fat filesystems/Kdos filesystems/lib_xv6fs/Xv6fs filesystems/Kfs files/P9 files/P9_wire devices/sys/Devmnt \
   buses/Usb buses/arm/Usbdwc buses/Devusb devices/keyboard/Latin1 devices/keyboard/Kbd $(PIXEL_ML) devices/screen/Swcursor \
   devices/screen/Swconsole devices/keyboard/Devkbin devices/mouse/Devmouse devices/audio/Devaudio buses/lib_usb/Usbdesc buses/lib_usb/Hid buses/lib_usb/Usbbus buses/Kusb devices/web/Kweb \
-  devices/screen/Devdraw devices/Devstub network/Etherusb network/Devether network/ip/Ip network/ip/Icmp network/ip/Udp network/ip/Tcp network/ip/Devip memory/Fault processes/Exec \
+  devices/screen/Devdraw devices/Devstub network/Etherusb network/Devether network/ip/Ip network/ip/Icmp network/ip/Udp network/ip/Tcp network/ip/Devip memory/Fault memory/Sysseg processes/Exec \
   ../../lib_executable/Symbols ../../lib_executable/Frames syscalls/Usermem processes/Sysproc processes/Syssema files/Sysfile security/Auth syscalls/Systab \
   syscalls/arm/Syscall init/Main
 

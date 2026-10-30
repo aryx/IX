@@ -500,8 +500,11 @@ pi1_by_ix() {
   until grep -aq '^%' $out || [ $n -ge 600 ]; do sleep 0.1; n=$((n + 1)); done
   kill $pid 2> /dev/null; wait $pid 2> /dev/null
   grep -aq '^%' $out || { echo "no rc prompt in:"; head -5 $out | cut -c1-200; return 1; }
+  # (then relinked with a boot that runs machine/tests/plan9/seg.c:
+  # code written in a segment, segflush, run; 17 s)
+  kernels/9pi/tests/seg.sh $b
 }
-tp="mini-9pi for the Pi 1 built by ix, booted to rc"
+tp="mini-9pi for the Pi 1 built by ix, booted to rc; its segments run a JIT's code"
 if [ -f $P/qemu-sd.img ] && [ -x $P/ROOT/arch/arm/bin/rc ]; then job "$tp" pi1_by_ix
 else skip "$tp" "no principia's card in $P"; fi
 [ -d kernels/9pi/build/pi1-ocaml ] || skip "mini-ml compiles mini-9pi's Memchan and Memfont" "no generated Memdata: principia's fonts, mini-9pi's Makefile"

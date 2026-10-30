@@ -3,8 +3,8 @@
 The author (2026-10-30), after plan_apps.md: "I would also love to have
 a maps and weather program that fetch data from internet."
 
-**Status: a plan, nothing built.** What is below about the services was
-tried on 2026-10-30 with ix's own `mini-curl`, a handful of requests.
+**Status: stage 1 built** (see the end). What is below about the services
+was tried on 2026-10-30 with ix's own `mini-curl`, a handful of requests.
 
 ## What it is for
 
@@ -101,3 +101,18 @@ Estimate: 1,000 to 1,500 lines of `.ml`, an estimate, before routes.
 ## Status
 
 2026-10-30: plan written. Nothing built.
+
+2026-10-30: stage 1 built, `apps/maps/` (its README.md): `Mercator`,
+`Tiles`, `Tile_worker`, `Map_window`; dragged, the arrows, the wheel, a
+double click, `+` and `-`; a tile not there yet shown from an ancestor,
+enlarged; the credit; its own User-Agent (`Http.saying` now replaces
+ours). Real tiles of Tours from OSM once, by hand, a screen's worth.
+By the tests: its frames by both compilers (`mini-httpd`, tiles of
+`Make_tiles`). The Hershey font has no copyright sign, so the credit
+reads "(c) OpenStreetMap contributors".
+On mini-9pi it is built and on the card, not yet run there: the moving
+map on a Pi (the open question below) is still not measured. The draw
+platform now keeps as many pictures as 3 million pixels hold, four at
+least, for those twenty tiles. Under mini-ml's threads a system call
+stops all of them, so the window waits while a tile is fetched, as
+mini-netscape's does.

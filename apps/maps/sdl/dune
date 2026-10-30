@@ -1,0 +1,7 @@
+; mini-maps with a window (SDL's): the same program, another platform
+(copy_files ../Maps.ml)
+(executable
+ (name Maps)
+ (public_name mini-maps)
+ (package ix)
+ (libraries ix_maps ix_playground ix_playground_render ix_playground_sdl ix_core caps unix))

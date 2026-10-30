@@ -29,10 +29,13 @@ let get ~(host : string) (target : string) : request =
   { meth = "GET"; target; headers = [ ("Host", host); ("User-Agent", "elm_playground"); ("Accept-Encoding", "gzip"); ("Connection", "close") ] }
 
 (* what the asker says besides (its cookies, a script's own headers),
- * before Connection, the last *)
+ * before Connection, the last; a program's own User-Agent instead of
+ * ours, not beside it (a header of one value said twice is refused by
+ * some servers) *)
 let saying (more : header list) (r : request) : request =
   let last, first = List.partition (fun (n, _) -> n = "Connection") r.headers in
-  { r with headers = first @ more @ last }
+  let replaced (n : string) : bool = String.lowercase_ascii n = "user-agent" && header n more <> None in
+  { r with headers = List.filter (fun (n, _) -> not (replaced n)) first @ more @ last }
 
 let keeping (r : request) : request =
   { r with headers = List.map (fun (n, v) -> if n = "Connection" then (n, "keep-alive") else (n, v)) r.headers }

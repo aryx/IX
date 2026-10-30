@@ -33,7 +33,7 @@ PROGS=(shell editors/ed utilities/files utilities/misc utilities/namespace \
  languages/smalltalk/hosts/draw languages/scheme languages/pascal \
  languages/prolog editors/drscheme apps/office apps/page \
  editors/turbopascal/hosts/draw editors/emacs/draw typesetting/man \
- networking browsers/lynx browsers/netscape assembler linker \
+ networking browsers/lynx browsers/netscape apps/maps assembler linker \
  linker/tools languages/ml languages/c builder generators/lex \
  generators/yacc)
 # (games again for its other platform, the software one)

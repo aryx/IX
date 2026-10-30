@@ -1,0 +1,5 @@
+; the unit tests of mini-maps (Testo), dune's only; Make_tiles, the tiles
+; of frames.sh, which runs its window's frames against mini-httpd
+(executables
+ (names Test Make_tiles)
+ (libraries ix_maps ix_graphics_core ix_core caps unix alcotest testo))

@@ -1,0 +1,28 @@
+; apps/maps: mini-maps, a map and the weather, fetched from the internet
+; (docs/plans/plan_maps.md). Mercator (a latitude to a pixel), Tiles (the
+; pyramid: which tiles a window needs), Tile_worker (fetched beside the
+; window), Map_window, over lib_networking's HTTP and Png. The program
+; here is linked with the platform that writes a frame to a file (the
+; tests'); sdl/ is the one with a window, bin/mini-maps
+(library
+ (name ix_maps)
+ (wrapped false)
+ (modules Mercator Tiles Worker_spawn Tile_worker Map_window)
+ (libraries threads.posix ix_http ix_tls ix_tcp ix_playground ix_gui ix_graphics_core
+   ix_graphics_software ix_core caps unix))
+
+; the worker's a thread: mini-netscape's module (under OCaml 5, a thread
+; too; mini-maps has nothing to run at the same instant)
+(rule
+ (targets Worker_spawn.ml)
+ (deps ../../browsers/netscape/spawn/threads.ml)
+ (action (copy ../../browsers/netscape/spawn/threads.ml Worker_spawn.ml)))
+(rule
+ (targets Worker_spawn.mli)
+ (deps ../../browsers/netscape/Worker_spawn.mli)
+ (action (copy ../../browsers/netscape/Worker_spawn.mli Worker_spawn.mli)))
+
+(executable
+ (name Maps)
+ (modules Maps)
+ (libraries ix_maps ix_playground ix_playground_render ix_playground_ppm ix_core caps unix))

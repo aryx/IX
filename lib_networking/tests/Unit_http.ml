@@ -31,6 +31,9 @@ let tests =
             (List.map fst r.headers);
           Alcotest.(check (option string)) "asked to stay" (Some "keep-alive") (Http.header "Connection" r.headers);
           Alcotest.(check (list string)) "every header of a name" [ "a=1"; "b=2" ] (Http.values "set-cookie" [ ("Set-Cookie", "a=1"); ("X", "y"); ("set-cookie", "b=2") ]));
+      Testo.create "a program's own User-Agent, instead of ours" (fun () ->
+          let r = Http.saying [ ("User-Agent", "mini-maps") ] (Http.get ~host:"a" "/") in
+          Alcotest.(check (list string)) "one" [ "mini-maps" ] (Http.values "user-agent" r.headers));
       Testo.create "where a response ends: what a kept connection needs" (fun () ->
           let head = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\n" in
           Alcotest.(check bool) "the head not whole: not known" true (Http.extent "HTTP/1.1 200 OK\r\nContent-Le" = None);

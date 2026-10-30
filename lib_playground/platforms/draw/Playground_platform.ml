@@ -404,8 +404,14 @@ let placed (m : Affine.t) (s : Playground.shape) : Affine.t =
  * Only a picture that fills its box, upright or turned by quarters,
  * and has no transparent pixel: for another the device would need its
  * opacities too (a mask), which is not done; it is its box, grey, as
- * before. *)
+ * before.
+ *
+ * The last few are kept, four at least, and more while they are small:
+ * mini-maps' window is twenty tiles of 65,536 pixels, each given again at
+ * each frame if only four stayed.
+ * old: let kept_pictures = 4, whatever their size *)
 let kept_pictures = 4
+let kept_pixels = 3_000_000
 
 let picture (win : window) (m : Affine.t) (w : float) (h : float) (img : Rgba_image.t) : Display.image option =
   let same (p : picture) : bool = p.pixels == img && p.a = m.a && p.b = m.b && p.c = m.c && p.d = m.d in
@@ -433,8 +439,14 @@ let picture (win : window) (m : Affine.t) (w : float) (h : float) (img : Rgba_im
         end
       in
       let now = { pixels = img; a = m.a; b = m.b; c = m.c; d = m.d; image } :: win.pictures in
-      List.iteri (fun (i : int) (p : picture) -> if i >= kept_pictures then Option.iter Display.free p.image) now;
-      win.pictures <- List.filteri (fun (i : int) (_ : picture) -> i < kept_pictures) now;
+      let room = ref kept_pixels in
+      let stays (i : int) (p : picture) : bool =
+        room := !room - (p.pixels.width * p.pixels.height);
+        i < kept_pictures || !room >= 0
+      in
+      let staying, gone = List.partition (fun ((i, p) : int * picture) -> stays i p) (List.mapi (fun (i : int) (p : picture) -> (i, p)) now) in
+      List.iter (fun ((_, p) : int * picture) -> Option.iter Display.free p.image) gone;
+      win.pictures <- List.map snd staying;
       image
 
 (* ix: a Pixels' picture (docs/plans/done/plan_playground_framebuffer.md,

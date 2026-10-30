@@ -92,6 +92,9 @@ let wstat path mode mtime name =
   let b = b16 (String.length body) ^ body in
   ignore (Unix.plan9_call "wstat" path 18 [| s path; s b; i (String.length b); z; z; z |])
 
+let is_link (_ : < Cap.readdir; .. >) (_ : string) = false
+let is_device (_ : < Cap.readdir; .. >) (_ : string) = false
+
 let rename (_ : < Cap.open_out; .. >) path name = wstat path None None name
 let chmod (_ : < Cap.open_out; .. >) path mode_type perm = wstat path (Some (mode_type, perm)) None ""
 let set_mtime (_ : < Cap.open_out; .. >) path secs = wstat path None (Some secs) ""

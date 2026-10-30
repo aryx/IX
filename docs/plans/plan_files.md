@@ -4,7 +4,7 @@ The author (2026-10-30), after plan_apps.md: "I think we could do a
 file manager that would dispatch to the appropriate 'player', and then
 support mpeg and play them with 'play' or via the new file manager."
 
-**Status: stages 1 and 2 done** (`lib_mime/`, `apps/files/`). Its video is
+**Status: stages 1 to 3 done** (`lib_mime/`, `apps/files/`). Its video is
 [`plan_video.md`](plan_video.md).
 
 ## What it is for
@@ -111,3 +111,11 @@ column, the path as buttons, Backspace, `b`, Enter and a double click;
 under mini-rio `Helpers.run` writes `new` to `/dev/wctl`. `root=` keeps it
 under a folder, which the frames' fixture needs. Checked by 14 recorded
 frames and 3 sessions of what it starts, on Linux.
+Stage 3 done: `c`, `x`, then `v` in the folder wanted (the Finder's way,
+one pane), `r`, `n`, `d` asking first, only `y` deleting. Nothing
+overwrites, a move elsewhere is a copy then a removal, a copy failing
+halfway removes what it made. A symbolic link is never followed: deleted,
+the link goes and not its target; a tree holding one is refused a copy or
+a move to another folder, since Plan 9's calls have no links to make.
+Checked by `apps/files/tests/changes.sh` on a scratch tree, by both
+compilers' programs.

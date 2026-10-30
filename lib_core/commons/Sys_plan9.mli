@@ -131,6 +131,13 @@ val dmtmp : int
 val dirstat : < Cap.readdir; .. > -> string -> dir
 (* a directory's entries *)
 val dirread : < Cap.readdir; .. > -> string -> dir list
+(* a symbolic link (Linux's: dirstat tells what it points to, so a walk of
+ * a tree must ask); never on Plan 9, which has bind in their place *)
+val is_link : < Cap.readdir; .. > -> string -> bool
+(* neither a file nor a directory, what it is after links: a pipe, a device
+ * or a socket (Linux's), where an open or a read may wait for ever; never
+ * on Plan 9 yet, whose devices are files in /dev *)
+val is_device : < Cap.readdir; .. > -> string -> bool
 
 (* One thing of a file's entry changed (9P's wstat, the rest of the
  * entry said unchanged); Unix_error when the server refuses.

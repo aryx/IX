@@ -131,7 +131,11 @@ dirfwstat(fdt fd, Dir *d)
  * the directory's descriptor (openat: dirread has no path) and
  * dirfstat. "." and ".." are left out, as Plan 9's directories have
  * none. dirread gives what one getdents64 gave, dirreadall goes on to
- * the end. */
+ * the end.
+ * O_PATH: the entry's name is all this asks for. A plain open left out
+ * a file one may not read, a link to nothing, and waited for ever on a
+ * pipe. Then O_NOFOLLOW, for the link to nothing; the numbers are
+ * arm's and arm64's. */
 typedef struct Dirent64 Dirent64;
 struct Dirent64 {
 	uvlong	ino;
@@ -143,6 +147,11 @@ struct Dirent64 {
 
 extern long openat(int dirfd, void *path, int flags, int mode);
 extern long _sysgetdents64(int fd, void *buf, uint count);
+
+enum {
+	OPATH		= 010000000,
+	ONOFOLLOW	= 0100000,
+};
 
 static long
 dirreadbuf(fdt fd, Dir **dp, int all)
@@ -165,7 +174,9 @@ dirreadbuf(fdt fd, Dir **dp, int all)
 			if (de->name[0] == '.' && (de->name[1] == 0 ||
 			    (de->name[1] == '.' && de->name[2] == 0)))
 				continue;
-			cfd = openat(fd, de->name, 0, 0);
+			cfd = openat(fd, de->name, OPATH, 0);
+			if (cfd < 0)
+				cfd = openat(fd, de->name, OPATH|ONOFOLLOW, 0);
 			if (cfd < 0)
 				continue;
 			nd = dirfstat(cfd);

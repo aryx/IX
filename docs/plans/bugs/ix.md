@@ -343,3 +343,17 @@ docker.yml's make test on GitHub (x86-64, four cores, OCaml 4.14.2 and
 | mini-5i: principia's acid with a float | `echo 'print(3.5)' \| mini-5i ~/principia/ROOT/arch/arm/bin/acid -l /dev/null` (2026-10-29, plan_debugger.md's stage 8, acid as mini-acid's reference) | `mini-5i: unimplemented instruction ee013190 at 19864` | a VFP move between a core register and a single (VMOV S, R: 5c's float code for acid's fval) that mini-5i's Plan 9 personality has not; open |
 | mini-5i: principia's acid stops at its first error | `printf 'x\nprint(1)\n' \| mini-5i ~/principia/ROOT/arch/arm/bin/acid -l /dev/null` | `<stdin>:2: (error) x used but not set` and nothing after: print(1) is not run, where acid at a terminal goes on (main.c: setjmp, then yyparse again) | not looked into (acid's longjmp under mini-5i, or its Biobuf of /fd/0 after it); mini-acid's tests give each error its own script; open |
 | mini-9pi for the Pi 2 by mini-ml (`COMPILER=ix`, the Pi 2's default from 9f9e8389) | `make self-quick-mix` (the build of ix on the card, under QEMU's raspi2b with its four cores), 2026-10-29 21:52, `_mk` made from nothing at 21:41 | after `rc kernels/9pi/tests/self.rc` started, the console a run of `k` to the end of the 50 minutes; no "hello from C" nor "hello from OCaml"; boot and session-c had passed (one core's work, little) | the same letters as the Pi 1's stale objects of the afternoon (R10), but no stale object here; not looked into (four cores? the collector under load?). The Pi 2 back on ocaml-light by default meanwhile; open |
+
+## Linux's dirreadall hid entries (2026-10-31, mini-files, fixed)
+
+`lib_core/libc/os/linux/stat.c` made each entry a `Dir` by opening it, and
+left out what it could not open: mini-ml's `Sys.readdir` (and what stands on
+it) did not list a file of mode 000 or a link to nothing, and waited for ever
+on a named pipe; dune's OCaml listed them all. Found by mini-files, built by
+mini-ml, moving a folder holding `chmod 000 inner.txt`: the copy "succeeded"
+without it, and the removal of the source stopped at `ENOTEMPTY`. Reproduced by
+`apps/files/tests/changes.sh $build/apps` (the sessions on a move failing
+halfway, and on a pipe and a link to nothing). Fixed: `O_PATH`, then
+`O_NOFOLLOW` for the link to nothing. Not fixed: Plan 9's devices.
+`Sys_plan9.is_device` is false there, so mini-files selecting `/dev/mouse`
+would wait in its read of the first bytes.

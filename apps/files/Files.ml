@@ -42,11 +42,20 @@ let usage =
   \  a click on the path         that folder\n\
   \  a click on Name, Size, Day  sorted by it; again, the other way\n\
   \  .                           the names that begin with a dot, shown or not\n\
+  \  c, x, then v                copied or cut, put in the folder shown\n\
+  \  r                           renamed;  n  a new folder\n\
+  \  d                           deleted, after a question\n\
   \  q                           the end\n"
 
 (*****************************************************************************)
 (* The model *)
 (*****************************************************************************)
+
+(* what the status line asks, the keys meanwhile being for it *)
+type asking = Deleting | Renaming | New_folder
+
+(* c or x: nothing changes until v, in the folder then shown *)
+type clip = Copied of string | Cut of string
 
 type model = {
   root : string; (* no folder above it is shown *)
@@ -59,6 +68,9 @@ type model = {
   top : int; (* the first row shown *)
   before : string list; (* the folders left, the last first *)
   said : string; (* the status line, when an action said something *)
+  asking : asking option;
+  field : string; (* what is typed after the question *)
+  clip : clip option;
   rules : Helpers.rule list; (* read once *)
   kind : string; (* the selected file's, and its program's name *)
   last_click : (int * float) option; (* the row, when: for a double click *)
@@ -74,9 +86,12 @@ let selected_entry (m : model) : Folder.entry option =
 
 (* the rule for the selected file, and what it is *)
 let rule_of (caps : caps) (m : model) (e : Folder.entry) : string * Helpers.rule option =
-  match File_kind.of_path caps (Fpath.v (Folder.join m.dir e.name)) with
-  | kind -> (kind, Helpers.for_type m.rules kind)
-  | exception Sys_error why -> (why, None)
+  let path = Folder.join m.dir e.name in
+  if Sys_plan9.is_device caps path then ("a pipe or a device", None)
+  else
+    match File_kind.of_path caps (Fpath.v path) with
+    | kind -> (kind, Helpers.for_type m.rules kind)
+    | exception Sys_error why -> (why, None)
 
 let with_kind (caps : caps) (m : model) : model =
   match selected_entry m with
@@ -118,7 +133,7 @@ let enter (caps : caps) (m : model) (dir : string) : model =
 let initial (caps : caps) (root : string) (dir : string) : model =
   read caps
     { root; dir; entries = [||]; order = By_name; reversed = false; dots = false; selected = 0; top = 0;
-      before = []; said = ""; rules = Helpers.rules caps; kind = ""; last_click = None; held = Set_.empty }
+      before = []; said = ""; asking = None; field = ""; clip = None; rules = Helpers.rules caps; kind = ""; last_click = None; held = Set_.empty }
     None
 
 let open_selected (caps : caps) (m : model) : model =
@@ -212,6 +227,96 @@ let sorted (caps : caps) (m : model) (order : Folder.order) : model =
   let name = Option.map (fun (e : Folder.entry) -> e.name) (selected_entry m) in
   read caps { m with order; reversed } name
 
+(*****************************************************************************)
+(* Changing files *)
+(*****************************************************************************)
+
+(* the action's failure, in words *)
+let tried (action : unit -> unit) : string option =
+  match action () with
+  | () -> None
+  | exception Folder.Refused why -> Some why
+  | exception Unix.Unix_error (e, _, what) -> Some (Filename.basename what ^ ": " ^ Unix.error_message e)
+  | exception Sys_error why -> Some why
+
+(* the folder read again after an action, what it said on the status line *)
+let shown (caps : caps) (a : area) (m : model) (name : string option) (said : string) : model =
+  keep_shown a { (read caps m name) with said; asking = None; field = "" }
+
+let selected_name (m : model) : string option = Option.map (fun (e : Folder.entry) -> e.name) (selected_entry m)
+
+(* the row that takes a deleted one's place *)
+let next_name (m : model) : string option =
+  let n = Array.length m.entries in
+  if m.selected + 1 < n then Some m.entries.(m.selected + 1).name
+  else if m.selected > 0 then Some m.entries.(m.selected - 1).name
+  else None
+
+let delete (caps : caps) (a : area) (m : model) : model =
+  match selected_entry m with
+  | None -> m
+  | Some e -> (
+      match tried (fun () -> Folder.remove caps (Folder.join m.dir e.name)) with
+      | None -> shown caps a m (next_name m) (e.name ^ " deleted")
+      | Some why -> shown caps a m (Some e.name) why)
+
+(* the field, a name of one folder, given to the action *)
+let named (caps : caps) (a : area) (m : model) (action : string -> unit) (said : string -> string) : model =
+  let name = m.field in
+  if not (Folder.good_name name) then
+    { m with said = "a name is not empty, and has no / in it"; asking = None; field = "" }
+  else
+    match tried (fun () -> action name) with
+    | None -> shown caps a m (Some name) (said name)
+    | Some why -> shown caps a m (selected_name m) why
+
+let copy_or_cut (m : model) (clip : string -> clip) (word : string) : model =
+  match selected_entry m with
+  | None -> m
+  | Some e ->
+      { m with
+        clip = Some (clip (Folder.join m.dir e.name));
+        said = Printf.sprintf "%s %s: v in the folder it goes to" e.name word }
+
+let paste (caps : caps) (a : area) (m : model) : model =
+  let here (from : string) = Filename.dirname from = m.dir in
+  match m.clip with
+  | None -> { m with said = "nothing to put here: c or x first" }
+  | Some (Cut from) when here from -> { m with said = Filename.basename from ^ " is already here" }
+  | Some (Cut from) -> (
+      let name = Filename.basename from in
+      match tried (fun () -> Folder.move caps from (Folder.join m.dir name)) with
+      | None -> shown caps a { m with clip = None } (Some name) (name ^ " moved here")
+      | Some why -> shown caps a m (selected_name m) why)
+  | Some (Copied from) -> (
+      let base = Filename.basename from in
+      let taken (name : string) = Folder.exists caps (Folder.join m.dir name) in
+      let name = if here from then Folder.copy_name ~taken base else base in
+      match tried (fun () -> Folder.copy caps from (Folder.join m.dir name)) with
+      | None -> shown caps a m (Some name) (name ^ " copied here")
+      | Some why -> shown caps a m (selected_name m) why)
+
+(* while a question is on the status line: y alone deletes *)
+let answer (caps : caps) (computer : computer) (a : area) (m : model) (q : asking) : model =
+  let keys = computer.keyboard.keys in
+  let pressed (name : string) = Set_.mem name keys && not (Set_.mem name m.held) in
+  let typed = computer.keyboard.typed in
+  let dropped = { m with asking = None; field = ""; said = "" } in
+  match q with
+  | Deleting -> if typed = "y" then delete caps a m else if typed = "n" || pressed "Escape" then dropped else m
+  | New_folder when pressed "Enter" ->
+      named caps a m (fun name -> Folder.make_folder caps (Folder.join m.dir name)) (fun name -> name ^ ": a new folder")
+  | Renaming when pressed "Enter" -> (
+      match selected_entry m with
+      | Some e when e.name <> m.field ->
+          named caps a m (fun name -> Folder.rename caps (Folder.join m.dir e.name) name) (fun name -> "now " ^ name)
+      | _ -> dropped)
+  | Renaming | New_folder ->
+      if pressed "Escape" then dropped
+      else if pressed "Backspace" then
+        { m with field = String.concat "" (List.rev (match List.rev (Text.chars m.field) with [] -> [] | _ :: rest -> rest)) }
+      else { m with field = m.field ^ String.concat "" (List.filter (fun c -> c >= " ") (Text.chars typed)) }
+
 let click (caps : caps) (computer : computer) (a : area) (m : model) : model =
   let x = computer.mouse.mx and y = computer.mouse.my in
   let (Time now) = computer.time in
@@ -230,7 +335,7 @@ let click (caps : caps) (computer : computer) (a : area) (m : model) : model =
         | _ -> { (with_selected caps m i) with last_click = Some (i, now) })
     | _ -> m
 
-let update (caps : caps) (computer : computer) (m : model) : model =
+let browse (caps : caps) (computer : computer) (m : model) : model =
   let keys = computer.keyboard.keys in
   let pressed (name : string) = Set_.mem name keys && not (Set_.mem name m.held) in
   let typed = computer.keyboard.typed in
@@ -248,7 +353,14 @@ let update (caps : caps) (computer : computer) (m : model) : model =
       | dir :: before -> read caps { m with dir; before; said = "" } (came_from dir m.dir)
       | [] -> m)
     else if typed = "." then
-      read caps { m with dots = not m.dots } (Option.map (fun (e : Folder.entry) -> e.name) (selected_entry m))
+      read caps { m with dots = not m.dots } (selected_name m)
+    else if typed = "c" then copy_or_cut m (fun path -> Copied path) "copied"
+    else if typed = "x" then copy_or_cut m (fun path -> Cut path) "cut"
+    else if typed = "v" then paste caps a m
+    else if typed = "d" && selected_entry m <> None then { m with asking = Some Deleting; said = "" }
+    else if typed = "r" && selected_entry m <> None then
+      { m with asking = Some Renaming; field = (match selected_name m with Some name -> name | None -> ""); said = "" }
+    else if typed = "n" then { m with asking = Some New_folder; field = ""; said = "" }
     else if typed = "q" then CapStdlib.exit caps 0
     else m
   in
@@ -257,18 +369,28 @@ let update (caps : caps) (computer : computer) (m : model) : model =
   let last = max 0 (Array.length m.entries - a.rows) in
   let wheel = int_of_float computer.mouse.mwheel in
   let m = if wheel <> 0 then { m with top = max 0 (min last (m.top - (3 * wheel))) } else m in
-  { m with held = keys }
+  m
+
+let update (caps : caps) (computer : computer) (m : model) : model =
+  let m =
+    match m.asking with
+    | Some q -> answer caps computer (area computer) m q
+    | None -> browse caps computer m
+  in
+  { m with held = computer.keyboard.keys }
 
 (*****************************************************************************)
 (* The view *)
 (*****************************************************************************)
 
 let status (m : model) : string =
-  if m.said <> "" then m.said
-  else
-    match selected_entry m with
-    | Some e when not e.is_dir -> m.kind
-    | _ -> Printf.sprintf "%d items" (Array.length m.entries)
+  match (m.asking, selected_entry m) with
+  | Some Deleting, Some e ->
+      Printf.sprintf "delete %s%s? y or n" e.name (if e.is_dir then " and all it holds" else "")
+  | Some Renaming, _ -> "new name: " ^ m.field ^ "_"
+  | Some New_folder, _ -> "new folder: " ^ m.field ^ "_"
+  | _, Some e when m.said = "" && not e.is_dir -> m.kind
+  | _ -> if m.said <> "" then m.said else Printf.sprintf "%d items" (Array.length m.entries)
 
 let view (computer : computer) (m : model) : shape list =
   let a = area computer in

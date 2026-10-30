@@ -12,3 +12,10 @@ dots|4|type(.):2|17ab7e89758fa356f73c023905c634369172958f7bfc9bf8305bb4f8e2f5dee
 wheel|8|down:2,return:4,wheel(-2):6|1b75c0b919553a6c494d9afe10e083d60d82bbc0743634872fc882071b2545d4
 path-click|8|at(-490;485):1-3,down:2,return:3,click:6|c418e4eee751657852b437f964d9640d8a512835ccf0ffe3d183fa187f103258
 no-program|10|down:2,down:4,down:6,return:8|54860b21ea44b27a1ca5252c920a2b0f2d56cea6059d91cfefcf6c2710582683
+ask-delete|4|type(d):2|7e2d7907413f14caa4acac4652edfcf3bb967e7bb68d41bdf5d2a57d2ec911df
+ask-delete-file|8|down:2,down:4,down:6,type(d):7|5a1a471a16baf5931b1800427048852666aeb987f37579c55daf4f9ef395ec42
+ask-rename|10|down:2,down:4,down:6,down:8,type(r):9|363ce7f4f47ac7ed0c3250fe3ecd36a7978d84a0774e522f6a52c626abd27637
+ask-new-folder|6|type(n):2,type(a b):4|1d13d90f03e9e91c5e3609ef2ae3ef98239caf326d6496b8f34e6b82bac5304b
+copied-said|4|type(c):2|a62e0f5c13b45cc8a45284f0b8b86474a3b803d38ff8fed296b81964068878e0
+already-here|6|type(x):2,type(v):4|e1dc8fdf09d8b4b44846e1b3fc744e03acb348bb76c31f76e5e5bae23180e312
+nothing-to-put|4|type(v):2|43f9498c164f0e44710f670273f4c0d814f8e543a7ace35a87a73cb3dad5ccfa

@@ -57,3 +57,42 @@ val parent : root:string -> string -> string
 
 (* [join dir name]: without a second '/' in the root *)
 val join : string -> string -> string
+
+(* Changing files. Nothing here overwrites: a name that is taken is
+   [Refused], where Linux's rename would have replaced it. The window waits
+   while a big tree is copied.
+
+   Moving to another folder is a copy and then a removal, as mv's on
+   Plan 9, whose rename stays in its directory: the source goes only once
+   the copy is whole; a copy that fails halfway removes what it made.
+
+   A symbolic link (Linux's) is not followed: removed, it is the link
+   that goes; in a copy it is [Refused], the folder it may point to, even
+   a parent, not being part of the tree. A pipe or a device is refused
+   too: reading one may never end. *)
+
+(* said in words, for the status line; also Unix_error from the system *)
+exception Refused of string
+
+type caps = < Cap.readdir ; Cap.open_in ; Cap.open_out >
+
+val exists : < caps ; .. > -> string -> bool
+
+(* a name in one folder: no '/', not "." nor ".." *)
+val good_name : string -> bool
+
+(* "copy of a", then "copy 2 of a", for a copy in its own folder *)
+val copy_name : taken:(string -> bool) -> string -> string
+
+(* [copy caps from dest], [move caps from dest]: whole paths, a tree or a
+   file; [dest] not in [from] itself *)
+val copy : < caps ; .. > -> string -> string -> unit
+val move : < caps ; .. > -> string -> string -> unit
+
+(* [rename caps path name]: in the folder it is in *)
+val rename : < caps ; .. > -> string -> string -> unit
+
+(* a file, or a folder with all it holds *)
+val remove : < caps ; .. > -> string -> unit
+
+val make_folder : < caps ; .. > -> string -> unit

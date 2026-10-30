@@ -36,6 +36,12 @@ let dirstat (_ : < Cap.readdir; .. >) path = dir_of (if path = "/" then path els
 let dirread (_ : < Cap.readdir; .. >) path =
   let names = try Sys.readdir path with Sys_error m -> raise (Unix.Unix_error (Unix.ENOENT, "dirread", m)) in
   List.map (fun name -> dir_of name (Filename.concat path name)) (Array.to_list names)
+let is_link (_ : < Cap.readdir; .. >) path = (Unix.lstat path).st_kind = Unix.S_LNK
+let is_device (_ : < Cap.readdir; .. >) path =
+  match (Unix.stat path).st_kind with
+  | Unix.S_REG | Unix.S_DIR -> false
+  | _ -> true
+  | exception Unix.Unix_error _ -> false
 
 let rename (_ : < Cap.open_out; .. >) path name = Unix.rename path (Filename.concat (Filename.dirname path) name)
 let chmod (_ : < Cap.open_out; .. >) path (_ : int) perm = Unix.chmod path perm

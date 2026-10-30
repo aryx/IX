@@ -12,7 +12,7 @@
 cd "$(dirname "$0")/../../.."
 D=${1:-_build/default/apps}/files
 F=$D/Files.exe; [ -x $F ] || F=$D/files
-F=$PWD/$F
+F=$(realpath $F)
 E=$PWD/apps/files/tests/frames.expected
 T=$(mktemp -d); trap 'rm -rf $T' EXIT
 r=0

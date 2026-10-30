@@ -39,18 +39,25 @@ let find (caps : < Cap.open_in; .. >) (t : t) (id : string) : Item.t option =
   Option.map Item.parse (FS.read_opt caps (Fpath.v (path t "items" id)))
 
 let save (caps : < Cap.open_out; .. >) (t : t) (item : Item.t) : unit =
+  Logs.debug (fun m -> m "store: writing %s" (Item.id item));
   mkdir_p caps (Filename.concat t.dir "items");
   FS.write caps (Fpath.v (path t "items" (Item.id item))) (Item.to_string item)
 
 let all (caps : < Cap.open_in; Cap.readdir; .. >) (t : t) : Item.t list =
   let dir = Filename.concat t.dir "items" in
-  if not (Sys.file_exists dir) then []
+  if not (Sys.file_exists dir) then begin
+    Logs.debug (fun m -> m "store: no %s yet" dir);
+    []
+  end
   else
+    let names = Array.to_list (Sys.readdir dir) in
+    Logs.debug (fun m -> m "store: reading %d items of %s" (List.length names) dir);
     List.map
       (fun name -> Item.parse (FS.read caps (Fpath.v (Filename.concat dir name))))
-      (List.sort compare (Array.to_list (Sys.readdir dir)))
+      (List.sort compare names)
 
 let cached (caps : < Cap.open_in; .. >) (t : t) (key : string) : string option =
+  Logs.debug (fun m -> m "store: the cache's %s" key);
   FS.read_opt caps (Fpath.v (path t "cache" key))
 
 let cache (caps : < Cap.open_out; .. >) (t : t) (key : string)
@@ -66,10 +73,14 @@ let secret (caps : < Cap.env; Cap.open_in; .. >) (name : string) :
     (string option, string) result =
   let file = Filename.concat (place caps) name in
   match Unix.stat file with
-  | exception Unix.Unix_error _ -> Ok None
+  | exception Unix.Unix_error _ ->
+      Logs.info (fun m -> m "store: no %s" file);
+      Ok None
   | st when st.st_perm land 0o077 <> 0 ->
       Error
         (Printf.sprintf "%s: others may read it (chmod 600 %s), not used"
            file file)
-  | _ -> Ok (FS.read_opt caps (Fpath.v file))
+  | _ ->
+      Logs.info (fun m -> m "store: reading %s" file);
+      Ok (FS.read_opt caps (Fpath.v file))
 

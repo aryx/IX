@@ -91,6 +91,7 @@ let usage =
   \  -s      the server (smtp.gmail.com:465 to send, imap.gmail.com:993 else)\n\
   \  -plain  no TLS (mini-maild, on this machine)\n\
   \  -offline  list and read what the store has, no server\n\
+  \  -v, -debug  what it reads, writes and fetches, on standard error\n\
   \  -u      the account: log in as that user, the password the store's\n\
   \          file (~/.ix-pim/password, mode 600) or the first line of stdin\n\
   with no command, the window: mini-pim user=... [server=host:port]\n\
@@ -125,6 +126,10 @@ let rec options (o : options) (args : string list) : options option =
           | None -> None)
       | None -> None)
   | "-plain" :: rest -> options { o with plain = true } rest
+  (* (every ix program's: docs/man/1/common.md) *)
+  | "-v" :: rest -> Logs.set_level (Some Logs.Info); options o rest
+  | "-debug" :: rest -> Logs.set_level (Some Logs.Debug); options o rest
+  | "-quiet" :: rest -> Logs.set_level None; options o rest
   | "-u" :: u :: rest -> options { o with user = Some u } rest
   | "-n" :: n :: rest -> (
       match int_of_string_opt n with
@@ -591,7 +596,10 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
   in
   let uids l = List.filter_map int_of_string_opt l in
   let assignments = Pim_store.assignments in
-  match options default (List.tl (Array.to_list argv)) with
+  let parsed = options default (List.tl (Array.to_list argv)) in
+  (* (after the options: -v is one) *)
+  Logs.info (fun m -> m "store: %s" (Items.place caps));
+  match parsed with
   | Some ({ args = [ "send"; file ]; _ } as o) -> send caps o file
   | Some ({ args = [ "list" ]; _ } as o) -> list caps o
   | Some ({ args = [ "read"; uid ]; _ } as o) when uids [ uid ] <> [] ->
@@ -644,6 +652,7 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
  * platform's words on the command line, and the window's flags *)
 let window (caps : < caps ; Cap.argv ; .. >) : Exit.t =
   let flags = ("window", "") :: Playground_platform.flags caps in
+  Logs.info (fun m -> m "store: %s" (Items.place caps));
   let wcaps = (caps :> Pim_window.caps) in
   Playground_platform.run_app caps flags
     (Playground.game Pim_window.view (Pim_window.update wcaps)
@@ -660,6 +669,8 @@ let () =
       Exit.exit caps
         (Exit.catch (fun () ->
              let argv = CapSys.argv caps in
+             (* the traces' reporter, before the flags: -v, -debug *)
+             Logging.setup caps ~name:"mini-pim";
              (* a command: the command line; else the window *)
              if List.exists (fun a -> List.mem a commands) (Array.to_list argv)
              then main caps argv

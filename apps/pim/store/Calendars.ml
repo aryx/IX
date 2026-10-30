@@ -50,6 +50,8 @@ let merge (items : Item.t list) (name : string) (fetched : Item.t list) :
 
 let fetch (caps : < Cap.network ; Cap.env ; Cap.open_in ; Cap.open_out ;
                     Cap.readdir ; .. >) (s : source) : (int * int, string) result =
+  (* (its name, not its address: a secret) *)
+  Logs.info (fun m -> m "calendar %s: fetching" s.name);
   match Http_client.get caps s.url with
   | Error e -> Error (s.name ^ ": " ^ e)
   | Ok r when r.status <> 200 ->
@@ -60,4 +62,7 @@ let fetch (caps : < Cap.network ; Cap.env ; Cap.open_in ; Cap.open_out ;
       let changed, gone = merge (Items.all caps store) s.name fetched in
       List.iter (Items.save caps store) changed;
       List.iter (Items.remove caps store) gone;
+      Logs.info (fun m ->
+          m "calendar %s: %d events, %d saved, %d removed" s.name
+            (List.length fetched) (List.length changed) (List.length gone));
       Ok (List.length changed, List.length gone)

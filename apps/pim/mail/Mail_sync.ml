@@ -10,6 +10,9 @@ let gmail_smtp = { host = "smtp.gmail.com"; port = 465; plain = false }
 
 let connect (caps : < Cap.network ; Cap.open_in ; .. >) (s : server) :
     (Lines.t, string) result =
+  Logs.info (fun m ->
+      m "mail: connecting to %s:%d%s" s.host s.port
+        (if s.plain then "" else ", TLS"));
   let conn =
     if s.plain then Lines.plain caps ~host:s.host ~port:s.port
     else
@@ -46,8 +49,10 @@ let session (caps : < Cap.network ; Cap.open_in ; .. >) (s : server)
       let r =
         let* t = Imap.connect conn in
         let* () = Imap.login t ~user ~password in
+        Logs.info (fun m -> m "mail: logged in as %s" user);
         let* name = named t mailbox in
         let* _ = Imap.select t name in
+        Logs.info (fun m -> m "mail: %s selected" name);
         let r = f t in
         Imap.logout t;
         r
@@ -87,7 +92,12 @@ let list (caps : < Cap.open_in ; Cap.open_out ; .. >) (store : Items.t)
   | Ok uids -> (
       match Imap.summaries t (newest n uids) with
       | Error e -> Error e
-      | Ok l -> keep caps store ~account ~mailbox l; Ok l)
+      | Ok l ->
+          Logs.info (fun m ->
+              m "mail: %d of %d messages' headers fetched, kept in the store"
+                (List.length l) (List.length uids));
+          keep caps store ~account ~mailbox l;
+          Ok l)
 
 let message (caps : < Cap.open_in ; Cap.open_out ; .. >) (store : Items.t)
     (t : Imap.t) ~(account : string) ~(mailbox : string) (uid : int) :

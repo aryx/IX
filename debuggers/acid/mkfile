@@ -1,10 +1,10 @@
 # mini-acid, built by ix's tools: its lexer by mini-lex, its grammar by
-# mini-yacc
+# mini-yacc; Ptrace linux/mini-ml/'s, which has none (dune's is linux/'s)
 TOP=../..
 DIR=debuggers/acid
 PROG=mini-acid
-SRC=Ast Code Value Eval Das Proc Parser Lexer Builtin CLI Main
-LOCAL=`{ls *.ml *.mli *.mly *.mll}
+SRC=Ast Code Value Eval Das Das_arm64 Ptrace Proc Parser Lexer Builtin CLI Main
+LOCAL=`{ls *.ml *.mli *.mly *.mll linux/mini-ml/*.ml}
 LIBI=
 LIBUNITS=
 LIBOBJS=
@@ -19,3 +19,5 @@ $D/Parser.$O: $D/Parser.ml $LOCAL
 	$ML $INCLUDES -o $target $D/Parser.ml
 $D/Lexer.$O: $D/Lexer.ml $D/Parser.ml $LOCAL
 	$ML $INCLUDES -o $target $D/Lexer.ml
+$D/Ptrace.$O: linux/mini-ml/Ptrace.ml $LOCAL
+	$ML $INCLUDES -o $target linux/mini-ml/Ptrace.ml

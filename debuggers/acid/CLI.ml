@@ -30,6 +30,10 @@ value prints by its type (n1, n1.next->name, *walk:n).
 An ML value prints by its words (ml(*Values.l): [1; 2; 3]), a unit's global
 named M.x; by its type when mini-ml -g described it (ml(Values.p):
 {x = 1; y = 2; name = "origin"}; mlvars(): every global).
+On Linux (arm64), a program of this machine, an ELF (gcc's too), by ptrace,
+with arm64.acid: its names by its symbol table, its stack by the frame
+pointers; its types by mini-cc -m 7 -a's declarations of its .c (-l):
+  mini-acid -l port.acid -l arm64.acid -l prog.acid ./prog
 |}
 
 (* the input's name, for the errors: <stdin>:12: (error) ... *)
@@ -129,5 +133,5 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
       Lexer.interactive := true;
       run caps (stdin_lexbuf caps) ~prompt:true;
       (* die's: the processes left, how to kill them *)
-      List.iter (fun p -> Console.print caps (Printf.sprintf "echo kill > /proc/%d/ctl\n" p)) (Proc.attached ());
+      List.iter (fun p -> Console.print caps (if Ptrace.available then Printf.sprintf "kill %d\n" p else Printf.sprintf "echo kill > /proc/%d/ctl\n" p)) (Proc.attached ());
       Exit.OK

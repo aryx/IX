@@ -21,6 +21,9 @@ defn acidinit()
 
 defn linkreg() { return *R14; }
 
+// the program's first function, where a stack ends (5l's _main)
+defn isstart(a) { return a == _main; }
+
 // a function's frame by its prologue: {its size, the address of the
 // return's save}, {} when it has none. Read in the program's file (@),
 // not the process (*): a breakpoint may be in the process's text

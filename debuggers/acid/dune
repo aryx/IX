@@ -2,10 +2,15 @@
 ; ocamllex and its grammar in yacc (ocamlyacc here, not menhir: menhir
 ; reads the token after a statement's ; before running it, so a terminal
 ; would answer a line late; mini-lex and mini-yacc in the mkfile)
+; linux/: Linux's side of a process, ptrace (Ptrace.mli); the mkfile
+; takes linux/mini-ml/'s Ptrace, which has none
+(copy_files# linux/{Ptrace.ml,ptrace.c})
+
 (library
  (name ix_acid)
  (wrapped false)
- (modules Ast Code Value Eval Das Proc Parser Lexer Builtin CLI)
+ (modules Ast Code Value Eval Das Das_arm64 Ptrace Proc Parser Lexer Builtin CLI)
+ (foreign_stubs (language c) (names ptrace))
  (libraries ix_executable ix_core fpath unix caps))
 
 (ocamllex Lexer)

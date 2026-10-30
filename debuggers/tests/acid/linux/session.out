@@ -1,0 +1,18 @@
+./target:arm64 linux executable
+acid: PID: Breakpoint/Trace trap	ADDR	?
+PID: Breakpoint/Trace trap	main+0x4	MOV	RSP, R29
+acid: acid: PID: Breakpoint/Trace trap	leaf	SUB	$16, RSP, RSP
+acid: leaf()+0x0 ?file?:0
+walk()+0x30 ?file?:0
+main+0x18 ?file?:0
+acid: 0x00000003
+acid: Node {name=ADDR "one", p=Point {x=1, y=2}, next=(Node*)ADDR, c=97, s=7}
+acid: Node {name=ADDR "two", p=Point {x=3, y=4}, next=nil, c=98, s=-2}
+acid: integer variable format a complex Node
+acid: PID: Breakpoint/Trace trap	leaf+0x4	MOVW	R0, 12(RSP)
+acid: PID: Breakpoint/Trace trap	leaf	SUB	$16, RSP, RSP
+acid: leaf()+0x0 ?file?:0
+walk()+0x30 ?file?:0
+main+0x30 ?file?:0
+acid: 
+kill PID

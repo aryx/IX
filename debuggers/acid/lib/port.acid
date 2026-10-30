@@ -30,7 +30,8 @@ defn pfl(addr)
 }
 
 // the frames from (pc, sp, link), the innermost first, each {its
-// function, where in it, its sp}, to _main: a function's frame by its
+// function, where in it, its sp}, to the start (isstart: arm.acid's
+// _main, arm64.acid's main): a function's frame by its
 // prologue (arm.acid's frame), its caller's address at 0(SP) once saved,
 // the link before (and in a leaf, the innermost only)
 defn frames(pc, sp, link)
@@ -45,7 +46,7 @@ defn frames(pc, sp, link)
 			return l;
 		start = f[0];
 		append l, {start, pc, sp};
-		if start == _main then
+		if isstart(start) then
 			return l;
 		p = frame(start);
 		if p == {} || pc <= p[1] then {
@@ -97,7 +98,7 @@ defn _stk(dolocals)
 	t = strace(*PC, *SP, linkreg());
 	while l do {
 		f = head l;
-		if f[0] == _main then {
+		if isstart(f[0]) then {
 			print(fmt(f[1], 'a'), " ");
 			pfl(f[1]);
 			return {};
@@ -424,14 +425,18 @@ defn pmember(a, f, t)
 			print(a\X);
 		return {};
 	}
-	if f == "A" || f == "X" then {
-		v = *(a\X);
+	if f == "A" || f == "X" || f == "Y" then {
+		// (a pointer of 8 bytes: 'Y', or 'A' on arm64)
+		if f == "Y" || (f == "A" && objtype == "arm64") then
+			v = *(a\Y);
+		else
+			v = *(a\X);
 		if v == 0 then
 			print("nil");
 		else if t != "" then
-			print("(", t, "*)", v\X);
+			print("(", t, "*)", v);
 		else {
-			print(v\X);
+			print(v);
 			s = cstring(v);
 			if s != {} then
 				print(" \"", s, "\"");

@@ -298,6 +298,7 @@ job "mini-5i's /proc: children stopped, read, written, killed; a breakpoint; a h
 job "mini-5i's segments: code written in one attached, segflush, the new code run (a JIT's way)" machine/tests/seg.sh
 job "mini-acid: its language, scripts printed as Plan 9's acid prints them" debuggers/tests/acid.sh
 job "mini-acid with ix's acid library on a process under mini-5i: new, breakpoints, step, next, stk of C and mini-ml" debuggers/tests/acid_proc.sh
+job "mini-acid on Linux by ptrace: a program of gcc's stopped at a breakpoint, its stack, its C values printed by their types" debuggers/tests/acid_linux.sh
 job "mini-turbopascal: recorded screens" editors/turbopascal/tests/keys.sh
 job "mini-page: recorded frames" apps/page/tests/frames.sh
 job "mini-office: pictures" apps/office/tests/image.sh

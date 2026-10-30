@@ -952,3 +952,35 @@ debuggers/tests/tables.sh, a program of gcc's: mini-nm's values and
 names those of binutils' nm (when gcc and nm are there); mini-nm built
 by mini-ml (arm64) prints what dune's does.
 
+2026-10-30, **mini-acid on Linux, by ptrace** (stage 8a's second
+step): dune's mini-acid debugs a program of this machine (arm64), gcc's
+first. The side (decision 12's third): Ptrace.mli, linux/ptrace.c, a
+stub of six calls (a program spawned traced, PTRACE_TRACEME and execv,
+its addresses not randomized; PTRACE_GETREGSET and SETREGSET of
+user_pt_regs; PTRACE_CONT; waitpid; kill), linux/Ptrace.ml its
+externals, linux/mini-ml/Ptrace.ml the mkfile's, none (mini-acid on
+Plan 9 reads /proc). Proc: an ELF's program (Elf_file: its loads, its
+symbols; a PIE's moved by its bias, auxv's AT_ENTRY less the file's,
+once it runs), /proc/$pid/mem as Plan 9's mem, the registers arm64's
+user_pt_regs and a TYPE after them (the stop's signal, which
+port.acid's stopped gives reason), ctl's messages as ptrace's (start,
+startstop, waitstop, stop, kill; a breakpoint's SIGTRAP not given back,
+another signal given at the next start), the notes the signal's name
+(sys: breakpoint), status by /proc/$pid/stat, map() by
+/proc/$pid/maps, a name+offset of 64 bits. Das_arm64: follow (B, BL,
+B.cond, CBZ, TBZ, BR, BLR, RET, their conditions evaluated), so
+port.acid's step, cont and bpset as they are (BRK #0); its printer a
+few instructions, the others their word. lib/arm64.acid: the link R30,
+isstart main (port.acid asks isstart, arm.acid's _main), the frames by
+the frame pointers' list (AAPCS64: 8(R29) the return, 0(R29) the
+caller's record; R30 before the prologue sets R29, or in a leaf). Values
+by mini-cc -m 7 -a's declarations of the same .c (7c's layout is
+gcc's): port.acid's pmember reads 'Y' and arm64's 'A' as 8 bytes.
+Not yet: lines (DWARF's .debug_line: next, src, filepc), mini-ld's
+ELF symbols (mini-cc, mini-asm and mini-ml's programs on Linux), 7c's
+and mini-ml's arm64 frames, a parameter's or a local's address (f:v),
+mini-acid built by mini-ml for Linux (its runtime's ptrace). Checked:
+debuggers/tests/acid_linux.sh (new, when gcc is there on arm64 Linux):
+new, bpset, stk, step, cont, n1 and n2 printed by their types, the
+addresses and pids left out; acid_proc.sh as before (11, and live).
+

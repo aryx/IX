@@ -1,0 +1,11 @@
+new()
+bpset(leaf)
+cont()
+stk()
+*counter
+n1
+n2
+whatis n1
+step()
+cont()
+stk()

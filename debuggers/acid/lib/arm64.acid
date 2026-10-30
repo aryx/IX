@@ -1,0 +1,103 @@
+// Claude Code
+// Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+//
+// arm64.acid: mini-acid's library, arm64's part, on Linux (port.acid
+// is the rest; arm.acid the arm's): the breakpoint's size, the link
+// register, the registers printed, and the frames, by the frame
+// pointer's chain (AAPCS64, gcc's and clang's): a function's prologue
+// saves the caller's R29 (FP) and R30 (LR) in a record on the stack
+// and points R29 at it,
+//
+//     STP.W (R29, R30), -n(RSP)     or  SUB $n, RSP
+//     MOV   RSP, R29                    STP (R29, R30), m(RSP)
+//                                       ADD $m, RSP, R29
+//
+//     R29 -> | the caller's R29 |  the record: a list, each frame's
+//            | its return       |  first word the one before's
+//
+// so the walk is the list: a return address at 8(R29), the caller's
+// record at 0(R29). Before R29 is set (a breakpoint at a function's
+// first instruction), and in a leaf that makes no record, the return
+// is in R30. ix's compilers make no record yet (mini-cc's 7c frames,
+// mini-ml's): their frames read by their prologues as on arm, later.
+
+defn acidinit()
+{
+	bplist = {};
+	bpfmt = 'X';
+}
+
+defn linkreg() { return *R30; }
+
+// where a stack ends: main (gcc's programs have no _main; libc's start
+// calls main)
+defn isstart(a) { return a == main; }
+
+// where a function's prologue sets R29 (MOV RSP, R29; ADD $m, RSP,
+// R29), in its first four instructions; {} when it does not (a leaf).
+// Read in the program's file (@): a breakpoint may be in the process's
+defn frame(start)
+{
+	local i, w;
+
+	i = 0;
+	while i < 4 do {
+		w = @fmt(start+i*4, 'X');
+		if (w & 0xffc003ff) == 0x910003fd then
+			return {0, start+i*4};
+		i = i + 1;
+	}
+	return {};
+}
+
+// the frames from (pc, sp, link), the innermost first, each {its
+// function, where in it, its sp} (port.acid's frames, for arm64), to
+// main (isstart) or the list's end
+defn frames(pc, sp, link)
+{
+	local l, f, start, p, fp, ret, n;
+
+	l = {};
+	fp = *R29;
+	n = 0;
+	while n < 40 do {
+		f = fnbound(pc);
+		if f == {} then
+			return l;
+		start = f[0];
+		append l, {start, pc, sp};
+		if isstart(start) then
+			return l;
+		p = frame(start);
+		if n == 0 && (p == {} || pc <= p[1]) then
+			ret = link;
+		else {
+			if fp == 0 then
+				return l;
+			ret = *fmt(fp+8, 'Y');
+			sp = fp+16;
+			fp = *fmt(fp, 'Y');
+		}
+		if ret == 0 then
+			return l;
+		pc = ret-4;		// the call
+		n = n+1;
+	}
+	return l;
+}
+
+defn regs()
+{
+	local i;
+
+	i = 0;
+	while i < 31 do {
+		print("R", i\D, "\t", *fmt(i*8, 'Y'));
+		if i % 3 == 2 then
+			print("\n");
+		else
+			print(" ");
+		i = i + 1;
+	}
+	print(" SP\t", *SP, " PC\t", *PC, "\n");
+}

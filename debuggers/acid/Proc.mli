@@ -15,9 +15,15 @@
  * A process: started by newproc, hung at its exec (ctl's hang) and
  * waited for; a stop (stop, startstop, waitstop) reads its notes
  * (notes) and calls the acid function stopped(pid), the library's
- * (port.acid prints where and why). *)
+ * (port.acid prints where and why).
+ *
+ * On Linux (Ptrace.available: dune's mini-acid), the same by ptrace
+ * (Ptrace.mli has the table): an ELF's program (gcc's, arm64), its
+ * symbols moved where a PIE is put, /proc/$pid/mem, the registers
+ * arm64's user_pt_regs and TYPE, the stop's signal; ctl's messages
+ * are ptrace's calls, a note the signal's name. *)
 
-type caps = < Cap.open_in; Cap.open_out; Cap.fork; Cap.exec >
+type caps = < Cap.open_in; Cap.open_out; Cap.fork; Cap.exec; Cap.kill >
 
 (* the program read (the a.out's path): its variables made, the
  * registers' too; its line ("prog:arm plan 9 executable") printed *)

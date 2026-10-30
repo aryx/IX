@@ -33,8 +33,8 @@ StringBuilder, List, Dictionary, the delegates.
 **-jit**
 :    The methods the JIT takes (their arguments, locals and stack of
      int32s and references, not structs, longs, doubles or pointers;
-     no try) are compiled at the first call of one of them, the
-     assembly's all at once, and run as the machine's code; the
+     no try) are compiled each at its first call and run as the
+     machine's code; the
      others by the interpreter. The code reads fields and array
      elements itself; for a call into the library or to a virtual
      method, `new`, a string, a static field or a cast it asks the

@@ -795,3 +795,19 @@ its call-out, its token resolved at its first run. `jit/objects.cs`
 (from 0.83), the shapes 0.13 s (0.18), the counter 0.11 s (0.32: a
 call-out now some 100 ns).
 
+Then a method compiled at its own first call (decision 12's stub and
+cell). At the first call of one of an assembly's methods, those the
+JIT takes are verified and each given a cell (a word of a memory file
+mapped readable, which ML writes by pwrite: neither the code nor the
+cells are ever writable in the process's memory), an entry and a stub;
+the cell holds the stub's address, then the method's code's. A call
+from compiled code loads the cell and branches to it (MOV, MOV, BL
+(R16)). The stub, a function of the method's arguments, calls the
+compiler with the method's number (its references kept on mini-ml's
+value stack meanwhile: the compiler allocates), which makes the
+method's text, encodes and loads it, and sets the cell; the stub then
+calls the method with its arguments. Each piece of code has its own
+copy of the runtime's stubs (jit_out, jit_null...). Checked: tests/run.sh's
+215 checks; a method never called is not compiled (fib.dll: 3 of 4,
+objects.cs 21 of 22); bench.cs 0.37 s, objects.cs 0.66 s, as before.
+

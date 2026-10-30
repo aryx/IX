@@ -139,6 +139,18 @@ let call_out (img : Image.t) (im : Value.image option) (taken : int -> bool) (ca
   | Il.Stfld tok when (match im with Some im -> Value.is_ref (field im tok).ftype | None -> false) -> Some (2, false)
   | _ -> None
 
+(* the words a method has on mini-ml's value stack: its slots', its
+ * locals', its arguments', when one may be a reference; else none *)
+let value_words (img : Image.t) (row : int) (r : V.result) : int =
+  let body = Image.body img (Image.get img M.t_method_def row "RVA") in
+  let locals = List.map (sig_kind img true "") (local_sigs img body) in
+  let args = Array.to_list (arg_kinds img true row) in
+  let depth = Array.fold_left (fun d s -> match s with Some s -> max d (List.length s) | None -> d) 0 r.stacks in
+  let any_ref = List.mem R locals || List.mem R args
+                || Array.exists (fun s -> match s with
+                    | Some s -> List.exists (fun v -> vt_kind true v = Some R) s | None -> false) r.stacks in
+  if any_ref then depth + 1 + List.length locals + List.length args else 0
+
 (* the methods the JIT takes: each one's own reasons, its stacks (the
  * verifier's: int32s only, or references), its instructions, and its
  * calls, to methods taken too (until no more is dropped); with
@@ -175,6 +187,7 @@ let choose (img : Image.t) (im : Value.image option) : (int, V.result) Hashtbl.t
                | Some im when (field im tok).fstatic -> refuse (sprintf "IL_%04x: a static field by %s" ins.at ins.name)
                | _ -> ())
           | _ -> ()) r.instrs;
+      if refs && value_words img row r > 32 then refuse "more than 32 words on the value stack";
       r
     with
     | r -> Hashtbl.replace taken row r
@@ -230,8 +243,19 @@ let symbol (img : Image.t) (row : int) : string =
  * field, a cast, a reference stored (its write barrier). *)
 let store_s = 8 and store_r = 16 and store_len = 24
 
+(* what the code with references is made with: the assembly loaded,
+ * the methods taken, the call-outs (numbered from base), a method's
+ * cell (its address: the code's, its stub's until it is compiled) *)
+type env = {
+  im : Value.image;
+  taken : int -> bool;
+  sites : site list ref;
+  base : int;
+  cell : int -> string;
+}
+
 let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row : int) (r : V.result)
-    (refs : (Value.image * (int -> bool) * site list ref * int) option) : string =
+    (refs : env option) : string =
   let b = Buffer.create 1024 in
   let ins fmt = Printf.ksprintf (fun s -> Buffer.add_string b ("\t" ^ s ^ "\n")) fmt in
   let a64 = m = Arm64 in
@@ -246,8 +270,8 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
   let nargs = Array.length args in
   let depth = Array.fold_left (fun d s -> match s with Some s -> max d (List.length s) | None -> d) 0 r.stacks in
   let nslots = depth + 1 in
-  let taken = match refs with Some (_, t, _, _) -> t | None -> (fun _ -> true) in
-  let im = match refs with Some (im, _, _, _) -> Some im | None -> None in
+  let taken = match refs with Some e -> e.taken | None -> (fun _ -> true) in
+  let im = match refs with Some e -> Some e.im | None -> None in
   (* the outgoing arguments' room: the most a call passes, 5c's way *)
   let maxargs = Array.fold_left (fun a (ins : Il.instr) -> match ins.op with
       | Il.Call tok when refs = None || call_out img im taken row ins.op = None ->
@@ -255,13 +279,8 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
           max a (List.length m.params)
       | _ -> a) 1 r.instrs in
   let frame = w * (nslots + nlocals) + w * maxargs in
-  (* the value stack's words: the slots, the locals, the arguments; none
-   * without references *)
-  let any_ref = Array.exists (( = ) R) locals || Array.exists (( = ) R) args
-                || Array.exists (fun s -> match s with
-                    | Some s -> List.exists (fun v -> vt_kind true v = Some R) s | None -> false) r.stacks in
-  let nv = if refs <> None && any_ref then nslots + nlocals + nargs else 0 in
-  if nv > 32 then refuse "more than 32 words on the value stack";
+  (* the value stack's words: the slots, the locals, the arguments *)
+  let nv = if refs <> None then value_words img row r else 0 in
   let word j = sprintf "%d(R26)" (-8 * (nv - j)) in
   (* the places: a stack slot, a local (autos, below SP), an argument
    * (FP: the first one left there from R0 by the prologue's MOVW) *)
@@ -385,7 +404,7 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
         | Il.K_u2 -> Value.T_u2 | _ -> Value.T_i4 in
       match refs, x.op with
       | Some _, _ when r.stacks.(i) = None -> ()
-      | Some (_, _, sites, base), _ when call_out img im taken row x.op <> None ->
+      | Some { sites; base; _ }, _ when call_out img im taken row x.op <> None ->
           (* the instruction run by the interpreter: its operands, the
            * bottom first, as values of mini-ml's (an int32 tagged), in
            * R2...; the call-out's number in R1 *)
@@ -413,7 +432,7 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
       | _, Il.Ldnull -> ins "MOV\t$1, R1"; ins "MOV\tR1, %s" (vslot (top + 1))
       | _, Il.Dup -> move (before top) (slot top, vslot top) (slot (top + 1), vslot (top + 1))
       | _, Il.Pop -> ()
-      | Some (im, _, _, _), (Il.Ldfld tok | Il.Stfld tok) ->
+      | Some { im; _ }, (Il.Ldfld tok | Il.Stfld tok) ->
           let fd = field im tok in
           let is_ref = Value.is_ref fd.ftype in
           (match x.op with
@@ -534,7 +553,9 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
           done;
           if n > 0 then
             if ks.(0) = I then ins "MOVW\t%s, R0" (slot (top - n + 1)) else ins "MOV\t%s, R0" (vslot (top - n + 1));
-          ins "BL\t%s(SB)" (Hashtbl.find syms callee);
+          (match refs with
+           | Some e -> ins "MOV\t%s, R16" (e.cell callee); ins "MOV\t0(R16), R16"; ins "BL\t(R16)"
+           | None -> ins "BL\t%s(SB)" (Hashtbl.find syms callee));
           let sg' = signature img callee in
           if sg'.ret <> S.Void then
             if sig_kind img (refs <> None) "" sg'.ret = I then ins "MOVW\tR0, %s" (slot (top - n + 1))
@@ -557,63 +578,68 @@ let symbols (img : Image.t) (taken : (int, V.result) Hashtbl.t) : int list * (in
       Hashtbl.replace syms row s) rows;
   (rows, syms)
 
-exception Dropped of int * string
-
-(* each method's text, its call-outs numbered from [base]; a method
- * refused only now (its frame too big) is dropped with its callers,
- * and all again *)
-let texts (m : mach) (img : Image.t) (im : Value.image option) (base : int) :
-  int list * (int, string) Hashtbl.t * string * site list * (int * string) list =
-  let taken, refused = choose img im in
-  let refused = ref refused in
-  let rec go () =
-    let rows, syms = symbols img taken in
-    let sites = ref [] in
-    let b = Buffer.create 4096 in
-    match
-      List.iter (fun row ->
-          let refs = match im with
-            | Some im -> Some (im, (fun r -> Hashtbl.mem taken r), sites, base)
-            | None -> None in
-          match method_text m img syms row (Hashtbl.find taken row) refs with
-          | s -> Buffer.add_string b s
-          | exception Refused why -> raise (Dropped (row, why))) rows
-    with
-    | () -> (rows, syms, Buffer.contents b, !sites, List.sort compare !refused)
-    | exception Dropped (row, why) ->
-        Hashtbl.remove taken row;
-        refused := (row, why) :: !refused;
-        (* (its direct callers: those that call it by BL) *)
-        Hashtbl.iter (fun caller (r : V.result) ->
-            if Array.exists (fun (ins : Il.instr) -> match ins.op with
-                | Il.Call tok -> M.token_table tok = M.t_method_def && M.token_row tok = row
-                | _ -> false) r.instrs
-            then (Hashtbl.remove taken caller;
-                  refused := (caller, "a call to a method not compiled") :: !refused))
-          (Hashtbl.copy taken);
-        go () in
-  go ()
-
+(* each method's text, its call-outs numbered from 0, a method's cell
+ * by its symbol: -S's *)
 let assembly (m : mach) (img : Image.t) (im : Value.image option) : string * int * (int * string) list =
   let im = if m = Arm then None else im in
-  let rows, _, text, _, refused = texts m img im 0 in
-  (text, List.length rows, refused)
+  let taken, refused = choose img im in
+  let rows, syms = symbols img taken in
+  let sites = ref [] in
+  let b = Buffer.create 4096 in
+  List.iter (fun row ->
+      let refs = match im with
+        | Some im -> Some { im; taken = Hashtbl.mem taken; sites; base = 0;
+                            cell = fun r -> sprintf "$%s_cell(SB)" (Hashtbl.find syms r) }
+        | None -> None in
+      Buffer.add_string b (method_text m img syms row (Hashtbl.find taken row) refs)) rows;
+  (Buffer.contents b, List.length rows, refused)
 
 (* ------------------------------------------------------------------ *)
-(* In mini-dotnet: each method's entry an ML function *)
+(* In mini-dotnet: a method compiled at its first call *)
 (* ------------------------------------------------------------------ *)
+
+type prepared = {
+  pim : Value.image;
+  ptaken : (int, V.result) Hashtbl.t;
+  prows : int list;
+  psyms : (int, string) Hashtbl.t;
+}
+
+let prepare (im : Value.image) : prepared =
+  let taken, _ = choose im.img (Some im) in
+  let rows, syms = symbols im.img taken in
+  { pim = im; ptaken = taken; prows = rows; psyms = syms }
+
+let rows (p : prepared) : int list = p.prows
+
+let outs = 8
+
+(* the runtime's, in each piece of code (its own copy, the pieces apart
+ * in memory): an ML function's static closure at an address, called
+ * by its n-ary code (field 1) with the code's link kept: a throw's, of
+ * unit, which raises and so does not come back; a call-out's, of its
+ * number in R1 and its operands; the compiler's, of a method's number *)
+let runtime ~(throws : (string * int) list) ~(out : int array) ~(compile : int) : string =
+  let b = Buffer.create 1024 in
+  List.iter (fun (name, addr) ->
+      Buffer.add_string b (sprintf "\tTEXT\t%s(SB), $-8\n\tMOV\t$%d, R0\n\tMOV\t$1, R1\n\tMOV\t8(R0), R16\n\tB\t(R16)\n" name addr))
+    throws;
+  Array.iteri (fun n addr ->
+      Buffer.add_string b (sprintf "\tTEXT\tjit_out%d(SB), $-8\n\tMOV\t$%d, R0\n\tMOV\t8(R0), R16\n\tB\t(R16)\n" n addr))
+    out;
+  Buffer.add_string b (sprintf "\tTEXT\tjit_compile(SB), $-8\n\tMOV\t$%d, R0\n\tMOV\t8(R0), R16\n\tB\t(R16)\n" compile);
+  Buffer.contents b
 
 (* An entry, as mini-ml calls a closure of one argument (Gen: the
  * closure in R0, its argument in R1, the result in R0): the argument
  * an array of the method's arguments, values of mini-ml's (an int32 a
  * tagged int); each put in 7c's places, an int32 untagged, the method
- * called, its result tagged (2n + 1), a reference as it is. The value
- * stack's top (R26) is the caller's, which the method raises if it
- * holds references. *)
-let entry (img : Image.t) (syms : (int, string) Hashtbl.t) (row : int) : string =
+ * called by its cell, its result tagged (2n + 1), a reference as it
+ * is. The value stack's top (R26) is the caller's, which the method
+ * raises if it holds references. *)
+let entry (img : Image.t) (sym : string) (row : int) (cell : int) : string =
   let b = Buffer.create 256 in
   let ins fmt = Printf.ksprintf (fun s -> Buffer.add_string b ("\t" ^ s ^ "\n")) fmt in
-  let sym = Hashtbl.find syms row in
   let sg = signature img row in
   let ks = arg_kinds img true row in
   let n = Array.length ks in
@@ -624,29 +650,68 @@ let entry (img : Image.t) (syms : (int, string) Hashtbl.t) (row : int) : string 
     else ins "MOV\tR2, %d(R31)" (8 + 8 * k)
   done;
   if n > 0 then (ins "MOV\t0(R1), R0"; if ks.(0) = I then ins "ASR\t$1, R0");
-  ins "BL\t%s(SB)" sym;
+  ins "MOV\t$%d, R16" cell;
+  ins "MOV\t0(R16), R16";
+  ins "BL\t(R16)";
   if sg.ret = S.Void then ins "MOV\t$1, R0"
   else if sig_kind img true "" sg.ret = I then (ins "LSL\t$1, R0"; ins "ORR\t$1, R0");
   ins "RETURN";
   Buffer.contents b
 
-let outs = 8
+(* A stub, a method's cell's until it is compiled: a function of the
+ * method's arguments, which compiles it (jit_compile, its number in
+ * R1: the compiler allocates, so the references given wait on the
+ * value stack, where the collector moves them), then calls it with
+ * them through its cell, and returns its result: decision 12's stub,
+ * as .NET's first JIT had (its "prestub") *)
+let stub (img : Image.t) (sym : string) (row : int) (cell : int) (number : int) : string =
+  let b = Buffer.create 256 in
+  let ins fmt = Printf.ksprintf (fun s -> Buffer.add_string b ("\t" ^ s ^ "\n")) fmt in
+  let ks = arg_kinds img true row in
+  let n = Array.length ks in
+  let refs = List.filter (fun i -> ks.(i) = R) (List.init n (fun i -> i)) in
+  let nr = List.length refs in
+  let word i = let rec index j l = match l with x :: l -> if x = i then j else index (j + 1) l | [] -> 0 in
+    sprintf "%d(R26)" (-8 * (nr - index 0 refs)) in
+  let arg i = sprintf "a%d+%d(FP)" i (8 * i) in
+  Buffer.add_string b (sprintf "\tTEXT\t%s_stub(SB), 0, $%d\n" sym (8 * (n + 1)));
+  if n > 0 && ks.(0) = I then ins "MOVW\tR0, %s" (arg 0);
+  if nr > 0 then begin
+    ins "ADD\t$%d, R26" (8 * nr);
+    List.iter (fun i -> if i = 0 then ins "MOV\tR0, %s" (word 0)
+                else (ins "MOV\t%s, R1" (arg i); ins "MOV\tR1, %s" (word i))) refs
+  end;
+  ins "MOV\t$%d, R1" (2 * number + 1);
+  ins "BL\tjit_compile(SB)";
+  for i = n - 1 downto 1 do
+    if ks.(i) = I then (ins "MOVW\t%s, R1" (arg i); ins "MOVW\tR1, %d(R31)" (8 + 8 * i))
+    else (ins "MOV\t%s, R1" (word i); ins "MOV\tR1, %d(R31)" (8 + 8 * i))
+  done;
+  if n > 0 then (if ks.(0) = I then ins "MOVW\t%s, R0" (arg 0) else ins "MOV\t%s, R0" (word 0));
+  if nr > 0 then ins "SUB\t$%d, R26" (8 * nr);
+  ins "MOV\t$%d, R16" cell;
+  ins "MOV\t0(R16), R16";
+  ins "BL\t(R16)";
+  ins "RETURN";
+  Buffer.contents b
 
-let program (im : Value.image) ~(base : int) ~(throws : (string * int) list) ~(out : int array) :
-  string * (int * string) list * site list =
-  let img = im.img in
-  let rows, syms, text, sites, _ = texts Arm64 img (Some im) base in
+let symbol_of (p : prepared) (row : int) : string = Hashtbl.find p.psyms row
+
+let stubs (p : prepared) ~(cell : int -> int) ~(number : int -> int) ~(runtime : string) :
+  string * (int * string) list * (int * string) list =
   let b = Buffer.create 4096 in
-  Buffer.add_string b text;
-  List.iter (fun row -> Buffer.add_string b (entry img syms row)) rows;
-  (* the runtime's: an ML function's static closure at an address,
-   * called by its n-ary code (field 1) with the code's link kept: a
-   * throw's of unit, which raises and so does not come back; a
-   * call-out's of the number in R1 and the operands *)
-  List.iter (fun (name, addr) ->
-      Buffer.add_string b (sprintf "\tTEXT\t%s(SB), $-8\n\tMOV\t$%d, R0\n\tMOV\t$1, R1\n\tMOV\t8(R0), R16\n\tB\t(R16)\n" name addr))
-    throws;
-  Array.iteri (fun n addr ->
-      Buffer.add_string b (sprintf "\tTEXT\tjit_out%d(SB), $-8\n\tMOV\t$%d, R0\n\tMOV\t8(R0), R16\n\tB\t(R16)\n" n addr))
-    out;
-  (Buffer.contents b, List.map (fun row -> (row, Hashtbl.find syms row ^ "_entry")) rows, sites)
+  List.iter (fun row ->
+      let sym = symbol_of p row in
+      Buffer.add_string b (entry p.pim.img sym row (cell row));
+      Buffer.add_string b (stub p.pim.img sym row (cell row) (number row))) p.prows;
+  Buffer.add_string b runtime;
+  (Buffer.contents b,
+   List.map (fun row -> (row, symbol_of p row ^ "_entry")) p.prows,
+   List.map (fun row -> (row, symbol_of p row ^ "_stub")) p.prows)
+
+let method_code (p : prepared) (row : int) ~(cell : int -> int) ~(base : int) ~(runtime : string) :
+  string * site list =
+  let sites = ref [] in
+  let env = { im = p.pim; taken = Hashtbl.mem p.ptaken; sites; base; cell = fun r -> sprintf "$%d" (cell r) } in
+  let text = method_text Arm64 p.pim.img p.psyms row (Hashtbl.find p.ptaken row) (Some env) in
+  (text ^ runtime, !sites)

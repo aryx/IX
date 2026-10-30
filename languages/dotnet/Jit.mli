@@ -68,10 +68,20 @@
  *
  * What it refuses is said with the reason: a struct, an int64, a
  * double, a pointer on the stack, an instruction without its template
- * yet, exception clauses, a generic method or class. The rest of
- * decision 12: a method's entry a cell, a stub that compiles it at its
- * first call; the code in memory both written and run on mini-9pi
- * (segflush; under mini-5i and mini-qemu their caches told).
+ * yet, exception clauses, a generic method or class.
+ *
+ * {b A method is compiled at its first call} (stubs, method_code): it
+ * is called through its cell, a word holding its code's address, at
+ * first its stub's, which compiles it, sets the cell, and calls it;
+ * then the code itself:
+ *
+ *     caller: MOV $cell, R16; MOV 0(R16), R16; BL (R16)
+ *               cell --> Rec_stub: compile Rec (jit_compile), the cell
+ *                                  now Rec's code; call it; return
+ *               cell --> Rec       (each call after)
+ *
+ * What is left of decision 12: the code on arm, under mini-5i and on
+ * mini-9pi (segflush; mini-5i's and mini-qemu's caches told).
  *
  * others:
  * .NET's first JIT (2002) compiled a method at its first call through
@@ -105,14 +115,34 @@ val assembly : mach -> Image.t -> Value.image option -> string * int * (int * st
 (* the most operands of a call-out *)
 val outs : int
 
-(* the text Jit_run encodes and runs, on arm64, with references: the
- * methods, and for each an entry, `Sym_entry`, which mini-ml calls as
- * a closure of one argument, an array of the arguments (an int32 a
- * tagged int), and which returns the result likewise; the runtime's
- * functions by their static closures' addresses: [throws] by name,
+(* In mini-dotnet (Jit_run), on arm64, with references: an assembly's
+ * methods compiled each at its first call (decision 12). Each has a
+ * cell, a word at an address that holds its code's address, its
+ * stub's until then, and is called through it. *)
+
+(* the assembly's methods the JIT takes, verified, their symbols *)
+type prepared
+val prepare : Value.image -> prepared
+val rows : prepared -> int list
+val symbol_of : prepared -> int -> string
+
+(* the runtime's functions, by their static closures' addresses: in
+ * each piece of code (each its own copy). [throws] by name,
  * jit_divide_by_zero, jit_null, jit_range, of unit, which raise; [out]
  * the call-outs', by their operands (0 to outs), each taking the
- * call-out's number then the operands. The rows and their entries,
- * the call-outs numbered from [base]. *)
-val program : Value.image -> base:int -> throws:(string * int) list -> out:int array ->
-  string * (int * string) list * site list
+ * call-out's number then the operands; [compile] the compiler's, of a
+ * method's number *)
+val runtime : throws:(string * int) list -> out:int array -> compile:int -> string
+
+(* the code at the start: for each method an entry, `Sym_entry`, which
+ * mini-ml calls as a closure of one argument, an array of the
+ * arguments (an int32 a tagged int), and which returns the result
+ * likewise; and its stub, `Sym_stub`, which calls jit_compile with the
+ * method's [number], then the method through its [cell]. The text, the
+ * entries' symbols, the stubs' *)
+val stubs : prepared -> cell:(int -> int) -> number:(int -> int) -> runtime:string ->
+  string * (int * string) list * (int * string) list
+
+(* a method's code, at its first call: its text (`Sym`, then the
+ * runtime's), its call-outs numbered from [base] *)
+val method_code : prepared -> int -> cell:(int -> int) -> base:int -> runtime:string -> string * site list

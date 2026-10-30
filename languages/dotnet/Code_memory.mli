@@ -31,6 +31,12 @@ val available : bool
 (* the code's bytes made executable: their address *)
 val load : string -> int
 
+(* words the code reads and ML writes (the methods' cells): their
+ * first values, their address, and a word's writer (its index, its
+ * value). Mapped readable only, as the code: a word is written through
+ * the file (pwrite), not the memory *)
+val cells : int array -> int * (int -> int -> unit)
+
 (* a closure of mini-ml's whose code is at an address *)
 val closure : int -> Obj.t
 

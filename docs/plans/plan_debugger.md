@@ -702,3 +702,27 @@ acid's recorded (live: acid again). Not yet: complex types' . and casts
 (arm.acid's Ureg printing), floats as %g, mini-ml programs' frames
 (their L .frame 0: libmach's walk reads the link, as acid does, not
 their prologue), arm64, mini-9pi (stage 7's #p).
+
+2026-10-30, mini-ml's programs under mini-acid, **in acid** (the
+author: "hopefully those ml specific stuff can be done in acid's code,
+proving the versatility of the acid as a debugger language approach",
+then "we should aim for preferring to implement in acid when
+possible"): debuggers/acid/lib/ml.acid, 113 lines, ix's library beside
+port.acid. acid's stk() is libmach's walk and stops after mini-ml's
+first frame (its functions say L and .frame 0 in the table); mlstk()
+walks them by their prologues, read with acid's own @ and *: mini-ml's
+SUB $n, R13; MOVW R14, 0(R13) (or n from the pool), and 5l's MOVW.W
+R14, -n(R13) for the runtime's C, the link before the save. Nothing of
+mini-acid's OCaml changed for it (a first try put the prologues in
+Proc's strace, and was taken back out: acid's builtins stay libmach's).
+The prologue is read in the program's file, @, as port.acid's cont
+reads an instruction under a breakpoint. On the way: a Unix_error of a
+process gone, in Proc's builtins and maps, is acid's error (process
+exited), not mini-acid's crash. Checked: debuggers/tests/acid_proc.sh's
+third session (acid/ml/Down.ml, by mini-ml for Plan 9 with its tables:
+a breakpoint at down's entry, four conts, stk's two frames, mlstk's
+down four times, Down.Init, ml_program, main, _main rt0.s:17; its
+output mini-acid's recorded, acid having no ml.acid); make test (161
+jobs). Seen: mini-ml inlined a function marked let[@inline never]
+(another session's [@inline] work). Next: a breakpoint by a .ml line
+(filepc, in acid if it can be), mini-ml's values by their types.

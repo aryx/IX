@@ -316,11 +316,13 @@ let strace pc sp link =
 let attached () = List.map fst !ctls
 
 let init (caps : < caps; .. >) =
-  Eval.load := load;
-  Eval.store := store;
+  (* (a process gone between two reads: acid's error, not a crash) *)
+  let exited f = try f () with Unix.Unix_error _ -> error "process exited" in
+  Eval.load := (fun core a n -> exited (fun () -> load core a n));
+  Eval.store := (fun a s -> exited (fun () -> store a s));
   Eval.symbol := symoff;
   Value.das := instruction;
-  let def name f = Hashtbl.replace Eval.builtins name f in
+  let def name f = Hashtbl.replace Eval.builtins name (fun vs -> exited (fun () -> f vs)) in
   let none = Value.empty in
   def "setproc" (fun vs -> attach caps (Int64.to_int (int "setproc" vs)); none);
   def "start" (fun vs -> msg (Int64.to_int (int "start" vs)) "start"; none);

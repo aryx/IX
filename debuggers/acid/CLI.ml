@@ -3,7 +3,7 @@
 
 (* See CLI.mli *)
 
-type caps = < Builtin.caps; Proc.caps; Cap.stdin; Cap.stdout; Cap.stderr >
+type caps = < Builtin.caps; Proc.caps; Cap.stdin; Cap.stdout; Cap.stderr; Cap.env >
 
 let help = {|usage: mini-acid [-l library]... [pid | program [pid]]
 Plan 9's acid, a debugger that is a language: the libraries read (-l, each a
@@ -33,8 +33,10 @@ named M.x; by its type when mini-ml -g described it (ml(Values.p):
 On Linux (arm64), a program of this machine, an ELF, by ptrace, with
 arm64.acid: mini-cc's, mini-ml's, mini-asm's linked by mini-ld -g -H7 (their
 names, lines and types in the program), gcc's (its names, DWARF's lines; its
-types by mini-cc -m 7 -a's declarations of its .c, -l):
-  mini-acid -l port.acid -l arm64.acid -l prog.acid ./prog
+types by mini-cc -m 7 -a's declarations of its .c, -l). The libraries from
+$ACIDLIB, else ix's debuggers/acid/lib above mini-acid's executable:
+  mini-acid ./prog
+  mini-acid -l prog.acid ./gccprog
 |}
 
 (* the input's name, for the errors: <stdin>:12: (error) ... *)
@@ -85,6 +87,22 @@ let run_text (caps : < caps; .. >) name text =
 
 let library (caps : < caps; .. >) f = Option.iter (run_text caps f) (FS.read_opt caps (Fpath.v f))
 
+(* where the default libraries are: Plan 9's /lib/acid; on Linux first
+ * $ACIDLIB, then ix's debuggers/acid/lib in a directory above mini-acid's
+ * executable (dune's _build/default/debuggers/acid/Main.exe, which ix's
+ * bin/mini-acid is) *)
+let libdir (caps : < caps; .. >) =
+  let rec above d n =
+    if n = 0 then [] else Filename.concat d "debuggers/acid/lib" :: above (Filename.dirname d) (n - 1) in
+  let dirs =
+    if Ptrace.available then
+      (match CapSys.getenv caps "ACIDLIB" with d -> [ d ] | exception Not_found -> [])
+      @ above (Filename.dirname Sys.executable_name) 6 @ [ "/lib/acid" ]
+    else [ "/lib/acid" ] in
+  match List.find_opt (fun d -> FS.read_opt caps (Fpath.v (Filename.concat d "port.acid")) <> None) dirs with
+  | Some d -> d
+  | None -> "/lib/acid"
+
 let main (caps : < caps; .. >) (argv : string array) : Exit.t =
   let rec options libs = function
     | "-l" :: f :: rest -> options (f :: libs) rest
@@ -113,7 +131,13 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
       (match aout with
        | Some a -> start (fun () -> Proc.program caps a; match pid with Some p -> Proc.attach caps p | None -> ())
        | None -> Proc.registers ());
-      List.iter (library caps) [ "/lib/acid/port.acid"; "/lib/acid/arm.acid" ];
+      (* (the machine's the program's, arm64.acid for an arm64 one; none
+       * when -l names a port.acid: the same library twice) *)
+      let objtype = match (Eval.get "objtype").kind with String s -> s | _ -> "arm" | exception Eval.Error _ -> "arm" in
+      if not (List.exists (fun f -> Filename.basename f = "port.acid") files) then begin
+        let d = libdir caps in
+        List.iter (library caps) [ Filename.concat d "port.acid"; Filename.concat d (objtype ^ ".acid") ]
+      end;
       List.iter (fun f ->
         match FS.read_opt caps (Fpath.v f) with
         | Some text ->

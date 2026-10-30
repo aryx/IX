@@ -11,8 +11,10 @@ nm – the names of an executable, an object or a library
 # DESCRIPTION
 *Nm* lists the names of each *file*, a line each: the value in
 hexadecimal, a letter, the name, sorted by name. An executable's are
-its symbol table's (\man{ld}{1} **-g**); an object's and a library's
-are what it defines and what it names without defining, with no value.
+its symbol table's (\man{ld}{1} **-g**), an ELF's its **.symtab**
+(Linux's, gcc's too: nm's **r** and **W** as **D** or **T**); an
+object's and a library's are what it defines and what it names
+without defining, with no value.
 
 **T** text, **D** data, **B** bss, in lower case when the name is
 local to its file; **L** a function that calls none; **U** a name

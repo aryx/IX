@@ -4,7 +4,8 @@
 #
 # mini-acid on Linux (plan_debugger.md, stage 8a): dune's mini-acid,
 # ptrace's side (debuggers/acid/linux), on programs of this machine
-# (arm64) with ix's library and arm64.acid:
+# (arm64) with ix's library and arm64.acid, found by mini-acid itself
+# (no -l):
 #   acid/linux/*.acid      gcc's (acid/linux/target.c): new, a
 #                          breakpoint, stk by the frame pointers, step,
 #                          cont, values by mini-cc -m 7 -a's declarations
@@ -23,7 +24,6 @@
 ROOT=$(cd $(dirname $0)/../.. && pwd)
 IX=$ROOT/_build/default
 T=$ROOT/debuggers/tests/acid/linux
-LIB=$ROOT/debuggers/acid/lib
 [ "$(uname -s)/$(uname -m)" = Linux/aarch64 ] || { echo "skipped: not arm64 Linux"; exit 0; }
 command -v gcc > /dev/null || { echo "skipped: no gcc"; exit 0; }
 W=$(mktemp -d)
@@ -54,7 +54,8 @@ for d in gcc:. cc:cc ml:ml asm:asm; do
   for f in $T/${d#*:}/*.acid; do
     name=${d#*:}/$(basename $f .acid)
     n=$((n + 1))
-    (cd $W/${d%:*} && timeout -s KILL 30 $IX/debuggers/acid/Main.exe -l $LIB/port.acid -l $LIB/arm64.acid $decls ./target < $f > $W/out 2>&1)
+    # (the libraries mini-acid's own: debuggers/acid/lib above its executable)
+    (cd $W/${d%:*} && timeout -s KILL 30 $IX/debuggers/acid/Main.exe $decls ./target < $f > $W/out 2>&1)
     norm < $W/out > $W/got
     [ "$1" = record ] && cp $W/got $T/$name.out
     cmp -s $T/$name.out $W/got || { failures=$((failures + 1)); echo "FAIL linux/$name"; diff -a $T/$name.out $W/got | head -6; }

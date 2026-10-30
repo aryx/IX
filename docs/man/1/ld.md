@@ -47,7 +47,11 @@ the library that it uses.
 :    Plan 9's symbol table and pc/line table in an a.out for arm
      (**-H2**): the names of the functions and data, the files' paths
      and each instruction's line, what a debugger or a trace names an
-     address by. *5l* writes them unless **-s**.
+     address by. *5l* writes them unless **-s**. In an ELF (**-H6**,
+     **-H7**): sections, ELF's **.symtab** (\man{nm}{1}, gdb) and
+     Plan 9's two tables (**.plan9.syms**, **.plan9.lines**, which
+     mini-acid reads); the objects' acid declarations as the data
+     **.acid** in both.
 
 **-s**
 :    The tables left out: without **-g**, as now by default.

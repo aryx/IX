@@ -42,6 +42,6 @@
  * References: acid(1) in the Plan 9 manual; Winterbottom's paper and
  * "Acid Manual"; principia's Debugger.nw. *)
 
-type caps = < Builtin.caps; Proc.caps; Cap.stdin; Cap.stdout; Cap.stderr >
+type caps = < Builtin.caps; Proc.caps; Cap.stdin; Cap.stdout; Cap.stderr; Cap.env >
 
 val main : < caps; .. > -> string array -> Exit.t

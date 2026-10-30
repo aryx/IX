@@ -21,7 +21,9 @@ Elsewhere, called from here or calling here:
 - `CLI`: `-g` (the tables, and `Debug_link.acid_data` before the
   data's layout).
 - `Exe`: the a.out's header sizes of the two tables, and the tables
-  after the data.
+  after the data; with `-g` in an ELF (`elf_g`), sections: `.symtab`
+  and `.strtab` (`Symtab.elf_symbols`), `.plan9.syms` and
+  `.plan9.lines`.
 - The assembler's `Asm`: an object's history and acid declarations,
   after its items (the object's format, which mini-asm, mini-cc and
   mini-ml write).

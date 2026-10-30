@@ -1015,3 +1015,12 @@ gcc's two, mini-cc's (names, lines, n1 by its own .acid, no -l),
 mini-ml's (Values.ml -g: its values by their types, its stack),
 mini-asm's (hello_linux_arm64.s: steps, an instruction's line).
 
+2026-10-30, **mini-acid's libraries found by itself**: on Linux,
+$ACIDLIB, else ix's debuggers/acid/lib in a directory above its
+executable (bin/mini-acid is dune's Main.exe), else /lib/acid; the
+machine's by the program's objtype (arm64.acid); none of them when -l
+names a port.acid already. So `mini-acid ./prog` debugs a program of
+ix's, `mini-acid -l prog.acid ./gccprog` one of gcc's with mini-cc -m 7
+-a's declarations. ld(1) and nm(1) say the ELF's sections.
+Checked: acid_linux.sh's sessions without -l (5).
+

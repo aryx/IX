@@ -30,6 +30,8 @@ type card = {
 (* the file's cards, leniently: a line not understood skipped *)
 val of_string : string -> card list
 
-(* the card a contact (People's), its id its first address's; None
- * without an address, which mail could not name *)
+(* the card a contact (People's), its id its first address's, else
+ * (most of a phone's book: a phone, a birthday) its name's, its
+ * company's, its phone's: contact:jean-dupont; None for a card of
+ * none of them *)
 val to_item : card -> Item.t option

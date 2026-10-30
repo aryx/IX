@@ -111,12 +111,16 @@ let tests =
            NOTE:met at the\r\n  conference\r\nEND:VCARD\r\n\
            BEGIN:VCARD\r\nVERSION:3.0\r\nN:Brown;Dan;;;\r\nBDAY:--0704\r\n\
            EMAIL:dan@ix\r\nEND:VCARD\r\n\
-           BEGIN:VCARD\r\nVERSION:3.0\r\nFN:no address\r\nEND:VCARD\r\n"
+           BEGIN:VCARD\r\nVERSION:3.0\r\nFN:Jean Dupont\r\n\
+           TEL:+33 6 00 00 00 00\r\nEND:VCARD\r\n\
+           BEGIN:VCARD\r\nVERSION:3.0\r\nNOTE:nothing\r\nEND:VCARD\r\n"
         in
         let cards = Vcard.of_string vcf in
-        Alcotest.(check int) "three cards" 3 (List.length cards);
+        Alcotest.(check int) "four cards" 4 (List.length cards);
         match List.filter_map Vcard.to_item cards with
-        | [ a; d ] ->
+        | [ a; d; j ] ->
+            check "no address: its name's id" "contact:jean-dupont" (Item.id j);
+            check "its phone" "+33 6 00 00 00 00" (Item.field j "phone");
             check "her id, her first address" "contact:alice@ix" (Item.id a);
             Alcotest.(check (list string)) "both addresses"
               [ "alice@ix"; "alice@work.example" ] (People.emails a);

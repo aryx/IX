@@ -1,0 +1,70 @@
+== andersen
+Contexts.a: dec inc 
+Contexts.c: dec inc 
+Contexts.pf: inc 
+Contexts.f1: dec inc 
+Contexts.h1: dec inc 
+Contexts.e: dec inc 
+== insensitive
+Contexts.a: dec inc 
+Contexts.c: dec inc 
+Contexts.pf: inc 
+Contexts.f1: dec inc 
+Contexts.h1: dec inc 
+Contexts.e: dec inc 
+== call1
+Contexts.a: inc 
+Contexts.c: dec inc 
+Contexts.pf: inc 
+Contexts.f1: dec inc 
+Contexts.h1: inc 
+Contexts.e: inc 
+== call1_heap1
+Contexts.a: inc 
+Contexts.c: dec inc 
+Contexts.pf: inc 
+Contexts.f1: inc 
+Contexts.h1: inc 
+Contexts.e: inc 
+== call2_heap1
+Contexts.a: inc 
+Contexts.c: inc 
+Contexts.pf: inc 
+Contexts.f1: inc 
+Contexts.h1: inc 
+Contexts.e: inc 
+== object1
+Contexts.a: inc 
+Contexts.c: inc 
+Contexts.pf: inc 
+Contexts.f1: dec inc 
+Contexts.h1: inc 
+Contexts.e: dec inc 
+== object2_heap1
+Contexts.a: inc 
+Contexts.c: inc 
+Contexts.pf: inc 
+Contexts.f1: inc 
+Contexts.h1: inc 
+Contexts.e: inc 
+== type2_heap1
+Contexts.a: dec inc 
+Contexts.c: dec inc 
+Contexts.pf: inc 
+Contexts.f1: dec inc 
+Contexts.h1: dec inc 
+Contexts.e: dec inc 
+== hybrid
+Contexts.a: inc 
+Contexts.c: inc 
+Contexts.pf: inc 
+Contexts.f1: inc 
+Contexts.h1: inc 
+Contexts.e: inc 
+== selective
+Contexts.a: inc 
+Contexts.c: inc 
+Contexts.pf: inc 
+Contexts.f1: inc 
+Contexts.h1: inc 
+Contexts.e: inc 

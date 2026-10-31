@@ -5,7 +5,7 @@
 # What a program of ix never calls (docs/plans/plan_prolog.md, stage
 # 10): mini-ml -facts on each .ml of the program's directories and of
 # lib_core (the stdlib's units and commons/), all the facts together,
-# then mini-datalog with languages/datalog/analyses/pointer.dl (the
+# then mini-datalog with lib_code/datalog/pointer.dl (the
 # author's rules, unchanged) and calls.dl. Printed: the numbers
 # (units, functions written, calls, the calls' targets found, the
 # seconds), then each function of the program's own directories that
@@ -16,7 +16,7 @@
 # ML, DATALOG: the two programs, if not dune's.
 cd "$(dirname "$0")/../../../.."
 export LC_ALL=C
-A=languages/datalog/analyses
+A=lib_code/datalog
 ML=${ML:-_build/default/languages/ml/Main.exe}
 DATALOG=${DATALOG:-_build/default/languages/datalog/Main.exe}
 holes=; [ "${1:-}" = -holes ] && { holes=1; shift; }

@@ -312,6 +312,7 @@ job "mini-ml -pp" languages/ml/tests/pp.sh
 job "mini-prolog: the language, by text" languages/prolog/tests/run.sh -dune
 job "mini-forth: the words, by text" languages/forth/tests/run.sh -dune
 job "mini-datalog: its programs, naive and semi-naive" languages/datalog/tests/run.sh -dune
+job "pointer analyses (Andersen's, Doop's contexts): what each tells apart in a C and an ML program, each inside the coarser" lib_code/datalog/tests/run.sh
 job "mini-dotnet: Microsoft's assemblies read, listed (-S), run: what Microsoft's runtime prints" languages/dotnet/tests/run.sh -dune
 job "mini-tiger: fork-tiger's programs and Appel's 49, compiled to .NET, run by mini-dotnet" languages/tiger/tests/run.sh -dune
 job "mini-csc: the survey's C# and its own, compiled to .NET, run by mini-dotnet: what Microsoft's printed" languages/dotnet/csc/tests/run.sh -dune

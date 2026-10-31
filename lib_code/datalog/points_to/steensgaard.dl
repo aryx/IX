@@ -1,0 +1,54 @@
+% Steensgaard's analysis (1996): where Andersen's says p = q makes what
+% q points to included in what p points to, this makes the two equal.
+% Coarser, and in its hand-written form almost linear. Run with
+% instructions.dl:
+%   same(A, B)        A and B point to the same things
+%   pt(V, H), call_edge(I, F)   as in andersen.dl, always its superset
+%
+%     p = &a;  q = &b;  p = q;        Andersen's: q -> b only
+%                                     here: p, q -> a, b, and a is b
+%
+% Fields are by name (x.f one place for every x): an object's fields
+% unified would need a term for "the contents of the contents". So
+% store and load are through a place F, which same then unifies.
+%
+% design:
+% Not fast here. Its speed comes from a union-find, each set one node,
+% and same/2 writes every pair of each set out instead: quadratic in
+% the size of a class. It is here because it says what the difference
+% with Andersen's is, in rules: drop the symmetry of same and of a
+% copy, and you are back to inclusion.
+%
+% cs-history:
+% Bjarne Steensgaard, at Microsoft Research, wanted an alias analysis
+% for millions of lines, on machines of 1996; it ran where Andersen's
+% then could not. Manuvir Das's One Level Flow (2000) kept its speed
+% with most of Andersen's precision on C, by unifying only below the
+% first level. The trade off of precision against time never closed:
+% the analyses here are points along it.
+%
+% References: Bjarne Steensgaard, "Points-to analysis in almost linear
+% time" (POPL 1996); Manuvir Das, "Unification-based pointer analysis
+% with directional assignments" (PLDI 2000).
+
+same(P, Q) :- copy(P, Q).
+same(Q, P) :- same(P, Q).
+same(A, C) :- same(A, B), same(B, C).
+
+pt(V, H) :- alloc(V, H).
+pt(V, H) :- same(V, W), alloc(W, H).
+
+% two things one pointer may point to hold the same
+same(H, K) :- pt(V, H), pt(V, K).
+
+% star, and fields by name: a place of its own, unified with what goes in
+same(P, H) :- load(P, X, star), pt(X, H).
+same(V, H) :- store(X, star, V), pt(X, H).
+same(P, F) :- load(P, _, F), F \= star.
+same(V, F) :- store(_, F, V), F \= star.
+pt(P, F) :- assign_field_address(P, _, F).
+
+call_edge(I, F) :- call_direct(I, F).
+call_edge(I, F) :- call_indirect(I, V), pt(V, F), function(F).
+same(P, A) :- call_edge(I, F), parameter(F, Z, P), argument(I, Z, A).
+same(R, V) :- call_edge(I, F), return(F, V), call_ret(I, R).

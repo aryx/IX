@@ -11,9 +11,10 @@ cd "$(dirname "$0")/../.."
 ANALYZE=${ANALYZE:-_build/default/analyzers/Main.exe}
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 failures=0
-for d in analyzers/tests/c/*/ analyzers/tests/ml/*/; do
+for d in analyzers/tests/c/*/ analyzers/tests/ml/*/ analyzers/tests/dead/*/; do
   d=${d%/}; n=$(basename $d)
-  $ANALYZE $d/*.[cm]* > $W/$n.out 2>&1
+  case $d in */dead/*) n=dead_$n; flag=-dead;; *) flag=;; esac
+  $ANALYZE $flag $d/*.[cm]* > $W/$n.out 2>&1
   if [ "${1:-}" = -record ]; then cp $W/$n.out $d/expected.out; echo "recorded $d/expected.out"
   elif cmp -s $W/$n.out $d/expected.out; then echo "ok mini-analyze: $n"
   else echo "FAIL mini-analyze: $n"; diff $d/expected.out $W/$n.out | head -10; failures=$((failures + 1)); fi

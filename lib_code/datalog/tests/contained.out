@@ -1,0 +1,31 @@
+== c
+andersen inside steensgaard: 0
+insensitive inside andersen: 0
+call1 inside andersen: 0
+object1 inside andersen: 0
+hybrid inside andersen: 0
+selective inside andersen: 0
+call1 inside insensitive: 0
+call1_heap1 inside call1: 0
+call2_heap1 inside call1_heap1: 0
+object2_heap1 inside object1: 0
+selective inside insensitive: 0
+object1 reaches what call2_heap1 reaches: 0 not
+object2_heap1 reaches what call2_heap1 reaches: 0 not
+type2_heap1 reaches what call2_heap1 reaches: 0 not
+hybrid reaches what call2_heap1 reaches: 0 not
+== ml
+insensitive inside andersen: 0
+call1 inside andersen: 0
+object1 inside andersen: 0
+hybrid inside andersen: 0
+selective inside andersen: 0
+call1 inside insensitive: 0
+call1_heap1 inside call1: 0
+call2_heap1 inside call1_heap1: 0
+object2_heap1 inside object1: 0
+selective inside insensitive: 0
+object1 reaches what call2_heap1 reaches: 0 not
+object2_heap1 reaches what call2_heap1 reaches: 0 not
+type2_heap1 reaches what call2_heap1 reaches: 0 not
+hybrid reaches what call2_heap1 reaches: 0 not

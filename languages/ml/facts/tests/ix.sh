@@ -5,7 +5,7 @@
 # The rules' liveness and dominators against the compiler's own, on
 # ix's own programs (docs/plans/plan_prolog.md, stage 9's check): for
 # each .ml of the directories given, mini-ml -flow and -dflow, then
-# mini-datalog with languages/datalog/analyses/liveness_ssa.dl and
+# mini-datalog with lib_code/datalog/liveness_ssa.dl and
 # dominators.dl and tests/check.dl; a line per directory (its files,
 # functions, blocks, facts, the tuples the rules find, those that
 # differ from Alloc's liveness or Ssa_build's dominators, the seconds
@@ -15,7 +15,7 @@
 # ML, DATALOG: the two programs, if not dune's.
 cd "$(dirname "$0")/../../../.."
 T=languages/ml/facts/tests
-A=languages/datalog/analyses
+A=lib_code/datalog
 ML=${ML:-_build/default/languages/ml/Main.exe}
 DATALOG=${DATALOG:-_build/default/languages/datalog/Main.exe}
 W=$(mktemp -d); trap 'rm -rf $W' EXIT

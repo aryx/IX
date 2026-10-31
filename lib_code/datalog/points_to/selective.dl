@@ -1,0 +1,16 @@
+% Selective, the idea of introspective analysis (Smaragdakis, Kastrinis,
+% Balatsouras, 2014) and of Zipper (Li and others, 2018): a first pass,
+% andersen.dl, says which functions a context can help, and the others
+% run once. A context costs and tells nothing to a function given one
+% object: so 2-call-site+1-heap for a function that may be given two
+% (varied), or that hands out what it made (a wrapper).
+%
+% Those two papers choose by numbers from the first pass (sizes, flows);
+% this engine has no counts, so "two" is the one number it can say.
+varied(F) :- parameter(F, _, P), pt(P, X), pt(P, Y), X \= Y.
+wrapper(F) :- return(F, R), pt(R, H), alloc(V, H), owner(V, F).
+worth(F) :- varied(F).
+worth(F) :- wrapper(F).
+callee(I, C1, C2, F, I, C1) :- fresh(I, C1, C2, F, _, _), worth(F).
+callee(I, C1, C2, F, none, none) :- fresh(I, C1, C2, F, _, _), \+ worth(F).
+pt(V, C1, C2, H, C1, none) :- new_site(V, H, C1, C2).

@@ -1,0 +1,20 @@
+analyzers/tests/dead/ml/Lib.ml: dead global: Lib.dead_value, nothing live names it
+analyzers/tests/dead/ml/Lib.ml:12: dead: Lib.unused, nothing names it
+analyzers/tests/dead/ml/Lib.ml:13: dead: Lib.only_by_dead, named only by dead code: Lib.dead_caller
+analyzers/tests/dead/ml/Lib.ml:14: dead: Lib.dead_caller, nothing names it
+analyzers/tests/dead/ml/Lib.ml:15: dead: Lib.ping, nothing names it
+analyzers/tests/dead/ml/Lib.ml:16: dead: Lib.pong, nothing names it
+analyzers/tests/dead/ml/Lib.ml:18: never built: Never.0, matched in Lib.area
+analyzers/tests/dead/ml/Main.ml: dead field: dropped stored in init, nothing live reads it
+analyzers/tests/dead/ml/Main.ml: dead global: Main.a, nothing live names it
+analyzers/tests/dead/ml/Main.ml: dead global: Main.b, nothing live names it
+analyzers/tests/dead/ml/Main.ml: dead global: Main.c, nothing live names it
+analyzers/tests/dead/ml/Main.ml: dead global: Main.d, nothing live names it
+analyzers/tests/dead/ml/Main.ml: dead global: Main.e, nothing live names it
+analyzers/tests/dead/ml/Main.ml: dead global: Main.g, nothing live names it
+analyzers/tests/dead/ml/Main.ml: dead global: Main.i, nothing live names it
+analyzers/tests/dead/ml/Main.ml: dead global: Main.j, nothing live names it
+analyzers/tests/dead/ml/Main.ml: dead global: Main.k, nothing live names it
+analyzers/tests/dead/ml/Main.ml: dead global: Main.l, nothing live names it
+analyzers/tests/dead/ml/Main.ml: dead global: Main.r, nothing live names it
+5 functions dead (4 nothing names), 0 only through a pointer; 12 globals, 1 fields, 1 constructors, 0 statements

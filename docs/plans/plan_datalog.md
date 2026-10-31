@@ -27,7 +27,10 @@ said to be estimates.
 a rule's body made a plan once, its atoms' order chosen; the tuples'
 own set, `Tuples`; no `-plan` yet. mini-ml's own analysis 225 s to 95
 s, rc's 6.7 s to 0.2 s: `languages/datalog/README.md`, "Its speed").
-The rest as written (2026-10-10; see Status at the end).
+Stage 7 and 8's analyses written (2026-10-31, `lib_code/datalog/points_to/`,
+over facts added to the 17 relations, not stages 5 and 6's rewrite:
+`lib_code/README.md`). The rest as written (2026-10-10; see Status at
+the end).
 
 ## What there is
 
@@ -40,7 +43,7 @@ From [`plan_prolog.md`](done/plan_prolog.md)'s stages 7 to 10 (done):
 | C's flow | `languages/c/facts/Ir_facts` (`-flow`) | 52 | the stack code's points, successors, definitions, uses |
 | ML's facts | `languages/ml/facts/Closure_facts` (`mini-ml -facts`) | 241 | a unit in those same 17 relations: a function is a place, a call is a call through a pointer |
 | ML's flow | `languages/ml/facts/Ssa_facts` (`-flow`) | 72 | the SSA form's blocks, definitions, uses, phis |
-| the rules | `languages/datalog/analyses/` | 248 | `pointer.dl` (pfff's, 2014: Andersen's, field-based, the calls found as it goes), `calls.dl`, `liveness.dl`, `liveness_ssa.dl`, `dominators.dl` |
+| the rules | `lib_code/datalog/` | 248 | `pointer.dl` (pfff's, 2014: Andersen's, field-based, the calls found as it goes), `calls.dl`, `liveness.dl`, `liveness_ssa.dl`, `dominators.dl` |
 
 What it does today: liveness and dominators the same as the
 compilers' own on 3,459 ML functions and 395 C ones, no tuple
@@ -325,7 +328,7 @@ that is kept up as the program changes; Java.
 
 2026-10-10: plan written, after plan_prolog.md was moved to `done/`.
 Read for it: `languages/datalog/README.md` (its tables are the
-numbers above), `analyses/pointer.dl`'s head and `calls.dl`,
+numbers above), `lib_code/datalog/pointer.dl`'s head and `calls.dl`,
 `mini-datalog -s`'s output, `make loc`'s first lines. The same day
 the author answered its first three questions (decisions 3, 9 and
 10) and said how far it is to go: contexts and types, dataflow across
@@ -351,3 +354,24 @@ OCaml 5's domains, -j, then Souffle's storage, the rows numbered and
 the indexes flat, the adding on every domain: 98 s to 15.4 on 32,
 plan_ml_multicore.md's Status), incremental evaluation (DRed,
 DDlog's differences: Datalog_eval.mli says them).
+
+2026-10-31: the author: "let's move the datalog analysie from
+languages/datalog/... to lib_code/datalog/", "(not the engine, just the
+.dl)", "please write your own based on the classic pointer analysis,
+possibly providing a few, including the context sensitive one in DOOP";
+and of the aim: "very sophissticated static analysis of C and ML programs
+(possibly later on mixing also with dynamic analysis results) to find
+bugs in Ix's code", "an analyzer written in both ML and datalog [...] so
+that the analysis remains small in terms of total LOC", "teaching value
+for advanced grad student". Done: `lib_code/datalog/` and `points_to/`:
+Steensgaard's, Andersen's by site with fields by object, and Doop's frame
+with call-site, object, type, hybrid and selective files; decision 5's
+two columns, decision 7b's containments in `tests/run.sh`, 7d's table in
+`tests/table.sh`. Different from the plan: an object is the first
+argument, there being no receiver; ML's types are not in the facts, so
+type sensitivity's place is a unit and does little. Not done: `bugs.dl`
+and `calls.dl` still read `pointer.dl`'s answers; decision 7c (the calls
+of a run inside the call graph), which is also what would check the C
+hole `lib_code/README.md` names; the numbers there say what to refine
+for ML next (`ext`) and that the richer files do not yet end on
+mini-datalog.

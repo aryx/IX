@@ -84,3 +84,101 @@ What stays in each compiler: its instructions, what must live in
 memory (mini-ml's collector, C's calls), what a use weighs, the code
 emitted.
 
+## Analyses in Datalog (`datalog/`)
+
+The rules mini-datalog runs (the engine stays in `languages/datalog/`;
+the author, 2026-10-31: "move the datalog analyses", "not the engine,
+just the .dl"), toward what `plan_datalog.md` is for: static analysis
+of ix's C and ML that finds its bugs, sophisticated and small, ML and
+Datalog each for what it is best at, and read by students.
+
+| | |
+|---|---|
+| `pointer.dl` | the author's, pfff's of 2014: Andersen's, field-based |
+| `calls.dl`, `bugs.dl` | who calls whom, what is never called; three C bugs, over `pointer.dl`'s answers |
+| `dead.dl` | dead functions, globals, fields, constructors and statements, by `points_to/`'s call graph (`mini-analyze -dead`) |
+| `liveness.dl`, `liveness_ssa.dl`, `dominators.dl` | one function's dataflow, checked against the compilers' own |
+| `points_to/` | the pointer analyses below, each file's header its history |
+
+`points_to/` reads the same facts in a normal form
+(`instructions.dl`), with a few more from the compilers: which function
+names which variable, ML's blocks by site, what is a scalar
+(`Facts.mli`, `Closure_facts.mli`):
+
+| analysis | files | tells apart |
+|---|---|---|
+| Steensgaard's (1996) | `steensgaard.dl` | little: a copy unifies both sides |
+| Andersen's (1994), by allocation site, fields by object | `andersen.dl` | `x.f` from `y.f`; the pre-analysis of the others |
+| Doop's frame (2009): one set of rules, a context file | `contexts.dl` + one of: | |
+| no context | `insensitive.dl` | Andersen's on what is reached |
+| 1-call-site, 1-call-site+1-heap, 2-call-site+1-heap | `call1.dl`, `call1_heap1.dl`, `call2_heap1.dl` | callers of a function, through wrappers; a wrapper of `malloc` |
+| 1-object, 2-object+1-heap (first argument's object) | `object1.dl`, `object2_heap1.dl` | what a function works on, at any depth |
+| 2-type+1-heap (Smaragdakis, 2011) | `type2_heap1.dl` | objects by where they are made; no types in the facts yet, so C's function, ML's unit |
+| hybrid (Kastrinis, 2013) | `hybrid.dl` | objects, and call sites where no object is |
+| selective (introspective 2014, Zipper 2018) | `selective.dl` | 2-call-site only where Andersen's shows a function given two objects or handing out its own |
+
+`datalog/tests/contexts.c` and `contexts.ml` ask, a question each,
+what separates them; `contexts_c.out`, `contexts_ml.out` the answers,
+read; `contained.out` that each answer is inside the coarser one's
+(`run.sh`, in `make test`). `table.sh` is Doop's table for a program,
+`real.sh` runs it on ix's.
+
+What the facts force, each in `contexts.dl`'s header: a variable a
+closure captures and a C variable whose address is taken have no
+context (m-CFA's choice, not k-CFA's); an ML function of several
+arguments is one frame; object sensitivity's receiver is the first
+argument. For ML every value has an object (`scalar` at the least), so
+an empty first argument means no run gets there. For C the facts say
+no constant, so `p = 0; f(p);` is not followed where `p` is that: the
+one known hole, in the object, type and hybrid files.
+
+### What they cost and give (`tests/real.sh`, 2026-10-31)
+
+One core, by OCaml 4.14's build. `pt`: (variable, object) pairs, contexts
+forgotten; `several`: calls with more than one target. `>150`: stopped.
+
+| | mini-datalog, 101,863 facts | | | | rc (C), 14,264 facts | | |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| | s | `pt` | edges | `several` | s | `pt` | edges |
+| `andersen` | 22.4 | 1,223,579 | 13,124 | 200 | 0.3 | 26,077 | 1,270 |
+| `insensitive` | 26.0 | 492,834 | 8,531 | 154 | 0.6 | 25,555 | 1,258 |
+| `call1` | 45.9 | 441,334 | 8,041 | 154 | 3.5 | 25,541 | 1,258 |
+| `call1_heap1` | 57.6 | 318,220 | 7,763 | 152 | 15.4 | 16,171 | 1,258 |
+| `call2_heap1` | >150 | | | | 82.1 | 16,171 | 1,258 |
+| `object1` | >150 | | | | 1.7 | 25,536 | 1,258 |
+| `object2_heap1` | >150 | | | | 33.9 | 25,224 | 1,258 |
+| `type2_heap1` | >150 | | | | 12.8 | 25,224 | 1,258 |
+| `hybrid` | >150 | | | | 54.2 | 24,807 | 1,258 |
+| `selective` | >150 | | | | 28.8 | 16,171 | 1,258 |
+
+Read: reachability removes 60% of Andersen's pairs on ML, because it
+leaves out what the program does not run; a heap context is what
+removes the next quarter (rc: `call1_heap1` 37% fewer pairs than
+`call1`, and no more from a second call site). The calls with several
+targets hardly move (154 to 152): what they go through is not told
+apart by a context (`ext`, the one place of arrays, exceptions and C;
+a captured variable), so that, not longer contexts, is what to refine
+next for ML. And on mini-datalog the richer files do not end in 150 s:
+`-j`, or fewer contexts for scalars, is not tried. On a ten-line program
+using `lib_core`, `object2_heap1` and `hybrid` take over 60 s where the
+others take 2 s.
+
+### Dead code (`mini-analyze -dead`, `dead.dl`)
+
+The author: "flag dead functions (and dead code); some func might not be
+called directly but called via pointer, but some are not called by anything
+and should be flagged". From `main` and the toplevels, by `insensitive.dl`
+without Andersen's first pass: 8 s on mini-datalog, its report read against
+the sources:
+
+| program | dead functions | through a pointer only | others |
+|---|---:|---:|---|
+| rc (goken's) | 1, `Xrdfn`: its comment says so, a stub a table names | 55 | the fields `changed`, `fnchanged`, written and read only by `plan9.c`, not in this build |
+| mini-datalog | 14, 6 checked by grep; most of Prolog's and Prolog_read's API, which mini-prolog uses and this program does not | - | `Local`, matched and not built here |
+| mini-forth | 0 | - | nothing |
+
+A function is reported by why: nothing names it; only dead code does; or
+live code takes its address and no call goes through it, which a grep would
+have called used. What cannot be seen counts as alive: given to a C function
+with no body, in ML's `ext`, or named by `-root` (`dead.dl`'s header).
+`analyzers/tests/dead/` says each kind, and each thing that only looks dead.

@@ -18,7 +18,11 @@
  *                                       |  call_edge(I, F), point_to(V, M)
  *                                  the report: a.c:12: in walk, through f: hide, show
  *
- *     mini-analyze -r languages/datalog/analyses prog/*.c
+ *     mini-analyze -r lib_code/datalog prog/*.c
+ *
+ * With -dead, other rules on the same facts and another report: what no
+ * run can reach from main and the toplevels (dead.dl, whose header says
+ * why from the roots, and what is taken as alive).
  *
  * A call's site is Facts's name, the function and the global line
  * (_in_walk_line_56_1); the line is found back in its file by the

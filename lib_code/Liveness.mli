@@ -10,7 +10,7 @@
  *
  * Met in the tree three more times: mini-cc's Opti (regs) over a C
  * function's variables, its Peep over the machine's registers, and as
- * Datalog rules (languages/datalog/analyses/liveness.dl, liveness_ssa.dl).
+ * Datalog rules (lib_code/datalog/liveness.dl, liveness_ssa.dl).
  *
  * Reference: Aho, Lam, Sethi and Ullman, Compilers (the Dragon book),
  * 9.2.5, live-variable analysis. *)

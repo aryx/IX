@@ -4,7 +4,7 @@
  * together, a function's parameter one variable). mini-ml -facts.
  *
  * The facts are those of the author's pointer analysis of C
- * (languages/datalog/analyses/pointer.dl), whose rules then run
+ * (lib_code/datalog/pointer.dl), whose rules then run
  * unchanged: a function written (fun, function, let f x = ...) is a
  * place, a variable points to the functions it may be, and every call
  * is a call through a pointer:
@@ -23,11 +23,21 @@
  * an array's elements and what a handler catches are there too. Those
  * the compiler writes in place move nothing (x + y), or what they are
  * known to: a ref's content ('fld:contents'), a pair's halves.
- * And, for the reports (analyses/calls.dl):
+ * And, for the reports (lib_code/datalog/calls.dl):
  *   closure(F, Unit, Line)      each function written
  *   inner(F2, F)                F2 is F's next argument's function (f' of f)
  *   in_function(I, F)           the call I is in F's body ('M:init': the toplevel's)
  *   init(F)                     a unit's toplevel, 'M:init': where a program starts
+ * And, for what pointer.dl does not ask (lib_code/datalog/points_to/):
+ *   var_in(V, F)                the function F names the variable V
+ *   global_var(V)               V is one place, whatever the call: a toplevel value, ext
+ *   curried(F2, F)              inner's, and the externals' stages
+ *   new_block(V, S)             V is a block made at the site S (a tuple, a record, a
+ *                               constructor applied; 'prim:%makemutable:block' a ref)
+ *   alloc_in(S, Unit)           the unit a site or a function is written in
+ *   scalar(V)                   V may hold what is no object: a number, unit, a
+ *                               constant constructor, what C gave
+ *   global_def(G, 'M:init')     the toplevel that defines G (dead.dl)
  * A name is its unit's ('Prolog:x/12' a variable, 'Prolog.deref' a
  * toplevel value, its symbol), so that the facts of a program's units
  * are one program's when put together.

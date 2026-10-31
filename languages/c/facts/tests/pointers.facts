@@ -1,89 +1,181 @@
+var_in('gp', '_init').
+global_var('gp').
+global_def('gp', '_init').
+var_in('x', '_init').
+global_var('x').
+var_in('_init__t1', '_init').
 assign_address('_init__t1', 'x').
 assign('gp', '_init__t1').
 point_to('show', 'show').
 return('show', 'ret_show').
+var_in('ret_show', 'show').
+defined('show', 18).
 parameter('show', 1, 'show__n').
+var_in('show__n', 'show').
 point_to('hide', 'hide').
 return('hide', 'ret_hide').
+var_in('ret_hide', 'hide').
+defined('hide', 19).
 parameter('hide', 1, 'hide__n').
+var_in('hide__n', 'hide').
+var_in('table', '_init').
+global_var('table').
+global_def('table', '_init').
 point_to('table', '_array_elt_table').
+var_in('show', '_init').
+global_var('show').
 assign_array_deref('table', 'show').
+var_in('hide', '_init').
+global_var('hide').
 assign_array_deref('table', 'hide').
 point_to('id', 'id').
 return('id', 'ret_id').
+var_in('ret_id', 'id').
+defined('id', 27).
 parameter('id', 1, 'id__a').
+var_in('id__a', 'id').
 assign('ret_id', 'id__a').
 point_to('swap', 'swap').
 return('swap', 'ret_swap').
+var_in('ret_swap', 'swap').
+defined('swap', 35).
 parameter('swap', 1, 'swap__a').
+var_in('swap__a', 'swap').
 parameter('swap', 2, 'swap__b').
+var_in('swap__b', 'swap').
+var_in('swap__t1', 'swap').
 assign_content('swap__t1', 'swap__a').
+var_in('swap__t', 'swap').
 assign('swap__t', 'swap__t1').
+var_in('swap__t2', 'swap').
 assign_content('swap__t2', 'swap__b').
 assign_deref('swap__a', 'swap__t2').
 assign_deref('swap__b', 'swap__t').
 point_to('cons', 'cons').
 return('cons', 'ret_cons').
+var_in('ret_cons', 'cons').
+defined('cons', 45).
 parameter('cons', 1, 'cons__v').
+var_in('cons__v', 'cons').
 parameter('cons', 2, 'cons__rest').
+var_in('cons__rest', 'cons').
+var_in('cons__t1', 'cons').
 point_to('cons__t1', '_malloc_in_cons_line_45').
+alloc_in('_malloc_in_cons_line_45', 'cons').
+allocator_call('malloc', 'cons').
+var_in('cons__n', 'cons').
 assign('cons__n', 'cons__t1').
 assign_store_field('cons__n', '_fld__val', 'cons__v').
 assign_store_field('cons__n', '_fld__next', 'cons__rest').
+var_in('show', 'cons').
 assign_store_field('cons__n', '_fld__visit', 'show').
 assign('ret_cons', 'cons__n').
 point_to('walk', 'walk').
 return('walk', 'ret_walk').
+var_in('ret_walk', 'walk').
+defined('walk', 0).
 parameter('walk', 1, 'walk__l').
+var_in('walk__l', 'walk').
 parameter('walk', 2, 'walk__f').
+var_in('walk__f', 'walk').
+var_in('walk__t1', 'walk').
 assign_load_field('walk__t1', 'walk__l', '_fld__next').
 assign('walk__l', 'walk__t1').
+var_in('walk__t2', 'walk').
+in_function('_in_walk_line_56_1', 'walk').
 argument('_in_walk_line_56_1', 1, 'walk__l').
 call_ret('_in_walk_line_56_1', 'walk__t2').
 call_indirect('_in_walk_line_56_1', 'walk__f').
 point_to('main', 'main').
 return('main', 'ret_main').
+var_in('ret_main', 'main').
+defined('main', 67).
+var_in('x', 'main').
+var_in('main__t1', 'main').
 assign_address('main__t1', 'x').
+var_in('main__p', 'main').
 assign('main__p', 'main__t1').
+var_in('y', 'main').
+global_var('y').
+var_in('main__t2', 'main').
 assign_address('main__t2', 'y').
+var_in('main__q', 'main').
 assign('main__q', 'main__t2').
+var_in('main__t3', 'main').
 assign_address('main__t3', 'main__p').
+var_in('main__t4', 'main').
 assign_address('main__t4', 'main__q').
+var_in('main__t5', 'main').
+in_function('_in_main_line_69_1', 'main').
 argument('_in_main_line_69_1', 1, 'main__t3').
 argument('_in_main_line_69_1', 2, 'main__t4').
 call_ret('_in_main_line_69_1', 'main__t5').
 call_direct('_in_main_line_69_1', 'swap').
+var_in('main__t6', 'main').
 assign_address('main__t6', 'main__p').
+var_in('main__pp', 'main').
 assign('main__pp', 'main__t6').
+var_in('main__t7', 'main').
 assign_content('main__t7', 'main__pp').
+var_in('main__t8', 'main').
+in_function('_in_main_line_71_2', 'main').
 argument('_in_main_line_71_2', 1, 'main__t7').
 call_ret('_in_main_line_71_2', 'main__t8').
 call_direct('_in_main_line_71_2', 'id').
+var_in('main__r', 'main').
 assign('main__r', 'main__t8').
+var_in('arr', 'main').
+global_var('arr').
 point_to('arr', '_array_elt_arr').
+alloc_in('_array_elt_arr', 'main').
+var_in('main__t9', 'main').
 assign_array_element_address('main__t9', 'arr').
 assign('main__r', 'main__t9').
+var_in('main__t10', 'main').
 point_to('main__t10', '_str_in_main_line_73').
+alloc_in('_str_in_main_line_73', 'main').
+var_in('main__s', 'main').
 assign('main__s', 'main__t10').
+var_in('main__t11', 'main').
+in_function('_in_main_line_74_3', 'main').
 call_ret('_in_main_line_74_3', 'main__t11').
 call_direct('_in_main_line_74_3', 'cons').
+var_in('main__t12', 'main').
+in_function('_in_main_line_74_4', 'main').
 argument('_in_main_line_74_4', 2, 'main__t11').
 call_ret('_in_main_line_74_4', 'main__t12').
 call_direct('_in_main_line_74_4', 'cons').
+var_in('main__l', 'main').
 assign('main__l', 'main__t12').
+var_in('hide', 'main').
+var_in('main__t13', 'main').
+in_function('_in_main_line_75_5', 'main').
 argument('_in_main_line_75_5', 1, 'main__l').
 argument('_in_main_line_75_5', 2, 'hide').
 call_ret('_in_main_line_75_5', 'main__t13').
 call_direct('_in_main_line_75_5', 'walk').
+var_in('main__t14', 'main').
+in_function('_in_main_line_76_6', 'main').
 argument('_in_main_line_76_6', 1, 'main__l').
 call_ret('_in_main_line_76_6', 'main__t14').
+var_in('main__t15', 'main').
 assign_load_field('main__t15', 'main__l', '_fld__visit').
 call_indirect('_in_main_line_76_6', 'main__t15').
+var_in('root', 'main').
+global_var('root').
+var_in('main__t16', 'main').
 assign_address('main__t16', 'root').
+var_in('main__t17', 'main').
+in_function('_in_main_line_77_7', 'main').
 argument('_in_main_line_77_7', 1, 'main__t16').
 call_ret('_in_main_line_77_7', 'main__t17').
+var_in('table', 'main').
+alloc_in('_array_elt_table', 'main').
+var_in('main__t18', 'main').
 assign_array_elt('main__t18', 'table').
 call_indirect('_in_main_line_77_7', 'main__t18').
+var_in('main__t19', 'main').
 assign('main__t19', 'main__p').
 assign('main__t19', 'main__q').
+var_in('gp', 'main').
 assign('gp', 'main__t19').

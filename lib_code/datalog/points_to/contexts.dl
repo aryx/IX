@@ -1,0 +1,258 @@
+% Context sensitivity, Doop's way (Bravenboer and Smaragdakis, 2009): the
+% same rules for every analysis, and a small file that says what a
+% context is. Run with instructions.dl, andersen.dl (a pre-analysis:
+% what no context can add to) and one file of this directory:
+%
+%   insensitive.dl       no context: andersen.dl again, on what is reached
+%   call1.dl             1-call-site: Sharir and Pnueli's, Shivers's 1-CFA
+%   call1_heap1.dl       the same, an object known by its caller too
+%   call2_heap1.dl       2-call-site+1-heap: Doop's 2cfa+H
+%   object1.dl           1-object: the first argument's object
+%   object2_heap1.dl     2-object+1-heap: Doop's 2obj+H, its best known
+%   type2_heap1.dl       2-type+1-heap: the object's place, not the object
+%   hybrid.dl            2-object, and call sites where no object is there
+%   selective.dl         2-call-site only for what Andersen's shows worth it
+%
+%   pt(V, C1, C2, H, H1, H2)      in the context (C1, C2), V may point to H
+%                                 made in the context (H1, H2)
+%   fpt(O, O1, O2, F, L, L1, L2)  a field of an object in its context
+%   gpt(G, H, H1, H2)             a global's: one place, no context
+%   reachable(F, C1, C2)          F runs in that context
+%   target(I, F), pts(V, H)       the answers, contexts forgotten
+%
+% A context is two columns, not a term (plan_datalog.md, decision 5):
+% none where it is shorter, so an analysis with no context pays only for
+% the two columns.
+%
+%     int *id(int *a) { return a; }
+%     p = id(&x);  q = id(&y);
+%
+%     no context    a -> x, y    so p -> x, y and q -> x, y
+%     call site     a -> x in the context of the first call, y in the
+%                   second's; each returns to its own: p -> x, q -> y
+%
+% What a file says, the two choices of Doop's Merge and Record:
+%   callee(I, C1, C2, F, N1, N2) :- fresh(I, C1, C2, F, H1, H2), ...
+%       a call I in the context (C1, C2), of F held in an object of the
+%       context (H1, H2): the context (N1, N2) it runs in
+%   pt(V, C1, C2, H, H1, H2) :- new_site(V, H, C1, C2).
+%       an object made in the context (C1, C2): the one it is known by
+%
+% design:
+% A variable without a frame has no context: a global, a variable two
+% functions name (what a closure captures), a C variable whose address
+% is taken. Those are global(V), and two rules alone deal with them: a
+% tuple written into one, in any context, goes to its one set, gpt;
+% and that set is seen in each context of each function that names it.
+% So every other rule can say one context for all it names, and needs no
+% case for global and local. (Might, Smaragdakis and Van Horn's m-CFA
+% does the same for its closures, flattened: what a closure captures
+% could be followed by context only in exponential time.)
+%
+% design:
+% ML's let f x y = ... is two functions, curried(f', f), and a body that
+% names x from f' would make x a captured variable, if its frame were f'
+% alone. So f and f' are one frame (root), and f' runs in the context
+% of the closure f made it in: its heap context is a whole context, for
+% those objects only. Otherwise one parameter of each function would be
+% without context, and precision is what contexts are for.
+%
+% cs-history:
+% Sharir and Pnueli's "two approaches to interprocedural data flow
+% analysis" (1981) gave the call string; Shivers (1988) the same, as
+% k-CFA, for Scheme. Object sensitivity (Milanova, Rountev, Ryder,
+% 2002) said that a method's receiver is the better context in Java;
+% Doop's table said by how much, and that a heap context matters as
+% much as a longer call string. Smaragdakis, Bravenboer and Lhotak
+% (2011) gave type sensitivity: almost that precision, far cheaper.
+% Hybrid (Kastrinis, Smaragdakis, 2013) mixes them by the kind of call.
+% Introspective analysis (Smaragdakis, Kastrinis, Balatsouras, 2014),
+% then Zipper (Li, Tan, Moeller, Smaragdakis, 2018) and Scaler (2018):
+% a cheap first pass chooses the few functions worth a context.
+%
+% ocaml:
+% Neither C nor ML has a receiver: object sensitivity here is the first
+% argument's object. For ML that is what tells one List.map f from
+% another, f being a closure site; for C's conventions, it is the
+% structure the function works on: Hashtbl.add h, chanwrite(c).
+% A call with no object (andersen.dl says) keeps its caller's context.
+%
+% road-not-taken:
+% Flow sensitivity, each variable's set by program point (Hardekopf
+% and Lin's sparse analysis, 2011; SVF for C, 2016), is not here; its
+% facts are only in -flow, of a function. bugs.dl says what it would
+% add. CFL-reachability (Reps; Sridharan and Bodik, 2006) and demand-
+% driven questions (Heintze and Tardieu, 2001) answer one variable and
+% not all; both are the same rules seen another way, given magic sets.
+%
+% References: Martin Bravenboer, Yannis Smaragdakis, "Strictly
+% declarative specification of sophisticated points-to analyses"
+% (OOPSLA 2009); Yannis Smaragdakis, George Balatsouras, "Pointer
+% Analysis" (2015), the rules of its chapter 2; Ana Milanova, Atanas
+% Rountev, Barbara Ryder, "Parameterized object sensitivity for
+% points-to analysis for Java" (TOSEM 2005); Smaragdakis, Bravenboer,
+% Ondrej Lhotak, "Pick your contexts well" (POPL 2011); George
+% Kastrinis, Smaragdakis, "Hybrid context-sensitivity for points-to
+% analysis" (PLDI 2013); Smaragdakis, Kastrinis, Balatsouras,
+% "Introspective analysis" (PLDI 2014); Yue Li, Tian Tan, Anders
+% Moeller, Smaragdakis, "Precision-guided context sensitivity for
+% pointer analysis" (OOPSLA 2018, Zipper); Matthew Might, Smaragdakis,
+% David Van Horn, "Resolving and exploiting the k-CFA paradox" (PLDI
+% 2010).
+
+% ---- frames: what is in a context, and what is not
+
+entry(F) :- init(F).
+entry('_init').
+% (C: main; with none, a library, what no one names. ML: only toplevels)
+has_main(yes) :- function(main).
+entry(main) :- function(main).
+named(F) :- var_in(F, _).
+named(F) :- call_direct(_, F).
+named(F) :- assign_address(_, F).
+named(F) :- closure(F, _, _).
+named(F) :- curried(F, _).
+entry(F) :- function(F), \+ named(F), \+ has_main(yes).
+reachable(F, none, none) :- entry(F).
+
+is_stage(F) :- curried(F, _).
+root(F, F) :- function(F), \+ is_stage(F).
+root(F, F) :- entry(F).
+root(F2, R) :- curried(F2, F), root(F, R).
+
+owner(V, R) :- var_in(V, F), root(F, R).
+shared(V) :- owner(V, R), owner(V, S), R \= S.
+global(V) :- global_var(V).
+global(V) :- shared(V).
+global(V) :- var_object(V).
+global(F) :- field_place(F).
+
+frame(V, C1, C2) :- owner(V, R), reachable(R, C1, C2).
+
+% the two rules for a global: written in any context, seen in every one
+gpt(G, H, H1, H2) :- global(G), pt(G, _, _, H, H1, H2).
+pt(G, C1, C2, H, H1, H2) :- global(G), frame(G, C1, C2), gpt(G, H, H1, H2).
+
+% ---- objects
+
+gpt(G, H, none, none) :- alloc(G, H), global(G).
+alloc_here(V, H, C1, C2) :- alloc(V, H), \+ global(V), frame(V, C1, C2).
+pt(V, C1, C2, X, none, none) :- alloc_here(V, X, C1, C2), var_object(X).
+% (a curried closure remembers its whole context: see above)
+pt(V, C1, C2, H, C1, C2) :- alloc_here(V, H, C1, C2), curried(H, _).
+new_site(V, H, C1, C2) :- alloc_here(V, H, C1, C2), \+ var_object(H), \+ is_stage(H).
+
+% what names an object when its type is asked: where it was made, or itself
+has_place(H) :- alloc_in(H, _).
+place_of(H, T) :- alloc_in(H, T).
+place_of(H, H) :- alloc(_, H), \+ has_place(H).
+
+% scalar: a value that is no object the facts follow (Closure_facts).
+% What is read from it, or returned by calling it, is one too.
+pt(V, C1, C2, scalar, none, none) :- scalar(V), frame(V, C1, C2).
+place_of(scalar, scalar).
+% (a C function with no body, libc's: scalar, not a value of its callers')
+scalar(R) :- call_ret(I, R), call_direct(I, F), \+ function(F).
+
+% ---- instructions: one context for all a rule names
+%
+% design:
+% Doop's reason for its intermediate relations, here too: a join is
+% planned by how many columns are known (Datalog_eval), and a context's
+% two columns count as much as a variable. stored, read, passed and
+% returned join the instruction and its variable first, so the context
+% is never what is searched by: a rule of one body had 313 million
+% lookups for 4,204 firings on ten lines using lib_core.
+%
+% A global is seen in the contexts of every function that names it, so
+% an instruction reading one says which of them are its own function's
+% (frame, running); a local is in its own function's only.
+
+pt(P, C1, C2, H, H1, H2) :-
+  copy(P, Q), \+ global(Q), pt(Q, C1, C2, H, H1, H2).
+pt(P, C1, C2, H, H1, H2) :-
+  copy(P, G), global(G), gpt(G, H, H1, H2), frame(P, C1, C2).
+
+stored(X, F, C1, C2, L, L1, L2) :- store(X, F, V), pt(V, C1, C2, L, L1, L2).
+fpt(O, O1, O2, F, L, L1, L2) :-
+  stored(X, F, C1, C2, L, L1, L2), pt(X, C1, C2, O, O1, O2), O \= scalar.
+
+read(P, F, C1, C2, O, O1, O2) :-
+  load(P, X, F), \+ global(X), pt(X, C1, C2, O, O1, O2).
+read(P, F, C1, C2, O, O1, O2) :-
+  load(P, G, F), global(G), gpt(G, O, O1, O2), frame(P, C1, C2).
+pt(P, C1, C2, L, L1, L2) :-
+  read(P, F, C1, C2, O, O1, O2), fpt(O, O1, O2, F, L, L1, L2).
+pt(P, C1, C2, scalar, none, none) :- read(P, _, C1, C2, scalar, _, _).
+
+% C: &x, whose content is the variable x
+gpt(X, L, L1, L2) :- var_object(X), fpt(X, none, none, star, L, L1, L2).
+fpt(X, none, none, star, L, L1, L2) :- var_object(X), gpt(X, L, L1, L2).
+
+% C: &p->f, one place for each f whose address is taken
+pt(P, C1, C2, F, none, none) :-
+  assign_field_address(P, _, F), frame(P, C1, C2).
+fpt(F, none, none, star, L, L1, L2) :-
+  fpt(_, _, _, F, L, L1, L2), field_place(F).
+pt(P, C1, C2, L, L1, L2) :-
+  read(P, F, C1, C2, _, _, _), field_place(F),
+  fpt(F, none, none, star, L, L1, L2).
+
+% C: a global's initializer (Dev consdev = { "cons", consread })
+fpt(X, none, none, F, L, L1, L2) :-
+  assign_store_field(X, F, V), global_var(X), pt(V, _, _, L, L1, L2).
+
+% ---- calls: Doop's on-the-fly call graph
+
+running(I, C1, C2) :- in_function(I, G), root(G, R), reachable(R, C1, C2).
+call(I, C1, C2, F, none, none) :- call_direct(I, F), running(I, C1, C2).
+call(I, C1, C2, F, H1, H2) :-
+  call_indirect(I, V), \+ global(V), pt(V, C1, C2, F, H1, H2), function(F).
+call(I, C1, C2, F, H1, H2) :-
+  call_indirect(I, G), global(G), gpt(G, F, H1, H2), function(F),
+  running(I, C1, C2).
+% (calling what C gave)
+pt(R, C1, C2, scalar, none, none) :-
+  call_indirect(I, V), \+ global(V), pt(V, C1, C2, scalar, _, _),
+  call_ret(I, R).
+pt(R, C1, C2, scalar, none, none) :-
+  call_indirect(I, G), global(G), gpt(G, scalar, _, _), call_ret(I, R),
+  running(I, C1, C2).
+
+% what the context files choose for; f' keeps the context of its closure
+fresh(I, C1, C2, F, H1, H2) :- call(I, C1, C2, F, H1, H2), \+ is_stage(F).
+callee(I, C1, C2, F, H1, H2) :- call(I, C1, C2, F, H1, H2), is_stage(F).
+
+reachable(F, N1, N2) :- callee(_, _, _, F, N1, N2).
+
+passed(I, Z, C1, C2, L, L1, L2) :-
+  argument(I, Z, A), pt(A, C1, C2, L, L1, L2).
+returned(F, N1, N2, L, L1, L2) :- return(F, V), pt(V, N1, N2, L, L1, L2).
+
+% an object-sensitive file writes its first parameter itself: filtered(I)
+filtered(none).
+pt(P, N1, N2, L, L1, L2) :-
+  passed(I, Z, C1, C2, L, L1, L2), Z > 1,
+  callee(I, C1, C2, F, N1, N2), parameter(F, Z, P).
+pt(P, N1, N2, L, L1, L2) :-
+  passed(I, 1, C1, C2, L, L1, L2), \+ filtered(I),
+  callee(I, C1, C2, F, N1, N2), parameter(F, 1, P).
+% (f' takes its closure's context, so no file's choice filters its argument)
+pt(P, N1, N2, L, L1, L2) :-
+  passed(I, 1, C1, C2, L, L1, L2), callee(I, C1, C2, F, N1, N2), is_stage(F),
+  parameter(F, 1, P).
+pt(R, C1, C2, L, L1, L2) :-
+  returned(F, N1, N2, L, L1, L2), callee(I, C1, C2, F, N1, N2),
+  call_ret(I, R).
+
+% ---- what the first pass says, for the files that ask
+
+has_object(I) :- argument(I, 1, A), pt(A, _).
+
+% ---- the answers, contexts forgotten
+
+target(I, F) :- call(I, _, _, F, _, _).
+pts(V, H) :- pt(V, _, _, H, _, _), H \= scalar.
+pts(V, H) :- gpt(V, H, _, _), H \= scalar.
+fpts(O, F, L) :- fpt(O, _, _, F, L, _, _).
+reach(F) :- reachable(F, _, _).

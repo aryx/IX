@@ -416,3 +416,12 @@ Reproduced at once by `desktop` (mini-stats and mini-files, both talking to rio)
 under QEMU; gdb as above gave `wait` and its `try` a thousand times. Fixed by no
 call in the handler. Not fixed: mini-ml's tail calls in a handler; any such loop
 in a program is the same, only with a larger stack to fill.
+
+## mini-analyze's facts missed two kinds of call (2026-10-31)
+
+Found by `mini-analyze -dead`, which flagged live functions. In `Closure_facts`,
+`f @@ x` and `x |> f` (`%apply`, `%revapply`) moved nothing and called nothing, so
+a function used only that way looked uncalled, to `calls.dl`'s `unreached` too. In
+`Facts`, a call of `table[0]()`, folded to `table` or `*table`, went through the
+array and not its element, so no function in the table was reached. Fixed, each in
+`analyzers/tests/dead/`: `Lib.through_apply` and `through_rev`, `intable`.

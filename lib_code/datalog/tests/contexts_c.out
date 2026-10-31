@@ -1,0 +1,77 @@
+== steensgaard
+p1: x y 
+q1: x y 
+r1: u w x y 
+o1: u w x y 
+n1: u w x y 
+f1: x y 
+== andersen
+p1: x y 
+q1: x y 
+r1: u w x y 
+o1: u w x y 
+n1: x 
+f1: x y 
+== insensitive
+p1: x y 
+q1: x y 
+r1: u w x y 
+o1: u w x y 
+n1: x 
+f1: x y 
+== call1
+p1: x 
+q1: x y 
+r1: u w x y 
+o1: u w x y 
+n1: x 
+f1: x 
+== call1_heap1
+p1: x 
+q1: x y 
+r1: x 
+o1: u w 
+n1: x 
+f1: x 
+== call2_heap1
+p1: x 
+q1: x 
+r1: x 
+o1: u w 
+n1: x 
+f1: x 
+== object1
+p1: x 
+q1: x 
+r1: u x y 
+o1: u x y 
+n1: x 
+f1: x 
+== object2_heap1
+p1: x 
+q1: x 
+r1: u x y 
+o1: u x y 
+n1: x 
+f1: x 
+== type2_heap1
+p1: x 
+q1: x 
+r1: u x y 
+o1: u x y 
+n1: x 
+f1: x 
+== hybrid
+p1: x 
+q1: x 
+r1: x 
+o1: u 
+n1: x 
+f1: x 
+== selective
+p1: x 
+q1: x 
+r1: x 
+o1: u w 
+n1: x 
+f1: x 

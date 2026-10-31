@@ -41,12 +41,12 @@ of Opti's passes, -Otails... one each; -O3 every optimization (-O and
 -ssa, the mkfiles' MLOPT), -O0 none; -unsafe-types, no type checker.
 -facts: no object; the unit as the facts of which function may be which
 variable's value (Closure_facts.mli); a program's units' together, then:
-  mini-datalog -q 'never_called(G)' languages/datalog/analyses/pointer.dl \
-    languages/datalog/analyses/calls.dl *.dl
+  mini-datalog -q 'never_called(G)' lib_code/datalog/pointer.dl \
+    lib_code/datalog/calls.dl *.dl
 -flow: no object; the file's functions in SSA form as facts (blocks, points,
 what each defines and uses: Ssa_facts.mli), for mini-datalog:
   mini-ml -flow fact.ml > fact.dl
-  mini-datalog -q 'live_in(V, B)' languages/datalog/analyses/liveness_ssa.dl fact.dl
+  mini-datalog -q 'live_in(V, B)' lib_code/datalog/liveness_ssa.dl fact.dl
 -dflow: the compiler's own liveness and dominators, as facts, to compare.
 -dotnet: the units, in order, as a .NET assembly, fact.dll (or -o's) and its
 runtimeconfig.json,

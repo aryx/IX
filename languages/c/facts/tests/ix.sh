@@ -5,7 +5,7 @@
 # The rules' liveness against the compiler's own, on ix's own C
 # (docs/plans/plan_prolog.md, stage 9's check): for mini-ml's runtime
 # and each file of lib_core's libc, mini-cc -flow and -dflow, then
-# mini-datalog with languages/datalog/analyses/liveness.dl and
+# mini-datalog with lib_code/datalog/liveness.dl and
 # tests/flow_check.dl; a line for each of the two (its files,
 # functions, instructions, facts, the tuples the rules find, those that
 # differ from Opti's liveness, the seconds of mini-cc and of
@@ -14,7 +14,7 @@
 # CC, DATALOG: the two programs, if not dune's.
 cd "$(dirname "$0")/../../../.."
 T=languages/c/facts/tests
-A=languages/datalog/analyses
+A=lib_code/datalog
 CC=${CC:-_build/default/languages/c/Main.exe}
 DATALOG=${DATALOG:-_build/default/languages/datalog/Main.exe}
 W=$(mktemp -d); trap 'rm -rf $W' EXIT

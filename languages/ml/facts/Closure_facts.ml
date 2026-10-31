@@ -10,6 +10,7 @@ let unit_name : string ref = ref ""
 let temps : int ref = ref 0
 let calls : int ref = ref 0
 let funs : int ref = ref 0
+let blocks : int ref = ref 0
 
 (* the function whose body is being read *)
 let inside : string ref = ref ""
@@ -36,17 +37,64 @@ let fact1 (relation : string) (a : string) (b : string) : unit =
   Buffer.add_string out (Printf.sprintf "%s(%s, 1, %s).\n" relation (quote a) (quote b));
   !added relation [ Sym a; Num 1; Sym b ]
 
+(* each (variable, function) once: a variable is named at every use *)
+let mentioned : (string * string, unit) Hashtbl.t = Hashtbl.create 1021
+
+let var_in (v : string) (f : string) : unit =
+  if not (Hashtbl.mem mentioned (v, f)) then begin
+    Hashtbl.add mentioned (v, f) ();
+    fact "var_in" [ v; f ]
+  end
+
+let here (v : string) : string =
+  var_in v !inside;
+  v
+
+(* a variable no frame owns: a toplevel value, ext *)
+let global (v : string) (f : string) : string =
+  if not (Hashtbl.mem mentioned (v, "")) then begin
+    Hashtbl.add mentioned (v, "") ();
+    fact "global_var" [ v ]
+  end;
+  var_in v f;
+  v
+
+(* v holds a value that is no object the facts follow: a number, unit, a
+ * constant constructor, what C gave. So every value has an object, and
+ * a variable with none is one no run has reached: what lets an analysis
+ * choose a context by an argument's object (object1.dl) *)
+let scalar (v : string) : unit =
+  if not (Hashtbl.mem mentioned (v, "scalar")) then begin
+    Hashtbl.add mentioned (v, "scalar") ();
+    fact "scalar" [ v ]
+  end
+
 let temp () : string =
   incr temps;
-  Printf.sprintf "%s:t%d" !unit_name !temps
+  here (Printf.sprintf "%s:t%d" !unit_name !temps)
 
-let local (v : var) : string = Printf.sprintf "%s:%s/%d" !unit_name v.vname v.vid
+let local (v : var) : string = here (Printf.sprintf "%s:%s/%d" !unit_name v.vname v.vid)
 
 (* where a value no one reads goes *)
 let junk () : string = !unit_name ^ ":_"
 
+(* a constant's value: no fact writes it, so it points to nothing
+ * (old: junk, which a condition's or a statement's value had gone to,
+ * so a constant argument passed them on) *)
+let constant () : string =
+  let c = global (!unit_name ^ ":const") !inside in
+  scalar c;
+  c
+
 (* the externals' one place *)
 let ext : string = "ext"
+
+(* a block made: dst points to a place of its own, this expression's *)
+let block (dst : string) (loc : int) : unit =
+  incr blocks;
+  let site = Printf.sprintf "%s:block%d@%d" !unit_name !blocks loc in
+  fact "new_block" [ dst; site ];
+  fact "alloc_in" [ site; !unit_name ]
 
 (* An external, as a function of each of its arguments in turn
  * ('prim:name', then 'prim:name'2'...), the last returning its result.
@@ -64,18 +112,36 @@ let prim (name : string) (arity : int) : string =
     Hashtbl.add prims name ();
     for k = 1 to n do
       fact1 "parameter" (stage k) (arg k);
+      var_in (arg k) (stage k);
       if k < n then begin
         fact "return" [ stage k; Printf.sprintf "prim:%s:ret%d" name k ];
-        fact "assign_address" [ Printf.sprintf "prim:%s:ret%d" name k; stage (k + 1) ]
+        var_in (Printf.sprintf "prim:%s:ret%d" name k) (stage k);
+        fact "assign_address" [ Printf.sprintf "prim:%s:ret%d" name k; stage (k + 1) ];
+        fact "curried" [ stage (k + 1); stage k ]
       end
-      else fact "return" [ stage k; ret ]
+      else begin
+        fact "return" [ stage k; ret ];
+        var_in ret (stage k)
+      end
     done;
     let kept () : unit =
-      for k = 1 to n do fact "assign" [ ext; arg k ] done;
-      fact "assign" [ ret; ext ] in
+      for k = 1 to n do fact "assign" [ global ext (stage k); arg k ] done;
+      fact "assign" [ ret; global ext (stage n) ] in
+    scalar ext;
+    scalar ret;
     match name with
     | "%identity" -> fact "assign" [ ret; arg 1 ]
-    | "%makemutable" -> fact "assign_store_field" [ ret; "fld:contents"; arg 1 ]
+    (* f @@ x and x |> f: a call, of what the external was given *)
+    | "%apply" | "%revapply" ->
+        let f, x = if name = "%apply" then (arg 1, arg 2) else (arg 2, arg 1) in
+        let i = "prim:" ^ name ^ ":call" in
+        fact "in_function" [ i; stage 2 ];
+        fact "call_indirect" [ i; f ];
+        fact1 "argument" i x;
+        fact "call_ret" [ i; ret ]
+    | "%makemutable" ->
+        fact "new_block" [ ret; "prim:%makemutable:block" ];
+        fact "assign_store_field" [ ret; "fld:contents"; arg 1 ]
     | "%field0" ->
         fact "assign_load_field" [ ret; arg 1; "fld:contents" ];
         fact "assign_load_field" [ ret; arg 1; "tuple:2.0" ]
@@ -125,9 +191,9 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
   let stores (fields : (string * expr) list) : unit =
     List.iter (fun ((field, e) : string * expr) -> fact "assign_store_field" [ dst; field; operand e ]) fields in
   match x.e with
-  | Econst _ -> ()
+  | Econst _ -> scalar dst
   | Evar (Local v) -> fact "assign" [ dst; local v ]
-  | Evar (Global g) -> fact "assign" [ dst; g.gsym ]
+  | Evar (Global g) -> fact "assign" [ dst; global g.gsym !inside ]
   | Evar (Prim (p, arity, _)) -> fact "assign_address" [ dst; prim p arity ]
   | Econstraint (e, _) -> flow name e dst
   | Efunction cases ->
@@ -136,15 +202,21 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
         | Some n -> n
         | None -> incr funs; Printf.sprintf "%s:fun%d@%d" !unit_name !funs x.loc in
       fact "closure" [ f; !unit_name; string_of_int x.loc ];
+      fact "alloc_in" [ f; !unit_name ];
       fact "assign_address" [ dst; f ];
       fact1 "parameter" f (f ^ ":arg");
       fact "return" [ f; f ^ ":ret" ];
+      var_in (f ^ ":arg") f;
+      var_in (f ^ ":ret") f;
       let outer = !inside in
       inside := f;
       (* let f x y = ...: the function of y is f' *)
       let inner : string option =
         match cases with
-        | [ (_, _, body) ] when is_function body -> fact "inner" [ f ^ "'"; f ]; Some (f ^ "'")
+        | [ (_, _, body) ] when is_function body ->
+            fact "inner" [ f ^ "'"; f ];
+            fact "curried" [ f ^ "'"; f ];
+            Some (f ^ "'")
         | _ -> None in
       List.iter
         (fun ((p, guard, body) : case) ->
@@ -180,37 +252,47 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
       flow None e dst;
       List.iter
         (fun ((p, guard, body) : case) ->
-          bind p ext;
+          bind p (global ext !inside);
           Option.iter (fun (g : expr) -> flow None g (junk ())) guard;
           flow None body dst)
         cases
   | Etuple es ->
       let n = List.length es in
+      block dst x.loc;
       stores (List.mapi (fun (k : int) (e : expr) -> (Printf.sprintf "tuple:%d.%d" n k, e)) es)
-  | Econs (c, es) -> stores (List.mapi (fun (k : int) (e : expr) -> (Printf.sprintf "con:%s.%d" c.cname k, e)) es)
-  | Erecord (_, fields) -> stores (List.map (fun ((l, e) : label * expr) -> ("fld:" ^ l.lname, e)) fields)
+  | Econs (_, []) -> scalar dst
+  | Econs (c, es) ->
+      block dst x.loc;
+      stores (List.mapi (fun (k : int) (e : expr) -> (Printf.sprintf "con:%s.%d" c.cname k, e)) es)
+  | Erecord (_, fields) ->
+      block dst x.loc;
+      stores (List.map (fun ((l, e) : label * expr) -> ("fld:" ^ l.lname, e)) fields)
   | Ewith (e, _, fields) ->
       flow None e dst;
       stores (List.map (fun ((l, e) : label * expr) -> ("fld:" ^ l.lname, e)) fields)
   | Efield (e, l) -> fact "assign_load_field" [ dst; operand e; "fld:" ^ l.lname ]
-  | Esetfield (e, l, v) -> fact "assign_store_field" [ operand e; "fld:" ^ l.lname; operand v ]
-  | Earray es -> List.iter (fun (e : expr) -> fact "assign" [ ext; operand e ]) es
+  | Esetfield (e, l, v) ->
+      scalar dst;
+      fact "assign_store_field" [ operand e; "fld:" ^ l.lname; operand v ]
+  | Earray es ->
+      scalar dst;
+      List.iter (fun (e : expr) -> fact "assign" [ global ext !inside; operand e ]) es
   | Eif (c, a, b) ->
       flow None c (junk ());
       flow None a dst;
-      Option.iter (fun (b : expr) -> flow None b dst) b
+      (match b with Some b -> flow None b dst | None -> scalar dst)
   | Eseq (a, b) -> flow None a (junk ()); flow name b dst
-  | Ewhile (c, body) -> flow None c (junk ()); flow None body (junk ())
-  | Efor (_, lo, hi, _, body) -> flow None lo (junk ()); flow None hi (junk ()); flow None body (junk ())
-  | Eassert e -> flow None e (junk ())
+  | Ewhile (c, body) -> scalar dst; flow None c (junk ()); flow None body (junk ())
+  | Efor (_, lo, hi, _, body) -> scalar dst; flow None lo (junk ()); flow None hi (junk ()); flow None body (junk ())
+  | Eassert e -> scalar dst; flow None e (junk ())
 
 (* the variable e's value is in: its own if it is one, or a new one *)
 and operand (x : expr) : string =
   match x.e with
   | Evar (Local v) -> local v
-  | Evar (Global g) -> g.gsym
+  | Evar (Global g) -> global g.gsym !inside
   | Econstraint (e, _) -> operand e
-  | Econst _ -> junk ()
+  | Econst _ -> constant ()
   | _ ->
       let t = temp () in
       flow None x t;
@@ -230,10 +312,12 @@ and lets (bindings : (pattern * expr) list) (exported : (var * global) list) : u
 let unit_ (name : string) (items : item list) : string =
   Buffer.clear out;
   Hashtbl.reset prims;
+  Hashtbl.reset mentioned;
   unit_name := name;
   temps := 0;
   calls := 0;
   funs := 0;
+  blocks := 0;
   inside := name ^ ":init";
   fact "init" [ name ^ ":init" ];
   List.iter
@@ -242,8 +326,12 @@ let unit_ (name : string) (items : item list) : string =
       | Ieval e -> flow None e (junk ())
       | Ivalue (_, bindings, exported) ->
           lets bindings exported;
-          List.iter (fun ((v, g) : var * global) -> fact "assign" [ g.gsym; local v ]) exported
+          List.iter
+            (fun ((v, g) : var * global) ->
+              fact "global_def" [ g.gsym; !inside ];
+              fact "assign" [ global g.gsym !inside; local v ])
+            exported
       | Iexception _ -> ()
-      | Iexternal (g, p, arity, _) -> fact "assign_address" [ g.gsym; prim p arity ])
+      | Iexternal (g, p, arity, _) -> fact "assign_address" [ global g.gsym !inside; prim p arity ])
     items;
   Buffer.contents out

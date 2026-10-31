@@ -1,0 +1,115 @@
+% Dead code: what no run of the program can reach, by the call graph the
+% pointer analysis finds as it goes. mini-analyze -dead, with
+% points_to/instructions.dl, contexts.dl and insensitive.dl. Reports:
+%   dead(F)               a function no call from the roots reaches, not one
+%                         written inside another dead one, then
+%     never_named(F)      nothing but itself names it
+%     named_in_live(F, G) the live G names it (its address taken, put in
+%                         a table): a pointer exists, no call goes through it
+%     named_in_dead(F, G) only the dead G names it: dead because G is
+%   through_pointer(F)    alive, and no direct call reaches it: what a
+%                         grep of its name's calls would have called dead
+%   dead_global(G)        a C global or ML toplevel value nothing live names
+%   dead_field(F, G)      the field G's code stores, that nothing live reads
+%   never_built(C, G)     the live G matches a constructor nothing live builds
+%   dead_stmt(F, Line)    C: a statement after a return, goto, break, continue
+%
+%     void show(Node *n) { ... }         void (*visit)(Node*) = show;
+%     void hide(Node *n) { ... }         main() { visit(&root); }
+%     void unused(void) { hide(0); }
+%
+%     show: alive, through_pointer: no line of the program calls it by name
+%     unused: dead, never_named
+%     hide: dead, named_in_dead: only unused calls it
+%
+% design:
+% A grep's answer and a call graph's differ both ways. Name a function and
+% a grep is satisfied, though what names it may be dead itself or the
+% pointer never called; call it through a pointer and a grep sees no call.
+% What is reached is found from the roots and not from each function's
+% callers, or two dead functions calling each other keep each other alive
+% (reference counting's cycle, the same reason a collector marks from its
+% roots). No context is asked for: a context tells apart a function's
+% callers, and whether it has any is the same with one context or many.
+%
+% design:
+% What is flagged must be believed, or nobody reads it; so what cannot be
+% seen is taken as alive. A function given to a C function with no body
+% (qsort, signal) may be called from there; one in ML's ext (given to C, in
+% an array) too. A root the facts cannot see, a kernel's entry from
+% assembly, is said by mini-analyze -root. Without a main, each function
+% nothing names is a root (contexts.dl): a library has no dead functions
+% of that kind.
+%
+% Each answer is still a "may". Functions of the same name in two C files
+% are one here (static or not), so one alive keeps the other. A field read
+% only by a polymorphic compare, a print, or a memcpy of its structure is
+% flagged, and C's facts say no store of a constant, so a member only ever
+% set to numbers and not read is missed. Write-only variables are not found:
+% naming a global is all that is asked of it.
+%
+% others:
+% lint (Stephen Johnson, 1978) said a function defined and not used, by
+% name. Tree shaking (Lisp's, then JavaScript's rollup) and a linker's
+% --gc-sections remove what is unreached, without telling apart a pointer
+% taken from a pointer called: Rapid Type Analysis (David Bacon, Peter
+% Sweeney, 1996) was the first step past names, for C++'s virtual calls, the
+% same on-the-fly idea as here. For OCaml, a whole program's values and
+% fields unused are what Flambda's and dead_code_analyzer's checks ask.
+%
+% References: David Bacon, Peter Sweeney, "Fast static analysis of C++
+% virtual function calls" (OOPSLA 1996); Frank Tip and others, "Practical
+% experience with an application extractor for Java" (OOPSLA 1999).
+
+% ---- what may be called from where the facts do not go
+
+escaped(F) :-
+  call_direct(I, G), \+ function(G), argument(I, _, A), pts(A, F), function(F).
+escaped(F) :- gpt(ext, F, _, _), function(F).
+reachable(F, none, none) :- escaped(F).
+% (emalloc's calls are objects in the facts, not calls, if it has a body)
+reachable(A, none, none) :-
+  allocator_call(A, G), function(A), root(G, R), reach(R).
+
+% ---- functions
+
+written(F) :- closure(F, _, _), \+ is_stage(F).
+written(F) :- defined(F, _).
+unreached(F) :- written(F), \+ reach(F).
+% (a lambda in a dead function says nothing more than the function does)
+% (a toplevel let rec's variable is the toplevel's too, live)
+live_owner(V) :- owner(V, R), reach(R).
+inside_dead(F) :-
+  assign_address(V, F), owner(V, R), unreached(R), R \= F, \+ live_owner(V).
+dead(F) :- unreached(F), \+ inside_dead(F).
+
+names(G, F) :- var_in(F, G), function(F), F \= G, \+ global_def(F, G).
+names(G, F) :- call_direct(I, F), in_function(I, G), F \= G.
+names(G, F) :- allocator_call(F, G), F \= G.
+in_live(G, F) :- names(G, F), root(G, R), reach(R).
+is_named(F) :- names(_, F).
+is_named_in_live(F) :- in_live(_, F).
+
+never_named(F) :- dead(F), \+ is_named(F).
+named_in_live(F, G) :- dead(F), in_live(G, F).
+named_in_dead(F, G) :- dead(F), \+ is_named_in_live(F), names(G, F).
+
+called_by_name(F) :- call_direct(I, F), running(I, _, _).
+through_pointer(F) :- defined(F, _), reach(F), \+ called_by_name(F), \+ entry(F).
+
+% ---- what else nothing live uses
+
+used_global(G) :- var_in(G, F), \+ global_def(G, F), root(F, R), reach(R).
+dead_global(G) :- global_def(G, _), \+ function(G), \+ used_global(G).
+
+live_var(V) :- owner(V, R), reach(R).
+% (by what it is read from: while m.running reads into nobody's variable)
+field_read(F) :- load(_, X, F), live_var(X).
+field_read(F) :- field_place(F).
+dead_field(F, G) :-
+  store(X, F, _), F \= star, var_in(X, G), root(G, R), reach(R), \+ field_read(F).
+
+built(F) :- store(X, F, _), live_var(X).
+% (not what a handler catches, in ext: C raises Sys_error)
+never_built(F, G) :-
+  load(P, X, F), X \= ext, var_in(P, G), root(G, R), reach(R), \+ built(F).

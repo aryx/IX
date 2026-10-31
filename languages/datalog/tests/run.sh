@@ -11,7 +11,7 @@
 #   liveness    a backward dataflow with a negation in its recursion's stratum below
 #   dominators  three strata of negation, a comparison of numbers
 #   refused     what is not Datalog, each said with its line
-#   pointer     the author's pointer analysis of 2014 (analyses/pointer.dl)
+#   pointer     the author's pointer analysis of 2014 (lib_code/datalog/pointer.dl)
 #               on facts written by hand
 # The .out files were read, not made by another Datalog (none is here).
 # usage: languages/datalog/tests/run.sh [-5] [-dune] [-mini] [-record]   (dune build, and mini-mk in languages/datalog, first)
@@ -57,7 +57,7 @@ all() {
     cmp -s $W/$name.out $W/$name.naive || echo "the naive way finds other tuples" >> $W/$name.out
   done
   refused "$@" > $W/refused.out 2>&1
-  "$@" -q 'call_edge(I, F)' languages/datalog/analyses/pointer.dl $T/pointer_facts.dl 2>&1 | grep -v '^warning' > $W/pointer.out
+  "$@" -q 'call_edge(I, F)' lib_code/datalog/pointer.dl $T/pointer_facts.dl 2>&1 | grep -v '^warning' > $W/pointer.out
 }
 check() {
   local what=$1 name; shift

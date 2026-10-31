@@ -39,7 +39,14 @@ let text () : string = String.concat "\n" (List.rev !lines) ^ "\n"
 
 let temp () : string =
   incr temps;
-  Printf.sprintf "%s__t%d" !scope !temps
+  let t = Printf.sprintf "%s__t%d" !scope !temps in
+  fact "var_in" [ sym t; sym !scope ];
+  t
+
+(* a place a function's frame makes: which function, for type sensitivity *)
+let alloc (t : string) (place : string) : unit =
+  fact "point_to" [ sym t; sym place ];
+  fact "alloc_in" [ sym place; sym !scope ]
 
 let field (s : Tree.sym) : string = "_fld__" ^ s.name
 
@@ -49,8 +56,11 @@ let variable (x : Tree.expr) (s : Tree.sym) (c : Tree.cls) : string =
     match c with
     | Tree.Cauto | Tree.Cparam | Tree.Clocal -> !scope ^ "__" ^ s.name
     | _ -> s.name in
+  fact "var_in" [ sym v; sym !scope ];
+  (* (a static local is one place too, whatever the call) *)
+  if c <> Tree.Cauto && c <> Tree.Cparam then fact "global_var" [ sym v ];
   (* an array's elements are one place, which the array's name points to *)
-  if x.t.etype = Tree.Tarray then fact "point_to" [ sym v; sym ("_array_elt_" ^ v) ];
+  if x.t.etype = Tree.Tarray then alloc v ("_array_elt_" ^ v);
   v
 
 (* the allocators: each call's result points to a place of its own *)
@@ -65,7 +75,7 @@ let rec value (x : Tree.expr) : string option =
   | Tree.Sizeof _ -> None
   | Tree.Str _ | Tree.Lstr _ ->
       let t = temp () in
-      fact "point_to" [ sym t; sym (Printf.sprintf "_str_in_%s_line_%d" !scope x.line) ];
+      alloc t (Printf.sprintf "_str_in_%s_line_%d" !scope x.line);
       Some t
   | Tree.Typed a -> value a
   | Tree.Unary (Tree.Ind, { e = Tree.Binary (Tree.Add, a, i); _ }) ->
@@ -188,11 +198,13 @@ and call (x : Tree.expr) (f : Tree.expr) (args : Tree.expr list) : string option
   let t = temp () in
   match direct with
   | Some name when List.mem name allocators ->
-      fact "point_to" [ sym t; sym (Printf.sprintf "_malloc_in_%s_line_%d" !scope x.line) ];
+      alloc t (Printf.sprintf "_malloc_in_%s_line_%d" !scope x.line);
+      fact "allocator_call" [ sym name; sym !scope ];
       Some t
   | _ ->
       incr calls;
       let site = sym (Printf.sprintf "_in_%s_line_%d_%d" !scope x.line !calls) in
+      fact "in_function" [ site; sym !scope ];
       List.iteri
         (fun (i : int) (v : string option) ->
           Option.iter (fun (v : string) -> fact "argument" [ site; Num (i + 1); sym v ]) v)
@@ -201,17 +213,59 @@ and call (x : Tree.expr) (f : Tree.expr) (args : Tree.expr list) : string option
       (match direct with
        | Some name -> fact "call_direct" [ site; sym name ]
        | None -> (
-           (* a pointer's star called and the pointer called are the same call *)
-           let target : string option = match f.e with Tree.Unary (Tree.Ind, p) -> value p | _ -> value f in
+           (* a pointer's star called and the pointer called are the same call;
+            * not an array's: table[0]() is *table once folded, or table,
+            * an element called *)
+           let rec bare (x : Tree.expr) : Tree.expr =
+             match x.e with
+             | Tree.Typed a | Tree.Unary ((Tree.Cast | Tree.Ind), a) | Tree.Binary (Tree.Add, a, _) -> bare a
+             | _ -> x in
+           let base = bare f in
+           let target : string option =
+             match base.e with
+             | Tree.Name _ when base.t.etype = Tree.Tarray -> load "assign_array_elt" (value base)
+             | _ -> (match f.e with Tree.Unary (Tree.Ind, p) -> value p | _ -> value f) in
            match target with
            | Some v -> fact "call_indirect" [ site; sym v ]
            | None -> ()));
       Some t
 
+(* a statement's line, if an expression of it says *)
+let rec first_line (s : Tree.stmt) : int option =
+  match s with
+  | Tree.Expr x | Tree.If (x, _, _) | Tree.While (x, _) | Tree.Switch (x, _) | Tree.Return (Some x, _) -> Some x.line
+  | Tree.Dowhile (a, _) | Tree.For (a, _, _, _) -> first_line a
+  | Tree.Block l -> List.find_map first_line l
+  | _ -> None
+
+(* a label or a case in it, however deep: a way in from elsewhere *)
+let rec entered (s : Tree.stmt) : bool =
+  match s with
+  | Tree.Label _ | Tree.Case _ -> true
+  | Tree.Block l -> List.exists entered l
+  | Tree.If (_, a, None) -> entered a
+  | Tree.If (_, a, Some b) -> entered a || entered b
+  | Tree.While (_, a) | Tree.Dowhile (a, _) | Tree.For (_, _, _, a) | Tree.Switch (_, a) -> entered a
+  | _ -> false
+
+(* what follows a jump in a block, until a way in, no run reaches *)
+let rec after_jumps (jumped : bool) (l : Tree.stmt list) : unit =
+  match l with
+  | [] -> ()
+  | s :: rest when entered s -> after_jumps false rest
+  | (Tree.Used _ | Tree.Set _) :: rest -> after_jumps jumped rest
+  | s :: rest ->
+      if jumped then Option.iter (fun (n : int) -> fact "dead_stmt" [ sym !scope; Num n ]) (first_line s);
+      after_jumps
+        (jumped || match s with Tree.Return _ | Tree.Goto _ | Tree.Break | Tree.Continue -> true | _ -> false)
+        rest
+
 let rec statement (s : Tree.stmt) : unit =
   match s with
   | Tree.Expr x -> ignore (value x)
-  | Tree.Block l -> List.iter statement l
+  | Tree.Block l ->
+      after_jumps false l;
+      List.iter statement l
   | Tree.If (c, a, b) ->
       ignore (value c);
       statement a;
@@ -275,13 +329,18 @@ let func (f : Tree.sym) (body : Tree.stmt) : unit =
   calls := 0;
   fact "point_to" [ sym f.name; sym f.name ];
   fact "return" [ sym f.name; sym ("ret_" ^ f.name) ];
+  fact "var_in" [ sym ("ret_" ^ f.name); sym f.name ];
+  fact "defined" [ sym f.name; Num (match first_line body with Some n -> n | None -> 0) ];
   let named : (string * int) list ref = ref [] in
   parameters_of body named;
   List.iteri
     (fun (i : int) (offset : int) ->
       List.iter
         (fun ((name, o) : string * int) ->
-          if o = offset then fact "parameter" [ sym f.name; Num (i + 1); sym (f.name ^ "__" ^ name) ])
+          if o = offset then begin
+            fact "parameter" [ sym f.name; Num (i + 1); sym (f.name ^ "__" ^ name) ];
+            fact "var_in" [ sym (f.name ^ "__" ^ name); sym f.name ]
+          end)
         !named)
     (parameter_offsets f);
   statement body;
@@ -304,6 +363,9 @@ let rec member (t : Tree.typ) (o : int) : Tree.sym option =
 
 let global (s : Tree.sym) (x : Tree.expr) (o : int) : unit =
   let array : bool = match s.typ with Some t -> t.etype = Tree.Tarray | None -> false in
+  fact "var_in" [ sym s.name; sym !scope ];
+  fact "global_var" [ sym s.name ];
+  fact "global_def" [ sym s.name; sym !scope ];
   if array then fact "point_to" [ sym s.name; sym ("_array_elt_" ^ s.name) ];
   (* a structure's member, by its name as x->f is (Dev consdev = { "cons", consread }) *)
   let put (v : string) : unit =

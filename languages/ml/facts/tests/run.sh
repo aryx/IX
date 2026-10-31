@@ -4,7 +4,7 @@
 #
 # mini-ml -flow, then liveness and dominators by mini-datalog
 # (docs/plans/plan_prolog.md, stage 9): flow.ml's facts against
-# flow.facts; what the rules of languages/datalog/analyses/ find (the
+# flow.facts; what the rules of lib_code/datalog/ find (the
 # loops' headers, each block's immediate dominator, what is live round
 # triangle's loop) against flow.out; the rules' liveness and dominators
 # against the compiler's own (-dflow: Alloc's and Ssa_build's), tuple
@@ -18,7 +18,7 @@
 # ML, DATALOG: the two programs, if not dune's.
 cd "$(dirname "$0")/../../../.."
 T=languages/ml/facts/tests
-A=languages/datalog/analyses
+A=lib_code/datalog
 ML=${ML:-_build/default/languages/ml/Main.exe}
 DATALOG=${DATALOG:-_build/default/languages/datalog/Main.exe}
 W=$(mktemp -d); trap 'rm -rf $W' EXIT

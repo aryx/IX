@@ -1,21 +1,37 @@
 init('Kit:init').
+var_in('Kit:iter/1', 'Kit:init').
 closure('Kit.iter', 'Kit', '7').
+alloc_in('Kit.iter', 'Kit').
 assign_address('Kit:iter/1', 'Kit.iter').
 parameter('Kit.iter', 1, 'Kit.iter:arg').
 return('Kit.iter', 'Kit.iter:ret').
+var_in('Kit.iter:arg', 'Kit.iter').
+var_in('Kit.iter:ret', 'Kit.iter').
 inner('Kit.iter\'', 'Kit.iter').
+curried('Kit.iter\'', 'Kit.iter').
+var_in('Kit:f/2', 'Kit.iter').
 assign('Kit:f/2', 'Kit.iter:arg').
 closure('Kit.iter\'', 'Kit', '7').
+alloc_in('Kit.iter\'', 'Kit').
 assign_address('Kit.iter:ret', 'Kit.iter\'').
 parameter('Kit.iter\'', 1, 'Kit.iter\':arg').
 return('Kit.iter\'', 'Kit.iter\':ret').
+var_in('Kit.iter\':arg', 'Kit.iter\'').
+var_in('Kit.iter\':ret', 'Kit.iter\'').
+var_in('Kit:xs/3', 'Kit.iter\'').
 assign('Kit:xs/3', 'Kit.iter\':arg').
+scalar('Kit.iter\':ret').
+var_in('Kit:x/4', 'Kit.iter\'').
 assign_load_field('Kit:x/4', 'Kit:xs/3', 'con:::.0').
+var_in('Kit:rest/5', 'Kit.iter\'').
 assign_load_field('Kit:rest/5', 'Kit:xs/3', 'con:::.1').
+var_in('Kit:f/2', 'Kit.iter\'').
 in_function('Kit:8:c1', 'Kit.iter\'').
 call_indirect('Kit:8:c1', 'Kit:f/2').
 argument('Kit:8:c1', 1, 'Kit:x/4').
 call_ret('Kit:8:c1', 'Kit:_').
+var_in('Kit:iter/1', 'Kit.iter\'').
+var_in('Kit:t1', 'Kit.iter\'').
 in_function('Kit:8:c2', 'Kit.iter\'').
 call_indirect('Kit:8:c2', 'Kit:iter/1').
 argument('Kit:8:c2', 1, 'Kit:f/2').
@@ -24,33 +40,60 @@ in_function('Kit:8:c3', 'Kit.iter\'').
 call_indirect('Kit:8:c3', 'Kit:t1').
 argument('Kit:8:c3', 1, 'Kit:rest/5').
 call_ret('Kit:8:c3', 'Kit.iter\':ret').
+global_def('Kit.iter', 'Kit:init').
+global_var('Kit.iter').
+var_in('Kit.iter', 'Kit:init').
 assign('Kit.iter', 'Kit:iter/1').
+var_in('Kit:fold/6', 'Kit:init').
 closure('Kit.fold', 'Kit', '10').
+alloc_in('Kit.fold', 'Kit').
 assign_address('Kit:fold/6', 'Kit.fold').
 parameter('Kit.fold', 1, 'Kit.fold:arg').
 return('Kit.fold', 'Kit.fold:ret').
+var_in('Kit.fold:arg', 'Kit.fold').
+var_in('Kit.fold:ret', 'Kit.fold').
 inner('Kit.fold\'', 'Kit.fold').
+curried('Kit.fold\'', 'Kit.fold').
+var_in('Kit:f/7', 'Kit.fold').
 assign('Kit:f/7', 'Kit.fold:arg').
 closure('Kit.fold\'', 'Kit', '10').
+alloc_in('Kit.fold\'', 'Kit').
 assign_address('Kit.fold:ret', 'Kit.fold\'').
 parameter('Kit.fold\'', 1, 'Kit.fold\':arg').
 return('Kit.fold\'', 'Kit.fold\':ret').
+var_in('Kit.fold\':arg', 'Kit.fold\'').
+var_in('Kit.fold\':ret', 'Kit.fold\'').
 inner('Kit.fold\'\'', 'Kit.fold\'').
+curried('Kit.fold\'\'', 'Kit.fold\'').
+var_in('Kit:acc/8', 'Kit.fold\'').
 assign('Kit:acc/8', 'Kit.fold\':arg').
 closure('Kit.fold\'\'', 'Kit', '10').
+alloc_in('Kit.fold\'\'', 'Kit').
 assign_address('Kit.fold\':ret', 'Kit.fold\'\'').
 parameter('Kit.fold\'\'', 1, 'Kit.fold\'\':arg').
 return('Kit.fold\'\'', 'Kit.fold\'\':ret').
+var_in('Kit.fold\'\':arg', 'Kit.fold\'\'').
+var_in('Kit.fold\'\':ret', 'Kit.fold\'\'').
+var_in('Kit:xs/9', 'Kit.fold\'\'').
 assign('Kit:xs/9', 'Kit.fold\'\':arg').
+var_in('Kit:acc/8', 'Kit.fold\'\'').
 assign('Kit.fold\'\':ret', 'Kit:acc/8').
+var_in('Kit:x/10', 'Kit.fold\'\'').
 assign_load_field('Kit:x/10', 'Kit:xs/9', 'con:::.0').
+var_in('Kit:rest/11', 'Kit.fold\'\'').
 assign_load_field('Kit:rest/11', 'Kit:xs/9', 'con:::.1').
+var_in('Kit:fold/6', 'Kit.fold\'\'').
+var_in('Kit:t2', 'Kit.fold\'\'').
 in_function('Kit:11:c4', 'Kit.fold\'\'').
 call_indirect('Kit:11:c4', 'Kit:fold/6').
+var_in('Kit:f/7', 'Kit.fold\'\'').
 argument('Kit:11:c4', 1, 'Kit:f/7').
 call_ret('Kit:11:c4', 'Kit:t2').
+var_in('Kit:t3', 'Kit.fold\'\'').
 in_function('Kit:11:c5', 'Kit.fold\'\'').
 call_indirect('Kit:11:c5', 'Kit:t2').
+var_in('Kit:t4', 'Kit.fold\'\'').
+var_in('Kit:t5', 'Kit.fold\'\'').
 in_function('Kit:11:c6', 'Kit.fold\'\'').
 call_indirect('Kit:11:c6', 'Kit:f/7').
 argument('Kit:11:c6', 1, 'Kit:acc/8').
@@ -65,53 +108,100 @@ in_function('Kit:11:c8', 'Kit.fold\'\'').
 call_indirect('Kit:11:c8', 'Kit:t3').
 argument('Kit:11:c8', 1, 'Kit:rest/11').
 call_ret('Kit:11:c8', 'Kit.fold\'\':ret').
+global_def('Kit.fold', 'Kit:init').
+global_var('Kit.fold').
+var_in('Kit.fold', 'Kit:init').
 assign('Kit.fold', 'Kit:fold/6').
+var_in('Kit:double/13', 'Kit:init').
 closure('Kit.double', 'Kit', '13').
+alloc_in('Kit.double', 'Kit').
 assign_address('Kit:double/13', 'Kit.double').
 parameter('Kit.double', 1, 'Kit.double:arg').
 return('Kit.double', 'Kit.double:ret').
+var_in('Kit.double:arg', 'Kit.double').
+var_in('Kit.double:ret', 'Kit.double').
+var_in('Kit:x/12', 'Kit.double').
 assign('Kit:x/12', 'Kit.double:arg').
+var_in('Kit:t6', 'Kit.double').
 parameter('prim:%mulint', 1, 'prim:%mulint:arg1').
+var_in('prim:%mulint:arg1', 'prim:%mulint').
 return('prim:%mulint', 'prim:%mulint:ret1').
+var_in('prim:%mulint:ret1', 'prim:%mulint').
 assign_address('prim:%mulint:ret1', 'prim:%mulint\'2').
+curried('prim:%mulint\'2', 'prim:%mulint').
 parameter('prim:%mulint\'2', 1, 'prim:%mulint:arg2').
+var_in('prim:%mulint:arg2', 'prim:%mulint\'2').
 return('prim:%mulint\'2', 'prim:%mulint:ret').
+var_in('prim:%mulint:ret', 'prim:%mulint\'2').
+scalar('ext').
+scalar('prim:%mulint:ret').
 assign_address('Kit:t6', 'prim:%mulint').
+var_in('Kit:t7', 'Kit.double').
 in_function('Kit:13:c9', 'Kit.double').
 call_indirect('Kit:13:c9', 'Kit:t6').
 argument('Kit:13:c9', 1, 'Kit:x/12').
 call_ret('Kit:13:c9', 'Kit:t7').
 in_function('Kit:13:c10', 'Kit.double').
 call_indirect('Kit:13:c10', 'Kit:t7').
-argument('Kit:13:c10', 1, 'Kit:_').
+global_var('Kit:const').
+var_in('Kit:const', 'Kit.double').
+scalar('Kit:const').
+argument('Kit:13:c10', 1, 'Kit:const').
 call_ret('Kit:13:c10', 'Kit.double:ret').
+global_def('Kit.double', 'Kit:init').
+global_var('Kit.double').
+var_in('Kit.double', 'Kit:init').
 assign('Kit.double', 'Kit:double/13').
+var_in('Kit:negate/15', 'Kit:init').
 closure('Kit.negate', 'Kit', '14').
+alloc_in('Kit.negate', 'Kit').
 assign_address('Kit:negate/15', 'Kit.negate').
 parameter('Kit.negate', 1, 'Kit.negate:arg').
 return('Kit.negate', 'Kit.negate:ret').
+var_in('Kit.negate:arg', 'Kit.negate').
+var_in('Kit.negate:ret', 'Kit.negate').
+var_in('Kit:x/14', 'Kit.negate').
 assign('Kit:x/14', 'Kit.negate:arg').
+var_in('Kit:t8', 'Kit.negate').
 parameter('prim:%subint', 1, 'prim:%subint:arg1').
+var_in('prim:%subint:arg1', 'prim:%subint').
 return('prim:%subint', 'prim:%subint:ret1').
+var_in('prim:%subint:ret1', 'prim:%subint').
 assign_address('prim:%subint:ret1', 'prim:%subint\'2').
+curried('prim:%subint\'2', 'prim:%subint').
 parameter('prim:%subint\'2', 1, 'prim:%subint:arg2').
+var_in('prim:%subint:arg2', 'prim:%subint\'2').
 return('prim:%subint\'2', 'prim:%subint:ret').
+var_in('prim:%subint:ret', 'prim:%subint\'2').
+scalar('prim:%subint:ret').
 assign_address('Kit:t8', 'prim:%subint').
+var_in('Kit:t9', 'Kit.negate').
 in_function('Kit:14:c11', 'Kit.negate').
 call_indirect('Kit:14:c11', 'Kit:t8').
-argument('Kit:14:c11', 1, 'Kit:_').
+var_in('Kit:const', 'Kit.negate').
+argument('Kit:14:c11', 1, 'Kit:const').
 call_ret('Kit:14:c11', 'Kit:t9').
 in_function('Kit:14:c12', 'Kit.negate').
 call_indirect('Kit:14:c12', 'Kit:t9').
 argument('Kit:14:c12', 1, 'Kit:x/14').
 call_ret('Kit:14:c12', 'Kit.negate:ret').
+global_def('Kit.negate', 'Kit:init').
+global_var('Kit.negate').
+var_in('Kit.negate', 'Kit:init').
 assign('Kit.negate', 'Kit:negate/15').
+var_in('Kit:square/17', 'Kit:init').
 closure('Kit.square', 'Kit', '15').
+alloc_in('Kit.square', 'Kit').
 assign_address('Kit:square/17', 'Kit.square').
 parameter('Kit.square', 1, 'Kit.square:arg').
 return('Kit.square', 'Kit.square:ret').
+var_in('Kit.square:arg', 'Kit.square').
+var_in('Kit.square:ret', 'Kit.square').
+var_in('Kit:x/16', 'Kit.square').
 assign('Kit:x/16', 'Kit.square:arg').
+var_in('Kit:t10', 'Kit.square').
 assign_address('Kit:t10', 'prim:%mulint').
+var_in('Kit:t11', 'Kit.square').
 in_function('Kit:15:c13', 'Kit.square').
 call_indirect('Kit:15:c13', 'Kit:t10').
 argument('Kit:15:c13', 1, 'Kit:x/16').
@@ -120,42 +210,77 @@ in_function('Kit:15:c14', 'Kit.square').
 call_indirect('Kit:15:c14', 'Kit:t11').
 argument('Kit:15:c14', 1, 'Kit:x/16').
 call_ret('Kit:15:c14', 'Kit.square:ret').
+global_def('Kit.square', 'Kit:init').
+global_var('Kit.square').
+var_in('Kit.square', 'Kit:init').
 assign('Kit.square', 'Kit:square/17').
+var_in('Kit:add/20', 'Kit:init').
 closure('Kit.add', 'Kit', '16').
+alloc_in('Kit.add', 'Kit').
 assign_address('Kit:add/20', 'Kit.add').
 parameter('Kit.add', 1, 'Kit.add:arg').
 return('Kit.add', 'Kit.add:ret').
+var_in('Kit.add:arg', 'Kit.add').
+var_in('Kit.add:ret', 'Kit.add').
 inner('Kit.add\'', 'Kit.add').
+curried('Kit.add\'', 'Kit.add').
+var_in('Kit:a/18', 'Kit.add').
 assign('Kit:a/18', 'Kit.add:arg').
 closure('Kit.add\'', 'Kit', '16').
+alloc_in('Kit.add\'', 'Kit').
 assign_address('Kit.add:ret', 'Kit.add\'').
 parameter('Kit.add\'', 1, 'Kit.add\':arg').
 return('Kit.add\'', 'Kit.add\':ret').
+var_in('Kit.add\':arg', 'Kit.add\'').
+var_in('Kit.add\':ret', 'Kit.add\'').
+var_in('Kit:b/19', 'Kit.add\'').
 assign('Kit:b/19', 'Kit.add\':arg').
+var_in('Kit:t12', 'Kit.add\'').
 parameter('prim:%addint', 1, 'prim:%addint:arg1').
+var_in('prim:%addint:arg1', 'prim:%addint').
 return('prim:%addint', 'prim:%addint:ret1').
+var_in('prim:%addint:ret1', 'prim:%addint').
 assign_address('prim:%addint:ret1', 'prim:%addint\'2').
+curried('prim:%addint\'2', 'prim:%addint').
 parameter('prim:%addint\'2', 1, 'prim:%addint:arg2').
+var_in('prim:%addint:arg2', 'prim:%addint\'2').
 return('prim:%addint\'2', 'prim:%addint:ret').
+var_in('prim:%addint:ret', 'prim:%addint\'2').
+scalar('prim:%addint:ret').
 assign_address('Kit:t12', 'prim:%addint').
+var_in('Kit:t13', 'Kit.add\'').
 in_function('Kit:16:c15', 'Kit.add\'').
 call_indirect('Kit:16:c15', 'Kit:t12').
+var_in('Kit:a/18', 'Kit.add\'').
 argument('Kit:16:c15', 1, 'Kit:a/18').
 call_ret('Kit:16:c15', 'Kit:t13').
 in_function('Kit:16:c16', 'Kit.add\'').
 call_indirect('Kit:16:c16', 'Kit:t13').
 argument('Kit:16:c16', 1, 'Kit:b/19').
 call_ret('Kit:16:c16', 'Kit.add\':ret').
+global_def('Kit.add', 'Kit:init').
+global_var('Kit.add').
+var_in('Kit.add', 'Kit:init').
 assign('Kit.add', 'Kit:add/20').
+var_in('Kit:cube/22', 'Kit:init').
 closure('Kit.cube', 'Kit', '19').
+alloc_in('Kit.cube', 'Kit').
 assign_address('Kit:cube/22', 'Kit.cube').
 parameter('Kit.cube', 1, 'Kit.cube:arg').
 return('Kit.cube', 'Kit.cube:ret').
+var_in('Kit.cube:arg', 'Kit.cube').
+var_in('Kit.cube:ret', 'Kit.cube').
+var_in('Kit:x/21', 'Kit.cube').
 assign('Kit:x/21', 'Kit.cube:arg').
+var_in('Kit:t14', 'Kit.cube').
 assign_address('Kit:t14', 'prim:%mulint').
+var_in('Kit:t15', 'Kit.cube').
 in_function('Kit:19:c17', 'Kit.cube').
 call_indirect('Kit:19:c17', 'Kit:t14').
+var_in('Kit:t16', 'Kit.cube').
+var_in('Kit:t17', 'Kit.cube').
 assign_address('Kit:t17', 'prim:%mulint').
+var_in('Kit:t18', 'Kit.cube').
 in_function('Kit:19:c18', 'Kit.cube').
 call_indirect('Kit:19:c18', 'Kit:t17').
 argument('Kit:19:c18', 1, 'Kit:x/21').
@@ -170,150 +295,292 @@ in_function('Kit:19:c20', 'Kit.cube').
 call_indirect('Kit:19:c20', 'Kit:t15').
 argument('Kit:19:c20', 1, 'Kit:x/21').
 call_ret('Kit:19:c20', 'Kit.cube:ret').
+global_def('Kit.cube', 'Kit:init').
+global_var('Kit.cube').
+var_in('Kit.cube', 'Kit:init').
 assign('Kit.cube', 'Kit:cube/22').
+var_in('Kit:helper/24', 'Kit:init').
 closure('Kit.helper', 'Kit', '22').
+alloc_in('Kit.helper', 'Kit').
 assign_address('Kit:helper/24', 'Kit.helper').
 parameter('Kit.helper', 1, 'Kit.helper:arg').
 return('Kit.helper', 'Kit.helper:ret').
+var_in('Kit.helper:arg', 'Kit.helper').
+var_in('Kit.helper:ret', 'Kit.helper').
+var_in('Kit:x/23', 'Kit.helper').
 assign('Kit:x/23', 'Kit.helper:arg').
+var_in('Kit:t19', 'Kit.helper').
 assign_address('Kit:t19', 'prim:%addint').
+var_in('Kit:t20', 'Kit.helper').
 in_function('Kit:22:c21', 'Kit.helper').
 call_indirect('Kit:22:c21', 'Kit:t19').
 argument('Kit:22:c21', 1, 'Kit:x/23').
 call_ret('Kit:22:c21', 'Kit:t20').
 in_function('Kit:22:c22', 'Kit.helper').
 call_indirect('Kit:22:c22', 'Kit:t20').
-argument('Kit:22:c22', 1, 'Kit:_').
+var_in('Kit:const', 'Kit.helper').
+argument('Kit:22:c22', 1, 'Kit:const').
 call_ret('Kit:22:c22', 'Kit.helper:ret').
+global_def('Kit.helper', 'Kit:init').
+global_var('Kit.helper').
+var_in('Kit.helper', 'Kit:init').
 assign('Kit.helper', 'Kit:helper/24').
+var_in('Kit:dead/26', 'Kit:init').
 closure('Kit.dead', 'Kit', '23').
+alloc_in('Kit.dead', 'Kit').
 assign_address('Kit:dead/26', 'Kit.dead').
 parameter('Kit.dead', 1, 'Kit.dead:arg').
 return('Kit.dead', 'Kit.dead:ret').
+var_in('Kit.dead:arg', 'Kit.dead').
+var_in('Kit.dead:ret', 'Kit.dead').
+var_in('Kit:x/25', 'Kit.dead').
 assign('Kit:x/25', 'Kit.dead:arg').
+var_in('Kit.helper', 'Kit.dead').
 in_function('Kit:23:c23', 'Kit.dead').
 call_indirect('Kit:23:c23', 'Kit.helper').
+var_in('Kit:t21', 'Kit.dead').
 in_function('Kit:23:c24', 'Kit.dead').
 call_indirect('Kit:23:c24', 'Kit.helper').
 argument('Kit:23:c24', 1, 'Kit:x/25').
 call_ret('Kit:23:c24', 'Kit:t21').
 argument('Kit:23:c23', 1, 'Kit:t21').
 call_ret('Kit:23:c23', 'Kit.dead:ret').
+global_def('Kit.dead', 'Kit:init').
+global_var('Kit.dead').
+var_in('Kit.dead', 'Kit:init').
 assign('Kit.dead', 'Kit:dead/26').
+var_in('Kit:scale/29', 'Kit:init').
 closure('Kit.scale', 'Kit', '26').
+alloc_in('Kit.scale', 'Kit').
 assign_address('Kit:scale/29', 'Kit.scale').
 parameter('Kit.scale', 1, 'Kit.scale:arg').
 return('Kit.scale', 'Kit.scale:ret').
+var_in('Kit.scale:arg', 'Kit.scale').
+var_in('Kit.scale:ret', 'Kit.scale').
 inner('Kit.scale\'', 'Kit.scale').
+curried('Kit.scale\'', 'Kit.scale').
+var_in('Kit:k/27', 'Kit.scale').
 assign('Kit:k/27', 'Kit.scale:arg').
 closure('Kit.scale\'', 'Kit', '26').
+alloc_in('Kit.scale\'', 'Kit').
 assign_address('Kit.scale:ret', 'Kit.scale\'').
 parameter('Kit.scale\'', 1, 'Kit.scale\':arg').
 return('Kit.scale\'', 'Kit.scale\':ret').
+var_in('Kit.scale\':arg', 'Kit.scale\'').
+var_in('Kit.scale\':ret', 'Kit.scale\'').
+var_in('Kit:x/28', 'Kit.scale\'').
 assign('Kit:x/28', 'Kit.scale\':arg').
+var_in('Kit:t22', 'Kit.scale\'').
 assign_address('Kit:t22', 'prim:%mulint').
+var_in('Kit:t23', 'Kit.scale\'').
 in_function('Kit:26:c25', 'Kit.scale\'').
 call_indirect('Kit:26:c25', 'Kit:t22').
+var_in('Kit:k/27', 'Kit.scale\'').
 argument('Kit:26:c25', 1, 'Kit:k/27').
 call_ret('Kit:26:c25', 'Kit:t23').
 in_function('Kit:26:c26', 'Kit.scale\'').
 call_indirect('Kit:26:c26', 'Kit:t23').
 argument('Kit:26:c26', 1, 'Kit:x/28').
 call_ret('Kit:26:c26', 'Kit.scale\':ret').
+global_def('Kit.scale', 'Kit:init').
+global_var('Kit.scale').
+var_in('Kit.scale', 'Kit:init').
 assign('Kit.scale', 'Kit:scale/29').
-assign_store_field('Kit:t24', 'fld:name', 'Kit:_').
+var_in('Kit:handlers/31', 'Kit:init').
+new_block('Kit:handlers/31', 'Kit:block1@28').
+alloc_in('Kit:block1@28', 'Kit').
+var_in('Kit:t24', 'Kit:init').
+new_block('Kit:t24', 'Kit:block2@28').
+alloc_in('Kit:block2@28', 'Kit').
+var_in('Kit:const', 'Kit:init').
+assign_store_field('Kit:t24', 'fld:name', 'Kit:const').
 assign_store_field('Kit:t24', 'fld:run', 'Kit.double').
 assign_store_field('Kit:handlers/31', 'con:::.0', 'Kit:t24').
-assign_store_field('Kit:t26', 'fld:name', 'Kit:_').
+var_in('Kit:t25', 'Kit:init').
+new_block('Kit:t25', 'Kit:block3@28').
+alloc_in('Kit:block3@28', 'Kit').
+var_in('Kit:t26', 'Kit:init').
+new_block('Kit:t26', 'Kit:block4@28').
+alloc_in('Kit:block4@28', 'Kit').
+assign_store_field('Kit:t26', 'fld:name', 'Kit:const').
+var_in('Kit:t27', 'Kit:init').
 closure('Kit:fun1@28', 'Kit', '28').
+alloc_in('Kit:fun1@28', 'Kit').
 assign_address('Kit:t27', 'Kit:fun1@28').
 parameter('Kit:fun1@28', 1, 'Kit:fun1@28:arg').
 return('Kit:fun1@28', 'Kit:fun1@28:ret').
+var_in('Kit:fun1@28:arg', 'Kit:fun1@28').
+var_in('Kit:fun1@28:ret', 'Kit:fun1@28').
+var_in('Kit:x/30', 'Kit:fun1@28').
 assign('Kit:x/30', 'Kit:fun1@28:arg').
+var_in('Kit:t28', 'Kit:fun1@28').
 assign_address('Kit:t28', 'prim:%subint').
+var_in('Kit:t29', 'Kit:fun1@28').
 in_function('Kit:28:c27', 'Kit:fun1@28').
 call_indirect('Kit:28:c27', 'Kit:t28').
 argument('Kit:28:c27', 1, 'Kit:x/30').
 call_ret('Kit:28:c27', 'Kit:t29').
 in_function('Kit:28:c28', 'Kit:fun1@28').
 call_indirect('Kit:28:c28', 'Kit:t29').
-argument('Kit:28:c28', 1, 'Kit:_').
+var_in('Kit:const', 'Kit:fun1@28').
+argument('Kit:28:c28', 1, 'Kit:const').
 call_ret('Kit:28:c28', 'Kit:fun1@28:ret').
 assign_store_field('Kit:t26', 'fld:run', 'Kit:t27').
 assign_store_field('Kit:t25', 'con:::.0', 'Kit:t26').
+var_in('Kit:t30', 'Kit:init').
+scalar('Kit:t30').
 assign_store_field('Kit:t25', 'con:::.1', 'Kit:t30').
 assign_store_field('Kit:handlers/31', 'con:::.1', 'Kit:t25').
+global_def('Kit.handlers', 'Kit:init').
+global_var('Kit.handlers').
+var_in('Kit.handlers', 'Kit:init').
 assign('Kit.handlers', 'Kit:handlers/31').
+var_in('Kit:current/32', 'Kit:init').
+var_in('Kit:t31', 'Kit:init').
 parameter('prim:%makemutable', 1, 'prim:%makemutable:arg1').
+var_in('prim:%makemutable:arg1', 'prim:%makemutable').
 return('prim:%makemutable', 'prim:%makemutable:ret').
+var_in('prim:%makemutable:ret', 'prim:%makemutable').
+scalar('prim:%makemutable:ret').
+new_block('prim:%makemutable:ret', 'prim:%makemutable:block').
 assign_store_field('prim:%makemutable:ret', 'fld:contents', 'prim:%makemutable:arg1').
 assign_address('Kit:t31', 'prim:%makemutable').
 in_function('Kit:29:c29', 'Kit:init').
 call_indirect('Kit:29:c29', 'Kit:t31').
 argument('Kit:29:c29', 1, 'Kit.negate').
 call_ret('Kit:29:c29', 'Kit:current/32').
+global_def('Kit.current', 'Kit:init').
+global_var('Kit.current').
+var_in('Kit.current', 'Kit:init').
 assign('Kit.current', 'Kit:current/32').
+var_in('Kit:last/34', 'Kit:init').
 closure('Kit.last', 'Kit', '30').
+alloc_in('Kit.last', 'Kit').
 assign_address('Kit:last/34', 'Kit.last').
 parameter('Kit.last', 1, 'Kit.last:arg').
 return('Kit.last', 'Kit.last:ret').
+var_in('Kit.last:arg', 'Kit.last').
+var_in('Kit.last:ret', 'Kit.last').
+var_in('Kit:x/33', 'Kit.last').
 assign('Kit:x/33', 'Kit.last:arg').
+var_in('Kit:t32', 'Kit.last').
 parameter('prim:%raise', 1, 'prim:%raise:arg1').
+var_in('prim:%raise:arg1', 'prim:%raise').
 return('prim:%raise', 'prim:%raise:ret').
+var_in('prim:%raise:ret', 'prim:%raise').
+scalar('prim:%raise:ret').
+global_var('ext').
+var_in('ext', 'prim:%raise').
 assign('ext', 'prim:%raise:arg1').
 assign('prim:%raise:ret', 'ext').
 assign_address('Kit:t32', 'prim:%raise').
 in_function('Kit:30:c30', 'Kit.last').
 call_indirect('Kit:30:c30', 'Kit:t32').
+var_in('Kit:t33', 'Kit.last').
+new_block('Kit:t33', 'Kit:block5@30').
+alloc_in('Kit:block5@30', 'Kit').
+var_in('Kit.square', 'Kit.last').
 assign_store_field('Kit:t33', 'con:Stop.0', 'Kit.square').
 argument('Kit:30:c30', 1, 'Kit:t33').
 call_ret('Kit:30:c30', 'Kit.last:ret').
+global_def('Kit.last', 'Kit:init').
+global_var('Kit.last').
+var_in('Kit.last', 'Kit:init').
 assign('Kit.last', 'Kit:last/34').
 init('Use:init').
+var_in('Use:total/1', 'Use:init').
+var_in('Use:t1', 'Use:init').
 parameter('prim:%makemutable', 1, 'prim:%makemutable:arg1').
+var_in('prim:%makemutable:arg1', 'prim:%makemutable').
 return('prim:%makemutable', 'prim:%makemutable:ret').
+var_in('prim:%makemutable:ret', 'prim:%makemutable').
+scalar('ext').
+scalar('prim:%makemutable:ret').
+new_block('prim:%makemutable:ret', 'prim:%makemutable:block').
 assign_store_field('prim:%makemutable:ret', 'fld:contents', 'prim:%makemutable:arg1').
 assign_address('Use:t1', 'prim:%makemutable').
 in_function('Use:2:c1', 'Use:init').
 call_indirect('Use:2:c1', 'Use:t1').
-argument('Use:2:c1', 1, 'Use:_').
+global_var('Use:const').
+var_in('Use:const', 'Use:init').
+scalar('Use:const').
+argument('Use:2:c1', 1, 'Use:const').
 call_ret('Use:2:c1', 'Use:total/1').
+global_def('Use.total', 'Use:init').
+global_var('Use.total').
+var_in('Use.total', 'Use:init').
 assign('Use.total', 'Use:total/1').
+var_in('Use:run_all/7', 'Use:init').
 closure('Use.run_all', 'Use', '4').
+alloc_in('Use.run_all', 'Use').
 assign_address('Use:run_all/7', 'Use.run_all').
 parameter('Use.run_all', 1, 'Use.run_all:arg').
 return('Use.run_all', 'Use.run_all:ret').
+var_in('Use.run_all:arg', 'Use.run_all').
+var_in('Use.run_all:ret', 'Use.run_all').
+var_in('Use:x/2', 'Use.run_all').
 assign('Use:x/2', 'Use.run_all:arg').
+var_in('Use:go/3', 'Use.run_all').
 closure('Use:go/3', 'Use', '5').
+alloc_in('Use:go/3', 'Use').
 assign_address('Use:go/3', 'Use:go/3').
 parameter('Use:go/3', 1, 'Use:go/3:arg').
 return('Use:go/3', 'Use:go/3:ret').
+var_in('Use:go/3:arg', 'Use:go/3').
+var_in('Use:go/3:ret', 'Use:go/3').
+var_in('Use:hs/4', 'Use:go/3').
 assign('Use:hs/4', 'Use:go/3:arg').
+scalar('Use:go/3:ret').
+var_in('Use:h/5', 'Use:go/3').
 assign_load_field('Use:h/5', 'Use:hs/4', 'con:::.0').
+var_in('Use:rest/6', 'Use:go/3').
 assign_load_field('Use:rest/6', 'Use:hs/4', 'con:::.1').
+var_in('Use:t2', 'Use:go/3').
 parameter('prim:%setfield0', 1, 'prim:%setfield0:arg1').
+var_in('prim:%setfield0:arg1', 'prim:%setfield0').
 return('prim:%setfield0', 'prim:%setfield0:ret1').
+var_in('prim:%setfield0:ret1', 'prim:%setfield0').
 assign_address('prim:%setfield0:ret1', 'prim:%setfield0\'2').
+curried('prim:%setfield0\'2', 'prim:%setfield0').
 parameter('prim:%setfield0\'2', 1, 'prim:%setfield0:arg2').
+var_in('prim:%setfield0:arg2', 'prim:%setfield0\'2').
 return('prim:%setfield0\'2', 'prim:%setfield0:ret').
+var_in('prim:%setfield0:ret', 'prim:%setfield0\'2').
+scalar('prim:%setfield0:ret').
 assign_store_field('prim:%setfield0:arg1', 'fld:contents', 'prim:%setfield0:arg2').
 assign_address('Use:t2', 'prim:%setfield0').
+var_in('Use:t3', 'Use:go/3').
 in_function('Use:6:c2', 'Use:go/3').
 call_indirect('Use:6:c2', 'Use:t2').
+var_in('Use.total', 'Use:go/3').
 argument('Use:6:c2', 1, 'Use.total').
 call_ret('Use:6:c2', 'Use:t3').
 in_function('Use:6:c3', 'Use:go/3').
 call_indirect('Use:6:c3', 'Use:t3').
+var_in('Use:t4', 'Use:go/3').
+var_in('Use:t5', 'Use:go/3').
 parameter('prim:%addint', 1, 'prim:%addint:arg1').
+var_in('prim:%addint:arg1', 'prim:%addint').
 return('prim:%addint', 'prim:%addint:ret1').
+var_in('prim:%addint:ret1', 'prim:%addint').
 assign_address('prim:%addint:ret1', 'prim:%addint\'2').
+curried('prim:%addint\'2', 'prim:%addint').
 parameter('prim:%addint\'2', 1, 'prim:%addint:arg2').
+var_in('prim:%addint:arg2', 'prim:%addint\'2').
 return('prim:%addint\'2', 'prim:%addint:ret').
+var_in('prim:%addint:ret', 'prim:%addint\'2').
+scalar('prim:%addint:ret').
 assign_address('Use:t5', 'prim:%addint').
+var_in('Use:t6', 'Use:go/3').
 in_function('Use:6:c4', 'Use:go/3').
 call_indirect('Use:6:c4', 'Use:t5').
+var_in('Use:t7', 'Use:go/3').
+var_in('Use:t8', 'Use:go/3').
 parameter('prim:%field0', 1, 'prim:%field0:arg1').
+var_in('prim:%field0:arg1', 'prim:%field0').
 return('prim:%field0', 'prim:%field0:ret').
+var_in('prim:%field0:ret', 'prim:%field0').
+scalar('prim:%field0:ret').
 assign_load_field('prim:%field0:ret', 'prim:%field0:arg1', 'fld:contents').
 assign_load_field('prim:%field0:ret', 'prim:%field0:arg1', 'tuple:2.0').
 assign_address('Use:t8', 'prim:%field0').
@@ -325,45 +592,71 @@ argument('Use:6:c4', 1, 'Use:t7').
 call_ret('Use:6:c4', 'Use:t6').
 in_function('Use:6:c6', 'Use:go/3').
 call_indirect('Use:6:c6', 'Use:t6').
+var_in('Use:t9', 'Use:go/3').
+var_in('Use:t10', 'Use:go/3').
 assign_load_field('Use:t10', 'Use:h/5', 'fld:run').
 in_function('Use:6:c7', 'Use:go/3').
 call_indirect('Use:6:c7', 'Use:t10').
+var_in('Use:x/2', 'Use:go/3').
 argument('Use:6:c7', 1, 'Use:x/2').
 call_ret('Use:6:c7', 'Use:t9').
 argument('Use:6:c6', 1, 'Use:t9').
 call_ret('Use:6:c6', 'Use:t4').
 argument('Use:6:c3', 1, 'Use:t4').
 call_ret('Use:6:c3', 'Use:_').
+var_in('Use:go/3', 'Use:go/3').
 in_function('Use:6:c8', 'Use:go/3').
 call_indirect('Use:6:c8', 'Use:go/3').
 argument('Use:6:c8', 1, 'Use:rest/6').
 call_ret('Use:6:c8', 'Use:go/3:ret').
 in_function('Use:7:c9', 'Use.run_all').
 call_indirect('Use:7:c9', 'Use:go/3').
+global_var('Kit.handlers').
+var_in('Kit.handlers', 'Use.run_all').
 argument('Use:7:c9', 1, 'Kit.handlers').
 call_ret('Use:7:c9', 'Use.run_all:ret').
+global_def('Use.run_all', 'Use:init').
+global_var('Use.run_all').
+var_in('Use.run_all', 'Use:init').
 assign('Use.run_all', 'Use:run_all/7').
+var_in('Use:t11', 'Use:init').
 in_function('Use:10:c10', 'Use:init').
 call_indirect('Use:10:c10', 'Use.run_all').
-argument('Use:10:c10', 1, 'Use:_').
+argument('Use:10:c10', 1, 'Use:const').
 call_ret('Use:10:c10', 'Use:_').
+global_var('Kit.iter').
+var_in('Kit.iter', 'Use:init').
+var_in('Use:t12', 'Use:init').
 in_function('Use:11:c11', 'Use:init').
 call_indirect('Use:11:c11', 'Kit.iter').
+var_in('Use:t13', 'Use:init').
 closure('Use:fun1@11', 'Use', '11').
+alloc_in('Use:fun1@11', 'Use').
 assign_address('Use:t13', 'Use:fun1@11').
 parameter('Use:fun1@11', 1, 'Use:fun1@11:arg').
 return('Use:fun1@11', 'Use:fun1@11:ret').
+var_in('Use:fun1@11:arg', 'Use:fun1@11').
+var_in('Use:fun1@11:ret', 'Use:fun1@11').
+var_in('Use:x/10', 'Use:fun1@11').
 assign('Use:x/10', 'Use:fun1@11:arg').
+var_in('Use:t14', 'Use:fun1@11').
 assign_address('Use:t14', 'prim:%setfield0').
+var_in('Use:t15', 'Use:fun1@11').
 in_function('Use:11:c12', 'Use:fun1@11').
 call_indirect('Use:11:c12', 'Use:t14').
+var_in('Use.total', 'Use:fun1@11').
 argument('Use:11:c12', 1, 'Use.total').
 call_ret('Use:11:c12', 'Use:t15').
 in_function('Use:11:c13', 'Use:fun1@11').
 call_indirect('Use:11:c13', 'Use:t15').
+var_in('Use:t16', 'Use:fun1@11').
+var_in('Use:t17', 'Use:fun1@11').
 assign_address('Use:t17', 'prim:%addint').
+var_in('Use:t18', 'Use:fun1@11').
 in_function('Use:11:c14', 'Use:fun1@11').
 call_indirect('Use:11:c14', 'Use:t17').
+var_in('Use:t19', 'Use:fun1@11').
+var_in('Use:t20', 'Use:fun1@11').
 assign_address('Use:t20', 'prim:%field0').
 in_function('Use:11:c15', 'Use:fun1@11').
 call_indirect('Use:11:c15', 'Use:t20').
@@ -373,9 +666,14 @@ argument('Use:11:c14', 1, 'Use:t19').
 call_ret('Use:11:c14', 'Use:t18').
 in_function('Use:11:c16', 'Use:fun1@11').
 call_indirect('Use:11:c16', 'Use:t18').
+var_in('Use:t21', 'Use:fun1@11').
+var_in('Use:t22', 'Use:fun1@11').
+var_in('Use:t23', 'Use:fun1@11').
 assign_address('Use:t23', 'prim:%field0').
 in_function('Use:11:c17', 'Use:fun1@11').
 call_indirect('Use:11:c17', 'Use:t23').
+global_var('Kit.current').
+var_in('Kit.current', 'Use:fun1@11').
 argument('Use:11:c17', 1, 'Kit.current').
 call_ret('Use:11:c17', 'Use:t22').
 in_function('Use:11:c18', 'Use:fun1@11').
@@ -390,25 +688,44 @@ argument('Use:11:c11', 1, 'Use:t13').
 call_ret('Use:11:c11', 'Use:t12').
 in_function('Use:11:c19', 'Use:init').
 call_indirect('Use:11:c19', 'Use:t12').
-assign_store_field('Use:t24', 'con:::.0', 'Use:_').
-assign_store_field('Use:t25', 'con:::.0', 'Use:_').
+var_in('Use:t24', 'Use:init').
+new_block('Use:t24', 'Use:block1@11').
+alloc_in('Use:block1@11', 'Use').
+assign_store_field('Use:t24', 'con:::.0', 'Use:const').
+var_in('Use:t25', 'Use:init').
+new_block('Use:t25', 'Use:block2@11').
+alloc_in('Use:block2@11', 'Use').
+assign_store_field('Use:t25', 'con:::.0', 'Use:const').
+var_in('Use:t26', 'Use:init').
+scalar('Use:t26').
 assign_store_field('Use:t25', 'con:::.1', 'Use:t26').
 assign_store_field('Use:t24', 'con:::.1', 'Use:t25').
 argument('Use:11:c19', 1, 'Use:t24').
 call_ret('Use:11:c19', 'Use:_').
+var_in('Use:t27', 'Use:init').
 assign_address('Use:t27', 'prim:%setfield0').
+var_in('Use:t28', 'Use:init').
 in_function('Use:12:c20', 'Use:init').
 call_indirect('Use:12:c20', 'Use:t27').
 argument('Use:12:c20', 1, 'Use.total').
 call_ret('Use:12:c20', 'Use:t28').
 in_function('Use:12:c21', 'Use:init').
 call_indirect('Use:12:c21', 'Use:t28').
+var_in('Use:t29', 'Use:init').
+global_var('Kit.fold').
+var_in('Kit.fold', 'Use:init').
+var_in('Use:t30', 'Use:init').
 in_function('Use:12:c22', 'Use:init').
 call_indirect('Use:12:c22', 'Kit.fold').
+global_var('Kit.add').
+var_in('Kit.add', 'Use:init').
 argument('Use:12:c22', 1, 'Kit.add').
 call_ret('Use:12:c22', 'Use:t30').
+var_in('Use:t31', 'Use:init').
 in_function('Use:12:c23', 'Use:init').
 call_indirect('Use:12:c23', 'Use:t30').
+var_in('Use:t32', 'Use:init').
+var_in('Use:t33', 'Use:init').
 assign_address('Use:t33', 'prim:%field0').
 in_function('Use:12:c24', 'Use:init').
 call_indirect('Use:12:c24', 'Use:t33').
@@ -418,44 +735,71 @@ argument('Use:12:c23', 1, 'Use:t32').
 call_ret('Use:12:c23', 'Use:t31').
 in_function('Use:12:c25', 'Use:init').
 call_indirect('Use:12:c25', 'Use:t31').
-assign_store_field('Use:t34', 'con:::.0', 'Use:_').
-assign_store_field('Use:t35', 'con:::.0', 'Use:_').
+var_in('Use:t34', 'Use:init').
+new_block('Use:t34', 'Use:block3@12').
+alloc_in('Use:block3@12', 'Use').
+assign_store_field('Use:t34', 'con:::.0', 'Use:const').
+var_in('Use:t35', 'Use:init').
+new_block('Use:t35', 'Use:block4@12').
+alloc_in('Use:block4@12', 'Use').
+assign_store_field('Use:t35', 'con:::.0', 'Use:const').
+var_in('Use:t36', 'Use:init').
+scalar('Use:t36').
 assign_store_field('Use:t35', 'con:::.1', 'Use:t36').
 assign_store_field('Use:t34', 'con:::.1', 'Use:t35').
 argument('Use:12:c25', 1, 'Use:t34').
 call_ret('Use:12:c25', 'Use:t29').
 argument('Use:12:c21', 1, 'Use:t29').
 call_ret('Use:12:c21', 'Use:_').
+var_in('Use:half/8', 'Use:init').
+global_var('Kit.scale').
+var_in('Kit.scale', 'Use:init').
 in_function('Use:13:c26', 'Use:init').
 call_indirect('Use:13:c26', 'Kit.scale').
-argument('Use:13:c26', 1, 'Use:_').
+argument('Use:13:c26', 1, 'Use:const').
 call_ret('Use:13:c26', 'Use:half/8').
+var_in('Use:t37', 'Use:init').
 parameter('prim:%ignore', 1, 'prim:%ignore:arg1').
+var_in('prim:%ignore:arg1', 'prim:%ignore').
 return('prim:%ignore', 'prim:%ignore:ret').
+var_in('prim:%ignore:ret', 'prim:%ignore').
+scalar('prim:%ignore:ret').
 assign_address('Use:t37', 'prim:%ignore').
 in_function('Use:14:c27', 'Use:init').
 call_indirect('Use:14:c27', 'Use:t37').
 argument('Use:14:c27', 1, 'Use:half/8').
 call_ret('Use:14:c27', 'Use:_').
+var_in('Use:t38', 'Use:init').
 assign_address('Use:t38', 'prim:%ignore').
 in_function('Use:15:c28', 'Use:init').
 call_indirect('Use:15:c28', 'Use:t38').
+var_in('Use:t39', 'Use:init').
+global_var('Kit.last').
+var_in('Kit.last', 'Use:init').
 in_function('Use:15:c29', 'Use:init').
 call_indirect('Use:15:c29', 'Kit.last').
-argument('Use:15:c29', 1, 'Use:_').
+argument('Use:15:c29', 1, 'Use:const').
 call_ret('Use:15:c29', 'Use:t39').
 argument('Use:15:c28', 1, 'Use:t39').
 call_ret('Use:15:c28', 'Use:_').
+global_var('ext').
+var_in('ext', 'Use:init').
+var_in('Use:f/9', 'Use:init').
 assign_load_field('Use:f/9', 'ext', 'con:Stop.0').
+var_in('Use:t40', 'Use:init').
 assign_address('Use:t40', 'prim:%setfield0').
+var_in('Use:t41', 'Use:init').
 in_function('Use:15:c30', 'Use:init').
 call_indirect('Use:15:c30', 'Use:t40').
 argument('Use:15:c30', 1, 'Use.total').
 call_ret('Use:15:c30', 'Use:t41').
 in_function('Use:15:c31', 'Use:init').
 call_indirect('Use:15:c31', 'Use:t41').
+var_in('Use:t42', 'Use:init').
 in_function('Use:15:c32', 'Use:init').
 call_indirect('Use:15:c32', 'Use:f/9').
+var_in('Use:t43', 'Use:init').
+var_in('Use:t44', 'Use:init').
 assign_address('Use:t44', 'prim:%field0').
 in_function('Use:15:c33', 'Use:init').
 call_indirect('Use:15:c33', 'Use:t44').
@@ -465,8 +809,12 @@ argument('Use:15:c32', 1, 'Use:t43').
 call_ret('Use:15:c32', 'Use:t42').
 argument('Use:15:c31', 1, 'Use:t42').
 call_ret('Use:15:c31', 'Use:_').
+global_var('Pervasives.print_int').
+var_in('Pervasives.print_int', 'Use:init').
 in_function('Use:16:c34', 'Use:init').
 call_indirect('Use:16:c34', 'Pervasives.print_int').
+var_in('Use:t45', 'Use:init').
+var_in('Use:t46', 'Use:init').
 assign_address('Use:t46', 'prim:%field0').
 in_function('Use:16:c35', 'Use:init').
 call_indirect('Use:16:c35', 'Use:t46').

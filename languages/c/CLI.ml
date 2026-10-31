@@ -26,11 +26,11 @@ An error names the file and the line: hello.c:5: syntax error
 -facts: no object; the file as the facts of a pointer analysis (what is
 assigned to what, who calls whom: Facts.mli), for mini-datalog:
   mini-cc -m 7 -facts hello.c > hello.dl
-  mini-datalog -q 'call_edge(I, F)' languages/datalog/analyses/pointer.dl hello.dl
+  mini-datalog -q 'call_edge(I, F)' lib_code/datalog/pointer.dl hello.dl
 -flow: no object; each function's stack code as facts (who follows whom, the
 variables read and written: Ir_facts.mli), for liveness by mini-datalog:
   mini-cc -m 7 -flow hello.c > flow.dl
-  mini-datalog -q 'across_call(V, P)' languages/datalog/analyses/liveness.dl flow.dl
+  mini-datalog -q 'across_call(V, P)' lib_code/datalog/liveness.dl flow.dl
 -dflow: the compiler's own liveness (Opti's regs), as facts, to compare.
 -g: acid's declarations of the file's types in the object, for mini-ld -g.
 -a: no object; acid's declarations of the file's types on stdout, 5c's (Acid

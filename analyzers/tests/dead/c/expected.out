@@ -1,0 +1,10 @@
+dead global: unused_global, nothing live names it
+analyzers/tests/dead/c/dead.c:19: dead: orphan, in main but no call goes through the pointer
+analyzers/tests/dead/c/dead.c:22: dead: unused, nothing names it
+analyzers/tests/dead/c/dead.c:25: dead: onlybydead, named only by dead code: deadcaller
+analyzers/tests/dead/c/dead.c:26: dead: deadcaller, nothing names it
+analyzers/tests/dead/c/dead.c:28: dead: pong, named only by dead code: ping
+analyzers/tests/dead/c/dead.c:29: dead: ping, named only by dead code: pong
+analyzers/tests/dead/c/dead.c:43: dead code: in jumps, after a jump
+analyzers/tests/dead/c/dead.c:54: dead field: neverread stored in main, nothing live reads it
+6 functions dead (2 nothing names), 3 only through a pointer; 1 globals, 1 fields, 0 constructors, 1 statements

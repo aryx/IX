@@ -1,0 +1,5 @@
+% 1-call-site (1-CFA): a call runs in the context of the place it is
+% called from. Sees through one wrapper; an object has no context, so
+% each call's own malloc in one function is one object.
+callee(I, C1, C2, F, I, none) :- fresh(I, C1, C2, F, _, _).
+pt(V, C1, C2, H, none, none) :- new_site(V, H, C1, C2).

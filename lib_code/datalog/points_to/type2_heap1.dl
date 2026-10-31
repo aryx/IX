@@ -1,0 +1,14 @@
+% 2-type+1-heap (Smaragdakis, Bravenboer, Lhotak, 2011): 2-object with
+% an object replaced by what contains its allocation, here its function
+% for C, its unit for ML (no types in the facts yet): far fewer contexts,
+% for most of the precision. All the objects of one place are one
+% context, so the first parameter holds those of that place only.
+filtered(I) :- has_object(I).
+callee(I, C1, C2, F, T, O1) :-
+  passed(I, 1, C1, C2, O, O1, _), has_object(I), place_of(O, T),
+  fresh(I, C1, C2, F, _, _).
+callee(I, C1, C2, F, C1, C2) :- fresh(I, C1, C2, F, _, _), \+ has_object(I).
+pt(P, T, O1, O, O1, O2) :-
+  passed(I, 1, C1, C2, O, O1, O2), filtered(I), place_of(O, T),
+  callee(I, C1, C2, F, T, O1), parameter(F, 1, P).
+pt(V, C1, C2, H, C1, none) :- new_site(V, H, C1, C2).

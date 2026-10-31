@@ -1,0 +1,4 @@
+% 1-call-site+1-heap: an object is also known by the call that made it:
+% a malloc wrapper's two callers have two objects.
+callee(I, C1, C2, F, I, none) :- fresh(I, C1, C2, F, _, _).
+pt(V, C1, C2, H, C1, none) :- new_site(V, H, C1, C2).

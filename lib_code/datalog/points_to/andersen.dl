@@ -1,0 +1,71 @@
+% Andersen's analysis (1994), by allocation site and with fields by
+% object, the base the others are measured against. Run with
+% instructions.dl:
+%   pt(V, H)         the variable V may point to the object H
+%   fpt(O, F, L)     the field F of the object O may point to L
+%   call_edge(I, F)  the call I may reach the function F
+%
+% Each statement is an inclusion: p = q says that what q points to, p
+% points to. Nothing says the order of statements (flow-insensitive),
+% and a function is analysed once for all its callers (context-
+% insensitive). It differs from the author's pointer.dl (2014), whose
+% relations it reads, by two things Doop's has: an object is where it
+% was made, and x.f and y.f are different places if x and y point to
+% different objects (pointer.dl: one place *.f for every record).
+%
+%     x.f = a;  y.f = b;  r = x.f;     field-based: r -> a, b
+%                                      here: r -> a, if x and y do not alias
+%
+% cs-history:
+% Lars Ole Andersen's thesis (Copenhagen, 1994) solved it for C with
+% set constraints, in cubic time. It was the precise one that was too
+% slow, for a decade: Steensgaard (steensgaard.dl) gave up precision
+% for speed. Then it was the solvers: cycle elimination (Faehndrich,
+% Foster, Su, Aiken, 1998), Berndl and others' BDDs (2003), Hardekopf
+% and Lin's lazy cycle detection (2007) analysed millions of lines.
+% Whaley and Lam (2004, bddbddb) wrote it as Datalog, as here: the
+% rules are the analysis, and the solver is someone else's problem.
+%
+% road-not-taken:
+% A hand-written solver collapses a cycle of copies into one node,
+% which the rules below pay for: each of its variables has its own set.
+% Hardekopf and Lin's trick is the engine's or the facts' to do.
+%
+% References: Lars Ole Andersen, "Program Analysis and Specialization
+% for the C Programming Language" (1994); Ben Hardekopf, Calvin Lin,
+% "The ant and the grasshopper" (PLDI 2007); John Whaley, Monica Lam,
+% "Cloning-based context-sensitive pointer alias analysis using binary
+% decision diagrams" (PLDI 2004).
+
+pt(V, H) :- alloc(V, H).
+% (a number, what C gave: an object of one kind, Closure_facts says it;
+% what is read from it, or returned by calling it, is one too)
+pt(V, scalar) :- scalar(V).
+pt(P, scalar) :- load(P, X, _), pt(X, scalar).
+pt(R, scalar) :- call_indirect(I, V), pt(V, scalar), call_ret(I, R).
+scalar(R) :- call_ret(I, R), call_direct(I, F), \+ function(F).
+pt(P, H) :- copy(P, Q), pt(Q, H).
+% (a scalar has no field: None or Some x is scalar or a block, and a
+% store through it would make scalar the place of every field)
+fpt(O, F, L) :- store(X, F, V), pt(X, O), O \= scalar, pt(V, L).
+pt(P, L) :- load(P, X, F), pt(X, O), fpt(O, F, L).
+
+% &x: the object x's content is the variable x
+pt(X, L) :- var_object(X), fpt(X, star, L).
+fpt(X, star, L) :- var_object(X), pt(X, L).
+
+% &p->f: f is one place for every object, once its address is taken;
+% a nested x.a.b goes this way too (Facts: &x.a, then its b)
+pt(P, F) :- assign_field_address(P, _, F).
+fpt(F, star, L) :- fpt(_, F, L), field_place(F).
+pt(P, L) :- load(P, X, F), field_place(F), pt(X, _), fpt(F, star, L).
+
+% a global's initializer: the store is in the object itself
+% (Dev consdev = { "cons", consread })
+fpt(X, F, L) :- assign_store_field(X, F, V), global_var(X), pt(V, L).
+
+% the calls, found as it goes: values make calls, calls move values
+call_edge(I, F) :- call_direct(I, F).
+call_edge(I, F) :- call_indirect(I, V), pt(V, F), function(F).
+pt(P, L) :- call_edge(I, F), parameter(F, Z, P), argument(I, Z, A), pt(A, L).
+pt(R, L) :- call_edge(I, F), return(F, V), call_ret(I, R), pt(V, L).

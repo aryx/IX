@@ -1,0 +1,41 @@
+% What every analysis here reads: the facts of mini-cc and mini-ml
+% (Facts.mli, Closure_facts.mli) in the normal form of Doop's and of
+% Smaragdakis and Balatsouras's book, four instructions and calls:
+%
+%   alloc(V, H)      V = new H       H an abstract object: a malloc's
+%                                    site, a block's, a closure, &x
+%   copy(P, Q)       P = Q
+%   load(P, X, F)    P = X.F         F a field, or star for *X and X[i]
+%   store(X, F, V)   X.F = V
+%
+% Loaded first, with one of steensgaard.dl, andersen.dl, or contexts.dl
+% and a context file. The three things only C has are said here too:
+%   var_object(X)    &x: the variable x is an object too, its content
+%                    what the variable holds
+%   field_place(F)   &p->f somewhere: f's address taken, whatever p
+% and a function is what returns: return(F, _).
+%
+% design:
+% The 17 relations came from pfff's pointer.dl, one a C syntax. A[i]
+% and *A are the same here because arrays are one place (Facts.mli);
+% &a[i] is a copy for the same reason. So the rules that follow are
+% about memory, not about C, and ML's facts need no rule of their own.
+
+alloc(V, H) :- point_to(V, H).
+alloc(V, H) :- assign_address(V, H).
+alloc(V, H) :- new_block(V, H).
+
+copy(P, Q) :- assign(P, Q).
+copy(P, A) :- assign_array_element_address(P, A).
+
+load(P, X, F) :- assign_load_field(P, X, F).
+load(P, X, star) :- assign_content(P, X).
+load(P, X, star) :- assign_array_elt(P, X).
+
+store(X, F, V) :- assign_store_field(X, F, V).
+store(X, star, V) :- assign_deref(X, V).
+store(X, star, V) :- assign_array_deref(X, V).
+
+function(F) :- return(F, _).
+var_object(X) :- assign_address(_, X), \+ function(X).
+field_place(F) :- assign_field_address(_, _, F).

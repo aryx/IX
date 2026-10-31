@@ -18,7 +18,7 @@ LIBOBJS=${LIB:%=$D/%.$O}
 LOCAL=`{ls *.ml *.mli ../../../lib_audio/Player.ml* ../../../lib_audio/formats/mpeg_audio/*.ml*} $LIBSRC
 LIBS=$LIBOBJS $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
-all:V: $D/mini-play
+all:V: $D/mini-play $D/mpg_bench
 
 $D/%.$O: $LOCAL
 	mkdir -p $D
@@ -29,10 +29,14 @@ $D/mini-play: $D/Play.$O $LIBS mkfile
 	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} $LIB Play Std_exit -o $D/Play.start.$O
 	$LD $LDH -nofollow -o $target $D/Play.start.$O $STDOBJS $LIBA $LIBOBJS $D/Play.$O $STDEND
 
+$D/mpg_bench: $D/Mpg_bench.$O $LIBS mkfile
+	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} $LIB Mpg_bench Std_exit -o $D/Mpg_bench.start.$O
+	$LD $LDH -nofollow -o $target $D/Mpg_bench.start.$O $STDOBJS $LIBA $LIBOBJS $D/Mpg_bench.$O $STDEND
+
 # the units' order (mkfiles/mkdepend)
 DEPOBJ=D
 DEPDIRS=$DIRS
-DEPUNITS=$LIB Play
+DEPUNITS=$LIB Play Mpg_bench
 <$TOP/mkfiles/mkdepend
 
 clean:V:

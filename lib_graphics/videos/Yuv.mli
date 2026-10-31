@@ -73,3 +73,7 @@ val of_image : range -> chroma -> Rgba_image.t -> planes
 
 (* [to_image range planes]: back to pixels, opaque *)
 val to_image : range -> planes -> Rgba_image.t
+
+(* the two ways: whole numbers (Opti.enabled, the default), floats *)
+val to_image_whole : range -> planes -> Rgba_image.t
+val to_image_floats : range -> planes -> Rgba_image.t

@@ -56,6 +56,23 @@ let test_cost () =
   if db Studio C420 smooth < 35. then Alcotest.failf "a smooth picture through 4:2:0: %.1f dB" (db Studio C420 smooth);
   if db Studio C420 sharp > 15. then Alcotest.failf "a red and blue checker through 4:2:0: %.1f dB" (db Studio C420 sharp)
 
+(* every pixel of a Y, Cb, Cr sweep: the whole numbers within one of the floats *)
+let whole_within_one () =
+  let w = 256 and h = 64 in
+  let plane (f : int -> int) = Bytes.init (w * h) (fun i -> Char.chr (f i land 255)) in
+  let check (range : Yuv.range) =
+    let p : Yuv.planes =
+      { width = w; height = h; chroma = C444; y = plane (fun i -> i); cb = plane (fun i -> i * 7 / 3); cr = plane (fun i -> i * 11 / 5) }
+    in
+    let a = Yuv.to_image_whole range p and b = Yuv.to_image_floats range p in
+    Bytes.iteri
+      (fun i c -> if abs (Char.code c - Bytes.get_uint8 b.rgba i) > 1 then Alcotest.failf "byte %d" i)
+      a.rgba
+  in
+  check Studio;
+  check Full
+
 let tests =
   Testo.categorize "Yuv"
-    [ t "red, white, black: Yuv.mli's numbers" test_worked; t "4:2:0: a red and blue checker becomes purple" test_checker; t "what 4:2:0 costs, measured" test_cost ]
+    [ t "whole numbers: within one of the floats" whole_within_one;
+      t "red, white, black: Yuv.mli's numbers" test_worked; t "4:2:0: a red and blue checker becomes purple" test_checker; t "what 4:2:0 costs, measured" test_cost ]

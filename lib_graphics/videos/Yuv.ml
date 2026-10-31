@@ -89,7 +89,48 @@ let tables_of (range : range) : tables =
 let full_tables = tables_of Full
 let studio_tables = tables_of Studio
 
-let to_image (range : range) (p : planes) : Rgba_image.t =
+(* optimization (Opti.enabled), what to_image_floats does in whole numbers:
+ * a color conversion was 31% of an MPEG-1 frame's instructions on arm
+ * (mini-5i -prof, docs/plans/plan_video.md's stage 3), the floats boxed, a
+ * call to store each byte. The same tables times 65,536; within one of the
+ * floats' answer (Unit_yuv), and the same bytes from both compilers, which
+ * floats are not (OCaml's arm64 fuses a*b+c). *)
+type whole_tables = { wluma : int array; wr_cr : int array; wg_cb : int array; wg_cr : int array; wb_cb : int array }
+
+let whole_of (t : tables) : whole_tables =
+  let whole (a : float array) = Array.map (fun (x : float) -> int_of_float (Float.round (x *. 65536.))) a in
+  { wluma = whole t.luma; wr_cr = whole t.r_cr; wg_cb = whole t.g_cb; wg_cr = whole t.g_cr; wb_cb = whole t.b_cb }
+
+let full_whole = whole_of full_tables
+let studio_whole = whole_of studio_tables
+
+let to_image_whole (range : range) (p : planes) : Rgba_image.t =
+  let t = match range with Full -> full_whole | Studio -> studio_whole in
+  let img = Rgba_image.create ~width:p.width ~height:p.height in
+  let cw, _ = chroma_size p.chroma ~width:p.width ~height:p.height in
+  let shift = match p.chroma with C444 -> 0 | C420 -> 1 in
+  let out = img.rgba in
+  let store (o : int) (v : int) =
+    let v = v asr 16 in
+    Bytes.unsafe_set out o (Char.unsafe_chr (if v < 0 then 0 else if v > 255 then 255 else v))
+  in
+  for py = 0 to p.height - 1 do
+    let chroma_row = (py lsr shift) * cw and row = py * p.width in
+    for px = 0 to p.width - 1 do
+      let c = chroma_row + (px lsr shift) in
+      (* (32,768: to the nearest, as the floats' clamp) *)
+      let y = Array.unsafe_get t.wluma (Char.code (Bytes.unsafe_get p.y (row + px))) + 32768 in
+      let cb = Char.code (Bytes.unsafe_get p.cb c) and cr = Char.code (Bytes.unsafe_get p.cr c) in
+      let o = 4 * (row + px) in
+      store o (y + Array.unsafe_get t.wr_cr cr);
+      store (o + 1) (y - Array.unsafe_get t.wg_cb cb - Array.unsafe_get t.wg_cr cr);
+      store (o + 2) (y + Array.unsafe_get t.wb_cb cb);
+      Bytes.unsafe_set out (o + 3) '\255'
+    done
+  done;
+  img
+
+let to_image_floats (range : range) (p : planes) : Rgba_image.t =
   let t = match range with Full -> full_tables | Studio -> studio_tables in
   let img = Rgba_image.create ~width:p.width ~height:p.height in
   let cw, _ = chroma_size p.chroma ~width:p.width ~height:p.height in
@@ -111,3 +152,6 @@ let to_image (range : range) (p : planes) : Rgba_image.t =
     done
   done;
   img
+
+let to_image (range : range) (p : planes) : Rgba_image.t =
+  if !Opti.enabled then to_image_whole range p else to_image_floats range p

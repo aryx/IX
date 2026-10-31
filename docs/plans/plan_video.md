@@ -6,7 +6,7 @@ code to play simple videos; we don't have in IX to support all formats,
 but the historical one, that have great teaching value, we should
 definitely do".
 
-**Status: stages 1 and 2 done** (`lib_graphics/videos/`, `apps/music/play/Film`). The file manager that opens these
+**Status: stages 1 and 2 done, stage 3 counted but not run on a board** (`lib_graphics/videos/`, `apps/music/play/Film`). The file manager that opens these
 files is [`plan_files.md`](done/plan_files.md).
 
 ## The measure
@@ -158,3 +158,29 @@ a lower bound since measured through the window's scaling. On this machine, the
 first 71 of its frames, in a run of 170 screens with the window's drawing:
 0.77 s by OCaml, 1.23 s by mini-ml, 60% more. Stage 3 is what matters: a Pi.
 A film's sound is decoded whole when it opens, which a Pi will feel.
+
+Stage 3, counted (`apps/music/play/Mpg_bench` under `mini-5i -s`, arm, a real
+film of ffmpeg's, 320 by 240, 800 kbit/s; a part is a run less the run before):
+
+| The part | Instructions |
+|---|---|
+| the file read and demultiplexed, a second of film | 4.3 million |
+| its sound decoded, a second | 111.7 million |
+| a picture, before | 82.1 million (frames 4 to 8) |
+| a picture, whole-number colours | 66.4 million, 19.1% fewer |
+
+`mini-prof` said colour conversion was 31% of a frame, floats boxed and a call
+a byte: `Yuv.to_image_whole` (`Opti.enabled`; the floats kept beside it, within
+one of them, tested). What is left is spread: motion prediction 19%, colours
+14.4%, putting blocks 9.3%, the IDCT 8.9%, reading bits about 15%.
+
+What it means, by arithmetic, not measured: 25 pictures a second is 1,660 million
+instructions, before the drawing; at the 1,400 million a second that
+plan_playground_speed.md guesses of a Pi 2's integers, some 21 pictures a
+second, and fewer since its floats are slower and the IDCT is floats; at
+mini-qemu's `-ips 200`, 3. So a 320 by 240 film will likely drop frames on a
+Pi 2 and more on a Pi 1, which the sound's clock is there for. A minute's sound
+decoded when the film opens is 6,700 million instructions, some 5 seconds of
+waiting on a Pi 2: to decode it as it plays would be the next thing to do.
+**Not run: `mini-qemu -ips 200`, a Pi.** mini-9pi could not be built while
+another session's `debuggers/acid` was in progress.

@@ -1,5 +1,5 @@
 ; apps/maps: mini-maps, a map and the weather, fetched from the internet
-; (docs/plans/plan_maps.md). Mercator (a latitude to a pixel), Tiles (the
+; (docs/plans/done/plan_maps.md). Mercator (a latitude to a pixel), Tiles (the
 ; pyramid: which tiles a window needs), Tile_cache (on disk, as the server
 ; says), Map_worker (fetched beside the window), Map_window, over lib_networking's HTTP and Png. The program
 ; here is linked with the platform that writes a frame to a file (the

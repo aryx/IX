@@ -17,7 +17,7 @@ money ([`plan_pim.md`](done/plan_pim.md) and
 author's daily use on their Gmail, on Linux only so far; the table
 below says what is where. Taken next, by the author:
 [`plan_files.md`](done/plan_files.md), [`plan_video.md`](plan_video.md) and
-[`plan_maps.md`](plan_maps.md).
+[`plan_maps.md`](done/plan_maps.md).
 
 ## The measure
 
@@ -253,7 +253,7 @@ for 1 to 3):
    kind leading to its program.
 2. **Video**: [`plan_video.md`](plan_video.md), the historical formats,
    played by `play` and from the file manager.
-3. **Maps and the weather**: [`plan_maps.md`](plan_maps.md), fetched
+3. **Maps and the weather**: [`plan_maps.md`](done/plan_maps.md), fetched
    from the internet: built (2026-10-30) but for routes.
 4. **Photos**: the big thing left that nearly every user does and ix
    cannot do, useful for real on the author's own JPEGs. It brings

@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # mini-maps route A to B, against mini-httpd and a small network written
-# by hand (docs/plans/plan_maps.md, stage 5): the way found, the extract
+# by hand (docs/plans/done/plan_maps.md, stage 5): the way found, the extract
 # kept and used again, and what it says when no way can be had.
 #
 # usage: route.sh [dir]

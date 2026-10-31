@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* the tests of mini-maps (docs/plans/plan_maps.md): the arithmetic of the
+(* the tests of mini-maps (docs/plans/done/plan_maps.md): the arithmetic of the
  * map, with no network; frames.sh is its window's *)
 
 let check_int = Alcotest.(check int)

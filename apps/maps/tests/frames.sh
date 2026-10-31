@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# mini-maps's window (docs/plans/plan_maps.md) against mini-httpd: tiles
+# mini-maps's window (docs/plans/done/plan_maps.md) against mini-httpd: tiles
 # made here (Make_tiles: each says its z/x/y), the window run without one
 # (lib_playground's ppm platform) with worker=wait, one tile a frame; a
 # session a line of frames.expected: its name, its arguments, the SHA-256

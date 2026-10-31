@@ -3,9 +3,11 @@
 The author (2026-10-30), after plan_apps.md: "I would also love to have
 a maps and weather program that fetch data from internet."
 
-**Status: stages 1 to 5 built** (see the end); stages 1 to 4 run on mini-9pi,
-stage 5 on Linux and on 32-bit arm's code only. What is below about the services
-was tried on 2026-10-30 with ix's own `mini-curl`, a handful of requests.
+**Status: done** (2026-10-31; see the end): all five stages run on Linux and on
+mini-9pi, the Pi 2 under QEMU. Left: anything on a real Pi, the real services
+from mini-9pi (https://), the window frozen during a large route there. What is
+below about the services was tried on 2026-10-30 with ix's own `mini-curl`, a
+handful of requests.
 
 ## What it is for
 
@@ -180,8 +182,24 @@ Vouvray with no residential streets (15,668 nodes): 7,987 and 11,250, 29%
 fewer. mini-ml's code gives the same counts. On 32-bit arm's code under
 qemu-arm, no real board: the 59,264 nodes of Tours to Amboise in 25 s.
 
-Not run: a route in the window on mini-9pi; on a real Pi. Not done: maxspeed,
-turn restrictions, traffic; a walking or cycling route; gzip's size on the
-wire not measured with ix's client (2.6 MB by gzip for the 17 MB).
+Not run: anything on a real Pi. Not done: maxspeed, turn restrictions, traffic;
+a walking or cycling route; gzip's size on the wire not measured with ix's
+client (2.6 MB by gzip for the 17 MB).
 
 Lines of `.ml`: 1,985, of which stage 5 is about 660.
+
+2026-10-31: a route in the window on mini-9pi, the Pi 2 under QEMU, the card's
+own boot, by `tests/route_9pi.sh`: real keys, `mini-httpd` on the host for the
+roads over Plan 9's TCP. The small network by hand: 4.6 km, 4 min, within 6 s of
+Enter; `r` takes it away. A real extract, what a box past 0.1 degrees asks for:
+Tours to Amboise of 2026-10-31 with its residential ways dropped (7 MB, 59,264
+nodes; OSM's, so not in this repository): 26.4 km, 22 min, as on Linux from the
+same file, 120 to 135 s after Enter.
+
+For those two minutes the window is frozen, at 56 fps before: lib_core's threads
+are cooperative, and neither `Roads.of_json` nor `Route.search` yields, so even
+Enter's closing of the box is not drawn until the route is there. Real Overpass
+would add its wait, a system call stopping all the threads (read in `Map_worker`,
+not run). dune's build on Linux has real threads; its window during a route not
+measured. With the route drawn, a still window is at 14 fps. Neither is fixed.
+Also the credit now says the ODbL, as OSM's copyright page asks.

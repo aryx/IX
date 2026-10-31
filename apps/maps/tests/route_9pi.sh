@@ -1,0 +1,62 @@
+#!/bin/bash
+# Claude Code
+# Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+#
+# A route in mini-maps's window on mini-9pi (docs/plans/done/plan_maps.md,
+# stage 5): the card booted on the Pi 2 under QEMU, real keys (/, a place,
+# Enter, r, / the other, Enter), mini-httpd on this machine as all services.
+# Its screens are to be looked at (DIR/liveN.png); what is said is the time
+# from the last Enter to the first screen with the route's blue line, to the
+# step of a screen. Minutes long, so not in make test.
+#   make -C kernels/9pi card      first
+#
+# usage: route_9pi.sh DIR [ROADS LAT0 LON0 LAT1 LON1 ZOOM STEP WAITS]
+#   ROADS: an Overpass answer (default: tests/roads.json, written by hand)
+#   the places, the map's zoom, seconds between screens, screens after Enter
+
+ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
+D=${DUNE_BUILD:-$ROOT/_build/default}
+DIR=$(realpath -m "${1:?usage: route_9pi.sh DIR [ROADS LAT0 LON0 LAT1 LON1 ZOOM STEP WAITS]}")
+ROADS=$(realpath "${2:-$ROOT/apps/maps/tests/roads.json}")
+LAT0=${3:-47.3} LON0=${4:-0.70} LAT1=${5:-47.3} LON1=${6:-0.74}
+ZOOM=${7:-12} STEP=${8:-6} WAITS=${9:-3}
+W=$(mktemp -d); trap 'kill $pid 2> /dev/null; rm -rf $W' EXIT
+mkdir -p $W/site/api $DIR
+cp "$ROADS" $W/site/api/interpreter
+printf 'a\t%s\t%s\t\tFrom\nb\t%s\t%s\t\tTo\n' $LAT0 $LON0 $LAT1 $LON1 > $W/site/places
+$D/networking/Httpd.exe -p 0 $W/site > $W/log 2>&1 &
+pid=$!
+n=0
+until grep -q 'serving' $W/log || [ $n -ge 50 ]; do sleep 0.1; n=$((n + 1)); done
+PORT=$(grep -o '127.0.0.1:[0-9]*' $W/log | cut -d: -f2)
+[ -n "$PORT" ] || { echo "FAIL mini-httpd did not start: $(cat $W/log)"; exit 1; }
+T=http://10.0.2.2:$PORT
+
+# (no tile is served at this zoom: a grey map, and the route on it)
+LINE="mkdir /tmp/c; /progs/net/curl $T/places > /tmp/c/places; /progs/net/maps 'zoom=$ZOOM' 'lat=$LAT0' 'lon=$LON0' 'cache=/tmp/c' 'tiles=$T' 'roads=$T'"
+KEYS=slash,a,ret,r,slash,b,ret
+ENTER=7
+for i in $(seq 1 $WAITS); do KEYS=$KEYS,shift; done
+K=$ROOT/kernels/9pi
+BOOT="-M raspi2b -device loader,file=$K/kernel-pi2-ix.img,addr=0x8000,cpu-num=0,force-raw=on"
+for c in 1 2 3; do BOOT="$BOOT -device loader,addr=0x8000,cpu-num=$c"; done
+LIVE_START=15 timeout $((300 + (ENTER + WAITS) * STEP)) $K/tests/live.py $DIR $STEP "$LINE" $KEYS -- \
+  qemu-system-arm $BOOT -serial mon:stdio -display none -device usb-kbd -device usb-mouse \
+  -device usb-net,netdev=n0 -netdev user,id=n0 \
+  -drive file=$K/build/card.img,if=sd,format=raw,snapshot=on > /dev/null 2>&1
+
+python3 - $DIR $ENTER $STEP <<'PY'
+import glob, os, sys
+from PIL import Image
+d, enter, step = sys.argv[1], int(sys.argv[2]), float(sys.argv[3])
+first = None
+for n in range(1, len(glob.glob(d + "/live*.ppm")) + 1):
+    im = Image.open("%s/live%d.ppm" % (d, n)).convert("RGB")
+    im.save("%s/live%d.png" % (d, n))
+    # (Routing's colour on a screen of 16 bits a pixel)
+    blue = (40, 88, 216) in im.getdata()
+    if blue and first is None: first = n
+if first is None: print("FAIL no route on any screen of " + d); sys.exit(1)
+print("ok the route on screen %d, %d to %d s after Enter: look at %s/live%d.png"
+      % (first, (first - enter - 1) * step, (first - enter) * step, d, first))
+PY

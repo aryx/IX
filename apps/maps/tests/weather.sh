@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # mini-maps weather PLACE, the forecast as lines, against mini-httpd and
-# canned answers (docs/plans/plan_maps.md, stage 4): what it prints; a
+# canned answers (docs/plans/done/plan_maps.md, stage 4): what it prints; a
 # place known from the last run not asked again; and what it says when
 # there is no such place, or no service.
 #

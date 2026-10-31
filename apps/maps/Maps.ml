@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* mini-maps: a map moved and zoomed, fetched from the internet
- * (docs/plans/plan_maps.md): the program, the window being Map_window.
+ * (docs/plans/done/plan_maps.md): the program, the window being Map_window.
  *
  *   mini-maps                       the world
  *   mini-maps tours                 a place, found

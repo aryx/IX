@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# mini-maps's cache (docs/plans/plan_maps.md, stage 2; Tile_cache.mli)
+# mini-maps's cache (docs/plans/done/plan_maps.md, stage 2; Tile_cache.mli)
 # against mini-httpd, by what its log says was asked: a tile got once and
 # not asked while it is good; old, asked if it changed, 304 and nothing
 # sent; changed on the server, the new one; the server gone, the old tile

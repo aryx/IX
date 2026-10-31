@@ -1,7 +1,7 @@
 # mini-maps
 
 A map moved and zoomed, fetched from the internet
-([docs/plans/plan_maps.md](../../docs/plans/plan_maps.md)).
+([docs/plans/done/plan_maps.md](../../docs/plans/done/plan_maps.md)).
 
     mini-maps                       the world
     mini-maps tours                 a place, found
@@ -56,4 +56,5 @@ The forecast is Open-Meteo's, CC BY 4.0, credited under it; `places=URL` and
 
 Tests: `tests/Test.ml`, the arithmetic; `tests/frames.sh`, the window's
 frames against `mini-httpd`, with tiles made by `tests/Make_tiles.ml`;
-`tests/cache.sh`, what is asked of that server and what is not.
+`tests/cache.sh`, what is asked of that server and what is not;
+`tests/route_9pi.sh`, by hand, minutes long: a route in the window on mini-9pi.

@@ -76,7 +76,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
               if r.rules > 0 then
                 List.iter
                   (fun (line : string) -> Console.print caps (line ^ "\n"))
-                  (List.sort String.compare (List.map (D.show p r) r.all)))
+                  (* (rev_map: List.map of millions of tuples overflowed
+                   * the stack of 4.14's and of mini-ml's builds) *)
+                  (List.sort String.compare (List.rev_map (D.show p r) r.all)))
             relations;
         List.iter
           (fun (q : D.query) -> List.iter (fun (line : string) -> Console.print caps (line ^ "\n")) (Datalog_eval.answers p q))

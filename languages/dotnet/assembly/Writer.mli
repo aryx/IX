@@ -82,5 +82,5 @@ val set_entry_point : t -> int -> unit
 val write : t -> string
 
 (* what Microsoft's dotnet needs beside a program to run it: its
- * runtimeconfig.json, .NET 8 *)
+ * runtimeconfig.json, .NET 8, the invariant culture *)
 val runtime_config : string

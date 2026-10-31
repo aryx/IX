@@ -83,3 +83,6 @@ let convert (k : code) (from : S.t) (into : S.t) : unit =
   | S.I4, S.Char -> emit k (Il.Conv (Il.K_u2, false, false))
   | S.I8, S.Char -> emit k (Il.Conv (Il.K_u2, false, false))
   | _ -> ()
+
+let is_value (t : S.t) : bool =
+  match t with S.I4 | S.I8 | S.R8 | S.Bool | S.Char -> true | _ -> false

@@ -93,9 +93,11 @@ ocaml-light's *ocamlopt*. Another unit's names are read from its
      loops, several units; an `external` naming a .NET member
      (`"dotnet:instance System.String::Substring(int32,int32)"`, its
      .NET types when they are not the ML ones', `-> int32` its
-     result's) a call of it. The rest (a unit not given, so the
-     library's List and Array; an external of C) is refused by its
-     name and line.
+     result's) a call of it; an external of C a call of the runtime
+     unit's function of its name (-L's `dotnet/Runtime.ml`, compiled
+     first: the math, the numbers read and written). The rest (a unit
+     not given, so the library's List and Array; the channels) is
+     refused by its name and line.
 
 **-h**
 :    How, by examples, and the options to debug the compiler

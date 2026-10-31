@@ -504,9 +504,25 @@ but really use the same types!". So the decisions below are those of
        to and from ML's int64, a char); the MemberRef made from the
        ML type (Il_externals). Checked: externals.ml (String's and
        Console's members) by both runtimes, by both mini-ml builds.
-     - the runtime unit: Pervasives' caml_* in ML over those
-       (strings, floats' functions by System.Math, conversions);
-       what mini-dotnet's Library lacks added under its .NET name.
+     - done: the runtime unit, lib_core/dotnet/Runtime.ml (the
+       author: "good choice for lib_core/dotnet/"), compiled first by
+       -dotnet -L lib_core; a call of an external of C a call of its
+       function of the primitive's name. The math by System.Math;
+       frexp, ldexp, modf by ILogB and ScaleB, fmod by
+       IEEERemainder; int_of_string,
+       format_int and strtod's syntax in ML; a decimal read by
+       Double.Parse, a float's digits by its E and F formats, C's %e
+       %f %g made from them. The compiler: a value type's this by
+       its address (Double's ToString(format)), %identity converting
+       a char and an int, a unit of a name already
+       given refused; the assemblies' runtimeconfig.json the
+       invariant culture. mini-dotnet's Library: System.Math, Double's
+       Parse and ToString(format). An int is .NET's int64, so %x of
+       -1 is 16 digits (the native's 63 bits: 15). Checked:
+       c_externals.ml (the math, frexp, modf, the numbers read and
+       written, 107 lines, C's printf and strtod by Python's) by
+       both runtimes, by both mini-ml builds. make loc sets apart
+       any dotnet/ directory (the author's).
      - the channels: OCaml's in_channel and out_channel over .NET's
        Console and files, an abstract type an Object.
    - 3c. lib_core's units given with the program's (-L lib_core, in

@@ -5,4 +5,6 @@
 ; programs built by dune have OCaml's, so dune doesn't look here.
 ; parallel/ is dune's alone (Parallel: the host's cores, by OCaml's
 ; Domain where there is one), not a unit of mini-ml's.
-(data_only_dirs core base collections printing parsing system concurrency libc)
+; dotnet/ is mini-ml -dotnet's runtime unit (Runtime.ml), in ML over
+; .NET, compiled with a program's units into its assembly.
+(data_only_dirs core base collections printing parsing system concurrency libc dotnet)

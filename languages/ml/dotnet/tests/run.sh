@@ -40,6 +40,10 @@
 #   externals  externals naming .NET members (decision 7): String's,
 #             Console's; int32 and char converted (externals.expected
 #             written by hand: ocaml has no .NET)
+#   c_externals  the runtime unit (lib_core/dotnet/Runtime.ml): the math
+#             functions, frexp, modf, int_of_string, float_of_string,
+#             format_int, format_float (c_externals.expected: C's printf
+#             and strtod, by Python's; .NET's int64 where they differ)
 #   units/    three units in one assembly (geometry, counter, main): one
 #             unit's values, functions, types, constructors, exception
 #             from another; the toplevels in link order (what OCaml's
@@ -63,7 +67,7 @@ W=$(mktemp -d); trap 'rm -rf $W' EXIT
 failures=0
 ok() { echo "ok $*"; }
 fail() { echo "FAIL $*"; failures=$((failures + 1)); }
-progs="fib arith strings loops variants records exceptions equality closures generics generic_types tuples_lists arrays tails generic_closures externals"
+progs="fib arith strings loops variants records exceptions equality closures generics generic_types tuples_lists arrays tails generic_closures externals c_externals"
 # what is refused: a program a line, and the stage that will have it
 refused() {
   local ml=$1 n=0

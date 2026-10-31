@@ -436,9 +436,11 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   (* -L: the directories of its units.txt's lines, core/Pervasives, and
    * commons; the directory from here or from one above (dune names it
    * from the workspace, and merlin runs -pp in the source's directory) *)
-  let lib d =
+  let root d =
     let rec above d n = if n = 0 || FS.read_opt caps (path (Filename.concat d "units.txt")) <> None then d else above (Filename.concat ".." d) (n - 1) in
-    let d = if Filename.is_relative d then above d 8 else d in
+    if Filename.is_relative d then above d 8 else d in
+  let lib d =
+    let d = root d in
     let units = String.split_on_char '\n' (match FS.read_opt caps (path (Filename.concat d "units.txt")) with Some t -> t | None -> "") in
     let dirs = List.filter_map (fun u -> if u = "" || u.[0] = '#' then None else Some (Filename.dirname u)) units in
     List.map (Filename.concat d) (List.sort_uniq compare dirs @ [ "commons" ])
@@ -458,10 +460,15 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   (* -dotnet: the units, in order, into one assembly (named after -o,
    * else the last unit) *)
   | (_ :: _ as units), incs when !dotnet -> (
+      (* (-L's dotnet/Runtime.ml first: Pervasives' externals of C, in ML
+       * over .NET, which an external's call calls by its name) *)
+      let runtime = List.map (fun (d : string) -> Filename.concat (root d) "dotnet/Runtime.ml") (List.rev !libs) in
+      let given (f : string) = List.exists (fun (u : string) -> Fpath.to_string (path u) = Fpath.to_string (path f)) units in
+      let units = List.filter (fun (f : string) -> FS.read_opt caps (path f) <> None && not (given f)) runtime @ units in
       let last = path (List.nth units (List.length units - 1)) in
       let out = if !out <> "" then path !out else Fpath.set_ext ".dll" (Fpath.base last) in
       let a = Lower_il.start (Fpath.to_string (Fpath.rem_ext (Fpath.base out))) in
-      let rec go (units : string list) : int =
+      let rec go (seen : string list) (units : string list) : int =
         match units with
         | [] ->
             FS.write caps out (Lower_il.finish a);
@@ -470,6 +477,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         | f :: rest -> (
             let file = path f in
             let name = String.capitalize_ascii (Fpath.to_string (Fpath.rem_ext (Fpath.base file))) in
+            (* (a class of each: two of one name, the runtime's included,
+             * an assembly .NET refuses) *)
+            if List.mem name seen then fail (f ^ ": a unit " ^ name ^ " already given (lib_core/dotnet/ has the runtime's)") else
             match parse caps file with
             | Error m -> fail m
             | Ok (_, Ast.Signature _) -> fail (f ^ ": an interface, not a unit")
@@ -483,8 +493,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                     | _ -> (
                         match Lower_il.unit_ a name items with
                         | exception Il_code.Refused (l, m) -> fail (Printf.sprintf "%s:%d: %s" (Fpath.to_string file) l m)
-                        | () -> go rest)))) in
-      go units)
+                        | () -> go (name :: seen) rest)))) in
+      go [] units)
   (* mlpp: *)
   | [ f ], incs when !pp -> (
       match FS.read_opt caps (path f) with

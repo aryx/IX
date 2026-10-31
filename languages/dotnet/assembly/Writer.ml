@@ -315,8 +315,11 @@ let body_bytes (w : t) (remap : int -> int) (locals_tok : int) (m : mdef)
 
 let pad4 (b : Buffer.t) : unit = while Buffer.length b mod 4 <> 0 do Buffer.add_char b '\000' done
 
+(* (the invariant culture: a number read and written as C's and
+ * OCaml's, 1.5, whatever the machine's language) *)
 let runtime_config =
-  "{\"runtimeOptions\":{\"tfm\":\"net8.0\",\"framework\":{\"name\":\"Microsoft.NETCore.App\",\"version\":\"8.0.0\"}}}\n"
+  "{\"runtimeOptions\":{\"tfm\":\"net8.0\",\"framework\":{\"name\":\"Microsoft.NETCore.App\",\"version\":\"8.0.0\"},"
+  ^ "\"configProperties\":{\"System.Globalization.Invariant\":true}}}\n"
 
 (* where .text starts in memory and in the file *)
 let text_rva = 0x2000

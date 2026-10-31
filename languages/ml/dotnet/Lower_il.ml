@@ -130,11 +130,9 @@ let unit_ (a : assembly) (name : string) (items : Scope.item list) : unit =
           bs
     (* (an exception's class is made when it is first raised or matched) *)
     | Iexception _ -> ()
-    (* (an external's declaration: its uses are its primitive's IL, or
-     * its .NET member's call; a C function's, not yet) *)
-    | Iexternal (g, p, _, _) ->
-        if not (String.length p > 0 && p.[0] = '%') && not (Il_externals.is_dotnet p) then
-          refuse 0 ("the external " ^ g.gname ^ " (" ^ p ^ "), a C function of the native runtime") "3b" in
+    (* (an external's declaration: its uses are its primitive's IL, its
+     * .NET member's call, or the runtime unit's function of its name) *)
+    | Iexternal _ -> () in
   List.iter item items;
   emit k Il.Ret;
   finish c k cctor

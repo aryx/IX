@@ -119,7 +119,12 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
   [ $root = lib_terminal ] && incs[$root]="-I lib_terminal -I lib_terminal/unix -I lib_terminal/hosts -I lib_terminal/hosts/draw -I lib_playground/random $(dirs lib_graphics)"
   [ $root = kernels/squeak ] && { mkdir -p $W/squeak; echo 'let system = Squeak.Squeak let depth = 16' > $W/squeak/Which.ml; incs[$root]="$(dirs kernels/squeak) $(dirs languages/smalltalk) -I $W/squeak"; }
   [ $root = kernels/9pi/filesystems/user/dossrv ] && incs[$root]="$(dirs kernels/9pi/filesystems/user/dossrv) $(dirs kernels/9pi/filesystems/lib_fat)"
-  err=$($ML -m 7 -o /dev/null ${incs[$root]} $shared $f 2>&1 >/dev/null | head -1)
+  # (lib_core/dotnet/: mini-ml -dotnet's runtime unit, whose externals
+  # name .NET's members: compiled as -dotnet compiles it)
+  case $f in
+  lib_core/dotnet/*) err=$($ML -dotnet -L lib_core -o $W/dotnet.dll $f 2>&1 >/dev/null | head -1);;
+  *) err=$($ML -m 7 -o /dev/null ${incs[$root]} $shared $f 2>&1 >/dev/null | head -1);;
+  esac
   [ -z "$err" ] && continue
   bad[$d]=$((${bad[$d]:-0} + 1))
   # the message without its file and line, its names and numbers out

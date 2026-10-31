@@ -1,5 +1,5 @@
 -- let a = Array.make 3 0
-r1.ml:1: the primitive make_vect, of the library's runtime: not compiled to .NET yet (plan_dotnet_languages.md, stage 3)
+r1.ml:1: the primitive make_vect, not in the runtime unit (lib_core/dotnet/Runtime.ml): not compiled to .NET yet (plan_dotnet_languages.md, stage 3b)
 -- type t = { a : int } let b = { a = 1 } < { a = 2 }
 r2.ml:1: < on records or variants (OCaml's structural order): not compiled to .NET yet (plan_dotnet_languages.md, stage 1d)
 -- let () = let rec even n = n = 0 || odd (n - 1) and odd n = n <> 0 && even (n - 1) in print_int (if even 4 then 1 else 0)

@@ -169,6 +169,20 @@ let format_double (f : float) : string =
     (if neg then "-" else "") ^ body
   end
 
+(* double.ToString("E6"), ("F2"): .NET's exponent signed and of three
+ * digits at least, 1.500000E+003; another format as ToString() *)
+let format_double_as (fmt : string) (f : float) : string =
+  let n = String.length fmt in
+  let p = if n > 1 then int_of_string_opt (String.sub fmt 1 (n - 1)) else Some 6 in
+  match (if n > 0 then fmt.[0] else ' '), p with
+  | ('E' | 'e'), Some p when not (Float.is_nan f) && abs_float f <> infinity ->
+      let s = Printf.sprintf "%.*e" p f in
+      let e = String.index s 'e' in
+      let exp = int_of_string (String.sub s (e + 1) (String.length s - e - 1)) in
+      String.sub s 0 e ^ String.make 1 fmt.[0] ^ (if exp < 0 then "-" else "+") ^ Printf.sprintf "%03d" (abs exp)
+  | ('F' | 'f'), Some p when not (Float.is_nan f) && abs_float f <> infinity -> Printf.sprintf "%.*f" p f
+  | _ -> format_double f
+
 let format_char (c : int) : string =
   if c < 256 then String.make 1 (Char.chr c) else "?"
 
@@ -258,7 +272,14 @@ let primitives = [
     stat "Parse" [string] int (fun a -> parse_int (to_str a.(0)));
   ];
   primitive long long [];
-  primitive double double [];
+  primitive double double [
+    stat "Parse" [string] double (fun a ->
+        match float_of_string_opt (String.trim (to_str a.(0))) with
+        | Some f -> R8 f
+        | None -> hooks.throw "System.FormatException" ("The input string '" ^ to_str a.(0) ^ "' was not in a correct format."));
+    inst "ToString" [string] string (fun a ->
+        match number a.(0) with R8 f -> Str (format_double_as (to_str a.(1)) f) | _ -> invalid_arg "Double.ToString");
+  ];
   primitive "System.Single" "System.Single" [];
   primitive bool bool [];
   primitive char char [
@@ -278,6 +299,40 @@ let primitives = [
     inst "get_Length" [] int (fun a -> let st, _, _ = view a.(0) in i4 st.len);
   ];
 ]
+
+(* System.Math: a double's functions, C's *)
+let math =
+  let f1 (name : string) (f : float -> float) =
+    stat name [double] double (fun a -> match a.(0) with R8 x -> R8 (f x) | _ -> invalid_arg name) in
+  let f2 (name : string) (f : float -> float -> float) =
+    stat name [double; double] double (fun a ->
+        match a.(0), a.(1) with R8 x, R8 y -> R8 (f x y) | _ -> invalid_arg name) in
+  spec d "System.Math" [
+    f1 "Sqrt" sqrt; f1 "Exp" exp; f1 "Log" log; f1 "Log10" log10;
+    f1 "Sin" sin; f1 "Cos" cos; f1 "Tan" tan; f1 "Asin" asin; f1 "Acos" acos; f1 "Atan" atan;
+    f1 "Sinh" sinh; f1 "Cosh" cosh; f1 "Tanh" tanh; f1 "Floor" floor; f1 "Ceiling" ceil;
+    f1 "Truncate" (fun x -> if x < 0.0 then -. floor (-. x) else floor x);
+    f2 "Pow" ( ** ); f2 "Atan2" atan2;
+    (* (x less y times x/y rounded to the nearest, to the even at a
+     * half: glibc's way, by fmod over 2y, exact) *)
+    f2 "IEEERemainder" (fun x y ->
+        let p = abs_float y in
+        let r = if 2.0 *. p < infinity then mod_float x (2.0 *. p) else x in
+        let a = abs_float r in
+        let a = if a +. a > p then (let a = a -. p in if a +. a >= p then a -. p else a) else a in
+        if x < 0.0 || (x = 0.0 && 1.0 /. x < 0.0) then -. a else a);
+    stat "ScaleB" [double; int] double (fun a ->
+        match a.(0) with R8 x -> R8 (ldexp x (to_int a.(1))) | _ -> invalid_arg "ScaleB");
+    (* (the exponent of 1.m: frexp's less one; 0's, NaN's, infinity's
+     * Int32's minimum and maximum, .NET's) *)
+    stat "ILogB" [double] int (fun a ->
+        match a.(0) with
+        | R8 x when x = 0.0 -> i4 (-2147483648)
+        | R8 x when x <> x -> i4 (-2147483648)
+        | R8 x when x = infinity || x = neg_infinity -> i4 2147483647
+        | R8 x -> i4 (snd (frexp x) - 1)
+        | _ -> invalid_arg "ILogB");
+  ]
 
 (* Environment.Exit: the program stops there, its status said *)
 exception Exit of int
@@ -679,7 +734,7 @@ let delegates = [
 let specs : (string, spec) Hashtbl.t =
   let h = Hashtbl.create 64 in
   List.iter (fun s -> Hashtbl.replace h s.sname s)
-    ([ object_; string_; console; environment; encoding; string_builder; interpolation; list;
+    ([ object_; string_; console; environment; math; encoding; string_builder; interpolation; list;
        list_enumerator; dictionary ]
      @ primitives @ exceptions @ reflection @ delegates);
   h

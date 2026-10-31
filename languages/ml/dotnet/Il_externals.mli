@@ -55,3 +55,7 @@ val arrows : Scope.ty -> Scope.ty list * Scope.ty
 (* a value converted from a .NET type to another (an int64 to an
  * int32 and back, a char to a UTF-16 unit) *)
 val convert : Il_code.code -> Signature.t -> Signature.t -> unit
+
+(* a value type's (an int32, an int64, a float64, a bool, a char): an
+ * instance method's this then given by its address *)
+val is_value : Signature.t -> bool

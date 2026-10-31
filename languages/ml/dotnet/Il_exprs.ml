@@ -76,6 +76,11 @@ let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
           match type_of e with
           | Tarrow _ -> refuse e.loc (g.gsym ^ ", a function as a value") "1c"
           | _ -> refuse e.loc (g.gsym ^ ", a value of another unit") "1e"))
+  (* an external of C: the runtime unit's function of its name
+   * (lib_core/dotnet/Runtime.ml, compiled first) *)
+  | Evar (Prim (p, _, _)) when Hashtbl.mem env.by_sym ("Runtime." ^ p) -> partial c env k e (Hashtbl.find env.by_sym ("Runtime." ^ p)) []
+  | Eapply (({ e = Evar (Prim (p, _, _)); _ } as fe), args) when Hashtbl.mem env.by_sym ("Runtime." ^ p) ->
+      call c env k fe (Hashtbl.find env.by_sym ("Runtime." ^ p)) args
   | Evar (Prim (p, _, _)) -> refuse e.loc (p ^ ", a primitive as a value") "1c"
   | Eapply ({ e = Evar (Prim (p, _, pty)); _ }, args) when Il_externals.is_dotnet p -> dotnet c env k e p pty args
   | Eapply ({ e = Evar (Prim (p, _, _)); _ }, args) -> prim c env k e p args
@@ -587,18 +592,26 @@ and dotnet (c : c) (env : env) (k : code) (e : Scope.expr) (p : string) (pty : S
   if List.length args <> n then refuse e.loc (p ^ ", an external given fewer or more arguments than its type's") "3b";
   let saved = k.pending in
   let pending = ref (List.combine m.from m.into) in
-  List.iter
-    (fun (a : Scope.expr) ->
+  (* (a this of a value type, a double's ToString: its address, and a
+   * call, not a callvirt) *)
+  let by_address = not m.static && (match m.into with t :: _ -> Il_externals.is_value t | [] -> false) in
+  List.iteri
+    (fun (i : int) (a : Scope.expr) ->
       expr c env k a;
       if cts_of c a <> S.Void then begin
         (match !pending with
-         | (f, i) :: rest -> Il_externals.convert k f i; pending := rest
+         | (f, t) :: rest -> Il_externals.convert k f t; pending := rest
          | [] -> ());
+        if i = 0 && by_address then begin
+          let v = local k (List.hd m.into) in
+          emit k (Il.Stloc v);
+          emit k (Il.Ldloca v)
+        end;
         k.pending <- k.pending + 1
       end)
     args;
   k.pending <- saved;
-  emit k (if m.static then Il.Call m.tok else Il.Callvirt m.tok);
+  emit k (if m.static || by_address then Il.Call m.tok else Il.Callvirt m.tok);
   if m.ml_ret = S.Void && m.ret <> S.Void then emit k Il.Pop
   else Il_externals.convert k m.ret m.ml_ret
 
@@ -751,9 +764,10 @@ and prim (c : c) (env : env) (k : code) (e : Scope.expr) (p : string) (args : Sc
       k.pending <- k.pending + 1; expr c env k x; if cts_of c x = S.Void then emit k Il.Ldnull;
       k.pending <- k.pending - 2;
       emit k (Il.Stelem_any tok)
-  | "%identity", _ -> all ()
+  (* (an int a char and back, Char.code's: int64 and int32) *)
+  | "%identity", [ a ] -> all (); Il_externals.convert k (cts_of c a) (cts_of c e)
   | "%ignore", [ a ] -> drop c env k a
   | "%raise", [ a ] -> expr c env k a; emit k Il.Throw
   (* (a primitive of the native runtime's C: the library's) *)
-  | _ when String.length p > 0 && p.[0] <> '%' -> refuse e.loc ("the primitive " ^ p ^ ", of the library's runtime") "3"
+  | _ when String.length p > 0 && p.[0] <> '%' -> refuse e.loc ("the primitive " ^ p ^ ", not in the runtime unit (lib_core/dotnet/Runtime.ml)") "3b"
   | _ -> refuse e.loc ("the primitive " ^ p) "1a"

@@ -468,6 +468,39 @@ but really use the same types!". So the decisions below are those of
    grown as a test needs it. Check: the same tests of each class by
    Microsoft's `dotnet` (its real classes) and by mini-dotnet (ours);
    stage 1's tests again, now with ML's library.
+   Asked of the compiler first (2026-10-31, the author: "ok let's
+   commit and move forward"): lib_core's Option compiles whole;
+   List needs Pervasives; Pervasives stops at its externals, of which
+   the %-primitives need no code (their uses are IL) and about forty
+   are the native runtime's C (channels, format_int and
+   format_float, the math functions, sys_exit). In steps:
+   - 3a. **What lib_core's ML needs of the compiler**: a closure
+     inside a polymorphic function, a polymorphic function partly
+     applied or as a value. Done: a closure's class generic in the
+     enclosing method's or class's type variables (its own !0...,
+     made at the method's !!0...; Il_types.helper_class); a local
+     polymorphic function (let's polymorphism: its type generalized
+     apart from the enclosing function's) compiled at the one type
+     its uses in the let's body give, used at several refused; a
+     partial application's classes generic in the function's
+     variables, made at what the use gives; a one-argument library
+     function as a value (List.map string_of_int) a class whose
+     Invoke is its call. Checked: generic_closures (map and filter
+     with local recursions and closures, a lambda capturing an 'a,
+     a closure made in a closure, map and twice partly applied at
+     ints and strings) by both runtimes.
+   - 3b. **Pervasives' externals over .NET**, a question for the
+     author: the C externals written as ML of a runtime unit for
+     .NET, which reaches .NET's members by decision 7's
+     `external ... = "dotnet:System.Math::Sin"` (the compiler makes
+     the MemberRef from the ML type), an external of Pervasives then
+     a call of that unit's function of its name; or each one
+     hand-written IL in the assembly (Ml::compare's way), or added to
+     mini-dotnet's Library (its adapters, decision 6's first way).
+     The channels decide most of it: OCaml's in_channel and
+     out_channel over .NET's Console and files.
+   - 3c. lib_core's units given with the program's (-L lib_core, in
+     units.txt's order), List, Option, String, Hashtbl, Printf first.
 4. **Speed**: mini-ml's benchmarks native, on .NET (Microsoft's), on
    mini-dotnet (its JIT), and the same programs in F# (fsc): their IL
    compared, -S beside ildasm's, and their time.

@@ -31,6 +31,10 @@
 #   tuples_lists  tuples and lists (Stdlib.tuple`n, Stdlib.list`1):
 #             built, matched, given to generic functions, compared
 #   arrays    T[]: literals, a.(i), a.(i) <- v, Array.length, a sort
+#   generic_closures  closures inside polymorphic functions (generic
+#             classes), local polymorphic functions at their use's type,
+#             polymorphic functions partly applied, a library function
+#             as a value
 #   tails     tail calls: loops of a hundred thousand turns as tail
 #             recursions (direct, mutual, over a list, through a Func)
 #   units/    three units in one assembly (geometry, counter, main): one
@@ -56,7 +60,7 @@ W=$(mktemp -d); trap 'rm -rf $W' EXIT
 failures=0
 ok() { echo "ok $*"; }
 fail() { echo "FAIL $*"; failures=$((failures + 1)); }
-progs="fib arith strings loops variants records exceptions equality closures generics generic_types tuples_lists arrays tails"
+progs="fib arith strings loops variants records exceptions equality closures generics generic_types tuples_lists arrays tails generic_closures"
 # what is refused: a program a line, and the stage that will have it
 refused() {
   local ml=$1 n=0
@@ -66,11 +70,9 @@ refused() {
     $ml -L lib_core -dotnet -o $W/r$n.dll $W/r$n.ml 2>&1 | sed "s|$W/||"
   done <<'R'
 let a = Array.make 3 0
-let twice f x = f (f x) let g = twice
 type t = { a : int } let b = { a = 1 } < { a = 2 }
 let () = let rec even n = n = 0 || odd (n - 1) and odd n = n <> 0 && even (n - 1) in print_int (if even 4 then 1 else 0)
-let id x = x
-let twice_all f l = let g x = f (f x) in g l
+let f () = let id x = x in (id 1, id "a")
 let () = print_float 1.5
 let x = 1 + (try 2 with Not_found -> 3)
 type t = A of { a : int } let v = A { a = 1 }

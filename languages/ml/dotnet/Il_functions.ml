@@ -111,6 +111,31 @@ let instantiation (gen : Scope.ty) (inst : Scope.ty) : (string * Scope.ty) list 
   go gen inst;
   !acc
 
+(* the expressions naming a variable, in an expression *)
+let uses (vid : int) (e : Scope.expr) : Scope.expr list =
+  let acc = ref [] in
+  let rec go (e : Scope.expr) : unit =
+    match e.e with
+    | Evar (Local v) -> if v.vid = vid then acc := e :: !acc
+    | Evar _ | Econst _ -> ()
+    | Elet (_, bs, body) -> List.iter (fun ((_, d) : Scope.pattern * Scope.expr) -> go d) bs; go body
+    | Efunction cases -> List.iter (fun ((_, g, b) : Scope.case) -> (match g with Some g -> go g | None -> ()); go b) cases
+    | Ematch (x, cases) | Etry (x, cases) ->
+        go x;
+        List.iter (fun ((_, g, b) : Scope.case) -> (match g with Some g -> go g | None -> ()); go b) cases
+    | Eapply (f, args) -> go f; List.iter go args
+    | Etuple es | Econs (_, es) | Earray es -> List.iter go es
+    | Erecord (_, fs) -> List.iter (fun ((_, x) : Scope.label * Scope.expr) -> go x) fs
+    | Ewith (r, _, fs) -> go r; List.iter (fun ((_, x) : Scope.label * Scope.expr) -> go x) fs
+    | Efield (r, _) -> go r
+    | Esetfield (r, _, x) -> go r; go x
+    | Eif (a, b, c) -> go a; go b; (match c with Some c -> go c | None -> ())
+    | Eseq (a, b) | Ewhile (a, b) -> go a; go b
+    | Efor (_, a, b, _, body) -> go a; go b; go body
+    | Eassert x | Econstraint (x, _) -> go x in
+  go e;
+  !acc
+
 (* a function's type after its first i arguments: the arrows of the
  * rest, to its result *)
 let rest (f : fn) (i : int) : Scope.ty =
@@ -118,43 +143,49 @@ let rest (f : fn) (i : int) : Scope.ty =
 
 (* the class of a function of the unit given i arguments: its fields
  * those (unit's an object, null), its constructor, its Invoke *)
-let rec level (c : c) (f : fn) (i : int) : int * int * int =
+(* the levels made, by function and number of arguments *)
+let levels : (string, tclass * int * S.meth) Hashtbl.t = Hashtbl.create 16
+
+let rec level (c : c) (f : fn) (i : int) : tclass * int * S.meth =
   let key = Printf.sprintf "level %d %d" f.tok i in
-  match Hashtbl.find_opt c.memo key with
-  | Some cls -> (cls, Hashtbl.find c.memo (key ^ " ctor"), Hashtbl.find c.memo (key ^ " invoke"))
+  match Hashtbl.find_opt levels key with
+  | Some x -> x
   | None ->
+      (* (a polymorphic function's: generic in its type variables, its
+       * own !0... there, the method called at them) *)
+      let saved = c.tvars in
+      let me = List.mapi (fun (j : int) (_ : string) -> S.Var j) f.gvars in
+      c.tvars <- List.combine f.gvars me;
       let n = List.length f.ptys in
       let given = List.filteri (fun (j : int) (_ : Scope.ty) -> j < i) f.ptys in
       let fields = List.mapi (fun (j : int) (t : Scope.ty) -> (Printf.sprintf "arg%d" (j + 1), arg_type c 0 t)) given in
-      let cls, ctor, toks =
-        new_class c "" (Printf.sprintf "%s_%d" f.fname i) 0x00100102 (sys c "Object") (object_ctor c) [] fields in
-      W.nest c.w cls c.cls;
+      let t = helper_class c (Printf.sprintf "%s_%d" f.fname i) (List.length f.gvars) fields in
       let p = List.nth f.ptys i in
-      let inv = W.method_def c.w cls "Invoke" 0x0086 (instance [ arg_type c 0 p ] (arg_type c 0 (rest f (i + 1)))) in
-      Hashtbl.replace c.memo key cls;
-      Hashtbl.replace c.memo (key ^ " ctor") ctor;
-      Hashtbl.replace c.memo (key ^ " invoke") inv;
+      let sg = instance [ arg_type c 0 p ] (arg_type c 0 (rest f (i + 1))) in
+      let inv = W.method_def c.w t.tok "Invoke" 0x0086 sg in
+      Hashtbl.replace levels key (t, inv, sg);
       let k = new_code () in
       if i + 1 = n then begin
         List.iteri
-          (fun (j : int) (fld : int) ->
-            if cts c 0 (List.nth f.ptys j) <> S.Void then (emit k (Il.Ldarg 0); emit k (Il.Ldfld fld)))
-          toks;
+          (fun (j : int) (_ : Scope.ty) ->
+            if cts c 0 (List.nth f.ptys j) <> S.Void then (emit k (Il.Ldarg 0); emit k (Il.Ldfld (field_tok c t me j))))
+          given;
         if cts c 0 p <> S.Void then emit k (Il.Ldarg 1);
-        emit k (Il.Call f.tok);
+        emit k (Il.Call (if f.gvars = [] then f.tok else W.method_spec c.w f.tok me));
         if cts c 0 f.rty = S.Void then emit k Il.Ldnull
       end
       else begin
-        List.iter (fun (fld : int) -> emit k (Il.Ldarg 0); emit k (Il.Ldfld fld)) toks;
+        List.iteri (fun (j : int) (_ : Scope.ty) -> emit k (Il.Ldarg 0); emit k (Il.Ldfld (field_tok c t me j))) given;
         emit k (Il.Ldarg 1);
-        let _, ctor', inv' = level c f (i + 1) in
-        emit k (Il.Newobj ctor');
-        emit k (Il.Ldftn inv');
+        let t', inv', sg' = level c f (i + 1) in
+        emit k (Il.Newobj (ctor_tok c t' me));
+        emit k (Il.Ldftn (method_tok c t' me "Invoke" inv' sg'));
         emit k (Il.Newobj (func_ctor c (cts c 0 (rest f (i + 1)))))
       end;
       emit k Il.Ret;
       finish c k inv;
-      (cls, ctor, inv)
+      c.tvars <- saved;
+      (t, inv, sg)
 
 let is_function (e : Scope.expr) : bool = match e.e with Efunction _ -> true | Econstraint ({ e = Efunction _; _ }, _) -> true | _ -> false
 

@@ -132,6 +132,26 @@ let constructor (c : c) (t : tclass) (parent_ctor : int) : unit =
   emit k Il.Ret;
   finish c k ctor
 
+(* a class of the lowering's own (a closure's, a partial application's):
+ * nested in the unit's class, sealed, generic in [arity] parameters
+ * (the enclosing method's or class's type variables, its own !0...),
+ * its fields (declared in those) set by its constructor *)
+let helper_class (c : c) (name : string) (arity : int) (fields : (string * S.t) list) : tclass =
+  let tok = W.type_def c.w "" (if arity > 0 then Printf.sprintf "%s`%d" name arity else name) 0x00100102 (sys c "Object") in
+  W.nest c.w tok c.cls;
+  for i = 0 to arity - 1 do
+    W.generic_param c.w tok i (Printf.sprintf "T%d" i)
+  done;
+  let t = { tok; arity; fields; ftoks = List.map (fun ((n, ty) : string * S.t) -> W.field_def c.w tok n 0x0006 ty) fields; ctor = 0 } in
+  constructor c t (object_ctor c);
+  t
+
+(* a method of such a class at its instance: the MethodDef, or a
+ * MemberRef of the instance, its signature the declared one *)
+let method_tok (c : c) (t : tclass) (args : S.t list) (name : string) (tok : int) (m : S.meth) : int =
+  if t.arity = 0 then tok
+  else memo c ("method " ^ S.encode_type_spec (at t args) ^ "." ^ name) (fun () -> W.member_ref c.w (W.type_spec c.w (at t args)) name m)
+
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)

@@ -39,15 +39,20 @@ val tvars_of : Scope.ty -> string list
 (* the generic type's variables, as an instance gives them *)
 val instantiation : Scope.ty -> Scope.ty -> (string * Scope.ty) list
 
+(* the expressions naming a variable (its uses), in an expression *)
+val uses : int -> Scope.expr -> Scope.expr list
+
 (* the variables an expression names, each once, in order *)
 val named : Scope.expr -> int list
 
 (* a function's type after its first i arguments *)
 val rest : fn -> int -> Scope.ty
 
-(* the class of a function given i arguments: the class, its
- * constructor (the arguments given), its Invoke (the next) *)
-val level : Il_code.c -> fn -> int -> int * int * int
+(* the class of a function given i arguments (generic in its type
+ * variables): the class, its Invoke (the next argument's), its
+ * signature; made once (levels, reset by each assembly) *)
+val levels : (string, Il_types.tclass * int * Signature.meth) Hashtbl.t
+val level : Il_code.c -> fn -> int -> Il_types.tclass * int * Signature.meth
 
 val is_function : Scope.expr -> bool
 

@@ -75,6 +75,14 @@
  *     'a list, [], x :: l         Stdlib.list`1, its Nil and Cons
  *     'a array, [| ... |]         T[]: newarr, stelem; a.(i) ldelem,
  *                                 a.(i) <- v stelem, length ldlen
+ *     a closure in a polymorphic  a class generic in its type
+ *       function                  variables (closure`1<!!0>); a local
+ *                                 polymorphic function at the one type
+ *                                 its uses give
+ *     map f (partly), map as a    the classes of a partial application
+ *       value                     generic too, at what the use gives;
+ *                                 string_of_int as a value, a class
+ *                                 whose Invoke is its call
  *     a call in tail position     tail. call; ret (a function value's
  *                                 last Invoke too): a loop written as
  *                                 a tail recursion runs in one frame
@@ -89,10 +97,10 @@
  *     type 'a box, let wrap x     Shapes.box<string> b = Shapes.wrap("..")
  *     let coordinates p = ...     Shapes.coordinates(q).Item1
  *
- * Stage 1: what is not above (a closure inside a polymorphic
- * function, one as a value, < on records, a unit not given, and so the
- * library's List or Array, until lib_core is compiled so) is refused
- * by name, the stage that will have it said. Tuples and lists are ML's own classes, not .NET's
+ * Stages 1 and 2, 3a: what is not above (a local function used at
+ * several types, < on records, a unit not given, and so the library's
+ * List or Array, until lib_core is compiled so) is refused by name,
+ * the stage that will have it said. Tuples and lists are ML's own classes, not .NET's
  * ValueTuple and ImmutableStack (decision 2's), which mini-dotnet's
  * library has not got yet. A try inside an operand is refused too: IL's rule is
  * that a protected region starts with an empty stack (Tiger's

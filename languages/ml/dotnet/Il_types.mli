@@ -8,6 +8,29 @@
  * MemberRefs of that, as C# makes them. Pervasives' ref and option,
  * until units are several (stage 1e), Stdlib's in each assembly. *)
 
+(* a class made for a type or by the lowering: its TypeDef, its generic
+ * parameters' number, its fields (declared in its own parameters) *)
+type tclass = {
+  tok : int;
+  arity : int;
+  mutable fields : (string * Signature.t) list;
+  mutable ftoks : int list;
+  mutable ctor : int;
+}
+
+(* such a class at type arguments; its token (isinst, a parent); its
+ * i-th field, its constructor, a method of it, at those *)
+val at : tclass -> Signature.t list -> Signature.t
+val type_tok : Il_code.c -> tclass -> Signature.t list -> int
+val field_tok : Il_code.c -> tclass -> Signature.t list -> int -> int
+val ctor_tok : Il_code.c -> tclass -> Signature.t list -> int
+val method_tok : Il_code.c -> tclass -> Signature.t list -> string -> int -> Signature.meth -> int
+
+(* a class of the lowering's own (a closure's, a partial
+ * application's): nested in the unit's, generic in so many parameters,
+ * its fields set by its constructor *)
+val helper_class : Il_code.c -> string -> int -> (string * Signature.t) list -> tclass
+
 (* the unit's classes forgotten, before another unit *)
 val reset : unit -> unit
 

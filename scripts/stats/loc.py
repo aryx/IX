@@ -439,6 +439,10 @@ APART = [
     # mini-tiger, its compiler, with it)
     ("languages/dotnet/, tiger/", "mini-dotnet, its compilers mini-tiger and mini-csc (plan_dotnet.md): the same",
      lambda dirs, path: path.startswith(("languages/dotnet/", "languages/tiger/"))),
+    # (the author, 2026-10-31: "this would allow us in make loc to skip
+    # all those dotnet code by just skipping any dotnet/ directory")
+    ("dotnet/", "the compilers' back ends to .NET and their runtime (plan_dotnet_languages.md): mini-ml's, lib_core's",
+     lambda dirs, path: "dotnet" in dirs),
     # (the author, 2026-10-08: "let's not cound drscheme and turbopascal
     # as part of make loc"; the second when it is there)
     ("editors/drscheme/, turbopascal/", "mini-drscheme and TinyTurboPascal, the playground's two programs of those languages: the same",

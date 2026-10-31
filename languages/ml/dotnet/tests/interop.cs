@@ -17,6 +17,8 @@ static class Interop {
         Console.WriteLine("a C# lambda given to ML: " + Shapes.map_area(a => a + 1, s));
         Func<long, long> triple = Shapes.scale(3);
         Console.WriteLine("an ML function returned to C#: " + triple(14));
+        Shapes.box<string> b = Shapes.wrap("an ML generic");
+        Console.WriteLine(b.content + ", from C# " + new Shapes.box<long>(7).Equals(Shapes.wrap(7L)));
         switch (s) {
             case Shapes.shape.Rect r: Console.WriteLine("C#'s switch on an ML variant: a Rect to " + r.Item2.x); break;
             case Shapes.shape.Circle c: Console.WriteLine("a Circle"); break;

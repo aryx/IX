@@ -60,10 +60,10 @@ let rec pattern (c : c) (k : code) (load : unit -> unit) (ty : Scope.ty) (p : Sc
   | Pcons (k', ps) ->
       let _, args, _ = k'.ctype in
       if List.length ps <> List.length args then refuse 0 (k'.cname ^ "'s arguments as one tuple") "1d";
-      let cls, _, fld =
+      let cls, _, fld, args =
         match k'.kind with
-        | Exn g -> exn c 0 g.gsym args
-        | Const _ | Block _ -> case c 0 k' in
+        | Exn g -> let cls, ctor, fld = exn c 0 g.gsym args in (cls, ctor, fld, args)
+        | Const _ | Block _ -> case c 0 k' ty in
       load ();
       emit k (Il.Isinst cls);
       emit k (Il.Brfalse fail);
@@ -72,11 +72,9 @@ let rec pattern (c : c) (k : code) (load : unit -> unit) (ty : Scope.ty) (p : Sc
           pattern c k (fun () -> load (); emit k (Il.Castclass cls); emit k (Il.Ldfld (fld i))) t p fail)
         (List.combine ps args)
   | Precord fs ->
-      let d = match ty with Tconstr (d, _) -> d | _ -> refuse 0 "a record pattern" "1b" in
       List.iter
         (fun ((l, p) : Scope.label * Scope.pattern) ->
-          let _, t, _ = l.ltype in
-          pattern c k (fun () -> load (); emit k (Il.Ldfld (field c 0 d l.lname))) t p fail)
+          pattern c k (fun () -> load (); emit k (Il.Ldfld (field c 0 ty l.lname))) (label_type l ty) p fail)
         fs
   | Por (a, b) ->
       let other = label k and ok = label k in

@@ -380,8 +380,27 @@ but really use the same types!". So the decisions below are those of
      generic, = at ints, strings, records) by both runtimes. Refused
      for now: a polymorphic function as a value or partly applied, a
      closure inside one (their classes would be generic too), one
-     at unit. 1d-2: generic types (a record or variant of
-     parameters, ref, option); 1d-3: tuples and lists.
+     at unit. 1d-2 done: a type of parameters a generic class
+     (tree`1, T0...), its constructors' classes generic too, their
+     parent the variant's at their parameters (Node`1 : tree`1<!0>);
+     a use of it at types its instance (tree`1<long>), its fields and
+     constructor MemberRefs of that, its own methods (constructor,
+     Equals, GetHashCode) through its own instance, a type
+     parameter's field boxed for Equals; Pervasives' ref and option
+     Stdlib.ref`1 and Stdlib.option`1 in each assembly (until stage
+     1e), ref, !, :=, incr, decr; a unit field an object, null; let
+     ... and; < and compare at a type variable by the assembly's
+     helper Stdlib.Ml::compare (strings ordinal, ints, floats,
+     chars, booleans; a record or a variant there, OCaml's structural
+     order, thrown as not yet; < on records refused at compile time).
+     Found: a function of cases took its argument's type from its
+     first pattern, the declared 'a tree, not int tree. Checked:
+     generic_types (a tree at ints and strings, functions over it at
+     any type, a record of two parameters, option, references in
+     loops, = and < on instances) by both runtimes; C# using an ML
+     generic record and function (Shapes.box<string>,
+     Shapes.wrap(7L)). Left for 1d-3: tuples and lists; then a
+     closure inside a polymorphic function, and one as a value.
    - 1e. **Modules**: a unit a static class, several units in one
      assembly.
 2. **Tail calls in mini-dotnet** (decision 3). Check: a loop of

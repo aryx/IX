@@ -4,4 +4,5 @@ a circle's area: 12
 ML's = from C#: True False
 a C# lambda given to ML: 201
 an ML function returned to C#: 42
+an ML generic, from C# True
 C#'s switch on an ML variant: a Rect to 11

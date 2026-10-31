@@ -86,8 +86,9 @@ ocaml-light's *ocamlopt*. Another unit's names are read from its
      exception a System.Exception; a function a `Func`, a closure a
      class of what it captures. So far ints, floats, strings, chars,
      booleans, records, variants, exceptions, `match`, functions and
-     closures, loops; the rest (polymorphism, tuples, lists,
-     references) is refused by its name and line.
+     closures, polymorphic functions and types (generic methods and
+     classes), references, options, loops; the rest (tuples, lists)
+     is refused by its name and line.
 
 **-h**
 :    How, by examples, and the options to debug the compiler

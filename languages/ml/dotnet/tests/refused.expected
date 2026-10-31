@@ -2,13 +2,13 @@
 r1.ml:1: a tuple: not compiled to .NET yet (plan_dotnet_languages.md, stage 1d)
 -- let twice f x = f (f x) let g = twice
 r2.ml:1: twice, a polymorphic function given fewer arguments, or as a value: not compiled to .NET yet (plan_dotnet_languages.md, stage 1d)
--- let r = ref 0
-r3.ml:1: a value of type Pervasives.ref, of parameters: not compiled to .NET yet (plan_dotnet_languages.md, stage 1d)
+-- type t = { a : int } let b = { a = 1 } < { a = 2 }
+r3.ml:1: < on records or variants (OCaml's structural order): not compiled to .NET yet (plan_dotnet_languages.md, stage 1d)
 -- let () = let rec even n = n = 0 || odd (n - 1) and odd n = n <> 0 && even (n - 1) in print_int (if even 4 then 1 else 0)
 r4.ml:1: a let rec of several, or of a pattern, or let ... and: not compiled to .NET yet (plan_dotnet_languages.md, stage 1c)
 -- let id x = x
 -- let l = [ 1; 2 ]
-r6.ml:1: a value of type list, of parameters: not compiled to .NET yet (plan_dotnet_languages.md, stage 1d)
+r6.ml:1: a value of type list: not compiled to .NET yet (plan_dotnet_languages.md, stage 1d)
 -- let () = print_float 1.5
 r7.ml:1: Pervasives.print_float, of the library: not compiled to .NET yet (plan_dotnet_languages.md, stage 3)
 -- let x = 1 + (try 2 with Not_found -> 3)

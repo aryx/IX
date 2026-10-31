@@ -52,8 +52,8 @@ let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
           operands c env k args;
           emit k (Il.Newobj ctor)
       | Const _ | Block _ ->
-          let _, ctor, _ = case c e.loc k' in
-          operands c env k args;
+          let _, ctor, _, _ = case c e.loc k' (type_of e) in
+          values c env k args;
           emit k (Il.Newobj ctor))
   | Evar (Local v) when Hashtbl.mem k.args v.vid || Hashtbl.mem k.slots v.vid || Hashtbl.mem k.captured v.vid -> load_var k v.vid
   (* (a function of the unit as a value: a Func) *)
@@ -124,7 +124,9 @@ let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
       emit k (Il.Stloc i);
       emit k (Il.Br top);
       place k over
-  | Elet (false, [ (p, d) ], body) ->
+  | Elet (false, bs, body) ->
+      (* (let ... and ...: each bound in turn, none seeing another) *)
+      List.iter (fun ((p, d) : Scope.pattern * Scope.expr) ->
       (match simple p, d.e with
        | Some (Some _), _ when cts_of c d = S.Void -> drop c env k d
        | Some (Some v), _ -> bind c k v (fun () -> expr c env k d)
@@ -138,7 +140,8 @@ let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
            emit k (Il.Br ok);
            place k fail;
            match_failure c k;
-           place k ok);
+           place k ok))
+        bs;
       expr c env k body
   (* a local function that calls itself: its closure's own field *)
   | Elet (true, [ (Pvar v, ({ e = Efunction _; _ } as d)) ], body) ->
@@ -154,13 +157,13 @@ let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
       matching c env k e (fun () -> emit k (Il.Ldloc v)) (type_of scrut) cases
   | Etry (body, cases) -> try_ c env k e body cases
   | Erecord (_, fs) ->
-      let d = decl (type_of e) in
       (* (the fields' values in the class's order, its constructor's) *)
       let fs = List.sort (fun ((a, _) : Scope.label * Scope.expr) ((b, _) : Scope.label * Scope.expr) -> compare a.pos b.pos) fs in
-      operands c env k (List.map snd fs);
-      emit k (Il.Newobj (record_ctor c e.loc d))
+      values c env k (List.map snd fs);
+      emit k (Il.Newobj (record_ctor c e.loc (type_of e)))
   | Ewith (r, _, fs) ->
-      let d = decl (type_of e) in
+      let ty = type_of e in
+      let d = decl ty in
       let labels = match Resolve.type_fields d with Some l -> List.map snd l | None -> [] in
       let labels = List.sort (fun (a : Scope.label) (b : Scope.label) -> compare a.pos b.pos) labels in
       let v = local k (cts_of c r) in
@@ -170,17 +173,19 @@ let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
         (fun (i : int) (l : Scope.label) ->
           k.pending <- k.pending + i;
           (match List.find_opt (fun ((l', _) : Scope.label * Scope.expr) -> l'.lname = l.lname) fs with
-           | Some (_, x) -> expr c env k x
-           | None -> emit k (Il.Ldloc v); emit k (Il.Ldfld (field c e.loc d l.lname)));
+           | Some (_, x) -> expr c env k x; if cts_of c x = S.Void then emit k Il.Ldnull
+           | None -> emit k (Il.Ldloc v); emit k (Il.Ldfld (field c e.loc ty l.lname)));
           k.pending <- k.pending - i)
         labels;
-      emit k (Il.Newobj (record_ctor c e.loc d))
+      emit k (Il.Newobj (record_ctor c e.loc ty))
   | Efield (r, l) ->
       expr c env k r;
-      emit k (Il.Ldfld (field c e.loc (decl (type_of r)) l.lname))
+      emit k (Il.Ldfld (field c e.loc (type_of r) l.lname));
+      (* (a unit field's null) *)
+      if cts_of c e = S.Void then emit k Il.Pop
   | Esetfield (r, l, x) ->
-      operands c env k [ r; x ];
-      emit k (Il.Stfld (field c e.loc (decl (type_of r)) l.lname))
+      values c env k [ r; x ];
+      emit k (Il.Stfld (field c e.loc (type_of r) l.lname))
   | Etuple _ -> refuse e.loc "a tuple" "1d"
   | Earray _ -> refuse e.loc "an array" "1d"
   | Eassert _ -> refuse e.loc "an assert" "1b"
@@ -193,6 +198,18 @@ and operands (c : c) (env : env) (k : code) (es : Scope.expr list) : unit =
     (fun (a : Scope.expr) ->
       expr c env k a;
       if cts_of c a <> S.Void then k.pending <- k.pending + 1)
+    es;
+  k.pending <- saved
+
+(* the values of a constructor's arguments, a record's fields: as
+ * operands, unit's an object, null *)
+and values (c : c) (env : env) (k : code) (es : Scope.expr list) : unit =
+  let saved = k.pending in
+  List.iter
+    (fun (a : Scope.expr) ->
+      expr c env k a;
+      if cts_of c a = S.Void then emit k Il.Ldnull;
+      k.pending <- k.pending + 1)
     es;
   k.pending <- saved
 
@@ -402,14 +419,28 @@ and prim (c : c) (env : env) (k : code) (e : Scope.expr) (p : string) (args : Sc
   let all () = operands c env k args in
   let op (o : Il.op) = all (); emit k o in
   let first () : S.t = match args with a :: _ -> cts_of c a | [] -> S.Void in
-  (* a comparison: a string's by CompareOrdinal against 0 *)
+  (* both operands boxed (a type variable's value) *)
+  let boxed () =
+    let ty = first () in
+    match args with
+    | [ a; b ] ->
+        expr c env k a; emit k (Il.Box (W.type_spec c.w ty));
+        k.pending <- k.pending + 1; expr c env k b; emit k (Il.Box (W.type_spec c.w ty)); k.pending <- k.pending - 1
+    | _ -> refuse e.loc "a comparison of a polymorphic value" "1d" in
+  (* a comparison: a string's by CompareOrdinal against 0; a type
+   * variable's by the assembly's Ml::compare *)
   let compare (lt : bool) (negate : bool) =
-    if first () = S.String then begin
-      all ();
-      emit k (Il.Call (lib c "String" "CompareOrdinal" (static [ S.String; S.String ] S.I4)));
-      emit k (Il.Ldc_i4 0l)
-    end
-    else all ();
+    (match first () with
+    | S.String ->
+        all ();
+        emit k (Il.Call (lib c "String" "CompareOrdinal" (static [ S.String; S.String ] S.I4)));
+        emit k (Il.Ldc_i4 0l)
+    | S.MVar _ | S.Var _ ->
+        boxed ();
+        emit k (Il.Call (ml_compare c));
+        emit k (Il.Ldc_i4 0l)
+    | S.Class _ | S.GenericInst _ -> refuse e.loc "< on records or variants (OCaml's structural order)" "1d"
+    | _ -> all ());
     (* (a float's NaN: unordered, so a <= b is not (a > b, or unordered)) *)
     let unordered = negate && first () = S.R8 in
     emit k (if lt then Il.Clt unordered else Il.Cgt unordered);
@@ -429,7 +460,7 @@ and prim (c : c) (env : env) (k : code) (e : Scope.expr) (p : string) (args : Sc
          | _ -> refuse e.loc "= of a polymorphic value" "1d")
     (* (a record's or a variant's Equals, structural; an exception's
      * the same object) *)
-    | S.Class _ when p = "%equal" || p = "%notequal" -> op (Il.Callvirt (lib c "Object" "Equals" (instance [ S.Object ] S.Bool)))
+    | S.Class _ | S.GenericInst _ when p = "%equal" || p = "%notequal" -> op (Il.Callvirt (lib c "Object" "Equals" (instance [ S.Object ] S.Bool)))
     | _ -> op Il.Ceq in
   match p, args with
   | ("%addint" | "%addfloat"), _ -> op (Il.Binop Il.Add)
@@ -486,6 +517,36 @@ and prim (c : c) (env : env) (k : code) (e : Scope.expr) (p : string) (args : Sc
       emit k (Il.Conv (Il.K_i4, false, false));
       emit k (Il.Callvirt (lib c "String" "get_Chars" (instance [ S.I4 ] S.Char)));
       emit k (Il.Conv (Il.K_i4, false, false))
+  (* ref, !, :=, incr, decr: Pervasives' 'a ref, a record *)
+  | "%makemutable", _ -> values c env k args; emit k (Il.Newobj (record_ctor c e.loc (type_of e)))
+  | "%field0", [ r ] ->
+      expr c env k r;
+      emit k (Il.Ldfld (field0 c e.loc (type_of r)));
+      if cts_of c e = S.Void then emit k Il.Pop
+  | "%setfield0", [ r; _ ] -> values c env k args; emit k (Il.Stfld (field0 c e.loc (type_of r)))
+  | ("%incr" | "%decr"), [ r ] ->
+      let f = field0 c e.loc (type_of r) in
+      expr c env k r;
+      emit k Il.Dup;
+      emit k (Il.Ldfld f);
+      emit k (Il.Ldc_i8 1L);
+      emit k (Il.Binop (if p = "%incr" then Il.Add else Il.Sub));
+      emit k (Il.Stfld f)
+  | "compare", [ _; _ ] -> (
+      match first () with
+      | S.MVar _ | S.Var _ | S.String | S.I8 | S.R8 | S.I4 | S.Bool ->
+          (match first () with
+           | S.MVar _ | S.Var _ -> boxed ()
+           | ty ->
+               let box = match ty with S.String -> [] | S.I8 -> [ Il.Box (sys c "Int64") ] | S.R8 -> [ Il.Box (sys c "Double") ] | S.I4 -> [ Il.Box (sys c "Int32") ] | _ -> [ Il.Box (sys c "Boolean") ] in
+               (match args with
+                | [ a; b ] ->
+                    expr c env k a; List.iter (emit k) box;
+                    k.pending <- k.pending + 1; expr c env k b; List.iter (emit k) box; k.pending <- k.pending - 1
+                | _ -> ()));
+          emit k (Il.Call (ml_compare c));
+          emit k (Il.Conv (Il.K_i8, false, false))
+      | _ -> refuse e.loc "compare on records or variants (OCaml's structural order)" "1d")
   | "%identity", _ -> all ()
   | "%ignore", [ a ] -> drop c env k a
   | "%raise", [ a ] -> expr c env k a; emit k Il.Throw
@@ -531,7 +592,9 @@ let define (c : c) (env : env) (f : fn) : unit =
    | Some cases ->
        (* (the last argument matched: the function's cases a match's) *)
        let arg = !last in
-       let pty = match cases with (p, _, _) :: _ -> pattern_type p | [] -> Resolve.unit_t in
+       (* (its argument's own type: a constructor's pattern says the
+        * declared one, 'a tree, not int tree) *)
+       let pty = match List.rev f.ptys with t :: _ -> t | [] -> (match cases with (p, _, _) :: _ -> pattern_type p | [] -> Resolve.unit_t) in
        matching c env k f.body (fun () -> if arg >= 0 then emit k (Il.Ldarg arg)) pty cases);
   emit k Il.Ret;
   finish c k f.tok;
@@ -545,6 +608,7 @@ let unit_ (name : string) (items : Scope.item list) : string =
   (* (a static class: abstract and sealed) *)
   let cls = W.type_def w "" name 0x00100181 obj in
   let c = { w; runtime; console; cls; uname = name; memo = Hashtbl.create 64; tvars = [] } in
+  Il_types.reset ();
   closures := 0;
   Hashtbl.replace c.memo "type Object" obj;
   let env = { by_var = Hashtbl.create 16; by_sym = Hashtbl.create 16; fields = Hashtbl.create 16 } in

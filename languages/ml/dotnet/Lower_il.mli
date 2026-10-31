@@ -52,6 +52,18 @@
  *     id 5, id "a"                call id<long>, call id<string>: a
  *                                 MethodSpec, the call's instance
  *     = on 'a                     box !!0, Object::Equals
+ *     < on 'a, compare            box !!0, the assembly's helper
+ *                                 Stdlib.Ml::compare (strings, ints,
+ *                                 floats, chars, booleans)
+ *     type 'a tree = ...          a generic class tree`1, its cases'
+ *                                 classes generic too (Node`1 :
+ *                                 tree`1<!0>); int tree tree`1<long>,
+ *                                 its fields and constructor MemberRefs
+ *                                 of that instance, as C#'s
+ *     'a ref, 'a option           Pervasives' types: Stdlib.ref`1,
+ *                                 Stdlib.option`1 in the assembly
+ *     ref x, !r, r := v, incr r   newobj, ldfld, stfld contents
+ *     a unit field, argument      an object, null (as in a Func)
  *
  *     shapes.ml                   interop.cs (tests/)
  *     type shape =                Shapes.shape s =
@@ -60,10 +72,11 @@
  *     match s with Rect ...       switch (s) { case Shapes.shape.Rect r: }
  *     let map_area (f : int ->    Shapes.map_area(a => a + 1, s)
  *       int) s = f (area s)
+ *     type 'a box, let wrap x     Shapes.box<string> b = Shapes.wrap("..")
  *
- * Stages 1a to 1c, and 1d's polymorphic functions: what is not above
- * (types of parameters, tuples and lists, references, a closure inside
- * a polymorphic function, other units) is refused by name, the stage
+ * Stages 1a to 1c, 1d's polymorphic functions and types of parameters:
+ * what is not above (tuples and lists, a closure inside a polymorphic
+ * function, < on records, other units) is refused by name, the stage
  * that will have it said. A try inside an operand is refused too: IL's rule is
  * that a protected region starts with an empty stack (Tiger's
  * emitter met it: Microsoft's JIT refuses it), so its value is made a

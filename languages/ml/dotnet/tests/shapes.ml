@@ -17,3 +17,7 @@ let describe s = match s with Circle _ -> "a circle" | Rect _ -> "a rectangle"
    function made after a let is returned as one) *)
 let map_area (f : int -> int) s = f (area s)
 let scale k = let factor = k in fun n -> n * factor
+
+(* a type of a parameter, a polymorphic function: C#'s generics *)
+type 'a box = { content : 'a }
+let wrap x = { content = x }

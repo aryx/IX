@@ -26,6 +26,8 @@
 #             values, a local let rec, curried, unit arguments
 #   generics  polymorphic functions as generic methods, each call its
 #             instantiation; = on a type variable
+#   generic_types  types of parameters as generic classes (a tree, a
+#             record), ref and option, = and < on their values
 # usage: languages/ml/dotnet/tests/run.sh [-dune] [-mini] [-ms] [-record]
 #   (dune build, and mini-mk in languages/ml and languages/dotnet, first)
 # MINIML, MINIDOTNET: mini-ml's builds, if not _mk/7's (ix built by
@@ -45,7 +47,7 @@ W=$(mktemp -d); trap 'rm -rf $W' EXIT
 failures=0
 ok() { echo "ok $*"; }
 fail() { echo "FAIL $*"; failures=$((failures + 1)); }
-progs="fib arith strings loops variants records exceptions equality closures generics"
+progs="fib arith strings loops variants records exceptions equality closures generics generic_types"
 # what is refused: a program a line, and the stage that will have it
 refused() {
   local ml=$1 n=0
@@ -56,7 +58,7 @@ refused() {
   done <<'R'
 let pair = (1, "one")
 let twice f x = f (f x) let g = twice
-let r = ref 0
+type t = { a : int } let b = { a = 1 } < { a = 2 }
 let () = let rec even n = n = 0 || odd (n - 1) and odd n = n <> 0 && even (n - 1) in print_int (if even 4 then 1 else 0)
 let id x = x
 let l = [ 1; 2 ]

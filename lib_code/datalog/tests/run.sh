@@ -40,6 +40,7 @@ answers() { # facts, then the variables
 
 $ANALYZE -facts $T/contexts.c > $W/c.facts 2>&1
 $ANALYZE -facts -L lib_core $T/contexts.ml > $W/ml.facts 2>&1
+$ANALYZE -facts $T/hole.c > $W/hole.facts 2>&1
 answers $W/c.facts p1 q1 r1 o1 n1 f1 > $W/contexts_c.out
 # (not Steensgaard's: lib_core's facts are too many for its pairs)
 analyses=${analyses#steensgaard }
@@ -70,7 +71,9 @@ inside_steensgaard() { # facts
   $DATALOG -q 'pt(V, H)' $D/instructions.dl $D/steensgaard.dl $1 2> /dev/null | sort -u > $W/b
   echo "andersen inside steensgaard: $(comm -23 $W/a $W/b | wc -l)"
 }
-{ for f in c ml; do
+{ echo "== hole.c: a first argument with an object only in dead code"
+  for a in object1 object2_heap1 type2_heap1 hybrid; do same_reach $W/hole.facts call2_heap1 $a; done
+  for f in c ml; do
     echo "== $f"
     [ $f = c ] && inside_steensgaard $W/$f.facts
     for a in insensitive call1 object1 hybrid selective; do inside_andersen $W/$f.facts $a; done

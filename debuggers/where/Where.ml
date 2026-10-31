@@ -34,13 +34,24 @@ let address w =
   if w <> "" && String.for_all (fun c -> (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) w then int_of_string_opt ("0x" ^ w)
   else None
 
+(* an a.out's tables, or an ELF's two sections of them (mini-ld -g's, as
+ * mini-acid reads them) *)
+let tables (bytes : string) : Symbols.t option =
+  match Elf_file.read bytes with
+  | None -> Symbols.read bytes
+  | Some e -> (
+      match Elf_file.section e ".plan9.syms", Elf_file.section e ".plan9.lines", Elf_file.text_segment e with
+      | Some s, Some l, Some (g : Elf_file.segment) ->
+          Some (Symbols.of_tables (Elf_file.bytes bytes s) (Elf_file.bytes bytes l) g.vaddr (g.vaddr + g.filesz))
+      | _ -> None)
+
 let main (caps : < caps; .. >) (argv : string array) : Exit.t =
   match List.tl (Array.to_list argv) with
   | prog :: (_ :: _ as words) -> (
       match FS.read caps (Fpath.v prog) with
       | exception Sys_error m -> Console.eprint caps (Printf.sprintf "where: %s: %s\n" prog m); Exit.Err "open"
       | bytes ->
-          match Symbols.read bytes with
+          match tables bytes with
           | None -> Console.eprint caps (Printf.sprintf "where: %s: no symbol table (link it with mini-ld -g)\n" prog); Exit.Err "no table"
           | Some t ->
               List.iter (fun w ->

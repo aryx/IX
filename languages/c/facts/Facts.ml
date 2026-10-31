@@ -43,6 +43,18 @@ let temp () : string =
   fact "var_in" [ sym t; sym !scope ];
   t
 
+(* what holds a value no pointer analysis follows: a number, 0, arithmetic.
+ * So a variable with nothing in it is one no run has reached (Closure_facts's
+ * scalar): what lets an analysis choose a context by an argument's object *)
+let constant () : string =
+  fact "var_in" [ sym "_const"; sym !scope ];
+  fact "global_var" [ sym "_const" ];
+  fact "scalar" [ sym "_const" ];
+  "_const"
+
+let some_value (v : string option) : string =
+  match v with Some v -> v | None -> constant ()
+
 (* a place a function's frame makes: which function, for type sensitivity *)
 let alloc (t : string) (place : string) : unit =
   fact "point_to" [ sym t; sym place ];
@@ -102,7 +114,7 @@ let rec value (x : Tree.expr) : string option =
       None
   | Tree.Assign (_, l, r) ->
       let v = value r in
-      store l v;
+      store l (Some (some_value v));
       v
   | Tree.Cond (c, a, b) -> (
       ignore (value c);
@@ -112,8 +124,8 @@ let rec value (x : Tree.expr) : string option =
       | None, None -> None
       | _ ->
           let t = temp () in
-          Option.iter (fun (v : string) -> fact "assign" [ sym t; sym v ]) va;
-          Option.iter (fun (v : string) -> fact "assign" [ sym t; sym v ]) vb;
+          fact "assign" [ sym t; sym (some_value va) ];
+          fact "assign" [ sym t; sym (some_value vb) ];
           Some t)
   | Tree.Call (f, args) -> call x f args
   | Tree.Elem (a, s) ->
@@ -207,7 +219,7 @@ and call (x : Tree.expr) (f : Tree.expr) (args : Tree.expr list) : string option
       fact "in_function" [ site; sym !scope ];
       List.iteri
         (fun (i : int) (v : string option) ->
-          Option.iter (fun (v : string) -> fact "argument" [ site; Num (i + 1); sym v ]) v)
+          fact "argument" [ site; Num (i + 1); sym (some_value v) ])
         values;
       fact "call_ret" [ site; sym t ];
       (match direct with
@@ -278,7 +290,7 @@ let rec statement (s : Tree.stmt) : unit =
       Option.iter (fun (c : Tree.expr) -> ignore (value c)) test;
       statement step;
       statement body
-  | Tree.Return (Some x, _) -> Option.iter (fun (v : string) -> fact "assign" [ sym ("ret_" ^ !scope); sym v ]) (value x)
+  | Tree.Return (Some x, _) -> fact "assign" [ sym ("ret_" ^ !scope); sym (some_value (value x)) ]
   | Tree.Used l | Tree.Set l -> List.iter (fun (x : Tree.expr) -> ignore (value x)) l
   | Tree.Case _ | Tree.Label _ | Tree.Goto _ | Tree.Break | Tree.Continue | Tree.Return (None, _) -> ()
 

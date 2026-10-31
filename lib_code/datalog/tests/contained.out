@@ -1,3 +1,8 @@
+== hole.c: a first argument with an object only in dead code
+object1 reaches what call2_heap1 reaches: 0 not
+object2_heap1 reaches what call2_heap1 reaches: 0 not
+type2_heap1 reaches what call2_heap1 reaches: 0 not
+hybrid reaches what call2_heap1 reaches: 0 not
 == c
 andersen inside steensgaard: 0
 insensitive inside andersen: 0

@@ -380,3 +380,8 @@ mini-datalog.
 order: the sweep, the calls of a run against the call graph (decision 7c),
 `bugs.dl` on `points_to/`, capabilities, `ext` split. The sweep done:
 `lib_code/README.md`; 23 of 44 programs read, mini-ml and mini-cc not.
+
+2026-10-31: decision 7c, by `lib_code/datalog/tests/dynamic.sh`: 5 ML programs,
+94 runs of their tests, 0 functions run and not reached; for C, toy programs,
+which showed the object files' hole (`hole.c`) and its fix. Function by function,
+not call by call: which call went where is not recorded (`-prof` counts addresses).

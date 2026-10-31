@@ -127,34 +127,35 @@ What the facts force, each in `contexts.dl`'s header: a variable a
 closure captures and a C variable whose address is taken have no
 context (m-CFA's choice, not k-CFA's); an ML function of several
 arguments is one frame; object sensitivity's receiver is the first
-argument. For ML every value has an object (`scalar` at the least), so
-an empty first argument means no run gets there. For C the facts say
-no constant, so `p = 0; f(p);` is not followed where `p` is that: the
-one known hole, in the object, type and hybrid files.
+argument. Every value has an object (`scalar` at the least), so an empty
+first argument means no run gets there; `tests/dynamic.sh -c` holds it to
+that on `tests/hole.c`. What remains, in C: a call given what is read from a
+global or a field never written, 0, is not followed by the object, type and
+hybrid files.
 
 ### What they cost and give (`tests/real.sh`, 2026-10-31)
 
 One core, by OCaml 4.14's build. `pt`: (variable, object) pairs, contexts
 forgotten; `several`: calls with more than one target. `>150`: stopped.
 
-| | mini-datalog, 101,863 facts | | | | rc (C), 14,264 facts | | |
+| | mini-datalog, 101,863 facts | | | | rc (C), 15,026 facts | | |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | | s | `pt` | edges | `several` | s | `pt` | edges |
 | `andersen` | 22.4 | 1,223,579 | 13,124 | 200 | 0.3 | 26,077 | 1,270 |
-| `insensitive` | 26.0 | 492,834 | 8,531 | 154 | 0.6 | 25,555 | 1,258 |
-| `call1` | 45.9 | 441,334 | 8,041 | 154 | 3.5 | 25,541 | 1,258 |
-| `call1_heap1` | 57.6 | 318,220 | 7,763 | 152 | 15.4 | 16,171 | 1,258 |
-| `call2_heap1` | >150 | | | | 82.1 | 16,171 | 1,258 |
-| `object1` | >150 | | | | 1.7 | 25,536 | 1,258 |
-| `object2_heap1` | >150 | | | | 33.9 | 25,224 | 1,258 |
-| `type2_heap1` | >150 | | | | 12.8 | 25,224 | 1,258 |
-| `hybrid` | >150 | | | | 54.2 | 24,807 | 1,258 |
-| `selective` | >150 | | | | 28.8 | 16,171 | 1,258 |
+| `insensitive` | 26.0 | 492,834 | 8,531 | 154 | 0.6 | 25,368 | 1,256 |
+| `call1` | 45.9 | 441,334 | 8,041 | 154 | 3.9 | 25,354 | 1,256 |
+| `call1_heap1` | 57.6 | 318,220 | 7,763 | 152 | 16.1 | 16,074 | 1,256 |
+| `call2_heap1` | >150 | | | | >100 | | |
+| `object1` | >150 | | | | 2.0 | 25,349 | 1,256 |
+| `object2_heap1` | >150 | | | | 72.4 | 25,040 | 1,256 |
+| `type2_heap1` | >150 | | | | 27.2 | 25,040 | 1,256 |
+| `hybrid` | >150 | | | | 51.4 | 16,074 | 1,256 |
+| `selective` | >150 | | | | 30.0 | 16,074 | 1,256 |
 
 Read: reachability removes 60% of Andersen's pairs on ML, because it
 leaves out what the program does not run; a heap context is what
-removes the next quarter (rc: `call1_heap1` 37% fewer pairs than
-`call1`, and no more from a second call site). The calls with several
+removes the next quarter (rc: `call1_heap1` 37% fewer pairs than `call1`,
+`hybrid` as many, `object2_heap1` not). The calls with several
 targets hardly move (154 to 152): what they go through is not told
 apart by a context (`ext`, the one place of arrays, exceptions and C;
 a captured variable), so that, not longer contexts, is what to refine
@@ -205,3 +206,28 @@ is dead in this one, so 196 of the 236 are to be read, not deleted. Fields are
 noisier: what a program writes by `Marshal` (`Asm`'s `s_items`) another reads.
 `dead_ix.txt` is a list to read, not to delete by: its grep sees no `open`, and
 tests and other programs not read may use what it lists.
+
+### Against real runs (`tests/dynamic.sh`, 2026-10-31)
+
+Plan_datalog.md's decision 7c. A function that ran and that the call graph does
+not reach is the analysis's mistake. `mini-5i -prof` says the addresses that ran,
+the link's map their functions, `mini-where` (a link with `-g`) each one's unit
+and first line, which is a `closure(F, Unit, Line)`. No emulator change.
+
+| program, by mini-ml | runs (its own tests) | functions ran | reached by `insensitive.dl` | missed |
+|---|---:|---:|---:|---:|
+| mini-forth | 5 | 223 | 815 | 0 |
+| mini-datalog | 12 | 351 | 1,253 | 0 |
+| mini-rc | 45 | 362 | 1,202 | 0 |
+| mini-prolog | 6 | 216 | 1,457 | 0 |
+| mini-dc | 26 | 156 | 744 | 0 |
+
+The check can fail: with calls through a local variable followed only for curried
+stages (`RULES=` a broken copy), mini-forth's 223 give 212 missed. For C, by `-c`
+on toy programs under every context file: `hole.c` missed `sink` and `target` under
+object1, object2_heap1, type2_heap1 and hybrid, until the facts said what a constant
+holds; now none. It is a one-way test: what ran is a part of what can run, so
+reached and not run says nothing, and it speaks only for those workloads and for
+the context file run (ML: `insensitive.dl`, the one `-dead` uses; the object files
+do not end on these programs). A source edited after its object gives lines that
+name another function: the script says so; run it on a clean copy of a tree others edit.

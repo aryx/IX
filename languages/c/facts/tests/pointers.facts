@@ -12,12 +12,18 @@ var_in('ret_show', 'show').
 defined('show', 18).
 parameter('show', 1, 'show__n').
 var_in('show__n', 'show').
+var_in('_const', 'show').
+global_var('_const').
+scalar('_const').
+assign_store_field('show__n', '_fld__val', '_const').
 point_to('hide', 'hide').
 return('hide', 'ret_hide').
 var_in('ret_hide', 'hide').
 defined('hide', 19).
 parameter('hide', 1, 'hide__n').
 var_in('hide__n', 'hide').
+var_in('_const', 'hide').
+assign_store_field('hide__n', '_fld__val', '_const').
 var_in('table', '_init').
 global_var('table').
 global_def('table', '_init').
@@ -138,10 +144,14 @@ var_in('main__s', 'main').
 assign('main__s', 'main__t10').
 var_in('main__t11', 'main').
 in_function('_in_main_line_74_3', 'main').
+var_in('_const', 'main').
+argument('_in_main_line_74_3', 1, '_const').
+argument('_in_main_line_74_3', 2, '_const').
 call_ret('_in_main_line_74_3', 'main__t11').
 call_direct('_in_main_line_74_3', 'cons').
 var_in('main__t12', 'main').
 in_function('_in_main_line_74_4', 'main').
+argument('_in_main_line_74_4', 1, '_const').
 argument('_in_main_line_74_4', 2, 'main__t11').
 call_ret('_in_main_line_74_4', 'main__t12').
 call_direct('_in_main_line_74_4', 'cons').

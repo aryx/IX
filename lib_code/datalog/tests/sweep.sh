@@ -15,28 +15,8 @@ cd "$(dirname "$0")/../../.."
 out=$1; limit=${2:-180}
 export ANALYZE=${ANALYZE:-$PWD/_build/default/analyzers/Main.exe}
 mkdir -p $out
-git ls-files '*.ml' > $out/.all
 
-# a mkfile's variable, its \-lines joined, $names inside it expanded
-var() { # mkfile name
-  local line v
-  line=$(sed -e ':a' -e '/\\$/N; s/\\\n//; ta' "$1" | grep -E "^$2 ?=" | head -1 | sed -E "s/^$2 ?= ?//")
-  while [[ $line =~ \$([A-Za-z_]+) ]]; do
-    v=$(var "$1" "${BASH_REMATCH[1]}")
-    line=${line//\$${BASH_REMATCH[1]}/$v}
-  done
-  echo "$line"
-}
-
-unit_file() { # directory, -I's, unit
-  local d f
-  for d in $1 $2 _mk/7/$1; do
-    [ -f $d/$3.ml ] && { echo $d/$3.ml; return; }
-  done
-  f=$(find $1 -name "$3.ml" 2> /dev/null | head -1)
-  [ -z "$f" ] && f=$(grep -E "/$3\.ml$" $out/.all | head -1)
-  echo $f
-}
+. lib_code/datalog/tests/mk_units.sh
 
 one() { # a mkfile
   local mk=$1 dir=$(dirname $1) name files u f missing= incs= flags= i
@@ -60,6 +40,6 @@ one() { # a mkfile
     printf '%-44s %4ds NOT READ (exit %d): %s\n' $dir $((t1 - t0)) $st "$(head -1 $out/$name.err | cut -c1-80)"
   fi
 }
-export -f one unit_file var
+export -f one
 export out limit
-git grep -lE '^SRC ?=' -- '*mkfile' | xargs -P 8 -n 1 bash -c 'one "$0"' | sort | tee $out/SUMMARY
+git grep -lE '^SRC ?=' -- '*mkfile' |  xargs -P 8 -n 1 bash -c '. lib_code/datalog/tests/mk_units.sh; one "$0"' | sort | tee $out/SUMMARY

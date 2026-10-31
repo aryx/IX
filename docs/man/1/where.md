@@ -11,7 +11,8 @@ where – a trace's addresses named
 # DESCRIPTION
 *Where* says, of each *address* of *program*, the function it is in,
 the offset in it, and its file and line, from the program's own
-symbol table and pc/line table (\man{ld}{1} **-g**). An address is
+symbol table and pc/line table (\man{ld}{1} **-g**), an a.out's or
+an ELF's. An address is
 hexadecimal, `0x` before it or not; the words of a trace can be given
 as they are (`lr=0x1698`), what is no address left out. The line is,
 in a program of \man{ml}{1}, the first of the function's body; in an

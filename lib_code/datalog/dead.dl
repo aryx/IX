@@ -44,9 +44,8 @@
 % Each answer is still a "may". Functions of the same name in two C files
 % are one here (static or not), so one alive keeps the other. A field read
 % only by a polymorphic compare, a print, or a memcpy of its structure is
-% flagged, and C's facts say no store of a constant, so a member only ever
-% set to numbers and not read is missed. Write-only variables are not found:
-% naming a global is all that is asked of it.
+% flagged. Write-only variables are not found: naming a global is all that is
+% asked of it.
 %
 % others:
 % lint (Stephen Johnson, 1978) said a function defined and not used, by

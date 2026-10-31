@@ -27,7 +27,8 @@
  * whatever the call (a global, a static, a function); in_function(I, F);
  * alloc_in(H, F), the function that makes H; and for dead.dl, defined(F,
  * Line), global_def(G, '_init'), dead_stmt(F, Line), allocator_call(A, F)
- * (a call of an allocator is an object above, not a call).
+ * (a call of an allocator is an object above, not a call). A value that is no
+ * pointer (a constant, arithmetic) is the variable _const, scalar(_const).
  *
  * A local x of f is f__x, a temporary f__tN, a member m is _fld__m
  * (whatever its structure: the analysis is by field's name), a call

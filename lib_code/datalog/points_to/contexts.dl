@@ -247,7 +247,7 @@ pt(R, C1, C2, L, L1, L2) :-
 
 % ---- what the first pass says, for the files that ask
 
-has_object(I) :- argument(I, 1, A), pt(A, _).
+has_object(I) :- argument(I, 1, A), pt(A, O), O \= scalar.
 
 % ---- the answers, contexts forgotten
 

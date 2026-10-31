@@ -3,10 +3,10 @@
 % The first parameter then holds that object alone, the "filter" that
 % makes a method's this precise.
 %
-% (A first argument with no object in this context: for ML, no run
-% gets here, every value having one, a scalar at least (Closure_facts).
-% For C, whose facts say no constant, p = 0; f(p); is not followed where
-% p is that: the hole of these files for C, tests/table.sh to measure.)
+% (A first argument with no object in this context: no run gets here, every
+% value having one, a scalar at least: Closure_facts and Facts. Not quite, for
+% C: what is read from a global or a field never written, 0, has none, so a
+% call given that is not followed. tests/hole.c, tests/dynamic.sh -c.)
 filtered(I) :- has_object(I).
 callee(I, C1, C2, F, O, none) :-
   passed(I, 1, C1, C2, O, _, _), has_object(I), fresh(I, C1, C2, F, _, _).

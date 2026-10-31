@@ -6,12 +6,26 @@
 (* the windows, the one in front first; the first has the keyboard
  * (the hidden ones are last) *)
 val windows : Window.t list ref
+(* all, those of a layer too (Window.layer), which [windows] does not have *)
+val all : unit -> Window.t list
 (* the one of a number (a mount's spec) *)
 val find : int -> Window.t option
 (* the one that has the keyboard, when it shows *)
 val current : unit -> Window.t option
-(* the one a point is in, the one in front of the others there *)
+(* the normal one a point is in, the one in front of the others there;
+ * none when a popup or a panel is there, over it *)
 val at : Point.t -> Window.t option
+(* the one of a layer a point is in: a popup, a panel, or a desk when no
+ * window is there *)
+val layer_at : Point.t -> Window.t option
+(* the popups that show *)
+val popups : unit -> Window.t list
+(* the layers back in order, a window having a new image *)
+val restack : Window.t -> unit
+(* [work_of screen taken]: what is left of the screen for windows when
+ * the rectangles [taken] are panels: a panel along a whole side takes
+ * its depth off that side, any other takes nothing *)
+val work_of : Rectangle.t -> Rectangle.t list -> Rectangle.t
 (* the window whose border a point is on, and which of its corners and
  * sides, three by three from the top left (rio's whichcorner: a
  * corner is the 20 pixels at a side's end) *)
@@ -42,9 +56,9 @@ val bottom : Window.t -> unit
 (* [control caps make screen w c]: a command written to w's wctl file
  * (none: the root's), done ([make]: create, but for the rectangle and
  * the command;
- * [screen]: the screen's rectangle, where a new window with no
- * rectangle said is put, 600 by 400 at most, each a little further
- * than the last, as rio's). What cannot be done is not: a window
+ * [screen]: the screen's rectangle; less what panels take, where a new
+ * window with no rectangle said is put, 600 by 400 at most, each a
+ * little further than the last, as rio's). What cannot be done is not: a window
  * that is not there, a rectangle too small. top and current are one
  * here: the window in front has the keyboard *)
 val control : < Cap.open_out; .. > -> (Rectangle.t -> Wctl.command -> Window.t option) -> Rectangle.t -> Window.t option -> Wctl.command -> unit

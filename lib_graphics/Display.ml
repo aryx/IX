@@ -218,8 +218,9 @@ let load (i : image) r pixels = load_sub i r (Bytes.unsafe_of_string pixels) 0 (
 
 (* Where a program draws: its window when it runs in one (/dev/winname
  * has the window's image's name: the window system's file), inside its
- * border; or all the screen (the kernel's /dev/winname, a name that
- * starts with "noborder"; or none) *)
+ * border, or all of it for a name that starts with "noborder.window";
+ * or all the screen (the kernel's /dev/winname, "noborder.screen.1"; or
+ * none) *)
 let screen (d : t) =
   (* (asked again: the window it had is let go, or the window system's
    * old image of it would stay on the screen) *)
@@ -231,6 +232,8 @@ let screen (d : t) =
          Bytes.sub_string b 0 n) with
   | exception Unix.Unix_error _ -> whole d
   | "" -> whole d
+  (* (a window with no border: all of its image) *)
+  | n when String.length n >= 15 && String.sub n 0 15 = "noborder.window" -> let w = named d n in d.mine <- Some w; w
   | n when String.length n >= 8 && String.sub n 0 8 = "noborder" -> whole d
   | n -> let w = named d n in d.mine <- Some w; { w with r = Rectangle.inset w.r 4 }
 

@@ -46,6 +46,29 @@ let test_new () =
   Alcotest.(check string) "rc itself" "" plain.arg;
   Alcotest.(check bool) "no -hold" false plain.hold
 
+let test_layers () =
+  let layer text = (Wctl.parse text).layer in
+  Alcotest.(check bool) "normal by default" true (layer "new x" = Window.Normal);
+  Alcotest.(check bool) "-desk" true (layer "new -desk x" = Window.Desk);
+  Alcotest.(check bool) "-panel" true (layer "new -panel x" = Window.Panel);
+  Alcotest.(check bool) "-popup" true (layer "new -popup -hide x" = Window.Popup);
+  same "along the bottom" (0, 772, 1000, 800) (area "new -panel -edge bottom 28 x");
+  same "along the top" (0, 0, 1000, 28) (area "new -panel -edge top 28 x");
+  same "along the left" (0, 0, 64, 800) (area "new -panel -edge left 64 x");
+  same "along the right" (936, 0, 1000, 800) (area "new -panel -edge right 64 x");
+  refused "new -edge middle 28 x";
+  refused "new -edge bottom"
+
+let test_work () =
+  let v = Rectangle.v in
+  same "no panel: all of it" (0, 0, 1000, 800) (Wm.work_of screen []);
+  same "a bar at the bottom" (0, 0, 1000, 772) (Wm.work_of screen [ v 0 772 1000 800 ]);
+  same "at the top" (0, 28, 1000, 800) (Wm.work_of screen [ v 0 0 1000 28 ]);
+  same "on the left" (64, 0, 1000, 800) (Wm.work_of screen [ v 0 0 64 800 ]);
+  same "on the right" (0, 0, 936, 800) (Wm.work_of screen [ v 936 0 1000 800 ]);
+  same "two sides" (64, 0, 1000, 772) (Wm.work_of screen [ v 0 772 1000 800; v 0 0 64 772 ]);
+  same "not along a whole side: nothing" (0, 0, 1000, 800) (Wm.work_of screen [ v 100 772 400 800 ])
+
 let test_rio's () =
   same "-r as before" (1, 2, 300, 400) ((Wctl.parse "new -r 1 2 300 400 x").place screen);
   same "a side moved" (10, 0, 1000, 800) ((Wctl.parse "resize -minx 10").place screen);
@@ -60,4 +83,6 @@ let () =
   Testo.interpret_argv ~project_name:"mini-rio"
     (fun _ -> [ t "new -at and -max: places whatever the screen" test_at;
                 t "new's flags and command" test_new;
+                t "new's layers and -edge" test_layers;
+                t "what panels leave of the screen for windows" test_work;
                 t "rio's own words" test_rio's ])

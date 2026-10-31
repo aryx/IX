@@ -3,6 +3,7 @@
  *
  *   new [-r minx miny maxx maxy] [-at where width height] [-max]
  *       [-hide] [-scroll] [-noscroll] [-label word] [-cd dir] [-hold]
+ *       [-desk] [-panel] [-popup] [-edge top|bottom|left|right size]
  *       [command]
  *   resize, move    with -r, or -minx n -miny n -maxx n -maxy n -dx n
  *                   -dy n (a number after + or -: that much more or
@@ -15,11 +16,15 @@
  * windows, whatever its size, which a script cannot compute (rc has no
  * arithmetic): where is nw, n, ne, w, c, e, sw, s or se; new, resize
  * and move take them. new -hold: its window stays when its command
- * ends. A read is the window's rectangle and what it is: four numbers
+ * ends. new -desk, -panel, -popup: its layer (Window.layer), a desk on
+ * the whole screen if nothing else is said. -edge: along that side of
+ * what the screen has, that many pixels deep; a panel so placed takes
+ * that much from what windows are given. A read is the window's rectangle and what it is: four numbers
  * as the kernel's files say them, then current or notcurrent, hidden
- * or visible.
+ * or visible, and for a window of a layer, the layer's name: desk,
+ * panel or popup.
  *
- * Not rio's: -at, -max, -label, -hold, exit. Not here: -pid, set; a read does not wait for the window to
+ * Not rio's: -at, -max, -label, -hold, the layers, -edge, exit. Not here: -pid, set; a read does not wait for the window to
  * change; a command is done after the write is answered, so what it
  * cannot do (a window that is not there, a rectangle too small) is not
  * said to its writer. *)
@@ -40,6 +45,7 @@ type command = {
   label : string;               (* new -label: "" for its command's name *)
   cd : string;                  (* new -cd: "" for the window system's directory *)
   hold : bool;                  (* new -hold: it stays when its command ends *)
+  layer : Window.layer;         (* new -desk, -panel, -popup *)
 }
 
 (* new, nothing else said: what the menu's New asks *)

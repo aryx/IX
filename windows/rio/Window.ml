@@ -4,6 +4,7 @@
 (* See Window.mli *)
 
 (* (the two types are Window.mli's: said once, there) *)
+type layer = [%mli]
 type message = [%mli]
 type t = [%mli]
 
@@ -11,15 +12,17 @@ let width = 4      (* the border's, as rio's *)
 
 let pointer : Mouse.state ref = ref { Mouse.pos = Point.zero; buttons = 0; msec = 0; resized = false }
 
-(* (a window's image has another name when it is another image: its number) *)
-let name (w : t) = Printf.sprintf "window.%d.%d.%d" (Unix.getpid ()) w.id w.image.id
+(* (a window's image has another name when it is another image: its
+ * number; noborder, as Plan 9 says it: its program draws in all of it) *)
+let name (w : t) = Printf.sprintf "%swindow.%d.%d.%d" (if w.layer = Normal then "" else "noborder.") (Unix.getpid ()) w.id w.image.id
 (* the text's rectangle: inside the border, and 2 pixels more *)
 let text_r (w : t) = Rectangle.inset w.image.r (width + 2)
 let in_bar (w : t) (p : Point.t) = Terminal.in_bar (text_r w) p
-let on_border (w : t) (p : Point.t) = Rectangle.contains w.image.r p && not (Rectangle.contains (Rectangle.inset w.image.r width) p)
+let on_border (w : t) (p : Point.t) = w.layer = Normal && Rectangle.contains w.image.r p && not (Rectangle.contains (Rectangle.inset w.image.r width) p)
 
 let text (w : t) = Terminal.contents w.text
 let note : (t -> string -> unit) ref = ref (fun _ _ -> ())
+let restack : (t -> unit) ref = ref (fun _ -> ())
 
 (* (a window deleted has no thread to take it: what its program does on
  * the way out, its mouse file closed, must not stop the file server.
@@ -49,9 +52,11 @@ let run (w : t) desk =
    * the others (ix's colours: rio's are a grey green and a pale one) *)
   let border current_ =
     w.current <- current_;
-    let c = Display.color d (if current_ then Display.rgb 0x33 0x66 0x99 else Display.rgb 0xb8 0xcc 0xe0) in
-    Draw.border w.image w.image.r width c;
-    Display.free c in
+    if w.layer = Normal then begin
+      let c = Display.color d (if current_ then Display.rgb 0x33 0x66 0x99 else Display.rgb 0xb8 0xcc 0xe0) in
+      Draw.border w.image w.image.r width c;
+      Display.free c
+    end in
   (* a read that waits answered by a line (what it does not take of it is the next read's) *)
   let rec serve () =
     if not (Queue.is_empty readers) && (!rest <> "" || not (Queue.is_empty lines)) then begin
@@ -106,7 +111,7 @@ let run (w : t) desk =
       ignore (reply "");
       show ()
     end in
-  border true;
+  border (w.layer = Normal);
   let rec loop () =
     show ();
     Display.flush d;
@@ -168,7 +173,8 @@ let run (w : t) desk =
           w.image <- Display.window desk r Display.white;
           Display.free old;
           Display.name w.image (name w);
-          w.text <- Terminal.reshape w.text w.image (Rectangle.inset r (width + 2))
+          w.text <- Terminal.reshape w.text w.image (Rectangle.inset r (width + 2));
+          !restack w
         end;
         border w.current;
         (* a program that draws here is told, at its next mouse read *)
@@ -178,13 +184,15 @@ let run (w : t) desk =
         (* off the screen: its place there far away, its own coordinates kept *)
         w.hidden <- on;
         w.image <- Display.origin w.image w.image.r.min (if on then Point.v 20000 20000 else w.image.r.min);
+        (* (a menu shown again starts anew: its program is told) *)
+        if w.layer <> Normal && w.wants_mouse then begin reshaped := true; moved := Some { !pointer with buttons = 0 }; serve_mouse () end;
         loop ()
     | Quit -> Display.free w.image; Display.flush d in
   loop ()
 
-let make desk id r font =
+let make desk id r font layer =
   let image = Display.window desk r Display.white in
-  let w = { id; image; text = Terminal.make image (Rectangle.inset image.r (width + 2)) font; hidden = false; current = true; label = Printf.sprintf "rc %d" id; cursor = None; inbox = Event.new_channel (); pid = 0; wants_mouse = false; thread = None; ends = false; cons_opens = 0; gone = false } in
+  let w = { id; layer; image; text = Terminal.make image (Rectangle.inset image.r (width + 2)) font; hidden = false; current = true; label = Printf.sprintf "rc %d" id; cursor = None; inbox = Event.new_channel (); pid = 0; wants_mouse = false; thread = None; ends = false; cons_opens = 0; gone = false } in
   Display.name image (name w);
   (* (no thread left for it: no window) *)
   (match Thread.create (fun () -> run w desk) () with

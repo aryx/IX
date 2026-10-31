@@ -10,7 +10,14 @@ let verbs = [ "new", New; "resize", Resize; "move", Move; "top", Top; "bottom", 
               "hide", Hide; "unhide", Unhide; "delete", Delete; "scroll", Scroll; "noscroll", Noscroll; "exit", Exit ]
 
 let plain : command =
-  { verb = New; place = (fun r -> r); area = None; hidden = false; scrolling = None; id = None; arg = ""; label = ""; cd = ""; hold = false }
+  { verb = New; place = (fun r -> r); area = None; hidden = false; scrolling = None; id = None; arg = ""; label = ""; cd = ""; hold = false; layer = Window.Normal }
+
+(* -edge's rectangle: along a side of the area, [size] deep *)
+let along side size (work : Rectangle.t) =
+  if side = "top" then Rectangle.v work.min.x work.min.y work.max.x (work.min.y + size)
+  else if side = "bottom" then Rectangle.v work.min.x (work.max.y - size) work.max.x work.max.y
+  else if side = "left" then Rectangle.v work.min.x work.min.y (work.min.x + size) work.max.y
+  else Rectangle.v (work.max.x - size) work.min.y work.max.x work.max.y
 
 (* -at's rectangle: a corner, a side or the middle of the area *)
 let anchored where wide high (work : Rectangle.t) =
@@ -39,6 +46,13 @@ let parse text : command =
         let w = number w and h = number h in
         flags { c with area = Some (anchored where w h) } more
     | "-at" :: _ -> bad "missing or bad wctl parameter"
+    | "-edge" :: side :: n :: more when List.mem side [ "top"; "bottom"; "left"; "right" ] ->
+        let n = number n in
+        flags { c with area = Some (along side n) } more
+    | "-edge" :: _ -> bad "missing or bad wctl parameter"
+    | "-desk" :: more -> flags { c with layer = Window.Desk } more
+    | "-panel" :: more -> flags { c with layer = Window.Panel } more
+    | "-popup" :: more -> flags { c with layer = Window.Popup } more
     | "-label" :: l :: more -> flags { c with label = l } more
     | "-cd" :: d :: more -> flags { c with cd = d } more
     | "-hold" :: more -> flags { c with hold = true } more
@@ -72,6 +86,7 @@ let written w data = ask w (parse data)
 let wctl : Device.t = { Device.default with name = "wctl";
   read = (fun w ->
     let r = w.image.r in
-    Device.part (Printf.sprintf "%11d %11d %11d %11d %s %s " r.min.x r.min.y r.max.x r.max.y
-                   (if w.current then "current" else "notcurrent") (if w.hidden then "hidden" else "visible")));
+    Device.part (Printf.sprintf "%11d %11d %11d %11d %s %s %s" r.min.x r.min.y r.max.x r.max.y
+                   (if w.current then "current" else "notcurrent") (if w.hidden then "hidden" else "visible")
+                   (match w.layer with Window.Normal -> "" | Window.Desk -> "desk " | Window.Panel -> "panel " | Window.Popup -> "popup ")));
   write = (fun w data -> written (Some w) data) }

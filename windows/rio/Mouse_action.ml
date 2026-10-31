@@ -84,4 +84,4 @@ let hover (a : t) (m : Mouse.state) =
     cursor a (match Wm.border m.pos, Wm.at m.pos with
       | Some (_, k), _ -> Some Cursors.corners.(k)
       | None, Some w -> w.cursor
-      | None, None -> None)
+      | None, None -> (match Wm.layer_at m.pos with Some w -> w.cursor | None -> None))

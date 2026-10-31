@@ -608,6 +608,10 @@ check-ix: ix
 #   win-script   rio -i: windows made by a script at -at's places (a command
 #             ending takes its window, -hold keeps it), /dev/wsys, wctl's
 #             exit, back at the console. With win-files in make check-files
+#   win-layers   a desk (colors), a panel (hellorio, along the bottom), a popup
+#             (hellorio) and rc: the keys stay in rc whatever is pressed, a
+#             press elsewhere hides the popup, Delete cannot point at the panel,
+#             -max leaves it its room. With win-files in make check-files
 #   colors-bare  mini-colors (../../apps/misc) on the bare screen:
 #             a square pointed at, its menu's exit
 #   colors-win   the same program in a window of mini-rio's, which is moved
@@ -753,7 +757,7 @@ gcheck = $(MAKE) --no-print-directory -j$(GJOBS) $(foreach s,$(1),run-$(s)-mini 
 check-draw: ix ; $(call gcheck,draw)
 check-menu: ix-usb card ; $(call gcheck,menu)
 check-rio: ix-usb card ; $(call gcheck,win-new win-ops win-border win-scroll win-select win-utf8)
-check-files: ix-usb card ; $(call gcheck,win-files win-wctl win-script)
+check-files: ix-usb card ; $(call gcheck,win-files win-wctl win-script win-layers)
 check-colors: ix-usb card ; $(call gcheck,colors-bare colors-win)
 check-tetris: ix-usb card ; $(call gcheck,tetris-bare tetris-win)
 check-kbd: ix-usb card ; $(call gcheck,kbd-bare kbd-win)

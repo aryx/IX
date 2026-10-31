@@ -33,8 +33,15 @@
  * uses in C. Here they are Thread and Event's channels, a send
  * waiting for its receive ([send]). *)
 
+(* Where it is among the others (not rio's; plan_desktop.md): most are
+ * Normal. A Desk is below them all, a Panel above them all, a Popup above
+ * the panels and hidden by a press anywhere else. These three have no
+ * border, never have the keyboard, and take the mouse without coming to
+ * the front: what a desktop's wallpaper, bar and menu need. *)
+type layer = Normal | Desk | Panel | Popup
+
 type message =
-  | Keys of string list                 (* typed, the window in front: characters, each its bytes *)
+  | Keys of string list                (* typed, the window in front: characters, each its bytes *)
   | Moved of Mouse.state                (* the mouse, in the window: its program's when it reads
                                            the mouse, else the text's (the scroll bar, selecting) *)
   | Read of (string -> bool) * int      (* its console read: how to answer (false: the reader is
@@ -59,6 +66,7 @@ type message =
 
 type t = {
   id : int;
+  layer : layer;
   (* (its image is another when its size changes: the thread's to
    * change, the window system's to read, as [hidden]) *)
   mutable image : Display.image;
@@ -96,7 +104,7 @@ type t = {
 
 (* a window on the desktop, and its thread started; Failure when there
  * are too many threads (Thread.create's) *)
-val make : Display.desktop -> int -> Rectangle.t -> Font.t -> t
+val make : Display.desktop -> int -> Rectangle.t -> Font.t -> layer -> t
 (* a message for it: the sender waits until the thread takes it *)
 val send : t -> message -> unit
 (* Quit sent, and its thread ended *)
@@ -116,5 +124,8 @@ val on_border : t -> Point.t -> bool
 (* a note for a window's processes (the Delete key, or Control-C: "interrupt"): the
  * window system says how *)
 val note : (t -> string -> unit) ref
+(* the layers put back in order, a window having been made another size:
+ * its new image, the kernel puts in front of all (Wm says how) *)
+val restack : (t -> unit) ref
 (* where the mouse is, as the window system last saw it (a mouse file's first read) *)
 val pointer : Mouse.state ref

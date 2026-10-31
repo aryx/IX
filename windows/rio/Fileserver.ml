@@ -51,7 +51,7 @@ let fs : file P9_server.fs =
     entries = (fun f ->
       match f with
       | Root -> [ entry Root_wctl; entry Wsys ]
-      | Wsys -> List.map (fun w -> entry (Dir w)) (List.sort (fun (a : Window.t) (b : Window.t) -> compare a.id b.id) !Wm.windows)
+      | Wsys -> List.map (fun w -> entry (Dir w)) (List.sort (fun (a : Window.t) (b : Window.t) -> compare a.id b.id) (Wm.all ()))
       | Dir w -> List.map (fun d -> entry (Dev (w, d))) devices @ [ entry Wsys ]
       | Root_wctl | Dev _ -> []);
     write = (fun f _offset data ->

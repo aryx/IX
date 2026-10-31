@@ -138,9 +138,39 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
   let make = Wm.create caps desk font srv in
   let action = Mouse_action.make caps mouse display desk in
   Window.note := Processes_winshell.note caps;
+  Window.restack := Wm.restack;
   Option.iter (Processes_winshell.init caps srv) init;
   (* the buttons at the event before; the window that has the mouse until they are up *)
   let held = ref 0 and selecting : Window.t option ref = ref None in
+  (* the buttons at the last event, whoever had it (the menus read the
+   * mouse themselves: none down after them) *)
+  let was = ref 0 in
+  (* The mouse for a window of a layer, which has it without coming to the
+   * front: whether it took this event. A press anywhere but in a panel
+   * hides the popups (a panel's own: its button that shows one must
+   * not see it hidden, and shows it again). The right button on a desk
+   * stays the window system's: its menu. *)
+  let to_layer (m : Mouse.state) =
+    let fresh = m.buttons <> 0 && !was = 0 in
+    was := m.buttons;
+    match !selecting with
+    | Some w when w.layer <> Window.Normal ->
+        Window.send w (Window.Moved m);
+        if m.buttons = 0 then selecting := None;
+        true
+    | Some _ -> false
+    | None ->
+        let there = Wm.layer_at m.pos in
+        let in_panel = match there with Some w -> w.layer = Window.Panel | None -> false in
+        if fresh && not in_panel then
+          List.iter (fun (p : Window.t) -> if not (Rectangle.contains p.image.r m.pos) then Wm.hide p) (Wm.popups ());
+        (* (again: what was there may have been a popup now hidden) *)
+        (match Wm.layer_at m.pos with
+         | Some w when (fresh || m.buttons = 0) && not (w.layer = Window.Desk && m.buttons land 4 <> 0) ->
+             Window.send w (Window.Moved m);
+             if fresh then selecting := Some w;
+             true
+         | _ -> false) in
   let rec loop last =
     Display.flush display;
     match next () with
@@ -150,10 +180,11 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
     (* a wctl file written: what the menu does, asked by a program *)
     | Asked (_, c) when c.verb = Wctl.Exit -> ()
     | Asked (w, c) -> Wm.control caps make view.r w c; loop last
-    (* the mouse in the front window, when its program reads it, is the program's *)
     | Mouse m when (Window.pointer := m;
                     Mouse_action.hover action m;
-                    match !Wm.windows with w :: _ -> w.wants_mouse && not w.hidden && Rectangle.contains w.image.r m.pos && not (Window.on_border w m.pos) | [] -> false) ->
+                    to_layer m) -> loop last
+    (* the mouse in the front window, when its program reads it, is the program's *)
+    | Mouse m when (match !Wm.windows with w :: _ -> w.wants_mouse && not w.hidden && Rectangle.contains w.image.r m.pos && not (Window.on_border w m.pos) | [] -> false) ->
         Window.send (List.hd !Wm.windows) (Window.Moved m); loop last
     (* a button went down in a window's scroll bar, or the left one in its
      * text: the mouse is that window's until the buttons are up (its
@@ -165,7 +196,7 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
         loop last
     (* a button pressed on a window's border: its size, or its place (the
      * mouse is read there until the button is up) *)
-    | Mouse m when m.buttons <> 0 && !held = 0 && (match Wm.border m.pos with Some (w, k) -> Mouse_action.grab action w k m; true | None -> false) -> loop last
+    | Mouse m when m.buttons <> 0 && !held = 0 && (match Wm.border m.pos with Some (w, k) -> Mouse_action.grab action w k m; was := 0; true | None -> false) -> loop last
     (* a button pressed in a window's scroll bar is the window's: it scrolls
      * (once a press: [held] is the buttons at the event before) *)
     | Mouse m when (let fresh = m.buttons <> 0 && !held = 0 in
@@ -178,6 +209,7 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
     | Mouse m when m.buttons land 4 <> 0 -> (
         (* (the menu and what follows read the mouse themselves: no button is down after) *)
         held := 0;
+        was := 0;
         (* rio's menu, and under it the hidden windows, by their labels *)
         let hidden = Wm.hidden () in
         let items = [ "New"; "Resize"; "Move"; "Delete"; "Hide" ] @ List.map (fun (w : Window.t) -> w.label) hidden @ [ "Exit" ] in
@@ -203,6 +235,7 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
      * it gives is typed there *)
     | Mouse m when m.buttons land 2 <> 0 ->
         held := 0;
+        was := 0;
         (match Wm.at m.pos with
          | Some w ->
              Wm.front w;
@@ -219,7 +252,7 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
         loop last
     | Mouse _ -> loop last in
   loop 0;
-  List.iter (Wm.delete caps) !Wm.windows;
+  List.iter (Wm.delete caps) (Wm.all ());
   (try FS.remove_any caps srv with Unix.Unix_error _ | Sys_error _ -> ());
   Display.close display;
   Exit.OK

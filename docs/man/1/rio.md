@@ -50,7 +50,17 @@ each with **-id** for another window. All three take **-max**, and
 **-at** *where width height*, *where* being `nw`, `n`, `ne`, `w`, `c`,
 `e`, `sw`, `s` or `se`: a place whatever the screen's size. A read is
 the window's rectangle, then `current` or `notcurrent`, `hidden` or
-`visible`.
+`visible`, and the layer of one that has a layer.
+
+`new` with **-desk**, **-panel** or **-popup** makes a window of a
+layer: a desk below all the others (the whole screen unless placed), a
+panel above them, a popup above the panels. These have no border, are
+not in the menu, cannot be pointed at, never have the keyboard, and
+take the mouse without coming to the front, but for the right button
+on a desk, still *rio*'s menu. A press anywhere but in a panel hides
+the popups. **-edge** `top`|`bottom`|`left`|`right` *size* places one
+along a side; a panel along a whole side takes that much from where
+windows go by themselves and from **-at** and **-max**.
 
 # EXAMPLES
 ```
@@ -72,7 +82,8 @@ A window's text is not edited: what is typed goes at its end. No
 option but **-i** (no **-k**, **-s**, **-f**), and no *label* nor
 *wloc* commands: `wctl` and `label` are written instead. `wctl`
 takes no **-pid**, and what it cannot do is not said to its writer.
-**-at**, **-max**, **-label**, **-hold** and `exit` are not Plan 9's;
+**-at**, **-max**, **-label**, **-hold**, the layers, **-edge** and
+`exit` are not Plan 9's;
 its *window* takes a rectangle of its own forms, this one `wctl`'s.
 
 # SEE ALSO

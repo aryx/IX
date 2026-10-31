@@ -12,7 +12,23 @@
  *
  * Dragging moves the map, as do the arrows; the wheel, a double click,
  * + and - zoom it; / finds a place, a click marks one; w, its forecast;
- * r, a route from it to the next one marked. *)
+ * r, a route from it to the next one marked.
+ *
+ * The licences. This code is LGPL; what it shows is not ours, and nothing
+ * of it is in this repository (the tests' tiles and roads are made here):
+ *  - the places (Nominatim), the roads (Overpass), what the tiles are drawn
+ *    from: OSM's data, under the ODbL. It must be credited, and said to be
+ *    under that licence; a database made from it and given to others stays
+ *    under it. (OSM's page gives no licence for the tiles as pictures; its
+ *    tile policy says how they may be used.)
+ *  - the forecast (Open-Meteo): CC BY 4.0, to be credited. Its free service
+ *    is for non-commercial use only; a product would pay for it.
+ * The servers have rules of their own, apart from the licences: a real
+ * User-Agent, answers kept, one request a second at most for Nominatim. They
+ * are run for people and small programs, on donations for OSM's: a program
+ * with many users must use tiles=, places=, roads= and forecast= to go
+ * elsewhere. (Read 2026-10-31: openstreetmap.org/copyright,
+ * operations.osmfoundation.org/policies, open-meteo.com/en/terms.) *)
 
 (* the words before and after "to" *)
 let rec split_at_to (before : string list) (l : string list) : (string * string) option =

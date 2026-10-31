@@ -49,8 +49,9 @@ what each defines and uses: Ssa_facts.mli), for mini-datalog:
   mini-datalog -q 'live_in(V, B)' languages/datalog/analyses/liveness_ssa.dl fact.dl
 -dflow: the compiler's own liveness and dominators, as facts, to compare.
 -dotnet: the unit as a .NET assembly, fact.dll and its runtimeconfig.json,
-for mini-dotnet and Microsoft's dotnet (dotnet/Lower_il.mli; stage 1a: ints,
-floats, strings, a unit's functions, loops; the rest refused):
+for mini-dotnet and Microsoft's dotnet (dotnet/Lower_il.mli; stages 1a, 1b:
+ints, floats, strings, records, variants, exceptions, match, a unit's
+functions, loops; the rest refused):
   mini-ml -dotnet fact.ml; mini-dotnet fact.dll
 An error names the file and the line: fact.ml:2: this expression has type ...
 |}
@@ -479,7 +480,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                 | _ when !dotnet -> (
                     let out = if !out <> "" then path !out else Fpath.set_ext ".dll" (Fpath.base file) in
                     match Lower_il.unit_ name items with
-                    | exception Lower_il.Refused (l, m) -> fail (Printf.sprintf "%s:%d: %s" (Fpath.to_string file) l m)
+                    | exception Il_code.Refused (l, m) -> fail (Printf.sprintf "%s:%d: %s" (Fpath.to_string file) l m)
                     | bytes ->
                         FS.write caps out bytes;
                         FS.write caps (Fpath.set_ext ".runtimeconfig.json" out) Writer.runtime_config;

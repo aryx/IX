@@ -43,8 +43,9 @@ exceptions never caught (Leroy and Pessaux's analysis, 2000) and code
 never reached; and for mini-ml's optimizer, calls of a known closure
 made direct and inlined.
 
-**Status: step 0 done (mini-analyze, native: below); stage 1a done
-(mini-ml -dotnet, the monomorphic core, 2026-10-31: the stages); the
+**Status: step 0 done (mini-analyze, native: below); stages 1a and
+1b done (mini-ml -dotnet: the monomorphic core, records, variants,
+exceptions, match; C# using an ML unit; 2026-10-31: the stages); the
 rest not built.** For the author: what step 0 showed, decision 6 to be
 decided again by it, the open questions at the end.
 
@@ -324,6 +325,24 @@ but really use the same types!". So the decisions below are those of
    - 1b. **Records, variants, exceptions, pattern matching**: classes
      (a variant an abstract class and a class a case), exceptions
      System.Exception's, a match by isinst and fields.
+     Done (2026-10-31, the author: "let's commit and move forward"):
+     the unit's types nested in its class (F#'s: C# names them
+     Shapes.point; a namespace of the unit's name beside its class
+     tripped C#'s lookup); a record's constructor takes its fields in
+     order, a case's its arguments (Item1...); Equals and GetHashCode
+     overridden, field by field, so `=` is Equals and C# compares ML
+     values as OCaml does; exceptions nested, OCaml's own in Stdlib,
+     Division_by_zero .NET's DivideByZeroException (what a division
+     throws); try a catch of Exception, the handler's cases on it,
+     rethrow; a function of several cases a match on its argument.
+     Refused: a try inside an operand (IL's protected region starts
+     with an empty stack), an inline record. Checked: variants,
+     records, exceptions, equality, by mini-dotnet (verified) and
+     Microsoft's dotnet, as `ocaml` prints; stage 1's own check,
+     C# using an ML unit (tests/interop.cs on shapes.ml: new
+     Shapes.shape.Rect(p, q), Shapes.area(s), Equals, C#'s switch on
+     the cases), by Microsoft's csc and dotnet (mini-dotnet: one
+     assembly, stage 7).
    - 1c. **Closures**: Func<T,R> (a TypeSpec, which Writer has), local
      functions, partial application, functions passed.
    - 1d. **Polymorphism**: Writer's GenericParam and MethodSpec;

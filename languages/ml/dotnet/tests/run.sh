@@ -2,18 +2,26 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# mini-ml -dotnet's tests (docs/plans/plan_dotnet_languages.md, stage
-# 1a): each program here compiled to an assembly, verified by
+# mini-ml -dotnet's tests (docs/plans/plan_dotnet_languages.md, stages
+# 1a and 1b): each program here compiled to an assembly, verified by
 # mini-dotnet (-verify: every method passes), run, against what OCaml
 # prints for it (the .expected files, made by ocaml file.ml, then read);
 # by dune's mini-ml and mini-dotnet, and by mini-ml's own (_mk/7);
 # Microsoft's dotnet too with -ms (not in make test: it needs the SDK).
-# And what stage 1a refuses, each with its message (refused.expected).
+# And what is refused, each with its message (refused.expected); with
+# -ms, C# using an ML unit (interop.cs on shapes.ml), by Microsoft's
+# compiler and runtime (mini-dotnet runs one assembly: stage 7).
 #   fib       recursion, a unit's function called by its toplevel
 #   arith     int64's arithmetic as OCaml's, floats by conversions, the
 #             comparisons (a float's NaN unordered)
 #   strings   ^, String.length, comparisons by the text, chars printed
 #   loops     for up and down, && and || short, a value of the unit
+#   variants  constructors, a recursive type, match, guards, or-patterns,
+#             ranges, a function of several cases
+#   records   fields read, set, copied by with, matched
+#   exceptions  raise, try, handlers' cases, failwith, Not_found, a
+#             division by zero (.NET's own exception), one let through
+#   equality  = on records and variants by their contents (Equals), ==
 # usage: languages/ml/dotnet/tests/run.sh [-dune] [-mini] [-ms] [-record]
 #   (dune build, and mini-mk in languages/ml and languages/dotnet, first)
 # MINIML, MINIDOTNET: mini-ml's builds, if not _mk/7's (ix built by
@@ -33,8 +41,8 @@ W=$(mktemp -d); trap 'rm -rf $W' EXIT
 failures=0
 ok() { echo "ok $*"; }
 fail() { echo "FAIL $*"; failures=$((failures + 1)); }
-progs="fib arith strings loops"
-# what stage 1a refuses: a program a line, and the stage that will have it
+progs="fib arith strings loops variants records exceptions equality"
+# what is refused: a program a line, and the stage that will have it
 refused() {
   local ml=$1 n=0
   while IFS= read -r line; do
@@ -43,14 +51,14 @@ refused() {
     $ml -L lib_core -dotnet -o $W/r$n.dll $W/r$n.ml 2>&1 | sed "s|$W/||"
   done <<'R'
 let pair = (1, "one")
-type point = { x : int; y : int } let p = { x = 1; y = 2 }
-let f x = match x with 0 -> "zero" | _ -> "many"
 let twice f x = f (f x)
 let () = let add x y = x + y in print_int (add 1 2)
 let add x y = x + y let inc = add 1
-exception Stop let () = raise Stop
 let id x = x
+let l = [ 1; 2 ]
 let () = print_float 1.5
+let x = 1 + (try 2 with Not_found -> 3)
+type t = A of { a : int } let v = A { a = 1 }
 R
 }
 check() {
@@ -66,8 +74,22 @@ check() {
   done
   refused $ml > $W/refused.out
   if [ -n "$record" ]; then cp $W/refused.out $T/refused.expected
-  elif cmp -s $W/refused.out $T/refused.expected; then ok "mini-ml -dotnet: what stage 1a refuses, by $what"
-  else fail "mini-ml -dotnet: what stage 1a refuses, by $what"; diff $T/refused.expected $W/refused.out | head -5; fi
+  elif cmp -s $W/refused.out $T/refused.expected; then ok "mini-ml -dotnet: what it refuses, by $what"
+  else fail "mini-ml -dotnet: what it refuses, by $what"; diff $T/refused.expected $W/refused.out | head -5; fi
+}
+# C# using an ML unit: Microsoft's csc against shapes.dll, run by its dotnet
+interop() {
+  local ml=$1 sdk rt refs=
+  sdk=$(dotnet --list-sdks 2>/dev/null | tail -1 | sed 's/ \[\(.*\)\]/ \1/' | awk '{print $2 "/" $1}')
+  rt=$(dotnet --list-runtimes 2>/dev/null | grep NETCore.App | tail -1 | sed 's/ \[\(.*\)\]/ \1/' | awk '{print $3 "/" $2}')
+  [ -f "$sdk/Roslyn/bincore/csc.dll" ] || { echo "skipped: C# using an ML unit (no SDK)"; return; }
+  for a in System.Runtime System.Console System.Private.CoreLib; do refs="$refs -r:$rt/$a.dll"; done
+  $ml -L lib_core -dotnet -o $W/shapes.dll $T/shapes.ml &&
+  dotnet $sdk/Roslyn/bincore/csc.dll -nologo -nostdlib -debug- $refs -r:$W/shapes.dll -out:$W/interop.dll $T/interop.cs > $W/csc.out 2>&1 &&
+  cp $W/shapes.runtimeconfig.json $W/interop.runtimeconfig.json &&
+  (cd $W && dotnet interop.dll) > $W/interop.out 2>&1
+  if cmp -s $W/interop.out $T/interop.expected; then ok "C# using an ML unit (shapes.ml): Microsoft's csc and dotnet"
+  else fail "C# using an ML unit (shapes.ml)"; head -5 $W/csc.out; diff $T/interop.expected $W/interop.out | head -5; fi
 }
 ML=${DUNEML:-_build/default/languages/ml/Main.exe}
 DOTNET=${DUNEDOTNET:-_build/default/languages/dotnet/Main.exe}
@@ -75,7 +97,7 @@ if [ -n "$record" ]; then check dune $ML $DOTNET; exit 0; fi
 if [ "$only" != mini ]; then
   check "dune's mini-ml and mini-dotnet" $ML $DOTNET
   if [ -n "$ms" ]; then
-    if command -v dotnet > /dev/null; then check "dune's mini-ml, Microsoft's dotnet" $ML $(command -v dotnet)
+    if command -v dotnet > /dev/null; then check "dune's mini-ml, Microsoft's dotnet" $ML $(command -v dotnet); interop $ML
     else echo "skipped: Microsoft's dotnet (none here)"; fi
   fi
 fi

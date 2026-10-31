@@ -19,11 +19,36 @@
  *     + - * / mod, comparisons    add, sub, mul, div, rem, clt...;
  *                                 a string's by String::CompareOrdinal
  *     print_int, print_string     Console::Write, WriteLine
- *     string_of_int, ^            Convert::ToString, String::Concat
+ *     string_of_int, ^            Int64's ToString, String::Concat
+ *     a record type               a class nested in the unit's, its
+ *                                 fields public, its constructor
+ *                                 taking them in order
+ *     a variant type              an abstract class; a class a
+ *                                 constructor, nested in it, its
+ *                                 arguments the fields Item1...
+ *     = on them                   Equals, overridden: field by field
+ *                                 (GetHashCode too: F#'s structural
+ *                                 equality, so C# compares them)
+ *     an exception                a class of System.Exception's;
+ *                                 Failure, Not_found... Stdlib's,
+ *                                 Division_by_zero .NET's own
+ *     raise, try ... with         throw; a catch of Exception, the
+ *                                 handler's cases on it, rethrow
+ *     match                       the cases tried in order: isinst
+ *                                 and fields, constants, ranges
  *
- * This is stage 1a, the monomorphic core: what is not above (records,
- * variants, a match, exceptions, closures, polymorphism, other units)
- * is refused by name, the stage that will have it said.
+ *     shapes.ml                   interop.cs (tests/)
+ *     type shape =                Shapes.shape s =
+ *       Rect of point * point       new Shapes.shape.Rect(p, q);
+ *     let area s = ...            Shapes.area(s)
+ *     match s with Rect ...       switch (s) { case Shapes.shape.Rect r: }
+ *
+ * Stages 1a and 1b: what is not above (closures, polymorphism, tuples
+ * and lists, other units) is refused by name, the stage that will
+ * have it said. A try inside an operand is refused too: IL's rule is
+ * that a protected region starts with an empty stack (Tiger's
+ * emitter met it: Microsoft's JIT refuses it), so its value is made a
+ * variable's first.
  *
  * design:
  * Where simple/Lower (the native back end) forgets the types and
@@ -45,5 +70,4 @@
  * Typing.keep: the assembly, as its file's bytes *)
 val unit_ : string -> Scope.item list -> string
 
-(* what is not compiled yet: its line, what it is *)
-exception Refused of int * string
+(* (Il_code.Refused: what is not compiled yet, its line, what it is) *)

@@ -81,9 +81,12 @@ ocaml-light's *ocamlopt*. Another unit's names are read from its
      Microsoft's `dotnet`. Typed, as F# is: an `int` is an int64, a
      `string` a System.String, the unit a static class, its
      functions static methods, its values static fields, its
-     toplevel `Main`. So far ints, floats, strings, chars, booleans,
-     a unit's functions and loops; the rest is refused by its name
-     and line.
+     toplevel `Main`; a record a class, a variant an abstract class
+     and a class a constructor, compared by their contents; an
+     exception a System.Exception. So far ints, floats, strings,
+     chars, booleans, records, variants, exceptions, `match`, a
+     unit's functions and loops; the rest (closures, polymorphism,
+     tuples, lists) is refused by its name and line.
 
 **-h**
 :    How, by examples, and the options to debug the compiler

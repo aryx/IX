@@ -6,7 +6,7 @@ code to play simple videos; we don't have in IX to support all formats,
 but the historical one, that have great teaching value, we should
 definitely do".
 
-**Status: stages 1 and 2 done, stage 3 counted but not run on a board** (`lib_graphics/videos/`, `apps/music/play/Film`). The file manager that opens these
+**Status: stages 1, 2, 4 and 5 done, stage 3 counted but not run on a board, stage 6 (the encoder) not begun** (`lib_graphics/videos/`, `apps/music/play/Film`). The file manager that opens these
 files is [`plan_files.md`](done/plan_files.md).
 
 ## The measure
@@ -184,3 +184,15 @@ decoded when the film opens is 6,700 million instructions, some 5 seconds of
 waiting on a Pi 2: to decode it as it plays would be the next thing to do.
 **Not run: `mini-qemu -ips 200`, a Pi.** mini-9pi could not be built while
 another session's `debuggers/acid` was in progress.
+
+Stage 4 done: `d`, `a`, `r`, the arrows five seconds. Looked at on the real
+film's frame 26, a P frame: its blocks by how they were coded with their vectors,
+what was sent alone, and what changed, where the encoder's skipped blocks show as
+the only dimmed pixels. A seek decodes forward from the start (`Movie.sequential`)
+and not from a group of pictures, the plan's "by its groups": slow far into a
+long film, left for after a board has spoken.
+
+Stage 5 done: `video/*` and `image/gif` to mini-play in `Helpers`, so mini-files,
+mini-open and mini-netscape all give it films; a GIF that a page shows stays in
+the page. The first of those a session (`apps/files/tests/frames.sh`), with a fake
+program; netscape not tried with a film over the network.

@@ -27,7 +27,7 @@ while IFS='|' read -r name frames script clip sum; do
   # where mini-ml does not: a colour off by one here and there, 681 pixels of
   # a million in the AVI's frame. Recorded by dune's alone; on ix's build the
   # checks below read them)
-  [ -n "${1:-}" ] && case $name in avi-*|m1v-*|mpg-*) continue;; esac
+  [ -n "${1:-}" ] && case $name in avi-*|m1v-*|mpg-*|changes|blocks-*|residual) continue;; esac
   run "$frames" "$script" $C/$clip $T/f.ppm
   got=$(sha256sum < $T/f.ppm | cut -d' ' -f1)
   if [ -n "${RECORD:-}" ]; then echo "$name|$frames|$script|$clip|$got" >> $T/new
@@ -45,6 +45,22 @@ run 40 'space:2' $C/testsrc.y4m $T/p.ppm; run 4 'space:2' $C/testsrc.y4m $T/q.pp
 alike "paused from frame 2: the same picture 36 frames later" $T/p.ppm $T/q.ppm
 run 45 'space:2,space:6' $C/testsrc.y4m $T/c.ppm; run 41 '' $C/testsrc.y4m $T/d.ppm
 alike "paused for 4 frames, it goes on from where it was" $T/c.ppm $T/d.ppm
+
+# the analyzer's keys: each another picture of the same frame, and back
+run 40 '' $C/ball_and_square.m1v $T/n.ppm
+run 40 'type(a):5' $C/ball_and_square.m1v $T/k.ppm
+differ "a: the blocks over the picture" $T/n.ppm $T/k.ppm
+run 40 'type(r):5' $C/ball_and_square.m1v $T/k2.ppm
+differ "r: what was sent, not what is shown" $T/n.ppm $T/k2.ppm
+run 40 'type(d):5' $C/ball_and_square.m1v $T/k3.ppm
+differ "d: what changed, the rest dimmed" $T/n.ppm $T/k3.ppm
+run 40 'type(a):5,type(a):9,type(r):13,type(r):17,type(d):21,type(d):25' $C/ball_and_square.m1v $T/k4.ppm
+alike "each key again: the plain picture" $T/n.ppm $T/k4.ppm
+# seeking: a film of 2 s, so 5 s on is its end
+run 20 'right:8' $C/ball_and_square.m1v $T/j.ppm
+differ "the right arrow goes on" $T/n.ppm $T/j.ppm
+run 39 'right:8,left:12' $C/ball_and_square.m1v $T/j3.ppm
+differ "and the left arrow comes back: not the end" $T/j.ppm $T/j3.ppm
 
 run 2 '' $C/ball_and_square.m1v $T/e.ppm; run 40 '' $C/ball_and_square.m1v $T/f.ppm
 differ "MPEG-1: a P or a B frame on is not the first" $T/e.ppm $T/f.ppm

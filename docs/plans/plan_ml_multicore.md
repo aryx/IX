@@ -271,3 +271,53 @@ with safepoints polled by the compiled code, the scheme of decision 7.
 
 2026-10-31: written; nothing built. Stage 0 is the next step, and the
 one that decides whether the others are worth it.
+
+2026-10-31, stage 0 done (the author: "let's commit and measure").
+mini-datalog `-j n`: in a round, a rule whose new tuples are 128 or
+more has them shared among n domains (a pool of workers made once a
+run, over `Parallel`), in chunks of 32 taken in turn by an `Atomic`
+counter; each domain tests a firing's head against the relation and
+against a `Tuples` of its own, and keeps the rest by chunk; the
+caller adds them in the chunks' order. The indexes the steps read are
+made before (`prepare`), so the domains only read and nothing is
+locked. The tuples, and `-all`'s bytes, are the same at every n and
+from run to run (a tuple is added at the first chunk that found it,
+whichever domain ran it).
+
+mini-ml and the assembler with lib_core, by OCaml 5.5.1 (the same 9.5
+million `point_to` tuples each time, compared whole):
+
+| domains | 1 | 2 | 4 | 8 | 16 | 32 | 64 |
+|---|---|---|---|---|---|---|---|
+| seconds | 98.0 | 83.5 | 52.7 | 37.8 | 30.7 | 28.8 | 32.1 |
+| GB | 2.0 | 2.7 | 2.4 | 2.6 | 2.7 | 3.3 | 4.7 |
+
+3.4 times at best (32 domains), against the 8 times stage 0 asked
+for. What was found on the way, by timers in `apply_shared` (not
+kept):
+- **The first version kept every candidate**: a tuple found by a
+  thousand firings was a thousand candidates (the loop on one core
+  adds it at once and finds it there after). 79.5 s on 16 domains,
+  11 GB, half of it adding them. A `Tuples` a domain: 33.4 s, 2.9 GB.
+- **The adding, on one domain, is the wall**: 11.6 million new tuples
+  into the set, the list and the indexes (Hashtbl of projected
+  arrays), 11 s on 2 domains growing to 19 s on 64 (the same tuple
+  found by several domains). The part on the domains goes from 66 s
+  on 2 to 14 s on 16, then no lower.
+- **Not OCaml 5's minor collections**: a minor heap 16 times larger
+  (OCAMLRUNPARAM s=4M) gained 2 to 3 s on 16 and 32 domains.
+- **Chunks of 32 over 512**: 33.4 to 30.5 s on 16, 32.7 to 28.9 s on
+  32 (a tuple with a large fan-out held one domain).
+
+So the bound is the engine's, not the runtime's or memory's: by
+Amdahl, 13 to 15 s on one domain and 3 s of the rounds' other work
+cap 64 cores near 6 times. Before stage 1's runtime work, the engine:
+the indexes flat as `Tuples` is (faster on one core too), then the
+adding shared out (each domain the tuples whose hash is its own, as
+Souffle's relations partitioned by hash). Then stage 0 again.
+Checked: mini-datalog's tests by dune's 4.14 build and by mini-ml's
+(`-j` there runs on one: `Parallel`'s single file, copied by its
+mkfile as tiny/'s is); make test: 170 jobs, 1 failure, mini-lex's
+tokens against ocamllex's over sources other sessions are editing.
+Found on the way and committed alone: `-all` over millions of tuples
+overflowed 4.14's and mini-ml's stacks (List.map), 72fc00c1.

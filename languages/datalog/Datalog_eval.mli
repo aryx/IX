@@ -63,6 +63,21 @@
  * in 20 million lookups and 6.7 s, where the plan does it in 0.6
  * million and 0.2 s, the same tuples (-profile shows each rule's share).
  *
+ * A rule on several domains (-j, OCaml 5's build): its new tuples in
+ * chunks, each domain taking the next chunk, testing what its firings
+ * find against the relation and against what it found itself, and
+ * keeping the rest; the caller adds them, chunk by chunk, so the
+ * tuples' order is the same whatever the domains did. Nothing is
+ * written while the domains run (the indexes they need are made
+ * before), so nothing is locked. mini-ml and the assembler with
+ * lib_core (98 s on one core by OCaml 5): 52.7 s on 4 domains, 37.8
+ * on 8, 28.8 on 32, 32.1 on 64. What stays on one domain is adding the new
+ * tuples (11.6 million, to the set and the indexes: 13 to 15 s), so
+ * the indexes as flat as Tuples, or each domain adding its share of
+ * the hashes, come before more cores.
+ * old: without each domain's own set, a tuple found by a thousand
+ * firings was a thousand candidates: 79.5 s on 16 domains, 11 GB.
+ *
  * cs-history:
  * The fixpoint by rounds is the definition of what a program means
  * (van Emden and Kowalski, 1976). Semi-naive evaluation is from the
@@ -135,6 +150,11 @@ type stats = {
 }
 
 and cost = { mutable fired : int; mutable added : int; mutable looked : int; mutable seconds : float }
+
+(* the domains among which a rule's new tuples are shared, when there
+ * are enough of them (1: the caller's alone; more only where
+ * Parallel.available) *)
+val jobs : int ref
 
 (* Datalog.Error: not stratified *)
 val run : naive:bool -> Datalog.t -> stats

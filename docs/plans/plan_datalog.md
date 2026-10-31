@@ -346,5 +346,6 @@ there). Done: the order chosen by the columns known, a rule with an
 empty relation not run, a plan made once a rule, `Tuples` (open
 addressing, flat). Not done: `-plan` printing it, indexes chosen
 before the run, a round on several cores (needs OCaml 5's domains,
-or mini-ml's: plan_multicore.md), incremental evaluation (DRed,
+or mini-ml's: plan_multicore.md; 2026-10-31, a rule's new tuples on
+OCaml 5's domains, -j: plan_ml_multicore.md's stage 0), incremental evaluation (DRed,
 DDlog's differences: Datalog_eval.mli says them).

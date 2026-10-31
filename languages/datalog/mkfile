@@ -4,7 +4,7 @@ TOP=../..
 DIR=languages/datalog
 PROG=mini-datalog
 PL=$TOP/languages/prolog
-SRC=Prolog Prolog_read Tuples Datalog Datalog_eval CLI Main
+SRC=Prolog Prolog_read Parallel Tuples Datalog Datalog_eval CLI Main
 LOCAL=`{ls *.ml *.mli ../prolog/Prolog.ml ../prolog/Prolog.mli ../prolog/Prolog_read.ml ../prolog/Prolog_read.mli}
 GEN=
 LIBI=-I ../prolog
@@ -20,3 +20,11 @@ $D/Prolog.$O: $PL/Prolog.ml $LOCAL
 $D/Prolog_read.$O: $PL/Prolog_read.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target $PL/Prolog_read.ml
+# (Parallel: the host's cores where OCaml has domains, -j; mini-ml has
+# none yet, plan_ml_multicore.md: lib_core/parallel's file for OCaml
+# 4.14, which dune chooses by the compiler's version)
+$D/Parallel.$O: $TOP/lib_core/parallel/host/single.ml.in $TOP/lib_core/parallel/Parallel.mli
+	mkdir -p $D
+	cp $TOP/lib_core/parallel/Parallel.mli $D/Parallel.mli
+	cp $TOP/lib_core/parallel/host/single.ml.in $D/Parallel.ml
+	$ML $INCLUDES -o $target $D/Parallel.ml

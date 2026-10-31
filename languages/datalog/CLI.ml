@@ -7,10 +7,10 @@ module D = Datalog
 
 type caps = < Cap.open_in; Cap.stdout; Cap.stderr >
 
-let usage = "usage: mini-datalog [-q query]... [-all] [-naive] [-s] [-profile] file.dl...   (-h: how)"
+let usage = "usage: mini-datalog [-q query]... [-all] [-naive] [-j n] [-s] [-profile] file.dl...   (-h: how)"
 
 (* -h: how, by an example *)
-let help = {|usage: mini-datalog [-q query]... [-all] [-naive] [-s] [-profile] file.dl...
+let help = {|usage: mini-datalog [-q query]... [-all] [-naive] [-j n] [-s] [-profile] file.dl...
 Datalog: facts, and rules run until nothing new is found. A file's text is
 Prolog's, without compound terms:
   edge(a, b). edge(b, c). edge(c, a). edge(c, d).     facts
@@ -31,7 +31,8 @@ Prolog: path above is found whole, by any order of its rules and its atoms.
 computed whole before another negates it, and a negation through a recursion
 is refused. = \= < > =< >= compare two values (numbers, then atoms).
 -naive: every rule on every tuple each round (the definition; the default runs
-a rule again only on what the last round found). -s: the relations' sizes,
+a rule again only on what the last round found). -j n: n domains share a
+rule's new tuples (OCaml 5's build; one elsewhere). -s: the relations' sizes,
 the rounds, the rules' firings. -profile: each rule's firings, new tuples,
 lookups and seconds, the costliest first.|}
 
@@ -42,6 +43,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     [ ("-q", Arg.String (fun (q : string) -> queries := q :: !queries), " a query: the tuples that match it");
       ("-all", Arg.Set all, " every tuple of every relation that has a rule");
       ("-naive", Arg.Set naive, " every rule on every tuple, each round");
+      ("-j", Arg.Set_int Datalog_eval.jobs, " n domains share a rule's new tuples (OCaml 5's build)");
       ("-s", Arg.Set stats, " the relations' sizes, the rounds, the firings");
       ("-profile", Arg.Set profile, " each rule's firings, new tuples, lookups and seconds, the costliest first") ] in
   match Arg.parse_argv argv options (fun (f : string) -> files := f :: !files) usage with

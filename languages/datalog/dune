@@ -7,7 +7,7 @@
  (name ix_datalog)
  (wrapped false)
  (modules :standard \ CLI Main)
- (libraries ix_prolog ix_core))
+ (libraries ix_prolog ix_core ix_parallel))
 
 ; the command
 (library

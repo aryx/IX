@@ -114,18 +114,23 @@ let index (r : D.relation) (mask : int) : (int array, int array list ref) Hashtb
 
 let value (env : int array) (x : D.arg) : int = match x with D.Const c -> c | D.Slot k -> env.(k) | D.Any -> -1
 
+(* a negation's columns that are not _, a bit each *)
+let known (a : D.atom) : int =
+  let mask = ref 0 in
+  Array.iteri (fun (i : int) (x : D.arg) -> if x <> D.Any then mask := !mask lor (1 lsl i)) a.args;
+  !mask
+
 let holds (p : D.t) (stats : stats) (env : int array) (l : D.literal) : bool =
   match l with
   | D.Pos _ -> true
   | D.Neg a ->
       (* (no tuple has those values in the columns that are not _) *)
       stats.lookups <- stats.lookups + 1;
-      let mask = ref 0 in
-      Array.iteri (fun (i : int) (x : D.arg) -> if x <> D.Any then mask := !mask lor (1 lsl i)) a.args;
-      let key = D.project !mask (Array.map (value env) a.args) in
-      if !mask = 0 then a.rel.count = 0
+      let mask = known a in
+      let key = D.project mask (Array.map (value env) a.args) in
+      if mask = 0 then a.rel.count = 0
       else if Array.length key = a.rel.arity then not (Tuples.mem a.rel.set key)
-      else not (Hashtbl.mem (index a.rel !mask) key)
+      else not (Hashtbl.mem (index a.rel mask) key)
   | D.Cmp (op, x, y) -> (
       let x = value env x and y = value env y in
       match op with
@@ -145,18 +150,163 @@ let rec join (p : D.t) (stats : stats) (env : int array) (steps : step list) (fo
   | Scan s :: rest -> (
       stats.lookups <- stats.lookups + 1;
       let r = s.atom.rel in
-      let each (tuple : int array) : unit =
-        List.iter (fun ((i, k) : int * int) -> env.(k) <- tuple.(i)) s.binds;
-        if List.for_all (fun ((i, k) : int * int) -> tuple.(i) = env.(k)) s.same then join p stats env rest found in
-      if s.from_new || s.mask = 0 then
-        List.iter
-          (fun (tuple : int array) ->
-            if Array.for_all (fun ((i, x) : int * D.arg) -> tuple.(i) = value env x) s.keys then each tuple)
-          (if s.from_new then r.delta else r.all)
+      if s.from_new || s.mask = 0 then List.iter (scanned p stats env s rest found) (if s.from_new then r.delta else r.all)
       else
         let key = Array.map (fun ((_, x) : int * D.arg) -> value env x) s.keys in
         if Array.length key = r.arity then (if Tuples.mem r.set key then join p stats env rest found)
-        else match Hashtbl.find_opt (index r s.mask) key with Some bucket -> List.iter each !bucket | None -> ())
+        else match Hashtbl.find_opt (index r s.mask) key with Some bucket -> List.iter (each p stats env s rest found) !bucket | None -> ())
+
+(* a tuple of a scan with no index: its known columns compared *)
+and scanned (p : D.t) (stats : stats) (env : int array) (s : scan) (rest : step list) (found : unit -> unit) (tuple : int array) : unit =
+  if Array.for_all (fun ((i, x) : int * D.arg) -> tuple.(i) = value env x) s.keys then each p stats env s rest found tuple
+
+(* a tuple that matches: its variables bound, the steps after *)
+and each (p : D.t) (stats : stats) (env : int array) (s : scan) (rest : step list) (found : unit -> unit) (tuple : int array) : unit =
+  List.iter (fun ((i, k) : int * int) -> env.(k) <- tuple.(i)) s.binds;
+  if List.for_all (fun ((i, k) : int * int) -> tuple.(i) = env.(k)) s.same then join p stats env rest found
+
+(*****************************************************************************)
+(* A rule on several domains *)
+(*****************************************************************************)
+
+let jobs = ref 1
+
+(* the domains that wait for a job, [job d] on each, the caller's 0 *)
+type pool = {
+  size : int;
+  lock : Parallel.lock;
+  start : Parallel.cond;
+  finished : Parallel.cond;
+  mutable job : int -> unit;
+  mutable generation : int;     (* how many jobs were given *)
+  mutable left : int;           (* the workers still at this one *)
+  mutable stop : bool;
+  mutable failed : exn option;
+}
+
+let worker (pool : pool) (d : int) () : unit =
+  let seen = ref 0 in
+  Parallel.take pool.lock;
+  while not pool.stop do
+    if pool.generation = !seen then Parallel.wait pool.start pool.lock
+    else begin
+      seen := pool.generation;
+      let job = pool.job in
+      Parallel.give pool.lock;
+      let failed : exn option = try job d; None with e -> Some e in
+      Parallel.take pool.lock;
+      if failed <> None then pool.failed <- failed;
+      pool.left <- pool.left - 1;
+      if pool.left = 0 then Parallel.signal pool.finished
+    end
+  done;
+  Parallel.give pool.lock
+
+let pool_make (size : int) : pool =
+  let pool : pool =
+    { size; lock = Parallel.lock (); start = Parallel.cond (); finished = Parallel.cond (); job = (fun (_ : int) -> ());
+      generation = 0; left = 0; stop = false; failed = None } in
+  for d = 1 to size - 1 do
+    Parallel.spawn (worker pool d)
+  done;
+  pool
+
+(* [job] on every domain, back when all are done *)
+let pool_run (pool : pool) (job : int -> unit) : unit =
+  Parallel.take pool.lock;
+  pool.job <- job;
+  pool.generation <- pool.generation + 1;
+  pool.left <- pool.size - 1;
+  Parallel.broadcast pool.start;
+  Parallel.give pool.lock;
+  let mine : exn option = try job 0; None with e -> Some e in
+  Parallel.take pool.lock;
+  while pool.left > 0 do
+    Parallel.wait pool.finished pool.lock
+  done;
+  let failed = if mine <> None then mine else pool.failed in
+  pool.failed <- None;
+  Parallel.give pool.lock;
+  match failed with Some e -> raise e | None -> ()
+
+let pool_stop (pool : pool) : unit =
+  Parallel.take pool.lock;
+  pool.stop <- true;
+  Parallel.broadcast pool.start;
+  Parallel.give pool.lock
+
+let pool : pool option ref = ref None
+
+(* the new tuples a domain takes at a time, and how many make a rule
+ * worth sharing out *)
+let chunk = 32
+let shared = 4 * chunk
+
+let rec at_least (n : int) (l : int array list) : bool = n <= 0 || match l with [] -> false | _ :: l -> at_least (n - 1) l
+
+(* the indexes the steps will ask for, made now: on the domains they
+ * are only read *)
+let prepare (steps : step list) : unit =
+  List.iter
+    (fun (step : step) ->
+      match step with
+      | Scan s when (not s.from_new) && s.mask <> 0 && Array.length s.keys < s.atom.rel.arity -> ignore (index s.atom.rel s.mask)
+      | Test (D.Neg a) ->
+          let mask = known a in
+          if mask <> 0 && mask <> (1 lsl a.rel.arity) - 1 then ignore (index a.rel mask)
+      | _ -> ())
+    steps
+
+(* the new tuples of the first scan in chunks, taken by the domains in
+ * turn; what each finds that is not there kept by chunk, and added by
+ * the caller in the chunks' order, the same each time. The relations
+ * are only read while the domains run. *)
+let apply_shared (p : D.t) (stats : stats) (pool : pool) (rule : D.rule) (s : scan) (rest : step list) : unit =
+  prepare rest;
+  let delta = Array.of_list s.atom.rel.delta in
+  let n = (Array.length delta + chunk - 1) / chunk in
+  let next = Atomic.make 0 in
+  let results : int array list array = Array.make n [] in
+  let counts : stats array =
+    Array.init pool.size (fun (_ : int) -> { rounds = 0; firings = 0; derived = 0; lookups = 0; profile = [] }) in
+  pool_run pool (fun (d : int) ->
+      let mine = counts.(d) in
+      let env = Array.make rule.slots (-1) in
+      let head (i : int) : int = value env rule.head.args.(i) in
+      (* (what this domain found already: without it, a tuple found by
+       * a thousand firings was a thousand candidates, which the caller
+       * added one by one) *)
+      let seen = Tuples.create (Array.length rule.head.args) in
+      let c = ref (Atomic.fetch_and_add next 1) in
+      while !c < n do
+        let got : int array list ref = ref [] in
+        for i = !c * chunk to min (Array.length delta) ((!c + 1) * chunk) - 1 do
+          scanned p mine env s rest
+            (fun () ->
+              mine.firings <- mine.firings + 1;
+              if not (Tuples.mem_by rule.head.rel.set head || Tuples.mem_by seen head) then begin
+                let tuple = Array.map (value env) rule.head.args in
+                ignore (Tuples.add seen tuple);
+                got := tuple :: !got
+              end)
+            delta.(i)
+        done;
+        results.(!c) <- List.rev !got;
+        c := Atomic.fetch_and_add next 1
+      done);
+  stats.lookups <- stats.lookups + 1;
+  Array.iter
+    (fun (c : stats) ->
+      stats.firings <- stats.firings + c.firings;
+      stats.lookups <- stats.lookups + c.lookups)
+    counts;
+  Array.iter
+    (List.iter (fun (tuple : int array) ->
+         if D.add rule.head.rel tuple then begin
+           stats.derived <- stats.derived + 1;
+           rule.head.rel.fresh <- tuple :: rule.head.rel.fresh
+         end))
+    results
 
 (* a rule applied by one of its plans: the tuples it finds that were not
  * known are its head's fresh ones. Not at all if an atom has no tuple
@@ -171,15 +321,19 @@ let apply (p : D.t) (stats : stats) (rule : D.rule) (steps : step list) : unit =
     let env = Array.make rule.slots (-1) in
     let head (i : int) : int = value env rule.head.args.(i) in
     let fired = stats.firings and added = stats.derived and looked = stats.lookups and t0 = Sys.time () in
-    join p stats env steps (fun () ->
-        stats.firings <- stats.firings + 1;
-        (* (most firings find their tuple there: asked before it is made) *)
-        if not (Tuples.mem_by rule.head.rel.set head) then begin
-          let tuple = Array.map (value env) rule.head.args in
-          ignore (D.add rule.head.rel tuple);
-          stats.derived <- stats.derived + 1;
-          rule.head.rel.fresh <- tuple :: rule.head.rel.fresh
-        end);
+    (match (!pool, steps) with
+     | Some pool, Scan s :: rest when s.from_new && at_least shared s.atom.rel.delta ->
+         apply_shared p stats pool rule s rest
+     | _ ->
+         join p stats env steps (fun () ->
+             stats.firings <- stats.firings + 1;
+             (* (most firings find their tuple there: asked before it is made) *)
+             if not (Tuples.mem_by rule.head.rel.set head) then begin
+               let tuple = Array.map (value env) rule.head.args in
+               ignore (D.add rule.head.rel tuple);
+               stats.derived <- stats.derived + 1;
+               rule.head.rel.fresh <- tuple :: rule.head.rel.fresh
+             end));
     let c =
       match List.assq_opt rule stats.profile with
       | Some c -> c
@@ -235,6 +389,7 @@ let run ~(naive : bool) (p : D.t) : stats =
   let stats : stats = { rounds = 0; firings = 0; derived = 0; lookups = 0; profile = [] } in
   let top = stratify p in
   let rules = List.rev p.rule_list in
+  if !jobs > 1 && Parallel.available then pool := Some (pool_make !jobs);
   for s = 0 to top do
     let mine = List.filter (fun (rule : D.rule) -> rule.head.rel.stratum = s) rules in
     (* (each once: a relation with two rules is one relation) *)
@@ -271,6 +426,7 @@ let run ~(naive : bool) (p : D.t) : stats =
     done;
     List.iter (fun (r : D.relation) -> r.delta <- []) heads
   done;
+  (match !pool with Some pl -> pool_stop pl; pool := None | None -> ());
   stats
 
 let answers (p : D.t) (q : D.query) : string list =

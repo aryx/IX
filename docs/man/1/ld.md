@@ -82,7 +82,7 @@ ld -m 5 -o hello my.a libc.a
 ```
 
 # SEE ALSO
-\man{asm}{1}, \man{cc}{1}, \man{ml}{1}, \man{5i}{1}, \man{ar}{1},
+\man{asm}{1}, \man{cc}{1}, \man{ml}{1}, \man{5i}{1}, \man{acid}{1}, \man{ar}{1},
 \man{8l}{1}
 
 # DIAGNOSTICS

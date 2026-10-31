@@ -82,7 +82,7 @@ ml -pp Prelude.ml
 ```
 
 # SEE ALSO
-\man{ld}{1}, \man{singml}{1}, \man{datalog}{1}
+\man{ld}{1}, \man{singml}{1}, \man{datalog}{1}, \man{acid}{1}
 
 # DIAGNOSTICS
 An error names the file and the line,

@@ -76,7 +76,7 @@ cc -m 7 -facts hello.c > hello.dl
 ```
 
 # SEE ALSO
-\man{asm}{1}, \man{ld}{1}, \man{5i}{1}, \man{datalog}{1},
+\man{asm}{1}, \man{ld}{1}, \man{5i}{1}, \man{acid}{1}, \man{datalog}{1},
 \man{8c}{1}
 
 # DIAGNOSTICS

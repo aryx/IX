@@ -76,6 +76,10 @@ val own_type : string -> tdecl option
 (* a global's symbol, M.x *)
 val symbol : string list -> string -> string
 
+(* the unit's exceptions, in order: their symbols, their arguments'
+ * types (mini-ml -g describes them) *)
+val exceptions : unit -> (string * ty list) list
+
 (* the unit's own interface, if it has one: its values' types *)
 val interface : unit -> (string * ty) list option
 

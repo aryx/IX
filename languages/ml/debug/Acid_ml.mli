@@ -4,7 +4,7 @@
  * whose ml(Values.shapes) then prints [Circle 1.5; Rect (3, 4); Empty]
  * where the words alone say [(1.5); #1(3, 4); 0].
  *
- * Two lists, the library's (port.acid), each line one more element:
+ * Three lists, the library's (port.acid), each line one more element:
  *
  *     mltypes = append mltypes, {"Values.shape", {}, "variant",
  *         {"Empty"},                          the constant constructors
@@ -14,14 +14,18 @@
  *         {"x", {"int"}}, {"y", {"int"}}, {"name", {"string"}}};
  *     mltypes = append mltypes, {"Values.t", {"'a"}, "=", {"list", {"'a"}}};
  *     mlglobals = append mlglobals, {"Values.shapes", {"list", {"Values.shape"}}};
+ *     mlexns = append mlexns, {"Raise.Bad", {"Raise.shape"}, {"int"}};
+ *                                             an exception's arguments
  *
  * A type is a list: its path and its arguments ({"list", {"int"}}), a
  * tuple's "*" and its components, a function's "->", a variable's
  * "'a". A global by its symbol's name, read when the program's
  * symbols are not yet set: var("Values.shapes") is its word's address
- * later (the M.x acid's lexer reads). Each type's description a line
- * of its own, the same text in every unit naming it: mini-ld keeps
- * one. The predefined
+ * later (the M.x acid's lexer reads). An exception by its symbol too,
+ * its block's (an exception value's first field): the runtime prints
+ * an uncaught one's arguments by their types (Printexc). Each type's
+ * description a line of its own, the same text in every unit naming
+ * it: mini-ld keeps one. The predefined
  * (int, string, list, array...) have none: the printer knows them; an
  * abstract type none: its words.
  *
@@ -30,5 +34,6 @@
  * debugger's language is the format, as 5c -a's (C's: Acid). *)
 
 (* the descriptions of the values given (Typing.global_types) that are
- * in the unit's data (text, its assembly), and of the types they name *)
-val decls : text:string -> (string * Scope.ty) list -> string list
+ * in the unit's data (text, its assembly), of the exceptions given
+ * that have arguments (Resolve.exceptions), and of the types they name *)
+val decls : text:string -> (string * Scope.ty) list -> (string * Scope.ty list) list -> string list

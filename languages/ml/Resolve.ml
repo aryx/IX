@@ -833,6 +833,10 @@ and recursive env bs =
 let defined : (string, global) Hashtbl.t = Hashtbl.create 64
 let shadowed = ref 0
 
+(* the unit's exceptions, the last first: their globals and arguments *)
+let exns : (global * ty list) list ref = ref []
+let exceptions () = List.rev_map (fun ((g : global), ts) -> g.gsym, ts) !exns
+
 let define path x =
   let sym = symbol path x in
   (match Hashtbl.find_opt defined sym with
@@ -877,7 +881,9 @@ let rec structure path env (items : Ast.structure) : item list * env * env =
       | Iexception (c, ts) ->
           let g = define path c in
           emit (Iexception (g, c));
-          let c = exn_cons c g (List.map (resolve env it.iloc) ts) in
+          let ts = List.map (resolve env it.iloc) ts in
+          exns := (g, ts) :: !exns;
+          let c = exn_cons c g ts in
           both (fun env -> { env with conses = c :: env.conses })
       | Imodule (m, me) ->
           let rec md = function

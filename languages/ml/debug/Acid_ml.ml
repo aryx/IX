@@ -96,8 +96,11 @@ let globls text =
     (String.split_on_char '\n' text);
   h
 
-let decls ~text globals =
+let decls ~text globals exns =
   let data = globls text in
   let globals = List.filter (fun (sym, _) -> plain sym && Hashtbl.mem data sym) globals in
-  types (List.map snd globals)
+  let exns = List.filter (fun (_, ts) -> ts <> []) exns in
+  types (List.map snd globals @ List.concat_map snd exns)
   @ List.map (fun (sym, t) -> sprintf "mlglobals = append mlglobals, {\"%s\", %s};\n" sym (ty t)) globals
+  @ List.map (fun (sym, ts) ->
+      sprintf "mlexns = append mlexns, {%s};\n" (String.concat ", " (sprintf "\"%s\"" sym :: List.map ty ts))) exns

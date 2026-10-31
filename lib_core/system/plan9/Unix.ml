@@ -60,6 +60,15 @@ let contains msg part =
 let last = ref ""
 let error_message (_ : error) = !last
 
+(* ix: an uncaught Unix_error says its error by its message, not a
+ * number (plan_debugger.md, stage 5) *)
+let () =
+  Printexc.register_printer (function
+    | Unix_error (e, fn, arg) ->
+        let quoted s = "\"" ^ String.escaped s ^ "\"" in
+        Some ("Unix_error(" ^ error_message e ^ ", " ^ quoted fn ^ ", " ^ quoted arg ^ ")")
+    | _ -> None)
+
 (* a call's answer, or its error raised: the function's name, its
  * argument. A note that came meanwhile: its handler is run first
  * (../Unix.ml's check). The kernel's string is asked of it (errstr

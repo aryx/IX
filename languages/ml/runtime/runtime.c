@@ -96,6 +96,7 @@ unsupported(char *what)
 #include "gc.c"          /* the heap: two halves, Cheney's collector, a young generation */
 #include "strings.c"     /* strings and bytes */
 #include "frames.c"      /* a raise's frames, named by the program's own table */
+#include "typed.c"       /* an exception's arguments by their types */
 #include "exceptions.c"  /* the predefined exceptions, raising from C, the uncaught one */
 #include "compare.c"     /* compare and hash */
 #include "arrays.c"      /* arrays, Obj, Callback */

@@ -50,7 +50,8 @@ U=$($ROOT/bin/mini-ar t $M/lib_core/lib_core.a | sed 's,.*/,,; s,\.ml$,,' | tr '
           $M/lib_core/std_exit.7 $M/lib_core/runtime.7 $M/lib_core/libc.a) &&
   (cd $W/asm && $IX/assembler/Main.exe -m 7 -o hello.7 hello_linux_arm64.s && $IX/linker/Main.exe -m 7 -g -H7 -E _start -o target hello.7)
 ) > $W/err 2>&1 || { echo "FAIL the targets' build: $(head -2 $W/err)"; exit 1; }
-norm() { sed -E "s|$W|W|g" | sed -E 's/[0-9]{4,8}: /PID: /g; s/0x[0-9a-f]{12,16}/ADDR/g; s/pid=[0-9]+/pid=PID/g; s/^kill [0-9]+/kill PID/'; }
+# (mini-ml's runtime.c: its lines move with its code)
+norm() { sed -E "s|$W|W|g" | sed -E 's/[0-9]{4,8}: /PID: /g; s/0x[0-9a-f]{12,16}/ADDR/g; s/pid=[0-9]+/pid=PID/g; s/^kill [0-9]+/kill PID/; s/runtime\.c:[0-9]+/runtime.c:N/g'; }
 n=0; failures=0
 for d in gcc:. gcc:dwarf cc:cc ml:ml asm:asm; do
   # (gcc's program its types from mini-cc -a's file, or from its DWARF;

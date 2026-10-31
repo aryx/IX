@@ -14,6 +14,11 @@
 val to_string : exn -> string
         (* [Printexc.to_string e] returns a string representation of [e]. *)
 
+(* ix: OCaml's (4.14): [Printexc.register_printer p] makes [to_string]
+   and the uncaught exception's message ask [p] first ([None]: not one
+   of its exceptions); the last registered asked first *)
+val register_printer : (exn -> string option) -> unit
+
 val print: ('a -> 'b) -> 'a -> 'b
         (* Same as [catch], but re-raise the stray exception after printing
            it, instead of aborting the program. *)

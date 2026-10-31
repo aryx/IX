@@ -640,9 +640,11 @@ defn mlv(v, d)
 // adds to: each type's {path, params, "variant", {constant names},
 // {name, args...}...}, {path, params, "record", {name, type}...} or
 // {path, params, "=", type}; each global's {symbol, type}, a type a
-// list, its path and its arguments: {"list", {"int"}}
+// list, its path and its arguments: {"list", {"int"}}; each
+// exception's {symbol, its arguments' types...} (the runtime's)
 mltypes = {};
 mlglobals = {};
+mlexns = {};
 
 // the description of the type of this path, or {}
 defn mltypeof(p)

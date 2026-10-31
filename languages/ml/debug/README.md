@@ -6,10 +6,11 @@ Here:
 
 - `Lines_ml`: the .ml's lines in the object, from the assembly's
   `// line n` marks, and the history.
-- `Acid_ml`: `-g`'s descriptions of the unit's values and their
-  types (constructors by tag, records' fields), acid's text in the
-  object, which mini-ld puts in the program's `.acid`; port.acid's
-  `ml()` prints a value by them.
+- `Acid_ml`: `-g`'s descriptions of the unit's values, its
+  exceptions' arguments and their types (constructors by tag,
+  records' fields), acid's text in the object, which mini-ld puts in
+  the program's `.acid`; port.acid's `ml()` prints a value by them,
+  the runtime an uncaught exception's arguments.
 
 Elsewhere, called from here or calling here:
 
@@ -22,7 +23,11 @@ Elsewhere, called from here or calling here:
   (`raise_`, `ml_raise_pc`, `ml_raise_sp`, `ml_raise_lr`,
   `ml_raise_top`, and `ml_raise_c`).
 - `runtime/frames.c`: the frames walked at an uncaught exception, by
-  the program's tables; `runtime/exceptions.c` calls it.
+  the program's tables; `runtime/typed.c`: its arguments by their
+  types, by the descriptions in the program; `runtime/exceptions.c`
+  calls them, Printexc's `to_string` too (`ml_exn_string`).
+- `Resolve.exceptions`: the unit's exceptions and their arguments'
+  types, what `Acid_ml` describes.
 - `CLI`: calls `Lines_ml.add` on each object, `Acid_ml.decls` with
   `-g`.
 - `Typing.global_types` (the values' types, inferred) and

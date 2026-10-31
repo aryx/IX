@@ -506,7 +506,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                     | text ->
                         if !dir || !dssa || !flow || !dflow then 0
                         else begin
-                          let acid = if !debug && not !unsafe then Acid_ml.decls ~text (Typing.global_types ()) else [] in
+                          let acid = if !debug && not !unsafe then Acid_ml.decls ~text (Typing.global_types ()) (Resolve.exceptions ()) else [] in
                           output caps !mach ~listing:!listing ~out:(outfile file) ~file ~acid text;
                           if !Lower.inline_most > 0 && not !listing then write_summary caps (outfile file) file name items;
                           0

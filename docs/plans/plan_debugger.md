@@ -1088,3 +1088,46 @@ decision 13 are plan_debugger_replay.md's. What is left here: the
 traces (5's second half: an exception's arguments by their types; 5a
 on arm64; 5b, the line's text; 6, the kernel's panic), then this plan
 to done/.
+
+2026-10-31, **stage 5's second half: an exception's arguments by their
+types** (the author: "let's move forward on the plan and finish the
+traces"). An uncaught exception printed its arguments as `_` unless
+they were integers or strings; now, its unit compiled with -g and the
+program linked with -g:
+```
+Fatal error: uncaught exception Bad(Rect (3, -4), {x = 1; y = 2; name = "origin"}, [1; 2], Some "why")
+```
+(debuggers/tests/fault/Typed.ml), and by their words without:
+`Bad(#1(3, -4), (1, 2, "origin"), (1, (2, 0)), ("why"))`.
+- **The descriptions** are decision 14's: mini-ml -g's acid text in
+  the program, now with each exception's arguments' types
+  (`mlexns = append mlexns, {"Typed.Bad", {"Typed.shape"}, ...};`,
+  Resolve.exceptions, Acid_ml; port.acid's list mlexns).
+- **The printer is the runtime's C** (languages/ml/runtime/typed.c),
+  not Printexc's OCaml, which was written first and taken back: a
+  program links only the units it names, and Printexc with what it
+  names (Printf, String) is 187 KB more for a hello world (134,000
+  bytes to 321,520); the runtime is in every program, and finds the
+  descriptions by the table frames.c already reads (the .acid data
+  symbol, the exception's block's symbol). The text read in place, a
+  list's element a pointer into it; nothing allocated while a value
+  is printed. 5.5 KB of runtime more for a hello world (4.1%).
+  Printexc's to_string asks the same (ml_exn_string), so a thread
+  killed by an exception says it so too.
+- **Printexc.register_printer** (OCaml's API): Unix's says a
+  Unix_error by its message, `Unix_error(file does not exist, "open",
+  "/no/such/file")` (the kernel's words on Plan 9, strerror's on
+  Linux); the runtime asks Printexc first when it is linked
+  (Printexc.uncaught, a named value). Printexc without Printf now
+  (its locfmt and eprintf by ^), so Unix's printer does not make
+  every program link Printf.
+- On the way: main had no line in the sessions (?file?:0), its runtime
+  older than mini-cc's statement lines in the shared _mk; made again it
+  says runtime.c:171, a line that moves with runtime.c's code: walk.sh,
+  acid_proc.sh and acid_linux.sh compare runtime.c's lines without
+  their numbers.
+Not done: 64-bit (the table read is arm's a.out's: 5a's arm64); a
+constructor's inline record (its words), an exception inside an
+argument (its words). Checked: walk.sh's three new cases (by types,
+by words, Unix_error), 6 cases; acid_proc.sh (12) and acid_linux.sh
+(8), three and one sessions re-recorded for main's line.

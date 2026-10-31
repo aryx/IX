@@ -93,6 +93,15 @@ let error_message (e : error) =
   | EWOULDBLOCK -> "Resource temporarily unavailable"
   | _ -> (match List.find_opt (fun (_, e', _) -> e' = e) errors with Some (_, _, m) -> m | None -> "Unknown error")
 
+(* ix: an uncaught Unix_error says its error by its message, not a
+ * number (plan_debugger.md, stage 5) *)
+let () =
+  Printexc.register_printer (function
+    | Unix_error (e, fn, arg) ->
+        let quoted s = "\"" ^ String.escaped s ^ "\"" in
+        Some ("Unix_error(" ^ error_message e ^ ", " ^ quoted fn ^ ", " ^ quoted arg ^ ")")
+    | _ -> None)
+
 let error_of n = match List.find_opt (fun (n', _, _) -> n' = n) errors with Some (_, e, _) -> e | None -> EUNKNOWNERR n
 
 (* a call's answer, or its error raised: the function's name, its argument *)

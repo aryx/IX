@@ -231,7 +231,10 @@ ml_raise_trace(value unit)
 	return ml_string(tbuf);
 }
 
-static char ebuf[256];
+value *caml_named_value(char*);       /* (arrays.c's) */
+value callback(value, value);
+
+static char ebuf[1024];
 static int elen;
 
 static void
@@ -239,51 +242,32 @@ eadd(char *s, int n)
 {
 	int i;
 
-	for(i = 0; i < n && elen < 255; i++)
+	for(i = 0; i < n && elen < sizeof ebuf - 1; i++)
 		ebuf[elen++] = s[i];
 }
 
-/* as ocaml-light's printexc.c: its name, then its integer and string
- * arguments (a single tuple's fields, as Match_failure's); stdout isn't
- * flushed */
+/* as ocaml-light's printexc.c, its name and its arguments, these by
+ * their types (typed.c); stdout isn't flushed. One with arguments asks
+ * Printexc first when it is linked (Printexc.uncaught: its printers,
+ * Unix_error's), one without (an Out_of_memory) does not ask ML */
 value
 ml_uncaught(value exn)
 {
-	char buf[64];
-	value b, v, i, start, name;
-	int s, tlen;
+	value v, *f;
+	int tlen;
 
 	tlen = trace();
-	name = Field(Field(exn, 0), 0);
-	eadd((char*)Bytes(name), length(name));
-	if(Wosize(exn) >= 2){
-		b = exn;
-		start = 1;
-		v = Field(exn, 1);
-		if(Wosize(exn) == 2 && !Is_int(v) && Tag(v) == 0){
-			b = v;
-			start = 0;
-		}
-		eadd("(", 1);
-		for(i = start; i < Wosize(b); i++){
-			if(i > start)
-				eadd(", ", 2);
-			v = Field(b, i);
-			if(Is_int(v)){
-				if(Long_val(v) < 0){
-					s = digits(-(uvalue)Long_val(v), 10, 0, buf, 64);
-					buf[--s] = '-';
-				}else
-					s = digits(Long_val(v), 10, 0, buf, 64);
-				eadd(buf + s, 64 - s);
-			}else if(Tag(v) == String_tag){
-				eadd("\"", 1);
-				eadd((char*)Bytes(v), length(v));
-				eadd("\"", 1);
-			}else
-				eadd("_", 1);
-		}
-		eadd(")", 1);
+	f = Wosize(exn) >= 2 ? caml_named_value("Printexc.uncaught") : nil;
+	if(f != nil){
+		push(exn);
+		v = callback(*f, exn);
+		eadd((char*)Bytes(v), length(v));
+		exn = pop();
+	}
+	if(elen == 0){
+		xlen = 0;
+		xexn(exn);
+		eadd(xbuf, xlen);
 	}
 	write(2, "Fatal error: uncaught exception ", 32);
 	write(2, ebuf, elen);

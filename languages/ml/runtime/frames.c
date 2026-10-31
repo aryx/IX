@@ -119,6 +119,47 @@ entry(long o, uint *v, int *t, uchar **name, long *len)
 	return o + 5 + e + 1;
 }
 
+/* the data symbol at a, its name; nil if none starts there */
+static uchar*
+datasym(uvalue a, long *len)
+{
+	long o, n;
+	uint v;
+	int t;
+	uchar *nm;
+
+	if(sizeof(value) != 4 || !table())
+		return nil;
+	for(o = 0; o + 5 <= nsyms; ){
+		o = entry(o, &v, &t, &nm, &n);
+		if((t == 'D' || t == 'd') && v == a){
+			*len = n;
+			return nm;
+		}
+	}
+	return nil;
+}
+
+/* the program's .acid (mini-ld -g: its types described by mini-ml -g,
+ * a string to its NUL), or nil */
+static char*
+acidtext(void)
+{
+	long o, n;
+	uint v;
+	int t;
+	uchar *nm;
+
+	if(sizeof(value) != 4 || !table())
+		return nil;
+	for(o = 0; o + 5 <= nsyms; ){
+		o = entry(o, &v, &t, &nm, &n);
+		if((t == 'D' || t == 'd') && n == 5 && memcmp(nm, ".acid", 5) == 0)
+			return (char*)v;
+	}
+	return nil;
+}
+
 static int
 istext(int t)
 {

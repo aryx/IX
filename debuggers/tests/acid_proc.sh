@@ -80,7 +80,8 @@ for x in ml:Down mlvalues:Values mlsteps:Steps; do
     || { echo "FAIL $u.ml's build: $(head -2 $W/err)"; exit 1; }
 done
 
-norm() { grep -a -v 'pushfile: /lib' | sed 's/[0-9]\{4,8\}: /PID: /g;s/[0-9]\{4,8\}\/ctl/PID\/ctl/g;s/pid=[0-9]*/pid=PID/g'; }
+# (mini-ml's runtime.c: its lines move with its code)
+norm() { grep -a -v 'pushfile: /lib' | sed 's/[0-9]\{4,8\}: /PID: /g;s/[0-9]\{4,8\}\/ctl/PID\/ctl/g;s/pid=[0-9]*/pid=PID/g;s/runtime\.c:[0-9]*/runtime.c:N/g'; }
 # (live: what ix's library does otherwise, taken out of both)
 # (and _main's line: its call's, rt0.s:17, where libmach's says the line
 # of the instruction before it, 16)

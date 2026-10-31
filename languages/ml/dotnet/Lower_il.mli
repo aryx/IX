@@ -11,11 +11,18 @@
  *     float                       float64
  *     string                      System.String
  *     unit                        nothing: void, no argument, no local
- *     the unit                    a static class, the unit's name
+ *     a unit                      a static class, the unit's name
  *     a function of the unit      a static method, its arguments the
  *                                 function's, called directly
- *     a value of the unit         a static field, set by Main
- *     the toplevel's code         Main, the entry point, in order
+ *     a value of the unit         a static field, set by its toplevel
+ *     the unit's toplevel         its class's type initializer
+ *                                 (.cctor): run before the class's
+ *                                 first use, C#'s too (F#'s way)
+ *     a.ml b.ml main.ml           one assembly: <Program>.Main calls
+ *                                 each unit's (empty) init in link
+ *                                 order, so their toplevels run so
+ *     B.f, B.t, B.C, B.E          another unit's method, nested class,
+ *                                 constructor's class, exception
  *     + - * / mod, comparisons    add, sub, mul, div, rem, clt...;
  *                                 a string's by String::CompareOrdinal
  *     print_int, print_string     Console::Write, WriteLine
@@ -79,10 +86,10 @@
  *     type 'a box, let wrap x     Shapes.box<string> b = Shapes.wrap("..")
  *     let coordinates p = ...     Shapes.coordinates(q).Item1
  *
- * Stages 1a to 1d: what is not above (a closure inside a polymorphic
- * function, one as a value, < on records, other units and so the
- * library's List or Array) is refused by name, the stage that will
- * have it said. Tuples and lists are ML's own classes, not .NET's
+ * Stage 1: what is not above (a closure inside a polymorphic
+ * function, one as a value, < on records, a unit not given, and so the
+ * library's List or Array, until lib_core is compiled so) is refused
+ * by name, the stage that will have it said. Tuples and lists are ML's own classes, not .NET's
  * ValueTuple and ImmutableStack (decision 2's), which mini-dotnet's
  * library has not got yet. A try inside an operand is refused too: IL's rule is
  * that a protected region starts with an empty stack (Tiger's
@@ -105,8 +112,17 @@
  * 6) took the other way, every value an object, close to OCaml's own
  * representation, and paid for it at every call into .NET's library. *)
 
-(* the unit's name (its class), its items, checked by Typing with
- * Typing.keep: the assembly, as its file's bytes *)
-val unit_ : string -> Scope.item list -> string
+(* an assembly of units (mini-ml -dotnet a.ml b.ml main.ml), its name *)
+type assembly
+val start : string -> assembly
+
+(* a unit's name (its class), its items, checked by Typing with
+ * Typing.keep, compiled into the assembly: each unit after those it
+ * names, its toplevel its class's type initializer *)
+val unit_ : assembly -> string -> Scope.item list -> unit
+
+(* the entry point (each unit's toplevel, in order): the assembly, as
+ * its file's bytes *)
+val finish : assembly -> string
 
 (* (Il_code.Refused: what is not compiled yet, its line, what it is) *)

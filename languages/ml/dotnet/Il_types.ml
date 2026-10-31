@@ -158,6 +158,11 @@ let split (c : c) (path : string) : string * string =
   | Some i -> (String.sub path 0 i, String.sub path (i + 1) (String.length path - i - 1))
   | None -> (c.uname, path)
 
+(* a unit's class, this one's or one compiled before it in the
+ * assembly *)
+let unit_class (c : c) (name : string) : int option =
+  if name = c.uname then Some c.cls else Hashtbl.find_opt c.memo ("unit " ^ name)
+
 (* a type's class made: of the unit, nested in the unit's (F#'s modules:
  * so C# names it Unit.t, and no namespace has the unit's class's name);
  * of Pervasives (ref, option), in the namespace Stdlib of this assembly
@@ -168,13 +173,13 @@ let make_class (c : c) (loc : int) (path : string) (arity : int) (flags : int) (
   let ns, name = split c path in
   let name = if arity > 0 then Printf.sprintf "%s`%d" name arity else name in
   let cls =
-    if ns = c.uname then begin
-      let cls = W.type_def c.w "" name (flags lor 0x2) parent in
-      W.nest c.w cls c.cls;
-      cls
-    end
-    else if ns = "Pervasives" then W.type_def c.w "Stdlib" name (flags lor 0x1) parent
-    else refuse loc ("the type " ^ path ^ ", of another unit") "1e" in
+    match unit_class c ns with
+    | Some outer ->
+        let cls = W.type_def c.w "" name (flags lor 0x2) parent in
+        W.nest c.w cls outer;
+        cls
+    | None when ns = "Pervasives" -> W.type_def c.w "Stdlib" name (flags lor 0x1) parent
+    | None -> refuse loc ("the type " ^ path ^ ", of a unit not compiled with it") "1e" in
   for i = 0 to arity - 1 do
     W.generic_param c.w cls i (Printf.sprintf "T%d" i)
   done;
@@ -376,11 +381,12 @@ let exn (c : c) (loc : int) (sym : string) (args : Scope.ty list) : int * int * 
       let base = lib c "Exception" ".ctor" (instance [ S.String ] S.Void) in
       (* (OCaml's own, Failure, Not_found...: Stdlib's; the unit's
        * nested in its class) *)
-      if not predefined && fst (split c sym) <> c.uname then refuse loc ("the exception " ^ sym ^ ", of another unit") "1e";
+      let outer = if predefined then None else unit_class c (fst (split c sym)) in
+      if not predefined && outer = None then refuse loc ("the exception " ^ sym ^ ", of a unit not compiled with it") "1e";
       let cls, ctor, toks =
         new_class c (if predefined then "Stdlib" else "") name (if predefined then 0x00100001 else 0x00100002) (sys c "Exception") base
           [ Il.Ldstr (W.user_string c.w name) ] fields in
-      if not predefined then W.nest c.w cls c.cls;
+      (match outer with Some o -> W.nest c.w cls o | None -> ());
       Hashtbl.replace c.memo key cls;
       Hashtbl.replace c.memo (key ^ " ctor") ctor;
       List.iteri (fun (i : int) (f : int) -> Hashtbl.replace c.memo (Printf.sprintf "%s.%d" key i) f) toks

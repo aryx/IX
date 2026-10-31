@@ -25,7 +25,7 @@ ml – the OCaml compiler, for arm and arm64
 **ml**
 **-dotnet**
 [ **-o** *file*`.dll` ]
-*file*`.ml`
+*file*`.ml` ...
 
 # DESCRIPTION
 *Ml* compiles a unit of OCaml, the language ix is written in, to its
@@ -76,20 +76,22 @@ ocaml-light's *ocamlopt*. Another unit's names are read from its
      SSA form.
 
 **-dotnet**
-:    No object: the unit as a .NET assembly, *file*`.dll` and its
+:    No object: the units, in order, as one .NET assembly, the last
+     *file*`.dll` (or **-o**'s) and its
      *file*`.runtimeconfig.json`, which \man{dotnet}{1} runs, and
      Microsoft's `dotnet`. Typed, as F# is: an `int` is an int64, a
      `string` a System.String, the unit a static class, its
      functions static methods, its values static fields, its
-     toplevel `Main`; a record a class, a variant an abstract class
+     toplevel its class's type initializer, run before its first use
+     (by C# too), the units' in their order; a record a class, a variant an abstract class
      and a class a constructor, compared by their contents; an
      exception a System.Exception; a function a `Func`, a closure a
      class of what it captures. So far ints, floats, strings, chars,
      booleans, records, variants, exceptions, `match`, functions and
      closures, polymorphic functions and types (generic methods and
      classes), references, options, tuples, lists, arrays (T[]),
-     loops; the rest (another unit, so the library's List and Array)
-     is refused by its name and line.
+     loops, several units; the rest (a unit not given, so the
+     library's List and Array) is refused by its name and line.
 
 **-h**
 :    How, by examples, and the options to debug the compiler

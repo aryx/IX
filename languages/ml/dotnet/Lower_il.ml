@@ -636,20 +636,46 @@ let define (c : c) (env : env) (f : fn) : unit =
   finish c k f.tok;
   c.tvars <- []
 
-let unit_ (name : string) (items : Scope.item list) : string =
+(* an assembly being made: its writer, what its units share (the
+ * members made, the functions and values by symbol), its units' init
+ * methods in order *)
+type assembly = {
+  w : W.t;
+  runtime : int;
+  console : int;
+  obj : int;
+  memo : (string, int) Hashtbl.t;
+  env : env;
+  mutable inits : int list;             (* reversed *)
+}
+
+let start (name : string) : assembly =
   let w = W.create name in
   let runtime = W.assembly_ref w "System.Runtime" in
   let console = W.type_ref w (W.assembly_ref w "System.Console") "System" "Console" in
   let obj = W.type_ref w runtime "System" "Object" in
-  (* (a static class: abstract and sealed) *)
-  let cls = W.type_def w "" name 0x00100181 obj in
-  let c = { w; runtime; console; cls; uname = name; memo = Hashtbl.create 64; tvars = [] } in
+  let memo = Hashtbl.create 64 in
+  Hashtbl.replace memo "type Object" obj;
   Il_types.reset ();
   closures := 0;
-  Hashtbl.replace c.memo "type Object" obj;
-  let env = { by_var = Hashtbl.create 16; by_sym = Hashtbl.create 16; fields = Hashtbl.create 16 } in
-  let main = W.method_def w cls "Main" 0x0096 (static [] S.Void) in
-  W.set_entry_point w main;
+  { w; runtime; console; obj; memo; env = { by_var = Hashtbl.create 16; by_sym = Hashtbl.create 16; fields = Hashtbl.create 16 };
+    inits = [] }
+
+(* a unit: a static class (abstract, sealed; not beforefieldinit: its
+ * initializer runs before its first use, no sooner); its toplevel its
+ * type initializer (.cctor), which the runtime runs before the class is
+ * first used, by C# too (F#'s way: a C# program using a unit finds its
+ * values made); an empty init, which <Program>.Main calls in link order
+ * so that the units' toplevels run in OCaml's order *)
+let unit_ (a : assembly) (name : string) (items : Scope.item list) : unit =
+  let w = a.w and env = a.env in
+  let cls = W.type_def w "" name 0x00000181 a.obj in
+  Hashtbl.replace a.memo ("unit " ^ name) cls;
+  let c = { w; runtime = a.runtime; console = a.console; cls; uname = name; memo = a.memo; tvars = [] } in
+  let cctor = W.method_def w cls ".cctor" 0x1891 (static [] S.Void) in
+  let init = W.method_def w cls "init" 0x0096 (static [] S.Void) in
+  W.set_body w init [] [| Il.Ret |] [];
+  a.inits <- init :: a.inits;
   let k = new_code () in
   let item (it : Scope.item) : unit =
     match it with
@@ -682,8 +708,15 @@ let unit_ (name : string) (items : Scope.item list) : string =
           bs
     (* (an exception's class is made when it is first raised or matched) *)
     | Iexception _ -> ()
-    | Iexternal (g, _, _, _) -> refuse 0 ("the external " ^ g.gname) "1a" in
+    | Iexternal (g, _, _, _) -> refuse 0 ("the external " ^ g.gname) "3" in
   List.iter item items;
   emit k Il.Ret;
-  finish c k main;
-  W.write w
+  finish c k cctor
+
+(* the entry point, <Program>.Main: each unit's init, in order *)
+let finish (a : assembly) : string =
+  let cls = W.type_def a.w "" "<Program>" 0x00100181 a.obj in
+  let main = W.method_def a.w cls "Main" 0x0096 (static [] S.Void) in
+  W.set_body a.w main [] (Array.of_list (List.rev_map (fun (i : int) -> Il.Call i) a.inits @ [ Il.Ret ])) [];
+  W.set_entry_point a.w main;
+  W.write a.w

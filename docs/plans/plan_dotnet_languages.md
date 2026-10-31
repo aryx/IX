@@ -43,11 +43,11 @@ exceptions never caught (Leroy and Pessaux's analysis, 2000) and code
 never reached; and for mini-ml's optimizer, calls of a known closure
 made direct and inlined.
 
-**Status: step 0 done (mini-analyze, native: below); stages 1a to 1d
-done (mini-ml -dotnet: the monomorphic core, records, variants,
+**Status: step 0 done (mini-analyze, native: below); stage 1 done
+(mini-ml -dotnet: the monomorphic core, records, variants,
 exceptions, match, closures, generic functions and types, tuples,
-lists, arrays; C# using an ML unit; 2026-10-31: the stages); the
-rest not built.** For the author: what step 0 showed, decision 6 to be
+lists, arrays, several units in one assembly; C# using an ML unit;
+2026-10-31: the stages); the rest not built.** For the author: what step 0 showed, decision 6 to be
 decided again by it, the open questions at the end.
 
 ## Step 0: the program first, native (2026-10-30)
@@ -420,6 +420,29 @@ but really use the same types!". So the decisions below are those of
      library to have them.
    - 1e. **Modules**: a unit a static class, several units in one
      assembly.
+     Done (2026-10-31, the author: "let's commit and move forward"):
+     `mini-ml -dotnet a.ml b.ml main.ml`, each unit checked then
+     lowered in turn into one Writer (Lower_il.start, unit_,
+     finish), what they share kept (the functions and values by
+     symbol, the classes made); another unit's types and exceptions
+     nested in that unit's class. A unit's toplevel its class's type
+     initializer (.cctor, the class not beforefieldinit), F#'s way:
+     run before the class's first use, by C# too (a C# program
+     reading an ML unit's value finds it made); <Program>.Main calls
+     each unit's empty init in link order, so the toplevels run in
+     OCaml's order. Found: Typing gave another unit's value with no
+     .mli a fresh variable, not checked, and a function of it was
+     compiled a polymorphic one; with -dotnet the units checked
+     before are known by their inferred types (Typing.others).
+     Checked: tests/units (geometry, counter, main: one unit's
+     values, functions, types, constructors, exception from another,
+     the toplevels in link order, as OCaml's own compiler's program
+     prints) by both runtimes; C# reading Shapes.unit_area, made by
+     the unit's toplevel. Left of stage 1: a closure inside a
+     polymorphic function and one as a value (generic closure
+     classes), < on records (OCaml's structural order); and lib_core
+     compiled so (decision 6, revised), the library's units then
+     given with the program's.
 2. **Tail calls in mini-dotnet** (decision 3). Check: a loop of
    10,000,000 turns written as a tail recursion, by both runtimes.
 3. **The library** (decision 6): the .NET subset in C# by mini-csc,

@@ -21,6 +21,7 @@ static class Interop {
         Console.WriteLine(b.content + ", from C# " + new Shapes.box<long>(7).Equals(Shapes.wrap(7L)));
         var xy = Shapes.coordinates(q);
         Console.WriteLine("an ML tuple in C#: " + xy.Item1 + ", " + xy.Item2);
+        Console.WriteLine("an ML unit's value, made by its toplevel: " + Shapes.unit_area);
         switch (s) {
             case Shapes.shape.Rect r: Console.WriteLine("C#'s switch on an ML variant: a Rect to " + r.Item2.x); break;
             case Shapes.shape.Circle c: Console.WriteLine("a Circle"); break;

@@ -24,3 +24,7 @@ let wrap x = { content = x }
 
 (* a tuple: Stdlib.tuple`2, its fields Item1, Item2 *)
 let coordinates p = (p.x, p.y)
+
+(* a value made by the unit's toplevel: its type initializer, which the
+   runtime runs before C# first uses the class *)
+let unit_area = area (Rect ({ x = 0; y = 0 }, { x = 1; y = 1 }))

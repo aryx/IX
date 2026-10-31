@@ -48,7 +48,8 @@ what each defines and uses: Ssa_facts.mli), for mini-datalog:
   mini-ml -flow fact.ml > fact.dl
   mini-datalog -q 'live_in(V, B)' languages/datalog/analyses/liveness_ssa.dl fact.dl
 -dflow: the compiler's own liveness and dominators, as facts, to compare.
--dotnet: the unit as a .NET assembly, fact.dll and its runtimeconfig.json,
+-dotnet: the units, in order, as a .NET assembly, fact.dll (or -o's) and its
+runtimeconfig.json,
 for mini-dotnet and Microsoft's dotnet (dotnet/Lower_il.mli; stages 1a to
 1c: ints, floats, strings, records, variants, exceptions, match, functions
 and closures, loops; the rest refused):
@@ -454,6 +455,36 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       (match output caps !mach ~listing:!listing ~out:(outfile file) ~file ~acid:[] (Gen.startup !mach compile units) with
        | () -> 0
        | exception Failure m -> fail ("mini-ml: " ^ m))
+  (* -dotnet: the units, in order, into one assembly (named after -o,
+   * else the last unit) *)
+  | (_ :: _ as units), incs when !dotnet -> (
+      let last = path (List.nth units (List.length units - 1)) in
+      let out = if !out <> "" then path !out else Fpath.set_ext ".dll" (Fpath.base last) in
+      let a = Lower_il.start (Fpath.to_string (Fpath.rem_ext (Fpath.base out))) in
+      let rec go (units : string list) : int =
+        match units with
+        | [] ->
+            FS.write caps out (Lower_il.finish a);
+            FS.write caps (Fpath.set_ext ".runtimeconfig.json" out) Writer.runtime_config;
+            0
+        | f :: rest -> (
+            let file = path f in
+            let name = String.capitalize_ascii (Fpath.to_string (Fpath.rem_ext (Fpath.base file))) in
+            match parse caps file with
+            | Error m -> fail m
+            | Ok (_, Ast.Signature _) -> fail (f ^ ": an interface, not a unit")
+            | Ok (text, Ast.Structure items) -> (
+                match classes caps (Fpath.parent file :: incs) ~lenient:false (Fpath.to_string file) text items with
+                | exception Rejected m -> fail m
+                | _, _, items -> (
+                    Typing.keep := true;
+                    match Typing.unit_ name items with
+                    | exception Typing.Error (l, m) -> fail (Printf.sprintf "%s:%d: %s" (Fpath.to_string file) l m)
+                    | _ -> (
+                        match Lower_il.unit_ a name items with
+                        | exception Il_code.Refused (l, m) -> fail (Printf.sprintf "%s:%d: %s" (Fpath.to_string file) l m)
+                        | () -> go rest)))) in
+      go units)
   (* mlpp: *)
   | [ f ], incs when !pp -> (
       match FS.read_opt caps (path f) with
@@ -475,20 +506,11 @@ let main (caps : < caps; .. >) (argv : string array) : int =
               if !dast then print caps (String.concat "\n" (List.map Ast.show_item tree) ^ "\n");
               if !dscope then print caps (String.concat "\n" (List.map Scope.show_item items) ^ "\n");
               if !deps then print caps (String.concat " " (Resolve.units_named ()) ^ "\n");
-              Typing.keep := !dotnet;
               if !dast || !dscope || !deps then 0
               else
                 match if !unsafe then [] else Typing.unit_ name items with
                 | exception Typing.Error (l, m) -> fail (Printf.sprintf "%s:%d: %s" (Fpath.to_string file) l m)
                 | _ when !facts -> print caps (Closure_facts.unit_ name items); 0
-                | _ when !dotnet -> (
-                    let out = if !out <> "" then path !out else Fpath.set_ext ".dll" (Fpath.base file) in
-                    match Lower_il.unit_ name items with
-                    | exception Il_code.Refused (l, m) -> fail (Printf.sprintf "%s:%d: %s" (Fpath.to_string file) l m)
-                    | bytes ->
-                        FS.write caps out bytes;
-                        FS.write caps (Fpath.set_ext ".runtimeconfig.json" out) Writer.runtime_config;
-                        0)
                 | types when !show_types -> List.iter (fun (x, t) -> print caps (Printf.sprintf "val %s : %s\n" x t)) types; 0
                 | _ ->
                 Fold.reset ();

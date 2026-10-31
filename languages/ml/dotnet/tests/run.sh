@@ -31,6 +31,10 @@
 #   tuples_lists  tuples and lists (Stdlib.tuple`n, Stdlib.list`1):
 #             built, matched, given to generic functions, compared
 #   arrays    T[]: literals, a.(i), a.(i) <- v, Array.length, a sort
+#   units/    three units in one assembly (geometry, counter, main): one
+#             unit's values, functions, types, constructors, exception
+#             from another; the toplevels in link order (what OCaml's
+#             own compiler's program prints: program.expected)
 # usage: languages/ml/dotnet/tests/run.sh [-dune] [-mini] [-ms] [-record]
 #   (dune build, and mini-mk in languages/ml and languages/dotnet, first)
 # MINIML, MINIDOTNET: mini-ml's builds, if not _mk/7's (ix built by
@@ -81,6 +85,11 @@ check() {
     if cmp -s $W/$p.out $T/$p.expected; then ok "mini-ml -dotnet $p, run by $what"
     else fail "mini-ml -dotnet $p, run by $what"; diff $T/$p.expected $W/$p.out | head -5; head -3 $W/$p.err; fi
   done
+  local U=$T/units
+  if $ml -L lib_core -dotnet -o $W/program.dll $U/geometry.ml $U/counter.ml $U/main.ml 2> $W/units.err &&
+     $dotnet $W/program.dll > $W/units.out 2>&1 && cmp -s $W/units.out $U/program.expected; then
+    ok "mini-ml -dotnet: three units in one assembly, run by $what"
+  else fail "mini-ml -dotnet: three units in one assembly, run by $what"; head -3 $W/units.err; diff $U/program.expected $W/units.out | head -5; fi
   refused $ml > $W/refused.out
   if [ -n "$record" ]; then cp $W/refused.out $T/refused.expected
   elif cmp -s $W/refused.out $T/refused.expected; then ok "mini-ml -dotnet: what it refuses, by $what"

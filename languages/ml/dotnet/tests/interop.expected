@@ -6,4 +6,5 @@ a C# lambda given to ML: 201
 an ML function returned to C#: 42
 an ML generic, from C# True
 an ML tuple in C#: 11, 22
+an ML unit's value, made by its toplevel: 1
 C#'s switch on an ML variant: a Rect to 11

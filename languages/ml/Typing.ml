@@ -373,6 +373,12 @@ let kind (e : Scope.expr) : int =
   | Earray _ -> 13 | Eif _ -> 14 | Eseq _ -> 15 | Ewhile _ -> 16 | Efor _ -> 17 | Eassert _ -> 18 | Econstraint _ -> 19
 let by_var : (int, t) Hashtbl.t = Hashtbl.create 256
 let stable_names = ref []
+
+(* -dotnet: the values of the units checked before this one in the same
+ * compilation, their inferred types: what another unit's value is when
+ * that unit has no .mli (else a fresh variable, not checked, and a
+ * function of it would be compiled a polymorphic one) *)
+let others : (string, t) Hashtbl.t = Hashtbl.create 64
 let var_typed (v : Scope.var) (t : t) : unit = if !keep then Hashtbl.replace by_var v.vid t
 
 (* a pattern's type, and its variables' *)
@@ -444,7 +450,7 @@ and infer_ env (e : Scope.expr) =
         match Hashtbl.find_opt globals g.gsym, g.gtype with
         | Some t, _ -> implicit env e (instantiate t)
         | None, Some ty -> implicit env e (instance ty)
-        | None, None -> newvar ()
+        | None, None -> (match Hashtbl.find_opt others g.gsym with Some t when !keep -> implicit env e (instantiate t) | _ -> newvar ())
       in
       (* min and max: their operands' type too (Lower.min_max) *)
       if Hashtbl.mem min_max g.gsym then typed := (e.span, t, 1) :: !typed;
@@ -651,6 +657,7 @@ let unit_ name (items : Scope.item list) =
          | Some inferred ->
              if not (instance_of declared inferred) then
                fail 0 (Printf.sprintf "the value %s: its interface's type isn't an instance of %s" x (show inferred))) decls);
+  if !keep then Hashtbl.iter (fun sym t -> Hashtbl.replace others sym t) globals;
   List.rev_map (fun (x, sym, prim) -> x, show (Hashtbl.find globals sym) ^ prim) !shown
 
 (* the places recorded whose type is one of [types]; a place seen at two

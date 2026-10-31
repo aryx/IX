@@ -414,6 +414,25 @@ let exn (c : c) (loc : int) (sym : string) (args : Scope.ty list) : int * int * 
     (Hashtbl.find c.memo key, Hashtbl.find c.memo (key ^ " ctor"), fun (i : int) -> Hashtbl.find c.memo (Printf.sprintf "%s.%d" key i))
   end
 
+(* the calls of Pervasives this stage has, as .NET's library's *)
+let builtin (c : c) (sym : string) : Il.op list option =
+  let write (t : S.t) = Il.Call (lib c "Console" "Write" (static [ t ] S.Void)) in
+  let throw (name : string) =
+    let _, ctor, _ = exn c 0 ("caml_exn_" ^ name) [ Resolve.string_t ] in
+    [ Il.Newobj ctor; Il.Throw ] in
+  match sym with
+  | "Pervasives.print_int" -> Some [ write S.I8 ]
+  | "Pervasives.print_string" -> Some [ write S.String ]
+  | "Pervasives.print_char" -> Some [ Il.Conv (Il.K_u2, false, false); write S.Char ]
+  | "Pervasives.print_endline" -> Some [ Il.Call (lib c "Console" "WriteLine" (static [ S.String ] S.Void)) ]
+  | "Pervasives.print_newline" -> Some [ Il.Call (lib c "Console" "WriteLine" (static [] S.Void)) ]
+  | "Pervasives.^" -> Some [ Il.Call (lib c "String" "Concat" (static [ S.String; S.String ] S.String)) ]
+  (* (an int64 boxed, its ToString: Int64's own, by the object's class) *)
+  | "Pervasives.string_of_int" -> Some [ Il.Box (sys c "Int64"); Il.Callvirt (lib c "Object" "ToString" (instance [] S.String)) ]
+  | "Pervasives.failwith" -> Some (throw "Failure")
+  | "Pervasives.invalid_arg" -> Some (throw "Invalid_argument")
+  | _ -> None
+
 let type_of (e : Scope.expr) : Scope.ty =
   match Typing.expr_type e with Some t -> t | None -> refuse e.loc "an expression whose type was not kept" "1a"
 

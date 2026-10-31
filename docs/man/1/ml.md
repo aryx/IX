@@ -90,8 +90,12 @@ ocaml-light's *ocamlopt*. Another unit's names are read from its
      booleans, records, variants, exceptions, `match`, functions and
      closures, polymorphic functions and types (generic methods and
      classes), references, options, tuples, lists, arrays (T[]),
-     loops, several units; the rest (a unit not given, so the
-     library's List and Array) is refused by its name and line.
+     loops, several units; an `external` naming a .NET member
+     (`"dotnet:instance System.String::Substring(int32,int32)"`, its
+     .NET types when they are not the ML ones', `-> int32` its
+     result's) a call of it. The rest (a unit not given, so the
+     library's List and Array; an external of C) is refused by its
+     name and line.
 
 **-h**
 :    How, by examples, and the options to debug the compiler

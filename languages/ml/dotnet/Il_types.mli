@@ -81,6 +81,11 @@ val case : Il_code.c -> int -> Scope.cons -> Scope.ty -> int * int * (int -> int
 (* an exception by its symbol, of these arguments: the same *)
 val exn : Il_code.c -> int -> string -> Scope.ty list -> int * int * (int -> int)
 
+(* the calls of Pervasives' functions mapped to .NET's library (print_*,
+ * ^, string_of_int, failwith, invalid_arg): their IL after the
+ * arguments, when Pervasives itself is not compiled with the program *)
+val builtin : Il_code.c -> string -> Il.op list option
+
 (* an expression's type, as Typing kept it; its .NET type (a raise's:
  * nothing, whatever its type) *)
 val type_of : Scope.expr -> Scope.ty

@@ -1,0 +1,85 @@
+(* Claude Code
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
+(* See Il_externals.mli *)
+
+module S = Signature
+module W = Writer
+open Il_code
+
+type member = { tok : int; static : bool; into : S.t list; from : S.t list; ret : S.t; ml_ret : S.t }
+
+let prefix = "dotnet:"
+let is_dotnet (p : string) : bool = String.length p > 7 && String.sub p 0 7 = prefix
+
+let type_of_name (loc : int) (n : string) : S.t =
+  match String.trim n with
+  | "int32" -> S.I4
+  | "int64" -> S.I8
+  | "float64" -> S.R8
+  | "string" -> S.String
+  | "bool" -> S.Bool
+  | "char" -> S.Char
+  | "object" -> S.Object
+  | "void" -> S.Void
+  | n -> refuse loc ("a .NET type an external names: " ^ n) "3b"
+
+(* the ML type's arguments and result *)
+let rec arrows (t : Scope.ty) : Scope.ty list * Scope.ty =
+  match t with
+  | Tarrow (a, b) -> let args, r = arrows b in (a :: args, r)
+  | t -> ([], t)
+
+let member (c : c) (loc : int) (p : string) (ty : Scope.ty) : member =
+  let bad (what : string) = refuse loc ("an external " ^ p ^ ": " ^ what) "3b" in
+  let spec = String.sub p 7 (String.length p - 7) in
+  let kind, rest =
+    match String.index_opt spec ' ' with
+    | Some i -> (String.sub spec 0 i, String.sub spec (i + 1) (String.length spec - i - 1))
+    | None -> bad "static or instance, then the member" in
+  let is_static = match kind with "static" -> true | "instance" -> false | _ -> bad "static or instance" in
+  (* its result's .NET type after ->, when it is not the ML one's *)
+  let rest, result =
+    match String.index_opt rest '>' with
+    | Some i when i > 0 && rest.[i - 1] = '-' ->
+        (String.trim (String.sub rest 0 (i - 1)), Some (type_of_name loc (String.sub rest (i + 1) (String.length rest - i - 1))))
+    | _ -> (String.trim rest, None) in
+  (* Class::Method, then its parameters' .NET types in parentheses *)
+  let path, given =
+    match String.index_opt rest '(' with
+    | Some i ->
+        let inside = String.sub rest (i + 1) (String.length rest - i - 2) in
+        (String.sub rest 0 i, Some (if String.trim inside = "" then [] else List.map (type_of_name loc) (String.split_on_char ',' inside)))
+    | None -> (rest, None) in
+  let cls, name =
+    match String.index_opt path ':' with
+    | Some i -> (String.sub path 0 i, String.sub path (i + 2) (String.length path - i - 2))
+    | None -> bad "Class::Method" in
+  let ns, cname =
+    match String.rindex_opt cls '.' with
+    | Some i -> (String.sub cls 0 i, String.sub cls (i + 1) (String.length cls - i - 1))
+    | None -> ("", cls) in
+  let args, res = arrows ty in
+  (* the ML arguments' .NET types (unit's none): an instance method's
+   * first its this, the others its parameters *)
+  let from = List.filter (fun (t : S.t) -> t <> S.Void) (List.map (Il_types.cts c loc) args) in
+  let this, params = if is_static then ([], from) else (match from with t :: r -> ([ t ], r) | [] -> bad "its this") in
+  let into = match given with Some ts -> ts | None -> params in
+  if List.length into <> List.length params then bad "its parameters and its ML type's arguments";
+  let ml_ret = Il_types.cts c loc res in
+  let ret = match result with Some t -> t | None -> ml_ret in
+  let cls_tok =
+    memo c ("type " ^ cls) (fun () ->
+        let asm = W.assembly_ref c.w (if cls = "System.Console" then "System.Console" else "System.Runtime") in
+        W.type_ref c.w asm ns cname) in
+  let sg = if is_static then static into ret else instance into ret in
+  let tok = memo c ("member " ^ cls ^ "::" ^ name ^ S.encode_method sg) (fun () -> W.member_ref c.w cls_tok name sg) in
+  { tok; static = is_static; into = this @ into; from; ret; ml_ret }
+
+let convert (k : code) (from : S.t) (into : S.t) : unit =
+  match from, into with
+  | S.I8, S.I4 -> emit k (Il.Conv (Il.K_i4, false, false))
+  | S.I4, S.I8 | S.Char, S.I8 -> emit k (Il.Conv (Il.K_i8, false, false))
+  | S.I4, S.Char -> emit k (Il.Conv (Il.K_u2, false, false))
+  | S.I8, S.Char -> emit k (Il.Conv (Il.K_u2, false, false))
+  | _ -> ()

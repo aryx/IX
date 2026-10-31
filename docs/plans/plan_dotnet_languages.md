@@ -489,16 +489,26 @@ but really use the same types!". So the decisions below are those of
      with local recursions and closures, a lambda capturing an 'a,
      a closure made in a closure, map and twice partly applied at
      ints and strings) by both runtimes.
-   - 3b. **Pervasives' externals over .NET**, a question for the
-     author: the C externals written as ML of a runtime unit for
-     .NET, which reaches .NET's members by decision 7's
-     `external ... = "dotnet:System.Math::Sin"` (the compiler makes
-     the MemberRef from the ML type), an external of Pervasives then
-     a call of that unit's function of its name; or each one
-     hand-written IL in the assembly (Ml::compare's way), or added to
-     mini-dotnet's Library (its adapters, decision 6's first way).
-     The channels decide most of it: OCaml's in_channel and
-     out_channel over .NET's Console and files.
+   - 3b. **Pervasives' externals over .NET**: the C externals
+     written as ML of a runtime unit for .NET, which reaches .NET's
+     members by decision 7's externals; an external of Pervasives
+     then a call of that unit's function of its name. The author
+     chose it: "We do want to run what is produced by mini-ml
+     -dotnet with the microsoft's dotnet and runtime" (hand-written
+     IL, or mini-dotnet's Library alone, were the others). In steps:
+     - done: externals naming .NET members,
+       `external sub : string -> int -> int -> string =
+       "dotnet:instance System.String::Substring(int32,int32)"`,
+       static or instance, the parameters' and the result's .NET
+       types when they are not the ML ones' (an int32 converted
+       to and from ML's int64, a char); the MemberRef made from the
+       ML type (Il_externals). Checked: externals.ml (String's and
+       Console's members) by both runtimes, by both mini-ml builds.
+     - the runtime unit: Pervasives' caml_* in ML over those
+       (strings, floats' functions by System.Math, conversions);
+       what mini-dotnet's Library lacks added under its .NET name.
+     - the channels: OCaml's in_channel and out_channel over .NET's
+       Console and files, an abstract type an Object.
    - 3c. lib_core's units given with the program's (-L lib_core, in
      units.txt's order), List, Option, String, Hashtbl, Printf first.
 4. **Speed**: mini-ml's benchmarks native, on .NET (Microsoft's), on

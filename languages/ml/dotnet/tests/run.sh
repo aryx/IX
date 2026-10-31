@@ -37,6 +37,9 @@
 #             as a value
 #   tails     tail calls: loops of a hundred thousand turns as tail
 #             recursions (direct, mutual, over a list, through a Func)
+#   externals  externals naming .NET members (decision 7): String's,
+#             Console's; int32 and char converted (externals.expected
+#             written by hand: ocaml has no .NET)
 #   units/    three units in one assembly (geometry, counter, main): one
 #             unit's values, functions, types, constructors, exception
 #             from another; the toplevels in link order (what OCaml's
@@ -60,7 +63,7 @@ W=$(mktemp -d); trap 'rm -rf $W' EXIT
 failures=0
 ok() { echo "ok $*"; }
 fail() { echo "FAIL $*"; failures=$((failures + 1)); }
-progs="fib arith strings loops variants records exceptions equality closures generics generic_types tuples_lists arrays tails generic_closures"
+progs="fib arith strings loops variants records exceptions equality closures generics generic_types tuples_lists arrays tails generic_closures externals"
 # what is refused: a program a line, and the stage that will have it
 refused() {
   local ml=$1 n=0

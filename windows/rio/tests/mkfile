@@ -1,12 +1,12 @@
 # hellorio, for mini-9pi (mini-mk O=5 OS=plan9), with lib_graphics's units
-TOP=../..
+TOP=../../..
 <$TOP/mkfiles/mkconfig
-D=$B/windows/tests
-G=../../lib_graphics
+D=$B/windows/rio/tests
+G=../../../lib_graphics
 INCLUDES=-I . -I $G $STDI
 LIB=Point Rectangle Display Draw Font_default Font Mouse Keyboard Cursor Menu
 LIBOBJS=${LIB:%=$D/%.$O}
-LOCAL=`{ls *.ml ../../lib_graphics/*.ml ../../lib_graphics/*.mli}
+LOCAL=`{ls *.ml ../../../lib_graphics/*.ml ../../../lib_graphics/*.mli}
 
 all:V: $D/hellorio
 

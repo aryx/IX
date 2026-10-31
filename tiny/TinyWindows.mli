@@ -1,6 +1,6 @@
 (* A tiny window system, written in ML as a program that runs on
  * TinyKernel.ml. It keeps the essentials of Plan 9's rio; the
- * full-size version in ix is windows/ (mini-rio). The design is in
+ * full-size version in ix is windows/rio/ (mini-rio). The design is in
  * plan_tiny_windows.md.
  *
  * The main idea comes from rio: {b a window looks like the machine}.

@@ -8,7 +8,7 @@
  * 256 greys instead; -x: the numbers in hexadecimal.
  *
  * A graphical program like any: it draws where Display.screen says, in
- * its window under mini-rio (windows/), on the whole screen without.
+ * its window under mini-rio (windows/rio/), on the whole screen without.
  *
  * It is also the smallest program in ix that talks to the draw
  * device itself, and so the skeleton of all of them (mini-rio, the

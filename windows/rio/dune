@@ -1,4 +1,4 @@
-; windows: mini-rio, the window system (plan_rio.md, stage 7c)
+; mini-rio, the window system (plan_rio.md, stage 7c)
 (executable
  (name Rio)
  (public_name mini-rio)

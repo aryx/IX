@@ -18,7 +18,7 @@
 #                       build/card.img), mounted on /root; the Pi4 has
 #                       none, and runs the arm programs in AArch32. -g:
 #                       a window, a USB keyboard and mouse: type rio
-#                       there, ix's own (windows/): its menu is the
+#                       there, ix's own (windows/rio/): its menu is the
 #                       right button's
 #   ./mini-pi mini-xv6-pi1   mini-xv6 (kernels/xv6/: xv6 in OCaml), with
 #                       xv6's fs.img; -g: its console drawn in a window

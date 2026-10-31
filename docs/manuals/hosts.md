@@ -52,7 +52,7 @@ Three facts decide the rest:
 | mini-rc, mini-ed, mini-mk, mini-troff, mini-man | yes, dune and mini-mk | yes, dune | no (rc picks its rcmain by the system: `shell/CLI.ml`) |
 | the toolchain: mini-cc, mini-ml, mini-asm, mini-ld, mini-ar, mini-lex, mini-yacc | yes; they write Linux's ELF (`-H7`) or Plan 9's a.out (`-H2`) | the tools, by dune; mini-ld writes Mach-O (`-H6`) for C and assembly programs (goken's libc), not yet for mini-ml's (ix's libc has Linux's and Plan 9's system calls only: `lib_core/libc/syscall/os/`) | no |
 | mini-emacs | in a terminal (`mini-emacs-tty`, dune and mini-mk) and in an SDL window (dune) | the same, by dune | its `draw/` build only, in a window of mini-rio |
-| **mini-rio** | builds, cannot work | the same | **yes**: it draws through `/dev/draw`, serves its windows as a file server posted in `/srv`, and gives each window a namespace of its own by `bind` and `mount` (`windows/Rio.ml`, `lib_networking/9p/P9_server.ml`) |
+| **mini-rio** | builds, cannot work | the same | **yes**: it draws through `/dev/draw`, serves its windows as a file server posted in `/srv`, and gives each window a namespace of its own by `bind` and `mount` (`windows/rio/Rio.ml`, `lib_networking/9p/P9_server.ml`) |
 | lib_graphics's programs (hellodraw, hellokbd, hellomenu, hellorio) | no | no | **yes**: `/dev/draw`, `/dev/winname` |
 | the games, lib_playground | in an SDL window, dune (`bin/mini-doom`); mini-mk's: frames to files | dune, SDL | no; their `draw` and `software` platforms are mini-9pi's |
 | mini-netscape | SDL, dune; mini-mk's: frames to files | dune; a known bug, deep recursion in async JavaScript dies by SIGBUS (a thread's stack of 512 KB: `docs/plans/bugs/ix.md`) | no |

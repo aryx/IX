@@ -332,7 +332,7 @@ QEMU_BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(QEMU_BOOT))
 # echo, ls, cat, bind and mount, mini-ed as ed, tests/hello and
 # tests/threads (mini-ml's threads and channels), Source's check
 # (lib_core/commons/tests), mini-dossrv, mini-fdisk and hellodraw
-# and hellomenu (lib_graphics/tests), mini-rio as rio and hellorio (windows), mini-colors as colors
+# and hellomenu (lib_graphics/tests), mini-rio as rio and hellorio (windows/rio), mini-colors as colors
 # (apps/misc). No SD
 # card, nothing of principia's in the bootdir (its date: KERNDATE_IX,
 # the day mini-9pi was started; the pixels' tables are still
@@ -346,7 +346,7 @@ QEMU_BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(QEMU_BOOT))
 IX = $(abspath ../..)
 IX9 = $(IX)/_mk/5-plan9
 IXDIRS = shell editors/ed utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/archive utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/tests/hello kernels/9pi/tests/hog kernels/9pi/tests/tone kernels/9pi/tests/threads lib_core/commons/tests kernels/9pi/filesystems/user/dossrv \
-  kernels/9pi/devices/storage/user/fdisk kernels/9pi/buses/user/usbd lib_graphics/tests windows windows/tests apps/misc profilers/misc apps/media/play apps/music/rebirth games \
+  kernels/9pi/devices/storage/user/fdisk kernels/9pi/buses/user/usbd lib_graphics/tests windows/rio windows/rio/tests apps/misc profilers/misc apps/media/play apps/music/rebirth games \
   languages/smalltalk languages/smalltalk/hosts/draw languages/scheme languages/pascal languages/prolog languages/dotnet languages/tiger editors/drscheme apps/office apps/page editors/turbopascal/hosts/draw editors/emacs/draw \
   typesetting/man networking browsers/lynx browsers/netscape apps/maps assembler linker linker/tools languages/ml languages/c builder generators/lex generators/yacc
 BOOTDIR_IX = boot=conf/boot.rc rc=$(IX9)/shell/mini-rc ed=$(IX9)/editors/ed/mini-ed hello=$(IX9)/kernels/9pi/tests/hello/hello hog=$(IX9)/kernels/9pi/tests/hog/hog threads=$(IX9)/kernels/9pi/tests/threads/threads sources=$(IX9)/lib_core/commons/tests/sources \
@@ -573,7 +573,7 @@ check-ix: ix
 #             (tests/hellodraw.ppm.gz: one screen, no steps)
 #   menu      hellomenu (the same directory): the mouse, the keyboard, a
 #             menu shown, an item chosen, a key typed, "exit"
-#   win-new      mini-rio (../../windows): rio started at the console, its
+#   win-new      mini-rio (../../windows/rio): rio started at the console, its
 #             menu, New (the cursor a cross), a rectangle swept out (seen
 #             half-way), a command in the window (mini-rc's answer
 #             there), hellorio in it (a program that draws), q, rc again
@@ -934,7 +934,7 @@ endef
 #              open (emacs /src/hello.ml)
 #   tmp
 CARD_apps = colors=$(IX9)/apps/misc/mini-colors files=$(IX9)/apps/files/files open=$(IX9)/apps/files/open stats=$(IX9)/profilers/misc/mini-stats office=$(IX9)/apps/office/office page=$(IX9)/apps/page/pageview play=$(IX9)/apps/media/play/mini-play rebirth=$(IX9)/apps/music/rebirth/rebirth
-CARD_system = rio=$(IX9)/windows/mini-rio ps=$(IX9)/utilities/process/mini-ps free=$(IX9)/utilities/process/mini-free
+CARD_system = rio=$(IX9)/windows/rio/mini-rio ps=$(IX9)/utilities/process/mini-ps free=$(IX9)/utilities/process/mini-free
 CARD_devtools = emacs=$(IX9)/editors/emacs/draw/emacs drscheme=$(IX9)/editors/drscheme/drscheme turbopascal=$(IX9)/editors/turbopascal/hosts/draw/turbopascal \
   squeak=$(IX9)/languages/smalltalk/hosts/draw/squeak scheme=$(IX9)/languages/scheme/mini-scheme pascal=$(IX9)/languages/pascal/mini-pascal \
   prolog=$(IX9)/languages/prolog/mini-prolog dotnet=$(IX9)/languages/dotnet/mini-dotnet tiger=$(IX9)/languages/tiger/mini-tiger
@@ -956,7 +956,7 @@ CARD_utilities/archive = tar=$(IX9)/utilities/archive/mini-tar gzip=$(IX9)/utili
 CARD_utilities/misc = wc=$(IX9)/utilities/misc/mini-wc basename=$(IX9)/utilities/misc/mini-basename \
   cmp=$(IX9)/utilities/compare/mini-cmp unmount=$(IX9)/utilities/namespace/mini-unmount seq=$(IX9)/utilities/misc/mini-seq \
   cleanname=$(IX9)/utilities/misc/mini-cleanname du=$(IX9)/utilities/misc/mini-du xd=$(IX9)/utilities/byte/mini-xd test=$(IX9)/utilities/misc/mini-test
-CARD_examples = hellorio=$(IX9)/windows/tests/hellorio hellokbd=$(IX9)/lib_graphics/tests/hellokbd hello=$(IX9)/kernels/9pi/tests/hello/hello tone=$(IX9)/kernels/9pi/tests/tone/tone
+CARD_examples = hellorio=$(IX9)/windows/rio/tests/hellorio hellokbd=$(IX9)/lib_graphics/tests/hellokbd hello=$(IX9)/kernels/9pi/tests/hello/hello tone=$(IX9)/kernels/9pi/tests/tone/tone
 # the typesetter and the manual (docs/plans/done/plan_typesetting.md, stage 8)
 CARD_typesetting = troff=$(IX9)/typesetting/troff/mini-troff man=$(IX9)/typesetting/man/mini-man
 # the assembler and the linker, for ix built on the card
@@ -1007,7 +1007,7 @@ CARD_LIB = lib/scheme/queens.scm=../../languages/scheme/tests/queens.scm lib/pas
 # a first /src: small programs in the languages ix is written in, to
 # open with emacs for now (docs/plans/plan_self_hosting.md: ix's sources
 # on the card, and ix built from them there, later)
-CARD_SRC = src/hello.ml=tests/hello/Hello.ml src/hellodraw.ml=../../lib_graphics/tests/Hellodraw.ml src/hellorio.ml=../../windows/tests/Hellorio.ml \
+CARD_SRC = src/hello.ml=tests/hello/Hello.ml src/hellodraw.ml=../../lib_graphics/tests/Hellodraw.ml src/hellorio.ml=../../windows/rio/tests/Hellorio.ml \
   src/hello.c=../steps/step0/hello.c src/hello.s=../../linker/tests/golden/hello_plan9_arm.s
 ifdef SELF
 CARD = build/card-self.img

@@ -84,7 +84,7 @@ let late_frame ((w, h) : int * int) : Playground.shape list =
  * /dev/cursor (Cursor; in a window, mini-rio's, which keeps one a
  * window). Plan 9 has its arrow and no other: the hand, the I-beam and
  * the cross are drawn here, 16 by 16, a row a string: '#' black, '.'
- * white, ' ' the screen, rio's way (windows/Cursors). *)
+ * white, ' ' the screen, rio's way (its Cursors). *)
 let cursor ((x, y) : int * int) (rows : string list) : Cursor.t =
   let bits (c : char) : string =
     String.concat ""

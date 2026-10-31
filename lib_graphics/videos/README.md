@@ -1,7 +1,7 @@
 # lib_graphics/videos: films, as a player sees them
 
 The author's playground's `libs/graphics/videos` (`~/playground`), for
-[`plan_video.md`](../../docs/plans/plan_video.md): the formats that found
+[`plan_video.md`](../../docs/plans/done/plan_video.md): the formats that found
 each idea, played by mini-play (`apps/media/play/Film`). The numbers are
 `scripts/playground_copies.sh lib_graphics/videos`.
 

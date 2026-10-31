@@ -1,13 +1,13 @@
 ; apps/media/play: mini-play, a file of music to samples on /dev/audio or
 ; standard output (docs/plans/plan_audio.md), a film in a window
-; (docs/plans/plan_video.md). Here with the platform that writes a frame to
+; (docs/plans/done/plan_video.md). Here with the platform that writes a frame to
 ; a file (the tests'); sdl/ is the one with a window, bin/mini-play
 (executable
  (name Play)
  (modules Play Film)
  (libraries ix_audio ix_mime ix_graphics_videos ix_graphics_images ix_playground ix_playground_ppm ix_core fpath caps unix))
 
-; what an .mpg costs, a part at a time (docs/plans/plan_video.md's stage 3)
+; what an .mpg costs, a part at a time (docs/plans/done/plan_video.md's stage 3)
 (executable
  (name Mpg_bench)
  (modules Mpg_bench)

@@ -91,7 +91,7 @@ let studio_tables = tables_of Studio
 
 (* optimization (Opti.enabled), what to_image_floats does in whole numbers:
  * a color conversion was 31% of an MPEG-1 frame's instructions on arm
- * (mini-5i -prof, docs/plans/plan_video.md's stage 3), the floats boxed, a
+ * (mini-5i -prof, docs/plans/done/plan_video.md's stage 3), the floats boxed, a
  * call to store each byte. The same tables times 65,536; within one of the
  * floats' answer (Unit_yuv), and the same bytes from both compilers, which
  * floats are not (OCaml's arm64 fuses a*b+c). *)

@@ -6,8 +6,11 @@ code to play simple videos; we don't have in IX to support all formats,
 but the historical one, that have great teaching value, we should
 definitely do".
 
-**Status: stages 1, 2, 4 and 5 done, stage 3 counted but not run on a board, stage 6 (the encoder) not begun** (`lib_graphics/videos/`, `apps/media/play/Film`). The file manager that opens these
-files is [`plan_files.md`](done/plan_files.md).
+**Status: done** (`lib_graphics/videos/`, `apps/media/play/Film`): stages 1, 2, 4 and 5, and
+stage 3 on Linux, a real film played smoothly on the author's screen (2026-10-31). Left: stage 3
+on a Pi 2 (`mini-qemu -ips 200`, a board), this plan to be adjusted from what it says;
+stage 6, the encoder, not begun. The file manager that opens these files is
+[`plan_files.md`](plan_files.md).
 
 ## The measure
 
@@ -197,9 +200,10 @@ software renderer, no real screen), each picture's time logged: two times, 23.9
 pictures a second, 5% skipped, 36 ms apart at the median, 59 at the 95th
 percentile; three times, by hand (`window=1280x900`), 13.8, 45% skipped. So
 enlarged by hand it still cannot keep up. What is left is shared by the decoder
-and the resizing, each about a third of a frame.
-**Not run: `mini-qemu -ips 200`, a Pi.** mini-9pi could not be built while
-another session's `debuggers/acid` was in progress.
+and the resizing, each about a third of a frame. On the author's screen, the same
+day, at two times: "it plays very good. smooth".
+
+**Not run: `mini-qemu -ips 200`, a Pi, a film under mini-rio on mini-9pi.**
 
 Stage 4 done: `d`, `a`, `r`, the arrows five seconds. Looked at on the real
 film's frame 26, a P frame: its blocks by how they were coded with their vectors,

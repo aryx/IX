@@ -16,7 +16,7 @@ money ([`plan_pim.md`](done/plan_pim.md) and
 [`plan_mail.md`](done/plan_mail.md), both done 2026-10-30), in the
 author's daily use on their Gmail, on Linux only so far; the table
 below says what is where. Taken next, by the author:
-[`plan_files.md`](done/plan_files.md), [`plan_video.md`](plan_video.md) and
+[`plan_files.md`](done/plan_files.md), [`plan_video.md`](done/plan_video.md) and
 [`plan_maps.md`](done/plan_maps.md).
 
 ## The measure
@@ -251,7 +251,7 @@ for 1 to 3):
    m-ix program runs under mini-9pi.
 1. **The file manager**: [`plan_files.md`](done/plan_files.md), a file's
    kind leading to its program.
-2. **Video**: [`plan_video.md`](plan_video.md), the historical formats,
+2. **Video**: [`plan_video.md`](done/plan_video.md), the historical formats,
    played by `play` and from the file manager.
 3. **Maps and the weather**: [`plan_maps.md`](done/plan_maps.md), fetched
    from the internet: built (2026-10-30) but for routes.

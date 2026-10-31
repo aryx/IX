@@ -1,6 +1,6 @@
 # languages/ml/debug
 
-What mini-ml does for a debugger (docs/plans/plan_debugger.md).
+What mini-ml does for a debugger (docs/plans/done/plan_debugger.md).
 
 Here:
 

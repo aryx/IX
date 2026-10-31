@@ -1,6 +1,6 @@
 # languages/c/debug
 
-What mini-cc does for a debugger (docs/plans/plan_debugger.md).
+What mini-cc does for a debugger (docs/plans/done/plan_debugger.md).
 
 Here:
 

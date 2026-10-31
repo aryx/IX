@@ -315,7 +315,7 @@ order proposed:
    booted on the author's board.
 
 A program that dies says addresses, not names: that is
-[`plan_debugger.md`](plan_debugger.md), whose stage 1 (the linker
+[`plan_debugger.md`](done/plan_debugger.md), whose stage 1 (the linker
 writes the symbol table) needs no board.
 
 ## A page of text: mini-office (2026-10-09; a redesign agreed, not begun)
@@ -597,7 +597,7 @@ fix is as Linux and principia's 9pi do on this processor). The time
 is asked of a file kept open (`Unix.gettimeofday` on Plan 9: it was an
 open, a read and a close each time, several a frame, and in a window
 each open asks rio first). A program that dies now says its stack's
-addresses (`docs/plans/plan_debugger.md`, stage 0). The author, the
+addresses (`docs/plans/done/plan_debugger.md`, stage 0). The author, the
 same evening, with that card: "cameltry had good fps, and so
 wolfenstein; sometimes it dropped to 17fps, but it still felt smooth
 mostly". No number but that 17; what the drops are (a collection, the

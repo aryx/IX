@@ -1,6 +1,6 @@
 # linker/debug
 
-What mini-ld does for a debugger (docs/plans/plan_debugger.md): the
+What mini-ld does for a debugger (docs/plans/done/plan_debugger.md): the
 tables and data `-g` adds to a program, which mini-acid, mini-nm and
 a trace read.
 

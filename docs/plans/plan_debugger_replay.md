@@ -1,6 +1,6 @@
 # Plan: replay and going back, in ix's emulators (`machine/`, `raspberry/`) and the playground
 
-Split from plan_debugger.md on 2026-10-31, its stages 10 to 12 and
+Split from plan_debugger.md (now in done/) on 2026-10-31, its stages 10 to 12 and
 its decision 13 (the author: "Good idea to move in a separate
 plan_debugger_replay.md the time travel stuff"), when that plan's
 debugger was done and its traces were what was left.

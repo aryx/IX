@@ -8,7 +8,8 @@
  (name ix_maps)
  (wrapped false)
  (modules Mercator Tiles Tile_cache Place Weather Map_look Weather_panel Map_http Roads Route Routing Worker_spawn Map_worker Map_services Map_window)
- (libraries threads.posix ix_http ix_tls ix_tcp ix_playground ix_gui ix_graphics_core
+ (libraries threads.posix ix_threads ix_http ix_tls ix_tcp ix_playground ix_gui
+   ix_graphics_core
    ix_graphics_software ix_core caps unix))
 
 ; the worker's a thread: mini-netscape's module (under OCaml 5, a thread

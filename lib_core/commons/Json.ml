@@ -43,7 +43,7 @@ let rec to_text = function
 (* Parsing *)
 (*****************************************************************************)
 
-let of_text s =
+let of_text_turning turn s =
   let n = String.length s and i = ref 0 in
   let rec blanks () = if !i < n && String.contains " \t\r\n" s.[!i] then (incr i; blanks ()) in
   let peek () = blanks (); if !i < n then s.[!i] else error "unexpected end" in
@@ -73,6 +73,7 @@ let of_text s =
     go ()
   in
   let rec value () =
+    turn ();
     match peek () with
     | '{' ->
         incr i;
@@ -122,6 +123,8 @@ let of_text s =
   blanks ();
   if !i < n then error "garbage after the value at %d" !i;
   v
+
+let of_text s = of_text_turning ignore s
 
 (*****************************************************************************)
 (* Access *)

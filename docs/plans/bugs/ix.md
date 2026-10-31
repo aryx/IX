@@ -357,3 +357,23 @@ halfway, and on a pipe and a link to nothing). Fixed: `O_PATH`, then
 `O_NOFOLLOW` for the link to nothing. Not fixed: Plan 9's devices.
 `Sys_plan9.is_device` is false there, so mini-files selecting `/dev/mouse`
 would wait in its read of the first bytes.
+
+## mini-9pi: a file cut short on a full disk, nothing said (2026-10-31, mini-maps)
+
+Not fixed. The card's file system has 5.3 MB free (`CARD_FS_MB = 95`; 91,941 of
+97,280 blocks used). On the card, `curl http://host/big.txt > /tmp/big` with 7 MB
+ended with no message, and `/tmp/big` shorter, ending in a line cut and padding:
+6,488,064 bytes that time; mini-maps's temporary file of a 7 MB extract failed
+to parse at 5,447,679, which is the free space. Found by a route over a real
+extract ("unexpected '?' at 5447679"). `Routing` now keeps the answer's length in
+its file's header, so it is not fooled; whether `Kfs`'s write or the program
+drops the error is not looked at.
+
+## mini-9pi's Tcp: a constant where Linux's has a ref (2026-10-31, mini-maps, fixed)
+
+`lib_networking/tcp/Tcp.mli` says `timeout : float ref`, made so for Overpass's
+silence of 37 to 46 s; `tcp/plan9/Tcp.ml` still said `let timeout = 30.`, and
+the build took it, with `Tcp.timeout := 90.` and `!Tcp.timeout` in `Routing`. So
+on mini-9pi a silence of 30 s failed ("Http: no status line"). Reproduced by
+`SILENT=30 apps/maps/tests/route_9pi.sh DIR`. Fixed: a `ref`. Not looked at: why
+mini-ml's build does not refuse an implementation unlike the interface here.

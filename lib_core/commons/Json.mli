@@ -34,6 +34,10 @@ val to_text : t -> string
 (* Error if it isn't JSON, or has something after *)
 val of_text : string -> t
 
+(* the same, a long text: [turn ()] called at each value (mini-ml's threads:
+ * a thread gives its turn, or the others wait for all of the text) *)
+val of_text_turning : (unit -> unit) -> string -> t
+
 (* an object's field, Null when absent; Error for a non-object *)
 val member : string -> t -> t
 

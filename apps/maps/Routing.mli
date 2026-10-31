@@ -20,13 +20,16 @@ type t = {
   steps : (string * int) list; (* the roads driven, their metres; "" for no name *)
 }
 
-(* [find caps ~base ~dir ~dijkstra a b]: the route, with [dir] the cache's
- * directory if there is one; with [dijkstra], how many nodes Dijkstra's
- * search settles too (the terminal's lesson); or what went wrong *)
+(* [find caps ~base ~dir ~give ~dijkstra a b]: the route, with [dir] the
+ * cache's directory if there is one; with [dijkstra], how many nodes Dijkstra's
+ * search settles too (the terminal's lesson); or what went wrong.
+ * [give]: a window waits, on the same core: the extract is asked by a process
+ * of its own, and [give ()] called all along gives the window its turn. *)
 val find :
-  < Cap.network; Cap.open_in; Cap.open_out; .. > ->
+  < Cap.fork; Cap.kill; Cap.wait; Cap.network; Cap.open_in; Cap.open_out; .. > ->
   base:string ->
   dir:string option ->
+  give:(unit -> unit) option ->
   dijkstra:bool ->
   Place.t ->
   Place.t ->

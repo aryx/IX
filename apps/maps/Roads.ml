@@ -81,22 +81,31 @@ let largest_piece (nodes : int) (origin : int array) (target : int array) : bool
   Array.iteri (fun (i : int) (c : int) -> if c > count.(!best) then best := i) count;
   Array.init nodes (fun (i : int) -> nodes > 0 && root i = !best)
 
-let of_json (text : string) : t =
+let of_json_turning (turn : unit -> unit) (text : string) : t =
   let elements =
-    try Json.list (Json.member "elements" (Json.of_text text))
+    try Json.list (Json.member "elements" (Json.of_text_turning turn text))
     with Json.Error why -> failwith why
   in
-  let kind (e : Json.t) : string = Json.string (Json.member "type" e) in
+  let kind (e : Json.t) : string =
+    turn ();
+    Json.string (Json.member "type" e)
+  in
   try
     let nodes = List.filter (fun (e : Json.t) -> kind e = "node") elements in
     let ways = List.filter (fun (e : Json.t) -> kind e = "way") elements in
-    let lat = Array.of_list (List.map (fun (e : Json.t) -> Json.float (Json.member "lat" e)) nodes) in
-    let lon = Array.of_list (List.map (fun (e : Json.t) -> Json.float (Json.member "lon" e)) nodes) in
+    let number (k : string) (e : Json.t) : float =
+      turn ();
+      Json.float (Json.member k e)
+    in
+    let lat = Array.of_list (List.map (number "lat") nodes) in
+    let lon = Array.of_list (List.map (number "lon") nodes) in
     let count = Array.length lat in
     (* (an id is a float: past 2^31, more than a 32-bit int) *)
     let index : (float, int) Hashtbl.t = Hashtbl.create (2 * count + 1) in
     List.iteri
-      (fun (i : int) (e : Json.t) -> Hashtbl.replace index (Json.float (Json.member "id" e)) i)
+      (fun (i : int) (e : Json.t) ->
+        turn ();
+        Hashtbl.replace index (Json.float (Json.member "id" e)) i)
       nodes;
     let middle =
       if count = 0 then 0. else (Array.fold_left (+.) 0. lat /. float_of_int count)
@@ -127,6 +136,7 @@ let of_json (text : string) : t =
     in
     List.iter
       (fun (w : Json.t) ->
+        turn ();
         let tags = Json.member "tags" w in
         let tag (k : string) : string =
           match tags with
@@ -175,6 +185,7 @@ let of_json (text : string) : t =
     let name = Array.make total 0 in
     Array.iter
       (fun ((a, b, ms, m, n) : int * int * int * int * int) ->
+        turn ();
         let e = next.(a) in
         next.(a) <- e + 1;
         origin.(e) <- a;
@@ -189,13 +200,16 @@ let of_json (text : string) : t =
       top_speed = !top }
   with Json.Error why -> failwith why
 
-let nearest (g : t) (lat : float) (lon : float) : (int * float) option =
+let of_json (text : string) : t = of_json_turning ignore text
+
+let nearest_turning (turn : unit -> unit) (g : t) (lat : float) (lon : float) : (int * float) option =
   if Array.length g.lat = 0 then None
   else begin
     let px = lon *. g.shrink *. metres_a_degree and py = lat *. metres_a_degree in
     let best = ref (-1) and far = ref infinity in
     Array.iteri
       (fun (i : int) (on : bool) ->
+        turn ();
         if on then begin
           let dx = g.x.(i) -. px and dy = g.y.(i) -. py in
           let d = (dx *. dx) +. (dy *. dy) in
@@ -207,3 +221,6 @@ let nearest (g : t) (lat : float) (lon : float) : (int * float) option =
       g.linked;
     if !best < 0 then None else Some (!best, sqrt !far)
   end
+
+let nearest (g : t) (lat : float) (lon : float) : (int * float) option =
+  nearest_turning ignore g lat lon

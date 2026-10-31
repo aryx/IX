@@ -5,7 +5,7 @@
 
 module P = Playground
 
-type caps = < Cap.network; Cap.open_in; Cap.open_out; Cap.env >
+type caps = < Cap.fork; Cap.kill; Cap.wait; Cap.network; Cap.open_in; Cap.open_out; Cap.env >
 
 let default_places = "https://nominatim.openstreetmap.org"
 let default_weather = "https://api.open-meteo.com"
@@ -95,4 +95,5 @@ let route_lines (caps : caps) (flags : P.flags) (from : string) (goal : string) 
       | Ok b ->
           Result.map
             (fun ((r, plain) : Routing.t * int option) -> Routing.lines r plain)
-            (Routing.find caps ~base:(roads_base_of flags) ~dir:(cache_dir caps flags) ~dijkstra:true a b))
+            (Routing.find caps ~base:(roads_base_of flags) ~dir:(cache_dir caps flags) ~give:None
+               ~dijkstra:true a b))

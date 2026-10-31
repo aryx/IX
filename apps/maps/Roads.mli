@@ -92,6 +92,12 @@ val url : string -> float * float * float * float -> string
 (* the graph of the service's answer; Failure if it is not such an answer *)
 val of_json : string -> t
 
+(* the same, [turn ()] called all along: the window's (Routing) *)
+val of_json_turning : (unit -> unit) -> string -> t
+
 (* the node of the largest piece nearest to a place, and how many metres
  * away; None if the graph has no node *)
 val nearest : t -> float -> float -> (int * float) option
+
+(* the same, [turn ()] called all along *)
+val nearest_turning : (unit -> unit) -> t -> float -> float -> (int * float) option

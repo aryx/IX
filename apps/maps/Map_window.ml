@@ -294,6 +294,22 @@ let subject (m : model) : string * float * float =
 
 let route_found : (Routing.t, string) result option ref = ref None
 
+(* the worker waits, a moment: a yield would not do. mini-ml's scheduler reads
+ * the keys and the clock only when no thread can run (Source), so a worker
+ * always ready leaves the window, which waits for them, asleep. *)
+let worker_waits (caps : caps) : unit -> unit =
+  let clock = ref None in
+  fun () ->
+    let c =
+      match !clock with
+      | Some c -> c
+      | None ->
+          let c = Source.timer caps 0.01 in
+          clock := Some c;
+          c
+    in
+    Event.sync (Event.receive c)
+
 (* r: from the place marked; again, none *)
 let route_key (m : model) : model =
   let m = { m with generation = m.generation + 1 } in
@@ -552,6 +568,8 @@ let said_line (m : model) : string =
   else
     match m.routing with
     | Shown r -> Routing.summary r
+    (* (the map moved meanwhile has taken the notice away) *)
+    | Asking _ -> "a route: asking for the roads..."
     | _ -> if m.said <> "" then m.said else where m
 
 (* the Find box, at the window's top left *)
@@ -640,7 +658,9 @@ let initial (caps : caps) (flags : P.flags) : model =
     ask_route =
       (fun (a : Place.t) (b : Place.t) ->
         Map_worker.job (fun () ->
-            route_found := Some (Result.map fst (Routing.find caps ~base:roads ~dir ~dijkstra:false a b))));
+            (* (a domain beside the window needs not give it a turn) *)
+            let give = if Worker_spawn.parallel then None else Some (worker_waits caps) in
+            route_found := Some (Result.map fst (Routing.find caps ~base:roads ~dir ~give ~dijkstra:false a b))));
     ask_forecast =
       (fun (key : string) (lat : float) (lon : float) ->
         Map_worker.job (fun () -> forecast_found := Some (key, S.forecast_of caps weather_base lat lon))) }

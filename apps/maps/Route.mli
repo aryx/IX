@@ -60,3 +60,6 @@ type t = {
 (* [search g ~guess from goal]: the quickest way, None if there is none;
  * [guess] false is h = 0, Dijkstra's *)
 val search : Roads.t -> guess:bool -> int -> int -> t option
+
+(* the same, [turn ()] called at each step: the window's (Routing) *)
+val search_turning : (unit -> unit) -> Roads.t -> guess:bool -> int -> int -> t option

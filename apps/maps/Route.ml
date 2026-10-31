@@ -50,7 +50,7 @@ let pop (h : heap) : int * int =
   h.nodes.(!i) <- node;
   top
 
-let search (g : Roads.t) ~(guess : bool) (from : int) (goal : int) : t option =
+let search_turning (turn : unit -> unit) (g : Roads.t) ~(guess : bool) (from : int) (goal : int) : t option =
   let count = Array.length g.lat in
   (* what is left, rounded down as the edges are rounded up, so that it
    * stays consistent *)
@@ -68,6 +68,7 @@ let search (g : Roads.t) ~(guess : bool) (from : int) (goal : int) : t option =
   push queue (left from) from;
   let taken = ref 0 and found = ref false in
   while (not !found) && queue.size > 0 do
+    turn ();
     let _, n = pop queue in
     if not settled.(n) then begin
       settled.(n) <- true;
@@ -97,3 +98,6 @@ let search (g : Roads.t) ~(guess : bool) (from : int) (goal : int) : t option =
     let metres = List.fold_left (fun (s : int) (e : int) -> s + g.metres.(e)) 0 edges in
     Some { edges; millis = cost.(goal); metres; settled = !taken }
   end
+
+let search (g : Roads.t) ~(guess : bool) (from : int) (goal : int) : t option =
+  search_turning ignore g ~guess from goal

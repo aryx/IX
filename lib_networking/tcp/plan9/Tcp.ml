@@ -9,7 +9,7 @@
  * opened: the stream. The ctl is then closed; the kernel hangs up at
  * the last close, the data's (mini-9pi's Devip). *)
 
-let timeout = 30.
+let timeout = ref 30.
 
 let is_address (host : string) : bool = host <> "" && String.for_all (fun c -> (c >= '0' && c <= '9') || c = '.') host
 
@@ -52,7 +52,7 @@ let alarm (seconds : float) : unit = ignore (Unix.setitimer Unix.ITIMER_REAL { U
 
 let arrived (fd : Unix.file_descr) : string option =
   let buf = Bytes.create 65536 in
-  alarm timeout;
+  alarm !timeout;
   let r =
     match Unix.read fd buf 0 (Bytes.length buf) with
     | 0 -> None

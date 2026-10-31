@@ -5,8 +5,7 @@ a maps and weather program that fetch data from internet."
 
 **Status: done** (2026-10-31; see the end): all five stages run on Linux and on
 mini-9pi, the Pi 2 under QEMU. Left: anything on a real Pi, the real services
-from mini-9pi (https://), the window frozen during a large route there. What is
-below about the services was tried on 2026-10-30 with ix's own `mini-curl`, a
+from mini-9pi (https://). What is below about the services was tried on 2026-10-30 with ix's own `mini-curl`, a
 handful of requests.
 
 ## What it is for
@@ -203,3 +202,34 @@ would add its wait, a system call stopping all the threads (read in `Map_worker`
 not run). dune's build on Linux has real threads; its window during a route not
 measured. With the route drawn, a still window is at 14 fps. Neither is fixed.
 Also the credit now says the ODbL, as OSM's copyright page asks.
+
+2026-10-31, later: that freeze fixed (the author: "let's commit and fix the
+freeze"). Four things, each found by running it, `route_9pi.sh` with `SILENT=30`:
+
+- A read stops all of mini-ml's threads, so the extract is asked by a process
+  of its own, and comes through a pipe once it is there.
+- `Thread.yield` is not enough: the scheduler reads the keys and the clock only
+  when no thread can run (`Source`), so a worker always ready leaves the window
+  asleep. The worker waits on a timer of 10 ms instead, every 50 ms of work:
+  `Json.of_text_turning`, `Roads.of_json_turning`, `Route.search_turning`.
+- 7 MB written to the card's file system are most of a minute of system calls:
+  the process that asked writes the kept extract, and is not waited for, in
+  pieces of 16 KB with a rest of 0.2 s. (A fork for it once the graph was made
+  stopped the window 20 s, for the heap. Written at once in that process, the
+  route took 270 s where it takes 120, and the window 3 frames a second.)
+- `lib_networking/tcp/plan9/Tcp.ml` had its own `timeout`, a constant 30, so the
+  90 s around Overpass's request did nothing there, and any silence of 30 s or
+  more failed ("Http: no status line"). Now a `ref`, as Linux's.
+
+Measured, the same 7 MB extract with the service silent 30 s, the right arrow
+each 5 s: all 24 screens until the route differ from the one before; the route
+125 to 130 s after Enter, so 95 to 100 s without the silence, where it was 120
+to 135 s frozen; 60 frames a second during the silence, 10 to 13 while parsing.
+That was with `create_fd` for the file; `open_out_fd` after it, for a file already
+there (seen on Linux by both builds, not again on mini-9pi).
+
+Also: moving the map no longer takes "asking for the roads" away; a kept extract
+that cannot be read is asked for again, where it failed for 30 days; its header
+has its length, a short file known without parsing it. The card has 5.3 MB free
+(95 MB, 91,941 of 97,280 blocks), so this extract is cut short there
+(docs/plans/bugs/ix.md) and asked for again at the next start.

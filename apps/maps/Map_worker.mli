@@ -26,7 +26,9 @@
    frame: the frame n of a session has n tiles, on any machine. Under
    mini-ml a thread runs until it waits or yields, a system call stopping
    all of them: the window yields at each frame while tiles are out, and
-   the worker gives its turn back after each tile. *)
+   the worker gives its turn back after each tile. A long job does more, or
+   the window stops with it: Routing asks by a process of its own and gives
+   the window its turn all along. *)
 
 type mode = Beside | Waited
 

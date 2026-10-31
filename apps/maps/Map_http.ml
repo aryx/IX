@@ -9,3 +9,8 @@ let get (caps : < Cap.network; Cap.open_in; .. >) ~(more : Http.header list) (ur
   let said = ("User-Agent", user_agent) :: more in
   let options = { Http_client.defaults with said; keep = true } in
   Result.map snd (Http_client.fetch_with options caps ~post:None url)
+
+let get_once (caps : < Cap.network; Cap.open_in; .. >) (url : string) : (Http.response, string) result =
+  let said = [ ("User-Agent", user_agent) ] in
+  let options = { Http_client.defaults with said; keep = false } in
+  Result.map snd (Http_client.fetch_with options caps ~post:None url)

@@ -43,10 +43,10 @@ exceptions never caught (Leroy and Pessaux's analysis, 2000) and code
 never reached; and for mini-ml's optimizer, calls of a known closure
 made direct and inlined.
 
-**Status: step 0 done (mini-analyze, native: below); stages 1a and
-1b done (mini-ml -dotnet: the monomorphic core, records, variants,
-exceptions, match; C# using an ML unit; 2026-10-31: the stages); the
-rest not built.** For the author: what step 0 showed, decision 6 to be
+**Status: step 0 done (mini-analyze, native: below); stages 1a to 1c
+done (mini-ml -dotnet: the monomorphic core, records, variants,
+exceptions, match, closures; C# using an ML unit; 2026-10-31: the
+stages); the rest not built.** For the author: what step 0 showed, decision 6 to be
 decided again by it, the open questions at the end.
 
 ## Step 0: the program first, native (2026-10-30)
@@ -345,6 +345,24 @@ but really use the same types!". So the decisions below are those of
      assembly, stage 7).
    - 1c. **Closures**: Func<T,R> (a TypeSpec, which Writer has), local
      functions, partial application, functions passed.
+     Done (2026-10-31, the author: "let's commit and move forward"):
+     a function type Func<A, B>, curried, unit in it an object (null,
+     F#'s unit); a lambda a class of the variables it captures (those
+     it names that its method has), its Invoke the body, the value
+     its object as a Func (ldftn, newobj); a function of the unit
+     given fewer arguments than it takes, or as a value, a class a
+     number of arguments given, its Invoke the next one's, the last
+     calling the method; more, its result invoked; a call of a
+     function value its Invoke, an argument at a time; a local let
+     rec a closure whose own field is the Func. Typing kept the type
+     of a lambda checked against its place's (Typing.under), which
+     it had not. Found by C#: `let f k = fun n -> ...` is ML's
+     `f k n`, a method of two arguments, as F#'s. Checked: closures
+     (lambdas, captures, partial application, a toplevel function as
+     a value, a local let rec, curried, unit arguments, a lambda of
+     cases) by both runtimes; C# giving ML a lambda
+     (Shapes.map_area(a => a + 1, s)) and calling the Func ML returns.
+     Refused: a local let rec of several functions.
    - 1d. **Polymorphism**: Writer's GenericParam and MethodSpec;
      tuples and lists (ValueTuple and ImmutableStack, or ML's own
      classes first if mini-dotnet's library has not got them).

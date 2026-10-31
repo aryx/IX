@@ -103,10 +103,19 @@ let rec cts (c : c) (loc : int) (t : Scope.ty) : S.t =
   | Tconstr (d, []) when Resolve.type_fields d <> None -> S.Class (record c loc d)
   | Tconstr (d, []) when Resolve.type_conses d <> None -> S.Class (variant c loc d)
   | Tvar _ -> refuse loc "a polymorphic value" "1d"
-  | Tarrow _ -> refuse loc "a function as a value" "1c"
+  | Tarrow (a, b) -> func c loc a b
   | Ttuple _ -> refuse loc "a tuple" "1d"
   | Tconstr (d, _ :: _) -> refuse loc ("a value of type " ^ d.tpath ^ ", of parameters") "1d"
   | Tconstr (d, []) -> refuse loc ("a value of type " ^ d.tpath) "1b"
+
+(* a type as a Func's argument or result: unit an object, always null
+ * (F#'s unit: .NET has no void type argument) *)
+and arg_type (c : c) (loc : int) (t : Scope.ty) : S.t = match cts c loc t with S.Void -> S.Object | t -> t
+
+(* a function, System.Func<A, B>: curried as ML's, int -> int -> int a
+ * Func<long, Func<long, long>> *)
+and func (c : c) (loc : int) (a : Scope.ty) (b : Scope.ty) : S.t =
+  S.GenericInst (S.Class (sys c "Func`2"), [ arg_type c loc a; arg_type c loc b ])
 
 (* a record type: a class of its fields, in their order *)
 and record (c : c) (loc : int) (d : Scope.tdecl) : int =
@@ -207,3 +216,11 @@ let is_raise (e : Scope.expr) : bool =
   match e.e with Eapply ({ e = Evar (Prim ("%raise", _, _)); _ }, _) -> true | _ -> false
 
 let cts_of (c : c) (e : Scope.expr) : S.t = if is_raise e then S.Void else cts c e.loc (type_of e)
+
+(* a Func's Invoke and constructor (an object, a method's address) *)
+let invoke (c : c) (f : S.t) : int =
+  memo c ("invoke " ^ S.encode_type_spec f) (fun () -> W.member_ref c.w (W.type_spec c.w f) "Invoke" (instance [ S.Var 0 ] (S.Var 1)))
+
+let func_ctor (c : c) (f : S.t) : int =
+  memo c ("func ctor " ^ S.encode_type_spec f) (fun () ->
+      W.member_ref c.w (W.type_spec c.w f) ".ctor" (instance [ S.Object; S.I ] S.Void))

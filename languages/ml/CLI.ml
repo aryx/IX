@@ -49,9 +49,9 @@ what each defines and uses: Ssa_facts.mli), for mini-datalog:
   mini-datalog -q 'live_in(V, B)' languages/datalog/analyses/liveness_ssa.dl fact.dl
 -dflow: the compiler's own liveness and dominators, as facts, to compare.
 -dotnet: the unit as a .NET assembly, fact.dll and its runtimeconfig.json,
-for mini-dotnet and Microsoft's dotnet (dotnet/Lower_il.mli; stages 1a, 1b:
-ints, floats, strings, records, variants, exceptions, match, a unit's
-functions, loops; the rest refused):
+for mini-dotnet and Microsoft's dotnet (dotnet/Lower_il.mli; stages 1a to
+1c: ints, floats, strings, records, variants, exceptions, match, functions
+and closures, loops; the rest refused):
   mini-ml -dotnet fact.ml; mini-dotnet fact.dll
 An error names the file and the line: fact.ml:2: this expression has type ...
 |}

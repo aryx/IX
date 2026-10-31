@@ -36,15 +36,28 @@
  *                                 handler's cases on it, rethrow
  *     match                       the cases tried in order: isinst
  *                                 and fields, constants, ranges
+ *     a function's type a -> b    System.Func<A, B>, curried: int ->
+ *                                 int -> int a Func<long, Func<long,
+ *                                 long>>; unit in it an object, null
+ *     fun x -> e                  a class of the variables it
+ *                                 captures, its Invoke e; the value
+ *                                 an object of it as a Func (ldftn)
+ *     f a, f a function value     its Invoke, an argument at a time
+ *     add 1, add as a value       a class of the arguments given, its
+ *                                 Invoke the next one's; the last
+ *                                 calls the method
+ *     let rec f x = ... in        a closure whose own field is f
  *
  *     shapes.ml                   interop.cs (tests/)
  *     type shape =                Shapes.shape s =
  *       Rect of point * point       new Shapes.shape.Rect(p, q);
  *     let area s = ...            Shapes.area(s)
  *     match s with Rect ...       switch (s) { case Shapes.shape.Rect r: }
+ *     let map_area (f : int ->    Shapes.map_area(a => a + 1, s)
+ *       int) s = f (area s)
  *
- * Stages 1a and 1b: what is not above (closures, polymorphism, tuples
- * and lists, other units) is refused by name, the stage that will
+ * Stages 1a to 1c: what is not above (polymorphism, tuples and lists,
+ * references, other units) is refused by name, the stage that will
  * have it said. A try inside an operand is refused too: IL's rule is
  * that a protected region starts with an empty stack (Tiger's
  * emitter met it: Microsoft's JIT refuses it), so its value is made a

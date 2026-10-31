@@ -1,7 +1,8 @@
 // C# using an ML unit compiled by mini-ml -dotnet (shapes.ml): its
 // record a class whose constructor takes the fields, its variant an
 // abstract class with a class a case, its functions static methods;
-// an ML int a long, an ML string a string. Equals is ML's =.
+// an ML int a long, an ML string a string, an ML function a Func.
+// Equals is ML's =.
 using System;
 
 static class Interop {
@@ -13,6 +14,9 @@ static class Interop {
         Console.WriteLine(Shapes.describe(s) + " of area " + Shapes.area(s));
         Console.WriteLine("a circle's area: " + Shapes.area(new Shapes.shape.Circle(p, 2)));
         Console.WriteLine("ML's = from C#: " + new Shapes.point(1, 2).Equals(p) + " " + p.Equals(q));
+        Console.WriteLine("a C# lambda given to ML: " + Shapes.map_area(a => a + 1, s));
+        Func<long, long> triple = Shapes.scale(3);
+        Console.WriteLine("an ML function returned to C#: " + triple(14));
         switch (s) {
             case Shapes.shape.Rect r: Console.WriteLine("C#'s switch on an ML variant: a Rect to " + r.Item2.x); break;
             case Shapes.shape.Circle c: Console.WriteLine("a Circle"); break;

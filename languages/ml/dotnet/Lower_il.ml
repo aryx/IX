@@ -7,122 +7,8 @@ module S = Signature
 module W = Writer
 open Il_code
 open Il_types
-
-(*****************************************************************************)
-(* The unit's functions and values *)
-(*****************************************************************************)
-
-(* a function of the unit: its method, its arguments' variables (None:
- * unit's, or _), and when its last argument is a pattern or several
- * (function A -> ... | B -> ...), the cases on it; its body otherwise *)
-type fn = { tok : int; params : (Scope.var option * S.t) list; cases : Scope.case list option; body : Scope.expr }
-
-(* by variable (inside its definition, a let rec's) and by symbol
- * (after it, from the toplevel's later items); a value's field by
- * symbol *)
-type env = { by_var : (int, fn) Hashtbl.t; by_sym : (string, fn) Hashtbl.t; fields : (string, int * S.t) Hashtbl.t }
-
-let rec simple (p : Scope.pattern) : Scope.var option option =
-  match p with
-  | Pvar v -> Some (Some v)
-  | Pany -> Some None
-  | Pcons (k, []) when k.cname = "()" -> Some None
-  | Pconstraint (p, _) -> simple p
-  | _ -> None
-
-(* a function's arguments, as its Efunction's nest; the last's cases
- * if it is matched *)
-let rec params (e : Scope.expr) : (Scope.var option * Scope.ty) list * Scope.case list option * Scope.expr =
-  match e.e with
-  | Efunction cases ->
-      let arg = match type_of e with Tarrow (a, _) -> a | _ -> refuse e.loc "a function" "1a" in
-      (match cases with
-       | [ (p, None, body) ] when simple p <> None ->
-           let v = match simple p with Some v -> v | None -> None in
-           let rest, cs, body = params body in
-           ((v, arg) :: rest, cs, body)
-       | (_, _, body) :: _ -> ([ (None, arg) ], Some cases, body)
-       | [] -> refuse e.loc "a function of no case" "1a")
-  | _ -> ([], None, e)
-
-(*****************************************************************************)
-(* Patterns *)
-(*****************************************************************************)
-
-(* a variable bound to the value [load] pushes, in a local of its own *)
-let bind (c : c) (k : code) (v : Scope.var) (load : unit -> unit) : unit =
-  let ty = match Typing.var_type v.vid with Some t -> cts c 0 t | None -> refuse 0 (v.vname ^ ", a variable whose type was not kept") "1a" in
-  if ty <> S.Void then begin
-    let i = match Hashtbl.find_opt k.slots v.vid with Some i -> i | None -> let i = local k ty in Hashtbl.replace k.slots v.vid i; i in
-    load ();
-    emit k (Il.Stloc i)
-  end
-
-(* the pattern tested on the value [load] pushes (of type [ty]): to
- * [fail] if it does not match, its variables bound if it does. A
- * value's parts are loaded again from it each time (a local, a field:
- * cheap), a constructor's after a cast to its class *)
-let rec pattern (c : c) (k : code) (load : unit -> unit) (ty : Scope.ty) (p : Scope.pattern) (fail : int) : unit =
-  match p with
-  | Pany -> ()
-  | Pvar v -> bind c k v load
-  | Palias (p, v) ->
-      pattern c k load ty p fail;
-      bind c k v load
-  | Pconstraint (p, _) -> pattern c k load ty p fail
-  | Pconst (Int n) ->
-      load ();
-      emit k (Il.Ldc_i8 (Int64.of_int n));
-      emit k (Il.Bcmp (Il.Ne, false, fail))
-  | Pconst (Char ch) ->
-      load ();
-      emit k (Il.Ldc_i4 (Int32.of_int (Char.code ch)));
-      emit k (Il.Bcmp (Il.Ne, false, fail))
-  | Pconst (String s) ->
-      load ();
-      emit k (Il.Ldstr (W.user_string c.w s));
-      emit k (Il.Call (lib c "String" "op_Equality" (static [ S.String; S.String ] S.Bool)));
-      emit k (Il.Brfalse fail)
-  | Pconst _ -> refuse 0 "a float, int32 or int64 constant as a pattern" "1d"
-  | Prange (a, b) ->
-      load ();
-      emit k (Il.Ldc_i4 (Int32.of_int (Char.code a)));
-      emit k (Il.Bcmp (Il.Lt, false, fail));
-      load ();
-      emit k (Il.Ldc_i4 (Int32.of_int (Char.code b)));
-      emit k (Il.Bcmp (Il.Gt, false, fail))
-  | Pcons (k', []) when k'.cname = "()" -> ()
-  | Pcons (k', []) when k'.cname = "true" -> load (); emit k (Il.Brfalse fail)
-  | Pcons (k', []) when k'.cname = "false" -> load (); emit k (Il.Brtrue fail)
-  | Pcons (k', ps) ->
-      let _, args, _ = k'.ctype in
-      if List.length ps <> List.length args then refuse 0 (k'.cname ^ "'s arguments as one tuple") "1d";
-      let cls, _, fld =
-        match k'.kind with
-        | Exn g -> exn c 0 g.gsym args
-        | Const _ | Block _ -> case c 0 k' in
-      load ();
-      emit k (Il.Isinst cls);
-      emit k (Il.Brfalse fail);
-      List.iteri
-        (fun (i : int) ((p, t) : Scope.pattern * Scope.ty) ->
-          pattern c k (fun () -> load (); emit k (Il.Castclass cls); emit k (Il.Ldfld (fld i))) t p fail)
-        (List.combine ps args)
-  | Precord fs ->
-      let d = match ty with Tconstr (d, _) -> d | _ -> refuse 0 "a record pattern" "1b" in
-      List.iter
-        (fun ((l, p) : Scope.label * Scope.pattern) ->
-          let _, t, _ = l.ltype in
-          pattern c k (fun () -> load (); emit k (Il.Ldfld (field c 0 d l.lname))) t p fail)
-        fs
-  | Por (a, b) ->
-      let other = label k and ok = label k in
-      pattern c k load ty a other;
-      emit k (Il.Br ok);
-      place k other;
-      pattern c k load ty b fail;
-      place k ok
-  | Ptuple _ -> refuse 0 "a tuple pattern" "1d"
+open Il_functions
+open Il_patterns
 
 (*****************************************************************************)
 (* Expressions *)
@@ -169,11 +55,11 @@ let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
           let _, ctor, _ = case c e.loc k' in
           operands c env k args;
           emit k (Il.Newobj ctor))
-  | Evar (Local v) -> (
-      match Hashtbl.find_opt k.args v.vid, Hashtbl.find_opt k.slots v.vid with
-      | Some i, _ -> emit k (Il.Ldarg i)
-      | None, Some i -> emit k (Il.Ldloc i)
-      | None, None -> if cts_of c e = S.Void then () else refuse e.loc (v.vname ^ ", a function as a value") "1c")
+  | Evar (Local v) when Hashtbl.mem k.args v.vid || Hashtbl.mem k.slots v.vid || Hashtbl.mem k.captured v.vid -> load_var k v.vid
+  (* (a function of the unit as a value: a Func) *)
+  | Evar (Local v) when Hashtbl.mem env.by_var v.vid -> partial c env k (Hashtbl.find env.by_var v.vid) []
+  | Evar (Local v) -> if cts_of c e = S.Void then () else refuse e.loc (v.vname ^ ", a variable not compiled") "1c"
+  | Evar (Global g) when Hashtbl.mem env.by_sym g.gsym -> partial c env k (Hashtbl.find env.by_sym g.gsym) []
   | Evar (Global g) -> (
       match Hashtbl.find_opt env.fields g.gsym, g.gsym with
       | Some (f, ty), _ -> if ty <> S.Void then emit k (Il.Ldsfld f)
@@ -188,6 +74,7 @@ let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
   | Eapply ({ e = Evar (Prim (p, _, _)); _ }, args) -> prim c env k e p args
   | Eapply ({ e = Evar (Global g); _ }, args) when Hashtbl.mem env.by_sym g.gsym -> call c env k e (Hashtbl.find env.by_sym g.gsym) args
   | Eapply ({ e = Evar (Local v); _ }, args) when Hashtbl.mem env.by_var v.vid -> call c env k e (Hashtbl.find env.by_var v.vid) args
+  | Eapply (({ e = Evar (Global g); _ } as f), args) when Hashtbl.mem env.fields g.gsym -> apply c env k f args
   | Eapply ({ e = Evar (Global g); _ }, args) -> (
       match builtin c g.gsym with
       | Some ops ->
@@ -195,7 +82,7 @@ let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
           List.iter (emit k) ops
       | None when String.length g.gsym > 11 && String.sub g.gsym 0 11 = "Pervasives." -> refuse e.loc (g.gsym ^ ", of the library") "3"
       | None -> refuse e.loc (g.gsym ^ ", of another unit") "1e")
-  | Eapply _ -> refuse e.loc "a call of a function value" "1c"
+  | Eapply (f, args) -> apply c env k f args
   | Eseq (a, b) ->
       drop c env k a;
       expr c env k b
@@ -239,7 +126,6 @@ let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
       place k over
   | Elet (false, [ (p, d) ], body) ->
       (match simple p, d.e with
-       | Some (Some v), Efunction _ -> refuse d.loc (v.vname ^ ", a local function") "1c"
        | Some (Some _), _ when cts_of c d = S.Void -> drop c env k d
        | Some (Some v), _ -> bind c k v (fun () -> expr c env k d)
        | Some None, _ -> drop c env k d
@@ -254,9 +140,13 @@ let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
            match_failure c k;
            place k ok);
       expr c env k body
-  | Elet _ -> refuse e.loc "a let rec or let ... and" "1c"
+  (* a local function that calls itself: its closure's own field *)
+  | Elet (true, [ (Pvar v, ({ e = Efunction _; _ } as d)) ], body) ->
+      lambda c env k d (Some v);
+      expr c env k body
+  | Elet _ -> refuse e.loc "a let rec of several, or of a pattern, or let ... and" "1c"
   | Econstraint (e, _) -> expr c env k e
-  | Efunction _ -> refuse e.loc "a function as a value" "1c"
+  | Efunction _ -> lambda c env k e None
   | Ematch (scrut, cases) ->
       let v = local k (cts_of c scrut) in
       expr c env k scrut;
@@ -311,11 +201,126 @@ and drop (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
   expr c env k e;
   if cts_of c e <> S.Void then emit k Il.Pop
 
-(* a call of a function of the unit, all its arguments given *)
+(* a call of a function of the unit: its method, all its arguments
+ * given; fewer, a Func of those given (partial); more, its result
+ * invoked with the others *)
 and call (c : c) (env : env) (k : code) (e : Scope.expr) (f : fn) (args : Scope.expr list) : unit =
-  if List.length args <> List.length f.params then refuse e.loc "a partial application" "1c";
-  operands c env k args;
-  emit k (Il.Call f.tok)
+  let n = List.length f.params in
+  if List.length args < n then partial c env k f args
+  else begin
+    let mine = List.filteri (fun (i : int) (_ : Scope.expr) -> i < n) args in
+    let more = List.filteri (fun (i : int) (_ : Scope.expr) -> i >= n) args in
+    operands c env k mine;
+    emit k (Il.Call f.tok);
+    if more <> [] then invoke_with c env k e f.rty more
+  end
+
+(* a variable's value: an argument, a local, a captured one (a field of
+ * the closure, this) *)
+and load_var (k : code) (vid : int) : unit =
+  match Hashtbl.find_opt k.args vid, Hashtbl.find_opt k.slots vid, Hashtbl.find_opt k.captured vid with
+  | Some i, _, _ -> emit k (Il.Ldarg i)
+  | None, Some i, _ -> emit k (Il.Ldloc i)
+  | None, None, Some f -> emit k (Il.Ldarg 0); emit k (Il.Ldfld f)
+  | None, None, None -> ()
+
+(* a function value applied: its Func invoked with each argument in
+ * turn (unit's: null), the result of each the next Func *)
+and apply (c : c) (env : env) (k : code) (f : Scope.expr) (args : Scope.expr list) : unit =
+  expr c env k f;
+  invoke_with c env k f (type_of f) args
+
+and invoke_with (c : c) (env : env) (k : code) (at : Scope.expr) (fty : Scope.ty) (args : Scope.expr list) : unit =
+  let ty = ref fty in
+  List.iter
+    (fun (a : Scope.expr) ->
+      let dom, codom = match !ty with Tarrow (x, y) -> (x, y) | _ -> refuse at.loc "an application of a non-function" "1c" in
+      let fs = cts c at.loc !ty in
+      k.pending <- k.pending + 1;
+      expr c env k a;
+      if cts c at.loc dom = S.Void then emit k Il.Ldnull;
+      k.pending <- k.pending - 1;
+      emit k (Il.Callvirt (invoke c fs));
+      ty := codom)
+    args;
+  (* (unit's value, a null object, not left) *)
+  if cts c at.loc !ty = S.Void then emit k Il.Pop
+
+(* a function of the unit given i arguments of its n: an object of a
+ * class of its own holding them, its Invoke the next argument's (the
+ * last calls the method), as a Func *)
+and partial (c : c) (env : env) (k : code) (f : fn) (args : Scope.expr list) : unit =
+  let i = List.length args in
+  let saved = k.pending in
+  List.iteri
+    (fun (j : int) (a : Scope.expr) ->
+      expr c env k a;
+      if cts c a.loc (List.nth f.ptys j) = S.Void then emit k Il.Ldnull;
+      k.pending <- k.pending + 1)
+    args;
+  k.pending <- saved;
+  let _, ctor, inv = level c f i in
+  emit k (Il.Newobj ctor);
+  emit k (Il.Ldftn inv);
+  emit k (Il.Newobj (func_ctor c (cts c 0 (rest f i))))
+
+(* fun x -> ...: a class whose fields are the variables it captures (the
+ * enclosing method's it names), its Invoke the function's body; the
+ * value an object of it, as a Func. [self]: a let rec's name, a field
+ * set to the Func itself, which the body calls *)
+and lambda (c : c) (env : env) (k : code) (e : Scope.expr) (self : Scope.var option) : unit =
+  let cases = match e.e with Efunction cases -> cases | _ -> refuse e.loc "a function" "1c" in
+  let fty = type_of e in
+  let dom, codom = match fty with Tarrow (a, b) -> (a, b) | _ -> refuse e.loc "a function" "1c" in
+  let own = match self with Some v -> [ v.vid ] | None -> [] in
+  let captured =
+    List.filter
+      (fun (vid : int) -> (Hashtbl.mem k.args vid || Hashtbl.mem k.slots vid || Hashtbl.mem k.captured vid) && not (List.mem vid own))
+      (named e) in
+  let types = List.map (fun (vid : int) -> match Typing.var_type vid with Some t -> cts c e.loc t | None -> S.Object) captured in
+  let captured = List.filter (fun ((_, t) : int * S.t) -> t <> S.Void) (List.combine captured types) in
+  incr closures;
+  let fields = List.mapi (fun (i : int) ((_, t) : int * S.t) -> (Printf.sprintf "c%d" i, t)) captured in
+  let fields = match self with Some v -> fields @ [ ("self_" ^ v.vname, cts c e.loc fty) ] | None -> fields in
+  let cls, ctor, toks = new_class c "" (Printf.sprintf "closure%d" !closures) 0x00100102 (sys c "Object") (object_ctor c) [] fields in
+  W.nest c.w cls c.cls;
+  let inv = W.method_def c.w cls "Invoke" 0x0086 (instance [ arg_type c e.loc dom ] (arg_type c e.loc codom)) in
+  (* its body *)
+  let k' = new_code () in
+  List.iteri (fun (i : int) ((vid, _) : int * S.t) -> Hashtbl.replace k'.captured vid (List.nth toks i)) captured;
+  (match self with Some v -> Hashtbl.replace k'.captured v.vid (List.nth toks (List.length captured)) | None -> ());
+  (match cases with
+   | [ (p, None, body) ] when (match p with Pvar _ | Pany | Pconstraint (Pvar _, _) -> true | Pcons (k'', []) -> k''.cname = "()" | _ -> false) ->
+       (match p with Pvar v | Pconstraint (Pvar v, _) -> if cts c e.loc dom <> S.Void then Hashtbl.replace k'.args v.vid 1 | _ -> ());
+       expr c env k' body;
+       if cts_of c body = S.Void then emit k' Il.Ldnull
+   | (_, _, body) :: _ ->
+       matching c env k' body (fun () -> emit k' (Il.Ldarg 1)) dom cases;
+       if cts_of c body = S.Void then emit k' Il.Ldnull
+   | [] -> refuse e.loc "a function of no case" "1c");
+  emit k' Il.Ret;
+  finish c k' inv;
+  (* the value: the captured values, the object, the Func *)
+  let saved = k.pending in
+  List.iter (fun ((vid, _) : int * S.t) -> load_var k vid; k.pending <- k.pending + 1) captured;
+  k.pending <- saved;
+  (match self with Some _ -> emit k Il.Ldnull | None -> ());
+  emit k (Il.Newobj ctor);
+  match self with
+  | None ->
+      emit k (Il.Ldftn inv);
+      emit k (Il.Newobj (func_ctor c (cts c e.loc fty)))
+  | Some v ->
+      let obj = local k (S.Class cls) and fslot = local k (cts c e.loc fty) in
+      emit k (Il.Stloc obj);
+      emit k (Il.Ldloc obj);
+      emit k (Il.Ldftn inv);
+      emit k (Il.Newobj (func_ctor c (cts c e.loc fty)));
+      emit k (Il.Stloc fslot);
+      Hashtbl.replace k.slots v.vid fslot;
+      emit k (Il.Ldloc obj);
+      emit k (Il.Ldloc fslot);
+      emit k (Il.Stfld (List.nth toks (List.length captured)))
 
 (* the cases tried in order on the value [load] pushes, the first that
  * matches (and whose guard holds) taken; its value in a local, read
@@ -460,12 +465,6 @@ and prim (c : c) (env : env) (k : code) (e : Scope.expr) (p : string) (args : Sc
 (* A unit *)
 (*****************************************************************************)
 
-let is_function (e : Scope.expr) : bool = match e.e with Efunction _ -> true | Econstraint ({ e = Efunction _; _ }, _) -> true | _ -> false
-
-(* a toplevel variable's global *)
-let global_of (globals : (Scope.var * Scope.global) list) (v : Scope.var) : Scope.global option =
-  Option.map snd (List.find_opt (fun ((v', _) : Scope.var * Scope.global) -> v'.vid = v.vid) globals)
-
 (* a function's method declared (a let rec's all first, so that each
  * calls the others), its body made later *)
 let declare (c : c) (env : env) (globals : (Scope.var * Scope.global) list) (v : Scope.var) (d : Scope.expr) : fn =
@@ -474,23 +473,11 @@ let declare (c : c) (env : env) (globals : (Scope.var * Scope.global) list) (v :
   let ret = if is_raise body then S.Void else cts c body.loc (type_of body) in
   let sg = static (List.filter (fun (t : S.t) -> t <> S.Void) (List.map snd params)) ret in
   let tok = W.method_def c.w c.cls v.vname 0x0096 sg in
-  let f = { tok; params; cases; body } in
+  let rty = match cases with Some ((_, _, b) :: _) -> type_of b | _ -> type_of body in
+  let f = { tok; fname = v.vname; params; ptys = List.map snd ps; rty; cases; body } in
   Hashtbl.replace env.by_var v.vid f;
   (match global_of globals v with Some g -> Hashtbl.replace env.by_sym g.gsym f | None -> ());
   f
-
-(* a function's argument's type, from its first case's pattern: its
- * variable's, its constructor's, its record's *)
-let rec pattern_type (p : Scope.pattern) : Scope.ty =
-  match p with
-  | Pvar v | Palias (_, v) -> (match Typing.var_type v.vid with Some t -> t | None -> Resolve.unit_t)
-  | Pcons (k, _) -> let _, _, res = k.ctype in res
-  | Precord ((l, _) :: _) -> let _, _, r = l.ltype in r
-  | Pconstraint (p, _) | Por (p, _) -> pattern_type p
-  | Pconst (Int _) -> Resolve.int_t
-  | Pconst (String _) -> Resolve.string_t
-  | Pconst (Char _) | Prange _ -> Resolve.char_t
-  | _ -> Resolve.unit_t
 
 let define (c : c) (env : env) (f : fn) : unit =
   let k = new_code () in
@@ -521,6 +508,7 @@ let unit_ (name : string) (items : Scope.item list) : string =
   (* (a static class: abstract and sealed) *)
   let cls = W.type_def w "" name 0x00100181 obj in
   let c = { w; runtime; console; cls; uname = name; memo = Hashtbl.create 64 } in
+  closures := 0;
   Hashtbl.replace c.memo "type Object" obj;
   let env = { by_var = Hashtbl.create 16; by_sym = Hashtbl.create 16; fields = Hashtbl.create 16 } in
   let main = W.method_def w cls "Main" 0x0096 (static [] S.Void) in

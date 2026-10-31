@@ -1,0 +1,51 @@
+(* The unit's functions, as Lower_il compiles them: each a static
+ * method of the unit's class, its arguments from its nest of
+ * Efunctions (the last matched when it has cases); the variables a
+ * lambda names (those of its method it captures); and the classes that
+ * make a function given fewer arguments than it takes a Func, one a
+ * number of arguments given (Lower_il.mli's table). *)
+
+(* a function of the unit: its method, its arguments' variables (None:
+ * unit's, or _) and .NET types, its arguments' and result's ML types,
+ * the cases on its last argument if it is matched, its body *)
+type fn = {
+  tok : int;
+  fname : string;
+  params : (Scope.var option * Signature.t) list;
+  ptys : Scope.ty list;
+  rty : Scope.ty;
+  cases : Scope.case list option;
+  body : Scope.expr;
+}
+
+(* the unit's closures' classes, numbered (reset by each unit) *)
+val closures : int ref
+
+(* the unit's functions by variable (inside a let rec) and by symbol
+ * (from the toplevel's later items); its values' static fields *)
+type env = { by_var : (int, fn) Hashtbl.t; by_sym : (string, fn) Hashtbl.t; fields : (string, int * Signature.t) Hashtbl.t }
+
+(* a pattern that is no test: Some (its variable, None for _ or ()) *)
+val simple : Scope.pattern -> Scope.var option option
+
+(* a function's arguments, as its Efunction's nest: their variables and
+ * types; the last's cases if it is matched; the body *)
+val params : Scope.expr -> (Scope.var option * Scope.ty) list * Scope.case list option * Scope.expr
+
+(* the variables an expression names, each once, in order *)
+val named : Scope.expr -> int list
+
+(* a function's type after its first i arguments *)
+val rest : fn -> int -> Scope.ty
+
+(* the class of a function given i arguments: the class, its
+ * constructor (the arguments given), its Invoke (the next) *)
+val level : Il_code.c -> fn -> int -> int * int * int
+
+val is_function : Scope.expr -> bool
+
+(* a toplevel variable's global *)
+val global_of : (Scope.var * Scope.global) list -> Scope.var -> Scope.global option
+
+(* a function's argument's type, from its first case's pattern *)
+val pattern_type : Scope.pattern -> Scope.ty

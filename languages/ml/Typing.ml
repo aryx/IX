@@ -506,6 +506,7 @@ and under env (e : Scope.expr) t =
       let pa, pr = arrow (expanded t) in
       let saved = !loc in
       loc := e.loc;
+      if !keep then Hashtbl.replace by_span e.span t;
       cases env pa pr cs;
       loc := saved
   | _ -> unify (infer env e) t

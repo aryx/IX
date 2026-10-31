@@ -55,6 +55,8 @@ type code = {
    * must start with none (IL's rule), so one inside an operand is
    * refused *)
   mutable pending : int;
+  (* in a closure's Invoke: a variable it captured, its field of this *)
+  captured : (int, int) Hashtbl.t;
 }
 
 val new_code : unit -> code

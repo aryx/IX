@@ -7,9 +7,19 @@
 val decl : Scope.ty -> Scope.tdecl
 
 (* an ML type's .NET type, its class made if needed; unit's Void.
- * Refused: what a later stage has (a function, a tuple, a type of
- * parameters, a polymorphic value) *)
+ * Refused: what a later stage has (a tuple, a type of parameters, a
+ * polymorphic value) *)
 val cts : Il_code.c -> int -> Scope.ty -> Signature.t
+
+(* a type as a Func's argument or result (unit an object, null); a
+ * function's type, Func<A, B> *)
+val arg_type : Il_code.c -> int -> Scope.ty -> Signature.t
+val func : Il_code.c -> int -> Scope.ty -> Scope.ty -> Signature.t
+
+(* a Func type's Invoke, its constructor (an object, a method's
+ * address: ldftn) *)
+val invoke : Il_code.c -> Signature.t -> int
+val func_ctor : Il_code.c -> Signature.t -> int
 
 (* a record type's field, its constructor (the fields in order) *)
 val field : Il_code.c -> int -> Scope.tdecl -> string -> int

@@ -11,11 +11,11 @@ type relation = {
   name : string;
   arity : int;
   set : Tuples.t;
-  mutable all : int array list;
+  mutable rows : int array;
   mutable count : int;
-  mutable indexes : (int * (int array, int array list ref) Hashtbl.t) list;
-  mutable delta : int array list;
-  mutable fresh : int array list;
+  mutable indexes : (int * int array * Index.t) list;
+  mutable delta_from : int;
+  mutable delta_to : int;
   mutable stratum : int;
   mutable given : int;
   mutable rules : int;
@@ -65,7 +65,7 @@ let relation (p : t) (name : string) (arity : int) : relation =
   | Some r -> r
   | None ->
       let r : relation =
-        { name; arity; set = Tuples.create arity; all = []; count = 0; indexes = []; delta = []; fresh = []; stratum = 0; given = 0; rules = 0 } in
+        { name; arity; set = Tuples.create arity; rows = Array.make (16 * arity) 0; count = 0; indexes = []; delta_from = 0; delta_to = 0; stratum = 0; given = 0; rules = 0 } in
       Hashtbl.add p.relations key r;
       r
 
@@ -76,36 +76,43 @@ let show (p : t) (r : relation) (tuple : int array) : string =
     ^ String.concat "," (List.map (fun (k : int) -> text_of p.terms.(k)) (Array.to_list tuple))
     ^ ")."
 
-let project (mask : int) (tuple : int array) : int array =
-  let n = ref 0 in
-  Array.iteri (fun (i : int) (_ : int) -> if mask land (1 lsl i) <> 0 then incr n) tuple;
-  let key = Array.make !n 0 in
-  let j = ref 0 in
-  Array.iteri
-    (fun (i : int) (v : int) ->
-      if mask land (1 lsl i) <> 0 then begin
-        key.(!j) <- v;
-        incr j
-      end)
-    tuple;
-  key
+let get (r : relation) (i : int) (j : int) : int = r.rows.((i * r.arity) + j)
 
-(* (Hashtbl.add where the key is known to be new, for the indexes:
- * replace would look for it a second time) *)
+(* an index's key: the values of the mask's columns, in order *)
+let columns (arity : int) (mask : int) : int array =
+  let cols = ref [] in
+  for i = arity - 1 downto 0 do
+    if mask land (1 lsl i) <> 0 then cols := i :: !cols
+  done;
+  Array.of_list !cols
+
+let append (r : relation) (tuple : int array) : int =
+  let id = r.count and n = r.arity in
+  if (id + 1) * n > Array.length r.rows then begin
+    let larger = Array.make (2 * (id + 1) * n) 0 in
+    Array.blit r.rows 0 larger 0 (id * n);
+    r.rows <- larger
+  end;
+  Array.blit tuple 0 r.rows (id * n) n;
+  r.count <- id + 1;
+  id
+
 let add (r : relation) (tuple : int array) : bool =
   if not (Tuples.add r.set tuple) then false
   else begin
-    r.all <- tuple :: r.all;
-    r.count <- r.count + 1;
+    let id = append r tuple in
     List.iter
-      (fun ((mask, index) : int * (int array, int array list ref) Hashtbl.t) ->
-        let key = project mask tuple in
-        match Hashtbl.find_opt index key with
-        | Some bucket -> bucket := tuple :: !bucket
-        | None -> Hashtbl.add index key (ref [ tuple ]))
+      (fun ((_, cols, index) : int * int array * Index.t) -> Index.add index (fun (i : int) -> tuple.(cols.(i))) id)
       r.indexes;
     true
   end
+
+let tuples (r : relation) : int array list =
+  let all = ref [] in
+  for i = 0 to r.count - 1 do
+    all := Array.sub r.rows (i * r.arity) r.arity :: !all
+  done;
+  !all
 
 (*****************************************************************************)
 (* A text read *)

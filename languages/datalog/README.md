@@ -9,9 +9,10 @@ over facts, which is what this computes. The plan:
 
 | module | what |
 |---|---|
-| `Datalog` | relations (sets of tuples of symbols), rules, queries; a text loaded and checked (a rule must be safe) |
-| `Datalog_eval` | the strata (a relation is whole before another negates it), the fixpoint (semi-naive, or naive), a body joined by a plan made once (its atoms' order chosen), by indexes made on demand |
-| `CLI`, `Main` | the command: files, `-q query`, `-all`, `-naive`, `-s`, `-profile` |
+| `Tuples`, `Index` | a relation's set of tuples and its indexes: flat arrays of integers, open addressing, in 64 parts by hash |
+| `Datalog` | relations (tuples of symbols, numbered in rows, as Soufflé's), rules, queries; a text loaded and checked (a rule must be safe) |
+| `Datalog_eval` | the strata (a relation is whole before another negates it), the fixpoint (semi-naive, or naive), a body joined by a plan made once (its atoms' order chosen), by indexes made on demand; a rule's new tuples on several domains (`-j`) |
+| `CLI`, `Main` | the command: files, `-q query`, `-all`, `-naive`, `-j n`, `-s`, `-profile` |
 
 `mini-datalog -h` says how, by an example.
 
@@ -203,18 +204,22 @@ What is left is that rule: Andersen's analysis copies each set along
 each assignment, again and again where the assignments make a cycle.
 Collapsing the cycles (Hardekopf and Lin, "The Ant and the
 Grasshopper", PLDI 2007) is the analysis's change, not the engine's;
-the engine's next ones would be the indexes chosen before the run, and
-flat as `Tuples` is.
+the engine's next one would be the indexes chosen before the run.
 
 Several cores (`-j n`, OCaml 5's build only: 4.14's and mini-ml's run
 on one, plan_ml_multicore.md): a rule's new tuples are shared among
-the domains, which only read; one adds what they found. The same run
-of mini-ml and the assembler by OCaml 5.5.1, the same tuples each time:
+the domains, which only read; then each adds what was found to its own
+parts of the set and the indexes (64, by hash), as Soufflé's rounds
+insert on every core. The same run of mini-ml and the assembler by
+OCaml 5.5.1, the same tuples each time:
 
 | domains | 1 | 2 | 4 | 8 | 16 | 32 | 64 |
 |---|---|---|---|---|---|---|---|
-| seconds | 98.0 | 83.5 | 52.7 | 37.8 | 30.7 | 28.8 | 32.1 |
-| GB | 2.0 | 2.7 | 2.4 | 2.6 | 2.7 | 3.3 | 4.7 |
+| seconds | 101.1 | 70.0 | 40.0 | 25.7 | 18.4 | 15.4 | 18.2 |
+| GB | 1.6 | 1.9 | 2.1 | 2.2 | 2.4 | 3.3 | 4.4 |
+| before (adding on one domain, Hashtbl indexes) | 98.0 | 83.5 | 52.7 | 37.8 | 30.7 | 28.8 | 32.1 |
 
-The adding stays on one domain, 13 to 15 s of it: what to make
-parallel next, or faster for one core as well.
+On 32 domains, 9 s of the 15.4 is the join, every domain busy, each
+firing three times as long as on one core: memory's (each test of a
+head a miss of the cache), as the analysis's 372 million firings are
+the analysis's (cycles of assignments, above).

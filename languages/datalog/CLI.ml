@@ -80,7 +80,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                   (fun (line : string) -> Console.print caps (line ^ "\n"))
                   (* (rev_map: List.map of millions of tuples overflowed
                    * the stack of 4.14's and of mini-ml's builds) *)
-                  (List.sort String.compare (List.rev_map (D.show p r) r.all)))
+                  (List.sort String.compare (List.rev_map (D.show p r) (D.tuples r))))
             relations;
         List.iter
           (fun (q : D.query) -> List.iter (fun (line : string) -> Console.print caps (line ^ "\n")) (Datalog_eval.answers p q))

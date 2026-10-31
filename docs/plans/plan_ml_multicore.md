@@ -321,3 +321,42 @@ mkfile as tiny/'s is); make test: 170 jobs, 1 failure, mini-lex's
 tokens against ocamllex's over sources other sessions are editing.
 Found on the way and committed alone: `-all` over millions of tuples
 overflowed 4.14's and mini-ml's stacks (List.map), 72fc00c1.
+
+2026-10-31, the engine made for several cores (the author: "ok let's
+fix the engine so it's more multicore friendly, maybe imitating more
+Souffle"). Two changes, measured on the same run:
+- **Souffle's storage**: a relation's tuples numbered in the order
+  added, flat in one array of rows (`Datalog.rows`); the last round's
+  new tuples, this round's and all of them three ranges of numbers
+  (Souffle's delta, new and full), where they were lists of arrays;
+  the indexes flat (`Index`: open addressing from a key to the last
+  tuple's number, a chain of numbers by tuple), where they were
+  Hashtbl's of projected arrays to lists. One core, 4.14: 90.6 s
+  (95 before), 2.0 GB; mini-datalog's own facts 1.74 s to 1.33.
+- **The adding on every domain**: `Tuples` and `Index` in 64 parts by
+  hash, each its own array; after the join, each domain adds to the
+  set the tuples of its parts, the rows are numbered in turn, then
+  each adds the keys of its parts to each index. Each part sees the
+  tuples in the order found: the same numbers, the same `-all` bytes,
+  at every n. One core: 91.4 s (the parts 1%), 1.6 GB.
+
+| domains | 1 | 2 | 4 | 8 | 16 | 32 | 64 |
+|---|---|---|---|---|---|---|---|
+| seconds | 101.1 | 70.0 | 40.0 | 25.7 | 18.4 | 15.4 | 18.2 |
+| before | 98.0 | 83.5 | 52.7 | 37.8 | 30.7 | 28.8 | 32.1 |
+
+6.6 times at best (32 domains). By timers (not kept), on 32: the join
+9.0 s, gathering what was found 0.8, the set 1.5, the rows 1.5 (one
+domain), the indexes 0.7. The join is balanced (the slowest domain
+within 5% of the mean, the mean the wall) and not the minor heap's
+(s=1M, s=8M: the same), but a firing takes three times as long as on
+one core: 372 million tests of a head against 9.5 million tuples,
+each a miss of the cache, on a Neoverse N1 whose huge pages are by
+madvise only. What is left for cores: the rows and the gathering by
+prefix sums (2.3 s); for memory: fewer firings (Hardekopf and Lin's
+cycles, the analysis's change), or a layout with locality (Souffle's
+B-trees, sorted). Stage 1 of this plan (mini-ml's runtime) is now worth
+doing on these numbers: the engine scales to 32 cores where OCaml 5
+does. Checked: mini-datalog's tests by 4.14's and mini-ml's builds,
+mini-analyze's; `-all`'s bytes the same by the three builds and at 1,
+7, 32 domains; make test: 170 jobs, 0 failures.

@@ -44,12 +44,17 @@ type relation = {
   name : string;
   arity : int;
   set : Tuples.t;                         (* its tuples, each once *)
-  mutable all : int array list;           (* the same, the last added first *)
+  (* the same, numbered in the order added: tuple i is rows.(i * arity)
+   * to rows.(i * arity + arity - 1) *)
+  mutable rows : int array;
   mutable count : int;
-  (* by the columns that are known (a bit each): their values to the tuples *)
-  mutable indexes : (int * (int array, int array list ref) Hashtbl.t) list;
-  mutable delta : int array list;         (* Datalog_eval's: the last round's new tuples *)
-  mutable fresh : int array list;         (* this round's *)
+  (* by the columns that are known (a bit each, and their numbers): their
+   * values to the tuples *)
+  mutable indexes : (int * int array * Index.t) list;
+  (* Datalog_eval's: the last round's new tuples are those numbered from
+   * delta_from to delta_to - 1; this round's, from delta_to on *)
+  mutable delta_from : int;
+  mutable delta_to : int;
   mutable stratum : int;
   mutable given : int;                    (* its facts in the text *)
   mutable rules : int;                    (* the rules with it as head *)
@@ -89,5 +94,15 @@ val show : t -> relation -> int array -> string
 (* a tuple added; false: it was there *)
 val add : relation -> int array -> bool
 
-(* the values of the columns whose bit is in the mask *)
-val project : int -> int array -> int array
+(* a tuple's row added, not to the set or the indexes (the caller
+ * adds them: Datalog_eval's on several domains); its number *)
+val append : relation -> int array -> int
+
+(* the numbers of the mask's columns, in order, for an arity *)
+val columns : int -> int -> int array
+
+(* the i-th tuple's j-th value *)
+val get : relation -> int -> int -> int
+
+(* every tuple, the last added first *)
+val tuples : relation -> int array list

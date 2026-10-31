@@ -3,7 +3,10 @@
  * slot its hash says, or the next free one after it; a lookup walks
  * from that slot to the tuple or to a free slot. Half the slots at most
  * are used, so a walk is short. A slot is the tuple's values, in one
- * array of integers for all the slots: no pointer to follow.
+ * array of integers for all the slots: no pointer to follow. The
+ * slots are in 64 parts, a tuple's part by its hash: each part its own
+ * array, which grows alone, so that several domains add tuples at once
+ * when each adds those of its own parts (Datalog_eval's -j).
  *
  * design:
  * Most of a pointer analysis's firings find a tuple that is there
@@ -16,6 +19,7 @@
  * and they are where the slot is: with millions of tuples a lookup is
  * a miss of the cache, two when the slot points to an array (the rule
  * above: 147 s by Hashtbl, 104 s by slots of arrays, 81 s flat).
+ * The parts cost a mask and a load more a lookup.
  * old: OCaml's Hashtbl of int arrays: the tuple made first, hashed by
  * the polymorphic hash (which walks any value), compared by the
  * polymorphic compare.
@@ -39,3 +43,12 @@ val mem_by : t -> (int -> int) -> bool
 
 (* false: it was there *)
 val add : t -> int array -> bool
+
+(* the hash of n values, the i-th [value i] (Index's too) *)
+val hash : int -> (int -> int) -> int
+
+(* the parts, and the part of the tuple whose i-th value is [value i]:
+ * [add] of tuples of different parts may run at the same time *)
+val parts : int
+val part_bits : int             (* parts = 2^part_bits *)
+val part_of : t -> (int -> int) -> int

@@ -63,20 +63,28 @@
  * in 20 million lookups and 6.7 s, where the plan does it in 0.6
  * million and 0.2 s, the same tuples (-profile shows each rule's share).
  *
+ * A relation is stored as Souffle's: its tuples numbered in the order
+ * added, flat in one array of rows (Datalog's), so that the last
+ * round's new tuples, this round's and all of them are three ranges of
+ * numbers (Souffle's delta, new and full relations); a set (Tuples)
+ * and indexes (Index) of those numbers beside, flat too.
+ *
  * A rule on several domains (-j, OCaml 5's build): its new tuples in
  * chunks, each domain taking the next chunk, testing what its firings
  * find against the relation and against what it found itself, and
- * keeping the rest; the caller adds them, chunk by chunk, so the
- * tuples' order is the same whatever the domains did. Nothing is
- * written while the domains run (the indexes they need are made
- * before), so nothing is locked. mini-ml and the assembler with
- * lib_core (98 s on one core by OCaml 5): 52.7 s on 4 domains, 37.8
- * on 8, 28.8 on 32, 32.1 on 64. What stays on one domain is adding the new
- * tuples (11.6 million, to the set and the indexes: 13 to 15 s), so
- * the indexes as flat as Tuples, or each domain adding its share of
- * the hashes, come before more cores.
- * old: without each domain's own set, a tuple found by a thousand
- * firings was a thousand candidates: 79.5 s on 16 domains, 11 GB.
+ * keeping the rest. Nothing is written while the domains run (the
+ * indexes they need are made before), so nothing is locked. Then they
+ * add what was found: the set and the indexes are in 64 parts by
+ * hash, each domain adds to its own parts, in the order found, so the
+ * tuples are numbered the same whatever the domains did. mini-ml and
+ * the assembler with lib_core, by OCaml 5: 101 s on one domain, 25.7 s
+ * on 8, 15.4 on 32, 18.2 on 64. On 32, 9 s of it is the join, every
+ * domain busy, a firing three times as long as on one core: the
+ * 372 million tests of a head against 9.5 million tuples, each a miss
+ * of the cache, are memory's (Neoverse N1, no huge pages).
+ * old: the adding on one domain, Hashtbl's indexes: 28.8 s on 32;
+ * without each domain's own set, a tuple found by a thousand firings
+ * was a thousand candidates: 79.5 s on 16 domains, 11 GB.
  *
  * cs-history:
  * The fixpoint by rounds is the definition of what a program means
@@ -110,7 +118,9 @@
  * C++ program a file of rules, each relation with the fewest indexes
  * that cover its rules' lookups (chosen before the run, where an
  * index is made here at its first lookup), B-trees and tries for the
- * tuples, a round's outer loop on all the cores. Its join order is
+ * tuples, a round's outer loop on all the cores, inserted into
+ * concurrent B-trees (optimistic locks) where here each domain has
+ * its parts. Its join order is
  * chosen by the variables bound, as here, or given (.plan, from a
  * profile). Semmle's QL (CodeQL) orders joins by the relations'
  * estimated sizes, a database's optimizer. LogicBlox joins all the

@@ -140,14 +140,14 @@ let said (s : string) : string =
  * what it may reach; then what bugs.dl finds *)
 
 let report (caps : < caps; .. >) (p : D.t) : unit =
-  let tuples r = (D.relation p r 2).all in
+  let tuples r = D.tuples (D.relation p r 2) in
   let loads = Hashtbl.create 101 in
   List.iter
     (fun (t : int array) ->
       let fld = name p t.(2) in
       let fld = if String.length fld > 6 && String.sub fld 0 6 = "_fld__" then String.sub fld 6 (String.length fld - 6) else fld in
       Hashtbl.replace loads (name p t.(0)) (name p t.(1), "->" ^ fld))
-    (D.relation p "assign_load_field" 3).all;
+    (D.tuples (D.relation p "assign_load_field" 3));
   List.iter (fun (t : int array) -> Hashtbl.replace loads (name p t.(0)) (name p t.(1), "[]")) (tuples "assign_array_elt");
   let edges = Hashtbl.create 101 in
   List.iter (fun (t : int array) -> Hashtbl.add edges (name p t.(0)) (name p t.(1))) (tuples "call_edge");
@@ -227,7 +227,7 @@ let rec ml_function (f : string) : string =
  * units, its targets; the program's functions its toplevel does not
  * reach (calls.dl's unreached) *)
 let ml_report (caps : < caps; .. >) (p : D.t) : unit =
-  let tuples r = (D.relation p r 2).all in
+  let tuples r = D.tuples (D.relation p r 2) in
   let edges = Hashtbl.create 101 and inside = Hashtbl.create 101 in
   List.iter (fun (t : int array) -> Hashtbl.add edges (name p t.(0)) (name p t.(1))) (tuples "call_edge");
   List.iter (fun (t : int array) -> Hashtbl.replace inside (name p t.(0)) (name p t.(1))) (tuples "in_function");
@@ -238,7 +238,7 @@ let ml_report (caps : < caps; .. >) (p : D.t) : unit =
     (fun (t : int array) ->
       let fld = name p t.(2) in
       Hashtbl.replace loads (name p t.(0)) (name p t.(1), Option.value (prefix "fld:" fld) ~default:fld))
-    (D.relation p "assign_load_field" 3).all;
+    (D.tuples (D.relation p "assign_load_field" 3));
   let through v =
     match Hashtbl.find_opt loads v with
     | Some (x, fld) when String.contains x '/' -> Some (ml_function x ^ "." ^ fld)
@@ -270,7 +270,7 @@ let ml_report (caps : < caps; .. >) (p : D.t) : unit =
            (if targets = [] then "nothing found" else String.concat ", " targets)))
     calls;
   let lines = Hashtbl.create 101 in
-  List.iter (fun (t : int array) -> Hashtbl.replace lines (name p t.(0)) (name p t.(1), name p t.(2))) (D.relation p "closure" 3).all;
+  List.iter (fun (t : int array) -> Hashtbl.replace lines (name p t.(0)) (name p t.(1), name p t.(2))) (D.tuples (D.relation p "closure" 3));
   let unreached =
     List.filter_map
       (fun (t : int array) ->
@@ -278,7 +278,7 @@ let ml_report (caps : < caps; .. >) (p : D.t) : unit =
         match Hashtbl.find_opt lines f with
         | Some (u, l) when Hashtbl.mem Ml_front.own u -> Some (Printf.sprintf "never reached: %s (%s:%s)" (ml_function f) (file u) l)
         | _ -> None)
-      ((D.relation p "unreached" 1).all) in
+      (D.tuples (D.relation p "unreached" 1)) in
   List.iter (fun l -> Console.print caps (l ^ "\n")) (List.sort_uniq compare unreached);
   Console.print caps
     (Printf.sprintf "%d units (%d the program's), %d calls through a variable, %d functions never reached\n"

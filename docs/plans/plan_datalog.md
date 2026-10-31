@@ -347,5 +347,7 @@ empty relation not run, a plan made once a rule, `Tuples` (open
 addressing, flat). Not done: `-plan` printing it, indexes chosen
 before the run, a round on several cores (needs OCaml 5's domains,
 or mini-ml's: plan_multicore.md; 2026-10-31, a rule's new tuples on
-OCaml 5's domains, -j: plan_ml_multicore.md's stage 0), incremental evaluation (DRed,
+OCaml 5's domains, -j, then Souffle's storage, the rows numbered and
+the indexes flat, the adding on every domain: 98 s to 15.4 on 32,
+plan_ml_multicore.md's Status), incremental evaluation (DRed,
 DDlog's differences: Datalog_eval.mli says them).

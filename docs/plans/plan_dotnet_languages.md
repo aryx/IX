@@ -523,8 +523,30 @@ but really use the same types!". So the decisions below are those of
        written, 107 lines, C's printf and strtod by Python's) by
        both runtimes, by both mini-ml builds. make loc sets apart
        any dotnet/ directory (the author's).
-     - the channels: OCaml's in_channel and out_channel over .NET's
-       Console and files, an abstract type an Object.
+     - done: bytes, the channels, sys_open, sys_exit (the author,
+       asked: "byte[] + Streams"). bytes a byte[] (the %string_*
+       primitives on it ldelem and stelem, a %identity to and from a
+       string a copy by the runtime's Latin-1); the native's channels
+       (a buffer of 4096 bytes) over a .NET Stream, the console's
+       (OpenStandardOutput...: its bytes as they are) or a file's
+       (File's OpenRead, OpenWrite, Create: no enum to name), the
+       descriptors a table of them; an abstract type an object, the
+       runtime casting it to its channel. The compiler: externals
+       naming classes (System.IO.Stream) and arrays (uint8[]), an
+       object cast to them; a runtime function's arguments converted
+       to its parameters (output_byte's int where output_char's char);
+       sys_exit's 'a a default value. mini-dotnet's Library: Stream,
+       FileStream, File, Console's standard streams, Encoding's
+       GetString and GetBytes, IOException; its CLI the streams by
+       capabilities (Cap.open_out now), over the console's channels so
+       that Console.Write's and theirs keep their order. Found: the
+       native's flush of an input channel writes what is left to read
+       (a write that fails silently on a file opened to read); here
+       only a channel written to is flushed. Checked: channels.ml (the
+       console, a file written, read, sought, appended, sys_open's
+       errors, a line of 5000 bytes from the standard input) by both
+       runtimes and both mini-ml builds; the programs run in the
+       scratch directory.
    - 3c. lib_core's units given with the program's (-L lib_core, in
      units.txt's order), List, Option, String, Hashtbl, Printf first.
 4. **Speed**: mini-ml's benchmarks native, on .NET (Microsoft's), on

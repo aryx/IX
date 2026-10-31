@@ -64,6 +64,6 @@
  * Source CLI Essentials" (O'Reilly, 2003), Rotor read; Serge Lidin,
  * ".NET IL Assembler" (Apress, 2014). *)
 
-type caps = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr >
+type caps = < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr >
 
 val main : < caps; .. > -> string array -> int

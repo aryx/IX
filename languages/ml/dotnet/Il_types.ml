@@ -109,6 +109,9 @@ let structural (c : c) (t : tclass) (tag : int) : unit =
        | S.R8 -> emit k (Il.Box (sys c "Double")); emit k (Il.Callvirt (lib c "Object" "GetHashCode" (instance [] S.I4)))
        | S.Var _ -> box ty k; emit k (Il.Callvirt (lib c "Object" "GetHashCode" (instance [] S.I4)))
        | S.String | S.Class _ | S.GenericInst _ -> emit k (Il.Callvirt (lib c "Object" "GetHashCode" (instance [] S.I4)))
+       (* (an abstract type's object, an array: Equals compares their
+        * references, so nothing of theirs) *)
+       | S.Object | S.SzArray _ -> emit k Il.Pop; emit k (Il.Ldc_i4 0l)
        | _ -> ());
       emit k (Il.Binop Il.Add))
     fields;
@@ -230,6 +233,8 @@ let rec cts (c : c) (loc : int) (t : Scope.ty) : S.t =
   | Tconstr (d, []) when d == char_d -> S.I4
   | Tconstr (d, []) when d == float_d -> S.R8
   | Tconstr (d, []) when d == string_d -> S.String
+  (* (bytes, .NET's byte[]: a channel's Stream reads and writes them) *)
+  | Tconstr (d, []) when d.tpath = "bytes" -> S.SzArray S.U1
   | Tconstr (d, []) when d == unit_d -> S.Void
   | Tconstr (d, []) when d == exn_d -> S.Class (sys c "Exception")
   | Tconstr ({ tabbrev = Some t; _ }, []) -> cts c loc t
@@ -242,6 +247,9 @@ let rec cts (c : c) (loc : int) (t : Scope.ty) : S.t =
   | Ttuple ts -> at (tuple c loc (List.length ts)) (List.map (arg_type c loc) ts)
   (* (an array, .NET's own: T[]) *)
   | Tconstr (d, [ a ]) when d == Resolve.array_d -> S.SzArray (arg_type c loc a)
+  (* (a unit's abstract type, Pervasives' in_channel: an object, which
+   * the runtime unit casts to what it is) *)
+  | Tconstr (d, _) when d.tabbrev = None && String.contains d.tpath '.' -> S.Object
   | Tconstr (d, _) -> refuse loc ("a value of type " ^ d.tpath) "1d"
 
 (* a type as a type argument (a Func's, a generic class's): unit an

@@ -327,3 +327,237 @@ let format_float (f : string) (x : float) : string =
           if sp.alt then s else trim s
       | _ -> failwith "format_float: bad format" in
     pad sp (sign_of sp neg) digits true
+
+(*****************************************************************************)
+(* Bytes *)
+(*****************************************************************************)
+
+(* bytes are .NET's byte[], a string a System.String of a byte a char:
+ * between them by Latin-1, a copy each way *)
+type encoding
+
+external alloc : int -> bytes = "%bytes_create"
+external bget : bytes -> int -> char = "%string_unsafe_get"
+external bset : bytes -> int -> char -> unit = "%string_unsafe_set"
+external blength : bytes -> int = "%string_length"
+external latin1 : unit -> encoding
+  = "dotnet:static System.Text.Encoding::get_Latin1() -> System.Text.Encoding"
+external get_string : encoding -> bytes -> string
+  = "dotnet:instance System.Text.Encoding::GetString(uint8[])"
+external get_bytes : encoding -> string -> bytes
+  = "dotnet:instance System.Text.Encoding::GetBytes(string)"
+
+let create_string (n : int) : bytes =
+  if n < 0 then invalid_arg "Bytes.create" else alloc n
+
+let blit_string (s : string) (o1 : int) (b : bytes) (o2 : int) (n : int) : unit =
+  for i = 0 to n - 1 do bset b (o2 + i) s.[o1 + i] done
+
+let string_of_bytes (b : bytes) : string = get_string (latin1 ()) b
+let bytes_of_string (s : string) : bytes = get_bytes (latin1 ()) s
+
+(*****************************************************************************)
+(* Channels *)
+(*****************************************************************************)
+
+(* the native runtime's (languages/ml/runtime/io.c): a buffer of 4096
+ * bytes over a file's, here a .NET Stream (the console's: its bytes as
+ * they are, whatever its encoding). A descriptor a number in a table
+ * of the streams: 0, 1 and 2 the console's, then the files opened *)
+type stream
+
+external stdin_stream : unit -> stream
+  = "dotnet:static System.Console::OpenStandardInput() -> System.IO.Stream"
+external stdout_stream : unit -> stream
+  = "dotnet:static System.Console::OpenStandardOutput() -> System.IO.Stream"
+external stderr_stream : unit -> stream
+  = "dotnet:static System.Console::OpenStandardError() -> System.IO.Stream"
+external s_read : stream -> bytes -> int -> int -> int
+  = "dotnet:instance System.IO.Stream::Read(uint8[],int32,int32) -> int32"
+external s_write : stream -> bytes -> int -> int -> unit
+  = "dotnet:instance System.IO.Stream::Write(uint8[],int32,int32)"
+external s_flush : stream -> unit = "dotnet:instance System.IO.Stream::Flush"
+external s_dispose : stream -> unit = "dotnet:instance System.IO.Stream::Dispose"
+external s_length : stream -> int = "dotnet:instance System.IO.Stream::get_Length"
+external s_seek : stream -> int -> unit = "dotnet:instance System.IO.Stream::set_Position"
+external open_read : string -> stream
+  = "dotnet:static System.IO.File::OpenRead -> System.IO.FileStream"
+external open_write : string -> stream
+  = "dotnet:static System.IO.File::OpenWrite -> System.IO.FileStream"
+external create : string -> stream
+  = "dotnet:static System.IO.File::Create -> System.IO.FileStream"
+external exists : string -> bool = "dotnet:static System.IO.File::Exists"
+
+type channel = {
+  stream : stream;
+  buf : bytes;
+  mutable len : int;            (* output: the bytes buffered; input: those left, *)
+  mutable pos : int;            (* from pos *)
+  mutable offset : int;         (* the stream's position *)
+  mutable written : bool;       (* an output channel's (flush writes) *)
+}
+
+(* (Pervasives' in_channel and out_channel are abstract: objects, each
+ * a channel; out_channel says both here) *)
+external chan : out_channel -> channel = "%identity"
+external of_chan : channel -> out_channel = "%identity"
+external chr : int -> char = "%identity"
+
+let streams : (int * stream) list ref = ref []
+let next_fd = ref 3
+
+let stream_of (fd : int) : stream =
+  let rec find (l : (int * stream) list) : stream option =
+    match l with [] -> None | (n, s) :: r -> if n = fd then Some s else find r in
+  match find !streams with
+  | Some s -> s
+  | None ->
+      let s =
+        if fd = 0 then stdin_stream () else if fd = 1 then stdout_stream ()
+        else if fd = 2 then stderr_stream () else raise (Sys_error "bad file descriptor") in
+      streams := (fd, s) :: !streams;
+      s
+
+let caml_open_descriptor (fd : int) : out_channel =
+  of_chan { stream = stream_of fd; buf = create_string 4096; len = 0; pos = 0; offset = 0; written = false }
+
+(* (an input channel's len is what is left to read: not written, the
+ * native's write of it fails on a file opened to read, .NET's throws) *)
+let flush_chan (c : channel) : unit =
+  if c.written then begin
+    if c.len > 0 then s_write c.stream c.buf 0 c.len;
+    s_flush c.stream;
+    c.offset <- c.offset + c.len;
+    c.len <- 0
+  end
+
+let caml_flush (ch : out_channel) : unit = flush_chan (chan ch)
+
+let putc (c : channel) (b : char) : unit =
+  c.written <- true;
+  if c.len = 4096 then flush_chan c;
+  bset c.buf c.len b;
+  c.len <- c.len + 1
+
+let caml_output_char (ch : out_channel) (b : char) : unit = putc (chan ch) b
+
+let caml_output (ch : out_channel) (s : string) (ofs : int) (len : int) : unit =
+  let c = chan ch in
+  for i = 0 to len - 1 do putc c s.[ofs + i] done
+
+let caml_output_int (ch : out_channel) (n : int) : unit =
+  let c = chan ch in
+  putc c (chr ((n asr 24) land 255));
+  putc c (chr ((n asr 16) land 255));
+  putc c (chr ((n asr 8) land 255));
+  putc c (chr (n land 255))
+
+let fill (c : channel) : int =
+  let n = s_read c.stream c.buf 0 4096 in
+  if n > 0 then begin
+    c.offset <- c.offset + n;
+    c.len <- n;
+    c.pos <- 0
+  end;
+  n
+
+(* the next byte, or -1 at the end (no signals here: -2 never) *)
+let ml_input_char (ch : out_channel) : int =
+  let c = chan ch in
+  if c.len = 0 && fill c <= 0 then -1
+  else begin
+    c.len <- c.len - 1;
+    c.pos <- c.pos + 1;
+    code (bget c.buf (c.pos - 1))
+  end
+
+(* what the buffer has, at once (filled first when it is empty) *)
+let caml_input (ch : out_channel) (s : bytes) (ofs : int) (len : int) : int =
+  let c = chan ch in
+  if c.len = 0 && len > 0 then ignore (fill c);
+  let n = if len < c.len then len else c.len in
+  let n = if n < 0 then 0 else n in
+  for i = 0 to n - 1 do bset s (ofs + i) (bget c.buf (c.pos + i)) done;
+  c.pos <- c.pos + n;
+  c.len <- c.len - n;
+  n
+
+(* how far to the next newline (included), negated if the buffer ends
+ * first, 0 at the end: input_line loops on it *)
+let caml_input_scan_line (ch : out_channel) : int =
+  let c = chan ch in
+  if c.len = 0 && fill c <= 0 then 0
+  else begin
+    let i = ref 0 and found = ref (-1) in
+    while !found < 0 && !i < c.len do
+      if bget c.buf (c.pos + !i) = '\n' then found := !i + 1;
+      incr i
+    done;
+    if !found > 0 then !found else - c.len
+  end
+
+let caml_close_channel (ch : out_channel) : unit =
+  let c = chan ch in
+  flush_chan c;
+  s_dispose c.stream
+
+let caml_pos_out (ch : out_channel) : int = (chan ch).offset + (chan ch).len
+let caml_pos_in (ch : out_channel) : int = (chan ch).offset - (chan ch).len
+let caml_channel_size (ch : out_channel) : int = s_length (chan ch).stream
+
+let caml_seek_in (ch : out_channel) (n : int) : unit =
+  let c = chan ch in
+  s_seek c.stream n;
+  c.offset <- n;
+  c.len <- 0;
+  c.pos <- 0
+
+let caml_seek_out (ch : out_channel) (n : int) : unit =
+  let c = chan ch in
+  flush_chan c;
+  s_seek c.stream n;
+  c.offset <- n
+
+(* output_binary_int's 4 bytes, the high one first, with its sign *)
+let caml_input_int (ch : out_channel) : int =
+  let n = ref 0 in
+  for _i = 1 to 4 do
+    let b = ml_input_char ch in
+    if b < 0 then raise End_of_file;
+    n := (!n lsl 8) lor b
+  done;
+  if !n land 0x80000000 <> 0 then !n - 0x100000000 else !n
+
+let ml_signal_pending () : int = 0
+
+(*****************************************************************************)
+(* The system *)
+(*****************************************************************************)
+
+let rec has (f : open_flag) (l : open_flag list) : bool =
+  match l with [] -> false | x :: r -> x = f || has f r
+
+(* the native's open: written with Open_wronly or Open_append; made with
+ * Open_creat when it is not there (or only made, Open_excl); emptied
+ * with Open_trunc; at its end with Open_append. A name that cannot be:
+ * Sys_error, the name its message, as the native's *)
+let sys_open (name : string) (flags : open_flag list) (_perm : int) : int =
+  let write = has Open_wronly flags || has Open_append flags in
+  let there = exists name in
+  if (not there && not (has Open_creat flags)) || (there && has Open_creat flags && has Open_excl flags) then
+    raise (Sys_error name);
+  let s =
+    if not there || has Open_trunc flags then create name
+    else if write then open_write name
+    else open_read name in
+  if has Open_append flags then s_seek s (s_length s);
+  let fd = !next_fd in
+  incr next_fd;
+  streams := (fd, s) :: !streams;
+  fd
+
+external environment_exit : int -> unit = "dotnet:static System.Environment::Exit(int32)"
+
+(* (the external's 'a: a call of it gets a value of its type, which
+ * Exit never lets it use) *)
+let sys_exit (n : int) : unit = environment_exit n

@@ -22,10 +22,28 @@
  * decimal number read (Double.Parse) and a float's digits (its E and F
  * formats), from which C's %e, %f and %g are made.
  *
+ * bytes are .NET's byte[] (the author's choice: "byte[] + Streams"),
+ * a string a System.String of a byte a char: a %identity between them
+ * a copy, by string_of_bytes and bytes_of_string here (Latin-1). The
+ * channels are the native's, a buffer of 4096 bytes, over a .NET
+ * Stream instead of a descriptor: the console's (Console's
+ * OpenStandardOutput..., its bytes as they are, whatever its encoding)
+ * or a file's (File's OpenRead, OpenWrite, Create, no enum to name);
+ * the descriptors numbers in a table of them, as sys_open returns one.
+ *
+ *   Pervasives      stdout = open_descriptor_out 1
+ *                     |  external ... = "caml_open_descriptor"
+ *   Runtime         { stream = Console.OpenStandardOutput(); buf; ... }
+ *                     |  output_string: caml_output, a byte at a time
+ *                     |  into buf; flush: Stream.Write(buf, 0, len)
+ *   .NET            System.IO.Stream (mini-dotnet's: the console's
+ *                   channel, a file's descriptor)
+ *
  * Differences with the native runtime: an int is an int64 (63 bits
  * natively), so %x of a negative int has 16 digits and int_of_string
- * wraps at 64 bits. Not yet: the channels, bytes (create_string,
- * blit_string), sys_exit.
+ * wraps at 64 bits; no signals (ml_signal_pending 0); a file's
+ * permissions not given (.NET's own); an error of .NET's (a file it
+ * cannot open though it is there) its exception, not Sys_error.
  *
  * others:
  * OCaml's own runtime: C (floats.c, ints.c, io.c...), its primitives
@@ -64,3 +82,33 @@ val float_of_string : string -> float
  * or e E f F g G *)
 val format_int : string -> int -> string
 val format_float : string -> float -> string
+
+(* Bytes: a byte[] made, a string's bytes copied into one; the %identity
+ * between bytes and string, which the compiler calls *)
+val create_string : int -> bytes
+val blit_string : string -> int -> bytes -> int -> int -> unit
+val string_of_bytes : bytes -> string
+val bytes_of_string : string -> bytes
+
+(* Channels: an in_channel's too (an object both, out_channel says it);
+ * ml_input_char -1 at the end, caml_input_scan_line the native's *)
+val caml_open_descriptor : int -> out_channel
+val caml_flush : out_channel -> unit
+val caml_output_char : out_channel -> char -> unit
+val caml_output : out_channel -> string -> int -> int -> unit
+val caml_output_int : out_channel -> int -> unit
+val ml_input_char : out_channel -> int
+val caml_input : out_channel -> bytes -> int -> int -> int
+val caml_input_scan_line : out_channel -> int
+val caml_close_channel : out_channel -> unit
+val caml_pos_out : out_channel -> int
+val caml_pos_in : out_channel -> int
+val caml_channel_size : out_channel -> int
+val caml_seek_in : out_channel -> int -> unit
+val caml_seek_out : out_channel -> int -> unit
+val caml_input_int : out_channel -> int
+val ml_signal_pending : unit -> int
+
+(* The system: a file opened, its descriptor; Environment.Exit *)
+val sys_open : string -> open_flag list -> int -> int
+val sys_exit : int -> unit

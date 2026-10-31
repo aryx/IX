@@ -163,6 +163,20 @@ and native =
   | N_type of typ                      (* System.Type *)
   | N_delegate of value * meth         (* its target (Null if static), its method *)
   | N_message of string                (* an exception's *)
+  | N_stream of stream                 (* System.IO.Stream: the console's, a file's *)
+
+(* a Stream's bytes, by the program's capabilities (CLI's): read into
+ * a buffer from an offset, at most n, 0 at the end; written; where it
+ * is, set; its length *)
+and stream = {
+  sread : Bytes.t -> int -> int -> int;
+  swrite : Bytes.t -> int -> int -> unit;
+  sflush : unit -> unit;
+  sclose : unit -> unit;
+  sposition : unit -> int;
+  sseek : int -> unit;
+  slength : unit -> int;
+}
 
 and vec = { mutable items : value array; mutable count : int }
 

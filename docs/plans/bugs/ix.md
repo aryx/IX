@@ -425,3 +425,17 @@ a function used only that way looked uncalled, to `calls.dl`'s `unreached` too. 
 `Facts`, a call of `table[0]()`, folded to `table` or `*table`, went through the
 array and not its element, so no function in the table was reached. Fixed, each in
 `analyzers/tests/dead/`: `Lib.through_apply` and `through_rev`, `intable`.
+
+## mini-ml's runtime: close_in writes what was left to read (2026-10-31, not fixed)
+
+Found writing mini-ml -dotnet's runtime unit (lib_core/dotnet/Runtime.ml),
+whose channels are io.c's. `caml_close_channel` calls `flush_chan`, which
+writes `c->len` bytes, but on an input channel `len` is what is left to read:
+a channel opened with `open_in` and closed before its end writes its unread
+bytes to a descriptor opened to read. The write fails, silently, so nothing
+shows; `offset` grows by them too, harmless as the channel is closed. .NET's
+FileStream throws instead ("Stream does not support writing"), which is how it
+was seen. Reproduction: `let ic = open_in "f" in ignore (input_char ic);
+close_in ic` on a file of two bytes or more, under strace: a write(fd, ..., n-1)
+returning EBADF. The runtime unit flushes only a channel written to (a field
+`written`); io.c could do the same.

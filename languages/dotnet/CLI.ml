@@ -3,19 +3,68 @@
 
 (* See CLI.mli *)
 
-type caps = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr >
+type caps = < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr >
 
 let usage = "usage: mini-dotnet [-v|-debug|-quiet] [-trace] [-s] [-jit [-tier n]] file.dll [arg...] | -S [-jit [-m 5|7 [-refs]]] | -tables | -size | -verify file.dll..."
 
+(* a Stream that cannot seek: the console's *)
+let unseekable () : 'a =
+  ignore (Library.hooks.throw "System.NotSupportedException" "Stream does not support seeking.");
+  assert false
+
+(* the system's error .NET's IOException (a write to a file opened to
+ * read...) *)
+let io (f : unit -> 'a) : 'a =
+  match f () with
+  | x -> x
+  | exception Unix.Unix_error (e, _, _) ->
+      ignore (Library.hooks.throw "System.IO.IOException" (Unix.error_message e)); assert false
+
+(* a file's Stream: its descriptor's bytes *)
+let file_stream (fd : Unix.file_descr) : Value.stream =
+  let rec write (b : Bytes.t) (off : int) (n : int) : unit =
+    if n > 0 then (let k = io (fun () -> Unix.write fd b off n) in write b (off + k) (n - k)) in
+  { sread = (fun b off n -> io (fun () -> Unix.read fd b off n)); swrite = write; sflush = (fun () -> ());
+    sclose = (fun () -> io (fun () -> Unix.close fd));
+    sposition = (fun () -> io (fun () -> Unix.lseek fd 0 Unix.SEEK_CUR));
+    sseek = (fun (p : int) -> io (fun () -> ignore (Unix.lseek fd p Unix.SEEK_SET)));
+    slength = (fun () -> io (fun () -> (Unix.fstat fd).st_size)) }
+
+(* File's OpenRead, OpenWrite (made when it is not there, else written
+ * as it is), Create (made or emptied); Exists *)
+let open_file (caps : < caps; .. >) (how : string) (f : string) : Value.stream option =
+  let exists () = match FS.open_in_fd caps f with fd -> Unix.close fd; true | exception Unix.Unix_error _ -> false in
+  match how with
+  | "Exists" -> if exists () then Some (file_stream Unix.stdin) else None
+  | _ -> (
+      match
+        (match how with
+         | "OpenRead" -> FS.open_in_fd caps f
+         | "OpenWrite" when exists () -> FS.open_device_fd caps f
+         | _ -> FS.open_out_fd caps f 0o666)
+      with
+      | fd -> Some (file_stream fd)
+      | exception Unix.Unix_error _ -> None)
+
 (* a program run: its output by the console's channel, its input
  * read a byte at a time; an exception no one catches said as .NET says
- * it, the exit then 134 (.NET's abort) *)
+ * it, the exit then 134 (.NET's abort). The standard streams over the
+ * same channels, so that Console.Write's and theirs come in order *)
 let run (caps : < caps; .. >) (img : Image.t) (argv : string list) (tracing : bool) (stats : bool) : int =
   let out = Console.stdout caps in
-  let input = Console.stdin caps in
+  let ic = Console.stdin caps in
+  let err = Console.stderr caps in
   Library.hooks.out <- output_string out;
-  Library.hooks.read <- (fun () -> flush out; match input_char input with
+  Library.hooks.read <- (fun () -> flush out; match input_char ic with
     | c -> Char.code c | exception End_of_file -> -1);
+  let std (fd : int) : Value.stream =
+    let oc = if fd = 2 then err else out in
+    { sread = (fun b off n -> if fd = 0 then (flush out; input ic b off n) else 0);
+      swrite = (fun b off n -> if fd <> 0 then output oc b off n);
+      sflush = (fun () -> if fd <> 0 then flush oc);
+      sclose = (fun () -> ()); sposition = unseekable; sseek = (fun (_ : int) -> unseekable ()); slength = unseekable } in
+  Library.hooks.std <- std;
+  Library.hooks.file <- open_file caps;
   if tracing then Frame.trace := Some (fun s -> flush out; Console.eprint caps (s ^ "\n"));
   Machine.install ();
   let im = Types.load img in

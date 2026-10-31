@@ -44,6 +44,10 @@
 #             functions, frexp, modf, int_of_string, float_of_string,
 #             format_int, format_float (c_externals.expected: C's printf
 #             and strtod, by Python's; .NET's int64 where they differ)
+#   channels  the runtime unit's channels over .NET's Streams: the
+#             console's, a file written, read, sought, appended to (in
+#             the scratch directory, where the programs run), sys_open's
+#             errors, the standard input (channels.in); bytes a byte[]
 #   units/    three units in one assembly (geometry, counter, main): one
 #             unit's values, functions, types, constructors, exception
 #             from another; the toplevels in link order (what OCaml's
@@ -66,8 +70,9 @@ T=languages/ml/dotnet/tests
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 failures=0
 ok() { echo "ok $*"; }
+abs() { case $1 in /*) echo $1;; *) echo $PWD/$1;; esac; }
 fail() { echo "FAIL $*"; failures=$((failures + 1)); }
-progs="fib arith strings loops variants records exceptions equality closures generics generic_types tuples_lists arrays tails generic_closures externals c_externals"
+progs="fib arith strings loops variants records exceptions equality closures generics generic_types tuples_lists arrays tails generic_closures externals c_externals channels"
 # what is refused: a program a line, and the stage that will have it
 refused() {
   local ml=$1 n=0
@@ -92,7 +97,9 @@ check() {
     if ! $ml -L lib_core -dotnet -o $W/$p.dll $T/$p.ml 2> $W/$p.err; then fail "mini-ml -dotnet $p, by $what"; head -3 $W/$p.err; continue; fi
     case "$($DOTNET -verify $W/$p.dll | tail -1)" in
       *" 0 refused") ;; *) fail "mini-ml -dotnet $p, verified"; $DOTNET -verify $W/$p.dll | head -3;; esac
-    $dotnet $W/$p.dll > $W/$p.out 2> $W/$p.err
+    in=/dev/null; [ -f $T/$p.in ] && in=$PWD/$T/$p.in
+    run=$(abs $dotnet)
+    (cd $W && $run $p.dll < $in) > $W/$p.out 2> $W/$p.err
     if cmp -s $W/$p.out $T/$p.expected; then ok "mini-ml -dotnet $p, run by $what"
     else fail "mini-ml -dotnet $p, run by $what"; diff $T/$p.expected $W/$p.out | head -5; head -3 $W/$p.err; fi
   done

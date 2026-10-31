@@ -12,7 +12,17 @@ type member = { tok : int; static : bool; into : S.t list; from : S.t list; ret 
 let prefix = "dotnet:"
 let is_dotnet (p : string) : bool = String.length p > 7 && String.sub p 0 7 = prefix
 
-let type_of_name (loc : int) (n : string) : S.t =
+(* a class of .NET's library by its full name: System.Console in its
+ * own assembly, the others in System.Runtime *)
+let class_ref (c : c) (cls : string) : int =
+  memo c ("type " ^ cls) (fun () ->
+      let ns, name =
+        match String.rindex_opt cls '.' with
+        | Some i -> (String.sub cls 0 i, String.sub cls (i + 1) (String.length cls - i - 1))
+        | None -> ("", cls) in
+      W.type_ref c.w (W.assembly_ref c.w (if cls = "System.Console" then "System.Console" else "System.Runtime")) ns name)
+
+let rec type_of_name (c : c) (loc : int) (n : string) : S.t =
   match String.trim n with
   | "int32" -> S.I4
   | "int64" -> S.I8
@@ -20,8 +30,12 @@ let type_of_name (loc : int) (n : string) : S.t =
   | "string" -> S.String
   | "bool" -> S.Bool
   | "char" -> S.Char
+  | "uint8" -> S.U1
   | "object" -> S.Object
   | "void" -> S.Void
+  | n when String.length n > 2 && String.sub n (String.length n - 2) 2 = "[]" ->
+      S.SzArray (type_of_name c loc (String.sub n 0 (String.length n - 2)))
+  | n when String.contains n '.' -> S.Class (class_ref c n)
   | n -> refuse loc ("a .NET type an external names: " ^ n) "3b"
 
 (* the ML type's arguments and result *)
@@ -42,42 +56,41 @@ let member (c : c) (loc : int) (p : string) (ty : Scope.ty) : member =
   let rest, result =
     match String.index_opt rest '>' with
     | Some i when i > 0 && rest.[i - 1] = '-' ->
-        (String.trim (String.sub rest 0 (i - 1)), Some (type_of_name loc (String.sub rest (i + 1) (String.length rest - i - 1))))
+        (String.trim (String.sub rest 0 (i - 1)), Some (type_of_name c loc (String.sub rest (i + 1) (String.length rest - i - 1))))
     | _ -> (String.trim rest, None) in
   (* Class::Method, then its parameters' .NET types in parentheses *)
   let path, given =
     match String.index_opt rest '(' with
     | Some i ->
         let inside = String.sub rest (i + 1) (String.length rest - i - 2) in
-        (String.sub rest 0 i, Some (if String.trim inside = "" then [] else List.map (type_of_name loc) (String.split_on_char ',' inside)))
+        (String.sub rest 0 i, Some (if String.trim inside = "" then [] else List.map (type_of_name c loc) (String.split_on_char ',' inside)))
     | None -> (rest, None) in
   let cls, name =
     match String.index_opt path ':' with
     | Some i -> (String.sub path 0 i, String.sub path (i + 2) (String.length path - i - 2))
     | None -> bad "Class::Method" in
-  let ns, cname =
-    match String.rindex_opt cls '.' with
-    | Some i -> (String.sub cls 0 i, String.sub cls (i + 1) (String.length cls - i - 1))
-    | None -> ("", cls) in
+  let cls_tok = class_ref c cls in
   let args, res = arrows ty in
   (* the ML arguments' .NET types (unit's none): an instance method's
    * first its this, the others its parameters *)
   let from = List.filter (fun (t : S.t) -> t <> S.Void) (List.map (Il_types.cts c loc) args) in
-  let this, params = if is_static then ([], from) else (match from with t :: r -> ([ t ], r) | [] -> bad "its this") in
+  (* (a this of an abstract type, an object, cast to the class) *)
+  let this, params =
+    if is_static then ([], from)
+    else (match from with t :: r -> ([ (if t = S.Object then S.Class cls_tok else t) ], r) | [] -> bad "its this") in
   let into = match given with Some ts -> ts | None -> params in
   if List.length into <> List.length params then bad "its parameters and its ML type's arguments";
   let ml_ret = Il_types.cts c loc res in
   let ret = match result with Some t -> t | None -> ml_ret in
-  let cls_tok =
-    memo c ("type " ^ cls) (fun () ->
-        let asm = W.assembly_ref c.w (if cls = "System.Console" then "System.Console" else "System.Runtime") in
-        W.type_ref c.w asm ns cname) in
   let sg = if is_static then static into ret else instance into ret in
   let tok = memo c ("member " ^ cls ^ "::" ^ name ^ S.encode_method sg) (fun () -> W.member_ref c.w cls_tok name sg) in
   { tok; static = is_static; into = this @ into; from; ret; ml_ret }
 
-let convert (k : code) (from : S.t) (into : S.t) : unit =
+let convert (c : c) (k : code) (from : S.t) (into : S.t) : unit =
   match from, into with
+  (* (an ML abstract type's value, an object: the class .NET's member
+   * wants, checked) *)
+  | S.Object, (S.Class _ | S.SzArray _) -> emit k (Il.Castclass (Il_types.type_token c into))
   | S.I8, S.I4 -> emit k (Il.Conv (Il.K_i4, false, false))
   | S.I4, S.I8 | S.Char, S.I8 -> emit k (Il.Conv (Il.K_i8, false, false))
   | S.I4, S.Char -> emit k (Il.Conv (Il.K_u2, false, false))

@@ -114,6 +114,17 @@ and native =
   | N_type of typ
   | N_delegate of value * meth
   | N_message of string
+  | N_stream of stream
+
+and stream = {
+  sread : Bytes.t -> int -> int -> int;
+  swrite : Bytes.t -> int -> int -> unit;
+  sflush : unit -> unit;
+  sclose : unit -> unit;
+  sposition : unit -> int;
+  sseek : int -> unit;
+  slength : unit -> int;
+}
 
 and vec = { mutable items : value array; mutable count : int }
 

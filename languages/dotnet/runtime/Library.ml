@@ -38,6 +38,9 @@ type hooks = {
   mutable hash : value -> int;
   mutable throw : string -> string -> value;
   mutable instance : string -> typ array -> cls;
+  mutable bytes : int -> store;
+  mutable std : int -> stream;
+  mutable file : string -> string -> stream option;
 }
 
 let hooks = {
@@ -48,6 +51,9 @@ let hooks = {
   hash = (fun _ -> failwith "Library.hooks: no machine");
   throw = (fun _ _ -> failwith "Library.hooks: no machine");
   instance = (fun _ _ -> failwith "Library.hooks: no machine");
+  bytes = (fun _ -> failwith "Library.hooks: no machine");
+  std = (fun _ -> failwith "Library.hooks: no program");
+  file = (fun _ _ -> None);
 }
 
 (* the keys of the types the members name *)
@@ -337,13 +343,71 @@ let math =
 (* Environment.Exit: the program stops there, its status said *)
 exception Exit of int
 
+(* (Latin-1: a byte a char, as the strings here are) *)
 let encoding =
   spec d "System.Text.Encoding" [
     stat "get_Latin1" [] "System.Text.Encoding" (fun _ ->
         let st = make_store (hooks.instance "System.Text.Encoding" [||]) 0 in
         st.native <- N_message "Latin1";
         Obj st);
+    virt "GetString" ["System.Byte[]"] string (fun a ->
+        let st, _, _ = view a.(1) in Str (Bytes.sub_string st.s 0 st.len));
+    virt "GetBytes" [string] "System.Byte[]" (fun a ->
+        let s = to_str a.(1) in
+        let st = hooks.bytes (String.length s) in
+        Bytes.blit_string s 0 st.s 0 (String.length s);
+        Obj st);
   ]
+
+(* ------------------------------------------------------------------ *)
+(* System.IO: Stream, FileStream, File *)
+(* ------------------------------------------------------------------ *)
+
+let stream_of (v : value) : stream =
+  let st, _, _ = view v in
+  match st.native with N_stream s -> s | _ -> invalid_arg "Library: not a stream"
+
+let new_stream (cls : string) (s : stream) : value =
+  let st = make_store (hooks.instance cls [||]) 0 in
+  st.native <- N_stream s;
+  Obj st
+
+let io_error (what : string) : value = hooks.throw "System.IO.IOException" what
+
+(* (an array and its range: .NET's ArgumentException when it is out) *)
+let range (a : value) (off : value) (n : value) : Bytes.t * int * int =
+  let st, _, _ = view a in
+  let off = to_int off and n = to_int n in
+  if off < 0 || n < 0 || off + n > st.len then
+    ignore (hooks.throw "System.ArgumentException" "Offset and length were out of bounds for the array or count is greater than the number of elements from index to the end of the source collection.");
+  (st.s, off, n)
+
+let streams = [
+  spec d "System.IO.Stream" [
+    virt "Read" ["System.Byte[]"; int; int] int (fun a ->
+        let b, off, n = range a.(1) a.(2) a.(3) in i4 ((stream_of a.(0)).sread b off n));
+    virt "Write" ["System.Byte[]"; int; int] void (fun a ->
+        let b, off, n = range a.(1) a.(2) a.(3) in (stream_of a.(0)).swrite b off n; Null);
+    virt "Flush" [] void (fun a -> (stream_of a.(0)).sflush (); Null);
+    inst "Dispose" [] void (fun a -> (stream_of a.(0)).sclose (); Null);
+    virt "get_Length" [] long (fun a -> I8 (Int64.of_int ((stream_of a.(0)).slength ())));
+    virt "get_Position" [] long (fun a -> I8 (Int64.of_int ((stream_of a.(0)).sposition ())));
+    virt "set_Position" [long] void (fun a -> (stream_of a.(0)).sseek (to_int a.(1)); Null);
+  ];
+  spec { d with sparent = "System.IO.Stream" } "System.IO.FileStream" [];
+  (* (a name the program cannot open: IOException, .NET's
+   * FileNotFoundException's and UnauthorizedAccessException's parent
+   * in spirit) *)
+  spec d "System.IO.File" (
+    List.map (fun (name : string) ->
+        stat name [string] "System.IO.FileStream" (fun a ->
+            let f = to_str a.(0) in
+            match hooks.file name f with
+            | Some s -> new_stream "System.IO.FileStream" s
+            | None -> io_error ("Could not open file '" ^ f ^ "'.")))
+      [ "OpenRead"; "OpenWrite"; "Create" ]
+    @ [ stat "Exists" [string] bool (fun a -> bool_v (hooks.file "Exists" (to_str a.(0)) <> None)) ]);
+]
 
 let environment =
   spec d "System.Environment" [
@@ -435,6 +499,11 @@ let console =
       stat "Write" [obj] void (fun a -> write (hooks.to_string a.(0)); Null);
       stat "WriteLine" [obj] void (fun a -> write (hooks.to_string a.(0) ^ "\n"); Null);
       stat "Read" [] int (fun _ -> i4 (hooks.read ()));
+      (* (the standard streams: their bytes as they are, the console's
+       * channel the same as Write's) *)
+      stat "OpenStandardInput" [] "System.IO.Stream" (fun _ -> new_stream "System.IO.Stream" (hooks.std 0));
+      stat "OpenStandardOutput" [] "System.IO.Stream" (fun _ -> new_stream "System.IO.Stream" (hooks.std 1));
+      stat "OpenStandardError" [] "System.IO.Stream" (fun _ -> new_stream "System.IO.Stream" (hooks.std 2));
       (* (the input is read a byte at a time whatever the encoding) *)
       stat "set_InputEncoding" ["System.Text.Encoding"] void (fun _ -> Null);
       stat "set_OutputEncoding" ["System.Text.Encoding"] void (fun a ->
@@ -492,6 +561,7 @@ let exceptions = [
   exception_ "System.ArrayTypeMismatchException" "System.SystemException" "Attempted to access an element as a type incompatible with the array.";
   exception_ "System.Collections.Generic.KeyNotFoundException" "System.SystemException" "The given key was not present in the dictionary.";
   exception_ "System.StackOverflowException" "System.SystemException" "Operation caused a stack overflow.";
+  exception_ "System.IO.IOException" "System.SystemException" "I/O error occurred.";
 ]
 
 (* ------------------------------------------------------------------ *)
@@ -736,5 +806,5 @@ let specs : (string, spec) Hashtbl.t =
   List.iter (fun s -> Hashtbl.replace h s.sname s)
     ([ object_; string_; console; environment; math; encoding; string_builder; interpolation; list;
        list_enumerator; dictionary ]
-     @ primitives @ exceptions @ reflection @ delegates);
+     @ primitives @ exceptions @ reflection @ delegates @ streams);
   h

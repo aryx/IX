@@ -13,12 +13,20 @@
  * static: a static method, its arguments the ML ones; instance: an
  * instance method of the first argument's class, its this. Its
  * parameters' .NET types are the ML types' (an int an int64, a float
- * a float64, a string a String, unit none) unless the string gives them
- * (int32, int64, float64, string, bool, char, object), when the ML
- * values are converted (an int64 to an int32, a char to a UTF-16
- * unit); its result's after ->, converted back (an int32 to an
- * int64). System.Console is in its own assembly, the rest of System in
- * System.Runtime.
+ * a float64, a string a String, bytes a uint8[], an abstract type an
+ * object, unit none) unless the string gives them (int32, int64,
+ * float64, string, bool, char, uint8, object, a class by its full name,
+ * System.IO.Stream, an array of one, uint8[]), when the ML values are
+ * converted (an int64 to an int32, a char to a UTF-16 unit, an object
+ * cast to the class); its result's after ->, converted back (an int32
+ * to an int64). System.Console is in its own assembly, the rest of
+ * System in System.Runtime:
+ *
+ *   type stream
+ *   external stdout : unit -> stream
+ *     = "dotnet:static System.Console::OpenStandardOutput() -> System.IO.Stream"
+ *   external write : stream -> bytes -> int -> int -> unit
+ *     = "dotnet:instance System.IO.Stream::Write(uint8[],int32,int32)"
  *
  * Which members are there: Microsoft's .NET has them all; mini-dotnet's
  * library has the ones its programs use (runtime/Library.ml), and one
@@ -54,7 +62,7 @@ val arrows : Scope.ty -> Scope.ty list * Scope.ty
 
 (* a value converted from a .NET type to another (an int64 to an
  * int32 and back, a char to a UTF-16 unit) *)
-val convert : Il_code.code -> Signature.t -> Signature.t -> unit
+val convert : Il_code.c -> Il_code.code -> Signature.t -> Signature.t -> unit
 
 (* a value type's (an int32, an int64, a float64, a bool, a char): an
  * instance method's this then given by its address *)

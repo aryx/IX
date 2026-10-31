@@ -69,6 +69,11 @@ type hooks = {
   mutable hash : value -> int;                  (* the virtual GetHashCode *)
   mutable throw : string -> string -> value;    (* a class of the library's, a message: raises Thrown *)
   mutable instance : string -> typ array -> cls;  (* a class, instantiated *)
+  mutable bytes : int -> store;                 (* a byte[] of n zeros *)
+  mutable std : int -> stream;                  (* the standard input, output, error *)
+  (* a file opened as File's method of this name (OpenRead, OpenWrite,
+   * Create) says, None when it cannot be; "Exists" opens nothing *)
+  mutable file : string -> string -> stream option;
 }
 val hooks : hooks
 

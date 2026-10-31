@@ -80,7 +80,8 @@ let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
    * (lib_core/dotnet/Runtime.ml, compiled first) *)
   | Evar (Prim (p, _, _)) when Hashtbl.mem env.by_sym ("Runtime." ^ p) -> partial c env k e (Hashtbl.find env.by_sym ("Runtime." ^ p)) []
   | Eapply (({ e = Evar (Prim (p, _, _)); _ } as fe), args) when Hashtbl.mem env.by_sym ("Runtime." ^ p) ->
-      call c env k fe (Hashtbl.find env.by_sym ("Runtime." ^ p)) args
+      let f = Hashtbl.find env.by_sym ("Runtime." ^ p) in
+      if not (runtime_call c env k e f args) then call c env k fe f args
   | Evar (Prim (p, _, _)) -> refuse e.loc (p ^ ", a primitive as a value") "1c"
   | Eapply ({ e = Evar (Prim (p, _, pty)); _ }, args) when Il_externals.is_dotnet p -> dotnet c env k e p pty args
   | Eapply ({ e = Evar (Prim (p, _, _)); _ }, args) -> prim c env k e p args
@@ -584,6 +585,38 @@ and try_ (c : c) (env : env) (k : code) (e : Scope.expr) (body : Scope.expr) (ca
   place k over;
   match res with Some r -> emit k (Il.Ldloc r) | None -> ()
 
+(* a call of the runtime unit's function of a C primitive's name, all
+ * its arguments given, it not polymorphic: each argument converted to
+ * its parameter's type, which may be another than the external's (the
+ * primitive of output_char is output_byte's, an int there), the result
+ * back; sys_exit's 'a, which no value reaches, a default one. false
+ * when it is not so (a partial application: call's) *)
+and runtime_call (c : c) (env : env) (k : code) (e : Scope.expr) (f : fn) (args : Scope.expr list) : bool =
+  if f.gvars <> [] || List.length args <> List.length f.params then false
+  else begin
+    let saved = k.pending in
+    List.iter2
+      (fun (a : Scope.expr) ((_, t) : Scope.var option * S.t) ->
+        expr c env k a;
+        if t <> S.Void then begin
+          Il_externals.convert c k (cts_of c a) t;
+          k.pending <- k.pending + 1
+        end)
+      args f.params;
+    k.pending <- saved;
+    emit k (Il.Call f.tok);
+    let ret = if is_raise f.body then S.Void else cts c e.loc f.rty in
+    (match ret, cts_of c e with
+     | S.Void, S.Void -> ()
+     | S.Void, S.I8 -> emit k (Il.Ldc_i8 0L)
+     | S.Void, (S.I4 | S.Bool | S.Char) -> emit k (Il.Ldc_i4 0l)
+     | S.Void, S.R8 -> emit k (Il.Ldc_r 0.0)
+     | S.Void, _ -> emit k Il.Ldnull
+     | r, S.Void -> emit k Il.Pop; ignore r
+     | r, t -> Il_externals.convert c k r t);
+    true
+  end
+
 (* a call of an external naming a .NET member (decision 7): its
  * arguments converted to its parameters' .NET types, its result back *)
 and dotnet (c : c) (env : env) (k : code) (e : Scope.expr) (p : string) (pty : Scope.ty) (args : Scope.expr list) : unit =
@@ -600,7 +633,7 @@ and dotnet (c : c) (env : env) (k : code) (e : Scope.expr) (p : string) (pty : S
       expr c env k a;
       if cts_of c a <> S.Void then begin
         (match !pending with
-         | (f, t) :: rest -> Il_externals.convert k f t; pending := rest
+         | (f, t) :: rest -> Il_externals.convert c k f t; pending := rest
          | [] -> ());
         if i = 0 && by_address then begin
           let v = local k (List.hd m.into) in
@@ -613,7 +646,7 @@ and dotnet (c : c) (env : env) (k : code) (e : Scope.expr) (p : string) (pty : S
   k.pending <- saved;
   emit k (if m.static || by_address then Il.Call m.tok else Il.Callvirt m.tok);
   if m.ml_ret = S.Void && m.ret <> S.Void then emit k Il.Pop
-  else Il_externals.convert k m.ret m.ml_ret
+  else Il_externals.convert c k m.ret m.ml_ret
 
 and prim (c : c) (env : env) (k : code) (e : Scope.expr) (p : string) (args : Scope.expr list) : unit =
   let all () = operands c env k args in
@@ -707,7 +740,22 @@ and prim (c : c) (env : env) (k : code) (e : Scope.expr) (p : string) (args : Sc
       place k yes;
       emit k (Il.Ldc_i4 1l);
       place k over
+  | "%string_length", [ s ] when cts_of c s = S.SzArray S.U1 -> all (); emit k Il.Ldlen; emit k (Il.Conv (Il.K_i8, false, false))
   | "%string_length", _ -> all (); emit k (Il.Callvirt (lib c "String" "get_Length" (instance [] S.I4))); emit k (Il.Conv (Il.K_i8, false, false))
+  (* (bytes: a byte[]'s element, a uint8, our char an int32) *)
+  | ("%string_safe_get" | "%string_unsafe_get"), [ s; i ] when cts_of c s = S.SzArray S.U1 ->
+      expr c env k s;
+      k.pending <- k.pending + 1; expr c env k i; k.pending <- k.pending - 1;
+      emit k (Il.Conv (Il.K_i4, false, false));
+      emit k (Il.Ldelem Il.K_u1)
+  (* (a byte[] made, IL's newarr: the runtime unit's create_string) *)
+  | "%bytes_create", _ -> all (); emit k (Il.Conv (Il.K_i4, false, false)); emit k (Il.Newarr (sys c "Byte"))
+  | ("%string_safe_set" | "%string_unsafe_set"), [ s; i; x ] when cts_of c s = S.SzArray S.U1 ->
+      expr c env k s;
+      k.pending <- k.pending + 1; expr c env k i; emit k (Il.Conv (Il.K_i4, false, false));
+      k.pending <- k.pending + 1; expr c env k x;
+      k.pending <- k.pending - 2;
+      emit k (Il.Stelem Il.K_i1)
   (* (s.[i]: String's Chars, a UTF-16 unit, a byte here: our char) *)
   | ("%string_safe_get" | "%string_unsafe_get"), [ s; i ] ->
       expr c env k s;
@@ -764,8 +812,16 @@ and prim (c : c) (env : env) (k : code) (e : Scope.expr) (p : string) (args : Sc
       k.pending <- k.pending + 1; expr c env k x; if cts_of c x = S.Void then emit k Il.Ldnull;
       k.pending <- k.pending - 2;
       emit k (Il.Stelem_any tok)
-  (* (an int a char and back, Char.code's: int64 and int32) *)
-  | "%identity", [ a ] -> all (); Il_externals.convert k (cts_of c a) (cts_of c e)
+  (* (bytes a string and back, Bytes.to_string's: a copy, by the
+   * runtime unit's functions, .NET's string being another object) *)
+  | "%identity", [ a ] when (match cts_of c a, cts_of c e with S.SzArray S.U1, S.String | S.String, S.SzArray S.U1 -> true | _ -> false) ->
+      let name = if cts_of c a = S.String then "Runtime.bytes_of_string" else "Runtime.string_of_bytes" in
+      (match Hashtbl.find_opt env.by_sym name with
+       | Some f -> all (); emit k (Il.Call f.tok)
+       | None -> refuse e.loc ("bytes and strings, without the runtime unit's " ^ name) "3b")
+  (* (an int a char and back, Char.code's: int64 and int32; an abstract
+   * type's object the class it is) *)
+  | "%identity", [ a ] -> all (); Il_externals.convert c k (cts_of c a) (cts_of c e)
   | "%ignore", [ a ] -> drop c env k a
   | "%raise", [ a ] -> expr c env k a; emit k Il.Throw
   (* (a primitive of the native runtime's C: the library's) *)

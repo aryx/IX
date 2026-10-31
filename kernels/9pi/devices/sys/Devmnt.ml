@@ -70,12 +70,17 @@ let rpc m req =
   let tag = match req with P9.Request.Version (_, _) -> P9.notag | _ -> alloc_tag m in
   let s = P9_wire.encode { P9.tag = tag; P9.mtyp = P9.T req } in
   ignore ((conn_dev m).Dev.write m.conn s 0);
+  (* (no call of wait in a handler: mini-ml's try is a function of its own,
+   * so that was no tail call, and a process waiting here woken by each
+   * reply on the connection, all rio's windows' for rio's, went down its
+   * kernel stack, 48 bytes a reply, and into the next process's:
+   * docs/plans/bugs/ix.md. old: try List.assoc ... with Not_found -> ...) *)
   let rec wait () =
-    try
-      let r = List.assoc tag m.replies in
-      m.replies <- List.filter (fun (t, _) -> t <> tag) m.replies;
-      r
-    with Not_found ->
+    match List.assoc_opt tag m.replies with
+    | Some r ->
+        m.replies <- List.filter (fun (t, _) -> t <> tag) m.replies;
+        r
+    | None ->
       if m.reading then begin Proc.sleep (Mnt_reply m.mid); wait () end
       else begin
         m.reading <- true;

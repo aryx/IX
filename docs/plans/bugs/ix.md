@@ -377,3 +377,42 @@ the build took it, with `Tcp.timeout := 90.` and `!Tcp.timeout` in `Routing`. So
 on mini-9pi a silence of 30 s failed ("Http: no status line"). Reproduced by
 `SILENT=30 apps/maps/tests/route_9pi.sh DIR`. Fixed: a `ref`. Not looked at: why
 mini-ml's build does not refuse an implementation unlike the interface here.
+
+## mini-9pi: a shared-pages table in one bucket, a kernel stack overrun (2026-10-31, mini-rio, fixed)
+
+`Fault.holders`, the count of holders of each page shared by a fork, was
+`Hashtbl.create 1024`. Its keys are pages' addresses, multiples of 4096, and an
+integer hashes to itself: all of them were in bucket 0 until the table grew at
+2,048. `Hashtbl.remove` goes down a bucket by a call per binding, 16 bytes a
+frame: about 1,000 shared pages took all of a process's kernel stack (`KSTACK`,
+16 KB) and went on into the next process's, and that process's return, at its
+next `k_swtch`, jumped anywhere. The machine then printed `k` forever: `kfault`'s
+"kernel fault: ..." stopped at its first letter (why is not looked at).
+
+Seen only when enough was running: `rio -i` with a program, a held window and rc,
+then about ten programs run in rc, then Exit, so the crash looked like Exit's.
+`kernels/9pi/tests/win-script.steps` reproduced it each time, under QEMU; the same
+minus one line (`ls /dev/wsys; cat /dev/wsys/2/label`) did not, which is only how
+near to the limit it was. Found with gdb on QEMU's stub: a hardware breakpoint on
+`kfault`, cpsr set to SVC to see that mode's stack, its words looked up in
+`kernel.img.map`: a hundred frames of `remove_bucket`.
+
+Fixed: 1021 buckets, so the pages spread. Not fixed: `Hashtbl.remove` and
+`replace` are still recursive in a bucket's length, so a kernel table of many
+keys of one hash would do the same; `Fault.set`'s comment says the same of
+ocaml-light's `replace`, where the same overrun was met before. `s.pages` has the
+same keys but its 16 buckets grow at 32.
+
+## mini-9pi: a read waiting on a mount went down its kernel stack (2026-10-31, mini-rio, fixed)
+
+`Devmnt.rpc`'s `wait` called itself in the handler of a `try`. In OCaml that is a
+tail call; mini-ml compiles a `try` as a function of its own, so here it was not,
+and each wake of a process waiting for its reply cost 48 bytes. All the processes
+waiting on a connection are woken by each reply on it, and rio's connection is
+all its windows': a program waiting on `/dev/mouse` or `/dev/cons` died after
+about 330 replies to the others, taking the next process's stack as above.
+
+Reproduced at once by `desktop` (mini-stats and mini-files, both talking to rio)
+under QEMU; gdb as above gave `wait` and its `try` a thousand times. Fixed by no
+call in the handler. Not fixed: mini-ml's tail calls in a handler; any such loop
+in a program is the same, only with a larger stack to fill.

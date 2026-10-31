@@ -68,7 +68,13 @@ let fill pgdir s pg =
  * use (/dev/swap): 43,691 (170 MB of the Pi1's 352) before, 28,327
  * (110 MB) after (2026-10-22). Before it, troff.pdf's start failed at
  * a fork, and a zoom ended mini-page, or rio, the next to ask. *)
-let holders : (int, int) Hashtbl.t = Hashtbl.create 1024
+(* (1021 buckets, not a power of two: a key is a page's address, a multiple
+ * of 4096, and hashes to itself, so with 1024 all were in bucket 0 until
+ * the table grew at 2,048. Hashtbl.remove goes down a bucket by a call per
+ * binding: about 1,000 shared pages took a process's kernel stack, and the
+ * next one's, whose return then jumped anywhere: docs/plans/bugs/ix.md.
+ * old: Hashtbl.create 1024) *)
+let holders : (int, int) Hashtbl.t = Hashtbl.create 1021
 let held pa = try Hashtbl.find holders pa with Not_found -> 1
 
 (* a binding changed (Hashtbl.replace: ocaml-light's never grows the

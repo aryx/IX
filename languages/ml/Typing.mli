@@ -148,12 +148,12 @@ val min_max_globals : unit -> (string * string) list
 val global_types : unit -> (string * Scope.ty) list
 
 (* -dotnet (dotnet/Lower_il, plan_dotnet_languages.md): when [keep],
- * unit_ keeps each expression's type, by its span, and each
+ * unit_ keeps each expression's type, by its span and kind, and each
  * variable's, by its number; asked after it, a type variable named by
  * its cell (t0, t1...), the same each time in the unit: a polymorphic
  * function's 'a is one in its type and in its body's expressions *)
 val keep : bool ref
-val expr_type : Ast.span -> Scope.ty option
+val expr_type : Scope.expr -> Scope.ty option
 val var_type : int -> Scope.ty option
 
 val dictionaries : unit -> (Ast.span * int * (string, string) result) list

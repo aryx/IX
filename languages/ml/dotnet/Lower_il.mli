@@ -64,6 +64,10 @@
  *                                 Stdlib.option`1 in the assembly
  *     ref x, !r, r := v, incr r   newobj, ldfld, stfld contents
  *     a unit field, argument      an object, null (as in a Func)
+ *     a * b, (x, y)               Stdlib.tuple`2<A, B>, Item1, Item2
+ *     'a list, [], x :: l         Stdlib.list`1, its Nil and Cons
+ *     'a array, [| ... |]         T[]: newarr, stelem; a.(i) ldelem,
+ *                                 a.(i) <- v stelem, length ldlen
  *
  *     shapes.ml                   interop.cs (tests/)
  *     type shape =                Shapes.shape s =
@@ -73,11 +77,14 @@
  *     let map_area (f : int ->    Shapes.map_area(a => a + 1, s)
  *       int) s = f (area s)
  *     type 'a box, let wrap x     Shapes.box<string> b = Shapes.wrap("..")
+ *     let coordinates p = ...     Shapes.coordinates(q).Item1
  *
- * Stages 1a to 1c, 1d's polymorphic functions and types of parameters:
- * what is not above (tuples and lists, a closure inside a polymorphic
- * function, < on records, other units) is refused by name, the stage
- * that will have it said. A try inside an operand is refused too: IL's rule is
+ * Stages 1a to 1d: what is not above (a closure inside a polymorphic
+ * function, one as a value, < on records, other units and so the
+ * library's List or Array) is refused by name, the stage that will
+ * have it said. Tuples and lists are ML's own classes, not .NET's
+ * ValueTuple and ImmutableStack (decision 2's), which mini-dotnet's
+ * library has not got yet. A try inside an operand is refused too: IL's rule is
  * that a protected region starts with an empty stack (Tiger's
  * emitter met it: Microsoft's JIT refuses it), so its value is made a
  * variable's first.

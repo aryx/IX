@@ -43,10 +43,11 @@ exceptions never caught (Leroy and Pessaux's analysis, 2000) and code
 never reached; and for mini-ml's optimizer, calls of a known closure
 made direct and inlined.
 
-**Status: step 0 done (mini-analyze, native: below); stages 1a to 1c
+**Status: step 0 done (mini-analyze, native: below); stages 1a to 1d
 done (mini-ml -dotnet: the monomorphic core, records, variants,
-exceptions, match, closures; C# using an ML unit; 2026-10-31: the
-stages); the rest not built.** For the author: what step 0 showed, decision 6 to be
+exceptions, match, closures, generic functions and types, tuples,
+lists, arrays; C# using an ML unit; 2026-10-31: the stages); the
+rest not built.** For the author: what step 0 showed, decision 6 to be
 decided again by it, the open questions at the end.
 
 ## Step 0: the program first, native (2026-10-30)
@@ -399,8 +400,24 @@ but really use the same types!". So the decisions below are those of
      any type, a record of two parameters, option, references in
      loops, = and < on instances) by both runtimes; C# using an ML
      generic record and function (Shapes.box<string>,
-     Shapes.wrap(7L)). Left for 1d-3: tuples and lists; then a
-     closure inside a polymorphic function, and one as a value.
+     Shapes.wrap(7L)). 1d-3 done: tuples ML's own Stdlib.tuple`n
+     (Item1..., ValueTuple's names), lists the language's variant
+     Stdlib.list`1 (its cases Nil and Cons, names C# can say; its
+     constructors written out, Resolve's tables having not the
+     predefined ones), tuple patterns; arrays .NET's own T[] (newarr
+     and stelem.any, ldelem.any, ldlen; an index an int32). Found:
+     a list literal's sugar gives each cons its element's span, so a
+     type kept by span alone was the cons's: Typing keeps them by
+     span and the expression's kind. Checked: tuples_lists (tuples
+     in and out, patterns, lists built and matched, a generic map
+     given a lambda, rev, a lookup in a list of pairs, = on both),
+     arrays (literals of ints, strings, records, a sort in place, a
+     generic function at two types), by both runtimes; C# reading an
+     ML tuple. Not yet, of 1d: a closure inside a polymorphic
+     function, or one as a value (generic closure classes); <
+     on records (OCaml's structural order); decision 2's ValueTuple,
+     ImmutableStack and None as null, which wait for mini-dotnet's
+     library to have them.
    - 1e. **Modules**: a unit a static class, several units in one
      assembly.
 2. **Tail calls in mini-dotnet** (decision 3). Check: a loop of

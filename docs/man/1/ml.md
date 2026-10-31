@@ -87,7 +87,8 @@ ocaml-light's *ocamlopt*. Another unit's names are read from its
      class of what it captures. So far ints, floats, strings, chars,
      booleans, records, variants, exceptions, `match`, functions and
      closures, polymorphic functions and types (generic methods and
-     classes), references, options, loops; the rest (tuples, lists)
+     classes), references, options, tuples, lists, arrays (T[]),
+     loops; the rest (another unit, so the library's List and Array)
      is refused by its name and line.
 
 **-h**

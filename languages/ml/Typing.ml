@@ -360,7 +360,17 @@ let const_type = function
  * by its number, kept for the typed lowering (dotnet/Lower_il), which
  * reads them when the unit is checked, the cells then all unified *)
 let keep = ref false
-let by_span : (Ast.span, t) Hashtbl.t = Hashtbl.create 1024
+let by_span : (Ast.span * int, t) Hashtbl.t = Hashtbl.create 1024
+
+(* an expression's place in by_span: its span and its kind. The span
+ * alone is not enough: a list's sugar gives each cons of [a; b] its
+ * element's span (a tuple's, [(1, "a")]), and the cons's type, a
+ * list, was found there *)
+let kind (e : Scope.expr) : int =
+  match e.e with
+  | Evar _ -> 0 | Econst _ -> 1 | Elet _ -> 2 | Efunction _ -> 3 | Eapply _ -> 4 | Ematch _ -> 5 | Etry _ -> 6
+  | Etuple _ -> 7 | Econs _ -> 8 | Erecord _ -> 9 | Ewith _ -> 10 | Efield _ -> 11 | Esetfield _ -> 12
+  | Earray _ -> 13 | Eif _ -> 14 | Eseq _ -> 15 | Ewhile _ -> 16 | Efor _ -> 17 | Eassert _ -> 18 | Econstraint _ -> 19
 let by_var : (int, t) Hashtbl.t = Hashtbl.create 256
 let stable_names = ref []
 let var_typed (v : Scope.var) (t : t) : unit = if !keep then Hashtbl.replace by_var v.vid t
@@ -421,7 +431,7 @@ let rec infer env (e : Scope.expr) : t =
   loc := e.loc;
   let t = infer_ env e in
   loc := saved;
-  if !keep then Hashtbl.replace by_span e.span t;
+  if !keep then Hashtbl.replace by_span (e.span, kind e) t;
   t
 
 and infer_ env (e : Scope.expr) =
@@ -507,7 +517,7 @@ and under env (e : Scope.expr) t =
       let pa, pr = arrow (expanded t) in
       let saved = !loc in
       loc := e.loc;
-      if !keep then Hashtbl.replace by_span e.span t;
+      if !keep then Hashtbl.replace by_span (e.span, kind e) t;
       cases env pa pr cs;
       loc := saved
   | _ -> unify (infer env e) t
@@ -720,5 +730,5 @@ let to_scope_stable t =
   in
   go t
 
-let expr_type (sp : Ast.span) : Scope.ty option = Option.map to_scope_stable (Hashtbl.find_opt by_span sp)
+let expr_type (e : Scope.expr) : Scope.ty option = Option.map to_scope_stable (Hashtbl.find_opt by_span (e.span, kind e))
 let var_type (vid : int) : Scope.ty option = Option.map to_scope_stable (Hashtbl.find_opt by_var vid)

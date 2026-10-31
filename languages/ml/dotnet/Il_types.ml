@@ -141,6 +141,17 @@ let int_d = decl Resolve.int_t and bool_d = decl Resolve.bool_t and unit_d = dec
 let char_d = decl Resolve.char_t and float_d = decl Resolve.float_t and string_d = decl Resolve.string_t
 let exn_d = decl Resolve.exn_t
 
+(* the list's constructors, the language's own, which Resolve's tables
+ * of a type's constructors have not (they are Resolve's predefined
+ * ones, as written there) *)
+let list_conses : (string * Scope.cons) list =
+  let list = Scope.Tconstr (Resolve.list_d, [ Tvar "a" ]) in
+  [ ("[]", { cname = "[]"; kind = Const 0; arity = 0; nconst = 1; nblock = 1; ctype = ([ "a" ], [], list); cinline = [] });
+    ("::", { cname = "::"; kind = Block 0; arity = 2; nconst = 1; nblock = 1; ctype = ([ "a" ], [ Tvar "a"; list ], list); cinline = [] }) ]
+
+let conses (d : Scope.tdecl) : (string * Scope.cons) list option =
+  if d == Resolve.list_d then Some list_conses else Resolve.type_conses d
+
 (* a type's namespace and name: a path's own, else the unit's *)
 let split (c : c) (path : string) : string * string =
   match String.rindex_opt path '.' with
@@ -198,12 +209,14 @@ let rec cts (c : c) (loc : int) (t : Scope.ty) : S.t =
   | Tconstr (d, []) when d == exn_d -> S.Class (sys c "Exception")
   | Tconstr ({ tabbrev = Some t; _ }, []) -> cts c loc t
   | Tconstr (d, args) when Resolve.type_fields d <> None -> at (record c loc d) (List.map (arg_type c loc) args)
-  | Tconstr (d, args) when Resolve.type_conses d <> None -> at (variant c loc d) (List.map (arg_type c loc) args)
+  | Tconstr (d, args) when conses d <> None -> at (variant c loc d) (List.map (arg_type c loc) args)
   (* (a polymorphic function's variable its method's parameter; one
    * that nothing constrains, an object) *)
   | Tvar n -> (match List.assoc_opt n c.tvars with Some t -> t | None -> S.Object)
   | Tarrow (a, b) -> func c loc a b
-  | Ttuple _ -> refuse loc "a tuple" "1d"
+  | Ttuple ts -> at (tuple c loc (List.length ts)) (List.map (arg_type c loc) ts)
+  (* (an array, .NET's own: T[]) *)
+  | Tconstr (d, [ a ]) when d == Resolve.array_d -> S.SzArray (arg_type c loc a)
   | Tconstr (d, _) -> refuse loc ("a value of type " ^ d.tpath) "1d"
 
 (* a type as a type argument (a Func's, a generic class's): unit an
@@ -238,6 +251,21 @@ and record (c : c) (loc : int) (d : Scope.tdecl) : tclass =
       structural c t 0;
       t
 
+(* a tuple of n: ML's own class, Stdlib.tuple`n, its fields Item1...
+ * (System.ValueTuple's names: mini-dotnet's library has not got it) *)
+and tuple (c : c) (loc : int) (n : int) : tclass =
+  let key = Printf.sprintf "tuple %d" n in
+  match Hashtbl.find_opt classes key with
+  | Some t -> t
+  | None ->
+      let t = { tok = make_class c loc "Pervasives.tuple" n 0x00100100 (sys c "Object"); arity = n; fields = []; ftoks = []; ctor = 0 } in
+      Hashtbl.replace classes key t;
+      t.fields <- List.init n (fun (i : int) -> (Printf.sprintf "Item%d" (i + 1), S.Var i));
+      t.ftoks <- List.map (fun ((f, ty) : string * S.t) -> W.field_def c.w t.tok f 0x0006 ty) t.fields;
+      constructor c t (object_ctor c);
+      structural c t 0;
+      t
+
 (* a variant type: an abstract class, and a class of each constructor's,
  * nested in it, its fields the constructor's arguments (Item1...);
  * generic, each a class of the same parameters, its parent the
@@ -247,7 +275,11 @@ and variant (c : c) (loc : int) (d : Scope.tdecl) : tclass =
   | Some t -> t
   | None ->
       let arity = List.length d.tparams in
-      let t = { tok = make_class c loc d.tpath arity 0x00100080 (sys c "Object"); arity; fields = []; ftoks = []; ctor = 0 } in
+      (* (OCaml's list, a variant of the language's: Stdlib's too, its
+       * constructors' classes Nil and Cons, names that C# can say) *)
+      let predefined = d == Resolve.list_d in
+      let path = if predefined then "Pervasives." ^ d.tpath else d.tpath in
+      let t = { tok = make_class c loc path arity 0x00100080 (sys c "Object"); arity; fields = []; ftoks = []; ctor = 0 } in
       Hashtbl.replace classes d.tpath t;
       constructor c t (object_ctor c);
       let me = own t in
@@ -256,7 +288,8 @@ and variant (c : c) (loc : int) (d : Scope.tdecl) : tclass =
         (fun (tag : int) ((cname, k) : string * Scope.cons) ->
           if k.cinline <> [] then refuse loc (cname ^ ", a constructor of an inline record") "1b";
           let params, args, _ = k.ctype in
-          let name = if arity > 0 then Printf.sprintf "%s`%d" cname arity else cname in
+          let cname' = match cname with "[]" -> "Nil" | "::" -> "Cons" | n -> n in
+          let name = if arity > 0 then Printf.sprintf "%s`%d" cname' arity else cname' in
           let tok = W.type_def c.w "" name 0x00100102 parent in
           W.nest c.w tok t.tok;
           for i = 0 to arity - 1 do
@@ -269,7 +302,7 @@ and variant (c : c) (loc : int) (d : Scope.tdecl) : tclass =
           constructor c case parent_ctor;
           structural c case tag;
           Hashtbl.replace classes (d.tpath ^ "|" ^ cname) case)
-        (match Resolve.type_conses d with Some l -> l | None -> []);
+        (match conses d with Some l -> l | None -> []);
       t
 
 (* a record's type's class and its type arguments *)
@@ -294,6 +327,20 @@ let field0 (c : c) (loc : int) (ty : Scope.ty) : int =
 
 let record_ctor (c : c) (loc : int) (ty : Scope.ty) : int =
   let t, args = record_at c loc ty in
+  ctor_tok c t args
+
+(* a tuple's i-th field at its type, its constructor there *)
+let tuple_at (c : c) (loc : int) (ty : Scope.ty) : tclass * S.t list =
+  match ty with
+  | Ttuple ts -> (tuple c loc (List.length ts), List.map (arg_type c loc) ts)
+  | _ -> refuse loc "a tuple of no tuple type" "1d"
+
+let tuple_field (c : c) (loc : int) (ty : Scope.ty) (i : int) : int =
+  let t, args = tuple_at c loc ty in
+  field_tok c t args i
+
+let tuple_ctor (c : c) (loc : int) (ty : Scope.ty) : int =
+  let t, args = tuple_at c loc ty in
   ctor_tok c t args
 
 (* a constructor of a variant at the variant's type: its class's token,
@@ -342,7 +389,7 @@ let exn (c : c) (loc : int) (sym : string) (args : Scope.ty list) : int * int * 
   end
 
 let type_of (e : Scope.expr) : Scope.ty =
-  match Typing.expr_type e.span with Some t -> t | None -> refuse e.loc "an expression whose type was not kept" "1a"
+  match Typing.expr_type e with Some t -> t | None -> refuse e.loc "an expression whose type was not kept" "1a"
 
 (* (a raise's type is any: nothing is left by it) *)
 let is_raise (e : Scope.expr) : bool =
@@ -404,3 +451,16 @@ let ml_compare (c : c) : int =
       emit k Il.Throw;
       finish c k m;
       m)
+
+(* a .NET type's token, as newarr, box, ldelem.any take it: System's
+ * class for a primitive, a class's own, a TypeSpec for the others *)
+let type_token (c : c) (t : S.t) : int =
+  match t with
+  | S.I8 -> sys c "Int64"
+  | S.I4 -> sys c "Int32"
+  | S.Bool -> sys c "Boolean"
+  | S.R8 -> sys c "Double"
+  | S.String -> sys c "String"
+  | S.Object -> sys c "Object"
+  | S.Class tok -> tok
+  | t -> W.type_spec c.w t

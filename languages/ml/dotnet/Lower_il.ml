@@ -186,8 +186,25 @@ let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
   | Esetfield (r, l, x) ->
       values c env k [ r; x ];
       emit k (Il.Stfld (field c e.loc (type_of r) l.lname))
-  | Etuple _ -> refuse e.loc "a tuple" "1d"
-  | Earray _ -> refuse e.loc "an array" "1d"
+  | Etuple es ->
+      values c env k es;
+      emit k (Il.Newobj (tuple_ctor c e.loc (type_of e)))
+  (* [| a; b |]: newarr, each element stored *)
+  | Earray es ->
+      let elem = match cts_of c e with S.SzArray t -> t | _ -> refuse e.loc "an array of no array type" "1d" in
+      let tok = type_token c elem in
+      emit k (Il.Ldc_i4 (Int32.of_int (List.length es)));
+      emit k (Il.Newarr tok);
+      List.iteri
+        (fun (i : int) (x : Scope.expr) ->
+          emit k Il.Dup;
+          emit k (Il.Ldc_i4 (Int32.of_int i));
+          k.pending <- k.pending + 3;
+          expr c env k x;
+          if cts_of c x = S.Void then emit k Il.Ldnull;
+          k.pending <- k.pending - 3;
+          emit k (Il.Stelem_any tok))
+        es
   | Eassert _ -> refuse e.loc "an assert" "1b"
 
 (* operands, each left on the stack, the ones before it counted as
@@ -547,9 +564,28 @@ and prim (c : c) (env : env) (k : code) (e : Scope.expr) (p : string) (args : Sc
           emit k (Il.Call (ml_compare c));
           emit k (Il.Conv (Il.K_i8, false, false))
       | _ -> refuse e.loc "compare on records or variants (OCaml's structural order)" "1d")
+  (* an array's length, an element read and written (an index an
+   * int32: IL's) *)
+  | "%array_length", _ -> all (); emit k Il.Ldlen; emit k (Il.Conv (Il.K_i8, false, false))
+  | ("%array_safe_get" | "%array_unsafe_get"), [ a; i ] ->
+      let tok = match cts_of c a with S.SzArray t -> type_token c t | _ -> refuse e.loc "an array" "1d" in
+      expr c env k a;
+      k.pending <- k.pending + 1; expr c env k i; k.pending <- k.pending - 1;
+      emit k (Il.Conv (Il.K_i4, false, false));
+      emit k (Il.Ldelem_any tok);
+      if cts_of c e = S.Void then emit k Il.Pop
+  | ("%array_safe_set" | "%array_unsafe_set"), [ a; i; x ] ->
+      let tok = match cts_of c a with S.SzArray t -> type_token c t | _ -> refuse e.loc "an array" "1d" in
+      expr c env k a;
+      k.pending <- k.pending + 1; expr c env k i; emit k (Il.Conv (Il.K_i4, false, false));
+      k.pending <- k.pending + 1; expr c env k x; if cts_of c x = S.Void then emit k Il.Ldnull;
+      k.pending <- k.pending - 2;
+      emit k (Il.Stelem_any tok)
   | "%identity", _ -> all ()
   | "%ignore", [ a ] -> drop c env k a
   | "%raise", [ a ] -> expr c env k a; emit k Il.Throw
+  (* (a primitive of the native runtime's C: the library's) *)
+  | _ when String.length p > 0 && p.[0] <> '%' -> refuse e.loc ("the primitive " ^ p ^ ", of the library's runtime") "3"
   | _ -> refuse e.loc ("the primitive " ^ p) "1a"
 
 (*****************************************************************************)

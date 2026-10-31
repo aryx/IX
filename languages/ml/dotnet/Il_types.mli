@@ -25,6 +25,9 @@ val cts : Il_code.c -> int -> Scope.ty -> Signature.t
 val arg_type : Il_code.c -> int -> Scope.ty -> Signature.t
 val func : Il_code.c -> int -> Scope.ty -> Scope.ty -> Signature.t
 
+(* a .NET type's token, as newarr, box and ldelem.any take it *)
+val type_token : Il_code.c -> Signature.t -> int
+
 (* the assembly's helper Stdlib.Ml::compare(object, object): OCaml's
  * order of two boxed values (a string's, an int's, a float's, a
  * char's, a boolean's) *)
@@ -42,6 +45,11 @@ val field : Il_code.c -> int -> Scope.ty -> string -> int
 val field0 : Il_code.c -> int -> Scope.ty -> int
 val record_ctor : Il_code.c -> int -> Scope.ty -> int
 val label_type : Scope.label -> Scope.ty -> Scope.ty
+
+(* a tuple's i-th field at its type (Stdlib.tuple`n's Item), its
+ * constructor there *)
+val tuple_field : Il_code.c -> int -> Scope.ty -> int -> int
+val tuple_ctor : Il_code.c -> int -> Scope.ty -> int
 
 (* a variant's constructor at the variant's type: its class's token,
  * its constructor, its i-th field, its arguments' types there *)

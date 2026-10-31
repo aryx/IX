@@ -21,3 +21,6 @@ let scale k = let factor = k in fun n -> n * factor
 (* a type of a parameter, a polymorphic function: C#'s generics *)
 type 'a box = { content : 'a }
 let wrap x = { content = x }
+
+(* a tuple: Stdlib.tuple`2, its fields Item1, Item2 *)
+let coordinates p = (p.x, p.y)

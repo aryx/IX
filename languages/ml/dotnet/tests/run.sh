@@ -28,6 +28,9 @@
 #             instantiation; = on a type variable
 #   generic_types  types of parameters as generic classes (a tree, a
 #             record), ref and option, = and < on their values
+#   tuples_lists  tuples and lists (Stdlib.tuple`n, Stdlib.list`1):
+#             built, matched, given to generic functions, compared
+#   arrays    T[]: literals, a.(i), a.(i) <- v, Array.length, a sort
 # usage: languages/ml/dotnet/tests/run.sh [-dune] [-mini] [-ms] [-record]
 #   (dune build, and mini-mk in languages/ml and languages/dotnet, first)
 # MINIML, MINIDOTNET: mini-ml's builds, if not _mk/7's (ix built by
@@ -47,7 +50,7 @@ W=$(mktemp -d); trap 'rm -rf $W' EXIT
 failures=0
 ok() { echo "ok $*"; }
 fail() { echo "FAIL $*"; failures=$((failures + 1)); }
-progs="fib arith strings loops variants records exceptions equality closures generics generic_types"
+progs="fib arith strings loops variants records exceptions equality closures generics generic_types tuples_lists arrays"
 # what is refused: a program a line, and the stage that will have it
 refused() {
   local ml=$1 n=0
@@ -56,12 +59,12 @@ refused() {
     echo "-- $line"
     $ml -L lib_core -dotnet -o $W/r$n.dll $W/r$n.ml 2>&1 | sed "s|$W/||"
   done <<'R'
-let pair = (1, "one")
+let a = Array.make 3 0
 let twice f x = f (f x) let g = twice
 type t = { a : int } let b = { a = 1 } < { a = 2 }
 let () = let rec even n = n = 0 || odd (n - 1) and odd n = n <> 0 && even (n - 1) in print_int (if even 4 then 1 else 0)
 let id x = x
-let l = [ 1; 2 ]
+let twice_all f l = let g x = f (f x) in g l
 let () = print_float 1.5
 let x = 1 + (try 2 with Not_found -> 3)
 type t = A of { a : int } let v = A { a = 1 }

@@ -5,4 +5,5 @@ ML's = from C#: True False
 a C# lambda given to ML: 201
 an ML function returned to C#: 42
 an ML generic, from C# True
+an ML tuple in C#: 11, 22
 C#'s switch on an ML variant: a Rect to 11

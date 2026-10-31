@@ -131,8 +131,9 @@ check() {
   done
   # (with -jit: the JIT's code where it runs, the interpreter elsewhere;
   # bench's 400 million instructions only where the JIT compiles them,
-  # objects' 15 million not under mini-5i)
-  jit=; "$@" -jit -s $T/jit/zero.dll 2>&1 >/dev/null | grep -q 'methods compiled' && jit=1
+  # objects' 15 million not under mini-5i); the probe at -tier 0: zero.dll,
+  # without a loop and of few calls, is compiled only so)
+  jit=; "$@" -jit -tier 0 -s $T/jit/zero.dll 2>&1 >/dev/null | grep -q 'methods compiled' && jit=1
   if [ -z "$jit" ]; then
     if "$@" -jit $T/jit/zero.dll 2>&1 >/dev/null | grep -q -e '-jit ignored'; then ok "mini-dotnet -jit where there is no JIT says it is ignored, by $what"
     else fail "mini-dotnet -jit where there is no JIT says nothing, by $what"; fi

@@ -1,0 +1,12 @@
+; the desktop around mini-rio (docs/plans/plan_desktop.md): programs in rio's
+; windows, and desktop.rc and start.rc, which start them
+(library
+ (name ix_desktop)
+ (wrapped false)
+ (modules Taskbar)
+ (libraries ix_graphics ix_core))
+
+(executable
+ (name Panel)
+ (modules Panel)
+ (libraries ix_desktop ix_graphics ix_threads ix_core threads.posix unix caps fpath))

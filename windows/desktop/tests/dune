@@ -1,0 +1,5 @@
+; what the panel decides, without a screen
+(executable
+ (name Test)
+ (modules Test)
+ (libraries ix_desktop ix_graphics testo alcotest))

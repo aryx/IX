@@ -1,0 +1,59 @@
+# the desktop's programs, built by ix's tools (for Plan 9: mini-mk O=5
+# OS=plan9), with lib_graphics's units, compiled here
+TOP=../..
+<$TOP/mkfiles/mkconfig
+D=$B/windows/desktop
+G=../../lib_graphics
+INCLUDES=-I . -I $G $STDI
+GFX=Point Rectangle Display Draw Font_default Font Mouse Keyboard Cursor Menu
+UNITS=$GFX Taskbar Panel
+OBJS=${UNITS:%=$D/%.$O}
+LOCAL=`{ls *.ml *.mli ../../lib_graphics/*.ml ../../lib_graphics/*.mli}
+
+all:V: $D/panel
+
+$D/%.$O: %.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $stem.ml
+$D/Point.$O: $G/Point.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $G/Point.ml
+$D/Rectangle.$O: $G/Rectangle.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $G/Rectangle.ml
+$D/Display.$O: $G/Display.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $G/Display.ml
+$D/Draw.$O: $G/Draw.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $G/Draw.ml
+$D/Font_default.$O: $G/Font_default.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $G/Font_default.ml
+$D/Font.$O: $G/Font.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $G/Font.ml
+$D/Mouse.$O: $G/Mouse.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $G/Mouse.ml
+$D/Keyboard.$O: $G/Keyboard.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $G/Keyboard.ml
+$D/Cursor.$O: $G/Cursor.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $G/Cursor.ml
+$D/Menu.$O: $G/Menu.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $G/Menu.ml
+$D/panel: $OBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+	$ML -start $STD $COMMONS $UNITS Std_exit -o $D/start.$O
+	$LD $LDH -nofollow -o $target $D/start.$O $STDOBJS $OBJS $STDEND
+
+clean:V:
+	rm -rf $D
+
+# the units' order (mkfiles/mkdepend)
+DEPOBJ=D
+DEPDIRS=.
+DEPUNITS=$UNITS
+<$TOP/mkfiles/mkdepend

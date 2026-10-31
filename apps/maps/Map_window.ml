@@ -5,7 +5,9 @@
 
 module P = Playground
 
-type caps = < Cap.network; Cap.open_in; Cap.open_out; Cap.env >
+type caps = Map_services.caps
+
+module S = Map_services
 
 (*****************************************************************************)
 (* Types *)
@@ -17,6 +19,9 @@ type tile = { image : Rgba_image.t; sharp : bool; mutable used : int }
 (* a forecast: asked, or come and when; asked again after a quarter of an
  * hour, how often the service makes a new one *)
 type forecast = Asked | Came of float * (Weather.t, string) result
+
+(* r: where from, then the next place marked is where to *)
+type routing = No_route | From of Place.t | Asking of Place.t | Shown of Routing.t
 
 type model = {
   z : int;
@@ -41,14 +46,14 @@ type model = {
   forecasts : (string, forecast) Hashtbl.t; (* by where, to two decimals *)
   ask_forecast : string -> float -> float -> unit; (* by the worker *)
   save : (string * Place.t) list -> unit; (* the last places written down *)
+  routing : routing;
+  ask_route : Place.t -> Place.t -> unit; (* by the worker *)
 }
 
 let kept = 120
 let again_after = 30.
 let credit = "\xc2\xa9 OpenStreetMap contributors"
 let default_tiles = "https://tile.openstreetmap.org"
-let default_places = "https://nominatim.openstreetmap.org"
-let default_weather = "https://api.open-meteo.com"
 let forecast_good = 900.
 let places_kept = 20
 let rows_shown = 6
@@ -245,12 +250,6 @@ let took (w : int) (h : int) (m : model) : model =
 
 let forecast_found : (string * (Weather.t, string) result) option ref = ref None
 
-let forecast_of (caps : < Cap.network; Cap.open_in; .. >) (base : string) (lat : float) (lon : float) : (Weather.t, string) result =
-  match Map_http.get caps ~more:[] (Weather.url base lat lon) with
-  | Error why -> Error why
-  | Ok r when r.status <> 200 -> Error (Printf.sprintf "%d %s" r.status r.reason)
-  | Ok r -> ( try Ok (Weather.of_json r.body) with Failure why -> Error why)
-
 let forecast_key (lat : float) (lon : float) : string = Printf.sprintf "%.2f,%.2f" lat lon
 
 (* the panel for that place, the forecast asked unless it is known and good *)
@@ -290,6 +289,51 @@ let subject (m : model) : string * float * float =
       (lat_lon_words lat lon, lat, lon)
 
 (*****************************************************************************)
+(* A route *)
+(*****************************************************************************)
+
+let route_found : (Routing.t, string) result option ref = ref None
+
+(* r: from the place marked; again, none *)
+let route_key (m : model) : model =
+  let m = { m with generation = m.generation + 1 } in
+  match (m.routing, m.place) with
+  | No_route, Some p ->
+      { m with routing = From p; notice = "a route: now find or click where to" }
+  | No_route, None -> { m with notice = "a route: find or click where from, then r" }
+  | _ -> { m with routing = No_route; notice = "" }
+
+(* the next place marked is where to *)
+let route_asked (m : model) : model =
+  match (m.routing, m.place) with
+  | From a, Some b when (a.lat, a.lon) <> (b.lat, b.lon) ->
+      m.ask_route a b;
+      { m with routing = Asking a; notice = "a route: asking for the roads..." }
+  | _ -> m
+
+(* the route come: the window shows all of it *)
+let took_route (w : int) (h : int) (m : model) : model =
+  match !route_found with
+  | None -> m
+  | Some (Error why) ->
+      route_found := None;
+      { m with routing = No_route; notice = "a route: " ^ why; generation = m.generation + 1 }
+  | Some (Ok r) ->
+      route_found := None;
+      let fold (f : float -> float -> float) (pick : float * float -> float) : float =
+        Array.fold_left (fun (acc : float) (p : float * float) -> f acc (pick p)) (pick r.points.(0)) r.points
+      in
+      let south = fold Float.min fst and north = fold Float.max fst in
+      let west = fold Float.min snd and east = fold Float.max snd in
+      let all : Place.t =
+        { name = ""; lat = (south +. north) /. 2.; lon = (west +. east) /. 2.;
+          box = Some (south, north, west, east) }
+      in
+      let z = Place.zoom_for ~at_most:14 all (w - 40) (h - 80) in
+      let cx, cy = Tiles.centred z (Mercator.x_of_longitude z all.lon) (Mercator.y_of_latitude z all.lat) h in
+      { m with z; cx; cy; grab = None; routing = Shown r; notice = ""; generation = m.generation + 1 }
+
+(*****************************************************************************)
 (* The Find box *)
 (*****************************************************************************)
 
@@ -324,7 +368,7 @@ let line_at (fw : float) (fh : float) (m : model) (mx : float) (my : float) : in
   find 0 (box_lines fw m)
 
 (* the characters typed: in the box when it is open; / opens it, + and -
- * zoom, w the forecast *)
+ * zoom, w the forecast, r a route *)
 let typed (now : float) (h : int) (s : string) (m : model) : model =
   List.fold_left
     (fun (m : model) (c : string) ->
@@ -335,6 +379,7 @@ let typed (now : float) (h : int) (s : string) (m : model) : model =
       | None, ("+" | "=") -> zoomed 1 0 0 h m
       | None, "-" -> zoomed (-1) 0 0 h m
       | None, "w" -> if m.weather_at = None then weather_for now (subject m) m else { m with weather_at = None }
+      | None, "r" -> route_key m
       | None, _ -> m)
     m (Text.chars s)
 
@@ -376,6 +421,7 @@ let update (computer : P.computer) (m : model) : model =
   let m = collected now m in
   let m = took w h m in
   let m = took_forecast now m in
+  let m = took_route w h m in
   let m =
     match m.start with
     | Some query -> asked now w h query { m with start = None; asked_at = now -. 1. }
@@ -432,6 +478,7 @@ let update (computer : P.computer) (m : model) : model =
   in
   (* (what the search said, until the map moves; the keys for next time) *)
   let m = if (m.z, m.cx, m.cy) <> before then { m with notice = "" } else m in
+  let m = route_asked m in
   let held = List.filter (fun (k : string) -> Set_.mem k keys.keys) [ "Enter"; "Escape"; "Backspace" ] in
   let m = { m with held } in
   let m, missing = in_store now m (Tiles.in_view m.z m.cx m.cy w h) in
@@ -484,6 +531,29 @@ let marker (fw : float) (fh : float) (m : model) : P.shape list =
       else
         [ P.circle P.white 8. |> P.move x y; P.circle P.red 6. |> P.move x y ]
 
+(* the way, and where it starts from *)
+let route (fw : float) (fh : float) (m : model) : P.shape list =
+  let start (lat : float) (lon : float) : P.shape list =
+    let x = float_of_int (Mercator.x_of_longitude m.z lon - m.cx) in
+    let y = -.float_of_int (Mercator.y_of_latitude m.z lat - m.cy) in
+    [ P.circle P.white 8. |> P.move x y; P.circle P.green 6. |> P.move x y ]
+  in
+  match m.routing with
+  | No_route -> []
+  | From p | Asking p -> start p.lat p.lon
+  | Shown r ->
+      let lat, lon = r.points.(0) in
+      Routing.shapes r ~z:m.z ~cx:m.cx ~cy:m.cy fw fh @ start lat lon
+
+(* the band's left: what was said, the route, a tile's failure, or where the
+ * window is *)
+let said_line (m : model) : string =
+  if m.notice <> "" then m.notice
+  else
+    match m.routing with
+    | Shown r -> Routing.summary r
+    | _ -> if m.said <> "" then m.said else where m
+
 (* the Find box, at the window's top left *)
 let box (fw : float) (fh : float) (m : model) : P.shape list =
   let left = (-.fw /. 2.) +. 6. and top = (fh /. 2.) -. 6. in
@@ -512,10 +582,11 @@ let drawn (w : int) (h : int) (m : model) : P.shape list =
   in
   (P.rectangle (P.rgb 200 200 200) fw fh
   :: List.filter_map tile (Tiles.in_view m.z m.cx m.cy w h))
+  @ route fw fh m
   @ marker fw fh m
   @ box fw fh m
   @ weather fw fh m
-  @ band fw fh false (if m.notice <> "" then m.notice else if m.said <> "" then m.said else where m)
+  @ band fw fh false (said_line m)
   @ band fw fh true credit
 
 (* the same list while nothing it shows changed: a window at rest costs no
@@ -537,63 +608,6 @@ let view (computer : P.computer) (m : model) : P.shape list =
 (* Entry point *)
 (*****************************************************************************)
 
-(* cache=DIR, or the user's; cache=off, none *)
-let cache_dir (caps : caps) (flags : P.flags) : string option =
-  let env (name : string) : string option =
-    match CapSys.getenv caps name with "" -> None | v -> Some v | exception Not_found -> None
-  in
-  match (List.assoc_opt "cache" flags, env "XDG_CACHE_HOME", env "HOME", env "home") with
-  | Some "off", _, _, _ -> None
-  | Some dir, _, _, _ -> Some dir
-  | None, Some cache, _, _ -> Some (Filename.concat cache "mini-maps")
-  | None, None, Some home, _ | None, None, None, Some home -> Some (Filename.concat (Filename.concat home ".cache") "mini-maps")
-  | None, None, None, None -> None
-
-(* the last places: a file beside the cache's tiles *)
-let places_file (caps : caps) (flags : P.flags) : Fpath.t option =
-  Option.map (fun (dir : string) -> Fpath.v (Filename.concat dir "places")) (cache_dir caps flags)
-
-let known_places (caps : caps) (flags : P.flags) : (string * Place.t) list =
-  match Option.bind (places_file caps flags) (fun (f : Fpath.t) -> FS.read_opt caps f) with
-  | None -> []
-  | Some lines -> List.filter_map Place.of_line (String.split_on_char '\n' lines)
-
-let save_places (caps : caps) (flags : P.flags) (l : (string * Place.t) list) : unit =
-  let lines = String.concat "" (List.map (fun (e : string * Place.t) -> Place.to_line e ^ "\n") l) in
-  match places_file caps flags with
-  | None -> ()
-  | Some f -> ( try FS.write caps f lines with Sys_error _ | Unix.Unix_error _ -> ())
-
-let words_of (flags : P.flags) : string list =
-  List.filter_map (fun ((k, v) : string * string) -> if v = "" && k <> "window" then Some k else None) flags
-
-let weather_base_of (flags : P.flags) : string =
-  (* (forecast=, weather being the terminal's command word, a flag too) *)
-  match List.assoc_opt "forecast" flags with Some b -> b | None -> default_weather
-
-(* the terminal's: a place from the last ones or asked, and its forecast *)
-let forecast_lines (caps : caps) (flags : P.flags) (query : string) : (string list, string) result =
-  let known = known_places caps flags in
-  let place =
-    match List.assoc_opt (Place.normal query) known with
-    | Some p -> Ok p
-    | None -> (
-        let base = match List.assoc_opt "places" flags with Some b -> b | None -> default_places in
-        match Map_http.get caps ~more:[] (Place.search_url base query) with
-        | Error why -> Error why
-        | Ok r when r.status <> 200 -> Error (Printf.sprintf "%d %s" r.status r.reason)
-        | Ok r -> (
-            match Place.of_json r.body with
-            | p :: _ ->
-                save_places caps flags ((Place.normal query, p) :: known);
-                Ok p
-            | [] -> Error (Printf.sprintf "no place called %s" query)
-            | exception Failure why -> Error why))
-  in
-  match place with
-  | Error why -> Error why
-  | Ok p -> Result.map (Weather.lines p.name) (forecast_of caps (weather_base_of flags) p.lat p.lon)
-
 let initial (caps : caps) (flags : P.flags) : model =
   let number (name : string) : float option = Option.bind (List.assoc_opt name flags) float_of_string_opt in
   let z =
@@ -610,17 +624,23 @@ let initial (caps : caps) (flags : P.flags) : model =
     | Some megabytes -> megabytes * 1_000_000
     | None -> default_cache_megabytes * 1_000_000
   in
-  let cache = Option.bind (cache_dir caps flags) (fun (dir : string) -> Tile_cache.create caps ~dir ~limit) in
+  let cache = Option.bind (S.cache_dir caps flags) (fun (dir : string) -> Tile_cache.create caps ~dir ~limit) in
   Map_worker.start (fetch caps base cache);
-  let places = match List.assoc_opt "places" flags with Some b -> b | None -> default_places in
-  let weather_base = weather_base_of flags in
-  let known = known_places caps flags and save = save_places caps flags in
-  let words = words_of flags in
+  let places = S.places_base_of flags in
+  let weather_base = S.weather_base_of flags in
+  let roads = S.roads_base_of flags in
+  let dir = S.cache_dir caps flags in
+  let known = S.known_places caps flags and save = S.save_places caps flags in
+  let words = S.words_of flags in
   let start = if words = [] then None else Some (String.concat " " words) in
   { z; cx; cy; grab = None; wheel = 0.; store = Hashtbl.create 200; failed = Hashtbl.create 20; ticks = 0; generation = 0; said = "";
     finding = None; place = None; known; notice = ""; asked_at = -1000.; start; held = [];
     ask = (fun (query : string) -> Map_worker.job (fun () -> search caps places query)); save;
-    weather_at = None; forecasts = Hashtbl.create 16;
+    weather_at = None; forecasts = Hashtbl.create 16; routing = No_route;
+    ask_route =
+      (fun (a : Place.t) (b : Place.t) ->
+        Map_worker.job (fun () ->
+            route_found := Some (Result.map fst (Routing.find caps ~base:roads ~dir ~dijkstra:false a b))));
     ask_forecast =
       (fun (key : string) (lat : float) (lon : float) ->
-        Map_worker.job (fun () -> forecast_found := Some (key, forecast_of caps weather_base lat lon))) }
+        Map_worker.job (fun () -> forecast_found := Some (key, S.forecast_of caps weather_base lat lon))) }

@@ -86,8 +86,10 @@
    "Elementary TCP Sockets");
    RFC 793 (TCP) and RFC 791 (IP), Jon Postel (1981). *)
 
-(* ix: the seconds of silence after which a read gives up *)
-val timeout : float
+(* ix: the seconds of silence after which a read gives up; 30, and a program
+ * that knows a server to think longer says so around its request (mini-maps,
+ * for Overpass) *)
+val timeout : float ref
 
 (* a connection to [host] (a name, or an address: "127.0.0.1")
  * on [port], each of its addresses tried in turn; raises Unix.Unix_error

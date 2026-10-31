@@ -10,9 +10,17 @@ A map moved and zoomed, fetched from the internet
 Drag or the arrows move it; the wheel, a double click, `+` and `-` zoom it;
 `/` (or a click on the box at the top left) finds a place, on Enter; a click
 on the map marks one; `w` shows the forecast of the place marked, or of the
-window's centre.
+window's centre; `r` starts a route from the place marked, to the next place
+marked (`r` again takes it away).
 
     mini-maps weather tours         the forecast as lines, for a terminal
+    mini-maps route tours to amboise  the way, road by road, and how many
+                                      nodes A* and Dijkstra each settled
+
+A route is computed here, by A*, over the roads Overpass gives for a box
+around both places: half a degree at most, without the residential streets
+past a tenth of a degree. So no route across France; times come from the
+road's class, with no traffic and no turn restrictions.
 
 Under Plan 9's rc, a flag is quoted (`'zoom=3'`): `name=value` is an
 assignment there.
@@ -28,6 +36,10 @@ assignment there.
 | `Map_http` | a request, saying who is asking |
 | `Tile_cache` | the tiles on disk, for as long as the server says |
 | `Map_worker` | the tiles, and a place or a forecast, fetched beside the window |
+| `Roads` | the roads of a box, asked of Overpass, as a graph |
+| `Route` | the quickest way: A*, and Dijkstra with no guess |
+| `Routing` | two places to a route: the extract kept, the words, the line |
+| `Map_services` | where the services are, the cache's directory, the terminal's commands |
 | `Map_window` | the window: its place, the tiles in memory, the picture |
 
 `Worker_spawn` is mini-netscape's (`browsers/netscape`), copied by the

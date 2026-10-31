@@ -1,0 +1,19 @@
+{"version":0.6,"generator":"written by hand for the tests: no OSM data",
+"elements":[
+{"type":"way","id":1,"nodes":[11197711196,2,3,4],"tags":{"highway":"residential","name":"Slow Street"}},
+{"type":"way","id":2,"nodes":[11197711196,5,6,4],"tags":{"highway":"primary","name":"Fast Road"}},
+{"type":"way","id":3,"nodes":[4,7],"tags":{"highway":"tertiary","name":"One Way","oneway":"yes"}},
+{"type":"way","id":4,"nodes":[8,7],"tags":{"highway":"residential","name":"Back Way","oneway":"-1"}},
+{"type":"way","id":5,"nodes":[9,10],"tags":{"highway":"residential","name":"Cut Off"}},
+{"type":"way","id":6,"nodes":[2,5],"tags":{"highway":"footway","name":"Not For Cars"}},
+{"type":"node","id":11197711196,"lat":47.300,"lon":0.700},
+{"type":"node","id":2,"lat":47.300,"lon":0.710},
+{"type":"node","id":3,"lat":47.300,"lon":0.720},
+{"type":"node","id":4,"lat":47.300,"lon":0.730},
+{"type":"node","id":5,"lat":47.310,"lon":0.705},
+{"type":"node","id":6,"lat":47.310,"lon":0.725},
+{"type":"node","id":7,"lat":47.300,"lon":0.740},
+{"type":"node","id":8,"lat":47.300,"lon":0.750},
+{"type":"node","id":9,"lat":47.350,"lon":0.700},
+{"type":"node","id":10,"lat":47.350,"lon":0.701}
+]}

@@ -5,7 +5,7 @@
 
 (* See Tcp.mli *)
 
-let timeout = 30.
+let timeout = ref 30.
 
 let connect (caps : < Cap.network; Cap.open_in; .. >) ~(host : string) ~(port : int) : Unix.file_descr =
   let addresses =
@@ -51,7 +51,7 @@ let receive_all (fd : Unix.file_descr) : string =
   let b = Buffer.create 65536 in
   let chunk = Bytes.create 65536 in
   let rec go () =
-    (match Unix.select [ fd ] [] [] timeout with [], _, _ -> failwith (Printf.sprintf "no answer in %.0f s" timeout) | _ -> ());
+    (match Unix.select [ fd ] [] [] !timeout with [], _, _ -> failwith (Printf.sprintf "no answer in %.0f s" !timeout) | _ -> ());
     match Unix.read fd chunk 0 (Bytes.length chunk) with
     | 0 -> Buffer.contents b
     | n ->

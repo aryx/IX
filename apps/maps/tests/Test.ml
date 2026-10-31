@@ -48,6 +48,108 @@ let forecast_text = {|{"current":{"time":"2026-10-30T20:30","temperature_2m":-0.
   "hourly":{"time":["2026-10-30T20:00","2026-10-30T21:00"],"temperature_2m":[10.5,9]},
   "daily":{"time":["2026-10-31"],"weather_code":[95],"temperature_2m_max":[15.8],"temperature_2m_min":[5],"precipitation_sum":[2.25]}}|}
 
+(* a grid of [n] by [n] streets, one in [every] a faster road, as Overpass
+ * says it: ids past 2^31, as OSM's are *)
+let grid_text (n : int) (every : int) : string =
+  let id (x : int) (y : int) : int = 5_000_000_000 + (x * n) + y in
+  let node (x : int) (y : int) : string =
+    Printf.sprintf {|{"type":"node","id":%d,"lat":%f,"lon":%f}|} (id x y)
+      (47. +. (float_of_int y *. 0.001))
+      (0.7 +. (float_of_int x *. 0.001))
+  in
+  let way (i : int) (a : int) (b : int) : string =
+    Printf.sprintf {|{"type":"way","id":%d,"nodes":[%d,%d],"tags":{"highway":"%s"}}|} i a b
+      (if i mod every = 0 then "primary" else "residential")
+  in
+  let all = List.init n (fun (x : int) -> x) in
+  let each (f : int -> int -> string option) : string list =
+    List.concat_map (fun (x : int) -> List.filter_map (f x) all) all
+  in
+  let elements =
+    each (fun (x : int) (y : int) -> Some (node x y))
+    @ each (fun (x : int) (y : int) ->
+          if x + 1 < n then Some (way ((x * n) + y) (id x y) (id (x + 1) y)) else None)
+    @ each (fun (x : int) (y : int) ->
+          if y + 1 < n then Some (way ((n * n) + (x * n) + y) (id x y) (id x (y + 1))) else None)
+  in
+  Printf.sprintf {|{"elements":[%s]}|} (String.concat "," elements)
+
+let route_tests =
+  [
+    Testo.create "Json: an integer too big for the machine's int stays a number" (fun () ->
+        Alcotest.(check (float 0.)) "OSM's ids" 11197711196.
+          (Json.float (Json.of_text "11197711196"));
+        Alcotest.(check (float 0.)) "past 63 bits" 1e20
+          (Json.float (Json.of_text "100000000000000000000")));
+    Testo.create "Roads: a way's directions, and what is not a car's" (fun () ->
+        let g = Roads.of_json {|{"elements":[
+          {"type":"node","id":1,"lat":47,"lon":0.7},
+          {"type":"node","id":2,"lat":47,"lon":0.71},
+          {"type":"node","id":3,"lat":47,"lon":0.72},
+          {"type":"node","id":4,"lat":47,"lon":0.73},
+          {"type":"way","id":1,"nodes":[1,2],"tags":{"highway":"residential"}},
+          {"type":"way","id":2,"nodes":[2,3],"tags":{"highway":"residential","oneway":"yes"}},
+          {"type":"way","id":3,"nodes":[3,4],"tags":{"highway":"motorway"}},
+          {"type":"way","id":4,"nodes":[4,1],"tags":{"highway":"footway"}}]}|} in
+        check_int "both ways, one, a motorway's one, none" 4 (Array.length g.target);
+        Alcotest.(check (float 0.1)) "the fastest: 110 km/h" (110. /. 3.6) g.top_speed);
+    Testo.create "Roads: a long box does without the residential streets" (fun () ->
+        let asks (box : float * float * float * float) : bool =
+          let u = Roads.url "http://x" box in
+          let word = "residential" in
+          let rec has (i : int) : bool =
+            i + String.length word <= String.length u
+            && (String.sub u i (String.length word) = word || has (i + 1))
+          in
+          has 0
+        in
+        Alcotest.(check bool) "a town" true (asks (47.3, 0.6, 47.38, 0.68));
+        Alcotest.(check bool) "a long way" false (asks (47.3, 0.6, 47.4, 1.0)));
+    Testo.create "Roads: what is not an answer" (fun () ->
+        Alcotest.check_raises "no JSON" (Failure "unexpected 'x' at 0") (fun () ->
+            ignore (Roads.of_json "x")));
+    Testo.create "Route: A* costs what Dijkstra costs, settling fewer" (fun () ->
+        let g = Roads.of_json (grid_text 30 5) in
+        check_int "its nodes" 900 (Array.length g.lat);
+        let pairs = [ (0, 899); (14, 800); (435, 3); (29, 870); (100, 101) ] in
+        List.iter
+          (fun ((a, b) : int * int) ->
+            match (Route.search g ~guess:true a b, Route.search g ~guess:false a b) with
+            | Some astar, Some plain ->
+                check_int "the same cost" plain.millis astar.millis;
+                Alcotest.(check bool) "no more nodes" true (astar.settled <= plain.settled);
+                (* (the path is one, from a to b, costing what it says) *)
+                let sum = List.fold_left (fun (s : int) (e : int) -> s + g.millis.(e)) 0 astar.edges in
+                check_int "its edges' cost" astar.millis sum;
+                check_int "it starts there" a g.origin.(List.hd astar.edges);
+                check_int "it ends there" b g.target.(List.hd (List.rev astar.edges))
+            | _ -> Alcotest.fail "no way in a grid")
+          pairs);
+    Testo.create "Route: from a node to itself, and to one unreachable" (fun () ->
+        let g = Roads.of_json {|{"elements":[
+          {"type":"node","id":1,"lat":47,"lon":0.7},
+          {"type":"node","id":2,"lat":47,"lon":0.71},
+          {"type":"way","id":1,"nodes":[1,2],"tags":{"highway":"primary","oneway":"yes"}}]}|} in
+        (match Route.search g ~guess:true 0 0 with
+        | Some r -> check_int "no time at all" 0 r.millis
+        | None -> Alcotest.fail "a node reaches itself");
+        Alcotest.(check bool) "against the one-way" true (Route.search g ~guess:true 1 0 = None));
+    Testo.create "Roads: the nearest node, on the largest piece" (fun () ->
+        let g = Roads.of_json {|{"elements":[
+          {"type":"node","id":1,"lat":47,"lon":0.7},
+          {"type":"node","id":2,"lat":47,"lon":0.71},
+          {"type":"node","id":3,"lat":47,"lon":0.72},
+          {"type":"node","id":4,"lat":47.5,"lon":0.7},
+          {"type":"node","id":5,"lat":47.5,"lon":0.71},
+          {"type":"way","id":1,"nodes":[1,2,3],"tags":{"highway":"primary"}},
+          {"type":"way","id":2,"nodes":[4,5],"tags":{"highway":"primary"}}]}|} in
+        match Roads.nearest g 47.5 0.7 with
+        | Some (n, far) ->
+            check_int "the big piece's" 0 n;
+            Alcotest.(check bool) "far away" true (far > 50_000.)
+        | None -> Alcotest.fail "no node");
+  ]
+
 let tests =
   Testo.categorize "maps"
     [
@@ -168,4 +270,4 @@ let tests =
 let () =
   Cap.main (fun caps ->
       Testo.interpret_argv ~project_name:"maps" (fun _env ->
-          tests @ Testo.categorize "maps" (cache_tests caps)))
+          tests @ Testo.categorize "maps" (route_tests @ cache_tests caps)))

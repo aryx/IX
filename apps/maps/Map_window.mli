@@ -29,21 +29,15 @@
 type model
 
 (* what the window needs of the system *)
-type caps = < Cap.network; Cap.open_in; Cap.open_out; Cap.env >
+type caps = Map_services.caps
 
 (* [initial caps flags]: from the flags lat=, lon=, zoom= (the world, by
  * default), a word (a place to find), tiles= and places= (the servers,
- * OSM's by default), forecast= (Open-Meteo by default), cache= (a directory
+ * OSM's by default), forecast= (Open-Meteo by default), roads= (Overpass by
+ * default), cache= (a directory
  * or off; the user's by default), cache-size= (in megabytes), worker=wait
  * (the tests': Map_worker.Waited). The worker is started. *)
 val initial : caps -> Playground.flags -> model
-
-(* the words on the command line, without the flags' *)
-val words_of : Playground.flags -> string list
-
-(* mini-maps weather PLACE: the place, as the Find box finds it, and its
- * forecast as lines *)
-val forecast_lines : caps -> Playground.flags -> string -> (string list, string) result
 
 val update : Playground.computer -> model -> model
 val view : Playground.computer -> model -> Playground.shape list

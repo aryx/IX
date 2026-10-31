@@ -57,7 +57,7 @@ let ask (c : Tls_client.t) ~(host : string) (request : string) : outcome =
     | _, Failed why -> if Buffer.length answer = 0 then Failed (why, 0) else Failed (why, Buffer.length answer)
     | _, Closed -> Ended so_far
     | _ when Tls_client.ended c -> Ended (so_far ^ Tls_client.receive c)
-    | _ when silent > Tcp.timeout -> Failed (Printf.sprintf "%s: no answer in %.0f s" host Tcp.timeout, Buffer.length answer)
+    | _ when silent > !Tcp.timeout -> Failed (Printf.sprintf "%s: no answer in %.0f s" host !Tcp.timeout, Buffer.length answer)
     | _ ->
         if got = "" then (
           Tls_client.wait c 0.05;

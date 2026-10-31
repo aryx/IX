@@ -107,7 +107,15 @@ let of_text s =
         while !i < n && String.contains "0123456789.eE+-" s.[!i] do incr i done;
         let text = String.sub s start (!i - start) in
         if is_float then (match float_of_string_opt text with Some f -> Float f | None -> error "bad number %s" text)
-        else Int (int_of_string text)
+        else (
+          (* (too big for this machine's int, an OSM node's id on a 32-bit
+           * one: a float holds it exactly up to 2^53) *)
+          match int_of_string_opt text with
+          | Some v -> Int v
+          | None -> (
+              match float_of_string_opt text with
+              | Some f -> Float f
+              | None -> error "bad number %s" text))
     | c -> error "unexpected '%c' at %d" c !i
   in
   let v = value () in

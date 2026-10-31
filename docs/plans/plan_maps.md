@@ -3,8 +3,8 @@
 The author (2026-10-30), after plan_apps.md: "I would also love to have
 a maps and weather program that fetch data from internet."
 
-**Status: stages 1 to 4 built** (see the end), on Linux and on mini-9pi;
-stage 5, a route, not begun, waiting for a decision (below). What is below about the services
+**Status: stages 1 to 5 built** (see the end); stages 1 to 4 run on mini-9pi,
+stage 5 on Linux and on 32-bit arm's code only. What is below about the services
 was tried on 2026-10-30 with ix's own `mini-curl`, a handful of requests.
 
 ## What it is for
@@ -28,7 +28,7 @@ All answered ix's own TLS and HTTP, with no key:
 | the map | `tile.openstreetmap.org/z/x/y.png` | a 256x256 PNG, 25,476 bytes for 4/8/5, a palette (`Png` reads those) | see below |
 | a place found | Nominatim, `nominatim.openstreetmap.org/search` | JSON | at most 1 request a second; no autocomplete at all; results cached; our own User-Agent |
 | the weather | Open-Meteo, `api.open-meteo.com/v1/forecast` | JSON, current and by day | free for non-commercial use; under 10,000 calls a day; CC-BY 4.0, so credited |
-| a route (later) | OSRM's demo server | JSON | not read yet, to read before stage 5 |
+| the roads for a route | Overpass, `overpass-api.de/api/interpreter` | JSON | read 2026-10-31: under 10,000 queries and 1 GB a day, a hundredth of that for regular use; 429 or 504 when overloaded; ODbL, so credited |
 
 OSM's tile policy shapes the design more than anything else:
 
@@ -64,9 +64,8 @@ OSM's tile policy shapes the design more than anything else:
   temperature; and in the `.mli` the history, from Richardson's forecast
   by hand (1922) to ENIAC's (1950), today's models being what the
   service gives us.
-- **Later, a shortest path**: Dijkstra (1959) and A* (1968), which the
-  author's measure would prefer computed here, over a small extract,
-  than asked of a server.
+- **A shortest path**: Dijkstra (1959) and A* (1968), computed here, over
+  a small extract, rather than asked of a server.
 
 ## Tests
 
@@ -87,8 +86,9 @@ mini-pim.
    autocomplete), a marker, the last places kept.
 4. **The weather**: Open-Meteo, a panel for the place, the terminal's
    `weather`, `timezone=auto` so the service gives local days.
-5. **A route**: after reading OSRM's terms; own A* only with a data
-   source decided.
+5. **A route**: own A* over a small extract (the author, 2026-10-31,
+   "let's follow what you suggest"), the extract asked of Overpass for a
+   box around the two places.
 
 Estimate: 1,000 to 1,500 lines of `.ml`, an estimate, before routes.
 
@@ -98,8 +98,8 @@ Estimate: 1,000 to 1,500 lines of `.ml`, an estimate, before routes.
   the map. Both are natural once this exists; neither is in this plan.
 - A Pi 1 redrawing a moving map of 256x256 tiles: not measured; a first
   check on the Pi 2 first. QEMU's 60 frames a second say nothing of it.
-- Stage 5 needs the author: OSRM's terms are still to read, and own A*
-  needs a data source (an extract), which is a choice of what to carry.
+- Nothing is carried for a route: it needs Overpass the first time in a
+  box. An extract on the card, for a route with no network, is not done.
 - https:// from mini-9pi to the real services: not tried; mini-netscape's
   and mini-curl's TLS are the same code.
 
@@ -161,3 +161,27 @@ host (`http://10.0.2.2`): 25 tiles over Plan 9's TCP, the frame as on Linux,
 `w` and its forecast, the arrows. No recorded session of it (a minute and a
 half, and a keyboard). rc takes `name=value` as an assignment: the flags
 are quoted there, `'zoom=3'`. Lines of `.ml`: 1,309, in the estimate.
+
+2026-10-31: stage 5 built. `Roads`: Overpass's answer as a graph, its costs
+whole milliseconds by road class, only its largest connected piece; `Route`:
+A*, or Dijkstra with h = 0, over a binary heap; `Routing`: a box around both
+places, one extract kept for 30 days, the words and the band on the map. `r`
+starts from the place marked; `mini-maps route tours to amboise` prints it.
+Found on the way, by real requests: Overpass took 37 and 46 s, silent, past
+`Tcp.timeout`'s 30, which is now a `ref` set to 90 around that request; and
+17 MB does not fit a 32-bit string (16 MB), so a box past 0.1 degrees does
+without the residential streets, 8 MB there. `Json` gives a float for an
+integer past the machine's int: OSM's ids, past 2^31.
+
+Measured, Tours to Amboise with all roads (124,996 nodes): A* settles 92,213,
+Dijkstra 110,424, 16.5% fewer. With the fast motorway in the box the
+straight line at 110 km/h is a poor guess, as `Route.mli` says. Tours to
+Vouvray with no residential streets (15,668 nodes): 7,987 and 11,250, 29%
+fewer. mini-ml's code gives the same counts. On 32-bit arm's code under
+qemu-arm, no real board: the 59,264 nodes of Tours to Amboise in 25 s.
+
+Not run: a route in the window on mini-9pi; on a real Pi. Not done: maxspeed,
+turn restrictions, traffic; a walking or cycling route; gzip's size on the
+wire not measured with ix's client (2.6 MB by gzip for the 17 MB).
+
+Lines of `.ml`: 1,985, of which stage 5 is about 660.

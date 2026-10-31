@@ -92,7 +92,7 @@ let more (t : t) (deadline : float) : bool =
   go ()
 
 let bytes (t : t) (n : int) : string option =
-  let deadline = Unix.gettimeofday () +. Tcp.timeout in
+  let deadline = Unix.gettimeofday () +. !Tcp.timeout in
   let rec go () =
     if String.length t.pending >= n then begin
       let b = String.sub t.pending 0 n in
@@ -105,7 +105,7 @@ let bytes (t : t) (n : int) : string option =
   go ()
 
 let line (t : t) : string option =
-  let deadline = Unix.gettimeofday () +. Tcp.timeout in
+  let deadline = Unix.gettimeofday () +. !Tcp.timeout in
   let rec go () =
     match take t with
     | Some l -> Some l

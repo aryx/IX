@@ -131,7 +131,7 @@ let close (t : t) : unit =
   end
 
 let exchange (caps : < Cap.network; Cap.open_in; .. >) ~(trust : X509.roots) ~(host : string) ~(port : int) (request : string) : (string, string) result =
-  let timeout = Tcp.timeout in
+  let timeout = !Tcp.timeout in
   match connect caps ~trust ~host ~port with
   | Error e -> Error e
   | Ok t ->

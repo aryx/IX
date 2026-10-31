@@ -1,0 +1,20 @@
+add 7
+sub -37
+mul -42
+div -3
+mod -1
+neg -1000000000000
+big 1000000000000
+lsl 1099511627776
+asr -128
+lsr 8
+land 8
+lor 14
+lxor 6
+lnot -6
+succ 42
+pred 42
+float 18
+trunc -3
+fdiv 250
+TFTFTTFTFFT

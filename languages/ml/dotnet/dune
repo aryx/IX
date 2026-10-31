@@ -1,0 +1,10 @@
+; mini-ml -dotnet (docs/plans/plan_dotnet_languages.md, stage 1): the
+; typed lowering of a checked unit to .NET's IL (Lower_il), and the
+; assembly's writer, mini-dotnet's, copied (mini-ml does not link
+; mini-dotnet's interpreter and JIT for four files)
+(library
+ (name ix_ml_dotnet)
+ (wrapped false)
+ (libraries ix_ml ix_core))
+
+(copy_files# ../../dotnet/assembly/{Metadata,Signature,Il,Writer}.{ml,mli})

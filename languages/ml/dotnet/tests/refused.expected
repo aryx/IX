@@ -1,0 +1,18 @@
+-- let pair = (1, "one")
+r1.ml:1: a tuple: not compiled to .NET yet (plan_dotnet_languages.md, stage 1d)
+-- type point = { x : int; y : int } let p = { x = 1; y = 2 }
+r2.ml:1: a value of type R2.point: not compiled to .NET yet (plan_dotnet_languages.md, stage 1b)
+-- let f x = match x with 0 -> "zero" | _ -> "many"
+r3.ml:1: a match: not compiled to .NET yet (plan_dotnet_languages.md, stage 1b)
+-- let twice f x = f (f x)
+r4.ml:1: a function as a value: not compiled to .NET yet (plan_dotnet_languages.md, stage 1c)
+-- let () = let add x y = x + y in print_int (add 1 2)
+r5.ml:1: add, a local function: not compiled to .NET yet (plan_dotnet_languages.md, stage 1c)
+-- let add x y = x + y let inc = add 1
+r6.ml:1: a function as a value: not compiled to .NET yet (plan_dotnet_languages.md, stage 1c)
+-- exception Stop let () = raise Stop
+r7.ml:0: the exception Stop: not compiled to .NET yet (plan_dotnet_languages.md, stage 1b)
+-- let id x = x
+r8.ml:1: a polymorphic value: not compiled to .NET yet (plan_dotnet_languages.md, stage 1d)
+-- let () = print_float 1.5
+r9.ml:1: Pervasives.print_float, of the library: not compiled to .NET yet (plan_dotnet_languages.md, stage 3)

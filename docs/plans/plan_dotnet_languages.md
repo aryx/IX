@@ -43,8 +43,9 @@ exceptions never caught (Leroy and Pessaux's analysis, 2000) and code
 never reached; and for mini-ml's optimizer, calls of a known closure
 made direct and inlined.
 
-**Status: step 0 done (mini-analyze, native: below), the rest not
-built.** For the author: what step 0 showed, decision 6 to be
+**Status: step 0 done (mini-analyze, native: below); stage 1a done
+(mini-ml -dotnet, the monomorphic core, 2026-10-31: the stages); the
+rest not built.** For the author: what step 0 showed, decision 6 to be
 decided again by it, the open questions at the end.
 
 ## Step 0: the program first, native (2026-10-30)
@@ -296,6 +297,40 @@ but really use the same types!". So the decisions below are those of
    generics, exceptions, pattern matching, modules; programs without
    the stdlib, printing by Console. Check: a dozen of mini-ml's tests,
    by both runtimes, and C# calling an ML function on an ML record.
+   In steps (2026-10-31, the author choosing it over the analyzer's
+   precision: what the tree has decides the order: Writer writes no
+   GenericParam or MethodSpec rows yet, and mini-dotnet's library has
+   neither ValueTuple nor ImmutableStack):
+   - 1a. **The monomorphic core**: Typing keeps each expression's
+     type (by its span) and each variable's (by its number);
+     `languages/ml/dotnet/`'s lowering: int, bool, char, float,
+     string, unit; a unit's functions its class's static methods,
+     called directly, recursion; its values static fields; let, if,
+     sequences, while, for; arithmetic and comparisons; print_*,
+     string_of_int, ^ over Console and String. The rest refused by
+     name. Check: small programs by mini-dotnet and Microsoft's
+     `dotnet`, against the native build's output.
+     Done (2026-10-31, the author: "Stage 1: mini-ml -dotnet"):
+     `languages/ml/dotnet/Lower_il` (its library copies mini-dotnet's
+     Metadata, Signature, Il and Writer: mini-ml does not link the
+     runtime); Typing.keep, expr_type, var_type; `mini-ml -dotnet`.
+     tests/run.sh: fib, arith, strings, loops, each verified by
+     mini-dotnet (-verify), run by it and by Microsoft's dotnet (-ms),
+     the same as `ocaml file.ml` prints; by dune's mini-ml and by
+     mini-ml's own; nine refusals with their stage. Found: an ML int
+     is 63 bits and an int64 64, so `(-1) lsr 60` is 7 by OCaml and
+     15 on .NET (the plan's "near enough", now a case); `print_float`
+     waits for the library (OCaml's `1.5` and `1.`, not .NET's).
+   - 1b. **Records, variants, exceptions, pattern matching**: classes
+     (a variant an abstract class and a class a case), exceptions
+     System.Exception's, a match by isinst and fields.
+   - 1c. **Closures**: Func<T,R> (a TypeSpec, which Writer has), local
+     functions, partial application, functions passed.
+   - 1d. **Polymorphism**: Writer's GenericParam and MethodSpec;
+     tuples and lists (ValueTuple and ImmutableStack, or ML's own
+     classes first if mini-dotnet's library has not got them).
+   - 1e. **Modules**: a unit a static class, several units in one
+     assembly.
 2. **Tail calls in mini-dotnet** (decision 3). Check: a loop of
    10,000,000 turns written as a tail recursion, by both runtimes.
 3. **The library** (decision 6): the .NET subset in C# by mini-csc,

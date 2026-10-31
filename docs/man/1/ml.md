@@ -22,6 +22,11 @@ ml – the OCaml compiler, for arm and arm64
 **-pp**
 *file*`.ml`
 
+**ml**
+**-dotnet**
+[ **-o** *file*`.dll` ]
+*file*`.ml`
+
 # DESCRIPTION
 *Ml* compiles a unit of OCaml, the language ix is written in, to its
 object, *file*`.5` or *file*`.7`, for \man{ld}{1}. It behaves as
@@ -70,6 +75,16 @@ ocaml-light's *ocamlopt*. Another unit's names are read from its
      function may be which variable's value, or of its functions in
      SSA form.
 
+**-dotnet**
+:    No object: the unit as a .NET assembly, *file*`.dll` and its
+     *file*`.runtimeconfig.json`, which \man{dotnet}{1} runs, and
+     Microsoft's `dotnet`. Typed, as F# is: an `int` is an int64, a
+     `string` a System.String, the unit a static class, its
+     functions static methods, its values static fields, its
+     toplevel `Main`. So far ints, floats, strings, chars, booleans,
+     a unit's functions and loops; the rest is refused by its name
+     and line.
+
 **-h**
 :    How, by examples, and the options to debug the compiler
      (**-dast**, **-dscope**, **-dir**, **-dssa**, **-O**...).
@@ -79,10 +94,12 @@ ocaml-light's *ocamlopt*. Another unit's names are read from its
 ml -i fact.ml
 ml -m 7 fact.ml
 ml -pp Prelude.ml
+ml -dotnet fib.ml; dotnet fib.dll
 ```
 
 # SEE ALSO
-\man{ld}{1}, \man{singml}{1}, \man{datalog}{1}, \man{acid}{1}
+\man{ld}{1}, \man{singml}{1}, \man{datalog}{1}, \man{acid}{1},
+\man{dotnet}{1}
 
 # DIAGNOSTICS
 An error names the file and the line,

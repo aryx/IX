@@ -48,6 +48,10 @@ what each defines and uses: Ssa_facts.mli), for mini-datalog:
   mini-ml -flow fact.ml > fact.dl
   mini-datalog -q 'live_in(V, B)' languages/datalog/analyses/liveness_ssa.dl fact.dl
 -dflow: the compiler's own liveness and dominators, as facts, to compare.
+-dotnet: the unit as a .NET assembly, fact.dll and its runtimeconfig.json,
+for mini-dotnet and Microsoft's dotnet (dotnet/Lower_il.mli; stage 1a: ints,
+floats, strings, a unit's functions, loops; the rest refused):
+  mini-ml -dotnet fact.ml; mini-dotnet fact.dll
 An error names the file and the line: fact.ml:2: this expression has type ...
 |}
 
@@ -359,6 +363,7 @@ let usage = "usage: mini-ml [-m 5|7] [-S] [-o out] [-I dir] file.ml | -start Uni
 let main (caps : < caps; .. >) (argv : string array) : int =
   let dast = ref false and dscope = ref false and dir = ref false and listing = ref false and start = ref false and deps = ref false and opti = ref [] and dssa = ref false and facts = ref false and flow = ref false and dflow = ref false and ssa = ref false and ssa_stack = ref false in
   let show_types = ref false and unsafe = ref false and pp = ref false and depends = ref "" in
+  let dotnet = ref false in
   let mach = ref Gen.arm and out = ref "" and incs = ref [] and libs = ref [] and files = ref [] in
   let options = [
     "-m", Arg.String (function "5" -> mach := Gen.arm | "7" -> mach := Gen.arm64 | m -> raise (Arg.Bad ("-m " ^ m ^ ": 5 or 7"))), " 5|7: arm or arm64";
@@ -405,6 +410,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     "-facts", Arg.Set facts, " the unit as Datalog facts: which function a call may reach";
     "-flow", Arg.Set flow, " the SSA form as Datalog facts, for mini-datalog";
     "-dflow", Arg.Set dflow, " dump Alloc's liveness and the dominators, as facts";
+    "-dotnet", Arg.Set dotnet, " the unit as a .NET assembly (file.dll)";
     "-h", Arg.Unit (fun () -> raise (Arg.Help "")), " how, by examples";
   ] @ List.map (fun (pass, _) -> "-O" ^ pass, Arg.Unit (fun () -> opti := pass :: !opti), "") Opti.passes in
   match Arg.parse_argv argv options (fun f -> files := f :: !files) usage with
@@ -464,11 +470,20 @@ let main (caps : < caps; .. >) (argv : string array) : int =
               if !dast then print caps (String.concat "\n" (List.map Ast.show_item tree) ^ "\n");
               if !dscope then print caps (String.concat "\n" (List.map Scope.show_item items) ^ "\n");
               if !deps then print caps (String.concat " " (Resolve.units_named ()) ^ "\n");
+              Typing.keep := !dotnet;
               if !dast || !dscope || !deps then 0
               else
                 match if !unsafe then [] else Typing.unit_ name items with
                 | exception Typing.Error (l, m) -> fail (Printf.sprintf "%s:%d: %s" (Fpath.to_string file) l m)
                 | _ when !facts -> print caps (Closure_facts.unit_ name items); 0
+                | _ when !dotnet -> (
+                    let out = if !out <> "" then path !out else Fpath.set_ext ".dll" (Fpath.base file) in
+                    match Lower_il.unit_ name items with
+                    | exception Lower_il.Refused (l, m) -> fail (Printf.sprintf "%s:%d: %s" (Fpath.to_string file) l m)
+                    | bytes ->
+                        FS.write caps out bytes;
+                        FS.write caps (Fpath.set_ext ".runtimeconfig.json" out) Writer.runtime_config;
+                        0)
                 | types when !show_types -> List.iter (fun (x, t) -> print caps (Printf.sprintf "val %s : %s\n" x t)) types; 0
                 | _ ->
                 Fold.reset ();

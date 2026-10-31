@@ -356,12 +356,20 @@ let const_type = function
   | Int32 _ -> of_scope_const (Resolve.boxed_int_type "Int32")
   | Int64 _ -> of_scope_const (Resolve.boxed_int_type "Int64")
 
+(* -dotnet: each expression's type, by its span, and each variable's,
+ * by its number, kept for the typed lowering (dotnet/Lower_il), which
+ * reads them when the unit is checked, the cells then all unified *)
+let keep = ref false
+let by_span : (Ast.span, t) Hashtbl.t = Hashtbl.create 1024
+let by_var : (int, t) Hashtbl.t = Hashtbl.create 256
+let var_typed (v : Scope.var) (t : t) : unit = if !keep then Hashtbl.replace by_var v.vid t
+
 (* a pattern's type, and its variables' *)
 let rec pattern (p : Scope.pattern) : t * (int * t) list =
   match p with
   | Pany -> newvar (), []
-  | Pvar v -> let t = newvar () in t, [ v.vid, t ]
-  | Palias (p, v) -> let t, bs = pattern p in t, (v.vid, t) :: bs
+  | Pvar v -> let t = newvar () in var_typed v t; t, [ v.vid, t ]
+  | Palias (p, v) -> let t, bs = pattern p in var_typed v t; t, (v.vid, t) :: bs
   | Pconst c -> const_type c, []
   | Prange _ -> char_t, []
   | Ptuple ps -> let l = List.map pattern ps in Tuple (List.map fst l), List.concat_map snd l
@@ -412,6 +420,7 @@ let rec infer env (e : Scope.expr) : t =
   loc := e.loc;
   let t = infer_ env e in
   loc := saved;
+  if !keep then Hashtbl.replace by_span e.span t;
   t
 
 and infer_ env (e : Scope.expr) =
@@ -477,6 +486,7 @@ and infer_ env (e : Scope.expr) =
   | Eseq (a, b) -> ignore (infer env a); infer env b
   | Ewhile (c, b) -> unify (infer env c) bool_t; ignore (infer env b); unit_t
   | Efor (v, a, b, _, body) ->
+      var_typed v int_t;
       unify (infer env a) int_t;
       unify (infer env b) int_t;
       ignore (infer ((v.vid, int_t) :: env) body);
@@ -539,7 +549,7 @@ and letrec env bs =
     | Efunction [ (Pconstraint (_, (Tconstr (d, _) as ty)), None, body) ] when d == Resolve.using_d -> Arrow (annot ty, shape body)
     | _ -> newvar ()
   in
-  let vs = List.map (function Scope.Pvar v, e -> v.vid, shape e | _ -> error "let rec: a name expected") bs in
+  let vs = List.map (function Scope.Pvar v, e -> let t = shape e in var_typed v t; v.vid, t | _ -> error "let rec: a name expected") bs in
   let env' = vs @ env in
   List.iter2 (fun (_, t) (_, e) -> unify (infer env' e) t) vs bs;
   decr level;
@@ -581,6 +591,8 @@ let unit_ name (items : Scope.item list) =
   Hashtbl.reset globals;
   defined := [];
   typed := [];
+  Hashtbl.reset by_span;
+  Hashtbl.reset by_var;
   Hashtbl.reset min_max;
   List.iter (fun g -> Hashtbl.replace min_max g g) min_max_base;
   current := name;
@@ -684,3 +696,6 @@ let to_scope t =
   go t
 
 let global_types () = List.rev_map (fun sym -> sym, to_scope (Hashtbl.find globals sym)) !defined
+
+let expr_type (sp : Ast.span) : Scope.ty option = Option.map to_scope (Hashtbl.find_opt by_span sp)
+let var_type (vid : int) : Scope.ty option = Option.map to_scope (Hashtbl.find_opt by_var vid)

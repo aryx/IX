@@ -147,5 +147,14 @@ val min_max_globals : unit -> (string * string) list
  * the order defined (mini-ml -g's descriptions: debug/Acid_ml) *)
 val global_types : unit -> (string * Scope.ty) list
 
+(* -dotnet (dotnet/Lower_il, plan_dotnet_languages.md): when [keep],
+ * unit_ keeps each expression's type, by its span, and each
+ * variable's, by its number; asked after it, their variables named as
+ * -i names them (a, b, ...: one of a function's type the same name
+ * each time it is asked) *)
+val keep : bool ref
+val expr_type : Ast.span -> Scope.ty option
+val var_type : int -> Scope.ty option
+
 val dictionaries : unit -> (Ast.span * int * (string, string) result) list
 val errors : unit -> (int * string) list

@@ -32,7 +32,14 @@ let closures = ref 0
 (* by variable (inside its definition, a let rec's) and by symbol
  * (after it, from the toplevel's later items); a value's field by
  * symbol *)
-type env = { by_var : (int, fn) Hashtbl.t; by_sym : (string, fn) Hashtbl.t; fields : (string, int * S.t) Hashtbl.t }
+type env = {
+  by_var : (int, fn) Hashtbl.t;
+  by_sym : (string, fn) Hashtbl.t;
+  fields : (string, int * S.t) Hashtbl.t;
+  (* a unit's externals by symbol: another's use of one its .mli says
+   * val of (Uchar.unsafe_of_int), compiled as the primitive *)
+  externals : (string, string * int * Scope.ty) Hashtbl.t;
+}
 
 let rec simple (p : Scope.pattern) : Scope.var option option =
   match p with
@@ -56,6 +63,10 @@ let rec params (e : Scope.expr) : (Scope.var option * Scope.ty) list * Scope.cas
        | (_, _, body) :: _ -> ([ (None, arg) ], Some cases, body)
        | [] -> refuse e.loc "a function of no case" "1a")
   | _ -> ([], None, e)
+
+(* a function whose method returns nothing: its body a raise (not its
+ * first case's only: List.assoc's [] -> raise Not_found) *)
+let raises_always (f : fn) : bool = f.cases = None && is_raise f.body
 
 (*****************************************************************************)
 (* Closures *)

@@ -471,7 +471,11 @@ and infer_ env (e : Scope.expr) =
       List.fold_left (fun tf (arg : Scope.expr) ->
         let a, r = arrow tf in
         (match arg.e with
-         | Econst (String s) when is_format a -> loc := arg.loc; unify a (format s)
+         | Econst (String s) when is_format a ->
+             loc := arg.loc;
+             unify a (format s);
+             (* (kept: mini-ml -dotnet compiles a printf of it) *)
+             if !keep then Hashtbl.replace by_span (arg.span, kind arg) a
          | _ -> under env arg a);
         loc := e.loc;
         r) (infer env f) args

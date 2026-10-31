@@ -27,6 +27,7 @@ let rec type_of_name (c : c) (loc : int) (n : string) : S.t =
   | "int32" -> S.I4
   | "int64" -> S.I8
   | "float64" -> S.R8
+  | "float32" -> S.R4
   | "string" -> S.String
   | "bool" -> S.Bool
   | "char" -> S.Char
@@ -95,6 +96,8 @@ let convert (c : c) (k : code) (from : S.t) (into : S.t) : unit =
   | S.I4, S.I8 | S.Char, S.I8 -> emit k (Il.Conv (Il.K_i8, false, false))
   | S.I4, S.Char -> emit k (Il.Conv (Il.K_u2, false, false))
   | S.I8, S.Char -> emit k (Il.Conv (Il.K_u2, false, false))
+  | S.R8, S.R4 -> emit k (Il.Conv (Il.K_r4, false, false))
+  | S.R4, S.R8 -> emit k (Il.Conv (Il.K_r8, false, false))
   | _ -> ()
 
 let is_value (t : S.t) : bool =

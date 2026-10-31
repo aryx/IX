@@ -1,0 +1,24 @@
+sorted 1 2 3 5 8 9
+sum 28 max 9
+filter 5,3,1,9
+assoc two, mem true, nth 8, rev 2
+Not_found
+alice:30 bob:40 carol:40 
+colors R G B1 B2
+HELLO, WORLD World 7 h
+split a|b||c
+trim [x y] escaped [a\tb\n]
+bytes Xbcd12 6
+buffer 1;2;3;4;5; 10
+[   42] [42   ] [00042] [ff] [FF] [10]
+[ab] [        ab] [ab        ] [z]
+[3.141590] [2.72] [1.234568e+04] [0.0001] [1e+20]
+1.5 0.1 1e+20
+7-x-true
+alice=30 bob=41 carol=40 
+find 30, mem false, length 3
+structural keys a b
+array 25 16 9 4 1 0 55
+matrix 7 3
+option true true
+even true odd true

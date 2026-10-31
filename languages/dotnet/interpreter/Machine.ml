@@ -652,7 +652,7 @@ let install () : unit =
       | v -> Arith.int_of (call_method "GetHashCode" v));
   h.throw <- Frame.throw_new;
   h.instance <- Types.find_class;
-  h.bytes <- (fun n -> make_store (Types.array_class T_u1) n)
+  h.array <- (fun (t : typ) (n : int) -> make_store (Types.array_class t) n)
 
 let run_main (im : image) (argv : string list) : int =
   let tok = im.img.entry_point in

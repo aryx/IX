@@ -14,13 +14,17 @@ open Il_patterns
 (* Expressions *)
 (*****************************************************************************)
 
+(* the primitives made values so far, a name each *)
+let prim_values = ref 0
+
 let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
   match e.e with
   | Econst (Int n) -> emit k (Il.Ldc_i8 (Int64.of_int n))
   | Econst (Char ch) -> emit k (Il.Ldc_i4 (Int32.of_int (Char.code ch)))
   | Econst (String s) -> emit k (Il.Ldstr (W.user_string c.w s))
   | Econst (Float f) -> emit k (Il.Ldc_r (float_of_string f))
-  | Econst _ -> refuse e.loc "an int32 or int64 constant" "1d"
+  | Econst (Int64 s) -> emit k (Il.Ldc_i8 (Int64.of_string s))
+  | Econst (Int32 s) -> emit k (Il.Ldc_i4 (Int32.of_string s))
   | Econs (k', []) when k'.cname = "()" -> ()
   | Econs (k', []) when k'.cname = "true" -> emit k (Il.Ldc_i4 1l)
   | Econs (k', []) when k'.cname = "false" -> emit k (Il.Ldc_i4 0l)
@@ -40,6 +44,10 @@ let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
   (* (a function of the unit as a value: a Func) *)
   | Evar (Local v) when Hashtbl.mem env.by_var v.vid -> partial c env k e (Hashtbl.find env.by_var v.vid) []
   | Evar (Local v) -> if cts_of c e = S.Void then () else refuse e.loc (v.vname ^ ", a variable not compiled") "1c"
+  (* (another unit's external, its .mli's val: the primitive) *)
+  | Evar (Global g) when Hashtbl.mem env.externals g.gsym ->
+      let p, n, ty = Hashtbl.find env.externals g.gsym in
+      expr c env k { e with e = Evar (Prim (p, n, ty)) }
   | Evar (Global g) when Hashtbl.mem env.by_sym g.gsym -> partial c env k e (Hashtbl.find env.by_sym g.gsym) []
   (* a library function of one argument as a value (List.map
    * string_of_int): a class whose Invoke is its call *)
@@ -81,12 +89,21 @@ let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
   | Evar (Prim (p, _, _)) when Hashtbl.mem env.by_sym ("Runtime." ^ p) -> partial c env k e (Hashtbl.find env.by_sym ("Runtime." ^ p)) []
   | Eapply (({ e = Evar (Prim (p, _, _)); _ } as fe), args) when Hashtbl.mem env.by_sym ("Runtime." ^ p) ->
       let f = Hashtbl.find env.by_sym ("Runtime." ^ p) in
-      if not (runtime_call c env k e f args) then call c env k fe f args
+      if not (Il_prims.runtime_call c k (compiler c env k) e f args) then call c env k e fe f args
+  | Evar (Prim (p, n, _)) when not (Il_externals.is_dotnet p) -> prim_value c env k e p n
   | Evar (Prim (p, _, _)) -> refuse e.loc (p ^ ", a primitive as a value") "1c"
-  | Eapply ({ e = Evar (Prim (p, _, pty)); _ }, args) when Il_externals.is_dotnet p -> dotnet c env k e p pty args
-  | Eapply ({ e = Evar (Prim (p, _, _)); _ }, args) -> prim c env k e p args
-  | Eapply (({ e = Evar (Global g); _ } as fe), args) when Hashtbl.mem env.by_sym g.gsym -> call c env k fe (Hashtbl.find env.by_sym g.gsym) args
-  | Eapply (({ e = Evar (Local v); _ } as fe), args) when Hashtbl.mem env.by_var v.vid -> call c env k fe (Hashtbl.find env.by_var v.vid) args
+  | Eapply ({ e = Evar (Prim (p, _, pty)); _ }, args) when Il_externals.is_dotnet p -> Il_prims.dotnet c k (compiler c env k) e p pty args
+  | Eapply ({ e = Evar (Prim (p, _, _)); _ }, args) -> Il_prims.prim c env k (compiler c env k) e p args
+  | Eapply (({ e = Evar (Global g); _ } as fe), args) when Hashtbl.mem env.externals g.gsym ->
+      let p, n, ty = Hashtbl.find env.externals g.gsym in
+      expr c env k { e with e = Eapply ({ fe with e = Evar (Prim (p, n, ty)) }, args) }
+  (* (Printf's functions with a literal format: compiled, Il_printf) *)
+  | Eapply ({ e = Evar (Global g); _ }, args) when Il_printf.applies g.gsym args ->
+      Il_printf.compile c env k (expr c env k) e g.gsym args
+  (* (^ String.Concat, Pervasives' own or not: its ML copies twice) *)
+  | Eapply (({ e = Evar (Global g); _ } as fe), args) when Hashtbl.mem env.by_sym g.gsym && g.gsym <> "Pervasives.^" ->
+      call c env k e fe (Hashtbl.find env.by_sym g.gsym) args
+  | Eapply (({ e = Evar (Local v); _ } as fe), args) when Hashtbl.mem env.by_var v.vid -> call c env k e fe (Hashtbl.find env.by_var v.vid) args
   | Eapply (({ e = Evar (Global g); _ } as f), args) when Hashtbl.mem env.fields g.gsym -> apply c env k f args
   | Eapply ({ e = Evar (Global g); _ }, args) -> (
       match builtin c g.gsym with
@@ -143,6 +160,9 @@ let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
   (* a local function that calls itself: its closure's own field *)
   | Elet (true, [ (Pvar v, ({ e = Efunction _; _ } as d)) ], body) ->
       lambda c env k d (Some v) (own_instance c v body);
+      expr c env k body
+  | Elet (true, bs, body) when rec_functions bs ->
+      lambdas c env k (rec_group c bs body);
       expr c env k body
   | Elet _ -> refuse e.loc "a let rec of several, or of a pattern, or let ... and" "1c"
   | Econstraint (e, _) -> expr c env k e
@@ -227,7 +247,22 @@ and expr2 (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
           k.pending <- k.pending - 3;
           emit k (Il.Stelem_any tok))
         es
-  | Eassert _ -> refuse e.loc "an assert" "1b"
+  (* (Assert_failure (file, line, 0), as the native compiler's; assert
+   * false of any type: a default value after, never reached) *)
+  | Eassert x ->
+      let ok = label k in
+      expr c env k x;
+      emit k (Il.Brtrue ok);
+      let ty = Scope.Ttuple [ Resolve.string_t; Resolve.int_t; Resolve.int_t ] in
+      emit k (Il.Ldstr (W.user_string c.w (c.uname ^ ".ml")));
+      emit k (Il.Ldc_i8 (Int64.of_int e.loc));
+      emit k (Il.Ldc_i8 0L);
+      emit k (Il.Newobj (tuple_ctor c e.loc ty));
+      let _, ctor, _ = exn c e.loc "caml_exn_Assert_failure" [ ty ] in
+      emit k (Il.Newobj ctor);
+      emit k Il.Throw;
+      place k ok;
+      Il_prims.default k (cts_of c e)
   | _ -> expr c env k e
 
 (* an expression in tail position, its value returned: every path ends
@@ -242,7 +277,9 @@ and tail_expr (c : c) (env : env) (k : code) (e : Scope.expr) (boxed : bool) : u
     if boxed && cts_of c e = S.Void then emit k Il.Ldnull;
     emit k Il.Ret in
   let known (f : fn) (args : Scope.expr list) =
-    List.length args = List.length f.params && not (boxed && cts c e.loc f.rty = S.Void) in
+    (* (a call of unit, boxed: plain's null; its callee's result maybe a
+     * type variable, failwith's 'a, so the call's own type asked too) *)
+    List.length args = List.length f.params && not (boxed && (cts c e.loc f.rty = S.Void || cts_of c e = S.Void)) in
   match e.e with
   | Eif (cond, a, Some b) ->
       let otherwise = label k in
@@ -260,17 +297,20 @@ and tail_expr (c : c) (env : env) (k : code) (e : Scope.expr) (boxed : bool) : u
   | Elet (true, [ (Pvar v, ({ e = Efunction _; _ } as d)) ], body) ->
       lambda c env k d (Some v) (own_instance c v body);
       tail_expr c env k body boxed
+  | Elet (true, bs, body) when rec_functions bs ->
+      lambdas c env k (rec_group c bs body);
+      tail_expr c env k body boxed
   | Econstraint (x, _) -> tail_expr c env k x boxed
   | Ematch (scrut, cases) ->
       let v = local k (cts_of c scrut) in
       expr c env k scrut;
       emit k (Il.Stloc v);
       tail_cases c env k (fun () -> emit k (Il.Ldloc v)) (type_of scrut) cases boxed
-  | Eapply (({ e = Evar (Global g); _ } as fe), args) when Hashtbl.mem env.by_sym g.gsym && known (Hashtbl.find env.by_sym g.gsym) args ->
-      call_with c env k fe (Hashtbl.find env.by_sym g.gsym) args true;
+  | Eapply (({ e = Evar (Global g); _ } as fe), args) when Hashtbl.mem env.by_sym g.gsym && known (Hashtbl.find env.by_sym g.gsym) args && not (Il_printf.applies g.gsym args) ->
+      call_with c env k e fe (Hashtbl.find env.by_sym g.gsym) args true;
       emit k Il.Ret
   | Eapply (({ e = Evar (Local v); _ } as fe), args) when Hashtbl.mem env.by_var v.vid && known (Hashtbl.find env.by_var v.vid) args ->
-      call_with c env k fe (Hashtbl.find env.by_var v.vid) args true;
+      call_with c env k e fe (Hashtbl.find env.by_var v.vid) args true;
       emit k Il.Ret
   (* a function value: its last Invoke a tail call when its result is
    * what the method returns (an object, for unit) *)
@@ -340,22 +380,41 @@ and drop (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
 (* a call of a function of the unit: its method, all its arguments
  * given; fewer, a Func of those given (partial); more, its result
  * invoked with the others *)
-and call (c : c) (env : env) (k : code) (fe : Scope.expr) (f : fn) (args : Scope.expr list) : unit =
-  call_with c env k fe f args false
+and call (c : c) (env : env) (k : code) (e : Scope.expr) (fe : Scope.expr) (f : fn) (args : Scope.expr list) : unit =
+  call_with c env k e fe f args false
 
 (* [tail]: all its arguments given, the call after tail. (the caller
  * then returns) *)
-and call_with (c : c) (env : env) (k : code) (fe : Scope.expr) (f : fn) (args : Scope.expr list) (tail : bool) : unit =
+and call_with (c : c) (env : env) (k : code) (e : Scope.expr) (fe : Scope.expr) (f : fn) (args : Scope.expr list) (tail : bool) : unit =
   let n = List.length f.params in
   if List.length args < n then partial c env k fe f args
   else begin
     let mine = List.filteri (fun (i : int) (_ : Scope.expr) -> i < n) args in
     let more = List.filteri (fun (i : int) (_ : Scope.expr) -> i >= n) args in
-    operands c env k mine;
+    (* (a unit for a parameter of a type variable: null, F#'s unit as a
+     * type argument, an object) *)
+    let saved = k.pending in
+    List.iter2
+      (fun (a : Scope.expr) ((_, t) : Scope.var option * S.t) ->
+        expr c env k a;
+        let unit_ = cts_of c a = S.Void in
+        if unit_ && (match t with S.MVar _ -> true | _ -> false) then emit k Il.Ldnull;
+        if not unit_ || t <> S.Void then k.pending <- k.pending + 1)
+      mine f.params;
+    k.pending <- saved;
     (* (a polymorphic function: its method instantiated at what the call
-     * gives its type's variables, the call's own type said so) *)
+     * gives its type's variables, the call's own type said so; unit
+     * an object, its result then dropped) *)
     let ity = type_of fe in
-    if tail then emit k (Il.Prefix "tail.");
+    let rec after (t : Scope.ty) (i : int) : Scope.ty = if i = 0 then t else match t with Tarrow (_, b) -> after b (i - 1) | t -> t in
+    let drop_result =
+      f.gvars <> [] && more = [] && not (raises_always f)
+      && (match f.rty with Tvar _ -> true | _ -> false) && cts c fe.loc (after ity n) = S.Void in
+    (* (a method of nothing, unit's or a raise's, where a value is
+     * wanted, a type variable's in an Obj.magic: a default value) *)
+    let void_callee = raises_always f || cts c fe.loc f.rty = S.Void in
+    let raises = void_callee && more = [] && cts_of c e <> S.Void in
+    if tail && not drop_result && not raises then emit k (Il.Prefix "tail.");
     (if f.gvars = [] then emit k (Il.Call f.tok)
      else begin
        let inst = instantiation (rest f 0) ity in
@@ -363,15 +422,13 @@ and call_with (c : c) (env : env) (k : code) (fe : Scope.expr) (f : fn) (args : 
          List.map
            (fun (n : string) ->
              match List.assoc_opt n inst with
-             | Some t ->
-                 let t' = cts c fe.loc t in
-                 if t' = S.Void then refuse fe.loc "a polymorphic function at unit" "1d";
-                 t'
+             | Some t -> arg_type c fe.loc t
              | None -> S.Object)
            f.gvars in
        emit k (Il.Call (W.method_spec c.w f.tok args))
      end);
-    let rec after (t : Scope.ty) (i : int) : Scope.ty = if i = 0 then t else match t with Tarrow (_, b) -> after b (i - 1) | t -> t in
+    if drop_result then emit k Il.Pop;
+    if raises then Il_prims.default k (cts_of c e);
     if more <> [] then invoke_with c env k fe (after ity n) more
   end
 
@@ -464,10 +521,29 @@ and own_instance (c : c) (v : Scope.var) (body : Scope.expr) : (string * Scope.t
       end
 
 and lambda (c : c) (env : env) (k : code) (e : Scope.expr) (self : Scope.var option) (aliases : (string * Scope.ty) list) : unit =
+  match self with
+  | Some v -> lambdas c env k [ (v, e, aliases) ]
+  | None ->
+      let outer = c.tvars in
+      let t, at_outer, inv', fs, captured = closure c env k e [] aliases in
+      let saved = k.pending in
+      List.iter (fun ((vid, _) : int * S.t) -> load_var k vid; k.pending <- k.pending + 1) captured;
+      k.pending <- saved;
+      emit k (Il.Newobj (ctor_tok c t at_outer));
+      emit k (Il.Ldftn inv');
+      emit k (Il.Newobj (func_ctor c fs));
+      c.tvars <- outer
+
+(* a closure's class and its Invoke; [group]: the functions of a let
+ * rec it is one of, each a field of it (null when it is made, then
+ * set: lambdas). Its class, the type arguments it is made at, its
+ * Invoke, its Func's type, what it captures *)
+and closure (c : c) (env : env) (k : code) (e : Scope.expr) (group : (Scope.var * Scope.ty) list) (aliases : (string * Scope.ty) list)
+    : tclass * S.t list * int * S.t * (int * S.t) list =
   let cases = match e.e with Efunction cases -> cases | _ -> refuse e.loc "a function" "1c" in
   let fty = type_of e in
   let dom, codom = match fty with Tarrow (a, b) -> (a, b) | _ -> refuse e.loc "a function" "1c" in
-  let own = match self with Some v -> [ v.vid ] | None -> [] in
+  let own = List.map (fun ((v, _) : Scope.var * Scope.ty) -> v.vid) group in
   let captured =
     List.filter
       (fun (vid : int) -> (Hashtbl.mem k.args vid || Hashtbl.mem k.slots vid || Hashtbl.mem k.captured vid) && not (List.mem vid own))
@@ -480,13 +556,14 @@ and lambda (c : c) (env : env) (k : code) (e : Scope.expr) (self : Scope.var opt
   (* (its own variables, a local polymorphic function's, as its uses
    * give them, in each context) *)
   let outer' = outer @ List.map (fun ((n, t) : string * Scope.ty) -> (n, cts c e.loc t)) aliases in
+  (* (the aliases' types in the class's variables: inner first) *)
   c.tvars <- inner;
   c.tvars <- inner @ List.map (fun ((n, t) : string * Scope.ty) -> (n, cts c e.loc t)) aliases;
   let types = List.map (fun (vid : int) -> match Typing.var_type vid with Some t -> cts c e.loc t | None -> S.Object) captured in
   let captured = List.filter (fun ((_, t) : int * S.t) -> t <> S.Void) (List.combine captured types) in
   incr closures;
   let fields = List.mapi (fun (i : int) ((_, t) : int * S.t) -> (Printf.sprintf "c%d" i, t)) captured in
-  let fields = match self with Some v -> fields @ [ ("self_" ^ v.vname, cts c e.loc fty) ] | None -> fields in
+  let fields = fields @ List.map (fun ((v, ty) : Scope.var * Scope.ty) -> ("self_" ^ v.vname, cts c e.loc ty)) group in
   let t = helper_class c (Printf.sprintf "closure%d" !closures) (List.length outer) fields in
   let me = List.map snd inner in
   let sg = instance [ arg_type c e.loc dom ] (arg_type c e.loc codom) in
@@ -494,7 +571,7 @@ and lambda (c : c) (env : env) (k : code) (e : Scope.expr) (self : Scope.var opt
   (* its body *)
   let k' = new_code () in
   List.iteri (fun (i : int) ((vid, _) : int * S.t) -> Hashtbl.replace k'.captured vid (field_tok c t me i)) captured;
-  (match self with Some v -> Hashtbl.replace k'.captured v.vid (field_tok c t me (List.length captured)) | None -> ());
+  List.iteri (fun (j : int) ((v, _) : Scope.var * Scope.ty) -> Hashtbl.replace k'.captured v.vid (field_tok c t me (List.length captured + j))) group;
   (match cases with
    | [ (p, None, body) ] when (match p with Pvar _ | Pany | Pconstraint (Pvar _, _) -> true | Pcons (k'', []) -> k''.cname = "()" | _ -> false) ->
        (match p with Pvar v | Pconstraint (Pvar v, _) -> if cts c e.loc dom <> S.Void then Hashtbl.replace k'.args v.vid 1 | _ -> ());
@@ -503,31 +580,59 @@ and lambda (c : c) (env : env) (k : code) (e : Scope.expr) (self : Scope.var opt
    | [] -> refuse e.loc "a function of no case" "1c");
   finish c k' inv;
   c.tvars <- outer';
-  (* the value: the captured values, the object, the Func *)
-  let saved = k.pending in
-  List.iter (fun ((vid, _) : int * S.t) -> load_var k vid; k.pending <- k.pending + 1) captured;
-  k.pending <- saved;
-  (match self with Some _ -> emit k Il.Ldnull | None -> ());
-  emit k (Il.Newobj (ctor_tok c t at_outer));
   let inv' = method_tok c t at_outer "Invoke" inv sg in
   let fs = cts c e.loc fty in
-  match self with
-  | None ->
-      emit k (Il.Ldftn inv');
-      emit k (Il.Newobj (func_ctor c fs));
-      c.tvars <- outer
-  | Some v ->
-      let obj = local k (at t at_outer) and fslot = local k fs in
-      emit k (Il.Stloc obj);
-      emit k (Il.Ldloc obj);
-      emit k (Il.Ldftn inv');
-      emit k (Il.Newobj (func_ctor c fs));
-      emit k (Il.Stloc fslot);
-      Hashtbl.replace k.slots v.vid fslot;
-      emit k (Il.Ldloc obj);
-      emit k (Il.Ldloc fslot);
-      emit k (Il.Stfld (field_tok c t at_outer (List.length captured)));
-      c.tvars <- outer
+  (t, at_outer, inv', fs, captured)
+
+(* a let rec's bindings all functions, of variables *)
+and rec_functions (bs : (Scope.pattern * Scope.expr) list) : bool =
+  List.for_all
+    (fun ((p, d) : Scope.pattern * Scope.expr) ->
+      match p, d.e with (Pvar _ | Pconstraint (Pvar _, _)), Efunction _ -> true | _ -> false)
+    bs
+
+and rec_group (c : c) (bs : (Scope.pattern * Scope.expr) list) (body : Scope.expr) : (Scope.var * Scope.expr * (string * Scope.ty) list) list =
+  List.map
+    (fun ((p, d) : Scope.pattern * Scope.expr) ->
+      match p with
+      | Pvar v | Pconstraint (Pvar v, _) -> (v, d, own_instance c v body)
+      | _ -> refuse d.loc "a let rec of a pattern" "1c")
+    bs
+
+(* a let rec of functions (one, or several calling each other): each a
+ * closure whose fields hold the group's Funcs; all made first, their
+ * Funcs in locals (the variables), then each one's fields set *)
+and lambdas (c : c) (env : env) (k : code) (defs : (Scope.var * Scope.expr * (string * Scope.ty) list) list) : unit =
+  let outer = c.tvars in
+  let group = List.map (fun ((v, d, _) : Scope.var * Scope.expr * (string * Scope.ty) list) -> (v, type_of d)) defs in
+  let made =
+    List.map
+      (fun ((v, d, aliases) : Scope.var * Scope.expr * (string * Scope.ty) list) ->
+        let t, at_outer, inv', fs, captured = closure c env k d group aliases in
+        let saved = k.pending in
+        List.iter (fun ((vid, _) : int * S.t) -> load_var k vid; k.pending <- k.pending + 1) captured;
+        k.pending <- saved;
+        List.iter (fun (_ : Scope.var * Scope.ty) -> emit k Il.Ldnull) group;
+        emit k (Il.Newobj (ctor_tok c t at_outer));
+        let obj = local k (at t at_outer) and fslot = local k fs in
+        emit k (Il.Stloc obj);
+        emit k (Il.Ldloc obj);
+        emit k (Il.Ldftn inv');
+        emit k (Il.Newobj (func_ctor c fs));
+        emit k (Il.Stloc fslot);
+        c.tvars <- outer;
+        (v, t, at_outer, obj, fslot, List.length captured))
+      defs in
+  List.iter (fun ((v, _, _, _, fslot, _) : Scope.var * tclass * S.t list * int * int * int) -> Hashtbl.replace k.slots v.vid fslot) made;
+  List.iter
+    (fun ((_, t, at_outer, obj, _, n) : Scope.var * tclass * S.t list * int * int * int) ->
+      List.iteri
+        (fun (j : int) ((_, _, _, _, fslot, _) : Scope.var * tclass * S.t list * int * int * int) ->
+          emit k (Il.Ldloc obj);
+          emit k (Il.Ldloc fslot);
+          emit k (Il.Stfld (field_tok c t at_outer (n + j))))
+        made)
+    made
 
 (* the cases tried in order on the value [load] pushes, the first that
  * matches (and whose guard holds) taken; its value in a local, read
@@ -585,245 +690,49 @@ and try_ (c : c) (env : env) (k : code) (e : Scope.expr) (body : Scope.expr) (ca
   place k over;
   match res with Some r -> emit k (Il.Ldloc r) | None -> ()
 
-(* a call of the runtime unit's function of a C primitive's name, all
- * its arguments given, it not polymorphic: each argument converted to
- * its parameter's type, which may be another than the external's (the
- * primitive of output_char is output_byte's, an int there), the result
- * back; sys_exit's 'a, which no value reaches, a default one. false
- * when it is not so (a partial application: call's) *)
-and runtime_call (c : c) (env : env) (k : code) (e : Scope.expr) (f : fn) (args : Scope.expr list) : bool =
-  if f.gvars <> [] || List.length args <> List.length f.params then false
-  else begin
-    let saved = k.pending in
-    List.iter2
-      (fun (a : Scope.expr) ((_, t) : Scope.var option * S.t) ->
-        expr c env k a;
-        if t <> S.Void then begin
-          Il_externals.convert c k (cts_of c a) t;
-          k.pending <- k.pending + 1
-        end)
-      args f.params;
-    k.pending <- saved;
-    emit k (Il.Call f.tok);
-    let ret = if is_raise f.body then S.Void else cts c e.loc f.rty in
-    (match ret, cts_of c e with
-     | S.Void, S.Void -> ()
-     | S.Void, S.I8 -> emit k (Il.Ldc_i8 0L)
-     | S.Void, (S.I4 | S.Bool | S.Char) -> emit k (Il.Ldc_i4 0l)
-     | S.Void, S.R8 -> emit k (Il.Ldc_r 0.0)
-     | S.Void, _ -> emit k Il.Ldnull
-     | r, S.Void -> emit k Il.Pop; ignore r
-     | r, t -> Il_externals.convert c k r t);
-    true
-  end
-
-(* a call of an external naming a .NET member (decision 7): its
- * arguments converted to its parameters' .NET types, its result back *)
-and dotnet (c : c) (env : env) (k : code) (e : Scope.expr) (p : string) (pty : Scope.ty) (args : Scope.expr list) : unit =
-  let m = Il_externals.member c e.loc p pty in
-  let n = List.length (fst (Il_externals.arrows pty)) in
-  if List.length args <> n then refuse e.loc (p ^ ", an external given fewer or more arguments than its type's") "3b";
-  let saved = k.pending in
-  let pending = ref (List.combine m.from m.into) in
-  (* (a this of a value type, a double's ToString: its address, and a
-   * call, not a callvirt) *)
-  let by_address = not m.static && (match m.into with t :: _ -> Il_externals.is_value t | [] -> false) in
-  List.iteri
-    (fun (i : int) (a : Scope.expr) ->
-      expr c env k a;
-      if cts_of c a <> S.Void then begin
-        (match !pending with
-         | (f, t) :: rest -> Il_externals.convert c k f t; pending := rest
-         | [] -> ());
-        if i = 0 && by_address then begin
-          let v = local k (List.hd m.into) in
-          emit k (Il.Stloc v);
-          emit k (Il.Ldloca v)
-        end;
-        k.pending <- k.pending + 1
+(* a primitive as a value (let equal = (=)): η-expanded, a method of
+ * the unit, prim_N x1 ... xn = p x1 ... xn, at the use's type, made a
+ * Func as a function given none of its arguments (partial) *)
+and prim_value (c : c) (env : env) (k : code) (e : Scope.expr) (p : string) (n : int) : unit =
+  let ty = type_of e in
+  let rec tvars (t : Scope.ty) : bool =
+    match t with
+    | Tvar _ -> true
+    | Tarrow (a, b) -> tvars a || tvars b
+    | Ttuple ts | Tconstr (_, ts) -> List.exists tvars ts in
+  if tvars ty then refuse e.loc (p ^ ", a primitive as a value at a polymorphic type") "1c";
+  let rec split (t : Scope.ty) (i : int) : Scope.ty list * Scope.ty =
+    if i = 0 then ([], t) else match t with Tarrow (a, b) -> let l, r = split b (i - 1) in (a :: l, r) | t -> ([], t) in
+  let ptys, rty = split ty n in
+  incr prim_values;
+  let id = !prim_values in
+  let fresh (t : Scope.ty) (x : Scope.exp) : Scope.expr =
+    incr prim_values;
+    let ex : Scope.expr = { e = x; loc = e.loc; span = (- !prim_values, - id) } in
+    Hashtbl.replace synthetic ex.span t;
+    ex in
+  let vars = List.mapi (fun (i : int) (_ : Scope.ty) -> ({ vname = Printf.sprintf "x%d" i; vid = - 1000000 * id - i } : Scope.var)) ptys in
+  let fe = fresh ty (Evar (Prim (p, n, ty))) in
+  let body = fresh rty (Eapply (fe, List.map2 (fun (v : Scope.var) (t : Scope.ty) -> fresh t (Evar (Local v))) vars ptys)) in
+  let params = List.map2 (fun (v : Scope.var) (t : Scope.ty) -> (Some v, cts c e.loc t)) vars ptys in
+  let ret = cts c e.loc rty in
+  let tok = W.method_def c.w c.cls (Printf.sprintf "prim%d" id) 0x0096
+      (static (List.filter (fun (t : S.t) -> t <> S.Void) (List.map snd params)) ret) in
+  (* (its name the method's, unique: partial's class is named after it) *)
+  let f = { tok; fname = Printf.sprintf "prim%d" id; params; ptys; rty; cases = None; body; gvars = [] } in
+  let k' = new_code () in
+  let i = ref 0 in
+  List.iter
+    (fun ((v, t) : Scope.var option * S.t) ->
+      if t <> S.Void then begin
+        (match v with Some v -> Hashtbl.replace k'.args v.vid !i | None -> ());
+        incr i
       end)
-    args;
-  k.pending <- saved;
-  emit k (if m.static || by_address then Il.Call m.tok else Il.Callvirt m.tok);
-  if m.ml_ret = S.Void && m.ret <> S.Void then emit k Il.Pop
-  else Il_externals.convert c k m.ret m.ml_ret
+    params;
+  tail_expr c env k' body false;
+  finish c k' tok;
+  partial c env k e f []
 
-and prim (c : c) (env : env) (k : code) (e : Scope.expr) (p : string) (args : Scope.expr list) : unit =
-  let all () = operands c env k args in
-  let op (o : Il.op) = all (); emit k o in
-  let first () : S.t = match args with a :: _ -> cts_of c a | [] -> S.Void in
-  (* both operands boxed (a type variable's value) *)
-  let boxed () =
-    let ty = first () in
-    match args with
-    | [ a; b ] ->
-        expr c env k a; emit k (Il.Box (W.type_spec c.w ty));
-        k.pending <- k.pending + 1; expr c env k b; emit k (Il.Box (W.type_spec c.w ty)); k.pending <- k.pending - 1
-    | _ -> refuse e.loc "a comparison of a polymorphic value" "1d" in
-  (* a comparison: a string's by CompareOrdinal against 0; a type
-   * variable's by the assembly's Ml::compare *)
-  let compare (lt : bool) (negate : bool) =
-    (match first () with
-    | S.String ->
-        all ();
-        emit k (Il.Call (lib c "String" "CompareOrdinal" (static [ S.String; S.String ] S.I4)));
-        emit k (Il.Ldc_i4 0l)
-    | S.MVar _ | S.Var _ ->
-        boxed ();
-        emit k (Il.Call (ml_compare c));
-        emit k (Il.Ldc_i4 0l)
-    | S.Class _ | S.GenericInst _ -> refuse e.loc "< on records or variants (OCaml's structural order)" "1d"
-    | _ -> all ());
-    (* (a float's NaN: unordered, so a <= b is not (a > b, or unordered)) *)
-    let unordered = negate && first () = S.R8 in
-    emit k (if lt then Il.Clt unordered else Il.Cgt unordered);
-    if negate then (emit k (Il.Ldc_i4 0l); emit k Il.Ceq) in
-  let equal () =
-    match first () with
-    | S.String -> op (Il.Call (lib c "String" "op_Equality" (static [ S.String; S.String ] S.Bool)))
-    (* (a polymorphic function's value: boxed, its own Equals, an int's
-     * or a record's) *)
-    | (S.MVar _ | S.Var _) as t when p = "%equal" || p = "%notequal" ->
-        let box () = emit k (Il.Box (W.type_spec c.w t)) in
-        (match args with
-         | [ a; b ] ->
-             expr c env k a; box ();
-             k.pending <- k.pending + 1; expr c env k b; box (); k.pending <- k.pending - 1;
-             emit k (Il.Callvirt (lib c "Object" "Equals" (instance [ S.Object ] S.Bool)))
-         | _ -> refuse e.loc "= of a polymorphic value" "1d")
-    (* (a record's or a variant's Equals, structural; an exception's
-     * the same object) *)
-    | S.Class _ | S.GenericInst _ when p = "%equal" || p = "%notequal" -> op (Il.Callvirt (lib c "Object" "Equals" (instance [ S.Object ] S.Bool)))
-    | _ -> op Il.Ceq in
-  match p, args with
-  | ("%addint" | "%addfloat"), _ -> op (Il.Binop Il.Add)
-  | ("%subint" | "%subfloat"), _ -> op (Il.Binop Il.Sub)
-  | ("%mulint" | "%mulfloat"), _ -> op (Il.Binop Il.Mul)
-  | ("%divint" | "%divfloat"), _ -> op (Il.Binop Il.Div)
-  | "%modint", _ -> op (Il.Binop Il.Rem)
-  | "%andint", _ -> op (Il.Binop Il.And)
-  | "%orint", _ -> op (Il.Binop Il.Or)
-  | "%xorint", _ -> op (Il.Binop Il.Xor)
-  | ("%negint" | "%negfloat"), _ -> op Il.Neg
-  | "%lnot", _ -> op Il.Not
-  | "%succint", _ -> all (); emit k (Il.Ldc_i8 1L); emit k (Il.Binop Il.Add)
-  | "%predint", _ -> all (); emit k (Il.Ldc_i8 1L); emit k (Il.Binop Il.Sub)
-  (* (a shift's count an int32, IL's) *)
-  | ("%lslint" | "%asrint" | "%lsrint"), _ ->
-      all ();
-      emit k (Il.Conv (Il.K_i4, false, false));
-      emit k (Il.Binop (match p with "%lslint" -> Il.Shl | "%asrint" -> Il.Shr | _ -> Il.Shr_un))
-  | "%floatofint", _ -> op (Il.Conv (Il.K_r8, false, false))
-  | "%intoffloat", _ -> op (Il.Conv (Il.K_i8, false, false))
-  | "%boolnot", _ -> all (); emit k (Il.Ldc_i4 0l); emit k Il.Ceq
-  | ("%equal" | "%eq"), _ -> equal ()
-  | ("%notequal" | "%noteq"), _ -> equal (); emit k (Il.Ldc_i4 0l); emit k Il.Ceq
-  | "%lessthan", _ -> compare true false
-  | "%greaterthan", _ -> compare false false
-  | "%lessequal", _ -> compare false true
-  | "%greaterequal", _ -> compare true true
-  | "%sequand", [ a; b ] ->
-      let no = label k and over = label k in
-      expr c env k a;
-      emit k (Il.Brfalse no);
-      expr c env k b;
-      emit k (Il.Br over);
-      place k no;
-      emit k (Il.Ldc_i4 0l);
-      place k over
-  | "%sequor", [ a; b ] ->
-      let yes = label k and over = label k in
-      expr c env k a;
-      emit k (Il.Brtrue yes);
-      expr c env k b;
-      emit k (Il.Br over);
-      place k yes;
-      emit k (Il.Ldc_i4 1l);
-      place k over
-  | "%string_length", [ s ] when cts_of c s = S.SzArray S.U1 -> all (); emit k Il.Ldlen; emit k (Il.Conv (Il.K_i8, false, false))
-  | "%string_length", _ -> all (); emit k (Il.Callvirt (lib c "String" "get_Length" (instance [] S.I4))); emit k (Il.Conv (Il.K_i8, false, false))
-  (* (bytes: a byte[]'s element, a uint8, our char an int32) *)
-  | ("%string_safe_get" | "%string_unsafe_get"), [ s; i ] when cts_of c s = S.SzArray S.U1 ->
-      expr c env k s;
-      k.pending <- k.pending + 1; expr c env k i; k.pending <- k.pending - 1;
-      emit k (Il.Conv (Il.K_i4, false, false));
-      emit k (Il.Ldelem Il.K_u1)
-  (* (a byte[] made, IL's newarr: the runtime unit's create_string) *)
-  | "%bytes_create", _ -> all (); emit k (Il.Conv (Il.K_i4, false, false)); emit k (Il.Newarr (sys c "Byte"))
-  | ("%string_safe_set" | "%string_unsafe_set"), [ s; i; x ] when cts_of c s = S.SzArray S.U1 ->
-      expr c env k s;
-      k.pending <- k.pending + 1; expr c env k i; emit k (Il.Conv (Il.K_i4, false, false));
-      k.pending <- k.pending + 1; expr c env k x;
-      k.pending <- k.pending - 2;
-      emit k (Il.Stelem Il.K_i1)
-  (* (s.[i]: String's Chars, a UTF-16 unit, a byte here: our char) *)
-  | ("%string_safe_get" | "%string_unsafe_get"), [ s; i ] ->
-      expr c env k s;
-      k.pending <- k.pending + 1;
-      expr c env k i;
-      k.pending <- k.pending - 1;
-      emit k (Il.Conv (Il.K_i4, false, false));
-      emit k (Il.Callvirt (lib c "String" "get_Chars" (instance [ S.I4 ] S.Char)));
-      emit k (Il.Conv (Il.K_i4, false, false))
-  (* ref, !, :=, incr, decr: Pervasives' 'a ref, a record *)
-  | "%makemutable", _ -> values c env k args; emit k (Il.Newobj (record_ctor c e.loc (type_of e)))
-  | "%field0", [ r ] ->
-      expr c env k r;
-      emit k (Il.Ldfld (field0 c e.loc (type_of r)));
-      if cts_of c e = S.Void then emit k Il.Pop
-  | "%setfield0", [ r; _ ] -> values c env k args; emit k (Il.Stfld (field0 c e.loc (type_of r)))
-  | ("%incr" | "%decr"), [ r ] ->
-      let f = field0 c e.loc (type_of r) in
-      expr c env k r;
-      emit k Il.Dup;
-      emit k (Il.Ldfld f);
-      emit k (Il.Ldc_i8 1L);
-      emit k (Il.Binop (if p = "%incr" then Il.Add else Il.Sub));
-      emit k (Il.Stfld f)
-  | "compare", [ _; _ ] -> (
-      match first () with
-      | S.MVar _ | S.Var _ | S.String | S.I8 | S.R8 | S.I4 | S.Bool ->
-          (match first () with
-           | S.MVar _ | S.Var _ -> boxed ()
-           | ty ->
-               let box = match ty with S.String -> [] | S.I8 -> [ Il.Box (sys c "Int64") ] | S.R8 -> [ Il.Box (sys c "Double") ] | S.I4 -> [ Il.Box (sys c "Int32") ] | _ -> [ Il.Box (sys c "Boolean") ] in
-               (match args with
-                | [ a; b ] ->
-                    expr c env k a; List.iter (emit k) box;
-                    k.pending <- k.pending + 1; expr c env k b; List.iter (emit k) box; k.pending <- k.pending - 1
-                | _ -> ()));
-          emit k (Il.Call (ml_compare c));
-          emit k (Il.Conv (Il.K_i8, false, false))
-      | _ -> refuse e.loc "compare on records or variants (OCaml's structural order)" "1d")
-  (* an array's length, an element read and written (an index an
-   * int32: IL's) *)
-  | "%array_length", _ -> all (); emit k Il.Ldlen; emit k (Il.Conv (Il.K_i8, false, false))
-  | ("%array_safe_get" | "%array_unsafe_get"), [ a; i ] ->
-      let tok = match cts_of c a with S.SzArray t -> type_token c t | _ -> refuse e.loc "an array" "1d" in
-      expr c env k a;
-      k.pending <- k.pending + 1; expr c env k i; k.pending <- k.pending - 1;
-      emit k (Il.Conv (Il.K_i4, false, false));
-      emit k (Il.Ldelem_any tok);
-      if cts_of c e = S.Void then emit k Il.Pop
-  | ("%array_safe_set" | "%array_unsafe_set"), [ a; i; x ] ->
-      let tok = match cts_of c a with S.SzArray t -> type_token c t | _ -> refuse e.loc "an array" "1d" in
-      expr c env k a;
-      k.pending <- k.pending + 1; expr c env k i; emit k (Il.Conv (Il.K_i4, false, false));
-      k.pending <- k.pending + 1; expr c env k x; if cts_of c x = S.Void then emit k Il.Ldnull;
-      k.pending <- k.pending - 2;
-      emit k (Il.Stelem_any tok)
-  (* (bytes a string and back, Bytes.to_string's: a copy, by the
-   * runtime unit's functions, .NET's string being another object) *)
-  | "%identity", [ a ] when (match cts_of c a, cts_of c e with S.SzArray S.U1, S.String | S.String, S.SzArray S.U1 -> true | _ -> false) ->
-      let name = if cts_of c a = S.String then "Runtime.bytes_of_string" else "Runtime.string_of_bytes" in
-      (match Hashtbl.find_opt env.by_sym name with
-       | Some f -> all (); emit k (Il.Call f.tok)
-       | None -> refuse e.loc ("bytes and strings, without the runtime unit's " ^ name) "3b")
-  (* (an int a char and back, Char.code's: int64 and int32; an abstract
-   * type's object the class it is) *)
-  | "%identity", [ a ] -> all (); Il_externals.convert c k (cts_of c a) (cts_of c e)
-  | "%ignore", [ a ] -> drop c env k a
-  | "%raise", [ a ] -> expr c env k a; emit k Il.Throw
-  (* (a primitive of the native runtime's C: the library's) *)
-  | _ when String.length p > 0 && p.[0] <> '%' -> refuse e.loc ("the primitive " ^ p ^ ", not in the runtime unit (lib_core/dotnet/Runtime.ml)") "3b"
-  | _ -> refuse e.loc ("the primitive " ^ p) "1a"
+(* the record the primitives' compiler is given *)
+and compiler (c : c) (env : env) (k : code) : Il_prims.compiler =
+  { Il_prims.expr = expr c env k; operands = operands c env k; values = values c env k; drop = drop c env k }

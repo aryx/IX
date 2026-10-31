@@ -463,8 +463,30 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       (* (-L's dotnet/Runtime.ml first: Pervasives' externals of C, in ML
        * over .NET, which an external's call calls by its name) *)
       let runtime = List.map (fun (d : string) -> Filename.concat (root d) "dotnet/Runtime.ml") (List.rev !libs) in
-      let given (f : string) = List.exists (fun (u : string) -> Fpath.to_string (path u) = Fpath.to_string (path f)) units in
-      let units = List.filter (fun (f : string) -> FS.read_opt caps (path f) <> None && not (given f)) runtime @ units in
+      let name (f : string) = String.capitalize_ascii (Filename.remove_extension (Filename.basename f)) in
+      (* (-L's units the program names, and those they name, in
+       * units.txt's order, before its own: the stdlib compiled with it,
+       * as .NET has no library of ML's; Pervasives always) *)
+      let lib_units =
+        List.concat_map
+          (fun (d : string) ->
+            let r = root d in
+            let lines = String.split_on_char '\n' (match FS.read_opt caps (path (Filename.concat r "units.txt")) with Some t -> t | None -> "") in
+            List.filter_map (fun (u : string) -> if u = "" || u.[0] = '#' then None else Some (name u, Filename.concat r (u ^ ".ml"))) lines)
+          (List.rev !libs) in
+      let names_of (f : string) = match FS.read_opt caps (path f) with Some t -> named_units t | None -> [] in
+      let own = List.map name units in
+      let rec needed (acc : string list) (todo : string list) : string list =
+        match todo with
+        | [] -> acc
+        | n :: rest when List.mem n acc || List.mem n own -> needed acc rest
+        | n :: rest -> (match List.assoc_opt n lib_units with Some f -> needed (n :: acc) (names_of f @ rest) | None -> needed acc rest) in
+      let need = needed [] (List.concat_map names_of units) in
+      let lib = List.filter_map (fun ((n, f) : string * string) -> if List.mem n need then Some f else None) lib_units in
+      (* (the runtime first, given or not: Pervasives' externals call it) *)
+      let runtime = List.filter (fun (f : string) -> FS.read_opt caps (path f) <> None) runtime in
+      let is_runtime (u : string) = List.exists (fun (f : string) -> Fpath.to_string (path u) = Fpath.to_string (path f)) runtime in
+      let units = runtime @ lib @ List.filter (fun (u : string) -> not (is_runtime u)) units in
       let last = path (List.nth units (List.length units - 1)) in
       let out = if !out <> "" then path !out else Fpath.set_ext ".dll" (Fpath.base last) in
       let a = Lower_il.start (Fpath.to_string (Fpath.rem_ext (Fpath.base out))) in

@@ -934,5 +934,6 @@ let instance (c : tdecl) key =
 
 let interface () = !own
 let own_type p = Hashtbl.find_opt own_types p
+let own_types_all () = Hashtbl.fold (fun _ d acc -> d :: acc) own_types []
 
 let units_named () = List.sort compare (Hashtbl.fold (fun n m acc -> if m <> None then n :: acc else acc) units [])

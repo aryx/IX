@@ -48,6 +48,9 @@
 #             console's, a file written, read, sought, appended to (in
 #             the scratch directory, where the programs run), sys_open's
 #             errors, the standard input (channels.in); bytes a byte[]
+#   library   lib_core's units compiled with the program (stage 3c): List,
+#             String, Bytes, Buffer, Printf (literal formats compiled),
+#             Hashtbl, Array, Char, Option; compare's structural order
 #   units/    three units in one assembly (geometry, counter, main): one
 #             unit's values, functions, types, constructors, exception
 #             from another; the toplevels in link order (what OCaml's
@@ -72,7 +75,7 @@ failures=0
 ok() { echo "ok $*"; }
 abs() { case $1 in /*) echo $1;; *) echo $PWD/$1;; esac; }
 fail() { echo "FAIL $*"; failures=$((failures + 1)); }
-progs="fib arith strings loops variants records exceptions equality closures generics generic_types tuples_lists arrays tails generic_closures externals c_externals channels"
+progs="fib arith strings loops variants records exceptions equality closures generics generic_types tuples_lists arrays tails generic_closures externals c_externals channels library"
 # what is refused: a program a line, and the stage that will have it
 refused() {
   local ml=$1 n=0
@@ -81,13 +84,12 @@ refused() {
     echo "-- $line"
     $ml -L lib_core -dotnet -o $W/r$n.dll $W/r$n.ml 2>&1 | sed "s|$W/||"
   done <<'R'
-let a = Array.make 3 0
-type t = { a : int } let b = { a = 1 } < { a = 2 }
-let () = let rec even n = n = 0 || odd (n - 1) and odd n = n <> 0 && even (n - 1) in print_int (if even 4 then 1 else 0)
 let f () = let id x = x in (id 1, id "a")
-let () = print_float 1.5
 let x = 1 + (try 2 with Not_found -> 3)
 type t = A of { a : int } let v = A { a = 1 }
+let eq (x : 'a) = (=) x
+let () = Gc.compact ()
+let d = Digest.string "a"
 R
 }
 check() {

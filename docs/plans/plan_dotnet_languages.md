@@ -549,6 +549,52 @@ but really use the same types!". So the decisions below are those of
        scratch directory.
    - 3c. lib_core's units given with the program's (-L lib_core, in
      units.txt's order), List, Option, String, Hashtbl, Printf first.
+     Begun (2026-10-31, the author: "excellent! let's commit and move
+     forward"): mini-ml -dotnet -L compiles the units the program
+     names, and those they name (by their tokens, CLI.named_units), in
+     units.txt's order, after the runtime unit; Pervasives always,
+     its do_at_exit in <Program>.Main's finally (the channels flushed,
+     an exception's end too). 33 of lib_core's 50 compile, each with
+     what it names: Pervasives, Int32, Int64, Seq, List, Char,
+     Uchar, String, Bytes, Array, Sys, Hashtbl, Filename, Obj,
+     Stack, Queue, Buffer, Printf, Format, Arg, Option, Result,
+     Either, Int, Bool, Fun, In_channel, Out_channel, Fpath, Cap,
+     CapSys, CapStdlib, Atomic. What it took of the compiler:
+     - compare and < on records, variants, tuples and lists, OCaml's
+       order: each class a CompareTo (IComparable, F#'s way), the
+       constructors by OCaml's representation (constants first,
+       ml_order), the fields by Ml::compare; Hashtbl.hash Ml::hash, the
+       same on both runtimes (Microsoft's String.GetHashCode varies by
+       process), records' GetHashCode by it.
+     - Printf's functions with a literal format compiled (Il_printf):
+       lib_core's Printf builds its closures with Obj.magic, which .NET's
+       delegates, typed, refuse; %a and %t refused.
+     - a let rec of several local functions (closures holding each
+       other); assert; a primitive as a value (η-expanded, a method);
+       another unit's external its .mli says val of; a function's alias
+       (let sort = stable_sort) the same method, polymorphic as it; a
+       polymorphic function at unit (object, F#'s); a toplevel let of
+       a pattern; an abstract type of a .mli its .ml's definition when
+       compiled in the assembly (Uchar.utf_decode an int); a re-exported
+       type's constructors the first's classes (Option's t); int32 and
+       int64 .NET's, their constants; a parametrized abbreviation.
+     - the runtime unit: Int32's and Int64's primitives (on int, the
+       call converting), make_vect (newarr), is_printable, fill_string,
+       Sys's (argv, getenv, files and directories, time), the
+       byte-access primitives, hash_univ_param; mini-dotnet's Library:
+       Environment, Directory, File's Delete and Move, BitConverter,
+       IComparable; its CLI's system by capabilities (Cap.env,
+       Cap.readdir, Cap.chdir).
+     Not yet: Marshal (Obj's blocks), Gc, Digest (and Random, over
+     it), Callback (and Printexc, Unix, Thread... over it), Lexing and
+     Parsing, Float's float arrays, Logs (an inline record), and what
+     stands on them. lib_core's
+     Char.escaped wrote a string (the only place): made as bytes now,
+     as String's. Checked: tests/library.ml (List, String, Bytes,
+     Buffer, Printf's formats, Hashtbl, Array, Char, Option, compare's
+     order, a local let rec ... and) as OCaml prints, by both runtimes
+     and both mini-ml builds; the suite's other programs now with
+     Pervasives compiled.
 4. **Speed**: mini-ml's benchmarks native, on .NET (Microsoft's), on
    mini-dotnet (its JIT), and the same programs in F# (fsc): their IL
    compared, -S beside ildasm's, and their time.

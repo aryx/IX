@@ -61,6 +61,25 @@ type spec = {
 (* the classes, by name *)
 val specs : (string, spec) Hashtbl.t
 
+(* the system, by the program's capabilities (CLI's): its arguments
+ * (the assembly's path first, as GetCommandLineArgs says), a variable
+ * of the environment, a path's kind (0 nothing, 1 a file, 2 a
+ * directory), a file removed, renamed, a directory made (false when it
+ * cannot be), a directory's entries' names, the current one, set; the
+ * milliseconds of a clock *)
+type os = {
+  argv : string list;
+  getenv : string -> string option;
+  kind : string -> int;
+  remove : string -> bool;
+  rename : string -> string -> bool;
+  mkdir : string -> bool;
+  entries : string -> string list option;
+  cwd : unit -> string;
+  chdir : string -> bool;
+  ticks : unit -> int;
+}
+
 type hooks = {
   mutable out : string -> unit;                 (* the console's output *)
   mutable read : unit -> int;                   (* a byte of its input, -1 at its end *)
@@ -69,11 +88,12 @@ type hooks = {
   mutable hash : value -> int;                  (* the virtual GetHashCode *)
   mutable throw : string -> string -> value;    (* a class of the library's, a message: raises Thrown *)
   mutable instance : string -> typ array -> cls;  (* a class, instantiated *)
-  mutable bytes : int -> store;                 (* a byte[] of n zeros *)
+  mutable array : typ -> int -> store;          (* a T[] of n zeros or nulls *)
   mutable std : int -> stream;                  (* the standard input, output, error *)
   (* a file opened as File's method of this name (OpenRead, OpenWrite,
    * Create) says, None when it cannot be; "Exists" opens nothing *)
   mutable file : string -> string -> stream option;
+  mutable os : os;
 }
 val hooks : hooks
 

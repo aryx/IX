@@ -3,7 +3,7 @@
 
 (* See CLI.mli *)
 
-type caps = < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr >
+type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.env; Cap.chdir; Cap.stdin; Cap.stdout; Cap.stderr >
 
 let usage = "usage: mini-dotnet [-v|-debug|-quiet] [-trace] [-s] [-jit [-tier n]] file.dll [arg...] | -S [-jit [-m 5|7 [-refs]]] | -tables | -size | -verify file.dll..."
 
@@ -46,11 +46,40 @@ let open_file (caps : < caps; .. >) (how : string) (f : string) : Value.stream o
       | fd -> Some (file_stream fd)
       | exception Unix.Unix_error _ -> None)
 
+(* a path's kind: 0 nothing, 1 a file, 2 a directory *)
+let kind (_caps : < Cap.open_in; .. >) (f : string) : int =
+  (* nosemgrep: use-caps *)
+  match (Unix.stat f).st_kind with Unix.S_DIR -> 2 | _ -> 1 | exception Unix.Unix_error _ -> 0
+
+let rename (_caps : < Cap.open_out; .. >) (a : string) (b : string) : bool =
+  (* nosemgrep: use-caps *)
+  match Sys.rename a b with () -> true | exception Sys_error _ -> false
+
+(* (sorted: .NET's order is the system's, which may differ) *)
+let entries (_caps : < Cap.readdir; .. >) (f : string) : string list option =
+  (* nosemgrep: use-caps *)
+  match Sys.readdir f with a -> Some (List.sort compare (Array.to_list a)) | exception Sys_error _ -> None
+
+(* Library's system: each access by its capability; the clock the
+ * milliseconds since the program started *)
+let os (caps : < caps; .. >) (argv : string list) : Library.os =
+  let start = Unix.gettimeofday () in
+  { argv;
+    getenv = (fun (v : string) -> match CapSys.getenv caps v with s -> Some s | exception Not_found -> None);
+    kind = kind caps;
+    remove = (fun (f : string) -> match FS.remove_any caps f with () -> true | exception Unix.Unix_error _ -> false);
+    rename = rename caps;
+    mkdir = (fun (f : string) -> match FS.mkdir caps f 0o777 with () -> true | exception Unix.Unix_error _ -> false);
+    entries = entries caps;
+    cwd = (fun () -> FS.getcwd caps ());
+    chdir = (fun (f : string) -> match CapUnix.chdir caps f with () -> true | exception Unix.Unix_error _ -> false);
+    ticks = (fun () -> int_of_float ((Unix.gettimeofday () -. start) *. 1000.)) }
+
 (* a program run: its output by the console's channel, its input
  * read a byte at a time; an exception no one catches said as .NET says
  * it, the exit then 134 (.NET's abort). The standard streams over the
  * same channels, so that Console.Write's and theirs come in order *)
-let run (caps : < caps; .. >) (img : Image.t) (argv : string list) (tracing : bool) (stats : bool) : int =
+let run (caps : < caps; .. >) (path : string) (img : Image.t) (argv : string list) (tracing : bool) (stats : bool) : int =
   let out = Console.stdout caps in
   let ic = Console.stdin caps in
   let err = Console.stderr caps in
@@ -65,6 +94,7 @@ let run (caps : < caps; .. >) (img : Image.t) (argv : string list) (tracing : bo
       sclose = (fun () -> ()); sposition = unseekable; sseek = (fun (_ : int) -> unseekable ()); slength = unseekable } in
   Library.hooks.std <- std;
   Library.hooks.file <- open_file caps;
+  Library.hooks.os <- os caps (path :: argv);
   if tracing then Frame.trace := Some (fun s -> flush out; Console.eprint caps (s ^ "\n"));
   Machine.install ();
   let im = Types.load img in
@@ -146,7 +176,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                 Logs.warn (fun m -> m "-jit ignored: this build has no JIT\n\
                                        (mini-ml's on arm64 has: _mk/7/languages/dotnet/mini-dotnet)");
               if !jit then Machine.jit := Some (Jit_run.jit caps);
-              run caps (read f) argv !tracing !stats
+              run caps f (read f) argv !tracing !stats
         end
         else (List.iter one (List.rev !files); 0)
       with

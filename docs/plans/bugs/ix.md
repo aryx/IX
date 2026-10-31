@@ -448,3 +448,13 @@ On clean copies of 529ce2ea and c7a5deb2: `mk: don't know how to make
 need assembler's objects for that O and OS, and nothing there has made them.
 Reproduce: `git archive HEAD | tar -x -C copy; cd copy; make self-quick-mix`. Not
 fixed: found while checking another change. Not looked at: since when.
+
+## lib_core's string_of_float: no point after a whole number (2026-10-31, not fixed)
+
+Found writing mini-ml -dotnet's test of lib_core (languages/ml/dotnet/tests/
+library.ml), against what OCaml prints. Pervasives.string_of_float is
+`format_float "%.12g" f`, so `string_of_float 100.` is `100`, where OCaml's
+(`valid_float_lexem` of the same) says `100.`: a float printed reads back as an
+int. The same natively and on .NET (the ML is lib_core's). Reproduction:
+`print_string (string_of_float 100.)`, ocaml prints `100.`, mini-ml's program
+`100`. The test prints 1e20 instead.

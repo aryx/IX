@@ -30,6 +30,21 @@ type spec = {
   smethods : smeth list;
 }
 
+(* the system, by the program's capabilities (CLI's): its arguments,
+ * the environment, files and directories, the time *)
+type os = {
+  argv : string list;
+  getenv : string -> string option;
+  kind : string -> int;
+  remove : string -> bool;
+  rename : string -> string -> bool;
+  mkdir : string -> bool;
+  entries : string -> string list option;
+  cwd : unit -> string;
+  chdir : string -> bool;
+  ticks : unit -> int;
+}
+
 type hooks = {
   mutable out : string -> unit;
   mutable read : unit -> int;
@@ -38,9 +53,10 @@ type hooks = {
   mutable hash : value -> int;
   mutable throw : string -> string -> value;
   mutable instance : string -> typ array -> cls;
-  mutable bytes : int -> store;
+  mutable array : typ -> int -> store;
   mutable std : int -> stream;
   mutable file : string -> string -> stream option;
+  mutable os : os;
 }
 
 let hooks = {
@@ -51,9 +67,12 @@ let hooks = {
   hash = (fun _ -> failwith "Library.hooks: no machine");
   throw = (fun _ _ -> failwith "Library.hooks: no machine");
   instance = (fun _ _ -> failwith "Library.hooks: no machine");
-  bytes = (fun _ -> failwith "Library.hooks: no machine");
+  array = (fun _ _ -> failwith "Library.hooks: no machine");
   std = (fun _ -> failwith "Library.hooks: no program");
   file = (fun _ _ -> None);
+  os = { argv = []; getenv = (fun _ -> None); kind = (fun _ -> 0); remove = (fun _ -> false);
+         rename = (fun _ _ -> false); mkdir = (fun _ -> false); entries = (fun _ -> None);
+         cwd = (fun () -> "/"); chdir = (fun _ -> false); ticks = (fun () -> 0) };
 }
 
 (* the keys of the types the members name *)
@@ -340,6 +359,19 @@ let math =
         | _ -> invalid_arg "ILogB");
   ]
 
+(* BitConverter: a double's bits as an int64 and back *)
+let bit_converter =
+  spec d "System.BitConverter" [
+    stat "Int64BitsToDouble" [long] double (fun a ->
+        match a.(0) with I8 n -> R8 (Int64.float_of_bits n) | _ -> invalid_arg "Int64BitsToDouble");
+    stat "DoubleToInt64Bits" [double] long (fun a ->
+        match a.(0) with R8 x -> I8 (Int64.bits_of_float x) | _ -> invalid_arg "DoubleToInt64Bits");
+    (* (a float32 a double here, rounded to a single's precision) *)
+    stat "SingleToInt32Bits" ["System.Single"] int (fun a ->
+        match a.(0) with R8 x -> I4 (Int32.bits_of_float x) | _ -> invalid_arg "SingleToInt32Bits");
+    stat "Int32BitsToSingle" [int] "System.Single" (fun a -> R8 (Int32.float_of_bits (Int32.of_int (to_int a.(0)))));
+  ]
+
 (* Environment.Exit: the program stops there, its status said *)
 exception Exit of int
 
@@ -354,7 +386,7 @@ let encoding =
         let st, _, _ = view a.(1) in Str (Bytes.sub_string st.s 0 st.len));
     virt "GetBytes" [string] "System.Byte[]" (fun a ->
         let s = to_str a.(1) in
-        let st = hooks.bytes (String.length s) in
+        let st = hooks.array T_u1 (String.length s) in
         Bytes.blit_string s 0 st.s 0 (String.length s);
         Obj st);
   ]
@@ -406,12 +438,46 @@ let streams = [
             | Some s -> new_stream "System.IO.FileStream" s
             | None -> io_error ("Could not open file '" ^ f ^ "'.")))
       [ "OpenRead"; "OpenWrite"; "Create" ]
-    @ [ stat "Exists" [string] bool (fun a -> bool_v (hooks.file "Exists" (to_str a.(0)) <> None)) ]);
+    @ [ stat "Exists" [string] bool (fun a -> bool_v (hooks.os.kind (to_str a.(0)) = 1));
+        stat "Delete" [string] void (fun a ->
+            let f = to_str a.(0) in
+            if hooks.os.kind f = 1 && not (hooks.os.remove f) then io_error ("Access to the path '" ^ f ^ "' is denied.") else Null);
+        stat "Move" [string; string; bool] void (fun a ->
+            let f = to_str a.(0) in
+            if hooks.os.rename f (to_str a.(1)) then Null else io_error ("Could not find file '" ^ f ^ "'.")) ]);
+  spec d "System.IO.DirectoryInfo" [];
+  spec d "System.IO.Directory" [
+    stat "Exists" [string] bool (fun a -> bool_v (hooks.os.kind (to_str a.(0)) = 2));
+    stat "CreateDirectory" [string] "System.IO.DirectoryInfo" (fun a ->
+        let f = to_str a.(0) in
+        if hooks.os.kind f = 2 || hooks.os.mkdir f then Obj (make_store (hooks.instance "System.IO.DirectoryInfo" [||]) 0)
+        else io_error ("Could not create the directory '" ^ f ^ "'."));
+    stat "GetCurrentDirectory" [] string (fun _ -> Str (hooks.os.cwd ()));
+    stat "SetCurrentDirectory" [string] void (fun a ->
+        let f = to_str a.(0) in
+        if hooks.os.chdir f then Null else hooks.throw "System.IO.DirectoryNotFoundException" ("Could not find a part of the path '" ^ f ^ "'."));
+    (* (each entry its path, the directory's then its name, as .NET's) *)
+    stat "GetFileSystemEntries" [string] "System.String[]" (fun a ->
+        let f = to_str a.(0) in
+        match hooks.os.entries f with
+        | Some names ->
+            let st = hooks.array (T_class (hooks.instance string [||])) (List.length names) in
+            List.iteri (fun (i : int) (n : string) -> st.r.(i) <- Str (Filename.concat f n)) names;
+            Obj st
+        | None -> hooks.throw "System.IO.DirectoryNotFoundException" ("Could not find a part of the path '" ^ f ^ "'."));
+  ];
 ]
 
 let environment =
   spec d "System.Environment" [
     stat "Exit" [int] void (fun a -> raise (Exit (to_int a.(0))));
+    stat "GetCommandLineArgs" [] "System.String[]" (fun _ ->
+        let st = hooks.array (T_class (hooks.instance string [||])) (List.length hooks.os.argv) in
+        List.iteri (fun (i : int) (s : string) -> st.r.(i) <- Str s) hooks.os.argv;
+        Obj st);
+    stat "GetEnvironmentVariable" [string] string (fun a ->
+        match hooks.os.getenv (to_str a.(0)) with Some v -> Str v | None -> Null);
+    stat "get_TickCount64" [] long (fun _ -> I8 (Int64.of_int (hooks.os.ticks ())));
   ]
 
 let concat (l : value list) : value =
@@ -562,6 +628,7 @@ let exceptions = [
   exception_ "System.Collections.Generic.KeyNotFoundException" "System.SystemException" "The given key was not present in the dictionary.";
   exception_ "System.StackOverflowException" "System.SystemException" "Operation caused a stack overflow.";
   exception_ "System.IO.IOException" "System.SystemException" "I/O error occurred.";
+  exception_ "System.IO.DirectoryNotFoundException" "System.IO.IOException" "Could not find a part of the path.";
 ]
 
 (* ------------------------------------------------------------------ *)
@@ -796,6 +863,10 @@ let delegates = [
    * does not run either) *)
   spec { d with skind = Interface } "System.IAsyncResult" [];
   delegate "System.AsyncCallback" 0 ["System.IAsyncResult"] void;
+  (* (ML's records and variants: their structural order) *)
+  spec { d with skind = Interface } "System.IComparable" [
+    { (virt "CompareTo" [obj] int (fun _ -> Null)) with impl = Abstract };
+  ];
   spec { d with skind = Interface } "System.IDisposable" [
     { (virt "Dispose" [] void (fun _ -> Null)) with impl = Abstract };
   ];
@@ -804,7 +875,7 @@ let delegates = [
 let specs : (string, spec) Hashtbl.t =
   let h = Hashtbl.create 64 in
   List.iter (fun s -> Hashtbl.replace h s.sname s)
-    ([ object_; string_; console; environment; math; encoding; string_builder; interpolation; list;
+    ([ object_; string_; console; environment; math; bit_converter; encoding; string_builder; interpolation; list;
        list_enumerator; dictionary ]
      @ primitives @ exceptions @ reflection @ delegates @ streams);
   h

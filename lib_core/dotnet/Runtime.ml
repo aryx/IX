@@ -274,6 +274,18 @@ let format_int (f : string) (n : int) : string =
   | 'o' -> pad sp (if sp.alt && n <> 0 then "0" else "") (unsigned_digits n 8 false) true
   | _ -> failwith "format_int: bad format"
 
+(* a string, a char, a boolean in a width (%-10s, %5c, %b): Printf's,
+ * as the compiler makes its calls *)
+let format_string (f : string) (x : string) : string =
+  let sp = spec f in
+  let x = if sp.precision >= 0 && sp.precision < String.length x then sub x 0 sp.precision else x in
+  pad sp "" x false
+
+external char_string : char -> string = "dotnet:static System.Char::ToString(char) -> string"
+
+let format_char (f : string) (c : char) : string = pad (spec f) "" (char_string c) false
+let format_bool (f : string) (b : bool) : string = pad (spec f) "" (if b then "true" else "false") false
+
 (* .NET's E format, 1.500000E+003, as C's %e: 1.500000e+03 *)
 let exponent (x : float) (p : int) (upper : bool) : string =
   let s = to_string x ("E" ^ format_int "%d" p) in
@@ -352,6 +364,21 @@ let create_string (n : int) : bytes =
 
 let blit_string (s : string) (o1 : int) (b : bytes) (o2 : int) (n : int) : unit =
   for i = 0 to n - 1 do bset b (o2 + i) s.[o1 + i] done
+
+let fill_string (b : bytes) (o : int) (n : int) (c : char) : unit =
+  for i = o to o + n - 1 do bset b i c done
+
+(* (C's isprint of ASCII, as the native's: Latin-1's upper half not) *)
+let is_printable (c : char) : bool = c >= ' ' && c < '\127'
+
+(* an array of n x: .NET's T[] (newarr), generic in its element *)
+external alloc_array : int -> 'a array = "%array_create"
+
+let make_vect (n : int) (x : 'a) : 'a array =
+  if n < 0 then invalid_arg "Array.make";
+  let a = alloc_array n in
+  for i = 0 to n - 1 do a.(i) <- x done;
+  a
 
 let string_of_bytes (b : bytes) : string = get_string (latin1 ()) b
 let bytes_of_string (s : string) : bytes = get_bytes (latin1 ()) s
@@ -555,6 +582,166 @@ let sys_open (name : string) (flags : open_flag list) (_perm : int) : int =
   incr next_fd;
   streams := (fd, s) :: !streams;
   fd
+
+external bits_to_double : int64 -> float
+  = "dotnet:static System.BitConverter::Int64BitsToDouble"
+external double_to_bits : float -> int64
+  = "dotnet:static System.BitConverter::DoubleToInt64Bits"
+
+let int64_float_of_bits (b : int64) : float = bits_to_double b
+let int64_bits_of_float (x : float) : int64 = double_to_bits x
+
+(*****************************************************************************)
+(* Int32, Int64 *)
+(*****************************************************************************)
+
+(* an int64 is .NET's int64, an int; an int32 its int32, which a call
+ * of these converts to an int and back (conv.i4: the 32 bits kept, as
+ * the int32's own arithmetic would) *)
+let int64_neg (a : int) : int = - a
+let int64_add (a : int) (b : int) : int = a + b
+let int64_sub (a : int) (b : int) : int = a - b
+let int64_mul (a : int) (b : int) : int = a * b
+let int64_div (a : int) (b : int) : int = a / b
+let int64_mod (a : int) (b : int) : int = a mod b
+let int64_and (a : int) (b : int) : int = a land b
+let int64_or (a : int) (b : int) : int = a lor b
+let int64_xor (a : int) (b : int) : int = a lxor b
+let int64_shift_left (a : int) (n : int) : int = a lsl n
+let int64_shift_right (a : int) (n : int) : int = a asr n
+let int64_shift_right_unsigned (a : int) (n : int) : int = a lsr n
+let int64_of_int (a : int) : int = a
+let int64_to_int (a : int) : int = a
+let int64_of_int32 (a : int) : int = a
+let int64_to_int32 (a : int) : int = a
+let int64_format (f : string) (a : int) : string = format_int f a
+let int64_of_string (s : string) : int = int_of_string s
+let int64_of_float (x : float) : int = truncate x
+let int64_to_float (a : int) : float = float a
+
+let int32_neg (a : int) : int = - a
+let int32_add (a : int) (b : int) : int = a + b
+let int32_sub (a : int) (b : int) : int = a - b
+let int32_mul (a : int) (b : int) : int = a * b
+let int32_div (a : int) (b : int) : int = a / b
+let int32_mod (a : int) (b : int) : int = a mod b
+let int32_and (a : int) (b : int) : int = a land b
+let int32_or (a : int) (b : int) : int = a lor b
+let int32_xor (a : int) (b : int) : int = a lxor b
+let int32_shift_left (a : int) (n : int) : int = a lsl n
+let int32_shift_right (a : int) (n : int) : int = a asr n
+let int32_shift_right_unsigned (a : int) (n : int) : int = (a land 0xFFFFFFFF) lsr n
+let int32_of_int (a : int) : int = a
+let int32_to_int (a : int) : int = a
+(* (%x, %o, %u of a negative one: its 32 bits) *)
+let int32_format (f : string) (a : int) : string =
+  let c = f.[String.length f - 1] in
+  format_int f (if a < 0 && (c = 'x' || c = 'X' || c = 'o' || c = 'u') then a land 0xFFFFFFFF else a)
+let int32_of_string (s : string) : int =
+  let n = int_of_string s in
+  if n < -0x80000000 || n > 0xFFFFFFFF then failwith "Int32.of_string" else n
+let int32_of_float (x : float) : int = truncate x
+let int32_to_float (a : int) : float = float a
+
+external single_bits : float -> int
+  = "dotnet:static System.BitConverter::SingleToInt32Bits(float32) -> int32"
+external bits_single : int -> float
+  = "dotnet:static System.BitConverter::Int32BitsToSingle(int32) -> float32"
+
+let int32_bits_of_float (x : float) : int = single_bits x
+let int32_float_of_bits (b : int) : float = bits_single b
+
+(*****************************************************************************)
+(* Hashtbl *)
+(*****************************************************************************)
+
+(* Hashtbl.hash: the compiler's Ml::hash, the same on both runtimes
+ * (not OCaml's numbers: a table's order is not its); positive *)
+external ml_hash : 'a -> int = "%hash"
+
+let hash_univ_param (_count : int) (_limit : int) (x : 'a) : int = ml_hash x land 0x3FFFFFFF
+
+(*****************************************************************************)
+(* Sys *)
+(*****************************************************************************)
+
+type directory_info
+
+external command_line : unit -> string array
+  = "dotnet:static System.Environment::GetCommandLineArgs() -> string[]"
+external get_variable : string -> string
+  = "dotnet:static System.Environment::GetEnvironmentVariable"
+external null_or_empty : string -> bool = "dotnet:static System.String::IsNullOrEmpty"
+external tick_count : unit -> int = "dotnet:static System.Environment::get_TickCount64"
+external dir_exists : string -> bool = "dotnet:static System.IO.Directory::Exists"
+external create_directory : string -> directory_info
+  = "dotnet:static System.IO.Directory::CreateDirectory -> System.IO.DirectoryInfo"
+external current_directory : unit -> string
+  = "dotnet:static System.IO.Directory::GetCurrentDirectory"
+external set_current_directory : string -> unit
+  = "dotnet:static System.IO.Directory::SetCurrentDirectory"
+external entries : string -> string array
+  = "dotnet:static System.IO.Directory::GetFileSystemEntries"
+external file_delete : string -> unit = "dotnet:static System.IO.File::Delete"
+external file_move : string -> string -> bool -> unit = "dotnet:static System.IO.File::Move"
+
+(* (the assembly's path first: the program's name, as argv.(0)) *)
+let sys_get_argv () : string array = command_line ()
+
+(* (an int of 64 bits: .NET's) *)
+let sys_get_config () : string * int = ("Unix", 64)
+
+(* (a variable set to "": not set, as .NET says null and "" alike here) *)
+let sys_getenv (v : string) : string =
+  let s = get_variable v in
+  if null_or_empty s then raise Not_found else s
+
+let sys_file_exists (f : string) : bool = exists f || dir_exists f
+
+let no_such (f : string) : 'a = raise (Sys_error (f ^ ": No such file or directory"))
+
+let sys_is_directory (f : string) : bool =
+  if dir_exists f then true else if exists f then false else no_such f
+
+let sys_remove (f : string) : unit = if exists f then file_delete f else no_such f
+
+let sys_rename (a : string) (b : string) : unit =
+  if exists a then file_move a b true else no_such a
+
+let sys_mkdir (f : string) (_perm : int) : unit =
+  if sys_file_exists f then raise (Sys_error (f ^ ": File exists")) else ignore (create_directory f)
+
+(* the names of a directory's entries (.NET's are paths) *)
+let sys_read_directory (d : string) : string array =
+  if not (dir_exists d) then no_such d;
+  let a = entries d in
+  for i = 0 to Array.length a - 1 do
+    let p = a.(i) in
+    let j = ref (String.length p - 1) in
+    while !j >= 0 && p.[!j] <> '/' do decr j done;
+    a.(i) <- sub p (!j + 1) (String.length p - !j - 1)
+  done;
+  a
+
+let sys_getcwd () : string = current_directory ()
+let sys_chdir (d : string) : unit = if dir_exists d then set_current_directory d else no_such d
+
+(* (the time since the program started, by the clock: not the
+ * processor's, which .NET gives only through a Process) *)
+let start_ticks = tick_count ()
+let sys_time () : float = float (tick_count () - start_ticks) /. 1000.0
+
+let sys_system_command (_ : string) : int = raise (Sys_error "Sys.command: no process here (.NET)")
+
+(* (no signals: a handler installed is never run) *)
+let ml_signal (_ : int) (_ : int) : unit = ()
+
+let sys_close (fd : int) : unit =
+  let rec remove (l : (int * stream) list) : (int * stream) list =
+    match l with
+    | [] -> []
+    | (n, s) :: r -> if n = fd then (s_dispose s; r) else (n, s) :: remove r in
+  streams := remove !streams
 
 external environment_exit : int -> unit = "dotnet:static System.Environment::Exit(int32)"
 

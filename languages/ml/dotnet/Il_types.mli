@@ -34,6 +34,14 @@ val helper_class : Il_code.c -> string -> int -> (string * Signature.t) list -> 
 (* the unit's classes forgotten, before another unit *)
 val reset : unit -> unit
 
+(* the types of the expressions the back end makes itself, by their
+ * spans (negative: no source's) *)
+val synthetic : (Ast.span, Scope.ty) Hashtbl.t
+
+(* the types the assembly's units declare, by path (Lower_il records
+ * each unit's): what is abstract in a .mli is its .ml's there *)
+val implementations : (string, Scope.tdecl) Hashtbl.t
+
 (* a type's declaration (its constructor's) *)
 val decl : Scope.ty -> Scope.tdecl
 
@@ -54,6 +62,10 @@ val type_token : Il_code.c -> Signature.t -> int
 (* the assembly's helper Stdlib.Ml::compare(object, object): OCaml's
  * order of two boxed values (a string's, an int's, a float's, a
  * char's, a boolean's) *)
+(* OCaml's Hashtbl.hash, the assembly's Stdlib.Ml::hash(object): the
+ * same on every runtime (a string's by its chars, not .NET's
+ * GetHashCode, which Microsoft's varies by process) *)
+val ml_hash : Il_code.c -> int
 val ml_compare : Il_code.c -> int
 
 (* a Func type's Invoke, its constructor (an object, a method's

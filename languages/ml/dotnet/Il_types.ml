@@ -26,7 +26,16 @@ type tclass = {
 (* the unit's, by type (path) and by constructor (path|name) *)
 let classes : (string, tclass) Hashtbl.t = Hashtbl.create 16
 
-let reset () : unit = Hashtbl.reset classes
+(* the types of the expressions this back end makes (a primitive as a
+ * value, η-expanded), by their spans, which no source has *)
+let synthetic : (Ast.span, Scope.ty) Hashtbl.t = Hashtbl.create 16
+
+(* the types the assembly's units declare, by path: what another unit,
+ * whose .mli says type t abstract, sees of them (Uchar.utf_decode an
+ * int) *)
+let implementations : (string, Scope.tdecl) Hashtbl.t = Hashtbl.create 64
+
+let reset () : unit = Hashtbl.reset classes; Hashtbl.reset synthetic; Hashtbl.reset implementations
 
 (* a class's own parameters, !0..., as its methods see them *)
 let own (t : tclass) : S.t list = List.init t.arity (fun (i : int) -> S.Var i)
@@ -52,12 +61,155 @@ let ctor_tok (c : c) (t : tclass) (args : S.t list) : int =
     memo c ("ctor " ^ S.encode_type_spec (at t args)) (fun () ->
         W.member_ref c.w (W.type_spec c.w (at t args)) ".ctor" (instance (List.map snd t.fields) S.Void))
 
+(* a method of such a class at its instance: the MethodDef, or a
+ * MemberRef of the instance, its signature the declared one *)
+let method_tok (c : c) (t : tclass) (args : S.t list) (name : string) (tok : int) (m : S.meth) : int =
+  if t.arity = 0 then tok
+  else memo c ("method " ^ S.encode_type_spec (at t args) ^ "." ^ name) (fun () -> W.member_ref c.w (W.type_spec c.w (at t args)) name m)
+
+(* the assembly's class of ML's helpers, Stdlib.Ml (compare, hash) *)
+let ml_class (c : c) : int =
+  memo c "type Stdlib.Ml" (fun () -> W.type_def c.w "Stdlib" "Ml" 0x00100181 (sys c "Object"))
+
+(* OCaml's compare of two values of a type variable, boxed: the
+ * assembly's helper Stdlib.Ml::compare(object, object), made once: a
+ * string's ordinal, an int's, a float's, a char's, a boolean's order;
+ * another value (a record's, a variant's: OCaml's structural order, not
+ * yet) an exception *)
+let ml_compare (c : c) : int =
+  memo c "ml compare" (fun () ->
+      let cls = ml_class c in
+      let m = W.method_def c.w cls "compare" 0x0096 (static [ S.Object; S.Object ] S.I4) in
+      let k = new_code () in
+      let order (ty : string) (t : S.t) =
+        (* (a < b: -1, a > b: 1, else 0) *)
+        let next = label k in
+        emit k (Il.Ldarg 0);
+        emit k (Il.Isinst (sys c ty));
+        emit k (Il.Brfalse next);
+        let x = local k t and y = local k t in
+        emit k (Il.Ldarg 0); emit k (Il.Unbox_any (sys c ty)); emit k (Il.Stloc x);
+        emit k (Il.Ldarg 1); emit k (Il.Unbox_any (sys c ty)); emit k (Il.Stloc y);
+        let not_less = label k and not_more = label k in
+        emit k (Il.Ldloc x); emit k (Il.Ldloc y); emit k (Il.Clt false); emit k (Il.Brfalse not_less);
+        emit k (Il.Ldc_i4 (-1l)); emit k Il.Ret;
+        place k not_less;
+        emit k (Il.Ldloc x); emit k (Il.Ldloc y); emit k (Il.Cgt false); emit k (Il.Brfalse not_more);
+        emit k (Il.Ldc_i4 1l); emit k Il.Ret;
+        place k not_more;
+        emit k (Il.Ldc_i4 0l); emit k Il.Ret;
+        place k next in
+      (* (unit, null: equal to itself, before anything else) *)
+      let a_set = label k and b_set = label k in
+      emit k (Il.Ldarg 0); emit k (Il.Brtrue a_set);
+      emit k (Il.Ldarg 1); emit k (Il.Ldnull); emit k (Il.Cgt true); emit k (Il.Neg); emit k Il.Ret;
+      place k a_set;
+      emit k (Il.Ldarg 1); emit k (Il.Brtrue b_set);
+      emit k (Il.Ldc_i4 1l); emit k Il.Ret;
+      place k b_set;
+      (* (a string's: CompareOrdinal's sign, -1, 0 or 1 as OCaml's) *)
+      let not_string = label k in
+      emit k (Il.Ldarg 0);
+      emit k (Il.Isinst (sys c "String"));
+      emit k (Il.Brfalse not_string);
+      let d = local k S.I4 in
+      emit k (Il.Ldarg 0); emit k (Il.Castclass (sys c "String"));
+      emit k (Il.Ldarg 1); emit k (Il.Castclass (sys c "String"));
+      emit k (Il.Call (lib c "String" "CompareOrdinal" (static [ S.String; S.String ] S.I4)));
+      emit k (Il.Stloc d);
+      emit k (Il.Ldloc d); emit k (Il.Ldc_i4 0l); emit k (Il.Cgt false);
+      emit k (Il.Ldloc d); emit k (Il.Ldc_i4 0l); emit k (Il.Clt false);
+      emit k (Il.Binop Il.Sub);
+      emit k Il.Ret;
+      place k not_string;
+      order "Int64" S.I8;
+      order "Double" S.R8;
+      order "Int32" S.I4;
+      order "Boolean" S.Bool;
+      (* (a record's, a variant's, a tuple's, a list's: their CompareTo,
+       * structural, IComparable's) *)
+      let none = label k in
+      emit k (Il.Ldarg 0); emit k (Il.Isinst (sys c "IComparable")); emit k (Il.Brfalse none);
+      emit k (Il.Ldarg 0); emit k (Il.Castclass (sys c "IComparable")); emit k (Il.Ldarg 1);
+      emit k (Il.Callvirt (lib c "IComparable" "CompareTo" (instance [ S.Object ] S.I4)));
+      emit k Il.Ret;
+      place k none;
+      emit k (Il.Ldstr (W.user_string c.w "compare: a value of no order (a function, an array)"));
+      emit k (Il.Newobj (lib c "Exception" ".ctor" (instance [ S.String ] S.Void)));
+      emit k Il.Throw;
+      finish c k m;
+      m)
+
+(* OCaml's Hashtbl.hash of a value: the assembly's helper
+ * Stdlib.Ml::hash(object), made once, the same on every runtime (.NET's
+ * String.GetHashCode is not: Microsoft's varies by process): a
+ * string's chars (h * 31 + c), an int64's halves, a float's bits, an
+ * int32's or a boolean's value, an ML value's structural GetHashCode
+ * (which hashes its fields here), null 0 *)
+let ml_hash (c : c) : int =
+  memo c "ml hash" (fun () ->
+      let cls = ml_class c in
+      let m = W.method_def c.w cls "hash" 0x0096 (static [ S.Object ] S.I4) in
+      let k = new_code () in
+      let set = label k in
+      emit k (Il.Ldarg 0); emit k (Il.Brtrue set); emit k (Il.Ldc_i4 0l); emit k Il.Ret;
+      place k set;
+      (* a string *)
+      let not_string = label k in
+      emit k (Il.Ldarg 0); emit k (Il.Isinst (sys c "String")); emit k (Il.Brfalse not_string);
+      let str = local k S.String and h = local k S.I4 and i = local k S.I4 in
+      let top = label k and over = label k in
+      emit k (Il.Ldarg 0); emit k (Il.Castclass (sys c "String")); emit k (Il.Stloc str);
+      emit k (Il.Ldc_i4 0l); emit k (Il.Stloc h);
+      emit k (Il.Ldc_i4 0l); emit k (Il.Stloc i);
+      place k top;
+      emit k (Il.Ldloc i); emit k (Il.Ldloc str);
+      emit k (Il.Callvirt (lib c "String" "get_Length" (instance [] S.I4)));
+      emit k (Il.Clt false); emit k (Il.Brfalse over);
+      emit k (Il.Ldloc h); emit k (Il.Ldc_i4 31l); emit k (Il.Binop Il.Mul);
+      emit k (Il.Ldloc str); emit k (Il.Ldloc i);
+      emit k (Il.Callvirt (lib c "String" "get_Chars" (instance [ S.I4 ] S.Char)));
+      emit k (Il.Binop Il.Add); emit k (Il.Stloc h);
+      emit k (Il.Ldloc i); emit k (Il.Ldc_i4 1l); emit k (Il.Binop Il.Add); emit k (Il.Stloc i);
+      emit k (Il.Br top);
+      place k over;
+      emit k (Il.Ldloc h); emit k Il.Ret;
+      place k not_string;
+      (* an int64, a float (its bits): the two halves *)
+      let halves () =
+        emit k Il.Dup; emit k (Il.Ldc_i4 32l); emit k (Il.Binop Il.Shr); emit k (Il.Binop Il.Xor);
+        emit k (Il.Conv (Il.K_i4, false, false)); emit k Il.Ret in
+      let not_long = label k in
+      emit k (Il.Ldarg 0); emit k (Il.Isinst (sys c "Int64")); emit k (Il.Brfalse not_long);
+      emit k (Il.Ldarg 0); emit k (Il.Unbox_any (sys c "Int64")); halves ();
+      place k not_long;
+      let not_double = label k in
+      emit k (Il.Ldarg 0); emit k (Il.Isinst (sys c "Double")); emit k (Il.Brfalse not_double);
+      emit k (Il.Ldarg 0); emit k (Il.Unbox_any (sys c "Double"));
+      emit k (Il.Call (lib c "BitConverter" "DoubleToInt64Bits" (static [ S.R8 ] S.I8))); halves ();
+      place k not_double;
+      let value (name : string) (t : S.t) =
+        let next = label k in
+        emit k (Il.Ldarg 0); emit k (Il.Isinst (sys c name)); emit k (Il.Brfalse next);
+        emit k (Il.Ldarg 0); emit k (Il.Unbox_any (sys c name));
+        if t = S.Bool then emit k (Il.Conv (Il.K_i4, false, false));
+        emit k Il.Ret;
+        place k next in
+      value "Int32" S.I4;
+      value "Boolean" S.Bool;
+      (* an ML value's, and any other's *)
+      emit k (Il.Ldarg 0);
+      emit k (Il.Callvirt (lib c "Object" "GetHashCode" (instance [] S.I4)));
+      emit k Il.Ret;
+      finish c k m;
+      m)
+
 (* structural equality, F#'s: Equals of an object of the same class
  * whose fields are equal (an int's, a float's, a string's text, an ML
  * value's own Equals, a type parameter's boxed), and GetHashCode of the
  * fields', so that = is a call of Equals, and a .NET set or dictionary
  * holds ML values as OCaml's = sees them *)
-let structural (c : c) (t : tclass) (tag : int) : unit =
+let structural (c : c) (t : tclass) (tag : int) (variant : (tclass * int * int) option) : unit =
   let me = own t in
   let fields = List.mapi (fun (i : int) ((_, ty) : string * S.t) -> (field_tok c t me i, ty)) t.fields in
   let box (ty : S.t) (k : code) = match ty with S.Var _ -> emit k (Il.Box (W.type_spec c.w ty)) | _ -> () in
@@ -106,9 +258,10 @@ let structural (c : c) (t : tclass) (tag : int) : unit =
            emit k (Il.Binop Il.Shr);
            emit k (Il.Binop Il.Xor);
            emit k (Il.Conv (Il.K_i4, false, false))
-       | S.R8 -> emit k (Il.Box (sys c "Double")); emit k (Il.Callvirt (lib c "Object" "GetHashCode" (instance [] S.I4)))
-       | S.Var _ -> box ty k; emit k (Il.Callvirt (lib c "Object" "GetHashCode" (instance [] S.I4)))
-       | S.String | S.Class _ | S.GenericInst _ -> emit k (Il.Callvirt (lib c "Object" "GetHashCode" (instance [] S.I4)))
+       (* (the others by Ml::hash: a string's the same everywhere, null's 0) *)
+       | S.R8 -> emit k (Il.Box (sys c "Double")); emit k (Il.Call (ml_hash c))
+       | S.Var _ -> box ty k; emit k (Il.Call (ml_hash c))
+       | S.String | S.Class _ | S.GenericInst _ -> emit k (Il.Call (ml_hash c))
        (* (an abstract type's object, an array: Equals compares their
         * references, so nothing of theirs) *)
        | S.Object | S.SzArray _ -> emit k Il.Pop; emit k (Il.Ldc_i4 0l)
@@ -116,7 +269,49 @@ let structural (c : c) (t : tclass) (tag : int) : unit =
       emit k (Il.Binop Il.Add))
     fields;
   emit k Il.Ret;
-  finish c k hash
+  finish c k hash;
+  (* CompareTo, OCaml's order (IComparable's, which Ml::compare calls):
+   * a variant's constructors by their order ([variant]: the parent,
+   * its ml_order, this one's: OCaml's constants before its blocks),
+   * then the fields in turn *)
+  let cmp = W.method_def c.w t.tok "CompareTo" 0x01E6 (instance [ S.Object ] S.I4) in
+  W.implements c.w t.tok (sys c "IComparable");
+  let k = new_code () in
+  (match variant with
+   | Some (parent, ord, order) ->
+       let other = local k S.I4 and same = label k and more = label k in
+       emit k (Il.Ldarg 1);
+       emit k (Il.Castclass (type_tok c parent me));
+       emit k (Il.Callvirt (method_tok c parent me "ml_order" ord (instance [] S.I4)));
+       emit k (Il.Stloc other);
+       emit k (Il.Ldc_i4 (Int32.of_int order)); emit k (Il.Ldloc other); emit k Il.Ceq; emit k (Il.Brtrue same);
+       emit k (Il.Ldc_i4 (Int32.of_int order)); emit k (Il.Ldloc other); emit k (Il.Clt false); emit k (Il.Brfalse more);
+       emit k (Il.Ldc_i4 (-1l)); emit k Il.Ret;
+       place k more;
+       emit k (Il.Ldc_i4 1l); emit k Il.Ret;
+       place k same
+   | None -> ());
+  let y = local k (at t me) and over = label k in
+  emit k (Il.Ldarg 1); emit k (Il.Castclass (type_tok c t me)); emit k (Il.Stloc y);
+  let boxed (ty : S.t) =
+    match ty with
+    | S.I8 -> emit k (Il.Box (sys c "Int64"))
+    | S.R8 -> emit k (Il.Box (sys c "Double"))
+    | S.I4 -> emit k (Il.Box (sys c "Int32"))
+    | S.Bool -> emit k (Il.Box (sys c "Boolean"))
+    | S.Var _ | S.MVar _ -> emit k (Il.Box (W.type_spec c.w ty))
+    | _ -> () in
+  List.iter
+    (fun ((f, ty) : int * S.t) ->
+      emit k (Il.Ldarg 0); emit k (Il.Ldfld f); boxed ty;
+      emit k (Il.Ldloc y); emit k (Il.Ldfld f); boxed ty;
+      emit k (Il.Call (ml_compare c));
+      emit k Il.Dup; emit k (Il.Brtrue over); emit k Il.Pop)
+    fields;
+  emit k (Il.Ldc_i4 0l); emit k Il.Ret;
+  place k over;
+  emit k Il.Ret;
+  finish c k cmp
 
 (* a constructor taking the fields in order, after its parent's *)
 let constructor (c : c) (t : tclass) (parent_ctor : int) : unit =
@@ -148,12 +343,6 @@ let helper_class (c : c) (name : string) (arity : int) (fields : (string * S.t) 
   let t = { tok; arity; fields; ftoks = List.map (fun ((n, ty) : string * S.t) -> W.field_def c.w tok n 0x0006 ty) fields; ctor = 0 } in
   constructor c t (object_ctor c);
   t
-
-(* a method of such a class at its instance: the MethodDef, or a
- * MemberRef of the instance, its signature the declared one *)
-let method_tok (c : c) (t : tclass) (args : S.t list) (name : string) (tok : int) (m : S.meth) : int =
-  if t.arity = 0 then tok
-  else memo c ("method " ^ S.encode_type_spec (at t args) ^ "." ^ name) (fun () -> W.member_ref c.w (W.type_spec c.w (at t args)) name m)
 
 (*****************************************************************************)
 (* Types *)
@@ -235,9 +424,14 @@ let rec cts (c : c) (loc : int) (t : Scope.ty) : S.t =
   | Tconstr (d, []) when d == string_d -> S.String
   (* (bytes, .NET's byte[]: a channel's Stream reads and writes them) *)
   | Tconstr (d, []) when d.tpath = "bytes" -> S.SzArray S.U1
+  (* (int64 and int32, lib_core's abstract Int64.t and Int32.t: .NET's
+   * own, unboxed) *)
+  | Tconstr (d, []) when d.tpath = "Int64.t" -> S.I8
+  | Tconstr (d, []) when d.tpath = "Int32.t" -> S.I4
   | Tconstr (d, []) when d == unit_d -> S.Void
   | Tconstr (d, []) when d == exn_d -> S.Class (sys c "Exception")
   | Tconstr ({ tabbrev = Some t; _ }, []) -> cts c loc t
+  | Tconstr ({ tabbrev = Some t; tparams; _ }, args) -> cts c loc (subst tparams args t)
   | Tconstr (d, args) when Resolve.type_fields d <> None -> at (record c loc d) (List.map (arg_type c loc) args)
   | Tconstr (d, args) when conses d <> None -> at (variant c loc d) (List.map (arg_type c loc) args)
   (* (a polymorphic function's variable its method's parameter; one
@@ -247,6 +441,10 @@ let rec cts (c : c) (loc : int) (t : Scope.ty) : S.t =
   | Ttuple ts -> at (tuple c loc (List.length ts)) (List.map (arg_type c loc) ts)
   (* (an array, .NET's own: T[]) *)
   | Tconstr (d, [ a ]) when d == Resolve.array_d -> S.SzArray (arg_type c loc a)
+  (* (a type abstract in its unit's .mli, defined in its .ml, compiled
+   * in this assembly: that definition) *)
+  | Tconstr (d, args) when d.tabbrev = None && (match Hashtbl.find_opt implementations d.tpath with Some d' -> d' != d | None -> false) ->
+      cts c loc (Tconstr (Hashtbl.find implementations d.tpath, args))
   (* (a unit's abstract type, Pervasives' in_channel: an object, which
    * the runtime unit casts to what it is) *)
   | Tconstr (d, _) when d.tabbrev = None && String.contains d.tpath '.' -> S.Object
@@ -281,7 +479,7 @@ and record (c : c) (loc : int) (d : Scope.tdecl) : tclass =
           labels;
       t.ftoks <- List.map (fun ((n, ty) : string * S.t) -> W.field_def c.w t.tok n 0x0006 ty) t.fields;
       constructor c t (object_ctor c);
-      structural c t 0;
+      structural c t 0 None;
       t
 
 (* a tuple of n: ML's own class, Stdlib.tuple`n, its fields Item1...
@@ -296,7 +494,7 @@ and tuple (c : c) (loc : int) (n : int) : tclass =
       t.fields <- List.init n (fun (i : int) -> (Printf.sprintf "Item%d" (i + 1), S.Var i));
       t.ftoks <- List.map (fun ((f, ty) : string * S.t) -> W.field_def c.w t.tok f 0x0006 ty) t.fields;
       constructor c t (object_ctor c);
-      structural c t 0;
+      structural c t 0 None;
       t
 
 (* a variant type: an abstract class, and a class of each constructor's,
@@ -317,6 +515,8 @@ and variant (c : c) (loc : int) (d : Scope.tdecl) : tclass =
       constructor c t (object_ctor c);
       let me = own t in
       let parent = type_tok c t me and parent_ctor = ctor_tok c t me in
+      (* (each constructor's place in OCaml's order, its classes' ml_order) *)
+      let ord = W.method_def c.w t.tok "ml_order" 0x05C6 (instance [] S.I4) in
       List.iteri
         (fun (tag : int) ((cname, k) : string * Scope.cons) ->
           if k.cinline <> [] then refuse loc (cname ^ ", a constructor of an inline record") "1b";
@@ -333,7 +533,10 @@ and variant (c : c) (loc : int) (d : Scope.tdecl) : tclass =
             List.mapi (fun (i : int) (ty : Scope.ty) -> (Printf.sprintf "Item%d" (i + 1), in_class c params (fun () -> arg_type c loc ty))) args;
           case.ftoks <- List.map (fun ((n, ty) : string * S.t) -> W.field_def c.w tok n 0x0006 ty) case.fields;
           constructor c case parent_ctor;
-          structural c case tag;
+          let order = match k.kind with Const n -> n | Block n -> 1000000 + n | _ -> tag in
+          let m = W.method_def c.w tok "ml_order" 0x00C6 (instance [] S.I4) in
+          W.set_body c.w m [] [| Il.Ldc_i4 (Int32.of_int order); Il.Ret |] [];
+          structural c case tag (Some (t, ord, order));
           Hashtbl.replace classes (d.tpath ^ "|" ^ cname) case)
         (match conses d with Some l -> l | None -> []);
       t
@@ -378,9 +581,15 @@ let tuple_ctor (c : c) (loc : int) (ty : Scope.ty) : int =
 
 (* a constructor of a variant at the variant's type: its class's token,
  * its constructor, its fields, its arguments' types there *)
+(* a type's declaration, through the abbreviations a re-export makes
+ * (Option's type 'a t = 'a option = None | Some of 'a): one class
+ * for each constructor, the first declaration's *)
+let rec canonical (d : Scope.tdecl) : Scope.tdecl =
+  match d.tabbrev with Some (Tconstr (d', _)) when d' != d -> canonical d' | _ -> d
+
 let case (c : c) (loc : int) (k : Scope.cons) (ty : Scope.ty) : int * int * (int -> int) * Scope.ty list =
   let params, targs, res = k.ctype in
-  let d = decl res in
+  let d = canonical (decl res) in
   let inst = match ty with Tconstr (_, a) -> a | _ -> [] in
   ignore (variant c loc d);
   let t = Hashtbl.find classes (d.tpath ^ "|" ^ k.cname) in
@@ -442,7 +651,9 @@ let builtin (c : c) (sym : string) : Il.op list option =
   | _ -> None
 
 let type_of (e : Scope.expr) : Scope.ty =
-  match Typing.expr_type e with Some t -> t | None -> refuse e.loc "an expression whose type was not kept" "1a"
+  match Hashtbl.find_opt synthetic e.span with
+  | Some t -> t
+  | None -> (match Typing.expr_type e with Some t -> t | None -> refuse e.loc "an expression whose type was not kept" "1a")
 
 (* (a raise's type is any: nothing is left by it) *)
 let is_raise (e : Scope.expr) : bool =
@@ -457,53 +668,6 @@ let invoke (c : c) (f : S.t) : int =
 let func_ctor (c : c) (f : S.t) : int =
   memo c ("func ctor " ^ S.encode_type_spec f) (fun () ->
       W.member_ref c.w (W.type_spec c.w f) ".ctor" (instance [ S.Object; S.I ] S.Void))
-
-(* OCaml's compare of two values of a type variable, boxed: the
- * assembly's helper Stdlib.Ml::compare(object, object), made once: a
- * string's ordinal, an int's, a float's, a char's, a boolean's order;
- * another value (a record's, a variant's: OCaml's structural order, not
- * yet) an exception *)
-let ml_compare (c : c) : int =
-  memo c "ml compare" (fun () ->
-      let cls = W.type_def c.w "Stdlib" "Ml" 0x00100181 (sys c "Object") in
-      let m = W.method_def c.w cls "compare" 0x0096 (static [ S.Object; S.Object ] S.I4) in
-      let k = new_code () in
-      let order (ty : string) (t : S.t) =
-        (* (a < b: -1, a > b: 1, else 0) *)
-        let next = label k in
-        emit k (Il.Ldarg 0);
-        emit k (Il.Isinst (sys c ty));
-        emit k (Il.Brfalse next);
-        let x = local k t and y = local k t in
-        emit k (Il.Ldarg 0); emit k (Il.Unbox_any (sys c ty)); emit k (Il.Stloc x);
-        emit k (Il.Ldarg 1); emit k (Il.Unbox_any (sys c ty)); emit k (Il.Stloc y);
-        let not_less = label k and not_more = label k in
-        emit k (Il.Ldloc x); emit k (Il.Ldloc y); emit k (Il.Clt false); emit k (Il.Brfalse not_less);
-        emit k (Il.Ldc_i4 (-1l)); emit k Il.Ret;
-        place k not_less;
-        emit k (Il.Ldloc x); emit k (Il.Ldloc y); emit k (Il.Cgt false); emit k (Il.Brfalse not_more);
-        emit k (Il.Ldc_i4 1l); emit k Il.Ret;
-        place k not_more;
-        emit k (Il.Ldc_i4 0l); emit k Il.Ret;
-        place k next in
-      let not_string = label k in
-      emit k (Il.Ldarg 0);
-      emit k (Il.Isinst (sys c "String"));
-      emit k (Il.Brfalse not_string);
-      emit k (Il.Ldarg 0); emit k (Il.Castclass (sys c "String"));
-      emit k (Il.Ldarg 1); emit k (Il.Castclass (sys c "String"));
-      emit k (Il.Call (lib c "String" "CompareOrdinal" (static [ S.String; S.String ] S.I4)));
-      emit k Il.Ret;
-      place k not_string;
-      order "Int64" S.I8;
-      order "Double" S.R8;
-      order "Int32" S.I4;
-      order "Boolean" S.Bool;
-      emit k (Il.Ldstr (W.user_string c.w "compare: a record's or a variant's order, at a type variable"));
-      emit k (Il.Newobj (lib c "Exception" ".ctor" (instance [ S.String ] S.Void)));
-      emit k Il.Throw;
-      finish c k m;
-      m)
 
 (* a .NET type's token, as newarr, box, ldelem.any take it: System's
  * class for a primitive, a class's own, a TypeSpec for the others *)

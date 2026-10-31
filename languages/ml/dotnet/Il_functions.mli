@@ -24,13 +24,23 @@ val closures : int ref
 
 (* the unit's functions by variable (inside a let rec) and by symbol
  * (from the toplevel's later items); its values' static fields *)
-type env = { by_var : (int, fn) Hashtbl.t; by_sym : (string, fn) Hashtbl.t; fields : (string, int * Signature.t) Hashtbl.t }
+type env = {
+  by_var : (int, fn) Hashtbl.t;
+  by_sym : (string, fn) Hashtbl.t;
+  fields : (string, int * Signature.t) Hashtbl.t;
+  (* a unit's externals by symbol: another's use of one its .mli says
+   * val of (Uchar.unsafe_of_int), compiled as the primitive *)
+  externals : (string, string * int * Scope.ty) Hashtbl.t;
+}
 
 (* a pattern that is no test: Some (its variable, None for _ or ()) *)
 val simple : Scope.pattern -> Scope.var option option
 
 (* a function's arguments, as its Efunction's nest: their variables and
  * types; the last's cases if it is matched; the body *)
+(* a function whose method returns nothing: its whole body a raise *)
+val raises_always : fn -> bool
+
 val params : Scope.expr -> (Scope.var option * Scope.ty) list * Scope.case list option * Scope.expr
 
 (* a type's variables, each once, in order *)

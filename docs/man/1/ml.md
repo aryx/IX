@@ -96,8 +96,12 @@ ocaml-light's *ocamlopt*. Another unit's names are read from its
      result's) a call of it; an external of C a call of the runtime
      unit's function of its name (-L's `dotnet/Runtime.ml`, compiled
      first: the math, the numbers read and written, the channels over
-     .NET's Streams; `bytes` a byte[]). The rest (a unit not given, so
-     the library's List and Array) is refused by its name and line.
+     .NET's Streams; `bytes` a byte[]). With **-L**, the library's units
+     the program names are compiled with it, in their order (Pervasives
+     always, List, String, Hashtbl, Printf...); Printf's functions given
+     a literal format are compiled, the format's pieces at compile
+     time. The rest (Marshal, Unix, Printf's %a) is refused by its name
+     and line.
 
 **-h**
 :    How, by examples, and the options to debug the compiler

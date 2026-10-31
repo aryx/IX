@@ -15,7 +15,7 @@
  * parameters' .NET types are the ML types' (an int an int64, a float
  * a float64, a string a String, bytes a uint8[], an abstract type an
  * object, unit none) unless the string gives them (int32, int64,
- * float64, string, bool, char, uint8, object, a class by its full name,
+ * float64, float32, string, bool, char, uint8, object, a class by its full name,
  * System.IO.Stream, an array of one, uint8[]), when the ML values are
  * converted (an int64 to an int32, a char to a UTF-16 unit, an object
  * cast to the class); its result's after ->, converted back (an int32

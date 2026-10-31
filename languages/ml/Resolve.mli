@@ -70,8 +70,9 @@ val boxed_int_type : string -> ty
 val format_d : tdecl
 val format4_d : tdecl
 
-(* a type the current unit declares, by its path *)
+(* a type the current unit declares, by its path; all of them *)
 val own_type : string -> tdecl option
+val own_types_all : unit -> tdecl list
 
 (* a global's symbol, M.x *)
 val symbol : string list -> string -> string

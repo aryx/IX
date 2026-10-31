@@ -52,7 +52,9 @@ $STDUNITS: $MLEXE
 # the units' order (mkfiles/mkdepend)
 INCLUDES=$STDI
 DEPOBJ=L
-DEPDIRS=$UNIXDIR $P9DIR concurrency $STDDIRS
+DEPDIRS=concurrency $UNIXDIR $P9DIR $STDDIRS
+# (concurrency first: Source is its file, not commons's, which P9DIR is on
+# Linux; old: after it, so Source was not made after the Printf it names.)
 # (std_exit too: Pervasives' do_at_exit inlined. old: not, compiled
 # beside Pervasives)
 DEPUNITS=$STD $COMMONS std_exit

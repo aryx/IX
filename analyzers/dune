@@ -6,4 +6,4 @@
  (public_name mini-analyze)
  (package ix)
  (modules Main Analyze Ml_front)
- (libraries ix_analyze_c ix_ml ix_ml_facts ix_datalog ix_prolog ix_core fpath logs caps))
+ (libraries ix_analyze_c ix_ml ix_ml_pp ix_ml_facts ix_datalog ix_prolog ix_core fpath logs caps))

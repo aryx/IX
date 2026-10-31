@@ -86,6 +86,7 @@ dead(F) :- unreached(F), \+ inside_dead(F).
 names(G, F) :- var_in(F, G), function(F), F \= G, \+ global_def(F, G).
 names(G, F) :- call_direct(I, F), in_function(I, G), F \= G.
 names(G, F) :- allocator_call(F, G), F \= G.
+names(G, F) :- read_var(F), global_def(F, G), function(F).
 in_live(G, F) :- names(G, F), root(G, R), reach(R).
 is_named(F) :- names(_, F).
 is_named_in_live(F) :- in_live(_, F).
@@ -99,6 +100,16 @@ through_pointer(F) :- defined(F, _), reach(F), \+ called_by_name(F), \+ entry(F)
 
 % ---- what else nothing live uses
 
+% read, wherever: the toplevel that defines it may also read it, as
+% let table = [ hello ], and a mention there is no use by itself, since the
+% definition is one. (So a global read only by dead code is not reported.)
+read_var(V) :- copy(_, V).
+read_var(V) :- store(V, _, _).
+read_var(V) :- store(_, _, V).
+read_var(V) :- load(_, V, _).
+read_var(V) :- argument(_, _, V).
+read_var(V) :- call_indirect(_, V).
+used_global(G) :- read_var(G).
 used_global(G) :- var_in(G, F), \+ global_def(G, F), root(F, R), reach(R).
 dead_global(G) :- global_def(G, _), \+ function(G), \+ used_global(G).
 

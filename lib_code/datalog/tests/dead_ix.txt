@@ -1,0 +1,40 @@
+editors/turbopascal/editor/Tui_turbo.ml:28 Tui_turbo.cursor
+editors/turbopascal/editor/Tui_turbo.ml:31 Tui_turbo.screen
+languages/datalog/Tuples.ml:49 Tuples.mem
+languages/prolog/Prolog.ml:206 Prolog.variables
+languages/prolog/Prolog.ml:238 Prolog.text_of
+languages/prolog/Prolog.ml:61 Prolog.fixity_of_string
+languages/prolog/Prolog.ml:67 Prolog.string_of_fixity
+languages/scheme/Scheme.ml:130 Scheme.kind
+languages/smalltalk/compiler/St_bytecode.ml:92 St_bytecode.is_send
+languages/smalltalk/compiler/St_chunk.ml:89 St_chunk.methods_chunk
+languages/smalltalk/vm/St_class.ml:119 St_class.definition
+languages/smalltalk/vm/St_class.ml:174 St_class.categories
+languages/smalltalk/vm/St_class.ml:175 St_class.category_selectors
+languages/smalltalk/vm/St_class.ml:261 St_class.remove
+languages/smalltalk/vm/St_class.ml:65 St_class.comment
+languages/smalltalk/vm/St_debug.ml:142 St_debug.step_into
+languages/smalltalk/vm/St_interp.ml:104 St_interp.set_host
+languages/smalltalk/vm/St_interp.ml:106 St_interp.set_extra_roots
+languages/smalltalk/vm/St_interp.ml:112 St_interp.cache_stats
+languages/smalltalk/vm/St_interp.ml:120 St_interp.is_closure_context, in init but no call 
+languages/smalltalk/vm/St_interp.ml:131 St_interp.context_method, in init but no call goes
+languages/smalltalk/vm/St_interp.ml:154 St_interp.home_context
+languages/smalltalk/vm/St_interp.ml:686 St_interp.resume, in init but no call goes through
+languages/smalltalk/vm/St_memory.ml:147 St_memory.set_body
+languages/smalltalk/vm/St_memory.ml:162 St_memory.float_of
+languages/smalltalk/vm/St_memory.ml:172 St_memory.symbols
+lib_graphics/Draw.ml:78 Draw.ellipse
+lib_networking/9p/P9_server.ml:25 P9_server.no_write
+lib_networking/9p/P9_server.ml:26 P9_server.no_create
+lib_networking/9p/P9_server.ml:27 P9_server.no_remove
+lib_networking/9p/P9_server.ml:28 P9_server.no_wstat
+lib_terminal/Line_discipline.ml:19 Line_discipline.set_echo
+lib_terminal/Line_discipline.ml:20 Line_discipline.pending
+lib_terminal/Talk.ml:213 Talk.reading
+lib_terminal/Talk.ml:214 Talk.finished
+lib_terminal/Talk.ml:34 Talk.return
+lib_terminal/Talk.ml:39 Talk.spawn
+lib_terminal/Talk.ml:56 Talk.ask
+lib_terminal/Vt.ml:360 Vt.text
+shell/Process.ml:79 Process.wait_any

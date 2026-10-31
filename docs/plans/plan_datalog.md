@@ -375,3 +375,8 @@ of a run inside the call graph), which is also what would check the C
 hole `lib_code/README.md` names; the numbers there say what to refine
 for ML next (`ext`) and that the richer files do not yet end on
 mini-datalog.
+
+2026-10-31, the author: "flag dead functions (and dead code)", then the
+order: the sweep, the calls of a run against the call graph (decision 7c),
+`bugs.dl` on `points_to/`, capabilities, `ext` split. The sweep done:
+`lib_code/README.md`; 23 of 44 programs read, mini-ml and mini-cc not.

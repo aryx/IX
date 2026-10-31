@@ -182,3 +182,26 @@ live code takes its address and no call goes through it, which a grep would
 have called used. What cannot be seen counts as alive: given to a C function
 with no body, in ML's `ext`, or named by `-root` (`dead.dl`'s header).
 `analyzers/tests/dead/` says each kind, and each thing that only looks dead.
+
+### The sweep (`tests/sweep.sh`, `tests/triage.sh`, 2026-10-31)
+
+Every program with a mkfile's `SRC`, by its own units and `-I`'s: 23 of 44
+read whole. A report is only of those: a unit not read makes what it calls
+look dead, so the others say `NOT READ`, and `-dead` fails on them. Not read:
+mini-ml and mini-cc (past 180 s), mini-emacs, mini-tiger and mini-csc (past
+180 s or 12 GB), and programs whose units share a name with another's (`Ast`,
+`Symbols`), or need files `sweep.sh` does not find; mini-oberon and mini-squeak
+compute their `SRC`.
+
+| found in those 23 | |
+|---|---:|
+| dead functions, in the program that was read | 236 |
+| of them, a name no other file writes, nor its own past its definition (`tests/dead_ix.txt`) | 40 |
+| named by another file of the same program, though "nothing names it": false by that test | 0 |
+| dead globals, fields, constructors, in the program | 12, 37, 26 |
+
+Dead in a program is not dead in ix: a library's function another program uses
+is dead in this one, so 196 of the 236 are to be read, not deleted. Fields are
+noisier: what a program writes by `Marshal` (`Asm`'s `s_items`) another reads.
+`dead_ix.txt` is a list to read, not to delete by: its grep sees no `open`, and
+tests and other programs not read may use what it lists.

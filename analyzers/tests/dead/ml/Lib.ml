@@ -24,3 +24,10 @@ let live_value = 43
 (* a field read only as a condition is read *)
 type flag = { mutable on : bool }
 let looped f = while f.on do f.on <- false done
+
+(* read by its own toplevel: used, though no function names it; what reads it,
+ * dead; a function in a table, named, and nothing calls it *)
+let in_table = 1
+let table = [ in_table ]
+let in_fun_table x = x + 8
+let fun_table = [ in_fun_table ]

@@ -23,6 +23,23 @@ let parse (file : string) (text : string) : (Ast.source, string) result =
   | Parser.Error | Parsing.Parse_error -> Error (where () ^ ": syntax error")
   | Lexer.Error m -> Error (where () ^ ": " ^ m)
 
+(* mlpp: a .ml's type t = [%mli] and the like rewritten, as CLI's parse does *)
+let rewritten (caps : < Cap.open_in; .. >) (file : string) (text : string) (tree : Ast.source) : (Ast.source, string) result =
+  let mli () =
+    let f = Filename.remove_extension file ^ ".mli" in
+    let rec decls (s : Ast.signature) =
+      List.concat_map (fun (i : Ast.sig_item) -> match i.s with Stype ds -> ds | Smodule (_, MTsig s) -> decls s | _ -> []) s in
+    match FS.read_opt caps (Fpath.v f) with
+    | None -> None
+    | Some mli_text -> (
+        match parse f mli_text with
+        | Ok (Ast.Signature s) -> Some { Pp.mli_file = f; mli_text; mli_decls = decls s }
+        | _ -> None) in
+  match Pp.file ~file text tree ~mli with
+  | exception Pp.Error (l, m) -> Error (Printf.sprintf "%s:%d: %s" file l m)
+  | text' when text' == text -> Ok tree
+  | text' -> parse file text'
+
 (* a unit's file in the directories: its .mli for the names, or its .ml *)
 let find (caps : < Cap.open_in; .. >) (dirs : Fpath.t list) (name : string) (exts : string list) : (Fpath.t * string) option =
   let names = List.concat_map (fun ext -> [ String.uncapitalize_ascii name ^ ext; name ^ ext ]) exts in
@@ -30,19 +47,24 @@ let find (caps : < Cap.open_in; .. >) (dirs : Fpath.t list) (name : string) (ext
     (fun (d : Fpath.t) -> List.find_map (fun n -> let f = Fpath.(d / n) in Option.map (fun t -> (f, t)) (FS.read_opt caps f)) names)
     dirs
 
+let parsed (caps : < Cap.open_in; .. >) (f : string) (text : string) : (Ast.source, string) result =
+  match parse f text with
+  | Error m -> Error m
+  | Ok tree -> rewritten caps f text tree
+
 (* CLI's loader *)
 let loader (caps : < Cap.open_in; .. >) (dirs : Fpath.t list) : Scope.loader =
  fun name ->
   match find caps dirs name [ ".mli"; ".ml" ] with
   | None -> None
-  | Some (f, text) -> (match parse (Fpath.to_string f) text with Ok src -> Some src | Error m -> raise (Resolve.Error (0, m)))
+  | Some (f, text) -> (match parsed caps (Fpath.to_string f) text with Ok src -> Some src | Error m -> raise (Resolve.Error (0, m)))
 
 (* one unit: its facts made; the units it names *)
 let unit_ (caps : < Cap.open_in; .. >) (dirs : Fpath.t list) (file : Fpath.t) (text : string) : (string list, string) result =
   let f = Fpath.to_string file in
   let name = String.capitalize_ascii (Filename.remove_extension (Filename.basename f)) in
   Hashtbl.replace files name f;
-  match parse f text with
+  match parsed caps f text with
   | Error m -> Error m
   | Ok (Ast.Signature _) -> Ok []
   | Ok (Ast.Structure items) -> (
@@ -54,6 +76,8 @@ let unit_ (caps : < Cap.open_in; .. >) (dirs : Fpath.t list) (file : Fpath.t) (t
         Ok named
       with Resolve.Error (l, m) | Typing.Error (l, m) -> Error (Printf.sprintf "%s:%d: %s" f l m))
 
+let unread : string list ref = ref []
+
 let program (caps : < Cap.open_in; .. >) (dirs : Fpath.t list) (paths : Fpath.t list) : string list =
   let errors = ref [] in
   let todo = Queue.create () in
@@ -63,7 +87,7 @@ let program (caps : < Cap.open_in; .. >) (dirs : Fpath.t list) (paths : Fpath.t 
   let read (file : Fpath.t) (text : string) (mine : bool) =
     match unit_ caps dirs file text with
     | Ok named -> List.iter (fun u -> Queue.add u todo) named
-    | Error m -> if mine then errors := m :: !errors in
+    | Error m -> if mine then errors := m :: !errors else unread := m :: !unread in
   List.iter
     (fun (p : Fpath.t) ->
       Hashtbl.replace own (String.capitalize_ascii (Filename.remove_extension (Filename.basename (Fpath.to_string p)))) ();

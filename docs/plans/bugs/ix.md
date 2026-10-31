@@ -439,3 +439,12 @@ was seen. Reproduction: `let ic = open_in "f" in ignore (input_char ic);
 close_in ic` on a file of two bytes or more, under strace: a write(fd, ..., n-1)
 returning EBADF. The runtime unit flushes only a channel written to (a field
 `written`); io.c could do the same.
+
+## make self-quick-mix stops at languages/dotnet (2026-10-31)
+
+On clean copies of 529ce2ea and c7a5deb2: `mk: don't know how to make
+'../../_mk/5-plan9/assembler/Asm.5' in .../languages/dotnet`, from kernels/9pi's
+`ix` target (`mini-mk O=5 OS=plan9` in each of `IXDIRS`): that mkfile's LIBOBJS
+need assembler's objects for that O and OS, and nothing there has made them.
+Reproduce: `git archive HEAD | tar -x -C copy; cd copy; make self-quick-mix`. Not
+fixed: found while checking another change. Not looked at: since when.

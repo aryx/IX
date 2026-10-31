@@ -423,7 +423,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
             | Error m -> Console.eprint caps (m ^ "\n"); incr failed)
           c;
         if ml <> [] then
-          List.iter (fun m -> Console.eprint caps (m ^ "\n"); incr failed) (Ml_front.program caps (Ml_front.library caps !lib) (List.map path ml));
+          List.iter (fun m -> Console.eprint caps (m ^ "\n"); incr failed) (Ml_front.program caps (incs @ Ml_front.library caps !lib) (List.map path ml));
+        (* (what they call would be reported dead) *)
+        if !dead then List.iter (fun m -> Console.eprint caps ("not read: " ^ m ^ "\n"); incr failed) !Ml_front.unread;
         if !only then Console.print caps (Buffer.contents text)
         else begin
           ignore (Datalog_eval.run ~naive:false p);

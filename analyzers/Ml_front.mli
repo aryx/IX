@@ -12,6 +12,9 @@ val library : < Cap.open_in; .. > -> string -> Fpath.t list
  * out) *)
 val program : < Cap.open_in; .. > -> Fpath.t list -> Fpath.t list -> string list
 
+(* the library units that could not be read, why: what they call looks unused *)
+val unread : string list ref
+
 (* a unit's file, by its name (Use: tests/ml/handlers/Use.ml) *)
 val files : (string, string) Hashtbl.t
 

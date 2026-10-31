@@ -1,0 +1,6 @@
+; btree_bench: Btree against Tuples for a rule's head tests
+; (Btree.mli's design); by dune alone, on domains under OCaml 5
+(executable
+ (name btree_bench)
+ (modules btree_bench)
+ (libraries ix_datalog ix_parallel unix))

@@ -360,3 +360,30 @@ doing on these numbers: the engine scales to 32 cores where OCaml 5
 does. Checked: mini-datalog's tests by 4.14's and mini-ml's builds,
 mini-analyze's; `-all`'s bytes the same by the three builds and at 1,
 7, 32 domains; make test: 170 jobs, 0 failures.
+
+2026-10-31, Souffle's B-trees tried (the author: "Let's try souffle
+sorted B-trees?"). Measured, not yet the engine's: `Btree` (a B+tree
+of int tuples, flat sorted leaves linked, a hint the caller owns:
+the last leaf, as Souffle's operation hints) and
+`languages/datalog/tests/btree_bench.ml`. Found:
+- **The order that makes the head tests neighbours is (P, L)**, the
+  natural one: rule 81 fires mostly from a new `assign(P, Q)`, then
+  Q's `point_to` in order, testing (P, L1), (P, L2)... With the index
+  lookups sorted (by a sort, in temporary code), a tree sorted (P, L)
+  had 87% of 381 million tests in the hint's leaf; (L, P) 8%.
+- **Generic code loses, written-out code wins**: through a closure a
+  value, a hinted tree test is 301 ns where Tuples's is 213; written
+  out for pairs, 117 against 172 on one domain (32% less) and 206
+  against 395 on 32 (48% less): the hint's leaf is in the cache, a
+  hash's slot is not, and 32 cores' misses queue.
+- The whole run with the tree as a second set and sorted lookups was
+  slower (494 s for rule 81 against 418 by the hash, the same sort):
+  the generic tree, and a sort that builds arrays to compare.
+What Souffle's way would take in the engine: the indexes as trees
+(their tuples come out sorted, which is what makes the tests
+neighbours, at no sorting cost), the set a tree, both written out for
+the arities the analyses use (2 and 3: mini-ml has no functors), and
+the adding on several domains by parts of the first column's hash
+(Tuples's parts by the whole tuple's hash would scatter a P's
+tuples). The join on 32 domains is 9 s of 15.4, most of it these
+tests: if they cost half, about 4 s less.

@@ -85,3 +85,16 @@ let add (t : t) (tuple : int array) : bool =
       true
     end
   end
+
+(* mem_by for pairs, written out (Btree.mem2_hint's measure: what a
+ * test costs with no closure called for each value) *)
+let mem2 (t : t) (a : int) (b : int) : bool =
+  let h = (((2 * 1000003) + a) * 1000003) + b in
+  let h = (h lxor (h lsr 16)) * 73244475 in
+  let h = (h lxor (h lsr 16)) land max_int in
+  let p = t.part.(h land (parts - 1)) in
+  let mask = p.size - 1 and cells = p.cells in
+  let rec walk (k : int) : bool =
+    let x = cells.(2 * k) in
+    if x < 0 then false else if x = a && cells.((2 * k) + 1) = b then true else walk ((k + 1) land mask) in
+  walk ((h lsr part_bits) land mask)

@@ -44,6 +44,9 @@ val mem_by : t -> (int -> int) -> bool
 (* false: it was there *)
 val add : t -> int array -> bool
 
+(* mem_by of the pair (a, b), for pairs, written out *)
+val mem2 : t -> int -> int -> bool
+
 (* the hash of n values, the i-th [value i] (Index's too) *)
 val hash : int -> (int -> int) -> int
 

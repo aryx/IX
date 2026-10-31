@@ -27,7 +27,7 @@ tiger -o /tmp/q.dll /lib/tiger/queens.tig
 ```
 
 # SEE ALSO
-\man{dotnet}{1}
+\man{dotnet}{1}, \man{csc}{1}
 
 # DIAGNOSTICS
 An error is said with its file, line and column, and nothing is

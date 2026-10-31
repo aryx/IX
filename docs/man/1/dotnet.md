@@ -17,8 +17,8 @@ dotnet – run a .NET assembly
 *file*`.dll` ...
 
 # DESCRIPTION
-*Dotnet* runs a .NET assembly, a file as Microsoft's C# compiler or
-\man{tiger}{1} writes it: its metadata read, its classes loaded when
+*Dotnet* runs a .NET assembly, a file as Microsoft's C# compiler,
+\man{csc}{1} or \man{tiger}{1} writes it: its metadata read, its classes loaded when
 first named, its methods' IL run by an interpreter. The *args* are
 given to its Main. Its library is its own, the classes of `System`
 that programs use most: Object, String, Console, the exceptions,
@@ -81,7 +81,7 @@ tiger -o /tmp/q.dll /lib/tiger/queens.tig; dotnet /tmp/q.dll
 ```
 
 # SEE ALSO
-\man{tiger}{1}, \man{common}{1}
+\man{csc}{1}, \man{tiger}{1}, \man{common}{1}
 
 # DIAGNOSTICS
 An exception no one catches is said as .NET says it, `Unhandled

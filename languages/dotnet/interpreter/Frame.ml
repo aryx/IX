@@ -36,7 +36,9 @@ let max_depth = 10_000
 (* .NET does not let a program catch it: it stops the process *)
 
 (* how a run of a method's instructions ends *)
-type outcome = Returned of value | End_finally | Filtered of bool
+(* Tail: a call after the prefix tail., its method and arguments, made
+ * in the caller's place (Machine.run_method's loop) *)
+type outcome = Returned of value | End_finally | Filtered of bool | Tail of meth * value array
 
 let name_of (m : meth) : string = m.mcls.name ^ "::" ^ m.mname
 

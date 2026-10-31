@@ -125,7 +125,24 @@ let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
       emit k (Il.Br top);
       place k over
   | Elet (false, bs, body) ->
-      (* (let ... and ...: each bound in turn, none seeing another) *)
+      bindings c env k bs;
+      expr c env k body
+  (* a local function that calls itself: its closure's own field *)
+  | Elet (true, [ (Pvar v, ({ e = Efunction _; _ } as d)) ], body) ->
+      lambda c env k d (Some v);
+      expr c env k body
+  | Elet _ -> refuse e.loc "a let rec of several, or of a pattern, or let ... and" "1c"
+  | Econstraint (e, _) -> expr c env k e
+  | Efunction _ -> lambda c env k e None
+  | Ematch (scrut, cases) ->
+      let v = local k (cts_of c scrut) in
+      expr c env k scrut;
+      emit k (Il.Stloc v);
+      matching c env k e (fun () -> emit k (Il.Ldloc v)) (type_of scrut) cases
+  | _ -> expr2 c env k e
+
+(* let ... and ...: each bound in turn, none seeing another *)
+and bindings (c : c) (env : env) (k : code) (bs : (Scope.pattern * Scope.expr) list) : unit =
       List.iter (fun ((p, d) : Scope.pattern * Scope.expr) ->
       (match simple p, d.e with
        | Some (Some _), _ when cts_of c d = S.Void -> drop c env k d
@@ -141,20 +158,11 @@ let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
            place k fail;
            match_failure c k;
            place k ok))
-        bs;
-      expr c env k body
-  (* a local function that calls itself: its closure's own field *)
-  | Elet (true, [ (Pvar v, ({ e = Efunction _; _ } as d)) ], body) ->
-      lambda c env k d (Some v);
-      expr c env k body
-  | Elet _ -> refuse e.loc "a let rec of several, or of a pattern, or let ... and" "1c"
-  | Econstraint (e, _) -> expr c env k e
-  | Efunction _ -> lambda c env k e None
-  | Ematch (scrut, cases) ->
-      let v = local k (cts_of c scrut) in
-      expr c env k scrut;
-      emit k (Il.Stloc v);
-      matching c env k e (fun () -> emit k (Il.Ldloc v)) (type_of scrut) cases
+        bs
+
+(* (expr's other cases: try, records, tuples, arrays) *)
+and expr2 (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
+  match e.e with
   | Etry (body, cases) -> try_ c env k e body cases
   | Erecord (_, fs) ->
       (* (the fields' values in the class's order, its constructor's) *)
@@ -206,6 +214,86 @@ let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
           emit k (Il.Stelem_any tok))
         es
   | Eassert _ -> refuse e.loc "an assert" "1b"
+  | _ -> expr c env k e
+
+(* an expression in tail position, its value returned: every path ends
+ * in ret, and a call there is a tail call (tail. call; ret: the
+ * callee's frame in the caller's place, so that an ML loop, a tail
+ * recursion, runs in a frame: the plan's decision 3). [boxed]: the
+ * method returns an object for unit (a closure's Invoke), so a callee
+ * returning nothing is called as any *)
+and tail_expr (c : c) (env : env) (k : code) (e : Scope.expr) (boxed : bool) : unit =
+  let plain () =
+    expr c env k e;
+    if boxed && cts_of c e = S.Void then emit k Il.Ldnull;
+    emit k Il.Ret in
+  let known (f : fn) (args : Scope.expr list) =
+    List.length args = List.length f.params && not (boxed && cts c e.loc f.rty = S.Void) in
+  match e.e with
+  | Eif (cond, a, Some b) ->
+      let otherwise = label k in
+      expr c env k cond;
+      emit k (Il.Brfalse otherwise);
+      tail_expr c env k a boxed;
+      place k otherwise;
+      tail_expr c env k b boxed
+  | Eseq (a, b) ->
+      drop c env k a;
+      tail_expr c env k b boxed
+  | Elet (false, bs, body) ->
+      bindings c env k bs;
+      tail_expr c env k body boxed
+  | Elet (true, [ (Pvar v, ({ e = Efunction _; _ } as d)) ], body) ->
+      lambda c env k d (Some v);
+      tail_expr c env k body boxed
+  | Econstraint (x, _) -> tail_expr c env k x boxed
+  | Ematch (scrut, cases) ->
+      let v = local k (cts_of c scrut) in
+      expr c env k scrut;
+      emit k (Il.Stloc v);
+      tail_cases c env k (fun () -> emit k (Il.Ldloc v)) (type_of scrut) cases boxed
+  | Eapply (({ e = Evar (Global g); _ } as fe), args) when Hashtbl.mem env.by_sym g.gsym && known (Hashtbl.find env.by_sym g.gsym) args ->
+      call_with c env k fe (Hashtbl.find env.by_sym g.gsym) args true;
+      emit k Il.Ret
+  | Eapply (({ e = Evar (Local v); _ } as fe), args) when Hashtbl.mem env.by_var v.vid && known (Hashtbl.find env.by_var v.vid) args ->
+      call_with c env k fe (Hashtbl.find env.by_var v.vid) args true;
+      emit k Il.Ret
+  (* a function value: its last Invoke a tail call when its result is
+   * what the method returns (an object, for unit) *)
+  | Eapply (({ e = Evar (Local v); _ } as fe), args)
+    when (Hashtbl.mem k.args v.vid || Hashtbl.mem k.slots v.vid || Hashtbl.mem k.captured v.vid) && (boxed || cts_of c e <> S.Void) ->
+      expr c env k fe;
+      invoke_tail c env k fe (type_of fe) args;
+      emit k Il.Ret
+  | _ -> plain ()
+
+(* a match's cases, each body in tail position *)
+and tail_cases (c : c) (env : env) (k : code) (load : unit -> unit) (ty : Scope.ty) (cases : Scope.case list) (boxed : bool) : unit =
+  List.iter
+    (fun ((p, guard, body) : Scope.case) ->
+      let next = label k in
+      pattern c k load ty p next;
+      (match guard with Some g -> expr c env k g; emit k (Il.Brfalse next) | None -> ());
+      tail_expr c env k body boxed;
+      place k next)
+    cases;
+  match_failure c k
+
+(* a function value's Invokes, the last after tail. *)
+and invoke_tail (c : c) (env : env) (k : code) (at : Scope.expr) (fty : Scope.ty) (args : Scope.expr list) : unit =
+  let ty = ref fty and n = List.length args in
+  List.iteri
+    (fun (i : int) (a : Scope.expr) ->
+      let dom, codom = match !ty with Tarrow (x, y) -> (x, y) | _ -> refuse at.loc "an application of a non-function" "1c" in
+      let fs = cts c at.loc !ty in
+      k.pending <- k.pending + 1;
+      expr c env k a;
+      if cts c at.loc dom = S.Void then emit k Il.Ldnull;
+      k.pending <- k.pending - 1;
+      if i = n - 1 then emit k (Il.Prefix "tail.");
+      emit k (Il.Callvirt (invoke c fs));
+      ty := codom)
+    args
 
 (* operands, each left on the stack, the ones before it counted as
  * pending while it is made *)
@@ -239,6 +327,11 @@ and drop (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
  * given; fewer, a Func of those given (partial); more, its result
  * invoked with the others *)
 and call (c : c) (env : env) (k : code) (fe : Scope.expr) (f : fn) (args : Scope.expr list) : unit =
+  call_with c env k fe f args false
+
+(* [tail]: all its arguments given, the call after tail. (the caller
+ * then returns) *)
+and call_with (c : c) (env : env) (k : code) (fe : Scope.expr) (f : fn) (args : Scope.expr list) (tail : bool) : unit =
   let n = List.length f.params in
   if List.length args < n then partial c env k f args
   else begin
@@ -248,6 +341,7 @@ and call (c : c) (env : env) (k : code) (fe : Scope.expr) (f : fn) (args : Scope
     (* (a polymorphic function: its method instantiated at what the call
      * gives its type's variables, the call's own type said so) *)
     let ity = type_of fe in
+    if tail then emit k (Il.Prefix "tail.");
     (if f.gvars = [] then emit k (Il.Call f.tok)
      else begin
        let inst = instantiation (rest f 0) ity in
@@ -346,13 +440,9 @@ and lambda (c : c) (env : env) (k : code) (e : Scope.expr) (self : Scope.var opt
   (match cases with
    | [ (p, None, body) ] when (match p with Pvar _ | Pany | Pconstraint (Pvar _, _) -> true | Pcons (k'', []) -> k''.cname = "()" | _ -> false) ->
        (match p with Pvar v | Pconstraint (Pvar v, _) -> if cts c e.loc dom <> S.Void then Hashtbl.replace k'.args v.vid 1 | _ -> ());
-       expr c env k' body;
-       if cts_of c body = S.Void then emit k' Il.Ldnull
-   | (_, _, body) :: _ ->
-       matching c env k' body (fun () -> emit k' (Il.Ldarg 1)) dom cases;
-       if cts_of c body = S.Void then emit k' Il.Ldnull
+       tail_expr c env k' body true
+   | _ :: _ -> tail_cases c env k' (fun () -> emit k' (Il.Ldarg 1)) dom cases true
    | [] -> refuse e.loc "a function of no case" "1c");
-  emit k' Il.Ret;
   finish c k' inv;
   (* the value: the captured values, the object, the Func *)
   let saved = k.pending in
@@ -624,15 +714,14 @@ let define (c : c) (env : env) (f : fn) : unit =
       end)
     f.params;
   (match f.cases with
-   | None -> expr c env k f.body
+   | None -> tail_expr c env k f.body false
    | Some cases ->
        (* (the last argument matched: the function's cases a match's) *)
        let arg = !last in
        (* (its argument's own type: a constructor's pattern says the
         * declared one, 'a tree, not int tree) *)
        let pty = match List.rev f.ptys with t :: _ -> t | [] -> (match cases with (p, _, _) :: _ -> pattern_type p | [] -> Resolve.unit_t) in
-       matching c env k f.body (fun () -> if arg >= 0 then emit k (Il.Ldarg arg)) pty cases);
-  emit k Il.Ret;
+       tail_cases c env k (fun () -> if arg >= 0 then emit k (Il.Ldarg arg)) pty cases false);
   finish c k f.tok;
   c.tvars <- []
 

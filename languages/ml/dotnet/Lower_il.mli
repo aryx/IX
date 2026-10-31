@@ -75,6 +75,9 @@
  *     'a list, [], x :: l         Stdlib.list`1, its Nil and Cons
  *     'a array, [| ... |]         T[]: newarr, stelem; a.(i) ldelem,
  *                                 a.(i) <- v stelem, length ldlen
+ *     a call in tail position     tail. call; ret (a function value's
+ *                                 last Invoke too): a loop written as
+ *                                 a tail recursion runs in one frame
  *
  *     shapes.ml                   interop.cs (tests/)
  *     type shape =                Shapes.shape s =

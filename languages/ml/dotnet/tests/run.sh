@@ -31,6 +31,8 @@
 #   tuples_lists  tuples and lists (Stdlib.tuple`n, Stdlib.list`1):
 #             built, matched, given to generic functions, compared
 #   arrays    T[]: literals, a.(i), a.(i) <- v, Array.length, a sort
+#   tails     tail calls: loops of a hundred thousand turns as tail
+#             recursions (direct, mutual, over a list, through a Func)
 #   units/    three units in one assembly (geometry, counter, main): one
 #             unit's values, functions, types, constructors, exception
 #             from another; the toplevels in link order (what OCaml's
@@ -54,7 +56,7 @@ W=$(mktemp -d); trap 'rm -rf $W' EXIT
 failures=0
 ok() { echo "ok $*"; }
 fail() { echo "FAIL $*"; failures=$((failures + 1)); }
-progs="fib arith strings loops variants records exceptions equality closures generics generic_types tuples_lists arrays"
+progs="fib arith strings loops variants records exceptions equality closures generics generic_types tuples_lists arrays tails"
 # what is refused: a program a line, and the stage that will have it
 refused() {
   local ml=$1 n=0

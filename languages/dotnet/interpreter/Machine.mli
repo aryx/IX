@@ -16,6 +16,16 @@
  *       IL_0006: ldarg.0  ...
  *       IL_0009: call Fib::Rec     a frame of its own, its result pushed
  *
+ * {b A tail call reuses its caller's frame}: a call after the prefix
+ * tail. (and a ret), to a method this runs, is its frame's last
+ * outcome (Frame.Tail), and run_method's loop makes the callee's frame
+ * in its place, no deeper in OCaml's stack nor in the depth; a
+ * delegate's Invoke to such a method too (ML's closures). So a loop
+ * that ML writes as a tail recursion (mini-ml -dotnet) runs ten million
+ * turns in a frame (plan_dotnet_languages.md, decision 3). A native
+ * callee, the library's or the JIT's, is called as any; a method only
+ * tail-called is not counted hot, so stays interpreted.
+ *
  * {b An instruction is typed by its operands} (lesson 3): `add` looks
  * at its two values' tags, int32 and int32, int64 and int64, floats.
  *

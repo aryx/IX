@@ -28,7 +28,7 @@ assemblies.
 **The program it is for: an analysis of programs, each part in the
 language best at it.** ML parses and types (mini-cc's or mini-ml's
 own front end) and writes the program as facts; Datalog computes the
-analysis (analyses/: Andersen's pointer analysis, liveness, the
+analysis (lib_code/datalog/: Andersen's pointer analysis, liveness, the
 dominators); ML reads the answers back and reports. Today these are
 three processes and files of facts between them (`mini-cc -facts`,
 `mini-datalog`); here one program, the facts passed as calls, the
@@ -445,6 +445,24 @@ but really use the same types!". So the decisions below are those of
      given with the program's.
 2. **Tail calls in mini-dotnet** (decision 3). Check: a loop of
    10,000,000 turns written as a tail recursion, by both runtimes.
+   Done (2026-10-31, the author: "let's commit and move forward"):
+   mini-ml -dotnet compiles a function's body and a closure's Invoke
+   in tail position (Lower_il.tail_expr: if's and match's branches, a
+   let's body, a sequence's last, never a try), a call there after
+   tail. and followed by ret (a function value's last Invoke too; not
+   one returning nothing from an Invoke, whose unit is an object).
+   mini-dotnet's interpreter honours it: the call is its frame's last
+   outcome (Frame.Tail), run_method's loop makes the callee's frame
+   in its place, no deeper in OCaml's stack nor in its depth; a
+   delegate's Invoke to a method it runs too. The loop of 10,000,000
+   turns: mini-dotnet 5.4 s and 8 MB (dune's), 9.9 s and 11 MB
+   (mini-ml's build); Microsoft's dotnet 0.08 s. The JIT: a native
+   callee is called as any, and a method only tail-called is not
+   counted hot, so such a loop stays interpreted (right, not
+   compiled). Checked: tests/tails.ml (direct, mutual, over a list,
+   through a Func, a local let rec's: a hundred thousand turns,
+   where mini-dotnet stops at ten thousand frames) by both runtimes;
+   the suite again, every body now in tail position.
 3. **The library** (decision 6): the .NET subset in C# by mini-csc,
    then ML's List, Option, String, Hashtbl, Printf over it, each
    grown as a test needs it. Check: the same tests of each class by
@@ -457,13 +475,13 @@ but really use the same types!". So the decisions below are those of
    tests that stay in it, by both runtimes, what the native build
    prints; those refused, counted with their reason.
 6. **mini-datalog compiled** (decision 5). Check: its analyses
-   (analyses/) on mini-cc's and mini-ml's facts, the same answers as
+   (lib_code/datalog/) on mini-cc's and mini-ml's facts, the same answers as
    the interpreter's.
 7. **Several assemblies in mini-dotnet** (decision 1): AssemblyRef
    resolved to an assembly beside the program's.
 8. **The program in several languages** (decision 7): Andersen's
    points-to on whole C programs, mini-cc's front end (ML) parsing and
-   writing facts into a Datalog module (analyses/'s rules, compiled),
+   writing facts into a Datalog module (lib_code/datalog/'s rules, compiled),
    the answers read back by ML and printed; a C module where C is the
    better tool (a fast hash of the facts, say). Check: the same
    answers as today's pipeline (`mini-cc -facts`, `mini-datalog`), by

@@ -204,15 +204,20 @@ and run_method (m : meth) (args : value array) : value =
    * own stack would be used up first, its Frame.frames bigger) *)
   incr Frame.depth;
   if !Frame.depth > Frame.max_depth then raise Frame.Stack_overflow;
-  let code = Types.code m in
-  let (f : Frame.frame) = { meth = m; code; args;
-            locals = Array.map zero code.locals;
-            stack = Array.make (code.max_stack + 1) Null; sp = 0; pc = 0; at = 0; caught = None } in
-  Frame.frames := f :: !Frame.frames;
-  match run f with
-  | Frame.Returned v -> Frame.frames := List.tl !Frame.frames; decr Frame.depth; v
-  | Frame.End_finally | Frame.Filtered _ -> Frame.error "endfinally or endfilter outside their block"
-  | exception e -> Frame.frames := List.tl !Frame.frames; decr Frame.depth; raise e
+  (* (a tail call: the callee's frame in this one's place, in this loop:
+   * OCaml's stack and the depth as they were, as .NET's tail. asks) *)
+  let rec go (m : meth) (args : value array) : value =
+    let code = Types.code m in
+    let (f : Frame.frame) = { meth = m; code; args;
+              locals = Array.map zero code.locals;
+              stack = Array.make (code.max_stack + 1) Null; sp = 0; pc = 0; at = 0; caught = None } in
+    Frame.frames := f :: !Frame.frames;
+    match run f with
+    | Frame.Returned v -> Frame.frames := List.tl !Frame.frames; decr Frame.depth; v
+    | Frame.Tail (m', args') -> Frame.frames := List.tl !Frame.frames; go m' args'
+    | Frame.End_finally | Frame.Filtered _ -> Frame.error "endfinally or endfilter outside their block"
+    | exception e -> Frame.frames := List.tl !Frame.frames; decr Frame.depth; raise e in
+  go m args
 
 (* the instructions run, an exception caught by this frame's clauses *)
 and run (f : Frame.frame) : Frame.outcome =
@@ -282,6 +287,11 @@ and loop (until : int) (f : Frame.frame) : Frame.outcome =
     pop_n (List.length m.params + if m.static then 0 else 1) in
   let result (m : meth) (v : value) = if m.ret <> T_void then push v in
   let constrained = ref None in
+  (* (after tail.: the next call made in this frame's place, when its
+   * method is IL to interpret; a native one, the library's or the
+   * JIT's, called as any) *)
+  let tail = ref false in
+  let interpreted (m : meth) = match m.body with Il_body _ | Decoded _ -> true | _ -> false in
   let rec go () : Frame.outcome =
     let ins = f.code.instrs.(f.pc) in
     f.at <- f.pc;
@@ -292,11 +302,30 @@ and loop (until : int) (f : Frame.frame) : Frame.outcome =
      | None -> ());
     match ins.op with
     | Ret -> Frame.Returned (if f.meth.ret = T_void then Null else pop ())
+    | Prefix "tail." -> tail := true; go ()
+    | Call tok when !tail && !constrained = None && (let m = meth tok in m.static && interpreted m) ->
+        tail := false;
+        let m = meth tok in
+        ensure_init m.mcls;
+        Frame.Tail (m, args_of m)
+    (* (a delegate's Invoke, its target a static method to interpret:
+     * ML's closures' calls) *)
+    | Callvirt tok when !tail && !constrained = None
+                        && (let m = meth tok in m.body = Runtime && m.mname = "Invoke") ->
+        tail := false;
+        let m = meth tok in
+        let a = args_of m in
+        let st = match a.(0) with Obj st -> st | Null -> Frame.null_ref () | _ -> Frame.error "a delegate" in
+        (match st.native with
+         | N_delegate (target, fn) when interpreted fn ->
+             let rest = Array.sub a 1 (Array.length a - 1) in
+             if fn.static then Frame.Tail (fn, rest) else Frame.Tail (fn, Array.append [| target |] rest)
+         | _ -> result m (invoke m a); go ())
     | Endfinally -> Frame.End_finally
     | Endfilter -> Frame.Filtered (Arith.truthy (pop ()))
     | op ->
         (match op with
-         | Nop | Prefix _ | Break -> ()
+         | Nop | Prefix _ | Break -> tail := false
          | Ldarg n -> push (copy_value f.args.(n))
          | Ldarga n -> push (Ptr (Slot (f.args, n)))
          | Starg n -> f.args.(n) <- pop ()

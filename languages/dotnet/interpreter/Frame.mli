@@ -59,7 +59,9 @@ val max_depth : int
 
 (* how a run of a method's instructions ends: its return, a finally's
  * end, a filter's answer *)
-type outcome = Returned of value | End_finally | Filtered of bool
+(* Tail: a call after the prefix tail., its method and arguments, made
+ * in the caller's place (Machine.run_method's loop) *)
+type outcome = Returned of value | End_finally | Filtered of bool | Tail of meth * value array
 
 (* Class::Method *)
 val name_of : meth -> string

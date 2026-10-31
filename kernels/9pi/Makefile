@@ -605,6 +605,9 @@ check-ix: ix
 #             and delete by -id; its files at /mnt/wsys and by $wsys
 #             (mounted elsewhere); the sizes of /dev/screen and
 #             /dev/window. With win-files in make check-files
+#   win-script   rio -i: windows made by a script at -at's places (a command
+#             ending takes its window, -hold keeps it), /dev/wsys, wctl's
+#             exit, back at the console. With win-files in make check-files
 #   colors-bare  mini-colors (../../apps/misc) on the bare screen:
 #             a square pointed at, its menu's exit
 #   colors-win   the same program in a window of mini-rio's, which is moved
@@ -750,7 +753,7 @@ gcheck = $(MAKE) --no-print-directory -j$(GJOBS) $(foreach s,$(1),run-$(s)-mini 
 check-draw: ix ; $(call gcheck,draw)
 check-menu: ix-usb card ; $(call gcheck,menu)
 check-rio: ix-usb card ; $(call gcheck,win-new win-ops win-border win-scroll win-select win-utf8)
-check-files: ix-usb card ; $(call gcheck,win-files win-wctl)
+check-files: ix-usb card ; $(call gcheck,win-files win-wctl win-script)
 check-colors: ix-usb card ; $(call gcheck,colors-bare colors-win)
 check-tetris: ix-usb card ; $(call gcheck,tetris-bare tetris-win)
 check-kbd: ix-usb card ; $(call gcheck,kbd-bare kbd-win)
@@ -890,7 +893,8 @@ endef
 #              /progs/toolchain actually for mini-asm, mini-ld, etc.";
 #              plan_self_hosting.md)
 #              (old: all of them in bin/arm, Plan 9's place)
-#   rc/bin     the commands that are scripts (kill), bound after it too
+#   rc/bin     the commands that are scripts (kill, window, desktop), bound
+#              after it too
 #   usr/pad    a user's directory, where the shell starts
 #   mnt/fat    where the card's first partition, the firmware's FAT, is
 #              mounted
@@ -989,7 +993,8 @@ CARD_MAN = $(foreach f,$(filter-out %/turbopascal-tty.md,$(wildcard ../../docs/m
 # monsters were not drawn, nor heard (its music, Vorbis, is off on Plan 9)
 QUAKE_DATA = ../../games/fps/quake/data
 CARD_QUAKE = $(foreach f,$(wildcard $(QUAKE_DATA)/progs/*.mdl $(QUAKE_DATA)/sound/*/*.wav),lib/quake/$(f:$(QUAKE_DATA)/%=%)=$(f))
-CARD_LIB = lib/scheme/queens.scm=../../languages/scheme/tests/queens.scm lib/pascal/types.pas=../../languages/pascal/tests/types.pas \
+CARD_LIB = rc/bin/window=../../windows/rio/window.rc rc/bin/desktop=../../windows/desktop/desktop.rc lib/desktop/start=../../windows/desktop/start.rc \
+  lib/scheme/queens.scm=../../languages/scheme/tests/queens.scm lib/pascal/types.pas=../../languages/pascal/tests/types.pas \
   lib/prolog/classics.pl=../../languages/prolog/tests/classics.pl \
   $(foreach p,hello fib queens shapes exceptions strings vec generic collections closures,lib/dotnet/$(p).dll=../../languages/dotnet/survey/programs/$(p).dll) \
   lib/dotnet/unhandled.dll=../../languages/dotnet/tests/programs/unhandled.dll \

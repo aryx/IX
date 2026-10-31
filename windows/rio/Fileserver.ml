@@ -8,36 +8,60 @@ let devices : Device.t list =
   [ Virtual_cons.cons; Virtual_cons.consctl; Virtual_cons.kbd; Virtual_mouse.mouse; Virtual_mouse.cursor;
     Dev_wm.winname; Dev_wm.winid; Dev_wm.label; Dev_wm.text; Dev_wm.window; Dev_wm.screen; Dev_wm.snarf; Wctl.wctl ]
 
-(* a window's directory (no device), or one of its files *)
-type file = { win : Window.t; dev : Device.t option }
+(* The tree. The root is what -i's process has (no window's): a wctl for
+ * new, and wsys. A window's directory is what its process has, wsys
+ * too, in which each window is again, as rio's. *)
+type file = Root | Root_wctl | Wsys | Dir of Window.t | Dev of Window.t * Device.t
 
 let entry (f : file) : Sys_plan9.dir =
   let rec number k (d : Device.t) = function x :: more -> if x == d then k else number (k + 1) d more | [] -> 0 in
-  let name, code, perm, t = match f.dev with
-    | None -> "/", 0, 0o555, Sys_plan9.dmdir
-    | Some d -> d.name, number 1 d devices, d.perm, 0 in
+  let name, id, code, perm, t = match f with
+    | Root -> "/", 0, 0, 0o555, Sys_plan9.dmdir
+    | Root_wctl -> "wctl", 0, 1, 0o666, 0
+    | Wsys -> "wsys", 0, 2, 0o555, Sys_plan9.dmdir
+    | Dir w -> string_of_int w.id, w.id, 0, 0o555, Sys_plan9.dmdir
+    | Dev (w, d) -> d.name, w.id, number 1 d devices, d.perm, 0 in
   { name; uid = "ix"; gid = "ix"; muid = "ix"; dev_type = '\000'; dev = 0;
-    qid_path = Int64.of_int ((f.win.id * 64) + code); qid_vers = 0L; qid_type = t; mode_type = t; perm;
+    qid_path = Int64.of_int ((id * 64) + code); qid_vers = 0L; qid_type = t; mode_type = t; perm;
     atime = 0.0; mtime = 0.0; length = 0 }
 
 let refuse _ = raise (P9_server.Error "permission denied")
+let absent () = raise (P9_server.Error "file does not exist")
+
+let window_of name = Option.bind (int_of_string_opt name) Wm.find
 
 let fs : file P9_server.fs =
   { attach = (fun _user aname ->
-      match Option.bind (int_of_string_opt aname) Wm.find with
-      | Some win -> { win; dev = None }
-      | None -> raise (P9_server.Error ("unknown window: " ^ aname)));
+      if aname = "" then Root
+      else match window_of aname with
+        | Some win -> Dir win
+        | None -> raise (P9_server.Error ("unknown window: " ^ aname)));
     walk = (fun f name ->
-      match f.dev, List.find_opt (fun (d : Device.t) -> d.name = name) devices with
-      | None, Some d -> { f with dev = Some d }
-      | _ -> if name = ".." then { f with dev = None } else raise (P9_server.Error "file does not exist"));
+      match f, name with
+      | (Root | Root_wctl | Wsys), ".." -> Root
+      | Root, "wctl" -> Root_wctl
+      | (Root | Dir _), "wsys" -> Wsys
+      | Wsys, _ -> (match window_of name with Some w -> Dir w | None -> absent ())
+      | (Dir w | Dev (w, _)), ".." -> Dir w
+      | Dir w, _ -> (match List.find_opt (fun (d : Device.t) -> d.name = name) devices with Some d -> Dev (w, d) | None -> absent ())
+      | _ -> absent ());
     stat = entry;
-    opened = (fun f mode -> match f.dev with Some d -> d.opened f.win mode | None -> ());
-    read = (fun f offset count -> match f.dev with Some d -> d.read f.win offset count | None -> "");
-    entries = (fun f -> List.map (fun d -> entry { f with dev = Some d }) devices);
-    write = (fun f _offset data -> (match f.dev with Some d -> d.write f.win data | None -> ()); String.length data);
+    opened = (fun f mode -> match f with Dev (w, d) -> d.opened w mode | _ -> ());
+    read = (fun f offset count -> match f with Dev (w, d) -> d.read w offset count | _ -> "");
+    entries = (fun f ->
+      match f with
+      | Root -> [ entry Root_wctl; entry Wsys ]
+      | Wsys -> List.map (fun w -> entry (Dir w)) (List.sort (fun (a : Window.t) (b : Window.t) -> compare a.id b.id) !Wm.windows)
+      | Dir w -> List.map (fun d -> entry (Dev (w, d))) devices @ [ entry Wsys ]
+      | Root_wctl | Dev _ -> []);
+    write = (fun f _offset data ->
+      (match f with
+       | Dev (w, d) -> d.write w data
+       | Root_wctl -> Wctl.written None data
+       | _ -> ());
+      String.length data);
     create = (fun f _ _ _ -> refuse f); remove = refuse; wstat = (fun f _ -> refuse f);
-    clunk = (fun f was_open -> match f.dev with Some d when was_open -> d.closed f.win | _ -> ()) }
+    clunk = (fun f was_open -> match f with Dev (w, d) when was_open -> d.closed w | _ -> ()) }
 
 let serve (requests : bytes Event.channel) mine =
   let server = P9_server.make fs (fun bytes -> ignore (Unix.write_substring mine bytes 0 (String.length bytes))) in

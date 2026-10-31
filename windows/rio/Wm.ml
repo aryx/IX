@@ -27,10 +27,21 @@ let front (w : Window.t) =
 
 let fits r = Rectangle.dx r >= 100 && Rectangle.dy r >= 50
 
-let create caps desk font srv r command =
+(* (a command's label: its name, the first word without its directory) *)
+let label_of (c : Wctl.command) =
+  if c.label <> "" then c.label
+  else if c.arg = "" then ""
+  else Filename.basename (List.hd (String.split_on_char ' ' c.arg))
+
+let create caps desk font srv r (c : Wctl.command) =
   incr ids;
   match Window.make desk !ids r font with
-  | w -> front w; Processes_winshell.start caps w srv command; Some w
+  | w ->
+      front w;
+      if label_of c <> "" then Window.send w (Window.Label (label_of c));
+      w.ends <- c.arg <> "" && not c.hold;
+      Processes_winshell.start caps w srv ~cd:c.cd c.arg;
+      Some w
   | exception Failure m -> prerr_string ("rio: no new window: " ^ m ^ "\n"); None
 
 let reshape (w : Window.t) r = front w; Window.send w (Window.Reshape r)
@@ -58,23 +69,26 @@ let bottom (w : Window.t) =
 (* (rio's newrect) *)
 let news = ref 0
 
-let control caps make (screen : Rectangle.t) (w : Window.t) (c : Wctl.command) =
-  match (match c.id with Some id -> find id | None -> if List.memq w !windows then Some w else None) with
-  | None -> ()
-  | Some w -> (
+let control caps make (screen : Rectangle.t) (w : Window.t option) (c : Wctl.command) =
+  let placed r = match c.area with Some f -> f screen | None -> c.place r in
+  match (match c.id with Some id -> find id | None -> (match w with Some w when List.memq w !windows -> Some w | _ -> None)), c.verb with
+  (* (a new one needs no window: the root's wctl, one that has gone) *)
+  | _, Wctl.New ->
+      let at = 32 + (16 * !news) in
+      news := (!news + 1) mod 10;
+      let r = placed (Rectangle.v at at (at + min 600 (Rectangle.dx screen - 8)) (at + min 400 (Rectangle.dy screen - 8))) in
+      if fits r then
+        Option.iter (fun fresh ->
+            Option.iter (fun on -> Window.send fresh (Window.Scroll on)) c.scrolling;
+            if c.hidden then hide fresh) (make r c)
+  | None, _ -> ()
+  | Some w, _ -> (
       match c.verb with
-      | Wctl.New ->
-          let at = 32 + (16 * !news) in
-          news := (!news + 1) mod 10;
-          let r = c.place (Rectangle.v at at (at + min 600 (Rectangle.dx screen - 8)) (at + min 400 (Rectangle.dy screen - 8))) in
-          if fits r then
-            Option.iter (fun fresh ->
-                Option.iter (fun on -> Window.send fresh (Window.Scroll on)) c.scrolling;
-                if c.hidden then hide fresh) (make r c.arg)
-      | Wctl.Resize -> let r = c.place w.image.r in if fits r && r <> w.image.r then reshape w r
+      | Wctl.New | Wctl.Exit -> ()
+      | Wctl.Resize -> let r = placed w.image.r in if fits r && r <> w.image.r then reshape w r
       | Wctl.Move ->
           (* (its place only: the size is the window's) *)
-          let r : Rectangle.t = c.place w.image.r in
+          let r : Rectangle.t = placed w.image.r in
           let r = Rectangle.v r.min.x r.min.y (r.min.x + Rectangle.dx w.image.r) (r.min.y + Rectangle.dy w.image.r) in
           if r <> w.image.r then reshape w r
       | Wctl.Top | Wctl.Current -> if not w.hidden then front w

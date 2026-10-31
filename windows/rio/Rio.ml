@@ -63,6 +63,10 @@
  *     that window before /dev's. It reads /dev/cons: a line
  *     typed in the window. It writes it: text in the window.
  *
+ * rio -i command: that command run at the start, in a process with no
+ * window, whose /dev/wctl makes them: a session, as a script (Plan 9's
+ * riostart; desktop is one, plan_desktop.md). rio alone starts nothing.
+ *
  * reframe:
  * A window system is a multiplexer: one screen, one mouse and one
  * keyboard made into several, as a kernel makes one processor into
@@ -104,11 +108,15 @@
  * System" (ACM Transactions on Graphics, 1986); principia's book on
  * rio. *)
 
-type caps = < Cap.draw; Cap.mouse; Cap.keyboard; Cap.fork; Cap.exec; Cap.mount; Cap.bind; Cap.open_in; Cap.open_out >
+type caps = < Cap.chdir; Cap.argv; Cap.draw; Cap.mouse; Cap.keyboard; Cap.fork; Cap.exec; Cap.mount; Cap.bind; Cap.open_in; Cap.open_out >
 
-type event = Mouse of Mouse.state | Keys of string list | Held of string | Asked of Window.t * Wctl.command
+type event = Mouse of Mouse.state | Keys of string list | Held of string | Asked of Window.t option * Wctl.command
 
-let main (caps : < caps; .. >) : Exit.t =
+let main (caps : < caps; .. >) (argv : string array) : Exit.t =
+  let init =
+    if Array.length argv = 1 then None
+    else if Array.length argv = 3 && argv.(1) = "-i" then Some argv.(2)
+    else failwith "usage: rio [-i command]" in
   let display = Display.init caps in
   let view = Display.whole display and font = Font.default display in
   let mouse = Mouse.init caps and keyboard = Keyboard.init caps in
@@ -130,6 +138,7 @@ let main (caps : < caps; .. >) : Exit.t =
   let make = Wm.create caps desk font srv in
   let action = Mouse_action.make caps mouse display desk in
   Window.note := Processes_winshell.note caps;
+  Option.iter (Processes_winshell.init caps srv) init;
   (* the buttons at the event before; the window that has the mouse until they are up *)
   let held = ref 0 and selecting : Window.t option ref = ref None in
   let rec loop last =
@@ -138,7 +147,8 @@ let main (caps : < caps; .. >) : Exit.t =
     | Keys [] -> loop last
     | Keys keys -> Option.iter (fun w -> Window.send w (Window.Keys keys)) (Wm.current ()); loop last
     | Held m -> Option.iter (fun w -> Window.send w (Window.Held m)) (Wm.current ()); loop last
-    (* a window's wctl file written: what the menu does, asked by a program *)
+    (* a wctl file written: what the menu does, asked by a program *)
+    | Asked (_, c) when c.verb = Wctl.Exit -> ()
     | Asked (w, c) -> Wm.control caps make view.r w c; loop last
     (* the mouse in the front window, when its program reads it, is the program's *)
     | Mouse m when (Window.pointer := m;
@@ -175,7 +185,7 @@ let main (caps : < caps; .. >) : Exit.t =
         | Some 0 ->
             (* (too small a rectangle, a click: a window of 400 by 240 there) *)
             let r : Rectangle.t = Mouse_action.sweep action in
-            ignore (make (if Wm.fits r then r else Rectangle.v r.min.x r.min.y (r.min.x + 400) (r.min.y + 240)) "");
+            ignore (make (if Wm.fits r then r else Rectangle.v r.min.x r.min.y (r.min.x + 400) (r.min.y + 240)) Wctl.plain);
             loop 0
         | Some 1 ->
             (* a window pointed at, then its new rectangle swept out *)
@@ -214,4 +224,4 @@ let main (caps : < caps; .. >) : Exit.t =
   Display.close display;
   Exit.OK
 
-let () = Cap.main (fun caps -> Exit.exit caps (Exit.catch (fun () -> main caps)))
+let () = Cap.main (fun caps -> Exit.exit caps (Exit.catch (fun () -> main caps (CapSys.argv caps))))

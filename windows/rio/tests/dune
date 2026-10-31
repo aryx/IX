@@ -1,4 +1,11 @@
 ; hellorio: a program that draws in a window of mini-rio's (kernels/9pi's make check-rio)
 (executable
  (name Hellorio)
+ (modules Hellorio)
  (libraries ix_graphics ix_threads ix_core threads.posix unix caps fpath))
+
+; what wctl's words mean, without a screen
+(executable
+ (name Test)
+ (modules Test)
+ (libraries ix_rio ix_graphics ix_9p caps testo alcotest))

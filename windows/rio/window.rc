@@ -1,0 +1,8 @@
+#!/bin/rc
+# Claude Code
+# Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+#
+# window: a new window, Plan 9's name: what follows is wctl's new, flags
+# and command (rio(1)):
+#   window -at ne 320 120 stats
+echo new $* > /dev/wctl

@@ -1,0 +1,9 @@
+[('type', "echo 'window -at ne 320 240 colors' > /tmp/s; echo 'window -at sw 400 200 -hold -label held echo stays' >> /tmp/s; echo 'window -at c 400 200' >> /tmp/s"),
+ ('type', "rio -i 'rc /tmp/s'"),
+ ('move', 300, 200),
+ ('type', 'ls /dev/wsys; cat /dev/wsys/2/label; echo'),
+ ('type', 'window -at se 200 100 sleep 3; sleep 6; ls /dev/wsys'),
+ ('type', 'window -max -cd /lib -label big ls; sleep 3; ls /dev/wsys'),
+ ('type', 'window -at se 300 120 -cd /lib -hold pwd; sleep 3; echo current > /dev/wctl'),
+ ('type', 'echo exit > /dev/wctl'),
+ ('type', 'echo back at the console')]

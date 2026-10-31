@@ -85,6 +85,13 @@ type t = {
    * window system) *)
   mutable wants_mouse : bool;
   mutable thread : Thread.t option;
+  (* it goes when its console is closed by all who have it open (its
+   * command and what that started): a window made with a command *)
+  mutable ends : bool;
+  (* those: the file server's, which alone counts them *)
+  mutable cons_opens : int;
+  (* deleted: a message for it is dropped *)
+  mutable gone : bool;
 }
 
 (* a window on the desktop, and its thread started; Failure when there

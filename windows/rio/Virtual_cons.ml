@@ -4,6 +4,10 @@
 (* See Virtual_cons.mli *)
 
 let cons : Device.t = { Device.default with name = "cons";
+  opened = (fun w _ -> w.cons_opens <- w.cons_opens + 1);
+  closed = (fun w ->
+    w.cons_opens <- w.cons_opens - 1;
+    if w.cons_opens = 0 && w.ends then Wctl.ended w);
   read = (fun w _ count -> Device.later w (fun reply -> Window.Read (reply, count)));
   write = (fun w data -> Device.later w (fun reply -> Window.Wrote (data, reply))) }
 

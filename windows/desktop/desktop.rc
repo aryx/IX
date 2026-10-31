@@ -1,0 +1,10 @@
+#!/bin/rc
+# Claude Code
+# Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+#
+# desktop: rio and what start says, a person's $home/lib/desktop/start
+# before /lib/desktop/start (plan_desktop.md). rio alone starts nothing.
+start=/lib/desktop/start
+if(ls $home/lib/desktop/start > /dev/null >[2] /dev/null)
+	start=$home/lib/desktop/start
+exec rio -i 'rc '$start

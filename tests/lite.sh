@@ -252,6 +252,7 @@ family "each program's unit tests"
 job "mini-mk: unit tests" _build/default/builder/tests/Test.exe
 job "mini-rc: unit tests" _build/default/shell/tests/Test.exe
 job "mini-ed: unit tests" _build/default/editors/ed/tests/Test.exe
+job "mini-rio: what wctl's words say (new -at, -max, -label, -cd, -hold, exit)" _build/default/windows/rio/tests/Test.exe
 job "mini-chidb: unit tests" _build/default/database/tests/Test.exe
 job "mini-smalltalk: unit tests" _build/default/languages/smalltalk/tests/Test.exe
 job "mini-scheme: unit tests" _build/default/languages/scheme/tests/Test.exe

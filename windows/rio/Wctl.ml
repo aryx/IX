@@ -7,7 +7,17 @@ type verb = [%mli]
 type command = [%mli]
 
 let verbs = [ "new", New; "resize", Resize; "move", Move; "top", Top; "bottom", Bottom; "current", Current;
-              "hide", Hide; "unhide", Unhide; "delete", Delete; "scroll", Scroll; "noscroll", Noscroll ]
+              "hide", Hide; "unhide", Unhide; "delete", Delete; "scroll", Scroll; "noscroll", Noscroll; "exit", Exit ]
+
+let plain : command =
+  { verb = New; place = (fun r -> r); area = None; hidden = false; scrolling = None; id = None; arg = ""; label = ""; cd = ""; hold = false }
+
+(* -at's rectangle: a corner, a side or the middle of the area *)
+let anchored where wide high (work : Rectangle.t) =
+  let w = min wide (Rectangle.dx work) and h = min high (Rectangle.dy work) in
+  let x = if String.contains where 'w' then work.min.x else if String.contains where 'e' then work.max.x - w else work.min.x + ((Rectangle.dx work - w) / 2) in
+  let y = if String.contains where 'n' then work.min.y else if String.contains where 's' then work.max.y - h else work.min.y + ((Rectangle.dy work - h) / 2) in
+  Rectangle.v x y (x + w) (y + h)
 
 let parse text : command =
   let bad m = raise (P9_server.Error m) in
@@ -24,6 +34,14 @@ let parse text : command =
     | "-scroll" :: more -> flags { c with scrolling = Some true } more
     | "-noscroll" :: more -> flags { c with scrolling = Some false } more
     | "-id" :: n :: more -> flags { c with id = Some (number n) } more
+    | "-max" :: more -> flags { c with area = Some (fun work -> work) } more
+    | "-at" :: where :: w :: h :: more when List.mem where [ "nw"; "n"; "ne"; "w"; "c"; "e"; "sw"; "s"; "se" ] ->
+        let w = number w and h = number h in
+        flags { c with area = Some (anchored where w h) } more
+    | "-at" :: _ -> bad "missing or bad wctl parameter"
+    | "-label" :: l :: more -> flags { c with label = l } more
+    | "-cd" :: d :: more -> flags { c with cd = d } more
+    | "-hold" :: more -> flags { c with hold = true } more
     | "-r" :: x0 :: y0 :: x1 :: y1 :: more -> let r = Rectangle.v (number x0) (number y0) (number x1) (number y1) in flags { c with place = (fun _ -> r) } more
     | side :: n :: more when List.mem side [ "-minx"; "-miny"; "-maxx"; "-maxy"; "-dx"; "-dy" ] ->
         (* a side's place: a number, or after a sign that much from where it is *)
@@ -41,17 +59,19 @@ let parse text : command =
         flags { c with place = (fun r -> edit (before r)) } more
     | flag :: _ when flag.[0] = '-' && verb <> New -> bad "missing or bad wctl parameter"
     | rest -> c, rest in
-  let c, rest = flags { verb; place = (fun r -> r); hidden = false; scrolling = None; id = None; arg = "" } rest in
+  let c, rest = flags { plain with verb } rest in
   if verb <> New && rest <> [] then bad "extraneous text in wctl message";
   { c with arg = String.concat " " rest }
 
-let requests : (Window.t * command) Event.channel = Event.new_channel ()
+let requests : (Window.t option * command) Event.channel = Event.new_channel ()
+
+let ask w c = ignore (Thread.create (fun () -> Event.sync (Event.send requests (w, c))) ())
+let ended w = ask (Some w) { plain with verb = Delete }
+let written w data = ask w (parse data)
 
 let wctl : Device.t = { Device.default with name = "wctl";
   read = (fun w ->
     let r = w.image.r in
     Device.part (Printf.sprintf "%11d %11d %11d %11d %s %s " r.min.x r.min.y r.max.x r.max.y
                    (if w.current then "current" else "notcurrent") (if w.hidden then "hidden" else "visible")));
-  write = (fun w data ->
-    let c = parse data in
-    ignore (Thread.create (fun () -> Event.sync (Event.send requests (w, c))) ())) }
+  write = (fun w data -> written (Some w) data) }

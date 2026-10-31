@@ -8,8 +8,10 @@ clicked show a menu with the application (see also /progs/) with icons,
 settings, etc. like in Windows or other Desktop OS. This might need
 modifications to rio to control how to create windows from a script."
 
-**Status: stage 0 done** (rio in `windows/rio/`). Nothing else built. The sizes below are estimates, to be replaced by
-`make loc`'s numbers as stages end.
+**Status: stages 0 and 1 done** (rio in `windows/rio/`; a scripted session:
+`rio -i`, `window`, `desktop`, `/dev/wsys`, windows ending with their
+programs). `desktop` is two programs in their places for now. The sizes below
+are estimates, to be replaced by `make loc`'s numbers as stages end.
 
 ## What it is for
 
@@ -159,7 +161,10 @@ Panel, startmenu and desk run all the time, on a Pi 1, so they are on
 once-a-second alarm and draw only what changed. `Plan9_loop` runs a frame
 loop, which suits a program one is looking at, so **settings** is on
 `lib_gui` (it is only there while open, and its toolkit has the fields and
-the buttons).
+the buttons). Seen at stage 1: `desktop` with mini-files left open and nothing
+touched, 59 fps by its own meter and 67% of the processor by mini-stats, under
+QEMU. So any program on that loop costs that much open and idle, which is for
+stage 8 and is why the desktop's own three are not on it.
 
 Each is a program of its own, `windows/desktop/` being one directory with
 several `executable`s, as `apps/files` has files and open.

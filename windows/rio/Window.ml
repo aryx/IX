@@ -21,7 +21,10 @@ let on_border (w : t) (p : Point.t) = Rectangle.contains w.image.r p && not (Rec
 let text (w : t) = Terminal.contents w.text
 let note : (t -> string -> unit) ref = ref (fun _ _ -> ())
 
-let send (w : t) m = Event.sync (Event.send w.inbox m)
+(* (a window deleted has no thread to take it: what its program does on
+ * the way out, its mouse file closed, must not stop the file server.
+ * Threads are cooperative: nothing runs between the test and the send) *)
+let send (w : t) m = if not w.gone then Event.sync (Event.send w.inbox m)
 
 (* The thread: the window's state is its variables. *)
 let run (w : t) desk =
@@ -181,7 +184,7 @@ let run (w : t) desk =
 
 let make desk id r font =
   let image = Display.window desk r Display.white in
-  let w = { id; image; text = Terminal.make image (Rectangle.inset image.r (width + 2)) font; hidden = false; current = true; label = Printf.sprintf "rc %d" id; cursor = None; inbox = Event.new_channel (); pid = 0; wants_mouse = false; thread = None } in
+  let w = { id; image; text = Terminal.make image (Rectangle.inset image.r (width + 2)) font; hidden = false; current = true; label = Printf.sprintf "rc %d" id; cursor = None; inbox = Event.new_channel (); pid = 0; wants_mouse = false; thread = None; ends = false; cons_opens = 0; gone = false } in
   Display.name image (name w);
   (* (no thread left for it: no window) *)
   (match Thread.create (fun () -> run w desk) () with
@@ -189,4 +192,4 @@ let make desk id r font =
    | exception Failure m -> Display.free image; failwith m);
   w
 
-let quit (w : t) = send w Quit; Option.iter Thread.join w.thread
+let quit (w : t) = send w Quit; w.gone <- true; Option.iter Thread.join w.thread

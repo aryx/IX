@@ -1,29 +1,29 @@
-world|20|385fed3a0d2f910342834b5f6eadcdd87314263abd5a5524bf70a1b66dd26427
-waiting|2|73073a9f28ba69cf4008b49a3d6344b17b422e26861b655943b40672f1b6bd23
-place|20 lat=47.39 lon=0.69 zoom=3|16bf8d17b83f1a151d43761822c484f176da22aaa1e571fcd6002f604d6ba4d9|5144cf35329fe12f67b6dc1c43d7948047f5e7c8e127798982abfbb19ec34b8d
-drag|40 'lat=20' 'lon=20' 'zoom=3' -script 'at(0;0):1-40,click:20-30,at(120;-60):25-40'|ee0a1da7636818305625496dc2404b86418ece8c5fbdce14edfac2a7dbde82ac|d152d4a729d656a97fe75698a86fe1b9d5e211e476b51768e0620d66618a3b57
-arrows|40 lat=20 lon=20 zoom=3 -script 'right:20-30'|c875362a3c3920564df574ca6d37e1c5fd4da9c6b29de172f7a6b97d20b9329e
-wheel-coarse|21 zoom=2 lat=20 lon=20 -script 'at(100;50):1-40,wheel(1):20'|d6fa450f333506394b286cbcb79f4220741a6c411682f5430840519390fafa5f
-wheel-sharp|40 zoom=2 lat=20 lon=20 -script 'at(100;50):1-40,wheel(1):20'|5039b926d44b032d832a41697e6a815ef5f65fa48c70f7576a34c0d26fda7610
-keys|40 zoom=2 lat=20 lon=20 -script 'type(-):20'|9be54472647d114e7d62ce68fa2e4b8998ec9c1183cac3e64bfa6ead9ce6d7c5
-missing|40 zoom=5 lat=20 lon=20|73609ff46f90ee6062e9860b6505797d5dac98a20426b50451eab5830f5e341d
-find-typing|8 zoom=1 -script 'type(/):3,type(toures):4,Backspace:6,Backspace:7'|ac0a7988640566269673c1c53f3721c81508ce4604c67b858403d99feb3c9ec7
-find-tours|40 zoom=1 -script 'type(/):3,type(tours):4,Enter:5'|6bb0c2ba29c5ee1125b1ab950f760952b1f8e516020e6238b6891e5e60b5b249|4c054f8502853ac1e623dfce7eda6388d39470bd6cff6088afd5018df8b2c6cb
-find-again|50 zoom=1 -script 'type(/):3,type(tours):4,Enter:5,type(/):40'|49c48bce3309d8d22a6d8c92dcef53080fa99539b61ad49ee5c3b4191751dd03|8636a7b7673db15ad5ef7d79bffe894c331996ed08c28e5b68e42a55d4b8eea0
-find-word|40 tours|6bb0c2ba29c5ee1125b1ab950f760952b1f8e516020e6238b6891e5e60b5b249|4c054f8502853ac1e623dfce7eda6388d39470bd6cff6088afd5018df8b2c6cb
-find-none|12 zoom=1 -script 'type(/):3,type(nowhere):4,Enter:5'|31647cab7f42b48b8988db703921fe1ad1bd520e11b01a169dfb48a4638a3666
-find-absent|12 zoom=1 -script 'type(/):3,type(tours):4,Enter:5'|7f0a3f66523d0bfc5ad824c3f7cdecc7bc4b2d957aaac00571121ec1e9e7bcbd
-find-click|8 zoom=1 -script 'at(-300;228):1-8,click:3'|65d17f5eda07c5470954c1f7977c8896e6ce27d324fa67cda5c27c0b2498e060
-find-escape|12 zoom=1 -script 'type(/):3,type(tours):4,Escape:6'|385fed3a0d2f910342834b5f6eadcdd87314263abd5a5524bf70a1b66dd26427
-weather|20 zoom=2 lat=47 lon=1 -script 'type(w):3'|24270134345279029340cc22a2121a79b89196ad0590c01e4c4aeeaa1f53467e
-weather-waiting|3 zoom=2 lat=47 lon=1 -script 'type(w):3'|8871eb98d2b42644ed6e8a9d09253b4ab4240fddee35498ecf54d2f292819d54
-weather-place|40 zoom=1 -script 'type(/):3,type(tours):4,Enter:5,type(w):30'|d3cd6cd0fa923466c6113f07ac35174b257f351455582dcadd8820d94342c225|4a2a2b957c3f5a39c51a454690d9fdee5b6e1d83c91e7b9964944653e3a6ecc6
-weather-closed|20 zoom=2 lat=47 lon=1 -script 'type(w):3,Escape:10'|bf568ee0ecf6528094061175429f0838dc626cf5205740d14e3eb00a98e00b09
-weather-absent|20 zoom=2 lat=47 lon=1 -script 'type(w):3'|a3e7086ab480f8aab450b6e4957bb98de801c880a365c74293c3470e0930520a
-marked|20 zoom=3 lat=47 lon=1 -script 'at(-150;100):1-20,click:12'|97b3387cc4a98727c3ed6809d13b592c7cee641e8083efc4c80ca6422f80305a|c8f857e505cae8b66fc24c02f35f7b01d8a6ed5c1b012c119c04b41dbdea0f20
-weather-follows|30 zoom=3 lat=47 lon=1 -script 'type(w):3,at(-150;100):1-30,click:20'|b7dbf86c8049e1bfd88ca1c0cfa7b4983057de82644df7f9968170ff4dd05f92|9f5220cd728f35122ff1364af2cb2cd3f08d06f23c6b50dca7dfdc4895aa83a8
-route-no-place|8 zoom=12 lat=47.3 lon=0.72 -script 'type(r):3'|41899c6680a30066dec6719bb423cd65cece781fb919b201ea923f8542d3579e
-route-from|12 zoom=12 lat=47.3 lon=0.72 -script 'at(-58;0):1-12,click:3,type(r):10'|e0051aad108fe8dc997a3c1f50ae7c9e24892d5a8d4e7315b66a18f207cd7e13|7884aae5ea9254772b3475223fe0386bc4113fdadfe4e1a7b0952a2d9396255a
-route|30 zoom=12 lat=47.3 lon=0.72 -script 'at(-58;0):1-8,click:3,type(r):10,at(58;0):12-30,click:14'|5bdc8898934a7fb2933d2e47064940f89d70e4a90da613fbb9a6bf187ab887bd|36e685937167ed33a2a44fb610c8ab9e14403e6ba9387781dd9da6c607afac15
-route-absent|30 zoom=12 lat=47.3 lon=0.72 -script 'at(-58;0):1-8,click:3,type(r):10,at(58;0):12-30,click:14'|9e6e6301efd6d22f109f788ef535fce0d36f2afe858f5388d821d6cadbc5742e|55e6e335423e0bdf2ce9cb81f73d3fa02c1e53cd4a647cd2cdfcfa47b89f7d3f
-route-cleared|40 zoom=12 lat=47.3 lon=0.72 -script 'at(-58;0):1-8,click:3,type(r):10,at(58;0):12-30,click:14,type(r):35'|87df98ebf1a868b893505b433106a4b82e68072b2cc5030656ac8dfa55b185dd|9c82ed24dacf999b7d20302dda93463ccaa6cc608f8e973a6c378b4e62c1b8d4
+world|20|66a6084a0bb0b435d7385cf59c44f501a9933116130918ec9e2beb58042bc871
+waiting|2|8a30d48c04bf4fe1aa5020288a64dd8bd89454d8d2b0524046eefc4be8ab1604
+place|20 lat=47.39 lon=0.69 zoom=3|4bb5446859d72e5114d54cb74f8900f3b7984810445d5b2419a0f090b1266064|ab150a5d5c4cabc63b43901ce5e6268410e755b74982ec470be4f54c72bb4bd0
+drag|40 'lat=20' 'lon=20' 'zoom=3' -script 'at(0;0):1-40,click:20-30,at(120;-60):25-40'|7a2995d4ffc0816f5873b0ab9ba7b0933d1da261e0a1fca997f64e611b668b8c|4a74e025e77e6df9b3ec3306f8bcba5f8f0785ecffdbb3db79fd1c3d340245c0
+arrows|40 lat=20 lon=20 zoom=3 -script 'right:20-30'|e59d2d42d168217526c1ffd3884762802eaaff82d6e4a583b7d6d8c5f5affe1b
+wheel-coarse|21 zoom=2 lat=20 lon=20 -script 'at(100;50):1-40,wheel(1):20'|469a344920c635ef65e0a52f3ea490d6c6aa3c9b5ad6f6aed7adc342671813e5
+wheel-sharp|40 zoom=2 lat=20 lon=20 -script 'at(100;50):1-40,wheel(1):20'|24f101b320efa7b57caf75e5db44e62f87e984272f3ee5b4cba94e7fd9e237a6
+keys|40 zoom=2 lat=20 lon=20 -script 'type(-):20'|157911da20ae02d94ec9b4148ab4e7c85351bb063a687da0c614623b5c869e13
+missing|40 zoom=5 lat=20 lon=20|432285de86b079189a137b17e32e33ecced58a91e1a36031d1e3f12c259e9a9d
+find-typing|8 zoom=1 -script 'type(/):3,type(toures):4,Backspace:6,Backspace:7'|fcc01ab6645bc6b230176a73c7de290ec449b8bc5b2a2da8064f2a893f5bf5bf
+find-tours|40 zoom=1 -script 'type(/):3,type(tours):4,Enter:5'|4bf154c912fc0aea6829f1722469357007666e2a074bc1134eaffae762306353|a4cbf96d82964a34e60f3b014a62fdadeb892bedd9e63f1ba393b39440234481
+find-again|50 zoom=1 -script 'type(/):3,type(tours):4,Enter:5,type(/):40'|cd19ca149691e16257f90ae45e76fd569ed29358ea83464de1f328e45eccf57b|14f5f6e55b9b9507573f62f6c4bf411ed7d1a0e049072c43ca4ca944975a3aa5
+find-word|40 tours|4bf154c912fc0aea6829f1722469357007666e2a074bc1134eaffae762306353|a4cbf96d82964a34e60f3b014a62fdadeb892bedd9e63f1ba393b39440234481
+find-none|12 zoom=1 -script 'type(/):3,type(nowhere):4,Enter:5'|2f1de2aa388db336edae867b7019ac74aa67510578ed02ef4c32b31aa3f2bebe
+find-absent|12 zoom=1 -script 'type(/):3,type(tours):4,Enter:5'|c717e9efe77048a32ab4cdbeb388415df3d130fd940d89b7dc20b9776cefbaf9
+find-click|8 zoom=1 -script 'at(-300;228):1-8,click:3'|9a5662e8a54c5e827c9b27f4489e6626f2b7e6fc0abd5d9509e80fbe3599cfa9
+find-escape|12 zoom=1 -script 'type(/):3,type(tours):4,Escape:6'|66a6084a0bb0b435d7385cf59c44f501a9933116130918ec9e2beb58042bc871
+weather|20 zoom=2 lat=47 lon=1 -script 'type(w):3'|8ece47746303b9ec802744dffcd59efda4dc29dd2d11935aea372af691d444dc
+weather-waiting|3 zoom=2 lat=47 lon=1 -script 'type(w):3'|49b2187a3b45b77ff114754f6654270137bc24288a3384d96051ba5fe8760f1d
+weather-place|40 zoom=1 -script 'type(/):3,type(tours):4,Enter:5,type(w):30'|cba0e106e87727893ee31cd5db1dfde62ad81a87a1174ed4244fc41f12db1046|22a9cbcac6d2773587d2437213bcef10b1ce78379ef6d50e9376c06629ec40d8
+weather-closed|20 zoom=2 lat=47 lon=1 -script 'type(w):3,Escape:10'|fde594d1dc144da676a2dc62c62719df6e8652c5841d9798f1a01b58aafe4190
+weather-absent|20 zoom=2 lat=47 lon=1 -script 'type(w):3'|ced11706a8ce75413402d5646d2fcc75555047b2c7d5dbf3edd07fa4e623931c
+marked|20 zoom=3 lat=47 lon=1 -script 'at(-150;100):1-20,click:12'|2d12a527d402d4ea3e4e1d9d2a3ee3a4e2b429069e64152401bcc16512c9acbc|97ea03b64595d36e31b2e18bfccaeede45e803d2e542f01cff31f4aa8d56009a
+weather-follows|30 zoom=3 lat=47 lon=1 -script 'type(w):3,at(-150;100):1-30,click:20'|380a9d41e19199350c39a7f2f0b31c2c5dfe8104291ae178ff4cac4e1d6150c1|9cd5ebc0aa51202a8fe2f4bed5793686a1246ceffdffe367446f742c67482bcb
+route-no-place|8 zoom=12 lat=47.3 lon=0.72 -script 'type(r):3'|f9efa498301d3b56d9c27b108517f6b9a308607b3479757d7edc84d7b77a7842
+route-from|12 zoom=12 lat=47.3 lon=0.72 -script 'at(-58;0):1-12,click:3,type(r):10'|599ade72fe19306a8342588466110cd3b78801e735c07b51fd2620f76e481d05|7084894d009d7e37c4aa8046503a7794af0426356ca807e9249699abb14ed16a
+route|30 zoom=12 lat=47.3 lon=0.72 -script 'at(-58;0):1-8,click:3,type(r):10,at(58;0):12-30,click:14'|429d759615845892b3d93de2417e488227a59412416aa1bd330764f191a0b233|dc98a896f6614d389d03c38ee6a7334c55ed7cb82a0d3b19b2938a96b652d764
+route-absent|30 zoom=12 lat=47.3 lon=0.72 -script 'at(-58;0):1-8,click:3,type(r):10,at(58;0):12-30,click:14'|d36dc1352f761b3691dfda785e1985d385c5873935127a0b9be53061c8be4b65|2add39836a16e94823a0e0b10adfc6a1e8e277aa66b9a9bcc7b9c85c2cb528ba
+route-cleared|40 zoom=12 lat=47.3 lon=0.72 -script 'at(-58;0):1-8,click:3,type(r):10,at(58;0):12-30,click:14,type(r):35'|f4eb1e3873ab58b518ba00d7fa707da96159c4958f911aba78dc2409760d760f|f3efbda74e77715b8b8b5a84f639ed5832c7aa5f38cb453286e54c1f83696187

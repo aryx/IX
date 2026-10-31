@@ -52,7 +52,7 @@ type model = {
 
 let kept = 120
 let again_after = 30.
-let credit = "\xc2\xa9 OpenStreetMap contributors"
+let credit = "\xc2\xa9 OpenStreetMap contributors, ODbL"
 let default_tiles = "https://tile.openstreetmap.org"
 let forecast_good = 900.
 let places_kept = 20

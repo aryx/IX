@@ -51,6 +51,10 @@ type t = {
   mutable impls : (int * int) list;
   mutable stand_alone : string list;
   mutable entry : int;
+  (* (owner, number, name): a generic type's or method's parameters *)
+  mutable generic_params : (int * int * string) list;
+  method_specs : (int * string, int) Hashtbl.t;
+  mutable method_spec_rows : (int * string) list;
 }
 
 let create (name : string) : t =
@@ -60,7 +64,7 @@ let create (name : string) : t =
             member_refs = Hashtbl.create 16; member_ref_rows = [];
             sigs = Hashtbl.create 16; type_specs = Hashtbl.create 8; type_spec_rows = [];
             type_defs = []; fields = []; methods = []; nested = []; impls = []; stand_alone = [];
-            entry = 0 } in
+            entry = 0; generic_params = []; method_specs = Hashtbl.create 8; method_spec_rows = [] } in
   (* the first TypeDef, <Module>: what is global *)
   w.type_defs <- [ (0, "", "<Module>", 0) ];
   w
@@ -165,6 +169,24 @@ let field_def (w : t) (owner : int) (name : string) (flags : int) (ty : Signatur
   w.fields <- { fowner = M.token_row owner; fname = name; fflags = flags;
                 fsig = Signature.encode_field ty } :: w.fields;
   M.token M.t_field (List.length w.fields)
+
+(* a generic type's or method's parameter: its owner (a TypeDef, a
+ * MethodDef), its number, its name *)
+let generic_param (w : t) (owner : int) (number : int) (name : string) : unit =
+  w.generic_params <- (owner, number, name) :: w.generic_params
+
+(* a generic method instantiated (II.23.2.15): the method, a MethodDef
+ * or a MemberRef, and its type arguments; called as the method is *)
+let method_spec (w : t) (meth : int) (args : Signature.t list) : int =
+  let blob = "\x0a" ^ String.make 1 (Char.chr (List.length args)) ^ String.concat "" (List.map Signature.encode_type_spec args) in
+  match Hashtbl.find_opt w.method_specs (meth, blob) with
+  | Some t -> t
+  | None ->
+      w.method_spec_rows <- (meth, blob) :: w.method_spec_rows;
+      let t = M.token M.t_method_spec (List.length w.method_spec_rows) in
+      Hashtbl.replace w.method_specs (meth, blob) t;
+      (match Hashtbl.find_opt w.sigs meth with Some s -> Hashtbl.replace w.sigs t s | None -> ());
+      t
 
 let method_def (w : t) (owner : int) (name : string) (flags : int) (m : Signature.meth) : int =
   w.methods <- { mowner = M.token_row owner; mname = name; mflags = flags; msig = m; body = None }
@@ -374,6 +396,17 @@ let write (w : t) : string =
     (List.rev w.member_ref_rows);
   List.iter (fun sg -> add M.t_stand_alone_sig [| blob w sg |]) (List.rev w.stand_alone);
   List.iter (fun sg -> add M.t_type_spec [| blob w sg |]) (List.rev w.type_spec_rows);
+  (* (a MethodDef's provisional token to its row's) *)
+  let def_or_ref (tok : int) : int =
+    let tok = remap tok in
+    if M.token_table tok = M.t_method_def then M.token_row tok lsl 1 else (M.token_row tok lsl 1) lor 1 in
+  List.iter (fun (meth, sg) -> add M.t_method_spec [| def_or_ref meth; blob w sg |]) (List.rev w.method_spec_rows);
+  (* (GenericParam sorted by its owner, then its number, as ECMA asks) *)
+  let owner (tok : int) : int =
+    let tok = remap tok in
+    if M.token_table tok = M.t_type_def then M.token_row tok lsl 1 else (M.token_row tok lsl 1) lor 1 in
+  List.iter (fun ((o, n, name) : int * int * string) -> add M.t_generic_param [| n; 0; o; str w name |])
+    (List.stable_sort compare (List.map (fun ((o, n, name) : int * int * string) -> (owner o, n, name)) (List.rev w.generic_params)));
   add M.t_assembly [| 0x8004; 0; 0; 0; 0; 0; 0; str w w.name; 0 |];
   (* Microsoft's key's token, for its assemblies *)
   let key = blob w "\xb0\x3f\x5f\x7f\x11\xd5\x0a\x3a" in

@@ -362,6 +362,7 @@ let const_type = function
 let keep = ref false
 let by_span : (Ast.span, t) Hashtbl.t = Hashtbl.create 1024
 let by_var : (int, t) Hashtbl.t = Hashtbl.create 256
+let stable_names = ref []
 let var_typed (v : Scope.var) (t : t) : unit = if !keep then Hashtbl.replace by_var v.vid t
 
 (* a pattern's type, and its variables' *)
@@ -594,6 +595,7 @@ let unit_ name (items : Scope.item list) =
   typed := [];
   Hashtbl.reset by_span;
   Hashtbl.reset by_var;
+  stable_names := [];
   Hashtbl.reset min_max;
   List.iter (fun g -> Hashtbl.replace min_max g g) min_max_base;
   current := name;
@@ -698,5 +700,25 @@ let to_scope t =
 
 let global_types () = List.rev_map (fun sym -> sym, to_scope (Hashtbl.find globals sym)) !defined
 
-let expr_type (sp : Ast.span) : Scope.ty option = Option.map to_scope (Hashtbl.find_opt by_span sp)
-let var_type (vid : int) : Scope.ty option = Option.map to_scope (Hashtbl.find_opt by_var vid)
+(* -dotnet: a variable named by its cell, the same name each time in the
+ * unit (stable_names): a polymorphic function's 'a is one in its type
+ * and in its body's expressions (the same cells), its generic method's
+ * parameter *)
+let to_scope_stable t =
+  let rec go t : Scope.ty =
+    match repr t with
+    | Var r -> (
+        match List.assq_opt r !stable_names with
+        | Some n -> Tvar n
+        | None ->
+            let n = Printf.sprintf "t%d" (List.length !stable_names) in
+            stable_names := (r, n) :: !stable_names;
+            Tvar n)
+    | Arrow (a, b) -> Tarrow (go a, go b)
+    | Tuple ts -> Ttuple (List.map go ts)
+    | Con (d, ts) -> Tconstr (d, List.map go ts)
+  in
+  go t
+
+let expr_type (sp : Ast.span) : Scope.ty option = Option.map to_scope_stable (Hashtbl.find_opt by_span sp)
+let var_type (vid : int) : Scope.ty option = Option.map to_scope_stable (Hashtbl.find_opt by_var vid)

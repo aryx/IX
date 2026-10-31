@@ -1,13 +1,12 @@
 -- let pair = (1, "one")
 r1.ml:1: a tuple: not compiled to .NET yet (plan_dotnet_languages.md, stage 1d)
--- let twice f x = f (f x)
-r2.ml:1: a polymorphic value: not compiled to .NET yet (plan_dotnet_languages.md, stage 1d)
+-- let twice f x = f (f x) let g = twice
+r2.ml:1: twice, a polymorphic function given fewer arguments, or as a value: not compiled to .NET yet (plan_dotnet_languages.md, stage 1d)
 -- let r = ref 0
 r3.ml:1: a value of type Pervasives.ref, of parameters: not compiled to .NET yet (plan_dotnet_languages.md, stage 1d)
 -- let () = let rec even n = n = 0 || odd (n - 1) and odd n = n <> 0 && even (n - 1) in print_int (if even 4 then 1 else 0)
 r4.ml:1: a let rec of several, or of a pattern, or let ... and: not compiled to .NET yet (plan_dotnet_languages.md, stage 1c)
 -- let id x = x
-r5.ml:1: a polymorphic value: not compiled to .NET yet (plan_dotnet_languages.md, stage 1d)
 -- let l = [ 1; 2 ]
 r6.ml:1: a value of type list, of parameters: not compiled to .NET yet (plan_dotnet_languages.md, stage 1d)
 -- let () = print_float 1.5

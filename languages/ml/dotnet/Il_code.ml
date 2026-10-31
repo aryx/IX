@@ -22,6 +22,9 @@ type c = {
   cls : int;                            (* the unit's class *)
   uname : string;                       (* the unit's name: its types' namespace *)
   memo : (string, int) Hashtbl.t;       (* what is made, by a name of ours *)
+  (* in a polymorphic function: its type variables, its method's generic
+   * parameters (!!0...) *)
+  mutable tvars : (string * S.t) list;
 }
 
 let memo (c : c) (key : string) (make : unit -> int) : int =

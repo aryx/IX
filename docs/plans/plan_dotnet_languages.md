@@ -366,6 +366,22 @@ but really use the same types!". So the decisions below are those of
    - 1d. **Polymorphism**: Writer's GenericParam and MethodSpec;
      tuples and lists (ValueTuple and ImmutableStack, or ML's own
      classes first if mini-dotnet's library has not got them).
+     In three parts (2026-10-31, the author: "let's commit and move
+     forward on 1d"). 1d-1 done: Writer.generic_param (GenericParam,
+     sorted by owner) and method_spec (MethodSpec, its method's
+     provisional token renumbered, called as the method); Typing
+     names a type variable by its cell, the same name each time in
+     the unit (to_scope_stable), so a polymorphic function's 'a is
+     one in its type and in its body; such a function a generic
+     method, its type's variables its parameters (!!0...), a call its
+     instantiation as the call's own type gives it; = on a type
+     variable the boxed value's Equals. Checked: generics (id at ints
+     and strings, twice and compose given lambdas, a recursive
+     generic, = at ints, strings, records) by both runtimes. Refused
+     for now: a polymorphic function as a value or partly applied, a
+     closure inside one (their classes would be generic too), one
+     at unit. 1d-2: generic types (a record or variant of
+     parameters, ref, option); 1d-3: tuples and lists.
    - 1e. **Modules**: a unit a static class, several units in one
      assembly.
 2. **Tail calls in mini-dotnet** (decision 3). Check: a loop of

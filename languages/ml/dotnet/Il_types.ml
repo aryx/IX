@@ -102,7 +102,9 @@ let rec cts (c : c) (loc : int) (t : Scope.ty) : S.t =
   | Tconstr ({ tabbrev = Some t; _ }, []) -> cts c loc t
   | Tconstr (d, []) when Resolve.type_fields d <> None -> S.Class (record c loc d)
   | Tconstr (d, []) when Resolve.type_conses d <> None -> S.Class (variant c loc d)
-  | Tvar _ -> refuse loc "a polymorphic value" "1d"
+  (* (a polymorphic function's variable its method's parameter; one
+   * that nothing constrains, an object) *)
+  | Tvar n -> (match List.assoc_opt n c.tvars with Some t -> t | None -> S.Object)
   | Tarrow (a, b) -> func c loc a b
   | Ttuple _ -> refuse loc "a tuple" "1d"
   | Tconstr (d, _ :: _) -> refuse loc ("a value of type " ^ d.tpath ^ ", of parameters") "1d"

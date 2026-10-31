@@ -16,6 +16,7 @@ type fn = {
   rty : Scope.ty;
   cases : Scope.case list option;
   body : Scope.expr;
+  gvars : string list;                  (* its type's variables: its method's generic parameters *)
 }
 
 (* the unit's closures' classes, numbered (reset by each unit) *)
@@ -31,6 +32,12 @@ val simple : Scope.pattern -> Scope.var option option
 (* a function's arguments, as its Efunction's nest: their variables and
  * types; the last's cases if it is matched; the body *)
 val params : Scope.expr -> (Scope.var option * Scope.ty) list * Scope.case list option * Scope.expr
+
+(* a type's variables, each once, in order *)
+val tvars_of : Scope.ty -> string list
+
+(* the generic type's variables, as an instance gives them *)
+val instantiation : Scope.ty -> Scope.ty -> (string * Scope.ty) list
 
 (* the variables an expression names, each once, in order *)
 val named : Scope.expr -> int list

@@ -47,6 +47,11 @@
  *                                 Invoke the next one's; the last
  *                                 calls the method
  *     let rec f x = ... in        a closure whose own field is f
+ *     let id x = x                !!0 id<T0>(!!0 x): a generic method,
+ *                                 its type's variables its parameters
+ *     id 5, id "a"                call id<long>, call id<string>: a
+ *                                 MethodSpec, the call's instance
+ *     = on 'a                     box !!0, Object::Equals
  *
  *     shapes.ml                   interop.cs (tests/)
  *     type shape =                Shapes.shape s =
@@ -56,9 +61,10 @@
  *     let map_area (f : int ->    Shapes.map_area(a => a + 1, s)
  *       int) s = f (area s)
  *
- * Stages 1a to 1c: what is not above (polymorphism, tuples and lists,
- * references, other units) is refused by name, the stage that will
- * have it said. A try inside an operand is refused too: IL's rule is
+ * Stages 1a to 1c, and 1d's polymorphic functions: what is not above
+ * (types of parameters, tuples and lists, references, a closure inside
+ * a polymorphic function, other units) is refused by name, the stage
+ * that will have it said. A try inside an operand is refused too: IL's rule is
  * that a protected region starts with an empty stack (Tiger's
  * emitter met it: Microsoft's JIT refuses it), so its value is made a
  * variable's first.

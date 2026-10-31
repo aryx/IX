@@ -48,6 +48,16 @@ val user_string : t -> string -> int
 val type_def : t -> string -> string -> int -> int -> int
 val field_def : t -> int -> string -> int -> Signature.t -> int
 val method_def : t -> int -> string -> int -> Signature.meth -> int
+
+(* a generic type's or method's parameter: its owner (a TypeDef's or a
+ * MethodDef's token), its number, its name; the method's signature
+ * says how many (Signature.meth's generic) *)
+val generic_param : t -> int -> int -> string -> unit
+
+(* a generic method instantiated (a MethodSpec): the method (a MethodDef
+ * or a MemberRef) and its type arguments; its token is called as the
+ * method's *)
+val method_spec : t -> int -> Signature.t list -> int
 (* an interface a type implements (InterfaceImpl) *)
 val implements : t -> int -> int -> unit
 (* a nested type's enclosing one *)

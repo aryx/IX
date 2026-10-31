@@ -72,8 +72,8 @@ let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
           | _ -> refuse e.loc (g.gsym ^ ", a value of another unit") "1e"))
   | Evar (Prim (p, _, _)) -> refuse e.loc (p ^ ", a primitive as a value") "1c"
   | Eapply ({ e = Evar (Prim (p, _, _)); _ }, args) -> prim c env k e p args
-  | Eapply ({ e = Evar (Global g); _ }, args) when Hashtbl.mem env.by_sym g.gsym -> call c env k e (Hashtbl.find env.by_sym g.gsym) args
-  | Eapply ({ e = Evar (Local v); _ }, args) when Hashtbl.mem env.by_var v.vid -> call c env k e (Hashtbl.find env.by_var v.vid) args
+  | Eapply (({ e = Evar (Global g); _ } as fe), args) when Hashtbl.mem env.by_sym g.gsym -> call c env k fe (Hashtbl.find env.by_sym g.gsym) args
+  | Eapply (({ e = Evar (Local v); _ } as fe), args) when Hashtbl.mem env.by_var v.vid -> call c env k fe (Hashtbl.find env.by_var v.vid) args
   | Eapply (({ e = Evar (Global g); _ } as f), args) when Hashtbl.mem env.fields g.gsym -> apply c env k f args
   | Eapply ({ e = Evar (Global g); _ }, args) -> (
       match builtin c g.gsym with
@@ -204,15 +204,33 @@ and drop (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
 (* a call of a function of the unit: its method, all its arguments
  * given; fewer, a Func of those given (partial); more, its result
  * invoked with the others *)
-and call (c : c) (env : env) (k : code) (e : Scope.expr) (f : fn) (args : Scope.expr list) : unit =
+and call (c : c) (env : env) (k : code) (fe : Scope.expr) (f : fn) (args : Scope.expr list) : unit =
   let n = List.length f.params in
   if List.length args < n then partial c env k f args
   else begin
     let mine = List.filteri (fun (i : int) (_ : Scope.expr) -> i < n) args in
     let more = List.filteri (fun (i : int) (_ : Scope.expr) -> i >= n) args in
     operands c env k mine;
-    emit k (Il.Call f.tok);
-    if more <> [] then invoke_with c env k e f.rty more
+    (* (a polymorphic function: its method instantiated at what the call
+     * gives its type's variables, the call's own type said so) *)
+    let ity = type_of fe in
+    (if f.gvars = [] then emit k (Il.Call f.tok)
+     else begin
+       let inst = instantiation (rest f 0) ity in
+       let args =
+         List.map
+           (fun (n : string) ->
+             match List.assoc_opt n inst with
+             | Some t ->
+                 let t' = cts c fe.loc t in
+                 if t' = S.Void then refuse fe.loc "a polymorphic function at unit" "1d";
+                 t'
+             | None -> S.Object)
+           f.gvars in
+       emit k (Il.Call (W.method_spec c.w f.tok args))
+     end);
+    let rec after (t : Scope.ty) (i : int) : Scope.ty = if i = 0 then t else match t with Tarrow (_, b) -> after b (i - 1) | t -> t in
+    if more <> [] then invoke_with c env k fe (after ity n) more
   end
 
 (* a variable's value: an argument, a local, a captured one (a field of
@@ -250,6 +268,7 @@ and invoke_with (c : c) (env : env) (k : code) (at : Scope.expr) (fty : Scope.ty
  * class of its own holding them, its Invoke the next argument's (the
  * last calls the method), as a Func *)
 and partial (c : c) (env : env) (k : code) (f : fn) (args : Scope.expr list) : unit =
+  if f.gvars <> [] then refuse f.body.loc (f.fname ^ ", a polymorphic function given fewer arguments, or as a value") "1d";
   let i = List.length args in
   let saved = k.pending in
   List.iteri
@@ -269,6 +288,7 @@ and partial (c : c) (env : env) (k : code) (f : fn) (args : Scope.expr list) : u
  * value an object of it, as a Func. [self]: a let rec's name, a field
  * set to the Func itself, which the body calls *)
 and lambda (c : c) (env : env) (k : code) (e : Scope.expr) (self : Scope.var option) : unit =
+  if c.tvars <> [] then refuse e.loc "a closure inside a polymorphic function" "1d";
   let cases = match e.e with Efunction cases -> cases | _ -> refuse e.loc "a function" "1c" in
   let fty = type_of e in
   let dom, codom = match fty with Tarrow (a, b) -> (a, b) | _ -> refuse e.loc "a function" "1c" in
@@ -397,6 +417,16 @@ and prim (c : c) (env : env) (k : code) (e : Scope.expr) (p : string) (args : Sc
   let equal () =
     match first () with
     | S.String -> op (Il.Call (lib c "String" "op_Equality" (static [ S.String; S.String ] S.Bool)))
+    (* (a polymorphic function's value: boxed, its own Equals, an int's
+     * or a record's) *)
+    | (S.MVar _ | S.Var _) as t when p = "%equal" || p = "%notequal" ->
+        let box () = emit k (Il.Box (W.type_spec c.w t)) in
+        (match args with
+         | [ a; b ] ->
+             expr c env k a; box ();
+             k.pending <- k.pending + 1; expr c env k b; box (); k.pending <- k.pending - 1;
+             emit k (Il.Callvirt (lib c "Object" "Equals" (instance [ S.Object ] S.Bool)))
+         | _ -> refuse e.loc "= of a polymorphic value" "1d")
     (* (a record's or a variant's Equals, structural; an exception's
      * the same object) *)
     | S.Class _ when p = "%equal" || p = "%notequal" -> op (Il.Callvirt (lib c "Object" "Equals" (instance [ S.Object ] S.Bool)))
@@ -469,17 +499,23 @@ and prim (c : c) (env : env) (k : code) (e : Scope.expr) (p : string) (args : Sc
  * calls the others), its body made later *)
 let declare (c : c) (env : env) (globals : (Scope.var * Scope.global) list) (v : Scope.var) (d : Scope.expr) : fn =
   let ps, cases, body = params d in
-  let params = List.map (fun ((v, ty) : Scope.var option * Scope.ty) -> (v, cts c d.loc ty)) ps in
-  let ret = if is_raise body then S.Void else cts c body.loc (type_of body) in
-  let sg = static (List.filter (fun (t : S.t) -> t <> S.Void) (List.map snd params)) ret in
-  let tok = W.method_def c.w c.cls v.vname 0x0096 sg in
   let rty = match cases with Some ((_, _, b) :: _) -> type_of b | _ -> type_of body in
-  let f = { tok; fname = v.vname; params; ptys = List.map snd ps; rty; cases; body } in
+  (* its type's variables: a generic method's parameters, !!0... *)
+  let gvars = tvars_of (List.fold_right (fun ((_, a) : Scope.var option * Scope.ty) (b : Scope.ty) -> Scope.Tarrow (a, b)) ps rty) in
+  c.tvars <- List.mapi (fun (i : int) (n : string) -> (n, S.MVar i)) gvars;
+  let params = List.map (fun ((v, ty) : Scope.var option * Scope.ty) -> (v, cts c d.loc ty)) ps in
+  let ret = if is_raise body then S.Void else cts c body.loc rty in
+  let sg = { (static (List.filter (fun (t : S.t) -> t <> S.Void) (List.map snd params)) ret) with generic = List.length gvars } in
+  c.tvars <- [];
+  let tok = W.method_def c.w c.cls v.vname 0x0096 sg in
+  List.iteri (fun (i : int) (_ : string) -> W.generic_param c.w tok i (Printf.sprintf "T%d" i)) gvars;
+  let f = { tok; fname = v.vname; params; ptys = List.map snd ps; rty; cases; body; gvars } in
   Hashtbl.replace env.by_var v.vid f;
   (match global_of globals v with Some g -> Hashtbl.replace env.by_sym g.gsym f | None -> ());
   f
 
 let define (c : c) (env : env) (f : fn) : unit =
+  c.tvars <- List.mapi (fun (i : int) (n : string) -> (n, S.MVar i)) f.gvars;
   let k = new_code () in
   let n = ref 0 and last = ref (-1) in
   List.iter
@@ -498,7 +534,8 @@ let define (c : c) (env : env) (f : fn) : unit =
        let pty = match cases with (p, _, _) :: _ -> pattern_type p | [] -> Resolve.unit_t in
        matching c env k f.body (fun () -> if arg >= 0 then emit k (Il.Ldarg arg)) pty cases);
   emit k Il.Ret;
-  finish c k f.tok
+  finish c k f.tok;
+  c.tvars <- []
 
 let unit_ (name : string) (items : Scope.item list) : string =
   let w = W.create name in
@@ -507,7 +544,7 @@ let unit_ (name : string) (items : Scope.item list) : string =
   let obj = W.type_ref w runtime "System" "Object" in
   (* (a static class: abstract and sealed) *)
   let cls = W.type_def w "" name 0x00100181 obj in
-  let c = { w; runtime; console; cls; uname = name; memo = Hashtbl.create 64 } in
+  let c = { w; runtime; console; cls; uname = name; memo = Hashtbl.create 64; tvars = [] } in
   closures := 0;
   Hashtbl.replace c.memo "type Object" obj;
   let env = { by_var = Hashtbl.create 16; by_sym = Hashtbl.create 16; fields = Hashtbl.create 16 } in

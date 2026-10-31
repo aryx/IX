@@ -19,6 +19,9 @@ type c = {
   cls : int;                            (* the unit's class *)
   uname : string;                       (* the unit's name *)
   memo : (string, int) Hashtbl.t;       (* what is made, by a name of ours *)
+  (* in a polymorphic function: its type variables, its method's generic
+   * parameters (!!0...) *)
+  mutable tvars : (string * Signature.t) list;
 }
 
 (* [make]'s token, made once by that name *)

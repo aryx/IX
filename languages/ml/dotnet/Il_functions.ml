@@ -23,6 +23,7 @@ type fn = {
   rty : Scope.ty;                       (* the result's, after them all *)
   cases : Scope.case list option;
   body : Scope.expr;
+  gvars : string list;                  (* its type's variables: its generic parameters *)
 }
 
 (* the unit's closures' classes, numbered *)
@@ -84,6 +85,31 @@ let named (e : Scope.expr) : int list =
     | Eassert x | Econstraint (x, _) -> go x in
   go e;
   List.rev !order
+
+(* a type's variables, each once, in order *)
+let tvars_of (t : Scope.ty) : string list =
+  let acc = ref [] in
+  let rec go (t : Scope.ty) : unit =
+    match t with
+    | Tvar n -> if not (List.mem n !acc) then acc := n :: !acc
+    | Tarrow (a, b) -> go a; go b
+    | Ttuple ts | Tconstr (_, ts) -> List.iter go ts in
+  go t;
+  List.rev !acc
+
+(* the generic type's variables, as the instance gives them (the same
+ * shape, walked together) *)
+let instantiation (gen : Scope.ty) (inst : Scope.ty) : (string * Scope.ty) list =
+  let acc = ref [] in
+  let rec go (g : Scope.ty) (i : Scope.ty) : unit =
+    match g, i with
+    | Tvar n, t -> if not (List.mem_assoc n !acc) then acc := (n, t) :: !acc
+    | Tarrow (a, b), Tarrow (a', b') -> go a a'; go b b'
+    | Ttuple xs, Ttuple ys when List.length xs = List.length ys -> List.iter2 go xs ys
+    | Tconstr (_, xs), Tconstr (_, ys) when List.length xs = List.length ys -> List.iter2 go xs ys
+    | _ -> () in
+  go gen inst;
+  !acc
 
 (* a function's type after its first i arguments: the arrows of the
  * rest, to its result *)

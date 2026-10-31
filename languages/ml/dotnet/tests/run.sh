@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # mini-ml -dotnet's tests (docs/plans/plan_dotnet_languages.md, stages
-# 1a to 1c): each program here compiled to an assembly, verified by
+# 1a to 1d): each program here compiled to an assembly, verified by
 # mini-dotnet (-verify: every method passes), run, against what OCaml
 # prints for it (the .expected files, made by ocaml file.ml, then read);
 # by dune's mini-ml and mini-dotnet, and by mini-ml's own (_mk/7);
@@ -24,6 +24,8 @@
 #   equality  = on records and variants by their contents (Equals), ==
 #   closures  lambdas, captures, partial application, functions as
 #             values, a local let rec, curried, unit arguments
+#   generics  polymorphic functions as generic methods, each call its
+#             instantiation; = on a type variable
 # usage: languages/ml/dotnet/tests/run.sh [-dune] [-mini] [-ms] [-record]
 #   (dune build, and mini-mk in languages/ml and languages/dotnet, first)
 # MINIML, MINIDOTNET: mini-ml's builds, if not _mk/7's (ix built by
@@ -43,7 +45,7 @@ W=$(mktemp -d); trap 'rm -rf $W' EXIT
 failures=0
 ok() { echo "ok $*"; }
 fail() { echo "FAIL $*"; failures=$((failures + 1)); }
-progs="fib arith strings loops variants records exceptions equality closures"
+progs="fib arith strings loops variants records exceptions equality closures generics"
 # what is refused: a program a line, and the stage that will have it
 refused() {
   local ml=$1 n=0
@@ -53,7 +55,7 @@ refused() {
     $ml -L lib_core -dotnet -o $W/r$n.dll $W/r$n.ml 2>&1 | sed "s|$W/||"
   done <<'R'
 let pair = (1, "one")
-let twice f x = f (f x)
+let twice f x = f (f x) let g = twice
 let r = ref 0
 let () = let rec even n = n = 0 || odd (n - 1) and odd n = n <> 0 && even (n - 1) in print_int (if even 4 then 1 else 0)
 let id x = x

@@ -7,8 +7,9 @@
 val decl : Scope.ty -> Scope.tdecl
 
 (* an ML type's .NET type, its class made if needed; unit's Void.
- * Refused: what a later stage has (a tuple, a type of parameters, a
- * polymorphic value) *)
+ * Refused: what a later stage has (a tuple, a type of parameters). A
+ * type variable: the polymorphic function's parameter (Il_code.c's
+ * tvars), else an object *)
 val cts : Il_code.c -> int -> Scope.ty -> Signature.t
 
 (* a type as a Func's argument or result (unit an object, null); a

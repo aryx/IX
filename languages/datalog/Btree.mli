@@ -50,6 +50,21 @@
  * domains (Tuples's parts by hash would scatter a P's tuples; by a
  * hash of the first column they stay together).
  *
+ * road-not-taken:
+ * Souffle's insertion hints: a tuple that belongs in the leaf of the
+ * insertion before (at or above its first, below the next leaf's
+ * first), with room, put there with no descent; and a rule's new
+ * tuples sorted before they are inserted, in each index's order, so
+ * that they mostly do. Tried (2026-10-31) and not kept: mini-ml and
+ * the assembler, all sorted, one core, 105.9 s with the hint against
+ * 105.2 without; mini-datalog's own facts 2.04 s, and 2.33 with the
+ * batches sorted, against 2.00. The new tuples do not come grouped by
+ * leaf here (only the set's, of the hot rule, come by P), the descent
+ * saved is a few binary searches in nodes in the cache, and a sort in
+ * OCaml (Array.stable_sort, a closure a comparison, its stores through
+ * the collector's barrier, being polymorphic) costs more than they.
+ * The leaves' moves, the larger part of an insertion, stay either way.
+ *
  * cs-history:
  * Rudolf Bayer and Edward McCreight's B-trees (1970, at Boeing; Acta
  * Informatica 1972), made for disks: a node a page, so a lookup reads

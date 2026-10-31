@@ -428,3 +428,28 @@ sorted kind: insertion as Souffle's (the batch sorted, a hint for
 inserting too, so that the descent is skipped), or a leaf's new
 tuples merged in one pass; the rows and the gathering on every domain
 (2.4 s on one, for both kinds).
+
+2026-10-31, insertion as Souffle's, tried and not kept (the author:
+"let's commit this and move forward on the insertion work"). An
+insertion hint (a tuple that belongs in the leaf of the one before,
+which has room, put there with no descent; the hint left at the leaf
+where it went) and a rule's new tuples inserted as a batch, sorted
+first in the set's order and in each index's. The sorted engine, one
+core by 4.14:
+
+| seconds | mini-datalog's facts | mini-ml and the assembler |
+|---|---|---|
+| no hint (276f2f48) | 2.00 | 105.2 |
+| hint, the batch as found | 2.04 | 105.9 |
+| hint, the batch sorted | 2.33 | |
+
+The same answers each way. The descents saved (`child2` from 4.3% of
+the instructions to 1.7% with the sort) cost less than the sort
+(`Array.stable_sort`: a closure a comparison, its stores through
+`caml_modify`, being polymorphic: 15%), and without the sort the new
+tuples rarely come grouped by leaf; the leaves' moves stay. Btree.mli's
+road-not-taken says it. What is left for the sorted kind on one core
+would be a different insertion (a leaf's new tuples merged into it in
+one pass, the batch sorted by a sort written out for pairs), or none:
+it is an option, which wins on 8 domains. For both kinds: the rows
+and the gathering on every domain (2.4 s on one, on 32).

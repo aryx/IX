@@ -233,6 +233,7 @@ ml_raise_trace(value unit)
 
 value *caml_named_value(char*);       /* (arrays.c's) */
 value callback(value, value);
+static int srcline(char*, int);       /* (source.c's) */
 
 static char ebuf[1024];
 static int elen;
@@ -276,6 +277,12 @@ ml_uncaught(value exn)
 		write(2, "raised at:", 10);
 		write(2, tbuf, tlen);
 		write(2, "\n", 1);
+		/* the line of code: tbuf again, the frames said */
+		tlen = srcline(tbuf, sizeof tbuf);
+		if(tlen > 0){
+			write(2, tbuf, tlen);
+			write(2, "\n", 1);
+		}
 	}
 	exit(2);
 	return Val_unit;

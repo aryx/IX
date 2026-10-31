@@ -83,14 +83,13 @@ md5_add(MD5 *m, uchar *p, long n)
 	}
 }
 
-/* the padding (a 1 bit, zeros, the length in bits), then the digest:
- * the 16 bytes of an ML string */
-static value
-md5_end(MD5 *m)
+/* the padding (a 1 bit, zeros, the length in bits), then the digest,
+ * its 16 bytes in d */
+static void
+md5_digest(MD5 *m, uchar *d)
 {
 	uchar pad[8], b;
 	uvlong bits;
-	value s;
 	int i;
 
 	bits = m->len * 8;
@@ -102,9 +101,18 @@ md5_end(MD5 *m)
 	while((m->len & 63) != 56)
 		md5_add(m, &b, 1);
 	md5_add(m, pad, 8);
-	s = string_alloc(16);
 	for(i = 0; i < 16; i++)
-		Bytes(s)[i] = m->h[i >> 2] >> (8 * (i & 3));
+		d[i] = m->h[i >> 2] >> (8 * (i & 3));
+}
+
+/* the digest as an ML string */
+static value
+md5_end(MD5 *m)
+{
+	value s;
+
+	s = string_alloc(16);
+	md5_digest(m, (uchar*)Bytes(s));
 	return s;
 }
 

@@ -105,6 +105,7 @@ unsupported(char *what)
 #include "floats.c"      /* floats */
 #include "ints.c"        /* Int32 and Int64 */
 #include "md5.c"         /* Digest: MD5 */
+#include "source.c"      /* a trace's line of code, from /src */
 #include "unix.c"        /* Unix: a system call by its number */
 
 /*****************************************************************************/

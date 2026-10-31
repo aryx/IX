@@ -211,7 +211,10 @@ two programs.
    I like your suggestion and /src/VERSION"): all of the tree, from
    what is committed, with `/src/VERSION`. Since done for card-self
    (plan_self_hosting.md: the repository but docs/); the everyday card
-   has five examples; `/src/VERSION` is to do.
+   has five examples; `/src/VERSION` is to do. (2026-10-31, at 5b: no
+   VERSION, a file's MD5 instead, mini-ml -g's in the program: a build
+   from a tree with changes not committed has no version to say, and a
+   file whose sum is the same is the same file.)
 9. **Whose file and line, when the table says an address?** (5b) The
    table gives the line of the instruction; an exception's trace has
    return addresses, whose line is the call's (the address less one
@@ -1131,3 +1134,29 @@ constructor's inline record (its words), an exception inside an
 argument (its words). Checked: walk.sh's three new cases (by types,
 by words, Unix_error), 6 cases; acid_proc.sh (12) and acid_linux.sh
 (8), three and one sessions re-recorded for main's line.
+
+2026-10-31, **stage 5b: the raise's line of code** (the author, of
+where the trace finds the sources: the paths from ix's root, a stale
+/src saying nothing). After the frames, the innermost frame's line
+whose source is there:
+```
+Fatal error: uncaught exception Bad(Rect (3, -4), {x = 1; y = 2; name = "origin"}, [1; 2], Some "why")
+raised at: Typed.Init+0x324 Typed.ml:10 < ml_program+0x270 < main+0x190 runtime.c:172 < _main+0x20 rt0.s:17
+Typed.ml:10  let check n = if n > 2 then raise (Bad (Rect (3, -4), { x = 1; y...
+```
+- mini-ml -g names the unit's file in the history by its path in ix
+  (Lines_ml.source: the directory above with lib_core/units.txt),
+  debuggers/tests/fault/Typed.ml, as the card's /src has it; without
+  -g as given, the objects the same bytes as before. And its MD5 in the
+  descriptions (Acid_ml.source: mlsources).
+- The runtime (languages/ml/runtime/source.c) joins the history's
+  components, reads /src's copy ($ML_SRC elsewhere: a checkout), a
+  block at a time, summed as it goes (md5.c's digest, without an ML
+  string), and says the line when the sums are the same; cut at 80
+  columns.
+- mini-acid: port.acid's srcpath is ./ and /src/ (the card's); on the
+  host, ix's directory appended (acid(1)).
+Not done: C's files (mini-cc's history is 5c's, the path as given),
+the kernel's traces (stage 4's), 64-bit. Checked: walk.sh's two new
+cases (the line, from this checkout; none from a copy changed), 8
+cases; acid_proc.sh (12), acid_linux.sh (8).

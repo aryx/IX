@@ -239,9 +239,10 @@ pc2line(uvalue pc)
  * the object (the z entries before its first function: the last such
  * at or before pc), its files a stack, an included one's lines added to
  * its includer's at its end (libmach's fline). The file is its path's
- * last component, all a trace says */
+ * last component, all a trace says; the whole path's components in
+ * path, their numbers, two bytes each (source.c's) */
 static int
-fileline(uvalue pc, long line, uchar **file, long *flen, long *fline)
+fileline(uvalue pc, long line, uchar **file, long *flen, long *fline, uchar **path, long *plen)
 {
 	struct { uchar *path; long len, base, at; } st[16];
 	long o, at, g, best, n;
@@ -286,6 +287,8 @@ fileline(uvalue pc, long line, uchar **file, long *flen, long *fline)
 	}
 	if(sp == 0)
 		return 0;
+	*path = st[sp - 1].path;
+	*plen = st[sp - 1].len;
 	/* the last component: the f entry of the path's last number */
 	nm = st[sp - 1].path + st[sp - 1].len - 2;
 	k = (nm[0] << 8) | nm[1];
@@ -360,6 +363,10 @@ add(char *b, int len, int max, char *s, int n)
 	return len;
 }
 
+/* the frames' pcs, the last trace's (source.c's) */
+static uvalue tpc[40];
+static int ntpc;
+
 /* the frames of the last raise, at most 40, in b as the kernel says a
  * suicide's (Frames.show): " f+0x10 a.ml:12 < g+0x2c a.ml:30"; its
  * length, 0 when there is no table or no raise kept */
@@ -369,11 +376,12 @@ frames(char *b, int max)
 	Func f;
 	uvalue pc, sp, saved, ra;
 	uint size, w;
-	long line, flen, fl;
-	uchar *file;
+	long line, flen, fl, plen;
+	uchar *file, *path;
 	char d[20];
 	int n, len, s, leaf;
 
+	ntpc = 0;
 	if(sizeof(value) != 4 || ml_raise_pc == 0 || !table())
 		return 0;
 	pc = ml_raise_pc - 8;
@@ -385,6 +393,7 @@ frames(char *b, int max)
 		return 0;
 	len = 0;
 	for(n = 0; n < 40 && function(pc, &f); n++){
+		tpc[ntpc++] = pc;
 		len = add(b, len, max, n == 0 ? " " : " < ", n == 0 ? 1 : 3);
 		len = add(b, len, max, (char*)f.name, f.len);
 		if(pc != f.start){
@@ -393,7 +402,7 @@ frames(char *b, int max)
 			len = add(b, len, max, d + s, 20 - s);
 		}
 		line = pc2line(pc);
-		if(line > 0 && fileline(pc, line, &file, &flen, &fl)){
+		if(line > 0 && fileline(pc, line, &file, &flen, &fl, &path, &plen)){
 			len = add(b, len, max, " ", 1);
 			len = add(b, len, max, (char*)file, flen);
 			len = add(b, len, max, ":", 1);

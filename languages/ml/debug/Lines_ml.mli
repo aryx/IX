@@ -8,6 +8,11 @@
  * of a .ml (the start's text, its functions all the compiler's): no
  * history. *)
 
-(* [add caps file text obj]: obj, the assembly text's, with file's
- * lines *)
-val add : < Cap.open_in; .. > -> Fpath.t -> string -> Asm.obj -> Asm.obj
+(* [add caps file name text obj]: obj, the assembly text's, with file's
+ * lines, the file named name in the history *)
+val add : < Cap.open_in; .. > -> Fpath.t -> string -> string -> Asm.obj -> Asm.obj
+
+(* file's path from ix's root (apps/rio/Rio.ml: the directory above it
+ * with lib_core/units.txt), as the card's /src has it (plan_debugger.md,
+ * stage 5b: a trace's line of code); as given outside ix *)
+val source : < Cap.open_in; Cap.readdir; .. > -> Fpath.t -> string

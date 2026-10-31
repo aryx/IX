@@ -122,10 +122,11 @@ defn stk() { _stk(0); }
 defn lstk() { _stk(1); }
 
 // a source file's lines, read once (srcpath's directories tried for a
-// relative name)
+// relative name: mini-ml -g says a file by its path in ix, the card's
+// /src; on the host, append ix's directory)
 srcfiles = {};
 srctext = {};
-srcpath = {"./"};
+srcpath = {"./", "/src/"};
 defn findsrc(file)
 {
 	local i, dirs, text;
@@ -641,10 +642,12 @@ defn mlv(v, d)
 // {name, args...}...}, {path, params, "record", {name, type}...} or
 // {path, params, "=", type}; each global's {symbol, type}, a type a
 // list, its path and its arguments: {"list", {"int"}}; each
-// exception's {symbol, its arguments' types...} (the runtime's)
+// exception's {symbol, its arguments' types...}; each unit's file
+// {its path in ix, its MD5} (the runtime's)
 mltypes = {};
 mlglobals = {};
 mlexns = {};
+mlsources = {};
 
 // the description of the type of this path, or {}
 defn mltypeof(p)

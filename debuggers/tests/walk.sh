@@ -15,7 +15,9 @@
 # (frames.c, the image's /proc/$pid/text: mini-5i's); its arguments
 # by their types (stage 5: fault/Typed.ml by mini-ml -g, its
 # descriptions in the program, typed.c), by their words without them,
-# and a Unix_error by its message (fault/Missing.ml: Unix's printer).
+# and a Unix_error by its message (fault/Missing.ml: Unix's printer);
+# the raise's line of code (stage 5b: source.c), from this checkout as
+# from the card's /src, none from a copy whose MD5 is not the unit's.
 # usage: debuggers/tests/walk.sh
 
 ROOT=$(cd $(dirname $0)/../.. && pwd)
@@ -66,6 +68,13 @@ raised at: f1_down Raise.ml:6 < f1_down Raise.ml:6 < f1_down Raise.ml:6 < f1_dow
     same "an exception's arguments by their types: a variant, a record, a list, an option" \
       'Fatal error: uncaught exception Bad(Rect (3, -4), {x = 1; y = 2; name = "origin"}, [1; 2], Some "why")' \
       "$($IX/machine/Main.exe $W/typedml 2>&1 | head -1)"
+    same "the raise's line of code, from ix's sources (\$ML_SRC: the card's /src), its MD5 the unit's" \
+      'Typed.ml:10  let check n = if n > 2 then raise (Bad (Rect (3, -4), { x = 1; y...' \
+      "$(ML_SRC=$ROOT $IX/machine/Main.exe $W/typedml 2>&1 | sed -n 3p)"
+    mkdir -p $W/stale/debuggers/tests/fault
+    (cat $F/Typed.ml; echo '(* changed *)') > $W/stale/debuggers/tests/fault/Typed.ml
+    same "no line of code from a source of another day" "2" \
+      "$(ML_SRC=$W/stale $IX/machine/Main.exe $W/typedml 2>&1 | wc -l)"
   fi
   if ml Typed; then
     same "an exception's arguments by their words, its unit without -g" \

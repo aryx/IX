@@ -104,3 +104,5 @@ let decls ~text globals exns =
   @ List.map (fun (sym, t) -> sprintf "mlglobals = append mlglobals, {\"%s\", %s};\n" sym (ty t)) globals
   @ List.map (fun (sym, ts) ->
       sprintf "mlexns = append mlexns, {%s};\n" (String.concat ", " (sprintf "\"%s\"" sym :: List.map ty ts))) exns
+
+let source path digest = sprintf "mlsources = append mlsources, {\"%s\", \"%s\"};\n" path digest

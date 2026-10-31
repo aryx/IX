@@ -264,7 +264,11 @@ let output (caps : < caps; .. >) mach ~listing ~out ~file ~acid text =
   if listing then print caps text
   else
     let obj : Asm.obj = Parser_asm.parse caps (Gen.arch mach) file text in
-    let obj = { (Lines_ml.add caps file text obj) with acid } in
+    (* -g: the file by its path in ix, its digest for the runtime to
+     * check /src's copy by (Lines_ml.source) *)
+    let name = if !debug then Lines_ml.source caps file else Fpath.to_string file in
+    let acid = if !debug then acid @ [ Acid_ml.source name (Digest.to_hex (Digest.string (FS.read caps file))) ] else acid in
+    let obj = { (Lines_ml.add caps file name text obj) with acid } in
     if !gas then FS.write caps out (Gas.obj obj) else Asm.save caps out obj
 
 (* -depend's way when a unit's names do not resolve: those it names

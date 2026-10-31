@@ -81,7 +81,12 @@ program, built by dune. What it showed:
   rounds and 20 million lookups for 44,000 tuples. A Datalog compiled
   (decision 5) or better indexes before whole programs of ix. Then
   (2026-10-31, plan_datalog.md's stages 1 and 2): the join's order
-  chosen, the rules 0.2 s; mini-ml's own analysis 225 s to 95 s.
+  chosen, the rules 0.2 s; mini-ml's own analysis 225 s to 95 s;
+  then (plan_ml_multicore.md) 88 s on one core, 14.8 s on 32 of OCaml
+  5's domains, the relations hashed or sorted (Souffle's B-trees), a
+  relation's choice. The engine's optimization stopped there (the
+  author: "let's stop the optimization of mini-datalog and go back on
+  the big picture project").
 - **The answers are useful and coarse.** rc: `runq->code->f` reaches
   the 46 X instructions of its machine, `bp->fnc` the 11 builtins;
   efree may be given 18 strings, a false alarm of the field-based

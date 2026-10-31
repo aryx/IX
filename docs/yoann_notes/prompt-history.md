@@ -57927,3 +57927,646 @@ Claude moved the rules from `Browser_helpers` into a new `Helpers` module and ad
 Claude found 4 `make test` failures in languages/ml and checked whether its own changes caused them.
 Claude committed stage 1 after the gate, then read how Playground programs are built for mini-files.
 Claude wrote stage 2 with the `Folder` module and `Files` window, then read the video plan for later.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 18:28
+
+**Yoann:**
+
+> the DOOP project and many papers from yannis have great program analysis in Datalog for complex languages, with complex context sensitive pointer analysis and control flow analysis. Remember the teaching purpose also of IX so possibly add those header comments also in the datalog files
+
+**Claude (summary):**
+
+Claude found the Datalog evaluator, not the front ends, is the bottleneck: 7 seconds on rc versus 0.3 seconds of parsing.
+Claude offered speeding up the Datalog engine with better indexes or compiled Datalog as the next step.
+Claude separated that speed problem from precision, since rc's false alarm on `efree` needs context sensitivity like Doop's.
+Claude's other work was the C and ML analyzers, facts passed as values, Datalog teaching headers, and five commits.
+Claude asked which to take next: Datalog speed, precision, or mini-ml compiling to .NET.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 18:20
+
+**Yoann:**
+
+> I'll be gone for a few hours so commit as you go
+
+**Claude (summary):**
+
+Claude recommended committing each stage as it passes `make test`, staging only its own hunks by pathspec.
+Claude found the flaky test came from its own `compile_ix.sh` path setup, then fixed it and got 12 of 12 passing runs.
+Claude confirmed the `Symbols.mli` syntax error and `mini-yacc` comparison failure were in files it never touched.
+Claude got the real Nominatim and forecast responses working, then ran mini-maps on mini-9pi, fetching 25 tiles over Plan 9 TCP.
+Claude checked the tile pictures themselves, not just the recorded sums, before committing stage 1.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 18:18
+
+**Yoann:**
+
+> (but run make test first of course)
+
+**Claude (summary):**
+
+Claude reported that mini-acid now debugs Linux programs from mini-cc, mini-ml, mini-asm and gcc, with DWARF lines and types.
+Claude built the ELF reader, mini-nm and `.symtab` output, and committed each step after `make test` passed 167 of 167 jobs.
+Claude added the first C stub in ix, `debuggers/acid/linux/ptrace.c`, which mini-ml's runtime does not yet provide.
+Claude chose `.plan9.syms` and `.plan9.lines` for Plan 9 tables and added a `var("name")` builtin for globals.
+Claude listed the limits: no function parameters or locals on arm64, a partial disassembler, and a stalled `make self-quick-mix` from another session.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 22:59
+
+**Yoann:**
+
+> 1: yes it's acceptable. let's do 2, optimize the Datalog engine; maybe can get inspiration from Semmle QL, Logiblox, and Souffle. Ideally in the long term we might want to have incremental analysis so modifying a file and reanalyzing a project would not recompute everything; there are some differential datalog (from vmware?) that I think we could use at some point some techniques.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 23:10
+
+**Yoann:**
+
+> I remember reading about Datalog MagicSet optimization; dunno if we can apply this technique here. I dunno what state of the art datalog engine do noaways (bbbdbbd, logiblox, souffle, etc.)
+
+------------------------------------------------------------------------
+
+## 2026-10-30 23:10
+
+**Yoann:**
+
+> in theory we can also use the 64 cores on this machine
+
+------------------------------------------------------------------------
+
+## 2026-10-30 23:12
+
+**Yoann:**
+
+> maybe we should start thinking about multicore support in mini-ml
+
+------------------------------------------------------------------------
+
+## 2026-10-30 23:04
+
+**Yoann:**
+
+> excellent work! What's next?
+
+**Claude (summary):**
+
+Claude recommended adding a line entry per statement first, since mini-ml and mini-cc map lines to whole functions.
+That makes next, step, src and breakpoints work per statement, as gdb does on gcc's programs.
+Claude proposed f:v on arm64 for parameters and locals: Plan 9 autos and DWARF locations for gcc.
+Claude called f:v small and said it finishes the Linux work of stage 8a.
+Claude ranked these two first, followed by stage 6 and the mini-5i replay of stage 10.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 23:12
+
+**Yoann:**
+
+> and then in mini-dotnet itself (via its compilation by mini-ml)
+
+**Claude (summary):**
+
+Claude said semi-naive Datalog rounds parallelize easily, since each rule only reads relations.
+Claude suggested trying this today under the OCaml 5.5.1 switch, using lib_core/parallel as the first benchmark.
+Claude said multicore mini-ml is its own project, because its collector is written for a single thread.
+Claude proposed a separate plan_ml_multicore.md, listed as option C in plan_multicore.md, with mini-dotnet threads coming later.
+Claude also reported the Datalog engine's speedups, 225 s to 95 s on mini-ml facts, committed as 3290d9bc.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 23:01
+
+**Yoann:**
+
+> let's follow what you suggest
+
+**Claude (summary):**
+
+Claude reported that Stage 5's route search is written, with Tours to Amboise coming out at 26.0 km and 22 min in 1.6 s.
+Claude confirmed all 23 unit tests pass and the 24 older window frames stayed byte-identical, then checked the five new route frames.
+Claude said the route follows real roads on OSM tiles and the mini-ml window draws correctly.
+Claude was updating the README and plan, then running the full `make test` gate, which was killed before printing results and restarted in the background.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 22:55
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude said the file manager's stage 2 needed a gate run before committing, since its earlier test run hung on a stray `cat`. Claude then reported that stage 3 (copy, cut, paste, delete, rename, new folder) was written with 33 scratch-tree checks, and that a mini-ml miscompile of `try f x with e` in `Folder.copy` was traced. Claude also said stage 4 (icons and dragging) was committed, and video stage 1 and 2 (MPEG-1 with sound) were committed after their gates. The one-line answer to "what's next" was the file manager's final rio check, and Claude said the video plan's stage 1 was committed with only its own hunks in `tests/lite.sh`.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 23:13
+
+**Yoann:**
+
+> ok let's do 1 and 2.
+
+**Claude (summary):**
+
+Claude's answer finished both steps of the ix debugger work, with commits made for each. Step 1 gave each statement its own line: mini-cc's default back end and mini-ml's Lower now mark statement starts, and the generated code was checked identical across 456 compiles. Under that, `next` in mini-debugger now steps a statement at a time, shown by the new `mlsteps/next.acid` session. Step 2 added arm64 parameters and locals, read from Plan 9 symbol tables or from DWARF for gcc programs, through a new `Frame64` module and `f:v` support. Claude also listed the limits, such as gcc -O2 frames and register-held DWARF variables.
+
+------------------------------------------------------------------------
+
+## 2026-10-31 06:59
+
+**Yoann:**
+
+> excellent! let's commit and let's start a plan_ml_multicode.md for mini-ml (and possibly used for mini-dotnet compiled by mini-ml)
+
+**Claude (summary):**
+
+Claude wrote the plan as `docs/plans/plan_ml_multicore.md`, reading "multicode" as multicore, and left it uncommitted.
+Claude explained the Datalog work was already committed as 3290d9bc, so no new commit was needed for it.
+Claude's plan proposes OCaml 5-style Domain, Mutex, Condition and Atomic names for mini-ml, with stop-the-world GC via the existing ml_limit trick.
+Claude staged the work: measure parallel mini-datalog ceiling under OCaml 5.5.1 first, then build mini-ml support, then mini-dotnet.
+Claude flagged that the analysis wastes firings and mini-ml's heap caps are limits that more cores won't fix.
+
+------------------------------------------------------------------------
+
+## 2026-10-31 07:01
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude found nothing of its own to commit, since the file manager and video work was already in at 3aa9fb30.
+Claude left the uncommitted apps/maps/, plan_maps.md, and tests/lite.sh changes untouched, since another session owns them.
+Claude also flagged lib_networking/ and Json.ml as probably maps-related, though it did not verify that.
+Claude advised the maps session to commit its own work, since it may still be editing those files.
+Claude noted that make test had not been run on those files from this session.
+
+------------------------------------------------------------------------
+
+## 2026-10-31 07:04
+
+**Yoann:**
+
+> let's commit and measure
+
+**Claude (summary):**
+
+Claude recommended fixing the Datalog engine before any mini-ml runtime work, since the engine is the bottleneck.
+Claude proposed flat indexes first, like the tuple sets, which would also speed up the one-core build.
+Claude then proposed splitting the adding of new tuples across domains by hash, as Soufflé partitions relations.
+Claude noted the one-domain merge, 11 to 19 seconds, limits 64 cores to about six times.
+Earlier, Claude committed the plan, a segfault fix, and -j rounds, reaching 3.4 times at 32 domains.
+
+------------------------------------------------------------------------
+
+## 2026-10-31 07:04
+
+**Yoann:**
+
+> what's next? Can I close this session?
+
+**Claude (summary):**
+
+Claude recommended closing this session, since all its work is committed and nothing is still running.
+Claude said closing it would leave the other session's uncommitted maps and networking files untouched.
+Claude's top priority was running `files` and `play /lib/videos/ball.mpg` under rio on a Pi 2.
+That hardware run matters most, because `mini-rio` has never run, film sound is untested, and 21 fps is only arithmetic.
+Claude also listed `make self-quick-mix` (6 min), the `/dev/mouse` fix in `mini-files`, and the video encoder stage 6 as later steps.
+
+------------------------------------------------------------------------
+
+## 2026-10-31 06:59
+
+**Yoann:**
+
+> let's commit. How do I use the mini google maps here? It has a GUI right?
+
+**Claude (summary):**
+
+Claude reported the gate as clean: 170 jobs, 0 failures, 0 skipped.
+Claude said it was committing the work, then checking that the window version starts.
+Claude planned to verify the GUI launch so its instructions on running the mini google maps would be accurate.
+
+------------------------------------------------------------------------
+
+## 2026-10-31 08:03
+
+**Yoann:**
+
+> wow, the maps is very good and fast and smooth; are you using data from google maps?
+
+**Claude (summary):**
+
+Claude explained that mini-maps uses OpenStreetMap tiles, Nominatim search, Overpass road data, and Open-Meteo forecasts, not Google.
+Claude said routes are computed locally with A* over downloaded roads, so driving times are rough estimates without traffic or turn restrictions.
+Claude noted that OpenStreetMap's licence requires crediting its contributors, and asked that the credit be kept for screenshots or publishing.
+Claude described the 32 MB tile cache in `~/.cache/mini-maps` and the background worker that fetches tiles so dragging stays smooth.
+Claude also said mini-maps uses its own user agent, not the user's email, and `tiles=URL` can switch tile servers for heavier use.
+
+------------------------------------------------------------------------
+
+## 2026-10-31 08:05
+
+**Yoann:**
+
+> ok; this licensing thing should be added in the comment of mini-maps somewhere at least
+
+------------------------------------------------------------------------
+
+## 2026-10-31 07:59
+
+**Yoann:**
+
+> ok let's fix the engine so it's more multicore friendly, maybe imitating more Souffle
+
+**Claude (summary):**
+
+Claude made the relations Soufflé-style, with tuples numbered in one flat array and per-key index chains.
+Claude measured 15.4 s on 32 domains, down from 28.8 s, and committed it as 9807521b.
+Claude found the join now takes 9 s of that, because its 372 million head tests each miss the cache.
+Claude proposed Soufflé's sorted B-trees for locality, with collapsing assignment cycles as the alternative that changes the analysis.
+Claude left out another session's uncommitted docs/plans/plan_video.md from the commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-31 09:04
+
+**Yoann:**
+
+> let's commit the progress. Let's try souffle sorted B-trees?
+
+------------------------------------------------------------------------
+
+## 2026-10-31 08:02
+
+**Yoann:**
+
+> I tried mini-play on the Linux host, see the ~/cosmocats_debut.mpg and it's very slow; the sound is good but the video is not playing smoothly
+
+**Claude (summary):**
+
+Claude traced the stutter to drawing, not decoding: the 1280x900 window scaled the 352x288 film 3x with a slow bilinear filter.
+Claude added `Blit.resized`, which uses whole-number scaling and cut a 3x drawn frame from about 212 ms to 33 ms.
+Films now open at the largest whole size fitting 800 pixels, so `~/cosmocats_debut.mpg` opens at 704x602 (2x).
+Claude also repainted only the black bars and scaled each picture once, and the picture now follows the audio clock without stepping backwards.
+The film now plays at 23.9 of 25 frames a second with about 5% skipped, and tests pass, but nothing is committed yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-31 09:09
+
+**Yoann:**
+
+> excellent work! let's commit. Also maybe now that mini-play plays video, maybe it should be moved out of apps/music/ in a new apps/media/ ?
+
+------------------------------------------------------------------------
+
+## 2026-10-31 08:05
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude's notes separated the LGPL code from the ODbL OpenStreetMap data and CC BY 4.0 forecast.
+Claude flagged that the map window credit should name the ODbL, a one-line change still pending.
+Claude found the Maps.ml licensing edit built with dune but was uncommitted and untested.
+Claude then offered to commit that edit alongside the credit fix before choosing the next step.
+Claude also laid out three next options: finishing the maps plan, maxspeed drive times, and turn restrictions.
+
+------------------------------------------------------------------------
+
+## 2026-10-31 09:11
+
+**Yoann:**
+
+> ok let's commit and move forward
+
+------------------------------------------------------------------------
+
+## 2026-10-31 09:05
+
+**Yoann:**
+
+> and remember to add good teaching comments
+
+------------------------------------------------------------------------
+
+## 2026-10-31 09:17
+
+**Yoann:**
+
+> I'll be back in 1h
+
+**Claude (summary):**
+
+Claude recommended starting the full conversion with B-tree indexes, since sorted lookups are the precondition for the rest.
+Claude expected sorted indexes to place consecutive rule 81 head tests in one leaf, with no extra sorting.
+Claude said the set and indexes would both be hand-specialized B-trees for arities 2 and 3.
+Claude said the parallel adding would be redone per tree, partitioned by the hash of the first column.
+Claude had built the uncommitted Btree experiment, beating the hash set by about a third on one domain.
+
+------------------------------------------------------------------------
+
+## 2026-10-31 09:09
+
+**Yoann:**
+
+> or something
+
+**Claude (summary):**
+
+Claude reported that the full test suite passes after the move of the new directory.
+Claude planned to add the new directory to the playground-copies table in the repository.
+Claude said it would commit only those specific paths rather than the whole working tree.
+Yoann's follow-up asks to commit the excellent/ directory, which is the focus of this answer.
+Claude's answer otherwise made no further decisions or file changes beyond these steps.
+
+------------------------------------------------------------------------
+
+## 2026-10-31 11:50
+
+**Yoann:**
+
+> let's commitexcellent/ What's next?
+
+**Claude (summary):**
+
+Claude reported that nothing remained to commit, since the fix and move landed as `c082cc43` and `b33deff6`.
+Claude's main proposal was to have Yoann play `mini-play ~/cosmocats_debut.mpg` and judge whether playback is smooth enough.
+Claude suggested speeding up decoding next if stuttering persisted, since that would also help the Pi and enlarged windows.
+Claude also listed running `make self-quick-mix`, testing `files` and `play` on a Pi 2, and fixing `/dev/mouse` in `mini-files`.
+Claude proposed deferring the video encoder (stage 6) until the player is proven on a Pi.
+
+------------------------------------------------------------------------
+
+## 2026-10-31 11:51
+
+**Yoann:**
+
+> I did play, and it plays very good. smooth (given the mpg itself is an anime, so not smooth, but that's the video itself). Great work!
+
+**Claude (summary):**
+
+Claude judged the video smooth on Yoann's real screen, so it dropped further Linux decoding speed work.
+Claude identified the remaining untested item as video playback on a Pi 2 under rio.
+Claude flagged that the Pi 2 check must also confirm sound and picture stay together.
+Claude noted the commit message and docs/plans/plan_video.md still list a real screen as untested.
+Claude planned to correct that wording the next time it edited the plan.
+
+------------------------------------------------------------------------
+
+## 2026-10-31 09:16
+
+**Yoann:**
+
+> I'll be back in 1h
+
+**Claude (summary):**
+
+Claude reported that both credit commits (`50269372`, `8a23cd8c`) are in, and the maps plan was closed with `8488d701`.
+Claude ran the route on mini-9pi with real key presses, using the local server for roads.
+A small network routed in under 6 seconds, and the Tours to Amboise extract (59,264 nodes) took 120 to 135 seconds.
+Claude flagged the window freezing during large routes, since mini-ml threads never yield during road parsing or A* search.
+Claude recommended making parsing and search yield regularly and showing "finding a route…" in the bottom band.
+
+------------------------------------------------------------------------
+
+## 2026-10-31 11:51
+
+**Yoann:**
+
+> let's move to done/, I can always test on Pi 2 later and we can adjust the done plan from there if needed
+
+**Claude (summary):**
+
+Claude moved the video plan to `docs/plans/done/plan_video.md` but left the move uncommitted.
+Claude marked the plan done, listing Pi 2 speed checks and the unstarted stage 6 encoder as remaining work.
+Claude updated `plan_apps.md`, the videos `README.md`, two `dune` files, and a `Yuv.ml` comment, and fixed the `plan_files.md` link.
+Claude offered to commit on Yoann's word and recorded his smooth real-screen playback, with `mini-rio` and `mini-qemu -ips 200` still marked not run.
+Claude rebuilt `lib_graphics/videos` and `apps/media/play` cleanly but did not rerun `make test`.
+
+------------------------------------------------------------------------
+
+## 2026-10-31 07:02
+
+**Yoann:**
+
+> ok what's next? How can I try mini-debugger on programs compiled by gcc or mini-ml or mini-c or something else?
+
+**Claude (summary):**
+
+Claude recommended trying mini-acid on gcc-built and mini-cc-built programs, with exact commands from the debuggers test tree.
+Claude gave a mini-ml build sequence (mini-ml, mini-ld, mini-acid) and pointed to lines 40–52 of acid_linux.sh.
+Claude noted the Plan 9 mini-5i path via acid_proc.sh and warned that entry-point breakpoints show garbage parameters.
+Claude proposed a one-command mini-ml debug build as the first next step, followed by readable exception traces, replay, and gcc -O2 CFI support.
+
+------------------------------------------------------------------------
+
+## 2026-10-31 11:50
+
+**Yoann:**
+
+> let's start, if it Souffle does a similar thing it must be a good idea that work
+
+------------------------------------------------------------------------
+
+## 2026-10-31 11:52
+
+**Yoann:**
+
+> let's commit. Can I close this session?
+
+**Claude (summary):**
+
+Claude confirmed the session can be closed because the plan's move was committed as `ce4141a6`.
+Claude noted that nothing from this session remains uncommitted and no player test runs are still active.
+Claude said `prompt-history.md` and another session's `languages/datalog/` work are uncommitted and will be left untouched.
+Claude did not rerun `make test` since the commit only changed docs and comments.
+Claude flagged that `make self-quick-mix` has not been run and should follow once other sessions commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-31 11:55
+
+**Yoann:**
+
+> independently, I think we should have a man page for mini-csc C# compiler, next to the dotnet man page
+
+**Claude (summary):**
+
+Claude reported that the B-tree index converts cleanly with identical output, but runs 22% slower on one core.
+Claude recommended continuing, with a stop condition: drop the conversion if one core isn't within 5% of the hash version.
+Claude proposed sorting new tuples before insertion and adding an insertion hint, so consecutive inserts reuse the same leaf.
+Claude also flagged the single-domain row numbering and candidate gathering, which cost 2.4 of 15.2 seconds on 32 domains.
+Claude committed the mini-csc man page as 95e6e216 and linked it from the mini-dotnet page.
+
+------------------------------------------------------------------------
+
+## 2026-10-31 12:36
+
+**Yoann:**
+
+> let's continue, but maybe make it possible to switch also to Hash engine, so we can have both if possible, which is also good teaching value
+
+------------------------------------------------------------------------
+
+## 2026-10-31 12:36
+
+**Yoann:**
+
+> I dunno if it would be possible to switch from one to the other depending on the table
+
+------------------------------------------------------------------------
+
+## 2026-10-31 11:52
+
+**Yoann:**
+
+> let's commit and fix the freeze
+
+**Claude (summary):**
+
+Claude found everything from the previous round was already committed, so nothing new needed committing.
+Claude examined how the worker and window share time to locate the freeze, then edited the code.
+Claude fixed the terminal caller and built with both compilers, but the mini-ml build failed.
+Claude flagged the earlier test results as stale from an old binary and investigated the mini-ml error.
+Claude started a background run with a 7 MB extract, a 30-second silent server, and arrow keys.
+
+------------------------------------------------------------------------
+
+## 2026-10-31 11:53
+
+**Yoann:**
+
+> this is great documentation. Maybe those examples above should be added in the acid.md man/1/ page ?
+
+**Claude (summary):**
+
+Claude wrote a new acid(1) man page at `docs/man/1/acid.md` in the style of 5i(1), with examples and a Bugs section.
+Claude rendered it with mini-man to confirm it displays cleanly, and checked the gcc, mini-cc and mini-ml examples by running them.
+Claude added acid(1) to the SEE ALSO lines of cc(1), ld(1) and ml(1) and committed the docs-only change as `4fe46d59`.
+Claude could not get `make test` to pass, since it stopped on another session's unfinished `Btree.width` datalog edit.
+Claude recommended option 1 next, a one-command debuggable build for mini-ml, because its five-line link makes the example heavy.
+
+------------------------------------------------------------------------
+
+## 2026-10-31 12:37
+
+**Yoann:**
+
+> Does souffle do that?
+
+**Claude (summary):**
+
+Claude asked whether to commit the two engines as one feature, "two engines, per relation."
+Claude proposed Soufflé-style insertion next: sort each batch and keep a hint for inserts too.
+That skips the root-to-leaf walk each sorted insert pays, the cost that puts sorted 14–19% behind on one core.
+Claude also named row numbering and candidate gathering on every domain, at 2.4 s on one domain today.
+The rest: a per-relation `-btree` option, sorted 12% faster on 8 domains, hashed kept as default, docs updated.
+
+------------------------------------------------------------------------
+
+## 2026-10-31 12:37
+
+**Yoann:**
+
+> what's next? Can we move the debugger plan to done/? What remains?
+
+**Claude (summary):**
+
+Claude reviewed the stage table and Status log of `docs/plans/plan_debugger.md` and found the state column out of date.
+Claude recommended not moving the debugger plan yet, and finishing the trace stages first: 5's second half, 5b, 5a on arm64, and optionally 6.
+Claude proposed moving the time-travel stages (10–12) into a new `plan_replay.md`, then moving the debugger plan to `done/` with its Status updated.
+Claude listed what remains beyond the traces: 8a's `-O2` frames, mini-ratrace, the Pi 4's `#p`, and txt2data.
+
+------------------------------------------------------------------------
+
+## 2026-10-31 13:00
+
+**Yoann:**
+
+> let's commit this and move forward on the insertion work
+
+**Claude (summary):**
+
+Claude tried Soufflé's insertion hint and sorted batches on the sorted engine, with no gain.
+Claude measured 2.04 s with the hint and unsorted batches, against 2.00 s without, and 2.33 s sorted.
+Claude found the sort cost 15% of instructions through generic Array.stable_sort, more than the descents it saved.
+Claude committed the two engines as 276f2f48 and recorded the finding, with its numbers, as 534dd49a.
+Claude kept Hash as the one-core default and Sorted for eight domains, and proposed a parallel next step.
+
+------------------------------------------------------------------------
+
+## 2026-10-31 12:37
+
+**Yoann:**
+
+> progress?
+
+**Claude (summary):**
+
+Claude reported that the card was rebuilding with both fixes, with the full test run to follow.
+Claude said the gate passed with 170 jobs and 0 failures, but flagged that `make self-quick-mix` was needed because `lib_core` changed.
+Claude was recording the bugs it found and running the final mini-9pi check and build before committing.
+Claude said the last checks were running and it would commit once they passed.
+Claude's status updates were otherwise repetitive, with no new decisions beyond the build and test sequence.
+
+------------------------------------------------------------------------
+
+## 2026-10-31 13:19
+
+**Yoann:**
+
+> let's commit. let's stop the optimization of mini-datalog and go back on the big picture project
+
+**Claude (summary):**
+
+Claude committed stage 1a of the big-picture plan as 04f769b2, after removing its scratch file tests/refused.ml.
+Claude's 1a compiles ML ints, floats, strings, unit functions, recursion, loops and prints to .NET assemblies.
+Claude checked four programs that print exactly what OCaml prints when run by mini-dotnet and Microsoft's dotnet.
+Claude noted one known gap, 63-bit OCaml ints versus 64-bit .NET ints, plus one unrelated make test failure.
+Claude wrote stage 1b, records, variants, pattern matching and exceptions, into the plan as the next step.
+
+------------------------------------------------------------------------
+
+## 2026-10-31 13:20
+
+**Yoann:**
+
+> progress?
+
+**Claude (summary):**
+
+Claude reported that the freeze fix was finished but not yet committed, with the final route test and `make self-quick-mix` still running.
+Claude said the fixes so far were a separate process for the road request, a real 50 ms wait in the parser and search, and a separate process for saving the extract.
+Claude found a fixed 30 s timeout in mini-9pi's `Tcp.ml` that would fail on real Overpass silences of 37 to 46 s, and it was fixed.
+Claude noted a 15 to 20 s stall before the route appears that may remain, since nearest-road search still never yields to the window.
+Claude also left open the silent truncation of 7 MB extracts on the card's 5.3 MB free disk, logged in `docs/plans/bugs/ix.md`.
+
+------------------------------------------------------------------------
+
+## 2026-10-31 13:43
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude committed stage 1b as a1e6dc0b, leaving another session's CLI.ml digest edit out of the commit.
+Claude's commit split the 882-line lowering into Il_code, Il_types and Lower_il, past ix's ~700-line limit.
+Claude ran all 28 checks, including Microsoft's dotnet on the C# interop test against shapes.ml, before committing.
+Claude then set stage 1c, closures, as next: functions as values become Func<T,R> delegates.
+Claude had summarized stage 1b as records, variants, exceptions and pattern matching compiled to .NET.

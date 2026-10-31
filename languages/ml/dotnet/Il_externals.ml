@@ -12,15 +12,22 @@ type member = { tok : int; static : bool; into : S.t list; from : S.t list; ret 
 let prefix = "dotnet:"
 let is_dotnet (p : string) : bool = String.length p > 7 && String.sub p 0 7 = prefix
 
-(* a class of .NET's library by its full name: System.Console in its
- * own assembly, the others in System.Runtime *)
+(* a class of .NET's library by its full name: System.Console and
+ * System.Security.Cryptography's in their own assemblies, the others
+ * in System.Runtime (its facade forwards them, not those) *)
+let assembly_of (cls : string) : string =
+  let under (ns : string) = String.length cls > String.length ns && String.sub cls 0 (String.length ns) = ns in
+  if cls = "System.Console" then "System.Console"
+  else if under "System.Security.Cryptography." then "System.Security.Cryptography"
+  else "System.Runtime"
+
 let class_ref (c : c) (cls : string) : int =
   memo c ("type " ^ cls) (fun () ->
       let ns, name =
         match String.rindex_opt cls '.' with
         | Some i -> (String.sub cls 0 i, String.sub cls (i + 1) (String.length cls - i - 1))
         | None -> ("", cls) in
-      W.type_ref c.w (W.assembly_ref c.w (if cls = "System.Console" then "System.Console" else "System.Runtime")) ns name)
+      W.type_ref c.w (W.assembly_ref c.w (assembly_of cls)) ns name)
 
 let rec type_of_name (c : c) (loc : int) (n : string) : S.t =
   match String.trim n with

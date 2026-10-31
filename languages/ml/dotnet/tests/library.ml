@@ -1,6 +1,7 @@
 (* lib_core's units compiled with the program (stage 3c): List, String,
- * Bytes, Buffer, Printf, Hashtbl, Array, Char, Option; compare's
- * structural order; floats printed; a local let rec ... and *)
+ * Bytes, Buffer, Printf, Hashtbl, Array, Char, Option, Digest, Printexc,
+ * Float.Array; compare's structural order; floats printed; a local let
+ * rec ... and *)
 
 type color = Red | Green | Blue of int
 type person = { name : string; age : int }
@@ -55,6 +56,13 @@ let () =
   Printf.printf "matrix %d %d\n" m.(1).(2) (Array.length m.(0));
   (* Option *)
   Printf.printf "option %b %b\n" (Option.map succ (Some 5) = Some 6) (Option.is_none None);
+  (* Digest (.NET's MD5), Printexc, Float.Array (a float64[]), fst and snd *)
+  Printf.printf "md5 %s\n" (Digest.to_hex (Digest.string "abc"));
+  Printf.printf "exn %s %s\n" (Printexc.to_string (Failure "x")) (Printexc.to_string Not_found);
+  let fa = Float.Array.make 3 1.5 in
+  Float.Array.set fa 1 2.5;
+  Printf.printf "floats %g %d\n" (Float.Array.get fa 0 +. Float.Array.get fa 1) (Float.Array.length fa);
+  Printf.printf "pair %d %s\n" (fst (1, "a")) (snd (1, "a"));
   (* a local let rec ... and *)
   let rec even n = n = 0 || odd (n - 1) and odd n = n <> 0 && even (n - 1) in
   Printf.printf "even %b odd %b\n" (even 10) (odd 7)

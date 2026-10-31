@@ -585,10 +585,19 @@ but really use the same types!". So the decisions below are those of
        Environment, Directory, File's Delete and Move, BitConverter,
        IComparable; its CLI's system by capabilities (Cap.env,
        Cap.readdir, Cap.chdir).
-     Not yet: Marshal (Obj's blocks), Gc, Digest (and Random, over
-     it), Callback (and Printexc, Unix, Thread... over it), Lexing and
-     Parsing, Float's float arrays, Logs (an inline record), and what
-     stands on them. lib_core's
+     Then (the author: "let's commit and move forward"): 41 of 50,
+     with Gc (no counters, collections nothing), Digest (.NET's
+     MD5.HashData, in System.Security.Cryptography's assembly, which
+     the externals now know), Random, Callback (register_named_value
+     nothing: no C runtime asks), Printexc (the predefined exceptions
+     with their arguments, the others their class's name; no
+     backtrace), Lexing and Parsing (fst and snd on tuples), Float's
+     float arrays (float64[]), Unix's Float. assert throws
+     Pervasives' Assert_failure, which a handler names.
+     Not yet: Marshal (OCaml's blocks), Unix (system calls by number)
+     and Thread (the C runtime's green threads), which .NET has other
+     forms of; Logs and Logs_fmt: formats as values (Logs' msgf), which
+     need a .NET form of formats (Printf's of a literal is compiled). lib_core's
      Char.escaped wrote a string (the only place): made as bytes now,
      as String's. Checked: tests/library.ml (List, String, Bytes,
      Buffer, Printf's formats, Hashtbl, Array, Char, Option, compare's

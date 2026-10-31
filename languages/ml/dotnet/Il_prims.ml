@@ -252,6 +252,19 @@ and prim (c : c) (env : env) (k : code) (cx : compiler) (e : Scope.expr) (p : st
        | _ -> ());
       emit k (Il.Call (ml_hash c));
       emit k (Il.Conv (Il.K_i8, false, false))
+  (* (Float.Array's, a float64[]) *)
+  | "%floatarray_length", _ -> all (); emit k Il.Ldlen; emit k (Il.Conv (Il.K_i8, false, false))
+  | ("%floatarray_safe_get" | "%floatarray_unsafe_get"), [ a; i ] ->
+      cx.expr a;
+      k.pending <- k.pending + 1; cx.expr i; k.pending <- k.pending - 1;
+      emit k (Il.Conv (Il.K_i4, false, false));
+      emit k (Il.Ldelem Il.K_r8)
+  | ("%floatarray_safe_set" | "%floatarray_unsafe_set"), [ a; i; x ] ->
+      cx.expr a;
+      k.pending <- k.pending + 1; cx.expr i; emit k (Il.Conv (Il.K_i4, false, false));
+      k.pending <- k.pending + 1; cx.expr x;
+      k.pending <- k.pending - 2;
+      emit k (Il.Stelem Il.K_r8)
   (* (Sys's: .NET's int an int64, its word 64 bits) *)
   | ("%word_size" | "%int_size"), _ -> all (); emit k (Il.Ldc_i8 64L)
   (* (a T[] of n nulls or zeros: the runtime unit's make_vect) *)
@@ -275,6 +288,14 @@ and prim (c : c) (env : env) (k : code) (cx : compiler) (e : Scope.expr) (p : st
       emit k (Il.Conv (Il.K_i4, false, false))
   (* ref, !, :=, incr, decr: Pervasives' 'a ref, a record *)
   | "%makemutable", _ -> cx.values args; emit k (Il.Newobj (record_ctor c e.loc (type_of e)))
+  (* (fst and snd: a tuple's Item1 and Item2) *)
+  | ("%field0" | "%field1"), [ r ] when (match type_of r with Ttuple _ -> true | _ -> false) ->
+      cx.expr r;
+      emit k (Il.Ldfld (tuple_field c e.loc (type_of r) (if p = "%field0" then 0 else 1)));
+      if cts_of c e = S.Void then emit k Il.Pop
+  (* (Obj.field: .NET's values are no blocks; null, which only
+   * Callback.register_exception asks for, its value then ignored) *)
+  | "%obj_field", _ -> List.iter cx.drop args; emit k Il.Ldnull
   | "%field0", [ r ] ->
       cx.expr r;
       emit k (Il.Ldfld (field0 c e.loc (type_of r)));

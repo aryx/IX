@@ -374,6 +374,11 @@ let is_printable (c : char) : bool = c >= ' ' && c < '\127'
 (* an array of n x: .NET's T[] (newarr), generic in its element *)
 external alloc_array : int -> 'a array = "%array_create"
 
+(* Float.Array.create's: a float64[] of zeros *)
+external alloc_floats : int -> Float.Array.t = "%array_create"
+let caml_floatarray_create (n : int) : Float.Array.t =
+  if n < 0 then invalid_arg "Float.Array.create" else alloc_floats n
+
 let make_vect (n : int) (x : 'a) : 'a array =
   if n < 0 then invalid_arg "Array.make";
   let a = alloc_array n in
@@ -742,6 +747,71 @@ let sys_close (fd : int) : unit =
     | [] -> []
     | (n, s) :: r -> if n = fd then (s_dispose s; r) else (n, s) :: remove r in
   streams := remove !streams
+
+(*****************************************************************************)
+(* Callback, Gc, Digest *)
+(*****************************************************************************)
+
+(* (a value named for the C runtime's own calls: none here) *)
+let register_named_value (_ : string) (_ : Obj.t) : unit = ()
+
+(* (.NET's collector: no counters of OCaml's heap, nothing to ask) *)
+let gc_counters () : int * int * int * int = (0, 0, 0, 0)
+let gc_minor () : unit = ()
+let gc_major () : unit = ()
+let gc_full_major () : unit = ()
+let gc_compaction () : unit = ()
+
+external md5 : bytes -> bytes
+  = "dotnet:static System.Security.Cryptography.MD5::HashData(uint8[]) -> uint8[]"
+
+let md5_string (s : string) (ofs : int) (len : int) : string =
+  string_of_bytes (md5 (bytes_of_string (sub s ofs len)))
+
+(* a channel's len bytes, or all that is left (len < 0) *)
+let md5_chan (ch : out_channel) (len : int) : string =
+  let b = create_string 4096 and acc = ref "" and left = ref len and over = ref false in
+  while not !over do
+    let want = if !left < 0 || !left > 4096 then 4096 else !left in
+    let n = if want = 0 then 0 else caml_input ch b 0 want in
+    if n = 0 then over := true
+    else begin
+      acc := !acc ^ sub (string_of_bytes b) 0 n;
+      if !left > 0 then left := !left - n
+    end
+  done;
+  if !left > 0 then raise End_of_file;
+  md5_string !acc 0 (String.length !acc)
+
+(*****************************************************************************)
+(* Printexc *)
+(*****************************************************************************)
+
+type dotnet_type
+
+external get_type : exn -> dotnet_type = "dotnet:instance System.Object::GetType() -> System.Type"
+external type_name : dotnet_type -> string = "dotnet:instance System.Type::get_Name"
+
+(* an exception as OCaml prints it: the predefined ones with their
+ * arguments (Failure("..."), Sys_error, Invalid_argument); another,
+ * Pervasives' too (Exit, Assert_failure: a unit after this one), its
+ * class's name, its arguments not (no reflection of them here) *)
+let ml_exn_string (e : exn) : string =
+  (* (not escaped: String's escaped is a unit after this one) *)
+  let quoted (s : string) = "(\"" ^ s ^ "\")" in
+  match e with
+  | Failure s -> "Failure" ^ quoted s
+  | Invalid_argument s -> "Invalid_argument" ^ quoted s
+  | Sys_error s -> "Sys_error" ^ quoted s
+  | Not_found -> "Not_found"
+  | End_of_file -> "End_of_file"
+  | Division_by_zero -> "Division_by_zero"
+  | e -> type_name (get_type e)
+
+(* (no backtrace kept: none, at Printexc's types, which come after) *)
+let ml_raise_trace () : string = ""
+let caml_get_exception_backtrace () : 'a option = None
+let caml_get_exception_raw_backtrace () : string = ""
 
 external environment_exit : int -> unit = "dotnet:static System.Environment::Exit(int32)"
 

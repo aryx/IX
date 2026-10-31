@@ -428,6 +428,8 @@ let rec cts (c : c) (loc : int) (t : Scope.ty) : S.t =
    * own, unboxed) *)
   | Tconstr (d, []) when d.tpath = "Int64.t" -> S.I8
   | Tconstr (d, []) when d.tpath = "Int32.t" -> S.I4
+  (* (Float.Array.t, OCaml's floatarray: .NET's float64[]) *)
+  | Tconstr (d, []) when d.tpath = "Float.Array.t" -> S.SzArray S.R8
   | Tconstr (d, []) when d == unit_d -> S.Void
   | Tconstr (d, []) when d == exn_d -> S.Class (sys c "Exception")
   | Tconstr ({ tabbrev = Some t; _ }, []) -> cts c loc t

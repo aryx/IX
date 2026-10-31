@@ -6,7 +6,7 @@ r2.ml:1: a try inside an operand (made a variable's value first): not compiled t
 r3.ml:1: A, a constructor of an inline record: not compiled to .NET yet (plan_dotnet_languages.md, stage 1b)
 -- let eq (x : 'a) = (=) x
 r4.ml:1: = of a polymorphic value: not compiled to .NET yet (plan_dotnet_languages.md, stage 1d)
--- let () = Gc.compact ()
-lib_core/core/Gc.ml:27: the primitive gc_counters, not in the runtime unit (lib_core/dotnet/Runtime.ml): not compiled to .NET yet (plan_dotnet_languages.md, stage 3b)
--- let d = Digest.string "a"
-lib_core/base/Digest.ml:21: the primitive md5_string, not in the runtime unit (lib_core/dotnet/Runtime.ml): not compiled to .NET yet (plan_dotnet_languages.md, stage 3b)
+-- let () = Logs.info (fun m -> m "x")
+lib_core/system/Logs.ml:25: a value of type format4: not compiled to .NET yet (plan_dotnet_languages.md, stage 1d)
+-- let s = Marshal.to_string 1 []
+lib_core/core/Marshal.ml:92: the primitive %obj_is_int: not compiled to .NET yet (plan_dotnet_languages.md, stage 1a)

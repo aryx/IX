@@ -19,8 +19,8 @@
  * System.IO.Stream, an array of one, uint8[]), when the ML values are
  * converted (an int64 to an int32, a char to a UTF-16 unit, an object
  * cast to the class); its result's after ->, converted back (an int32
- * to an int64). System.Console is in its own assembly, the rest of
- * System in System.Runtime:
+ * to an int64). System.Console and System.Security.Cryptography are in
+ * their own assemblies, the rest of System in System.Runtime:
  *
  *   type stream
  *   external stdout : unit -> stream

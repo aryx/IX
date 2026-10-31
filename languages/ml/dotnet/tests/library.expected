@@ -21,4 +21,8 @@ structural keys a b
 array 25 16 9 4 1 0 55
 matrix 7 3
 option true true
+md5 900150983cd24fb0d6963f7d28e17f72
+exn Failure("x") Not_found
+floats 4 3
+pair 1 a
 even true odd true

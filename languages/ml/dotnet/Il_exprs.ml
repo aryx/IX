@@ -258,7 +258,10 @@ and expr2 (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
       emit k (Il.Ldc_i8 (Int64.of_int e.loc));
       emit k (Il.Ldc_i8 0L);
       emit k (Il.Newobj (tuple_ctor c e.loc ty));
-      let _, ctor, _ = exn c e.loc "caml_exn_Assert_failure" [ ty ] in
+      (* (Pervasives' Assert_failure, which a handler names, when it is
+       * in the assembly) *)
+      let sym = if Hashtbl.mem c.memo "unit Pervasives" then "Pervasives.Assert_failure" else "caml_exn_Assert_failure" in
+      let _, ctor, _ = exn c e.loc sym [ ty ] in
       emit k (Il.Newobj ctor);
       emit k Il.Throw;
       place k ok;

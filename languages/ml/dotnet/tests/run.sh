@@ -88,8 +88,8 @@ let f () = let id x = x in (id 1, id "a")
 let x = 1 + (try 2 with Not_found -> 3)
 type t = A of { a : int } let v = A { a = 1 }
 let eq (x : 'a) = (=) x
-let () = Gc.compact ()
-let d = Digest.string "a"
+let () = Logs.info (fun m -> m "x")
+let s = Marshal.to_string 1 []
 R
 }
 check() {

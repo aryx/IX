@@ -359,6 +359,17 @@ let math =
         | _ -> invalid_arg "ILogB");
   ]
 
+(* MD5.HashData: a byte[]'s digest, OCaml's Digest's *)
+let md5 =
+  spec d "System.Security.Cryptography.MD5" [
+    stat "HashData" ["System.Byte[]"] "System.Byte[]" (fun a ->
+        let st, _, _ = view a.(0) in
+        let h = Digest.string (Bytes.sub_string st.s 0 st.len) in
+        let r = hooks.array T_u1 16 in
+        Bytes.blit_string h 0 r.s 0 16;
+        Obj r);
+  ]
+
 (* BitConverter: a double's bits as an int64 and back *)
 let bit_converter =
   spec d "System.BitConverter" [
@@ -875,7 +886,7 @@ let delegates = [
 let specs : (string, spec) Hashtbl.t =
   let h = Hashtbl.create 64 in
   List.iter (fun s -> Hashtbl.replace h s.sname s)
-    ([ object_; string_; console; environment; math; bit_converter; encoding; string_builder; interpolation; list;
+    ([ object_; string_; console; environment; math; bit_converter; md5; encoding; string_builder; interpolation; list;
        list_enumerator; dictionary ]
      @ primitives @ exceptions @ reflection @ delegates @ streams);
   h

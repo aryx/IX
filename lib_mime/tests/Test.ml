@@ -67,6 +67,10 @@ let rules () =
   check "the built-in, a PDF file" "mini-page" (program "application/pdf");
   check "the built-in, text" "mini-emacs" (program "text/plain");
   check "a sound" "mini-play" (program "audio/mpeg");
+  check "a film" "mini-play" (program "video/x-msvideo");
+  check "a mailcap's image/* over the built-in GIF" "feh" (program "image/gif");
+  check "a GIF, which may be a film, built in" "mini-play"
+    (match Helpers.for_type Helpers.defaults "image/gif" with Some r -> Helpers.name r | None -> "none");
   check "a tune, not as any text" "mini-play" (program "text/x-abc");
   check "HTML, not as any text" "mini-netscape" (program "text/html");
   check "nothing for what is not known" "none" (program "application/octet-stream");

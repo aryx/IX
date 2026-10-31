@@ -64,4 +64,7 @@ run 8 'at(-400;314):1-8,click:3' $T/o.ppm
 check "a single click: nothing started" "$(said)" ""
 run 12 'down:2,down:4,down:6,down:8,return:10' $T/o.ppm
 check "Enter on notes.txt: mini-emacs" "$(said)" "mini-emacs T/tree/notes.txt;"
+# (in docs/: inner rows a.txt, archive.gz, book.pdf, film.y4m)
+run 12 'return:2,down:4,down:6,down:8,return:10' $T/o.ppm
+check "Enter on a film: mini-play" "$(said)" "mini-play T/tree/docs/film.y4m;"
 exit $r

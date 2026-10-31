@@ -126,5 +126,6 @@ onto a folder of the path, is moved there.
 Left: mini-files has not been run under mini-rio on mini-9pi (it builds for
 Plan 9, the card lists it). `Sys_plan9.is_device` is false on Plan 9, so
 selecting `/dev/mouse` there would wait (`bugs/ix.md`). A big copy stops the
-window while it runs. No Trash, as planned at the start. GIF and office
-documents have no rule yet; video has none until plan_video.md's stage 5.
+window while it runs. No Trash, as planned at the start. Office documents have
+no rule yet (mini-office takes no file). GIF and video go to mini-play since
+plan_video.md's stage 5.

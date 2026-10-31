@@ -17,6 +17,8 @@ let defaults : rule list =
       [ ("image/png", [ "mini-page"; "page" ]);
         ("image/jpeg", [ "mini-page"; "page" ]);
         ("audio/*", [ "mini-play"; "play" ]);
+        ("video/*", [ "mini-play"; "play" ]);
+        ("image/gif", [ "mini-play"; "play" ]);
         ("text/x-abc", [ "mini-play"; "play" ]);
         ("text/html", [ "mini-netscape"; "netscape" ]);
         ("text/*", [ "mini-emacs"; "emacs" ]) ]

@@ -1,4 +1,4 @@
-# Plan: a program that dies says where and how it came there, and m-ix gets a debugger: the tables (`linker/`), the traces (`kernels/9pi/`, `languages/ml/runtime/`), mini-acid (`debuggers/`), and replay (`machine/`, `raspberry/`)
+# Plan: a program that dies says where and how it came there, and m-ix gets a debugger: the tables (`linker/`), the traces (`kernels/9pi/`, `languages/ml/runtime/`), and mini-acid (`debuggers/`)
 
 The author (2026-10-08), the day mini-9pi first ran on his Pi1, rio
 dying there and nowhere else: "we should aim to improve the suicide
@@ -116,8 +116,9 @@ And what there is to build on (2026-10-29):
 
 ## Stages
 
-The traces first (0 to 6), then the debugger on them (7 to 9), then
-what the emulators make possible (10, 11), the playground's (12).
+The traces first (0 to 6), then the debugger on them (7 to 9); what
+the emulators make possible, and the playground, are
+plan_debugger_replay.md's since 2026-10-31.
 
 | | what | who uses it | state |
 |---|---|---|---|
@@ -134,15 +135,12 @@ what the emulators make possible (10, 11), the playground's (12).
 | 8 | **mini-acid**: acid's language (lists, strings, integers, its C-like statements and its `defn`), its builtins (`print`, `mem`, `map`, `symbols`, `new`, `start`, `stop`, `bpset` underneath), its library in acid (`port`: `stk()`, `lstk()`, `bpset()`, `cont()`, `step()`; `arm` for the registers), over stage 1's table and stage 7's `#p`. Principia's acid run on mini-9pi on the same program the reference: the same answers (decision 11) | the author, at mini-9pi's console, in a window of rio | |
 | 8a | **mini-acid on this machine's programs**, not only mini-9pi's (the author, 2026-10-29: "It would be great if the debugger mini-acid could also debug binaries for this machine; the one produced by mini-c and mini-ml -a, with extra info, but maybe regular gcc binaries too with DWARF [...] plan9port already ported acid to also work on macos and Linux thx to an extended libmach. We could maybe imitate that too"). A third side of decision 12's interface: **Linux by ptrace**, as plan9port's libmach (`Linux.c`: `PTRACE_ATTACH`, the memory and registers by ptrace, `/proc` for a process's status), arm64 first (this machine), the registers by `PTRACE_GETREGSET`. The names: mini-ld -H7's ELF symbol table (stage 1's ELF part), then **DWARF read** for gcc's and clang's programs (plan9port's `dwarf*.c` and `symdwarf.c`: `.debug_line` for the lines, `.debug_info` for the functions, their variables and types, `.debug_frame` for the walk): what a debugger of today reads, beside Plan 9's two tables, for its teaching value. **macOS**: Mach-O read (plan9port's `macho.c`, `symmacho.c`), its processes later: plan9port's `Darwin.c` is `nosys.c`, no process control (macOS asks a signed debugger for `task_for_pid`) | the author, debugging ix's programs and gcc's on Linux | |
 | 9 | **OCaml's values in mini-acid**: as `5c -a` writes acid's definitions of a C program's structs, mini-ml writes those of a unit's types (`mini-ml -a`): a constructor's name by its tag, a record's fields, a list as a list. A value printed by its type, where a debugger of mini-ml's code would print words; the same descriptions read by stage 5's runtime | mini-acid; stage 5 | |
-| 10 | **Replay, and going back** (rr, Mozilla 2014; Pernosco; and before them ocamldebug's checkpoints, Vouillon, 1990s): mini-5i records what comes from outside (each system call's results, the signals' instants), and plays a run again exactly; snapshots along the way, and a run played to an instant from the nearest. Then going back: `reverse-continue` to the last write of an address (a watchpoint over the run played again), which is the question of the survey's second line: who wrote the bad value. mini-acid drives it by builtins | whoever debugs a crash whose cause was earlier: the collector's, the kernel's | |
-| 11 | **The board's run played again**: the same in mini-qemu, the whole system (its interrupts' instants, the keyboard's, the card's, the network's bytes recorded), so a kernel's panic is replayed and gone back from; and a gdb remote stub, QEMU's `-s`, for the host's gdb on mini-9pi's kernel meanwhile | who debugs mini-9pi | |
-| 12 | **Time travel in the playground** (Elm's debugger, 2016): a program of lib_playground is a model, an update and messages; the messages recorded, any instant is the first model updated by them. A slider over a game's past, its model shown | a reader of a game; the playground's teaching | |
+| 10-12 | Replay and going back, the board's run played again, time travel in the playground: moved to plan_debugger_replay.md (2026-10-31) | | moved |
 
 Stages 1 to 4 are the first request; 5 is the same work for the third
 message of the survey; 6 may wait. 7 and 8 are the debugger; 9 is
-what makes it OCaml's; 10 to 12 are ix's own, what a debugger of today
-does that Plan 9's did not, and can be had small because ix has its
-own emulators.
+what makes it OCaml's; 10 to 12 (now plan_debugger_replay.md's) are
+ix's own, what a debugger of today does that Plan 9's did not.
 
 Its order with plan_profiler.md (the author, "1 and 2 could go
 together"): stage 1's table is mini-prof's names too (its maps then
@@ -275,15 +273,7 @@ two programs.
      decision 5);
    - a target blocked in a host call (a read of the console) answers
      when the call returns: a limit of the first version.
-13. **What replay records, and its cost.** mini-5i is deterministic but
-   for its system calls (their results, the bytes they read), its
-   signals and its time: a log of those is a run. rr's design, without
-   rr's hard part (counting instructions on a real CPU's counters):
-   mini-5i counts them. Snapshots: the memory's segments copied every
-   N instructions (or by pages changed). Proposed: a run of mini-doom's
-   start recorded, its log's size and the replay's speed measured first;
-   threads (mini-5i runs them one at a time) in the log as switches at
-   counted instants.
+13. **What replay records**: moved to plan_debugger_replay.md.
 14. **Where a program's types are described** (stage 9, C's and
    OCaml's). Plan 9's: 5c -a writes acid's declarations of a file's
    structs (aggr: a member's format and offset), a function printing
@@ -327,10 +317,6 @@ two programs.
   (decision 12).
 - Stage 9: a unit's types printed by mini-acid, against what OCaml's
   toplevel prints of the same values.
-- Stage 10: a program whose bug writes a bad value early and crashes
-  late (a C program, then the survey's kind: a mini-ml program with a
-  bad external); the reverse watchpoint names the write; a recorded
-  run replayed gives the same instructions' count and output.
 
 ## Out of scope
 
@@ -1094,3 +1080,11 @@ k by f:v, *walk:n a Node, walk:q a Point, then the second call's),
 the other sessions' stk now with parameters (8 sessions; the same with
 a 3000-byte variable in the environment); Frame64 and the changed units
 by mini-ml too; make test: 170 jobs, 0 failures.
+
+2026-10-31, **replay split off** (the author: "ok let's move forward on
+the plan and finish the traces. Good idea to move in a separate
+plan_debugger_replay.md the time travel stuff"): stages 10, 11, 12 and
+decision 13 are plan_debugger_replay.md's. What is left here: the
+traces (5's second half: an exception's arguments by their types; 5a
+on arm64; 5b, the line's text; 6, the kernel's panic), then this plan
+to done/.

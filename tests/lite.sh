@@ -261,7 +261,7 @@ job "mini-emacs: unit tests" _build/default/editors/emacs/tests/Test.exe
 job "gui4: unit tests" _build/default/examples/gui4/tests/Test.exe
 job "mini-office: unit tests" _build/default/apps/office/tests/Test.exe
 job "lib_mime, mini-open: a file's kind by its bytes, the program for it" sh_ '_build/default/lib_mime/tests/Test.exe && apps/files/tests/open.sh'
-job "lib_graphics/videos, mini-play's window: Y4M, FLI, AVI, GIF, the sound's clock" sh_ '_build/default/lib_graphics/videos/tests/Test.exe && apps/music/tests/film.sh'
+job "lib_graphics/videos, mini-play's window: Y4M, FLI, AVI, GIF, the sound's clock" sh_ '_build/default/lib_graphics/videos/tests/Test.exe && apps/media/tests/film.sh'
 job "mini-files: the window's recorded frames, what it starts, its changes to a scratch tree" sh_ 'apps/files/tests/frames.sh && apps/files/tests/changes.sh'
 job "mini-maps: the map's arithmetic, its window's frames against mini-httpd" sh_ '_build/default/apps/maps/tests/Test.exe && apps/maps/tests/frames.sh && apps/maps/tests/cache.sh && apps/maps/tests/weather.sh && apps/maps/tests/route.sh'
 job "mini-pim: unit tests, a session with mini-maild (SMTP, IMAP, offline)" sh_ '_build/default/apps/pim/tests/Test.exe && apps/pim/tests/session.sh'
@@ -437,7 +437,7 @@ ix() {
   (mk linker && mk linker/tools) & pids+=($!)
   (mk version_control && mk tiny) & pids+=($!)
   mk lib_crypto/tests & pids+=($!)
-  mk apps/music/play & pids+=($!)
+  mk apps/media/play & pids+=($!)
   (mk networking && mk browsers/lynx) & pids+=($!)
   mk typesetting/man & pids+=($!)
   mk browsers/javascript & pids+=($!)
@@ -479,7 +479,7 @@ by_ix_browsers() {
   nofail browsers/netscape/tests/frames.sh $K/browsers
 }
 by_ix_vectors() { $K/lib_crypto/tests/vectors | cmp - lib_crypto/tests/Vectors.expected; }
-by_ix_play() { ! lib_audio/tests/play.sh $K/apps/music/play/mini-play | grep -v "^play.sh:"; }
+by_ix_play() { ! lib_audio/tests/play.sh $K/apps/media/play/mini-play | grep -v "^play.sh:"; }
 # m-ix building in itself, a part (kernels/9pi/tests/smoke.sh: ix for
 # arm and Plan 9, a mini-9pi, a small card; on it under QEMU, a unit and
 # a C file compiled, two programs linked and run, the host's bytes;
@@ -555,7 +555,7 @@ if [ -n "$runs7" ]; then
   job $a "mini-play built by ix" by_ix_play
   job $a "lib_crypto built by ix: the vectors" by_ix_vectors
   job $a "mini-curl, mini-httpd, mini-lynx built by ix" by_ix_net
-  job $a "mini-play's window built by ix: its frames, the sound's clock" nofail apps/music/tests/film.sh $K/apps
+  job $a "mini-play's window built by ix: its frames, the sound's clock" nofail apps/media/tests/film.sh $K/apps
   job $a "mini-files built by ix: its window's frames, its changes to a scratch tree" by_ix_files
   job $a "mini-maps built by ix: its window's frames, its cache" by_ix_maps
   job $a "mini-node, browsers/engine, mini-netscape built by ix" by_ix_browsers

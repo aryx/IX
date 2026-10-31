@@ -2,7 +2,7 @@
 
 The author's playground's `libs/graphics/videos` (`~/playground`), for
 [`plan_video.md`](../../docs/plans/plan_video.md): the formats that found
-each idea, played by mini-play (`apps/music/play/Film`). The numbers are
+each idea, played by mini-play (`apps/media/play/Film`). The numbers are
 `scripts/playground_copies.sh lib_graphics/videos`.
 
 **Copied:** `Yuv`, `Psnr`, `Y4m`, `Movie`, `Fli`, `Avi`, `Mpeg1`, `Mpeg1_vlc`,

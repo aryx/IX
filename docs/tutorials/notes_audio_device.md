@@ -25,7 +25,7 @@ The plan: [`plan_audio.md`](../plans/done/plan_audio.md).
 |---|---|---|
 | `kernels/9pi/devices/audio/Devaudio` | `/dev/audio`: the ring, the DMA, the PWM | §4, §5, §6 |
 | `kernels/lib_machine` (`Machine.board_rev`) | which pin is the left ear | §4 |
-| `apps/music/play` | mini-play: a file's samples to `/dev/audio` | §7 |
+| `apps/media/play` | mini-play: a file's samples to `/dev/audio` | §7 |
 | `lib_audio` | the decoders, the synthesizer, the mixer | §7 |
 | `lib_playground/apis/Audio` | a game's sounds: `play`, `loop`, `stop` | §7 |
 | `lib_playground/Audio_source` | where a platform finds a program's samples | §7 |

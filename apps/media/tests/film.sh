@@ -6,14 +6,14 @@
 # frame, its script, its clip, the frame's SHA-256. And what only a run can
 # tell: that the sound's clock runs the picture, that a sound is still a
 # sound, that a broken film is said so. RECORD=1 writes the sums again.
-# usage: apps/music/tests/film.sh [dir]
+# usage: apps/media/tests/film.sh [dir]
 #   dir: where the program is (default: dune's, _build/default/apps)
 cd "$(dirname "$0")/../../.."
-D=${1:-_build/default/apps}/music/play
+D=${1:-_build/default/apps}/media/play
 F=$D/Play.exe; [ -x $F ] || F=$D/mini-play
 F=$(realpath $F)
 C=lib_graphics/videos/tests/clips
-E=apps/music/tests/film.expected
+E=apps/media/tests/film.expected
 T=$(mktemp -d); trap 'rm -rf $T' EXIT
 r=0
 run() { # frames script file out [more flags]

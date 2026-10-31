@@ -3,7 +3,7 @@
 A software synthesizer and the decoders of the files sounds and songs
 are kept in, from the author's playground (`~/playground`,
 [ocaml-elm-playground](https://github.com/aryx/ocaml-elm-playground)):
-its `libs/audio`. What mini-play (`apps/music/play/`) is written with,
+its `libs/audio`. What mini-play (`apps/media/play/`) is written with,
 and what the games' sounds will be
 ([`plan_audio.md`](../docs/plans/done/plan_audio.md), whose stage 1 this
 is). Pure OCaml, floats, 44,100 samples a second; nothing here knows a

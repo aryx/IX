@@ -52,7 +52,7 @@ not the measure.
 |---|---|---|---|
 | Write, calculate, draw, present | mini-office (`apps/office/`), slides and their show included | yes: `office` | spelling |
 | Read a document | mini-page (`apps/page/`): PDF and pictures | yes: `page` | |
-| Listen | mini-play (`apps/music/play/`), mini-rebirth | yes: `play`, `rebirth` | a player with a library and playlists |
+| Listen | mini-play (`apps/media/play/`), mini-rebirth | yes: `play`, `rebirth` | a player with a library and playlists |
 | Watch | mini-netscape hands YouTube's films to `mpv` on Linux | no | a video player |
 | Write to people | mini-pim's Mail (`apps/pim/`), Gmail's; mini-netscape's `mailto:` | **no** | chat |
 | Keep time and people | mini-pim's Calendar, People, Tasks, Notes, Money | **no** | `date` still GMT only |

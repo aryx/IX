@@ -62,12 +62,12 @@ For a program that runs alone on Linux's arm as mini-ml makes it
 (mini-play, a game with `-dump-frame`: the platform that draws to a
 file).
 
-    cd apps/music/play && mini-mk O=5
+    cd apps/media/play && mini-mk O=5
         ... mini-ld -m 5 -H7 -nofollow -o ../../../_mk/5/.../mini-play A.5 B.5 ...
 
     # the same command, -v added, another output: the listing
     mini-ld -v -m 5 -H7 -nofollow -o /tmp/play5 A.5 B.5 ... > /tmp/play5.lst
-    cmp /tmp/play5 _mk/5/apps/music/play/mini-play        # the same link
+    cmp /tmp/play5 _mk/5/apps/media/play/mini-play        # the same link
 
     mini-5i -s /tmp/play5 -c -s 1 tune.mod > /dev/null    # how much
     mini-5i -s /tmp/play5 -c -s 2 tune.mod > /dev/null    # ... a second of it

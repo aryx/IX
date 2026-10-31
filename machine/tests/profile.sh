@@ -12,7 +12,7 @@
 #
 #   usage: profile.sh [-n lines] listing program [args...]
 #
-#   cd apps/music/play && mini-mk O=5      its link's command is printed
+#   cd apps/media/play && mini-mk O=5      its link's command is printed
 #   mini-ld -v ...the same... -o /tmp/play5 > /tmp/play5.lst
 #   machine/tests/profile.sh /tmp/play5.lst /tmp/play5 -c -s 0.2 tune.mod
 #

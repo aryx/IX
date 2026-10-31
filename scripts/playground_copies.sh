@@ -41,6 +41,7 @@ lib_networking libs/networking/mail libs/networking/protocols libs/networking/tl
 lib_gui libs/gui
 lib_audio libs/audio
 apps/music apps/music
+apps/media apps/media
 lib_playground/physics libs/physics
 lib_playground/ai libs/ai
 lib_playground/netcode libs/networking/netcode

@@ -1,4 +1,4 @@
-; apps/music/play: mini-play, a file of music to samples on /dev/audio or
+; apps/media/play: mini-play, a file of music to samples on /dev/audio or
 ; standard output (docs/plans/plan_audio.md), a film in a window
 ; (docs/plans/plan_video.md). Here with the platform that writes a frame to
 ; a file (the tests'); sdl/ is the one with a window, bin/mini-play

@@ -6,7 +6,7 @@ code to play simple videos; we don't have in IX to support all formats,
 but the historical one, that have great teaching value, we should
 definitely do".
 
-**Status: stages 1, 2, 4 and 5 done, stage 3 counted but not run on a board, stage 6 (the encoder) not begun** (`lib_graphics/videos/`, `apps/music/play/Film`). The file manager that opens these
+**Status: stages 1, 2, 4 and 5 done, stage 3 counted but not run on a board, stage 6 (the encoder) not begun** (`lib_graphics/videos/`, `apps/media/play/Film`). The file manager that opens these
 files is [`plan_files.md`](done/plan_files.md).
 
 ## The measure
@@ -159,7 +159,7 @@ first 71 of its frames, in a run of 170 screens with the window's drawing:
 0.77 s by OCaml, 1.23 s by mini-ml, 60% more. Stage 3 is what matters: a Pi.
 A film's sound is decoded whole when it opens, which a Pi will feel.
 
-Stage 3, counted (`apps/music/play/Mpg_bench` under `mini-5i -s`, arm, a real
+Stage 3, counted (`apps/media/play/Mpg_bench` under `mini-5i -s`, arm, a real
 film of ffmpeg's, 320 by 240, 800 kbit/s; a part is a run less the run before):
 
 | The part | Instructions |

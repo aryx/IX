@@ -1,6 +1,6 @@
 (* tiny-play: a WAV file played, on tiny-kernel's speaker
  * (plan_tiny_audio.md, step 4). m-ix's twin is mini-play
- * (apps/music/play/, on lib_audio/formats/), which plays MOD, MIDI,
+ * (apps/media/play/, on lib_audio/formats/), which plays MOD, MIDI,
  * MP3, WAV and ABC to Plan 9's /dev/audio.
  *
  *     play /examples/korobeiniki.wav        on tiny-kernel

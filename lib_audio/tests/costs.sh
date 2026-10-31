@@ -4,7 +4,7 @@
 #
 # What a second of sound costs in mini-ml's code on arm, in
 # instructions (docs/plans/plan_audio.md, stage 1): mini-play built for
-# arm (mini-mk O=5 in apps/music/play), run by mini-5i -s on a file of
+# arm (mini-mk O=5 in apps/media/play), run by mini-5i -s on a file of
 # each format for no sample, half a second and a second. No clock: the
 # same numbers on any host.
 #   start     what is paid before the first sample (the file read, its
@@ -16,8 +16,8 @@
 # usage: costs.sh [mini-play for arm [file...]]     (minutes: the emulator;
 #   a quarter of an hour for the .abc, whose tune is rendered three times)
 cd "$(dirname "$0")/../.."
-play=${1:-_mk/5/apps/music/play/mini-play}
-[ -x $play ] || { echo "costs.sh: no $play (mini-mk O=5 in apps/music/play)"; exit 1; }
+play=${1:-_mk/5/apps/media/play/mini-play}
+[ -x $play ] || { echo "costs.sh: no $play (mini-mk O=5 in apps/media/play)"; exit 1; }
 count() { mini-5i -s $play -c -s $2 $1 2>&1 > /dev/null | sed -n 's/.*mini-5i: \([0-9]*\) instructions.*/\1/p'; }
 printf "%-24s %14s %14s %8s\n" "" start "a second" "of a Pi1"
 [ $# -gt 1 ] && { shift; files="$*"; } || files=$(ls lib_audio/tests/data/*)

@@ -9,10 +9,10 @@
 # same bytes are asked of mini-ml's build, on arm64 and arm.
 # usage: play.sh [command that runs mini-play]
 #   lib_audio/tests/play.sh
-#   lib_audio/tests/play.sh _mk/7/apps/music/play/mini-play
-#   lib_audio/tests/play.sh "mini-5i _mk/5/apps/music/play/mini-play"   (minutes)
+#   lib_audio/tests/play.sh _mk/7/apps/media/play/mini-play
+#   lib_audio/tests/play.sh "mini-5i _mk/5/apps/media/play/mini-play"   (minutes)
 cd "$(dirname "$0")/../.."
-run=${1:-_build/default/apps/music/play/Play.exe}
+run=${1:-_build/default/apps/media/play/Play.exe}
 T=$(mktemp -d); trap 'rm -rf $T' EXIT
 for f in lib_audio/tests/data/*; do
   $run -c $f > $T/out 2> $T/err || { echo "$(basename $f): $(cat $T/err)"; continue; }

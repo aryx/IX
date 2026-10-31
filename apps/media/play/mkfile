@@ -1,10 +1,10 @@
-# apps/music/play, built by ix's tools: mini-play, a sound to /dev/audio, a
+# apps/media/play, built by ix's tools: mini-play, a sound to /dev/audio, a
 # film in a window (Film), so with lib_audio, lib_mime and the graphics. The
 # platform is ppm's on Linux (a frame written to a file, the tests'), draw's
 # on Plan 9. mini-mk O=5 OS=plan9: for mini-9pi.
 TOP=../../..
 <$TOP/mkfiles/mkconfig
-D=$B/apps/music/play
+D=$B/apps/media/play
 PLATFORM=`{if(~ $OS plan9) echo draw; if not echo ppm}
 LIBDIRS=lib_mime lib_compression lib_graphics lib_playground lib_gui lib_audio lib_networking lib_playground/apis lib_playground/platforms lib_playground/platforms/$PLATFORM
 <$TOP/mkfiles/mklibs

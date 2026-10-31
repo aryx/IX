@@ -59,8 +59,16 @@ let devices () =
 (* The traps *)
 (*****************************************************************************)
 
+(* an exception the kernel did not catch, a panic: what and where it
+ * was raised, the addresses of the raise's frames up to here (the
+ * runtime's guess: kernel.img.aout beside the image names them on the
+ * host, mini-where; plan_debugger.md's stage 6) *)
 let guard where f =
-  try f () with e -> ignore (Machine.panic ("an exception in " ^ where ^ ": " ^ Printexc.to_string e))
+  try f ()
+  with e ->
+    let at = Printexc.get_backtrace () in
+    ignore (Machine.panic ("an exception in " ^ where ^ ": " ^ Printexc.to_string e
+                           ^ (if at = "" then "" else "\nraised at:" ^ at)))
 
 (* a system call (its notes delivered on its way back: Syscall) *)
 let trap () = guard "a system call" (fun () -> Syscall.syscall (Proc.myproc ()))

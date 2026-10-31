@@ -83,7 +83,7 @@ $D/start.$O: mkfile $TOP/mkfiles/mkconfig $KLIB/mkkernel
 COPT=-O3
 $D/rt.$O: $RTSRC $KLIB/mkkernel
 	mkdir -p $D
-	$CC $COPT $CINC $HEAP -o $target $RT/runtime.c
+	$CC $COPT $CINC $HEAP -DTRACING -o $target $RT/runtime.c
 KH=$RT/mlvalues.h $RT/callback.h $RT/memory.h $RT/alloc.h $BD/board.h
 $D/kruntime.$O: $KLIB/runtime.c $KH
 	mkdir -p $D
@@ -112,9 +112,11 @@ $D/images.$O: $FS $KLIB/font1.bin
 	$AS -o $target $D/images.s
 
 # (l first: its vectors, or on the Pi 1 its start, are the image's first bytes)
+# (-g: on arm, the image again as an a.out with its tables beside it,
+# kernel.img.aout, what mini-where names a panic's addresses by)
 OBJS=$D/l.$O $D/shim.$O $D/machine_c.$O $D/kruntime.$O $D/usb_c.$O $D/images.$O $D/start.$O $STDOBJS ${ALL_ML:%=$D/%.$O} $L/std_exit.$O $D/rt.$O $L/libc.a
 $IMAGE: $OBJS
-	$LD -H0 -T $KTEXT -E $ENTRY -nofollow -o $target $OBJS
+	$LD -g -H0 -T $KTEXT -E $ENTRY -nofollow -o $target $OBJS
 
 clean:V:
 	rm -rf $D

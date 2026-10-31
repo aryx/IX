@@ -207,6 +207,14 @@ trace(void)
 	if(len > 0)
 		return len;
 	n = ml_tracing ? NTRACE - ml_raise_left : 0;
+	/* the raise's own address first, which no return says (arm's:
+	 * Gen's MOVW R15, R2, or ml_raise_c's call: 8 before ml_raise_pc) */
+	if(n > 0 && sizeof(value) == 4 && ml_raise_pc >= (uvalue)ml_start + 8 && ml_raise_pc <= (uvalue)etext){
+		s = digits(ml_raise_pc - 8, 16, 0, d, 20);
+		tbuf[len++] = ' ';
+		memmove(tbuf + len, d + s, 20 - s);
+		len += 20 - s;
+	}
 	for(i = 0; i < n; i++)
 		if(returns((uvalue)ml_raise_words[i])){
 			s = digits((uvalue)ml_raise_words[i] - 4, 16, 0, d, 20);

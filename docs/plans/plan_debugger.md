@@ -1160,3 +1160,49 @@ Not done: C's files (mini-cc's history is 5c's, the path as given),
 the kernel's traces (stage 4's), 64-bit. Checked: walk.sh's two new
 cases (the line, from this checkout; none from a copy changed), 8
 cases; acid_proc.sh (12), acid_linux.sh (8).
+
+2026-10-31, **stage 6: the kernel's own panic** (the author: "Stage
+6, then close"). An exception mini-9pi does not catch (Main.guard) is
+a panic that now says where it was raised; the host names it:
+```
+panic: an exception in a system call: Failure("/dev/reboot")
+raised at: 801c5bfc 80047bb0 80047b80 80178788 80188484
+% mini-where kernel.img.aout 801c5bfc 80047bb0 80047b80 80178788 80188484
+801c5bfc f5_failwith+0x90 Pervasives.ml:39
+80047bb0 f7_fun+0x610 Devsys.ml:70
+80047b80 f7_fun+0x5e0 Devsys.ml:70
+80178788 f5_syspwrite+0x4e0 Sysfile.ml:60
+80188484 f9_syscall+0x890 Syscall.ml:211
+```
+- **The kernel traces its raises**: its runtime (mkkernel's rt, mini-ml's
+  runtime.c) built with -DTRACING, as a Plan 9 program's always is;
+  Main.guard adds Printexc.get_backtrace's addresses to the panic's
+  message. The guess (exceptions.c's), the image having no table in
+  memory; the raise's own address first now (ml_raise_pc, which no
+  return said: the guess began at its caller's caller).
+- **A handler passing an exception on keeps its trace**: a try whose
+  cases do not match raised the exception again, and the trace was
+  the handler's (Syscall's try ... with Error "not yet" said
+  Syscall.ml:200, not Devsys). mini-ml's Ir.Reraise (Lower, a
+  handler's last case; Ssa's Reraise; Gen's and Emit's B ml_reraise),
+  the start's ml_reraise unwinding without recording, as OCaml's
+  reraise. User programs too (debuggers/tests/fault/Passed.ml: the
+  frames from down's raise through shallow's handler, -O0 and -O3).
+  The shared _mk's 153 start objects removed, to be made again with
+  ml_reraise (mk does not remake what a changed compiler made).
+- **The names on the host**: mini-ld -g -H0 writes kernel.img.aout
+  beside the image, the same link as Plan 9's a.out with its tables at
+  the image's addresses (mkkernel links with -g: no time more, the image
+  the same bytes); -T and -R apply to any format now (5l's); Symbols
+  takes the text's start from its first function (the header says
+  none: 0x1020, a kernel's 0x80008000).
+- /dev/reboot's "exception" (Devsys): one raised in the call, to see
+  it, beside Plan 9's "panic".
+Not done: a kernel fault (kfault: lr and far printed, which mini-where
+names, the stack not walked: the abort's mode has its own stack
+pointer); Machine.panic called directly (no raise: no trace); the Pi 4
+(arm64: the guess's raise address is arm's); C's frames in a kernel
+exception. Checked: kernels/9pi/tests/panic.sh, in make test's Pi 1
+job beside seg.sh and acid.sh (a boot writing exception to #k/reboot:
+the message, its trace naming Devsys; 13 s); walk.sh's new case
+(Passed.ml), 9 cases.

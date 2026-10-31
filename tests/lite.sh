@@ -513,23 +513,27 @@ pi1_by_ix() {
   # word, it is relinked for the two boots below while this one goes on.
   # old: one after the other, 124 s, past make test's 120)
   until [ -s $out ] || [ $n -ge 300 ]; do sleep 0.1; n=$((n + 1)); done
-  local r=0 spid
+  local r=0 spid ppid
   # relinked with a boot that runs machine/tests/plan9/seg.c (code
-  # written in a segment, segflush, run; 17 s), and a copy of it with
+  # written in a segment, segflush, run; 17 s), a copy of it with
   # mini-acid debugging a program in it (stage 7's #p: a breakpoint,
-  # stk, step; 21 s), the three boots side by side
+  # stk, step; 21 s), and one that panics (plan_debugger.md's stage 6:
+  # its trace named by mini-where; 13 s), the four boots side by side
   rm -rf $b/kernels/9pi-acid; cp -a $b/kernels/9pi $b/kernels/9pi-acid
+  rm -rf $b/kernels/9pi-panic; cp -a $b/kernels/9pi $b/kernels/9pi-panic
   kernels/9pi/tests/seg.sh $b > $W/seg.txt 2>&1 & spid=$!
+  kernels/9pi/tests/panic.sh $b kernels/9pi-panic > $W/panic.txt 2>&1 & ppid=$!
   kernels/9pi/tests/acid.sh $b check kernels/9pi-acid || r=1
   wait $spid || r=1
-  cat $W/seg.txt
+  wait $ppid || r=1
+  cat $W/seg.txt $W/panic.txt
   n=0
   until grep -aq '^%' $out || [ $n -ge 600 ]; do sleep 0.1; n=$((n + 1)); done
   kill $pid 2> /dev/null; wait $pid 2> /dev/null
   grep -aq '^%' $out || { echo "no rc prompt in:"; head -5 $out | cut -c1-200; return 1; }
   return $r
 }
-tp="mini-9pi for the Pi 1 built by ix, booted to rc; its segments run a JIT's code; mini-acid debugs in it"
+tp="mini-9pi for the Pi 1 built by ix, booted to rc; its segments run a JIT's code; mini-acid debugs in it; its panic's trace named"
 if [ -f $P/qemu-sd.img ] && [ -x $P/ROOT/arch/arm/bin/rc ]; then job "$tp" pi1_by_ix
 else skip "$tp" "no principia's card in $P"; fi
 [ -d kernels/9pi/build/pi1-ocaml ] || skip "mini-ml compiles mini-9pi's Memchan and Memfont" "no generated Memdata: principia's fonts, mini-9pi's Makefile"

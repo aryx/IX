@@ -10,7 +10,7 @@ type loc = Reg of int | Mem of int | Nil | Dmem of int
 
 let successors = Ssa_build.successors_of
 
-let term_uses (b : block) = match b.term with Br (v, _, _) | Switch (v, _) | Ret v | Raise v -> [ v ] | Tail (_, vs) -> vs | _ -> []
+let term_uses (b : block) = match b.term with Br (v, _, _) | Switch (v, _) | Ret v | Raise v | Reraise v -> [ v ] | Tail (_, vs) -> vs | _ -> []
 
 (* the instructions after which the collector may have run, or which a
  * handler's entry follows *)

@@ -15,7 +15,7 @@ open Ssa
 type raw = { label : int option; code : L.t list; last : L.t option }
 
 let ends : L.t -> bool = function
-  | Jmp _ | Jz _ | Jnz _ | Switch _ | Ret | Raise | TryEnter _ | Call (_, _, true) -> true
+  | Jmp _ | Jz _ | Jnz _ | Switch _ | Ret | Raise | Reraise | TryEnter _ | Call (_, _, true) -> true
   | _ -> false
 
 let split (code : L.t list) =
@@ -53,7 +53,7 @@ let successors (raws : raw array) =
 (* the slots an instruction pops, and pushes *)
 let arity : L.t -> int * int = function
   | Int _ | Block _ | Sym _ | Get _ | GetG _ | Catch _ -> 0, 1
-  | Set _ | SetG _ | Drop | Ret | Raise | Jz _ | Jnz _ | Switch _ -> 1, 0
+  | Set _ | SetG _ | Drop | Ret | Raise | Reraise | Jz _ | Jnz _ | Switch _ -> 1, 0
   | Field _ -> 1, 1
   | SetField _ -> 2, 0
   | Index -> 2, 1
@@ -184,7 +184,7 @@ let build (f : L.func) =
       | TryExit k -> ignore (emit id (TryExit k))
       | Catch k -> push (emit id (Caught k))
       | Line n -> line := n
-      | Label _ | Jmp _ | Jz _ | Jnz _ | Switch _ | Ret | Raise | TryEnter _ -> ()) r.code;
+      | Label _ | Jmp _ | Jz _ | Jnz _ | Switch _ | Ret | Raise | Reraise | TryEnter _ -> ()) r.code;
     let succs = bsucc id in
     (b.term <-
        match r.last, succs with
@@ -195,6 +195,7 @@ let build (f : L.func) =
        | Some (Switch ls), _ -> Switch (pop (), List.map (fun l -> ids.(run l)) ls)
        | Some Ret, _ -> Ret (pop ())
        | Some Raise, _ -> Raise (pop ())
+       | Some Reraise, _ -> Reraise (pop ())
        | Some (Call (t, slots, true)), _ -> Tail (t, List.map get slots)
        | None, [] -> Ret (emit id Zero)
        | _ -> failwith (f.name ^ ": ssa: a block's end"));
@@ -241,6 +242,7 @@ let map_term f = function
   | Switch (v, bs) -> Switch (f v, bs)
   | Ret v -> Ret (f v)
   | Raise v -> Raise (f v)
+  | Reraise v -> Reraise (f v)
   | Tail (t, vs) -> Tail (t, List.map f vs)
   | t -> t
 
@@ -299,7 +301,7 @@ let check (fn : func) =
           List.iter (fun (p, v) -> before v p max_int) ops
       | _ -> fail "v%d: a phi that is not" phi) b.phis;
     List.iteri (fun i v -> List.iter (fun u -> before u b.id i) (operands (Hashtbl.find fn.defs v))) b.body;
-    let term_uses = match b.term with Br (v, _, _) | Switch (v, _) | Ret v | Raise v -> [ v ] | Tail (_, vs) -> vs | _ -> [] in
+    let term_uses = match b.term with Br (v, _, _) | Switch (v, _) | Ret v | Raise v | Reraise v -> [ v ] | Tail (_, vs) -> vs | _ -> [] in
     List.iter (fun u -> before u b.id max_int) term_uses) fn.blocks
 
 (*****************************************************************************)
@@ -359,6 +361,7 @@ let show_term = function
   | Try (k, a, h) -> Printf.sprintf "try %d b%d, handler b%d" k a h
   | Ret v -> Printf.sprintf "ret v%d" v
   | Raise v -> Printf.sprintf "raise v%d" v
+  | Reraise v -> Printf.sprintf "reraise v%d" v
   | Tail (t, l) -> Printf.sprintf "tail %s %s" (show_target t) (vs l)
 
 let show (fn : func) =
@@ -455,6 +458,7 @@ let out (lf : L.func) (fn : func) : L.func =
     | Try (k, body, h) -> emit (L.TryEnter (k, lbl.(h))); emit (L.Jmp (edge b.id body ~alone:false))
     | Ret v -> get v; emit L.Ret
     | Raise v -> get v; emit L.Raise
+    | Reraise v -> get v; emit L.Reraise
     | Tail (t, xs) -> emit (L.Call (t, List.map slot xs, true))) fn.blocks;
   List.iter (fun (l, p, s) -> emit (L.Label l); copies p s; emit (L.Jmp lbl.(s))) (List.rev !split);
   let values = Hashtbl.fold (fun v _ m -> max m (v + 1)) fn.defs 0 in

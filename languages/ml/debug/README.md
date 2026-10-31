@@ -21,7 +21,9 @@ Elsewhere, called from here or calling here:
   instruction.
 - `Gen`: a raise leaves the registers a trace's walk starts from
   (`raise_`, `ml_raise_pc`, `ml_raise_sp`, `ml_raise_lr`,
-  `ml_raise_top`, and `ml_raise_c`).
+  `ml_raise_top`, and `ml_raise_c`); a handler's raise of what it
+  did not match does not (`Ir.Reraise`, `ml_reraise`), so the trace is
+  still the first raise's.
 - `runtime/frames.c`: the frames walked at an uncaught exception, by
   the program's tables; `runtime/typed.c`: its arguments by their
   types, by the descriptions in the program; `runtime/exceptions.c`

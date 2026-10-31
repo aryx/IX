@@ -18,6 +18,8 @@
 # and a Unix_error by its message (fault/Missing.ml: Unix's printer);
 # the raise's line of code (stage 5b: source.c), from this checkout as
 # from the card's /src, none from a copy whose MD5 is not the unit's.
+# An exception a handler does not match, passed on (fault/Passed.ml):
+# the trace still the first raise's (mini-ml's Reraise).
 # usage: debuggers/tests/walk.sh
 
 ROOT=$(cd $(dirname $0)/../.. && pwd)
@@ -63,6 +65,11 @@ if [ -f $M/lib_core/lib_core.a ]; then
       "Fatal error: uncaught exception Deep(7)
 raised at: f1_down Raise.ml:6 < f1_down Raise.ml:6 < f1_down Raise.ml:6 < f1_down Raise.ml:6 < Raise.Init Raise.ml:8 < ml_program < main runtime.c < _main rt0.s:17" \
       "$($IX/machine/Main.exe $W/raiseml 2>&1 | sed 's/+0x[0-9a-f]*//g; s/runtime.c:[0-9]*/runtime.c/')"
+  fi
+  if ml Passed; then
+    same "an exception passed on by a handler that does not match it: where it was raised" \
+      "raised at: f1_down Passed.ml:6 < f1_down Passed.ml:6 < f1_down Passed.ml:6 < f1_down Passed.ml:6 < f2_shallow Passed.ml:8 < Passed.Init Passed.ml:10 < ml_program < main runtime.c < _main rt0.s:17" \
+      "$($IX/machine/Main.exe $W/passedml 2>&1 | sed -n 2p | sed 's/+0x[0-9a-f]*//g; s/runtime.c:[0-9]*/runtime.c/')"
   fi
   if ml Typed -g; then
     same "an exception's arguments by their types: a variant, a record, a list, an option" \

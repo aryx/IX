@@ -142,6 +142,9 @@ type t =
   | Drop
   | Ret
   | Raise                             (* the top raised; its place taken by the result, never seen *)
+  (* a handler's that matched none of its cases: the exception raised
+   * again, where it was first raised kept for a trace (OCaml's reraise) *)
+  | Reraise
   | TryEnter of int * int             (* the k-th handler of the function, its code *)
   | TryExit of int
   | Catch of int                      (* the handler's entry: the exception pushed *)

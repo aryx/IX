@@ -861,7 +861,7 @@ let func m out (fn : func) (lf : L.func) =
   let read v = Hashtbl.replace reads v (1 + match Hashtbl.find_opt reads v with Some k -> k | None -> 0) in
   Array.iter (fun (b : block) ->
     List.iter (fun v -> List.iter read (Ssa_build.operands (Hashtbl.find fn.defs v))) (b.phis @ b.body);
-    match b.term with Br (v, _, _) | Switch (v, _) | Ret v | Raise v -> read v | Tail (_, vs) -> List.iter read vs | _ -> ()) fn.blocks;
+    match b.term with Br (v, _, _) | Switch (v, _) | Ret v | Raise v | Reraise v -> read v | Tail (_, vs) -> List.iter read vs | _ -> ()) fn.blocks;
   (* (and of floats: CMPD, then B.cond, where the boolean was made then
    * compared, 6 instructions a test on arm, 3; mini-doom's View.norm,
    * mini-virtuaracing's faces) *)
@@ -1147,7 +1147,7 @@ let func m out (fn : func) (lf : L.func) =
     let jump l = if l <> next then ins "B\t%s" l in
     let negate = function L.Eq -> L.Ne | Ne -> Eq | Lt -> Ge | Ge -> Lt | Le -> Gt | Gt -> Le in
     (* (a jump its condition's line; a tail call its arguments', the last) *)
-    (match b.term with Br (v, _, _) | Switch (v, _) | Ret v | Raise v -> line_of v | _ -> ());
+    (match b.term with Br (v, _, _) | Switch (v, _) | Ret v | Raise v | Reraise v -> line_of v | _ -> ());
     match b.term with
     | Jmp s -> let l = edge b.id s ~alone:true in jump l
     | Br (v, tr, fl) ->
@@ -1204,6 +1204,7 @@ let func m out (fn : func) (lf : L.func) =
         ins "B\t%s" (edge b.id body ~alone:false)
     | Ret v -> load v 0; epilogue (); ins "%s" (match m.arch with Arm -> "RET" | Arm64 -> "RET\t(R30)")
     | Raise v -> load v 0; List.iter (ins "%s") (Gen.raise_ m.arch)
+    | Reraise v -> load v 0; List.iter (ins "%s") Gen.reraise_
     | Tail (tg, xs) ->
         args xs true;
         (match tg with L.Direct f -> epilogue (); ins "B\t%s(SB)" f | L.Code k -> ins "%s\t%d(R0), R%d" mov (w * k) t; epilogue (); ins "B\t(R%d)" t))

@@ -699,7 +699,7 @@ let rec value env (e : Scope.expr) =
       let s = slot () in
       emit (Set s);
       (* no clause matches: raised again *)
-      match_cases env s cases false e.loc (fun () -> emit (Get s); emit Raise);
+      match_cases env s cases false e.loc (fun () -> emit (Get s); emit Reraise);
       emit (Label out)
   | Ewhile (c, b) ->
       let top = label () and out = label () in

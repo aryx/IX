@@ -145,6 +145,10 @@ val gnu : mach -> mach
 (* a raise's instructions, the exception in R0 (Emit's too) *)
 val raise_ : Asm.arch -> string list
 
+(* a handler's raise of an exception it matched none of its cases of:
+ * ml_reraise, the trace kept as the first raise left it *)
+val reraise_ : string list
+
 (* a unit's assembly *)
 val unit_ : mach -> Ir.unit_ -> string
 

@@ -95,7 +95,7 @@ let func (fn : func) : func =
             List.iter2 (fun x f -> if f then ignore (unboxed x)) xs (floats p xs)
         | ins -> read_at b true (Ssa_build.operands ins)) (b.phis @ b.body);
       match b.term with
-      | Br (x, _, _) | Switch (x, _) | Ret x | Raise x -> read_at b false [ x ]
+      | Br (x, _, _) | Switch (x, _) | Ret x | Raise x | Reraise x -> read_at b false [ x ]
       | Tail (_, xs) -> read_at b false xs
       | Jmp _ | Try _ -> ()) fn.blocks;
     (* OPTIMIZATION (box where read): a double read as a word in one
@@ -226,6 +226,6 @@ let check (fn : func) =
         match b.term with
         | Ret v when Hashtbl.mem boxes v -> refuse "it is boxed: returned"
         | Tail (_, vs) when boxed vs -> refuse "it is boxed: passed to a function"
-        | Raise v when Hashtbl.mem boxes v -> refuse "it is boxed: raised"
+        | Raise v | Reraise v when Hashtbl.mem boxes v -> refuse "it is boxed: raised"
         | _ -> ()) fn.blocks
     end) Lower.unboxed_floats

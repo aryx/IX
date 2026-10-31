@@ -52,7 +52,7 @@ let func (fn : Ssa.func) : string =
         bl.body;
       let used : Ssa.value list =
         match bl.term with
-        | Ssa.Br (v, _, _) | Ssa.Switch (v, _) | Ssa.Ret v | Ssa.Raise v -> [ v ]
+        | Ssa.Br (v, _, _) | Ssa.Switch (v, _) | Ssa.Ret v | Ssa.Raise v | Ssa.Reraise v -> [ v ]
         | Ssa.Tail (_, vs) -> vs
         | Ssa.Jmp _ | Ssa.Try _ -> [] in
       List.iter (fun (x : Ssa.value) -> fact b "use" [ value x; last ]) used;
@@ -61,7 +61,7 @@ let func (fn : Ssa.func) : string =
         | Ssa.Jmp s -> [ s ]
         | Ssa.Br (_, s, t) | Ssa.Try (_, s, t) -> [ s; t ]
         | Ssa.Switch _ -> Ssa_build.successors_of bl
-        | Ssa.Ret _ | Ssa.Raise _ | Ssa.Tail _ -> [] in
+        | Ssa.Ret _ | Ssa.Raise _ | Ssa.Reraise _ | Ssa.Tail _ -> [] in
       List.iter (fun (s : int) -> fact b "succ" [ here; block s ]) after)
     fn.blocks;
   Buffer.contents b

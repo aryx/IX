@@ -62,6 +62,10 @@ let glabel () = incr glabels; sprintf "M%d" !glabels
 let raise_ (arch : Asm.arch) =
   (if arch = Arm then [ "MOVW\tR15, R2" ] else []) @ [ "B\tml_raise(SB)" ]
 
+(* a handler's raise of what it did not match: ml_reraise, the trace
+ * kept as the first raise left it *)
+let reraise_ = [ "B\tml_reraise(SB)" ]
+
 let func m out (fn : func) =
   let w = m.w and mov = m.mov and vsp = m.vsp in
   let lines = ref [] in
@@ -298,6 +302,7 @@ let func m out (fn : func) =
         ins "%s" (match m.arch with Arm -> "RET" | Arm64 -> "RET\t(R30)");
         dead := true
     | Raise -> ins "%s\tR%d, R0" mov !sp; List.iter (ins "%s") (raise_ m.arch); dead := true
+    | Reraise -> ins "%s\tR%d, R0" mov !sp; List.iter (ins "%s") reraise_; dead := true
     | TryEnter (k, handler) ->
         spill ();
         Hashtbl.replace catch_at k !sp;
@@ -405,6 +410,13 @@ let startup m compile units =
   pr "\t%s\t%s, R2\n\t%s\t$ml_raise_words(SB), R3\n\t%s\t$64, R4\n" mov (match m.arch with Arm -> "R13" | Arm64 -> "RSP") mov mov;
   pr "\tCMP\tR1, R2\n\tBHS\t8(PC)\n\t%s\t0(R2), R5\n\t%s\tR5, 0(R3)\n\tADD\t$%d, R2\n\tADD\t$%d, R3\n\tSUB\t$1, R4\n\tCMP\t$0, R4\n\tBNE\t-8(PC)\n" mov mov w w;
   pr "\t%s\tR4, ml_raise_left(SB)\n" mov;
+  (match m.arch with
+   | Arm64 -> pr "\tMOV\t0(R%d), R18\n\tMOV\tR18, RSP\n\tMOV\t8(R%d), R26\n\tMOV\t24(R%d), R18\n\tMOV\tR18, ml_handler(SB)\n\tMOV\t16(R%d), R18\n\tB\t(R18)\n" t t t t
+   | Arm -> pr "\tMOVW\t0(R9), R13\n\tMOVW\t4(R9), R10\n\tMOVW\t12(R9), R14\n\tMOVW\tR14, ml_handler(SB)\n\tMOVW\t8(R9), R9\n\tB\t(R9)\n");
+  (* a handler's raise of what it did not match: the same, but what a
+   * trace reads is the first raise's (OCaml's reraise: the exception's
+   * own place, not the handler's that passed it on) *)
+  pr "\tTEXT\tml_reraise(SB), %s\n\t%s\tml_handler(SB), R%d\n" m.frame mov t;
   (match m.arch with
    | Arm64 -> pr "\tMOV\t0(R%d), R18\n\tMOV\tR18, RSP\n\tMOV\t8(R%d), R26\n\tMOV\t24(R%d), R18\n\tMOV\tR18, ml_handler(SB)\n\tMOV\t16(R%d), R18\n\tB\t(R18)\n" t t t t
    | Arm -> pr "\tMOVW\t0(R9), R13\n\tMOVW\t4(R9), R10\n\tMOVW\t12(R9), R14\n\tMOVW\tR14, ml_handler(SB)\n\tMOVW\t8(R9), R9\n\tB\t(R9)\n");

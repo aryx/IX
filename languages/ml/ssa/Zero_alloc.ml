@@ -48,7 +48,7 @@ let check (fn : func) =
        * counted *)
       Array.iter (fun (b : block) ->
         match b.term with
-        | Raise _ -> ()
+        | Raise _ | Reraise _ -> ()
         | term ->
             List.iter (fun v -> Option.iter refuse (why (Hashtbl.find fn.defs v))) b.body;
             match term with Tail (t, _) -> Option.iter refuse (call t) | _ -> ()) fn.blocks

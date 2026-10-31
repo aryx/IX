@@ -109,6 +109,7 @@ type term =
   | Try of int * int * int            (* the k-th handler: the body, the handler *)
   | Ret of value
   | Raise of value
+  | Reraise of value                  (* Ir.Reraise *)
   | Tail of Ir.target * value list
 
 type block = {

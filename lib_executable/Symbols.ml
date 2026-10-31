@@ -35,7 +35,10 @@ let of_tables syms lines text_start text_end =
   { syms = entries syms (String.length syms); text_start; text_end; lines }
 
 (* an a.out for arm (Exe's header): its text at 0x1000 and the
- * header's 32 bytes, the symbols after the data, the lines after them *)
+ * header's 32 bytes, the symbols after the data, the lines after them.
+ * Where the text is the header does not say: its first function's
+ * address, 0x1020 but in a kernel's (mini-ld -g -H0's out.aout, its
+ * image's: 0x80008000 on the Pi 1) *)
 let read_with (read : int -> int -> string) =
   let h = read 0 32 in
   if String.length h < 32 || be32 h 0 <> 0x647 || be32 h 16 = 0 then None
@@ -43,7 +46,13 @@ let read_with (read : int -> int -> string) =
     let text = be32 h 4 and data = be32 h 8 and nsyms = be32 h 16 and nlines = be32 h 28 in
     let s = read (32 + text + data) (nsyms + nlines) in
     if String.length s < nsyms + nlines then None
-    else Some { syms = entries s nsyms; text_start = 0x1020; text_end = 0x1020 + text; lines = String.sub s nsyms nlines }
+    else
+      let syms = entries s nsyms in
+      let start =
+        List.fold_left (fun m (e : sym) ->
+          match e.typ with 'T' | 't' | 'L' | 'l' when e.value < m -> e.value | _ -> m) max_int syms in
+      let start = if start = max_int then 0x1020 else start in
+      Some { syms; text_start = start; text_end = start + text; lines = String.sub s nsyms nlines }
   end
 
 let read (s : string) =

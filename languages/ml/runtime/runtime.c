@@ -182,7 +182,13 @@ main(int ac, char *av[])
 #ifdef plan9
 	ml_tracing = 1;
 #else
+#ifdef TRACING
+	/* (a kernel's, mkkernel's: its panics say the raise's addresses,
+	 * plan_debugger.md's stage 6) */
+	ml_tracing = 1;
+#else
 	ml_tracing = getenv("ML_TRACE") != nil;
+#endif
 #endif
 	s = getenv("ML_HEAP");
 	if(s != nil)

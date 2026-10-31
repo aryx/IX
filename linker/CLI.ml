@@ -25,12 +25,13 @@ type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 let print = Console.print and eprint = Console.eprint
 
 (* -h: how, by examples, each one as it runs *)
-let help = {|usage: mini-ld [-m 5|7] [-H2|-H6|-H7|-H0 -T address [-R n]] [-nofollow] [-v] [-map] [-g|-s] [-E entry] [-o out] files...
+let help = {|usage: mini-ld [-m 5|7] [-H2|-H6|-H7|-H0] [-T address] [-R n] [-nofollow] [-v] [-map] [-g|-s] [-E entry] [-o out] files...
 5l and 7l's twin (-m 5: arm, the default; 7: arm64): mini-asm's and mini-cc's
 objects, and libraries, linked into an executable, a.out by default (-o:
 another), goken's bytes: an ELF (-H7, the default), Plan 9's a.out (-H2), Mach-O (-H6), or no
 header (-H0, a kernel's image: its text at -T's address, 0x80000 on the Pi 4, its
-data's rounded to -R's n bytes, 4). -g writes Plan 9's symbol and pc/line tables
+data's rounded to -R's n bytes, 4; -T and -R another format's too; -g writes
+out.aout beside it, the same as Plan 9's a.out with its tables, for mini-where). -g writes Plan 9's symbol and pc/line tables
 in an a.out (-m 5 -H2), 5l's without -s; -s (5l's) leaves them out, as without
 -g for now. The entry is _main (-E: another); -v lists each instruction, its address and word;
 -map writes out.map, each function's address and name (scripts/where.sh);
@@ -52,9 +53,12 @@ An error names the file and the line: hello.c:0: undefined: print
 let follow = ref true
 
 (* -T and -R: the text's address and what the data's is rounded to
- * (5l's INITTEXT, INITRND), for an image without a header *)
-let text_at = ref 0
-let round = ref 4
+ * (5l's INITTEXT, INITRND), an image without a header's (0 and 4 if
+ * not said), or another's instead of its own: the kernel's image linked
+ * again as an a.out with its tables, at the same addresses, for
+ * mini-where (plan_debugger.md, stage 6) *)
+let text_at = ref None
+let round = ref None
 
 (* -v: the listing (a flag here, not link's eighth parameter: mini-ml on
  * arm has 7) *)
@@ -73,13 +77,15 @@ let link (m : _ machine) caps arch format entry out files =
   let t = Link.create arch ~text_start:0 in
   let headr = Exe.headr (format, arch) in
   (* 5l's and 7l's INITTEXT: after the header *)
-  t.text_start <- (match format, arch with
-    | Exe.Elf, Asm.Arm -> 0x8000 + headr | Exe.Elf, Asm.Arm64 -> 0x400000 + headr
-    | Exe.Plan9, Asm.Arm -> 4096 + headr | Exe.Plan9, Asm.Arm64 -> 0x10000 + headr
-    | Exe.Macho, _ -> (1 lsl 32) + headr
-    | Exe.Raw, _ -> !text_at);
-  t.data_round <- (match format, arch with
-    | Exe.Macho, _ -> 0x4000 | Exe.Plan9, Asm.Arm64 -> 0x10000 | Exe.Raw, _ -> !round | _ -> 4096);
+  t.text_start <- (match !text_at, format, arch with
+    | Some a, _, _ -> a
+    | None, Exe.Elf, Asm.Arm -> 0x8000 + headr | None, Exe.Elf, Asm.Arm64 -> 0x400000 + headr
+    | None, Exe.Plan9, Asm.Arm -> 4096 + headr | None, Exe.Plan9, Asm.Arm64 -> 0x10000 + headr
+    | None, Exe.Macho, _ -> (1 lsl 32) + headr
+    | None, Exe.Raw, _ -> 0);
+  t.data_round <- (match !round, format, arch with
+    | Some n, _, _ -> n
+    | None, Exe.Macho, _ -> 0x4000 | None, Exe.Plan9, Asm.Arm64 -> 0x10000 | None, Exe.Raw, _ -> 4 | _ -> 4096);
   t.pie <- format = Exe.Macho;
   (* the entry is the first name needed, before any object (5l's main) *)
   ignore (Link.lookup t entry 0);
@@ -119,9 +125,17 @@ let link (m : _ machine) caps arch format entry out files =
   let syms, lines =
     if !symbols && (format = Exe.Plan9 && arch = Asm.Arm || format = Exe.Elf) then Symtab.symbols t, Symtab.lines t else "", "" in
   let elf_syms = if !symbols && format = Exe.Elf then Symtab.elf_symbols t else [] in
-  Exe.write caps format arch out
+  let exe : Exe.image =
     { text; data; bss = t.bss_size; text_start = t.text_start; data_start = t.data_start; entry = Link.entry t entry;
-      pointers = Link.pointers t; round = t.data_round; syms; lines; elf_syms }
+      pointers = Link.pointers t; round = t.data_round; syms; lines; elf_syms } in
+  Exe.write caps format arch out exe;
+  (* -g of an image without a header (arm's kernel): the same link again
+   * as Plan 9's a.out with its tables, out.aout, at the image's
+   * addresses: what mini-where and mini-nm name a kernel's addresses by
+   * (plan_debugger.md, stage 6); the image has no room for them *)
+  if !symbols && format = Exe.Raw && arch = Asm.Arm then
+    Exe.write caps Exe.Plan9 arch (Fpath.v (Fpath.to_string out ^ ".aout"))
+      { exe with syms = Symtab.symbols t; lines = Symtab.lines t }
 
 let main (caps : < caps; .. >) (argv : string array) : int =
   let arch = ref Asm.Arm and format = ref Exe.Elf and entry = ref "_main" and out = ref "a.out"
@@ -134,8 +148,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     | "-H6" :: rest -> format := Exe.Macho; args rest
     | "-H0" :: rest -> format := Exe.Raw; args rest
     (* (through Int64: a kernel's address has its top bits set, 0xffffff8000080000) *)
-    | "-T" :: a :: rest -> text_at := Int64.to_int (Int64.of_string a); args rest
-    | "-R" :: n :: rest -> round := int_of_string n; args rest
+    | "-T" :: a :: rest -> text_at := Some (Int64.to_int (Int64.of_string a)); args rest
+    | "-R" :: n :: rest -> round := Some (int_of_string n); args rest
     | "-E" :: e :: rest -> entry := e; args rest
     | "-o" :: o :: rest -> out := o; args rest
     | "-s" :: rest -> symbols := false; args rest
@@ -150,7 +164,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   let files = List.rev !files in
   match files with
   | _ when List.mem "-h" files || List.mem "--help" files -> print caps help; 0
-  | [] -> eprint caps "usage: mini-ld [-m 5|7] [-H2|-H6|-H7|-H0 -T address [-R n]] [-nofollow] [-v] [-map] [-g|-s] [-E entry] [-o out] files...   (-h: how)\n"; 1
+  | [] -> eprint caps "usage: mini-ld [-m 5|7] [-H2|-H6|-H7|-H0] [-T address] [-R n] [-nofollow] [-v] [-map] [-g|-s] [-E entry] [-o out] files...   (-h: how)\n"; 1
   | _ -> (
       try
         let path s = match FS.path s with Ok p -> p | Error m -> failwith m in

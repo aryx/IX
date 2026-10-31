@@ -63,8 +63,11 @@ let init () =
         * "hang", ix's: the kernel looping with its lock held, for the
         * watchdog (lib_machine's runtime.c): on several cores another
         * says it after 10 s; with one, the machine is only stuck.
-        * "reboot" itself, a new kernel, not yet.) *)
+        * And "exception", ix's: one raised in the system call, for
+        * Main.guard's panic and its trace. "reboot" itself, a new
+        * kernel, not yet.) *)
        | "reboot" when chomp s = "panic" -> Machine.panic "/dev/reboot"
+       | "reboot" when chomp s = "exception" -> failwith "/dev/reboot"
        | "reboot" when chomp s = "hang" -> while true do () done
        | _ -> raise (Error eperm));
       String.length s);

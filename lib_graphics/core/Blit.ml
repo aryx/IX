@@ -179,6 +179,67 @@ let draw_copy (fb : Framebuffer.t) (image : image) ~(tx : int) ~(ty : int) ~(alp
     done
   done
 
+(* An old row stretched to the new width, weights of 0 to 256 made once for
+ * each column, and each new row a mix of two of those, the same two for
+ * several rows when the picture is enlarged. mini-play's film, 352 by 288
+ * three times its size: draw_fast's closures and boxed floats, 205 ms a
+ * frame, the sound going on without it (the author, 2026-10-31: "the video
+ * is not playing smoothly"). *)
+let resized (image : image) ~(width : int) ~(height : int) : image =
+  let sw = image.width and sh = image.height in
+  let out = Rgba_image.create ~width ~height in
+  let data = image.rgba and pixels = out.rgba in
+  (* where a new pixel's centre falls in the old ones, in 256ths, less half
+   * a pixel: the first old pixel and how far towards the next *)
+  let place (i : int) (old_size : int) (size : int) : int =
+    max 0 ((((2 * i) + 1) * old_size * 128 / size) - 128) in
+  let first = Array.make width 0 and second = Array.make width 0 and towards = Array.make width 0 in
+  for x = 0 to width - 1 do
+    let p = place x sw width in
+    let i = min (sw - 1) (p lsr 8) in
+    first.(x) <- 4 * i;
+    second.(x) <- 4 * min (sw - 1) (i + 1);
+    towards.(x) <- p land 255
+  done;
+  (* an old row at the new width, each channel times 256 *)
+  let stretch (j : int) (into : int array) : unit =
+    let row = 4 * j * sw in
+    for x = 0 to width - 1 do
+      let a = row + Array.unsafe_get first x and b = row + Array.unsafe_get second x in
+      let wb = Array.unsafe_get towards x in
+      let wa = 256 - wb and o = 4 * x in
+      for c = 0 to 3 do
+        Array.unsafe_set into (o + c)
+          ((Char.code (Bytes.unsafe_get data (a + c)) * wa) + (Char.code (Bytes.unsafe_get data (b + c)) * wb))
+      done
+    done in
+  let n = 4 * width in
+  let up = ref (Array.make n 0) and down = ref (Array.make n 0) in
+  let up_is = ref (-1) and down_is = ref (-1) in
+  for y = 0 to height - 1 do
+    let p = place y sh height in
+    let j = min (sh - 1) (p lsr 8) in
+    let wd = p land 255 in
+    let wu = 256 - wd in
+    let j' = min (sh - 1) (j + 1) in
+    (* (going down, the row below is often the row above of the next) *)
+    if !down_is = j then begin
+      let t = !up in
+      up := !down;
+      down := t;
+      up_is := j;
+      down_is := -1
+    end;
+    if !up_is <> j then (stretch j !up; up_is := j);
+    if !down_is <> j' then (stretch j' !down; down_is := j');
+    let u = !up and d = !down and row = y * n in
+    for k = 0 to n - 1 do
+      Bytes.unsafe_set pixels (row + k)
+        (Char.unsafe_chr (((Array.unsafe_get u k * wu) + (Array.unsafe_get d k * wd) + 32768) lsr 16))
+    done
+  done;
+  out
+
 let draw fb image (m : Affine.t) ~filter ~alpha =
   let whole (f : float) : bool = Float.round f = f in
   if !Opti.enabled && filter = Nearest && m.a = 1. && m.d = 1. && m.b = 0. && m.c = 0. && whole m.tx && whole m.ty then

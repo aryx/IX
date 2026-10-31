@@ -182,6 +182,22 @@ mini-qemu's `-ips 200`, 3. So a 320 by 240 film will likely drop frames on a
 Pi 2 and more on a Pi 1, which the sound's clock is there for. A minute's sound
 decoded when the film opens is 6,700 million instructions, some 5 seconds of
 waiting on a Pi 2: to decode it as it plays would be the next thing to do.
+
+On Linux, the author's first real film (352 by 288, 25 a second, MP2; 2026-10-31):
+"the sound is good but the video is not playing smoothly". Decoding was never it,
+12.4 ms a picture; it was drawing, in a window of 1280 by 900, three times the
+picture's size, by `Blit.draw_fast`'s floats: 205 ms, some 4 pictures a second.
+Stage 3 had counted the decoder and only said "before drawing". Now
+`Blit.resized` (whole numbers, a row stretched once) and the picture drawn as it
+is: `mpg_bench draw film n 1280 900 k` gives 33 ms at three times, 20 at two, a
+black window's 7 of each now bars around the picture. The window opens at the
+whole size that fits in 800 pixels, here two. The picture follows what was heard,
+less what is queued, never backwards. Run for 24 s by SDL's dummy drivers (its
+software renderer, no real screen), each picture's time logged: two times, 23.9
+pictures a second, 5% skipped, 36 ms apart at the median, 59 at the 95th
+percentile; three times, by hand (`window=1280x900`), 13.8, 45% skipped. So
+enlarged by hand it still cannot keep up. What is left is shared by the decoder
+and the resizing, each about a third of a frame.
 **Not run: `mini-qemu -ips 200`, a Pi.** mini-9pi could not be built while
 another session's `debuggers/acid` was in progress.
 

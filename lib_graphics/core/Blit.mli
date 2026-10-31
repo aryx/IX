@@ -107,3 +107,10 @@ type filter = Nearest | Bilinear
  * neither scaled nor turned, moved by whole pixels) copied a row at a
  * time, no float. *)
 val draw : Framebuffer.t -> image -> Affine.t -> filter:filter -> alpha:float -> unit
+
+(* [resized image ~width ~height]: the picture at that size, each pixel from
+ * its four neighbours as [draw]'s Bilinear, in whole numbers: within a step
+ * or two of [draw]'s colours, the same bytes from both compilers, and many
+ * times faster, for what is drawn again and again, a film's frames. Then
+ * drawn as it is. *)
+val resized : image -> width:int -> height:int -> image

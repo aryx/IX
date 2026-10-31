@@ -6,6 +6,8 @@
  *   mpg_bench open film.mpg      the file read and its streams apart
  *   mpg_bench sound film.mpg     and its sound decoded whole
  *   mpg_bench frames film.mpg n  and its first n pictures, not the sound
+ *   mpg_bench draw film.mpg n w h f [floats]  and each drawn in a w by h
+ *     window, f times its size, on black, by Blit.resized or as draw_fast
  * Each run's count less the run before it is the part's cost.
  * ix: the author's playground's libs/graphics/videos/tests/Mpg_bench.ml, by
  * parts and no clock of its own *)
@@ -28,4 +30,24 @@ let () =
           for i = 0 to n - 1 do
             ignore (movie.frame i)
           done
-      | _ -> failwith "usage: mpg_bench open|sound|frames file [n]")
+      | "draw" ->
+          let h, movie, _ = Mpeg1.of_string ~residual:false video.bytes in
+          let n = min (int_of_string argv.(3)) (Movie.frame_count movie) in
+          let w = int_of_string argv.(4) and wh = int_of_string argv.(5) and f = float_of_string argv.(6) in
+          let options = { Shape_render_software.default_options with antialiasing = true } in
+          for i = 0 to n - 1 do
+            let picture = movie.frame i in
+            let fb = Framebuffer.create ~width:w ~height:wh in
+            let tw = int_of_float (f *. float_of_int h.width) and th = int_of_float (f *. float_of_int h.height) in
+            let bitmap =
+              if Array.length argv > 7 && argv.(7) = "floats" then Playground.bitmap (float_of_int tw) (float_of_int th) picture
+              else
+                Playground.bitmap (float_of_int tw) (float_of_int th) (Blit.resized picture ~width:tw ~height:th)
+                |> Playground.move (if (w - tw) land 1 = 1 then 0.5 else 0.) (if (wh - th) land 1 = 1 then 0.5 else 0.)
+            in
+            let shapes =
+              [ Playground.rectangle Playground.black (float_of_int w) (float_of_int wh); bitmap ]
+            in
+            Shape_render_software.render ~options ~scale:1. fb shapes
+          done
+      | _ -> failwith "usage: mpg_bench open|sound|frames|draw file [n [w h f [floats]]]")

@@ -11,4 +11,4 @@
 (executable
  (name Mpg_bench)
  (modules Mpg_bench)
- (libraries ix_audio ix_graphics_videos ix_graphics_images ix_core fpath caps unix))
+ (libraries ix_audio ix_graphics_videos ix_graphics_images ix_playground ix_playground_ppm ix_core fpath caps unix))

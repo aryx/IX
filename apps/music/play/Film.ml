@@ -84,9 +84,10 @@ let read ~(kind : string) (bytes : string) : (t, string) result =
 (* The sound's side: the mixer pulls its blocks between frames *)
 (*****************************************************************************)
 
-type deck = { mutable samples : Signal.stereo; mutable pos : int; mutable paused : bool }
+(* [heard]: the furthest the sound has been heard, in seconds *)
+type deck = { mutable samples : Signal.stereo; mutable pos : int; mutable paused : bool; mutable heard : float }
 
-let deck = { samples = { left = [||]; right = [||] }; pos = 0; paused = false }
+let deck = { samples = { left = [||]; right = [||] }; pos = 0; paused = false; heard = 0. }
 
 let fill (out : Signal.stereo) : unit =
   let n = Array.length out.left in
@@ -113,9 +114,15 @@ type model = {
   held : string Set_.t;
 }
 
-(* where the film is: the sound's, once it has begun *)
+(* where the film is: the sound's, once it has begun. What was pulled less
+ * what is still queued: the queue grows when a frame is slow, up to a third
+ * of a second, and the picture would leap ahead of the ear. Never back, when
+ * it grows: a frame further back is decoded from the film's start. *)
 let position (m : model) : float =
-  if deck.pos > 0 then float_of_int deck.pos /. float_of_int Signal.rate
+  if deck.pos > 0 then begin
+    deck.heard <- Float.max deck.heard ((float_of_int deck.pos /. float_of_int Signal.rate) -. Audio.latency ());
+    deck.heard
+  end
   else if m.film.loops then Float.rem m.clock m.film.movie.duration
   else m.clock
 
@@ -145,6 +152,7 @@ let update (caps : Cap.all_caps) (computer : computer) (m : model) : model =
     else
       let t = Float.max 0. (Float.min (m.film.movie.duration -. 0.001) (position m +. step)) in
       deck.pos <- int_of_float (t *. float_of_int Signal.rate);
+      deck.heard <- t;
       { m with clock = t }
   in
   let (Time now) = computer.time in
@@ -244,6 +252,35 @@ let blocks_over (a : analysis) (movie : Movie.t) (f : float) (centre_y : float) 
   in
   List.concat (List.mapi macroblock (Array.to_list inf.macroblocks)) @ strip
 
+(* The picture at its size in the window, kept while it is the same one: the
+ * view is asked 60 times a second, a film has 25 pictures. *)
+type sized = { i : int; changes_on : bool; residual_on : bool; tw : int; th : int; image : Rgba_image.t }
+
+let last_sized : sized option ref = ref None
+
+let sized (m : model) (i : int) (tw : int) (th : int) : Rgba_image.t =
+  match !last_sized with
+  | Some s when s.i = i && s.changes_on = m.changes && s.residual_on = m.residual && s.tw = tw && s.th = th -> s.image
+  | _ ->
+      let shown = match m.film.mpeg with Some a when m.residual -> a.sent () | _ -> m.film.movie in
+      let picture = if m.changes then changed shown i else shown.frame i in
+      let image = if picture.width = tw && picture.height = th then picture else Blit.resized picture ~width:tw ~height:th in
+      last_sized := Some { i; changes_on = m.changes; residual_on = m.residual; tw; th; image };
+      image
+
+(* a black rectangle by its corners in pixels from the window's top left, if
+ * it has any size *)
+let bar (w : float) (h : float) ((x0, y0, x1, y1) : int * int * int * int) : shape list =
+  if x1 <= x0 || y1 <= y0 then []
+  else
+    let width = float_of_int (x1 - x0) and height = float_of_int (y1 - y0) in
+    [ move (float_of_int x0 +. (width /. 2.) -. (w /. 2.)) ((h /. 2.) -. float_of_int y0 -. (height /. 2.)) (rectangle black width height) ]
+
+(* the status line's size: smaller in a window that it would run out of *)
+let line_scale (w : float) (line : string) : float =
+  let _, length = Hershey.layout line in
+  Float.min 1.6 ((w -. 8.) /. (length *. words_font_size /. Hershey.units_per_em))
+
 let view (computer : computer) (m : model) : shape list =
   let movie = m.film.movie in
   let w = computer.screen.width and h = computer.screen.height in
@@ -260,23 +297,39 @@ let view (computer : computer) (m : model) : shape list =
     Printf.sprintf "frame %d of %d%s   d: changes   arrows: 5 s   %s   q: the end" (i + 1) (Movie.frame_count movie) mpeg
       (if m.paused then "space: go on" else "space: pause")
   in
-  let shown = match m.film.mpeg with Some a when m.residual -> a.sent () | _ -> movie in
-  let picture = if m.changes then changed shown i else shown.frame i in
+  (* in whole pixels, drawn as they are (Blit.draw_copy); the bars around it,
+   * no black under it: what is a frame's cost is the pixels *)
+  let tw = max 1 (int_of_float (f *. float_of_int movie.width)) and th = max 1 (int_of_float (f *. float_of_int movie.height)) in
+  let ww = int_of_float w and wh = int_of_float h in
+  let x0 = (ww - tw) / 2 and y0 = (wh - int_of_float status_bar - th) / 2 in
+  let cx = float_of_int x0 +. (float_of_int tw /. 2.) -. (w /. 2.) in
+  let cy = (h /. 2.) -. float_of_int y0 -. (float_of_int th /. 2.) in
   let analysis =
     match m.film.mpeg with
     | Some a when m.blocks ->
         blocks_over a movie f (status_bar /. 2.) ((-.h /. 2.) +. status_bar +. 14.) w i
     | _ -> []
   in
-  [ rectangle black w h;
-    move 0. (status_bar /. 2.)
-      (bitmap (f *. float_of_int movie.width) (f *. float_of_int movie.height) picture) ]
+  bar w h (0, 0, ww, y0)
+  @ bar w h (0, y0 + th, ww, wh)
+  @ bar w h (0, y0, x0, y0 + th)
+  @ bar w h (x0 + tw, y0, ww, y0 + th)
+  @ [ move cx cy (bitmap (float_of_int tw) (float_of_int th) (sized m i tw th)) ]
   @ analysis
   @ [
-    move 0. ((-.h /. 2.) +. (status_bar /. 2.)) (scale 1.6 (words (rgb 200 200 200) line)) ]
+    move 0. ((-.h /. 2.) +. (status_bar /. 2.)) (scale (line_scale w line) (words (rgb 200 200 200) line)) ]
+
+(* The window a film opens with: as many times its size as fit in 800 pixels,
+ * where every pixel is one more to draw at each frame (352 by 288, twice its
+ * size: 21 ms of a picture; three times: 33), the status line under it. A
+ * film too large for that: the platform's own size, the picture made to fit. *)
+let window_flag (movie : Movie.t) : string =
+  let k = min (800 / movie.width) ((800 - int_of_float status_bar) / movie.height) in
+  if k < 1 then ""
+  else Printf.sprintf "%dx%d" (k * movie.width) ((k * movie.height) + int_of_float status_bar)
 
 let run (caps : Cap.all_caps) (film : t) : unit =
   (match film.sound with Some s -> deck.samples <- s | None -> ());
   Playground_platform.run_app caps
-    (Playground_platform.flags caps @ [ ("window", "") ])
+    (Playground_platform.flags caps @ [ ("window", window_flag film.movie) ])
     (Playground.game view (update caps) { film; clock = 0.; last = None; paused = false; changes = false; blocks = false; residual = false; held = Set_.empty })

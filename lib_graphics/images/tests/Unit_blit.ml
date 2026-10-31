@@ -107,6 +107,37 @@ let test_opti_same_pixels () =
                   done
                 done))
 
+(* whole numbers for a film's frames: the picture's look kept *)
+let test_resized () =
+  let bytes (i : Blit.image) = List.init (Bytes.length i.rgba) (fun k -> Bytes.get_uint8 i.rgba k) in
+  let two = image [ [ (0x000000, 255); (0xC86440, 255) ]; [ (0x204060, 255); (0xFFFFFF, 255) ] ] in
+  Alcotest.(check (list int)) "its own size: itself" (bytes two) (bytes (Blit.resized two ~width:2 ~height:2));
+  let flat = image [ [ (0x336699, 128); (0x336699, 128) ]; [ (0x336699, 128); (0x336699, 128) ] ] in
+  let big = Blit.resized flat ~width:7 ~height:5 in
+  Alcotest.(check (pair int int)) "the size asked" (7, 5) (big.width, big.height);
+  Bytes.iteri
+    (fun k c -> Alcotest.(check int) "one colour stays that colour, no step" [| 0x33; 0x66; 0x99; 128 |].(k mod 4) (Char.code c))
+    big.rgba;
+  let small = Blit.resized two ~width:1 ~height:1 in
+  Alcotest.(check int) "made smaller: the four mixed" ((0x00 + 0xC8 + 0x20 + 0xFF + 2) / 4) (Bytes.get_uint8 small.rgba 0);
+  (* each pixel against draw's Bilinear, enlarged by a whole number and not *)
+  List.iter
+    (fun ((w, h) : int * int) ->
+      let r = Blit.resized two ~width:w ~height:h in
+      List.iter
+        (fun (y : int) ->
+          List.iter
+            (fun (x : int) ->
+              let u = (float x +. 0.5) *. 2. /. float w and v = (float y +. 0.5) *. 2. /. float h in
+              let c = Blit.sample_bilinear two (u, v) in
+              let o = 4 * ((y * w) + x) in
+              let near (shift : int) (k : int) =
+                abs (((c.rgb lsr shift) land 255) - Bytes.get_uint8 r.rgba (o + k)) <= 2 in
+              Alcotest.(check bool) "within two of the floats" true (near 16 0 && near 8 1 && near 0 2))
+            (List.init w Fun.id))
+        (List.init h Fun.id))
+    [ (6, 6); (4, 4); (5, 3); (9, 7) ]
+
 let tests =
   Testo.categorize "Blit"
     [
@@ -115,4 +146,5 @@ let tests =
       t "rotate" test_rotate;
       t "transparent pixels" test_transparent;
       t "bilinear" test_bilinear;
+      t "resized: in whole numbers" test_resized;
     ]

@@ -50,15 +50,13 @@ let () =
     Array.init 200_000 (fun (_ : int) ->
         let p = Random.int ps in
         let got = ref [] and m = ref 0 in
-        Btree.iter_from t
-          (fun (i : int) -> if i = 0 then p else min_int)
+        Btree.iter_prefix t 1
+          (fun (_ : int) -> p)
           (fun (keys : int array) (b : int) ->
-            if keys.(b) = p && !m < 40 then begin
+            if !m < 40 then begin
               got := keys.(b + 1) :: !got;
-              incr m;
-              true
-            end
-            else false);
+              incr m
+            end);
         (p, Array.of_list (List.rev !got))) in
   let total = Array.fold_left (fun (a : int) ((_, l) : int * int array) -> a + Array.length l) 0 runs in
   let ways : (string * (Btree.hint -> int -> int -> bool)) list =

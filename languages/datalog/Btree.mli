@@ -21,9 +21,10 @@
  *   root. A hint is the caller's (a domain's own), not the tree's.
  *
  * design:
- * Flat as Tuples: a node's tuples in one array of integers. Not yet
- * the engine's: measured first against Tuples (plan_ml_multicore.md's
- * Status, tests/btree_bench.ml). What was found:
+ * Flat as Tuples: a node's tuples in one array of integers. An index of
+ * Datalog's relations is one (Index), measured first against Tuples
+ * (plan_ml_multicore.md's Status, tests/btree_bench.ml). What was
+ * found:
  * - The order of the set is the one that makes the head tests
  *   neighbours. Rule 81 of pointer.dl, point_to(P, L) :- assign(P, Q),
  *   point_to(Q, L), fires mostly from a new assign(P, Q), then Q's
@@ -68,10 +69,17 @@
 
 type t
 
-(* the tuples of n values each *)
+(* the tuples of n values each, in 64 parts by their first value's hash
+ * (Tuples.parts): a tree each, so that domains add at once the tuples
+ * of their own parts, and the tuples that begin with the same value,
+ * a range, are in one tree *)
 val create : int -> t
 
 val count : t -> int
+val width : t -> int             (* the values of a tuple *)
+
+(* the part of the tuple whose first value is [value 0] *)
+val part_of : t -> (int -> int) -> int
 
 (* is the tuple whose i-th value is [value i] there? *)
 val mem_by : t -> (int -> int) -> bool
@@ -84,9 +92,17 @@ val mem_hint : t -> hint -> (int -> int) -> bool
 (* mem_hint of the pair (a, b), for a tree of pairs, written out *)
 val mem2_hint : t -> hint -> int -> int -> bool
 
-(* false: it was there *)
+(* false: it was there. Not while a range of the same part is walked
+ * (a leaf's tuples move). *)
 val add_by : t -> (int -> int) -> bool
 
-(* [f keys base] for each tuple at or above the values, in order (its
- * values keys.(base) to keys.(base + n - 1)), until [f] says false *)
-val iter_from : t -> (int -> int) -> (int array -> int -> bool) -> unit
+(* add_by of the pair (a, b), written out *)
+val add2 : t -> int -> int -> bool
+
+(* [f keys base] for each tuple whose first n values are [value 0] to
+ * [value (n - 1)], in order: its values keys.(base) to
+ * keys.(base + w - 1). n is at least 1. *)
+val iter_prefix : t -> int -> (int -> int) -> (int array -> int -> unit) -> unit
+
+(* is there one? *)
+val exists_prefix : t -> int -> (int -> int) -> bool

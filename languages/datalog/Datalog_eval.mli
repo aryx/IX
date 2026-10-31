@@ -66,8 +66,17 @@
  * A relation is stored as Souffle's: its tuples numbered in the order
  * added, flat in one array of rows (Datalog's), so that the last
  * round's new tuples, this round's and all of them are three ranges of
- * numbers (Souffle's delta, new and full relations); a set (Tuples)
- * and indexes (Index) of those numbers beside, flat too.
+ * numbers (Souffle's delta, new and full relations); beside them a
+ * set and indexes, of one of two kinds, the relation's choice
+ * (Relset.mli, -btree): hashed (Tuples, Hash_index), where an index
+ * gives the tuples' numbers to read in the rows, in the order added;
+ * or sorted (Btree, Tree_index), where an index is the relation
+ * again with its key's columns first, giving the tuples themselves in
+ * order, so that a rule's heads tested one after the other are
+ * neighbours in a sorted set (its hint). A sorted relation's tuples
+ * are added after the rule's join, not during it: a B-tree's leaf
+ * moves under an insertion, a walk of it would lose its place; a
+ * hashed one's as found, as before (a slot, a chain's head).
  *
  * A rule on several domains (-j, OCaml 5's build): its new tuples in
  * chunks, each domain taking the next chunk, testing what its firings

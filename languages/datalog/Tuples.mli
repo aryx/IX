@@ -36,6 +36,7 @@ type t
 val create : int -> t
 
 val count : t -> int
+val arity : t -> int
 val mem : t -> int array -> bool
 
 (* is there the tuple whose i-th value is [value i]? *)

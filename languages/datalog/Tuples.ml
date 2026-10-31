@@ -16,6 +16,7 @@ type t = { arity : int; part : part array }
 let create (arity : int) : t =
   { arity; part = Array.init parts (fun (_ : int) -> { cells = Array.make (8 * arity) (-1); size = 8; count = 0 }) }
 
+let arity (t : t) : int = t.arity
 let count (t : t) : int = Array.fold_left (fun (n : int) (p : part) -> n + p.count) 0 t.part
 
 (* each column's value in turn, then the high bits brought down, so

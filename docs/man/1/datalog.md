@@ -8,7 +8,10 @@ datalog – facts, and rules run until nothing new is found
 [ **-q** *query* ] ...
 [ **-all** ]
 [ **-naive** ]
+[ **-j** *n* ]
+[ **-btree** *name*`/`*arity* ] ...
 [ **-s** ]
+[ **-profile** ]
 *file*`.dl` ...
 
 # DESCRIPTION
@@ -42,13 +45,30 @@ it, and a negation through a recursion is refused. `=`, `\=`, `<`,
 :    Every rule on every fact at each round, as the definition says,
      and not only on what the round before found.
 
+**-j** *n*
+:    *N* domains share a rule's new facts, each the tuples it takes,
+     then add what they found, each its share. Where *datalog* was
+     built by OCaml 5; elsewhere one runs all.
+
+**-btree** *name*`/`*arity*
+:    That relation is kept sorted, in B-trees, as Soufflé keeps them,
+     and so are its indexes; the others are hashed. `all`: every
+     relation. A relation whose facts a rule tests one after the
+     other in order (its indexes give them sorted) is faster sorted;
+     one mostly added to, hashed. The facts found are the same.
+
 **-s**
 :    The relations' sizes, the rounds, the rules' firings.
+
+**-profile**
+:    Each rule's firings, new facts, lookups and seconds, the
+     costliest first.
 
 # EXAMPLES
 ```
 datalog graph.dl
 datalog -q 'path(a, X)' graph.dl
+datalog -profile -btree point_to/2 pointer.dl facts.dl
 cc -m 7 -facts hello.c > hello.dl
 ```
 

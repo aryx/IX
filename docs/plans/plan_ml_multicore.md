@@ -387,3 +387,44 @@ the adding on several domains by parts of the first column's hash
 (Tuples's parts by the whole tuple's hash would scatter a P's
 tuples). The join on 32 domains is 9 s of 15.4, most of it these
 tests: if they cost half, about 4 s less.
+
+2026-10-31, Souffle's B-trees in the engine, beside the hashes, a
+relation's choice (the author: "let's start, if Souffle does a similar
+thing it must be a good idea"; then "maybe make it possible to switch
+also to Hash engine, so we can have both if possible, which is also
+good teaching value"; "I dunno if it would be possible to switch from
+one to the other depending on the table"). `Relset` (a relation's set,
+`Tuples` or `Btree`) and `Index` (`Hash_index`, the chained hash, or
+`Tree_index`, the relation again sorted with its key's columns first,
+whose lookups give the tuples themselves, in order);
+`mini-datalog -btree name/arity` (repeatable; `all`), as Souffle's
+`.decl r(...) btree`/`brie`; hashed by default. A sorted head's
+tuples are added after the rule's join (a leaf moves under an
+insertion); a hashed head's as found. On the way: `n.kids = [||]` (the
+polymorphic compare at each node, 5% of a run), `Array.blit` of
+integers into the major heap (4.14 passes each through `caml_modify`:
+11%, Btree's leaves and Datalog's rows, the hash engine's too),
+`List.assoc_opt` on the indexes (the polymorphic compare at each
+lookup), the pairs' searches and insertion written out, leaves of 32.
+mini-ml and the assembler (the same tuples by every choice, build and
+-j):
+
+| seconds | one core (4.14) | 8 domains | 32 |
+|---|---|---|---|
+| hashed, 9807521b | 91.4 | 25.7 | 15.4 |
+| hashed now (rows by loops, pairs written out) | 88.4 | 24.0 | 14.8 |
+| all sorted | 105.2 | 21.9 | 14.9 |
+| point_to sorted, the rest hashed | 101.1 | 21.2 | 14.5 |
+
+mini-datalog's own facts, one core: hashed 1.32 s by 4.14, 2.12 by
+mini-ml (1.35 and 2.2 before); all sorted 2.00 and 2.72. The hint
+works: 81% of 379 million head tests in the leaf of the one before.
+Sorted wins on 8 domains (12%), is even on 32 (the join, 8.3 s of it,
+memory's: not the minor heap, s=8M the same; not the domains' counts
+side by side, made on their own domains the same), and loses on one
+core (14% to 19%): insertion, a leaf's tuples moved for each, and a
+descent from the root each, where a hash writes a slot. Left for the
+sorted kind: insertion as Souffle's (the batch sorted, a hint for
+inserting too, so that the descent is skipped), or a leaf's new
+tuples merged in one pass; the rows and the gathering on every domain
+(2.4 s on one, for both kinds).

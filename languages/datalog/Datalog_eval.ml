@@ -98,15 +98,17 @@ let plan (slots : int) (first : D.atom option) (body : D.literal list) : step li
 
 (* the index of a relation by some columns, made if it is not there *)
 let index (r : D.relation) (mask : int) : Index.t =
-  match List.find_opt (fun ((m, _, _) : int * int array * Index.t) -> m = mask) r.indexes with
-  | Some (_, _, index) -> index
+  (* (not List.assoc_opt: its compare is the polymorphic one, a call
+   * into the runtime at each lookup, 2.3 million on mini-datalog's
+   * facts) *)
+  match List.find_opt (fun ((m, _) : int * Index.t) -> m = mask) r.indexes with
+  | Some (_, index) -> index
   | None ->
-      let cols = D.columns r.arity mask in
-      let index = Index.create (Array.length cols) in
+      let index = Index.create ~sorted:(Relset.sorted r.set) r.arity (D.columns r.arity mask) in
       for id = 0 to r.count - 1 do
-        Index.add index (fun (i : int) -> D.get r id cols.(i)) id
+        Index.add index (D.get r id) id
       done;
-      r.indexes <- (mask, cols, index) :: r.indexes;
+      r.indexes <- (mask, index) :: r.indexes;
       index
 
 let value (env : int array) (x : D.arg) : int = match x with D.Const c -> c | D.Slot k -> env.(k) | D.Any -> -1
@@ -125,10 +127,10 @@ let holds (p : D.t) (stats : stats) (env : int array) (l : D.literal) : bool =
       stats.lookups <- stats.lookups + 1;
       let mask = known a in
       if mask = 0 then a.rel.count = 0
-      else if mask = (1 lsl a.rel.arity) - 1 then not (Tuples.mem_by a.rel.set (fun (i : int) -> value env a.args.(i)))
+      else if mask = (1 lsl a.rel.arity) - 1 then not (Relset.mem_by a.rel.set (fun (i : int) -> value env a.args.(i)))
       else
         let cols = D.columns a.rel.arity mask in
-        Index.first (index a.rel mask) (fun (i : int) -> value env a.args.(cols.(i))) < 0
+        not (Index.exists (index a.rel mask) (fun (i : int) -> value env a.args.(cols.(i))))
   | D.Cmp (op, x, y) -> (
       let x = value env x and y = value env y in
       match op with
@@ -137,6 +139,9 @@ let holds (p : D.t) (stats : stats) (env : int array) (l : D.literal) : bool =
       | _ -> (
           let c = Prolog.compare p.terms.(x) p.terms.(y) in
           match op with "<" -> c < 0 | ">" -> c > 0 | "=<" -> c <= 0 | _ -> c >= 0))
+
+(* a column's place in a row: its own *)
+let same_place : int array = Array.init 63 (fun (c : int) -> c)
 
 (* each way the steps hold together: [found] called with the variables
  * bound (a slot is read only after the step that binds it: nothing is
@@ -155,27 +160,26 @@ let rec join (p : D.t) (stats : stats) (env : int array) (steps : step list) (fo
           scanned p stats env s rest found id
         done
       end
-      else if Array.length s.keys = r.arity then (if Tuples.mem_by r.set key then join p stats env rest found)
+      else if Array.length s.keys = r.arity then (if Relset.mem_by r.set key then join p stats env rest found)
       else begin
         let index = index r s.mask in
-        let id = ref (Index.first index key) in
-        while !id >= 0 do
-          each p stats env s rest found !id;
-          id := Index.next index !id
-        done
+        let at = Index.at index in
+        Index.iter index r.rows r.arity key (fun (keys : int array) (base : int) -> each p stats env s rest found keys base at)
       end
 
 (* a tuple of a scan with no index, by its number: its known columns
  * compared *)
 and scanned (p : D.t) (stats : stats) (env : int array) (s : scan) (rest : step list) (found : unit -> unit) (id : int) : unit =
   let r = s.atom.rel in
-  if Array.for_all (fun ((i, x) : int * D.arg) -> D.get r id i = value env x) s.keys then each p stats env s rest found id
+  if Array.for_all (fun ((i, x) : int * D.arg) -> D.get r id i = value env x) s.keys then
+    each p stats env s rest found r.rows (id * r.arity) same_place
 
-(* a tuple that matches: its variables bound, the steps after *)
-and each (p : D.t) (stats : stats) (env : int array) (s : scan) (rest : step list) (found : unit -> unit) (id : int) : unit =
-  let r = s.atom.rel in
-  List.iter (fun ((i, k) : int * int) -> env.(k) <- D.get r id i) s.binds;
-  if List.for_all (fun ((i, k) : int * int) -> D.get r id i = env.(k)) s.same then join p stats env rest found
+(* a tuple that matches, column c at keys.(base + at.(c)) (a row, or an
+ * index's leaf): its variables bound, the steps after *)
+and each (p : D.t) (stats : stats) (env : int array) (s : scan) (rest : step list) (found : unit -> unit) (keys : int array)
+    (base : int) (at : int array) : unit =
+  List.iter (fun ((i, k) : int * int) -> env.(k) <- keys.(base + at.(i))) s.binds;
+  if List.for_all (fun ((i, k) : int * int) -> keys.(base + at.(i)) = env.(k)) s.same then join p stats env rest found
 
 (*****************************************************************************)
 (* A rule on several domains *)
@@ -280,32 +284,43 @@ let add_shared (pool : pool) (r : D.relation) (found : int array array) : int =
       let lo, hi = slice d m in
       for i = lo to hi - 1 do
         let tuple = found.(i) in
-        part.(i) <- Tuples.part_of r.set (fun (j : int) -> tuple.(j))
+        part.(i) <- Relset.part_of r.set (fun (j : int) -> tuple.(j))
       done);
   let fresh = Array.make m false in
   pool_run pool (fun (d : int) ->
       for i = 0 to m - 1 do
-        if part.(i) mod size = d then fresh.(i) <- Tuples.add r.set found.(i)
+        if part.(i) mod size = d then begin
+          let tuple = found.(i) in
+          fresh.(i) <- Relset.add r.set tuple
+        end
       done);
   let first = r.count in
   Array.iteri (fun (i : int) (tuple : int array) -> if fresh.(i) then ignore (D.append r tuple)) found;
   let added = r.count - first in
   List.iter
-    (fun ((_, cols, index) : int * int array * Index.t) ->
+    (fun ((_, index) : int * Index.t) ->
       Index.reserve index r.count;
-      let key (id : int) (i : int) : int = D.get r id cols.(i) in
       let part = Array.make added 0 in
       pool_run pool (fun (d : int) ->
           let lo, hi = slice d added in
           for k = lo to hi - 1 do
-            part.(k) <- Index.part_of index (key (first + k))
+            part.(k) <- Index.part_of index (D.get r (first + k))
           done);
       pool_run pool (fun (d : int) ->
           for k = 0 to added - 1 do
-            if part.(k) mod size = d then Index.add index (key (first + k)) (first + k)
+            if part.(k) mod size = d then Index.add index (D.get r (first + k)) (first + k)
           done))
     r.indexes;
   added
+
+(* what a rule found added after its join, not during it: a tree's
+ * range may not change while it is walked (Souffle's rounds, likewise,
+ * write their new tuples apart from those they read). On the domains
+ * when there are enough. *)
+let add_found (stats : stats) (r : D.relation) (found : int array array) : unit =
+  match !pool with
+  | Some pool when Array.length found >= shared -> stats.derived <- stats.derived + add_shared pool r found
+  | _ -> Array.iter (fun (tuple : int array) -> if D.add r tuple then stats.derived <- stats.derived + 1) found
 
 (* the new tuples of the first scan in chunks, taken by the domains in
  * turn; what each finds that is not there kept by chunk, and added in
@@ -317,16 +332,20 @@ let apply_shared (p : D.t) (stats : stats) (pool : pool) (rule : D.rule) (s : sc
   let n = (hi - lo + chunk - 1) / chunk in
   let next = Atomic.make 0 in
   let results : int array list array = Array.make n [] in
-  let counts : stats array =
-    Array.init pool.size (fun (_ : int) -> { rounds = 0; firings = 0; derived = 0; lookups = 0; profile = [] }) in
+  let none : stats = { rounds = 0; firings = 0; derived = 0; lookups = 0; profile = [] } in
+  let counts : stats array = Array.make pool.size none in
   pool_run pool (fun (d : int) ->
-      let mine = counts.(d) in
+      (* (its counts made here, on its own domain, and given at the
+       * end: made by the caller, the domains' records are side by side,
+       * several in a line of the cache, which each firing's count
+       * would pass from core to core; measured, no difference here) *)
+      let mine : stats = { rounds = 0; firings = 0; derived = 0; lookups = 0; profile = [] } in
       let env = Array.make rule.slots (-1) in
       let head (i : int) : int = value env rule.head.args.(i) in
       (* (what this domain found already: without it, a tuple found by
        * a thousand firings was a thousand candidates, which the caller
        * added one by one) *)
-      let seen = Tuples.create (Array.length rule.head.args) in
+      let seen = Tuples.create (Array.length rule.head.args) and h = Relset.hint rule.head.rel.set in
       let c = ref (Atomic.fetch_and_add next 1) in
       while !c < n do
         let got : int array list ref = ref [] in
@@ -334,7 +353,7 @@ let apply_shared (p : D.t) (stats : stats) (pool : pool) (rule : D.rule) (s : sc
           scanned p mine env s rest
             (fun () ->
               mine.firings <- mine.firings + 1;
-              if not (Tuples.mem_by rule.head.rel.set head || Tuples.mem_by seen head) then begin
+              if not (Relset.mem_hint rule.head.rel.set h head || Tuples.mem_by seen head) then begin
                 let tuple = Array.map (value env) rule.head.args in
                 ignore (Tuples.add seen tuple);
                 got := tuple :: !got
@@ -343,7 +362,8 @@ let apply_shared (p : D.t) (stats : stats) (pool : pool) (rule : D.rule) (s : sc
         done;
         results.(!c) <- List.rev !got;
         c := Atomic.fetch_and_add next 1
-      done);
+      done;
+      counts.(d) <- mine);
   stats.lookups <- stats.lookups + 1;
   Array.iter
     (fun (c : stats) ->
@@ -353,7 +373,7 @@ let apply_shared (p : D.t) (stats : stats) (pool : pool) (rule : D.rule) (s : sc
   let all = Array.make (Array.fold_left (fun (n : int) (l : int array list) -> n + List.length l) 0 results) [||] in
   let k = ref 0 in
   Array.iter (List.iter (fun (tuple : int array) -> all.(!k) <- tuple; incr k)) results;
-  stats.derived <- stats.derived + add_shared pool rule.head.rel all
+  add_found stats rule.head.rel all
 
 (* a rule applied by one of its plans: the tuples it finds that were not
  * known are added to its head, this round's new ones. Not at all if an
@@ -371,15 +391,29 @@ let apply (p : D.t) (stats : stats) (rule : D.rule) (steps : step list) : unit =
     (match (!pool, steps) with
      | Some pool, Scan s :: rest when s.from_new && s.atom.rel.delta_to - s.atom.rel.delta_from >= shared ->
          apply_shared p stats pool rule s rest
+     | _ when not (Relset.sorted rule.head.rel.set) ->
+         (* a hashed head: each tuple added as found (a hash's slots and
+          * chains do not move under a walk) *)
+         let r = rule.head.rel in
+         let h = Relset.hint r.set in
+         join p stats env steps (fun () ->
+             stats.firings <- stats.firings + 1;
+             if not (Relset.mem_hint r.set h head) then begin
+               ignore (D.add r (Array.map (value env) rule.head.args));
+               stats.derived <- stats.derived + 1
+             end)
      | _ ->
+         let r = rule.head.rel in
+         let seen = Tuples.create r.arity and got = ref [] and h = Relset.hint r.set in
          join p stats env steps (fun () ->
              stats.firings <- stats.firings + 1;
              (* (most firings find their tuple there: asked before it is made) *)
-             if not (Tuples.mem_by rule.head.rel.set head) then begin
+             if not (Relset.mem_hint r.set h head || Tuples.mem_by seen head) then begin
                let tuple = Array.map (value env) rule.head.args in
-               ignore (D.add rule.head.rel tuple);
-               stats.derived <- stats.derived + 1
-             end));
+               ignore (Tuples.add seen tuple);
+               got := tuple :: !got
+             end);
+         add_found stats r (Array.of_list (List.rev !got)));
     let c =
       match List.assq_opt rule stats.profile with
       | Some c -> c

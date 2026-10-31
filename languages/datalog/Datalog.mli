@@ -43,14 +43,14 @@ type arg = Const of int | Slot of int | Any
 type relation = {
   name : string;
   arity : int;
-  set : Tuples.t;                         (* its tuples, each once *)
+  set : Relset.t;                         (* its tuples, each once, hashed or sorted *)
   (* the same, numbered in the order added: tuple i is rows.(i * arity)
    * to rows.(i * arity + arity - 1) *)
   mutable rows : int array;
   mutable count : int;
-  (* by the columns that are known (a bit each, and their numbers): their
-   * values to the tuples *)
-  mutable indexes : (int * int array * Index.t) list;
+  (* by the columns that are known (a bit each): an index on them, of
+   * the relation's kind *)
+  mutable indexes : (int * Index.t) list;
   (* Datalog_eval's: the last round's new tuples are those numbered from
    * delta_from to delta_to - 1; this round's, from delta_to on *)
   mutable delta_from : int;
@@ -72,6 +72,9 @@ type t = {
   relations : (string, relation) Hashtbl.t; (* by name/arity *)
   mutable rule_list : rule list;          (* in the text's order *)
   mutable queries : query list;
+  (* the relations sorted (Relset.mli), by name/arity, or all; set
+   * before a text names them: the others are hashed *)
+  mutable sorted : string list;
 }
 
 (* a text's mistake: the message, where (file:line) *)

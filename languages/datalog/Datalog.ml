@@ -10,10 +10,10 @@ type arg = Const of int | Slot of int | Any
 type relation = {
   name : string;
   arity : int;
-  set : Tuples.t;
+  set : Relset.t;
   mutable rows : int array;
   mutable count : int;
-  mutable indexes : (int * int array * Index.t) list;
+  mutable indexes : (int * Index.t) list;
   mutable delta_from : int;
   mutable delta_to : int;
   mutable stratum : int;
@@ -33,12 +33,13 @@ type t = {
   relations : (string, relation) Hashtbl.t;
   mutable rule_list : rule list;
   mutable queries : query list;
+  mutable sorted : string list;
 }
 
 exception Error of string * string
 
 let create () : t =
-  { symbols = Hashtbl.create 1021; terms = Array.make 256 P.nil; nsymbols = 0; relations = Hashtbl.create 61; rule_list = []; queries = [] }
+  { symbols = Hashtbl.create 1021; terms = Array.make 256 P.nil; nsymbols = 0; relations = Hashtbl.create 61; rule_list = []; queries = []; sorted = [] }
 
 let ops : P.ops = P.default_ops ()
 let text_of (t : P.term) : string = P.to_string ops ~quoted:true t
@@ -65,7 +66,8 @@ let relation (p : t) (name : string) (arity : int) : relation =
   | Some r -> r
   | None ->
       let r : relation =
-        { name; arity; set = Tuples.create arity; rows = Array.make (16 * arity) 0; count = 0; indexes = []; delta_from = 0; delta_to = 0; stratum = 0; given = 0; rules = 0 } in
+        let sorted = List.mem key p.sorted || List.mem "all" p.sorted in
+        { name; arity; set = Relset.create ~sorted arity; rows = Array.make (16 * arity) 0; count = 0; indexes = []; delta_from = 0; delta_to = 0; stratum = 0; given = 0; rules = 0 } in
       Hashtbl.add p.relations key r;
       r
 
@@ -90,20 +92,25 @@ let append (r : relation) (tuple : int array) : int =
   let id = r.count and n = r.arity in
   if (id + 1) * n > Array.length r.rows then begin
     let larger = Array.make (2 * (id + 1) * n) 0 in
-    Array.blit r.rows 0 larger 0 (id * n);
+    for i = 0 to (id * n) - 1 do
+      larger.(i) <- r.rows.(i)
+    done;
     r.rows <- larger
   end;
-  Array.blit tuple 0 r.rows (id * n) n;
+  (* (loops, not Array.blit: into an array of the major heap, 4.14's
+   * passes each value through the collector's barrier, not knowing
+   * they are integers: Btree's move) *)
+  for i = 0 to n - 1 do
+    r.rows.((id * n) + i) <- tuple.(i)
+  done;
   r.count <- id + 1;
   id
 
 let add (r : relation) (tuple : int array) : bool =
-  if not (Tuples.add r.set tuple) then false
+  if not (Relset.add r.set tuple) then false
   else begin
     let id = append r tuple in
-    List.iter
-      (fun ((_, cols, index) : int * int array * Index.t) -> Index.add index (fun (i : int) -> tuple.(cols.(i))) id)
-      r.indexes;
+    List.iter (fun ((_, index) : int * Index.t) -> Index.add index (fun (c : int) -> tuple.(c)) id) r.indexes;
     true
   end
 

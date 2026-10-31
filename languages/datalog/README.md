@@ -9,10 +9,12 @@ over facts, which is what this computes. The plan:
 
 | module | what |
 |---|---|
-| `Tuples`, `Index` | a relation's set of tuples and its indexes: flat arrays of integers, open addressing, in 64 parts by hash |
+| `Relset`, `Index` | a relation's set of tuples and its indexes, hashed or sorted, chosen for each relation (`-btree`) |
+| `Tuples`, `Hash_index` | hashed: flat arrays of integers, open addressing, an index a chain of the tuples' numbers |
+| `Btree`, `Tree_index` | sorted, as Soufflé's: a B+tree of flat leaves, a hint (the last leaf); an index the relation again, its key's columns first |
 | `Datalog` | relations (tuples of symbols, numbered in rows, as Soufflé's), rules, queries; a text loaded and checked (a rule must be safe) |
 | `Datalog_eval` | the strata (a relation is whole before another negates it), the fixpoint (semi-naive, or naive), a body joined by a plan made once (its atoms' order chosen), by indexes made on demand; a rule's new tuples on several domains (`-j`) |
-| `CLI`, `Main` | the command: files, `-q query`, `-all`, `-naive`, `-j n`, `-s`, `-profile` |
+| `CLI`, `Main` | the command: files, `-q query`, `-all`, `-naive`, `-j n`, `-btree rel`, `-s`, `-profile` |
 
 `mini-datalog -h` says how, by an example.
 

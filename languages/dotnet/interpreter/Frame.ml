@@ -31,7 +31,7 @@ let frames : frame list ref = ref []
 
 (* the frames running, and their most *)
 let depth = ref 0
-let max_depth = 10_000
+let max_depth = 30_000
 
 (* .NET does not let a program catch it: it stops the process *)
 

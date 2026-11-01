@@ -211,15 +211,21 @@ let native (m : meth) (addr : int) : value array -> value =
     let r = f (Array.mapi (fun j v -> to_word ks.(j) v) args) in
     if m.ret = T_void then Null else of_word ret r
 
-(* each assembly's methods, by its name: a row's function *)
-let programs : (string, (int, value array -> value) Hashtbl.t) Hashtbl.t = Hashtbl.create 4
+(* each assembly's methods, by its name: a row's entry's address (its
+ * function made by jit, of the method it is given, when the method is
+ * hot: looking up all the methods at the start took 331 ms of a 437 ms
+ * start, fib's); and the methods' IL decoded, by their rows, kept as
+ * each is made Native (jit: its IL the interpreter's, decoded), for its
+ * call-outs when it is compiled *)
+let programs : (string, (int, int) Hashtbl.t * (int, meth * code) Hashtbl.t) Hashtbl.t = Hashtbl.create 4
 
-let program (caps : < Cap.open_in; .. >) (im : image) : (int, value array -> value) Hashtbl.t =
+let program (caps : < Cap.open_in; .. >) (im : image) : (int, int) Hashtbl.t * (int, meth * code) Hashtbl.t =
   match Hashtbl.find_opt programs im.aname with
   | Some p -> p
   | None ->
       let p = Hashtbl.create 16 in
-      Hashtbl.replace programs im.aname p;
+      let codes = Hashtbl.create 16 in
+      Hashtbl.replace programs im.aname (p, codes);
       let prep = Jit.prepare mach im in
       let rows = Jit.rows prep in
       let name row = Listing.token_name im.img (Metadata.token Metadata.t_method_def row) in
@@ -237,11 +243,15 @@ let program (caps : < Cap.open_in; .. >) (im : image) : (int, value array -> val
         let code, offset = encode caps text in
         let base = Code_memory.load code in
         List.iter (fun (row, sym) -> set (Hashtbl.find index row) (base + offset sym)) stubs;
-        (* each method's IL decoded now, before its body is Native: its
-         * call-outs' *)
-        let codes = Hashtbl.create 16 in
-        List.iter (fun row -> let m = Types.meth_of_def im row in Hashtbl.replace codes row (m, Types.code m)) rows;
+        (* (each method's IL decoded when it is compiled, not all of them
+         * now: a method hot is in codes already, its IL kept by jit before
+         * its body was Native; one compiled first by a call of the code,
+         * its cell's stub, is decoded then, its body still the image's) *)
         pending := Array.append !pending (Array.of_list (List.map (fun row () ->
+            if not (Hashtbl.mem codes row) then begin
+              let m = Types.meth_of_def im row in
+              Hashtbl.replace codes row (m, Types.code m)
+            end;
             let text, sites = Jit.method_code prep row ~cell ~base:(Array.length !table) ~limit:!limit
                 ~handler:(Code_memory.handler ()) ~runtime in
             let code, offset = encode caps text in
@@ -251,14 +261,11 @@ let program (caps : < Cap.open_in; .. >) (im : image) : (int, value array -> val
             call_outs codes sites;
             incr compiled;
             set (Hashtbl.find index row) (at + offset (Jit.symbol_of prep row))) rows));
-        List.iter (fun (row, sym) ->
-            let m, _ = Hashtbl.find codes row in
-            let call = native m (base + offset sym) in
-            (* (each method's body the interpreter's until it is hot:
-             * Machine's tiers; then this) *)
-            Hashtbl.replace p row call) entries
+        (* (each method's body the interpreter's until it is hot:
+         * Machine's tiers; then its entry, jit's) *)
+        List.iter (fun (row, sym) -> Hashtbl.replace p row (base + offset sym)) entries
       end;
-      p
+      (p, codes)
 
 (* an instance of a generic method, compiled at its first call
  * (Jit.instance_code), its code its own *)
@@ -283,5 +290,13 @@ let jit (caps : < Cap.open_in; .. >) (m : meth) : (value array -> value) option 
   match m.def with
   | Some (im, row) when Code_memory.available ->
       if m.mcls.args <> [||] || m.margs <> [||] then instance caps m row
-      else Hashtbl.find_opt (program caps im) row
+      else begin
+        let p, codes = program caps im in
+        match Hashtbl.find_opt p row with
+        | Some addr ->
+            (* (its IL kept now: its body is Native after this) *)
+            if not (Hashtbl.mem codes row) then Hashtbl.replace codes row (m, Types.code m);
+            Some (native m addr)
+        | None -> None
+      end
   | _ -> None

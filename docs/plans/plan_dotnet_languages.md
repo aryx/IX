@@ -673,6 +673,35 @@ but really use the same types!". So the decisions below are those of
    (their text alone 130 ms, verifying 32); and doubles, and int64s
    on arm, still call-outs. Next: those stubs made at a first call,
    and bigger runs for the times beyond the start.
+   Then the JIT's start (the author: "let's do 1 and maybe stop there
+   for the optimization. Remember that 2x slower than microsoft dotnet
+   is fine"): measured, 331 ms of its 437 were Types.meth_of_def of
+   every method taken, for its entry's function; that function made
+   now when the method is hot (Machine's tiers, Jit_run.jit), and a
+   method's IL decoded when it is compiled. fib by the JIT 493 ms to
+   153 (Microsoft's dotnet 116), with nothing compiled 312 (verifying
+   the methods, 32 ms, and encoding their stubs and entries, about 60,
+   are what is left of the start). The times:
+
+       program  native  dotnet  mini-dotnet -jit
+       hello     0.005   0.062   0.032
+       pixels    0.010   0.096   1.299
+       limbs     0.009   0.082   0.981
+       samples   0.007   0.086   0.562
+       floats    0.006   0.081   0.742
+       sha       0.007   0.093   1.427
+       fib       0.005   0.116   0.156
+       tak       0.006   0.091   0.167
+       maps      0.011   0.095   1.651
+       sched     0.012   0.109   2.783
+       interp    0.010   0.154   5.162
+       matrix    0.011   0.076   1.538
+
+   fib and tak within 1.5 of Microsoft's, its start included; the
+   others 7 to 33: the code the JIT leaves to the interpreter
+   (doubles, closures' Invoke, allocation) and each method's compiling
+   (mini-asm's and mini-ld's passes). Stopped there for now, the
+   author's target being 2x.
 5. **mini-cc to IL, a managed C** (decision 4). Check: mini-cc's
    tests that stay in it, by both runtimes, what the native build
    prints; those refused, counted with their reason.

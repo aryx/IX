@@ -376,7 +376,7 @@ def files():
 # with the variants, a tiny/ group. kernels/ and languages/ take every
 # entry under them, said without the directory, and those of GROUP_OF
 LINES = [("hosts", ["sdl/", "tty/", "web/"]),
-         ("variants", ["compat/", "opti/", "ssa/", "runtime/gnu.h",
+         ("variants", ["compat/", "opti/", "ssa/", "dotnet/", "runtime/gnu.h",
                        "lib_graphics/c/"]),
          ("tiny/", ["tiny/TinyKernel/steps/", "tiny-kernel's sh.c, mltests.c",
                     "tiny/TinyEditorLine.ml"]),
@@ -399,6 +399,13 @@ APART = [
      lambda dirs, path: "opti" in dirs),
     ("ssa/", "mini-ml's optimizations in SSA form, behind a flag",
      lambda dirs, path: "ssa" in dirs),
+    # (the author, 2026-10-31: "this would allow us in make loc to skip
+    # all those dotnet code by just skipping any dotnet/ directory", and
+    # 2026-11-01: "dotnet/ that is spread around could be considered a
+    # variants and put with the other variants (ssa/. opti/, etc.)";
+    # mini-dotnet itself, languages/dotnet/, its own row below)
+    ("dotnet/", "the compilers' back ends to .NET and their runtime (plan_dotnet_languages.md): mini-ml's, lib_core's",
+     lambda dirs, path: "dotnet" in dirs and not path.startswith("languages/dotnet/")),
     # (the author, 2026-10-10: "maybe we should also skip code under
     # web/ for make loc?")
     ("web/", "m-ix in a web page (plan_web.md): mini-qemu's host there, the kernel's requests to it",
@@ -439,10 +446,6 @@ APART = [
     # mini-tiger, its compiler, with it)
     ("languages/dotnet/, tiger/", "mini-dotnet, its compilers mini-tiger and mini-csc (plan_dotnet.md): the same",
      lambda dirs, path: path.startswith(("languages/dotnet/", "languages/tiger/"))),
-    # (the author, 2026-10-31: "this would allow us in make loc to skip
-    # all those dotnet code by just skipping any dotnet/ directory")
-    ("dotnet/", "the compilers' back ends to .NET and their runtime (plan_dotnet_languages.md): mini-ml's, lib_core's",
-     lambda dirs, path: "dotnet" in dirs),
     # (the author, 2026-10-08: "let's not cound drscheme and turbopascal
     # as part of make loc"; the second when it is there)
     ("editors/drscheme/, turbopascal/", "mini-drscheme and TinyTurboPascal, the playground's two programs of those languages: the same",

@@ -45,6 +45,12 @@ let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
           let _, ctor, _, _ = case c e.loc k' (type_of e) in
           values c env k args;
           emit k (Il.Newobj ctor))
+  (* (a local function specialized: the closure of this use's types) *)
+  | Evar (Local v) when Hashtbl.mem k.specs v.vid -> (
+      let key = alias_key c (use_aliases c v e) in
+      match List.find_opt (fun ((k', _, _) : string * spec * S.t) -> k' = key) (Hashtbl.find k.specs v.vid) with
+      | Some (_, place, _) -> load_spec k place
+      | None -> refuse e.loc (v.vname ^ ", a local function at a type of none of its uses") "3a")
   | Evar (Local v) when Hashtbl.mem k.args v.vid || Hashtbl.mem k.slots v.vid || Hashtbl.mem k.captured v.vid -> load_var k v.vid
   (* (a function of the unit as a value: a Func) *)
   | Evar (Local v) when Hashtbl.mem env.by_var v.vid -> partial c env k e (Hashtbl.find env.by_var v.vid) []
@@ -53,6 +59,9 @@ let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
   | Evar (Global g) when Hashtbl.mem env.externals g.gsym ->
       let p, n, ty = Hashtbl.find env.externals g.gsym in
       expr c env k { e with e = Evar (Prim (p, n, ty)) }
+  (* (a polymorphic value's method, of no argument: called) *)
+  | Evar (Global g) when Hashtbl.mem env.by_sym g.gsym && (Hashtbl.find env.by_sym g.gsym).params = [] ->
+      call c env k e e (Hashtbl.find env.by_sym g.gsym) []
   | Evar (Global g) when Hashtbl.mem env.by_sym g.gsym -> partial c env k e (Hashtbl.find env.by_sym g.gsym) []
   (* a library function of one argument as a value (List.map
    * string_of_int): a class whose Invoke is its call *)
@@ -97,6 +106,15 @@ let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
       if not (Il_prims.runtime_call c k (compiler c env k) e f args) then call c env k e fe f args
   | Evar (Prim (p, n, _)) when not (Il_externals.is_dotnet p) -> prim_value c env k e p n
   | Evar (Prim (p, _, _)) -> refuse e.loc (p ^ ", a primitive as a value") "1c"
+  (* (a primitive given fewer arguments than it takes, String.get s: the
+   * primitive a value, applied; not %identity, whole with one, whatever
+   * its type's arrows: Obj.magic's) *)
+  | Eapply (({ e = Evar (Prim (p, n, _)); _ } as fe), args)
+    when List.length args < n && p <> "%identity" && not (Il_externals.is_dotnet p) && not (Hashtbl.mem env.by_sym ("Runtime." ^ p)) ->
+      apply c env k fe args
+  (* (x |> f and f @@ x: f x, its type the application's) *)
+  | Eapply ({ e = Evar (Prim ("%revapply", _, _)); _ }, x :: f :: more) -> expr c env k { e with e = Eapply (f, x :: more) }
+  | Eapply ({ e = Evar (Prim ("%apply", _, _)); _ }, f :: x :: more) -> expr c env k { e with e = Eapply (f, x :: more) }
   | Eapply ({ e = Evar (Prim (p, _, pty)); _ }, args) when Il_externals.is_dotnet p -> Il_prims.dotnet c k (compiler c env k) e p pty args
   | Eapply ({ e = Evar (Prim (p, _, _)); _ }, args) -> Il_prims.prim c env k (compiler c env k) e p args
   | Eapply (({ e = Evar (Global g); _ } as fe), args) when Hashtbl.mem env.externals g.gsym ->
@@ -172,6 +190,11 @@ let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
   | Elet _ -> refuse e.loc "a let rec of several, or of a pattern, or let ... and" "1c"
   | Econstraint (e, _) -> expr c env k e
   | Efunction _ -> lambda c env k e None []
+  (* (a unit's: evaluated, nothing to keep; the parser's match with
+   * exception clauses matches one, its value made a variable) *)
+  | Ematch (scrut, cases) when cts_of c scrut = S.Void ->
+      drop c env k scrut;
+      matching c env k e (fun () -> ()) (type_of scrut) cases
   | Ematch (scrut, cases) ->
       let v = local k (cts_of c scrut) in
       expr c env k scrut;
@@ -184,6 +207,15 @@ and bindings (c : c) (env : env) (k : code) (bs : (Scope.pattern * Scope.expr) l
       List.iter (fun ((p, d) : Scope.pattern * Scope.expr) ->
       (match simple p, d.e with
        | Some (Some _), _ when cts_of c d = S.Void -> drop c env k d
+       (* (used at several types: a closure for each, in its local) *)
+       | Some (Some v), Efunction _ when List.length (instances c v body) > 1 ->
+           let specs = List.map (fun (a : (string * Scope.ty) list) ->
+               let ty = cts c d.loc (subst (List.map fst a) (List.map snd a) (type_of d)) in
+               let slot = local k ty in
+               lambda c env k d None a;
+               emit k (Il.Stloc slot);
+               (alias_key c a, Slocal slot, ty)) (instances c v body) in
+           Hashtbl.replace k.specs v.vid specs
        | Some (Some v), Efunction _ -> bind c k v (fun () -> lambda c env k d None (own_instance c v body))
        | Some (Some v), _ -> bind c k v (fun () -> expr c env k d)
        | Some None, _ -> drop c env k d
@@ -309,6 +341,9 @@ and tail_expr (c : c) (env : env) (k : code) (e : Scope.expr) (boxed : bool) : u
       lambdas c env k (rec_group c bs body);
       tail_expr c env k body boxed
   | Econstraint (x, _) -> tail_expr c env k x boxed
+  | Ematch (scrut, cases) when cts_of c scrut = S.Void ->
+      drop c env k scrut;
+      tail_cases c env k (fun () -> ()) (type_of scrut) cases boxed
   | Ematch (scrut, cases) ->
       let v = local k (cts_of c scrut) in
       expr c env k scrut;
@@ -440,6 +475,12 @@ and call_with (c : c) (env : env) (k : code) (e : Scope.expr) (fe : Scope.expr) 
     if more <> [] then invoke_with c env k fe (after ity n) more
   end
 
+(* a specialized closure's value: its local, or its field of this *)
+and load_spec (k : code) (place : spec) : unit =
+  match place with
+  | Slocal slot -> emit k (Il.Ldloc slot)
+  | Sfield f -> emit k (Il.Ldarg 0); emit k (Il.Ldfld f)
+
 (* a variable's value: an argument, a local, a captured one (a field of
  * the closure, this) *)
 and load_var (k : code) (vid : int) : unit =
@@ -506,6 +547,31 @@ and partial (c : c) (env : env) (k : code) (fe : Scope.expr) (f : fn) (args : Sc
  * generalized apart from the enclosing function's), as its uses in the
  * let's body give them: a closure is not generic per call, so it is
  * compiled at the one type it is used at *)
+(* a local function's use: the types it gives its own variables (those
+ * not of the enclosing function), and their key *)
+and use_aliases (c : c) (v : Scope.var) (u : Scope.expr) : (string * Scope.ty) list =
+  match Il_types.var_type v.vid with
+  | None -> []
+  | Some vty ->
+      let own = List.filter (fun (n : string) -> not (List.mem_assoc n c.tvars)) (tvars_of vty) in
+      let m = instantiation vty (type_of u) in
+      List.filter_map (fun (n : string) ->
+          match List.assoc_opt n m with Some (Tvar n') when n' = n -> None | Some t -> Some (n, t) | None -> None) own
+
+and alias_key (c : c) (aliases : (string * Scope.ty) list) : string =
+  String.concat "," (List.map (fun ((n, t) : string * Scope.ty) -> n ^ "=" ^ S.encode_type_spec (arg_type c 0 t)) aliases)
+
+(* a local function's instances, by its uses' types: several when it is
+ * used at several (let's polymorphism: Check's one, of a list of two
+ * types), each then a closure of its own (specialize) *)
+and instances (c : c) (v : Scope.var) (body : Scope.expr) : (string * Scope.ty) list list =
+  let seen = Hashtbl.create 4 in
+  List.filter_map (fun (u : Scope.expr) ->
+      let a = use_aliases c v u in
+      let key = alias_key c a in
+      if Hashtbl.mem seen key then None else (Hashtbl.replace seen key (); Some a))
+    (uses v.vid body)
+
 and own_instance (c : c) (v : Scope.var) (body : Scope.expr) : (string * Scope.ty) list =
   match Il_types.var_type v.vid with
   | None -> []
@@ -533,9 +599,10 @@ and lambda (c : c) (env : env) (k : code) (e : Scope.expr) (self : Scope.var opt
   | Some v -> lambdas c env k [ (v, e, aliases) ]
   | None ->
       let outer = c.tvars in
-      let t, at_outer, inv', fs, captured = closure c env k e [] aliases in
+      let t, at_outer, inv', fs, captured, specs = closure c env k e [] aliases in
       let saved = k.pending in
       List.iter (fun ((vid, _) : int * S.t) -> load_var k vid; k.pending <- k.pending + 1) captured;
+      List.iter (fun ((_, place, _) : string * spec * S.t) -> load_spec k place; k.pending <- k.pending + 1) specs;
       k.pending <- saved;
       emit k (Il.Newobj (ctor_tok c t at_outer));
       emit k (Il.Ldftn inv');
@@ -547,7 +614,7 @@ and lambda (c : c) (env : env) (k : code) (e : Scope.expr) (self : Scope.var opt
  * set: lambdas). Its class, the type arguments it is made at, its
  * Invoke, its Func's type, what it captures *)
 and closure (c : c) (env : env) (k : code) (e : Scope.expr) (group : (Scope.var * Scope.ty) list) (aliases : (string * Scope.ty) list)
-    : tclass * S.t list * int * S.t * (int * S.t) list =
+    : tclass * S.t list * int * S.t * (int * S.t) list * (string * spec * S.t) list =
   let cases = match e.e with Efunction cases -> cases | _ -> refuse e.loc "a function" "1c" in
   let fty = type_of e in
   let dom, codom = match unabbrev fty with Tarrow (a, b) -> (a, b) | _ -> refuse e.loc "a function" "1c" in
@@ -563,14 +630,20 @@ and closure (c : c) (env : env) (k : code) (e : Scope.expr) (group : (Scope.var 
   let at_outer = List.map snd outer in
   (* (its own variables, a local polymorphic function's, as its uses
    * give them, in each context) *)
-  let outer' = outer @ List.map (fun ((n, t) : string * Scope.ty) -> (n, cts c e.loc t)) aliases in
+  let outer' = outer @ List.map (fun ((n, t) : string * Scope.ty) -> (n, arg_type c e.loc t)) aliases in
   (* (the aliases' types in the class's variables: inner first) *)
   c.tvars <- inner;
-  c.tvars <- inner @ List.map (fun ((n, t) : string * Scope.ty) -> (n, cts c e.loc t)) aliases;
+  c.tvars <- inner @ List.map (fun ((n, t) : string * Scope.ty) -> (n, arg_type c e.loc t)) aliases;
   let types = List.map (fun (vid : int) -> match Il_types.var_type vid with Some t -> cts c e.loc t | None -> S.Object) captured in
   let captured = List.filter (fun ((_, t) : int * S.t) -> t <> S.Void) (List.combine captured types) in
   incr closures;
+  (* (a local function specialized, named here: each of its closures a
+   * field, after the variables') *)
+  let spec_vids = List.filter (fun (vid : int) -> Hashtbl.mem k.specs vid && not (List.mem vid own)) (named e) in
+  let spec_caps = List.concat_map (fun (vid : int) ->
+      List.map (fun ((key, place, ty) : string * spec * S.t) -> (vid, key, place, ty)) (Hashtbl.find k.specs vid)) spec_vids in
   let fields = List.mapi (fun (i : int) ((_, t) : int * S.t) -> (Printf.sprintf "c%d" i, t)) captured in
+  let fields = fields @ List.mapi (fun (i : int) ((_, _, _, t) : int * string * spec * S.t) -> (Printf.sprintf "s%d" i, t)) spec_caps in
   let fields = fields @ List.map (fun ((v, ty) : Scope.var * Scope.ty) -> ("self_" ^ v.vname, cts c e.loc ty)) group in
   let t = helper_class c (Printf.sprintf "closure%d" !closures) (List.length outer) fields in
   let me = List.map snd inner in
@@ -579,7 +652,12 @@ and closure (c : c) (env : env) (k : code) (e : Scope.expr) (group : (Scope.var 
   (* its body *)
   let k' = new_code () in
   List.iteri (fun (i : int) ((vid, _) : int * S.t) -> Hashtbl.replace k'.captured vid (field_tok c t me i)) captured;
-  List.iteri (fun (j : int) ((v, _) : Scope.var * Scope.ty) -> Hashtbl.replace k'.captured v.vid (field_tok c t me (List.length captured + j))) group;
+  List.iteri (fun (j : int) ((vid, key, _, ty) : int * string * spec * S.t) ->
+      let f = field_tok c t me (List.length captured + j) in
+      let before = match Hashtbl.find_opt k'.specs vid with Some l -> l | None -> [] in
+      Hashtbl.replace k'.specs vid (before @ [ (key, Sfield f, ty) ])) spec_caps;
+  let nspec = List.length spec_caps in
+  List.iteri (fun (j : int) ((v, _) : Scope.var * Scope.ty) -> Hashtbl.replace k'.captured v.vid (field_tok c t me (List.length captured + nspec + j))) group;
   (match cases with
    | [ (p, None, body) ] when (match p with Pvar _ | Pany | Pconstraint (Pvar _, _) -> true | Pcons (k'', []) -> k''.cname = "()" | _ -> false) ->
        (match p with Pvar v | Pconstraint (Pvar v, _) -> if cts c e.loc dom <> S.Void then Hashtbl.replace k'.args v.vid 1 | _ -> ());
@@ -590,7 +668,7 @@ and closure (c : c) (env : env) (k : code) (e : Scope.expr) (group : (Scope.var 
   c.tvars <- outer';
   let inv' = method_tok c t at_outer "Invoke" inv sg in
   let fs = cts c e.loc fty in
-  (t, at_outer, inv', fs, captured)
+  (t, at_outer, inv', fs, captured, List.map (fun ((_, key, place, ty) : int * string * spec * S.t) -> (key, place, ty)) spec_caps)
 
 (* a let rec's bindings all functions, of variables *)
 and rec_functions (bs : (Scope.pattern * Scope.expr) list) : bool =
@@ -616,9 +694,10 @@ and lambdas (c : c) (env : env) (k : code) (defs : (Scope.var * Scope.expr * (st
   let made =
     List.map
       (fun ((v, d, aliases) : Scope.var * Scope.expr * (string * Scope.ty) list) ->
-        let t, at_outer, inv', fs, captured = closure c env k d group aliases in
+        let t, at_outer, inv', fs, captured, specs = closure c env k d group aliases in
         let saved = k.pending in
         List.iter (fun ((vid, _) : int * S.t) -> load_var k vid; k.pending <- k.pending + 1) captured;
+        List.iter (fun ((_, place, _) : string * spec * S.t) -> load_spec k place; k.pending <- k.pending + 1) specs;
         k.pending <- saved;
         List.iter (fun (_ : Scope.var * Scope.ty) -> emit k Il.Ldnull) group;
         emit k (Il.Newobj (ctor_tok c t at_outer));
@@ -629,7 +708,7 @@ and lambdas (c : c) (env : env) (k : code) (defs : (Scope.var * Scope.expr * (st
         emit k (Il.Newobj (func_ctor c fs));
         emit k (Il.Stloc fslot);
         c.tvars <- outer;
-        (v, t, at_outer, obj, fslot, List.length captured))
+        (v, t, at_outer, obj, fslot, List.length captured + List.length specs))
       defs in
   List.iter (fun ((v, _, _, _, fslot, _) : Scope.var * tclass * S.t list * int * int * int) -> Hashtbl.replace k.slots v.vid fslot) made;
   List.iter
@@ -703,12 +782,11 @@ and try_ (c : c) (env : env) (k : code) (e : Scope.expr) (body : Scope.expr) (ca
  * Func as a function given none of its arguments (partial) *)
 and prim_value (c : c) (env : env) (k : code) (e : Scope.expr) (p : string) (n : int) : unit =
   let ty = type_of e in
-  let rec tvars (t : Scope.ty) : bool =
-    match t with
-    | Tvar _ -> true
-    | Tarrow (a, b) -> tvars a || tvars b
-    | Ttuple ts | Tconstr (_, ts) -> List.exists tvars ts in
-  if tvars ty then refuse e.loc (p ^ ", a primitive as a value at a polymorphic type") "1c";
+  (* (at a type variable, compare in a polymorphic function: the
+   * method generic in them, made at the use's types by partial) *)
+  let outer = c.tvars in
+  let gvars = tvars_of ty in
+  c.tvars <- List.mapi (fun (i : int) (n : string) -> (n, S.MVar i)) gvars;
   let rec split (t : Scope.ty) (i : int) : Scope.ty list * Scope.ty =
     if i = 0 then ([], t) else match t with Tarrow (a, b) -> let l, r = split b (i - 1) in (a :: l, r) | t -> ([], t) in
   let ptys, rty = split ty n in
@@ -725,9 +803,10 @@ and prim_value (c : c) (env : env) (k : code) (e : Scope.expr) (p : string) (n :
   let params = List.map2 (fun (v : Scope.var) (t : Scope.ty) -> (Some v, cts c e.loc t)) vars ptys in
   let ret = cts c e.loc rty in
   let tok = W.method_def c.w c.cls (Printf.sprintf "prim%d" id) 0x0096
-      (static (List.filter (fun (t : S.t) -> t <> S.Void) (List.map snd params)) ret) in
+      { (static (List.filter (fun (t : S.t) -> t <> S.Void) (List.map snd params)) ret) with generic = List.length gvars } in
+  List.iteri (fun (i : int) (_ : string) -> W.generic_param c.w tok i (Printf.sprintf "T%d" i)) gvars;
   (* (its name the method's, unique: partial's class is named after it) *)
-  let f = { tok; fname = Printf.sprintf "prim%d" id; params; ptys; rty; cases = None; body; gvars = [] } in
+  let f = { tok; fname = Printf.sprintf "prim%d" id; params; ptys; rty; cases = None; body; gvars } in
   let k' = new_code () in
   let i = ref 0 in
   List.iter
@@ -739,6 +818,7 @@ and prim_value (c : c) (env : env) (k : code) (e : Scope.expr) (p : string) (n :
     params;
   tail_expr c env k' body false;
   finish c k' tok;
+  c.tvars <- outer;
   partial c env k e f []
 
 (* a format as a value (Logs' m "...", a format given to a function):
@@ -750,7 +830,9 @@ and format_value (c : c) (env : env) (k : code) (e : Scope.expr) (s : string) : 
   let a, b, d = match unabbrev (type_of e) with Tconstr (_, [ a; b; _; d ]) -> (a, b, d) | _ -> refuse e.loc "a format" "3c" in
   let formatter = match b with Tconstr (bd, _) -> bd.tpath = "Format.formatter" | _ -> false in
   let pieces = Il_printf.parse e.loc formatter s in
-  let n = List.length (List.filter (fun (p : Il_printf.piece) -> match p with Conv _ -> true | _ -> false) pieces) in
+  (* (the arguments: %a two, a printer and its value; the others one) *)
+  let n = List.fold_left (fun n (p : Il_printf.piece) ->
+      match p with Conv (_, 'a') -> n + 2 | Conv _ -> n + 1 | _ -> n) 0 pieces in
   let rec split (t : Scope.ty) (i : int) : Scope.ty list =
     if i = 0 then [] else match t with Tarrow (x, r) -> x :: split r (i - 1) | _ -> refuse e.loc "a format's arguments" "3c" in
   let ptys = split a n in
@@ -770,12 +852,38 @@ and format_value (c : c) (env : env) (k : code) (e : Scope.expr) (s : string) : 
   let kty = Scope.Tarrow (Resolve.string_t, d) in
   let kv = var "k" kty in
   let xs = List.mapi (fun (i : int) (t : Scope.ty) -> var (Printf.sprintf "x%d" i) t) ptys in
-  let sym = if formatter then "Format.asprintf" else "Printf.sprintf" in
-  let g : Scope.global = { gpath = [ String.sub sym 0 (String.index sym '.') ]; gname = "sprintf"; gsym = sym; gtype = None; glabels = [] } in
-  let fn_ty = List.fold_right (fun (t : Scope.ty) (r : Scope.ty) -> Scope.Tarrow (t, r)) (Resolve.string_t :: ptys) Resolve.string_t in
+  let global (sym : string) : Scope.global =
+    { gpath = [ String.sub sym 0 (String.index sym '.') ]; gname = sym; gsym = sym; gtype = None; glabels = [] } in
+  let arrows (ts : Scope.ty list) (r : Scope.ty) = List.fold_right (fun (t : Scope.ty) (r : Scope.ty) -> Scope.Tarrow (t, r)) ts r in
+  (* (%a's and %t's text, the printer's captured: Format's on a buffer's
+   * formatter, sprintf's its string, bprintf's a buffer's) *)
+  let capture (t : bool) (args : (Scope.var * Scope.ty) list) : Scope.expr =
+    let fn = match b with
+      | Tconstr (bd, _) when bd.tpath = "Format.formatter" -> "Format_dotnet.capture"
+      | Tconstr (bd, _) when bd.tpath = "unit" -> "Printf_dotnet.capture"
+      | Tconstr (bd, _) when bd.tpath = "Buffer.t" -> "Printf_dotnet.capture_buffer"
+      | _ -> refuse e.loc "%a or %t in a format of a channel's (fprintf's: its text cannot be taken)" "3c" in
+    let fn = if t then fn ^ "_t" else fn in
+    fresh Resolve.string_t
+      (Eapply (fresh (arrows (List.map snd args) Resolve.string_t) (Evar (Global (global fn))),
+               List.map (fun ((v, ty) : Scope.var * Scope.ty) -> fresh ty (Evar (Local v))) args)) in
+  (* the format again, %a and %t now %s, a text the sprintf's own
+   * (Format's directives done: escaped %, no @ read again) *)
+  let rest = ref (List.combine xs ptys) in
+  let take () = match !rest with x :: r -> rest := r; x | [] -> refuse e.loc "a format's arguments" "3c" in
+  let args = ref [] in
+  let fmt = String.concat "" (List.map (fun (p : Il_printf.piece) ->
+      match p with
+      | Text t -> String.concat "%%" (String.split_on_char '%' t)
+      | Flush -> ""
+      | Conv (_, 'a') -> let pr = take () in let x = take () in args := capture false [ pr; x ] :: !args; "%s"
+      | Conv (_, 't') -> let pr = take () in args := capture true [ pr ] :: !args; "%s"
+      | Conv (spec, _) -> let (v, t) = take () in args := fresh t (Evar (Local v)) :: !args; spec) pieces) in
+  let args = List.rev !args in
+  let fn_ty = arrows (Resolve.string_t :: List.map type_of args) Resolve.string_t in
   let text =
     fresh Resolve.string_t
-      (Eapply (fresh fn_ty (Evar (Global g)), fresh Resolve.string_t (Econst (String s)) :: List.map2 (fun (v : Scope.var) (t : Scope.ty) -> fresh t (Evar (Local v))) xs ptys)) in
+      (Eapply (fresh fn_ty (Evar (Global (global "Printf.sprintf"))), fresh Resolve.string_t (Econst (String fmt)) :: args)) in
   let body = fresh d (Eapply (fresh kty (Evar (Local kv)), [ text ])) in
   let inner =
     List.fold_right2

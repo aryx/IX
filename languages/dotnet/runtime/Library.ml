@@ -333,7 +333,7 @@ let math =
     stat name [double; double] double (fun a ->
         match a.(0), a.(1) with R8 x, R8 y -> R8 (f x y) | _ -> invalid_arg name) in
   spec d "System.Math" [
-    f1 "Sqrt" sqrt; f1 "Exp" exp; f1 "Log" log; f1 "Log10" log10;
+    f1 "Sqrt" sqrt; f1 "Abs" abs_float; f1 "Exp" exp; f1 "Log" log; f1 "Log10" log10;
     f1 "Sin" sin; f1 "Cos" cos; f1 "Tan" tan; f1 "Asin" asin; f1 "Acos" acos; f1 "Atan" atan;
     f1 "Sinh" sinh; f1 "Cosh" cosh; f1 "Tanh" tanh; f1 "Floor" floor; f1 "Ceiling" ceil;
     f1 "Truncate" (fun x -> if x < 0.0 then -. floor (-. x) else floor x);

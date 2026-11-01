@@ -6,3 +6,8 @@
 
 val fprintf : Format.formatter -> ('a, Format.formatter, unit) format -> 'a
 val printf : ('a, Format.formatter, unit) format -> 'a
+
+(* %a's and %t's text in a format of Format's, compiled: the printer's
+ * on a formatter over a buffer *)
+val capture : (Format.formatter -> 'x -> unit) -> 'x -> string
+val capture_t : (Format.formatter -> unit) -> string

@@ -17,3 +17,11 @@ val printf : ('a, out_channel, unit) format -> 'a
 val eprintf : ('a, out_channel, unit) format -> 'a
 val fprintf : out_channel -> ('a, out_channel, unit) format -> 'a
 val bprintf : Buffer.t -> ('a, Buffer.t, unit) format -> 'a
+
+(* %a's and %t's text in a format compiled: sprintf's printer's string,
+ * bprintf's on a buffer (fprintf's, on a channel, is refused: what it
+ * writes cannot be taken) *)
+val capture : (unit -> 'x -> string) -> 'x -> string
+val capture_t : (unit -> string) -> string
+val capture_buffer : (Buffer.t -> 'x -> unit) -> 'x -> string
+val capture_buffer_t : (Buffer.t -> unit) -> string

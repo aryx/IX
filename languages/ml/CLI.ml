@@ -328,6 +328,11 @@ let named_words text =
  * old: depend.rc's loops, an ls for each unit and dir, then mini-ml
  * -uses for each file: 2 s for play's 39 units, 1.6 of them the
  * processes; a unit whose names did not resolve, no line *)
+(* a directory's entries' names, none if it cannot be read *)
+let readdir (_caps : < Cap.readdir; .. >) (d : string) : string list =
+  (* nosemgrep: use-caps *)
+  match Sys.readdir d with a -> Array.to_list a | exception Sys_error _ -> []
+
 let depend (caps : < caps; .. >) obj dirs units =
   let find ext u =
     List.find_map (fun d ->
@@ -464,6 +469,22 @@ let main (caps : < caps; .. >) (argv : string array) : int =
        * over .NET, which an external's call calls by its name) *)
       let runtime = List.map (fun (d : string) -> Filename.concat (root d) "dotnet/Runtime.ml") (List.rev !libs) in
       let name (f : string) = String.capitalize_ascii (Filename.remove_extension (Filename.basename f)) in
+      let names_of (f : string) = match FS.read_opt caps (path f) with Some t -> named_units t | None -> [] in
+      (* (-L's commons/, ix's own units, after the stdlib's: in the order
+       * of what they name, each after those of commons/ it names, as
+       * mkconfig's COMMONS has them) *)
+      let commons (r : string) : (string * string) list =
+        let d = Filename.concat r "commons" in
+        let all = List.filter_map (fun (f : string) ->
+            if Filename.check_suffix f ".ml" then Some (name f, Filename.concat d f) else None)
+            (List.sort compare (readdir caps d)) in
+        let deps = List.map (fun ((n, f) : string * string) -> (n, List.filter (fun (m : string) -> m <> n && List.mem_assoc m all) (names_of f))) all in
+        let rec order (placed : string list) (left : (string * string) list) : (string * string) list =
+          match List.partition (fun ((n, _) : string * string) -> List.for_all (fun (m : string) -> List.mem m placed) (List.assoc n deps)) left with
+          | [], [] -> []
+          | [], rest -> rest
+          | ready, rest -> ready @ order (placed @ List.map fst ready) rest in
+        order [] all in
       (* (-L's units the program names, and those they name, in
        * units.txt's order, before its own: the stdlib compiled with it,
        * as .NET has no library of ML's; Pervasives always) *)
@@ -472,9 +493,14 @@ let main (caps : < caps; .. >) (argv : string array) : int =
           (fun (d : string) ->
             let r = root d in
             let lines = String.split_on_char '\n' (match FS.read_opt caps (path (Filename.concat r "units.txt")) with Some t -> t | None -> "") in
-            List.filter_map (fun (u : string) -> if u = "" || u.[0] = '#' then None else Some (name u, Filename.concat r (u ^ ".ml"))) lines)
+            (* (a unit of -L's dotnet/, same name: .NET's in place of it,
+             * Marshal's) *)
+            let file (u : string) =
+              let own = Filename.concat r ("dotnet/" ^ Filename.basename u ^ ".ml") in
+              if FS.read_opt caps (path own) <> None then own else Filename.concat r (u ^ ".ml") in
+            List.filter_map (fun (u : string) -> if u = "" || u.[0] = '#' then None else Some (name u, file u)) lines
+            @ commons r)
           (List.rev !libs) in
-      let names_of (f : string) = match FS.read_opt caps (path f) with Some t -> named_units t | None -> [] in
       let own = List.map name units in
       let rec needed (acc : string list) (todo : string list) : string list =
         match todo with

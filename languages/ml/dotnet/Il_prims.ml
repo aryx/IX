@@ -265,6 +265,7 @@ and prim (c : c) (env : env) (k : code) (cx : compiler) (e : Scope.expr) (p : st
       k.pending <- k.pending + 1; cx.expr x;
       k.pending <- k.pending - 2;
       emit k (Il.Stelem Il.K_r8)
+  | "%absfloat", _ -> all (); emit k (Il.Call (lib c "Math" "Abs" (static [ S.R8 ] S.R8)))
   (* (Sys's: .NET's int an int64, its word 64 bits) *)
   | ("%word_size" | "%int_size"), _ -> all (); emit k (Il.Ldc_i8 64L)
   (* (a T[] of n nulls or zeros: the runtime unit's make_vect) *)

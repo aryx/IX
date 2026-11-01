@@ -1,12 +1,8 @@
--- let f () = let id x = x in (id 1, id "a")
-r1.ml:0: id, a local function used at several types: not compiled to .NET yet (plan_dotnet_languages.md, stage 3a)
 -- let x = 1 + (try 2 with Not_found -> 3)
-r2.ml:1: a try inside an operand (made a variable's value first): not compiled to .NET yet (plan_dotnet_languages.md, stage 1b)
+r1.ml:1: a try inside an operand (made a variable's value first): not compiled to .NET yet (plan_dotnet_languages.md, stage 1b)
 -- type t = A of { a : int } let v = A { a = 1 }
-r3.ml:1: A, a constructor of an inline record: not compiled to .NET yet (plan_dotnet_languages.md, stage 1b)
--- let eq (x : 'a) = (=) x
-r4.ml:1: = of a polymorphic value: not compiled to .NET yet (plan_dotnet_languages.md, stage 1d)
--- let s = Printf.sprintf "%t" (fun () -> "x")
-r5.ml:1: %t in a format compiled (a printer, %a or %t: the library's Printf): not compiled to .NET yet (plan_dotnet_languages.md, stage 3c)
--- let s = Marshal.to_string 1 []
-lib_core/core/Marshal.ml:92: the primitive %obj_is_int: not compiled to .NET yet (plan_dotnet_languages.md, stage 1a)
+r2.ml:1: A, a constructor of an inline record: not compiled to .NET yet (plan_dotnet_languages.md, stage 1b)
+-- let () = Printf.printf "%a" (fun oc () -> output_string oc "x") ()
+r3.ml:1: %a or %t in a format of a channel's (fprintf's: its text cannot be taken): not compiled to .NET yet (plan_dotnet_languages.md, stage 3c)
+-- let f () = Obj.size (Obj.repr 1)
+r4.ml:1: the primitive %obj_size: not compiled to .NET yet (plan_dotnet_languages.md, stage 1a)

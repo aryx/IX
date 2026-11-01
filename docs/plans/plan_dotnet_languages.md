@@ -718,6 +718,39 @@ but really use the same types!". So the decisions below are those of
    answers as today's pipeline (`mini-cc -facts`, `mini-datalog`), by
    both runtimes, and on mini-9pi's card. First on a C program as
    the analysis's tests have it, then on one of ix's own (mini-rc's).
+   Begun (2026-11-01, the author: "let's commit and move forward with
+   the analysis direction"): mini-cc whole compiled to .NET by mini-ml
+   -dotnet (its mkfile's units, the assembler's two, lib_code's, the
+   parser and lexer mini-yacc's and mini-lex's: 1.4 MB, 8,492
+   methods, all verified, compiled in 2.5 s), its -facts and -flow of
+   languages/c/facts/tests/' programs what the native mini-cc writes,
+   by Microsoft's dotnet (474 ms, native 14), mini-dotnet's interpreter
+   (18 s) and its JIT (33 s: compiling hot methods through mini-asm and
+   mini-ld costs more than it saves on an assembly of this size).
+   tests/run.sh checks it (front_end). What it took:
+   - lib_core's units of .NET's own in lib_core/dotnet/, in place of
+     lib_core's (Unix: its system calls fail by name, those of Sys's
+     done; Marshal: its functions fail by name), so that commons/ (FS,
+     Console, Logging...) compile as they are; commons/'s units after
+     the stdlib's, in the order of what they name.
+   - %a and %t (Format's: the printer's text on a buffer's formatter;
+     sprintf's, bprintf's), %h, %S, %C; a literal format given fewer
+     arguments a value; Format's output flushed at a newline (@.).
+   - a local function used at several types specialized: a closure for
+     each, captured by the closures that use it (Check's one); compare
+     as a value in a polymorphic function (a generic method); a
+     primitive given fewer arguments (String.get s); |> and @@; int64
+     and float constants as patterns; a polymorphic toplevel value
+     (Set_'s empty) a generic method, a fresh value at each use's type
+     (one field was one instance, Set_.add then failed its match); a
+     unit matched (the parser's match with exception clauses); the
+     classes keyed by the unit's qualified path (Ir's mem = Asm.mem in
+     Opti; two units' t no more one class), records through their
+     abbreviations; a function that always raises given as a value.
+   - mini-dotnet: a program's arguments after its .dll its own
+     (mini-cc.dll -m 7 -facts), Math.Abs.
+   Next: Datalog's side (stage 6, or the facts read by mini-datalog as
+   today), then the whole pipeline on mini-rc.
 9. **ML analysed** (the end goal's other half): mini-ml's front end
    writing an ML program's facts (its closures, calls, raises, handlers),
    0-CFA in Datalog, then the exceptions never caught. Check: on

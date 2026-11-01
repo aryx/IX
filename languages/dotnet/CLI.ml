@@ -131,6 +131,17 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       ("-tier", Arg.Set_int Machine.tier, " with -jit: the calls a method is interpreted before it is compiled (30; 0: at its first; a method with a loop at its first)");
       ("-m", Arg.Set_int mach, " with -S -jit: the machine, 5 (arm, the default) or 7 (arm64)");
       ("-refs", Arg.Set refs, " with -S -jit: references too, the code -jit runs (the assembly loaded)") ] in
+  (* (running a program, the arguments after its .dll are its own, its
+   * options too: mini-cc.dll -m 7 -facts) *)
+  let rec first_dll (i : int) =
+    if i >= Array.length argv then Array.length argv
+    else if Filename.check_suffix argv.(i) ".dll" && argv.(i - 1) <> "-tier" && argv.(i - 1) <> "-m" then i
+    else first_dll (i + 1) in
+  let cut = first_dll 1 in
+  let own = Array.sub argv 0 (min (cut + 1) (Array.length argv)) in
+  let program_args = if cut + 1 < Array.length argv then Array.to_list (Array.sub argv (cut + 1) (Array.length argv - cut - 1)) else [] in
+  let verbs = Array.exists (fun (a : string) -> a = "-S" || a = "-tables" || a = "-size" || a = "-verify") own in
+  let argv = if verbs then argv else own in
   match Arg.parse_argv argv options (fun (f : string) -> files := f :: !files) usage with
   | exception Arg.Help _ -> Console.print caps (usage ^ "\n"); 0
   | exception Arg.Bad msg -> Console.eprint caps msg; 1
@@ -172,6 +183,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
           match List.rev !files with
           | [] -> Console.eprint caps (usage ^ "\n"); 1
           | f :: argv ->
+              let argv = argv @ program_args in
               if !jit && not Code_memory.available then
                 Logs.warn (fun m -> m "-jit ignored: this build has no JIT\n\
                                        (mini-ml's on arm64 has: _mk/7/languages/dotnet/mini-dotnet)");

@@ -56,6 +56,10 @@
 #             its text goes, Printf's and Format's over it (lib_core/dotnet/
 #             *_dotnet.ml), ix's Logs (formats.expected: OCaml's for the
 #             lines before Logs, ix's own)
+#   frontend  what mini-cc's front end asked: a local function at
+#             several types, compare a polymorphic value, %a %t %h %S %C,
+#             |> and @@, a polymorphic toplevel value, int64 and float
+#             patterns, a primitive partly applied, a unit matched
 #   units/    three units in one assembly (geometry, counter, main): one
 #             unit's values, functions, types, constructors, exception
 #             from another; the toplevels in link order (what OCaml's
@@ -80,7 +84,7 @@ failures=0
 ok() { echo "ok $*"; }
 abs() { case $1 in /*) echo $1;; *) echo $PWD/$1;; esac; }
 fail() { echo "FAIL $*"; failures=$((failures + 1)); }
-progs="fib arith strings loops variants records exceptions equality closures generics generic_types tuples_lists arrays tails generic_closures externals c_externals channels library formats"
+progs="fib arith strings loops variants records exceptions equality closures generics generic_types tuples_lists arrays tails generic_closures externals c_externals channels library formats frontend"
 # what is refused: a program a line, and the stage that will have it
 refused() {
   local ml=$1 n=0
@@ -89,12 +93,10 @@ refused() {
     echo "-- $line"
     $ml -L lib_core -dotnet -o $W/r$n.dll $W/r$n.ml 2>&1 | sed "s|$W/||"
   done <<'R'
-let f () = let id x = x in (id 1, id "a")
 let x = 1 + (try 2 with Not_found -> 3)
 type t = A of { a : int } let v = A { a = 1 }
-let eq (x : 'a) = (=) x
-let s = Printf.sprintf "%t" (fun () -> "x")
-let s = Marshal.to_string 1 []
+let () = Printf.printf "%a" (fun oc () -> output_string oc "x") ()
+let f () = Obj.size (Obj.repr 1)
 R
 }
 check() {
@@ -134,6 +136,31 @@ interop() {
   if cmp -s $W/interop.out $T/interop.expected; then ok "C# using an ML unit (shapes.ml): Microsoft's csc and dotnet"
   else fail "C# using an ML unit (shapes.ml)"; head -5 $W/csc.out; diff $T/interop.expected $W/interop.out | head -5; fi
 }
+# mini-cc's own front end compiled to .NET (plan's stage 8 begun): mini-cc
+# whole, its units in its mkfile's order (the parser and lexer
+# mini-yacc's and mini-lex's, ix's build's), its -facts and -flow of
+# languages/c/facts/tests/' programs what the native mini-cc writes
+front_end() {
+  local ml=$1 run=$2 what=$3 C=languages/c P=_mk/7/languages/c u f files=
+  [ -f $P/Parser.ml ] && [ -f $P/Lexer.ml ] || { echo "skipped: mini-cc to .NET ($P's Parser.ml not built)"; return; }
+  for u in Asm Show_asm $(sed -n '/^SRC=/,/[^\\]$/p' $C/mkfile | sed 's/^SRC=//; s/\\$//'); do
+    # (the first there, in this order: ls would sort them)
+    for f in $C/$u.ml $C/*/$u.ml lib_code/$u.ml assembler/$u.ml $P/$u.ml; do [ -f $f ] && break; done
+    files="$files $(realpath $f)"
+  done
+  local mla=$(abs $ml)
+  if ! (cd $C && $mla -L ../../lib_core -I . -I ../../assembler -I debug -I compat -I simple -I opti -I ssa -I facts \
+          -I ../../lib_code -I ../../$P -dotnet -o $W/mini-cc.dll $files) > $W/cc.err 2>&1; then
+    fail "mini-cc compiled to .NET, by $what"; head -3 $W/cc.err; return
+  fi
+  local r=$(abs $run) T=$PWD/$C/facts/tests
+  for t in "facts pointers" "flow flow"; do
+    set -- $t
+    (cd $W && $r mini-cc.dll -m 7 -$1 $T/$2.c) > $W/cc.out 2>&1
+    if cmp -s $W/cc.out $T/$2.facts; then ok "mini-cc compiled to .NET: -$1 $2.c as the native mini-cc, run by $what"
+    else fail "mini-cc compiled to .NET: -$1 $2.c, run by $what"; diff $T/$2.facts $W/cc.out | head -5; fi
+  done
+}
 ML=${DUNEML:-_build/default/languages/ml/Main.exe}
 DOTNET=${DUNEDOTNET:-_build/default/languages/dotnet/Main.exe}
 if [ -n "$record" ]; then check dune $ML $DOTNET; exit 0; fi
@@ -141,10 +168,12 @@ if [ "$only" != mini ]; then
   check "dune's mini-ml and mini-dotnet" $ML $DOTNET
   if [ -n "$ms" ]; then
     if command -v dotnet > /dev/null; then check "dune's mini-ml, Microsoft's dotnet" $ML $(command -v dotnet); interop $ML
+      front_end $ML $(command -v dotnet) "Microsoft's dotnet"
     else echo "skipped: Microsoft's dotnet (none here)"; fi
   fi
 fi
 [ "$only" != dune ] && check "mini-ml's mini-ml and mini-dotnet" ${MINIML:-_mk/7/languages/ml/mini-ml} ${MINIDOTNET:-_mk/7/languages/dotnet/mini-dotnet}
+[ "$only" != dune ] && front_end $ML ${MINIDOTNET:-_mk/7/languages/dotnet/mini-dotnet} "mini-ml's mini-dotnet"
 # the same by mini-dotnet's JIT (mini-ml's build has one on arm64: an
 # int64 the code's own, Jit's L), where there is one
 MD=$(abs ${MINIDOTNET:-_mk/7/languages/dotnet/mini-dotnet})

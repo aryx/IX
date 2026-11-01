@@ -61,9 +61,17 @@ let printers =
  * buffer, ksprintf's continuation *)
 let before (sym : string) : int = match sym with "Printf.fprintf" | "Printf.bprintf" | "Printf.ksprintf" -> 1 | _ -> 0
 
+(* (a format with %a or %t, or given fewer arguments than it takes: a
+ * value, Il_exprs.format_value's, given to the overlay's function) *)
 let applies (sym : string) (args : Scope.expr list) : bool =
   List.mem sym printers
-  && (match List.nth_opt args (before sym) with Some { e = Econst (String _); _ } -> true | _ -> false)
+  && (match List.nth_opt args (before sym) with
+      | Some { e = Econst (String s); _ } ->
+          let pieces = parse 0 (String.length sym > 7 && String.sub sym 0 7 = "Format.") s in
+          let convs = List.length (List.filter (fun (p : piece) -> match p with Conv _ -> true | _ -> false) pieces) in
+          not (List.exists (fun (p : piece) -> match p with Conv (_, ('a' | 't')) -> true | _ -> false) pieces)
+          && List.length args = before sym + 1 + convs
+      | _ -> false)
 
 let call (env : env) (k : code) (sym : string) =
   match Hashtbl.find_opt env.by_sym sym with
@@ -106,10 +114,12 @@ let compile (c : c) (env : env) (k : code) (expr : Scope.expr -> unit) (e : Scop
             emit k (Il.Ldstr (W.user_string c.w spec)); arg into_t; call env k ("Runtime." ^ name) in
           (match ch with
            | 'd' | 'i' | 'u' | 'x' | 'X' | 'o' -> runtime "format_int" S.I8
-           | 'f' | 'e' | 'E' | 'g' | 'G' -> runtime "format_float" S.R8
+           | 'f' | 'e' | 'E' | 'g' | 'G' | 'h' | 'H' -> runtime "format_float" S.R8
            | 's' when spec = "%s" -> load v
            | 's' -> runtime "format_string" S.String
            | 'c' -> runtime "format_char" S.I4
+           | 'S' -> runtime "format_quoted" S.String
+           | 'C' -> runtime "format_quoted_char" S.I4
            | 'b' | 'B' -> runtime "format_bool" S.Bool
            | ch -> refuse a.loc (Printf.sprintf "%%%c in a format compiled (a printer, %%a or %%t: the library's Printf)" ch) "3c");
           joined ())

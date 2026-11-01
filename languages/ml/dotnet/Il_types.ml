@@ -41,6 +41,12 @@ let var_type (vid : int) : Scope.ty option =
  * int) *)
 let implementations : (string, Scope.tdecl) Hashtbl.t = Hashtbl.create 64
 
+(* a type's key among the classes: its path, a unit's own qualified by
+ * the unit (Asm's mem is Asm.mem in Opti; two units' t two classes);
+ * the predefined list as it is *)
+let qkey (c : c) (d : Scope.tdecl) : string =
+  if d == Resolve.list_d || String.contains d.tpath '.' then d.tpath else c.uname ^ "." ^ d.tpath
+
 let reset () : unit =
   Hashtbl.reset classes; Hashtbl.reset synthetic; Hashtbl.reset synthetic_vars; Hashtbl.reset implementations
 
@@ -477,18 +483,23 @@ and arg_type (c : c) (loc : int) (t : Scope.ty) : S.t = match cts c loc t with S
 and func (c : c) (loc : int) (a : Scope.ty) (b : Scope.ty) : S.t =
   S.GenericInst (S.Class (sys c "Func`2"), [ arg_type c loc a; arg_type c loc b ])
 
-(* a record type: a class of its fields, in their order *)
+(* a record type: a class of its fields, in their order; seen from
+ * another unit, its declaration the unit's own (implementations: its
+ * fields there) *)
 and record (c : c) (loc : int) (d : Scope.tdecl) : tclass =
-  match Hashtbl.find_opt classes d.tpath with
+  let key = qkey c d in
+  match Hashtbl.find_opt classes key with
   | Some t -> t
   | None ->
+      let d = match Resolve.type_fields d, Hashtbl.find_opt implementations key with
+        | None, Some d' -> d' | _ -> d in
       let labels = match Resolve.type_fields d with Some l -> l | None -> [] in
       let labels = List.sort (fun ((_, a) : string * Scope.label) ((_, b) : string * Scope.label) -> compare a.pos b.pos) labels in
       let arity = List.length d.tparams in
       (* (known before its fields' types, which may be its own: a type of
        * the metadata is its token, known at once) *)
-      let t = { tok = make_class c loc d.tpath arity 0x00100000 (sys c "Object"); arity; fields = []; ftoks = []; ctor = 0 } in
-      Hashtbl.replace classes d.tpath t;
+      let t = { tok = make_class c loc (if String.contains d.tpath '.' then d.tpath else key) arity 0x00100000 (sys c "Object"); arity; fields = []; ftoks = []; ctor = 0 } in
+      Hashtbl.replace classes key t;
       t.fields <-
         List.map
           (fun ((n, l) : string * Scope.label) ->
@@ -520,7 +531,8 @@ and tuple (c : c) (loc : int) (n : int) : tclass =
  * generic, each a class of the same parameters, its parent the
  * variant's at them *)
 and variant (c : c) (loc : int) (d : Scope.tdecl) : tclass =
-  match Hashtbl.find_opt classes d.tpath with
+  let key = qkey c d in
+  match Hashtbl.find_opt classes key with
   | Some t -> t
   | None ->
       let arity = List.length d.tparams in
@@ -529,7 +541,7 @@ and variant (c : c) (loc : int) (d : Scope.tdecl) : tclass =
       let predefined = d == Resolve.list_d in
       let path = if predefined then "Pervasives." ^ d.tpath else d.tpath in
       let t = { tok = make_class c loc path arity 0x00100080 (sys c "Object"); arity; fields = []; ftoks = []; ctor = 0 } in
-      Hashtbl.replace classes d.tpath t;
+      Hashtbl.replace classes key t;
       constructor c t (object_ctor c);
       let me = own t in
       let parent = type_tok c t me and parent_ctor = ctor_tok c t me in
@@ -555,13 +567,14 @@ and variant (c : c) (loc : int) (d : Scope.tdecl) : tclass =
           let m = W.method_def c.w tok "ml_order" 0x00C6 (instance [] S.I4) in
           W.set_body c.w m [] [| Il.Ldc_i4 (Int32.of_int order); Il.Ret |] [];
           structural c case tag (Some (t, ord, order));
-          Hashtbl.replace classes (d.tpath ^ "|" ^ cname) case)
+          Hashtbl.replace classes (key ^ "|" ^ cname) case)
         (match conses d with Some l -> l | None -> []);
       t
 
 (* a record's type's class and its type arguments *)
 let record_at (c : c) (loc : int) (ty : Scope.ty) : tclass * S.t list =
-  match ty with
+  (* (through abbreviations: Ir's type mem = Asm.mem) *)
+  match unabbrev ty with
   | Tconstr (d, args) -> (record c loc d, List.map (arg_type c loc) args)
   | _ -> refuse loc "a record of no record type" "1b"
 
@@ -573,7 +586,11 @@ let index (t : tclass) (name : string) : int =
 
 let field (c : c) (loc : int) (ty : Scope.ty) (name : string) : int =
   let t, args = record_at c loc ty in
-  field_tok c t args (index t name)
+  match index t name with
+  | i -> field_tok c t args i
+  | exception Not_found ->
+      refuse loc (Printf.sprintf "%s, a field its record's class has not (%s)" name
+                    (String.concat " " (List.map fst t.fields))) "1b"
 
 let field0 (c : c) (loc : int) (ty : Scope.ty) : int =
   let t, args = record_at c loc ty in
@@ -610,7 +627,7 @@ let case (c : c) (loc : int) (k : Scope.cons) (ty : Scope.ty) : int * int * (int
   let d = canonical (decl res) in
   let inst = match ty with Tconstr (_, a) -> a | _ -> [] in
   ignore (variant c loc d);
-  let t = Hashtbl.find classes (d.tpath ^ "|" ^ k.cname) in
+  let t = Hashtbl.find classes (qkey c d ^ "|" ^ k.cname) in
   let args = List.map (arg_type c loc) inst in
   let types = if List.length params = List.length inst then List.map (subst params inst) targs else targs in
   (type_tok c t args, ctor_tok c t args, field_tok c t args, types)

@@ -283,6 +283,26 @@ let format_string (f : string) (x : string) : string =
 
 external char_string : char -> string = "dotnet:static System.Char::ToString(char) -> string"
 
+(* a char as OCaml's String.escaped writes it (String is a unit after
+ * this one): a backslash before a quote and a backslash, newline, tab,
+ * return and backspace by their letters, the printable as they are,
+ * the others by three digits *)
+let escaped_char (c : char) : string =
+  match c with
+  | '"' -> "\\\"" | '\\' -> "\\\\" | '\n' -> "\\n" | '\t' -> "\\t" | '\r' -> "\\r" | '\b' -> "\\b"
+  | c when c >= ' ' && c < '\127' -> char_string c
+  | c -> let n = code c in "\\" ^ format_int "%03d" n
+
+let escaped (s : string) : string =
+  let r = ref "" in
+  for i = 0 to String.length s - 1 do r := !r ^ escaped_char s.[i] done;
+  !r
+
+(* %S and %C: OCaml's quoted, escaped *)
+let format_quoted (f : string) (x : string) : string = format_string f ("\"" ^ escaped x ^ "\"")
+let format_quoted_char (f : string) (c : char) : string =
+  format_string f ("'" ^ (if c = '\'' then "\\'" else if c = '"' then "\"" else escaped_char c) ^ "'")
+
 let format_char (f : string) (c : char) : string = pad (spec f) "" (char_string c) false
 let format_bool (f : string) (b : bool) : string = pad (spec f) "" (if b then "true" else "false") false
 
@@ -313,15 +333,33 @@ let trim (s : string) : string =
     sub s 0 (!k + 1) ^ sub s !e (String.length s - !e)
   end
 
+(* OCaml's %h: 0x1.8p+1, the mantissa's hexadecimal digits, its
+ * trailing zeros dropped; 0x0p+0; infinity, nan *)
+let hex_float (x : float) : string =
+  if x = 0.0 then "0x0p+0"
+  else begin
+    let m, e = frexp_float x in
+    (* (1.xxx: twice the mantissa, the exponent one less) *)
+    let bits = truncate ((m *. 2.0 -. 1.0) *. 4503599627370496.0) in
+    let s = ref "" and b = ref bits in
+    for _i = 1 to 13 do s := sub digit_chars (!b land 15) 1 ^ !s; b := !b lsr 4 done;
+    let n = ref 13 in
+    while !n > 0 && (!s).[!n - 1] = '0' do decr n done;
+    let e = e - 1 in
+    "0x1" ^ (if !n > 0 then "." ^ sub !s 0 !n else "") ^ "p" ^ (if e < 0 then "-" else "+") ^ format_int "%d" (if e < 0 then - e else e)
+  end
+
 (* C's %e %f %g (and E F G) of a precision, 6 when it has none; inf
- * and nan as OCaml prints them *)
+ * and nan as OCaml prints them; OCaml's %h *)
 let format_float (f : string) (x : float) : string =
   let sp = spec f in
   let p = if sp.precision < 0 then 6 else sp.precision in
   let upper = sp.conv = 'E' || sp.conv = 'G' || sp.conv = 'F' in
   let neg = x < 0.0 || (x = 0.0 && 1.0 /. x < 0.0) in
   let a = if neg then -. x else x in
-  if x <> x then pad sp "" (if upper then "NAN" else "nan") false
+  if sp.conv = 'h' || sp.conv = 'H' then
+    pad sp (sign_of sp neg) (if x <> x then "nan" else if a = infinity then "infinity" else hex_float a) false
+  else if x <> x then pad sp "" (if upper then "NAN" else "nan") false
   else if a = infinity then pad sp (sign_of sp neg) (if upper then "INF" else "inf") false
   else
     let digits =

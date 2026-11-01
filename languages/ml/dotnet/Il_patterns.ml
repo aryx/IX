@@ -46,7 +46,19 @@ let rec pattern (c : c) (k : code) (load : unit -> unit) (ty : Scope.ty) (p : Sc
       emit k (Il.Ldstr (W.user_string c.w s));
       emit k (Il.Call (lib c "String" "op_Equality" (static [ S.String; S.String ] S.Bool)));
       emit k (Il.Brfalse fail)
-  | Pconst _ -> refuse 0 "a float, int32 or int64 constant as a pattern" "1d"
+  | Pconst (Int64 n) ->
+      load ();
+      emit k (Il.Ldc_i8 (Int64.of_string n));
+      emit k (Il.Bcmp (Il.Ne, false, fail))
+  | Pconst (Int32 n) ->
+      load ();
+      emit k (Il.Ldc_i4 (Int32.of_string n));
+      emit k (Il.Bcmp (Il.Ne, false, fail))
+  (* (a float: bne.un, a NaN equal to nothing) *)
+  | Pconst (Float f) ->
+      load ();
+      emit k (Il.Ldc_r (float_of_string f));
+      emit k (Il.Bcmp (Il.Ne, true, fail))
   | Prange (a, b) ->
       load ();
       emit k (Il.Ldc_i4 (Int32.of_int (Char.code a)));

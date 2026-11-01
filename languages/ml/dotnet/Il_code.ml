@@ -63,6 +63,9 @@ let object_ctor (c : c) : int = lib c "Object" ".ctor" (instance [] S.Void)
 (* A method's code: the instructions, their labels, the locals *)
 (*****************************************************************************)
 
+(* a specialized closure's place: a local, or a field of this *)
+type spec = Slocal of int | Sfield of int
+
 type code = {
   mutable ops : Il.op list;             (* reversed *)
   mutable n : int;
@@ -80,11 +83,15 @@ type code = {
   mutable pending : int;
   (* in a closure's Invoke: a variable it captured, its field of this *)
   captured : (int, int) Hashtbl.t;
+  (* a local function used at several types: a closure for each, in a
+   * local or (captured) a field of this, of its type, by the types its
+   * use gives its own variables *)
+  specs : (int, (string * spec * Signature.t) list) Hashtbl.t;
 }
 
 let new_code () : code =
   { ops = []; n = 0; labels = Hashtbl.create 8; nlabels = 0; locals = []; nlocals = 0; args = Hashtbl.create 4;
-    slots = Hashtbl.create 8; clauses = []; pending = 0; captured = Hashtbl.create 4 }
+    slots = Hashtbl.create 8; clauses = []; pending = 0; captured = Hashtbl.create 4; specs = Hashtbl.create 2 }
 
 let emit (k : code) (op : Il.op) : unit =
   k.ops <- op :: k.ops;

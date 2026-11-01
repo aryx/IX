@@ -17,3 +17,18 @@ let fprintf (oc : out_channel) (f : ('a, out_channel, unit) format) : 'a =
 
 let bprintf (b : Buffer.t) (f : ('a, Buffer.t, unit) format) : 'a =
   apply f (fun (s : string) -> Buffer.add_string b s)
+
+(* %a's and %t's text, a format being compiled (Il_exprs.format_value):
+ * sprintf's printer's own string, bprintf's on a buffer *)
+let capture (p : unit -> 'x -> string) (x : 'x) : string = p () x
+let capture_t (p : unit -> string) : string = p ()
+
+let capture_buffer (p : Buffer.t -> 'x -> unit) (x : 'x) : string =
+  let b = Buffer.create 16 in
+  p b x;
+  Buffer.contents b
+
+let capture_buffer_t (p : Buffer.t -> unit) : string =
+  let b = Buffer.create 16 in
+  p b;
+  Buffer.contents b

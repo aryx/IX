@@ -184,6 +184,15 @@ let rec level (c : c) (f : fn) (i : int) : tclass * int * S.meth =
         if cts c 0 p <> S.Void then emit k (Il.Ldarg 1);
         emit k (Il.Call (if f.gvars = [] then f.tok else W.method_spec c.w f.tok me));
         if cts c 0 f.rty = S.Void then emit k Il.Ldnull
+        (* (a function that always raises, its method void: a value of
+         * its result's type, T's default, never reached) *)
+        else if raises_always f then begin
+          let t' = arg_type c 0 f.rty in
+          let l = local k t' in
+          emit k (Il.Ldloca l);
+          emit k (Il.Initobj (type_token c t'));
+          emit k (Il.Ldloc l)
+        end
       end
       else begin
         List.iteri (fun (j : int) (_ : Scope.ty) -> emit k (Il.Ldarg 0); emit k (Il.Ldfld (field_tok c t me j))) given;

@@ -20,7 +20,9 @@ cd $ROOT
 declare -A all bad kinds incs
 # a program's directories: those with a .ml under its root
 # (and dune's copy of each, for the Parser and the Lexer it made of a .mly and a .mll)
-dirs() { for d in $(tests/ix_files.sh "$1" | grep -E '\.ml[ily]?$' | grep -v '/tests/' | xargs -n1 dirname | sort -u); do echo -n "-I $d -I _build/default/$d "; done; }
+# (not lib_core/dotnet/: mini-ml -dotnet's units, Unix's and Marshal's in
+# lib_core's place, which a native program must not see)
+dirs() { for d in $(tests/ix_files.sh "$1" | grep -E '\.ml[ily]?$' | grep -v '/tests/' | grep -v '^lib_core/dotnet/' | xargs -n1 dirname | sort -u); do echo -n "-I $d -I _build/default/$d "; done; }
 # lib_core: ix's commons, and the stdlib
 shared="$(dirs lib_core) $(dirs lib_code) $(dirs lib_mime) $(dirs lib_compression) $(dirs lib_crypto) $(dirs lib_executable) $(dirs lib_networking) $(dirs lib_graphics) $(dirs assembler) $(dirs machine)"
 # not the tests (the author: "let's not compile testing code with mini-ml for now": they

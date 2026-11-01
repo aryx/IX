@@ -101,8 +101,10 @@ ocaml-light's *ocamlopt*. Another unit's names are read from its
      always, List, String, Hashtbl, Printf...); a format is a function
      of where its text goes, a literal's compiled (Printf's and
      Format's functions over it: *-L*'s `dotnet/Printf_dotnet.ml`, in
-     Printf's place), Format's boxes text. The rest (Marshal, Unix,
-     %a) is refused by its name and line.
+     Printf's place), Format's boxes text. A unit of *-L*'s `dotnet/`
+     of a library unit's name is compiled in its place (Unix and
+     Marshal, whose functions fail by name where they are called). What
+     else is refused says its name and line.
 
 **-h**
 :    How, by examples, and the options to debug the compiler

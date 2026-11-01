@@ -145,13 +145,18 @@ let unit_ (a : assembly) (name : string) (items : Scope.item list) : unit =
             (fun ((p, d) : Scope.pattern * Scope.expr) ->
               match p with
               | (Pvar v | Pconstraint (Pvar v, _)) when is_function d -> Some (declare c env globals v d)
+              (* (a value of a polymorphic type, Set_'s empty = Empty: a
+               * generic method of no argument, a fresh value at each use's
+               * types, F#'s way; one field would be one instance) *)
+              | (Pvar v | Pconstraint (Pvar v, _)) when tvars_of (type_of d) <> [] && global_of globals v <> None ->
+                  Some (declare c env globals v d)
               | _ -> None)
             bs in
         List.iter (define c env) fns;
         List.iter
           (fun ((p, d) : Scope.pattern * Scope.expr) ->
             match p with
-            | (Pvar v | Pconstraint (Pvar v, _)) when not (is_function d) -> (
+            | (Pvar v | Pconstraint (Pvar v, _)) when not (is_function d) && not (tvars_of (type_of d) <> [] && global_of globals v <> None) -> (
                 let ty = cts_of c d in
                 expr c env k d;
                 if ty <> S.Void then

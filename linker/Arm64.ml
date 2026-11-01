@@ -540,7 +540,9 @@ let select ctx (p : prog) : action =
       let st o = if store then tostore o else o in
       one (fun () ->
         let x = off a and b = base a in
-        if x < 0 then olsr9s (st (opldr9 m)) x b rd
+        (* (a negative offset, or a small one not of the access's size:
+         * the unscaled form, ldur and stur, 7l's for its 9-bit classes) *)
+        if x < 0 || (shl (x asr scale) scale <> x && x < 256) then olsr9s (st (opldr9 m)) x b rd
         else if shl (x asr scale) scale <> x then error "odd offset: %d" x
         else olsr12u (st (opldr12 m)) (x asr scale) b rd)
     in

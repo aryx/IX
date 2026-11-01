@@ -359,9 +359,33 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.d
             (try ignore (Unix.write_substring fd s 0 (String.length s)) with Unix.Unix_error _ -> ());
             written := !written + (ahead - queued)
           end in
+    (* A program that says idle=wait among its flags (a file manager, what
+     * only changes when it is used): its picture the same for half a
+     * second, nothing typed or moved, it is looked at 4 times a second and
+     * not 60. On mini-9pi under QEMU mini-files alone, doing nothing, took
+     * 58% of the processor: nothing drawn, but an update, a view and their
+     * comparison 60 times a second. Only when asked: a game may count
+     * ticks through a still picture (Tetris's piece, between two falls),
+     * and those ticks are not given here: what is due is one, the
+     * program's time still the clock's. Its fps meter is left out, which
+     * would change, and say nothing a person wants. The flag idle=spin on
+     * the command line: as other programs, to compare. *)
+    let calm =
+      audio = None
+      && List.assoc_opt "idle" (Playground.flags_of_strings cli.args @ flags) = Some "wait" in
+    (* the frames with nothing to show, since the last that had or the last
+     * input; whether the last alarm asked was the long one; whether an
+     * alarm is on its way (one asking at a time: Source.alarm) *)
+    let quiet = ref 0 and slept = ref false and on_its_way = ref false in
     let wake () : unit =
-      let left = start +. (float (!given + 1) /. 60.) -. Unix.gettimeofday () in
-      ask (if left > 0.010 then left -. 0.010 else if left > 0. then 0.001 else 0.) in
+      if not !on_its_way then begin
+        on_its_way := true;
+        if calm && !quiet >= 30 then begin slept := true; ask 0.25 end
+        else begin
+          let left = start +. (float (!given + 1) /. 60.) -. Unix.gettimeofday () in
+          ask (if left > 0.010 then left -. 0.010 else if left > 0. then 0.001 else 0.)
+        end
+      end in
     let mice = Event.wrap (Mouse.receive mouse) (fun (m : Mouse.state) -> Mouse m)
     and keys = Event.wrap (Keyboard.receive keyboard) (fun (k : string list) -> Keys k)
     and clock = Event.wrap (Event.receive ticks) (fun () -> Tick) in
@@ -392,6 +416,10 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.d
         m_update := 0.; m_view := 0.; m_show := 0.; m_ticks := 0; m_frames := 0; m_since := t
       end in
     let input (i : input) : unit =
+      (* (a calm program answers at once, not at the end of its long sleep) *)
+      (match i with
+       | Tick -> ()
+       | _ -> if calm then begin quiet := 0; ticked := true end);
       match i with
       | Keys k when quits k -> quit := true
       | Keys k -> on_keys k
@@ -399,7 +427,7 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.d
       | Mouse m ->
           if m.resized then resized ();
           on_mouse m
-      | Tick -> ticked := true in
+      | Tick -> on_its_way := false; ticked := true in
     (* What waits, taken without waiting: the keys and the mouse, before
      * a frame is drawn. The threads are cooperative: what a source has
      * read is given by its thread, which runs when this one lets it
@@ -420,6 +448,10 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.d
         ticked := false;
         let now = Unix.gettimeofday () in
         let due = int_of_float ((now -. start) *. 60.) - !given in
+        (* (a calm program after its long sleep: one, and it is not late) *)
+        let due =
+          if !slept && due > 1 then begin given := !given + due - 1; 1 end else due in
+        slept := false;
         (* (more than [most]: the others are not owed any more) *)
         let cut = due > most in
         if cut then given := !given + (due - most);
@@ -458,7 +490,9 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.d
           previous := shapes;
           let shapes = if cut && not still then shapes @ late_frame (w.units !win) else shapes in
           let t2 = if stats then Unix.gettimeofday () else 0. in
-          let did = show shapes !fps in
+          (* (-1: no meter: Session.fps_counter's callers) *)
+          let did = show shapes (if calm then -1 else !fps) in
+          if did then quiet := 0 else incr quiet;
           incr drawn;
           if stats && did then meter (t1 -. now) (t2 -. t1) (Unix.gettimeofday () -. t2) due;
           if now -. !since >= 1. then (fps := !drawn; drawn := 0; since := now)

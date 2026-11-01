@@ -70,8 +70,9 @@ let window (display : Display.t) : window =
  * kernel's image where it goes, and that rectangle of the image drawn
  * on the window *)
 let show (display : Display.t) (win : window) (shapes : Playground.shape list) (fps : int) : bool =
-  let counter = Session.fps_counter ~width:win.size ~height:win.size ~scale:win.scale fps in
-  let parts = Redraw.frame win.redraw (shapes @ [ counter ]) in
+  (* (a negative number: no meter, Plan9_loop's idle=wait) *)
+  let shown = if fps < 0 then shapes else shapes @ [ Session.fps_counter ~width:win.size ~height:win.size ~scale:win.scale fps ] in
+  let parts = Redraw.frame win.redraw shown in
   List.iter
     (fun (((x0, y0, x1, _), fb) : (int * int * int * int) * Framebuffer.t) ->
       let w = x1 - x0 in

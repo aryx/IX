@@ -544,6 +544,8 @@ let () =
                let dir = absolute own start in
                let dir = if String.starts_with ~prefix:root dir then dir else root in
                Playground_platform.run_app caps
-                 (flags @ [ ("window", "") ])
+                 (* (idle=wait: looked at 4 times a second when nothing changes:
+                  * Plan9_loop. old: 60, 58% of mini-9pi's processor under QEMU) *)
+                 (flags @ [ ("window", ""); ("idle", "wait") ])
                  (Playground.game view (update own) (initial own root dir));
                Exit.OK)))

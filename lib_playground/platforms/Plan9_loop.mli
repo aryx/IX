@@ -41,6 +41,10 @@
  *               (/dev/kbd), on the standard error
  *   stats=on    (a flag) every 40 frames, what a frame cost, on the
  *               standard error: the update, the view, the showing
+ *   idle=wait   (a flag, usually the program's own) the picture still and
+ *               nothing happening: looked at 4 times a second, not 60, and
+ *               no meter. Not for what counts ticks through a still picture
+ *               (a game). idle=spin on the command line: as other programs
  *   -frames n   n frames at once, the script's keys in them, then the
  *               picture stays: a session that is the same each time,
  *               for a test to compare its screen (Session.mli) *)

@@ -723,7 +723,8 @@ let show_boxes (display : Display.t) (win : window) (m : Affine.t) (shapes : Pla
  * last one's is not drawn again. *)
 let show (display : Display.t) (win : window) (shapes : Playground.shape list) (fps : int) : bool =
   let shapes =
-    if !counter then
+    (* (a negative number: no meter, Plan9_loop's idle=wait) *)
+    if !counter && fps >= 0 then
       shapes @ [ Session.fps_counter ~width:win.width ~height:win.height ~scale:win.scale fps ]
     else shapes in
   (* opti: is this frame the last one? [x == y] before [x = y].

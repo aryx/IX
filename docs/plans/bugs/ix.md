@@ -458,3 +458,25 @@ library.ml), against what OCaml prints. Pervasives.string_of_float is
 int. The same natively and on .NET (the ML is lib_core's). Reproduction:
 `print_string (string_of_float 100.)`, ocaml prints `100.`, mini-ml's program
 `100`. The test prints 1e20 instead.
+
+## mini-ld's arm64 encoder: a small offset not of the access's size refused (2026-11-01, fixed)
+
+Found by mini-dotnet's JIT running mini-ml -dotnet's sha benchmark
+(languages/ml/dotnet/tests/speed.sh): "odd offset: 21", the JIT dead. Arm64.ml
+encoded a load's or store's positive offset only in its scaled form, a multiple
+of the access's size; 21 for an 8-byte access was refused, where arm64 has the
+unscaled form (ldur, stur: -256 to 255, any), which 7l uses for its 9-bit
+classes and Arm64.ml did for negative offsets only. Reproduction: mini-ml
+-dotnet -L lib_core languages/ml/tests/bench/sha.ml, then _mk/7's mini-dotnet
+-jit sha.dll. Now the unscaled form below 256; what encoded before encodes the
+same.
+
+## mini-dotnet: 10,000 frames, less than a List.map of 10,000 (2026-11-01, fixed)
+
+Found by mini-ml -dotnet's maps benchmark: "Stack overflow." where Microsoft's
+dotnet runs it (List.map recurses once per element). Frame.max_depth was
+10,000; the interpreter's own OCaml stack (8 MB) holds about 45,000 frames
+(dune's build, a recursion of 40,000 runs, 50,000 dies without a word), so the
+limit is now 30,000, mini-ml's build tried at 29,000. Reproduction: let rec f
+n = if n = 0 then 0 else 1 + f (n - 1), f 20000, by mini-ml -dotnet, run by
+mini-dotnet.

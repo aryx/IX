@@ -622,6 +622,35 @@ but really use the same types!". So the decisions below are those of
 4. **Speed**: mini-ml's benchmarks native, on .NET (Microsoft's), on
    mini-dotnet (its JIT), and the same programs in F# (fsc): their IL
    compared, -S beside ildasm's, and their time.
+   Begun (2026-11-01, the author: "let's commit and move forward"):
+   languages/ml/dotnet/tests/speed.sh, the 11 of languages/ml/tests/
+   bench/ (all compile with -dotnet, all print their .out on both
+   runtimes), the best of three, seconds, on the arm64 host:
+
+       program  native  dotnet  mini-dotnet -jit
+       hello     0.004   0.065   0.034
+       pixels    0.011   0.092   6.688
+       limbs     0.006   0.077   3.603
+       samples   0.007   0.089   1.589
+       floats    0.007   0.077   1.848
+       sha       0.007   0.096   3.825
+       fib       0.006   0.101   0.733
+       tak       0.005   0.089   0.583
+       maps      0.014   0.089   3.212
+       sched     0.009   0.131   3.930
+       interp    0.009   0.163   8.295
+       matrix    0.009   0.082   5.435
+
+   The benchmarks are sized for mini-5i's counts: natively and on
+   Microsoft's dotnet their time is mostly the start (hello's), so
+   that comparison needs bigger runs. mini-dotnet's is its
+   interpreter's: its JIT takes only methods all of int32 (its C#
+   programs'), and an ML int is an int64 (fib's 4 methods compiled of
+   its assembly's, not fib; "a parameter not an int32" 160 times,
+   "this is a reference" 113). Found and fixed on the way (in
+   docs/plans/bugs/ix.md): mini-ld's arm64 encoder refused a small
+   unaligned offset (the JIT died on sha), mini-dotnet's 10,000 frames
+   (maps' List.map; now 30,000).
 5. **mini-cc to IL, a managed C** (decision 4). Check: mini-cc's
    tests that stay in it, by both runtimes, what the native build
    prints; those refused, counted with their reason.

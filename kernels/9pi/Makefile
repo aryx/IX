@@ -618,6 +618,8 @@ check-ix: ix
 #   win-menu   the start menu: shown and hidden by the start button, hidden by a
 #             press elsewhere; a group opened by the mouse, a program opened from
 #             it, Exit. With win-files in make check-files
+#   win-open   mini-files under rio: a file opened by Enter is in a new window, and
+#             the files window stays itself. With win-files in make check-files
 #   colors-bare  mini-colors (../../apps/misc) on the bare screen:
 #             a square pointed at, its menu's exit
 #   colors-win   the same program in a window of mini-rio's, which is moved
@@ -763,7 +765,7 @@ gcheck = $(MAKE) --no-print-directory -j$(GJOBS) $(foreach s,$(1),run-$(s)-mini 
 check-draw: ix ; $(call gcheck,draw)
 check-menu: ix-usb card ; $(call gcheck,menu)
 check-rio: ix-usb card ; $(call gcheck,win-new win-ops win-border win-scroll win-select win-utf8)
-check-files: ix-usb card ; $(call gcheck,win-files win-wctl win-script win-layers win-panel win-menu)
+check-files: ix-usb card ; $(call gcheck,win-files win-wctl win-script win-layers win-panel win-menu win-open)
 check-colors: ix-usb card ; $(call gcheck,colors-bare colors-win)
 check-tetris: ix-usb card ; $(call gcheck,tetris-bare tetris-win)
 check-kbd: ix-usb card ; $(call gcheck,kbd-bare kbd-win)

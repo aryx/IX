@@ -480,3 +480,14 @@ dotnet runs it (List.map recurses once per element). Frame.max_depth was
 limit is now 30,000, mini-ml's build tried at 29,000. Reproduction: let rec f
 n = if n = 0 then 0 else 1 + f (n - 1), f 20000, by mini-ml -dotnet, run by
 mini-dotnet.
+
+## Helpers.run under mini-rio: the program started twice (2026-11-01, the author, fixed)
+
+The author: "running emacs from it seems to run it externally, which is good, in
+a new window, but it also seems to take over the files window". In `Helpers.run`,
+`if ... then (...) else a; match ...` makes the `else` the line `a` alone, so the
+`match` that starts a process beside the caller also ran after the new window was
+asked of rio: two emacs, one in the caller's window. It came with mini-files, whose
+plan says it was "not yet run under mini-rio on mini-9pi". Reproduced under QEMU: rio
+-i with files on /usr/pad, a click on readme, Enter. Fixed by `begin`. Checks on
+Linux could not see it (`on_plan9` is false there).

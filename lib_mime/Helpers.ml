@@ -131,13 +131,18 @@ let run (caps : < Cap.exec; Cap.wait; Cap.open_out; .. >) (command : string list
   if on_plan9 () && windows () then (
     try run_in_window caps command
     with Unix.Unix_error (e, _, _) -> Logs.warn (fun m -> m "%s: %s" wctl (Unix.error_message e)))
-  else
-  running := List.filter (fun pid -> match CapUnix.waitpid caps [ Unix.WNOHANG ] pid with 0, _ -> true | _ -> false | exception Unix.Unix_error _ -> false) !running;
-  match command with
-  | prog :: args ->
-      Logs.info (fun m -> m "running %s" (String.concat " " command));
-      (* (not Procs.spawn: OCaml 5's Unix.fork fails once the tab's worker,
-       * a domain, was spawned: Worker_spawn) *)
-      (try running := Procs.create_process caps prog args ~stdin:Unix.stdin ~stdout:Unix.stdout :: !running
-       with Unix.Unix_error (e, _, _) -> Logs.warn (fun m -> m "%s: %s" prog (Unix.error_message e)))
-  | [] -> ()
+  else begin
+    (* (begin: without it the else was this line alone, and under mini-rio
+     * the program started in its new window was started here too, in the
+     * caller's: mini-files' window taken over by the emacs it opened.
+     * docs/plans/bugs/ix.md) *)
+    running := List.filter (fun pid -> match CapUnix.waitpid caps [ Unix.WNOHANG ] pid with 0, _ -> true | _ -> false | exception Unix.Unix_error _ -> false) !running;
+    match command with
+    | prog :: args ->
+        Logs.info (fun m -> m "running %s" (String.concat " " command));
+        (* (not Procs.spawn: OCaml 5's Unix.fork fails once the tab's worker,
+         * a domain, was spawned: Worker_spawn) *)
+        (try running := Procs.create_process caps prog args ~stdin:Unix.stdin ~stdout:Unix.stdout :: !running
+         with Unix.Unix_error (e, _, _) -> Logs.warn (fun m -> m "%s: %s" prog (Unix.error_message e)))
+    | [] -> ()
+  end

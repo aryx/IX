@@ -1,0 +1,5 @@
+[('type', "rio -i 'window -at c 640 480 files /usr/pad'"),
+ ('move', 500, 240),
+ ('buttons', [('down', 'left')]),
+ ('buttons', [('up', 'left')]),
+ ('key', 'ret')]

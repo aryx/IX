@@ -1,0 +1,19 @@
+# a musical note
+k 223344
+b 5577aa
+................
+.....kkkkkkkkk..
+.....kbbbbbbbk..
+.....kkkkkkkkk..
+.....k.......k..
+.....k.......k..
+.....k.......k..
+.....k.......k..
+.....k.......k..
+.....k.......k..
+.....k...kkkkk..
+.kkkkk..kkkkkk..
+kkkkkk..kkkkkk..
+kkkkkk...kkkk...
+.kkkk...........
+................

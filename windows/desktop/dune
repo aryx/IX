@@ -3,10 +3,15 @@
 (library
  (name ix_desktop)
  (wrapped false)
- (modules Taskbar)
+ (modules Taskbar Apps Icon)
  (libraries ix_graphics ix_core))
 
 (executable
  (name Panel)
  (modules Panel)
+ (libraries ix_desktop ix_graphics ix_threads ix_core threads.posix unix caps fpath))
+
+(executable
+ (name Startmenu)
+ (modules Startmenu)
  (libraries ix_desktop ix_graphics ix_threads ix_core threads.posix unix caps fpath))

@@ -1,0 +1,21 @@
+# falling blocks
+r dd4444
+g 44bb55
+b 4477dd
+y e8c84a
+................
+..........yyyy..
+..........yyyy..
+..........yyyy..
+..........yyyy..
+................
+.rrrr...........
+.rrrr...........
+.rrrr...........
+.rrrrbbbb.gggg..
+.rrrrbbbb.gggg..
+.rrrrbbbb.gggg..
+.rrrrbbbb.gggg..
+.rrrrbbbbbbbbg..
+.rrrrbbbbbbbbg..
+................

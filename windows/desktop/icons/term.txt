@@ -1,0 +1,20 @@
+# a terminal: a prompt on a dark screen
+d 202830
+s 333d47
+g 66dd88
+................
+.dddddddddddddd.
+.dssssssssssssd.
+.dssssssssssssd.
+.dssgsssssssssd.
+.dsssgssssssssd.
+.dssssgsssssssd.
+.dsssgssssssssd.
+.dssgssgggggssd.
+.dssssssssssssd.
+.dssssssssssssd.
+.dssssssssssssd.
+.dddddddddddddd.
+.....dddddd.....
+...dddddddddd...
+................

@@ -8,11 +8,18 @@ clicked show a menu with the application (see also /progs/) with icons,
 settings, etc. like in Windows or other Desktop OS. This might need
 modifications to rio to control how to create windows from a script."
 
-**Status: stages 0 to 3 done** (rio in `windows/rio/`; a scripted session:
+**Status: stages 0 to 4 done** (rio in `windows/rio/`; a scripted session:
 `rio -i`, `window`, `desktop`, `/dev/wsys`, windows ending with their
-programs; the layers; `panel`). `desktop` is the panel and two programs in
-their places for now; the menu and the desk are next. The panel's clock says
-GMT, as date does: the system has no time zone. Changed from the design below: a press
+programs; the layers; `panel`; `startmenu`, its table and icons). The desk is
+next. The panel's clock says GMT, as date does: the system has no time zone.
+Stage 4 as built, against the design below: the menu is two panes in one window
+(groups on the left, a group's programs on the right) rather than submenus; click,
+move, click, and no press and drag (the panel has the mouse until the button is
+up); icons are 16 by 16, drawn twice as large on the desk when it comes; the
+table's fields are separated by `|`, and a `top` group is on the menu itself. It
+sizes itself from its table and places itself by `resize -at sw`, so `start` says
+no rectangle. A program not in `/bin` is not listed, so Settings shows when its
+program is on the card. Changed from the design below: a press
 in a panel does not hide the popups, or the button that shows one would see it
 hidden and show it again; the panel hides them itself. A wctl read adds the
 layer's name, so a panel can find its menu in `/dev/wsys`. The sizes below

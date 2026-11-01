@@ -6,11 +6,14 @@ D=$B/windows/desktop
 G=../../lib_graphics
 INCLUDES=-I . -I $G $STDI
 GFX=Point Rectangle Display Draw Font_default Font Mouse Keyboard Cursor Menu
-UNITS=$GFX Taskbar Panel
-OBJS=${UNITS:%=$D/%.$O}
+PANEL=$GFX Taskbar Panel
+MENU=$GFX Apps Icon Startmenu
+UNITS=$GFX Taskbar Apps Icon Panel Startmenu
+PANELOBJS=${PANEL:%=$D/%.$O}
+MENUOBJS=${MENU:%=$D/%.$O}
 LOCAL=`{ls *.ml *.mli ../../lib_graphics/*.ml ../../lib_graphics/*.mli}
 
-all:V: $D/panel
+all:V: $D/panel $D/startmenu
 
 $D/%.$O: %.ml $LOCAL
 	mkdir -p $D
@@ -45,9 +48,12 @@ $D/Cursor.$O: $G/Cursor.ml $LOCAL
 $D/Menu.$O: $G/Menu.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target $G/Menu.ml
-$D/panel: $OBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
-	$ML -start $STD $COMMONS $UNITS Std_exit -o $D/start.$O
-	$LD $LDH -nofollow -o $target $D/start.$O $STDOBJS $OBJS $STDEND
+$D/panel: $PANELOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+	$ML -start $STD $COMMONS $PANEL Std_exit -o $D/panel.start.$O
+	$LD $LDH -nofollow -o $target $D/panel.start.$O $STDOBJS $PANELOBJS $STDEND
+$D/startmenu: $MENUOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+	$ML -start $STD $COMMONS $MENU Std_exit -o $D/startmenu.start.$O
+	$LD $LDH -nofollow -o $target $D/startmenu.start.$O $STDOBJS $MENUOBJS $STDEND
 
 clean:V:
 	rm -rf $D

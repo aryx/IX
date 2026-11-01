@@ -1,0 +1,19 @@
+# an E, for the editor
+p 6a4a9a
+w f5f0fb
+................
+.pppppppppppppp.
+.pppppppppppppp.
+.ppwwwwwwwwwwpp.
+.ppwwwwwwwwwwpp.
+.ppwwpppppppppp.
+.ppwwpppppppppp.
+.ppwwwwwwwwpppp.
+.ppwwwwwwwwpppp.
+.ppwwpppppppppp.
+.ppwwpppppppppp.
+.ppwwwwwwwwwwpp.
+.ppwwwwwwwwwwpp.
+.pppppppppppppp.
+.pppppppppppppp.
+................

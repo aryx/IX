@@ -1,0 +1,20 @@
+# bars, as mini-stats draws them
+d 335577
+w f5f8fb
+g 339944
+................
+.dddddddddddddd.
+.dwwwwwwwwwwwwd.
+.dwwwwwwwwwgwwd.
+.dwwwwwwwwwgwwd.
+.dwwwwwgwwwgwwd.
+.dwwwwwgwwwgwwd.
+.dwwgwwgwwwgwwd.
+.dwwgwwgwgwgwwd.
+.dwwgwwgwgwgwwd.
+.dwwgwwgwgwgwwd.
+.dwwgwwgwgwgwwd.
+.dwwgwwgwgwgwwd.
+.dwwwwwwwwwwwwd.
+.dddddddddddddd.
+................

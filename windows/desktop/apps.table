@@ -1,0 +1,36 @@
+# What the start menu lists (Apps says the form): group | name | icon | size | command
+# On the card, /lib/desktop/apps. tests/Test.ml holds it to the Makefile's
+# CARD_* lists: a program there is listed here, or in that test's list of those
+# left out.
+top      | Terminal      | term   | 640x400 | rc -i
+top      | Files         | folder | 640x480 | files /usr/pad
+top      | All programs  | folder | 640x480 | files /progs
+top      | Settings      | gear   | 480x360 | settings
+
+apps     | Office        | doc    | 800x600 | office
+apps     | Page          | doc    | 700x600 | page /lib/pdf/tex.pdf
+apps     | Stats         | chart  | 320x120 | stats
+apps     | Colors        | app    | 320x320 | colors
+apps     | ReBirth       | note   | 900x600 | rebirth
+
+games    | Tetris        | blocks | 400x600 | tetris
+games    | Breakout      | game   | 640x480 | breakout
+games    | Missile Command | game | 640x480 | missilecommand
+games    | Cameltry      | game   | 640x480 | cameltry
+games    | Tronscroll    | game   | 640x480 | tronscroll
+games    | Wolfenstein   | face   | 640x480 | wolfenstein
+games    | Doom          | face   | max     | doom
+games    | Quake         | face   | max     | quake
+games    | Virtua Racing | game   | max     | virtua
+
+net      | Netscape      | globe  | 900x700 | netscape
+net      | Maps          | map    | 800x600 | maps
+
+devtools | Emacs         | editor | 720x560 | emacs
+devtools | DrScheme      | code   | 720x560 | drscheme
+devtools | Turbo Pascal  | code   | 720x480 | turbopascal
+devtools | Squeak        | code   | 800x600 | squeak
+
+system   | Terminal      | term   | 640x400 | rc -i
+
+examples | Hello Rio     | app    | 320x240 | hellorio

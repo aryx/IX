@@ -176,6 +176,8 @@ let run (w : t) desk =
           w.text <- Terminal.reshape w.text w.image (Rectangle.inset r (width + 2));
           !restack w
         end;
+        (* (changed while hidden: its new place, kept off the screen) *)
+        if w.hidden then w.image <- Display.origin w.image w.image.r.min (Point.v 20000 20000);
         border w.current;
         (* a program that draws here is told, at its next mouse read *)
         if w.wants_mouse then begin reshaped := true; moved := Some !pointer; serve_mouse () end;

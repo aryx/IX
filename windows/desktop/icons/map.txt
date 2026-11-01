@@ -1,0 +1,22 @@
+# a map and a pin
+d 556677
+w eaf0e0
+b 99ccee
+g 99cc88
+r dd3333
+................
+.dddddddddddddd.
+.dgggwwwwwbbbbd.
+.dgggwwwwwbbbbd.
+.dggwwwrrwwbbbd.
+.dwwwwrrrrwwbbd.
+.dwwwwrrrrwwwbd.
+.dwwwwwrrwwwwwd.
+.dbbwwwwrwwgggd.
+.dbbbwwwwwggggd.
+.dbbbbwwwwggggd.
+.dbbbbbwwwggggd.
+.dbbbbbbwwggggd.
+.dbbbbbbwwggggd.
+.dddddddddddddd.
+................

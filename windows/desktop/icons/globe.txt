@@ -1,0 +1,20 @@
+# the world
+b 3377cc
+g 44aa66
+d 225588
+................
+.....dddddd.....
+...ddbbggbbdd...
+..dbbgggggbbbd..
+.dbbbbgggbbggbd.
+.dbbbbbgbbgggbd.
+dbbggbbbbbbggbbd
+dbgggggbbbbbbbbd
+dbgggggbbbbbbbbd
+dbbgggbbbbbgggbd
+.dbbgbbbbbggggd.
+.dbbbbbbbbbggbd.
+..dbbbbbbbbbbd..
+...ddbbbbbbdd...
+.....dddddd.....
+................

@@ -1,0 +1,20 @@
+# a window
+d 335577
+b 7fa6c9
+w f5f8fb
+................
+.dddddddddddddd.
+.dbbbbbbbbbbbbd.
+.dbbbbbbbbbbbbd.
+.dddddddddddddd.
+.dwwwwwwwwwwwwd.
+.dwwwwwwwwwwwwd.
+.dwwwwwwwwwwwwd.
+.dwwwwwwwwwwwwd.
+.dwwwwwwwwwwwwd.
+.dwwwwwwwwwwwwd.
+.dwwwwwwwwwwwwd.
+.dwwwwwwwwwwwwd.
+.dwwwwwwwwwwwwd.
+.dddddddddddddd.
+................

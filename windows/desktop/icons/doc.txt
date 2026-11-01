@@ -1,0 +1,20 @@
+# a page with lines on it
+d 556677
+w fbfcfd
+g 8899aa
+................
+...ddddddddd....
+...dwwwwwwwdd...
+...dwwwwwwwwdd..
+...dwgggggwwwd..
+...dwwwwwwwwwd..
+...dwgggggggwd..
+...dwwwwwwwwwd..
+...dwgggggggwd..
+...dwwwwwwwwwd..
+...dwgggggggwd..
+...dwwwwwwwwwd..
+...dwgggggwwwd..
+...dwwwwwwwwwd..
+...ddddddddddd..
+................

@@ -749,8 +749,22 @@ but really use the same types!". So the decisions below are those of
      abbreviations; a function that always raises given as a value.
    - mini-dotnet: a program's arguments after its .dll its own
      (mini-cc.dll -m 7 -facts), Math.Abs.
-   Next: Datalog's side (stage 6, or the facts read by mini-datalog as
-   today), then the whole pipeline on mini-rc.
+   Then (the author: "let's commmit and move forward") the pipeline
+   whole on .NET: mini-datalog compiled too (its mkfile's units: 3,043
+   methods, all verified), and languages/c/facts/tests/run.sh given
+   both assemblies (CC, DATALOG): mini-cc's facts, mini-datalog's
+   pointer analysis and liveness on them, every answer the native
+   pipeline's, by Microsoft's dotnet (18 s) and mini-dotnet's
+   interpreter (81 s); mini-datalog's own suite (graph, liveness,
+   dominators, refused, pointer) by Microsoft's too. tests/run.sh's
+   pipeline checks it with -ms. What it took: a variant's case
+   through its type's abbreviation (Relset's hint, a Btree.hint
+   option: Some`1<> made), a record's labels and a tuple's too.
+   mini-analyze itself is not compiled: dune's wrapped libraries put
+   mini-cc's and mini-ml's units (each a Lexer, a Parser) in one
+   program, and mini-ml has one namespace of units (natively too).
+   Next: the pipeline on one of ix's own programs (mini-rc's), then
+   mini-ml's front end and its facts (stage 9).
 9. **ML analysed** (the end goal's other half): mini-ml's front end
    writing an ML program's facts (its closures, calls, raises, handlers),
    0-CFA in Datalog, then the exceptions never caught. Check: on

@@ -602,7 +602,7 @@ let record_ctor (c : c) (loc : int) (ty : Scope.ty) : int =
 
 (* a tuple's i-th field at its type, its constructor there *)
 let tuple_at (c : c) (loc : int) (ty : Scope.ty) : tclass * S.t list =
-  match ty with
+  match unabbrev ty with
   | Ttuple ts -> (tuple c loc (List.length ts), List.map (arg_type c loc) ts)
   | _ -> refuse loc "a tuple of no tuple type" "1d"
 
@@ -625,7 +625,9 @@ let rec canonical (d : Scope.tdecl) : Scope.tdecl =
 let case (c : c) (loc : int) (k : Scope.cons) (ty : Scope.ty) : int * int * (int -> int) * Scope.ty list =
   let params, targs, res = k.ctype in
   let d = canonical (decl res) in
-  let inst = match ty with Tconstr (_, a) -> a | _ -> [] in
+  (* (its type's arguments through abbreviations: Relset's hint, a
+   * Btree.hint option) *)
+  let inst = match unabbrev ty with Tconstr (_, a) -> a | _ -> [] in
   ignore (variant c loc d);
   let t = Hashtbl.find classes (qkey c d ^ "|" ^ k.cname) in
   let args = List.map (arg_type c loc) inst in
@@ -635,7 +637,7 @@ let case (c : c) (loc : int) (k : Scope.cons) (ty : Scope.ty) : int * int * (int
 (* a record's fields' types at the record's type, by label *)
 let label_type (l : Scope.label) (ty : Scope.ty) : Scope.ty =
   let params, fty, _ = l.ltype in
-  match ty with Tconstr (_, inst) when List.length params = List.length inst -> subst params inst fty | _ -> fty
+  match unabbrev ty with Tconstr (_, inst) when List.length params = List.length inst -> subst params inst fty | _ -> fty
 
 (* an exception: a class of System.Exception's, its message its name;
  * OCaml's Division_by_zero .NET's own, which a division throws *)

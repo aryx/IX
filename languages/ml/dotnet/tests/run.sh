@@ -161,6 +161,24 @@ front_end() {
     else fail "mini-cc compiled to .NET: -$1 $2.c, run by $what"; diff $T/$2.facts $W/cc.out | head -5; fi
   done
 }
+# the analysis's pipeline on .NET: mini-datalog compiled too, and
+# languages/c/facts/tests/run.sh with both assemblies (CC, DATALOG): its
+# facts and the pointer analysis's and liveness's answers the native's
+# (with -ms: Microsoft's dotnet, 18 s; mini-dotnet's interpreter takes 81)
+pipeline() {
+  local ml=$(abs $1) run=$2 D=languages/datalog P=_mk/7/languages/datalog u f files=
+  [ -f $W/mini-cc.dll ] || { echo "skipped: the pipeline (mini-cc not compiled)"; return; }
+  for u in $(sed -n 's/^SRC=//p' $D/mkfile); do
+    for f in $D/$u.ml languages/prolog/$u.ml $P/$u.ml; do [ -f $f ] && break; done
+    files="$files $(realpath $f)"
+  done
+  if ! (cd $D && $ml -L ../../lib_core -I . -I ../prolog -I ../../$P -dotnet -o $W/mini-datalog.dll $files) > $W/dl.err 2>&1; then
+    fail "mini-datalog compiled to .NET"; head -3 $W/dl.err; return
+  fi
+  if CC="$run $W/mini-cc.dll" DATALOG="$run $W/mini-datalog.dll" languages/c/facts/tests/run.sh > $W/pipeline.out 2>&1; then
+    ok "the facts pipeline on .NET: mini-cc's facts, mini-datalog's pointer analysis and liveness, the native's, by $3"
+  else fail "the facts pipeline on .NET, by $3"; grep -v '^ok' $W/pipeline.out | head -5; fi
+}
 ML=${DUNEML:-_build/default/languages/ml/Main.exe}
 DOTNET=${DUNEDOTNET:-_build/default/languages/dotnet/Main.exe}
 if [ -n "$record" ]; then check dune $ML $DOTNET; exit 0; fi
@@ -169,6 +187,7 @@ if [ "$only" != mini ]; then
   if [ -n "$ms" ]; then
     if command -v dotnet > /dev/null; then check "dune's mini-ml, Microsoft's dotnet" $ML $(command -v dotnet); interop $ML
       front_end $ML $(command -v dotnet) "Microsoft's dotnet"
+      pipeline $ML $(command -v dotnet) "Microsoft's dotnet"
     else echo "skipped: Microsoft's dotnet (none here)"; fi
   fi
 fi

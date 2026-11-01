@@ -65,8 +65,11 @@ let out6 (k : int) (a : Obj.t) (b : Obj.t) (c : Obj.t) (d : Obj.t) (e : Obj.t) (
 let out7 (k : int) (a : Obj.t) (b : Obj.t) (c : Obj.t) (d : Obj.t) (e : Obj.t) (f : Obj.t) (g : Obj.t) : Obj.t =
   (!table).(k) [| a; b; c; d; e; f; g |]
 
-(* an int32 past an int's 31 bits (arm), from its halves *)
-let box (hi : int) (lo : int) : Obj.t = Obj.repr (Int32.logor (Int32.shift_left (Int32.of_int hi) 16) (Int32.of_int lo))
+(* an int32 past an int's 31 bits (arm), from its halves; on arm64 an
+ * int64 (L) of its 32-bit halves *)
+let box (hi : int) (lo : int) : Obj.t =
+  if mach = Jit.Arm64 then Obj.repr (Int64.logor (Int64.shift_left (Int64.of_int hi) 32) (Int64.of_int lo))
+  else Obj.repr (Int32.logor (Int32.shift_left (Int32.of_int hi) 16) (Int32.of_int lo))
 
 (* a value of the code's, of its kind, as the interpreter's, and back *)
 (* (an int32 a tagged int, or on arm past 31 bits its Int32 block) *)
@@ -74,12 +77,29 @@ let of_word (k : Jit.kind) (x : Obj.t) : value =
   match k with
   | Jit.I -> if Obj.is_int x then I4 (Int32.of_int (Obj.obj x : int)) else I4 (Obj.obj x : int32)
   | Jit.R -> (Obj.obj x : value)
+  (* (an int64: its block, or its halves joined, of_words) *)
+  | Jit.L -> if Obj.is_int x then I8 (Int64.of_int (Obj.obj x : int)) else I8 (Obj.obj x : int64)
+
+(* a call-out's words, its operands: an int64's two, its halves *)
+let of_words (kinds : Jit.kind array) (a : Obj.t array) : Obj.t array =
+  let i = ref 0 in
+  Array.map (fun (k : Jit.kind) ->
+      let x = a.(!i) in
+      incr i;
+      if k = Jit.L then begin
+        let lo = a.(!i) in
+        incr i;
+        box (Obj.obj x : int) (Obj.obj lo : int)
+      end else x) kinds
 
 let to_word (k : Jit.kind) (v : value) : Obj.t =
   match k, v with
   | Jit.I, I4 n -> let i = Int32.to_int n in if Int32.of_int i = n then Obj.repr i else Obj.repr n
   | Jit.I, _ -> Frame.error "the JIT's code: an int32 expected"
   | Jit.R, v -> Obj.repr v
+  (* (an int64 to the code: its block, which it reads at 0) *)
+  | Jit.L, I8 n -> Obj.repr n
+  | Jit.L, _ -> Frame.error "the JIT's code: an int64 expected"
 
 (* ------------------------------------------------------------------ *)
 (* An assembly's code *)
@@ -100,11 +120,12 @@ let run_site (m : meth) (code : code) (s : Jit.site) : Obj.t array -> Obj.t =
     | Jit.Made k -> Machine.exec m code k [||]
     | _ -> of_word kinds.(j) x in
   if not (List.mem Jit.Addr s.sform) then
-    fun (a : Obj.t array) -> result (run (Array.mapi operand a))
+    fun (a : Obj.t array) -> result (run (Array.mapi operand (of_words kinds a)))
   else
     (* a local's address: an interpreter's cell with its value, its
      * new value given back after the result *)
     fun (a : Obj.t array) ->
+      let a = of_words kinds a in
       let cells = Array.map (fun x -> [| x |]) (Array.mapi operand a) in
       let v = run (Array.mapi (fun j (c : value array) -> if form.(j) = Jit.Addr then Ptr (Slot (c, 0)) else c.(0)) cells) in
       let back = List.filter (fun j -> form.(j) = Jit.Addr) (List.init (Array.length a) (fun j -> j)) in
@@ -180,6 +201,7 @@ let native (m : meth) (addr : int) : value array -> value =
   (* (a struct a reference to the code, its Vt; an enum an int32) *)
   let kind t = match t with
     | T_value c when c.kind = Struct -> Jit.R
+    | T_i8 | T_u8 when mach = Jit.Arm64 -> Jit.L
     | T_i8 | T_u8 | T_r4 | T_r8 -> Jit.R
     | t -> if is_ref t then Jit.R else Jit.I in
   let ks = Array.of_list ((if m.static then [] else [ Jit.R ]) @ List.map kind m.params) in

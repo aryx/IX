@@ -651,6 +651,28 @@ but really use the same types!". So the decisions below are those of
    docs/plans/bugs/ix.md): mini-ld's arm64 encoder refused a small
    unaligned offset (the JIT died on sha), mini-dotnet's 10,000 frames
    (maps' List.map; now 30,000).
+   Then (the author, asked: "JIT int64, arm64 first"; and: "long term
+   the arm64 part of mini-dotnet is more important than the arm [...]
+   Still we also want to make it work on the Pi1 and Pi2"): an int64
+   the JIT's own on arm64 (Jit's kind L: a word in a register, X
+   instructions; crossing to ML as two tagged halves, or its block),
+   so that ML's code is compiled: fib's interpreted instructions
+   676,669 before, 1,529 after; the suite's 20 programs by the JIT
+   (run.sh's third pass), C#'s and Tiger's too. The times:
+
+       program  native  dotnet  mini-dotnet -jit (before)
+       fib       0.006   0.115   0.502  (0.733)
+       pixels    0.013   0.086   2.267  (6.688)
+       matrix    0.012   0.086   2.350  (5.435)
+       interp    0.009   0.156   7.073  (8.295)
+
+   What is left of mini-dotnet's: about 450 ms of the JIT's own start,
+   at a first call (fib with nothing compiled, -tier 1000000: 639 ms;
+   interpreted 194 ms), the assembly's stubs and entries, all its
+   methods', assembled and encoded by mini-asm's and mini-ld's passes
+   (their text alone 130 ms, verifying 32); and doubles, and int64s
+   on arm, still call-outs. Next: those stubs made at a first call,
+   and bigger runs for the times beyond the start.
 5. **mini-cc to IL, a managed C** (decision 4). Check: mini-cc's
    tests that stay in it, by both runtimes, what the native build
    prints; those refused, counted with their reason.

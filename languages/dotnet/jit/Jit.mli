@@ -116,10 +116,26 @@
  * called on its address writes in it; a field of a struct through its
  * address (its own methods' this), a struct field, ldtoken: call-outs.
  *
- * {b int64s, doubles}: the interpreter's I8 and R8, references to the
- * code, their arithmetic, conversions and comparisons (and every
- * checked operation) call-outs, a branch on them the interpreter's
- * test, then the code's branch: compiled, not fast.
+ * {b int64s} on arm64 (kind L, [longs]): the code's own, a word in a
+ * register or a slot of the machine's stack, as an int32 is, their
+ * templates X instructions (ADD where an int32's is ADDW, SDIV, a
+ * shift's count its 6 bits); a field or an element of 8 bytes read
+ * and written in place, conv.i8 a sign extension (MOVW), conv.u8 a
+ * zero one (MOVWU). An int64 is ML's int (mini-ml -dotnet), so this is
+ * what takes ML's code: fib's own method, interpreted before. One
+ * crossing to ML is a value of its: given to a call-out, its high and
+ * low 32 bits, tagged (two words, two registers); from ML, its Int64
+ * block, read at 0 at once; an entry's result made a block by
+ * jit_box, of its halves (as arm's int32 past 31 bits).
+ *
+ *     ldarg.0; ldc.i8 1; sub        MOV a0+0(FP), R1; MOV $1, R2
+ *                                   SUB R2, R1
+ *
+ * {b doubles}, and int64s on arm (a pair of registers there, later):
+ * the interpreter's R8 and I8, references to the code, their
+ * arithmetic, conversions and comparisons (and every checked
+ * operation) call-outs, a branch on them the interpreter's test, then
+ * the code's branch: compiled, not fast.
  *
  * What it refuses is said with the reason: an address at a jump or
  * given to the code itself, an instruction without its template yet,
@@ -193,8 +209,10 @@ exception Refused of string
 type mach = Arm | Arm64
 
 (* a slot's kind: an int32 (a native int) on the machine's stack, a
- * reference (the interpreter's value) on mini-ml's *)
-type kind = I | R
+ * reference (the interpreter's value) on mini-ml's, an int64 (arm64,
+ * with references) on the machine's, 64 bits: crossing to ML as its
+ * block (Int64's), or as two tagged halves, its high and low 32 bits *)
+type kind = I | R | L
 
 (* a call-out: an instruction of a method (its row, its index) the
  * interpreter runs for the code (Machine.exec), its operands' kinds,

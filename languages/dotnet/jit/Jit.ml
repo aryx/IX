@@ -14,7 +14,12 @@ let sprintf = Printf.sprintf
 
 type mach = Arm | Arm64
 
-type kind = I | R
+type kind = I | R | L
+
+(* an int64 the code's own (L), in a register, a slot of the machine's
+ * stack: on arm64 with references (Jit_run's), where a word holds it;
+ * else the interpreter's I8, a reference, its arithmetic call-outs *)
+let longs = ref false
 
 type form = Word | Addr | Made of int
 
@@ -64,6 +69,7 @@ let typ_kind (t : Value.typ) : kind option =
   | Value.T_bool | Value.T_char | Value.T_i1 | Value.T_u1 | Value.T_i2 | Value.T_u2
   | Value.T_i4 | Value.T_u4 | Value.T_i | Value.T_u -> Some I
   | Value.T_class _ | Value.T_array _ -> Some R
+  | Value.T_i8 | Value.T_u8 when !longs -> Some L
   | _ -> None
 
 let gen_kind (t : S.t) : kind option =
@@ -76,6 +82,7 @@ let gen_kind (t : S.t) : kind option =
 let sig_kind (img : Image.t) (refs : bool) (what : string) (t : S.t) : kind =
   if int32_sig t then I
   else match V.of_sig img t with
+    | Some V.Int64 when refs && !longs -> L
     | Some (V.Obj _ | V.Ptr _ | V.Value _ | V.Int64 | V.Float) when refs -> R
     | Some (V.Gen g) when refs -> (match gen_kind g with Some k -> k | None -> refuse what)
     | _ -> refuse what
@@ -92,6 +99,7 @@ let vt_kind (refs : bool) (v : V.vt) : kind option =
   | V.Value _ when refs -> Some R
   (* (an int64, a double: the interpreter's I8, R8, their arithmetic its
    * own, by call-outs) *)
+  | V.Int64 when refs && !longs -> Some L
   | V.Int64 | V.Float when refs -> Some R
   | V.Gen g when refs -> gen_kind g
   | _ -> None
@@ -180,7 +188,10 @@ let field (im : Value.image) (tok : int) : Value.field =
 
 (* an int64 or a double among the [n] operands on top *)
 let numeric (st : V.vt list) (n : int) : bool =
-  List.exists (fun v -> v = V.Int64 || v = V.Float) (List.filteri (fun i _ -> i < n) st)
+  List.exists (fun v -> (v = V.Int64 && not !longs) || v = V.Float) (List.filteri (fun i _ -> i < n) st)
+
+(* an int64 (L) among them: the code's conversions to and from it *)
+let long_kind (k : Il.kind) : bool = !longs && (k = Il.K_i8 || k = Il.K_u8)
 
 (* an int32's operation the templates have (no overflow check) *)
 let int_op (o : Il.binop) : bool =
@@ -237,14 +248,15 @@ let call_out (img : Image.t) (im : Value.image option) (taken : int -> bool) (ca
   | Il.Ldfld tok when not (by_code tok (match st with o :: _ -> o | _ -> V.Obj None)) -> Some (1, true)
   | Il.Ldtoken _ -> Some (0, true)
   (* the numbers that are not int32s: the interpreter's arithmetic *)
-  | Il.Ldc_i8 _ | Il.Ldc_r _ -> Some (0, true)
+  | Il.Ldc_i8 _ when not !longs -> Some (0, true)
+  | Il.Ldc_r _ -> Some (0, true)
   | Il.Conv_r_un | Il.Ckfinite -> Some (1, true)
-  | Il.Conv (k, ovf, _) when ovf || not (int_kind k) || numeric st 1 -> Some (1, true)
+  | Il.Conv (k, ovf, _) when ovf || not (int_kind k || long_kind k) || numeric st 1 -> Some (1, true)
   | (Il.Neg | Il.Not) when numeric st 1 -> Some (1, true)
   | Il.Binop o when numeric st 2 || not (int_op o) -> Some (2, true)
   | (Il.Ceq | Il.Cgt _ | Il.Clt _) when numeric st 2 -> Some (2, true)
-  | Il.Ldelem k when not (int_kind k || k = Il.K_ref) -> Some (2, true)
-  | Il.Stelem k when not (int_kind k || k = Il.K_ref) -> Some (3, false)
+  | Il.Ldelem k when not (int_kind k || long_kind k || k = Il.K_ref) -> Some (2, true)
+  | Il.Stelem k when not (int_kind k || long_kind k || k = Il.K_ref) -> Some (3, false)
   | _ -> None
 
 (* the operands of an instruction the code does itself (not a
@@ -342,10 +354,12 @@ let accept (img : Image.t) (im : Value.image option) (row : int) : V.result =
       match ins.op, stack with
       | Il.Call tok, _ when not refs && M.token_table tok <> M.t_method_def ->
           refuse (sprintf "IL_%04x: a call into the library" ins.at)
-      | (Il.Call _ | Il.Callvirt _ | Il.Newobj _), _ when refs ->
-          (match call_out img im (fun _ -> false) row stack ins.op with
-           | Some (n, _) when n > outs -> refuse (sprintf "IL_%04x: a call of %d arguments" ins.at n)
-           | _ -> ())
+      (* (a call-out's operands in registers: an int64 (L) two of them,
+       * its halves) *)
+      | _, _ when refs && (match call_out img im (fun _ -> false) row stack ins.op with
+          | Some (n, _) -> n + List.length (List.filter (fun v -> vt_kind refs v = Some L) (List.filteri (fun j _ -> j < n) stack)) > outs
+          | None -> false) ->
+          refuse (sprintf "IL_%04x: a call-out of more than %d words" ins.at outs)
       | (Il.Bcmp ((Il.Eq | Il.Ne), _, _) | Il.Ceq | Il.Cgt true), b :: a :: _ when is_ref a || is_ref b -> ()
       | (Il.Bcmp _ | Il.Cgt _ | Il.Clt _), b :: a :: _ when is_ref a || is_ref b ->
           refuse (sprintf "IL_%04x: %s of references" ins.at ins.name)
@@ -530,8 +544,8 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
         let d = match r.stacks.(i) with Some s -> List.length s | None -> 0 in
         for k = max 0 (d - 2) to d do use (Hslot k) done;
         match x.op with
-        | Il.Ldloc l | Il.Stloc l when locals.(l) = I -> use (Hlocal l)
-        | Il.Ldarg a | Il.Starg a when args.(a) = I -> use (Harg a)
+        | Il.Ldloc l | Il.Stloc l when locals.(l) <> R -> use (Hlocal l)
+        | Il.Ldarg a | Il.Starg a when args.(a) <> R -> use (Harg a)
         | _ -> ()) r.instrs;
     (* (a home used no more than twice a call is not worth its saves
      * and restores: Fib's n, three uses for two calls, took 17% more
@@ -557,8 +571,10 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
       | Hslot k -> (rg, mem_slot k) :: acc
       | Hlocal l -> (rg, mem_local l) :: acc
       | Harg a -> (rg, mem_arg a) :: acc) reg [] in
-  let save below = List.iter (fun (rg, mem) -> ins "MOVW\t%s, %s" rg mem) (List.sort compare (in_use below)) in
-  let restore below = List.iter (fun (rg, mem) -> ins "MOVW\t%s, %s" mem rg) (List.sort compare (in_use below)) in
+  (* (on arm64 whole words: a register may hold an int64, L) *)
+  let mv = if a64 then "MOV" else "MOVW" in
+  let save below = List.iter (fun (rg, mem) -> ins "%s\t%s, %s" mv rg mem) (List.sort compare (in_use below)) in
+  let restore below = List.iter (fun (rg, mem) -> ins "%s\t%s, %s" mv mem rg) (List.sort compare (in_use below)) in
   let vslot k = word k and vlocal i = word (nslots + i) and varg i = word (nslots + nlocals + i) in
   let record c j = sprintf "r%d_%d-%d(SP)" c j (w * (nslots + nlocals + (5 * c) + 4 - j)) in
   let cont c = sprintf "k%d-%d(SP)" c (w * (nslots + nlocals + (5 * c) + 5)) in
@@ -589,7 +605,7 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
   let struct_local = Array.of_list (List.map is_struct (local_sigs img body)) in
   (* (and an int64's, a double's: a local starts as its zero, I8 0, R8 0) *)
   let init_local = Array.of_list (List.map (fun t ->
-      match V.of_sig img t with Some (V.Value _ | V.Int64 | V.Float) -> true | _ -> false) (local_sigs img body)) in
+      match V.of_sig img t with Some (V.Value _ | V.Float) -> true | Some V.Int64 -> not !longs | _ -> false) (local_sigs img body)) in
   let struct_arg = Array.of_list ((if sg.has_this then [ false ] else []) @ List.map is_struct sg.params) in
   let copy k =
     save k;
@@ -602,6 +618,7 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
                          (Listing.token_name img (M.token M.t_method_def row)) (String.length body.code) nslots nlocals);
   Buffer.add_string b (sprintf "\tTEXT\t%s(SB), 0, $%d\n" sym frame);
   if nargs > 0 && args.(0) = I then ins "MOVW\tR0, %s" (mem_arg 0);
+  if nargs > 0 && args.(0) = L then ins "MOV\tR0, %s" (mem_arg 0);
   (* the machine's stack checked: a recursion with no end is the
    * interpreter's Stack_overflow (jit_overflow), as its 10,000 frames,
    * not a fault; the limit in words (an address past an int's 31 bits
@@ -634,12 +651,12 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
         ins "MOV\tR0, %s" (vlocal l)
       end) init_local;
   (* the locals zeroed, as .locals init asks (C#'s always does) *)
-  if Array.exists (( = ) I) locals then begin
+  if Array.exists (fun k -> k <> R) locals then begin
     ins "MOVW\t$0, R1";
-    Array.iteri (fun i k -> if k = I then ins "MOVW\tR1, %s" (local i)) locals
+    Array.iteri (fun i k -> if k = I then ins "MOVW\tR1, %s" (local i) else if k = L then ins "MOV\tR1, %s" (local i)) locals
   end;
   (* the arguments with a register, from their memory homes *)
-  Hashtbl.iter (fun h rg -> match h with Harg a -> ins "MOVW\t%s, %s" (mem_arg a) rg | _ -> ()) reg;
+  Hashtbl.iter (fun h rg -> match h with Harg a -> ins "%s\t%s, %s" mv (mem_arg a) rg | _ -> ()) reg;
   let return () =
     if nv > 0 then ins "SUB\t$%d, R26" (w * nv);
     ins "%s" (if a64 then "RETURN" else "RET") in
@@ -673,7 +690,15 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
       (* a value moved: from a place to a place, of its kind *)
       let move k (src_i, src_r) (dst_i, dst_r) =
         if k = I then (ins "MOVW\t%s, R1" src_i; ins "MOVW\tR1, %s" dst_i)
+        else if k = L then (ins "MOV\t%s, R1" src_i; ins "MOV\tR1, %s" dst_i)
         else (ins "MOV\t%s, R1" src_r; ins "MOV\tR1, %s" dst_r) in
+      (* an int64's operation (L): the two slots, 64 bits *)
+      let long2 () = before top = L || before (top - 1) = L in
+      let pair_l f =
+        ins "MOV\t%s, R1" (slot (top - 1));
+        ins "MOV\t%s, R2" (slot top);
+        f ();
+        ins "MOV\tR1, %s" (slot (top - 1)) in
       let pair f =
         ins "MOVW\t%s, R1" (slot (top - 1));
         ins "MOVW\t%s, R2" (slot top);
@@ -742,13 +767,17 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
         ins "ADD\tR2, R1" in
       let load_of (t : Value.typ) = match t with
         | Value.T_bool | Value.T_u1 -> "MOVBU" | Value.T_i1 -> "MOVB"
-        | Value.T_char | Value.T_u2 -> "MOVHU" | Value.T_i2 -> "MOVH" | _ -> "MOVW" in
+        | Value.T_char | Value.T_u2 -> "MOVHU" | Value.T_i2 -> "MOVH"
+        | Value.T_i8 | Value.T_u8 -> "MOV" | _ -> "MOVW" in
       let store_as (t : Value.typ) = match t with
         | Value.T_bool | Value.T_u1 | Value.T_i1 -> "MOVB"
-        | Value.T_char | Value.T_u2 | Value.T_i2 -> "MOVH" | _ -> "MOVW" in
+        | Value.T_char | Value.T_u2 | Value.T_i2 -> "MOVH"
+        | Value.T_i8 | Value.T_u8 -> "MOV" | _ -> "MOVW" in
       let kind_typ (k : Il.kind) : Value.typ = match k with
         | Il.K_i1 -> Value.T_i1 | Il.K_u1 -> Value.T_u1 | Il.K_i2 -> Value.T_i2
-        | Il.K_u2 -> Value.T_u2 | _ -> Value.T_i4 in
+        | Il.K_u2 -> Value.T_u2 | Il.K_i8 -> Value.T_i8 | Il.K_u8 -> Value.T_u8 | _ -> Value.T_i4 in
+      (* (a slot written or read of its kind: an int64's 8 bytes) *)
+      let mov_of (t : Value.typ) = if typ_kind t = Some L then "MOV" else "MOVW" in
       match refs, x.op with
       | Some _, _ when r.stacks.(i) = None -> ()
       | Some { sites; base; _ }, _ when call_out img im taken row (match r.stacks.(i) with Some s -> s | None -> []) x.op <> None ->
@@ -792,18 +821,34 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
                   ins "MOVW\tR0, %s" (vslot s)
                 end) kinds;
           ins "MOV\t$%d, R1" (2 * number + 1);
+          (* (each operand a register from R2; an int64, L, two: its high
+           * and low 32 bits, tagged, a value of mini-ml's each) *)
+          let next = ref 2 in
           List.iteri (fun j k ->
               let s = top - n + 1 + j in
               let _, src, vsrc = home j in
-              if k = R then ins "MOV\t%s, R%d" vsrc (j + 2)
-              else if a64 then (ins "MOVW\t%s, R%d" src (j + 2); ins "LSL\t$1, R%d" (j + 2); ins "ORR\t$1, R%d" (j + 2))
+              let rg = !next in
+              incr next;
+              if k = R then ins "MOV\t%s, R%d" vsrc rg
+              else if k = L then begin
+                incr next;
+                ins "MOV\t%s, R%d" src rg;
+                ins "MOV\tR%d, R%d" rg (rg + 1);
+                ins "ASR\t$32, R%d" rg;
+                ins "LSL\t$1, R%d" rg;
+                ins "ORR\t$1, R%d" rg;
+                ins "AND\t$4294967295, R%d" (rg + 1);
+                ins "LSL\t$1, R%d" (rg + 1);
+                ins "ORR\t$1, R%d" (rg + 1)
+              end
+              else if a64 then (ins "MOVW\t%s, R%d" src rg; ins "LSL\t$1, R%d" rg; ins "ORR\t$1, R%d" rg)
               else begin
-                ins "MOVW\t%s, R%d" src (j + 2);
-                ins "ADD.S\tR%d, R%d, R%d" (j + 2) (j + 2) (j + 2);
-                ins "ORR.VC\t$1, R%d" (j + 2);
-                ins "MOVW.VS\t%s, R%d" (vslot s) (j + 2)
+                ins "MOVW\t%s, R%d" src rg;
+                ins "ADD.S\tR%d, R%d, R%d" rg rg rg;
+                ins "ORR.VC\t$1, R%d" rg;
+                ins "MOVW.VS\t%s, R%d" (vslot s) rg
               end) kinds;
-          ins "BL\tjit_out%d(SB)" n;
+          ins "BL\tjit_out%d(SB)" (!next - 2);
           restore (top - n + 1);
           (* the locals' new values, then the result: an array of them *)
           if List.mem Addr sform then begin
@@ -813,12 +858,16 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
                   incr m;
                   let _, _, vsrc = home j in
                   ins "MOV\t%d(R0), R1" (w * !m);
-                  if k = I then (unbox_reg "R1"; ins "MOVW\tR1, %s" (back j)) else ins "MOV\tR1, %s" vsrc
+                  if k = I then (unbox_reg "R1"; ins "MOVW\tR1, %s" (back j))
+                  else if k = L then (ins "MOV\t0(R1), R1"; ins "MOV\tR1, %s" (back j))
+                  else ins "MOV\tR1, %s" vsrc
                 end) kinds;
             ins "MOV\t0(R0), R0"
           end;
           (match ret with
            | Some I -> unbox (); ins "MOVW\tR0, %s" (slot (top - n + 1))
+           (* (an int64 from ML: its block, its 64 bits at 0) *)
+           | Some L -> ins "MOV\t0(R0), R0"; ins "MOV\tR0, %s" (slot (top - n + 1))
            | Some R -> ins "MOV\tR0, %s" (vslot (top - n + 1))
            | None -> ())
       | _, Il.Nop | _, Il.Prefix _ | _, Il.Constrained _ | _, Il.Ldloca _ | _, Il.Ldarga _ | _, Il.Ldftn _ -> ()
@@ -829,6 +878,7 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
           if refs <> None && struct_local.(l) then copy (top + 1)
       | _, Il.Stloc l -> move locals.(l) (slot top, vslot top) (local l, vlocal l)
       | _, Il.Ldc_i4 n -> ins "MOVW\t$%ld, R1" n; ins "MOVW\tR1, %s" (slot (top + 1))
+      | _, Il.Ldc_i8 n -> ins "MOV\t$%Ld, R1" n; ins "MOV\tR1, %s" (slot (top + 1))
       | _, Il.Ldnull -> ins "MOV\t$1, R1"; ins "MOV\tR1, %s" (vslot (top + 1))
       | _, Il.Dup -> move (before top) (slot top, vslot top) (slot (top + 1), vslot (top + 1));
           if refs <> None && (match r.stacks.(i) with Some (V.Value _ :: _) -> true | _ -> false) then copy (top + 1)
@@ -840,12 +890,12 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
            | Il.Ldfld _ ->
                store_of top;
                if is_ref then (ins "MOV\t%d(R1), R1" store_r; ins "MOV\t%d(R1), R1" (w * fd.roff); ins "MOV\tR1, %s" (vslot top))
-               else (ins "MOV\t%d(R1), R1" store_s; ins "%s\t%d(R1), R1" (load_of fd.ftype) fd.off; ins "MOVW\tR1, %s" (slot top))
+               else (ins "MOV\t%d(R1), R1" store_s; ins "%s\t%d(R1), R1" (load_of fd.ftype) fd.off; ins "%s\tR1, %s" (mov_of fd.ftype) (slot top))
            | _ when is_ref -> assert false
            | _ ->
                store_of (top - 1);
                ins "MOV\t%d(R1), R1" store_s;
-               ins "MOVW\t%s, R2" (slot top);
+               ins "%s\t%s, R2" (mov_of fd.ftype) (slot top);
                ins "%s\tR2, %d(R1)" (store_as fd.ftype) fd.off)
       | Some _, Il.Ldlen ->
           store_of top;
@@ -860,11 +910,11 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
           let t = kind_typ k in
           element top (Value.scalar_size t) false;
           ins "%s\t0(R1), R1" (load_of t);
-          ins "MOVW\tR1, %s" (slot (top - 1))
+          ins "%s\tR1, %s" (mov_of t) (slot (top - 1))
       | Some _, Il.Stelem k ->
           let t = kind_typ k in
           element (top - 1) (Value.scalar_size t) false;
-          ins "MOVW\t%s, R3" (slot top);
+          ins "%s\t%s, R3" (mov_of t) (slot top);
           ins "%s\tR3, 0(R1)" (store_as t)
       | Some _, Il.Binop ((Il.Div | Il.Div_un | Il.Rem | Il.Rem_un) as o) when not a64 ->
           (* arm's (the Pi 1's ARMv6) has no division: the runtime's
@@ -888,6 +938,25 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
               | Il.Rem -> ins "MOVW\tR2, R1"; ins "CMP\t$0, R5"; ins "RSB.LT\t$0, R1, R1"
               | Il.Rem_un -> ins "MOVW\tR2, R1"
               | _ -> ())
+      (* an int64's (L): the X registers; a shift's count its low 6 bits *)
+      | _, Il.Binop o when long2 () ->
+          pair_l (fun () ->
+              match o with
+              | Il.Add -> ins "ADD\tR2, R1"
+              | Il.Sub -> ins "SUB\tR2, R1"
+              | Il.Mul -> ins "MUL\tR2, R1"
+              | Il.And -> ins "AND\tR2, R1"
+              | Il.Or -> ins "ORR\tR2, R1"
+              | Il.Xor -> ins "EOR\tR2, R1"
+              | Il.Shl | Il.Shr | Il.Shr_un ->
+                  ins "AND\t$63, R2";
+                  ins "%s\tR2, R1" (match o with Il.Shl -> "LSL" | Il.Shr -> "ASR" | _ -> "LSR")
+              | Il.Div | Il.Div_un | Il.Rem | Il.Rem_un ->
+                  ins "CMP\t$0, R2";
+                  ins "BNE\t2(PC)";
+                  ins "BL\tjit_divide_by_zero(SB)";
+                  ins "%s\tR2, R1" (match o with Il.Div -> "SDIV" | Il.Div_un -> "UDIV" | Il.Rem -> "REM" | _ -> "UREM")
+              | _ -> assert false)
       | _, Il.Binop o ->
           pair (fun () ->
               match o with
@@ -913,6 +982,10 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
                       | Il.Div, Arm64 -> "SDIVW" | Il.Div_un, Arm64 -> "UDIVW" | Il.Rem, Arm64 -> "REMW"
                       | _, Arm64 -> "UREMW")
               | _ -> assert false)
+      | _, (Il.Neg | Il.Not) when before top = L ->
+          ins "MOV\t%s, R1" (slot top);
+          ins "%s\tR1, R1" (if x.op = Il.Neg then "NEG" else "MVN");
+          ins "MOV\tR1, %s" (slot top)
       | _, Il.Neg ->
           ins "MOVW\t%s, R1" (slot top);
           if a64 then ins "NEGW\tR1, R1" else ins "RSB\t$0, R1, R1";
@@ -923,12 +996,24 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
           ref_eq ();
           if x.op <> Il.Ceq then ins "EOR\t$1, R3";
           ins "MOVW\tR3, %s" (slot (top - 1))
+      | _, (Il.Ceq | Il.Cgt _ | Il.Clt _) when long2 () ->
+          ins "MOV\t%s, R1" (slot (top - 1));
+          ins "MOV\t%s, R2" (slot top);
+          ins "CMP\tR2, R1";
+          set_bool (match x.op with
+              | Il.Ceq -> "EQ" | Il.Cgt un -> compare Il.Gt un | Il.Clt un -> compare Il.Lt un | _ -> assert false)
       | _, (Il.Ceq | Il.Cgt _ | Il.Clt _) ->
           ins "MOVW\t%s, R1" (slot (top - 1));
           ins "MOVW\t%s, R2" (slot top);
           ins "%s\tR2, R1" (op "CMP");
           set_bool (match x.op with
               | Il.Ceq -> "EQ" | Il.Cgt un -> compare Il.Gt un | Il.Clt un -> compare Il.Lt un | _ -> assert false)
+      (* (to an int64: from one, itself; from an int32, sign-extended,
+       * conv.u8's zero-extended) *)
+      | _, Il.Conv (k, _, _) when long_kind k ->
+          if before top = L then ins "MOV\t%s, R1" (slot top)
+          else ins "%s\t%s, R1" (if k = Il.K_u8 then "MOVWU" else "MOVW") (slot top);
+          ins "MOV\tR1, %s" (slot top)
       | _, Il.Conv (k, _, _) ->
           ins "MOVW\t%s, R1" (slot top);
           (match k, m with
@@ -962,6 +1047,10 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
           ins "MOV\t%s, R1" (vslot top);
           ins "CMP\t$1, R1";
           ins "%s\t%s" (match x.op with Il.Brtrue _ -> "BNE" | _ -> "BEQ") (label t)
+      | _, (Il.Brfalse t | Il.Brtrue t) when before top = L ->
+          ins "MOV\t%s, R1" (slot top);
+          ins "CMP\t$0, R1";
+          ins "%s\t%s" (match x.op with Il.Brtrue _ -> "BNE" | _ -> "BEQ") (label t)
       | _, (Il.Brfalse t | Il.Brtrue t) ->
           ins "MOVW\t%s, R1" (slot top);
           ins "%s\t$0, R1" (op "CMP");
@@ -970,6 +1059,11 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
           ref_eq ();
           ins "CMP\t$0, R3";
           ins "%s\t%s" (if c = Il.Eq then "BNE" else "BEQ") (label t)
+      | _, Il.Bcmp (c, un, t) when long2 () ->
+          ins "MOV\t%s, R1" (slot (top - 1));
+          ins "MOV\t%s, R2" (slot top);
+          ins "CMP\tR2, R1";
+          ins "B%s\t%s" (compare c un) (label t)
       | _, Il.Bcmp (c, un, t) ->
           ins "MOVW\t%s, R1" (slot (top - 1));
           ins "MOVW\t%s, R2" (slot top);
@@ -988,18 +1082,23 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
           for k = n - 1 downto 1 do
             let s = top - n + 1 + k in
             if ks.(k) = I then (ins "MOVW\t%s, R1" (slot s); ins "MOVW\tR1, %d(%s)" (w + w * k) (if a64 then "R31" else "R13"))
+            else if ks.(k) = L then (ins "MOV\t%s, R1" (slot s); ins "MOV\tR1, %d(R31)" (w + w * k))
             else (ins "MOV\t%s, R1" (vslot s); ins "MOV\tR1, %d(R31)" (w + w * k))
           done;
           if n > 0 then
-            if ks.(0) = I then ins "MOVW\t%s, R0" (slot (top - n + 1)) else ins "MOV\t%s, R0" (vslot (top - n + 1));
+            if ks.(0) = I then ins "MOVW\t%s, R0" (slot (top - n + 1))
+            else if ks.(0) = L then ins "MOV\t%s, R0" (slot (top - n + 1))
+            else ins "MOV\t%s, R0" (vslot (top - n + 1));
           (match refs with
            | Some e -> ins "MOV\t%s, R16" (e.cell callee); ins "MOV\t0(R16), R16"; ins "BL\t(R16)"
            | None -> ins "BL\t%s(SB)" (Hashtbl.find syms callee));
           restore (top - n + 1);
           let sg' = signature img callee in
           if sg'.ret <> S.Void then
-            if sig_kind img (refs <> None) "" sg'.ret = I then ins "MOVW\tR0, %s" (slot (top - n + 1))
-            else ins "MOV\tR0, %s" (vslot (top - n + 1))
+            (match sig_kind img (refs <> None) "" sg'.ret with
+             | I -> ins "MOVW\tR0, %s" (slot (top - n + 1))
+             | L -> ins "MOV\tR0, %s" (slot (top - n + 1))
+             | R -> ins "MOV\tR0, %s" (vslot (top - n + 1)))
       | _, Il.Leave t ->
           (* the trys it leaves, the inner first: each record popped (its
            * previous one the chain's again), its frame; a finally run,
@@ -1044,7 +1143,10 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
               end) cls
       | _, Il.Ret ->
           if sg.ret <> S.Void then
-            if before top = I then ins "MOVW\t%s, R0" (slot top) else ins "MOV\t%s, R0" (vslot top);
+            (match before top with
+             | I -> ins "MOVW\t%s, R0" (slot top)
+             | L -> ins "MOV\t%s, R0" (slot top)
+             | R -> ins "MOV\t%s, R0" (vslot top));
           return ()
       | _ -> assert false) r.instrs;
   (* the handlers: the exception (R0) given to the interpreter's rule
@@ -1075,6 +1177,7 @@ let symbols (img : Image.t) (taken : (int, V.result) Hashtbl.t) : int list * (in
 (* each method's text, its call-outs numbered from 0, a method's cell
  * by its symbol: -S's *)
 let assembly (m : mach) (img : Image.t) (im : Value.image option) : string * int * (int * string) list =
+  longs := m = Arm64 && im <> None;
   let taken, refused = choose img im in
   let rows, syms = symbols img taken in
   let sites = ref [] in
@@ -1101,6 +1204,7 @@ type prepared = {
 }
 
 let prepare (m : mach) (im : Value.image) : prepared =
+  longs := m = Arm64;
   let taken, refused = choose im.img (Some im) in
   let rows, syms = symbols im.img taken in
   { prefused = refused; pmach = m; pim = im; ptaken = taken; prows = rows; psyms = syms }
@@ -1135,6 +1239,10 @@ let runtime ~(mach : mach) ~(throws : (string * int) list) ~(out : int array) ~(
   Buffer.add_string b
     (if a64 then sprintf "\tTEXT\tjit_try(SB), $-8\n\tMOV\tRSP, R16\n\tMOV\tR16, 0(R0)\n\tMOV\tR26, 8(R0)\n\tMOV\tR30, 16(R0)\n\tMOV\t$%d, R16\n\tMOV\t0(R16), R17\n\tMOV\tR17, 24(R0)\n\tMOV\tR0, 0(R16)\n\tMOV\t$0, R0\n\tRET\t(R30)\n" handler
      else sprintf "\tTEXT\tjit_try(SB), $-4\n\tMOVW\tR13, 0(R0)\n\tMOVW\tR10, 4(R0)\n\tMOVW\tR14, 8(R0)\n\tMOVW\t$%d, R9\n\tMOVW\t0(R9), R4\n\tMOVW\tR4, 12(R0)\n\tMOVW\tR0, 0(R9)\n\tMOVW\t$0, R0\n\tRET\n" handler);
+  (* (arm64's: an int64, in R1, to ML, its high and low 32 bits tagged
+   * given to [box], which makes its block) *)
+  if a64 then
+    add (sprintf "\tTEXT\tjit_box(SB), $-8\n\tMOV\tR1, R2\n\tAND\t$4294967295, R2\n\tLSL\t$1, R2\n\tORR\t$1, R2\n\tASR\t$32, R1\n\tLSL\t$1, R1\n\tORR\t$1, R1\n%s" (call box));
   if not a64 then begin
     add (sprintf "\tTEXT\tjit_box(SB), $-4\n\tMOVW\tR1, R2\n\tSLL\t$16, R2\n\tSRL\t$15, R2\n\tORR\t$1, R2\n\tSRA\t$16, R1\n\tSLL\t$1, R1\n\tORR\t$1, R1\n%s" (call box));
     add "\tTEXT\tjit_udiv(SB), $-4\n\tMOVW\t$0, R4\n\tMOVW\t$0, R3\n";
@@ -1168,13 +1276,17 @@ let entry (m : mach) (img : Image.t) (sym : string) (row : int) (cell : int opti
   for k = n - 1 downto 1 do
     ins "MOV\t%d(R1), R2" (w * k);
     if ks.(k) = I then (untag "R2"; ins "MOVW\tR2, %d(R31)" (w + w * k))
+    else if ks.(k) = L then (ins "MOV\t0(R2), R2"; ins "MOV\tR2, %d(R31)" (w + w * k))
     else ins "MOV\tR2, %d(R31)" (w + w * k)
   done;
-  if n > 0 then (ins "MOV\t0(R1), R0"; if ks.(0) = I then untag "R0");
+  (* (an int64, L: its block from ML, its 64 bits at 0) *)
+  if n > 0 then (ins "MOV\t0(R1), R0"; if ks.(0) = I then untag "R0" else if ks.(0) = L then ins "MOV\t0(R0), R0");
   (match cell with
    | Some c -> ins "MOV\t$%d, R16" c; ins "MOV\t0(R16), R16"; ins "BL\t(R16)"
    | None -> ins "BL\t%s(SB)" sym);
   if sg.ret = S.Void then ins "MOV\t$1, R0"
+  (* (an int64 to ML: its block, made of its halves by jit_box) *)
+  else if sig_kind img true "" sg.ret = L then (ins "MOV\tR0, R1"; ins "BL\tjit_box(SB)")
   else if sig_kind img true "" sg.ret = I then begin
     if a64 then (ins "LSL\t$1, R0"; ins "ORR\t$1, R0")
     else begin
@@ -1208,6 +1320,8 @@ let stub (m : mach) (img : Image.t) (sym : string) (row : int) (cell : int) (num
   let arg i = sprintf "a%d+%d(FP)" i (w * i) in
   Buffer.add_string b (sprintf "\tTEXT\t%s_stub(SB), 0, $%d\n" sym (w * (n + 1)));
   if n > 0 && ks.(0) = I then ins "MOVW\tR0, %s" (arg 0);
+  (* (an int64, L: kept where an int32 is, in its argument's place) *)
+  if n > 0 && ks.(0) = L then ins "MOV\tR0, %s" (arg 0);
   if nr > 0 then begin
     ins "ADD\t$%d, R26" (w * nr);
     List.iter (fun i -> if i = 0 then ins "MOV\tR0, %s" (word 0)
@@ -1217,9 +1331,14 @@ let stub (m : mach) (img : Image.t) (sym : string) (row : int) (cell : int) (num
   ins "BL\tjit_compile(SB)";
   for i = n - 1 downto 1 do
     if ks.(i) = I then (ins "MOVW\t%s, R1" (arg i); ins "MOVW\tR1, %d(R31)" (w + w * i))
+    else if ks.(i) = L then (ins "MOV\t%s, R1" (arg i); ins "MOV\tR1, %d(R31)" (w + w * i))
     else (ins "MOV\t%s, R1" (word i); ins "MOV\tR1, %d(R31)" (w + w * i))
   done;
-  if n > 0 then (if ks.(0) = I then ins "MOVW\t%s, R0" (arg 0) else ins "MOV\t%s, R0" (word 0));
+  if n > 0 then
+    (match ks.(0) with
+     | I -> ins "MOVW\t%s, R0" (arg 0)
+     | L -> ins "MOV\t%s, R0" (arg 0)
+     | R -> ins "MOV\t%s, R0" (word 0));
   if nr > 0 then ins "SUB\t$%d, R26" (w * nr);
   ins "MOV\t$%d, R16" cell;
   ins "MOV\t0(R16), R16";
@@ -1265,6 +1384,7 @@ let instance_code (m : mach) (meth : Value.meth) ~(base : int) ~(limit : int) ~(
   | None -> None
   | Some (im, row) ->
       instance := Some (meth.mcls.args, meth.margs);
+      longs := m = Arm64;
       let made = try
         match accept im.img (Some im) row with
         | exception (Refused _ | V.Bad _ | Types.Load_error _) -> None

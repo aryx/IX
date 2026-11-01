@@ -6,7 +6,8 @@
 # 1a to 1d): each program here compiled to an assembly, verified by
 # mini-dotnet (-verify: every method passes), run, against what OCaml
 # prints for it (the .expected files, made by ocaml file.ml, then read);
-# by dune's mini-ml and mini-dotnet, and by mini-ml's own (_mk/7);
+# by dune's mini-ml and mini-dotnet, and by mini-ml's own (_mk/7), and
+# its mini-dotnet's JIT (arm64);
 # Microsoft's dotnet too with -ms (not in make test: it needs the SDK).
 # And what is refused, each with its message (refused.expected); with
 # -ms, C# using an ML unit (interop.cs on shapes.ml), by Microsoft's
@@ -144,4 +145,11 @@ if [ "$only" != mini ]; then
   fi
 fi
 [ "$only" != dune ] && check "mini-ml's mini-ml and mini-dotnet" ${MINIML:-_mk/7/languages/ml/mini-ml} ${MINIDOTNET:-_mk/7/languages/dotnet/mini-dotnet}
+# the same by mini-dotnet's JIT (mini-ml's build has one on arm64: an
+# int64 the code's own, Jit's L), where there is one
+MD=$(abs ${MINIDOTNET:-_mk/7/languages/dotnet/mini-dotnet})
+if [ "$only" != dune ] && [ -x $MD ] && $MD -jit -tier 0 -s languages/dotnet/tests/jit/zero.dll 2>&1 >/dev/null | grep -q "methods compiled"; then
+  printf '#!/bin/sh\nexec %s -jit "$@"\n' $MD > $W/jit.sh; chmod +x $W/jit.sh
+  check "mini-ml's mini-ml and mini-dotnet's JIT" ${MINIML:-_mk/7/languages/ml/mini-ml} $W/jit.sh
+fi
 exit $failures

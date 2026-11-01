@@ -95,7 +95,8 @@ Datalog each for what it is best at, and read by students.
 | | |
 |---|---|
 | `pointer.dl` | the author's, pfff's of 2014: Andersen's, field-based |
-| `calls.dl`, `bugs.dl` | who calls whom, what is never called; three C bugs, over `pointer.dl`'s answers |
+| `calls.dl` | who calls whom, what is never called, over `call_edge`: `andersen.dl`'s in mini-analyze, `pointer.dl`'s in `languages/ml/facts/tests` |
+| `bugs.dl` | three C bugs, over `points_to/`'s answers |
 | `dead.dl` | dead functions, globals, fields, constructors and statements, by `points_to/`'s call graph (`mini-analyze -dead`) |
 | `liveness.dl`, `liveness_ssa.dl`, `dominators.dl` | one function's dataflow, checked against the compilers' own |
 | `points_to/` | the pointer analyses below, each file's header its history |
@@ -231,3 +232,25 @@ reached and not run says nothing, and it speaks only for those workloads and for
 the context file run (ML: `insensitive.dl`, the one `-dead` uses; the object files
 do not end on these programs). A source edited after its object gives lines that
 name another function: the script says so; run it on a clean copy of a tree others edit.
+
+### The bugs on sharper answers (`bugs.dl`, `mini-analyze -context`, 2026-10-31)
+
+mini-analyze's C report now reads `points_to/`, `call1_heap1.dl` unless told. On
+`analyzers/tests/c/bugs/bugs.c`, 5 real bugs and two look-alikes, a string in the
+same field of another object and a string given to a function that another caller
+gives the heap:
+
+| rules | reports | false |
+|---|---:|---:|
+| `pointer.dl` | 7 | 2 |
+| `insensitive.dl`: fields by object | 6 | 1 |
+| `call1_heap1.dl`: and a call site | 5 | 0 |
+
+On real code it has changed nothing yet. rc's one report, `efree` given strings and
+code arrays, stays under every context file, and is not a matter of contexts:
+`codefree` frees only when `--cp[0].i` reaches 0, and a static table's count does
+not. What keeps it safe is a value; a points-to set has none. Read with `-library`
+(without it, what `main` does not reach is not looked at, and mini-ml's runtime is
+called from ML): the runtime, libc's port and Linux files, singularity's, squeak's:
+0 reports, of these three checks only. `kernels/lib_machine`, `kernels/9pi`'s C and
+`debuggers/acid`'s stop on includes; they were not read.

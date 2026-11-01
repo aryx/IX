@@ -385,3 +385,7 @@ order: the sweep, the calls of a run against the call graph (decision 7c),
 94 runs of their tests, 0 functions run and not reached; for C, toy programs,
 which showed the object files' hole (`hole.c`) and its fix. Function by function,
 not call by call: which call went where is not recorded (`-prof` counts addresses).
+
+2026-10-31: `bugs.dl` and mini-analyze on `points_to/`, `-context`, `-library`:
+`lib_code/README.md`. `pointer.dl` and `calls.dl` over it stay as
+`languages/ml/facts/tests`'s; decision 9's retiring of them is the author's to say.

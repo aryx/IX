@@ -12,7 +12,7 @@ let usage = "usage: mini-analyze [-r rules-dir] [-Idir] [-Dname=value] [-L lib] 
 let help = {|usage: mini-analyze [-r rules-dir] [-Idir] [-Dname=value] [-L lib] [-facts] [-dead] [-root f]... file.c|file.ml...
 The C files read as one program, each call through a pointer said with the
 functions it may reach, by an analysis of where each pointer may point
-(Andersen's, the rules of pointer.dl):
+(points_to/'s: Andersen's first pass, then a context file, -context):
   mini-analyze -r lib_code/datalog -I include prog/*.c
   walk.c:56: in walk, through f: hide, show
   main.c:76: in main, through table[]: show
@@ -21,7 +21,7 @@ and the bugs the same answers show (bugs.dl), each a "may":
   bug? bugs.c: scratch may return the address of tmp[], a local of scratch
 The ML files the same, with the library's units they name (lib_core's, by
 -L): each call of a function held in a variable, which functions it may
-reach (0-CFA, the same rules: a closure is a pointer to a function), and the
+reach (Andersen's, by object: a closure is a pointer to a function), and the
 program's functions that its toplevel never reaches (calls.dl):
   mini-analyze tests/ml/handlers/*.ml
   Events.ml:15: in Events:fun at line 15, through h.on_key: Events.beep, Main:fun at line 4
@@ -33,7 +33,10 @@ program's functions that its toplevel never reaches (calls.dl):
   dead.c:24: dead: orphan, in main but no call goes through the pointer
   dead.c:31: dead code: in main, after a return
 -root f: f is also entered from where the facts do not go (assembly)
--r: the directory of pointer.dl, bugs.dl, calls.dl (lib_code/datalog)
+-context file: C's, of points_to/ (call1_heap1); the sharper, the longer
+-library: every function may be called from outside, not main alone: a runtime
+  ML calls, a library; without it what main does not reach is not looked at
+-r: the directory of points_to/, bugs.dl, calls.dl, dead.dl (lib_code/datalog)
 -I, -D: as mini-cc's; -L: lib_core's directory (lib_core); -facts: the facts
 made, not the analysis|}
 
@@ -156,12 +159,16 @@ let report (caps : < caps; .. >) (p : D.t) : unit =
     (D.tuples (D.relation p "assign_load_field" 3));
   List.iter (fun (t : int array) -> Hashtbl.replace loads (name p t.(0)) (name p t.(1), "[]")) (tuples "assign_array_elt");
   let edges = Hashtbl.create 101 in
-  List.iter (fun (t : int array) -> Hashtbl.add edges (name p t.(0)) (name p t.(1))) (tuples "call_edge");
+  List.iter (fun (t : int array) -> Hashtbl.add edges (name p t.(0)) (name p t.(1))) (tuples "target");
+  (* (the calls in code that runs: what is not reached has no answers) *)
+  let running = Hashtbl.create 101 in
+  List.iter (fun (t : int array) -> Hashtbl.replace running (name p t.(0)) ()) (D.tuples (D.relation p "running" 3));
   let calls =
     List.filter_map
       (fun (t : int array) ->
         let s = name p t.(0) and v = name p t.(1) in
         match site s with
+        | _ when not (Hashtbl.mem running s) -> None
         | None -> None
         | Some (f, l) ->
             let file, line = where f l in
@@ -376,13 +383,15 @@ let line (relation : string) (args : C.Facts.arg list) : string =
 
 let main (caps : < caps; .. >) (argv : string array) : int =
   let rules = ref "lib_code/datalog" and lib = ref "lib_core" and only = ref false and incs = ref [] and defs = ref [] and files = ref [] in
-  let dead = ref false and roots = ref [] in
+  let dead = ref false and roots = ref [] and context = ref "call1_heap1" and library = ref false in
   let options =
     Logging.flags
-    @ [ ("-r", Arg.Set_string rules, " the directory of pointer.dl and bugs.dl");
+    @ [ ("-r", Arg.Set_string rules, " the directory of points_to/ and bugs.dl");
         ("-facts", Arg.Set only, " the facts, not the analysis");
         ("-dead", Arg.Set dead, " what no run can reach, not the calls and the bugs");
         ("-root", Arg.String (fun f -> roots := f :: !roots), " a function entered from where the facts do not go");
+        ("-context", Arg.Set_string context, " C: the context file of points_to/ (call1_heap1)");
+        ("-library", Arg.Set library, " every function may be called from outside: a runtime, a library");
         ("-L", Arg.Set_string lib, " lib_core's directory, for an ML program's library");
         ("-I", Arg.String (fun d -> incs := d :: !incs), " a directory of #include's");
         ("-D", Arg.String (fun d -> defs := d :: !defs), " name=value, as #define") ] in
@@ -410,8 +419,12 @@ let main (caps : < caps; .. >) (argv : string array) : int =
               let rules = Fpath.append (path !rules) (Fpath.v r) in
               D.load p ~from:(Fpath.to_string rules) (FS.read caps rules))
             (if !dead then [ "points_to/instructions.dl"; "points_to/contexts.dl"; "points_to/insensitive.dl"; "dead.dl" ]
-             else [ "pointer.dl" ] @ (if c <> [] then [ "bugs.dl" ] else []) @ if ml <> [] then [ "calls.dl" ] else []);
+             else
+               [ "points_to/instructions.dl"; "points_to/andersen.dl" ]
+               @ (if c <> [] then [ "points_to/contexts.dl"; "points_to/" ^ !context ^ ".dl"; "bugs.dl" ] else [])
+               @ if ml <> [] then [ "calls.dl" ] else []);
         List.iter (fun (f : string) -> given p "entry" [ C.Facts.Sym f ]) !roots;
+        if !library then D.load p ~from:"-library" "entry(F) :- function(F).\n";
         C.Facts.added := fact;
         Closure_facts.added :=
           (fun r args -> fact r (List.map (function Closure_facts.Sym s -> C.Facts.Sym s | Closure_facts.Num n -> C.Facts.Num n) args));

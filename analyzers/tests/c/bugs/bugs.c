@@ -50,12 +50,35 @@ release(Buf *b)
 	free(b->data);
 }
 
+/* given a string by one caller, the heap by another: no bug in the one
+ * that frees, but a function run once for both says there is */
+char*
+same(char *p)
+{
+	return p;
+}
+
+void
+lookalikes(void)
+{
+	Buf named, owned;
+
+	/* the same field of two objects: by field's name, one place */
+	named.data = "a label";
+	owned.data = malloc(8);
+	free(owned.data);
+	same("not freed");
+	free(same(malloc(8)));
+}
+
 void
 main(void)
 {
 	Buf b;
 	char *s;
 	int x;
+
+	lookalikes();
 
 	b.data = fresh(10);
 	release(&b);		/* the heap's: no bug */

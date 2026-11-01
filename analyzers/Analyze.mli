@@ -4,10 +4,10 @@
  * address: bugs.dl) (docs/plans/plan_dotnet_languages.md, its step 0). One program of three parts that were three commands:
  * mini-cc's front end reads the C files, Facts says each function as
  * the facts of a pointer analysis (mini-cc -facts), and mini-datalog's
- * evaluator runs the author's rules on them (pointer.dl); the answers
+ * evaluator runs lib_code/datalog/points_to/'s rules on them; the answers
  * are read back here, not printed by another program.
  *
- *    a.c b.c ...                   pointer.dl, bugs.dl (the rules, read at run time)
+ *    a.c b.c ...                   points_to/, bugs.dl (the rules, read at run time)
  *        |                              |
  *    mini-cc's front end                |
  *    (Pre, Lexer, Parser, Declare)      |
@@ -15,7 +15,7 @@
  *    Facts: assign(p, q).  ...          |
  *        |  each a tuple, as found      v
  *    Datalog.add ----------------> Datalog_eval.run
- *                                       |  call_edge(I, F), point_to(V, M)
+ *                                       |  target(I, F), pts(V, M)
  *                                  the report: a.c:12: in walk, through f: hide, show
  *
  *     mini-analyze -r lib_code/datalog prog/*.c

@@ -1,0 +1,4 @@
+; what mini-stats reads in the kernel's files, without a kernel
+(executable
+ (name Test)
+ (libraries ix_sysinfo testo alcotest))

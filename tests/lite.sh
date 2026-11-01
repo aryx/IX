@@ -254,6 +254,7 @@ job "mini-rc: unit tests" _build/default/shell/tests/Test.exe
 job "mini-ed: unit tests" _build/default/editors/ed/tests/Test.exe
 job "mini-rio: what wctl's words say (new -at, -max, -label, -cd, -hold, exit)" _build/default/windows/rio/tests/Test.exe
 job "the desktop's panel and start menu: buttons, what a press asks, apps.table against the card" _build/default/windows/desktop/tests/Test.exe
+job "mini-stats: what it reads in the kernel's files, a rate's height on the strip" _build/default/profilers/misc/tests/Test.exe
 job "mini-chidb: unit tests" _build/default/database/tests/Test.exe
 job "mini-smalltalk: unit tests" _build/default/languages/smalltalk/tests/Test.exe
 job "mini-scheme: unit tests" _build/default/languages/scheme/tests/Test.exe
@@ -314,6 +315,7 @@ job "mini-prolog: the language, by text" languages/prolog/tests/run.sh -dune
 job "mini-forth: the words, by text" languages/forth/tests/run.sh -dune
 job "mini-datalog: its programs, naive and semi-naive" languages/datalog/tests/run.sh -dune
 job "pointer analyses (Andersen's, Doop's contexts): what each tells apart in a C and an ML program, each inside the coarser" lib_code/datalog/tests/run.sh
+job "capabilities as OCaml's types, in Datalog: the errors planted in a program OCaml refuses" lib_code/datalog/tests/caps_types.sh
 job "mini-dotnet: Microsoft's assemblies read, listed (-S), run: what Microsoft's runtime prints" languages/dotnet/tests/run.sh -dune
 job "mini-tiger: fork-tiger's programs and Appel's 49, compiled to .NET, run by mini-dotnet" languages/tiger/tests/run.sh -dune
 job "mini-csc: the survey's C# and its own, compiled to .NET, run by mini-dotnet: what Microsoft's printed" languages/dotnet/csc/tests/run.sh -dune

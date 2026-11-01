@@ -36,12 +36,15 @@ $D/Prof.$O: Prof.ml $LOCAL $MLOCAL
 $D/mini-prof: $MACHOBJS $D/Profiler.$O $D/Prof.$O $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 	$ML -start $STD $COMMONS $MACH Profiler Prof Std_exit -o $D/Prof.start.$O
 	$LD $LDH -nofollow -o $target $D/Prof.start.$O $STDOBJS $MACHOBJS $D/Profiler.$O $D/Prof.$O $STDEND
+$D/Sysinfo.$O: Sysinfo.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target Sysinfo.ml
 $D/Stats.$O: Stats.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target Stats.ml
-$D/mini-stats: $D/Stats.$O $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
-	$ML -start $STD $COMMONS $LIB Stats Std_exit -o $D/Stats.start.$O
-	$LD $LDH -nofollow -o $target $D/Stats.start.$O $STDOBJS $LIBOBJS $D/Stats.$O $STDEND
+$D/mini-stats: $D/Sysinfo.$O $D/Stats.$O $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+	$ML -start $STD $COMMONS $LIB Sysinfo Stats Std_exit -o $D/Stats.start.$O
+	$LD $LDH -nofollow -o $target $D/Stats.start.$O $STDOBJS $LIBOBJS $D/Sysinfo.$O $D/Stats.$O $STDEND
 
 clean:V:
 	rm -rf $D
@@ -49,5 +52,5 @@ clean:V:
 # the units' order (mkfiles/mkdepend)
 DEPOBJ=D
 DEPDIRS=.
-DEPUNITS=$MACH $LIB Profiler Prof Stats
+DEPUNITS=$MACH $LIB Profiler Prof Sysinfo Stats
 <$TOP/mkfiles/mkdepend

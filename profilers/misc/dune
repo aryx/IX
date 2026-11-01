@@ -1,7 +1,12 @@
 ; profilers/misc: principia's profilers/misc, in OCaml: mini-prof
 ; (docs/plans/plan_profiler.md: mini-5i's and mini-qemu's profiles, by
 ; the link's map, function by function) and mini-stats (how busy each
-; core is, as a graph)
+; core is, the memory, the network and the disk, as graphs)
+(library
+ (name ix_sysinfo)
+ (wrapped false)
+ (modules Sysinfo))
+
 (executable
  (name Prof)
  (public_name mini-prof)
@@ -14,4 +19,4 @@
  (public_name mini-stats)
  (package ix)
  (modules Stats)
- (libraries ix_graphics ix_threads ix_core threads.posix unix caps fpath))
+ (libraries ix_sysinfo ix_graphics ix_threads ix_core threads.posix unix caps fpath))

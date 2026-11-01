@@ -9,7 +9,7 @@ top      | Settings      | gear   | 480x360 | settings
 
 apps     | Office        | doc    | 800x600 | office
 apps     | Page          | doc    | 700x600 | page /lib/pdf/tex.pdf
-apps     | Stats         | chart  | 320x120 | stats
+apps     | Stats         | chart  | 400x160 | stats
 apps     | Colors        | app    | 320x320 | colors
 apps     | ReBirth       | note   | 900x600 | rebirth
 

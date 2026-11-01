@@ -97,6 +97,9 @@ let parent path = if typ path = qtopdir || typ path = qunitdir || typ path = qto
 (* I/O (sdbio) *)
 (*****************************************************************************)
 
+(* the bytes read and written, for ctl's io line (not 9pi's: mini-stats') *)
+let read_bytes = ref 0 and written_bytes = ref 0
+
 let bio (c : chan) write s len off =
   let cd = unit () in
   let pp = part c.qid.path in
@@ -113,9 +116,11 @@ let bio (c : chan) write s len off =
       let b = if offset <> 0 || len mod ss <> 0 then Bytes.unsafe_of_string (Emmc.bio cd false "" bno nb) else Bytes.make (nb * ss) '\000' in
       Bytes.blit_string s 0 b offset len;
       ignore (Emmc.bio cd true (Bytes.unsafe_to_string b) bno nb);
+      written_bytes := !written_bytes + len;
       "", len
     end else begin
       let b = Emmc.bio cd false "" bno nb in
+      read_bytes := !read_bytes + len;
       String.sub b offset len, len
     end
   end
@@ -153,6 +158,7 @@ let init () =
         let b = Buffer.create 256 in
         Buffer.add_string b ("inquiry " ^ Emmc.inquiry () ^ "\n");
         Buffer.add_string b (Emmc.rctl cd);
+        Buffer.add_string b (Printf.sprintf "io %d %d\n" !read_bytes !written_bytes);
         Array.iter (fun o -> match o with
           | Some pp -> Buffer.add_string b (Printf.sprintf "part %s %d %d\n" pp.pname pp.start pp.end_)
           | None -> ()) !parts;

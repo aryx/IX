@@ -3,5 +3,5 @@
 # not depend on the screen's size). As Plan 9's riostart.
 window -panel -edge bottom 28 panel
 window -popup -hide -label startmenu startmenu
-window -at ne 320 120 stats
+window -at ne 400 160 stats
 window -at c 640 480 files /usr/pad

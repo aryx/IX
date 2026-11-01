@@ -482,7 +482,23 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         | n :: rest when List.mem n acc || List.mem n own -> needed acc rest
         | n :: rest -> (match List.assoc_opt n lib_units with Some f -> needed (n :: acc) (names_of f @ rest) | None -> needed acc rest) in
       let need = needed [] (List.concat_map names_of units) in
-      let lib = List.filter_map (fun ((n, f) : string * string) -> if List.mem n need then Some f else None) lib_units in
+      (* (a unit's overlay, -L's dotnet/Unit_dotnet.ml, right after it:
+       * its functions in place of the unit's, Lower_il.overlay) *)
+      let overlay_of (n : string) =
+        List.find_map
+          (fun (d : string) ->
+            let f = Filename.concat (root d) ("dotnet/" ^ n ^ "_dotnet.ml") in
+            if FS.read_opt caps (path f) <> None then Some f else None)
+          (List.rev !libs) in
+      let need = need @ List.concat_map (fun (n : string) -> match overlay_of n with Some f -> needed [] (names_of f) | None -> []) need in
+      let lib =
+        List.concat_map
+          (fun ((n, f) : string * string) ->
+            if not (List.mem n need) then []
+            else match overlay_of n with
+              | Some o when not (List.exists (fun (u : string) -> Fpath.to_string (path u) = Fpath.to_string (path o)) units) -> [ f; o ]
+              | _ -> [ f ])
+          lib_units in
       (* (the runtime first, given or not: Pervasives' externals call it) *)
       let runtime = List.filter (fun (f : string) -> FS.read_opt caps (path f) <> None) runtime in
       let is_runtime (u : string) = List.exists (fun (f : string) -> Fpath.to_string (path u) = Fpath.to_string (path f)) runtime in
@@ -515,7 +531,10 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                     | _ -> (
                         match Lower_il.unit_ a name items with
                         | exception Il_code.Refused (l, m) -> fail (Printf.sprintf "%s:%d: %s" (Fpath.to_string file) l m)
-                        | () -> go (name :: seen) rest)))) in
+                        | () ->
+                            let n = String.length name in
+                            if n > 7 && String.sub name (n - 7) 7 = "_dotnet" then Lower_il.overlay a name (String.sub name 0 (n - 7));
+                            go (name :: seen) rest)))) in
       go [] units)
   (* mlpp: *)
   | [ f ], incs when !pp -> (

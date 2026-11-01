@@ -14,7 +14,7 @@ open Il_types
 
 (* a variable bound to the value [load] pushes, in a local of its own *)
 let bind (c : c) (k : code) (v : Scope.var) (load : unit -> unit) : unit =
-  let ty = match Typing.var_type v.vid with Some t -> cts c 0 t | None -> refuse 0 (v.vname ^ ", a variable whose type was not kept") "1a" in
+  let ty = match Il_types.var_type v.vid with Some t -> cts c 0 t | None -> refuse 0 (v.vname ^ ", a variable whose type was not kept") "1a" in
   if ty <> S.Void then begin
     let i = match Hashtbl.find_opt k.slots v.vid with Some i -> i | None -> let i = local k ty in Hashtbl.replace k.slots v.vid i; i in
     load ();

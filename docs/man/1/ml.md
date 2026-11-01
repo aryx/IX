@@ -98,10 +98,11 @@ ocaml-light's *ocamlopt*. Another unit's names are read from its
      first: the math, the numbers read and written, the channels over
      .NET's Streams; `bytes` a byte[]). With **-L**, the library's units
      the program names are compiled with it, in their order (Pervasives
-     always, List, String, Hashtbl, Printf...); Printf's functions given
-     a literal format are compiled, the format's pieces at compile
-     time. The rest (Marshal, Unix, Printf's %a) is refused by its name
-     and line.
+     always, List, String, Hashtbl, Printf...); a format is a function
+     of where its text goes, a literal's compiled (Printf's and
+     Format's functions over it: *-L*'s `dotnet/Printf_dotnet.ml`, in
+     Printf's place), Format's boxes text. The rest (Marshal, Unix,
+     %a) is refused by its name and line.
 
 **-h**
 :    How, by examples, and the options to debug the compiler

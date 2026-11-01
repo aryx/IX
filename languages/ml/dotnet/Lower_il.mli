@@ -134,6 +134,10 @@ val unit_ : assembly -> string -> Scope.item list -> unit
 
 (* the entry point (each unit's toplevel, in order): the assembly, as
  * its file's bytes *)
+(* an overlay unit's functions in place of a unit's (Printf_dotnet's,
+ * from, over Printf's, onto): those compiled after it call them *)
+val overlay : assembly -> string -> string -> unit
+
 val finish : assembly -> string
 
 (* (Il_code.Refused: what is not compiled yet, its line, what it is) *)

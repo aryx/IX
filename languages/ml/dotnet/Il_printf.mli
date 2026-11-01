@@ -27,7 +27,12 @@
  * as here, a DefaultInterpolatedStringHandler's appends; OCaml's own
  * is CamlinternalFormat's GADT, typed, interpreted at run time. *)
 
-(* is it a call of one of Printf's functions with a literal format? *)
+(* a format's pieces; Format's (true), its @ directives text *)
+type piece = Text of string | Conv of string * char | Flush
+val parse : int -> bool -> string -> piece list
+
+(* is it a call of one of Printf's functions with a literal format
+ * (Format's asprintf and sprintf too)? *)
 val applies : string -> Scope.expr list -> bool
 
 (* the call compiled, given the function's symbol, its arguments, and

@@ -54,7 +54,7 @@ let rec simple (p : Scope.pattern) : Scope.var option option =
 let rec params (e : Scope.expr) : (Scope.var option * Scope.ty) list * Scope.case list option * Scope.expr =
   match e.e with
   | Efunction cases ->
-      let arg = match type_of e with Tarrow (a, _) -> a | _ -> refuse e.loc "a function" "1a" in
+      let arg = match unabbrev (type_of e) with Tarrow (a, _) -> a | _ -> refuse e.loc "a function" "1a" in
       (match cases with
        | [ (p, None, body) ] when simple p <> None ->
            let v = match simple p with Some v -> v | None -> None in
@@ -208,7 +208,7 @@ let global_of (globals : (Scope.var * Scope.global) list) (v : Scope.var) : Scop
  * variable's, its constructor's, its record's *)
 let rec pattern_type (p : Scope.pattern) : Scope.ty =
   match p with
-  | Pvar v | Palias (_, v) -> (match Typing.var_type v.vid with Some t -> t | None -> Resolve.unit_t)
+  | Pvar v | Palias (_, v) -> (match Il_types.var_type v.vid with Some t -> t | None -> Resolve.unit_t)
   | Pcons (k, _) -> let _, _, res = k.ctype in res
   | Precord ((l, _) :: _) -> let _, _, r = l.ltype in r
   | Pconstraint (p, _) | Por (p, _) -> pattern_type p

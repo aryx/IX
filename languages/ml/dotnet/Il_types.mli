@@ -36,7 +36,17 @@ val reset : unit -> unit
 
 (* the types of the expressions the back end makes itself, by their
  * spans (negative: no source's) *)
+(* a type's variables (params) replaced by args; its abbreviations
+ * expanded at its top *)
+val subst : string list -> Scope.ty list -> Scope.ty -> Scope.ty
+val unabbrev : Scope.ty -> Scope.ty
+
 val synthetic : (Ast.span, Scope.ty) Hashtbl.t
+
+(* and of the variables they bind; a variable's type, those first, then
+ * Typing's *)
+val synthetic_vars : (int, Scope.ty) Hashtbl.t
+val var_type : int -> Scope.ty option
 
 (* the types the assembly's units declare, by path (Lower_il records
  * each unit's): what is abstract in a .mli is its .ml's there *)

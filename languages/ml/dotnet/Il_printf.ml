@@ -14,13 +14,30 @@ type piece =
   | Conv of string * char       (* its spec, %-5d, and its letter *)
   | Flush                       (* %! *)
 
-let parse (loc : int) (f : string) : piece list =
+(* [format]: Format's, its @ directives text: @. and @\n a newline,
+ * @  and @; a space, @@ an @, the boxes and the rest nothing (no
+ * pretty-printing: a string is made) *)
+let parse (loc : int) (format : bool) (f : string) : piece list =
   let n = String.length f in
   let b = Buffer.create 16 and out = ref [] in
   let text () = if Buffer.length b > 0 then (out := Text (Buffer.contents b) :: !out; Buffer.clear b) in
   let i = ref 0 in
+  (* (a directive's <...>, skipped) *)
+  let skip_angle () = if !i < n && f.[!i] = '<' then (while !i < n && f.[!i] <> '>' do incr i done; incr i) in
   while !i < n do
-    if f.[!i] <> '%' then (Buffer.add_char b f.[!i]; incr i)
+    if format && f.[!i] = '@' && !i + 1 < n then begin
+      let ch = f.[!i + 1] in
+      i := !i + 2;
+      match ch with
+      | '@' -> Buffer.add_char b '@'
+      | '.' | '\n' -> Buffer.add_char b '\n'
+      | ' ' -> Buffer.add_char b ' '
+      | ';' -> Buffer.add_char b ' '; skip_angle ()
+      | '[' -> skip_angle ()
+      | '{' -> skip_angle ()
+      | _ -> ()
+    end
+    else if f.[!i] <> '%' then (Buffer.add_char b f.[!i]; incr i)
     else if !i + 1 < n && f.[!i + 1] = '%' then (Buffer.add_char b '%'; i := !i + 2)
     else if !i + 1 < n && f.[!i + 1] = '!' then (text (); out := Flush :: !out; i := !i + 2)
     else begin
@@ -36,7 +53,9 @@ let parse (loc : int) (f : string) : piece list =
   text ();
   List.rev !out
 
-let printers = [ "Printf.printf"; "Printf.eprintf"; "Printf.sprintf"; "Printf.fprintf"; "Printf.bprintf"; "Printf.ksprintf" ]
+let printers =
+  [ "Printf.printf"; "Printf.eprintf"; "Printf.sprintf"; "Printf.fprintf"; "Printf.bprintf"; "Printf.ksprintf";
+    "Format.asprintf"; "Format.sprintf" ]
 
 (* the arguments before the format: fprintf's channel, bprintf's
  * buffer, ksprintf's continuation *)
@@ -54,7 +73,7 @@ let call (env : env) (k : code) (sym : string) =
 let compile (c : c) (env : env) (k : code) (expr : Scope.expr -> unit) (e : Scope.expr) (sym : string) (args : Scope.expr list) : unit =
   let pre = before sym in
   let fmt = match List.nth args pre with { e = Econst (String s); _ } -> s | _ -> "" in
-  let pieces = parse e.loc fmt in
+  let pieces = parse e.loc (String.length sym > 7 && String.sub sym 0 7 = "Format.") fmt in
   let convs = List.filter (fun (p : piece) -> match p with Conv _ -> true | _ -> false) pieces in
   let rest = List.filteri (fun (i : int) (_ : Scope.expr) -> i > pre) args in
   if List.length rest <> List.length convs then
@@ -102,7 +121,7 @@ let compile (c : c) (env : env) (k : code) (expr : Scope.expr -> unit) (e : Scop
     | Some (f, _) -> emit k (Il.Ldsfld f)
     | None -> refuse e.loc (name ^ ", its unit not compiled") "3c" in
   match sym with
-  | "Printf.sprintf" -> ()
+  | "Printf.sprintf" | "Format.asprintf" | "Format.sprintf" -> ()
   | "Printf.printf" ->
       call env k "Pervasives.print_string";
       if flushes then (channel "Pervasives.stdout"; call env k "Runtime.caml_flush")

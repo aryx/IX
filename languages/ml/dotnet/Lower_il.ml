@@ -178,7 +178,7 @@ let unit_ (a : assembly) (name : string) (items : Scope.item list) : unit =
                   (fun (x : Scope.var) ->
                     match Hashtbl.find_opt k.slots x.vid, global_of globals x with
                     | Some slot, Some g ->
-                        let ty = match Typing.var_type x.vid with Some t -> cts c d.loc t | None -> S.Object in
+                        let ty = match Il_types.var_type x.vid with Some t -> cts c d.loc t | None -> S.Object in
                         if ty <> S.Void then begin
                           let f = W.field_def w cls x.vname 0x0016 ty in
                           Hashtbl.replace env.fields g.gsym (f, ty);
@@ -196,6 +196,23 @@ let unit_ (a : assembly) (name : string) (items : Scope.item list) : unit =
   List.iter item items;
   emit k Il.Ret;
   finish c k cctor
+
+(* an overlay's functions in place of its unit's (Printf_dotnet's over
+ * Printf's: lib_core/dotnet/, where .NET wants another way, formats
+ * as values): the units after it call them *)
+let moved (pre : string) (onto : string) (tbl : (string, 'v) Hashtbl.t) : (string * 'v) list =
+  Hashtbl.fold
+    (fun (sym : string) (v : 'v) (acc : (string * 'v) list) ->
+      if String.length sym > String.length pre && String.sub sym 0 (String.length pre) = pre then
+        (onto ^ "." ^ String.sub sym (String.length pre) (String.length sym - String.length pre), v) :: acc
+      else acc)
+    tbl []
+
+let overlay (a : assembly) (from : string) (onto : string) : unit =
+  let pre = from ^ "." in
+  List.iter (fun ((s, v) : string * fn) -> Hashtbl.replace a.env.by_sym s v) (moved pre onto a.env.by_sym);
+  List.iter (fun ((s, v) : string * (int * S.t)) -> Hashtbl.replace a.env.fields s v) (moved pre onto a.env.fields);
+  List.iter (fun ((s, v) : string * (string * int * Scope.ty)) -> Hashtbl.replace a.env.externals s v) (moved pre onto a.env.externals)
 
 (* the entry point, <Program>.Main: each unit's init, in order; with
  * Pervasives compiled, its do_at_exit after them, in a finally (the

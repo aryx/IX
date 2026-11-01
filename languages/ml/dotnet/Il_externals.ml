@@ -99,6 +99,13 @@ let convert (c : c) (k : code) (from : S.t) (into : S.t) : unit =
   (* (an ML abstract type's value, an object: the class .NET's member
    * wants, checked) *)
   | S.Object, (S.Class _ | S.SzArray _) -> emit k (Il.Castclass (Il_types.type_token c into))
+  (* (Obj.magic between two references, lib_core's untyped code: cast,
+   * so that it verifies; wrong, it fails where it runs) *)
+  | (S.String | S.Class _ | S.GenericInst _ | S.SzArray _), (S.String | S.Class _ | S.GenericInst _ | S.SzArray _ | S.Var _ | S.MVar _)
+    when from <> into ->
+      (match into with
+       | S.Var _ | S.MVar _ -> emit k (Il.Unbox_any (Il_types.type_token c into))
+       | _ -> emit k (Il.Castclass (Il_types.type_token c into)))
   | S.I8, S.I4 -> emit k (Il.Conv (Il.K_i4, false, false))
   | S.I4, S.I8 | S.Char, S.I8 -> emit k (Il.Conv (Il.K_i8, false, false))
   | S.I4, S.Char -> emit k (Il.Conv (Il.K_u2, false, false))

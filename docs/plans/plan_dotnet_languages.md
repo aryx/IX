@@ -594,10 +594,25 @@ but really use the same types!". So the decisions below are those of
      backtrace), Lexing and Parsing (fst and snd on tuples), Float's
      float arrays (float64[]), Unix's Float. assert throws
      Pervasives' Assert_failure, which a handler names.
+     Then formats as values (the author, asked: "Compiled closure";
+     and of Logs: "we don't have to support all of Logs", ix's being a
+     poor man's, the real one's functors beyond mini-ml): 43 of 50. A
+     format is F#'s way, a function of k : string -> 'd, the curried
+     function of its arguments giving k their text, a literal's
+     compiled (Il_exprs.format_value, synthetic expressions: fun k ->
+     fun x1 ... -> k (sprintf "..." x1 ...)); Format's @ directives
+     text (@. a newline, the boxes nothing: no line breaking). Printf's
+     and Format's printf functions over it in overlays,
+     lib_core/dotnet/Printf_dotnet.ml and Format_dotnet.ml, compiled
+     right after their unit, their functions in its place
+     (Lower_il.overlay): lib_core's, which read a string and make
+     closures by Obj.magic, stay, cast (castclass, verifiable), unused.
+     Function types through abbreviations ('a msgf). Checked:
+     tests/formats.ml (a format given to a function, ksprintf, printf
+     as a value, Format's directives, ix's Logs).
      Not yet: Marshal (OCaml's blocks), Unix (system calls by number)
      and Thread (the C runtime's green threads), which .NET has other
-     forms of; Logs and Logs_fmt: formats as values (Logs' msgf), which
-     need a .NET form of formats (Printf's of a literal is compiled). lib_core's
+     forms of; %a and %t; an external over-applied. lib_core's
      Char.escaped wrote a string (the only place): made as bytes now,
      as String's. Checked: tests/library.ml (List, String, Bytes,
      Buffer, Printf's formats, Hashtbl, Array, Char, Option, compare's

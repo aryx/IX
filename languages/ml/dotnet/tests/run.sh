@@ -51,6 +51,10 @@
 #   library   lib_core's units compiled with the program (stage 3c): List,
 #             String, Bytes, Buffer, Printf (literal formats compiled),
 #             Hashtbl, Array, Char, Option; compare's structural order
+#   formats   formats as values: a literal compiled to a function of where
+#             its text goes, Printf's and Format's over it (lib_core/dotnet/
+#             *_dotnet.ml), ix's Logs (formats.expected: OCaml's for the
+#             lines before Logs, ix's own)
 #   units/    three units in one assembly (geometry, counter, main): one
 #             unit's values, functions, types, constructors, exception
 #             from another; the toplevels in link order (what OCaml's
@@ -75,7 +79,7 @@ failures=0
 ok() { echo "ok $*"; }
 abs() { case $1 in /*) echo $1;; *) echo $PWD/$1;; esac; }
 fail() { echo "FAIL $*"; failures=$((failures + 1)); }
-progs="fib arith strings loops variants records exceptions equality closures generics generic_types tuples_lists arrays tails generic_closures externals c_externals channels library"
+progs="fib arith strings loops variants records exceptions equality closures generics generic_types tuples_lists arrays tails generic_closures externals c_externals channels library formats"
 # what is refused: a program a line, and the stage that will have it
 refused() {
   local ml=$1 n=0
@@ -88,7 +92,7 @@ let f () = let id x = x in (id 1, id "a")
 let x = 1 + (try 2 with Not_found -> 3)
 type t = A of { a : int } let v = A { a = 1 }
 let eq (x : 'a) = (=) x
-let () = Logs.info (fun m -> m "x")
+let s = Printf.sprintf "%t" (fun () -> "x")
 let s = Marshal.to_string 1 []
 R
 }

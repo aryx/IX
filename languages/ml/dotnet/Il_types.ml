@@ -30,12 +30,19 @@ let classes : (string, tclass) Hashtbl.t = Hashtbl.create 16
  * value, η-expanded), by their spans, which no source has *)
 let synthetic : (Ast.span, Scope.ty) Hashtbl.t = Hashtbl.create 16
 
+(* and of the variables those bind (by their ids, negative) *)
+let synthetic_vars : (int, Scope.ty) Hashtbl.t = Hashtbl.create 16
+
+let var_type (vid : int) : Scope.ty option =
+  match Hashtbl.find_opt synthetic_vars vid with Some t -> Some t | None -> Typing.var_type vid
+
 (* the types the assembly's units declare, by path: what another unit,
  * whose .mli says type t abstract, sees of them (Uchar.utf_decode an
  * int) *)
 let implementations : (string, Scope.tdecl) Hashtbl.t = Hashtbl.create 64
 
-let reset () : unit = Hashtbl.reset classes; Hashtbl.reset synthetic; Hashtbl.reset implementations
+let reset () : unit =
+  Hashtbl.reset classes; Hashtbl.reset synthetic; Hashtbl.reset synthetic_vars; Hashtbl.reset implementations
 
 (* a class's own parameters, !0..., as its methods see them *)
 let own (t : tclass) : S.t list = List.init t.arity (fun (i : int) -> S.Var i)
@@ -414,6 +421,11 @@ let rec subst (params : string list) (args : Scope.ty list) (t : Scope.ty) : Sco
   | Ttuple ts -> Ttuple (List.map (subst params args) ts)
   | Tconstr (d, ts) -> Tconstr (d, List.map (subst params args) ts)
 
+(* a type's abbreviations expanded at its top: 'a msgf to the function
+ * it is *)
+let rec unabbrev (t : Scope.ty) : Scope.ty =
+  match t with Tconstr ({ tabbrev = Some a; tparams; _ }, args) -> unabbrev (subst tparams args a) | t -> t
+
 (* an ML type's .NET type; unit's Void (no value) *)
 let rec cts (c : c) (loc : int) (t : Scope.ty) : S.t =
   match t with
@@ -443,6 +455,10 @@ let rec cts (c : c) (loc : int) (t : Scope.ty) : S.t =
   | Ttuple ts -> at (tuple c loc (List.length ts)) (List.map (arg_type c loc) ts)
   (* (an array, .NET's own: T[]) *)
   | Tconstr (d, [ a ]) when d == Resolve.array_d -> S.SzArray (arg_type c loc a)
+  (* (a format, ('a, 'b, 'c, 'd) format4: a function of k : string ->
+   * 'd, the curried function of its arguments, k of their text; F#'s
+   * way, typed, a literal's compiled: Il_exprs.format_value) *)
+  | Tconstr (d, [ a; _; _; dd ]) when d.tpath = "format4" -> func c loc (Tarrow (Resolve.string_t, dd)) a
   (* (a type abstract in its unit's .mli, defined in its .ml, compiled
    * in this assembly: that definition) *)
   | Tconstr (d, args) when d.tabbrev = None && (match Hashtbl.find_opt implementations d.tpath with Some d' -> d' != d | None -> false) ->

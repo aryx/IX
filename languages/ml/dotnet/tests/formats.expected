@@ -1,0 +1,6 @@
+3 and x
+log: a=1
+via a value true
+fmt 5
+box inside
+[info] hello 42 logs

@@ -14,13 +14,18 @@ open Il_patterns
 (* Expressions *)
 (*****************************************************************************)
 
-(* the primitives made values so far, a name each *)
+(* the primitives made values so far, a name each; the formats *)
 let prim_values = ref 0
+let format_values = ref 0
+
+let is_format (t : Scope.ty) : bool =
+  match t with Tconstr (d, _) -> d.tpath = "format4" || d.tpath = "format" | _ -> false
 
 let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
   match e.e with
   | Econst (Int n) -> emit k (Il.Ldc_i8 (Int64.of_int n))
   | Econst (Char ch) -> emit k (Il.Ldc_i4 (Int32.of_int (Char.code ch)))
+  | Econst (String s) when is_format (type_of e) -> format_value c env k e s
   | Econst (String s) -> emit k (Il.Ldstr (W.user_string c.w s))
   | Econst (Float f) -> emit k (Il.Ldc_r (float_of_string f))
   | Econst (Int64 s) -> emit k (Il.Ldc_i8 (Int64.of_string s))
@@ -341,7 +346,7 @@ and invoke_tail (c : c) (env : env) (k : code) (at : Scope.expr) (fty : Scope.ty
   let ty = ref fty and n = List.length args in
   List.iteri
     (fun (i : int) (a : Scope.expr) ->
-      let dom, codom = match !ty with Tarrow (x, y) -> (x, y) | _ -> refuse at.loc "an application of a non-function" "1c" in
+      let dom, codom = match unabbrev !ty with Tarrow (x, y) -> (x, y) | _ -> refuse at.loc "an application of a non-function" "1c" in
       let fs = cts c at.loc !ty in
       k.pending <- k.pending + 1;
       expr c env k a;
@@ -409,7 +414,7 @@ and call_with (c : c) (env : env) (k : code) (e : Scope.expr) (fe : Scope.expr) 
      * gives its type's variables, the call's own type said so; unit
      * an object, its result then dropped) *)
     let ity = type_of fe in
-    let rec after (t : Scope.ty) (i : int) : Scope.ty = if i = 0 then t else match t with Tarrow (_, b) -> after b (i - 1) | t -> t in
+    let rec after (t : Scope.ty) (i : int) : Scope.ty = if i = 0 then t else match unabbrev t with Tarrow (_, b) -> after b (i - 1) | t -> t in
     let drop_result =
       f.gvars <> [] && more = [] && not (raises_always f)
       && (match f.rty with Tvar _ -> true | _ -> false) && cts c fe.loc (after ity n) = S.Void in
@@ -454,7 +459,7 @@ and invoke_with (c : c) (env : env) (k : code) (at : Scope.expr) (fty : Scope.ty
   let ty = ref fty in
   List.iter
     (fun (a : Scope.expr) ->
-      let dom, codom = match !ty with Tarrow (x, y) -> (x, y) | _ -> refuse at.loc "an application of a non-function" "1c" in
+      let dom, codom = match unabbrev !ty with Tarrow (x, y) -> (x, y) | _ -> refuse at.loc "an application of a non-function" "1c" in
       let fs = cts c at.loc !ty in
       k.pending <- k.pending + 1;
       expr c env k a;
@@ -488,7 +493,7 @@ and partial (c : c) (env : env) (k : code) (fe : Scope.expr) (f : fn) (args : Sc
       let m = instantiation (rest f 0) ity in
       List.map (fun (n : string) -> match List.assoc_opt n m with Some t -> arg_type c fe.loc t | None -> S.Object) f.gvars in
   let t, inv, sg = level c f i in
-  let rec after (t : Scope.ty) (n : int) : Scope.ty = if n = 0 then t else match t with Tarrow (_, b) -> after b (n - 1) | t -> t in
+  let rec after (t : Scope.ty) (n : int) : Scope.ty = if n = 0 then t else match unabbrev t with Tarrow (_, b) -> after b (n - 1) | t -> t in
   emit k (Il.Newobj (ctor_tok c t inst));
   emit k (Il.Ldftn (method_tok c t inst "Invoke" inv sg));
   emit k (Il.Newobj (func_ctor c (cts c fe.loc (after ity i))))
@@ -502,7 +507,7 @@ and partial (c : c) (env : env) (k : code) (fe : Scope.expr) (f : fn) (args : Sc
  * let's body give them: a closure is not generic per call, so it is
  * compiled at the one type it is used at *)
 and own_instance (c : c) (v : Scope.var) (body : Scope.expr) : (string * Scope.ty) list =
-  match Typing.var_type v.vid with
+  match Il_types.var_type v.vid with
   | None -> []
   | Some vty ->
       let own = List.filter (fun (n : string) -> not (List.mem_assoc n c.tvars)) (tvars_of vty) in
@@ -545,7 +550,7 @@ and closure (c : c) (env : env) (k : code) (e : Scope.expr) (group : (Scope.var 
     : tclass * S.t list * int * S.t * (int * S.t) list =
   let cases = match e.e with Efunction cases -> cases | _ -> refuse e.loc "a function" "1c" in
   let fty = type_of e in
-  let dom, codom = match fty with Tarrow (a, b) -> (a, b) | _ -> refuse e.loc "a function" "1c" in
+  let dom, codom = match unabbrev fty with Tarrow (a, b) -> (a, b) | _ -> refuse e.loc "a function" "1c" in
   let own = List.map (fun ((v, _) : Scope.var * Scope.ty) -> v.vid) group in
   let captured =
     List.filter
@@ -562,7 +567,7 @@ and closure (c : c) (env : env) (k : code) (e : Scope.expr) (group : (Scope.var 
   (* (the aliases' types in the class's variables: inner first) *)
   c.tvars <- inner;
   c.tvars <- inner @ List.map (fun ((n, t) : string * Scope.ty) -> (n, cts c e.loc t)) aliases;
-  let types = List.map (fun (vid : int) -> match Typing.var_type vid with Some t -> cts c e.loc t | None -> S.Object) captured in
+  let types = List.map (fun (vid : int) -> match Il_types.var_type vid with Some t -> cts c e.loc t | None -> S.Object) captured in
   let captured = List.filter (fun ((_, t) : int * S.t) -> t <> S.Void) (List.combine captured types) in
   incr closures;
   let fields = List.mapi (fun (i : int) ((_, t) : int * S.t) -> (Printf.sprintf "c%d" i, t)) captured in
@@ -735,6 +740,49 @@ and prim_value (c : c) (env : env) (k : code) (e : Scope.expr) (p : string) (n :
   tail_expr c env k' body false;
   finish c k' tok;
   partial c env k e f []
+
+(* a format as a value (Logs' m "...", a format given to a function):
+ * fun k -> fun x1 -> ... fun xn -> k (sprintf "..." x1 ... xn), made
+ * of synthetic expressions (Il_types.synthetic), compiled as any
+ * closure; Format's (its 'b a Format.formatter) by Format.asprintf, its
+ * @ directives text *)
+and format_value (c : c) (env : env) (k : code) (e : Scope.expr) (s : string) : unit =
+  let a, b, d = match unabbrev (type_of e) with Tconstr (_, [ a; b; _; d ]) -> (a, b, d) | _ -> refuse e.loc "a format" "3c" in
+  let formatter = match b with Tconstr (bd, _) -> bd.tpath = "Format.formatter" | _ -> false in
+  let pieces = Il_printf.parse e.loc formatter s in
+  let n = List.length (List.filter (fun (p : Il_printf.piece) -> match p with Conv _ -> true | _ -> false) pieces) in
+  let rec split (t : Scope.ty) (i : int) : Scope.ty list =
+    if i = 0 then [] else match t with Tarrow (x, r) -> x :: split r (i - 1) | _ -> refuse e.loc "a format's arguments" "3c" in
+  let ptys = split a n in
+  incr format_values;
+  let id = !format_values in
+  let count = ref 0 in
+  let fresh (t : Scope.ty) (x : Scope.exp) : Scope.expr =
+    incr count;
+    let ex : Scope.expr = { e = x; loc = e.loc; span = (- !count, - 1000000 - id) } in
+    Hashtbl.replace synthetic ex.span t;
+    ex in
+  let var (name : string) (t : Scope.ty) : Scope.var =
+    incr count;
+    let v : Scope.var = { vname = name; vid = - 2000000000 - 1000 * id - !count } in
+    Hashtbl.replace synthetic_vars v.vid t;
+    v in
+  let kty = Scope.Tarrow (Resolve.string_t, d) in
+  let kv = var "k" kty in
+  let xs = List.mapi (fun (i : int) (t : Scope.ty) -> var (Printf.sprintf "x%d" i) t) ptys in
+  let sym = if formatter then "Format.asprintf" else "Printf.sprintf" in
+  let g : Scope.global = { gpath = [ String.sub sym 0 (String.index sym '.') ]; gname = "sprintf"; gsym = sym; gtype = None; glabels = [] } in
+  let fn_ty = List.fold_right (fun (t : Scope.ty) (r : Scope.ty) -> Scope.Tarrow (t, r)) (Resolve.string_t :: ptys) Resolve.string_t in
+  let text =
+    fresh Resolve.string_t
+      (Eapply (fresh fn_ty (Evar (Global g)), fresh Resolve.string_t (Econst (String s)) :: List.map2 (fun (v : Scope.var) (t : Scope.ty) -> fresh t (Evar (Local v))) xs ptys)) in
+  let body = fresh d (Eapply (fresh kty (Evar (Local kv)), [ text ])) in
+  let inner =
+    List.fold_right2
+      (fun (v : Scope.var) (t : Scope.ty) (b : Scope.expr) -> fresh (Scope.Tarrow (t, type_of b)) (Efunction [ (Pvar v, None, b) ]))
+      xs ptys body in
+  let outer = fresh (Scope.Tarrow (kty, a)) (Efunction [ (Pvar kv, None, inner) ]) in
+  lambda c env k outer None []
 
 (* the record the primitives' compiler is given *)
 and compiler (c : c) (env : env) (k : code) : Il_prims.compiler =

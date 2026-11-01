@@ -28,6 +28,10 @@ open Scope
 (* Type-directed fields, the poor man's: the field named so of a record
  * type, for Typing, which knows r's type in r.l when Scope doesn't; a
  * field Scope found in no type in scope has no position yet (pos < 0) *)
+(* the capabilities an object type names, its aliases and groups expanded one
+ * level: < Cap.stdout; caps; .. >. Typing has all objects as one type *)
+val capabilities : ty -> string list
+
 val type_field : tdecl -> string -> label option
 
 (* a type's constructors and a record type's fields, by its path,

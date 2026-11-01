@@ -480,15 +480,16 @@ simple_core_type:
   | simple_core_type type_longident { Tconstr ($2, [ $1 ]) }
   | LPAREN core_type_comma_list RPAREN type_longident { Tconstr ($4, List.rev $2) }
   | LPAREN core_type RPAREN { $2 }
-  | LESS separated_list(SEMI, object_field) GREATER { Tconstr ([ "< .. >" ], []) }
+  | LESS separated_list(SEMI, object_field) GREATER { Tconstr ([ "< .. >" ], List.concat $2) }
   /* mlpp: */
   | LBRACKETPERCENT LIDENT COLON core_type RBRACKET { if $2 <> "using" then raise Parsing.Parse_error; Tusing ($4, span $sloc) }
 ;
 /* < Cap.stdout; caps; .. >: an object type's methods or the types it
- * includes, and the others (..); all object types are one (Scope) */
+ * includes, and the others (..); all object types are one (Scope), its
+ * fields kept for what Resolve.capabilities says of them */
 object_field:
-  | type_longident { () }
-  | DOTDOT { () }
+  | type_longident { [ Tconstr ($1, []) ] }
+  | DOTDOT { [] }
 ;
 core_type_tuple:
   | simple_core_type STAR simple_core_type { [ $3; $1 ] }

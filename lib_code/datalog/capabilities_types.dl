@@ -1,0 +1,85 @@
+% OCaml's check of the capabilities, again, in Datalog: a function hands on a
+% capability it holds, and the function it reaches asks for that much or less.
+% Run with points_to/instructions.dl, contexts.dl, insensitive.dl, dead.dl and
+% capabilities.dl. Not to find bugs in the program, which OCaml has refused to
+% compile if it had one: to find them in the analysis, as dead.dl does.
+%   mismatch(R, I, H, C)  R gives what it holds at the call I, to H, which asks
+%                         for C, that R does not hold: OCaml says there is none
+%   by_need(R, I, H, S)   the same where H's type names nothing (< .. >, CapUnix's):
+%                         what it needs, by capabilities.dl's table, R cannot
+%                         allow S: a test of that table and of needs
+%   cap_call(I, H)        a call found to give H its capability parameter
+%   checked(I, H)         ... one whose both sides are known
+%   not_seen(I, H, Why)   ... one that is not, and why
+%
+%     let g (caps : < Cap.stdout; .. >) = Console.print caps "x"
+%     let f (caps : < Cap.stdout; Cap.exit; .. >) = g caps    checked, fine
+%     let e (caps : < Cap.exit; .. >) = g caps
+%                         OCaml: this expression has type < exit > but...
+%                         here: mismatch(e, I, g, stdout)
+%
+% design:
+% A mismatch on code OCaml accepted is this analysis's mistake, and which one is
+% the interesting part: a call graph that gives a call a target it has not, a
+% capability's value followed where it does not go, a type read wrong. It is a
+% test with no expected output to write by hand, on every program there is, the
+% way a compiler's types are a test of its passes (Typed Assembly Language,
+% Greg Morrisett and others, 1998; a checker of a pass's result is simpler than
+% the pass: Translation validation, Amir Pnueli, 1998).
+%
+% design:
+% It is one rule because OCaml's is. Row polymorphism, the .. of < Cap.stdout; ..
+% >, says a function given more than it asks for is fine: this is subset. What
+% OCaml has and this has not is the type at each expression: its capability is
+% found by following a value, so one held in a record's field is not_seen, and
+% so is one given to a function with no written type, which OCaml infers. The
+% counts say how much of the program the check really covers: 0 mismatches of 0
+% checked would be nothing. And what is not reached is not checked: OCaml does
+% read dead code.
+
+% ---- whose capability a value is
+
+cap_from(V, R) :-
+  takes_cap(F), parameter(F, _, P), assign(V, P), root(F, R).
+cap_from(V, R) :- assign(V, W), cap_from(W, R).
+% (a closure written in R, or a local alias in it: the same R, by the value)
+
+% ---- the calls that give a function its capability parameter
+
+gives(I, H, V) :-
+  target(I, H), takes_cap(H), parameter(H, Z, _), argument(I, Z, V).
+cap_call(I, H) :- gives(I, H, _).
+
+named_caller(I, H, R) :- gives(I, H, V), cap_from(V, R), holds_named(R).
+asks_named(H) :- declares(H, _).
+
+checked(I, H) :- named_caller(I, H, _), asks_named(H).
+
+from_a_parameter(I, H) :- gives(I, H, V), cap_from(V, _).
+from_a_field(I, H) :- gives(I, H, V), load(V, _, _).
+
+not_seen(I, H, 'callee has no capability named') :- cap_call(I, H), \+ asks_named(H).
+not_seen(I, H, 'caller has no capability named') :-
+  gives(I, H, V), cap_from(V, _), asks_named(H), \+ named_caller(I, H, _).
+not_seen(I, H, 'from a field') :-
+  gives(I, H, _), from_a_field(I, H), asks_named(H), \+ from_a_parameter(I, H).
+not_seen(I, H, 'from elsewhere') :-
+  gives(I, H, _), asks_named(H), \+ from_a_parameter(I, H), \+ from_a_field(I, H).
+
+mismatch(R, I, H, C) :-
+  named_caller(I, H, R), declares(H, C), \+ holds(R, C).
+
+by_need(R, I, H, S) :-
+  named_caller(I, H, R), \+ asks_named(H), needs(H, S), \+ allowed(R, S).
+
+% ---- what the check does not reach: its blind spots
+
+% a capability handed to a function not known to take one: its parameter has
+% another name and no type, or the call graph is wrong
+handed_unknown(I, G, V) :-
+  target(I, G), parameter(G, Z, _), argument(I, Z, V), cap_from(V, _), \+ takes_cap(G).
+% a capability handed, in code no call reaches: OCaml checks it, this does not
+handed_in_dead(I, V) :-
+  argument(I, _, V), cap_from_written(V), in_function(I, F), root(F, R), \+ reach(R).
+cap_from_written(V) :- takes_cap(F), parameter(F, _, P), assign(V, P).
+cap_from_written(V) :- assign(V, W), cap_from_written(W).

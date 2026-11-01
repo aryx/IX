@@ -158,6 +158,31 @@ let rec plain (p : pattern) : var option =
   | Pconstraint (p, _) -> plain p
   | _ -> None
 
+(* a parameter that is a capability: of an object's type, written or found by
+ * Typing (Typing.keep, mini-analyze's), or named so where nothing says more:
+ * let argv _caps = ... has any type. (old: the name alone, and Regex's caps, its
+ * groups' places, an array, was one: capabilities_types.dl's handed_unknown) *)
+let rec is_object (t : ty) : bool =
+  match t with
+  | Tconstr ({ tabbrev = Some t; _ }, _) -> is_object t
+  | Tconstr (d, _) -> d.tpath = "< .. >"
+  | _ -> false
+
+let rec takes_capability (p : pattern) : bool =
+  match p with
+  | Pconstraint (p, t) -> is_object t || takes_capability p
+  | Pvar v -> (
+      let named = v.vname = "caps" || v.vname = "_caps" in
+      match Typing.var_type v.vid with
+      | None | Some (Tvar _) -> named
+      | Some t -> is_object t)
+  | _ -> false
+
+let rec declared (p : pattern) : string list =
+  match p with
+  | Pconstraint (p, t) -> Resolve.capabilities t @ declared p
+  | _ -> []
+
 let rec is_function (x : expr) : bool =
   match x.e with
   | Efunction _ -> true
@@ -208,6 +233,10 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
       fact "return" [ f; f ^ ":ret" ];
       var_in (f ^ ":arg") f;
       var_in (f ^ ":ret") f;
+      if List.exists (fun ((p, _, _) : case) -> takes_capability p) cases then fact "takes_cap" [ f ];
+      List.iter
+        (fun ((p, _, _) : case) -> List.iter (fun (c : string) -> fact "declares" [ f; c ]) (declared p))
+        cases;
       let outer = !inside in
       inside := f;
       (* let f x y = ...: the function of y is f' *)

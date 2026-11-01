@@ -389,3 +389,9 @@ not call by call: which call went where is not recorded (`-prof` counts addresse
 2026-10-31: `bugs.dl` and mini-analyze on `points_to/`, `-context`, `-library`:
 `lib_code/README.md`. `pointer.dl` and `calls.dl` over it stay as
 `languages/ml/facts/tests`'s; decision 9's retiring of them is the author's to say.
+
+2026-11-01: capabilities, of stage 11 (the author: "We do need to know which
+capability and parse the < Cap.stdout; ... > [...] to know whether you put the right
+capability given the syscalls you're doing"): `capabilities.dl`, `mini-analyze -caps`:
+`lib_code/README.md`, 40 functions on 23 programs; reports only, no code changed for
+them. Calls with one target, exceptions, purity not done.

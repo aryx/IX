@@ -1,0 +1,247 @@
+% Does a function hold the right capabilities for what it does? mini-analyze
+% -caps, with points_to/instructions.dl, contexts.dl, insensitive.dl and dead.dl.
+%   no_cap(O, S, Via)     the program's O does S and holds no capability
+%   wrong_cap(O, S, Via)  O holds capabilities, none that allows S
+%   unused_cap(O, C)      O is given C, and nothing it reaches needs it
+% S done by O itself (Via = itself) or by calling the library's Via.
+%
+%     let log s = print_string s               no_cap: needs Cap.stdout
+%     let say (caps : < Cap.stdout; .. >) s = Console.print caps s    right
+%     let f (_ : < Cap.stdout; .. >) p = Unix.openfile p ...          wrong_cap
+%     let g (_ : < Cap.fork; Cap.stdout; .. >) s = print_string s
+%                                              unused_cap: Cap.fork
+%     let all l = List.iter print_int l        no_cap, by print_int
+%     let some l = List.iter ignore l          nothing, though List.iter is
+%                                              given print_int elsewhere
+%
+% Cap.mli says what this is for: a signature tells what a function may do, "only
+% if the code does not go around it: Stdlib's print_string and Unix's openfile
+% ask for nothing. That part is a convention". OCaml checks one function given
+% what another asks for; nothing checks that what a function asks for is what
+% its body does, which is this file's question, in both directions.
+%
+% design:
+% What a function does is computed, a fixpoint over the call graph, and what it
+% holds is read from its type (declares, Closure_facts, by Resolve: an alias and
+% an object in an object expanded), so the check is the difference of two sets.
+% That table, requires(S, C), is the one thing to read and argue with. Several
+% C for one S are alternatives, as Unix.openfile: which it takes is in its flags,
+% that this does not read.
+%
+% design:
+% A function answers for what it names, called or passed on, not for what it
+% calls through a parameter. List.iter calls every closure any caller gives it:
+% following that would blame each caller of List.iter for what one of them
+% passes, where naming blames the one that wrote List.iter print_int l. A name is
+% a may: named and never called is reported.
+%
+% Not authority: a channel or a descriptor already held (Cap.mli's reframe: a
+% descriptor is a capability), so Unix.read is nothing here and Unix.openfile
+% is; the clock, a pipe, a process's own number, for which xix's Cap has none.
+%
+% design:
+% unused_cap is a may too, and quieter by choice: not said of a function that lets
+% the capability go where this cannot follow, into a data structure (Eval.t's
+% caps field) or to a call through a parameter. A record's capabilities do not
+% count as held, so let read t = ... t.caps is no_cap, what it does being said.
+%
+% others:
+% xix checks a name by a Semgrep rule: one asked for nothing, written anywhere,
+% whether it runs or not, and blind to a wrapper. Joe-E (Adrian Mettler, David
+% Wagner, Tyler Close, 2010) took the convention to Java by a language subset;
+% Wyvern (Darya Melicher and others, 2017) by types: a module's authority follows
+% from what it is given. Effect systems (John Lucassen, David Gifford, 1988) make
+% the computed set the type; OpenBSD's pledge (2015) says it to the kernel, at run
+% time, by families of calls. The principle of least authority is Saltzer and
+% Schroeder's (1975), unused_cap's question.
+%
+% References: Adrian Mettler, David Wagner, Tyler Close, "Joe-E: a security-
+% oriented subset of Java" (NDSS 2010); Mark Miller, "Robust composition" (his
+% thesis, Johns Hopkins, 2006); Jerome Saltzer, Michael Schroeder, "The protection
+% of information in computer systems" (Proc. IEEE, 1975).
+
+% ---- what needs what
+
+requires('Pervasives.stdin', stdin).
+requires('Pervasives.stdout', stdout).
+requires('Pervasives.stderr', stderr).
+requires('Unix.stdin', stdin).
+requires('Unix.stdout', stdout).
+requires('Unix.stderr', stderr).
+
+requires('Pervasives.open_in', open_in).
+requires('Pervasives.open_in_bin', open_in).
+requires('Pervasives.open_in_gen', open_in).
+requires('Pervasives.open_out', open_out).
+requires('Pervasives.open_out_bin', open_out).
+requires('Pervasives.open_out_gen', open_out).
+requires('prim:sys_open', open_in).
+requires('prim:sys_open', open_out).
+requires('Unix.openfile', open_in).
+requires('Unix.openfile', open_out).
+requires('Unix.stat', open_in).
+requires('Unix.lstat', open_in).
+requires('Unix.access', open_in).
+requires('Unix.readlink', open_in).
+requires('Unix.realpath', open_in).
+requires('prim:sys_file_exists', open_in).
+requires('prim:sys_file_exists', readdir).
+requires('prim:sys_is_directory', open_in).
+requires('prim:sys_is_directory', readdir).
+
+requires('prim:sys_remove', open_out).
+requires('prim:sys_rename', open_out).
+requires('prim:sys_mkdir', open_out).
+requires('Unix.unlink', open_out).
+requires('Unix.link', open_out).
+requires('Unix.rename', open_out).
+requires('Unix.chmod', open_out).
+requires('Unix.utimes', open_out).
+requires('Unix.mkdir', open_out).
+requires('Unix.mkfifo', open_out).
+requires('Unix.rmdir', open_out).
+
+requires('prim:sys_read_directory', readdir).
+requires('Unix.opendir', readdir).
+requires('Sys_plan9.dirread', readdir).
+
+requires('prim:sys_chdir', chdir).
+requires('Unix.chdir', chdir).
+requires('prim:sys_exit', exit).
+requires('Pervasives.exit', exit).
+requires('Unix._exit', exit).
+% (a forked child's way out: not a capability of its own to ask for)
+requires('Unix._exit', fork).
+requires('prim:sys_getenv', env).
+requires('Unix.environment', env).
+requires('prim:sys_get_argv', argv).
+requires('prim:ml_signal', signal).
+requires('Unix.setitimer', signal).
+
+requires('Thread.create', fork).
+requires('Unix.fork', fork).
+requires('Sys_plan9.rfork', fork).
+requires('Unix.wait', wait).
+requires('Unix.waitpid', wait).
+requires('Unix.kill', kill).
+requires('prim:unix_execve', exec).
+requires('Unix.execv', exec).
+requires('Unix.execve', exec).
+requires('Unix.create_process', exec).
+requires('prim:sys_system_command', exec).
+requires('Sys_plan9.mount', mount).
+requires('Sys_plan9.bind', bind).
+
+requires('Unix.socket', network).
+requires('Unix.bind', network).
+requires('Unix.listen', network).
+requires('Unix.accept', network).
+requires('Unix.connect', network).
+requires('Unix.getaddrinfo', network).
+
+% xix's Cap.mli's groups
+cap_includes(console, stdin).
+cap_includes(console, stdout).
+cap_includes(console, stderr).
+cap_includes(console, draw).
+cap_includes(console, keyboard).
+cap_includes(console, mouse).
+cap_includes(process_multi, fork).
+cap_includes(process_multi, wait).
+cap_includes(process_multi, kill).
+cap_includes(process_single, signal).
+cap_includes(process_single, time_limit).
+cap_includes(process_single, memory_limit).
+cap_includes(process_single, exit).
+cap_includes(process_single, chdir).
+cap_includes(process, argv).
+cap_includes(process, env).
+cap_includes(process, process_single).
+cap_includes(process, process_multi).
+cap_includes(fs, readdir).
+cap_includes(fs, tmp).
+cap_includes(fs, open_in).
+cap_includes(fs, open_out).
+cap_includes(forkew, fork).
+cap_includes(forkew, exec).
+cap_includes(forkew, wait).
+cap_includes(misc, random).
+cap_includes(all_caps, console).
+cap_includes(all_caps, process).
+cap_includes(all_caps, fs).
+cap_includes(all_caps, exec).
+cap_includes(all_caps, network).
+cap_includes(all_caps, misc).
+
+authority(S) :- requires(S, _).
+
+% ---- who names what: a variable a toplevel or a let bound to a function
+
+known_callee(V, G) :- assign_address(V, G).
+known_callee(V, G) :- assign(V, W), known_callee(W, G).
+names_known(R, H) :-
+  var_in(V, F), known_callee(V, H), root(F, R), \+ global_def(V, F).
+
+uses(R, S) :- names_known(R, S), authority(S).
+uses(R, S) :- var_in(S, G), authority(S), root(G, R), \+ global_def(S, G).
+names_function(R, G) :- names_known(R, H), root(H, G), R \= G.
+
+% ---- what a function holds: given to it, or to what it is written in
+
+gate(R) :- takes_cap(F), root(F, R).
+gate(L) :- assign_address(V, L), owner(V, R), gate(R), root(L, L).
+
+declared_by(R, C) :- declares(F, C), root(F, R).
+declared_by(L, C) :-
+  assign_address(V, L), owner(V, R), declared_by(R, C), root(L, L).
+holds(R, C) :- declared_by(R, C).
+holds(R, X) :- holds(R, C), cap_includes(C, X).
+holds_named(R) :- holds(R, _).
+allowed(R, S) :- holds(R, C), requires(S, C).
+% (a device is a file: /dev/draw by Cap.draw, which the path would say)
+device_cap(draw).
+device_cap(keyboard).
+device_cap(mouse).
+allowed(R, 'Unix.openfile') :- holds(R, C), device_cap(C).
+
+% ---- the program, given by mini-analyze: own_unit(U), own_init('U:init')
+
+own(O) :- closure(O, U, _), own_unit(U), root(O, O).
+own(O) :- own_init(O).
+library_function(R) :- closure(R, _, _), root(R, R), \+ own(R).
+
+% what the library does for its caller, with no capability of its own asked for;
+% (an authority itself, as Pervasives.open_in, is said by its name, not gone into)
+open_library(R) :- library_function(R), \+ gate(R), \+ authority(R).
+in_library(R, S) :- open_library(R), uses(R, S).
+in_library(R, S) :- open_library(R), names_function(R, G), in_library(G, S).
+
+does(O, S, itself) :- own(O), reach(O), uses(O, S).
+does(O, S, Via) :- own(O), reach(O), names_function(O, Via), in_library(Via, S).
+
+no_cap(O, S, Via) :- does(O, S, Via), \+ gate(O).
+% (holds_named: a < .. >, or a parameter named caps of no written type, says nothing)
+wrong_cap(O, S, Via) :- does(O, S, Via), holds_named(O), \+ allowed(O, S).
+
+% ---- what it needs: all it reaches, through what holds capabilities too
+
+needs(R, S) :- uses(R, S).
+% (an authority is said by its name, not gone into: Thread.create needs Cap.fork,
+% whatever its body does with exit; capabilities_types.dl's by_need found this)
+needs(R, S) :- names_function(R, G), \+ authority(G), needs(G, S).
+needed(R, C) :- needs(R, S), requires(S, C).
+needed(R, C) :- needs(R, 'Unix.openfile'), device_cap(C).
+needed(R, A) :- needed(R, C), cap_includes(A, C).
+
+% the capability's value: where the parameter goes
+cap_value(V) :- takes_cap(F), parameter(F, _, P), assign(V, P).
+cap_value(V) :- assign(V, W), cap_value(W).
+cap_owner(V, R) :- cap_value(V), owner(V, R).
+lets_go(R) :- cap_owner(V, R), store(_, _, V).
+lets_go(R) :-
+  cap_owner(V, R), argument(I, _, V), call_indirect(I, W), \+ known_callee(W, _).
+% (a gate given it by name, itself letting it go, as Eval.create)
+lets_go(R) :- names_function(R, G), lets_go(G), gate(G).
+
+unused_cap(O, C) :-
+  own(O), reach(O), declares(F, C), root(F, O), \+ needed(O, C), \+ lets_go(O).

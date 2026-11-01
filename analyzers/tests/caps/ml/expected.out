@@ -1,0 +1,16 @@
+analyzers/tests/caps/ml/Use.ml:5: Use.log: no capability, needs Cap.stdout (Pervasives.print_string)
+analyzers/tests/caps/ml/Use.ml:6: Use.named: no capability, needs Cap.stdout (Pervasives.stdout)
+analyzers/tests/caps/ml/Use.ml:7: Use.printed: no capability, needs Cap.stdout (Printf.printf)
+analyzers/tests/caps/ml/Use.ml:8: Use.opened: no capability, needs Cap.open_in (Pervasives.open_in)
+analyzers/tests/caps/ml/Use.ml:9: Use.environment: no capability, needs Cap.env (sys_getenv)
+analyzers/tests/caps/ml/Use.ml:10: Use.bye: no capability, needs Cap.exit (Pervasives.exit)
+analyzers/tests/caps/ml/Use.ml:27: Use.wrong: has < Cap.stdout >, needs Cap.open_in|Cap.open_out (Unix.openfile); may not need Cap.stdout
+analyzers/tests/caps/ml/Use.ml:28: Use.wrong_closure: has < Cap.stderr >, needs Cap.stdout (Pervasives.print_string); may not need Cap.stderr
+analyzers/tests/caps/ml/Use.ml:29: Use.half: has < Cap.stderr; Cap.stdout >, needs Cap.open_in (Pervasives.open_in); may not need Cap.stdout
+analyzers/tests/caps/ml/Use.ml:32: Use.excess: has < Cap.fork; Cap.stdout >, may not need Cap.fork
+analyzers/tests/caps/ml/Use.ml:40: Use:fun at line 40: no capability, needs Cap.stdout (Pervasives.print_string)
+analyzers/tests/caps/ml/Use.ml:41: Use.passed: no capability, needs Cap.stdout (Pervasives.print_int)
+analyzers/tests/caps/ml/Use.ml:42: Use.found: no capability, needs Cap.open_in|Cap.readdir (sys_file_exists)
+analyzers/tests/caps/ml/Use.ml:47: Use.helper: no capability, needs Cap.stdout (Pervasives.print_newline)
+analyzers/tests/caps/ml/Use.ml:53: Use.opens_fd: no capability, needs Cap.open_in|Cap.open_out (Unix.openfile)
+11 functions with no capability, 3 with the wrong one, 4 with one they may not need; missing: Cap.stdout 7, Cap.open_in|Cap.open_out 2, Cap.open_in 2, Cap.open_in|Cap.readdir 1, Cap.exit 1, Cap.env 1

@@ -7,9 +7,9 @@ module D = Datalog
 
 type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 
-let usage = "usage: mini-analyze [-r rules-dir] [-Idir] [-Dname=value] [-L lib] [-facts] [-dead] [-root f]... file.c|file.ml...   (-h: how)"
+let usage = "usage: mini-analyze [-r rules-dir] [-Idir] [-Dname=value] [-L lib] [-facts] [-dead] [-caps] [-root f]... file.c|file.ml...   (-h: how)"
 
-let help = {|usage: mini-analyze [-r rules-dir] [-Idir] [-Dname=value] [-L lib] [-facts] [-dead] [-root f]... file.c|file.ml...
+let help = {|usage: mini-analyze [-r rules-dir] [-Idir] [-Dname=value] [-L lib] [-facts] [-dead] [-caps] [-root f]... file.c|file.ml...
 The C files read as one program, each call through a pointer said with the
 functions it may reach, by an analysis of where each pointer may point
 (points_to/'s: Andersen's first pass, then a context file, -context):
@@ -32,6 +32,11 @@ program's functions that its toplevel never reaches (calls.dl):
   dead.c:18: dead: hide, named only by dead code: unused
   dead.c:24: dead: orphan, in main but no call goes through the pointer
   dead.c:31: dead code: in main, after a return
+-caps: instead, whether ML's own functions hold the capabilities they need
+(capabilities.dl), from their types' < Cap.x; .. > and what they reach:
+  Log.ml:5: Log.log: no capability, needs Cap.stdout (Pervasives.print_string)
+  Fs.ml:9: Fs.get: has < Cap.stdout >, needs Cap.open_in|Cap.open_out (Unix.openfile)
+  Run.ml:3: Run.go: has < Cap.fork; Cap.stdout >, may not need Cap.fork
 -root f: f is also entered from where the facts do not go (assembly)
 -context file: C's, of points_to/ (call1_heap1); the sharper, the longer
 -library: every function may be called from outside, not main alone: a runtime
@@ -376,6 +381,75 @@ let dead_report (caps : < caps; .. >) (p : D.t) (ml : bool) : unit =
        (List.length dead) (List.length (List.filter is_own unnamed)) (List.length (tuples "through_pointer" 1))
        (List.length globals) (List.length fields) (List.length constructors) (List.length stmts))
 
+(* -caps: what capabilities.dl finds, a line a function: what it holds, what is
+ * missing and by what, what it holds for nothing *)
+let caps_report (caps : < caps; .. >) (p : D.t) : unit =
+  let tuples r n = List.map (fun (t : int array) -> Array.map (name p) t) (D.tuples (D.relation p r n)) in
+  let file_of u = match Hashtbl.find_opt Ml_front.files u with Some f -> f | None -> u in
+  let lines = Hashtbl.create 101 in
+  List.iter (fun t -> Hashtbl.replace lines t.(0) (file_of t.(1), int_of_string t.(2))) (tuples "closure" 3);
+  let at (o : string) : string * int =
+    match Hashtbl.find_opt lines o with
+    | Some w -> w
+    | None -> (file_of (String.sub o 0 (String.index o ':')), 0) in
+  let requires = tuples "requires" 2 in
+  (* Cap.open_in|Cap.open_out: what allows S *)
+  let need (s : string) : string =
+    String.concat "|"
+      (List.sort compare (List.filter_map (fun t -> if t.(0) = s then Some ("Cap." ^ t.(1)) else None) requires)) in
+  let held (o : string) : string list =
+    List.sort_uniq compare
+      (List.filter_map (fun t -> if t.(0) = o then Some ("Cap." ^ t.(1)) else None) (tuples "declared_by" 2)) in
+  (* one function's needs, each with the ways: Cap.stdout (Pervasives.print_string) *)
+  let needs (r : string array list) (o : string) : string =
+    let mine = List.filter (fun t -> t.(0) = o) r in
+    let by_need =
+      List.sort_uniq compare (List.map (fun t -> need t.(1)) mine)
+      |> List.map (fun n ->
+             let ways =
+               List.sort_uniq compare
+                 (List.filter_map
+                    (fun t ->
+                      if need t.(1) <> n then None
+                      else if t.(2) <> "itself" then Some (ml_function t.(2))
+                      else match prefix "prim:" t.(1) with Some x -> Some x | None -> Some t.(1))
+                    mine) in
+             Printf.sprintf "%s (%s)" n (String.concat ", " ways)) in
+    String.concat ", " by_need in
+  let functions r = List.sort_uniq compare (List.map (fun t -> t.(0)) r) in
+  let none = tuples "no_cap" 3 and wrong = tuples "wrong_cap" 3 and unused = tuples "unused_cap" 2 in
+  (* a function a line *)
+  let report =
+    List.map
+      (fun o ->
+        let f, l = at o in
+        let unneeded = List.sort compare (List.filter_map (fun t -> if t.(0) = o then Some ("Cap." ^ t.(1)) else None) unused) in
+        let says =
+          (if List.exists (fun t -> t.(0) = o) none then [ "no capability, needs " ^ needs none o ] else [])
+          @ (if List.exists (fun t -> t.(0) = o) wrong then [ "needs " ^ needs wrong o ] else [])
+          @ if unneeded = [] then [] else [ "may not need " ^ String.concat ", " unneeded ] in
+        let has = match held o with [] -> "" | h -> Printf.sprintf "has < %s >, " (String.concat "; " h) in
+        (f, l, Printf.sprintf "%s: %s%s" (ml_function o) has (String.concat "; " says)))
+      (functions (none @ wrong @ List.map (fun t -> [| t.(0) |]) unused)) in
+  List.iter
+    (fun (f, l, msg) -> Console.print caps (if l > 0 then Printf.sprintf "%s:%d: %s\n" f l msg else Printf.sprintf "%s: %s\n" f msg))
+    (List.sort compare report);
+  (* what is asked for most: where to start *)
+  let counts = Hashtbl.create 17 in
+  List.iter
+    (fun t ->
+      let n = need t.(1) in
+      Hashtbl.replace counts n ((try Hashtbl.find counts n with Not_found -> []) @ [ t.(0) ]))
+    (none @ wrong);
+  let by_cap =
+    Hashtbl.fold (fun n os acc -> (List.length (List.sort_uniq compare os), n) :: acc) counts []
+    |> List.sort (fun a b -> compare b a)
+    |> List.map (fun (k, n) -> Printf.sprintf "%s %d" n k) in
+  Console.print caps
+    (Printf.sprintf "%d functions with no capability, %d with the wrong one, %d with one they may not need%s\n"
+       (List.length (functions none)) (List.length (functions wrong)) (List.length (functions unused))
+       (if by_cap = [] then "" else "; missing: " ^ String.concat ", " by_cap))
+
 (* a fact as a line, for -facts *)
 let line (relation : string) (args : C.Facts.arg list) : string =
   let show = function C.Facts.Sym s -> "'" ^ String.concat "\\'" (String.split_on_char '\'' s) ^ "'" | C.Facts.Num n -> string_of_int n in
@@ -383,12 +457,13 @@ let line (relation : string) (args : C.Facts.arg list) : string =
 
 let main (caps : < caps; .. >) (argv : string array) : int =
   let rules = ref "lib_code/datalog" and lib = ref "lib_core" and only = ref false and incs = ref [] and defs = ref [] and files = ref [] in
-  let dead = ref false and roots = ref [] and context = ref "call1_heap1" and library = ref false in
+  let dead = ref false and ambient = ref false and roots = ref [] and context = ref "call1_heap1" and library = ref false in
   let options =
     Logging.flags
     @ [ ("-r", Arg.Set_string rules, " the directory of points_to/ and bugs.dl");
         ("-facts", Arg.Set only, " the facts, not the analysis");
         ("-dead", Arg.Set dead, " what no run can reach, not the calls and the bugs");
+        ("-caps", Arg.Set ambient, " whether ML's own functions hold the capabilities they need");
         ("-root", Arg.String (fun f -> roots := f :: !roots), " a function entered from where the facts do not go");
         ("-context", Arg.Set_string context, " C: the context file of points_to/ (call1_heap1)");
         ("-library", Arg.Set library, " every function may be called from outside: a runtime, a library");
@@ -418,7 +493,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
             (fun (r : string) ->
               let rules = Fpath.append (path !rules) (Fpath.v r) in
               D.load p ~from:(Fpath.to_string rules) (FS.read caps rules))
-            (if !dead then [ "points_to/instructions.dl"; "points_to/contexts.dl"; "points_to/insensitive.dl"; "dead.dl" ]
+            (if !dead || !ambient then
+               [ "points_to/instructions.dl"; "points_to/contexts.dl"; "points_to/insensitive.dl"; "dead.dl" ]
+               @ if !ambient then [ "capabilities.dl" ] else []
              else
                [ "points_to/instructions.dl"; "points_to/andersen.dl" ]
                @ (if c <> [] then [ "points_to/contexts.dl"; "points_to/" ^ !context ^ ".dl"; "bugs.dl" ] else [])
@@ -438,11 +515,14 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         if ml <> [] then
           List.iter (fun m -> Console.eprint caps (m ^ "\n"); incr failed) (Ml_front.program caps (incs @ Ml_front.library caps !lib) (List.map path ml));
         (* (what they call would be reported dead) *)
-        if !dead then List.iter (fun m -> Console.eprint caps ("not read: " ^ m ^ "\n"); incr failed) !Ml_front.unread;
+        if !dead || !ambient then List.iter (fun m -> Console.eprint caps ("not read: " ^ m ^ "\n"); incr failed) !Ml_front.unread;
+        if !ambient then
+          Hashtbl.iter (fun u () -> given p "own_unit" [ C.Facts.Sym u ]; given p "own_init" [ C.Facts.Sym (u ^ ":init") ]) Ml_front.own;
         if !only then Console.print caps (Buffer.contents text)
         else begin
           ignore (Datalog_eval.run ~naive:false p);
-          if !dead then dead_report caps p (ml <> [])
+          if !ambient then caps_report caps p
+          else if !dead then dead_report caps p (ml <> [])
           else begin
             if c <> [] then report caps p;
             if ml <> [] then ml_report caps p

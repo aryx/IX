@@ -81,6 +81,8 @@ let unread : string list ref = ref []
 let program (caps : < Cap.open_in; .. >) (dirs : Fpath.t list) (paths : Fpath.t list) : string list =
   let errors = ref [] in
   let todo = Queue.create () in
+  (* (a variable's type, for what is a capability) *)
+  Typing.keep := true;
   (* (each unit sees the program's directories, then the library's) *)
   let program_dirs = List.sort_uniq compare (List.map Fpath.parent paths) in
   let dirs = program_dirs @ dirs in

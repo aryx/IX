@@ -32,7 +32,7 @@ one() { # a mkfile
   done
   echo $files > $out/$name.files
   local t0=$(date +%s)
-  (ulimit -v 12000000; timeout $limit $ANALYZE -dead -L lib_core $flags $files) > $out/$name.out 2> $out/$name.err
+  (ulimit -v 12000000; timeout $limit $ANALYZE ${FLAG:--dead} -L lib_core $flags $files) > $out/$name.out 2> $out/$name.err
   local st=$? t1=$(date +%s)
   if [ $st = 0 ]; then
     printf '%-44s %4ds %s%s\n' $dir $((t1 - t0)) "$(tail -1 $out/$name.out | sed -E 's/, 0 only through a pointer//' | cut -c1-90)" "${missing:+ missing:$missing}"
@@ -41,5 +41,5 @@ one() { # a mkfile
   fi
 }
 export -f one
-export out limit
+export out limit FLAG
 git grep -lE '^SRC ?=' -- '*mkfile' |  xargs -P 8 -n 1 bash -c '. lib_code/datalog/tests/mk_units.sh; one "$0"' | sort | tee $out/SUMMARY

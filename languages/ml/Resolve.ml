@@ -104,6 +104,15 @@ let format_d =
  * so that any two unify (plan_ml_bootstrap.md, decision 4, its first
  * step: OCaml checks the same code, for now) *)
 let object_d = tdecl [] "< .. >" []
+
+(* each object type written and what it names: beside the types, all objects
+ * being one to Typing, for mini-analyze -caps to read *)
+let object_fields : (ty * string list) list ref = ref []
+
+let rec capabilities (t : ty) : string list =
+  match t with
+  | Tconstr ({ tabbrev = Some a; _ }, _) -> capabilities a
+  | _ -> (match List.assq_opt t !object_fields with Some names -> names | None -> [])
 let int_t = Tconstr (int_d, []) and char_t = Tconstr (char_d, []) and string_t = Tconstr (string_d, [])
 let float_t = Tconstr (float_d, []) and bool_t = Tconstr (bool_d, []) and unit_t = Tconstr (unit_d, [])
 let exn_t = Tconstr (exn_d, [])
@@ -287,6 +296,17 @@ and qualified env loc (id : Ast.longid) =
   | [] -> assert false
   | x :: rmods -> (if rmods = [] then env else force (find_module env loc (List.rev rmods)).menv), x
 
+(* an object type's field: Cap's, by its name (this Cap has no such type, it
+ * is OCaml's to check), or a type naming more of them, expanded *)
+and object_field env loc (f : Ast.ty) : string list =
+  match f with
+  | Tconstr ([ "Cap"; c ], _) -> [ c ]
+  | Tconstr (id, _) -> (
+      match resolve env loc f with
+      | t -> capabilities t
+      | exception Error _ -> [ List.nth id (List.length id - 1) ])
+  | _ -> []
+
 (* a type expression's constructors resolved *)
 and resolve env loc (t : Ast.ty) =
   match t with
@@ -300,6 +320,10 @@ and resolve env loc (t : Ast.ty) =
   (* int64 and int32, OCaml's names of the stdlib's Int64.t and Int32.t *)
   | Tconstr ([ ("int64" | "int32") as x ], []) when not (List.mem_assoc x env.types) ->
       resolve env loc (Tconstr ([ String.capitalize_ascii x; "t" ], []))
+  | Tconstr ([ "< .. >" ], fields) ->
+      let t = Tconstr (object_d, []) in
+      object_fields := (t, List.concat_map (object_field env loc) fields) :: !object_fields;
+      t
   | Tconstr (id, args) ->
       let d = found (qualified env loc id) loc id (fun e -> e.types) "type" in
       if List.length args <> List.length d.tparams then error loc "the type %s expects %d argument(s)" (Ast.name id) (List.length d.tparams);

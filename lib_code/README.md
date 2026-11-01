@@ -98,6 +98,8 @@ Datalog each for what it is best at, and read by students.
 | `calls.dl` | who calls whom, what is never called, over `call_edge`: `andersen.dl`'s in mini-analyze, `pointer.dl`'s in `languages/ml/facts/tests` |
 | `bugs.dl` | three C bugs, over `points_to/`'s answers |
 | `dead.dl` | dead functions, globals, fields, constructors and statements, by `points_to/`'s call graph (`mini-analyze -dead`) |
+| `capabilities_types.dl` | OCaml's check of the capabilities again: a test of the analysis, and a teaching one |
+| `capabilities.dl` | whether ML's functions hold the capabilities they need, and no others (`mini-analyze -caps`) |
 | `liveness.dl`, `liveness_ssa.dl`, `dominators.dl` | one function's dataflow, checked against the compilers' own |
 | `points_to/` | the pointer analyses below, each file's header its history |
 
@@ -254,3 +256,71 @@ not. What keeps it safe is a value; a points-to set has none. Read with `-librar
 called from ML): the runtime, libc's port and Linux files, singularity's, squeak's:
 0 reports, of these three checks only. `kernels/lib_machine`, `kernels/9pi`'s C and
 `debuggers/acid`'s stop on includes; they were not read.
+
+### The right capabilities (`mini-analyze -caps`, `capabilities.dl`, 2026-11-01)
+
+`Cap.mli`: a signature tells what a function may do "only if the code does not go
+around it [...] That part is a convention", which xix checks with a Semgrep rule.
+OCaml checks that a function holds what the functions it calls ask for; nothing
+checks that what it asks for is what its body does. Here that is two sets: what it
+holds, from its type (`< Cap.stdout; caps; .. >`, by `Resolve.capabilities`, aliases
+and groups expanded, all objects still one type to `Typing`), and what it reaches,
+a fixpoint over the call graph, with `requires(S, C)`, the table of what needs what.
+
+```
+editors/ed/CLI.ml:27: CLI.main: has < Cap.argv; ...; Cap.wait >, needs Cap.signal (Sys.set_signal), Cap.stdin (Unix.stdin)
+utilities/calc/dc/Dc.ml:610: Dc.flush_out: has < Cap.exec; ...; Cap.wait >, may not need Cap.exec, Cap.fork, Cap.open_in, Cap.stdin, Cap.wait
+shell/Eval.ml:31: Eval.print: no capability, needs Cap.stdout (Pervasives.print_string, Pervasives.stdout)
+```
+
+A function a line: what it holds, what is missing and by what, what it may hold for
+nothing; the last line says which capabilities are missing most. A function answers
+for what it names, called or passed on, not for what it calls through a parameter:
+`List.iter print_int l` is its writer's, no other caller of `List.iter`'s. A
+descriptor is a capability, so `Unix.read` is nothing here, `Unix.openfile` is.
+`Cap.draw`, `keyboard`, `mouse` allow `Unix.openfile`, a device being a file.
+
+`sweep.sh` with `FLAG=-caps`, on the 23 of 44 programs read: 40 functions
+(`tests/caps_ix.txt`).
+
+| | functions | |
+|---|---:|---|
+| no capability | 28 | `Eval.print`, `Eval.exists`, `Command.read`; test programs' prints |
+| holds some, not the one | 3 | `Sys.set_signal` in mini-rc's, mini-ed's and mini-mk's mains |
+| holds one it may not need | 9 | `Dc.flush_out` (5 of its 6) and 5 more of dc's, `Pascal CLI.run` (`Cap.open_in`), `builder CLI.print`, `Dossrv.fs` |
+
+Those holding some were read at the source, but for 5 of dc's of one kind, of which one was. What it does not say: a
+capability held in a record's field is not held, so `Command.read t` with `t.caps` is
+"no capability"; `Unix.openfile`'s flags are not read, so `Cap.open_in|Cap.open_out`;
+the clock, a pipe have no capability in xix's `Cap`; `may not need` is not said of a
+function that lets its capability go into a structure or a call through a parameter;
+a function that names and never calls is reported; mini-ml, mini-cc, mini-emacs and
+the other programs not read.
+
+### OCaml's check again, to test the analysis (`capabilities_types.dl`, `tests/caps_types.sh`, 2026-11-01)
+
+The author: "the capabilities are checked by the OCaml 4.14 type checker, so we
+should not redo too much", "it's like a deadcode analyzer [...] a great way to find
+bugs in the analysis (call graph, use graph) and find blind spot". OCaml accepts ix,
+so on any program a `mismatch` is this analysis's mistake: a test with no expected
+output to write, on every program. A function hands on a capability it holds, the
+function reached asks for that much or less: one rule, row polymorphism as a subset.
+
+On `tests/caps_wrong/`, a program OCaml refuses and mini-ml takes: its 4 planted
+errors, through a closure and a renamed variable, and none of the look-alikes. On
+the 23 programs read: 422 calls that hand on a capability, 206 with both sides
+known, 0 mismatches.
+
+| found by it | |
+|---|---|
+| `Regex`'s `caps`, its groups' places, was taken as a capability | the name was the rule; now `Typing`'s type, the name only where the type says nothing |
+| `needs` went inside `Thread.create`: `Source.reader` needed `Pervasives.exit` | an authority is said by its name, not gone into |
+| `Unix._exit` in a forked child asked `Cap.exit` | `Cap.fork` allows it too |
+
+What it says it cannot see: 216 of the 422, mostly a callee whose type names
+nothing (`CapUnix`'s `< .. >`), or a caller whose capability has no written type,
+as `Cap.main (fun caps -> ...)`; one in a field; and the calls in code no call
+reaches, each counted. Where the callee names nothing, `by_need` asks what it needs
+by `requires`: 21 reports, not mistakes of the analysis but wrappers doing more than
+they say (`Source.reader`'s `Unix.kill`, `Procs.spawn`'s `Pervasives.stderr`): OCaml
+does not see these, so this is not a count that must be 0.

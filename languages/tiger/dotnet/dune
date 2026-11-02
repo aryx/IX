@@ -1,0 +1,6 @@
+; mini-tiger's back end to .NET: Tiger_emit (frames as classes, the IL,
+; by languages/dotnet's Writer); dotnet/ as mini-ml's and mini-cc's
+(library
+ (name ix_tiger_dotnet)
+ (wrapped false)
+ (libraries ix_tiger ix_dotnet ix_core))

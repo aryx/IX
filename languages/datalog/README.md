@@ -41,9 +41,9 @@ allocation site and with Doop's contexts, are in
 `tests/liveness.dl` and `tests/dominators.dl` are the two dataflow
 examples of the plan's table, on graphs written by hand.
 
-And a C file's own facts, `mini-cc -facts` (`languages/c/facts/`: the
+And a C file's own facts, `mini-analyze -facts` (`analyzers/c/`: the
 17 relations of those rules, made from mini-cc's tree before its
-typing). `languages/c/facts/tests/pointers.c` is each way a pointer is
+typing). `analyzers/c/tests/pointers.c` is each way a pointer is
 made, moved and called through; the analysis finds a call through a
 table of functions reaching both of its functions, one through a
 structure's member, one through a parameter. On ix's own C
@@ -66,7 +66,7 @@ reads and writes, by each compiler, and the rules in `lib_code/datalog/`:
 | | facts | rules | checked against |
 |---|---|---|---|
 | mini-ml | `mini-analyze -flow` (`analyzers/ml/Ssa_facts`, mini-ml's SSA form): the SSA form's blocks, points, definitions, uses, phis | `liveness_ssa.dl` (a phi's operand is live at its predecessor's end), `dominators.dl` (and the loops' back edges) | `Alloc`'s liveness and `Ssa_build`'s dominators |
-| mini-cc | `mini-cc -flow` (`languages/c/facts/Ir_facts`): the stack code's instructions, the variables a register may hold | `liveness.dl` (the textbook's three rules, and what is live across a call) | `Opti`'s liveness (its `regs` pass) |
+| mini-cc | `mini-analyze -flow` (`analyzers/c/Ir_facts`, mini-cc's stack code): the stack code's instructions, the variables a register may hold | `liveness.dl` (the textbook's three rules, and what is live across a call) | `Opti`'s liveness (its `regs` pass) |
 
 Each compiler prints its own answer as facts of other names (`-dflow`:
 `own_live_in`, `own_idom`...), and a file of rules beside the tests
@@ -75,7 +75,7 @@ other has not: the comparison is a Datalog question, and its answer
 must be empty. Each test also takes a rule out and expects
 differences, so that an empty answer says something. On ix's own
 programs (2026-10-10, OCaml's builds; `analyzers/ml/tests/ix.sh`
-and `languages/c/facts/tests/ix.sh`), no tuple differs:
+and `analyzers/c/tests/ix.sh`), no tuple differs:
 
 | program | files | functions | blocks (C: instructions) | facts | tuples found | differ | mini-datalog |
 |---|---:|---:|---:|---:|---:|---:|---:|

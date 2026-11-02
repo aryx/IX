@@ -23,15 +23,6 @@ hello.c (~/goken/tests/c/hello_libc/), for example:
   mini-ld -m 5 -o hello hello.5 w/t/libc.a
   mini-5i hello                   hello from libc.a: 2 + 2 = 4
 An error names the file and the line: hello.c:5: syntax error
--facts: no object; the file as the facts of a pointer analysis (what is
-assigned to what, who calls whom: Facts.mli), for mini-datalog:
-  mini-cc -m 7 -facts hello.c > hello.dl
-  mini-datalog -q 'call_edge(I, F)' lib_code/datalog/pointer.dl hello.dl
--flow: no object; each function's stack code as facts (who follows whom, the
-variables read and written: Ir_facts.mli), for liveness by mini-datalog:
-  mini-cc -m 7 -flow hello.c > flow.dl
-  mini-datalog -q 'across_call(V, P)' lib_code/datalog/liveness.dl flow.dl
--dflow: the compiler's own liveness (Opti's regs), as facts, to compare.
 -dotnet: x.dll, a .NET assembly of the file, with languages/c/dotnet/libc.c
 (-L: its directory), for Microsoft's dotnet and mini-dotnet; a managed C, as
 C++/CLI's safe mode: a struct a class, a pointer an array and an index (Ptr),
@@ -106,41 +97,6 @@ let simple_backend (caps : < caps; .. >) ~dir ~ssa:(ssa, dssa) ~opti : backend =
     saved = true;
   })
 
-(* no code: the file's facts, its listing (facts/Facts) *)
-let facts_backend : backend =
-  ({
-    init = (fun () ->
-      Check.xcom := (fun (n : Tree.expr) -> n);
-      Check.outstring := (fun (_ : string) (_ : int) -> 0);
-      Declare.gextern := (fun (s : Tree.sym) (x : Tree.expr) (o : int) (_ : int) -> Facts.global s x o);
-      Emit.init ());
-    codgen = Facts.func;
-    finish = (fun () -> ());
-    listing = Facts.text;
-    obj = Emit.obj;
-    saved = false;
-  })
-
-(* no code: each function's stack code as facts (facts/Ir_facts), after
- * Opti's passes but regs; own: what regs itself finds live, instead *)
-let flow_backend ~(own : bool) : backend =
-  let text = Buffer.create 1024 in
-  let passes : string list = List.filter (fun (p : string) -> p <> "regs") (List.map fst Opti.passes) in
-  ({
-    init = (fun () ->
-      Check.xcom := Lower.calls64;
-      Check.outstring := Emit.outstring;
-      Declare.gextern := Emit.gextern;
-      Emit.init ());
-    codgen = (fun (f : Tree.sym) (body : Tree.stmt) ->
-      let fn = Opti.run passes (Lower.func f body) in
-      Buffer.add_string text (if own then Ir_facts.own fn else Ir_facts.func fn));
-    finish = (fun () -> ());
-    listing = (fun () -> Buffer.contents text);
-    obj = Emit.obj;
-    saved = false;
-  })
-
 (* a managed C to .NET's IL (dotnet/, plan_dotnet_languages.md, stage
  * 5): the assembly written at the file's end, out, its
  * runtimeconfig.json beside it *)
@@ -209,16 +165,13 @@ let compile (caps : < caps; .. >) (mach : Tree.machine) (be : backend) ~show:(du
        | exception Parsing.Parse_error -> Error (Printf.sprintf "%s:%d: syntax error" (Fpath.to_string file) !Tree_helpers.lineno))
 
 let main (caps : < caps; .. >) (argv : string array) : int =
-  let mach = ref Machines.arm and simple = ref false and facts = ref false and flow = ref false and dflow = ref false and dir = ref false and dssa = ref false and ssa = ref false and opti = ref [] and dump = ref false and listing = ref false and out = ref "" and defs = ref [] and incs = ref [] and files = ref [] and acidfile = ref false and dotnet = ref false and libdir = ref "" in
+  let mach = ref Machines.arm and simple = ref false and dir = ref false and dssa = ref false and ssa = ref false and opti = ref [] and dump = ref false and listing = ref false and out = ref "" and defs = ref [] and incs = ref [] and files = ref [] and acidfile = ref false and dotnet = ref false and libdir = ref "" in
   let rec args = function
     | "-m" :: "5" :: rest -> mach := Machines.arm; args rest
     | "-m" :: "7" :: rest -> mach := Machines.arm64; args rest
     | "-simple" :: rest -> simple := true; args rest
     | "-dotnet" :: rest -> dotnet := true; mach := Machines.arm; args rest
     | "-L" :: d :: rest -> libdir := d; args rest
-    | "-facts" :: rest -> facts := true; listing := true; args rest
-    | "-flow" :: rest -> flow := true; listing := true; args rest
-    | "-dflow" :: rest -> dflow := true; listing := true; args rest
     | "-dir" :: rest -> dir := true; args rest
     | "-dssa" :: rest -> dssa := true; args rest
     | "-ssa" :: rest -> ssa := true; args rest
@@ -262,7 +215,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         1
       end else begin
       if !dotnet then prelude := Option.map (fun (text : string) -> (Fpath.to_string lib, text)) (FS.read_opt caps lib);
-      match compile caps !mach (if !dotnet then dotnet_backend caps ~out else if !facts then facts_backend else if !flow || !dflow then flow_backend ~own:!dflow else if !simple then simple_backend caps ~dir:!dir ~ssa:(!ssa, !dssa) ~opti:!opti else compat !mach) ~show:(!dump, !listing) ~out (List.rev !defs, incs) file with
+      match compile caps !mach (if !dotnet then dotnet_backend caps ~out else if !simple then simple_backend caps ~dir:!dir ~ssa:(!ssa, !dssa) ~opti:!opti else compat !mach) ~show:(!dump, !listing) ~out (List.rev !defs, incs) file with
       | Ok () when !acid_only ->
           (* (-n: x.acid, in the current directory as x.5, or -o's) *)
           let text = Acid.text () in
@@ -273,5 +226,5 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       | Error m -> eprint caps (m ^ "\n"); 1
       end)
   | exception Failure m -> eprint caps ("mini-cc: " ^ m ^ "\n"); 1
-  | _, _ -> eprint caps "usage: mini-cc -m 5|7 [-O3] [-simple [-dir] [-ssa] [-dssa] [-O|-Opass]] [-facts] [-flow] [-x] [-S] [-Idir] [-Dname=value] [-o out] file.c   (-h: how)\n"; 1
+  | _, _ -> eprint caps "usage: mini-cc -m 5|7 [-O3] [-simple [-dir] [-ssa] [-dssa] [-O|-Opass]] [-x] [-S] [-Idir] [-Dname=value] [-o out] file.c   (-h: how)\n"; 1
   end

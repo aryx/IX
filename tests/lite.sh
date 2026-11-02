@@ -324,7 +324,7 @@ job "mini-ml -dotnet: ML compiled to .NET, verified and run by mini-dotnet: what
 job "mini-cc -dotnet: C to .NET, run by mini-dotnet as the tests' .out; what it refuses" languages/c/dotnet/tests/run.sh -dune
 job "mini-datalog -dotnet: rules compiled to .NET, run by mini-dotnet: the interpreter's answers" languages/datalog/dotnet/tests/run.sh
 job "mini-analyze's two roads: native and .NET (one process, rules compiled), the same answers" analyzers/dotnet/tests/run.sh
-job "mini-cc -facts, -flow: a C file's facts, the pointer analysis and liveness on them" languages/c/facts/tests/run.sh
+job "mini-analyze -facts, -flow of C: a C file's facts, the pointer analysis and liveness on them" analyzers/c/tests/run.sh
 job "mini-analyze -flow: ML's SSA as facts, liveness and dominators against the compiler's" analyzers/ml/tests/run.sh
 job "mini-analyze: toy C and ML programs, each call through a pointer or a closure, its targets, the bugs and dead functions found" analyzers/tests/run.sh
 job "mini-play: a file of each format, its samples" lib_audio/tests/play.sh
@@ -472,9 +472,9 @@ nofail() { ! "$@" | grep '^FAIL'; }
 noskip() { ! "$@" | grep '^FAIL\|^skipped'; }
 by_ix_rc() { nofail env MINIRC=$K/shell/mini-rc RC=$ROOT/bin/mini-rc ORC= shell/tests/differential.sh; }
 by_ix_ed() { nofail env MINIED=$K/editors/ed/mini-ed ED=$ROOT/bin/mini-ed editors/ed/tests/differential.sh; }
+# (the facts by dune's mini-analyze: it is not built by ix)
 by_ix_facts() {
-  local D=$K/languages/datalog/mini-datalog
-  nofail env CC=$K/languages/c/mini-cc DATALOG=$D languages/c/facts/tests/run.sh
+  nofail env DATALOG=$K/languages/datalog/mini-datalog analyzers/c/tests/run.sh
 }
 by_ix_net() {
   nofail networking/tests/served.sh $K/networking && nofail networking/tests/tls.sh $K/networking &&
@@ -560,7 +560,7 @@ if [ -n "$runs7" ]; then
   job $a "mini-datalog built by ix" noskip env MINIDATALOG=$K/languages/datalog/mini-datalog languages/datalog/tests/run.sh -mini
   job $a "mini-ml -dotnet built by ix, its assemblies run by dune's mini-dotnet" noskip env MINIML=$K/languages/ml/mini-ml MINIDOTNET=_build/default/languages/dotnet/Main.exe languages/ml/dotnet/tests/run.sh -mini
   job $a "mini-cc -dotnet built by ix, its assemblies run by dune's mini-dotnet" noskip env MINICC=$K/languages/c/mini-cc MINIDOTNET=_build/default/languages/dotnet/Main.exe languages/c/dotnet/tests/run.sh -mini
-  job $a "mini-cc -facts, -flow built by ix" by_ix_facts
+  job $a "mini-datalog built by ix: the pointer analysis and liveness on C's facts" by_ix_facts
   job $a "games built by ix: recorded frames" nofail games/tests/frames.sh $K/games
   job $a "games built by ix: recorded sounds" nofail games/tests/audio.sh $K/games
   job $a "mini-music built by ix: frames, sounds" sh_ "! { apps/music/tests/frames.sh $K/apps; apps/music/tests/audio.sh $K/apps; } | grep '^FAIL'"

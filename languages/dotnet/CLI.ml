@@ -167,7 +167,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       ("-m", Arg.Set_int mach, " with -S -jit: the machine, 5 (arm, the default) or 7 (arm64)");
       ("-refs", Arg.Set refs, " with -S -jit: references too, the code -jit runs (the assembly loaded)") ] in
   (* (running a program, the arguments after its .dll are its own, its
-   * options too: mini-cc.dll -m 7 -facts) *)
+   * options too: mini-cc.dll -m 7 -x -a) *)
   let rec first_dll (i : int) =
     if i >= Array.length argv then Array.length argv
     else if Filename.check_suffix argv.(i) ".dll" && argv.(i - 1) <> "-tier" && argv.(i - 1) <> "-m" then i

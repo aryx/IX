@@ -1,5 +1,5 @@
 % Liveness, the textbook's equations as rules (docs/plans/plan_prolog.md,
-% stage 9), over the facts of mini-cc -flow (Ir_facts.mli): a variable
+% stage 9), over the facts of mini-analyze -flow of C (Ir_facts.mli): a variable
 % is live into an instruction that reads it, or that it is live out of
 % and that does not write it; live out of one when live into a
 % successor. The same sets as mini-cc's Opti's own (its regs pass).

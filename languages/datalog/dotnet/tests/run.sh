@@ -11,23 +11,22 @@
 # compiled by mini-ml -dotnet (Datalog_rt and its units).
 #   graph       tests/graph.dl: a recursion, negations on two strata,
 #               comparisons, constants, p(X, X), a query in the text
-#   pointer     lib_code/datalog/pointer.dl on mini-cc -facts of
-#               languages/c/facts/tests/pointers.c: the calls, point_to
-#   liveness    liveness.dl on mini-cc -flow of flow.c; without its
+#   pointer     lib_code/datalog/pointer.dl on mini-analyze -facts of
+#               analyzers/c/tests/pointers.c: the calls, point_to
+#   liveness    liveness.dl on mini-analyze -flow of flow.c; without its
 #               writes, with flow_check.dl and -dflow's facts, the
 #               differences (none with the writes)
 #   points_to/  each of the eleven analyses on mini-analyze -facts of
 #               lib_code/datalog/tests/contexts.c: pt or pts, reach; with
 #               -ms, call1 on contexts.ml's (mini-ml's, lib_core's too)
 # usage: languages/datalog/dotnet/tests/run.sh [-ms]   (dune build first)
-# DUNEML, DUNEDATALOG, DUNEDOTNET, DUNECC, DUNEANALYZE: if not _build's.
+# DUNEML, DUNEDATALOG, DUNEDOTNET, DUNEANALYZE: if not _build's.
 cd "$(dirname "$0")/../../../.."
 ms=; [ "${1:-}" = -ms ] && ms=1
 B=_build/default
 ML=${DUNEML:-$B/languages/ml/Main.exe}
 DL=${DUNEDATALOG:-$B/languages/datalog/Main.exe}
 DN=${DUNEDOTNET:-$B/languages/dotnet/Main.exe}
-CC=${DUNECC:-$B/languages/c/Main.exe}
 AN=${DUNEANALYZE:-$B/analyzers/Main.exe}
 T=languages/datalog/dotnet/tests
 A=lib_code/datalog
@@ -78,15 +77,15 @@ case_() {
 }
 
 job case_ graph $T/graph.dl $T/graph_facts.dl 'apart(X, Y)' 'loop(X)' 'before(X, Y)' 'heavy(X)' 'both(X, Y)' 'lonely(X)'
-$CC -m 7 -facts languages/c/facts/tests/pointers.c > $W/pointers.facts
+$AN -facts analyzers/c/tests/pointers.c > $W/pointers.facts
 grep -v '^point_to(A,B)?' $A/pointer.dl > $W/pointer.dl
 job case_ pointer $W/pointer.dl $W/pointers.facts 'call_edge(I, F)' 'point_to(V, L)'
-$CC -m 7 -flow languages/c/facts/tests/flow.c > $W/flow.facts
-$CC -m 7 -dflow languages/c/facts/tests/flow.c > $W/own.dl
+$AN -flow analyzers/c/tests/flow.c > $W/flow.facts
+$AN -dflow analyzers/c/tests/flow.c > $W/own.dl
 job case_ liveness $A/liveness.dl $W/flow.facts 'across_call(V, P)'
 # (the liveness without its writes: the differences none would show)
 sed 's/, \\+ def(V, P)//' $A/liveness.dl > $W/broken.dl
-job case_ liveness_check "$W/broken.dl languages/c/facts/tests/flow_check.dl" "$W/flow.facts $W/own.dl" 'differs(Who, V, P)'
+job case_ liveness_check "$W/broken.dl analyzers/c/tests/flow_check.dl" "$W/flow.facts $W/own.dl" 'differs(Who, V, P)'
 P=$A/points_to
 if [ -x $AN ]; then
   $AN -facts $A/tests/contexts.c > $W/c.facts 2>&1

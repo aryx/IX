@@ -32,8 +32,8 @@
  *     the tables full  --- answers: the tuples a query matches
  *
  * In ix it is the language program analyses are written in. A
- * compiler writes its program out as facts (mini-cc -facts and -flow,
- * ML's by mini-analyze -facts and -flow), and an analysis is a file of rules
+ * compiler's front end writes a program out as facts (mini-analyze
+ * -facts and -flow, C's and ML's), and an analysis is a file of rules
  * (lib_code/datalog/): Andersen's pointer analysis in 15, liveness in three,
  * the dominators, who calls whom. A dataflow analysis is a fixpoint
  * over a program's graph, which is what a compiler's own pass

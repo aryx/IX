@@ -1,4 +1,4 @@
-% What every analysis here reads: the facts of mini-cc and mini-ml
+% What every analysis here reads: the facts of mini-analyze, C's and ML's
 % (Facts.mli, Closure_facts.mli) in the normal form of Doop's and of
 % Smaragdakis and Balatsouras's book, four instructions and calls:
 %

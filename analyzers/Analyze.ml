@@ -51,10 +51,14 @@ made, not the analysis; -alone: an ML file's own facts, without those of the
 library units it names
 -flow: ML's files each as its functions in SSA form, the facts of
 lib_code/datalog/liveness_ssa.dl and dominators.dl (Ssa_facts, by mini-ml's
-own way to its SSA: Ml_flow); -dflow: the compiler's own liveness and
-dominators, to compare (analyzers/ml/tests/run.sh):
+own way to its SSA: Ml_flow); C's as each function's stack code, the facts of
+liveness.dl (Ir_facts, by mini-cc's simple back end: C_flow); -dflow: the
+compiler's own liveness (ML's dominators too), to compare (analyzers/ml/tests/
+and analyzers/c/tests/run.sh):
   mini-analyze -flow -L lib_core fact.ml > fact.dl
-  mini-datalog -q 'live_in(V, B)' lib_code/datalog/liveness_ssa.dl fact.dl|}
+  mini-datalog -q 'live_in(V, B)' lib_code/datalog/liveness_ssa.dl fact.dl
+  mini-analyze -flow hello.c > flow.dl
+  mini-datalog -q 'across_call(V, P)' lib_code/datalog/liveness.dl flow.dl|}
 
 module C = Ix_analyze_c
 
@@ -86,7 +90,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     @ [ ("-r", Arg.Set_string rules, " the directory of points_to/ and bugs.dl");
         ("-facts", Arg.Set only, " the facts, not the analysis");
         ("-alone", Arg.Set Ml_front.alone, " ML: the files' facts alone, not their library's units'");
-        ("-flow", Arg.Set flow, " ML's functions in SSA form, as facts");
+        ("-flow", Arg.Set flow, " ML's functions in SSA form, C's stack code, as facts");
         ("-dflow", Arg.Set dflow, " the compiler's own liveness and dominators, as facts");
         ("-dead", Arg.Set dead, " what no run can reach, not the calls and the bugs");
         ("-caps", Arg.Set ambient, " whether ML's own functions hold the capabilities they need");
@@ -118,6 +122,16 @@ let main (caps : < caps; .. >) (argv : string array) : int =
           let dirs = incs @ Ml_front.library caps !lib in
           List.fold_left
             (fun status (f : string) ->
+              let c own =
+                C.C_flow.file caps ~own (List.rev !defs, incs) (path f) in
+              (* (C's: mini-cc's stack code, Ir_facts) *)
+              if Filename.check_suffix f ".c" then
+                let none = Ok "" in
+                match (if !flow then c false else none),
+                      (if !dflow then c true else none) with
+                | Ok a, Ok b -> Console.print caps (a ^ b); status
+                | Error m, _ | _, Error m -> Console.eprint caps (m ^ "\n"); 1
+              else
               match Ml_flow.file caps dirs (path f) with
               | Ok fns ->
                   if !flow then List.iter (fun fn -> Console.print caps (Ssa_facts.func fn)) fns;

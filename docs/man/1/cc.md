@@ -49,13 +49,6 @@ nothing.
      code, **-O** runs all its optimizations and one as **-Oincs**
      runs that one.
 
-**-facts**, **-flow**
-:    No object: the file as facts for \man{datalog}{1}, those of a
-     pointer analysis (what is assigned to what, who calls whom), or
-     each function's code (who follows whom, what is read and
-     written). **-dflow** gives the compiler's own liveness, to
-     compare.
-
 **-a**
 :    No object: the declarations of the file's structures in acid's
      language, *5c*'s byte for byte, on the standard output: each
@@ -72,7 +65,6 @@ nothing.
 cc -m 5 -I/sys/include -I/arm/include hello.c
 ld -m 5 -o hello hello.5 libc.a
 5i hello
-cc -m 7 -facts hello.c > hello.dl
 ```
 
 # SEE ALSO

@@ -6,8 +6,11 @@
 let owner : (string, string) Hashtbl.t = Hashtbl.create 101
 let histories : (string, (string option * int) list) Hashtbl.t = Hashtbl.create 17
 
-(* CLI's compile with its facts_backend, the listing and the object left out *)
-let file (caps : < Cap.open_in; .. >) (defs, incs) (file : Fpath.t) : (unit, string) result =
+(* mini-cc's CLI.compile, on arm64, the listing and the object left out:
+ * init sets the front end's hooks, codgen is given each function *)
+let read (caps : < Cap.open_in; .. >) (defs, incs) ~(init : unit -> unit)
+    ~(codgen : Tree.sym -> Tree.stmt -> unit) (file : Fpath.t) :
+    (unit, string) result =
   let f = Fpath.to_string file in
   Tree_helpers.mach := Some Machines.arm64;
   Tree_helpers.init_types ();
@@ -21,11 +24,8 @@ let file (caps : < Cap.open_in; .. >) (defs, incs) (file : Fpath.t) : (unit, str
   List.iter Pre.dodefine defs;
   Pre.includes := Fpath.parent file :: incs;
   Pre.read_file := FS.read_opt caps;
-  Check.xcom := (fun (n : Tree.expr) -> n);
-  Check.outstring := (fun (_ : string) (_ : int) -> 0);
-  Declare.gextern := (fun (s : Tree.sym) (x : Tree.expr) (o : int) (_ : int) -> Facts.global s x o);
-  Emit.init ();
-  Declare.on_function := (fun (fn : Tree.sym) body -> Hashtbl.replace owner fn.name f; Facts.func fn body);
+  init ();
+  Declare.on_function := codgen;
   match FS.read_opt caps file with
   | None -> Error (Printf.sprintf "cannot open %s" f)
   | Some text -> (
@@ -36,3 +36,18 @@ let file (caps : < Cap.open_in; .. >) (defs, incs) (file : Fpath.t) : (unit, str
       | () -> Hashtbl.replace histories f (List.rev !Pre.history); Ok ()
       | exception Tree_helpers.Error m -> Error (Printf.sprintf "%s:%s" f m)
       | exception Parsing.Parse_error -> Error (Printf.sprintf "%s:%d: syntax error" f !Tree_helpers.lineno))
+
+(* no code: the pointer facts (was mini-cc -facts's back end) *)
+let file (caps : < Cap.open_in; .. >) (defs, incs) (file : Fpath.t) :
+    (unit, string) result =
+  let f = Fpath.to_string file in
+  let init () =
+    Check.xcom := (fun (n : Tree.expr) -> n);
+    Check.outstring := (fun (_ : string) (_ : int) -> 0);
+    Declare.gextern :=
+      (fun (s : Tree.sym) (x : Tree.expr) (o : int) (_ : int) -> Facts.global s x o);
+    Emit.init () in
+  let codgen (fn : Tree.sym) body =
+    Hashtbl.replace owner fn.name f;
+    Facts.func fn body in
+  read caps (defs, incs) ~init ~codgen file

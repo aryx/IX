@@ -7,9 +7,9 @@ DIR=languages/c
 PROG=mini-cc
 SRC=Tree Tree_helpers Pre Acid Check Declare Machines Emit Com64 Parser Lexer \
  Multiply Acom Regs Cgen Arm Arm64 Prtree Ir Lower Gen Opti Peep Dominators Braun Liveness Coloring Ssa Ssa_build Alloc Ssa_gen \
- Facts Ir_facts Metadata Signature Il Writer Cil_types Cil_strings Cil_exprs Lower_cil CLI Main
-LOCAL=`{ls *.ml *.mli *.mly *.mll debug/*.ml debug/*.mli compat/*.ml compat/*.mli simple/*.ml simple/*.mli opti/*.ml opti/*.mli ssa/*.ml ssa/*.mli facts/*.ml facts/*.mli dotnet/*.ml dotnet/*.mli ../dotnet/assembly/*.ml ../dotnet/assembly/*.mli ../../lib_code/*.ml ../../lib_code/*.mli}
-LIBI=-I ../../assembler -I debug -I compat -I simple -I opti -I ssa -I facts -I dotnet -I ../dotnet/assembly -I ../../lib_code
+ Metadata Signature Il Writer Cil_types Cil_strings Cil_exprs Lower_cil CLI Main
+LOCAL=`{ls *.ml *.mli *.mly *.mll debug/*.ml debug/*.mli compat/*.ml compat/*.mli simple/*.ml simple/*.mli opti/*.ml opti/*.mli ssa/*.ml ssa/*.mli dotnet/*.ml dotnet/*.mli ../dotnet/assembly/*.ml ../dotnet/assembly/*.mli ../../lib_code/*.ml ../../lib_code/*.mli}
+LIBI=-I ../../assembler -I debug -I compat -I simple -I opti -I ssa -I dotnet -I ../dotnet/assembly -I ../../lib_code
 LIBUNITS=Asm Show_asm
 <$TOP/mkfiles/mkconfig
 GEN=$B/languages/c/Parser.ml $B/languages/c/Lexer.ml
@@ -48,10 +48,6 @@ $D/%.$O: $TOP/lib_code/%.ml
 $D/%.$O: ssa/%.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target ssa/$stem.ml
-# facts/'s units (Facts Ir_facts): one recipe each, so that .depend orders each
-$D/%.$O: facts/%.ml
-	mkdir -p $D
-	$ML $INCLUDES -o $target facts/$stem.ml
 # dotnet/'s units (Cil_types Cil_strings Cil_exprs Lower_cil), and mini-dotnet's writer
 # of assemblies (Metadata Signature Il Writer), by their names
 $D/%.$O: dotnet/%.ml

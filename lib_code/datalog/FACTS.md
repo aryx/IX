@@ -5,8 +5,8 @@ vocabulary: this is that vocabulary. Each compiler says a program as Datalog
 facts, nothing computed, and the rules in this directory do the rest.
 
 ```
- a.c, B.ml --> mini-cc, mini-analyze --> facts --> mini-datalog + rules --> answers
-                                     |
+ a.c, B.ml --> mini-analyze --> facts --> mini-datalog + rules --> answers
+                         |
                  what points where:  Facts (C), Closure_facts (ML)   -facts
                  one function's flow: Ir_facts (C), Ssa_facts (ML)   -flow
 ```
@@ -18,7 +18,7 @@ every relation they can say being in this file. To see them all:
 ```
 mini-analyze -facts lib_code/datalog/tests/facts_toy/toy.c
 mini-analyze -facts lib_code/datalog/tests/facts_toy/Toy.ml      (with lib_core's units)
-mini-cc -m 7 -flow toy.c            mini-analyze -flow Toy.ml
+mini-analyze -flow toy.c            mini-analyze -flow Toy.ml
 ```
 
 ## Nothing but symbols and small numbers
@@ -317,8 +317,8 @@ zero('f8_sum<>:v3').
 succ('f8_sum<>:b0', 'f8_sum<>:b1').
 ```
 
-`mini-cc -dflow` and `mini-analyze -dflow` add what the compiler itself computed, to
-compare with: `own_live_out(V, P)`, and for ML `own_live_in(V, B)`, `own_idom(D, B)`.
+`mini-analyze -dflow` adds what the compiler itself computed, to compare
+with: `own_live_out(V, P)`, and for ML `own_live_in(V, B)`, `own_idom(D, B)`.
 
 ## Who reads what
 

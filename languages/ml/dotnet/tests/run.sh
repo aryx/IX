@@ -142,8 +142,11 @@ interop() {
 }
 # mini-cc's own front end compiled to .NET (plan's stage 8 begun): mini-cc
 # whole, its units in its mkfile's order (the parser and lexer
-# mini-yacc's and mini-lex's, ix's build's), its -facts and -flow of
-# languages/c/facts/tests/' programs what the native mini-cc writes
+# mini-yacc's and mini-lex's, ix's build's), what its front end makes of
+# analyzers/c/tests/' programs (-x -a: each function's typed tree, the
+# types' declarations, no code) what the native mini-cc writes (its
+# -facts and -flow until 2026-11-02, now mini-analyze's; -S aborts:
+# its back ends not run on .NET yet)
 front_end() {
   local ml=$1 run=$2 what=$3 C=languages/c P=_mk/7/languages/c u f files=
   [ -f $P/Parser.ml ] && [ -f $P/Lexer.ml ] || { echo "skipped: mini-cc to .NET ($P's Parser.ml not built)"; return; }
@@ -157,21 +160,21 @@ front_end() {
           -I ../../lib_code -I ../../$P -dotnet -o $W/mini-cc.dll $files) > $W/cc.err 2>&1; then
     fail "mini-cc compiled to .NET, by $what"; head -3 $W/cc.err; return
   fi
-  local r=$(abs $run) T=$PWD/$C/facts/tests
-  for t in "facts pointers" "flow flow"; do
-    set -- $t
-    (cd $W && $r mini-cc.dll -m 7 -$1 $T/$2.c) > $W/cc.out 2>&1
-    if cmp -s $W/cc.out $T/$2.facts; then ok "mini-cc compiled to .NET: -$1 $2.c as the native mini-cc, run by $what"
-    else fail "mini-cc compiled to .NET: -$1 $2.c, run by $what"; diff $T/$2.facts $W/cc.out | head -5; fi
+  local r=$(abs $run) T=$PWD/analyzers/c/tests CC=${DUNECC:-_build/default/languages/c/Main.exe}
+  for t in pointers flow; do
+    $CC -m 7 -x -a $T/$t.c > $W/cc.want 2>&1
+    (cd $W && $r mini-cc.dll -m 7 -x -a $T/$t.c) > $W/cc.out 2>&1
+    if cmp -s $W/cc.out $W/cc.want; then ok "mini-cc compiled to .NET: -x -a $t.c (its trees) as the native mini-cc, run by $what"
+    else fail "mini-cc compiled to .NET: -x -a $t.c (its trees), run by $what"; diff $W/cc.want $W/cc.out | head -5; fi
   done
 }
 # the analysis's pipeline on .NET: mini-datalog compiled too, and
-# languages/c/facts/tests/run.sh with both assemblies (CC, DATALOG): its
-# facts and the pointer analysis's and liveness's answers the native's
+# analyzers/c/tests/run.sh with its assembly (DATALOG; the facts by the
+# native mini-analyze, mini-cc's -facts and -flow until 2026-11-02): the
+# pointer analysis's and liveness's answers the native's
 # (with -ms: Microsoft's dotnet, 18 s; mini-dotnet's interpreter takes 81)
 pipeline() {
   local ml=$(abs $1) run=$2 D=languages/datalog P=_mk/7/languages/datalog u f files=
-  [ -f $W/mini-cc.dll ] || { echo "skipped: the pipeline (mini-cc not compiled)"; return; }
   for u in $(sed -n '/^SRC=/,/[^\\]$/p' $D/mkfile | sed 's/^SRC=//; s/\\$//'); do
     for f in $D/$u.ml $D/dotnet/$u.ml languages/prolog/$u.ml languages/dotnet/assembly/$u.ml $P/$u.ml; do [ -f $f ] && break; done
     files="$files $(realpath $f)"
@@ -179,8 +182,8 @@ pipeline() {
   if ! (cd $D && $ml -L ../../lib_core -I . -I ../prolog -I dotnet -I ../dotnet/assembly -I ../../$P -dotnet -o $W/mini-datalog.dll $files) > $W/dl.err 2>&1; then
     fail "mini-datalog compiled to .NET"; head -3 $W/dl.err; return
   fi
-  if CC="$run $W/mini-cc.dll" DATALOG="$run $W/mini-datalog.dll" languages/c/facts/tests/run.sh > $W/pipeline.out 2>&1; then
-    ok "the facts pipeline on .NET: mini-cc's facts, mini-datalog's pointer analysis and liveness, the native's, by $3"
+  if DATALOG="$run $W/mini-datalog.dll" analyzers/c/tests/run.sh > $W/pipeline.out 2>&1; then
+    ok "the facts pipeline on .NET: mini-datalog's pointer analysis and liveness, the native's, by $3"
   else fail "the facts pipeline on .NET, by $3"; grep -v '^ok' $W/pipeline.out | head -5; fi
 }
 ML=${DUNEML:-_build/default/languages/ml/Main.exe}

@@ -26,7 +26,7 @@
  *        | Emit.obj
  *     Asm.obj        x.5 or x.7: what mini-asm makes of a .s
  *
- * (-facts and -flow stop on the way and print Datalog facts: Facts,
+ * (mini-analyze stops on the way and prints Datalog facts: Facts,
  * Ir_facts.) The front end is one for both machines, Machines says
  * what it must know of each (the sizes, what goes in a register), and
  * a back end is given to it as four functions (Check.xcom and

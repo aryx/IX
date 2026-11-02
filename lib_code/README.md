@@ -364,5 +364,5 @@ What is left in mini-cc's 217 s: a field's load (line 185 of `contexts.dl`: 243
 million firings for 1.4 million new tuples) and a function's results to each caller
 (line 246): an `int list` and a `string list` have one head, so `List.rev`'s result
 is still every list. Not done: full types where both sides have them, or contexts
-for the library's polymorphic functions. mini-datalog reading mini-cc's facts from a
+for the library's polymorphic functions. mini-datalog reading C's facts from a
 file overflows the stack (`docs/plans/bugs/ix.md`); mini-analyze gives them as values.

@@ -20,6 +20,9 @@ BOARD=`{case $O in 5) echo pi1;; 7) echo pi4;; esac}
 ARCH=`{case $O in 5) echo arm;; 7) echo arm64;; esac}
 M=machine
 BD=$M/$BOARD
+# the board's assembly: the Pi 1's l1.s defines its numbers, then
+# includes l.s (the Pi 4's l.s is whole)
+LS=`{case $O in 5) echo l1.s;; 7) echo l.s;; esac}
 D=$B/$DIR
 
 # the kernel's modules, in the order they start, after the machine's
@@ -117,9 +120,9 @@ $D/machine_c.$O: $BD/machine.c $M/machine.c $KH
 $D/shim.$O: $M/shim.c $BD/board.h
 	mkdir -p $D
 	$CC $KINC -o $target $M/shim.c
-$D/l.$O: $BD/l.s
+$D/l.$O: $BD/$LS $BD/l.s
 	mkdir -p $D
-	$AS -o $target $BD/l.s
+	$AS -o $target $BD/$LS
 
 # the crossing, the kernel's side
 $D/cross.$O: cross.c $KH

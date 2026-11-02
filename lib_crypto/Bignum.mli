@@ -4,15 +4,17 @@
 
    A number is an array of *limbs* of 26 bits, the least significant
    first: 26 so that the product of two limbs (52 bits) plus what is
-   carried stays inside OCaml's 63-bit native int; 14 where an int has
-   31 or 32 bits (mini-ml for arm, a page), a product then of 28: the
-   width is [Sys.int_size]'s, nothing else knows it. Schoolbook
+   carried stays inside OCaml's 63-bit native int; 28 where an int has
+   31 or 32 bits (mini-ml for arm, a page), a product then of 56 bits
+   that does not fit, in two limbs, its high one by Wide.mul_high (the
+   processor's long multiplication; 14 bits before, each product in an
+   int): the width is [Sys.int_size]'s, nothing else knows it. Schoolbook
    addition, subtraction and multiplication (Knuth, TAOCP vol. 2, 4.3.1);
    division a bit at a time, for the few places that need it.
 
    What is done most -- a*b mod m, thousands of times in a signature's
    check -- is Montgomery's (1985) instead, which never divides: a
-   number a is kept as aR mod m (R = 2^(26*limbs), or 14), and
+   number a is kept as aR mod m (R = 2^(26*limbs), or 28), and
 
        mont_mul(aR, bR) = aR * bR / R  mod m  = (ab)R mod m
 
@@ -129,6 +131,10 @@ val mont_mul : modulus -> mont -> mont -> mont
 (* the same by the textbook's two rows a limb (CIOS), which the tests
    hold [mont_mul], the two in one loop, against *)
 val mont_mul_simple : modulus -> mont -> mont -> mont
+(* the one loop where a product does not fit an int (on 31 bits:
+   [mont_mul] there), each product's high limb by Wide.mul_high; right
+   on 63 bits too, which the tests hold against [mont_mul_simple] *)
+val mont_mul_wide : modulus -> mont -> mont -> mont
 val mont_add : modulus -> mont -> mont -> mont
 val mont_sub : modulus -> mont -> mont -> mont
 val mont_one : modulus -> mont

@@ -244,7 +244,7 @@ let func m out (fn : func) =
     | StrLen | Float1 _ | FloatOfInt | IntOfFloat | FloatRound _
     | Int32 Neg | Int32OfInt | Int32ToInt ->
         spill (); call_c (Lower.runtime_function i) 1; reload (); result ()
-    | ByteGet _ | FloatCmp _ | Float2 _ | FloatIndex _ | Int32 _ | BytesGet _ ->
+    | ByteGet _ | FloatCmp _ | Float2 _ | FloatIndex _ | Int32 _ | BytesGet _ | MulHigh ->
         spill (); call_c (Lower.runtime_function i) 2; reload (); result ()
     | FloatCall (_, _, n) ->
         spill (); call_c (Lower.runtime_function i) n; reload (); result ()

@@ -616,3 +616,52 @@ A loop's body 1.5 to 2.0 of ocamlopt's. sha256 the one left: its
 Int32 operations in place since plan_ml_speed.md's stage 5, each
 result still a block; L (`int32` unboxed inside a function) is its
 next step. Squeak's first screen not measured again.
+
+2026-11-02, **a TLS handshake, then limbs of 28 bits on arm** (the
+author: "yes", of measuring a handshake then L; then of a primitive
+for a product's high part, "the general primitive is fine"). mini-5i
+has no sockets, so a handshake was counted by ocamlopt's code, mini-curl
+against openssl s_server under callgrind (`lib_crypto/tests/handshake.sh`):
+
+| | P-256 certificate | RSA 2048 |
+|---|---:|---:|
+| all, instructions | 126.6 million | 82.4 million |
+| Bignum | 77.6% | 75.1% |
+| AES and GCM (mostly their tables, at the start) | 6.3% | 10.7% |
+| SHA-256 | 1.4% | 2.8% |
+
+By this table's ratios SHA-256 would be some 7% of mini-ml's on arm64,
+and less on arm, where Bignum is three times its arm64 instructions:
+L would make a handshake on a Pi 1 3 to 5% faster. Not done for it.
+What decides it is Bignum on arm: a product of two limbs had to fit
+an int of 31 bits, so limbs had 14 bits, 19 of them for 256 bits.
+
+`Wide.mul_high a b`, the bits of a * b above an int's (lib_crypto's
+Wide: mini-ml's external in Wide.ml, OCaml's in ocaml/Wide.ml for
+dune), mini-ml's Ir MulHigh: arm's MULLU, arm64's UMULH, five
+instructions, a untagged times b's word less its tag so that the high
+word is the answer; the runtime's ml_mul_high in simple's code. Bignum
+on 31 bits: limbs of 28, a product's low limb added and its high one
+carried (`redc_mul_wide`; `redc_mul_narrow` the 63-bit one, as it
+was); of_bytes and shift_left no longer make a value wider than an
+int. Through Wide.mli's val the calls were a closure's (38% fewer, not
+54): mini-ml reads Wide's summary only when the text it finds by the
+-I's is Wide's own, so OCaml's file is in a directory apart.
+
+| arm, mini-5i | 14 bits | 28 bits | |
+|---|---:|---:|---:|
+| the start | 3,795,102 | 2,886,641 | -24% |
+| x25519 | 91,226,599 | 41,623,230 | -54% |
+| ecdsa | 183,330,186 | 84,968,251 | -54% |
+| rsa | 63,063,250 | 29,133,581 | -54% |
+
+arm64 the same as before (26 bits, no MulHigh). Checked: the vectors
+by mini-ml for arm (qemu-arm) and arm64 as Vectors.expected;
+tests/runtime/mul_high.ml on both at -O3 and -O0, MULLU and UMULH in
+the assembly; lib_crypto's and lib_networking's tests (dune), and in
+Unit_public_key the wide loop against the simple one on 63 bits
+(Bignum.mont_mul_wide) and ocaml/Wide.ml against a long
+multiplication bit by bit; make test, 182 jobs, 0 failures; make
+self-quick-mix (the card's 89 files Linux's). Next by the same count: AES's and GCM's
+tables at the start, and Bignum on arm64 (limbs of 60 bits by UMULH,
+a quarter of the products again).

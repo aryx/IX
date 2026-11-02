@@ -121,6 +121,28 @@ int32_mod(value a, value b)
 	return copy_int32(Int32_val(a) % Int32_val(b));
 }
 
+/* Wide.mul_high: the bits of a * b above an int's (a and b not
+ * negative), from the products of their halves, none of which
+ * overflows a word; simple's code, ssa's is the processor's (MULLU on
+ * arm, UMULH on arm64: Emit). The same as Wide.ml's, in OCaml */
+value
+ml_mul_high(value a, value b)
+{
+	uvalue x, y, x0, x1, y0, y1, m, mid, mid2, hi;
+	int n, h;
+
+	n = 8 * sizeof(value) - 1;	/* an int's bits */
+	h = n / 2;
+	m = ((uvalue)1 << h) - 1;
+	x = Long_val(a); y = Long_val(b);
+	x0 = x & m; x1 = x >> h;
+	y0 = y & m; y1 = y >> h;
+	mid = x1 * y0 + ((x0 * y0) >> h);
+	mid2 = x0 * y1 + (mid & m);
+	hi = x1 * y1 + (mid >> h) + (mid2 >> h);	/* a * b over 2^2h */
+	return Val_long(hi >> (n - 2 * h));
+}
+
 value int64_neg(value a) { return copy_int64(-U64(a)); }
 value int64_add(value a, value b) { return copy_int64(U64(a) + U64(b)); }
 value int64_sub(value a, value b) { return copy_int64(U64(a) - U64(b)); }

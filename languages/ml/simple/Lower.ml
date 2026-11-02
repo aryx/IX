@@ -37,6 +37,7 @@ let runtime_function (p : Ir.t) =
         | Lsr -> "shift_right_unsigned" | _ -> "neg")
   | Int32OfInt -> "int32_of_int"
   | Int32ToInt -> "int32_to_int"
+  | MulHigh -> "ml_mul_high"
   | BytesGet n -> Printf.sprintf "caml_bytes_get%d" (8 * n)
   | BytesSet n -> Printf.sprintf "caml_bytes_set%d" (8 * n)
   | _ -> failwith "runtime_function: not a primitive"
@@ -489,7 +490,8 @@ let int32_ops : (string * Ir.t) list =
     "int32_mul", Int32 Mul; "int32_and", Int32 And; "int32_or", Int32 Or;
     "int32_xor", Int32 Xor; "int32_shift_left", Int32 Lsl;
     "int32_shift_right", Int32 Asr; "int32_shift_right_unsigned", Int32 Lsr;
-    "int32_of_int", Int32OfInt; "int32_to_int", Int32ToInt ]
+    "int32_of_int", Int32OfInt; "int32_to_int", Int32ToInt;
+    "ml_mul_high", MulHigh ]
 
 (* the operands are pushed, the first on top; imm: the value a store
  * writes is an immediate (Typing.immediates: no barrier) *)

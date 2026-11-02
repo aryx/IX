@@ -56,9 +56,16 @@ labels as they are.
   it counted in native ints taken to have 63 bits (a limb of 26 bits,
   a product of 52), as the playground's dune file says: "native only,
   as TLS is". Now:
-  - `Bignum`: a limb of 14 bits where `Sys.int_size` is below 63 (a
-    product and two limbs below 2^28), 26 where it is not; nothing
-    else of it changed.
+  - `Bignum`: a limb of 28 bits where `Sys.int_size` is below 63, 26
+    where it is not. A product of two then has 56 bits, which do not
+    fit: its high limb is `Wide.mul_high`'s (the processor's long
+    multiplication, mini-ml's MulHigh), `redc_mul_wide` beside
+    `redc_mul_narrow`. Until 2026-11-02, 14 bits, each product in an
+    int (below 2^28 with two limbs).
+  - `Wide`: two files, `Wide.ml` mini-ml's external and
+    `ocaml/Wide.ml` OCaml's (dune's library `ix_crypto_wide`), apart so
+    that mini-ml finds its own text and reads its summary: through the
+    .mli alone, Bignum's calls were a closure's.
   - `Chacha20`: a word as two ints of 16 bits (`block_halves`) where
     an int is small; the playground's word in an int (`block_wide`)
     where it is not.
@@ -120,3 +127,20 @@ same). Not done: a square of its own, mixed additions and a window in
 ECDSA (10 to 15% each); SHA-256 in halves; and the real one, mini-ml's
 code for a loop (the product's is 110 instructions for a limb's two
 multiplications).
+
+2026-11-02, **limbs of 28 bits on arm** (the author, of a primitive
+for the high part of a product: "the general primitive is fine"). A
+handshake's instructions are Bignum's (`tests/handshake.sh`, ocamlopt's
+code under callgrind: 77.6% with a P-256 certificate, 75.1% with RSA;
+SHA-256 1.4% and 2.8%), and on arm a number had twice as many limbs as
+it needed. Millions of arm instructions, `mini-5i -s`:
+
+| | 14 bits | 28 bits | |
+|---|---:|---:|---|
+| a program's start | 3.8 | 2.9 | the curves' constants, fewer limbs |
+| X25519, a public key | 91.2 | 41.6 | 54% fewer |
+| ECDSA P-256, a signature checked | 183.3 | 85.0 | 54% fewer |
+| RSA 2048, a modulus and its 17 products | 63.1 | 29.1 | 54% fewer |
+
+A quarter of the products, each now two multiplications and the high
+part's shifts: 2.2 times faster, not 4. arm64's numbers did not move.

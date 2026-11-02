@@ -64,7 +64,7 @@ let arity : L.t -> int * int = function
   | FloatRound _ -> 1, 1
   | FloatCall (_, _, n) -> n, 1
   | Int32 Neg | Int32OfInt | Int32ToInt -> 1, 1
-  | Int32 _ -> 2, 1
+  | Int32 _ | MulHigh -> 2, 1
   | BytesGet _ -> 2, 1
   | BytesSet _ -> 3, 0
   | StrLen -> 1, 1
@@ -174,7 +174,7 @@ let build (f : L.func) =
        *   | ByteGet -> let vs = pops 2 in push (emit id (CallC ("ml_string_get", vs))) *)
       | ByteSet _ | FloatSetIndex _ | BytesSet _ -> let vs = pops 3 in ignore (emit id (Prim (i, vs)))
       | ByteGet _ | StrLen | Float2 _ | Float1 _ | FloatOfInt | IntOfFloat | FloatCmp _ | FloatIndex _ | FloatRound _
-      | FloatCall _ | Int32 _ | Int32OfInt | Int32ToInt | BytesGet _ ->
+      | FloatCall _ | Int32 _ | Int32OfInt | Int32ToInt | BytesGet _ | MulHigh ->
           let vs = pops (fst (arity i)) in push (emit id (Prim (i, vs)))
       | Alloc (tag, n) -> let vs = pops n in push (emit id (Alloc (tag, vs)))
       | Op o -> let p, _ = arity i in let vs = pops p in push (emit id (Op (o, vs)))
@@ -337,7 +337,7 @@ let show_ins ins =
         | ByteGet c -> if c then "byte?" else "byte"
         | ByteSet c -> if c then "setbyte?" else "setbyte"
         | StrLen -> "length"
-        | Float2 _ | Float1 _ | Int32 _ | Int32OfInt | Int32ToInt ->
+        | Float2 _ | Float1 _ | Int32 _ | Int32OfInt | Int32ToInt | MulHigh ->
             Lower.runtime_function p
         | FloatOfInt -> "floatofint" | IntOfFloat -> "intoffloat"
         | FloatCmp r -> "float" ^ L.show_rel r

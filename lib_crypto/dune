@@ -6,4 +6,5 @@
  (wrapped false)
  (flags (:standard -w -69))
  (modules Sha1 Sha256 Sha512 Hmac Hkdf Chacha20 Poly1305 Chacha20_poly1305
-  Aes Gcm Bignum X25519 Ecdsa Rsa))
+  Aes Gcm Bignum X25519 Ecdsa Rsa)
+ (libraries ix_crypto_wide))

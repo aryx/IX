@@ -675,6 +675,20 @@ let func m out (fn : func) (lf : L.func) =
         call_c (Lower.runtime_function p) xs;
         lab ok;
         finish v 0
+    (* Wide.mul_high: a untagged times b's word less its tag (2b), so
+     * the high word of the product, 2ab over 2^32 (2^64), is ab over
+     * 2^31 (2^63): the bits above an int's, then tagged. arm's MULLU
+     * its low word in t, unread *)
+    | MulHigh, [ x; y ] when in_place ->
+        let a = src x r1 in let b = src y r2 in let d = dst v r3 in
+        ins "%s\t$1, R%d, R%d" (shift Asr) a r1;
+        ins "SUB\t$1, R%d, R%d" b r2;
+        (match m.arch with
+         | Arm -> ins "MULLU\tR%d, R%d, (R%d, R%d)" r1 r2 d t
+         | Arm64 -> ins "UMULH\tR%d, R%d, R%d" r1 r2 d);
+        ins "%s\t$1, R%d" (shift Lsl) d;
+        ins "ORR\t$1, R%d" d;
+        finish v d
     | Float2 o, [ x; y ] when in_place ->
         let a = src x r1 in let b = src y r2 in
         ins "%s\t0(R%d), F0" fmov a;
@@ -728,7 +742,7 @@ let func m out (fn : func) (lf : L.func) =
         call_c (Lower.runtime_function p) xs
     | (ByteGet _ | StrLen | Float2 _ | Float1 _ | FloatOfInt | IntOfFloat
       | FloatIndex _ | FloatRound _ | FloatCall _ | Int32 _ | Int32OfInt
-      | Int32ToInt | BytesGet _), _ ->
+      | Int32ToInt | BytesGet _ | MulHigh), _ ->
         call_c (Lower.runtime_function p) xs; finish v 0
     | _ -> failwith (fn.name ^ ": ssa: a primitive's operands")
   in

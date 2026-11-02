@@ -1,0 +1,8 @@
+; claude: Wide in OCaml, for dune's build; ../Wide.ml is mini-ml's, its
+; external (Wide.mli)
+(library
+ (name ix_crypto_wide)
+ (wrapped false)
+ (modules Wide))
+
+(copy_files# ../Wide.mli)

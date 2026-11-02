@@ -122,6 +122,10 @@ type t =
   | Int32 of op                       (* Add Sub Mul And Or Xor Lsl Asr Lsr Neg *)
   | Int32OfInt
   | Int32ToInt
+  (* the bits of two ints' product above an int's (Wide.mul_high): the
+   * runtime's ml_mul_high in simple's code, the processor's long
+   * multiplication in ssa's (Lower.ints_in_place) *)
+  | MulHigh
   (* a string's (or bytes') little-endian integer of n bytes (2 or 4) at
    * an index, checked: the 16 bits an int, the 32 an int32's block;
    * read, or written (the value below the index). Ir's own, a load or

@@ -3,7 +3,7 @@
 
 (* One kind of work, a number of times, to be timed from outside
  * (speed.sh): where a handshake's and a record's time goes on a small
- * machine, where an int has 31 bits and a limb 14. *)
+ * machine, where an int has 31 bits and a limb 28. *)
 
 let unhex (s : string) : string = String.init (String.length s / 2) (fun i -> Char.chr (int_of_string ("0x" ^ String.sub s (2 * i) 2)))
 

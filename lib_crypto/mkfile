@@ -5,5 +5,5 @@ TOP=..
 LIB=lib_crypto
 DIRS=.
 NEEDS=
-UNITS=Sha1 Sha256 Sha512 Hmac Hkdf Chacha20 Bignum Poly1305 Chacha20_poly1305 Aes Gcm X25519 Ecdsa Rsa
+UNITS=Sha1 Sha256 Sha512 Hmac Hkdf Chacha20 Wide Bignum Poly1305 Chacha20_poly1305 Aes Gcm X25519 Ecdsa Rsa
 <$TOP/mkfiles/mklib

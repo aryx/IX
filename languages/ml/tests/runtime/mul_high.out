@@ -1,0 +1,12 @@
+0 0: true
+max_int 0: true
+max_int 1: true
+max_int 2: true
+max_int 3: true
+max_int max_int: true
+2^(n-2) a: true
+2^(n/2+1) 2^(n/2): true
+2^(n-2) 2^(n-2): true
+limbs: true
+random pairs, wrong: 0
+exit 0

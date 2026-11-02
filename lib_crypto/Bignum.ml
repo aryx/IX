@@ -5,12 +5,21 @@
 
 (* See Bignum.mli *)
 
-(* a limb's bits: a product of two and two more limbs must fit an int,
- * (2^b - 1)^2 + 2 (2^b - 1) < 2^(2b). 26 where an int has 63 bits; 14
- * where it has 31 (mini-ml for arm, mini-9pi) or 32 (a page).
- * old: let base_bits = 26, and other bytes on arm *)
-let base_bits = if Sys.int_size >= 63 then 26 else 14
+(* a limb's bits. 26 where an int has 63 bits: a product of two and two
+ * more limbs fits an int, (2^b - 1)^2 + 2 (2^b - 1) < 2^(2b). 28 where
+ * it has 31 (mini-ml for arm, mini-9pi) or 32 (a page): a product is
+ * split in two limbs ([wide], Wide.mul_high its high part), and a sum
+ * of three limbs and a carry fits, below 2^30.
+ * old: let base_bits = if Sys.int_size >= 63 then 26 else 14, each
+ * product in an int: a quarter of the products for a number on arm *)
+let wide = Sys.int_size < 63
+let base_bits = if wide then 28 else 26
 let mask = (1 lsl base_bits) - 1
+
+(* a * b's high limb, p its low bits (p = a * b, which may not fit an
+ * int: its low limb p land mask) *)
+let high (a : int) (b : int) (p : int) : int =
+  if wide then (Wide.mul_high a b lsl (Sys.int_size - base_bits)) lor (p lsr base_bits) else p lsr base_bits
 
 (* the limbs, least significant first, no zero limb on top *)
 type t = int array
@@ -66,9 +75,10 @@ let mul (a : t) (b : t) : t =
     for i = 0 to la - 1 do
       let c = ref 0 in
       for j = 0 to lb - 1 do
-        let x = r.(i + j) + (a.(i) * b.(j)) + !c in
+        let p = a.(i) * b.(j) in
+        let x = r.(i + j) + (p land mask) + !c in
         r.(i + j) <- x land mask;
-        c := x lsr base_bits
+        c := high a.(i) b.(j) p + (x lsr base_bits)
       done;
       r.(i + lb) <- r.(i + lb) + !c
     done;
@@ -89,11 +99,12 @@ let shift_left (a : t) (k : int) : t =
   else
     let limbs = k / base_bits and b = k mod base_bits in
     let r = Array.make (Array.length a + limbs + 1) 0 in
+    (* (x lsl b may not fit an int: its low bits, x's high ones apart.
+     * old: let v = x lsl b in ... (v land mask) ... v lsr base_bits) *)
     Array.iteri
       (fun i x ->
-        let v = x lsl b in
-        r.(i + limbs) <- r.(i + limbs) lor (v land mask);
-        r.(i + limbs + 1) <- v lsr base_bits)
+        r.(i + limbs) <- r.(i + limbs) lor ((x lsl b) land mask);
+        r.(i + limbs + 1) <- x lsr (base_bits - b))
       a;
     normalize r
 
@@ -124,15 +135,19 @@ let of_bytes (s : string) : t =
   let len = String.length s in
   let r = Array.make (((8 * len) + base_bits - 1) / base_bits) 0 in
   let acc = ref 0 and bits = ref 0 and k = ref 0 in
+  (* (a limb's bits and a byte may not fit an int: the byte's low bits
+   * in the limb, its high ones the next's. old: acc := !acc lor (c lsl
+   * !bits), the limb taken when there were base_bits) *)
   for i = len - 1 downto 0 do
-    acc := !acc lor (Char.code s.[i] lsl !bits);
-    bits := !bits + 8;
-    if !bits >= base_bits then begin
-      r.(!k) <- !acc land mask;
+    let c = Char.code s.[i] in
+    acc := !acc lor ((c lsl !bits) land mask);
+    if !bits + 8 >= base_bits then begin
+      r.(!k) <- !acc;
       incr k;
-      acc := !acc lsr base_bits;
-      bits := !bits - base_bits
+      acc := c lsr (base_bits - !bits);
+      bits := !bits + 8 - base_bits
     end
+    else bits := !bits + 8
   done;
   if !bits > 0 && !k < Array.length r then r.(!k) <- !acc;
   normalize r
@@ -180,21 +195,24 @@ let redc_mul_simple (md : modulus) (a : int array) (b : int array) : int array =
     let c = ref 0 in
     let ai = a.(i) in
     for j = 0 to n - 1 do
-      let x = t.(j) + (ai * b.(j)) + !c in
+      let p = ai * b.(j) in
+      let x = t.(j) + (p land mask) + !c in
       t.(j) <- x land mask;
-      c := x lsr base_bits
+      c := high ai b.(j) p + (x lsr base_bits)
     done;
     let x = t.(n) + !c in
     t.(n) <- x land mask;
     t.(n + 1) <- t.(n + 1) + (x lsr base_bits);
     (* a multiple of m that zeroes the lowest limb, then shift by one *)
     let u = (t.(0) * md.minv) land mask in
-    let x = t.(0) + (u * m.(0)) in
-    let c = ref (x lsr base_bits) in
+    let p = u * m.(0) in
+    let x = t.(0) + (p land mask) in
+    let c = ref (high u m.(0) p + (x lsr base_bits)) in
     for j = 1 to n - 1 do
-      let x = t.(j) + (u * m.(j)) + !c in
+      let p = u * m.(j) in
+      let x = t.(j) + (p land mask) + !c in
       t.(j - 1) <- x land mask;
-      c := x lsr base_bits
+      c := high u m.(j) p + (x lsr base_bits)
     done;
     let x = t.(n) + !c in
     t.(n - 1) <- x land mask;
@@ -205,12 +223,31 @@ let redc_mul_simple (md : modulus) (a : int array) (b : int array) : int array =
   let r = if compare r md.m >= 0 then sub r md.m else r in
   pad n r
 
+(* t (n + 1 limbs, below 2m) less m once when it is m or more, in
+ * place: its n limbs *)
+let below_m (m : int array) (n : int) (t : int array) : int array =
+  let ge =
+    t.(n) > 0
+    ||
+    let rec go i = if i < 0 then true else if t.(i) <> m.(i) then t.(i) > m.(i) else go (i - 1) in
+    go (n - 1)
+  in
+  let r = Array.sub t 0 n in
+  if ge then begin
+    let borrow = ref 0 in
+    for i = 0 to n - 1 do
+      let x = r.(i) - m.(i) - !borrow in
+      if x < 0 then (r.(i) <- x + (1 lsl base_bits); borrow := 1) else (r.(i) <- x; borrow := 0)
+    done
+  end;
+  r
+
 (* opti: the two rows in one loop (the multiple of m is known from the
  * first limb alone), two carries so that each sum stays below 2^(2b);
  * and at the end m taken off in place, where the simple one makes
  * three arrays (normalize, sub, pad). A fifth less by mini-ml for arm,
- * whose loop is 80 instructions a limb. *)
-let redc_mul (md : modulus) (a : int array) (b : int array) : int array =
+ * whose loop was 80 instructions a limb. Where a product fits an int *)
+let redc_mul_narrow (md : modulus) (a : int array) (b : int array) : int array =
   let n = md.n and m = md.mp in
   let t = Array.make (n + 1) 0 in
   for i = 0 to n - 1 do
@@ -230,22 +267,39 @@ let redc_mul (md : modulus) (a : int array) (b : int array) : int array =
     t.(n - 1) <- x land mask;
     t.(n) <- x lsr base_bits
   done;
-  (* below 2m: m off once when it is m or more *)
-  let ge =
-    t.(n) > 0
-    ||
-    let rec go i = if i < 0 then true else if t.(i) <> m.(i) then t.(i) > m.(i) else go (i - 1) in
-    go (n - 1)
-  in
-  let r = Array.sub t 0 n in
-  if ge then begin
-    let borrow = ref 0 in
-    for i = 0 to n - 1 do
-      let x = r.(i) - m.(i) - !borrow in
-      if x < 0 then (r.(i) <- x + (1 lsl base_bits); borrow := 1) else (r.(i) <- x; borrow := 0)
-    done
-  end;
-  r
+  below_m m n t
+
+(* opti: the same where it does not ([wide]): each product's low limb
+ * added, its high one (Wide.mul_high's bits and the low word's top)
+ * into the carry; a sum of three limbs, below 2^30 *)
+let redc_mul_wide (md : modulus) (a : int array) (b : int array) : int array =
+  let n = md.n and m = md.mp and s = Sys.int_size - base_bits in
+  let t = Array.make (n + 1) 0 in
+  for i = 0 to n - 1 do
+    let ai = a.(i) and b0 = b.(0) in
+    let p = ai * b0 in
+    let x = t.(0) + (p land mask) in
+    let u = ((x land mask) * md.minv) land mask and m0 = m.(0) in
+    let q = u * m0 in
+    let y = (x land mask) + (q land mask) in
+    let c1 = ref (((Wide.mul_high ai b0 lsl s) lor (p lsr base_bits)) + (x lsr base_bits)) in
+    let c2 = ref (((Wide.mul_high u m0 lsl s) lor (q lsr base_bits)) + (y lsr base_bits)) in
+    for j = 1 to n - 1 do
+      let bj = b.(j) and mj = m.(j) in
+      let p = ai * bj and q = u * mj in
+      let x = t.(j) + (p land mask) + !c1 in
+      let y = (x land mask) + (q land mask) + !c2 in
+      t.(j - 1) <- y land mask;
+      c1 := ((Wide.mul_high ai bj lsl s) lor (p lsr base_bits)) + (x lsr base_bits);
+      c2 := ((Wide.mul_high u mj lsl s) lor (q lsr base_bits)) + (y lsr base_bits)
+    done;
+    let x = t.(n) + !c1 + !c2 in
+    t.(n - 1) <- x land mask;
+    t.(n) <- x lsr base_bits
+  done;
+  below_m m n t
+
+let redc_mul = if wide then redc_mul_wide else redc_mul_narrow
 
 let modulus (m : t) : modulus =
   if Array.length m = 0 || m.(0) land 1 = 0 then invalid_arg "Bignum.modulus: even";
@@ -306,6 +360,7 @@ let of_nat (md : modulus) (a : t) : mont = constants md; redc_mul md (pad md.n (
 let to_nat (md : modulus) (a : mont) : t = normalize (redc_mul md a (pad md.n one))
 let mont_mul = redc_mul
 let mont_mul_simple = redc_mul_simple
+let mont_mul_wide = redc_mul_wide
 let mont_one (md : modulus) : mont = constants md; md.one_m
 let mont_is_zero (a : mont) : bool = Array.for_all (( = ) 0) a
 let mont_equal (a : mont) (b : mont) : bool = a = b

@@ -66,10 +66,38 @@ let tests =
                 let am = Bignum.of_nat md a and bm = Bignum.of_nat md b in
                 Alcotest.(check string) (Printf.sprintf "product %d" i)
                   (Bignum.to_hex (Bignum.to_nat md (Bignum.mont_mul_simple md am bm))) (Bignum.to_hex (Bignum.to_nat md (Bignum.mont_mul md am bm)));
+                Alcotest.(check string) (Printf.sprintf "product %d, the wide loop" i)
+                  (Bignum.to_hex (Bignum.to_nat md (Bignum.mont_mul_simple md am bm))) (Bignum.to_hex (Bignum.to_nat md (Bignum.mont_mul_wide md am bm)));
                 Alcotest.(check string) (Printf.sprintf "against rem %d" i) (Bignum.to_hex (Bignum.rem (Bignum.mul a b) mv)) (Bignum.to_hex (Bignum.mul_mod md a b))
               done)
             [ "ffffffff00000001000000000000000000000000ffffffffffffffffffffffff"; "7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffed";
               "3fffffffffffffffffffffffffffffffb"; "d"; rsa_n; "10001" ]);
+      Testo.create "Wide.mul_high: a product's high bits, against a long multiplication bit by bit" (fun () ->
+          let n = Sys.int_size in
+          (* a * b as two words (hi, lo) of n bits, by b's bits: a shifted
+             added each time, the carry where lo's unsigned sum wrapped *)
+          let reference a b =
+            let hi = ref 0 and lo = ref 0 in
+            for k = 0 to n - 1 do
+              if (b lsr k) land 1 = 1 then begin
+                let x = a lsl k in
+                let s = !lo + x in
+                let carry = if (s lxor min_int) < (!lo lxor min_int) then 1 else 0 in
+                lo := s;
+                hi := !hi + (if k = 0 then 0 else a lsr (n - k)) + carry
+              end
+            done;
+            !hi
+          in
+          let x = ref 12345 in
+          let pairs = List.init 2000 (fun _ ->
+            x := ((!x * 1103515245) + 12345) land max_int;
+            let a = !x lsr (!x land 15) in
+            x := ((!x * 1103515245) + 12345) land max_int;
+            (a, !x lsr (!x land 7))) in
+          List.iter (fun (a, b) ->
+            Alcotest.(check int) (Printf.sprintf "%d %d" a b) (reference a b) (Wide.mul_high a b))
+            ([ (0, 0); (max_int, 1); (max_int, 3); (max_int, max_int); (1 lsl (n - 2), 0x1234567) ] @ pairs));
       Testo.create "X25519: RFC 7748's vectors (5.2) and Alice and Bob (6.1)" (fun () ->
           check_hex "1" "c3da55379de9c6908e94ea4df28d084f32eccf03491c71f754b4075577a28552"
             (X25519.scalar_mult (unhex "a546e36bf0527c9d3b16154b82465edd62144c0ac1fc5a18506a2244ba449ac4")

@@ -335,7 +335,9 @@ The same `shrink` could later draw previews on the panel's task buttons.
 ## Decisions taken (for the author to undo)
 
 1. **`windows/desktop/` beside `windows/rio/`**, and rio's tests in
-   `windows/rio/tests/`.
+   `windows/rio/tests/`. The programs at `windows/desktop/`, the modules they
+   share in `windows/desktop/lib/` (the author, 2026-11-02: "maybe we should
+   separate the progs from the library modules used by those progs").
 2. **Layers and popups in rio, everything else in programs.**
 3. **Rio's right-button menu stays** on the desk and on normal windows: the
    start menu is added, nothing is taken away. The panel's right button is

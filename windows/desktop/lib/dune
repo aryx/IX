@@ -1,0 +1,7 @@
+; the desktop's modules that its programs share (../): what rio's windows
+; and files say, the start menu's table, icons, the settings' file, the
+; wallpaper's pixels, Expose's grid. Pure but Wsys, which reads /dev/wsys
+(library
+ (name ix_desktop)
+ (wrapped false)
+ (libraries ix_graphics ix_core caps fpath unix))

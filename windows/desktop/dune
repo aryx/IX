@@ -1,10 +1,6 @@
-; the desktop around mini-rio (docs/plans/plan_desktop.md): programs in rio's
-; windows, and desktop.rc and start.rc, which start them
-(library
- (name ix_desktop)
- (wrapped false)
- (modules Taskbar Apps Icon Prefs Paper Tiles Wsys)
- (libraries ix_graphics ix_core caps fpath unix))
+; the desktop around mini-rio (docs/plans/plan_desktop.md): its programs, in
+; rio's windows, and desktop.rc and start.rc, which start them; the modules
+; they share in lib/
 
 (executable
  (name Expose)

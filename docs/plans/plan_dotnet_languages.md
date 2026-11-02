@@ -85,10 +85,16 @@ made direct and inlined.
   for each miss in lib_core's searches, notes_profiling_techniques.md).
   Not: -btree's sorted relations, typed CTS columns (decision 5's, for
   ML's values).
-- **Stage 8 begun**: mini-cc and mini-datalog (their ML) compiled to
-  .NET, the facts pipeline's answers the native's by both runtimes.
-  Not: the pipeline on mini-rc; the one program (needs 6 and 7, and
-  mini-analyze's units in one namespace).
+- **Stage 8 half**: mini-cc and mini-datalog (their ML) compiled to
+  .NET, the facts pipeline's answers the native's by both runtimes;
+  mini-analyze's two roads (the author's: native and .NET, for teaching
+  and comparison) both run on C, one process each, the same answers
+  (contexts.c, Plan 9's rc: 17,330). The .NET road is slower (rc: 31 s
+  against the native evaluator's 16): mini-ml -dotnet's code under the
+  compiled rules (closures at each tuple lookup, Lexing's copies,
+  Array.make's fill). Not: that speed; ML programs (mini-ml's and
+  mini-cc's units share names in mini-ml's one namespace); the report
+  (mini-analyze's, another session's); a C module; mini-9pi's card.
 - **Stage 9 not built**: ML analysed.
 
 For the author: what step 0 showed, decision 6 to be decided again

@@ -250,6 +250,23 @@ runtime, each found by the tool that sees it:
   call of .NET's (`Encoding.GetBytes` into a byte[]) for the copy:
   262 million instructions to 113, 39 s to 23.
 
+Then, under mini-analyze's compiled rules (rc, 2026-11-02), with no
+profiler of Microsoft's runtime here (no perf, no dotnet-trace): a
+**microbenchmark of the operations** the compiled loops make (a million
+each: get, an index's chain, mem, hash, add), the same program by OCaml
+natively and by Microsoft's .NET: each 3x, nothing pathological, the
+closures 8x. So the cost was mini-ml -dotnet's code shape: a local
+function a closure called through a delegate once per argument; lifted
+to a static method (F#'s way), rc 30.7 s of CPU to 25.5. And
+`mini-dotnet -profile` on the front end showed `Lexing`'s engine asking
+257 table entries at each buffer's end, which mini-cc's one-character
+refills made every character: a quadratic-looking cost that natively
+hid in a fast loop, found only because the interpreter counts
+instructions. Fixed in lib_core (per lexer, once): ix's native mini-cc
+2x faster too. A benchmark loop inside a unit's toplevel misleads on
+.NET: the toplevel is the class's .cctor, and each call of the class's
+own methods there goes through the class-initialization check.
+
 The lesson: the same IL has a different cost on each runtime, and the
 first profile of one says nothing of the other. A miss signalled by an
 exception is the .NET case of "what usually is it" (below, 9).

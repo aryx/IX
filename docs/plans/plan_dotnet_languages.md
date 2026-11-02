@@ -849,8 +849,17 @@ but really use the same types!". So the decisions below are those of
    for the relations (Tuples's hash and its closures, one an object
    and a virtual call at each lookup; Array.make filled in ML) and,
    for the front end, lib_core's Lexing.from_function, which copies a
-   token's bytes again at each one-character refill. Next: those, each
-   measured natively before lib_core is touched outside dotnet/. Not
+   token's bytes again at each one-character refill. Then (the
+   author: "ok let's do it"): mini-ml -dotnet lifts a local function
+   it never needs as a value to a static method (F#'s way), its
+   captured variables its first parameters: rc 30.7 s of CPU to 25.5;
+   lib_core's Lexing grows its buffer instead of copying at each
+   refill, and knows once per lexer which states have a way out
+   (engine asked 257 entries at each buffer's end: mini-cc's every
+   character): ix's own mini-cc writes rc's facts in 0.50 s, was 1.03,
+   the same facts; on .NET the front end 2.7 s (0.08 s a file, its
+   headers; startup 0.3). Left: Tuples's and Hash_index's keys as
+   closures (int -> int), a delegate call a column. Not
    yet: ML programs (mini-ml's and mini-cc's Lexer and Parser in
    mini-ml's one namespace), the report (Analyze's, in the native
    mini-analyze, which another session is changing).

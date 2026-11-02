@@ -4,6 +4,11 @@
  * primitives, a match's cases and a try's are here, one recursion. *)
 
 (* an expression's value pushed (none for unit's) *)
+
+(* Lower_il's define, set by it: a local function lifted to a method
+ * (its body made as a function of the unit's) *)
+val define_hook : (Il_code.c -> Il_functions.env -> Il_functions.fn -> unit) ref
+
 val expr : Il_code.c -> Il_functions.env -> Il_code.code -> Scope.expr -> unit
 
 (* an expression for its effect: its value, if any, popped *)

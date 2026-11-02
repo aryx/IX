@@ -17,6 +17,9 @@ type fn = {
   cases : Scope.case list option;
   body : Scope.expr;
   gvars : string list;                  (* its type's variables: its method's generic parameters *)
+  (* a local function made a method (Il_exprs.lift): the variables it
+   * captured, its first parameters, each call's first arguments *)
+  lifted : (Scope.var * Signature.t) list;
 }
 
 (* the unit's closures' classes, numbered (reset by each unit) *)
@@ -54,6 +57,10 @@ val uses : int -> Scope.expr -> Scope.expr list
 
 (* the variables an expression names, each once, in order *)
 val named : Scope.expr -> int list
+
+(* every use of the variable a call of it with n arguments, none inside
+ * a lambda *)
+val applied_only : int -> int -> Scope.expr -> bool
 
 (* a function's type after its first i arguments *)
 val rest : fn -> int -> Scope.ty

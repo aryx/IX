@@ -14,6 +14,9 @@ open Il_patterns
 (* Expressions *)
 (*****************************************************************************)
 
+(* Lower_il's define: a lifted local function's method body made *)
+let define_hook : (c -> env -> fn -> unit) ref = ref (fun (_ : c) (_ : env) (_ : fn) -> failwith "Il_exprs.define_hook")
+
 (* the primitives made values so far, a name each; the formats *)
 let prim_values = ref 0
 let format_values = ref 0
@@ -182,6 +185,8 @@ let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
       bindings c env k bs body;
       expr c env k body
   (* a local function that calls itself: its closure's own field *)
+  | Elet (true, [ (Pvar v, ({ e = Efunction _; _ } as d)) ], body) when lift c env k v d body true ->
+      expr c env k body
   | Elet (true, [ (Pvar v, ({ e = Efunction _; _ } as d)) ], body) ->
       lambda c env k d (Some v) (own_instance c v body);
       expr c env k body
@@ -217,6 +222,7 @@ and bindings (c : c) (env : env) (k : code) (bs : (Scope.pattern * Scope.expr) l
                emit k (Il.Stloc slot);
                (alias_key c a, Slocal slot, ty)) (instances c v body) in
            Hashtbl.replace k.specs v.vid specs
+       | Some (Some v), Efunction _ when lift c env k v d body false -> ()
        | Some (Some v), Efunction _ -> bind c k v (fun () -> lambda c env k d None (own_instance c v body))
        | Some (Some v), _ -> bind c k v (fun () -> expr c env k d)
        | Some None, _ -> drop c env k d
@@ -335,6 +341,8 @@ and tail_expr (c : c) (env : env) (k : code) (e : Scope.expr) (boxed : bool) : u
   | Elet (false, bs, body) ->
       bindings c env k bs body;
       tail_expr c env k body boxed
+  | Elet (true, [ (Pvar v, ({ e = Efunction _; _ } as d)) ], body) when lift c env k v d body true ->
+      tail_expr c env k body boxed
   | Elet (true, [ (Pvar v, ({ e = Efunction _; _ } as d)) ], body) ->
       lambda c env k d (Some v) (own_instance c v body);
       tail_expr c env k body boxed
@@ -438,6 +446,10 @@ and call_with (c : c) (env : env) (k : code) (e : Scope.expr) (fe : Scope.expr) 
     (* (a unit for a parameter of a type variable: null, F#'s unit as a
      * type argument, an object) *)
     let saved = k.pending in
+    (* (a lifted function's captured variables first: Il_exprs.lift) *)
+    List.iter
+      (fun ((v, t) : Scope.var * S.t) -> if t <> S.Void then (load_var k v.vid; k.pending <- k.pending + 1))
+      f.lifted;
     List.iter2
       (fun (a : Scope.expr) ((_, t) : Scope.var option * S.t) ->
         expr c env k a;
@@ -484,6 +496,71 @@ and load_spec (k : code) (place : spec) : unit =
 
 (* a variable's value: an argument, a local, a captured one (a field of
  * the closure, this) *)
+(* a local function made a static method, as F# makes an inner function
+ * it never needs as a value: when it is monomorphic, outside a generic
+ * method, and each use is a call with all its arguments, none inside a
+ * lambda. What it captures (and what the lifted functions it calls
+ * capture) are its first parameters, each call's first arguments
+ * (call_with). A call is then one call, where a closure was a Func
+ * called once per argument, a closure made between. True if lifted *)
+and lift (c : c) (env : env) (k : code) (v : Scope.var) (d : Scope.expr) (body : Scope.expr) (recursive : bool) : bool =
+  let ps, cases, fbody = params d in
+  let arity = List.length ps in
+  let used_so (x : Scope.expr) = applied_only v.vid arity x in
+  let in_own =
+    used_so fbody
+    && (match cases with
+        | Some cs ->
+            List.for_all
+              (fun ((_, g, b) : Scope.case) -> (match g with Some g -> used_so g | None -> true) && used_so b)
+              cs
+        | None -> true) in
+  let names = named d in
+  let in_method (vid : int) = Hashtbl.mem k.args vid || Hashtbl.mem k.slots vid || Hashtbl.mem k.captured vid in
+  if c.tvars <> [] || tvars_of (type_of d) <> [] || arity = 0 || not (used_so body) || (recursive && not in_own)
+     || List.exists (fun (vid : int) -> Hashtbl.mem k.specs vid) names
+  then false
+  else begin
+    let own = List.filter_map (fun ((p, _) : Scope.var option * Scope.ty) -> Option.map (fun (p : Scope.var) -> p.vid) p) ps in
+    let record (vid : int) : Scope.var option =
+      match uses vid d with { e = Evar (Local x); _ } :: _ -> Some x | _ -> None in
+    let direct =
+      List.filter_map
+        (fun (vid : int) -> if vid <> v.vid && not (List.mem vid own) && in_method vid then record vid else None)
+        names in
+    let via =
+      List.concat_map
+        (fun (vid : int) ->
+          match Hashtbl.find_opt env.by_var vid with
+          | Some f -> List.map fst f.lifted
+          | None -> [])
+        names in
+    let vars =
+      List.fold_left
+        (fun (acc : Scope.var list) (x : Scope.var) -> if List.exists (fun (y : Scope.var) -> y.vid = x.vid) acc then acc else acc @ [ x ])
+        [] (direct @ via) in
+    let typed = List.map (fun (x : Scope.var) -> (x, Il_types.var_type x.vid)) vars in
+    if List.exists (fun ((_, t) : Scope.var * Scope.ty option) -> t = None) typed then false
+    else begin
+      let lifted =
+        List.filter_map
+          (fun ((x, t) : Scope.var * Scope.ty option) ->
+            match t with
+            | Some t -> let ty = cts c d.loc t in if ty = S.Void then None else Some (x, ty)
+            | None -> None)
+          typed in
+      let params' = List.map (fun ((p, ty) : Scope.var option * Scope.ty) -> (p, cts c d.loc ty)) ps in
+      let rty = match cases with Some ((_, _, b) :: _) -> type_of b | _ -> type_of fbody in
+      let ret = if cases = None && is_raise fbody then S.Void else cts c fbody.loc rty in
+      let sg = static (List.filter (fun (t : S.t) -> t <> S.Void) (List.map snd lifted @ List.map snd params')) ret in
+      let tok = W.method_def c.w c.cls (Printf.sprintf "%s@%d" v.vname v.vid) 0x0091 sg in
+      let f = { tok; fname = v.vname; params = params'; ptys = List.map snd ps; rty; cases; body = fbody; gvars = []; lifted } in
+      Hashtbl.replace env.by_var v.vid f;
+      !define_hook c env f;
+      true
+    end
+  end
+
 and load_var (k : code) (vid : int) : unit =
   match Hashtbl.find_opt k.args vid, Hashtbl.find_opt k.slots vid, Hashtbl.find_opt k.captured vid with
   | Some i, _, _ -> emit k (Il.Ldarg i)
@@ -807,7 +884,7 @@ and prim_value (c : c) (env : env) (k : code) (e : Scope.expr) (p : string) (n :
       { (static (List.filter (fun (t : S.t) -> t <> S.Void) (List.map snd params)) ret) with generic = List.length gvars } in
   List.iteri (fun (i : int) (_ : string) -> W.generic_param c.w tok i (Printf.sprintf "T%d" i)) gvars;
   (* (its name the method's, unique: partial's class is named after it) *)
-  let f = { tok; fname = Printf.sprintf "prim%d" id; params; ptys; rty; cases = None; body; gvars } in
+  let f = { tok; fname = Printf.sprintf "prim%d" id; params; ptys; rty; cases = None; body; gvars; lifted = [] } in
   let k' = new_code () in
   let i = ref 0 in
   List.iter

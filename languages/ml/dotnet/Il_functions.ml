@@ -24,6 +24,7 @@ type fn = {
   cases : Scope.case list option;
   body : Scope.expr;
   gvars : string list;                  (* its type's variables: its generic parameters *)
+  lifted : (Scope.var * S.t) list;      (* a local function lifted: what it captured *)
 }
 
 (* the unit's closures' classes, numbered *)
@@ -146,6 +147,35 @@ let uses (vid : int) (e : Scope.expr) : Scope.expr list =
     | Eassert x | Econstraint (x, _) -> go x in
   go e;
   !acc
+
+(* every use of a variable a call of it with n arguments, none inside
+ * a lambda: a local function that can be a method (Il_exprs.lift) *)
+let applied_only (vid : int) (n : int) (e : Scope.expr) : bool =
+  let ok = ref true in
+  let rec go (e : Scope.expr) : unit =
+    match e.e with
+    | Evar (Local v) -> if v.vid = vid then ok := false
+    | Eapply ({ e = Evar (Local v); _ }, args) when v.vid = vid ->
+        if List.length args <> n then ok := false;
+        List.iter go args
+    | Efunction _ -> if uses vid e <> [] then ok := false
+    | Evar _ | Econst _ -> ()
+    | Elet (_, bs, body) -> List.iter (fun ((_, d) : Scope.pattern * Scope.expr) -> go d) bs; go body
+    | Ematch (x, cases) | Etry (x, cases) ->
+        go x;
+        List.iter (fun ((_, g, b) : Scope.case) -> (match g with Some g -> go g | None -> ()); go b) cases
+    | Eapply (f, args) -> go f; List.iter go args
+    | Etuple es | Econs (_, es) | Earray es -> List.iter go es
+    | Erecord (_, fs) -> List.iter (fun ((_, x) : Scope.label * Scope.expr) -> go x) fs
+    | Ewith (r, _, fs) -> go r; List.iter (fun ((_, x) : Scope.label * Scope.expr) -> go x) fs
+    | Efield (r, _) -> go r
+    | Esetfield (r, _, x) -> go r; go x
+    | Eif (a, b, c) -> go a; go b; (match c with Some c -> go c | None -> ())
+    | Eseq (a, b) | Ewhile (a, b) -> go a; go b
+    | Efor (_, a, b, _, body) -> go a; go b; go body
+    | Eassert x | Econstraint (x, _) -> go x in
+  go e;
+  !ok
 
 (* a function's type after its first i arguments: the arrows of the
  * rest, to its result *)

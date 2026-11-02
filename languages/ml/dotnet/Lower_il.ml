@@ -29,7 +29,7 @@ let declare (c : c) (env : env) (globals : (Scope.var * Scope.global) list) (v :
   c.tvars <- [];
   let tok = W.method_def c.w c.cls v.vname 0x0096 sg in
   List.iteri (fun (i : int) (_ : string) -> W.generic_param c.w tok i (Printf.sprintf "T%d" i)) gvars;
-  let f = { tok; fname = v.vname; params; ptys = List.map snd ps; rty; cases; body; gvars } in
+  let f = { tok; fname = v.vname; params; ptys = List.map snd ps; rty; cases; body; gvars; lifted = [] } in
   Hashtbl.replace env.by_var v.vid f;
   (match global_of globals v with Some g -> Hashtbl.replace env.by_sym g.gsym f | None -> ());
   f
@@ -57,7 +57,7 @@ let define (c : c) (env : env) (f : fn) : unit =
         last := !n;
         incr n
       end)
-    f.params;
+    (List.map (fun ((v, t) : Scope.var * S.t) -> (Some v, t)) f.lifted @ f.params);
   (match f.cases with
    | None -> tail_expr c env k f.body false
    | Some cases ->
@@ -69,6 +69,8 @@ let define (c : c) (env : env) (f : fn) : unit =
        tail_cases c env k (fun () -> if arg >= 0 then emit k (Il.Ldarg arg)) pty cases false);
   finish c k f.tok;
   c.tvars <- []
+
+let () = Il_exprs.define_hook := define
 
 (* an assembly being made: its writer, what its units share (the
  * members made, the functions and values by symbol), its units' init

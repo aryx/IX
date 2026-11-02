@@ -25,20 +25,33 @@ let make refill buffer =
 
 let from_string s = make (fun b -> b.lex_eof_reached <- true) (Bytes.of_string s)
 
-(* more characters: those before the current token dropped, the new
- * ones after what is left *)
+(* more characters, after what is left: where there is room (the
+ * buffer twice what it must hold when it grows), the current token
+ * moved to the front only when there is none.
+ * old: the token's bytes and the new ones made a new buffer at each
+ * refill (Bytes.cat of two subs), mini-cc's one character a refill:
+ * mini-ml -dotnet's front end spent 23% of rc's analysis there
+ * (plan_dotnet_languages.md, stage 8); natively 10% less: mini-cc
+ * -facts of rc's 30 files by mini-ml's build, 1.03 s to 0.93 *)
 let from_function read =
   let chunk = Bytes.create 1024 in
   make (fun b ->
     let n = read chunk 1024 in
     if n = 0 then b.lex_eof_reached <- true
     else begin
-      let kept = b.lex_buffer_len - b.lex_start_pos in
-      b.lex_buffer <- Bytes.cat (Bytes.sub b.lex_buffer b.lex_start_pos kept) (Bytes.sub chunk 0 n);
-      b.lex_buffer_len <- kept + n;
-      b.lex_abs_pos <- b.lex_abs_pos + b.lex_start_pos;
-      b.lex_curr_pos <- b.lex_curr_pos - b.lex_start_pos;
-      b.lex_start_pos <- 0
+      if b.lex_buffer_len + n > Bytes.length b.lex_buffer then begin
+        let kept = b.lex_buffer_len - b.lex_start_pos in
+        let buf =
+          if kept + n > Bytes.length b.lex_buffer then Bytes.create (2 * (kept + n)) else b.lex_buffer in
+        Bytes.blit b.lex_buffer b.lex_start_pos buf 0 kept;
+        b.lex_buffer <- buf;
+        b.lex_buffer_len <- kept;
+        b.lex_abs_pos <- b.lex_abs_pos + b.lex_start_pos;
+        b.lex_curr_pos <- b.lex_curr_pos - b.lex_start_pos;
+        b.lex_start_pos <- 0
+      end;
+      Bytes.blit chunk 0 b.lex_buffer b.lex_buffer_len n;
+      b.lex_buffer_len <- b.lex_buffer_len + n
     end) Bytes.empty
 
 let from_channel ic = from_function (fun buf n -> input ic buf 0 n)
@@ -56,6 +69,26 @@ let new_line b =
 
 type tables = { trans : string; accept : string }
 
+(* whether each state has a way out, for each lexer's tables (by its
+ * transitions, physically: a lexer's tables are made once): computed
+ * once, where engine asked it of 257 entries at each buffer's end,
+ * mini-cc's each character (65% of mini-cc's front end on mini-dotnet;
+ * natively mini-cc -facts of rc's 30 files by mini-ml's build, 0.93 s
+ * to 0.50) *)
+let exits : (string * bool array) list ref = ref []
+
+let ways_out (t : tables) : bool array =
+  match List.assq_opt t.trans !exits with
+  | Some a -> a
+  | None ->
+      let states = String.length t.trans / (2 * 257) in
+      let a =
+        Array.init states (fun (state : int) ->
+            let rec leaves c = c <= 256 && (String.get_uint16_le t.trans (2 * ((257 * state) + c)) <> 0 || leaves (c + 1)) in
+            leaves 0) in
+      exits := (t.trans, a) :: !exits;
+      a
+
 (* The DFA run from the current position, the last state that accepted
  * remembered with where it was: the longest match. The end of the
  * input is a character of its own (256), read without moving. *)
@@ -65,12 +98,12 @@ let engine (t : tables) state b =
   b.lex_start_pos <- b.lex_curr_pos;
   (* the last match: its clause, its length (a refill moves the buffer) *)
   let last = ref (-1) and last_len = ref 0 in
+  let out = ways_out t in
   let rec go state =
     (match String.get_uint16_le t.accept (2 * state) with 0 -> () | a -> last := a - 1; last_len := b.lex_curr_pos - b.lex_start_pos);
     (* a state with no way out reads nothing more (ocamllex's too): the
      * token of a line's end is given before the next line is asked for *)
-    let rec leaves c = c <= 256 && (String.get_uint16_le t.trans (2 * ((257 * state) + c)) <> 0 || leaves (c + 1)) in
-    let stuck = b.lex_curr_pos >= b.lex_buffer_len && not b.lex_eof_reached && not (leaves 0) in
+    let stuck = b.lex_curr_pos >= b.lex_buffer_len && not b.lex_eof_reached && not out.(state) in
     if b.lex_curr_pos >= b.lex_buffer_len && not b.lex_eof_reached && not stuck then b.refill_buff b;
     let at_end = b.lex_curr_pos >= b.lex_buffer_len in
     if stuck then ()

@@ -1,4 +1,4 @@
-% The rules' answers against the compiler's own (mini-ml -dflow): each
+% The rules' answers against the compiler's own (mini-analyze -dflow): each
 % tuple one has and the other has not. Nothing is the expected answer.
 differs(live_in, rules, V, B) :- live_in(V, B), \+ own_live_in(V, B).
 differs(live_in, compiler, V, B) :- own_live_in(V, B), \+ live_in(V, B).

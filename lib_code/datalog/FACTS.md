@@ -5,7 +5,7 @@ vocabulary: this is that vocabulary. Each compiler says a program as Datalog
 facts, nothing computed, and the rules in this directory do the rest.
 
 ```
- a.c, B.ml --> mini-cc, mini-ml --> facts --> mini-datalog + rules --> answers
+ a.c, B.ml --> mini-cc, mini-analyze --> facts --> mini-datalog + rules --> answers
                                      |
                  what points where:  Facts (C), Closure_facts (ML)   -facts
                  one function's flow: Ir_facts (C), Ssa_facts (ML)   -flow
@@ -18,7 +18,7 @@ every relation they can say being in this file. To see them all:
 ```
 mini-analyze -facts lib_code/datalog/tests/facts_toy/toy.c
 mini-analyze -facts lib_code/datalog/tests/facts_toy/Toy.ml      (with lib_core's units)
-mini-cc -m 7 -flow toy.c            mini-ml -m 7 -flow -I ... Toy.ml
+mini-cc -m 7 -flow toy.c            mini-analyze -flow Toy.ml
 ```
 
 ## Nothing but symbols and small numbers
@@ -249,7 +249,8 @@ assign_address('Toy:t43', 'prim:sys_getenv').
 for a pair. The analyses keep an object out of a variable whose type's head is
 another (`andersen.dl`'s design note: mini-tiger's Andersen's, past 200 s and
 8.5 GB, 5.9 s and 250 MB). None for a type variable or `Obj.t`, and none from
-`mini-ml -facts` alone, which does not keep types:
+mini-ml's own Closure_facts until 2026-11-02 (`mini-ml -facts`), which did not
+keep types:
 
 ```
 vtype('Toy:n/1', 'int').
@@ -313,7 +314,7 @@ zero('f8_sum<>:v3').
 succ('f8_sum<>:b0', 'f8_sum<>:b1').
 ```
 
-`mini-cc -dflow` and `mini-ml -dflow` add what the compiler itself computed, to
+`mini-cc -dflow` and `mini-analyze -dflow` add what the compiler itself computed, to
 compare with: `own_live_out(V, P)`, and for ML `own_live_in(V, B)`, `own_idom(D, B)`.
 
 ## Who reads what

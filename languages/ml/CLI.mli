@@ -163,3 +163,26 @@
 type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout; Cap.stderr >
 
 val main : < caps; .. > -> string array -> int
+
+(* What mini-analyze -flow (analyzers/ml/Ml_flow) shares with the
+ * command, the way to Lower: *)
+
+(* a file's text and tree, mlpp's constructs rewritten *)
+val parse : < caps; .. > -> Fpath.t -> (string * Ast.source, string) result
+
+exception Rejected of string
+
+(* the unit's names resolved (dirs: where the units it names are), and
+ * mlpp's classes made dictionaries: its text, its tree, its names;
+ * Rejected with the message when it cannot be *)
+val classes :
+  < caps; .. > -> Fpath.t list -> lenient:bool -> string -> string ->
+  Ast.structure -> string * Ast.structure * Scope.item list
+
+(* a typed unit as Lower's stack machine, before Opti: Fold's constants
+ * at the machine's width, Typing's hints (none when unsafe), the
+ * summaries of the units it names when inlining (the objdir where they
+ * are written, then the dirs) *)
+val lower :
+  < caps; .. > -> unsafe:bool -> Asm.arch -> Fpath.t -> Fpath.t list ->
+  string -> Scope.item list -> Ir.unit_

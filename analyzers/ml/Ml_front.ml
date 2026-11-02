@@ -77,6 +77,7 @@ let unit_ (caps : < Cap.open_in; .. >) (dirs : Fpath.t list) (file : Fpath.t) (t
       with Resolve.Error (l, m) | Typing.Error (l, m) -> Error (Printf.sprintf "%s:%d: %s" f l m))
 
 let unread : string list ref = ref []
+let alone : bool ref = ref false
 
 let program (caps : < Cap.open_in; .. >) (dirs : Fpath.t list) (paths : Fpath.t list) : string list =
   let errors = ref [] in
@@ -97,7 +98,7 @@ let program (caps : < Cap.open_in; .. >) (dirs : Fpath.t list) (paths : Fpath.t 
       | Some text -> read p text true
       | None -> errors := ("cannot open " ^ Fpath.to_string p) :: !errors)
     paths;
-  while not (Queue.is_empty todo) do
+  while not !alone && not (Queue.is_empty todo) do
     let u = Queue.pop todo in
     if not (Hashtbl.mem files u) then begin
       Hashtbl.replace files u "";

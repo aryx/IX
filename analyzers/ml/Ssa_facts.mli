@@ -1,7 +1,7 @@
 (* A function's SSA form as Datalog facts (docs/plans/plan_prolog.md,
  * stage 9): its blocks and who follows whom, each instruction as a
  * point of the program with the value it defines and those it uses,
- * the phis. mini-ml -flow, for mini-datalog to run
+ * the phis. mini-analyze -flow, for mini-datalog to run
  * lib_code/datalog/liveness_ssa.dl and dominators.dl on.
  *
  * A name is its function's: 'f1_sum:b2' a block, 'f1_sum:v7' a value
@@ -18,7 +18,7 @@
 val func : Ssa.func -> string
 
 (* What the compiler itself computed, as facts of other names, to check
- * the rules' answers against (mini-ml -dflow): Alloc's liveness
+ * the rules' answers against (mini-analyze -dflow): Alloc's liveness
  * (own_live_in(V, B), own_live_out(V, B)) and Ssa_build's dominators
  * (own_idom(D, B)). *)
 val own : Ssa.func -> string

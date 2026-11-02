@@ -1,5 +1,5 @@
 % Liveness of a function in SSA form (docs/plans/plan_prolog.md, stage
-% 9), over the facts of mini-ml -flow (Ssa_facts.mli): the textbook's
+% 9), over the facts of mini-analyze -flow (Ssa_facts.mli): the textbook's
 % backward dataflow, by instruction, and what SSA adds: a phi's operand
 % is live at the end of the predecessor it comes from and not at the
 % phi's block's start, where the phi itself is.

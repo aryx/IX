@@ -65,7 +65,7 @@ reads and writes, by each compiler, and the rules in `lib_code/datalog/`:
 
 | | facts | rules | checked against |
 |---|---|---|---|
-| mini-ml | `mini-ml -flow` (`languages/ml/facts/Ssa_facts`): the SSA form's blocks, points, definitions, uses, phis | `liveness_ssa.dl` (a phi's operand is live at its predecessor's end), `dominators.dl` (and the loops' back edges) | `Alloc`'s liveness and `Ssa_build`'s dominators |
+| mini-ml | `mini-analyze -flow` (`analyzers/ml/Ssa_facts`, mini-ml's SSA form): the SSA form's blocks, points, definitions, uses, phis | `liveness_ssa.dl` (a phi's operand is live at its predecessor's end), `dominators.dl` (and the loops' back edges) | `Alloc`'s liveness and `Ssa_build`'s dominators |
 | mini-cc | `mini-cc -flow` (`languages/c/facts/Ir_facts`): the stack code's instructions, the variables a register may hold | `liveness.dl` (the textbook's three rules, and what is live across a call) | `Opti`'s liveness (its `regs` pass) |
 
 Each compiler prints its own answer as facts of other names (`-dflow`:
@@ -74,7 +74,7 @@ Each compiler prints its own answer as facts of other names (`-dflow`:
 other has not: the comparison is a Datalog question, and its answer
 must be empty. Each test also takes a rule out and expects
 differences, so that an empty answer says something. On ix's own
-programs (2026-10-10, OCaml's builds; `languages/ml/facts/tests/ix.sh`
+programs (2026-10-10, OCaml's builds; `analyzers/ml/tests/ix.sh`
 and `languages/c/facts/tests/ix.sh`), no tuple differs:
 
 | program | files | functions | blocks (C: instructions) | facts | tuples found | differ | mini-datalog |
@@ -96,7 +96,7 @@ in the square of a function's blocks.
 
 ## ML's closures, and what a program never calls
 
-`mini-ml -facts` (`languages/ml/facts/Closure_facts`) says an ML unit
+`mini-analyze -facts` (`analyzers/ml/Closure_facts`) says an ML unit
 in the relations of the author's pointer analysis of C, and
 `lib_code/datalog/pointer.dl` runs on them unchanged: a function written is a
 place, a variable points to the functions it may be, a call is a call
@@ -107,7 +107,7 @@ field's name, as the rules have it for C (`'fld:run'`, `'con:Some.0'`,
 called, what no unit's toplevel reaches, what is given one argument
 and never its next.
 
-`languages/ml/facts/tests/program.sh dir...` is the report for a
+`analyzers/ml/tests/program.sh dir...` is the report for a
 program with lib_core (2026-10-10, OCaml's builds):
 
 | program | units, with lib_core's 69 | functions | calls | targets found | `point_to` | mini-datalog | its own functions unreached |

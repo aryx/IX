@@ -1,9 +1,18 @@
-; mini-analyze's ML front end: mini-ml's into Closure_facts (Ml_front,
-; mini-ml -facts's path); a library, apart from c/'s wrapped copy of
-; mini-cc (both compilers have a Parser and a Lexer), as c/ is: both
-; roads use it, the native mini-analyze and the .NET one (../dotnet)
+; mini-analyze's ML front end: mini-ml's into Closure_facts (Ml_front:
+; mini-ml's parse, Resolve, Typing); a library, apart from c/'s wrapped
+; copy of mini-cc (both compilers have a Parser and a Lexer), as c/ is:
+; both roads use it, the native mini-analyze and the .NET one (../dotnet)
 (library
  (name ix_analyze_ml)
  (wrapped false)
- (modules Ml_front)
- (libraries ix_ml ix_ml_pp ix_ml_facts ix_datalog ix_prolog ix_core fpath logs caps))
+ (modules Ml_front Closure_facts)
+ (libraries ix_ml ix_ml_pp ix_datalog ix_prolog ix_core fpath logs caps))
+
+; mini-analyze -flow and -dflow: a function's SSA form as facts
+; (Ssa_facts), the unit compiled by mini-ml's own way to Lower (Ml_flow);
+; the native road's only, mini-ml's back end in it
+(library
+ (name ix_analyze_flow)
+ (wrapped false)
+ (modules Ssa_facts Ml_flow)
+ (libraries ix_ml_cli ix_ml ix_ml_simple ix_ml_ssa ix_asm ix_core fpath caps))

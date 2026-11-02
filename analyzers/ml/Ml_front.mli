@@ -1,5 +1,5 @@
-(* ML units through mini-ml's front end into Closure_facts (mini-ml
- * -facts's path: CLI's parse, Resolve, Typing, without mlpp's classes):
+(* ML units through mini-ml's front end into Closure_facts (CLI's
+ * parse, Resolve, Typing, without mlpp's classes):
  * the facts of a whole program, its own units and those of the library
  * they name, so that a function given to List.iter is seen called *)
 
@@ -11,6 +11,11 @@ val library : < Cap.open_in; .. > -> string -> Fpath.t list
  * the errors of the program's files (a library unit not read is left
  * out) *)
 val program : < Cap.open_in; .. > -> Fpath.t list -> Fpath.t list -> string list
+
+(* the files alone, their units, not the library units they name: their
+ * names resolved by their interfaces, their code not read (-alone, the
+ * tests' facts of one unit, which mini-ml -facts gave) *)
+val alone : bool ref
 
 (* the library units that could not be read, why: what they call looks unused *)
 val unread : string list ref

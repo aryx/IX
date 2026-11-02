@@ -70,11 +70,6 @@ ocaml-light's *ocamlopt*. Another unit's names are read from its
      the classes of `[@@class]` and `[%using]`), with `#` lines to the
      source's: a preprocessor for another OCaml compiler.
 
-**-facts**, **-flow**
-:    No object: the unit as facts for \man{datalog}{1}, of which
-     function may be which variable's value, or of its functions in
-     SSA form.
-
 **-dotnet**
 :    No object: the units, in order, as one .NET assembly, the last
      *file*`.dll` (or **-o**'s) and its

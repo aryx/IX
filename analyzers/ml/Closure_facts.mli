@@ -1,7 +1,8 @@
 (* An ML unit as Datalog facts (docs/plans/plan_prolog.md, stage 10):
  * which function may be the value of which variable, and so which
  * functions a call may reach (0-CFA: every call of a function seen
- * together, a function's parameter one variable). mini-ml -facts.
+ * together, a function's parameter one variable). mini-analyze -facts
+ * (mini-ml -facts until 2026-11-02).
  *
  * The facts are those of the author's pointer analysis of C
  * (lib_code/datalog/pointer.dl), whose rules then run

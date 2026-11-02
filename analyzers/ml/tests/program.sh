@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # What a program of ix never calls (docs/plans/plan_prolog.md, stage
-# 10): mini-ml -facts on each .ml of the program's directories and of
+# 10): mini-analyze -facts -alone on each .ml of the program's directories and of
 # lib_core (the stdlib's units and commons/), all the facts together,
 # then mini-datalog with lib_code/datalog/pointer.dl (the
 # author's rules, unchanged) and calls.dl. Printed: the numbers
@@ -12,12 +12,12 @@
 # no call reaches from a unit's toplevel, with its line. lib_core's
 # own unreached ones are counted only: a program uses a part of it.
 # -holes: also the calls in code that runs which reach nothing.
-# usage: languages/ml/facts/tests/program.sh [-holes] dir|file.ml...   (dune build first: bin/mini-yacc, mini-lex)
-# ML, DATALOG: the two programs, if not dune's.
-cd "$(dirname "$0")/../../../.."
+# usage: analyzers/ml/tests/program.sh [-holes] dir|file.ml...   (dune build first: bin/mini-yacc, mini-lex)
+# ANALYZE, DATALOG: the two programs, if not dune's.
+cd "$(dirname "$0")/../../.."
 export LC_ALL=C
 A=lib_code/datalog
-ML=${ML:-_build/default/languages/ml/Main.exe}
+ANALYZE=${ANALYZE:-_build/default/analyzers/Main.exe}
 DATALOG=${DATALOG:-_build/default/languages/datalog/Main.exe}
 holes=; [ "${1:-}" = -holes ] && { holes=1; shift; }
 [ $# = 0 ] && { echo "usage: program.sh [-holes] dir..."; exit 2; }
@@ -40,13 +40,13 @@ for g in $(for a in "$@"; do [ -d $a ] && find $a -maxdepth 1 -name '*.mly' -o -
     *.mll) bin/mini-lex -o $W/gen/$(basename $g .mll).ml $g > /dev/null 2>&1;;
   esac
 done
-for f in $lib; do $ML -m 7 -facts $incs $f > $W/lib/$(basename $f .ml).dl 2> /dev/null || rm $W/lib/$(basename $f .ml).dl; done
+for f in $lib; do $ANALYZE -facts -alone $incs $f > $W/lib/$(basename $f .ml).dl 2> /dev/null || rm $W/lib/$(basename $f .ml).dl; done
 for f in $own; do
   # (a Lexer, a Parser: dune's, made of the .mll and the .mly)
-  $ML -m 7 -facts $incs $f > $W/own/$(basename $f .ml).dl 2> $W/err || { echo "not compiled: $f: $(head -1 $W/err | cut -c1-90)"; rm $W/own/$(basename $f .ml).dl; }
+  $ANALYZE -facts -alone $incs $f > $W/own/$(basename $f .ml).dl 2> $W/err || { echo "not compiled: $f: $(head -1 $W/err | cut -c1-90)"; rm $W/own/$(basename $f .ml).dl; }
 done
 for f in $(ls $W/gen/*.ml 2> /dev/null); do
-  $ML -m 7 -facts -I $W/gen $incs $f > $W/own/$(basename $f .ml).dl 2> $W/err || { echo "not compiled: $(basename $f): $(head -1 $W/err | cut -c1-90)"; rm $W/own/$(basename $f .ml).dl; }
+  $ANALYZE -facts -alone -I $W/gen $incs $f > $W/own/$(basename $f .ml).dl 2> $W/err || { echo "not compiled: $(basename $f): $(head -1 $W/err | cut -c1-90)"; rm $W/own/$(basename $f .ml).dl; }
 done
 t1=$(date +%s.%N)
 # (the rules' own question, every point_to, is not asked)
@@ -58,7 +58,7 @@ count() { sed -n "s|^$1 *\([0-9]*\) tuples.*|\1|p" $W/stats; }
 units=$(ls $W/own | sed 's/\.dl$//' | tr '\n' '|' | sed 's/|$//')
 mine() { grep -E "^$1\('($units)[.:]" $W/out; }
 printf "%s: %d units and %d of lib_core, %d functions written, %d facts\n" "$*" $(ls $W/own | wc -l) $(ls $W/lib | wc -l) $(grep -c '^closure' $W/all.dl) $(wc -l < $W/all.dl)
-printf "%d calls, %d targets found (call_edge), %d point_to; mini-ml %.1f s, mini-datalog %.1f s\n" $(grep -c '^call_indirect' $W/all.dl) $(count call_edge/2) $(count point_to/2) $(echo "$t1 - $t0" | bc) $(echo "$t2 - $t1" | bc)
+printf "%d calls, %d targets found (call_edge), %d point_to; mini-analyze %.1f s, mini-datalog %.1f s\n" $(grep -c '^call_indirect' $W/all.dl) $(count call_edge/2) $(count point_to/2) $(echo "$t1 - $t0" | bc) $(echo "$t2 - $t1" | bc)
 printf "unreached: %d of the program's own functions, %d of lib_core's; calls that reach nothing in code that runs: %d\n" $(mine unreached | wc -l) $(($(grep -c '^unreached' $W/out) - $(mine unreached | wc -l))) $(grep -c '^hole' $W/out)
 # each with its line: closure(F, Unit, Line)
 mine unreached | sed -E "s/^unreached\((.*)\)\.$/\1/" | while IFS= read -r f; do

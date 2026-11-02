@@ -6,21 +6,19 @@
 # say of tests/facts_toy/ today, and each relation they can say is in it. So a
 # change of the facts changes the document, or this fails.
 # usage: lib_code/datalog/tests/facts_doc.sh   (dune build first)
-# ANALYZE, CC, ML, DATALOG: the programs, if not dune's.
+# ANALYZE, CC, DATALOG: the programs, if not dune's.
 cd "$(dirname "$0")/../../.."
 R=lib_code/datalog; D=$R/points_to; T=$R/tests/facts_toy
 ANALYZE=${ANALYZE:-_build/default/analyzers/Main.exe}
 CC=${CC:-_build/default/languages/c/Main.exe}
-ML=${ML:-_build/default/languages/ml/Main.exe}
 DATALOG=${DATALOG:-_build/default/languages/datalog/Main.exe}
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 failures=0
-I=$(for u in $(grep -v '^#' lib_core/units.txt); do echo "-I lib_core/$(dirname $u)"; done | sort -u)
 
 $ANALYZE -facts $T/toy.c > $W/c.facts 2>&1
 $ANALYZE -facts -L lib_core $T/Toy.ml > $W/ml.facts 2>&1
 $CC -m 7 -flow $T/toy.c > $W/c.flow 2>&1
-$ML -m 7 -flow $I -I lib_core/commons $T/Toy.ml > $W/ml.flow 2>&1
+$ANALYZE -flow -L lib_core $T/Toy.ml > $W/ml.flow 2>&1
 $DATALOG -q 'target(I, F)' $D/instructions.dl $D/contexts.dl $D/insensitive.dl $W/c.facts > $W/c.answers 2> /dev/null
 cat $W/c.facts $W/ml.facts $W/c.flow $W/ml.flow $W/c.answers | sort -u > $W/real
 
@@ -32,8 +30,8 @@ if [ -s $W/not_real ]; then
 else echo "ok FACTS.md: its $(wc -l < $W/shown) facts are what the compilers say"; fi
 
 # each relation the compilers can say
-{ grep -ohE '(fact1?|load|put|typed) "[a-z_]+"' languages/c/facts/Facts.ml languages/ml/facts/Closure_facts.ml
-  grep -ohE 'fact b "[a-z_]+"' languages/c/facts/Ir_facts.ml languages/ml/facts/Ssa_facts.ml
+{ grep -ohE '(fact1?|load|put|typed) "[a-z_]+"' languages/c/facts/Facts.ml analyzers/ml/Closure_facts.ml
+  grep -ohE 'fact b "[a-z_]+"' languages/c/facts/Ir_facts.ml analyzers/ml/Ssa_facts.ml
 } | sed -E 's/.*"(.*)"/\1/' | sort -u > $W/relations
 # (those passed by name to Facts.load, Facts.store's put)
 grep -ohE '"assign_[a-z_]+"' languages/c/facts/Facts.ml | tr -d '"' >> $W/relations

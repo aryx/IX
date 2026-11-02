@@ -67,7 +67,7 @@ for u in Ast Annotations Parser Lexer Scope Resolve Typing Bits Derive Pp Closur
            languages/datalog/$u.ml languages/datalog/dotnet/$u.ml $W/$u.ml; do [ -f $f ] && break; done
   files="$files $f"
 done
-if ! $ML -L lib_core -I $W/c -I assembler -I languages/ml -I languages/ml/pp -I languages/ml/facts -I $M -I analyzers -I analyzers/ml -I analyzers/report \
+if ! $ML -L lib_core -I $W/c -I assembler -I languages/ml -I languages/ml/pp -I $M -I analyzers -I analyzers/ml -I analyzers/report \
      -I analyzers/dotnet -I languages/prolog -I languages/datalog -I languages/datalog/dotnet -I $W \
      -dotnet -o $W/analyze_rt.dll $files > $W/rt.err 2>&1; then
   echo "FAIL analyze_rt.dll by mini-ml -dotnet"; head -3 $W/rt.err; exit 1

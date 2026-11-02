@@ -1,5 +1,5 @@
 % Dominators of a function's blocks (docs/plans/plan_prolog.md, stage
-% 9), over the facts of mini-ml -flow (Ssa_facts.mli), by what they
+% 9), over the facts of mini-analyze -flow (Ssa_facts.mli), by what they
 % are not: X does not dominate N when N is reached from the entry by a
 % path that avoids X. In the squares of a function's blocks: Cooper,
 % Harvey and Kennedy's algorithm, which the compiler has, is far less.

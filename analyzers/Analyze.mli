@@ -60,7 +60,7 @@
  * (OOPSLA 2009); Yannis Smaragdakis, George Balatsouras, "Pointer
  * Analysis" (Foundations and Trends in Programming Languages, 2015). *)
 
-type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
+type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout; Cap.stderr >
 
 (* a global line of a file read with its #includes: the file and its
  * own line, by the history (the oldest first) *)

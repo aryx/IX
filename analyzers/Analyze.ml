@@ -5,11 +5,11 @@
 
 module D = Datalog
 
-type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
+type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout; Cap.stderr >
 
-let usage = "usage: mini-analyze [-r rules-dir] [-Idir] [-Dname=value] [-L lib] [-facts] [-dead] [-caps] [-exn] [-root f]... file.c|file.ml...   (-h: how)"
+let usage = "usage: mini-analyze [-r rules-dir] [-Idir] [-Dname=value] [-L lib] [-facts] [-flow] [-dflow] [-dead] [-caps] [-exn] [-root f]... file.c|file.ml...   (-h: how)"
 
-let help = {|usage: mini-analyze [-r rules-dir] [-Idir] [-Dname=value] [-L lib] [-facts] [-dead] [-caps] [-exn] [-root f]... file.c|file.ml...
+let help = {|usage: mini-analyze [-r rules-dir] [-Idir] [-Dname=value] [-L lib] [-facts] [-flow] [-dflow] [-dead] [-caps] [-exn] [-root f]... file.c|file.ml...
 The C files read as one program, each call through a pointer said with the
 functions it may reach, by an analysis of where each pointer may point
 (points_to/'s: Andersen's first pass, then a context file, -context):
@@ -47,7 +47,14 @@ program's functions that its toplevel never reaches (calls.dl):
   ML calls, a library; without it what main does not reach is not looked at
 -r: the directory of points_to/ and the .dl files (lib_code/datalog)
 -I, -D: as mini-cc's; -L: lib_core's directory (lib_core); -facts: the facts
-made, not the analysis|}
+made, not the analysis; -alone: an ML file's own facts, without those of the
+library units it names
+-flow: ML's files each as its functions in SSA form, the facts of
+lib_code/datalog/liveness_ssa.dl and dominators.dl (Ssa_facts, by mini-ml's
+own way to its SSA: Ml_flow); -dflow: the compiler's own liveness and
+dominators, to compare (analyzers/ml/tests/run.sh):
+  mini-analyze -flow -L lib_core fact.ml > fact.dl
+  mini-datalog -q 'live_in(V, B)' lib_code/datalog/liveness_ssa.dl fact.dl|}
 
 module C = Ix_analyze_c
 
@@ -73,11 +80,14 @@ let line (relation : string) (args : C.Facts.arg list) : string =
 let main (caps : < caps; .. >) (argv : string array) : int =
   let rules = ref "lib_code/datalog" and lib = ref "lib_core" and only = ref false and incs = ref [] and defs = ref [] and files = ref [] in
   let dead = ref false and ambient = ref false and roots = ref [] and context = ref "" and library = ref false in
-  let fingerprint = ref false and exns = ref false in
+  let fingerprint = ref false and exns = ref false and flow = ref false and dflow = ref false in
   let options =
     Logging.flags
     @ [ ("-r", Arg.Set_string rules, " the directory of points_to/ and bugs.dl");
         ("-facts", Arg.Set only, " the facts, not the analysis");
+        ("-alone", Arg.Set Ml_front.alone, " ML: the files' facts alone, not their library's units'");
+        ("-flow", Arg.Set flow, " ML's functions in SSA form, as facts");
+        ("-dflow", Arg.Set dflow, " the compiler's own liveness and dominators, as facts");
         ("-dead", Arg.Set dead, " what no run can reach, not the calls and the bugs");
         ("-caps", Arg.Set ambient, " whether ML's own functions hold the capabilities they need");
         ("-exn", Arg.Set exns, " the exceptions ML's toplevels may let escape");
@@ -104,6 +114,19 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       try
         if !files = [] then failwith usage;
         let incs = List.map path (List.rev !incs) in
+        if !flow || !dflow then begin
+          let dirs = incs @ Ml_front.library caps !lib in
+          List.fold_left
+            (fun status (f : string) ->
+              match Ml_flow.file caps dirs (path f) with
+              | Ok fns ->
+                  if !flow then List.iter (fun fn -> Console.print caps (Ssa_facts.func fn)) fns;
+                  if !dflow then List.iter (fun fn -> Console.print caps (Ssa_facts.own fn)) fns;
+                  status
+              | Error m -> Console.eprint caps (m ^ "\n"); 1)
+            0 (List.rev !files)
+        end
+        else
         let failed = ref 0 in
         let p = D.create () in
         let ml, c = List.partition (fun f -> Filename.check_suffix f ".ml") (List.rev !files) in

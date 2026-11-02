@@ -7,4 +7,4 @@
  (wrapped false)
  (modules Analyze_rt)
  (flags (:standard -open Ix_analyze_c))
- (libraries ix_analyze_c ix_analyze_ml ix_analyze_reports ix_ml_facts ix_datalog_rt ix_datalog ix_prolog ix_core fpath caps))
+ (libraries ix_analyze_c ix_analyze_ml ix_analyze_reports ix_datalog_rt ix_datalog ix_prolog ix_core fpath caps))

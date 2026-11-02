@@ -1,14 +1,14 @@
 # mini-ml, built by ix's tools (and so by itself): the front end, its
 # lexer by mini-lex and its grammar by mini-yacc, the preprocessor
-# (pp/), then the back ends (simple/, compat/, opti/, ssa/), the facts
-# for mini-datalog (facts/), what a debugger needs (debug/), .NET's
+# (pp/), then the back ends (simple/, compat/, opti/, ssa/), what a
+# debugger needs (debug/), .NET's
 # (dotnet/, over mini-dotnet's writer of assemblies), the command
 TOP=../..
 DIR=languages/ml
 PROG=mini-ml
-SRC=Ast Annotations Parser Lexer Scope Resolve Typing Bits Derive Pp Ir Summary Fold Lower Gas Opti Dominators Braun Liveness Coloring Ssa Ssa_build Unbox Untag Cse Licm Alloc Zero_alloc Gen Emit Ssa_facts Closure_facts Lines_ml Acid_ml Metadata Signature Il Writer Il_code Il_types Il_functions Il_patterns Il_externals Il_printf Il_prims Il_exprs Lower_il CLI Main
-LOCAL=`{ls *.ml *.mli *.mly *.mll pp/*.ml pp/*.mli simple/*.ml simple/*.mli compat/*.ml compat/*.mli opti/*.ml opti/*.mli ssa/*.ml ssa/*.mli facts/*.ml facts/*.mli debug/*.ml debug/*.mli dotnet/*.ml dotnet/*.mli ../dotnet/assembly/*.ml ../dotnet/assembly/*.mli ../../lib_code/*.ml ../../lib_code/*.mli}
-LIBI=-I ../../assembler -I pp -I simple -I compat -I opti -I ssa -I facts -I debug -I dotnet -I ../dotnet/assembly -I ../../lib_code
+SRC=Ast Annotations Parser Lexer Scope Resolve Typing Bits Derive Pp Ir Summary Fold Lower Gas Opti Dominators Braun Liveness Coloring Ssa Ssa_build Unbox Untag Cse Licm Alloc Zero_alloc Gen Emit Lines_ml Acid_ml Metadata Signature Il Writer Il_code Il_types Il_functions Il_patterns Il_externals Il_printf Il_prims Il_exprs Lower_il CLI Main
+LOCAL=`{ls *.ml *.mli *.mly *.mll pp/*.ml pp/*.mli simple/*.ml simple/*.mli compat/*.ml compat/*.mli opti/*.ml opti/*.mli ssa/*.ml ssa/*.mli debug/*.ml debug/*.mli dotnet/*.ml dotnet/*.mli ../dotnet/assembly/*.ml ../dotnet/assembly/*.mli ../../lib_code/*.ml ../../lib_code/*.mli}
+LIBI=-I ../../assembler -I pp -I simple -I compat -I opti -I ssa -I debug -I dotnet -I ../dotnet/assembly -I ../../lib_code
 LIBUNITS=Asm Lexer_asm Parser_asm
 <$TOP/mkfiles/mkconfig
 GEN=$B/languages/ml/Parser.ml $B/languages/ml/Lexer.ml
@@ -42,10 +42,6 @@ $D/Opti.$O: opti/Opti.ml $LOCAL $GEN
 $D/%.$O: ssa/%.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target ssa/$stem.ml
-# facts/'s units (Ssa_facts Closure_facts): one recipe each, so that .depend orders each
-$D/%.$O: facts/%.ml
-	mkdir -p $D
-	$ML $INCLUDES -o $target facts/$stem.ml
 # debug/'s units (Lines_ml Acid_ml): one recipe each, so that .depend orders each
 $D/%.$O: debug/%.ml
 	mkdir -p $D

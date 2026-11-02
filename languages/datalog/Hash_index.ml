@@ -34,6 +34,19 @@ let first (t : t) (value : int -> int) : int =
 
 let next (t : t) (id : int) : int = t.chain.(id)
 
+(* first and add of a key in an array, written out: no closure called
+ * for each value (Tuples.hash_array's reason) *)
+let find_array (n : int) (p : part) (h : int) (key : int array) : int =
+  let mask = p.size - 1 and w = n + 1 and cells = p.cells in
+  let rec same (base : int) (i : int) : bool = i = n || (cells.(base + i) = key.(i) && same base (i + 1)) in
+  let rec walk (k : int) : int = if cells.((k * w) + n) < 0 || same (k * w) 0 then k else walk ((k + 1) land mask) in
+  walk ((h lsr Tuples.part_bits) land mask)
+
+let first_array (t : t) (key : int array) : int =
+  let h = Tuples.hash_array t.n key in
+  let p = t.part.(h land (Tuples.parts - 1)) in
+  p.cells.((find_array t.n p h key * (t.n + 1)) + t.n)
+
 (* room in the chain for the tuples numbered below [count] *)
 let reserve (t : t) (count : int) : unit =
   if count > Array.length t.chain then begin
@@ -53,6 +66,21 @@ let grow (n : int) (p : part) : unit =
       Array.blit old (k * w) p.cells (find n p (Tuples.hash n value) value * w) w
     end
   done
+
+let add_array (t : t) (key : int array) (id : int) : unit =
+  reserve t (id + 1);
+  let n = t.n and w = t.n + 1 in
+  let h = Tuples.hash_array n key in
+  let p = t.part.(h land (Tuples.parts - 1)) in
+  let k = find_array n p h key in
+  let head = p.cells.((k * w) + n) in
+  t.chain.(id) <- head;
+  if head < 0 then begin
+    Array.blit key 0 p.cells (k * w) n;
+    p.keys <- p.keys + 1
+  end;
+  p.cells.((k * w) + n) <- id;
+  if head < 0 && 2 * p.keys > p.size then grow n p
 
 let add (t : t) (value : int -> int) (id : int) : unit =
   reserve t (id + 1);

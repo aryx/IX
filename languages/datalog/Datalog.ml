@@ -112,7 +112,8 @@ let add (r : relation) (tuple : int array) : bool =
   if not (Relset.add r.set tuple) then false
   else begin
     let id = append r tuple in
-    List.iter (fun ((_, index) : int * Index.t) -> Index.add index (fun (c : int) -> tuple.(c)) id) r.indexes;
+    (* (old: Index.add index (fun c -> tuple.(c)) id, a closure each) *)
+    List.iter (fun ((_, index) : int * Index.t) -> Index.add_array index tuple id) r.indexes;
     true
   end
 

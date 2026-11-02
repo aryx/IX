@@ -45,6 +45,11 @@ val first : t -> (int -> int) -> int
 (* the tuple added with the same key before this one, -1 if none *)
 val next : t -> int -> int
 
+(* first and add of a key in an array (no closure: a compiled
+ * program's, Datalog.add's) *)
+val first_array : t -> int array -> int
+val add_array : t -> int array -> int -> unit
+
 (* the part of the key whose i-th value is [value i]: [add] of keys of
  * different parts may run at the same time, after [reserve] for the
  * largest number added *)

@@ -33,6 +33,8 @@ val sorted : t -> bool
 
 (* is the tuple whose i-th value is [value i] there? *)
 val mem_by : t -> (int -> int) -> bool
+(* the same, the tuple an array (a hashed set's: no closure) *)
+val mem_array : t -> int array -> bool
 
 (* the same for a rule's heads, one after the other: a sorted set
  * tries the leaf of the one before first (Btree's hint), a pair's test

@@ -51,6 +51,9 @@ val mem2 : t -> int -> int -> bool
 (* the hash of n values, the i-th [value i] (Index's too) *)
 val hash : int -> (int -> int) -> int
 
+(* the same of an array's n values (no closure: a compiled program's) *)
+val hash_array : int -> int array -> int
+
 (* the parts, and the part of the tuple whose i-th value is [value i]:
  * [add] of tuples of different parts may run at the same time *)
 val parts : int

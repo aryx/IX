@@ -55,16 +55,15 @@ let lookup (r : D.relation) (mask : int) (keys : int array) : int array =
  * with the same, -1 at the end (the compiled loop's, no allocation) *)
 let index (r : D.relation) (mask : int) : Index.t = Datalog_eval.index r mask
 
-let first (idx : Index.t) (keys : int array) : int = Index.first idx (fun (i : int) -> keys.(i))
+let first (idx : Index.t) (keys : int array) : int = Index.first_array idx keys
 let next (idx : Index.t) (id : int) : int = Index.next idx id
 
-let mem (r : D.relation) (tuple : int array) : bool =
-  Relset.mem_by r.set (fun (i : int) -> tuple.(i))
+let mem (r : D.relation) (tuple : int array) : bool = Relset.mem_array r.set tuple
 
 let absent (r : D.relation) (mask : int) (keys : int array) : bool =
   if mask = 0 then r.count = 0
   else if mask = (1 lsl r.arity) - 1 then not (mem r keys)
-  else not (Index.exists (Datalog_eval.index r mask) (fun (i : int) -> keys.(i)))
+  else not (Index.exists_array (Datalog_eval.index r mask) keys)
 
 let compare (p : D.t) (x : int) (y : int) : int =
   Prolog.compare p.terms.(x) p.terms.(y)

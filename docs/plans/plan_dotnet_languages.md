@@ -89,10 +89,10 @@ made direct and inlined.
   .NET, the facts pipeline's answers the native's by both runtimes;
   mini-analyze's two roads (the author's: native and .NET, for teaching
   and comparison) both run on C, one process each, the same answers
-  (contexts.c, Plan 9's rc: 17,330). The .NET road is slower (rc: 31 s
-  against the native evaluator's 16): mini-ml -dotnet's code under the
-  compiled rules (closures at each tuple lookup, Lexing's copies,
-  Array.make's fill). Not: that speed; ML programs (mini-ml's and
+  (contexts.c, Plan 9's rc: 17,330). The .NET road near the native
+  one (rc: 22.8 s of CPU against 18.9), after lifting local functions
+  to methods in mini-ml -dotnet, a linear Lexing in lib_core, and
+  array-keyed relations. Not: ML programs (mini-ml's and
   mini-cc's units share names in mini-ml's one namespace); the report
   (mini-analyze's, another session's); a C module; mini-9pi's card.
 - **Stage 9 not built**: ML analysed.
@@ -858,8 +858,13 @@ but really use the same types!". So the decisions below are those of
    (engine asked 257 entries at each buffer's end: mini-cc's every
    character): ix's own mini-cc writes rc's facts in 0.50 s, was 1.03,
    the same facts; on .NET the front end 2.7 s (0.08 s a file, its
-   headers; startup 0.3). Left: Tuples's and Hash_index's keys as
-   closures (int -> int), a delegate call a column. Not
+   headers; startup 0.3). Then (the author: "I've paused the other
+   session so let's go"): Tuples, Hash_index, Index and Relset given
+   array-keyed hash, find, mem, first, add (no closure called for each
+   value, Tuples.mem2's way for any arity), Datalog.add indexing by
+   them: rc's .NET road 22.8 s of CPU (was 30.7 this morning), the
+   native evaluator 18.6 (was 19.3: faster too). The compiled rules
+   now near the native interpreter, 1.2x with the front end. Not
    yet: ML programs (mini-ml's and mini-cc's Lexer and Parser in
    mini-ml's one namespace), the report (Analyze's, in the native
    mini-analyze, which another session is changing).

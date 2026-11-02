@@ -30,6 +30,12 @@ val iter : t -> int array -> int -> (int -> int) -> (int array -> int -> unit) -
 val first : t -> (int -> int) -> int
 val next : t -> int -> int
 
+(* first and exists of a key in an array; a tuple added by its own
+ * columns (no closure called for each value) *)
+val first_array : t -> int array -> int
+val exists_array : t -> int array -> bool
+val add_array : t -> int array -> int -> unit
+
 (* is there one? *)
 val exists : t -> (int -> int) -> bool
 

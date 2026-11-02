@@ -34,6 +34,20 @@ let first (t : t) (key : int -> int) : int =
 
 let next (t : t) (id : int) : int = match t with Hashed (_, h) -> Hash_index.next h id | Sorted _ -> -1
 
+(* the same, the key an array (no closure) *)
+let first_array (t : t) (key : int array) : int =
+  match t with Hashed (_, h) -> Hash_index.first_array h key | Sorted _ -> invalid_arg "Index.first_array: sorted"
+
+let exists_array (t : t) (key : int array) : bool =
+  match t with Hashed (_, h) -> Hash_index.first_array h key >= 0 | Sorted s -> Tree_index.exists s (fun (i : int) -> key.(i))
+
+(* a tuple's number added under its key, the key its columns' values
+ * (a hashed index's: no closure of the tuple's) *)
+let add_array (t : t) (tuple : int array) (id : int) : unit =
+  match t with
+  | Hashed (cols, h) -> Hash_index.add_array h (Array.map (fun (c : int) -> tuple.(c)) cols) id
+  | Sorted s -> Tree_index.add s (fun (c : int) -> tuple.(c))
+
 let exists (t : t) (key : int -> int) : bool =
   match t with Hashed (_, h) -> Hash_index.first h key >= 0 | Sorted s -> Tree_index.exists s key
 

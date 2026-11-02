@@ -11,6 +11,10 @@ let sorted (t : t) : bool = match t with Sorted _ -> true | Hashed _ -> false
 let mem_by (t : t) (value : int -> int) : bool =
   match t with Hashed s -> Tuples.mem_by s value | Sorted b -> Btree.mem_by b value
 
+(* the same of a tuple in an array (a hashed set's: no closure) *)
+let mem_array (t : t) (tuple : int array) : bool =
+  match t with Hashed s -> Tuples.mem s tuple | Sorted b -> Btree.mem_by b (fun (i : int) -> tuple.(i))
+
 (* (a hashed set's: none) *)
 type hint = Btree.hint option
 

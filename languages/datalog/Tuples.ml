@@ -30,6 +30,23 @@ let hash (arity : int) (value : int -> int) : int =
   let h = (!h lxor (!h lsr 16)) * 73244475 in
   (h lxor (h lsr 16)) land max_int
 
+(* hash and find of a tuple in an array, written out: no closure called
+ * for each value (mem2's measure, for any arity; on .NET a closure is
+ * an object and a delegate's call: mini-datalog -dotnet's loops) *)
+let hash_array (n : int) (a : int array) : int =
+  let h = ref n in
+  for i = 0 to n - 1 do
+    h := (!h * 1000003) + a.(i)
+  done;
+  let h = (!h lxor (!h lsr 16)) * 73244475 in
+  (h lxor (h lsr 16)) land max_int
+
+let find_array (n : int) (p : part) (h : int) (a : int array) : int =
+  let mask = p.size - 1 and cells = p.cells in
+  let rec same (base : int) (i : int) : bool = i = n || (cells.(base + i) = a.(i) && same base (i + 1)) in
+  let rec walk (k : int) : int = if cells.(k * n) < 0 || same (k * n) 0 then k else walk ((k + 1) land mask) in
+  walk ((h lsr part_bits) land mask)
+
 let part_of (t : t) (value : int -> int) : int = if t.arity = 0 then 0 else hash t.arity value land (parts - 1)
 
 (* in part p, the slot of the tuple, or the free one where it would go *)
@@ -46,7 +63,13 @@ let mem_by (t : t) (value : int -> int) : bool =
     let p = t.part.(h land (parts - 1)) in
     p.cells.(find t.arity p h value * t.arity) >= 0
 
-let mem (t : t) (tuple : int array) : bool = mem_by t (fun (i : int) -> tuple.(i))
+(* old: mem_by t (fun (i : int) -> tuple.(i)) *)
+let mem (t : t) (tuple : int array) : bool =
+  if t.arity = 0 then t.part.(0).count > 0
+  else
+    let h = hash_array t.arity tuple in
+    let p = t.part.(h land (parts - 1)) in
+    p.cells.(find_array t.arity p h tuple * t.arity) >= 0
 
 let put (n : int) (p : part) (k : int) (value : int -> int) : unit =
   for i = 0 to n - 1 do
@@ -73,14 +96,14 @@ let add (t : t) (tuple : int array) : bool =
     fresh
   end
   else begin
+    (* (old: through a closure of the tuple, hash and find's) *)
     let n = t.arity in
-    let value (i : int) : int = tuple.(i) in
-    let h = hash n value in
+    let h = hash_array n tuple in
     let p = t.part.(h land (parts - 1)) in
-    let k = find n p h value in
+    let k = find_array n p h tuple in
     if p.cells.(k * n) >= 0 then false
     else begin
-      put n p k value;
+      Array.blit tuple 0 p.cells (k * n) n;
       p.count <- p.count + 1;
       if 2 * p.count > p.size then grow n p;
       true

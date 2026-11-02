@@ -19,12 +19,14 @@
 # -fingerprint's number of the answers by fingerprint.c, compiled by
 # mini-cc -dotnet and called from ML on .NET (dotnet/Fingerprint.ml's
 # externals), by Fingerprint.ml natively: the same.
-# usage: analyzers/dotnet/tests/run.sh [-ms] [-rc]   (dune build, and
-#   mini-mk in languages/c for its parser and lexer, first)
+# usage: analyzers/dotnet/tests/run.sh [-ms] [-rc] [-build]   (dune build,
+#   and mini-mk in languages/c for its parser and lexer, first)
+# -build: no test, the C report's assemblies made in WORK (analyze_rt.dll,
+#   fingerprint.dll, report.dll): mini-9pi's card's (its make card)
 # DUNEML, DUNEDATALOG, DUNEDOTNET, DUNEANALYZE: if not _build's.
 cd "$(dirname "$0")/../../.."
-ms=; rc=
-for a in "$@"; do case $a in -ms) ms=1;; -rc) rc=1;; esac; done
+ms=; rc=; build=
+for a in "$@"; do case $a in -ms) ms=1;; -rc) rc=1;; -build) build=1;; esac; done
 B=_build/default
 ML=${DUNEML:-$B/languages/ml/Main.exe}
 DL=${DUNEDATALOG:-$B/languages/datalog/Main.exe}
@@ -78,6 +80,12 @@ if ! $CC -dotnet -L languages/c/dotnet -o $W/fingerprint.dll analyzers/dotnet/fi
   echo "FAIL fingerprint.dll by mini-cc -dotnet"; head -3 $W/fp.err; exit 1
 fi
 R=lib_code/datalog/points_to
+if [ -n "$build" ]; then
+  $DL -dotnet -runtime analyze_rt -entry Analyze_rt -o $W/report.dll \
+    $R/instructions.dl $R/andersen.dl $R/contexts.dl $R/call1_heap1.dl lib_code/datalog/bugs.dl ||
+    { echo "FAIL mini-datalog -dotnet, the C report's program"; exit 1; }
+  exit 0
+fi
 Q=(-q 'target(I, F)' -q 'pts(V, H)')
 QML=(-q 'pts(V, H)' -q 'reach(F)')
 # (C's analysis: call1_heap1; ML's: call1, as lib_code/datalog/tests')

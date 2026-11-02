@@ -571,3 +571,13 @@ same (tests/corpus/nextfile_in_end, recorded from principia's awk).
 Found by mini-analyze -exn (plan_dotnet_languages.md, stage 9), whose
 report also said Break_loop and Continue_loop: false, the parser refuses
 them outside a loop.
+
+## mini-mkfs: a full file system, a String.blit error (2026-11-02)
+
+`make card` with 95.7 MB of files for the card's 95 MB partition
+(mini-analyze's .NET road added to it): `Fatal error: exception
+Invalid_argument("String.blit / Bytes.blit_string")` in Xv6fs.balloc,
+where its `look` says "file system full" when no block is free. A block
+past the image's end was taken: what `t.blocks` counts and what the
+image holds do not agree at the end. Not fixed: the card made larger
+(256 MB) instead; found while making it.

@@ -922,7 +922,10 @@ endef
 #              classics.pl: check-scheme, check-pascal,
 #              check-prolog; .NET's assemblies in /lib/dotnet, the
 #              survey's, and Tiger's programs in /lib/tiger:
-#              check-dotnet); and three small PDF files
+#              check-dotnet; mini-analyze's .NET road in
+#              /lib/analyze, its C report and a program for it,
+#              bugs.c: plan_dotnet_languages.md, stage 8); and three
+#              small PDF files
 #              for page (page /lib/pdf/tex.pdf: two pages of pdfTeX's;
 #              docs/plans/done/plan_pdf.md, C2)
 #              and the manual, /lib/man/1 (man troff: mini-man's
@@ -993,8 +996,10 @@ MKFS = ../../_build/default/kernels/tools/Mkfs.exe
 # partition's, what the FAT's 32 and the first megabyte leave. It was 64
 # and 31, and full at 43 programs (2026-10-07: a program of ix's is 0.7
 # to 1.2 MB, its library linked whole); a real card is gigabytes.
-CARD_MB = 128
-CARD_FS_MB = 95
+# Then 128 and 95, full at 95.7 MB of files with mini-analyze's .NET
+# road (2026-11-02, its runtime 2.3 MB): 256, written in twice the time.
+CARD_MB = 256
+CARD_FS_MB = 223
 CARD_FS = build/card-fs.img
 # its files and directories, at most: xv6's 200 were full at the
 # manual's 93 pages (2026-10-14)
@@ -1016,6 +1021,7 @@ CARD_LIB = lib/desktop/apps=../../windows/desktop/apps.table lib/desktop/desk=..
   $(foreach p,hello fib queens shapes exceptions strings vec generic collections closures,lib/dotnet/$(p).dll=../../languages/dotnet/survey/programs/$(p).dll) \
   lib/dotnet/unhandled.dll=../../languages/dotnet/tests/programs/unhandled.dll \
   $(foreach p,queens sieve exceptions merge,lib/tiger/$(p).tig=../../languages/tiger/tests/programs/$(p).tig) \
+  $(foreach f,$(ANALYZE_DLLS),lib/analyze/$(notdir $(f))=$(f)) lib/analyze/bugs.c=../../analyzers/tests/c/bugs/bugs.c \
   $(CARD_MAN) lib/pdf/troff.pdf=$(TROFF_PDF) \
   $(CARD_BOOK) \
   lib/pdf/tex.pdf=../../lib_graphics/pdf/tests/data/tex.pdf lib/pdf/shapes.pdf=../../lib_graphics/pdf/tests/data/shapes.pdf lib/pdf/standard.pdf=../../lib_graphics/pdf/tests/data/standard.pdf \
@@ -1060,6 +1066,13 @@ TROFF_PDF = build/troff.pdf
 $(TROFF_PDF): ../../docs/man/1/troff.md ../../_build/default/typesetting/troff/Main.exe
 	@mkdir -p build
 	../../_build/default/typesetting/troff/Main.exe -T pdf ../../docs/man/1/troff.md > $@
+# mini-analyze's .NET road, its C report (analyzers/dotnet/tests/run.sh
+# -build): what make card runs it from, mini-dotnet on the board
+#   dotnet /lib/analyze/report.dll -fingerprint /lib/analyze/bugs.c
+ANALYZE_DLLS = build/analyze/analyze_rt.dll build/analyze/fingerprint.dll build/analyze/report.dll
+$(ANALYZE_DLLS) &: ../../_build/default/languages/ml/Main.exe ../../_build/default/languages/datalog/Main.exe \
+  ../../_build/default/languages/c/Main.exe $(wildcard ../../analyzers/*/*.ml ../../analyzers/dotnet/*.c ../../lib_code/datalog/*.dl ../../lib_code/datalog/points_to/*.dl)
+	cd ../.. && WORK=kernels/9pi/build/analyze analyzers/dotnet/tests/run.sh -build
 $(CARD_NS): Makefile
 	@mkdir -p build
 	for d in $(CARD_PROGS); do echo "bind -a /root/progs/$$d /bin"; done > $@
@@ -1144,6 +1157,15 @@ check-scheme: card ; $(call langcheck,scheme,--also "> " --also "  ")
 check-pascal: card ; $(call langcheck,pascal,--also "? ")
 check-prolog: card ; $(call langcheck,prolog,--also "?- " --also " ? ")
 check-dotnet: card ; $(call langcheck,dotnet)
+# mini-analyze's .NET road on the card (plan_dotnet_languages.md, stage
+# 8): its C report of /lib/analyze/bugs.c by mini-dotnet under QEMU,
+# each line the native mini-analyze's (90 s, the card made and booted)
+check-analyze: card
+	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 3000 --out $(B)/qemu-card-analyze.txt --lines tests/session-card-analyze.cmds -- $(QEMU) $(QEMU_BOOT_IX) $(CARD_SD)
+	cd ../../analyzers/tests/c/bugs && ../../../../_build/default/analyzers/Main.exe -r ../../../../lib_code/datalog -fingerprint bugs.c > $(abspath $(B))/analyze-native.txt
+	tr -d '\r' < $(B)/qemu-card-analyze.txt | grep -Fxv -f - $(B)/analyze-native.txt > $(B)/analyze-missing.txt; \
+	  if [ -s $(B)/analyze-missing.txt ]; then echo "FAIL card: mini-analyze's .NET road, lines not said:"; cat $(B)/analyze-missing.txt; exit 1; \
+	  else echo "ok card: mini-analyze's .NET road, its $$(wc -l < $(B)/analyze-native.txt) lines the native's"; fi
 expected-langs: card
 	$(SESSION_PY) $(IXQUIET) --prompt "% " --also "> " --also "  " --timeout 300 --out $(B)/qemu-card-scheme.txt --lines tests/session-card-scheme.cmds -- $(QEMU) $(QEMU_BOOT_IX) $(CARD_SD)
 	$(SESSION_PY) $(IXQUIET) --prompt "% " --also "? " --timeout 300 --out $(B)/qemu-card-pascal.txt --lines tests/session-card-pascal.cmds -- $(QEMU) $(QEMU_BOOT_IX) $(CARD_SD)
@@ -1159,4 +1181,4 @@ FORCE:
 clean:
 	rm -rf build kernel-pi2*.img kernel-pi1.img kernel-pi1-b.img kernel-pi1-ix.img kernel-pi1-ixu.img kernel-pi1-ixa.img kernel-pi1-web.img kernel-pi1-card.img kernel-pi1-light*.img kernel-pi4.elf kernel-pi4-b.elf kernel-pi4-ix.elf kernel-pi4-card.elf kernel-pi4-ocaml4*.elf
 
-.PHONY: all run qemu check ix ix-usb run-ix check-ix ix-audio check-audio check-audio-game check-audio-play check-draw expected-draw check-menu check-rio check-colors card check-card check-scheme check-pascal check-prolog check-dotnet expected-langs clean FORCE
+.PHONY: all run qemu check ix ix-usb run-ix check-ix ix-audio check-audio check-audio-game check-audio-play check-draw expected-draw check-menu check-rio check-colors card check-card check-scheme check-pascal check-prolog check-dotnet check-analyze expected-langs clean FORCE

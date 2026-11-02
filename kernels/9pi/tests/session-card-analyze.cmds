@@ -1,0 +1,2 @@
+cd /lib/analyze
+dotnet report.dll -fingerprint bugs.c

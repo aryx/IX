@@ -64,9 +64,11 @@ made direct and inlined.
   JIT) and Microsoft's dotnet as the host's cc prints them; 289 random
   programs (vlong too) as mini-cc's native build prints them; 8 kinds
   of programs refused, each with its reason. A pointer a pair (an
-  array, an index), a struct a class (decision 4, as built). Not:
-  floats printed (%f), unions, a struct's initializer, an address of a
-  member, functions of variable arguments but print's.
+  array, an index), a struct a class (decision 4, as built). Refused
+  by design: a union read as another field, a scalar member's
+  address, variable arguments but print's (no va_list in .NET). Left,
+  for when a program needs them: print's %f %g %e (a float formatter
+  in libc.c), a global structure's initializer.
 - **Stages 6, 7 not built**: mini-datalog compiled, several assemblies
   in mini-dotnet.
 - **Stage 8 begun**: mini-cc and mini-datalog (their ML) compiled to

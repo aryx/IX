@@ -897,7 +897,11 @@ but really use the same types!". So the decisions below are those of
    same bits); natively Fingerprint.ml, ML's Int64. The same number by
    both roads (bugs.c, handlers), so a program of ML, Datalog and C
    modules, each a .NET assembly, calling each other with no
-   conversion. Not
+   conversion. analyzers/ then in folders (the author: "let's move ml
+   related code to analyzers/ml/ like we did for c/", "and maybe have a
+   report/ folder too?"): c/ mini-cc's front end (wrapped) and C_front,
+   ml/ Ml_front, report/ the four reports, Answers and Fingerprint,
+   dotnet/ the .NET road. Not
    yet: ML programs (mini-ml's and mini-cc's Lexer and Parser in
    mini-ml's one namespace), the report (Analyze's, in the native
    mini-analyze, which another session is changing).

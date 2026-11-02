@@ -63,11 +63,11 @@ for u in Tree Tree_helpers Pre Acid Check Declare Machines Emit Com64 Parser Lex
 done
 for u in Ast Annotations Parser Lexer Scope Resolve Typing Bits Derive Pp Closure_facts Ml_front \
          Prolog Prolog_read Parallel Tuples Btree Relset Hash_index Tree_index Index Datalog Datalog_eval Datalog_rt C_report Ml_report Fingerprint Answers Dead_report Caps_report Analyze_rt; do
-  for f in analyzers/dotnet/$u.ml languages/ml/$u.ml languages/ml/*/$u.ml $M/$u.ml analyzers/$u.ml analyzers/c/$u.ml languages/prolog/$u.ml \
+  for f in analyzers/dotnet/$u.ml languages/ml/$u.ml languages/ml/*/$u.ml $M/$u.ml analyzers/$u.ml analyzers/ml/$u.ml analyzers/report/$u.ml languages/prolog/$u.ml \
            languages/datalog/$u.ml languages/datalog/dotnet/$u.ml $W/$u.ml; do [ -f $f ] && break; done
   files="$files $f"
 done
-if ! $ML -L lib_core -I $W/c -I assembler -I languages/ml -I languages/ml/pp -I languages/ml/facts -I $M -I analyzers -I analyzers/c \
+if ! $ML -L lib_core -I $W/c -I assembler -I languages/ml -I languages/ml/pp -I languages/ml/facts -I $M -I analyzers -I analyzers/ml -I analyzers/report \
      -I analyzers/dotnet -I languages/prolog -I languages/datalog -I languages/datalog/dotnet -I $W \
      -dotnet -o $W/analyze_rt.dll $files > $W/rt.err 2>&1; then
   echo "FAIL analyze_rt.dll by mini-ml -dotnet"; head -3 $W/rt.err; exit 1

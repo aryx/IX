@@ -1,0 +1,9 @@
+; mini-analyze's ML front end: mini-ml's into Closure_facts (Ml_front,
+; mini-ml -facts's path); a library, apart from c/'s wrapped copy of
+; mini-cc (both compilers have a Parser and a Lexer), as c/ is: both
+; roads use it, the native mini-analyze and the .NET one (../dotnet)
+(library
+ (name ix_analyze_ml)
+ (wrapped false)
+ (modules Ml_front)
+ (libraries ix_ml ix_ml_pp ix_ml_facts ix_datalog ix_prolog ix_core fpath logs caps))

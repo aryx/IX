@@ -50,7 +50,7 @@ module C = Ix_analyze_c
 (* the C program's report, the facts given with bugs.dl's kinds of
  * places (C_report); the ML program's (Ml_report): mini-analyze
  * -dotnet's too (analyzers/dotnet/Analyze_rt) *)
-module R = C.C_report
+module R = C_report
 
 let locate = R.locate
 let given = R.given

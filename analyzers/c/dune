@@ -10,9 +10,9 @@
 
 (library
  (name ix_analyze_c)
- (modules Tree Tree_helpers Pre Acid Lexer Parser Declare Check Machines Emit Com64 Facts C_front C_report)
+ (modules Tree Tree_helpers Pre Acid Lexer Parser Declare Check Machines Emit Com64 Facts C_front)
  (preprocess (pps ppx_deriving.show))
- (libraries ix_core ix_asm ix_datalog ix_prolog fpath logs caps))
+ (libraries ix_core ix_asm fpath logs caps))
 
 (ocamllex Lexer)
 

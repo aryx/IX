@@ -1,0 +1,12 @@
+; mini-analyze's reports, of the facts and the rules' answers: a C
+; program's (C_report, with the facts given to Datalog), an ML program's
+; (Ml_report), -dead's, -caps' (of both front ends' tables), and
+; -fingerprint's (Answers, and natively Fingerprint: the .NET road's is a
+; C module, ../dotnet/fingerprint.c). Both roads use them, the native
+; mini-analyze and the .NET one (../dotnet). c/'s wrapped units opened,
+; apart from ml/'s Ml_front (mini-ml's Parser, not mini-cc's)
+(library
+ (name ix_analyze_reports)
+ (wrapped false)
+ (flags (:standard -open Ix_analyze_c))
+ (libraries ix_analyze_c ix_analyze_ml ix_datalog ix_prolog ix_core fpath caps))

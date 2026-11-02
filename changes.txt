@@ -1,24 +1,65 @@
 # -*- org -*-
 
-* 0.2 (Q4 2026) (mini-9pi built by ix and on a real Pi 1, mini-rio, a browser, an office, sound, IX in a web page)
+* 0.3 (Q4.2 2026) (in progress) (a desktop, C and Datalog on .NET, mini-analyze on both roads)
+
+** dotnet
+- mini-cc -dotnet, a managed C; mini-datalog -dotnet, the rules
+  compiled to IL (Souffle's split); several assemblies in mini-dotnet
+- mini-ml -dotnet: formats as values (F#'s way), its benchmarks
+  native, by Microsoft's dotnet and by mini-dotnet; a C module (mini-cc
+  -dotnet) called from ML by externals
+- mini-analyze runs on .NET, its two roads (C and ML) with their
+  reports; mini-dotnet's JIT starts in 110 ms where 437
+
+** analyses
+- mini-analyze -caps: a function's capabilities, OCaml's check of
+  them again in Datalog; -dead and -caps over 42 of 44 programs (283
+  functions dead in their program)
+- pointer analyses that keep apart what OCaml's types say cannot meet;
+  lib_code/datalog/FACTS.md, every fact the front ends say
+
+** windows
+- a desktop over mini-rio (windows/desktop/): rio scripted and in
+  layers, panel, startmenu, desk (wallpaper and icons), settings,
+  expose (the draw device's 'Z', an image k times smaller)
+- idle=wait: mini-files, mini-office, mini-page asleep until used;
+  mini-stats shows the memory, the disk and the network too
+
+** misc
+- Bignum's limbs of 28 bits on arm: X25519, ECDSA and RSA 54% fewer
+  instructions there
+- make's test targets named by category
+
+* -----------------------------------------------------------
+
+* 0.2 (Q4.1 2026) (mini-9pi built by ix and on real Pi 1 and Pi 2 boards, mini-rio, a browser, an office, sound, IX in a web page, Doom and Quake, a PIM, a debugger, dotnet, ix built in its own system)
 
 ** kernels
 - mini-xv6 and mini-9pi built by ix's tools alone (their mkfiles:
   mini-ml in ocaml-light's place, mini-cc in gcc's, mini-asm and
   mini-ld in GNU's as and ld), on the Pi 4 and the Pi 1 (mini-mk O=5),
-  the Makefiles' checks passed; kernels/steps/ too
+  the Makefiles' checks passed; kernels/steps/ too; the Pi 1's kernel
+  by ix's tools by default
 - mini-9pi boots on a real Pi 1 (the author's model B): the card, the
   keyboard and mouse, rio, the games, the sound; overclocked to 800 MHz
+- mini-9pi on the Pi 2, under QEMU and on the author's board, one card
+  for both Pis; the Pi 2's four cores under one kernel lock
+  (mini-stats, /dev/sysstat); the Pi 4B begun under QEMU
 - mini-9pi runs ix's own programs, not principia's: a Plan 9 target
   for mini-ml (mini-mk O=5 OS=plan9, Unix over Plan 9's system calls,
   threads), mini-rc the boot shell, an SD card made by mini-mkcard
   (FAT and an xv6 partition as the root, the sources in /src)
+- mini-9pi builds ix on its card, each file Linux's byte for byte
+  (176 minutes on the Pi 2 under QEMU)
 - mini-9pi's drivers as programs and in the kernel, the same code:
   mini-usbd and Kusb (hubs, unplug and plug), mini-dossrv and Kdos
   (FAT read and written), mini-fdisk; lib_memdraw and lib_memlayer
 - mini-9pi: /dev/audio (the Pi 1's PWM and DMA), UDP, a clock, the
   compose key, the keys held (/dev/kbd), 1024 by 768, 352 MB for the
   processes, a process ended when no page is left, free
+- mini-9pi: fork's copy on write, segments, #p for a debugger, a USB
+  mouse's wheel, letters smoothed, a picture scaled k times by the
+  draw device, the Pi's temperature and clock, a watchdog
 - kernels/lib_machine/: the machine under every kernel here
 - the Pi 4's kernels by OCaml 4.14 too, a third compiler; strings not
   written, Bytes for those that are
@@ -34,6 +75,7 @@
   paste, UTF-8; wctl, label, cursor, /dev/screen; a thread a window
 - lib_graphics (the draw device's client: Display, Draw, Font, Mouse,
   Keyboard, Menu), lib_networking/9p, lib_core/concurrency
+- the draw platform draws only what changed (Redraw)
 
 ** utilities
 - Plan 9's commands, as principia's and checked against them under
@@ -41,18 +83,40 @@
   chmod, sleep, seq, du, date, grep, tail, xd, uniq, tr, sed, sort,
   ps, time, test, xargs, walk, cal; each access by a capability
 - new mini-awk, mini-hoc, mini-dc and mini-bc
+- new mini-tar, mini-gzip and mini-gunzip
+- common(1): -v, -debug, -quiet, for every program
+
+** typesetting
+- new mini-troff and mini-man: a manual page for a terminal, PDF, ms's
+  papers with tables and pictures, simple LaTeX and noweb (principia's
+  books typeset), a format of ix's own (Markdown and \name{text})
+- ix's manual: a page for each program, how it differs from Plan 9's
 
 ** apps
 - new mini-office (the playground's TinyOffice): documents with
   pictures (PNG, JPEG), exported to PDF
-- new mini-page: a PDF viewer; lib_graphics's images and fonts
-- new mini-play (.mod, .mid, .mp3) and mini-rebirth; lib_audio
+- new mini-page: a PDF viewer; lib_graphics's images and fonts; pages
+  one under another, links followed, 60 frames a second on mini-9pi
+- new mini-play (.mod, .mid, .mp3) and mini-rebirth; lib_audio;
+  mini-play plays films too (FLI, AVI, MPEG-1 with its MP2)
+- new mini-pim: mail (SMTP, IMAP, mini-maild, Gmail read), calendar
+  with time zones, people, notes, tasks, money with envelopes, Today,
+  one search over all, reminders; lib_networking/mail
+- new mini-files, a file manager (icons, dragging), and mini-open
+  (lib_mime: a file's kind by its bytes, the program for it)
+- new mini-maps: OpenStreetMap's tiles, places, the weather, a route
+  by A*
+- new mini-prof (where a program's instructions go) and mini-stats
 
 ** browsers and networking
 - new mini-netscape, after mini-chrome: CSS, a layout engine with
   grid, pictures (PNG, JPEG, GIF, SVG), PDF, JavaScript, cookies
+- mini-netscape: tabs, history, bookmarks, helper programs (PDF to
+  mini-page, films to mini-play), fields edited, mailto:; on mini-9pi
+  (Hacker News in 23 s); browsers/ 23,038 lines to 19,277 (degrade,
+  don't fail: no ES modules, shadow trees, Proxy; strings as UTF-8)
 - new mini-lynx, mini-curl, mini-httpd, mini-node
-- lib_networking: TCP, DNS, TLS 1.3, HTTP; lib_crypto for it
+- lib_networking: TCP, DNS, TLS 1.3 and 1.2, HTTP; lib_crypto for it
 - mini-curl and mini-lynx on mini-9pi, https:// from the Internet
 
 ** editors
@@ -65,7 +129,32 @@
 ** games
 - the author's playground in ix (lib_playground, lib_physics): Tetris,
   TinyWolfenstein, TinyCameltry, TinyMissileCommand, with sound, on
-  Linux (SDL) and on mini-9pi through the draw device
+  Linux (SDL) and on mini-9pi through the draw device; TinyBreakout,
+  TinyTronscroll over the network (UDP); juice, physics, ai and
+  netcode in lib_playground
+- new mini-doom: id's renderer, Freedoom's levels, sound, music,
+  weapons, monsters; 15 frames a second on mini-9pi
+- new mini-quake: Quake's software renderer, lightmaps (mini-light),
+  monsters, weapons, particles, on LibreQuake's levels
+- new mini-virtuaracing: three courses, the sound, the painter's
+  algorithm and the PlayStation's ordering table beside the depth
+
+** debuggers
+- new mini-acid: Plan 9's acid, over mini-5i's /proc, mini-9pi's #p
+  and Linux's ptrace; breakpoints by line, C and ML values by their
+  types, DWARF's lines and types for gcc's programs
+- mini-ld -g (5l's symbol and pc/line tables), mini-ml's and mini-cc's
+  lines; lib_executable (ELF too), mini-nm, mini-where
+- the stack named at a fault, an uncaught exception, mini-9pi's panic:
+  the frames, the raise's line, its arguments
+
+** dotnet
+- new mini-dotnet: .NET's assemblies read and run (Microsoft's too),
+  a verifier, a JIT for arm64 and arm (generics, exceptions, structs,
+  a register cache, tiers); on mini-9pi's card
+- new mini-tiger and mini-csc (a reduced C#), compiled to .NET
+- mini-ml -dotnet: ML to IL (closures, generics, tail calls, several
+  units), lib_core's units compiled to .NET
 
 ** languages
 - new mini-scheme (and Landin's SECD), mini-pascal, mini-smalltalk,
@@ -73,9 +162,18 @@
 - new mini-prolog (and Warren's machine, -wam) and mini-datalog;
   mini-cc -facts and mini-ml -facts, -flow: pointer, control flow and
   liveness analyses of ix's own C and OCaml as Datalog rules
+- new mini-analyze (analyzers/): those analyses over ix's programs, a
+  bug finder, -dead, the call graph against real runs (lib_code/datalog)
+- mini-datalog faster: two engines (hashed, Souffle's B-trees), -j n
+  on several domains
 - mini-ml's runtime: C calls ML (callback), a value stack per
   process, threads, a signal between two system calls handled; in
-  parts, with ocaml-light's header names
+  parts, with ocaml-light's header names; a generational collector
+- mini-ml faster: the ssa back end, -O3 (ix built with it), floats
+  unboxed, ints untagged, inlining across units, CSE, loop invariants,
+  jump tables; checked annotations ([@@tailrec], [@@zero_alloc]...)
+- mini-cc -O3: a registerizer and ssa/, the C library and the kernels
+  by it; lib_code: dominators, SSA, liveness, coloring shared
 - mini-ml: let*, bytes a type of its own; Marshal in ML; the stdlib a
   library, a program linking the units it uses
 - mlpp: type t = [%mli], [%list] comprehensions, |!, type classes
@@ -92,12 +190,16 @@
   WFI, the barriers, SYS), arm's MRC, MCR and status registers
 - mini-asm: #include includes, a #define may name others
 - the C library: its formatter and arm's 64-bit arithmetic are ix's
-  own; goken's rest trimmed (7,748 lines to 5,423)
+  own; goken's rest trimmed (7,748 lines to 5,423); memmove and memset
+  in each machine's assembly
 
 ** machines
 - mini-qemu: the Pi 1's jack (PWM, DMA) to SDL or a WAV file, a
   network that reaches the Internet, meters in its window
-- mini-5i's decoders by [%bits], an encoding a clause
+- mini-qemu: a Pi 2 (-M raspi2b), its four cores in turns or on the
+  host's cores (OCaml 5's domains)
+- mini-5i's decoders by [%bits], an encoding a clause; -prof, /proc
+  for a debugger, segments
 - machine/tests/profile.sh: a program's instructions by function
 - mini-pi: ix's kernels by name, on Linux and macOS (./configure),
   without ocaml-light, principia or xv6
@@ -109,26 +211,42 @@
   and a game, ARM translated to JavaScript (docs/m-ix.html)
 
 ** t-ix
-- tiny-machine has a screen, a mouse and a network device
+- tiny-machine has a screen, a mouse and a network device; 128 MB,
+  sound, several cores, 1024 by 768
 - new tiny-graphics, tiny-windows, tiny-playground and tiny-tetris,
   in ML on tiny-kernel
 - new tiny-network: IP, ping, IL (Plan 9's protocol), get, httpd; on
   Linux a gateway to real servers
+- new tiny-gui and its applications, tiny-emacs, tiny-www (Wikipedia
+  with its pictures), tiny-office (text, sheet, drawing, paint,
+  chart), tiny-troff, tiny-play, tiny-utils (one program, 20 names),
+  tiny-prof, trace and debug
+- tiny-kernel: a file system on its disk, hard links, segments and
+  pages, spawn, no zombies; its font Ubuntu Mono's by ix's own
+  TrueType reader
+- t-ix builds itself: arm64 out, tiny-machine the one target, units
+  in tiny-ml, the toolchain on tiny-kernel, its image the host's byte
+  for byte
 - tiny/TinyLib/: a small stdlib, runtime and C library of t-ix's own
   (mini-mk LIB=tiny); the tiny programs through FS, Console and
   capabilities; an .mli for each
-- tiny-pi removed
+- tiny-pi and tiny-os removed (v0 and t6 in TinyKernel/steps/)
 
 ** build infra
-- make ix, make test-lite (on all the cores) and make test-all (every
-  suite: tests/all.sh, its times in docs/test_times.md); the whole
-  suite from 2 hours 11 to half an hour
-- Docker and GitHub Actions run test-lite (OCaml 4.14 and 5.5.1), and
+- make ix, make test (the gate, 2 minutes, on all the cores; test-tix
+  and test-mix for one system) and make test-all (every suite:
+  tests/all.sh, its times in docs/test_times.md); the whole suite from
+  2 hours 11 to half an hour; make test-speed; on macOS too
+- make self and self-quick: ix built by ix in its own system, t-ix
+  and m-ix, each file the host's; each night on GitHub
+- Docker and GitHub Actions run make test (OCaml 4.14 and 5.5.1), and
   the whole suite on arm64
 - ix for arm (mini-mk O=5), and its fixed point under qemu-arm
 - the other programs built by ix: mini-5i, mini-git, mini-diff,
   mini-merge3, the tiny programs
-- make loc with a budget: 150,000 lines for m-ix, 20,000 for t-ix
+- mkfiles: libraries as xix's, recipes in rc, .depend made by the
+  build (mini-ml -depend); no Python in the build
+- make loc with a budget: 150,000 lines for m-ix, 30,000 for t-ix
 - make website
 
 ** internals
@@ -138,6 +256,8 @@
   what is only compared
 - renames: kernel/ is kernels/, editor/ is editors/ed/, lib_security/
   is lib_crypto/, Files is FS
+- programs in folders (raspberry/, languages/, apps/...); a module past
+  700 lines split
 - lib_core/commons: Binary (a format's numbers), Utf8
 - a file's header in two lines; header comments that teach, in the
   .mli (docs/tags.md)
@@ -145,16 +265,19 @@
 ** docs
 - changes.txt, authors.txt
 - README.md: the system as it is today, Bootstrapping, the budget
-- docs/manuals/t-ix.md, docs/projects.md, docs/pics/toolchains.svg
-- notes: the keyboard, the sound (and a tutorial from a program to
-  the jack), profiling, the choice of ML, the tiny spirit
+- docs/manuals/t-ix.md, hosts.md, docs/projects.md,
+  docs/pics/toolchains.svg, docs/testing.md
+- notes (docs/notes/): the keyboard, the sound (and a tutorial from a
+  program to the jack), profiling, debugging, fonts, the choice of ML,
+  the tiny spirit, the optimizations tried
 - a README.md in each directory copied from the author's playground
 - finished plans in docs/plans/done/; plans proposed: riscv, l4, xen,
-  the Pi 2, the GPU, several cores, swap, a debugger, self hosting
+  dos, wifi, the GPU, swap, cmm, the gaps a textbook would show,
+  replay in the debugger
 
 * -----------------------------------------------------------
 
-* 0.1 (Q3 2026) (first commit, m-ix and t-ix, toolchain v0, mini-qemu boots xv6 and 9pi, mini-xv6, mini-9pi, mini-ml, ix built by ix)
+* 0.1 (Q3.3 2026) (first commit, m-ix and t-ix, toolchain v0, mini-qemu boots xv6 and 9pi, mini-xv6, mini-9pi, mini-ml, ix built by ix)
 
 ** general
 - first commit (2026-09-21): the programs of the Principia Softwarica

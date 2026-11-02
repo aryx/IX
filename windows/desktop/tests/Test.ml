@@ -39,16 +39,16 @@ let nums (r : Rectangle.t) = (r.min.x, r.min.y, r.max.x, r.max.y)
 let test_layout () =
   let r = Rectangle.v 0 740 1000 768 in
   let parts = Taskbar.layout r [ win 1 "a"; win 2 "b" ] 40 in
-  Alcotest.(check int) "start, two tasks, the clock" 4 (List.length parts);
+  Alcotest.(check int) "start, the overview, two tasks, the clock" 5 (List.length parts);
   let widths = List.map (fun (_, r) -> Rectangle.dx r) parts in
-  Alcotest.(check (list int)) "at their widths" [ 64; 160; 160; 40 ] widths;
+  Alcotest.(check (list int)) "at their widths" [ 64; 28; 160; 160; 40 ] widths;
   let many = List.init 50 (fun i -> win i "x") in
   let parts = Taskbar.layout r many 40 in
-  let last_task = List.nth parts 50 and clock = List.nth parts 51 in
+  let last_task = List.nth parts 51 and clock = List.nth parts 52 in
   let _, (x0, _, _, _) = (), nums (snd clock) in
   let _, (_, _, x1, _) = (), nums (snd last_task) in
   Alcotest.(check bool) "many: narrower, none under the clock" true (x1 <= x0);
-  (match Taskbar.at (Taskbar.layout r [ win 7 "a" ] 40) (Point.v 100 750) with
+  (match Taskbar.at (Taskbar.layout r [ win 7 "a" ] 40) (Point.v 150 750) with
    | Some (Taskbar.Task w) -> Alcotest.(check int) "a point on a button" 7 w.id
    | _ -> Alcotest.fail "no task there");
   Alcotest.(check bool) "a point in the gap" true (Taskbar.at (Taskbar.layout r [] 40) (Point.v 500 750) = None)
@@ -67,6 +67,7 @@ let test_press () =
   line_of "another: to the front" (Taskbar.Task b) [ "current -id 2" ];
   line_of "a hidden one: back" (Taskbar.Task h) [ "unhide -id 3" ];
   line_of "no menu: the start button does nothing" Taskbar.Start [];
+  line_of "the overview: expose, in a popup" Taskbar.Overview [ "new -popup -max -label expose expose" ];
   let _, after = Taskbar.press ws (Taskbar.Task b) in
   Alcotest.(check (list bool)) "the button changes at once" [ false; true; false ] (List.map (fun (w : Taskbar.window) -> w.current) after);
   let closed = win 9 "startmenu" ~layer:"popup" ~hidden:true in
@@ -129,7 +130,7 @@ let card () =
 
 (* on the card, of the groups people open, and not listed: for a reason *)
 let left_out = [
-  "rio"; "panel"; "startmenu"; "desk"; "ps"; "free";     (* the desktop, or printing a state *)
+  "rio"; "panel"; "startmenu"; "desk"; "expose"; "ps"; "free"; (* the desktop, or printing a state *)
   "open"; "play";                                        (* they want a file: from files *)
   "scheme"; "pascal"; "prolog"; "dotnet"; "tiger";       (* languages, from a terminal *)
   "lynx"; "curl"; "timesync";                            (* the same *)
@@ -220,6 +221,26 @@ let test_prefs () =
   Alcotest.(check string) "none" "" (Prefs.clock_text { p with clock = "off" } 9 5);
   Alcotest.(check (list string)) "the mouse's lines" [ "buttonmap 321"; "linear" ] (Prefs.mouse_lines p)
 
+let test_tiles () =
+  let area = Rectangle.v 0 0 1000 700 in
+  Alcotest.(check int) "none" 0 (List.length (Tiles.layout area []));
+  let one = Tiles.layout area [ (1600, 1200) ] in
+  (match one with
+   | [ (cell, thumb, k) ] ->
+       Alcotest.(check int) "one: all the area" 1000 (Rectangle.dx cell);
+       Alcotest.(check int) "shrunk, a whole factor" 2 k;
+       Alcotest.(check (pair int int)) "its shape kept" (800, 600) (Rectangle.dx thumb, Rectangle.dy thumb)
+   | _ -> Alcotest.fail "not one");
+  let five = Tiles.layout area (List.init 5 (fun _ -> (640, 480))) in
+  let cells = List.map (fun (c, _, _) -> c) five in
+  Alcotest.(check int) "five: three columns" 333 (Rectangle.dx (List.hd cells));
+  Alcotest.(check int) "two rows" 350 (Rectangle.dy (List.hd cells));
+  List.iter (fun ((c : Rectangle.t), (t : Rectangle.t), _) ->
+      Alcotest.(check bool) "a thumbnail inside its cell, room for its name" true
+        (t.min.x >= c.min.x && t.max.x <= c.max.x && t.min.y >= c.min.y && t.max.y + Tiles.label_h <= c.max.y)) five;
+  let tiny = Tiles.layout area [ (10, 10) ] in
+  Alcotest.(check bool) "a small window: not enlarged" true (match tiny with [ (_, _, k) ] -> k = 1 | _ -> false)
+
 let test_paper () =
   (match Paper.bands 3 0x608090 with
    | [ a; _; c ] ->
@@ -250,4 +271,5 @@ let () =
                 t "each program's icon exists and is 16 by 16" test_icons_there;
                 t "the desk: its table, its places, a double click, an icon doubled" test_desk;
                 t "the settings' file: read, written, the clock's forms, the mouse's lines" test_prefs;
-                t "the wallpaper: a colour's bands, a picture covering the screen" test_paper ])
+                t "the wallpaper: a colour's bands, a picture covering the screen" test_paper;
+                t "expose's grid: cells, a whole factor, the windows' shapes kept" test_tiles ])

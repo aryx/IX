@@ -42,11 +42,12 @@ val tasks : window list -> window list
 (* the window of the start button: a popup labelled startmenu *)
 val menu : window list -> window option
 
-type part = Start | Task of window | Clock
+type part = Start | Overview | Task of window | Clock
 
 (* [layout r tasks clock_width]: the panel's rectangle cut in buttons: the
- * start button on the left, the clock on the right, a button a task
- * between, the same width, narrower when there are many *)
+ * start button on the left and the overview's beside it (expose: all the
+ * windows at once), the clock on the right, a button a task between, the
+ * same width, narrower when there are many *)
 val layout : Rectangle.t -> window list -> int -> (part * Rectangle.t) list
 val at : (part * Rectangle.t) list -> Point.t -> part option
 
@@ -57,6 +58,7 @@ val shorten : (string -> int) -> int -> string -> string
 (* [press windows part]: a press on a part: the lines for wctl, and the
  * windows as they will be, so that the button changes at once and not
  * at the next look at rio's. On a task: to the front, or hidden when it
- * has the keyboard already, or back when hidden. The menu's shown one goes
- * whatever is pressed but the start button, which shows or hides it. *)
+ * has the keyboard already, or back when hidden. On the overview's: expose
+ * started, in a popup of all the room. The menu's shown one goes whatever
+ * is pressed but the start button, which shows or hides it. *)
 val press : window list -> part -> string list * window list

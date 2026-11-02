@@ -622,6 +622,8 @@ check-ix: ix
 #             the files window stays itself. With win-files in make check-files
 #   win-desk   the desk: its wallpaper and icons, one selected by a click, opened by
 #             a double click; rio's menu still at the right button.
+#   win-expose   expose from the panel's button: three windows shrunk, one of
+#             them hidden; a click brings each to the front, the hidden one back.
 #             With win-files in make check-files
 #   colors-bare  mini-colors (../../apps/misc) on the bare screen:
 #             a square pointed at, its menu's exit
@@ -768,7 +770,7 @@ gcheck = $(MAKE) --no-print-directory -j$(GJOBS) $(foreach s,$(1),run-$(s)-mini 
 check-draw: ix ; $(call gcheck,draw)
 check-menu: ix-usb card ; $(call gcheck,menu)
 check-rio: ix-usb card ; $(call gcheck,win-new win-ops win-border win-scroll win-select win-utf8)
-check-files: ix-usb card ; $(call gcheck,win-files win-wctl win-script win-layers win-panel win-menu win-open win-desk)
+check-files: ix-usb card ; $(call gcheck,win-files win-wctl win-script win-layers win-panel win-menu win-open win-desk win-expose)
 check-colors: ix-usb card ; $(call gcheck,colors-bare colors-win)
 check-tetris: ix-usb card ; $(call gcheck,tetris-bare tetris-win)
 check-kbd: ix-usb card ; $(call gcheck,kbd-bare kbd-win)
@@ -953,7 +955,7 @@ endef
 #              open (emacs /src/hello.ml)
 #   tmp
 CARD_apps = colors=$(IX9)/apps/misc/mini-colors files=$(IX9)/apps/files/files open=$(IX9)/apps/files/open stats=$(IX9)/profilers/misc/mini-stats office=$(IX9)/apps/office/office page=$(IX9)/apps/page/pageview play=$(IX9)/apps/media/play/mini-play rebirth=$(IX9)/apps/music/rebirth/rebirth
-CARD_system = rio=$(IX9)/windows/rio/mini-rio panel=$(IX9)/windows/desktop/panel startmenu=$(IX9)/windows/desktop/startmenu desk=$(IX9)/windows/desktop/desk settings=$(IX9)/windows/desktop/settings ps=$(IX9)/utilities/process/mini-ps free=$(IX9)/utilities/process/mini-free
+CARD_system = rio=$(IX9)/windows/rio/mini-rio panel=$(IX9)/windows/desktop/panel startmenu=$(IX9)/windows/desktop/startmenu desk=$(IX9)/windows/desktop/desk settings=$(IX9)/windows/desktop/settings expose=$(IX9)/windows/desktop/expose ps=$(IX9)/utilities/process/mini-ps free=$(IX9)/utilities/process/mini-free
 CARD_devtools = emacs=$(IX9)/editors/emacs/draw/emacs drscheme=$(IX9)/editors/drscheme/drscheme turbopascal=$(IX9)/editors/turbopascal/hosts/draw/turbopascal \
   squeak=$(IX9)/languages/smalltalk/hosts/draw/squeak scheme=$(IX9)/languages/scheme/mini-scheme pascal=$(IX9)/languages/pascal/mini-pascal \
   prolog=$(IX9)/languages/prolog/mini-prolog dotnet=$(IX9)/languages/dotnet/mini-dotnet tiger=$(IX9)/languages/tiger/mini-tiger

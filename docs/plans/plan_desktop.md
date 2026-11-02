@@ -8,17 +8,20 @@ clicked show a menu with the application (see also /progs/) with icons,
 settings, etc. like in Windows or other Desktop OS. This might need
 modifications to rio to control how to create windows from a script."
 
-**Status: stages 0 to 6 done** (rio in `windows/rio/`; a scripted session:
-`rio -i`, `window`, `desktop`, `/dev/wsys`, windows ending with their
-programs; the layers; `panel`; `startmenu`, its table and icons; `desk`, a
-wallpaper made of bands, its icons from a table of the menu's form; `settings`:
-the wallpaper's colour or picture, the clock, the panel's side, the mouse, the
-volume, written to `$home/lib/desktop/settings`, which panel and desk look at
-again). The shakedown (2026-11-02): `startmenu -try` opened every program of the
-table under QEMU; all ran, the games' windows made square, Virtua Racing blank
-after 35 s (its start under QEMU, not looked at further); it found a kernel
-built by ix's tools halting at a program's first sound (bugs/ix.md). Left:
-stages 7 to 9. `files`, `office` and `page` say `idle=wait` (`Plan9_loop`): not
+**Status: stages 0 to 6 and 9 done**, stage 7 dropped (the author, 2026-11-02:
+"Title bars seems to conflict with rio"), stage 8 left to the author on the
+boards. Rio in `windows/rio/`; a scripted session: `rio -i`, `window`,
+`desktop`, `/dev/wsys`, windows ending with their programs; the layers;
+`panel`; `startmenu`, its table and icons; `desk`, a wallpaper made of bands,
+its icons from a table of the menu's form; `settings`: the wallpaper's colour
+or picture, the clock, the panel's side, the mouse, the volume, written to
+`$home/lib/desktop/settings`, which panel and desk look at again; `expose`, the
+windows shrunk side by side, live, by the draw device's new `Z` (Memdraw.shrink),
+started by the panel's button beside Start. The shakedown (2026-11-02):
+`startmenu -try` opened every program of the table under QEMU; all ran, the
+games' windows made square, Virtua Racing blank after 35 s (its start under
+QEMU, not looked at further); it found a kernel built by ix's tools halting at a
+program's first sound (bugs/ix.md). `files`, `office` and `page` say `idle=wait` (`Plan9_loop`): not
 `netscape` nor `maps`, whose work under a still picture goes a slice a tick. The panel's clock says GMT, as date does: the system has no time zone.
 Stage 4 as built, against the design below: the menu is two panes in one window
 (groups on the left, a group's programs on the right) rather than submenus; click,

@@ -16,9 +16,10 @@ let window_of id label wctl =
 let tasks = List.filter (fun w -> w.layer = "")
 let menu = List.find_opt (fun w -> w.layer = "popup" && w.label = "startmenu")
 
-type part = Start | Task of window | Clock
+type part = Start | Overview | Task of window | Clock
 
 let start_width = 64
+let overview_width = 28
 let task_width = 160
 let gap = 4
 
@@ -26,13 +27,14 @@ let layout (r : Rectangle.t) tasks clock_width =
   let y0 = r.min.y + 2 and y1 = r.max.y - 2 in
   let start_r : Rectangle.t = Rectangle.v (r.min.x + 2) y0 (r.min.x + 2 + start_width) y1 in
   let clock_r : Rectangle.t = Rectangle.v (r.max.x - clock_width - 2) y0 (r.max.x - 2) y1 in
-  let x0 = start_r.max.x + gap and room = clock_r.min.x - gap - (start_r.max.x + gap) in
+  let over_r : Rectangle.t = Rectangle.v (start_r.max.x + gap) y0 (start_r.max.x + gap + overview_width) y1 in
+  let x0 = over_r.max.x + gap and room = clock_r.min.x - gap - (over_r.max.x + gap) in
   let n = List.length tasks in
   let w = if n = 0 then 0 else min task_width (max 0 ((room - (gap * (n - 1))) / n)) in
   let buttons = List.mapi (fun i t ->
       let x = x0 + (i * (w + gap)) in
       (Task t, Rectangle.v x y0 (x + w) y1)) tasks in
-  ((Start, start_r) :: buttons) @ [ (Clock, clock_r) ]
+  ((Start, start_r) :: (Overview, over_r) :: buttons) @ [ (Clock, clock_r) ]
 
 let at parts p =
   match List.find_opt (fun (_, r) -> Rectangle.contains r p) parts with
@@ -68,6 +70,7 @@ let press ws part =
        | Some m -> [ Printf.sprintf "hide -id %d" m.id ], set_hidden m.id true ws
        | None -> [], ws)
   | Clock -> lines, ws
+  | Overview -> lines @ [ "new -popup -max -label expose expose" ], ws
   | Task t ->
       let front ws = List.map (fun w -> if w.layer <> "" then w else { w with current = w.id = t.id }) ws in
       if t.hidden then lines @ [ Printf.sprintf "unhide -id %d" t.id ], front (set_hidden t.id false ws)

@@ -3,8 +3,13 @@
 (library
  (name ix_desktop)
  (wrapped false)
- (modules Taskbar Apps Icon Prefs Paper)
- (libraries ix_graphics ix_core))
+ (modules Taskbar Apps Icon Prefs Paper Tiles Wsys)
+ (libraries ix_graphics ix_core caps fpath unix))
+
+(executable
+ (name Expose)
+ (modules Expose)
+ (libraries ix_desktop ix_graphics ix_threads ix_core threads.posix unix caps fpath))
 
 (executable
  (name Panel)

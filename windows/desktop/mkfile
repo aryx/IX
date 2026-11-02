@@ -11,19 +11,21 @@ G=../../lib_graphics
 INCLUDES=-I . -I $G -I $G/core -I $G/images $LIBI $STDI
 GFX=Point Rectangle Display Draw Font_default Font Mouse Keyboard Cursor Menu
 IMG=Rgba_image Dct Jpeg_progressive Png Jpeg Image_file
-PANEL=$GFX Taskbar Prefs Panel
+PANEL=$GFX Taskbar Wsys Prefs Panel
+EXPOSE=$GFX Taskbar Wsys Tiles Expose
 MENU=$GFX Apps Icon Startmenu
 DESK=$GFX $IMG Taskbar Apps Icon Prefs Paper Desk
 SETTINGS=$GFX Taskbar Prefs Settings
-UNITS=$GFX $IMG Taskbar Apps Icon Prefs Paper Panel Startmenu Desk Settings
+UNITS=$GFX $IMG Taskbar Wsys Tiles Apps Icon Prefs Paper Panel Startmenu Desk Settings Expose
 PANELOBJS=${PANEL:%=$D/%.$O}
 MENUOBJS=${MENU:%=$D/%.$O}
 DESKOBJS=${DESK:%=$D/%.$O}
 SETTINGSOBJS=${SETTINGS:%=$D/%.$O}
+EXPOSEOBJS=${EXPOSE:%=$D/%.$O}
 IMGOBJS=${IMG:%=$D/%.$O}
 LOCAL=`{ls *.ml *.mli ../../lib_graphics/*.ml ../../lib_graphics/*.mli} $LIBSRC
 
-all:V: $D/panel $D/startmenu $D/desk $D/settings
+all:V: $D/panel $D/startmenu $D/desk $D/settings $D/expose
 
 # the picture's units: said whole (a second rule with %, mk refuses), each
 # found by its name in lib_graphics' folders
@@ -76,6 +78,9 @@ $D/desk: $DESKOBJS $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 $D/settings: $SETTINGSOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 	$ML -start $STD $COMMONS $SETTINGS Std_exit -o $D/settings.start.$O
 	$LD $LDH -nofollow -o $target $D/settings.start.$O $STDOBJS $SETTINGSOBJS $STDEND
+$D/expose: $EXPOSEOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+	$ML -start $STD $COMMONS $EXPOSE Std_exit -o $D/expose.start.$O
+	$LD $LDH -nofollow -o $target $D/expose.start.$O $STDOBJS $EXPOSEOBJS $STDEND
 
 clean:V:
 	rm -rf $D

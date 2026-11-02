@@ -24,23 +24,8 @@ type event = Mouse of Mouse.state | Tick
 let read_file (caps : < Cap.open_in; .. >) path =
   try Some (FS.read caps (Fpath.v path)) with Sys_error _ | Unix.Unix_error _ -> None
 
-(* (a window may go between two reads: it is then not listed) *)
-let windows (caps : < Cap.readdir; Cap.open_in; .. >) : Taskbar.window list =
-  let names = try Sys_plan9.dirread caps "/dev/wsys" with Sys_error _ | Unix.Unix_error _ -> [] in
-  let ids = List.filter_map (fun (d : Sys_plan9.dir) -> int_of_string_opt d.name) names in
-  List.filter_map (fun id ->
-      let file name = read_file caps (Printf.sprintf "/dev/wsys/%d/%s" id name) in
-      match file "wctl", file "label" with
-      | Some wctl, Some label -> Taskbar.window_of id label wctl
-      | _ -> None)
-    (List.sort compare ids)
-
-(* (one write a line: rio takes a command a write) *)
-let ask (caps : < Cap.open_out; .. >) line =
-  try
-    let fd = FS.open_device_fd caps "/dev/wctl" in
-    Fun.protect ~finally:(fun () -> Unix.close fd) (fun () -> ignore (Unix.write_substring fd line 0 (String.length line)))
-  with Unix.Unix_error _ | Sys_error _ -> ()
+let windows = Wsys.windows
+let ask = Wsys.ask
 
 let clock (p : Prefs.t) =
   let t : Unix.tm = Unix.gmtime (Unix.time ()) in
@@ -68,6 +53,13 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
     List.iter (fun (part, (r : Rectangle.t)) ->
         match (part : Taskbar.part) with
         | Start -> Draw.fill view r raised; text view r black "Start"
+        | Overview ->
+            (* (four small windows: all of them at once) *)
+            Draw.fill view r raised;
+            let w = (Rectangle.dx r - 12) / 2 and h = (Rectangle.dy r - 10) / 2 in
+            List.iter (fun (i, j) ->
+                let x = r.min.x + 4 + (i * (w + 4)) and y = r.min.y + 3 + (j * (h + 4)) in
+                Draw.fill view (Rectangle.v x y (x + w) (y + h)) front) [ (0, 0); (1, 0); (0, 1); (1, 1) ]
         | Task t ->
             Draw.fill view r (if t.hidden then hidden else if t.current then front else raised);
             text view r (if t.hidden || t.current then white else black) t.label

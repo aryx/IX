@@ -25,3 +25,6 @@ type t = {
 
 (* None when the text is no icon: an unknown character, rows of two widths *)
 val parse : string -> t option
+
+(* twice as wide and as high, each pixel four: the desk's *)
+val doubled : t -> t

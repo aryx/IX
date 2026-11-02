@@ -620,6 +620,9 @@ check-ix: ix
 #             it, Exit. With win-files in make check-files
 #   win-open   mini-files under rio: a file opened by Enter is in a new window, and
 #             the files window stays itself. With win-files in make check-files
+#   win-desk   the desk: its wallpaper and icons, one selected by a click, opened by
+#             a double click; rio's menu still at the right button.
+#             With win-files in make check-files
 #   colors-bare  mini-colors (../../apps/misc) on the bare screen:
 #             a square pointed at, its menu's exit
 #   colors-win   the same program in a window of mini-rio's, which is moved
@@ -765,7 +768,7 @@ gcheck = $(MAKE) --no-print-directory -j$(GJOBS) $(foreach s,$(1),run-$(s)-mini 
 check-draw: ix ; $(call gcheck,draw)
 check-menu: ix-usb card ; $(call gcheck,menu)
 check-rio: ix-usb card ; $(call gcheck,win-new win-ops win-border win-scroll win-select win-utf8)
-check-files: ix-usb card ; $(call gcheck,win-files win-wctl win-script win-layers win-panel win-menu win-open)
+check-files: ix-usb card ; $(call gcheck,win-files win-wctl win-script win-layers win-panel win-menu win-open win-desk)
 check-colors: ix-usb card ; $(call gcheck,colors-bare colors-win)
 check-tetris: ix-usb card ; $(call gcheck,tetris-bare tetris-win)
 check-kbd: ix-usb card ; $(call gcheck,kbd-bare kbd-win)
@@ -950,7 +953,7 @@ endef
 #              open (emacs /src/hello.ml)
 #   tmp
 CARD_apps = colors=$(IX9)/apps/misc/mini-colors files=$(IX9)/apps/files/files open=$(IX9)/apps/files/open stats=$(IX9)/profilers/misc/mini-stats office=$(IX9)/apps/office/office page=$(IX9)/apps/page/pageview play=$(IX9)/apps/media/play/mini-play rebirth=$(IX9)/apps/music/rebirth/rebirth
-CARD_system = rio=$(IX9)/windows/rio/mini-rio panel=$(IX9)/windows/desktop/panel startmenu=$(IX9)/windows/desktop/startmenu ps=$(IX9)/utilities/process/mini-ps free=$(IX9)/utilities/process/mini-free
+CARD_system = rio=$(IX9)/windows/rio/mini-rio panel=$(IX9)/windows/desktop/panel startmenu=$(IX9)/windows/desktop/startmenu desk=$(IX9)/windows/desktop/desk ps=$(IX9)/utilities/process/mini-ps free=$(IX9)/utilities/process/mini-free
 CARD_devtools = emacs=$(IX9)/editors/emacs/draw/emacs drscheme=$(IX9)/editors/drscheme/drscheme turbopascal=$(IX9)/editors/turbopascal/hosts/draw/turbopascal \
   squeak=$(IX9)/languages/smalltalk/hosts/draw/squeak scheme=$(IX9)/languages/scheme/mini-scheme pascal=$(IX9)/languages/pascal/mini-pascal \
   prolog=$(IX9)/languages/prolog/mini-prolog dotnet=$(IX9)/languages/dotnet/mini-dotnet tiger=$(IX9)/languages/tiger/mini-tiger
@@ -1005,7 +1008,7 @@ CARD_MAN = $(foreach f,$(filter-out %/turbopascal-tty.md,$(wildcard ../../docs/m
 # monsters were not drawn, nor heard (its music, Vorbis, is off on Plan 9)
 QUAKE_DATA = ../../games/fps/quake/data
 CARD_QUAKE = $(foreach f,$(wildcard $(QUAKE_DATA)/progs/*.mdl $(QUAKE_DATA)/sound/*/*.wav),lib/quake/$(f:$(QUAKE_DATA)/%=%)=$(f))
-CARD_LIB = lib/desktop/apps=../../windows/desktop/apps.table $(foreach f,$(wildcard ../../windows/desktop/icons/*.txt),lib/desktop/icons/$(notdir $(f))=$(f)) rc/bin/window=../../windows/rio/window.rc rc/bin/desktop=../../windows/desktop/desktop.rc lib/desktop/start=../../windows/desktop/start.rc \
+CARD_LIB = lib/desktop/apps=../../windows/desktop/apps.table lib/desktop/desk=../../windows/desktop/desk.table $(foreach f,$(wildcard ../../windows/desktop/icons/*.txt),lib/desktop/icons/$(notdir $(f))=$(f)) rc/bin/window=../../windows/rio/window.rc rc/bin/desktop=../../windows/desktop/desktop.rc lib/desktop/start=../../windows/desktop/start.rc \
   lib/scheme/queens.scm=../../languages/scheme/tests/queens.scm lib/pascal/types.pas=../../languages/pascal/tests/types.pas \
   lib/prolog/classics.pl=../../languages/prolog/tests/classics.pl \
   $(foreach p,hello fib queens shapes exceptions strings vec generic collections closures,lib/dotnet/$(p).dll=../../languages/dotnet/survey/programs/$(p).dll) \

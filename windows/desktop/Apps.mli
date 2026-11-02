@@ -65,3 +65,10 @@ val right_w : int
 val size_of : entry list -> int * int
 (* [row_at top y]: which row a height is, the rows starting at [top] *)
 val row_at : int -> int -> int
+
+(* [desk_cell (x0, y0, x1, y1) i]: where the desk's icon i goes in that
+ * rectangle, as (x0, y0, x1, y1): down the left side, then the next column *)
+val desk_cell : int * int * int * int -> int -> int * int * int * int
+(* [double_click t0 t1]: two presses at those milliseconds are one double
+ * click *)
+val double_click : int -> int -> bool

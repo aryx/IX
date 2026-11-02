@@ -62,3 +62,13 @@ let size_of entries =
   (left_w + right_w, (longest * row_h) + 8)
 
 let row_at top y = if y < top then -1 else (y - top) / row_h
+
+let cell_w = 88
+let cell_h = 64
+
+let desk_cell (x0, y0, _, y1) i =
+  let per = max 1 ((y1 - y0 - 8) / cell_h) in
+  let x = x0 + 8 + ((i / per) * cell_w) and y = y0 + 8 + ((i mod per) * cell_h) in
+  (x, y, x + cell_w, y + cell_h)
+
+let double_click t0 t1 = t1 - t0 >= 0 && t1 - t0 < 500

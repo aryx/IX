@@ -167,6 +167,8 @@ let test_icon () =
   Alcotest.(check bool) "a colour not named" true (Icon.parse "a 112233\n.b\n" = None);
   Alcotest.(check bool) "nothing" true (Icon.parse "# x\n" = None)
 
+let desk_table () = Apps.parse (read "windows/desktop/desk.table")
+
 let test_icons_there () =
   List.iter (fun (e : Apps.entry) ->
       let f = "windows/desktop/icons/" ^ e.icon ^ ".txt" in
@@ -174,7 +176,31 @@ let test_icons_there () =
       else match Icon.parse (read f) with
         | Some i -> Alcotest.(check (pair int int)) f (16, 16) (i.w, i.h)
         | None -> Alcotest.fail (f ^ ": not an icon"))
-    (table ())
+    (table () @ desk_table ())
+
+let test_desk () =
+  let on_card = card () in
+  List.iter (fun (e : Apps.entry) ->
+      let p = Apps.program e in
+      if p <> "rc" && not (List.mem_assoc p on_card) then Alcotest.fail (e.name ^ ": " ^ p ^ " is not on the card"))
+    (desk_table ());
+  let screen = (0, 0, 1000, 700) in
+  Alcotest.(check (list int)) "the first, near the corner" [ 8; 8; 96; 72 ]
+    (let (a, b, c, d) = Apps.desk_cell screen 0 in [ a; b; c; d ]);
+  Alcotest.(check int) "the next, below it" 72 (let (_, y, _, _) = Apps.desk_cell screen 1 in y);
+  let per = (700 - 8) / 64 in
+  Alcotest.(check int) "past the bottom: the next column" 96 (let (x, _, _, _) = Apps.desk_cell screen per in x);
+  Alcotest.(check bool) "a double click" true (Apps.double_click 1000 1300);
+  Alcotest.(check bool) "too slow" false (Apps.double_click 1000 1600);
+  Alcotest.(check bool) "the mouse's clock went back" false (Apps.double_click 1000 900);
+  match Icon.parse "a 112233\n.a\n" with
+  | Some i ->
+      let d = Icon.doubled i in
+      Alcotest.(check (pair int int)) "doubled" (4, 2) (d.w, d.h);
+      Alcotest.(check string) "each pixel four"
+        (String.make 8 '\000' ^ "\255\x33\x22\x11\255\x33\x22\x11" ^ String.make 8 '\000' ^ "\255\x33\x22\x11\255\x33\x22\x11")
+        d.pixels
+  | None -> Alcotest.fail "no icon"
 
 let () =
   Testo.interpret_argv ~project_name:"mini-desktop"
@@ -187,4 +213,5 @@ let () =
                 t "the menu's columns and size" test_menu_shape;
                 t "apps.table against what the Makefile puts on the card" test_table_and_card;
                 t "an icon from its text" test_icon;
-                t "each program's icon exists and is 16 by 16" test_icons_there ])
+                t "each program's icon exists and is 16 by 16" test_icons_there;
+                t "the desk: its table, its places, a double click, an icon doubled" test_desk ])

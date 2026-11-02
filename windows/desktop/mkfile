@@ -8,12 +8,14 @@ INCLUDES=-I . -I $G $STDI
 GFX=Point Rectangle Display Draw Font_default Font Mouse Keyboard Cursor Menu
 PANEL=$GFX Taskbar Panel
 MENU=$GFX Apps Icon Startmenu
-UNITS=$GFX Taskbar Apps Icon Panel Startmenu
+DESK=$GFX Taskbar Apps Icon Desk
+UNITS=$GFX Taskbar Apps Icon Panel Startmenu Desk
 PANELOBJS=${PANEL:%=$D/%.$O}
 MENUOBJS=${MENU:%=$D/%.$O}
+DESKOBJS=${DESK:%=$D/%.$O}
 LOCAL=`{ls *.ml *.mli ../../lib_graphics/*.ml ../../lib_graphics/*.mli}
 
-all:V: $D/panel $D/startmenu
+all:V: $D/panel $D/startmenu $D/desk
 
 $D/%.$O: %.ml $LOCAL
 	mkdir -p $D
@@ -54,6 +56,9 @@ $D/panel: $PANELOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 $D/startmenu: $MENUOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 	$ML -start $STD $COMMONS $MENU Std_exit -o $D/startmenu.start.$O
 	$LD $LDH -nofollow -o $target $D/startmenu.start.$O $STDOBJS $MENUOBJS $STDEND
+$D/desk: $DESKOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+	$ML -start $STD $COMMONS $DESK Std_exit -o $D/desk.start.$O
+	$LD $LDH -nofollow -o $target $D/desk.start.$O $STDOBJS $DESKOBJS $STDEND
 
 clean:V:
 	rm -rf $D

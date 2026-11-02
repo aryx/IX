@@ -12,6 +12,11 @@
  (libraries ix_desktop ix_graphics ix_threads ix_core threads.posix unix caps fpath))
 
 (executable
+ (name Desk)
+ (modules Desk)
+ (libraries ix_desktop ix_graphics ix_threads ix_core threads.posix unix caps fpath))
+
+(executable
  (name Startmenu)
  (modules Startmenu)
  (libraries ix_desktop ix_graphics ix_threads ix_core threads.posix unix caps fpath))

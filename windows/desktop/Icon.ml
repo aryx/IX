@@ -30,3 +30,12 @@ let parse text =
                 end) r) rows;
         Some { w; h; pixels = Bytes.to_string b }
       end
+
+let doubled i =
+  let b = Bytes.create (i.w * i.h * 16) in
+  for y = 0 to (2 * i.h) - 1 do
+    for x = 0 to (2 * i.w) - 1 do
+      Bytes.blit_string i.pixels ((((y / 2) * i.w) + (x / 2)) * 4) b (((y * 2 * i.w) + x) * 4) 4
+    done
+  done;
+  { w = 2 * i.w; h = 2 * i.h; pixels = Bytes.to_string b }

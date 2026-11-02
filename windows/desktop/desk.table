@@ -1,0 +1,10 @@
+# The desk's icons, in their order (Apps says the form); on the card,
+# /lib/desktop/desk; a person's own in $home/lib/desktop/desk.
+top | Terminal     | term   | 640x400 | rc -i
+top | Files        | folder | 640x480 | files /usr/pad
+top | Programs     | folder | 640x480 | files /progs
+top | Office       | doc    | 800x600 | office
+top | Netscape     | globe  | 900x700 | netscape
+top | Emacs        | editor | 720x560 | emacs
+top | Tetris       | blocks | 400x600 | tetris
+top | Doom         | face   | max     | doom

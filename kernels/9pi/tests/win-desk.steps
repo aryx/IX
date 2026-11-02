@@ -1,0 +1,13 @@
+[('type', "echo 'window -desk desk' > /tmp/s; echo 'window -panel -edge bottom 28 panel -noclock' >> /tmp/s"),
+ ('type', "rio -i 'rc /tmp/s'"),
+ ('move', 52, 94),
+ ('buttons', [('down', 'left')]),
+ ('buttons', [('up', 'left')]),
+ ('move', 0, -64),
+ ('buttons', [('down', 'left'), ('up', 'left'), ('down', 'left'), ('up', 'left')], 0.1),
+ ('type', 'echo opened by a double click'),
+ ('move', 500, 640),
+ ('buttons', [('down', 'right')]),
+ ('buttons', [('move', 400, 0), ('up', 'right')]),
+ ('type', 'echo exit > /dev/wctl'),
+ ('type', 'echo back at the console')]

@@ -59691,3 +59691,896 @@ Claude recommended starting with the facts reading to measure and test that exce
 **Yoann:**
 
 > ideally the mini-analyzer can have 2 paths: one compiled natively, with extra comm/conversion because the different parts are in different languages, but maybe it's run faster. and the other path is all compiled with -dotnet so potentially less total code but maybe less inefficient in the end. It's good to have the 2 code paths working for a teaching and comparison purpose.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 09:16
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the two sweep scripts as `3941d7bb`, staging them by pathspec rather than by directory.
+Claude did not run `make test` for the commit, since the scripts are used by hand and by three `make test` jobs.
+Claude ran `run.sh`, `caps_types.sh`, and `facts_doc.sh` by hand, and all three passed.
+Claude flagged that the dead-code and capability reports still cover only 23 of the 35 programs, leaving 12 unread.
+Claude proposed re-running those reports on the 12 new programs, then measuring the analysis cost on the 9 large programs.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 09:17
+
+**Yoann:**
+
+> great work, let's commit. What's next?
+
+**Claude (summary):**
+
+Claude reported two commits: `5edb94ac` added `idle=wait` to `office` and `page`, and `6f116f78` added the desk.
+Claude laid out the remaining work, recommending settings (stage 6) first, then a shakedown pass.
+Settings would cover wallpaper, panel edge and clock format, mouse swap and acceleration, volume, and a read-only about page.
+It would save to `$home/lib/desktop/settings`, with live pickup by the panel and desk, and would be the first image decoder linked into the desk.
+The shakedown would open every program from the menu and desk, fix guessed sizes, and run `desktop` under mini-qemu.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 09:49
+
+**Yoann:**
+
+> I think running mini-xv6 when compiled by mini-ml was 4x slower than when compiled by ocaml-light. Is is still the case?
+
+------------------------------------------------------------------------
+
+## 2026-11-02 09:49
+
+**Yoann:**
+
+> I think we had similar bad results for crypto and a few other things
+
+**Claude (summary):**
+
+Claude looked up the last recorded speed-plan numbers: xv6 at 1.33× (26 Oct, down from 4.4×) and crypto at 27.6× (sha256, 11 Oct).
+Claude found the installed `mini-ml` dated 29 Oct was older than the runtime, so it rebuilt with the repo's `bin/` first on PATH.
+Claude started a benchmark comparing `mini-ml` instruction counts under mini-5i against ocamlopt's counts under valgrind.
+Claude's crypto bench rebuild was meant to measure today's state before any comparison was run.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 09:20
+
+**Yoann:**
+
+> please add stuff in notes profiling techniques if you use new techniques to find the bottleneck here
+
+**Claude (summary):**
+
+Claude changed lib_core's string searches to return -1 instead of raising Not_found on every miss.
+Claude also made Hashtbl.replace check for the key first, and Printf stop raising once per format.
+Those Hashtbl and Printf edits sit in shared lib_core, code that every mini-ml program uses.
+Claude left everything uncommitted, reported make test and make self-quick-mix passing, and asked before committing.
+Claude also added mini-dotnet -profile, cutting Microsoft's dotnet run from 5.5 s to 0.55 s.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 10:06
+
+**Yoann:**
+
+> let's commit, but try hard to not modify lib_core/ outside of lib_core/dotnet/. Here for Hashtbl modif may have an impact on mini-ml programs. Adding functions is ok, especially when they are in recent OCaml stdlib, but modifying the existing code to help dotnet should ask for judgment; we don't want to slow down the other programs that do not use dotnet
+
+------------------------------------------------------------------------
+
+## 2026-11-02 09:39
+
+**Yoann:**
+
+> let's do it
+
+**Claude (summary):**
+
+Claude ran two sweeps across the 35 programs, with the run moved to the background since it takes over ten minutes.
+Claude planned to triage the dead-function findings against a whole-tree grep once the sweeps finished.
+Claude said it would pick up the results when the background run completed.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 10:09
+
+**Yoann:**
+
+> excellent work! Let's commit and move on the 9 too-big programs
+
+------------------------------------------------------------------------
+
+## 2026-11-02 09:55
+
+**Yoann:**
+
+> yes rerun xv6 and add the crypto row
+
+**Claude (summary):**
+
+Claude said it had measured xv6 and was now reading where the crypto row sits in the plan.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 10:15
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed only `docs/plans/plan_mini_toolchain_optimization.md` as commit 314ddc16, skipping `make test` because only plan text changed.
+Claude noticed `docs/plans/plan_dotnet_languages.md` was also modified in that directory but left it out of the commit.
+Claude judged that file to be another session's uncommitted work, unrelated to the mini-toolchain plan, so it stayed uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 10:06
+
+**Yoann:**
+
+> but it's a judgment call
+
+**Claude (summary):**
+
+Claude reported that the `String` search change (returning -1 instead of raising `Not_found`) was kept, since OCaml's stdlib does the same since 4.05. Claude reworked the `Hashtbl.replace` change into a single-pass version after Yoann objected that the first, two-walk version would be slower natively. Claude then found and fixed a stage-1 bug in mini-ml -dotnet where constant constructors like `None` were fresh objects, so `None == None` was false; each now has one shared instance. Measured on call1 with mini-ml's facts, Microsoft's dotnet dropped from 5.5 s to 0.55 s and mini-dotnet from 39 s to 22 s. Claude committed the work as b3d4136f after `make test` and `make self-quick-mix` passed.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 10:16
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended starting with "L", keeping int32 values unboxed inside a function, since sha256 runs at 8.6× ocamlopt.
+Claude argued this matters for the plan's TLS handshake target on a Pi 1, because SHA-256 runs over the transcript and each certificate check.
+Claude suggested first re-timing a handshake for arm under mini-5i to measure how much sha256 now accounts for.
+Claude also listed follow-ups: profiling mini-xv6's boot, re-measuring ix built by ix, Squeak's first screen, and reinstalling opam `mini-ml`.
+Claude asked whether to start with the handshake measurement and then L, and Yoann said yes.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 10:26
+
+**Yoann:**
+
+> yes
+
+------------------------------------------------------------------------
+
+## 2026-11-02 10:25
+
+**Yoann:**
+
+> excellent, let's commit and move forward
+
+------------------------------------------------------------------------
+
+## 2026-11-02 10:26
+
+**Yoann:**
+
+> I have another session optimizing mini-analyzer native, so be aware
+
+**Claude (summary):**
+
+Claude compared both roads on contexts.c and rc, with the same answers but a slower .NET road.
+Claude left everything uncommitted, with new files only under analyzers/dotnet/ and the other session's edits untouched.
+Claude noted ML programs on the .NET road are still blocked by mini-ml's Lexer and Parser name clash.
+Claude flagged mini-analyze's report as unported, since it lives in Analyze.ml, which the other session is editing.
+Claude proposed committing, then attacking the Lexing, closure-key and Array.make costs, measuring the Lexing fix natively first.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 10:26
+
+**Yoann:**
+
+> I like your plan
+
+**Claude (summary):**
+
+Claude found no handshake benchmark exists, since the README only measured mini-curl up to the connect.
+Claude checked whether mini-5i could run a full handshake against a local openssl server, and found it has no sockets.
+Claude then looked for an in-memory or recorded handshake to run instead, since a live one was impossible under mini-5i.
+Claude noted the inclusive profile totals exceeded 100% because of recursion, so it switched to self costs grouped by source file.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 10:15
+
+**Yoann:**
+
+> I think andersen is known to be cubic and too slow no? or it requires many opti to work?
+
+**Claude (summary):**
+
+Claude recommended type filtering for the points-to analysis, since OCaml's inferred types are more precise than Java's declared types.
+Claude explained the cause: polymorphic library functions like `List.rev_append` and `List.assoc_opt` merge every caller's data into one shared set.
+Claude listed three options: type filtering, contexts for the library, and selective contexts, noting the second is too slow on mini-datalog.
+Claude corrected itself: `ext` wasn't the bomb, since removing it also cut off array flow and misled the test.
+Claude noted three uncommitted changes (arrays as objects, exceptions, C primitives) would break recorded test outputs until re-recorded.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 09:47
+
+**Yoann:**
+
+> let's do 1 and 2
+
+**Claude (summary):**
+
+Claude planned the first commit for the sound-probe fix in l.s and machine.c.
+Claude planned the second commit for settings, with its desk and panel changes.
+Claude planned the third commit for the shakedown: startmenu -try and the square window sizes.
+Claude noted that the bug note was already swept into another session's commit, b3d4136f.
+Claude also noted that the two make test failures probably belong to another session, unconfirmed in a clean copy.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 11:17
+
+**Yoann:**
+
+> let's commit the progress and summarize the progress on the whole plan and what remains
+
+**Claude (summary):**
+
+Claude committed the progress as 560cc25b, updated the plan's Status in e073a7b4, and left out plan_desktop.md.
+Claude recommended tackling the closure allocated for every tuple lookup in mini-datalog's sets and indexes first.
+Claude then named lib_core's lexer, which copies bytes per character: 3 s on .NET against 0.3 s natively.
+Claude noted the lexer fix sits outside dotnet/ in lib_core, so it needs native measurements first.
+Claude suggested the Lexer and Parser namespace clash after those, since it opens stage 9.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 11:18
+
+**Yoann:**
+
+> what is the primitive added? where?
+
+**Claude (summary):**
+
+Claude's answer was only a preamble: it said it would check how `Bignum` picks its limbs and how mini-ml adds a primitive today.
+Claude did not name a primitive or a file in this reply.
+Yoann's follow-up, "yes! the general primitive is fine," points to a general-purpose primitive he is endorsing, but this answer does not state what it is.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 11:20
+
+**Yoann:**
+
+> let's commit!
+
+**Claude (summary):**
+
+Claude listed three stages still left in the plan after the commits.
+Claude named stage 7 title bars, stage 8 measuring on your boards, and stage 9 Exposé.
+Claude pointed to Exposé as stage 9, the final item in the remaining plan.
+Claude committed the kernel, settings, and shakedown changes as three commits and deleted the temporary test files.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 11:34
+
+**Yoann:**
+
+> let's do expose! Title bars seems to conflict with rio. I'll measure on the board later
+
+**Claude (summary):**
+
+Claude finished Exposé: a kernel draw message `Z` for shrunken images, an `expose` program, and a panel button.
+Claude verified it with `make test` (182 jobs, 0 failures) and a QEMU `win-expose` session, checking the screenshots.
+Claude left all of it uncommitted and offered two separate commits, one for the kernel's `Z` and one for Exposé.
+Claude had marked stages 0–6 and 9 as done in the plan, and dropped title bars (stage 7) as Yoann asked.
+Claude listed what remains unchecked: board speed, live thumbnails, hover highlight, the `PIXEL=c` build, and mini-qemu runs.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 11:59
+
+**Yoann:**
+
+> great work, let's commit
+
+**Claude (summary):**
+
+Claude committed the two pending changes: `4a18be5e` adds the kernel's `Z` message and `Draw.shrink` for programs.
+Claude committed `4b2b2271` with Exposé, its panel button, grid layout, shared window-list code, `win-expose` session, man page, and plan status.
+That commit completes the desktop plan except stage 8, measuring on real boards, with title bars recorded as dropped.
+Claude suggested `startmenu -try N` to open every program on the board, with QEMU idle baselines: `stats` at about 15–18% CPU.
+Claude also noted `files` adds about 5 points on top of `stats`, while `netscape` and `maps` still use full CPU when idle.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 11:32
+
+**Yoann:**
+
+> ok let's do it
+
+**Claude (summary):**
+
+Claude reported that three self-quick-mix attempts never finished, blocked by other sessions' interference.
+Claude named the blockers: a corrupted Hid.cmi, a card image read-back I/O error, and dune's missing Wsys module.
+Claude proposed committing the Lexing and mini-ml -dotnet changes as they stand, or rerunning self-quick-mix.
+Claude was asked to rerun self-quick-mix, since it covers the Lexing change m-ix's card tools use.
+Claude had earlier reported that lambda lifting cut rc's CPU time from 30.7 to 25.5 seconds.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 11:33
+
+**Yoann:**
+
+> yes! the general primitive is fine
+
+**Claude (summary):**
+
+Claude implemented wide (Int32) multiplication for Bignum, using MULLU on arm and UMULH on arm64 via mini-ml's Ir primitives.
+Claude added a `Wide` module to lib_crypto, with the OCaml and mini-ml versions, and wired it into the dune and mkfile builds.
+Claude split Bignum's Montgomery multiply into `redc_mul_narrow` for 63-bit ints and a new `redc_mul_wide` for the wide path.
+Host tests (20 and 71 passing), arm and arm64 vectors, and `make test` (182 jobs, 0 failures) all passed, with MULLU and UMULH confirmed in the emitted code.
+Claude wrote the docs and was rerunning `make self-quick-mix` after an earlier failure in the Plan 9 build.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 11:20
+
+**Yoann:**
+
+> yes let's do it
+
+**Claude (summary):**
+
+Claude recommended filtering points-to facts by each value's type head, such as `list`, `Hashtbl.t`, or a function, rather than the full type.
+Claude found that this took mini-tiger's Andersen analysis from over 200 s and 8.8 GB to 5.9 s and 0.25 GB.
+Claude fixed a bug where `ref` cells were tagged wrongly, which had left 96 of mini-forth's functions unreached, and now all five programs show zero missed.
+Claude reports 42 of 44 programs now read, up from 35, with mini-cc at 217 s and mini-ml over 15 minutes still too slow.
+Claude documented the new facts in `FACTS.md`, recorded the mini-datalog stack overflow in `docs/plans/bugs/ix.md`, and nothing is committed yet.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 12:10
+
+**Yoann:**
+
+> rerun self-quick-mix
+
+**Claude (summary):**
+
+Claude reran `make self-quick-mix`, which passed with byte-identical output, and committed b0e58201 with the mini-ml, Lexing, and docs changes.
+Claude identified the remaining .NET cost as mini-datalog's tuple sets and indexes, which take keys as `int -> int` functions.
+Claude measured rc on .NET at 26 s CPU against 16 s for the native interpreter, and proposed rewriting `Tuples` and `Hash_index` to close the gap.
+Claude noted that the other session is optimizing native mini-analyze, so those changes could collide with the tuple work.
+Claude asked whether to start the `Tuples` and `Hash_index` changes now or wait until the other session's work was committed.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 12:10
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude added a host test comparing `mont_mul_wide` against `mont_mul_simple` alongside the existing check, plus a new `Wide.mul_high` test.
+Claude rebuilt the arm emulator after the interface change, confirmed its vectors still match, and ran `make test`.
+Claude reported 21 of 21 host tests passing and `make test` at 182 jobs with 0 failures.
+Claude verified each file to commit held only its own hunks, then added the new host test to the plan entry's check list.
+Claude committed the changes by pathspec.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 12:12
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the work as `fbea8bf8`, 18 files staged by pathspec, touching only its own changes.
+Claude noted the shared files `docs/plans/bugs/ix.md` and `lib_code/README.md` contain only its additions.
+Claude flagged that `make test` fails on "mini-ml -dotnet built by ix", a segfault that also occurs on HEAD.
+Claude listed the stale dead-code and capability reports and the slow mini-cc and mini-ml as remaining open items.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 13:05
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended pausing new code and spending an hour measuring the inner loop of `redc_mul_wide` on arm.
+Claude found the arm bignum loop keeps its variables in stack slots and spends six instructions per bounds check.
+Claude proposed sorting those instructions with `mini-5i -t` into spills, bounds checks and arithmetic, to pick the next fix.
+Spills would point to mini-ml's register allocation, which would speed up every ix loop; bounds checks would point to toolchain item K.
+Claude listed three other options: ECDSA squaring and windowing, arm64 `UMULH` bignum, and stale measurements, then asked whether to start.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 12:00
+
+**Yoann:**
+
+> in windows/desktop/ maybe we should separate the progs from the library modules used by those progs
+
+**Claude (summary):**
+
+Claude agreed and recommended moving shared library modules into a new `windows/desktop/lib/` subfolder.
+Claude proposed `lib/` for `Taskbar`, `Apps`, `Icon`, `Prefs`, `Paper`, `Tiles` and `Wsys`, the modules used by several programs.
+Claude said `windows/desktop/` would keep the five programs, rc scripts, tables, icons and tests in place.
+Claude said it would first check how other multi-folder directories handle subfolders in their mkfiles.
+Claude suggested a `DIRS` list with one rule to find each unit's source, replacing the long per-unit rules in the desktop mkfile.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 13:15
+
+**Yoann:**
+
+> Why are we doing this? What is the current speed? Maybe it's ok to stop here? Can I close the session?
+
+**Claude (summary):**
+
+Claude said the session can be closed, since everything is committed as 314ddc16 and 80218bd7 with nothing still running.
+Claude reported that mini-xv6 is no longer 4× slower and now takes 28% longer than ocaml-light, and that crypto was the next target.
+Claude estimated mini-ml handshakes on arm dropped from about 730M to 340M instructions for an ECDSA chain, after big-number work and `mul_high`.
+Claude judged crypto probably good enough for Netscape-era browsing, and suggested general compiler work next rather than more crypto steps.
+Claude flagged a stale `~/.opam/4.14.2/bin/mini-ml` to reinstall and an unrerun `make self-quick-mix` after the final edit.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 13:04
+
+**Yoann:**
+
+> I've paused the other session so let's go
+
+**Claude (summary):**
+
+Claude added array-keyed tuple sets and indexes to mini-datalog, keeping the native interpreter's closure-keyed code for its own use.
+Claude reported the .NET road dropping from 30.7 to 22.8 CPU seconds on rc, with the same 17,330 answers.
+Claude said 22.8 s was within about 1.2x of the native interpreter's 18.6 s plus 0.3 s front end.
+Claude described the compiled program's runtime as using only the array-keyed tuple sets and indexes, which still evaluate datalog rules.
+Claude then passed `make test` and `self-quick-mix`, committed eb3efcfc, and listed stage 8's Lexer/Parser namespace work as next.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 13:16
+
+**Yoann:**
+
+> excellent, let's commit
+
+**Claude (summary):**
+
+Claude committed both pending changes, leaving no uncommitted changes in the working tree.
+Claude's commit `8a29f7c3` re-records the four sessions that show the panel, fixing the Exposé commit that changed the panel without re-recording them.
+Claude's commit `29d93fc1` splits `windows/desktop/` into the programs and `lib/`, using the simpler mkfile and adding the plan's layout note.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 13:36
+
+**Yoann:**
+
+> I am trying ./mini-pi -g -q mini-9pi
+> but it takes a very long time; maybe it is blocked?
+
+**Claude (summary):**
+
+Claude diagnosed that `mini-pi` wasn't blocked but was rebuilding, having run about 4½ minutes with `mini-mk` compiling the kernel.
+Claude attributed the slowness to other sessions changing `mini-ml` and `lib_core`, which forces a full card rebuild taking 8 to 10 minutes.
+Claude advised that QEMU's window opens only after the kernel finishes building, so a few more minutes are expected.
+Claude suggested using `./mini-pi -g -q -n mini-9pi` next time to skip the build and boot the last build, which includes this session's commits.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 13:22
+
+**Yoann:**
+
+> yes being 1.5 slower than native is more than fine when using similar algorithms; for .NET though I thought we were compiling things instead of interpreting datalog rules. In any case, let's move forward on stage 8
+
+**Claude (summary):**
+
+Claude recommended mini-ml -dotnet and mini-cc each keep their own `Parser`/`Lexer`, renamed in a copied build so both front ends fit one assembly.
+Claude fixed the mini-ml-on-.NET gaps: type-abbreviated tuple patterns and `fst`/`snd`, plus `try` inside expressions, now lifted into a helper method.
+Claude moved the `try` refusal case into `exceptions.ml`, re-recorded `refused.expected`, and made `Analyze_rt` accept `-L dir` as one or two words.
+Claude reported `make test` at 182 jobs with 0 failures, and contexts.ml giving 523 answers on both native and .NET roads.
+Nothing was committed yet; Claude listed the uncommitted files and asked whether to commit and take the mini-analyze report next.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 13:41
+
+**Yoann:**
+
+> excellent, let's commit
+
+**Claude (summary):**
+
+Claude committed the work as 93c33dae: ML programs on the .NET road, two mini-ml -dotnet fixes, and updated tests and plan.
+Claude listed what remains in stage 8: the .NET-road report, a C module inside the analyser, and running on mini-9pi's card.
+Claude recommended doing the report next, moving its C and ML report functions into a shared unit both roads use.
+Claude flagged that the report lives in Analyze.ml, which the paused other session was changing, so it may conflict.
+Claude asked whether Yoann would rather keep Analyze.ml free for that other session before starting.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 13:40
+
+**Yoann:**
+
+> ok great work. What's next?
+
+**Claude (summary):**
+
+Claude recommended closing the desktop plan first by moving `plan_desktop.md` into `docs/plans/done/`, with its status listing what remains.
+Claude proposed a mini-qemu pass on `desktop` and the `win-*` sessions, and an idle "busy" signal so `netscape` and `maps` stop spinning at 60 Hz.
+Claude listed smaller ideas: Alt-Tab-style keyboard switching, Exposé from a screen corner, and desk icons opening files by kind through `files` rules.
+Claude suggested doing the plan closure, then the idle fix, and leaving the mini-qemu pass for when boards are running.
+Claude asked which option Yoann wanted next.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 13:43
+
+**Yoann:**
+
+> let's do it
+
+**Claude (summary):**
+
+Claude proposed moving the C and ML reports into shared analyzer modules, and fixed a mini-ml array equality bug along the way.
+Claude found that mini-ml -dotnet compared arrays by reference, so the .NET report never printed; it added element-wise comparison and a static `Object.Equals` in mini-dotnet's library.
+Claude moved the C report into `analyzers/c/C_report` and the ML report into `analyzers/Ml_report` under a new `ix_analyze_ml` library.
+Claude made `Analyze_rt` print C and ML reports, which matched native mini-analyze output on mini-dotnet and Microsoft's dotnet.
+Claude left the changes uncommitted and asked whether to rerun make test (one failure, now fixed in isolation) before committing.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 13:44
+
+**Yoann:**
+
+> let's move the plan to done/ and stop there and put the smaller ideas in the what's left section of the plan with other remaining stuff
+
+**Claude (summary):**
+
+Claude moved the plan to `docs/plans/done/plan_desktop.md` and staged the move without committing, since Yoann hadn't asked for a commit.
+Claude updated the plan's status to "done", listing completed stages and pointing to the "What is left" section.
+Claude added a "What is left" section before related work, covering stage 8 on the boards, untested `mini-qemu` runs, and the idle CPU issues in `netscape` and `maps`.
+Claude kept the smaller ideas Yoann asked for, such as Alt-Tab-style switching, Exposé from a screen corner, and desk icons.
+Claude also fixed the old plan path in `windows/desktop/dune` and added a desktop row to `docs/README.md`.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 14:10
+
+**Yoann:**
+
+> let's commit
+
+------------------------------------------------------------------------
+
+## 2026-11-02 14:09
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the work as 461e4826 after `make test` passed with no failures across 182 jobs.
+Claude moved mini-analyze's C and ML reports into units shared by both roads, so both print the same report on the bugs, callbacks and handlers programs.
+Claude also fixed `=` on arrays in mini-ml -dotnet, which had been comparing them by reference instead of by value.
+Claude noted that `-dead` and `-caps` are still missing on the .NET road, and that they live in `Analyze.ml`, the file Yoann's paused session is working in.
+Claude recommended the C module next, since no one has started it, and left the mini-9pi card run open.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 14:10
+
+**Yoann:**
+
+> Can I close this session?
+
+**Claude (summary):**
+
+Claude confirmed the session can be closed, since the plan's move is committed as `3007e967` with nothing left running.
+Claude noted that the desktop work is recorded in `docs/plans/done/plan_desktop.md`.
+Claude pointed to that file's "What is left" section, starting with the board measurements that `startmenu -try` can help with.
+Claude said the remaining uncommitted changes belong to another session: `docs/plans/bugs/ix.md` and `plan_dotnet_languages.md`.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 14:39
+
+**Yoann:**
+
+> exot
+
+------------------------------------------------------------------------
+
+## 2026-11-02 14:37
+
+**Yoann:**
+
+> do the other 2 reports and  and the module written in C!
+
+**Claude (summary):**
+
+Claude moved the `-dead` and `-caps` reports into separate `Dead_report` and `Caps_report` libraries.
+Claude fixed compare and less/greater on arrays in mini-ml's `-dotnet` backend, using OCaml's ordering.
+Claude wrote `fingerprint.c`, a 64-bit FNV-1a hash, compiled into `fingerprint.dll` with mini-cc `-dotnet`.
+Claude confirmed the fingerprint `7127604fadc44b90` matched natively and on both .NET runtimes, so the C module was really called.
+Claude ran the mini-analyze, mini-ml and `make test` suites, all passing, and left the changes uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 14:57
+
+**Yoann:**
+
+> excellent work, let's commit
+
+**Claude (summary):**
+
+Claude committed the stage 8 work as 65ba5a33, marking the .NET multi-assembly analyzer as done.
+Claude reported that all four mini-analyze reports match the native output, and `make test` passes with 182 jobs.
+Claude said the only remaining stage 8 item is running it on mini-9pi's card.
+Claude outlined stage 9 (ML program analysis) and smaller .NET gaps for mini-cc and mini-ml.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 14:58
+
+**Yoann:**
+
+> let's move ml related code to analyzers/ml/ like we did for c/ (we did that for C for dune reason but it's good anyway to organize those modules)
+
+------------------------------------------------------------------------
+
+## 2026-11-02 14:59
+
+**Yoann:**
+
+> and maybe have a report/ folder too?
+
+**Claude (summary):**
+
+Claude proposed reorganizing `analyzers/` into `c/`, `ml/`, `report/`, and `dotnet/` subfolders, which Yoann approved. Claude moved the reports, including `C_report` and `Fingerprint`, into `report/` with `git mv`, and `Ml_front` into `ml/`. It rewired the `ix_analyze_ml` and `ix_analyze_reports` libraries, updated the .NET test paths, and added the layout to the plan. The native tests and `-ms` runs of both roads pass, with `make test` at 182 jobs. Nothing is committed yet, and Claude asked whether to commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 15:17
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed the analyzer reorganization as bf08d488 in the ix repository.
+Claude moved the sources into `analyzers/` subdirectories: `c/`, `ml/`, `report/` and `dotnet/`.
+Claude left `Analyze.ml` and `Main.ml` at the top level of `analyzers/`.
+Claude's reply was a one-line report with no further recommendation or follow-up.
+Yoann's "what's next?" asks for the next step after this commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 15:23
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended doing stage 9 next, the static analysis of ML programs and the last stage of the plan.
+Claude proposed starting with exceptions that are raised and never caught, since it is well studied and should quickly find real bugs in ix's own ML code.
+The stage would then add which closures a call can reach, with contexts like the C analyses, and code never reached.
+Claude listed the other remaining items briefly: running on mini-9pi's card, mini-cc and mini-ml gaps on .NET, and JIT speed.
+Claude noted that closure reachability is the base of the other analyses, though much of it already runs.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 15:38
+
+**Yoann:**
+
+> let's update changes.txt with all the recent work, but again still in a compact way. I decided to change the format to do Q4.1 instead of Q4 because it would be too long; let's realease every month and increment version every month
+
+**Claude (summary):**
+
+Claude read the 879 commits made since changes.txt was last updated on 2026-10-12.
+Claude checked desktop, analyses, Bignum, and mini-pim commit details before writing the entries.
+Claude sorted October's work under the 0.2 section, in Q4.1 subsections.
+Claude was writing November's work into a new 0.3 section labeled Q4.2, one release per month.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 16:50
+
+**Yoann:**
+
+> excellent! let's commit
+
+**Claude (summary):**
+
+Claude committed the changes.txt update as commit 93a0ab17, with nothing else included.
+Claude left the other uncommitted files alone, namely the analyzers work and prompt-history.md.
+Claude skipped running make test before committing, because the commit only touches changes.txt.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 15:26
+
+**Yoann:**
+
+> let's do stage 9!
+
+**Claude (summary):**
+
+Claude finished stage 9, adding `mini-analyze -exn` to report which exceptions an ML toplevel may let escape.
+Claude added raise and try facts to Closure_facts, the rules in exceptions.dl, and an Exn_report printer wired into both roads.
+Claude confirmed the native and .NET roads give the same exception report, and `make test` passes with 182 jobs.
+Claude found mini-prolog's real Prolog_read.Error escape, but also false Halt and Throw reports from 0-CFA merging.
+Claude left everything uncommitted, and did not run `make self-quick-mix` or cover primitive raises like Division_by_zero.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 16:52
+
+**Yoann:**
+
+> excellent work! let's commit
+
+**Claude (summary):**
+
+Claude committed the stage 9 files as a907ca59, leaving prompt-history.md unstaged, and flagged self-quick-mix as not yet run.
+Claude proposed telling callers apart by call site for ML programs, as the next analysis step.
+Claude explained that every caller of List.iter currently shares one summary, which causes the false reports.
+Claude said per-call-site summaries would remove the false Halt and Throw reports on mini-prolog.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 17:18
+
+**Yoann:**
+
+> ./mini-pi -g -q mini-9pi
+>  has become far slower lately
+
+------------------------------------------------------------------------
+
+## 2026-11-02 17:18
+
+**Yoann:**
+
+> it used to take maybe 30s
+
+------------------------------------------------------------------------
+
+## 2026-11-02 17:00
+
+**Yoann:**
+
+> let's do it
+
+**Claude (summary):**
+
+Claude reran the call1_heap1 checks on the toy test and found Prolog_read.Error was a real escape, and the false Halt came from a closure-in-try bug. Claude fixed closure_facts so function bodies start outside any try, and added a `Late` case to the toy test. The fix passes `make test` (182 jobs, 0 failures) and leaves closures.facts unchanged, but nothing is committed yet. Claude also made exceptions.dl work over contexts, so `-exn -context x` sets precision, with insensitive as the default. Claude said mini-scheme's `Scheme_step.Error` report is false because Printf's `ksprintf` captures continuations, and no context file fixes that.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 17:20
+
+**Yoann:**
+
+> ok let's commit. What's next?
+
+**Claude (summary):**
+
+Claude committed the work as 38b789d4, staging only its own files and leaving `prompt-history.md` out.
+Claude laid out three options for what comes next, and recommended option 2: turn `-exn` into a bug hunt over ix.
+That bug hunt starts with the `ksprintf` fix, treating `k` as a parameter, so Printf-based helpers don't flood the results with false reports.
+Option 1 follows: run stage 8 on mini-9pi's card, then move the plan to `docs/plans/done/` with a "What is left" section.
+Claude also flagged that `make self-quick-mix` hasn't been run since the Closure_facts changes.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 17:19
+
+**Yoann:**
+
+> and no other session when running concurrently I think
+
+**Claude (summary):**
+
+Claude found that the 194 s `make card ix-usb` run was slow because `mini-ml` had been relinked two minutes before, forcing rebuilds.
+Claude said the kernel boots in about 17 s, so the slowness came from the build step that mini-pi runs first.
+Claude re-ran the build with nothing changed to see what gets redone, then began checking whether every program's objects depend on the compiler binary.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 17:23
+
+**Yoann:**
+
+> I agree with your plan, let's do 2 and then 1
+
+------------------------------------------------------------------------
+
+## 2026-11-02 17:28
+
+**Yoann:**
+
+> for languages/tiger/ maybe we can move the dotnet related backend also under a languages/tiger/dotnet/ like we did for C and ML
+
+------------------------------------------------------------------------
+
+## 2026-11-02 17:26
+
+**Yoann:**
+
+> let's move -facts and -flow out of mini-ml indeed, especially since we now have a analyzers/ml/ and analyzers/c/  so all code related to datalog is under analyzers/ (except the datalog engine itself which is in languages/ but actually maybe we could move it under analyzers/ at some point). For mini-asm, why it must assemble such big files?
+
+**Claude (summary):**
+
+Claude moved `-facts` and `-flow` out of `mini-ml` into `mini-analyze` through a new `Ml_flow` module, then updated the tests, docs, and mkfile.
+Claude traced the 73 MB `mini-asm` input to `kernels/9pi`'s mkfile, which turns the 7 MB boot directory into `DATA` text lines.
+Each 4 bytes of binary data became about 40 bytes of text, which `mini-asm` parses back into the same 7 MB.
+Claude noted that Plan 9's assemblers cap `DATA` at 8 bytes, and the ocaml-light road used gcc's `.incbin` instead.
+Claude proposed no fix for the `DATA` encoding, and its final message left the .NET road test and `make test` still in progress.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 17:28
+
+**Yoann:**
+
+> it's true this language has just one backend (for now), but it allows to have this dotnet/ consistent naming
+
+**Claude (summary):**
+
+Claude moved Tiger_emit.ml and Tiger_emit.mli to `languages/tiger/dotnet/` with `git mv`, as its own dune library.
+Claude cut the tiger front end's dependency on ix_dotnet and added `-I dotnet` plus a rule for the moved unit to the mkfile.
+Claude moved Tiger_emit's `make loc` row under the `dotnet/` row as mini-tiger's, so the totals stay unchanged.
+Claude checked the move with dune and mini-mk builds of mini-tiger, with zero test failures and mini-ml's languages/tiger check at 6 of 6.
+Claude also reported the `-exn` precision fixes and the awk `nextfile` fix, all still uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 17:52
+
+**Yoann:**
+
+> let's commit the datalog and fact thing, and let's optimize the DATA thing
+
+**Claude (summary):**
+
+Claude added a `-data` option to mini-asm that emits all data as one string instead of per-word DATA lines.
+Claude noted the linker already builds its debug tables as one big string, so this approach had precedent.
+Claude switched lib_machine's mkkernel and the oberon, squeak, singularity mkfiles to `-data`, with byte-identical kernel images.
+mini-asm dropped from 23 s to 0.04 s and mini-ld from 4 s to 2.7 s per `-g` build.
+Claude also committed the datalog work by pathspec, then hit an unrelated RAM_MB error on Pi 1 builds.

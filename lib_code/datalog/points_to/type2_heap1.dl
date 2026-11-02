@@ -8,7 +8,7 @@ callee(I, C1, C2, F, T, O1) :-
   passed(I, 1, C1, C2, O, O1, _), has_object(I), place_of(O, T),
   fresh(I, C1, C2, F, _, _).
 callee(I, C1, C2, F, C1, C2) :- fresh(I, C1, C2, F, _, _), \+ has_object(I).
-pt(P, T, O1, O, O1, O2) :-
+flow(P, T, O1, O, O1, O2) :-
   passed(I, 1, C1, C2, O, O1, O2), filtered(I), place_of(O, T),
   callee(I, C1, C2, F, T, O1), parameter(F, 1, P).
-pt(V, C1, C2, H, C1, none) :- new_site(V, H, C1, C2).
+flow(V, C1, C2, H, C1, none) :- new_site(V, H, C1, C2).

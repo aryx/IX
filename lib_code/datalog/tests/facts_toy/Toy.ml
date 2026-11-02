@@ -29,3 +29,8 @@ let () =
   ignore (List.map (fun n -> n * 2) [ area (Circle 1); area Empty; safe inc ]);
   ignore (Sys.getenv "HOME"); ignore (sum 3 0);
   Cap.main (fun caps -> say caps "done")
+
+(* an array, its elements one field of it; raise and what a handler catches *)
+let table = [| inc; add 1 |]
+let lookup k = if k < 2 then table.(k) else raise Not_found
+let found = try lookup 0 with e -> raise e

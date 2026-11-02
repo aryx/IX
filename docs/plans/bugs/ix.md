@@ -526,3 +526,15 @@ ReBirth on a card and kernel built by ix's tools; a kernel by ocaml-light and
 gcc (start.s, mini-pi's choice when ~/ocaml-light is there) did not show it.
 Fixed: l.s's kernel_data as start.s's. Not done: the Pi 4's l.s, which has no
 probe either (the Pi 4 has no PWM sound here).
+
+## mini-datalog overflows the stack reading a large file of facts (2026-11-02)
+
+`mini-datalog rules.dl facts.dl` on mini-cc's facts (343,456 lines, by
+`mini-analyze -facts`): `Fatal error: exception Stack overflow`, in 0.15 s, before
+any rule runs; with `ulimit -s unlimited` it reads them and runs (217 s). Every line
+is a plain fact, the longest 101 characters, so it is the reading's own recursion,
+in `Datalog.load` or Prolog's reader, over the clauses. mini-analyze gives the facts
+as values and does not meet it. Reproduce: `mini-analyze -facts` of mini-cc's units
+(`lib_code/datalog/tests/mk_units.sh`'s `program_args languages/c/mkfile`) into a
+file, then `mini-datalog lib_code/datalog/points_to/instructions.dl` and that file.
+Not fixed: found while measuring another thing.

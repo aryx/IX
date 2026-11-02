@@ -69,11 +69,34 @@ let scalar (v : string) : unit =
     fact "scalar" [ v ]
   end
 
+(* a type's head, for the analyses to keep apart what cannot be in one
+ * variable: list, Hashtbl.t, int64, -> (a function), *2 (a pair). None: a
+ * type variable, or Obj.t, which Obj.magic makes of anything *)
+let rec head (t : ty) : string option =
+  match t with
+  | Tconstr ({ tabbrev = Some a; _ }, _) -> head a
+  | Tconstr (d, _) -> if d.tpath = "Obj.t" then None else Some d.tpath
+  | Tarrow _ -> Some "->"
+  | Ttuple ts -> Some ("*" ^ string_of_int (List.length ts))
+  | Tvar _ -> None
+
+(* v's type's head and a site's: Typing's (Typing.keep, mini-analyze's), else
+ * none: then nothing is kept apart *)
+let typed (relation : string) (v : string) (t : ty option) : unit =
+  match Option.bind t head with
+  | Some h when not (Hashtbl.mem mentioned (v, relation)) ->
+      Hashtbl.add mentioned (v, relation) ();
+      fact relation [ v; h ]
+  | _ -> ()
+
 let temp () : string =
   incr temps;
   here (Printf.sprintf "%s:t%d" !unit_name !temps)
 
-let local (v : var) : string = here (Printf.sprintf "%s:%s/%d" !unit_name v.vname v.vid)
+let local (v : var) : string =
+  let name = here (Printf.sprintf "%s:%s/%d" !unit_name v.vname v.vid) in
+  typed "vtype" name (Typing.var_type v.vid);
+  name
 
 (* where a value no one reads goes *)
 let junk () : string = !unit_name ^ ":_"
@@ -86,24 +109,38 @@ let constant () : string =
   scalar c;
   c
 
-(* the externals' one place *)
+(* the externals' one place: what is given to C and comes back, Obj's *)
 let ext : string = "ext"
 
+(* what raise gives and a handler catches (old: ext, with the arrays' elements:
+ * what any array held, any read of one had, the set that made mini-tiger's
+ * Andersen's past 12 GB; 36 s without them) *)
+let exn : string = "exn"
+
+(* an array's elements: one field of the array, each array its object *)
+let elt : string = "arr:elt"
+
 (* a block made: dst points to a place of its own, this expression's *)
-let block (dst : string) (loc : int) : unit =
+let block (dst : string) (x : expr) : unit =
   incr blocks;
-  let site = Printf.sprintf "%s:block%d@%d" !unit_name !blocks loc in
+  let site = Printf.sprintf "%s:block%d@%d" !unit_name !blocks x.loc in
   fact "new_block" [ dst; site ];
-  fact "alloc_in" [ site; !unit_name ]
+  fact "alloc_in" [ site; !unit_name ];
+  typed "htype" site (Typing.expr_type x)
 
 (* An external, as a function of each of its arguments in turn
  * ('prim:name', then 'prim:name'2'...), the last returning its result.
  * One the compiler writes in place (%...) moves a value only if it is
  * one of these: the identity, a ref's and a pair's fields, an array's
- * and a block's elements (in ext, the one place of what is not
- * followed), raise (to ext: where a handler's pattern reads). A C
- * function's arguments go to ext and its result comes from it. *)
-let prim (name : string) (arity : int) : string =
+ * elements (a field of the array), raise (to exn: where a handler's
+ * pattern reads), Obj's fields (in ext, the one place of what is not
+ * followed). A C function's result is its own, a new object of its name,
+ * its arguments going nowhere, but of those that keep or call what they are
+ * given (register_named_value, ml_signal, thread_new), to ext; make_vect's is
+ * an array of its own, of the one site. *)
+let prim (name : string) (arity : int) (t : ty) : string =
+  (* its result's type, after its arguments' arrows *)
+  let rec result (t : ty) (n : int) : ty = match t with Tarrow (_, r) when n > 0 -> result r (n - 1) | _ -> t in
   let stage (k : int) : string = if k = 1 then "prim:" ^ name else Printf.sprintf "prim:%s'%d" name k in
   let arg (k : int) : string = Printf.sprintf "prim:%s:arg%d" name k in
   let ret : string = "prim:" ^ name ^ ":ret" in
@@ -141,14 +178,33 @@ let prim (name : string) (arity : int) : string =
         fact "call_ret" [ i; ret ]
     | "%makemutable" ->
         fact "new_block" [ ret; "prim:%makemutable:block" ];
+        (* (its type's head by its type, Pervasives.ref: old, "ref", that no
+         * variable's was, and every ref's content was lost) *)
+        typed "htype" "prim:%makemutable:block" (Some (result t arity));
         fact "assign_store_field" [ ret; "fld:contents"; arg 1 ]
     | "%field0" ->
         fact "assign_load_field" [ ret; arg 1; "fld:contents" ];
         fact "assign_load_field" [ ret; arg 1; "tuple:2.0" ]
     | "%field1" -> fact "assign_load_field" [ ret; arg 1; "tuple:2.1" ]
     | "%setfield0" -> fact "assign_store_field" [ arg 1; "fld:contents"; arg 2 ]
-    | "%raise" | "%array_safe_get" | "%array_safe_set" | "%array_unsafe_get" | "%array_unsafe_set" | "%obj_field" | "%obj_set_field" -> kept ()
-    | _ -> if name = "" || name.[0] <> '%' then kept ()
+    | "%array_safe_get" | "%array_unsafe_get" -> fact "assign_load_field" [ ret; arg 1; elt ]
+    | "%array_safe_set" | "%array_unsafe_set" -> fact "assign_store_field" [ arg 1; elt; arg 3 ]
+    | "make_vect" ->
+        fact "new_block" [ ret; "prim:make_vect:block" ];
+        typed "htype" "prim:make_vect:block" (Some (result t arity));
+        fact "assign_store_field" [ ret; elt; arg 2 ]
+    | "%raise" -> fact "assign" [ global exn (stage 1); arg 1 ]
+    | "%obj_field" | "%obj_set_field" -> kept ()
+    (* what C keeps, or calls: a handler, a thread's function, a callback's *)
+    | "register_named_value" | "ml_signal" | "thread_new" -> kept ()
+    (* another C function: what it returns is its own, a number or new, and
+     * what it is given stays (compare's and hash's: any value at all); old:
+     * kept (), so that every C call returned all any had been given *)
+    | _ ->
+        if name = "" || name.[0] <> '%' then begin
+          fact "new_block" [ ret; "prim:" ^ name ^ ":block" ];
+          typed "htype" ("prim:" ^ name ^ ":block") (Some (result t arity))
+        end
   end;
   stage 1
 
@@ -218,8 +274,8 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
   match x.e with
   | Econst _ -> scalar dst
   | Evar (Local v) -> fact "assign" [ dst; local v ]
-  | Evar (Global g) -> fact "assign" [ dst; global g.gsym !inside ]
-  | Evar (Prim (p, arity, _)) -> fact "assign_address" [ dst; prim p arity ]
+  | Evar (Global g) -> fact "assign" [ dst; global g.gsym !inside ]; typed "vtype" g.gsym g.gtype
+  | Evar (Prim (p, arity, t)) -> fact "assign_address" [ dst; prim p arity t ]
   | Econstraint (e, _) -> flow name e dst
   | Efunction cases ->
       let f : string =
@@ -228,6 +284,10 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
         | None -> incr funs; Printf.sprintf "%s:fun%d@%d" !unit_name !funs x.loc in
       fact "closure" [ f; !unit_name; string_of_int x.loc ];
       fact "alloc_in" [ f; !unit_name ];
+      fact "htype" [ f; "->" ];
+      (match Typing.expr_type x with
+       | Some (Tarrow (a, r)) -> typed "vtype" (f ^ ":arg") (Some a); typed "vtype" (f ^ ":ret") (Some r)
+       | _ -> ());
       fact "assign_address" [ dst; f ];
       fact1 "parameter" f (f ^ ":arg");
       fact "return" [ f; f ^ ":ret" ];
@@ -281,20 +341,20 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
       flow None e dst;
       List.iter
         (fun ((p, guard, body) : case) ->
-          bind p (global ext !inside);
+          bind p (global exn !inside);
           Option.iter (fun (g : expr) -> flow None g (junk ())) guard;
           flow None body dst)
         cases
   | Etuple es ->
       let n = List.length es in
-      block dst x.loc;
+      block dst x;
       stores (List.mapi (fun (k : int) (e : expr) -> (Printf.sprintf "tuple:%d.%d" n k, e)) es)
   | Econs (_, []) -> scalar dst
   | Econs (c, es) ->
-      block dst x.loc;
+      block dst x;
       stores (List.mapi (fun (k : int) (e : expr) -> (Printf.sprintf "con:%s.%d" c.cname k, e)) es)
   | Erecord (_, fields) ->
-      block dst x.loc;
+      block dst x;
       stores (List.map (fun ((l, e) : label * expr) -> ("fld:" ^ l.lname, e)) fields)
   | Ewith (e, _, fields) ->
       flow None e dst;
@@ -304,8 +364,8 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
       scalar dst;
       fact "assign_store_field" [ operand e; "fld:" ^ l.lname; operand v ]
   | Earray es ->
-      scalar dst;
-      List.iter (fun (e : expr) -> fact "assign" [ global ext !inside; operand e ]) es
+      block dst x;
+      List.iter (fun (e : expr) -> fact "assign_store_field" [ dst; elt; operand e ]) es
   | Eif (c, a, b) ->
       flow None c (junk ());
       flow None a dst;
@@ -319,11 +379,12 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
 and operand (x : expr) : string =
   match x.e with
   | Evar (Local v) -> local v
-  | Evar (Global g) -> global g.gsym !inside
+  | Evar (Global g) -> typed "vtype" g.gsym g.gtype; global g.gsym !inside
   | Econstraint (e, _) -> operand e
   | Econst _ -> constant ()
   | _ ->
       let t = temp () in
+      typed "vtype" t (Typing.expr_type x);
       flow None x t;
       t
 
@@ -361,6 +422,6 @@ let unit_ (name : string) (items : item list) : string =
               fact "assign" [ global g.gsym !inside; local v ])
             exported
       | Iexception _ -> ()
-      | Iexternal (g, p, arity, _) -> fact "assign_address" [ global g.gsym !inside; prim p arity ])
+      | Iexternal (g, p, arity, t) -> fact "assign_address" [ global g.gsym !inside; prim p arity t ])
     items;
   Buffer.contents out

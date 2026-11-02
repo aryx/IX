@@ -6,7 +6,7 @@ filtered(I) :- has_object(I).
 callee(I, C1, C2, F, O, O1) :-
   passed(I, 1, C1, C2, O, O1, _), has_object(I), fresh(I, C1, C2, F, _, _).
 callee(I, C1, C2, F, C1, C2) :- fresh(I, C1, C2, F, _, _), \+ has_object(I).
-pt(P, O, O1, O, O1, O2) :-
+flow(P, O, O1, O, O1, O2) :-
   passed(I, 1, C1, C2, O, O1, O2), filtered(I),
   callee(I, C1, C2, F, O, O1), parameter(F, 1, P).
-pt(V, C1, C2, H, C1, none) :- new_site(V, H, C1, C2).
+flow(V, C1, C2, H, C1, none) :- new_site(V, H, C1, C2).

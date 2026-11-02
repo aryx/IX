@@ -131,15 +131,15 @@ frame(V, C1, C2) :- owner(V, R), reachable(R, C1, C2).
 
 % the two rules for a global: written in any context, seen in every one
 gpt(G, H, H1, H2) :- global(G), pt(G, _, _, H, H1, H2).
-pt(G, C1, C2, H, H1, H2) :- global(G), frame(G, C1, C2), gpt(G, H, H1, H2).
+flow(G, C1, C2, H, H1, H2) :- global(G), frame(G, C1, C2), gpt(G, H, H1, H2).
 
 % ---- objects
 
 gpt(G, H, none, none) :- alloc(G, H), global(G).
 alloc_here(V, H, C1, C2) :- alloc(V, H), \+ global(V), frame(V, C1, C2).
-pt(V, C1, C2, X, none, none) :- alloc_here(V, X, C1, C2), var_object(X).
+flow(V, C1, C2, X, none, none) :- alloc_here(V, X, C1, C2), var_object(X).
 % (a curried closure remembers its whole context: see above)
-pt(V, C1, C2, H, C1, C2) :- alloc_here(V, H, C1, C2), curried(H, _).
+flow(V, C1, C2, H, C1, C2) :- alloc_here(V, H, C1, C2), curried(H, _).
 new_site(V, H, C1, C2) :- alloc_here(V, H, C1, C2), \+ var_object(H), \+ is_stage(H).
 
 % what names an object when its type is asked: where it was made, or itself
@@ -149,7 +149,7 @@ place_of(H, H) :- alloc(_, H), \+ has_place(H).
 
 % scalar: a value that is no object the facts follow (Closure_facts).
 % What is read from it, or returned by calling it, is one too.
-pt(V, C1, C2, scalar, none, none) :- scalar(V), frame(V, C1, C2).
+flow(V, C1, C2, scalar, none, none) :- scalar(V), frame(V, C1, C2).
 place_of(scalar, scalar).
 % (a C function with no body, libc's: scalar, not a value of its callers')
 scalar(R) :- call_ret(I, R), call_direct(I, F), \+ function(F).
@@ -168,9 +168,9 @@ scalar(R) :- call_ret(I, R), call_direct(I, F), \+ function(F).
 % an instruction reading one says which of them are its own function's
 % (frame, running); a local is in its own function's only.
 
-pt(P, C1, C2, H, H1, H2) :-
+flow(P, C1, C2, H, H1, H2) :-
   copy(P, Q), \+ global(Q), pt(Q, C1, C2, H, H1, H2).
-pt(P, C1, C2, H, H1, H2) :-
+flow(P, C1, C2, H, H1, H2) :-
   copy(P, G), global(G), gpt(G, H, H1, H2), frame(P, C1, C2).
 
 stored(X, F, C1, C2, L, L1, L2) :- store(X, F, V), pt(V, C1, C2, L, L1, L2).
@@ -181,20 +181,20 @@ read(P, F, C1, C2, O, O1, O2) :-
   load(P, X, F), \+ global(X), pt(X, C1, C2, O, O1, O2).
 read(P, F, C1, C2, O, O1, O2) :-
   load(P, G, F), global(G), gpt(G, O, O1, O2), frame(P, C1, C2).
-pt(P, C1, C2, L, L1, L2) :-
+flow(P, C1, C2, L, L1, L2) :-
   read(P, F, C1, C2, O, O1, O2), fpt(O, O1, O2, F, L, L1, L2).
-pt(P, C1, C2, scalar, none, none) :- read(P, _, C1, C2, scalar, _, _).
+flow(P, C1, C2, scalar, none, none) :- read(P, _, C1, C2, scalar, _, _).
 
 % C: &x, whose content is the variable x
 gpt(X, L, L1, L2) :- var_object(X), fpt(X, none, none, star, L, L1, L2).
 fpt(X, none, none, star, L, L1, L2) :- var_object(X), gpt(X, L, L1, L2).
 
 % C: &p->f, one place for each f whose address is taken
-pt(P, C1, C2, F, none, none) :-
+flow(P, C1, C2, F, none, none) :-
   assign_field_address(P, _, F), frame(P, C1, C2).
 fpt(F, none, none, star, L, L1, L2) :-
   fpt(_, _, _, F, L, L1, L2), field_place(F).
-pt(P, C1, C2, L, L1, L2) :-
+flow(P, C1, C2, L, L1, L2) :-
   read(P, F, C1, C2, _, _, _), field_place(F),
   fpt(F, none, none, star, L, L1, L2).
 
@@ -212,10 +212,10 @@ call(I, C1, C2, F, H1, H2) :-
   call_indirect(I, G), global(G), gpt(G, F, H1, H2), function(F),
   running(I, C1, C2).
 % (calling what C gave)
-pt(R, C1, C2, scalar, none, none) :-
+flow(R, C1, C2, scalar, none, none) :-
   call_indirect(I, V), \+ global(V), pt(V, C1, C2, scalar, _, _),
   call_ret(I, R).
-pt(R, C1, C2, scalar, none, none) :-
+flow(R, C1, C2, scalar, none, none) :-
   call_indirect(I, G), global(G), gpt(G, scalar, _, _), call_ret(I, R),
   running(I, C1, C2).
 
@@ -231,17 +231,17 @@ returned(F, N1, N2, L, L1, L2) :- return(F, V), pt(V, N1, N2, L, L1, L2).
 
 % an object-sensitive file writes its first parameter itself: filtered(I)
 filtered(none).
-pt(P, N1, N2, L, L1, L2) :-
+flow(P, N1, N2, L, L1, L2) :-
   passed(I, Z, C1, C2, L, L1, L2), Z > 1,
   callee(I, C1, C2, F, N1, N2), parameter(F, Z, P).
-pt(P, N1, N2, L, L1, L2) :-
+flow(P, N1, N2, L, L1, L2) :-
   passed(I, 1, C1, C2, L, L1, L2), \+ filtered(I),
   callee(I, C1, C2, F, N1, N2), parameter(F, 1, P).
 % (f' takes its closure's context, so no file's choice filters its argument)
-pt(P, N1, N2, L, L1, L2) :-
+flow(P, N1, N2, L, L1, L2) :-
   passed(I, 1, C1, C2, L, L1, L2), callee(I, C1, C2, F, N1, N2), is_stage(F),
   parameter(F, 1, P).
-pt(R, C1, C2, L, L1, L2) :-
+flow(R, C1, C2, L, L1, L2) :-
   returned(F, N1, N2, L, L1, L2), callee(I, C1, C2, F, N1, N2),
   call_ret(I, R).
 
@@ -256,3 +256,12 @@ pts(V, H) :- pt(V, _, _, H, _, _), H \= scalar.
 pts(V, H) :- gpt(V, H, _, _), H \= scalar.
 fpts(O, F, L) :- fpt(O, _, _, F, L, _, _).
 reach(F) :- reachable(F, _, _).
+
+% ---- the types: what cannot be in one variable is kept apart (andersen.dl's)
+
+typed_var(V) :- vtype(V, _).
+typed_object(H) :- htype(H, _).
+pt(V, C1, C2, H, H1, H2) :- flow(V, C1, C2, H, H1, H2), \+ typed_var(V).
+pt(V, C1, C2, H, H1, H2) :- flow(V, C1, C2, H, H1, H2), \+ typed_object(H).
+pt(V, C1, C2, H, H1, H2) :-
+  flow(V, C1, C2, H, H1, H2), vtype(V, T), htype(H, T).

@@ -2,6 +2,7 @@ init('Kit:init').
 var_in('Kit:iter/1', 'Kit:init').
 closure('Kit.iter', 'Kit', '7').
 alloc_in('Kit.iter', 'Kit').
+htype('Kit.iter', '->').
 assign_address('Kit:iter/1', 'Kit.iter').
 parameter('Kit.iter', 1, 'Kit.iter:arg').
 return('Kit.iter', 'Kit.iter:ret').
@@ -13,6 +14,7 @@ var_in('Kit:f/2', 'Kit.iter').
 assign('Kit:f/2', 'Kit.iter:arg').
 closure('Kit.iter\'', 'Kit', '7').
 alloc_in('Kit.iter\'', 'Kit').
+htype('Kit.iter\'', '->').
 assign_address('Kit.iter:ret', 'Kit.iter\'').
 parameter('Kit.iter\'', 1, 'Kit.iter\':arg').
 return('Kit.iter\'', 'Kit.iter\':ret').
@@ -47,6 +49,7 @@ assign('Kit.iter', 'Kit:iter/1').
 var_in('Kit:fold/6', 'Kit:init').
 closure('Kit.fold', 'Kit', '10').
 alloc_in('Kit.fold', 'Kit').
+htype('Kit.fold', '->').
 assign_address('Kit:fold/6', 'Kit.fold').
 parameter('Kit.fold', 1, 'Kit.fold:arg').
 return('Kit.fold', 'Kit.fold:ret').
@@ -58,6 +61,7 @@ var_in('Kit:f/7', 'Kit.fold').
 assign('Kit:f/7', 'Kit.fold:arg').
 closure('Kit.fold\'', 'Kit', '10').
 alloc_in('Kit.fold\'', 'Kit').
+htype('Kit.fold\'', '->').
 assign_address('Kit.fold:ret', 'Kit.fold\'').
 parameter('Kit.fold\'', 1, 'Kit.fold\':arg').
 return('Kit.fold\'', 'Kit.fold\':ret').
@@ -69,6 +73,7 @@ var_in('Kit:acc/8', 'Kit.fold\'').
 assign('Kit:acc/8', 'Kit.fold\':arg').
 closure('Kit.fold\'\'', 'Kit', '10').
 alloc_in('Kit.fold\'\'', 'Kit').
+htype('Kit.fold\'\'', '->').
 assign_address('Kit.fold\':ret', 'Kit.fold\'\'').
 parameter('Kit.fold\'\'', 1, 'Kit.fold\'\':arg').
 return('Kit.fold\'\'', 'Kit.fold\'\':ret').
@@ -115,6 +120,7 @@ assign('Kit.fold', 'Kit:fold/6').
 var_in('Kit:double/13', 'Kit:init').
 closure('Kit.double', 'Kit', '13').
 alloc_in('Kit.double', 'Kit').
+htype('Kit.double', '->').
 assign_address('Kit:double/13', 'Kit.double').
 parameter('Kit.double', 1, 'Kit.double:arg').
 return('Kit.double', 'Kit.double:ret').
@@ -155,6 +161,7 @@ assign('Kit.double', 'Kit:double/13').
 var_in('Kit:negate/15', 'Kit:init').
 closure('Kit.negate', 'Kit', '14').
 alloc_in('Kit.negate', 'Kit').
+htype('Kit.negate', '->').
 assign_address('Kit:negate/15', 'Kit.negate').
 parameter('Kit.negate', 1, 'Kit.negate:arg').
 return('Kit.negate', 'Kit.negate:ret').
@@ -192,6 +199,7 @@ assign('Kit.negate', 'Kit:negate/15').
 var_in('Kit:square/17', 'Kit:init').
 closure('Kit.square', 'Kit', '15').
 alloc_in('Kit.square', 'Kit').
+htype('Kit.square', '->').
 assign_address('Kit:square/17', 'Kit.square').
 parameter('Kit.square', 1, 'Kit.square:arg').
 return('Kit.square', 'Kit.square:ret').
@@ -217,6 +225,7 @@ assign('Kit.square', 'Kit:square/17').
 var_in('Kit:add/20', 'Kit:init').
 closure('Kit.add', 'Kit', '16').
 alloc_in('Kit.add', 'Kit').
+htype('Kit.add', '->').
 assign_address('Kit:add/20', 'Kit.add').
 parameter('Kit.add', 1, 'Kit.add:arg').
 return('Kit.add', 'Kit.add:ret').
@@ -228,6 +237,7 @@ var_in('Kit:a/18', 'Kit.add').
 assign('Kit:a/18', 'Kit.add:arg').
 closure('Kit.add\'', 'Kit', '16').
 alloc_in('Kit.add\'', 'Kit').
+htype('Kit.add\'', '->').
 assign_address('Kit.add:ret', 'Kit.add\'').
 parameter('Kit.add\'', 1, 'Kit.add\':arg').
 return('Kit.add\'', 'Kit.add\':ret').
@@ -265,6 +275,7 @@ assign('Kit.add', 'Kit:add/20').
 var_in('Kit:cube/22', 'Kit:init').
 closure('Kit.cube', 'Kit', '19').
 alloc_in('Kit.cube', 'Kit').
+htype('Kit.cube', '->').
 assign_address('Kit:cube/22', 'Kit.cube').
 parameter('Kit.cube', 1, 'Kit.cube:arg').
 return('Kit.cube', 'Kit.cube:ret').
@@ -302,6 +313,7 @@ assign('Kit.cube', 'Kit:cube/22').
 var_in('Kit:helper/24', 'Kit:init').
 closure('Kit.helper', 'Kit', '22').
 alloc_in('Kit.helper', 'Kit').
+htype('Kit.helper', '->').
 assign_address('Kit:helper/24', 'Kit.helper').
 parameter('Kit.helper', 1, 'Kit.helper:arg').
 return('Kit.helper', 'Kit.helper:ret').
@@ -328,6 +340,7 @@ assign('Kit.helper', 'Kit:helper/24').
 var_in('Kit:dead/26', 'Kit:init').
 closure('Kit.dead', 'Kit', '23').
 alloc_in('Kit.dead', 'Kit').
+htype('Kit.dead', '->').
 assign_address('Kit:dead/26', 'Kit.dead').
 parameter('Kit.dead', 1, 'Kit.dead:arg').
 return('Kit.dead', 'Kit.dead:ret').
@@ -352,6 +365,7 @@ assign('Kit.dead', 'Kit:dead/26').
 var_in('Kit:scale/29', 'Kit:init').
 closure('Kit.scale', 'Kit', '26').
 alloc_in('Kit.scale', 'Kit').
+htype('Kit.scale', '->').
 assign_address('Kit:scale/29', 'Kit.scale').
 parameter('Kit.scale', 1, 'Kit.scale:arg').
 return('Kit.scale', 'Kit.scale:ret').
@@ -363,6 +377,7 @@ var_in('Kit:k/27', 'Kit.scale').
 assign('Kit:k/27', 'Kit.scale:arg').
 closure('Kit.scale\'', 'Kit', '26').
 alloc_in('Kit.scale\'', 'Kit').
+htype('Kit.scale\'', '->').
 assign_address('Kit.scale:ret', 'Kit.scale\'').
 parameter('Kit.scale\'', 1, 'Kit.scale\':arg').
 return('Kit.scale\'', 'Kit.scale\':ret').
@@ -406,6 +421,7 @@ assign_store_field('Kit:t26', 'fld:name', 'Kit:const').
 var_in('Kit:t27', 'Kit:init').
 closure('Kit:fun1@28', 'Kit', '28').
 alloc_in('Kit:fun1@28', 'Kit').
+htype('Kit:fun1@28', '->').
 assign_address('Kit:t27', 'Kit:fun1@28').
 parameter('Kit:fun1@28', 1, 'Kit:fun1@28:arg').
 return('Kit:fun1@28', 'Kit:fun1@28:ret').
@@ -443,6 +459,7 @@ return('prim:%makemutable', 'prim:%makemutable:ret').
 var_in('prim:%makemutable:ret', 'prim:%makemutable').
 scalar('prim:%makemutable:ret').
 new_block('prim:%makemutable:ret', 'prim:%makemutable:block').
+htype('prim:%makemutable:block', 'Pervasives.ref').
 assign_store_field('prim:%makemutable:ret', 'fld:contents', 'prim:%makemutable:arg1').
 assign_address('Kit:t31', 'prim:%makemutable').
 in_function('Kit:29:c29', 'Kit:init').
@@ -456,6 +473,7 @@ assign('Kit.current', 'Kit:current/32').
 var_in('Kit:last/34', 'Kit:init').
 closure('Kit.last', 'Kit', '30').
 alloc_in('Kit.last', 'Kit').
+htype('Kit.last', '->').
 assign_address('Kit:last/34', 'Kit.last').
 parameter('Kit.last', 1, 'Kit.last:arg').
 return('Kit.last', 'Kit.last:ret').
@@ -469,10 +487,9 @@ var_in('prim:%raise:arg1', 'prim:%raise').
 return('prim:%raise', 'prim:%raise:ret').
 var_in('prim:%raise:ret', 'prim:%raise').
 scalar('prim:%raise:ret').
-global_var('ext').
-var_in('ext', 'prim:%raise').
-assign('ext', 'prim:%raise:arg1').
-assign('prim:%raise:ret', 'ext').
+global_var('exn').
+var_in('exn', 'prim:%raise').
+assign('exn', 'prim:%raise:arg1').
 assign_address('Kit:t32', 'prim:%raise').
 in_function('Kit:30:c30', 'Kit.last').
 call_indirect('Kit:30:c30', 'Kit:t32').
@@ -497,6 +514,7 @@ var_in('prim:%makemutable:ret', 'prim:%makemutable').
 scalar('ext').
 scalar('prim:%makemutable:ret').
 new_block('prim:%makemutable:ret', 'prim:%makemutable:block').
+htype('prim:%makemutable:block', 'Pervasives.ref').
 assign_store_field('prim:%makemutable:ret', 'fld:contents', 'prim:%makemutable:arg1').
 assign_address('Use:t1', 'prim:%makemutable').
 in_function('Use:2:c1', 'Use:init').
@@ -513,6 +531,7 @@ assign('Use.total', 'Use:total/1').
 var_in('Use:run_all/7', 'Use:init').
 closure('Use.run_all', 'Use', '4').
 alloc_in('Use.run_all', 'Use').
+htype('Use.run_all', '->').
 assign_address('Use:run_all/7', 'Use.run_all').
 parameter('Use.run_all', 1, 'Use.run_all:arg').
 return('Use.run_all', 'Use.run_all:ret').
@@ -523,6 +542,7 @@ assign('Use:x/2', 'Use.run_all:arg').
 var_in('Use:go/3', 'Use.run_all').
 closure('Use:go/3', 'Use', '5').
 alloc_in('Use:go/3', 'Use').
+htype('Use:go/3', '->').
 assign_address('Use:go/3', 'Use:go/3').
 parameter('Use:go/3', 1, 'Use:go/3:arg').
 return('Use:go/3', 'Use:go/3:ret').
@@ -632,6 +652,7 @@ call_indirect('Use:11:c11', 'Kit.iter').
 var_in('Use:t13', 'Use:init').
 closure('Use:fun1@11', 'Use', '11').
 alloc_in('Use:fun1@11', 'Use').
+htype('Use:fun1@11', '->').
 assign_address('Use:t13', 'Use:fun1@11').
 parameter('Use:fun1@11', 1, 'Use:fun1@11:arg').
 return('Use:fun1@11', 'Use:fun1@11:ret').
@@ -782,10 +803,10 @@ argument('Use:15:c29', 1, 'Use:const').
 call_ret('Use:15:c29', 'Use:t39').
 argument('Use:15:c28', 1, 'Use:t39').
 call_ret('Use:15:c28', 'Use:_').
-global_var('ext').
-var_in('ext', 'Use:init').
+global_var('exn').
+var_in('exn', 'Use:init').
 var_in('Use:f/9', 'Use:init').
-assign_load_field('Use:f/9', 'ext', 'con:Stop.0').
+assign_load_field('Use:f/9', 'exn', 'con:Stop.0').
 var_in('Use:t40', 'Use:init').
 assign_address('Use:t40', 'prim:%setfield0').
 var_in('Use:t41', 'Use:init').
@@ -809,6 +830,7 @@ argument('Use:15:c32', 1, 'Use:t43').
 call_ret('Use:15:c32', 'Use:t42').
 argument('Use:15:c31', 1, 'Use:t42').
 call_ret('Use:15:c31', 'Use:_').
+vtype('Pervasives.print_int', '->').
 global_var('Pervasives.print_int').
 var_in('Pervasives.print_int', 'Use:init').
 in_function('Use:16:c34', 'Use:init').

@@ -330,3 +330,39 @@ reaches, each counted. Where the callee names nothing, `by_need` asks what it ne
 by `requires`: 21 reports, not mistakes of the analysis but wrappers doing more than
 they say (`Source.reader`'s `Unix.kill`, `Procs.spawn`'s `Pervasives.stderr`): OCaml
 does not see these, so this is not a count that must be 0.
+
+### The big programs: types, not `ext` (2026-11-02)
+
+Of the 9 programs too big or too slow, 7 now read, most in seconds: mini-emacs's two
+(9 s, 8 s), mini-tiger 3 s, mini-dotnet 41 s, mini-csc 4 s, mini-datalog 4 s, mini-man
+14 s; 42 of 44. mini-cc's `-dead` ends past the sweep's 180 s (217 s, 6.5 GB by
+mini-datalog), mini-ml's past 900 s and 10.8 GB.
+
+What it was, measured on mini-tiger's 118,832 facts (Andersen's, by mini-datalog):
+
+| | s | GB | `pt` |
+|---|---:|---:|---:|
+| before | >200 | 8.8 | |
+| `ext`'s 1,652 facts taken out | 36 | 1.3 | 1,445,401 |
+| arrays as objects, `exn`, C's results their own (`Closure_facts`) | >200 | 8.5 | |
+| and the types' heads (`vtype`, `htype`) | 5.9 | 0.25 | 559,338 |
+
+Not `ext` but the polymorphic library: `List.rev_append`'s parameter, one for every
+caller, held every list of the program (783 objects), and every caller's result
+them all; a boxed `int64` was in 1,900 variables. `ext` taken out had only cut what
+arrays held. A variable now holds an object only if their types' heads are the
+same, or one is not known (`andersen.dl`'s design note): OCaml's types, a static
+analysis already done, as Doop filters by Java's declared types.
+
+Checked by real runs (`tests/dynamic.sh`): the first filter lost 96 of mini-forth's
+223 functions that ran, `Pervasives.ref` written `ref` for `%makemutable`'s object,
+so every ref's content was lost; the heads from the external's own type, 0 missed
+on all five programs (mini-forth 818 reached, mini-datalog 1,626, mini-rc 1,206,
+mini-prolog 1,458, mini-dc 748).
+
+What is left in mini-cc's 217 s: a field's load (line 185 of `contexts.dl`: 243
+million firings for 1.4 million new tuples) and a function's results to each caller
+(line 246): an `int list` and a `string list` have one head, so `List.rev`'s result
+is still every list. Not done: full types where both sides have them, or contexts
+for the library's polymorphic functions. mini-datalog reading mini-cc's facts from a
+file overflows the stack (`docs/plans/bugs/ix.md`); mini-analyze gives them as values.

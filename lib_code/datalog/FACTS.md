@@ -34,9 +34,10 @@ Datalog has no compound term, so a place is a name, and a name says what it is:
 | a global | `gp` | `Toy.pair` |
 | a parameter, a result | `id__a`, `ret_id` | `Toy.inc:arg`, `Toy.inc:ret` |
 | a call | `_in_main_line_63_1` | `Toy:5:c1`: unit, line, count |
-| a field | `_fld__next`, whatever the struct | `fld:fn`, `con:Circle.0`, `tuple:2.0` |
+| a field | `_fld__next`, whatever the struct | `fld:fn`, `con:Circle.0`, `tuple:2.0`, `arr:elt` |
 | an object | `_malloc_in_cons_line_32`, `_str_in_main_line_65`, `_array_elt_table` | `Toy:block1@10`; a closure is its function's name |
-| what the facts do not follow | `_const` | `Toy:const`, `ext` |
+| what the facts do not follow | `_const` | `Toy:const`, `ext`; `exn` what is raised |
+| what C returns | | `prim:create_string:block` |
 | an external | | `prim:%addint`, `prim:sys_getenv` |
 
 Each expression becomes instructions over variables, a temporary for each value
@@ -196,18 +197,51 @@ assign_address('Toy:t29', 'Toy:fun1@29').
 assign('Toy:n/27', 'Toy:fun1@29:arg').
 ```
 
-**What the facts do not follow.** A constant, unit, a constant constructor, what
-an external gave: `scalar`, so every value has an object and a variable with none
-is one no run reaches. `ext` is the one place of arrays' elements, of what is given
-to C and comes back, of what a handler catches: a `ref` and a pair's halves are
-followed, by `%makemutable` and `%field0`, the rest ends there:
+**Arrays and exceptions.** An array is an object, its elements one field,
+`arr:elt`; `a.(i)` and `a.(i) <- v` a load and a store, by `%array_safe_get` and
+`%array_safe_set`; `Array.make`'s (C's `make_vect`) one object for every call of it.
+What `raise` gives goes to `exn`, where a handler's pattern reads:
+
+```
+new_block('Toy:table/28', 'Toy:block7@34').
+assign_store_field('Toy:table/28', 'arr:elt', 'Toy.inc').
+assign_load_field('prim:%array_safe_get:ret', 'prim:%array_safe_get:arg1', 'arr:elt').
+assign('exn', 'prim:%raise:arg1').
+assign('Toy:e/31', 'exn').
+```
+
+**What the facts do not follow.** A constant, unit, a constant constructor:
+`scalar`, so every value has an object and a variable with none is one no run
+reaches. A C function's result is an object of its own, of its name, its arguments
+going nowhere (`compare`, `Hashtbl.hash` given anything give nothing back); only
+those that keep or call what they are given (`register_named_value`, `ml_signal`,
+`thread_new`) and Obj's fields go to `ext`, the one place of what is not followed:
 
 ```
 scalar('Toy:const').
 scalar('Toy.safe:ret').
 scalar('ext').
+new_block('prim:create_string:ret', 'prim:create_string:block').
 new_block('prim:%makemutable:ret', 'prim:%makemutable:block').
 assign_address('Toy:t43', 'prim:sys_getenv').
+```
+
+**Types.** The head of a variable's type and of an object's, from `Typing`
+(mini-analyze's, `Typing.keep`): a type's constructor, `->` for a function, `*2`
+for a pair. The analyses keep an object out of a variable whose type's head is
+another (`andersen.dl`'s design note: mini-tiger's Andersen's, past 200 s and
+8.5 GB, 5.9 s and 250 MB). None for a type variable or `Obj.t`, and none from
+`mini-ml -facts` alone, which does not keep types:
+
+```
+vtype('Toy:n/1', 'int').
+vtype('Toy.inc:ret', 'int').
+vtype('Toy:table/28', 'array').
+vtype('Toy:e/31', 'exn').
+htype('Toy:block1@10', 'Toy.box').
+htype('Toy.lookup', '->').
+htype('prim:create_string:block', 'bytes').
+htype('prim:caml_open_descriptor:block', 'Pervasives.out_channel').
 ```
 
 **Capabilities.** `let say (caps : < Cap.stdout; .. >) s = ...`, a parameter that
@@ -270,6 +304,7 @@ compare with: `own_live_out(V, P)`, and for ML `own_live_in(V, B)`, `own_idom(D,
 |---|---|
 | `pointer.dl` (the author's, 2014) | the `assign*`, `point_to`, `parameter`, `return`, `argument`, `call_*` |
 | `points_to/instructions.dl` | the same, into `alloc`, `copy`, `load`, `store`, which the analyses read: `new_block` too |
+| `points_to/andersen.dl`, `contexts.dl` | `vtype`, `htype`: what a variable may hold |
 | `points_to/contexts.dl` | `var_in`, `global_var`, `in_function`, `init`, `closure`, `curried`, `alloc_in`, `scalar` |
 | `calls.dl` | `closure`, `inner`, `in_function`, `init`, over `call_edge` |
 | `dead.dl` | `defined`, `closure`, `global_def`, `dead_stmt`, `allocator_call` |

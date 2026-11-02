@@ -37,28 +37,28 @@
 % "Cloning-based context-sensitive pointer alias analysis using binary
 % decision diagrams" (PLDI 2004).
 
-pt(V, H) :- alloc(V, H).
+flow(V, H) :- alloc(V, H).
 % (a number, what C gave: an object of one kind, Closure_facts says it;
 % what is read from it, or returned by calling it, is one too)
-pt(V, scalar) :- scalar(V).
-pt(P, scalar) :- load(P, X, _), pt(X, scalar).
-pt(R, scalar) :- call_indirect(I, V), pt(V, scalar), call_ret(I, R).
+flow(V, scalar) :- scalar(V).
+flow(P, scalar) :- load(P, X, _), pt(X, scalar).
+flow(R, scalar) :- call_indirect(I, V), pt(V, scalar), call_ret(I, R).
 scalar(R) :- call_ret(I, R), call_direct(I, F), \+ function(F).
-pt(P, H) :- copy(P, Q), pt(Q, H).
+flow(P, H) :- copy(P, Q), pt(Q, H).
 % (a scalar has no field: None or Some x is scalar or a block, and a
 % store through it would make scalar the place of every field)
 fpt(O, F, L) :- store(X, F, V), pt(X, O), O \= scalar, pt(V, L).
-pt(P, L) :- load(P, X, F), pt(X, O), fpt(O, F, L).
+flow(P, L) :- load(P, X, F), pt(X, O), fpt(O, F, L).
 
 % &x: the object x's content is the variable x
-pt(X, L) :- var_object(X), fpt(X, star, L).
+flow(X, L) :- var_object(X), fpt(X, star, L).
 fpt(X, star, L) :- var_object(X), pt(X, L).
 
 % &p->f: f is one place for every object, once its address is taken;
 % a nested x.a.b goes this way too (Facts: &x.a, then its b)
-pt(P, F) :- assign_field_address(P, _, F).
+flow(P, F) :- assign_field_address(P, _, F).
 fpt(F, star, L) :- fpt(_, F, L), field_place(F).
-pt(P, L) :- load(P, X, F), field_place(F), pt(X, _), fpt(F, star, L).
+flow(P, L) :- load(P, X, F), field_place(F), pt(X, _), fpt(F, star, L).
 
 % a global's initializer: the store is in the object itself
 % (Dev consdev = { "cons", consread })
@@ -67,5 +67,23 @@ fpt(X, F, L) :- assign_store_field(X, F, V), global_var(X), pt(V, L).
 % the calls, found as it goes: values make calls, calls move values
 call_edge(I, F) :- call_direct(I, F).
 call_edge(I, F) :- call_indirect(I, V), pt(V, F), function(F).
-pt(P, L) :- call_edge(I, F), parameter(F, Z, P), argument(I, Z, A), pt(A, L).
-pt(R, L) :- call_edge(I, F), return(F, V), call_ret(I, R), pt(V, L).
+flow(P, L) :- call_edge(I, F), parameter(F, Z, P), argument(I, Z, A), pt(A, L).
+flow(R, L) :- call_edge(I, F), return(F, V), call_ret(I, R), pt(V, L).
+
+% ---- the types: what cannot be in one variable is kept apart
+%
+% design:
+% Each rule above says where a value may flow; it is kept if the variable
+% may hold it: the head of its type (Closure_facts: list, Hashtbl.t, int64,
+% -> for a function) and the object's are the same, or one of them is not
+% known (a type variable, Obj.t, C's facts, scalar). Without it, mini-tiger's
+% facts (118,832) did not end in 200 s and 8.5 GB: List.rev_append's
+% parameter, one for every caller, held every list of the program, and every
+% caller's result them all, a boxed int64 in 1,900 variables. OCaml's types
+% are a static analysis already done; Doop filters by Java's declared types
+% for the same reason, a cast's checkcast its one exception.
+typed_var(V) :- vtype(V, _).
+typed_object(H) :- htype(H, _).
+pt(V, H) :- flow(V, H), \+ typed_var(V).
+pt(V, H) :- flow(V, H), \+ typed_object(H).
+pt(V, H) :- flow(V, H), vtype(V, T), htype(H, T).

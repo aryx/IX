@@ -13,4 +13,4 @@ worth(F) :- varied(F).
 worth(F) :- wrapper(F).
 callee(I, C1, C2, F, I, C1) :- fresh(I, C1, C2, F, _, _), worth(F).
 callee(I, C1, C2, F, none, none) :- fresh(I, C1, C2, F, _, _), \+ worth(F).
-pt(V, C1, C2, H, C1, none) :- new_site(V, H, C1, C2).
+flow(V, C1, C2, H, C1, none) :- new_site(V, H, C1, C2).

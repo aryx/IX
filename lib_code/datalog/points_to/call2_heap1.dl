@@ -1,4 +1,4 @@
 % 2-call-site+1-heap (2-CFA, Doop's 2cfa+H): the last two calls. Sees
 % through two levels of wrappers, at the square of the contexts.
 callee(I, C1, C2, F, I, C1) :- fresh(I, C1, C2, F, _, _).
-pt(V, C1, C2, H, C1, none) :- new_site(V, H, C1, C2).
+flow(V, C1, C2, H, C1, none) :- new_site(V, H, C1, C2).

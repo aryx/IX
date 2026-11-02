@@ -1,7 +1,7 @@
 ; mini-analyze: mini-cc's front end (c/, a wrapped copy), its pointer
 ; facts, mini-datalog's evaluator, in one program; ml/ mini-ml's front
 ; end, report/ the reports
-; (docs/plans/plan_dotnet_languages.md, step 0)
+; (docs/plans/done/plan_dotnet_languages.md, step 0)
 (executable
  (name Main)
  (public_name mini-analyze)

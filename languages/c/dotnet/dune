@@ -1,4 +1,4 @@
-; mini-cc -dotnet (docs/plans/plan_dotnet_languages.md, stage 5): a
+; mini-cc -dotnet (docs/plans/done/plan_dotnet_languages.md, stage 5): a
 ; managed C, the typed trees lowered to .NET's IL (Lower_cil), and the
 ; assembly's writer, mini-dotnet's, copied as mini-ml's dotnet/ does;
 ; libc.c, the C library compiled with each program

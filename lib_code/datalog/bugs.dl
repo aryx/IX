@@ -1,5 +1,5 @@
 % Bugs in a C program that the pointer analysis can show, whatever the
-% order of its statements (docs/plans/plan_dotnet_languages.md, the
+% order of its statements (docs/plans/done/plan_dotnet_languages.md, the
 % end goal): run with points_to/contexts.dl and a context file, over mini-cc's
 % facts (Facts.mli) and
 % three relations that mini-analyze says of the places:

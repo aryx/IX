@@ -1,4 +1,4 @@
-; mini-datalog -dotnet (docs/plans/plan_dotnet_languages.md, stage 6):
+; mini-datalog -dotnet (docs/plans/done/plan_dotnet_languages.md, stage 6):
 ; a program's rules compiled to .NET's IL, Souffle's way (Compile_il),
 ; over the assembly's writer, mini-dotnet's, copied as mini-ml's and
 ; mini-cc's dotnet/ do; the program's runtime, Datalog_rt, mini-datalog's

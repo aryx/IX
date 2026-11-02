@@ -43,7 +43,16 @@ exceptions never caught (Leroy and Pessaux's analysis, 2000) and code
 never reached; and for mini-ml's optimizer, calls of a known closure
 made direct and inlined.
 
-**Status (2026-11-02):**
+**Status: done** (2026-11-02; the author: "let's commit and move the
+plan to done/"): step 0 and stages 1, 2, 5 to 9 done, stage 3 but
+corners, stage 4 paused at the author's target; what is left is in
+"What is left". One analysis program of three languages runs, on two
+roads (native, and .NET in one process: ML's front ends, the rules
+compiled from Datalog to IL, a C module called from ML), on both
+runtimes and on mini-9pi's card; mini-analyze reports C's bugs, ML's
+calls, dead code, capabilities and the exceptions ML's toplevels may
+let escape, whose sweep over ix found a bug (mini-awk's END
+{ nextfile }).
 - **Step 0 done**: mini-analyze, native (below).
 - **Stage 1 done**: mini-ml -dotnet, typed as F#: records, variants,
   exceptions, match, closures, generic functions and types, tuples,
@@ -85,7 +94,7 @@ made direct and inlined.
   for each miss in lib_core's searches, notes_profiling_techniques.md).
   Not: -btree's sorted relations, typed CTS columns (decision 5's, for
   ML's values).
-- **Stage 8 half**: mini-cc and mini-datalog (their ML) compiled to
+- **Stage 8 done**: mini-cc and mini-datalog (their ML) compiled to
   .NET, the facts pipeline's answers the native's by both runtimes;
   mini-analyze's two roads (the author's: native and .NET, for teaching
   and comparison) both run on C, one process each, the same answers
@@ -96,7 +105,9 @@ made direct and inlined.
   523 the same), mini-cc's units renamed beside mini-ml's; the reports
   (C's and ML's, -dead's, -caps') the native's; a C module
   (fingerprint.c, called from ML: the answers' fingerprint the same
-  by both roads). Not: mini-9pi's card.
+  by both roads). Then the card (stage 8 done): /lib/analyze, the C
+  report by mini-dotnet on QEMU's Pi 2 the native's (make BOARD=pi2
+  check-analyze); mini-dotnet's method lookup 10x faster on the way.
 - **Stage 9 done** (2026-11-02): ML analysed, the exceptions a
   program's toplevels may let escape: mini-analyze -exn, both roads.
   Contexts (call1_heap1 and deeper) tried: no answer changed, at
@@ -1025,6 +1036,38 @@ but really use the same types!". So the decisions below are those of
    real but harmless; false ones by the parser's checks (awk's break),
    a value tested before a raise (dc's divide by 0), and handlers not
    seen, untraced yet.
+
+## What is left
+
+- **Stage 3's corners**: Marshal, Unix and Thread as .NET forms;
+  Printf's %a on a channel.
+- **Stage 4, speed, paused at 2x Microsoft's**: doubles in mini-dotnet's
+  JIT, arm's int64s, F#'s IL compared, longer runs. On mini-analyze's
+  road the JIT was slower than the interpreter (58 s and 650 MB against
+  31 s, before the lookup's fix): the card runs it interpreted.
+- **Stage 5's gaps**, for when a program needs them: print's %f %g %e
+  (a float formatter in libc.c), a global structure's initializer.
+- **mini-ml -dotnet**: an array inside a record compared by reference.
+- **Stage 6**: -btree's sorted relations; typed CTS columns (decision 5,
+  for ML's values).
+- **Stage 8, on the boards** (the author's): the card's command on the
+  Pi 2, `cd /lib/analyze; dotnet report.dll -fingerprint bugs.c`, its
+  time there. Only the C report is on the card: ML's programs would
+  want lib_core's sources there (-L). make check-card's recorded
+  sessions changed with the card's size (256 MB), not run since.
+- **Stage 9, the exceptions**: the primitives' (Division_by_zero, an
+  array's Invalid_argument) not said; a raise whose value points
+  nowhere silent; the false reports of lib_code/datalog/tests/exn_ix.txt
+  whose handler is not seen (hoc's Eval.Returned, forth's Forth.Error,
+  awk's Regex.Error, mini-rc's Word.Error, mini-tiger's
+  Tiger_semant.Error) untraced, and its reports not tried; mini-ml past
+  the sweep's 300 s; captured variables by context (what Printf needed,
+  a model for now).
+- **The end goal's other uses**: for C, null and freed pointers
+  dereferenced, memory not freed (bugs.dl has the first kinds); for
+  mini-ml's optimizer, a call of a known closure made direct and
+  inlined (calls.dl's answers are there).
+- **mini-mkfs**: a full file system crashes it (docs/plans/bugs/ix.md).
 
 ## Sizes (estimates, from the neighbours)
 

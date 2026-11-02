@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# mini-datalog -dotnet's tests (docs/plans/plan_dotnet_languages.md,
+# mini-datalog -dotnet's tests (docs/plans/done/plan_dotnet_languages.md,
 # stage 6): each case's rules compiled to an assembly with its queries,
 # verified by mini-dotnet (every method), run on its facts by
 # mini-dotnet (Microsoft's dotnet too with -ms: not in make test, the

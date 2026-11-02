@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# mini-ml -dotnet's tests (docs/plans/plan_dotnet_languages.md, stages
+# mini-ml -dotnet's tests (docs/plans/done/plan_dotnet_languages.md, stages
 # 1a to 1d): each program here compiled to an assembly, verified by
 # mini-dotnet (-verify: every method passes), run, against what OCaml
 # prints for it (the .expected files, made by ocaml file.ml, then read);

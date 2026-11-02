@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# mini-cc -dotnet's tests (docs/plans/plan_dotnet_languages.md, stage 5):
+# mini-cc -dotnet's tests (docs/plans/done/plan_dotnet_languages.md, stage 5):
 # tiny/tests/TinyC_tests' programs (integers of each width, calls,
 # control, enums, function pointers, globals and their initializers,
 # pointers into arrays, a sort, structures, unsigned division), each

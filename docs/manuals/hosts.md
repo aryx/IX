@@ -13,7 +13,8 @@ that *is* a file server for its windows.
 
 This page says which programs are which, and why. "Verified" rows were
 read in the code (the file is named); the few marked *inferred* were
-reasoned out and not run. Its survey is of 2026-10-29.
+reasoned out and not run. Its survey is of 2026-10-29, the .NET
+programs and the languages added 2026-11-02.
 
 ## 1. The two ways a program reaches a host
 
@@ -58,6 +59,11 @@ Three facts decide the rest:
 | mini-netscape | SDL, dune; mini-mk's: frames to files | dune; a known bug, deep recursion in async JavaScript dies by SIGBUS (a thread's stack of 512 KB: `docs/plans/bugs/ix.md`) | no |
 | mini-office, mini-drscheme, mini-squeak | SDL, dune | dune | no |
 | mini-chidb, mini-git, mini-diff, mini-merge3 | yes, dune and mini-mk | dune | no |
+| mini-scheme, mini-prolog, mini-pascal, mini-smalltalk | yes, dune and mini-mk | dune | no; on the card too (`kernels/9pi/Makefile`'s `IXDIRS`) |
+| mini-datalog, mini-forth | yes, dune and mini-mk | dune | not built for mini-9pi |
+| mini-dotnet | yes: dune's interprets; mini-mk's has its JIT too, arm64's code (`languages/dotnet/mkfile`) | dune, interpreting | no; on mini-9pi too, the card's `dotnet`, its JIT arm's. A program's assemblies are the same files on every system |
+| mini-tiger, mini-csc, and mini-ml, mini-cc, mini-datalog with `-dotnet` | yes, dune and mini-mk; they write .NET assemblies | dune | no; mini-tiger on the card too, mini-csc not built for mini-9pi. What they write runs by mini-dotnet and by Microsoft's `dotnet` (Linux here; macOS *inferred*) |
+| mini-analyze | dune only (no mkfile: `analyzers/`) | dune | no. Its .NET road (`analyzers/dotnet/`: assemblies) runs by mini-dotnet or Microsoft's `dotnet`, and on mini-9pi's card (`/lib/analyze`, `make BOARD=pi2 check-analyze`) |
 | mini-curl, mini-timesync | yes, dune and mini-mk | dune | no; on mini-9pi through `/net` (`lib_networking/tcp/plan9/`) |
 | mini-httpd | yes | dune | **the other way: Linux's only**, sockets, no Plan 9 build (`networking/mkfile`) |
 | mini-5i | yes | dune; how an arm64 ELF of ix's runs off Linux | no. Its Plan 9 calls have no `bind`, `mount`, `unmount`, nor `/dev/draw` (`machine/process/Plan9.ml`): a Plan 9 program that needs them runs only on mini-9pi |
@@ -92,7 +98,9 @@ which a native Windows OCaml does not have, so a port would need a
 side of its own for those. *Inferred*: WSL is Linux, and the Linux
 builds may well run there; nothing has tried. The two pages of the
 website run anywhere a browser does: mini-qemu and tiny-machine
-compiled to JavaScript.
+compiled to JavaScript. And the .NET assemblies ix's compilers write
+(above): *inferred*, Microsoft's `dotnet` runs them on Windows as on
+Linux, the same files; not tried.
 
 ## 5. What is not settled
 

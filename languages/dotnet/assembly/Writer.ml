@@ -411,9 +411,15 @@ let write (w : t) : string =
   List.iter (fun ((o, n, name) : int * int * string) -> add M.t_generic_param [| n; 0; o; str w name |])
     (List.stable_sort compare (List.map (fun ((o, n, name) : int * int * string) -> (owner o, n, name)) (List.rev w.generic_params)));
   add M.t_assembly [| 0x8004; 0; 0; 0; 0; 0; 0; str w w.name; 0 |];
-  (* Microsoft's key's token, for its assemblies *)
+  (* Microsoft's key's token and version, for its assemblies; another,
+   * written as this one is: version 0, no key *)
   let key = blob w "\xb0\x3f\x5f\x7f\x11\xd5\x0a\x3a" in
-  List.iter (fun name -> add M.t_assembly_ref [| 8; 0; 0; 0; 0; key; str w name; 0; 0 |])
+  let microsoft (name : string) =
+    name = "System" || (String.length name > 7 && String.sub name 0 7 = "System.") in
+  List.iter
+    (fun name ->
+      if microsoft name then add M.t_assembly_ref [| 8; 0; 0; 0; 0; key; str w name; 0; 0 |]
+      else add M.t_assembly_ref [| 0; 0; 0; 0; 0; 0; str w name; 0; 0 |])
     (List.rev w.assembly_ref_rows);
   (* (InterfaceImpl sorted by its class, as ECMA asks) *)
   List.iter (fun (cls, iface) ->

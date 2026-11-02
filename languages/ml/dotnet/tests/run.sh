@@ -135,6 +135,11 @@ interop() {
   (cd $W && dotnet interop.dll) > $W/interop.out 2>&1
   if cmp -s $W/interop.out $T/interop.expected; then ok "C# using an ML unit (shapes.ml): Microsoft's csc and dotnet"
   else fail "C# using an ML unit (shapes.ml)"; head -5 $W/csc.out; diff $T/interop.expected $W/interop.out | head -5; fi
+  # (two assemblies in mini-dotnet: interop.dll's reference to shapes.dll
+  # loaded from beside it, stage 7)
+  (cd $W && $(abs $DOTNET) interop.dll) > $W/interop.mini.out 2>&1
+  if cmp -s $W/interop.mini.out $T/interop.expected; then ok "C# using an ML unit, two assemblies run by mini-dotnet"
+  else fail "C# using an ML unit, run by mini-dotnet"; diff $T/interop.expected $W/interop.mini.out | head -5; fi
 }
 # mini-cc's own front end compiled to .NET (plan's stage 8 begun): mini-cc
 # whole, its units in its mkfile's order (the parser and lexer

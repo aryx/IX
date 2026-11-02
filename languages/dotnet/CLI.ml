@@ -97,6 +97,28 @@ let run (caps : < caps; .. >) (path : string) (img : Image.t) (argv : string lis
   Library.hooks.os <- os caps (path :: argv);
   if tracing then Frame.trace := Some (fun s -> flush out; Console.eprint caps (s ^ "\n"));
   Machine.install ();
+  (* the assemblies it references that are not .NET's, beside it, each
+   * loaded before what references it (plan_dotnet_languages.md, stage
+   * 7): a class is then found by its name in any of them *)
+  let loaded = Hashtbl.create 4 in
+  let rec references (img : Image.t) : unit =
+    for r = 1 to img.rows.(Metadata.t_assembly_ref) do
+      let name = Image.string img (Image.get img Metadata.t_assembly_ref r "Name") in
+      let dll = match FS.path path with
+        | Ok p -> Some Fpath.(parent p / (name ^ ".dll")) | Error _ -> None in
+      match dll with
+      | Some f when not (Hashtbl.mem loaded name) && name <> "System"
+                    && not (String.length name > 7 && String.sub name 0 7 = "System.") -> (
+          match FS.read_opt caps f with
+          | Some data ->
+              Hashtbl.replace loaded name ();
+              let i = Image.read data in
+              references i;
+              ignore (Types.load i)
+          | None -> ())
+      | _ -> ()
+    done in
+  references img;
   let im = Types.load img in
   let finish () =
     flush out;

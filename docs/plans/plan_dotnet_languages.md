@@ -69,8 +69,12 @@ made direct and inlined.
   address, variable arguments but print's (no va_list in .NET). Left,
   for when a program needs them: print's %f %g %e (a float formatter
   in libc.c), a global structure's initializer.
-- **Stages 6, 7 not built**: mini-datalog compiled, several assemblies
-  in mini-dotnet.
+- **Stage 7 done** (before 6, which stands on it): mini-dotnet loads
+  the assemblies a program references from beside it, a class found by
+  its name in any; C# (Microsoft's csc) using an ML unit runs by it as
+  by Microsoft's. Writer's AssemblyRef to an assembly of ours: version
+  0, no key (Microsoft's dotnet refused the key's token).
+- **Stage 6 not built**: mini-datalog compiled.
 - **Stage 8 begun**: mini-cc and mini-datalog (their ML) compiled to
   .NET, the facts pipeline's answers the native's by both runtimes.
   Not: the pipeline on mini-rc; the one program (needs 6 and 7, and
@@ -775,6 +779,12 @@ but really use the same types!". So the decisions below are those of
    the interpreter's.
 7. **Several assemblies in mini-dotnet** (decision 1): AssemblyRef
    resolved to an assembly beside the program's.
+
+   Done (2026-11-02): CLI.run loads each AssemblyRef not System's,
+   name.dll beside the program, its own references first; Types'
+   find_class already looked in every image loaded. Check: ML's
+   tests/run.sh -ms, interop.cs (Microsoft's csc) over shapes.ml's
+   assembly, run by mini-dotnet as by Microsoft's dotnet.
 8. **The program in several languages** (decision 7): Andersen's
    points-to on whole C programs, mini-cc's front end (ML) parsing and
    writing facts into a Datalog module (lib_code/datalog/'s rules, compiled),

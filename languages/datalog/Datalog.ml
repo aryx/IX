@@ -71,6 +71,8 @@ let relation (p : t) (name : string) (arity : int) : relation =
       Hashtbl.add p.relations key r;
       r
 
+let text (p : t) (k : int) : string = text_of p.terms.(k)
+
 let show (p : t) (r : relation) (tuple : int array) : string =
   if r.arity = 0 then P.atom_text true r.name ^ "."
   else

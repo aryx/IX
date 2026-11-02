@@ -74,7 +74,16 @@ made direct and inlined.
   its name in any; C# (Microsoft's csc) using an ML unit runs by it as
   by Microsoft's. Writer's AssemblyRef to an assembly of ours: version
   0, no key (Microsoft's dotnet refused the key's token).
-- **Stage 6 not built**: mini-datalog compiled.
+- **Stage 6 done**: mini-datalog -dotnet, the rules compiled to IL
+  (the interpreter's plans as nested loops, the strata's semi-naive
+  rounds), over a runtime of mini-datalog's own relations compiled by
+  mini-ml -dotnet (datalog_rt.dll, beside: stage 7). 15 programs (a
+  graph, pointer.dl and liveness on mini-cc's facts, the 11 points_to
+  analyses on mini-analyze's) answer as the interpreter, by both
+  runtimes; with -ms, call1 on mini-ml's facts. Not: speed (reading
+  6,093 facts takes 4.8 s on Microsoft's runtime: the Prolog reader as
+  mini-ml -dotnet compiles it), -btree's sorted relations, typed CTS
+  columns (decision 5's, for ML's values).
 - **Stage 8 begun**: mini-cc and mini-datalog (their ML) compiled to
   .NET, the facts pipeline's answers the native's by both runtimes.
   Not: the pipeline on mini-rc; the one program (needs 6 and 7, and
@@ -777,6 +786,28 @@ but really use the same types!". So the decisions below are those of
 6. **mini-datalog compiled** (decision 5). Check: its analyses
    (lib_code/datalog/) on mini-cc's and mini-ml's facts, the same answers as
    the interpreter's.
+
+   Done (2026-11-02), after stage 7, Souffle's split: `mini-datalog
+   -dotnet -o p.dll -q 'call_edge(I, F)' pointer.dl`, then `dotnet
+   p.dll facts...`. The compiler (languages/datalog/dotnet/Compile_il)
+   decides what the interpreter decides as it runs, once: the strata,
+   each rule's plans (Datalog_eval.plan, the same code), and writes
+   their joins as loops in IL (a range of a relation's tuples, or the
+   numbers an index gives; each test a branch; the head added
+   innermost). The relations are not compiled: mini-datalog's own
+   (Datalog, Relset, Index), compiled by mini-ml -dotnet into
+   datalog_rt.dll with Datalog_rt (the calls the loops make, the
+   program's entry under Cap.main, the queries answered as the
+   interpreter does). The author chose IL over C (mini-cc -dotnet,
+   Souffle's own road through C++); the runtime is ML, not C# as first
+   proposed: mini-csc's C# 1 has no bit operations nor generics of its
+   own. Check: languages/datalog/dotnet/tests/run.sh (make test, 8 s,
+   the cases run at once): 15 programs, every method verified, their
+   answers the interpreter's by mini-dotnet; Microsoft's dotnet too with
+   -ms, and call1 on contexts.ml's facts (mini-ml's and lib_core's,
+   6,093: 473 answers; 38 s by mini-dotnet, 5.5 s by Microsoft's, of
+   which 4.8 s the facts read). ix's mini-datalog writes the same bytes
+   as dune's. Sizes: Compile_il 375 lines, Datalog_rt 112.
 7. **Several assemblies in mini-dotnet** (decision 1): AssemblyRef
    resolved to an assembly beside the program's.
 
@@ -855,7 +886,7 @@ but really use the same types!". So the decisions below are those of
 | ML's library for .NET (List, Option, String, Hashtbl, Printf) | 500 |
 | tail calls in mini-dotnet | 150 |
 | mini-cc's managed back end (built: 1,598, and libc.c 154) | 1,000 |
-| mini-datalog's compiler | 600 |
+| mini-datalog's compiler (built: 375, and its runtime's calls 112) | 600 |
 | several assemblies in mini-dotnet | 200 |
 
 ## Open questions

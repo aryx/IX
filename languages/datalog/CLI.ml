@@ -5,7 +5,7 @@
 
 module D = Datalog
 
-type caps = < Cap.open_in; Cap.stdout; Cap.stderr >
+type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 
 let usage = "usage: mini-datalog [-q query]... [-all] [-naive] [-j n] [-btree rel]... [-s] [-profile] file.dl...   (-h: how)"
 
@@ -36,12 +36,18 @@ rule's new tuples (OCaml 5's build; one elsewhere). -btree name/arity: that
 relation sorted, in B-trees, as Souffle's, where the others are hashed (all:
 every one). -s: the relations' sizes,
 the rounds, the rules' firings. -profile: each rule's firings, new tuples,
-lookups and seconds, the costliest first.|}
+lookups and seconds, the costliest first.
+-dotnet [-o x.dll]: the files' rules compiled to a .NET assembly, Souffle's
+way, and the queries; its facts are given when it runs (the program's
+runtime beside it: datalog_rt.dll, mini-datalog's relations by mini-ml):
+  mini-datalog -dotnet -o graph.dll -q 'path(a, X)' rules.dl
+  dotnet graph.dll facts.dl              path(a,a). path(a,b). ...|}
 
 let main (caps : < caps; .. >) (argv : string array) : int =
   let queries : string list ref = ref [] and files : string list ref = ref [] in
   let all = ref false and naive = ref false and stats = ref false and profile = ref false in
   let sorted : string list ref = ref [] in
+  let dotnet = ref false and out = ref "" in
   let options =
     [ ("-q", Arg.String (fun (q : string) -> queries := q :: !queries), " a query: the tuples that match it");
       ("-all", Arg.Set all, " every tuple of every relation that has a rule");
@@ -49,7 +55,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       ("-j", Arg.Set_int Datalog_eval.jobs, " n domains share a rule's new tuples (OCaml 5's build)");
       ("-btree", Arg.String (fun (r : string) -> sorted := r :: !sorted), " name/arity: that relation sorted, in B-trees (all: every one)");
       ("-s", Arg.Set stats, " the relations' sizes, the rounds, the firings");
-      ("-profile", Arg.Set profile, " each rule's firings, new tuples, lookups and seconds, the costliest first") ] in
+      ("-profile", Arg.Set profile, " each rule's firings, new tuples, lookups and seconds, the costliest first");
+      ("-dotnet", Arg.Set dotnet, " the rules compiled to a .NET assembly, its facts given when it runs");
+      ("-o", Arg.Set_string out, " -dotnet's assembly (the last file's name.dll)") ] in
   match Arg.parse_argv argv options (fun (f : string) -> files := f :: !files) usage with
   | exception Arg.Help _ -> Console.print caps (help ^ "\n"); 0
   | exception Arg.Bad msg -> Console.eprint caps msg; 1
@@ -66,6 +74,15 @@ let main (caps : < caps; .. >) (argv : string array) : int =
             D.load p ~from:f text)
           (List.rev !files);
         let asked = List.map (D.query p) (List.rev !queries) in
+        if !dotnet then begin
+          let path (f : string) = match FS.path f with Ok p -> p | Error msg -> failwith msg in
+          let out = if !out <> "" then path !out else Fpath.set_ext ".dll" (Fpath.base (path (List.hd !files))) in
+          let name = Fpath.to_string (Fpath.rem_ext (Fpath.base out)) in
+          let texts = List.map (fun (f : string) -> (f, FS.read caps (path f))) (List.rev !files) in
+          FS.write caps out (Compile_il.assembly name p texts (List.rev !queries));
+          FS.write caps (Fpath.set_ext ".runtimeconfig.json" out) Writer.runtime_config;
+          raise Exit
+        end;
         (* a relation that is read and never written: a name mistyped, most often *)
         Hashtbl.iter
           (fun (_ : string) (r : D.relation) ->
@@ -113,5 +130,6 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                st.profile);
         0
       with
+      | Exit -> 0
       | D.Error (msg, at) -> Console.eprint caps (Printf.sprintf "%s: %s\n" at msg); 1
       | Failure msg | Sys_error msg -> Console.eprint caps (msg ^ "\n"); 1)

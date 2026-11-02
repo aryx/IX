@@ -14,7 +14,7 @@
  (name ix_datalog_cli)
  (wrapped false)
  (modules CLI)
- (libraries ix_datalog ix_core fpath caps))
+ (libraries ix_datalog ix_datalog_dotnet ix_core fpath caps))
 
 (executable
  (name Main)

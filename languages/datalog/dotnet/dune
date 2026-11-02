@@ -1,0 +1,18 @@
+; mini-datalog -dotnet (docs/plans/plan_dotnet_languages.md, stage 6):
+; a program's rules compiled to .NET's IL, Souffle's way (Compile_il),
+; over the assembly's writer, mini-dotnet's, copied as mini-ml's and
+; mini-cc's dotnet/ do; the program's runtime, Datalog_rt, mini-datalog's
+; relations compiled by mini-ml -dotnet (datalog_rt.dll, beside it)
+(library
+ (name ix_datalog_dotnet)
+ (wrapped false)
+ (modules Metadata Signature Il Writer Compile_il)
+ (libraries ix_datalog ix_core))
+
+(library
+ (name ix_datalog_rt)
+ (wrapped false)
+ (modules Datalog_rt)
+ (libraries ix_datalog ix_core fpath caps))
+
+(copy_files# ../../dotnet/assembly/{Metadata,Signature,Il,Writer}.{ml,mli})

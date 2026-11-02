@@ -91,6 +91,9 @@ val query : t -> string -> query
 val symbol : t -> Prolog.term -> int
 val relation : t -> string -> int -> relation
 
+(* a symbol's text, as a fact shows it (an atom quoted if it must be) *)
+val text : t -> int -> string
+
 (* a tuple as a fact: name(a,b). *)
 val show : t -> relation -> int array -> string
 

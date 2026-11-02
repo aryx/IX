@@ -170,6 +170,33 @@ type stats = {
 
 and cost = { mutable fired : int; mutable added : int; mutable looked : int; mutable seconds : float }
 
+(* a body's plan, its steps in order: what each atom knows of its
+ * columns (the index's mask, the keys' values), the variables it binds,
+ * a variable bound again (p(X, X)), where each test is (mini-datalog
+ * -dotnet compiles a plan to loops, Compile_il) *)
+type step = Scan of scan | Test of Datalog.literal
+
+and scan = {
+  atom : Datalog.atom;
+  from_new : bool;
+  mask : int;
+  keys : (int * Datalog.arg) array;
+  binds : (int * int) list;
+  same : (int * int) list;
+}
+
+(* a rule's body's plan, with an atom from the new tuples or none; with
+ * its k-th literal from them *)
+val plan : int -> Datalog.atom option -> Datalog.literal list -> step list
+val from_new : Datalog.rule -> int -> Datalog.atom -> step list
+
+(* each relation's stratum set, the highest returned (Datalog.Error: a
+ * negation through a recursion) *)
+val stratify : Datalog.t -> int
+
+(* a relation's index by the mask's columns, made the first time *)
+val index : Datalog.relation -> int -> Index.t
+
 (* the domains among which a rule's new tuples are shared, when there
  * are enough of them (1: the caller's alone; more only where
  * Parallel.available) *)

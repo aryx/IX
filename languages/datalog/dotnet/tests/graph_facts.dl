@@ -1,0 +1,3 @@
+edge(a, b). edge(b, c). edge(c, a). edge(c, d). edge(d, e). edge(e, d).
+edge('Big one', a). edge(f, f).
+weight(a, 3). weight(c, 10). weight(d, 12). weight(zz, 40).

@@ -1,0 +1,15 @@
+% mini-datalog -dotnet's test (tests/run.sh): a recursion, negations
+% (one stratum on another), comparisons, a constant in a rule, a
+% variable twice in an atom, an atom known whole, a query in the text
+path(X, Y) :- edge(X, Y).
+path(X, Y) :- path(X, Z), edge(Z, Y).
+node(X) :- edge(X, _).
+node(Y) :- edge(_, Y).
+apart(X, Y) :- node(X), node(Y), \+ path(X, Y).
+loop(X) :- path(X, X).
+from_a(Y) :- path(a, Y), Y \= a.
+before(X, Y) :- node(X), node(Y), X < Y, \+ apart(X, Y).
+heavy(X) :- weight(X, W), W >= 10, node(X).
+both(X, Y) :- edge(X, Y), edge(Y, X).
+lonely(X) :- node(X), \+ edge(X, _).
+?- from_a(Y).

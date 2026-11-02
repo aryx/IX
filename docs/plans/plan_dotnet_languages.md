@@ -828,6 +828,26 @@ but really use the same types!". So the decisions below are those of
    facts as text between them (today's pipeline), and .NET, one
    process whose parts share the CTS's values; their answers compared,
    their times and sizes said side by side.
+   Both run (2026-11-02, C only): analyzers/dotnet/tests/run.sh. The
+   .NET road: Analyze_rt, the entry of a program whose rules
+   mini-datalog -dotnet compiled (-runtime analyze_rt -entry
+   Analyze_rt), mini-cc's front end, Facts, C_front, mini-datalog's
+   relations and Datalog_rt compiled by mini-ml -dotnet into
+   analyze_rt.dll (1 MB), the facts given as values (Facts.added). On
+   contexts.c, call1_heap1's 110 answers the same (native 33 ms; .NET
+   0.5 s by Microsoft's dotnet, 12 s by mini-dotnet); on Plan 9's rc
+   (30 files, 15,026 facts), 17,330 the same: native 16 s (the front
+   end 0.3, the evaluator 16), .NET 31 s by Microsoft's (the front end
+   3). The compiled rules lose to the native interpreter for now: what
+   mini-dotnet's -profile shows under them is mini-ml -dotnet's code
+   for the relations (Tuples's hash and its closures, one an object
+   and a virtual call at each lookup; Array.make filled in ML) and,
+   for the front end, lib_core's Lexing.from_function, which copies a
+   token's bytes again at each one-character refill. Next: those, each
+   measured natively before lib_core is touched outside dotnet/. Not
+   yet: ML programs (mini-ml's and mini-cc's Lexer and Parser in
+   mini-ml's one namespace), the report (Analyze's, in the native
+   mini-analyze, which another session is changing).
    Then: Andersen's
    points-to on whole C programs, mini-cc's front end (ML) parsing and
    writing facts into a Datalog module (lib_code/datalog/'s rules, compiled),

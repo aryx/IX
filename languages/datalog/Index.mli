@@ -24,6 +24,12 @@ val add : t -> (int -> int) -> int -> unit
  * (Datalog's), of its arity. Not while a tuple is added. *)
 val iter : t -> int array -> int -> (int -> int) -> (int array -> int -> unit) -> unit
 
+(* a hashed index's chain, for a caller that walks it (a compiled
+ * loop): the number of the last tuple with the key, -1 if none; the
+ * one added before it with the same key. Not of a sorted index *)
+val first : t -> (int -> int) -> int
+val next : t -> int -> int
+
 (* is there one? *)
 val exists : t -> (int -> int) -> bool
 

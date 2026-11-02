@@ -13,6 +13,10 @@
  * the answers printed *)
 val main : string array -> string array -> (Datalog.t -> unit) -> unit
 
+(* the queries' answers printed, the texts' then those given, each
+ * sorted (another entry's, Analyze_rt's) *)
+val answers : < Cap.stdout; .. > -> Datalog.t -> string array -> unit
+
 (* a relation, a constant's symbol by its text *)
 val relation : Datalog.t -> string -> int -> Datalog.relation
 val symbol : Datalog.t -> string -> int
@@ -24,6 +28,13 @@ val delta_from : Datalog.relation -> int
 val delta_to : Datalog.relation -> int
 val get : Datalog.relation -> int -> int -> int
 
+(* a relation's index by the mask's columns (made the first time); its
+ * chain: the last tuple whose mask's columns are the keys, the one
+ * before with the same, -1 at the end *)
+val index : Datalog.relation -> int -> Index.t
+val first : Index.t -> int array -> int
+val next : Index.t -> int -> int
+
 (* the numbers of the tuples whose mask's columns are the keys (an
  * index, made the first time); a tuple there; none such (a negation:
  * the mask's columns, 0 for none) *)
@@ -34,7 +45,7 @@ val absent : Datalog.relation -> int -> int array -> bool
 (* two symbols in the standard order (numbers, then atoms) *)
 val compare : Datalog.t -> int -> int -> int
 
-(* a tuple added, if new *)
+(* a tuple added, if new (copied: the caller's array is used again) *)
 val add : Datalog.relation -> int array -> unit
 
 (* a stratum's rounds: its heads' ranges set; a round's end, true if a

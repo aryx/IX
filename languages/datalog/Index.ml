@@ -27,6 +27,13 @@ let iter (t : t) (rows : int array) (arity : int) (key : int -> int) (f : int ar
       done
   | Sorted s -> Tree_index.iter s key f
 
+(* a hashed index's chain, walked by its caller (mini-datalog -dotnet's
+ * compiled loops): the last tuple with the key, the one before *)
+let first (t : t) (key : int -> int) : int =
+  match t with Hashed (_, h) -> Hash_index.first h key | Sorted _ -> invalid_arg "Index.first: sorted"
+
+let next (t : t) (id : int) : int = match t with Hashed (_, h) -> Hash_index.next h id | Sorted _ -> -1
+
 let exists (t : t) (key : int -> int) : bool =
   match t with Hashed (_, h) -> Hash_index.first h key >= 0 | Sorted s -> Tree_index.exists s key
 

@@ -35,7 +35,10 @@
  * interpreter it later got (2019) runs the same RAM. Here the plan is
  * the interpreter's, the same code choosing it for both. *)
 
-(* the assembly's bytes: its name, the program loaded (its rules, a
+(* the assembly's bytes: its runtime's assembly and the class whose
+ * main is the entry (datalog_rt, Datalog_rt; mini-analyze's
+ * analyze_rt, Analyze_rt), its name, the program loaded (its rules, a
  * relation's stratum set by its run), the files' names and texts, the
  * queries asked *)
-val assembly : string -> Datalog.t -> (string * string) list -> string list -> string
+val assembly :
+  string * string -> string -> Datalog.t -> (string * string) list -> string list -> string

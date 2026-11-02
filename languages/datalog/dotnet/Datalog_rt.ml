@@ -50,6 +50,14 @@ let lookup (r : D.relation) (mask : int) (keys : int array) : int array =
     (fun (_ : int array) (base : int) -> found := (base / r.arity) :: !found);
   Array.of_list (List.rev !found)
 
+(* a relation's hashed index by the mask's columns (made the first
+ * time), and its chain: the last tuple with the keys, the one before
+ * with the same, -1 at the end (the compiled loop's, no allocation) *)
+let index (r : D.relation) (mask : int) : Index.t = Datalog_eval.index r mask
+
+let first (idx : Index.t) (keys : int array) : int = Index.first idx (fun (i : int) -> keys.(i))
+let next (idx : Index.t) (id : int) : int = Index.next idx id
+
 let mem (r : D.relation) (tuple : int array) : bool =
   Relset.mem_by r.set (fun (i : int) -> tuple.(i))
 
@@ -61,7 +69,9 @@ let absent (r : D.relation) (mask : int) (keys : int array) : bool =
 let compare (p : D.t) (x : int) (y : int) : int =
   Prolog.compare p.terms.(x) p.terms.(y)
 
-let add (r : D.relation) (tuple : int array) : unit = ignore (D.add r tuple)
+(* (the tuple is the caller's, filled again: copied when it is new) *)
+let add (r : D.relation) (tuple : int array) : unit =
+  if not (mem r tuple) then ignore (D.add r (Array.copy tuple))
 
 (* a stratum's rounds: its heads' new tuples, Datalog_eval's ranges *)
 let since (r : D.relation) (from : int) : unit =

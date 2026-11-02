@@ -18,6 +18,7 @@ type c = {
   t : S.t;                                  (* Datalog.t *)
   rel : S.t;                                (* Datalog.relation *)
   rt : int;                                 (* Datalog_rt *)
+  idx : S.t;                                (* Index.t *)
   p : int;                                  (* the field holding the program *)
   relations : (string, int) Hashtbl.t;      (* name/arity: its field *)
   symbols : (int, int) Hashtbl.t;           (* a constant: its field *)
@@ -144,17 +145,39 @@ let plan (c : c) (p : D.t) (rule : D.rule) (steps : E.step list) (name : string)
     | D.Const s -> emit k (Il.Ldsfld (symbol c p s))
     | D.Slot v -> emit k (Il.Ldloc env.(v))
     | D.Any -> emit k (Il.Ldc_i8 (-1L)) in
-  (* an int64[] of the values *)
+  (* the method's start: each index it walks, each int64[] of keys it
+   * fills, made once (in the order the steps below take them) *)
+  let made : int Queue.t = Queue.create () in
+  let int64 = W.type_ref c.w (W.assembly_ref c.w "System.Runtime") "System" "Int64" in
+  let buffer (n : int) =
+    let b = local k ints in
+    emit k (Il.Ldc_i4 (Int32.of_int n)); emit k (Il.Newarr int64); emit k (Il.Stloc b);
+    Queue.add b made in
+  let index_of (r : D.relation) (mask : int) =
+    let x = local k c.idx in
+    emit k (Il.Ldsfld (relation c r)); emit k (Il.Ldc_i8 (Int64.of_int mask));
+    emit k (call c "index" [ c.rel; S.I8 ] c.idx); emit k (Il.Stloc x);
+    Queue.add x made in
+  List.iter
+    (fun (step : E.step) ->
+      match step with
+      | E.Test (D.Neg a) -> buffer (List.length (List.filter (fun (x : D.arg) -> x <> D.Any) (Array.to_list a.args)))
+      | E.Test _ -> ()
+      | E.Scan s when s.from_new || s.mask = 0 -> ()
+      | E.Scan s when Array.length s.keys = s.atom.rel.arity -> buffer (Array.length s.keys)
+      | E.Scan s -> index_of s.atom.rel s.mask; buffer (Array.length s.keys))
+    steps;
+  buffer rule.head.rel.arity;
+  (* the next of them; an int64[] of them, its values put *)
+  let made_next () = Queue.pop made in
   let array (xs : D.arg list) : unit =
-    let runtime = W.assembly_ref c.w "System.Runtime" in
-    let int64 = W.type_ref c.w runtime "System" "Int64" in
-    emit k (Il.Ldc_i4 (Int32.of_int (List.length xs)));
-    emit k (Il.Newarr int64);
+    let b = made_next () in
     List.iteri
       (fun (i : int) (x : D.arg) ->
-        emit k Il.Dup; emit k (Il.Ldc_i4 (Int32.of_int i)); value x;
+        emit k (Il.Ldloc b); emit k (Il.Ldc_i4 (Int32.of_int i)); value x;
         emit k (Il.Stelem Il.K_i8))
-      xs in
+      xs;
+    emit k (Il.Ldloc b) in
   let get (r : int) (id : unit -> unit) (col : int) : unit =
     emit k (Il.Ldsfld r);
     id ();
@@ -216,21 +239,27 @@ let plan (c : c) (p : D.t) (rule : D.rule) (steps : E.step list) (name : string)
           place k skip
         end
         else begin
-          let ids = local k ints and i = local k S.I4 in
-          emit k (Il.Ldsfld r);
-          emit k (Il.Ldc_i8 (Int64.of_int s.mask));
+          (* (an index's chain: the tuples with the keys, the last first) *)
+          let x = made_next () in
+          let id = local k S.I8 in
+          let top = label k and next = label k and stop = label k in
+          emit k (Il.Ldloc x);
           array keys;
-          emit k (call c "lookup" [ c.rel; S.I8; ints ] ints);
-          emit k (Il.Stloc ids);
-          let id () =
-            emit k (Il.Ldloc ids); emit k (Il.Ldloc i); emit k (Il.Ldelem Il.K_i8) in
-          loop k i
-            (fun () -> emit k (Il.Ldc_i4 0l))
-            (fun () ->
-              emit k (Il.Ldloc ids); emit k Il.Ldlen;
-              emit k (Il.Conv (Il.K_i4, false, false)))
-            (Il.Ldc_i4 1l)
-            (fun (next : int) -> tuple s r id false next; steps_of rest)
+          emit k (call c "first" [ c.idx; ints ] S.I8);
+          emit k (Il.Stloc id);
+          place k top;
+          emit k (Il.Ldloc id);
+          emit k (Il.Ldc_i8 0L);
+          emit k (Il.Bcmp (Il.Lt, false, stop));
+          tuple s r (fun () -> emit k (Il.Ldloc id)) false next;
+          steps_of rest;
+          place k next;
+          emit k (Il.Ldloc x);
+          emit k (Il.Ldloc id);
+          emit k (call c "next" [ c.idx; S.I8 ] S.I8);
+          emit k (Il.Stloc id);
+          emit k (Il.Br top);
+          place k stop
         end
   (* to skip when the test fails *)
   and test (t : D.literal) (skip : int) : unit =
@@ -301,20 +330,21 @@ let strata (c : c) (p : D.t) : (int list * int list * int list) list =
           mine in
       (List.map (relation c) heads, whole, by_new))
 
-let assembly (name : string) (p : D.t) (texts : (string * string) list)
-    (queries : string list) : string =
+let assembly ((rt_name, entry) : string * string) (name : string) (p : D.t)
+    (texts : (string * string) list) (queries : string list) : string =
   let w = W.create name in
   let runtime = W.assembly_ref w "System.Runtime" in
-  let rt_asm = W.assembly_ref w "datalog_rt" in
+  let rt_asm = W.assembly_ref w rt_name in
   let datalog = W.type_ref w rt_asm "" "Datalog" in
   let rel_tok = W.type_ref w datalog "" "relation" in
+  let idx = S.Class (W.type_ref w (W.type_ref w rt_asm "" "Index") "" "t") in
   let t = S.Class (W.type_ref w datalog "" "t") and rel = S.Class rel_tok in
   let rt = W.type_ref w rt_asm "" "Datalog_rt" in
   let obj = W.type_ref w runtime "System" "Object" in
   let cls = W.type_def w "" "Compiled" 0x00000181 obj in
   let pf = W.field_def w cls "<p>" 0x0011 t in
   let c =
-    { w; cls; t; rel; rt; p = pf; relations = Hashtbl.create 16;
+    { w; cls; t; rel; rt; idx; p = pf; relations = Hashtbl.create 16;
       symbols = Hashtbl.create 16; inits = [] } in
   let strata = strata c p in
   (* rules(p): the fields set, then each stratum's rounds *)
@@ -369,7 +399,7 @@ let assembly (name : string) (p : D.t) (texts : (string * string) list)
     strings (List.concat_map (fun ((n, text) : string * string) -> [ n; text ]) texts)
     @ strings queries
     @ [ Il.Ldnull; Il.Ldftn rules_m; Il.Newobj func_ctor;
-        Il.Call (W.member_ref w rt "main" rt_main); Il.Ret ] in
+        Il.Call (W.member_ref w (W.type_ref w rt_asm "" entry) "main" rt_main); Il.Ret ] in
   W.set_body w main [] (Array.of_list ops) [];
   W.set_entry_point w main;
   W.write w

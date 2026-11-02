@@ -323,6 +323,7 @@ job "mini-csc: the survey's C# and its own, compiled to .NET, run by mini-dotnet
 job "mini-ml -dotnet: ML compiled to .NET, verified and run by mini-dotnet: what OCaml prints" languages/ml/dotnet/tests/run.sh -dune
 job "mini-cc -dotnet: C to .NET, run by mini-dotnet as the tests' .out; what it refuses" languages/c/dotnet/tests/run.sh -dune
 job "mini-datalog -dotnet: rules compiled to .NET, run by mini-dotnet: the interpreter's answers" languages/datalog/dotnet/tests/run.sh
+job "mini-analyze's two roads: native and .NET (one process, rules compiled), the same answers" analyzers/dotnet/tests/run.sh
 job "mini-cc -facts, -flow: a C file's facts, the pointer analysis and liveness on them" languages/c/facts/tests/run.sh
 job "mini-ml -flow: SSA as facts, liveness and dominators against the compiler's" languages/ml/facts/tests/run.sh
 job "mini-analyze: toy C and ML programs, each call through a pointer or a closure, its targets, the bugs and dead functions found" analyzers/tests/run.sh

@@ -1,0 +1,10 @@
+; mini-analyze's .NET road (plan_dotnet_languages.md, stage 8): Analyze_rt,
+; the entry of a program whose rules mini-datalog -dotnet compiled, its
+; facts from mini-cc's front end; compiled by mini-ml -dotnet into
+; analyze_rt.dll (tests/run.sh), checked here by OCaml's types only
+(library
+ (name ix_analyze_rt)
+ (wrapped false)
+ (modules Analyze_rt)
+ (flags (:standard -open Ix_analyze_c))
+ (libraries ix_analyze_c ix_datalog_rt ix_datalog ix_prolog ix_core fpath caps))

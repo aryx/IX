@@ -10,7 +10,7 @@
 # out of bounds a fatal error, the order of a.(i) <- v's operands,
 # max_int of 31 bits). They were ocaml-light's ocamlopt's; RECORD=1
 # records them again, from the ocamlfind ocamlopt in the PATH (OCaml's:
-# what TinyML_fuzz.py's programs need, make test-ocaml). Then the
+# what TinyML_fuzz.py's programs need, make test-vs-ocaml-light). Then the
 # collector's law: each program again with a heap of 64 words, where it
 # collects all the time, the same output. Not gc (its lists are deeper
 # than tiny-cpu's 1 MB holds). A program with an integer beyond 31 bits

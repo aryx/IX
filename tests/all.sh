@@ -11,7 +11,7 @@
 #
 #   tests/all.sh             every suite (half an hour: -l says about how long)
 #   tests/all.sh -l          the suites, what each is, what it needs
-#   tests/all.sh ix arm      those suites only
+#   tests/all.sh ix ix-arm   those suites only
 # The logs: $IX_TEST_LOGS, or /tmp/ix-test-all.
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -26,27 +26,27 @@ cat <<'END'
 build@1@@dune builds every program, by OCaml@make all
 test@2@@make test: the gate, every program's fast checks at once (tests/lite.sh)@make test
 long@3@@make test-long: the long forms of make test's checks (the random tests' full counts, the fuzzers, tiny-kernel's whole check)@make test-long
-ml@6@@make test-ml: mini-ml on today's OCaml (tests/modern/ against OCaml), every file of ix compiled, the preprocessor@make test-ml
-differential@1@@make test-differential: mini-mk against plan9port's mk and xix's omk, when they are installed@make test-differential
-goken@25@[ -x $HOME/goken/ROOT/arch/boot-gcc/bin/5c ]@make test-goken: the toolchain against goken's (5a 5l -f 5c, 7a 7l 7c), byte for byte@make test-goken
-ocaml@30@[ -d $HOME/ocaml-light ] && [ -x $HOME/goken/ROOT/arch/boot-gcc/bin/5c ]@make test-ocaml: mini-ml against ocaml-light's ocamlopt (built first: kernels/ocaml-light.sh)@kernels/ocaml-light.sh arm64 && kernels/ocaml-light.sh arm && make test-ocaml
-playground@6@[ -d ${PLAYGROUND:-$HOME/playground}/_build/default/games ]@the games' and mini-music's frames and sounds against the playground's own programs (test-lite has them without)@games/tests/frames.sh && games/tests/audio.sh && apps/music/tests/frames.sh && apps/music/tests/audio.sh
-chidb@3@[ -d $HOME/github/chidb ]@make test-chidb: mini-chidb against chidb@make test-chidb
+vs-ocaml@6@@make test-vs-ocaml: mini-ml on today's OCaml (tests/modern/ against OCaml), every file of ix compiled, the preprocessor@make test-vs-ocaml
+vs-mk@1@@make test-vs-mk: mini-mk against plan9port's mk and xix's omk, when they are installed@make test-vs-mk
+vs-goken@25@[ -x $HOME/goken/ROOT/arch/boot-gcc/bin/5c ]@make test-vs-goken: the toolchain against goken's (5a 5l -f 5c, 7a 7l 7c), byte for byte@make test-vs-goken
+vs-ocaml-light@30@[ -d $HOME/ocaml-light ] && [ -x $HOME/goken/ROOT/arch/boot-gcc/bin/5c ]@make test-vs-ocaml-light: mini-ml against ocaml-light's ocamlopt (built first: kernels/ocaml-light.sh)@kernels/ocaml-light.sh arm64 && kernels/ocaml-light.sh arm && make test-vs-ocaml-light
+vs-playground@6@[ -d ${PLAYGROUND:-$HOME/playground}/_build/default/games ]@the games' and mini-music's frames and sounds against the playground's own programs (test-lite has them without)@games/tests/frames.sh && games/tests/audio.sh && apps/music/tests/frames.sh && apps/music/tests/audio.sh
+vs-chidb@3@[ -d $HOME/github/chidb ]@make test-vs-chidb: mini-chidb against chidb@make test-vs-chidb
 ix@5@@make test-ix: ix built by ix (mini-mk over the mkfiles), each program against dune's, the tiny programs' tests, the kernels' steps and mini-xv6 booted@make test-ix
-fixpoint@2@@make test-fixpoint: ix built by its own build, the same files@make test-fixpoint
-arm@2@command -v qemu-arm > /dev/null && mkfiles/runs_arm.sh@make test-arm: ix for arm built by ix, its programs run under qemu-arm@make test-arm
-fixpoint-arm@2@command -v qemu-arm > /dev/null && mkfiles/runs_arm.sh@make test-fixpoint-arm: ix for arm built by its arm programs: the host's files@make test-fixpoint-arm
-pi@3@[ -d $HOME/principia ] && [ -d $HOME/xv6 ] && command -v qemu-system-arm > /dev/null@make test-pi: mini-qemu against QEMU, the kernels by ocaml-light and gcc (their steps, mini-xv6 on both boards, mini-9pi)@make test-pi
-kernels-ix@6@[ -d $HOME/principia ] && [ -f $HOME/xv6/forks/arm64-pi4/fs.img ] && [ -x $QEMU64 ]@make test-kernels-ix: the kernels built by ix, on the Pi 4: mini-xv6's and mini-9pi's checks, the Makefiles' own@make test-kernels-ix
+ix-fixpoint@2@@make test-ix-fixpoint: ix built by its own build, the same files@make test-ix-fixpoint
+ix-arm@2@command -v qemu-arm > /dev/null && mkfiles/runs_arm.sh@make test-ix-arm: ix for arm built by ix, its programs run under qemu-arm@make test-ix-arm
+ix-fixpoint-arm@2@command -v qemu-arm > /dev/null && mkfiles/runs_arm.sh@make test-ix-fixpoint-arm: ix for arm built by its arm programs: the host's files@make test-ix-fixpoint-arm
+vs-qemu@3@[ -d $HOME/principia ] && [ -d $HOME/xv6 ] && command -v qemu-system-arm > /dev/null@make test-vs-qemu: mini-qemu against QEMU, the kernels by ocaml-light and gcc (their steps, mini-xv6 on both boards, mini-9pi)@make test-vs-qemu
+ix-kernels@6@[ -d $HOME/principia ] && [ -f $HOME/xv6/forks/arm64-pi4/fs.img ] && [ -x $QEMU64 ]@make test-ix-kernels: the kernels built by ix, on the Pi 4: mini-xv6's and mini-9pi's checks, the Makefiles' own@make test-ix-kernels
 speed@2@[ -d $HOME/principia ] && [ -d $HOME/ocaml-light ] && command -v qemu-system-arm > /dev/null@make test-speed: the build when nothing changed and TinyCameltry's frames a second under QEMU, against the author's machine's numbers@make test-speed
-github@2@[ -n "$IX_TEST_NET" ]@make test-github: ix cloned from GitHub by mini-git (set IX_TEST_NET=1: it needs the network)@make test-github
+vs-github@2@[ -n "$IX_TEST_NET" ]@make test-vs-github: ix cloned from GitHub by mini-git (set IX_TEST_NET=1: it needs the network)@make test-vs-github
 END
 }
 
 if [ "${1:-}" = -l ]; then
   suites | while IFS='@' read -r name minutes needs what cmd; do
-    printf "%-13s %3s min  %s\n" "$name" "$minutes" "$what"
-    [ -n "$needs" ] && { eval "$needs" 2> /dev/null && printf "%24s(has what it needs)\n" "" || printf "%24s(would be skipped here: %s)\n" "" "$needs"; }
+    printf "%-15s %3s min  %s\n" "$name" "$minutes" "$what"
+    [ -n "$needs" ] && { eval "$needs" 2> /dev/null && printf "%26s(has what it needs)\n" "" || printf "%26s(would be skipped here: %s)\n" "" "$needs"; }
   done
   exit 0
 fi
@@ -56,15 +56,15 @@ failed=0
 while IFS='@' read -r name minutes needs what cmd <&3; do
   if [ $# -gt 0 ]; then case " $* " in *" $name "*) ;; *) continue;; esac; fi
   if [ -n "$needs" ] && ! eval "$needs" 2> /dev/null; then
-    line=$(printf "skipped %-13s (not here: %s)" "$name" "$needs")
+    line=$(printf "skipped %-15s (not here: %s)" "$name" "$needs")
   else
-    printf "....... %-13s %s\n" "$name" "$what"
+    printf "....... %-15s %s\n" "$name" "$what"
     start=$(date +%s)
     # (its input an empty pipe: not this script's, and not a file or a
     # terminal, on which some tests' answers depend)
     if true | bash -c "$cmd" > $LOGS/$name.log 2>&1; then status=ok; else status=FAIL; failed=$((failed + 1)); fi
     took=$(( $(date +%s) - start ))
-    line=$(printf "%-7s %-13s %3d min %02d s   %s" $status "$name" $((took / 60)) $((took % 60)) "$LOGS/$name.log")
+    line=$(printf "%-7s %-15s %3d min %02d s   %s" $status "$name" $((took / 60)) $((took % 60)) "$LOGS/$name.log")
     [ $status = FAIL ] && line="$line
 $(grep -a '^FAIL\|[a-z0-9]-FAIL\|Error \|!=\| differ\|[1-9][0-9]* failure' $LOGS/$name.log | grep -v 'expected to\|XFAIL\|on purpose' | tail -5 | cut -c1-160 | sed 's/^/          /')"
   fi

@@ -54,7 +54,7 @@
  * holds twice its heap: mini-ld built by mini-ml 267 MB to link
  * mini-rm, where 54 MB are alive (OCaml's holds 136), and sixty such
  * links at once, which is ix built by ix, do not fit in a machine of
- * 16 GB (GitHub's: make test-fixpoint there).
+ * 16 GB (GitHub's: make test-ix-fixpoint there).
  * Tried, worked, and not kept: the half just emptied given back to the
  * system at the end of a collection (Linux's madvise, MADV_DONTNEED, on
  * its pages above what the next collection will copy there, for a heap

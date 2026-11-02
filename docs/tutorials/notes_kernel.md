@@ -366,7 +366,7 @@ kernel stack as on the Pi1: SP_EL1 is banked, as the SVC mode's sp is.
 `kernels/test.sh` builds each step and runs its `kernel.img` under
 mini-qemu and QEMU's `raspi1ap` (loaded at 0x8000, as the firmware
 does), the console compared with the step's `expected`. It is part of
-`make test-pi`; ocaml-light's cross compiler is built once, in /tmp,
+`make test-vs-qemu`; ocaml-light's cross compiler is built once, in /tmp,
 from a clone of ~/ocaml-light (`kernels/ocaml-light.sh`).
 
 mini-xv6 is tested against xv6's C kernel, ix's usual differential

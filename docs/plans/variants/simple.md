@@ -65,7 +65,7 @@ same (`cca739e`).
 
 ## Remaining
 
-- **`make test-goken`**: `simple.sh 5` and `7` (with `SIMPLE_FLAGS=-O`
+- **`make test-vs-goken`**: `simple.sh 5` and `7` (with `SIMPLE_FLAGS=-O`
   too) are not in it yet: the Makefile had another session's edits.
 - **arm's registers**: R1-R8 are the stack's and R9-R15 reserved or
   special, so an expression deeper than 7 slots is refused (none of

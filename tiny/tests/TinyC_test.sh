@@ -9,7 +9,7 @@
 # They are the host's cc's: RECORD=1 records them again, each program
 # built by $CC with TinyC_tests/host.h for its libc.h (Plan 9's C on a
 # 32-bit machine, made the host's), what TinyC_fuzz.py's programs need
-# (make test-ocaml). A program with long long is refused (TinyCPU is 32
+# (make test-vs-ocaml-light). A program with long long is refused (TinyCPU is 32
 # bits), and said so. Then the errors: the file and the line.
 # usage: TinyC_test.sh [prog.c...]
 

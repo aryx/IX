@@ -173,7 +173,7 @@ simple's by construction, and the construction and its destruction
 are tested end to end. All four combinations of decision 2 pass:
 arm64, live against ocamlopt and with `ML_HEAP=64`, `tests/tiny`,
 `bench/`, ocaml-light's 16 tests and 100 fuzzer programs; arm, `make
-test-ocaml`'s nine and `bench/`; 0 failures. Slower, as expected
+test-vs-ocaml-light`'s nine and `bench/`; 0 failures. Slower, as expected
 (every value in memory): fib 4.72 times ocamlopt's instructions, tak
 4.28, where simple with `-O` is 3.22 and 2.58. Phase 3 replaces the
 way back to the stack machine by ssa's own emission, with registers.

@@ -76,7 +76,7 @@ What it costs:
   nothing of t-ix boots on it (the Pi's machine is mini-qemu, m-ix's).
 - **Quirks kept on purpose.** tiny-ml's list above is behavior nobody
   would design.
-- **goken at test time.** `make test-goken`, not `make test`.
+- **goken at test time.** `make test-vs-goken`, not `make test`.
 
 The free path exists beside it and is whole: `tiny-c` and `tiny-ml
 -tm`, `TinyCRuntime/`, tiny-cpu, tiny-machine, tiny-kernel. So the

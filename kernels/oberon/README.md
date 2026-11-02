@@ -141,7 +141,7 @@ It takes several minutes for a board and is **not in `make test`, nor
 in any of ix's suites**: run it here, by hand, after a change. What
 the suites do with this directory is compile it:
 `languages/ml/tests/compile_ix.sh` (in `make test-lite` and
-`make test-ml`) has mini-ml compile every `.ml` of ix, these too. And
+`make test-vs-ocaml`) has mini-ml compile every `.ml` of ix, these too. And
 `make loc` counts it apart, not in m-ix.
 
 The steps are made by `tests/steps.py` from places on the screen (a

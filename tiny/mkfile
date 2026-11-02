@@ -157,7 +157,7 @@ clean:V:
 # TinyKernel are tiny-ml's: no lines; of TinyBrowser, tiny-machine's
 # three. old: none of TinyBrowser's, and TinyBrowserHttp compiled
 # beside TinyBrowserText, inlining its functions or not by which ended
-# first: test-fixpoint's builds differed, one in two or three)
+# first: test-ix-fixpoint's builds differed, one in two or three)
 DEPOBJ=D
 DEPDIRS=. TinyMachine TinyBrowser TinyML TinyC TinyKernel TinyKernel/host TinyKernel/steps/t6 $D
 DEPBROWSER=TinyBrowser/TinyBrowserText.ml TinyBrowser/TinyBrowserAddress.ml \

@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# make test-pi: mini-qemu against QEMU and the kernels by ocaml-light
+# make test-vs-qemu: mini-qemu against QEMU and the kernels by ocaml-light
 # and gcc, its scripts side by side. Each one is an emulator or two
 # waited on, a core each: one after the other they took 43 minutes
 # (docs/test_times.md), most of the machine idle. Each has its own
@@ -43,5 +43,5 @@ for name in "${names[@]}"; do
   cat $W/job$n.log
   [ $s = ok ] || failures=$((failures + 1))
 done
-echo "test-pi: ${#names[@]} jobs, $failures failure(s)"
+echo "test-vs-qemu: ${#names[@]} jobs, $failures failure(s)"
 [ $failures = 0 ]

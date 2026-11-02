@@ -544,7 +544,7 @@ the web."
   Under node, `Board.run`'s own lines are 20% of the time, the
   execution 49%, `translate` 7%.
 - Not checked: the web kernel's graphical sessions beyond rio's
-  screen, Firefox, `make test-pi`, `make check-card`.
+  screen, Firefox, `make test-vs-qemu`, `make check-card`.
 
 2026-10-11, **the night's round: rio and a game in a window of it are
 usable in the page. In Chrome here the prompt comes after 15 to 20 s
@@ -684,7 +684,7 @@ Not done, not checked:
   than the boot line's words); mini-9pi for the Pi 1 by ix's own
   tools does not link (`kernel_heap_top`, since 979188b). Both in
   docs/plans/bugs/ix.md, neither fixed.
-- `make test-pi`, `make check-card`, the recorded sessions.
+- `make test-vs-qemu`, `make check-card`, the recorded sessions.
 - The instructions counted with the translator are within a
   hundredth of the interpreter's, not the same (a tick comes some
   instructions later); the board's time by its instructions is so

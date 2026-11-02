@@ -110,9 +110,14 @@ website-mini: website-mini-js
 # Tests against the references
 ###############################################################################
 
+# The test targets' names say their category: test-vs-xxx, against
+# another program (xxx: the reference, which make test does not need);
+# test-ix-xxx, ix built by ix (below); test, test-lite, test-long,
+# test-all, test-tix and test-mix, how much is run.
+
 # The same corpus through plan9port (9base) mk and xix's omk too, when
 # they are installed; see builder/tests/differential.sh.
-test-differential: all
+test-vs-mk: all
 	./builder/tests/differential.sh live
 
 # The toolchain against goken (~/goken, built, with its libcs): C
@@ -123,7 +128,7 @@ test-differential: all
 # MINICC=1 linker/tests/libc.sh for the executables mini-cc and mini-ld
 # make).
 GOKEN_W = /tmp/ix-goken
-test-goken: all
+test-vs-goken: all
 	./linker/tests/libc.sh 5 $(GOKEN_W)/libc5 $(HOME)/goken/tests/c/hello_libc/*.c
 	./linker/tests/libc.sh 7 $(GOKEN_W)/libc7 $(HOME)/goken/tests/c/hello_libc/*.c
 	./languages/c/tests/listing.sh 5 $(GOKEN_W)/listing5 $(HOME)/goken/tests/c/hello_libc/*.c languages/c/tests/c/*.c
@@ -147,7 +152,7 @@ test-goken: all
 # no longer ocaml-light's, an index out of bounds an exception and \b,
 # \r in an escaped string, which tests/modern/stdlib.ml checks)
 OCAML_LIGHT_TESTS = $(addprefix $(HOME)/ocaml-light/test/,fib.ml takc.ml taku.ml sieve.ml quicksort.ml soli.ml bdd.ml boyer.ml nucleic.ml KB Moretest/letstar.ml Moretest/bigints.ml Moretest/equality.ml Moretest/signals.ml Moretest/wc.ml Moretest/testrandom.ml)
-test-ocaml: all
+test-vs-ocaml-light: all
 	mkdir -p $(GOKEN_W)/tinyml && ./tiny/tests/TinyML_fuzz.py $(GOKEN_W)/tinyml 100
 	./languages/ml/tests/corpus.sh
 	./languages/ml/tests/types.sh
@@ -160,7 +165,7 @@ test-ocaml: all
 # .dbmf cases (in make test too, when chidb's checkout is there), the
 # SQL corpus (stdout, stderr, the file, and SQLite reading it), the
 # B-trees alone, and random sessions; see database/tests/.
-test-chidb: all
+test-vs-chidb: all
 	./_build/default/database/tests/Test.exe
 	./database/tests/differential.sh
 	./database/tests/btree_differential.sh
@@ -170,7 +175,7 @@ test-chidb: all
 # by mini-ml's executable (arm64), the same output; every file of ix
 # compiled (compile_ix.sh); the preprocessor. (true |: a test asks
 # whether its input is a file.)
-test-ml: all
+test-vs-ocaml: all
 	true | ./languages/ml/tests/modern.sh
 	./languages/ml/tests/compile_ix.sh
 	./languages/ml/tests/pp.sh
@@ -183,7 +188,7 @@ test-ml: all
 # ~/principia, ~/xv6 and the QEMUs (see raspberry/tests/). With
 # XV6_USERTESTS=-u, the Pi1 ports' full usertests too.
 # (side by side: tests/pi.sh, which has the list)
-test-pi: all
+test-vs-qemu: all
 	./tests/pi.sh $(XV6_USERTESTS)
 
 # Speed regressions: the build when nothing changed (mini-9pi's
@@ -195,7 +200,7 @@ test-speed:
 
 # mini-git over the Internet: ix cloned from GitHub by mini-git (https,
 # through curl), checked by git fsck and walk.
-test-github: all
+test-vs-github: all
 	rm -rf /tmp/ix-github && ./_build/default/version_control/Main.exe clone https://github.com/aryx/IX /tmp/ix-github
 	git --git-dir=/tmp/ix-github/.git fsck --strict
 	cd /tmp/ix-github && $(CURDIR)/_build/default/version_control/Main.exe walk -q
@@ -225,24 +230,24 @@ kernels-ix: ix ix-arm
 #   output byte for byte, the others' differential tests), the tiny
 #   programs' tests, the kernels' steps and mini-xv6 booted under
 #   mini-qemu and QEMU (mkfiles/check.sh)
-# - test-fixpoint: ix built twice, by dune's programs then by the first
+# - test-ix-fixpoint: ix built twice, by dune's programs then by the first
 #   build's alone: the same files (mkfiles/fixpoint.sh)
-# - test-arm: the arm programs, under qemu-arm (mkfiles/check_arm.sh);
-#   test-fixpoint-arm: ix for arm built again by them: the same files
-# - test-kernels-ix: mini-xv6's and mini-9pi's checks, on the Pi 4
+# - test-ix-arm: the arm programs, under qemu-arm (mkfiles/check_arm.sh);
+#   test-ix-fixpoint-arm: ix for arm built again by them: the same files
+# - test-ix-kernels: mini-xv6's and mini-9pi's checks, on the Pi 4
 # - self: ix built by ix in its own system, t-ix in tiny-kernel and
 #   m-ix in mini-9pi (the Pi 2 under QEMU), side by side, each file the
 #   host's (tiny/TinyKernel's make self, kernels/9pi's); hours.
 #   self-quick: a part of each, a few minutes
 test-ix: all
 	true | ./mkfiles/check.sh
-test-fixpoint: all
+test-ix-fixpoint: all
 	./mkfiles/fixpoint.sh
-test-arm: all
+test-ix-arm: all
 	true | ./mkfiles/check_arm.sh
-test-fixpoint-arm: all
+test-ix-fixpoint-arm: all
 	./mkfiles/fixpoint.sh 5
-test-kernels-ix: all
+test-ix-kernels: all
 	./tests/kernels_ix.sh
 
 self self-quick:
@@ -259,7 +264,7 @@ self-mix self-quick-mix: all
 # Everything: every suite of this file, one after the other, each in
 # its log, a line for each and the list at the end; a suite whose
 # references are not on this machine is skipped, and said. Half an hour.
-# tests/all.sh -l lists them; tests/all.sh ix arm runs those two.
+# tests/all.sh -l lists them; tests/all.sh ix ix-arm runs those two.
 test-all:
 	./tests/all.sh
 
@@ -279,15 +284,15 @@ test-all:
 #
 # What it leaves out, on purpose (make test-all has them all):
 # - what needs a reference outside the repository: goken's toolchain
-#   (test-goken), ocaml-light's ocamlopt (test-ocaml), chidb
-#   (test-chidb), plan9port's mk (test-differential), QEMU and the C
-#   kernels (test-pi; mini-xv6 here is booted under mini-qemu only);
-# - arm: ix built for arm and run under qemu-arm (test-arm,
-#   test-fixpoint-arm);
+#   (test-vs-goken), ocaml-light's ocamlopt (test-vs-ocaml-light), chidb
+#   (test-vs-chidb), plan9port's mk (test-vs-mk), QEMU and the C
+#   kernels (test-vs-qemu; mini-xv6 here is booted under mini-qemu only);
+# - arm: ix built for arm and run under qemu-arm (test-ix-arm,
+#   test-ix-fixpoint-arm);
 # - the fixed point: ix built again by the build it just made
-#   (test-fixpoint); here the first build is made, and used;
+#   (test-ix-fixpoint); here the first build is made, and used;
 # - mini-9pi by ix, and mini-xv6's whole check (the session, the screen,
-#   USB, usertests: test-kernels-ix): here mini-xv6 only boots to sh;
+#   USB, usertests: test-ix-kernels): here mini-xv6 only boots to sh;
 # - the long forms of what it has: the random tests' full counts, the
 #   rest of tests/modern/, each tiny program built by ix run through
 #   its tests (make test-long, test-ix).
@@ -342,5 +347,10 @@ visual:
 visual-all:
 	codemap -screen_size 3                 -efuns_client efuns_client -emacs_client /dev/null .
 
-.PHONY: all tix mix install website website-mini website-mini-js test test-differential test-goken test-ocaml test-chidb test-pi clean loc loc-v build-docker build-docker-ocaml5 build-docker-test-all \
-  test-ml ix ix-arm kernels-ix test-ix test-fixpoint test-arm test-fixpoint-arm test-kernels-ix self self-quick self-tix self-quick-tix self-mix self-quick-mix test-all test-lite test-tix test-mix hooks test-long test-github visual visual-all
+.PHONY: all tix mix install website website-mini website-mini-js test \
+  test-vs-mk test-vs-goken test-vs-ocaml-light test-vs-chidb test-vs-qemu \
+  clean loc loc-v build-docker build-docker-ocaml5 build-docker-test-all \
+  test-vs-ocaml ix ix-arm kernels-ix test-ix test-ix-fixpoint test-ix-arm \
+  test-ix-fixpoint-arm test-ix-kernels self self-quick self-tix \
+  self-quick-tix self-mix self-quick-mix test-all test-lite test-tix \
+  test-mix hooks test-long test-vs-github visual visual-all

@@ -16,7 +16,7 @@
 # lsr and no division by zero, which differ with the machine, and only
 # small numbers multiplied, shifted left or added in a loop, so that the
 # arithmetic stays within 31 bits. Without it, mini-ml's (make
-# test-ocaml, languages/ml/tests/run.sh, against ocaml-light's
+# test-vs-ocaml-light, languages/ml/tests/run.sh, against ocaml-light's
 # ocamlopt): one constant in ten is max_int, 62 bits of ones, for the
 # arithmetic that wraps.
 #

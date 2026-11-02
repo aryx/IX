@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# make test-kernels-ix: mini-xv6's and mini-9pi's checks with the
+# make test-ix-kernels: mini-xv6's and mini-9pi's checks with the
 # images ix's tools made (their mkfiles' check), on the Pi 4 (arm64)
 # and the Pi 1 (arm, mini-mk O=5), side by side but mini-9pi's two
 # boards one after the other: its network test's web server has one

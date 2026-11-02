@@ -8,7 +8,7 @@
 # (X.inline) when it is there; without the edge the two are compiled
 # side by side, by NPROC, and which ended first decides the object: a
 # right program either way, so a build's tests pass, and only two
-# builds compared differ, one run in two or three (test-fixpoint on
+# builds compared differ, one run in two or three (test-ix-fixpoint on
 # GitHub, 2026-10-28: tiny/'s TinyBrowserHttp after TinyBrowserText,
 # which the .depend left out). Here the graph itself is read, the same
 # answer whatever the timing: mini-mk -n -a -dg in each directory (its

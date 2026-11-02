@@ -322,20 +322,20 @@ mini-ml's runtime, mini-ar and mini-ld link. No OCaml compiler, gcc,
 GNU binutils or glibc is run or linked; the results are under `_mk/`.
 
 ```bash
-make                # stage 0: IX built by OCaml and dune (bin/)
-make ix             # stage 1: IX built by stage 0's tools, for arm64 (make ix-arm: for arm)
-make test-fixpoint  # stage 2: IX built by stage 1's tools: the same files
-make kernels-ix     # mini-xv6 and mini-9pi for the Pi 4, the same way
-make test-ix        # each program of stage 1 against dune's build of it
+make                   # stage 0: IX built by OCaml and dune (bin/)
+make ix                # stage 1: IX built by stage 0's tools, for arm64 (make ix-arm: for arm)
+make test-ix-fixpoint  # stage 2: IX built by stage 1's tools: the same files
+make kernels-ix        # mini-xv6 and mini-9pi for the Pi 4, the same way
+make test-ix           # each program of stage 1 against dune's build of it
 ```
 
 Stage 2 is the fixed point: IX built by the programs that IX built
 gives the same 383 files as stage 1, byte for byte, in about a minute
 on a large machine. On arm, where the programs run under qemu-arm, the
 second and third builds are the same 358 files (`make
-test-fixpoint-arm`). The kernels built this way boot on the Pi 4 under
+test-ix-fixpoint-arm`). The kernels built this way boot on the Pi 4 under
 mini-qemu and QEMU and pass the same checks as the ones built by
-ocaml-light and gcc (`make test-kernels-ix`).
+ocaml-light and gcc (`make test-ix-kernels`).
 
 What is not built by IX: mini-qemu, which opens its window with SDL,
 and the tests. The plan and its history are in

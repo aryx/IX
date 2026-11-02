@@ -137,7 +137,7 @@ existing simple code path"):
 Checked with `-O`, live against ocamlopt (`ML_FLAGS=-O LIVE=1 run.sh`),
 each also with `ML_HEAP=64`: on arm64 `tests/tiny`, `bench/`,
 ocaml-light's 16 test programs and 100 of `TinyML_fuzz.py`'s, 0
-failures; on arm, `make test-ocaml`'s nine and `bench/`, 0. The counts
+failures; on arm, `make test-vs-ocaml-light`'s nine and `bench/`, 0. The counts
 (`count.sh`, arm64): loops 7.97 to 6.13 times ocamlopt's instructions,
 tak 2.76 to 2.58, fib 3.23 to 3.22.
 
@@ -164,7 +164,7 @@ form, `ssa/`, optional and combinable with `-O`: ssa.md.
   the hooks to reuse.
 - **The tests**: the existing ones, 9pi's console byte for byte, xv6's
   `usertests`, mini-5i's 3,000 random instructions; the speed by
-  `make test-pi`'s time and a boot's.
+  `make test-vs-qemu`'s time and a boot's.
 
 ## Maybe: mini-9pi's boot, the collector
 

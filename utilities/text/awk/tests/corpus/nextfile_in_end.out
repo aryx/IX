@@ -1,0 +1,4 @@
+record a
+record b
+end
+[exit 0]

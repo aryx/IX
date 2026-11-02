@@ -559,3 +559,15 @@ which define IO_MB, RAM_MB, UNC_L1 and BOARD_START first; mini-9pi's build
 link l.s and assemble it alone. Their Pi 4 builds (O=7) are fine. Found while
 checking mini-asm -data's kernels byte for byte. Not fixed: likely a link to
 l1.s in each machine/pi1/ and their mkfiles' l rule naming it.
+
+## mini-awk: nextfile in END, an uncaught exception (2026-11-02, fixed)
+
+`echo x | mini-awk 'END { nextfile }'`: `Fatal error: exception
+Run.Next_file`, exit 2. Run.run's END handler caught Exit_program and
+the jumps Plan 9 refuses there (break, continue, next), not Next_file;
+the parser refuses nextfile only in a function. Plan 9's awk (run.c's
+program) checks only those three, so nextfile ends the action: now the
+same (tests/corpus/nextfile_in_end, recorded from principia's awk).
+Found by mini-analyze -exn (plan_dotnet_languages.md, stage 9), whose
+report also said Break_loop and Continue_loop: false, the parser refuses
+them outside a loop.

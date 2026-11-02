@@ -630,6 +630,8 @@ let run (caps : < caps; .. >) (p : program) =
   end;
   (try List.iter (exec caps) p.ends
    with
-   | Exit_program -> ()
+   (* (nextfile: the action ended, as Plan 9's, which checks only
+    * the three below) *)
+   | Exit_program | Next_file -> ()
    | Next_record | Break_loop | Continue_loop -> fatal "illegal break, continue, next or nextfile from END");
   Io.close_all caps

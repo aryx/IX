@@ -1,10 +1,7 @@
+database/storage/Record.ml:71 Record.packed_size
 editors/turbopascal/editor/Tui_turbo.ml:28 Tui_turbo.cursor
 editors/turbopascal/editor/Tui_turbo.ml:31 Tui_turbo.screen
-languages/datalog/Tuples.ml:49 Tuples.mem
-languages/prolog/Prolog.ml:206 Prolog.variables
-languages/prolog/Prolog.ml:238 Prolog.text_of
-languages/prolog/Prolog.ml:61 Prolog.fixity_of_string
-languages/prolog/Prolog.ml:67 Prolog.string_of_fixity
+kernels/oberon/system/Oberon.ml:60 Oberon.fade_mouse
 languages/scheme/Scheme.ml:130 Scheme.kind
 languages/smalltalk/compiler/St_bytecode.ml:92 St_bytecode.is_send
 languages/smalltalk/compiler/St_chunk.ml:89 St_chunk.methods_chunk
@@ -21,6 +18,7 @@ languages/smalltalk/vm/St_interp.ml:120 St_interp.is_closure_context, in init bu
 languages/smalltalk/vm/St_interp.ml:131 St_interp.context_method, in init but no call goes
 languages/smalltalk/vm/St_interp.ml:154 St_interp.home_context
 languages/smalltalk/vm/St_interp.ml:686 St_interp.resume, in init but no call goes through
+languages/smalltalk/vm/St_interp.ml:709 St_interp.print_string
 languages/smalltalk/vm/St_memory.ml:147 St_memory.set_body
 languages/smalltalk/vm/St_memory.ml:162 St_memory.float_of
 languages/smalltalk/vm/St_memory.ml:172 St_memory.symbols
@@ -37,4 +35,6 @@ lib_terminal/Talk.ml:34 Talk.return
 lib_terminal/Talk.ml:39 Talk.spawn
 lib_terminal/Talk.ml:56 Talk.ask
 lib_terminal/Vt.ml:360 Vt.text
+machine/arm32/Mmu32.ml:22 Mmu32.enabled
 shell/Process.ml:79 Process.wait_any
+version_control/repo/Refs.ml:43 Refs.head_ref

@@ -192,23 +192,24 @@ with no body, in ML's `ext`, or named by `-root` (`dead.dl`'s header).
 
 ### The sweep (`tests/sweep.sh`, `tests/triage.sh`, 2026-10-31)
 
-Every program with a mkfile's `SRC`, by its own units and `-I`'s: 23 of 44
-read whole. A report is only of those: a unit not read makes what it calls
-look dead, so the others say `NOT READ`, and `-dead` fails on them. Not read:
-mini-ml and mini-cc (past 180 s), mini-emacs, mini-tiger and mini-csc (past
-180 s or 12 GB), and programs whose units share a name with another's (`Ast`,
-`Symbols`), or need files `sweep.sh` does not find; mini-oberon and mini-squeak
-compute their `SRC`.
+Every program with a mkfile's `SRC`, by its own units and `-I`'s (`mk_units.sh`:
+LIBI's, INCLUDES', LIBDIRS', a library's DIRS, the units made first): 35 of 44
+read whole (2026-11-02; 23 on 10-31). A report is only of those: a unit not read
+makes what it calls look dead, so the others say `NOT READ`, and `-dead` fails
+on them, as on a unit with no file (mini-squeak read without two: 415 dead
+functions; whole, 61). Not read, too big or too slow: mini-ml, mini-cc and
+mini-man past 180 s; mini-emacs's two, mini-dotnet, mini-csc, mini-tiger and
+mini-datalog (since a .NET back end in progress) past 12 GB.
 
-| found in those 23 | |
+| found in those 35 | |
 |---|---:|
-| dead functions, in the program that was read | 236 |
+| dead functions, in the program that was read | 283 |
 | of them, a name no other file writes, nor its own past its definition (`tests/dead_ix.txt`) | 40 |
-| named by another file of the same program, though "nothing names it": false by that test | 0 |
-| dead globals, fields, constructors, in the program | 12, 37, 26 |
+| named by another file of the same program, though "nothing names it": false by that test | 2, each a comment's or a string's (`Arm32.take`, `Arm64.sysreg`) |
+| dead globals, fields, constructors, in the program | 29, 52, 25 |
 
 Dead in a program is not dead in ix: a library's function another program uses
-is dead in this one, so 196 of the 236 are to be read, not deleted. Fields are
+is dead in this one, so 243 of the 283 are to be read, not deleted. Fields are
 noisier: what a program writes by `Marshal` (`Asm`'s `s_items`) another reads.
 `dead_ix.txt` is a list to read, not to delete by: its grep sees no `open`, and
 tests and other programs not read may use what it lists.
@@ -283,16 +284,18 @@ for what it names, called or passed on, not for what it calls through a paramete
 descriptor is a capability, so `Unix.read` is nothing here, `Unix.openfile` is.
 `Cap.draw`, `keyboard`, `mouse` allow `Unix.openfile`, a device being a file.
 
-`sweep.sh` with `FLAG=-caps`, on the 23 of 44 programs read: 40 functions
-(`tests/caps_ix.txt`).
+`sweep.sh` with `FLAG=-caps`, on the 35 of 44 programs read: 149 functions
+(`tests/caps_ix.txt`; 40 on the 23 read before).
 
 | | functions | |
 |---|---:|---|
-| no capability | 28 | `Eval.print`, `Eval.exists`, `Command.read`; test programs' prints |
-| holds some, not the one | 3 | `Sys.set_signal` in mini-rc's, mini-ed's and mini-mk's mains |
-| holds one it may not need | 9 | `Dc.flush_out` (5 of its 6) and 5 more of dc's, `Pascal CLI.run` (`Cap.open_in`), `builder CLI.print`, `Dossrv.fs` |
+| no capability | 82 | `Eval.print`, `Eval.exists`, `Command.read`; test programs' prints |
+| holds some, not the one | 19 | `Sys.set_signal` in mini-rc's, mini-ed's, mini-mk's, mini-5i's mains; `Host.dir_of`'s `Unix.opendir` with no `Cap.readdir`; `version_control`'s `commit`, `clone` |
+| holds one it may not need | 50 | mini-acid's `Proc` and `CLI` 16, awk's `Io` 7, hoc's `Eval` 6, `Dc` 6 |
 
-Those holding some were read at the source, but for 5 of dc's of one kind, of which one was. What it does not say: a
+Of the 23 programs read first, those holding some were read at the source, but for
+5 of dc's of one kind, of which one was; of the 12 read since, 2 (`Host.dir_of`,
+mini-sql's prompt loop), the others not. What it does not say: a
 capability held in a record's field is not held, so `Command.read t` with `t.caps` is
 "no capability"; `Unix.openfile`'s flags are not read, so `Cap.open_in|Cap.open_out`;
 the clock, a pipe have no capability in xix's `Cap`; `may not need` is not said of a

@@ -25,3 +25,8 @@ let () =
   let e = Empty in
   print_string (if keep e == e && Empty == Empty then "Empty == Empty\n" else "Empty != Empty\n");
   print_string (if (None : int option) == None && ([] : string list) == [] then "None == None\n" else "None != None\n")
+
+(* = of arrays, by their elements (an empty one equal to [||]) *)
+let () =
+  let a : string array = Array.make 0 "" and b = [| 1; 2 |] in
+  print_string (if a = [||] && b = [| 1; 2 |] && b <> [| 1; 3 |] then "arrays equal by their elements\n" else "arrays compared as places\n")

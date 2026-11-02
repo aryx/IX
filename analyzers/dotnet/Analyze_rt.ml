@@ -5,13 +5,9 @@
 
 module D = Datalog
 
-(* a fact as Facts finds it: a tuple of symbols (mini-analyze's given,
- * without bugs.dl's kinds of places) *)
-let given (p : D.t) (relation : string) (args : Facts.arg list) : unit =
-  let r = D.relation p relation (List.length args) in
-  let value (a : Facts.arg) =
-    match a with Facts.Sym s -> D.symbol p (Prolog.Atom s) | Facts.Num n -> D.symbol p (Prolog.Int n) in
-  if D.add r (Array.of_list (List.map value args)) then r.given <- r.given + 1
+(* a fact as Facts finds it: a tuple of symbols, bugs.dl's kinds of its
+ * places (C_report's, the native mini-analyze's) *)
+let given = C_report.given
 
 (* an option of one word: -Idir, -Ldir *)
 let flag (pre : string) (a : string) : string option =
@@ -62,7 +58,12 @@ let main (texts : string array) (queries : string array) (rules : D.t -> unit) :
          if ml <> [] then
            List.iter complain (Ml_front.program caps (incs @ Ml_front.library caps lib) (List.map path ml));
          rules p;
-         Datalog_rt.answers caps p queries
+         (* (no query: mini-analyze's reports, C's then ML's) *)
+         if queries <> [||] then Datalog_rt.answers caps p queries
+         else begin
+           if List.exists (fun (f : string) -> Filename.check_suffix f ".c") files then C_report.report caps p;
+           if ml <> [] then Ml_report.ml_report caps p
+         end
        with
        | D.Error (msg, at) -> complain (at ^ ": " ^ msg)
        | Failure m -> complain m);

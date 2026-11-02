@@ -239,6 +239,8 @@ let object_ =
             | Str x, Str y -> x = y
             | Obj x, Obj y -> x == y
             | _ -> false));
+    (* (both null, or the first's Equals: mini-ml -dotnet's array =) *)
+    stat "Equals" [obj; obj] bool (fun a -> bool_v (hooks.equals a.(0) a.(1)));
     virt "GetHashCode" [] int (fun a ->
         match a.(0) with
         | Str s -> i4 (Hashtbl.hash s)

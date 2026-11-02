@@ -157,6 +157,9 @@ and prim (c : c) (env : env) (k : code) (cx : compiler) (e : Scope.expr) (p : st
     (* (a record's or a variant's Equals, structural; an exception's
      * the same object) *)
     | S.Class _ | S.GenericInst _ when p = "%equal" || p = "%notequal" -> op (Il.Callvirt (lib c "Object" "Equals" (instance [ S.Object ] S.Bool)))
+    (* (an array's by its elements, not its place) *)
+    | S.SzArray t when p = "%equal" || p = "%notequal" ->
+        op (Il.Call (memo c ("array_equal " ^ S.encode_type_spec t) (fun () -> W.method_spec c.w (ml_array_equal c) [ t ])))
     | _ -> op Il.Ceq in
   match p, args with
   | ("%addint" | "%addfloat"), _ -> op (Il.Binop Il.Add)

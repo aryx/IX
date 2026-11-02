@@ -481,6 +481,16 @@ limit is now 30,000, mini-ml's build tried at 29,000. Reproduction: let rec f
 n = if n = 0 then 0 else 1 + f (n - 1), f 20000, by mini-ml -dotnet, run by
 mini-dotnet.
 
+## mini-ml -dotnet: = of arrays by their places (2026-11-02, fixed)
+
+`[||] = [||]` and `[| 1; 2 |] = [| 1; 2 |]` were false: = of an array was
+ceq, the references. Found by mini-analyze's .NET road, whose entry tested
+`queries <> [||]` and so never printed its report. Now the assembly's
+helper Stdlib.Ml::array_equal<T>, each pair of elements by
+Object.Equals (mini-dotnet's library given the static Object.Equals).
+An array inside a record, or of arrays, still compared as a place.
+Reproduction: equality.ml's last case.
+
 ## mini-ml -dotnet: a constant constructor made anew, == false of two (2026-11-02, fixed)
 
 `None == None`, `Empty == Empty` were false: each use of a constant

@@ -165,6 +165,42 @@ let ml_compare (c : c) : int =
       finish c k m;
       m)
 
+(* = of two arrays (OCaml's: their lengths and elements, not their
+ * places): the assembly's helper Stdlib.Ml::array_equal<T>(T[], T[]),
+ * each pair of elements by Object.Equals, boxed (a record's, a
+ * variant's structural, a number's or a string's by value); an array
+ * inside a record or another array still compared as a place *)
+let ml_array_equal (c : c) : int =
+  memo c "ml array_equal" (fun () ->
+      let cls = ml_class c in
+      let a = S.SzArray (S.MVar 0) in
+      let m = W.method_def c.w cls "array_equal" 0x0096 { (static [ a; a ] S.Bool) with generic = 1 } in
+      W.generic_param c.w m 0 "T";
+      let t = W.type_spec c.w (S.MVar 0) in
+      let k = new_code () in
+      let yes = label k and no = label k and top = label k in
+      let i = local k S.I4 in
+      emit k (Il.Ldarg 0); emit k (Il.Ldarg 1); emit k (Il.Bcmp (Il.Eq, false, yes));
+      emit k (Il.Ldarg 0); emit k (Il.Brfalse no);
+      emit k (Il.Ldarg 1); emit k (Il.Brfalse no);
+      emit k (Il.Ldarg 0); emit k Il.Ldlen; emit k (Il.Conv (Il.K_i4, false, false));
+      emit k (Il.Ldarg 1); emit k Il.Ldlen; emit k (Il.Conv (Il.K_i4, false, false));
+      emit k (Il.Bcmp (Il.Ne, true, no));
+      emit k (Il.Ldc_i4 0l); emit k (Il.Stloc i);
+      place k top;
+      emit k (Il.Ldloc i); emit k (Il.Ldarg 0); emit k Il.Ldlen; emit k (Il.Conv (Il.K_i4, false, false));
+      emit k (Il.Bcmp (Il.Ge, false, yes));
+      emit k (Il.Ldarg 0); emit k (Il.Ldloc i); emit k (Il.Ldelem_any t); emit k (Il.Box t);
+      emit k (Il.Ldarg 1); emit k (Il.Ldloc i); emit k (Il.Ldelem_any t); emit k (Il.Box t);
+      emit k (Il.Call (lib c "Object" "Equals" (static [ S.Object; S.Object ] S.Bool)));
+      emit k (Il.Brfalse no);
+      emit k (Il.Ldloc i); emit k (Il.Ldc_i4 1l); emit k (Il.Binop Il.Add); emit k (Il.Stloc i);
+      emit k (Il.Br top);
+      place k yes; emit k (Il.Ldc_i4 1l); emit k Il.Ret;
+      place k no; emit k (Il.Ldc_i4 0l); emit k Il.Ret;
+      finish c k m;
+      m)
+
 (* OCaml's Hashtbl.hash of a value: the assembly's helper
  * Stdlib.Ml::hash(object), made once, the same on every runtime (.NET's
  * String.GetHashCode is not: Microsoft's varies by process): a

@@ -11,7 +11,10 @@
 # Analyze_rt). call1_heap1's target and pts on
 # lib_code/datalog/tests/contexts.c, by mini-dotnet (Microsoft's dotnet
 # too with -ms); -rc: on Plan 9's rc (goken's 30 files: minutes),
-# timed, by Microsoft's dotnet.
+# timed, by Microsoft's dotnet. Then mini-analyze's reports, of the
+# rules it loads (C's: call1_heap1 and bugs.dl; ML's: calls.dl): the
+# .NET program's (no query) the native mini-analyze's, on
+# analyzers/tests' bugs, callbacks and handlers (ML).
 # usage: analyzers/dotnet/tests/run.sh [-ms] [-rc]   (dune build, and
 #   mini-mk in languages/c for its parser and lexer, first)
 # DUNEML, DUNEDATALOG, DUNEDOTNET, DUNEANALYZE: if not _build's.
@@ -54,12 +57,12 @@ for u in Tree Tree_helpers Pre Acid Check Declare Machines Emit Com64 Parser Lex
   files="$files $W/c/$(rename $u).ml"
 done
 for u in Ast Annotations Parser Lexer Scope Resolve Typing Bits Derive Pp Closure_facts Ml_front \
-         Prolog Prolog_read Parallel Tuples Btree Relset Hash_index Tree_index Index Datalog Datalog_eval Datalog_rt Analyze_rt; do
-  for f in languages/ml/$u.ml languages/ml/*/$u.ml $M/$u.ml analyzers/$u.ml analyzers/dotnet/$u.ml languages/prolog/$u.ml \
+         Prolog Prolog_read Parallel Tuples Btree Relset Hash_index Tree_index Index Datalog Datalog_eval Datalog_rt C_report Ml_report Analyze_rt; do
+  for f in languages/ml/$u.ml languages/ml/*/$u.ml $M/$u.ml analyzers/$u.ml analyzers/c/$u.ml analyzers/dotnet/$u.ml languages/prolog/$u.ml \
            languages/datalog/$u.ml languages/datalog/dotnet/$u.ml $W/$u.ml; do [ -f $f ] && break; done
   files="$files $f"
 done
-if ! $ML -L lib_core -I $W/c -I assembler -I languages/ml -I languages/ml/pp -I languages/ml/facts -I $M -I analyzers \
+if ! $ML -L lib_core -I $W/c -I assembler -I languages/ml -I languages/ml/pp -I languages/ml/facts -I $M -I analyzers -I analyzers/c \
      -I analyzers/dotnet -I languages/prolog -I languages/datalog -I languages/datalog/dotnet -I $W \
      -dotnet -o $W/analyze_rt.dll $files > $W/rt.err 2>&1; then
   echo "FAIL analyze_rt.dll by mini-ml -dotnet"; head -3 $W/rt.err; exit 1
@@ -98,6 +101,31 @@ roads contexts pta lib_code/datalog/tests contexts.c
 # (an ML program, lib_core's units it names read too: Microsoft's only,
 # mini-dotnet's interpreter too slow for make test's minute)
 ms_only=1 roads contexts_ml pta_ml lib_code/datalog/tests -L $PWD/lib_core contexts.ml
+# the reports: a program of the rules mini-analyze loads, no query;
+# its report the native mini-analyze's
+REPORT_C="$R/instructions.dl $R/andersen.dl $R/contexts.dl $R/call1_heap1.dl lib_code/datalog/bugs.dl"
+REPORT_ML="$R/instructions.dl $R/andersen.dl lib_code/datalog/calls.dl"
+$DL -dotnet -runtime analyze_rt -entry Analyze_rt -o $W/report_c.dll $REPORT_C &&
+  $DL -dotnet -runtime analyze_rt -entry Analyze_rt -o $W/report_ml.dll $REPORT_ML ||
+  { echo "FAIL mini-datalog -dotnet, the reports' programs"; exit 1; }
+report() { # name, its program, the directory, the files
+  local name=$1 prog=$2 dir=$3; shift 3
+  [ -n "${ms_only:-}" ] && [ -z "$ms" ] && { echo "skipped: $name's report (Microsoft's dotnet only: -ms)"; return; }
+  local root=$PWD
+  (cd $dir && $AN -r $root/lib_code/datalog "$@") > $W/$name.report.want 2>&1
+  local args=("$@")
+  run() { # what, runtime
+    (cd $dir && $2 $W/$prog.dll "${args[@]}") > $W/$name.report.got 2>&1
+    if [ -s $W/$name.report.want ] && cmp -s $W/$name.report.want $W/$name.report.got; then
+      echo "ok mini-analyze's report on $name: the native's ($(wc -l < $W/$name.report.want) lines), by $1"
+    else fail "mini-analyze's .NET report on $name, by $1"; diff $W/$name.report.want $W/$name.report.got | head -5; fi
+  }
+  [ -z "${ms_only:-}" ] && run mini-dotnet "$(realpath $DN)"
+  [ -n "$ms" ] && run "Microsoft's dotnet" dotnet
+}
+report bugs report_c analyzers/tests/c/bugs bugs.c
+ms_only=1 report callbacks report_c analyzers/tests/c/callbacks $(cd analyzers/tests/c/callbacks && ls *.c)
+ms_only=1 report handlers report_ml . analyzers/tests/ml/handlers/Events.ml analyzers/tests/ml/handlers/Main.ml
 if [ -n "$rc" ]; then
   G=${GOKEN:-$HOME/goken}
   F="builtins.c code.c env.c error.c exec.c executils.c fmt.c getflags_.c globals.c glob.c goken.c here.c input.c io.c lex.c main.c notify_full.c path.c pcmd.c pfnc.c processes.c rfork_fork.c simple.c status.c trap.c tree.c utils.c var.c words.c y.tab.c"

@@ -77,6 +77,8 @@ val type_token : Il_code.c -> Signature.t -> int
  * GetHashCode, which Microsoft's varies by process) *)
 val ml_hash : Il_code.c -> int
 val ml_compare : Il_code.c -> int
+(* = of two arrays, by their elements: Stdlib.Ml::array_equal<T> *)
+val ml_array_equal : Il_code.c -> int
 
 (* a Func type's Invoke, its constructor (an object, a method's
  * address: ldftn) *)

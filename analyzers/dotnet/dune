@@ -8,13 +8,3 @@
  (modules Analyze_rt)
  (flags (:standard -open Ix_analyze_c))
  (libraries ix_analyze_c ix_analyze_ml ix_ml_facts ix_datalog_rt ix_datalog ix_prolog ix_core fpath caps))
-
-; mini-analyze's ML front end, a copy (it is the executable's module),
-; apart: mini-ml's Parser, not mini-cc's that Ix_analyze_c opens
-(library
- (name ix_analyze_ml)
- (wrapped false)
- (modules Ml_front)
- (libraries ix_ml ix_ml_pp ix_ml_facts ix_core fpath logs caps))
-
-(copy_files# ../Ml_front.{ml,mli})

@@ -93,8 +93,8 @@ made direct and inlined.
   one (rc: 22.8 s of CPU against 18.9), after lifting local functions
   to methods in mini-ml -dotnet, a linear Lexing in lib_core, and
   array-keyed relations; ML programs on both roads too (contexts.ml,
-  523 the same), mini-cc's units renamed beside mini-ml's. Not: the
-  report
+  523 the same), mini-cc's units renamed beside mini-ml's; the reports
+  (C's and ML's) the native's. Not: -dead and -caps' reports
   (mini-analyze's, another session's); a C module; mini-9pi's card.
 - **Stage 9 not built**: ML analysed.
 
@@ -876,7 +876,13 @@ but really use the same types!". So the decisions below are those of
    its own (IL's try starts with an empty stack: F#'s way, as lift's).
    contexts.ml with the lib_core units it names, call1's pts and
    reach: 523 answers the same (native 0.1 s, Microsoft's dotnet 1 s).
-   Not
+   And the report (the author: "let's do it"): mini-analyze's C and ML
+   reports out of Analyze into units both roads use (analyzers/c's
+   C_report, with the facts' given; analyzers' Ml_report, in a library
+   with Ml_front), Analyze_rt printing them when it is given no query:
+   bugs.c, callbacks.c and handlers (ML) reported as the native
+   mini-analyze reports them. What it took: = of arrays in mini-ml
+   -dotnet by their elements, not their places (bugs/ix.md). Not
    yet: ML programs (mini-ml's and mini-cc's Lexer and Parser in
    mini-ml's one namespace), the report (Analyze's, in the native
    mini-analyze, which another session is changing).

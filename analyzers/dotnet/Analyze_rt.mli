@@ -27,6 +27,10 @@
  * assembly: mini-cc's units copied with Parser and Lexer renamed
  * (tests/run.sh), as dune's wrapped copy in analyzers/c does it. *)
 
+(* (with no query, the reports mini-analyze prints, C_report's and
+ * Ml_report's: the program compiled with its rules, as mini-analyze
+ * loads them) *)
+
 (* the program: the rules' texts (file, text...), the queries, the
  * rules compiled; the files from the command line, -Idir for C and
  * ML, -Ldir lib_core's *)

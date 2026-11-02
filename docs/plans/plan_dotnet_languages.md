@@ -43,12 +43,32 @@ exceptions never caught (Leroy and Pessaux's analysis, 2000) and code
 never reached; and for mini-ml's optimizer, calls of a known closure
 made direct and inlined.
 
-**Status: step 0 done (mini-analyze, native: below); stage 1 done
-(mini-ml -dotnet: the monomorphic core, records, variants,
-exceptions, match, closures, generic functions and types, tuples,
-lists, arrays, several units in one assembly; C# using an ML unit;
-2026-10-31: the stages); the rest not built.** For the author: what step 0 showed, decision 6 to be
-decided again by it, the open questions at the end.
+**Status (2026-11-02):**
+- **Step 0 done**: mini-analyze, native (below).
+- **Stage 1 done**: mini-ml -dotnet, typed as F#: records, variants,
+  exceptions, match, closures, generic functions and types, tuples,
+  lists, arrays, several units in one assembly; C# using an ML unit.
+- **Stage 2 done**: tail calls, mini-ml's tail. and mini-dotnet's.
+- **Stage 3 done but corners**: lib_core compiled with the program
+  (43 of its 50 units), its C primitives in ML over .NET
+  (lib_core/dotnet/Runtime.ml), bytes a byte[], channels .NET's
+  streams, formats typed closures; lib_core/dotnet/'s units in
+  lib_core's place (Unix, Marshal) or over them (Printf, Format). Not:
+  Marshal, Unix, Thread as .NET forms; %a on a channel.
+- **Stage 4 paused** at the author's target (2x Microsoft's):
+  speed.sh; mini-dotnet's JIT with int64s native on arm64 and a lazy
+  start (fib within 1.5x of Microsoft's; the rest 7x to 33x). Not:
+  doubles in the JIT, arm's int64s, F#'s IL compared, longer runs.
+- **Stages 5, 6, 7 not built**: mini-cc to IL, mini-datalog compiled,
+  several assemblies in mini-dotnet.
+- **Stage 8 begun**: mini-cc and mini-datalog (their ML) compiled to
+  .NET, the facts pipeline's answers the native's by both runtimes.
+  Not: the pipeline on mini-rc; the one program (needs 6 and 7, and
+  mini-analyze's units in one namespace).
+- **Stage 9 not built**: ML analysed.
+
+For the author: what step 0 showed, decision 6 to be decided again
+by it, the open questions at the end.
 
 ## Step 0: the program first, native (2026-10-30)
 

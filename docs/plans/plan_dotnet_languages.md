@@ -1007,6 +1007,24 @@ but really use the same types!". So the decisions below are those of
    (contexts.dl's m-CFA design), so every sprintf may raise it. Next,
    if wanted: captured variables by context, or ksprintf's k followed
    as a parameter.
+   Then (the author: "let's do 2 and then 1": the sweep over ix, then
+   stage 8's card) three fixes of precision, each a false report's
+   cause: a model of Printf (its functions raise nothing of their own,
+   ksprintf what its continuation raises, at its call; a first try,
+   charging every call through a parameter to the caller, was 25 times
+   slower and changed nothing); call1_rec.dl, -exn's context file
+   now, a recursive call in its caller's context (with call1_heap1,
+   List.fold_left's recursion was the one context of all its callers);
+   a handler's variable pointing to its try's caught object, not to
+   exn, every exception (Datalog_eval's Some e raised again,
+   version_control's proto_die). mini-prolog 24 s and 1.9 GB. The
+   sweep (sweep.sh, FLAG=-exn): 43 programs, 56 reports of their own
+   exceptions (lib_code/datalog/tests/exn_ix.txt, with its triage),
+   one real bug: mini-awk died on END { nextfile } (fixed, bugs/ix.md);
+   the prelude parsers of mini-prolog and mini-scheme outside any try,
+   real but harmless; false ones by the parser's checks (awk's break),
+   a value tested before a raise (dc's divide by 0), and handlers not
+   seen, untraced yet.
 
 ## Sizes (estimates, from the neighbours)
 

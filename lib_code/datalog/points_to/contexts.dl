@@ -6,6 +6,7 @@
 %   insensitive.dl       no context: andersen.dl again, on what is reached
 %   call1.dl             1-call-site: Sharir and Pnueli's, Shivers's 1-CFA
 %   call1_heap1.dl       the same, an object known by its caller too
+%   call1_rec.dl         the same, a recursive call in its caller's context
 %   call2_heap1.dl       2-call-site+1-heap: Doop's 2cfa+H
 %   object1.dl           1-object: the first argument's object
 %   object2_heap1.dl     2-object+1-heap: Doop's 2obj+H, its best known

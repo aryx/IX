@@ -27,17 +27,23 @@
 % subtraction at each try: the Datalog is ten lines.
 %
 % design:
-% Over contexts.dl's calls, so a context file chooses: insensitive.dl,
-% 0-CFA, mini-analyze -exn's; call1_heap1.dl, a function's calls apart
-% by the call site that called it. On mini-prolog, mini-scheme and
-% mini-datalog the contexts change no answer (call1_heap1: 2 to 6 times
-% the time, up to 9 times the memory; call2_heap1 on mini-scheme 110 s,
-% 7 GB), only fewer raise sites shown. What they miss: mini-scheme's
-% fail, Printf.ksprintf (fun msg -> raise (Error msg)), makes every
-% ksprintf, so every sprintf, raise Error: k is captured by Printf's
-% closures, and a captured variable has no context (contexts.dl's own
-% design note, m-CFA's). Telling them apart needs captured variables by
-% context, or ksprintf's k followed as a parameter.
+% Over contexts.dl's calls, so a context file chooses; mini-analyze
+% -exn's is call1_rec.dl. Two merges made false reports, measured on
+% mini-prolog, mini-scheme and mini-datalog:
+% - Printf: it reads a format by closures it returns, each one for all
+%   the program's formats, their continuations captured, and a captured
+%   variable has no context (contexts.dl's m-CFA design): every sprintf
+%   raised what any ksprintf's continuation does (mini-scheme's fail).
+%   No context file helps (call2_heap1, object1: 110-130 s, 7 GB, the
+%   same answers): the model below.
+% - A recursive function's callers: with call1_heap1, List.fold_left's
+%   own recursive call is the context its callers all end in, so each
+%   of them calls every closure given to fold_left (mini-scheme's
+%   Scheme_step.Error, caught by Scheme_step.steps, reported).
+%   call1_rec.dl keeps the caller's context through such a call.
+% With both: mini-prolog's Halt and mini-scheme's Scheme_step.Error and
+% Scheme_prims.Error gone; insensitive.dl 7 s and 380 MB on
+% mini-prolog, call1_rec.dl 24 s and 1.9 GB (mini-scheme 15 and 22 s).
 %
 % References: Xavier Leroy, François Pessaux, "Type-based analysis of
 % uncaught exceptions" (TOPLAS 2000); Kwangkeun Yi, "Compile-time
@@ -45,11 +51,33 @@
 
 at(S, C1, C2, E) :- raise_of(S, E), running(S, C1, C2).
 at(R, C1, C2, E) :- reraises(R, T), arrives(T, C1, C2, E).
+% (a try's caught object, kept and raised again: what arrived there)
+at(R, C1, C2, E) :-
+  raise_in(R, F), \+ is_reraise(R), argument(R, 1, V), pt(V, C1, C2, T, H1, H2),
+  arrives(T, A1, A2, E).
 % (not a handler's variable: it points to every exception of the program)
 at(R, C1, C2, E) :-
   raise_in(R, F), \+ is_reraise(R), argument(R, 1, V), pt(V, C1, C2, H, H1, H2),
   exn_block(H, E).
-at(I, C1, C2, E) :- callee(I, C1, C2, G, N1, N2), escapes(G, N1, N2, E).
+at(I, C1, C2, E) :-
+  callee(I, C1, C2, G, N1, N2), \+ modeled(G), escapes(G, N1, N2, E).
+
+% A model of the library (ocamlexc had one of its primitives): Printf's
+% functions raise nothing of their own, ksprintf what its continuation
+% raises, at its call. Printf interprets a format by closures it returns
+% (fun s -> cont_s ...), each one closure for all the program's formats,
+% their continuations captured: followed, every sprintf would raise what
+% any ksprintf's continuation does (mini-scheme's fail). Not seen: the
+% exceptions of a %a or %t printer, and of a format Printf refuses.
+modeled_unit('Printf').
+modeled(G) :- closure(G, U, L), modeled_unit(U).
+continuation_taker('Printf.ksprintf').
+% (from each call's argument: from continuation_taker, callee's column
+% of F has no index, 1.2 billion lookups, 230 s on mini-prolog)
+continuation(K, J, C1, C2) :-
+  argument(J, 1, A), callee(J, C1, C2, F, N1, N2), continuation_taker(F),
+  pt(A, C1, C2, K, H1, H2).
+at(J, C1, C2, E) :- escapes(K, M1, M2, E), continuation(K, J, C1, C2).
 is_reraise(R) :- reraises(R, T).
 
 protected(S) :- in_try(S, T).

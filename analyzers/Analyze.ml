@@ -41,7 +41,7 @@ program's functions that its toplevel never reaches (calls.dl):
 (exceptions.dl), with where they may be raised:
   Main.ml: the toplevel may let Empty escape, raised at Main.ml:11 (Main.first)
 -root f: f is also entered from where the facts do not go (assembly)
--context file: of points_to/, C's (call1_heap1) and -exn's (insensitive); the
+-context file: of points_to/, C's (call1_heap1) and -exn's (call1_rec); the
   sharper, the longer
 -library: every function may be called from outside, not main alone: a runtime
   ML calls, a library; without it what main does not reach is not looked at
@@ -92,7 +92,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         ("-caps", Arg.Set ambient, " whether ML's own functions hold the capabilities they need");
         ("-exn", Arg.Set exns, " the exceptions ML's toplevels may let escape");
         ("-root", Arg.String (fun f -> roots := f :: !roots), " a function entered from where the facts do not go");
-        ("-context", Arg.Set_string context, " the context file of points_to/: C's (call1_heap1), -exn's (insensitive)");
+        ("-context", Arg.Set_string context, " the context file of points_to/: C's (call1_heap1), -exn's (call1_rec)");
         ("-library", Arg.Set library, " every function may be called from outside: a runtime, a library");
         ("-fingerprint", Arg.Set fingerprint, " after the report, one number of every answer (Answers, Fingerprint)");
         ("-L", Arg.Set_string lib, " lib_core's directory, for an ML program's library");
@@ -107,9 +107,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   | exception Arg.Help _ -> Console.print caps (help ^ "\n"); 0
   | exception Arg.Bad msg -> Console.eprint caps msg; 1
   | () -> (
-      (* (-exn's: a function's calls by its caller sharpen nothing yet,
-       * at many times the cost: exceptions.dl's design note) *)
-      let context = if !context <> "" then !context else if !exns then "insensitive" else "call1_heap1" in
+      (* (-exn's: a recursive call in its caller's context, else
+       * List.fold_left's callers are one: exceptions.dl's design note) *)
+      let context = if !context <> "" then !context else if !exns then "call1_rec" else "call1_heap1" in
       let path s = match FS.path s with Ok p -> p | Error m -> failwith m in
       try
         if !files = [] then failwith usage;

@@ -951,6 +951,7 @@ argument('Use:15:c29', 1, 'Use:const').
 call_ret('Use:15:c29', 'Use:t39').
 argument('Use:15:c28', 1, 'Use:t39').
 call_ret('Use:15:c28', 'Use:_').
+new_block('Use:try1@15:caught', 'Use:try1@15').
 catches('Use:try1@15', 'Kit.Stop').
 global_var('exn').
 var_in('exn', 'Use:init').

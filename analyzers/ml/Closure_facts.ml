@@ -377,10 +377,21 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
         | Pvar v -> handler_vars := (v.vid, t) :: !handler_vars; fact "catches_all" [ t ]
         | Pany -> fact "catches_all" [ t ]
         | _ -> () in
+      (* (a variable of the whole exception points to the try's own
+       * object, what it caught: kept and raised again, it is what
+       * arrived there, not every exception, as exn would say) *)
+      let caught = t ^ ":caught" in
+      fact "new_block" [ caught; t ];
+      let rec whole (p : pattern) : unit =
+        match p with
+        | Pvar _ -> bind p caught
+        | Palias (q, v) -> bind q (global exn !inside); bind (Pvar v) caught
+        | Pconstraint (q, _) -> whole q
+        | _ -> bind p (global exn !inside) in
       List.iter
         (fun ((p, guard, body) : case) ->
           (match guard with None -> catches p | Some _ -> ());
-          bind p (global exn !inside);
+          whole p;
           Option.iter (fun (g : expr) -> flow None g (junk ())) guard;
           flow None body dst)
         cases

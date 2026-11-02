@@ -117,7 +117,7 @@ REPORT_C="$R/instructions.dl $R/andersen.dl $R/contexts.dl $R/call1_heap1.dl lib
 REPORT_ML="$R/instructions.dl $R/andersen.dl lib_code/datalog/calls.dl"
 REPORT_DEAD="$R/instructions.dl $R/contexts.dl $R/insensitive.dl lib_code/datalog/dead.dl"
 REPORT_CAPS="$REPORT_DEAD lib_code/datalog/capabilities.dl"
-REPORT_EXN="$R/instructions.dl $R/andersen.dl $R/contexts.dl $R/insensitive.dl lib_code/datalog/exceptions.dl"
+REPORT_EXN="$R/instructions.dl $R/andersen.dl $R/contexts.dl $R/call1_rec.dl lib_code/datalog/exceptions.dl"
 $DL -dotnet -runtime analyze_rt -entry Analyze_rt -o $W/report_c.dll $REPORT_C &&
   $DL -dotnet -runtime analyze_rt -entry Analyze_rt -o $W/report_ml.dll $REPORT_ML &&
   $DL -dotnet -runtime analyze_rt -entry Analyze_rt -o $W/report_dead.dll $REPORT_DEAD &&

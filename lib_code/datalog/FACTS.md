@@ -200,14 +200,17 @@ assign('Toy:n/27', 'Toy:fun1@29:arg').
 **Arrays and exceptions.** An array is an object, its elements one field,
 `arr:elt`; `a.(i)` and `a.(i) <- v` a load and a store, by `%array_safe_get` and
 `%array_safe_set`; `Array.make`'s (C's `make_vect`) one object for every call of it.
-What `raise` gives goes to `exn`, where a handler's pattern reads:
+What `raise` gives goes to `exn`, where a handler's pattern reads; a variable of
+the whole exception (`with e -> raise e`) points to its try's own object instead,
+what it caught (for `exceptions.dl`: raised again, what arrived there):
 
 ```
 new_block('Toy:table/28', 'Toy:block7@34').
 assign_store_field('Toy:table/28', 'arr:elt', 'Toy.inc').
 assign_load_field('prim:%array_safe_get:ret', 'prim:%array_safe_get:arg1', 'arr:elt').
 assign('exn', 'prim:%raise:arg1').
-assign('Toy:e/31', 'exn').
+new_block('Toy:try2@36:caught', 'Toy:try2@36').
+assign('Toy:e/31', 'Toy:try2@36:caught').
 ```
 
 For `exceptions.dl`, which exceptions may escape: a raise is a call, its site

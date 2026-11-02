@@ -1,0 +1,9 @@
+% 1-call-site+1-heap, a recursive call in its caller's context: a call
+% from a function to itself (its root: fold_left'' calls fold_left)
+% keeps the context it runs in, so List.fold_left's recursion does not
+% put all its callers in one context, its own call's.
+% (by andersen.dl's call_edge: by fresh, a negation through callee)
+recursive(I) :- call_edge(I, F), in_function(I, G), root(G, R), root(F, R).
+callee(I, C1, C2, F, I, none) :- fresh(I, C1, C2, F, _, _), \+ recursive(I).
+callee(I, C1, C2, F, C1, C2) :- fresh(I, C1, C2, F, _, _), recursive(I).
+flow(V, C1, C2, H, C1, none) :- new_site(V, H, C1, C2).

@@ -1,0 +1,73 @@
+# mini-analyze -exn over ix (lib_code/datalog/tests/sweep.sh with
+# FLAG=-exn, 2026-11-02): each program's own exceptions its toplevels
+# may let escape (not lib_core's Invalid_argument, Failure, Not_found,
+# Unix_error, End_of_file, Sys_error, Queue.Empty, which most programs
+# may raise), 43 programs read, mini-ml past the 300 s. Triage, tried
+# on the programs:
+#   real: utilities_text_awk Run.Next_file (END { nextfile }, fixed:
+#     docs/plans/bugs/ix.md); languages_prolog Prolog_read.Error and
+#     languages_scheme Scheme_syntax.Error (their built-in preludes
+#     parsed outside any try: never, the preludes being right)
+#   false, the parser's checks: awk's Break_loop, Continue_loop
+#   false, a value's test before the raise: dc's and bc's
+#     Division_by_zero ("divide by 0" printed)
+#   false, a handler not seen: hoc's Eval.Returned, forth's Forth.Error,
+#     awk's Regex.Error, shell's Word.Error, tiger's Tiger_semant.Error
+#     (each said as an error when tried)
+#   the rest: not tried yet
+database: Main.ml: the toplevel may let Btree.Bad_node escape
+database: Main.ml: the toplevel may let Codegen.Invalid escape
+database: Main.ml: the toplevel may let Pager.Bad_page escape
+database: Main.ml: the toplevel may let Record.Invalid_type escape
+editors_emacs_draw: Main.ml: the toplevel may let Parsing.Parse_error escape
+editors_turbopascal_hosts_draw: Main.ml: the toplevel may let Pascal_compile.Failed escape
+editors_turbopascal_hosts_draw: Main.ml: the toplevel may let Pmachine.Runtime escape
+editors_turbopascal_tty: Main.ml: the toplevel may let Pascal_compile.Failed escape
+editors_turbopascal_tty: Main.ml: the toplevel may let Pmachine.Runtime escape
+kernels_squeak: Main.ml: the toplevel may let St_boot.Error escape
+kernels_squeak: Main.ml: the toplevel may let St_chunk.Error escape
+kernels_squeak: Main.ml: the toplevel may let St_compile.Error escape
+languages_c: Main.ml: the toplevel may let Il.Bad_il escape
+languages_c: Main.ml: the toplevel may let Tree_helpers.Error escape
+languages_datalog: Main.ml: the toplevel may let Il.Bad_il escape
+languages_dotnet: Arm64.ml: the toplevel may let Link.Error escape
+languages_dotnet: Arm.ml: the toplevel may let Link.Error escape
+languages_dotnet_csc: Main.ml: the toplevel may let Il.Bad_il escape
+languages_dotnet: Main.ml: the toplevel may let Il.Bad_il escape
+languages_dotnet: Main.ml: the toplevel may let Jit.Refused escape
+languages_dotnet: Main.ml: the toplevel may let Link.Error escape
+languages_dotnet: Main.ml: the toplevel may let Parser_asm.Error escape
+languages_dotnet: Main.ml: the toplevel may let Signature.Bad escape
+languages_dotnet: Main.ml: the toplevel may let Types.Load_error escape
+languages_dotnet: Main.ml: the toplevel may let Value.Thrown escape
+languages_dotnet: Main.ml: the toplevel may let Verifier.Bad escape
+languages_forth: Main.ml: the toplevel may let Forth.Error escape
+languages_pascal: Main.ml: the toplevel may let Pmachine.Runtime escape
+languages_prolog: Main.ml: the toplevel may let Prolog_machine.Throw escape
+languages_prolog: Main.ml: the toplevel may let Prolog_read.Error escape
+languages_scheme: Main.ml: the toplevel may let Scheme_syntax.Error escape
+languages_scheme: Main.ml: the toplevel may let Sexpr_read.Error escape
+languages_smalltalk: Main.ml: the toplevel may let St_compile.Error escape
+languages_tiger: Main.ml: the toplevel may let Il.Bad_il escape
+languages_tiger: Main.ml: the toplevel may let Tiger_semant.Error escape
+linker: Arm64.ml: the toplevel may let Link.Error escape
+linker: Arm.ml: the toplevel may let Link.Error escape
+machine: Main.ml: the toplevel may let Memory.Fault escape
+shell: Main.ml: the toplevel may let Eval.Error escape
+shell: Main.ml: the toplevel may let Word.Error escape
+typesetting_man: Main.ml: the toplevel may let Pic.Unknown escape
+typesetting_man: Main.ml: the toplevel may let Zlib.Corrupt escape
+utilities_calc_bc: Main.ml: the toplevel may let Division_by_zero escape
+utilities_calc_dc: Main.ml: the toplevel may let Division_by_zero escape
+utilities_calc_hoc: Main.ml: the toplevel may let Eval.Returned escape
+utilities_text_awk: Main.ml: the toplevel may let Cell.Fatal escape
+utilities_text_awk: Main.ml: the toplevel may let Regex.Error escape
+utilities_text_awk: Main.ml: the toplevel may let Run.Break_loop escape
+utilities_text_awk: Main.ml: the toplevel may let Run.Continue_loop escape
+utilities_text_awk: Main.ml: the toplevel may let Run.Exit_program escape
+utilities_text_awk: Main.ml: the toplevel may let Run.Next_file escape
+utilities_text_awk: Main.ml: the toplevel may let Run.Next_record escape
+utilities_text_awk: Main.ml: the toplevel may let Run.Return_value escape
+version_control: Main.ml: the toplevel may let Delta.Corrupt escape
+version_control: Main.ml: the toplevel may let Proto.Error escape
+version_control: Main.ml: the toplevel may let Zlib.Corrupt escape

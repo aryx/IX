@@ -1,21 +1,35 @@
 # the desktop's programs, built by ix's tools (for Plan 9: mini-mk O=5
-# OS=plan9), with lib_graphics's units, compiled here
+# OS=plan9), with lib_graphics's units, compiled here: those of the screen,
+# and for desk those that read a picture (not all of lib_graphics' archive:
+# 9 MB of PDF, fonts and films for a wallpaper), with lib_compression's
 TOP=../..
 <$TOP/mkfiles/mkconfig
+LIBDIRS=lib_compression
+<$TOP/mkfiles/mklibs
 D=$B/windows/desktop
 G=../../lib_graphics
-INCLUDES=-I . -I $G $STDI
+INCLUDES=-I . -I $G -I $G/core -I $G/images $LIBI $STDI
 GFX=Point Rectangle Display Draw Font_default Font Mouse Keyboard Cursor Menu
-PANEL=$GFX Taskbar Panel
+IMG=Rgba_image Dct Jpeg_progressive Png Jpeg Image_file
+PANEL=$GFX Taskbar Prefs Panel
 MENU=$GFX Apps Icon Startmenu
-DESK=$GFX Taskbar Apps Icon Desk
-UNITS=$GFX Taskbar Apps Icon Panel Startmenu Desk
+DESK=$GFX $IMG Taskbar Apps Icon Prefs Paper Desk
+SETTINGS=$GFX Taskbar Prefs Settings
+UNITS=$GFX $IMG Taskbar Apps Icon Prefs Paper Panel Startmenu Desk Settings
 PANELOBJS=${PANEL:%=$D/%.$O}
 MENUOBJS=${MENU:%=$D/%.$O}
 DESKOBJS=${DESK:%=$D/%.$O}
-LOCAL=`{ls *.ml *.mli ../../lib_graphics/*.ml ../../lib_graphics/*.mli}
+SETTINGSOBJS=${SETTINGS:%=$D/%.$O}
+IMGOBJS=${IMG:%=$D/%.$O}
+LOCAL=`{ls *.ml *.mli ../../lib_graphics/*.ml ../../lib_graphics/*.mli} $LIBSRC
 
-all:V: $D/panel $D/startmenu $D/desk
+all:V: $D/panel $D/startmenu $D/desk $D/settings
+
+# the picture's units: said whole (a second rule with %, mk refuses), each
+# found by its name in lib_graphics' folders
+$IMGOBJS: `{ls ../../lib_graphics/core/*.ml ../../lib_graphics/images/*.ml}
+	mkdir -p $D
+	for(t in $target) $ML $INCLUDES -o $t `{ls $G/core/^`{basename $t .$O}^.ml $G/images/^`{basename $t .$O}^.ml >[2] /dev/null} || exit 1
 
 $D/%.$O: %.ml $LOCAL
 	mkdir -p $D
@@ -56,9 +70,12 @@ $D/panel: $PANELOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 $D/startmenu: $MENUOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 	$ML -start $STD $COMMONS $MENU Std_exit -o $D/startmenu.start.$O
 	$LD $LDH -nofollow -o $target $D/startmenu.start.$O $STDOBJS $MENUOBJS $STDEND
-$D/desk: $DESKOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
-	$ML -start $STD $COMMONS $DESK Std_exit -o $D/desk.start.$O
-	$LD $LDH -nofollow -o $target $D/desk.start.$O $STDOBJS $DESKOBJS $STDEND
+$D/desk: $DESKOBJS $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} $DESK Std_exit -o $D/desk.start.$O
+	$LD $LDH -nofollow -o $target $D/desk.start.$O $STDOBJS $LIBA $DESKOBJS $STDEND
+$D/settings: $SETTINGSOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+	$ML -start $STD $COMMONS $SETTINGS Std_exit -o $D/settings.start.$O
+	$LD $LDH -nofollow -o $target $D/settings.start.$O $STDOBJS $SETTINGSOBJS $STDEND
 
 clean:V:
 	rm -rf $D

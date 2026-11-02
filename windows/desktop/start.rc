@@ -1,6 +1,7 @@
 # What desktop runs in rio: the windows of a session, each by window
 # (-at's where is nw, n, ne, w, c, e, sw, s or se, so that this does
 # not depend on the screen's size). As Plan 9's riostart.
+settings -apply
 window -desk desk
 window -panel -edge bottom 28 panel
 window -popup -hide -label startmenu startmenu

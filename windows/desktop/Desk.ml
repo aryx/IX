@@ -12,8 +12,9 @@
  * opens it. The right button is rio's: a desk does not get it, so its menu
  * stays where it always was.
  *
- * It draws when something changes and waits for the mouse otherwise: there
- * is no clock in it. The wallpaper is made once, in an image of its own, and
+ * It draws when something changes and waits for the mouse otherwise, and
+ * looks at the settings (Prefs) every two seconds: their wallpaper, a colour
+ * or a picture. The wallpaper is made once, in an image of its own, and
  * what an icon uncovers is copied back from there.
  *
  * cs-history:
@@ -33,10 +34,11 @@ let ask (caps : < Cap.open_out; .. >) line =
     Fun.protect ~finally:(fun () -> Unix.close fd) (fun () -> ignore (Unix.write_substring fd line 0 (String.length line)))
   with Unix.Unix_error _ | Sys_error _ -> ()
 
-(* the two ends of the wallpaper, from the top down *)
-let top = (0x3a, 0x5f, 0x85)
-let bottom = (0x14, 0x26, 0x3a)
 let bands = 128
+(* the panel's depth, desktop's start's (window -panel -edge bottom 28) *)
+let panel_h = 28
+
+type event = Mouse of Mouse.state | Look
 
 let main (caps : < caps; .. >) : Exit.t =
   let home = try CapSys.getenv caps "home" with Not_found -> "" in
@@ -60,20 +62,37 @@ let main (caps : < caps; .. >) : Exit.t =
           Display.load image r i.pixels;
           Some image
       | None -> None) entries in
-  (* the wallpaper of a window: colours made and let go here, it is done once *)
-  let wallpaper (r : Rectangle.t) =
+  let prefs () = match read_file caps (Prefs.path home) with Some t -> Prefs.parse t | None -> Prefs.default in
+  (* the wallpaper of a window, made once: the settings' colour made bands
+   * (Paper), or their picture covering it; a picture that cannot be read,
+   * the colour's place taken by the default one *)
+  let wallpaper (r : Rectangle.t) (p : Prefs.t) =
     let image = Display.alloc display r "x8r8g8b8" ~repl:false Display.black in
-    let mix a b k = a + ((b - a) * k / (bands - 1)) in
-    let (r0, g0, b0) = top and (r1, g1, b1) = bottom in
-    for k = 0 to bands - 1 do
-      let c = Display.color display (Display.rgb (mix r0 r1 k) (mix g0 g1 k) (mix b0 b1 k)) in
-      let y0 = r.min.y + (Rectangle.dy r * k / bands) and y1 = r.min.y + (Rectangle.dy r * (k + 1) / bands) in
-      Draw.fill image (Rectangle.v r.min.x y0 r.max.x y1) c;
-      Display.free c
-    done;
+    let gradient c =
+      List.iteri (fun k c ->
+          let ink = Display.color display (Display.rgb ((c lsr 16) land 255) ((c lsr 8) land 255) (c land 255)) in
+          let y0 = r.min.y + (Rectangle.dy r * k / bands) and y1 = r.min.y + (Rectangle.dy r * (k + 1) / bands) in
+          Draw.fill image (Rectangle.v r.min.x y0 r.max.x y1) ink;
+          Display.free ink) (Paper.bands bands c) in
+    (match p.wallpaper with
+     | Prefs.Colour c -> gradient c
+     | Prefs.Picture file -> (
+         let decoded = match read_file caps file with
+           | Some bytes -> (try Some (Image_file.decode bytes) with _ -> None)
+           | None -> None in
+         match decoded with
+         | Some (pic : Rgba_image.t) ->
+             Display.load image r (Paper.cover pic.width pic.height pic.rgba (Rectangle.dx r) (Rectangle.dy r))
+         | None -> (match Prefs.default.wallpaper with Prefs.Colour c -> gradient c | Prefs.Picture _ -> ())));
     image in
+  (* the icons out of the panel's way: its side, the settings' (the panel
+   * itself says no more than that to anyone) *)
+  let edge = ref (prefs ()).edge in
   let cell_of (view : Display.image) i : Rectangle.t =
-    let (x0, y0, x1, y1) = Apps.desk_cell (view.r.min.x, view.r.min.y, view.r.max.x, view.r.max.y) i in
+    let r = view.r in
+    let y0 = if !edge = "top" then r.min.y + panel_h else r.min.y
+    and y1 = if !edge = "top" then r.max.y else r.max.y - panel_h in
+    let (x0, y0, x1, y1) = Apps.desk_cell (r.min.x, y0, r.max.x, y1) i in
     Rectangle.v x0 y0 x1 y1 in
   (* one icon, on what is under it *)
   let draw_icon (view : Display.image) (paper : Display.image) i on =
@@ -102,14 +121,28 @@ let main (caps : < caps; .. >) : Exit.t =
       else look (i + 1) in
     look 0 in
   (* [selected]: which is marked; [last]: the last press, on which and when *)
-  let rec loop (view : Display.image) paper selected last was =
-    let m : Mouse.state = Event.sync (Mouse.receive mouse) in
+  (* the settings looked at every two seconds: the wallpaper made again when
+   * they say another *)
+  let looks = Source.timer caps 2.0 in
+  let rec loop (view : Display.image) paper (wall : Prefs.wallpaper) selected last was =
+    match Event.select [ Event.wrap (Mouse.receive mouse) (fun m -> Mouse m); Event.wrap (Event.receive looks) (fun () -> Look) ] with
+    | Look ->
+        let p = prefs () in
+        if p.wallpaper = wall && p.edge = !edge then loop view paper wall selected last was
+        else begin
+          let paper = if p.wallpaper = wall then paper else begin Display.free paper; wallpaper view.r p end in
+          edge := p.edge;
+          paint view paper selected;
+          loop view paper p.wallpaper selected last was
+        end
+    | Mouse m ->
     if m.resized then begin
       let view = Display.screen display in
       Display.free paper;
-      let paper = wallpaper view.r in
+      let p = prefs () in
+      let paper = wallpaper view.r p in
       paint view paper selected;
-      loop view paper selected last m.buttons
+      loop view paper p.wallpaper selected last m.buttons
     end
     else if m.buttons land 1 <> 0 && was = 0 then begin
       let hit = at view m.pos in
@@ -121,14 +154,15 @@ let main (caps : < caps; .. >) : Exit.t =
       (match hit, last with
        | Some i, Some (j, t) when i = j && Apps.double_click t m.msec ->
            ask caps (Apps.open_line entries.(i));
-           loop view paper hit None m.buttons
-       | Some i, _ -> loop view paper hit (Some (i, m.msec)) m.buttons
-       | None, _ -> loop view paper None None m.buttons)
+           loop view paper wall hit None m.buttons
+       | Some i, _ -> loop view paper wall hit (Some (i, m.msec)) m.buttons
+       | None, _ -> loop view paper wall None None m.buttons)
     end
-    else loop view paper selected last m.buttons in
+    else loop view paper wall selected last m.buttons in
   let view = Display.screen display in
-  let paper = wallpaper view.r in
+  let p = prefs () in
+  let paper = wallpaper view.r p in
   paint view paper None;
-  loop view paper None None 0
+  loop view paper p.wallpaper None None 0
 
 let () = Cap.main (fun caps -> Exit.exit caps (Exit.catch (fun () -> main caps)))

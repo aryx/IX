@@ -3,7 +3,7 @@
 (library
  (name ix_desktop)
  (wrapped false)
- (modules Taskbar Apps Icon)
+ (modules Taskbar Apps Icon Prefs Paper)
  (libraries ix_graphics ix_core))
 
 (executable
@@ -12,9 +12,14 @@
  (libraries ix_desktop ix_graphics ix_threads ix_core threads.posix unix caps fpath))
 
 (executable
+ (name Settings)
+ (modules Settings)
+ (libraries ix_desktop ix_graphics ix_threads ix_core threads.posix unix caps fpath))
+
+(executable
  (name Desk)
  (modules Desk)
- (libraries ix_desktop ix_graphics ix_threads ix_core threads.posix unix caps fpath))
+ (libraries ix_desktop ix_graphics_images ix_graphics_core ix_graphics ix_threads ix_core threads.posix unix caps fpath))
 
 (executable
  (name Startmenu)

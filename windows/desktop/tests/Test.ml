@@ -202,6 +202,40 @@ let test_desk () =
         d.pixels
   | None -> Alcotest.fail "no icon"
 
+let test_prefs () =
+  let p = Prefs.parse "wallpaper=picture /usr/pad/lib/sea.jpg\nclock=12\nedge=top\nswap=yes\nvolume=70\nnonsense=1\n" in
+  Alcotest.(check bool) "a picture" true (p.wallpaper = Prefs.Picture "/usr/pad/lib/sea.jpg");
+  Alcotest.(check string) "12 hours" "12" p.clock;
+  Alcotest.(check string) "on top" "top" p.edge;
+  Alcotest.(check bool) "swapped" true p.swap;
+  Alcotest.(check bool) "not said: the default" false p.accelerated;
+  Alcotest.(check (option int)) "the volume" (Some 70) p.volume;
+  Alcotest.(check bool) "printed and read again" true (Prefs.parse (Prefs.print p) = p);
+  Alcotest.(check bool) "nothing: the defaults" true (Prefs.parse "" = Prefs.default);
+  Alcotest.(check bool) "a colour" true ((Prefs.parse "wallpaper=colour 6a4a7a").wallpaper = Prefs.Colour 0x6a4a7a);
+  Alcotest.(check bool) "a bad one: the default" true ((Prefs.parse "clock=25\nvolume=400\n") = Prefs.default);
+  Alcotest.(check string) "24 hours" "09:05" (Prefs.clock_text Prefs.default 9 5);
+  Alcotest.(check string) "12: the afternoon" "1:05 pm" (Prefs.clock_text p 13 5);
+  Alcotest.(check string) "12: midnight" "12:00 am" (Prefs.clock_text p 0 0);
+  Alcotest.(check string) "none" "" (Prefs.clock_text { p with clock = "off" } 9 5);
+  Alcotest.(check (list string)) "the mouse's lines" [ "buttonmap 321"; "linear" ] (Prefs.mouse_lines p)
+
+let test_paper () =
+  (match Paper.bands 3 0x608090 with
+   | [ a; _; c ] ->
+       Alcotest.(check int) "the colour at the top" 0x608090 a;
+       Alcotest.(check int) "a third of it at the bottom" 0x202b30 c
+   | _ -> Alcotest.fail "not 3");
+  (* a picture of 2 by 1, a red pixel and a blue one, made 2 by 2: the screen
+   * is taller, so its width is cut, half each side: the left half of each *)
+  let rgba = Bytes.of_string "\255\000\000\255\000\000\255\255" in
+  let out = Paper.cover 2 1 rgba 2 2 in
+  Alcotest.(check int) "four pixels" 16 (String.length out);
+  Alcotest.(check string) "a pixel is b, g, r" "\000\000\255" (String.sub out 0 3);
+  let wide = Paper.cover 2 1 rgba 4 2 in
+  Alcotest.(check string) "the same shape: both pixels, twice" "\000\000\255" (String.sub wide 0 3);
+  Alcotest.(check string) "and the blue at the right" "\255\000\000" (String.sub wide 12 3)
+
 let () =
   Testo.interpret_argv ~project_name:"mini-desktop"
     (fun _ -> [ t "a window from what rio's wctl file says" test_wctl;
@@ -214,4 +248,6 @@ let () =
                 t "apps.table against what the Makefile puts on the card" test_table_and_card;
                 t "an icon from its text" test_icon;
                 t "each program's icon exists and is 16 by 16" test_icons_there;
-                t "the desk: its table, its places, a double click, an icon doubled" test_desk ])
+                t "the desk: its table, its places, a double click, an icon doubled" test_desk;
+                t "the settings' file: read, written, the clock's forms, the mouse's lines" test_prefs;
+                t "the wallpaper: a colour's bands, a picture covering the screen" test_paper ])

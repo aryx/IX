@@ -192,22 +192,20 @@ $D/p_%.img: $D/p_%.sip $D/g_%.given $POBJS $PEND mkfile
 	i=0; for p in $PROGRAMS; do [ $p = $stem ] && break; i=$((i + 1)); done
 	$LD -H0 -T `printf '%s%08x' $KHIGH $(($KLOW + $PFIRST + i * $PSLOT))` -E _sipstart -nofollow -o $target $POBJS $D/g_$stem.given $D/p_$stem.sip $PEND
 
-# The console's font and the programs inside the kernel, as data: each
-# word a DATA line (od's words are the machine's). The programs' table
+# The console's font and the programs inside the kernel: each file's
+# bytes one DATA, by mini-asm -data (old: each word a DATA line, by od
+# and awk). The programs' table
 # (cross.c's sip_images): for each its copy's address, its bytes, the
 # address it is linked at, its slot's bytes. And the disk machine.c names, which this
 # kernel has not: a word, its size 0.
 PIMAGES=${PROGRAMS:%=$D/p_%.img}
 $D/images.$O: $M/font1.bin $PIMAGES mkfile
 	mkdir -p $D
-	data() { od -An -v -tx$WORD $2 | awk -v n=$1 -v w=$WORD '{ for (i = 1; i <= NF; i++) printf "DATA\t%s+%d(SB)/%d, $0x%s\n", n, k++ * w, w, $i } END { printf "GLOBL\t%s+0(SB), $%d\n", n, k * w }'; }
 	word() { echo "DATA	$1+$(($2 * $WORD))(SB)/$WORD, \$$3"; }
-	(data font_image $M/font1.bin
-	 echo "GLOBL	fs_image+0(SB), \$$WORD"
+	(echo "GLOBL	fs_image+0(SB), \$$WORD"
 	 word fs_image_size 0 0; echo "GLOBL	fs_image_size+0(SB), \$$WORD"
 	 i=0
 	 for p in $PROGRAMS; do
-		data sip_image$i $D/p_$p.img
 		word sip_images $((4 * i)) "sip_image$i+0(SB)"
 		word sip_images $((4 * i + 1)) `wc -c < $D/p_$p.img | tr -d ' '`
 		word sip_images $((4 * i + 3)) $PSLOT
@@ -216,7 +214,7 @@ $D/images.$O: $M/font1.bin $PIMAGES mkfile
 	 done
 	 echo "GLOBL	sip_images+0(SB), \$$((4 * i * $WORD))"
 	 word sip_nimages 0 $i; echo "GLOBL	sip_nimages+0(SB), \$$WORD") > $D/images.s
-	$AS -o $target $D/images.s
+	$AS -data font_image=$M/font1.bin `i=0; for p in $PROGRAMS; do echo -data sip_image$i=$D/p_$p.img; i=$((i + 1)); done` -o $target $D/images.s
 
 # (l first: its vectors, or on the Pi 1 its start, are the image's first bytes)
 OBJS=$D/l.$O $D/shim.$O $D/machine_c.$O $D/kruntime.$O $D/usb_c.$O $D/cross.$O $D/crossl.$O $D/malloc.$O $D/images.$O $D/start.$O $STDOBJS ${UNITS:%=$D/%.$O} $L/std_exit.$O $D/rt.$O $L/libc.a

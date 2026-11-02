@@ -21,7 +21,8 @@
 #   the OCaml  kernels/lib_machine's modules (the board's Arch), then the
 #              kernel's, the whole stdlib, mini-ml's runtime with the
 #              board's heap
-#   images.s   the disk image and the font, as data
+#   images.s   the disk image's size; the image and the font, data
+#              by mini-asm -data
 # linked as an image without a header, its text at KERNBASE + where the
 # board loads it (0x80000 on the Pi 4, 0x8000 on the Pi 1).
 
@@ -101,15 +102,15 @@ $D/l.$O: $BD/$LS $BD/l.s
 	mkdir -p $D
 	$AS -o $target $BD/$LS
 
-# the disk image and the font inside the kernel: each word a DATA line
-# (od's words are the machine's: little-endian), 192,000 lines for
-# xv6's disk on the Pi 4; mini-asm takes 2 seconds
+# the disk image and the font inside the kernel: each file's bytes
+# one DATA, by mini-asm -data; the image's size a line of text.
+# old: each word a DATA line, by od and awk (od's words the machine's:
+# little-endian), mini-9pi's 7 MB disk 73 MB of text, mini-asm 23 s:
+#   fn data { od -An -v -tx$WORD $2 | awk ... printf "DATA\t%s+%d(SB)/%d, $0x%s\n" ... }
 $D/images.$O: $FS $KLIB/font1.bin
 	mkdir -p $D
-	fn data { od -An -v -tx$WORD $2 | awk -v 'n='$1 -v 'w='$WORD '{ for (i = 1; i <= NF; i++) printf "DATA\t%s+%d(SB)/%d, $0x%s\n", n, k++ * w, w, $i } END { printf "GLOBL\t%s+0(SB), $%d\n", n, k * w }' }
-	{ data fs_image $FS; data font_image $KLIB/font1.bin
-	  echo 'DATA	fs_image_size+0(SB)/'^$WORD^', $'^`{wc -c < $FS | tr -d ' '}; echo 'GLOBL	fs_image_size+0(SB), $'^$WORD } > $D/images.s
-	$AS -o $target $D/images.s
+	{ echo 'DATA	fs_image_size+0(SB)/'^$WORD^', $'^`{wc -c < $FS | tr -d ' '}; echo 'GLOBL	fs_image_size+0(SB), $'^$WORD } > $D/images.s
+	$AS -data fs_image'='$FS -data font_image'='$KLIB/font1.bin -o $target $D/images.s
 
 # (l first: its vectors, or on the Pi 1 its start, are the image's first bytes)
 # (-g: on arm, the image again as an a.out with its tables beside it,

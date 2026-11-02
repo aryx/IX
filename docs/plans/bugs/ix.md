@@ -548,3 +548,14 @@ as values and does not meet it. Reproduce: `mini-analyze -facts` of mini-cc's un
 (`lib_code/datalog/tests/mk_units.sh`'s `program_args languages/c/mkfile`) into a
 file, then `mini-datalog lib_code/datalog/points_to/instructions.dl` and that file.
 Not fixed: found while measuring another thing.
+
+## mini-oberon and mini-singularity for the Pi 1 not built: undefined label RAM_MB (2026-11-02)
+
+`cd kernels/oberon && MKSHELL=mini-rc mini-mk O=5` (singularity the same):
+`machine/pi1/l.s:96: undefined label RAM_MB`. Since e6849abd (2026-10-12, the
+Pi 2's kernel by ix's tools) lib_machine's pi1/l.s is included by l1.s or l2.s,
+which define IO_MB, RAM_MB, UNC_L1 and BOARD_START first; mini-9pi's build
+(mkkernel's LS) assembles l1.s, but oberon's and singularity's machine/pi1/
+link l.s and assemble it alone. Their Pi 4 builds (O=7) are fine. Found while
+checking mini-asm -data's kernels byte for byte. Not fixed: likely a link to
+l1.s in each machine/pi1/ and their mkfiles' l rule naming it.

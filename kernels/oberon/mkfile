@@ -103,14 +103,13 @@ $DISK: $DISKFILES mkfile
 	mkdir -p $D
 	(for f in $DISKFILES; do echo `basename $f` `wc -c < $f | tr -d ' '`; cat $f; done; echo) > $target
 
-# the disk and the console's font inside the kernel, as data: each word
-# a DATA line (od's words are the machine's)
+# the disk and the console's font inside the kernel: each file's bytes
+# one DATA, by mini-asm -data; the disk's size a line of text
+# (old: each word a DATA line, by od and awk: lib_machine's mkkernel)
 $D/images.$O: $DISK $M/font1.bin
 	mkdir -p $D
-	data() { od -An -v -tx$WORD $2 | awk -v n=$1 -v w=$WORD '{ for (i = 1; i <= NF; i++) printf "DATA\t%s+%d(SB)/%d, $0x%s\n", n, k++ * w, w, $i } END { printf "GLOBL\t%s+0(SB), $%d\n", n, k * w }'; }
-	(data fs_image $DISK; data font_image $M/font1.bin
-	 echo "DATA	fs_image_size+0(SB)/$WORD, \$`wc -c < $DISK | tr -d ' '`"; echo "GLOBL	fs_image_size+0(SB), \$$WORD") > $D/images.s
-	$AS -o $target $D/images.s
+	(echo "DATA	fs_image_size+0(SB)/$WORD, \$`wc -c < $DISK | tr -d ' '`"; echo "GLOBL	fs_image_size+0(SB), \$$WORD") > $D/images.s
+	$AS -data fs_image=$DISK -data font_image=$M/font1.bin -o $target $D/images.s
 
 # (l first: its vectors, or on the Pi 1 its start, are the image's first bytes)
 OBJS=$D/l.$O $D/shim.$O $D/machine_c.$O $D/kruntime.$O $D/usb_c.$O $D/images.$O $D/start.$O $STDOBJS ${UNITS:%=$D/%.$O} $L/std_exit.$O $D/rt.$O $L/libc.a

@@ -97,7 +97,10 @@ made direct and inlined.
   (C's and ML's, -dead's, -caps') the native's; a C module
   (fingerprint.c, called from ML: the answers' fingerprint the same
   by both roads). Not: mini-9pi's card.
-- **Stage 9 not built**: ML analysed.
+- **Stage 9 done** (2026-11-02): ML analysed, the exceptions a
+  program's toplevels may let escape: mini-analyze -exn, both roads.
+  0-CFA's imprecision shows on real programs (one List.iter for all
+  its callers); a call site's context is the next step.
 
 For the author: what step 0 showed, decision 6 to be decided again
 by it, the open questions at the end.
@@ -964,6 +967,30 @@ but really use the same types!". So the decisions below are those of
    writing an ML program's facts (its closures, calls, raises, handlers),
    0-CFA in Datalog, then the exceptions never caught. Check: on
    mini-ml's tests with a known answer, then on an ix program.
+   Done (2026-11-02, the author: "let's do stage 9!"). The closures and
+   calls were there (plan_prolog's stage 10); Closure_facts adds a
+   raise's site (its call's), what it raises when written, a handler's
+   variable raised again, an exception made a block of its constructor
+   (raise of a variable: what it points to), and each try: its
+   function, the try around it, the calls in it, what it catches for
+   sure (a guard nothing). lib_code/datalog/exceptions.dl, Leroy and
+   Pessaux's question over the call graph in ten rules: at, arrives,
+   passes, escapes, uncaught; raised says where. mini-analyze -exn
+   (analyzers/report/Exn_report), on the .NET road too (Analyze_rt
+   -exn, the native's report). Checked: analyzers/tests/exn/toplevel
+   (a raise caught by the caller, a catch-all raising again, nested
+   trys, a guard, a function value: Empty, Parse_error and Quiet
+   escape, Not_found does not); FACTS.md's toy. On ix programs (-I
+   the program's directory): mini-datalog in 0.5 s, only lib_core's
+   Failure and Invalid_argument (Buffer.add's "cannot grow"); mini-
+   prolog in 4.5 s: Prolog_read.Error really escapes (Wam_machine
+   .install reads its own clauses outside CLI's try), but Halt and
+   Throw, caught by CLI, are reported too: 0-CFA has one List.iter, one
+   Printf continuation, for all their callers, so a closure raising
+   Halt anywhere makes each of them raise it. Not: the primitives'
+   exceptions (Division_by_zero, an array's Invalid_argument); a raise
+   whose value points nowhere is silent. Next: contexts for ML
+   (call1_heap1 runs on ML's facts, contexts_ml), escapes by context.
 
 ## Sizes (estimates, from the neighbours)
 

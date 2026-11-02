@@ -14,11 +14,11 @@
 # timed, by Microsoft's dotnet. Then mini-analyze's reports, of the
 # rules it loads (C's: call1_heap1 and bugs.dl; ML's: calls.dl): the
 # .NET program's (no query) the native mini-analyze's, on
-# analyzers/tests' bugs, callbacks and handlers (ML), dead/ (-dead) and
-# caps/ (-caps). And a C module (stage 8's): -fingerprint's number of the
-# answers by fingerprint.c, compiled by mini-cc -dotnet and called from
-# ML on .NET (dotnet/Fingerprint.ml's externals), by Fingerprint.ml
-# natively: the same.
+# analyzers/tests' bugs, callbacks and handlers (ML), dead/ (-dead),
+# caps/ (-caps) and exn/ (-exn). And a C module (stage 8's):
+# -fingerprint's number of the answers by fingerprint.c, compiled by
+# mini-cc -dotnet and called from ML on .NET (dotnet/Fingerprint.ml's
+# externals), by Fingerprint.ml natively: the same.
 # usage: analyzers/dotnet/tests/run.sh [-ms] [-rc]   (dune build, and
 #   mini-mk in languages/c for its parser and lexer, first)
 # DUNEML, DUNEDATALOG, DUNEDOTNET, DUNEANALYZE: if not _build's.
@@ -62,7 +62,7 @@ for u in Tree Tree_helpers Pre Acid Check Declare Machines Emit Com64 Parser Lex
   files="$files $W/c/$(rename $u).ml"
 done
 for u in Ast Annotations Parser Lexer Scope Resolve Typing Bits Derive Pp Closure_facts Ml_front \
-         Prolog Prolog_read Parallel Tuples Btree Relset Hash_index Tree_index Index Datalog Datalog_eval Datalog_rt C_report Ml_report Fingerprint Answers Dead_report Caps_report Analyze_rt; do
+         Prolog Prolog_read Parallel Tuples Btree Relset Hash_index Tree_index Index Datalog Datalog_eval Datalog_rt C_report Ml_report Fingerprint Answers Dead_report Caps_report Exn_report Analyze_rt; do
   for f in analyzers/dotnet/$u.ml languages/ml/$u.ml languages/ml/*/$u.ml $M/$u.ml analyzers/$u.ml analyzers/ml/$u.ml analyzers/report/$u.ml languages/prolog/$u.ml \
            languages/datalog/$u.ml languages/datalog/dotnet/$u.ml $W/$u.ml; do [ -f $f ] && break; done
   files="$files $f"
@@ -117,10 +117,12 @@ REPORT_C="$R/instructions.dl $R/andersen.dl $R/contexts.dl $R/call1_heap1.dl lib
 REPORT_ML="$R/instructions.dl $R/andersen.dl lib_code/datalog/calls.dl"
 REPORT_DEAD="$R/instructions.dl $R/contexts.dl $R/insensitive.dl lib_code/datalog/dead.dl"
 REPORT_CAPS="$REPORT_DEAD lib_code/datalog/capabilities.dl"
+REPORT_EXN="$REPORT_ML lib_code/datalog/exceptions.dl"
 $DL -dotnet -runtime analyze_rt -entry Analyze_rt -o $W/report_c.dll $REPORT_C &&
   $DL -dotnet -runtime analyze_rt -entry Analyze_rt -o $W/report_ml.dll $REPORT_ML &&
   $DL -dotnet -runtime analyze_rt -entry Analyze_rt -o $W/report_dead.dll $REPORT_DEAD &&
-  $DL -dotnet -runtime analyze_rt -entry Analyze_rt -o $W/report_caps.dll $REPORT_CAPS ||
+  $DL -dotnet -runtime analyze_rt -entry Analyze_rt -o $W/report_caps.dll $REPORT_CAPS &&
+  $DL -dotnet -runtime analyze_rt -entry Analyze_rt -o $W/report_exn.dll $REPORT_EXN ||
   { echo "FAIL mini-datalog -dotnet, the reports' programs"; exit 1; }
 report() { # name, its program, the directory, the files
   local name=$1 prog=$2 dir=$3; shift 3
@@ -148,6 +150,7 @@ for d in analyzers/tests/dead/c analyzers/tests/dead/ml; do
   ms_only=1 report dead_$(basename $d) report_dead . -dead $(ls $d/*.[cm]* | grep -v expected)
 done
 ms_only=1 report caps report_caps . -caps $(ls analyzers/tests/caps/ml/*.ml)
+ms_only=1 report exn report_exn . -exn analyzers/tests/exn/toplevel/Main.ml
 if [ -n "$rc" ]; then
   G=${GOKEN:-$HOME/goken}
   F="builtins.c code.c env.c error.c exec.c executils.c fmt.c getflags_.c globals.c glob.c goken.c here.c input.c io.c lex.c main.c notify_full.c path.c pcmd.c pfnc.c processes.c rfork_fork.c simple.c status.c trap.c tree.c utils.c var.c words.c y.tab.c"

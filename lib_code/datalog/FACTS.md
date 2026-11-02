@@ -210,6 +210,24 @@ assign('exn', 'prim:%raise:arg1').
 assign('Toy:e/31', 'exn').
 ```
 
+For `exceptions.dl`, which exceptions may escape: a raise is a call, its site
+the call's, with what it raises when written (`raise Not_found`), or a handler's
+variable raised again (`with e -> raise e`); an exception made is a block of its
+constructor, what a raise of a variable is followed to. A try, in which function
+(and in which try, `try_in_try`), each call or raise in it, what its cases catch
+for sure (a case with a guard nothing, a variable everything):
+
+```
+raise_in('Toy:35:c48', 'Toy.lookup').
+raise_of('Toy:35:c48', 'caml_exn_Not_found').
+exn_block('Toy:block8@35', 'caml_exn_Not_found').
+try_in_function('Toy:try1@16', 'Toy.safe').
+in_try('Toy:16:c10', 'Toy:try1@16').
+catches('Toy:try1@16', 'caml_exn_Not_found').
+catches_all('Toy:try2@36').
+reraises('Toy:36:c50', 'Toy:try2@36').
+```
+
 **What the facts do not follow.** A constant, unit, a constant constructor:
 `scalar`, so every value has an object and a variable with none is one no run
 reaches. A C function's result is an object of its own, of its name, its arguments
@@ -307,6 +325,7 @@ compare with: `own_live_out(V, P)`, and for ML `own_live_in(V, B)`, `own_idom(D,
 | `points_to/andersen.dl`, `contexts.dl` | `vtype`, `htype`: what a variable may hold |
 | `points_to/contexts.dl` | `var_in`, `global_var`, `in_function`, `init`, `closure`, `curried`, `alloc_in`, `scalar` |
 | `calls.dl` | `closure`, `inner`, `in_function`, `init`, over `call_edge` |
+| `exceptions.dl` | `raise_in`, `raise_of`, `reraises`, `exn_block`, the `try`'s, `catches*`, over `call_edge`, `pt`, `reached` |
 | `dead.dl` | `defined`, `closure`, `global_def`, `dead_stmt`, `allocator_call` |
 | `capabilities.dl`, `capabilities_types.dl` | `takes_cap`, `declares`, `assign_address`, `global_def` |
 | `bugs.dl` | `call_direct`, `return`, and `heap`, `local`, `literal`, which mini-analyze makes of the names |

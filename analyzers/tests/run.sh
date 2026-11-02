@@ -3,17 +3,18 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # mini-analyze on toy programs: each directory of tests/c/ and
-# tests/ml/ (its .c or .ml files one program) against its
-# expected.out, read, not made by another analysis.
+# tests/ml/, and of dead/, caps/ and exn/ by their option (its .c or
+# .ml files one program) against its expected.out, read, not made by
+# another analysis.
 # usage: analyzers/tests/run.sh [-record]   (dune build first)
 # ANALYZE: the program, if not dune's.
 cd "$(dirname "$0")/../.."
 ANALYZE=${ANALYZE:-_build/default/analyzers/Main.exe}
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 failures=0
-for d in analyzers/tests/c/*/ analyzers/tests/ml/*/ analyzers/tests/dead/*/ analyzers/tests/caps/*/; do
+for d in analyzers/tests/c/*/ analyzers/tests/ml/*/ analyzers/tests/dead/*/ analyzers/tests/caps/*/ analyzers/tests/exn/*/; do
   d=${d%/}; n=$(basename $d)
-  case $d in */dead/*) n=dead_$n; flag=-dead;; */caps/*) n=caps_$n; flag=-caps;; *) flag=;; esac
+  case $d in */dead/*) n=dead_$n; flag=-dead;; */caps/*) n=caps_$n; flag=-caps;; */exn/*) n=exn_$n; flag=-exn;; *) flag=;; esac
   $ANALYZE $flag $d/*.[cm]* > $W/$n.out 2>&1
   if [ "${1:-}" = -record ]; then cp $W/$n.out $d/expected.out; echo "recorded $d/expected.out"
   elif cmp -s $W/$n.out $d/expected.out; then echo "ok mini-analyze: $n"

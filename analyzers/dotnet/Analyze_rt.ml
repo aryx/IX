@@ -26,11 +26,11 @@ let main (texts : string array) (queries : string array) (rules : D.t -> unit) :
       let path (f : string) = match FS.path f with Ok p -> p | Error m -> failwith m in
       let incs = List.map path (List.filter_map (flag "-I") args) in
       let lib = match List.filter_map (flag "-L") args with l :: _ -> l | [] -> "lib_core" in
-      let dead = List.mem "-dead" args and ambient = List.mem "-caps" args in
+      let dead = List.mem "-dead" args and ambient = List.mem "-caps" args and exns = List.mem "-exn" args in
       let fingerprint = List.mem "-fingerprint" args in
       let files =
         List.filter
-          (fun (a : string) -> flag "-I" a = None && flag "-L" a = None && not (List.mem a [ "-dead"; "-caps"; "-fingerprint" ]))
+          (fun (a : string) -> flag "-I" a = None && flag "-L" a = None && not (List.mem a [ "-dead"; "-caps"; "-exn"; "-fingerprint" ]))
           args in
       let p = D.create () in
       let failed = ref 0 in
@@ -72,6 +72,7 @@ let main (texts : string array) (queries : string array) (rules : D.t -> unit) :
          (* (no query: mini-analyze's reports, C's then ML's) *)
          if queries <> [||] then Datalog_rt.answers caps p queries
          else if ambient then Caps_report.caps_report caps p
+         else if exns then Exn_report.exn_report caps p
          else if dead then Dead_report.dead_report caps p (ml <> [])
          else begin
            if List.exists (fun (f : string) -> Filename.check_suffix f ".c") files then C_report.report caps p;

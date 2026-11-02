@@ -481,6 +481,8 @@ var_in('Kit.last:arg', 'Kit.last').
 var_in('Kit.last:ret', 'Kit.last').
 var_in('Kit:x/33', 'Kit.last').
 assign('Kit:x/33', 'Kit.last:arg').
+raise_in('Kit:30:c30', 'Kit.last').
+raise_of('Kit:30:c30', 'Kit.Stop').
 var_in('Kit:t32', 'Kit.last').
 parameter('prim:%raise', 1, 'prim:%raise:arg1').
 var_in('prim:%raise:arg1', 'prim:%raise').
@@ -496,6 +498,7 @@ call_indirect('Kit:30:c30', 'Kit:t32').
 var_in('Kit:t33', 'Kit.last').
 new_block('Kit:t33', 'Kit:block5@30').
 alloc_in('Kit:block5@30', 'Kit').
+exn_block('Kit:block5@30', 'Kit.Stop').
 var_in('Kit.square', 'Kit.last').
 assign_store_field('Kit:t33', 'con:Stop.0', 'Kit.square').
 argument('Kit:30:c30', 1, 'Kit:t33').
@@ -790,19 +793,23 @@ in_function('Use:14:c27', 'Use:init').
 call_indirect('Use:14:c27', 'Use:t37').
 argument('Use:14:c27', 1, 'Use:half/8').
 call_ret('Use:14:c27', 'Use:_').
+try_in_function('Use:try1@15', 'Use:init').
 var_in('Use:t38', 'Use:init').
 assign_address('Use:t38', 'prim:%ignore').
 in_function('Use:15:c28', 'Use:init').
+in_try('Use:15:c28', 'Use:try1@15').
 call_indirect('Use:15:c28', 'Use:t38').
 var_in('Use:t39', 'Use:init').
 global_var('Kit.last').
 var_in('Kit.last', 'Use:init').
 in_function('Use:15:c29', 'Use:init').
+in_try('Use:15:c29', 'Use:try1@15').
 call_indirect('Use:15:c29', 'Kit.last').
 argument('Use:15:c29', 1, 'Use:const').
 call_ret('Use:15:c29', 'Use:t39').
 argument('Use:15:c28', 1, 'Use:t39').
 call_ret('Use:15:c28', 'Use:_').
+catches('Use:try1@15', 'Kit.Stop').
 global_var('exn').
 var_in('exn', 'Use:init').
 var_in('Use:f/9', 'Use:init').

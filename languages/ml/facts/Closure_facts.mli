@@ -28,6 +28,16 @@
  *   inner(F2, F)                F2 is F's next argument's function (f' of f)
  *   in_function(I, F)           the call I is in F's body ('M:init': the toplevel's)
  *   init(F)                     a unit's toplevel, 'M:init': where a program starts
+ * And, for the exceptions that may escape (lib_code/datalog/exceptions.dl):
+ *   raise_in(R, F)              the raise R, in F's body: a call of %raise, its site
+ *   raise_of(R, E)              ... raises E, its constructor as written ('M.E')
+ *   reraises(R, T)              ... raises again what the try T's handler caught
+ *   exn_block(S, E)             the block made at S is an exception E
+ *   try_in_function(T, F)       the try T is in F's body ('M:try1@12')
+ *   try_in_try(T, T2)           ... in T2's body, the innermost around it
+ *   in_try(S, T)                the call or raise S is in T's body, innermost
+ *   catches(T, E). catches_all(T)  a case of T catches E, everything; not one
+ *                               with a guard
  * And, for what pointer.dl does not ask (lib_code/datalog/points_to/):
  *   var_in(V, F)                the function F names the variable V
  *   global_var(V)               V is one place, whatever the call: a toplevel value, ext

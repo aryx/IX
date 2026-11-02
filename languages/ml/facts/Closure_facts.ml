@@ -14,6 +14,14 @@ let blocks : int ref = ref 0
 
 (* the function whose body is being read *)
 let inside : string ref = ref ""
+
+(* the exceptions' facts (lib_code/datalog/exceptions.dl): the trys
+ * around the expression being read, the innermost first; a handler's
+ * variable, by the try it catches for (raise e again: what came) *)
+let tries : string list ref = ref []
+let try_count : int ref = ref 0
+let handler_vars : (int * string) list ref = ref []
+
 let prims : (string, unit) Hashtbl.t = Hashtbl.create 64
 
 let quote (s : string) : string =
@@ -121,12 +129,15 @@ let exn : string = "exn"
 let elt : string = "arr:elt"
 
 (* a block made: dst points to a place of its own, this expression's *)
-let block (dst : string) (x : expr) : unit =
+let block_at (dst : string) (x : expr) : string =
   incr blocks;
   let site = Printf.sprintf "%s:block%d@%d" !unit_name !blocks x.loc in
   fact "new_block" [ dst; site ];
   fact "alloc_in" [ site; !unit_name ];
-  typed "htype" site (Typing.expr_type x)
+  typed "htype" site (Typing.expr_type x);
+  site
+
+let block (dst : string) (x : expr) : unit = ignore (block_at dst x)
 
 (* An external, as a function of each of its arguments in turn
  * ('prim:name', then 'prim:name'2'...), the last returning its result.
@@ -266,6 +277,9 @@ let rec bind (p : pattern) (src : string) : unit =
   | Pcons (c, ps) -> List.iteri (fun (k : int) (p : pattern) -> part (Printf.sprintf "con:%s.%d" c.cname k) p) ps
   | Precord fields -> List.iter (fun ((l, p) : label * pattern) -> part ("fld:" ^ l.lname) p) fields
 
+(* a call's or a raise's site: in which try *)
+let site_in (s : string) : unit = match !tries with t :: _ -> fact "in_try" [ s; t ] | [] -> ()
+
 (* e's value goes to the variable dst; name: what a function written
  * here is called (the variable it is bound to) *)
 let rec flow (name : string option) (x : expr) (dst : string) : unit =
@@ -314,20 +328,23 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
           flow inner body (f ^ ":ret"))
         cases;
       inside := outer
-  | Eapply (f, args) ->
-      let n = List.length args in
-      let fn = ref (operand f) in
-      List.iteri
-        (fun (k : int) (a : expr) ->
-          incr calls;
-          let i = Printf.sprintf "%s:%d:c%d" !unit_name x.loc !calls in
-          let result = if k = n - 1 then dst else temp () in
-          fact "in_function" [ i; !inside ];
-          fact "call_indirect" [ i; !fn ];
-          fact1 "argument" i (operand a);
-          fact "call_ret" [ i; result ];
-          fn := result)
-        args
+  | Eapply (({ e = Evar (Prim ("%raise", _, _)); _ } as f), [ a ]) ->
+      (* (a raise: its site, its call's, the exception's constructor
+       * when it is written, a handler's variable raised again; else
+       * what its argument points to, an exception's block) *)
+      let r = Printf.sprintf "%s:%d:c%d" !unit_name x.loc (!calls + 1) in
+      fact "raise_in" [ r; !inside ];
+      site_in r;
+      let rec what (a : expr) : unit =
+        match a.e with
+        | Econstraint (a, _) -> what a
+        | Econs ({ kind = Exn g; _ }, _) -> fact "raise_of" [ r; g.gsym ]
+        | Evar (Local v) when List.mem_assoc v.vid !handler_vars ->
+            fact "reraises" [ r; List.assoc v.vid !handler_vars ]
+        | _ -> () in
+      what a;
+      call x f [ a ] dst
+  | Eapply (f, args) -> call x f args dst
   | Elet (_, bindings, body) -> lets bindings []; flow name body dst
   | Ematch (e, cases) ->
       let v = operand e in
@@ -338,9 +355,28 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
           flow None body dst)
         cases
   | Etry (e, cases) ->
+      (* (a try: in which function, in which try; what it catches, a
+       * case with a guard nothing for sure) *)
+      incr try_count;
+      let t = Printf.sprintf "%s:try%d@%d" !unit_name !try_count x.loc in
+      fact "try_in_function" [ t; !inside ];
+      (match !tries with t2 :: _ -> fact "try_in_try" [ t; t2 ] | [] -> ());
+      let outer = !tries in
+      tries := t :: outer;
       flow None e dst;
+      tries := outer;
+      let rec catches (p : pattern) : unit =
+        match p with
+        | Pcons ({ kind = Exn g; _ }, _) -> fact "catches" [ t; g.gsym ]
+        | Por (p, q) -> catches p; catches q
+        | Palias (p, v) -> handler_vars := (v.vid, t) :: !handler_vars; catches p
+        | Pconstraint (p, _) -> catches p
+        | Pvar v -> handler_vars := (v.vid, t) :: !handler_vars; fact "catches_all" [ t ]
+        | Pany -> fact "catches_all" [ t ]
+        | _ -> () in
       List.iter
         (fun ((p, guard, body) : case) ->
+          (match guard with None -> catches p | Some _ -> ());
           bind p (global exn !inside);
           Option.iter (fun (g : expr) -> flow None g (junk ())) guard;
           flow None body dst)
@@ -349,6 +385,11 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
       let n = List.length es in
       block dst x;
       stores (List.mapi (fun (k : int) (e : expr) -> (Printf.sprintf "tuple:%d.%d" n k, e)) es)
+  | Econs (({ kind = Exn g; _ } as c), es) ->
+      (* (an exception a block even without arguments: what a raise
+       * of a variable raises) *)
+      fact "exn_block" [ block_at dst x; g.gsym ];
+      stores (List.mapi (fun (k : int) (e : expr) -> (Printf.sprintf "con:%s.%d" c.cname k, e)) es)
   | Econs (_, []) -> scalar dst
   | Econs (c, es) ->
       block dst x;
@@ -374,6 +415,23 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
   | Ewhile (c, body) -> scalar dst; flow None c (junk ()); flow None body (junk ())
   | Efor (_, lo, hi, _, body) -> scalar dst; flow None lo (junk ()); flow None hi (junk ()); flow None body (junk ())
   | Eassert e -> scalar dst; flow None e (junk ())
+
+(* f a1 ... an: a call for each argument, of what the one before returned *)
+and call (x : expr) (f : expr) (args : expr list) (dst : string) : unit =
+  let n = List.length args in
+  let fn = ref (operand f) in
+  List.iteri
+    (fun (k : int) (a : expr) ->
+      incr calls;
+      let i = Printf.sprintf "%s:%d:c%d" !unit_name x.loc !calls in
+      let result = if k = n - 1 then dst else temp () in
+      fact "in_function" [ i; !inside ];
+      site_in i;
+      fact "call_indirect" [ i; !fn ];
+      fact1 "argument" i (operand a);
+      fact "call_ret" [ i; result ];
+      fn := result)
+    args
 
 (* the variable e's value is in: its own if it is one, or a new one *)
 and operand (x : expr) : string =
@@ -406,6 +464,9 @@ let unit_ (name : string) (items : item list) : string =
   unit_name := name;
   temps := 0;
   calls := 0;
+  try_count := 0;
+  tries := [];
+  handler_vars := [];
   funs := 0;
   blocks := 0;
   inside := name ^ ":init";

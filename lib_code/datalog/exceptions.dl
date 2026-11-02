@@ -1,0 +1,52 @@
+% Which exceptions an ML program may let escape (docs/plans/
+% plan_dotnet_languages.md, stage 9), over the facts of mini-ml -facts
+% (Closure_facts.mli) and the call graph of pointer.dl (call_edge), run
+% with calls.dl:
+%   at(S, E)          the raise or the call S may raise E
+%   arrives(T, E)     E may come to the try T, from its body
+%   passes(T, E)      ... and go through: no case catches it for sure
+%   escapes(F, E)     E may leave the function F
+%   uncaught(F, E)    E may leave a unit's toplevel F: the program dies
+%   raised(E, R)      an uncaught E may be raised at R
+% A raised exception is its constructor when written (raise Empty), a
+% handler's variable raised again what that try may arrive at, else the
+% exceptions' blocks its argument may point to (pt, exn_block). Not
+% here: the exceptions of the primitives (Division_by_zero, an array's
+% Invalid_argument), and a function of the library not read raises
+% nothing (lib_core's are read with the program, -L).
+%
+% cs-history:
+% CLU (Barbara Liskov, 1975) and then Java made a function declare what
+% it raises and the compiler check it; ML did not, and the analysis came
+% after: Kwangkeun Yi's exception analysis of SML (1994, by abstract
+% interpretation), Xavier Leroy and François Pessaux's for OCaml (ocamlexc,
+% 2000, by types and row variables, the precision of the type checker).
+% Over a call graph, as here, it is the transitive closure plus a
+% subtraction at each try: the Datalog is ten lines.
+%
+% References: Xavier Leroy, François Pessaux, "Type-based analysis of
+% uncaught exceptions" (TOPLAS 2000); Kwangkeun Yi, "Compile-time
+% detection of uncaught exceptions in Standard ML programs" (SAS 1994).
+
+at(S, E) :- raise_of(S, E).
+at(R, E) :- reraises(R, T), arrives(T, E).
+at(R, E) :- raise_in(R, F), argument(R, V), pt(V, H), exn_block(H, E).
+at(I, E) :- call_edge(I, G), escapes(G, E).
+
+protected(S) :- in_try(S, T).
+nested(T) :- try_in_try(T, T2).
+
+arrives(T, E) :- at(S, E), in_try(S, T).
+arrives(T2, E) :- passes(T, E), try_in_try(T, T2).
+passes(T, E) :- arrives(T, E), \+ catches(T, E), \+ catches_all(T).
+
+escapes(F, E) :- at(S, E), in_function(S, F), \+ protected(S).
+escapes(F, E) :- at(R, E), raise_in(R, F), \+ protected(R).
+escapes(F, E) :- passes(T, E), try_in_function(T, F), \+ nested(T).
+
+uncaught(F, E) :- init(F), escapes(F, E).
+
+% where an uncaught E may be raised: a raise of E in a function the
+% toplevels reach and E may leave (not each raise's own way out: one of
+% the function's raises of E may be caught where another is not)
+raised(E, R) :- uncaught(F, E), raise_in(R, G), at(R, E), reached(G), escapes(G, E).

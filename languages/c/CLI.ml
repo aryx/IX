@@ -32,6 +32,11 @@ variables read and written: Ir_facts.mli), for liveness by mini-datalog:
   mini-cc -m 7 -flow hello.c > flow.dl
   mini-datalog -q 'across_call(V, P)' lib_code/datalog/liveness.dl flow.dl
 -dflow: the compiler's own liveness (Opti's regs), as facts, to compare.
+-dotnet: x.dll, a .NET assembly of the file, with languages/c/dotnet/libc.c
+(-L: its directory), for Microsoft's dotnet and mini-dotnet; a managed C, as
+C++/CLI's safe mode: a struct a class, a pointer an array and an index (Ptr),
+what .NET's types do not allow refused (a pointer cast, an int made one):
+  mini-cc -dotnet -L languages/c/dotnet hello.c; dotnet hello.dll
 -g: acid's declarations of the file's types in the object, for mini-ld -g.
 -a: no object; acid's declarations of the file's types on stdout, 5c's (Acid
 says what), for mini-acid's -l; -aa: not its #includes'; -n with it: in x.acid:
@@ -136,6 +141,29 @@ let flow_backend ~(own : bool) : backend =
     saved = false;
   })
 
+(* a managed C to .NET's IL (dotnet/, plan_dotnet_languages.md, stage
+ * 5): the assembly written at the file's end, out, its
+ * runtimeconfig.json beside it *)
+let dotnet_backend (caps : < caps; .. >) ~(out : Fpath.t) : backend =
+  ({
+    init = (fun () ->
+      Check.xcom := Fun.id;
+      Check.outstring := Cil_strings.outstring;
+      Check.managed := true;
+      Declare.gextern := Lower_cil.gextern;
+      Lower_cil.start (Fpath.to_string (Fpath.rem_ext (Fpath.base out))));
+    codgen = Lower_cil.func;
+    finish = (fun () ->
+      FS.write caps out (Lower_cil.finish ());
+      FS.write caps (Fpath.set_ext ".runtimeconfig.json" out) Writer.runtime_config);
+    listing = (fun () -> "");
+    obj = Emit.obj;
+    saved = false;
+  })
+
+(* a file read after the program's, its name and text: -dotnet's libc.c *)
+let prelude : (string * string) option ref = ref None
+
 (* a front end's state is global: one file per run; the tokens are
  * read by Lexer, whose lexbuf is over Pre's input stack *)
 (* (-x and -S together, -D and -I together: at most 7 parameters for
@@ -166,23 +194,28 @@ let compile (caps : < caps; .. >) (mach : Tree.machine) (be : backend) ~show:(du
   | Some text ->
       Tree_helpers.lineno := 1;
       Pre.history := [];
+      Option.iter (fun ((name, text) : string * string) -> Pre.push_file name text) !prelude;
       Pre.push_file (Fpath.to_string file) text;
       (match Parser.prog Lexer.token (Lexer.lexbuf ()) with
        | () when !acid_only -> Ok ()
-       | () ->
-           be.finish ();
-           if listing then print caps (be.listing ());
-           if be.saved then Asm.save caps out (be.obj file);
-           Ok ()
+       | () -> (
+           match be.finish () with
+           | () ->
+               if listing then print caps (be.listing ());
+               if be.saved then Asm.save caps out (be.obj file);
+               Ok ()
+           | exception Tree_helpers.Error m -> Error (Printf.sprintf "%s:%s" (Fpath.to_string file) m))
        | exception Tree_helpers.Error m -> Error (Printf.sprintf "%s:%s" (Fpath.to_string file) m)
        | exception Parsing.Parse_error -> Error (Printf.sprintf "%s:%d: syntax error" (Fpath.to_string file) !Tree_helpers.lineno))
 
 let main (caps : < caps; .. >) (argv : string array) : int =
-  let mach = ref Machines.arm and simple = ref false and facts = ref false and flow = ref false and dflow = ref false and dir = ref false and dssa = ref false and ssa = ref false and opti = ref [] and dump = ref false and listing = ref false and out = ref "" and defs = ref [] and incs = ref [] and files = ref [] and acidfile = ref false in
+  let mach = ref Machines.arm and simple = ref false and facts = ref false and flow = ref false and dflow = ref false and dir = ref false and dssa = ref false and ssa = ref false and opti = ref [] and dump = ref false and listing = ref false and out = ref "" and defs = ref [] and incs = ref [] and files = ref [] and acidfile = ref false and dotnet = ref false and libdir = ref "" in
   let rec args = function
     | "-m" :: "5" :: rest -> mach := Machines.arm; args rest
     | "-m" :: "7" :: rest -> mach := Machines.arm64; args rest
     | "-simple" :: rest -> simple := true; args rest
+    | "-dotnet" :: rest -> dotnet := true; mach := Machines.arm; args rest
+    | "-L" :: d :: rest -> libdir := d; args rest
     | "-facts" :: rest -> facts := true; listing := true; args rest
     | "-flow" :: rest -> flow := true; listing := true; args rest
     | "-dflow" :: rest -> dflow := true; listing := true; args rest
@@ -221,8 +254,15 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   | [ file ], incs -> (
       (* x.c to x.5, in the current directory, as 5c *)
       let out0 = out in
-      let out = if !out <> "" then path !out else Fpath.set_ext ("." ^ String.make 1 !mach.thechar) (Fpath.base file) in
-      match compile caps !mach (if !facts then facts_backend else if !flow || !dflow then flow_backend ~own:!dflow else if !simple then simple_backend caps ~dir:!dir ~ssa:(!ssa, !dssa) ~opti:!opti else compat !mach) ~show:(!dump, !listing) ~out (List.rev !defs, incs) file with
+      let ext = if !dotnet then ".dll" else "." ^ String.make 1 !mach.thechar in
+      let out = if !out <> "" then path !out else Fpath.set_ext ext (Fpath.base file) in
+      let lib = Fpath.(path (if !libdir = "" then "." else !libdir) / "libc.c") in
+      if !dotnet && FS.read_opt caps lib = None then begin
+        eprint caps (Printf.sprintf "mini-cc: -dotnet: no %s (-L: its directory, languages/c/dotnet)\n" (Fpath.to_string lib));
+        1
+      end else begin
+      if !dotnet then prelude := Option.map (fun (text : string) -> (Fpath.to_string lib, text)) (FS.read_opt caps lib);
+      match compile caps !mach (if !dotnet then dotnet_backend caps ~out else if !facts then facts_backend else if !flow || !dflow then flow_backend ~own:!dflow else if !simple then simple_backend caps ~dir:!dir ~ssa:(!ssa, !dssa) ~opti:!opti else compat !mach) ~show:(!dump, !listing) ~out (List.rev !defs, incs) file with
       | Ok () when !acid_only ->
           (* (-n: x.acid, in the current directory as x.5, or -o's) *)
           let text = Acid.text () in
@@ -230,7 +270,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
           else print caps text;
           0
       | Ok () -> 0
-      | Error m -> eprint caps (m ^ "\n"); 1)
+      | Error m -> eprint caps (m ^ "\n"); 1
+      end)
   | exception Failure m -> eprint caps ("mini-cc: " ^ m ^ "\n"); 1
   | _, _ -> eprint caps "usage: mini-cc -m 5|7 [-O3] [-simple [-dir] [-ssa] [-dssa] [-O|-Opass]] [-facts] [-flow] [-x] [-S] [-Idir] [-Dname=value] [-o out] file.c   (-h: how)\n"; 1
   end

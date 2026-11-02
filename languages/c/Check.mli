@@ -53,6 +53,12 @@
 (* what the front end asks of the back end, set by the command (CLI) *)
 val outstring : (string -> int -> int) ref
 val xcom : (Tree.expr -> Tree.expr) ref
+(* the .NET back end's trees, whose places are typed (a member a field,
+ * an array an array): a member kept a Dot of its structure, an l-value
+ * when the structure is one, not the content of the structure's
+ * address plus the member's offset; an array used, the address of the
+ * array, not of its first element *)
+val managed : bool ref
 
 (* the value of a small integral constant, or -159 *)
 val vconst : Tree.expr -> int

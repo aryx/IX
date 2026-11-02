@@ -1,0 +1,16 @@
+-- union U { int i; char c; } u; void main(void) { u.i = 1; }
+r1.c:1: a union: not in mini-cc's managed C (plan_dotnet_languages.md, decision 4)
+-- int x; void main(void) { char *p; p = (char*)&x; }
+r2.c:1: a pointer cast to another type: not in mini-cc's managed C (plan_dotnet_languages.md, decision 4)
+-- void main(void) { int *p; p = (int*)4; }
+r3.c:1: an integer made a pointer: not in mini-cc's managed C (plan_dotnet_languages.md, decision 4)
+-- int x; void main(void) { long l; l = (long)&x; }
+r4.c:1: a pointer made an integer: not in mini-cc's managed C (plan_dotnet_languages.md, decision 4)
+-- struct S { int a; } s; void main(void) { int *p; p = &s.a; }
+r5.c:1: the address of a member: not in mini-cc's managed C (plan_dotnet_languages.md, decision 4)
+-- extern int print(char*, ...); char *f = "%d"; void main(void) { print(f, 1); }
+r6.c:1: a format that is not a literal: not in mini-cc's managed C (plan_dotnet_languages.md, decision 4)
+-- int g(int, ...); void main(void) { g(1, 2); }
+r7.c:1: a function of variable arguments: not in mini-cc's managed C (plan_dotnet_languages.md, decision 4)
+-- void *malloc(unsigned long); void main(void) { void *p; p = malloc(8); }
+r8.c:1: malloc's memory given no type: not in mini-cc's managed C (plan_dotnet_languages.md, decision 4)

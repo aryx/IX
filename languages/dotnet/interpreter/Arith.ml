@@ -97,8 +97,10 @@ let binop (op : Il.binop) (a : value) (b : value) : value =
       | Add | Add_ovf | Add_ovf_un -> I8 (Int64.add x y)
       | Sub | Sub_ovf | Sub_ovf_un -> I8 (Int64.sub x y)
       | Mul | Mul_ovf | Mul_ovf_un -> I8 (Int64.mul x y)
-      | Div | Div_un -> if Int64.compare y 0L = 0 then divide_by_zero () else I8 (Int64.div x y)
-      | Rem | Rem_un -> if Int64.compare y 0L = 0 then divide_by_zero () else I8 (Int64.rem x y)
+      | Div -> if Int64.compare y 0L = 0 then divide_by_zero () else I8 (Int64.div x y)
+      | Rem -> if Int64.compare y 0L = 0 then divide_by_zero () else I8 (Int64.rem x y)
+      | Div_un -> if Int64.compare y 0L = 0 then divide_by_zero () else I8 (Int64.unsigned_div x y)
+      | Rem_un -> if Int64.compare y 0L = 0 then divide_by_zero () else I8 (Int64.unsigned_rem x y)
       | And -> I8 (Int64.logand x y) | Or -> I8 (Int64.logor x y) | Xor -> I8 (Int64.logxor x y))
   | R8 x, R8 y -> (
       match op with

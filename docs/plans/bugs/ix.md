@@ -481,6 +481,16 @@ limit is now 30,000, mini-ml's build tried at 29,000. Reproduction: let rec f
 n = if n = 0 then 0 else 1 + f (n - 1), f 20000, by mini-ml -dotnet, run by
 mini-dotnet.
 
+## mini-dotnet: div.un and rem.un of int64 signed (2026-11-02, fixed)
+
+Found by mini-cc -dotnet's fuzz differential (languages/c/dotnet/tests/run.sh
+-fuzz 300): 9 of TinyC_fuzz.py's programs printed what Microsoft's dotnet did
+not, an unsigned long long's `%` or `/`. The interpreter's Arith took `Div_un`
+and `Rem_un` with `Div` and `Rem` for int64 (Int64.div), where int32's were
+unsigned; now Int64.unsigned_div and unsigned_rem. The JIT's were right (UDIV).
+Reproduction: `uvlong a = (long)-5, b = 7; print("%lld", (vlong)(a % b))`, 4 by
+Microsoft's, -5 by mini-dotnet.
+
 ## Helpers.run under mini-rio: the program started twice (2026-11-01, the author, fixed)
 
 The author: "running emacs from it seems to run it externally, which is good, in

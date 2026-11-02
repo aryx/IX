@@ -404,7 +404,7 @@ APART = [
     # 2026-11-01: "dotnet/ that is spread around could be considered a
     # variants and put with the other variants (ssa/. opti/, etc.)";
     # mini-dotnet itself, languages/dotnet/, its own row below)
-    ("dotnet/", "the compilers' back ends to .NET and their runtime (plan_dotnet_languages.md): mini-ml's, lib_core's",
+    ("dotnet/", "the compilers' back ends to .NET and their runtime (plan_dotnet_languages.md): mini-ml's, lib_core's, mini-cc's",
      lambda dirs, path: "dotnet" in dirs and not path.startswith("languages/dotnet/")),
     # (the author, 2026-10-10: "maybe we should also skip code under
     # web/ for make loc?")

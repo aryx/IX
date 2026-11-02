@@ -136,6 +136,7 @@ test-vs-goken: all
 	./languages/c/tests/acid.sh 5 $(GOKEN_W)/acid5
 	./languages/c/tests/acid.sh 7 $(GOKEN_W)/acid7
 	./languages/c/tests/fuzz.sh $(GOKEN_W)/fuzz 150
+	./languages/c/dotnet/tests/run.sh -dune -fuzz 300
 	P9DIFF=$(GOKEN_W)/p9diff ./version_control/tests/diff_fuzz.py 500
 	./machine/tests/corpus.py 5 $(GOKEN_W)/libc5/*/*.exe
 	./machine/tests/corpus.py 7 $(GOKEN_W)/libc7/*/*.exe

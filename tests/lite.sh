@@ -320,6 +320,7 @@ job "mini-dotnet: Microsoft's assemblies read, listed (-S), run: what Microsoft'
 job "mini-tiger: fork-tiger's programs and Appel's 49, compiled to .NET, run by mini-dotnet" languages/tiger/tests/run.sh -dune
 job "mini-csc: the survey's C# and its own, compiled to .NET, run by mini-dotnet: what Microsoft's printed" languages/dotnet/csc/tests/run.sh -dune
 job "mini-ml -dotnet: ML compiled to .NET, verified and run by mini-dotnet: what OCaml prints" languages/ml/dotnet/tests/run.sh -dune
+job "mini-cc -dotnet: C to .NET, run by mini-dotnet as the tests' .out; what it refuses" languages/c/dotnet/tests/run.sh -dune
 job "mini-cc -facts, -flow: a C file's facts, the pointer analysis and liveness on them" languages/c/facts/tests/run.sh
 job "mini-ml -flow: SSA as facts, liveness and dominators against the compiler's" languages/ml/facts/tests/run.sh
 job "mini-analyze: toy C and ML programs, each call through a pointer or a closure, its targets, the bugs and dead functions found" analyzers/tests/run.sh
@@ -556,6 +557,7 @@ if [ -n "$runs7" ]; then
   job $a "mini-forth built by ix" noskip env MINIFORTH=$K/languages/forth/mini-forth languages/forth/tests/run.sh -mini
   job $a "mini-datalog built by ix" noskip env MINIDATALOG=$K/languages/datalog/mini-datalog languages/datalog/tests/run.sh -mini
   job $a "mini-ml -dotnet built by ix, its assemblies run by dune's mini-dotnet" noskip env MINIML=$K/languages/ml/mini-ml MINIDOTNET=_build/default/languages/dotnet/Main.exe languages/ml/dotnet/tests/run.sh -mini
+  job $a "mini-cc -dotnet built by ix, its assemblies run by dune's mini-dotnet" noskip env MINICC=$K/languages/c/mini-cc MINIDOTNET=_build/default/languages/dotnet/Main.exe languages/c/dotnet/tests/run.sh -mini
   job $a "mini-ml -flow, mini-cc -facts built by ix" by_ix_facts
   job $a "games built by ix: recorded frames" nofail games/tests/frames.sh $K/games
   job $a "games built by ix: recorded sounds" nofail games/tests/audio.sh $K/games

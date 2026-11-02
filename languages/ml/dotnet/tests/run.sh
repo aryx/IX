@@ -145,11 +145,11 @@ front_end() {
   [ -f $P/Parser.ml ] && [ -f $P/Lexer.ml ] || { echo "skipped: mini-cc to .NET ($P's Parser.ml not built)"; return; }
   for u in Asm Show_asm $(sed -n '/^SRC=/,/[^\\]$/p' $C/mkfile | sed 's/^SRC=//; s/\\$//'); do
     # (the first there, in this order: ls would sort them)
-    for f in $C/$u.ml $C/*/$u.ml lib_code/$u.ml assembler/$u.ml $P/$u.ml; do [ -f $f ] && break; done
+    for f in $C/$u.ml $C/*/$u.ml lib_code/$u.ml assembler/$u.ml languages/dotnet/assembly/$u.ml $P/$u.ml; do [ -f $f ] && break; done
     files="$files $(realpath $f)"
   done
   local mla=$(abs $ml)
-  if ! (cd $C && $mla -L ../../lib_core -I . -I ../../assembler -I debug -I compat -I simple -I opti -I ssa -I facts \
+  if ! (cd $C && $mla -L ../../lib_core -I . -I ../../assembler -I debug -I compat -I simple -I opti -I ssa -I facts -I dotnet -I ../dotnet/assembly \
           -I ../../lib_code -I ../../$P -dotnet -o $W/mini-cc.dll $files) > $W/cc.err 2>&1; then
     fail "mini-cc compiled to .NET, by $what"; head -3 $W/cc.err; return
   fi

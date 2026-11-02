@@ -110,7 +110,9 @@ let tcompat (n : expr) t1 t2 ttab =
   if stcompat ~cast t1 t2 ttab then
     ignore (diag (Some n) "incompatible types: \"%s\" and \"%s\" for op \"%s\"" (show_type (Some t1)) (show_type (Some t2)) (op_name n))
 
-let lvalue (n : expr) = match n.e with Name _ | Unary (Ind, _) -> true | _ -> false
+let managed = ref false
+
+let rec lvalue (n : expr) = match n.e with Name _ | Unary (Ind, _) -> true | Dot (l, _) -> !managed && lvalue l | _ -> false
 let tlvalue (n : expr) = if not (lvalue n) then ignore (diag (Some n) "not an l-value")
 
 let rec members (t : typ option) = match t with None -> [] | Some t -> t :: members t.down
@@ -129,9 +131,10 @@ let rec dotsearch (s : sym) (tt : typ option) (n : expr) : (typ * int) option =
       | None -> one (List.filter_map (fun t1 -> if unnamed_su t1 then Option.map (fun (x, o) -> (x, o + t1.offset)) (dotsearch s t1.link n) else None) all))
 
 (* the member of l, of type tt at o: l itself, an indirection through
- * its address plus o, or a Dot when l is no l-value (sub.c's makedot) *)
+ * its address plus o, or a Dot when l is no l-value (sub.c's makedot);
+ * managed, always a Dot *)
 let makedot (n : expr) (l : expr) (tt : typ) o =
-  if not (lvalue l) then { n with e = Dot (l, o); t = tt }
+  if !managed || not (lvalue l) then { n with e = Dot (l, o); t = tt }
   else begin
     let l = { l with t = tt } in
     if o = 0 then l
@@ -271,7 +274,7 @@ let rec tcomo ~addr (n : expr) : expr =
     let inner = if tt.etype = Tarray then { n with t = link tt } else n in
     let pt = typ Tind (Some inner.t) in
     pt.width <- (ty Tind).width;
-    { n with e = Unary (Addr, inner); t = pt }
+    { n with e = Unary (Addr, if !managed then n else inner); t = pt }
   end
   else n
 
@@ -528,7 +531,7 @@ let rec ccom (n : expr) : expr =
       let n = { n with e = Unary (Cast, l) } in
       let folded = if is_const l then evconst n else n in
       if is_const folded then folded
-      else if nocast l.t n.t && (not (typefd (et l)) || typeu (et l) && typeu (et n)) then { l with t = n.t }
+      else if nocast l.t n.t && (not (typefd (et l)) || typeu (et l) && typeu (et n)) && not !managed then { l with t = n.t }
       else n
   | Cond (c, a, b) ->
       let c = ccom c in
@@ -539,7 +542,9 @@ let rec ccom (n : expr) : expr =
   | Unary ((Addr | Ind) as o, l) -> (
       (* &*x and *&x as x *)
       match o, (ccom l) with
-      | Addr, { e = Unary (Ind, x); _ } | Ind, { e = Unary (Addr, x); _ } -> { x with t = n.t }
+      (* (managed, *&a of an array a kept: a[0]) *)
+      | (Addr, { e = Unary (Ind, x); _ } | Ind, { e = Unary (Addr, x); _ }) when not !managed || x.t.etype = n.t.etype ->
+          { x with t = n.t }
       | _, l -> common { n with e = Unary (o, l) })
   | Binary (o, l, r) when is_rel o ->
       let l = ccom l in

@@ -97,6 +97,23 @@ TinyC's fuzzer (fuzz44 of `tiny/tests/TinyC_fuzz.py`, seed 11: `x0 ^=
 (uchar)((uchar)x3 ? 256 ^ x2 : x5)`), where TinyC is right and 7c the
 reference. mini-cc reproduces it, being 7c's twin.
 
+### 5e. 7c sign-extends a constant: `SXTW $1, R5`, which 7l refuses
+
+A `&&` or `||` whose 0 or 1 is extended to 64 bits, as a vlong's
+shift count, is made of two `SXTW $1,R5` and `SXTW $0,R5`: an
+instruction of a register only, given a constant. 7l says `illegal
+combination SXTW ABCON NONE REG` (and exits 0, its output wrong);
+mini-ld refuses it. Reproduce (2026-11-02):
+
+    unsigned x, y;
+    long long f(void) { return (unsigned long long)x << (x && y); }
+
+`7c -S`: `CMPW $0,R3; BNE 2(PC); B 3(PC); SXTW $1,R5; B 2(PC); SXTW
+$0,R5; LSL R5,R0`. Found by 300 of `TinyC_fuzz.py`'s programs (seed
+11, with vlong) compiled by mini-cc's native back end, the reference
+of mini-cc -dotnet: 11 hit it. mini-cc reproduces it, being 7c's twin;
+-simple and -dotnet compute the value.
+
 ### 6. The code depends on the host's `qsort`
 
 cck's reassociation (`scon.c`'s `acom2`) sorts its terms with `qsort`,

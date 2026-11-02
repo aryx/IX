@@ -59,8 +59,16 @@ made direct and inlined.
   speed.sh; mini-dotnet's JIT with int64s native on arm64 and a lazy
   start (fib within 1.5x of Microsoft's; the rest 7x to 33x). Not:
   doubles in the JIT, arm's int64s, F#'s IL compared, longer runs.
-- **Stages 5, 6, 7 not built**: mini-cc to IL, mini-datalog compiled,
-  several assemblies in mini-dotnet.
+- **Stage 5 done**: mini-cc -dotnet, a managed C (languages/c/dotnet/):
+  TinyC_tests' 11 programs verified and run by mini-dotnet (and its
+  JIT) and Microsoft's dotnet as the host's cc prints them; 289 random
+  programs (vlong too) as mini-cc's native build prints them; 8 kinds
+  of programs refused, each with its reason. A pointer a pair (an
+  array, an index), a struct a class (decision 4, as built). Not:
+  floats printed (%f), unions, a struct's initializer, an address of a
+  member, functions of variable arguments but print's.
+- **Stages 6, 7 not built**: mini-datalog compiled, several assemblies
+  in mini-dotnet.
 - **Stage 8 begun**: mini-cc and mini-datalog (their ML) compiled to
   .NET, the facts pipeline's answers the native's by both runtimes.
   Not: the pipeline on mini-rc; the one program (needs 6 and 7, and
@@ -259,6 +267,22 @@ but really use the same types!". So the decisions below are those of
    native. (The other way, C's memory one array of bytes as
    WebAssembly's, runs all of C but its values are bytes: converted
    at every call, which this plan's rule refuses.)
+
+   As built (stage 5, 2026-11-02), two changes. A pointer is a pair,
+   Ptr<T> (an array, an index; null for 0), not an int32&: a managed
+   reference can be neither kept in a field nor moved, and C keeps
+   pointers in structures (a Node's next) and moves them (p++); .NET
+   checks the bounds when the pointer is used, so arithmetic past an
+   array is caught there (Cyclone's and CCured's fat pointers, 2002).
+   A variable whose address is taken lives in an array of one element.
+   And a struct is a class, not a .NET struct: its arrays and
+   structures made by its constructor, C's assignment its Clone (a
+   value type's arrays would be null until made, at each copy). The
+   front end gives the back end its places typed (Check.managed: a
+   member a Dot, an array's address its own type, no cast dropped),
+   where 5c's typing leaves bytes and offsets; libc.c, in the managed
+   C itself, is compiled with each program, print's formats compiled
+   where they are (as mini-ml's Printf). Cil_types.mli has the table.
 
 5. **mini-datalog compiled** (Soufflé's way), its relations of CTS
    values: a relation a class with a set of tuples of its columns'
@@ -725,6 +749,25 @@ but really use the same types!". So the decisions below are those of
 5. **mini-cc to IL, a managed C** (decision 4). Check: mini-cc's
    tests that stay in it, by both runtimes, what the native build
    prints; those refused, counted with their reason.
+
+   Done (2026-11-02): `mini-cc -dotnet -L languages/c/dotnet x.c`,
+   x.dll. languages/c/dotnet/tests/run.sh: tiny/tests/TinyC_tests'
+   11 programs (integers of each width, calls, control, enums,
+   function pointers, globals, pointers into arrays, a sort, structs,
+   unsigned division), every method verified by mini-dotnet, run by
+   dune's and ix's mini-dotnet, ix's JIT and Microsoft's dotnet, as
+   their .out (make test: dune's, and ix's mini-cc after ix); 8
+   programs refused, each with its message (a union, a pointer cast,
+   an int made a pointer and back, a member's address, a format of a
+   variable, variable arguments, malloc's memory given no type).
+   -fuzz 300 (make test-vs-goken): TinyC_fuzz.py's programs against
+   mini-cc's native arm64 build with goken's libc, 289 the same, 11
+   not built natively (goken's 7c, bugs/goken.md 5e); the host's cc
+   is no reference there, its ANSI promotions not Plan 9's. It found
+   mini-dotnet's int64 div.un and rem.un signed (bugs/ix.md, fixed).
+   ix's mini-cc writes the same bytes as dune's. Sizes: the back end
+   1,598 lines (Cil_types, Cil_strings, Cil_exprs, Lower_cil), libc.c
+   154, the front end's flag 12.
 6. **mini-datalog compiled** (decision 5). Check: its analyses
    (lib_code/datalog/) on mini-cc's and mini-ml's facts, the same answers as
    the interpreter's.
@@ -799,7 +842,7 @@ but really use the same types!". So the decisions below are those of
 | the .NET subset in C# (stage 8's needs) | 600 |
 | ML's library for .NET (List, Option, String, Hashtbl, Printf) | 500 |
 | tail calls in mini-dotnet | 150 |
-| mini-cc's managed back end | 1,000 |
+| mini-cc's managed back end (built: 1,598, and libc.c 154) | 1,000 |
 | mini-datalog's compiler | 600 |
 | several assemblies in mini-dotnet | 200 |
 

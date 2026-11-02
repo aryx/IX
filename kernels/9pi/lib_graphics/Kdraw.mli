@@ -83,6 +83,9 @@ val memload : image -> int array -> string -> int
  * each pixel k by k (Memdraw.scale; the draw device's 'z'); false when
  * it cannot (another chan; the C pixels, PIXEL=c, which have none) *)
 val scale : image -> image -> int array -> bool
+(* ix: [shrink dst src [| r[4] sp[2] k |]]: src drawn k times smaller
+ * (Memdraw.shrink; the draw device's 'Z'); false as scale's *)
+val shrink : image -> image -> int array -> bool
 (* [unload img [| r[4] |]]: its pixels *)
 val unload : image -> int array -> string
 

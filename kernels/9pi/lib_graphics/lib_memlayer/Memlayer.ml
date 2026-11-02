@@ -129,6 +129,14 @@ let load w r data compressed =
 
 (* ix: Memdraw.scale, then a window's changed rectangle on its screen,
  * as draw *)
+let shown_after dst r =
+  (match dst.layer, clip r dst.r with
+   | Some _, Some r -> (match clip r dst.clipr with Some r -> show dst r | None -> ())
+   | _ -> ());
+  true
+
+let shrink dst r src sp k = Memdraw.shrink dst r src sp k && shown_after dst r
+
 let scale dst r src sp k =
   Memdraw.scale dst r src sp k
   && begin

@@ -51,6 +51,8 @@ val draw : Memimage.t -> rect -> Memimage.t -> int * int -> Memimage.t -> int * 
 
 (* ix: Memdraw.scale, then shown as draw's *)
 val scale : Memimage.t -> rect -> Memimage.t -> int * int -> int -> bool
+(* ix: Memdraw.shrink, then shown as draw's *)
+val shrink : Memimage.t -> rect -> Memimage.t -> int * int -> int -> bool
 
 (* memopaque: a 1x1 repl white GREY1 image *)
 val opaque : Memimage.t

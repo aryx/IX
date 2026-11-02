@@ -497,6 +497,39 @@ let draw dst r src sp mask mp op =
  * not repeated and not the destination's memory; else false, nothing
  * drawn. Clipped as a draw is: dst's rectangle and clip, and where
  * src's rectangle and clip go once scaled. *)
+let shrink dst r src (spx, spy) k =
+  let d = dst.chan.Memchan.depth in
+  if k < 1 || src.repl || src.data == dst.data || d land 7 <> 0
+     || src.chan.Memchan.hi <> dst.chan.Memchan.hi || src.chan.Memchan.lo <> dst.chan.Memchan.lo then false
+  else begin
+    let (rx0, ry0, _, _) = r in
+    let ( >>= ) o f = match o with None -> None | Some v -> f v in
+    (* (dst's pixels whose src pixel is inside src's rectangle and clip) *)
+    let up a = if a >= 0 then (a + k - 1) / k else -((-a) / k) in
+    (match
+       clip r dst.r >>= fun r ->
+       clip r dst.clipr >>= fun r ->
+       clip src.r src.clipr >>= fun (a0, b0, a1, b1) ->
+       clip r (rx0 + up (a0 - spx), ry0 + up (b0 - spy), rx0 + up (a1 - spx), ry0 + up (b1 - spy))
+     with
+     | None -> ()
+     | Some ((x0, y0, x1, y1) as cr) ->
+         if dst.data.onscreen then !hwdraw cr;
+         let bpp = d asr 3 and db = dst.data.bytes and sb = src.data.bytes in
+         for y = y0 to y1 - 1 do
+           let sy = spy + ((y - ry0) * k) in
+           (* (a row's two first addresses, then steps: byteaddr once a row) *)
+           let da = ref (byteaddr dst x0 y) and sa = ref (byteaddr src (spx + ((x0 - rx0) * k)) sy) in
+           for _i = x0 to x1 - 1 do
+             Bytes.blit sb !sa db !da bpp;
+             da := !da + bpp;
+             sa := !sa + (k * bpp)
+           done
+         done;
+         flush dst cr);
+    true
+  end
+
 let scale dst r src (spx, spy) k =
   let d = dst.chan.Memchan.depth in
   if k < 1 || src.repl || src.data == dst.data || d land 7 <> 0

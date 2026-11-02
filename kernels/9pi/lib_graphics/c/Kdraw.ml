@@ -73,6 +73,7 @@ external ellipse : image -> image -> int array -> unit = "draw_ellipse"
 external memload : image -> int array -> string -> int = "draw_memload"
 (* ix: the OCaml pixels' only: none here *)
 let scale (_ : image) (_ : image) (_ : int array) = false
+let shrink (_ : image) (_ : image) (_ : int array) = false
 (* [unload img [| r[4] |]]: its pixels *)
 external unload : image -> int array -> string = "draw_unload"
 

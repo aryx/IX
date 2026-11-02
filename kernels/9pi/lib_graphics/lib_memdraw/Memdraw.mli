@@ -108,3 +108,12 @@ val fast_grey : bool ref
  * whole bytes a pixel, src not repeated nor sharing dst's memory:
  * else false. *)
 val scale : Memimage.t -> rect -> Memimage.t -> int * int -> int -> bool
+
+(* ix: [shrink dst r src sp k]: src from sp drawn into dst's r k times
+ * smaller, each pixel of dst the one of src at k times its offset
+ * (nearest, no blending): a window's picture made a thumbnail, Expose's
+ * (plan_desktop.md), the draw device's 'Z', scale's other way. The same
+ * images as scale, clipped as it is; else false. In OCaml, a pixel a
+ * copy: a screen's worth is a fraction of a second on a Pi 1, for a
+ * picture looked at twice a second. *)
+val shrink : Memimage.t -> rect -> Memimage.t -> int * int -> int -> bool

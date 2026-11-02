@@ -105,6 +105,12 @@ val draw_mask : Display.image -> Rectangle.t -> Display.image -> Point.t -> Disp
  * drawn to find out *)
 val scale : Display.image -> Rectangle.t -> Display.image -> Point.t -> int -> unit
 val can_scale : Display.image -> Display.image -> bool
+(* ix: [shrink dst r src p k]: src from p drawn into dst's r k times
+ * smaller, a pixel of dst for k by k of src, the nearest (mini-9pi's 'Z':
+ * a window made a thumbnail, Expose's). [can_shrink dst src]: does the
+ * device have it *)
+val shrink : Display.image -> Rectangle.t -> Display.image -> Point.t -> int -> unit
+val can_shrink : Display.image -> Display.image -> bool
 
 (* a rectangle filled; its border, n pixels wide, inside it *)
 val fill : Display.image -> Rectangle.t -> Display.image -> unit

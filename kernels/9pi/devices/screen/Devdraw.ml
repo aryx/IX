@@ -427,6 +427,17 @@ let drawmesg cl a =
           if k < 1 || k > 16 then error "bad scale";
           if not (Kdraw.scale dst src (Array.concat [ rect 9; pt 25; [| k |] ])) then error "cannot scale these images";
           34
+      (* ix: a draw k times smaller, a pixel of dst for k by k of src: 'Z'
+       * dstid[4] srcid[4] R[4*4] P[2*4] k[1] (Kdraw.shrink: a window's
+       * thumbnail, Expose's, plan_desktop.md; not Plan 9's) *)
+      | 'Z' ->
+          short 34;
+          let dst = drawimage cl a (p + 1) in
+          let src = drawimage cl a (p + 5) in
+          let k = b 33 in
+          if k < 1 || k > 64 then error "bad scale";
+          if not (Kdraw.shrink dst src (Array.concat [ rect 9; pt 25; [| k |] ])) then error "cannot shrink these images";
+          34
       (* the next drawing's op: 'O' op *)
       | 'O' -> short 2; cl.op <- b 1; 2
       (* line: 'L' dstid[4] p0[2*4] p1[2*4] end0[4] end1[4] radius[4] srcid[4] sp[2*4] *)

@@ -140,6 +140,7 @@ let memload dst a data = Memlayer.load dst (rect a 0) data (a.(4) <> 0)
 
 (* ix: [| r[4] sp[2] k |] *)
 let scale dst src a = Memlayer.scale dst (rect a 0) src (a.(4), a.(5)) a.(6)
+let shrink dst src a = Memlayer.shrink dst (rect a 0) src (a.(4), a.(5)) a.(6)
 
 let unload i a = Memimage.unload i (rect a 0)
 

@@ -523,12 +523,12 @@ void user_abort(int kind)
              cur_tf[15], far);
 }
 
-/* Is there a device at this register? Read with start.s told that a
- * fault here is an answer and not the kernel's end (kernel_data): an
- * emulator may have no memory at all where a board has a device
- * (QEMU's raspi: the PWM), and a driver asks before it writes. The
- * kernel by ix's own tools (l.s) has no such entry yet: a probe of
- * nothing halts there, as any fault. */
+/* Is there a device at this register? Read with start.s (or l.s, the
+ * kernel by ix's own tools) told that a fault here is an answer and not
+ * the kernel's end (kernel_data): an emulator may have no memory at all
+ * where a board has a device (QEMU's raspi: the PWM), and a driver asks
+ * before it writes. (old: l.s had no such entry: a probe of nothing
+ * halted there, as any fault, the first sound of a program under QEMU.) */
 volatile unsigned probing[2];
 
 value io_probe(value off)

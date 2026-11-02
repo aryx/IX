@@ -273,7 +273,27 @@ TEXT data_entry+0(SB), $-4
 	MOVW	$3, R0
 	BL	user_abort+0(SB)
 	B	user_return+0(SB)
+// a probe (machine.c's io_probe: probing[0] set) is the kernel asking
+// whether a device is there: its fault is the answer (probing[1] takes the
+// link, not 0) and the kernel goes on after the instruction that faulted
+// (the link is 8 past it), as start.s's. QEMU's raspi has no PWM, its
+// registers no memory at all: without this a game's first sound halted the
+// kernel built by ix's tools, the console saying k (kfault's first letter)
+// forever. The address by a constant ($probing), not R12: the kernel's
+// code may have it as a register of its own. old: MOVW $3, R0; B fault
 kernel_data:
+	MOVW.W	R0, -4(R13)
+	MOVW	$probing+0(SB), R0
+	MOVW	0(R0), R0
+	CMP	$0, R0
+	BEQ	kernel_data_fault
+	MOVW	$probing+0(SB), R0
+	MOVW	R14, 4(R0)
+	MOVW.P	4(R13), R0
+	SUB	$4, R14
+	MOVW.S	R14, R15
+kernel_data_fault:
+	MOVW.P	4(R13), R0
 	MOVW	$3, R0
 	B	fault+0(SB)
 TEXT prefetch_entry+0(SB), $-4

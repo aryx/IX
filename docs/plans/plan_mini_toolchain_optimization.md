@@ -576,3 +576,43 @@ a million pairs), in mem_check.sh and lite's libc job. Left of the
 23rd's list: `ml_floor`'s call and the allocations, which
 plan_ml_floats.md's unboxed floats change (another session's, in
 `ssa/` now).
+
+2026-11-02, **the three benchmarks measured again** (the author: "I
+think running mini-xv6 when compiled by mini-ml was 4x slower than
+when compiled by ocaml-light. Is is still the case?", "I think we had
+similar bad results for crypto", then "yes rerun xv6 and add the
+crypto row"). The shared tree at 125414e6, with another session's
+uncommitted lib_core (String, Hashtbl, Printf); built by the tree's
+bin/, not the installed mini-ml of 2026-10-29 (its start object no
+longer links with the runtime: `undefined: ml_raise_c`).
+
+mini-xv6, `kernels/xv6/numbers.sh light=kernel-pi4.elf
+ix=../../_mk/7/kernels/xv6/kernel8.img`:
+
+| build | image | to `sh` and an `ls` | the check's session |
+|---|---:|---:|---:|
+| ocaml-light, gcc | 1,933,928 (an ELF) | 3.2 s | 21.1 s |
+| ix's tools | 2,031,256 | 8.0 s | 27.1 s |
+
+The session 1.28 (4.4 on 2026-10-02, 1.33 on 2026-10-26): the target,
+under 2, is met. The boot, 2.5, is what is left.
+
+lib_crypto, `lib_crypto/tests/numbers.sh` (arm64, the ratio to
+ocamlopt's instructions):
+
+| | mini-ml, arm64 | ocamlopt | ratio | 2026-10-11 | mini-ml, arm |
+|---|---:|---:|---:|---:|---:|
+| the start | 2,632,650 | 2,514,882 | 1.0 | 1.9 | 3,795,102 |
+| aes | 1,047,424 | 678,610 | 1.5 | 2.6 | 1,133,435 |
+| ghash | 1,478,195 | 866,918 | 1.7 | 2.7 | 1,488,842 |
+| chacha20 | 619,757 | 311,068 | 2.0 | 4.3 | 1,290,007 |
+| poly1305 | 69,732 | 40,177 | 1.7 | 4.8 | 610,262 |
+| sha256 | 1,761,055 | 205,500 | **8.6** | 27.6 | 1,796,916 |
+| x25519 | 28,147,362 | 17,734,615 | 1.6 | 3.4 | 91,226,599 |
+| ecdsa | 58,857,452 | 37,548,567 | 1.6 | 3.4 | 183,330,186 |
+| rsa | 26,822,917 | 15,172,699 | 1.8 | 3.5 | 63,063,250 |
+
+A loop's body 1.5 to 2.0 of ocamlopt's. sha256 the one left: its
+Int32 operations in place since plan_ml_speed.md's stage 5, each
+result still a block; L (`int32` unboxed inside a function) is its
+next step. Squeak's first screen not measured again.

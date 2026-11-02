@@ -60584,3 +60584,149 @@ Claude noted the linker already builds its debug tables as one big string, so th
 Claude switched lib_machine's mkkernel and the oberon, squeak, singularity mkfiles to `-data`, with byte-identical kernel images.
 mini-asm dropped from 23 s to 0.04 s and mini-ld from 4 s to 2.7 s per `-g` build.
 Claude also committed the datalog work by pathspec, then hit an unrelated RAM_MB error on Pi 1 builds.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 19:11
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the pending work as three commits, checking for other sessions' hunks first. b2a7557e moved mini-tiger's back end to `languages/tiger/dotnet/`. 89e79b5e fixed mini-awk's `END { nextfile }` with its corpus case and a `docs/plans/bugs/ix.md` entry. 508a4c0f landed the `-exn` precision work, the Printf model, `call1_rec.dl`, and the sweep results in `lib_code/datalog/tests/exn_ix.txt`.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 19:11
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude noticed the awk entry in `docs/plans/bugs/ix.md` belonged to another session's work.
+Claude planned to commit only its own hunk of that file.
+Claude would then restore the working copy so the other session's awk entry stayed uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 13:05
+
+**Yoann:**
+
+> let's pause for now because another session is doing the dotnet side of the mini-analyzers, and optimizing the dotnet side
+
+**Claude (summary):**
+
+Claude paused the work and confirmed everything was committed, last commit `fbea8bf8`.
+Claude listed the resume checklist, led by checking what the .NET session changed in `analyzers/`, `languages/ml/facts/` and `lib_code/datalog/`.
+Claude flagged the slow runs (mini-cc at 217 s, mini-ml over 15 minutes) and the stale dead-code and capability lists.
+Claude noted the open mini-datalog stack overflow on large facts files, recorded in `docs/plans/bugs/ix.md`.
+Claude also raised two open questions and the `make test` failure "mini-ml -dotnet built by ix", which also fails on HEAD alone.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 19:29
+
+**Yoann:**
+
+> please make the card, and what is the command to run from the Pi2 booted card?
+
+**Claude (summary):**
+
+Claude traced the 15 seconds an empty C file cost to polymorphic equality in mini-dotnet's Types.ml.
+Claude swapped the polymorphic = on assembly images for ==, cutting the report from 22 s to 2.2 s.
+Claude kept the fingerprint 7127604fadc44b90, passed make test with 182 jobs, and rebuilt the card.
+Claude reran the QEMU Pi 2 check on the rebuilt card, matching native mini-analyze line for line.
+Claude left the changes uncommitted for Yoann's go-ahead, with the card at 256 MB and the mini-mkfs crash unrecorded.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 20:21
+
+**Yoann:**
+
+> let's commit and move the plan to done/. Great work
+
+------------------------------------------------------------------------
+
+## 2026-11-02 19:29
+
+**Yoann:**
+
+> ok, what's next?
+
+**Claude (summary):**
+
+Claude proposed five follow-ups, ordered by priority, with item 1 being the Pi 1 build fix for mini-oberon and mini-singularity.
+Item 1 was to point their `machine/pi1/` at `l1.s` instead of `l.s`, matching mini-9pi, to clear the `undefined label RAM_MB` failure.
+Claude suggested timing a full `./mini-pi -g -q mini-9pi` run to check whether the build is back near the old 30 s.
+Claude also recommended `make self-quick-mix` (about 6 minutes) because two recent commits skipped it after toolchain changes.
+Claude deferred moving mini-cc's `-facts` and `-flow` into `analyzers/c/` and the Datalog engine move, both of which Yoann has now asked to do.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 20:22
+
+**Yoann:**
+
+> maybe we can also update hosts.md with the dotnet and mini-analyzer programs (and maybe other I forget)
+
+**Claude (summary):**
+
+Claude committed the mini-dotnet fix as aab2542e, switching method lookup to compare assembly images by identity.
+Claude reported the fix cut the report time from 22 seconds to 2.2 seconds, per the callgrind profiling notes.
+Claude committed efe67e62 for the card: /lib/analyze assemblies, a 256 MB image, and make check-analyze.
+Claude committed 801d623a moving the dotnet plan to docs/plans/done with a "What is left" section.
+Claude also updated hosts.md and the docs README table within those same commits.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 20:46
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude found nothing of its own left to commit, since its work ended at 801d623a.
+Claude found the remaining uncommitted changes belonged to another session, so it left them alone.
+Claude listed the C facts move to analyzers/c and the Pi 1 build fix for mini-oberon and mini-singularity.
+Claude noted smaller edits to languages/dotnet/CLI.ml, two test scripts, liveness.dl, and instructions.dl.
+Claude offered to commit any named file from this session, otherwise leaving them to the other session.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 20:46
+
+**Yoann:**
+
+> can I close this session?
+
+**Claude (summary):**
+
+Claude said the session can be closed, since all its work is committed at 801d623a with nothing running in the background.
+Claude listed three open items, all recorded in the plan's "What is left" section for a future session to pick up.
+The first is running `dotnet report.dll -fingerprint bugs.c` in /lib/analyze on the real Pi 2.
+The second is running `make self-quick-mix` and `make check-card`, neither of which has run since today's changes.
+The third is the other session's uncommitted tree work (C facts moving to `analyzers/c/`, Pi 1 fix for mini-oberon and mini-singularity), which Claude left for that session to commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-02 20:24
+
+**Yoann:**
+
+> let's do 1, 2, 3, 4, and maybe 5
+
+**Claude (summary):**
+
+Claude linked l1.s into mini-oberon and mini-singularity for the Pi 1, and both sessions pass.
+Claude moved mini-cc's -facts, -flow and -dflow into mini-analyze, sharing one C_front reader with a new C_flow.
+Claude switched the datalog .NET test from mini-cc to mini-analyze -x -a, and reran the flaky C# interop case.
+Claude ran make test (182 jobs, 0 failures) and make self-quick-mix, which passed with 89 files matching Linux.
+Claude timed ./mini-pi -g -q mini-9pi at 3 min 20 s, mostly waiting, and began looking for the slow phase.

@@ -1,4 +1,4 @@
-; the desktop around mini-rio (docs/plans/plan_desktop.md): its programs, in
+; the desktop around mini-rio (docs/plans/done/plan_desktop.md): its programs, in
 ; rio's windows, and desktop.rc and start.rc, which start them; the modules
 ; they share in lib/
 

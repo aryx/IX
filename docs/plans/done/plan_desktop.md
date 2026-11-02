@@ -8,33 +8,36 @@ clicked show a menu with the application (see also /progs/) with icons,
 settings, etc. like in Windows or other Desktop OS. This might need
 modifications to rio to control how to create windows from a script."
 
-**Status: stages 0 to 6 and 9 done**, stage 7 dropped (the author, 2026-11-02:
-"Title bars seems to conflict with rio"), stage 8 left to the author on the
-boards. Rio in `windows/rio/`; a scripted session: `rio -i`, `window`,
-`desktop`, `/dev/wsys`, windows ending with their programs; the layers;
-`panel`; `startmenu`, its table and icons; `desk`, a wallpaper made of bands,
-its icons from a table of the menu's form; `settings`: the wallpaper's colour
-or picture, the clock, the panel's side, the mouse, the volume, written to
-`$home/lib/desktop/settings`, which panel and desk look at again; `expose`, the
-windows shrunk side by side, live, by the draw device's new `Z` (Memdraw.shrink),
-started by the panel's button beside Start. The shakedown (2026-11-02):
-`startmenu -try` opened every program of the table under QEMU; all ran, the
-games' windows made square, Virtua Racing blank after 35 s (its start under
-QEMU, not looked at further); it found a kernel built by ix's tools halting at a
-program's first sound (bugs/ix.md). `files`, `office` and `page` say `idle=wait` (`Plan9_loop`): not
-`netscape` nor `maps`, whose work under a still picture goes a slice a tick. The panel's clock says GMT, as date does: the system has no time zone.
-Stage 4 as built, against the design below: the menu is two panes in one window
-(groups on the left, a group's programs on the right) rather than submenus; click,
-move, click, and no press and drag (the panel has the mouse until the button is
-up); icons are 16 by 16, drawn twice as large on the desk when it comes; the
-table's fields are separated by `|`, and a `top` group is on the menu itself. It
-sizes itself from its table and places itself by `resize -at sw`, so `start` says
-no rectangle. A program not in `/bin` is not listed, so Settings shows when its
-program is on the card. Changed from the design below: a press
-in a panel does not hide the popups, or the button that shows one would see it
-hidden and show it again; the panel hides them itself. A wctl read adds the
-layer's name, so a panel can find its menu in `/dev/wsys`. The sizes below
-are estimates, to be replaced by `make loc`'s numbers as stages end.
+**Status: done** (2026-11-02; the author: "let's move the plan to done/ and stop
+there"): stages 0 to 6 and 9, stage 7 dropped (the author: "Title bars seems to
+conflict with rio"), stage 8 the author's, on the boards; what else is left is
+in "What is left". Rio in `windows/rio/`; a scripted session: `rio -i`,
+`window`, `desktop`, `/dev/wsys`, windows ending with their programs; the
+layers; `panel`; `startmenu`, its table and icons; `desk`, a wallpaper made of
+bands, its icons from a table of the menu's form; `settings`: the wallpaper's
+colour or picture, the clock, the panel's side, the mouse, the volume, written
+to `$home/lib/desktop/settings`, which panel and desk look at again; `expose`,
+the windows shrunk side by side, live, by the draw device's new `Z`
+(Memdraw.shrink), started by the panel's button beside Start. The shakedown
+(2026-11-02): `startmenu -try` opened every program of the table under QEMU; all
+ran, the games' windows made square, Virtua Racing blank after 35 s (its start
+under QEMU, not looked at further); it found a kernel built by ix's tools
+halting at a program's first sound (bugs/ix.md). `files`, `office` and `page`
+say `idle=wait` (`Plan9_loop`): not `netscape` nor `maps`, whose work under a
+still picture goes a slice a tick. The panel's clock says GMT, as date does: the
+system has no time zone. Stage 4 as built, against the design below: the menu is
+two panes in one window (groups on the left, a group's programs on the right)
+rather than submenus; click, move, click, and no press and drag (the panel has
+the mouse until the button is up); icons are 16 by 16, drawn twice as large on
+the desk when it comes; the table's fields are separated by `|`, and a `top`
+group is on the menu itself. It sizes itself from its table and places itself by
+`resize -at sw`, so `start` says no rectangle. A program not in `/bin` is not
+listed, so Settings shows when its program is on the card. Changed from the
+design below: a press in a panel does not hide the popups, or the button that
+shows one would see it hidden and show it again; the panel hides them itself. A
+wctl read adds the layer's name, so a panel can find its menu in `/dev/wsys`.
+The sizes below are estimates, to be replaced by `make loc`'s numbers as stages
+end.
 
 ## What it is for
 
@@ -367,6 +370,51 @@ renames. Changed: `TOP` and the `../lib_` paths of the two mkfiles, the
 top `mkfile`'s `DIRS`, `kernels/9pi/Makefile`'s `IXDIRS` and `CARD_*`,
 `tests/self.rc`, and the path in comments and docs that said `windows/`
 (`done/` plans keep the path of their day).
+
+## What is left
+
+- **Stage 8, on the boards** (the author's): the Pi 1 and the Pi 2, and
+  `mini-qemu -ips 200` before them. The idle desktop's cost, the menu's time to
+  show, a game's fps with the desktop against without, expose's redraw (a screen
+  shrunk in OCaml, twice a second). `startmenu -try` opens every program in turn.
+  Under QEMU, idle: mini-stats alone 15 to 18% of the processor, mini-files 5
+  points more.
+- **Nothing tried under mini-qemu**: every check of this plan ran under QEMU
+  (`check-files`: win-files, win-wctl, win-script, win-layers, win-panel,
+  win-menu, win-open, win-desk, win-expose; win-settings recorded beside them).
+  `check-rio` not run since stage 0; win-new's recorded boot screen no longer
+  matched then, not looked at.
+- **mini-netscape and mini-maps idle**: still 60 frames a second with nothing
+  happening. Their work under a still picture (a page loaded, tiles fetched)
+  goes a slice a tick where there is no second domain, so `idle=wait` would slow
+  it: they would need to say when they are busy.
+- **Virtua Racing**: its window blank after 35 s under QEMU in the shakedown;
+  its start there not looked at.
+- **The Pi 4's `l.s`**: no probe entry, as the Pi 1's had none
+  (`docs/plans/bugs/ix.md`); no PWM sound there yet.
+- **The kernel's recursion**: `Hashtbl.remove` and `replace` still go down a
+  bucket by a call per binding, and mini-ml makes no tail call in a `try`'s
+  handler (`docs/plans/bugs/ix.md`); the two overruns found are fixed, not the
+  kind.
+- **Expose**: no smoothing (a thumbnail's pixel the nearest of k by k: an
+  average of them would read text better), no sliding to the places; the
+  hover's border and live thumbnails of a moving program not seen in a check;
+  `PIXEL=c` has no `Z` (a grey box a window), not tried.
+- **Smaller ideas** (the author asked them kept here):
+  - switching windows from the keyboard, Alt-Tab's way: a key rio would keep
+    for itself instead of giving it to the window in front;
+  - expose from a corner of the screen, as macOS's hot corners, rather than
+    only the panel's button: rio's to watch, the mouse being its;
+  - the desk showing a person's own files as icons too (`$home/Desktop`'s, say),
+    opened by their kind through mini-files' rules (Helpers);
+  - a press and drag from the start button to a program, besides click, move,
+    click (the panel keeps the mouse until the button is up: rio would give the
+    drag to the popup);
+  - a time zone for the panel's clock (GMT, as date: the system has none), with
+    settings to choose it;
+  - wallpaper pictures on the card to choose from (only Aldrin's photograph is
+    there, from mini-office's).
+- **Title bars** (stage 7): dropped, rio's look kept.
 
 ## Related work (from memory, to check before quoting in a `.mli`)
 

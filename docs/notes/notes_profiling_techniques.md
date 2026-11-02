@@ -31,6 +31,8 @@ code" while two of the tools below were in the tree.
 | How far is mini-ml's code from OCaml's? | `tests/icount.c` on the arm64 host, both builds of the same program; `mini-5i -prof` and callgrind by function | 10 | "a frame of mini-doom: 16.25 million, 7.59 by OCaml 4.14" |
 | A command's time at rc's prompt | `tests/perf/timecmd.py CMD -- EMULATOR...` | 5 | wall time, N times |
 | The boot, the collector's parameters | `tests/perf/gc_boot.sh` | 5 | seconds, collections |
+| Which part of a .NET program? (mini-ml -dotnet's, on Microsoft's dotnet) | its stages timed (`Sys.time`) in a small program of the same units, compiled the same way | 5 | "the facts parsed: 0.36 s; loaded: 4.8 s"; then one function at a time |
+| Which method, on mini-dotnet? | `mini-dotnet -profile -s prog.dll args` | 1 to 5 | each method's own IL instructions (its calls' not), the costliest first |
 
 Everything in `kernels/9pi/tests/perf/` and `machine/tests/` says its
 usage at its top.
@@ -213,6 +215,45 @@ its closures (`camlEmit__fun_10395`), and the numbers move from one
 build to the other. Compare the totals, and the runtime's functions
 (`do_compare_val`, `caml_oldify_one`), whose names hold.
 
+## A program on .NET: two runtimes, two cost models (2026-11-02)
+
+mini-datalog's facts read by mini-ml -dotnet's code took 4.8 s on
+Microsoft's dotnet, 25 s on mini-dotnet, 0.1 s natively. One cause per
+runtime, each found by the tool that sees it:
+
+- **Microsoft's dotnet: by halves, timed.** No profiler of .NET is here
+  (dotnet-trace is not installed), so the program's stages were timed
+  in a small ML program (`Sys.time` around each), compiled by mini-ml
+  -dotnet with the same units: parsing 0.36 s, loading 4.8 s; then the
+  loading's suspects one at a time, 20,000 calls each: Hashtbl,
+  Tuples, Buffer all fast, `Prolog.to_string` 230 microseconds a
+  call. Its `atom_text` asked `String.contains` of each character, and
+  lib_core's `contains` was `try index ... with Not_found`: an
+  exception for each miss. An OCaml exception is a few instructions; a
+  .NET exception is a stack walk, microseconds. lib_core's searches
+  now return -1 (`String.index_or`, as OCaml's own stdlib since 4.05),
+  `Hashtbl.replace` is one pass that gives the bucket back unchanged
+  for a new key: 4.8 s to 0.17, the whole program 5.5 to 0.55. Each
+  change to lib_core outside lib_core/dotnet/ measured natively first
+  (the author: "we don't want to slow down the other programs that do
+  not use dotnet"): 2 million `contains`, 0.160 s to 0.134 by mini-ml;
+  2 million `replace`, 0.21 to 0.16 by mini-ml, 0.08 both by OCaml.
+  Printf's own `Not_found` was left: on .NET a literal format does not
+  go through it.
+- **mini-dotnet: by method, counted.** Its interpreter's time is its
+  instructions (about 10 million a second), and `-profile` (new)
+  charges each to the method running, less its calls': `String.index_or`
+  35%, `blit_string` 21%. Not exceptions there (mini-dotnet's are
+  OCaml's): character classes tested by scanning a constant string
+  (`String.contains "+-*/..." c`, each character read), and a string
+  copied into bytes a byte at a time in ML. Matches for the classes, one
+  call of .NET's (`Encoding.GetBytes` into a byte[]) for the copy:
+  262 million instructions to 113, 39 s to 23.
+
+The lesson: the same IL has a different cost on each runtime, and the
+first profile of one says nothing of the other. A miss signalled by an
+exception is the .NET case of "what usually is it" (below, 9).
+
 ## The collector, which is in every profile
 
 mini-ml's collector copies everything alive at each collection, and a
@@ -303,6 +344,10 @@ By how often it was the answer in ix, for mini-ml's code on arm:
    above).
 8. A cost paid by the second whatever happens (a sample of silence
    through the mixer, its limit, the conversion, the kernel's ring).
+9. On .NET (mini-ml -dotnet's code, Microsoft's runtime): an exception
+   for an ordinary miss (`Not_found` from a search, caught to say
+   false or None): microseconds each, where OCaml's is a jump.
+   lib_core's searches no longer raise for it (above).
 
 ## What to do, in order
 

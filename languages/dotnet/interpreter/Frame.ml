@@ -12,6 +12,11 @@ exception Stack_overflow
 let trace : (string -> unit) option ref = ref None
 let steps = ref 0
 
+(* -profile: each method's own instructions (its calls' not), by name;
+ * the instructions of the calls of the frame running *)
+let profile : (string, int ref) Hashtbl.t option ref = ref None
+let in_calls = ref 0
+
 let error (s : string) = raise (Error s)
 
 type frame = {

@@ -173,11 +173,11 @@ front_end() {
 pipeline() {
   local ml=$(abs $1) run=$2 D=languages/datalog P=_mk/7/languages/datalog u f files=
   [ -f $W/mini-cc.dll ] || { echo "skipped: the pipeline (mini-cc not compiled)"; return; }
-  for u in $(sed -n 's/^SRC=//p' $D/mkfile); do
-    for f in $D/$u.ml languages/prolog/$u.ml $P/$u.ml; do [ -f $f ] && break; done
+  for u in $(sed -n '/^SRC=/,/[^\\]$/p' $D/mkfile | sed 's/^SRC=//; s/\\$//'); do
+    for f in $D/$u.ml $D/dotnet/$u.ml languages/prolog/$u.ml languages/dotnet/assembly/$u.ml $P/$u.ml; do [ -f $f ] && break; done
     files="$files $(realpath $f)"
   done
-  if ! (cd $D && $ml -L ../../lib_core -I . -I ../prolog -I ../../$P -dotnet -o $W/mini-datalog.dll $files) > $W/dl.err 2>&1; then
+  if ! (cd $D && $ml -L ../../lib_core -I . -I ../prolog -I dotnet -I ../dotnet/assembly -I ../../$P -dotnet -o $W/mini-datalog.dll $files) > $W/dl.err 2>&1; then
     fail "mini-datalog compiled to .NET"; head -3 $W/dl.err; return
   fi
   if CC="$run $W/mini-cc.dll" DATALOG="$run $W/mini-datalog.dll" languages/c/facts/tests/run.sh > $W/pipeline.out 2>&1; then

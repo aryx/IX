@@ -123,6 +123,17 @@ let run (caps : < caps; .. >) (path : string) (img : Image.t) (argv : string lis
   let finish () =
     flush out;
     if stats then Console.eprint caps (Printf.sprintf "%d instructions\n" !Frame.steps);
+    (match !Frame.profile with
+     | Some h ->
+         let all = max 1 !Frame.steps in
+         let l = Hashtbl.fold (fun (name : string) (n : int ref) acc -> (!n, name) :: acc) h [] in
+         List.iteri
+           (fun (i : int) ((n, name) : int * string) ->
+             if i < 25 then
+               Console.eprint caps
+                 (Printf.sprintf "%5.1f%% %12d  %s\n" (100. *. float n /. float all) n name))
+           (List.sort (fun (a : int * string) b -> compare b a) l)
+     | None -> ());
     if stats && !Jit_run.compiled > 0 then
       Console.eprint caps (Printf.sprintf "%d methods compiled\n" !Jit_run.compiled) in
   match Machine.run_main im argv with
@@ -145,7 +156,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   let options =
     Logging.flags @
     [ ("-trace", Arg.Set tracing, " each instruction said as it runs, to the standard error");
-      ("-s", Arg.Set stats, " the instructions run, said at the end"); ("-tables", Arg.Unit (fun () -> mode := "tables"), " the metadata's tables, a row a line");
+      ("-s", Arg.Set stats, " the instructions run, said at the end");
+      ("-profile", Arg.Unit (fun () -> Frame.profile := Some (Hashtbl.create 64)),
+       " each method's own instructions (its calls' not), the costliest first, at the end"); ("-tables", Arg.Unit (fun () -> mode := "tables"), " the metadata's tables, a row a line");
       ("-S", Arg.Unit (fun () -> mode := "S"), " the types and their methods' IL, as ildasm");
       ("-size", Arg.Unit (fun () -> mode := "size"), " its types, methods and bytes of IL (each body decoded)");
       ("-verify", Arg.Unit (fun () -> mode := "verify"), " each method's stack typed at each instruction: those refused, and why");

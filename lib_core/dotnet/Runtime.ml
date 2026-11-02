@@ -400,8 +400,14 @@ external get_bytes : encoding -> string -> bytes
 let create_string (n : int) : bytes =
   if n < 0 then invalid_arg "Bytes.create" else alloc n
 
+external get_bytes_into : encoding -> string -> int -> int -> bytes -> int -> int
+  = "dotnet:instance System.Text.Encoding::GetBytes(string,int32,int32,uint8[],int32) -> int32"
+
+(* (one call of .NET's, not a loop: mini-dotnet's interpreter spent a
+ * fifth of the reading of a Datalog file in the loop)
+ * old: for i = 0 to n - 1 do bset b (o2 + i) s.[o1 + i] done *)
 let blit_string (s : string) (o1 : int) (b : bytes) (o2 : int) (n : int) : unit =
-  for i = 0 to n - 1 do bset b (o2 + i) s.[o1 + i] done
+  if n > 0 then ignore (get_bytes_into (latin1 ()) s o1 n b o2)
 
 let fill_string (b : bytes) (o : int) (n : int) (c : char) : unit =
   for i = o to o + n - 1 do bset b i c done

@@ -39,6 +39,10 @@ exception Stack_overflow
 (* each instruction said as it runs (-trace), and the count of them (-s) *)
 val trace : (string -> unit) option ref
 val steps : int ref
+(* -profile's: each method's own instructions, by its name, when set;
+ * those of the running frame's calls *)
+val profile : (string, int ref) Hashtbl.t option ref
+val in_calls : int ref
 
 type frame = {
   meth : meth;

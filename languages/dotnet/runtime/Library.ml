@@ -400,6 +400,12 @@ let encoding =
         let st = hooks.array T_u1 (String.length s) in
         Bytes.blit_string s 0 st.s 0 (String.length s);
         Obj st);
+    (* (a string's chars into a byte[]: lib_core/dotnet's blit_string) *)
+    virt "GetBytes" [string; int; int; "System.Byte[]"; int] int (fun a ->
+        let s = to_str a.(1) and n = to_int a.(3) in
+        let st, _, _ = view a.(4) in
+        Bytes.blit_string s (to_int a.(2)) st.s (to_int a.(5)) n;
+        i4 n);
   ]
 
 (* ------------------------------------------------------------------ *)

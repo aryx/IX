@@ -16,3 +16,12 @@ let () =
   let e3 = Add (Num 1, Neg (Var "y")) in
   yes (e1 = e2); yes (e1 = e3); yes (Num 3 = Num 3); yes (Num 3 = Var "3"); yes (e1 <> e3);
   print_newline ()
+
+(* a constant constructor is one value, == of two true (as OCaml's
+ * immediate; Hashtbl.replace counts on it) *)
+type bucket = Empty | Cons of int * bucket
+let keep (b : bucket) : bucket = match b with Empty -> Empty | Cons _ -> b
+let () =
+  let e = Empty in
+  print_string (if keep e == e && Empty == Empty then "Empty == Empty\n" else "Empty != Empty\n");
+  print_string (if (None : int option) == None && ([] : string list) == [] then "None == None\n" else "None != None\n")

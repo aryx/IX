@@ -41,7 +41,8 @@ let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
           let _, ctor, _ = exn c e.loc g.gsym targs in
           operands c env k args;
           emit k (Il.Newobj ctor)
-      | Const _ | Block _ ->
+      | Const _ -> emit k (Il.Ldsfld (constant c e.loc k' (type_of e)))
+      | Block _ ->
           let _, ctor, _, _ = case c e.loc k' (type_of e) in
           values c env k args;
           emit k (Il.Newobj ctor))

@@ -80,10 +80,11 @@ made direct and inlined.
   mini-ml -dotnet (datalog_rt.dll, beside: stage 7). 15 programs (a
   graph, pointer.dl and liveness on mini-cc's facts, the 11 points_to
   analyses on mini-analyze's) answer as the interpreter, by both
-  runtimes; with -ms, call1 on mini-ml's facts. Not: speed (reading
-  6,093 facts takes 4.8 s on Microsoft's runtime: the Prolog reader as
-  mini-ml -dotnet compiles it), -btree's sorted relations, typed CTS
-  columns (decision 5's, for ML's values).
+  runtimes; with -ms, call1 on mini-ml's facts (0.55 s by Microsoft's
+  dotnet, 23 s by mini-dotnet, after the reading's fix: an exception
+  for each miss in lib_core's searches, notes_profiling_techniques.md).
+  Not: -btree's sorted relations, typed CTS columns (decision 5's, for
+  ML's values).
 - **Stage 8 begun**: mini-cc and mini-datalog (their ML) compiled to
   .NET, the facts pipeline's answers the native's by both runtimes.
   Not: the pipeline on mini-rc; the one program (needs 6 and 7, and
@@ -816,7 +817,18 @@ but really use the same types!". So the decisions below are those of
    find_class already looked in every image loaded. Check: ML's
    tests/run.sh -ms, interop.cs (Microsoft's csc) over shapes.ml's
    assembly, run by mini-dotnet as by Microsoft's dotnet.
-8. **The program in several languages** (decision 7): Andersen's
+8. **The program in several languages** (decision 7), by two roads
+   kept working both (the author: "ideally the mini-analyzer can have 2
+   paths: one compiled natively, with extra comm/conversion because the
+   different parts are in different languages, but maybe it's run
+   faster. and the other path is all compiled with -dotnet so
+   potentially less total code but maybe less inefficient in the end.
+   It's good to have the 2 code paths working for a teaching and
+   comparison purpose"): native, each part its own program and the
+   facts as text between them (today's pipeline), and .NET, one
+   process whose parts share the CTS's values; their answers compared,
+   their times and sizes said side by side.
+   Then: Andersen's
    points-to on whole C programs, mini-cc's front end (ML) parsing and
    writing facts into a Datalog module (lib_code/datalog/'s rules, compiled),
    the answers read back by ML and printed; a C module where C is the

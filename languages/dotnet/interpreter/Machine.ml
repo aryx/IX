@@ -212,9 +212,22 @@ and run_method (m : meth) (args : value array) : value =
               locals = Array.map zero code.locals;
               stack = Array.make (code.max_stack + 1) Null; sp = 0; pc = 0; at = 0; caught = None } in
     Frame.frames := f :: !Frame.frames;
+    (* (-profile: the frame's instructions, less its calls') *)
+    let start = !Frame.steps and outer = !Frame.in_calls in
+    let counted () =
+      match !Frame.profile with
+      | None -> ()
+      | Some h ->
+          let all = !Frame.steps - start in
+          let name = Frame.name_of m in
+          (match Hashtbl.find_opt h name with
+           | Some n -> n := !n + all - !Frame.in_calls
+           | None -> Hashtbl.replace h name (ref (all - !Frame.in_calls)));
+          Frame.in_calls := outer + all in
+    if !Frame.profile <> None then Frame.in_calls := 0;
     match run f with
-    | Frame.Returned v -> Frame.frames := List.tl !Frame.frames; decr Frame.depth; v
-    | Frame.Tail (m', args') -> Frame.frames := List.tl !Frame.frames; go m' args'
+    | Frame.Returned v -> counted (); Frame.frames := List.tl !Frame.frames; decr Frame.depth; v
+    | Frame.Tail (m', args') -> counted (); Frame.frames := List.tl !Frame.frames; go m' args'
     | Frame.End_finally | Frame.Filtered _ -> Frame.error "endfinally or endfilter outside their block"
     | exception e -> Frame.frames := List.tl !Frame.frames; decr Frame.depth; raise e in
   go m args

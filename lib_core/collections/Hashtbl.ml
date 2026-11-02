@@ -154,25 +154,35 @@ let fold f h init =
   !accu
 
 
+(* ix: one pass, the same bucket back when the key is not there: no
+ * exception for a new key (microseconds on .NET), no copy. Measured on
+ * 2 million replaces: OCaml's code 0.08 s both ways, mini-ml's 0.16 s
+ * against 0.21 (plan_dotnet_languages.md)
+ * old: replace_bucket raised Not_found at a bucket's end, caught to add *)
 let replace h key info =
-  let rec replace_bucket = function
+  let rec replace_bucket b =
+    match b with
       Empty ->
-        raise Not_found
+        Empty
     | Cons(k, i, next) ->
         if compare k key = 0
         then Cons(k, info, next)
-        else Cons(k, i, replace_bucket next) in
+        else
+          let next' = replace_bucket next in
+          if next' == next then b else Cons(k, i, next') in
   let i = (hash key) mod (Array.length h.data) in
   let l = h.data.(i) in
-  try
-    h.data.(i) <- replace_bucket l
-  with Not_found ->
+  let l' = replace_bucket l in
+  if l' != l then
+    h.data.(i) <- l'
+  else begin
     (* ix: a new key grows the table as add does (it did not: a table
      * filled by replace kept its first size, its buckets long lists) *)
     let bucket = Cons(key, info, l) in
     h.data.(i) <- bucket;
     h.size <- h.size + 1;
     grown h
+  end
 
 let find_opt h key =
   let rec find_in_bucket = function

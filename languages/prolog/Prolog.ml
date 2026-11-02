@@ -102,12 +102,21 @@ let is_lower (c : char) : bool = c >= 'a' && c <= 'z'
 let is_upper (c : char) : bool = (c >= 'A' && c <= 'Z') || c = '_'
 let is_digit (c : char) : bool = c >= '0' && c <= '9'
 let is_alnum (c : char) : bool = is_lower c || is_upper c || is_digit c
-let is_symbol (c : char) : bool = String.contains "+-*/\\^<>=~:.?@#&$" c
+(* (a match, not String.contains of the 17: each character read asked
+ * it, mini-dotnet's interpreter spent a third of a Datalog file's
+ * reading there) *)
+let is_symbol (c : char) : bool =
+  match c with
+  | '+' | '-' | '*' | '/' | '\\' | '^' | '<' | '>' | '=' | '~' | ':' | '.' | '?' | '@'
+  | '#' | '&' | '$' -> true
+  | _ -> false
 
+(* (stopped at the first that is not: atom_text asks is_symbol of each
+ * atom, most failing at their first character)
+ * old: String.iter over all of s, a flag set *)
 let all (p : char -> bool) (s : string) : bool =
-  let ok = ref true in
-  String.iter (fun (c : char) -> if not (p c) then ok := false) s;
-  !ok
+  let rec from (i : int) : bool = i >= String.length s || (p s.[i] && from (i + 1)) in
+  from 0
 
 (* an atom as it must be written to be read back *)
 let atom_text (quoted : bool) (s : string) : string =

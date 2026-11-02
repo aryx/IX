@@ -154,7 +154,7 @@ let advance (r : t) : unit =
       else if Prolog.is_lower c then Tatom (run r Prolog.is_alnum)
       else if c = '\'' then Tquoted (quoted r '\'')
       else if c = '"' then Tstring (quoted r '"')
-      else if String.contains "()[]{},|" c then begin
+      else if (match c with '(' | ')' | '[' | ']' | '{' | '}' | ',' | '|' -> true | _ -> false) then begin
         r.pos <- r.pos + 1;
         Tpunct c
       end

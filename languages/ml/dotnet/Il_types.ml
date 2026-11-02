@@ -47,8 +47,12 @@ let implementations : (string, Scope.tdecl) Hashtbl.t = Hashtbl.create 64
 let qkey (c : c) (d : Scope.tdecl) : string =
   if d == Resolve.list_d || String.contains d.tpath '.' then d.tpath else c.uname ^ "." ^ d.tpath
 
+(* a constant constructor's class: its static field Instance *)
+let instances : (int, int) Hashtbl.t = Hashtbl.create 16
+
 let reset () : unit =
-  Hashtbl.reset classes; Hashtbl.reset synthetic; Hashtbl.reset synthetic_vars; Hashtbl.reset implementations
+  Hashtbl.reset classes; Hashtbl.reset synthetic; Hashtbl.reset synthetic_vars; Hashtbl.reset implementations;
+  Hashtbl.reset instances
 
 (* a class's own parameters, !0..., as its methods see them *)
 let own (t : tclass) : S.t list = List.init t.arity (fun (i : int) -> S.Var i)
@@ -73,6 +77,14 @@ let ctor_tok (c : c) (t : tclass) (args : S.t list) : int =
   else
     memo c ("ctor " ^ S.encode_type_spec (at t args)) (fun () ->
         W.member_ref c.w (W.type_spec c.w (at t args)) ".ctor" (instance (List.map snd t.fields) S.Void))
+
+(* a constant constructor's one value (OCaml's None == None): its
+ * class's static field Instance, made by its .cctor, at type arguments *)
+let instance_tok (c : c) (t : tclass) (args : S.t list) : int =
+  if t.arity = 0 then Hashtbl.find instances t.tok
+  else
+    memo c ("instance " ^ S.encode_type_spec (at t args)) (fun () ->
+        W.field_ref c.w (W.type_spec c.w (at t args)) "Instance" (at t (own t)))
 
 (* a method of such a class at its instance: the MethodDef, or a
  * MemberRef of the instance, its signature the declared one *)
@@ -563,6 +575,17 @@ and variant (c : c) (loc : int) (d : Scope.tdecl) : tclass =
             List.mapi (fun (i : int) (ty : Scope.ty) -> (Printf.sprintf "Item%d" (i + 1), in_class c params (fun () -> arg_type c loc ty))) args;
           case.ftoks <- List.map (fun ((n, ty) : string * S.t) -> W.field_def c.w tok n 0x0006 ty) case.fields;
           constructor c case parent_ctor;
+          (match k.kind with
+           | Const _ ->
+               (* (its one value: made once, as OCaml's constant is one
+                * word; == of two None true) *)
+               let me = own case in
+               let f = W.field_def c.w tok "Instance" 0x0016 (at case me) in
+               Hashtbl.replace instances tok f;
+               let init = W.method_def c.w tok ".cctor" 0x1891 (static [] S.Void) in
+               W.set_body c.w init []
+                 [| Il.Newobj (ctor_tok c case me); Il.Stsfld (instance_tok c case me); Il.Ret |] []
+           | _ -> ());
           let order = match k.kind with Const n -> n | Block n -> 1000000 + n | _ -> tag in
           let m = W.method_def c.w tok "ml_order" 0x00C6 (instance [] S.I4) in
           W.set_body c.w m [] [| Il.Ldc_i4 (Int32.of_int order); Il.Ret |] [];
@@ -621,6 +644,15 @@ let tuple_ctor (c : c) (loc : int) (ty : Scope.ty) : int =
  * for each constructor, the first declaration's *)
 let rec canonical (d : Scope.tdecl) : Scope.tdecl =
   match d.tabbrev with Some (Tconstr (d', _)) when d' != d -> canonical d' | _ -> d
+
+(* a constant constructor's one value, at its type's arguments *)
+let constant (c : c) (loc : int) (k : Scope.cons) (ty : Scope.ty) : int =
+  let _, _, res = k.ctype in
+  let d = canonical (decl res) in
+  let inst = match unabbrev ty with Tconstr (_, a) -> a | _ -> [] in
+  ignore (variant c loc d);
+  let t = Hashtbl.find classes (qkey c d ^ "|" ^ k.cname) in
+  instance_tok c t (List.map (arg_type c loc) inst)
 
 let case (c : c) (loc : int) (k : Scope.cons) (ty : Scope.ty) : int * int * (int -> int) * Scope.ty list =
   let params, targs, res = k.ctype in

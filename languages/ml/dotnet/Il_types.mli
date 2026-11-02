@@ -98,6 +98,9 @@ val tuple_ctor : Il_code.c -> int -> Scope.ty -> int
 
 (* a variant's constructor at the variant's type: its class's token,
  * its constructor, its i-th field, its arguments' types there *)
+(* a constant constructor's one value (its class's static Instance: ==
+ * holds of two, as of OCaml's), at a type *)
+val constant : Il_code.c -> int -> Scope.cons -> Scope.ty -> int
 val case : Il_code.c -> int -> Scope.cons -> Scope.ty -> int * int * (int -> int) * Scope.ty list
 
 (* an exception by its symbol, of these arguments: the same *)

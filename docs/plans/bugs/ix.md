@@ -481,6 +481,19 @@ limit is now 30,000, mini-ml's build tried at 29,000. Reproduction: let rec f
 n = if n = 0 then 0 else 1 + f (n - 1), f 20000, by mini-ml -dotnet, run by
 mini-dotnet.
 
+## mini-ml -dotnet: a constant constructor made anew, == false of two (2026-11-02, fixed)
+
+`None == None`, `Empty == Empty` were false: each use of a constant
+constructor was a newobj of its class, where OCaml's is one immediate
+word. Found when Hashtbl.replace was made one pass, its bucket's end
+compared by == (lib_core's single-pass replace never found a key absent
+on .NET, so every key was "replaced": Prolog's operator table empty,
+"an operator or the clause's end is expected, not :-"). Now each such
+class has a static field Instance, made by its .cctor, generic classes
+per instance (Il_types.constant). Reproduction: `type t = E | C of int`,
+`print_string (if E == E then "same" else "different")`, by mini-ml
+-dotnet; languages/ml/dotnet/tests/equality.ml has it.
+
 ## mini-dotnet: div.un and rem.un of int64 signed (2026-11-02, fixed)
 
 Found by mini-cc -dotnet's fuzz differential (languages/c/dotnet/tests/run.sh
@@ -501,3 +514,15 @@ asked of rio: two emacs, one in the caller's window. It came with mini-files, wh
 plan says it was "not yet run under mini-rio on mini-9pi". Reproduced under QEMU: rio
 -i with files on /usr/pad, a click on readme, Enter. Fixed by `begin`. Checks on
 Linux could not see it (`on_plan9` is false there).
+
+## mini-9pi built by ix's tools: a program's first sound halted it under QEMU (2026-11-02, fixed)
+
+QEMU's raspi has no PWM, its registers no memory: the sound driver asks first
+(machine.c's io_probe), a data abort that start.s's kernel_data takes as the
+answer. l.s, the same file for ix's own assembler (COMPILER=ix), had no such
+entry: the probe's fault was a kernel's fault, the console saying k forever.
+Found by plan_desktop.md's shakedown, startmenu -try opening Tetris and
+ReBirth on a card and kernel built by ix's tools; a kernel by ocaml-light and
+gcc (start.s, mini-pi's choice when ~/ocaml-light is there) did not show it.
+Fixed: l.s's kernel_data as start.s's. Not done: the Pi 4's l.s, which has no
+probe either (the Pi 4 has no PWM sound here).

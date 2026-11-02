@@ -1,0 +1,296 @@
+# The facts: what the compilers tell the analyses
+
+An analysis here is rules over facts, and the rules read like their facts'
+vocabulary: this is that vocabulary. Each compiler says a program as Datalog
+facts, nothing computed, and the rules in this directory do the rest.
+
+```
+ a.c, B.ml --> mini-cc, mini-ml --> facts --> mini-datalog + rules --> answers
+                                     |
+                 what points where:  Facts (C), Closure_facts (ML)   -facts
+                 one function's flow: Ir_facts (C), Ssa_facts (ML)   -flow
+```
+
+The examples are `tests/facts_toy/toy.c` and `Toy.ml`; every fact shown is what the
+compilers say of them, which `tests/facts_doc.sh` checks in `make test`, with
+every relation they can say being in this file. To see them all:
+
+```
+mini-analyze -facts lib_code/datalog/tests/facts_toy/toy.c
+mini-analyze -facts lib_code/datalog/tests/facts_toy/Toy.ml      (with lib_core's units)
+mini-cc -m 7 -flow toy.c            mini-ml -m 7 -flow -I ... Toy.ml
+```
+
+## Nothing but symbols and small numbers
+
+Datalog has no compound term, so a place is a name, and a name says what it is:
+
+| a name | C | ML |
+|---|---|---|
+| a function | `id` | `Toy.inc`, its symbol; `Toy:go/3`, local; `Toy:fun1@29`, a lambda at line 29 |
+| a function's next argument | | `Toy.add'`: `let add a b` is `add`, then `add'` |
+| a local variable | `main__p` | `Toy:n/1`: name and number, a unit having several `n` |
+| a temporary | `main__t3` | `Toy:t2` |
+| a global | `gp` | `Toy.pair` |
+| a parameter, a result | `id__a`, `ret_id` | `Toy.inc:arg`, `Toy.inc:ret` |
+| a call | `_in_main_line_63_1` | `Toy:5:c1`: unit, line, count |
+| a field | `_fld__next`, whatever the struct | `fld:fn`, `con:Circle.0`, `tuple:2.0` |
+| an object | `_malloc_in_cons_line_32`, `_str_in_main_line_65`, `_array_elt_table` | `Toy:block1@10`; a closure is its function's name |
+| what the facts do not follow | `_const` | `Toy:const`, `ext` |
+| an external | | `prim:%addint`, `prim:sys_getenv` |
+
+Each expression becomes instructions over variables, a temporary for each value
+in between, so a rule never sees a nested expression.
+
+## What points where: C
+
+A statement and what it says. The order of statements is said nowhere: these
+analyses are flow-insensitive, and a set of facts is what that means.
+
+**Pointers.** `p = &y; pp = &p; *pp = id(&x); p = *pp;`, in `main`:
+
+```
+assign_address('main__t1', 'main__y').
+assign('main__p', 'main__t1').
+assign_address('main__t2', 'main__p').
+assign('main__pp', 'main__t2').
+assign_deref('main__pp', 'main__t4').
+assign_content('main__t5', 'main__pp').
+assign('main__p', 'main__t5').
+```
+
+**Arrays**, their elements one place, `table` pointing to it. `p = &table[1];` and
+the `table[2]` of `p = table[2] ? p : 0;`. `assign_array_deref(a, q)` is `a[i] = q`:
+
+```
+point_to('table', '_array_elt_table').
+assign_array_element_address('main__t7', 'table').
+assign_array_elt('main__t8', 'table').
+```
+
+**Fields.** `n->val = v;`, `p = l->val;`, `pp = &l->val;`:
+
+```
+assign_store_field('cons__n', '_fld__val', 'cons__v').
+assign_load_field('main__t11', 'main__l', '_fld__val').
+assign_field_address('main__t12', 'main__l', '_fld__val').
+```
+
+**Objects.** `n = malloc(...)`, `s = "hello"`. `allocator_call` because a call of
+an allocator is an object here, not a call:
+
+```
+point_to('cons__t1', '_malloc_in_cons_line_32').
+allocator_call('malloc', 'cons').
+alloc_in('_malloc_in_cons_line_32', 'cons').
+point_to('main__t6', '_str_in_main_line_65').
+```
+
+**Functions and calls.** `id`, then `*pp = id(&x)`, then `handler = show;
+handler(p);`, where `handler` is a global a function's name is assigned to:
+
+```
+point_to('id', 'id').
+return('id', 'ret_id').
+parameter('id', 1, 'id__a').
+assign('ret_id', 'id__a').
+in_function('_in_main_line_63_1', 'main').
+argument('_in_main_line_63_1', 1, 'main__t3').
+call_ret('_in_main_line_63_1', 'main__t4').
+call_direct('_in_main_line_63_1', 'id').
+assign('handler', 'show').
+call_indirect('_in_main_line_72_3', 'handler').
+```
+
+**What holds no pointer.** A number, arithmetic: the variable `_const`, so that a
+value always has something (`scalar`, used by the object-sensitive analyses):
+
+```
+scalar('_const').
+argument('_in_main_line_68_2', 2, '_const').
+```
+
+**Who is where.** `var_in` for each variable a function names; a global too, and
+it is `global_var`; `global_def` where its initializer is; `defined` with the
+line of the function's first statement; `dead_stmt` for what follows a jump, here
+the `n = 0;` after a `return`:
+
+```
+var_in('main__p', 'main').
+var_in('x', 'main').
+global_var('x').
+global_def('gp', '_init').
+defined('cons', 32).
+dead_stmt('cons', 36).
+```
+
+## What points where: ML
+
+The same relations, on purpose: a function is a pointer to a function, so
+Shivers's question and Andersen's are one (`Closure_facts.mli`). A function takes
+one argument, so every call is `call_indirect`, and `add 1 2` is two calls.
+
+**A function.** `let inc n = n + 1`: a place, its parameter, its result. `+` is an
+external, called through a temporary, an argument at a time, the second call
+through what the first returned:
+
+```
+closure('Toy.inc', 'Toy', '5').
+assign_address('Toy:inc/2', 'Toy.inc').
+parameter('Toy.inc', 1, 'Toy.inc:arg').
+return('Toy.inc', 'Toy.inc:ret').
+assign('Toy:n/1', 'Toy.inc:arg').
+assign_address('Toy:t1', 'prim:%addint').
+in_function('Toy:5:c1', 'Toy.inc').
+call_indirect('Toy:5:c1', 'Toy:t1').
+argument('Toy:5:c1', 1, 'Toy:n/1').
+call_ret('Toy:5:c1', 'Toy:t2').
+call_indirect('Toy:5:c2', 'Toy:t2').
+argument('Toy:5:c2', 1, 'Toy:const').
+call_ret('Toy:5:c2', 'Toy.inc:ret').
+```
+
+**Curried.** `let add a b = a + b` is two functions, the first returning the
+second. `inner` is for `calls.dl`; `curried` also says it of externals':
+
+```
+inner('Toy.add\'', 'Toy.add').
+curried('Toy.add\'', 'Toy.add').
+assign_address('Toy.add:ret', 'Toy.add\'').
+```
+
+**Toplevels.** Where a program starts, and a value's symbol, read from other units:
+
+```
+init('Toy:init').
+global_var('Toy.inc').
+global_def('Toy.inc', 'Toy:init').
+assign('Toy.inc', 'Toy:inc/2').
+```
+
+**Blocks**, each made where it is written. A record, a tuple, a constructor
+applied; `{ fn = f; label = "box" }`, `(inc, 2)`:
+
+```
+new_block('Toy.make:ret', 'Toy:block1@10').
+alloc_in('Toy:block1@10', 'Toy').
+assign_store_field('Toy.make:ret', 'fld:fn', 'Toy:f/9').
+assign_store_field('Toy.make:ret', 'fld:label', 'Toy:const').
+new_block('Toy:pair/22', 'Toy:block2@21').
+assign_store_field('Toy:pair/22', 'tuple:2.0', 'Toy.inc').
+```
+
+A pattern and a field read are loads, `Circle r` and `b.fn`:
+
+```
+assign_load_field('Toy:r/12', 'Toy:s/11', 'con:Circle.0').
+assign_load_field('Toy:first/23', 'Toy.pair', 'tuple:2.0').
+assign_load_field('Toy:t24', 'Toy:b/25', 'fld:fn').
+```
+
+**Lambdas**, named by where they are:
+
+```
+closure('Toy:fun1@29', 'Toy', '29').
+assign_address('Toy:t29', 'Toy:fun1@29').
+assign('Toy:n/27', 'Toy:fun1@29:arg').
+```
+
+**What the facts do not follow.** A constant, unit, a constant constructor, what
+an external gave: `scalar`, so every value has an object and a variable with none
+is one no run reaches. `ext` is the one place of arrays' elements, of what is given
+to C and comes back, of what a handler catches: a `ref` and a pair's halves are
+followed, by `%makemutable` and `%field0`, the rest ends there:
+
+```
+scalar('Toy:const').
+scalar('Toy.safe:ret').
+scalar('ext').
+new_block('prim:%makemutable:ret', 'prim:%makemutable:block').
+assign_address('Toy:t43', 'prim:sys_getenv').
+```
+
+**Capabilities.** `let say (caps : < Cap.stdout; .. >) s = ...`, a parameter that
+is one, and what its type names, aliases expanded (`Resolve.capabilities`):
+
+```
+takes_cap('Toy.say').
+declares('Toy.say', 'stdout').
+```
+
+**Who is where.** As in C. A variable two functions name is what a closure captures:
+
+```
+var_in('Toy:n/1', 'Toy.inc').
+var_in('Toy.inc:ret', 'Toy.inc').
+```
+
+## One function's flow: -flow
+
+Separate facts, of the compiler's own intermediate code, with an order, for
+liveness and dominators; they share no name with the above. C's are the stack
+code, an instruction a point. `sum`'s loop in `toy.c`:
+
+```
+function('sum').
+point('sum:1', 'sum').
+succ('sum:1', 'sum:2').
+def('sum:s/-4', 'sum:1').
+use('sum:n/0', 'sum:3').
+succ('sum:4', 'sum:13').
+succ('sum:4', 'sum:5').
+```
+
+`call(P)` says a point is a call, where a register does not survive. A variable is
+`function:name/offset`, only those `regs` considers.
+
+ML's are the SSA form, `Ssa_facts`: blocks, a value and the instruction that makes
+it one name, `zero` a slot never written. `phi(V, B)` and `phi_arg(V, Pred, X)` are
+SSA's: entered from `Pred`, `V` is `X`. `sum` in `Toy.ml`:
+
+```
+function('f8_sum<>').
+entry('f8_sum<>:b0').
+block('f8_sum<>:b0', 'f8_sum<>').
+first('f8_sum<>:b0', 'f8_sum<>:v0').
+next('f8_sum<>:v0', 'f8_sum<>:v1').
+last('f8_sum<>:b0', 'f8_sum<>:t0').
+def('f8_sum<>:v4', 'f8_sum<>:v4').
+use('f8_sum<>:v1', 'f8_sum<>:v4').
+zero('f8_sum<>:v3').
+succ('f8_sum<>:b0', 'f8_sum<>:b1').
+```
+
+`mini-cc -dflow` and `mini-ml -dflow` add what the compiler itself computed, to
+compare with: `own_live_out(V, P)`, and for ML `own_live_in(V, B)`, `own_idom(D, B)`.
+
+## Who reads what
+
+| rules | read |
+|---|---|
+| `pointer.dl` (the author's, 2014) | the `assign*`, `point_to`, `parameter`, `return`, `argument`, `call_*` |
+| `points_to/instructions.dl` | the same, into `alloc`, `copy`, `load`, `store`, which the analyses read: `new_block` too |
+| `points_to/contexts.dl` | `var_in`, `global_var`, `in_function`, `init`, `closure`, `curried`, `alloc_in`, `scalar` |
+| `calls.dl` | `closure`, `inner`, `in_function`, `init`, over `call_edge` |
+| `dead.dl` | `defined`, `closure`, `global_def`, `dead_stmt`, `allocator_call` |
+| `capabilities.dl`, `capabilities_types.dl` | `takes_cap`, `declares`, `assign_address`, `global_def` |
+| `bugs.dl` | `call_direct`, `return`, and `heap`, `local`, `literal`, which mini-analyze makes of the names |
+| `liveness.dl` | C's `-flow` |
+| `liveness_ssa.dl`, `dominators.dl` | ML's `-flow` |
+
+Not said by a compiler: `heap(L)`, `local(L, F)`, `literal(L)` (mini-analyze, of C's
+names) and `own_unit(U)`, `own_init(I)` (mini-analyze -caps: the program's units,
+not the library's).
+
+## What the rules then say
+
+`handler(p)`, a call through a pointer, in `toy.c`: nothing says what it reaches,
+and `target` is found (`contexts.dl`, `insensitive.dl`):
+
+```
+target('_in_main_line_72_3',show).
+```
+
+The chain, each a rule over the facts above: `assign('handler', 'show')` copies what
+`show` points to, `point_to('show', 'show')`, so `handler` points to `show`, a
+function, since `return('show', 'ret_show')`.

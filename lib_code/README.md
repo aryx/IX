@@ -86,6 +86,9 @@ emitted.
 
 ## Analyses in Datalog (`datalog/`)
 
+What each rule file reads, every fact the compilers say, on toy programs:
+[`datalog/FACTS.md`](datalog/FACTS.md).
+
 The rules mini-datalog runs (the engine stays in `languages/datalog/`;
 the author, 2026-10-31: "move the datalog analyses", "not the engine,
 just the .dl"), toward what `plan_datalog.md` is for: static analysis

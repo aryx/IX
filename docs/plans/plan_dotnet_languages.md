@@ -99,8 +99,8 @@ made direct and inlined.
   by both roads). Not: mini-9pi's card.
 - **Stage 9 done** (2026-11-02): ML analysed, the exceptions a
   program's toplevels may let escape: mini-analyze -exn, both roads.
-  0-CFA's imprecision shows on real programs (one List.iter for all
-  its callers); a call site's context is the next step.
+  Contexts (call1_heap1 and deeper) tried: no answer changed, at
+  many times the cost; Printf.ksprintf's captured k is what misleads.
 
 For the author: what step 0 showed, decision 6 to be decided again
 by it, the open questions at the end.
@@ -984,13 +984,29 @@ but really use the same types!". So the decisions below are those of
    the program's directory): mini-datalog in 0.5 s, only lib_core's
    Failure and Invalid_argument (Buffer.add's "cannot grow"); mini-
    prolog in 4.5 s: Prolog_read.Error really escapes (Wam_machine
-   .install reads its own clauses outside CLI's try), but Halt and
-   Throw, caught by CLI, are reported too: 0-CFA has one List.iter, one
-   Printf continuation, for all their callers, so a closure raising
-   Halt anywhere makes each of them raise it. Not: the primitives'
-   exceptions (Division_by_zero, an array's Invalid_argument); a raise
-   whose value points nowhere is silent. Next: contexts for ML
-   (call1_heap1 runs on ML's facts, contexts_ml), escapes by context.
+   .install reads its own clauses outside CLI's try). Not: the
+   primitives' exceptions (Division_by_zero, an array's
+   Invalid_argument); a raise whose value points nowhere is silent.
+   Then (the author: "let's do it"), contexts: exceptions.dl over
+   contexts.dl's callee and pt, each fact in a context, so a context
+   file chooses (insensitive.dl the same as before). Halt, reported
+   though CLI catches it, was not 0-CFA's: a function made inside a
+   try had its calls said in that try (the parser's match with
+   exception makes one: the value's cases a closure made in the try,
+   run outside); Closure_facts now starts each function's body out of
+   any try (tests/exn's Late). Halt is still reported, rightly a
+   "may": Prolog_builtins.create consults the prelude outside CLI's
+   try. The contexts, on mini-prolog, mini-scheme, mini-datalog:
+   call1_heap1 changes no answer (42 s and 3.3 GB against 7 s and
+   380 MB on mini-prolog), only fewer raise sites shown; call2_heap1
+   and object1 on mini-scheme neither (110-130 s, 7 GB). -exn's
+   default insensitive, -context to choose. What they miss, mini-
+   scheme's Scheme_step.Error, caught by Scheme_step.steps:
+   fail = Printf.ksprintf (fun msg -> raise (Error msg)), and Printf's
+   closures capture k, a captured variable having no context
+   (contexts.dl's m-CFA design), so every sprintf may raise it. Next,
+   if wanted: captured variables by context, or ksprintf's k followed
+   as a parameter.
 
 ## Sizes (estimates, from the neighbours)
 

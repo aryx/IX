@@ -41,7 +41,8 @@ program's functions that its toplevel never reaches (calls.dl):
 (exceptions.dl), with where they may be raised:
   Main.ml: the toplevel may let Empty escape, raised at Main.ml:11 (Main.first)
 -root f: f is also entered from where the facts do not go (assembly)
--context file: C's, of points_to/ (call1_heap1); the sharper, the longer
+-context file: of points_to/, C's (call1_heap1) and -exn's (insensitive); the
+  sharper, the longer
 -library: every function may be called from outside, not main alone: a runtime
   ML calls, a library; without it what main does not reach is not looked at
 -r: the directory of points_to/ and the .dl files (lib_code/datalog)
@@ -71,7 +72,7 @@ let line (relation : string) (args : C.Facts.arg list) : string =
 
 let main (caps : < caps; .. >) (argv : string array) : int =
   let rules = ref "lib_code/datalog" and lib = ref "lib_core" and only = ref false and incs = ref [] and defs = ref [] and files = ref [] in
-  let dead = ref false and ambient = ref false and roots = ref [] and context = ref "call1_heap1" and library = ref false in
+  let dead = ref false and ambient = ref false and roots = ref [] and context = ref "" and library = ref false in
   let fingerprint = ref false and exns = ref false in
   let options =
     Logging.flags
@@ -81,7 +82,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         ("-caps", Arg.Set ambient, " whether ML's own functions hold the capabilities they need");
         ("-exn", Arg.Set exns, " the exceptions ML's toplevels may let escape");
         ("-root", Arg.String (fun f -> roots := f :: !roots), " a function entered from where the facts do not go");
-        ("-context", Arg.Set_string context, " C: the context file of points_to/ (call1_heap1)");
+        ("-context", Arg.Set_string context, " the context file of points_to/: C's (call1_heap1), -exn's (insensitive)");
         ("-library", Arg.Set library, " every function may be called from outside: a runtime, a library");
         ("-fingerprint", Arg.Set fingerprint, " after the report, one number of every answer (Answers, Fingerprint)");
         ("-L", Arg.Set_string lib, " lib_core's directory, for an ML program's library");
@@ -96,6 +97,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   | exception Arg.Help _ -> Console.print caps (help ^ "\n"); 0
   | exception Arg.Bad msg -> Console.eprint caps msg; 1
   | () -> (
+      (* (-exn's: a function's calls by its caller sharpen nothing yet,
+       * at many times the cost: exceptions.dl's design note) *)
+      let context = if !context <> "" then !context else if !exns then "insensitive" else "call1_heap1" in
       let path s = match FS.path s with Ok p -> p | Error m -> failwith m in
       try
         if !files = [] then failwith usage;
@@ -113,11 +117,13 @@ let main (caps : < caps; .. >) (argv : string array) : int =
             (if !dead || !ambient then
                [ "points_to/instructions.dl"; "points_to/contexts.dl"; "points_to/insensitive.dl"; "dead.dl" ]
                @ if !ambient then [ "capabilities.dl" ] else []
+             else if !exns then
+               [ "points_to/instructions.dl"; "points_to/andersen.dl"; "points_to/contexts.dl";
+                 "points_to/" ^ context ^ ".dl"; "exceptions.dl" ]
              else
                [ "points_to/instructions.dl"; "points_to/andersen.dl" ]
-               @ (if c <> [] then [ "points_to/contexts.dl"; "points_to/" ^ !context ^ ".dl"; "bugs.dl" ] else [])
-               @ (if ml <> [] then [ "calls.dl" ] else [])
-               @ if !exns then [ "exceptions.dl" ] else []);
+               @ (if c <> [] then [ "points_to/contexts.dl"; "points_to/" ^ context ^ ".dl"; "bugs.dl" ] else [])
+               @ if ml <> [] then [ "calls.dl" ] else []);
         List.iter (fun (f : string) -> given p "entry" [ C.Facts.Sym f ]) !roots;
         if !library then D.load p ~from:"-library" "entry(F) :- function(F).\n";
         C.Facts.added := fact;

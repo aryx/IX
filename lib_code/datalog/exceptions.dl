@@ -1,13 +1,15 @@
 % Which exceptions an ML program may let escape (docs/plans/
 % plan_dotnet_languages.md, stage 9), over the facts of mini-ml -facts
-% (Closure_facts.mli) and the call graph of pointer.dl (call_edge), run
-% with calls.dl:
-%   at(S, E)          the raise or the call S may raise E
-%   arrives(T, E)     E may come to the try T, from its body
-%   passes(T, E)      ... and go through: no case catches it for sure
-%   escapes(F, E)     E may leave the function F
-%   uncaught(F, E)    E may leave a unit's toplevel F: the program dies
-%   raised(E, R)      an uncaught E may be raised at R
+% (Closure_facts.mli) and the calls of points_to/contexts.dl, each in a
+% context (C1, C2): run with instructions.dl, andersen.dl, contexts.dl
+% and its context file (insensitive.dl: 0-CFA; call1_heap1.dl: a
+% function's calls apart by the call site that called it):
+%   at(S, C1, C2, E)        the raise or call S, in that context, may raise E
+%   arrives(T, C1, C2, E)   E may come to the try T, from its body
+%   passes(T, C1, C2, E)    ... and go through: no case catches it for sure
+%   escapes(F, C1, C2, E)   E may leave the function F run in that context
+%   uncaught(F, E)          E may leave a unit's toplevel F: the program dies
+%   raised(E, R)            an uncaught E may be raised at R
 % A raised exception is its constructor when written (raise Empty), a
 % handler's variable raised again what that try may arrive at, else the
 % exceptions' blocks its argument may point to (pt, exn_block). Not
@@ -24,29 +26,47 @@
 % Over a call graph, as here, it is the transitive closure plus a
 % subtraction at each try: the Datalog is ten lines.
 %
+% design:
+% Over contexts.dl's calls, so a context file chooses: insensitive.dl,
+% 0-CFA, mini-analyze -exn's; call1_heap1.dl, a function's calls apart
+% by the call site that called it. On mini-prolog, mini-scheme and
+% mini-datalog the contexts change no answer (call1_heap1: 2 to 6 times
+% the time, up to 9 times the memory; call2_heap1 on mini-scheme 110 s,
+% 7 GB), only fewer raise sites shown. What they miss: mini-scheme's
+% fail, Printf.ksprintf (fun msg -> raise (Error msg)), makes every
+% ksprintf, so every sprintf, raise Error: k is captured by Printf's
+% closures, and a captured variable has no context (contexts.dl's own
+% design note, m-CFA's). Telling them apart needs captured variables by
+% context, or ksprintf's k followed as a parameter.
+%
 % References: Xavier Leroy, François Pessaux, "Type-based analysis of
 % uncaught exceptions" (TOPLAS 2000); Kwangkeun Yi, "Compile-time
 % detection of uncaught exceptions in Standard ML programs" (SAS 1994).
 
-at(S, E) :- raise_of(S, E).
-at(R, E) :- reraises(R, T), arrives(T, E).
-at(R, E) :- raise_in(R, F), argument(R, V), pt(V, H), exn_block(H, E).
-at(I, E) :- call_edge(I, G), escapes(G, E).
+at(S, C1, C2, E) :- raise_of(S, E), running(S, C1, C2).
+at(R, C1, C2, E) :- reraises(R, T), arrives(T, C1, C2, E).
+% (not a handler's variable: it points to every exception of the program)
+at(R, C1, C2, E) :-
+  raise_in(R, F), \+ is_reraise(R), argument(R, 1, V), pt(V, C1, C2, H, H1, H2),
+  exn_block(H, E).
+at(I, C1, C2, E) :- callee(I, C1, C2, G, N1, N2), escapes(G, N1, N2, E).
+is_reraise(R) :- reraises(R, T).
 
 protected(S) :- in_try(S, T).
 nested(T) :- try_in_try(T, T2).
 
-arrives(T, E) :- at(S, E), in_try(S, T).
-arrives(T2, E) :- passes(T, E), try_in_try(T, T2).
-passes(T, E) :- arrives(T, E), \+ catches(T, E), \+ catches_all(T).
+arrives(T, C1, C2, E) :- at(S, C1, C2, E), in_try(S, T).
+arrives(T2, C1, C2, E) :- passes(T, C1, C2, E), try_in_try(T, T2).
+passes(T, C1, C2, E) :- arrives(T, C1, C2, E), \+ catches(T, E), \+ catches_all(T).
 
-escapes(F, E) :- at(S, E), in_function(S, F), \+ protected(S).
-escapes(F, E) :- at(R, E), raise_in(R, F), \+ protected(R).
-escapes(F, E) :- passes(T, E), try_in_function(T, F), \+ nested(T).
+% (a raise is a call: in_function says where)
+escapes(F, C1, C2, E) :- at(S, C1, C2, E), in_function(S, F), \+ protected(S).
+escapes(F, C1, C2, E) :- passes(T, C1, C2, E), try_in_function(T, F), \+ nested(T).
 
-uncaught(F, E) :- init(F), escapes(F, E).
+uncaught(F, E) :- init(F), escapes(F, none, none, E).
 
-% where an uncaught E may be raised: a raise of E in a function the
-% toplevels reach and E may leave (not each raise's own way out: one of
-% the function's raises of E may be caught where another is not)
-raised(E, R) :- uncaught(F, E), raise_in(R, G), at(R, E), reached(G), escapes(G, E).
+% where an uncaught E may be raised: a raise of E in a context it may
+% leave its function from (not each raise's own way out: one of the
+% function's raises of E may be caught where another is not)
+raised(E, R) :-
+  uncaught(F, E), raise_in(R, G), at(R, C1, C2, E), escapes(G, C1, C2, E).

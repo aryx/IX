@@ -311,8 +311,10 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
       List.iter
         (fun ((p, _, _) : case) -> List.iter (fun (c : string) -> fact "declares" [ f; c ]) (declared p))
         cases;
-      let outer = !inside in
+      let outer = !inside and outer_tries = !tries in
+      (* (its body runs where it is called, not in the trys around it) *)
       inside := f;
+      tries := [];
       (* let f x y = ...: the function of y is f' *)
       let inner : string option =
         match cases with
@@ -327,7 +329,8 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
           Option.iter (fun (g : expr) -> flow None g (junk ())) guard;
           flow inner body (f ^ ":ret"))
         cases;
-      inside := outer
+      inside := outer;
+      tries := outer_tries
   | Eapply (({ e = Evar (Prim ("%raise", _, _)); _ } as f), [ a ]) ->
       (* (a raise: its site, its call's, the exception's constructor
        * when it is written, a handler's variable raised again; else

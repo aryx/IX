@@ -825,8 +825,10 @@ let () =
                  * drawn at the pixels it is shown: the draw platform's
                  * fit) *)
                 Playground_platform.run_app caps
-                  (* (the command line's first: window=WxH there wins) *)
-                  (flags @ [ ("heap", "modest"); ("window", "") ])
+                  (* (the command line's first: window=WxH there wins;
+                   * idle=wait: looked at 4 times a second when nothing
+                   * changes: Plan9_loop) *)
+                  (flags @ [ ("heap", "modest"); ("window", ""); ("idle", "wait") ])
                   (Playground.game view update model))
       with Failure msg ->
         Console.eprint caps (msg ^ "\n");

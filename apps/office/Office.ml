@@ -237,7 +237,8 @@ let () =
        * says what it changes) *)
       (* (-help: the usage, and the end, Exit.ExitCode) *)
       Exit.exit caps @@ Exit.catch @@ fun () ->
-      (try Playground_platform.run_app caps (("heap", "modest") :: Playground_platform.flags caps) (app (caps :> File_menu.caps))
+      (* (idle=wait: looked at 4 times a second when nothing changes: Plan9_loop) *)
+      (try Playground_platform.run_app caps (("heap", "modest") :: ("idle", "wait") :: Playground_platform.flags caps) (app (caps:> File_menu.caps))
       with Failure msg ->
         Console.eprint caps (msg ^ "\n");
         CapStdlib.exit caps 1);

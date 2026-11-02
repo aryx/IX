@@ -369,7 +369,10 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.d
      * and those ticks are not given here: what is due is one, the
      * program's time still the clock's. Its fps meter is left out, which
      * would change, and say nothing a person wants. The flag idle=spin on
-     * the command line: as other programs, to compare. *)
+     * the command line: as other programs, to compare. Not for a program
+     * with work under a still picture done a slice a tick: mini-netscape's
+     * page being loaded and mini-maps' tiles, where there is no second
+     * domain (Plan 9), would go at 4 slices a second. *)
     let calm =
       audio = None
       && List.assoc_opt "idle" (Playground.flags_of_strings cli.args @ flags) = Some "wait" in

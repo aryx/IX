@@ -28,8 +28,8 @@
  * (tests/run.sh), as dune's wrapped copy in analyzers/c does it. *)
 
 (* (with no query, the reports mini-analyze prints, C_report's and
- * Ml_report's: the program compiled with its rules, as mini-analyze
- * loads them) *)
+ * Ml_report's, or with -dead Dead_report's, with -caps Caps_report's:
+ * the program compiled with the rules mini-analyze loads for each) *)
 
 (* the program: the rules' texts (file, text...), the queries, the
  * rules compiled; the files from the command line, -Idir for C and

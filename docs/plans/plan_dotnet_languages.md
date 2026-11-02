@@ -94,8 +94,9 @@ made direct and inlined.
   to methods in mini-ml -dotnet, a linear Lexing in lib_core, and
   array-keyed relations; ML programs on both roads too (contexts.ml,
   523 the same), mini-cc's units renamed beside mini-ml's; the reports
-  (C's and ML's) the native's. Not: -dead and -caps' reports
-  (mini-analyze's, another session's); a C module; mini-9pi's card.
+  (C's and ML's, -dead's, -caps') the native's; a C module
+  (fingerprint.c, called from ML: the answers' fingerprint the same
+  by both roads). Not: mini-9pi's card.
 - **Stage 9 not built**: ML analysed.
 
 For the author: what step 0 showed, decision 6 to be decided again
@@ -882,7 +883,21 @@ but really use the same types!". So the decisions below are those of
    with Ml_front), Analyze_rt printing them when it is given no query:
    bugs.c, callbacks.c and handlers (ML) reported as the native
    mini-analyze reports them. What it took: = of arrays in mini-ml
-   -dotnet by their elements, not their places (bugs/ix.md). Not
+   -dotnet by their elements, not their places (bugs/ix.md). Then (the
+   author: "do the other 2 reports and the module written in C!"):
+   -dead's and -caps' reports too (analyzers' Dead_report and
+   Caps_report, a library of both front ends' tables), the native's
+   on analyzers/tests' dead and caps programs (compare of arrays in
+   mini-ml -dotnet now, OCaml's order). And the C module: -fingerprint,
+   one number of every answer (Answers), FNV-1a over 64 bits, unsigned,
+   C's own arithmetic: analyzers/dotnet/fingerprint.c compiled by
+   mini-cc -dotnet into fingerprint.dll, called from ML by
+   dotnet/Fingerprint.ml's externals ([fingerprint]fingerprint::fp_mix,
+   ilasm's way of another assembly's class; uint64 there, int64 here, the
+   same bits); natively Fingerprint.ml, ML's Int64. The same number by
+   both roads (bugs.c, handlers), so a program of ML, Datalog and C
+   modules, each a .NET assembly, calling each other with no
+   conversion. Not
    yet: ML programs (mini-ml's and mini-cc's Lexer and Parser in
    mini-ml's one namespace), the report (Analyze's, in the native
    mini-analyze, which another session is changing).

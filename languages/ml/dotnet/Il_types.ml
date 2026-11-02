@@ -201,6 +201,44 @@ let ml_array_equal (c : c) : int =
       finish c k m;
       m)
 
+(* compare of two arrays, OCaml's order: the shorter first, then by
+ * their elements in turn, each pair by the assembly's Ml::compare,
+ * boxed: the helper Stdlib.Ml::array_compare<T>(T[], T[]) *)
+let ml_array_compare (c : c) : int =
+  memo c "ml array_compare" (fun () ->
+      let cls = ml_class c in
+      let a = S.SzArray (S.MVar 0) in
+      let m = W.method_def c.w cls "array_compare" 0x0096 { (static [ a; a ] S.I4) with generic = 1 } in
+      W.generic_param c.w m 0 "T";
+      let t = W.type_spec c.w (S.MVar 0) in
+      let k = new_code () in
+      let i = local k S.I4 and d = local k S.I4 and n = local k S.I4 in
+      let top = label k and equal = label k and same_length = label k in
+      let length (arg : int) = emit k (Il.Ldarg arg); emit k Il.Ldlen; emit k (Il.Conv (Il.K_i4, false, false)) in
+      (* (the lengths' order: -1, 0 or 1) *)
+      length 0; length 1; emit k (Il.Cgt false);
+      length 0; length 1; emit k (Il.Clt false);
+      emit k (Il.Binop Il.Sub); emit k (Il.Stloc d);
+      emit k (Il.Ldloc d); emit k (Il.Brfalse same_length);
+      emit k (Il.Ldloc d); emit k Il.Ret;
+      place k same_length;
+      length 0; emit k (Il.Stloc n);
+      emit k (Il.Ldc_i4 0l); emit k (Il.Stloc i);
+      place k top;
+      emit k (Il.Ldloc i); emit k (Il.Ldloc n); emit k (Il.Bcmp (Il.Ge, false, equal));
+      emit k (Il.Ldarg 0); emit k (Il.Ldloc i); emit k (Il.Ldelem_any t); emit k (Il.Box t);
+      emit k (Il.Ldarg 1); emit k (Il.Ldloc i); emit k (Il.Ldelem_any t); emit k (Il.Box t);
+      emit k (Il.Call (ml_compare c)); emit k (Il.Stloc d);
+      let next = label k in
+      emit k (Il.Ldloc d); emit k (Il.Brfalse next);
+      emit k (Il.Ldloc d); emit k Il.Ret;
+      place k next;
+      emit k (Il.Ldloc i); emit k (Il.Ldc_i4 1l); emit k (Il.Binop Il.Add); emit k (Il.Stloc i);
+      emit k (Il.Br top);
+      place k equal; emit k (Il.Ldc_i4 0l); emit k Il.Ret;
+      finish c k m;
+      m)
+
 (* OCaml's Hashtbl.hash of a value: the assembly's helper
  * Stdlib.Ml::hash(object), made once, the same on every runtime (.NET's
  * String.GetHashCode is not: Microsoft's varies by process): a

@@ -26,7 +26,12 @@ let main (texts : string array) (queries : string array) (rules : D.t -> unit) :
       let path (f : string) = match FS.path f with Ok p -> p | Error m -> failwith m in
       let incs = List.map path (List.filter_map (flag "-I") args) in
       let lib = match List.filter_map (flag "-L") args with l :: _ -> l | [] -> "lib_core" in
-      let files = List.filter (fun (a : string) -> flag "-I" a = None && flag "-L" a = None) args in
+      let dead = List.mem "-dead" args and ambient = List.mem "-caps" args in
+      let fingerprint = List.mem "-fingerprint" args in
+      let files =
+        List.filter
+          (fun (a : string) -> flag "-I" a = None && flag "-L" a = None && not (List.mem a [ "-dead"; "-caps"; "-fingerprint" ]))
+          args in
       let p = D.create () in
       let failed = ref 0 in
       let complain (m : string) = Console.eprint caps (m ^ "\n"); incr failed in
@@ -57,13 +62,22 @@ let main (texts : string array) (queries : string array) (rules : D.t -> unit) :
          (* an ML program: its units and the library's they name *)
          if ml <> [] then
            List.iter complain (Ml_front.program caps (incs @ Ml_front.library caps lib) (List.map path ml));
+         (* (-caps: the program's own units and their toplevels, as
+          * mini-analyze gives them) *)
+         if ambient then
+           Hashtbl.iter
+             (fun (u : string) () -> given p "own_unit" [ Facts.Sym u ]; given p "own_init" [ Facts.Sym (u ^ ":init") ])
+             Ml_front.own;
          rules p;
          (* (no query: mini-analyze's reports, C's then ML's) *)
          if queries <> [||] then Datalog_rt.answers caps p queries
+         else if ambient then Caps_report.caps_report caps p
+         else if dead then Dead_report.dead_report caps p (ml <> [])
          else begin
            if List.exists (fun (f : string) -> Filename.check_suffix f ".c") files then C_report.report caps p;
            if ml <> [] then Ml_report.ml_report caps p
-         end
+         end;
+         if fingerprint then Console.print caps ("fingerprint of the answers: " ^ Answers.hex (Answers.fingerprint p) ^ "\n")
        with
        | D.Error (msg, at) -> complain (at ^ ": " ^ msg)
        | Failure m -> complain m);

@@ -6,12 +6,21 @@
  (public_name mini-analyze)
  (package ix)
  (modules Main Analyze)
- (libraries ix_analyze_c ix_analyze_ml ix_ml ix_ml_pp ix_ml_facts ix_datalog ix_prolog ix_core fpath logs caps))
+ (libraries ix_analyze_c ix_analyze_ml ix_analyze_reports ix_ml ix_ml_pp ix_ml_facts ix_datalog ix_prolog ix_core fpath logs caps))
 
 ; its ML front end and ML report, a library: the .NET road's
 ; (analyzers/dotnet) too
 (library
  (name ix_analyze_ml)
  (wrapped false)
- (modules Ml_front Ml_report)
+ (modules Ml_front Ml_report Fingerprint Answers)
  (libraries ix_ml ix_ml_pp ix_ml_facts ix_datalog ix_prolog ix_core fpath logs caps))
+
+; its -dead and -caps reports, of both front ends' tables: mini-cc's
+; wrapped units opened, apart from Ml_front (mini-ml's Parser)
+(library
+ (name ix_analyze_reports)
+ (wrapped false)
+ (modules Dead_report Caps_report)
+ (flags (:standard -open Ix_analyze_c))
+ (libraries ix_analyze_c ix_analyze_ml ix_datalog ix_prolog ix_core fpath caps))

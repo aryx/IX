@@ -21,13 +21,21 @@ let assembly_of (cls : string) : string =
   else if under "System.Security.Cryptography." then "System.Security.Cryptography"
   else "System.Runtime"
 
+(* a class: its full name, in .NET's assemblies; or [assembly]Class, as
+ * ilasm writes one of another (mini-cc -dotnet's, beside the program:
+ * plan_dotnet_languages.md, stage 8) *)
 let class_ref (c : c) (cls : string) : int =
   memo c ("type " ^ cls) (fun () ->
+      let asm, cls =
+        match String.index_opt cls ']' with
+        | Some i when cls <> "" && cls.[0] = '[' ->
+            (String.sub cls 1 (i - 1), String.sub cls (i + 1) (String.length cls - i - 1))
+        | _ -> (assembly_of cls, cls) in
       let ns, name =
         match String.rindex_opt cls '.' with
         | Some i -> (String.sub cls 0 i, String.sub cls (i + 1) (String.length cls - i - 1))
         | None -> ("", cls) in
-      W.type_ref c.w (W.assembly_ref c.w (assembly_of cls)) ns name)
+      W.type_ref c.w (W.assembly_ref c.w asm) ns name)
 
 let rec type_of_name (c : c) (loc : int) (n : string) : S.t =
   match String.trim n with
@@ -39,11 +47,12 @@ let rec type_of_name (c : c) (loc : int) (n : string) : S.t =
   | "bool" -> S.Bool
   | "char" -> S.Char
   | "uint8" -> S.U1
+  | "uint64" -> S.U8
   | "object" -> S.Object
   | "void" -> S.Void
   | n when String.length n > 2 && String.sub n (String.length n - 2) 2 = "[]" ->
       S.SzArray (type_of_name c loc (String.sub n 0 (String.length n - 2)))
-  | n when String.contains n '.' -> S.Class (class_ref c n)
+  | n when String.contains n '.' || (n <> "" && n.[0] = '[') -> S.Class (class_ref c n)
   | n -> refuse loc ("a .NET type an external names: " ^ n) "3b"
 
 (* the ML type's arguments and result *)

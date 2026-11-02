@@ -134,6 +134,11 @@ and prim (c : c) (env : env) (k : code) (cx : compiler) (e : Scope.expr) (p : st
         all ();
         emit k (Il.Call (ml_compare c));
         emit k (Il.Ldc_i4 0l)
+    (* (an array's: its length, then its elements) *)
+    | S.SzArray t ->
+        all ();
+        emit k (Il.Call (memo c ("array_compare " ^ S.encode_type_spec t) (fun () -> W.method_spec c.w (ml_array_compare c) [ t ])));
+        emit k (Il.Ldc_i4 0l)
     | _ -> all ());
     (* (a float's NaN: unordered, so a <= b is not (a > b, or unordered)) *)
     let unordered = negate && first () = S.R8 in
@@ -329,7 +334,12 @@ and prim (c : c) (env : env) (k : code) (cx : compiler) (e : Scope.expr) (p : st
           emit k (Il.Conv (Il.K_i8, false, false))
       | S.Class _ | S.GenericInst _ -> all (); emit k (Il.Call (ml_compare c)); emit k (Il.Conv (Il.K_i8, false, false))
       | S.SzArray S.U1 -> as_strings (); emit k (Il.Call (ml_compare c)); emit k (Il.Conv (Il.K_i8, false, false))
-      | _ -> refuse e.loc "compare of a value of no order (a function, an array)" "1d")
+      (* (an array's: its length, then its elements) *)
+      | S.SzArray t ->
+          all ();
+          emit k (Il.Call (memo c ("array_compare " ^ S.encode_type_spec t) (fun () -> W.method_spec c.w (ml_array_compare c) [ t ])));
+          emit k (Il.Conv (Il.K_i8, false, false))
+      | _ -> refuse e.loc "compare of a value of no order (a function)" "1d")
   (* an array's length, an element read and written (an index an
    * int32: IL's) *)
   | "%array_length", _ -> all (); emit k Il.Ldlen; emit k (Il.Conv (Il.K_i8, false, false))

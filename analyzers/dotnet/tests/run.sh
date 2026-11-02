@@ -14,7 +14,11 @@
 # timed, by Microsoft's dotnet. Then mini-analyze's reports, of the
 # rules it loads (C's: call1_heap1 and bugs.dl; ML's: calls.dl): the
 # .NET program's (no query) the native mini-analyze's, on
-# analyzers/tests' bugs, callbacks and handlers (ML).
+# analyzers/tests' bugs, callbacks and handlers (ML), dead/ (-dead) and
+# caps/ (-caps). And a C module (stage 8's): -fingerprint's number of the
+# answers by fingerprint.c, compiled by mini-cc -dotnet and called from
+# ML on .NET (dotnet/Fingerprint.ml's externals), by Fingerprint.ml
+# natively: the same.
 # usage: analyzers/dotnet/tests/run.sh [-ms] [-rc]   (dune build, and
 #   mini-mk in languages/c for its parser and lexer, first)
 # DUNEML, DUNEDATALOG, DUNEDOTNET, DUNEANALYZE: if not _build's.
@@ -26,6 +30,7 @@ ML=${DUNEML:-$B/languages/ml/Main.exe}
 DL=${DUNEDATALOG:-$B/languages/datalog/Main.exe}
 DN=${DUNEDOTNET:-$B/languages/dotnet/Main.exe}
 AN=$(realpath ${DUNEANALYZE:-$B/analyzers/Main.exe})
+CC=${DUNECC:-$B/languages/c/Main.exe}
 P=_mk/7/languages/c
 # (WORK=dir: the assemblies made kept there)
 W=${WORK:-$(mktemp -d)}; [ -n "${WORK:-}" ] || trap 'rm -rf $W' EXIT
@@ -57,8 +62,8 @@ for u in Tree Tree_helpers Pre Acid Check Declare Machines Emit Com64 Parser Lex
   files="$files $W/c/$(rename $u).ml"
 done
 for u in Ast Annotations Parser Lexer Scope Resolve Typing Bits Derive Pp Closure_facts Ml_front \
-         Prolog Prolog_read Parallel Tuples Btree Relset Hash_index Tree_index Index Datalog Datalog_eval Datalog_rt C_report Ml_report Analyze_rt; do
-  for f in languages/ml/$u.ml languages/ml/*/$u.ml $M/$u.ml analyzers/$u.ml analyzers/c/$u.ml analyzers/dotnet/$u.ml languages/prolog/$u.ml \
+         Prolog Prolog_read Parallel Tuples Btree Relset Hash_index Tree_index Index Datalog Datalog_eval Datalog_rt C_report Ml_report Fingerprint Answers Dead_report Caps_report Analyze_rt; do
+  for f in analyzers/dotnet/$u.ml languages/ml/$u.ml languages/ml/*/$u.ml $M/$u.ml analyzers/$u.ml analyzers/c/$u.ml languages/prolog/$u.ml \
            languages/datalog/$u.ml languages/datalog/dotnet/$u.ml $W/$u.ml; do [ -f $f ] && break; done
   files="$files $f"
 done
@@ -66,6 +71,11 @@ if ! $ML -L lib_core -I $W/c -I assembler -I languages/ml -I languages/ml/pp -I 
      -I analyzers/dotnet -I languages/prolog -I languages/datalog -I languages/datalog/dotnet -I $W \
      -dotnet -o $W/analyze_rt.dll $files > $W/rt.err 2>&1; then
   echo "FAIL analyze_rt.dll by mini-ml -dotnet"; head -3 $W/rt.err; exit 1
+fi
+# the C module: fingerprint.c by mini-cc -dotnet, beside the program;
+# the .NET road's Fingerprint (dotnet/Fingerprint.ml) calls it
+if ! $CC -dotnet -L languages/c/dotnet -o $W/fingerprint.dll analyzers/dotnet/fingerprint.c > $W/fp.err 2>&1; then
+  echo "FAIL fingerprint.dll by mini-cc -dotnet"; head -3 $W/fp.err; exit 1
 fi
 R=lib_code/datalog/points_to
 Q=(-q 'target(I, F)' -q 'pts(V, H)')
@@ -105,8 +115,12 @@ ms_only=1 roads contexts_ml pta_ml lib_code/datalog/tests -L $PWD/lib_core conte
 # its report the native mini-analyze's
 REPORT_C="$R/instructions.dl $R/andersen.dl $R/contexts.dl $R/call1_heap1.dl lib_code/datalog/bugs.dl"
 REPORT_ML="$R/instructions.dl $R/andersen.dl lib_code/datalog/calls.dl"
+REPORT_DEAD="$R/instructions.dl $R/contexts.dl $R/insensitive.dl lib_code/datalog/dead.dl"
+REPORT_CAPS="$REPORT_DEAD lib_code/datalog/capabilities.dl"
 $DL -dotnet -runtime analyze_rt -entry Analyze_rt -o $W/report_c.dll $REPORT_C &&
-  $DL -dotnet -runtime analyze_rt -entry Analyze_rt -o $W/report_ml.dll $REPORT_ML ||
+  $DL -dotnet -runtime analyze_rt -entry Analyze_rt -o $W/report_ml.dll $REPORT_ML &&
+  $DL -dotnet -runtime analyze_rt -entry Analyze_rt -o $W/report_dead.dll $REPORT_DEAD &&
+  $DL -dotnet -runtime analyze_rt -entry Analyze_rt -o $W/report_caps.dll $REPORT_CAPS ||
   { echo "FAIL mini-datalog -dotnet, the reports' programs"; exit 1; }
 report() { # name, its program, the directory, the files
   local name=$1 prog=$2 dir=$3; shift 3
@@ -126,6 +140,14 @@ report() { # name, its program, the directory, the files
 report bugs report_c analyzers/tests/c/bugs bugs.c
 ms_only=1 report callbacks report_c analyzers/tests/c/callbacks $(cd analyzers/tests/c/callbacks && ls *.c)
 ms_only=1 report handlers report_ml . analyzers/tests/ml/handlers/Events.ml analyzers/tests/ml/handlers/Main.ml
+# a C module called from ML: the answers' fingerprint by fingerprint.c on
+# .NET, by Fingerprint.ml natively, the same number
+report fingerprint report_c analyzers/tests/c/bugs -fingerprint bugs.c
+ms_only=1 report fingerprint_ml report_ml . -fingerprint analyzers/tests/ml/handlers/Events.ml analyzers/tests/ml/handlers/Main.ml
+for d in analyzers/tests/dead/c analyzers/tests/dead/ml; do
+  ms_only=1 report dead_$(basename $d) report_dead . -dead $(ls $d/*.[cm]* | grep -v expected)
+done
+ms_only=1 report caps report_caps . -caps $(ls analyzers/tests/caps/ml/*.ml)
 if [ -n "$rc" ]; then
   G=${GOKEN:-$HOME/goken}
   F="builtins.c code.c env.c error.c exec.c executils.c fmt.c getflags_.c globals.c glob.c goken.c here.c input.c io.c lex.c main.c notify_full.c path.c pcmd.c pfnc.c processes.c rfork_fork.c simple.c status.c trap.c tree.c utils.c var.c words.c y.tab.c"

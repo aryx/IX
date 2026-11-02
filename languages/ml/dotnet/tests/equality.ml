@@ -30,3 +30,10 @@ let () =
 let () =
   let a : string array = Array.make 0 "" and b = [| 1; 2 |] in
   print_string (if a = [||] && b = [| 1; 2 |] && b <> [| 1; 3 |] then "arrays equal by their elements\n" else "arrays compared as places\n")
+
+(* compare of arrays, OCaml's order: the shorter first, then the elements *)
+let () =
+  let l = List.sort compare [ [| "b"; "a" |]; [| "a"; "z" |]; [| "a" |]; [| "a"; "b" |] ] in
+  List.iter (fun (a : string array) -> print_string (String.concat "," (Array.to_list a) ^ ";")) l;
+  print_newline ();
+  print_string (if [| 1; 2 |] < [| 1; 3 |] && [| 5 |] < [| 1; 1 |] then "ordered\n" else "not ordered\n")

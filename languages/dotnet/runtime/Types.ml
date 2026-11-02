@@ -413,7 +413,10 @@ and meth_of_token (ctx : ctx) (tok : int) : meth =
       let owner = (extra ctx.im).method_owner.(row) in
       let n = (extra ctx.im).generics.(owner) in
       let c = class_of_def ctx.im owner (if n > 0 then Array.sub ctx.targs 0 n else [||]) in
-      (match List.find_opt (fun (m : meth) -> m.def = Some (ctx.im, row)) c.methods with
+      (* (the image by ==: = walked all its tables for each method, 95%
+       * of a 2.3 MB assembly's run, 15 s before its first instruction) *)
+      let mine (m : meth) = match m.def with Some (im, r) -> im == ctx.im && r = row | None -> false in
+      (match List.find_opt mine c.methods with
        | Some m -> m
        | None -> error "a MethodDef in no class")
   | x when x = M.t_member_ref ->

@@ -271,6 +271,26 @@ The lesson: the same IL has a different cost on each runtime, and the
 first profile of one says nothing of the other. A miss signalled by an
 exception is the .NET case of "what usually is it" (below, 9).
 
+Then mini-analyze's .NET road for mini-9pi's card (2026-11-02): 22 s
+under mini-dotnet, 15.7 of them for an empty C file, yet `-profile`
+counted 9 million instructions (a second's worth). So the time was not
+the interpreter's: loading was 0.1 s (`-size`), the GC little
+(`OCAMLRUNPARAM=v=0x400`: 73 million words). gdb could not attach
+(ptrace refused here), perf is not installed: **callgrind on the empty
+case**, 15 minutes under valgrind, said 95% in OCaml's runtime,
+`do_compare_val` and `caml_page_table_lookup`, which name no ML
+function. The way to the culprit, through the runtime's C:
+`callgrind_annotate --tree=caller --threshold=100`, then from
+`caml_equal`'s entry to its caller, `caml_c_call` (how ML calls the
+runtime's C), then `caml_c_call`'s callers ranked by cost: one lambda
+of mini-dotnet's Types, 40,749 calls. Its `m.def = Some (ctx.im, row)`
+compared the whole assembly's image, megabytes of tables, for each
+method looked up; by `==` on the image, 22 s to 2.2. A polymorphic
+`=` on a structure that holds something big is invisible in the ML
+profile (the time is the runtime's) and in the code (it reads as a
+small test): page_table_lookup high in a profile is its sign, compare
+walking values the GC does not own.
+
 ## The collector, which is in every profile
 
 mini-ml's collector copies everything alive at each collection, and a
@@ -365,6 +385,11 @@ By how often it was the answer in ix, for mini-ml's code on arm:
    for an ordinary miss (`Not_found` from a search, caught to say
    false or None): microseconds each, where OCaml's is a jump.
    lib_core's searches no longer raise for it (above).
+10. A polymorphic `=` (or `compare`, `Hashtbl` on such a key) on a
+   value that holds something big: an image, a table, a whole tree.
+   It reads as a small test; the profile says `do_compare_val` and
+   `caml_page_table_lookup`, the runtime's, not the ML function that
+   asked (mini-dotnet's method lookup, above: `==` on the image).
 
 ## What to do, in order
 

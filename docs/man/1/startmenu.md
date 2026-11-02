@@ -6,6 +6,8 @@ startmenu – what the start button shows: the programs, with their icons
 # SYNOPSIS
 **window -popup -hide -label startmenu startmenu**
 
+**startmenu -try** *seconds* [*group*]
+
 # DESCRIPTION
 *Startmenu* lists the programs of `/lib/desktop/apps`, those on top
 directly and the others by their group, in a window of \man{rio}{1}'s
@@ -14,6 +16,10 @@ opens it beside; a press on a program opens it in a new window, in the
 middle of what the screen has for windows or on all of it, and hides the
 menu, as a press anywhere else does. **Exit** ends *rio*. A program of the table that
 is not in `/bin` is not listed.
+
+With **-try**, no menu: each program of the table (but those on top),
+or of that group, is opened as the menu opens it, left that many seconds,
+and deleted: every program looked at once.
 
 A line of the table is
 

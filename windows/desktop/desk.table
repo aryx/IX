@@ -6,5 +6,5 @@ top | Programs     | folder | 640x480 | files /progs
 top | Office       | doc    | 800x600 | office
 top | Netscape     | globe  | 900x700 | netscape
 top | Emacs        | editor | 720x560 | emacs
-top | Tetris       | blocks | 400x600 | tetris
+top | Tetris       | blocks | 440x440 | tetris
 top | Doom         | face   | max     | doom

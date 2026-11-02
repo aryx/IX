@@ -1,7 +1,8 @@
 # What the start menu lists (Apps says the form): group | name | icon | size | command
 # On the card, /lib/desktop/apps. tests/Test.ml holds it to the Makefile's
 # CARD_* lists: a program there is listed here, or in that test's list of those
-# left out.
+# left out. Sizes looked at on mini-9pi under QEMU (startmenu -try): the games
+# draw a square, so their windows are.
 top      | Terminal      | term   | 640x400 | rc -i
 top      | Files         | folder | 640x480 | files /usr/pad
 top      | All programs  | folder | 640x480 | files /progs
@@ -11,14 +12,14 @@ apps     | Office        | doc    | 800x600 | office
 apps     | Page          | doc    | 700x600 | page /lib/pdf/tex.pdf
 apps     | Stats         | chart  | 400x160 | stats
 apps     | Colors        | app    | 320x320 | colors
-apps     | ReBirth       | note   | 900x600 | rebirth
+apps     | ReBirth       | note   | 720x600 | rebirth
 
-games    | Tetris        | blocks | 400x600 | tetris
-games    | Breakout      | game   | 640x480 | breakout
-games    | Missile Command | game | 640x480 | missilecommand
-games    | Cameltry      | game   | 640x480 | cameltry
-games    | Tronscroll    | game   | 640x480 | tronscroll
-games    | Wolfenstein   | face   | 640x480 | wolfenstein
+games    | Tetris        | blocks | 440x440 | tetris
+games    | Breakout      | game   | 520x520 | breakout
+games    | Missile Command | game | 520x520 | missilecommand
+games    | Cameltry      | game   | 520x520 | cameltry
+games    | Tronscroll    | game   | 520x520 | tronscroll
+games    | Wolfenstein   | face   | 520x520 | wolfenstein
 games    | Doom          | face   | max     | doom
 games    | Quake         | face   | max     | quake
 games    | Virtua Racing | game   | max     | virtua

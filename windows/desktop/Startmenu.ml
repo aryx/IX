@@ -27,9 +27,14 @@
  *
  * It takes the size its table needs, at the bottom left of what the screen
  * has for windows, and asks rio for it. A program that is not on the card
- * is not listed. *)
+ * is not listed.
+ *
+ * startmenu -try seconds [group]: no menu; each program of the table, or
+ * of that group, opened as the menu opens it, left that long, and deleted:
+ * all of them looked at once (plan_desktop.md's shakedown), from rio -i or
+ * a window. *)
 
-type caps = < Cap.draw; Cap.mouse; Cap.fork; Cap.open_in; Cap.open_out >
+type caps = < Cap.draw; Cap.mouse; Cap.fork; Cap.readdir; Cap.open_in; Cap.open_out >
 
 let read_file (caps : < Cap.open_in; .. >) path =
   try Some (FS.read caps (Fpath.v path)) with Sys_error _ | Unix.Unix_error _ -> None
@@ -40,9 +45,29 @@ let ask (caps : < Cap.open_out; .. >) line =
     Fun.protect ~finally:(fun () -> Unix.close fd) (fun () -> ignore (Unix.write_substring fd line 0 (String.length line)))
   with Unix.Unix_error _ | Sys_error _ -> ()
 
-let main (caps : < caps; .. >) : Exit.t =
+(* the newest window: the largest number in /dev/wsys *)
+let newest (caps : < Cap.readdir; .. >) =
+  let names = try Sys_plan9.dirread caps "/dev/wsys" with Sys_error _ | Unix.Unix_error _ -> [] in
+  List.fold_left (fun n (d : Sys_plan9.dir) -> match int_of_string_opt d.name with Some k -> max n k | None -> n) 0 names
+
+let try_all caps (entries : Apps.entry list) seconds =
+  List.iter (fun (e : Apps.entry) ->
+      let before = newest caps in
+      ask caps (Apps.open_line e);
+      Unix.sleepf (float seconds);
+      let id = newest caps in
+      if id > before then ask caps (Printf.sprintf "delete -id %d" id)) entries
+
+let main (caps : < caps; .. >) (argv : string array) : Exit.t =
   let table = match read_file caps "/lib/desktop/apps" with Some t -> Apps.parse t | None -> [] in
   let entries = List.filter (fun e -> Sys.file_exists ("/bin/" ^ Apps.program e)) table in
+  if Array.length argv >= 3 && argv.(1) = "-try" then begin
+    let group = if Array.length argv >= 4 then Some argv.(3) else None in
+    let chosen = List.filter (fun (e : Apps.entry) -> match group with Some g -> e.group = g | None -> e.group <> "top") entries in
+    try_all caps chosen (match int_of_string_opt argv.(2) with Some n -> n | None -> 30);
+    Exit.OK
+  end
+  else
   let display = Display.init caps in
   let font = Font.default display and mouse = Mouse.init caps in
   let color r g b = Display.color display (Display.rgb r g b) in
@@ -134,4 +159,4 @@ let main (caps : < caps; .. >) : Exit.t =
   draw view None None;
   loop view None None 0
 
-let () = Cap.main (fun caps -> Exit.exit caps (Exit.catch (fun () -> main caps)))
+let () = Cap.main (fun caps -> Exit.exit caps (Exit.catch (fun () -> main caps (CapSys.argv caps))))

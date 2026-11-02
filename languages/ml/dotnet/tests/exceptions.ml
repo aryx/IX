@@ -34,3 +34,10 @@ let () =
   (try inner () with Empty_stack -> print_endline "through the inner handler");
   let r = try check 1 with Stop _ -> 0 in
   print_int r; print_newline ()
+
+(* a try inside an operand (values on IL's stack, where a try starts
+ * with none): its own method, what it names its arguments *)
+let () =
+  let base = 40 in
+  let n = base + (try int_of_string "x" with Failure _ -> 2) in
+  print_int (n + (try List.assoc 3 [ (3, 0) ] with Not_found -> 9)); print_newline ()

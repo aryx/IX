@@ -92,8 +92,9 @@ made direct and inlined.
   (contexts.c, Plan 9's rc: 17,330). The .NET road near the native
   one (rc: 22.8 s of CPU against 18.9), after lifting local functions
   to methods in mini-ml -dotnet, a linear Lexing in lib_core, and
-  array-keyed relations. Not: ML programs (mini-ml's and
-  mini-cc's units share names in mini-ml's one namespace); the report
+  array-keyed relations; ML programs on both roads too (contexts.ml,
+  523 the same), mini-cc's units renamed beside mini-ml's. Not: the
+  report
   (mini-analyze's, another session's); a C module; mini-9pi's card.
 - **Stage 9 not built**: ML analysed.
 
@@ -864,7 +865,18 @@ but really use the same types!". So the decisions below are those of
    value, Tuples.mem2's way for any arity), Datalog.add indexing by
    them: rc's .NET road 22.8 s of CPU (was 30.7 this morning), the
    native evaluator 18.6 (was 19.3: faster too). The compiled rules
-   now near the native interpreter, 1.2x with the front end. Not
+   now near the native interpreter, 1.2x with the front end. ML too
+   (the author: "let's move forward on stage 8"): analyze_rt.dll holds
+   both front ends, mini-ml's (Ast to Typing, mlpp's Pp, Closure_facts,
+   Ml_front) and mini-cc's, the latter's units copied with Parser and
+   Lexer renamed C_parser and C_lexer (dune's wrapped copy in
+   analyzers/c, by hand: mini-ml has one namespace of units). What it
+   took of mini-ml -dotnet: a tuple pattern and fst/snd through a type
+   abbreviation (Ast's span), a try inside an operand made a method of
+   its own (IL's try starts with an empty stack: F#'s way, as lift's).
+   contexts.ml with the lib_core units it names, call1's pts and
+   reach: 523 answers the same (native 0.1 s, Microsoft's dotnet 1 s).
+   Not
    yet: ML programs (mini-ml's and mini-cc's Lexer and Parser in
    mini-ml's one namespace), the report (Analyze's, in the native
    mini-analyze, which another session is changing).

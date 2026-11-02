@@ -24,42 +24,68 @@ DL=${DUNEDATALOG:-$B/languages/datalog/Main.exe}
 DN=${DUNEDOTNET:-$B/languages/dotnet/Main.exe}
 AN=$(realpath ${DUNEANALYZE:-$B/analyzers/Main.exe})
 P=_mk/7/languages/c
-W=$(mktemp -d); trap 'rm -rf $W' EXIT
+# (WORK=dir: the assemblies made kept there)
+W=${WORK:-$(mktemp -d)}; [ -n "${WORK:-}" ] || trap 'rm -rf $W' EXIT
 failures=0
 fail() { echo "FAIL $*"; failures=$((failures + 1)); }
 [ -f $P/Parser.ml ] || { echo "skipped: $P/Parser.ml not built (mini-mk in languages/c)"; exit 0; }
 
 # analyze_rt.dll: mini-cc's front end (its mkfile's order), Facts,
-# C_front, mini-datalog's relations, Datalog_rt, Analyze_rt
+# C_front; mini-ml's front end (Ast to Typing, mlpp's Pp), Closure_facts,
+# Ml_front; mini-datalog's relations, Datalog_rt, Analyze_rt. The two
+# front ends each have a Parser and a Lexer, mini-ml one namespace of
+# units: mini-cc's copied with theirs renamed C_parser and C_lexer, and
+# what names them (dune's wrapped copy of them, analyzers/c, by hand)
+M=_mk/7/languages/ml
+[ -f $M/Parser.ml ] || { echo "skipped: $M/Parser.ml not built (mini-mk in languages/ml)"; exit 0; }
+mkdir -p $W/c
 cp lib_core/parallel/Parallel.mli $W/
 cp lib_core/parallel/host/single.ml.in $W/Parallel.ml
+rename() { case $1 in Parser) echo C_parser;; Lexer) echo C_lexer;; *) echo $1;; esac; }
 files=
-for u in Asm Show_asm Tree Tree_helpers Pre Acid Check Declare Machines Emit Com64 Parser Lexer Facts C_front \
+for u in Asm Show_asm; do files="$files assembler/$u.ml"; done
+for u in Tree Tree_helpers Pre Acid Check Declare Machines Emit Com64 Parser Lexer Facts C_front; do
+  for f in languages/c/$u.ml languages/c/*/$u.ml analyzers/c/$u.ml $P/$u.ml; do [ -f $f ] && break; done
+  for x in ml mli; do
+    for g in ${f%.ml}.$x languages/c/$u.$x $P/$u.$x; do
+      [ -f $g ] && { sed -E 's/\bParser\b/C_parser/g; s/\bLexer\b/C_lexer/g' $g > $W/c/$(rename $u).$x; break; }
+    done
+  done
+  files="$files $W/c/$(rename $u).ml"
+done
+for u in Ast Annotations Parser Lexer Scope Resolve Typing Bits Derive Pp Closure_facts Ml_front \
          Prolog Prolog_read Parallel Tuples Btree Relset Hash_index Tree_index Index Datalog Datalog_eval Datalog_rt Analyze_rt; do
-  for f in languages/c/$u.ml languages/c/*/$u.ml assembler/$u.ml analyzers/c/$u.ml analyzers/dotnet/$u.ml languages/prolog/$u.ml \
-           languages/datalog/$u.ml languages/datalog/dotnet/$u.ml $W/$u.ml $P/$u.ml; do [ -f $f ] && break; done
+  for f in languages/ml/$u.ml languages/ml/*/$u.ml $M/$u.ml analyzers/$u.ml analyzers/dotnet/$u.ml languages/prolog/$u.ml \
+           languages/datalog/$u.ml languages/datalog/dotnet/$u.ml $W/$u.ml; do [ -f $f ] && break; done
   files="$files $f"
 done
-if ! $ML -L lib_core -I languages/c -I $P -I languages/c/debug -I languages/c/facts -I assembler -I analyzers/c \
+if ! $ML -L lib_core -I $W/c -I assembler -I languages/ml -I languages/ml/pp -I languages/ml/facts -I $M -I analyzers \
      -I analyzers/dotnet -I languages/prolog -I languages/datalog -I languages/datalog/dotnet -I $W \
      -dotnet -o $W/analyze_rt.dll $files > $W/rt.err 2>&1; then
   echo "FAIL analyze_rt.dll by mini-ml -dotnet"; head -3 $W/rt.err; exit 1
 fi
 R=lib_code/datalog/points_to
-RULES="$R/instructions.dl $R/andersen.dl $R/contexts.dl $R/call1_heap1.dl"
 Q=(-q 'target(I, F)' -q 'pts(V, H)')
-$DL -dotnet -runtime analyze_rt -entry Analyze_rt -o $W/pta.dll "${Q[@]}" $RULES || { echo "FAIL mini-datalog -dotnet"; exit 1; }
+QML=(-q 'pts(V, H)' -q 'reach(F)')
+# (C's analysis: call1_heap1; ML's: call1, as lib_code/datalog/tests')
+C_RULES="$R/instructions.dl $R/andersen.dl $R/contexts.dl $R/call1_heap1.dl"
+ML_RULES="$R/instructions.dl $R/andersen.dl $R/contexts.dl $R/call1.dl"
+$DL -dotnet -runtime analyze_rt -entry Analyze_rt -o $W/pta.dll "${Q[@]}" $C_RULES &&
+  $DL -dotnet -runtime analyze_rt -entry Analyze_rt -o $W/pta_ml.dll "${QML[@]}" $ML_RULES ||
+  { echo "FAIL mini-datalog -dotnet"; exit 1; }
 
 # a program: the native road's answers, the .NET road's by each runtime
-roads() { # name, the directory, the files and -I's
-  local name=$1 dir=$2; shift 2
-  local args=("$@") t0=$(date +%s%N)
-  (cd $dir && $AN -facts "$@") > $W/$name.facts
-  $DL "${Q[@]}" $RULES $W/$name.facts > $W/$name.want 2> /dev/null
+roads() { # name, the compiled program (pta or pta_ml), the directory, the files and -I's
+  local name=$1 prog=$2 dir=$3; shift 3
+  [ -n "${ms_only:-}" ] && [ -z "$ms" ] && { echo "skipped: $name (Microsoft's dotnet only: -ms)"; return; }
+  local args=("$@") t0=$(date +%s%N) rules=$C_RULES q=("${Q[@]}")
+  [ $prog = pta_ml ] && { rules=$ML_RULES; q=("${QML[@]}"); }
+  (cd $dir && $AN -facts "$@") > $W/$name.facts 2> /dev/null
+  $DL "${q[@]}" $rules $W/$name.facts > $W/$name.want 2> /dev/null
   local native=$(( ($(date +%s%N) - t0) / 1000000 ))
   run() { # what, runtime
     local t0=$(date +%s%N)
-    (cd $dir && $2 $W/pta.dll "${args[@]}") > $W/$name.got 2>&1
+    (cd $dir && $2 $W/$prog.dll "${args[@]}") > $W/$name.got 2>&1
     local ms=$(( ($(date +%s%N) - t0) / 1000000 ))
     if [ -s $W/$name.want ] && cmp -s $W/$name.want $W/$name.got; then
       echo "ok mini-analyze's two roads on $name: $(wc -l < $W/$name.want) answers the same (native $native ms, .NET by $1 $ms ms)"
@@ -68,11 +94,14 @@ roads() { # name, the directory, the files and -I's
   [ -z "${ms_only:-}" ] && run mini-dotnet "$(realpath $DN)"
   [ -n "$ms" ] && run "Microsoft's dotnet" dotnet
 }
-roads contexts lib_code/datalog/tests contexts.c
+roads contexts pta lib_code/datalog/tests contexts.c
+# (an ML program, lib_core's units it names read too: Microsoft's only,
+# mini-dotnet's interpreter too slow for make test's minute)
+ms_only=1 roads contexts_ml pta_ml lib_code/datalog/tests -L $PWD/lib_core contexts.ml
 if [ -n "$rc" ]; then
   G=${GOKEN:-$HOME/goken}
   F="builtins.c code.c env.c error.c exec.c executils.c fmt.c getflags_.c globals.c glob.c goken.c here.c input.c io.c lex.c main.c notify_full.c path.c pcmd.c pfnc.c processes.c rfork_fork.c simple.c status.c trap.c tree.c utils.c var.c words.c y.tab.c"
-  ms=1 ms_only=1 roads rc $G/rc -I$G/include/ALL -I$G/include/arch/arm64 -I$G/include $F
+  ms=1 ms_only=1 roads rc pta $G/rc -I$G/include/ALL -I$G/include/arch/arm64 -I$G/include $F
 fi
 echo "$failures failure(s)"
 [ $failures = 0 ]

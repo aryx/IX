@@ -20,9 +20,14 @@
  * no text between them. The native road it is compared with: the
  * same front end's facts as text (mini-analyze -facts), mini-datalog
  * on them; the author's two roads, for the teaching and the numbers.
- * A file not .c is read as Datalog's text (more facts, or rules'
- * facts). *)
+ * An ML program's .ml files go through mini-ml's front end into
+ * Closure_facts (Ml_front, mini-analyze's), lib_core's units they name
+ * with them (-Ldir, lib_core); a file neither .c nor .ml is read as
+ * Datalog's text (more facts, or rules' facts). Both front ends in one
+ * assembly: mini-cc's units copied with Parser and Lexer renamed
+ * (tests/run.sh), as dune's wrapped copy in analyzers/c does it. *)
 
 (* the program: the rules' texts (file, text...), the queries, the
- * rules compiled; the files from the command line, -Idir for C *)
+ * rules compiled; the files from the command line, -Idir for C and
+ * ML, -Ldir lib_core's *)
 val main : string array -> string array -> (Datalog.t -> unit) -> unit

@@ -1,8 +1,6 @@
--- let x = 1 + (try 2 with Not_found -> 3)
-r1.ml:1: a try inside an operand (made a variable's value first): not compiled to .NET yet (plan_dotnet_languages.md, stage 1b)
 -- type t = A of { a : int } let v = A { a = 1 }
-r2.ml:1: A, a constructor of an inline record: not compiled to .NET yet (plan_dotnet_languages.md, stage 1b)
+r1.ml:1: A, a constructor of an inline record: not compiled to .NET yet (plan_dotnet_languages.md, stage 1b)
 -- let () = Printf.printf "%a" (fun oc () -> output_string oc "x") ()
-r3.ml:1: %a or %t in a format of a channel's (fprintf's: its text cannot be taken): not compiled to .NET yet (plan_dotnet_languages.md, stage 3c)
+r2.ml:1: %a or %t in a format of a channel's (fprintf's: its text cannot be taken): not compiled to .NET yet (plan_dotnet_languages.md, stage 3c)
 -- let f () = Obj.size (Obj.repr 1)
-r4.ml:1: the primitive %obj_size: not compiled to .NET yet (plan_dotnet_languages.md, stage 1a)
+r3.ml:1: the primitive %obj_size: not compiled to .NET yet (plan_dotnet_languages.md, stage 1a)

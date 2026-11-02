@@ -13,14 +13,24 @@ let given (p : D.t) (relation : string) (args : Facts.arg list) : unit =
     match a with Facts.Sym s -> D.symbol p (Prolog.Atom s) | Facts.Num n -> D.symbol p (Prolog.Int n) in
   if D.add r (Array.of_list (List.map value args)) then r.given <- r.given + 1
 
+(* an option of one word: -Idir, -Ldir *)
+let flag (pre : string) (a : string) : string option =
+  if String.length a > 2 && String.sub a 0 2 = pre then Some (String.sub a 2 (String.length a - 2)) else None
+
 let main (texts : string array) (queries : string array) (rules : D.t -> unit) : unit =
   Cap.main (fun (caps : Cap.all_caps) ->
       let argv = CapSys.argv caps in
-      let args = Array.to_list (Array.sub argv 1 (Array.length argv - 1)) in
-      let incs, files =
-        List.partition (fun (a : string) -> String.length a > 2 && String.sub a 0 2 = "-I") args in
+      (* (-I dir and -L dir as mini-analyze's, two words: made one) *)
+      let rec joined (l : string list) =
+        match l with
+        | (("-I" | "-L") as o) :: d :: rest -> (o ^ d) :: joined rest
+        | a :: rest -> a :: joined rest
+        | [] -> [] in
+      let args = joined (Array.to_list (Array.sub argv 1 (Array.length argv - 1))) in
       let path (f : string) = match FS.path f with Ok p -> p | Error m -> failwith m in
-      let incs = List.map (fun (a : string) -> path (String.sub a 2 (String.length a - 2))) incs in
+      let incs = List.map path (List.filter_map (flag "-I") args) in
+      let lib = match List.filter_map (flag "-L") args with l :: _ -> l | [] -> "lib_core" in
+      let files = List.filter (fun (a : string) -> flag "-I" a = None && flag "-L" a = None) args in
       let p = D.create () in
       let failed = ref 0 in
       let complain (m : string) = Console.eprint caps (m ^ "\n"); incr failed in
@@ -29,15 +39,28 @@ let main (texts : string array) (queries : string array) (rules : D.t -> unit) :
            D.load p ~from:texts.(2 * i) texts.((2 * i) + 1)
          done;
          Facts.added := given p;
+         (* (ML's facts the same: mini-analyze's Closure_facts.added) *)
+         Closure_facts.added :=
+           (fun (r : string) (args : Closure_facts.arg list) ->
+             given p r
+               (List.map
+                  (fun (a : Closure_facts.arg) ->
+                    match a with Closure_facts.Sym s -> Facts.Sym s | Closure_facts.Num n -> Facts.Num n)
+                  args));
+         let ml = List.filter (fun (f : string) -> Filename.check_suffix f ".ml") files in
          List.iter
            (fun (f : string) ->
              if Filename.check_suffix f ".c" then
                (match C_front.file caps ([], incs) (path f) with Ok () -> () | Error m -> complain m)
+             else if Filename.check_suffix f ".ml" then ()
              else
                match FS.read_opt caps (path f) with
                | Some text -> D.load p ~from:f text
                | None -> complain (f ^ ": cannot be read"))
            files;
+         (* an ML program: its units and the library's they name *)
+         if ml <> [] then
+           List.iter complain (Ml_front.program caps (incs @ Ml_front.library caps lib) (List.map path ml));
          rules p;
          Datalog_rt.answers caps p queries
        with

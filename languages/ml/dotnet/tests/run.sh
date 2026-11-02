@@ -93,7 +93,6 @@ refused() {
     echo "-- $line"
     $ml -L lib_core -dotnet -o $W/r$n.dll $W/r$n.ml 2>&1 | sed "s|$W/||"
   done <<'R'
-let x = 1 + (try 2 with Not_found -> 3)
 type t = A of { a : int } let v = A { a = 1 }
 let () = Printf.printf "%a" (fun oc () -> output_string oc "x") ()
 let f () = Obj.size (Obj.repr 1)

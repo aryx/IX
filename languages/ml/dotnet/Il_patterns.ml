@@ -96,7 +96,7 @@ let rec pattern (c : c) (k : code) (load : unit -> unit) (ty : Scope.ty) (p : Sc
       pattern c k load ty b fail;
       place k ok
   | Ptuple ps ->
-      let ts = match ty with Ttuple ts -> ts | _ -> refuse 0 "a tuple pattern of no tuple type" "1d" in
+      let ts = match unabbrev ty with Ttuple ts -> ts | _ -> refuse 0 "a tuple pattern of no tuple type" "1d" in
       List.iteri
         (fun (i : int) ((p, t) : Scope.pattern * Scope.ty) ->
           pattern c k (fun () -> load (); emit k (Il.Ldfld (tuple_field c 0 ty i))) t p fail)

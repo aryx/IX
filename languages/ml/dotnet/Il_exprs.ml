@@ -515,40 +515,12 @@ and lift (c : c) (env : env) (k : code) (v : Scope.var) (d : Scope.expr) (body :
               (fun ((_, g, b) : Scope.case) -> (match g with Some g -> used_so g | None -> true) && used_so b)
               cs
         | None -> true) in
-  let names = named d in
-  let in_method (vid : int) = Hashtbl.mem k.args vid || Hashtbl.mem k.slots vid || Hashtbl.mem k.captured vid in
-  if c.tvars <> [] || tvars_of (type_of d) <> [] || arity = 0 || not (used_so body) || (recursive && not in_own)
-     || List.exists (fun (vid : int) -> Hashtbl.mem k.specs vid) names
-  then false
+  if c.tvars <> [] || tvars_of (type_of d) <> [] || arity = 0 || not (used_so body) || (recursive && not in_own) then false
   else begin
     let own = List.filter_map (fun ((p, _) : Scope.var option * Scope.ty) -> Option.map (fun (p : Scope.var) -> p.vid) p) ps in
-    let record (vid : int) : Scope.var option =
-      match uses vid d with { e = Evar (Local x); _ } :: _ -> Some x | _ -> None in
-    let direct =
-      List.filter_map
-        (fun (vid : int) -> if vid <> v.vid && not (List.mem vid own) && in_method vid then record vid else None)
-        names in
-    let via =
-      List.concat_map
-        (fun (vid : int) ->
-          match Hashtbl.find_opt env.by_var vid with
-          | Some f -> List.map fst f.lifted
-          | None -> [])
-        names in
-    let vars =
-      List.fold_left
-        (fun (acc : Scope.var list) (x : Scope.var) -> if List.exists (fun (y : Scope.var) -> y.vid = x.vid) acc then acc else acc @ [ x ])
-        [] (direct @ via) in
-    let typed = List.map (fun (x : Scope.var) -> (x, Il_types.var_type x.vid)) vars in
-    if List.exists (fun ((_, t) : Scope.var * Scope.ty option) -> t = None) typed then false
-    else begin
-      let lifted =
-        List.filter_map
-          (fun ((x, t) : Scope.var * Scope.ty option) ->
-            match t with
-            | Some t -> let ty = cts c d.loc t in if ty = S.Void then None else Some (x, ty)
-            | None -> None)
-          typed in
+    match captures c env k d (v.vid :: own) with
+    | None -> false
+    | Some lifted ->
       let params' = List.map (fun ((p, ty) : Scope.var option * Scope.ty) -> (p, cts c d.loc ty)) ps in
       let rty = match cases with Some ((_, _, b) :: _) -> type_of b | _ -> type_of fbody in
       let ret = if cases = None && is_raise fbody then S.Void else cts c fbody.loc rty in
@@ -558,8 +530,60 @@ and lift (c : c) (env : env) (k : code) (v : Scope.var) (d : Scope.expr) (body :
       Hashtbl.replace env.by_var v.vid f;
       !define_hook c env f;
       true
-    end
   end
+
+(* the variables of the method being made that e names, but those
+ * excluded (and what the lifted functions it calls capture), with their
+ * .NET types: what a method made of e takes first; None if e names a
+ * specialized local function, or a variable of no known type *)
+and captures (c : c) (env : env) (k : code) (e : Scope.expr) (excluded : int list) : (Scope.var * S.t) list option =
+  let names = named e in
+  let in_method (vid : int) = Hashtbl.mem k.args vid || Hashtbl.mem k.slots vid || Hashtbl.mem k.captured vid in
+  if List.exists (fun (vid : int) -> Hashtbl.mem k.specs vid) names then None
+  else begin
+    let record (vid : int) : Scope.var option =
+      match uses vid e with { e = Evar (Local x); _ } :: _ -> Some x | _ -> None in
+    let direct =
+      List.filter_map
+        (fun (vid : int) -> if not (List.mem vid excluded) && in_method vid then record vid else None)
+        names in
+    let via =
+      List.concat_map
+        (fun (vid : int) -> match Hashtbl.find_opt env.by_var vid with Some f -> List.map fst f.lifted | None -> [])
+        names in
+    let vars =
+      List.fold_left
+        (fun (acc : Scope.var list) (x : Scope.var) -> if List.exists (fun (y : Scope.var) -> y.vid = x.vid) acc then acc else acc @ [ x ])
+        [] (direct @ via) in
+    let typed = List.map (fun (x : Scope.var) -> (x, Il_types.var_type x.vid)) vars in
+    if List.exists (fun ((_, t) : Scope.var * Scope.ty option) -> t = None) typed then None
+    else
+      Some
+        (List.filter_map
+           (fun ((x, t) : Scope.var * Scope.ty option) ->
+             match t with
+             | Some t -> let ty = cts c e.loc t in if ty = S.Void then None else Some (x, ty)
+             | None -> None)
+           typed)
+  end
+
+(* a try where values are on the stack (IL's try starts with none): its
+ * own method, of what it names, called here, F#'s way *)
+and outline (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
+  match if c.tvars = [] then captures c env k e [] else None with
+  | None -> refuse e.loc "a try inside an operand (made a variable's value first)" "1b"
+  | Some lifted ->
+      incr prim_values;
+      let rty = type_of e in
+      let ret = if is_raise e then S.Void else cts c e.loc rty in
+      let sg = static (List.map snd lifted) ret in
+      let tok = W.method_def c.w c.cls (Printf.sprintf "try%d" !prim_values) 0x0091 sg in
+      let f = { tok; fname = "try"; params = []; ptys = []; rty; cases = None; body = e; gvars = []; lifted } in
+      !define_hook c env f;
+      let saved = k.pending in
+      List.iter (fun ((v, _) : Scope.var * S.t) -> load_var k v.vid; k.pending <- k.pending + 1) lifted;
+      k.pending <- saved;
+      emit k (Il.Call tok)
 
 and load_var (k : code) (vid : int) : unit =
   match Hashtbl.find_opt k.args vid, Hashtbl.find_opt k.slots vid, Hashtbl.find_opt k.captured vid with
@@ -829,7 +853,7 @@ and value (c : c) (env : env) (k : code) (e : Scope.expr) (res : int option) : u
 (* try: the body in a protected region, any exception caught, the
  * handler's cases tried on it (as a match's), none: thrown again *)
 and try_ (c : c) (env : env) (k : code) (e : Scope.expr) (body : Scope.expr) (cases : Scope.case list) : unit =
-  if k.pending > 0 then refuse e.loc "a try inside an operand (made a variable's value first)" "1b";
+  if k.pending > 0 then outline c env k e else
   let rty = cts_of c e in
   let res = if rty <> S.Void then Some (local k rty) else None in
   let ex = local k (S.Class (sys c "Exception")) in

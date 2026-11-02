@@ -290,7 +290,7 @@ and prim (c : c) (env : env) (k : code) (cx : compiler) (e : Scope.expr) (p : st
   (* ref, !, :=, incr, decr: Pervasives' 'a ref, a record *)
   | "%makemutable", _ -> cx.values args; emit k (Il.Newobj (record_ctor c e.loc (type_of e)))
   (* (fst and snd: a tuple's Item1 and Item2) *)
-  | ("%field0" | "%field1"), [ r ] when (match type_of r with Ttuple _ -> true | _ -> false) ->
+  | ("%field0" | "%field1"), [ r ] when (match unabbrev (type_of r) with Ttuple _ -> true | _ -> false) ->
       cx.expr r;
       emit k (Il.Ldfld (tuple_field c e.loc (type_of r) (if p = "%field0" then 0 else 1)));
       if cts_of c e = S.Void then emit k Il.Pop

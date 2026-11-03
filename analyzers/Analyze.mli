@@ -1,13 +1,13 @@
 (* mini-analyze: a whole program's calls through pointers, which
  * functions each may reach, and the bugs the same answers show (a
  * free of what no allocator gave, a function returning its frame's
- * address: bugs.dl) (docs/plans/done/plan_dotnet_languages.md, its step 0). One program of three parts that were three commands:
+ * address: bugs/pointers.dl) (docs/plans/done/plan_dotnet_languages.md, its step 0). One program of three parts that were three commands:
  * mini-cc's front end reads the C files, Facts says each function as
  * the facts of a pointer analysis (mini-cc -facts), and mini-datalog's
  * evaluator runs lib_code/datalog/points_to/'s rules on them; the answers
  * are read back here, not printed by another program.
  *
- *    a.c b.c ...                   points_to/, bugs.dl (the rules, read at run time)
+ *    a.c b.c ...                   points_to/, bugs/ (the rules, read at run time)
  *        |                              |
  *    mini-cc's front end                |
  *    (Pre, Lexer, Parser, Declare)      |

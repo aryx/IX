@@ -81,7 +81,7 @@
 % road-not-taken:
 % Flow sensitivity, each variable's set by program point (Hardekopf
 % and Lin's sparse analysis, 2011; SVF for C, 2016), is not here; its
-% facts are only in -flow, of a function. bugs.dl says what it would
+% facts are only in -flow, of a function. bugs/pointers.dl says what it would
 % add. CFL-reachability (Reps; Sridharan and Bodik, 2006) and demand-
 % driven questions (Heintze and Tardieu, 2001) answer one variable and
 % not all; both are the same rules seen another way, given magic sets.

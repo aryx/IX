@@ -305,14 +305,14 @@ holds_field('Toy.greet', 'stdout').
 
 **Physical equality.** Each `==` and `!=`, in which function; and a side made
 in the comparison itself, by what it is, which no other value can be
-(`physeq.dl`). `o == Some 1`, in `is_one`:
+(`bugs/physeq.dl`). `o == Some 1`, in `is_one`:
 
 ```
 phys_compare('Toy:43:c43', 'Toy.is_one', '==').
 fresh_operand('Toy:43:c43', 'Some').
 ```
 
-**A call's place**, for `stack.dl`: a tail call as mini-ml compiles it, its
+**A call's place**, for `bugs/stack.dl`: a tail call as mini-ml compiles it, its
 result the function's and no try around it (`f x` in `apply`); one that would be
 but for a try (`try inc n with ...` in `safe`); a call in a handler, which mini-ml
 compiles as a function of its own (`retry (n - 1)` in `retry`, line 48). And a type
@@ -385,9 +385,9 @@ with: `own_live_out(V, P)`, and for ML `own_live_in(V, B)`, `own_idom(D, B)`.
 | `exceptions.dl` | `raise_in`, `raise_of`, `reraises`, `exn_block`, the `try`'s, `catches*`, over `call_edge`, `pt`, `reached` |
 | `dead.dl` | `defined`, `closure`, `global_def`, `dead_stmt`, `allocator_call` |
 | `capabilities.dl`, `capabilities_types.dl` | `takes_cap`, `declares`, `assign_address`, `global_def` |
-| `bugs.dl` | `call_direct`, `return`, and `heap`, `local`, `literal`, which mini-analyze makes of the names |
-| `physeq.dl` | `phys_compare`, `fresh_operand` |
-| `stack.dl` | `tail`, `tail_but_try`, `in_handler`, `in_try`, `list_like`, `parameter`, `vtype`, `inner`, `alloc_in`, over `target` and `reach` |
+| `bugs/pointers.dl` | `call_direct`, `return`, and `heap`, `local`, `literal`, which mini-analyze makes of the names |
+| `bugs/physeq.dl` | `phys_compare`, `fresh_operand` |
+| `bugs/stack.dl` | `tail`, `tail_but_try`, `in_handler`, `in_try`, `list_like`, `parameter`, `vtype`, `inner`, `alloc_in`, over `target` and `reach` |
 | `liveness.dl` | C's `-flow` |
 | `liveness_ssa.dl`, `dominators.dl` | ML's `-flow` |
 

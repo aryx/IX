@@ -75,7 +75,7 @@ let place (s : string) : place =
 (* the facts as Facts finds them, each a tuple of the relation, its
  * names Datalog's symbols: no text between them
  * (old: Facts.text () given to D.load, the text parsed again); and
- * bugs.dl's heap, local and literal of each name seen *)
+ * bugs/pointers.dl's heap, local and literal of each name seen *)
 let rec given (p : D.t) (relation : string) (args : Facts.arg list) : unit =
   let r = D.relation p relation (List.length args) in
   let value = function Facts.Sym s -> D.symbol p (Prolog.Atom s) | Facts.Num n -> D.symbol p (Prolog.Int n) in
@@ -109,7 +109,7 @@ let said (s : string) : string =
   | Global -> (match prefix "_array_elt_" s with Some v -> v ^ "[], a global" | None -> if Hashtbl.mem C_front.owner s then "the function " ^ s else s ^ ", a global")
 
 (* the analysis on the facts: each call through a pointer, where, and
- * what it may reach; then what bugs.dl finds *)
+ * what it may reach; then what bugs/pointers.dl finds *)
 
 let report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
   let tuples r = D.tuples (D.relation p r 2) in

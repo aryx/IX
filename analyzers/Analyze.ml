@@ -16,7 +16,7 @@ functions it may reach, by an analysis of where each pointer may point
   mini-analyze -r lib_code/datalog -I include prog/*.c
   walk.c:56: in walk, through f: hide, show
   main.c:76: in main, through table[]: show
-and the bugs the same answers show (bugs.dl), each a "may":
+and the bugs the same answers show (bugs/pointers.dl), each a "may":
   bug? bugs.c:65: in main, free may be given a string (line 64), not the heap's
   bug? bugs.c: scratch may return the address of tmp[], a local of scratch
 The ML files the same, with the library's units they name (lib_core's, by
@@ -41,7 +41,7 @@ program's functions that its toplevel never reaches (calls.dl):
 (exceptions.dl), with where they may be raised:
   Main.ml: the toplevel may let Empty escape, raised at Main.ml:11 (Main.first)
 -bugs: instead, an ML program's bugs that may be, each named by its analysis
-(docs/plans/plan_bug_analyses.md; C's are bugs.dl's, above):
+(docs/plans/plan_bug_analyses.md; C's are bugs/pointers.dl's, above):
   Before.ml:6: physeq: in Before.loop, != of a Some made there: always true
   Css.ml:13: stack: Css.components calls itself, not a tail call, over a list
 -root f: f is also entered from where the facts do not go (assembly)
@@ -66,7 +66,7 @@ and analyzers/c/tests/run.sh):
 
 module C = Ix_analyze_c
 
-(* the C program's report, the facts given with bugs.dl's kinds of
+(* the C program's report, the facts given with bugs/pointers.dl's kinds of
  * places (C_report); the ML program's (Ml_report): mini-analyze
  * -dotnet's too (analyzers/dotnet/Analyze_rt) *)
 module R = C_report
@@ -93,7 +93,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   let bugs = ref false in
   let options =
     Logging.flags
-    @ [ ("-r", Arg.Set_string rules, " the directory of points_to/ and bugs.dl");
+    @ [ ("-r", Arg.Set_string rules, " the directory of points_to/ and bugs/");
         ("-facts", Arg.Set only, " the facts, not the analysis");
         ("-alone", Arg.Set Ml_front.alone, " ML: the files' facts alone, not their library's units'");
         ("-flow", Arg.Set flow, " ML's functions in SSA form, C's stack code, as facts");
@@ -162,13 +162,13 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                [ "points_to/instructions.dl"; "points_to/contexts.dl"; "points_to/insensitive.dl"; "dead.dl" ]
                @ if !ambient then [ "capabilities.dl" ] else []
              else if !bugs && c = [] then
-               [ "points_to/instructions.dl"; "points_to/contexts.dl"; "points_to/insensitive.dl"; "physeq.dl"; "stack.dl" ]
+               [ "points_to/instructions.dl"; "points_to/contexts.dl"; "points_to/insensitive.dl"; "bugs/physeq.dl"; "bugs/stack.dl" ]
              else if !exns then
                [ "points_to/instructions.dl"; "points_to/andersen.dl"; "points_to/contexts.dl";
                  "points_to/" ^ context ^ ".dl"; "exceptions.dl" ]
              else
                [ "points_to/instructions.dl"; "points_to/andersen.dl" ]
-               @ (if c <> [] then [ "points_to/contexts.dl"; "points_to/" ^ context ^ ".dl"; "bugs.dl" ] else [])
+               @ (if c <> [] then [ "points_to/contexts.dl"; "points_to/" ^ context ^ ".dl"; "bugs/pointers.dl" ] else [])
                @ if ml <> [] then [ "calls.dl" ] else []);
         List.iter (fun (f : string) -> given p "entry" [ C.Facts.Sym f ]) !roots;
         if !library then D.load p ~from:"-library" "entry(F) :- function(F).\n";

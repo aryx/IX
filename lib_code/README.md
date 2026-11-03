@@ -99,9 +99,9 @@ Datalog each for what it is best at, and read by students.
 |---|---|
 | `pointer.dl` | the author's, pfff's of 2014: Andersen's, field-based |
 | `calls.dl` | who calls whom, what is never called, over `call_edge`: `andersen.dl`'s in mini-analyze, `pointer.dl`'s in `analyzers/ml/tests` |
-| `bugs.dl` | three C bugs, over `points_to/`'s answers |
-| `physeq.dl` | ML's `==` or `!=` with a side made in the comparison (`mini-analyze -bugs`; the first of `plan_bug_analyses.md`'s, each checked on a fix's code before and after it, `analyzers/tests/bugs/`) |
-| `stack.dl` | ML's recursions the stack may not hold: a loop through a `try`, a frame a list's element (`-bugs`) |
+| `bugs/pointers.dl` | three C bugs, over `points_to/`'s answers |
+| `bugs/physeq.dl` | ML's `==` or `!=` with a side made in the comparison (`mini-analyze -bugs`; the first of `plan_bug_analyses.md`'s, each checked on a fix's code before and after it, `analyzers/tests/bugs/`) |
+| `bugs/stack.dl` | ML's recursions the stack may not hold: a loop through a `try`, a frame a list's element (`-bugs`) |
 | `dead.dl` | dead functions, globals, fields, constructors and statements, by `points_to/`'s call graph (`mini-analyze -dead`) |
 | `capabilities_types.dl` | OCaml's check of the capabilities again: a test of the analysis, and a teaching one |
 | `capabilities.dl` | whether ML's functions hold the capabilities they need, and no others (`mini-analyze -caps`) |
@@ -243,7 +243,7 @@ the context file run (ML: `insensitive.dl`, the one `-dead` uses; the object fil
 do not end on these programs). A source edited after its object gives lines that
 name another function: the script says so; run it on a clean copy of a tree others edit.
 
-### The bugs on sharper answers (`bugs.dl`, `mini-analyze -context`, 2026-10-31)
+### The bugs on sharper answers (`bugs/pointers.dl`, `mini-analyze -context`, 2026-10-31)
 
 mini-analyze's C report now reads `points_to/`, `call1_heap1.dl` unless told. On
 `analyzers/tests/c/bugs/bugs.c`, 5 real bugs and two look-alikes, a string in the

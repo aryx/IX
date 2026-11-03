@@ -5,7 +5,7 @@
 
 module D = Datalog
 
-(* a fact as Facts finds it: a tuple of symbols, bugs.dl's kinds of its
+(* a fact as Facts finds it: a tuple of symbols, bugs/pointers.dl's kinds of its
  * places (C_report's, the native mini-analyze's) *)
 let given = C_report.given
 

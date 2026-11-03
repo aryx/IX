@@ -28,7 +28,7 @@ of a program holds of every run, and what is said may never happen.
 
 With no option, each call through a pointer (C) or through a variable
 (ML: a closure is a pointer to a function) is said with the functions
-it may reach, and for C the bugs the same answers show (`bugs.dl`): a
+it may reach, and for C the bugs the same answers show (`bugs/pointers.dl`): a
 `free` of what is not the heap's, a local's address returned. An ML
 program's library, lib_core's units it names, is read with it.
 
@@ -53,13 +53,13 @@ program's library, lib_core's units it names, is read with it.
 **-bugs**
 :    An ML program's bugs that may be, each line named by its
      analysis (`docs/plans/plan_bug_analyses.md`): `physeq`, an `==`
-     or `!=` with a side made in the comparison (`physeq.dl`), whose
+     or `!=` with a side made in the comparison (`bugs/physeq.dl`), whose
      answer is known before it runs; `stack`, a recursion the stack
-     may not hold (`stack.dl`): a function calling itself back in a
+     may not hold (`bugs/stack.dl`): a function calling itself back in a
      `try`, its result the function's, which mini-ml makes no tail
      call, or not by a tail call over a list, a frame an element. C
      files: the report without an option, its `bug?` lines
-     `bugs.dl`'s.
+     `bugs/pointers.dl`'s.
 
 **-facts**
 :    The facts, not the analysis: to write one's own rules
@@ -240,7 +240,7 @@ across_call('main:s/-8','main:7').
 
 # FILES
 `lib_code/datalog/*.dl`
-:    The questions: `bugs.dl`, `calls.dl`, `dead.dl`,
+:    The questions: `bugs/pointers.dl`, `calls.dl`, `dead.dl`,
      `capabilities.dl`, `exceptions.dl`, `liveness.dl`, ...; each
      file's header says what it reports, why so, and its history.
 

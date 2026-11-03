@@ -1,9 +1,9 @@
 (* A C program's analysis said (mini-analyze's report, Analyze.mli):
  * each call through a pointer, where, through what, and the functions
- * it may reach (points_to/'s target); then what bugs.dl finds, a free
+ * it may reach (points_to/'s target); then what bugs/pointers.dl finds, a free
  * of what no allocator gave, a function returning its frame's address.
  * And the facts as Facts finds them given to Datalog as values, with
- * bugs.dl's heap, local and literal of each place. Both of
+ * bugs/pointers.dl's heap, local and literal of each place. Both of
  * mini-analyze's roads use it: the native one, whose rules
  * mini-datalog's evaluator runs, and the .NET one, whose rules are
  * compiled (analyzers/dotnet/Analyze_rt). *)
@@ -24,7 +24,8 @@ type place = Heap | Literal | Local of string * string | Global
 
 val place : string -> place
 
-(* a fact added, a tuple of symbols, and bugs.dl's kinds of its places *)
+(* a fact added, a tuple of symbols, and bugs/pointers.dl's kinds of
+ * its places *)
 val given : Datalog.t -> string -> Facts.arg list -> unit
 
 (* a function's global line, its file's and its line there *)

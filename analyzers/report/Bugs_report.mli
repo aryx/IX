@@ -6,8 +6,8 @@
  *   bug? Before.ml:6: physeq: in Before.loop, != of a Some made there: always true
  *   bug? Devmnt.ml:85: stack: wait calls itself in a try's handler: no tail call by mini-ml
  *
- * physeq (lib_code/datalog/physeq.dl): == or != with a side made in
- * the comparison itself. stack (stack.dl): a recursion the stack may
+ * physeq (lib_code/datalog/bugs/physeq.dl): == or != with a side made in
+ * the comparison itself. stack (bugs/stack.dl): a recursion the stack may
  * not hold, a loop through a try, or a frame for each element of a
  * list. Only the program's own units, and code that is reached. *)
 

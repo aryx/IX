@@ -140,7 +140,7 @@ let rec full (t : ty) : string option =
 (* v's type's head and a site's (vtype, htype), and its whole type when it has
  * no variable (vfull, hfull): Typing's (Typing.keep, mini-analyze's), else
  * none: then nothing is kept apart *)
-(* a variant shaped as a list, for stack.dl: a constructor holds one
+(* a variant shaped as a list, for bugs/stack.dl: a constructor holds one
  * value of the type itself, and none two (a tree's): Hashtbl's buckets
  * (Cons of 'a * 'b * bucketlist), walked by a call an element *)
 let list_like (t : ty) : unit =
@@ -398,7 +398,7 @@ let rec bind (p : pattern) (src : string) : unit =
 (* a call's or a raise's site: in which try *)
 let site_in (s : string) : unit = match !tries with t :: _ -> fact "in_try" [ s; t ] | [] -> ()
 
-(* a call's place, for stack.dl: in a handler (no tail call by mini-ml,
+(* a call's place, for bugs/stack.dl: in a handler (no tail call by mini-ml,
  * whose try is a function of its own); a tail call, its result the
  * function's, outside any try; or one but for a try around it *)
 let position (i : string) (result : string) : unit =
@@ -407,7 +407,7 @@ let position (i : string) (result : string) : unit =
     if !tries = [] && !handlers = [] then fact "tail" [ i ] else fact "tail_but_try" [ i ]
 
 (* an operand of == or != made where it is written, so no other value is
- * it: what it is, for physeq.dl's report. A constant constructor and []
+ * it: what it is, for bugs/physeq.dl's report. A constant constructor and []
  * are numbers, not blocks; a closure is left out (one with no free
  * variable may be static) *)
 let rec fresh (x : expr) : string option =
@@ -611,7 +611,7 @@ and call (x : expr) (f : expr) (args : expr list) (dst : string) : unit =
           fact "in_function" [ i; !inside ];
           fact1 "argument" i given.(0)
         end;
-        (* (x == y, x != y: physeq.dl's, a side made here never the other) *)
+        (* (x == y, x != y: bugs/physeq.dl's, a side made here never the other) *)
         if p = "%eq" || p = "%noteq" then begin
           fact "phys_compare" [ i; !inside; (if p = "%eq" then "==" else "!=") ];
           List.iter (fun (e : expr) -> Option.iter (fun w -> fact "fresh_operand" [ i; w ]) (fresh e))

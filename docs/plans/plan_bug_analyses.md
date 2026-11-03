@@ -21,8 +21,8 @@ before the fix (`git show FIX^:path`) and stay quiet on the fixed code.
 Then it runs over ix through the sweep, as `-dead`, `-caps` and `-exn` do.
 
 **Status: A6's first half and A1 done (2026-11-03), the rest planned.**
-`mini-analyze -bugs` runs `physeq.dl` (`==` or `!=` with a side made in
-the comparison) and `stack.dl` (a loop through a `try`, a frame a
+`mini-analyze -bugs` runs `bugs/physeq.dl` (`==` or `!=` with a side made in
+the comparison) and `bugs/stack.dl` (a loop through a `try`, a frame a
 list's element). Each reports its bugs on the code before the fix and
 not after (`analyzers/tests/bugs/`: eb5378a5, 021c562b, f46346db). On
 today's ix, `physeq` finds nothing; `stack` gives 145 reports on the 44
@@ -45,7 +45,7 @@ c5086383, d22c56e4.
 | `-dead` (`dead.dl`) | functions no run reaches, dead code after a jump, fields stored and never read (`dead_field`) | the call graph from `points_to/` |
 | `-caps` (`capabilities.dl`) | a function reaching a system call without the capability | the same, plus `takes_cap`, `declares`, `holds_field` |
 | `-exn` (`exceptions.dl`) | the exceptions a toplevel may let escape | the same, plus `raise_*`, `catches*`, `in_try` |
-| `bugs.dl` (C) | `free` given what is not the heap's, a returned local's address, a call through a pointer that is never set | Andersen's `pts` |
+| `bugs/pointers.dl` (C) | `free` given what is not the heap's, a returned local's address, a call through a pointer that is never set | Andersen's `pts` |
 | `-flow` | liveness, dominators | one function's SSA (ML) or stack code (C) |
 
 The real bugs these analyses have found so far: one, awk's `Next_file`,
@@ -84,7 +84,7 @@ Each one lists: the bugs it re-finds, the facts it reads (existing or
 new), the rules, the false reports to expect, and the cost in lines.
 The order is by bugs re-found per line of code.
 
-### A1. Deep recursion (`stack.dl`)
+### A1. Deep recursion (`bugs/stack.dl`)
 
 **Done** (2026-11-03), as `stack` in `-bugs`. It re-finds 021c562b,
 both overruns: `wait` calling itself in a handler, and `Hashtbl.remove`
@@ -111,7 +111,7 @@ The plan's `rec_over` (a string or an array walked by an index) was
 not written: in the history that shape was the compiler's bug (2fe7e116),
 not the program's.
 
-**The rules** (`stack.dl`, 20 lines). A call I in F is `recursive` if
+**The rules** (`bugs/stack.dl`, 20 lines). A call I in F is `recursive` if
 its target is F, or a function of F's unit that calls back to F (the
 closure of the calls is per unit: small, but a recursion through two
 units is not found), and F is reached. Two reports:
@@ -256,7 +256,7 @@ The sinks are limited to the tools whose output ix compares
 **Cost:** about 30 lines of rules. `Marshal` without `No_sharing` is one
 fact on the call's arguments.
 
-### A6. Physical equality (`physeq.dl`)
+### A6. Physical equality (`bugs/physeq.dl`)
 
 **Re-finds:** eb5378a5, both halves: `!drawn != Some !model` is always
 true, since `Some` makes a new block; and mini-emacs's model, changed in
@@ -335,7 +335,7 @@ facts), every path to the function's exit goes through its `release`,
 or returns the thing. 62d811be's bug is path-sensitive: the release
 depends on `o != c`. The rule reports the path where it is skipped, and
 someone has to judge whether that path is legitimate. This is
-bugs.dl's "use after free needs the order", and Engler's checkers'
+bugs/pointers.dl's "use after free needs the order", and Engler's checkers'
 shape.
 
 **Cost:** about 40 lines of facts and 30 of rules. Later than A1 to A7.
@@ -377,7 +377,7 @@ C (mini-ml's runtime, the kernels' C, lib_core's libc), the classes that
 apply are A1 (the runtime's statics corrupted by f46346db's depth: a
 guard page, not an analysis), A9 (counts and locks), and unchecked
 lengths (plan_datalog.md's stage 10, taint: `argptr`, `copyin`). The
-existing `bugs.dl` stays as it is. Taint is the next step for C, after
+existing `bugs/pointers.dl` stays as it is. Taint is the next step for C, after
 A9's flow facts exist for both languages.
 
 ## The method: each analysis against its history
@@ -418,7 +418,7 @@ reproduction.
 | 12 | A11 layout, evaluation order | columns, purity | 40+ | ~3 | |
 | 13 | A7 unused parameters (fields: `-dead`'s) | SSA `use` joined | 20 | ~2 | |
 
-These estimates come from reading the existing rule files (`bugs.dl` is
+These estimates come from reading the existing rule files (`bugs/pointers.dl` is
 53 lines and `exceptions.dl` 100) and are not measured. The counts of
 bugs re-found are the history files' and are checked by the history
 tests as each analysis is written.

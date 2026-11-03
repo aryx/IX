@@ -12,7 +12,7 @@
 # lib_code/datalog/tests/contexts.c, by mini-dotnet (Microsoft's dotnet
 # too with -ms); -rc: on Plan 9's rc (goken's 30 files: minutes),
 # timed, by Microsoft's dotnet. Then mini-analyze's reports, of the
-# rules it loads (C's: call1_heap1 and bugs.dl; ML's: calls.dl): the
+# rules it loads (C's: call1_heap1 and bugs/pointers.dl; ML's: calls.dl): the
 # .NET program's (no query) the native mini-analyze's, on
 # analyzers/tests' bugs, callbacks and handlers (ML), dead/ (-dead),
 # caps/ (-caps) and exn/ (-exn). And a C module (stage 8's):
@@ -82,7 +82,7 @@ fi
 R=lib_code/datalog/points_to
 if [ -n "$build" ]; then
   $DL -dotnet -runtime analyze_rt -entry Analyze_rt -o $W/report.dll \
-    $R/instructions.dl $R/andersen.dl $R/contexts.dl $R/call1_heap1.dl lib_code/datalog/bugs.dl ||
+    $R/instructions.dl $R/andersen.dl $R/contexts.dl $R/call1_heap1.dl lib_code/datalog/bugs/pointers.dl ||
     { echo "FAIL mini-datalog -dotnet, the C report's program"; exit 1; }
   exit 0
 fi
@@ -121,7 +121,7 @@ roads contexts pta lib_code/datalog/tests contexts.c
 ms_only=1 roads contexts_ml pta_ml lib_code/datalog/tests -L $PWD/lib_core contexts.ml
 # the reports: a program of the rules mini-analyze loads, no query;
 # its report the native mini-analyze's
-REPORT_C="$R/instructions.dl $R/andersen.dl $R/contexts.dl $R/call1_heap1.dl lib_code/datalog/bugs.dl"
+REPORT_C="$R/instructions.dl $R/andersen.dl $R/contexts.dl $R/call1_heap1.dl lib_code/datalog/bugs/pointers.dl"
 REPORT_ML="$R/instructions.dl $R/andersen.dl lib_code/datalog/calls.dl"
 REPORT_DEAD="$R/instructions.dl $R/contexts.dl $R/insensitive.dl lib_code/datalog/dead.dl"
 REPORT_CAPS="$REPORT_DEAD lib_code/datalog/capabilities.dl"

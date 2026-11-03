@@ -30,7 +30,7 @@ let compare : t -> t -> int = compare
 external to_float : int -> float = "%floatofint"
 external of_float : float -> int = "%intoffloat"
 
-external int_of_string : string -> int = "int_of_string"
+external int_of_string : string -> int = "int_of_string" [@@raise Failure]
 let of_string s = try Some (int_of_string s) with Failure _ -> None
 
 external format_int : string -> int -> string = "format_int"

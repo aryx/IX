@@ -24,7 +24,7 @@ external remove: string -> unit = "sys_remove" [@@raise Sys_error]
         (* Remove the given file name from the file system. *)
 external rename : string -> string -> unit = "sys_rename" [@@raise Sys_error]
         (* Rename a file. *)
-external getenv: string -> string = "sys_getenv"
+external getenv: string -> string = "sys_getenv" [@@raise Not_found]
         (* Return the value associated to a variable in the process
            environment. Raise [Not_found] if the variable is unbound. *)
 

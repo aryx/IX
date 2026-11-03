@@ -39,7 +39,7 @@ external of_int : int -> float = "%floatofint"
 external to_int : float -> int = "%intoffloat"
 (** Truncate the given floating-point number to an integer. *)
 
-external of_string : string -> float = "float_of_string"
+external of_string : string -> float = "float_of_string" [@@raise Failure]
 (** Convert the given string to a float. Raise [Failure "float_of_string"]
     if the given string is not a valid representation of a float. *)
 
@@ -174,6 +174,7 @@ module Array : sig
   external unsafe_set : t -> int -> float -> unit = "%floatarray_unsafe_set"
   (* its floats 0.0 here (OCaml's: anything) *)
   external create : int -> t = "caml_floatarray_create"
+    [@@raise Invalid_argument]
   val make : int -> float -> t
   val init : int -> (int -> float) -> t
   val fill : t -> int -> int -> float -> unit

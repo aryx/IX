@@ -13,6 +13,7 @@ type t = int
  * number and stacks back (not its own: a thread cannot free the stack
  * it runs on). *)
 external thread_new : bool -> (unit -> unit) -> t = "thread_new"
+  [@@raise Failure]
 external thread_switch : t -> unit = "thread_switch"
 external thread_free : t -> unit = "thread_free"
 

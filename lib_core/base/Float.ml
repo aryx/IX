@@ -24,7 +24,7 @@ let epsilon_float = Pervasives.epsilon_float
 
 external of_int : int -> float = "%floatofint"
 external to_int : float -> int = "%intoffloat"
-external of_string : string -> float = "float_of_string"
+external of_string : string -> float = "float_of_string" [@@raise Failure]
 let to_string = Pervasives.string_of_float
 
 external pow : float -> float -> float = "power_float" "pow"
@@ -141,6 +141,7 @@ module Array = struct
   external unsafe_get : t -> int -> float = "%floatarray_unsafe_get"
   external unsafe_set : t -> int -> float -> unit = "%floatarray_unsafe_set"
   external create : int -> t = "caml_floatarray_create"
+    [@@raise Invalid_argument]
 
   let fill (a : t) (ofs : int) (n : int) (x : float) : unit =
     if ofs < 0 || n < 0 || ofs > length a - n then invalid_arg "Float.Array.fill";

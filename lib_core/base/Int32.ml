@@ -20,8 +20,8 @@ external neg: t -> t = "int32_neg"
 external add: t -> t -> t = "int32_add"
 external sub: t -> t -> t = "int32_sub"
 external mul: t -> t -> t = "int32_mul"
-external div: t -> t -> t = "int32_div"
-external rem: t -> t -> t = "int32_mod"
+external div: t -> t -> t = "int32_div" [@@raise Division_by_zero]
+external rem: t -> t -> t = "int32_mod" [@@raise Division_by_zero]
 external logand: t -> t -> t = "int32_and"
 external logor: t -> t -> t = "int32_or"
 external logxor: t -> t -> t = "int32_xor"
@@ -44,7 +44,7 @@ let lognot n = logxor n minus_one
 external format : string -> t -> string = "int32_format"
 let to_string n = format "%d" n
 
-external of_string: string -> t = "int32_of_string"
+external of_string: string -> t = "int32_of_string" [@@raise Failure]
 
 (* ix: OCaml's later functions, those ix's programs use *)
 

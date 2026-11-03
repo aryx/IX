@@ -20,8 +20,8 @@ external neg: t -> t = "int64_neg"
 external add: t -> t -> t = "int64_add"
 external sub: t -> t -> t = "int64_sub"
 external mul: t -> t -> t = "int64_mul"
-external div: t -> t -> t = "int64_div"
-external rem: t -> t -> t = "int64_mod"
+external div: t -> t -> t = "int64_div" [@@raise Division_by_zero]
+external rem: t -> t -> t = "int64_mod" [@@raise Division_by_zero]
 external logand: t -> t -> t = "int64_and"
 external logor: t -> t -> t = "int64_or"
 external logxor: t -> t -> t = "int64_xor"
@@ -46,7 +46,7 @@ let lognot n = logxor n minus_one
 external format : string -> t -> string = "int64_format"
 let to_string n = format "%d" n
 
-external of_string: string -> t = "int64_of_string"
+external of_string: string -> t = "int64_of_string" [@@raise Failure]
 
 (* ix: OCaml's later functions, those ix's programs use *)
 

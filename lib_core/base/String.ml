@@ -24,7 +24,7 @@ external unsafe_get : string -> int -> char = "%string_unsafe_get"
  * old: external set : string -> int -> char -> unit = "%string_safe_set"
  *      external create: int -> string = "create_string"
  *      and unsafe_set, unsafe_blit, unsafe_fill over strings *)
-external create: int -> bytes = "create_string"
+external create: int -> bytes = "create_string" [@@raise Invalid_argument]
 external unsafe_set : bytes -> int -> char -> unit = "%string_unsafe_set"
 external unsafe_blit : string -> int -> bytes -> int -> int -> unit
                      = "blit_string" "noalloc"

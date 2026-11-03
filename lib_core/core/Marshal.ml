@@ -50,6 +50,7 @@ let double_array_tag = 251
 
 (* Float.Array's, which is Float's, a unit after this one *)
 external floatarray_create : int -> Obj.t = "caml_floatarray_create"
+  [@@raise Invalid_argument]
 external floatarray_length : Obj.t -> int = "%floatarray_length"
 external floatarray_get : Obj.t -> int -> float = "%floatarray_unsafe_get"
 external floatarray_set : Obj.t -> int -> float -> unit = "%floatarray_unsafe_set"

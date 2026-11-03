@@ -22,9 +22,9 @@ external set: 'a array -> int -> 'a -> unit = "%array_safe_set"
         (* [Array.set a n x] modifies array [a] in place, replacing element
            number [n] with [x]. Raise [Invalid_argument "Array.set"] if [n]
            is outside the range 0 to [Array.length a - 1]. *)
-external make: int -> 'a -> 'a array = "make_vect"
+external make: int -> 'a -> 'a array = "make_vect" [@@raise Invalid_argument]
 (* DEPRECATED; use make *)
-external create: int -> 'a -> 'a array = "make_vect"
+external create: int -> 'a -> 'a array = "make_vect" [@@raise Invalid_argument]
         (* [Array.make n x] returns a fresh array of length [n], initialized
            with [x]. *)
 val init: int -> (int -> 'a) -> 'a array

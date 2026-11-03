@@ -71,7 +71,7 @@ external set : bytes -> int -> char -> unit = "%string_safe_set"
     with [c].
     @raise Invalid_argument if [n] is not a valid index in [s]. *)
 
-external create : int -> bytes = "create_string"
+external create : int -> bytes = "create_string" [@@raise Invalid_argument]
 (** [create n] returns a new byte sequence of length [n]. The
     sequence is uninitialized and contains arbitrary bytes.
     @raise Invalid_argument if [n < 0] or [n > ]{!Sys.max_string_length}. *)

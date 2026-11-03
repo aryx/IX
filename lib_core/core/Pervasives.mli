@@ -137,6 +137,7 @@ external (<=) : 'a -> 'a -> bool = "%lessequal"
 external (>=) : 'a -> 'a -> bool = "%greaterequal"
         (* Structural ordering functions. *)
 external compare: 'a -> 'a -> int = "compare" "noalloc"
+  [@@raise Invalid_argument]
         (* [compare x y] returns [0] if [x=y], a negative integer if [x<y],
            and a positive integer if [x>y]. *)
 val min: 'a -> 'a -> 'a
@@ -289,13 +290,13 @@ val bool_of_string : string -> bool
 
 val string_of_int : int -> string
         (* Return the string representation of an integer, in decimal. *)
-external int_of_string : string -> int = "int_of_string"
+external int_of_string : string -> int = "int_of_string" [@@raise Failure]
         (* Convert the given string to an integer. Raise [Failure
            "int_of_string"] if the given string is not a valid
            representation of an integer. *)
 val string_of_float : float -> string
         (* Return the string representation of a floating-point number. *)
-external float_of_string : string -> float = "float_of_string"
+external float_of_string : string -> float = "float_of_string" [@@raise Failure]
         (* Convert the given string to a float. *)
 
 (*** Pair operations *)

@@ -19,7 +19,7 @@ external uts : bytes -> string = "%identity"
 external length : bytes -> int = "%string_length"
 
 (* old: let create x = String.create x *)
-external create : int -> bytes = "create_string"
+external create : int -> bytes = "create_string" [@@raise Invalid_argument]
 
 let empty = create 0
 

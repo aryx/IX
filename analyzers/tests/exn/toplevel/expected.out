@@ -2,3 +2,4 @@ Main.ml: the toplevel may let Main.Empty escape, raised at Main.ml:12 (Main.firs
 Main.ml: the toplevel may let Main.Late escape, raised at Main.ml:26 (Main:fun at line 26)
 Main.ml: the toplevel may let Main.Parse_error escape, raised at Main.ml:9 (Main.parse)
 Main.ml: the toplevel may let Main.Quiet escape, raised at Main.ml:17 (Main.again)
+Main.ml: the toplevel may let Invalid_argument escape, raised at List.ml:131 (List.assoc)

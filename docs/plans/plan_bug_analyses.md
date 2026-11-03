@@ -20,7 +20,7 @@ checked the same way: it must report the bug on the code as it was
 before the fix (`git show FIX^:path`) and stay quiet on the fixed code.
 Then it runs over ix through the sweep, as `-dead`, `-caps` and `-exn` do.
 
-**Status: A6's first half, A1 and A3 done (2026-11-03), the rest planned.**
+**Status: A6's first half, A1, A3 and A2's primitives done (2026-11-03), the rest planned.**
 `mini-analyze -bugs` runs `bugs/physeq.dl` (`==` or `!=` with a side
 made in the comparison), `bugs/stack.dl` (a loop through a `try`, a
 frame a list's element) and `bugs/swallowed.dl` (an error of the
@@ -207,6 +207,18 @@ Some are the call graph's only: `Sys.readdir`'s `Invalid_argument` is
 an allocation's of a size that cannot be negative there. Not yet
 added: adding them is the rest of A2, and changes `-exn`'s answers.
 
+**The primitives' exceptions said** (2026-11-03, the rest of A2's
+primitives): the 23 others annotated where they are declared, 39 lines
+of lib_core (a `.ml`'s and its `.mli`'s). `raises_ix.txt` now 2, the
+call graph's false ones: `Sys.get_argv` and `Sys.readdir` call
+`make_vect` with `argc` and a count checked `>= 0`, a size never
+negative; not annotated, a wrong `[@@raise]` would be a lie to `-exn`.
+The sweeps of the 44 programs, before and after: `-bugs` the same;
+`-exn` the same for each program's own exceptions (`exn_ix.txt`
+unchanged), more toplevels and sites for lib_core's: `Invalid_argument`
+118 lines to 165 (`compare`, `String.make`, `Hashtbl.create`, ...),
+`Failure` 73 to 79, `Division_by_zero` 2 to 8, `End_of_file` 1 to 2.
+
 **Cost:** about 20 lines of facts and 5 of rules. The `Invalid_argument`
 ones will be many. Report them only on paths where the index comes from
 the outside, which needs A4, or leave them behind a switch.
@@ -265,7 +277,7 @@ None was fixed: the author decides.
 
 **Not done:** `Failure` and the program's own exceptions; a case that
 says something but drops the error (`with _ -> prerr_endline "?"`);
-the rest of A2's primitives (`Invalid_argument`, `Division_by_zero`).
+the `Invalid_argument` of an index out of bounds (`%array_safe_get`).
 
 ### A4. Ints on 31 bits (`intwidth.dl`)
 

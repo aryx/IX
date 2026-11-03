@@ -42,10 +42,10 @@ external sub: t -> t -> t = "int64_sub"
       (* Subtraction. *)
 external mul: t -> t -> t = "int64_mul"
       (* Multiplication. *)
-external div: t -> t -> t = "int64_div"
+external div: t -> t -> t = "int64_div" [@@raise Division_by_zero]
       (* Integer division. Raise [Division_by_zero] if the second argument
          is zero. *)
-external rem: t -> t -> t = "int64_mod"
+external rem: t -> t -> t = "int64_mod" [@@raise Division_by_zero]
       (* Integer remainder. *)
 val succ: t -> t
       (* Successor. *)
@@ -88,7 +88,7 @@ external to_int32: t -> Int32.t = "int64_to_int32"
       (* Convert the given 64-bit integer (type [Int64.t]) to a 32-bit
          integer (type [Int32.t]). *)
 
-external of_string: string -> t = "int64_of_string"
+external of_string: string -> t = "int64_of_string" [@@raise Failure]
       (* Convert the given string to a 64-bit integer. Raise [Failure
          "int_of_string"] if the given string is not a valid representation
          of an integer. *)

@@ -26,7 +26,7 @@ val substring: string -> int -> int -> t
         (* [Digest.substring s ofs len] returns the digest of the substring
            of [s] starting at character number [ofs] and containing [len]
            characters. *)
-external channel: in_channel -> int -> t = "md5_chan"
+external channel: in_channel -> int -> t = "md5_chan" [@@raise End_of_file]
         (* [Digest.channel ic len] reads [len] characters from channel [ic]
            and returns their digest. *)
 val file: string -> t

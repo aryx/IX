@@ -15,7 +15,7 @@
 type t = string
 
 external unsafe_string: string -> int -> int -> t = "md5_string"
-external channel: in_channel -> int -> t = "md5_chan"
+external channel: in_channel -> int -> t = "md5_chan" [@@raise End_of_file]
 
 let string str =
   unsafe_string str 0 (String.length str)

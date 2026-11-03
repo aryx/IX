@@ -30,7 +30,7 @@ external file_exists: string -> bool = "sys_file_exists"
 external is_directory : string -> bool = "sys_is_directory" [@@raise Sys_error]
 external remove: string -> unit = "sys_remove" [@@raise Sys_error]
 external rename : string -> string -> unit = "sys_rename" [@@raise Sys_error]
-external getenv: string -> string = "sys_getenv"
+external getenv: string -> string = "sys_getenv" [@@raise Not_found]
 
 let getenv_opt s =
   try Some (getenv s)

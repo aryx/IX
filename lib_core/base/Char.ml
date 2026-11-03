@@ -26,6 +26,7 @@ external is_printable: char -> bool = "is_printable"
  * old: external string_create: int -> string = "create_string"
  *      external string_unsafe_set : string -> int -> char -> unit *)
 external string_create: int -> bytes = "create_string"
+  [@@raise Invalid_argument]
 external string_unsafe_set : bytes -> int -> char -> unit
                            = "%string_unsafe_set"
 external bts : bytes -> string = "%identity"

@@ -51,6 +51,7 @@ external (>) : 'a -> 'a -> bool = "%greaterthan"
 external (<=) : 'a -> 'a -> bool = "%lessequal"
 external (>=) : 'a -> 'a -> bool = "%greaterequal"
 external compare: 'a -> 'a -> int = "compare" "noalloc"
+  [@@raise Invalid_argument]
 
 let min x y = if x <= y then x else y
 let max x y = if x >= y then x else y
@@ -134,6 +135,7 @@ external string_length : string -> int = "ml_string_length"
  * old: external string_create: int -> string, string_blit's
  * destination a string *)
 external string_create: int -> bytes = "create_string"
+  [@@raise Invalid_argument]
 external string_blit : string -> int -> bytes -> int -> int -> unit
                      = "blit_string"
 external bytes_length : bytes -> int = "ml_string_length"
@@ -167,12 +169,12 @@ let bool_of_string = function
 let string_of_int n =
   format_int "%d" n
 
-external int_of_string : string -> int = "int_of_string"
+external int_of_string : string -> int = "int_of_string" [@@raise Failure]
 
 let string_of_float f =
   format_float "%.12g" f
 
-external float_of_string : string -> float = "float_of_string"
+external float_of_string : string -> float = "float_of_string" [@@raise Failure]
 
 (* ix: OCaml's later functions, None for a Failure *)
 let int_of_string_opt s = try Some (int_of_string s) with Failure _ -> None
@@ -337,6 +339,7 @@ let rec input_line chan =
 external code_of_char : char -> int = "%identity"
 let input_byte ic = code_of_char (input_char ic)
 external input_binary_int : in_channel -> int = "caml_input_int"
+  [@@raise End_of_file]
 external seek_in : in_channel -> int -> unit = "caml_seek_in"
   [@@raise Sys_error]
 external pos_in : in_channel -> int = "caml_pos_in"

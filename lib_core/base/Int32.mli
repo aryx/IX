@@ -36,10 +36,10 @@ external sub: t -> t -> t = "int32_sub"
       (* Subtraction. *)
 external mul: t -> t -> t = "int32_mul"
       (* Multiplication. *)
-external div: t -> t -> t = "int32_div"
+external div: t -> t -> t = "int32_div" [@@raise Division_by_zero]
       (* Integer division. Raise [Division_by_zero] if the second argument
          is zero. *)
-external rem: t -> t -> t = "int32_mod"
+external rem: t -> t -> t = "int32_mod" [@@raise Division_by_zero]
       (* Integer remainder. *)
 val succ: t -> t
       (* Successor. *)
@@ -75,7 +75,7 @@ external to_int: t -> int = "int32_to_int"
       (* Convert the given 32-bit integer (type [Int32.t]) to an integer
          (type [int]). *)
 
-external of_string: string -> t = "int32_of_string"
+external of_string: string -> t = "int32_of_string" [@@raise Failure]
       (* Convert the given string to a 32-bit integer. Raise [Failure
          "int_of_string"] if the given string is not a valid representation
          of an integer. *)

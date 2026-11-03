@@ -91,9 +91,14 @@ compare() { # ran, facts, reached names
       u = $1; l = $2 + 0; best = -1
       for (i = 1; i <= n[u]; i++) if (lines[u, i] <= l && lines[u, i] > best) best = lines[u, i]
       if (best < 0) { print "no-closure", $0; next }
-      seen = 0
-      for (i = 1; i <= n[u]; i++) if (lines[u, i] == best && (names[u, i] in ok)) seen = 1
-      if (!seen) print "missed", $0, "closure at line " best
+      seen = 0; model = 0
+      for (i = 1; i <= n[u]; i++) if (lines[u, i] == best) {
+        if (names[u, i] in ok) seen = 1
+        # (a function the models replace, Pervasives.@: model:Pervasives.@)
+        if (names[u, i] ~ /^model:/) model = 1
+      }
+      if (model) print "modeled", $0
+      else if (!seen) print "missed", $0, "closure at line " best
     }' $1
 }
 
@@ -138,7 +143,7 @@ c_check() {
 }
 [ "${1:-}" = -c ] && c_check
 
-printf '%-8s %6s %7s %7s %7s %8s\n' program runs ran reached missed unmatched
+printf '%-8s %6s %7s %7s %7s %8s %7s\n' program runs ran reached missed unmatched modeled
 for p in ${@:-$all}; do
   case $p in
     forth) mk=languages/forth/mkfile; bin=_mk/7/languages/forth/mini-forth;;
@@ -159,7 +164,12 @@ for p in ${@:-$all}; do
   read flags files < <(program_args $mk)
   $ANALYZE -facts -L lib_core ${flags//,/ } $files > $W/facts 2> $W/err
   [ -s $W/err ] && { echo "$p: not read: $(head -1 $W/err | cut -c1-90)"; failures=$((failures + 1)); continue; }
-  ran_functions $W/prog.map $W/prof.* > $W/ran
+  ran_functions $W/prog.map $W/prof.* > $W/ran_all
+  # (the units the models replace, analyzers/ml/Models: List's and Hashtbl's
+  # bodies are not in the facts, nor their helpers, and are not checked;
+  # what they call back is the program's, and is)
+  grep -vE '^(List|Hashtbl) ' $W/ran_all > $W/ran
+  skipped=$(grep -cE '^(List|Hashtbl) ' $W/ran_all)
   # (a source edited since its object: its lines say another function; so
   # on a tree others edit, a clean copy of it)
   stale=$(awk '{ print $1 }' $W/ran | sort -u | while read -r u; do
@@ -170,7 +180,8 @@ for p in ${@:-$all}; do
   $DATALOG -q 'reach(F)' $D/instructions.dl $D/contexts.dl $D/insensitive.dl lib_code/datalog/dead.dl $W/facts 2> /dev/null |
     sed -E "s/^reach\('?//; s/'?\)\.$//; s/\\\\'/'/g" | sort -u > $W/reached
   compare $W/ran $W/facts $W/reached > $W/result
-  printf '%-8s %6d %7d %7d %7d %8d\n' $p $n $(wc -l < $W/ran) $(wc -l < $W/reached) $(grep -c '^missed' $W/result) $(grep -c '^no-closure' $W/result)
+  modeled=$((skipped + $(grep -c '^modeled' $W/result)))
+  printf '%-8s %6d %7d %7d %7d %8d %7d\n' $p $n $(wc -l < $W/ran) $(wc -l < $W/reached) $(grep -c '^missed' $W/result) $(grep -c '^no-closure' $W/result) $modeled
   grep -E '^(missed|no-closure)' $W/result | sed "s/^/   $p: /" | head -${SHOW:-30}
   failures=$((failures + $(grep -c '^missed' $W/result)))
 done

@@ -95,7 +95,6 @@ languages/ml/dotnet/Il_exprs.ml:704: stack: Il_exprs.lambda calls itself, not a 
 languages/ml/dotnet/Il_exprs.ml:766: stack: Il_exprs.closure calls itself, not a tail call, over a list
 languages/ml/dotnet/Il_exprs.ml:862: stack: Il_exprs.try_ calls itself, not a tail call, over a list
 languages/ml/dotnet/Il_types.ml:512: stack: Il_types.subst calls itself, not a tail call, over a list
-languages/ml/highlight/Names_ml.ml:97: swallowed: in Names_ml:fun at line 96, Unix.Unix_error silenced, a constant answered
 languages/ml/opti/Opti.ml:52: stack: go calls itself, not a tail call, over a list
 languages/ml/opti/Opti.ml:54: stack: go calls itself, not a tail call, over a list
 languages/ml/opti/Opti.ml:55: stack: go calls itself, not a tail call, over a list

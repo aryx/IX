@@ -54,13 +54,17 @@
 % depth bounded by analysis is what embedded C's tools do (AbsInt's
 % StackAnalyzer, 2000s), and what MISRA's rule against recursion avoids.
 
-calls(F, G) :- in_function(I, F), target(I, G), alloc_in(F, U), alloc_in(G, U).
+% (a library's call written at its caller, model_call, the f of a
+% List.map f l, is the library's: in another unit, as it was when
+% List.map's own body was read)
+own_call(I) :- in_function(I, _), \+ model_call(I, _).
+calls(F, G) :- own_call(I), in_function(I, F), target(I, G), alloc_in(F, U), alloc_in(G, U).
 back(F, G) :- calls(F, G).
 back(F, H) :- back(F, G), calls(G, H).
 
 % the call I in F may come back to F
-recursive(I, F) :- in_function(I, F), target(I, F), reach(F).
-recursive(I, F) :- in_function(I, F), target(I, G), back(G, F), reach(F).
+recursive(I, F) :- own_call(I), in_function(I, F), target(I, F), reach(F).
+recursive(I, F) :- own_call(I), in_function(I, F), target(I, G), back(G, F), reach(F).
 
 in_try_rec(I, F, T) :- recursive(I, F), tail_but_try(I), in_try(I, T).
 in_try_rec(I, F, T) :- recursive(I, F), tail_but_try(I), in_handler(I, T).

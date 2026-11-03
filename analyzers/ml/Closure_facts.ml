@@ -275,6 +275,33 @@ let prim_body (name : string) (arity : int) (res : ty) ~(arg : int -> string)
    * kept (), so that every C call returned all any had been given *)
   | _ -> if name = "" || name.[0] <> '%' then ignore (new_block "block")
 
+(* a function of n arguments in turn, named f: f, f'2 ... f'n, the k-th's
+ * argument f:argk, the last's result f:ret *)
+let stage (f : string) (k : int) : string =
+  if k = 1 then f else Printf.sprintf "%s'%d" f k
+let stage_arg (f : string) (k : int) : string = Printf.sprintf "%s:arg%d" f k
+
+let chain (f : string) (n : int) : unit =
+  let ret = f ^ ":ret" in
+  for k = 1 to n do
+    (* (a function, as a closure is: without it, a primitive given as a
+     * value, (-.), passed every filter, mini-cc's 25 a list's cells) *)
+    fact "htype" [ stage f k; "->" ];
+    fact1 "parameter" (stage f k) (stage_arg f k);
+    var_in (stage_arg f k) (stage f k);
+    if k < n then begin
+      let r = Printf.sprintf "%s:ret%d" f k in
+      fact "return" [ stage f k; r ];
+      var_in r (stage f k);
+      fact "assign_address" [ r; stage f (k + 1) ];
+      fact "curried" [ stage f (k + 1); stage f k ]
+    end
+    else begin
+      fact "return" [ stage f k; ret ];
+      var_in ret (stage f k)
+    end
+  done
+
 (* An external, as a function of each of its arguments in turn
  * ('prim:name', then 'prim:name'2'...), the last returning its result.
  * One the compiler writes in place (%...) moves a value only if it is
@@ -288,32 +315,76 @@ let prim_body (name : string) (arity : int) (res : ty) ~(arg : int -> string)
  * value, (-.) given to a fold; a call of all its arguments has its own
  * copy (call's, prim_body at the site). *)
 let prim (name : string) (arity : int) (t : ty) : string =
-  let stage (k : int) : string = if k = 1 then "prim:" ^ name else Printf.sprintf "prim:%s'%d" name k in
-  let arg (k : int) : string = Printf.sprintf "prim:%s:arg%d" name k in
-  let ret : string = "prim:" ^ name ^ ":ret" in
-  let n = max arity 1 in
+  let f = "prim:" ^ name in
   if not (Hashtbl.mem prims name) then begin
     Hashtbl.add prims name ();
-    for k = 1 to n do
-      (* (a function, as a closure is: without it, a primitive given as a
-       * value, (-.), passed every filter, mini-cc's 25 a list's cells) *)
-      fact "htype" [ stage k; "->" ];
-      fact1 "parameter" (stage k) (arg k);
-      var_in (arg k) (stage k);
-      if k < n then begin
-        fact "return" [ stage k; Printf.sprintf "prim:%s:ret%d" name k ];
-        var_in (Printf.sprintf "prim:%s:ret%d" name k) (stage k);
-        fact "assign_address" [ Printf.sprintf "prim:%s:ret%d" name k; stage (k + 1) ];
-        fact "curried" [ stage (k + 1); stage k ]
-      end
-      else begin
-        fact "return" [ stage k; ret ];
-        var_in ret (stage k)
-      end
-    done;
-    prim_body name arity (result t arity) ~arg ~ret ~inside:stage ~site:("prim:" ^ name) ~place:None
+    chain f (max arity 1);
+    prim_body name arity (result t arity) ~arg:(stage_arg f) ~ret:(f ^ ":ret")
+      ~inside:(stage f) ~site:f ~place:None
   end;
-  stage 1
+  f
+
+(* what a library's container does (Models): its arguments arg 1 ..., its
+ * result ret, of type res, its own variables and its calls in the function
+ * inside, its sites named after site; the sites of its calls and raises *)
+let model_body (sym : string) (ops : Models.op list) ~(arg : int -> string)
+    ~(ret : string) ~(inside : string) ~(site : string) ~(place : string option)
+    (res : ty option) : string list =
+  let own (s : string) : string = var_in s inside; s in
+  (* (a result no one reads goes nowhere: see call) *)
+  let ret = if ret = junk () then own (site ^ ":ret") else ret in
+  let var (v : Models.v) : string =
+    match v with
+    | Arg k -> arg k
+    | Ret -> ret
+    | Tmp k -> own (Printf.sprintf "%s:m%d" site k) in
+  let calls = ref 0 and news = ref 0 in
+  List.concat_map
+    (fun (op : Models.op) ->
+      match op with
+      | New v ->
+          incr news;
+          let b =
+            if !news = 1 then site ^ ":block"
+            else Printf.sprintf "%s:block%d" site !news in
+          fact "new_block" [ var v; b ];
+          (* (of the result's type; another's is not known: no filter) *)
+          if v = Ret then typed "htype" b res;
+          Option.iter (fun (u : string) -> fact "alloc_in" [ b; u ]) place;
+          []
+      | Load (d, o, f) -> fact "assign_load_field" [ var d; var o; f ]; []
+      | Store (o, f, s) -> fact "assign_store_field" [ var o; f; var s ]; []
+      | Assign (d, s) -> fact "assign" [ var d; var s ]; []
+      | Scalar v -> scalar (var v); []
+      | Call (d, f, a) ->
+          incr calls;
+          let i = Printf.sprintf "%s:call%d" site !calls in
+          fact "in_function" [ i; inside ];
+          fact "call_indirect" [ i; var f ];
+          fact1 "argument" i (var a);
+          fact "call_ret" [ i; var d ];
+          (* (the library's call: bugs/stack.dl does not follow it, as it
+           * did not follow List.map's own, in another unit) *)
+          fact "model_call" [ i; sym ];
+          [ i ]
+      | Raise e ->
+          let i = site ^ ":raise" in
+          fact "raise_in" [ i; inside ];
+          fact "in_function" [ i; inside ];
+          fact "raise_of" [ i; e ];
+          [ i ])
+    ops
+
+(* a modeled global as a value, its own function: model:Hashtbl.find *)
+let model_fun (sym : string) (n : int) (ops : Models.op list) (t : ty option) :
+    string =
+  let f = "model:" ^ sym in
+  chain f n;
+  let res = Option.map (fun (t : ty) -> result t n) t in
+  ignore
+    (model_body sym ops ~arg:(stage_arg f) ~ret:(f ^ ":ret") ~inside:(stage f n)
+       ~site:f ~place:None res);
+  f
 
 let rec plain (p : pattern) : var option =
   match p with
@@ -654,6 +725,40 @@ and call (x : expr) (f : expr) (args : expr list) (dst : string) : unit =
         end;
         fn := ret;
         List.filteri (fun k _ -> k >= n) args
+    (* a container's function given all its arguments: what it does, here
+     * (Models), its objects this call's *)
+    | Evar (Global g)
+      when (match Models.find g.gsym with
+            | Some (n, _) -> List.length args >= n
+            | None -> false) ->
+        let n, ops = Option.get (Models.find g.gsym) in
+        (* (numbered as the n calls it replaces, each's result a temporary
+         * but the last's, an argument's own calls after: the facts after
+         * it named as without the model; a temporary no one reads is a
+         * number, not a variable) *)
+        let total = List.length args in
+        let num = ref 0 and ret = ref dst in
+        let given =
+          Array.of_list
+            (List.mapi
+               (fun (k : int) (a : expr) ->
+                 incr calls;
+                 num := !calls;
+                 if k < total - 1 then (if k = n - 1 then ret := temp () else incr temps);
+                 operand a)
+               (List.filteri (fun k _ -> k < n) args)) in
+        let i = Printf.sprintf "%s:%d:c%d" !unit_name x.loc !num in
+        let last = total = n in
+        let ret = !ret in
+        let res =
+          if last then Typing.expr_type x
+          else Option.map (fun (t : ty) -> result t n) g.gtype in
+        let sites =
+          model_body g.gsym ops ~arg:(fun k -> given.(k - 1)) ~ret ~inside:!inside
+            ~site:i ~place:(Some !unit_name) res in
+        List.iter site_in sites;
+        fn := ret;
+        List.filteri (fun k _ -> k >= n) args
     | _ -> args in
   let n = List.length args in
   List.iteri
@@ -715,6 +820,30 @@ let unit_ (name : string) (items : item list) : string =
     (fun (item : item) ->
       match item with
       | Ieval e -> flow None e (junk ())
+      (* a modeled unit's functions: their models, their bodies not read; the
+       * unit's own code, what is not modeled, calls them by their variable *)
+      | Ivalue (_, bindings, ((_ :: _) as exported))
+        when Models.modeled_unit name
+             && List.for_all
+                  (fun ((_, g) : var * global) -> Models.find g.gsym <> None)
+                  exported ->
+          List.iter
+            (fun ((v, g) : var * global) ->
+              let n, ops = Option.get (Models.find g.gsym) in
+              let line =
+                List.fold_left
+                  (fun (l : int) ((p, e) : pattern * expr) ->
+                    match plain p with Some w when w.vid = v.vid -> e.loc | _ -> l)
+                  0 bindings in
+              let f = model_fun g.gsym n ops g.gtype in
+              (* (where the function is written: dynamic.sh's, what ran
+               * there is the model's) *)
+              fact "closure" [ f; !unit_name; string_of_int line ];
+              fact "alloc_in" [ f; !unit_name ];
+              fact "assign_address" [ local v; f ];
+              fact "global_def" [ g.gsym; !inside ];
+              fact "assign" [ global g.gsym !inside; local v ])
+            exported
       | Ivalue (_, bindings, exported) ->
           lets bindings exported;
           List.iter

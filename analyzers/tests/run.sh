@@ -23,4 +23,21 @@ for d in analyzers/tests/c/*/ analyzers/tests/ml/*/ analyzers/tests/dead/*/ anal
   elif cmp -s $W/$n.out $d/expected.out; then echo "ok mini-analyze: $n"
   else echo "FAIL mini-analyze: $n"; diff $d/expected.out $W/$n.out | head -10; failures=$((failures + 1)); fi
 done
+# models/: List's and Hashtbl's models (analyzers/ml/Models) against their
+# code as written (-no-models): for each function of Probe.ml, what may
+# escape it, and whether it is called (a function given a container's)
+DATALOG=${DATALOG:-_build/default/languages/datalog/Main.exe}
+R=lib_code/datalog; P=$R/points_to
+for m in models no-models; do
+  $ANALYZE -facts $([ $m = no-models ] && echo -no-models) analyzers/tests/models/Probe.ml > $W/$m.facts 2>&1
+  $DATALOG -q 'escapes(F, none, none, E)' -q 'called(F)' $P/instructions.dl $P/andersen.dl \
+    $P/contexts.dl $P/insensitive.dl $R/calls.dl $R/exceptions.dl $W/$m.facts 2> /dev/null |
+    grep -E "^[a-z]+\('Probe\.[a-z_0-9]*'" > $W/$m.answers
+done
+if [ -s $W/models.answers ] && cmp -s $W/models.answers $W/no-models.answers; then
+  echo "ok mini-analyze: models raise and call as the library's code ($(wc -l < $W/models.answers) answers)"
+else
+  echo "FAIL mini-analyze: models, not as the library's code (< models, > as written)"
+  diff $W/models.answers $W/no-models.answers | head -10; failures=$((failures + 1))
+fi
 exit $failures

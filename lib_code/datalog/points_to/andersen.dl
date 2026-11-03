@@ -95,6 +95,14 @@ flow(R, L) :- call_edge(I, F), return(F, V), call_ret(I, R), pt(V, L).
 % or a built-in name: abstract in an .mli and an abbreviation inside, it
 % has two names (mini-turbopascal's program record lost, 183 functions
 % called dead); mini-cc 47 s and 3.8 GB, mini-ml 68 s and 3.8 GB.
+% The same merge, of what is written in ML: List's functions, @ and
+% Hashtbl's buckets, each one set of cells for all callers, every list
+% of mini-cc 949 elements; a model at each call (analyzers/ml/Models):
+% -dead on mini-cc 36 s and 3.8 GB to 12 s and 1.2 GB, mini-ml 51 s to
+% 10 s and 1 GB, -exn on mini-cc 247 s and 12 GB to 46 s and 3.8 GB.
+% Contexts were not the way there either: one for each call of List's
+% polymorphic functions moved the merge to Hashtbl's buckets, made in
+% replace's local function, its key and info captured, one set for all.
 typed_var(V) :- vtype(V, _).
 typed_object(H) :- htype(H, _).
 full_var(V) :- vfull(V, _).

@@ -237,6 +237,26 @@ catches_all('Toy:try2@36').
 reraises('Toy:36:c40', 'Toy:try2@36').
 ```
 
+**Containers.** A call of `List`'s or `Hashtbl`'s functions given all their
+arguments is what the function does, written at the call (`Models`): a loop over
+a list two facts, its cells `c = l` then `c = c.tl`, a list made one cell of the
+call. A table is one object, made where `Hashtbl.create` is called, its keys and
+its values two fields (`tbl:key`, `tbl:val`). The library's own bodies are not
+read; one used as a value is the model as a function (`model:List.map`). A call
+the model makes, of the function it was given, says so, for `bugs/stack.dl`.
+`List.map (fun n -> n * 2) [ ... ]`:
+
+```
+assign('Toy:29:c23:m2', 'Toy:t24').
+assign_load_field('Toy:29:c23:m2', 'Toy:29:c23:m2', 'con:::.1').
+assign_load_field('Toy:29:c23:m1', 'Toy:29:c23:m2', 'con:::.0').
+call_indirect('Toy:29:c23:call1', 'Toy:t22').
+argument('Toy:29:c23:call1', 1, 'Toy:29:c23:m1').
+model_call('Toy:29:c23:call1', 'List.map').
+new_block('Toy:t20', 'Toy:29:c23:block').
+assign_store_field('Toy:t20', 'con:::.0', 'Toy:29:c23:m3').
+```
+
 **What the facts do not follow.** A constant, unit, a constant constructor:
 `scalar`, so every value has an object and a variable with none is one no run
 reaches. A C function's result is an object of its own, of its call (a call not
@@ -409,7 +429,7 @@ with: `own_live_out(V, P)`, and for ML `own_live_in(V, B)`, `own_idom(D, B)`.
 | `capabilities.dl`, `capabilities_types.dl` | `takes_cap`, `declares`, `assign_address`, `global_def` |
 | `bugs/pointers.dl` | `call_direct`, `return`, and `heap`, `local`, `literal`, which mini-analyze makes of the names |
 | `bugs/physeq.dl` | `phys_compare`, `fresh_operand` |
-| `bugs/stack.dl` | `tail`, `tail_but_try`, `in_handler`, `in_try`, `list_like`, `parameter`, `vtype`, `inner`, `alloc_in`, over `target` and `reach` |
+| `bugs/stack.dl` | `tail`, `model_call`, `tail_but_try`, `in_handler`, `in_try`, `list_like`, `parameter`, `vtype`, `inner`, `alloc_in`, over `target` and `reach` |
 | `bugs/raises.dl` | ML's `external_prim`, `declares_raise`; C's `call_direct`, `argument`, `parameter`, `in_function`, `global_var`, `defined` |
 | `bugs/swallowed.dl` | `silent`, `silent_all`, `catches`, `primitive`, `curried`, over `exceptions.dl`'s `arrives` |
 | `liveness.dl` | C's `-flow` |

@@ -14,6 +14,7 @@ analyze – what C and ML programs may do, by facts and Datalog rules
 [ **-context** *file* ]
 [ **-library** ]
 [ **-alone** ]
+[ **-no-models** ]
 [ **-fingerprint** ]
 *file*`.c` ... | *file*`.ml` ...
 
@@ -102,6 +103,11 @@ program's library, lib_core's units it names, is read with it.
 
 **-alone**
 :    ML: the files' own facts, not their library units'.
+
+**-no-models**
+:    ML: `List`'s, `Hashtbl`'s and `@`'s code read as written, not
+     their models at each call (`analyzers/ml/Models.ml`), which are
+     3 to 5 times faster on mini-cc and mini-ml: to compare.
 
 **-fingerprint**
 :    After the report, one number of every answer: two runs of the

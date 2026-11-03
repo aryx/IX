@@ -55,7 +55,8 @@ program's functions that its toplevel never reaches (calls.dl):
 -r: the directory of points_to/ and the .dl files (lib_code/datalog)
 -I, -D: as mini-cc's; -L: lib_core's directory (lib_core); -facts: the facts
 made, not the analysis; -alone: an ML file's own facts, without those of the
-library units it names
+library units it names; -no-models: List's, Hashtbl's and @'s code read as
+written, not their models at each call (analyzers/ml/Models: to compare, slower)
 -flow: ML's files each as its functions in SSA form, the facts of
 lib_code/datalog/liveness_ssa.dl and dominators.dl (Ssa_facts, by mini-ml's
 own way to its SSA: Ml_flow); C's as each function's stack code, the facts of
@@ -100,6 +101,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     @ [ ("-r", Arg.Set_string rules, " the directory of points_to/ and bugs/");
         ("-facts", Arg.Set only, " the facts, not the analysis");
         ("-alone", Arg.Set Ml_front.alone, " ML: the files' facts alone, not their library's units'");
+        ("-no-models", Arg.Clear Models.on, " ML: List's and Hashtbl's code as written, not their models");
         ("-flow", Arg.Set flow, " ML's functions in SSA form, C's stack code, as facts");
         ("-dflow", Arg.Set dflow, " the compiler's own liveness and dominators, as facts");
         ("-dead", Arg.Set dead, " what no run can reach, not the calls and the bugs");

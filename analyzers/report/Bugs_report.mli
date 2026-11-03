@@ -8,7 +8,7 @@
  *   bug? Process.ml:46: swallowed: in fork, Sys_error silenced, a constant answered
  *   bug? Main.ml:67: crash: in Main.guard, Fault.Error caught by all, the handler raising Failure
  *
- * physeq (lib_code/datalog/bugs/physeq.dl): == or != with a side made in
+ * physeq (analyzers/datalog/bugs/physeq.dl): == or != with a side made in
  * the comparison itself. stack (bugs/stack.dl): a recursion the stack may
  * not hold, a loop through a try, or a frame for each element of a
  * list. swallowed (bugs/swallowed.dl): an error of the system that may

@@ -1071,7 +1071,7 @@ $(TROFF_PDF): ../../docs/man/1/troff.md ../../_build/default/typesetting/troff/M
 #   dotnet /lib/analyze/report.dll -fingerprint /lib/analyze/bugs.c
 ANALYZE_DLLS = build/analyze/analyze_rt.dll build/analyze/fingerprint.dll build/analyze/report.dll
 $(ANALYZE_DLLS) &: ../../_build/default/languages/ml/Main.exe ../../_build/default/languages/datalog/Main.exe \
-  ../../_build/default/languages/c/Main.exe $(wildcard ../../analyzers/*/*.ml ../../analyzers/dotnet/*.c ../../lib_code/datalog/*.dl ../../lib_code/datalog/points_to/*.dl)
+  ../../_build/default/languages/c/Main.exe $(wildcard ../../analyzers/*/*.ml ../../analyzers/dotnet/*.c ../../analyzers/datalog/*.dl ../../analyzers/datalog/points_to/*.dl)
 	cd ../.. && WORK=kernels/9pi/build/analyze analyzers/dotnet/tests/run.sh -build
 $(CARD_NS): Makefile
 	@mkdir -p build
@@ -1162,7 +1162,7 @@ check-dotnet: card ; $(call langcheck,dotnet)
 # each line the native mini-analyze's (90 s, the card made and booted)
 check-analyze: card
 	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 3000 --out $(B)/qemu-card-analyze.txt --lines tests/session-card-analyze.cmds -- $(QEMU) $(QEMU_BOOT_IX) $(CARD_SD)
-	cd ../../analyzers/tests/c/bugs && ../../../../_build/default/analyzers/Main.exe -r ../../../../lib_code/datalog -fingerprint bugs.c > $(abspath $(B))/analyze-native.txt
+	cd ../../analyzers/tests/c/bugs && ../../../../_build/default/analyzers/Main.exe -r ../../../../analyzers/datalog -fingerprint bugs.c > $(abspath $(B))/analyze-native.txt
 	tr -d '\r' < $(B)/qemu-card-analyze.txt | grep -Fxv -f - $(B)/analyze-native.txt > $(B)/analyze-missing.txt; \
 	  if [ -s $(B)/analyze-missing.txt ]; then echo "FAIL card: mini-analyze's .NET road, lines not said:"; cat $(B)/analyze-missing.txt; exit 1; \
 	  else echo "ok card: mini-analyze's .NET road, its $$(wc -l < $(B)/analyze-native.txt) lines the native's"; fi

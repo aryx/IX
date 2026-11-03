@@ -2,13 +2,13 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# lib_code/datalog/FACTS.md against the compilers: each fact it shows is what they
+# analyzers/datalog/FACTS.md against the compilers: each fact it shows is what they
 # say of tests/facts_toy/ today, and each relation they can say is in it. So a
 # change of the facts changes the document, or this fails.
-# usage: lib_code/datalog/tests/facts_doc.sh   (dune build first)
+# usage: analyzers/datalog/tests/facts_doc.sh   (dune build first)
 # ANALYZE, DATALOG: the programs, if not dune's.
 cd "$(dirname "$0")/../../.."
-R=lib_code/datalog; D=$R/points_to; T=$R/tests/facts_toy
+R=analyzers/datalog; D=$R/points_to; T=$R/tests/facts_toy
 ANALYZE=${ANALYZE:-_build/default/analyzers/Main.exe}
 DATALOG=${DATALOG:-_build/default/languages/datalog/Main.exe}
 W=$(mktemp -d); trap 'rm -rf $W' EXIT

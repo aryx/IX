@@ -34,7 +34,7 @@
  * In ix it is the language program analyses are written in. A
  * compiler's front end writes a program out as facts (mini-analyze
  * -facts and -flow, C's and ML's), and an analysis is a file of rules
- * (lib_code/datalog/): Andersen's pointer analysis in 15, liveness in three,
+ * (analyzers/datalog/): Andersen's pointer analysis in 15, liveness in three,
  * the dominators, who calls whom. A dataflow analysis is a fixpoint
  * over a program's graph, which is what a compiler's own pass
  * computes with a worklist (mini-cc's Opti, mini-ml's Alloc): the

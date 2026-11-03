@@ -1,7 +1,7 @@
 (* A C function's stack code as Datalog facts (docs/plans/plan_prolog.md,
  * stage 9): each instruction a point, who follows whom, and the
  * variables it reads and writes; for mini-datalog to run
- * lib_code/datalog/liveness.dl on. mini-cc -flow.
+ * analyzers/datalog/liveness.dl on. mini-cc -flow.
  *
  * The code is Lower's after Opti's passes but regs (a variable is read
  * and written whole by their forms, loadat and storeat), and the

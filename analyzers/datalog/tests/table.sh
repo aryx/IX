@@ -8,10 +8,10 @@
 # edges of Andersen's, in a function this analysis reaches, it has not.
 # Each is precision gained or, for object1.dl and those after it, may
 # be its hole: compare with call2_heap1's, which follows every call.
-# usage: lib_code/datalog/tests/table.sh limit-seconds facts.dl [analysis...]
+# usage: analyzers/datalog/tests/table.sh limit-seconds facts.dl [analysis...]
 # facts by mini-analyze -facts. DATALOG: the program, if not dune's.
 cd "$(dirname "$0")/../../.."
-D=lib_code/datalog/points_to
+D=analyzers/datalog/points_to
 DATALOG=${DATALOG:-_build/default/languages/datalog/Main.exe}
 limit=$1; facts=$2; shift 2
 W=$(mktemp -d); trap 'rm -rf $W' EXIT

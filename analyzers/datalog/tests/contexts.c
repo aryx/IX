@@ -1,4 +1,4 @@
-/* What each pointer analysis can tell apart (lib_code/datalog/points_to),
+/* What each pointer analysis can tell apart (analyzers/datalog/points_to),
  * a question a part; run.sh asks, contexts_c.out says. */
 void	*malloc(unsigned long);
 

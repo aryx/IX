@@ -16,8 +16,8 @@ compilers say of them, which `tests/facts_doc.sh` checks in `make test`, with
 every relation they can say being in this file. To see them all:
 
 ```
-mini-analyze -facts lib_code/datalog/tests/facts_toy/toy.c
-mini-analyze -facts lib_code/datalog/tests/facts_toy/Toy.ml      (with lib_core's units)
+mini-analyze -facts analyzers/datalog/tests/facts_toy/toy.c
+mini-analyze -facts analyzers/datalog/tests/facts_toy/Toy.ml      (with lib_core's units)
 mini-analyze -flow toy.c            mini-analyze -flow Toy.ml
 ```
 

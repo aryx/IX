@@ -15,7 +15,7 @@ let blocks : int ref = ref 0
 (* the function whose body is being read *)
 let inside : string ref = ref ""
 
-(* the exceptions' facts (lib_code/datalog/exceptions.dl): the trys
+(* the exceptions' facts (analyzers/datalog/exceptions.dl): the trys
  * around the expression being read, the innermost first; a handler's
  * variable, by the try it catches for (raise e again: what came) *)
 let tries : string list ref = ref []

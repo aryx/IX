@@ -8,10 +8,10 @@
 # mismatch there is a mistake of the facts or the call graph, since OCaml accepts
 # them; a line each: the calls found, those checked, the mismatches, what is not
 # seen and why. Minutes with -all: by hand.
-# usage: lib_code/datalog/tests/caps_types.sh [-record] [-all | dir...]   (dune build first)
+# usage: analyzers/datalog/tests/caps_types.sh [-record] [-all | dir...]   (dune build first)
 # ANALYZE, DATALOG: the programs, if not dune's.
 cd "$(dirname "$0")/../../.."
-R=lib_code/datalog; D=$R/points_to; T=$R/tests
+R=analyzers/datalog; D=$R/points_to; T=$R/tests
 export ANALYZE=${ANALYZE:-$PWD/_build/default/analyzers/Main.exe}
 export DATALOG=${DATALOG:-$PWD/_build/default/languages/datalog/Main.exe}
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
@@ -43,7 +43,7 @@ export SHOW LIMIT BLIND
 if [ "${1:-}" = -all ] || [ "${1:-}" != -record -a $# -gt 0 ]; then
   printf '%-40s %5s %7s %6s  %s\n' program calls checked wrong 'not seen'
   if [ "$1" = -all ]; then list=$(git grep -lE '^SRC ?=' -- '*mkfile'); else list=$(for d in "$@"; do echo $d/mkfile; done); fi
-  echo "$list" | xargs -P 8 -n 1 bash -c '. lib_code/datalog/tests/mk_units.sh; one "$0"'
+  echo "$list" | xargs -P 8 -n 1 bash -c '. analyzers/datalog/tests/mk_units.sh; one "$0"'
   exit 0
 fi
 

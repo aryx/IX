@@ -545,8 +545,8 @@ any rule runs; with `ulimit -s unlimited` it reads them and runs (217 s). Every 
 is a plain fact, the longest 101 characters, so it is the reading's own recursion,
 in `Datalog.load` or Prolog's reader, over the clauses. mini-analyze gives the facts
 as values and does not meet it. Reproduce: `mini-analyze -facts` of mini-cc's units
-(`lib_code/datalog/tests/mk_units.sh`'s `program_args languages/c/mkfile`) into a
-file, then `mini-datalog lib_code/datalog/points_to/instructions.dl` and that file.
+(`analyzers/datalog/tests/mk_units.sh`'s `program_args languages/c/mkfile`) into a
+file, then `mini-datalog analyzers/datalog/points_to/instructions.dl` and that file.
 Not fixed: found while measuring another thing.
 
 Fixed: not the reader but `Datalog.questions`, which looks for a line ended by `?`

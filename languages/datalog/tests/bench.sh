@@ -7,7 +7,7 @@
 # (N(N+1)/2 tuples, N rounds: the worst for the rounds) with the
 # recursion on the left and on the right, the semi-naive way and the
 # naive one; and the author's pointer analysis
-# (lib_code/datalog/pointer.dl) on M assignments made by a generator of random
+# (analyzers/datalog/pointer.dl) on M assignments made by a generator of random
 # numbers written here, the same on every machine.
 # For each: the build, the seconds, the memory, the engine's own counts.
 # usage: languages/datalog/tests/bench.sh [N] [M]   (dune build, and mini-mk in languages/datalog, first)
@@ -45,5 +45,5 @@ for X in _build/default/languages/datalog/Main.exe _mk/7/languages/datalog/mini-
   one "a chain of $N, recursion on the right" $X -s $W/right.dl
   one "a chain of $((N / 5)), semi-naive" $X -s $W/small.dl
   one "a chain of $((N / 5)), naive" $X -naive -s $W/small.dl
-  one "pointer analysis, $M assignments" $X -s lib_code/datalog/pointer.dl $W/facts.dl
+  one "pointer analysis, $M assignments" $X -s analyzers/datalog/pointer.dl $W/facts.dl
 done

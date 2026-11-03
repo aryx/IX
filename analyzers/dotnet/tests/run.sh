@@ -9,7 +9,7 @@
 # mini-cc's front end compiled by mini-ml -dotnet giving its facts as
 # values to the rules mini-datalog -dotnet compiled (analyze_rt.dll,
 # Analyze_rt). call1_heap1's target and pts on
-# lib_code/datalog/tests/contexts.c, by mini-dotnet (Microsoft's dotnet
+# analyzers/datalog/tests/contexts.c, by mini-dotnet (Microsoft's dotnet
 # too with -ms); -rc: on Plan 9's rc (goken's 30 files: minutes),
 # timed, by Microsoft's dotnet. Then mini-analyze's reports, of the
 # rules it loads (C's: call1_heap1 and bugs/pointers.dl; ML's: calls.dl): the
@@ -79,16 +79,16 @@ fi
 if ! $CC -dotnet -L languages/c/dotnet -o $W/fingerprint.dll analyzers/dotnet/fingerprint.c > $W/fp.err 2>&1; then
   echo "FAIL fingerprint.dll by mini-cc -dotnet"; head -3 $W/fp.err; exit 1
 fi
-R=lib_code/datalog/points_to
+R=analyzers/datalog/points_to
 if [ -n "$build" ]; then
   $DL -dotnet -runtime analyze_rt -entry Analyze_rt -o $W/report.dll \
-    $R/instructions.dl $R/andersen.dl $R/contexts.dl $R/call1_heap1.dl lib_code/datalog/bugs/pointers.dl ||
+    $R/instructions.dl $R/andersen.dl $R/contexts.dl $R/call1_heap1.dl analyzers/datalog/bugs/pointers.dl ||
     { echo "FAIL mini-datalog -dotnet, the C report's program"; exit 1; }
   exit 0
 fi
 Q=(-q 'target(I, F)' -q 'pts(V, H)')
 QML=(-q 'pts(V, H)' -q 'reach(F)')
-# (C's analysis: call1_heap1; ML's: call1, as lib_code/datalog/tests')
+# (C's analysis: call1_heap1; ML's: call1, as analyzers/datalog/tests')
 C_RULES="$R/instructions.dl $R/andersen.dl $R/contexts.dl $R/call1_heap1.dl"
 ML_RULES="$R/instructions.dl $R/andersen.dl $R/contexts.dl $R/call1.dl"
 $DL -dotnet -runtime analyze_rt -entry Analyze_rt -o $W/pta.dll "${Q[@]}" $C_RULES &&
@@ -115,17 +115,17 @@ roads() { # name, the compiled program (pta or pta_ml), the directory, the files
   [ -z "${ms_only:-}" ] && run mini-dotnet "$(realpath $DN)"
   [ -n "$ms" ] && run "Microsoft's dotnet" dotnet
 }
-roads contexts pta lib_code/datalog/tests contexts.c
+roads contexts pta analyzers/datalog/tests contexts.c
 # (an ML program, lib_core's units it names read too: Microsoft's only,
 # mini-dotnet's interpreter too slow for make test's minute)
-ms_only=1 roads contexts_ml pta_ml lib_code/datalog/tests -L $PWD/lib_core contexts.ml
+ms_only=1 roads contexts_ml pta_ml analyzers/datalog/tests -L $PWD/lib_core contexts.ml
 # the reports: a program of the rules mini-analyze loads, no query;
 # its report the native mini-analyze's
-REPORT_C="$R/instructions.dl $R/andersen.dl $R/contexts.dl $R/call1_heap1.dl lib_code/datalog/bugs/pointers.dl"
-REPORT_ML="$R/instructions.dl $R/andersen.dl lib_code/datalog/calls.dl"
-REPORT_DEAD="$R/instructions.dl $R/contexts.dl $R/insensitive.dl lib_code/datalog/dead.dl"
-REPORT_CAPS="$REPORT_DEAD lib_code/datalog/capabilities.dl"
-REPORT_EXN="$R/instructions.dl $R/andersen.dl $R/contexts.dl $R/call1_rec.dl lib_code/datalog/exceptions.dl"
+REPORT_C="$R/instructions.dl $R/andersen.dl $R/contexts.dl $R/call1_heap1.dl analyzers/datalog/bugs/pointers.dl"
+REPORT_ML="$R/instructions.dl $R/andersen.dl analyzers/datalog/calls.dl"
+REPORT_DEAD="$R/instructions.dl $R/contexts.dl $R/insensitive.dl analyzers/datalog/dead.dl"
+REPORT_CAPS="$REPORT_DEAD analyzers/datalog/capabilities.dl"
+REPORT_EXN="$R/instructions.dl $R/andersen.dl $R/contexts.dl $R/call1_rec.dl analyzers/datalog/exceptions.dl"
 $DL -dotnet -runtime analyze_rt -entry Analyze_rt -o $W/report_c.dll $REPORT_C &&
   $DL -dotnet -runtime analyze_rt -entry Analyze_rt -o $W/report_ml.dll $REPORT_ML &&
   $DL -dotnet -runtime analyze_rt -entry Analyze_rt -o $W/report_dead.dll $REPORT_DEAD &&
@@ -136,7 +136,7 @@ report() { # name, its program, the directory, the files
   local name=$1 prog=$2 dir=$3; shift 3
   [ -n "${ms_only:-}" ] && [ -z "$ms" ] && { echo "skipped: $name's report (Microsoft's dotnet only: -ms)"; return; }
   local root=$PWD
-  (cd $dir && $AN -r $root/lib_code/datalog "$@") > $W/$name.report.want 2>&1
+  (cd $dir && $AN -r $root/analyzers/datalog "$@") > $W/$name.report.want 2>&1
   local args=("$@")
   run() { # what, runtime
     (cd $dir && $2 $W/$prog.dll "${args[@]}") > $W/$name.report.got 2>&1

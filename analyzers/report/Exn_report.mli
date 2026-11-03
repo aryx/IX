@@ -1,5 +1,5 @@
 (* mini-analyze -exn's report: the exceptions an ML program's toplevels
- * may let escape (lib_code/datalog/exceptions.dl), each with where it
+ * may let escape (analyzers/datalog/exceptions.dl), each with where it
  * may be raised; a function C calls, back to C; a try catching all
  * whose handler raises (exceptions.dl's from_c, ends_in). Both of
  * mini-analyze's roads use it, as Ml_report.

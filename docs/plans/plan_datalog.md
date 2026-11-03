@@ -27,9 +27,9 @@ said to be estimates.
 a rule's body made a plan once, its atoms' order chosen; the tuples'
 own set, `Tuples`; no `-plan` yet. mini-ml's own analysis 225 s to 95
 s, rc's 6.7 s to 0.2 s: `languages/datalog/README.md`, "Its speed").
-Stage 7 and 8's analyses written (2026-10-31, `lib_code/datalog/points_to/`,
+Stage 7 and 8's analyses written (2026-10-31, `analyzers/datalog/points_to/`,
 over facts added to the 17 relations, not stages 5 and 6's rewrite:
-`lib_code/README.md`). The rest as written (2026-10-10; see Status at
+`analyzers/datalog/README.md`). The rest as written (2026-10-10; see Status at
 the end).
 
 ## What there is
@@ -43,7 +43,7 @@ From [`plan_prolog.md`](done/plan_prolog.md)'s stages 7 to 10 (done):
 | C's flow | `languages/c/facts/Ir_facts` (`-flow`) | 52 | the stack code's points, successors, definitions, uses |
 | ML's facts | `languages/ml/facts/Closure_facts` (`mini-ml -facts`) | 241 | a unit in those same 17 relations: a function is a place, a call is a call through a pointer |
 | ML's flow | `languages/ml/facts/Ssa_facts` (`-flow`) | 72 | the SSA form's blocks, definitions, uses, phis |
-| the rules | `lib_code/datalog/` | 248 | `pointer.dl` (pfff's, 2014: Andersen's, field-based, the calls found as it goes), `calls.dl`, `liveness.dl`, `liveness_ssa.dl`, `dominators.dl` |
+| the rules | `analyzers/datalog/` | 248 | `pointer.dl` (pfff's, 2014: Andersen's, field-based, the calls found as it goes), `calls.dl`, `liveness.dl`, `liveness_ssa.dl`, `dominators.dl` |
 
 What it does today: liveness and dominators the same as the
 compilers' own on 3,459 ML functions and 395 C ones, no tuple
@@ -328,7 +328,7 @@ that is kept up as the program changes; Java.
 
 2026-10-10: plan written, after plan_prolog.md was moved to `done/`.
 Read for it: `languages/datalog/README.md` (its tables are the
-numbers above), `lib_code/datalog/pointer.dl`'s head and `calls.dl`,
+numbers above), `analyzers/datalog/pointer.dl`'s head and `calls.dl`,
 `mini-datalog -s`'s output, `make loc`'s first lines. The same day
 the author answered its first three questions (decisions 3, 9 and
 10) and said how far it is to go: contexts and types, dataflow across
@@ -356,14 +356,14 @@ plan_ml_multicore.md's Status), incremental evaluation (DRed,
 DDlog's differences: Datalog_eval.mli says them).
 
 2026-10-31: the author: "let's move the datalog analysie from
-languages/datalog/... to lib_code/datalog/", "(not the engine, just the
+languages/datalog/... to analyzers/datalog/", "(not the engine, just the
 .dl)", "please write your own based on the classic pointer analysis,
 possibly providing a few, including the context sensitive one in DOOP";
 and of the aim: "very sophissticated static analysis of C and ML programs
 (possibly later on mixing also with dynamic analysis results) to find
 bugs in Ix's code", "an analyzer written in both ML and datalog [...] so
 that the analysis remains small in terms of total LOC", "teaching value
-for advanced grad student". Done: `lib_code/datalog/` and `points_to/`:
+for advanced grad student". Done: `analyzers/datalog/` and `points_to/`:
 Steensgaard's, Andersen's by site with fields by object, and Doop's frame
 with call-site, object, type, hybrid and selective files; decision 5's
 two columns, decision 7b's containments in `tests/run.sh`, 7d's table in
@@ -372,28 +372,28 @@ argument, there being no receiver; ML's types are not in the facts, so
 type sensitivity's place is a unit and does little. Not done: `bugs.dl`
 and `calls.dl` still read `pointer.dl`'s answers; decision 7c (the calls
 of a run inside the call graph), which is also what would check the C
-hole `lib_code/README.md` names; the numbers there say what to refine
+hole `analyzers/datalog/README.md` names; the numbers there say what to refine
 for ML next (`ext`) and that the richer files do not yet end on
 mini-datalog.
 
 2026-10-31, the author: "flag dead functions (and dead code)", then the
 order: the sweep, the calls of a run against the call graph (decision 7c),
 `bugs.dl` on `points_to/`, capabilities, `ext` split. The sweep done:
-`lib_code/README.md`; 23 of 44 programs read, mini-ml and mini-cc not.
+`analyzers/datalog/README.md`; 23 of 44 programs read, mini-ml and mini-cc not.
 
-2026-10-31: decision 7c, by `lib_code/datalog/tests/dynamic.sh`: 5 ML programs,
+2026-10-31: decision 7c, by `analyzers/datalog/tests/dynamic.sh`: 5 ML programs,
 94 runs of their tests, 0 functions run and not reached; for C, toy programs,
 which showed the object files' hole (`hole.c`) and its fix. Function by function,
 not call by call: which call went where is not recorded (`-prof` counts addresses).
 
 2026-10-31: `bugs.dl` and mini-analyze on `points_to/`, `-context`, `-library`:
-`lib_code/README.md`. `pointer.dl` and `calls.dl` over it stay as
+`analyzers/datalog/README.md`. `pointer.dl` and `calls.dl` over it stay as
 `languages/ml/facts/tests`'s; decision 9's retiring of them is the author's to say.
 
 2026-11-01: capabilities, of stage 11 (the author: "We do need to know which
 capability and parse the < Cap.stdout; ... > [...] to know whether you put the right
 capability given the syscalls you're doing"): `capabilities.dl`, `mini-analyze -caps`:
-`lib_code/README.md`, 40 functions on 23 programs; reports only, no code changed for
+`analyzers/datalog/README.md`, 40 functions on 23 programs; reports only, no code changed for
 them. Calls with one target, exceptions, purity not done.
 
 2026-11-03, the author: "we mostly finished the dotnet session, we can resume
@@ -401,7 +401,7 @@ here", "let's do it": all 44 programs read by `-dead` and `-caps` (mini-ml 71 s,
 mini-cc 49 s), by an external's copy at each call, not by contexts
 (`call1_heap1` and `call1_rec` on mini-cc: 403 s, 15 GB, the same answers), and
 whole types where both sides have no variable; `dead_ix.txt` 43, `caps_ix.txt`
-172, `exn_ix.txt` 42 programs: `lib_code/README.md`'s "mini-cc and mini-ml".
+172, `exn_ix.txt` 42 programs: `analyzers/datalog/README.md`'s "mini-cc and mini-ml".
 
 2026-11-03, the author: "yes a record field count as held", "Yes clock and pipes
 should get a capability too, and more generally any system call", "yes let's do

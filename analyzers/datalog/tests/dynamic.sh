@@ -21,13 +21,13 @@
 # is said of it. The test is one way: what ran is a part of what can run, so
 # nothing here says -dead's answers are dead, only that it did not call dead
 # what ran.
-# usage: lib_code/datalog/tests/dynamic.sh [-c | program...]   (dune build first)
+# usage: analyzers/datalog/tests/dynamic.sh [-c | program...]   (dune build first)
 # ANALYZE, DATALOG, MINI5I, WHERE: the programs, if not dune's. RULES: other
 # points_to rules (a broken copy: does the check see it?). SHOW: lines shown.
 cd "$(dirname "$0")/../../.."
 ROOT=$PWD
-T=lib_code/datalog/tests
-D=${RULES:-lib_code/datalog/points_to}
+T=analyzers/datalog/tests
+D=${RULES:-analyzers/datalog/points_to}
 ANALYZE=${ANALYZE:-$ROOT/_build/default/analyzers/Main.exe}
 DATALOG=${DATALOG:-$ROOT/_build/default/languages/datalog/Main.exe}
 MINI5I=${MINI5I:-$ROOT/_build/default/machine/Main.exe}
@@ -53,7 +53,7 @@ workload() { # a program's own tests
       for f in graph liveness dominators; do
         run -all $ROOT/$t/$f.dl; run -naive -s -profile -all $ROOT/$t/$f.dl; run -btree all -all $ROOT/$t/$f.dl
       done
-      run -q 'call_edge(I, F)' $ROOT/lib_code/datalog/pointer.dl $ROOT/$t/pointer_facts.dl
+      run -q 'call_edge(I, F)' $ROOT/analyzers/datalog/pointer.dl $ROOT/$t/pointer_facts.dl
       run -h; run /nonexistent;;
     rc) for f in $ROOT/shell/tests/corpus/*.rc; do run $f; done;;
     prolog) for f in $ROOT/languages/prolog/tests/*.pl; do run $f; done;;
@@ -132,7 +132,7 @@ c_check() {
     } | sort -k1,1 -k2,2 | awk '$2 == "m" { sym = $3; next } $2 == "p" { print sym }' | sed 's/<>$//' | sort -u > $W/ran
     comm -12 $W/ran $W/own > $W/ran_own
     for a in insensitive call1 call2_heap1 object1 object2_heap1 type2_heap1 hybrid selective; do
-      $DATALOG -q 'reach(F)' $D/instructions.dl $D/andersen.dl $D/contexts.dl $D/$a.dl lib_code/datalog/dead.dl $W/facts 2> /dev/null |
+      $DATALOG -q 'reach(F)' $D/instructions.dl $D/andersen.dl $D/contexts.dl $D/$a.dl analyzers/datalog/dead.dl $W/facts 2> /dev/null |
         sed -E "s/^reach\('?//; s/'?\)\.$//" | sort -u > $W/reached
       comm -23 $W/ran_own $W/reached > $W/missed
       printf '%-16s %-14s %5d %7d %6d %s\n' $prog $a $(wc -l < $W/ran_own) $(comm -12 $W/reached $W/own | wc -l) $(wc -l < $W/missed) "$(tr '\n' ' ' < $W/missed)"
@@ -177,7 +177,7 @@ for p in ${@:-$all}; do
     [ -n "$o" ] && [ -n "$f" ] && [ "$f" -nt "$o" ] && echo $u
   done | tr '\n' ' ')
   [ -n "$stale" ] && echo "$p: newer than their objects, lines not to be trusted: $stale"
-  $DATALOG -q 'reach(F)' $D/instructions.dl $D/contexts.dl $D/insensitive.dl lib_code/datalog/dead.dl $W/facts 2> /dev/null |
+  $DATALOG -q 'reach(F)' $D/instructions.dl $D/contexts.dl $D/insensitive.dl analyzers/datalog/dead.dl $W/facts 2> /dev/null |
     sed -E "s/^reach\('?//; s/'?\)\.$//; s/\\\\'/'/g" | sort -u > $W/reached
   compare $W/ran $W/facts $W/reached > $W/result
   modeled=$((skipped + $(grep -c '^modeled' $W/result)))

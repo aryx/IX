@@ -4,14 +4,14 @@
 #
 # mini-analyze -bugs on mini-ml's runtime (runtime.c, its parts included)
 # and lib_core's units with externals: each external's [@@raise E]
-# against what its C raises (lib_code/datalog/bugs/raises.dl), the
+# against what its C raises (analyzers/datalog/bugs/raises.dl), the
 # report against raises_ix.txt. An annotation the C does not back fails;
 # one added, or a C raise added, is -record'ed. A second.
-# usage: lib_code/datalog/tests/raises.sh [-record]   (dune build first)
+# usage: analyzers/datalog/tests/raises.sh [-record]   (dune build first)
 # ANALYZE: the program, if not dune's.
 cd "$(dirname "$0")/../../.."
 ANALYZE=${ANALYZE:-_build/default/analyzers/Main.exe}
-T=lib_code/datalog/tests
+T=analyzers/datalog/tests
 L=lib_core/libc/include
 ml=$(grep -rl '^external' lib_core --include=*.ml | grep -v 'dotnet\|plan9\|tests' | sort)
 out=$($ANALYZE -bugs -I $L -I $L/arch/arm -I $L/utf -I languages/ml/runtime languages/ml/runtime/runtime.c $ml 2>&1)

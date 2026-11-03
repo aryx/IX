@@ -21,7 +21,7 @@ analyze – what C and ML programs may do, by facts and Datalog rules
 # DESCRIPTION
 *Analyze* reads the *files* as one program, by mini-cc's front end
 for C and mini-ml's for ML, writes what each says as Datalog facts,
-and runs on them the rules of `lib_code/datalog`, with
+and runs on them the rules of `analyzers/datalog`, with
 \man{datalog}{1}'s engine: what a pointer may point to, by Andersen's
 analysis, then the question asked of it. Each answer is a "may": what
 the facts cannot see is taken as able to do anything, so what is said
@@ -69,13 +69,13 @@ program's library, lib_core's units it names, is read with it.
      handler raises another (`exceptions.dl`'s `ends_in`). C files: the
      report without an option, its `bug?` lines `bugs/pointers.dl`'s.
      C files and ML ones (mini-ml's runtime and lib_core: what
-     `lib_code/datalog/tests/raises.sh` gives): each external's
+     `analyzers/datalog/tests/raises.sh` gives): each external's
      `[@@raise E]` against what the C of its primitive raises,
      `raises` (`bugs/raises.dl`), one analysis over two languages.
 
 **-facts**
 :    The facts, not the analysis: to write one's own rules
-     (`lib_code/datalog/FACTS.md` says each relation).
+     (`analyzers/datalog/FACTS.md` says each relation).
 
 **-flow**
 :    Each function's code as facts: ML's in SSA form, for
@@ -85,7 +85,7 @@ program's library, lib_core's units it names, is read with it.
 
 **-r** *rules*
 :    The directory of the `.dl` files and `points_to/`; by default
-     `lib_code/datalog` of the current directory.
+     `analyzers/datalog` of the current directory.
 
 **-L** *lib*
 :    lib_core's directory, `lib_core`; *lib*`/stdlib`'s Pervasives
@@ -156,11 +156,11 @@ main(void)
 ```
 
 ```
-% mini-analyze -r $IX/lib_code/datalog calc.c
+% mini-analyze -r $IX/analyzers/datalog calc.c
 calc.c:16: in apply, through o->run: square, twice
 bug? calc.c:25: in main, free may be given a string (line 22),
   not the heap's
-% mini-analyze -r $IX/lib_code/datalog -dead calc.c
+% mini-analyze -r $IX/analyzers/datalog -dead calc.c
 dead field: name stored in _init, nothing live reads it
 calc.c:9: dead: negate, nothing names it
 ```
@@ -194,7 +194,7 @@ let () =
 ```
 
 ```
-% mini-analyze -r $IX/lib_code/datalog -L $IX/lib_core Log.ml Main.ml
+% mini-analyze -r $IX/analyzers/datalog -L $IX/lib_core Log.ml Main.ml
 Main.ml:11: in Main:fun at line 11, through h: Main:fun at line 6,
   Main:fun at line 7
 never reached: Log.unused (Log.ml:3)
@@ -220,7 +220,7 @@ utilities/calc/dc/Num.ml:64: dead: Num.sub, nothing names it
 
 `Num.sub` is called by nothing in ix. `Dc.feed` and `Dc.of_string`
 are dead in mini-dc, not in mini-bc, which links `Dc` and calls
-`feed`: **-dead** is of one program. `lib_code/datalog/tests/sweep.sh` runs a
+`feed`: **-dead** is of one program. `analyzers/datalog/tests/sweep.sh` runs a
 mode on each of ix's programs, `triage.sh` sorts what **-dead** says.
 
 One's own question: the facts, and rules over them. Which functions
@@ -236,7 +236,7 @@ reaches(G, F) :- reaches(G, H), calls(H, F).
 
 ```
 % mini-analyze -facts calc.c > calc.dl
-% P=$IX/lib_code/datalog/points_to
+% P=$IX/analyzers/datalog/points_to
 % mini-datalog -q 'reaches(main, F)' \
     $P/instructions.dl $P/contexts.dl $P/insensitive.dl \
     calc.dl graph.dl 2> /dev/null
@@ -252,24 +252,24 @@ must save (`s`, the string `free` is given after `apply`):
 ```
 % mini-analyze -flow calc.c > flow.dl
 % mini-datalog -q 'across_call(V, P)' \
-    $IX/lib_code/datalog/liveness.dl flow.dl
+    $IX/analyzers/datalog/liveness.dl flow.dl
 across_call('main:s/-8','main:7').
 ```
 
 # FILES
-`lib_code/datalog/*.dl`
+`analyzers/datalog/*.dl`
 :    The questions: `bugs/pointers.dl`, `calls.dl`, `dead.dl`,
      `capabilities.dl`, `exceptions.dl`, `liveness.dl`, ...; each
      file's header says what it reports, why so, and its history.
 
-`lib_code/datalog/points_to/`
+`analyzers/datalog/points_to/`
 :    The pointer analysis: `instructions.dl`, `contexts.dl`, and the
      context files.
 
-`lib_code/datalog/FACTS.md`
+`analyzers/datalog/FACTS.md`
 :    Each relation, with the facts of a small program.
 
-`lib_code/README.md`
+`analyzers/datalog/README.md`
 :    The analyses run on ix, what they found, their costs.
 
 # SEE ALSO

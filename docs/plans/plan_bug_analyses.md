@@ -1,4 +1,4 @@
-# Plan: analyses that would have found ix's past bugs (`lib_code/datalog/`, `analyzers/`)
+# Plan: analyses that would have found ix's past bugs (`analyzers/datalog/`, `analyzers/`)
 
 The author (2026-11-03): "we recently added some analyzers/ to find bugs
 in C or ML. Can you study the git history of this repo and your own
@@ -28,7 +28,7 @@ system silenced). Each reports its bugs on the code before the fix and
 not after (`analyzers/tests/bugs/`: eb5378a5, 021c562b, f46346db,
 c5086383, 4f00134c). On today's ix, `physeq` finds nothing; `stack`
 gives 145 reports on the 44 programs and 9 on the kernel, `swallowed`
-12 on the programs (`lib_code/datalog/tests/bugs_ix.txt`), read in A1
+12 on the programs (`analyzers/datalog/tests/bugs_ix.txt`), read in A1
 and A3 below. A7 turned out to be
 `-dead`'s already (below).
 The evidence is in
@@ -129,7 +129,7 @@ units is not found), and F is reached. Two reports:
 
 **On ix** (the sweep of the 44 programs, 1 min; the kernel by hand from
 `kernels/9pi/mkfile`'s `KML`, 4 s): 145 reports in the programs, 9 in
-the kernel, all in `lib_code/datalog/tests/bugs_ix.txt`.
+the kernel, all in `analyzers/datalog/tests/bugs_ix.txt`.
 - **In a try, 8.** `machine/CLI.ml`'s `go` calls itself in a handler
   at each breakpoint (a frame each, mini-5i built by mini-ml), and `run`
   calls itself at each `exec`. git's `dial` loops over the few addresses
@@ -194,7 +194,7 @@ by (`caml_exn_Sys_error`). A C raise is a call of `raise_with` or
 `overdeclared` (it says E, the C never raises it). 15 lines of rules,
 10 of facts, 25 of report. Test: `analyzers/tests/raises/prims/` (said
 right, through `failwith`, not said, through a wrapper, said wrong).
-On the runtime and lib_core, 0.6 s (`lib_code/datalog/tests/raises.sh`,
+On the runtime and lib_core, 0.6 s (`analyzers/datalog/tests/raises.sh`,
 a make test job, against `raises_ix.txt`): the 11 `[@@raise
 Sys_error]` all backed by the C, none wrong; 25 externals that do not
 say what their C raises, what -exn has never seen: `int_of_string`,
@@ -298,7 +298,7 @@ and `Not_found` are left out: `with Not_found -> None` and
 chooses another).
 
 **On ix** (the sweep, 1 min, the longest program 74 s; the kernel 6 s):
-12 reports, in `lib_code/datalog/tests/bugs_ix.txt`, the kernel none
+12 reports, in `analyzers/datalog/tests/bugs_ix.txt`, the kernel none
 (its errors its own `Error`). Read one by one:
 - **Worth a look, 3.** rio's `mount_files` writes `/env/wsys` and says
   nothing when it cannot: 4f00134c's shape, the window's rc without

@@ -4,7 +4,7 @@
 (* See Models.mli for what a model is.
  *
  * An optimization of the pointer analysis, before any of its precision:
- * the time is the facts' (lib_code/datalog/points_to/andersen.dl's, run
+ * the time is the facts' (analyzers/datalog/points_to/andersen.dl's, run
  * first by every analysis), not the engine's.
  *
  * Found by the hot rule's joins. mini-datalog -profile: on mini-cc,
@@ -33,7 +33,7 @@
  *
  * Measured, mini-analyze on this machine (64 arm64 cores, one run each,
  * 2026-11-03), HEAD before the models against the models; the units of
- * each program's mkfile (lib_code/datalog/tests/mk_units.sh):
+ * each program's mkfile (analyzers/datalog/tests/mk_units.sh):
  *
  *     mini-cc (41 units)  before            the models
  *     the call graph      36.1 s  1.1 GB    12.4 s  0.37 GB
@@ -48,7 +48,7 @@
  *     -exn                out of memory at 14 GB, both
  *
  * mini-cc's -exn read for the first time in the sweep's 180 s (its 6
- * exceptions; lib_code/datalog/tests/exn_ix.txt). Each model's share, on
+ * exceptions; analyzers/datalog/tests/exn_ix.txt). Each model's share, on
  * mini-cc's Andersen alone (mini-datalog, its facts): 70.7 million
  * firings; Hashtbl's 64.4; and List's 13.7. On mini-ml, List and Hashtbl
  * without @ were slower than none, 134 s against 70: the lists made by @

@@ -13,7 +13,7 @@ let help = {|usage: mini-analyze [-r rules-dir] [-Idir] [-Dname=value] [-L lib] 
 The C files read as one program, each call through a pointer said with the
 functions it may reach, by an analysis of where each pointer may point
 (points_to/'s: Andersen's first pass, then a context file, -context):
-  mini-analyze -r lib_code/datalog -I include prog/*.c
+  mini-analyze -r analyzers/datalog -I include prog/*.c
   walk.c:56: in walk, through f: hide, show
   main.c:76: in main, through table[]: show
 and the bugs the same answers show (bugs/pointers.dl), each a "may":
@@ -52,21 +52,21 @@ program's functions that its toplevel never reaches (calls.dl):
   -bugs's (insensitive); the sharper, the longer
 -library: every function may be called from outside, not main alone: a runtime
   ML calls, a library; without it what main does not reach is not looked at
--r: the directory of points_to/ and the .dl files (lib_code/datalog)
+-r: the directory of points_to/ and the .dl files (analyzers/datalog)
 -I, -D: as mini-cc's; -L: lib_core's directory (lib_core); -facts: the facts
 made, not the analysis; -alone: an ML file's own facts, without those of the
 library units it names; -no-models: List's, Hashtbl's and @'s code read as
 written, not their models at each call (analyzers/ml/Models: to compare, slower)
 -flow: ML's files each as its functions in SSA form, the facts of
-lib_code/datalog/liveness_ssa.dl and dominators.dl (Ssa_facts, by mini-ml's
+analyzers/datalog/liveness_ssa.dl and dominators.dl (Ssa_facts, by mini-ml's
 own way to its SSA: Ml_flow); C's as each function's stack code, the facts of
 liveness.dl (Ir_facts, by mini-cc's simple back end: C_flow); -dflow: the
 compiler's own liveness (ML's dominators too), to compare (analyzers/ml/tests/
 and analyzers/c/tests/run.sh):
   mini-analyze -flow -L lib_core fact.ml > fact.dl
-  mini-datalog -q 'live_in(V, B)' lib_code/datalog/liveness_ssa.dl fact.dl
+  mini-datalog -q 'live_in(V, B)' analyzers/datalog/liveness_ssa.dl fact.dl
   mini-analyze -flow hello.c > flow.dl
-  mini-datalog -q 'across_call(V, P)' lib_code/datalog/liveness.dl flow.dl|}
+  mini-datalog -q 'across_call(V, P)' analyzers/datalog/liveness.dl flow.dl|}
 
 module C = Ix_analyze_c
 
@@ -92,7 +92,7 @@ let line (relation : string) (args : C.Facts.arg list) : string =
   relation ^ "(" ^ String.concat ", " (List.map show args) ^ ")."
 
 let main (caps : < caps; .. >) (argv : string array) : int =
-  let rules = ref "lib_code/datalog" and lib = ref "lib_core" and only = ref false and incs = ref [] and defs = ref [] and files = ref [] in
+  let rules = ref "analyzers/datalog" and lib = ref "lib_core" and only = ref false and incs = ref [] and defs = ref [] and files = ref [] in
   let dead = ref false and ambient = ref false and roots = ref [] and context = ref "" and library = ref false in
   let fingerprint = ref false and exns = ref false and flow = ref false and dflow = ref false in
   let bugs = ref false in

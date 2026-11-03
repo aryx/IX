@@ -9,14 +9,14 @@
 # the directory, then the one of that name elsewhere in the tree. exit 0
 # only: another's report is of a program partly read, and what the units
 # not read call looks dead. Minutes: by hand, not in make test.
-# usage: lib_code/datalog/tests/sweep.sh out-dir [limit-seconds]   (dune build, make first)
+# usage: analyzers/datalog/tests/sweep.sh out-dir [limit-seconds]   (dune build, make first)
 # ANALYZE: the program, if not dune's.
 cd "$(dirname "$0")/../../.."
 out=$1; limit=${2:-180}
 export ANALYZE=${ANALYZE:-$PWD/_build/default/analyzers/Main.exe}
 mkdir -p $out
 
-. lib_code/datalog/tests/mk_units.sh
+. analyzers/datalog/tests/mk_units.sh
 
 one() { # a mkfile
   local mk=$1 dir=$(dirname $1) name files flags
@@ -42,4 +42,4 @@ export out limit FLAG
 for mk in $(git grep -lE '^SRC ?=' -- '*mkfile'); do
   needs_gen $mk && (cd $(dirname $mk) && MKSHELL=mini-rc PATH=$PWD/../../bin:$OLDPWD/bin:$PATH timeout 600 mini-mk > /dev/null 2>&1)
 done
-git grep -lE '^SRC ?=' -- '*mkfile' |  xargs -P 8 -n 1 bash -c '. lib_code/datalog/tests/mk_units.sh; one "$0"' | sort | tee $out/SUMMARY
+git grep -lE '^SRC ?=' -- '*mkfile' |  xargs -P 8 -n 1 bash -c '. analyzers/datalog/tests/mk_units.sh; one "$0"' | sort | tee $out/SUMMARY

@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# Each pointer analysis of lib_code/datalog/points_to on contexts.c and
+# Each pointer analysis of analyzers/datalog/points_to on contexts.c and
 # contexts.ml: what each named variable may point to, against
 # contexts_c.out and contexts_ml.out. Read, not made by another analysis:
 # each question in contexts.c says which analysis should tell it apart.
@@ -10,11 +10,11 @@
 # count that must be 0: an analysis's answers inside a coarser one's;
 # and the functions reached the same: what a call site follows, an
 # object must too, in a program where they differ by precision alone.
-# usage: lib_code/datalog/tests/run.sh [-record]   (dune build first)
+# usage: analyzers/datalog/tests/run.sh [-record]   (dune build first)
 # ANALYZE, DATALOG: the two programs, if not dune's.
 cd "$(dirname "$0")/../../.."
-T=lib_code/datalog/tests
-D=lib_code/datalog/points_to
+T=analyzers/datalog/tests
+D=analyzers/datalog/points_to
 ANALYZE=${ANALYZE:-_build/default/analyzers/Main.exe}
 DATALOG=${DATALOG:-_build/default/languages/datalog/Main.exe}
 W=$(mktemp -d); trap 'rm -rf $W' EXIT

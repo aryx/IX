@@ -1,4 +1,4 @@
-(* The example of lib_code/datalog/FACTS.md: each kind of fact mini-ml says. *)
+(* The example of analyzers/datalog/FACTS.md: each kind of fact mini-ml says. *)
 type shape = Circle of int | Empty
 type box = { mutable fn : int -> int; label : string }
 

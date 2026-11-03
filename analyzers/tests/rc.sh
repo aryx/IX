@@ -11,7 +11,7 @@
 cd "$(dirname "$0")/../.."
 GOKEN=${GOKEN:-$HOME/goken}
 ANALYZE=${ANALYZE:-$PWD/_build/default/analyzers/Main.exe}
-RULES=$PWD/lib_code/datalog
+RULES=$PWD/analyzers/datalog
 [ -d $GOKEN/rc ] || { echo "no $GOKEN/rc"; exit 2; }
 cd $GOKEN/rc
 # (main's files on Linux: goken.c's, notify_full's, rfork_fork's, not plan9.c, unix.c, the windows ones)

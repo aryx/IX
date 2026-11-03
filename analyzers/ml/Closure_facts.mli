@@ -5,7 +5,7 @@
  * (mini-ml -facts until 2026-11-02).
  *
  * The facts are those of the author's pointer analysis of C
- * (lib_code/datalog/pointer.dl), whose rules then run
+ * (analyzers/datalog/pointer.dl), whose rules then run
  * unchanged: a function written (fun, function, let f x = ...) is a
  * place, a variable points to the functions it may be, and every call
  * is a call through a pointer:
@@ -27,12 +27,12 @@
  * Those the compiler writes in place move nothing (x + y), or what
  * they are known to: a ref's content ('fld:contents'), a pair's
  * halves, an array's elements ('arr:elt').
- * And, for the reports (lib_code/datalog/calls.dl):
+ * And, for the reports (analyzers/datalog/calls.dl):
  *   closure(F, Unit, Line)      each function written
  *   inner(F2, F)                F2 is F's next argument's function (f' of f)
  *   in_function(I, F)           the call I is in F's body ('M:init': the toplevel's)
  *   init(F)                     a unit's toplevel, 'M:init': where a program starts
- * And, for the exceptions that may escape (lib_code/datalog/exceptions.dl):
+ * And, for the exceptions that may escape (analyzers/datalog/exceptions.dl):
  *   raise_in(R, F)              the raise R, in F's body: %raise's site (a call's id)
  *   raise_of(R, E)              ... raises E, its constructor as written ('M.E')
  *   reraises(R, T)              ... raises again what the try T's handler caught
@@ -42,7 +42,7 @@
  *   in_try(S, T)                the call or raise S is in T's body, innermost
  *   catches(T, E). catches_all(T)  a case of T catches E, everything; not one
  *                               with a guard
- * And, for what pointer.dl does not ask (lib_code/datalog/points_to/):
+ * And, for what pointer.dl does not ask (analyzers/datalog/points_to/):
  *   var_in(V, F)                the function F names the variable V
  *   global_var(V)               V is one place, whatever the call: a toplevel value, ext
  *   curried(F2, F)              inner's, and the externals' stages

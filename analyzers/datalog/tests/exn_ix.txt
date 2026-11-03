@@ -1,4 +1,4 @@
-# mini-analyze -exn over ix (lib_code/datalog/tests/sweep.sh with
+# mini-analyze -exn over ix (analyzers/datalog/tests/sweep.sh with
 # FLAG=-exn, 2026-11-02): each program's own exceptions its toplevels
 # may let escape (not lib_core's Invalid_argument, Failure, Not_found,
 # Unix_error, End_of_file, Sys_error, Queue.Empty, which most programs

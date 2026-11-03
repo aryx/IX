@@ -2,15 +2,15 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# table.sh on real programs of ix, the numbers in lib_code/README.md: ML,
-# mini-datalog (with mini-prolog's two units and what they use of
-# lib_core); C, Plan 9's rc, if a goken checkout is there. Minutes: by
-# hand, not in make test.
-# usage: lib_code/datalog/tests/real.sh [limit-seconds]   (dune build first)
+# table.sh on real programs of ix, the numbers in
+# analyzers/datalog/README.md: ML, mini-datalog (with mini-prolog's two
+# units and what they use of lib_core); C, Plan 9's rc, if a goken
+# checkout is there. Minutes: by hand, not in make test.
+# usage: analyzers/datalog/tests/real.sh [limit-seconds]   (dune build first)
 # GOKEN: goken's checkout (~/goken); ANALYZE, DATALOG: if not dune's.
 cd "$(dirname "$0")/../../.."
 limit=${1:-120}
-T=$PWD/lib_code/datalog/tests
+T=$PWD/analyzers/datalog/tests
 ANALYZE=${ANALYZE:-$PWD/_build/default/analyzers/Main.exe}
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 d=languages/datalog; p=languages/prolog

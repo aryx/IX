@@ -4,7 +4,7 @@
  * address: bugs/pointers.dl) (docs/plans/done/plan_dotnet_languages.md, its step 0). One program of three parts that were three commands:
  * mini-cc's front end reads the C files, Facts says each function as
  * the facts of a pointer analysis (mini-cc -facts), and mini-datalog's
- * evaluator runs lib_code/datalog/points_to/'s rules on them; the answers
+ * evaluator runs analyzers/datalog/points_to/'s rules on them; the answers
  * are read back here, not printed by another program.
  *
  *    a.c b.c ...                   points_to/, bugs/ (the rules, read at run time)
@@ -18,7 +18,7 @@
  *                                       |  target(I, F), pts(V, M)
  *                                  the report: a.c:12: in walk, through f: hide, show
  *
- *     mini-analyze -r lib_code/datalog prog/*.c
+ *     mini-analyze -r analyzers/datalog prog/*.c
  *
  * With -dead, other rules on the same facts and another report: what no
  * run can reach from main and the toplevels (dead.dl, whose header says

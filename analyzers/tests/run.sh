@@ -27,7 +27,7 @@ done
 # code as written (-no-models): for each function of Probe.ml, what may
 # escape it, and whether it is called (a function given a container's)
 DATALOG=${DATALOG:-_build/default/languages/datalog/Main.exe}
-R=lib_code/datalog; P=$R/points_to
+R=analyzers/datalog; P=$R/points_to
 for m in models no-models; do
   $ANALYZE -facts $([ $m = no-models ] && echo -no-models) analyzers/tests/models/Probe.ml > $W/$m.facts 2>&1
   $DATALOG -q 'escapes(F, none, none, E)' -q 'called(F)' $P/instructions.dl $P/andersen.dl \

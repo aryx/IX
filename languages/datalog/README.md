@@ -29,14 +29,14 @@ of a body's atoms changes the time only.
 
 ## What it runs
 
-The author's pointer analysis of 2014, as it is: `lib_code/datalog/pointer.dl`
+The author's pointer analysis of 2014, as it is: `analyzers/datalog/pointer.dl`
 (pfff's `h_program-lang/datalog_code.dl`, copied; 15 rules: Andersen's analysis of C,
 the calls through pointers found by the analysis and fed back to it),
 its `point_to(A,B)?` included, on pfff's test's facts
 (its `tests/mini/datalog/pointer.dl`, by hand: not a test here) and on `tests/pointer_facts.dl`
 here (a call through a pointer). The analyses written after it, by
 allocation site and with Doop's contexts, are in
-`lib_code/datalog/points_to/`; `lib_code/README.md` says them.
+`analyzers/datalog/points_to/`; `analyzers/datalog/README.md` says them.
 
 `tests/liveness.dl` and `tests/dominators.dl` are the two dataflow
 examples of the plan's table, on graphs written by hand.
@@ -61,7 +61,7 @@ a program that links it).
 ## Control flow and liveness, checked against the compilers
 
 A function as facts of its control flow and of what each instruction
-reads and writes, by each compiler, and the rules in `lib_code/datalog/`:
+reads and writes, by each compiler, and the rules in `analyzers/datalog/`:
 
 | | facts | rules | checked against |
 |---|---|---|---|
@@ -98,12 +98,12 @@ in the square of a function's blocks.
 
 `mini-analyze -facts` (`analyzers/ml/Closure_facts`) says an ML unit
 in the relations of the author's pointer analysis of C, and
-`lib_code/datalog/pointer.dl` runs on them unchanged: a function written is a
+`analyzers/datalog/pointer.dl` runs on them unchanged: a function written is a
 place, a variable points to the functions it may be, a call is a call
 through a pointer, `f x y` two of them. What a block holds is by its
 field's name, as the rules have it for C (`'fld:run'`, `'con:Some.0'`,
 `'tuple:2.1'`). The units' facts put together are a program's, and
-`lib_code/datalog/calls.dl` (11 rules) asks: who calls whom, what is never
+`analyzers/datalog/calls.dl` (11 rules) asks: who calls whom, what is never
 called, what no unit's toplevel reaches, what is given one argument
 and never its next.
 
@@ -176,7 +176,7 @@ rules for `*p = q` and `p = *q` join two such sets (8.8 million
 firings for 35,003 tuples). Some 5 million firings a second by
 OCaml's build, a little more than half of it by mini-ml's.
 
-On programs' facts (`lib_code/datalog/pointer.dl`, and `calls.dl` for ML;
+On programs' facts (`analyzers/datalog/pointer.dl`, and `calls.dl` for ML;
 the same tuples before and after, compared whole):
 
 | facts | tuples found | before | OCaml's build | mini-ml's |

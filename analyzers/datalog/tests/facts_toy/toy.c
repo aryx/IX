@@ -1,4 +1,4 @@
-/* The example of lib_code/datalog/FACTS.md: each kind of fact mini-cc says. */
+/* The example of analyzers/datalog/FACTS.md: each kind of fact mini-cc says. */
 void	*malloc(unsigned long);
 
 typedef struct Node Node;

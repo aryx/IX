@@ -11,13 +11,13 @@
 # compiled by mini-ml -dotnet (Datalog_rt and its units).
 #   graph       tests/graph.dl: a recursion, negations on two strata,
 #               comparisons, constants, p(X, X), a query in the text
-#   pointer     lib_code/datalog/pointer.dl on mini-analyze -facts of
+#   pointer     analyzers/datalog/pointer.dl on mini-analyze -facts of
 #               analyzers/c/tests/pointers.c: the calls, point_to
 #   liveness    liveness.dl on mini-analyze -flow of flow.c; without its
 #               writes, with flow_check.dl and -dflow's facts, the
 #               differences (none with the writes)
 #   points_to/  each of the eleven analyses on mini-analyze -facts of
-#               lib_code/datalog/tests/contexts.c: pt or pts, reach; with
+#               analyzers/datalog/tests/contexts.c: pt or pts, reach; with
 #               -ms, call1 on contexts.ml's (mini-ml's, lib_core's too)
 # usage: languages/datalog/dotnet/tests/run.sh [-ms]   (dune build first)
 # DUNEML, DUNEDATALOG, DUNEDOTNET, DUNEANALYZE: if not _build's.
@@ -29,7 +29,7 @@ DL=${DUNEDATALOG:-$B/languages/datalog/Main.exe}
 DN=${DUNEDOTNET:-$B/languages/dotnet/Main.exe}
 AN=${DUNEANALYZE:-$B/analyzers/Main.exe}
 T=languages/datalog/dotnet/tests
-A=lib_code/datalog
+A=analyzers/datalog
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 failures=0
 fail() { echo "FAIL $*"; failures=$((failures + 1)); }

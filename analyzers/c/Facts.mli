@@ -1,6 +1,6 @@
 (* A C file as Datalog facts (docs/plans/plan_prolog.md, stage 8): what
  * each function does to pointers, said in the relations of the
- * author's pointer analysis (lib_code/datalog/pointer.dl, 2014), for
+ * author's pointer analysis (analyzers/datalog/pointer.dl, 2014), for
  * mini-datalog to run its rules on. mini-cc -facts.
  *
  * Each expression is made a few simple instructions over variables, a
@@ -22,7 +22,7 @@
  *   "..."          point_to(T, S).            malloc(n)   point_to(T, M).
  *   an array a     point_to(a, E): its elements are one place.
  *
- * And, for what pointer.dl does not ask (lib_code/datalog/points_to/):
+ * And, for what pointer.dl does not ask (analyzers/datalog/points_to/):
  * var_in(V, F), the function F names V; global_var(V), V is one place
  * whatever the call (a global, a static, a function); in_function(I, F);
  * alloc_in(H, F), the function that makes H; and for dead.dl, defined(F,

@@ -9,7 +9,7 @@
 # its tests, or a false report: to be read.
 # Written to out-dir/TRIAGE and SAME_PROGRAM; printed: SAME_PROGRAM's lines,
 # the unused, the others. tests/dead_ix.txt is its UNUSED lines.
-# usage: lib_code/datalog/tests/triage.sh out-dir
+# usage: analyzers/datalog/tests/triage.sh out-dir
 cd "$(dirname "$0")/../../.."
 out=$1
 for o in $out/*.out; do

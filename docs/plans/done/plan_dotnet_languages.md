@@ -52,7 +52,8 @@ compiled from Datalog to IL, a C module called from ML), on both
 runtimes and on mini-9pi's card; mini-analyze reports C's bugs, ML's
 calls, dead code, capabilities and the exceptions ML's toplevels may
 let escape, whose sweep over ix found a bug (mini-awk's END
-{ nextfile }).
+{ nextfile }). Whether the .NET road pays, measured (2026-11-03): not
+yet, "Conclusion" below.
 - **Step 0 done**: mini-analyze, native (below).
 - **Stage 1 done**: mini-ml -dotnet, typed as F#: records, variants,
   exceptions, match, closures, generic functions and types, tuples,
@@ -1036,6 +1037,76 @@ but really use the same types!". So the decisions below are those of
    real but harmless; false ones by the parser's checks (awk's break),
    a value tested before a raise (dc's divide by 0), and handlers not
    seen, untraced yet.
+
+## Conclusion: the .NET road on analyzers/, a win? (2026-11-03)
+
+The author: "How much of a win it is on the analyzers/ which has a
+native path and a dotnet path in terms of performance, code clarity,
+and total LOC. Is it a big win to use dotnet in practice?". In short:
+**not on analyzers/ as it is**; slower, more code in all, a little
+clearer. The native road never had the boundary the shared runtime
+removes.
+
+Speed (analyzers/dotnet/tests/run.sh -ms -rc, and the reports run by
+hand on Plan 9's rc; the same answers everywhere, rc's report the same
+bytes):
+
+| input | native | .NET, Microsoft's | .NET, mini-dotnet |
+|---|---:|---:|---:|
+| contexts.c (110 answers) | 23 ms | 515 ms | 2,077 ms |
+| contexts.ml (468 answers) | 120 ms | 1,076 ms | |
+| rc, 30 files, -facts as text, then mini-datalog | 20.5 s | 32.1 s | |
+| rc, the report, one process | 20.7 s, 2.27 GB | 29.4 s, 2.61 GB | |
+
+1.4x-1.5x slower on a real program, 10x-20x on a small one (the
+start). The rules compiled to IL still lose to the native interpreter.
+The text between two native processes costs nothing seen (20.5 s
+against 20.7 s in one): 15k flat facts, the front end 0.3 s, the time
+all in the rules' evaluation. The "extra comm/conversion" feared of
+the native road is not there.
+
+Why: both roads are ML where it matters. mini-cc's and mini-ml's front
+ends, Facts, Closure_facts, the Datalog engine and the reports are
+all ML, one OCaml process natively, the facts passed as values
+(Facts.added to Datalog.add) on both roads. The boundaries between
+languages: the rules (interpreted natively, compiled on .NET), over
+tuples of symbols and ints, flat; and fingerprint.c, three functions
+on uint64, the mechanism shown, no structure passed (its ML twin, 9
+lines). No complex value crosses a language.
+
+Lines:
+
+| | native | .NET |
+|---|---:|---:|
+| the entry | Analyze.ml 197, every option | Analyze_rt.ml 86 + .mli 37, no -facts, -flow, -dflow, -context, -root, -library, -D |
+| the fingerprint | 9 (ML) | 13 (externals) + 32 (C) |
+| the build | dune | ~60 lines of tests/run.sh: units in order by hand, mini-cc's Parser and Lexer copied by sed as C_parser and C_lexer (mini-ml's one namespace of units); a .dll per rule set (5 for the reports) |
+| shared | ~2,400 (front ends, facts, reports) | the same |
+
+And the infrastructure (mini-dotnet 11.3k, mini-ml -dotnet 3.8k,
+mini-cc -dotnet 2.0k, mini-datalog -dotnet 0.6k, lib_core/dotnet
+1.3k: ~19k) far more than any line saved, though built for its own
+sake too, not for analyzers/ alone.
+
+Clarity: the reports were taken out of Analyze into units both roads
+use (analyzers/report/), for the second road; that stays, a gain to
+the native one too. Against it: the renaming, the build by hand, the
+fewer options, a program per rule set.
+
+Where a win would show:
+1. Typed CTS columns (decision 5, not done): relations holding ML's
+   values (a tree's node, a closure), not symbols, the rules joining
+   on the front end's own structures, no naming scheme between. The
+   shared runtime's case, and analyzers/ has not tried it: the
+   experiment to run before saying the idea pays.
+2. A part better in another language that takes rich values (a C#
+   or C report over the answers' structures), not a 3-function hash.
+3. Compiled rules faster than the interpreter (Soufflé's), today
+   1.2x-1.5x slower: mini-ml -dotnet's code for Tuples and the
+   indexes.
+
+Until then the .NET road is the teaching comparison the author asked
+for and a test of three compilers' back ends, not a practical gain.
 
 ## What is left
 

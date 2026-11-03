@@ -303,6 +303,15 @@ having a field `caps : < Cap.stdout; .. >` (or a record that has one):
 holds_field('Toy.greet', 'stdout').
 ```
 
+**Physical equality.** Each `==` and `!=`, in which function; and a side made
+in the comparison itself, by what it is, which no other value can be
+(`physeq.dl`). `o == Some 1`, in `is_one`:
+
+```
+phys_compare('Toy:43:c43', 'Toy.is_one', '==').
+fresh_operand('Toy:43:c43', 'Some').
+```
+
 **Who is where.** As in C. A variable two functions name is what a closure captures:
 
 ```
@@ -362,6 +371,7 @@ with: `own_live_out(V, P)`, and for ML `own_live_in(V, B)`, `own_idom(D, B)`.
 | `dead.dl` | `defined`, `closure`, `global_def`, `dead_stmt`, `allocator_call` |
 | `capabilities.dl`, `capabilities_types.dl` | `takes_cap`, `declares`, `assign_address`, `global_def` |
 | `bugs.dl` | `call_direct`, `return`, and `heap`, `local`, `literal`, which mini-analyze makes of the names |
+| `physeq.dl` | `phys_compare`, `fresh_operand` |
 | `liveness.dl` | C's `-flow` |
 | `liveness_ssa.dl`, `dominators.dl` | ML's `-flow` |
 

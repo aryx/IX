@@ -1,0 +1,38 @@
+% Physical equality with a value made in the comparison itself
+% (docs/plans/plan_bug_analyses.md, A6): mini-analyze -bugs, over the facts
+% of Closure_facts (FACTS.md):
+%   phys_compare(I, F, Op)  the call I of == or != (Op) is in F
+%   fresh_operand(I, What)  ... and one of its sides is made there: a
+%                           constructor applied (What its name), a tuple,
+%                           a record, an array, a string, a float
+% and says:
+%   always(I, F, Op, What)  the answer of I is known before it runs:
+%                           false for ==, true for !=
+%
+%     if !drawn != Some !model then paint ()      (eb5378a5^, Window.ml)
+%
+% Some !model is a block made at that line, so no other value is it, and
+% the test is always true: the screen was painted again each tick, the
+% program never waited. Meant was what = says, or the model compared:
+% (match !drawn with Some m -> m != !model | None -> true).
+%
+% design:
+% The answer is read off the program's text, no fixpoint: what is made in
+% place is the expression's, which the front end sees and the facts keep.
+% The rule is here, not in Closure_facts, so that -bugs is one program of
+% rules and its next checks join the same relations: the identity of a
+% value changed in place (a cache comparing by == what is mutated, the
+% other half of eb5378a5) needs the pointer analysis, store(V, Fld, _)
+% and pts(V, S) for the S compared. A constant constructor and [] are
+% numbers, not blocks, and a closure may be static: none is fresh.
+%
+% others:
+% OCaml's compiler warns of none of this; Java's == on a new Integer, or
+% on strings, is the same bug, which FindBugs (David Hovemeyer, William
+% Pugh, 2004) reported by a pattern of the bytecode, as here by one of the
+% tree: a "bug pattern", their name for a check that small.
+%
+% References: David Hovemeyer, William Pugh, "Finding bugs is easy"
+% (OOPSLA 2004 companion).
+
+always(I, F, Op, W) :- phys_compare(I, F, Op), fresh_operand(I, W).

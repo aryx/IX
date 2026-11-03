@@ -100,6 +100,7 @@ Datalog each for what it is best at, and read by students.
 | `pointer.dl` | the author's, pfff's of 2014: Andersen's, field-based |
 | `calls.dl` | who calls whom, what is never called, over `call_edge`: `andersen.dl`'s in mini-analyze, `pointer.dl`'s in `analyzers/ml/tests` |
 | `bugs.dl` | three C bugs, over `points_to/`'s answers |
+| `physeq.dl` | ML's `==` or `!=` with a side made in the comparison (`mini-analyze -bugs`; the first of `plan_bug_analyses.md`'s, each checked on a fix's code before and after it, `analyzers/tests/bugs/`) |
 | `dead.dl` | dead functions, globals, fields, constructors and statements, by `points_to/`'s call graph (`mini-analyze -dead`) |
 | `capabilities_types.dl` | OCaml's check of the capabilities again: a test of the analysis, and a teaching one |
 | `capabilities.dl` | whether ML's functions hold the capabilities they need, and no others (`mini-analyze -caps`) |

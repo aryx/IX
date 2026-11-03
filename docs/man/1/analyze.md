@@ -5,7 +5,7 @@ analyze – what C and ML programs may do, by facts and Datalog rules
 
 # SYNOPSIS
 **mini-analyze**
-[ **-dead** | **-caps** | **-exn** | **-facts** | **-flow** | **-dflow** ]
+[ **-dead** | **-caps** | **-exn** | **-bugs** | **-facts** | **-flow** | **-dflow** ]
 [ **-r** *rules* ]
 [ **-L** *lib* ]
 [ **-I** *dir* ] ...
@@ -49,6 +49,13 @@ program's library, lib_core's units it names, is read with it.
 **-exn**
 :    The exceptions an ML program's toplevels may let escape
      (`exceptions.dl`), with where they may be raised.
+
+**-bugs**
+:    An ML program's bugs that may be, each line named by its
+     analysis (`docs/plans/plan_bug_analyses.md`): `physeq`, an `==`
+     or `!=` with a side made in the comparison (`physeq.dl`), whose
+     answer is known before it runs. C files: the report without an
+     option, its `bug?` lines `bugs.dl`'s.
 
 **-facts**
 :    The facts, not the analysis: to write one's own rules

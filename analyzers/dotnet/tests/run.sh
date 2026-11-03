@@ -64,7 +64,7 @@ for u in Tree Tree_helpers Pre Acid Check Declare Machines Emit Com64 Parser Lex
   files="$files $W/c/$(rename $u).ml"
 done
 for u in Ast Annotations Parser Lexer Scope Resolve Typing Bits Derive Pp Closure_facts Ml_front \
-         Prolog Prolog_read Parallel Tuples Btree Relset Hash_index Tree_index Index Datalog Datalog_eval Datalog_rt C_report Ml_report Fingerprint Answers Dead_report Caps_report Exn_report Analyze_rt; do
+         Prolog Prolog_read Parallel Tuples Btree Relset Hash_index Tree_index Index Datalog Datalog_eval Datalog_rt C_report Ml_report Fingerprint Answers Dead_report Caps_report Exn_report Bugs_report Analyze_rt; do
   for f in analyzers/dotnet/$u.ml languages/ml/$u.ml languages/ml/*/$u.ml $M/$u.ml analyzers/$u.ml analyzers/ml/$u.ml analyzers/report/$u.ml languages/prolog/$u.ml \
            languages/datalog/$u.ml languages/datalog/dotnet/$u.ml $W/$u.ml; do [ -f $f ] && break; done
   files="$files $f"

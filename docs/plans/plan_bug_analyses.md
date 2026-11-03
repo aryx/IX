@@ -20,8 +20,13 @@ checked the same way: it must report the bug on the code as it was
 before the fix (`git show FIX^:path`) and stay quiet on the fixed code.
 Then it runs over ix through the sweep, as `-dead`, `-caps` and `-exn` do.
 
-**Status: plan only (2026-11-03).** Nothing in `analyzers/` or
-`lib_code/datalog/` is changed. The evidence is in
+**Status: A6's first half done (2026-11-03), the rest planned.**
+`mini-analyze -bugs` and `physeq.dl`: `==` or `!=` with a side made in
+the comparison. It reports eb5378a5's bug on the code before the fix
+(`analyzers/tests/bugs/eb5378a5/`) and nothing in today's ix (the sweep
+of the 44 programs, 13 s; a grep of the whole tree, apps and browsers
+too, finds no other case). A7 turned out to be `-dead`'s already (below).
+The evidence is in
 [`bugs/history/`](bugs/history/): `from_git.md` has 73 bug fixes found in
 `git log`, with their commits, about 25 of them read diff by diff.
 `from_docs.md` has about 280 rows read from `bugs/*.md`. Both were made
@@ -102,7 +107,7 @@ There, a call of a library function known to recurse once per element
 since ocaml-light's `Hashtbl` is recursive in a bucket's length) is
 reported too, because the stack is only 16 KB.
 
-**Check:** `analyzers/tests/history/stack/`, with Devmnt's `rpc`
+**Check:** `analyzers/tests/bugs/021c562b/`, with Devmnt's `rpc`
 before 021c562b and after it. The compiler's own tail calls are
 compared with `tail(I)`, as `-dflow` compares liveness: with the old
 `Lower.app`, `&&`'s right operand would have been `tail` in the facts
@@ -219,41 +224,53 @@ The sinks are limited to the tools whose output ix compares
 **Cost:** about 30 lines of rules. `Marshal` without `No_sharing` is one
 fact on the call's arguments.
 
-### A6. Physical equality (`physeq.dl`, in `bugs.dl`'s report)
+### A6. Physical equality (`physeq.dl`)
 
 **Re-finds:** eb5378a5, both halves: `!drawn != Some !model` is always
 true, since `Some` makes a new block; and mini-emacs's model, changed in
 place, so a cache comparing it by `!=` never saw it change. Also
 fbfc0317 and 282b689b.
 
-**New fact:** `phys_eq(I, X, Y)` for `==` and `!=` (the externals
-`%eq` and `%noteq` are already given all their arguments in place).
+**Done, the first half** (2026-11-03). The facts: `phys_compare(I, F, Op)`
+for each `==` and `!=` and the function it is in, and
+`fresh_operand(I, What)` for a side made there (a constructor applied, a
+tuple, a record, an array, a string or a float written there). What is
+fresh is read off the tree by `Closure_facts.fresh`, not by `pts`: a
+temporary that a block is made into cannot be told from a `let`'s
+variable in the facts, and `let x = Some 1 in x == x` is no bug. The
+rule, `always(I, F, Op, What)`, is a join of the two; 25 lines of facts,
+one rule, 25 lines of report (`Bugs_report`). Test:
+`analyzers/tests/bugs/eb5378a5/`, Before.ml reported, After.ml not, nor
+`l == []`, `o != None`. Today's ix: nothing.
 
-**Rules:**
-- `fresh_cmp(I)`: X points only to a site made in that same
-  expression. The comparison's answer is then known in advance.
-- `identity_key(I, S)`: X may point to S, and S is stored into in
-  place somewhere (`store` to S's fields). Comparing it by identity
-  then misses changes.
-
-**Cost:** about 10 lines of facts and 10 of rules.
+**Not done, the second half:** `identity_key(I, S)`: X may point to S,
+and S is changed in place somewhere (a field set, not a block's
+initialization, which the facts do not tell apart yet: a fact
+`mutates(V, Fld)` for `<-`, `:=` and `.() <-`). Comparing by identity
+then misses the change: mini-emacs's model behind a cache. This needs
+`pts`, so `-bugs` would then run the pointer analysis (its cost, as
+`-dead`'s).
 
 ### A7. A field that nothing reads, for ML too (`dead.dl`)
 
-**Re-finds:** `from_docs.md`'s class 8. mini-asm parsed a register
-index into a field that `Arm64.aclass` never read. `sys_open` ignored
-its flags. mini-ld kept no line for a reference, so it reported line 0.
+**Meant to re-find:** `from_docs.md`'s class 8. mini-asm parsed a
+register index into a field that `Arm64.aclass` never read. `sys_open`
+ignored its flags. mini-ld kept no line for a reference, so it reported
+line 0.
 
-`dead_field` already exists, over `store` and `load`. For ML, a
-record's field is `fld:x`, field-based. What is missing is a report for
-ML and the same check for a function's parameter: `unused_param(F, N)`,
-a parameter that no `use` reads, in a function that is reached. The
-facts for that are already in `Closure_facts`: `parameter` and the
-loads.
-
-**Cost:** about 10 lines. The parsers' records will have many fields
-read only by a printer. Report a field read by nothing, not even a
-printer.
+**Found when starting it (2026-11-03): this is `-dead`'s already.**
+`dead.dl`'s `dead_field` is over `store` and `load` of both languages,
+and `Dead_report` says ML's fields (`dead field: x stored in F`). And
+it could not have found the register index: a field is by its name,
+whatever the program, and `index` is read by the arm 32 encoder
+(`linker/Arm.ml`'s `aclass`, a `Mem { index = Some _ }`), only not by
+arm64's. The bug is a field one consumer of two ignores, which needs
+the consumers named (`Arm64.aclass` against `Arm.aclass`): not a rule
+for now. What is left is `unused_param(F, N)`, a parameter nothing reads
+in a function reached; but the facts say no read of a value used only
+by arithmetic (`n + 1` writes nothing of `n`), so it needs the
+`-flow` facts' `use`, whose names are SSA's, not `Closure_facts`'. Put
+after the others.
 
 ### A8. Races with handlers and threads (`races.dl`)
 
@@ -333,17 +350,20 @@ A9's flow facts exist for both languages.
 
 ## The method: each analysis against its history
 
-`analyzers/tests/history/<analysis>/<commit>/` holds two files, the
-smallest extract of the code before the fix and after it. Each is cut
-down until it parses alone, with the commit named in its first line.
-`run.sh` asks: the report on the before file contains the line
-expected, and the report on the after file does not. A false report
+`analyzers/tests/bugs/<commit>/` holds two units, `Before.ml` and
+`After.ml`, the smallest extract of the code before the fix and after
+it, with the commit named in its first comment. Each is cut down until
+it parses alone, and the two are read as one program by `-bugs`.
+`analyzers/tests/run.sh` compares the report with `expected.out`, which
+has `Before.ml`'s lines and none of `After.ml`'s (a look-alike that must
+stay quiet goes in `After.ml` too). A false report
 that a later change removes is a regression too. This is the test of a
 rule and also its documentation: a student reads the bug, the rule, and
 the commit.
 
 Then the sweep (`tests/sweep.sh FLAG=-bugs`) over the 44 programs
-gives one list, `bugs_ix.txt`, each line naming its analysis, triaged like `dead_ix.txt`.
+gives one list, `bugs_ix.txt`, each line naming its analysis, triaged
+like `dead_ix.txt`.
 Each report is read and marked real, harmless, or false. A false report
 is a test to add, and a real one goes in `bugs/ix.md` with its
 reproduction.
@@ -352,8 +372,8 @@ reproduction.
 
 | # | analysis | new facts | lines (est.) | bugs re-found | first |
 |---|---|---|---:|---:|---|
-| 1 | A7 unread fields and parameters, ML | none | 10 | ~5 | the report only |
-| 2 | A6 physical equality | `phys_eq` | 20 | ~6 | cheap with `pts` |
+| 1 | A6 physical equality, a side made there | `phys_compare`, `fresh_operand` | 50 | 1 | done |
+| 2 | A6, identity of what is changed in place | `mutates` | 20 | ~3 | `-bugs` then runs `pts` |
 | 3 | A1 deep recursion | `tail`, `in_handler`, `rec_over` | 55 | ~15 | the kernel's 16 KB |
 | 4 | A3 errors swallowed | `trivial_handler` | 25 | ~8 | over `-exn` |
 | 5 | A2 roots and primitives | `root_of`, primitive `raise_of` | 25 | ~5 | A8 uses its roots |
@@ -364,6 +384,7 @@ reproduction.
 | 10 | A9 pairs on every path | `call_at`, exception edges | 70 | ~5 | flow facts |
 | 11 | A4 step 2, intervals | `range` (ML) | 200 | ~5 | after numbers in Datalog |
 | 12 | A11 layout, evaluation order | columns, purity | 40+ | ~3 | |
+| 13 | A7 unused parameters (fields: `-dead`'s) | SSA `use` joined | 20 | ~2 | |
 
 These estimates come from reading the existing rule files (`bugs.dl` is
 53 lines and `exceptions.dl` 100) and are not measured. The counts of

@@ -381,6 +381,21 @@ let site_in (s : string) : unit = match !tries with t :: _ -> fact "in_try" [ s;
 
 (* e's value goes to the variable dst; name: what a function written
  * here is called (the variable it is bound to) *)
+(* an operand of == or != made where it is written, so no other value is
+ * it: what it is, for physeq.dl's report. A constant constructor and []
+ * are numbers, not blocks; a closure is left out (one with no free
+ * variable may be static) *)
+let rec fresh (x : expr) : string option =
+  match x.e with
+  | Econs (c, _ :: _) -> Some c.cname
+  | Etuple _ -> Some "a tuple"
+  | Erecord _ | Ewith _ -> Some "a record"
+  | Earray (_ :: _) -> Some "an array"
+  | Econst (Ast.String _) -> Some "a string"
+  | Econst (Ast.Float _) -> Some "a float"
+  | Econstraint (e, _) -> fresh e
+  | _ -> None
+
 let rec flow (name : string option) (x : expr) (dst : string) : unit =
   let stores (fields : (string * expr) list) : unit =
     List.iter (fun ((field, e) : string * expr) -> fact "assign_store_field" [ dst; field; operand e ]) fields in
@@ -557,6 +572,12 @@ and call (x : expr) (f : expr) (args : expr list) (dst : string) : unit =
         if p = "%raise" then begin
           fact "in_function" [ i; !inside ];
           fact1 "argument" i given.(0)
+        end;
+        (* (x == y, x != y: physeq.dl's, a side made here never the other) *)
+        if p = "%eq" || p = "%noteq" then begin
+          fact "phys_compare" [ i; !inside; (if p = "%eq" then "==" else "!=") ];
+          List.iter (fun (e : expr) -> Option.iter (fun w -> fact "fresh_operand" [ i; w ]) (fresh e))
+            (List.filteri (fun k _ -> k < 2) args)
         end;
         fn := ret;
         List.filteri (fun k _ -> k >= n) args

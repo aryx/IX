@@ -7,9 +7,9 @@ module D = Datalog
 
 type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout; Cap.stderr >
 
-let usage = "usage: mini-analyze [-r rules-dir] [-Idir] [-Dname=value] [-L lib] [-facts] [-flow] [-dflow] [-dead] [-caps] [-exn] [-root f]... file.c|file.ml...   (-h: how)"
+let usage = "usage: mini-analyze [-r rules-dir] [-Idir] [-Dname=value] [-L lib] [-facts] [-flow] [-dflow] [-dead] [-caps] [-exn] [-bugs] [-root f]... file.c|file.ml...   (-h: how)"
 
-let help = {|usage: mini-analyze [-r rules-dir] [-Idir] [-Dname=value] [-L lib] [-facts] [-flow] [-dflow] [-dead] [-caps] [-exn] [-root f]... file.c|file.ml...
+let help = {|usage: mini-analyze [-r rules-dir] [-Idir] [-Dname=value] [-L lib] [-facts] [-flow] [-dflow] [-dead] [-caps] [-exn] [-bugs] [-root f]... file.c|file.ml...
 The C files read as one program, each call through a pointer said with the
 functions it may reach, by an analysis of where each pointer may point
 (points_to/'s: Andersen's first pass, then a context file, -context):
@@ -40,6 +40,9 @@ program's functions that its toplevel never reaches (calls.dl):
 -exn: instead, the exceptions an ML program's toplevels may let escape
 (exceptions.dl), with where they may be raised:
   Main.ml: the toplevel may let Empty escape, raised at Main.ml:11 (Main.first)
+-bugs: instead, an ML program's bugs that may be, each named by its analysis
+(docs/plans/plan_bug_analyses.md; C's are bugs.dl's, above):
+  Before.ml:6: physeq: in Before.loop, != of a Some made there: always true
 -root f: f is also entered from where the facts do not go (assembly)
 -context file: of points_to/, C's (call1_heap1) and -exn's (call1_rec); the
   sharper, the longer
@@ -75,6 +78,7 @@ let ml_report = Ml_report.ml_report
 let dead_report = Dead_report.dead_report
 let caps_report = Caps_report.caps_report
 let exn_report = Exn_report.exn_report
+let bugs_report = Bugs_report.bugs_report
 
 (* a fact as a line, for -facts *)
 let line (relation : string) (args : C.Facts.arg list) : string =
@@ -85,6 +89,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   let rules = ref "lib_code/datalog" and lib = ref "lib_core" and only = ref false and incs = ref [] and defs = ref [] and files = ref [] in
   let dead = ref false and ambient = ref false and roots = ref [] and context = ref "" and library = ref false in
   let fingerprint = ref false and exns = ref false and flow = ref false and dflow = ref false in
+  let bugs = ref false in
   let options =
     Logging.flags
     @ [ ("-r", Arg.Set_string rules, " the directory of points_to/ and bugs.dl");
@@ -95,6 +100,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         ("-dead", Arg.Set dead, " what no run can reach, not the calls and the bugs");
         ("-caps", Arg.Set ambient, " whether ML's own functions hold the capabilities they need");
         ("-exn", Arg.Set exns, " the exceptions ML's toplevels may let escape");
+        ("-bugs", Arg.Set bugs, " an ML program's bugs that may be, each analysis of plan_bug_analyses.md");
         ("-root", Arg.String (fun f -> roots := f :: !roots), " a function entered from where the facts do not go");
         ("-context", Arg.Set_string context, " the context file of points_to/: C's (call1_heap1), -exn's (call1_rec)");
         ("-library", Arg.Set library, " every function may be called from outside: a runtime, a library");
@@ -154,6 +160,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
             (if !dead || !ambient then
                [ "points_to/instructions.dl"; "points_to/contexts.dl"; "points_to/insensitive.dl"; "dead.dl" ]
                @ if !ambient then [ "capabilities.dl" ] else []
+             else if !bugs && c = [] then [ "physeq.dl" ]
              else if !exns then
                [ "points_to/instructions.dl"; "points_to/andersen.dl"; "points_to/contexts.dl";
                  "points_to/" ^ context ^ ".dl"; "exceptions.dl" ]
@@ -185,6 +192,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
           if !ambient then caps_report caps p
           else if !exns then exn_report caps p
           else if !dead then dead_report caps p (ml <> [])
+          else if !bugs && c = [] then bugs_report caps p
           else begin
             if c <> [] then report caps p;
             if ml <> [] then ml_report caps p

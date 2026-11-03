@@ -8,5 +8,8 @@
  * the same by types; here it is the call graph's closure (pointer.dl's
  * call_edge) and a subtraction at each try. *)
 
+(* a site, a raise's or a call's, as file and line: Main:11:r6 is Main.ml:11 *)
+val site : string -> string
+
 (* the report, on the facts and the rules' answers *)
 val exn_report : < Cap.stdout; .. > -> Datalog.t -> unit

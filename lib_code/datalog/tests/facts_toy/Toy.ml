@@ -38,3 +38,6 @@ let found = try lookup 0 with e -> raise e
 (* a capability held in a record's field *)
 type env = { caps : < Cap.stdout; .. >; name : string }
 let greet (e : env) = Console.print e.caps e.name
+
+(* == with a side made in the comparison: always false (physeq.dl) *)
+let is_one (o : int option) = o == Some 1

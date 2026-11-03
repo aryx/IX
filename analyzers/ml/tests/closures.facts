@@ -56,6 +56,7 @@ call_indirect('Kit:8:c2', 'Kit:iter/1').
 argument('Kit:8:c2', 1, 'Kit:f/2').
 call_ret('Kit:8:c2', 'Kit:t1').
 in_function('Kit:8:c3', 'Kit.iter\'').
+tail('Kit:8:c3').
 call_indirect('Kit:8:c3', 'Kit:t1').
 argument('Kit:8:c3', 1, 'Kit:rest/5').
 call_ret('Kit:8:c3', 'Kit.iter\':ret').
@@ -153,6 +154,7 @@ call_ret('Kit:11:c7', 'Kit:t4').
 argument('Kit:11:c5', 1, 'Kit:t4').
 call_ret('Kit:11:c5', 'Kit:t3').
 in_function('Kit:11:c8', 'Kit.fold\'\'').
+tail('Kit:11:c8').
 call_indirect('Kit:11:c8', 'Kit:t3').
 argument('Kit:11:c8', 1, 'Kit:rest/11').
 call_ret('Kit:11:c8', 'Kit.fold\'\':ret').
@@ -421,6 +423,7 @@ vfull('Kit:x/25', 'int').
 assign('Kit:x/25', 'Kit.dead:arg').
 var_in('Kit.helper', 'Kit.dead').
 in_function('Kit:23:c16', 'Kit.dead').
+tail('Kit:23:c16').
 call_indirect('Kit:23:c16', 'Kit.helper').
 var_in('Kit:t14', 'Kit.dead').
 vtype('Kit:t14', 'int').
@@ -783,10 +786,12 @@ scalar('Use:_').
 assign_store_field('Use.total', 'fld:contents', 'Use:t3').
 var_in('Use:go/3', 'Use:go/3').
 in_function('Use:6:c6', 'Use:go/3').
+tail('Use:6:c6').
 call_indirect('Use:6:c6', 'Use:go/3').
 argument('Use:6:c6', 1, 'Use:rest/6').
 call_ret('Use:6:c6', 'Use:go/3:ret').
 in_function('Use:7:c7', 'Use.run_all').
+tail('Use:7:c7').
 call_indirect('Use:7:c7', 'Use:go/3').
 global_var('Kit.handlers').
 var_in('Kit.handlers', 'Use.run_all').
@@ -1002,6 +1007,7 @@ var_in('Use:t36', 'Use:init').
 vtype('Use:t36', 'int').
 vfull('Use:t36', 'int').
 in_function('Use:15:c26', 'Use:init').
+in_handler('Use:15:c26', 'Use:try1@15').
 call_indirect('Use:15:c26', 'Use:f/9').
 var_in('Use:t37', 'Use:init').
 vtype('Use:t37', 'int').

@@ -41,3 +41,8 @@ let greet (e : env) = Console.print e.caps e.name
 
 (* == with a side made in the comparison: always false (physeq.dl) *)
 let is_one (o : int option) = o == Some 1
+
+(* a chain walked by a call a link; a handler calling back (stack.dl) *)
+type chain = End | Link of int * chain
+let rec size (c : chain) = match c with End -> 0 | Link (_, c) -> 1 + size c
+let rec retry n = try if n = 0 then 0 else raise Exit with Exit -> retry (n - 1)

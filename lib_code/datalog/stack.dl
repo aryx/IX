@@ -1,0 +1,76 @@
+% A recursion the stack may not hold (docs/plans/plan_bug_analyses.md,
+% A1): mini-analyze -bugs, over the call graph of points_to/ (target,
+% reach) and the facts of Closure_facts (FACTS.md):
+%   list_like(T)       the type T is a variant shaped as a list, not a tree
+%   tail(I)            the call I is a tail call as mini-ml compiles it:
+%                      its result the function's, outside any try
+%   tail_but_try(I)    ... would be one, but for a try around it
+%   in_handler(I, T)   the call I is in the handler of the try T
+%   in_try(I, T)       ... in its body
+% and says, of a call I in F that may come back to F (its target F
+% itself, or a function of F's unit that calls back to it):
+%   in_try_rec(I, F, T)   I is in a try's body or handler, F's result its:
+%                         a loop written, and no tail call by mini-ml,
+%                         whose try is a function of its own
+%   on_list(I, F)         I is no tail call, F takes a list, and no call
+%                         of F back to F is one: a frame an element, as
+%                         deep as the input is long
+%
+%     let rec wait () =                            (021c562b^, Devmnt.ml)
+%       try List.assoc tag m.replies
+%       with Not_found -> Proc.sleep r; wait ()
+%
+% In OCaml the call in the handler is a tail call; in mini-ml it is not,
+% and each wake of a process waiting on a 9P reply took 48 bytes of a
+% kernel stack of 16 KB: rio's windows' processes died after some 330
+% replies, in the next process's stack. And
+%
+%     let rec components = function             (f46346db^, Css_syntax.ml)
+%       | [] -> [] | t :: rest -> component t :: components rest
+%
+% a frame a token, 62,000 on a large style sheet, past the stack.
+%
+% design:
+% Two shapes of the bugs found (docs/plans/bugs/history/), not every
+% recursion that is not a tail one: a tree's recursion is as deep as the
+% tree, a printer's as its value, and that is fine. A try's is reported
+% whatever the type when the call's result is the function's, a loop as
+% written, mini-ml making no tail call there (the author's programs
+% written for OCaml, where a handler's call is one); an interpreter's
+% walk of its tree through a try, its result not returned, is as deep as
+% the tree and is not reported. A list's
+% when not a tail call, a list being what grows with the input. A string
+% walked by an index (String.for_all's go before 2fe7e116, whose && was
+% no tail call) is no list: that bug was the compiler's, found by
+% checking its tail calls against tail(I) (the plan's A1 check).
+% Recursion is within a unit (a let rec and its and's), so the closure
+% of the calls is the unit's, small; a recursion through two units is not
+% found.
+%
+% others:
+% OCaml's [@tailcall] (4.03) asks the compiler to say when a call it is
+% put on is no tail call; Scheme makes every tail call one (R4RS, 1991:
+% "properly tail recursive"), which is what mini-ml's try is not. Stack
+% depth bounded by analysis is what embedded C's tools do (AbsInt's
+% StackAnalyzer, 2000s), and what MISRA's rule against recursion avoids.
+
+calls(F, G) :- in_function(I, F), target(I, G), alloc_in(F, U), alloc_in(G, U).
+back(F, G) :- calls(F, G).
+back(F, H) :- back(F, G), calls(G, H).
+
+% the call I in F may come back to F
+recursive(I, F) :- in_function(I, F), target(I, F), reach(F).
+recursive(I, F) :- in_function(I, F), target(I, G), back(G, F), reach(F).
+
+in_try_rec(I, F, T) :- recursive(I, F), tail_but_try(I), in_try(I, T).
+in_try_rec(I, F, T) :- recursive(I, F), tail_but_try(I), in_handler(I, T).
+% (let rec walk l f = ...: F a stage of walk, the list an earlier one's)
+takes_list(F) :- parameter(F, 1, P), vtype(P, list).
+takes_list(F) :- parameter(F, 1, P), vtype(P, T), list_like(T).
+takes_list(F) :- inner(F, G), takes_list(G).
+% (a function that also comes back by a tail call loops along the list
+% and recurses for what is nested, as deep as the nesting: f46346db's fix)
+loops(F) :- recursive(I, F), tail(I).
+on_list(I, F) :- recursive(I, F), \+ tail(I), takes_list(F), \+ loops(F), \+ in_a_try(I).
+in_a_try(I) :- in_try(I, _).
+in_a_try(I) :- in_handler(I, _).

@@ -1,2 +1,2 @@
-bug? Before.ml:6: physeq: in Before.loop, != of a Some made there: always true
-1 bugs? (physeq 1)
+bug? analyzers/tests/bugs/eb5378a5/Before.ml:6: physeq: in Before.loop, != of a Some made there: always true
+1 bugs? (physeq 1, stack 0)

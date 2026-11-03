@@ -19,6 +19,8 @@ let inside : string ref = ref ""
  * around the expression being read, the innermost first; a handler's
  * variable, by the try it catches for (raise e again: what came) *)
 let tries : string list ref = ref []
+(* the trys whose handler is being read, the innermost first *)
+let handlers : string list ref = ref []
 let try_count : int ref = ref 0
 let handler_vars : (int * string) list ref = ref []
 
@@ -138,11 +140,29 @@ let rec full (t : ty) : string option =
 (* v's type's head and a site's (vtype, htype), and its whole type when it has
  * no variable (vfull, hfull): Typing's (Typing.keep, mini-analyze's), else
  * none: then nothing is kept apart *)
+(* a variant shaped as a list, for stack.dl: a constructor holds one
+ * value of the type itself, and none two (a tree's): Hashtbl's buckets
+ * (Cons of 'a * 'b * bucketlist), walked by a call an element *)
+let list_like (t : ty) : unit =
+  match t with
+  | Tconstr (d, _) when not (Hashtbl.mem mentioned (d.tpath, "list_like")) ->
+      Hashtbl.add mentioned (d.tpath, "list_like") ();
+      let selves (c : cons) : int =
+        let _, args, _ = c.ctype in
+        List.length (List.filter (fun (a : ty) -> match a with Tconstr (d2, _) -> d2.tpath = d.tpath | _ -> false) args) in
+      (match Resolve.type_conses d with
+       | Some cs ->
+           let n = List.map (fun ((_, c) : string * cons) -> selves c) cs in
+           if List.mem 1 n && List.for_all (fun k -> k <= 1) n then fact "list_like" [ d.tpath ]
+       | None -> ())
+  | _ -> ()
+
 let typed (relation : string) (v : string) (t : ty option) : unit =
   match t with
   | Some t when not (Hashtbl.mem mentioned (v, relation)) ->
       Hashtbl.add mentioned (v, relation) ();
       (match head t with Some h -> fact relation [ v; h ] | None -> ());
+      if relation = "vtype" then list_like t;
       (match head t, full t with
        | Some _, Some f -> fact (String.sub relation 0 1 ^ "full") [ v; f ]
        | _ -> ())
@@ -195,7 +215,6 @@ let block_at (dst : string) (x : expr) : string =
   site
 
 let block (dst : string) (x : expr) : unit = ignore (block_at dst x)
-
 (* an external's result's type, after its arguments' arrows *)
 let rec result (t : ty) (n : int) : ty = match t with Tarrow (_, r) when n > 0 -> result r (n - 1) | _ -> t
 
@@ -379,8 +398,14 @@ let rec bind (p : pattern) (src : string) : unit =
 (* a call's or a raise's site: in which try *)
 let site_in (s : string) : unit = match !tries with t :: _ -> fact "in_try" [ s; t ] | [] -> ()
 
-(* e's value goes to the variable dst; name: what a function written
- * here is called (the variable it is bound to) *)
+(* a call's place, for stack.dl: in a handler (no tail call by mini-ml,
+ * whose try is a function of its own); a tail call, its result the
+ * function's, outside any try; or one but for a try around it *)
+let position (i : string) (result : string) : unit =
+  (match !handlers with t :: _ -> fact "in_handler" [ i; t ] | [] -> ());
+  if result = !inside ^ ":ret" then
+    if !tries = [] && !handlers = [] then fact "tail" [ i ] else fact "tail_but_try" [ i ]
+
 (* an operand of == or != made where it is written, so no other value is
  * it: what it is, for physeq.dl's report. A constant constructor and []
  * are numbers, not blocks; a closure is left out (one with no free
@@ -396,6 +421,8 @@ let rec fresh (x : expr) : string option =
   | Econstraint (e, _) -> fresh e
   | _ -> None
 
+(* e's value goes to the variable dst; name: what a function written
+ * here is called (the variable it is bound to) *)
 let rec flow (name : string option) (x : expr) (dst : string) : unit =
   let stores (fields : (string * expr) list) : unit =
     List.iter (fun ((field, e) : string * expr) -> fact "assign_store_field" [ dst; field; operand e ]) fields in
@@ -428,10 +455,11 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
       List.iter
         (fun (c : string) -> fact "holds_field" [ f; c ])
         (List.sort_uniq compare (List.concat_map (fun ((p, _, _) : case) -> held_in_fields p) cases));
-      let outer = !inside and outer_tries = !tries in
+      let outer = !inside and outer_tries = !tries and outer_handlers = !handlers in
       (* (its body runs where it is called, not in the trys around it) *)
       inside := f;
       tries := [];
+      handlers := [];
       (* let f x y = ...: the function of y is f' *)
       let inner : string option =
         match cases with
@@ -447,7 +475,8 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
           flow inner body (f ^ ":ret"))
         cases;
       inside := outer;
-      tries := outer_tries
+      tries := outer_tries;
+      handlers := outer_handlers
   | Eapply (({ e = Evar (Prim ("%raise", _, _)); _ } as f), [ a ]) ->
       (* (a raise: its site, its call's, the exception's constructor
        * when it is written, a handler's variable raised again; else
@@ -464,6 +493,12 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
         | _ -> () in
       what a;
       call x f [ a ] dst
+  (* a && b, a || b: b's value is the result, b a tail call if the whole
+   * is one (mini-ml's Lower since 2fe7e116), not an external's argument *)
+  | Eapply ({ e = Evar (Prim (("%sequand" | "%sequor"), _, _)); _ }, [ a; b ]) ->
+      scalar dst;
+      flow None a (junk ());
+      flow None b dst
   | Eapply (f, args) -> call x f args dst
   | Elet (_, bindings, body) -> lets bindings []; flow name body dst
   | Ematch (e, cases) ->
@@ -505,13 +540,16 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
         | Palias (q, v) -> bind q (global exn !inside); bind (Pvar v) caught
         | Pconstraint (q, _) -> whole q
         | _ -> bind p (global exn !inside) in
+      let outer_handlers = !handlers in
+      handlers := t :: outer_handlers;
       List.iter
         (fun ((p, guard, body) : case) ->
           (match guard with None -> catches p | Some _ -> ());
           whole p;
           Option.iter (fun (g : expr) -> flow None g (junk ())) guard;
           flow None body dst)
-        cases
+        cases;
+      handlers := outer_handlers
   | Etuple es ->
       let n = List.length es in
       block dst x;
@@ -567,7 +605,7 @@ and call (x : expr) (f : expr) (args : expr list) (dst : string) : unit =
         let res = match (if last then Typing.expr_type x else None) with Some r -> r | None -> result t arity in
         prim_body p arity res ~arg:(fun k -> given.(k - 1)) ~ret ~inside:(fun _ -> !inside) ~site:i
           ~place:(Some !unit_name);
-        if p = "%apply" || p = "%revapply" then site_in (i ^ ":call");
+        if p = "%apply" || p = "%revapply" then begin site_in (i ^ ":call"); position (i ^ ":call") ret end;
         (* (a raise's site, raise_in's: where it runs, what it raises) *)
         if p = "%raise" then begin
           fact "in_function" [ i; !inside ];
@@ -590,6 +628,7 @@ and call (x : expr) (f : expr) (args : expr list) (dst : string) : unit =
       let result = if k = n - 1 then dst else temp () in
       fact "in_function" [ i; !inside ];
       site_in i;
+      position i result;
       fact "call_indirect" [ i; !fn ];
       fact1 "argument" i (operand a);
       (* (a result no one reads, ignore (f x)'s, goes nowhere: one junk of a
@@ -631,6 +670,7 @@ let unit_ (name : string) (items : item list) : string =
   calls := 0;
   try_count := 0;
   tries := [];
+  handlers := [];
   handler_vars := [];
   funs := 0;
   blocks := 0;

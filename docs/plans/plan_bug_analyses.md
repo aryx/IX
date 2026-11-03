@@ -20,12 +20,15 @@ checked the same way: it must report the bug on the code as it was
 before the fix (`git show FIX^:path`) and stay quiet on the fixed code.
 Then it runs over ix through the sweep, as `-dead`, `-caps` and `-exn` do.
 
-**Status: A6's first half done (2026-11-03), the rest planned.**
-`mini-analyze -bugs` and `physeq.dl`: `==` or `!=` with a side made in
-the comparison. It reports eb5378a5's bug on the code before the fix
-(`analyzers/tests/bugs/eb5378a5/`) and nothing in today's ix (the sweep
-of the 44 programs, 13 s; a grep of the whole tree, apps and browsers
-too, finds no other case). A7 turned out to be `-dead`'s already (below).
+**Status: A6's first half and A1 done (2026-11-03), the rest planned.**
+`mini-analyze -bugs` runs `physeq.dl` (`==` or `!=` with a side made in
+the comparison) and `stack.dl` (a loop through a `try`, a frame a
+list's element). Each reports its bugs on the code before the fix and
+not after (`analyzers/tests/bugs/`: eb5378a5, 021c562b, f46346db). On
+today's ix, `physeq` finds nothing; `stack` gives 145 reports on the 44
+programs and 9 on the kernel (`lib_code/datalog/tests/bugs_ix.txt`),
+read in A1 below. A7 turned out to be
+`-dead`'s already (below).
 The evidence is in
 [`bugs/history/`](bugs/history/): `from_git.md` has 73 bug fixes found in
 `git log`, with their commits, about 25 of them read diff by diff.
@@ -83,41 +86,70 @@ The order is by bugs re-found per line of code.
 
 ### A1. Deep recursion (`stack.dl`)
 
-**Re-finds:** 021c562b, both overruns: `wait` calling itself inside a
-handler, and `Hashtbl.remove` reached from kernel code. Also f46346db,
-`Lexer_asm.preprocess`, `Datalog.questions` (non-tail recursion over
-the lines or tokens of a file), and 2fe7e116 (see the check below).
+**Done** (2026-11-03), as `stack` in `-bugs`. It re-finds 021c562b,
+both overruns: `wait` calling itself in a handler, and `Hashtbl.remove`
+going down a bucket a call a binding (lib_core's `remove_bucket`, still
+so, and `replace_bucket`, `insert_bucket`: reported on lib_core's own
+`Hashtbl.ml` by `-library`). It also re-finds f46346db
+(`Css_syntax.components`, a call a token).
 
-**New facts** (`Closure_facts`, about 30 lines):
-- `tail(I)`: call I is in tail position *as mini-ml compiles it*, so not
-  inside a `try`'s body or its handler (mini-ml compiles a `try` as a
-  function of its own).
+**The facts** (`Closure_facts`, about 45 lines):
+- `tail(I)`: call I is a tail call *as mini-ml compiles it*: its result
+  is the function's, with no `try` around it (mini-ml compiles a `try`
+  as a function of its own, so neither its body nor its handler makes a
+  tail call).
+- `tail_but_try(I)`: I would be a tail call if not for a `try` around it.
 - `in_handler(I, T)`: like `in_try`, but for the handler.
-- `rec_over(F, P)`: F's parameter P has a list, string or array type
-  (from `vtype`).
+- `list_like(T)`: a variant one of whose constructors holds one value
+  of the type itself and none two: a list of its own (Hashtbl's
+  `bucketlist`), not a tree.
+- `&&` and `||` are no longer an external's two arguments: the right
+  operand's value is the result, so a call there is a tail call
+  (mini-ml's `Lower` since 2fe7e116).
 
-**Rules** (about 25 lines): a function's strongly connected component,
-from `reach`; a call inside the component that is not `tail` gives
-`deep(F, I)`. These are ranked: first a call in a handler (no tail call
-by mini-ml, and OCaml programmers do not expect that), then recursion
-over a parameter found in `rec_over`. For the kernel, a second root
-set: what `kernels/9pi` reaches from its system calls and its traps.
-There, a call of a library function known to recurse once per element
-(a file of facts, `deep_lib('List.map')`, `deep_lib('Hashtbl.remove')`,
-since ocaml-light's `Hashtbl` is recursive in a bucket's length) is
-reported too, because the stack is only 16 KB.
+The plan's `rec_over` (a string or an array walked by an index) was
+not written: in the history that shape was the compiler's bug (2fe7e116),
+not the program's.
 
-**Check:** `analyzers/tests/bugs/021c562b/`, with Devmnt's `rpc`
-before 021c562b and after it. The compiler's own tail calls are
-compared with `tail(I)`, as `-dflow` compares liveness: with the old
-`Lower.app`, `&&`'s right operand would have been `tail` in the facts
-and not in mini-ml's code. That is the 2fe7e116 bug, found by checking
-the compiler against the facts rather than by checking the program.
+**The rules** (`stack.dl`, 20 lines). A call I in F is `recursive` if
+its target is F, or a function of F's unit that calls back to F (the
+closure of the calls is per unit: small, but a recursion through two
+units is not found), and F is reached. Two reports:
+- `in_try_rec`: the call is `tail_but_try`, in a try's body or handler.
+  It is a loop as written, through a try. Requiring that the call's
+  result is the function's own leaves out an interpreter walking its
+  tree through a try (awk's `exec`), which is as deep as the tree.
+- `on_list`: the call is no tail call, F (or an earlier stage of F,
+  `let rec f l x`) takes a list or a `list_like`, and *no* call of F
+  back to F is a tail call. That last condition tells f46346db's bug
+  from its fix: the fixed `go` loops by a tail call along a level and
+  calls back only for a bracket's inside, as deep as the nesting.
 
-**False reports:** recursion over a tree (an AST's depth is small), and
-over lists that are short by construction. The ranking puts handlers
-and the kernel first. A `[@tail_ok]`-style comment is not proposed;
-read the list first.
+**On ix** (the sweep of the 44 programs, 1 min; the kernel by hand from
+`kernels/9pi/mkfile`'s `KML`, 4 s): 145 reports in the programs, 9 in
+the kernel, all in `lib_code/datalog/tests/bugs_ix.txt`.
+- **In a try, 8.** `machine/CLI.ml`'s `go` calls itself in a handler
+  at each breakpoint (a frame each, mini-5i built by mini-ml), and `run`
+  calls itself at each `exec`. git's `dial` loops over the few addresses
+  of a host. The kernel's `Kchan.step` loops over a union's members.
+  These are bounded and harmless. awk's `exec` and `loop_body` are its
+  tree. acid's `exited` is a closure the analysis merges with others: a
+  false report.
+- **Over a list, 137.** These are the f46346db shape: a frame for each
+  element. mini-cc's peephole passes (`languages/c/opti/Opti.ml`'s
+  `imm`, `incs`, `puts`, `branch`: an instruction each, as long as a C
+  function), mini-ml's `Opti`, the IL emitters, git's `Diff.take` (a
+  line of a file each), `Texts.split`. Whether a list can be long
+  enough is not known from the code. None is a known crash; they are
+  where to look when a long input dies. Not triaged one by one.
+
+**Not done:**
+- The check of the compiler against the facts, which would have found
+  2fe7e116: mini-ml's own tail calls (`Ir.Call`'s flag, `Ssa.Tail`)
+  against `tail(I)`, as `-dflow` compares liveness. It needs a call's
+  line in the SSA's facts.
+- Recursion through two units.
+- A string or an array walked by an index.
 
 ### A2. Exceptions: more roots, the primitives' (`exceptions.dl`)
 
@@ -374,7 +406,7 @@ reproduction.
 |---|---|---|---:|---:|---|
 | 1 | A6 physical equality, a side made there | `phys_compare`, `fresh_operand` | 50 | 1 | done |
 | 2 | A6, identity of what is changed in place | `mutates` | 20 | ~3 | `-bugs` then runs `pts` |
-| 3 | A1 deep recursion | `tail`, `in_handler`, `rec_over` | 55 | ~15 | the kernel's 16 KB |
+| 3 | A1 deep recursion | `tail`, `tail_but_try`, `in_handler`, `list_like` | 65 | 3 | done |
 | 4 | A3 errors swallowed | `trivial_handler` | 25 | ~8 | over `-exn` |
 | 5 | A2 roots and primitives | `root_of`, primitive `raise_of` | 25 | ~5 | A8 uses its roots |
 | 6 | A4 31 bits, step 1 | `int_lit`, `shift`, `wide_unit`, `wide_only` | 55 | ~12 | |

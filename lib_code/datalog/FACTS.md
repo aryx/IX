@@ -312,6 +312,21 @@ phys_compare('Toy:43:c43', 'Toy.is_one', '==').
 fresh_operand('Toy:43:c43', 'Some').
 ```
 
+**A call's place**, for `stack.dl`: a tail call as mini-ml compiles it, its
+result the function's and no try around it (`f x` in `apply`); one that would be
+but for a try (`try inc n with ...` in `safe`); a call in a handler, which mini-ml
+compiles as a function of its own (`retry (n - 1)` in `retry`, line 48). And a type
+shaped as a list, a constructor holding one of its own and none two, `chain`,
+walked by `size` a call a link:
+
+```
+tail('Toy:8:c3').
+tail_but_try('Toy:16:c7').
+in_handler('Toy:48:c48', 'Toy:try3@48').
+tail_but_try('Toy:48:c48').
+list_like('Toy.chain').
+```
+
 **Who is where.** As in C. A variable two functions name is what a closure captures:
 
 ```
@@ -372,6 +387,7 @@ with: `own_live_out(V, P)`, and for ML `own_live_in(V, B)`, `own_idom(D, B)`.
 | `capabilities.dl`, `capabilities_types.dl` | `takes_cap`, `declares`, `assign_address`, `global_def` |
 | `bugs.dl` | `call_direct`, `return`, and `heap`, `local`, `literal`, which mini-analyze makes of the names |
 | `physeq.dl` | `phys_compare`, `fresh_operand` |
+| `stack.dl` | `tail`, `tail_but_try`, `in_handler`, `in_try`, `list_like`, `parameter`, `vtype`, `inner`, `alloc_in`, over `target` and `reach` |
 | `liveness.dl` | C's `-flow` |
 | `liveness_ssa.dl`, `dominators.dl` | ML's `-flow` |
 

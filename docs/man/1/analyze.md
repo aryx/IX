@@ -54,8 +54,12 @@ program's library, lib_core's units it names, is read with it.
 :    An ML program's bugs that may be, each line named by its
      analysis (`docs/plans/plan_bug_analyses.md`): `physeq`, an `==`
      or `!=` with a side made in the comparison (`physeq.dl`), whose
-     answer is known before it runs. C files: the report without an
-     option, its `bug?` lines `bugs.dl`'s.
+     answer is known before it runs; `stack`, a recursion the stack
+     may not hold (`stack.dl`): a function calling itself back in a
+     `try`, its result the function's, which mini-ml makes no tail
+     call, or not by a tail call over a list, a frame an element. C
+     files: the report without an option, its `bug?` lines
+     `bugs.dl`'s.
 
 **-facts**
 :    The facts, not the analysis: to write one's own rules

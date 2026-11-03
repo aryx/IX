@@ -43,6 +43,7 @@ program's functions that its toplevel never reaches (calls.dl):
 -bugs: instead, an ML program's bugs that may be, each named by its analysis
 (docs/plans/plan_bug_analyses.md; C's are bugs.dl's, above):
   Before.ml:6: physeq: in Before.loop, != of a Some made there: always true
+  Css.ml:13: stack: Css.components calls itself, not a tail call, over a list
 -root f: f is also entered from where the facts do not go (assembly)
 -context file: of points_to/, C's (call1_heap1) and -exn's (call1_rec); the
   sharper, the longer
@@ -100,7 +101,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         ("-dead", Arg.Set dead, " what no run can reach, not the calls and the bugs");
         ("-caps", Arg.Set ambient, " whether ML's own functions hold the capabilities they need");
         ("-exn", Arg.Set exns, " the exceptions ML's toplevels may let escape");
-        ("-bugs", Arg.Set bugs, " an ML program's bugs that may be, each analysis of plan_bug_analyses.md");
+        ("-bugs", Arg.Set bugs, " the bugs an ML program may have (plan_bug_analyses.md)");
         ("-root", Arg.String (fun f -> roots := f :: !roots), " a function entered from where the facts do not go");
         ("-context", Arg.Set_string context, " the context file of points_to/: C's (call1_heap1), -exn's (call1_rec)");
         ("-library", Arg.Set library, " every function may be called from outside: a runtime, a library");
@@ -160,7 +161,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
             (if !dead || !ambient then
                [ "points_to/instructions.dl"; "points_to/contexts.dl"; "points_to/insensitive.dl"; "dead.dl" ]
                @ if !ambient then [ "capabilities.dl" ] else []
-             else if !bugs && c = [] then [ "physeq.dl" ]
+             else if !bugs && c = [] then
+               [ "points_to/instructions.dl"; "points_to/contexts.dl"; "points_to/insensitive.dl"; "physeq.dl"; "stack.dl" ]
              else if !exns then
                [ "points_to/instructions.dl"; "points_to/andersen.dl"; "points_to/contexts.dl";
                  "points_to/" ^ context ^ ".dl"; "exceptions.dl" ]

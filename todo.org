@@ -1,1 +1,206 @@
+* Big plan 
+
+** TODO changes.txt
+
+** Later
+
+*** LATER docs/variants/*, especially modern.md
+
+*** LATER follow bootstrap appendix Principia.nw and
+have intermediate step! (easy for claude!) ASM0, LD0, etc
+
+*** LATER check if mini-chrome can load m-ix.html and t-ix.html web pages :)
+
+*** LATER add riscv64? mini-tinyemu :)
+try on orange-pi RV2
+
+*** LATER mini-xen
+and have xv6 and 9pi running at the same time on the Pi2! with a key to switch :)
+
+*** LATER mini search engine? 
+companion to database, teach different stuff
+
+can be integrated with PIM! to index lots of emails!
+
+*** LATER mini-snap, like we have turbo pascal, drscheme, another education oriented development
+environment
+could have kturtle too and logo in theory, but drscheme can maybe have a mode for it
+and playground has one too
+
+*** LATER say on the websites also the few original things brought by m-ix and t-ix compared to plan9
+like Oberon! Singularity! xv6! squeak bare metal and plan9 hosts
+mini-ml typeclasses!
+
+not just shorter, also more powerful on some aspects!
+later: xen, dotnet, etc.
+
+
 * Last
+
+** Last1
+
+* Infra
+
+** Dev infra
+
+*** a mini-semgrep :)
+and add cool features into it! steps, type info, etc.
+
+** Build infra
+
+** Test infra
+
+** Bench infra
+
+* Optimizations
+
+** web
+
+*** continue optimize 9pi-web, too slow right now
+compiled with ocaml-light (1.07) right now?
+faster with ocaml 4.14 ?
+
+** native
+
+*** also opti mini-pi? plans/variants/opti.md
+
+* t-IX
+
+** Later
+
+*** LATER improve plan tiny multicore, only 1.41 speedup for self-tix
+because Core 0 is bottleneck, with master/slave design
+
+** Components
+
+** Books
+
+*** !!!LATER generate .nw and single book with all tiny ix! send link to Knuth?!!!
+
+principia, tiny edition! (like encyclopedia in different editions :) )
+  see t-ix.md manual, projects.md archi diagram
+principia, mini edition
+principia, xix edition
+principia, C original edition
+
+
+* m-IX
+
+** Later
+
+** Refactorings
+
+*** Last
+
+**** m-ix: RELAX start to use Fpath and even Chan (so less need caps)
+like Pascal_compile.mli for instance
+
+**** m-ix: put also the 700 LOC limit like we did in mini-chrome and rewrite some long files
+# wait that removed boilerplate code first that can be handled by deriving
+
+languages/ml/Scope.ml split? Lower.ml split? put data structure
+in separate file? also remove the show boilerplate first maybe
+
+**** LATER ix: use more capabilities, and add a semgrep.jsonnet and forbid.jsonnet from caps submodule!
+can even get mini-semgrep and mini-jsonnet in!
+#alt caps.dl
+
+**** LATER mini-9pi: use capabilities in the kernel too?
+
+
+** Components
+
+*** kernel
+
+**** pi2 plan_multicore.md
+# trying to get 2 cameltry at high fps on the Pi2
+
+***** run new 'spin' command on the Pi2
+and also mini-qemu using domains, with also 2 cameltry running at few fps at least
+
+***** mini-9pi2: more work on getting 2 cameltry at 50fps (no lock contention)
+spin test program to help
+
+***** multi-domain mini-qemu
+# plan_multicore.md
+and for ocaml 4.14 do something compatible, like in mini-chrome?
+
+already done no?
+
+**** FUN plan_pi_gpu.md ? and start playground 3d games on it? via /dev/gpu or something?
+virtuaracing fast?
+start use gpu on pi2?
+can use GPU on pi4? extend draw with triangles and shader and stuff?
+
+**** ix: try on pi4, but tricky cos it will be new kernel work, new drivers
+and different from qemu, so more time to debug (no fast feedback loop; I am slow)
+
+faster cameltry?
+
+*** network
+
+**** try tronscroll with rj45 with pi1 and pi2! play with giogio!
+
+
+*** mini-ml (-pp, for ix, adv features)
+
+**** m-ix: try new card after all those opti, try doom, quake, with and without games and sprites
+
+**** use mini-datalog for whole program analysis and optimized mini-ml compiler!
+better than ocaml :)
+
+
+
+**** mini-ml: idea from oxcaml to add to mini-ml? to improve some speed?
+that could benefit m-ix
+
+**** mini-ml: take inspiration from recent middle_end/
+and flambda opti?
+
+
+**** LATER implement domain?  mini-domains :) 
+#alt: multicore via -dotnet backend
+
+or maybe continue Xavier's Leroy way and provide better API for fork-based parallelism
+with no sharing (but efficient message passing, maybe some shared hack-style hash table)
+
+**** dotnet multicore? mini-ml -dotnet, mini-dotnet interpreter/jit with domains
+actually the real dotnet has multicore! so it's an easier path towards multicore!
+get mini-ml -dotnet to work, and then done!
+
+we also want mini-dotnet to manage multicore, but this can rely on OCaml 5
+runtime so compile mini-dotnet with OCaml 5! need multicore JIT too
+
+via mini-ml compiled jit ???
+# need mini-ml multicore too, cos reuse mini-ml runtime GC?
+
+
+**** => ANN mini-ml! no functor, no classes, but typeclasses! (using extension point)
+#spinoff ix!
+give LOC! compare to ocaml 5, compare to ocaml-light (1.07). LOC OCaml and C.
+
+no bytecode, direct to arm/arm64 (riscv64?)
+also has a -dotnet backend! (with multicore?)
+
+typeclass with attribute syntax, so works fine with ocamlformat, merlin, etc.)
+trivial, 'a show = { } record and implicit dictionnary passed.
+also type x = [%mli]
+
+opti typeclasses? well the compiler should do it
+whole-program datalog analysis for opti?
+inlining?
+
+LATER: And book about mini-ml!!
+
+*** emacs
+
+**** still? tiny-emacs has better font than mini-emacs on Linux at least?
+maybe not better, but maybe could improve more the font in mini-emacs
+
+*** netscape
+
+**** mini-netscape accept ?, g, w, like tiny-www
+tiny-www pretty convenient right now actually
+
+** Books
+

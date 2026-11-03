@@ -1,0 +1,72 @@
+% An error made silent (docs/plans/plan_bug_analyses.md, A3): mini-analyze
+% -bugs, over exceptions.dl's arrives and the facts of Closure_facts
+% (FACTS.md):
+%   silent(T, E)       a case of the try T catches E, its answer a constant
+%   silent_all(T)      ... catches all (_, a variable), its answer a constant
+% and says
+%   swallowed(T, E)    the error E may arrive at T, from its body, and a
+%                      case answers a constant: nothing said, the caller
+%                      not told
+%
+%     let code = try f () with _ -> 1 in              (c5086383^, Process.ml)
+%
+% rc's forked child: a pipe's open that failed, a Sys_error, ended it in
+% silence (exit 1, no word), and a fork's Unix_error the same (7f7ce094).
+% And
+%
+%     let set name v = try put ... v with Unix_error _ -> ()   (4f00134c^)
+%
+% a variable /env could not hold left out, the program started without
+% it: a mkfile's recipe with an empty list.
+%
+% design:
+% A grep for "with _ -> ()" finds some 970 lines in ix: most stop a loop
+% (End_of_file), say a value is not there (Not_found -> None), or try a
+% conversion (int_of_string's Failure). What is reported is a case that
+% says nothing over what may arrive and is an error of the system: the
+% join with arrives is what grep cannot do, a with _ -> () around code
+% that raises only End_of_file not reported. error(E) is the list; a
+% program's own exception is not in it (its catches are its design, as
+% Exit). An earlier case that catches E and says something is seen
+% (catches, without silent); its guard is not (a case with a guard
+% catches nothing for sure, so silent_all after it is reported).
+%
+% others:
+% Java's "catch (Exception e) {}" is a classic of its linters (PMD's
+% EmptyCatchBlock, Error Prone's), by the tree alone. Weimer and Necula
+% ("Finding and preventing run-time error handling mistakes", OOPSLA
+% 2004) followed what may be thrown, as here.
+
+error('Unix.Unix_error').
+error(caml_exn_Sys_error).
+
+% What fails and is told by what comes next or does not matter, measured
+% on ix's 44 programs (plan_bug_analyses.md, A3): a close or a remove,
+% best effort, the end of a process or of a file not needed; an exec,
+% which comes back only when it failed, the next line saying so
+% ((try execv ... with _ -> ()); prerr_endline "can't exec").
+release('Unix.close').
+release('Unix.closedir').
+release('Unix.unlink').
+release('Unix.rmdir').
+release('Unix.kill').
+release('CapUnix.kill').
+release('FS.remove_any').
+release(sys_remove).
+release('Unix.execv').
+release('Unix.execve').
+release('Unix.execvp').
+release('CapUnix.execv').
+release('CapUnix.execve').
+released(G) :- release(G).
+released(G) :- curried(G, F), released(F).
+quiet(S) :- callee(S, _, _, G, _, _), released(G).
+quiet(S) :- primitive(S, P), release(P).
+
+% E may come to T from its body: raised or called there, by what is not
+% quiet, or through a try in it
+cause(T, E) :- at(S, _, _, E), in_try(S, T), \+ quiet(S).
+cause(T2, E) :- passes(T, _, _, E), try_in_try(T, T2).
+
+swallowed(T, E) :- silent(T, E), cause(T, E), error(E).
+swallowed(T, E) :- silent_all(T), cause(T, E), error(E), \+ catches(T, E).

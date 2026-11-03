@@ -47,7 +47,28 @@ let bugs_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
         else Some (Printf.sprintf "%s: stack: %s calls itself, not a tail call, over a list" (site i) f))
       (tuples "on_list" 2) in
   let stack = List.sort_uniq compare (in_try @ on_list) in
-  let all = List.sort_uniq compare (physeq @ stack) in
+  (* Main:try2@11: the try's line, its function, what may arrive *)
+  let fn = Hashtbl.create 17 in
+  List.iter (fun (t : string array) -> Hashtbl.replace fn t.(0) t.(1)) (tuples "try_in_function" 2);
+  let errors = Hashtbl.create 17 in
+  List.iter
+    (fun (t : string array) ->
+      let e = match C_report.prefix "caml_exn_" t.(1) with Some x -> x | None -> t.(1) in
+      Hashtbl.replace errors t.(0) (e :: (match Hashtbl.find_opt errors t.(0) with Some l -> l | None -> [])))
+    (tuples "swallowed" 2);
+  let swallowed =
+    Hashtbl.fold
+      (fun (t : string) (es : string list) acc ->
+        if not (own t) then acc
+        else
+          let line = match String.index_opt t '@' with Some i -> String.sub t (i + 1) (String.length t - i - 1) | None -> "?" in
+          let f = match Hashtbl.find_opt fn t with Some f -> Ml_report.ml_function f | None -> "?" in
+          Printf.sprintf "%s: swallowed: in %s, %s silenced, a constant answered" (site (unit_of t ^ ":" ^ line)) f
+            (String.concat " or " (List.sort_uniq compare es))
+          :: acc)
+      errors [] in
+  let all = List.sort_uniq compare (physeq @ stack @ swallowed) in
   List.iter (fun b -> Console.print caps ("bug? " ^ b ^ "\n")) all;
   Console.print caps
-    (Printf.sprintf "%d bugs? (physeq %d, stack %d)\n" (List.length all) (List.length physeq) (List.length stack))
+    (Printf.sprintf "%d bugs? (physeq %d, stack %d, swallowed %d)\n" (List.length all) (List.length physeq)
+       (List.length stack) (List.length swallowed))

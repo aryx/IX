@@ -1,3 +1,4 @@
+debuggers/acid/CLI.ml:79: swallowed: in CLI:fun at line 79, Unix.Unix_error silenced, a constant answered
 debuggers/acid/Code.ml:76: stack: Code.stmt calls itself, not a tail call, over a list
 debuggers/acid/Code.ml:77: stack: Code.stmt calls itself, not a tail call, over a list
 debuggers/acid/Code.ml:78: stack: Code.stmt calls itself, not a tail call, over a list
@@ -5,13 +6,17 @@ debuggers/acid/Code.ml:80: stack: Code.stmt calls itself, not a tail call, over 
 debuggers/acid/Proc.ml:413: stack: locals calls itself, not a tail call, over a list
 debuggers/acid/Proc.ml:549: stack: exited calls itself in a try's body: no tail call by mini-ml
 debuggers/acid/Value.ml:15: stack: go calls itself, not a tail call, over a list
+editors/ed/Command.ml:493: swallowed: in Command.rescue, Unix.Unix_error silenced, a constant answered
+editors/ed/Input.ml:94: swallowed: in Input.recover, Unix.Unix_error silenced, a constant answered
 editors/turbopascal/editor/Turbo_view.ml:69: stack: go calls itself, not a tail call, over a list
 generators/lex/Output.ml:46: stack: Output.value calls itself, not a tail call, over a list
 generators/lex/Output.ml:47: stack: Output.value calls itself, not a tail call, over a list
 generators/lex/Output.ml:48: stack: Output.value calls itself, not a tail call, over a list
 generators/lex/Output.ml:51: stack: Output.value calls itself, not a tail call, over a list
+kernels/9pi/buses/user/usbd/Usbd.ml:39: swallowed: in loop, Unix.Unix_error silenced, a constant answered
 kernels/9pi/devices/keyboard/Latin1.ml:133: stack: Latin1.take calls itself, not a tail call, over a list
 kernels/9pi/devices/screen/Devdraw.ml:204: stack: drop calls itself, not a tail call, over a list
+kernels/9pi/devices/storage/user/fdisk/Fdisk.ml:74: swallowed: in Fdisk:fun at line 70, Unix.Unix_error silenced, a constant answered
 kernels/9pi/devices/sys/Devarch.ml:77: stack: go calls itself, not a tail call, over a list
 kernels/9pi/devices/sys/Devproc.ml:98: stack: go calls itself, not a tail call, over a list
 kernels/9pi/devices/sys/Devsys.ml:21: stack: go calls itself, not a tail call, over a list
@@ -90,6 +95,7 @@ languages/ml/dotnet/Il_exprs.ml:704: stack: Il_exprs.lambda calls itself, not a 
 languages/ml/dotnet/Il_exprs.ml:766: stack: Il_exprs.closure calls itself, not a tail call, over a list
 languages/ml/dotnet/Il_exprs.ml:862: stack: Il_exprs.try_ calls itself, not a tail call, over a list
 languages/ml/dotnet/Il_types.ml:512: stack: Il_types.subst calls itself, not a tail call, over a list
+languages/ml/highlight/Names_ml.ml:97: swallowed: in Names_ml:fun at line 96, Unix.Unix_error silenced, a constant answered
 languages/ml/opti/Opti.ml:52: stack: go calls itself, not a tail call, over a list
 languages/ml/opti/Opti.ml:54: stack: go calls itself, not a tail call, over a list
 languages/ml/opti/Opti.ml:55: stack: go calls itself, not a tail call, over a list
@@ -141,14 +147,20 @@ _mk/7/editors/emacs/draw/Parser.ml:53: stack: Parser.mklist calls itself, not a 
 _mk/7/editors/emacs/draw/Parser.ml:57: stack: Parser.mkpatlist calls itself, not a tail call, over a list
 _mk/7/languages/ml/Parser.ml:53: stack: Parser.mklist calls itself, not a tail call, over a list
 _mk/7/languages/ml/Parser.ml:57: stack: Parser.mkpatlist calls itself, not a tail call, over a list
+shell/CLI.ml:156: swallowed: in finish, Sys_error or Unix.Unix_error silenced, a constant answered
 shell/Glob.ml:83: stack: literal calls itself, not a tail call, over a list
 typesetting/man/Main.ml:82: stack: para calls itself, not a tail call, over a list
+utilities/calc/hoc/Input.ml:103: swallowed: in Input.recover, Unix.Unix_error silenced, a constant answered
 utilities/text/awk/Run.ml:290: stack: Run.builtin calls itself, not a tail call, over a list
 utilities/text/awk/Run.ml:305: stack: Run.builtin calls itself, not a tail call, over a list
 utilities/text/awk/Run.ml:428: stack: Run.format calls itself, not a tail call, over a list
 utilities/text/awk/Run.ml:475: stack: Run.format calls itself, not a tail call, over a list
 utilities/text/awk/Run.ml:554: stack: Run.exec calls itself in a try's body: no tail call by mini-ml
 utilities/text/awk/Run.ml:594: stack: Run.loop_body calls itself in a try's body: no tail call by mini-ml
+version_control/commands/Commands.ml:32: swallowed: in Commands.mkdir_p, Unix.Unix_error silenced, a constant answered
 version_control/commands/Save.ml:72: stack: treeify calls itself, not a tail call, over a list
 version_control/diff/Diff.ml:67: stack: take calls itself, not a tail call, over a list
 version_control/wire/Proto.ml:208: stack: dial calls itself in a try's handler: no tail call by mini-ml
+windows/rio/Processes_winshell.ml:13: swallowed: in Processes_winshell.mount_files, Sys_error silenced, a constant answered
+windows/rio/Processes_winshell.ml:26: swallowed: in Processes_winshell.start, Unix.Unix_error silenced, a constant answered
+windows/rio/Processes_winshell.ml:46: swallowed: in Processes_winshell.note, Sys_error silenced, a constant answered

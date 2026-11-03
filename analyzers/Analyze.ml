@@ -44,9 +44,10 @@ program's functions that its toplevel never reaches (calls.dl):
 (docs/plans/plan_bug_analyses.md; C's are bugs/pointers.dl's, above):
   Before.ml:6: physeq: in Before.loop, != of a Some made there: always true
   Css.ml:13: stack: Css.components calls itself, not a tail call, over a list
+  Process.ml:46: swallowed: in fork, Sys_error silenced, a constant answered
 -root f: f is also entered from where the facts do not go (assembly)
--context file: of points_to/, C's (call1_heap1) and -exn's (call1_rec); the
-  sharper, the longer
+-context file: of points_to/, C's (call1_heap1), -exn's (call1_rec) and
+  -bugs's (insensitive); the sharper, the longer
 -library: every function may be called from outside, not main alone: a runtime
   ML calls, a library; without it what main does not reach is not looked at
 -r: the directory of points_to/ and the .dl files (lib_code/datalog)
@@ -120,7 +121,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   | () -> (
       (* (-exn's: a recursive call in its caller's context, else
        * List.fold_left's callers are one: exceptions.dl's design note) *)
-      let context = if !context <> "" then !context else if !exns then "call1_rec" else "call1_heap1" in
+      let context = if !context <> "" then !context else if !exns then "call1_rec" else if !bugs then "insensitive" else "call1_heap1" in
       let path s = match FS.path s with Ok p -> p | Error m -> failwith m in
       try
         if !files = [] then failwith usage;
@@ -162,7 +163,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                [ "points_to/instructions.dl"; "points_to/contexts.dl"; "points_to/insensitive.dl"; "dead.dl" ]
                @ if !ambient then [ "capabilities.dl" ] else []
              else if !bugs && c = [] then
-               [ "points_to/instructions.dl"; "points_to/contexts.dl"; "points_to/insensitive.dl"; "bugs/physeq.dl"; "bugs/stack.dl" ]
+               [ "points_to/instructions.dl"; "points_to/contexts.dl"; "points_to/" ^ context ^ ".dl"; "exceptions.dl";
+                 "bugs/physeq.dl"; "bugs/stack.dl"; "bugs/swallowed.dl" ]
              else if !exns then
                [ "points_to/instructions.dl"; "points_to/andersen.dl"; "points_to/contexts.dl";
                  "points_to/" ^ context ^ ".dl"; "exceptions.dl" ]

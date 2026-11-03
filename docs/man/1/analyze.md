@@ -57,9 +57,11 @@ program's library, lib_core's units it names, is read with it.
      answer is known before it runs; `stack`, a recursion the stack
      may not hold (`bugs/stack.dl`): a function calling itself back in a
      `try`, its result the function's, which mini-ml makes no tail
-     call, or not by a tail call over a list, a frame an element. C
-     files: the report without an option, its `bug?` lines
-     `bugs/pointers.dl`'s.
+     call, or not by a tail call over a list, a frame an element;
+     `swallowed`, an error of the system (`Unix_error`, `Sys_error`)
+     that may arrive at a `try` whose case answers a constant, saying
+     nothing (`bugs/swallowed.dl`, over `exceptions.dl`). C files: the
+     report without an option, its `bug?` lines `bugs/pointers.dl`'s.
 
 **-facts**
 :    The facts, not the analysis: to write one's own rules
@@ -88,7 +90,8 @@ program's library, lib_core's units it names, is read with it.
 
 **-context** *file*
 :    The context file of `points_to/`: `call1_heap1` for C,
-     `call1_rec` for **-exn**, `insensitive`. The sharper, the longer.
+     `call1_rec` for **-exn**, `insensitive` for **-bugs**. The
+     sharper, the longer.
 
 **-library**
 :    Every function may be called from outside, not `main` alone.

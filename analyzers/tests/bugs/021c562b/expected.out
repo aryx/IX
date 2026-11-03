@@ -1,3 +1,3 @@
 bug? analyzers/tests/bugs/021c562b/Before.ml:16: stack: wait calls itself in a try's handler: no tail call by mini-ml
 bug? analyzers/tests/bugs/021c562b/Before.ml:17: stack: wait calls itself in a try's handler: no tail call by mini-ml
-2 bugs? (physeq 0, stack 2)
+2 bugs? (physeq 0, stack 2, swallowed 0)

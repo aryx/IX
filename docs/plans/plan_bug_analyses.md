@@ -20,14 +20,16 @@ checked the same way: it must report the bug on the code as it was
 before the fix (`git show FIX^:path`) and stay quiet on the fixed code.
 Then it runs over ix through the sweep, as `-dead`, `-caps` and `-exn` do.
 
-**Status: A6's first half and A1 done (2026-11-03), the rest planned.**
-`mini-analyze -bugs` runs `bugs/physeq.dl` (`==` or `!=` with a side made in
-the comparison) and `bugs/stack.dl` (a loop through a `try`, a frame a
-list's element). Each reports its bugs on the code before the fix and
-not after (`analyzers/tests/bugs/`: eb5378a5, 021c562b, f46346db). On
-today's ix, `physeq` finds nothing; `stack` gives 145 reports on the 44
-programs and 9 on the kernel (`lib_code/datalog/tests/bugs_ix.txt`),
-read in A1 below. A7 turned out to be
+**Status: A6's first half, A1 and A3 done (2026-11-03), the rest planned.**
+`mini-analyze -bugs` runs `bugs/physeq.dl` (`==` or `!=` with a side
+made in the comparison), `bugs/stack.dl` (a loop through a `try`, a
+frame a list's element) and `bugs/swallowed.dl` (an error of the
+system silenced). Each reports its bugs on the code before the fix and
+not after (`analyzers/tests/bugs/`: eb5378a5, 021c562b, f46346db,
+c5086383, 4f00134c). On today's ix, `physeq` finds nothing; `stack`
+gives 145 reports on the 44 programs and 9 on the kernel, `swallowed`
+12 on the programs (`lib_code/datalog/tests/bugs_ix.txt`), read in A1
+and A3 below. A7 turned out to be
 `-dead`'s already (below).
 The evidence is in
 [`bugs/history/`](bugs/history/): `from_git.md` has 73 bug fixes found in
@@ -167,30 +169,69 @@ also say `root_of(F, thread)`. The exceptions of the primitives
 go in as `raise_of` facts at the call (`prim_body` is where). This is
 what exceptions.dl's header lists as "not here".
 
+**Done with A3** (2026-11-03): the primitives that raise `Sys_error`
+(`Closure_facts.sys_error_prims`), a raise at their call. `-exn` sees
+them too: 12 programs' toplevels may now let `Sys_error` escape, a
+lib_core exception that `exn_ix.txt` leaves out; nothing else changed.
+
 **Cost:** about 20 lines of facts and 5 of rules. The `Invalid_argument`
 ones will be many. Report them only on paths where the index comes from
 the outside, which needs A4, or leave them behind a switch.
 
-### A3. Errors swallowed (`swallowed.dl`, in `-exn`)
+### A3. Errors swallowed (`bugs/swallowed.dl`)
 
-**Re-finds:** c5086383 (`try f () with _ -> 1` in rc's forked child),
-4f00134c (`with Unix_error _ -> ()` around a write to /env), and
-7f7ce094 (a fork's `Unix_error` swallowed by the former).
+**Done** (2026-11-03), as `swallowed` in `-bugs`, not in `-exn` (the
+one switch). It re-finds c5086383 (`try f () with _ -> 1` in rc's
+forked child, a pipe's open failing) and 4f00134c (`with Unix_error _
+-> ()` around a write to /env). 7f7ce094 (a fork's `Unix_error` in the
+same child) is the same try, found by the same report.
 
-**New fact:** `trivial_handler(T)`: a case of T that does not name what
-it caught and returns a constant (`()`, `1`, `None`, `[]`). Around
-10 lines in `Closure_facts`, where `catches_all` is said.
+**The facts** (`Closure_facts`, about 30 lines):
+- `silent(T, E)`, `silent_all(T)`: a case of T (no guard) that catches
+  E, or everything, and answers `()` or a number: nothing of what it
+  caught is used, so the pattern needs no look. `None`, `false`, `[]`
+  are left out: `try Some (stat f) with Unix_error _ -> None` asks a
+  question, the answer the caller's (24 of the first sweep's 45). A
+  case that names what the exception holds (`Unix_error (EINTR, _,
+  _)`) is a choice, not silent.
+- The runtime's primitives that raise `Sys_error` (`sys_open`,
+  `sys_remove`, ... : `raise_with` in `languages/ml/runtime/`) are a
+  raise at their call (`raise_of`, and `primitive(I, P)` naming it).
+  That is A2's primitives, the part A3 needed: without it no
+  `Sys_error` arrives anywhere, `open_in` failing in C. `Unix_error`
+  needs nothing: lib_core's `Unix` raises it in ML.
 
-**Rule**, which is why this goes beyond grep: a grep for
-`with _ -> ()` finds 973 lines in ix. The rule joins
-`trivial_handler(T)` with `exceptions.dl`'s `arrives(T, _, _, E)` and
-reports only when what may arrive is an error of the system or of the
-program (`Unix_error`, `Sys_error`, `Failure`, `Invalid_argument`,
-`Not_found` from somewhere other than the try's own body's first call).
-An `End_of_file` or `Exit` arriving at a `with _ -> ()` is the usual
-way to stop a loop and is not reported.
+**The rules** (`bugs/swallowed.dl`, 30 lines): `swallowed(T, E)` when
+E is an error of the system (`Unix_error`, `Sys_error`), E may come to
+T from its body (`exceptions.dl`'s `at`, through the try's own calls
+and the tries in it), and a silent case catches it. A call whose
+failure is told by what follows or does not matter is not a cause
+(`release`): a close, a remove, a kill (best effort), an exec (it comes
+back only when it failed, the next line saying so). That list came
+from reading the first sweep's reports (12 of its 45). `Failure`, `Invalid_argument`
+and `Not_found` are left out: `with Not_found -> None` and
+`int_of_string`'s `with Failure _ -> 0` are how ix asks a question.
+`-bugs` now runs `exceptions.dl` over `insensitive.dl` (`-context`
+chooses another).
 
-**Cost:** about 15 lines of rules. It reuses `-exn`'s whole fixpoint.
+**On ix** (the sweep, 1 min, the longest program 74 s; the kernel 6 s):
+12 reports, in `lib_code/datalog/tests/bugs_ix.txt`, the kernel none
+(its errors its own `Error`). Read one by one:
+- **Worth a look, 3.** rio's `mount_files` writes `/env/wsys` and says
+  nothing when it cannot: 4f00134c's shape, the window's rc without
+  `$wsys`. rc's `finish` runs `sigexit` and drops its `Unix_error` and
+  `Sys_error`. git's `mkdir_p` drops every error of `mkdir`, not only
+  `EEXIST`: a directory not made shows only at the next write.
+- **A read error as the end, 3.** acid's console, usbd's and fdisk's
+  reads answer 0 on an error: the input ends early, in silence.
+- **Best effort, 6.** ed's save on hangup and its and hoc's `recover`
+  (an `lseek` after an interrupt), the highlighter's `Names_ml`, rio's
+  `chdir` of a window (its comment says why), rio's note to a process.
+None was fixed: the author decides.
+
+**Not done:** `Failure` and the program's own exceptions; a case that
+says something but drops the error (`with _ -> prerr_endline "?"`);
+the rest of A2's primitives (`Invalid_argument`, `Division_by_zero`).
 
 ### A4. Ints on 31 bits (`intwidth.dl`)
 
@@ -407,7 +448,7 @@ reproduction.
 | 1 | A6 physical equality, a side made there | `phys_compare`, `fresh_operand` | 50 | 1 | done |
 | 2 | A6, identity of what is changed in place | `mutates` | 20 | ~3 | `-bugs` then runs `pts` |
 | 3 | A1 deep recursion | `tail`, `tail_but_try`, `in_handler`, `list_like` | 65 | 3 | done |
-| 4 | A3 errors swallowed | `trivial_handler` | 25 | ~8 | over `-exn` |
+| 4 | A3 errors swallowed | `silent`, `silent_all`, `primitive` | 60 | 3 | done |
 | 5 | A2 roots and primitives | `root_of`, primitive `raise_of` | 25 | ~5 | A8 uses its roots |
 | 6 | A4 31 bits, step 1 | `int_lit`, `shift`, `wide_unit`, `wide_only` | 55 | ~12 | |
 | 7 | A5 output order | sinks file | 30 | ~10 | the fixed points |

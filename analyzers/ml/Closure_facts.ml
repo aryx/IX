@@ -406,6 +406,12 @@ let position (i : string) (result : string) : unit =
   if result = !inside ^ ":ret" then
     if !tries = [] && !handlers = [] then fact "tail" [ i ] else fact "tail_but_try" [ i ]
 
+(* the runtime's primitives that raise Sys_error (raise_with in
+ * languages/ml/runtime/io.c, sys.c, runtime.c) *)
+let sys_error_prims : string list =
+  [ "sys_open"; "sys_remove"; "sys_rename"; "sys_mkdir"; "sys_chdir"; "sys_getcwd"; "sys_is_directory";
+    "sys_read_directory"; "caml_channel_size"; "caml_seek_in"; "caml_seek_out" ]
+
 (* an operand of == or != made where it is written, so no other value is
  * it: what it is, for bugs/physeq.dl's report. A constant constructor and []
  * are numbers, not blocks; a closure is left out (one with no free
@@ -529,6 +535,30 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
         | Pvar v -> handler_vars := (v.vid, t) :: !handler_vars; fact "catches_all" [ t ]
         | Pany -> fact "catches_all" [ t ]
         | _ -> () in
+      (* (a case whose answer is a constant, with _ -> (), says nothing
+       * of what it caught: bugs/swallowed.dl's; one that names what it
+       * holds, Unix_error (EINTR, _, _), is a choice) *)
+      let rec any (p : pattern) : bool =
+        match p with
+        | Pany | Pvar _ -> true
+        | Ptuple ps -> List.for_all any ps
+        | Palias (p, _) | Pconstraint (p, _) -> any p
+        | _ -> false in
+      let rec silent (p : pattern) : unit =
+        match p with
+        | Pcons ({ kind = Exn g; _ }, ps) -> if List.for_all any ps then fact "silent" [ t; g.gsym ]
+        | Por (p, q) -> silent p; silent q
+        | Palias (p, _) | Pconstraint (p, _) -> silent p
+        | Pvar _ | Pany -> fact "silent_all" [ t ]
+        | _ -> () in
+      (* (unit or a number: what a None, a false or a [] answers is a
+       * question, try Some (stat f) with Unix_error _ -> None) *)
+      let rec constant (x : expr) : bool =
+        match x.e with
+        | Econst (Ast.Int _) -> true
+        | Econs ({ cname = "()"; _ }, []) -> true
+        | Econstraint (e, _) -> constant e
+        | _ -> false in
       (* (a variable of the whole exception points to the try's own
        * object, what it caught: kept and raised again, it is what
        * arrived there, not every exception, as exn would say) *)
@@ -544,7 +574,7 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
       handlers := t :: outer_handlers;
       List.iter
         (fun ((p, guard, body) : case) ->
-          (match guard with None -> catches p | Some _ -> ());
+          (match guard with None -> catches p; if constant body then silent p | Some _ -> ());
           whole p;
           Option.iter (fun (g : expr) -> flow None g (junk ())) guard;
           flow None body dst)
@@ -610,6 +640,15 @@ and call (x : expr) (f : expr) (args : expr list) (dst : string) : unit =
         if p = "%raise" then begin
           fact "in_function" [ i; !inside ];
           fact1 "argument" i given.(0)
+        end;
+        (* (a primitive that may fail, a raise of the runtime's: Sys_error,
+         * languages/ml/runtime's io.c, sys.c; plan_bug_analyses.md's A2) *)
+        if List.mem p sys_error_prims then begin
+          fact "raise_in" [ i; !inside ];
+          fact "in_function" [ i; !inside ];
+          site_in i;
+          fact "raise_of" [ i; "caml_exn_Sys_error" ];
+          fact "primitive" [ i; p ]
         end;
         (* (x == y, x != y: bugs/physeq.dl's, a side made here never the other) *)
         if p = "%eq" || p = "%noteq" then begin

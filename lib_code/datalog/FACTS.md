@@ -327,6 +327,19 @@ tail_but_try('Toy:48:c48').
 list_like('Toy.chain').
 ```
 
+**A case that says nothing**, for `bugs/swallowed.dl`: its answer `()` or a number, so
+nothing of what it caught is used, by the exception it names or all. And a
+primitive of the runtime that may fail, `sys_remove` (Sys_error, `raise_with` in
+`languages/ml/runtime/sys.c`), a raise at its call; in `clean`:
+
+```
+raise_in('Toy:52:c50', 'Toy.clean').
+raise_of('Toy:52:c50', 'caml_exn_Sys_error').
+primitive('Toy:52:c50', 'sys_remove').
+silent('Toy:try4@52', 'caml_exn_Sys_error').
+silent_all('Toy:try4@52').
+```
+
 **Who is where.** As in C. A variable two functions name is what a closure captures:
 
 ```
@@ -388,6 +401,7 @@ with: `own_live_out(V, P)`, and for ML `own_live_in(V, B)`, `own_idom(D, B)`.
 | `bugs/pointers.dl` | `call_direct`, `return`, and `heap`, `local`, `literal`, which mini-analyze makes of the names |
 | `bugs/physeq.dl` | `phys_compare`, `fresh_operand` |
 | `bugs/stack.dl` | `tail`, `tail_but_try`, `in_handler`, `in_try`, `list_like`, `parameter`, `vtype`, `inner`, `alloc_in`, over `target` and `reach` |
+| `bugs/swallowed.dl` | `silent`, `silent_all`, `catches`, `primitive`, `curried`, over `exceptions.dl`'s `arrives` |
 | `liveness.dl` | C's `-flow` |
 | `liveness_ssa.dl`, `dominators.dl` | ML's `-flow` |
 

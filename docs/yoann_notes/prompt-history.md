@@ -60825,3 +60825,104 @@ Claude said that when a fully applied primitive call is met, one to three facts 
 Each model uses the call's own variables and an object named after the call, so every call gets a clone.
 Claude's answer named only `Closure_facts.call` as the place where these models are produced, not a file listing them.
 Claude offered to add the framing and references to the `andersen.dl` design note.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 07:44
+
+**Yoann:**
+
+> where is stored the "model" of those primitives? Where can I see the code modelizing their semantic?
+
+**Claude (summary):**
+
+Claude explained that the primitive models live as OCaml code in `Closure_facts.ml`, in the `prim_body` match at line 205.
+Claude noted the same function serves two callers: `prim` at line 271 for externals passed as values, and the inline branch of `call` at line 528.
+The per-call clone works by passing the call's own operand variables into `prim_body`, so the model is written once.
+Claude flagged a soundness gap: unlisted `%` primitives are assumed to move no pointers, with nothing re-checking the list.
+Claude suggested a small test that flags any `%` name in lib_core missing from `prim_body`.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 08:02
+
+**Yoann:**
+
+> can I close this session?
+
+**Claude (summary):**
+
+Claude recommended closing the session, since commit f29ede7e holds everything and nothing runs in the background.
+Claude noted that docs/yoann_notes/prompt-history.md is staged but uncommitted, and left it untouched.
+Claude listed open items, including the capability questions, the `-exn` timeout on mini-cc and mini-ml, and an unwritten test.
+Claude said the memory note now records commit f29ede7e and the open items for a later session.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 08:05
+
+**Yoann:**
+
+> yes a record field count as held, but in practice we should prefer to store capabilities via parameters rather than big structures, but sometimes it's hard to do otherwise and we have to use a record field. Yes clock and pipes should get a capability too, and more generally any system call. That was the idea behind ~/github/ocaml-caps/ and "erased" in lib_core/system/
+
+**Claude (summary):**
+
+Claude saved both proposals to memory and changed no code, leaving the system-call work as a separate plan.
+Claude recommended that a capability stored in a record field should count as held, since Closure_facts.ml:315 currently ignores it.
+Claude planned a new holds_field(F, C) fact so nested records like env.ctx.caps also count as holding capabilities.
+Claude would have capabilities.dl accept those fields for no_cap and wrong_cap, but not unused_cap.
+Claude estimated a few hours and a standalone commit, with fewer of the 82 "no capability" lines expected in caps_ix.txt.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 08:09
+
+**Yoann:**
+
+> yes let's do part 1
+
+**Claude (summary):**
+
+Claude asked whether to commit the part 1 changes, which pass `make test` (182 jobs, 0 failures) and are not yet committed.
+Claude listed the touched files: `Closure_facts.ml` and `.mli`, `Use.ml` with `expected.out`, `capabilities.dl`, `FACTS.md`, and `Toy.ml`.
+The commit would also include `caps_ix.txt`, the README capabilities section, and a `plan_datalog.md` status entry marking part 2 as still planned.
+Claude also made records count as holding their capabilities, removing 21 "no capability" reports and moving 11 to "holds some, not the one."
+
+------------------------------------------------------------------------
+
+## 2026-11-03 11:59
+
+**Yoann:**
+
+> yes, excellent work
+
+**Claude (summary):**
+
+Claude committed the work as 98a593f4 and left the staged `prompt-history.md` out of the commit.
+Claude updated the memory note to record that part 1 is done in that commit.
+Part 2, a capability for the clock, pipes and other system calls, still needs its plan.
+That plan would list each system call ix uses and the capability it takes.
+The goal is to keep ocaml-caps and the erased `Cap` in `lib_core/system` unchanged.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 12:00
+
+**Yoann:**
+
+> does the mini-analyzer has its man page?
+
+------------------------------------------------------------------------
+
+## 2026-11-03 12:01
+
+**Yoann:**
+
+> with examples of how to use it on some toy C project, toy ML project, etc. ?
+
+**Claude (summary):**
+
+Claude wrote a new man page, docs/man/1/analyze.md, with examples taken from runnable toys and a real mini-dc dead-code run.
+Claude fixed the stale `-facts` example in datalog.md and pointed the SEE ALSO lines of cc.md, ml.md and datalog.md to analyze(1).
+Claude checked the examples by copying them out of the page and rerunning them, with output matching except the wrapped lines and omitted count lines.
+Claude asked whether to commit the four files, and Yoann replied yes.

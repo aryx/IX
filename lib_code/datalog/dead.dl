@@ -62,12 +62,7 @@
 
 % ---- what may be called from where the facts do not go
 
-escaped(F) :-
-  call_direct(I, G), \+ function(G), argument(I, _, A), pts(A, F), function(F).
-escaped(F) :- gpt(ext, F, _, _), function(F).
-% (made an Obj.t: mini-dotnet's JIT calls its call-outs by their address)
-escaped(F) :- gpt(raw, F, _, _), function(F).
-reachable(F, none, none) :- escaped(F).
+% (contexts.dl's callback(F): what C, or an Obj.magic, may call)
 % (emalloc's calls are objects in the facts, not calls, if it has a body)
 reachable(A, none, none) :-
   allocator_call(A, G), function(A), root(G, R), reach(R).

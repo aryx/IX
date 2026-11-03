@@ -9,13 +9,16 @@
 %   passes(T, C1, C2, E)    ... and go through: no case catches it for sure
 %   escapes(F, C1, C2, E)   E may leave the function F run in that context
 %   uncaught(F, E)          E may leave a unit's toplevel F: the program dies
+%   from_c(F, E)            ... or a function C calls (contexts.dl's c_callback)
+%   ends_in(T, E)           E may come to a try catching all whose handler
+%                           raises E2 (handler_raises(T, E2)): a crash
 %   raised(E, R)            an uncaught E may be raised at R
 % A raised exception is its constructor when written (raise Empty), a
 % handler's variable raised again what that try may arrive at, else the
 % exceptions' blocks its argument may point to (pt, exn_block). Not
-% here: the exceptions of the primitives (Division_by_zero, an array's
-% Invalid_argument), and a function of the library not read raises
-% nothing (lib_core's are read with the program, -L).
+% here: an index out of bounds (%array_safe_get's Invalid_argument),
+% and a function of the library not read raises nothing (lib_core's
+% are read with the program, -L); a primitive's are its [@@raise E].
 %
 % cs-history:
 % CLU (Barbara Liskov, 1975) and then Java made a function declare what
@@ -92,9 +95,31 @@ escapes(F, C1, C2, E) :- at(S, C1, C2, E), in_function(S, F), \+ protected(S).
 escapes(F, C1, C2, E) :- passes(T, C1, C2, E), try_in_function(T, F), \+ nested(T).
 
 uncaught(F, E) :- init(F), escapes(F, none, none, E).
+% (a function C calls, contexts.dl's c_callback: the kernel's trap)
+from_c(F, E) :- c_callback(F), escapes(F, none, none, E).
+leaves(F, E) :- uncaught(F, E).
+leaves(F, E) :- from_c(F, E).
+leaves(T, E) :- ends_in(T, E).
+
+% A try that catches all and raises from its handler E2, not what it
+% caught: what arrives there ends as E2 (the kernel's guard, whose
+% Machine.panic halts, then Failure). Not Invalid_argument: a handler
+% building its message with ^ may raise it, and does not mean to.
+gives_back(T) :- reraises(R, T).
+% (what it caught raised again elsewhere: git's proto_die, given e, raises
+% it unless it is Proto.Error; the caught object is the try, T)
+gives_back(T) :- raise_in(R, _), argument(R, 1, V), pts(V, T).
+handler_raises(T, E2) :-
+  catches_all(T), \+ gives_back(T), in_handler(S, T), at(S, _, _, E2),
+  E2 \= caml_exn_Invalid_argument.
+converts(T) :- handler_raises(T, _).
+ends_in(T, E) :- converts(T), arrives(T, _, _, E).
 
 % where an uncaught E may be raised: a raise of E in a context it may
 % leave its function from (not each raise's own way out: one of the
 % function's raises of E may be caught where another is not)
+% (the raises first, the exception checked last: from leaves(F, E), F
+% unused, each of its tuples scanned every raise, 187 s on mini-ml)
+leaving(E) :- leaves(_, E).
 raised(E, R) :-
-  uncaught(F, E), raise_in(R, G), at(R, C1, C2, E), escapes(G, C1, C2, E).
+  raise_in(R, G), at(R, C1, C2, E), leaving(E), escapes(G, C1, C2, E).

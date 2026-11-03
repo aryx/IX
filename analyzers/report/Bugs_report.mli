@@ -6,12 +6,16 @@
  *   bug? Before.ml:6: physeq: in Before.loop, != of a Some made there: always true
  *   bug? Devmnt.ml:85: stack: wait calls itself in a try's handler: no tail call by mini-ml
  *   bug? Process.ml:46: swallowed: in fork, Sys_error silenced, a constant answered
+ *   bug? Main.ml:67: crash: in Main.guard, Fault.Error caught by all, the handler raising Failure
  *
  * physeq (lib_code/datalog/bugs/physeq.dl): == or != with a side made in
  * the comparison itself. stack (bugs/stack.dl): a recursion the stack may
  * not hold, a loop through a try, or a frame for each element of a
  * list. swallowed (bugs/swallowed.dl): an error of the system that may
- * arrive at a try whose case answers a constant, saying nothing. Only
+ * arrive at a try whose case answers a constant, saying nothing. crash
+ * (exceptions.dl's ends_in): a program's own exception that may reach a
+ * try catching all whose handler raises another (the kernel's guard and
+ * its panic: 4436f60d's page refused). Only
  * the program's own units, and code that is reached. *)
 
 (* the report, on the facts and the rules' answers *)

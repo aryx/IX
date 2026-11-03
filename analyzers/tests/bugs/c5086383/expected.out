@@ -1,2 +1,2 @@
 bug? analyzers/tests/bugs/c5086383/Before.ml:7: swallowed: in Before.fork, Sys_error silenced, a constant answered
-1 bugs? (physeq 0, stack 0, swallowed 1)
+1 bugs? (physeq 0, stack 0, swallowed 1, crash 0)

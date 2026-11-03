@@ -1,2 +1,2 @@
 bug? analyzers/tests/bugs/4f00134c/Before.ml:9: swallowed: in Before.set, Unix.Unix_error silenced, a constant answered
-1 bugs? (physeq 0, stack 0, swallowed 1)
+1 bugs? (physeq 0, stack 0, swallowed 1, crash 0)

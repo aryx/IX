@@ -192,7 +192,7 @@ let constant () : string =
 let ext : string = "ext"
 
 (* what was made an Obj.t (Obj.repr f), that no one reads: a function there
- * may be called from where the facts do not go (dead.dl's escaped).
+ * may be called from where the facts do not go (contexts.dl's callback).
  * Not ext, which is read: Printf's closures, Obj.magic'd, would come back
  * from every C call *)
 let raw : string = "raw"
@@ -629,6 +629,11 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
        * arrived there, not every exception, as exn would say) *)
       let caught = t ^ ":caught" in
       fact "new_block" [ caught; t ];
+      (* (in the function, an exn: old, no frame, so no object ever; and
+       * untyped, it would go where any type does) *)
+      var_in caught !inside;
+      List.iter (fun (r : string) -> fact r [ t; "exn" ]) [ "htype"; "hfull" ];
+      List.iter (fun (r : string) -> fact r [ caught; "exn" ]) [ "vtype"; "vfull" ];
       let rec whole (p : pattern) : unit =
         match p with
         | Pvar _ -> bind p caught

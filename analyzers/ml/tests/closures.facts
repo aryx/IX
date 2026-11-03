@@ -992,6 +992,11 @@ call_indirect('Use:15:c24', 'Kit.last').
 argument('Use:15:c24', 1, 'Use:const').
 call_ret('Use:15:c24', 'Use:t34').
 new_block('Use:try1@15:caught', 'Use:try1@15').
+var_in('Use:try1@15:caught', 'Use:init').
+htype('Use:try1@15', 'exn').
+hfull('Use:try1@15', 'exn').
+vtype('Use:try1@15:caught', 'exn').
+vfull('Use:try1@15:caught', 'exn').
 catches('Use:try1@15', 'Kit.Stop').
 global_var('exn').
 var_in('exn', 'Use:init').

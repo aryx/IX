@@ -49,7 +49,10 @@ program's library, lib_core's units it names, is read with it.
 
 **-exn**
 :    The exceptions an ML program's toplevels may let escape
-     (`exceptions.dl`), with where they may be raised.
+     (`exceptions.dl`), with where they may be raised; those a
+     function C calls may let go back to C (`Callback.register`'s, a
+     signal's handler); those reaching a `try` that catches all and
+     raises from its handler (the kernel's `guard`, a panic).
 
 **-bugs**
 :    An ML program's bugs that may be, each line named by its
@@ -61,7 +64,9 @@ program's library, lib_core's units it names, is read with it.
      call, or not by a tail call over a list, a frame an element;
      `swallowed`, an error of the system (`Unix_error`, `Sys_error`)
      that may arrive at a `try` whose case answers a constant, saying
-     nothing (`bugs/swallowed.dl`, over `exceptions.dl`). C files: the
+     nothing (`bugs/swallowed.dl`, over `exceptions.dl`); `crash`, a
+     program's own exception that may reach a `try` catching all whose
+     handler raises another (`exceptions.dl`'s `ends_in`). C files: the
      report without an option, its `bug?` lines `bugs/pointers.dl`'s.
      C files and ML ones (mini-ml's runtime and lib_core: what
      `lib_code/datalog/tests/raises.sh` gives): each external's

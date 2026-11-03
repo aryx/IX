@@ -27,7 +27,15 @@
 #     Link.Error (an undefined symbol said). Not tried: database's
 #     Codegen.Invalid, turbopascal's Pascal_compile.Failed, squeak's
 #     St_compile.Error, version_control's Proto.Error
+#   2026-11-03, A2's roots (plan_bug_analyses.md): version_control's
+#     Proto.Error and Serve.Fatal, given on by Commands.proto_die (a
+#     caught exception followed since); Division_by_zero, Int32's and
+#     Int64's div and rem said [@@raise] (a4347009): assembler,
+#     languages_c, languages_dotnet, linker, machine, awk; not tried.
+#     Not given by a sweep since the models (7b8fad96): languages_dotnet's
+#     Arm.ml and Arm64.ml Link.Error
 #   the rest: not tried yet
+assembler: Main.ml: the toplevel may let Division_by_zero escape
 database: Main.ml: the toplevel may let Btree.Bad_node escape
 database: Main.ml: the toplevel may let Pager.Bad_page escape
 database: Main.ml: the toplevel may let Record.Invalid_type escape
@@ -36,12 +44,12 @@ editors_turbopascal_hosts_draw: Main.ml: the toplevel may let Pmachine.Runtime e
 editors_turbopascal_tty: Main.ml: the toplevel may let Pmachine.Runtime escape
 kernels_squeak: Main.ml: the toplevel may let St_boot.Error escape
 kernels_squeak: Main.ml: the toplevel may let St_chunk.Error escape
+languages_c: Main.ml: the toplevel may let Division_by_zero escape
 languages_c: Main.ml: the toplevel may let Il.Bad_il escape
 languages_c: Main.ml: the toplevel may let Tree_helpers.Error escape
 languages_datalog: Main.ml: the toplevel may let Il.Bad_il escape
-languages_dotnet: Arm64.ml: the toplevel may let Link.Error escape
-languages_dotnet: Arm.ml: the toplevel may let Link.Error escape
 languages_dotnet_csc: Main.ml: the toplevel may let Il.Bad_il escape
+languages_dotnet: Main.ml: the toplevel may let Division_by_zero escape
 languages_dotnet: Main.ml: the toplevel may let Il.Bad_il escape
 languages_dotnet: Main.ml: the toplevel may let Jit.Refused escape
 languages_dotnet: Main.ml: the toplevel may let Link.Error escape
@@ -57,16 +65,22 @@ languages_prolog: Main.ml: the toplevel may let Prolog_read.Error escape
 languages_scheme: Main.ml: the toplevel may let Scheme_syntax.Error escape
 languages_scheme: Main.ml: the toplevel may let Sexpr_read.Error escape
 languages_tiger: Main.ml: the toplevel may let Il.Bad_il escape
+linker: Main.ml: the toplevel may let Division_by_zero escape
+machine: Main.ml: the toplevel may let Division_by_zero escape
 machine: Main.ml: the toplevel may let Memory.Fault escape
 typesetting_man: Main.ml: the toplevel may let Pic.Unknown escape
 typesetting_man: Main.ml: the toplevel may let Zlib.Corrupt escape
 utilities_calc_bc: Main.ml: the toplevel may let Division_by_zero escape
 utilities_calc_dc: Main.ml: the toplevel may let Division_by_zero escape
 utilities_calc_hoc: Main.ml: the toplevel may let Eval.Returned escape
+utilities_text_awk: Cell.ml: the toplevel may let Division_by_zero escape
 utilities_text_awk: Main.ml: the toplevel may let Cell.Fatal escape
+utilities_text_awk: Main.ml: the toplevel may let Division_by_zero escape
 utilities_text_awk: Main.ml: the toplevel may let Regex.Error escape
 utilities_text_awk: Main.ml: the toplevel may let Run.Break_loop escape
 utilities_text_awk: Main.ml: the toplevel may let Run.Continue_loop escape
 utilities_text_awk: Main.ml: the toplevel may let Run.Return_value escape
 version_control: Main.ml: the toplevel may let Delta.Corrupt escape
+version_control: Main.ml: the toplevel may let Proto.Error escape
+version_control: Main.ml: the toplevel may let Serve.Fatal escape
 version_control: Main.ml: the toplevel may let Zlib.Corrupt escape

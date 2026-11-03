@@ -18,12 +18,15 @@ kernels/9pi/devices/keyboard/Latin1.ml:133: stack: Latin1.take calls itself, not
 kernels/9pi/devices/screen/Devdraw.ml:204: stack: drop calls itself, not a tail call, over a list
 kernels/9pi/devices/storage/user/fdisk/Fdisk.ml:74: swallowed: in Fdisk:fun at line 70, Unix.Unix_error silenced, a constant answered
 kernels/9pi/devices/sys/Devarch.ml:77: stack: go calls itself, not a tail call, over a list
+kernels/9pi/devices/sys/Devenv.ml:45: stack: replace calls itself, not a tail call, over a list
 kernels/9pi/devices/sys/Devproc.ml:98: stack: go calls itself, not a tail call, over a list
 kernels/9pi/devices/sys/Devsys.ml:21: stack: go calls itself, not a tail call, over a list
 kernels/9pi/files/Kchan.ml:88: stack: try_ calls itself in a try's handler: no tail call by mini-ml
+kernels/9pi/init/Main.ml:67: crash: in Main.guard, Errors.Error caught by all, the handler raising Failure
 kernels/9pi/lib_graphics/lib_memdraw/Memchan.ml:21: stack: place calls itself, not a tail call, over a list
 kernels/9pi/lib_graphics/lib_memlayer/Memlayer.ml:50: stack: front calls itself, not a tail call, over a list
 kernels/9pi/lib_graphics/lib_memlayer/Memshape.ml:38: stack: pairs calls itself, not a tail call, over a list
+kernels/9pi/syscalls/Usermem.ml:29: stack: go calls itself in a try's handler: no tail call by mini-ml
 kernels/oberon/texts/Texts.ml:113: stack: Texts.split calls itself, not a tail call, over a list
 kernels/singularity/singml/Safe.ml:118: stack: module_expr calls itself, not a tail call, over a list
 languages/c/Check.ml:454: stack: go calls itself, not a tail call, over a list
@@ -163,3 +166,4 @@ version_control/wire/Proto.ml:208: stack: dial calls itself in a try's handler: 
 windows/rio/Processes_winshell.ml:13: swallowed: in Processes_winshell.mount_files, Sys_error silenced, a constant answered
 windows/rio/Processes_winshell.ml:26: swallowed: in Processes_winshell.start, Unix.Unix_error silenced, a constant answered
 windows/rio/Processes_winshell.ml:46: swallowed: in Processes_winshell.note, Sys_error silenced, a constant answered
+windows/rio/Terminal.ml:43: stack: Terminal.take calls itself, not a tail call, over a list

@@ -19,6 +19,8 @@
 %   fpt(O, O1, O2, F, L, L1, L2)  a field of an object in its context
 %   gpt(G, H, H1, H2)             a global's: one place, no context
 %   reachable(F, C1, C2)          F runs in that context
+%   callback(F)                   F may be called from where the facts
+%                                 do not go, an entry; c_callback(F), by C
 %   target(I, F), pts(V, H)       the answers, contexts forgotten
 %
 % A context is two columns, not a term (plan_datalog.md, decision 5):
@@ -225,6 +227,18 @@ fresh(I, C1, C2, F, H1, H2) :- call(I, C1, C2, F, H1, H2), \+ is_stage(F).
 callee(I, C1, C2, F, H1, H2) :- call(I, C1, C2, F, H1, H2), is_stage(F).
 
 reachable(F, N1, N2) :- callee(_, _, _, F, N1, N2).
+
+% What may be called from where the facts do not go, with no context,
+% as an entry: what C calls, a function given to a C function with no
+% body (qsort, signal) or in ML's ext (Callback.register, Sys.signal, a
+% thread's); and one made an Obj.t (raw), called back by an Obj.magic
+% (ocamlyacc's actions) or by its address (mini-dotnet's JIT call-outs).
+c_callback(F) :-
+  call_direct(I, G), \+ function(G), argument(I, _, A), pts(A, F), function(F).
+c_callback(F) :- gpt(ext, F, _, _), function(F).
+callback(F) :- c_callback(F).
+callback(F) :- gpt(raw, F, _, _), function(F).
+reachable(F, none, none) :- callback(F).
 
 passed(I, Z, C1, C2, L, L1, L2) :-
   argument(I, Z, A), pt(A, C1, C2, L, L1, L2).

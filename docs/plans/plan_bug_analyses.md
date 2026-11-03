@@ -20,7 +20,7 @@ checked the same way: it must report the bug on the code as it was
 before the fix (`git show FIX^:path`) and stay quiet on the fixed code.
 Then it runs over ix through the sweep, as `-dead`, `-caps` and `-exn` do.
 
-**Status: A6's first half, A1, A3 and A2's primitives done (2026-11-03), the rest planned.**
+**Status: A6's first half, A1, A3 and A2 done (2026-11-03), the rest planned.**
 `mini-analyze -bugs` runs `bugs/physeq.dl` (`==` or `!=` with a side
 made in the comparison), `bugs/stack.dl` (a loop through a `try`, a
 frame a list's element) and `bugs/swallowed.dl` (an error of the
@@ -214,10 +214,47 @@ call graph's false ones: `Sys.get_argv` and `Sys.readdir` call
 `make_vect` with `argc` and a count checked `>= 0`, a size never
 negative; not annotated, a wrong `[@@raise]` would be a lie to `-exn`.
 The sweeps of the 44 programs, before and after: `-bugs` the same;
-`-exn` the same for each program's own exceptions (`exn_ix.txt`
-unchanged), more toplevels and sites for lib_core's: `Invalid_argument`
-118 lines to 165 (`compare`, `String.make`, `Hashtbl.create`, ...),
-`Failure` 73 to 79, `Division_by_zero` 2 to 8, `End_of_file` 1 to 2.
+`-exn` the same for each program's own exceptions, more toplevels and
+sites for lib_core's: `Invalid_argument` 118 lines to 165 (`compare`,
+`String.make`, `Hashtbl.create`, ...), `Failure` 73 to 79,
+`Division_by_zero` 2 to 8, `End_of_file` 1 to 2. (Wrong then:
+`exn_ix.txt` keeps `Division_by_zero`, bc's and dc's; the 6 new ones,
+`Int32`/`Int64` `div` and `rem`, are recorded with the roots below.)
+
+**The roots** (2026-11-03): what C calls was an entry for `-dead` only
+(`dead.dl`'s `escaped`); now `contexts.dl`'s `callback(F)`, for every
+analysis: a function in `ext` (`Callback.register`, `Sys.signal`, a
+thread's), one given to a C function with no body (`c_callback`), and
+one made an `Obj.t` (ocamlyacc's actions, mini-dotnet's JIT call-outs,
+called back by `Obj.magic` or their address). The kernel's `trap`,
+`irq`, `fault`, `process_start`, `Proc.scheduler` are read at last.
+`exceptions.dl`: `from_c(F, E)`, E leaving a function C calls (`-exn`:
+"Main.trap, called from C, may let Failure escape"); `ends_in(T, E)`,
+E reaching a try that catches all and raises from its handler, not
+what it caught (`guard`, whose `Machine.panic` ends in `failwith`):
+`-exn`'s "the try in Main.guard, its handler raising, may be reached
+by", and `-bugs`' `crash` for a program's own exception. A handler
+raising `Invalid_argument` (by `^`) is not one; one giving what it
+caught to a raise, there or in another function (git's `proto_die`),
+neither. Found on the way: a `with e ->`'s caught object had no frame
+(no `var_in`), so it never pointed anywhere and exceptions.dl's rule
+for "kept and raised again" had never run; it is in its function now,
+typed `exn`. And `raised(E, R)` scanned every raise for each tuple of
+`leaves`: 187 s of mini-ml's `-bugs`, reordered, 248 s to 66 (75 at
+HEAD). Test `analyzers/tests/bugs/4436f60d/`: Before.ml, the fault's
+refused page reaching `guard`, reported; After.ml, its fix, a cleanup
+raising `e` again, a handler answering, a `proto_die`, not. The sweeps
+of the 44, HEAD and after: `-dead`, `-caps` the same; `-bugs` 1 more,
+rio's `Terminal.take` (a callback's); `-exn` git's `Proto.Error` and
+`Serve.Fatal` (passed on by `proto_die`), no program's "called from C"
+line. The kernel: 3 more, `Devenv.replace` and `Usermem.go` (a page
+at a time, bounded) for `stack`, and the crash: `Errors.Error` may
+reach `guard` (and `Queue.Empty`, lib_core's), a panic, not triaged:
+`Syscall.syscall` catches it, so it comes another way (an interrupt's
+device, a note, a kernel process) or the analysis merges too much.
+`bugs_ix.txt`, `exn_ix.txt` recorded. Not done: a thread's function
+(`Thread.make` catches all already) and a signal's handler as roots of
+their own, with their own report.
 
 **Cost:** about 20 lines of facts and 5 of rules. The `Invalid_argument`
 ones will be many. Report them only on paths where the index comes from

@@ -68,7 +68,7 @@ ld -m 5 -o hello hello.5 libc.a
 ```
 
 # SEE ALSO
-\man{asm}{1}, \man{ld}{1}, \man{5i}{1}, \man{acid}{1}, \man{datalog}{1},
+\man{asm}{1}, \man{ld}{1}, \man{5i}{1}, \man{acid}{1}, \man{analyze}{1},
 \man{8c}{1}
 
 # DIAGNOSTICS

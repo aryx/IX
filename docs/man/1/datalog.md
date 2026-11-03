@@ -69,8 +69,8 @@ it, and a negation through a recursion is refused. `=`, `\=`, `<`,
 datalog graph.dl
 datalog -q 'path(a, X)' graph.dl
 datalog -profile -btree point_to/2 pointer.dl facts.dl
-cc -m 7 -facts hello.c > hello.dl
+mini-analyze -facts hello.c > hello.dl
 ```
 
 # SEE ALSO
-\man{prolog}{1}, \man{cc}{1}, \man{ml}{1}
+\man{analyze}{1}, \man{prolog}{1}, \man{cc}{1}, \man{ml}{1}

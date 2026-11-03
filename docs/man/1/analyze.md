@@ -1,0 +1,255 @@
+\title{analyze}{1}{devtools}
+
+# NAME
+analyze – what C and ML programs may do, by facts and Datalog rules
+
+# SYNOPSIS
+**mini-analyze**
+[ **-dead** | **-caps** | **-exn** | **-facts** | **-flow** | **-dflow** ]
+[ **-r** *rules* ]
+[ **-L** *lib* ]
+[ **-I** *dir* ] ...
+[ **-D** *name*`=`*value* ] ...
+[ **-root** *f* ] ...
+[ **-context** *file* ]
+[ **-library** ]
+[ **-alone** ]
+[ **-fingerprint** ]
+*file*`.c` ... | *file*`.ml` ...
+
+# DESCRIPTION
+*Analyze* reads the *files* as one program, by mini-cc's front end
+for C and mini-ml's for ML, writes what each says as Datalog facts,
+and runs on them the rules of `lib_code/datalog`, with
+\man{datalog}{1}'s engine: what a pointer may point to, by Andersen's
+analysis, then the question asked of it. Each answer is a "may": what
+the facts cannot see is taken as able to do anything, so what is said
+of a program holds of every run, and what is said may never happen.
+
+With no option, each call through a pointer (C) or through a variable
+(ML: a closure is a pointer to a function) is said with the functions
+it may reach, and for C the bugs the same answers show (`bugs.dl`): a
+`free` of what is not the heap's, a local's address returned. An ML
+program's library, lib_core's units it names, is read with it.
+
+**-dead**
+:    What no run can reach, from `main` and the toplevels (`dead.dl`):
+     functions, and why (nothing names it, named only by dead code, a
+     pointer taken and never called), globals, fields stored and never
+     read, constructors matched and never built, C statements after a
+     jump.
+
+**-caps**
+:    Whether ML's own functions hold the capabilities they need
+     (`capabilities.dl`): held, from a parameter's type
+     `< Cap.stdout; .. >` or a record's field; needed, from what the
+     function reaches. Said: no capability, not the right one, one it
+     may not need.
+
+**-exn**
+:    The exceptions an ML program's toplevels may let escape
+     (`exceptions.dl`), with where they may be raised.
+
+**-facts**
+:    The facts, not the analysis: to write one's own rules
+     (`lib_code/datalog/FACTS.md` says each relation).
+
+**-flow**
+:    Each function's code as facts: ML's in SSA form, for
+     `liveness_ssa.dl` and `dominators.dl`; C's as mini-cc's stack
+     code, for `liveness.dl`. **-dflow**: the compilers' own liveness
+     and dominators, to compare.
+
+**-r** *rules*
+:    The directory of the `.dl` files and `points_to/`; by default
+     `lib_code/datalog` of the current directory.
+
+**-L** *lib*
+:    lib_core's directory, `lib_core`; *lib*`/stdlib`'s Pervasives
+     must be there.
+
+**-I**, **-D**
+:    As \man{cc}{1}'s.
+
+**-root** *f*
+:    *F* is entered from where the facts do not go: assembly, a
+     kernel's trap.
+
+**-context** *file*
+:    The context file of `points_to/`: `call1_heap1` for C,
+     `call1_rec` for **-exn**, `insensitive`. The sharper, the longer.
+
+**-library**
+:    Every function may be called from outside, not `main` alone.
+
+**-alone**
+:    ML: the files' own facts, not their library units'.
+
+**-fingerprint**
+:    After the report, one number of every answer: two runs of the
+     analysis, native or on .NET, agree if their numbers do.
+
+# EXAMPLES
+In ix's root, `bin/` first on the path; elsewhere **-r** and **-L**
+say where ix is (`IX`). Each report's last line, its counts, is left
+out here, and long lines are cut.
+
+A C program, `calc.c`: a table of operations, one called by pointer.
+
+```
+void	*malloc(unsigned long);
+void	free(void*);
+
+typedef struct Op Op;
+struct Op { char *name; int (*run)(int); };
+
+int	twice(int x) { return 2*x; }
+int	square(int x) { return x*x; }
+int	negate(int x) { return -x; }
+
+Op	ops[] = { { "twice", twice }, { "square", square } };
+
+int
+apply(Op *o, int x)
+{
+	return o->run(x);
+}
+
+int
+main(void)
+{
+	char *s = "done";
+
+	apply(&ops[1], 3);
+	free(s);
+	return 0;
+}
+```
+
+```
+% mini-analyze -r $IX/lib_code/datalog calc.c
+calc.c:16: in apply, through o->run: square, twice
+bug? calc.c:25: in main, free may be given a string (line 22),
+  not the heap's
+% mini-analyze -r $IX/lib_code/datalog -dead calc.c
+dead field: name stored in _init, nothing live reads it
+calc.c:9: dead: negate, nothing names it
+```
+
+`o->run` may reach `twice` too, though `ops[1]` alone is passed: an
+array is one object to the analysis, its elements one field.
+
+An ML program, `Log.ml`:
+
+```
+let say (caps : < Cap.stdout; .. >) s = Console.print caps s
+let shout s = print_string (String.uppercase_ascii s)
+let unused () = shout "never"
+```
+
+and `Main.ml`:
+
+```
+exception Empty
+
+let first l = match l with [] -> raise Empty | x :: _ -> x
+
+let handlers =
+  [ (fun caps -> Log.say caps "hello\n");
+    (fun _ -> Log.shout "bye\n") ]
+
+let () =
+  Cap.main (fun caps ->
+    List.iter (fun h -> h caps) handlers;
+    ignore (first []))
+```
+
+```
+% mini-analyze -r $IX/lib_code/datalog -L $IX/lib_core Log.ml Main.ml
+Main.ml:11: in Main:fun at line 11, through h: Main:fun at line 6,
+  Main:fun at line 7
+never reached: Log.unused (Log.ml:3)
+% mini-analyze ... -dead Log.ml Main.ml
+Log.ml:3: dead: Log.unused, nothing names it
+% mini-analyze ... -caps Log.ml Main.ml
+Log.ml:2: Log.shout: no capability, needs Cap.stdout
+  (Pervasives.print_string)
+% mini-analyze ... -exn Log.ml Main.ml
+Main.ml: the toplevel may let Main.Empty escape, raised at Main.ml:3
+  (Main.first)
+```
+
+One of ix's programs, all its units, in ix's root (a second):
+
+```
+% mini-analyze -dead utilities/calc/dc/*.ml
+utilities/calc/dc/Dc.ml:116: dead: Dc.of_string, in init but no call
+  goes through the pointer
+utilities/calc/dc/Dc.ml:627: dead: Dc.feed, nothing names it
+utilities/calc/dc/Num.ml:64: dead: Num.sub, nothing names it
+```
+
+`Num.sub` is called by nothing in ix. `Dc.feed` and `Dc.of_string`
+are dead in mini-dc, not in mini-bc, which links `Dc` and calls
+`feed`: **-dead** is of one program. `lib_code/datalog/tests/sweep.sh` runs a
+mode on each of ix's programs, `triage.sh` sorts what **-dead** says.
+
+One's own question: the facts, and rules over them. Which functions
+may `main` reach, calls through pointers too (`target`, of
+`points_to/`)? In `graph.dl`:
+
+```
+calls(G, F) :- in_function(I, G), call_direct(I, F).
+calls(G, F) :- in_function(I, G), target(I, F).
+reaches(G, F) :- calls(G, F).
+reaches(G, F) :- reaches(G, H), calls(H, F).
+```
+
+```
+% mini-analyze -facts calc.c > calc.dl
+% P=$IX/lib_code/datalog/points_to
+% mini-datalog -q 'reaches(main, F)' \
+    $P/instructions.dl $P/contexts.dl $P/insensitive.dl \
+    calc.dl graph.dl 2> /dev/null
+reaches(main,apply).
+reaches(main,free).
+reaches(main,square).
+reaches(main,twice).
+```
+
+The facts of the code: what is live across a call, which a compiler
+must save (`s`, the string `free` is given after `apply`):
+
+```
+% mini-analyze -flow calc.c > flow.dl
+% mini-datalog -q 'across_call(V, P)' \
+    $IX/lib_code/datalog/liveness.dl flow.dl
+across_call('main:s/-8','main:7').
+```
+
+# FILES
+`lib_code/datalog/*.dl`
+:    The questions: `bugs.dl`, `calls.dl`, `dead.dl`,
+     `capabilities.dl`, `exceptions.dl`, `liveness.dl`, ...; each
+     file's header says what it reports, why so, and its history.
+
+`lib_code/datalog/points_to/`
+:    The pointer analysis: `instructions.dl`, `contexts.dl`, and the
+     context files.
+
+`lib_code/datalog/FACTS.md`
+:    Each relation, with the facts of a small program.
+
+`lib_code/README.md`
+:    The analyses run on ix, what they found, their costs.
+
+# SEE ALSO
+\man{datalog}{1}, \man{cc}{1}, \man{ml}{1}, \man{dotnet}{1}
+
+# BUGS
+Built by dune only, not by ix. A C function of the same name in two
+files is one function. A capability is held by its type alone: a
+`< .. >`, or a parameter named `caps` of no written type, holds none
+that can be named. `Unix.openfile`'s flags are not read, so it needs
+`Cap.open_in` or `Cap.open_out`. **-exn** on mini-cc or mini-ml runs
+past three minutes.

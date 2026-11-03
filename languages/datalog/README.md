@@ -203,6 +203,21 @@ firings, new tuples, lookups, seconds):
   point_to(Q, L)`, 98% of them finding a tuple there. Asked from the
   values, without an array made, hashed and compared as integers, the
   values flat in the slots: 147 s of that rule to 81 s.
+- **No closure in the join's loops** (2026-11-03, callgrind on
+  mini-scheme's Andersen: 2,700 instructions a firing). A key's values
+  were a closure called by the hash and the compare for each column, a
+  tuple's bound columns a `List.iter`, a head a closure tested then an
+  `Array.map` of it, a hash lookup two local `let rec` closing over the
+  slots (made at each call), an index found by `List.find_opt`'s
+  closure: now loops over arrays, a key a literal array (`Array.make`
+  is a call into the runtime, 6% of the instructions), a head one
+  buffer copied when new. 17.9 to 14.1 thousand million instructions;
+  mini-scheme's Andersen 4.13 s to 3.23, mini-prolog's `-exn` 22.6 s to
+  16.1, mini-cc's calls by mini-analyze 52 s to 38, mini-ml's `-dead` 74
+  s to 52, mini-cc's `-exn` 355 s to 255; every fact the same, compared
+  whole. Dune's dev profile adds `-opaque`, so a call into another
+  module (`Index.first_array`) is a closure's, `caml_apply2`: its release
+  build was 5% faster still, not worth a profile of its own.
 
 What is left is that rule: Andersen's analysis copies each set along
 each assignment, again and again where the assignments make a cycle.

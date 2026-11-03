@@ -41,11 +41,24 @@ let hash_array (n : int) (a : int array) : int =
   let h = (!h lxor (!h lsr 16)) * 73244475 in
   (h lxor (h lsr 16)) land max_int
 
+(* (loops: a local rec function of the free cells, n and a was a closure
+ * made at each call, the most allocated words of mini-prolog's -exn;
+ * old: let rec same base i = ... and walk k = ... in walk start) *)
 let find_array (n : int) (p : part) (h : int) (a : int array) : int =
   let mask = p.size - 1 and cells = p.cells in
-  let rec same (base : int) (i : int) : bool = i = n || (cells.(base + i) = a.(i) && same base (i + 1)) in
-  let rec walk (k : int) : int = if cells.(k * n) < 0 || same (k * n) 0 then k else walk ((k + 1) land mask) in
-  walk ((h lsr part_bits) land mask)
+  let k = ref ((h lsr part_bits) land mask) and found = ref false in
+  while not !found do
+    let base = !k * n in
+    if cells.(base) < 0 then found := true
+    else begin
+      let i = ref 0 in
+      while !i < n && cells.(base + !i) = a.(!i) do
+        incr i
+      done;
+      if !i = n then found := true else k := (!k + 1) land mask
+    end
+  done;
+  !k
 
 let part_of (t : t) (value : int -> int) : int = if t.arity = 0 then 0 else hash t.arity value land (parts - 1)
 

@@ -183,6 +183,12 @@ and scan = {
   keys : (int * Datalog.arg) array;
   binds : (int * int) list;
   same : (int * int) list;
+  (* binds and same again, as their columns and their slots: the run's
+   * loops read these *)
+  bind_at : int array;
+  bind_to : int array;
+  same_at : int array;
+  same_to : int array;
 }
 
 (* a rule's body's plan, with an atom from the new tuples or none; with

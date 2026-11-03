@@ -38,6 +38,13 @@ and scan = {
   keys : (int * D.arg) array;   (* (column, value): those columns' *)
   binds : (int * int) list;     (* (column, slot): a variable it binds *)
   same : (int * int) list;      (* (column, slot): the same again, p(X, X) *)
+  (* the two lists again, as arrays of columns and of slots: walked by a
+   * loop at each tuple, where a List.iter called a closure (Compile_il
+   * reads the lists) *)
+  bind_at : int array;
+  bind_to : int array;
+  same_at : int array;
+  same_to : int array;
 }
 
 (* the order of a body's atoms: after the one from the new tuples, the
@@ -65,7 +72,11 @@ let plan (slots : int) (first : D.atom option) (body : D.literal list) : step li
     List.iter (fun ((_, k) : int * int) -> bound.(k) <- true) !binds;
     let keys = Array.of_list (List.rev !keys) in
     let mask = Array.fold_left (fun (m : int) ((i, _) : int * D.arg) -> m lor (1 lsl i)) 0 keys in
-    Scan { atom = a; from_new; mask; keys; binds = !binds; same = !same } in
+    let cols (l : (int * int) list) : int array = Array.of_list (List.map fst l) in
+    let slots (l : (int * int) list) : int array = Array.of_list (List.map snd l) in
+    Scan
+      { atom = a; from_new; mask; keys; binds = !binds; same = !same; bind_at = cols !binds; bind_to = slots !binds;
+        same_at = cols !same; same_to = slots !same } in
   let score (a : D.atom) : int * int =
     let n = Array.fold_left (fun (n : int) (x : D.arg) -> if known x then n + 1 else n) 0 a.args in
     ((if n = Array.length a.args then 1 else 0), n) in
@@ -96,13 +107,18 @@ let plan (slots : int) (first : D.atom option) (body : D.literal list) : step li
 (* A plan run *)
 (*****************************************************************************)
 
+(* (a top-level loop: List.find_opt's closure was made at each lookup,
+ * 31 million on mini-scheme's Andersen) *)
+let rec find_index (mask : int) (l : (int * Index.t) list) : Index.t option =
+  match l with [] -> None | (m, index) :: rest -> if m = mask then Some index else find_index mask rest
+
 (* the index of a relation by some columns, made if it is not there *)
 let index (r : D.relation) (mask : int) : Index.t =
   (* (not List.assoc_opt: its compare is the polymorphic one, a call
    * into the runtime at each lookup, 2.3 million on mini-datalog's
    * facts) *)
-  match List.find_opt (fun ((m, _) : int * Index.t) -> m = mask) r.indexes with
-  | Some (_, index) -> index
+  match find_index mask r.indexes with
+  | Some index -> index
   | None ->
       let index = Index.create ~sorted:(Relset.sorted r.set) r.arity (D.columns r.arity mask) in
       for id = 0 to r.count - 1 do
@@ -153,33 +169,74 @@ let rec join (p : D.t) (stats : stats) (env : int array) (steps : step list) (fo
   | Scan s :: rest ->
       stats.lookups <- stats.lookups + 1;
       let r = s.atom.rel in
-      let key (i : int) : int = value env (snd s.keys.(i)) in
       if s.from_new || s.mask = 0 then begin
         let lo, hi = if s.from_new then (r.delta_from, r.delta_to) else (0, r.count) in
         for id = lo to hi - 1 do
           scanned p stats env s rest found id
         done
       end
-      else if Array.length s.keys = r.arity then (if Relset.mem_by r.set key then join p stats env rest found)
       else begin
-        let index = index r s.mask in
-        let at = Index.at index in
-        Index.iter index r.rows r.arity key (fun (keys : int array) (base : int) -> each p stats env s rest found keys base at)
+        (* the key's values in an array, made at each lookup (not kept in
+         * the plan: the domains share it), read by a loop where the key
+         * was a closure called for each column by the hash and the
+         * compare (old: Relset.mem_by r.set key, and Index.iter index
+         * r.rows r.arity key (fun keys base -> each ... keys base at)
+         * for both kinds of index; mini-cc's Andersen 46 s, ...) *)
+        let keys = s.keys in
+        let n = Array.length keys in
+        (* (a literal array for a key of 1 to 3 columns: made in place,
+         * where Array.make is a call into the runtime, caml_make_vect,
+         * 6% of mini-scheme's instructions) *)
+        let k =
+          match n with
+          | 1 -> [| value env (snd keys.(0)) |]
+          | 2 -> [| value env (snd keys.(0)); value env (snd keys.(1)) |]
+          | 3 -> [| value env (snd keys.(0)); value env (snd keys.(1)); value env (snd keys.(2)) |]
+          | _ -> Array.init n (fun (i : int) -> value env (snd keys.(i))) in
+        if n = r.arity then (if Relset.mem_array r.set k then join p stats env rest found)
+        else
+          let index = index r s.mask in
+          (* (a relation's indexes are of its set's kind) *)
+          if not (Relset.sorted r.set) then begin
+            let rows = r.rows and arity = r.arity in
+            let id = ref (Index.first_array index k) in
+            while !id >= 0 do
+              each p stats env s rest found rows (!id * arity) same_place;
+              id := Index.next index !id
+            done
+          end
+          else
+            let at = Index.at index in
+            let key (i : int) : int = k.(i) in
+            Index.iter index r.rows r.arity key (fun (keys : int array) (base : int) -> each p stats env s rest found keys base at)
       end
 
 (* a tuple of a scan with no index, by its number: its known columns
- * compared *)
+ * compared (old: Array.for_all of a closure) *)
 and scanned (p : D.t) (stats : stats) (env : int array) (s : scan) (rest : step list) (found : unit -> unit) (id : int) : unit =
   let r = s.atom.rel in
-  if Array.for_all (fun ((i, x) : int * D.arg) -> D.get r id i = value env x) s.keys then
-    each p stats env s rest found r.rows (id * r.arity) same_place
+  let rows = r.rows and base = id * r.arity and keys = s.keys in
+  let i = ref 0 and n = Array.length keys in
+  while !i < n && rows.(base + fst keys.(!i)) = value env (snd keys.(!i)) do
+    incr i
+  done;
+  if !i = n then each p stats env s rest found rows base same_place
 
 (* a tuple that matches, column c at keys.(base + at.(c)) (a row, or an
- * index's leaf): its variables bound, the steps after *)
+ * index's leaf): its variables bound, the steps after (old: List.iter and
+ * List.for_all of closures over s.binds and s.same) *)
 and each (p : D.t) (stats : stats) (env : int array) (s : scan) (rest : step list) (found : unit -> unit) (keys : int array)
     (base : int) (at : int array) : unit =
-  List.iter (fun ((i, k) : int * int) -> env.(k) <- keys.(base + at.(i))) s.binds;
-  if List.for_all (fun ((i, k) : int * int) -> keys.(base + at.(i)) = env.(k)) s.same then join p stats env rest found
+  let bind_at = s.bind_at and bind_to = s.bind_to in
+  for j = 0 to Array.length bind_at - 1 do
+    env.(bind_to.(j)) <- keys.(base + at.(bind_at.(j)))
+  done;
+  let same_at = s.same_at and same_to = s.same_to in
+  let j = ref 0 and n = Array.length same_at in
+  while !j < n && keys.(base + at.(same_at.(!j))) = env.(same_to.(!j)) do
+    incr j
+  done;
+  if !j = n then join p stats env rest found
 
 (*****************************************************************************)
 (* A rule on several domains *)
@@ -395,13 +452,18 @@ let apply (p : D.t) (stats : stats) (rule : D.rule) (steps : step list) : unit =
          (* a hashed head: each tuple added as found (a hash's slots and
           * chains do not move under a walk) *)
          let r = rule.head.rel in
-         let h = Relset.hint r.set in
+         (* the head's values into one array, tested, and added (copied)
+          * if new (old: Relset.mem_hint r.set h head, the head a closure
+          * called for each column, then Array.map (value env) of it) *)
+         let args = rule.head.args in
+         let n = Array.length args in
+         let tuple = Array.make n 0 in
          join p stats env steps (fun () ->
              stats.firings <- stats.firings + 1;
-             if not (Relset.mem_hint r.set h head) then begin
-               ignore (D.add r (Array.map (value env) rule.head.args));
-               stats.derived <- stats.derived + 1
-             end)
+             for i = 0 to n - 1 do
+               tuple.(i) <- value env args.(i)
+             done;
+             if D.add r tuple then stats.derived <- stats.derived + 1)
      | _ ->
          let r = rule.head.rel in
          let seen = Tuples.create r.arity and got = ref [] and h = Relset.hint r.set in

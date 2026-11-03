@@ -36,11 +36,22 @@ let next (t : t) (id : int) : int = t.chain.(id)
 
 (* first and add of a key in an array, written out: no closure called
  * for each value (Tuples.hash_array's reason) *)
+(* (loops, as Tuples.find_array's; old: let rec same and walk) *)
 let find_array (n : int) (p : part) (h : int) (key : int array) : int =
   let mask = p.size - 1 and w = n + 1 and cells = p.cells in
-  let rec same (base : int) (i : int) : bool = i = n || (cells.(base + i) = key.(i) && same base (i + 1)) in
-  let rec walk (k : int) : int = if cells.((k * w) + n) < 0 || same (k * w) 0 then k else walk ((k + 1) land mask) in
-  walk ((h lsr Tuples.part_bits) land mask)
+  let k = ref ((h lsr Tuples.part_bits) land mask) and found = ref false in
+  while not !found do
+    let base = !k * w in
+    if cells.(base + n) < 0 then found := true
+    else begin
+      let i = ref 0 in
+      while !i < n && cells.(base + !i) = key.(!i) do
+        incr i
+      done;
+      if !i = n then found := true else k := (!k + 1) land mask
+    end
+  done;
+  !k
 
 let first_array (t : t) (key : int array) : int =
   let h = Tuples.hash_array t.n key in

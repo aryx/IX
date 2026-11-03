@@ -16,13 +16,13 @@ val argv: string array
         (* The command line arguments given to the process. *)
 external file_exists: string -> bool = "sys_file_exists"
         (* Test if a file with the given name exists. *)
-external is_directory : string -> bool = "sys_is_directory"
+external is_directory : string -> bool = "sys_is_directory" [@@raise Sys_error]
         (* Returns [true] if the given name refers to a directory, [false]
            if it refers to another kind of file. Raise [Sys_error] if no
            file exists with the given name. *)
-external remove: string -> unit = "sys_remove"
+external remove: string -> unit = "sys_remove" [@@raise Sys_error]
         (* Remove the given file name from the file system. *)
-external rename : string -> string -> unit = "sys_rename"
+external rename : string -> string -> unit = "sys_rename" [@@raise Sys_error]
         (* Rename a file. *)
 external getenv: string -> string = "sys_getenv"
         (* Return the value associated to a variable in the process
@@ -37,9 +37,9 @@ external command: string -> int = "sys_system_command"
 external time: unit -> float = "sys_time"
         (* Return the processor time, in seconds, used by the program since
            the beginning of execution. *)
-external chdir: string -> unit = "sys_chdir"
+external chdir: string -> unit = "sys_chdir" [@@raise Sys_error]
         (* Change the current working directory of the process. *)
-external getcwd: unit -> string = "sys_getcwd"
+external getcwd: unit -> string = "sys_getcwd" [@@raise Sys_error]
         (* Return the current working directory of the process. *)
 val os_type: string
         (* Operating system currently executing the Caml program. *)
@@ -103,7 +103,8 @@ val int_size : int
 (* a directory's names, in no order, without . and ..; a directory made
  * with these permissions; an empty one removed *)
 external readdir : string -> string array = "sys_read_directory"
-external mkdir : string -> int -> unit = "sys_mkdir"
+  [@@raise Sys_error]
+external mkdir : string -> int -> unit = "sys_mkdir" [@@raise Sys_error]
 val rmdir : string -> unit
 
 (* the name the program was run by *)

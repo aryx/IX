@@ -169,8 +169,13 @@ also say `root_of(F, thread)`. The exceptions of the primitives
 go in as `raise_of` facts at the call (`prim_body` is where). This is
 what exceptions.dl's header lists as "not here".
 
-**Done with A3** (2026-11-03): the primitives that raise `Sys_error`
-(`Closure_facts.sys_error_prims`), a raise at their call. `-exn` sees
+**Done with A3** (2026-11-03): the primitives that raise `Sys_error`,
+a raise at their call. Each external says it where it is declared,
+`external remove : string -> unit = "sys_remove" [@@raise Sys_error]`
+(mini-ml's parser keeps it in `Annotations.raises`; OCaml ignores it),
+11 in lib_core's Pervasives, Sys, Filename: the rest of A2's
+primitives (`Invalid_argument`, `Division_by_zero`) are more
+attributes, no list in the analysis. `-exn` sees
 them too: 12 programs' toplevels may now let `Sys_error` escape, a
 lib_core exception that `exn_ix.txt` leaves out; nothing else changed.
 
@@ -195,7 +200,8 @@ same child) is the same try, found by the same report.
   case that names what the exception holds (`Unix_error (EINTR, _,
   _)`) is a choice, not silent.
 - The runtime's primitives that raise `Sys_error` (`sys_open`,
-  `sys_remove`, ... : `raise_with` in `languages/ml/runtime/`) are a
+  `sys_remove`, ...: `raise_with` in `languages/ml/runtime/`), their
+  externals marked `[@@raise Sys_error]` (A2 above), are a
   raise at their call (`raise_of`, and `primitive(I, P)` naming it).
   That is A2's primitives, the part A3 needed: without it no
   `Sys_error` arrives anywhere, `open_in` failing in C. `Unix_error`

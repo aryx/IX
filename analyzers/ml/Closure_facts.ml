@@ -406,12 +406,6 @@ let position (i : string) (result : string) : unit =
   if result = !inside ^ ":ret" then
     if !tries = [] && !handlers = [] then fact "tail" [ i ] else fact "tail_but_try" [ i ]
 
-(* the runtime's primitives that raise Sys_error (raise_with in
- * languages/ml/runtime/io.c, sys.c, runtime.c) *)
-let sys_error_prims : string list =
-  [ "sys_open"; "sys_remove"; "sys_rename"; "sys_mkdir"; "sys_chdir"; "sys_getcwd"; "sys_is_directory";
-    "sys_read_directory"; "caml_channel_size"; "caml_seek_in"; "caml_seek_out" ]
-
 (* an operand of == or != made where it is written, so no other value is
  * it: what it is, for bugs/physeq.dl's report. A constant constructor and []
  * are numbers, not blocks; a closure is left out (one with no free
@@ -641,15 +635,17 @@ and call (x : expr) (f : expr) (args : expr list) (dst : string) : unit =
           fact "in_function" [ i; !inside ];
           fact1 "argument" i given.(0)
         end;
-        (* (a primitive that may fail, a raise of the runtime's: Sys_error,
-         * languages/ml/runtime's io.c, sys.c; plan_bug_analyses.md's A2) *)
-        if List.mem p sys_error_prims then begin
-          fact "raise_in" [ i; !inside ];
-          fact "in_function" [ i; !inside ];
-          site_in i;
-          fact "raise_of" [ i; "caml_exn_Sys_error" ];
-          fact "primitive" [ i; p ]
-        end;
+        (* (a primitive that may fail, its external's [@@raise Sys_error]:
+         * a raise of the runtime's, a predefined exception;
+         * plan_bug_analyses.md's A2) *)
+        (match Hashtbl.find_all Annotations.raises p with
+         | [] -> ()
+         | es ->
+             fact "raise_in" [ i; !inside ];
+             fact "in_function" [ i; !inside ];
+             site_in i;
+             List.iter (fun (e : string) -> fact "raise_of" [ i; "caml_exn_" ^ e ]) es;
+             fact "primitive" [ i; p ]);
         (* (x == y, x != y: bugs/physeq.dl's, a side made here never the other) *)
         if p = "%eq" || p = "%noteq" then begin
           fact "phys_compare" [ i; !inside; (if p = "%eq" then "==" else "!=") ];

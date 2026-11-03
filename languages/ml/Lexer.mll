@@ -93,6 +93,8 @@ rule token = parse
   | "[@" [' ' '\t']* "tailcall" [' ' '\t']* "]" { TAILCALL }
   | "[@@" [' ' '\t']* "tailrec" [' ' '\t']* "]" { TAILREC }
   | "[@@" [' ' '\t']* "zero_alloc" [' ' '\t']* "]" { ZERO_ALLOC }
+  (* what an external may raise, [@@raise Sys_error] (Annotations.raises) *)
+  | "[@@" [' ' '\t']* "raise" [' ' '\t']+ { RAISES }
   (* the other attributes, [@inline], [@@unboxed], [@@@warning "-32"]:
    * skipped (OCaml reads them in -pp's output, the text itself) *)
   | "[@" { attribute 1 lexbuf; token lexbuf }

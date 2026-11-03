@@ -87,6 +87,14 @@ let mkmatch at e cases =
 (* { x; M.y }: a field of the variable of its name *)
 let last l = List.nth l (List.length l - 1)
 
+(* an external's [@@raise E]'s, by its primitive (Annotations.raises),
+ * each once (a .ml and its .mli both say it) *)
+let raises (prims : string list) (es : string list) : unit =
+  match prims with
+  | p :: _ ->
+      List.iter (fun e -> if not (List.mem e (Hashtbl.find_all Annotations.raises p)) then Hashtbl.add Annotations.raises p e) es
+  | [] -> ()
+
 (* mlpp: the [@@...] after a group of types: its last's, as in OCaml's tree *)
 let with_attribute ds a =
   match List.rev ds with d :: l -> List.rev ({ d with tattrs = d.tattrs @ [ a ] } :: l) | [] -> ds
@@ -102,7 +110,7 @@ let with_attribute ds a =
 %token MODULE MUTABLE OF OPEN OR REC SIG STRUCT THEN TO TRUE TRY TYPE VAL WHEN WHILE WITH
 %token LPAREN RPAREN LBRACE RBRACE LBRACKET RBRACKET LBRACKETBAR BARRBRACKET
 /* mlpp: [% and [@@deriving */
-%token LBRACKETPERCENT DERIVING CLASS INSTANCE
+%token LBRACKETPERCENT DERIVING CLASS INSTANCE RAISES
 /* the checked annotations (Annotations.mli) */
 %token TAILCALL TAILREC ZERO_ALLOC LETINLINE INLINE UNBOXED_FLOAT
 %token <string> LETOP
@@ -165,7 +173,7 @@ structure_item:
         match $3 with
         | [ ({ p = Pany; _ }, e) ] -> mkitem $sloc (Ieval e)
         | bs -> mkitem $sloc (Ivalue ($2, bs, $4)) }
-  | EXTERNAL val_ident COLON core_type EQUAL STRING+ { mkitem $sloc (Iexternal ($2, $4, $6)) }
+  | EXTERNAL val_ident COLON core_type EQUAL STRING+ raises { raises $6 $7; mkitem $sloc (Iexternal ($2, $4, $6)) }
   | TYPE type_declarations { mkitem $sloc (Itype $2) }
   /* mlpp: [@@deriving show] */
   | TYPE type_declarations attribute { mkitem $sloc (Itype (with_attribute $2 $3)) }
@@ -177,6 +185,11 @@ structure_item:
 attribute:
   | DERIVING LIDENT* RBRACKET { { aname = "deriving"; aargs = $2; aloc = line $sloc; aend = snd (span $sloc) } }
   | CLASS { { aname = "class"; aargs = []; aloc = line $sloc; aend = snd (span $sloc) } }
+;
+/* external remove : string -> unit = "sys_remove" [@@raise Sys_error] */
+raises:
+  | /* empty */ { [] }
+  | RAISES UIDENT RBRACKET raises { $2 :: $4 }
 ;
 /* mlpp: let show_int : int show = ... [@@instance] */
 instance:
@@ -198,7 +211,7 @@ signature_element:
 ;
 signature_item:
   | VAL val_ident COLON core_type instance { mksig $sloc (Sval ($2, $4, $5)) }
-  | EXTERNAL val_ident COLON core_type EQUAL STRING+ { mksig $sloc (Sexternal ($2, $4, $6)) }
+  | EXTERNAL val_ident COLON core_type EQUAL STRING+ raises { raises $6 $7; mksig $sloc (Sexternal ($2, $4, $6)) }
   | TYPE type_declarations { mksig $sloc (Stype $2) }
   /* mlpp: */
   | TYPE type_declarations attribute { mksig $sloc (Stype (with_attribute $2 $3)) }

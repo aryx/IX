@@ -9,7 +9,9 @@
  * to ocamlopt, not checked), and reads
  * [@tailcall] as its own, on the function of an application,
  * (f [@tailcall]) x (warning 51 if the call is not a tail call; on f
- * x [@tailcall] it is misplaced, warning 53): the same meaning.
+ * x [@tailcall] it is misplaced, warning 53): the same meaning. One
+ * is no assertion but what the analyses read: an external's [@@raise
+ * E] (raises, at the end).
  *
  *     let rec loop i acc =
  *       if i = 0 then acc else loop (i - 1) (acc + i) [@@tailrec]
@@ -55,3 +57,11 @@ val inlines : (Ast.span, unit) Hashtbl.t
  * type's, which ix's code uses (type reg = R of int [@@unboxed]); by
  * the span of the bound expression *)
 val unboxed_floats : (Ast.span, unit) Hashtbl.t
+
+(* what an external's primitive may raise, said where it is declared
+ * (external remove : string -> unit = "sys_remove" [@@raise Sys_error]):
+ * a predefined exception the C code raises, by the primitive's name, a
+ * binding each [@@raise]. Not checked, the C not read: the analyses
+ * trust it (mini-analyze's Closure_facts, a raise at each call;
+ * docs/plans/plan_bug_analyses.md's A2) *)
+val raises : (string, string) Hashtbl.t

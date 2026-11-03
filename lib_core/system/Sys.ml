@@ -27,9 +27,9 @@ let max_array_length = (1 lsl (word_size - 10)) - 1;;
 let max_string_length = word_size / 8 * max_array_length - 1;;
 
 external file_exists: string -> bool = "sys_file_exists"
-external is_directory : string -> bool = "sys_is_directory"
-external remove: string -> unit = "sys_remove"
-external rename : string -> string -> unit = "sys_rename"
+external is_directory : string -> bool = "sys_is_directory" [@@raise Sys_error]
+external remove: string -> unit = "sys_remove" [@@raise Sys_error]
+external rename : string -> string -> unit = "sys_rename" [@@raise Sys_error]
 external getenv: string -> string = "sys_getenv"
 
 let getenv_opt s =
@@ -38,8 +38,8 @@ let getenv_opt s =
 
 external command: string -> int = "sys_system_command"
 external time: unit -> float = "sys_time"
-external chdir: string -> unit = "sys_chdir"
-external getcwd: unit -> string = "sys_getcwd"
+external chdir: string -> unit = "sys_chdir" [@@raise Sys_error]
+external getcwd: unit -> string = "sys_getcwd" [@@raise Sys_error]
 
 
 type signal_behavior =
@@ -108,7 +108,8 @@ let catch_break on =
 let int_size = int_size ()
 
 external readdir : string -> string array = "sys_read_directory"
-external mkdir : string -> int -> unit = "sys_mkdir"
+  [@@raise Sys_error]
+external mkdir : string -> int -> unit = "sys_mkdir" [@@raise Sys_error]
 let rmdir = remove
 
 (* the name the program was run by (OCaml's is its file's full name) *)

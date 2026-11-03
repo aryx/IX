@@ -79,6 +79,7 @@ let dirname name =
 let temporary_directory = try Sys.getenv "TMPDIR" with Not_found -> "/tmp"
 
 external open_desc: string -> open_flag list -> int -> int = "sys_open"
+  [@@raise Sys_error]
 external close_desc: int -> unit = "sys_close"
 
 let temp_file prefix suffix =

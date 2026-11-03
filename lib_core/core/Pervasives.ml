@@ -205,6 +205,7 @@ type open_flag =
   | Open_binary | Open_text | Open_nonblock
 
 external open_desc: string -> open_flag list -> int -> int = "sys_open"
+  [@@raise Sys_error]
 
 let open_out_gen mode perm name =
   open_descriptor_out(open_desc name mode perm)
@@ -233,8 +234,10 @@ external output_byte : out_channel -> int -> unit = "caml_output_char"
 external output_binary_int : out_channel -> int -> unit = "caml_output_int"
 
 external seek_out : out_channel -> int -> unit = "caml_seek_out"
+  [@@raise Sys_error]
 external pos_out : out_channel -> int = "caml_pos_out"
 external out_channel_length : out_channel -> int = "caml_channel_size"
+  [@@raise Sys_error]
 external close_out_channel : out_channel -> unit = "caml_close_channel"
 let close_out oc = flush oc; close_out_channel oc
 
@@ -335,8 +338,10 @@ external code_of_char : char -> int = "%identity"
 let input_byte ic = code_of_char (input_char ic)
 external input_binary_int : in_channel -> int = "caml_input_int"
 external seek_in : in_channel -> int -> unit = "caml_seek_in"
+  [@@raise Sys_error]
 external pos_in : in_channel -> int = "caml_pos_in"
 external in_channel_length : in_channel -> int = "caml_channel_size"
+  [@@raise Sys_error]
 external close_in : in_channel -> unit = "caml_close_channel"
 
 (* Output functions on standard output *)

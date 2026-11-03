@@ -48,5 +48,5 @@ let rec size (c : chain) = match c with End -> 0 | Link (_, c) -> 1 + size c
 let rec retry n = try if n = 0 then 0 else raise Exit with Exit -> retry (n - 1)
 
 (* a primitive that raises, Sys_error; a try silencing it (bugs/swallowed.dl) *)
-external remove : string -> unit = "sys_remove"
+external remove : string -> unit = "sys_remove" [@@raise Sys_error]
 let clean f = try remove f with Sys_error _ -> () | _ -> ()

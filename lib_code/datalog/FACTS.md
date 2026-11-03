@@ -329,8 +329,8 @@ list_like('Toy.chain').
 
 **A case that says nothing**, for `bugs/swallowed.dl`: its answer `()` or a number, so
 nothing of what it caught is used, by the exception it names or all. And a
-primitive of the runtime that may fail, `sys_remove` (Sys_error, `raise_with` in
-`languages/ml/runtime/sys.c`), a raise at its call; in `clean`:
+primitive of the runtime that may fail, its external marked `[@@raise Sys_error]`
+(`Annotations.raises`), a raise at each call; in `clean`:
 
 ```
 raise_in('Toy:52:c50', 'Toy.clean').

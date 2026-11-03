@@ -166,9 +166,11 @@ wrapping); d47f0829 (a mask keeping the sign bit, then `mod`, then
 **Two steps:**
 1. **Syntactic, now.** The facts `int_lit(V, Big)` for a literal above
    `max_int` on 31 bits, and `shift(V, X, K)` for `lsl` by a constant,
-   both with their unit. Then `built_for(Unit, '5')`, from the mkfiles:
-   which units link into a program built for arm. Report a big literal
-   or a shift past bit 30 in a unit built for arm. Two hits of today
+   both with their unit. Every unit is taken to run on the Pi 1 too
+   (Decisions, below), but those named in a file as 64-bit only,
+   `wide_unit(U)` (`kernels/lib_machine/pi4/`, `raspberry/`,
+   `machine/`). Report a big literal
+   or a shift past bit 30 in any other unit. Two hits of today
    show what must be excused:
    - `Poly1305.mac_limbs`: 32-bit masks and `f lsr 32`, but `mac` calls
      it only when `Sys.int_size >= 63`. A call guarded by that test is a
@@ -187,8 +189,8 @@ wrapping); d47f0829 (a mask keeping the sign bit, then `mod`, then
    numbers. It finds the sign that d47f0829's `mod` kept and the guard
    that 7f15c58f wrapped.
 
-**Cost:** step 1 is about 40 lines of facts (the literal, the mkfiles'
-arch read by a small script) and 15 of rules. Step 2 is some 200 lines
+**Cost:** step 1 is about 40 lines of facts (the literal, the shift,
+the file of 64-bit units) and 15 of rules. Step 2 is some 200 lines
 of ML.
 
 ### A5. Output in a hash table's order (`order.dl`)
@@ -355,7 +357,7 @@ reproduction.
 | 3 | A1 deep recursion | `tail`, `in_handler`, `rec_over` | 55 | ~15 | the kernel's 16 KB |
 | 4 | A3 errors swallowed | `trivial_handler` | 25 | ~8 | over `-exn` |
 | 5 | A2 roots and primitives | `root_of`, primitive `raise_of` | 25 | ~5 | A8 uses its roots |
-| 6 | A4 31 bits, step 1 | `int_lit`, `shift`, `built_for`, `wide_only` | 55 | ~12 | |
+| 6 | A4 31 bits, step 1 | `int_lit`, `shift`, `wide_unit`, `wide_only` | 55 | ~12 | |
 | 7 | A5 output order | sinks file | 30 | ~10 | the fixed points |
 | 8 | A10 init and link order | `link` | 15 | ~3 | |
 | 9 | A8 races | `while` | 25 | ~3 | |
@@ -379,11 +381,18 @@ tests as each analysis is written.
 - **The catalogues stay as they are** for now (the author: "the
   catalogue can stay like this for now").
 
+- **A4's code is all of ix, on 31 bits** (the author: "assume all of it
+  should run both on pi1 and pi4. what is in lib_machine/pi4 is meant
+  only for pi4 I think"). No mkfile is read: every unit is taken to run
+  on the Pi 1 too, except those named in a file of the units meant for
+  64 bits only: `kernels/lib_machine/pi4/`, and for now `raspberry/`
+  (mini-qemu) and `machine/` (mini-5i, mini-7i), which run on the
+  author's arm64 machine (the author: "let's skip raspberry/ too then
+  and machine/ for now since yes we are mostly running this code from
+  this machine (an arm64)"). So `raspberry/boards/Pi4.ml`'s 29 literals
+  are not reported.
+
 ## Open questions
 
-- **Which programs are "built for arm"**: m-ix and t-ix whole (both run
-  on the Pi 1), or the units by mkfile? The first is simpler and
-  reports Pi4's 64-bit addresses in `raspberry/boards/Pi4.ml` (29
-  literals there) as if they could reach arm 32.
 - **Tests from history and the 80 columns**: an extract keeps the code
   as it was, long lines included.

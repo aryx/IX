@@ -19,18 +19,21 @@
  * and 'M.f''. What a block holds is by its field's name, whatever the
  * block (the rules' "field-based"): 'fld:contents' a record's field,
  * 'con:Some.0' a constructor's argument, 'tuple:2.0' a pair's first.
- * An external is a function 'prim:name'. A C function's arguments go
- * to one place for all of them, 'ext', and its result comes from it;
- * an array's elements and what a handler catches are there too. Those
- * the compiler writes in place move nothing (x + y), or what they are
- * known to: a ref's content ('fld:contents'), a pair's halves.
+ * An external is a function 'prim:name'; given all its arguments, a
+ * copy of it is written at the call instead, no call, its objects the
+ * call's ('M:12:c3:block'): shared, Obj.magic or ref was one for the
+ * whole program. A C function's result is a new object, its arguments
+ * going nowhere, but for those that keep or call them (to 'ext').
+ * Those the compiler writes in place move nothing (x + y), or what
+ * they are known to: a ref's content ('fld:contents'), a pair's
+ * halves, an array's elements ('arr:elt').
  * And, for the reports (lib_code/datalog/calls.dl):
  *   closure(F, Unit, Line)      each function written
  *   inner(F2, F)                F2 is F's next argument's function (f' of f)
  *   in_function(I, F)           the call I is in F's body ('M:init': the toplevel's)
  *   init(F)                     a unit's toplevel, 'M:init': where a program starts
  * And, for the exceptions that may escape (lib_code/datalog/exceptions.dl):
- *   raise_in(R, F)              the raise R, in F's body: a call of %raise, its site
+ *   raise_in(R, F)              the raise R, in F's body: %raise's site (a call's id)
  *   raise_of(R, E)              ... raises E, its constructor as written ('M.E')
  *   reraises(R, T)              ... raises again what the try T's handler caught
  *   exn_block(S, E)             the block made at S is an exception E
@@ -44,10 +47,13 @@
  *   global_var(V)               V is one place, whatever the call: a toplevel value, ext
  *   curried(F2, F)              inner's, and the externals' stages
  *   new_block(V, S)             V is a block made at the site S (a tuple, a record, a
- *                               constructor applied; 'prim:%makemutable:block' a ref)
+ *                               constructor applied; 'M:12:c3:block' a ref)
  *   alloc_in(S, Unit)           the unit a site or a function is written in
  *   scalar(V)                   V may hold what is no object: a number, unit, a
  *                               constant constructor, what C gave
+ *   vtype(V, T). htype(S, T)    the head of V's type, of S's: list, ->, *2
+ *   vfull(V, T). hfull(S, T)    ... the whole type, when it has no variable
+ *                               ('int list'); the rules keep apart what differs
  *   global_def(G, 'M:init')     the toplevel that defines G (dead.dl)
  *   takes_cap(F)                F's parameter is a capability (capabilities.dl)
  *   declares(F, C)              ... and its type names C: stdout for Cap.stdout

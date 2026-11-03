@@ -395,3 +395,10 @@ capability and parse the < Cap.stdout; ... > [...] to know whether you put the r
 capability given the syscalls you're doing"): `capabilities.dl`, `mini-analyze -caps`:
 `lib_code/README.md`, 40 functions on 23 programs; reports only, no code changed for
 them. Calls with one target, exceptions, purity not done.
+
+2026-11-03, the author: "we mostly finished the dotnet session, we can resume
+here", "let's do it": all 44 programs read by `-dead` and `-caps` (mini-ml 71 s,
+mini-cc 49 s), by an external's copy at each call, not by contexts
+(`call1_heap1` and `call1_rec` on mini-cc: 403 s, 15 GB, the same answers), and
+whole types where both sides have no variable; `dead_ix.txt` 43, `caps_ix.txt`
+172, `exn_ix.txt` 42 programs: `lib_code/README.md`'s "mini-cc and mini-ml".

@@ -33,7 +33,7 @@ Datalog has no compound term, so a place is a name, and a name says what it is:
 | a temporary | `main__t3` | `Toy:t2` |
 | a global | `gp` | `Toy.pair` |
 | a parameter, a result | `id__a`, `ret_id` | `Toy.inc:arg`, `Toy.inc:ret` |
-| a call | `_in_main_line_63_1` | `Toy:5:c1`: unit, line, count |
+| a call | `_in_main_line_63_1` | `Toy:8:c3`: unit, line, count |
 | a field | `_fld__next`, whatever the struct | `fld:fn`, `con:Circle.0`, `tuple:2.0`, `arr:elt` |
 | an object | `_malloc_in_cons_line_32`, `_str_in_main_line_65`, `_array_elt_table` | `Toy:block1@10`; a closure is its function's name |
 | what the facts do not follow | `_const` | `Toy:const`, `ext`; `exn` what is raised |
@@ -132,8 +132,9 @@ Shivers's question and Andersen's are one (`Closure_facts.mli`). A function take
 one argument, so every call is `call_indirect`, and `add 1 2` is two calls.
 
 **A function.** `let inc n = n + 1`: a place, its parameter, its result. `+` is an
-external, called through a temporary, an argument at a time, the second call
-through what the first returned:
+external given all its arguments, so no call: what it does is written in place, a
+copy of its own (an addition, a number: `scalar`); it is still named, for
+`capabilities.dl`:
 
 ```
 closure('Toy.inc', 'Toy', '5').
@@ -142,13 +143,18 @@ parameter('Toy.inc', 1, 'Toy.inc:arg').
 return('Toy.inc', 'Toy.inc:ret').
 assign('Toy:n/1', 'Toy.inc:arg').
 assign_address('Toy:t1', 'prim:%addint').
-in_function('Toy:5:c1', 'Toy.inc').
-call_indirect('Toy:5:c1', 'Toy:t1').
-argument('Toy:5:c1', 1, 'Toy:n/1').
-call_ret('Toy:5:c1', 'Toy:t2').
-call_indirect('Toy:5:c2', 'Toy:t2').
-argument('Toy:5:c2', 1, 'Toy:const').
-call_ret('Toy:5:c2', 'Toy.inc:ret').
+scalar('Toy.inc:ret').
+```
+
+**A call**, of a function or of an external not given all its arguments (`List.fold_left
+(+)`): `let apply f x = f x`, in which function, through what, with what, to where;
+`add 1 2` is two calls, the second through what the first returned:
+
+```
+in_function('Toy:8:c3', 'Toy.apply\'').
+call_indirect('Toy:8:c3', 'Toy:f/6').
+argument('Toy:8:c3', 1, 'Toy:x/7').
+call_ret('Toy:8:c3', 'Toy.apply\':ret').
 ```
 
 **Curried.** `let add a b = a + b` is two functions, the first returning the
@@ -186,20 +192,20 @@ A pattern and a field read are loads, `Circle r` and `b.fn`:
 ```
 assign_load_field('Toy:r/12', 'Toy:s/11', 'con:Circle.0').
 assign_load_field('Toy:first/23', 'Toy.pair', 'tuple:2.0').
-assign_load_field('Toy:t24', 'Toy:b/25', 'fld:fn').
+assign_load_field('Toy:t17', 'Toy:b/25', 'fld:fn').
 ```
 
 **Lambdas**, named by where they are:
 
 ```
 closure('Toy:fun1@29', 'Toy', '29').
-assign_address('Toy:t29', 'Toy:fun1@29').
+assign_address('Toy:t22', 'Toy:fun1@29').
 assign('Toy:n/27', 'Toy:fun1@29:arg').
 ```
 
 **Arrays and exceptions.** An array is an object, its elements one field,
 `arr:elt`; `a.(i)` and `a.(i) <- v` a load and a store, by `%array_safe_get` and
-`%array_safe_set`; `Array.make`'s (C's `make_vect`) one object for every call of it.
+`%array_safe_set`, each in place; `Array.make`'s (C's `make_vect`) an object of each call.
 What `raise` gives goes to `exn`, where a handler's pattern reads; a variable of
 the whole exception (`with e -> raise e`) points to its try's own object instead,
 what it caught (for `exceptions.dl`: raised again, what arrived there):
@@ -207,8 +213,8 @@ what it caught (for `exceptions.dl`: raised again, what arrived there):
 ```
 new_block('Toy:table/28', 'Toy:block7@34').
 assign_store_field('Toy:table/28', 'arr:elt', 'Toy.inc').
-assign_load_field('prim:%array_safe_get:ret', 'prim:%array_safe_get:arg1', 'arr:elt').
-assign('exn', 'prim:%raise:arg1').
+assign_load_field('Toy.lookup:ret', 'Toy.table', 'arr:elt').
+assign('exn', 'Toy:t45').
 new_block('Toy:try2@36:caught', 'Toy:try2@36').
 assign('Toy:e/31', 'Toy:try2@36:caught').
 ```
@@ -221,37 +227,43 @@ constructor, what a raise of a variable is followed to. A try, in which function
 for sure (a case with a guard nothing, a variable everything):
 
 ```
-raise_in('Toy:35:c48', 'Toy.lookup').
-raise_of('Toy:35:c48', 'caml_exn_Not_found').
+raise_in('Toy:35:c38', 'Toy.lookup').
+raise_of('Toy:35:c38', 'caml_exn_Not_found').
 exn_block('Toy:block8@35', 'caml_exn_Not_found').
 try_in_function('Toy:try1@16', 'Toy.safe').
-in_try('Toy:16:c10', 'Toy:try1@16').
+in_try('Toy:16:c7', 'Toy:try1@16').
 catches('Toy:try1@16', 'caml_exn_Not_found').
 catches_all('Toy:try2@36').
-reraises('Toy:36:c50', 'Toy:try2@36').
+reraises('Toy:36:c40', 'Toy:try2@36').
 ```
 
 **What the facts do not follow.** A constant, unit, a constant constructor:
 `scalar`, so every value has an object and a variable with none is one no run
-reaches. A C function's result is an object of its own, of its name, its arguments
-going nowhere (`compare`, `Hashtbl.hash` given anything give nothing back); only
+reaches. A C function's result is an object of its own, of its call (a call not
+given all the arguments: of its name, one for all), its arguments going nowhere (`compare`, `Hashtbl.hash` given anything give nothing back); only
 those that keep or call what they are given (`register_named_value`, `ml_signal`,
-`thread_new`) and Obj's fields go to `ext`, the one place of what is not followed:
+`thread_new`) and Obj's fields go to `ext`, the one place of what is not followed;
+a value made an `Obj.t` (`Obj.repr f`) to `raw`, which nothing reads, a function
+there called from where the facts do not go (mini-dotnet's JIT, by its address):
 
 ```
 scalar('Toy:const').
 scalar('Toy.safe:ret').
 scalar('ext').
-new_block('prim:create_string:ret', 'prim:create_string:block').
-new_block('prim:%makemutable:ret', 'prim:%makemutable:block').
-assign_address('Toy:t43', 'prim:sys_getenv').
+new_block('Toy:counter/24', 'Toy:23:c13:block').
+alloc_in('Toy:23:c13:block', 'Toy').
+assign_store_field('Toy:counter/24', 'fld:contents', 'Toy:const').
+assign_address('Toy:t35', 'prim:sys_getenv').
 ```
 
 **Types.** The head of a variable's type and of an object's, from `Typing`
 (mini-analyze's, `Typing.keep`): a type's constructor, `->` for a function, `*2`
 for a pair. The analyses keep an object out of a variable whose type's head is
 another (`andersen.dl`'s design note: mini-tiger's Andersen's, past 200 s and
-8.5 GB, 5.9 s and 250 MB). None for a type variable or `Obj.t`, and none from
+8.5 GB, 5.9 s and 250 MB). None for a type variable or `Obj.t`, nor for a type
+with no constructor, field, or built-in name (an abstract `Pervasives.out_channel`,
+`Tui_turbo.mli`'s `type model`, inside `Turbo_model.model`: two names for one
+type, which would keep apart what is one), and none from
 mini-ml's own Closure_facts until 2026-11-02 (`mini-ml -facts`), which did not
 keep types:
 
@@ -263,7 +275,17 @@ vtype('Toy:e/31', 'exn').
 htype('Toy:block1@10', 'Toy.box').
 htype('Toy.lookup', '->').
 htype('prim:create_string:block', 'bytes').
-htype('prim:caml_open_descriptor:block', 'Pervasives.out_channel').
+```
+
+And the whole type, where it has no type variable (nor `Obj.t`, nor an object,
+whose type is open): two objects of one head are then kept apart too, an
+`int list` from a `string list` (`andersen.dl`'s note):
+
+```
+vfull('Toy:pair/22', '((int -> int) * int)').
+vfull('Toy:t27', 'int list').
+hfull('Toy:block2@21', '((int -> int) * int)').
+hfull('Toy:block3@29', 'int list').
 ```
 
 **Capabilities.** `let say (caps : < Cap.stdout; .. >) s = ...`, a parameter that

@@ -1,3 +1,4 @@
+assembler/CLI.ml:33: CLI.data_items: has < Cap.open_in; Cap.open_out; Cap.stderr; Cap.stdout >, may not need Cap.open_out, Cap.stderr, Cap.stdout
 builder/CLI.ml:38: CLI.print: has < Cap.stdout >, may not need Cap.stdout
 builder/CLI.ml:79: CLI.run: has < Cap.env; Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.stderr; Cap.stdout; Cap.wait >, needs Cap.signal (Sys.set_signal)
 builder/Recipe.ml:124: Recipe.resolve: no capability, needs Cap.open_in|Cap.readdir (sys_file_exists)
@@ -31,6 +32,9 @@ editors/ed/Command.ml:141: Command.read: no capability, needs Cap.open_in|Cap.op
 editors/ed/Command.ml:153: Command.write: no capability, needs Cap.open_in|Cap.open_out (Unix.openfile)
 editors/ed/Command.ml:335: Command.callunix: no capability, needs Cap.env (sys_getenv), Cap.exit|Cap.fork (Unix._exit)
 editors/ed/Out.ml:13: Out.flush: no capability, needs Cap.stderr (Unix.stderr), Cap.stdout (Unix.stdout)
+editors/emacs/features/Multi_buffers.ml:13: Multi_buffers.is_directory: has < Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.open_out, Cap.readdir
+editors/emacs/features/Multi_buffers.ml:23: Multi_buffers.complete_filename: has < Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.open_in, Cap.open_out
+editors/emacs/modes/Dired.ml:24: Dired.listing: has < Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.open_in, Cap.open_out
 kernels/9pi/buses/user/usbd/Usbd.ml:50: Usbd.drive: has < Cap.argv; Cap.fork; Cap.open_in; Cap.open_out; Cap.stderr >, may not need Cap.argv, Cap.stderr
 kernels/9pi/buses/user/usbd/Usbd.ml:66: Usbd.main: has < Cap.argv; Cap.fork; Cap.open_in; Cap.open_out; Cap.stderr >, may not need Cap.argv
 kernels/9pi/filesystems/user/dossrv/Dossrv.ml:78: Dossrv.fs: has < Cap.fork; Cap.open_in; Cap.open_out; Cap.stderr >, may not need Cap.fork, Cap.stderr
@@ -40,7 +44,26 @@ kernels/9pi/tests/threads/Threads.ml:19: Threads:fun at line 19: no capability, 
 kernels/9pi/tests/threads/Threads.ml:43: Threads:fun at line 43: no capability, needs Cap.stdout (Printf.printf)
 kernels/9pi/tests/threads/Threads.ml: init: no capability, needs Cap.fork (Thread.create), Cap.stdout (Pervasives.print_endline, Pervasives.print_newline, Printf.printf)
 kernels/9pi/tests/tone/Tone.ml: init: no capability, needs Cap.stdout (Pervasives.print_string)
+languages/c/CLI.ml:103: CLI.dotnet_backend: has < Cap.open_in; Cap.open_out; Cap.stderr; Cap.stdout >, may not need Cap.open_in, Cap.stderr, Cap.stdout
+languages/c/CLI.ml:130: CLI.compile: has < Cap.open_in; Cap.open_out; Cap.stderr; Cap.stdout >, may not need Cap.stderr
+languages/c/CLI.ml:73: CLI.simple_backend: has < Cap.open_in; Cap.open_out; Cap.stderr; Cap.stdout >, may not need Cap.open_in, Cap.open_out, Cap.stderr
+languages/dotnet/CLI.ml:35: CLI.open_file: has < Cap.chdir; Cap.env; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdin; Cap.stdout >, may not need Cap.chdir, Cap.env, Cap.readdir, Cap.stderr, Cap.stdout
+languages/dotnet/CLI.ml:65: CLI.os: has < Cap.chdir; Cap.env; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdin; Cap.stdout >, may not need Cap.stderr, Cap.stdin, Cap.stdout
+languages/dotnet/csc/CLI.ml:10: CLI.compile: has < Cap.open_in; Cap.open_out; Cap.stderr; Cap.stdout >, may not need Cap.stderr, Cap.stdout
+languages/ml/CLI.ml:109: CLI.exists: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.open_in, Cap.open_out, Cap.stderr, Cap.stdout
+languages/ml/CLI.ml:124: CLI.loader: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.open_out, Cap.stderr, Cap.stdout
+languages/ml/CLI.ml:146: CLI.classes: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.open_out, Cap.stdout
+languages/ml/CLI.ml:179: CLI.preprocess: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.open_out, Cap.stdout
+languages/ml/CLI.ml:212: CLI.summaries: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.open_out, Cap.stderr, Cap.stdout
+languages/ml/CLI.ml:239: CLI.write_summary: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.readdir, Cap.stderr, Cap.stdout
+languages/ml/CLI.ml:253: CLI.lower: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.open_out, Cap.stderr, Cap.stdout
+languages/ml/CLI.ml:278: CLI.output: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.readdir, Cap.stderr
+languages/ml/CLI.ml:350: CLI.depend: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.open_out
+languages/ml/CLI.ml:67: CLI.rewrite: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.open_out, Cap.readdir, Cap.stderr, Cap.stdout
+languages/ml/CLI.ml:92: CLI.parse: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.open_out, Cap.readdir, Cap.stderr, Cap.stdout
+languages/ml/debug/Lines_ml.ml:6: Lines_ml.source: has < Cap.open_in; Cap.readdir >, may not need Cap.readdir
 languages/pascal/CLI.ml:29: CLI.run: has < Cap.open_in; Cap.stderr; Cap.stdin; Cap.stdout >, may not need Cap.open_in
+languages/tiger/CLI.ml:10: CLI.compile: has < Cap.open_in; Cap.open_out; Cap.stderr; Cap.stdout >, may not need Cap.stderr, Cap.stdout
 lib_graphics/Display.ml:224: Display.screen: no capability, needs Cap.open_in|Cap.open_out (Unix.openfile)
 lib_terminal/unix/Tty_unix.ml:13: Tty_unix.available: no capability, needs Cap.stdin (Unix.stdin)
 lib_terminal/unix/Tty_unix.ml:24: answer: no capability, needs Cap.stdin (Unix.stdin)

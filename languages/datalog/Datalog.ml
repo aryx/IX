@@ -226,7 +226,8 @@ let questions (text : string) : string =
     let code = String.trim code in
     let n = String.length code in
     if n > 1 && code.[n - 1] = '?' && not (n > 2 && code.[0] = '?' && code.[1] = '-') then "?- " ^ String.sub code 0 (n - 1) ^ " ." else l in
-  String.concat "\n" (List.map line (String.split_on_char '\n' text))
+  (* (rev_map: List.map's stack is a frame a line, a file of facts many) *)
+  String.concat "\n" (List.rev (List.rev_map line (String.split_on_char '\n' text)))
 
 let load (p : t) ~(from : string) (text : string) : unit =
   let place (line : int) : string = from ^ ":" ^ string_of_int line in

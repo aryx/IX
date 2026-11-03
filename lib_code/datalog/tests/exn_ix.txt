@@ -2,8 +2,8 @@
 # FLAG=-exn, 2026-11-02): each program's own exceptions its toplevels
 # may let escape (not lib_core's Invalid_argument, Failure, Not_found,
 # Unix_error, End_of_file, Sys_error, Queue.Empty, which most programs
-# may raise), 43 programs read, mini-ml past the 300 s. Triage, tried
-# on the programs:
+# may raise), 42 programs read (2026-11-03), mini-ml and mini-cc past
+# 180 s. Triage, tried on the programs:
 #   real: utilities_text_awk Run.Next_file (END { nextfile }, fixed:
 #     docs/plans/bugs/ix.md); languages_prolog Prolog_read.Error and
 #     languages_scheme Scheme_syntax.Error (their built-in preludes
@@ -14,12 +14,16 @@
 #   false, a handler not seen: hoc's Eval.Returned, forth's Forth.Error,
 #     awk's Regex.Error, shell's Word.Error, tiger's Tiger_semant.Error
 #     (each said as an error when tried)
+#   real, harmless: ed's Sys.Break, Sys.catch_break's handler (given to C,
+#     followed since 2026-11-03): a Control-C outside Command's try
+#   gone 2026-11-03: emacs's Parsing.Parse_error, false (Names_ml catches
+#     it: a handler not seen before the externals were each call's)
 #   the rest: not tried yet
 database: Main.ml: the toplevel may let Btree.Bad_node escape
 database: Main.ml: the toplevel may let Codegen.Invalid escape
 database: Main.ml: the toplevel may let Pager.Bad_page escape
 database: Main.ml: the toplevel may let Record.Invalid_type escape
-editors_emacs_draw: Main.ml: the toplevel may let Parsing.Parse_error escape
+editors_ed: Main.ml: the toplevel may let Sys.Break escape
 editors_turbopascal_hosts_draw: Main.ml: the toplevel may let Pascal_compile.Failed escape
 editors_turbopascal_hosts_draw: Main.ml: the toplevel may let Pmachine.Runtime escape
 editors_turbopascal_tty: Main.ml: the toplevel may let Pascal_compile.Failed escape
@@ -27,8 +31,6 @@ editors_turbopascal_tty: Main.ml: the toplevel may let Pmachine.Runtime escape
 kernels_squeak: Main.ml: the toplevel may let St_boot.Error escape
 kernels_squeak: Main.ml: the toplevel may let St_chunk.Error escape
 kernels_squeak: Main.ml: the toplevel may let St_compile.Error escape
-languages_c: Main.ml: the toplevel may let Il.Bad_il escape
-languages_c: Main.ml: the toplevel may let Tree_helpers.Error escape
 languages_datalog: Main.ml: the toplevel may let Il.Bad_il escape
 languages_dotnet: Arm64.ml: the toplevel may let Link.Error escape
 languages_dotnet: Arm.ml: the toplevel may let Link.Error escape

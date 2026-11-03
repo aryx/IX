@@ -77,24 +77,75 @@ let scalar (v : string) : unit =
     fact "scalar" [ v ]
   end
 
+(* a type the analyses may compare by its name: built in, an object's, or
+ * one with constructors or fields. Not one abstract here and defined by
+ * an abbreviation (Tui_turbo.mli's type model, Turbo_model.model inside):
+ * its two names would keep apart what is one (mini-turbopascal's program
+ * record lost, 183 functions dead) *)
+let known (d : tdecl) : bool =
+  List.mem d.tpath
+    [ "int"; "char"; "string"; "bytes"; "float"; "bool"; "unit"; "exn"; "array";
+      "list"; "int32"; "int64"; "nativeint"; "format"; "format4"; "< .. >" ]
+  || (match Resolve.type_conses d with Some _ -> true | None -> false)
+  || (match Resolve.type_fields d with Some _ -> true | None -> false)
+
 (* a type's head, for the analyses to keep apart what cannot be in one
  * variable: list, Hashtbl.t, int64, -> (a function), *2 (a pair). None: a
- * type variable, or Obj.t, which Obj.magic makes of anything *)
+ * type variable, Obj.t, which Obj.magic makes of anything, a type not known *)
 let rec head (t : ty) : string option =
   match t with
   | Tconstr ({ tabbrev = Some a; _ }, _) -> head a
-  | Tconstr (d, _) -> if d.tpath = "Obj.t" then None else Some d.tpath
+  | Tconstr (d, _) -> if d.tpath = "Obj.t" || not (known d) then None else Some d.tpath
   | Tarrow _ -> Some "->"
   | Ttuple ts -> Some ("*" ^ string_of_int (List.length ts))
   | Tvar _ -> None
 
-(* v's type's head and a site's: Typing's (Typing.keep, mini-analyze's), else
+(* a type's parameters replaced by its arguments, for an abbreviation's body *)
+let rec subst (by : (string * ty) list) (t : ty) : ty =
+  match t with
+  | Tvar a -> (match List.assoc_opt a by with Some u -> u | None -> t)
+  | Tarrow (a, r) -> Tarrow (subst by a, subst by r)
+  | Ttuple ts -> Ttuple (List.map (subst by) ts)
+  | Tconstr (d, ts) -> Tconstr (d, List.map (subst by) ts)
+
+(* a type whole, when it has no type variable (int list, not 'a list): two
+ * lists of other elements are kept apart too, which their head cannot do.
+ * None: a variable in it, Obj.t, an object, a type not known *)
+let rec full (t : ty) : string option =
+  let all (ts : ty list) : string list option =
+    List.fold_right (fun t acc ->
+      match full t, acc with Some s, Some l -> Some (s :: l) | _ -> None)
+      ts (Some [])
+  in
+  match t with
+  | Tconstr ({ tabbrev = Some a; tparams; _ }, ts)
+    when List.length tparams = List.length ts ->
+      full (subst (List.combine tparams ts) a)
+  | Tconstr ({ tabbrev = Some _; _ }, _) -> None
+  (* (an object's type is open: < Cap.stdout; .. > holds a bigger one) *)
+  | Tconstr ({ tpath = "< .. >"; _ }, _) -> None
+  | Tconstr (d, _) when not (known d) -> None
+  | Tconstr (d, []) -> if d.tpath = "Obj.t" then None else Some d.tpath
+  | Tconstr (d, [ t ]) -> Option.map (fun s -> s ^ " " ^ d.tpath) (full t)
+  | Tconstr (d, ts) ->
+      Option.map (fun l -> "(" ^ String.concat ", " l ^ ") " ^ d.tpath) (all ts)
+  | Tarrow (a, r) ->
+      Option.map (fun l -> "(" ^ String.concat " -> " l ^ ")") (all [ a; r ])
+  | Ttuple ts ->
+      Option.map (fun l -> "(" ^ String.concat " * " l ^ ")") (all ts)
+  | Tvar _ -> None
+
+(* v's type's head and a site's (vtype, htype), and its whole type when it has
+ * no variable (vfull, hfull): Typing's (Typing.keep, mini-analyze's), else
  * none: then nothing is kept apart *)
 let typed (relation : string) (v : string) (t : ty option) : unit =
-  match Option.bind t head with
-  | Some h when not (Hashtbl.mem mentioned (v, relation)) ->
+  match t with
+  | Some t when not (Hashtbl.mem mentioned (v, relation)) ->
       Hashtbl.add mentioned (v, relation) ();
-      fact relation [ v; h ]
+      (match head t with Some h -> fact relation [ v; h ] | None -> ());
+      (match head t, full t with
+       | Some _, Some f -> fact (String.sub relation 0 1 ^ "full") [ v; f ]
+       | _ -> ())
   | _ -> ()
 
 let temp () : string =
@@ -120,6 +171,12 @@ let constant () : string =
 (* the externals' one place: what is given to C and comes back, Obj's *)
 let ext : string = "ext"
 
+(* what was made an Obj.t (Obj.repr f), that no one reads: a function there
+ * may be called from where the facts do not go (dead.dl's escaped).
+ * Not ext, which is read: Printf's closures, Obj.magic'd, would come back
+ * from every C call *)
+let raw : string = "raw"
+
 (* what raise gives and a handler catches (old: ext, with the arrays' elements:
  * what any array held, any read of one had, the set that made mini-tiger's
  * Andersen's past 12 GB; 36 s without them) *)
@@ -139,6 +196,66 @@ let block_at (dst : string) (x : expr) : string =
 
 let block (dst : string) (x : expr) : unit = ignore (block_at dst x)
 
+(* an external's result's type, after its arguments' arrows *)
+let rec result (t : ty) (n : int) : ty = match t with Tarrow (_, r) when n > 0 -> result r (n - 1) | _ -> t
+
+(* what an external does, its arguments arg 1 ... arg n, its result ret of
+ * type res, in the functions inside k (the k-th argument's); its objects
+ * named after site, made in the unit place if one *)
+let prim_body (name : string) (arity : int) (res : ty) ~(arg : int -> string)
+    ~(ret : string) ~(inside : int -> string) ~(site : string) ~(place : string option) : unit =
+  let n = max arity 1 in
+  let kept () : unit =
+    for k = 1 to n do fact "assign" [ global ext (inside k); arg k ] done;
+    fact "assign" [ ret; global ext (inside n) ] in
+  let new_block (what : string) : string =
+    let b = site ^ ":" ^ what in
+    fact "new_block" [ ret; b ];
+    typed "htype" b (Some res);
+    Option.iter (fun u -> fact "alloc_in" [ b; u ]) place;
+    b in
+  scalar ext;
+  scalar ret;
+  match name with
+  | "%identity" ->
+      fact "assign" [ ret; arg 1 ];
+      (* (made an Obj.t, Obj.repr f: it may leave for what is not followed,
+       * mini-dotnet's JIT calling its call-outs by their address) *)
+      (match res with
+       | Tconstr ({ tpath = "Obj.t"; _ }, _) -> fact "assign" [ global raw (inside 1); arg 1 ]
+       | _ -> ())
+  (* f @@ x and x |> f: a call, of what the external was given *)
+  | "%apply" | "%revapply" ->
+      let f, x = if name = "%apply" then (arg 1, arg 2) else (arg 2, arg 1) in
+      let i = site ^ ":call" in
+      fact "in_function" [ i; inside 2 ];
+      fact "call_indirect" [ i; f ];
+      fact1 "argument" i x;
+      if ret <> junk () then fact "call_ret" [ i; ret ]
+  | "%makemutable" ->
+      (* (its type's head by its type, Pervasives.ref: old, "ref", that no
+       * variable's was, and every ref's content was lost) *)
+      ignore (new_block "block");
+      fact "assign_store_field" [ ret; "fld:contents"; arg 1 ]
+  | "%field0" ->
+      fact "assign_load_field" [ ret; arg 1; "fld:contents" ];
+      fact "assign_load_field" [ ret; arg 1; "tuple:2.0" ]
+  | "%field1" -> fact "assign_load_field" [ ret; arg 1; "tuple:2.1" ]
+  | "%setfield0" -> fact "assign_store_field" [ arg 1; "fld:contents"; arg 2 ]
+  | "%array_safe_get" | "%array_unsafe_get" -> fact "assign_load_field" [ ret; arg 1; elt ]
+  | "%array_safe_set" | "%array_unsafe_set" -> fact "assign_store_field" [ arg 1; elt; arg 3 ]
+  | "make_vect" ->
+      ignore (new_block "block");
+      fact "assign_store_field" [ ret; elt; arg 2 ]
+  | "%raise" -> fact "assign" [ global exn (inside 1); arg 1 ]
+  | "%obj_field" | "%obj_set_field" -> kept ()
+  (* what C keeps, or calls: a handler, a thread's function, a callback's *)
+  | "register_named_value" | "ml_signal" | "thread_new" -> kept ()
+  (* another C function: what it returns is its own, a number or new, and
+   * what it is given stays (compare's and hash's: any value at all); old:
+   * kept (), so that every C call returned all any had been given *)
+  | _ -> if name = "" || name.[0] <> '%' then ignore (new_block "block")
+
 (* An external, as a function of each of its arguments in turn
  * ('prim:name', then 'prim:name'2'...), the last returning its result.
  * One the compiler writes in place (%...) moves a value only if it is
@@ -148,10 +265,10 @@ let block (dst : string) (x : expr) : unit = ignore (block_at dst x)
  * followed). A C function's result is its own, a new object of its name,
  * its arguments going nowhere, but of those that keep or call what they are
  * given (register_named_value, ml_signal, thread_new), to ext; make_vect's is
- * an array of its own, of the one site. *)
+ * an array of its own, of the one site. This one is the external as a
+ * value, (-.) given to a fold; a call of all its arguments has its own
+ * copy (call's, prim_body at the site). *)
 let prim (name : string) (arity : int) (t : ty) : string =
-  (* its result's type, after its arguments' arrows *)
-  let rec result (t : ty) (n : int) : ty = match t with Tarrow (_, r) when n > 0 -> result r (n - 1) | _ -> t in
   let stage (k : int) : string = if k = 1 then "prim:" ^ name else Printf.sprintf "prim:%s'%d" name k in
   let arg (k : int) : string = Printf.sprintf "prim:%s:arg%d" name k in
   let ret : string = "prim:" ^ name ^ ":ret" in
@@ -159,6 +276,9 @@ let prim (name : string) (arity : int) (t : ty) : string =
   if not (Hashtbl.mem prims name) then begin
     Hashtbl.add prims name ();
     for k = 1 to n do
+      (* (a function, as a closure is: without it, a primitive given as a
+       * value, (-.), passed every filter, mini-cc's 25 a list's cells) *)
+      fact "htype" [ stage k; "->" ];
       fact1 "parameter" (stage k) (arg k);
       var_in (arg k) (stage k);
       if k < n then begin
@@ -172,50 +292,7 @@ let prim (name : string) (arity : int) (t : ty) : string =
         var_in ret (stage k)
       end
     done;
-    let kept () : unit =
-      for k = 1 to n do fact "assign" [ global ext (stage k); arg k ] done;
-      fact "assign" [ ret; global ext (stage n) ] in
-    scalar ext;
-    scalar ret;
-    match name with
-    | "%identity" -> fact "assign" [ ret; arg 1 ]
-    (* f @@ x and x |> f: a call, of what the external was given *)
-    | "%apply" | "%revapply" ->
-        let f, x = if name = "%apply" then (arg 1, arg 2) else (arg 2, arg 1) in
-        let i = "prim:" ^ name ^ ":call" in
-        fact "in_function" [ i; stage 2 ];
-        fact "call_indirect" [ i; f ];
-        fact1 "argument" i x;
-        fact "call_ret" [ i; ret ]
-    | "%makemutable" ->
-        fact "new_block" [ ret; "prim:%makemutable:block" ];
-        (* (its type's head by its type, Pervasives.ref: old, "ref", that no
-         * variable's was, and every ref's content was lost) *)
-        typed "htype" "prim:%makemutable:block" (Some (result t arity));
-        fact "assign_store_field" [ ret; "fld:contents"; arg 1 ]
-    | "%field0" ->
-        fact "assign_load_field" [ ret; arg 1; "fld:contents" ];
-        fact "assign_load_field" [ ret; arg 1; "tuple:2.0" ]
-    | "%field1" -> fact "assign_load_field" [ ret; arg 1; "tuple:2.1" ]
-    | "%setfield0" -> fact "assign_store_field" [ arg 1; "fld:contents"; arg 2 ]
-    | "%array_safe_get" | "%array_unsafe_get" -> fact "assign_load_field" [ ret; arg 1; elt ]
-    | "%array_safe_set" | "%array_unsafe_set" -> fact "assign_store_field" [ arg 1; elt; arg 3 ]
-    | "make_vect" ->
-        fact "new_block" [ ret; "prim:make_vect:block" ];
-        typed "htype" "prim:make_vect:block" (Some (result t arity));
-        fact "assign_store_field" [ ret; elt; arg 2 ]
-    | "%raise" -> fact "assign" [ global exn (stage 1); arg 1 ]
-    | "%obj_field" | "%obj_set_field" -> kept ()
-    (* what C keeps, or calls: a handler, a thread's function, a callback's *)
-    | "register_named_value" | "ml_signal" | "thread_new" -> kept ()
-    (* another C function: what it returns is its own, a number or new, and
-     * what it is given stays (compare's and hash's: any value at all); old:
-     * kept (), so that every C call returned all any had been given *)
-    | _ ->
-        if name = "" || name.[0] <> '%' then begin
-          fact "new_block" [ ret; "prim:" ^ name ^ ":block" ];
-          typed "htype" ("prim:" ^ name ^ ":block") (Some (result t arity))
-        end
+    prim_body name arity (result t arity) ~arg ~ret ~inside:stage ~site:("prim:" ^ name) ~place:None
   end;
   stage 1
 
@@ -432,8 +509,34 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
 
 (* f a1 ... an: a call for each argument, of what the one before returned *)
 and call (x : expr) (f : expr) (args : expr list) (dst : string) : unit =
-  let n = List.length args in
   let fn = ref (operand f) in
+  (* an external given all its arguments: its own copy, here, its objects
+   * this call's, of the type here (an int ref, not 'a ref). Shared, one
+   * Obj.magic, Array.get, ref for all the program, each returned all any
+   * caller had given (mini-cc: 306 functions returning 1,000 objects, the
+   * same 2,014) *)
+  let args =
+    match f.e with
+    | Evar (Prim (p, arity, t)) when List.length args >= max arity 1 ->
+        let n = max arity 1 in
+        incr calls;
+        let i = Printf.sprintf "%s:%d:c%d" !unit_name x.loc !calls in
+        let given = Array.of_list (List.map operand (List.filteri (fun k _ -> k < n) args)) in
+        let last = List.length args = n in
+        let ret = if last then dst else temp () in
+        let res = match (if last then Typing.expr_type x else None) with Some r -> r | None -> result t arity in
+        prim_body p arity res ~arg:(fun k -> given.(k - 1)) ~ret ~inside:(fun _ -> !inside) ~site:i
+          ~place:(Some !unit_name);
+        if p = "%apply" || p = "%revapply" then site_in (i ^ ":call");
+        (* (a raise's site, raise_in's: where it runs, what it raises) *)
+        if p = "%raise" then begin
+          fact "in_function" [ i; !inside ];
+          fact1 "argument" i given.(0)
+        end;
+        fn := ret;
+        List.filteri (fun k _ -> k >= n) args
+    | _ -> args in
+  let n = List.length args in
   List.iteri
     (fun (k : int) (a : expr) ->
       incr calls;
@@ -443,7 +546,9 @@ and call (x : expr) (f : expr) (args : expr list) (dst : string) : unit =
       site_in i;
       fact "call_indirect" [ i; !fn ];
       fact1 "argument" i (operand a);
-      fact "call_ret" [ i; result ];
+      (* (a result no one reads, ignore (f x)'s, goes nowhere: one junk of a
+       * unit had every such call's results, mini-cc's Cgen 398 calls) *)
+      if result <> junk () then fact "call_ret" [ i; result ];
       fn := result)
     args
 

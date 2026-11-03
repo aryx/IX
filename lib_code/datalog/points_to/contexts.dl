@@ -264,5 +264,10 @@ typed_var(V) :- vtype(V, _).
 typed_object(H) :- htype(H, _).
 pt(V, C1, C2, H, H1, H2) :- flow(V, C1, C2, H, H1, H2), \+ typed_var(V).
 pt(V, C1, C2, H, H1, H2) :- flow(V, C1, C2, H, H1, H2), \+ typed_object(H).
+full_var(V) :- vfull(V, _).
+full_object(H) :- hfull(H, _).
 pt(V, C1, C2, H, H1, H2) :-
-  flow(V, C1, C2, H, H1, H2), vtype(V, T), htype(H, T).
+  flow(V, C1, C2, H, H1, H2), vtype(V, T), htype(H, T), \+ full_var(V).
+pt(V, C1, C2, H, H1, H2) :-
+  flow(V, C1, C2, H, H1, H2), vtype(V, T), htype(H, T), \+ full_object(H).
+pt(V, C1, C2, H, H1, H2) :- flow(V, C1, C2, H, H1, H2), vfull(V, T), hfull(H, T).

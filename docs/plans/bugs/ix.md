@@ -537,7 +537,7 @@ gcc (start.s, mini-pi's choice when ~/ocaml-light is there) did not show it.
 Fixed: l.s's kernel_data as start.s's. Not done: the Pi 4's l.s, which has no
 probe either (the Pi 4 has no PWM sound here).
 
-## mini-datalog overflows the stack reading a large file of facts (2026-11-02)
+## mini-datalog overflows the stack reading a large file of facts (2026-11-02, fixed)
 
 `mini-datalog rules.dl facts.dl` on mini-cc's facts (343,456 lines, by
 `mini-analyze -facts`): `Fatal error: exception Stack overflow`, in 0.15 s, before
@@ -548,6 +548,10 @@ as values and does not meet it. Reproduce: `mini-analyze -facts` of mini-cc's un
 (`lib_code/datalog/tests/mk_units.sh`'s `program_args languages/c/mkfile`) into a
 file, then `mini-datalog lib_code/datalog/points_to/instructions.dl` and that file.
 Not fixed: found while measuring another thing.
+
+Fixed: not the reader but `Datalog.questions`, which looks for a line ended by `?`
+in each line of the text, by `List.map`, a stack frame a line (382,356 by then).
+`List.rev_map` and `List.rev`; the file now read in a second.
 
 ## mini-oberon and mini-singularity for the Pi 1 not built: undefined label RAM_MB (2026-11-02, fixed)
 

@@ -65,6 +65,8 @@
 escaped(F) :-
   call_direct(I, G), \+ function(G), argument(I, _, A), pts(A, F), function(F).
 escaped(F) :- gpt(ext, F, _, _), function(F).
+% (made an Obj.t: mini-dotnet's JIT calls its call-outs by their address)
+escaped(F) :- gpt(raw, F, _, _), function(F).
 reachable(F, none, none) :- escaped(F).
 % (emalloc's calls are objects in the facts, not calls, if it has a body)
 reachable(A, none, none) :-

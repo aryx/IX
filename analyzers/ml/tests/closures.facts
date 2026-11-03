@@ -1,11 +1,14 @@
 init('Kit:init').
 var_in('Kit:iter/1', 'Kit:init').
 vtype('Kit:iter/1', '->').
+vfull('Kit:iter/1', '((int -> unit) -> (int list -> unit))').
 closure('Kit.iter', 'Kit', '7').
 alloc_in('Kit.iter', 'Kit').
 htype('Kit.iter', '->').
 vtype('Kit.iter:arg', '->').
+vfull('Kit.iter:arg', '(int -> unit)').
 vtype('Kit.iter:ret', '->').
+vfull('Kit.iter:ret', '(int list -> unit)').
 assign_address('Kit:iter/1', 'Kit.iter').
 parameter('Kit.iter', 1, 'Kit.iter:arg').
 return('Kit.iter', 'Kit.iter:ret').
@@ -15,12 +18,15 @@ inner('Kit.iter\'', 'Kit.iter').
 curried('Kit.iter\'', 'Kit.iter').
 var_in('Kit:f/2', 'Kit.iter').
 vtype('Kit:f/2', '->').
+vfull('Kit:f/2', '(int -> unit)').
 assign('Kit:f/2', 'Kit.iter:arg').
 closure('Kit.iter\'', 'Kit', '7').
 alloc_in('Kit.iter\'', 'Kit').
 htype('Kit.iter\'', '->').
 vtype('Kit.iter\':arg', 'list').
+vfull('Kit.iter\':arg', 'int list').
 vtype('Kit.iter\':ret', 'unit').
+vfull('Kit.iter\':ret', 'unit').
 assign_address('Kit.iter:ret', 'Kit.iter\'').
 parameter('Kit.iter\'', 1, 'Kit.iter\':arg').
 return('Kit.iter\'', 'Kit.iter\':ret').
@@ -28,19 +34,21 @@ var_in('Kit.iter\':arg', 'Kit.iter\'').
 var_in('Kit.iter\':ret', 'Kit.iter\'').
 var_in('Kit:xs/3', 'Kit.iter\'').
 vtype('Kit:xs/3', 'list').
+vfull('Kit:xs/3', 'int list').
 assign('Kit:xs/3', 'Kit.iter\':arg').
 scalar('Kit.iter\':ret').
 var_in('Kit:x/4', 'Kit.iter\'').
 vtype('Kit:x/4', 'int').
+vfull('Kit:x/4', 'int').
 assign_load_field('Kit:x/4', 'Kit:xs/3', 'con:::.0').
 var_in('Kit:rest/5', 'Kit.iter\'').
 vtype('Kit:rest/5', 'list').
+vfull('Kit:rest/5', 'int list').
 assign_load_field('Kit:rest/5', 'Kit:xs/3', 'con:::.1').
 var_in('Kit:f/2', 'Kit.iter\'').
 in_function('Kit:8:c1', 'Kit.iter\'').
 call_indirect('Kit:8:c1', 'Kit:f/2').
 argument('Kit:8:c1', 1, 'Kit:x/4').
-call_ret('Kit:8:c1', 'Kit:_').
 var_in('Kit:iter/1', 'Kit.iter\'').
 var_in('Kit:t1', 'Kit.iter\'').
 in_function('Kit:8:c2', 'Kit.iter\'').
@@ -57,11 +65,14 @@ var_in('Kit.iter', 'Kit:init').
 assign('Kit.iter', 'Kit:iter/1').
 var_in('Kit:fold/6', 'Kit:init').
 vtype('Kit:fold/6', '->').
+vfull('Kit:fold/6', '((int -> (int -> int)) -> (int -> (int list -> int)))').
 closure('Kit.fold', 'Kit', '10').
 alloc_in('Kit.fold', 'Kit').
 htype('Kit.fold', '->').
 vtype('Kit.fold:arg', '->').
+vfull('Kit.fold:arg', '(int -> (int -> int))').
 vtype('Kit.fold:ret', '->').
+vfull('Kit.fold:ret', '(int -> (int list -> int))').
 assign_address('Kit:fold/6', 'Kit.fold').
 parameter('Kit.fold', 1, 'Kit.fold:arg').
 return('Kit.fold', 'Kit.fold:ret').
@@ -71,12 +82,15 @@ inner('Kit.fold\'', 'Kit.fold').
 curried('Kit.fold\'', 'Kit.fold').
 var_in('Kit:f/7', 'Kit.fold').
 vtype('Kit:f/7', '->').
+vfull('Kit:f/7', '(int -> (int -> int))').
 assign('Kit:f/7', 'Kit.fold:arg').
 closure('Kit.fold\'', 'Kit', '10').
 alloc_in('Kit.fold\'', 'Kit').
 htype('Kit.fold\'', '->').
 vtype('Kit.fold\':arg', 'int').
+vfull('Kit.fold\':arg', 'int').
 vtype('Kit.fold\':ret', '->').
+vfull('Kit.fold\':ret', '(int list -> int)').
 assign_address('Kit.fold:ret', 'Kit.fold\'').
 parameter('Kit.fold\'', 1, 'Kit.fold\':arg').
 return('Kit.fold\'', 'Kit.fold\':ret').
@@ -86,12 +100,15 @@ inner('Kit.fold\'\'', 'Kit.fold\'').
 curried('Kit.fold\'\'', 'Kit.fold\'').
 var_in('Kit:acc/8', 'Kit.fold\'').
 vtype('Kit:acc/8', 'int').
+vfull('Kit:acc/8', 'int').
 assign('Kit:acc/8', 'Kit.fold\':arg').
 closure('Kit.fold\'\'', 'Kit', '10').
 alloc_in('Kit.fold\'\'', 'Kit').
 htype('Kit.fold\'\'', '->').
 vtype('Kit.fold\'\':arg', 'list').
+vfull('Kit.fold\'\':arg', 'int list').
 vtype('Kit.fold\'\':ret', 'int').
+vfull('Kit.fold\'\':ret', 'int').
 assign_address('Kit.fold\':ret', 'Kit.fold\'\'').
 parameter('Kit.fold\'\'', 1, 'Kit.fold\'\':arg').
 return('Kit.fold\'\'', 'Kit.fold\'\':ret').
@@ -99,14 +116,17 @@ var_in('Kit.fold\'\':arg', 'Kit.fold\'\'').
 var_in('Kit.fold\'\':ret', 'Kit.fold\'\'').
 var_in('Kit:xs/9', 'Kit.fold\'\'').
 vtype('Kit:xs/9', 'list').
+vfull('Kit:xs/9', 'int list').
 assign('Kit:xs/9', 'Kit.fold\'\':arg').
 var_in('Kit:acc/8', 'Kit.fold\'\'').
 assign('Kit.fold\'\':ret', 'Kit:acc/8').
 var_in('Kit:x/10', 'Kit.fold\'\'').
 vtype('Kit:x/10', 'int').
+vfull('Kit:x/10', 'int').
 assign_load_field('Kit:x/10', 'Kit:xs/9', 'con:::.0').
 var_in('Kit:rest/11', 'Kit.fold\'\'').
 vtype('Kit:rest/11', 'list').
+vfull('Kit:rest/11', 'int list').
 assign_load_field('Kit:rest/11', 'Kit:xs/9', 'con:::.1').
 var_in('Kit:fold/6', 'Kit.fold\'\'').
 var_in('Kit:t2', 'Kit.fold\'\'').
@@ -120,6 +140,7 @@ in_function('Kit:11:c5', 'Kit.fold\'\'').
 call_indirect('Kit:11:c5', 'Kit:t2').
 var_in('Kit:t4', 'Kit.fold\'\'').
 vtype('Kit:t4', 'int').
+vfull('Kit:t4', 'int').
 var_in('Kit:t5', 'Kit.fold\'\'').
 in_function('Kit:11:c6', 'Kit.fold\'\'').
 call_indirect('Kit:11:c6', 'Kit:f/7').
@@ -141,11 +162,14 @@ var_in('Kit.fold', 'Kit:init').
 assign('Kit.fold', 'Kit:fold/6').
 var_in('Kit:double/13', 'Kit:init').
 vtype('Kit:double/13', '->').
+vfull('Kit:double/13', '(int -> int)').
 closure('Kit.double', 'Kit', '13').
 alloc_in('Kit.double', 'Kit').
 htype('Kit.double', '->').
 vtype('Kit.double:arg', 'int').
+vfull('Kit.double:arg', 'int').
 vtype('Kit.double:ret', 'int').
+vfull('Kit.double:ret', 'int').
 assign_address('Kit:double/13', 'Kit.double').
 parameter('Kit.double', 1, 'Kit.double:arg').
 return('Kit.double', 'Kit.double:ret').
@@ -153,15 +177,19 @@ var_in('Kit.double:arg', 'Kit.double').
 var_in('Kit.double:ret', 'Kit.double').
 var_in('Kit:x/12', 'Kit.double').
 vtype('Kit:x/12', 'int').
+vfull('Kit:x/12', 'int').
 assign('Kit:x/12', 'Kit.double:arg').
 var_in('Kit:t6', 'Kit.double').
 vtype('Kit:t6', '->').
+vfull('Kit:t6', '(int -> (int -> int))').
+htype('prim:%mulint', '->').
 parameter('prim:%mulint', 1, 'prim:%mulint:arg1').
 var_in('prim:%mulint:arg1', 'prim:%mulint').
 return('prim:%mulint', 'prim:%mulint:ret1').
 var_in('prim:%mulint:ret1', 'prim:%mulint').
 assign_address('prim:%mulint:ret1', 'prim:%mulint\'2').
 curried('prim:%mulint\'2', 'prim:%mulint').
+htype('prim:%mulint\'2', '->').
 parameter('prim:%mulint\'2', 1, 'prim:%mulint:arg2').
 var_in('prim:%mulint:arg2', 'prim:%mulint\'2').
 return('prim:%mulint\'2', 'prim:%mulint:ret').
@@ -169,29 +197,24 @@ var_in('prim:%mulint:ret', 'prim:%mulint\'2').
 scalar('ext').
 scalar('prim:%mulint:ret').
 assign_address('Kit:t6', 'prim:%mulint').
-var_in('Kit:t7', 'Kit.double').
-in_function('Kit:13:c9', 'Kit.double').
-call_indirect('Kit:13:c9', 'Kit:t6').
-argument('Kit:13:c9', 1, 'Kit:x/12').
-call_ret('Kit:13:c9', 'Kit:t7').
-in_function('Kit:13:c10', 'Kit.double').
-call_indirect('Kit:13:c10', 'Kit:t7').
 global_var('Kit:const').
 var_in('Kit:const', 'Kit.double').
 scalar('Kit:const').
-argument('Kit:13:c10', 1, 'Kit:const').
-call_ret('Kit:13:c10', 'Kit.double:ret').
+scalar('Kit.double:ret').
 global_def('Kit.double', 'Kit:init').
 global_var('Kit.double').
 var_in('Kit.double', 'Kit:init').
 assign('Kit.double', 'Kit:double/13').
 var_in('Kit:negate/15', 'Kit:init').
 vtype('Kit:negate/15', '->').
+vfull('Kit:negate/15', '(int -> int)').
 closure('Kit.negate', 'Kit', '14').
 alloc_in('Kit.negate', 'Kit').
 htype('Kit.negate', '->').
 vtype('Kit.negate:arg', 'int').
+vfull('Kit.negate:arg', 'int').
 vtype('Kit.negate:ret', 'int').
+vfull('Kit.negate:ret', 'int').
 assign_address('Kit:negate/15', 'Kit.negate').
 parameter('Kit.negate', 1, 'Kit.negate:arg').
 return('Kit.negate', 'Kit.negate:ret').
@@ -199,42 +222,41 @@ var_in('Kit.negate:arg', 'Kit.negate').
 var_in('Kit.negate:ret', 'Kit.negate').
 var_in('Kit:x/14', 'Kit.negate').
 vtype('Kit:x/14', 'int').
+vfull('Kit:x/14', 'int').
 assign('Kit:x/14', 'Kit.negate:arg').
-var_in('Kit:t8', 'Kit.negate').
-vtype('Kit:t8', '->').
+var_in('Kit:t7', 'Kit.negate').
+vtype('Kit:t7', '->').
+vfull('Kit:t7', '(int -> (int -> int))').
+htype('prim:%subint', '->').
 parameter('prim:%subint', 1, 'prim:%subint:arg1').
 var_in('prim:%subint:arg1', 'prim:%subint').
 return('prim:%subint', 'prim:%subint:ret1').
 var_in('prim:%subint:ret1', 'prim:%subint').
 assign_address('prim:%subint:ret1', 'prim:%subint\'2').
 curried('prim:%subint\'2', 'prim:%subint').
+htype('prim:%subint\'2', '->').
 parameter('prim:%subint\'2', 1, 'prim:%subint:arg2').
 var_in('prim:%subint:arg2', 'prim:%subint\'2').
 return('prim:%subint\'2', 'prim:%subint:ret').
 var_in('prim:%subint:ret', 'prim:%subint\'2').
 scalar('prim:%subint:ret').
-assign_address('Kit:t8', 'prim:%subint').
-var_in('Kit:t9', 'Kit.negate').
-in_function('Kit:14:c11', 'Kit.negate').
-call_indirect('Kit:14:c11', 'Kit:t8').
+assign_address('Kit:t7', 'prim:%subint').
 var_in('Kit:const', 'Kit.negate').
-argument('Kit:14:c11', 1, 'Kit:const').
-call_ret('Kit:14:c11', 'Kit:t9').
-in_function('Kit:14:c12', 'Kit.negate').
-call_indirect('Kit:14:c12', 'Kit:t9').
-argument('Kit:14:c12', 1, 'Kit:x/14').
-call_ret('Kit:14:c12', 'Kit.negate:ret').
+scalar('Kit.negate:ret').
 global_def('Kit.negate', 'Kit:init').
 global_var('Kit.negate').
 var_in('Kit.negate', 'Kit:init').
 assign('Kit.negate', 'Kit:negate/15').
 var_in('Kit:square/17', 'Kit:init').
 vtype('Kit:square/17', '->').
+vfull('Kit:square/17', '(int -> int)').
 closure('Kit.square', 'Kit', '15').
 alloc_in('Kit.square', 'Kit').
 htype('Kit.square', '->').
 vtype('Kit.square:arg', 'int').
+vfull('Kit.square:arg', 'int').
 vtype('Kit.square:ret', 'int').
+vfull('Kit.square:ret', 'int').
 assign_address('Kit:square/17', 'Kit.square').
 parameter('Kit.square', 1, 'Kit.square:arg').
 return('Kit.square', 'Kit.square:ret').
@@ -242,30 +264,27 @@ var_in('Kit.square:arg', 'Kit.square').
 var_in('Kit.square:ret', 'Kit.square').
 var_in('Kit:x/16', 'Kit.square').
 vtype('Kit:x/16', 'int').
+vfull('Kit:x/16', 'int').
 assign('Kit:x/16', 'Kit.square:arg').
-var_in('Kit:t10', 'Kit.square').
-vtype('Kit:t10', '->').
-assign_address('Kit:t10', 'prim:%mulint').
-var_in('Kit:t11', 'Kit.square').
-in_function('Kit:15:c13', 'Kit.square').
-call_indirect('Kit:15:c13', 'Kit:t10').
-argument('Kit:15:c13', 1, 'Kit:x/16').
-call_ret('Kit:15:c13', 'Kit:t11').
-in_function('Kit:15:c14', 'Kit.square').
-call_indirect('Kit:15:c14', 'Kit:t11').
-argument('Kit:15:c14', 1, 'Kit:x/16').
-call_ret('Kit:15:c14', 'Kit.square:ret').
+var_in('Kit:t8', 'Kit.square').
+vtype('Kit:t8', '->').
+vfull('Kit:t8', '(int -> (int -> int))').
+assign_address('Kit:t8', 'prim:%mulint').
+scalar('Kit.square:ret').
 global_def('Kit.square', 'Kit:init').
 global_var('Kit.square').
 var_in('Kit.square', 'Kit:init').
 assign('Kit.square', 'Kit:square/17').
 var_in('Kit:add/20', 'Kit:init').
 vtype('Kit:add/20', '->').
+vfull('Kit:add/20', '(int -> (int -> int))').
 closure('Kit.add', 'Kit', '16').
 alloc_in('Kit.add', 'Kit').
 htype('Kit.add', '->').
 vtype('Kit.add:arg', 'int').
+vfull('Kit.add:arg', 'int').
 vtype('Kit.add:ret', '->').
+vfull('Kit.add:ret', '(int -> int)').
 assign_address('Kit:add/20', 'Kit.add').
 parameter('Kit.add', 1, 'Kit.add:arg').
 return('Kit.add', 'Kit.add:ret').
@@ -275,12 +294,15 @@ inner('Kit.add\'', 'Kit.add').
 curried('Kit.add\'', 'Kit.add').
 var_in('Kit:a/18', 'Kit.add').
 vtype('Kit:a/18', 'int').
+vfull('Kit:a/18', 'int').
 assign('Kit:a/18', 'Kit.add:arg').
 closure('Kit.add\'', 'Kit', '16').
 alloc_in('Kit.add\'', 'Kit').
 htype('Kit.add\'', '->').
 vtype('Kit.add\':arg', 'int').
+vfull('Kit.add\':arg', 'int').
 vtype('Kit.add\':ret', 'int').
+vfull('Kit.add\':ret', 'int').
 assign_address('Kit.add:ret', 'Kit.add\'').
 parameter('Kit.add\'', 1, 'Kit.add\':arg').
 return('Kit.add\'', 'Kit.add\':ret').
@@ -288,42 +310,41 @@ var_in('Kit.add\':arg', 'Kit.add\'').
 var_in('Kit.add\':ret', 'Kit.add\'').
 var_in('Kit:b/19', 'Kit.add\'').
 vtype('Kit:b/19', 'int').
+vfull('Kit:b/19', 'int').
 assign('Kit:b/19', 'Kit.add\':arg').
-var_in('Kit:t12', 'Kit.add\'').
-vtype('Kit:t12', '->').
+var_in('Kit:t9', 'Kit.add\'').
+vtype('Kit:t9', '->').
+vfull('Kit:t9', '(int -> (int -> int))').
+htype('prim:%addint', '->').
 parameter('prim:%addint', 1, 'prim:%addint:arg1').
 var_in('prim:%addint:arg1', 'prim:%addint').
 return('prim:%addint', 'prim:%addint:ret1').
 var_in('prim:%addint:ret1', 'prim:%addint').
 assign_address('prim:%addint:ret1', 'prim:%addint\'2').
 curried('prim:%addint\'2', 'prim:%addint').
+htype('prim:%addint\'2', '->').
 parameter('prim:%addint\'2', 1, 'prim:%addint:arg2').
 var_in('prim:%addint:arg2', 'prim:%addint\'2').
 return('prim:%addint\'2', 'prim:%addint:ret').
 var_in('prim:%addint:ret', 'prim:%addint\'2').
 scalar('prim:%addint:ret').
-assign_address('Kit:t12', 'prim:%addint').
-var_in('Kit:t13', 'Kit.add\'').
-in_function('Kit:16:c15', 'Kit.add\'').
-call_indirect('Kit:16:c15', 'Kit:t12').
+assign_address('Kit:t9', 'prim:%addint').
 var_in('Kit:a/18', 'Kit.add\'').
-argument('Kit:16:c15', 1, 'Kit:a/18').
-call_ret('Kit:16:c15', 'Kit:t13').
-in_function('Kit:16:c16', 'Kit.add\'').
-call_indirect('Kit:16:c16', 'Kit:t13').
-argument('Kit:16:c16', 1, 'Kit:b/19').
-call_ret('Kit:16:c16', 'Kit.add\':ret').
+scalar('Kit.add\':ret').
 global_def('Kit.add', 'Kit:init').
 global_var('Kit.add').
 var_in('Kit.add', 'Kit:init').
 assign('Kit.add', 'Kit:add/20').
 var_in('Kit:cube/22', 'Kit:init').
 vtype('Kit:cube/22', '->').
+vfull('Kit:cube/22', '(int -> int)').
 closure('Kit.cube', 'Kit', '19').
 alloc_in('Kit.cube', 'Kit').
 htype('Kit.cube', '->').
 vtype('Kit.cube:arg', 'int').
+vfull('Kit.cube:arg', 'int').
 vtype('Kit.cube:ret', 'int').
+vfull('Kit.cube:ret', 'int').
 assign_address('Kit:cube/22', 'Kit.cube').
 parameter('Kit.cube', 1, 'Kit.cube:arg').
 return('Kit.cube', 'Kit.cube:ret').
@@ -331,44 +352,35 @@ var_in('Kit.cube:arg', 'Kit.cube').
 var_in('Kit.cube:ret', 'Kit.cube').
 var_in('Kit:x/21', 'Kit.cube').
 vtype('Kit:x/21', 'int').
+vfull('Kit:x/21', 'int').
 assign('Kit:x/21', 'Kit.cube:arg').
-var_in('Kit:t14', 'Kit.cube').
-vtype('Kit:t14', '->').
-assign_address('Kit:t14', 'prim:%mulint').
-var_in('Kit:t15', 'Kit.cube').
-in_function('Kit:19:c17', 'Kit.cube').
-call_indirect('Kit:19:c17', 'Kit:t14').
-var_in('Kit:t16', 'Kit.cube').
-vtype('Kit:t16', 'int').
-var_in('Kit:t17', 'Kit.cube').
-vtype('Kit:t17', '->').
-assign_address('Kit:t17', 'prim:%mulint').
-var_in('Kit:t18', 'Kit.cube').
-in_function('Kit:19:c18', 'Kit.cube').
-call_indirect('Kit:19:c18', 'Kit:t17').
-argument('Kit:19:c18', 1, 'Kit:x/21').
-call_ret('Kit:19:c18', 'Kit:t18').
-in_function('Kit:19:c19', 'Kit.cube').
-call_indirect('Kit:19:c19', 'Kit:t18').
-argument('Kit:19:c19', 1, 'Kit:x/21').
-call_ret('Kit:19:c19', 'Kit:t16').
-argument('Kit:19:c17', 1, 'Kit:t16').
-call_ret('Kit:19:c17', 'Kit:t15').
-in_function('Kit:19:c20', 'Kit.cube').
-call_indirect('Kit:19:c20', 'Kit:t15').
-argument('Kit:19:c20', 1, 'Kit:x/21').
-call_ret('Kit:19:c20', 'Kit.cube:ret').
+var_in('Kit:t10', 'Kit.cube').
+vtype('Kit:t10', '->').
+vfull('Kit:t10', '(int -> (int -> int))').
+assign_address('Kit:t10', 'prim:%mulint').
+var_in('Kit:t11', 'Kit.cube').
+vtype('Kit:t11', 'int').
+vfull('Kit:t11', 'int').
+var_in('Kit:t12', 'Kit.cube').
+vtype('Kit:t12', '->').
+vfull('Kit:t12', '(int -> (int -> int))').
+assign_address('Kit:t12', 'prim:%mulint').
+scalar('Kit:t11').
+scalar('Kit.cube:ret').
 global_def('Kit.cube', 'Kit:init').
 global_var('Kit.cube').
 var_in('Kit.cube', 'Kit:init').
 assign('Kit.cube', 'Kit:cube/22').
 var_in('Kit:helper/24', 'Kit:init').
 vtype('Kit:helper/24', '->').
+vfull('Kit:helper/24', '(int -> int)').
 closure('Kit.helper', 'Kit', '22').
 alloc_in('Kit.helper', 'Kit').
 htype('Kit.helper', '->').
 vtype('Kit.helper:arg', 'int').
+vfull('Kit.helper:arg', 'int').
 vtype('Kit.helper:ret', 'int').
+vfull('Kit.helper:ret', 'int').
 assign_address('Kit:helper/24', 'Kit.helper').
 parameter('Kit.helper', 1, 'Kit.helper:arg').
 return('Kit.helper', 'Kit.helper:ret').
@@ -376,31 +388,28 @@ var_in('Kit.helper:arg', 'Kit.helper').
 var_in('Kit.helper:ret', 'Kit.helper').
 var_in('Kit:x/23', 'Kit.helper').
 vtype('Kit:x/23', 'int').
+vfull('Kit:x/23', 'int').
 assign('Kit:x/23', 'Kit.helper:arg').
-var_in('Kit:t19', 'Kit.helper').
-vtype('Kit:t19', '->').
-assign_address('Kit:t19', 'prim:%addint').
-var_in('Kit:t20', 'Kit.helper').
-in_function('Kit:22:c21', 'Kit.helper').
-call_indirect('Kit:22:c21', 'Kit:t19').
-argument('Kit:22:c21', 1, 'Kit:x/23').
-call_ret('Kit:22:c21', 'Kit:t20').
-in_function('Kit:22:c22', 'Kit.helper').
-call_indirect('Kit:22:c22', 'Kit:t20').
+var_in('Kit:t13', 'Kit.helper').
+vtype('Kit:t13', '->').
+vfull('Kit:t13', '(int -> (int -> int))').
+assign_address('Kit:t13', 'prim:%addint').
 var_in('Kit:const', 'Kit.helper').
-argument('Kit:22:c22', 1, 'Kit:const').
-call_ret('Kit:22:c22', 'Kit.helper:ret').
+scalar('Kit.helper:ret').
 global_def('Kit.helper', 'Kit:init').
 global_var('Kit.helper').
 var_in('Kit.helper', 'Kit:init').
 assign('Kit.helper', 'Kit:helper/24').
 var_in('Kit:dead/26', 'Kit:init').
 vtype('Kit:dead/26', '->').
+vfull('Kit:dead/26', '(int -> int)').
 closure('Kit.dead', 'Kit', '23').
 alloc_in('Kit.dead', 'Kit').
 htype('Kit.dead', '->').
 vtype('Kit.dead:arg', 'int').
+vfull('Kit.dead:arg', 'int').
 vtype('Kit.dead:ret', 'int').
+vfull('Kit.dead:ret', 'int').
 assign_address('Kit:dead/26', 'Kit.dead').
 parameter('Kit.dead', 1, 'Kit.dead:arg').
 return('Kit.dead', 'Kit.dead:ret').
@@ -408,29 +417,34 @@ var_in('Kit.dead:arg', 'Kit.dead').
 var_in('Kit.dead:ret', 'Kit.dead').
 var_in('Kit:x/25', 'Kit.dead').
 vtype('Kit:x/25', 'int').
+vfull('Kit:x/25', 'int').
 assign('Kit:x/25', 'Kit.dead:arg').
 var_in('Kit.helper', 'Kit.dead').
-in_function('Kit:23:c23', 'Kit.dead').
-call_indirect('Kit:23:c23', 'Kit.helper').
-var_in('Kit:t21', 'Kit.dead').
-vtype('Kit:t21', 'int').
-in_function('Kit:23:c24', 'Kit.dead').
-call_indirect('Kit:23:c24', 'Kit.helper').
-argument('Kit:23:c24', 1, 'Kit:x/25').
-call_ret('Kit:23:c24', 'Kit:t21').
-argument('Kit:23:c23', 1, 'Kit:t21').
-call_ret('Kit:23:c23', 'Kit.dead:ret').
+in_function('Kit:23:c16', 'Kit.dead').
+call_indirect('Kit:23:c16', 'Kit.helper').
+var_in('Kit:t14', 'Kit.dead').
+vtype('Kit:t14', 'int').
+vfull('Kit:t14', 'int').
+in_function('Kit:23:c17', 'Kit.dead').
+call_indirect('Kit:23:c17', 'Kit.helper').
+argument('Kit:23:c17', 1, 'Kit:x/25').
+call_ret('Kit:23:c17', 'Kit:t14').
+argument('Kit:23:c16', 1, 'Kit:t14').
+call_ret('Kit:23:c16', 'Kit.dead:ret').
 global_def('Kit.dead', 'Kit:init').
 global_var('Kit.dead').
 var_in('Kit.dead', 'Kit:init').
 assign('Kit.dead', 'Kit:dead/26').
 var_in('Kit:scale/29', 'Kit:init').
 vtype('Kit:scale/29', '->').
+vfull('Kit:scale/29', '(int -> (int -> int))').
 closure('Kit.scale', 'Kit', '26').
 alloc_in('Kit.scale', 'Kit').
 htype('Kit.scale', '->').
 vtype('Kit.scale:arg', 'int').
+vfull('Kit.scale:arg', 'int').
 vtype('Kit.scale:ret', '->').
+vfull('Kit.scale:ret', '(int -> int)').
 assign_address('Kit:scale/29', 'Kit.scale').
 parameter('Kit.scale', 1, 'Kit.scale:arg').
 return('Kit.scale', 'Kit.scale:ret').
@@ -440,12 +454,15 @@ inner('Kit.scale\'', 'Kit.scale').
 curried('Kit.scale\'', 'Kit.scale').
 var_in('Kit:k/27', 'Kit.scale').
 vtype('Kit:k/27', 'int').
+vfull('Kit:k/27', 'int').
 assign('Kit:k/27', 'Kit.scale:arg').
 closure('Kit.scale\'', 'Kit', '26').
 alloc_in('Kit.scale\'', 'Kit').
 htype('Kit.scale\'', '->').
 vtype('Kit.scale\':arg', 'int').
+vfull('Kit.scale\':arg', 'int').
 vtype('Kit.scale\':ret', 'int').
+vfull('Kit.scale\':ret', 'int').
 assign_address('Kit.scale:ret', 'Kit.scale\'').
 parameter('Kit.scale\'', 1, 'Kit.scale\':arg').
 return('Kit.scale\'', 'Kit.scale\':ret').
@@ -453,92 +470,95 @@ var_in('Kit.scale\':arg', 'Kit.scale\'').
 var_in('Kit.scale\':ret', 'Kit.scale\'').
 var_in('Kit:x/28', 'Kit.scale\'').
 vtype('Kit:x/28', 'int').
+vfull('Kit:x/28', 'int').
 assign('Kit:x/28', 'Kit.scale\':arg').
-var_in('Kit:t22', 'Kit.scale\'').
-vtype('Kit:t22', '->').
-assign_address('Kit:t22', 'prim:%mulint').
-var_in('Kit:t23', 'Kit.scale\'').
-in_function('Kit:26:c25', 'Kit.scale\'').
-call_indirect('Kit:26:c25', 'Kit:t22').
+var_in('Kit:t15', 'Kit.scale\'').
+vtype('Kit:t15', '->').
+vfull('Kit:t15', '(int -> (int -> int))').
+assign_address('Kit:t15', 'prim:%mulint').
 var_in('Kit:k/27', 'Kit.scale\'').
-argument('Kit:26:c25', 1, 'Kit:k/27').
-call_ret('Kit:26:c25', 'Kit:t23').
-in_function('Kit:26:c26', 'Kit.scale\'').
-call_indirect('Kit:26:c26', 'Kit:t23').
-argument('Kit:26:c26', 1, 'Kit:x/28').
-call_ret('Kit:26:c26', 'Kit.scale\':ret').
+scalar('Kit.scale\':ret').
 global_def('Kit.scale', 'Kit:init').
 global_var('Kit.scale').
 var_in('Kit.scale', 'Kit:init').
 assign('Kit.scale', 'Kit:scale/29').
 var_in('Kit:handlers/31', 'Kit:init').
 vtype('Kit:handlers/31', 'list').
+vfull('Kit:handlers/31', 'Kit.handler list').
 new_block('Kit:handlers/31', 'Kit:block1@28').
 alloc_in('Kit:block1@28', 'Kit').
 htype('Kit:block1@28', 'list').
-var_in('Kit:t24', 'Kit:init').
-vtype('Kit:t24', 'Kit.handler').
-new_block('Kit:t24', 'Kit:block2@28').
+hfull('Kit:block1@28', 'Kit.handler list').
+var_in('Kit:t16', 'Kit:init').
+vtype('Kit:t16', 'Kit.handler').
+vfull('Kit:t16', 'Kit.handler').
+new_block('Kit:t16', 'Kit:block2@28').
 alloc_in('Kit:block2@28', 'Kit').
 htype('Kit:block2@28', 'Kit.handler').
+hfull('Kit:block2@28', 'Kit.handler').
 var_in('Kit:const', 'Kit:init').
-assign_store_field('Kit:t24', 'fld:name', 'Kit:const').
-assign_store_field('Kit:t24', 'fld:run', 'Kit.double').
-assign_store_field('Kit:handlers/31', 'con:::.0', 'Kit:t24').
-var_in('Kit:t25', 'Kit:init').
-vtype('Kit:t25', 'list').
-new_block('Kit:t25', 'Kit:block3@28').
+assign_store_field('Kit:t16', 'fld:name', 'Kit:const').
+assign_store_field('Kit:t16', 'fld:run', 'Kit.double').
+assign_store_field('Kit:handlers/31', 'con:::.0', 'Kit:t16').
+var_in('Kit:t17', 'Kit:init').
+vtype('Kit:t17', 'list').
+vfull('Kit:t17', 'Kit.handler list').
+new_block('Kit:t17', 'Kit:block3@28').
 alloc_in('Kit:block3@28', 'Kit').
 htype('Kit:block3@28', 'list').
-var_in('Kit:t26', 'Kit:init').
-vtype('Kit:t26', 'Kit.handler').
-new_block('Kit:t26', 'Kit:block4@28').
+hfull('Kit:block3@28', 'Kit.handler list').
+var_in('Kit:t18', 'Kit:init').
+vtype('Kit:t18', 'Kit.handler').
+vfull('Kit:t18', 'Kit.handler').
+new_block('Kit:t18', 'Kit:block4@28').
 alloc_in('Kit:block4@28', 'Kit').
 htype('Kit:block4@28', 'Kit.handler').
-assign_store_field('Kit:t26', 'fld:name', 'Kit:const').
-var_in('Kit:t27', 'Kit:init').
-vtype('Kit:t27', '->').
+hfull('Kit:block4@28', 'Kit.handler').
+assign_store_field('Kit:t18', 'fld:name', 'Kit:const').
+var_in('Kit:t19', 'Kit:init').
+vtype('Kit:t19', '->').
+vfull('Kit:t19', '(int -> int)').
 closure('Kit:fun1@28', 'Kit', '28').
 alloc_in('Kit:fun1@28', 'Kit').
 htype('Kit:fun1@28', '->').
 vtype('Kit:fun1@28:arg', 'int').
+vfull('Kit:fun1@28:arg', 'int').
 vtype('Kit:fun1@28:ret', 'int').
-assign_address('Kit:t27', 'Kit:fun1@28').
+vfull('Kit:fun1@28:ret', 'int').
+assign_address('Kit:t19', 'Kit:fun1@28').
 parameter('Kit:fun1@28', 1, 'Kit:fun1@28:arg').
 return('Kit:fun1@28', 'Kit:fun1@28:ret').
 var_in('Kit:fun1@28:arg', 'Kit:fun1@28').
 var_in('Kit:fun1@28:ret', 'Kit:fun1@28').
 var_in('Kit:x/30', 'Kit:fun1@28').
 vtype('Kit:x/30', 'int').
+vfull('Kit:x/30', 'int').
 assign('Kit:x/30', 'Kit:fun1@28:arg').
-var_in('Kit:t28', 'Kit:fun1@28').
-vtype('Kit:t28', '->').
-assign_address('Kit:t28', 'prim:%subint').
-var_in('Kit:t29', 'Kit:fun1@28').
-in_function('Kit:28:c27', 'Kit:fun1@28').
-call_indirect('Kit:28:c27', 'Kit:t28').
-argument('Kit:28:c27', 1, 'Kit:x/30').
-call_ret('Kit:28:c27', 'Kit:t29').
-in_function('Kit:28:c28', 'Kit:fun1@28').
-call_indirect('Kit:28:c28', 'Kit:t29').
+var_in('Kit:t20', 'Kit:fun1@28').
+vtype('Kit:t20', '->').
+vfull('Kit:t20', '(int -> (int -> int))').
+assign_address('Kit:t20', 'prim:%subint').
 var_in('Kit:const', 'Kit:fun1@28').
-argument('Kit:28:c28', 1, 'Kit:const').
-call_ret('Kit:28:c28', 'Kit:fun1@28:ret').
-assign_store_field('Kit:t26', 'fld:run', 'Kit:t27').
-assign_store_field('Kit:t25', 'con:::.0', 'Kit:t26').
-var_in('Kit:t30', 'Kit:init').
-vtype('Kit:t30', 'list').
-scalar('Kit:t30').
-assign_store_field('Kit:t25', 'con:::.1', 'Kit:t30').
-assign_store_field('Kit:handlers/31', 'con:::.1', 'Kit:t25').
+scalar('Kit:fun1@28:ret').
+assign_store_field('Kit:t18', 'fld:run', 'Kit:t19').
+assign_store_field('Kit:t17', 'con:::.0', 'Kit:t18').
+var_in('Kit:t21', 'Kit:init').
+vtype('Kit:t21', 'list').
+vfull('Kit:t21', 'Kit.handler list').
+scalar('Kit:t21').
+assign_store_field('Kit:t17', 'con:::.1', 'Kit:t21').
+assign_store_field('Kit:handlers/31', 'con:::.1', 'Kit:t17').
 global_def('Kit.handlers', 'Kit:init').
 global_var('Kit.handlers').
 var_in('Kit.handlers', 'Kit:init').
 assign('Kit.handlers', 'Kit:handlers/31').
 var_in('Kit:current/32', 'Kit:init').
 vtype('Kit:current/32', 'Pervasives.ref').
-var_in('Kit:t31', 'Kit:init').
-vtype('Kit:t31', '->').
+vfull('Kit:current/32', '(int -> int) Pervasives.ref').
+var_in('Kit:t22', 'Kit:init').
+vtype('Kit:t22', '->').
+vfull('Kit:t22', '((int -> int) -> (int -> int) Pervasives.ref)').
+htype('prim:%makemutable', '->').
 parameter('prim:%makemutable', 1, 'prim:%makemutable:arg1').
 var_in('prim:%makemutable:arg1', 'prim:%makemutable').
 return('prim:%makemutable', 'prim:%makemutable:ret').
@@ -547,22 +567,27 @@ scalar('prim:%makemutable:ret').
 new_block('prim:%makemutable:ret', 'prim:%makemutable:block').
 htype('prim:%makemutable:block', 'Pervasives.ref').
 assign_store_field('prim:%makemutable:ret', 'fld:contents', 'prim:%makemutable:arg1').
-assign_address('Kit:t31', 'prim:%makemutable').
-in_function('Kit:29:c29', 'Kit:init').
-call_indirect('Kit:29:c29', 'Kit:t31').
-argument('Kit:29:c29', 1, 'Kit.negate').
-call_ret('Kit:29:c29', 'Kit:current/32').
+assign_address('Kit:t22', 'prim:%makemutable').
+scalar('Kit:current/32').
+new_block('Kit:current/32', 'Kit:29:c20:block').
+htype('Kit:29:c20:block', 'Pervasives.ref').
+hfull('Kit:29:c20:block', '(int -> int) Pervasives.ref').
+alloc_in('Kit:29:c20:block', 'Kit').
+assign_store_field('Kit:current/32', 'fld:contents', 'Kit.negate').
 global_def('Kit.current', 'Kit:init').
 global_var('Kit.current').
 var_in('Kit.current', 'Kit:init').
 assign('Kit.current', 'Kit:current/32').
 var_in('Kit:last/34', 'Kit:init').
 vtype('Kit:last/34', '->').
+vfull('Kit:last/34', '(int -> int)').
 closure('Kit.last', 'Kit', '30').
 alloc_in('Kit.last', 'Kit').
 htype('Kit.last', '->').
 vtype('Kit.last:arg', 'int').
+vfull('Kit.last:arg', 'int').
 vtype('Kit.last:ret', 'int').
+vfull('Kit.last:ret', 'int').
 assign_address('Kit:last/34', 'Kit.last').
 parameter('Kit.last', 1, 'Kit.last:arg').
 return('Kit.last', 'Kit.last:ret').
@@ -570,11 +595,14 @@ var_in('Kit.last:arg', 'Kit.last').
 var_in('Kit.last:ret', 'Kit.last').
 var_in('Kit:x/33', 'Kit.last').
 vtype('Kit:x/33', 'int').
+vfull('Kit:x/33', 'int').
 assign('Kit:x/33', 'Kit.last:arg').
-raise_in('Kit:30:c30', 'Kit.last').
-raise_of('Kit:30:c30', 'Kit.Stop').
-var_in('Kit:t32', 'Kit.last').
-vtype('Kit:t32', '->').
+raise_in('Kit:30:c21', 'Kit.last').
+raise_of('Kit:30:c21', 'Kit.Stop').
+var_in('Kit:t23', 'Kit.last').
+vtype('Kit:t23', '->').
+vfull('Kit:t23', '(exn -> int)').
+htype('prim:%raise', '->').
 parameter('prim:%raise', 1, 'prim:%raise:arg1').
 var_in('prim:%raise:arg1', 'prim:%raise').
 return('prim:%raise', 'prim:%raise:ret').
@@ -583,19 +611,22 @@ scalar('prim:%raise:ret').
 global_var('exn').
 var_in('exn', 'prim:%raise').
 assign('exn', 'prim:%raise:arg1').
-assign_address('Kit:t32', 'prim:%raise').
-in_function('Kit:30:c30', 'Kit.last').
-call_indirect('Kit:30:c30', 'Kit:t32').
-var_in('Kit:t33', 'Kit.last').
-vtype('Kit:t33', 'exn').
-new_block('Kit:t33', 'Kit:block5@30').
+assign_address('Kit:t23', 'prim:%raise').
+var_in('Kit:t24', 'Kit.last').
+vtype('Kit:t24', 'exn').
+vfull('Kit:t24', 'exn').
+new_block('Kit:t24', 'Kit:block5@30').
 alloc_in('Kit:block5@30', 'Kit').
 htype('Kit:block5@30', 'exn').
+hfull('Kit:block5@30', 'exn').
 exn_block('Kit:block5@30', 'Kit.Stop').
 var_in('Kit.square', 'Kit.last').
-assign_store_field('Kit:t33', 'con:Stop.0', 'Kit.square').
-argument('Kit:30:c30', 1, 'Kit:t33').
-call_ret('Kit:30:c30', 'Kit.last:ret').
+assign_store_field('Kit:t24', 'con:Stop.0', 'Kit.square').
+scalar('Kit.last:ret').
+var_in('exn', 'Kit.last').
+assign('exn', 'Kit:t24').
+in_function('Kit:30:c21', 'Kit.last').
+argument('Kit:30:c21', 1, 'Kit:t24').
 global_def('Kit.last', 'Kit:init').
 global_var('Kit.last').
 var_in('Kit.last', 'Kit:init').
@@ -603,8 +634,11 @@ assign('Kit.last', 'Kit:last/34').
 init('Use:init').
 var_in('Use:total/1', 'Use:init').
 vtype('Use:total/1', 'Pervasives.ref').
+vfull('Use:total/1', 'int Pervasives.ref').
 var_in('Use:t1', 'Use:init').
 vtype('Use:t1', '->').
+vfull('Use:t1', '(int -> int Pervasives.ref)').
+htype('prim:%makemutable', '->').
 parameter('prim:%makemutable', 1, 'prim:%makemutable:arg1').
 var_in('prim:%makemutable:arg1', 'prim:%makemutable').
 return('prim:%makemutable', 'prim:%makemutable:ret').
@@ -615,24 +649,29 @@ new_block('prim:%makemutable:ret', 'prim:%makemutable:block').
 htype('prim:%makemutable:block', 'Pervasives.ref').
 assign_store_field('prim:%makemutable:ret', 'fld:contents', 'prim:%makemutable:arg1').
 assign_address('Use:t1', 'prim:%makemutable').
-in_function('Use:2:c1', 'Use:init').
-call_indirect('Use:2:c1', 'Use:t1').
 global_var('Use:const').
 var_in('Use:const', 'Use:init').
 scalar('Use:const').
-argument('Use:2:c1', 1, 'Use:const').
-call_ret('Use:2:c1', 'Use:total/1').
+scalar('Use:total/1').
+new_block('Use:total/1', 'Use:2:c1:block').
+htype('Use:2:c1:block', 'Pervasives.ref').
+hfull('Use:2:c1:block', 'int Pervasives.ref').
+alloc_in('Use:2:c1:block', 'Use').
+assign_store_field('Use:total/1', 'fld:contents', 'Use:const').
 global_def('Use.total', 'Use:init').
 global_var('Use.total').
 var_in('Use.total', 'Use:init').
 assign('Use.total', 'Use:total/1').
 var_in('Use:run_all/7', 'Use:init').
 vtype('Use:run_all/7', '->').
+vfull('Use:run_all/7', '(int -> unit)').
 closure('Use.run_all', 'Use', '4').
 alloc_in('Use.run_all', 'Use').
 htype('Use.run_all', '->').
 vtype('Use.run_all:arg', 'int').
+vfull('Use.run_all:arg', 'int').
 vtype('Use.run_all:ret', 'unit').
+vfull('Use.run_all:ret', 'unit').
 assign_address('Use:run_all/7', 'Use.run_all').
 parameter('Use.run_all', 1, 'Use.run_all:arg').
 return('Use.run_all', 'Use.run_all:ret').
@@ -640,14 +679,18 @@ var_in('Use.run_all:arg', 'Use.run_all').
 var_in('Use.run_all:ret', 'Use.run_all').
 var_in('Use:x/2', 'Use.run_all').
 vtype('Use:x/2', 'int').
+vfull('Use:x/2', 'int').
 assign('Use:x/2', 'Use.run_all:arg').
 var_in('Use:go/3', 'Use.run_all').
 vtype('Use:go/3', '->').
+vfull('Use:go/3', '(Kit.handler list -> unit)').
 closure('Use:go/3', 'Use', '5').
 alloc_in('Use:go/3', 'Use').
 htype('Use:go/3', '->').
 vtype('Use:go/3:arg', 'list').
+vfull('Use:go/3:arg', 'Kit.handler list').
 vtype('Use:go/3:ret', 'unit').
+vfull('Use:go/3:ret', 'unit').
 assign_address('Use:go/3', 'Use:go/3').
 parameter('Use:go/3', 1, 'Use:go/3:arg').
 return('Use:go/3', 'Use:go/3:ret').
@@ -655,22 +698,28 @@ var_in('Use:go/3:arg', 'Use:go/3').
 var_in('Use:go/3:ret', 'Use:go/3').
 var_in('Use:hs/4', 'Use:go/3').
 vtype('Use:hs/4', 'list').
+vfull('Use:hs/4', 'Kit.handler list').
 assign('Use:hs/4', 'Use:go/3:arg').
 scalar('Use:go/3:ret').
 var_in('Use:h/5', 'Use:go/3').
 vtype('Use:h/5', 'Kit.handler').
+vfull('Use:h/5', 'Kit.handler').
 assign_load_field('Use:h/5', 'Use:hs/4', 'con:::.0').
 var_in('Use:rest/6', 'Use:go/3').
 vtype('Use:rest/6', 'list').
+vfull('Use:rest/6', 'Kit.handler list').
 assign_load_field('Use:rest/6', 'Use:hs/4', 'con:::.1').
 var_in('Use:t2', 'Use:go/3').
 vtype('Use:t2', '->').
+vfull('Use:t2', '(int Pervasives.ref -> (int -> unit))').
+htype('prim:%setfield0', '->').
 parameter('prim:%setfield0', 1, 'prim:%setfield0:arg1').
 var_in('prim:%setfield0:arg1', 'prim:%setfield0').
 return('prim:%setfield0', 'prim:%setfield0:ret1').
 var_in('prim:%setfield0:ret1', 'prim:%setfield0').
 assign_address('prim:%setfield0:ret1', 'prim:%setfield0\'2').
 curried('prim:%setfield0\'2', 'prim:%setfield0').
+htype('prim:%setfield0\'2', '->').
 parameter('prim:%setfield0\'2', 1, 'prim:%setfield0:arg2').
 var_in('prim:%setfield0:arg2', 'prim:%setfield0\'2').
 return('prim:%setfield0\'2', 'prim:%setfield0:ret').
@@ -678,37 +727,34 @@ var_in('prim:%setfield0:ret', 'prim:%setfield0\'2').
 scalar('prim:%setfield0:ret').
 assign_store_field('prim:%setfield0:arg1', 'fld:contents', 'prim:%setfield0:arg2').
 assign_address('Use:t2', 'prim:%setfield0').
-var_in('Use:t3', 'Use:go/3').
-in_function('Use:6:c2', 'Use:go/3').
-call_indirect('Use:6:c2', 'Use:t2').
 var_in('Use.total', 'Use:go/3').
-argument('Use:6:c2', 1, 'Use.total').
-call_ret('Use:6:c2', 'Use:t3').
-in_function('Use:6:c3', 'Use:go/3').
-call_indirect('Use:6:c3', 'Use:t3').
+var_in('Use:t3', 'Use:go/3').
+vtype('Use:t3', 'int').
+vfull('Use:t3', 'int').
 var_in('Use:t4', 'Use:go/3').
-vtype('Use:t4', 'int').
-var_in('Use:t5', 'Use:go/3').
-vtype('Use:t5', '->').
+vtype('Use:t4', '->').
+vfull('Use:t4', '(int -> (int -> int))').
+htype('prim:%addint', '->').
 parameter('prim:%addint', 1, 'prim:%addint:arg1').
 var_in('prim:%addint:arg1', 'prim:%addint').
 return('prim:%addint', 'prim:%addint:ret1').
 var_in('prim:%addint:ret1', 'prim:%addint').
 assign_address('prim:%addint:ret1', 'prim:%addint\'2').
 curried('prim:%addint\'2', 'prim:%addint').
+htype('prim:%addint\'2', '->').
 parameter('prim:%addint\'2', 1, 'prim:%addint:arg2').
 var_in('prim:%addint:arg2', 'prim:%addint\'2').
 return('prim:%addint\'2', 'prim:%addint:ret').
 var_in('prim:%addint:ret', 'prim:%addint\'2').
 scalar('prim:%addint:ret').
-assign_address('Use:t5', 'prim:%addint').
+assign_address('Use:t4', 'prim:%addint').
+var_in('Use:t5', 'Use:go/3').
+vtype('Use:t5', 'int').
+vfull('Use:t5', 'int').
 var_in('Use:t6', 'Use:go/3').
-in_function('Use:6:c4', 'Use:go/3').
-call_indirect('Use:6:c4', 'Use:t5').
-var_in('Use:t7', 'Use:go/3').
-vtype('Use:t7', 'int').
-var_in('Use:t8', 'Use:go/3').
-vtype('Use:t8', '->').
+vtype('Use:t6', '->').
+vfull('Use:t6', '(int Pervasives.ref -> int)').
+htype('prim:%field0', '->').
 parameter('prim:%field0', 1, 'prim:%field0:arg1').
 var_in('prim:%field0:arg1', 'prim:%field0').
 return('prim:%field0', 'prim:%field0:ret').
@@ -716,288 +762,275 @@ var_in('prim:%field0:ret', 'prim:%field0').
 scalar('prim:%field0:ret').
 assign_load_field('prim:%field0:ret', 'prim:%field0:arg1', 'fld:contents').
 assign_load_field('prim:%field0:ret', 'prim:%field0:arg1', 'tuple:2.0').
-assign_address('Use:t8', 'prim:%field0').
+assign_address('Use:t6', 'prim:%field0').
+scalar('Use:t5').
+assign_load_field('Use:t5', 'Use.total', 'fld:contents').
+assign_load_field('Use:t5', 'Use.total', 'tuple:2.0').
+var_in('Use:t7', 'Use:go/3').
+vtype('Use:t7', 'int').
+vfull('Use:t7', 'int').
+var_in('Use:t8', 'Use:go/3').
+vtype('Use:t8', '->').
+vfull('Use:t8', '(int -> int)').
+assign_load_field('Use:t8', 'Use:h/5', 'fld:run').
 in_function('Use:6:c5', 'Use:go/3').
 call_indirect('Use:6:c5', 'Use:t8').
-argument('Use:6:c5', 1, 'Use.total').
-call_ret('Use:6:c5', 'Use:t7').
-argument('Use:6:c4', 1, 'Use:t7').
-call_ret('Use:6:c4', 'Use:t6').
-in_function('Use:6:c6', 'Use:go/3').
-call_indirect('Use:6:c6', 'Use:t6').
-var_in('Use:t9', 'Use:go/3').
-vtype('Use:t9', 'int').
-var_in('Use:t10', 'Use:go/3').
-vtype('Use:t10', '->').
-assign_load_field('Use:t10', 'Use:h/5', 'fld:run').
-in_function('Use:6:c7', 'Use:go/3').
-call_indirect('Use:6:c7', 'Use:t10').
 var_in('Use:x/2', 'Use:go/3').
-argument('Use:6:c7', 1, 'Use:x/2').
-call_ret('Use:6:c7', 'Use:t9').
-argument('Use:6:c6', 1, 'Use:t9').
-call_ret('Use:6:c6', 'Use:t4').
-argument('Use:6:c3', 1, 'Use:t4').
-call_ret('Use:6:c3', 'Use:_').
+argument('Use:6:c5', 1, 'Use:x/2').
+call_ret('Use:6:c5', 'Use:t7').
+scalar('Use:t3').
+scalar('Use:_').
+assign_store_field('Use.total', 'fld:contents', 'Use:t3').
 var_in('Use:go/3', 'Use:go/3').
-in_function('Use:6:c8', 'Use:go/3').
-call_indirect('Use:6:c8', 'Use:go/3').
-argument('Use:6:c8', 1, 'Use:rest/6').
-call_ret('Use:6:c8', 'Use:go/3:ret').
-in_function('Use:7:c9', 'Use.run_all').
-call_indirect('Use:7:c9', 'Use:go/3').
+in_function('Use:6:c6', 'Use:go/3').
+call_indirect('Use:6:c6', 'Use:go/3').
+argument('Use:6:c6', 1, 'Use:rest/6').
+call_ret('Use:6:c6', 'Use:go/3:ret').
+in_function('Use:7:c7', 'Use.run_all').
+call_indirect('Use:7:c7', 'Use:go/3').
 global_var('Kit.handlers').
 var_in('Kit.handlers', 'Use.run_all').
-argument('Use:7:c9', 1, 'Kit.handlers').
-call_ret('Use:7:c9', 'Use.run_all:ret').
+argument('Use:7:c7', 1, 'Kit.handlers').
+call_ret('Use:7:c7', 'Use.run_all:ret').
 global_def('Use.run_all', 'Use:init').
 global_var('Use.run_all').
 var_in('Use.run_all', 'Use:init').
 assign('Use.run_all', 'Use:run_all/7').
-var_in('Use:t11', 'Use:init').
-vtype('Use:t11', 'unit').
-in_function('Use:10:c10', 'Use:init').
-call_indirect('Use:10:c10', 'Use.run_all').
-argument('Use:10:c10', 1, 'Use:const').
-call_ret('Use:10:c10', 'Use:_').
+var_in('Use:t9', 'Use:init').
+vtype('Use:t9', 'unit').
+vfull('Use:t9', 'unit').
+in_function('Use:10:c8', 'Use:init').
+call_indirect('Use:10:c8', 'Use.run_all').
+argument('Use:10:c8', 1, 'Use:const').
 global_var('Kit.iter').
 var_in('Kit.iter', 'Use:init').
-var_in('Use:t12', 'Use:init').
-in_function('Use:11:c11', 'Use:init').
-call_indirect('Use:11:c11', 'Kit.iter').
-var_in('Use:t13', 'Use:init').
-vtype('Use:t13', '->').
+var_in('Use:t10', 'Use:init').
+in_function('Use:11:c9', 'Use:init').
+call_indirect('Use:11:c9', 'Kit.iter').
+var_in('Use:t11', 'Use:init').
+vtype('Use:t11', '->').
+vfull('Use:t11', '(int -> unit)').
 closure('Use:fun1@11', 'Use', '11').
 alloc_in('Use:fun1@11', 'Use').
 htype('Use:fun1@11', '->').
 vtype('Use:fun1@11:arg', 'int').
+vfull('Use:fun1@11:arg', 'int').
 vtype('Use:fun1@11:ret', 'unit').
-assign_address('Use:t13', 'Use:fun1@11').
+vfull('Use:fun1@11:ret', 'unit').
+assign_address('Use:t11', 'Use:fun1@11').
 parameter('Use:fun1@11', 1, 'Use:fun1@11:arg').
 return('Use:fun1@11', 'Use:fun1@11:ret').
 var_in('Use:fun1@11:arg', 'Use:fun1@11').
 var_in('Use:fun1@11:ret', 'Use:fun1@11').
 var_in('Use:x/10', 'Use:fun1@11').
 vtype('Use:x/10', 'int').
+vfull('Use:x/10', 'int').
 assign('Use:x/10', 'Use:fun1@11:arg').
+var_in('Use:t12', 'Use:fun1@11').
+vtype('Use:t12', '->').
+vfull('Use:t12', '(int Pervasives.ref -> (int -> unit))').
+assign_address('Use:t12', 'prim:%setfield0').
+var_in('Use.total', 'Use:fun1@11').
+var_in('Use:t13', 'Use:fun1@11').
+vtype('Use:t13', 'int').
+vfull('Use:t13', 'int').
 var_in('Use:t14', 'Use:fun1@11').
 vtype('Use:t14', '->').
-assign_address('Use:t14', 'prim:%setfield0').
+vfull('Use:t14', '(int -> (int -> int))').
+assign_address('Use:t14', 'prim:%addint').
 var_in('Use:t15', 'Use:fun1@11').
-in_function('Use:11:c12', 'Use:fun1@11').
-call_indirect('Use:11:c12', 'Use:t14').
-var_in('Use.total', 'Use:fun1@11').
-argument('Use:11:c12', 1, 'Use.total').
-call_ret('Use:11:c12', 'Use:t15').
-in_function('Use:11:c13', 'Use:fun1@11').
-call_indirect('Use:11:c13', 'Use:t15').
+vtype('Use:t15', 'int').
+vfull('Use:t15', 'int').
 var_in('Use:t16', 'Use:fun1@11').
-vtype('Use:t16', 'int').
+vtype('Use:t16', '->').
+vfull('Use:t16', '(int Pervasives.ref -> int)').
+assign_address('Use:t16', 'prim:%field0').
+scalar('Use:t15').
+assign_load_field('Use:t15', 'Use.total', 'fld:contents').
+assign_load_field('Use:t15', 'Use.total', 'tuple:2.0').
 var_in('Use:t17', 'Use:fun1@11').
-vtype('Use:t17', '->').
-assign_address('Use:t17', 'prim:%addint').
+vtype('Use:t17', 'int').
+vfull('Use:t17', 'int').
 var_in('Use:t18', 'Use:fun1@11').
-in_function('Use:11:c14', 'Use:fun1@11').
-call_indirect('Use:11:c14', 'Use:t17').
+vtype('Use:t18', '->').
+vfull('Use:t18', '(int -> int)').
 var_in('Use:t19', 'Use:fun1@11').
-vtype('Use:t19', 'int').
-var_in('Use:t20', 'Use:fun1@11').
-vtype('Use:t20', '->').
-assign_address('Use:t20', 'prim:%field0').
-in_function('Use:11:c15', 'Use:fun1@11').
-call_indirect('Use:11:c15', 'Use:t20').
-argument('Use:11:c15', 1, 'Use.total').
-call_ret('Use:11:c15', 'Use:t19').
-argument('Use:11:c14', 1, 'Use:t19').
-call_ret('Use:11:c14', 'Use:t18').
-in_function('Use:11:c16', 'Use:fun1@11').
-call_indirect('Use:11:c16', 'Use:t18').
-var_in('Use:t21', 'Use:fun1@11').
-vtype('Use:t21', 'int').
-var_in('Use:t22', 'Use:fun1@11').
-vtype('Use:t22', '->').
-var_in('Use:t23', 'Use:fun1@11').
-vtype('Use:t23', '->').
-assign_address('Use:t23', 'prim:%field0').
-in_function('Use:11:c17', 'Use:fun1@11').
-call_indirect('Use:11:c17', 'Use:t23').
+vtype('Use:t19', '->').
+vfull('Use:t19', '((int -> int) Pervasives.ref -> (int -> int))').
+assign_address('Use:t19', 'prim:%field0').
 global_var('Kit.current').
 var_in('Kit.current', 'Use:fun1@11').
-argument('Use:11:c17', 1, 'Kit.current').
-call_ret('Use:11:c17', 'Use:t22').
-in_function('Use:11:c18', 'Use:fun1@11').
-call_indirect('Use:11:c18', 'Use:t22').
-argument('Use:11:c18', 1, 'Use:x/10').
-call_ret('Use:11:c18', 'Use:t21').
-argument('Use:11:c16', 1, 'Use:t21').
-call_ret('Use:11:c16', 'Use:t16').
-argument('Use:11:c13', 1, 'Use:t16').
-call_ret('Use:11:c13', 'Use:fun1@11:ret').
-argument('Use:11:c11', 1, 'Use:t13').
-call_ret('Use:11:c11', 'Use:t12').
-in_function('Use:11:c19', 'Use:init').
-call_indirect('Use:11:c19', 'Use:t12').
-var_in('Use:t24', 'Use:init').
-vtype('Use:t24', 'list').
-new_block('Use:t24', 'Use:block1@11').
+scalar('Use:t18').
+assign_load_field('Use:t18', 'Kit.current', 'fld:contents').
+assign_load_field('Use:t18', 'Kit.current', 'tuple:2.0').
+in_function('Use:11:c14', 'Use:fun1@11').
+call_indirect('Use:11:c14', 'Use:t18').
+argument('Use:11:c14', 1, 'Use:x/10').
+call_ret('Use:11:c14', 'Use:t17').
+scalar('Use:t13').
+scalar('Use:fun1@11:ret').
+assign_store_field('Use.total', 'fld:contents', 'Use:t13').
+argument('Use:11:c9', 1, 'Use:t11').
+call_ret('Use:11:c9', 'Use:t10').
+in_function('Use:11:c15', 'Use:init').
+call_indirect('Use:11:c15', 'Use:t10').
+var_in('Use:t20', 'Use:init').
+vtype('Use:t20', 'list').
+vfull('Use:t20', 'int list').
+new_block('Use:t20', 'Use:block1@11').
 alloc_in('Use:block1@11', 'Use').
 htype('Use:block1@11', 'list').
-assign_store_field('Use:t24', 'con:::.0', 'Use:const').
-var_in('Use:t25', 'Use:init').
-vtype('Use:t25', 'list').
-new_block('Use:t25', 'Use:block2@11').
+hfull('Use:block1@11', 'int list').
+assign_store_field('Use:t20', 'con:::.0', 'Use:const').
+var_in('Use:t21', 'Use:init').
+vtype('Use:t21', 'list').
+vfull('Use:t21', 'int list').
+new_block('Use:t21', 'Use:block2@11').
 alloc_in('Use:block2@11', 'Use').
 htype('Use:block2@11', 'list').
-assign_store_field('Use:t25', 'con:::.0', 'Use:const').
-var_in('Use:t26', 'Use:init').
-vtype('Use:t26', 'list').
-scalar('Use:t26').
-assign_store_field('Use:t25', 'con:::.1', 'Use:t26').
-assign_store_field('Use:t24', 'con:::.1', 'Use:t25').
-argument('Use:11:c19', 1, 'Use:t24').
-call_ret('Use:11:c19', 'Use:_').
-var_in('Use:t27', 'Use:init').
-vtype('Use:t27', '->').
-assign_address('Use:t27', 'prim:%setfield0').
-var_in('Use:t28', 'Use:init').
-in_function('Use:12:c20', 'Use:init').
-call_indirect('Use:12:c20', 'Use:t27').
-argument('Use:12:c20', 1, 'Use.total').
-call_ret('Use:12:c20', 'Use:t28').
-in_function('Use:12:c21', 'Use:init').
-call_indirect('Use:12:c21', 'Use:t28').
-var_in('Use:t29', 'Use:init').
-vtype('Use:t29', 'int').
+hfull('Use:block2@11', 'int list').
+assign_store_field('Use:t21', 'con:::.0', 'Use:const').
+var_in('Use:t22', 'Use:init').
+vtype('Use:t22', 'list').
+vfull('Use:t22', 'int list').
+scalar('Use:t22').
+assign_store_field('Use:t21', 'con:::.1', 'Use:t22').
+assign_store_field('Use:t20', 'con:::.1', 'Use:t21').
+argument('Use:11:c15', 1, 'Use:t20').
+var_in('Use:t23', 'Use:init').
+vtype('Use:t23', '->').
+vfull('Use:t23', '(int Pervasives.ref -> (int -> unit))').
+assign_address('Use:t23', 'prim:%setfield0').
+var_in('Use:t24', 'Use:init').
+vtype('Use:t24', 'int').
+vfull('Use:t24', 'int').
 global_var('Kit.fold').
 var_in('Kit.fold', 'Use:init').
-var_in('Use:t30', 'Use:init').
-in_function('Use:12:c22', 'Use:init').
-call_indirect('Use:12:c22', 'Kit.fold').
+var_in('Use:t25', 'Use:init').
+in_function('Use:12:c17', 'Use:init').
+call_indirect('Use:12:c17', 'Kit.fold').
 global_var('Kit.add').
 var_in('Kit.add', 'Use:init').
-argument('Use:12:c22', 1, 'Kit.add').
-call_ret('Use:12:c22', 'Use:t30').
-var_in('Use:t31', 'Use:init').
-in_function('Use:12:c23', 'Use:init').
-call_indirect('Use:12:c23', 'Use:t30').
-var_in('Use:t32', 'Use:init').
-vtype('Use:t32', 'int').
-var_in('Use:t33', 'Use:init').
-vtype('Use:t33', '->').
-assign_address('Use:t33', 'prim:%field0').
-in_function('Use:12:c24', 'Use:init').
-call_indirect('Use:12:c24', 'Use:t33').
-argument('Use:12:c24', 1, 'Use.total').
-call_ret('Use:12:c24', 'Use:t32').
-argument('Use:12:c23', 1, 'Use:t32').
-call_ret('Use:12:c23', 'Use:t31').
-in_function('Use:12:c25', 'Use:init').
-call_indirect('Use:12:c25', 'Use:t31').
-var_in('Use:t34', 'Use:init').
-vtype('Use:t34', 'list').
-new_block('Use:t34', 'Use:block3@12').
+argument('Use:12:c17', 1, 'Kit.add').
+call_ret('Use:12:c17', 'Use:t25').
+var_in('Use:t26', 'Use:init').
+in_function('Use:12:c18', 'Use:init').
+call_indirect('Use:12:c18', 'Use:t25').
+var_in('Use:t27', 'Use:init').
+vtype('Use:t27', 'int').
+vfull('Use:t27', 'int').
+var_in('Use:t28', 'Use:init').
+vtype('Use:t28', '->').
+vfull('Use:t28', '(int Pervasives.ref -> int)').
+assign_address('Use:t28', 'prim:%field0').
+scalar('Use:t27').
+assign_load_field('Use:t27', 'Use.total', 'fld:contents').
+assign_load_field('Use:t27', 'Use.total', 'tuple:2.0').
+argument('Use:12:c18', 1, 'Use:t27').
+call_ret('Use:12:c18', 'Use:t26').
+in_function('Use:12:c20', 'Use:init').
+call_indirect('Use:12:c20', 'Use:t26').
+var_in('Use:t29', 'Use:init').
+vtype('Use:t29', 'list').
+vfull('Use:t29', 'int list').
+new_block('Use:t29', 'Use:block3@12').
 alloc_in('Use:block3@12', 'Use').
 htype('Use:block3@12', 'list').
-assign_store_field('Use:t34', 'con:::.0', 'Use:const').
-var_in('Use:t35', 'Use:init').
-vtype('Use:t35', 'list').
-new_block('Use:t35', 'Use:block4@12').
+hfull('Use:block3@12', 'int list').
+assign_store_field('Use:t29', 'con:::.0', 'Use:const').
+var_in('Use:t30', 'Use:init').
+vtype('Use:t30', 'list').
+vfull('Use:t30', 'int list').
+new_block('Use:t30', 'Use:block4@12').
 alloc_in('Use:block4@12', 'Use').
 htype('Use:block4@12', 'list').
-assign_store_field('Use:t35', 'con:::.0', 'Use:const').
-var_in('Use:t36', 'Use:init').
-vtype('Use:t36', 'list').
-scalar('Use:t36').
-assign_store_field('Use:t35', 'con:::.1', 'Use:t36').
-assign_store_field('Use:t34', 'con:::.1', 'Use:t35').
-argument('Use:12:c25', 1, 'Use:t34').
-call_ret('Use:12:c25', 'Use:t29').
-argument('Use:12:c21', 1, 'Use:t29').
-call_ret('Use:12:c21', 'Use:_').
+hfull('Use:block4@12', 'int list').
+assign_store_field('Use:t30', 'con:::.0', 'Use:const').
+var_in('Use:t31', 'Use:init').
+vtype('Use:t31', 'list').
+vfull('Use:t31', 'int list').
+scalar('Use:t31').
+assign_store_field('Use:t30', 'con:::.1', 'Use:t31').
+assign_store_field('Use:t29', 'con:::.1', 'Use:t30').
+argument('Use:12:c20', 1, 'Use:t29').
+call_ret('Use:12:c20', 'Use:t24').
+assign_store_field('Use.total', 'fld:contents', 'Use:t24').
 var_in('Use:half/8', 'Use:init').
 vtype('Use:half/8', '->').
+vfull('Use:half/8', '(int -> int)').
 global_var('Kit.scale').
 var_in('Kit.scale', 'Use:init').
-in_function('Use:13:c26', 'Use:init').
-call_indirect('Use:13:c26', 'Kit.scale').
-argument('Use:13:c26', 1, 'Use:const').
-call_ret('Use:13:c26', 'Use:half/8').
-var_in('Use:t37', 'Use:init').
-vtype('Use:t37', '->').
+in_function('Use:13:c21', 'Use:init').
+call_indirect('Use:13:c21', 'Kit.scale').
+argument('Use:13:c21', 1, 'Use:const').
+call_ret('Use:13:c21', 'Use:half/8').
+var_in('Use:t32', 'Use:init').
+vtype('Use:t32', '->').
+vfull('Use:t32', '((int -> int) -> unit)').
+htype('prim:%ignore', '->').
 parameter('prim:%ignore', 1, 'prim:%ignore:arg1').
 var_in('prim:%ignore:arg1', 'prim:%ignore').
 return('prim:%ignore', 'prim:%ignore:ret').
 var_in('prim:%ignore:ret', 'prim:%ignore').
 scalar('prim:%ignore:ret').
-assign_address('Use:t37', 'prim:%ignore').
-in_function('Use:14:c27', 'Use:init').
-call_indirect('Use:14:c27', 'Use:t37').
-argument('Use:14:c27', 1, 'Use:half/8').
-call_ret('Use:14:c27', 'Use:_').
+assign_address('Use:t32', 'prim:%ignore').
 try_in_function('Use:try1@15', 'Use:init').
-var_in('Use:t38', 'Use:init').
-vtype('Use:t38', '->').
-assign_address('Use:t38', 'prim:%ignore').
-in_function('Use:15:c28', 'Use:init').
-in_try('Use:15:c28', 'Use:try1@15').
-call_indirect('Use:15:c28', 'Use:t38').
-var_in('Use:t39', 'Use:init').
+var_in('Use:t33', 'Use:init').
+vtype('Use:t33', '->').
+assign_address('Use:t33', 'prim:%ignore').
+var_in('Use:t34', 'Use:init').
 global_var('Kit.last').
 var_in('Kit.last', 'Use:init').
-in_function('Use:15:c29', 'Use:init').
-in_try('Use:15:c29', 'Use:try1@15').
-call_indirect('Use:15:c29', 'Kit.last').
-argument('Use:15:c29', 1, 'Use:const').
-call_ret('Use:15:c29', 'Use:t39').
-argument('Use:15:c28', 1, 'Use:t39').
-call_ret('Use:15:c28', 'Use:_').
+in_function('Use:15:c24', 'Use:init').
+in_try('Use:15:c24', 'Use:try1@15').
+call_indirect('Use:15:c24', 'Kit.last').
+argument('Use:15:c24', 1, 'Use:const').
+call_ret('Use:15:c24', 'Use:t34').
 new_block('Use:try1@15:caught', 'Use:try1@15').
 catches('Use:try1@15', 'Kit.Stop').
 global_var('exn').
 var_in('exn', 'Use:init').
 var_in('Use:f/9', 'Use:init').
 vtype('Use:f/9', '->').
+vfull('Use:f/9', '(int -> int)').
 assign_load_field('Use:f/9', 'exn', 'con:Stop.0').
-var_in('Use:t40', 'Use:init').
-vtype('Use:t40', '->').
-assign_address('Use:t40', 'prim:%setfield0').
-var_in('Use:t41', 'Use:init').
-in_function('Use:15:c30', 'Use:init').
-call_indirect('Use:15:c30', 'Use:t40').
-argument('Use:15:c30', 1, 'Use.total').
-call_ret('Use:15:c30', 'Use:t41').
-in_function('Use:15:c31', 'Use:init').
-call_indirect('Use:15:c31', 'Use:t41').
-var_in('Use:t42', 'Use:init').
-vtype('Use:t42', 'int').
-in_function('Use:15:c32', 'Use:init').
-call_indirect('Use:15:c32', 'Use:f/9').
-var_in('Use:t43', 'Use:init').
-vtype('Use:t43', 'int').
-var_in('Use:t44', 'Use:init').
-vtype('Use:t44', '->').
-assign_address('Use:t44', 'prim:%field0').
-in_function('Use:15:c33', 'Use:init').
-call_indirect('Use:15:c33', 'Use:t44').
-argument('Use:15:c33', 1, 'Use.total').
-call_ret('Use:15:c33', 'Use:t43').
-argument('Use:15:c32', 1, 'Use:t43').
-call_ret('Use:15:c32', 'Use:t42').
-argument('Use:15:c31', 1, 'Use:t42').
-call_ret('Use:15:c31', 'Use:_').
+var_in('Use:t35', 'Use:init').
+vtype('Use:t35', '->').
+vfull('Use:t35', '(int Pervasives.ref -> (int -> unit))').
+assign_address('Use:t35', 'prim:%setfield0').
+var_in('Use:t36', 'Use:init').
+vtype('Use:t36', 'int').
+vfull('Use:t36', 'int').
+in_function('Use:15:c26', 'Use:init').
+call_indirect('Use:15:c26', 'Use:f/9').
+var_in('Use:t37', 'Use:init').
+vtype('Use:t37', 'int').
+vfull('Use:t37', 'int').
+var_in('Use:t38', 'Use:init').
+vtype('Use:t38', '->').
+vfull('Use:t38', '(int Pervasives.ref -> int)').
+assign_address('Use:t38', 'prim:%field0').
+scalar('Use:t37').
+assign_load_field('Use:t37', 'Use.total', 'fld:contents').
+assign_load_field('Use:t37', 'Use.total', 'tuple:2.0').
+argument('Use:15:c26', 1, 'Use:t37').
+call_ret('Use:15:c26', 'Use:t36').
+assign_store_field('Use.total', 'fld:contents', 'Use:t36').
 vtype('Pervasives.print_int', '->').
+vfull('Pervasives.print_int', '(int -> unit)').
 global_var('Pervasives.print_int').
 var_in('Pervasives.print_int', 'Use:init').
-in_function('Use:16:c34', 'Use:init').
-call_indirect('Use:16:c34', 'Pervasives.print_int').
-var_in('Use:t45', 'Use:init').
-vtype('Use:t45', 'int').
-var_in('Use:t46', 'Use:init').
-vtype('Use:t46', '->').
-assign_address('Use:t46', 'prim:%field0').
-in_function('Use:16:c35', 'Use:init').
-call_indirect('Use:16:c35', 'Use:t46').
-argument('Use:16:c35', 1, 'Use.total').
-call_ret('Use:16:c35', 'Use:t45').
-argument('Use:16:c34', 1, 'Use:t45').
-call_ret('Use:16:c34', 'Use:t11').
+in_function('Use:16:c28', 'Use:init').
+call_indirect('Use:16:c28', 'Pervasives.print_int').
+var_in('Use:t39', 'Use:init').
+vtype('Use:t39', 'int').
+vfull('Use:t39', 'int').
+var_in('Use:t40', 'Use:init').
+vtype('Use:t40', '->').
+vfull('Use:t40', '(int Pervasives.ref -> int)').
+assign_address('Use:t40', 'prim:%field0').
+scalar('Use:t39').
+assign_load_field('Use:t39', 'Use.total', 'fld:contents').
+assign_load_field('Use:t39', 'Use.total', 'tuple:2.0').
+argument('Use:16:c28', 1, 'Use:t39').
+call_ret('Use:16:c28', 'Use:t9').

@@ -19,10 +19,14 @@ while IFS= read -r line; do
   file=${line%%:*}
   full=$(echo "$line" | sed -E 's/.*: dead: ([^,]*),.*/\1/')
   unit=${full%%.*}; fn=${full#*.}
-  # (Unit.fn elsewhere, an open Unit's fn not counted; fn in its own file, past its definition)
-  others=$(git grep -lwE "$unit\.$fn" -- '*.ml' '*.mll' '*.mly' | grep -v "^$file$" | wc -l)
+  # (Unit.fn elsewhere, or by an alias, module W = Unit's W.fn; an open
+  # Unit's fn not counted; fn in its own file, past its definition)
+  names=$(git grep -hoE "module [A-Z][A-Za-z_0-9]* = $unit\b" -- '*.ml' | sed -E 's/module ([^ ]*) .*/\1/' | sort -u | tr '\n' '|')
+  others=$(git grep -lwE "(${names}$unit)\.$fn" -- '*.ml' '*.mll' '*.mly' | grep -v "^$file$" | wc -l)
   own=$(grep -cwE "$fn" "$file" 2> /dev/null)
-  if [ "$others" = 0 ] && [ "${own:-0}" -le 1 ]; then echo "UNUSED $line"
+  # (a printer of [@@deriving show], written by mlpp or ppx_deriving, not by hand)
+  if [[ $fn =~ ^(pp|show)_ ]] && grep -q '\[@@deriving' "$file" 2> /dev/null; then echo "DERIVED $line"
+  elif [ "$others" = 0 ] && [ "${own:-0}" -le 1 ]; then echo "UNUSED $line"
   else echo "used($others,$own) $line"; fi
 done < $out/.dead | sort > $out/TRIAGE
 # named by another file of the same program, though reported dead there: a

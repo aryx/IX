@@ -82,8 +82,25 @@ flow(R, L) :- call_edge(I, F), return(F, V), call_ret(I, R), pt(V, L).
 % caller's result them all, a boxed int64 in 1,900 variables. OCaml's types
 % are a static analysis already done; Doop filters by Java's declared types
 % for the same reason, a cast's checkcast its one exception.
+% The same head, then the whole types where both have no type variable
+% (vfull, hfull: int list and string list): mini-cc's -dead 217 s to
+% 145 s. What made mini-ml and mini-cc too big was another merge, one
+% the types cannot cut: an external was one function for the whole
+% program, Obj.magic's and Array.get's 'a result all any caller gave
+% (306 functions of mini-cc returning the same 2,014 objects). Each call
+% has its copy now (Closure_facts.call): mini-cc 16 s and 1.2 GB, mini-ml
+% 55 s and 3.2 GB (out of memory at 12 GB before). Contexts were not the
+% way: call1_heap1 and call1_rec on mini-cc 403 s and 15 GB, the same
+% dead functions. A type is compared only if it has constructors, fields
+% or a built-in name: abstract in an .mli and an abbreviation inside, it
+% has two names (mini-turbopascal's program record lost, 183 functions
+% called dead); mini-cc 47 s and 3.8 GB, mini-ml 68 s and 3.8 GB.
 typed_var(V) :- vtype(V, _).
 typed_object(H) :- htype(H, _).
+full_var(V) :- vfull(V, _).
+full_object(H) :- hfull(H, _).
 pt(V, H) :- flow(V, H), \+ typed_var(V).
 pt(V, H) :- flow(V, H), \+ typed_object(H).
-pt(V, H) :- flow(V, H), vtype(V, T), htype(H, T).
+pt(V, H) :- flow(V, H), vtype(V, T), htype(H, T), \+ full_var(V).
+pt(V, H) :- flow(V, H), vtype(V, T), htype(H, T), \+ full_object(H).
+pt(V, H) :- flow(V, H), vfull(V, T), hfull(H, T).

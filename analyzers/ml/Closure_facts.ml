@@ -327,6 +327,28 @@ let rec declared (p : pattern) : string list =
   | Pconstraint (p, t) -> Resolve.capabilities t @ declared p
   | _ -> []
 
+(* the capabilities a record keeps in its fields, Eval.t's caps, and in its
+ * fields' records (seen: the records gone into, a type of itself) *)
+let rec field_caps (seen : string list) (t : ty) : string list =
+  match t with
+  | Tconstr ({ tabbrev = Some a; _ }, _) -> field_caps seen a
+  | Tconstr (d, _) when not (List.mem d.tpath seen) -> (
+      match Resolve.type_fields d with
+      | None -> []
+      | Some fields ->
+          List.concat_map
+            (fun ((_, l) : string * label) ->
+              let _, ft, _ = l.ltype in
+              if is_object ft then Resolve.capabilities ft else field_caps (d.tpath :: seen) ft)
+            fields)
+  | _ -> []
+
+let rec held_in_fields (p : pattern) : string list =
+  match p with
+  | Pconstraint (p, t) -> field_caps [] t @ held_in_fields p
+  | Pvar v -> (match Typing.var_type v.vid with Some t -> field_caps [] t | None -> [])
+  | _ -> []
+
 let rec is_function (x : expr) : bool =
   match x.e with
   | Efunction _ -> true
@@ -388,6 +410,9 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
       List.iter
         (fun ((p, _, _) : case) -> List.iter (fun (c : string) -> fact "declares" [ f; c ]) (declared p))
         cases;
+      List.iter
+        (fun (c : string) -> fact "holds_field" [ f; c ])
+        (List.sort_uniq compare (List.concat_map (fun ((p, _, _) : case) -> held_in_fields p) cases));
       let outer = !inside and outer_tries = !tries in
       (* (its body runs where it is called, not in the trys around it) *)
       inside := f;

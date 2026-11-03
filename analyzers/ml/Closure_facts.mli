@@ -57,6 +57,8 @@
  *   global_def(G, 'M:init')     the toplevel that defines G (dead.dl)
  *   takes_cap(F)                F's parameter is a capability (capabilities.dl)
  *   declares(F, C)              ... and its type names C: stdout for Cap.stdout
+ *   holds_field(F, C)           F's parameter is a record, a field of which
+ *                               (or of its fields' records) names C
  * A name is its unit's ('Prolog:x/12' a variable, 'Prolog.deref' a
  * toplevel value, its symbol), so that the facts of a program's units
  * are one program's when put together.

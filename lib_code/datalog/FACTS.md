@@ -296,6 +296,13 @@ takes_cap('Toy.say').
 declares('Toy.say', 'stdout').
 ```
 
+A capability in a record's field is held too: `let greet (e : env) = ...`, `env`
+having a field `caps : < Cap.stdout; .. >` (or a record that has one):
+
+```
+holds_field('Toy.greet', 'stdout').
+```
+
 **Who is where.** As in C. A variable two functions name is what a closure captures:
 
 ```

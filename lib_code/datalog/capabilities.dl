@@ -37,13 +37,20 @@
 %
 % Not authority: a channel or a descriptor already held (Cap.mli's reframe: a
 % descriptor is a capability), so Unix.read is nothing here and Unix.openfile
-% is; the clock, a pipe, a process's own number, for which xix's Cap has none.
+% is; the clock, a pipe, a process's own number, for which xix's Cap has none
+% yet (each system call is to have one, the author's: 2026-11-03).
 %
 % design:
 % unused_cap is a may too, and quieter by choice: not said of a function that lets
 % the capability go where this cannot follow, into a data structure (Eval.t's
-% caps field) or to a call through a parameter. A record's capabilities do not
-% count as held, so let read t = ... t.caps is no_cap, what it does being said.
+% caps field) or to a call through a parameter.
+%
+% design:
+% A record's capabilities count as held: let read (t : Eval.t) = ... holds what
+% Eval.t's caps field names (holds_field, its fields' records gone into too). A
+% parameter is the better way to pass one, the author's choice, but a record is
+% sometimes the only reasonable one. unused_cap does not ask it of a record's:
+% the record is given for what else it has.
 %
 % others:
 % xix checks a name by a Semgrep rule: one asked for nothing, written anywhere,
@@ -189,9 +196,11 @@ names_function(R, G) :- names_known(R, H), root(H, G), R \= G.
 % ---- what a function holds: given to it, or to what it is written in
 
 gate(R) :- takes_cap(F), root(F, R).
+gate(R) :- holds_field(F, _), root(F, R).
 gate(L) :- assign_address(V, L), owner(V, R), gate(R), root(L, L).
 
 declared_by(R, C) :- declares(F, C), root(F, R).
+declared_by(R, C) :- holds_field(F, C), root(F, R).
 declared_by(L, C) :-
   assign_address(V, L), owner(V, R), declared_by(R, C), root(L, L).
 holds(R, C) :- declared_by(R, C).

@@ -286,20 +286,27 @@ for what it names, called or passed on, not for what it calls through a paramete
 descriptor is a capability, so `Unix.read` is nothing here, `Unix.openfile` is.
 `Cap.draw`, `keyboard`, `mouse` allow `Unix.openfile`, a device being a file.
 
-`sweep.sh` with `FLAG=-caps`, on the 44 programs: 172 functions
-(`tests/caps_ix.txt`; 149 on the 35 read on 11-02, 40 on the 23 before them).
+`sweep.sh` with `FLAG=-caps`, on the 44 programs: 151 functions
+(`tests/caps_ix.txt`; 172 before a record's capabilities were held, 149 on the
+35 read on 11-02, 40 on the 23 before them).
 
 | | functions | |
 |---|---:|---|
-| no capability | 82 | `Eval.print`, `Eval.exists`, `Command.read`; test programs' prints |
-| holds some, not the one | 19 | `Sys.set_signal` in mini-rc's, mini-ed's, mini-mk's, mini-5i's mains; `Host.dir_of`'s `Unix.opendir` with no `Cap.readdir`; `version_control`'s `commit`, `clone` |
+| no capability | 50 | `Eval.print`, version_control's commands 11, `Tty_unix` 6; test programs' prints |
+| holds some, not the one | 30 | `Sys.set_signal` in mini-rc's, mini-ed's, mini-mk's, mini-5i's mains; `Host.dir_of`'s `Unix.opendir` with no `Cap.readdir`; by a record's: version_control's `Fs.branch`, `Walk` (no `Cap.readdir`), mini-rc's `Eval.redirect` (no `Cap.stdout`) |
 | holds one it may not need | 73 | mini-acid's `Proc` and `CLI` 16, awk's `Io` 7, hoc's `Eval` 6, `Dc` 6; of the 9 programs read since, 23, each given the program's whole `caps` (mini-ml's `CLI` 11, mini-cc's 3, mini-tiger's and mini-csc's `compile`, mini-asm's `data_items`) |
 
 Of the 23 programs read first, those holding some were read at the source, but for
 5 of dc's of one kind, of which one was; of the 12 read since, 2 (`Host.dir_of`,
-mini-sql's prompt loop), the others not. What it does not say: a
-capability held in a record's field is not held, so `Command.read t` with `t.caps` is
-"no capability"; `Unix.openfile`'s flags are not read, so `Cap.open_in|Cap.open_out`;
+mini-sql's prompt loop), the others not.
+
+A capability in a record's field is held (2026-11-03, the author: "yes a record
+field count as held, but in practice we should prefer to store capabilities via
+parameters rather than big structures, but sometimes it's hard to do otherwise"):
+`holds_field`, the fields' records gone into too. Of the 82 "no capability", 21 went
+quiet, 11 became "not the one", the record holding others; "may not need" is not
+asked of a record's, given for what else it has. What it does not say:
+`Unix.openfile`'s flags are not read, so `Cap.open_in|Cap.open_out`;
 the clock, a pipe have no capability in xix's `Cap`; `may not need` is not said of a
 function that lets its capability go into a structure or a call through a parameter;
 a function that names and never calls is reported.

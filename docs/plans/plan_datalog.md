@@ -402,3 +402,10 @@ mini-cc 49 s), by an external's copy at each call, not by contexts
 (`call1_heap1` and `call1_rec` on mini-cc: 403 s, 15 GB, the same answers), and
 whole types where both sides have no variable; `dead_ix.txt` 43, `caps_ix.txt`
 172, `exn_ix.txt` 42 programs: `lib_code/README.md`'s "mini-cc and mini-ml".
+
+2026-11-03, the author: "yes a record field count as held", "Yes clock and pipes
+should get a capability too, and more generally any system call", "yes let's do
+part 1": a record's capabilities held (`holds_field`, `capabilities.dl`);
+`caps_ix.txt` 151 (82 "no capability" to 50). The clock, pipes and the other
+system calls' capabilities (ocaml-caps, `lib_core/system`'s `Cap`, the callers)
+are part 2, a plan to write.

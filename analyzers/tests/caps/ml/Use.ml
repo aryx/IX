@@ -35,6 +35,14 @@ type holder = { held_caps : < Cap.fork; .. > }
 let keeps (caps : < Cap.fork; .. >) = { held_caps = caps }
 let gives (caps : < Cap.fork; .. >) k = k caps
 
+(* a record's capabilities are held, its fields' records' too; not said as
+ * unneeded: the record is given for what else it has *)
+type env = { env_caps : < Cap.stdout; Cap.fork; .. >; name : string }
+type outer = { inner : env; depth : int }
+let in_record (e : env) = print_string e.name
+let in_inner (o : outer) = print_string o.inner.name
+let record_wrong (e : env) f = open_in f
+
 (* a closure is judged by itself; who calls List.iter is not, though another
  * gives it a closure that prints *)
 let lambda l = List.iter (fun s -> print_string s) l
@@ -63,6 +71,8 @@ let () =
     passed [ 1 ]; ignore (found [ "g" ]); ignore (not_found [ "h" ]);
     write (Console.stdout caps) "f";
     grouped caps "l"; ignore (wrong caps "m"); wrong_closure caps (); ignore (half caps "n");
+    let e = { env_caps = caps; name = "q" } in
+    in_record e; in_inner { inner = e; depth = 1 }; ignore (record_wrong e "r");
     excess caps "o"; ignore (through caps (Fpath.v "p")); ignore (keeps caps); gives caps ignore;
     ignore (on_fd (opens_fd "k") (Bytes.create 1));
     bye (); leave caps)

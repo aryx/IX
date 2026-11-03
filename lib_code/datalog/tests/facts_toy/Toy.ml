@@ -34,3 +34,7 @@ let () =
 let table = [| inc; add 1 |]
 let lookup k = if k < 2 then table.(k) else raise Not_found
 let found = try lookup 0 with e -> raise e
+
+(* a capability held in a record's field *)
+type env = { caps : < Cap.stdout; .. >; name : string }
+let greet (e : env) = Console.print e.caps e.name

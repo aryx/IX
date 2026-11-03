@@ -1,0 +1,55 @@
+% What an ML external says it raises against what its C does
+% (docs/plans/plan_bug_analyses.md, A2): mini-analyze -bugs given the
+% runtime's C and ML units, the facts of both front ends in one program.
+% From the ML (Closure_facts, FACTS.md):
+%   external_prim(G, P)    the external G is the primitive P
+%   declares_raise(P, E)   ... and says [@@raise E] (Annotations.raises)
+% from the C (mini-cc's Facts): its calls, their arguments, what is
+% defined. The names meet: the C function of a primitive is its name,
+% sys_open, and an exception the C raises is the global the ML's facts
+% name it by, caml_exn_Sys_error. It says
+%   c_raises(F, E)         the C function F may raise E
+%   undeclared(G, P, E)    P's C may raise E, G does not say it
+%   overdeclared(G, P, E)  G says E, P's C never raises it
+%
+%     external remove : string -> unit = "sys_remove" [@@raise Sys_error]
+%
+%     value sys_remove(value name) {                     (sys.c)
+%         if(remove((char*)Bytes(name)) < 0)
+%             raise_with(caml_exn_Sys_error, (char*)Bytes(name));
+%
+% design:
+% A raise in C is a call of raise_with or raise_const, the exception
+% its first argument, or of a function that passes its own first
+% argument to one (a wrapper); failwith's Failure follows from its own
+% raise_with, a caller's from the call graph. ml_raise_c is given a
+% block made beforehand: the one the runtime makes, bound_exn, is a
+% model below. A raise by an ML function the C calls back is not seen
+% (caml_callback: what the closure raises, -exn's), nor one by memory
+% (Out_of_memory). A primitive the C does not define (%addint, the
+% compiler's) is not looked at.
+%
+% others:
+% Java's checked exceptions make the declaration the compiler's to
+% check, in one language; JNI's C throws by ThrowNew, unchecked against
+% the Java method's throws. Furr and Foster's checking of OCaml's and
+% Java's C glue (PLDI 2005, ESOP 2006) typed the C against the
+% external's type; here it is what is raised.
+
+raiser(raise_with).
+raiser(raise_const).
+raiser(H) :-
+  parameter(H, 1, P), in_function(I, H), call_direct(I, G), raiser(G), argument(I, 1, P).
+
+% (runtime.c's bound_exn: Invalid_argument "index out of bounds", made
+% once at start, raised by ml_raise_c)
+made_exn(bound_exn, caml_exn_Invalid_argument).
+
+c_raises(F, E) :-
+  in_function(I, F), call_direct(I, G), raiser(G), argument(I, 1, E), global_var(E).
+c_raises(F, E) :-
+  in_function(I, F), call_direct(I, ml_raise_c), argument(I, 1, V), made_exn(V, E).
+c_raises(F, E) :- in_function(I, F), call_direct(I, G), c_raises(G, E).
+
+undeclared(G, P, E) :- external_prim(G, P), defined(P, _), c_raises(P, E), \+ declares_raise(P, E).
+overdeclared(G, P, E) :- external_prim(G, P), defined(P, _), declares_raise(P, E), \+ c_raises(P, E).

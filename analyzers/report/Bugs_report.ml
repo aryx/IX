@@ -72,3 +72,25 @@ let bugs_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
   Console.print caps
     (Printf.sprintf "%d bugs? (physeq %d, stack %d, swallowed %d)\n" (List.length all) (List.length physeq)
        (List.length stack) (List.length swallowed))
+
+let raises_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
+  let tuples r = List.map (fun (t : int array) -> Array.map (name p) t) (D.tuples (D.relation p r 3)) in
+  let exn (e : string) : string = match C_report.prefix "caml_exn_" e with Some x -> x | None -> e in
+  (* Sys.remove: Sys.ml, its unit's file *)
+  let file (g : string) : string =
+    let u = match String.index_opt g '.' with Some i -> String.sub g 0 i | None -> g in
+    match Hashtbl.find_opt Ml_front.files u with Some f -> f | None -> u ^ ".ml" in
+  let lines =
+    List.map
+      (fun (t : string array) ->
+        Printf.sprintf "%s: raises: %s's C (%s) may raise %s, not said ([@@raise %s])" (file t.(0)) t.(0) t.(1)
+          (exn t.(2)) (exn t.(2)))
+      (tuples "undeclared")
+    @ List.map
+        (fun (t : string array) ->
+          Printf.sprintf "%s: raises: %s says [@@raise %s], its C (%s) never raises it" (file t.(0)) t.(0)
+            (exn t.(2)) t.(1))
+        (tuples "overdeclared") in
+  let lines = List.sort_uniq compare lines in
+  List.iter (fun l -> Console.print caps ("bug? " ^ l ^ "\n")) lines;
+  Console.print caps (Printf.sprintf "%d bugs? (raises %d)\n" (List.length lines) (List.length lines))

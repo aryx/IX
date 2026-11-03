@@ -723,6 +723,12 @@ let unit_ (name : string) (items : item list) : string =
               fact "assign" [ global g.gsym !inside; local v ])
             exported
       | Iexception _ -> ()
-      | Iexternal (g, p, arity, t) -> fact "assign_address" [ global g.gsym !inside; prim p arity t ])
+      | Iexternal (g, p, arity, t) ->
+          fact "assign_address" [ global g.gsym !inside; prim p arity t ];
+          (* (its primitive, what its [@@raise] says: checked against the
+           * C by bugs/raises.dl) *)
+          fact "external_prim" [ g.gsym; p ];
+          List.iter (fun (e : string) -> fact "declares_raise" [ p; "caml_exn_" ^ e ])
+            (List.sort_uniq compare (Hashtbl.find_all Annotations.raises p)))
     items;
   Buffer.contents out

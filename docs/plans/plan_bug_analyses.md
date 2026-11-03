@@ -179,6 +179,34 @@ attributes, no list in the analysis. `-exn` sees
 them too: 12 programs' toplevels may now let `Sys_error` escape, a
 lib_core exception that `exn_ix.txt` leaves out; nothing else changed.
 
+**The annotations checked against the C** (2026-11-03; the author: "it
+would be interesting to check those @@raise annotations are correct
+via an analyzer itself since we can also analyze the C code"):
+`bugs/raises.dl`, run by `mini-analyze -bugs` given C files and ML
+ones, the facts of both front ends in one program. The names meet
+without a table: a primitive's C function is its name (`sys_open`), and
+the exception the C raises is the global the ML facts already name it
+by (`caml_exn_Sys_error`). A C raise is a call of `raise_with` or
+`raise_const` (or of a wrapper passing its argument on), with
+`failwith`'s `Failure` and the callers' following by the call graph;
+`ml_raise_c(bound_exn)` is a one-line model. Two reports:
+`undeclared` (the C may raise E, the external does not say it) and
+`overdeclared` (it says E, the C never raises it). 15 lines of rules,
+10 of facts, 25 of report. Test: `analyzers/tests/raises/prims/` (said
+right, through `failwith`, not said, through a wrapper, said wrong).
+On the runtime and lib_core, 0.6 s (`lib_code/datalog/tests/raises.sh`,
+a make test job, against `raises_ix.txt`): the 11 `[@@raise
+Sys_error]` all backed by the C, none wrong; 25 externals that do not
+say what their C raises, what -exn has never seen: `int_of_string`,
+`float_of_string` and the `of_string`s' `Failure`, `Sys.getenv`'s
+`Not_found`, `compare`'s `Invalid_argument` (a functional value),
+`Int32`/`Int64` `div`/`rem`'s `Division_by_zero`, `Array.make`'s and
+`Bytes.create`'s `Invalid_argument`, `input_binary_int`'s and
+`Digest.channel`'s `End_of_file`, `Thread.thread_new`'s `Failure`.
+Some are the call graph's only: `Sys.readdir`'s `Invalid_argument` is
+an allocation's of a size that cannot be negative there. Not yet
+added: adding them is the rest of A2, and changes `-exn`'s answers.
+
 **Cost:** about 20 lines of facts and 5 of rules. The `Invalid_argument`
 ones will be many. Report them only on paths where the index comes from
 the outside, which needs A4, or leave them behind a switch.

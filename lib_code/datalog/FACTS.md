@@ -340,6 +340,15 @@ silent('Toy:try4@52', 'caml_exn_Sys_error').
 silent_all('Toy:try4@52').
 ```
 
+**An external and what it says it raises**, for `bugs/raises.dl`, which checks it
+against the C of its primitive (`mini-analyze -bugs runtime.c ... Sys.ml ...`: the C
+function is the primitive's name, the exception the global the C raises):
+
+```
+external_prim('Toy.remove', 'sys_remove').
+declares_raise('sys_remove', 'caml_exn_Sys_error').
+```
+
 **Who is where.** As in C. A variable two functions name is what a closure captures:
 
 ```
@@ -401,6 +410,7 @@ with: `own_live_out(V, P)`, and for ML `own_live_in(V, B)`, `own_idom(D, B)`.
 | `bugs/pointers.dl` | `call_direct`, `return`, and `heap`, `local`, `literal`, which mini-analyze makes of the names |
 | `bugs/physeq.dl` | `phys_compare`, `fresh_operand` |
 | `bugs/stack.dl` | `tail`, `tail_but_try`, `in_handler`, `in_try`, `list_like`, `parameter`, `vtype`, `inner`, `alloc_in`, over `target` and `reach` |
+| `bugs/raises.dl` | ML's `external_prim`, `declares_raise`; C's `call_direct`, `argument`, `parameter`, `in_function`, `global_var`, `defined` |
 | `bugs/swallowed.dl` | `silent`, `silent_all`, `catches`, `primitive`, `curried`, over `exceptions.dl`'s `arrives` |
 | `liveness.dl` | C's `-flow` |
 | `liveness_ssa.dl`, `dominators.dl` | ML's `-flow` |

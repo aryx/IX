@@ -1,0 +1,4 @@
+bug? analyzers/tests/raises/prims/Prims.ml: raises: Prims.my_find's C (my_find) may raise Not_found, not said ([@@raise Not_found])
+bug? analyzers/tests/raises/prims/Prims.ml: raises: Prims.my_len says [@@raise Sys_error], its C (my_len) never raises it
+bug? analyzers/tests/raises/prims/Prims.ml: raises: Prims.my_rename's C (my_rename) may raise Sys_error, not said ([@@raise Sys_error])
+3 bugs? (raises 3)

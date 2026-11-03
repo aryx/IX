@@ -62,6 +62,10 @@ program's library, lib_core's units it names, is read with it.
      that may arrive at a `try` whose case answers a constant, saying
      nothing (`bugs/swallowed.dl`, over `exceptions.dl`). C files: the
      report without an option, its `bug?` lines `bugs/pointers.dl`'s.
+     C files and ML ones (mini-ml's runtime and lib_core: what
+     `lib_code/datalog/tests/raises.sh` gives): each external's
+     `[@@raise E]` against what the C of its primitive raises,
+     `raises` (`bugs/raises.dl`), one analysis over two languages.
 
 **-facts**
 :    The facts, not the analysis: to write one's own rules

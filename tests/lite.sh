@@ -317,6 +317,7 @@ job "mini-datalog: its programs, naive and semi-naive" languages/datalog/tests/r
 job "pointer analyses (Andersen's, Doop's contexts): what each tells apart in a C and an ML program, each inside the coarser" lib_code/datalog/tests/run.sh
 job "capabilities as OCaml's types, in Datalog: the errors planted in a program OCaml refuses" lib_code/datalog/tests/caps_types.sh
 job "lib_code/datalog/FACTS.md: each fact it shows is what the compilers say, each relation in it" lib_code/datalog/tests/facts_doc.sh
+job "mini-ml's externals: each [@@raise E] in lib_core is what its C in the runtime raises (raises_ix.txt)" lib_code/datalog/tests/raises.sh
 job "mini-dotnet: Microsoft's assemblies read, listed (-S), run: what Microsoft's runtime prints" languages/dotnet/tests/run.sh -dune
 job "mini-tiger: fork-tiger's programs and Appel's 49, compiled to .NET, run by mini-dotnet" languages/tiger/tests/run.sh -dune
 job "mini-csc: the survey's C# and its own, compiled to .NET, run by mini-dotnet: what Microsoft's printed" languages/dotnet/csc/tests/run.sh -dune

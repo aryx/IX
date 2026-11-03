@@ -16,3 +16,10 @@
 
 (* the report, on the facts and the rules' answers *)
 val bugs_report : < Cap.stdout; .. > -> Datalog.t -> unit
+
+(* -bugs given C files and ML ones, the runtime's and the library's: an
+ * external's [@@raise E] against what its C raises (bugs/raises.dl)
+ *
+ *   bug? Sys.ml: raises: Sys.getenv's C (sys_getenv) may raise Not_found, not said ([@@raise Not_found])
+ *)
+val raises_report : < Cap.stdout; .. > -> Datalog.t -> unit

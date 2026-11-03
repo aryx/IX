@@ -45,6 +45,8 @@ program's functions that its toplevel never reaches (calls.dl):
   Before.ml:6: physeq: in Before.loop, != of a Some made there: always true
   Css.ml:13: stack: Css.components calls itself, not a tail call, over a list
   Process.ml:46: swallowed: in fork, Sys_error silenced, a constant answered
+  given C files and ML ones (the runtime's, lib_core's): each external's
+  [@@raise E] against what its C raises (bugs/raises.dl)
 -root f: f is also entered from where the facts do not go (assembly)
 -context file: of points_to/, C's (call1_heap1), -exn's (call1_rec) and
   -bugs's (insensitive); the sharper, the longer
@@ -81,6 +83,7 @@ let dead_report = Dead_report.dead_report
 let caps_report = Caps_report.caps_report
 let exn_report = Exn_report.exn_report
 let bugs_report = Bugs_report.bugs_report
+let raises_report = Bugs_report.raises_report
 
 (* a fact as a line, for -facts *)
 let line (relation : string) (args : C.Facts.arg list) : string =
@@ -162,6 +165,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
             (if !dead || !ambient then
                [ "points_to/instructions.dl"; "points_to/contexts.dl"; "points_to/insensitive.dl"; "dead.dl" ]
                @ if !ambient then [ "capabilities.dl" ] else []
+             else if !bugs && c <> [] && ml <> [] then [ "bugs/raises.dl" ]
              else if !bugs && c = [] then
                [ "points_to/instructions.dl"; "points_to/contexts.dl"; "points_to/" ^ context ^ ".dl"; "exceptions.dl";
                  "bugs/physeq.dl"; "bugs/stack.dl"; "bugs/swallowed.dl" ]
@@ -196,6 +200,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
           if !ambient then caps_report caps p
           else if !exns then exn_report caps p
           else if !dead then dead_report caps p (ml <> [])
+          else if !bugs && c <> [] && ml <> [] then raises_report caps p
           else if !bugs && c = [] then bugs_report caps p
           else begin
             if c <> [] then report caps p;

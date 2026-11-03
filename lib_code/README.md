@@ -102,6 +102,7 @@ Datalog each for what it is best at, and read by students.
 | `bugs/pointers.dl` | three C bugs, over `points_to/`'s answers |
 | `bugs/physeq.dl` | ML's `==` or `!=` with a side made in the comparison (`mini-analyze -bugs`; the first of `plan_bug_analyses.md`'s, each checked on a fix's code before and after it, `analyzers/tests/bugs/`) |
 | `bugs/stack.dl` | ML's recursions the stack may not hold: a loop through a `try`, a frame a list's element (`-bugs`) |
+| `bugs/raises.dl` | an ML external's `[@@raise E]` against what its primitive's C raises: C's facts and ML's in one program (`-bugs`, `tests/raises.sh`) |
 | `bugs/swallowed.dl` | ML's errors of the system arriving at a `try` whose case answers a constant (`-bugs`, over `exceptions.dl`) |
 | `dead.dl` | dead functions, globals, fields, constructors and statements, by `points_to/`'s call graph (`mini-analyze -dead`) |
 | `capabilities_types.dl` | OCaml's check of the capabilities again: a test of the analysis, and a teaching one |

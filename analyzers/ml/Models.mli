@@ -47,10 +47,18 @@ type op =
   | Scalar of v                 (* a number, unit, a constant constructor *)
   | Call of v * v * v           (* dst, the function, its argument *)
   | Raise of string             (* the exception's symbol, caml_exn_Not_found *)
+  | Global of v * string        (* holds what the global does (a derived
+                                   summary's: List.hd's Pervasives.failwith) *)
 
 (* false: no model, the library's code read as written (mini-analyze
  * -no-models: to compare, Models.ml's numbers, tests/models/) *)
 val on : bool ref
+
+(* the summaries derived from the library's code (analyzers/summaries/,
+ * plan_analysis_scale.md, step 3), by symbol; with [derived_on], read
+ * first, the models written here for the rest (mini-analyze -summaries) *)
+val derived : (string, int * op list) Hashtbl.t
+val derived_on : bool ref
 
 (* a global's model, by its symbol (Hashtbl.find): its arity and what it does *)
 val find : string -> (int * op list) option

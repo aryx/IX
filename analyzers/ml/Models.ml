@@ -126,6 +126,7 @@ type op =
   | Scalar of v
   | Call of v * v * v
   | Raise of string
+  | Global of v * string
 
 let failure : string = "caml_exn_Failure"
 (* (what the real code may raise: compare's Invalid_argument, a functional
@@ -276,10 +277,15 @@ let units : (string * (string * (int * op list)) list) list =
   [ ("Hashtbl", hashtbl); ("List", list); ("Pervasives", pervasives) ]
 
 let on : bool ref = ref true
+let derived : (string, int * op list) Hashtbl.t = Hashtbl.create 256
+let derived_on : bool ref = ref false
 
 let find (sym : string) : (int * op list) option =
   match String.index_opt sym '.' with
   | Some _ when not !on -> None
+  (* (a derived one first, plan_analysis_scale.md's step 3; these for
+   * what has none) *)
+  | Some _ when !derived_on && Hashtbl.mem derived sym -> Hashtbl.find_opt derived sym
   | Some i -> (
       match List.assoc_opt (String.sub sym 0 i) units with
       | Some fs ->
@@ -287,4 +293,10 @@ let find (sym : string) : (int * op list) option =
       | None -> None)
   | None -> None
 
-let modeled_unit (name : string) : bool = !on && List.mem_assoc name units
+(* (a derived summary is a function's, no unit's interface whole: a unit
+ * with one is not modeled whole) *)
+let modeled_unit (name : string) : bool =
+  !on && List.mem_assoc name units
+  && not (!derived_on
+          && Hashtbl.fold (fun s _ b -> b || String.length s > String.length name
+                                              && String.sub s 0 (String.length name + 1) = name ^ ".") derived false)

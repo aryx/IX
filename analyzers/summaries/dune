@@ -1,0 +1,13 @@
+; a library function's summary derived from its facts, Models' vocabulary
+; (docs/plans/plan_analysis_scale.md, step 3); Derive prints them from
+; lib_core's facts (mini-analyze -facts -no-models)
+(library
+ (name ix_analyze_summaries)
+ (wrapped false)
+ (modules Summaries)
+ (libraries ix_analyze_ml))
+
+(executable
+ (name Derive)
+ (modules Derive)
+ (libraries ix_analyze_summaries ix_analyze_ml))

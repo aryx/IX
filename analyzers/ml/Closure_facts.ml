@@ -409,6 +409,11 @@ let model_body (sym : string) (ops : Models.op list) ~(arg : int -> string)
           fact "model_call" [ i; sym ];
           fact "walk_call" [ i; site ];
           [ i ]
+      | Global (v, g) ->
+          (* (a derived summary's global read: named here, as a use is) *)
+          var_in g inside;
+          fact "assign" [ var v; g ];
+          []
       | Raise e ->
           let i = site ^ ":raise" in
           fact "raise_in" [ i; inside ];

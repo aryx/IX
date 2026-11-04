@@ -190,7 +190,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
              Models.derived_on := true;
              List.iter (fun (s, m) -> Hashtbl.replace Models.derived s m)
                (Summaries.of_text (FS.read caps (Fpath.v f)))),
-         " file: ML: the library's summaries derived from its code (analyzers/summaries/), not Models' own");
+         " file: ML: the library's summaries derived from its code (analyzers/summaries/), Models' own for the rest");
         ("-flow", Arg.Set flow, " ML's functions in SSA form, C's stack code, as facts");
         ("-flow-answers", Arg.Set answers,
          " the compiler's own liveness and dominators on -flow's facts, as facts");

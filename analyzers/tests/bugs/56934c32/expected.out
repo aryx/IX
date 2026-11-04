@@ -1,0 +1,4 @@
+bug? analyzers/tests/bugs/56934c32/After.ml:5: stack: After.concat_map calls itself, not a tail call, over a list
+bug? analyzers/tests/bugs/56934c32/Before.ml:8: evalorder: operands at 8:14 and 8:20, both with an effect: their order the compiler's
+bug? analyzers/tests/bugs/56934c32/Before.ml:8: stack: Before.concat_map calls itself, not a tail call, over a list
+3 bugs? (stack 2, evalorder 1)

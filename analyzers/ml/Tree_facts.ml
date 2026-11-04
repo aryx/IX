@@ -10,6 +10,9 @@ let fact (r : string) (args : Closure_facts.arg list) : unit = !Closure_facts.ad
 let kind (e : exp) : string =
   match e with
   | Evar _ -> "var" | Econst _ -> "const" | Elet _ -> "let" | Efunction _ -> "function"
+  (* (a && b, a || b: b after a, if at all; not an application) *)
+  | Eapply ({ e = Evar (Prim (("%sequand" | "%sequor"), _, _)); _ }, _) ->
+      "andor"
   | Eapply _ -> "apply" | Ematch _ -> "match" | Etry _ -> "try" | Etuple _ -> "tuple"
   | Econs _ -> "cons" | Erecord _ -> "record" | Ewith _ -> "with" | Efield _ -> "field"
   | Esetfield _ -> "setfield" | Earray _ -> "array" | Eif _ -> "if" | Eseq _ -> "seq"
@@ -51,6 +54,12 @@ let unit_ (name : string) (text : string) (items : item list) : unit =
     let n = Printf.sprintf "%s:e%d" name !count in
     let a, _ = x.span in
     fact "expr" [ Sym n; Sym (kind x.e) ];
+    (* (an application by its function's span, as Closure_facts' site_key) *)
+    (match x.e with
+     | Eapply (f, _) ->
+         let a, b = f.span in
+         fact "tree_site" [ Sym n; Sym (Printf.sprintf "%s:%d-%d" name a b) ]
+     | _ -> ());
     if a >= 0 && a < String.length text then begin
       let l = line_of a in
       let col = a - starts.(l) in

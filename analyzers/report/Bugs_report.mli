@@ -21,6 +21,8 @@
  *        while: woken for another, it goes on
  *   bug? CLI.ml:31: leak: in CLI.read_file, taken here, given back at
  *        CLI.ml:33, not when CLI.ml:32 raises End_of_file
+ *   bug? List.ml:8: evalorder: operands at 8:14 and 8:20, both with an
+ *        effect: their order the compiler's
  *
  * physeq (analyzers/datalog/bugs/physeq.dl): == or != with a side made in
  * the comparison itself, or comparing a value kept with one changed in
@@ -50,8 +52,11 @@
  * closing helper before it closes (plan_analysis_summaries.md). unused (bugs/unused.dl): a local
  * variable never read, not named _x: OCaml's warnings 26 and 27 by
  * rules, a line its function's. layout (bugs/layout.dl): a statement in
- * the column of an if's branch above, not in it (b9fea684's else). Only
- * the program's own units, and code that is reached. *)
+ * the column of an if's branch above, not in it (b9fea684's else).
+ * evalorder (bugs/evalorder.dl): two operands with an effect, whose
+ * order the compiler chooses (56934c32's f a @ concat_map f l), a line
+ * an expression. Only the program's own units, and code that is
+ * reached. *)
 
 (* the report, on the facts and the rules' answers *)
 val bugs_report : < Cap.stdout; .. > -> Datalog.t -> unit

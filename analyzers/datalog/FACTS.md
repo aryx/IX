@@ -444,6 +444,20 @@ site_key('Toy:64:c63', 'Toy:2324-2338').
 site_key('Toy:64:c64', 'Toy:2324-2338').
 ```
 
+**An effect and where it is**, for `bugs/evalorder.dl`, two operands with an
+effect in an order OCaml does not say: a write's site when an external or a
+model makes it (`:=`, an array's `<-`, a table's), and the tree's application by
+the same key as `site_key`, joining a node to its calls (a model's site keyed
+too). `ready := 0` in `take`, its write and its node:
+
+```
+store_site('Toy:64:c65').
+site_key('Toy:64:c65', 'Toy:2355-2357').
+tree_site('Toy:e252', 'Toy:2355-2357').
+```
+
+A tree's `a && b` and `a || b` are of kind `andor`, not `apply`: an order.
+
 **Who is where.** As in C. A variable two functions name is what a closure captures:
 
 ```
@@ -525,6 +539,7 @@ with: `own_live_out(V, P)`, and for ML `own_live_in(V, B)`, `own_idom(D, B)`.
 | `bugs/init.dl` | `init`, `global_def`, `var_in`, `alloc_in`, `unit_start`, `starts_before`, `unit_file`, over `target` |
 | `bugs/layout.dl` | `expr`, `child`, `pos`, `leading` |
 | `bugs/unused.dl` | `bound_var`, `read`, `underscore` |
+| `bugs/evalorder.dl` | `store_in`, `store_site`, `tree_site`, `site_key`, `expr`, `child`, `new_block`, `var_in`, `argument`, `global_var`, `in_function`, over `target`, `pts`, `reach`, `order.dl`'s `sink`, `buffer_add`, `own_fun` |
 | `bugs/pairs.dl` | `site_key`, the SSA's `ssa_site`, `ssa_next`, `ssa_first`, `ssa_last`, `ssa_succ`, `ssa_block`, `ssa_entry`, `call_ret`, `argument`, `parameter`, `assign`, `return`, `curried`, over `target`, `pts`, `at`, `protected`, `reach` |
 | `bugs/races.dl` | `store_in`, `loop_site`, `parameter`, `vtype`, `alloc_in`, `own_unit`, over `pts`, `fpts`, `target`, `entry`, `callback`, `reach` |
 | `liveness.dl` | C's `-flow` |

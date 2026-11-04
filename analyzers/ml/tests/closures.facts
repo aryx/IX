@@ -716,6 +716,7 @@ child('Kit:e4', 1, 'Kit:e6').
 expr('Kit:e7', 'seq').
 pos('Kit:e7', 8, 40).
 expr('Kit:e8', 'apply').
+tree_site('Kit:e8', 'Kit:327-328').
 pos('Kit:e8', 8, 40).
 expr('Kit:e9', 'var').
 pos('Kit:e9', 8, 40).
@@ -725,6 +726,7 @@ pos('Kit:e10', 8, 42).
 child('Kit:e8', 1, 'Kit:e10').
 child('Kit:e7', 0, 'Kit:e8').
 expr('Kit:e11', 'apply').
+tree_site('Kit:e11', 'Kit:332-336').
 pos('Kit:e11', 8, 45).
 expr('Kit:e12', 'var').
 pos('Kit:e12', 8, 45).
@@ -758,6 +760,7 @@ expr('Kit:e21', 'var').
 pos('Kit:e21', 11, 22).
 child('Kit:e19', 1, 'Kit:e21').
 expr('Kit:e22', 'apply').
+tree_site('Kit:e22', 'Kit:459-463').
 pos('Kit:e22', 11, 41).
 expr('Kit:e23', 'var').
 pos('Kit:e23', 11, 41).
@@ -766,6 +769,7 @@ expr('Kit:e24', 'var').
 pos('Kit:e24', 11, 46).
 child('Kit:e22', 1, 'Kit:e24').
 expr('Kit:e25', 'apply').
+tree_site('Kit:e25', 'Kit:467-468').
 pos('Kit:e25', 11, 48).
 expr('Kit:e26', 'var').
 pos('Kit:e26', 11, 49).
@@ -790,6 +794,7 @@ pos('Kit:e30', 13, 11).
 expr('Kit:e31', 'constraint').
 pos('Kit:e31', 13, 21).
 expr('Kit:e32', 'apply').
+tree_site('Kit:e32', 'Kit:513-514').
 pos('Kit:e32', 13, 29).
 expr('Kit:e33', 'var').
 pos('Kit:e33', 13, 31).
@@ -807,6 +812,7 @@ pos('Kit:e36', 14, 11).
 expr('Kit:e37', 'constraint').
 pos('Kit:e37', 14, 21).
 expr('Kit:e38', 'apply').
+tree_site('Kit:e38', 'Kit:548-549').
 pos('Kit:e38', 14, 29).
 expr('Kit:e39', 'var').
 pos('Kit:e39', 14, 31).
@@ -824,6 +830,7 @@ pos('Kit:e42', 15, 11).
 expr('Kit:e43', 'constraint').
 pos('Kit:e43', 15, 21).
 expr('Kit:e44', 'apply').
+tree_site('Kit:e44', 'Kit:583-584').
 pos('Kit:e44', 15, 29).
 expr('Kit:e45', 'var').
 pos('Kit:e45', 15, 31).
@@ -843,6 +850,7 @@ pos('Kit:e49', 16, 18).
 expr('Kit:e50', 'constraint').
 pos('Kit:e50', 16, 28).
 expr('Kit:e51', 'apply').
+tree_site('Kit:e51', 'Kit:625-626').
 pos('Kit:e51', 16, 36).
 expr('Kit:e52', 'var').
 pos('Kit:e52', 16, 38).
@@ -861,11 +869,13 @@ pos('Kit:e55', 19, 9).
 expr('Kit:e56', 'constraint').
 pos('Kit:e56', 19, 19).
 expr('Kit:e57', 'apply').
+tree_site('Kit:e57', 'Kit:686-687').
 pos('Kit:e57', 19, 27).
 expr('Kit:e58', 'var').
 pos('Kit:e58', 19, 33).
 child('Kit:e57', 0, 'Kit:e58').
 expr('Kit:e59', 'apply').
+tree_site('Kit:e59', 'Kit:682-683').
 pos('Kit:e59', 19, 27).
 expr('Kit:e60', 'var').
 pos('Kit:e60', 19, 29).
@@ -887,6 +897,7 @@ pos('Kit:e64', 22, 11).
 expr('Kit:e65', 'constraint').
 pos('Kit:e65', 22, 21).
 expr('Kit:e66', 'apply').
+tree_site('Kit:e66', 'Kit:782-783').
 pos('Kit:e66', 22, 29).
 expr('Kit:e67', 'var').
 pos('Kit:e67', 22, 31).
@@ -904,11 +915,13 @@ pos('Kit:e70', 23, 9).
 expr('Kit:e71', 'constraint').
 pos('Kit:e71', 23, 19).
 expr('Kit:e72', 'apply').
+tree_site('Kit:e72', 'Kit:813-819').
 pos('Kit:e72', 23, 27).
 expr('Kit:e73', 'var').
 pos('Kit:e73', 23, 27).
 child('Kit:e72', 0, 'Kit:e73').
 expr('Kit:e74', 'apply').
+tree_site('Kit:e74', 'Kit:821-827').
 pos('Kit:e74', 23, 34).
 expr('Kit:e75', 'var').
 pos('Kit:e75', 23, 35).
@@ -926,6 +939,7 @@ pos('Kit:e78', 26, 20).
 expr('Kit:e79', 'constraint').
 pos('Kit:e79', 26, 30).
 expr('Kit:e80', 'apply').
+tree_site('Kit:e80', 'Kit:921-922').
 pos('Kit:e80', 26, 38).
 expr('Kit:e81', 'var').
 pos('Kit:e81', 26, 40).
@@ -962,6 +976,7 @@ child('Kit:e90', 0, 'Kit:e91').
 expr('Kit:e92', 'function').
 pos('Kit:e92', 28, 90).
 expr('Kit:e93', 'apply').
+tree_site('Kit:e93', 'Kit:1036-1037').
 pos('Kit:e93', 28, 108).
 expr('Kit:e94', 'var').
 pos('Kit:e94', 28, 110).
@@ -983,6 +998,7 @@ child('Kit:e84', 0, 'Kit:e85').
 expr('Kit:e98', 'constraint').
 pos('Kit:e98', 29, 12).
 expr('Kit:e99', 'apply').
+tree_site('Kit:e99', 'Kit:1078-1081').
 pos('Kit:e99', 29, 33).
 expr('Kit:e100', 'var').
 pos('Kit:e100', 29, 33).
@@ -996,6 +1012,7 @@ pos('Kit:e102', 30, 9).
 expr('Kit:e103', 'constraint').
 pos('Kit:e103', 30, 19).
 expr('Kit:e104', 'apply').
+tree_site('Kit:e104', 'Kit:1116-1121').
 pos('Kit:e104', 30, 27).
 expr('Kit:e105', 'var').
 pos('Kit:e105', 30, 27).
@@ -1111,6 +1128,7 @@ var_in('prim:%setfield0:ret', 'prim:%setfield0\'2').
 scalar('prim:%setfield0:ret').
 assign_store_field('prim:%setfield0:arg1', 'fld:contents', 'prim:%setfield0:arg2').
 store_in('prim:%setfield0:arg1', 'fld:contents', 'prim:%setfield0:arg2', 'prim:%setfield0\'2').
+store_site('prim:%setfield0').
 assign_address('Use:t2', 'prim:%setfield0').
 site_key('Use:6:c2', 'Use:211-213').
 var_in('Use.total', 'Use:go/3').
@@ -1173,6 +1191,7 @@ scalar('Use:t3').
 scalar('Use:_').
 assign_store_field('Use.total', 'fld:contents', 'Use:t3').
 store_in('Use.total', 'fld:contents', 'Use:t3', 'Use:go/3').
+store_site('Use:6:c2').
 var_in('Use:go/3', 'Use:go/3').
 read('Use:go/3').
 in_function('Use:6:c6', 'Use:go/3').
@@ -1278,6 +1297,7 @@ scalar('Use:t13').
 scalar('Use:fun1@11:ret').
 assign_store_field('Use.total', 'fld:contents', 'Use:t13').
 store_in('Use.total', 'fld:contents', 'Use:t13', 'Use:fun1@11').
+store_site('Use:11:c10').
 argument('Use:11:c9', 1, 'Use:t11').
 call_ret('Use:11:c9', 'Use:t10').
 in_function('Use:11:c15', 'Use:init').
@@ -1370,6 +1390,7 @@ argument('Use:12:c20', 1, 'Use:t29').
 call_ret('Use:12:c20', 'Use:t24').
 assign_store_field('Use.total', 'fld:contents', 'Use:t24').
 store_in('Use.total', 'fld:contents', 'Use:t24', 'Use:init').
+store_site('Use:12:c16').
 var_in('Use:half/8', 'Use:init').
 vtype('Use:half/8', '->').
 vfull('Use:half/8', '(int -> int)').
@@ -1449,6 +1470,7 @@ argument('Use:15:c26', 1, 'Use:t37').
 call_ret('Use:15:c26', 'Use:t36').
 assign_store_field('Use.total', 'fld:contents', 'Use:t36').
 store_in('Use.total', 'fld:contents', 'Use:t36', 'Use:init').
+store_site('Use:15:c25').
 vtype('Pervasives.print_int', '->').
 vfull('Pervasives.print_int', '(int -> unit)').
 global_var('Pervasives.print_int').
@@ -1472,6 +1494,7 @@ call_ret('Use:16:c28', 'Use:t9').
 expr('Use:e1', 'constraint').
 pos('Use:e1', 2, 10).
 expr('Use:e2', 'apply').
+tree_site('Use:e2', 'Use:79-82').
 pos('Use:e2', 2, 22).
 expr('Use:e3', 'var').
 pos('Use:e3', 2, 22).
@@ -1503,6 +1526,7 @@ child('Use:e10', 1, 'Use:e12').
 expr('Use:e13', 'seq').
 pos('Use:e13', 6, 42).
 expr('Use:e14', 'apply').
+tree_site('Use:e14', 'Use:211-213').
 pos('Use:e14', 6, 42).
 expr('Use:e15', 'var').
 pos('Use:e15', 6, 48).
@@ -1511,11 +1535,13 @@ expr('Use:e16', 'var').
 pos('Use:e16', 6, 42).
 child('Use:e14', 1, 'Use:e16').
 expr('Use:e17', 'apply').
+tree_site('Use:e17', 'Use:221-222').
 pos('Use:e17', 6, 51).
 expr('Use:e18', 'var').
 pos('Use:e18', 6, 58).
 child('Use:e17', 0, 'Use:e18').
 expr('Use:e19', 'apply').
+tree_site('Use:e19', 'Use:214-220').
 pos('Use:e19', 6, 51).
 expr('Use:e20', 'var').
 pos('Use:e20', 6, 51).
@@ -1525,6 +1551,7 @@ pos('Use:e21', 6, 52).
 child('Use:e19', 1, 'Use:e21').
 child('Use:e17', 1, 'Use:e19').
 expr('Use:e22', 'apply').
+tree_site('Use:e22', 'Use:223-228').
 pos('Use:e22', 6, 60).
 expr('Use:e23', 'field').
 pos('Use:e23', 6, 60).
@@ -1539,6 +1566,7 @@ child('Use:e17', 2, 'Use:e22').
 child('Use:e14', 2, 'Use:e17').
 child('Use:e13', 0, 'Use:e14').
 expr('Use:e26', 'apply').
+tree_site('Use:e26', 'Use:232-234').
 pos('Use:e26', 6, 69).
 expr('Use:e27', 'var').
 pos('Use:e27', 6, 69).
@@ -1552,6 +1580,7 @@ child('Use:e9', 0, 'Use:e10').
 child('Use:e8', 0, 'Use:e9').
 child('Use:e7', 0, 'Use:e8').
 expr('Use:e29', 'apply').
+tree_site('Use:e29', 'Use:245-247').
 pos('Use:e29', 7, 2).
 leading('Use:e29').
 expr('Use:e30', 'var').
@@ -1568,6 +1597,7 @@ expr('Use:e32', 'seq').
 pos('Use:e32', 10, 2).
 leading('Use:e32').
 expr('Use:e33', 'apply').
+tree_site('Use:e33', 'Use:273-280').
 pos('Use:e33', 10, 2).
 leading('Use:e33').
 expr('Use:e34', 'var').
@@ -1582,6 +1612,7 @@ expr('Use:e36', 'seq').
 pos('Use:e36', 11, 2).
 leading('Use:e36').
 expr('Use:e37', 'apply').
+tree_site('Use:e37', 'Use:286-294').
 pos('Use:e37', 11, 2).
 leading('Use:e37').
 expr('Use:e38', 'var').
@@ -1591,6 +1622,7 @@ child('Use:e37', 0, 'Use:e38').
 expr('Use:e39', 'function').
 pos('Use:e39', 11, 11).
 expr('Use:e40', 'apply').
+tree_site('Use:e40', 'Use:319-321').
 pos('Use:e40', 11, 29).
 expr('Use:e41', 'var').
 pos('Use:e41', 11, 35).
@@ -1599,11 +1631,13 @@ expr('Use:e42', 'var').
 pos('Use:e42', 11, 29).
 child('Use:e40', 1, 'Use:e42').
 expr('Use:e43', 'apply').
+tree_site('Use:e43', 'Use:329-330').
 pos('Use:e43', 11, 38).
 expr('Use:e44', 'var').
 pos('Use:e44', 11, 45).
 child('Use:e43', 0, 'Use:e44').
 expr('Use:e45', 'apply').
+tree_site('Use:e45', 'Use:322-328').
 pos('Use:e45', 11, 38).
 expr('Use:e46', 'var').
 pos('Use:e46', 11, 38).
@@ -1613,8 +1647,10 @@ pos('Use:e47', 11, 39).
 child('Use:e45', 1, 'Use:e47').
 child('Use:e43', 1, 'Use:e45').
 expr('Use:e48', 'apply').
+tree_site('Use:e48', 'Use:331-343').
 pos('Use:e48', 11, 47).
 expr('Use:e49', 'apply').
+tree_site('Use:e49', 'Use:331-343').
 pos('Use:e49', 11, 47).
 expr('Use:e50', 'var').
 pos('Use:e50', 11, 47).
@@ -1650,6 +1686,7 @@ expr('Use:e58', 'seq').
 pos('Use:e58', 12, 2).
 leading('Use:e58').
 expr('Use:e59', 'apply').
+tree_site('Use:e59', 'Use:365-367').
 pos('Use:e59', 12, 2).
 leading('Use:e59').
 expr('Use:e60', 'var').
@@ -1660,6 +1697,7 @@ pos('Use:e61', 12, 2).
 leading('Use:e61').
 child('Use:e59', 1, 'Use:e61').
 expr('Use:e62', 'apply').
+tree_site('Use:e62', 'Use:368-376').
 pos('Use:e62', 12, 11).
 expr('Use:e63', 'var').
 pos('Use:e63', 12, 11).
@@ -1668,6 +1706,7 @@ expr('Use:e64', 'var').
 pos('Use:e64', 12, 20).
 child('Use:e62', 1, 'Use:e64').
 expr('Use:e65', 'apply').
+tree_site('Use:e65', 'Use:385-391').
 pos('Use:e65', 12, 28).
 expr('Use:e66', 'var').
 pos('Use:e66', 12, 28).
@@ -1699,6 +1738,7 @@ leading('Use:e73').
 expr('Use:e74', 'constraint').
 pos('Use:e74', 13, 11).
 expr('Use:e75', 'apply').
+tree_site('Use:e75', 'Use:428-437').
 pos('Use:e75', 13, 26).
 expr('Use:e76', 'var').
 pos('Use:e76', 13, 26).
@@ -1712,6 +1752,7 @@ expr('Use:e78', 'seq').
 pos('Use:e78', 14, 2).
 leading('Use:e78').
 expr('Use:e79', 'apply').
+tree_site('Use:e79', 'Use:445-451').
 pos('Use:e79', 14, 2).
 leading('Use:e79').
 expr('Use:e80', 'var').
@@ -1729,11 +1770,13 @@ expr('Use:e83', 'try').
 pos('Use:e83', 15, 2).
 leading('Use:e83').
 expr('Use:e84', 'apply').
+tree_site('Use:e84', 'Use:465-471').
 pos('Use:e84', 15, 7).
 expr('Use:e85', 'var').
 pos('Use:e85', 15, 7).
 child('Use:e84', 0, 'Use:e85').
 expr('Use:e86', 'apply').
+tree_site('Use:e86', 'Use:473-481').
 pos('Use:e86', 15, 14).
 expr('Use:e87', 'var').
 pos('Use:e87', 15, 15).
@@ -1744,6 +1787,7 @@ child('Use:e86', 1, 'Use:e88').
 child('Use:e84', 1, 'Use:e86').
 child('Use:e83', 0, 'Use:e84').
 expr('Use:e89', 'apply').
+tree_site('Use:e89', 'Use:510-512').
 pos('Use:e89', 15, 46).
 expr('Use:e90', 'var').
 pos('Use:e90', 15, 52).
@@ -1752,11 +1796,13 @@ expr('Use:e91', 'var').
 pos('Use:e91', 15, 46).
 child('Use:e89', 1, 'Use:e91').
 expr('Use:e92', 'apply').
+tree_site('Use:e92', 'Use:513-514').
 pos('Use:e92', 15, 55).
 expr('Use:e93', 'var').
 pos('Use:e93', 15, 55).
 child('Use:e92', 0, 'Use:e93').
 expr('Use:e94', 'apply').
+tree_site('Use:e94', 'Use:515-521').
 pos('Use:e94', 15, 57).
 expr('Use:e95', 'var').
 pos('Use:e95', 15, 57).
@@ -1769,6 +1815,7 @@ child('Use:e89', 2, 'Use:e92').
 child('Use:e83', 1, 'Use:e89').
 child('Use:e82', 0, 'Use:e83').
 expr('Use:e97', 'apply').
+tree_site('Use:e97', 'Use:526-535').
 pos('Use:e97', 16, 2).
 leading('Use:e97').
 expr('Use:e98', 'var').
@@ -1776,6 +1823,7 @@ pos('Use:e98', 16, 2).
 leading('Use:e98').
 child('Use:e97', 0, 'Use:e98').
 expr('Use:e99', 'apply').
+tree_site('Use:e99', 'Use:536-542').
 pos('Use:e99', 16, 12).
 expr('Use:e100', 'var').
 pos('Use:e100', 16, 12).

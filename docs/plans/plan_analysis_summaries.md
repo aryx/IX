@@ -6,7 +6,7 @@ know another session was also mentioning using summaries to scale to
 100 000 LOC; I dunno how much those 2 overlap", then "ok let's start
 them with the short plan you mentioned".
 
-**Status: step 1 done (2026-11-04), steps 2 and 3 planned.**
+**Status: steps 1 and 2 done (2026-11-04), step 3 planned.**
 
 ## Two kinds of summary
 
@@ -72,6 +72,34 @@ it: one more fact, the channel holds it), counts (62d811be's dup).
 What A8's races and the exceptions' crash could read the same way: a
 function's writes (`writes(F, Field)`, the purity A11's evaluation
 order needs), what it may raise already being `exceptions.dl`'s.
+
+**Done** (2026-11-04), for A11's evaluation order: `bugs/evalorder.dl`'s
+`wrote(F, O)`, the objects a program's function writes, or what it
+calls, but those the callee made (a list or a table filled and returned
+is no effect for the caller), and `io` for order.dl's outputs and
+stdin's reads; `effectful(F)`; then `unordered(N, A, B)`, two operands
+of an application, a tuple, a constructor, a record, an array, both
+with an effect (Tree_facts' `tree_site`, an application by the key of
+`site_key`; Closure_facts' `store_site`, a write's site). Every level:
+the summary is a least fixpoint, its negations over facts only. The
+library's own writes not followed: the insensitive heap has one object
+for every `Buffer.create`, `Printf.sprintf` wrote all of them, 849
+reports on the 44 programs; by the program's functions and order.dl's
+table, 183. Test `analyzers/tests/bugs/56934c32/` (lib_core's `f a @
+concat_map f l`: reported; its `let`, `&&`, a lambda, pure operands:
+not).
+
+Found on the way: 56934c32 was not two compilers apart. OCaml and
+native mini-ml both evaluate right to left; OCaml's own List binds
+`f a` first, lib_core's did not. mini-ml -dotnet evaluates left to
+right, and stays so (the author: "better .NET evaluate left to right,
+and not necessarily follow what OCaml does, since anyway programs
+should not rely on such order"): the 183 are code whose output may
+differ between ix's native and .NET builds. Their kinds: caches
+(machine/'s `Memory`, its last segment: benign), tables filled in
+order (the .NET `Writer`'s string heap, `Il_types`' `sys c`: an
+entry's index), fresh counters (`Resolve`, `Ssa_build`). None fixed
+(the author decides). `writes` was order.dl's already: `effectful`.
 
 ## Step 3: lib_core's summaries stored (for 100,000 lines)
 

@@ -93,7 +93,11 @@ program's library, lib_core's units it names, is read with it.
      27 by rules (`bugs/unused.dl`), for what no compiler checks (the
      kernel's ML); `layout`, a statement in the column of an `if`'s
      branch above it, which OCaml runs whatever the test
-     (`bugs/layout.dl`, over the program's tree as facts). C files: the
+     (`bugs/layout.dl`, over the program's tree as facts); `evalorder`,
+     two operands that both have an effect, a write or I/O, in an
+     application, a tuple, a record, whose order the compiler chooses
+     (`bugs/evalorder.dl`: OCaml right to left, mini-ml -dotnet left to
+     right). C files: the
      report without an option, its `bug?` lines `bugs/pointers.dl`'s.
      C files and ML ones (mini-ml's runtime and lib_core: what
      `analyzers/datalog/tests/raises.sh` gives): each external's

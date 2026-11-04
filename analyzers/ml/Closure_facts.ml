@@ -277,11 +277,13 @@ let prim_body (name : string) (arity : int) (res : ty) ~(arg : int -> string)
   | "%field1" -> fact "assign_load_field" [ ret; arg 1; "tuple:2.1" ]
   | "%setfield0" ->
       fact "assign_store_field" [ arg 1; "fld:contents"; arg 2 ];
-      fact "store_in" [ arg 1; "fld:contents"; arg 2; inside 2 ]
+      fact "store_in" [ arg 1; "fld:contents"; arg 2; inside 2 ];
+      fact "store_site" [ site ]
   | "%array_safe_get" | "%array_unsafe_get" -> fact "assign_load_field" [ ret; arg 1; elt ]
   | "%array_safe_set" | "%array_unsafe_set" ->
       fact "assign_store_field" [ arg 1; elt; arg 3 ];
-      fact "store_in" [ arg 1; elt; arg 3; inside 3 ]
+      fact "store_in" [ arg 1; elt; arg 3; inside 3 ];
+      fact "store_site" [ site ]
   | "make_vect" ->
       ignore (new_block "block");
       fact "assign_store_field" [ ret; elt; arg 2 ]
@@ -388,8 +390,10 @@ let model_body (sym : string) (ops : Models.op list) ~(arg : int -> string)
       | Store (o, f, s) ->
           fact "assign_store_field" [ var o; f; var s ];
           (* (a block the model made is being given its fields) *)
-          if not (List.mem (Models.New o) ops) then
+          if not (List.mem (Models.New o) ops) then begin
             fact "store_in" [ var o; f; var s; inside ];
+            fact "store_site" [ site ]
+          end;
           []
       | Assign (d, s) -> fact "assign" [ var d; var s ]; []
       | Scalar v -> scalar (var v); []
@@ -926,6 +930,7 @@ and call (x : expr) (f : expr) (args : expr list) (dst : string) : unit =
                  operand a)
                (List.filteri (fun k _ -> k < n) args)) in
         let i = Printf.sprintf "%s:%d:c%d" !unit_name x.loc !num in
+        key i;
         let last = total = n in
         let ret = !ret in
         let res =

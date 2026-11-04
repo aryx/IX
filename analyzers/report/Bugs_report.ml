@@ -337,6 +337,26 @@ let bugs_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
                (site (u ^ ":" ^ t.(3)))))
       (tuples "dangling" 4) in
   let layout = List.sort_uniq compare layout in
+  (* two operands with an effect, which first the compiler's
+   * (evalorder.dl): a line an expression, where its operands start *)
+  let pos = Hashtbl.create 1024 in
+  List.iter (fun (t : string array) -> Hashtbl.replace pos t.(0) (t.(1), t.(2))) (tuples "pos" 3);
+  let at (n : string) : string =
+    match Hashtbl.find_opt pos n with Some (l, c) -> l ^ ":" ^ c | None -> "?" in
+  let unordered =
+    List.filter_map
+      (fun (t : string array) ->
+        let u = unit_of t.(0) in
+        if not (Hashtbl.mem Ml_front.own u) then None
+        else
+          let l = match Hashtbl.find_opt pos t.(0) with Some (l, _) -> l | None -> "?" in
+          Some
+            (Printf.sprintf
+               "%s: evalorder: operands at %s and %s, both with an effect: \
+                their order the compiler's"
+               (site (u ^ ":" ^ l)) (at t.(1)) (at t.(2))))
+      (tuples "unordered" 3) in
+  let unordered = List.sort_uniq compare unordered in
   (* inside a function that gives back its argument, a raise before it
    * does (pairs.dl's leak_in): a line a call *)
   let leak =
@@ -356,7 +376,7 @@ let bugs_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
   let all =
     List.sort_uniq compare
       (physeq @ stack @ swallowed @ crash @ int31 @ order @ sharing @ init @ link
-       @ race @ wait @ leak @ unused @ layout) in
+       @ race @ wait @ leak @ unused @ layout @ unordered) in
   List.iter (fun b -> Console.print caps ("bug? " ^ b ^ "\n")) all;
   (* (the analyses that report, by their number: within 80 columns) *)
   let counts =
@@ -367,7 +387,7 @@ let bugs_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
         ("crash", crash); ("int31", int31); ("order", order);
         ("sharing", sharing); ("init", init); ("link", link); ("race", race);
         ("wait", wait); ("leak", leak); ("unused", unused);
-        ("layout", layout) ] in
+        ("layout", layout); ("evalorder", unordered) ] in
   Console.print caps
     (Printf.sprintf "%d bugs?%s\n" (List.length all)
        (if counts = [] then "" else " (" ^ String.concat ", " counts ^ ")"))

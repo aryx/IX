@@ -1,0 +1,111 @@
+% Two operands that both have an effect, in an expression whose order of
+% evaluation OCaml does not say (docs/plans/done/plan_bug_analyses.md,
+% A11's second half; plan_analysis_summaries.md, step 2): mini-analyze
+% -bugs, over the call graph of points_to/ (target, pts, reach), the
+% facts of Closure_facts, the tree of Tree_facts (FACTS.md) and
+% order.dl's tables of outputs (sink, buffer_add, own_fun):
+%   store_in(V, Fld, W, F)  F writes W in a field of what V points to
+%                         (:=, <-, an array's element, a model's table)
+%   store_site(I)         the write is the external's or the model's at I
+%   tree_site(N, K), site_key(I, K)
+%                         the application N is the calls I
+%   expr(N, Kind), child(P, K, N)
+% and says:
+%   wrote(F, O)           the program's own function F, or what it calls,
+%                         writes the object O (io: an input, an output)
+%   effectful(F)          F writes an object it did not make: a
+%                         function's summary, its effect
+%   unordered(N, A, B)    A and B are two operands of N, an application
+%                         or a tuple, a constructor, a record, an array,
+%                         each with an effect: which first is the
+%                         compiler's choice
+%
+%     let rec concat_map f = function             (56934c32^, List.ml)
+%       | [] -> []
+%       | a :: l -> f a @ concat_map f l
+%
+% OCaml evaluates an application's arguments right to left, and so
+% does mini-ml (a tuple's, an array's, a record's, a list's too): f saw
+% the list from its end. OCaml's own List binds f a by a let, lib_core's
+% did not, so mini-ld, whose f kept a function's frame in a reference,
+% wrote each RETURN with the next function's when built by mini-ml only.
+% The fix, let r = f a in r @ concat_map f l: a let is an order.
+% mini-ml -dotnet evaluates left to right, and stays so (the author:
+% "programs should not rely on such order"): a report is code whose
+% answer may differ between ix's native build and its .NET one.
+%
+% design:
+% A summary by object, not a boolean: wrote(F, O) goes up the calls but
+% for an object the callee made, so that a function filling a list or a
+% table of its own, and returning it, has no effect for its callers. A
+% least fixpoint, its negations over facts only: every level, unlike
+% pairs.dl's "on every path", one level.
+%
+% design:
+% The program's own functions only, the library's by order.dl's table:
+% the heap is the insensitive one, and every Buffer.create's object is
+% one, so the library's own writes say nothing (Printf.sprintf, which
+% writes a buffer it made, would write every buffer of the program: 849
+% reports on the 44 programs). A library function given one of the
+% program's functions has that function's effect (List.iter print_x l).
+% Not an effect: a raise (which of two arrives is the order's too, but
+% that is a crash either way), a read (!r beside r := 1 is an order too:
+% a read set would say it; here both must write), a library function
+% writing what it is given (Queue.push q), not in the table.
+%
+% A node's effect is its subexpressions', up the tree to a function,
+% whose body does not run where it is written. a && b and a || b are an
+% order (Tree_facts' andor, not an apply); so are let, ;, if, match.
+%
+% others:
+% C leaves the order of a call's arguments unspecified too, and
+% f(i++, i++) undefined (C99's sequence points); GCC's -Wsequence-point
+% warns of a variable written twice, syntactically. Java (1996) and C#
+% fixed left to right; Scheme left it unspecified, Racket fixed it.
+% Effect systems (Lucassen and Gifford, POPL 1988) make effectful(F) a
+% type, its regions what wrote(F, O)'s objects are; Infer's purity
+% analysis and CodeQL's side-effect library compute it as here.
+
+% (what reads a channel: an input is an effect too, two read_line in a
+% tuple read their lines in the compiler's order; of a global channel,
+% stdin, since every open_in's is one object: two files read beside each
+% other are not)
+source('Pervasives.input_line'). source('Pervasives.input_char').
+source('Pervasives.input'). source('Pervasives.really_input_string').
+source('Pervasives.input_byte').
+
+made_in(O, F) :- new_block(V, O), var_in(V, F).
+io_call(I) :- target(I, G), sink(G).
+io_call(I) :- target(I, 'Pervasives.read_line').
+io_call(I) :- target(I, G), source(G), argument(I, 1, C), global_var(C).
+io_call(I) :- target(I, G), buffer_add(G), argument(I, 1, B), global_var(B).
+% (a library function given a function of the program's: what it writes)
+given(I, H) :-
+  target(I, G), \+ own_fun(G), argument(I, _, V), pts(V, H), own_fun(H).
+
+wrote(F, O) :- own_fun(F), store_in(V, _, _, F), pts(V, O).
+wrote(F, io) :- own_fun(F), in_function(I, F), io_call(I).
+wrote(F, O) :-
+  own_fun(F), in_function(I, F), target(I, G), own_fun(G), wrote(G, O),
+  \+ made_in(O, G).
+wrote(F, O) :-
+  own_fun(F), in_function(I, F), given(I, H), wrote(H, O), \+ made_in(O, H).
+effectful(F) :- wrote(F, O), \+ made_in(O, F).
+
+site_effect(I) :- in_function(I, F), reach(F), target(I, G), effectful(G).
+site_effect(I) :- in_function(I, F), reach(F), io_call(I).
+site_effect(I) :- in_function(I, F), reach(F), given(I, H), effectful(H).
+site_effect(I) :- store_site(I).
+
+has_effect(N) :- tree_site(N, K), site_key(I, K), site_effect(I).
+has_effect(N) :- expr(N, setfield).
+has_effect(P) :- child(P, _, N), has_effect(N), \+ expr(P, function).
+
+operands(N) :- expr(N, apply).
+operands(N) :- expr(N, tuple).
+operands(N) :- expr(N, cons).
+operands(N) :- expr(N, record).
+operands(N) :- expr(N, array).
+unordered(N, A, B) :-
+  operands(N), child(N, KA, A), child(N, KB, B), KA < KB,
+  has_effect(A), has_effect(B).

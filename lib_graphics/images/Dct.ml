@@ -25,7 +25,8 @@ let fdct (f : float array) : float array =
       let sum = ref 0. in
       for y = 0 to 7 do
         for x = 0 to 7 do
-          sum := !sum +. (f.((y * 8) + x) *. cosines.((x * 8) + u) *. cosines.((y * 8) + v))
+          let p = f.((y * 8) + x) *. cosines.((x * 8) + u) *. cosines.((y * 8) + v) in
+          sum := !sum +. p
         done
       done;
       0.25 *. c u *. c v *. !sum)
@@ -36,7 +37,8 @@ let idct (big_f : float array) : float array =
       let sum = ref 0. in
       for v = 0 to 7 do
         for u = 0 to 7 do
-          sum := !sum +. (c u *. c v *. big_f.((v * 8) + u) *. cosines.((x * 8) + u) *. cosines.((y * 8) + v))
+          let p = c u *. c v *. big_f.((v * 8) + u) *. cosines.((x * 8) + u) *. cosines.((y * 8) + v) in
+          sum := !sum +. p
         done
       done;
       0.25 *. !sum)
@@ -60,7 +62,10 @@ let idct_1d (a : float array) ~(off : int) ~(step : int) : unit =
   let tmp0 = get 0 and tmp1 = get 2 and tmp2 = get 4 and tmp3 = get 6 in
   let tmp10 = tmp0 +. tmp2 and tmp11 = tmp0 -. tmp2 in
   let tmp13 = tmp1 +. tmp3 in
-  let tmp12 = ((tmp1 -. tmp3) *. 1.414213562) -. tmp13 in
+  (* each product a let, not fused with its sum on arm64 (Jpeg's
+   * upsample says why) *)
+  let p = (tmp1 -. tmp3) *. 1.414213562 in
+  let tmp12 = p -. tmp13 in
   let tmp0 = tmp10 +. tmp13 and tmp3 = tmp10 -. tmp13 in
   let tmp1 = tmp11 +. tmp12 and tmp2 = tmp11 -. tmp12 in
   (* odd part *)
@@ -70,8 +75,9 @@ let idct_1d (a : float array) ~(off : int) ~(step : int) : unit =
   let tmp7 = z11 +. z13 in
   let tmp11 = (z11 -. z13) *. 1.414213562 in
   let z5 = (z10 +. z12) *. 1.847759065 in
-  let tmp10 = (1.082392200 *. z12) -. z5 in
-  let tmp12 = (-2.613125930 *. z10) +. z5 in
+  let p10 = 1.082392200 *. z12 and p12 = -2.613125930 *. z10 in
+  let tmp10 = p10 -. z5 in
+  let tmp12 = p12 +. z5 in
   let tmp6 = tmp12 -. tmp7 in
   let tmp5 = tmp11 -. tmp6 in
   let tmp4 = tmp10 +. tmp5 in

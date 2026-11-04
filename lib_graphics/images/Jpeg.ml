@@ -188,19 +188,24 @@ let upsample (upsampling : upsampling) (f : frame) (comp : component) : float ar
       [ (min (n - 1) j, 0.75); (other, 0.25) ]
     else [ (min (n - 1) (o / factor), 1.) ]
   in
-  (* vertically, into a (pw x height) array, then horizontally *)
+  (* vertically, into a (pw x height) array, then horizontally. Each
+   * product a let, here and in to_rgba: ocamlopt on arm64 fuses a *. b
+   * +. c (fmadd, one rounding), x86 and mini-ml do not, and a pixel came
+   * out one apart (mini-play's AVI frame, recorded on arm64, failed on
+   * GitHub's x86); a let keeps the product rounded, everywhere *)
   let tall = Array.make (comp.pw * f.height) 0. in
   for y = 0 to f.height - 1 do
     let ts = taps fy comp.ch y in
     for x = 0 to comp.pw - 1 do
-      tall.((y * comp.pw) + x) <- List.fold_left (fun acc (j, w) -> acc +. (w *. sample x j)) 0. ts
+      tall.((y * comp.pw) + x) <- List.fold_left (fun acc (j, w) -> let p = w *. sample x j in acc +. p) 0. ts
     done
   done;
   let full = Array.make (f.width * f.height) 0. in
   for x = 0 to f.width - 1 do
     let ts = taps fx comp.cw x in
     for y = 0 to f.height - 1 do
-      full.((y * f.width) + x) <- List.fold_left (fun acc (i, w) -> acc +. (w *. tall.((y * comp.pw) + i))) 0. ts
+      full.((y * f.width) + x) <- List.fold_left (fun acc (i, w) ->
+          let p = w *. tall.((y * comp.pw) + i) in acc +. p) 0. ts
     done
   done;
   full
@@ -215,7 +220,8 @@ let to_rgba (upsampling : upsampling) (f : frame) : Rgba_image.t =
         (y, y, y)
       else
         let y = planes.(0).(i) and cb = planes.(1).(i) -. 128. and cr = planes.(2).(i) -. 128. in
-        (y +. (1.402 *. cr), y -. (0.344136 *. cb) -. (0.714136 *. cr), y +. (1.772 *. cb))
+        let rv = 1.402 *. cr and gu = 0.344136 *. cb and gv = 0.714136 *. cr and bu = 1.772 *. cb in
+        (y +. rv, y -. gu -. gv, y +. bu)
     in
     Bytes.set img.rgba (i * 4) (Char.chr (clamp r));
     Bytes.set img.rgba ((i * 4) + 1) (Char.chr (clamp g));

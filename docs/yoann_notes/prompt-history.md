@@ -60926,3 +60926,567 @@ Claude wrote a new man page, docs/man/1/analyze.md, with examples taken from run
 Claude fixed the stale `-facts` example in datalog.md and pointed the SEE ALSO lines of cc.md, ml.md and datalog.md to analyze(1).
 Claude checked the examples by copying them out of the page and rerunning them, with output matching except the wrapped lines and omitted count lines.
 Claude asked whether to commit the four files, and Yoann replied yes.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 12:09
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed the man page and the cc, ml, and datalog page fixes as commit 7c3cd89e.
+Claude left your staged `prompt-history.md` out of that commit, so it remains in the working tree.
+Claude confirmed the only remaining change is that staged file, which is not part of the commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 12:10
+
+**Yoann:**
+
+> can I close this session?
+
+**Claude (summary):**
+
+Claude said the session can be closed because all work is committed: f29ede7e, 98a593f4, and 7c3cd89e.
+Claude noted that the only uncommitted change is Yoann's staged `prompt-history.md`.
+Claude recorded in memory that part 2 of the capabilities work still needs a plan mapping each system call to its capability.
+Claude also flagged that `-exn` still takes over three minutes on mini-cc and mini-ml, which is the open performance issue.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 12:11
+
+**Yoann:**
+
+> ok let's optimize -exn or the datalog engine itself or whatever so it can scale to programs like mini-cc and mini-ml (which are not that big actually; I'm surprised we already reach limit; real C and ML programs usually are in the order of 100 000 LOC; how can we hope to analyze that?)
+
+------------------------------------------------------------------------
+
+## 2026-11-03 12:13
+
+**Yoann:**
+
+> we recently added some analyzers/ to find bugs in C or ML. Can you study the git history of this repo and your own memory to study the bugs we had in the past in this repo, and the bugfixes, and maybe design analysis (using datalog and the ml and cc frontend in analyzers/) that would have found those bugs, and so can then be used to find possibly other similar bugs. I'll be back in 1h
+
+**Claude (summary):**
+
+Claude catalogued past bugs from docs/plans/bugs/ and git fix commits, finding 73 fixes across 14 classes.
+Claude spot-checked 10 of the git-history commits against their descriptions, and they matched.
+Claude planned to keep both catalogues in the repo as evidence for the bug-finding plan.
+Claude was checking the catalogues' size and writing the plan, which would name candidate analyses built on the analyzers' Datalog and ML/C frontends.
+A quick grep was also run to estimate how many candidates the cheapest bug classes would flag today.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 12:12
+
+**Yoann:**
+
+> how fast are the other analyzis (-caps, -dead, more?) on mini-cc and mini-ml themselves?
+
+**Claude (summary):**
+
+Claude timed the other modes: -caps and -dead take about 50 to 75 seconds, and -exn much longer.
+Claude proposed starting with step 1, the evaluator's inner join loop, which Yoann approved.
+That means replacing list-based bound columns with arrays and dropping closures for keys and hashes.
+It also planned fast paths for arity 2 and 3 tuples, aiming for a two to three times speedup.
+Answers must stay identical, checked by -fingerprint and the tests, with old code kept in old: comments.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 13:11
+
+**Yoann:**
+
+> I think a single -bugs would be more practical for the user for now. The catalogue can stay like this for now. let's commit the plan
+
+**Claude (summary):**
+
+Claude committed the plan as 32dd95e4, recording Yoann's two decisions in a new "Decisions" section.
+Claude recommended a single switch, `mini-analyze -bugs`, running every analysis so far over one points-to pass.
+Each report line names its analysis, and the sweep writes one combined list to `bugs_ix.txt`.
+The `-dead`, `-caps` and `-exn` switches stay as they are, and the catalogues in `docs/plans/bugs/history/` are unchanged.
+The open question left in the plan is whether "built for arm" covers all of m-ix and t-ix or each unit's mkfile.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 13:15
+
+**Yoann:**
+
+> I don't understand the question
+
+**Claude (summary):**
+
+Claude laid out two ways to handle the 31-bit integer check for 32-bit arm code.
+Option 1 reports every big literal in all files, which is simple but flags 64-bit-only code.
+Option 2 reads the mkfiles for `O=5` programs and only checks linked files, which Claude preferred since A10 needs that information.
+Yoann picked option 1, assuming all code must run on both Pi 1 and Pi 4.
+He also noted that `lib_machine/pi4` is meant only for the Pi 4, so it should be excluded.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 12:17
+
+**Yoann:**
+
+> we recently added mini-dotnet and some -dotnet backend to mini-cc and mini-ml and mini-datalog so one could write a single program using those 3 languages and share a common runtime that makes it easy to pass around complex data structure. How much of a win it is on the ~/analyzers/ which has a native path and a dotnet path in terms of performance, code clarity, and total LOC. Is it a big win to use dotnet in practice?
+
+**Claude (summary):**
+
+Claude said it was gathering numbers for the comparison.
+Claude was reading the two entry points of the native and dotnet paths in ~/analyzers/.
+Claude was timing both paths to compare performance, code clarity, and total LOC.
+Claude had not yet reached a conclusion on whether dotnet is a big win in practice.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 13:16
+
+**Yoann:**
+
+> yes assume all of it should run both on pi1 and pi4. what is in lib_machine/pi4 is meant only for pi4 I think
+
+**Claude (summary):**
+
+Claude updated the plan so the 31-bit check covers all of ix except kernels/lib_machine/pi4/, leaving it uncommitted.
+Claude flagged that the 29 large addresses in raspberry/boards/Pi4.ml would be reported under that rule.
+Claude explained that Pi4.ml models a Pi 4 for mini-qemu, so those addresses would be wrong for a Pi 1 build.
+Claude offered to add raspberry/ to the 64-bit-only list if mini-qemu only needs to run on 64-bit machines.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 13:20
+
+**Yoann:**
+
+> ok maybe let's skip raspberry/ too then and machine/ for now since yes we are mostly running this code from this machine (an arm64)
+
+**Claude (summary):**
+
+Claude added `raspberry/` (mini-qemu) and `machine/` (mini-5i, mini-7i) to the 64-bit-only list in the plan.
+Claude placed them beside `kernels/lib_machine/pi4/` and quoted Yoann's reason in the plan text.
+Claude noted that the "for now" wording means the list can shrink again later.
+Claude reported that the 29 large addresses in `raspberry/boards/Pi4.ml` are no longer flagged.
+Claude left the plan update uncommitted and asked Yoann whether to commit it.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 13:19
+
+**Yoann:**
+
+> ok good to know, maybe store this analysis in one of the plan document (maybe under done/) as a conclusion for it
+
+**Claude (summary):**
+
+Claude recommended storing the analysis as a conclusion section in a plan document under done/.
+Claude added a dated conclusion section before the "What is left" heading in that plan document.
+Claude's answer was brief, so the rest of its response is not summarized here.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 13:27
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed the plan update as ffacd5f3, touching only docs/plans/plan_bug_analyses.md.
+Claude skipped make test, reasoning that the change was documentation only with no code touched.
+Claude also refreshed its memory note on this plan to include the 64-bit-only list.
+Claude left unrelated uncommitted work alone: languages/datalog/, plan_dotnet_languages.md, and staged prompt-history.md.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 13:27
+
+**Yoann:**
+
+> let's commit and close this session
+
+**Claude (summary):**
+
+Claude committed the conclusion as `1c6a4ffd`, containing only `docs/plans/done/plan_dotnet_languages.md`.
+Claude did not run `make test` before committing, since the change is documentation only.
+Claude left out the other tree changes as not its own: `prompt-history.md` and `languages/datalog/` edits.
+Claude reported the session closed.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 13:33
+
+**Yoann:**
+
+> let's do the first analysis and start the plan
+
+**Claude (summary):**
+
+Claude added two facts, a `physeq.dl` rule file, and a `-bugs` flag in `Analyze.ml`.
+Claude tested the rule on `Before.ml` and `After.ml` cut from eb5378a5's Window loop, flagging only the pre-fix code.
+Claude wired the rule into the tests and documented the two new relations in `FACTS.md`, checked by `facts_doc.sh`.
+Claude swept ix's 44 programs with `-bugs`, found no hits, and grepped the whole tree to confirm.
+Claude had mini-ml compile the new code, with `make test` still running when the answer ended.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 13:14
+
+**Yoann:**
+
+> yes, let's do it
+
+**Claude (summary):**
+
+Claude recommended running `make test` before committing step 1, since that suite had not run yet.
+Claude proposed step 2 next: merging list cells by full type, since each answer repeats about 200 times.
+Claude noted step 2 covers about half of all combinations, a bigger lever than more interpreter tuning.
+Claude left step 1 uncommitted in `languages/datalog`, with its playground notes file edited but not committed.
+Claude's step 1 cut run times 22 to 30 percent, with every derived fact identical on three workloads.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 13:54
+
+**Yoann:**
+
+> let's commit and move forward
+
+------------------------------------------------------------------------
+
+## 2026-11-03 14:02
+
+**Yoann:**
+
+> should we "clone" the calls to List.map and expand with a model of it?
+
+------------------------------------------------------------------------
+
+## 2026-11-03 13:43
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude committed the A1 work as f94e4ea4, touching only its own paths, and wrote the deep-recursion analyzer rules.
+Claude added a `list_like(T)` fact, so the kernel reads with 9 reports and the full sweep was 68.
+Claude removed the now-unused `Exn_report.site` export and updated the A1 plan, man page, help text and `Bugs_report.mli`.
+Claude rebuilt the committed analyzer in a private copy to diff sweep outputs against the new one.
+Claude then found list cells named `cons:Kit.handler list` that it did not write, and began checking for another session editing `Closure_facts`.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 14:15
+
+**Yoann:**
+
+> check the background sweep comparison (sw_base/sw_new for -dead -caps -exn) and finish A1
+
+**Claude (summary):**
+
+Claude reran the sweeps on a private copy of the fresh binary, so another session's build couldn't swap it out.
+Claude compared the old and new analyzers on all 44 programs for -dead, -caps and -exn, and the outputs matched.
+Claude also found the -bugs list unchanged, and the kernel's nine reports matched the committed analyzer's output.
+Claude then started make test as the last check, with no result reported yet.
+Earlier, Claude committed f94e4ea4 and built the A1 deep-recursion rule in stack.dl with tail and in_handler facts.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 14:36
+
+**Yoann:**
+
+> check the background sweep comparison (sw_base/sw_new for -dead -caps -exn) and finish A1
+
+**Claude (summary):**
+
+Claude offered to commit only its own A1 paths once Yoann asked, leaving out other sessions' files.
+Claude flagged another session's poly.dl and prompt-history.md as files it would leave uncommitted.
+Claude listed its paths as the Closure_facts, stack.dl, report, test and docs changes for that commit.
+Claude's A1 `stack` check in -bugs re-finds both 021c562b kernel overruns and f46346db's list recursion.
+Claude's sweeps showed identical -dead, -caps and -exn reports on all 44 programs, and make test passed.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 16:59
+
+**Yoann:**
+
+> let's commit and move forward
+
+------------------------------------------------------------------------
+
+## 2026-11-03 14:03
+
+**Yoann:**
+
+> isn't that supposed to be the job of context sensitive analysis to solve those List.map issues?
+
+**Claude (summary):**
+
+Claude reported that per-call contexts on polymorphic functions left mini-cc at 152 to 164 million firings.
+Claude proposed the diagnosis as step 1: run the join ranking on the poly run's `read/7` and `fpt/7` relations.
+The ranking would show which objects and contexts still meet in the hot load, and whether the merge comes through monomorphic cells, closures, or elsewhere.
+Claude estimated about an hour for the diagnosis, then planned either a context rule fix or models for the dozen most-called `List` functions.
+Nothing beyond step 1 is committed, and `poly.dl` stays an uncommitted experiment.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 17:00
+
+**Yoann:**
+
+> should we prefix with bugs_stack.dl ? to better group what is under datalog/ ?
+
+**Claude (summary):**
+
+Claude recommended grouping the planned rules into a `bugs/` subdirectory rather than using a `bugs_stack` prefix.
+Claude proposed moving the existing top-level `bugs.dl` to `bugs/pointers.dl` so all bug rules sit together.
+That move touches `Analyze.ml`, `C_report.ml`, `dotnet/Analyze_rt.ml`, `dotnet/tests/run.sh` and the docs, and requires rerunning the .NET test.
+Claude suggested doing the move in its own commit before starting A3 in `bugs/swallowed.dl`.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 17:02
+
+**Yoann:**
+
+> move it
+
+**Claude (summary):**
+
+Claude made external primitives emit a `raise_of` fact at their call sites, so the exception analysis can see them.
+Claude matched the runtime's `caml_exn_Sys_error` and `caml_exn_Failure` symbols and added a `primitive(I, P)` fact for raising primitives.
+Claude hardcoded the release list of primitives inside the `.dl` rules, which keeps the `close`, `remove` and `EINTR` look-alikes quiet.
+Claude cut the swallowed-exception reports across the ix sweep from 45 to 12, while `-dead` and `-caps` stayed identical.
+Claude recorded the 12 reports in `bugs_ix.txt` and the plan's Status table, then ran the test suites.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 18:51
+
+**Yoann:**
+
+> for those primitive, maybe we should have a [@@raise] or something in the code, so the analysis can be aware of it instead of hardcoding things in the .dl ?
+
+------------------------------------------------------------------------
+
+## 2026-11-03 18:51
+
+**Yoann:**
+
+> In any case, let's commit and move forward
+
+**Claude (summary):**
+
+Claude said it would commit the A3 change first, using a pathspec commit.
+Yoann's follow-up was a go-ahead, so the focus is on that commit step.
+Claude's answer was only that opening line; it gave no further detail about the commit contents.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 17:01
+
+**Yoann:**
+
+> let's do it
+
+**Claude (summary):**
+
+Claude recommended models of the container libraries instead of further context-sensitivity tweaks, since Hashtbl, List and Set hide the cost.
+Claude reverted its nested-function context rule, because it made mini-cc slower (123 M firings, 88 s) and reported a false `Halt` on mini-prolog.
+Claude proposed one object per `Hashtbl.create` site, with `replace` storing into "key" and "value" fields and `find` loading "value".
+Claude suggested measuring a Hashtbl-only model on mini-cc first, estimating about a day for all three containers.
+Claude left `poly.dl` uncommitted and asked whether to start the Hashtbl model.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 18:53
+
+**Yoann:**
+
+> yes go ahead
+
+**Claude (summary):**
+
+Claude checked that the new `[@@raise Sys_error]` attribute table gives the same `-facts` as the hardcoded list.
+Claude compared `analyze_a3.exe` against the new build on 7 programs, then all 44, finding identical facts.
+The only discrepancy was duplicate entries, since `Sys.ml` and `Sys.mli` both declare the attribute and `sys_open` appeared twice.
+Claude made the table hold each pair once, after which the facts matched on every program.
+Claude then ran the mini-ml build and `make test`, and a FACTS.md check remains the one failure to investigate.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 19:18
+
+**Yoann:**
+
+> actually it would be interesting to check those @@raise annotations are correct via an analyzer itself since we can also analyze the C code so in theory we can check if the .ml annots are matching what the C code is doing! A great example of multi-language static analysis!
+
+**Claude (summary):**
+
+Claude recommended committing only its own files on top of HEAD, leaving the other session's Models work uncommitted.
+Claude planned to commit bugs/raises.dl, the Bugs_report code, the raises tests, and raises.sh.
+It also planned lite.sh, FACTS.md, the README, the man page, and the plan, plus one Closure_facts.ml hunk.
+Claude excluded the 25 missing annotations, since adding them changes -exn's answers and needs its own commit.
+Claude's runs found all 11 Sys_error annotations correct, but make test still fails on FACTS.md.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 18:54
+
+**Yoann:**
+
+> yes let's start those containers models
+
+**Claude (summary):**
+
+Claude recommended exposing `List` and `Hashtbl` models as facts at each call site instead of the shared library body.
+Claude built `Models.ml` and `.mli` for `List`, `Hashtbl`, and `@`, plus `Closure_facts.ml` and dune changes.
+Claude measured mini-cc `-exn` dropping from 247 s and 12 GB to 46 s and 3.8 GB, with mini-ml still out of memory.
+Claude verified `-dead` and `-caps` match HEAD, 14 false `-exn` reports removed, and all test suites passing.
+Nothing is committed yet, since another session has uncommitted `raises.dl` work in the same files.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 20:42
+
+**Yoann:**
+
+> wow nice, let's document this opti and the time it saves well in this new Models.ml
+
+------------------------------------------------------------------------
+
+## 2026-11-03 20:40
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude committed the FACTS.md update as HEAD plus its two hunks, as commit 3cc7ca4c.
+Claude left the other session's Models files uncommitted in the working tree, untouched.
+Claude kept the 39 `[@@raise]` annotations on 23 externals uncommitted, offering them as a separate commit.
+Claude ran the `-exn` and `-bugs` sweeps before and after in throwaway git repos, in the background.
+Claude expected `exn_ix.txt` to stay unchanged, then planned the A2 update and `make test`.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 20:42
+
+**Yoann:**
+
+> I still don't fully understand why a model that mostly expands its body is far better than a context sensitive analysis or cloning that should have a similar effect
+
+**Claude (summary):**
+
+Claude explained that a library model beats contexts because it clones the whole call tree with no inner helper calls to merge.
+Claude noted that closures share one points-to set across all contexts, so no context can split Hashtbl's buckets.
+Claude argued the model is simpler, a single object with `tbl:key` and `tbl:val` fields, and it changes the facts every analysis reads.
+Claude said the cost is writing and checking a model per library function, about 60 for List, Hashtbl and @.
+Claude offered to add these four reasons to the header's `road-not-taken:` paragraph, and Yoann agreed.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 20:51
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude held off committing until the after-annotation -exn and -bugs sweeps over the 44 programs finished.
+Claude planned a pathspec commit of the 21 lib_core files, one test, raises_ix.txt and the plan.
+Claude kept the other session's files out of the commit so they stay untouched.
+Claude re-recorded only exn_toplevel after the full build, since List.assoc's compare raises Invalid_argument on functional values.
+Claude ran make test in the main tree, then moved on to the pathspec commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 21:07
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude committed the cross-language check (3cc7ca4c) and the 23 missing `[@@raise E]` annotations in lib_core (a4347009).
+Claude reported `-exn` now finds more escaping lib_core exceptions, with `-bugs` and the program-own exception lines unchanged.
+Claude re-recorded the `exn_toplevel` test, since HEAD's `List.assoc` can now raise `Invalid_argument` through `compare`.
+Claude proposed starting A2's entry-point roots, but flagged `Closure_facts` as blocked on the other session's uncommitted Models work.
+Claude then began A2's roots in mine3, fixing a bug in `bugs_report`'s `unit_of` that cut names at `.`.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 20:52
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude corrected the header's count from 64 functions to 53 models, 16 for Hashtbl and 36 for List, plus @.
+Claude added a paragraph to Models.ml's header explaining why a model beats a clone or context here.
+The four reasons were whole call-tree coverage, no closure capture, a simpler shape, and changed analysis facts like Andersen merging.
+The stated cost is writing and checking one hand-made model per function, where contexts would be automatic.
+Claude confirmed the build succeeds and run.sh passes, and nothing has been committed yet.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 21:28
+
+**Yoann:**
+
+> maybe we should move lib_core/datalog/ to analyzers/datalog/ ? so all analyzer related code is in the same directory?
+
+**Claude (summary):**
+
+Claude agreed the move from lib_code/datalog to analyzers/datalog was right, as its own commit.
+Claude planned to finish and commit A2's roots first, since they touch contexts.dl, dead.dl and exceptions.dl.
+Claude wanted the move after the other session commits its Models edits, since a git mv would strand its files.
+Claude's A2 work also fixed a missing var_in in Closure_facts, dropping 40 false crash reports in Commands.ml.
+Claude estimated the move at 138 references across about 30 files, leaving done plans and history unchanged.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 21:45
+
+**Yoann:**
+
+> ok, finish A2's roots first then move it
+
+**Claude (summary):**
+
+Claude fixed mini-ml's `-bugs` slowdown by reordering the `raised` rule, from 248 s to 66 s.
+Claude committed A2's roots as 926c24af after `make test` passed with 183 jobs and no failures.
+Claude then moved `lib_code/datalog` to `analyzers/datalog` as its own commit, with the datalog README section split out.
+Claude updated every reference to the old path, including the rules' default path, and checked the build and the .NET road.
+Claude also fixed the kernel script's `$GFX` path so its runs no longer miss the draw units.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 22:40
+
+**Yoann:**
+
+> ok, finish A2's roots first then move it
+
+**Claude (summary):**
+
+Claude committed A2's roots as 926c24af, making C-called functions entry points for every analysis.
+Claude fixed mini-ml's `-bugs` slowdown from 248 s to 66 s by reordering the `raised` rule.
+Claude added `crash` reports to `-bugs` and fixed the caught-exception link, removing 40 false `-exn` reports in git.
+Claude then moved `lib_code/datalog` to `analyzers/datalog` as commit f3baeaf4, updating 45 files and splitting the README.
+Both commits passed `make test` with 183 jobs and 0 failures, and the other session's `poly.dl` stayed uncommitted.

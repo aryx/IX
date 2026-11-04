@@ -19,7 +19,9 @@ let sort (order : order) ~(reversed : bool) (entries : entry list) : entry list 
     let c =
       match order with
       | By_name -> by_name a b
-      | By_size -> compare a.size b.size
+      (* a folder's size, not shown, is its file system's (ext4's 4096,
+       * tmpfs's by its entries): folders stay by name *)
+      | By_size -> if a.is_dir then 0 else compare a.size b.size
       | By_day -> compare a.mtime b.mtime
     in
     if reversed then -c else c

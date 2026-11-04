@@ -36,7 +36,9 @@ printf '\001\002\003' > $T/tree/docs/other.bin
 echo secret > $T/tree/.hidden
 printf '\001\002\003' > $T/tree/data.bin
 for i in $(seq -w 10 69); do echo $i > $T/tree/many/file$i; done
-(cd $T/tree && i=0; for f in $(find . -depth); do i=$((i+1)); touch -d "2026-01-$(printf %02d $((i%28+1))) 12:00:00 UTC" "$f"; done)
+# (the days by the names' order: find's is the directory's, on ext4 by
+# a hash seeded per file system, so CI's disk gave other days)
+(cd $T/tree && i=0; for f in $(find . | LC_ALL=C sort); do i=$((i+1)); touch -d "2026-01-$(printf %02d $((i%28+1))) 12:00:00 UTC" "$f"; done)
 touch -d "2026-02-01 12:00:00 UTC" $T/tree/report.pdf $T/tree
 touch -d "2025-12-25 12:00:00 UTC" $T/tree/notes.txt
 

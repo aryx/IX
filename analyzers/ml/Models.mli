@@ -63,5 +63,6 @@ val derived_on : bool ref
 (* a global's model, by its symbol (Hashtbl.find): its arity and what it does *)
 val find : string -> (int * op list) option
 
-(* the units whose interface is modeled whole, Hashtbl *)
+(* the units whose let groups are replaced, each whose every function is
+ * modeled or summarized (Hashtbl whole, List in part) *)
 val modeled_unit : string -> bool

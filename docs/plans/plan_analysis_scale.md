@@ -159,12 +159,23 @@ through copies (a local function's parameter, rev_map's rmap_f), the
 hand models' answers the same; the sorts Models' own even with
 -summaries (`Models.meant`: a sort's result a list of its own, what
 bugs/order.dl needs, the code saying only cells, some its input's).
-Left: two order reports in mini-ml's Typing (places, min_max_globals:
-a table's contents sorted, then marshalled; false), TinyVCS.lca one
-output place of two, and TinyBrowserTokens.wanted no longer dead: which
-derived function carries the order is to find, through order.dl's taint.
+Left then: two order reports in mini-ml's Typing (places,
+min_max_globals: a table's contents sorted, then marshalled; false),
+TinyVCS.lca one output place of two, TinyBrowserTokens.wanted no longer
+dead. Found (2026-11-04): with -summaries, `Models.modeled_unit` was
+false for List, so no let group of List's was replaced, and a List
+function used as a value (`|> List.sort compare`, partial) ran lib_core's
+code, its result sharing its input's cells: Typing's two. modeled_unit
+now true for a unit with a summary too, each group replaced if its every
+function has one. Then make check's six, the hand models against the
+summaries: the same answers on the 44 programs; on tiny/ two, both the
+hand models' false reports: `TinyBrowserTokens.wanted` dead (Models'
+List.mem, `Scalar Ret`, never reads its list: the global read only by
+`List.mem a wanted` looks unread; the summary loads its cells), and
+TinyVCS.lca's order at line 759 (s.branches, printed there, comes from
+the state file, not from lca's table).
 
-Next: those three; then Hashtbl derived (its closures over the buckets, the
+Next: Hashtbl derived (its closures over the buckets, the
 case Models was written for); then the rest of lib_core, the fixed cost
 of step 1 (List's code about 2,400 of the 80,000 to 117,000 facts of
 lib_core in a program: mini-cat's count).

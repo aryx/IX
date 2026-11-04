@@ -300,10 +300,13 @@ let find (sym : string) : (int * op list) option =
       | None -> None)
   | None -> None
 
-(* (a derived summary is a function's, no unit's interface whole: a unit
- * with one is not modeled whole) *)
+(* (a unit with a derived summary too: a let group of its whose every
+ * function has a model or a summary is then replaced by them, its
+ * functions used as values the model's, List.sort compare; old, with
+ * -summaries: none such, a value's call ran lib_core's own code) *)
 let modeled_unit (name : string) : bool =
-  !on && List.mem_assoc name units
-  && not (!derived_on
+  !on
+  && (List.mem_assoc name units
+      || (!derived_on
           && Hashtbl.fold (fun s _ b -> b || String.length s > String.length name
-                                              && String.sub s 0 (String.length name + 1) = name ^ ".") derived false)
+                                              && String.sub s 0 (String.length name + 1) = name ^ ".") derived false))

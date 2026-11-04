@@ -62647,3 +62647,523 @@ Claude re-recorded `closures.facts`, `bugs_tiny.txt`, `bugs_ix.txt`, and `FACTS.
 Claude left step 2 uncommitted: the `bugs/evalorder.dl` rule, its facts, the report line, and the test directory.
 The rule header now says mini-ml -dotnet stays left to right and that a report means the code relies on order, per Yoann's decision.
 Claude asked whether to commit step 2, and it flagged `TinyDatabase.ml:209` and `TinyShell.ml:260` as real order dependences.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 17:10
+
+**Yoann:**
+
+> where is the FACTS.md check? it's written in datalog?
+
+**Claude (summary):**
+
+Claude recommended committing evalorder.dl with the bugs_tiny, bugs_ix, closures.facts and FACTS.md updates after your go-ahead.
+Claude noted bugs_ix.txt nearly doubles, from 213 to 386 lines, with 173 new evalorder reports.
+Claude suggested reading a sample of those 173 reports to check whether evalorder finds real order-dependent code.
+Claude warned that once recorded, those 173 reports become the accepted baseline the checks treat as correct.
+Claude explained the FACTS.md check is a bash script, facts_doc.sh, currently failing on the store_site and tree_site relations.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 17:17
+
+**Yoann:**
+
+> ok fixed I think in other session. What's next here?
+
+**Claude (summary):**
+
+Claude proposed measuring the 44 programs first, before writing any summaries, to decide whether lib_core's summaries are the right lever.
+The measurement would record lines of code, facts from own units versus lib_core, and analysis time and memory, to check whether growth is linear or quadratic.
+Claude expected stored lib_core summaries to help small programs most, but noted mini-ml and mini-cc might need per-module summaries or mini-datalog's `-j` and memory tuning.
+Results would go in `docs/plans/plan_analysis_scale.md` with the script that produces them, then step 3 would follow.
+Claude asked whether to go ahead with the measurement.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 17:17
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed step 2 as `4b45f5f0` after `make test` passed with 189 jobs and no failures.
+Claude's commit covered the evalorder rule, its two new facts, the report line, test `56934c32/`, and the plan's Done paragraph.
+Claude updated `bugs_ix.txt` (+173 lines), `bugs_tiny.txt` (+10) and `closures.facts` to match the new recordings.
+Claude left `prompt-history.md` out of the commit, leaving the other session's staged change to it untouched.
+Claude noted step 3 (storing lib_core summaries for faster analysis) and 183 pending ix reports as remaining work.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 17:22
+
+**Yoann:**
+
+> ok I'll do that in another session. Can I close this session then?
+
+**Claude (summary):**
+
+Claude pointed the next session to docs/plans/plan_analysis_summaries.md as the place to resume the work.
+Claude noted that this plan file marks steps 1 and 2 done, with step 3 as the next item.
+Claude explained that steps 1 and 2 are committed as 88bb4765 and 4b45f5f0, with make test passing before the last commit.
+Claude said the next session can start directly on step 3 without rebuilding the progress so far.
+Claude also confirmed nothing from this session is uncommitted or running, and saved the .NET left-to-right decision to memory.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 17:24
+
+**Yoann:**
+
+> looks like make check runs the -bugs, -exn, and -caps. There was other -xxx if I remember; I think there was some -dead at some point and maybe other. Why we don't run those in 'make check' (and some in make test) too?
+
+**Claude (summary):**
+
+Claude found that -exn is the only analysis flag that no make target checks against a recording.
+Claude noted that exn_ix.txt (101 lines, recorded 2026-11-02) has gone stale because no check reads it.
+Claude pointed out that -exn runs in about 7 seconds, so cost was not the reason it was left out.
+Claude proposed adding -exn to make test for tiny/ and to make check for m-ix, following the existing -bugs pattern.
+Claude also proposed re-recording exn_ix.txt in the check's format as one commit, after warning the ix-f5 session.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 17:20
+
+**Yoann:**
+
+> ok let's start the 100 000 lines scaling project with summaries
+
+**Claude (summary):**
+
+Claude recommended measuring the scaling project first, with a `measure.sh` sweep over mini-ed, mini-dotnet, and mini-ml.
+Claude found lib_core is a fixed cost of 80,000 to 117,000 facts in every program, dominating small ones.
+Claude wrote `docs/plans/plan_analysis_scale.md` and its evidence in `docs/plans/analysis_scale/`, with nothing committed yet.
+Claude's step 2 drops lib_core functions no name refers to, a cheap call-graph pruning that `make check` can verify.
+Claude proposed step 2 first, then asked whether to start it, and Yoann said yes.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 17:42
+
+**Yoann:**
+
+> yes
+
+------------------------------------------------------------------------
+
+## 2026-11-04 17:39
+
+**Yoann:**
+
+> let's add -exn; maybe we should find a way to differentiate those -facts, -flow that generate facts from the analysis one? some common prefix or something?
+
+**Claude (summary):**
+
+Claude recommended a shared -facts prefix for the fact-dumping options, since they print facts.
+Claude proposed renaming -flow to -facts-ssa, covering ML's functions in SSA form and C's stack code.
+Claude proposed renaming -dflow to -facts-compiler, for the compiler's own liveness and dominators.
+Claude noted the usage line would split into facts and analyses groups, renaming every caller with no old names kept.
+Claude also added -exn to both checks, uncommitted, with one unrelated mini-lex test failing.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 17:42
+
+**Yoann:**
+
+> hopefully we can get rid of hardcoded Models.ml (but it's a good baseline to compare too, for correctness and performance)
+
+**Claude (summary):**
+
+Claude reverted the Prune pass, which removed only 2.3% of facts and gave no speedup, and planned derived lib_core summaries instead.
+Claude's last step was deleting Models.ml, the hand-written summaries, once derived summaries matched its answers.
+Claude made that deletion conditional on matching Models.ml's answers and speed, not on a fixed date.
+Claude's plan put that removal third, after the derived List and Hashtbl summaries were checked against Models.ml.
+Claude asked whether to start with step 3.1, deriving the List and Hashtbl summaries.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 17:57
+
+**Yoann:**
+
+> we don't have to remove Models.ml; it also has teaching value, but we can have a flag to plug whether models or the other one or nothing.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 17:56
+
+**Yoann:**
+
+> yes; I'm not super convinced by the -facts-xxx names; it's not clear how -facts-compiler is different from -facts and -facts-ssa really
+
+------------------------------------------------------------------------
+
+## 2026-11-04 17:58
+
+**Yoann:**
+
+> but -expected is not clear
+
+------------------------------------------------------------------------
+
+## 2026-11-04 17:59
+
+**Yoann:**
+
+> I like that -facts is the basis, -flow is for the CFG related stuff, now -flow-expected is not clear what it's for
+
+**Claude (summary):**
+
+Claude recommended `-flow-compiler` for the `-dflow` option, with help text naming what `liveness.dl` and `dominators.dl` must find.
+Claude explained that `-dflow` prints the compilers' own liveness and dominator answers as facts, for checking the Datalog rules.
+Claude listed `-flow-reference` and `-flow-own` as alternatives, with `-flow-own` matching the `own_live_out` prefix.
+Claude noted only the `analyzers/ml/tests/`, `analyzers/c/tests/` and .NET Datalog tests use the option.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 17:59
+
+**Yoann:**
+
+> but this -compiler-xxx is not great either because -flow is also from the compiler no?
+
+**Claude (summary):**
+
+Claude agreed that `-flow` is also the compiler's output, so "compiler" doesn't separate the two flags.
+Claude proposed splitting by content: `-flow` shows the compiler's representation, while `-dflow` shows the compiler's analysis results.
+Claude recommended naming the results flag `-flow-answers`, since "answers" is ix's word for what rules compute, and listed `-flow-results` and `-flow-liveness` as alternatives.
+Claude asked Yoann to pick one of the three names.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 18:00
+
+**Yoann:**
+
+> so is is a -control-flow vs -data-flow?
+
+**Claude (summary):**
+
+Claude explained that `-flow` and `-dflow` both cover control flow and data flow, so the split is not control versus data.
+Claude said `-flow` gives the facts the rules start from, while `-dflow` gives what the compiler computed for them to check.
+Claude noted the "d" in `-dflow` likely came from liveness, which makes the name unclear now that dominators are included too.
+Claude recommended renaming it to `-flow-answers`, or `-flow-check` if naming by purpose, and Yoann chose `-flow-answers`.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 18:01
+
+**Yoann:**
+
+> ok go with -flow-answers
+
+------------------------------------------------------------------------
+
+## 2026-11-04 18:01
+
+**Yoann:**
+
+> I'm not super clear maybe on when things are rune
+
+------------------------------------------------------------------------
+
+## 2026-11-04 17:57
+
+**Yoann:**
+
+> but let's start yes
+
+**Claude (summary):**
+
+Claude recommended finishing List's summaries first, then checking them against the hand-written models before moving to Hashtbl.
+Claude found that the derivation already summarizes all 87 List functions, matching the hand models for iter, map and find.
+Claude flagged that rev loses precision by calling List.rev_append, so summaries of other summarized functions must be written in.
+Claude asked whether to continue with steps 1 to 4 for List, writing the Global operation into Models and Closure_facts.
+Nothing is committed, and the other session's pending Analyze.ml edit stays out of the way.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 18:01
+
+**Yoann:**
+
+> sounds like you have a 2 phases thing pipeline where facts is run first, then -flow, and from that is then run -flow-answers or something, is that th case?
+
+**Claude (summary):**
+
+Claude explained that facts, flow, and flow-answers are sibling outputs of one compilation, not a pipeline.
+Claude renamed -dflow to -flow-answers everywhere except two lines recording the old mini-ml and mini-cc option names.
+Claude confirmed both flow tests and the FACTS.md check pass, but had not yet run make test on the rename.
+Claude told ix-f5 its uncommitted rename sits in Analyze.ml, so ix-f5 should commit only its own edits there.
+Claude offered to run make test and commit the rename, and to time ix.sh for make check.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 18:05
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude recommended committing the List-derived summaries first, by pathspec, before starting the `walked` work.
+Claude's plan scoped the commit to `analyzers/summaries/`, its hunks in Models, Closure_facts, dune and Analyze, plus the measurements.
+Claude noted the `-bugs` differences come from Models' `walked` convention, not from summary semantics, so `walked` is next.
+Claude's measurements: List derived is about 8% faster on `-dead` and `-exn` across the 44 programs, with equal memory.
+Claude said the other session's `make test` failures were mid-edit states, and the OCaml 5.5.1 build now passes.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 18:05
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude proposed running the -flow rules' comparison over all of ix inside make check as the next step.
+Claude noted that analyzers/ml/tests/ix.sh and analyzers/c/tests/ix.sh currently run only by hand.
+Claude offered to time both ix.sh scripts first, before wiring them into make check.
+Claude recommended timing them first, then adding them to make check the way -exn was added.
+Claude reported four commits landed, and ix-f5 is fixing its own in-progress make test breakage.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 18:20
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude proposed committing this round, then taking the three remaining differences before Hashtbl.
+Claude listed those as two false order reports in mini-ml's Typing, places and min_max_globals, plus TinyVCS's lca.
+Claude said finding which derived List function carries the order is its own piece of work.
+Claude had earlier made inline write every call chain in, so List functions no longer call each other through globals.
+Claude also reported 9 of make check's 12 lines agreeing with the hand models, and make test passing with 190 jobs.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 18:35
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended fixing evalorder's reports, starting with tiny/'s 10, as the first real use of the check loop.
+Claude suggested the tiny/ fixes in TinyDatabase.ml:209 and TinyShell.ml:260, which are order-dependent and small.
+Claude also outlined ix's remaining 173 reports, grouped into tables, fresh counters, and benign caches like Memory.
+Claude proposed quieting cache writes with a [@cache] annotation, and running the flow checks in make check.
+Claude proposed asking whether to start with tiny/'s 10 fixes.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 19:00
+
+**Yoann:**
+
+> no let's not fix bugs for now; just write the analysis
+
+------------------------------------------------------------------------
+
+## 2026-11-04 18:59
+
+**Yoann:**
+
+> yes, let's commit and move forward
+
+**Claude (summary):**
+
+Claude committed the fix as `cff681b1` after `make test` passed with 190 jobs and 0 failures.
+Claude derived all 17 Hashtbl summaries from the real code, replacing the hand models, and `make test` still passes.
+Derived Hashtbl costs more: `-exn` on the 44 programs rose from 341 s to 368 s, and mini-ml's from 5.7 GB to 8.3 GB.
+Claude traced the cost to `Hashtbl.replace`'s summary, which has 95 operations against the hand model's 4.
+Claude proposed simplifying summaries before storing them, then asked whether to commit this round and start that work.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 19:00
+
+**Yoann:**
+
+> and improve the analysis
+
+**Claude (summary):**
+
+Claude improved the leak analysis in `bugs/pairs.dl` so closing a channel from `Unix.in_channel_of_descr` or `out_channel_of_descr` also gives back its descriptor.
+Claude linked the variables rather than heap objects, since linking objects would make any close give back every descriptor.
+Claude added ed-shaped tests under `analyzers/tests/bugs/summaries/`, and the full `make test` passes with 190 jobs and 0 failures.
+Claude found 5 new reports in ed, recorded them in `bugs_ix.txt`, and fixed none, as asked.
+Nothing is committed yet; Claude asked whether to commit, and the next step is the remaining `dup` count gap from 62d811be.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 19:42
+
+**Yoann:**
+
+> yes; how do you do those simplifications? In ocaml or in datalog?
+
+**Claude (summary):**
+
+Claude committed the pending work as 54b28e64 and set Datalog aside, since rebuilding the lists would still need OCaml.
+Claude placed the simplification pass in OCaml inside Summaries, running once per lib_core function before each summary is written.
+Claude proposed merging copy chains and cycles, so Tmp 5 and Tmp 1 in List.iter become a single variable.
+Claude proposed dropping unobserved loads, assignments, and allocations, cutting much of Hashtbl.replace's 95 operations.
+Claude planned to check results against the probe and make check's six tests, then compare Derive.exe sizes before and after.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 19:43
+
+**Yoann:**
+
+> yes, let's commit. What's next?
+
+**Claude (summary):**
+
+Claude committed the analysis work as a2dd04a8 and listed four candidates for the next step.
+Claude recommended first removing cache-induced reports from evalorder with a `[@@cache]` annotation on `Memory`.
+Claude explained that `Memory`'s last-segment cache writes `base`, `size` and `data`, which the purity analysis flags.
+Claude estimated that skipping annotated fields would drop a large share of the 183 reports.
+Claude then proposed adding `read_of(F, O)` for writes beside reads, and asked whether to start the cache annotation.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 19:49
+
+**Yoann:**
+
+> or can I close this session? are we working on an open plan or a closed one in done/ ?
+
+**Claude (summary):**
+
+Claude confirmed the session can be closed, since everything is committed at `a2dd04a8`.
+Claude said `docs/plans/plan_analysis_summaries.md` is an open plan, not in `done/`, with steps 1 and 2 done.
+Claude noted step 3 (lib_core summaries stored for 100,000 lines) now lives in `docs/plans/plan_analysis_scale.md` under `analyzers/summaries/`.
+Claude offered to move the plan to `docs/plans/done/` in one commit, with a status line and the remaining A9 counts and evalorder caches listed.
+Claude also offered to leave it open so the evalorder work can continue in a later session, and asked which Yoann prefers.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 19:46
+
+**Yoann:**
+
+> yes
+
+------------------------------------------------------------------------
+
+## 2026-11-04 19:54
+
+**Yoann:**
+
+> I've read that summaries and polymorphic types and context sensitive analysis have a lot in common
+
+**Claude (summary):**
+
+Claude reported that the simplified summaries kept every answer identical and sped up `-dead` to 120 s.
+Claude explained that `-exn`'s cost tracks object count, since each derived Hashtbl call allocates several objects.
+Claude tied polymorphic types, context sensitivity and heap cloning together, citing Rehof and Fähndrich's CFL-reachability result.
+Claude proposed merging same-type, same-role objects per instantiation into one, to match the hand models' `-exn` numbers.
+Claude offered to commit the simplification and add this heap question to the plan as the next step.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 19:59
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed ba5de95e, simplifying `-exn` and updating the plan, with `make test` passing 190 jobs and 0 failures.
+Claude pinned `-exn`'s extra cost on the objects each summary allocates per call, not on its operations.
+Claude proposed merging, per call, the objects one summary makes of the same type and role into one object.
+Each call keeps its own objects, so a table's `find` still reaches only its own buckets, but there are three times fewer.
+Claude said success would show in the probe and `make check` answers and in `-exn` against the hand models' 341 s and mini-ml's 75 s and 5.7 GB, then the 19 evalorder reports and lib_core.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 19:57
+
+**Yoann:**
+
+> for many of the programs in ix we have under docs/ a plan, but also a tutorial and a related_work document. We should do the same for the mini-analyzer, ideally with a great tutorial on program analysis, pointer analysis, control-flow sensitive vs insensitive, context sensitive, path sensitive, etc. summaries, polymorphic type system, tainting, etc. and a good related work document too. for tutorial maybe we can mention andersen's, steensgard, and other classic static analysis papers and innovations, possibly on toy examples each time.
+
+**Claude (summary):**
+
+Claude read the analyzer's code and plans to ground the tutorial in real files.
+Claude checked that mini-datalog runs small toy rule files, so the taint and flow-sensitivity examples are verified.
+Claude wrote and ran the toy programs, recording their outputs through a check script.
+Claude wrote the tutorial as `docs/tutorials/notes_analysis.md` and added a row to `docs/README.md`.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 20:36
+
+**Yoann:**
+
+> excellent, let's commit. Do we have the kildall and abstract interpretation and other basics implemented somewhere in analyzers/ ?
+
+------------------------------------------------------------------------
+
+## 2026-11-04 20:36
+
+**Yoann:**
+
+> (and dataflow monotone style framrwork)
+
+**Claude (summary):**
+
+Claude's answer was only "Tests pass. Committing my files only, by pathspec." It reported test results and a pending commit, with no further detail on the files, commit, or the dataflow framework. Yoann's reply, "yes let's write a plan for it," is a go-ahead to plan the work, so the focus is the unexplained commit step. I'll note that the answer is terse.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 20:32
+
+**Yoann:**
+
+> yes
+
+------------------------------------------------------------------------
+
+## 2026-11-04 20:41
+
+**Yoann:**
+
+> yes let's write a plan for it
+
+**Claude (summary):**
+
+Claude read the compiler's SSA passes so the plan's clients would be real ones.
+Claude noted that Untag already tracks a bit-width bound per value, which the plan can build on.
+Claude then started writing the plan itself, with its clients grounded in those SSA passes.
+Claude checked lib_core's interfaces and found that mini-ml has no optional arguments.
+Claude therefore made `edge` a required argument instead of an optional one.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 20:49
+
+**Yoann:**
+
+> let's commit the plan and stop here for now
+
+**Claude (summary):**
+
+Claude committed the plan as f90d6105, and that commit contains only docs/plans/plan_dataflow.md.
+Claude noted that the two earlier docs were already in the previous commit, not this one.
+Claude recorded the plan's status as "planned," confirming that no code has been written yet.
+Claude listed three open questions for later, starting with where tests should go, since lib_code/ has none.
+Claude also asked whether mini-cc's Opti and Peep should move to the new framework.

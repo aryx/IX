@@ -16,4 +16,14 @@ let size (f : string) : int =
   close_in ic;
   String.length f
 
-let () = print_string (contents "a"); maybe_close true stdin; print_int (size "b")
+(* a descriptor's channel closed, nothing raising between *)
+let length_of (f : string) : int =
+  let fd = Unix.openfile f [ Unix.O_RDONLY ] 0 in
+  let ic = Unix.in_channel_of_descr fd in
+  let n = in_channel_length ic in
+  close_in ic;
+  n
+
+let () =
+  print_string (contents "a"); maybe_close true stdin; print_int (size "b");
+  print_int (length_of "c")

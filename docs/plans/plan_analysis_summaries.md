@@ -63,9 +63,23 @@ programs and the kernel as `bugs_ix.txt` (mini-mk has one summary of
 each, Recipe's closing helper and `CapStdlib.open_in`: no raise between
 there). 25 lines of rules, 12 of report.
 
-Not in step 1: a channel made of a descriptor (ed's `read` opens a
-descriptor, `read_file` closes the channel `in_channel_of_descr` made of
-it: one more fact, the channel holds it), counts (62d811be's dup).
+Not in step 1: counts (62d811be's dup).
+
+**Done** (2026-11-04, the author: "just write the analysis", "and
+improve the analysis"): a channel made of a descriptor. ed's `read`
+opens a descriptor, `read_file` closes the channel
+`Unix.in_channel_of_descr` made of it: `pairs.dl`'s `channel_of(W, V)`,
+a close of W gives V's descriptor back, by the variables (every such
+channel is one object, `prim:caml_open_descriptor:block`, every
+descriptor of `Unix.openfile` another: by the objects a close would
+give back every descriptor). No new fact, 7 lines of rules. Test
+`analyzers/tests/bugs/summaries/` (ed's shape: the raise in the helper
+before its close, the one between the open and the helper's call;
+reported; a descriptor's channel closed with nothing between: not). On
+ix, ed's 5 (`read`'s descriptor when `squeeze` raises `Input.Error`,
+`read_file`'s `input_all` raising before the close, `write`'s
+descriptor when its loop raises), in `bugs_ix.txt`; the rest as
+recorded.
 
 ## Step 2: summaries for the other analyses
 

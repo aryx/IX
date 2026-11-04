@@ -1,4 +1,6 @@
-bug? analyzers/tests/bugs/summaries/Before.ml:12: leak: in Before.first_line, taken here, given back at analyzers/tests/bugs/summaries/Before.ml:14, not when analyzers/tests/bugs/summaries/Before.ml:13 raises End_of_file
-bug? analyzers/tests/bugs/summaries/Before.ml:20: leak: in Before.log, taken here, given back at analyzers/tests/bugs/summaries/Before.ml:22, not when analyzers/tests/bugs/summaries/Before.ml:21 raises End_of_file
-bug? analyzers/tests/bugs/summaries/Before.ml:7: leak: in Before.read_all, its argument given back at analyzers/tests/bugs/summaries/Before.ml:8, not when this raises End_of_file
-3 bugs? (leak 3)
+bug? analyzers/tests/bugs/summaries/Before.ml:13: leak: in Before.first_line, taken here, given back at analyzers/tests/bugs/summaries/Before.ml:15, not when analyzers/tests/bugs/summaries/Before.ml:14 raises End_of_file
+bug? analyzers/tests/bugs/summaries/Before.ml:21: leak: in Before.log, taken here, given back at analyzers/tests/bugs/summaries/Before.ml:23, not when analyzers/tests/bugs/summaries/Before.ml:22 raises End_of_file
+bug? analyzers/tests/bugs/summaries/Before.ml:27: leak: in Before.read_fd, its argument given back at analyzers/tests/bugs/summaries/Before.ml:28, not when this raises End_of_file
+bug? analyzers/tests/bugs/summaries/Before.ml:32: leak: in Before.read, taken here, given back at analyzers/tests/bugs/summaries/Before.ml:34, not when analyzers/tests/bugs/summaries/Before.ml:33 raises Failure
+bug? analyzers/tests/bugs/summaries/Before.ml:8: leak: in Before.read_all, its argument given back at analyzers/tests/bugs/summaries/Before.ml:9, not when this raises End_of_file
+5 bugs? (leak 5)

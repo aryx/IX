@@ -35,6 +35,11 @@ debuggers/acid/Proc.ml:515: evalorder: operands at 515:77 and 515:99, both with 
 debuggers/acid/Proc.ml:515: evalorder: operands at 515:88 and 515:99, both with an effect: their order the compiler's
 debuggers/acid/Proc.ml:549: stack: exited calls itself in a try's body: no tail call by mini-ml
 debuggers/acid/Value.ml:15: stack: go calls itself, not a tail call, over a list
+editors/ed/Command.ml:130: leak: in Command.read_file, its argument given back at editors/ed/Command.ml:131, not when this raises Failure
+editors/ed/Command.ml:130: leak: in Command.read_file, its argument given back at editors/ed/Command.ml:131, not when this raises Sys.Break
+editors/ed/Command.ml:130: leak: in Command.read_file, its argument given back at editors/ed/Command.ml:131, not when this raises Unix.Unix_error
+editors/ed/Command.ml:143: leak: in Command.read, taken here, given back at editors/ed/Command.ml:149, not when editors/ed/Command.ml:147 raises Input.Error
+editors/ed/Command.ml:155: leak: in Command.write, taken here, given back at editors/ed/Command.ml:165, not when editors/ed/Command.ml:160 raises Failure (and 1 more calls)
 editors/ed/Command.ml:493: swallowed: in Command.rescue, Unix.Unix_error silenced, a constant answered
 editors/ed/Input.ml:94: swallowed: in Input.recover, Unix.Unix_error silenced, a constant answered
 editors/emacs/core/Ebuffer.ml:12: evalorder: operands at 14:14 and 14:49, both with an effect: their order the compiler's

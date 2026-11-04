@@ -2,7 +2,8 @@
  * that closes its argument (gives_back), one that returns what it opens
  * (takes): a raise between the open and the helper's call, between the
  * helper's open and the close, now seen; and a raise inside the closing
- * helper before it closes *)
+ * helper before it closes. A descriptor given back by the close of the
+ * channel made of it (ed's read and read_file) *)
 let read_all (ic : in_channel) : string =
   let s = really_input_string ic (in_channel_length ic) in
   close_in ic;
@@ -21,4 +22,15 @@ let log (f : string) (s : string) : unit =
   output_string oc (String.sub s 0 (input_line stdin |> String.length));
   close_out oc
 
-let () = print_string (first_line "a"); log "b" "c"
+let read_fd (fd : Unix.file_descr) : string =
+  let ic = Unix.in_channel_of_descr fd in
+  let s = input_line ic in
+  close_in ic;
+  s
+
+let read (f : string) : string =
+  let fd = Unix.openfile f [ Unix.O_RDONLY ] 0 in
+  if f = "" then failwith "no name";
+  read_fd fd
+
+let () = print_string (first_line "a"); log "b" "c"; print_string (read "d")

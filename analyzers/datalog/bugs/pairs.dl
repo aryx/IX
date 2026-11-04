@@ -38,6 +38,8 @@
 % body is the handler's (protected), a handler that gives back and
 % raises again quiet. An exception that is another bug's
 % (Invalid_argument, which nearly every call may raise) is not counted.
+% A channel made of a descriptor gives it back by its close (ed's read
+% opens, read_file closes the channel in_channel_of_descr made of it).
 % A call of the SSA not named (a tail call of a
 % function's own lowering, an application written as |>) is no point
 % of a pair: missed, not said. The bugs of A9 that this does not see:
@@ -84,6 +86,18 @@ gave0(R, H, F) :-
   target(R, G), stage_of(G, P), releases(P), argument(R, 1, V), pts(V, H),
   in_function(R, F).
 
+% A channel made of a descriptor (Unix.in_channel_of_descr, out_channel_
+% of_descr: caml_open_descriptor) holds it: its close gives the descriptor
+% back. By the variables, not the objects: every such channel is one
+% object, and every descriptor Unix.openfile gives another; W made of V
+% says this close is of that descriptor.
+channel_of(W, V) :-
+  target(I, 'prim:caml_open_descriptor'), argument(I, 1, V), call_ret(I, W).
+closes(R, V) :- gave0(R, _, _), argument(R, 1, V).
+closes(R, V) :- gave0(R, _, _), argument(R, 1, W), channel_of(W, V).
+gave1(R, H, F) :- gave0(R, H, F).
+gave1(R, H, F) :- closes(R, V), pts(V, H), in_function(R, F).
+
 % The function's paths, mini-ml's SSA's (Ssa_facts, ssa_ before each
 % relation): from a point to the next in its block, from a block's end
 % to the first point of a block after it; a call of the SSA is the
@@ -102,8 +116,7 @@ one_application(A, C) :- site_key(A, K), site_key(C, K).
 % gives_arg_back(F): the stage F gives back its argument on every path of
 % the SSA from its function's entry to an end (a return, a raise, a tail
 % call): no path avoids a give-back of the variable its argument binds
-param_given(F, R) :-
-  parameter(F, 1, A), assign(V, A), gave0(R, _, _), argument(R, 1, V).
+param_given(F, R) :- parameter(F, 1, A), assign(V, A), closes(R, V).
 in_block(P, B) :- ssa_first(B, P).
 in_block(Q, B) :- in_block(P, B), ssa_next(P, Q).
 closing(F, Q) :- param_given(F, R), point_of(R, Q).
@@ -121,7 +134,7 @@ returns_taken(F) :- took0(_, H, F), return(F, V), pts(V, H).
 took(A, H, F) :- took0(A, H, F).
 took(I, H, F) :-
   target(I, G), returns_taken(G), call_ret(I, V), pts(V, H), in_function(I, F).
-gave(R, H, F) :- gave0(R, H, F).
+gave(R, H, F) :- gave1(R, H, F).
 gave(I, H, F) :-
   target(I, G), gives_arg_back(G), argument(I, 1, V), pts(V, H),
   in_function(I, F).

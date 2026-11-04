@@ -142,7 +142,8 @@ type cmd
 
 (* one command, done: its address found from dot, then the changes it
  * makes, all of them applied together at its end *)
-val exec : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. > -> cmd -> unit
+val exec :
+  < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; Cap.exit; .. > -> cmd -> unit
 
 (* the program: the files named, then the commands of its input *)
 val main : Cap.all_caps -> int

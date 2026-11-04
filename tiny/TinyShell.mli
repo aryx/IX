@@ -133,7 +133,8 @@
  * parser and [run] at work, without the command line around them *)
 val source :
   < Cap.fork; Cap.exec; Cap.wait; Cap.chdir; Cap.open_in; Cap.open_out;
-    Cap.stdin; Cap.stderr > ->
+    Cap.stdin; Cap.stderr; Cap.stdout; Cap.exit; Cap.pipe; Cap.signal; Cap.env;
+    Cap.readdir > ->
   string -> unit
 
 (* the program: its arguments (-h: the language by example) to its exit

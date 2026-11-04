@@ -26,7 +26,7 @@ let main (name : string) (f : Cap.all_caps -> int) : unit =
 let argv (caps : < Cap.argv; .. >) = Array.to_list (CapSys.argv caps)
 let environment (caps : < Cap.env; .. >) =
   Procs.split_env (CapUnix.environment caps ())
-let getpid () = Unix.getpid ()
+let getpid (caps : < Cap.env; .. >) = CapUnix.getpid caps ()
 
 (*****************************************************************************)
 (* The terminal *)
@@ -34,13 +34,14 @@ let getpid () = Unix.getpid ()
 
 let print (caps : < Cap.stdout; .. >) s = Console.print caps s
 let eprint (caps : < Cap.stderr; .. >) s = Console.eprint caps s
-let flush () = flush_all ()
+let flush (_ : < Cap.stdout; Cap.stderr; .. >) = flush_all ()
 let read_line (caps : < Cap.stdin; .. >) =
   try Some (input_line (Console.stdin caps)) with End_of_file -> None
 let isatty n = Unix.isatty (fd n)
 
 (* (a handler, unlike an ignored signal, is not inherited through exec) *)
-let ignore_interrupt () = Sys.set_signal Sys.sigint (Sys.Signal_handle (fun _ -> ()))
+let ignore_interrupt (_ : < Cap.signal; .. >) =
+  Sys.set_signal Sys.sigint (Sys.Signal_handle (fun _ -> ()))
 
 (*****************************************************************************)
 (* Files *)
@@ -63,8 +64,10 @@ let seek_end n = reason (fun () -> Unix.lseek (fd n) 0 Unix.SEEK_END)
 let read_file (caps : < Cap.open_in; .. >) file =
   reason (fun () -> FS.read caps (Fpath.v file))
 let read_all n = Procs.read_all (fd n)
-let readdir dir = try Array.to_list (Sys.readdir dir) with Sys_error _ -> []
-let is_directory file = try Sys.is_directory file with Sys_error _ -> false
+let readdir (_ : < Cap.readdir; .. >) dir =
+  try Array.to_list (Sys.readdir dir) with Sys_error _ -> []
+let is_directory (_ : < Cap.readdir; .. >) file =
+  try Sys.is_directory file with Sys_error _ -> false
 let chdir (caps : < Cap.chdir; .. >) dir = reason (fun () -> CapUnix.chdir caps dir)
 
 let read n max =
@@ -84,12 +87,13 @@ let write_file (caps : < Cap.open_out; .. >) file s =
   write fd s;
   close fd
 
-let stat file =
+let stat (_ : < Cap.open_in; .. >) file =
   reason (fun () ->
     let st = Unix.stat file in
     st.st_kind = Unix.S_DIR, st.st_size)
-let links file = reason (fun () -> (Unix.stat file).st_nlink)
-let mtime file =
+let links (_ : < Cap.open_in; .. >) file =
+  reason (fun () -> (Unix.stat file).st_nlink)
+let mtime (_ : < Cap.open_in; .. >) file =
   reason (fun () -> int_of_float (Unix.stat file).st_mtime - 946684800)
 let mkdir (caps : < Cap.open_out; .. >) dir =
   reason (fun () -> FS.mkdir caps dir 0o777)
@@ -98,22 +102,25 @@ let remove (caps : < Cap.open_out; .. >) file =
 let rename (_caps : < Cap.open_out; .. >) a b = reason (fun () -> Unix.rename a b)
 let link (_caps : < Cap.open_out; .. >) a b = reason (fun () -> Unix.link a b)
 
-let is_executable file =
+let is_executable (_ : < Cap.open_in; .. >) file =
   try (Unix.stat file).st_perm land 0o100 <> 0 with Unix.Unix_error _ -> false
 let set_executable (_caps : < Cap.open_out; .. >) file x =
   reason (fun () -> Unix.chmod file (if x then 0o755 else 0o644))
 
 (* (utimes with two zeros: now) *)
-let touch (caps : < Cap.open_out; .. >) file =
+let touch (caps : < Cap.open_in; Cap.open_out; .. >) file =
   reason (fun () ->
     if Sys.file_exists file then Unix.utimes file 0.0 0.0
     else Unix.close (FS.create_fd caps file 0o666))
 
-let getcwd (caps : < Cap.readdir; .. >) = FS.getcwd caps ()
+let getcwd (caps : < Cap.env; .. >) = CapSys.getcwd caps ()
 (* (946684800: 2000-01-01 in Unix's seconds) *)
-let time () = int_of_float (Unix.time ()) - 946684800
-let sleep ms = Unix.sleepf (float_of_int ms /. 1000.0)
-let millis () = int_of_float (Unix.gettimeofday () *. 1000.0)
+let time (caps : < Cap.clock; .. >) =
+  int_of_float (CapUnix.time caps ()) - 946684800
+let sleep (caps : < Cap.clock; .. >) ms =
+  CapUnix.sleepf caps (float_of_int ms /. 1000.0)
+let millis (caps : < Cap.clock; .. >) =
+  int_of_float (CapUnix.gettimeofday caps () *. 1000.0)
 
 (*****************************************************************************)
 (* Descriptors *)
@@ -123,7 +130,8 @@ let save n =
   try Some (number (Unix.dup ~cloexec:true (fd n)))
   with Unix.Unix_error _ -> None
 let dup2 a b = Unix.dup2 (fd a) (fd b)
-let pipe () = let r, w = Unix.pipe ~cloexec:true () in number r, number w
+let pipe (caps : < Cap.pipe; .. >) =
+  let r, w = CapUnix.pipe caps ~cloexec:true () in number r, number w
 
 (*****************************************************************************)
 (* Processes *)
@@ -160,7 +168,8 @@ let wait (caps : < Cap.wait; .. >) pid = status (Procs.waitpid caps pid)
 let wait_any (caps : < Cap.wait; .. >) =
   Option.map (fun (pid, st) -> pid, status st) (Procs.wait_any caps)
 
-let shell (caps : < Cap.fork; Cap.exec; Cap.env; .. >) vars script =
+let shell (caps : < Cap.fork; Cap.exec; Cap.env; Cap.stdout; Cap.stderr; .. >) vars
+    script =
   let env =
     List.map (fun (k, v) -> k ^ "=" ^ String.concat " " v) vars
     @ Array.to_list (CapUnix.environment caps ())
@@ -175,4 +184,4 @@ let shell (caps : < Cap.fork; Cap.exec; Cap.env; .. >) vars script =
     Unix._exit 127
   | pid -> pid
 
-let exit n = Unix._exit n
+let exit (_ : < Cap.exit; .. >) n = Unix._exit n

@@ -53,7 +53,7 @@ let main name f =
          1)
 let argv caps = List.init (u_argc ()) u_arg
 let environment caps = [ "PATH", "/bin" ]
-let getpid () = u_getpid ()
+let getpid _caps = u_getpid ()
 
 (*****************************************************************************)
 (* The terminal *)
@@ -61,7 +61,7 @@ let getpid () = u_getpid ()
 
 let print caps s = print_string s
 let eprint caps s = ignore (u_write 2 s)
-let flush () = u_flush ()
+let flush _caps = u_flush ()
 
 (* what was read of the input and is not yet a line given *)
 let pending = ref ""
@@ -79,7 +79,7 @@ let rec read_line caps =
       else (let line = !pending in pending := ""; Some line)
 
 let isatty n = true
-let ignore_interrupt () = ()
+let ignore_interrupt _caps = ()
 
 (*****************************************************************************)
 (* Files *)
@@ -153,7 +153,7 @@ let entries dir =
        word (k * 80 + 76)))
   end
 
-let readdir dir = List.map fst (entries dir)
+let readdir _caps dir = List.map fst (entries dir)
 
 (* a path's names from the root, as the kernel finds them *)
 let path_names file =
@@ -175,11 +175,11 @@ let entry file =
       String.get_uint16_le s i + (String.get_uint16_le s (i + 2) lsl 16) in
     Char.code s.[64] = 1, word 72, word 68, word 76
 
-let stat file = let is_dir, size, _, _ = entry file in is_dir, size
-let links file = let _, _, n, _ = entry file in n
-let mtime file = let _, _, _, d = entry file in d
+let stat _caps file = let is_dir, size, _, _ = entry file in is_dir, size
+let links _caps file = let _, _, n, _ = entry file in n
+let mtime _caps file = let _, _, _, d = entry file in d
 
-let is_directory file = try fst (stat file) with Failure _ -> false
+let is_directory caps file = try fst (stat caps file) with Failure _ -> false
 
 let read fd max = u_read fd max
 let write fd s = if u_write fd s < 0 then failwith "cannot write"
@@ -193,7 +193,7 @@ let link caps a b = if u_link a b < 0 then failwith "cannot"
 
 let rename caps a b =
   if path_names a <> path_names b then begin
-    if fst (stat a) then failwith "a directory, which tiny-kernel cannot move";
+    if fst (stat caps a) then failwith "a directory, which tiny-kernel cannot move";
     (* (a piece at a time, as cp: a big file does not fit in the heap) *)
     let src = open_in caps a in
     let fd = open_out caps b in
@@ -207,21 +207,21 @@ let rename caps a b =
     remove caps a
   end
 
-let is_executable file = false
+let is_executable _caps file = false
 let set_executable caps file x = ()
 
 let touch caps file =
-  if not (try ignore (stat file); true with Failure _ -> false) then
+  if not (try ignore (stat caps file); true with Failure _ -> false) then
     close (open_out caps file)
 
 let getcwd caps = u_getcwd ()
 
-let time () = u_time ()
+let time _caps = u_time ()
 
 (* a tick is 2.5 ms; ready on no descriptor until a tick is a sleep *)
 (* (the ticks, 400 a second) *)
-let millis () = u_ticks () * 5 / 2
-let sleep ms =
+let millis _caps = u_ticks () * 5 / 2
+let sleep _caps ms =
   if ms > 0 then
     ignore (u_ready (Array.make 0 0) 0 (u_ticks () + ((ms * 2) + 4) / 5))
 
@@ -245,7 +245,7 @@ let dup2 a b =
   end
 
 (* u_pipe's two ends in a number: where to read, and 256 times where to write *)
-let pipe () =
+let pipe _caps =
   let p = u_pipe () in
   if p < 0 then failwith "no pipe" else keep (p mod 256), keep (p / 256)
 
@@ -315,4 +315,4 @@ let shell caps vars script =
   if pid < 0 then ignore (u_unlink file);
   pid
 
-let exit n = exit n
+let exit _caps n = exit n

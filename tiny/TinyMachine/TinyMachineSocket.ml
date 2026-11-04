@@ -58,15 +58,16 @@ let relay inp out fd =
     go () in
   try go () with Exit | Unix.Unix_error _ -> ()
 
-let say s = ignore (Unix.write_substring Unix.stdout s 0 (String.length s))
+let say (caps : < Cap.stdout; .. >) s =
+  ignore (Unix.write_substring (Console.stdout_fd caps) s 0 (String.length s))
 
 (* SIGALRM's, which ends this, in s seconds (0.: none) *)
-let timer s =
+let timer (_ : < Cap.signal; .. >) s =
   ignore
     (Unix.setitimer Unix.ITIMER_REAL { it_interval = 0.; it_value = s })
 
 (* a named pipe of its own *)
-let fifo () =
+let fifo (_ : < Cap.open_in; Cap.open_out; .. >) =
   let f = Filename.temp_file "tiny-machine-socket" "" in
   Sys.remove f;
   Unix.mkfifo f 0o600;
@@ -79,42 +80,46 @@ let fifo () =
  * connection alone, its socket then closed, the next one's helper
  * started when this one's was seen: a connection between the two was
  * refused (make test on GitHub's runner, linux.py's GET /bin/ping) *)
-let listen (_caps : < Cap.network; .. >) port =
+let listen
+    (caps : < Cap.network; Cap.stdin; Cap.stdout; Cap.fork; Cap.signal;
+             Cap.open_in; Cap.open_out; .. >) port =
   let l = Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
   match
     Unix.setsockopt l Unix.SO_REUSEADDR true;
     Unix.bind l (Unix.ADDR_INET (Unix.inet_addr_loopback, port));
     Unix.listen l 16
   with
-  | exception Unix.Unix_error _ -> Unix.close l; say "-\n"
+  | exception Unix.Unix_error _ -> Unix.close l; say caps "-\n"
   | () ->
-      say "+\n";
+      say caps "+\n";
       Sys.set_signal Sys.sigchld Sys.Signal_ignore;
       let rec wait () =
-        let ready, _, _ = Unix.select [ Unix.stdin; l ] [] [] (-1.) in
-        if not (List.mem Unix.stdin ready) then begin
+        let ready, _, _ = Unix.select [ Console.stdin_fd caps; l ] [] [] (-1.) in
+        if not (List.mem (Console.stdin_fd caps) ready) then begin
           (match Unix.accept l with
            | fd, _ ->
-               let inp = fifo () and out = fifo () in
-               (match Unix.fork () with
+               let inp = fifo caps and out = fifo caps in
+               (match CapUnix.fork caps () with
                 | 0 ->
                     Unix.close l;
-                    Unix.close Unix.stdout;
-                    timer 10.;
+                    Unix.close (Console.stdout_fd caps);
+                    timer caps 10.;
                     let i = Unix.openfile inp [ Unix.O_RDONLY ] 0 in
                     let o = Unix.openfile out [ Unix.O_WRONLY ] 0 in
-                    timer 0.;
+                    timer caps 0.;
                     Sys.remove inp;
                     Sys.remove out;
                     relay i o fd;
                     Unix._exit 0
-                | _ -> Unix.close fd; say (inp ^ " " ^ out ^ "\n"))
+                | _ -> Unix.close fd; say caps (inp ^ " " ^ out ^ "\n"))
            | exception Unix.Unix_error _ -> ());
           wait ()
         end in
       wait ()
 
-let main (caps : < Cap.network; Cap.argv; Cap.stdout; .. >) =
+let main
+    (caps : < Cap.network; Cap.argv; Cap.stdin; Cap.stdout; Cap.stderr; Cap.fork;
+             Cap.signal; Cap.open_in; Cap.open_out; .. >) =
   Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
   (* (a terminal's ^C is for the kernel in the machine, which the one that
    * ran this gives it) *)
@@ -122,8 +127,8 @@ let main (caps : < Cap.network; Cap.argv; Cap.stdout; .. >) =
   match List.tl (Array.to_list (CapSys.argv caps)) with
   | [ "dial"; host; port ] when int_of_string_opt port <> None ->
       let fd = dial caps host (int_of_string port) in
-      say (if fd = None then "-" else "+");
-      Option.iter (relay Unix.stdin Unix.stdout) fd;
+      say caps (if fd = None then "-" else "+");
+      Option.iter (relay (Console.stdin_fd caps) (Console.stdout_fd caps)) fd;
       0
   | [ "listen"; port ] when int_of_string_opt port <> None ->
       listen caps (int_of_string port);
@@ -133,6 +138,6 @@ let main (caps : < Cap.network; Cap.argv; Cap.stdout; .. >) =
         (fun a -> Console.print caps (Unix.string_of_inet_addr a ^ "\n"))
         (address caps host);
       0
-  | _ -> prerr_endline usage; 2
+  | _ -> Console.eprint caps (usage ^ "\n"); 2
 
 let () = Cap.main (fun caps -> CapStdlib.exit caps (main caps))

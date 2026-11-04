@@ -86,7 +86,7 @@ is the kernel's (tiny-kernel: the program running killed); ^\ quits.
 (* The console, a terminal *)
 (*****************************************************************************)
 
-let tty = Unix.isatty Unix.stdin
+let tty (caps : < Cap.stdin; .. >) = Unix.isatty (Console.stdin_fd caps)
 
 (* a ^C of the terminal's, not yet given to the machine. (old: the
  * signal's handler typed it itself; when it came while console_poll
@@ -94,10 +94,11 @@ let tty = Unix.isatty Unix.stdin
  * added to, and the ^C was lost: a key typed right after it did that) *)
 let interrupted = ref false
 
-let console_open (caps : < Cap.stdin; .. >) (k : TinyMachineDevices.console) =
+let console_open (caps : < Cap.stdin; Cap.signal; .. >)
+    (k : TinyMachineDevices.console) =
   if not k.opened then begin
     k.opened <- true;
-    if not (tty) then (
+    if not (tty caps) then (
       k.queue <- Procs.read_all (Console.stdin_fd caps);
       k.eof <- true)
     else
@@ -106,16 +107,16 @@ let console_open (caps : < Cap.stdin; .. >) (k : TinyMachineDevices.console) =
   end
 
 (* a terminal's bytes, when some are there *)
-let console_poll (k : TinyMachineDevices.console) =
+let console_poll (caps : < Cap.stdin; .. >) (k : TinyMachineDevices.console) =
   if !interrupted then (
     interrupted := false;
     TinyMachineDevices.console_type k "\003");
-  if k.opened && not k.eof && k.next >= String.length k.queue && tty then
-    match Unix.select [ Unix.stdin ] [] [] 0.0 with
+  if k.opened && not k.eof && k.next >= String.length k.queue && tty caps then
+    match Unix.select [ Console.stdin_fd caps ] [] [] 0.0 with
     | [], _, _ -> ()
     | _ ->
         let b = Bytes.create 256 in
-        let n = Unix.read Unix.stdin b 0 256 in
+        let n = Unix.read (Console.stdin_fd caps) b 0 256 in
         if n = 0 then k.eof <- true
         else (k.queue <- Bytes.sub_string b 0 n; k.next <- 0)
     | exception Unix.Unix_error (Unix.EINTR, _, _) -> ()   (* a ^C meanwhile *)
@@ -177,11 +178,13 @@ type window = {
   mutable frame : float; mutable partial : string;
   mutable cursor : int; heard : Buffer.t;
   mutable due : float;
+  now : unit -> float; sleep : float -> unit;  (* the clock, window_open's *)
 }
 
-let window_open (caps : < Cap.fork; Cap.exec; .. >) =
-  let screen_r, to_w = Unix.pipe ~cloexec:true ()
-  and from_w, events_w = Unix.pipe ~cloexec:true () in
+let window_open
+    (caps : < Cap.fork; Cap.exec; Cap.pipe; Cap.signal; Cap.clock; .. >) =
+  let screen_r, to_w = CapUnix.pipe caps ~cloexec:true ()
+  and from_w, events_w = CapUnix.pipe caps ~cloexec:true () in
   (* beside this program, by its installed name or by dune's *)
   let name =
     if Filename.check_suffix Sys.executable_name ".exe" then
@@ -194,18 +197,19 @@ let window_open (caps : < Cap.fork; Cap.exec; .. >) =
   (* the window closed while a screen is written: its end is read next *)
   Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
   { to_w; from_w; shown = ""; frame = 0.; partial = ""; cursor = 0;
-    heard = Buffer.create 4096; due = Unix.gettimeofday () }
+    heard = Buffer.create 4096; due = CapUnix.gettimeofday caps ();
+    now = CapUnix.gettimeofday caps; sleep = CapUnix.sleepf caps }
 
 (* every [polled] instructions *)
 let polled = 0x10000
 let window_poll w (m : TinyMachineCPU.machine)
     (ms : TinyMachineDevices.mouse) k =
-  let now = Unix.gettimeofday () in
+  let now = w.now () in
   w.due <-
     w.due +. (float_of_int polled /. float_of_int !TinyMachineDevices.rate);
-  if w.due > now then Unix.sleepf (w.due -. now)
+  if w.due > now then w.sleep (w.due -. now)
   else if now -. w.due > 0.1 then w.due <- now;
-  let now = Unix.gettimeofday () in
+  let now = w.now () in
   if now -. w.frame > 1. /. 30. then begin
     w.frame <- now;
     let pixels =
@@ -266,14 +270,15 @@ type options = {
  * them. The ones that ended are waited for when the next one starts. *)
 let helpers = ref []
 
-let helper (caps : < Cap.fork; Cap.exec; .. >) args =
+let helper (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.pipe; Cap.signal; .. >)
+    args =
   helpers := List.filter (fun pid ->
-      match Unix.waitpid [ Unix.WNOHANG ] pid with
+      match CapUnix.waitpid caps [ Unix.WNOHANG ] pid with
       | 0, _ -> true
       | _ -> false
       | exception Unix.Unix_error _ -> false) !helpers;
-  let in_r, to_ = Unix.pipe ~cloexec:true ()
-  and from, out_w = Unix.pipe ~cloexec:true () in
+  let in_r, to_ = CapUnix.pipe caps ~cloexec:true ()
+  and from, out_w = CapUnix.pipe caps ~cloexec:true () in
   let name =
     if Filename.check_suffix Sys.executable_name ".exe" then
       "TinyMachine/TinyMachineSocket.exe"
@@ -326,9 +331,9 @@ let helper_said pipes wait =
  * HTTP), whose output is the answer, HTTP's response. The machine waits
  * meanwhile, which changes nothing of its time. None when the helper could not fetch it (no network, no
  * such host): then its output is a line that says why. *)
-let fetch (caps : < Cap.fork; Cap.exec; .. >) args =
-  let in_r, in_w = Unix.pipe ~cloexec:true ()
-  and from, out_w = Unix.pipe ~cloexec:true () in
+let fetch (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.pipe; .. >) args =
+  let in_r, in_w = CapUnix.pipe caps ~cloexec:true ()
+  and from, out_w = CapUnix.pipe caps ~cloexec:true () in
   let name =
     if Filename.check_suffix Sys.executable_name ".exe" then
       "TinyMachine/TinyMachineFetch.exe"
@@ -340,7 +345,7 @@ let fetch (caps : < Cap.fork; Cap.exec; .. >) args =
   Unix.close in_r; Unix.close in_w; Unix.close out_w;
   let out = Procs.read_all from in
   Unix.close from;
-  match Unix.waitpid [] pid with
+  match CapUnix.waitpid caps [] pid with
   | _, Unix.WEXITED 0 -> Ok out
   | _ -> Error out
 
@@ -667,7 +672,7 @@ let run caps o image =
     while true do
       (* the hosts' turns, by the time this instruction will be *)
       let t = c.(TinyMachineDevices.time) + 1 in
-      if stdin_keys && t land 1023 = 0 then console_poll mc.cons;
+      if stdin_keys && t land 1023 = 0 then console_poll caps mc.cons;
       if t land (polled - 1) = 0 && listening then
         TinyMachineDevices.speaker_hear mc;
       if t land (polled - 1) = 0 then
@@ -688,7 +693,8 @@ let run caps o image =
   with TinyMachineDevices.Halt n -> halted n
 
 let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in;
-                   Cap.open_out; Cap.fork; Cap.exec; .. >) =
+                   Cap.open_out; Cap.fork; Cap.exec; Cap.wait; Cap.pipe;
+                   Cap.signal; Cap.clock; .. >) =
   let args = List.tl (Array.to_list (CapSys.argv caps)) in
   TinyMachineCPU.memsize := TinyMachineDevices.memsize;
   let image files =

@@ -44,7 +44,7 @@ val argv : < Cap.argv; .. > -> string list
 
 (* the variables the program was started with, each with its value *)
 val environment : < Cap.env; .. > -> (string * string) list
-val getpid : unit -> int
+val getpid : < Cap.env; .. > -> int
 
 (*****************************************************************************)
 (* The terminal *)
@@ -53,7 +53,7 @@ val getpid : unit -> int
 (* on the standard output, kept until flush; on the error's, at once *)
 val print : < Cap.stdout; .. > -> string -> unit
 val eprint : < Cap.stderr; .. > -> string -> unit
-val flush : unit -> unit
+val flush : < Cap.stdout; Cap.stderr; .. > -> unit
 
 (* a line of the standard input without its end; None at the input's end *)
 val read_line : < Cap.stdin; .. > -> string option
@@ -63,7 +63,7 @@ val isatty : int -> bool
 
 (* an interrupt typed at the terminal is for the program that runs,
  * not for this one *)
-val ignore_interrupt : unit -> unit
+val ignore_interrupt : < Cap.signal; .. > -> unit
 
 (*****************************************************************************)
 (* Files *)
@@ -94,8 +94,8 @@ val write_file : < Cap.open_out; .. > -> string -> string -> unit
 val read_all : int -> string
 
 (* a directory's names, in no order; none when it cannot be read *)
-val readdir : string -> string list
-val is_directory : string -> bool
+val readdir : < Cap.readdir; .. > -> string -> string list
+val is_directory : < Cap.readdir; .. > -> string -> bool
 
 (* Failure with the reason *)
 val chdir : < Cap.chdir; .. > -> string -> unit
@@ -110,16 +110,16 @@ val write : int -> string -> unit
 
 (* whether a file is a directory, and its size in bytes; Failure with
  * the reason when it is not there *)
-val stat : string -> bool * int
+val stat : < Cap.open_in; .. > -> string -> bool * int
 
 (* how many names a file has (its hard links); Failure with the reason
  * when it is not there *)
-val links : string -> int
+val links : < Cap.open_in; .. > -> string -> int
 
 (* the date of a file's last write, seconds since 2000-01-01 (the image's
  * files on tiny-kernel: 0); Failure with the reason when it is not
  * there *)
-val mtime : string -> int
+val mtime : < Cap.open_in; .. > -> string -> int
 
 (* a new directory; a file, or a directory that is empty, removed.
  * Failure with the reason *)
@@ -137,28 +137,28 @@ val rename : < Cap.open_out; .. > -> string -> string -> unit
 (* whether a file is a program to run, its x bit for its owner; [set_executable
  * caps file x]: its bit set, or cleared (tiny-kernel has no modes: no
  * file is one there, and the call does nothing) *)
-val is_executable : string -> bool
+val is_executable : < Cap.open_in; .. > -> string -> bool
 val set_executable : < Cap.open_out; .. > -> string -> bool -> unit
 
 (* a file that is there written now, as far as its time says; one that
  * is not there made, empty. Failure with the reason *)
-val touch : < Cap.open_out; .. > -> string -> unit
+val touch : < Cap.open_in; Cap.open_out; .. > -> string -> unit
 
 (* the directory the process is in *)
-val getcwd : < Cap.readdir; .. > -> string
+val getcwd : < Cap.env; .. > -> string
 
 (* the date, in seconds since 2000-01-01 UTC, on both sides: a 31-bit
  * integer of tiny-ml's holds them until 2034, where 1970's would not
  * fit (old: Unix's seconds on the host, 0 on tiny-kernel, which had no
  * clock of the day) *)
-val time : unit -> int
+val time : < Cap.clock; .. > -> int
 
 (* nothing done for so many milliseconds *)
-val sleep : int -> unit
+val sleep : < Cap.clock; .. > -> int -> unit
 
 (* a clock in milliseconds, from some start (the boot on tiny-kernel, 2.5
  * at a time, its ticks): for a time taken, the difference of two *)
-val millis : unit -> int
+val millis : < Cap.clock; .. > -> int
 
 (*****************************************************************************)
 (* Descriptors *)
@@ -172,7 +172,7 @@ val save : int -> int option
 val dup2 : int -> int -> unit
 
 (* a pipe: where to read, where to write; not given to a program run *)
-val pipe : unit -> int * int
+val pipe : < Cap.pipe; .. > -> int * int
 
 (*****************************************************************************)
 (* Processes *)
@@ -205,8 +205,8 @@ val wait_any : < Cap.wait; .. > -> (int * string) option
  * rc reads whole and removes first; no environment: vars are rc's
  * assignments before it) *)
 val shell :
-  < Cap.fork; Cap.exec; Cap.env; Cap.open_out; .. > ->
+  < Cap.fork; Cap.exec; Cap.env; Cap.open_out; Cap.stdout; Cap.stderr; .. > ->
   (string * string list) list -> string -> int
 
 (* the end of this process, at once: nothing flushed *)
-val exit : int -> 'a
+val exit : < Cap.exit; .. > -> int -> 'a

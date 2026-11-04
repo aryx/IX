@@ -325,11 +325,11 @@ type options
  * the window), then the machine's instruction; to the exit status *)
 val run :
   < Cap.stdin; Cap.stdout; Cap.stderr; Cap.open_in; Cap.open_out; Cap.fork;
-    Cap.exec; .. > ->
+    Cap.exec; Cap.wait; Cap.pipe; Cap.signal; Cap.clock; .. > ->
   options -> string -> int
 
 (* the program: its arguments (-h: how) to its exit status *)
 val main :
   < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; Cap.open_out;
-    Cap.fork; Cap.exec; .. > ->
+    Cap.fork; Cap.exec; Cap.wait; Cap.pipe; Cap.signal; Cap.clock; .. > ->
   int

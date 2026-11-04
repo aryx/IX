@@ -264,11 +264,11 @@ let order (root : node) : node list =
 (* The outside world *)
 (*****************************************************************************)
 
-let exists file =
-  try ignore (TinyLibSystem.stat file); true with Failure _ -> false
+let exists caps file =
+  try ignore (TinyLibSystem.stat caps file); true with Failure _ -> false
 
 let read_file caps file =
-  if exists file then Some (TinyLibSystem.read_file caps file) else None
+  if exists caps file then Some (TinyLibSystem.read_file caps file) else None
 
 (* A file's digest, the SHA-1 of its bytes, read once in a run
  * (file_digests), and not at all when its size and date are the ones
@@ -285,18 +285,19 @@ let read_file caps file =
 let file_digests : (string, string option) Hashtbl.t = Hashtbl.create 101
 let known : (string, int * int * string) Hashtbl.t = Hashtbl.create 101
 
-let digest_file (caps : < Cap.open_in; .. >) (file : string) : string option =
+let digest_file (caps : < Cap.open_in; Cap.readdir; .. >) (file : string) :
+    string option =
   match Hashtbl.find_opt file_digests file with
   | Some d -> d
   | None ->
       let d =
-        if exists file && not (TinyLibSystem.is_directory file) then begin
-          let _, size = TinyLibSystem.stat file
-          and date = TinyLibSystem.mtime file in
+        if exists caps file && not (TinyLibSystem.is_directory caps file) then begin
+          let _, size = TinyLibSystem.stat caps file
+          and date = TinyLibSystem.mtime caps file in
           match Hashtbl.find_opt known file with
           | Some (s, t, d) when s = size && t = date -> Some d
           | _ ->
-              let now = TinyLibSystem.time () in
+              let now = TinyLibSystem.time caps in
               let fd = TinyLibSystem.open_in caps file in
               let d =
                 Sha1.to_hex (Sha1.reads (fun () -> TinyLibSystem.read fd 4096))
@@ -385,10 +386,10 @@ let build
       else
         match start caps (own @ env) r.text with
         | pid when pid > 0 ->
-            Hashtbl.replace running pid (n, TinyLibSystem.millis ()); true
+            Hashtbl.replace running pid (n, TinyLibSystem.millis caps); true
         | _ when Hashtbl.length running > 0 -> false
         | _ ->
-            TinyLibSystem.flush ();
+            TinyLibSystem.flush caps;
             TinyLibSystem.eprint caps
               (Printf.sprintf "tiny-build: %s: no process to run it\n" n.name);
             failed := true;
@@ -404,7 +405,7 @@ let build
         Hashtbl.remove running pid;
         (* (said at once: a build that fails later keeps them) *)
         if timed then begin
-          let ms = TinyLibSystem.millis () - began in
+          let ms = TinyLibSystem.millis caps - began in
           times := (n.name, ms) :: !times;
           TinyLibSystem.print caps (Printf.sprintf "%8d ms  %s\n" ms n.name)
         end;
@@ -415,7 +416,7 @@ let build
           finish n;
           save caps stamps)
         else (
-          TinyLibSystem.flush ();
+          TinyLibSystem.flush caps;
           TinyLibSystem.eprint caps
             (Printf.sprintf "tiny-build: %s failed\n" n.name);
           failed := true)
@@ -487,7 +488,7 @@ let report caps total =
 let run (caps : Cap.all_caps) : int =
   let file = ref "Buildfile" and jobs = ref 1 and dry = ref false
   and dot = ref false and timed = ref false in
-  let began = TinyLibSystem.millis () in
+  let began = TinyLibSystem.millis caps in
   let targets = ref [] in
   (* old: Arg.parse_argv, for these four options *)
   let bad o =
@@ -533,7 +534,7 @@ let run (caps : Cap.all_caps) : int =
         | _ -> ())) (read_file caps stampfile);
     let ok =
       List.for_all (fun t ->
-        let root = graph rules exists t in
+        let root = graph rules (exists caps) t in
         if !dot then begin
           TinyLibSystem.print caps "digraph G {\n";
           order root |> List.iter (fun n ->
@@ -546,10 +547,10 @@ let run (caps : Cap.all_caps) : int =
         else build caps vars stamps (max 1 !jobs) !dry !timed root) targets
     in
     if not !dry then save caps stamps;
-    if !timed then report caps (TinyLibSystem.millis () - began);
+    if !timed then report caps (TinyLibSystem.millis caps - began);
     if ok then 0 else 1
   with Error msg ->
-    TinyLibSystem.flush ();
+    TinyLibSystem.flush caps;
     TinyLibSystem.eprint caps (Printf.sprintf "tiny-build: %s\n" msg);
     1
 

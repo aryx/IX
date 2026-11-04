@@ -162,5 +162,5 @@
 (* a command and its arguments, done in the repository found from the
  * current directory: init, commit, log, diff, switch, merge, undo... *)
 val run :
-  < Cap.env; Cap.open_in; Cap.open_out; Cap.stdout; Cap.readdir > ->
+  < Cap.env; Cap.open_in; Cap.open_out; Cap.stdout; Cap.readdir; Cap.clock > ->
   string list -> unit

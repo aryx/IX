@@ -69,7 +69,8 @@ exception Exits of string
 
 type caps =
   < Cap.fork; Cap.exec; Cap.wait; Cap.chdir; Cap.open_in; Cap.open_out;
-    Cap.stdin; Cap.stderr >
+    Cap.stdin; Cap.stderr; Cap.stdout; Cap.exit; Cap.pipe; Cap.signal; Cap.env;
+    Cap.readdir >
 
 (*****************************************************************************)
 (* Lexing *)
@@ -371,20 +372,20 @@ let matches (pat : string) (s : string) : bool =
  * after one, the g of */g, names a file only where it is there.
  * (old: every directory's g kept, there or not: */g was d/g and
  * examples/g on tiny-kernel, where 9base's rc says d/g) *)
-let glob (w : string) : string list =
+let glob (caps : < Cap.open_in; Cap.readdir; .. >) (w : string) : string list =
   let rec expand dir = function
     | [] ->
-        if (try ignore (TinyLibSystem.stat dir); true with Failure _ -> false)
+        if (try ignore (TinyLibSystem.stat caps dir); true with Failure _ -> false)
         then [ dir ]
         else []
     | comp :: rest when not (has_meta comp 0) ->
         expand (dir ^ unescape comp ^ if rest = [] then "" else "/") rest
     | comp :: rest ->
-        List.sort compare (TinyLibSystem.readdir (if dir = "" then "." else dir))
+        List.sort compare (TinyLibSystem.readdir caps (if dir = "" then "." else dir))
         |> List.filter (matches comp)
         |> List.concat_map (fun e ->
             if rest = [] then [ dir ^ e ]
-            else if TinyLibSystem.is_directory (dir ^ e) then
+            else if TinyLibSystem.is_directory caps (dir ^ e) then
               expand (dir ^ e ^ "/") rest
             else [])
   in
@@ -453,7 +454,7 @@ let die (caps : < Cap.stderr; .. >) m =
 
 (* f in a child, which exits with the status it leaves *)
 let fork (caps : < Cap.fork; Cap.stderr; .. >) (f : unit -> unit) : int =
-  TinyLibSystem.flush ();
+  TinyLibSystem.flush caps;
   match TinyLibSystem.fork caps with
   (* tiny-kernel's fork fails when its eight processes are taken (the
    * host's raises); "try again" is rc's word for it *)
@@ -461,8 +462,8 @@ let fork (caps : < Cap.fork; Cap.stderr; .. >) (f : unit -> unit) : int =
   | 0 ->
       let st =
         try f (); status () with Exits s -> s | Error m -> die caps m in
-      TinyLibSystem.flush ();
-      TinyLibSystem.exit (code st)
+      TinyLibSystem.flush caps;
+      TinyLibSystem.exit caps (code st)
   | pid -> pid
 
 (* lists, rc's way: joined by \001 *)
@@ -483,7 +484,7 @@ let exec (caps : < Cap.exec; Cap.stderr; .. >) (argv : string list) =
     List.fold_left (fun _ f -> TinyLibSystem.exec caps f argv (environment ()))
       "not found" files in
   TinyLibSystem.eprint caps (name ^ ": " ^ why ^ "\n");
-  TinyLibSystem.exit 1
+  TinyLibSystem.exit caps 1
 
 (* [with_fds changes f]: each fd changed (the file, or another fd), f
  * run, then each fd put back *)
@@ -492,10 +493,10 @@ type target = To_file of string * mode | To_fd of int
 
 let with_fds (caps : < Cap.open_in; Cap.open_out; .. >)
     (changes : (int * target) list) f =
-  TinyLibSystem.flush ();
+  TinyLibSystem.flush caps;
   let saved = List.map (fun (n, _) -> n, TinyLibSystem.save n) changes in
   let restore () =
-    TinyLibSystem.flush ();
+    TinyLibSystem.flush caps;
     List.rev saved |> List.iter (fun (n, s) ->
       match s with
       | Some s -> TinyLibSystem.dup2 s n; TinyLibSystem.close s
@@ -543,7 +544,10 @@ let join (a : string list) (b : string list) : string list =
 (* e: -e applies here, not in a condition *)
 (* old: a global count of the conditions being run, still raised in a
  * function called from one: its failures were ignored *)
-let rec run (caps : caps) (e : bool) (c : cmd) : unit =
+let rec run
+    (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.chdir; Cap.open_in; Cap.open_out;
+             Cap.stderr; Cap.stdout; Cap.exit; Cap.pipe; Cap.readdir; .. >)
+    (e : bool) (c : cmd) : unit =
   let run = run caps e and cond = run caps false and words = words caps in
   match c with
   | Empty -> ()
@@ -582,7 +586,7 @@ let rec run (caps : caps) (e : bool) (c : cmd) : unit =
       let rec go = function
         | [ last ] -> run last
         | c :: rest ->
-            let r, w = TinyLibSystem.pipe () in
+            let r, w = TinyLibSystem.pipe caps in
             pids := into caps w r (fun () -> child caps e c) :: !pids;
             TinyLibSystem.close w;
             TinyLibSystem.dup2 r 0;
@@ -593,7 +597,7 @@ let rec run (caps : caps) (e : bool) (c : cmd) : unit =
       (* a stage that cannot be forked: the ones that were are waited for *)
       (try
          protect (fun () -> go (stages c [])) (fun () ->
-           TinyLibSystem.flush ();
+           TinyLibSystem.flush caps;
            TinyLibSystem.dup2 saved 0;
            TinyLibSystem.close saved)
        with ex ->
@@ -683,7 +687,7 @@ and word caps (w : word) : string list =
     | Var x -> List.map escape (get x)
     | Count x -> [ string_of_int (List.length (get x)) ]
     | Back c ->
-        let r, w = TinyLibSystem.pipe () in
+        let r, w = TinyLibSystem.pipe caps in
         let pid = into caps w r (fun () -> child caps true c) in
         TinyLibSystem.close w;
         let out = TinyLibSystem.read_all r in
@@ -701,7 +705,7 @@ and word caps (w : word) : string list =
       List.fold_left (fun acc p -> join acc (piece p)) (piece first) rest
 
 and words caps (ws : word list) : string list =
-  List.concat_map (fun w -> List.concat_map glob (word caps w)) ws
+  List.concat_map (fun w -> List.concat_map (glob caps) (word caps w)) ws
 
 (*****************************************************************************)
 (* Main *)
@@ -721,11 +725,14 @@ let source caps (text : string) =
  * line that leaves the parser at the end of the text, in a brace or a
  * quote, is continued, prompted by a tab; an interrupt is only for the
  * program running *)
-let interactive (caps : caps) =
-  TinyLibSystem.ignore_interrupt ();
+let interactive
+    (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.chdir; Cap.open_in; Cap.open_out;
+             Cap.stdin; Cap.stderr; Cap.stdout; Cap.exit; Cap.pipe; Cap.signal;
+             Cap.readdir; .. >) =
+  TinyLibSystem.ignore_interrupt caps;
   let buf = Buffer.create 80 in
   let rec loop () =
-    TinyLibSystem.flush ();
+    TinyLibSystem.flush caps;
     TinyLibSystem.eprint caps (if Buffer.length buf = 0 then "% " else "\t");
     match TinyLibSystem.read_line caps with
     | None -> ()
@@ -757,7 +764,7 @@ let start (caps : Cap.all_caps) : int =
   (* the environment, with rc's lists split back *)
   TinyLibSystem.environment caps
   |> List.iter (fun (k, v) -> set k (String.split_on_char '\001' v));
-  set "pid" [ string_of_int (TinyLibSystem.getpid ()) ];
+  set "pid" [ string_of_int (TinyLibSystem.getpid caps) ];
   let iflag = ref false in
   let rec flags = function
     | a :: rest
@@ -779,7 +786,7 @@ let start (caps : Cap.all_caps) : int =
       status ()
     with Exits s -> s | Error m -> die caps m | Failure m -> die caps m
   in
-  TinyLibSystem.flush ();
+  TinyLibSystem.flush caps;
   code st
 
 let main (caps : Cap.all_caps) : int =

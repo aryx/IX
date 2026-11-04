@@ -506,10 +506,10 @@ let rec address (ad : addr) (a : int * int) : int * int =
 (*****************************************************************************)
 
 let out = Buffer.create 4096
-let flush (caps : < Cap.stdout; .. >) =
+let flush (caps : < Cap.stdout; Cap.stderr; .. >) =
   TinyLibSystem.print caps (Buffer.contents out);
   Buffer.clear out;
-  TinyLibSystem.flush ()
+  TinyLibSystem.flush caps
 
 let print_posn (q0, q1) chars =
   let t = !text in
@@ -695,7 +695,7 @@ let rec exec
       if !modified && not !warned then
         (warned := true; raise (Error "changed files"));
       flush caps;
-      TinyLibSystem.exit 0
+      TinyLibSystem.exit caps 0
   | Undo n -> undo n
   | Newline -> (
       (* the next line, or the line dot is in if it is not one *)
@@ -712,7 +712,7 @@ let main (caps : Cap.all_caps) : int =
   next_line := (fun () -> TinyLibSystem.read_line caps);
   match TinyLibSystem.argv caps with
   | [ _; ("-h" | "--help") ] ->
-      TinyLibSystem.print caps help; TinyLibSystem.flush (); 0
+      TinyLibSystem.print caps help; TinyLibSystem.flush caps; 0
   | argv ->
       (match argv with
        | [ _; name ] ->

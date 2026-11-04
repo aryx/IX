@@ -218,12 +218,24 @@ capabilities were held, 149 on the 35 read on 11-02, 40 on the 23 before them).
 | | functions | |
 |---|---:|---|
 | no capability | 46 | `Eval.print`, version_control's commands, `Tty_unix`'s reads of stdin; test programs' prints |
-| holds some, not the one | 31 | `Sys.set_signal` in mini-rc's, mini-ed's, mini-mk's, mini-5i's mains; `Host.dir_of`'s `Unix.opendir` with no `Cap.readdir`; by a record's: version_control's `Fs.branch`, `Walk` (no `Cap.readdir`), mini-rc's `Eval.redirect` (no `Cap.stdout`) |
-| holds one it may not need | 73 | 13 of them now `Cap.clock` or `Cap.pipe` too, in a type the module's functions share (awk's `Io.caps`, version_control's `Store.caps`); mini-acid's `Proc` and `CLI` 16, awk's `Io` 7, hoc's `Eval` 6, `Dc` 6; of the 9 programs read since, 23, each given the program's whole `caps` (mini-ml's `CLI` 11, mini-cc's 3, mini-tiger's and mini-csc's `compile`, mini-asm's `data_items`) |
+| holds some, not the one | 32 | `Sys.set_signal` in mini-rc's, mini-ed's, mini-mk's, mini-5i's mains; `Host.dir_of`'s `Unix.opendir` with no `Cap.readdir`; by a record's: version_control's `Fs.branch`, `Walk` (no `Cap.readdir`), mini-rc's `Eval.redirect` (no `Cap.stdout`) |
+| holds one it may not need | 71 | 13 of them now `Cap.clock` or `Cap.pipe` too, in a type the module's functions share (awk's `Io.caps`, version_control's `Store.caps`); mini-acid's `Proc` and `CLI` 16, awk's `Io` 7, hoc's `Eval` 6, `Dc` 6; of the 9 programs read since, 23, each given the program's whole `caps` (mini-ml's `CLI` 11, mini-cc's 3, mini-tiger's and mini-csc's `compile`, mini-asm's `data_items`) |
 
 Of the 23 programs read first, those holding some were read at the source, but for
 5 of dc's of one kind, of which one was; of the 12 read since, 2 (`Host.dir_of`,
 mini-sql's prompt loop), the others not.
+
+tiny/'s host programs, the 17 OCaml builds (`tests/tiny_caps.sh`, seconds;
+`tests/caps_tiny.txt`): 45 functions at first (2026-11-04), 10 of them every
+CLI's "may not need `Cap.argv`", `Sys.argv` not in the table (now
+`requires('Sys.argv', argv)`); `TinyLibSystem`'s 17 functions that asked for
+nothing then asked, tiny-machine's console, window and helpers, its socket
+helper, the shell's `run` and `interactive` given what they use: 1 left.
+`TinyBuildSystem.start` holds `Cap.open_out`, which the host's
+`TinyLibSystem.shell` does not use (`/bin/sh -c`) and tiny-kernel's does (the
+script written to a file for rc): one interface, two systems, the host's
+alone read. Not read: the SDL programs, and what runs on tiny-kernel, whose
+system is tiny's kernel.
 
 A capability in a record's field is held (2026-11-03, the author: "yes a record
 field count as held, but in practice we should prefer to store capabilities via

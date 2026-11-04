@@ -27,7 +27,7 @@
  *                                "wc: f2: reason",      at once; the
  *                                the status is now 1    end of each file
  *
- * {b The others walk a file tree}, and they are one fold: [fold path f]
+ * {b The others walk a file tree}, and they are one fold: [fold caps path f]
  * calls f with the path, whether it is a directory, its size, and a
  * function that folds its entries, in name order, when it is called.
  * When f calls it decides the order:
@@ -66,7 +66,7 @@
 
 type caps =
   < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdin; Cap.stdout; Cap.stderr;
-    Cap.kill >
+    Cap.kill; Cap.clock; Cap.exit; Cap.env >
 
 (* [each_input caps tool files f]: f on each file named, as its name
  * and a descriptor open on it, or on "" and the standard input when no
@@ -74,8 +74,10 @@ type caps =
  * result, the exit status, is then 1 *)
 val each_input : caps -> string -> string list -> (string -> int -> unit) -> int
 
-(* [fold path f]: f path is_directory size entries, where entries ()
+(* [fold caps path f]: f path is_directory size entries, where entries ()
  * folds each entry of a directory (none for a file), in name order *)
-val fold : string -> (string -> bool -> int -> (unit -> 'a list) -> 'a) -> 'a
+val fold :
+  < Cap.open_in; Cap.readdir; .. > ->
+  string -> (string -> bool -> int -> (unit -> 'a list) -> 'a) -> 'a
 
 val main : Cap.all_caps -> int

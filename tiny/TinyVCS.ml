@@ -175,7 +175,8 @@ let decode s =
  * tiny-ml to compile and tiny-kernel to load) *)
 (* the capabilities a command needs: a repository is opened with them
  * and keeps them, for its files; output is printed with them *)
-type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.env; Cap.readdir >
+type caps =
+  < Cap.open_in; Cap.open_out; Cap.stdout; Cap.env; Cap.readdir; Cap.clock >
 
 type repo = {
   caps : caps;
@@ -191,7 +192,8 @@ let read_file (caps : < Cap.open_in; .. >) p = TinyLibSystem.read_file caps p
 
 let write_file = TinyLibSystem.write_file
 
-let exists p = try ignore (TinyLibSystem.stat p); true with Failure _ -> false
+let exists caps p =
+  try ignore (TinyLibSystem.stat caps p); true with Failure _ -> false
 
 let load (caps : caps) root =
   let r = { caps; root; index = Hashtbl.create 1024; fresh = [] } in
@@ -254,7 +256,7 @@ let getenv_opt (caps : < Cap.env; .. >) v =
 let now caps =
   match getenv_opt caps "TINYVCS_DATE" with
   | Some d -> int_of_string d
-  | None -> TinyLibSystem.time ()
+  | None -> TinyLibSystem.time caps
 
 (* a new state: the branches changed, the current branch too for
  * record_at, the rest kept *)
@@ -290,13 +292,13 @@ let snapshot r =
   let ign = ignored r.caps r.root in
   let old = match tip r with Some c -> Some (commit r c).tree | None -> None in
   let rec go dir (prev : (string * entry) list) =
-    let names = List.sort compare (TinyLibSystem.readdir dir) in
+    let names = List.sort compare (TinyLibSystem.readdir r.caps dir) in
     let es = List.filter_map (fun name ->
       if ign name then None
       else
         let p = Filename.concat dir name in
         match
-          (try Some (fst (TinyLibSystem.stat p)) with Failure _ -> None)
+          (try Some (fst (TinyLibSystem.stat r.caps p)) with Failure _ -> None)
         with
         | Some true ->
             let sub =
@@ -311,7 +313,7 @@ let snapshot r =
             let h = put r (Blob (read_file r.caps p)) in
             Some (name, match List.assoc_opt name prev with
               | Some (Conflict c) when c.text = h -> Conflict c
-              | _ -> if TinyLibSystem.is_executable p then Exec h else File h)
+              | _ -> if TinyLibSystem.is_executable r.caps p then Exec h else File h)
         | None -> None) names in
     es in
   put r (Tree (go r.root (match old with Some t -> tree r t | None -> [])))
@@ -320,14 +322,14 @@ let snapshot r =
  * removed, what differs written *)
 let checkout r (old : hash option) (nw : hash) =
   let rec rm_rf p =
-    if TinyLibSystem.is_directory p then
-      List.iter (fun f -> rm_rf (Filename.concat p f)) (TinyLibSystem.readdir p);
+    if TinyLibSystem.is_directory r.caps p then
+      List.iter (fun f -> rm_rf (Filename.concat p f)) (TinyLibSystem.readdir r.caps p);
     TinyLibSystem.remove r.caps p
   in
   (* (old: File h | Exec h | Conflict { text = h; _ }, an or-pattern
    * with variables, which tiny-ml does not read) *)
   let write p h x =
-    if exists p && TinyLibSystem.is_directory p then rm_rf p;
+    if exists r.caps p && TinyLibSystem.is_directory r.caps p then rm_rf p;
     write_file r.caps p (blob r h);
     TinyLibSystem.set_executable r.caps p x in
   let rec go dir (old : (string * entry) list) (nw : (string * entry) list) =
@@ -344,9 +346,9 @@ let checkout r (old : hash option) (nw : hash) =
               | Some (Dir o) -> tree r o
               | _ -> []
             in
-            if exists p && not (TinyLibSystem.is_directory p) then
+            if exists r.caps p && not (TinyLibSystem.is_directory r.caps p) then
               TinyLibSystem.remove r.caps p;
-            if not (exists p) then TinyLibSystem.mkdir r.caps p;
+            if not (exists r.caps p) then TinyLibSystem.mkdir r.caps p;
             go p sub (tree r h)
         | File h -> write p h false
         | Exec h -> write p h true
@@ -634,7 +636,7 @@ let first_line s =
 
 let find_root caps =
   let rec up d =
-    if exists (Filename.concat d ".tvcs/head") then d
+    if exists caps (Filename.concat d ".tvcs/head") then d
     else if Filename.dirname d = d then error "not a tiny-vcs repository"
     else up (Filename.dirname d)
   in
@@ -644,7 +646,7 @@ let author caps =
   getenv_opt caps "TINYVCS_AUTHOR" ||| (getenv_opt caps "USER" ||| "nobody")
 
 let init (caps : caps) dir =
-  if exists (Filename.concat dir ".tvcs") then error (dir ^ "/.tvcs exists");
+  if exists caps (Filename.concat dir ".tvcs") then error (dir ^ "/.tvcs exists");
   TinyLibSystem.mkdir caps (Filename.concat dir ".tvcs");
   let r = load caps dir in
   save r { prev = None; odate = now caps; what = "init"; current = "master";

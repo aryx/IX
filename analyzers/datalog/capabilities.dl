@@ -128,6 +128,10 @@ requires('Unix._exit', fork).
 requires('prim:sys_getenv', env).
 requires('Unix.environment', env).
 requires('prim:sys_get_argv', argv).
+% (Sys.argv a global, the primitive's answer at Sys's start: what reads the
+% arguments names it, CapSys.argv's caller too; without it every CLI holding
+% Cap.argv "may not need" it)
+requires('Sys.argv', argv).
 requires('prim:ml_signal', signal).
 requires('Unix.setitimer', signal).
 

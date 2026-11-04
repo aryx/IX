@@ -848,19 +848,19 @@ let main
       if tty then
         print caps (Printf.sprintf "tiny-db: %s; help for how, ^D to end\n" path);
       let rec loop n =
-        if tty then (print caps "tiny-db> "; TinyLibSystem.flush ());
+        if tty then (print caps "tiny-db> "; TinyLibSystem.flush caps);
         match TinyLibSystem.read_line caps with
         | None -> if tty then print caps "\n"; 0
         | Some line ->
             (try match tokens line with [] -> () | ts -> exec caps db (parse ts)
              with Error m ->
-               TinyLibSystem.flush ();
+               TinyLibSystem.flush caps;
                TinyLibSystem.eprint caps
                  (Printf.sprintf "tiny-db: line %d: %s\n" n m));
             loop (n + 1)
       in
       let code = loop 1 in
-      TinyLibSystem.flush ();
+      TinyLibSystem.flush caps;
       code
   | _ -> TinyLibSystem.eprint caps "usage: tiny-db file.db   (-h: how)\n"; 1
 

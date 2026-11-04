@@ -13,7 +13,7 @@ open TinyLibRegex
 
 type caps =
   < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdin; Cap.stdout; Cap.stderr;
-    Cap.kill >
+    Cap.kill; Cap.clock; Cap.exit; Cap.env >
 
 (* raised by a utility given arguments it does not take: the driver
  * then prints the utility's usage *)
@@ -100,7 +100,7 @@ let each_input caps tool files f =
 let cat caps args =
   let _, files = options "" args in
   each_input caps "cat" files (fun _ fd ->
-    pieces fd (fun s -> print caps s; TinyLibSystem.flush ()))
+    pieces fd (fun s -> print caps s; TinyLibSystem.flush caps))
 
 (* the counts so far, and whether the last byte counted was inside a
  * word: a word can be cut in two by the end of a piece *)
@@ -195,7 +195,7 @@ let tee caps args =
         complain caps "tee" (file ^ ": " ^ m); status := 1; []) files in
   pieces 0 (fun s ->
     print caps s;
-    TinyLibSystem.flush ();
+    TinyLibSystem.flush caps;
     List.iter (fun fd -> TinyLibSystem.write fd s) fds);
   List.iter TinyLibSystem.close fds;
   !status
@@ -347,13 +347,13 @@ let sort caps args =
 (* Walkers *)
 (*****************************************************************************)
 
-let entries dir = List.sort compare (TinyLibSystem.readdir dir)
+let entries caps dir = List.sort compare (TinyLibSystem.readdir caps dir)
 
-let rec fold path f =
-  let is_dir, size = TinyLibSystem.stat path in
+let rec fold caps path f =
+  let is_dir, size = TinyLibSystem.stat caps path in
   f path is_dir size (fun () ->
     if is_dir then
-      List.map (fun e -> fold (Filename.concat path e) f) (entries path)
+      List.map (fun e -> fold caps (Filename.concat path e) f) (entries caps path)
     else [])
 
 (* [each_path caps tool paths f]: f on each path; one that fails is
@@ -371,19 +371,19 @@ let ls caps args =
   let flags, paths = options "l" args in
   let names = ref [] in
   let status =
-    if paths = [] then begin names := entries "."; 0 end
+    if paths = [] then begin names := entries caps "."; 0 end
     else
       each_path caps "ls" paths (fun p ->
-        let is_dir, _ = TinyLibSystem.stat p in
+        let is_dir, _ = TinyLibSystem.stat caps p in
         names :=
-          (if is_dir then List.map (Filename.concat p) (entries p) else [ p ])
+          (if is_dir then List.map (Filename.concat p) (entries caps p) else [ p ])
           @ !names) in
   let long name =
     if not (List.mem 'l' flags) then ""
     else begin
-      let is_dir, size = TinyLibSystem.stat name in
+      let is_dir, size = TinyLibSystem.stat caps name in
       (if is_dir then "d" else "-")
-      ^ Printf.sprintf "%4d%9d " (TinyLibSystem.links name) size
+      ^ Printf.sprintf "%4d%9d " (TinyLibSystem.links caps name) size
     end in
   List.iter (fun name -> print caps (long name ^ quote name ^ "\n"))
     (List.sort compare !names);
@@ -394,12 +394,12 @@ let ls caps args =
 let walk caps args =
   let _, paths = options "" args in
   let pre p _ _ entries = print caps (p ^ "\n"); ignore (entries ()) in
-  if paths = [] then begin List.iter (fun e -> fold e pre) (entries "."); 0 end
+  if paths = [] then begin List.iter (fun e -> fold caps e pre) (entries caps "."); 0 end
   else
     each_path caps "walk" paths (fun p ->
-      let is_dir, _ = TinyLibSystem.stat p in
+      let is_dir, _ = TinyLibSystem.stat caps p in
       if is_dir then
-        List.iter (fun e -> fold (Filename.concat p e) pre) (entries p)
+        List.iter (fun e -> fold caps (Filename.concat p e) pre) (entries caps p)
       else print caps (p ^ "\n"))
 
 (* the kilobytes under each directory, after what it has; -a: each file
@@ -409,7 +409,7 @@ let du caps args =
   let paths = if paths = [] then [ "." ] else paths in
   each_path caps "du" paths (fun root ->
     ignore
-      (fold root (fun p is_dir size entries ->
+      (fold caps root (fun p is_dir size entries ->
          let k =
            List.fold_left (fun a b -> a + b)
              (if is_dir then 0 else (size + 1023) / 1024) (entries ()) in
@@ -423,7 +423,7 @@ let rm caps args =
   if paths = [] then raise Usage;
   each_path caps "rm" paths (fun root ->
     if List.mem 'r' flags then
-      fold root (fun p _ _ entries ->
+      fold caps root (fun p _ _ entries ->
         ignore (entries ()); TinyLibSystem.remove caps p)
     else TinyLibSystem.remove caps root)
 
@@ -438,7 +438,7 @@ let mkdir caps args =
         if i <= String.length dir then begin
           if i = String.length dir || dir.[i] = '/' then begin
             let d = String.sub dir 0 i in
-            if not (TinyLibSystem.is_directory d) then
+            if not (TinyLibSystem.is_directory caps d) then
               TinyLibSystem.mkdir caps d
           end;
           make (i + 1)
@@ -453,7 +453,7 @@ let mkdir caps args =
 let into_last caps tool paths f =
   match List.rev paths with
   | dest :: sources when sources <> [] ->
-      let into = TinyLibSystem.is_directory dest in
+      let into = TinyLibSystem.is_directory caps dest in
       if List.length sources > 1 && not into then begin
         complain caps tool (dest ^ ": not a directory"); 1
       end
@@ -481,7 +481,7 @@ let resolved caps p =
 let cp caps args =
   let _, paths = options "" args in
   into_last caps "cp" paths (fun from dest ->
-    if fst (TinyLibSystem.stat from) then failwith "is a directory";
+    if fst (TinyLibSystem.stat caps from) then failwith "is a directory";
     if resolved caps from = resolved caps dest then failwith "the same file";
     let src = TinyLibSystem.open_in caps from in
     let fd =
@@ -567,7 +567,7 @@ let pwd caps args =
   0
 
 (* seconds, and thousandths after a point: sleep .5 *)
-let sleep _caps args =
+let sleep caps args =
   match args with
   | [ a ] ->
       let point =
@@ -584,7 +584,7 @@ let sleep _caps args =
          int_of_string_opt thousandths
        with
        | Some s, Some ms when ms >= 0 ->
-           TinyLibSystem.sleep ((s * 1000) + ms); 0
+           TinyLibSystem.sleep caps ((s * 1000) + ms); 0
        | _ -> raise Usage)
   | _ -> raise Usage
 
@@ -600,7 +600,7 @@ let date caps args =
   let flags, rest = options "n" args in
   let t =
     match rest with
-    | [] -> TinyLibSystem.time ()
+    | [] -> TinyLibSystem.time caps
     | [ a ] ->
         (match int_of_string_opt a with
          | Some t when t >= 0 -> t
@@ -645,11 +645,11 @@ let date caps args =
  *
  * The questions kept are those tiny-kernel can answer: it has no
  * permissions and no times *)
-let test _caps args =
+let test caps args =
   let rest = ref args in
   let peek () = match !rest with a :: _ -> Some a | [] -> None in
   let next () = match !rest with a :: l -> rest := l; a | [] -> raise Usage in
-  let file f = try Some (TinyLibSystem.stat f) with Failure _ -> None in
+  let file f = try Some (TinyLibSystem.stat caps f) with Failure _ -> None in
   let number s =
     match int_of_string_opt s with Some n -> n | None -> raise Usage in
   let rec either () =
@@ -868,7 +868,7 @@ let main (caps : Cap.all_caps) : int =
             TinyLibSystem.print caps (help ()); 0
         | None -> TinyLibSystem.eprint caps (help ()); 1
       end in
-  TinyLibSystem.flush ();
+  TinyLibSystem.flush caps;
   status
 
 let () = TinyLibSystem.main "tiny-utils" main

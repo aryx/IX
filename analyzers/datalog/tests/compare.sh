@@ -4,8 +4,24 @@
 # An analysis's answer against its recording, the baseline (ix_check.sh's
 # and tiny_check.sh's; sourced): compared without line numbers, the
 # reports' own too (an edit above a function moves it), and without the
-# files in $unknown (one a line: not read here). Printed: ok, or the new
-# reports whole (where they are now) and those gone (as recorded).
+# files in $unknown (one a line: not read here), a recording's # lines
+# its notes. Printed: ok, or the new reports whole (where they are now)
+# and those gone (as recorded).
+
+# -exn's lines: a toplevel's exception, not where it is raised (that list
+# moves with every edit), nor what most programs may raise (lib_core's)
+exn_lines() {
+  grep 'the toplevel may let ' | sed 's/, raised at .*//' |
+    grep -vE ' let (Invalid_argument|Failure|Not_found|Unix\.Unix_error|End_of_file|Sys_error|Queue\.Empty) escape'
+}
+
+# a recording's # lines (notes, a triage), read before it is written
+# again, then put back
+notes_of() { grep '^#' $1 2> /dev/null; }
+keep_notes() { # notes answer
+  [ -n "$1" ] && { echo "$1" | cat - $2 > $2.n; mv $2.n $2; }
+  return 0
+}
 
 # a report without its line numbers
 bare_line() { sed -E 's/:[0-9]+/:/g; s/ line [0-9]+/ line/g'; }
@@ -19,7 +35,7 @@ known() { # unknown-file answer
 
 compare() { # what answer recording unknown-file
   local what=$1 out=$2 expected=$3 unknown=$4 t=$(mktemp -d)
-  known $unknown $out > $t/now; known $unknown $expected > $t/was
+  known $unknown $out > $t/now; known $unknown <(grep -v '^#' $expected) > $t/was
   bare_line < $t/now | sort -u > $t/now.b
   bare_line < $t/was | sort -u > $t/was.b
   comm -13 $t/was.b $t/now.b > $t/new.b; comm -23 $t/was.b $t/now.b > $t/gone.b

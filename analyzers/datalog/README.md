@@ -239,10 +239,11 @@ system is tiny's kernel.
 
 In make test (2026-11-04, the author: "at least we detect when new code
 introduce new one and prevent that"): a family of kind check, `-caps`,
-`-dead` and `-bugs` of tiny/'s host programs (`tests/tiny_check.sh`, the 17
-at once, seconds: `caps_tiny.txt` 1, `dead_tiny.txt` 75, `bugs_tiny.txt`
-55), and `-caps` of the 44 programs (`tests/ix_check.sh`: `caps_ix.txt`
-149); all six are make check's (check-tix, check-mix; 2 minutes), which
+`-dead`, `-bugs` and `-exn` of tiny/'s host programs (`tests/tiny_check.sh`,
+the 17 at once, seconds: `caps_tiny.txt` 1, `dead_tiny.txt` 75,
+`bugs_tiny.txt` 65, `exn_tiny.txt` 3), and `-caps` of the 44 programs
+(`tests/ix_check.sh`: `caps_ix.txt` 149); all eight are make check's
+(check-tix, check-mix; 4 minutes), which
 prints the new reports whole and those gone, the recording the baseline;
 m-ix's `-dead` and `-bugs` not in make test: a minute each, two
 under make test's load (`dead_all_ix.txt` 399, `bugs_ix.txt` 213 with
@@ -256,7 +257,12 @@ developers' ix build, `_mk/7`, skipped without one (CI's fresh tree): make
 test's own build makes part of ix, and a program whose generated units are
 missing is read wrong (its `Ast` found elsewhere: two false `link`
 reports). A program not read, and a generated file not made, are left out
-of both sides. Not `-exn`: mini-ml's alone is a minute and 6 GB.
+of both sides. `-exn` (2026-11-04, the author: "let's add -exn"): m-ix's
+in make check only, mini-ml's alone a minute and 6 GB, the 44 in 90
+seconds here (`exn_ix.txt` 54, its triage notes, `#` lines, kept by a
+recording again); a line a program's exception from a toplevel, not where
+it is raised (that list moves with every edit), nor lib_core's that most
+programs may raise (`Invalid_argument`, `Failure`, `Not_found`, ...).
 
 A capability in a record's field is held (2026-11-03, the author: "yes a record
 field count as held, but in practice we should prefer to store capabilities via

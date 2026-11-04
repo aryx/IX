@@ -58,7 +58,6 @@ languages_c: Main.ml: the toplevel may let Division_by_zero escape
 languages_c: Main.ml: the toplevel may let Il.Bad_il escape
 languages_c: Main.ml: the toplevel may let Tree_helpers.Error escape
 languages_datalog: Main.ml: the toplevel may let Il.Bad_il escape
-languages_dotnet_csc: Main.ml: the toplevel may let Il.Bad_il escape
 languages_dotnet: Main.ml: the toplevel may let Division_by_zero escape
 languages_dotnet: Main.ml: the toplevel may let Il.Bad_il escape
 languages_dotnet: Main.ml: the toplevel may let Jit.Refused escape
@@ -68,6 +67,7 @@ languages_dotnet: Main.ml: the toplevel may let Signature.Bad escape
 languages_dotnet: Main.ml: the toplevel may let Types.Load_error escape
 languages_dotnet: Main.ml: the toplevel may let Value.Thrown escape
 languages_dotnet: Main.ml: the toplevel may let Verifier.Bad escape
+languages_dotnet_csc: Main.ml: the toplevel may let Il.Bad_il escape
 languages_forth: Main.ml: the toplevel may let Forth.Error escape
 languages_ml: Main.ml: the toplevel may let Division_by_zero escape
 languages_ml: Main.ml: the toplevel may let Il.Bad_il escape

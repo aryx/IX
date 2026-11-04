@@ -607,6 +607,7 @@ family "ix's code by its analyses: no new report" check
 job "mini-analyze -caps on tiny/'s host programs: no report but the recorded one (caps_tiny.txt)" analyzers/datalog/tests/tiny_check.sh -caps -check
 job "mini-analyze -dead on tiny/'s host programs: no dead code but the recorded (dead_tiny.txt)" analyzers/datalog/tests/tiny_check.sh -dead -check
 job "mini-analyze -bugs on tiny/'s host programs: no bug report but the recorded (bugs_tiny.txt)" analyzers/datalog/tests/tiny_check.sh -bugs -check
+job "mini-analyze -exn on tiny/'s host programs: no exception escaping a toplevel but the recorded (exn_tiny.txt)" analyzers/datalog/tests/tiny_check.sh -exn -check
 group m-ix
 # (with the developers' ix, _mk/7, whole: make test's own builds part of it,
 # and a program partly built is read wrong, its generated units missing)

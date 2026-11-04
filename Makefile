@@ -66,16 +66,16 @@ test-long: all
 	$(MAKE) check
 
 # ix's code by its analyses (analyzers/datalog/README.md): mini-analyze
-# -caps, -dead, -bugs, each against its recording, the baseline; printed:
-# the new reports whole, those gone. make test runs tiny/'s three and
+# -caps, -dead, -bugs, -exn, each against its recording, the baseline;
+# printed: the new reports whole, those gone. make test runs tiny/'s four and
 # m-ix's -caps; these all, a longer budget (check-mix: a minute an
 # analysis, the developers' ix build in _mk/7 read: make ix first)
 check: check-tix check-mix
 check-tix:
-	@st=0; for f in -caps -dead -bugs; do \
+	@st=0; for f in -caps -dead -bugs -exn; do \
 	  ./analyzers/datalog/tests/tiny_check.sh $$f -check || st=1; done; exit $$st
 check-mix:
-	@st=0; for f in -caps -dead -bugs; do \
+	@st=0; for f in -caps -dead -bugs -exn; do \
 	  ./analyzers/datalog/tests/ix_check.sh $$f -check || st=1; done; exit $$st
 
 # The website's machine (docs/t-ix.html; plan_web.md): tiny-machine by

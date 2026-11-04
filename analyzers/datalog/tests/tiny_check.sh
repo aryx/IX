@@ -12,9 +12,10 @@
 # TinyBuildSystem.start's, analyzers/datalog/README.md), -bugs
 # bugs_tiny.txt, -dead dead_tiny.txt (what every program that has the
 # file says dead: TinyLibSystem's functions one program does not call are
-# not dead). -check (make test's): the answer against the recording,
+# not dead), -exn exn_tiny.txt (a program's toplevel exceptions, but
+# lib_core's every program may raise). -check (make test's): the answer against the recording,
 # without line numbers (an edit above a function moves it). Seconds.
-# usage: analyzers/datalog/tests/tiny_check.sh -caps|-dead|-bugs out-file|-check
+# usage: analyzers/datalog/tests/tiny_check.sh -caps|-dead|-bugs|-exn out-file|-check
 #   (dune build first)
 # ANALYZE: the program, if not dune's.
 cd "$(dirname "$0")/../../.."
@@ -27,7 +28,8 @@ case $flag in
   -caps) expected=caps_tiny.txt; said=': (no capability|has <)';;
   -bugs) expected=bugs_tiny.txt; said='^bug\? ';;
   -dead) expected=dead_tiny.txt; said=': dead( [a-z]+)?:';;
-  *) echo "usage: tiny_check.sh -caps|-dead|-bugs out-file|-check"; exit 2;;
+  -exn) expected=exn_tiny.txt; said='the toplevel may let ';;
+  *) echo "usage: tiny_check.sh -caps|-dead|-bugs|-exn out-file|-check"; exit 2;;
 esac
 expected=analyzers/datalog/tests/$expected
 if [ "$out" = -check ]; then check=1; out=$(mktemp); fi
@@ -65,6 +67,8 @@ mkfont|-I lib_graphics/core -I lib_graphics/geometry -I lib_graphics/fonts -I li
 EOF
 }
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
+. analyzers/datalog/tests/compare.sh
+notes=$(notes_of $expected)
 # (the programs at once, the analyses first: seconds, not a minute)
 programs | { while IFS='|' read -r name flags files; do
   [ "$flags" = - ] && flags=
@@ -76,7 +80,12 @@ programs | while IFS='|' read -r name flags files; do
   unread=$(grep -cE 'unbound module|not read' $W/$name.out)
   [ -z "$check" ] && printf '%-20s %3d%s\n' $name $n "$([ $unread -gt 0 ] && echo "  NOT READ: $(grep -m1 -E 'unbound module|not read' $W/$name.out)")"
   [ $unread -gt 0 ] && echo "$name NOT READ" >> $W/unread
-  grep -E "$said" $W/$name.out | sed 's/^bug? //; s|^|'$name'\t|' >> $W/said
+  if [ $flag = -exn ]; then
+    # (a program's name first: its exceptions, not a file's)
+    exn_lines < $W/$name.out | sed 's|^|'$name'\t'$name': |' >> $W/said
+  else
+    grep -E "$said" $W/$name.out | sed 's/^bug? //; s|^|'$name'\t|' >> $W/said
+  fi
   for x in $files; do printf '%s\t%s\n' $name $x; done >> $W/has
 done
 if [ $flag = -dead ]; then
@@ -90,9 +99,10 @@ else
   cut -f2- $W/said 2> /dev/null | sort -u > $out
 fi
 [ -s $W/unread ] && { cat $W/unread; }
-if [ -z "$check" ]; then echo "$(wc -l < $out) reports: $out"; exit 0; fi
+if [ -z "$check" ]; then
+  keep_notes "$notes" $out; echo "$(grep -vc '^#' $out) reports: $out"; exit 0
+fi
 # (a program not read: a failure, all tiny/'s programs readable here)
 [ -s $W/unread ] && { echo "FAIL mini-analyze $flag on tiny/'s host programs: not all read"; rm -f $out; exit 1; }
-. analyzers/datalog/tests/compare.sh
 compare "mini-analyze $flag on tiny/'s host programs" $out $expected /dev/null
 st=$?; rm -f $out; exit $st

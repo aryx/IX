@@ -61490,3 +61490,540 @@ Claude fixed mini-ml's `-bugs` slowdown from 248 s to 66 s by reordering the `ra
 Claude added `crash` reports to `-bugs` and fixed the caught-exception link, removing 40 false `-exn` reports in git.
 Claude then moved `lib_code/datalog` to `analyzers/datalog` as commit f3baeaf4, updating 45 files and splitting the README.
 Both commits passed `make test` with 183 jobs and 0 failures, and the other session's `poly.dl` stayed uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 23:01
+
+**Yoann:**
+
+> ok, finish A2's roots first then move it
+
+**Claude (summary):**
+
+I can't run this from here. My only tools are Claude Docs tools, and they can't run git, so I haven't pulled, rebased, or pushed anything. My first call was a mistake: I sent an empty Docs request that the tool rejected, and it changed nothing.
+The current directory, `/tmp`, is not a git repository either. Two options:
+- Run `git pull --rebase && git push` yourself in the ix repo (the one with 926c24af and f3baeaf4 on top).
+- Give me a session with shell access and the repo path, and I'll do it there. I'll stop if the rebase conflicts or the push is rejected.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 05:48
+
+**Yoann:**
+
+> can you pull, rebase, and push
+
+**Claude (summary):**
+
+Claude pulled the remote's new commit 4bfd0828, which adds todo.org, and rebased ten local commits onto it.
+Claude found that git pull --rebase refused to run because another session had uncommitted edits in the checkout.
+Claude rebased in a temporary worktree, moved main with git reset --keep, and then removed the worktree.
+Claude pushed origin/main, now at bed86d89, leaving prompt-history.md and the untracked poly.dl file uncommitted in the checkout.
+Claude skipped rerunning make test, since the only incoming change was todo.org.
+
+------------------------------------------------------------------------
+
+## 2026-11-03 21:31
+
+**Yoann:**
+
+> excellent. Let's commit. What's next?
+
+**Claude (summary):**
+
+Claude committed the `-no-models` switch, the `Models.ml` `Invalid_argument` raises, and the Probe test as `7b8fad96`.
+Claude's recommended next step was mini-ml's `-exn` run, which still runs out of memory at 16 GB.
+Claude proposed ranking the hot rule `call1_rec` first, then adding models such as `Set_`, `Map`, and `Buffer` if the cause is containers.
+Claude also suggested that `call1_rec` may be too sharp for mini-ml if the blowup comes from the contexts themselves.
+Claude left `poly.dl` uncommitted and asked whether to delete it and whether to log the `mini-ld` Marshal bug.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 05:49
+
+**Yoann:**
+
+> let's move forward with A4
+
+**Claude (summary):**
+
+Claude finished A4's first step, an uncommitted `int31` analysis in `mini-analyze -bugs`.
+It flags literals past 0x3fffffff, shifts by 31 or more, and `lsl` pushing values past bit 30.
+It skips the 64-bit-only directories pi4, raspberry and machine, plus code under `Sys.int_size` branches.
+Its history test in `analyzers/tests/bugs/e92ae1ec/` reproduces the pre-fix Sha1 and `Char.code` shifts and stays quiet on the fix.
+Claude reported 29 ix lines in `bugs_ix.txt`, fixed none, and left `make test` passing with 183 jobs.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 05:51
+
+**Yoann:**
+
+> ok let's move forward with 1 and I lik2 also 2 and 3, but let's do 1 first
+
+**Claude (summary):**
+
+Claude fixed mini-ml's `-exn` out-of-memory crash by dropping heap context for captured-variable objects in `call1_rec.dl`.
+Claude proposed committing `call1_rec.dl`, `exn_ix.txt`, `Models.ml`, and its `analyze.md` hunk, selected by pathspec.
+Claude would leave out the other session's `int31` changes that sit in those same files.
+Claude had recorded mini-ml's five own-exception reports in `exn_ix.txt`, marked not tried, with two probably false.
+Claude said it would start on part 2, the capabilities plan covering the clock, pipes, and system calls.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 06:30
+
+**Yoann:**
+
+> let's commit and move forward on 2
+
+**Claude (summary):**
+
+Claude committed `ce7ed1a4`, mini-ml's `-exn` change, staging only its own files by pathspec.
+Claude kept the other session's `int31` hunk out of the commit, so `analyze.md` held only Claude's line.
+Claude found the other session had already committed its hunk, leaving only Claude's line in `analyze.md`.
+Claude restored the working copy of `analyze.md` to its prior state after committing.
+Claude wrote the capabilities plan to `docs/plans/plan_caps_syscalls.md`, uncommitted, and asked four questions.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 06:48
+
+**Yoann:**
+
+> Check the -exn sweeps (sw_head, sw_held in scratchpad/mlx) and continue the mini-ml -exn work.
+
+**Claude (summary):**
+
+Claude found the sw_head and sw_held -exn sweeps finished, with identical reports for the 43 programs read.
+Claude noted mini-ml now reads in 69 s instead of running out of memory, and the -exn work is committed as ce7ed1a4.
+Claude left mini-ml's five new exn_ix.txt reports untried, suspecting two are false for CLI.ml:171's Resolve.Error and Pp.Error catches.
+Claude offered to triage those five reports next, or to wait for Yoann's answers on the capabilities plan.
+Claude also wrote the uncommitted capabilities plan at docs/plans/plan_caps_syscalls.md, with four open questions for Yoann.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 06:29
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude committed A5 as ba5e53b9 through a temporary index holding only its own hunks.
+Claude reset only its own index entries, leaving the other session's working-tree edits untouched.
+Claude offered to start A10, toplevel initialization and link order, as the plan's next item.
+Claude's A5 commit followed A4's, which was already committed as 1aafebe1 earlier.
+Claude left another session's Arm.ml edit and its moved bcases line alone; make test passed 184 jobs.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 07:09
+
+**Yoann:**
+
+> Check the -exn sweeps (sw_head, sw_held in scratchpad/mlx) and continue the mini-ml -exn work.
+
+**Claude (summary):**
+
+Claude triaged mini-ml's five new -exn reports, finding the Fold.int2 and Resolve or Pp ones false.
+Claude fixed a real bug: mini-asm died with Division_by_zero on $(1/0) and now reports the line.
+Claude confirmed make test passes with 185 jobs, and self-quick-mix builds identical files byte for byte.
+Claude asked whether to commit the assembler fix, the exn_ix.txt notes, and its own ix.md entry.
+Claude noted the capabilities plan stays uncommitted until Yoann answers its four questions.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 07:33
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude proposed committing the assembler fix for mini-asm's `$(1/0)` crash, with the `exn_ix.txt` triage notes and a `docs/plans/bugs/ix.md` entry.
+Claude suggested answering the capabilities plan's four questions in `docs/plans/plan_caps_syscalls.md`: clock, pipe, and self names; ocaml-caps as the home for new types; leaving out tiny/.
+Claude's `select` recommendation was to keep it alongside the descriptor functions, then commit the plan and start ocaml-caps step 1.
+Claude also proposed scaling mini-ml to 100,000 lines by measuring growth, summarizing lib_core units, and trying parallel `-j`.
+Claude recommended a plan for that scaling work, to be pursued alongside the capabilities work.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 07:37
+
+**Yoann:**
+
+> yes let's commit the assembler fix. 2: the names are good for clock and pipe. For self I don't know what is it for. yes we should modify ocaml-caps and install it in our local opam after. let's leave tiny/ out for now. select?
+
+------------------------------------------------------------------------
+
+## 2026-11-04 06:32
+
+**Yoann:**
+
+> the CI is currently failing, as well as self.yml, fix it, and analyze the regression to avoid it in the futur, by probably extending 'make test' if possible (if the regression check is fast)
+
+**Claude (summary):**
+
+Claude traced the CI failures to locale-dependent sorting, an ARM encoder bug, fused float ops, and directory ordering.
+Claude fixed the linker's ARM encoder so a shift by zero no longer encodes as LSR #32, which broke mini-chidb.
+Claude removed arm64 fused multiply-adds from the JPEG IDCT, so avi-later now matches the x86-64 output.
+Claude made mini-files sort folders by name and fixed the 9pi IXDIRS order in kernels/9pi/Makefile.
+Claude added an arm runtime job and an order check to make test, which now passes all 185 jobs.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 07:32
+
+**Yoann:**
+
+> yes let's commit and move forward
+
+**Claude (summary):**
+
+Claude committed A10 as c808b99b, after A5 was already in as ba5e53b9.
+Claude added `init` and `link` kinds to `-bugs`, plus a `-start` order built from each mkfile.
+Claude re-found the plan's two bugs: Poly1305 starting before Bignum in 70b6b2bf, and the Collide units in 6264d271.
+Claude removed false reports from the sweep, found nothing on ix, and `make test` passed with 185 jobs.
+Claude left tiny-ml's duplicate toplevel definition unfixed and named A8 as the next step.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 07:39
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude planned five commits, one per fix, after checking that `tests/lite.sh` and `docs/plans/bugs/ix.md` held only its changes.
+Claude found that the other session's commit ba5e53b9 touched only its own section, so it rebuilt the splits on the new HEAD.
+Claude kept the other session's `ix.md` section intact while rebuilding its own rows on that new HEAD.
+Claude put the new test files into commit 1 alongside the arm shift changes.
+Claude prepared commit 2 for self-mix's build order, the next of the five planned commits.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 07:38
+
+**Yoann:**
+
+> and otherwise I like your plan to improve the speed for 100 000 LOC
+
+**Claude (summary):**
+
+Claude proposed two commits: ocaml-caps first, with the new clock and pipe types, wrappers, Semgrep rules and CHANGES.md entry for 0.1.1.
+Claude's ix commit would hold the plan with census.sh and sites.txt, plus lib_core's erased CapUnix and CapSys.
+Claude had already built step 1 and step 2, and was waiting for approval before committing anything in either repository.
+The make test failures were in mini-analyze's -bugs tests, traced to the other session's uncommitted analyzer work rather than Claude's change.
+Claude's next steps were capabilities.dl rows and converting 32 callers, with the scaling plan afterwards.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 09:22
+
+**Yoann:**
+
+> let's commit and move forward
+
+------------------------------------------------------------------------
+
+## 2026-11-04 09:32
+
+**Yoann:**
+
+> what means \+ ? it's a negation? does it work in datalog?
+
+------------------------------------------------------------------------
+
+## 2026-11-04 09:33
+
+**Yoann:**
+
+> do we have "stratified negation"? Is it checked in the datalog engine mini-datalog?
+
+------------------------------------------------------------------------
+
+## 2026-11-04 09:34
+
+**Yoann:**
+
+> make test is currently failing?
+
+------------------------------------------------------------------------
+
+## 2026-11-04 09:31
+
+**Yoann:**
+
+> yes let's commit
+
+------------------------------------------------------------------------
+
+## 2026-11-04 09:34
+
+**Yoann:**
+
+> is it because of this session work?
+
+**Claude (summary):**
+
+Claude explained stratified negation in mini-datalog, checked in Datalog_eval.ml, and reported A8 still mostly false on threads.
+Claude found make test failing because of A8's work, with two new history tests lacking expected output.
+Claude recorded expected outputs for bugs_11c5d5f0 and bugs_ddb60eef, and both history tests now pass.
+Claude re-recorded closures.facts after its diff showed only the five new store_in facts.
+Claude reported make test passing with 185 jobs and 0 failures, leaving the work uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 09:44
+
+**Yoann:**
+
+> let's commit, and please run make test to prevent those kinds of regressions
+
+**Claude (summary):**
+
+Claude committed A8 as 8c35431c, adding `race` and `wait` kinds to the `-bugs` report.
+Claude ran `make test` after its last edit, and it passed with 185 jobs and 0 failures.
+Claude committed only its own files, plus its own row in docs/plans/bugs/ix.md, leaving other sessions' changes uncommitted.
+Claude named A9, giving back resources and counts on every path, as the next step in plan order.
+Claude also logged one narrow mini-5i race as unreproduced and left thread races out of scope.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 09:34
+
+**Yoann:**
+
+> make test is failing, is it because of this session?
+
+**Claude (summary):**
+
+Claude concluded the two `make test` failures are not from this session, but from the other session's uncommitted analyzer work.
+Claude traced `closures.facts` to extra `store_in(...)` lines from an uncommitted edit to `analyzers/ml/Closure_facts.ml`.
+Claude traced `bugs_11c5d5f0` and `bugs_ddb60eef` to untracked test directories running against that session's in-progress `Bugs_report.ml`.
+Claude committed the ocaml-caps clock, pipe and wrapper changes as `2e8a413`, and the ix plan and lib_core changes as `3eaab7bb`.
+Claude set the plan's status to "steps 1 and 2 done, step 3 next" and left the other session's files out.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 09:28
+
+**Yoann:**
+
+> does make test now work? What about make build-docker?
+
+**Claude (summary):**
+
+Claude found that `make build-docker` failed on HEAD: 181 jobs, one failure in the mini-ml dotnet job.
+Claude traced it to `languages/ml/dotnet/tests/run.sh`, which looked for generated parsers in a hardcoded `_mk/7` directory.
+Claude added an `MK` variable to `run.sh`, defaulting to `_mk/7`, and had `tests/lite.sh` pass `MK=$K`, left uncommitted.
+Claude added a row for this to `docs/plans/bugs/ix.md` and reran the Docker build from a clean HEAD copy plus the fix.
+Claude left `make test` at 185 jobs with 2 failures, both from another session's uncommitted `Closure_facts.ml` work.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 10:04
+
+**Yoann:**
+
+> let's commit. Can we close this session then?
+
+**Claude (summary):**
+
+Claude said it would add a fresh-tree check to the CI memory so a later session uses it.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 10:03
+
+**Yoann:**
+
+> let's commit and move forward
+
+------------------------------------------------------------------------
+
+## 2026-11-04 10:07
+
+**Yoann:**
+
+> Is datalog the right language to express all those program analysis? Would it be easier in ocaml directly?
+
+**Claude (summary):**
+
+Claude defended Datalog for whole-program fixpoints like points-to, call reachability, and exception flow.
+Claude pointed out that new analyses reuse those relations, so races.dl needs only about 30 lines of rules.
+Claude said stratification checks and queryable intermediate relations helped debug race and leak through mini-datalog.
+Claude also argued the rules read as the definition, which suits Yoann's teaching goal.
+Claude left ordered path checks to OCaml, and the A9 choice between call_seq and a pass in Closure_facts remains open.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 10:12
+
+**Yoann:**
+
+> I like your defense of datalog; is this comment of yours stored anywhere in one of the .mli to explain the datalog choice?
+
+**Claude (summary):**
+
+Claude found no written rationale for the Datalog choice in Analyze.mli or the plan documents.
+Claude proposed Datalog for whole-program fixpoints such as points-to, call graphs, and exception flow.
+Claude proposed OCaml for local, ordered, or syntactic facts, with A9 as the contrasting case.
+Claude said each Datalog analysis would be 10 to 50 lines of joins, with stratified negation checked.
+Claude offered to add this split as a paragraph in Analyze.mli's header and asked for confirmation.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 10:14
+
+**Yoann:**
+
+> Let's add this paragraph. Also maybe things are not control-flow sensitive I think, and you mention things are easier in OCaml for ordered or syntactic, could we combine things to make this possible from the datalog side? One idea would be to use semgrep patterns in some datalog rules; another might be that by a clever use of SSA we could recover some control-flow sensitive information because of the way an SSA is structured? What do you think? Those are vague ideas and they may not work actually.
+
+**Claude (summary):**
+
+Claude recommended SSA over semgrep patterns, since mini-analyze -flow already exports blocks, succ, def/use and phi facts.
+Claude proposed A9's leak check as post-dominance in dominators.dl, with exception edges to the handler or exit.
+Claude noted a wait inside a loop is found via back_edge to a dominating header, which also covers recursive retries.
+Claude said the bridge needs call_at and exception-edge facts, while guarded releases like 62d811be need condition facts.
+Claude proposed replacing call_seq in pairs.dl with these facts, and added a paragraph to Analyze.mli.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 10:17
+
+**Yoann:**
+
+> ok let's do it, and let's add a comment somewhere explainining how SSA allows to recover some control flow info and make some insensitive analysis actually control-flow sensitive
+
+------------------------------------------------------------------------
+
+## 2026-11-04 10:21
+
+**Yoann:**
+
+> seems redundant to build both a CFG and both an SSA? Is it possible to "higher" a bit the SSA instead of the current lowered version so we can recover more info for datalog and still be useful for the SSA opti needed by mini-ml ?
+
+------------------------------------------------------------------------
+
+## 2026-11-04 10:04
+
+**Yoann:**
+
+> let's do it
+
+**Claude (summary):**
+
+Claude added the capabilities.dl rows and a run.sh check over both Unix modules, catching three gaps.
+Claude offered to commit capabilities.dl, caps_ix.txt, the README, run.sh and the plan, staged by pathspec.
+Claude proposed step 4 next: changing the 32 callers to take the capability as a parameter.
+Claude expected step 4 to bring the caps_ix.txt sweep back down from its current 173 functions.
+Claude noted that nothing was committed yet, and that make test and the other checks passed.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 10:21
+
+**Yoann:**
+
+> or maybe the CFG has its use; just asking
+
+**Claude (summary):**
+
+Claude recommended keeping one graph, mini-ml's SSA, rather than building a separate tree CFG for the analyses.
+Claude proposed recording call sites by source span: Lower emits them, Ssa_build's table carries them, and Ssa exposes them as `ssa_site`.
+Claude suggested adding exception edges from each call to its handler, taken from Ssa_build's try regions.
+Claude planned post-dominators in `dominators.dl`, then rewriting `pairs.dl` over the sites and removing `call_seq`.
+Claude also noted the cost: the compiler and fixed-point checks are touched, so downstream programs rebuild once.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 20:44
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude recorded the mini-ml item as commit 46f92fe7 and profiled quake's sound against this morning's build.
+Claude found the mixer's per-sample loop costs most of quake's 2.1M a sixtieth, and fixed it in `Mixer.pull` by finding each shot's samples once.
+That change is in commit aba0032b, which cut quake's sound from 2.1M to 0.52M a sixtieth, byte-identical output.
+Claude built the card at `kernels/9pi/build/card.img` from a HEAD copy, excluding another session's uncommitted mini-ml changes.
+Claude gave a table of board checks, with expected frame rates for quake, virtua, and doom.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 10:21
+
+**Yoann:**
+
+> yes, let's commit and move forward
+
+**Claude (summary):**
+
+Claude committed the step 4 caller changes as `9f752731` and moved on to converting the 32 callers.
+Claude converted every call site to take the capability, including builder, usbd, dossrv, smalltalk, awk, version_control and rio.
+Claude verified with `dune build`, mini-mk, the smalltalk tests and a `-caps` sweep, which dropped from 173 to 149 functions.
+Claude was still waiting on the final `make test` run, with `self-quick-mix` not yet finished, when the session paused.
+Claude had not confirmed a clean result, since six earlier failures were only partly explained.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 11:02
+
+**Yoann:**
+
+> are we done? Can I close this session?
+
+------------------------------------------------------------------------
+
+## 2026-11-04 11:02
+
+**Yoann:**
+
+> I need to close this session and restore it later. Can we give a name to this session?
+
+**Claude (summary):**
+
+Claude explained that it cannot name the session itself, so Yoann should run `/rename pi2-games-speed` and resume later with `claude --resume`.
+Claude listed the saved state: the card at `kernels/9pi/build/card.img` holds commits up to aba0032b and has not been booted under emulation.
+Claude noted that the next step is Yoann's Pi 2 measurements: quake near the dogs with sound, virtua with and without `render=table`, doom's big room, and rebirth.
+Claude listed possible follow-ups, none started: rebirth's sound as its own plan, virtua's sound cost (waiting on mini-ml boxing in `plan_ml_speed.md`), and GPU plan G0.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 10:24
+
+**Yoann:**
+
+> let's do it!
+
+**Claude (summary):**
+
+Claude added a no-code `Ir.Site` instruction to mini-ml's `Lower`, enabled only by a `Lower.sites` flag.
+Claude made `-bugs` load all 639 program files in SSA form and added a `leak` rule over those paths.
+Claude wrote the SSA-ordering comment in `Ssa_facts.mli` and the Datalog-versus-OCaml paragraph in `Analyze.mli`.
+Claude fixed `Queue.take_opt` so it no longer made `Condition.wait` look like it could raise `Queue.Empty`.
+Claude committed A9 as 5b24e4a2 after `make test` passed, leaving out another session's capability files.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 11:03
+
+**Yoann:**
+
+> can we commit? I need to go soon
+
+**Claude (summary):**
+
+Claude committed the work as `79f0807a`, 49 files by pathspec, leaving `prompt-history.md`'s staged changes out.
+Claude flagged that `make self-quick-mix` was still running at commit time, so its result is unknown.
+Claude advised running `make self-quick-mix` (about 6 minutes) first next session, since it checks the usbd, dossrv and rio changes on mini-9pi.
+Claude listed the remaining work: step 5 for apps/, utilities/process, raspberry/ and lib_playground, the flaky mini-office `Unit_store` test, and item 3's 100k-line analysis speedup.

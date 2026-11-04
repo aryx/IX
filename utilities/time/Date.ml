@@ -21,7 +21,7 @@
  * holds: the year 2038 problem, for whatever still keeps the time
  * so. *)
 
-type caps = < Cap.stdout; Cap.stderr >
+type caps = < Cap.stdout; Cap.stderr; Cap.clock >
 
 exception Usage
 
@@ -40,7 +40,7 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
     (* (a float: seconds since 1970 are past arm's int; what is no number is 0, as strtoul's) *)
     let now = match options (List.tl (Array.to_list argv)) with
       | [ v ] -> if v <> "" && String.for_all (fun c -> c >= '0' && c <= '9') v then float_of_string v else 0.0
-      | _ -> Unix.time () in
+      | _ -> CapUnix.time caps () in
     (if !number then Console.print caps (Printf.sprintf "%.0f\n" now)
      else begin
        let t : Unix.tm = Unix.gmtime now in

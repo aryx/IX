@@ -594,7 +594,11 @@ let update msg model =
 (* Entry point *)
 (*****************************************************************************)
 
-let app = 
+(* the pieces' order without seed=n: the clock's milliseconds, read by
+ * main, which holds Cap.clock *)
+let clock_seed = ref 0
+
+let app =
   { Playground.
     view;
     update;
@@ -602,7 +606,7 @@ let app =
       let seed =
         match Option.bind (List.assoc_opt "seed" flags) int_of_string_opt with
         | Some n -> n
-        | None -> int_of_float (Unix.gettimeofday () *. 1000.)
+        | None -> !clock_seed
       in
       { (initial_model (initial_seed seed)) with music = List.assoc_opt "music" flags <> Some "off" }, Cmd.none);
     subscriptions  = (fun _ -> Sub.batch [
@@ -613,5 +617,6 @@ let app =
 
 (* (-help: the usage, and the end, Exit.ExitCode) *)
 let () = Cap.main (fun caps -> Exit.exit caps @@ Exit.catch @@ fun () ->
+  clock_seed := int_of_float (CapUnix.gettimeofday caps () *. 1000.);
   Playground_platform.run_app caps (Playground_platform.flags caps) app;
   Exit.OK)

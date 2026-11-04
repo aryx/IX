@@ -79,7 +79,8 @@ val flags : < Cap.argv ; Cap.stdout ; Cap.stderr ; .. > -> Playground.flags
  * and its events (Plan 9's: the draw device, the mouse, the keyboard,
  * the threads that read them), a file written (ppm/). *)
 val run_app :
-  < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. > ->
+  < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ;
+    Cap.clock ; .. > ->
   Playground.flags -> ('model, 'msg) Playground.app -> unit
 
 (* The mouse's cursor over the window from now on (Playground.cursor):

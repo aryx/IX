@@ -5,7 +5,7 @@
 
 open Common
 
-type caps = < Store.caps; Cap.stdout; Cap.stderr; Cap.fork; Cap.exec; Cap.wait >
+type caps = < Store.caps; Cap.stdout; Cap.stderr; Cap.fork; Cap.exec; Cap.wait; Cap.pipe >
 
 exception Die of string
 
@@ -168,6 +168,8 @@ let whoami caps (r : Repo.t) =
   let conf k = match Conf.lookup caps ~all:false (Conf.default_files r.root) k with v :: _ -> v | [] -> "" in
   let user = Sys.getenv_opt "USER" ||| "none" in
   let name = match conf "user.name" with "" -> user | n -> n in
+  (* (Cap.env's, held: caps; bare, lib_core's CapUnix being Plan 9's too,
+   * whose Unix has no gethostname) *)
   let email = match conf "user.email" with "" -> user ^ "@" ^ Unix.gethostname () | e -> e in
   { Save.name; email }
 

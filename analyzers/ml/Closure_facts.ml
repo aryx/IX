@@ -874,6 +874,9 @@ and call (x : expr) (f : expr) (args : expr list) (dst : string) : unit =
         (* (x == y, x != y: bugs/physeq.dl's, a side made here never the other) *)
         if p = "%eq" || p = "%noteq" then begin
           fact "phys_compare" [ i; !inside; (if p = "%eq" then "==" else "!=") ];
+          (* (its two sides, for a value changed in place compared by
+           * identity: physeq.dl's stale) *)
+          Array.iter (fun (v : string) -> fact "compared" [ i; v ]) given;
           List.iter (fun (e : expr) -> Option.iter (fun w -> fact "fresh_operand" [ i; w ]) (fresh e))
             (List.filteri (fun k _ -> k < 2) args)
         end;

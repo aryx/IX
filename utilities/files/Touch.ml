@@ -6,13 +6,13 @@
  * made, empty. -c: none is made; -t time: that time, seconds since
  * 1970, and not now. *)
 
-type caps = < Cap.open_out; Cap.stderr >
+type caps = < Cap.open_out; Cap.stderr; Cap.clock >
 
 exception Usage
 
 let main (caps : < caps; .. >) (argv : string array) : Exit.t =
   try
-    let nocreate = ref false and time = ref (Unix.time ()) in
+    let nocreate = ref false and time = ref (CapUnix.time caps ()) in
     (* the options: letters after a -, in the first arguments; -t's
      * value is the letters after it, or the next argument *)
     let rec options = function

@@ -61,7 +61,7 @@ val cookies_of_string : now:float -> string -> Cookie.jar
 val default_dir : < Cap.env; .. > -> string option
 
 (* what [dir] holds: empty, and no cookie, for a file that is not there *)
-val load : < Cap.open_in; .. > -> dir:string -> t * Cookie.jar
+val load : < Cap.open_in; Cap.clock; .. > -> dir:string -> t * Cookie.jar
 
 (* each file written, [dir] made if it is not there; cookies.txt for
  * its owner alone, being what signs in. Error says why not *)

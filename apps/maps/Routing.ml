@@ -69,13 +69,13 @@ let slice = 0.05
 
 (* [give] called when a slice has gone by (the clock read now and then: this
  * is called at each value of a JSON text) *)
-let breather (give : unit -> unit) : unit -> unit =
-  let calls = ref 0 and last = ref (Unix.gettimeofday ()) in
+let breather (caps : < Cap.clock; .. >) (give : unit -> unit) : unit -> unit =
+  let calls = ref 0 and last = ref (CapUnix.gettimeofday caps ()) in
   fun () ->
     incr calls;
-    if !calls land 255 = 0 && Unix.gettimeofday () -. !last > slice then begin
+    if !calls land 255 = 0 && CapUnix.gettimeofday caps () -. !last > slice then begin
       give ();
-      last := Unix.gettimeofday ()
+      last := CapUnix.gettimeofday caps ()
     end
 
 (* Overpass is silent until it has it all, for most of a minute at times *)
@@ -92,13 +92,13 @@ let asked (caps : < Cap.network; Cap.open_in; .. >) (url : string) : (string, st
 (* a file in small pieces, a rest after each: on mini-9pi a file of 7 MB is most
  * of a minute of system calls, and written at once it halves the speed of the
  * search and of the window, which have the same core's kernel to go through *)
-let write_gently (caps : < Cap.open_out; .. >) (f : Fpath.t) (text : string) : unit =
+let write_gently (caps : < Cap.open_out; Cap.clock; .. >) (f : Fpath.t) (text : string) : unit =
   let fd = FS.open_out_fd caps (Fpath.to_string f) 0o644 in
   let small = 16384 in
   let n = String.length text and at = ref 0 in
   while !at < n do
     at := !at + Unix.write_substring fd text !at (min small (n - !at));
-    Unix.sleepf 0.2
+    CapUnix.sleepf caps 0.2
   done;
   Unix.close fd
 
@@ -117,13 +117,14 @@ let piece = 65536
  * of a pipe with something coming is short. Then it does [keep] of the answer,
  * not waited for: the route has no need of it. A fork after the graph is made
  * would stop the window, for the heap: this one is early. *)
-let asked_beside (caps : < Cap.fork; Cap.kill; Cap.wait; Cap.network; Cap.open_in; Cap.open_out; .. >)
+let asked_beside (caps : < Cap.fork; Cap.kill; Cap.wait; Cap.network; Cap.open_in; Cap.open_out;
+    Cap.clock; Cap.pipe; .. >)
     (give : unit -> unit) ~(keep : string -> unit) (url : string) : (string, string) result =
   (match !asker with
   | Some pid -> ( try ignore (CapUnix.waitpid caps [] pid) with Unix.Unix_error _ -> ())
   | None -> ());
   let file = Filename.temp_file "mini-maps" ".roads" in
-  let from_it, to_me = Unix.pipe ~cloexec:false () in
+  let from_it, to_me = CapUnix.pipe caps ~cloexec:false () in
   match CapUnix.fork caps () with
   | 0 ->
       Unix.close from_it;
@@ -141,8 +142,8 @@ let asked_beside (caps : < Cap.fork; Cap.kill; Cap.wait; Cap.network; Cap.open_i
       Unix._exit 0
   | pid ->
       Unix.close to_me;
-      let until = Unix.gettimeofday () +. patience in
-      while Sys.file_exists file && Unix.gettimeofday () < until do give () done;
+      let until = CapUnix.gettimeofday caps () +. patience in
+      while Sys.file_exists file && CapUnix.gettimeofday caps () < until do give () done;
       let silent = Sys.file_exists file in
       if silent then begin
         (try CapUnix.kill caps pid Sys.sigkill with Unix.Unix_error _ -> ());
@@ -167,16 +168,17 @@ let asked_beside (caps : < Cap.fork; Cap.kill; Cap.wait; Cap.network; Cap.open_i
       else Error (Buffer.sub text 1 (n - 1))
 
 (* the graph for those two places: from memory, from the file, or asked *)
-let graph (caps : < Cap.fork; Cap.kill; Cap.wait; Cap.network; Cap.open_in; Cap.open_out; .. >) ~(base : string)
+let graph (caps : < Cap.fork; Cap.kill; Cap.wait; Cap.network; Cap.open_in; Cap.open_out;
+    Cap.clock; Cap.pipe; .. >) ~(base : string)
     ~(dir : string option) ~(give : (unit -> unit) option) (a : Place.t) (b : Place.t) : (Roads.t, string) result =
   (* (a town's route is not made over an extract without its streets) *)
   let covers (box : box) : bool =
     in_box box a && in_box box b && Roads.all_roads box = Roads.all_roads (box_of a b)
   in
-  let now = Unix.gettimeofday () in
+  let now = CapUnix.gettimeofday caps () in
   let file = Option.map (fun (d : string) -> Fpath.v (Filename.concat d "roads")) dir in
   let made (box : box) (text : string) : (Roads.t, string) result =
-    let turn = match give with Some f -> breather f | None -> ignore in
+    let turn = match give with Some f -> breather caps f | None -> ignore in
     match Roads.of_json_turning turn text with
     | g ->
         last := Some (box, g);
@@ -239,7 +241,8 @@ let steps_of (g : Roads.t) (edges : int list) : (string * int) list =
   in
   List.rev (List.fold_left add [] edges)
 
-let find (caps : < Cap.fork; Cap.kill; Cap.wait; Cap.network; Cap.open_in; Cap.open_out; .. >) ~(base : string)
+let find (caps : < Cap.fork; Cap.kill; Cap.wait; Cap.network; Cap.open_in; Cap.open_out;
+    Cap.clock; Cap.pipe; .. >) ~(base : string)
     ~(dir : string option) ~(give : (unit -> unit) option) ~(dijkstra : bool) (a : Place.t)
     (b : Place.t) : (t * int option, string) result =
   (* (it runs in the worker, which must outlive a thing too large for this
@@ -251,7 +254,7 @@ let find (caps : < Cap.fork; Cap.kill; Cap.wait; Cap.network; Cap.open_in; Cap.o
   with
   | Error why -> Error why
   | Ok g -> (
-      let turn = match give with Some f -> breather f | None -> ignore in
+      let turn = match give with Some f -> breather caps f | None -> ignore in
       let near (p : Place.t) : (int, string) result =
         match Roads.nearest_turning turn g p.lat p.lon with
         | Some (n, far) when far <= road_at_most -> Ok n

@@ -32,7 +32,7 @@
  *
  * References: ls(1); stat(5) of Plan 9's manual, an entry's bytes. *)
 
-type caps = < Cap.readdir; Cap.stdout; Cap.stderr >
+type caps = < Cap.readdir; Cap.stdout; Cap.stderr; Cap.clock >
 
 exception Usage
 
@@ -173,7 +173,7 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
     | rest -> rest in
   let files = options (List.tl (Array.to_list argv)) in
   let w = { ws = 0; wq = 0; wv = 0; wu = 0; wm = 0; wl = 0; wg = 0 } and lines = ref [] in
-  let now = if o.l then Unix.time () else 0.0 in
+  let now = if o.l then CapUnix.time caps () else 0.0 in
   let ok = match files with
     | [] -> ls caps o w ~now lines ~multi:false "."
     | _ -> List.fold_left (fun ok file -> ls caps o w ~now lines ~multi:true file && ok) true files in

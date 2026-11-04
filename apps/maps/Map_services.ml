@@ -5,7 +5,9 @@
 
 module P = Playground
 
-type caps = < Cap.fork; Cap.kill; Cap.wait; Cap.network; Cap.open_in; Cap.open_out; Cap.env >
+type caps =
+  < Cap.fork; Cap.kill; Cap.wait; Cap.network; Cap.open_in; Cap.open_out; Cap.env;
+    Cap.clock; Cap.pipe >
 
 let default_places = "https://nominatim.openstreetmap.org"
 let default_weather = "https://api.open-meteo.com"
@@ -67,9 +69,9 @@ let place_of (caps : caps) (flags : P.flags) (query : string) : (Place.t, string
   | None -> (
       let base = places_base_of flags in
       (* (a route asks two, a second apart: the service's rule) *)
-      let wait = !place_asked +. 1. -. Unix.gettimeofday () in
-      if wait > 0. then Unix.sleepf wait;
-      place_asked := Unix.gettimeofday ();
+      let wait = !place_asked +. 1. -. CapUnix.gettimeofday caps () in
+      if wait > 0. then CapUnix.sleepf caps wait;
+      place_asked := CapUnix.gettimeofday caps ();
       match Map_http.get caps ~more:[] (Place.search_url base query) with
       | Error why -> Error why
       | Ok r when r.status <> 200 -> Error (Printf.sprintf "%d %s" r.status r.reason)

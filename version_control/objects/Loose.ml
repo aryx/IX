@@ -21,14 +21,14 @@ let read caps git h =
           | _ -> corrupt ())
       | _ -> corrupt ()
 
-let write caps git (k : Object.Kind.t) data =
+let write (caps : < Cap.open_out; Cap.env; .. >) git (k : Object.Kind.t) data =
   let kind = Object.Kind.to_string k in
   let h = Hash.of_object kind data in
   let p = path git h in
   if not (Sys.file_exists (Fpath.to_string p)) then begin
     let dir = Fpath.to_string (Fpath.parent p) in
     if not (Sys.file_exists dir) then Unix.mkdir dir 0o755;
-    let tmp = Fpath.(parent p / ("tmp." ^ string_of_int (Unix.getpid ()))) in
+    let tmp = Fpath.(parent p / ("tmp." ^ string_of_int (CapUnix.getpid caps ()))) in
     FS.write_perm caps 0o444 tmp (Zlib.deflate (Printf.sprintf "%s %d\000%s" kind (String.length data) data));
     Unix.rename (Fpath.to_string tmp) (Fpath.to_string p)
   end;

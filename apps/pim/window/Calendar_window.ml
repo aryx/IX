@@ -122,7 +122,7 @@ let create (caps : caps) (m : model) (line : string) : model =
   if String.trim e.title = "" then m
   else begin
     incr made;
-    let id = Printf.sprintf "event:%.0f.%d" (Unix.gettimeofday ()) !made in
+    let id = Printf.sprintf "event:%.0f.%d" (CapUnix.gettimeofday caps ()) !made in
     Items.save caps st (Capture.to_item ~id e);
     let m = load caps { m with cursor = e.day } in
     { m with

@@ -157,7 +157,8 @@ let play_audio (device : Sdl.audio_device_id) (slow : float) : unit =
         ignore (Sdl.queue_audio device ba)
       end
 
-let run_app (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. >) (flags : Playground.flags)
+let run_app (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ;
+    Cap.clock ; .. >) (flags : Playground.flags)
     (app : ('model, 'msg) Playground.app) : unit =
   let cli = Session.parse caps in
   let own = Playground.flags_of_strings cli.args in
@@ -291,7 +292,7 @@ let run_app (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse 
     done
   end
   else begin
-    let start = Unix.gettimeofday () in
+    let start = CapUnix.gettimeofday caps () in
     let audio = open_audio () in
     (* the ticks given so far; the frames drawn in the second that began at [since], and in the one before it *)
     let given = ref 0 and since = ref start and drawn = ref 0 and fps = ref 0 in
@@ -300,7 +301,7 @@ let run_app (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse 
     let before = ref start and slow = ref 0. in
     while not !quit do
       events ();
-      let now = Unix.gettimeofday () in
+      let now = CapUnix.gettimeofday caps () in
       slow := Float.max (now -. !before) (!slow *. 0.995);
       before := now;
       let due = int_of_float ((now -. start) *. 60.) - !given in
@@ -320,7 +321,7 @@ let run_app (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse 
       end;
       (* old: Sdl.delay 5l, each time: a frame of 13 ms was 18, and 55
        * a second *)
-      let left = (start +. (float (!given + 1) /. 60.)) -. Unix.gettimeofday () in
+      let left = (start +. (float (!given + 1) /. 60.)) -. CapUnix.gettimeofday caps () in
       if left > 0. then Sdl.delay (Int32.of_float (Float.max 1. (Float.min 5. (left *. 1000.))))
     done
   end;

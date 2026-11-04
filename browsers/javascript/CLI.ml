@@ -3,7 +3,7 @@
 
 (* See CLI.mli *)
 
-type caps = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr >
+type caps = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; Cap.clock >
 
 let usage = "usage: mini-node [file.js | -e text]
   file.js  its statements run; a module if it imports (or is .mjs)
@@ -12,7 +12,7 @@ let usage = "usage: mini-node [file.js | -e text]
 
 let main (caps : < caps; .. >) (argv : string array) : int =
   let say (s : string) : unit = Console.print caps (s ^ "\n") in
-  let engine = Js_eval.create_with say 1 (fun () -> Unix.gettimeofday () *. 1000.) in
+  let engine = Js_eval.create_with say 1 (fun () -> CapUnix.gettimeofday caps () *. 1000.) in
   (* a script whole: what it logs, and its error if it ends by one *)
   let run (text : string) : int =
     match Js_eval.eval engine text with

@@ -16,7 +16,7 @@ let find caps =
     else if dir = "/" then raise Not_a_repository
     else up (Filename.dirname dir) (rel + 1) (Filename.basename dir :: below)
   in
-  up (Sys.getcwd ()) 0 []
+  up (CapSys.getcwd caps ()) 0 []
 
 let cleanname path =
   let abs = String.length path > 0 && path.[0] = '/' in

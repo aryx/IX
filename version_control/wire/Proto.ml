@@ -8,7 +8,7 @@ open Common
 type direction = Upload | Receive
 type http = { post : string; service : string; mutable request : string option; mutable temps : string list }
 type transport = Local | Git | Ssh | Http of http
-type caps = < Cap.fork; Cap.exec; Cap.wait >
+type caps = < Cap.fork; Cap.exec; Cap.wait; Cap.pipe >
 
 type conn = {
   caps : caps;
@@ -120,7 +120,9 @@ let handshake c host path dir =
                  (match host with Some h -> "host=" ^ h ^ "\000" | None -> ""))
 
 (* a child on one end of a socketpair, its standard input and output *)
-let spawn caps prog args transport =
+let spawn (caps : < caps; .. >) prog args transport =
+  (* (Cap.pipe's, held: caps; bare, lib_core's CapUnix being Plan 9's too,
+   * whose Unix has no socketpair) *)
   let mine, theirs = Unix.socketpair Unix.PF_UNIX Unix.SOCK_STREAM 0 in
   Unix.set_close_on_exec mine;
   let pid = Procs.spawn caps prog args ~stdin:theirs ~stdout:theirs in
@@ -135,7 +137,7 @@ let useragent = "git/2.24.1"
 
 (* curl's output as it comes; a pipe *)
 let curl caps args =
-  let rd, wr = Unix.pipe ~cloexec:true () in
+  let rd, wr = CapUnix.pipe caps ~cloexec:true () in
   let pid = Procs.spawn caps "curl" ([ "-s"; "-S"; "-L"; "--fail"; "-A"; useragent ] @ args) ~stdin:Unix.stdin ~stdout:wr in
   Unix.close wr;
   rd, pid

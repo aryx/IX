@@ -21,7 +21,7 @@
  * standard output: the user, its number, its subject. *)
 
 type caps = < Cap.network; Cap.open_in; Cap.open_out; Cap.readdir;
-              Cap.stdout; Cap.stderr >
+              Cap.stdout; Cap.stderr; Cap.clock >
 
 let usage = "usage: mini-maild [-p port] [-i port] [-d domain] [-a name] spool
   -p  SMTP's port (2525; 0: one the system chooses, said on the first line)
@@ -105,7 +105,7 @@ let smtp (caps : < caps; .. >) ~(spool : string) ~(domain : string)
   let s, greeting = Smtp_server.start ~domain in
   let step s l =
     let s, answer, delivered =
-      Smtp_server.step s ~now:(Unix.gettimeofday ()) l
+      Smtp_server.step s ~now:(CapUnix.gettimeofday caps ()) l
     in
     (match delivered with Some d -> keep caps ~spool d | None -> ());
     (s, answer)

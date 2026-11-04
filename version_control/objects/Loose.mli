@@ -12,7 +12,7 @@ val path : Fpath.t -> Hash.t -> Fpath.t
 val read : < Cap.open_in; .. > -> Fpath.t -> Hash.t -> (Object.Kind.t * string) option
 
 (* written unless present; its hash *)
-val write : < Cap.open_out; .. > -> Fpath.t -> Object.Kind.t -> string -> Hash.t
+val write : < Cap.open_out; Cap.env; .. > -> Fpath.t -> Object.Kind.t -> string -> Hash.t
 
 (* the hashes of all loose objects *)
 val all : Fpath.t -> Hash.t list

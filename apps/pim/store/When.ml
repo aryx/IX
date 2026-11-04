@@ -25,7 +25,7 @@ let month (w : string) : int option =
   lookup (List.mapi (fun i l -> (l, i + 1)) months) w
 
 let today (caps : < Cap.open_in ; Cap.env ; .. >) : Civil.date =
-  fst (Zone.clock (Zone.local caps) (Unix.gettimeofday ()))
+  fst (Zone.clock (Zone.local caps) (CapUnix.gettimeofday caps ()))
 
 let parse ~(today : Civil.date) (words : string) : Civil.date option =
   let t = Civil.days_from_civil today in

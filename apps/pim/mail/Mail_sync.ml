@@ -349,7 +349,7 @@ let said (o : Smtp.outcome) : string =
 (* now, and the minutes east of UTC of this place (Zone): a Date: as
  * the writer's clock says it *)
 let now (caps : < Cap.open_in ; Cap.env ; .. >) : float * int =
-  let t = Unix.gettimeofday () in
+  let t = CapUnix.gettimeofday caps () in
   (t, Zone.offset (Zone.local caps) t / 60)
 
 let sent = ref 0

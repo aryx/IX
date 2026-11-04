@@ -4,7 +4,8 @@
 (* See Mail_model.mli *)
 
 type caps =
-  < Cap.network ; Cap.open_in ; Cap.open_out ; Cap.readdir ; Cap.env ; Cap.exit >
+  < Cap.network ; Cap.open_in ; Cap.open_out ; Cap.readdir ; Cap.env ; Cap.exit ;
+    Cap.clock >
 
 (*****************************************************************************)
 (* The model *)

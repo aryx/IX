@@ -67,7 +67,7 @@ val front : string -> string
 
 (* {2 Processes} *)
 
-type caps = < Cap.fork; Cap.exec; Cap.wait >
+type caps = < Cap.fork; Cap.exec; Cap.wait; Cap.pipe >
 
 (* [start caps ~shell ~env ~args script]: fork the shell with [args]
  * (e.g. ["-e"]) and [script] on its standard input; returns its pid *)

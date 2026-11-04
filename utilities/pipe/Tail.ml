@@ -12,7 +12,7 @@
  * Not tail.c's way: it seeks to the file's end and reads back; here
  * the file is read whole, and what is asked cut from it. *)
 
-type caps = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr >
+type caps = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; Cap.clock >
 
 exception Usage
 (* what, and the system's reason if any *)
@@ -104,7 +104,7 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
     if o.follow && seekable then
       while true do
         write (rest_of (Buffer.create 256));
-        Unix.sleepf 5.0
+        CapUnix.sleepf caps 5.0
       done;
     Exit.OK
   with

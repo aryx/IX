@@ -69,7 +69,9 @@ val square : int * int
 (* Playground_platform's two, the second with the platform's window *)
 val flags : < Cap.argv ; Cap.stdout ; Cap.stderr ; .. > -> Playground.flags
 val run_app :
-  'w window -> < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. > ->
+  'w window ->
+  < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse ; Cap.keyboard ;
+    Cap.fork ; Cap.open_out ; Cap.clock ; .. > ->
   Playground.flags -> ('model, 'msg) Playground.app -> unit
 
 (* the cursor over the window, Playground_platform's: Plan 9's arrow,

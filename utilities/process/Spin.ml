@@ -26,7 +26,7 @@
  * mini-9pi's) is the plain case: programs that compute scale, programs
  * that ask the kernel much do not. *)
 
-type caps = < Cap.fork; Cap.wait; Cap.stdout; Cap.stderr >
+type caps = < Cap.fork; Cap.wait; Cap.stdout; Cap.stderr; Cap.clock >
 
 let help = {|usage: spin [n [kind]]: n processes (1) each do the same work at once; the time all took
   ints    a loop on integers: no memory but a few words, nothing asked of the kernel (the default)
@@ -67,24 +67,24 @@ let alloc () =
   done;
   !x + List.length !keep
 
-let sys () =
+let sys (caps : < Cap.clock; .. >) () =
   let x = ref 0 in
-  for _i = 1 to 200000 do x := !x + (int_of_float (Unix.gettimeofday ()) land 1) done;
+  for _i = 1 to 200000 do x := !x + (int_of_float (CapUnix.gettimeofday caps ()) land 1) done;
   !x
 
 let main (caps : < caps; .. >) (argv : string array) : Exit.t =
   let args = List.tl (Array.to_list argv) in
   let n = match args with a :: _ -> int_of_string_opt a | [] -> Some 1 in
   let kind = match args with _ :: k :: _ -> k | _ -> "ints" in
-  let work = match kind with "ints" -> Some ints | "mem" -> Some mem | "alloc" -> Some alloc | "sys" -> Some sys | _ -> None in
+  let work = match kind with "ints" -> Some ints | "mem" -> Some mem | "alloc" -> Some alloc | "sys" -> Some (sys caps) | _ -> None in
   match n, work with
   | Some n, Some work when n >= 1 && n <= 64 && List.length args <= 2 ->
-      let t0 = Unix.gettimeofday () in
+      let t0 = CapUnix.gettimeofday caps () in
       let pids = List.init n (fun _ -> match CapUnix.fork caps () with 0 -> ignore (work ()); Unix._exit 0 | pid -> pid) in
       List.iter (fun pid ->
         let rec wait () = match CapUnix.waitpid caps [] pid with _ -> () | exception Unix.Unix_error (Unix.EINTR, _, _) -> wait () in
         wait ()) pids;
-      Console.print caps (Printf.sprintf "spin %d %s: %.2f s\n" n kind (Unix.gettimeofday () -. t0));
+      Console.print caps (Printf.sprintf "spin %d %s: %.2f s\n" n kind (CapUnix.gettimeofday caps () -. t0));
       Exit.OK
   | _ -> Console.eprint caps help; Exit.Err "usage"
 

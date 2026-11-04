@@ -74,6 +74,8 @@
  * Version Control" (Software: Practice and Experience, 1985);
  * plan_vcs.md, for what differs from git9 and why. *)
 
-type caps = < Store.caps; Cap.stdout; Cap.stderr; Cap.argv; Cap.fork; Cap.exec; Cap.wait >
+type caps =
+  < Store.caps; Cap.stdout; Cap.stderr; Cap.argv; Cap.fork; Cap.exec; Cap.wait;
+    Cap.pipe >
 
 val main : < caps; .. > -> int

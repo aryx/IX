@@ -31,7 +31,7 @@
  * References: gzip(1) of Plan 9's manual; P. Deutsch, RFC 1952, "GZIP
  * file format specification version 4.3" (1996). *)
 
-type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdin; Cap.stdout; Cap.stderr >
+type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdin; Cap.stdout; Cap.stderr; Cap.clock >
 
 exception Usage
 
@@ -81,7 +81,7 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
       | rest -> rest in
     match options (List.tl (Array.to_list argv)) with
     | [] ->
-        write_all (Console.stdout_fd caps) (Zlib.gzip None (halves (Float.round (Unix.time ()))) (read_all (Console.stdin_fd caps)));
+        write_all (Console.stdout_fd caps) (Zlib.gzip None (halves (Float.round (CapUnix.time caps ()))) (read_all (Console.stdin_fd caps)));
         Exit.OK
     | files ->
         let ok = List.fold_left (fun ok f -> gzipf caps ~verbose:!verbose ~stdout:!stdout f && ok) true files in

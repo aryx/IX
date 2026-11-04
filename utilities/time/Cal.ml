@@ -32,7 +32,7 @@
  * took England's, and cal 10 1582 here is a whole month. A year is
  * the number as typed: cal 90 is the year 90, not 1990. *)
 
-type caps = < Cap.stdout; Cap.stderr >
+type caps = < Cap.stdout; Cap.stderr; Cap.clock >
 
 exception Bad
 
@@ -112,7 +112,7 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
         add (trimmed (String.concat "   " (List.map (fun k -> Bytes.to_string three.(k).(line)) [ 0; 1; 2 ])) ^ "\n")
       done) [ 0; 3; 6; 9 ];
     add "\n\n\n" in
-  let now = Unix.gmtime (Unix.time ()) in
+  let now = Unix.gmtime (CapUnix.time caps ()) in
   let this_year = now.Unix.tm_year + 1900 in
   match List.tl (Array.to_list argv) with
   | _ :: _ :: _ :: _ -> Console.eprint caps help; Exit.Err "usage"

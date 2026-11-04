@@ -5,7 +5,9 @@
 
 open Common
 
-type caps = < Store.caps; Cap.stdout; Cap.stderr; Cap.argv; Cap.fork; Cap.exec; Cap.wait >
+type caps =
+  < Store.caps; Cap.stdout; Cap.stderr; Cap.argv; Cap.fork; Cap.exec; Cap.wait;
+    Cap.pipe >
 
 (* -h: how, by examples, each one as it runs; the commands after it *)
 let help = {|usage: mini-git CMD args

@@ -80,8 +80,8 @@ let read (caps : < Cap.open_in; .. >) ~(dir : string) (name : string) : string =
   | Some s -> Logs.info (fun m -> m "profile: reading %s" path); s
   | None -> Logs.info (fun m -> m "profile: no %s yet" path); ""
 
-let load (caps : < Cap.open_in; .. >) ~(dir : string) : t * Cookie.jar =
-  (of_string (read caps ~dir "preferences"), cookies_of_string ~now:(Unix.gettimeofday ()) (read caps ~dir "cookies.txt"))
+let load (caps : < Cap.open_in; Cap.clock; .. >) ~(dir : string) : t * Cookie.jar =
+  (of_string (read caps ~dir "preferences"), cookies_of_string ~now:(CapUnix.gettimeofday caps ()) (read caps ~dir "cookies.txt"))
 
 let write (caps : < Cap.open_out; .. >) ~(dir : string) (name : string) (perm : int) (text : string) : (unit, string) result =
   let rec make (dir : string) : unit =

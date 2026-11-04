@@ -27,8 +27,8 @@ let read_file (caps : < Cap.open_in; .. >) path =
 let windows = Wsys.windows
 let ask = Wsys.ask
 
-let clock (p : Prefs.t) =
-  let t : Unix.tm = Unix.gmtime (Unix.time ()) in
+let clock (caps : < Cap.clock; .. >) (p : Prefs.t) =
+  let t : Unix.tm = Unix.gmtime (CapUnix.time caps ()) in
   Prefs.clock_text p t.tm_hour t.tm_min
 
 let main (caps : < caps; .. >) (argv : string array) : Exit.t =
@@ -73,7 +73,7 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
     let edge =
       if p.edge <> edge then begin ask caps (Printf.sprintf "resize -edge %s %d" p.edge (Rectangle.dy view.r)); p.edge end
       else edge in
-    let now = if with_clock then clock p else "" in
+    let now = if with_clock then clock caps p else "" in
     let tasks = Taskbar.tasks ws in
     let state = (view.r, tasks, now) in
     let parts = Taskbar.layout view.r tasks clock_width in

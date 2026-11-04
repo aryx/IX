@@ -51,7 +51,7 @@
  * References: tar(1) of Plan 9's manual; IEEE Std 1003.1's pax, the
  * ustar format. *)
 
-type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdin; Cap.stdout; Cap.stderr >
+type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdin; Cap.stdout; Cap.stderr; Cap.clock >
 
 exception Usage
 (* sysfatal: the words said, and the process's last ones *)
@@ -389,7 +389,7 @@ let replace (caps : < caps; .. >) o files =
   Buffer.add_string out (String.make (2 * tblock) '\000');
   Buffer.add_string out (String.make ((record - Buffer.length out mod record) mod record) '\000');
   let data = match compression o ~reading:false with
-    | Some ("gzip", _) -> let t = Float.round (Unix.time ()) in Zlib.gzip None (int_of_float (t /. 65536.), int_of_float (Float.rem t 65536.)) (Buffer.contents out)
+    | Some ("gzip", _) -> let t = Float.round (CapUnix.time caps ()) in Zlib.gzip None (int_of_float (t /. 65536.), int_of_float (Float.rem t 65536.)) (Buffer.contents out)
     | Some (cmd, _) -> raise (Fatal (Printf.sprintf "can't exec %s: not in ix" cmd))
     | None -> Buffer.contents out in
   if o.file <> None then ignore (Unix.lseek fd 0 Unix.SEEK_SET);

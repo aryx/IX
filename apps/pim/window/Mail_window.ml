@@ -274,9 +274,9 @@ let show (caps : caps) (m : model) (id : string) : model =
 let made = ref 0
 
 (* a draft's id: the time, and a count *)
-let new_id () : string =
+let new_id (caps : < Cap.clock; .. >) : string =
   incr made;
-  Printf.sprintf "draft:%.0f.%d" (Unix.gettimeofday ()) !made
+  Printf.sprintf "draft:%.0f.%d" (CapUnix.gettimeofday caps ()) !made
 
 (* the window writing [d]; back after to the list, or the conversation *)
 let compose (m : model) (d : Mail_compose.draft) : model =
@@ -287,14 +287,14 @@ let compose (m : model) (d : Mail_compose.draft) : model =
     back_to = (if m.mode = Reading then Reading else Browsing);
     status = "" }
 
-let write (m : model) (to_ : string) : model =
+let write (caps : caps) (m : model) (to_ : string) : model =
   compose { m with mode = Browsing }
-    { (Mail_compose.blank ~id:(new_id ())) with to_ }
+    { (Mail_compose.blank ~id:(new_id caps)) with to_ }
 
-let write_mailto (m : model) (t : Mailto.t) : model =
+let write_mailto (caps : caps) (m : model) (t : Mailto.t) : model =
   let m =
     compose { m with mode = Browsing }
-      { (Mail_compose.blank ~id:(new_id ())) with
+      { (Mail_compose.blank ~id:(new_id caps)) with
         to_ = String.concat ", " t.to_;
         cc = String.concat ", " t.cc;
         subject = t.subject;
@@ -315,7 +315,7 @@ let answer (caps : caps) (m : model) (c : command) : model =
   | ((s : Imap.summary), Some text) :: _ ->
       let mail = Mail.parse text in
       let shown = Mail_text.text mail in
-      let id = new_id () in
+      let id = new_id caps in
       compose m
         (if c = Forward then Mail_compose.forward ~id ~key:s.msgid mail shown
          else
@@ -467,7 +467,7 @@ let command (caps : caps) (m : model) (c : command) : model =
       if current m = [] then m
       else { m with mode = Asking Due; field = ""; status = "" }
   | Invitation -> if current m = [] then m else invitation caps m
-  | Compose -> compose m (Mail_compose.blank ~id:(new_id ()))
+  | Compose -> compose m (Mail_compose.blank ~id:(new_id caps))
   | Reply | Reply_all | Forward -> answer caps m c
   | Send_ -> run caps m Send
   | Save_draft ->

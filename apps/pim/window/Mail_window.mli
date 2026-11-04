@@ -60,7 +60,8 @@
    mini-maild), today=2026-10-29 (the tests': else the clock's). *)
 
 type caps =
-  < Cap.network ; Cap.open_in ; Cap.open_out ; Cap.readdir ; Cap.env ; Cap.exit >
+  < Cap.network ; Cap.open_in ; Cap.open_out ; Cap.readdir ; Cap.env ; Cap.exit ;
+    Cap.clock >
 
 type model
 
@@ -75,12 +76,12 @@ val refresh : caps -> string Set_.t -> model -> model
  * opened (a task's, a person's page's) *)
 val show : caps -> model -> string -> model
 
-(* [write m to_]: a new message to [to_] *)
-val write : model -> string -> model
+(* [write caps m to_]: a new message to [to_] *)
+val write : caps -> model -> string -> model
 
 (* a message written from a mailto: link (Mailto: its to, cc, subject
  * and text; a bcc said, left out) *)
-val write_mailto : model -> Mailto.t -> model
+val write_mailto : caps -> model -> Mailto.t -> model
 
 (* the conversation read, its messages fetched: their items' ids and
  * the messages (Found_window's, x); none when not reading *)

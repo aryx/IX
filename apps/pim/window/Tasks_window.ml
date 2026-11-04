@@ -139,7 +139,7 @@ let capture (caps : caps) (m : model) (line : string) : model =
   if String.trim title = "" then m
   else begin
     incr made;
-    let id = Printf.sprintf "task:%.0f.%d" (Unix.gettimeofday ()) !made in
+    let id = Printf.sprintf "task:%.0f.%d" (CapUnix.gettimeofday caps ()) !made in
     let due =
       match due with Some d -> [ ("due", Mail_sync.day d) ] | None -> []
     in

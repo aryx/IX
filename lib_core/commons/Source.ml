@@ -12,14 +12,16 @@ let reader (_ : < Cap.fork; .. >) fd n =
   ignore (Thread.create loop ());
   ch
 
-let alarm (_ : < Cap.fork; .. >) =
+let alarm (caps : < Cap.fork; Cap.clock; .. >) =
   let ch = Event.new_channel () and asked = Event.new_channel () in
-  let rec loop () = Unix.sleepf (Event.sync (Event.receive asked)); Event.sync (Event.send ch ()); loop () in
+  let rec loop () =
+    CapUnix.sleepf caps (Event.sync (Event.receive asked));
+    Event.sync (Event.send ch ()); loop () in
   ignore (Thread.create loop ());
   ((fun d -> Event.sync (Event.send asked d)), ch)
 
-let timer (_ : < Cap.fork; .. >) d =
+let timer (caps : < Cap.fork; Cap.clock; .. >) d =
   let ch = Event.new_channel () in
-  let rec loop () = Unix.sleepf d; Event.sync (Event.send ch ()); loop () in
+  let rec loop () = CapUnix.sleepf caps d; Event.sync (Event.send ch ()); loop () in
   ignore (Thread.create loop ());
   ch

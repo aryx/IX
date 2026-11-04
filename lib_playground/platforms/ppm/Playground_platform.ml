@@ -33,7 +33,8 @@ let kept = ref ""
 let clipboard () : string = !kept
 let set_clipboard (s : string) : unit = kept := s
 
-let run_app (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. >) (flags : Playground.flags)
+let run_app (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ;
+    Cap.clock ; .. >) (flags : Playground.flags)
     (app : ('model, 'msg) Playground.app) : unit =
   let cli = Session.parse caps in
   (* (heap=game: the collector as Plan9_loop sets it for a game on
@@ -67,7 +68,7 @@ let run_app (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse 
   let each = how = Some "each" || how = Some "all" in
   let pace = match Option.bind (List.assoc_opt "pace" flags) int_of_string_opt with Some p when p > 0 -> 1. /. float p | _ -> 0. in
   for n = 1 to cli.frames do
-    if pace > 0. then Unix.sleepf pace;
+    if pace > 0. then CapUnix.sleepf caps pace;
     Session.frame run cli.script n (Session.time_of_frame cli n);
     Session.hear cli;
     (* (the view is taken at each frame, as a window's platform takes

@@ -26,7 +26,8 @@ type t = {
  * [give]: a window waits, on the same core: the extract is asked by a process
  * of its own, and [give ()] called all along gives the window its turn. *)
 val find :
-  < Cap.fork; Cap.kill; Cap.wait; Cap.network; Cap.open_in; Cap.open_out; .. > ->
+  < Cap.fork; Cap.kill; Cap.wait; Cap.network; Cap.open_in; Cap.open_out;
+    Cap.clock; Cap.pipe; .. > ->
   base:string ->
   dir:string option ->
   give:(unit -> unit) option ->

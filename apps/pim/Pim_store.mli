@@ -17,7 +17,7 @@
 
 type caps =
   < Cap.open_in ; Cap.open_out ; Cap.readdir ; Cap.env ; Cap.stdout
-  ; Cap.stderr >
+  ; Cap.stderr ; Cap.clock >
 
 (* the reason on standard error, and the exit's *)
 val fail : < Cap.stderr ; .. > -> string -> Exit.t

@@ -9,7 +9,7 @@
  * A command returns its exit status; a script's "die msg" raises Die,
  * printed "git/CMD: msg" by CLI, exit 1. *)
 
-type caps = < Store.caps; Cap.stdout; Cap.stderr; Cap.fork; Cap.exec; Cap.wait >
+type caps = < Store.caps; Cap.stdout; Cap.stderr; Cap.fork; Cap.exec; Cap.wait; Cap.pipe >
 
 exception Die of string
 

@@ -68,7 +68,7 @@ let default_cache_megabytes = 32
  * server does not answer; else asked *)
 let fetch (caps : caps) (base : string) (cache : Tile_cache.t option) (key : Tiles.key) : (Rgba_image.t, string) result =
   let name = Tiles.name key in
-  let now = Unix.gettimeofday () in
+  let now = CapUnix.gettimeofday caps () in
   let ask (more : Http.header list) : (Http.response, string) result =
     Map_http.get caps ~more (Tiles.url base key)
   in

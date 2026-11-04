@@ -54,7 +54,7 @@ let try_all caps (entries : Apps.entry list) seconds =
   List.iter (fun (e : Apps.entry) ->
       let before = newest caps in
       ask caps (Apps.open_line e);
-      Unix.sleepf (float seconds);
+      CapUnix.sleepf caps (float seconds);
       let id = newest caps in
       if id > before then ask caps (Printf.sprintf "delete -id %d" id)) entries
 

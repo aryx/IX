@@ -1,7 +1,9 @@
 (* Map_services: what the flags say of the services and the cache, and the
    terminal's commands, which ask the same services as the window. *)
 
-type caps = < Cap.fork; Cap.kill; Cap.wait; Cap.network; Cap.open_in; Cap.open_out; Cap.env >
+type caps =
+  < Cap.fork; Cap.kill; Cap.wait; Cap.network; Cap.open_in; Cap.open_out; Cap.env;
+    Cap.clock; Cap.pipe >
 
 (* the words on the command line, without the flags' *)
 val words_of : Playground.flags -> string list

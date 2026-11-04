@@ -164,7 +164,7 @@ let record (caps : caps) (m : model) : model =
         { m with status = "a payee and an amount" }
       else begin
         incr made;
-        let id = Printf.sprintf "money:%.0f.%d" (Unix.gettimeofday ()) !made in
+        let id = Printf.sprintf "money:%.0f.%d" (CapUnix.gettimeofday caps ()) !made in
         let t : Ledger.txn =
           { date; num = String.trim f.num; payee = String.trim f.payee;
             category = String.trim f.category; memo = ""; amount = dep - pay;
@@ -318,7 +318,7 @@ let update (caps : caps) (computer : computer) (m : model) : model * go option =
               | Some c ->
                   incr made;
                   let id =
-                    Printf.sprintf "budget:%.0f.%d" (Unix.gettimeofday ()) !made
+                    Printf.sprintf "budget:%.0f.%d" (CapUnix.gettimeofday caps ()) !made
                   in
                   let name = String.concat " " (List.rev name) in
                   Items.save caps (store caps)

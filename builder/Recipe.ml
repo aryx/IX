@@ -115,7 +115,7 @@ let front (s : string) : string =
 (* Processes *)
 (*****************************************************************************)
 
-type caps = < Cap.fork; Cap.exec; Cap.wait >
+type caps = < Cap.fork; Cap.exec; Cap.wait; Cap.pipe >
 
 (* rc's -I: not interactive, even on a terminal (principia's rc.c) *)
 let shell_flags shell = match Word.quoting_of_shell shell with Word.Rc -> [ "-I" ] | Word.Sh -> []
@@ -152,7 +152,7 @@ let spawn caps ~shell ~env ~args ~stdin ~stdout =
   | pid -> pid
 
 let start caps ~shell ~env ~args script =
-  let rd, wr = Unix.pipe ~cloexec:true () in
+  let rd, wr = CapUnix.pipe caps ~cloexec:true () in
   let pid = spawn caps ~shell ~env ~args ~stdin:(Some rd) ~stdout:None in
   Unix.close rd;
   Procs.write_all wr script;
@@ -170,10 +170,10 @@ let describe (st : Unix.process_status) : ended =
 let wait caps = Option.map (fun (pid, st) -> pid, describe st) (Procs.wait_any caps)
 
 let output caps ~shell ~env ~stdin cmd =
-  let out_r, out_w = Unix.pipe ~cloexec:true () in
+  let out_r, out_w = CapUnix.pipe caps ~cloexec:true () in
   let pid, in_w =
     if stdin then begin
-      let in_r, in_w = Unix.pipe ~cloexec:true () in
+      let in_r, in_w = CapUnix.pipe caps ~cloexec:true () in
       let pid = spawn caps ~shell ~env ~args:[] ~stdin:(Some in_r) ~stdout:(Some out_w) in
       Unix.close in_r;
       pid, Some in_w

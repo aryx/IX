@@ -93,11 +93,11 @@ let loop caps ~out ~graphics ~qmp ~run ~now ~input ~frame ~key ~pointer ~qmp_pol
   let n = ref 0 in
   let paced = display != Display.none in
   (* the host's time when the board's was 0 *)
-  let base = ref (Unix.gettimeofday ()) in
+  let base = ref (CapUnix.gettimeofday caps ()) in
   let late = 0.03 in
   let pace () =
-    let ahead = (float_of_int (now ()) /. 1e6) -. (Unix.gettimeofday () -. !base) in
-    if ahead > 0.001 then Unix.sleepf (min ahead 0.02)
+    let ahead = (float_of_int (now ()) /. 1e6) -. (CapUnix.gettimeofday caps () -. !base) in
+    if ahead > 0.001 then CapUnix.sleepf caps (min ahead 0.02)
     (* OPTIMIZATION: behind by less than [late], nothing is lost yet: the
      * board catches up while its kernel waits, a wait costing the host
      * nothing. A kernel busy three tenths of the time (a mouse that
@@ -131,7 +131,7 @@ let loop caps ~out ~graphics ~qmp ~run ~now ~input ~frame ~key ~pointer ~qmp_pol
            Usernet.poll_all ();
            Option.iter (fun q -> qmp_poll q ~quit) qmp);
          let board = now () in
-         let now = Unix.gettimeofday () in
+         let now = CapUnix.gettimeofday caps () in
          Option.iter (fun m ->
            if Monitor.tick m ~host:now ~board ~net:(Usernet.totals ()) then begin
              incr stamp;

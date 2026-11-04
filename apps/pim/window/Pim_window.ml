@@ -121,7 +121,7 @@ let initial (caps : caps) (flags : Playground.flags) : model =
     home = home caps ~account ~today;
     mail =
       (let m = Mail_window.initial caps flags in
-       match mailto with Some t -> Mail_window.write_mailto m t | None -> m);
+       match mailto with Some t -> Mail_window.write_mailto caps m t | None -> m);
     tasks = Tasks_window.initial caps flags;
     people = People_window.initial caps flags;
     notes = Notes_window.initial caps flags;
@@ -183,7 +183,7 @@ let go (caps : caps) (s : model) (keys : string Set_.t) (g : go) : model =
       else s)
   | Write to_ ->
       let s = switch caps s keys Mail in
-      { s with mail = Mail_window.write s.mail to_ }
+      { s with mail = Mail_window.write caps s.mail to_ }
 
 (* the suite's menu, the first: Outlook's Go > Mail, Calendar,
  * Contacts, Tasks, and their keys, Ctrl and the view's number; the

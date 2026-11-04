@@ -36,7 +36,7 @@
  * is the first process. xv6 has no such stage: its kernel knows its
  * one disk and runs /init from it (mini-xv6's Main). *)
 
-type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
+type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; Cap.clock >
 
 let help = {|usage: mini-mkbootdir out kerndate name=file...
 mini-9pi's bootdir: the files of the kernel's own image, its /boot.
@@ -48,10 +48,10 @@ mini-9pi's bootdir: the files of the kernel's own image, its /boot.
 |}
 
 (* 9pi's kerndate, in principia's kernel/COMPILE/9/bcm *)
-let kerndate_9pi (caps : < Cap.open_in; .. >) (principia : string) : int =
+let kerndate_9pi (caps : < Cap.open_in; Cap.clock; .. >) (principia : string) : int =
   let bcm = Filename.concat principia "kernel/COMPILE/9/bcm" in
   match Unix.stat (Filename.concat bcm "pi.5"), FS.read caps (Fpath.v (Filename.concat bcm "9pi")) with
-  | exception (Unix.Unix_error _ | Sys_error _) -> int_of_float (Unix.time ())
+  | exception (Unix.Unix_error _ | Sys_error _) -> int_of_float (CapUnix.time caps ())
   | (st : Unix.stats), image ->
       let t = int_of_float st.st_mtime in
       let found = ref 0 in

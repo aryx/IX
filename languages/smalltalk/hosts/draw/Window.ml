@@ -3,7 +3,7 @@
 
 (* See Window.mli *)
 
-type caps = < Cap.draw; Cap.mouse; Cap.keyboard; Cap.fork >
+type caps = < Cap.draw; Cap.mouse; Cap.keyboard; Cap.fork; Cap.clock >
 
 (* a key as Squeak's code: a character's, or an arrow's *)
 let key_code (k : string) : int option =
@@ -32,11 +32,11 @@ let run (caps : < caps; .. >) (system : Squeak.system) (transcript : string -> u
    * (the buttons: 4 red, 2 yellow, 1 blue), the characters waiting *)
   let at = ref (w / 2, h / 2, 0) and keys : int Queue.t = Queue.create () in
   let interrupt = ref false in
-  let t0 = Unix.gettimeofday () in
+  let t0 = CapUnix.gettimeofday caps () in
   let host : St_interp.host =
     { St_boot.quiet_host with
       transcript;
-      milliseconds = (fun () -> int_of_float ((Unix.gettimeofday () -. t0) *. 1000.));
+      milliseconds = (fun () -> int_of_float ((CapUnix.gettimeofday caps () -. t0) *. 1000.));
       mouse = (fun () -> !at);
       keyboard = (fun () -> Queue.take_opt keys) } in
   let squeak = Squeak.start_sized system host (w, h) in

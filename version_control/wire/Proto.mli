@@ -49,7 +49,7 @@ type http = { post : string; service : string; mutable request : string option; 
 
 type transport = Local | Git | Ssh | Http of http
 
-type caps = < Cap.fork; Cap.exec; Cap.wait >
+type caps = < Cap.fork; Cap.exec; Cap.wait; Cap.pipe >
 
 type conn = {
   caps : caps;

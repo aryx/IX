@@ -108,12 +108,14 @@ let meter (shapes : int) : unit =
 (* a part of a frame's showing ends (stats=on): its messages flushed,
  * the time to make them and the device's for them counted *)
 let clock = ref 0.
+(* the time, set by run_app from its Cap.clock (0 before) *)
+let now : (unit -> float) ref = ref (fun () -> 0.)
 let part (display : Display.t) (i : int) : unit =
   if !stats then begin
-    let t = Unix.gettimeofday () in
+    let t = !now () in
     m_messages := !m_messages +. (t -. !clock);
     Display.flush display;
-    let t' = Unix.gettimeofday () in
+    let t' = !now () in
     m_device.(i) <- m_device.(i) +. (t' -. t);
     clock := t'
   end
@@ -763,7 +765,7 @@ let show (display : Display.t) (win : window) (shapes : Playground.shape list) (
   if (match win.last with Some last -> same last shapes | None -> false) then false
   else begin
     win.last <- Some shapes;
-    if !stats then clock := Unix.gettimeofday ();
+    if !stats then clock := !now ();
     (* the playground's units to the picture's pixels: up is less, the middle is (0, 0) *)
     let middle = Affine.translate (float win.width /. 2.) (float win.height /. 2.) in
     let m = Affine.compose (Affine.compose middle (Affine.scale 1. (-1.))) (Affine.scale win.scale win.scale) in
@@ -823,9 +825,11 @@ let set_cursor = Plan9_loop.set_cursor
 let clipboard = Plan9_loop.clipboard
 let set_clipboard = Plan9_loop.set_clipboard
 
-let run_app (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. >) (flags : Playground.flags)
+let run_app (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ;
+    Cap.clock ; .. >) (flags : Playground.flags)
     (app : ('model, 'msg) Playground.app) : unit =
   stats := List.assoc_opt "stats" (Plan9_loop.flags caps) = Some "on";
+  now := CapUnix.gettimeofday caps;
   counter := List.assoc_opt "fps" (Plan9_loop.flags caps) <> Some "off";
   bitmap := List.assoc_opt "font" (Plan9_loop.flags caps) <> Some "hershey";
   letters_kept := List.assoc_opt "letters" (Plan9_loop.flags caps) <> Some "strokes";

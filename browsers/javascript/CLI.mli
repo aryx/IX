@@ -106,7 +106,7 @@
  * "Modules: CommonJS modules", for what is not here. The language's
  * history and its reference: Js_eval. *)
 
-type caps = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr >
+type caps = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; Cap.clock >
 
 (* the program's status: 0, 1 for a script that failed, 2 for the usage *)
 val main : < caps; .. > -> string array -> int

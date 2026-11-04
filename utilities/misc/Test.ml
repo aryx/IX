@@ -38,7 +38,7 @@
  * matches strings against patterns and is built in, so test is left
  * with the files and the numbers. *)
 
-type caps = < Cap.readdir; Cap.stderr >
+type caps = < Cap.readdir; Cap.stderr; Cap.clock >
 
 exception Bad of string
 
@@ -82,7 +82,7 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
               end
             end in
           let total, relative = go 0 0.0 false in
-          d.mtime < (if relative then max 0.0 (Unix.time () -. total) else total) in
+          d.mtime < (if relative then max 0.0 (CapUnix.time caps () -. total) else total) in
     let mtimes a b f = match stat a, stat b with Some x, Some y -> f x.mtime y.mtime | _ -> false in
     let rec e () =
       let p = e1 () in

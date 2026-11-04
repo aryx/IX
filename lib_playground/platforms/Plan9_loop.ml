@@ -139,7 +139,9 @@ let writer : (string -> unit) ref = ref (fun (s : string) -> kept := s)
 let clipboard () : string = !reader ()
 let set_clipboard (s : string) : unit = !writer s
 
-let run_app (w : 'w window) (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. >)
+let run_app (w : 'w window)
+    (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse ;
+             Cap.keyboard ; Cap.fork ; Cap.open_out ; Cap.clock ; .. >)
     (flags : Playground.flags) (app : ('model, 'msg) Playground.app) : unit =
   let cli = Session.parse caps in
   (* A game makes much at each frame and keeps little (a float is a
@@ -318,7 +320,7 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.d
      * right").
      * old: let ticks = Source.timer caps 0.01 in *)
     let ask, ticks = alarm in
-    let start = Unix.gettimeofday () in
+    let start = CapUnix.gettimeofday caps () in
     (* the ticks given so far; the frames drawn in the second that began at [since], and in the one before it *)
     let given = ref 0 and since = ref start and drawn = ref 0 and fps = ref 0 in
     (* (a sleep is counted in the kernel's ticks, a hundredth of a second,
@@ -385,7 +387,7 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.d
         on_its_way := true;
         if calm && !quiet >= 30 then begin slept := true; ask 0.25 end
         else begin
-          let left = start +. (float (!given + 1) /. 60.) -. Unix.gettimeofday () in
+          let left = start +. (float (!given + 1) /. 60.) -. CapUnix.gettimeofday caps () in
           ask (if left > 0.010 then left -. 0.010 else if left > 0. then 0.001 else 0.)
         end
       end in
@@ -409,7 +411,7 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.d
       m_update := !m_update +. update; m_view := !m_view +. view; m_show := !m_show +. shown; m_ticks := !m_ticks + ticks;
       incr m_frames;
       if !m_frames = 40 then begin
-        let t = Unix.gettimeofday () in
+        let t = CapUnix.gettimeofday caps () in
         prerr_string
           (Printf.sprintf "40 frames in %.1f s, %d ticks: update %.0f ms, view %.0f ms, show %.0f ms each\n" (t -. !m_since) !m_ticks
              (!m_update *. 25.) (!m_view *. 25.) (!m_show *. 25.));
@@ -449,7 +451,7 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.d
       pending mice;
       if !ticked && not !quit then begin
         ticked := false;
-        let now = Unix.gettimeofday () in
+        let now = CapUnix.gettimeofday caps () in
         let due = int_of_float ((now -. start) *. 60.) - !given in
         (* (a calm program after its long sleep: one, and it is not late) *)
         let due =
@@ -480,7 +482,7 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.d
            * its piece, said 4 where it was making 60 (the author: "tetris
            * still display 4 fps"); the meter has the drawn ones only.
            * old: if did then incr drawn) *)
-          let t1 = if stats then Unix.gettimeofday () else 0. in
+          let t1 = if stats then CapUnix.gettimeofday caps () else 0. in
           let shapes = Session.view run in
           (* (the red frame only on a picture that changed: a program
            * whose picture is the very list of the frame before is
@@ -492,12 +494,12 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.d
           let still = shapes == !previous in
           previous := shapes;
           let shapes = if cut && not still then shapes @ late_frame (w.units !win) else shapes in
-          let t2 = if stats then Unix.gettimeofday () else 0. in
+          let t2 = if stats then CapUnix.gettimeofday caps () else 0. in
           (* (-1: no meter: Session.fps_counter's callers) *)
           let did = show shapes (if calm then -1 else !fps) in
           if did then quiet := 0 else incr quiet;
           incr drawn;
-          if stats && did then meter (t1 -. now) (t2 -. t1) (Unix.gettimeofday () -. t2) due;
+          if stats && did then meter (t1 -. now) (t2 -. t1) (CapUnix.gettimeofday caps () -. t2) due;
           if now -. !since >= 1. then (fps := !drawn; drawn := 0; since := now)
         end;
         wake ()

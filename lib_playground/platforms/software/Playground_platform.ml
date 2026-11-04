@@ -92,7 +92,8 @@ let set_cursor = Plan9_loop.set_cursor
 let clipboard = Plan9_loop.clipboard
 let set_clipboard = Plan9_loop.set_clipboard
 
-let run_app (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. >) (flags : Playground.flags)
+let run_app (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ;
+    Cap.clock ; .. >) (flags : Playground.flags)
     (app : ('model, 'msg) Playground.app) : unit =
   (* (the flag redraw=all: each frame the whole picture, the simple way) *)
   Redraw.choose (List.assoc_opt "redraw" (Plan9_loop.flags caps));

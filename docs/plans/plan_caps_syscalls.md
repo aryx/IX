@@ -153,6 +153,23 @@ raspberry/, lib_playground's platforms, and tiny/'s host side, about
    `CapUnix`'s. Or the sweep is taught their mkfiles; the units of
    some are computed (`sweep.sh`'s "computed units"). tiny/ is left
    out for now (the author's).
+   Under way (2026-11-04): 95 calls by `git grep`, tests and benchmarks
+   apart. Done: lib_core's `Source.timer` and `alarm` (now `Cap.clock`
+   too), lib_playground's platforms and `Plan9_loop` (draw's stats by
+   a clock set by `run_app`), apps/maps, apps/pim (each new item's id
+   by `caps`), browsers/javascript and netscape's profile, builder's
+   `Recipe`, the shell's `$pid`, mini-mkbootdir, Tetris (its seed read
+   by main), the utilities, version_control's `Loose`, `Repo`,
+   `Proto`'s pipe, the desktop's `Panel` and `Startmenu`, mini-qemu's
+   `Main`, smalltalk's draw host. Bare, with a comment: `Proto`'s
+   `socketpair` and `Commands`' `gethostname` (lib_core's `CapUnix` is
+   Plan 9's too, whose `Unix` has neither). Left as they were:
+   `FS.getcwd`, still `Cap.readdir`'s (its callers include tiny/ and
+   `analyzers/Analyze.ml`); tests, benchmarks, mini-ml's own tests of
+   `Unix`. Open: lib_networking's (`Lines`' deadlines, `Keep_alive`'s
+   ages, `Tls_client`'s cache, `Cookie_jar`'s now, `Dns`'s query id)
+   and mini-qemu's `Status` and `Usernet`, library code where no
+   `caps` goes.
 
 Checked at each step: `make test`, `analyzers/tests/run.sh`, the `-caps`
 sweep against the one before (the only new reports are the census's,

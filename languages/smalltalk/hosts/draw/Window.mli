@@ -12,6 +12,6 @@
  *
  * [run caps system transcript]: until the window is deleted. *)
 
-type caps = < Cap.draw; Cap.mouse; Cap.keyboard; Cap.fork >
+type caps = < Cap.draw; Cap.mouse; Cap.keyboard; Cap.fork; Cap.clock >
 
 val run : < caps; .. > -> Squeak.system -> (string -> unit) -> unit

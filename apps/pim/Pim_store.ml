@@ -5,7 +5,7 @@
 
 type caps =
   < Cap.open_in ; Cap.open_out ; Cap.readdir ; Cap.env ; Cap.stdout
-  ; Cap.stderr >
+  ; Cap.stderr ; Cap.clock >
 
 let fail (caps : < Cap.stderr ; .. >) (why : string) : Exit.t =
   Console.eprint caps (why ^ "\n");
@@ -127,7 +127,7 @@ let event (caps : < caps ; .. >) (today : Civil.date) (words : string) :
     Exit.t =
   let people = People.contacts (Items.all caps (store caps)) in
   let e = Capture.event ~today ~people words in
-  let id = Printf.sprintf "event:%.0f" (Unix.gettimeofday () *. 1e6) in
+  let id = Printf.sprintf "event:%.0f" (CapUnix.gettimeofday caps () *. 1e6) in
   let item = Capture.to_item ~id e in
   Items.save caps (store caps) item;
   Console.print caps (String.trim (Item.to_string item) ^ "\n");
@@ -171,7 +171,7 @@ let import (caps : < caps ; .. >) (account : string) (file : string) : Exit.t
         in
         List.iteri
           (fun k (t : Ledger.txn) ->
-            let id = Printf.sprintf "money:%.0f.%d" (Unix.gettimeofday ()) k in
+            let id = Printf.sprintf "money:%.0f.%d" (CapUnix.gettimeofday caps ()) k in
             let item = Books.of_txn ~id ~account t in
             Items.save caps (store caps) item;
             line caps "" item)
@@ -257,7 +257,7 @@ let assign (caps : < caps ; .. >) (today : Civil.date) (words : string list) :
       | None -> fail caps (amount ^ ": not an amount")
       | Some c ->
           (* (to the microsecond: assignments typed one after the other) *)
-          let id = Printf.sprintf "budget:%.0f" (Unix.gettimeofday () *. 1e6) in
+          let id = Printf.sprintf "budget:%.0f" (CapUnix.gettimeofday caps () *. 1e6) in
           let name = String.concat " " (List.rev name) in
           Items.save caps (store caps) (Envelopes.assign ~id today name c);
           Exit.OK)

@@ -85,9 +85,9 @@ let topic (subject : string) : string =
 
 let made = ref 0
 
-let fresh (kind : string) : string =
+let fresh (caps : < Cap.clock; .. >) (kind : string) : string =
   incr made;
-  Printf.sprintf "%s:%.0f.%d" kind (Unix.gettimeofday ()) !made
+  Printf.sprintf "%s:%.0f.%d" kind (CapUnix.gettimeofday caps ()) !made
 
 (* a row made an item, linked to its message by re:; the item's id and
  * what to say *)
@@ -101,7 +101,7 @@ let make (caps : caps) (r : row) : string * string =
         | None -> []
       in
       let e =
-        Capture.to_item ~id:(fresh "event")
+        Capture.to_item ~id:(fresh caps "event")
           { title = topic r.subject; day; time; ends = None; repeat = ""; with_ }
       in
       let e = Mail.set "re" r.message e in
@@ -116,7 +116,7 @@ let make (caps : caps) (r : row) : string * string =
         @ match r.due with Some d -> [ ("due", Mail_sync.day d) ] | None -> []
       in
       let t =
-        Item.make ~id:(fresh "task") ~stamps:[ "task"; "money" ] fields ""
+        Item.make ~id:(fresh caps "task") ~stamps:[ "task"; "money" ] fields ""
       in
       Items.save caps (store caps) t;
       (Item.id t, "a bill to pay: " ^ Money.to_string c)

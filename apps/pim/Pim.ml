@@ -60,7 +60,8 @@ type caps =
   ; Cap.stderr
   ; Cap.fork
   ; Cap.exec
-  ; Cap.wait >
+  ; Cap.wait
+  ; Cap.clock >
 
 let usage =
   "usage: mini-pim [-s host:port] [-plain] [-u user] command\n\
@@ -567,7 +568,7 @@ let remind (caps : < caps ; .. >) (o : options) : Exit.t =
       | Ok password ->
           let zone = Zone.local caps in
           let rec loop (day, minute) (looked : float) =
-            let now = Unix.gettimeofday () in
+            let now = CapUnix.gettimeofday caps () in
             let day', minute' = Zone.clock zone now in
             (* the minutes since the last look, a new day's from its
              * first *)
@@ -594,10 +595,10 @@ let remind (caps : < caps ; .. >) (o : options) : Exit.t =
               end
             in
             (* (to just after the next minute's start) *)
-            Unix.sleepf (60. -. Float.rem now 60. +. 0.1);
+            CapUnix.sleepf caps (60. -. Float.rem now 60. +. 0.1);
             loop (day', minute') looked
           in
-          let now = Unix.gettimeofday () in
+          let now = CapUnix.gettimeofday caps () in
           let day, minute = Zone.clock zone now in
           Console.print caps
             (Printf.sprintf "mini-pim remind: %s %s\n" (Mail_sync.day day)

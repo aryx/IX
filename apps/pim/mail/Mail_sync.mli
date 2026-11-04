@@ -143,6 +143,6 @@ val said : Smtp.outcome -> string
  * cache) and sent; its item removed once every recipient took it. The
  * outcome in words. *)
 val send_draft :
-  < Cap.network ; Cap.open_in ; Cap.open_out ; Cap.env ; .. > ->
+  < Cap.network ; Cap.open_in ; Cap.open_out ; Cap.env ; Cap.clock ; .. > ->
   Items.t -> server -> user:string -> password:string ->
   Mail_compose.draft -> (string, string) result

@@ -21,7 +21,7 @@
 val parse : today:Civil.date -> string -> Civil.date option
 
 (* today here, from the system's clock and zone (Zone.local) *)
-val today : < Cap.open_in ; Cap.env ; .. > -> Civil.date
+val today : < Cap.open_in ; Cap.env ; Cap.clock ; .. > -> Civil.date
 
 (* [ending ~today line]: a line typed to capture a task, its day at its
  * end found ("pay the electricity by friday": "pay the electricity",

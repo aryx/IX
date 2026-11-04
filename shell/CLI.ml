@@ -137,7 +137,7 @@ let run (caps : < caps; .. >) (argv : string array) : int =
   | Some args ->
       Env.set env "*" args;
       Env.set env "rcname" [ argv0 ];
-      Env.set env "pid" [ string_of_int (Unix.getpid ()) ];
+      Env.set env "pid" [ string_of_int (CapUnix.getpid caps ()) ];
       if not (Env.flag env 'I') && Env.get env "cflag" = [] && args = [] && Unix.isatty Unix.stdin then
         Env.set_flag env 'i' true;
       Sys.set_signal Sys.sigint (Sys.Signal_handle (fun _ -> Eval.interrupted := true));

@@ -11,7 +11,8 @@
                               Mail_view  (the picture) *)
 
 type caps =
-  < Cap.network ; Cap.open_in ; Cap.open_out ; Cap.readdir ; Cap.env ; Cap.exit >
+  < Cap.network ; Cap.open_in ; Cap.open_out ; Cap.readdir ; Cap.env ; Cap.exit ;
+    Cap.clock >
 
 (* what waits for the password *)
 type action = Fetch | Open | Archive | Star of bool | Send | Snooze of Civil.date

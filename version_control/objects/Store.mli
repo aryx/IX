@@ -4,7 +4,9 @@
  * The packs are opened when first needed and again when an object is
  * not found (a fetch may have added one: git9's refreshpacks). *)
 
-type caps = < Cap.open_in; Cap.open_out >
+(* (the clock: a walk's time of a file, a lock waited for; env: a
+ * temporary file's name by the pid) *)
+type caps = < Cap.open_in; Cap.open_out; Cap.clock; Cap.env >
 
 type t = {
   caps : caps;

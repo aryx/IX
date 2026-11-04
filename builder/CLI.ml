@@ -22,7 +22,9 @@ default); -d[egp]: dump the jobs, the graph, the rules; -H: out of date by
 content, not time (in .mkhash, not mk's); var=value: over the mkfile's var.
 |}
 
-type caps = < Recipe.caps; Cap.env; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
+type caps =
+  < Recipe.caps; Cap.env; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr;
+    Cap.clock >
 
 let usage = "Usage: mk [-f file] [-(n|a|e|t|k|i|H)] [-d[egp]] [targets ...]"
 let hashfile = ".mkhash"
@@ -53,11 +55,11 @@ let write_file caps file s = FS.write_perm caps 0o666 (path file) s
 
 (* file.c's touch(): update the time, or create the file; for an
  * archive member, its date in the archive's header *)
-let touch (caps : < Cap.open_in; Cap.open_out; .. >) (name : string) : unit =
+let touch (caps : < Cap.open_in; Cap.open_out; Cap.clock; .. >) (name : string) : unit =
   match Archive.split name with
   | Some (ar, member) -> (
       match read_file caps ar with
-      | Some s -> write_file caps ar (Archive.touch_date ~now:(Unix.gettimeofday ()) s member)
+      | Some s -> write_file caps ar (Archive.touch_date ~now:(CapUnix.gettimeofday caps ()) s member)
       | None -> write_file caps ar "!<arch>\n")
   | None ->
       if Sys.file_exists name then Unix.utimes name 0. 0.
@@ -117,7 +119,7 @@ let run (caps : < caps; .. >) (argv : string array) : int =
     let rest = options args in
     let assigns, targets = List.partition (fun a -> String.contains a '=') rest in
     let env = Procs.split_env (CapUnix.environment caps ()) in
-    let pid = Unix.getpid () in
+    let pid = CapUnix.getpid caps () in
     let mk = Mkfile.create ~env ~default_shell:[ "sh" ] in
     let io : Mkfile.io = {
       read_file = read_file caps;
@@ -139,7 +141,7 @@ let run (caps : < caps; .. >) (argv : string array) : int =
      | Some f -> Mkfile.read ~override:false io mk ~file:f (read_file caps f |! failwith (f ^ ": No such file or directory"))
      | None -> Option.iter (Mkfile.read ~override:false io mk ~file:"mkfile") (read_file caps "mkfile"));
     if !dump_mkfile then print caps (Mkfile.dump mk);
-    let now = Unix.gettimeofday () in
+    let now = CapUnix.gettimeofday caps () in
     (* -w's names: each option's, between commas, blanks or newlines (mlpp's [%list]) *)
     let whatif =
       [%list name || option <- !whatif; a <- String.split_on_char ',' option; b <- String.split_on_char ' ' a;
@@ -180,10 +182,10 @@ let run (caps : < caps; .. >) (argv : string array) : int =
         flush_out caps;
         snd (Recipe.output caps ~shell:(Mkfile.default_shell mk) ~env:(shell_env ())
                ~stdin:false (Printf.sprintf "%s '%s' '%s'" cmd target prereq)));
-      now = Unix.gettimeofday;
+      now = CapUnix.gettimeofday caps;
       print = print caps;
       eprint = eprint caps;
-      cwd = Sys.getcwd ();
+      cwd = CapSys.getcwd caps ();
       pid;
     } in
     (* -H: the traces of the last build, in .mkhash (Outofdate) *)

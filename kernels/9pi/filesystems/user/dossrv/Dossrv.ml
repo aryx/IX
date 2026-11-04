@@ -43,7 +43,7 @@
  * shape serves an ISO 9660 CD (9660srv), a tar file (tarfs), an
  * FTP site (ftpfs). *)
 
-type caps = < Cap.open_in; Cap.open_out; Cap.fork; Cap.stderr >
+type caps = < Cap.open_in; Cap.open_out; Cap.fork; Cap.stderr; Cap.clock; Cap.pipe >
 
 (* a file of a tree: its file system, its entry there, the directory it
  * was reached from (for "..") *)
@@ -134,7 +134,7 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
   match options (List.tl (Array.to_list argv)) with
   | ([] | [ _ ]) as rest ->
       let name = match rest with [ name ] -> name | _ -> "dos" in
-      Fat.clock := Unix.time;
+      Fat.clock := CapUnix.time caps;
       let fd = P9_server.post caps name in
       (* the server is a process of its own: this one ends, and its shell goes on *)
       (match CapUnix.fork caps () with

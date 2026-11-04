@@ -60,7 +60,7 @@ let init (caps : caps) args =
   let branch = Flags.get fl 'b' ||| "master" in
   let git = Filename.concat dir ".git" in
   if Sys.file_exists git then die "%s already exists" git;
-  let name = Filename.basename (Repo.cleanname (if Filename.is_relative dir then Filename.concat (Sys.getcwd ()) dir else dir)) in
+  let name = Filename.basename (Repo.cleanname (if Filename.is_relative dir then Filename.concat (CapSys.getcwd caps ()) dir else dir)) in
   let upstream = match Flags.get fl 'u' with
     | Some u -> Some u
     | None ->
@@ -116,10 +116,13 @@ let walk (caps : caps) args =
 
 (* GIT_AUTHOR_DATE, as C git reads it ("SECONDS" or "SECONDS +ZONE"):
  * the tests' way to fix the date (plan_vcs.md, deliberate difference 5) *)
-let now () =
-  match Sys.getenv_opt "GIT_AUTHOR_DATE" with
-  | Some d -> (match int_of_string_opt (List.hd (String.split_on_char ' ' (String.trim d))) with Some n -> n | None -> int_of_float (Unix.time ()))
-  | None -> int_of_float (Unix.time ())
+let now (caps : < Cap.env; Cap.clock; .. >) =
+  let clock () = int_of_float (CapUnix.time caps ()) in
+  match CapSys.getenv caps "GIT_AUTHOR_DATE" with
+  | d ->
+      let first = List.hd (String.split_on_char ' ' (String.trim d)) in
+      (match int_of_string_opt first with Some n -> n | None -> clock ())
+  | exception Not_found -> clock ()
 
 let save (caps : caps) args =
   let fl, args = try Flags.parse ~flags:"" ~with_arg:"mneNEpd" args with Flags.Usage -> die "usage: git/save -n name -e email -m message -d date [files...]" in
@@ -132,7 +135,7 @@ let save (caps : caps) args =
     | _ -> die "partially specified committer" in
   let date = match Flags.get fl 'd' with
     | Some d -> (int_of_string_opt d |! die "could not parse date %s" d)
-    | None -> now () in
+    | None -> now caps in
   let parents = List.map (fun p -> try Query.eval1 r.store p with Query.Error m -> die "invalid parent: %s" m) (Flags.all fl 'p') in
   let h = try Save.save r { author = { name; email }; committer; msg; date; parents } (rel_paths r args) with Save.Error m -> die "%s" m in
   print caps (Hash.to_hex h ^ "\n");
@@ -238,7 +241,7 @@ let commit (caps : caps) args =
         s in
   let text = cleanmsg text in
   if text = "" then die "empty commit message";
-  let date = now () in
+  let date = now caps in
   let parents = List.map (fun p -> try Query.eval1 r.store p with Query.Error m -> die "invalid parent: %s" m) parents in
   let hash = try Save.save r { author = who; committer = who; msg = text; date; parents } files with Save.Error m -> die "could not commit: %s" m in
   (* update *)
@@ -610,7 +613,7 @@ let clone (caps : caps) args =
   if Sys.file_exists local && (not (Sys.is_directory local) || Sys.readdir local <> [||]) then die "destination already exists: %s" local;
   (* the script works from inside the new directory: a relative remote
    * is relative to it *)
-  let local = if Filename.is_relative local then Filename.concat (Sys.getcwd ()) local else local in
+  let local = if Filename.is_relative local then Filename.concat (CapSys.getcwd caps ()) local else local in
   let cleanup st =
     eprint caps (Printf.sprintf "failed to clone %s: cleaning %s\n" remote local);
     rm_rf local;

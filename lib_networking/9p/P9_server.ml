@@ -149,8 +149,8 @@ let serve (fs : 'f fs) fd =
   let rec loop () = match P9_wire.read fd with None -> () | Some bytes -> request t bytes; loop () in
   loop ()
 
-let post (caps : < Cap.open_out; .. >) name =
-  let mine, posted = Unix.pipe ~cloexec:false () in
+let post (caps : < Cap.open_out; Cap.pipe; .. >) name =
+  let mine, posted = CapUnix.pipe caps ~cloexec:false () in
   (* /srv takes a descriptor's number, written to a file made there *)
   let number = string_of_int (Obj.magic posted : int) in
   Fpath.v ("/srv/" ^ name) |> FS.with_open_out caps (fun (chan : Chan.o) -> output_string chan.oc number);

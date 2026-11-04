@@ -3,7 +3,9 @@
 
 (* See CLI.mli *)
 
-type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.env; Cap.chdir; Cap.stdin; Cap.stdout; Cap.stderr >
+type caps =
+  < Cap.open_in; Cap.open_out; Cap.readdir; Cap.env; Cap.chdir; Cap.stdin;
+    Cap.stdout; Cap.stderr; Cap.clock >
 
 let usage = "usage: mini-dotnet [-v|-debug|-quiet] [-trace] [-s] [-jit [-tier n]] file.dll [arg...] | -S [-jit [-m 5|7 [-refs]]] | -tables | -size | -verify file.dll..."
 
@@ -63,7 +65,7 @@ let entries (_caps : < Cap.readdir; .. >) (f : string) : string list option =
 (* Library's system: each access by its capability; the clock the
  * milliseconds since the program started *)
 let os (caps : < caps; .. >) (argv : string list) : Library.os =
-  let start = Unix.gettimeofday () in
+  let start = CapUnix.gettimeofday caps () in
   { argv;
     getenv = (fun (v : string) -> match CapSys.getenv caps v with s -> Some s | exception Not_found -> None);
     kind = kind caps;
@@ -73,7 +75,7 @@ let os (caps : < caps; .. >) (argv : string list) : Library.os =
     entries = entries caps;
     cwd = (fun () -> FS.getcwd caps ());
     chdir = (fun (f : string) -> match CapUnix.chdir caps f with () -> true | exception Unix.Unix_error _ -> false);
-    ticks = (fun () -> int_of_float ((Unix.gettimeofday () -. start) *. 1000.)) }
+    ticks = (fun () -> int_of_float ((CapUnix.gettimeofday caps () -. start) *. 1000.)) }
 
 (* a program run: its output by the console's channel, its input
  * read a byte at a time; an exception no one catches said as .NET says

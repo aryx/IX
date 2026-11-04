@@ -91,7 +91,7 @@ let receive (st : Store.t) c =
     let rec take n =
       match Unix.openfile lock [ Unix.O_CREAT; Unix.O_EXCL; Unix.O_RDWR ] 0o644 with
       | fd -> Unix.close fd
-      | exception Unix.Unix_error _ -> if n = 0 then raise (Fatal "update refs: repo locked") else (Unix.sleepf 0.25; take (n - 1)) in
+      | exception Unix.Unix_error _ -> if n = 0 then raise (Fatal "update refs: repo locked") else (CapUnix.sleepf st.caps 0.25; take (n - 1)) in
     take 9;
     let release () = try Sys.remove lock with Sys_error _ -> () in
     let err fmt = Printf.ksprintf (fun s -> release (); (try Proto.write_pkt c ("ERR " ^ s) with _ -> ()); raise (Fatal ("update refs: " ^ s))) fmt in

@@ -177,9 +177,10 @@ val file : image -> string
 (* Windows: a screen's image made a desktop, filled with an image
  * where no window is; then windows on it, images that may cover one
  * another (the kernel draws what shows of each and keeps the rest:
- * Plan 9's layers); one brought to the front *)
+ * Plan 9's layers); one brought to the front. The desktop's number is
+ * one no other program uses: the caller's pid *)
 type desktop
-val desktop : image -> image -> desktop
+val desktop : image -> image -> int -> desktop
 val window : desktop -> Rectangle.t -> color -> image
 val top : image -> unit
 (* (and behind the others) *)

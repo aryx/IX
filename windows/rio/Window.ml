@@ -14,7 +14,8 @@ let pointer : Mouse.state ref = ref { Mouse.pos = Point.zero; buttons = 0; msec 
 
 (* (a window's image has another name when it is another image: its
  * number; noborder, as Plan 9 says it: its program draws in all of it) *)
-let name (w : t) = Printf.sprintf "%swindow.%d.%d.%d" (if w.layer = Normal then "" else "noborder.") (Unix.getpid ()) w.id w.image.id
+let pid = ref 0
+let name (w : t) = Printf.sprintf "%swindow.%d.%d.%d" (if w.layer = Normal then "" else "noborder.") !pid w.id w.image.id
 (* the text's rectangle: inside the border, and 2 pixels more *)
 let text_r (w : t) = Rectangle.inset w.image.r (width + 2)
 let in_bar (w : t) (p : Point.t) = Terminal.in_bar (text_r w) p

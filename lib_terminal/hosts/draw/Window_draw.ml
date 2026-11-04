@@ -3,7 +3,7 @@
 
 (* See Window_draw.mli *)
 
-type caps = < Cap.draw; Cap.mouse; Cap.keyboard; Cap.fork >
+type caps = < Cap.draw; Cap.mouse; Cap.keyboard; Cap.fork; Cap.clock >
 
 (* an F key's number (1 to 12), of Plan 9's rune for it (0xF001...) *)
 let f_key (k : string) : int option =
@@ -111,9 +111,9 @@ let run (caps : < caps; .. >) ~(mouse : bool) (timed : (string -> unit) option) 
      * the model is the one shown (a tick of a program that waits: the
      * same model) *)
     if (match !drawn with Some m -> m != !model | None -> true) then begin
-      let t0 = Unix.gettimeofday () in
+      let t0 = CapUnix.gettimeofday caps () in
       let next = p.view !model in
-      let t1 = Unix.gettimeofday () in
+      let t1 = CapUnix.gettimeofday caps () in
       (* (all of it: the window first, black past its last cell) *)
       if !screen = None then Draw.fill !view !view.r (color (0, 0, 0));
       Cells.show surface !screen next;
@@ -123,7 +123,7 @@ let run (caps : < caps; .. >) ~(mouse : bool) (timed : (string -> unit) option) 
       match timed with
       | Some say ->
           let ms (a : float) (b : float) : int = int_of_float ((b -. a) *. 1000.) in
-          say (Printf.sprintf "view %d ms, painted %d ms\n" (ms t0 t1) (ms t1 (Unix.gettimeofday ())))
+          say (Printf.sprintf "view %d ms, painted %d ms\n" (ms t0 t1) (ms t1 (CapUnix.gettimeofday caps ())))
       | None -> ()
     end;
     let events = [

@@ -91,6 +91,6 @@
  * Sterling and Ehud Shapiro, "The Art of Prolog" (MIT Press, 1986);
  * ISO/IEC 13211-1 (1995). *)
 
-type caps = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr >
+type caps = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; Cap.clock >
 
 val main : < caps; .. > -> string array -> int

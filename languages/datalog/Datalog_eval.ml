@@ -436,6 +436,8 @@ let apply_shared (p : D.t) (stats : stats) (pool : pool) (rule : D.rule) (s : sc
  * known are added to its head, this round's new ones. Not at all if an
  * atom has no tuple (pointer.dl's assign_deref on an ML program: a lookup for each new
  * point_to, 1.7 million, found nothing) *)
+let clock : (unit -> float) ref = ref (fun () -> 0.)
+
 let apply (p : D.t) (stats : stats) (rule : D.rule) (steps : step list) : unit =
   let empty (step : step) : bool =
     match step with
@@ -444,7 +446,7 @@ let apply (p : D.t) (stats : stats) (rule : D.rule) (steps : step list) : unit =
   if not (List.exists empty steps) then begin
     let env = Array.make rule.slots (-1) in
     let head (i : int) : int = value env rule.head.args.(i) in
-    let fired = stats.firings and added = stats.derived and looked = stats.lookups and t0 = Sys.time () in
+    let fired = stats.firings and added = stats.derived and looked = stats.lookups and t0 = !clock () in
     (match (!pool, steps) with
      | Some pool, Scan s :: rest when s.from_new && s.atom.rel.delta_to - s.atom.rel.delta_from >= shared ->
          apply_shared p stats pool rule s rest
@@ -486,7 +488,7 @@ let apply (p : D.t) (stats : stats) (rule : D.rule) (steps : step list) : unit =
     c.fired <- c.fired + stats.firings - fired;
     c.added <- c.added + stats.derived - added;
     c.looked <- c.looked + stats.lookups - looked;
-    c.seconds <- c.seconds +. Sys.time () -. t0
+    c.seconds <- c.seconds +. !clock () -. t0
   end
 
 (*****************************************************************************)

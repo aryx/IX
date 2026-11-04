@@ -39,9 +39,10 @@
    for it is open, and a program that dies has closed its files
    (Virtual_cons). *)
 
-val run : < Cap.stdin ; Cap.stdout ; .. > -> 'model Tui.program -> unit
+val run : < Cap.stdin; Cap.stdout; Cap.clock; .. > -> 'model Tui.program -> unit
 
 (* ix: the same, for a program of any size (Tui.Resize): the terminal
    is asked its rows and columns, and the program told before its
    first screen. Not again when the terminal's window changes. *)
-val run_sized : < Cap.stdin ; Cap.stdout ; .. > -> 'model Tui.program -> unit
+val run_sized :
+  < Cap.stdin; Cap.stdout; Cap.clock; .. > -> 'model Tui.program -> unit

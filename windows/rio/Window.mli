@@ -110,6 +110,9 @@ val send : t -> message -> unit
 (* Quit sent, and its thread ended *)
 val quit : t -> unit
 
+(* rio's pid, in each window's name (set by Rio.main, which holds Cap.env) *)
+val pid : int ref
+
 (* its image's name, for the program in it to draw there (Display.named) *)
 val name : t -> string
 (* whether a point is in its text's scroll bar: a press there is the

@@ -73,7 +73,7 @@ let exists f = Sys.file_exists f
 let rec ctx t : Word.ctx = {
   var = Env.get t.env;
   backquote = (fun _seps c ->
-    let r, w = Process.pipe () in
+    let r, w = Process.pipe t.caps in
     let pid = fork t (fun () ->
       Process.close r; Process.dup2 w 1; Process.close w; child t (fun () -> run t c)) in
     Process.close w;
@@ -85,7 +85,7 @@ let rec ctx t : Word.ctx = {
   pipefd = (fun side c ->
     (* the command's end is a child's fd 1 (or 0); ours stays open, and
      * its name is the word *)
-    let r, w = Process.pipe () in
+    let r, w = Process.pipe t.caps in
     let mine, theirs, fd = match side with Reads -> r, w, 1 | Writes -> w, r, 0 in
     let _pid = fork t (fun () ->
       Process.close mine; Process.dup2 theirs fd; Process.close theirs; child t (fun () -> run t c)) in
@@ -137,7 +137,7 @@ and run_e t ~e (c : cmd) : unit =
   | Or (a, b) -> run_e t ~e:false a; if not (ok t) then run_e t ~e b
   | Not c -> run_e t ~e:false c; set_status t (if ok t then "false" else "")
   | Pipe (l, r, a, b) ->
-      let rd, wr = Process.pipe () in
+      let rd, wr = Process.pipe t.caps in
       let pid = fork t (fun () ->
         Process.close rd; Process.dup2 wr l; Process.close wr; child t (fun () -> run_e t ~e a)) in
       Process.close wr;
@@ -243,7 +243,7 @@ and redirect t (r : redir) ~keep (f : unit -> unit) : unit =
     | Here (fd, h) ->
         (* the body through a pipe, from a child *)
         let body = if h.expand then heredoc t h.body else h.body in
-        let rd, wr = Process.pipe () in
+        let rd, wr = Process.pipe t.caps in
         let pid = fork t (fun () -> Process.close rd; Process.write wr body; 0) in
         ignore pid;
         Process.close wr;

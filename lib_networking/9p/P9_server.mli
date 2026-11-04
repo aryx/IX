@@ -116,4 +116,4 @@ exception Later of ((string -> bool) -> unit)
 
 (* [post caps name]: a pipe, one end posted as /srv/name (Plan 9's: a
  * program mounts it), the other returned, to serve *)
-val post : < Cap.open_out; .. > -> string -> Unix.file_descr
+val post : < Cap.open_out; Cap.pipe; .. > -> string -> Unix.file_descr

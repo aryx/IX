@@ -59,7 +59,7 @@
  * night and the day after; his memo of 1964 is kept on Dennis
  * Ritchie's pages. *)
 
-type caps = < Cap.fork; Cap.exec; Cap.wait; Cap.open_in; Cap.open_out >
+type caps = < Cap.fork; Cap.exec; Cap.wait; Cap.open_in; Cap.open_out; Cap.pipe >
 
 type fd = int
 
@@ -83,7 +83,7 @@ val wait_any : < Cap.wait; .. > -> (int * string) option
  * number, as rc's atoi ("3|4" 3), or 1 if that is 0 or none ("0|4") *)
 val code : string -> int
 
-val pipe : unit -> fd * fd   (* read end, write end *)
+val pipe : < Cap.pipe; .. > -> fd * fd   (* read end, write end *)
 val dup2 : fd -> fd -> unit
 val close : fd -> unit
 

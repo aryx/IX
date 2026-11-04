@@ -108,7 +108,9 @@
  * System" (ACM Transactions on Graphics, 1986); principia's book on
  * rio. *)
 
-type caps = < Cap.chdir; Cap.argv; Cap.draw; Cap.mouse; Cap.keyboard; Cap.fork; Cap.exec; Cap.mount; Cap.bind; Cap.open_in; Cap.open_out >
+type caps =
+  < Cap.chdir; Cap.argv; Cap.draw; Cap.mouse; Cap.keyboard; Cap.fork; Cap.exec;
+    Cap.mount; Cap.bind; Cap.open_in; Cap.open_out; Cap.env; Cap.pipe >
 
 type event = Mouse of Mouse.state | Keys of string list | Held of string | Asked of Window.t option * Wctl.command
 
@@ -123,12 +125,14 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
   (* the desktop: a grey blue where no window is (ix's colours: rio's
    * desktop is grey, its borders and menus green; one sees which it is) *)
   let grey = Display.color display (Display.rgb 0x66 0x77 0x88) in
-  let desk = Display.desktop view grey in
+  let pid = CapUnix.getpid caps () in
+  Window.pid := pid;
+  let desk = Display.desktop view grey pid in
   Draw.fill view view.r grey;
   Display.flush display;
   (* the windows' files, posted as rio's (/srv/rio.user.pid there): a
    * window's process mounts them, and whoever is given $wsys *)
-  let srv = Printf.sprintf "/srv/rio.%d" (Unix.getpid ()) in
+  let srv = Printf.sprintf "/srv/rio.%d" pid in
   let mine = P9_server.post caps (Filename.basename srv) in
   ignore (Thread.create (fun () -> Fileserver.serve (Source.reader caps mine 4000) mine) ());
   (* (the keys held, where the kernel says them: for the programs that ask, a window's kbd file) *)

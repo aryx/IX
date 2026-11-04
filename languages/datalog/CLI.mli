@@ -74,6 +74,6 @@
  * "Strictly Declarative Specification of Sophisticated Points-to
  * Analyses" (OOPSLA, 2009). *)
 
-type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
+type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; Cap.clock >
 
 val main : < caps; .. > -> string array -> int

@@ -6,7 +6,7 @@
 module P = Prolog
 module M = Prolog_machine
 
-type caps = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr >
+type caps = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; Cap.clock >
 
 let usage = "usage: mini-prolog [-g goal]... [-wam] [-S] [-trace] [-s] [file.pl]...   (-h: how)"
 
@@ -71,7 +71,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       let start : float option ref = ref None in
       m.clock <-
         (fun () ->
-          match Unix.gettimeofday () with
+          match CapUnix.gettimeofday caps () with
           | exception Unix.Unix_error _ -> 0
           | now -> (
               match !start with

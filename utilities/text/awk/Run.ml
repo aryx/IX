@@ -308,7 +308,7 @@ and builtin (caps : < caps; .. >) f args =
     | System -> number (float_of_int (Io.system caps (Cell.getsval x)))
     | Rand -> number (frand ())
     | Srand ->
-        let s = if args = [] then Float.trunc (Unix.time ()) else Cell.getfval x in
+        let s = if args = [] then Float.trunc (CapUnix.time caps ()) else Cell.getfval x in
         srand s;
         let old = !seed in
         seed := s;

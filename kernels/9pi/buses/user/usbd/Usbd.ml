@@ -27,7 +27,7 @@
  * kernel has ethernet), nor its file server for drivers that are
  * other programs. *)
 
-type caps = < Usbdev.caps; Cap.fork; Cap.stderr; Cap.argv >
+type caps = < Usbdev.caps; Cap.fork; Cap.stderr; Cap.argv; Cap.clock >
 
 (* The device's process: a report read (the endpoint's largest packet,
  * no more: a report is one packet, and a read of more would wait for
@@ -82,7 +82,7 @@ let main (caps : < caps; .. >) : Exit.t =
           Usbdev.open_data caps d 2;
           d);
         drop = Usbdev.close;
-        pause = (fun ms -> Unix.sleepf (float ms /. 1000.));
+        pause = (fun ms -> CapUnix.sleepf caps (float ms /. 1000.));
         drive = drive caps;
         say = Console.eprint caps } in
       (* the root hub: the kernel says how many ports ("ports 1") *)
@@ -93,7 +93,7 @@ let main (caps : < caps; .. >) : Exit.t =
       (* the one that stays, and looks again *)
       if CapUnix.fork caps () = 0 then begin
         ignore (Sys_plan9.rfork caps Sys_plan9.rfnoteg);
-        while true do Unix.sleepf 0.25; ignore (Usbbus.look bus) done
+        while true do CapUnix.sleepf caps 0.25; ignore (Usbbus.look bus) done
       end;
       Exit.OK
 

@@ -153,12 +153,11 @@ let clip (i : image) (r : Rectangle.t) =
 (* Windows: a screen is an image (the display's) on which the kernel
  * keeps windows, images that may cover one another: it draws what
  * shows of each and keeps what does not (libmemlayer). 'A': the
- * screen's number (one for all the programs: ours is the process's),
+ * screen's number (one for all the programs: the caller's process's),
  * its image, the image that fills where no window is. *)
 type desktop = { on : image; number : int }
 
-let desktop (on : image) (fill : image) =
-  let number = Unix.getpid () in
+let desktop (on : image) (fill : image) (number : int) =
   message on.display (fun b -> char b 'A'; long b number; long b on.id; long b fill.id; byte b 0);
   { on; number }
 

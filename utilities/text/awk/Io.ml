@@ -4,7 +4,9 @@
 (* See Io.mli *)
 open Ast
 
-type caps = < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr; Cap.fork; Cap.exec; Cap.wait; Cap.env >
+type caps =
+  < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr; Cap.fork;
+    Cap.exec; Cap.wait; Cap.env; Cap.clock; Cap.pipe >
 
 type mode = Read | Write | Append | Command_in | Command_out
 
@@ -74,12 +76,12 @@ let open_ (caps : < caps; .. >) mode name =
           | Append -> Some (stream (FS.open_append_fd caps name 0o666) None)
           | Read -> Some (if name = "-" then stdin else stream (FS.open_in_fd caps name) None)
           | Command_out ->
-              let r, w = Unix.pipe ~cloexec:true () in
+              let r, w = CapUnix.pipe caps ~cloexec:true () in
               let pid = shell caps name ~stdin:r ~stdout:Unix.stdout in
               Unix.close r;
               Some (stream w (Some pid))
           | Command_in ->
-              let r, w = Unix.pipe ~cloexec:true () in
+              let r, w = CapUnix.pipe caps ~cloexec:true () in
               let pid = shell caps name ~stdin:Unix.stdin ~stdout:w in
               Unix.close w;
               Some (stream r (Some pid))

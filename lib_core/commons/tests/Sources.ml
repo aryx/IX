@@ -8,10 +8,10 @@
 
 let write fd text = ignore (Unix.write_substring fd text 0 (String.length text))
 
-let main (caps : < Cap.fork; Cap.stdout; .. >) =
+let main (caps : < Cap.fork; Cap.stdout; Cap.pipe; .. >) =
   let say text = Console.print caps (text ^ "\n") in
   (* a pipe: what is written is a message, then its end *)
-  let r, w = Unix.pipe ~cloexec:false () in
+  let r, w = CapUnix.pipe caps ~cloexec:false () in
   let lines = Source.reader caps r 100 in
   write w "hello";
   say ("got: " ^ Bytes.to_string (Event.sync (Event.receive lines)));
@@ -21,7 +21,7 @@ let main (caps : < Cap.fork; Cap.stdout; .. >) =
   say (Printf.sprintf "the end: %d bytes" (Bytes.length (Event.sync (Event.receive lines))));
 
   (* two sources, a thread that chooses; a third thread answers on a channel *)
-  let r1, w1 = Unix.pipe ~cloexec:false () and r2, w2 = Unix.pipe ~cloexec:false () in
+  let r1, w1 = CapUnix.pipe caps ~cloexec:false () and r2, w2 = CapUnix.pipe caps ~cloexec:false () in
   let one = Source.reader caps r1 100 and two = Source.reader caps r2 100 in
   let answers = Event.new_channel () in
   ignore (Thread.create (fun () ->

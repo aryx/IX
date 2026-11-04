@@ -52,7 +52,8 @@
 
 exception Error of string
 
-(* a host that throws the Transcript away *)
+(* a host that throws the Transcript away, its clock stopped at 0 (a
+ * host that tells the time holds Cap.clock: the CLI's, SDL's) *)
 val quiet_host : St_interp.host
 
 (* the running system: Smalltalk-80, from the Blue Book's kernel

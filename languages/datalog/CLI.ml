@@ -5,7 +5,7 @@
 
 module D = Datalog
 
-type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
+type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; Cap.clock >
 
 let usage = "usage: mini-datalog [-q query]... [-all] [-naive] [-j n] [-btree rel]... [-s] [-profile] file.dl...   (-h: how)"
 
@@ -66,6 +66,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   | () -> (
       let p = D.create () in
       p.sorted <- !sorted;
+      if !profile then Datalog_eval.clock := CapSys.time caps;
       try
         if !files = [] then failwith usage;
         List.iter

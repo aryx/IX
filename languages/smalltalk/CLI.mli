@@ -96,6 +96,6 @@
  * machines learnt. L. Peter Deutsch and Allan Schiffman, "Efficient
  * Implementation of the Smalltalk-80 System" (POPL 1984). *)
 
-type caps = < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr >
+type caps = < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr; Cap.clock >
 
 val main : < caps; .. > -> string array -> int

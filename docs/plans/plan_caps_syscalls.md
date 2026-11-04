@@ -18,7 +18,7 @@ lib_core's erased `Cap` (which mini-ml compiles), `capabilities.dl`
 (which says who needs what), and the 32 callers, then the programs the
 sweep does not read.
 
-**Status: steps 1 to 3 done (2026-11-04), step 4 next.** Part 1, a
+**Status: steps 1 to 4 done (2026-11-04), step 5 next.** Part 1, a
 capability held in a record's field, is done (98a593f4). The author's
 answers to the open questions are in the last section.
 
@@ -133,6 +133,21 @@ raspberry/, lib_playground's platforms, and tiny/'s host side, about
    is worth a sentence in `Cap.mli`'s header. `caps_ix.txt` is
    re-recorded. `dune build` is the check that each caller holds what
    it passes: OCaml checks it.
+   Done: each call is `CapUnix`'s or `CapSys`'s; a module's `caps`
+   type got the capability (builder, mini-5i's `Host`, awk's `Io`,
+   version_control's `Store`: its record carries it to `Walk` and
+   `Serve`), or a parameter (`Tty_unix.run_`, the shell's
+   `Process.pipe`, version_control's `Commands.now`). Three by a value
+   the holder sets: `Datalog_eval.clock` (`CapSys.time caps`, by the
+   CLI, for `-profile`), rio's `Window.pid` and `Display.desktop`'s
+   number (rio's pid, read once by `Rio.main`). Smalltalk's
+   `St_boot.quiet_host` has a stopped clock (0); each host gives its
+   own (the CLI by `CapSys.time`). `caps_ix.txt`: 173 to 149, no
+   clock, pipe or pid left; 13 "may not need" lines name `Cap.clock`
+   or `Cap.pipe` too, given in a type a module's functions share.
+   Checked by `dune build`, by mini-mk for Linux (all of ix) and for
+   Plan 9 (mini-acid, usbd, dossrv, rio, the draw hosts of emacs,
+   turbopascal and smalltalk), and mini-squeak's kernel.
 5. **Outside the sweep.** apps/, utilities/process, raspberry/,
    lib_playground: by `git grep`, then by OCaml once their calls are
    `CapUnix`'s. Or the sweep is taught their mkfiles; the units of

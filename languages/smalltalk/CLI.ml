@@ -6,7 +6,7 @@
 module M = St_memory
 module I = St_interp
 
-type caps = < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr >
+type caps = < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr; Cap.clock >
 
 let usage = "usage: mini-smalltalk [-k blue|squeak|quiet|mini] [-i image] [-e expression]... [-world n] [-size WxH] [-o image] [-ppm file] [-s] [file.st]...   (-h: how)"
 
@@ -104,7 +104,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   let host : I.host =
     { St_boot.quiet_host with
       transcript = (fun (s : string) -> Console.print caps (String.map (fun (c : char) -> if c = '\r' then '\n' else c) s));
-      milliseconds = (fun () -> if !world >= 0 then !now else St_boot.quiet_host.milliseconds ());
+      milliseconds = (fun () ->
+        if !world >= 0 then !now else int_of_float (CapSys.time caps () *. 1000.));
       (* (and its mouse: at the Display's middle, where a board's starts) *)
       mouse = (fun () -> if !world >= 0 then (Squeak.width / 2, Squeak.height / 2, 0) else (0, 0, 0)) } in
   let print (vm : I.vm) (text : string) : bool =

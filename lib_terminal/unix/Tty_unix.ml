@@ -34,7 +34,7 @@ let size () : (int * int) option =
   answer "" 5
 
 (* ix: [sized]: the program told the terminal's size before its first screen *)
-let run_ (sized : bool) (p : 'model Tui.program) : unit =
+let run_ (caps : < Cap.clock; .. >) (sized : bool) (p : 'model Tui.program) : unit =
   let saved = Unix.tcgetattr Unix.stdin in
   (* raw: keys at once, unechoed, Control-C a key; a read returning
      what is there, maybe nothing *)
@@ -57,7 +57,7 @@ let run_ (sized : bool) (p : 'model Tui.program) : unit =
           if List.mem "\x03" keys then ()
           else begin
             let model = List.fold_left (fun m k -> p.update (Key k) m) model keys in
-            let now = Unix.gettimeofday () in
+            let now = CapUnix.gettimeofday caps () in
             (* a pause (the process stopped, Control-Z) isn't time played *)
             let model = p.update (Tick (Float.min 0.25 (now -. last))) model in
             let next = p.view model in
@@ -66,7 +66,11 @@ let run_ (sized : bool) (p : 'model Tui.program) : unit =
           end
         end
       in
-      loop init screen (Unix.gettimeofday ()))
+      loop init screen (CapUnix.gettimeofday caps ()))
 
-let run (_caps : < Cap.stdin ; Cap.stdout ; .. >) (p : 'model Tui.program) : unit = run_ false p
-let run_sized (_caps : < Cap.stdin ; Cap.stdout ; .. >) (p : 'model Tui.program) : unit = run_ true p
+let run (caps : < Cap.stdin; Cap.stdout; Cap.clock; .. >)
+    (p : 'model Tui.program) : unit =
+  run_ caps false p
+let run_sized (caps : < Cap.stdin; Cap.stdout; Cap.clock; .. >)
+    (p : 'model Tui.program) : unit =
+  run_ caps true p

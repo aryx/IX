@@ -111,7 +111,9 @@
  * 2018); mk(1); principia's builders/mk (main.c) and its book,
  * xix's builder (omk). *)
 
-type caps = < Recipe.caps; Cap.env; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
+type caps =
+  < Recipe.caps; Cap.env; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr;
+    Cap.clock >
 
 (* [main caps argv]: the exit status: 0, or 1 after an error *)
 val main : < caps; .. > -> string array -> int

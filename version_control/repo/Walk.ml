@@ -161,7 +161,7 @@ let run (r : Repo.t) o =
         staleidx := true
       end;
       r in
-  let now = Unix.gettimeofday () in
+  let now = CapUnix.gettimeofday st.caps () in
   let samedata (a : ent option) (b : ent) =
     match a with
     | Some a when a.qid = b.qid && a.qid <> Noqid && a.mode = b.mode && a.mode <> 0 -> true

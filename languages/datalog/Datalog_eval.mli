@@ -208,6 +208,11 @@ val index : Datalog.relation -> int -> Index.t
  * Parallel.available) *)
 val jobs : int ref
 
+(* the processor's time, for each rule's seconds (-profile): 0 unless the
+ * caller, holding Cap.clock, sets it (CapSys.time caps). The function is
+ * the capability, weakened: it reads the time and does nothing else *)
+val clock : (unit -> float) ref
+
 (* Datalog.Error: not stratified *)
 val run : naive:bool -> Datalog.t -> stats
 

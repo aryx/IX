@@ -23,6 +23,6 @@
  * each time the screen is painted, the milliseconds the program's
  * view took and the painting of what changed. *)
 
-type caps = < Cap.draw; Cap.mouse; Cap.keyboard; Cap.fork >
+type caps = < Cap.draw; Cap.mouse; Cap.keyboard; Cap.fork; Cap.clock >
 
 val run : < caps; .. > -> mouse:bool -> (string -> unit) option -> 'model Tui.program -> unit

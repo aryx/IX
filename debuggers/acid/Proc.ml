@@ -5,7 +5,7 @@
 
 open Ast
 
-type caps = < Cap.open_in; Cap.open_out; Cap.fork; Cap.exec; Cap.kill >
+type caps = < Cap.open_in; Cap.open_out; Cap.fork; Cap.exec; Cap.kill; Cap.env >
 
 let error fmt = Printf.ksprintf (fun s -> raise (Eval.Error s)) fmt
 
@@ -647,7 +647,7 @@ let init (caps : < caps; .. >) =
     match CapUnix.fork caps () with
     | 0 ->
         (try
-          let fd = FS.open_rw_fd caps (Printf.sprintf "/proc/%d/ctl" (Unix.getpid ())) in
+          let fd = FS.open_rw_fd caps (Printf.sprintf "/proc/%d/ctl" (CapUnix.getpid caps ())) in
           ignore (Unix.write fd (Bytes.of_string "hang") 0 4);
           Unix.close fd;
           CapUnix.execv caps aout (Array.of_list (aout :: args)); exit 1

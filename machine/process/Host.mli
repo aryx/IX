@@ -4,6 +4,8 @@
  * descriptors are mini-5i's own (qemu-user's choice): what the guest
  * opens, mini-5i has open. *)
 
-type caps = < Cap.fork; Cap.wait; Cap.chdir; Cap.kill; Cap.open_in; Cap.open_out >
+type caps =
+  < Cap.fork; Cap.wait; Cap.chdir; Cap.kill; Cap.open_in; Cap.open_out;
+    Cap.clock; Cap.pipe; Cap.env >
 
 val create : caps -> Host_calls.t

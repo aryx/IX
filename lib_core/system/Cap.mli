@@ -32,7 +32,9 @@
  * row variable, by which a function that asks for less takes an
  * object that has more. A caller can also hand down a weaker object
  * made by itself (xix's ed, run restricted, gives its commands an
- * open_in that refuses a name with a slash).
+ * open_in that refuses a name with a slash), or a function alone:
+ * mini-datalog's CLI gives Datalog_eval the clock as CapSys.time caps,
+ * which reads the time and can do nothing else.
  *
  * It holds only if the code does not go around it: Stdlib's
  * print_string and Unix's openfile ask for nothing. That part is a

@@ -23,7 +23,9 @@ is run by the host (as binfmt would). For example:
 Not glibc's programs (gcc's): their SIMD and more are beyond its subset.
 |}
 
-let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; Cap.fork; Cap.wait; Cap.chdir; Cap.kill; Cap.exec; Cap.env; .. >) =
+let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr;
+                   Cap.fork; Cap.wait; Cap.chdir; Cap.kill; Cap.exec; Cap.env;
+                   Cap.clock; Cap.pipe; .. >) =
   match List.tl (Array.to_list (CapSys.argv caps)) with
   | [] -> Console.eprint caps "usage: mini-5i [-t] [-s] [-y] [-prof file] program [args...]   (-h: how)\n"; 2
   | [ ("-h" | "--help") ] -> Console.print caps help; 0
@@ -54,12 +56,12 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
       if List.mem "-y" own then (Linux.log_calls := true; Plan9.log_calls := true);
       let host = Host.create (caps :> Host.caps) in
       let stats = { Cpu.instructions = 0 } in
-      let t0 = Unix.gettimeofday () in
+      let t0 = CapUnix.gettimeofday caps () in
       let report () =
         flush stdout;
         write_prof ();
         if stats_on then
-          let dt = Unix.gettimeofday () -. t0 in
+          let dt = CapUnix.gettimeofday caps () -. t0 in
           Console.eprint caps (Printf.sprintf "mini-5i: %d instructions, %.3f s, %.1f MIPS\n" stats.instructions dt
                                  (float stats.instructions /. dt /. 1e6)) in
       (* -prof, -s: a run stopped by SIGTERM (a program that never ends,

@@ -3,7 +3,9 @@
 
 (* See Store.mli *)
 
-type caps = < Cap.open_in; Cap.open_out >
+(* (the clock: a walk's time of a file, a lock waited for; env: a
+ * temporary file's name by the pid) *)
+type caps = < Cap.open_in; Cap.open_out; Cap.clock; Cap.env >
 
 type t = { caps : caps; git : Fpath.t; mutable packs : Pack.t list option; cache : (Hash.t, Object.t) Hashtbl.t }
 
@@ -81,7 +83,7 @@ let add_pack t ~warn pack =
     if Sys.file_exists (Fpath.to_string final) then
       warn (Printf.sprintf "warning, pack %s%s already %s\n" name ext (if ext = ".pack" then "fetched" else "indexed"))
     else begin
-      let tmp = Fpath.(dir / (Printf.sprintf "tmp.%d%s" (Unix.getpid ()) ext)) in
+      let tmp = Fpath.(dir / (Printf.sprintf "tmp.%d%s" (CapUnix.getpid t.caps ()) ext)) in
       FS.write t.caps tmp data;
       Unix.rename (Fpath.to_string tmp) (Fpath.to_string final)
     end in

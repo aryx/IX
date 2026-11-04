@@ -2,7 +2,9 @@
  * getrec and readrec), and the files and commands a program names
  * (run.c's table: print > "f", "cmd" | getline, close). *)
 
-type caps = < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr; Cap.fork; Cap.exec; Cap.wait; Cap.env >
+type caps =
+  < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr; Cap.fork;
+    Cap.exec; Cap.wait; Cap.env; Cap.clock; Cap.pipe >
 
 (* how a name is used: one name is one stream until it is closed, and
  * > then >> go on in the same file *)

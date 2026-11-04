@@ -26,7 +26,7 @@
  * arm64: by the table's entries (7c's, mini-ld -g's .plan9.syms) or,
  * in a program of gcc's, by DWARF. *)
 
-type caps = < Cap.open_in; Cap.open_out; Cap.fork; Cap.exec; Cap.kill >
+type caps = < Cap.open_in; Cap.open_out; Cap.fork; Cap.exec; Cap.kill; Cap.env >
 
 (* the program read (the a.out's path): its variables made, the
  * registers' too; its line ("prog:arm plan 9 executable") printed *)

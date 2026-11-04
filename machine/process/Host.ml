@@ -5,7 +5,9 @@
 
 open Common
 
-type caps = < Cap.fork; Cap.wait; Cap.chdir; Cap.kill; Cap.open_in; Cap.open_out >
+type caps =
+  < Cap.fork; Cap.wait; Cap.chdir; Cap.kill; Cap.open_in; Cap.open_out;
+    Cap.clock; Cap.pipe; Cap.env >
 
 let fd (n : int) : Unix.file_descr = Obj.magic n
 let int_of_fd (f : Unix.file_descr) : int = Obj.magic f
@@ -81,9 +83,9 @@ let create (caps : caps) : Host_calls.t =
     rename = (fun a b -> wrap (fun () -> Unix.rename a b));
     dup = (fun f -> wrap (fun () -> int_of_fd (Unix.dup ~cloexec:false (fd f))));
     dup2 = (fun a b -> wrap (fun () -> Unix.dup2 (fd a) (fd b); b));
-    getcwd = Sys.getcwd;
-    getpid = Unix.getpid;
-    pipe = (fun () -> wrap (fun () -> let a, b = Unix.pipe ~cloexec:false () in int_of_fd a, int_of_fd b));
+    getcwd = CapSys.getcwd caps;
+    getpid = CapUnix.getpid caps;
+    pipe = (fun () -> wrap (fun () -> let a, b = CapUnix.pipe caps ~cloexec:false () in int_of_fd a, int_of_fd b));
     fork = (fun () -> wrap (fun () -> flush_all (); CapUnix.fork caps ()));
     wait4 = (fun pid options -> wrap (fun () ->
       let flags = if options land 1 <> 0 then [ Unix.WNOHANG ] else [] in
@@ -102,8 +104,8 @@ let create (caps : caps) : Host_calls.t =
           Some { Host_calls.d_ino = s.st_ino; d_name = name; d_kind = kind s.st_kind }
       | exception End_of_file -> None));
     isatty = (fun f -> Unix.isatty (fd f));
-    now = Unix.gettimeofday;
-    sleep = (fun d -> try Unix.sleepf d with Unix.Unix_error (EINTR, _, _) -> ());
+    now = CapUnix.gettimeofday caps;
+    sleep = (fun d -> try CapUnix.sleepf caps d with Unix.Unix_error (EINTR, _, _) -> ());
     setitimer = (fun interval value ->
       let old = Unix.setitimer ITIMER_REAL { it_interval = interval; it_value = value } in
       old.it_interval, old.it_value);

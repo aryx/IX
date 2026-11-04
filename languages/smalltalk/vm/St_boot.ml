@@ -16,7 +16,8 @@ exception Error of string
 let quiet_host : I.host =
   {
     transcript = (fun _ -> ());
-    milliseconds = (fun () -> int_of_float (Sys.time () *. 1000.));
+    (* old: Sys.time's, with no capability; a host's clock is its own *)
+    milliseconds = (fun () -> 0);
     inspect = (fun _ -> ());
     mouse = (fun () -> (0, 0, 0));
     keyboard = (fun () -> None);

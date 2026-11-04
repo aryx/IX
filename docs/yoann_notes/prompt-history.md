@@ -63167,3 +63167,11 @@ Claude noted that the two earlier docs were already in the previous commit, not 
 Claude recorded the plan's status as "planned," confirming that no code has been written yet.
 Claude listed three open questions for later, starting with where tests should go, since lib_code/ has none.
 Claude also asked whether mini-cc's Opti and Peep should move to the new framework.
+
+------------------------------------------------------------------------
+
+## 2026-11-04 20:49
+
+**Yoann:**
+
+> I need to turn off the machine soon, let's commit and close this session

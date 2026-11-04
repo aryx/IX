@@ -1,0 +1,122 @@
+// generators/yacc/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there).
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-yacc, after Johnson's yacc and ocamlyacc: a .mly's LALR(1) tables written as an OCaml parser.",
+  files: {
+    'Main.ml': { digest: '52f69d06b7d0', summary: "mini-yacc's executable: Cap.main, the logging, CLI.main." },
+    'CLI.mli': { digest: '614d6a138960',
+      summary: 'mini-yacc: the pipeline drawn, 1 + 2 * 3 shifted and reduced, LR from Knuth to menhir.',
+      important: [
+        { at: 'comment:"Parser.mly                       when the parser is made"', say: 'made once, run by Parsing.run', weight: 3 },
+        { at: 'comment:"the stack                next   what is done"', say: 'a parse traced: TIMES shifted first', weight: 3 },
+        { at: 'comment:"Donald Knuth defined the LR(k) grammars in 1965"', weight: 1 },
+      ],
+    },
+    'CLI.ml': { digest: '00896420f27e',
+      summary: 'The grammar read, its automaton made, .ml and .mli written, conflicts counted as yacc does.',
+      capitals: [
+        { at: 'def:main', say: 'read, make, write: the whole tool' },
+      ],
+      important: [
+        { at: 'def:main', weight: 2 },
+        { at: 'code:"shift/reduce conflict"', say: "yacc's message, word for word", weight: 1 },
+      ],
+      links: [
+        { from: 'def:main', to: 'Yacc.ml:def:read' },
+        { from: 'def:main', to: 'Lalr.ml:def:make' },
+        { from: 'def:main', to: 'Output.ml:def:ocaml' },
+      ],
+    },
+    'Yacc.mli': { digest: 'b869d30e5db8',
+      summary: "A .mly as data, ocamlyacc's and menhir's list(x), x? and the like; actions as text.",
+      capitals: [
+        { at: 'type:t', say: 'tokens, precedences, rules, starts' },
+        { at: 'type:rule', say: 'a left side, symbols, an action' },
+      ],
+      important: [
+        { at: 'comment:"main: expr EOF"', say: 'the format, by example', weight: 3 },
+        { at: "comment:\"And of menhir's, so that a grammar is one text\"", say: 'one grammar for menhir and for ix', weight: 2 },
+        { at: 'comment:"Not read, and said so"', weight: 1 },
+        { at: 'def:read', weight: 2 },
+      ],
+    },
+    'Yacc.ml': { digest: 'a6756e3dc92f',
+      summary: "The reader by hand: tokens, directives, rules; menhir's standard rules expanded into plain ones.",
+      important: [
+        { at: 'def:token', weight: 2 },
+        { at: 'def:code', say: 'an action: its braces matched', weight: 1 },
+        { at: 'def:read', weight: 3 },
+        { at: "comment:\"menhir's standard rules: each use\"", say: 'list(x) a non-terminal named as menhir', weight: 3 },
+        { at: 'comment:"x?, x*, x+"', weight: 1 },
+      ],
+    },
+    'Lalr.mli': { digest: 'b7f80a940aac',
+      summary: "LALR(1) as Berkeley yacc computes it, so both parse alike: states, lookaheads, conflicts.",
+      capitals: [
+        { at: 'def:make', say: "a grammar's automaton: the generator's work" },
+        { at: 'type:t', say: 'actions, gotos, defaults by state' },
+      ],
+      important: [
+        { at: 'comment:"The lookaheads: for each state and item"', say: 'propagated until nothing is added', weight: 3 },
+        { at: "comment:\"two, yacc's rules: a shift against a reduction\"", say: 'precedence, then associativity', weight: 2 },
+        { at: 'comment:"menhir builds LR(1) states and merges"', say: "Pager's way: no LALR-only conflict", weight: 1 },
+        { at: 'type:action', weight: 2 },
+      ],
+    },
+    'Lalr.ml': { digest: 'a8e9900cc64c',
+      summary: "One function, make, in five steps: symbols, FIRST sets, LR(0) states, lookaheads, actions.",
+      important: [
+        { at: 'def:make', weight: 3 },
+        { at: 'comment:"What a non-terminal may be: nothing"', say: 'nullable and FIRST', weight: 2 },
+        { at: 'comment:"The LR(0) states"', weight: 2 },
+        { at: 'comment:"The lookaheads"', weight: 3 },
+        { at: "comment:\"yacc's choice: the shift if any\"", say: 'conflicts resolved as yacc, counted', weight: 3 },
+        { at: 'comment:"no shift left"', say: 'a default reduction: no token read', weight: 1 },
+      ],
+    },
+    'Output.mli': { digest: 'c7d705e891ab',
+      summary: "The parser as OCaml on lib_core's Parsing: tables, actions on an Obj.t stack, its .mli.",
+      important: [
+        { at: "comment:\"The values on the parser's stack have no type\"", say: "Obj.t: 'expr makes OCaml check the rules agree", weight: 3 },
+        { at: "comment:\"An action's places are menhir's\"", say: '$sloc, $loc($n): one grammar for both', weight: 2 },
+      ],
+    },
+    'Output.ml': { digest: 'c5fc564000f7',
+      summary: 'Tables packed in strings, $1 to _1 with its type, a function a start symbol; -v listing.',
+      important: [
+        { at: 'def:ocaml', weight: 3 },
+        { at: 'def:dollars', say: "$n and $loc: an action's text rewritten", weight: 2 },
+        { at: 'def:interface', weight: 1 },
+        { at: 'def:listing', say: "-v: yacc's y.output", weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.cli('mini-yacc: a .mly to a parser', [
+      ['Yacc.ml:def:read', 'the grammar: tokens, rules, actions as text'],
+      ['Lalr.ml:def:make', 'the LALR(1) automaton, conflicts decided'],
+      ['Output.ml:def:ocaml', 'the tables and the actions'],
+    ]) + {
+      bones+: [{ at: 'Output.ml:def:interface', role: 'the .mli: tokens, start symbols' }],
+      joints+: [{ from: 'CLI.ml:def:main', to: 'Output.ml:def:interface', say: 'the grammar' }],
+    },
+    skeletons.chain("make: Berkeley yacc's steps, in one function", [
+      ['Lalr.ml:comment:"The symbols and the rules"', 'numbered; an $accept rule per start', ''],
+      ['Lalr.ml:comment:"What a non-terminal may be: nothing"', 'nullable, FIRST', 'symbols'],
+      ['Lalr.ml:comment:"The LR(0) states"', 'kernels, closures, transitions', 'FIRST for closures'],
+      ['Lalr.ml:comment:"The lookaheads"', 'LALR(1): passed along until fixed', 'the states'],
+      ['Lalr.ml:comment:"The actions"', 'shift or reduce; precedence decides', 'lookaheads'],
+      ['Lalr.ml:type:t', 'the tables Output writes', 'actions, gotos, defaults'],
+    ]),
+    skeletons.chain('A .mly read, its sugar made rules', [
+      ['Yacc.ml:type:input', 'the text, an offset, a line', ''],
+      ['Yacc.ml:def:token', 'directives, symbols, code blocks', 'characters'],
+      ['Yacc.ml:def:read', 'declarations, rules, the trailer', 'tokens'],
+      ["Yacc.ml:comment:\"menhir's standard rules: each use\"", 'list(x) to plain rules', 'a use'],
+      ['Yacc.ml:type:t', 'the grammar for Lalr', 'rules'],
+    ]),
+  ],
+}

@@ -1,0 +1,203 @@
+// games/fps/doom/actors/: what the code map says of it
+local skeletons = import '../../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Doom's things that act (info.c, p_mobj.c, p_enemy.c, p_pspr.c, p_inter.c): states, monsters, weapons.",
+  files: {
+    'Info.mli': {
+      summary: "What each thing is, as id's tables: states (a picture, tics, an action, the next), numbers, weapons.",
+      digest: 'f0b763e73d27',
+      capitals: [
+        { at: 'type:state', say: "a monster's life: loops of states" },
+        { at: 'type:mobjinfo', say: "a kind's numbers: health, speed, sounds" },
+        { at: 'type:action', say: 'what a state does: Look, Chase, attacks' },
+      ],
+      important: [{ at: 'comment:"POSS_STND (A, 10 tics, Look)"', say: "the zombieman's states drawn", weight: 3 }],
+    },
+    'Info.ml': {
+      summary: "id's tables cut to E1's monsters: the states, the mobjinfo, the weapons, m_random's rndtable.",
+      digest: 'f3c6a8e8abe3',
+      important: [
+        { at: 'def:table', say: 'the states, as id wrote them', weight: 3 },
+        { at: 'def:possessed', say: 'the zombieman: one mobjinfo', weight: 1 },
+        { at: 'def:rndtable', say: "Doom's 256 'random' bytes", weight: 2 },
+        { at: 'def:p_random', say: 'the same game every time: demos', weight: 2 },
+      ],
+    },
+    'Things.mli': {
+      summary: "What stands in a level besides walls, and its sprites: a thing spawned from the map, a picture a frame.",
+      digest: '431f37f1f3ed',
+      capitals: [
+        { at: 'type:mobj', say: 'a thing: where, its state, its momentum' },
+        { at: 'def:frame', say: 'the picture to draw, by angle' },
+      ],
+      important: [{ at: 'type:info', say: 'a doomednum: its sprite, its size', weight: 2 }],
+    },
+    'Things.ml': {
+      summary: 'The things table, the map spawned (P_SpawnMapThing), the sprites loaded and found by angle.',
+      digest: '25c4073ef39f',
+      important: [
+        { at: 'def:spawn', say: "the map's THINGS, skill and flags", weight: 2 },
+        { at: 'def:load', say: 'R_InitSprites: frames and rotations', weight: 2 },
+        { at: 'def:frame', say: 'eight rotations, some mirrored', weight: 2 },
+      ],
+    },
+    'Mobj.mli': {
+      summary: 'A thing that acts, a tic at a time (p_mobj.c): its states, its momentum, its fall.',
+      digest: '30030b847cfb',
+      capitals: [{ at: 'def:think', say: 'P_MobjThinker' }],
+    },
+    'Mobj.ml': {
+      summary: 'P_MobjThinker: move, fall, count down the state; actions through a reference Enemy fills.',
+      digest: 'aa1c363e51b4',
+      important: [
+        { at: 'def:act', say: 'filled by Enemy at its start: a hidden call', weight: 3 },
+        { at: 'def:set_state', say: 'a state entered, its action done', weight: 3 },
+        { at: 'def:xy_movement', say: 'momentum against walls, missiles exploding', weight: 2 },
+        { at: 'def:think', say: 'a tic of a thing', weight: 2 },
+      ],
+    },
+    'Enemy.mli': {
+      summary: 'What monsters do (p_enemy.c): wait, wake, chase, attack, flinch, die; the states\' actions.',
+      digest: 'ddfb5a6e4a58',
+      capitals: [{ at: 'def:act', say: 'an action of a state' }],
+    },
+    'Enemy.ml': {
+      summary: "Doom's monster AI: A_Look, A_Chase by eight directions, attacks by chance and distance.",
+      digest: '6cd43d995963',
+      important: [
+        { at: 'def:look', say: 'A_Look: sees the player, or hears a shot', weight: 2 },
+        { at: 'def:chase', say: 'A_Chase: walk, maybe attack', weight: 3 },
+        { at: 'def:new_chase_dir', say: 'P_NewChaseDir: eight ways, no pathfinding', weight: 3 },
+        { at: 'def:check_missile_range', say: 'farther, less likely to fire', weight: 1 },
+        { at: 'def:act', say: 'the match on actions', weight: 2 },
+        { at: 'code:"Mobj.act := act"', say: 'Enemy plugs itself into Mobj', weight: 3 },
+      ],
+    },
+    'Ways.mli': {
+      summary: "ai=ways: the playground's AI for Doom's monsters, a flow field to the player, an aim that improves.",
+      digest: '36df91bf56b5',
+    },
+    'Ways.ml': {
+      summary: "The level as a grid of walkable cells, one flow field for all, followed downhill.",
+      digest: 'a5454358aeed',
+      important: [
+        { at: 'def:make', say: 'the level rasterized to cells', weight: 2 },
+        { at: 'def:flow', say: "lib_playground's Ai.flow from the player", weight: 2 },
+      ],
+    },
+    'Weapons.mli': {
+      summary: "The player's hand (p_pspr.c): the weapon raised, lowered, fired, flashed; a psprite over the view.",
+      digest: '81ee2c044da3',
+      capitals: [{ at: 'def:tic', say: "a tic of the hand's states" }],
+    },
+    'Weapons.ml': {
+      summary: "The psprites' states run, the ammo used, the guns' and the fist's attacks.",
+      digest: '6d03d3dd6bf2',
+      important: [
+        { at: 'def:fire', say: 'the attack state, the ammo', weight: 2 },
+        { at: 'def:gun_shot', say: 'a bullet with its spread', weight: 2 },
+        { at: 'def:act', say: "the weapons' actions", weight: 2 },
+      ],
+    },
+    'Inter.mli': {
+      summary: "The fights' consequences (p_inter.c, p_map.c): aim, a bullet's line, a blast; damage, death, items.",
+      digest: 'fc9e52ecc9bd',
+      capitals: [{ at: 'def:damage', say: 'P_DamageMobj: hurt, pushed, killed' }],
+    },
+    'Inter.ml': {
+      summary: 'Shots aimed and traced, damage dealt and its pain, deaths and drops, items picked up.',
+      digest: '3cdaff13f83d',
+      important: [
+        { at: 'def:aim', say: 'P_AimLineAttack: autoaim, up and down', weight: 2 },
+        { at: 'def:line_attack', say: 'a hitscan bullet: what it meets first', weight: 3 },
+        { at: 'def:damage', say: 'pain chance, thrust, the death states', weight: 3 },
+        { at: 'def:touch_specials', say: 'walking over an item', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.parts('A thing: a kind, a state machine, its actions', [
+      ['Info.ml', 'the tables: states, kinds, weapons'],
+      ['Things.ml', 'a thing, and its sprites'],
+      ['Mobj.ml', 'a thing run a tic'],
+      ['Enemy.ml', "the monsters' actions"],
+      ['Ways.ml', 'ai=ways: the playground AI instead'],
+      ['Weapons.ml', "the player's hand"],
+      ['Inter.ml', 'shots, damage, items'],
+    ], [
+      ['Things.ml', 'Info.ml', 'its kind'],
+      ['Mobj.ml', 'Things.ml', 'runs'],
+      ['Mobj.ml', 'Info.ml', 'its states'],
+      ['Mobj.ml', 'Enemy.ml', 'actions, by a ref'],
+      ['Enemy.ml', 'Ways.ml', 'ai=ways'],
+      ['Enemy.ml', 'Inter.ml', 'attacks'],
+      ['Weapons.ml', 'Inter.ml', 'attacks'],
+    ]),
+    {
+      name: "A monster's tic: state, action, attack",
+      bones: [
+        { at: 'Mobj.ml:def:think', role: 'P_MobjThinker' },
+        { at: 'Mobj.ml:def:set_state', role: 'the next state, its action' },
+        { at: 'Mobj.ml:def:act', role: 'the reference: Enemy.act' },
+        { at: 'Enemy.ml:def:act', role: 'the action' },
+        { at: 'Enemy.ml:def:chase', role: 'A_Chase' },
+        { at: 'Enemy.ml:def:new_chase_dir', role: 'a direction' },
+        { at: 'Inter.ml:def:line_attack', role: 'a shot' },
+        { at: 'Inter.ml:def:damage', role: 'the player hurt' },
+      ],
+      joints: [
+        { from: 'Mobj.ml:def:think', to: 'Mobj.ml:def:set_state', say: 'tics run out' },
+        { from: 'Mobj.ml:def:set_state', to: 'Mobj.ml:def:act', say: 'its action' },
+        { from: 'Mobj.ml:def:act', to: 'Enemy.ml:def:act', say: 'set at start: invisible' },
+        { from: 'Enemy.ml:def:act', to: 'Enemy.ml:def:chase', say: 'Chase' },
+        { from: 'Enemy.ml:def:chase', to: 'Enemy.ml:def:new_chase_dir', say: 'blocked or bored' },
+        { from: 'Enemy.ml:def:act', to: 'Inter.ml:def:line_attack', say: 'PosAttack' },
+        { from: 'Inter.ml:def:line_attack', to: 'Inter.ml:def:damage', say: 'a hit' },
+      ],
+    },
+    skeletons.module('Info.ml', "id's tables", [
+      ['table', 'the states', ''],
+      ['states', 'by name', 'indexed'],
+      ['possessed', 'a kind', 'its states'],
+      ['p_random', 'the random bytes', 'chances'],
+    ]),
+    skeletons.module('Things.ml', 'Things: spawned, pictured', [
+      ['spawn', "the map's things", ''],
+      ['make', 'one thing', 'each'],
+      ['load', 'the sprites', ''],
+      ['frame', 'its picture now', 'by angle'],
+    ]),
+    skeletons.module('Weapons.ml', 'The hand: states, fire, attacks', [
+      ['tic', 'a tic of the hand', ''],
+      ['set_psprite', 'its state', 'a state'],
+      ['fire', 'the attack', 'Fire'],
+      ['gun_shot', 'a bullet', 'pistol, shotgun'],
+    ]),
+    skeletons.module('Inter.ml', 'A shot: aimed, traced, hurting', [
+      ['aim', 'the slope to a target', ''],
+      ['line_attack', 'the bullet traced', 'aimed'],
+      ['damage', 'the damage', 'a hit'],
+      ['kill', 'the death', 'health 0'],
+    ]),
+    skeletons.module('Mobj.ml', 'A thing, a tic', [
+      ['think', 'P_MobjThinker', ''],
+      ['xy_movement', 'its momentum', 'moving?'],
+      ['z_movement', 'its fall', 'then'],
+      ['set_state', 'its next state', 'tics out'],
+    ]) + {
+      bones+: [{ at: 'Mobj.ml:def:act', role: "the state's action, by a ref" }, { at: 'Mobj.ml:def:spawn', role: 'a thing made' }],
+      joints+: [{ from: 'Mobj.ml:def:set_state', to: 'Mobj.ml:def:act', say: 'its action' }],
+    },
+    skeletons.module_calls('Enemy.ml', "A monster's actions", 'act', "the match on a state's action", [
+      ['look', 'A_Look: wake up', 'Look'],
+      ['chase', 'A_Chase: walk, maybe attack', 'Chase'],
+      ['face_target', 'A_FaceTarget', 'FaceTarget'],
+      ['bullets', 'the hitscan attacks', 'PosAttack'],
+      ['spawn_missile', "the imp's fireball", 'TroopAttack'],
+    ]) + {
+      bones+: [{ at: 'Enemy.ml:def:new_chase_dir', role: 'eight ways, no pathfinding' }],
+      joints+: [{ from: 'Enemy.ml:def:chase', to: 'Enemy.ml:def:new_chase_dir', say: 'blocked' }],
+    },
+  ],
+}

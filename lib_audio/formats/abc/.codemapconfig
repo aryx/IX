@@ -1,0 +1,41 @@
+// lib_audio/formats/abc/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Tunes as text: Walshaw's ABC notation, and solfège's do ré mi, both to the same tune.",
+  files: {
+    'Abc.mli': { digest: '3d1b15971ea6',
+      summary: 'ABC (1991): letters the notes, numbers their lengths, a key signature, voices: folk tunes.',
+      capitals: [{ at: 'type:tune', say: 'voices of timed notes' }],
+      important: [{ at: 'comment:"the letters are the notes"', weight: 3 }, { at: 'def:parse', weight: 2 }],
+    },
+    'Abc.ml': { digest: 'd2df0aa2f059',
+      summary: "Header fields, then the music line by line: accidentals, octaves, chords, broken rhythms.",
+      important: [
+        { at: 'def:key_offsets', say: 'the key signature: sharps in FCGDAEB order', weight: 2 },
+        { at: 'def:field', say: 'K:, L:, Q:, V: change the state', weight: 2 },
+        { at: 'def:parse_music_line', say: 'the notes, a character at a time', weight: 3 },
+        { at: 'def:broken', say: 'a > b: dotted then short', weight: 1 },
+      ],
+    },
+    'Doremi.mli': { digest: '9d11ca239b4b',
+      summary: 'Tunes in solfège, do ré mi fa sol la si, parsed into the same tune as ABC.',
+    },
+    'Doremi.ml': { digest: '7d21bd829443',
+      summary: 'Syllables split, octaves and lengths read, emitted as ABC events.',
+    },
+  },
+  skeletons: [
+    skeletons.chain('An ABC tune read', [
+      ['Abc.ml:def:parse', 'header or music, line by line', ''],
+      ['Abc.ml:def:field', 'key, length, tempo, voice', 'a header line'],
+      ['Abc.ml:def:parse_music_line', 'notes, bars, chords', 'a music line'],
+      ['Abc.ml:def:emit', 'an event at the voice time', 'each note'],
+    ]) + {
+      bones+: [{ at: 'Doremi.ml:def:parse', role: 'solfège: the same events' }],
+      joints+: [{ from: 'Doremi.ml:def:parse', to: 'Abc.ml:def:parse', say: 'the same tune type' }],
+    },
+  ],
+}

@@ -1,0 +1,43 @@
+// kernels/9pi/devices/web/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). In the kernel
+// built for a web page only (make WEB=1).
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The keyboard and mouse of mini-9pi in a web page: the page's events asked of the emulator each tick.",
+  files: {
+    'Kweb.mli': { digest: '2aab27b10344',
+      summary: 'No USB in a page: keys as USB reports, the mouse as a place, read from the board at each tick.',
+      important: [
+        { at: 'comment:"the page\'s events --> the board\'s queue"', say: 'from the page to Kbd and Devmouse', weight: 3 },
+        { at: 'comment:"a USB mouse that moves cost 5 of the 6 million"', say: 'why the host gives the place', weight: 3 },
+        { at: 'def:clock', weight: 2 },
+      ],
+    },
+    'Kweb.ml': { digest: '0cdf1c745d19',
+      summary: "Machine.web_input polled: a report to Hid.typed and Kbd, a place to Devmouse.at.",
+      important: [
+        { at: 'def:most', say: 'a tick must end', weight: 1 },
+        { at: 'def:clock', weight: 3 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: "A page's key and mouse, to the kernel",
+      bones: [
+        { at: 'Kweb.ml:def:clock', role: "the tick's look at the page's queue" },
+        { at: '../../../lib_machine/Machine.mli:code:"external web_input"', role: 'an event from the emulator' },
+        { at: '../../buses/lib_usb/Hid.ml:def:typed', role: "a keyboard report: USB's tables" },
+        { at: '../keyboard/Kbd.ml:def:kbdputsc', role: 'scancodes to runes' },
+        { at: '../mouse/Devmouse.ml:def:at', role: 'the mouse at a place' },
+      ],
+      joints: [
+        { from: 'Kweb.ml:def:clock', to: '../../../lib_machine/Machine.mli:code:"external web_input"', say: 'polled' },
+        { from: 'Kweb.ml:def:clock', to: '../../buses/lib_usb/Hid.ml:def:typed', say: 'kind 1: keys' },
+        { from: '../../buses/lib_usb/Hid.ml:def:typed', to: '../keyboard/Kbd.ml:def:kbdputsc', say: 'scancodes' },
+        { from: 'Kweb.ml:def:clock', to: '../mouse/Devmouse.ml:def:at', say: 'kind 2: x, y, buttons' },
+      ],
+    },
+  ],
+}

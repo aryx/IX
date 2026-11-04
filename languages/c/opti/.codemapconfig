@@ -2,19 +2,22 @@
 // tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there)
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "mini-cc -simple -O: passes over the stack code and a peephole on the instructions, each chosen by measuring.",
   files: {
-    'Opti.mli': { digest: '5c95ef4d6e54',
+    'Opti.mli': { digest: '565609c16d9c',
       summary: "Six switchable passes on Lower's stack code, same behavior, fewer instructions: incs, places, imm, branch, drops, regs.",
       important: [
         { at: 'comment:"They were chosen by measuring"', say: 'measured first, where -simple loses to compat', weight: 3 },
         { at: "comment:\"regs: a function's variables in registers\"", say: "5c's regopt: liveness, loop depth", weight: 2 },
+        { at: 'comment:"All of them on Lower\'s example"', say: 'the for loop: ten instructions, no load of i', weight: 2 },
+        { at: 'comment:"regs is, in small, the pass Ken Thompson calls registerization"', say: 'memory first, registers after: -O0 is easy', weight: 2 },
+        { at: 'comment:"The caller saves"', say: "why Plan 9 keeps no register across a call", weight: 1 },
         { at: 'def:passes', weight: 2 },
         { at: 'def:run', weight: 1 },
       ],
     },
-    'Opti.ml': { digest: '65b29d424f24',
+    'Opti.ml': { digest: '4fbc1c170b8f',
       summary: "Each pass a function from code to code, most a peephole on the list; regs a liveness dataflow over variables.",
       capitals: [
         { at: 'def:passes', say: 'the passes, by name, in order' },
@@ -26,20 +29,21 @@
         { at: 'def:branch', say: 'compare and jump as one', weight: 1 },
         { at: 'def:liveness', say: 'backward, to a fixpoint', weight: 2 },
         { at: 'def:regs', say: 'variables chosen for registers', weight: 3 },
+        { at: 'def:deepest', say: "arm: registers above the stack's deepest", weight: 1 },
         { at: 'def:passes', weight: 2 },
       ],
       links: [
         { from: 'def:regs', to: 'def:liveness' },
       ],
     },
-    'Peep.mli': { digest: '5073dfa2b241',
+    'Peep.mli': { digest: 'cf394f84bbac',
       summary: "A peephole on Gen's instructions (5c's peep.c copyprop): copies read through, dead moves made NOPs.",
       important: [
         { at: 'comment:"move, the reads of the copy read the original, until either is"', say: 'copy propagation', weight: 3 },
         { at: 'def:run', weight: 1 },
       ],
     },
-    'Peep.ml': { digest: 'e2a78205facd',
+    'Peep.ml': { digest: '69cd55c3b08f',
       summary: 'What an instruction reads and writes, from its operands; copy propagation, liveness, dead code.',
       important: [
         { at: 'def:reads', weight: 2 },

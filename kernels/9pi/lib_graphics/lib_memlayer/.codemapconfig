@@ -1,0 +1,89 @@
+// kernels/9pi/lib_graphics/lib_memlayer/: what the code map says of it
+// (the code map is tinybox codemap, in ~/github/ocaml-elm-playground; its
+// guidelines: docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Plan 9's memlayer and shapes in OCaml: windows drawn whole, lines and polygons as runs.",
+  files: {
+    'Memlayer.mli': { digest: 'c5be29f43db6',
+      summary: "Screens and windows (memlayer), each window's pixels whole in its own image: no refresh ever needed.",
+      capitals: [
+        { at: 'def:draw', say: 'a window drawn, its visible part copied up' },
+      ],
+      important: [
+        { at: 'comment:"always whole"', say: 'unlike memlayer: never a refresh message', weight: 3 },
+        { at: 'def:draw', weight: 2 },
+        { at: 'def:tofront', weight: 1 },
+        { at: 'def:origin', say: 'a window moved', weight: 1 },
+      ],
+    },
+    'Memlayer.ml': { digest: '76ad9aa7c50d',
+      summary: 'A drawing on a window shown on its screen where no window in front covers it; the rest repainted.',
+      important: [
+        { at: 'def:draw', say: 'drawn, then shown: up the chain of screens', weight: 3 },
+        { at: 'def:show', say: 'the parts where no window is in front', weight: 3 },
+        { at: 'def:repaint', say: 'what a raise, lower, move uncovered', weight: 2 },
+        { at: 'def:alloc', weight: 1 },
+      ],
+      links: [
+        { from: 'def:draw', to: 'def:show' },
+      ],
+    },
+    'Memshape.mli': { digest: 'f81fab66709c',
+      summary: 'Lines, polygons, ellipses and arcs in simple forms: rows of pixels drawn from src.',
+      important: [
+        { at: 'comment:"A shape is turned into horizontal runs"', say: 'every shape through the one draw', weight: 3 },
+      ],
+    },
+    'Memshape.ml': { digest: '491c9fc410c2',
+      summary: "A shape's rows of pixels decided (scanline polygon fill, discs, rings), each run drawn.",
+      important: [
+        { at: 'def:span', say: 'a run of a row: the one drawing', weight: 2 },
+        { at: 'def:fillpoly', say: 'the scanline fill every shape uses', weight: 3 },
+        { at: 'def:line', say: 'a thick line as a polygon, its ends discs', weight: 2 },
+        { at: 'def:ring', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'Windows: drawn whole, shown where uncovered',
+      bones: [
+        { at: 'Memlayer.ml:def:draw', role: "drawn in the window's own image, then shown" },
+        { at: 'Memlayer.ml:def:show', role: 'its rectangle on the screen, less the windows in front' },
+        { at: 'Memlayer.ml:def:minus', role: 'a rectangle less another: four at most' },
+        { at: 'Memlayer.ml:def:repaint', role: "a screen's rectangle: its fill, then the windows rear to front" },
+        { at: 'Memlayer.ml:def:alloc', role: 'a window on a screen, in front' },
+        { at: 'Memlayer.ml:def:tofront', role: 'windows reordered, then shown' },
+        { at: '../lib_memdraw/Memdraw.ml:def:draw', role: 'the pixels' },
+      ],
+      joints: [
+        { from: 'Memlayer.ml:def:draw', to: '../lib_memdraw/Memdraw.ml:def:draw', say: 'into the window' },
+        { from: 'Memlayer.ml:def:draw', to: 'Memlayer.ml:def:show' },
+        { from: 'Memlayer.ml:def:show', to: 'Memlayer.ml:def:minus', say: 'the windows in front' },
+        { from: 'Memlayer.ml:def:show', to: 'Memlayer.ml:def:draw', say: "the pieces onto the screen's image" },
+        { from: 'Memlayer.ml:def:tofront', to: 'Memlayer.ml:def:show' },
+        { from: 'Memlayer.ml:def:alloc', to: 'Memlayer.ml:def:show' },
+      ],
+    },
+    {
+      name: 'A shape as rows of pixels',
+      bones: [
+        { at: 'Memshape.ml:def:span', role: 'one run of a row drawn: the unit of every shape' },
+        { at: 'Memshape.ml:def:fillpoly', role: 'scanline fill: the edges crossed on each row' },
+        { at: 'Memshape.ml:def:line', role: 'a thick line as a polygon, its ends discs' },
+        { at: 'Memshape.ml:def:disc', role: 'a disc, row by row' },
+        { at: 'Memshape.ml:def:ring', role: 'an ellipse or arc: the rows between two ellipses' },
+        { at: 'Memshape.ml:def:poly', role: 'a polyline: lines joined' },
+      ],
+      joints: [
+        { from: 'Memshape.ml:def:poly', to: 'Memshape.ml:def:line' },
+        { from: 'Memshape.ml:def:line', to: 'Memshape.ml:def:fillpoly' },
+        { from: 'Memshape.ml:def:line', to: 'Memshape.ml:def:disc', say: 'round ends' },
+        { from: 'Memshape.ml:def:fillpoly', to: 'Memshape.ml:def:span' },
+        { from: 'Memshape.ml:def:disc', to: 'Memshape.ml:def:span' },
+        { from: 'Memshape.ml:def:ring', to: 'Memshape.ml:def:span' },
+      ],
+    },
+  ],
+}

@@ -2,25 +2,40 @@
 // codemap, in ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there)
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "mini-9pi's USB: endpoints as files for usbd and the drivers in user space, over the DWC2 host controller.",
   files: {
-    'Usb.mli': { digest: 'bc05b65658c8',
-      summary: "USB's data (usb.h): devices and their endpoints, shared by #u and the host controller's driver.",
+    'Usb.ml': { digest: 'bd18a1d39d1b',
+      summary: "USB's data (usb.h) as records, no .mli: devices and their endpoints, shared by #u and the controller.",
       capitals: [
         { at: 'type:ep', say: 'an endpoint: what #u and the controller share' },
       ],
       important: [
+        { at: 'comment:"udev 3 (a keyboard)"', say: 'a device and its endpoints, drawn', weight: 2 },
         { at: 'type:udev', say: 'a device: address, speed, state, hub or not', weight: 2 },
         { at: 'type:ep', say: 'type, mode, max packet, data toggles', weight: 3 },
         { at: 'type:ttype', weight: 1 },
         { at: 'def:ep0', say: "a device's setup endpoint", weight: 1 },
       ],
     },
-    'Usb.ml': { digest: '651b4d5cf7bf',
-      summary: 'The records of Usb.mli, and the setup packet constants.',
+    'Kusb.mli': { digest: 'f3a0626c17ae',
+      summary: "The kernel as its own usbd: the USB keyboard and mouse found and read with lib_usb, no program.",
+      important: [
+        { at: 'comment:"The kernel as its own usbd"', say: "the boot script chooses: kernel or usbd", weight: 3 },
+        { at: 'comment:"a try a tick: mini-9pi has no process of"', say: 'stale: Kproc gives it one, as said below', weight: 1 },
+        { at: 'def:clock', say: 'a report asked for each tick', weight: 2 },
+      ],
     },
-    'Usbdwc.mli': { digest: '5a6fb6ffaa07',
+    'Kusb.ml': { digest: 'aade29206fec',
+      summary: "lib_usb's Usbbus walked over Usbdwc's endpoints; each keyboard's and mouse's report polled.",
+      important: [
+        { at: 'def:io', say: "Usbbus's I/O as the kernel's controller", weight: 3 },
+        { at: 'def:start', say: 'the bus walked, a Kproc to watch the ports', weight: 3 },
+        { at: 'def:clock', say: 'scancodes to Kbd, moves to Devmouse', weight: 2 },
+        { at: 'code:"Devusb.kernel := start"', say: "a hook: Devusb cannot name Kusb (link order)", weight: 2 },
+      ],
+    },
+    'Usbdwc.mli': { digest: '3b936c2ca64e',
       summary: "The DWC2 host controller's driver: one channel, a DMA page, polled; NAKs retried after a sleep.",
       important: [
         { at: 'comment:"The USB host controller"', say: "how it simplifies 9pi's: polled, no split transactions", weight: 3 },
@@ -30,14 +45,14 @@
       ],
       related: ['arm/Usbdwc.ml', '../../lib_machine/usb.c'],
     },
-    'Devusb.mli': { digest: 'a4915e8466f4',
+    'Devusb.mli': { digest: '49cfb0bd295f',
       summary: "'#u', USB as files (devusb.c): a directory per endpoint, its data the transfers, its ctl the settings.",
       important: [
         { at: 'comment:"the bus"', say: 'enumeration is usbd, in user space', weight: 3 },
         { at: 'def:devices', say: "the kernel's own driver's way in: Etherusb", weight: 1 },
       ],
     },
-    'Devusb.ml': { digest: '41d3ee9f00a0',
+    'Devusb.ml': { digest: '68dcef4c4e52',
       summary: "#u's tree, a toy root hub, and each endpoint's ctl messages; its data read and written by the controller.",
       capitals: [
         { at: 'def:epctl', say: "an endpoint's ctl: new, newdev, speed, maxpkt..." },
@@ -75,6 +90,24 @@
       ],
     },
     {
+      name: "USB's two ways: usbd in user space, or the kernel's own",
+      bones: [
+        { at: 'Devusb.ml', role: "#u: endpoints as files" },
+        { at: 'user/usbd/', role: "usbd: the bus walked by a program, Plan 9's way" },
+        { at: 'Kusb.ml', role: "the kernel's walk: the usual kernel's way" },
+        { at: 'lib_usb/', role: 'the walk and HID, shared by both' },
+        { at: 'arm/Usbdwc.ml', role: 'the DWC2 controller' },
+      ],
+      joints: [
+        { from: 'user/usbd/', to: 'Devusb.ml', say: "#u's files" },
+        { from: 'user/usbd/', to: 'lib_usb/', say: 'written with' },
+        { from: 'Kusb.ml', to: 'lib_usb/', say: 'written with' },
+        { from: 'Devusb.ml', to: 'Kusb.ml', say: '"kernel" written to ctl' },
+        { from: 'Devusb.ml', to: 'arm/Usbdwc.ml', say: 'transfers' },
+        { from: 'Kusb.ml', to: 'arm/Usbdwc.ml', say: 'transfers' },
+      ],
+    },
+    {
       name: 'USB as records: a device and its endpoints',
       bones: [
         { at: 'Usb.ml:type:udev', role: 'a device: its address, speed, hub and port' },
@@ -95,13 +128,13 @@
       bones: [
         { at: 'Devusb.ml:def:init', role: "#u: an endpoint's data file read or written" },
         { at: 'Devusb.ml:def:epctl', role: "an endpoint's settings, from usbd" },
-        { at: 'Usb.mli:type:ep', role: 'the endpoint, shared by both sides' },
+        { at: 'Usb.ml:type:ep', role: 'the endpoint, shared by both sides' },
         { at: 'arm/Usbdwc.ml:def:eptrans', role: 'a bulk or interrupt transfer, its toggle' },
         { at: 'arm/Usbdwc.ml:def:chanio', role: 'one channel run, NAKs waited on' },
         { at: '../../lib_machine/usb.c:def:usb_transfer', role: "the controller's registers, the DMA page" },
       ],
       joints: [
-        { from: 'Devusb.ml:def:epctl', to: 'Usb.mli:type:ep', say: 'its settings' },
+        { from: 'Devusb.ml:def:epctl', to: 'Usb.ml:type:ep', say: 'its settings' },
         { from: 'Devusb.ml:def:init', to: 'arm/Usbdwc.ml:def:eptrans', say: 'the data' },
         { from: 'arm/Usbdwc.ml:def:eptrans', to: 'arm/Usbdwc.ml:def:chanio', say: 'a packet or more' },
         { from: 'arm/Usbdwc.ml:def:chanio', to: '../../lib_machine/usb.c:def:usb_transfer', say: 'a descriptor, a PID' },

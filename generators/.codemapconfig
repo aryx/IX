@@ -1,0 +1,24 @@
+// generators/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there).
+local skeletons = import '../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-lex and mini-yacc, ocamllex's and ocamlyacc's twins: ix's lexers and parsers built by ix.",
+  dirs: {
+    tests: { summary: "Each generator's output against ocamllex's and ocamlyacc's: tokens and trees compared." },
+  },
+  skeletons: [
+    skeletons.parts('Two generators, one pair of engines', [
+      ['lex/', 'a .mll to a lexer: regexps to one automaton'],
+      ['yacc/', 'a .mly to a parser: LALR(1) tables'],
+      ['../lib_core/', "Lexing's and Parsing's engines, which run them"],
+      ['../languages/', "the compilers' .mll and .mly, the main inputs"],
+    ], [
+      ['lex/', '../lib_core/', 'tables for Lexing.engine'],
+      ['yacc/', '../lib_core/', 'tables for Parsing.run'],
+      ['../languages/', 'lex/', 'Lexer.mll'],
+      ['../languages/', 'yacc/', 'Parser.mly'],
+    ]),
+  ],
+}

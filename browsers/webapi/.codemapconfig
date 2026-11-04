@@ -1,0 +1,45 @@
+// browsers/webapi/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "What a page's scripts see: document, elements, events, timers, fetch and XHR; mini-chrome's webapi of 2026-10-10.",
+  files: {
+    'Script_types.mli': { digest: '2e0e3cac68c6',
+      summary: "Types alone: the page's mutable copy a node at a time, a request, the scripts' state and its mailbox.",
+      capitals: [
+        { at: 'type:node', say: 'the tree with parents: what scripts change' },
+        { at: 'type:t', say: "a page's scripts: engine, copy, clock, mailbox" },
+      ],
+      important: [
+        { at: 'comment:"Two trees and a mailbox"', say: 'the design in one line', weight: 3 },
+        { at: 'type:request', say: 'what a script asks of the network', weight: 2 },
+        { at: 'type:timer', weight: 1 },
+      ],
+    },
+  },
+  dirs: {
+    tests: { summary: "mini-chrome's Unit_browser_script, Unit_script_dom, Unit_xhr, Unit_cors (Testo, dune's only)." },
+  },
+  skeletons: [
+    {
+      name: "A page's scripts and the page they see",
+      bones: [
+        { at: 'Script_types.mli', role: 'the shared types: node, request, state' },
+        { at: 'run/', role: 'the scripts run, events, timers' },
+        { at: 'dom/', role: "the page's copy and its host objects" },
+        { at: 'window/', role: "window's globals, URL, storage" },
+        { at: 'net/', role: 'requests queued for the browser' },
+        { at: '../javascript/', role: 'the language that runs them' },
+      ],
+      joints: [
+        { from: 'run/', to: '../javascript/', say: 'evaluated by' },
+        { from: 'run/', to: 'dom/', say: 'the tree thawed, frozen' },
+        { from: 'run/', to: 'window/', say: 'the globals installed' },
+        { from: 'run/', to: 'net/', say: 'fetch and XHR installed' },
+        { from: 'Script_types.mli', to: 'run/', say: 'the types' },
+        { from: 'Script_types.mli', to: 'dom/', say: 'the types' },
+      ],
+    },
+  ],
+}

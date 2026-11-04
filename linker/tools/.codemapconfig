@@ -1,0 +1,59 @@
+// linker/tools/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there).
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-ar and mini-nm, Plan 9's ar and nm, over the linker's own libraries and objects.",
+  files: {
+    'Ar.ml': { digest: 'c642d78799f6',
+      summary: "mini-ar, Plan 9's ar: objects kept in a library with the names each defines, for mini-ld.",
+      capitals: [
+        { at: 'def:main', say: 'u, v, t: put in, said, listed' },
+      ],
+      important: [
+        { at: 'comment:"What makes a file of objects a library is the index"', say: "who has print? without reading members", weight: 3 },
+        { at: 'comment:"ranlib added a first member"', say: "ranlib's job, done by ar itself", weight: 1 },
+        { at: 'comment:"an older object of the same source goes"', say: 'u replaces by source name', weight: 2 },
+        { at: 'def:help', weight: 1 },
+      ],
+      links: [
+        { from: 'def:main', to: '../Link.ml:def:write_library' },
+      ],
+    },
+    'Nm.ml': { digest: 'b05de11c3470',
+      summary: "mini-nm, Plan 9's nm: the names of an a.out's table (mini-ld -g), an ELF, an object or a library.",
+      capitals: [
+        { at: 'def:main', say: "a file's kind found, then its names" },
+      ],
+      important: [
+        { at: 'comment:"T text   D data   B bss"', say: "Plan 9's letters, a, p, z with -a", weight: 2 },
+        { at: 'def:of_object', say: "an ix object's names: no values", weight: 2 },
+        { at: 'def:print', say: 'sorted, filtered by the flags', weight: 2 },
+        { at: 'code:"Symbols.read bytes"', say: 'a.out first, then ELF, .a, object', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.onefile('mini-ar: a library of objects', 'Ar.ml', [
+      ['../Link.ml:def:member_of', 'an object as a member: its defined names', 'each object given'],
+      ['../Link.ml:def:write_library', 'the library marshalled, as an object is', 'old members, then the new'],
+      ['../Link.ml:def:load', "mini-ld: members taken when a name is wanted", 'lib.a'],
+    ]),
+    skeletons.onefile('mini-nm: the names of a file', 'Nm.ml', [
+      ['../../lib_executable/Symbols.ml', "a Plan 9 a.out's table (Symtab's bytes)", 'the bytes'],
+      ['Nm.ml:def:of_object', "else an ix object's or a library's names", 'not an a.out'],
+      ['Nm.ml:def:print', 'value, letter, name, sorted', 'the names'],
+    ]),
+    skeletons.parts('Two programs over the linker', [
+      ['Ar.ml', 'writes the libraries mini-ld reads'],
+      ['Nm.ml', "reads what mini-ld and mini-asm write"],
+      ['../Link.ml', 'the library format: members, index'],
+      ['../debug/Symtab.ml', "the a.out's table mini-nm lists"],
+    ], [
+      ['Ar.ml', '../Link.ml', 'member_of, write_library'],
+      ['../Link.ml', 'Nm.ml', 'read_library'],
+      ['../debug/Symtab.ml', 'Nm.ml', 'the table, in an a.out'],
+    ]),
+  ],
+}

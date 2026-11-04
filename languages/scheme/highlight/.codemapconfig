@@ -1,0 +1,40 @@
+// languages/scheme/highlight/: what the code map says of it (the code map
+// is tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Scheme's text coloured for the editors: parentheses and names, the special forms as keywords.",
+  files: {
+    'Highlight_scheme.mli': { digest: '43f3ec725565',
+      summary: "A Scheme file's tokens given Highlight_code's categories; nothing fails, unclosed runs to the end.",
+      important: [
+        { at: 'comment:"A name after an opening parenthesis is a keyword"', say: 'the only rule a Lisp needs', weight: 3 },
+        { at: 'def:lines', weight: 2 },
+      ],
+    },
+    'Highlight_scheme.ml': { digest: 'e68a077fa3fc',
+      summary: 'The highlighter: a scan of the text, the word after ( looked up among the forms.',
+      important: [
+        { at: 'def:forms', say: 'define, lambda, let: Keyword', weight: 2 },
+        { at: 'def:control', say: 'if, cond, and: Keyword_control', weight: 1 },
+        { at: 'def:lines', say: 'spans per line, for the editor', weight: 3 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'A Scheme text coloured',
+      bones: [
+        { at: 'Highlight_scheme.ml:def:lines', role: 'the text to spans, line by line' },
+        { at: 'Highlight_scheme.ml:def:forms', role: 'the special forms: keywords' },
+        { at: '../../../lib_code/Highlight_code.ml', role: 'the categories every language shares' },
+        { at: '../../../editors/emacs/modes/Scheme_mode.ml', role: "the editor's Scheme mode" },
+      ],
+      joints: [
+        { from: 'Highlight_scheme.ml:def:forms', to: 'Highlight_scheme.ml:def:lines', say: 'a head looked up' },
+        { from: '../../../lib_code/Highlight_code.ml', to: 'Highlight_scheme.ml:def:lines', say: 'the categories' },
+        { from: 'Highlight_scheme.ml:def:lines', to: '../../../editors/emacs/modes/Scheme_mode.ml', say: 'the spans drawn' },
+      ],
+    },
+  ],
+}

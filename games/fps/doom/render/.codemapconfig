@@ -1,0 +1,138 @@
+// games/fps/doom/render/: what the code map says of it
+local skeletons = import '../../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Doom's renderer (r_*.c): the BSP nearest first, walls a column at a time, visplanes, sprites; no z-buffer.",
+  files: {
+    'Render.mli': {
+      summary: "What the player sees, Doom's way: 320x200 bytes, column by column, no polygon, no z-buffer.",
+      digest: '6dd044977ad7',
+      capitals: [{ at: 'def:frame', say: 'a frame: the tree, the planes, the sprites' }],
+      important: [{ at: 'comment:"The tree, nearest first"', say: 'the four steps, with their r_*.c names', weight: 3 }],
+    },
+    'Render.ml': { summary: 'A frame: the clips reset, the tree walked, the planes, then the masked.', digest: '5872d3854161' },
+    'View.mli': {
+      summary: "The renderer's state all parts share: the eye, tables, column clips, visplanes, drawsegs, sprites.",
+      digest: 'dc2db390217b',
+      capitals: [
+        { at: 'type:t', say: 'the state of a frame' },
+        { at: 'def:draw_column', say: "R_DrawColumn: every wall's, sky's, sprite's pixels" },
+      ],
+      important: [
+        { at: 'type:plane', say: "a visplane: a flat's rows, top and bottom per column", weight: 2 },
+        { at: 'type:drawseg', say: 'a wall drawn, kept for sprites to clip', weight: 2 },
+      ],
+    },
+    'View.ml': {
+      summary: "r_main.c's and r_draw.c's: the tables (fine angles, tangents), the light, R_DrawColumn.",
+      digest: '590596dbdd2e',
+      important: [
+        { at: 'def:finetangent', say: "Doom's tables kept, in floats", weight: 2 },
+        { at: 'def:point_to_angle', say: 'R_PointToAngle: by tantoangle', weight: 2 },
+        { at: 'def:lit', say: 'distance to a COLORMAP row: darker far', weight: 2 },
+        { at: 'def:draw_column', say: 'the inner loop: a texel a pixel, stepped', weight: 3 },
+        { at: 'def:ifloor', say: 'floats for fixed_t: why slower', weight: 1 },
+      ],
+    },
+    'Bsp.mli': {
+      summary: "The tree walked nearest first and the columns it closes (r_bsp.c); the node builder made the tree.",
+      digest: '1b853f10b916',
+      capitals: [{ at: 'def:render_node', say: 'R_RenderBSPNode: the eye side first' }],
+    },
+    'Bsp.ml': {
+      summary: 'The walk: a side, its box checked against closed columns, segs clipped solid or passed.',
+      digest: 'd5861f150dd4',
+      important: [
+        { at: 'def:clip_solid', say: 'solidsegs: a wall closes its columns', weight: 3 },
+        { at: 'def:clip_pass', say: 'a window: seen through, narrowed', weight: 2 },
+        { at: 'def:check_box', say: 'a box all in closed columns: skipped', weight: 2 },
+        { at: 'def:add_line', say: 'a seg: its angles, its columns', weight: 2 },
+      ],
+    },
+    'Segs.mli': {
+      summary: "A seg's columns drawn (r_segs.c): the scale stepped, upper, middle, lower textures, the planes marked.",
+      digest: '128c0d0734d7',
+      capitals: [{ at: 'def:store_wall_range', say: 'R_StoreWallRange: a quarter of a frame' }],
+    },
+    'Segs.ml': {
+      summary: 'Walls column by column: the texture column by the tangent, the clips narrowed, the visplanes marked.',
+      digest: '8f9cfdacb014',
+      important: [{ at: 'def:store_wall_range', say: 'the scale linear on the screen: 1/z stepped', weight: 3 }],
+    },
+    'Planes.mli': {
+      summary: "The floors and ceilings (r_plane.c): visplanes gathered as walls are drawn, then drawn in rows.",
+      digest: '547663aeac0d',
+      capitals: [
+        { at: 'def:find_plane', say: "a visplane of this height, flat and light" },
+        { at: 'def:draw_planes', say: 'every visplane drawn a row at a time' },
+      ],
+    },
+    'Planes.ml': {
+      summary: 'Visplanes: found, checked, their columns made spans, each span textured by its distance.',
+      digest: '457953f2136e',
+      important: [
+        { at: 'def:make_spans', say: 'columns turned into rows', weight: 3 },
+        { at: 'def:map_plane', say: 'R_MapPlane: a row of a flat, one distance', weight: 2 },
+      ],
+    },
+    'Sprites.mli': {
+      summary: "The things and what is seen through (r_things.c): projected, sorted, clipped by the walls in front.",
+      digest: '6493439d1417',
+      important: [{ at: 'def:project_sprite', say: 'a vissprite, if it can be seen', weight: 2 }],
+    },
+    'Sprites.ml': {
+      summary: 'Sprites projected as the tree is walked, drawn far to near, clipped by drawsegs; the hand last.',
+      digest: 'd42cc7b7f738',
+      important: [
+        { at: 'def:project_sprite', say: 'a thing to a vissprite: scale, rotation', weight: 3 },
+        { at: 'def:draw_sprite', say: 'clipped by the walls nearer', weight: 3 },
+        { at: 'def:render_masked_seg_range', say: 'grates and windows: masked middles', weight: 1 },
+        { at: 'def:draw_psprite', say: 'the weapon over all', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.chain("A Doom frame: tree, walls, planes, sprites", [
+      ['Render.ml:def:frame', 'a frame', ''],
+      ['Bsp.ml:def:render_node', 'the tree, nearest first', 'the root'],
+      ['Bsp.ml:def:add_line', 'a seg seen', 'each seg'],
+      ['Segs.ml:def:store_wall_range', 'its columns', 'its open columns'],
+      ['View.ml:def:draw_column', 'a column of texture', 'each column'],
+    ]) + {
+      bones+: [
+        { at: 'Planes.ml:def:draw_planes', role: 'then the floors and ceilings' },
+        { at: 'Sprites.ml:def:draw_masked', role: 'then the sprites, far to near' },
+        { at: 'View.ml:type:t', role: 'what they all share' },
+      ],
+      joints+: [
+        { from: 'Render.ml:def:frame', to: 'Planes.ml:def:draw_planes', say: 'after the walls' },
+        { from: 'Render.ml:def:frame', to: 'Sprites.ml:def:draw_masked', say: 'last' },
+        { from: 'Segs.ml:def:store_wall_range', to: 'View.ml:type:t', say: 'clips, visplanes, drawsegs' },
+      ],
+    },
+    skeletons.module('View.ml', "The renderer's tables and its inner loop", [
+      ['create', 'the state, the tables', ''],
+      ['point_to_angle', 'an angle from the eye', 'the tables'],
+      ['x_of_angle', 'an angle to a column', 'projected'],
+      ['lit', 'a distance to a light', 'shaded'],
+      ['draw_column', 'R_DrawColumn', 'drawn'],
+    ]),
+    skeletons.chain('A wall, column by column: R_StoreWallRange', [
+      ['Segs.ml:def:store_wall_range', 'the seg, start to stop', ''],
+      ['Segs.ml:comment:"R_ScaleFromGlobalAngle"', 'its scale at both ends', 'first'],
+      ['Segs.ml:comment:"the drawseg: what this seg hides"', 'kept for the sprites', 'then'],
+      ['Segs.ml:comment:"the texture\'s first column, and the lights"', 'where the texture starts', 'then'],
+      ['Segs.ml:comment:"R_RenderSegLoop"', 'each column: upper, middle, lower', 'the loop'],
+      ['Segs.ml:comment:"the clips as they are now"', 'the clips saved', 'after'],
+    ]) + {
+      bones+: [{ at: 'View.ml:def:draw_column', role: 'each column drawn' }],
+      joints+: [{ from: 'Segs.ml:comment:"R_RenderSegLoop"', to: 'View.ml:def:draw_column', say: 'textured' }],
+    },
+    skeletons.module('Sprites.ml', 'Things: projected, then drawn clipped', [
+      ['project_sprite', 'a vissprite', ''],
+      ['draw_masked', 'all of them, far to near', 'sorted'],
+      ['draw_sprite', 'one, clipped by drawsegs', 'each'],
+      ['draw_masked_column', 'its columns', 'posts'],
+    ]),
+  ],
+}

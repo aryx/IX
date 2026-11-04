@@ -1,0 +1,57 @@
+// tiny/sdl/: what the code map says of it (the code map: tinybox
+// codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). The dune file
+// copies the programs' last files from ../TinyKernel/user/ (office.ml,
+// emacs.ml, calc.ml, tetris.ml, www.ml, troff.ml, play.ml) and builds
+// them here, as tiny-office, tiny-emacs...; TinyFont.ml is generated from
+// ../TinyKernel/fonts/plan9.font. Not counted by make loc.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The tiny programs on the host, in an SDL window: tiny-kernel's calls made by the kernel's own drawing and sound.",
+  files: {
+    'TinyCalls.ml': { digest: '9a49a9457e4f',
+      summary: "TinyCalls in an SDL window: draws by TinyKernelGraphics, mixes by TinyKernelAudio, the host's files, the peer's web.",
+      capitals: [
+        { at: 'def:u_ready', say: 'the loop: show, pump the events, feed the sound' },
+      ],
+      important: [
+        { at: 'def:conn', say: "the kernel's drawing, in TinyMemory's array", weight: 3 },
+        { at: 'def:draw', say: 'a bad message: -1, as /dev/draw', weight: 2 },
+        { at: 'def:show', say: 'the screen shown only when drawn on', weight: 2 },
+        { at: 'def:feed', say: 'the ring played by the clock, a fifth ahead', weight: 2 },
+        { at: 'def:speak', weight: 1 },
+        { at: 'def:pump', say: "the window's events to keys and the mouse's box", weight: 2 },
+        { at: 'def:u_ready', weight: 3 },
+        { at: 'def:u_read', weight: 1 },
+        { at: 'def:u_write', say: 'fd 3 the drawing, ENQ the window size', weight: 2 },
+        { at: 'def:answer', say: "a dial to port 70: the peer's own answers", weight: 1 },
+        { at: 'def:u_argc', say: "Sys.argv: the host's command line", weight: 1 },
+      ],
+      related: ['../TinyKernel/host/TinyCalls.mli', '../TinyKernel/host/stub/TinyCalls.ml', '../TinyMachine/TinyMachineSDL.ml', '../TinyKernel/user/'],
+    },
+  },
+  skeletons: [
+    {
+      name: 'A tiny program on the host: its calls in a window',
+      bones: [
+        { at: '../TinyKernel/user/office.ml', role: "a program's last file, copied here" },
+        { at: 'TinyCalls.ml:def:u_write', role: 'fd 3: the drawing; a file; the speaker' },
+        { at: 'TinyCalls.ml:def:draw', role: 'the messages, by the kernel' },
+        { at: '../TinyKernel/TinyKernelGraphics.ml:def:messages', role: "tiny-kernel's drawing, by OCaml" },
+        { at: 'TinyCalls.ml:def:u_ready', role: 'what the program waits on' },
+        { at: 'TinyCalls.ml:def:show', role: 'the screen to the window' },
+        { at: 'TinyCalls.ml:def:pump', role: "the window's events" },
+        { at: '../TinyMachine/TinyMachineSDL.ml:def:create', role: 'the SDL window' },
+      ],
+      joints: [
+        { from: '../TinyKernel/user/office.ml', to: 'TinyCalls.ml:def:u_write', say: 'messages' },
+        { from: 'TinyCalls.ml:def:u_write', to: 'TinyCalls.ml:def:draw', say: 'fd 3' },
+        { from: 'TinyCalls.ml:def:draw', to: '../TinyKernel/TinyKernelGraphics.ml:def:messages', say: 'the bytes' },
+        { from: '../TinyKernel/user/office.ml', to: 'TinyCalls.ml:def:u_ready', say: 'a key, the mouse' },
+        { from: 'TinyCalls.ml:def:u_ready', to: 'TinyCalls.ml:def:show', say: 'if drawn' },
+        { from: 'TinyCalls.ml:def:u_ready', to: 'TinyCalls.ml:def:pump', say: 'then' },
+        { from: 'TinyCalls.ml:def:show', to: '../TinyMachine/TinyMachineSDL.ml:def:create', say: 'present' },
+      ],
+    },
+  ],
+}

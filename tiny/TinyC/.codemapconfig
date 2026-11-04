@@ -1,19 +1,41 @@
 // tiny/TinyC/: what the code map says of it (the code map: tinybox
 // codemap, ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there). The program
-// is ../TinyC.ml; these are its passes, in their order.
+// is ../TinyC.ml; these are its passes, in their order. The .mli files
+// are the bare interfaces (no header: TinyC.mli has the design).
+local skeletons = import '../../skeletons.libsonnet';
+local frame_lines = 'comment:"the code, each line a function of the"';
+local convention = 'comment:"TinyCPU (TinyMachineCPU.ml) has 32-bit registers"';
+local unsigned_div = 'comment:"TinyCPU divides signed only"';
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-10-26' },
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "tiny-c's passes: C's types, the tokens, the tree typed as it is built, the stack machine, the parser, TinyCPU's code.",
   files: {
     'TinyCTypes.ml': { digest: '87b5064659c4',
       summary: "C's types on a 32-bit machine: sizes, alignments, a structure itself (same), no long long.",
+      important: [
+        { at: 'type:ty', weight: 3 },
+        { at: 'def:size', say: 'pointers 4 bytes, as int', weight: 2 },
+        { at: 'def:no_vlong', say: 'long long refused: the words are 4 bytes', weight: 1 },
+      ],
+    },
+    'TinyCTypes.mli': { digest: 'b4f06658e7a7',
+      summary: "C's types and their sizes, which every pass of tiny-c names.",
+      capitals: [
+        { at: 'type:ty', say: "C's types: every pass's vocabulary" },
+        { at: 'def:size', say: 'a type in bytes, on a 32-bit machine' },
+      ],
     },
     'TinyCLexer.ml': { digest: '07e0ace90821',
-      summary: "The tokens of a file, the preprocessor's job done as they are made: #include of a file, #define of a name, the other directives skipped.",
+      summary: "The tokens of a file, the preprocessor's job done as they are made: #include, #define of a name.",
       important: [
-        { at: 'def:tokens', say: 'the preprocessor: #include and #define of a name', weight: 1 },
+        { at: 'def:tokens', say: 'the preprocessor: #include and #define of a name', weight: 3 },
+        { at: 'comment:"the rest of the line, lexed"', say: "a macro is its line's tokens", weight: 2 },
+        { at: 'comment:"the escapes: n t r, octal"', say: "a string's and a character's escapes", weight: 1 },
       ],
+    },
+    'TinyCLexer.mli': { digest: '0e5d96f077db',
+      summary: 'The tokens, where each is (its file and line), and the one function making them.',
     },
     'TinyCTree.ml': { digest: 'a2e97cf586cb',
       summary: "The tree, typed as it is built: each expression with its type, C's conversions made nodes; the statements.",
@@ -21,10 +43,16 @@
         { at: 'type:expr', say: 'built typed, its conversions explicit (Conv)' },
       ],
       important: [
-        { at: 'type:expr', weight: 2 },
-        { at: 'def:conv', say: "C's conversions, made nodes as the tree is built", weight: 2 },
+        { at: 'type:expr', weight: 3 },
+        { at: 'def:conv', say: "C's conversions, made nodes as the tree is built", weight: 3 },
+        { at: 'def:common', say: 'the usual arithmetic conversions', weight: 2 },
+        { at: 'def:scale', say: "pointer arithmetic: an index times the type's size", weight: 1 },
+        { at: 'def:binary', weight: 2 },
         { at: 'type:stmt', weight: 1 },
       ],
+    },
+    'TinyCTree.mli': { digest: '470d84239352',
+      summary: "The typed tree's types and the constructors that make each node with its type.",
     },
     'TinyCLower.ml': { digest: 'a16e123a66ff',
       summary: 'The stack machine, and the tree lowered to it: labels and jumps, the front end knowing no register.',
@@ -34,21 +62,40 @@
       ],
       important: [
         { at: 'type:ir', weight: 3 },
+        { at: 'def:value', say: "an expression's value pushed", weight: 2 },
+        { at: 'def:for_effect', say: 'a statement: the value dropped', weight: 1 },
+        { at: 'type:targets', say: "break's, continue's and a switch's labels", weight: 1 },
         { at: 'def:lower', weight: 3 },
       ],
+    },
+    'TinyCLower.mli': { digest: '2f5b98b77c8f',
+      summary: "The stack machine's instructions (what -ir prints) and lower, a statement to them.",
     },
     'TinyCParser.ml': { digest: '5f6abb9d3f63',
       summary: 'Declarations, expressions and statements by recursive descent, the scopes and the data of the globals.',
       important: [
-        { at: 'def:block', say: "a function's body: the tree of statements", weight: 2 },
-        { at: 'def:base_type', weight: 1 },
+        { at: 'def:base_type', say: 'int, char, struct, enum, a typedef', weight: 1 },
+        { at: 'def:declarator', say: "C's declarators read inside out", weight: 2 },
+        { at: 'def:binary_expr', say: 'precedence climbing over the binary operators', weight: 2 },
+        { at: 'def:postfix', weight: 1 },
+        { at: 'def:statement', weight: 2 },
+        { at: 'def:block', say: "a function's body: the tree of statements", weight: 3 },
       ],
+    },
+    'TinyCParser.mli': { digest: '40fa1bec86c7',
+      summary: "The parser's state (tokens, scopes, globals) and its entries, as TinyC.ml drives them.",
     },
     'TinyCMachine.ml': { digest: 'b0df47f726e4',
       summary: "The stack machine to TinyCPU's assembly: the stack in r1..r12, a frame's sizes known at its end.",
       important: [
-        { at: 'def:machine', say: 'the back end, for TinyCPU: the stack in r1..r12, 100 lines', weight: 2 },
+        { at: convention, say: 'the calling convention: every argument in memory', weight: 3 },
+        { at: 'def:machine', say: 'the back end, for TinyCPU: the stack in r1..r12', weight: 3 },
+        { at: frame_lines, say: "the frame's size known only at the end", weight: 2 },
+        { at: unsigned_div, say: '__udivmod for the unsigned', weight: 1 },
       ],
+    },
+    'TinyCMachine.mli': { digest: '700341991b2e',
+      summary: "The back end's one function, a function's IR to assembly, and the buffer it writes.",
     },
   },
   skeletons: [
@@ -58,14 +105,88 @@
         { at: 'TinyCLexer.ml:def:tokens', role: 'the tokens, #include and #define done' },
         { at: 'TinyCParser.ml:def:block', role: 'the tree of statements, typed as built' },
         { at: 'TinyCTree.ml:def:conv', role: "C's conversions, nodes of the tree" },
+        { at: 'TinyCTypes.ml:type:ty', role: 'the types every pass names' },
         { at: 'TinyCLower.ml:def:lower', role: 'the tree to the stack machine' },
         { at: 'TinyCMachine.ml:def:machine', role: 'the stack machine to TinyCPU' },
       ],
       joints: [
         { from: 'TinyCLexer.ml:def:tokens', to: 'TinyCParser.ml:def:block', say: 'tokens' },
         { from: 'TinyCParser.ml:def:block', to: 'TinyCTree.ml:def:conv', say: 'expressions' },
+        { from: 'TinyCTree.ml:def:conv', to: 'TinyCTypes.ml:type:ty', say: 'types' },
         { from: 'TinyCParser.ml:def:block', to: 'TinyCLower.ml:def:lower', say: 'statements' },
         { from: 'TinyCLower.ml:def:lower', to: 'TinyCMachine.ml:def:machine', say: 'IR' },
+      ],
+    },
+    {
+      name: 'TinyCLexer: a file, its includes and macros, in tokens',
+      bones: [
+        { at: 'TinyCLexer.ml:def:tokens', role: "a file's tokens; an #include's in place" },
+        { at: 'TinyCLexer.ml:comment:"the rest of the line, lexed"', role: "#define: a macro's tokens" },
+        { at: 'TinyCLexer.ml:comment:"the escapes: n t r, octal"', role: 'strings and characters' },
+        { at: 'TinyCLexer.ml:type:token', role: 'an identifier, a number, a string, a punctuator' },
+      ],
+      joints: [
+        { from: 'TinyCLexer.ml:def:tokens', to: 'TinyCLexer.ml:comment:"the rest of the line, lexed"', say: '#define' },
+        { from: 'TinyCLexer.ml:def:tokens', to: 'TinyCLexer.ml:comment:"the escapes: n t r, octal"', say: 'a quote' },
+        { from: 'TinyCLexer.ml:def:tokens', to: 'TinyCLexer.ml:type:token', say: 'each token' },
+      ],
+    },
+    skeletons.module('TinyCTree.ml', 'TinyCTree: a node made with its type', [
+      ['binary', 'an operator: conversions, then the node', ''],
+      ['common', 'the usual arithmetic conversions', 'the types'],
+      ['conv', 'a conversion made a node', 'the type'],
+      ['mk', 'the node and its type', 'a desc'],
+    ]) + {
+      bones+: [
+        { at: 'TinyCTree.ml:type:expr', role: 'an expression and its type' },
+        { at: 'TinyCTree.ml:def:assign', role: 'an assignment: the right side converted' },
+      ],
+      joints+: [
+        { from: 'TinyCTree.ml:def:mk', to: 'TinyCTree.ml:type:expr', say: 'the node' },
+        { from: 'TinyCTree.ml:def:assign', to: 'TinyCTree.ml:def:conv', say: "the target's type" },
+      ],
+    },
+    skeletons.module('TinyCLower.ml', 'TinyCLower: statements, then values, to the stack machine', [
+      ['lower', 'a statement: labels and jumps', ''],
+      ['for_effect', 'an expression as a statement', 'Expr'],
+      ['value', 'its value on the stack', 'an expression'],
+      ['emit', 'an instruction appended', 'ir'],
+    ]) + {
+      bones+: [{ at: 'TinyCLower.ml:type:ir', role: 'the stack machine' }],
+      joints+: [{ from: 'TinyCLower.ml:def:emit', to: 'TinyCLower.ml:type:ir', say: 'code' }],
+    },
+    skeletons.module('TinyCParser.ml', 'TinyCParser: recursive descent, typed as it goes', [
+      ['block', "a function's body", ''],
+      ['statement', 'a statement', 'tokens'],
+      ['expr', 'an expression, with the comma', 'a condition'],
+      ['assign_expr', 'an assignment', 'operands'],
+      ['binary_expr', 'binary operators by precedence', 'operands'],
+      ['unary', 'prefix operators, casts, sizeof', 'operands'],
+      ['postfix', 'calls, indexes, members', 'operands'],
+    ]) + {
+      bones+: [
+        { at: 'TinyCParser.ml:def:declarator', role: "a declarator's type, inside out" },
+        { at: 'TinyCParser.ml:def:locals', role: "a block's declarations" },
+      ],
+      joints+: [
+        { from: 'TinyCParser.ml:def:block', to: 'TinyCParser.ml:def:locals', say: 'its declarations' },
+        { from: 'TinyCParser.ml:def:locals', to: 'TinyCParser.ml:def:declarator', say: 'a name and its type' },
+      ],
+    },
+    {
+      name: 'TinyCMachine: the stack in registers',
+      bones: [
+        { at: 'TinyCMachine.ml:' + convention, role: 'the convention: arguments in memory, r13 the result' },
+        { at: 'TinyCMachine.ml:def:machine', role: 'a function: each ir to instructions' },
+        { at: 'TinyCMachine.ml:' + frame_lines, role: "lines waiting for the frame's size" },
+        { at: 'TinyCMachine.ml:' + unsigned_div, role: 'unsigned division by a call' },
+        { at: 'TinyCMachine.ml:def:out', role: 'the assembly written' },
+      ],
+      joints: [
+        { from: 'TinyCMachine.ml:' + convention, to: 'TinyCMachine.ml:def:machine', say: 'the frame' },
+        { from: 'TinyCMachine.ml:def:machine', to: 'TinyCMachine.ml:' + frame_lines, say: 'each instruction' },
+        { from: 'TinyCMachine.ml:def:machine', to: 'TinyCMachine.ml:' + unsigned_div, say: 'unsigned / and %' },
+        { from: 'TinyCMachine.ml:' + frame_lines, to: 'TinyCMachine.ml:def:out', say: 'at the end' },
       ],
     },
   ],

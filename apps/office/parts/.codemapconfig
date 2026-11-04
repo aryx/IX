@@ -1,0 +1,143 @@
+// apps/office/parts/: what the code map says of it
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "A document's parts, after OLE and OpenDoc: a record of functions, and six kinds behind it.",
+  files: {
+    'Component.mli': {
+      summary: "What a part is: a record of functions closing over its state, OLE's idea without COM.",
+      digest: 'e57b0fd3bb22',
+      capitals: [
+        { at: 'type:part', say: 'height, draw, input, menu, command, save' },
+        { at: 'type:registry', say: "a kind's name to its loader" },
+        { at: 'def:load', say: 'a saved part back, or a placeholder' },
+      ],
+      important: [
+        { at: 'comment:"a record of functions"', say: 'the part as a value: no COM, no class', weight: 3 },
+        { at: 'def:placeholder', say: 'a part no one knows, kept whole', weight: 3 },
+        { at: 'def:draw_in', say: 'scaled to its frame, or reflowed' },
+        { at: 'def:input_in', say: 'the mouse mapped back into the part' },
+      ],
+    },
+    'Component.ml': {
+      summary: 'The part record, its registry, a placeholder, and the scaling into a frame.',
+      digest: '9c3dec34c0b0',
+      important: [
+        { at: 'type:part', weight: 3 },
+        { at: 'def:placeholder', say: 'unknown kinds pass through whole', weight: 3 },
+        { at: 'def:fit', say: 'a natural size scaled to the rectangle' },
+        { at: 'def:draw_in' },
+        { at: 'def:input_in' },
+      ],
+    },
+    'Part_text.ml': {
+      summary: 'The text part: rich text laid out at the frame width, typed into, saved as readable runs.',
+      digest: '719b173f8bfe',
+      important: [
+        { at: 'def:part', say: "the record of the part's functions", weight: 3 },
+        { at: 'def:laid_out', say: 'reflowed, never scaled', weight: 3 },
+        { at: 'def:input', say: 'caret, selection, typing' },
+        { at: 'def:save', say: 'runs and their looks, then the text' },
+        { at: 'def:command', say: 'the Text menu: bold, italic...' },
+      ],
+    },
+    'Part_text.mli': {
+      summary: "A text with looks as a part: TinyWord's engine behind a part's functions.",
+      digest: 'ffe6f18008ea',
+      important: [{ at: 'comment:"What it saves, which a person can read"', weight: 3 }, { at: 'def:make' }],
+    },
+    'Part_sheet.ml': {
+      summary: "The sheet part: TinyExcel's cells and drawing, typed into without a formula bar.",
+      digest: '445fe107c0d2',
+      important: [
+        { at: 'def:part', weight: 3 },
+        { at: 'def:input', say: 'a click selects, typing goes in', weight: 3 },
+        { at: 'def:draw' },
+        { at: 'def:make', say: 'also a spreadsheet document body' },
+      ],
+    },
+    'Part_sheet.mli': {
+      summary: 'A spreadsheet as a part, with a natural size; its saved text is what a chart reads.',
+      digest: '7fccd3a98f55',
+      important: [{ at: 'def:kind', weight: 3 }, { at: 'def:make' }],
+    },
+    'Part_picture.ml': {
+      summary: "The picture part: MacPaint's bits, painted with the tool and pattern of its menu.",
+      digest: 'c8a4c0f08b0a',
+      important: [
+        { at: 'def:part', weight: 3 },
+        { at: 'def:input', say: 'a drag paints with the tool', weight: 3 },
+        { at: 'def:local_shapes', say: 'the bits as shapes' },
+        { at: 'def:command' },
+      ],
+    },
+    'Part_picture.mli': {
+      summary: "A picture of bits as a part, TinyMacPaint's engine behind it.",
+      digest: 'af893d7435f1',
+      important: [{ at: 'def:make', weight: 3 }],
+    },
+    'Part_drawing.ml': {
+      summary: "The drawing part: MacDraw's objects on a 300 by 200 page fitted to the frame.",
+      digest: '7543b0b5543d',
+      important: [
+        { at: 'def:part', weight: 3 },
+        { at: 'def:input', say: "the arrow: select, move, resize", weight: 3 },
+        { at: 'def:zoom', say: 'the page fitted to the frame' },
+        { at: 'def:command', say: 'add shapes, fill, front and back' },
+      ],
+    },
+    'Part_drawing.mli': {
+      summary: 'A drawing as a part, added without the hosts knowing drawings: a registry line.',
+      digest: 'e16f0817347a',
+      important: [{ at: 'def:make', weight: 3 }],
+    },
+    'Part_chart.ml': {
+      summary: "The chart part: bars from a sheet's cells, drawn in proportion to the tallest.",
+      digest: '4ebef6a8be65',
+      important: [
+        { at: 'def:of_sheet', say: 'the bars made from cells', weight: 3 },
+        { at: 'def:draw', weight: 3 },
+        { at: 'def:part', say: 'no menu, no input: edit its sheet' },
+      ],
+    },
+    'Part_chart.mli': {
+      summary: "A bar chart as a part, linked to a sheet (OLE's linking), after Lotus 1-2-3's graphs.",
+      digest: '0f06638fa0ce',
+      important: [{ at: 'def:of_sheet', weight: 3 }, { at: 'comment:"cs-history:"' }],
+    },
+    'Part_image.ml': {
+      summary: "The image part: a PNG or JPEG, turned by quarters; ix's own, saving the file's bytes.",
+      digest: '1cbedc686812',
+      important: [
+        { at: 'type:state', say: 'the bytes as read: never encoded again', weight: 3 },
+        { at: 'def:turned', say: 'a new picture, its pixels moved', weight: 3 },
+        { at: 'def:part' },
+        { at: 'def:command', say: 'the Image menu: turn' },
+      ],
+    },
+    'Part_image.mli': {
+      summary: "A picture from a file as a part: its bytes kept, so a JPEG is not worn by Saves.",
+      digest: '5558dbfa9a20',
+      important: [{ at: 'comment:"The file\'s way"', say: 'store, Image_file, Rgba_image, a shape', weight: 3 }, { at: 'def:turned' }],
+    },
+  },
+  skeletons: [
+    skeletons.parts('A part: one interface, six kinds', [
+      ['Component.ml', 'what a part must do: a record'],
+      ['Part_text.ml', 'a text, reflowed'],
+      ['Part_sheet.ml', 'a sheet, scaled'],
+      ['Part_chart.ml', "a chart, linked to a sheet"],
+      ['Part_picture.ml', 'a picture of bits'],
+      ['Part_drawing.ml', 'a drawing of objects'],
+      ['Part_image.ml', 'an image file'],
+    ], [
+      ['Part_text.ml', 'Component.ml', 'is a'],
+      ['Part_sheet.ml', 'Component.ml', 'is a'],
+      ['Part_chart.ml', 'Component.ml', 'is a'],
+      ['Part_picture.ml', 'Component.ml', 'is a'],
+      ['Part_drawing.ml', 'Component.ml', 'is a'],
+      ['Part_image.ml', 'Component.ml', 'is a'],
+      ['Part_sheet.ml', 'Part_chart.ml', 'its saved cells'],
+    ]),
+  ],
+}

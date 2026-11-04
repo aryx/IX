@@ -1,6 +1,6 @@
 // languages/smalltalk/kernel/: what the code map says of it (docs/claude_notes/codemapconfig_guidelines.md)
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-10-04' },
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "The Blue Book's kernel, Smalltalk-80's classes written in Smalltalk, in chunk format: what St_boot compiles into the world.",
   files: {
     'Definitions.st': { digest: 'bb7535d92c31',
@@ -12,8 +12,8 @@
     'Classes.st': { digest: '508ffb2ec784',
       summary: "Behavior, Class and Metaclass; the Smalltalk dictionary; contexts and blocks as objects; the Transcript.",
     },
-    'Numbers.st': { digest: '3ed288805ba8',
-      summary: "Magnitudes, Characters, the numbers: SmallInteger's primitives, large integers over bytes, exact Fractions, Floats, Point and Rectangle.",
+    'Numbers.st': { digest: '0d8fd5860c61',
+      summary: "Magnitudes, Characters, the numbers: SmallInteger's primitives (30 bits, ix's one change), large integers, Fractions, Floats, Point.",
     },
     'Collections.st': { digest: '6596449d8c8c',
       summary: "The collections: Array, String, Symbol, OrderedCollection, Set, Bag, Dictionary, and their do:, collect:, inject:into:.",

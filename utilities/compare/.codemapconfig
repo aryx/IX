@@ -1,0 +1,21 @@
+// utilities/compare/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Plan 9's cmp: two files' bytes compared, the answer the status, the first difference said.",
+  files: {
+    'Cmp.ml': { digest: '7659054af45a',
+      summary: "mini-cmp: silent when equal (for a script's if), else the first byte that differs; -l, -L, -s.",
+      important: [
+        { at: 'comment:"Nothing said when there is nothing to say"', say: 'the status is the answer', weight: 3 },
+        { at: 'def:fill', say: 'a buffer of each, kept in step', weight: 1 },
+        { at: 'def:main', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.onefile('mini-cmp', 'Cmp.ml', [['Cmp.ml:def:fill', 'the two buffers refilled', 'two descriptors']]),
+  ],
+}

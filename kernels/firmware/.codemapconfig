@@ -1,0 +1,12 @@
+// kernels/firmware/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). No sources:
+// Broadcom's binaries, under their licence.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The Raspberry Pi's boot firmware (bootcode.bin, start_cd.elf), Broadcom's, put on the SD card.",
+  dirs: {
+    pi1: { summary: "The Pi 1's firmware of 2015, from 9pi's image: the old set, kept (FIRMWARE=../firmware/pi1)." },
+    'pi1-pi2': { summary: "The 2026 firmware make card uses: one card boots a Pi 1 or a Pi 2 (a BCM2837 wants it)." },
+  },
+}

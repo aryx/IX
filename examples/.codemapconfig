@@ -1,0 +1,88 @@
+// examples/: what the code map says of it
+// a GUI program on the playground: Model-View-Update down to its
+// Cap.main, and its layout (places: the panel arranged in the window)
+local gui(file, heart='def:places', role='the panel laid out: a box a slot', say='where the widgets are', model='type:model', init='def:initial') = {
+  local at(a) = file + ':' + a,
+  name: 'Model-View-Update, and its widgets: ' + std.split(heart, ':')[1],
+  bones: (if model == null then [] else [{ at: at(model), role: 'the state' }])
+    + (if init == null then [] else [{ at: at(init), role: 'the first state' }]) + [
+    { at: at('def:update'), role: 'a frame: the widgets answered, a new model' },
+    { at: at('def:view'), role: 'the widgets painted from the model' },
+    { at: at('def:app'), role: 'the app: the three given to game' },
+    { at: at('code:"Cap.main"'), role: 'the program: the app run, with the capabilities' },
+    { at: at(heart), role: role },
+  ],
+  joints: (if model == null || init == null then [] else [{ from: at(init), to: at(model) }])
+    + (if init == null then [] else [{ from: at('def:app'), to: at(init), say: 'starts from' }]) + [
+    { from: at('def:app'), to: at('def:update'), say: 'steps with' },
+    { from: at('def:app'), to: at('def:view'), say: 'draws with' },
+    { from: at('code:"Cap.main"'), to: at('def:app'), say: 'runs' },
+    { from: at('def:update'), to: at(heart), say: say },
+  ],
+};
+// a big-bang program (How to Design Programs' world, the Bigbang way):
+// no update nor view of its own, handlers given to big_bang
+local bigbang(file, handlers) = {
+  local at(a) = file + ':' + a,
+  name: "A big-bang world: its handlers, given to Bigbang's big_bang",
+  bones: [{ at: at(h[0]), role: h[1] } for h in handlers] + [
+    { at: at('def:app'), role: 'big_bang: the first world and the handlers' },
+    { at: at('code:"Cap.main"'), role: 'the program: the app run, with the capabilities' },
+    { at: '../lib_playground/ways/Bigbang.ml:def:big_bang', role: 'the way: handlers made an app' },
+  ],
+  joints: [{ from: at('def:app'), to: at(h[0]), say: h[2] } for h in handlers] + [
+    { from: at('code:"Cap.main"'), to: at('def:app'), say: 'runs' },
+    { from: at('def:app'), to: '../lib_playground/ways/Bigbang.ml:def:big_bang', say: 'built by' },
+  ],
+};
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Small programs that each show one thing: 7GUIs on lib_gui, HtDP's big-bang worlds.",
+  dirs: {
+    tests: { summary: "Each program's frame and its sum (frames.sh)." },
+  },
+  files: {
+    'Gui7Counter.ml': { summary: "7GUIs 1, Counter: a label and a button; the model is one number.", digest: '4b46d24582ed' },
+    'Gui7Temperature.ml': { summary: '7GUIs 2, Temperature Converter: two fields converting each other as typed.', digest: '4e88ad645bbc' },
+    'Gui7Flight.ml': { summary: '7GUIs 3, Flight Booker: Book on only when the dates make sense.', digest: '72a273da2bc5' },
+    'Gui7Timer.ml': { summary: '7GUIs 4, Timer: a bar filling with time, a slider for the duration.', digest: 'ba1bcd548522' },
+    'Gui7Crud.ml': { summary: '7GUIs 5, CRUD: a list of names filtered by prefix, created, updated, deleted.', digest: '562c3b015099' },
+    'Gui7Circles.ml': {
+      summary: "7GUIs 6, Circle Drawer: a canvas, a menu, a live dialog, undo over apps/office's Undo.",
+      digest: 'a6aae5c5d45f',
+      important: [
+        { at: 'type:model', say: 'circles, the dialog, and the history', weight: 2 },
+        { at: 'def:under', say: 'the circle nearest the mouse, if inside', weight: 1 },
+      ],
+    },
+    'Gui7Cells.ml': {
+      summary: "7GUIs 7, Cells: a spreadsheet, apps/office's Sheet and its formulas in a grid.",
+      digest: 'd2bf1fd06dd9',
+      important: [{ at: 'def:form', say: "the sheet in the office's grid of widgets", weight: 2 }],
+    },
+    'GuiFourWays.ml': {
+      summary: "gui4/'s five tasks, each run four ways side by side: the menu picks the task.",
+      digest: '20fec9be9e41',
+      important: [
+        { at: 'comment:"The same programs, four ways"', say: 'the teaching artifact the GUI corner exists for', weight: 3 },
+        { at: 'def:runners', say: "the four runners of the task chosen", weight: 2 },
+      ],
+    },
+    'GuiWidgets.ml': { summary: "Each of lib_gui's widgets once, on one screen, moving a spinning shape.", digest: '667869538052' },
+    'BigBangRocket.ml': { summary: "HtDP's first world program: a rocket landing, a number as the world.", digest: '2c612fbfbf72' },
+    'BigBangWorm.ml': { summary: "HtDP's worm game as a big-bang world: ticks, keys, a stop and an epitaph.", digest: '4efcdef203d3' },
+  },
+  skeletons: [
+    gui('Gui7Counter.ml', model=null),
+    gui('Gui7Temperature.ml'),
+    gui('Gui7Flight.ml'),
+    gui('Gui7Timer.ml'),
+    gui('Gui7Crud.ml'),
+    gui('Gui7Circles.ml'),
+    gui('Gui7Cells.ml'),
+    gui('GuiWidgets.ml'),
+    gui('GuiFourWays.ml', heart='def:runners', role='the task chosen, run four ways', say='the menu', model=null, init=null),
+    bigbang('BigBangRocket.ml', [['def:rocket', 'the world: a height', 'the picture'], ['def:draw', 'the world drawn', 'to_draw'], ['def:landed', 'where it stops', 'on_tick']]),
+    bigbang('BigBangWorm.ml', [['type:world', 'the world: the worm, the food, a seed', 'its type'], ['def:init', 'the first world', 'starts from'], ['def:tick', 'the worm moves', 'on_tick'], ['def:key', 'a key turns it', 'on_key'], ['def:dead', 'a wall or itself', 'stop_when'], ['def:draw', 'the world drawn', 'to_draw']]),
+  ],
+}

@@ -1,0 +1,13 @@
+// lib_core/libc/include/os/plan9/: what the code map says of it (the code map: tinybox codemap,
+// ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Plan 9's own constants: notes' groups and segments, for mini-9pi's programs.",
+  files: {
+    'note.h': { digest: '0a410f6eb048', summary: 'PNPROC and PNGROUP: whom postnote reaches.' },
+    'seg.h': { digest: 'a570652adc1c', summary: "Segments' attributes (segattach(2)), from Plan 9's libc.h." },
+  },
+  skeletons: [skeletons.parts("Plan 9's extras", [['note.h', 'notes'], ['seg.h', 'segments']], [['seg.h', 'note.h', 'beside']])],
+}

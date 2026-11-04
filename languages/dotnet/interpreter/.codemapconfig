@@ -1,0 +1,94 @@
+// languages/dotnet/interpreter/: what the code map says of it (the
+// code map is tinybox codemap, in ~/github/ocaml-elm-playground; its
+// guidelines: docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-dotnet's interpreter: the IL run an instruction at a time, exceptions in .NET's two passes.",
+  files: {
+    'Machine.mli': { digest: '5db47cc0b51f',
+      summary: "The machine: IL on a stack of tagged values, a call an OCaml call; the JIT's reference.",
+      capitals: [
+        { at: 'def:run_main', say: "the entry point's method, run" },
+        { at: 'def:invoke', say: 'a call: interpreted, or the JIT asked' },
+      ],
+      important: [
+        { at: 'comment:"A tail call reuses its caller"', say: "ML's tail recursions in constant depth", weight: 3 },
+        { at: 'def:install', say: "Library's hooks filled", weight: 1 },
+        { at: 'def:call_out', say: "an instruction the JIT's code asks", weight: 1 },
+      ],
+    },
+    'Machine.ml': { digest: '1d861bdcd0d6',
+      summary: 'Places, boxing, static constructors, calls and the instruction loop, after .NET tiered compilation.',
+      important: [
+        { at: 'def:hot', say: 'tier 0 to tier 1: 30 calls, or a loop', weight: 2 },
+        { at: 'def:loop', say: 'the instructions: one match', weight: 3 },
+        { at: 'def:run', say: "the second pass: frames left, finally run", weight: 3 },
+        { at: 'def:run_method', say: 'a frame, and tail calls in place', weight: 2 },
+        { at: 'def:ensure_init', say: '.cctor at first need', weight: 1 },
+        { at: 'def:call_virtual_this', say: 'the slot looked up in the object', weight: 1 },
+        { at: 'comment:"OPTIMIZATION (call-outs)"', weight: 1 },
+      ],
+    },
+    'Frame.mli': { digest: 'f997e56343b7',
+      summary: "A call's frame, the frames running, and an exception's first pass: nothing unwound yet.",
+      capitals: [
+        { at: 'type:frame', say: 'a call: args, locals, stack, pc' },
+      ],
+      important: [
+        { at: 'comment:"The first pass"', say: 'search, then cleanup: as C++ and SEH', weight: 3 },
+        { at: 'def:handled', say: 'the clause that takes it, or none', weight: 2 },
+        { at: 'def:throw_new', say: 'an exception the machine makes', weight: 1 },
+      ],
+    },
+    'Frame.ml': { digest: 'c5018b944908',
+      summary: "The frames list, -trace and -profile's counters, and the clauses asked frame by frame.",
+      important: [
+        { at: 'def:handled', say: 'a filter run there and then', weight: 3 },
+        { at: 'def:filter_hook', weight: 1 },
+        { at: 'def:throw', weight: 2 },
+      ],
+    },
+    'Arith.mli': { digest: '58df1fa0f792',
+      summary: "add and its family, comparisons and conversions on the tagged values; III.1.5's tables.",
+      important: [
+        { at: 'comment:"An int32 is an Int32.t everywhere"', say: "31-bit ints on arm: Fib's 47th must wrap", weight: 3 },
+        { at: 'def:binop', weight: 2 },
+        { at: 'def:conv', weight: 1 },
+      ],
+    },
+    'Arith.ml': { digest: 'f39ed682199d',
+      summary: 'The operands must agree: int32 with int32, a division by zero thrown as .NET does on arm.',
+      important: [
+        { at: 'def:binop', say: 'by the tags of both', weight: 3 },
+        { at: 'def:compare_values', say: '.un: unordered for floats', weight: 1 },
+        { at: 'def:divide_by_zero', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.module('Machine.ml', 'A method run', [
+      ['run_main', 'Main and its argv', ''],
+      ['invoke', 'a call: interpreted or compiled', 'the first call'],
+      ['run_method', 'a frame, tail calls in place', 'interpreted'],
+      ['run', 'the frame, its exceptions', 'the frame'],
+      ['loop', 'an instruction at a time', 'the IL'],
+    ]) + {
+      bones+: [{ at: 'Arith.ml:def:binop', role: 'add and its family' }, { at: 'Frame.ml:def:throw', role: 'the first pass, then raised' }],
+      joints+: [
+        { from: 'Machine.ml:def:loop', to: 'Machine.ml:def:invoke', say: 'a call' },
+        { from: 'Machine.ml:def:loop', to: 'Arith.ml:def:binop', say: 'two values' },
+        { from: 'Machine.ml:def:loop', to: 'Frame.ml:def:throw', say: 'an exception' },
+      ],
+    },
+    skeletons.parts('The interpreter', [
+      ['Machine.ml', 'the instructions run'],
+      ['Frame.ml', 'frames, the first pass'],
+      ['Arith.ml', 'the numbers'],
+    ], [
+      ['Machine.ml', 'Arith.ml', 'operands'],
+      ['Machine.ml', 'Frame.ml', 'a frame, a throw'],
+      ['Arith.ml', 'Frame.ml', 'an overflow thrown'],
+    ]),
+  ],
+}

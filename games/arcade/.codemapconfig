@@ -1,0 +1,108 @@
+// games/arcade/: what the code map says of it
+// a playground program: Model-View-Update down to its Cap.main, and its
+// heart reached from update (or view)
+local skeletons = import '../../skeletons.libsonnet';
+local mvu(file, heart, role, say, from="def:update") = {
+  local at(a) = file + ":" + a,
+  name: "Model-View-Update, and its heart: " + std.split(heart, ":")[1],
+  bones: [
+    { at: at("type:model"), role: "the state" },
+    { at: at("def:initial_model"), role: "the first state" },
+    { at: at("def:update"), role: "a frame: model -> model" },
+    { at: at("def:view"), role: "a picture: model -> shapes" },
+    { at: at("def:app"), role: "the app: the three given to the Playground" },
+    { at: at("code:\"Cap.main\""), role: "the program: the app run, with the capabilities" },
+    { at: at(heart), role: role },
+  ],
+  joints: [
+    { from: at("def:initial_model"), to: at("type:model") },
+    { from: at("type:model"), to: at("def:update"), say: "stepped" },
+    { from: at("def:update"), to: at("type:model"), say: "the next state" },
+    { from: at("type:model"), to: at("def:view"), say: "drawn" },
+    { from: at("def:app"), to: at("def:update"), say: "steps with" },
+    { from: at("def:app"), to: at("def:view"), say: "draws with" },
+    { from: at("code:\"Cap.main\""), to: at("def:app"), say: "runs" },
+    { from: at(from), to: at(heart), say: say },
+  ],
+};
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Arcade games, each on one of lib_playground's libraries: juice, physics, netcode.",
+  files: {
+    'TinyBreakout.ml': {
+      summary: "Breakout (Atari, 1976): a wall of bricks, a paddle, three balls; its juice switched off by juice=off.",
+      digest: '0c58f85bf9ba',
+      capitals: [{ at: 'def:move_ball', say: 'the ball moved: walls, bricks, the paddle' }],
+      important: [
+        { at: 'comment:"The original"', say: "the rules kept: 448 points a wall, two walls", weight: 2 },
+        { at: 'type:game', say: 'a wall in play: bricks as a tile map, ball, paddle', weight: 3 },
+        { at: 'def:paddle_bounce', say: 'where it hits the paddle sets the angle', weight: 3 },
+        { at: 'def:break_bricks', say: 'bricks taken out of the Tilemap, scored', weight: 2 },
+        { at: 'def:speed', say: 'faster after hits and the back rows', weight: 2 },
+        { at: 'section:The juice (juice=off: none of it)', say: 'the effects watch the rules from outside', weight: 2 },
+        { at: 'def:juiced', say: 'a brick broken: debris and a shake', weight: 2 },
+        { at: 'def:look_at_ball', say: "the paddle's eyes on springs", weight: 1 },
+      ],
+      links: [
+        { from: 'def:update', to: 'def:update_rules' },
+        { from: 'def:update', to: 'def:juiced' },
+        { from: 'def:update_rules', to: 'def:update_game' },
+        { from: 'def:update_game', to: 'def:move_ball' },
+      ],
+    },
+    'TinyCameltry.ml': {
+      summary: 'Cameltry (Taito, 1990): you turn the maze, not the ball; a moon rolling on the physics engine.',
+      digest: 'e2ad08fc6b7a',
+      capitals: [{ at: 'def:update_play', say: 'turning the maze is turning gravity' }],
+      important: [
+        { at: 'comment:"turning the maze is only turning"', say: 'the trick: physics in the maze, still', weight: 3 },
+        { at: 'type:play', say: 'the moon, the angle turned, the targets left', weight: 2 },
+        { at: 'def:walls', say: "a row's run of walls one body: no seams", weight: 2 },
+        { at: 'def:on_something', say: 'a probe a bit bigger: may it jump?', weight: 1 },
+        { at: 'def:view_play', say: 'everything drawn turned, around the moon', weight: 2 },
+      ],
+      links: [{ from: 'def:update', to: 'def:update_play' }],
+    },
+    'TinyTronscroll.ml': {
+      summary: "Light cycles on a map bigger than the screen, for two, over UDP: the author's own game of 1997.",
+      digest: '9d795d041046',
+      capitals: [{ at: 'def:play', say: 'a tick: every rider steered, moved, written' }],
+      important: [
+        { at: 'type:round', say: 'the map, the riders, the boxes to pick', weight: 3 },
+        { at: 'type:rider', say: 'a cycle: where, which way, its walls, its power', weight: 2 },
+        { at: 'comment:"pass 1: every move against the map of the tick before"', say: 'two passes: fair to both riders', weight: 3 },
+        { at: 'def:generations', say: 'walls fade: a mark carries its age', weight: 2 },
+        { at: 'def:advance', say: 'a rider moved, what it takes on the way', weight: 2 },
+        { at: 'def:app', say: 'Multiplayer.game: two players, split screen', weight: 2 },
+        { at: 'def:view_round', say: 'each half its rider in the centre', weight: 1 },
+      ],
+      links: [{ from: 'def:update', to: 'def:play' }, { from: 'def:play', to: 'def:advance' }],
+    },
+  },
+  skeletons: [
+    skeletons.parts('Three games, three libraries', [
+      ['TinyBreakout.ml', 'the juice: effects beside the rules'],
+      ['TinyCameltry.ml', 'the physics: a body that rolls'],
+      ['TinyTronscroll.ml', 'the netcode: two computers, one game'],
+      ['../../lib_playground/apis/Juice.ml', 'shake, flash, debris, springs'],
+      ['../../lib_playground/apis/Physics.ml', 'bodies pushed, stepped, bounced'],
+      ['../../lib_playground/apis/Multiplayer.ml', 'lockstep or rollback over UDP'],
+    ], [
+      ['TinyBreakout.ml', '../../lib_playground/apis/Juice.ml', 'its effects'],
+      ['TinyCameltry.ml', '../../lib_playground/apis/Physics.ml', 'its moon'],
+      ['TinyTronscroll.ml', '../../lib_playground/apis/Multiplayer.ml', 'its players'],
+    ]),
+    mvu('TinyBreakout.ml', 'def:move_ball', 'the ball through walls, bricks and paddle', 'the ball') + {
+      bones+: [{ at: 'TinyBreakout.ml:def:juiced', role: 'the effects, from the rules before and after' }],
+      joints+: [{ from: 'TinyBreakout.ml:def:update', to: 'TinyBreakout.ml:def:juiced', say: 'what changed' }],
+    },
+    mvu('TinyCameltry.ml', 'def:update_play', 'the maze turned: gravity turned, the moon stepped', 'the play') + {
+      bones+: [{ at: '../../lib_playground/apis/Physics.ml:def:step', role: 'the engine: one step' }],
+      joints+: [{ from: 'TinyCameltry.ml:def:update_play', to: '../../lib_playground/apis/Physics.ml:def:step', say: 'the moon' }],
+    },
+    mvu('TinyTronscroll.ml', 'def:play', 'a tick: steer, move, write the walls', 'the tick') + {
+      bones+: [{ at: '../../lib_playground/apis/Multiplayer.ml:def:game', role: 'the game over two computers' }],
+      joints+: [{ from: 'TinyTronscroll.ml:def:app', to: '../../lib_playground/apis/Multiplayer.ml:def:game', say: 'built by' }],
+    },
+  ],
+}

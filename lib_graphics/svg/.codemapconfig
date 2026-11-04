@@ -1,0 +1,43 @@
+// lib_graphics/svg/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The small part of SVG that logos and icons use, parsed and drawn to pixels for mini-netscape.",
+  dirs: {
+    tests: { summary: 'SVG pictures drawn and compared.' },
+  },
+  files: {
+    'Svg.mli': { digest: '2bec8de513a8',
+      summary: "SVG's shapes, paths and viewBox drawn at any size: a file, or the page's own elements.",
+      capitals: [{ at: 'def:render_in', say: 'a node to pixels; a colour for masks' }],
+      important: [
+        { at: 'comment:"A page has them in four ways"', say: 'img, inline, background, mask', weight: 3 },
+        { at: 'type:node', say: "the HTML parser's elements fit too", weight: 2 },
+        { at: 'def:parse', weight: 1 },
+      ],
+    },
+    'Svg.ml': { digest: 'adb5cb418d31',
+      summary: "A small XML reader, path data's commands, elliptic arcs, styles cascaded, coverage filled.",
+      important: [
+        { at: 'def:parse_xml', say: 'just enough XML: no DTD, no namespaces', weight: 2 },
+        { at: 'def:path', say: "d's commands, relative and absolute", weight: 3 },
+        { at: 'def:arc', say: 'endpoint to centre form (SVG appendix)', weight: 2 },
+        { at: 'def:styled', say: 'attributes and style= inherited', weight: 2 },
+        { at: 'def:draw', say: 'the tree walked, transforms composed', weight: 3 },
+        { at: 'def:skipped', say: 'gradients, clips, masks: not drawn', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.chain('An SVG drawn', [
+      ['Svg.ml:def:parse', 'the text to nodes', ''],
+      ['Svg.ml:def:render_in', 'viewBox to the size asked', 'the svg node'],
+      ['Svg.ml:def:draw', 'each element, its transform and style', 'the tree'],
+      ['Svg.ml:def:shape', 'rect, circle, polygon, path to contours', 'a shape element'],
+      ['Svg.ml:def:path', "the d attribute's commands", 'a path'],
+      ['Svg.ml:def:paint_contours', 'filled and stroked by coverage', 'the contours'],
+    ]),
+  ],
+}

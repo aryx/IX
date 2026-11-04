@@ -1,0 +1,23 @@
+// lib_terminal/unix/: what the code map says of it (the code map: tinybox codemap,
+// ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "A Tui program in the real terminal: raw mode, the alternate screen, the size asked, all undone on exit.",
+  files: {
+    'Tty_unix.mli': { digest: 'e73c2aa5a354',
+      summary: 'A Tui in xterm or the console: termios raw mode, the alternate screen, SIGWINCH, undone even on an exception.',
+      important: [{ at: 'comment:"Three things make a terminal fit for a full-screen program"', weight: 3 }],
+      related: ['Tty_unix.ml'],
+    },
+    'Tty_unix.ml': { digest: '51bda0f06b1f', summary: "The loop over stdin and the clock, curses' bytes to stdout.", important: [{ at: 'def:run_', weight: 3 }, { at: 'def:size', weight: 1 }] },
+  },
+  skeletons: [
+    skeletons.module('Tty_unix.ml', 'A Tui in a terminal', [
+      ['size', "the terminal's rows and columns", ''],
+      ['run_', 'raw mode, the loop, restored', 'the size'],
+      ['write', "curses' bytes out", 'each frame'],
+    ]),
+  ],
+}

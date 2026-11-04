@@ -1,0 +1,93 @@
+// lib_core/concurrency/: what the code map says of it (the code map:
+// tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Threads for mini-ml: a cooperative scheduler in OCaml, Concurrent ML's channels, and processes to wait outside.",
+  files: {
+    'Thread.mli': { digest: '76bf53fedf6f',
+      summary: "OCaml's Thread for mini-ml, cooperative: a ready queue and a sleeping table, Conway to libthread to Go.",
+      capitals: [
+        { at: 'def:yield', say: 'the whole scheduler: to the end, the first runs' },
+        { at: 'def:create', say: 'a thread: two stacks and a function' },
+      ],
+      important: [
+        { at: 'comment:"The scheduler is a queue and a table."', say: 'ready, running, asleep: the picture', weight: 3 },
+        { at: 'comment:"A thread must not wait in a system call"', say: 'why Source exists', weight: 2 },
+        { at: 'comment:"A switch saves three words"', say: 'cheaper than a process switch', weight: 2 },
+        { at: "comment:\"Plan 9's libthread is this design in C\"", weight: 1 },
+        { at: 'def:idle', say: 'none ready: deadlock, or Source waits', weight: 2 },
+      ],
+      related: ['Thread.ml'],
+    },
+    'Thread.ml': { digest: '1e5ebaf7272a',
+      summary: "The scheduler over the runtime's thread_new and thread_switch: a Queue of ready threads, a Hashtbl of asleep.",
+      important: [
+        { at: "comment:\"The runtime's part: a thread is a number\"", weight: 2 },
+        { at: 'def:schedule', say: 'the next ready one switched to; finished freed', weight: 3 },
+        { at: 'def:sleep', weight: 2 },
+        { at: 'def:wakeup', weight: 2 },
+        { at: 'def:make', weight: 1 },
+      ],
+    },
+    'Event.mli': { digest: '8302d0acef8f',
+      summary: "Concurrent ML's channels and events (Reppy): send, receive, choose, wrap, sync, select.",
+      important: [
+        { at: 'type:event', weight: 2 },
+        { at: 'def:sync', weight: 2 },
+        { at: 'def:select', say: "mini-rio's loops: mouse, keyboard, windows", weight: 3 },
+      ],
+      related: ['Event.ml'],
+    },
+    'Event.ml': { digest: '0bd2faf2ffb7',
+      summary: "OCaml 1.07's event.ml (Nowak and Leroy), on these threads: offers posted, the first partner wins.",
+      important: [
+        { at: 'type:communication', say: 'an offer waiting on a channel', weight: 2 },
+        { at: 'def:basic_sync', say: 'poll each, else post all and sleep', weight: 3 },
+        { at: 'def:scramble_array', say: 'fairness: the events tried in a random order', weight: 1 },
+        { at: 'def:send', weight: 2 },
+        { at: 'def:receive', weight: 1 },
+      ],
+    },
+    'Source.ml': { digest: 'e89db2045a80',
+      summary: 'Sources for mini-ml: a forked process waits in the system, writes frames to one pipe, read when all sleep.',
+      important: [
+        { at: 'comment:"A source is a process"', say: 'no select on Plan 9: a process waits for you', weight: 3 },
+        { at: 'def:wait', say: "the pipe read: frames to their pumps", weight: 2 },
+        { at: 'def:source', say: 'the process forked, its pump thread', weight: 2 },
+        { at: 'def:start', weight: 1 },
+      ],
+      related: ['../commons/Source.mli'],
+    },
+    'Mutex.mli': { digest: 'd71dd5efc4fb', summary: "Mutexes: a holder and its waiters, asleep until unlock wakes one.", related: ['Mutex.ml'] },
+    'Mutex.ml': { digest: '11af870ac170', summary: 'Mutex made over sleep and wakeup.' },
+    'Condition.mli': { digest: '19893c3617ce', summary: 'Condition variables: wait gives the mutex back and sleeps, signal wakes one.', related: ['Condition.ml'] },
+    'Condition.ml': { digest: '471913aad841', summary: 'Condition made: a queue of sleepers.' },
+    'Atomic.mli': { digest: 'f3c0b0f12bb0', summary: "OCaml 4.14's Atomic, sequential: nothing runs between two instructions here.", related: ['Atomic.ml'] },
+    'Atomic.ml': { digest: '95102e3934c5', summary: 'Atomic made: a ref, its operations plain reads and writes.' },
+  },
+  skeletons: [
+    skeletons.parts('Threads, channels, and the outside', [
+      ['Thread.ml', 'the scheduler: ready, running, asleep'],
+      ['Mutex.ml', 'a lock: its waiters asleep'],
+      ['Condition.ml', 'waiters on a condition'],
+      ['Event.ml', "CML's channels: a send meets a receive"],
+      ['Source.ml', 'a process waits outside, frames to a pipe'],
+    ], [
+      ['Mutex.ml', 'Thread.ml', 'sleep, wakeup'],
+      ['Condition.ml', 'Mutex.ml', 'given back while waiting'],
+      ['Event.ml', 'Condition.ml', 'a partner awaited'],
+      ['Source.ml', 'Thread.ml', 'idle: the pipe read'],
+      ['Source.ml', 'Event.ml', 'a frame sent by its pump'],
+    ]),
+    skeletons.module('Event.ml', 'An event synced: polled, else offered and slept on', [
+      ['new_channel', 'its waiting senders and receivers', ''],
+      ['send', 'an offer: a value for a receiver', 'on a channel'],
+      ['flatten_event', 'choose and wrap undone to a list', 'basic events'],
+      ['basic_sync', 'each polled, else all posted, sleep', 'the list'],
+      ['sync', 'entry: one event performed', 'its result'],
+      ['select', 'sync of a choice', 'the same'],
+    ]),
+  ],
+}

@@ -1,0 +1,42 @@
+// tiny/TinyKernel/examples/: what the code map says of it (the code map:
+// tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). Put in the
+// image's /examples: korobeiniki.wav (for play) and report.ixd (an
+// office document) are data; paint.c is built as /bin/paint.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Examples in tiny-kernel's /examples: a tune, a document, and paint, a C program that draws.",
+  files: {
+    'paint.c': { digest: '6cf91801c5ef',
+      summary: "paint: the mouse paints, a ball crosses by the clock; one loop on ready for the mouse, the keys and the time.",
+      capitals: [
+        { at: 'def:main', say: 'one ready for three: mouse, keys, the next tick' },
+      ],
+      important: [
+        { at: 'comment:"One loop waiting for the three at once"', weight: 3 },
+        { at: 'def:ball', say: "the clock's, not paint's: the same screen any time", weight: 2 },
+        { at: 'def:main', weight: 3 },
+        { at: 'def:clear', weight: 1 },
+      ],
+      related: ['../libc/draw.h', '../libc/draw.c', '../TinyKernelGraphics.ml'],
+    },
+  },
+  skeletons: [
+    {
+      name: 'paint: wait for the mouse, a key or the time',
+      bones: [
+        { at: 'paint.c:def:main', role: 'the loop' },
+        { at: '../libc/user.h:def:ready', role: 'mouse, keys, until the next move' },
+        { at: 'paint.c:def:ball', role: "the ball's place, by the clock" },
+        { at: 'paint.c:def:clear', role: 'c: the canvas cleared' },
+        { at: '../libc/draw.c:def:d_flush', role: 'the messages to descriptor 3' },
+      ],
+      joints: [
+        { from: 'paint.c:def:main', to: '../libc/user.h:def:ready', say: 'fds 0 and 4' },
+        { from: 'paint.c:def:main', to: 'paint.c:def:ball', say: 'the period' },
+        { from: 'paint.c:def:main', to: 'paint.c:def:clear', say: 'c' },
+        { from: 'paint.c:def:main', to: '../libc/draw.c:def:d_flush', say: 'what changed' },
+      ],
+    },
+  ],
+}

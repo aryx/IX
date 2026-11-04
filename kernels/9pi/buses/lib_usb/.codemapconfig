@@ -1,0 +1,127 @@
+// kernels/9pi/buses/lib_usb/: what the code map says of it (the code map
+// is tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). Linked into the
+// kernel (the Makefile's ML) and into mini-usbd (its mkfile); its tests/
+// (Hidtest: reports decoded) are off the map.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "USB's enumeration and HID, written once for a program (usbd) and for the kernel (Kusb).",
+  files: {
+    'Usbdesc.mli': { digest: '28fc61f9d657',
+      summary: "USB's chapter 9: setup packets, and what a device says of itself in its descriptors.",
+      capitals: [
+        { at: 'def:setup', say: "a control request's 8 bytes" },
+      ],
+      important: [
+        { at: 'comment:"three requests a new device is sent"', say: 'SET_ADDRESS, then two descriptors', weight: 3 },
+        { at: 'comment:"A device describes itself"', say: 'no table of what exists', weight: 2 },
+      ],
+    },
+    'Usbdesc.ml': { digest: '8432141fe676',
+      summary: "The setup's bytes little-endian; a configuration's descriptors walked for interfaces, endpoints.",
+    },
+    'Usbbus.mli': { digest: '769c8ff28804',
+      summary: "The enumeration (usbd's): each hub's ports looked at, a device reset, addressed, asked, started.",
+      capitals: [
+        { at: 'type:io', say: "how a device is reached: files, or the kernel's code" },
+        { at: 'def:look', say: 'every port looked at: plugged, unplugged' },
+      ],
+      important: [
+        { at: 'comment:"Written once for a program and for the kernel"', say: "the 'd io: what differs", weight: 3 },
+        { at: 'comment:"the root hub (the controller"', say: 'a bus, and the two kinds of d', weight: 2 },
+        { at: 'def:start', weight: 2 },
+      ],
+    },
+    'Usbbus.ml': { digest: '82c8d075d658',
+      summary: "Hubs' ports reset and their devices made, addressed, their descriptors read; HID devices handed on.",
+      important: [
+        { at: 'type:io', weight: 2 },
+        { at: 'def:attach', say: 'a port reset, a device made and addressed', weight: 3 },
+        { at: 'comment:"a real hub\'s reset is some 10ms"', say: "an emulator's is at once: timings for boards", weight: 1 },
+        { at: 'def:forget', say: 'unplugged: the device and its children', weight: 1 },
+        { at: 'def:look', weight: 3 },
+      ],
+      links: [
+        { from: 'def:look', to: 'def:attach' },
+        { from: 'def:look', to: 'def:forget' },
+      ],
+    },
+    'Hid.mli': { digest: 'c864965f0be0',
+      summary: "A keyboard's and a mouse's reports (usb/kb, the boot protocol): scancodes and moves.",
+      capitals: [
+        { at: 'def:typed', say: "two reports' difference: PC scancodes" },
+      ],
+      important: [
+        { at: 'comment:"a keyboard\'s report"', say: 'the bytes of a report, drawn', weight: 3 },
+        { at: 'comment:"A report is a state, not an event"', say: 'why typed keeps the one before', weight: 3 },
+        { at: 'type:kind', weight: 2 },
+        { at: 'def:moved', weight: 2 },
+      ],
+    },
+    'Hid.ml': { digest: '2afb5e216a88',
+      summary: "USB's usage numbers to a PC's scancodes; a mouse's fields found in its report descriptor.",
+      important: [
+        { at: 'type:field', say: 'a report field: byte, bit, width, sign', weight: 2 },
+        { at: 'def:layout', say: "a mouse's report descriptor parsed", weight: 2 },
+        { at: 'def:sctab', say: 'HID usage to PC scancode', weight: 2 },
+        { at: 'def:typed', weight: 3 },
+        { at: 'def:moved', say: 'x, y, buttons, the wheel', weight: 2 },
+      ],
+      links: [
+        { from: 'def:typed', to: 'def:scancodes' },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'One USB stack, two callers',
+      bones: [
+        { at: 'Usbbus.ml', role: 'the enumeration, over an io' },
+        { at: 'Usbdesc.ml', role: "the requests and descriptors" },
+        { at: 'Hid.ml', role: 'what a keyboard or mouse report means' },
+        { at: '../user/usbd/Usbd.ml', role: "a program's io: #u's files" },
+        { at: '../Kusb.ml', role: "the kernel's io: Devusb's code" },
+      ],
+      joints: [
+        { from: 'Usbbus.ml', to: 'Usbdesc.ml', say: 'asks with' },
+        { from: 'Usbbus.ml', to: 'Hid.ml', say: 'HID devices set up' },
+        { from: '../user/usbd/Usbd.ml', to: 'Usbbus.ml', say: 'start, look' },
+        { from: '../Kusb.ml', to: 'Usbbus.ml', say: 'start, look' },
+      ],
+    },
+    {
+      name: 'A bus looked at: the enumeration',
+      bones: [
+        { at: 'Usbbus.ml:def:start', role: 'the root hub and its ports' },
+        { at: 'Usbbus.ml:def:look', role: "each port's status: new or gone" },
+        { at: 'Usbbus.ml:def:attach', role: 'reset, a device, its address, its descriptors' },
+        { at: 'Usbdesc.ml:def:setup', role: 'a control request' },
+        { at: 'Hid.ml:def:layout', role: "a mouse's report laid out" },
+        { at: 'Usbbus.ml:type:io', role: "the caller's way to a device" },
+      ],
+      joints: [
+        { from: 'Usbbus.ml:def:start', to: 'Usbbus.ml:def:look', say: 'the bus' },
+        { from: 'Usbbus.ml:def:look', to: 'Usbbus.ml:def:attach', say: 'a port with a device' },
+        { from: 'Usbbus.ml:def:attach', to: 'Usbdesc.ml:def:setup', say: 'SET_ADDRESS, GET_DESCRIPTOR' },
+        { from: 'Usbbus.ml:def:attach', to: 'Hid.ml:def:layout', say: 'a mouse' },
+        { from: 'Usbbus.ml:def:attach', to: 'Usbbus.ml:type:io', say: 'child, send, ask, drive' },
+      ],
+    },
+    {
+      name: 'A key pressed: reports to scancodes',
+      bones: [
+        { at: 'Hid.ml:def:typed', role: 'this report against the one before' },
+        { at: 'Hid.ml:def:modifiers', role: 'Shift, Ctrl, Alt: bits changed' },
+        { at: 'Hid.ml:def:key', role: 'a key down or up' },
+        { at: 'Hid.ml:def:sctab', role: "USB's usage to a PC scancode" },
+        { at: 'Hid.ml:def:scancodes', role: 'the codes, in order' },
+      ],
+      joints: [
+        { from: 'Hid.ml:def:typed', to: 'Hid.ml:def:scancodes', say: 'two reports' },
+        { from: 'Hid.ml:def:scancodes', to: 'Hid.ml:def:modifiers', say: 'the modifier byte' },
+        { from: 'Hid.ml:def:scancodes', to: 'Hid.ml:def:key', say: 'each key' },
+        { from: 'Hid.ml:def:key', to: 'Hid.ml:def:sctab', say: 'its usage' },
+      ],
+    },
+  ],
+}

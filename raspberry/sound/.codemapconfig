@@ -1,0 +1,56 @@
+// raspberry/sound/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The board's sound: the BCM2835's PWM and its clock, its FIFO fed by DMA, out to the host's card.",
+  files: {
+    'Pwm.mli': { digest: '6c058be99caa',
+      summary: "The PWM as a DAC for a reader new to it; its registers; the FIFO paced by the sound, through Dma.",
+      capitals: [
+        { at: 'def:create', say: "the jack: a PWM fed by Dma" },
+      ],
+      important: [
+        { at: 'comment:"range = 8, data = 2"', say: 'pulse width modulation, drawn', weight: 3 },
+        { at: 'comment:"250,000,000 / 5,669"', say: '44,100 periods a second', weight: 2 },
+        { at: 'comment:"the sound is what paces the transfer"', say: "why Dma's at-once transfers did not do", weight: 3 },
+        { at: 'comment:"What is ours: a period is not drawn tick by tick"', say: 'a sample, not pin edges', weight: 2 },
+        { at: 'comment:"QEMU models this device as registers that remember"', weight: 1 },
+      ],
+    },
+    'Pwm.ml': { digest: '89b2cc427d48',
+      summary: "Words pulled from Dma a period at a time, each over its range a 16-bit sample for the host.",
+      important: [
+        { at: 'def:clock_rate', say: "the clock manager's source and divisor", weight: 2 },
+        { at: 'def:word', say: "a channel's next word: the FIFO or DAT", weight: 2 },
+        { at: 'def:sample', say: 'a word over its range, centred on zero', weight: 2 },
+        { at: 'def:advance', say: "the board's time: periods played", weight: 3 },
+        { at: 'def:until_next', say: 'how long a WFI may skip', weight: 1 },
+        { at: 'def:write', say: "CTL, DMAC, RNG, FIF1", weight: 2 },
+      ],
+      links: [
+        { from: 'def:advance', to: 'def:sample' },
+        { from: 'def:sample', to: 'def:word' },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'A period played: Dma pulled, a sample out',
+      bones: [
+        { at: 'Pwm.ml:def:write', role: 'the kernel sets the range and turns DMA on' },
+        { at: 'Pwm.ml:def:advance', role: "the board's time: so many periods" },
+        { at: 'Pwm.ml:def:word', role: "a channel's word, pulled from Dma" },
+        { at: 'Pwm.ml:def:sample', role: 'a 16-bit sample for the host' },
+        { at: '../storage/Dma.ml:def:pull', role: 'the DMA controller gives the next word' },
+        { at: 'Pwm.ml:def:until_next', role: 'the next period, for an idle CPU' },
+      ],
+      joints: [
+        { from: 'Pwm.ml:def:write', to: 'Pwm.ml:def:advance', say: 'PWEN, ENAB' },
+        { from: 'Pwm.ml:def:advance', to: 'Pwm.ml:def:sample', say: 'each period' },
+        { from: 'Pwm.ml:def:sample', to: 'Pwm.ml:def:word', say: 'each ear' },
+        { from: 'Pwm.ml:def:word', to: '../storage/Dma.ml:def:pull', say: 'DREQ 5' },
+      ],
+    },
+  ],
+}

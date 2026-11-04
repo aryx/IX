@@ -2,18 +2,21 @@
 // tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there)
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "mini-9pi's processes: the scheduler, sleep and wakeup, notes, and rfork, exec, exits, await.",
   files: {
-    'Proc.mli': { digest: 'a19fe1ee482c',
-      summary: 'A table of slots, a run queue, sleep and wakeup on a wait_chan; one core, so no locks.',
+    'Proc.mli': { digest: '82cf0925fee5',
+      summary: "A table of slots, a run queue, sleep and wakeup on a wait_chan; one core in the kernel at a time.",
       capitals: [
         { at: 'def:sleep', say: 'asleep on a wait_chan until a wakeup' },
         { at: 'def:wakeup', say: "the sleepers on a channel readied" },
         { at: 'def:scheduler', say: 'the run queue, forever, on the boot stack' },
       ],
       important: [
-        { at: 'comment:"no preemption inside the kernel"', say: 'one core, no kernel preemption: no locks', weight: 2 },
+        { at: 'comment:"one core in it at a time"', say: "no locks here: Machine's one lock on a Pi 2", weight: 2 },
+        { at: 'comment:"A process\'s states (Types.state)"', say: 'the states and who changes them, drawn', weight: 3 },
+        { at: 'comment:"cat, reading the console"', say: 'a sleep and its wakeup, step by step', weight: 3 },
+        { at: 'comment:"sleep and wakeup on a channel are Unix"', say: "why Plan 9 left this form, and it is right again", weight: 1 },
         { at: 'def:ready', say: 'readied by another: runs next (cooperative)', weight: 2 },
         { at: 'def:sleep', weight: 3 },
         { at: 'def:wakeup', weight: 3 },
@@ -22,14 +25,14 @@
         { at: 'def:postnote', say: "a note queued, the process's sleep broken", weight: 2 },
       ],
     },
-    'Proc.ml': { digest: '2b0d41ae7767',
+    'Proc.ml': { digest: '941812aa9f0f',
       summary: "proc.c's scheduler: a process readied by another runs next, a server answering its client at once.",
       capitals: [
         { at: 'def:scheduler', say: 'switch to the next, its table in TTBR0' },
       ],
       important: [
         { at: 'def:runq', weight: 2 },
-        { at: 'def:readied', say: "cpu->readied: Plan 9's cooperative hand-over", weight: 3 },
+        { at: 'def:readieds', say: "cpu->readied, a core's own: the hand-over", weight: 3 },
         { at: 'def:ready', say: "a divergence: an idle wake-up's fresh slice", weight: 2 },
         { at: 'def:sleep', say: 'a pending note interrupts it, before or after', weight: 3 },
         { at: 'def:scheduler', weight: 3 },
@@ -40,7 +43,7 @@
         { from: 'def:wakeup', to: 'def:ready' },
       ],
     },
-    'Exec.mli': { digest: 'a5cc365203d7',
+    'Exec.mli': { digest: '665b7bf08df0',
       summary: "exec: a Plan 9 a.out or a #! script into a new address space, laid out as sysexec does, byte for byte.",
       capitals: [
         { at: 'def:exec', say: 'a program replaces the process' },
@@ -49,9 +52,11 @@
         { at: 'comment:"UTZERO 0x1000"', say: "the user's memory map, drawn", weight: 3 },
         { at: 'def:exec', weight: 2 },
         { at: 'def:set_tos_pid', say: "libc's _tos: its pid", weight: 1 },
+        { at: 'comment:"A header of 32 bytes"', say: 'nothing to relocate: why exec is short', weight: 2 },
+        { at: 'comment:"xv6\'s exec reads the whole program"', say: 'demand paging against reading it all', weight: 1 },
       ],
     },
-    'Exec.ml': { digest: 'df8433eaf37e',
+    'Exec.ml': { digest: '9bf070891c69',
       summary: 'Only the header read and the arguments written: text and data come at their first touch (Fault).',
       important: [
         { at: 'def:resolve', say: 'the a.out header, or a #! line', weight: 2 },
@@ -63,7 +68,20 @@
         { from: 'def:exec', to: 'def:stack_image' },
       ],
     },
-    'Sysproc.mli': { digest: 'e6c5b37d555d',
+    'Kproc.mli': { digest: 'dc56d9d16169',
+      summary: "A kernel process (Plan 9's kproc): a function run for ever in the kernel, free to sleep.",
+      important: [
+        { at: 'comment:"Every kernel has a few"', say: 'what an interrupt handler must not do', weight: 2 },
+        { at: 'def:start', say: "Main's process_start runs the function", weight: 2 },
+      ],
+    },
+    'Kproc.ml': { digest: '7c59374915da',
+      summary: "A process with no program: no memory, no descriptors, its work queued in Proc.kernel_work.",
+      important: [
+        { at: 'def:start', weight: 2 },
+      ],
+    },
+    'Sysproc.mli': { digest: '9c738785beca',
       summary: "The processes' system calls (sysproc.c): rfork, exec, exits, await, brk, notes, rendezvous, errstr.",
       important: [
         { at: 'def:sysrfork', weight: 3 },
@@ -71,9 +89,11 @@
         { at: 'def:exits', say: "pexit: also the notes' way out", weight: 2 },
         { at: 'def:sysawait', weight: 1 },
         { at: 'def:sysrendezvous', weight: 1 },
+        { at: 'comment:"One call with bits, where Unix grew a family"', say: 'rfork against fork, vfork, clone', weight: 2 },
+        { at: 'comment:"A process ends with a string"', say: 'exits("why"), not a number', weight: 1 },
       ],
     },
-    'Sysproc.ml': { digest: '85a65e4d1948',
+    'Sysproc.ml': { digest: '3ce9f53cddd0',
       summary: 'rfork: which groups are shared, copied or new (RFNAMEG, RFFDG...); the child runs before its parent.',
       capitals: [
         { at: 'def:sysrfork', say: 'fork, Plan 9 style: a flag per shared resource' },
@@ -88,10 +108,13 @@
         { at: 'def:sysrendezvous', say: 'two processes exchange a value at a tag', weight: 2 },
       ],
     },
-    'Syssema.mli': { digest: 'be249d58ed8e',
+    'Syssema.mli': { digest: '79daac681655',
       summary: "Semaphores on a user's int, slept on by its physical address, the same for every sharer.",
+      important: [
+        { at: 'comment:"Linux\'s futex (2002) is the same idea"', say: 'no call when no one waits', weight: 2 },
+      ],
     },
-    'Syssema.ml': { digest: '11022eec576e',
+    'Syssema.ml': { digest: 'e933d04553eb',
       summary: 'acquire, tsemacquire, release: a decrement or a sleep, no lock needed on one core.',
       important: [
         { at: 'def:sem_pa', say: "the word's physical address: the wait_chan", weight: 2 },

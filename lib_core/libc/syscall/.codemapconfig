@@ -1,0 +1,7 @@
+// lib_core/libc/syscall/: what the code map says of it (the code map: tinybox codemap,
+// ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The way into the kernel: a C function per call over one assembly stub, Linux's or Plan 9's.",
+}

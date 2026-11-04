@@ -1,0 +1,30 @@
+// kernels/singularity/programs/bench/: what the code map says of it (the
+// code map is tinybox codemap, in ~/github/ocaml-elm-playground).
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The paper's table 1 measured here: a call, a yield, a message there and back, a process made.",
+  files: {
+    'Main.ml': { digest: '86ae1e564b03',
+      summary: "The paper's table 1 measured here: a call, a yield, a message there and back, a process made.",
+      capitals: [ { at: "code:\"let () =\"", say: "the four costs, each many times" } ],
+      important: [
+        { at: "def:measure", say: "microseconds over n runs; numbers.sh reads them", weight: 3 },
+        { at: "code:\"Pong.Imp.lend client\"", say: "a megabyte lent: no copy, its cost a message's", weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: "bench: four costs timed",
+      bones: [
+        { at: "Main.ml:code:\"let () =\"", role: "the four measures in turn" },
+        { at: "Main.ml:def:measure", role: "a loop timed by Sip.time" },
+        { at: "../../lib/Sip.ml:def:yield", role: "what is measured: a yield" },
+      ],
+      joints: [
+        { from: "Main.ml:code:\"let () =\"", to: "Main.ml:def:measure", say: "each cost" },
+        { from: "Main.ml:def:measure", to: "../../lib/Sip.ml:def:yield", say: "n times" },
+      ],
+    },
+  ],
+}

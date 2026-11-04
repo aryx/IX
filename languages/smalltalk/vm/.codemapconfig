@@ -1,0 +1,268 @@
+// languages/smalltalk/vm/: what the code map says of it (the code map:
+// tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import "../../../skeletons.libsonnet";
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The Blue Book's virtual machine, part four in OCaml: object table, interpreter, primitives, image, boot.",
+  files: {
+    'St_memory.mli': {
+      summary: "The object memory of the Blue Book's chapter 30: oops tagged by a bit, an object table for become:.",
+      digest: 'bd76bce14679',
+      capitals: [
+        { at: 'type:oop', say: 'a SmallInteger or an index in the table' },
+        { at: 'type:t', say: 'the memory: classes and bodies, side by side' },
+      ],
+      important: [
+        { at: 'comment:"Why a table, when OCaml has pointers?"', say: 'become: in constant time', weight: 3 },
+        { at: 'type:body', say: 'fields, bytes, a float, or a method: both', weight: 2 },
+        { at: 'type:known', say: 'the twenty classes the machine names', weight: 1 },
+        { at: 'def:gc', say: 'mark and sweep, from the roots given', weight: 1 },
+      ],
+    },
+    'St_memory.ml': {
+      summary: "The object table, allocation, become:, and a mark-and-sweep collector with an explicit stack.",
+      digest: '83be2bcea767',
+      important: [
+        { at: 'def:alloc', say: 'a free entry, else the table doubled', weight: 2 },
+        { at: 'def:become', say: 'two entries swapped: every reference follows', weight: 3 },
+        { at: 'def:gc', say: 'a context marked only up to its sp', weight: 3 },
+        { at: 'comment:"an explicit stack rather than recursion"', say: "a long chain of contexts overflowed OCaml's", weight: 1 },
+      ],
+    },
+    'St_class.mli': {
+      summary: "A class as the machine and the tools read it: fixed fields, its format, its method dictionary.",
+      digest: '502518e91a98',
+      capitals: [
+        { at: 'def:lookup', say: 'a selector up the superclass chain' },
+        { at: 'def:define_class', say: 'a class made or changed, metaclass too' },
+      ],
+      important: [
+        { at: 'comment:"The **format** is a SmallInteger"', say: 'fields * 8 + kind', weight: 2 },
+        { at: 'comment:"The **method dictionary** is two Arrays"', say: 'searched in order: the cache makes it rare', weight: 2 },
+        { at: 'def:install', say: "a compiled method put in its class", weight: 1 },
+      ],
+    },
+    'St_class.ml': {
+      summary: "Classes in the object memory: fields by place, globals in Smalltalk, method lookup, class definition.",
+      digest: '50206344d3e6',
+      important: [
+        { at: 'def:f_superclass', say: "Behavior's fields, by the machine's places", weight: 1 },
+        { at: 'def:lookup', say: 'the class, then its superclasses', weight: 3 },
+        { at: 'def:install', say: 'dictionary and organization both changed', weight: 2 },
+        { at: 'def:define_class', say: 'a redefinition reshapes its subclasses', weight: 3 },
+        { at: 'def:refresh_format', say: 'a superclass gained a field: recount', weight: 1 },
+      ],
+    },
+    'St_interp.mli': {
+      summary: "The Blue Book's interpreter, chapters 27 to 29: contexts as objects, processes run by a budget.",
+      digest: '3c4053071e10',
+      capitals: [
+        { at: 'type:vm', say: 'the registers: context, ip, sp, cache' },
+        { at: 'type:host', say: 'what the machine asks of its host' },
+        { at: 'def:evaluate', say: 'a text compiled as a DoIt and run' },
+      ],
+      important: [
+        { at: 'comment:"**Contexts are objects**"', say: 'the debugger reads them as it reads any', weight: 3 },
+        { at: 'comment:"With closures"', say: "Squeak's blocks: no BlockContext", weight: 2 },
+        { at: 'type:process', say: 'a computation that can stop and go on', weight: 2 },
+        { at: 'def:run', say: 'a budget of bytecodes: the host keeps its frame', weight: 2 },
+      ],
+    },
+    'St_interp.ml': {
+      summary: "Fetch, decode, execute: the bytecodes, sends through a method cache, returns, processes run.",
+      digest: 'a8bf5e5d7a69',
+      important: [
+        { at: 'def:lookup', say: 'the method cache, hashed on class and selector', weight: 3 },
+        { at: 'def:execute', say: 'the primitive first, the method if it fails', weight: 3 },
+        { at: 'def:send_to_class', say: 'not found: doesNotUnderstand: with a Message', weight: 2 },
+        { at: 'def:return_from_method', say: "^ from a block: to its home's sender", weight: 2 },
+        { at: 'def:step', say: "one bytecode, the Blue Book's table", weight: 3 },
+        { at: 'def:run_opt', say: 'the loop, a collection every 1024 bytecodes', weight: 2 },
+      ],
+      links: [
+        { from: 'def:run_opt', to: 'def:step' },
+        { from: 'def:send', to: 'def:send_to_class' },
+        { from: 'def:send_to_class', to: 'def:execute' },
+        { from: 'def:execute', to: 'def:activate_method' },
+      ],
+    },
+    'St_primitives.mli': {
+      summary: "What the machine does itself, by the Blue Book's numbers: arithmetic, at:, new, blocks, perform.",
+      digest: 'ae52a16249ba',
+      capitals: [{ at: 'def:install', say: 'the table the interpreter calls by number' }],
+      important: [
+        { at: 'comment:"the primitive runs first"', say: 'failure falls back on Smalltalk code', weight: 3 },
+      ],
+    },
+    'St_primitives.ml': {
+      summary: "The primitives, each a function that answers or fails: SmallIntegers to large ones, floats, blocks.",
+      digest: '547cab9f0c5d',
+      important: [
+        { at: 'def:small_ints', say: 'an overflow fails: LargePositiveInteger takes over', weight: 2 },
+        { at: 'def:start_closure', say: "a closure's value: a new MethodContext", weight: 2 },
+        { at: 'def:start_block', say: "Blue Book's: a BlockContext resumed", weight: 1 },
+        { at: 'def:compile', say: 'the compiler as a primitive: accept in the Browser', weight: 2 },
+        { at: 'def:install', say: 'every primitive by its number', weight: 3 },
+      ],
+    },
+    'St_boot.mli': {
+      summary: "From the kernel's text to a running Smalltalk in four steps, where Smalltalk-80 only ever loaded images.",
+      digest: 'f65a7f5722ca',
+      capitals: [{ at: 'def:boot', say: "the system made from kernel/*.st" }],
+      important: [
+        { at: 'comment:"Smalltalk-80 never booted"', say: 'why a boot at all', weight: 3 },
+        { at: 'comment:"chicken and the egg every self-hosted"', say: 'methods compiled by OCaml, once', weight: 2 },
+        { at: 'def:quiet_host', say: 'a host with no mouse, for tests and commands', weight: 1 },
+      ],
+    },
+    'St_boot.ml': {
+      summary: "The bootstrap: classes empty, then filled, methods compiled by OCaml, then the rest of the chunks run.",
+      digest: '0769e115a5ff',
+      important: [
+        { at: 'def:definition', say: 'a subclass: message read without a Smalltalk', weight: 2 },
+        { at: 'comment:"1. the classes, empty"', say: 'objects first, so Strings have a class', weight: 3 },
+        { at: 'comment:"2. the classes filled"', weight: 1 },
+        { at: 'comment:"3. the methods"', weight: 1 },
+        { at: 'comment:"4. the machine, and the rest of the chunks run"', weight: 2 },
+      ],
+    },
+    'St_image.mli': {
+      summary: "The whole object memory as bytes and back: you keep the world, not files.",
+      digest: '57d32f857d3c',
+      capitals: [
+        { at: 'def:save', say: 'every object, the methods accepted with them' },
+        { at: 'def:load_vm', say: 'a world back, at rest' },
+      ],
+      important: [
+        { at: 'comment:"Numbers are written in LEB128"', say: "the same bytes for 63-bit ints and the web's 32", weight: 2 },
+      ],
+    },
+    'St_image.ml': {
+      summary: "The image format: known objects, then each object's index, class and body, in varints.",
+      digest: '73b5fe38aae2',
+      important: [
+        { at: 'def:put_oop', say: 'a SmallInteger zigzagged, an object by index', weight: 2 },
+        { at: 'def:save', weight: 3 },
+        { at: 'def:load', say: 'the table rebuilt at the same indices', weight: 3 },
+      ],
+    },
+    'St_debug.mli': {
+      summary: "What a debugger asks of a stopped process: its frames, their variables, step, send, restart.",
+      digest: 'bfa04baf6993',
+      important: [
+        { at: 'comment:"Nothing here stops a process"', say: 'error: and halt stop it; here, read it', weight: 3 },
+        { at: 'def:restart', say: 'the method taken afresh: fixed, it runs fixed', weight: 2 },
+        { at: 'def:not_understood', say: 'define the missing method, then go on', weight: 2 },
+      ],
+    },
+    'St_debug.ml': {
+      summary: "The debugger's reading of contexts, and stepping as run_until with a condition per bytecode.",
+      digest: '464367526f83',
+      important: [
+        { at: 'def:frames', say: 'the chain of senders, as frames', weight: 2 },
+        { at: 'def:over_condition', say: 'stop at the next send of this context', weight: 3 },
+        { at: 'def:restart', weight: 2 },
+        { at: 'comment:"Moving on"', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'A send, through the machine',
+      bones: [
+        { at: 'St_interp.ml:def:run_opt', role: 'the loop: a budget of bytecodes' },
+        { at: 'St_interp.ml:def:step', role: 'one bytecode decoded' },
+        { at: 'St_interp.ml:def:lookup', role: 'the method cache' },
+        { at: 'St_class.ml:def:lookup', role: 'up the superclasses' },
+        { at: 'St_interp.ml:def:execute', role: 'primitive or method' },
+        { at: 'St_primitives.ml:def:install', role: 'the primitives by number' },
+        { at: 'St_interp.ml:def:activate_method', role: 'a new context, made active' },
+        { at: 'St_memory.ml:def:alloc', role: 'every context an object' },
+      ],
+      joints: [
+        { from: 'St_interp.ml:def:run_opt', to: 'St_interp.ml:def:step', say: 'each bytecode' },
+        { from: 'St_interp.ml:def:step', to: 'St_interp.ml:def:lookup', say: 'a send: class, selector' },
+        { from: 'St_interp.ml:def:lookup', to: 'St_class.ml:def:lookup', say: 'a miss' },
+        { from: 'St_interp.ml:def:lookup', to: 'St_interp.ml:def:execute', say: 'the method' },
+        { from: 'St_interp.ml:def:execute', to: 'St_primitives.ml:def:install', say: 'its primitive, tried' },
+        { from: 'St_interp.ml:def:execute', to: 'St_interp.ml:def:activate_method', say: 'it failed: Smalltalk' },
+        { from: 'St_interp.ml:def:activate_method', to: 'St_memory.ml:def:alloc', say: 'a MethodContext' },
+        { from: 'St_interp.ml:def:activate_method', to: 'St_interp.ml:def:run_opt', say: 'the next bytecode its' },
+      ],
+    },
+    {
+      name: 'The machine, layer on layer',
+      bones: [
+        { at: 'St_memory.ml', role: 'every object, and the collector' },
+        { at: 'St_class.ml', role: 'where a class keeps its methods' },
+        { at: 'St_interp.ml', role: 'the bytecodes run' },
+        { at: 'St_primitives.ml', role: 'what Smalltalk cannot do itself' },
+        { at: 'St_boot.ml', role: 'a world made from text' },
+        { at: 'St_image.ml', role: 'a world saved and loaded' },
+        { at: 'St_debug.ml', role: 'a stopped process read' },
+      ],
+      joints: [
+        { from: 'St_class.ml', to: 'St_memory.ml', say: 'fields of objects' },
+        { from: 'St_interp.ml', to: 'St_class.ml', say: 'lookup' },
+        { from: 'St_interp.ml', to: 'St_primitives.ml', say: 'by number' },
+        { from: 'St_boot.ml', to: 'St_interp.ml', say: 'a vm' },
+        { from: 'St_image.ml', to: 'St_memory.ml', say: 'all of it' },
+        { from: 'St_debug.ml', to: 'St_interp.ml', say: 'run_until' },
+      ],
+    },
+    {
+      name: 'The bootstrap',
+      bones: [
+        { at: 'St_boot.ml:def:boot', role: 'the four steps' },
+        { at: 'St_boot.ml:def:definition', role: 'a class definition, read' },
+        { at: 'St_class.ml:def:define_class', role: 'the class filled' },
+        { at: 'St_class.ml:def:install', role: 'each method installed' },
+        { at: 'St_primitives.ml:def:install', role: 'the primitives' },
+      ],
+      joints: [
+        { from: 'St_boot.ml:def:boot', to: 'St_boot.ml:def:definition', say: 'each chunk' },
+        { from: 'St_boot.ml:def:definition', to: 'St_class.ml:def:define_class', say: 'superclass, fields' },
+        { from: 'St_boot.ml:def:boot', to: 'St_class.ml:def:install', say: 'compiled by OCaml' },
+        { from: 'St_boot.ml:def:boot', to: 'St_primitives.ml:def:install', say: 'the machine made' },
+      ],
+    },
+    skeletons.module('St_memory.ml', 'An object table and its collector', [
+      ['alloc', 'an entry, the table grown', ''],
+      ['fields', 'an object read', 'its body'],
+      ['become', 'two entries swapped', ''],
+      ['gc', 'mark and sweep', 'unreached entries freed'],
+    ]),
+    skeletons.module('St_class.ml', 'A class: its fields, its methods', [
+      ['define_class', 'a class defined', ''],
+      ['install', 'a method put in', 'methods'],
+      ['dict', 'its method dictionary', 'two arrays'],
+      ['lookup', 'found up the chain', 'searched'],
+      ['superclass', 'the next class up', 'not here'],
+    ]),
+    skeletons.module('St_primitives.ml', 'The primitives, by number', [
+      ['install', 'the table', ''],
+      ['small_ints', 'SmallInteger arithmetic', '1 to 17'],
+      ['at', 'indexed access', '60'],
+      ['value', 'a block run', '81'],
+      ['compile', 'a method compiled', 'accept'],
+    ]),
+    skeletons.module('St_boot.ml', 'From text to a world', [
+      ['boot', 'the four steps', ''],
+      ['definition', 'a class definition read', 'each chunk'],
+      ['words', 'its words', 'split'],
+    ]),
+    skeletons.module('St_image.ml', 'An image written and read', [
+      ['save', 'every object written', ''],
+      ['put_oop', 'an oop as varints', 'each field'],
+      ['load', 'the table rebuilt', 'the bytes back'],
+      ['load_vm', 'a machine over it', 'the memory'],
+    ]),
+    skeletons.module('St_debug.ml', 'A stopped process, read and stepped', [
+      ['frames', 'the contexts as frames', ''],
+      ['over_condition', 'when to stop', 'the selected frame'],
+      ['run_until', 'run under it', 'checked each bytecode'],
+      ['step', 'step over', 'with the condition'],
+    ]),
+  ],
+}

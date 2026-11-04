@@ -1,0 +1,55 @@
+// analyzers/dotnet/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground). Built by mini-ml
+// -dotnet and mini-cc -dotnet into one assembly; tests/ is off the map.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-analyze's .NET road: the rules compiled to IL by mini-datalog, the front ends in the same assembly.",
+  files: {
+    'Analyze_rt.mli': { digest: 'a02313253719',
+      summary: "The entry of a program whose rules are compiled: facts as values, no text between the parts.",
+      capitals: [
+        { at: 'def:main', say: "the .NET road's main: facts, compiled rules, reports" },
+      ],
+      important: [
+        { at: 'comment:"Datalog.add --------------->  the rules compiled"', say: 'the road drawn', weight: 3 },
+        { at: 'comment:"the author\'s two roads"', say: 'native interpreted vs compiled: compared', weight: 2 },
+      ],
+    },
+    'Analyze_rt.ml': { digest: 'ef5a4dd673a3',
+      summary: 'Files made facts by the shared front ends, the compiled rules run, the same reports printed.',
+      important: [
+        { at: 'def:main', weight: 3 },
+        { at: 'def:flag', weight: 1 },
+      ],
+    },
+    'Fingerprint.ml': { digest: 'd363b0a007cd',
+      summary: "Fingerprint.mli on .NET: externals into fingerprint.c's class, compiled by mini-cc -dotnet.",
+      important: [
+        { at: 'code:"external basis"', say: 'a C method called from ML: uint64 as int64', weight: 2 },
+      ],
+    },
+    'fingerprint.c': { digest: 'c4c68c233f78',
+      summary: "FNV-1a over 64 bits in C, unsigned arithmetic ML cannot say, as a .NET class.",
+      important: [
+        { at: 'def:fp_mix', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'The .NET road: one assembly',
+      bones: [
+        { at: 'Analyze_rt.ml:def:main', role: 'files, compiled rules, queries' },
+        { at: '../c/C_front.ml:def:file', role: "C's front end, the same" },
+        { at: '../report/C_report.ml:def:report', role: 'the native road\'s report' },
+        { at: 'Fingerprint.ml:code:"external basis"', role: "-fingerprint: ML's side" },
+        { at: 'fingerprint.c:def:fp_mix', role: "C's side, unsigned" },
+      ],
+      joints: [
+        { from: 'Analyze_rt.ml:def:main', to: '../c/C_front.ml:def:file', say: 'C files' },
+        { from: 'Analyze_rt.ml:def:main', to: '../report/C_report.ml:def:report', say: 'the answers' },
+        { from: 'Fingerprint.ml:code:"external basis"', to: 'fingerprint.c:def:fp_mix', say: 'dotnet: externals' },
+      ],
+    },
+  ],
+}

@@ -1,0 +1,240 @@
+// lib_playground/apis/: what the code map says of it
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The playground's face of each library: Audio, Physics, Gui, Juice, Multiplayer, Ai, in Elm's idiom.",
+  files: {
+    'Audio.mli': {
+      summary: 'Sounds for games: a sound a value like a shape, made, shaped by verbs, played when things happen.',
+      digest: '3bf48694d20a',
+      capitals: [
+        { at: 'type:sound', say: 'a sound as a value, like a shape' },
+        { at: 'def:play', say: 'played now, from update: an effect' },
+      ],
+      important: [
+        { at: 'def:keep_playing', say: 'a named loop, started once', weight: 2 },
+        { at: 'def:sfx', say: "sfxr's presets: blip, coin, laser", weight: 1 },
+      ],
+    },
+    'Audio.ml': {
+      summary: "Audio made over lib_audio's synthesizer and mixer; loops rendered as played; Ogg decoded as pulled.",
+      digest: '9352a85fecbb',
+      important: [
+        { at: 'def:render_once', say: 'a sound rendered once, kept for the next play', weight: 2 },
+        { at: 'def:play', say: 'into the mixer, unless muted', weight: 2 },
+        { at: 'def:prepared', say: 'a loop rendered as it is played, not whole first', weight: 3 },
+        { at: 'def:play_ogg', say: "ix's: mini-quake's music, a packet at a time", weight: 2 },
+        { at: 'def:pull', say: 'what a platform asks: the next samples', weight: 2 },
+        { at: 'code:"Audio_source.source :="', say: 'linked: the platform may now ask', weight: 2 },
+      ],
+    },
+    'Audio3d.mli': {
+      summary: "Sound in a 3D world, heard from a listener; ix's facing for Doom's and Quake's z-up worlds.",
+      digest: '99179a66f331',
+      important: [{ at: 'type:listener', say: 'where the ears are, and which way', weight: 2 }],
+    },
+    'Audio3d.ml': { summary: 'The listener made, and a sound panned and faded by where it is.', digest: '283b212eddf4' },
+    'Gui.mli': {
+      summary: "Buttons, sliders, fields in the playground's idiom: immediate mode over lib_gui, in a view.",
+      digest: '916e36df6c8e',
+      capitals: [{ at: 'def:button_in', say: 'a widget: drawn and asked if clicked, in one call' }],
+      important: [
+        { at: 'def:draw', say: 'what was asked this frame, as shapes', weight: 2 },
+        { at: 'def:theme', say: "the look, from lib_gui's Theme", weight: 1 },
+      ],
+    },
+    'Gui.ml': {
+      summary: "Gui made: one Immediate ui kept between calls, the computer turned into a widget's input.",
+      digest: 'b05d169527fa',
+      important: [
+        { at: 'def:ui', say: 'the one state: a ref behind a pure API', weight: 3 },
+        { at: 'def:input_of', say: 'the computer as lib_gui sees it', weight: 2 },
+        { at: 'def:widget', say: 'every widget through here: a new frame begun', weight: 3 },
+        { at: 'def:draw', say: 'the paint of the frame to shapes', weight: 2 },
+      ],
+    },
+    'Juice.mli': {
+      summary: "What makes a game feel alive: shake, flash, freeze, tweens, squash, particles, springs.",
+      digest: '2200c44355d4',
+      capitals: [
+        { at: 'type:t', say: "the effects' state, kept beside the model" },
+        { at: 'def:view', say: 'the picture shaken, flashed, with particles' },
+      ],
+      important: [{ at: 'def:step', say: 'a frame: the clock, the trauma, the particles', weight: 2 }],
+    },
+    'Juice.ml': {
+      summary: "Juice made over juice/: a clock of frames, trauma, an emitter; shapes squashed by a linear map.",
+      digest: '7f31f70cb7d7',
+      important: [
+        { at: 'type:t', say: 'frames, trauma, freeze, flash, particles', weight: 3 },
+        { at: 'def:step', say: 'frozen frames skip the clock', weight: 2 },
+        { at: 'def:transform', say: 'a shape squashed: circles become polygons', weight: 2 },
+        { at: 'def:burst', say: 'particles from a recipe', weight: 1 },
+        { at: 'def:view', say: 'the shake applied last, to all', weight: 3 },
+      ],
+    },
+    'Multiplayer.mli': {
+      summary: 'A game for several players, one computer or several: players instead of a keyboard.',
+      digest: 'f246801e8360',
+      capitals: [
+        { at: 'def:game', say: "Playground.game with players: lockstep or rollback" },
+        { at: 'type:player', say: "a player's keys, held and pressed" },
+      ],
+    },
+    'Multiplayer.ml': {
+      summary: 'Multiplayer made: keys as a byte, a peer per side over Lockstep or Rollback, the HUD; no server.',
+      digest: '6def0d86223c',
+      important: [
+        { at: 'def:encode', say: 'a keyboard as one byte on the wire', weight: 2 },
+        { at: 'type:peer', say: 'one netcode or the other, one interface', weight: 3 },
+        { at: 'def:one_tick', say: "the game's update, the same everywhere", weight: 2 },
+        { at: 'def:cleaned', say: 'a computer with nothing local: determinism', weight: 3 },
+        { at: 'def:simulate_frame', say: 'net=simulate: two peers through Sim_net', weight: 2 },
+        { at: 'def:remote_frame', say: 'net=host or join: UDP', weight: 2 },
+        { at: 'def:update_state', say: 'the frame: start, knobs, play', weight: 2 },
+      ],
+    },
+    'Physics.mli': {
+      summary: 'Things that move by themselves: a body is a shape with a speed; bounce, push, step, worlds.',
+      digest: '2f5c6b2f8709',
+      capitals: [
+        { at: 'type:body', say: 'a shape that moves: what Cameltry rolls' },
+        { at: 'def:step', say: 'one sixtieth of a second' },
+      ],
+      important: [{ at: 'type:world', say: 'bodies, joints, and the solver remembered', weight: 2 }],
+    },
+    'Physics.ml': {
+      summary: 'Physics made over physics/: a body to a Body.t and hitboxes, then integrate, collide, resolve.',
+      digest: 'c77eb2999d30',
+      important: [
+        { at: 'type:body', say: "the game's view of a body", weight: 3 },
+        { at: 'def:step', say: 'semi-implicit Euler', weight: 2 },
+        { at: 'def:bounce', say: 'two bodies: contact, then impulse', weight: 2 },
+        { at: 'def:step_world', say: 'a whole world: broad phase, solver, joints', weight: 3 },
+        { at: 'def:went_through', say: 'tunnelling: too fast for one step', weight: 1 },
+      ],
+    },
+    'Ai.mli': {
+      summary: "Game AI for the playground: a way to the player through a map, a flow field for all; aim errors.",
+      digest: 'ac0cc377e675',
+      capitals: [{ at: 'type:flow', say: 'one search for every monster' }],
+    },
+    'Ai.ml': {
+      summary: "Ai made: a grid as Pathfind's problem, a flow field and its next step, a wobbly aim.",
+      digest: 'dcc445fe0ffc',
+      important: [{ at: 'def:next_step', say: 'downhill on the field', weight: 2 }],
+    },
+  },
+  skeletons: [
+    skeletons.parts('The APIs: a library each, in the playground\'s words', [
+      ['Audio.ml', 'sound: lib_audio'],
+      ['Audio3d.ml', 'sound placed in a 3D world'],
+      ['Physics.ml', 'bodies: physics/'],
+      ['Gui.ml', 'widgets: lib_gui'],
+      ['Juice.ml', 'the feel: juice/'],
+      ['Multiplayer.ml', 'several players: netcode/'],
+      ['Ai.ml', 'ways through a map: ai/'],
+      ['../Playground.mli', 'the shapes and the computer they speak'],
+      ['../Audio_source.mli', "where the platform finds the sound"],
+    ], [
+      ['Audio.ml', '../Audio_source.mli', 'sets it'],
+      ['Audio3d.ml', 'Audio.ml', 'pans'],
+      ['Physics.ml', '../Playground.mli', 'shapes that move'],
+      ['Gui.ml', '../Playground.mli', 'computer in, shapes out'],
+      ['Juice.ml', '../Playground.mli', 'shapes changed'],
+      ['Multiplayer.ml', '../Playground.mli', 'a game of players'],
+    ]),
+    {
+      name: 'Audio: a sound made, played, pulled by the platform',
+      bones: [
+        { at: 'Audio.ml:type:sound', role: "a sound: lib_audio's Synth.t" },
+        { at: 'Audio.ml:def:render_once', role: 'rendered to samples, cached' },
+        { at: 'Audio.ml:def:play', role: 'into the mixer' },
+        { at: 'Audio.ml:def:prepared', role: 'a loop rendered piece by piece' },
+        { at: 'Audio.ml:def:loop', role: 'a named loop' },
+        { at: 'Audio.ml:def:pull', role: "the platform's: the next samples" },
+      ],
+      joints: [
+        { from: 'Audio.ml:type:sound', to: 'Audio.ml:def:render_once', say: 'samples' },
+        { from: 'Audio.ml:def:render_once', to: 'Audio.ml:def:play', say: 'mixed' },
+        { from: 'Audio.ml:def:loop', to: 'Audio.ml:def:prepared', say: 'as played' },
+        { from: 'Audio.ml:def:play', to: 'Audio.ml:def:pull', say: 'the mix' },
+        { from: 'Audio.ml:def:prepared', to: 'Audio.ml:def:pull', say: 'the mix' },
+      ],
+    },
+    {
+      name: 'Gui: immediate widgets from a pure view',
+      bones: [
+        { at: 'Gui.ml:def:ui', role: 'the one Immediate state, hidden' },
+        { at: 'Gui.ml:def:input_of', role: 'the computer as input' },
+        { at: 'Gui.ml:def:widget', role: 'a widget run against the ui' },
+        { at: 'Gui.ml:def:button_in', role: 'a button: drawn, clicked?' },
+        { at: 'Gui.ml:def:draw', role: "the frame's paint as shapes" },
+      ],
+      joints: [
+        { from: 'Gui.ml:def:button_in', to: 'Gui.ml:def:widget', say: 'through' },
+        { from: 'Gui.ml:def:widget', to: 'Gui.ml:def:input_of', say: 'the input' },
+        { from: 'Gui.ml:def:widget', to: 'Gui.ml:def:ui', say: 'changes' },
+        { from: 'Gui.ml:def:ui', to: 'Gui.ml:def:draw', say: 'painted' },
+      ],
+    },
+    {
+      name: 'Juice: effects stepped beside the model, applied to the picture',
+      bones: [
+        { at: 'Juice.ml:type:t', role: 'the effects' },
+        { at: 'Juice.ml:def:step', role: 'a frame of the effects' },
+        { at: 'Juice.ml:def:shake', role: 'a hit: trauma added' },
+        { at: 'Juice.ml:def:burst', role: 'particles born' },
+        { at: 'Juice.ml:def:squash', role: 'a landing squashed' },
+        { at: 'Juice.ml:def:view', role: 'the picture with the effects' },
+      ],
+      joints: [
+        { from: 'Juice.ml:def:shake', to: 'Juice.ml:type:t', say: 'trauma' },
+        { from: 'Juice.ml:def:burst', to: 'Juice.ml:type:t', say: 'particles' },
+        { from: 'Juice.ml:type:t', to: 'Juice.ml:def:step', say: 'stepped' },
+        { from: 'Juice.ml:def:step', to: 'Juice.ml:type:t', say: 'the next' },
+        { from: 'Juice.ml:type:t', to: 'Juice.ml:def:squash', say: 'its clock' },
+        { from: 'Juice.ml:type:t', to: 'Juice.ml:def:view', say: 'drawn' },
+      ],
+    },
+    {
+      name: 'Multiplayer: a frame, players, a netcode',
+      bones: [
+        { at: 'Multiplayer.ml:def:game', role: 'the app: players, not a keyboard' },
+        { at: 'Multiplayer.ml:def:update_state', role: 'a frame of the platform' },
+        { at: 'Multiplayer.ml:def:simulate_frame', role: 'two peers in one program' },
+        { at: 'Multiplayer.ml:def:remote_frame', role: 'one peer, the other over UDP' },
+        { at: 'Multiplayer.ml:type:peer', role: 'Lockstep or Rollback' },
+        { at: 'Multiplayer.ml:def:one_tick', role: "a tick of the game's update" },
+        { at: 'Multiplayer.ml:def:draw', role: 'each player its view, split' },
+      ],
+      joints: [
+        { from: 'Multiplayer.ml:def:game', to: 'Multiplayer.ml:def:update_state', say: 'its update' },
+        { from: 'Multiplayer.ml:def:update_state', to: 'Multiplayer.ml:def:simulate_frame', say: 'net=simulate' },
+        { from: 'Multiplayer.ml:def:update_state', to: 'Multiplayer.ml:def:remote_frame', say: 'net=host, join' },
+        { from: 'Multiplayer.ml:def:simulate_frame', to: 'Multiplayer.ml:type:peer', say: 'keys' },
+        { from: 'Multiplayer.ml:def:remote_frame', to: 'Multiplayer.ml:type:peer', say: 'keys' },
+        { from: 'Multiplayer.ml:type:peer', to: 'Multiplayer.ml:def:one_tick', say: 'a tick complete' },
+        { from: 'Multiplayer.ml:def:game', to: 'Multiplayer.ml:def:draw', say: 'its view' },
+      ],
+    },
+    {
+      name: 'Physics: bodies to the engine and back',
+      bones: [
+        { at: 'Physics.ml:type:body', role: "a game's body: a shape that moves" },
+        { at: 'Physics.ml:def:state', role: 'to the engine: a Body.t' },
+        { at: 'Physics.ml:def:step', role: 'one body, one step' },
+        { at: 'Physics.ml:def:bounce', role: 'two bodies touching answered' },
+        { at: 'Physics.ml:type:world', role: 'bodies, joints, memory' },
+        { at: 'Physics.ml:def:step_world', role: 'a world stepped: pairs, solver' },
+      ],
+      joints: [
+        { from: 'Physics.ml:type:body', to: 'Physics.ml:def:state', say: 'its state' },
+        { from: 'Physics.ml:type:body', to: 'Physics.ml:def:step', say: 'stepped' },
+        { from: 'Physics.ml:type:body', to: 'Physics.ml:def:bounce', say: 'collided' },
+        { from: 'Physics.ml:type:world', to: 'Physics.ml:def:step_world', say: 'stepped' },
+        { from: 'Physics.ml:def:step_world', to: 'Physics.ml:def:state', say: 'each body' },
+      ],
+    },
+  ],
+}

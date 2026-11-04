@@ -1,0 +1,19 @@
+// typesetting/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-troff and mini-man: manual pages, papers, Markdown and LaTeX books typeset for a terminal or as PDF.",
+  dirs: {
+    tests: { summary: 'Sample documents in each input language, with the expected output and their scripts.' },
+  },
+  skeletons: [
+    skeletons.parts('The typesetter and the manual', [
+      ['man/', 'mini-man: a page found, then typeset'],
+      ['troff/', 'mini-troff: any document to text or PDF'],
+    ], [
+      ['man/', 'troff/', 'CLI.typeset'],
+    ]),
+  ],
+}

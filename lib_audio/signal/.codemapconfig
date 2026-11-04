@@ -1,0 +1,80 @@
+// lib_audio/signal/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: 'Samples, what a digital sound is, and what is computed on them: mixing, resampling, the spectrum.',
+  files: {
+    'Signal.mli': { digest: '40c7e6e50cb0',
+      summary: 'A sound as floats from -1 to 1, 44,100 a second, mono or stereo: what all of lib_audio passes.',
+      capitals: [
+        { at: 'type:t', say: 'samples: a float array' },
+        { at: 'type:stereo', say: 'left and right' },
+        { at: 'def:rate', say: '44,100 a second, everywhere' },
+      ],
+      important: [{ at: 'comment:"pressure measured at regular instants"', weight: 3 }],
+    },
+    'Signal.ml': { digest: 'f46f4e32a828',
+      summary: 'The types, the rate, and seconds to samples.',
+    },
+    'Mix.mli': { digest: 'a9faa085051a',
+      summary: 'Sounds added as air pressures add, then kept under 1 by a soft clip, not a hard one.',
+      important: [
+        { at: 'comment:"Two sounds at once are simply added"', weight: 2 },
+        { at: 'def:soft_clip', say: 'tanh: loud sounds round, not crack', weight: 3 },
+      ],
+    },
+    'Mix.ml': { digest: 'bd674c967b7f',
+      summary: "tanh by a rational function, libc's on request: a quarter of a game's sound time on a Pi.",
+      important: [
+        { at: 'def:exact_tanh', say: "libc's tanh: two exp each", weight: 1 },
+        { at: 'def:soft_clip', say: "tanh's continued fraction cut at x^7", weight: 3 },
+      ],
+    },
+    'Resample.mli': { digest: '59d35cf40398',
+      summary: 'A recording played faster, slower or at another rate: nearest, linear or cubic reading.',
+      important: [{ at: 'type:kind', weight: 2 }, { at: 'def:read', weight: 2 }],
+    },
+    'Resample.ml': { digest: '04cb37b0ed5d',
+      summary: 'A sample read between two by the kind of interpolation.',
+    },
+    'Spectrum.mli': { digest: '22ebe1db4e40',
+      summary: "Which frequencies a sound holds: Fourier's DFT, the FFT, a Hann window.",
+      important: [
+        { at: 'comment:"every periodic signal is a sum of sines"', weight: 2 },
+        { at: 'def:fft', say: 'Cooley-Tukey: N log N', weight: 3 },
+      ],
+    },
+    'Spectrum.ml': { digest: '9954687f02ee',
+      summary: 'The DFT by its definition, the FFT recursive and flat with its twiddles and windows cached.',
+      important: [
+        { at: 'def:dft', say: 'N squared: the reference', weight: 2 },
+        { at: 'def:fft', weight: 2 },
+        { at: 'def:fft_flat', say: 'in place, bit-reversed, unboxed', weight: 3 },
+        { at: 'def:twiddles', say: 'sines and cosines per size, kept', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.parts('Samples, and what is computed on them', [
+      ['Signal.mli', 'the samples'],
+      ['Mix.mli', 'added, kept under 1'],
+      ['Resample.mli', 'read at another speed'],
+      ['Spectrum.mli', 'seen as frequencies'],
+    ], [
+      ['Mix.mli', 'Signal.mli', 'sums'],
+      ['Resample.mli', 'Signal.mli', 'reads'],
+      ['Spectrum.mli', 'Signal.mli', 'analyses'],
+    ]),
+    skeletons.chain("A sound's spectrum", [
+      ['Spectrum.ml:def:of_signal', 'the entry: windowed or not', ''],
+      ['Spectrum.ml:def:window_of', 'a Hann window per size, kept', 'its length'],
+      ['Spectrum.ml:def:fft_flat', 'butterflies in place', 'the samples'],
+      ['Spectrum.ml:def:twiddle', 'the roots of unity', 'each stage'],
+    ]) + {
+      bones+: [{ at: 'Spectrum.ml:def:reversal', role: 'the bit-reversed order' }],
+      joints+: [{ from: 'Spectrum.ml:def:fft_flat', to: 'Spectrum.ml:def:reversal', say: 'the order' }],
+    },
+  ],
+}

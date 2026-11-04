@@ -1,0 +1,54 @@
+// games/fps/quake/model/: what the code map says of it
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Quake's level file: a .bsp of version 29, its lumps' bytes, then records the renderer and hulls walk.",
+  files: {
+    'Bspfile.mli': {
+      summary: "A .bsp (bspfile.h) as its fifteen lumps' bytes: what qbsp writes, vis and light add to.",
+      digest: 'bc099c72eba1',
+      capitals: [{ at: 'type:t', say: 'the fifteen lumps' }],
+      important: [{ at: 'comment:"fifteen (offset, length) pairs"', say: 'the lumps, laid out', weight: 3 }],
+    },
+    'Bspfile.ml': { summary: 'The lumps parsed and written back: light rewrites LIGHTING and FACES.', digest: '7995c7dba044' },
+    'Model.mli': {
+      summary: "A Quake level (model.c, Mod_LoadBrushModel): planes, faces, nodes, leaves, hulls, the PVS.",
+      digest: '8b640aa0e265',
+      capitals: [
+        { at: 'type:t', say: 'the level the renderer, hulls and light walk' },
+        { at: 'type:surface', say: 'a face: its plane, edges, texture, lightmaps' },
+      ],
+      important: [
+        { at: 'comment:"A level is a BSP tree of 3D space"', say: 'nodes, leaves, contents', weight: 3 },
+        { at: 'def:pvs', say: "a leaf's row of the PVS, decompressed", weight: 2 },
+        { at: 'def:leaf_at', say: 'where the eye is', weight: 2 },
+      ],
+    },
+    'Model.ml': {
+      summary: "The lumps made records: textures and mips, faces' extents, nodes linked, hulls from clipnodes.",
+      digest: 'd16af363b128',
+      important: [
+        { at: 'def:load', say: 'Mod_LoadBrushModel: lump by lump', weight: 3 },
+        { at: 'def:extents', say: "a face's texture extents: its lightmap's size", weight: 2 },
+        { at: 'def:parse_entities', say: 'the ENTITIES text', weight: 1 },
+        { at: 'def:pvs', say: 'run-length zeros of the PVS', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [{
+    name: 'A .bsp read: bytes, records, queries',
+    bones: [
+      { at: 'Bspfile.ml:def:parse', role: 'the lumps' },
+      { at: 'Model.ml:def:load', role: 'the records' },
+      { at: 'Model.ml:def:load_textures', role: 'the miptex' },
+      { at: 'Model.ml:def:extents', role: "a face's extents" },
+      { at: 'Model.ml:def:leaf_at', role: 'a point to its leaf' },
+      { at: 'Model.ml:def:pvs', role: 'the leaves seen from it' },
+    ],
+    joints: [
+      { from: 'Bspfile.ml:def:parse', to: 'Model.ml:def:load', say: 'the lumps' },
+      { from: 'Model.ml:def:load', to: 'Model.ml:def:load_textures', say: 'TEXTURES' },
+      { from: 'Model.ml:def:load', to: 'Model.ml:def:extents', say: 'each face' },
+      { from: 'Model.ml:def:leaf_at', to: 'Model.ml:def:pvs', say: 'its row' },
+    ],
+  }],
+}

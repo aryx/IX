@@ -1,0 +1,60 @@
+// apps/office/draw/: what the code map says of it
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "A picture as objects, after MacDraw (1984): figures that stay figures, and their drawing.",
+  files: {
+    'Figure.mli': {
+      summary: 'One figure: hit tested as MacDraw did, resized by an affine map of its bounds.',
+      digest: 'e5d5490c965e',
+      capitals: [{ at: 'type:t', say: 'a line, rectangle, oval, text, or group' }],
+      important: [
+        { at: 'comment:"Hit testing"', say: 'hollow shapes are hit near their outline', weight: 3 },
+        { at: 'comment:"Resizing is an affine map"', weight: 3 },
+        { at: 'def:handles' },
+        { at: 'def:drag_handle' },
+      ],
+    },
+    'Figure.ml': {
+      summary: 'Figures: their bounds, the click that hits them, the map that resizes them, handles.',
+      digest: '10fad9c9a935',
+      important: [
+        { at: 'def:hit', say: 'filled inside, hollow near the line', weight: 3 },
+        { at: 'def:map_points', say: 'old bounds onto new bounds', weight: 3 },
+        { at: 'def:distance_to_segment' },
+        { at: 'def:drag_handle', say: 'the opposite corner stays put' },
+      ],
+      links: [{ from: 'def:hit', to: 'def:distance_to_segment' }, { from: 'def:fit', to: 'def:map_points' }],
+    },
+    'Drawing.mli': {
+      summary: 'A drawing: figures back to front with stable ids, drawn forward and hit-tested backward.',
+      digest: '8c6cc6a62ecc',
+      capitals: [{ at: 'type:t', say: 'the figures in order, each with its id' }],
+      important: [
+        { at: 'comment:"The order is the whole of"', say: 'drawn from the start, clicked from the end', weight: 3 },
+        { at: 'def:group', say: "MacDraw's grouping" },
+        { at: 'def:at' },
+      ],
+    },
+    'Drawing.ml': {
+      summary: 'The figures and their ids: add, find, move, reorder, group, align.',
+      digest: 'b3ece4f97c93',
+      important: [
+        { at: 'def:at', say: 'the front-most figure hit', weight: 3 },
+        { at: 'def:group', say: 'in place of the front-most chosen', weight: 3 },
+        { at: 'def:to_front' },
+        { at: 'def:align' },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.chain('A click on a drawing', [
+      ['Drawing.ml:def:at', 'the figures, front first', ''],
+      ['Figure.ml:def:hit', 'did it land on me?', 'each figure'],
+      ['Figure.ml:def:distance_to_segment', 'near the outline', 'a hollow figure'],
+    ]) + {
+      bones+: [{ at: 'Figure.ml:def:map_points', role: 'resize: an affine map' }, { at: 'Drawing.ml:def:update', role: 'a figure replaced by id' }],
+      joints+: [{ from: 'Drawing.ml:def:update', to: 'Figure.ml:def:map_points', say: 'a dragged handle' }],
+    },
+  ],
+}

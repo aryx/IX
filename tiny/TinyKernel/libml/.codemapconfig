@@ -1,0 +1,102 @@
+// tiny/TinyKernel/libml/: what the code map says of it (the code map:
+// tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). What an ML
+// program of tiny-kernel is linked with to call it: mlsys.c (tiny-c,
+// TinyML's runtime included) and two files tiny-ml compiles, whose
+// twins for the host are ../host/'s. The calls cross from ML to C by
+// externals: the map's uses do not see that border.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "What an ML program of tiny-kernel stands on: the runtime given its partition, the calls as externals, a tool's system.",
+  files: {
+    'mlsys.c': { digest: 'c1ab4e4e8ef3',
+      summary: "An ML program's main (tiny-c): its partition cut into value stack and two heaps, the system calls as ML externals.",
+      capitals: [
+        { at: 'def:main', say: "the partition found from argv's place, then ml_run" },
+      ],
+      important: [
+        { at: 'comment:"The partition: the program from 0"', say: 'the layout of every ML program', weight: 3 },
+        { at: 'def:main', weight: 3 },
+        { at: 'def:u_read', weight: 1 },
+        { at: 'def:u_exec', say: 'an ML list of strings walked as C words', weight: 2 },
+        { at: 'def:u_waits', say: 'pid and status in one ML integer', weight: 1 },
+        { at: 'def:u_spawn_window', say: "a window's program: its five descriptors", weight: 1 },
+      ],
+      related: ['../../TinyMLRuntime/core.c', '../libc/user.h', '../runtime.c'],
+    },
+    'TinyCalls.ml': { digest: 'fbb2f0ed8fdd',
+      summary: "The kernel's calls for a program in ML: mlsys.c's functions named as externals; the host's are ../host/'s.",
+      important: [
+        { at: 'def:u_write', weight: 2 },
+        { at: 'def:u_fork', weight: 1 },
+        { at: 'def:u_trace', say: 'the debugger and the tracer ask through it', weight: 1 },
+      ],
+      related: ['mlsys.c', '../host/TinyCalls.mli'],
+    },
+    'TinyLibSystem.ml': { digest: '3cf7c9e39dc6',
+      summary: "TinyLibSystem on tiny-machine: a tool's system over tiny-kernel's calls, what the kernel lacks made up here.",
+      important: [
+        { at: 'comment:"What tiny-kernel has not, and what is done about it here"', weight: 3 },
+        { at: 'def:main', say: 'Failure printed, the status 1', weight: 1 },
+        { at: 'def:private_fds', say: 'closed before an exec: no close-on-exec here', weight: 2 },
+        { at: 'def:dup2', say: 'dup until the kernel gives the number', weight: 2 },
+        { at: 'def:wait', say: 'the ends of other children kept until asked', weight: 2 },
+        { at: 'def:exec', weight: 1 },
+        { at: 'def:shell', say: 'a script in a file that removes itself', weight: 1 },
+      ],
+      related: ['../host/TinyLibSystem.mli', '../host/TinyLibSystem.ml', '../../TinyShell.ml'],
+    },
+  },
+  skeletons: [
+    {
+      name: 'An ML program on tiny-kernel: its main to its calls',
+      bones: [
+        { at: 'mlsys.c:def:main', role: "start.tm's main: the partition laid out" },
+        { at: '../../TinyMLRuntime/core.c:def:ml_run', role: 'the runtime: the program run' },
+        { at: 'TinyLibSystem.ml:def:main', role: "a tool's main, its Failures said" },
+        { at: 'TinyCalls.ml:def:u_fork', role: 'an external' },
+        { at: 'mlsys.c:def:u_fork', role: "its C: the kernel's fork, ML's value back" },
+        { at: '../libc/user.h:def:fork', role: "sys.tm's stub" },
+      ],
+      joints: [
+        { from: 'mlsys.c:def:main', to: '../../TinyMLRuntime/core.c:def:ml_run', say: 'stack, two halves' },
+        { from: '../../TinyMLRuntime/core.c:def:ml_run', to: 'TinyLibSystem.ml:def:main', say: "the program's toplevel" },
+        { from: 'TinyLibSystem.ml:def:main', to: 'TinyCalls.ml:def:u_fork', say: "the tool's calls" },
+        { from: 'TinyCalls.ml:def:u_fork', to: 'mlsys.c:def:u_fork', say: 'external: no map edge' },
+        { from: 'mlsys.c:def:u_fork', to: '../libc/user.h:def:fork', say: 'sys 3' },
+      ],
+    },
+    {
+      name: 'mlsys.c: the partition, then the externals',
+      bones: [
+        { at: 'mlsys.c:def:main', role: 'vstack, heap0, half from argv and _end' },
+        { at: 'mlsys.c:def:u_read', role: 'bytes as an ML string' },
+        { at: 'mlsys.c:def:u_exec', role: 'an ML list to argv' },
+        { at: 'mlsys.c:def:u_waits', role: 'a wait, two numbers in one' },
+        { at: 'mlsys.c:def:u_spawn_window', role: "a window's child" },
+      ],
+      joints: [
+        { from: 'mlsys.c:def:main', to: 'mlsys.c:def:u_read', say: 'called from ML' },
+        { from: 'mlsys.c:def:main', to: 'mlsys.c:def:u_exec', say: 'called from ML' },
+        { from: 'mlsys.c:def:main', to: 'mlsys.c:def:u_waits', say: 'called from ML' },
+        { from: 'mlsys.c:def:main', to: 'mlsys.c:def:u_spawn_window', say: 'called from ML' },
+      ],
+    },
+    {
+      name: "TinyLibSystem on tiny-machine: what the kernel lacks, made",
+      bones: [
+        { at: 'TinyLibSystem.ml:def:keep', role: 'a descriptor made here, remembered' },
+        { at: 'TinyLibSystem.ml:def:private_fds', role: 'those to close before an exec' },
+        { at: 'TinyLibSystem.ml:def:dup2', role: 'close, then dup until the number' },
+        { at: 'TinyLibSystem.ml:def:exec', role: 'its own descriptors closed first' },
+        { at: 'TinyLibSystem.ml:def:wait', role: "one child's end, the others kept" },
+        { at: 'TinyLibSystem.ml:def:ended', role: 'the ends seen but not asked for' },
+      ],
+      joints: [
+        { from: 'TinyLibSystem.ml:def:keep', to: 'TinyLibSystem.ml:def:private_fds', say: 'its number' },
+        { from: 'TinyLibSystem.ml:def:private_fds', to: 'TinyLibSystem.ml:def:exec', say: 'closed' },
+        { from: 'TinyLibSystem.ml:def:wait', to: 'TinyLibSystem.ml:def:ended', say: 'another child' },
+      ],
+    },
+  ],
+}

@@ -1,0 +1,23 @@
+// debuggers/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground). tests/ is off the map:
+// mini-acid's sessions on programs of mini-cc's and mini-ml's.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The debuggers: mini-acid, Plan 9's debugger built from a language, and mini-where for traces.",
+  skeletons: [
+    {
+      name: 'The debuggers and what they read',
+      bones: [
+        { at: 'acid/', role: 'mini-acid: a process stopped, read, stepped' },
+        { at: 'where/', role: 'mini-where: a trace named, no process' },
+        { at: '../lib_executable/', role: "the executables' symbols and line tables" },
+        { at: '../tiny/TinyDebugger.ml', role: 'its tiny twin' },
+      ],
+      joints: [
+        { from: 'acid/', to: '../lib_executable/', say: 'symbols, pc/line' },
+        { from: 'where/', to: '../lib_executable/', say: 'symbols, pc/line' },
+        { from: '../tiny/TinyDebugger.ml', to: 'acid/', say: 'the essentials of' },
+      ],
+    },
+  ],
+}

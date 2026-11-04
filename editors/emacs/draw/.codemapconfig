@@ -1,0 +1,20 @@
+// editors/emacs/draw/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../skeletons.libsonnet';
+
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "emacs on mini-9pi: the editor in a window of mini-rio's or on the bare screen, by Window_draw.",
+  files: {
+    'Main.ml': { digest: '09e2627bf62a',
+      summary: "The draw device's main: -time measures each painting, then Window_draw.run.",
+      important: [
+        { at: 'def:main', say: "the flags, then the window", weight: 3 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.onefile("emacs on mini-9pi: a window of mini-rio's", 'Main.ml', [["../Start.ml:def:editor", "the editor made: configuration, first buffer", "the file, -q"], ["../../../lib_terminal/hosts/draw/Window_draw.ml:def:run", "the draw device: keys in, cells painted", "the editor's program"]]),
+  ],
+}

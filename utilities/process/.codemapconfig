@@ -1,0 +1,81 @@
+// utilities/process/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+local capunix = '../../lib_core/system/CapUnix.ml';
+local sys = '../../lib_core/commons/Sys_plan9.mli';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Processes seen and timed: Plan 9's ps, time, sleep, kill.rc, and mini-9pi's free and spin.",
+  files: {
+    'Ps.ml': { digest: 'b8ca989ffacc',
+      summary: "mini-ps after Plan 9's: every process from /proc's text files, no kernel memory read.",
+      important: [
+        { at: 'comment:"Plan 9 made /proc a directory a process"', say: 'text files, not kernel structs', weight: 3 },
+        { at: 'def:contents', say: "a /proc file's text", weight: 1 },
+        { at: 'def:main', weight: 2 },
+      ],
+    },
+    'Time.ml': { digest: '7c7aeb0a098f',
+      summary: "mini-time after Plan 9's: a command forked and waited, its user, system and real seconds.",
+      important: [
+        { at: 'code:"CapUnix.fork"', say: 'the command run in a child', weight: 2 },
+        { at: 'code:"Sys_plan9.last_times"', say: "the kernel's times of the child", weight: 2 },
+      ],
+    },
+    'Sleep.ml': { digest: '25c905ef2e80',
+      summary: "mini-sleep: seconds waited one at a time, so that an interrupt ends it, and thousandths.",
+    },
+    'Free.ml': { digest: '71a99cc95f1e',
+      summary: "mini-free, not Plan 9's: the board's memory as mini-9pi divides it, then a process a line.",
+      important: [
+        { at: 'def:said', say: '/dev/swap read into its numbers', weight: 2 },
+        { at: 'def:main', weight: 2 },
+      ],
+    },
+    'Spin.ml': { digest: '8eb97105fe1a',
+      summary: "mini-spin, not Plan 9's: do four cores do four times the work? n children timed, Amdahl's test.",
+      important: [
+        { at: 'comment:"Written when mini-9pi first ran processes"', say: 'why: the Pi 2 games at half speed', weight: 2 },
+        { at: 'def:mem', say: "the board's memory, shared", weight: 2 },
+        { at: 'def:sys', say: "the kernel's one lock, shared", weight: 2 },
+        { at: 'code:"CapUnix.fork"', say: 'n children, the same work', weight: 3 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.onefile('mini-ps', 'Ps.ml', [['Ps.ml:def:contents', '/proc/n/status read', 'each process']]),
+    skeletons.onefile('mini-time: fork, wait, times', 'Time.ml', [
+      ['Time.ml:code:"CapUnix.fork"', 'the command in a child', 'the command'],
+      ['Time.ml:code:"Sys_plan9.last_times"', "the child's times", 'once waited'],
+    ]),
+    skeletons.onefile('mini-sleep', 'Sleep.ml', []),
+    skeletons.onefile('mini-free', 'Free.ml', [['Free.ml:def:said', "the kernel's numbers read", '/dev/swap']]),
+    skeletons.onefile('mini-spin: n workers timed', 'Spin.ml', [
+      ['Spin.ml:code:"CapUnix.fork"', 'n children at once', 'n, the kind'],
+      ['Spin.ml:def:ints', 'the work: no sharing', 'kind ints'],
+    ]) + {
+      bones+: [
+        { at: 'Spin.ml:def:mem', role: 'the work: the memory shared' },
+        { at: 'Spin.ml:def:sys', role: "the work: the kernel's lock" },
+      ],
+      joints+: [
+        { from: 'Spin.ml:code:"CapUnix.fork"', to: 'Spin.ml:def:mem', say: 'kind mem' },
+        { from: 'Spin.ml:code:"CapUnix.fork"', to: 'Spin.ml:def:sys', say: 'kind sys' },
+      ],
+    },
+    skeletons.parts('Processes as files, and as children', [
+      ['Ps.ml', 'the processes, read in /proc'],
+      ['Free.ml', 'their memory, in /proc and /dev/swap'],
+      ['Time.ml', 'a child timed'],
+      ['Spin.ml', 'n children timed'],
+      [capunix, 'fork, wait'],
+      [sys, "a child's times, a directory read"],
+    ], [
+      ['Time.ml', capunix, 'fork, execv'],
+      ['Spin.ml', capunix, 'fork'],
+      ['Time.ml', sys, 'last_times'],
+      ['Free.ml', sys, 'dirread of /proc'],
+    ]),
+  ],
+}

@@ -2,13 +2,13 @@
 // tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there)
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "'#m', the mouse rio reads: its position and buttons, moves written in by usb/kb, the cursor's image.",
   files: {
-    'Devmouse.mli': { digest: '08f109764de2',
+    'Devmouse.mli': { digest: 'a77d67b0231d',
       summary: "/dev/mouse, mousein, mousectl and cursor: the mouse's state as rio reads it.",
     },
-    'Devmouse.ml': { digest: '8bca0dc1e2f4',
+    'Devmouse.ml': { digest: '3e77e7d44495',
       summary: 'Moves accelerated and clamped to the screen, button changes queued, a read waiting for a change.',
       capitals: [
         { at: 'def:mousetrack', say: 'a move in: clamped, queued, readers woken' },

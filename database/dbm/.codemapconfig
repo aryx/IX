@@ -1,0 +1,90 @@
+// database/dbm/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The database machine, chidb's DBM (SQLite's VDBE): instructions over registers and cursors.",
+  files: {
+    // the machine
+    'Dbm.mli': { digest: '36cf47134bcd',
+      summary: "The database machine SQL is compiled to, chidb's DBM after SQLite's VDBE: registers, cursors, jumps.",
+      capitals: [
+        { at: 'def:step', say: 'run until a row or the end' },
+      ],
+      important: [
+        { at: 'comment:"SELECT name FROM t"', say: 'a program, as EXPLAIN prints it', weight: 3 },
+        { at: 'comment:"Why a machine"', say: 'a statement kept, printed, stopped at a row', weight: 3 },
+        { at: 'comment:"Most databases do not compile to bytecode"', say: "Volcano's iterators, the other way", weight: 1 },
+        { at: 'def:step', weight: 2 },
+      ],
+    },
+    'Dbm.ml': { digest: 'f1336df5c40d',
+      summary: 'The instructions executed, each over registers, cursors and the B-tree.',
+      capitals: [
+        { at: 'def:exec', say: 'one instruction, over the B-trees' },
+      ],
+      important: [
+        { at: 'def:exec', weight: 3 },
+        { at: 'def:to_row', say: 'an instruction as EXPLAIN shows it', weight: 1 },
+        { at: 'def:compare_values', weight: 1 },
+      ],
+      links: [
+        { from: 'def:step', to: 'def:exec' },
+      ],
+    },
+    'Bytecode.ml': { digest: 'a96676037e64',
+      summary: "The machine's bytecode as types: chidb's instructions, registers, cursors and values.",
+      capitals: [
+        { at: 'type:instr', say: 'the machine code SQL becomes' },
+      ],
+      important: [
+        { at: 'type:instr', say: 'jumps as labels, then as addresses', weight: 3 },
+        { at: 'type:value', say: "chidb's tagged union, Unspecified unwritten", weight: 2 },
+        { at: 'type:row', say: 'an instruction as EXPLAIN and .dbmf show it', weight: 1 },
+      ],
+    },
+    'Dbmfile.mli': { digest: 'd14f12251924',
+      summary: "The .dbmf format: chidb's course tests, a program, its database, its expected rows and registers.",
+    },
+    'Dbmfile.ml': { digest: '20e5236c8bbe',
+      summary: 'A .dbmf file cut into its four parts, parsed as the C does.',
+    },
+  },
+  skeletons: [
+    { name: 'The machine: instructions over registers, cursors, the tree',
+      bones: [
+        { at: 'Bytecode.ml:type:instr', role: "chidb's instructions" },
+        { at: 'Dbm.ml:def:step', role: 'entry: run to the next row' },
+        { at: 'Dbm.ml:def:exec', role: 'one instruction' },
+        { at: 'Dbm.ml:def:open_cursor', role: 'a cursor on a tree' },
+        { at: 'Dbm.ml:def:insert', role: 'a record into a tree' },
+        { at: 'Dbm.ml:def:result_row', role: 'the registers of a row' },
+        { at: 'Dbm.ml:def:of_row', role: "a .dbmf's line to an instruction" },
+      ],
+      joints: [
+        { from: 'Bytecode.ml:type:instr', to: 'Dbm.ml:def:step', say: 'the program' },
+        { from: 'Dbm.ml:def:step', to: 'Dbm.ml:def:exec', say: 'the next instruction' },
+        { from: 'Dbm.ml:def:exec', to: 'Dbm.ml:def:open_cursor', say: 'OpenRead, OpenWrite' },
+        { from: 'Dbm.ml:def:exec', to: 'Dbm.ml:def:insert', say: 'Insert, IdxInsert' },
+        { from: 'Dbm.ml:def:exec', to: 'Dbm.ml:def:result_row', say: 'ResultRow' },
+        { from: 'Dbm.ml:def:of_row', to: 'Bytecode.ml:type:instr', say: 'an instruction' },
+      ],
+    },
+    { name: 'A .dbmf test file: database, program, expected rows',
+      bones: [
+        { at: 'Dbmfile.ml:def:parse', role: 'entry: the four parts' },
+        { at: 'Dbmfile.ml:def:tokenize', role: 'a line into words, as the C' },
+        { at: 'Dbmfile.ml:def:atoi', role: "C's atoi" },
+        { at: 'Dbmfile.ml:def:normalize_row', role: 'an expected row, spaced as printed' },
+        { at: 'Bytecode.ml:type:row', role: 'an instruction as a line: opcode, p1..p4' },
+      ],
+      joints: [
+        { from: 'Dbmfile.ml:def:tokenize', to: 'Dbmfile.ml:def:parse', say: 'words' },
+        { from: 'Dbmfile.ml:def:atoi', to: 'Dbmfile.ml:def:parse', say: 'numbers' },
+        { from: 'Dbmfile.ml:def:normalize_row', to: 'Dbmfile.ml:def:parse', say: 'expected rows' },
+        { from: 'Dbmfile.ml:def:parse', to: 'Bytecode.ml:type:row', say: 'the program, unless SQL' },
+      ],
+    },
+  ],
+}

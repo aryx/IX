@@ -1,0 +1,145 @@
+// raspberry/boards/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The boards mini-qemu emulates: the Pi 1 and the Pi 4, their address maps and loops, the mailbox.",
+  files: {
+    'Board.mli': { digest: '990edf8406b0',
+      summary: "The Raspberry Pi 1 (raspi1ap): an ARM1176, 512 MB, the BCM2835's devices the kernels touch.",
+      capitals: [
+        { at: 'def:run', say: 'a batch of instructions, then time' },
+      ],
+      important: [
+        { at: 'comment:"The loop: before each instruction the IRQ line"', say: 'interrupts, MMU, decode cache, exceptions', weight: 3 },
+        { at: 'type:config', weight: 2 },
+        { at: 'def:create', weight: 1 },
+        { at: 'def:run', weight: 2 },
+      ],
+    },
+    'Board.ml': { digest: '47f59e2b4126',
+      summary: "The Pi 1 built: devices mapped into the I/O space, CP15, and the loop with IRQs, aborts and WFI.",
+      capitals: [
+        { at: 'def:run', say: 'the instruction cycle, a system: IRQ, MMU, abort' },
+      ],
+      important: [
+        { at: 'def:coproc', say: 'CP15: mcr and mrc', weight: 1 },
+        { at: 'def:create', say: 'the address map: each device at its base', weight: 3 },
+        { at: 'def:load_kernel', say: "QEMU's boot: ATAGs, SVC mode", weight: 1 },
+        { at: 'def:run', weight: 3 },
+        { at: 'comment:"a WFI ends the batch where it is"', say: 'why a tick was lost for ever', weight: 2 },
+        { at: 'comment:"a WFI with nothing pending"', say: 'idle: time skipped to the next compare', weight: 2 },
+      ],
+      links: [
+        { from: 'def:run', to: '../interrupts/Intc.ml:def:irq' },
+        { from: 'def:create', to: 'Devices.ml:def:mailbox' },
+      ],
+    },
+    'Pi4.mli': { digest: 'ae3ddb00f4ef',
+      summary: "The Raspberry Pi 4 (raspi4b): Cortex-A72 cores in AArch64 taking turns, the GIC, generic timers.",
+      capitals: [
+        { at: 'def:run', say: 'the cores take turns, then the timers' },
+      ],
+      important: [
+        { at: 'comment:"The cores (1 to 4"', say: 'deterministic turns in one thread', weight: 3 },
+        { at: 'comment:"Time: the counter advances"', weight: 2 },
+        { at: 'type:config', weight: 1 },
+      ],
+    },
+    'Pi4.ml': { digest: '2ccb834884ec',
+      summary: "The Pi 4 built: system registers, spin-table boot of the secondaries, a core's turn, AArch32 at EL0.",
+      capitals: [
+        { at: 'def:turn', say: "a core's instruction cycle" },
+      ],
+      important: [
+        { at: 'type:core', weight: 2 },
+        { at: 'def:read_sysreg', say: 'the timers and IDs, as QEMU', weight: 1 },
+        { at: 'def:smpboot', say: 'the secondaries parked in a spin stub', weight: 2 },
+        { at: 'def:step32', say: "mini-9pi's arm programs under arm64", weight: 2 },
+        { at: 'def:turn', weight: 3 },
+        { at: 'def:run', say: 'rounds of turns; idle skips time', weight: 3 },
+      ],
+      links: [
+        { from: 'def:run', to: 'def:turn' },
+        { from: 'def:turn', to: 'def:step32' },
+        { from: 'def:turn', to: '../interrupts/Gic.ml:def:irq' },
+      ],
+    },
+    'Devices.mli': { digest: 'ff215e717e74',
+      summary: "The BCM2835's smaller devices, each a Memory.device: GPIO's registers, AUX, the mailbox.",
+      important: [
+        { at: 'def:mailbox', say: "the firmware's property interface", weight: 3 },
+        { at: 'def:unassigned', say: 'the rest of the I/O space: zero', weight: 1 },
+      ],
+    },
+    'Devices.ml': { digest: '73250c101884',
+      summary: "The mailbox's property tags answered: memory, clocks, the board's revision, a framebuffer.",
+      important: [
+        { at: 'def:property', say: 'one tag answered', weight: 3 },
+        { at: 'def:framebuffer', weight: 2 },
+        { at: 'def:mailbox', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'The Pi 1: its devices mapped, then the loop',
+      bones: [
+        { at: 'Board.ml:def:create', role: 'RAM, CP15 and the peripherals mapped at their I/O addresses, the USB tree' },
+        { at: 'Board.ml:def:load_kernel', role: "as QEMU's boot: at 0x10000, the ATAGs, SVC mode" },
+        { at: 'Board.ml:def:run', role: 'a batch: IRQs taken, decoded instructions cached, aborts, WFI skipping time' },
+        { at: 'Board.ml:def:coproc', role: 'CP15: the MMU, the caches, the fault registers' },
+        { at: '../../machine/arm32/Arm32.ml:def:decode', role: 'the CPU, shared with the emulators' },
+        { at: '../../machine/arm32/Arm32.ml:def:execute', role: 'an instruction run' },
+        { at: 'Board.ml:def:input', role: "the serial console's input, fed to the PL011" },
+      ],
+      joints: [
+        { from: 'Board.ml:def:create', to: 'Board.ml:def:coproc', say: 'st.coproc' },
+        { from: 'Board.ml:def:run', to: '../../machine/arm32/Arm32.ml:def:decode', say: 'a cache miss' },
+        { from: 'Board.ml:def:run', to: '../../machine/arm32/Arm32.ml:def:execute' },
+        { from: 'Board.ml:def:load_kernel', to: 'Board.ml:def:run', say: 'then the main loop' },
+        { from: 'Board.ml:def:input', to: 'Board.ml:def:run', say: 'fed at the end of a batch' },
+      ],
+    },
+    {
+      name: 'The Pi 4: cores taking turns',
+      bones: [
+        { at: 'Pi4.ml:def:create', role: "four cores, the GIC, the generic timers, the Pi 4's peripherals" },
+        { at: 'Pi4.ml:def:load_elf', role: 'the kernel loaded, the secondaries in the spin table' },
+        { at: 'Pi4.ml:def:run', role: 'rounds of turns, then the timers; all asleep: time skipped' },
+        { at: 'Pi4.ml:def:turn', role: "a core's quantum: IRQs, decode cache, execute, aborts" },
+        { at: 'Pi4.ml:def:step32', role: 'AArch32 at EL0: an arm program run by the Pi 1\'s CPU' },
+        { at: 'Pi4.ml:def:read_sysreg', role: "the system registers the board answers: the timers', the IDs" },
+        { at: '../../machine/arm64/Arm64.ml:def:execute', role: 'an A64 instruction run' },
+        { at: '../interrupts/Gic.ml:def:irq', role: "a core's interrupt line" },
+      ],
+      joints: [
+        { from: 'Pi4.ml:def:run', to: 'Pi4.ml:def:turn', say: 'each core awake' },
+        { from: 'Pi4.ml:def:turn', to: 'Pi4.ml:def:step32', say: 'aarch32' },
+        { from: 'Pi4.ml:def:turn', to: '../../machine/arm64/Arm64.ml:def:execute' },
+        { from: 'Pi4.ml:def:turn', to: '../interrupts/Gic.ml:def:irq', say: 'DAIF.I clear' },
+        { from: '../../machine/arm64/Arm64.ml:def:execute', to: 'Pi4.ml:def:read_sysreg', say: 'st.read_sysreg, set by create' },
+      ],
+    },
+    {
+      name: 'A board: its devices, its cores, its loop',
+      bones: [
+        { at: 'Board.ml', role: 'the Pi 1: one ARM1176, the BCM2835 devices' },
+        { at: 'Pi4.ml', role: 'the Pi 4: four A72 cores, the GIC' },
+        { at: 'Devices.ml', role: 'the small ones both share: AUX, RNG, the mailbox' },
+        { at: '../interrupts/', role: 'their interrupt controllers' },
+        { at: '../usb/', role: 'the USB host and its devices' },
+        { at: '../storage/', role: 'the SD card' },
+      ],
+      joints: [
+        { from: 'Board.ml', to: 'Devices.ml', say: 'mapped' },
+        { from: 'Pi4.ml', to: 'Devices.ml', say: 'mapped' },
+        { from: 'Pi4.ml', to: 'Board.ml', say: 'the Pi 1 core for AArch32' },
+        { from: 'Board.ml', to: '../interrupts/', say: 'Intc' },
+        { from: 'Pi4.ml', to: '../interrupts/', say: 'Gic' },
+        { from: 'Board.ml', to: '../usb/', say: 'Dwc2' },
+        { from: 'Board.ml', to: '../storage/', say: 'Sdhost' },
+      ],
+    },
+  ],
+}

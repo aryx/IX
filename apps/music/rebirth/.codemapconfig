@@ -1,0 +1,211 @@
+// apps/music/rebirth/: what the code map says of it
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-rebirth, after Propellerhead's ReBirth RB-338: two 303s, an 808 and a 909 on one clock, skinned.",
+  files: {
+    'ReBirth.ml': {
+      summary: "The playground's TinyReBirth with ix's skins: the machines' strips, the mixer, the PCF, as pictures.",
+      digest: 'e3aa31939c30',
+      capitals: [{ at: 'def:rebirth', say: 'the studio playing, pulled by the mixer' }],
+      important: [
+        { at: 'type:model', say: 'the patch, the song, the patterns shown', weight: 3 },
+        { at: 'def:update', say: 'steps clicked, knobs turned, the patch set', weight: 3 },
+        { at: 'def:skinned_view', say: "ix's own: the panel as Skin's pictures", weight: 3 },
+        { at: 'def:click_303', say: "a step's pitch by where it is clicked", weight: 1 },
+        { at: 'def:spectrum_view', say: 'the sound as frequencies', weight: 1 },
+        { at: 'def:app', say: 'the skinned update and view, the second ones', weight: 1 },
+      ],
+    },
+    'Studio_rebirth.ml': {
+      summary: 'The studio: four machines started together, a mixer, distortion, delay, compressor, the PCF.',
+      digest: 'fbaabeeba2bd',
+      important: [
+        { at: 'def:fill', say: 'each machine, then the PCF, the effects, the mix', weight: 3 },
+        { at: 'def:pcf_hz', say: 'the pattern controlled filter: 200 Hz to 20 kHz', weight: 1 },
+        { at: 'def:run', say: 'all started at one sample: in step for ever', weight: 3 },
+      ],
+    },
+    'Studio_rebirth.mli': {
+      summary: "A studio, not a voice: ReBirth's machines on one sample-exact clock, then the mixer and effects.",
+      digest: '90bdb8de2532',
+      capitals: [{ at: 'type:patch', say: 'four machines, a mixer, the effects' }],
+      important: [{ at: 'comment:"the *one clock*"', say: 'why they stay together', weight: 3 }],
+    },
+    'Voice_tb303.ml': {
+      summary: "The TB-303 as code: saw or square through a diode ladder, the accent's capacitor, the slide.",
+      digest: 'b9d06f3ff6d3',
+      important: [
+        { at: 'def:note_on', say: 'accent and slide decided per note', weight: 3 },
+        { at: 'def:render', say: 'per sample: envelopes, sweep, filter', weight: 3 },
+        { at: 'def:sweep_charge', say: "47k into 1 uF: acid's climbing accents", weight: 1 },
+        { at: 'def:locked', say: "a step's parameter locks applied", weight: 1 },
+      ],
+    },
+    'Voice_tb303.mli': {
+      summary: "Roland's Bass Line of 1981 and why it squelches: diode ladder, main envelope, accent, slide.",
+      digest: '7461731e6782',
+      capitals: [{ at: 'type:t', say: 'a 303 playing its pattern' }],
+    },
+    'Voice_tr808.ml': {
+      summary: "Eleven 808 drums synthesized, the kick a ringing sine, the metal six squares; the 909's 6-bit ROMs.",
+      digest: 'fdf1cf9cbb6f',
+      important: [
+        { at: 'def:sine_drum', say: 'kick and toms: the punch, the sigh', weight: 3 },
+        { at: 'def:metal_hit', say: 'six squares through band-passes', weight: 3 },
+        { at: 'def:record', say: "the 909's cymbals made once, at 6 bits", weight: 1 },
+        { at: 'def:strike', say: 'an instrument struck: which hit', weight: 1 },
+        { at: 'def:fill', say: 'shuffle and flam on the steps', weight: 1 },
+      ],
+    },
+    'Voice_tr808.mli': {
+      summary: "The TR-808's analogue circuits, struck by a 1 ms pulse; the 909 half sampled.",
+      digest: '4eaf733a9b8a',
+      capitals: [{ at: 'type:t', say: 'a drum machine playing' }],
+    },
+    'Voice.mli': {
+      summary: "What every synthesizer's voice gives its panel: a patch with named controls, a player.",
+      digest: '2cade09ce4df',
+    },
+    'Patch_text.ml': {
+      summary: 'Controls listed by name, written and read as "name = value" lines.',
+      digest: 'cf9599f73eea',
+    },
+    'Patch_text.mli': {
+      summary: "A patch as a panel and as text, like a Minimoog's patch chart: one list of named controls.",
+      digest: '8acca39baa4b',
+      capitals: [
+        { at: 'type:knob', say: 'a control: name, kind, get and set' },
+        { at: 'def:of_string', say: 'a patch read from its text' },
+      ],
+    },
+    'Skin.ml': {
+      summary: 'Brushed metal, cone-shaded knobs and lit keys computed from a palette, kept once made.',
+      digest: 'a1c56c2971d6',
+      important: [
+        { at: 'def:brushed', say: 'noise stretched along x', weight: 3 },
+        { at: 'def:knob', say: 'a cone under a light, one picture an angle', weight: 3 },
+        { at: 'def:kept', say: 'made when first asked, kept', weight: 1 },
+      ],
+    },
+    'Skin.mli': {
+      summary: "ReBirth's skins were bitmaps a user replaced; here computed from a palette, none of Propellerhead's.",
+      digest: '12b6ff674fea',
+      capitals: [{ at: 'type:t', say: 'a palette and its pictures made' }],
+    },
+  },
+  dirs: {
+    sdl: { summary: 'The SDL build of mini-rebirth, for a Unix desktop.' },
+  },
+  skeletons: [
+    {
+      name: 'mini-rebirth: the panel, the studio, the voices',
+      bones: [
+        { at: 'ReBirth.ml:code:"Cap.main"', role: 'the program: Cap.main, the flags' },
+        { at: 'ReBirth.ml:def:app', role: 'the skinned view and update' },
+        { at: 'ReBirth.ml:type:model', role: 'the patch and the song' },
+        { at: 'ReBirth.ml:def:update', role: 'a frame: the panel used' },
+        { at: 'ReBirth.ml:def:skinned_view', role: 'the panel as pictures' },
+        { at: 'ReBirth.ml:def:rebirth', role: 'the studio playing' },
+        { at: 'Studio_rebirth.ml:def:fill', role: 'a block of the mix' },
+        { at: 'Voice_tb303.ml:def:fill', role: 'a bass line' },
+        { at: 'Voice_tr808.ml:def:fill', role: 'a drum machine' },
+      ],
+      joints: [
+        { from: 'ReBirth.ml:code:"Cap.main"', to: 'ReBirth.ml:def:app', say: 'run_app' },
+        { from: 'ReBirth.ml:def:app', to: 'ReBirth.ml:def:update', say: 'each frame' },
+        { from: 'ReBirth.ml:def:update', to: 'ReBirth.ml:type:model', say: 'the next state' },
+        { from: 'ReBirth.ml:type:model', to: 'ReBirth.ml:def:skinned_view', say: 'drawn' },
+        { from: 'ReBirth.ml:def:update', to: 'ReBirth.ml:def:rebirth', say: 'set_patch' },
+        { from: 'ReBirth.ml:def:rebirth', to: 'Studio_rebirth.ml:def:fill', say: "the mixer's pull" },
+        { from: 'Studio_rebirth.ml:def:fill', to: 'Voice_tb303.ml:def:fill', say: 'two of them' },
+        { from: 'Studio_rebirth.ml:def:fill', to: 'Voice_tr808.ml:def:fill', say: '808 and 909' },
+      ],
+    },
+    skeletons.parts('A studio over its voices', [
+      ['ReBirth.ml', 'the panel'],
+      ['Skin.ml', 'its pictures'],
+      ['Studio_rebirth.ml', 'one clock, a mixer, effects'],
+      ['Voice_tb303.ml', 'the bass lines'],
+      ['Voice_tr808.ml', 'the drum machines'],
+      ['Patch_text.ml', 'controls by name, patches as text'],
+      ['Voice.mli', 'what a voice gives'],
+    ], [
+      ['ReBirth.ml', 'Skin.ml', 'draws with'],
+      ['ReBirth.ml', 'Studio_rebirth.ml', 'plays'],
+      ['Studio_rebirth.ml', 'Voice_tb303.ml', 'two'],
+      ['Studio_rebirth.ml', 'Voice_tr808.ml', 'two'],
+      ['Voice_tb303.ml', 'Patch_text.ml', 'its knobs'],
+      ['Voice_tr808.ml', 'Patch_text.ml', 'its knobs'],
+      ['Voice_tb303.ml', 'Voice.mli', 'is one'],
+    ]),
+    {
+      name: 'The studio: one clock, then the mix',
+      bones: [
+        { at: 'Studio_rebirth.ml:type:patch', role: 'four machines, mixer, effects' },
+        { at: 'Studio_rebirth.ml:def:create', role: 'the voices made' },
+        { at: 'Studio_rebirth.ml:def:run', role: 'started on one sample' },
+        { at: 'Studio_rebirth.ml:def:fill', role: 'a block: voices, PCF, effects' },
+        { at: 'Studio_rebirth.ml:def:pcf_hz', role: "the PCF's cutoff" },
+        { at: 'Studio_rebirth.ml:def:instrument', role: 'what the mixer pulls' },
+      ],
+      joints: [
+        { from: 'Studio_rebirth.ml:type:patch', to: 'Studio_rebirth.ml:def:create', say: 'the patch' },
+        { from: 'Studio_rebirth.ml:def:create', to: 'Studio_rebirth.ml:def:run', say: 'space' },
+        { from: 'Studio_rebirth.ml:def:instrument', to: 'Studio_rebirth.ml:def:fill', say: 'a block asked' },
+        { from: 'Studio_rebirth.ml:def:fill', to: 'Studio_rebirth.ml:def:pcf_hz', say: 'the step' },
+      ],
+    },
+    {
+      name: 'A TB-303 note',
+      bones: [
+        { at: 'Voice_tb303.ml:type:patch', role: 'knobs and the pattern' },
+        { at: 'Voice_tb303.ml:def:fill', role: 'a block asked' },
+        { at: 'Voice_tb303.ml:def:locked', role: "the step's locks" },
+        { at: 'Voice_tb303.ml:def:note_on', role: 'accent, slide, the envelopes' },
+        { at: 'Voice_tb303.ml:def:render', role: 'the samples: VCO, ladder, VCA' },
+        { at: 'Voice_tb303.ml:type:t', role: 'the player: sequencer, sweep, glide' },
+      ],
+      joints: [
+        { from: 'Voice_tb303.ml:def:fill', to: 'Voice_tb303.ml:def:note_on', say: 'a step falls' },
+        { from: 'Voice_tb303.ml:def:locked', to: 'Voice_tb303.ml:def:note_on', say: 'the patch at that step' },
+        { from: 'Voice_tb303.ml:def:note_on', to: 'Voice_tb303.ml:type:t', say: 'gate, accent, glide' },
+        { from: 'Voice_tb303.ml:def:fill', to: 'Voice_tb303.ml:def:render', say: 'between steps' },
+        { from: 'Voice_tb303.ml:type:t', to: 'Voice_tb303.ml:def:render', say: 'its state' },
+        { from: 'Voice_tb303.ml:type:patch', to: 'Voice_tb303.ml:def:locked', say: 'the knobs' },
+      ],
+    },
+    {
+      name: 'An 808 hit',
+      bones: [
+        { at: 'Voice_tr808.ml:def:fill', role: 'a block: steps, shuffle, flam' },
+        { at: 'Voice_tr808.ml:def:start_hit', role: 'a step strikes an instrument' },
+        { at: 'Voice_tr808.ml:def:strike', role: 'which circuit' },
+        { at: 'Voice_tr808.ml:def:sine_drum', role: 'kick, toms: a sighing sine' },
+        { at: 'Voice_tr808.ml:def:tones_and_noise', role: 'snare, clap, rim shot' },
+        { at: 'Voice_tr808.ml:def:render_metal', role: 'cymbals and hats: six squares' },
+        { at: 'Voice_tr808.ml:def:strike_909', role: "the 909's: sweeps and ROMs" },
+      ],
+      joints: [
+        { from: 'Voice_tr808.ml:def:fill', to: 'Voice_tr808.ml:def:start_hit', say: 'a step' },
+        { from: 'Voice_tr808.ml:def:start_hit', to: 'Voice_tr808.ml:def:strike', say: 'the accent' },
+        { from: 'Voice_tr808.ml:def:strike', to: 'Voice_tr808.ml:def:sine_drum', say: 'BD, toms' },
+        { from: 'Voice_tr808.ml:def:strike', to: 'Voice_tr808.ml:def:tones_and_noise', say: 'SD, CP, RS' },
+        { from: 'Voice_tr808.ml:def:strike', to: 'Voice_tr808.ml:def:strike_909', say: 'the 909' },
+        { from: 'Voice_tr808.ml:def:fill', to: 'Voice_tr808.ml:def:render_metal', say: 'the metal' },
+      ],
+    },
+    skeletons.module_calls('Skin.ml', 'Pictures computed from a palette', 'kept', 'made once, then kept', [
+      ['panel', 'brushed metal', 'a panel'],
+      ['knob', 'a shaded cone', 'a knob at an angle'],
+      ['key', "the 808's lit keys", 'a step'],
+      ['button', 'a button', 'a button'],
+    ]) + {
+      bones+: [{ at: 'Skin.ml:def:brushed', role: 'noise along x' }, { at: 'Skin.ml:type:palette', role: "each machine's colours" }],
+      joints+: [
+        { from: 'Skin.ml:def:panel', to: 'Skin.ml:def:brushed', say: 'each pixel' },
+        { from: 'Skin.ml:type:palette', to: 'Skin.ml:def:panel', say: 'the metal' },
+      ],
+    },
+  ],
+}

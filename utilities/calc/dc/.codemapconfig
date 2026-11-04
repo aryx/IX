@@ -1,0 +1,122 @@
+// utilities/calc/dc/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-dc, Plan 9's desk calculator: Unix's oldest language, a stack machine on decimals of any size.",
+  dirs: {
+    tests: { summary: 'A corpus of dc programs and their outputs, run against the C dc (differential.sh, fuzz.py).' },
+  },
+  files: {
+    'Main.ml': { digest: '3b5f95c80c58',
+      summary: 'mini-dc, the program: the capabilities, then CLI.main.',
+    },
+    'CLI.mli': { digest: 'fe3ab5f1bf4a',
+      summary: "dc's reverse Polish drawn, its history (B before C, the PDP-11's first language), its modules.",
+      important: [
+        { at: 'comment:"No parenthesis and no precedence are needed, so no parser"', weight: 3 },
+        { at: 'comment:"the senior"', say: "McIlroy's word for it", weight: 1 },
+      ],
+    },
+    'CLI.ml': { digest: 'a691e605dd08',
+      summary: "The command line: -h, or the file then the standard input run by Dc.run.",
+      capitals: [
+        { at: 'def:main', say: "mini-dc's entry" },
+      ],
+    },
+    'Dc.mli': { digest: '86801a2eae78',
+      summary: "dc.c's machine: a stack, 256 registers each a stack, strings run as macros (loops by recursion).",
+      capitals: [
+        { at: 'def:feed', say: "bc's way in: dc commands as text" },
+      ],
+      important: [
+        { at: 'comment:"A loop is a macro that runs itself"', say: 'no while: a string run again', weight: 3 },
+        { at: 'comment:"A program is a string, and a string is a value on the stack"', weight: 2 },
+        { at: 'def:feed', weight: 2 },
+        { at: 'def:run', weight: 2 },
+      ],
+    },
+    'Dc.ml': { digest: '82077904ddce',
+      summary: "dc.c in OCaml: a command a character, dc.c's scale rules, base-100 bytes kept for its quirks.",
+      capitals: [
+        { at: 'def:command', say: 'one character, one command: the whole machine' },
+      ],
+      important: [
+        { at: 'def:command', weight: 3 },
+        { at: 'def:commands', say: 'read a character, a number or a command', weight: 3 },
+        { at: 'def:stack', weight: 2 },
+        { at: 'def:registers', say: 'each a stack: S pushes, L pops', weight: 2 },
+        { at: 'def:execute', say: 'a string pushed as a macro', weight: 2 },
+        { at: 'def:division', say: "the dividend widened by the scale", weight: 2 },
+        { at: 'def:print_value', say: 'any base, 70 columns, \\ to go on', weight: 1 },
+        { at: 'def:condition', say: '<x >x =x: run a register if', weight: 2 },
+        { at: 'def:query', say: '? : a line of input as a macro', weight: 1 },
+      ],
+      links: [
+        { from: 'def:commands', to: 'def:command' },
+        { from: 'def:command', to: 'def:execute' },
+        { from: 'def:command', to: 'def:condition' },
+      ],
+    },
+    'Num.mli': { digest: '4ba532fbbafc',
+      summary: "dc's integers of any size, a sign and digits in base 100 as dc.c keeps them: why 100, not 256.",
+      important: [
+        { at: 'comment:"Base 100 and not base 256"', say: 'printing a lookup, scaling a byte', weight: 3 },
+        { at: 'type:t', weight: 2 },
+        { at: 'def:encode', say: "dc.c's bytes, for its quirks", weight: 2 },
+      ],
+    },
+    'Num.ml': { digest: 'd1d6b7ffa610',
+      summary: "School arithmetic in base 100: add, multiply, long division, square root by Newton.",
+      important: [
+        { at: 'def:divmod_mag', say: 'long division, a digit at a time', weight: 3 },
+        { at: 'def:mul_mag', weight: 2 },
+        { at: 'def:add_mag', say: 'a column at a time, the carry', weight: 2 },
+        { at: 'def:sqrt', weight: 1 },
+        { at: 'def:encode', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.cli('mini-dc: read, run', [
+      ['Dc.ml:def:run', 'the file, then the standard input'],
+      ['Dc.ml:def:commands', 'a character at a time'],
+      ['Dc.ml:def:command', 'one command on the stack'],
+      ['Num.ml:def:divmod', 'the arithmetic below'],
+    ]),
+    skeletons.parts('A machine and its numbers', [
+      ['CLI.ml', 'the command line'],
+      ['Dc.ml', 'the machine: stack, registers, macros'],
+      ['Num.ml', 'integers of any size, base 100'],
+      ['../bc/', 'a compiler to this machine'],
+    ], [
+      ['CLI.ml', 'Dc.ml', 'Dc.run'],
+      ['Dc.ml', 'Num.ml', 'each operation'],
+      ['../bc/', 'Dc.ml', 'Dc.feed: compiled text'],
+    ]),
+    skeletons.module_calls('Dc.ml', 'The machine: read, dispatch, recurse', 'commands', 'read a character', [
+      ['read_number', 'digits in the input base', 'a digit'],
+      ['command', 'any other character', 'a command'],
+    ]) + {
+      bones+: [
+        { at: 'Dc.ml:def:execute', role: 'a string as a macro' },
+        { at: 'Dc.ml:def:condition', role: 'a comparison runs a register' },
+        { at: 'Dc.ml:def:print_value', role: 'p: in the output base' },
+      ],
+      joints+: [
+        { from: 'Dc.ml:def:command', to: 'Dc.ml:def:execute', say: 'x' },
+        { from: 'Dc.ml:def:command', to: 'Dc.ml:def:condition', say: '< > =' },
+        { from: 'Dc.ml:def:condition', to: 'Dc.ml:def:execute', say: "the register's string" },
+        { from: 'Dc.ml:def:execute', to: 'Dc.ml:def:commands', say: 'read from the macro: a loop' },
+        { from: 'Dc.ml:def:command', to: 'Dc.ml:def:print_value', say: 'p, n, f' },
+      ],
+    },
+    skeletons.module('Num.ml', 'Long division in base 100', [
+      ['divmod', 'a quotient and remainder, signed', ''],
+      ['divmod_mag', 'long division of magnitudes', 'the magnitudes'],
+      ['mul_mag', 'a trial digit times the divisor', 'each digit guessed'],
+      ['sub_mag', 'the remainder: the product taken off', 'the trial product'],
+    ]),
+  ],
+}

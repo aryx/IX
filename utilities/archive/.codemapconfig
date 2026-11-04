@@ -1,0 +1,91 @@
+// utilities/archive/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Plan 9's tar, gzip and gunzip: archives byte for byte, deflate from our own Zlib.",
+  files: {
+    'Tar.ml': { digest: '30fc909a052a',
+      summary: "mini-tar after Plan 9's (Geoff Collyer's): 512-byte headers in octal, ustar names, all in memory.",
+      capitals: [
+        { at: 'def:header', say: "a file's 512 bytes: name, mode, size in octal" },
+      ],
+      important: [
+        { at: 'comment:"The archive is blocks of 512 bytes"', say: 'the format, drawn', weight: 3 },
+        { at: 'comment:"The archive is read and written in memory, whole"', say: 'unlike tar.c: an archive must fit', weight: 2 },
+        { at: "comment:\"its main leaves\"", say: "tar.c's own bug: tv's modes garbled", weight: 2 },
+        { at: 'def:chksum', say: 'its own field counted as spaces', weight: 2 },
+        { at: 'def:header', weight: 3 },
+        { at: 'def:put_name', say: 'past 100 bytes: a ustar prefix, split at /', weight: 1 },
+        { at: 'def:add', say: 'c and r: a tree walked into the buffer', weight: 2 },
+        { at: 'def:extract', say: 't and x: header after header to two zeros', weight: 2 },
+        { at: 'def:compression', say: 'z, or a .tgz: Zlib in the process', weight: 1 },
+        { at: 'def:main', weight: 1 },
+      ],
+      links: [
+        { from: 'def:add', to: 'def:header' },
+        { from: 'def:extract', to: 'def:extract1' },
+      ],
+    },
+    'Gzip.ml': { digest: '202260772917',
+      summary: "mini-gzip after Plan 9's: RFC 1952's envelope byte for byte, Zlib's fixed-code blocks inside.",
+      important: [
+        { at: 'comment:"1f 8b 08"', say: "the header's bytes, drawn", weight: 3 },
+        { at: 'comment:"Zlib\'s deflate writes fixed codes only"', say: 'why ours are bigger than libflate', weight: 2 },
+        { at: 'def:gzipf', say: 'a file to file.gz, the file kept', weight: 3 },
+        { at: 'def:halves', say: "the time as Zlib.gzip's two halves", weight: 1 },
+      ],
+    },
+    'Gunzip.ml': { digest: '50d31e091b19',
+      summary: "mini-gunzip after Plan 9's: members end to end inflated in turn, trailing garbage said and ignored.",
+      important: [
+        { at: 'comment:"several gzip files end to end"', say: 'cat a.gz b.gz is one gzip file', weight: 2 },
+        { at: 'def:member', say: 'one member: header, inflate, CRC, length', weight: 3 },
+        { at: 'def:gunzip', weight: 2 },
+        { at: 'def:gunzipf', say: 'a bad first member: the output removed', weight: 1 },
+      ],
+      links: [
+        { from: 'def:gunzip', to: 'def:member' },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.onefile('mini-tar: c, r, t, x', 'Tar.ml', [
+      ['Tar.ml:def:replace', 'c and r: the archive written anew', 'the letters: c or r'],
+      ['Tar.ml:def:add', 'a file or a tree added', 'each name'],
+      ['Tar.ml:def:header', 'its 512-byte header', "the file's stat"],
+    ]) + {
+      bones+: [
+        { at: 'Tar.ml:def:read_archive', role: 't and x: the archive read, ungzipped' },
+        { at: 'Tar.ml:def:extract', role: 'header by header' },
+        { at: 'Tar.ml:def:extract1', role: 'one file listed or made' },
+      ],
+      joints+: [
+        { from: 'Tar.ml:def:main', to: 'Tar.ml:def:read_archive', say: 't or x' },
+        { from: 'Tar.ml:def:read_archive', to: 'Tar.ml:def:extract', say: "the archive's bytes" },
+        { from: 'Tar.ml:def:extract', to: 'Tar.ml:def:extract1', say: 'a header and its bytes' },
+      ],
+    },
+    skeletons.onefile('mini-gzip: a file into its .gz', 'Gzip.ml', [
+      ['Gzip.ml:def:gzipf', 'a file compressed beside itself', 'each file'],
+      ['../../lib_compression/Zlib.ml', 'deflate and the gzip envelope', 'the bytes, the name, the time'],
+    ]),
+    skeletons.onefile('mini-gunzip: members inflated in turn', 'Gunzip.ml', [
+      ['Gunzip.ml:def:gunzipf', 'a .gz to its file', 'each file'],
+      ['Gunzip.ml:def:gunzip', 'the members, one after another', "the file's bytes"],
+      ['Gunzip.ml:def:member', 'one: header, blocks, trailer checked', 'where the next starts'],
+      ['../../lib_compression/Zlib.ml', 'inflate, CRC-32', 'the deflate blocks'],
+    ]),
+    skeletons.parts('Archives and compression', [
+      ['Tar.ml', 'many files as one'],
+      ['Gzip.ml', 'one file smaller'],
+      ['Gunzip.ml', 'and back'],
+      ['../../lib_compression/Zlib.ml', 'deflate, shared by all three'],
+    ], [
+      ['Tar.ml', '../../lib_compression/Zlib.ml', 'z: gzip in the process, no pipe'],
+      ['Gzip.ml', '../../lib_compression/Zlib.ml', 'Zlib.gzip'],
+      ['Gunzip.ml', '../../lib_compression/Zlib.ml', 'inflate_blocks_at'],
+    ]),
+  ],
+}

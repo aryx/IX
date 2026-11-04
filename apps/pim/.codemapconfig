@@ -1,0 +1,123 @@
+// apps/pim/: what the code map says of it
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: 'mini-pim: mail, calendar, people, tasks, notes and money over one store of plain-text items.',
+  files: {
+    'Pim.ml': {
+      summary: "mini-pim's entry: a command from a terminal (send, list, today, remind...), else the window.",
+      digest: 'd410e1ebb567',
+      capitals: [{ at: 'def:main', say: 'the commands: mail here, the store in Pim_store' }],
+      important: [
+        { at: 'code:"if List.exists (fun a -> List.mem a commands)"', say: 'a command word anywhere: the terminal, else the window', weight: 3 },
+        { at: 'def:window', say: 'the suite handed to the playground as a game', weight: 3 },
+        { at: 'def:reading', say: 'one IMAP session per command, as asked' },
+        { at: 'def:password', say: 'the app password: a 600 file, or stdin' },
+        { at: 'def:remind', say: 'a loop: each minute what is due, said' },
+        { at: 'def:new_mail', say: 'mail from people only, not newsletters' },
+      ],
+      links: [{ from: 'def:main', to: 'def:reading' }, { from: 'def:remind', to: 'def:say_due' }],
+      related: ['README.md', 'tests/session.sh', 'tests/frames.sh'],
+    },
+    'Maild.ml': {
+      summary: "mini-maild: SMTP in, IMAP out, a file a message; mini-pim's test server, after tiny_maild.",
+      digest: '05b929a67ca8',
+      capitals: [{ at: 'def:serve', say: 'one client at a time, on either port' }],
+      important: [
+        { at: 'def:keep', say: 'a message a file, its number its UID', weight: 3 },
+        { at: 'def:store', say: "the spool as Imap_server's store", weight: 3 },
+        { at: 'def:dialogue', say: "a protocol's machine fed lines" },
+        { at: 'def:main', say: 'flags, then two sockets served forever' },
+      ],
+    },
+    'Pim_store.ml': {
+      summary: "The terminal's commands needing no mail server: search, show, add, today, the money.",
+      digest: 'f94b0c40d143',
+      important: [
+        { at: 'def:store', say: 'read again by each command: no state kept', weight: 3 },
+        { at: 'def:today', say: "Home's Today, as text", weight: 3 },
+        { at: 'def:import', say: '.ics, .vcf or .qif by its extension' },
+        { at: 'def:register', say: "Quicken's columns" },
+        { at: 'def:assign', say: "YNAB's envelopes filled" },
+      ],
+    },
+    'Pim_store.mli': {
+      summary: 'What mini-pim does to the store from a terminal, each command writing an item at once.',
+      digest: 'd7aa2a517d88',
+    },
+  },
+  dirs: {
+    sdl: { summary: "The native build's dune: mini-pim's window on SDL." },
+    tests: { summary: "Unit tests, session.sh (commands against mini-maild) and frames.sh (the window's)." },
+  },
+  skeletons: [
+    skeletons.parts('mini-pim, its layers', [
+      ['Pim.ml', 'the program: a command or the window'],
+      ['window/', 'the window: Home and six views'],
+      ['mail/', 'the mail between server and store'],
+      ['store/', 'the store: items, links, search, the day'],
+      ['money/', 'amounts, registers, reconciling'],
+      ['time/', 'recurrences, iCalendar, the local zone'],
+      ['Maild.ml', 'the test server: SMTP and IMAP here'],
+    ], [
+      ['Pim.ml', 'window/', 'no command: the window'],
+      ['Pim.ml', 'mail/', 'the mail commands'],
+      ['window/', 'mail/', 'g, send, archive'],
+      ['window/', 'store/', 'each view read from it'],
+      ['mail/', 'store/', 'messages as items'],
+      ['store/', 'money/', 'postings'],
+      ['store/', 'time/', 'when events happen'],
+      ['mail/', 'Maild.ml', 'SMTP and IMAP, in the tests'],
+    ]),
+    skeletons.onefile('mini-pim: a command, or the window', 'Pim.ml', [
+      ['Pim.ml:def:reading', 'the mail: an IMAP session, the store', 'list, read, archive'],
+      ['mail/Mail_sync.ml:def:list', 'the newest messages into items', 'listed'],
+    ]) + {
+      bones+: [
+        { at: 'Pim.ml:def:window', role: 'the window: the suite as a game' },
+        { at: 'window/Pim_window.ml:def:update', role: "the suite's frame" },
+        { at: 'Pim_store.ml:def:search', role: 'the store from the terminal' },
+      ],
+      joints+: [
+        { from: 'Pim.ml:code:"Cap.main"', to: 'Pim.ml:def:window', say: 'no command word' },
+        { from: 'Pim.ml:def:window', to: 'window/Pim_window.ml:def:update', say: 'each frame' },
+        { from: 'Pim.ml:def:main', to: 'Pim_store.ml:def:search', say: 'search, show, add, today...' },
+      ],
+    },
+    skeletons.onefile('mini-maild: two protocols, one spool', 'Maild.ml', [
+      ['Maild.ml:def:serve', 'the loop: select, accept, serve', 'the two sockets'],
+      ['Maild.ml:def:smtp', 'SMTP: a message taken', 'a client on 2525'],
+      ['Maild.ml:def:keep', 'the message a file in the spool', 'a delivery'],
+    ]) + {
+      bones+: [
+        { at: 'Maild.ml:def:imap', role: 'IMAP: the spool read' },
+        { at: 'Maild.ml:def:store', role: 'the spool as an IMAP store' },
+      ],
+      joints+: [
+        { from: 'Maild.ml:def:serve', to: 'Maild.ml:def:imap', say: 'a client on 1143' },
+        { from: 'Maild.ml:def:store', to: 'Maild.ml:def:imap', say: 'the messages and their flags' },
+      ],
+    },
+    skeletons.calls('Pim_store: commands over the store', 'Pim_store.ml:def:store', 'the store, read again each time', [
+      ['Pim_store.ml:def:search', 'items found, a line each', 'all items'],
+      ['Pim_store.ml:def:show', 'an item and its links', 'one item'],
+      ['Pim_store.ml:def:add', 'an item made', 'saved'],
+      ['Pim_store.ml:def:today', 'the day', 'all items'],
+      ['Pim_store.ml:def:register', "an account's register", 'postings'],
+      ['Pim_store.ml:def:import', 'events, contacts or bank lines', 'saved'],
+    ]),
+  ],
+  tours: [
+    {
+      name: 'mini-pim, from the command line to an item',
+      stops: [
+        { at: 'Pim.ml:def:main', say: 'Each command a case; the mail ones here, the others in Pim_store.' },
+        { at: 'store/Item.mli:type:t', say: 'Every item, mail or task, is lines of name: value.' },
+        { at: 'store/Items.mli:def:save', say: 'A file an item, written at once: the store is plain text.' },
+        { at: 'mail/Mail_sync.mli:def:list', say: 'The server listed into items, so the window opens offline.' },
+        { at: 'store/Today.mli:def:lines', say: 'The day computed from all items: Home and mini-pim today.' },
+        { at: 'window/Pim_window.mli:def:update', say: 'The window: Home and its views, over the same store.' },
+      ],
+    },
+  ],
+}

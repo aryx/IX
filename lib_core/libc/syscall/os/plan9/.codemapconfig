@@ -1,0 +1,46 @@
+// lib_core/libc/syscall/os/plan9/: what the code map says of it (the code map: tinybox codemap,
+// ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Plan 9's system calls on arm: a stub a call, the numbers of sys.h, read and write as pread and pwrite.",
+  files: {
+    'svc_arm.s': { digest: '03c322b4b98e',
+      summary: "Plan 9's calls on arm, a function each: R0 stored to its stack slot, the number in R0, SWI.",
+      important: [
+        { at: 'comment:"the kernel reads the"', say: 'arguments on the stack: R0 put back', weight: 3 },
+        { at: 'code:"EXITS"', weight: 1 },
+        { at: 'code:"RFORK"', say: 'fork, and more', weight: 2 },
+        { at: 'code:"AWAIT"', say: 'wait as a line of text', weight: 1 },
+      ],
+    },
+    'sys.h': { digest: 'b9324ca66439', summary: "Plan 9's call numbers, principia's, to keep in sync with the kernel." },
+    'syscall_plan9_arm.h': { digest: '127a79b6b244', summary: 'read and write as pread and pwrite at -1: no such calls in the kernel.' },
+    'zsyscall_plan9_arm.c': { digest: '4c3dafde3f3c', summary: 'Nothing but a comment: read, write and exit are in the header.' },
+  },
+  skeletons: [
+    skeletons.parts("Plan 9's calls on arm", [
+      ['sys.h', 'the numbers'],
+      ['svc_arm.s', 'a stub a call'],
+      ['syscall_plan9_arm.h', 'read and write over pread, pwrite'],
+    ], [
+      ['sys.h', 'svc_arm.s', 'included'],
+      ['syscall_plan9_arm.h', 'svc_arm.s', 'its pread'],
+    ]),
+    { name: 'svc_arm.s: a call into Plan 9',
+      bones: [
+        { at: 'svc_arm.s:code:"EXITS"', role: 'exits: the reason as a string' },
+        { at: 'svc_arm.s:code:"OPEN"', role: 'open' },
+        { at: 'svc_arm.s:code:"PREAD"', role: 'pread: read is it at -1' },
+        { at: 'svc_arm.s:code:"RFORK"', role: 'rfork: fork and namespaces' },
+        { at: 'svc_arm.s:code:"AWAIT"', role: "await: a child's end, a line" },
+      ],
+      joints: [
+        { from: 'svc_arm.s:code:"OPEN"', to: 'svc_arm.s:code:"PREAD"', say: 'a descriptor' },
+        { from: 'svc_arm.s:code:"RFORK"', to: 'svc_arm.s:code:"AWAIT"', say: 'the child' },
+        { from: 'svc_arm.s:code:"RFORK"', to: 'svc_arm.s:code:"EXITS"', say: "the child's end" },
+      ],
+    },
+  ],
+}

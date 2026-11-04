@@ -4,10 +4,10 @@
 // is in arm/ (both boards: the programs are arm's; the Makefile's ARCH
 // picks arm64/'s Ureg on the Pi4), behind Syscall.mli and Ureg.mli here.
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "The door between user programs and mini-9pi: Plan 9's call numbers, the table, the user's memory.",
   files: {
-    'Syscall.mli': { digest: '8453ab6c871d',
+    'Syscall.mli': { digest: '3cd041a54a82',
       summary: "The arch's side: the number in R0, arguments on the user's stack, the result in R0; notes delivered.",
       capitals: [
         { at: 'def:syscall', say: 'a system call, from the trap frame' },
@@ -17,17 +17,19 @@
         { at: 'def:syscall', weight: 3 },
         { at: 'def:notify', say: 'a note to its handler on the way out', weight: 2 },
         { at: 'def:trap', weight: 1 },
+        { at: 'comment:"others:"', say: "Linux's numbers and registers, the other way", weight: 1 },
       ],
     },
-    'Systab.mli': { digest: '897318f8706d',
+    'Systab.mli': { digest: 'ca4cb9390840',
       summary: "The system calls' table (systab.c): sys.h's numbers, their names, each one's function.",
       important: [
         { at: 'type:call', weight: 2 },
         { at: 'def:calls', say: "indexed by sys.h's number", weight: 2 },
         { at: 'def:call', weight: 2 },
+        { at: 'comment:"plan9-is-cleaner"', say: 'forty calls: no getpid, no ioctl, files instead', weight: 2 },
       ],
     },
-    'Systab.ml': { digest: '5df0dbe9b2b0',
+    'Systab.ml': { digest: '6ccb9d449847',
       summary: "Every call in one match: its words decoded, Sysfile's, Sysproc's, Syssema's or Auth's function.",
       capitals: [
         { at: 'def:call', say: 'every system call, one line each' },
@@ -40,7 +42,7 @@
         { at: 'def:perm_arg', say: 'DMDIR as the sign: bit 31 past the Pi1 ints', weight: 1 },
       ],
     },
-    'Usermem.mli': { digest: 'a28e2d316419',
+    'Usermem.mli': { digest: '9e714187444b',
       summary: "The user's memory as the calls see it: bytes and strings read and written, pages faulted in first.",
       important: [
         { at: 'comment:"validaddr"', say: "Error ebadarg: not the process's address", weight: 2 },
@@ -50,14 +52,16 @@
         { at: 'def:offset', say: 'a vlong from two words', weight: 1 },
       ],
     },
-    'Usermem.ml': { digest: '418baa26d99a',
-      summary: 'Through Mmu, after Fault gives the pages a first touch would.',
+    'Usermem.ml': { digest: '6273ed54eacf',
+      summary: "Through Mmu, after Fault gives the pages a first touch would; a debugger's reads and writes.",
       important: [
+        { at: 'def:user_string', say: 'page by page, up to the NUL', weight: 2 },
+        { at: 'def:debug_write', say: "a breakpoint written into the text, I-cache synced", weight: 2 },
         { at: 'def:user_read', weight: 2 },
         { at: 'def:user_write', weight: 2 },
       ],
     },
-    'Ureg.mli': { digest: '1d6b73ee7b6b',
+    'Ureg.mli': { digest: '67fe4d77ffcd',
       summary: "An arm program's registers in the trap frame: the Pi1's r0-r14, or the Pi4's x0-x14 in AArch32.",
       important: [
         { at: 'comment:"The arm program\'s registers"', say: 'the same programs on both boards', weight: 2 },

@@ -1,0 +1,90 @@
+// apps/media/play/: what the code map says of it
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: 'mini-play: a song played to /dev/audio, or a film shown in a window, its picture following its sound.',
+  files: {
+    'Play.ml': {
+      summary: "mini-play: music as 16-bit stereo to /dev/audio a block at a time, or -c a filter, 9front's way.",
+      digest: '9c1c715afcfc',
+      capitals: [{ at: 'def:main', say: 'a film to its window, a song to /dev/audio' }],
+      important: [
+        { at: 'def:play', say: 'a block computed only when the last is written', weight: 3 },
+        { at: 'comment:"old: standard output always"', say: 'the author: play to /dev/audio directly', weight: 1 },
+        { at: 'def:film_of', say: 'a film is known by its kind', weight: 1 },
+      ],
+      related: ['../../../tiny/TinyPlay.ml'],
+    },
+    'Film.ml': {
+      summary: "A film as a Playground program: the deck's sound pulled by the mixer, the frame chosen by its clock.",
+      digest: '72820af45c1a',
+      important: [
+        { at: 'def:fill', say: "the mixer's pull: the sound is the clock", weight: 3 },
+        { at: 'def:position', say: 'the frame at the sound, or a timer before it', weight: 3 },
+        { at: 'def:of_system_stream', say: 'an .mpg split into video and MP2', weight: 1 },
+        { at: 'def:changed', say: "d: what changed since the last frame", weight: 1 },
+        { at: 'def:blocks_over', say: "a: MPEG-1's macroblocks and vectors", weight: 1 },
+      ],
+    },
+    'Film.mli': {
+      summary: 'Y4M, FLI, AVI, GIF or MPEG-1 to a Movie.t; the picture follows the sound, not the other way.',
+      digest: 'a365254c4b08',
+      capitals: [{ at: 'def:run', say: "a film in mini-play's window" }],
+      important: [{ at: 'comment:"The picture follows the sound"', say: 'a frame skipped is hardly seen', weight: 3 }],
+    },
+    'Mpg_bench.ml': {
+      summary: "What an .mpg costs a part at a time, its instructions counted under mini-5i -s.",
+      digest: '04c6afee7be4',
+    },
+    'Mpg_bench.mli': {
+      summary: "mpg_bench's empty interface: its usage is in the .ml.",
+      digest: 'd5efa37b0c2e',
+    },
+  },
+  dirs: {
+    sdl: { summary: 'The SDL build of mini-play, for a Unix desktop.' },
+  },
+  skeletons: [
+    skeletons.onefile('mini-play: a song or a film', 'Play.ml', [
+      ['Play.ml:def:film_of', 'a film? by its kind', 'the file'],
+      ['Film.ml:def:read', 'the frames and the sound', 'a film'],
+      ['Film.ml:def:run', 'the window: a Playground game', 'Movie.t'],
+      ['Film.ml:def:position', 'the frame at the sound\'s clock', 'each frame'],
+    ]) + {
+      bones+: [
+        { at: 'Play.ml:def:play', role: 'a song: blocks to /dev/audio' },
+        { at: '../../../lib_audio/Player.ml', role: 'MOD, MIDI, MP3, WAV, by its name' },
+        { at: 'Film.ml:def:fill', role: "the mixer's pull, the clock" },
+      ],
+      joints+: [
+        { from: 'Play.ml:def:main', to: 'Play.ml:def:play', say: 'not a film' },
+        { from: 'Play.ml:def:play', to: '../../../lib_audio/Player.ml', say: 'a block of 4,096' },
+        { from: 'Film.ml:def:fill', to: 'Film.ml:def:position', say: 'how far the sound is' },
+      ],
+    },
+    {
+      name: "A film's window: the sound as the clock",
+      bones: [
+        { at: 'Film.ml:type:t', role: 'a movie and its sound' },
+        { at: 'Film.ml:def:deck', role: 'the sound playing: samples, position' },
+        { at: 'Film.ml:def:fill', role: "the mixer's pull" },
+        { at: 'Film.ml:def:position', role: 'the time: the sound, else a timer' },
+        { at: 'Film.ml:def:update', role: 'keys: pause, seek, d, a' },
+        { at: 'Film.ml:def:view', role: 'the frame, the bar, the analysis' },
+        { at: 'Film.ml:def:sized', role: 'the frame scaled, kept' },
+      ],
+      joints: [
+        { from: 'Film.ml:type:t', to: 'Film.ml:def:deck', say: 'the sound' },
+        { from: 'Film.ml:def:deck', to: 'Film.ml:def:fill', say: 'its samples' },
+        { from: 'Film.ml:def:fill', to: 'Film.ml:def:position', say: 'how far' },
+        { from: 'Film.ml:def:update', to: 'Film.ml:def:deck', say: 'paused, sought' },
+        { from: 'Film.ml:def:position', to: 'Film.ml:def:view', say: 'which frame' },
+        { from: 'Film.ml:def:view', to: 'Film.ml:def:sized', say: 'its picture' },
+      ],
+    },
+    skeletons.onefile('mpg_bench: an .mpg by parts', 'Mpg_bench.ml', [
+      ['../../../lib_graphics/videos/Mpeg_system.ml', 'open: the streams apart', 'the file'],
+      ['../../../lib_graphics/videos/Mpeg1.ml', 'frames: the pictures decoded', 'the video'],
+    ], main='code:"match argv.(1) with"'),
+  ],
+}

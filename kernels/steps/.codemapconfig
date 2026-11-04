@@ -1,0 +1,30 @@
+// kernels/steps/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground). Each step a whole small
+// kernel, built two ways: its Makefile (ocaml-light and gcc, the Pi 1)
+// and its mkfile (ix's own tools, pi1/ and pi4/'s assembly and C).
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The ladder mini-xv6 was climbed by: six small kernels, a mechanism each; read in order, diff each with the next.",
+  skeletons: [
+    {
+      name: 'The ladder: a rung a mechanism',
+      bones: [
+        { at: 'step0/', role: 'C on the bare board, by ix\'s tools: the boot, the UART' },
+        { at: 'step1/', role: "OCaml's runtime with no system under it" },
+        { at: 'step2/', role: 'a trap: user mode, a system call, and back' },
+        { at: 'step3/', role: 'processes on their own kernel stacks; the GC told of them' },
+        { at: 'step4/', role: 'the MMU: an address space a process' },
+        { at: 'step5/', role: 'the timer: preemption, sleep, kill' },
+        { at: '../xv6/', role: 'then mini-xv6: the same grown into modules, with files' },
+      ],
+      joints: [
+        { from: 'step0/', to: 'step1/', say: 'its start, under OCaml' },
+        { from: 'step1/', to: 'step2/', say: 'libc.c, shared' },
+        { from: 'step2/', to: 'step3/', say: 'grows into' },
+        { from: 'step3/', to: 'step4/', say: 'grows into' },
+        { from: 'step4/', to: 'step5/', say: 'grows into' },
+        { from: 'step5/', to: '../xv6/', say: 'grows into' },
+      ],
+    },
+  ],
+}

@@ -1,0 +1,129 @@
+// languages/smalltalk/: what the code map says of it (the code map:
+// tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-smalltalk: Smalltalk-80 from the Blue Book, a VM in OCaml and a system in Smalltalk, with Squeak's Morphic.",
+  files: {
+    'Main.ml': {
+      summary: "mini-smalltalk's entry: the capabilities, the logging, then CLI.main.",
+      digest: 'ba5700b2fb8f',
+    },
+    'CLI.mli': {
+      summary: "Smalltalk-80 on a terminal, and the whole design: the modules a method's text goes through, the history.",
+      digest: 'd5a31a489df3',
+      capitals: [{ at: 'def:main', say: 'mini-smalltalk: boot or load, file in, print' }],
+      important: [
+        { at: "comment:\"the modules, a text's way\"", say: "the VM's modules in a text's order", weight: 3 },
+        { at: 'comment:"Smalltalk\'s lesson is that the environment"', say: 'one live world, never restarted', weight: 2 },
+        { at: 'comment:"evolution:"', say: 'from Smalltalk-72 to Squeak', weight: 1 },
+        { at: 'comment:"why-study:"', say: 'windows, browsers, JITs started here', weight: 1 },
+      ],
+    },
+    'CLI.ml': {
+      summary: "The command: a system booted from text or loaded from an image, files filed in, -e printed, -world cycled.",
+      digest: '93362e87958a',
+      important: [
+        { at: 'def:help', say: 'the manual, by examples', weight: 1 },
+        { at: 'def:file_in', say: 'methods into classes, the rest evaluated', weight: 2 },
+        { at: 'code:"St_boot.boot host"', say: 'the kernel chosen by -k, compiled', weight: 3 },
+        { at: 'code:"Squeak.cycle t ~interrupt:false"', say: "a host's frames, with no window", weight: 2 },
+        { at: 'def:ppm', say: 'the Display, of any depth, as a picture', weight: 1 },
+      ],
+    },
+    'Squeak.mli': {
+      summary: "Squeak over a host: the system brought up, its world made, then cycled a budget at a time.",
+      digest: '9fc4c67a3f0c',
+      capitals: [
+        { at: 'def:start', say: 'the system, its world, the first screen' },
+        { at: 'def:cycle', say: 'World doOneCycle, a budget of bytecodes' },
+      ],
+      important: [
+        { at: 'comment:"the host, a frame"', say: 'mouse in, cycle, Display out', weight: 3 },
+        { at: 'comment:"An operating system is a collection"', say: "Ingalls's line, the design's aim", weight: 1 },
+        { at: 'type:system', say: 'Squeak, Quiet for a slow Pi, MiniMorphic', weight: 2 },
+      ],
+    },
+    'Squeak.ml': {
+      summary: "What the three hosts share, after the playground's TinySqueak: the start's Smalltalk, the cycle resumed.",
+      digest: 'fde36362b294',
+      important: [
+        { at: 'def:start_squeak', say: 'the first screen, written in Smalltalk', weight: 2 },
+        { at: 'def:placed', say: 'positions scaled to the Display there is', weight: 1 },
+        { at: 'def:start_sized', weight: 2 },
+        { at: 'def:cycle', say: 'a cycle not done in budget goes on next frame', weight: 3 },
+        { at: 'def:report', say: 'an error said in the Transcript', weight: 1 },
+        { at: 'def:changed', say: 'BitBlt counted: redraw only on change', weight: 2 },
+      ],
+    },
+    'St_kernel.mli': {
+      summary: "The kernel's chunk files, embedded by dune: the Blue Book's, Squeak's, and MiniMorphic's.",
+      digest: 'cd13566212eb',
+      important: [
+        { at: 'def:files', weight: 1 },
+        { at: 'def:squeak', say: "the Blue Book's, then kernel/squeak/'s", weight: 2 },
+        { at: 'def:mini_morphic', say: 'Morphic in one file, to read first', weight: 1 },
+      ],
+    },
+  },
+  dirs: {
+    tests: { summary: "The playground's unit tests (the system, Morphic, Etoys, the tools), a differential run, a bench." },
+  },
+  skeletons: [
+    skeletons.cli('mini-smalltalk', [
+      ['vm/St_boot.ml:def:boot', 'the system from its text'],
+      ['CLI.ml:def:file_in', 'files of chunks filed in'],
+      ['vm/St_interp.ml:def:evaluate', 'each -e compiled and run'],
+      ['vm/St_image.ml:def:save', 'the world saved'],
+    ]),
+    {
+      name: 'Smalltalk-80, its two halves',
+      bones: [
+        { at: 'kernel/', role: 'the system, in Smalltalk' },
+        { at: 'compiler/', role: 'text to bytecodes' },
+        { at: 'vm/', role: 'the machine: memory, interpreter, primitives' },
+        { at: 'graphics/', role: 'BitBlt, the one drawing primitive' },
+        { at: 'Squeak.ml', role: 'a world cycled for a host' },
+        { at: 'hosts/', role: 'the windows' },
+        { at: 'CLI.ml', role: 'the command' },
+      ],
+      joints: [
+        { from: 'kernel/', to: 'compiler/', say: 'its methods, compiled at boot' },
+        { from: 'compiler/', to: 'vm/', say: 'CompiledMethods' },
+        { from: 'vm/', to: 'graphics/', say: 'primitive 96' },
+        { from: 'Squeak.ml', to: 'vm/', say: 'boot, run a process' },
+        { from: 'hosts/', to: 'Squeak.ml', say: 'mouse, keys, a frame' },
+        { from: 'CLI.ml', to: 'vm/', say: 'boot, evaluate, save' },
+      ],
+    },
+    skeletons.module_calls('CLI.ml', 'The command, its parts', 'main', 'flags read, a system made', [
+      ['help', 'the manual, -h', 'asked'],
+      ['file_in', 'files of chunks filed in', 'each file'],
+      ['ppm', 'the Display as a picture', '-ppm'],
+    ]),
+    skeletons.module('Squeak.ml', 'A world over a host', [
+      ['start_sized', 'the system booted, the start evaluated', ''],
+      ['start_squeak', 'the first screen in Smalltalk', 'its texts'],
+      ['cycle', "the world's doOneCycle, a budget", 'then each frame'],
+      ['report', 'why it stopped, said', 'a suspended process'],
+      ['picture', 'the Display, if it changed', 'after a cycle'],
+    ]),
+  ],
+  tours: [
+    {
+      name: 'From a method to the screen',
+      stops: [
+        { at: "CLI.mli:comment:\"the modules, a text's way\"", say: 'The map of the machine: read it first.' },
+        { at: 'vm/St_boot.ml:def:boot', say: 'The world is made from text, since there is no image yet.' },
+        { at: 'compiler/St_parse.ml:def:parse_method', say: 'Ten lines of grammar, written out.' },
+        { at: 'compiler/St_compile.ml:def:gen_send', say: 'ifTrue: and whileTrue: are messages, compiled as jumps.' },
+        { at: 'vm/St_interp.ml:def:step', say: "One bytecode: the Blue Book's table." },
+        { at: 'vm/St_interp.ml:def:lookup', say: 'Every send goes through the method cache.' },
+        { at: 'vm/St_memory.ml:def:become', say: 'The object table makes become: constant time.' },
+        { at: 'graphics/St_colorblt.ml:def:copy_bits', say: 'All drawing, text and windows included, is BitBlt.' },
+        { at: 'Squeak.ml:def:cycle', say: "Morphic's world, stepped a frame at a time." },
+      ],
+    },
+  ],
+}

@@ -1,0 +1,44 @@
+// apps/office/file_menu/: what the code map says of it
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The File menu applications share: New, Open, Save, Export, Exit, over the platform's store.",
+  files: {
+    'File_menu.mli': {
+      summary: 'The File menu and its dialogs, immediate mode; saving needs capabilities, and the type says so.',
+      digest: '3c1c24ce4190',
+      capitals: [
+        { at: 'type:caps', say: 'no capability, no Save' },
+        { at: 'def:command', say: 'an item chosen' },
+        { at: 'def:dialog', say: 'Open and Save As, each frame' },
+      ],
+      important: [
+        { at: 'comment:"the authority to"', say: "the store reached through Cap", weight: 3 },
+        { at: 'type:t' },
+        { at: 'def:busy', say: "a dialog up takes all the input" },
+      ],
+    },
+    'File_menu.ml': {
+      summary: 'The menu items, the Open and Save As dialogs, autosave, and their panel drawn.',
+      digest: 'ea305097af3a',
+      important: [
+        { at: 'def:command', say: "Exit is ix's own: ends at once", weight: 3 },
+        { at: 'def:dialog', say: 'a list to pick, a name to type', weight: 3 },
+        { at: 'def:save', say: 'Saved behind the magic line, in Store' },
+        { at: 'def:autosave' },
+        { at: 'def:view' },
+      ],
+      links: [{ from: 'def:command', to: 'def:save' }, { from: 'def:dialog', to: 'def:open_' }],
+    },
+  },
+  skeletons: [
+    skeletons.module_calls('File_menu.ml', 'An item to the store', 'command', 'the item chosen', [
+      ['save', 'the document written', 'Save'],
+      ['dialog', 'Open... and Save As..., a frame each', 'a dialog up'],
+      ['export', 'bytes out under a name', 'Export'],
+    ]) + {
+      bones+: [{ at: 'File_menu.ml:def:open_', role: 'a stored file read back' }, { at: 'File_menu.ml:def:view', role: 'the dialog drawn' }],
+      joints+: [{ from: 'File_menu.ml:def:dialog', to: 'File_menu.ml:def:open_', say: 'a name picked' }, { from: 'File_menu.ml:def:dialog', to: 'File_menu.ml:def:view', say: 'its state' }],
+    },
+  ],
+}

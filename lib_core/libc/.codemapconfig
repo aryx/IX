@@ -1,0 +1,24 @@
+// lib_core/libc/: what the code map says of it (the code map: tinybox codemap,
+// ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The C library under mini-ml's runtime: goken's libc, Plan 9's made portable to Linux, for arm and arm64.",
+  skeletons: [
+    skeletons.parts("libc: Plan 9's names over Linux's or Plan 9's kernel", [
+      ['include/', "libc.h and its headers, split as Go's packages"],
+      ['port/', "the portable C: strings, math, Plan 9's names over POSIX's"],
+      ['ix/', "ix's own: the formatter and vlong's runtime"],
+      ['os/', 'what differs by system: stat, open, getwd'],
+      ['syscall/', 'the way into the kernel, a function a call'],
+      ['arch/', "the start, and arm's division and copies"],
+    ], [
+      ['port/', 'include/', 'declared in'],
+      ['port/', 'os/', 'the system calls asked'],
+      ['os/', 'syscall/', 'the kernel called'],
+      ['arch/', 'port/', 'main called, by rt0'],
+      ['ix/', 'port/', 'beside: snprint, strtod'],
+    ]),
+  ],
+}

@@ -1,0 +1,78 @@
+// tiny/TinyKernel/libc/: what the code map says of it (the code map:
+// tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). sys.tm (the
+// system calls' stubs: the arguments to r1-r3, sys n, r1 back) is
+// tiny-machine's assembly, not a source to the map: named in the roles.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "What a C program of tiny-kernel is linked with to call it: its system calls, the drawing messages, a name reached.",
+  files: {
+    'user.h': { digest: 'fcdd8bcb3824',
+      summary: "What a C program of tiny-kernel has: its 29 system calls (sys.tm's stubs), descriptors 3 and 4, and libc.",
+      capitals: [
+        { at: 'def:fork', say: "Unix's pair again, as a kernel in ML serves it" },
+        { at: 'def:dial', say: 'the network as a descriptor: a write a message' },
+      ],
+      important: [
+        { at: 'type:dirent', say: 'an entry: 64-byte name, links, size, date', weight: 1 },
+        // claude: stale: cat, echo, ls, wc, mkdir and rm left ../user/ (TinyUtilities.ml has them)
+        { at: 'comment:"cat, echo, ls, wc, mkdir and rm are t6"', say: 'stale: they left ../user/; t6/user/ has its own', weight: 1 },
+        { at: 'def:fork', weight: 3 },
+        { at: 'def:exec', weight: 3 },
+        { at: 'def:spawn', say: "fork and exec in one: posix_spawn's", weight: 2 },
+        { at: 'def:pipe', weight: 2 },
+        { at: 'def:trace', say: "a process as a descriptor: Plan 9's /proc ctl", weight: 2 },
+        { at: 'def:ready', say: "select, cut down: the first that would not wait", weight: 2 },
+        { at: 'def:box', say: 'a pipe that keeps only the last write', weight: 1 },
+        { at: 'def:dial', weight: 2 },
+        { at: 'code:"#define DRAW 3"', say: 'drawing and mouse: descriptors 3 and 4', weight: 2 },
+      ],
+      related: ['sys.tm', '../TinyKernelCalls.ml', '../../TinyCRuntime/libc.h', '../steps/t6/libc/user.h'],
+    },
+    'draw.h': { digest: '6b780a281bbe',
+      summary: "What a C program that draws has: TinyKernelGraphics's messages as calls, a colour an image of one pixel.",
+      important: [
+        { at: 'def:d_draw', say: "the one operation, as Plan 9's draw", weight: 3 },
+        { at: 'def:d_flush', weight: 2 },
+        { at: 'def:d_colour', weight: 1 },
+        { at: 'def:d_text', weight: 1 },
+      ],
+      related: ['../TinyKernelGraphics.mli', '../../TinyLibDraw.ml'],
+    },
+    'draw.c': { digest: 'd25cb4f86bba',
+      summary: "The drawing messages gathered in a buffer, a letter then numbers of 16 bits, written whole to descriptor 3.",
+      important: [
+        { at: 'def:d_flush', say: "in pieces when 3 is a window's pipe", weight: 2 },
+        { at: 'def:d_start', say: 'a message that does not fit flushes first', weight: 2 },
+        { at: 'def:d_put', say: 'a number: its low byte first', weight: 1 },
+        { at: 'def:d_draw', weight: 2 },
+      ],
+      related: ['../TinyKernelGraphics.ml', '../examples/paint.c'],
+    },
+    'net.c': { digest: '7fdd94108963',
+      summary: "reach: dial by an address or by a name, the name asked of the wire's other end on port 53: all of DNS here.",
+      important: [
+        { at: 'def:reach', weight: 3 },
+      ],
+      related: ['../user/get.c', '../user/put.c'],
+    },
+  },
+  skeletons: [
+    {
+      name: 'A C program to the kernel: calls, drawing, the network',
+      bones: [
+        { at: 'user.h', role: 'the system calls, declared' },
+        { at: 'draw.c', role: 'draw.h made: messages to descriptor 3' },
+        { at: 'net.c', role: 'reach: dial by a name' },
+        { at: '../TinyKernelCalls.ml:def:syscall', role: "the kernel's side (via sys.tm)" },
+        { at: '../TinyKernelGraphics.ml:def:messages', role: 'the messages decoded' },
+      ],
+      joints: [
+        { from: 'draw.c', to: 'user.h', say: 'write(DRAW, ...)' },
+        { from: 'net.c', to: 'user.h', say: 'dial' },
+        { from: 'user.h', to: '../TinyKernelCalls.ml:def:syscall', say: 'sys n' },
+        { from: 'draw.c', to: '../TinyKernelGraphics.ml:def:messages', say: 'the bytes' },
+      ],
+    },
+  ],
+}

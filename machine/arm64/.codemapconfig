@@ -1,0 +1,103 @@
+// machine/arm64/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The arm64 core of mini-5i and mini-qemu: A64 decoded once, executed, exception levels, the Pi 4's MMU.",
+  files: {
+    'Arm64_isa.ml': { digest: '95af605b6056',
+      summary: "A64's instructions and the CPU's state as types, no .mli: register 31 sp or zero by operand.",
+      capitals: [
+        { at: 'type:t', say: 'an A64 instruction, decoded' },
+        { at: 'type:state', say: 'x0-x30, the exception levels, system registers' },
+      ],
+      important: [
+        { at: 'comment:"a word decoded once into a"', weight: 3 },
+        { at: 'comment:"objdump prints many instructions under an alias"', say: "the printer's aliases, as binutils", weight: 2 },
+        { at: 'type:t', weight: 2 },
+        { at: 'type:state', weight: 3 },
+      ],
+    },
+    'Arm64.mli': { digest: 'eb41f3d34302',
+      summary: 'A64, AArch64: the same shape as Arm32: decode, execute, take an exception, system registers.',
+      capitals: [
+        { at: 'def:execute', say: 'one instruction run' },
+      ],
+      important: [
+        { at: 'def:decode', weight: 2 },
+        { at: 'def:bitmask', say: "logical immediates' rotated runs", weight: 1 },
+        { at: 'def:take', say: 'an exception to a higher level', weight: 2 },
+        { at: 'def:sysreg', weight: 1 },
+      ],
+    },
+    'Arm64.ml': { digest: '8a1afef7e4d4',
+      summary: "A64 decoded and executed: logical immediates, exception levels, the scalar floating point.",
+      important: [
+        { at: 'def:bitmask', say: "DecodeBitMasks: A64's odd immediates", weight: 2 },
+        { at: 'def:decode', say: 'the class in bits 28-25', weight: 3 },
+        { at: 'def:execute', weight: 3 },
+        { at: 'def:enter', say: 'an exception level entered', weight: 2 },
+        { at: 'def:eret', weight: 1 },
+        { at: 'comment:"A single is computed as a double, rounded once when written"', weight: 1 },
+      ],
+      links: [
+        { from: 'def:decode', to: 'def:dp_imm' },
+        { from: 'def:decode', to: 'def:loadstore' },
+        { from: 'def:execute', to: 'def:load' },
+      ],
+    },
+    'Mmu64.mli': { digest: '6a6e43da5416',
+      summary: "AArch64's MMU for EL1&0: 4 KB granule, TTBR0 and TTBR1, blocks and pages (the Pi 4's).",
+      important: [
+        { at: 'comment:"xv6 arm64-pi4"', say: 'a worked example', weight: 2 },
+        { at: 'comment:"Not modelled"', weight: 1 },
+        { at: 'def:translate', weight: 2 },
+      ],
+    },
+    'Mmu64.ml': { digest: '83341714ce2b',
+      summary: 'The walk from the level the size starts at down to level 3, behind a TLB like Mmu32.',
+      important: [
+        { at: 'def:walk', weight: 3 },
+        { at: 'def:translate', weight: 2 },
+        { at: 'def:rights_of', say: 'AP, UXN, PXN as QEMU reads them', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: "A64 as types: an instruction, the CPU",
+      bones: [
+        { at: 'Arm64_isa.ml:type:t', role: 'the variant, register 31 kept as 31' },
+        { at: 'Arm64_isa.ml:type:sf', role: 'X or W: 64 or 32 bits' },
+        { at: 'Arm64_isa.ml:type:addr', role: "a load's or store's address mode" },
+        { at: 'Arm64_isa.ml:type:state', role: 'x0-x30, SPs by level, PSTATE, system registers' },
+        { at: 'Arm64_isa.ml:type:cond', role: 'the conditions' },
+      ],
+      joints: [
+        { from: 'Arm64_isa.ml:type:t', to: 'Arm64_isa.ml:type:sf', say: 'each data case' },
+        { from: 'Arm64_isa.ml:type:t', to: 'Arm64_isa.ml:type:addr', say: 'Mem' },
+        { from: 'Arm64_isa.ml:type:t', to: 'Arm64_isa.ml:type:cond', say: 'branches, csel' },
+      ],
+    },
+    {
+      name: 'An A64 instruction, and the exception levels',
+      bones: [
+        { at: 'Arm64.ml:def:bitmask', role: "logical immediates: A64's rotated runs of ones" },
+        { at: 'Arm64_isa.ml:type:t', role: 'an instruction as a variant' },
+        { at: 'Arm64.ml:def:decode', role: 'a word to an instruction' },
+        { at: 'Arm64_isa.ml:type:state', role: 'x0-x30, the SPs by level, PSTATE, system registers, fp' },
+        { at: 'Arm64.ml:def:execute', role: 'one instruction run' },
+        { at: 'Arm64.ml:def:take', role: 'an exception to a higher level: ELR, SPSR, ESR, the vector' },
+        { at: 'Arm64.ml:def:enter', role: 'the level entered: its SP' },
+        { at: 'Mmu64.ml:def:translate', role: "the Pi 4's addresses" },
+      ],
+      joints: [
+        { from: 'Arm64.ml:def:decode', to: 'Arm64.ml:def:bitmask', say: 'and, orr, eor immediates' },
+        { from: 'Arm64.ml:def:decode', to: 'Arm64_isa.ml:type:t' },
+        { from: 'Arm64.ml:def:execute', to: 'Arm64_isa.ml:type:state' },
+        { from: 'Arm64.ml:def:take', to: 'Arm64.ml:def:enter', say: 'EL, SP, pc' },
+        { from: 'Arm64.ml:def:execute', to: 'Mmu64.ml:def:translate', say: 'a load or store' },
+      ],
+    },
+  ],
+}

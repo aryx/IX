@@ -1,0 +1,87 @@
+// apps/files/: what the code map says of it
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: 'mini-files and mini-open: folders in a window, a file opened by its kind without naming a program.',
+  files: {
+    'Files.ml': {
+      summary: "mini-files, after the Star and the Finder: a folder's list, sorted, dragged, a file opened by its kind.",
+      digest: '72451359e4b4',
+      capitals: [{ at: 'def:open_selected', say: 'File_kind, then the mailcap rule run' }],
+      important: [
+        { at: 'type:model', say: 'the folder, the selection, the clip, a drag', weight: 3 },
+        { at: 'def:rule_of', say: 'a read of 4,096 bytes says the kind', weight: 3 },
+        { at: 'def:learn_kinds', say: 'a few rows a frame: a big folder never waits', weight: 1 },
+        { at: 'def:browse', say: 'the keys: Enter, arrows, Delete, copy, paste', weight: 1 },
+        { at: 'def:drop', say: 'a file dragged onto a folder: moved', weight: 1 },
+        { at: 'code:"(\"idle\", \"wait\")"', say: "idle=wait: 58% of mini-9pi's processor saved", weight: 1 },
+      ],
+      links: [{ from: 'def:update', to: 'def:browse' }, { from: 'def:browse', to: 'def:open_selected' }],
+    },
+    'Folder.ml': {
+      summary: "A directory's entries listed and sorted, sizes and days in words, copies and moves checked.",
+      digest: '0b6545a0e0ce',
+      important: [
+        { at: 'def:sort', say: 'folders first, then by name, size or day', weight: 1 },
+        { at: 'def:copy_tree', say: 'a folder copied, refused into itself', weight: 1 },
+      ],
+    },
+    'Folder.mli': {
+      summary: "A directory as mini-files shows it; the Star, the Finder, Norton Commander, and Plan 9's plumber.",
+      digest: '0a1a1eca007a',
+      capitals: [{ at: 'type:entry', say: 'a name, a size, a day, a folder or not' }],
+      important: [{ at: 'comment:"Plan 9, which had rio, had no file manager"', say: 'the plumber: rules over text', weight: 3 }],
+    },
+    'Icons.ml': {
+      summary: 'A 16-pixel picture per kind of file, drawn of plain shapes on a sheet.',
+      digest: '7d44597db546',
+    },
+    'Icons.mli': {
+      summary: "Icons for kinds of files: David Canfield Smith's word, the Star's picture, Susan Kare's.",
+      digest: '3f18259aa995',
+    },
+    'Open.ml': {
+      summary: "mini-open, macOS's open and xdg-open: a file given to the program that reads it.",
+      digest: '0e2556fb1ad0',
+      capitals: [{ at: 'def:main', say: 'File_kind, then Helpers: the mailcap' }],
+    },
+  },
+  dirs: {
+    sdl: { summary: 'The SDL build of mini-files, for a Unix desktop.' },
+  },
+  skeletons: [
+    skeletons.onefile('mini-files: a folder, a file opened', 'Files.ml', [
+      ['Files.ml:def:initial', 'the folder read, the rules read once', 'the start folder'],
+      ['Files.ml:def:update', 'a frame: the mouse, the keys', 'Playground.game'],
+      ['Files.ml:def:browse', 'what the keys and clicks do', 'the computer'],
+      ['Files.ml:def:open_selected', 'a double click or Enter', 'the selection'],
+      ['../../lib_mime/Helpers.ml:def:run', 'the program for its kind, in a window', 'a mailcap rule'],
+    ], main='code:"Playground_platform.run_app caps"') + {
+      bones+: [
+        { at: 'Files.ml:def:view', role: 'the path, the rows, the status' },
+        { at: 'Folder.ml:def:list', role: 'a directory read' },
+      ],
+      joints+: [
+        { from: 'Files.ml:def:update', to: 'Files.ml:def:view', say: 'the model' },
+        { from: 'Files.ml:def:initial', to: 'Folder.ml:def:list', say: 'its entries' },
+      ],
+    },
+    skeletons.onefile('mini-open: a file to its program', 'Open.ml', [
+      ['../../lib_mime/File_kind.ml:def:of_path', 'its kind, from its first bytes', 'a path'],
+      ['../../lib_mime/Helpers.ml:def:for_type', 'the mailcap rule for that kind', 'the kind'],
+      ['../../lib_mime/Helpers.ml:def:run', 'the command run', 'the rule'],
+    ]),
+    skeletons.parts('The file manager and what it stands on', [
+      ['Files.ml', 'the window: model, update, view'],
+      ['Folder.ml', 'a directory, its entries'],
+      ['Icons.ml', 'a picture per kind'],
+      ['Open.ml', 'the same dispatch, for a terminal'],
+      ['../../lib_mime/', 'kinds of files, mailcap rules'],
+    ], [
+      ['Files.ml', 'Folder.ml', 'lists, copies'],
+      ['Files.ml', 'Icons.ml', 'draws'],
+      ['Files.ml', '../../lib_mime/', 'opens'],
+      ['Open.ml', '../../lib_mime/', 'opens'],
+    ]),
+  ],
+}

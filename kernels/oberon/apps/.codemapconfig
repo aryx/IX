@@ -1,0 +1,85 @@
+// kernels/oberon/apps/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Programs of others, Project Oberon's small ones: each a frame, messages or a task of its own.",
+  files: {
+    'Hilbert.mli': { digest: '91b217960a6d',
+      summary: "Hilbert's curve in a viewer, a frame that draws itself whenever its rectangle changes.",
+      important: [
+        { at: 'comment:"The curve of order i is four curves"', say: 'four mutually recursive orientations', weight: 2 },
+      ],
+    },
+    'Hilbert.ml': { digest: '8940ac9f5c16',
+      summary: 'Four procedures, an orientation each, calling each other; the frame redrawn on Restore or Modify.',
+      important: [
+        { at: 'def:ha', say: 'hd, west, ha, south, ha, east, hb', weight: 3 },
+        { at: 'def:handler', say: 'a frame of its own: the messages it knows', weight: 2 },
+        { at: 'code:"Modules.command"', say: 'Hilbert.Draw said when the module starts', weight: 1 },
+      ],
+    },
+    'Sierpinski.mli': { digest: 'a6fd285da0b5',
+      summary: "Sierpinski's curve in a viewer, as Hilbert's.",
+    },
+    'Sierpinski.ml': { digest: '0ba2652665a8',
+      summary: 'Eight strokes and four procedures, a quarter of the curve each, as Wirth wrote it.',
+      important: [
+        { at: 'def:sa', weight: 2 },
+        { at: 'def:diagonal', weight: 1 },
+      ],
+    },
+    'Stars.mli': { digest: 'b02e723e4d2a',
+      summary: 'Bouncing stars: a frame, messages only this module knows, and a task that moves them.',
+      important: [
+        { at: 'type:Step', say: 'an open message: declared here and nowhere else', weight: 3 },
+      ],
+    },
+    'Stars.ml': { digest: '7feae87596db',
+      summary: "A task broadcasts Step; each Stars frame moves its stars, drawn by invert, on receiving it.",
+      capitals: [
+        { at: 'def:new_frame', say: 'a frame whose handler answers Step' },
+      ],
+      important: [
+        { at: 'def:task', say: 'every interval turns: Step to every viewer', weight: 3 },
+        { at: 'def:move', say: 'drawn twice by invert: erased, then moved', weight: 2 },
+        { at: 'def:new_frame', weight: 2 },
+      ],
+    },
+    'Checkers.mli': { digest: '42130400fa9d',
+      summary: "A viewer of checks: the smallest program with a frame of its own, a patterned area.",
+    },
+    'Checkers.ml': { digest: '7c4c94fd026c',
+      summary: 'A pattern of 8-pixel squares replicated over the frame whenever it is restored.',
+      important: [
+        { at: 'def:handle', weight: 2 },
+      ],
+    },
+    'Blink.mli': { digest: '944a91176690',
+      summary: "A task and nothing else (Oberon's Blink): a block that blinks in the corner.",
+    },
+    'Blink.ml': { digest: 'e1376bfa86f3',
+      summary: 'A task inverting a block every 50 turns of the loop; Blink.Run installs it, Stop removes it.',
+      important: [
+        { at: 'def:task', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: "Others' programs: a frame, a message, a task",
+      bones: [
+        { at: 'Checkers.ml', role: 'a frame of its own: the smallest' },
+        { at: 'Hilbert.ml', role: 'a frame that draws itself, a curve' },
+        { at: 'Sierpinski.ml', role: 'the same, another curve' },
+        { at: 'Stars.ml', role: 'a frame, its own message, a task' },
+        { at: 'Blink.ml', role: 'a task alone' },
+        { at: '../system/Oberon.ml:def:run_tasks', role: "the loop's idle turn" },
+      ],
+      joints: [
+        { from: '../system/Oberon.ml:def:run_tasks', to: 'Stars.ml', say: 'Step, broadcast' },
+        { from: '../system/Oberon.ml:def:run_tasks', to: 'Blink.ml', say: 'tick' },
+      ],
+    },
+  ],
+}

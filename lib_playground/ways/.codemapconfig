@@ -1,0 +1,43 @@
+// lib_playground/ways/: what the code map says of it
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Other ways to program, each building an app: How to Design Programs' big-bang.",
+  files: {
+    'Bigbang.mli': {
+      summary: "HtDP's 2htdp/image and big-bang: images as values, a world stepped by handlers.",
+      digest: '7a67f8a56eb9',
+      capitals: [{ at: 'def:big_bang', say: 'a world and its handlers made an app' }],
+      important: [
+        { at: 'type:image', say: 'an image with its size: beside, above, overlay', weight: 2 },
+        { at: 'type:handlers', say: 'on_tick, on_key, stop_when: a record here', weight: 2 },
+      ],
+    },
+    'Bigbang.ml': {
+      summary: 'big-bang made over game: the handlers called from the computer each frame.',
+      digest: '2db17bc7337f',
+      important: [
+        { at: 'def:big_bang', say: 'the update: a tick, keys and mouse as events', weight: 3 },
+        { at: 'def:key_events', say: 'keys held become key events', weight: 2 },
+        { at: 'type:world', say: "the program's world, and what was held before", weight: 2 },
+      ],
+    },
+  },
+  skeletons: [{
+    name: 'big-bang: a world, handlers, an app',
+    bones: [
+      { at: 'Bigbang.ml:type:image', role: 'what to_draw returns' },
+      { at: 'Bigbang.ml:type:handlers', role: "the program's: tick, key, mouse, stop" },
+      { at: 'Bigbang.ml:type:world', role: 'the world, and the keys before' },
+      { at: 'Bigbang.ml:def:key_events', role: 'held keys to events' },
+      { at: 'Bigbang.ml:def:big_bang', role: 'made a game for the playground' },
+      { at: '../Playground.mli:def:game', role: 'the app underneath' },
+    ],
+    joints: [
+      { from: 'Bigbang.ml:def:big_bang', to: 'Bigbang.ml:type:handlers', say: 'calls' },
+      { from: 'Bigbang.ml:def:big_bang', to: 'Bigbang.ml:def:key_events', say: 'each frame' },
+      { from: 'Bigbang.ml:def:big_bang', to: 'Bigbang.ml:type:world', say: 'steps' },
+      { from: 'Bigbang.ml:type:world', to: 'Bigbang.ml:type:image', say: 'to_draw' },
+      { from: 'Bigbang.ml:def:big_bang', to: '../Playground.mli:def:game', say: 'built on' },
+    ],
+  }],
+}

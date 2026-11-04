@@ -1,0 +1,19 @@
+// lib_terminal/hosts/draw/: what the code map says of it (the code map: tinybox codemap,
+// ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "A Tui program in a mini-rio window under mini-9pi: cells painted by the draw device, F keys as Plan 9's runes.",
+  files: {
+    'Window_draw.mli': { digest: '87d5f3278576', summary: "A Tui in a window of Plan 9's draw device, resized with the window.", related: ['Window_draw.ml'] },
+    'Window_draw.ml': { digest: '7fb67c2d8533', summary: "The loop: the window's keys made a terminal's bytes, the screen painted by Cells.", important: [{ at: 'def:run', weight: 3 }, { at: 'def:key_name', weight: 1 }] },
+  },
+  skeletons: [
+    skeletons.module('Window_draw.ml', 'A Tui in a Plan 9 window', [
+      ['f_key', "an F key's rune to its number", ''],
+      ['key_name', 'a rune to a Vt key name', 'F keys'],
+      ['run', 'the loop: keys, update, paint', 'keys'],
+    ]),
+  ],
+}

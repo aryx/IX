@@ -1,0 +1,86 @@
+// browsers/javascript/parsing/: what the code map says of it (the code
+// map is tinybox codemap, in ~/github/ocaml-elm-playground; its
+// guidelines: docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "JavaScript's text to a tree: tokens with their newlines, statements by descent, expressions by Pratt.",
+  files: {
+    'Js_lexer.mli': { digest: 'f1fdddf4f328',
+      summary: "Tokens, a newline remembered for semicolons not written, a / told from a regular expression's.",
+      important: [
+        { at: 'comment:"automatic semicolon insertion"', weight: 3 },
+        { at: 'type:token', weight: 2 },
+        { at: 'def:tokenize', weight: 2 },
+      ],
+    },
+    'Js_lexer.ml': { digest: '3769b32bd473',
+      summary: 'Punctuators longest first by their first character, numbers, strings, templates, regexps by context.',
+      important: [
+        { at: 'def:tokenize', say: 'the whole text at once', weight: 3 },
+        { at: 'def:puncts_by_first', weight: 1 },
+        { at: 'def:keywords', weight: 1 },
+      ],
+    },
+    'Js_ast.mli': { digest: '801729c19737',
+      summary: "A program as a tree after ESTree's names: expressions, statements, functions, classes, patterns.",
+      capitals: [
+        { at: 'type:expr', say: 'what the parser makes, the interpreter walks' },
+        { at: 'type:stmt', say: 'statements, a line each' },
+      ],
+      important: [
+        { at: 'type:func', weight: 2 },
+        { at: 'type:pattern', say: 'destructuring', weight: 1 },
+        { at: 'type:code', say: "a compiled body, as an exception's value", weight: 1 },
+      ],
+    },
+    'Js_ast.ml': { digest: '5dc316941a12',
+      summary: "The tree's types again (no [%mli] here), and a number printed as JavaScript does.",
+    },
+    'Js_parse.mli': { digest: '243fd406d00a',
+      summary: "Statements by recursive descent, expressions by Pratt's binding powers; why not yacc.",
+      capitals: [{ at: 'def:parse', say: 'a script to a program' }],
+      important: [
+        { at: 'comment:"Why not yacc"', say: "against ix's rule: kept as copied", weight: 3 },
+        { at: 'def:parse_page', say: "a page's script: what parses, kept", weight: 2 },
+      ],
+    },
+    'Js_parse.ml': { digest: '3de4077425b2',
+      summary: 'A token cursor, binding powers by operator, arrows told at their =>, classes, for-in/of, templates.',
+      important: [
+        { at: 'def:infix', say: "an operator's binding power", weight: 2 },
+        { at: 'def:expression', say: "Pratt's loop", weight: 3 },
+        { at: 'def:arrow_ahead', say: '(a, b) => known only at =>', weight: 2 },
+        { at: 'def:statement', weight: 3 },
+        { at: 'def:end_statement', say: 'a newline instead of a semicolon', weight: 2 },
+        { at: 'def:class_', weight: 1 },
+      ],
+      links: [
+        { from: 'def:parse', to: 'def:statement' },
+        { from: 'def:statement', to: 'def:expression' },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.parts('Text to tree', [
+      ['Js_lexer.ml', 'characters to tokens'],
+      ['Js_parse.ml', 'tokens to a tree'],
+      ['Js_ast.ml', 'the tree'],
+    ], [
+      ['Js_lexer.ml', 'Js_parse.ml', 'tokens, newlines marked'],
+      ['Js_parse.ml', 'Js_ast.ml', 'a program'],
+    ]),
+    skeletons.module('Js_parse.ml', 'Descent and Pratt', [
+      ['parse', 'a text in, a program out', ''],
+      ['statement', 'one statement, by its first token', 'each'],
+      ['expression', "Pratt's loop over binding powers", 'an expression'],
+      ['prefix', 'what starts an expression', 'the left'],
+      ['infix', 'the binding power of an operator', 'the next'],
+    ]),
+    skeletons.module('Js_lexer.ml', 'Characters to tokens', [
+      ['tokenize', 'the text', ''],
+      ['keyword', 'a name or a keyword', 'a name'],
+      ['punctuators', 'longest first', 'a sign'],
+    ]),
+  ],
+}

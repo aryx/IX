@@ -1,0 +1,60 @@
+// kernels/steps/step2/pi1/: what the code map says of it (the code map
+// is tinybox codemap, in ~/github/ocaml-elm-playground). Built by
+// ../mkfile with O=5; l.s includes step 0's pi1/l.s, the start.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Step 2 on the Pi 1 by ix's own tools: ../start.s and ../machine.c again, in Plan 9's assembly and mini-cc's C.",
+  files: {
+    'l.s': { digest: 'b033fba827b5',
+      summary: 'The vectors copied to 0, a system call\'s entry into the trap frame, and the way back to user mode.',
+      capitals: [
+        { at: 'comment:"A system call: in SVC mode"', say: "swi: the user's registers into cur_tf, then C" },
+      ],
+      important: [
+        { at: 'comment:"the vectors, copied to 0"', say: "eight ldr pc: their addresses after them", weight: 2 },
+        { at: 'def:copy', say: 'vectors_install: 64 bytes to address 0', weight: 1 },
+        { at: "comment:\"so the collector's view\"", say: "below OCaml's frames: the GC sees the stack whole", weight: 3 },
+        { at: 'comment:"to user mode, from the trap frame"', say: 'MOVW.S R14, R15: pc and CPSR at once', weight: 3 },
+        { at: 'comment:"the faults: named, the machine halted"', weight: 1 },
+      ],
+    },
+    'machine.c': { digest: '080974162e0b',
+      summary: "The machine as Main.ml sees it, over mini-ml's runtime: the UART, user mode entered, the trap to OCaml.",
+      capitals: [
+        { at: 'def:trap', say: "the C side of a swi: OCaml's registered trap" },
+      ],
+      important: [
+        { at: 'comment:"the trap frame, and where l.s finds it"', weight: 2 },
+        { at: 'def:user_enter', say: "the first entry: a frame of the user's pc and sp", weight: 3 },
+        { at: 'def:kfault', say: "a fault: said, then halt", weight: 1 },
+        { at: 'def:trap', weight: 3 },
+      ],
+      related: ['../machine.c'],
+    },
+    'user.s': { digest: '887b85d51cae',
+      summary: "The user program in Plan 9's assembly: write then exit, xv6 arm-pi1's way (swi 0x40, args on the stack).",
+      important: [
+        { at: 'code:"setR12"', say: "the kernel's static base: the image is one", weight: 2 },
+        { at: 'def:spin', say: 'exit never returns here', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'A system call, step 2 on the Pi 1',
+      bones: [
+        { at: 'machine.c:def:user_enter', role: 'user mode entered, from Main.ml' },
+        { at: 'user.s', role: 'the user program: swi 0x40' },
+        { at: 'l.s:comment:"A system call: in SVC mode"', role: 'svc_entry: registers into the trap frame' },
+        { at: 'machine.c:def:trap', role: "C, then OCaml's trap callback" },
+        { at: 'l.s:comment:"to user mode, from the trap frame"', role: 'user_return: back, r0 the result' },
+      ],
+      joints: [
+        { from: 'machine.c:def:user_enter', to: 'user.s', say: 'its pc and stack' },
+        { from: 'user.s', to: 'l.s:comment:"A system call: in SVC mode"', say: 'swi' },
+        { from: 'l.s:comment:"A system call: in SVC mode"', to: 'machine.c:def:trap', say: 'BL trap' },
+        { from: 'machine.c:def:trap', to: 'l.s:comment:"to user mode, from the trap frame"', say: 'returned' },
+      ],
+    },
+  ],
+}

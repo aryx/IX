@@ -1,0 +1,74 @@
+// kernels/steps/step2/pi4/: what the code map says of it (the code map
+// is tinybox codemap, in ~/github/ocaml-elm-playground). Built by
+// ../mkfile with O=7 (the default); the vectors are the image's first
+// bytes, step 0's l.s the start.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Step 2 on the Pi 4 (arm64): the vectors, a system call's entry and return, the Pi 1's trap frame as a view.",
+  files: {
+    'l.s': { digest: 'b9869b156d6e',
+      summary: 'The vector table as the image\'s first bytes, from_user saving x0-x30, user_return by ERET.',
+      capitals: [
+        { at: 'comment:"From user mode. The stack is"', say: "a system call: x0-x30 into the frame, then C" },
+      ],
+      important: [
+        { at: 'comment:"The assembler has no alignment"', say: 'why this file is linked first', weight: 3 },
+        { at: 'comment:"the image\'s entry"', say: 'the first vector is also the boot\'s jump', weight: 2 },
+        { at: 'comment:"to user mode, from the trap frame"', weight: 2 },
+        { at: 'comment:"the kernel\'s own fault"', weight: 1 },
+      ],
+    },
+    'machine.c': { digest: 'e77e7abf9301',
+      summary: "The Pi 1's 17-word trap frame as a view, filled from arm64's real one, so Main.ml is the same file.",
+      capitals: [
+        { at: 'def:trap', say: 'the view filled, OCaml called, r0 copied back' },
+      ],
+      important: [
+        { at: 'comment:"here that is a view, filled from the real frame"', say: 'one Main.ml for two boards', weight: 3 },
+        { at: 'def:user_enter', weight: 2 },
+        { at: 'def:kfault', say: "ESR's class and ELR said, then halt", weight: 1 },
+      ],
+      related: ['../pi1/machine.c'],
+    },
+    'user.s': { digest: '387daeb78544',
+      summary: "The user program for arm64, keeping xv6 arm-pi1's convention: the number first, args 32 bits on the stack.",
+      important: [
+        { at: 'def:spin', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'The vectors, in and out of user mode (arm64)',
+      bones: [
+        { at: 'l.s:comment:"The vectors: 16 entries of 128 bytes"', role: "the table, the image's first bytes" },
+        { at: "l.s:comment:\"the image's entry\"", role: "its first entry: the board's jump to _start" },
+        { at: 'l.s:comment:"From user mode. The stack is"', role: 'from_user: x0-x30 saved, C called' },
+        { at: 'l.s:comment:"to user mode, from the trap frame"', role: 'user_return: the frame back, ERET' },
+        { at: "l.s:comment:\"the kernel's own fault, or an exception\"", role: 'fault_entry: said, the end' },
+      ],
+      joints: [
+        { from: 'l.s:comment:"The vectors: 16 entries of 128 bytes"', to: "l.s:comment:\"the image's entry\"", say: 'reset' },
+        { from: 'l.s:comment:"The vectors: 16 entries of 128 bytes"', to: 'l.s:comment:"From user mode. The stack is"', say: '0x400: svc from EL0' },
+        { from: 'l.s:comment:"From user mode. The stack is"', to: 'l.s:comment:"to user mode, from the trap frame"', say: 'trap returned' },
+        { from: 'l.s:comment:"The vectors: 16 entries of 128 bytes"', to: "l.s:comment:\"the kernel's own fault, or an exception\"", say: '0x200 and the rest' },
+      ],
+    },
+    {
+      name: 'A system call, step 2 on the Pi 4',
+      bones: [
+        { at: 'machine.c:def:user_enter', role: 'user mode entered, from Main.ml' },
+        { at: 'user.s', role: 'the user program: svc' },
+        { at: 'l.s:comment:"From user mode. The stack is"', role: 'from_user: the real frame saved' },
+        { at: 'machine.c:def:trap', role: "the view filled, OCaml's trap called" },
+        { at: 'l.s:comment:"to user mode, from the trap frame"', role: 'user_return: ERET' },
+      ],
+      joints: [
+        { from: 'machine.c:def:user_enter', to: 'user.s', say: 'its pc and stack' },
+        { from: 'user.s', to: 'l.s:comment:"From user mode. The stack is"', say: 'svc' },
+        { from: 'l.s:comment:"From user mode. The stack is"', to: 'machine.c:def:trap', say: 'ESR' },
+        { from: 'machine.c:def:trap', to: 'l.s:comment:"to user mode, from the trap frame"', say: 'r0 back' },
+      ],
+    },
+  ],
+}

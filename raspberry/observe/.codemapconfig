@@ -1,0 +1,61 @@
+// raspberry/observe/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Watching the guest: QMP for the tests, -status samples, a profile, the window's meters.",
+  files: {
+    'Qmp.ml': { digest: '4ff731b11aaf',
+      summary: "QEMU's machine protocol, the part xv6's graphical tests use: send-key, input events, screendump.",
+      important: [
+        { at: 'def:execute', say: 'one JSON command', weight: 2 },
+      ],
+    },
+    'Status.mli': { digest: '22e426530ef1',
+      summary: "-status N: where the guest is every N seconds, to see where a boot blocks without a debugger.",
+      important: [
+        { at: 'comment:"A kernel stuck in a loop shows"', say: 'reading the line: loop, wait, wedged', weight: 2 },
+      ],
+    },
+    'Status.ml': { digest: '78cae206f652', summary: "Samples charged by instructions to the batch's last PC, named from the kernel's symbols." },
+    'Prof.mli': { digest: '3afe958f1839',
+      summary: "-prof FILE: every 1024th PC counted; found mini-9pi's time in __aeabi_idivmod.",
+    },
+    'Prof.ml': { digest: '2f0ea8b16a65', summary: 'A countdown, not a modulo: a decrement and a test per instruction.' },
+    'Monitor.mli': { digest: '76fedc72a1f8',
+      summary: "The window's meters: the CPU's busy share and the network's bytes, a strip and the title.",
+      important: [
+        { at: 'comment:"mini-qemu  cpu 43%"', say: 'the title line, as it reads', weight: 2 },
+        { at: 'comment:"the processor: a column a half"', say: 'the strip, drawn', weight: 3 },
+        { at: 'def:tick', say: 'a half second: a column', weight: 2 },
+      ],
+    },
+    'Monitor.ml': { digest: 'f0d687232c1c',
+      summary: 'Columns of samples kept, a rate of instructions, the strip painted as RGB565 rows.',
+      important: [
+        { at: 'def:sample', say: "Status's cpu: kernel or user", weight: 2 },
+        { at: 'def:tick', weight: 3 },
+        { at: 'def:line', weight: 1 },
+        { at: 'def:strip', say: 'the pixels under the screen', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'Four ways to see inside the guest',
+      bones: [
+        { at: 'Qmp.ml', role: "QMP: the tests' keys and screendumps" },
+        { at: 'Status.ml', role: '-status: where the guest is, by symbol' },
+        { at: 'Prof.ml', role: '-prof: samples by PC' },
+        { at: 'Monitor.ml', role: "the window's meters" },
+        { at: '../boards/', role: 'the board observed' },
+      ],
+      joints: [
+        { from: 'Qmp.ml', to: '../boards/', say: 'input, screendump' },
+        { from: 'Status.ml', to: '../boards/', say: 'the PC sampled' },
+        { from: 'Prof.ml', to: '../boards/', say: 'a tick' },
+        { from: 'Monitor.ml', to: 'Status.ml', say: 'cpu samples' },
+      ],
+    },
+  ],
+}

@@ -1,0 +1,89 @@
+// examples/gui4/: what the code map says of it
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Five of 7GUIs' tasks written four ways (immediate, callbacks, MVC, MVU): where the state lives.",
+  dirs: {
+    tests: { summary: 'Unit_gui4: fed one session, the four ways paint the same frames.' },
+  },
+  files: {
+    'Gui4.mli': {
+      summary: 'What the tasks share: the four architectures, and a runner stepping any of them a frame.',
+      digest: 'b0077cbbdc54',
+      capitals: [
+        { at: 'type:architecture', say: 'the four ways compared' },
+        { at: 'type:runner', say: 'a step per frame and a summary: what the tests compare' },
+      ],
+      important: [
+        { at: 'def:immediate', say: 'no widget kept: the frame redrawn from code', weight: 2 },
+        { at: 'def:retained', say: 'widgets kept, handlers called', weight: 2 },
+      ],
+    },
+    'Gui4.ml': {
+      summary: 'The runners made: an immediate frame, or retained widgets handling the input then painting.',
+      digest: '8023c801851c',
+    },
+    'Gui4Counter.mli': { summary: 'Counter, four ways: where the count lives, twice with callbacks.', digest: 'f536c222d1ce' },
+    'Gui4Counter.ml': { summary: 'The counter in each way: a label and a button.', digest: '51319a4f6c47' },
+    'Gui4Temperature.mli': { summary: 'Temperature Converter, four ways: two fields, each writing the other.', digest: '004814b118fa' },
+    'Gui4Temperature.ml': { summary: 'The converter in each way: one model, each field its half.', digest: 'f13ed1b8778d' },
+    'Gui4Flight.mli': { summary: 'Flight Booker, four ways: Book on only when the dates make sense.', digest: 'ceca43c3c74a' },
+    'Gui4Flight.ml': {
+      summary: 'The booker in each way: the rule written once, or recalled in every callback.',
+      digest: 'f76792cac68e',
+      important: [{ at: 'def:bookable', say: 'the one check callbacks must all call', weight: 2 }],
+    },
+    'Gui4Timer.mli': { summary: "Timer, four ways: state plus time; where each way's tick goes.", digest: 'f3c1b370807f' },
+    'Gui4Timer.ml': { summary: 'The timer in each way: a bar, the seconds, a slider, Reset.', digest: 'd894769f462e' },
+    'Gui4Circles.mli': { summary: 'Circle Drawer, four ways: a canvas, a menu, a live dialog, undo by whole adjustment.', digest: '8d4cc23233b5' },
+    'Gui4Circles.ml': {
+      summary: "The circle drawer in each way: the rules shared, then each way's wiring of them.",
+      digest: '90e3aa1611a0',
+      capitals: [{ at: 'def:make', say: 'one task, four wirings: the match on the way' }],
+      important: [
+        { at: 'type:model', say: 'circles, the hovered, the menu, the dialog, the history', weight: 3 },
+        { at: 'def:close', say: 'a whole adjustment one undo step', weight: 3 },
+        { at: 'def:on_canvas', say: 'a click: add, or open the menu', weight: 2 },
+        { at: 'comment:"immediate: the menu first"', say: 'the order of asking is the logic', weight: 2 },
+        { at: 'code:"| Callbacks ->"', say: 'every callback must repaint by hand', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.parts('Five tasks, four ways, one runner', [
+      ['Gui4.ml', 'the four ways and the runner'],
+      ['Gui4Counter.ml', 'a count'],
+      ['Gui4Temperature.ml', 'a two-way dependency'],
+      ['Gui4Flight.ml', 'a validation'],
+      ['Gui4Timer.ml', 'time passing'],
+      ['Gui4Circles.ml', 'a canvas, a dialog, undo'],
+      ['../GuiFourWays.ml', 'the four side by side'],
+    ], [
+      ['Gui4Counter.ml', 'Gui4.ml', 'a runner per way'],
+      ['Gui4Temperature.ml', 'Gui4.ml', 'a runner per way'],
+      ['Gui4Flight.ml', 'Gui4.ml', 'a runner per way'],
+      ['Gui4Timer.ml', 'Gui4.ml', 'a runner per way'],
+      ['Gui4Circles.ml', 'Gui4.ml', 'a runner per way'],
+      ['../GuiFourWays.ml', 'Gui4.ml', 'runs them'],
+    ]),
+    {
+      name: 'Circle Drawer: the rules once, the wiring four times',
+      bones: [
+        { at: 'Gui4Circles.ml:type:model', role: 'the state, whichever way holds it' },
+        { at: 'Gui4Circles.ml:def:on_canvas', role: 'a rule: a click on the canvas' },
+        { at: 'Gui4Circles.ml:def:close', role: 'a rule: the dialog closed, one undo step' },
+        { at: 'Gui4Circles.ml:def:drawing', role: 'the canvas drawn from the state' },
+        { at: 'Gui4Circles.ml:def:make', role: 'the four wirings of the rules' },
+        { at: 'Gui4.ml:type:runner', role: 'what each wiring becomes' },
+      ],
+      joints: [
+        { from: 'Gui4Circles.ml:def:make', to: 'Gui4Circles.ml:def:on_canvas', say: 'a click' },
+        { from: 'Gui4Circles.ml:def:make', to: 'Gui4Circles.ml:def:close', say: 'Close' },
+        { from: 'Gui4Circles.ml:def:on_canvas', to: 'Gui4Circles.ml:type:model', say: 'the next state' },
+        { from: 'Gui4Circles.ml:def:close', to: 'Gui4Circles.ml:type:model', say: 'the next state' },
+        { from: 'Gui4Circles.ml:type:model', to: 'Gui4Circles.ml:def:drawing', say: 'drawn' },
+        { from: 'Gui4Circles.ml:def:make', to: 'Gui4.ml:type:runner', say: 'a runner' },
+      ],
+    },
+  ],
+}

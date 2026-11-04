@@ -1,0 +1,102 @@
+// raspberry/usb/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "USB: the DWC2 host controller, QEMU's devices behind it, and user networking to host sockets.",
+  files: {
+    'Dwc2.mli': { digest: '95f0e1f047a3', summary: "The DWC2 USB host controller as QEMU's: the root port, control transfers by DMA, run whole." },
+    'Dwc2.ml': { digest: '04a708febfd7',
+      summary: "A host channel's transfer handed to the device tree, QEMU's quirks kept (no ACK, the packet count).",
+      important: [
+        { at: 'def:write_hprt', say: 'the port reset that enables a device', weight: 2 },
+        { at: 'def:transfer', say: 'a channel enabled: the whole transfer', weight: 3 },
+      ],
+    },
+    'Usb.mli': { digest: 'afe18b0b3378',
+      summary: "USB devices, QEMU's byte for byte: the hub, a boot keyboard and mouse, a network adapter.",
+      capitals: [
+        { at: 'type:device', say: 'a device on the bus: hub, keyboard, mouse, net' },
+      ],
+      important: [
+        { at: 'comment:"reads the keyboard there"', say: "keyboards read two ways: 9pi's and xv6's", weight: 2 },
+        { at: 'type:device', weight: 3 },
+        { at: 'def:setup', say: 'a control request', weight: 2 },
+        { at: 'def:key', weight: 1 },
+      ],
+    },
+    'Usb.ml': { digest: 'c0e5611d82f0',
+      summary: 'Descriptors, resets of the hub ports, control requests, HID reports of keys and motion.',
+      important: [
+        { at: 'def:device_descriptor', weight: 1 },
+        { at: 'def:hub', weight: 2 },
+        { at: 'def:request', say: 'the standard, hub and HID requests', weight: 3 },
+        { at: 'def:interrupt_in', say: 'endpoint 1: a report, or NAK', weight: 2 },
+      ],
+    },
+    'Usernet.mli': { digest: 'e7c03d37d55f', summary: "QEMU's user networking behind a usb-net: ARP, ping, TCP to the host's localhost." },
+    'Usernet.ml': { digest: '282e20eb7a1c',
+      summary: "Frames in, the guest's TCP relayed to a host socket in order; no retransmission: nothing is lost.",
+      important: [
+        { at: 'def:tcpin', say: "a guest's segment: SYN, data, FIN", weight: 3 },
+        { at: 'def:arp', weight: 1 },
+        { at: 'def:poll', say: "the host's data back to the guest", weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: "The DWC2 host: a channel's transfer handed to the USB tree",
+      bones: [
+        { at: 'Dwc2.ml:def:create', role: 'its registers, the root of the device tree, its interrupt line' },
+        { at: 'Dwc2.ml:def:write_reg', role: 'a register written: a channel enabled starts its transfer' },
+        { at: 'Dwc2.ml:def:transfer', role: "HCCHAR, HCTSIZ, DMA decoded; the device's answer, HCINT set" },
+        { at: 'Dwc2.ml:def:update', role: 'GINTSTS against the mask: the line' },
+        { at: 'Usb.ml:def:find', role: 'the device at an address' },
+        { at: 'Usb.ml:def:setup', role: 'the device side: a setup packet, data in, data out' },
+      ],
+      joints: [
+        { from: 'Dwc2.ml:def:write_reg', to: 'Dwc2.ml:def:transfer', say: 'HCCHAR.ENA' },
+        { from: 'Dwc2.ml:def:transfer', to: 'Usb.ml:def:find' },
+        { from: 'Dwc2.ml:def:transfer', to: 'Usb.ml:def:setup', say: 'or data_in, data_out' },
+        { from: 'Dwc2.ml:def:transfer', to: 'Dwc2.ml:def:update', say: 'XFERCOMPL, NAK, STALL' },
+      ],
+    },
+    {
+      name: 'USB devices: a hub, a keyboard, a mouse, a network adapter',
+      bones: [
+        { at: 'Usb.ml:type:device', role: 'a device: address, its kind, its endpoint 0 stage' },
+        { at: 'Usb.ml:def:hub', role: 'the hub QEMU adds, its ports' },
+        { at: 'Usb.ml:def:keyboard', role: 'a HID keyboard: its descriptors, its boot reports' },
+        { at: 'Usb.ml:def:request', role: 'a control request answered: descriptors, address, configuration, HID' },
+        { at: 'Usb.ml:def:setup', role: "the host controller's setup packet" },
+        { at: 'Usb.ml:def:data_in', role: 'IN: a control reply, a HID report, a frame' },
+        { at: 'Usb.ml:def:key', role: 'a key pressed or released, queued for the next report' },
+      ],
+      joints: [
+        { from: 'Usb.ml:def:hub', to: 'Usb.ml:type:device' },
+        { from: 'Usb.ml:def:keyboard', to: 'Usb.ml:type:device' },
+        { from: 'Usb.ml:def:setup', to: 'Usb.ml:def:request' },
+        { from: 'Usb.ml:def:key', to: 'Usb.ml:def:data_in', say: 'queued, read by the next report' },
+      ],
+    },
+    {
+      name: "User networking: the guest's TCP relayed to host sockets",
+      bones: [
+        { at: 'Usernet.ml:def:usb', role: 'a usb-net device and its network, joined' },
+        { at: 'Usernet.ml:def:input', role: 'a frame from the guest: ARP, ICMP or TCP' },
+        { at: 'Usernet.ml:def:tcpin', role: "a segment: a SYN connects a host socket, data written to it" },
+        { at: 'Usernet.ml:def:poll', role: "each loop: the host's data sent within the guest's window" },
+        { at: 'Usernet.ml:def:tcp', role: 'a segment built for the guest' },
+        { at: 'Usb.ml:def:net_input', role: 'a frame queued for the guest to read' },
+      ],
+      joints: [
+        { from: 'Usernet.ml:def:usb', to: 'Usernet.ml:def:input', say: "the device's output" },
+        { from: 'Usernet.ml:def:input', to: 'Usernet.ml:def:tcpin' },
+        { from: 'Usernet.ml:def:tcpin', to: 'Usernet.ml:def:tcp', say: 'SYN+ACK, ACK' },
+        { from: 'Usernet.ml:def:poll', to: 'Usernet.ml:def:tcp', say: 'data, FIN' },
+        { from: 'Usernet.ml:def:tcp', to: 'Usb.ml:def:net_input' },
+      ],
+    },
+  ],
+}

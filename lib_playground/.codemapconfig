@@ -1,0 +1,111 @@
+// lib_playground/: what the code map says of it (the code map's
+// guidelines: ~/github/ocaml-elm-playground's
+// docs/claude_notes/codemapconfig_guidelines.md)
+local skeletons = import '../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Elm's Playground in OCaml, after the author's playground: what ix's games and examples are written with.",
+  files: {
+    'Playground.mli': {
+      summary: "The API every program sees: shapes, colours, the computer, and picture, animation, game.",
+      digest: '66dc533c378c',
+      capitals: [
+        { at: 'def:game', say: 'a view, an update and a memory make an app' },
+        { at: 'type:computer', say: 'what a program is given each frame' },
+        { at: 'type:shape', say: 'what a view returns: shapes moved, turned, faded' },
+      ],
+      important: [
+        { at: 'comment:"Under the three is one type"', say: "Elm's architecture under the three steps", weight: 3 },
+        { at: 'def:picture', say: 'the simplest app: shapes, no time', weight: 2 },
+        { at: 'def:animation', say: 'shapes as a function of time', weight: 2 },
+        { at: 'type:keyboard', say: 'the keys held, the arrows', weight: 2 },
+        { at: 'type:app', say: "Elm's program: init, update, view, subscriptions", weight: 2 },
+        { at: 'type:flags', say: "the command line's key=value, for any program", weight: 1 },
+        { at: 'def:move', say: 'where a shape goes: the most used', weight: 1 },
+      ],
+    },
+    'Playground.ml': {
+      summary: "The API made: shapes as data, and picture, animation and game as apps over Elm's loop.",
+      digest: '129565ceae12',
+      capitals: [
+        { at: 'def:game_update', say: 'each event becomes the computer the update sees' },
+      ],
+      important: [
+        { at: 'comment:"ix: the author"', say: "the playground's file, less Http and any_app", weight: 2 },
+        { at: 'type:shape', say: 'a form, and where, turned, scaled, faded', weight: 3 },
+        { at: 'type:computer', say: 'the record every update and view gets', weight: 3 },
+        { at: 'def:game', say: 'the app: an init, an update fed the events, a view', weight: 3 },
+        { at: 'def:update_keyboard', say: 'a key named canonically, into the set held', weight: 2 },
+        { at: 'def:flags_of_strings', say: 'argv to flags: every platform calls it', weight: 1 },
+        { at: 'def:random_int', say: 'the seed kept in the model: same numbers everywhere', weight: 1 },
+      ],
+      links: [
+        { from: 'def:game', to: 'def:game_update' },
+        { from: 'def:game_update', to: 'def:update_keyboard' },
+      ],
+    },
+    'Playground_platform.mli': {
+      summary: "What runs a program: four platforms (ppm, sdl, software, draw), one interface; run_app takes ix's caps.",
+      digest: 'b84d12a62225',
+      capitals: [{ at: 'def:run_app', say: "an app run, given the flags and ix's capabilities" }],
+      important: [
+        { at: 'comment:"The four, by who makes the pixels"', say: 'one renderer behind three ways out, and the draw device', weight: 3 },
+        { at: 'def:flags', say: 'the command line, read inside main only', weight: 1 },
+      ],
+    },
+    'Audio_source.mli': {
+      summary: "Where a platform finds a program's sound, set by Audio when linked: silent programs skip lib_audio.",
+      digest: '3849b1e20071',
+      important: [
+        { at: 'def:source', say: 'None unless Audio is linked', weight: 3 },
+        { at: 'def:queue_ahead', say: 'frames ahead of the clock, not to starve', weight: 2 },
+      ],
+    },
+    'Audio_source.ml': {
+      summary: 'The sound source made: a reference, and samples to 16-bit bytes and a WAV.',
+      digest: 'ec362bc7ab3c',
+      important: [{ at: 'comment:"old: a function [put at x]"', say: 'a fifth of a game on the Pi went to it', weight: 2 }],
+    },
+  },
+  skeletons: [
+    skeletons.parts('The playground: one API, its libraries, four platforms', [
+      ['Playground.mli', 'the API every program calls: game, computer, shape'],
+      ['Playground_platform.mli', 'the one module left open: run_app'],
+      ['core/', "Elm's core: Basics, Color, Cmd, Sub, Time"],
+      ['platforms/', 'where an app runs: ppm, sdl, software, draw'],
+      ['apis/', 'the faces of the libraries: Audio, Physics, Gui...'],
+      ['layers/', 'camera, sprites, tile maps, scenes'],
+      ['ways/', "another way to program: HtDP's big-bang"],
+      ['Audio_source.mli', 'the sound, if a program has any'],
+    ], [
+      ['Playground.mli', 'core/', 'stands on'],
+      ['platforms/', 'Playground_platform.mli', 'implements'],
+      ['Playground.mli', 'Playground_platform.mli', 'run by'],
+      ['apis/', 'Playground.mli', 'built on'],
+      ['layers/', 'Playground.mli', 'built on'],
+      ['ways/', 'Playground.mli', 'build an app'],
+      ['apis/', 'Audio_source.mli', 'Audio sets it'],
+      ['platforms/', 'Audio_source.mli', 'plays it'],
+    ]),
+    {
+      name: 'The 2D API: shapes as data, a game as an app over one loop',
+      bones: [
+        { at: 'Playground.ml:type:shape', role: 'a form placed: x, y, angle, scale, alpha' },
+        { at: 'Playground.ml:type:computer', role: 'mouse, keyboard, screen, time, flags' },
+        { at: 'Playground.ml:type:app', role: "Elm's program: init, update, view, subscriptions" },
+        { at: 'Playground.ml:def:game', role: "a view and an update made an app" },
+        { at: 'Playground.ml:def:game_update', role: 'each message into the computer, a Tick into update' },
+        { at: 'Playground.ml:def:update_keyboard', role: 'a key named canonically, into the set held' },
+        { at: 'Playground.ml:def:picture', role: 'the simplest app: shapes that never change' },
+      ],
+      joints: [
+        { from: 'Playground.ml:def:game', to: 'Playground.ml:type:app', say: 'builds' },
+        { from: 'Playground.ml:def:game', to: 'Playground.ml:def:game_update', say: 'its update' },
+        { from: 'Playground.ml:def:game_update', to: 'Playground.ml:type:computer', say: 'a new computer' },
+        { from: 'Playground.ml:def:game_update', to: 'Playground.ml:def:update_keyboard', say: 'a key changed' },
+        { from: 'Playground.ml:def:picture', to: 'Playground.ml:type:app', say: 'builds' },
+        { from: 'Playground.ml:type:computer', to: 'Playground.ml:type:shape', say: "the program's view" },
+      ],
+    },
+  ],
+}

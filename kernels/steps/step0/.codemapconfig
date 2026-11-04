@@ -1,0 +1,79 @@
+// kernels/steps/step0/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+//
+// Not sources to the map: the mkfile (two images, -H0, at the board's
+// load address), expected-s and expected-c (the lines each prints).
+// The Pi 4's files here; pi1/ has the Pi 1's assembly.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: 'Step 0: the bare Pi by ix\'s own tools, before OCaml: a page of assembly, then C over goken\'s libc.',
+  files: {
+    'hello.s': { digest: '603a35430ff3',
+      summary: 'Assembly alone on the bare Pi 4: the first core writes a line to the PL011, then waits.',
+      important: [
+        { at: 'comment:"the first core only"', say: 'the board starts all four cores here', weight: 2 },
+        { at: 'def:full', say: "FR's bit 5: wait while the FIFO is full", weight: 3 },
+        { at: 'def:halt', weight: 1 },
+      ],
+    },
+    'l.s': { digest: '0aa973f492c0',
+      summary: "C's start on the bare Pi 4: down from EL3 or EL2 to EL1, the bss cleared, a stack, then main.",
+      capitals: [
+        { at: 'code:"_start"', say: 'the image\'s entry: the first core alone' },
+      ],
+      important: [
+        { at: 'comment:"Each piece is a leaf"', say: 'no stack yet: no call, ERET between pieces', weight: 3 },
+        { at: 'def:el3', say: 'EL3 to EL2: non-secure, AArch64 below', weight: 2 },
+        { at: 'def:at2', say: 'EL2 to EL1, the floating point not trapped', weight: 2 },
+        { at: 'comment:"the floating point: the runtime"', say: "CPACR: the runtime's doubles", weight: 2 },
+        { at: 'def:clear', say: 'the bss: the image has text and data only', weight: 1 },
+        { at: 'comment:"main(0, nil)"', say: 'main called, then halt', weight: 3 },
+      ],
+      related: ['../../lib_machine/pi4/start.s'],
+    },
+    'hello.c': { digest: 'a4bbe3f6b84c',
+      summary: 'The first C on the bare board, by mini-cc: a line formatted with a double, written, exits.',
+      capitals: [
+        { at: 'def:main', say: 'step 0\'s program: snprint, write, exits' },
+      ],
+      important: [
+        { at: 'def:BOARD', say: 'one source for the Pi 1 and the Pi 4', weight: 1 },
+        { at: 'code:"snprint"', say: 'a %.2f: the floating point is on', weight: 2 },
+      ],
+    },
+    'shim.c': { digest: '8f1890cd2808',
+      summary: "Linux in one function: the C library's _syscall6 answered, write to the PL011, exit halts.",
+      capitals: [
+        { at: 'def:_syscall6', say: 'the whole system: write and exit' },
+      ],
+      important: [
+        { at: 'comment:"reach the system through one function"', say: 'why goken\'s libc runs bare: one entry', weight: 3 },
+        { at: 'def:uart', weight: 1 },
+        { at: 'code:"return -38"', say: 'ENOSYS for every other call', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'Step 0: from the reset to a C line on the console',
+      bones: [
+        { at: 'l.s:code:"_start"', role: 'the first core; its exception level found' },
+        { at: 'l.s:def:el3', role: 'EL3 to EL2' },
+        { at: 'l.s:def:at2', role: 'EL2 to EL1' },
+        { at: 'l.s:def:clear', role: 'floating point on, the bss cleared, a stack' },
+        { at: 'hello.c:def:main', role: 'the C program' },
+        { at: 'shim.c:def:_syscall6', role: "the libc's one way to the system" },
+        { at: 'shim.c:def:uart', role: "a byte to the PL011" },
+      ],
+      joints: [
+        { from: 'l.s:code:"_start"', to: 'l.s:def:el3', say: 'at EL3' },
+        { from: 'l.s:def:el3', to: 'l.s:def:at2', say: 'ERET' },
+        { from: 'l.s:def:at2', to: 'l.s:def:clear', say: 'ERET to el1' },
+        { from: 'l.s:def:clear', to: 'hello.c:def:main', say: 'boot: main(0, nil)' },
+        { from: 'hello.c:def:main', to: 'shim.c:def:_syscall6', say: 'write(1, line, n)' },
+        { from: 'shim.c:def:_syscall6', to: 'shim.c:def:uart', say: 'each byte' },
+      ],
+    },
+  ],
+}

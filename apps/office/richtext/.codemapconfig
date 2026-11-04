@@ -1,0 +1,86 @@
+// apps/office/richtext/: what the code map says of it
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "A text with looks, after Bravo and Word: a piece table, runs of looks, and the page laid out.",
+  files: {
+    'Style.mli': {
+      summary: 'A look -- bold, italic, underline, strike, size -- a value with no identity: what makes runs.',
+      digest: '2eddefda0bb9',
+      capitals: [{ at: 'type:t', say: 'a look: equal looks share a run' }],
+    },
+    'Style.ml': {
+      summary: 'The look record, plain, and its toggles.',
+      digest: 'bcd23f9aa08a',
+    },
+    'Rich.mli': {
+      summary: "The characters in Text_edit's piece table, the looks a second table of runs beside it.",
+      digest: '8f248e9b3904',
+      capitals: [
+        { at: 'type:t', say: 'text and runs, edited together' },
+        { at: 'def:insert', say: 'typed at the caret, in its look' },
+        { at: 'def:restyle', say: 'a look over a range: runs split' },
+      ],
+      important: [
+        { at: 'comment:"Every edit is then surgery on two tables"', weight: 3 },
+        { at: 'def:typing_style', say: 'the look the next key gets' },
+      ],
+    },
+    'Rich.ml': {
+      summary: 'The run table split and merged on each edit, the caret and the selection, the looks.',
+      digest: '827ad486d652',
+      important: [
+        { at: 'def:split', say: 'a run cut at a position', weight: 3 },
+        { at: 'def:merge', say: 'neighbours alike joined again', weight: 3 },
+        { at: 'def:restyle' },
+        { at: 'def:typing_style', say: "the look before the caret" },
+        { at: 'def:insert' },
+      ],
+      links: [{ from: 'def:restyle', to: 'def:split' }, { from: 'def:restyle', to: 'def:merge' }],
+    },
+    'Page.mli': {
+      summary: 'A text laid out, and the way back: offset to caret, click to offset -- what WYSIWYG takes.',
+      digest: 'b6fc8e2360ea',
+      capitals: [
+        { at: 'def:layout', say: 'the text broken into lines' },
+        { at: 'def:offset_at', say: 'a click to a place in the text' },
+      ],
+      important: [
+        { at: 'comment:"caret_at     offset 12"', say: 'both directions, kept the same picture', weight: 3 },
+        { at: 'comment:"Lines are broken greedily"' },
+        { at: 'def:caret_at' },
+      ],
+    },
+    'Page.ml': {
+      summary: 'Characters to words to lines, greedily; lines round obstacles; and back from a point.',
+      digest: 'f680d5ad35ec',
+      important: [
+        { at: 'def:layout', say: 'cells, words, lines, aligned', weight: 3 },
+        { at: 'def:lines_of', say: 'greedy: a word that does not fit breaks', weight: 3 },
+        { at: 'def:lines_around', say: 'lines in the room objects leave', weight: 3 },
+        { at: 'def:words_of' },
+        { at: 'def:aligned' },
+        { at: 'def:offset_at' },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.calls('A text laid out', 'Page.ml:def:layout', 'the page of a rich text', [
+      ['Page.ml:def:words_of', 'characters into words', 'the cells'],
+      ['Page.ml:def:lines_of', 'words into lines, greedily', 'the words'],
+      ['Page.ml:def:lines_around', 'lines round the objects', 'the obstacles'],
+      ['Page.ml:def:aligned', 'each line placed', 'a line'],
+      ['Page.ml:def:offset_at', 'the way back: a click', 'the page'],
+    ]),
+    skeletons.parts('Rich text: looks, text, page', [
+      ['Style.ml', 'a look'],
+      ['Rich.ml', 'the text and its runs'],
+      ['Page.ml', 'the text laid out'],
+      ['../../../lib_gui/Text_edit.ml', 'the piece table under it'],
+    ], [
+      ['Rich.ml', 'Style.ml', 'runs of'],
+      ['Rich.ml', '../../../lib_gui/Text_edit.ml', 'characters in'],
+      ['Page.ml', 'Rich.ml', 'lays out'],
+    ]),
+  ],
+}

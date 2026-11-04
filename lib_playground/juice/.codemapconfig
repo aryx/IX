@@ -1,0 +1,61 @@
+// lib_playground/juice/: what the code map says of it
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "A game's feel, after the playground's libs/juice: easing, tweens, shake, particles, springs.",
+  files: {
+    'Ease.mli': {
+      summary: 'Easing curves: how a thing gets from here to there (Penner), as functions of [0, 1].',
+      digest: '87e0df83539f',
+      capitals: [{ at: 'type:t', say: 'a curve: progress in, progress out' }],
+      important: [{ at: 'def:out', say: 'a curve turned: fast first, then settling', weight: 2 }],
+    },
+    'Ease.ml': { summary: "Penner's curves made: quad, cubic, sine, back, elastic, bounce; in, out, in-out.", digest: '5536852d0b48' },
+    'Tween.mli': {
+      summary: 'A tween: a value from one number to another over a time, along a curve.',
+      digest: '97024207db45',
+      capitals: [{ at: 'def:value', say: 'where it is now, eased' }],
+      important: [{ at: 'def:lerp', say: 'the straight line every effect uses', weight: 2 }],
+    },
+    'Tween.ml': { summary: 'The tween made: a progress from the clock, eased, interpolated.', digest: 'c410126503f8' },
+    'Trauma.mli': {
+      summary: "Screen shake as trauma (Squirrel Eiserloh): added by hits, decaying, shaking by its square.",
+      digest: '0e0077c1fe8a',
+      important: [{ at: 'type:offset', say: 'how far the picture is knocked, and turned', weight: 2 }],
+    },
+    'Trauma.ml': { summary: 'The shake made: trauma squared, smooth noise per axis from a hash.', digest: 'aae0816c94d0' },
+    'Squash.mli': { summary: 'Squash and stretch: flattened on landing, the area kept.', digest: 'e6e58eb46b2f' },
+    'Squash.ml': { summary: 'The squash made: an elastic back to 1.', digest: 'f828295f7821' },
+    'Emitter.mli': {
+      summary: 'Particles: many small things, each born, moving and dying by itself, from a recipe.',
+      digest: 'c20c19374a4d',
+      important: [{ at: 'type:recipe', say: 'how a burst is made: counts, speeds, lives', weight: 2 }],
+    },
+    'Emitter.ml': { summary: 'The particles made: a burst born from a recipe, each stepped, the dead dropped.', digest: 'bfa3d9092ed7' },
+    'Follow.mli': { summary: 'A value after a moving target: a spring with a frequency and a damping.', digest: 'dd3f12052fe0' },
+    'Follow.ml': { summary: 'The spring made, and an exponential smoothing.', digest: 'dd7429e29f3b' },
+    'Hash.mli': { summary: 'Random numbers the same every time: a hash of a seed and an index.', digest: '09cd15b3e886' },
+    'Hash.ml': { summary: "The hash made, over floats and Int32 for the Pi's 31-bit ints.", digest: 'c1f2024bb6ac' },
+  },
+  skeletons: [
+    skeletons.parts('The juice: curves under effects, Juice above them', [
+      ['Ease.ml', 'the curves'],
+      ['Tween.ml', 'a value over time, along a curve'],
+      ['Trauma.ml', 'the shake'],
+      ['Squash.ml', 'squash and stretch'],
+      ['Emitter.ml', 'particles'],
+      ['Follow.ml', 'springs'],
+      ['Hash.ml', 'noise the same every time'],
+      ['../apis/Juice.ml', 'what a game calls: these, as one value'],
+    ], [
+      ['Tween.ml', 'Ease.ml', 'eased by'],
+      ['Squash.ml', 'Ease.ml', 'an elastic'],
+      ['Trauma.ml', 'Hash.ml', 'its noise'],
+      ['Emitter.ml', 'Hash.ml', 'its spread'],
+      ['../apis/Juice.ml', 'Tween.ml', 'uses'],
+      ['../apis/Juice.ml', 'Trauma.ml', 'uses'],
+      ['../apis/Juice.ml', 'Emitter.ml', 'uses'],
+      ['../apis/Juice.ml', 'Follow.ml', 'uses'],
+    ]),
+  ],
+}

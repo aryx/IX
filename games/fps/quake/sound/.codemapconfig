@@ -1,0 +1,35 @@
+// games/fps/quake/sound/: what the code map says of it
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Quake's sound (snd_dma.c) and music (cd_audio.c, played from .ogg) through lib_playground's Audio.",
+  files: {
+    'Sound.mli': {
+      summary: "What the player hears: a WAV loaded when first heard, placed by SND_Spatialize, or Audio3d.",
+      digest: '66d9bc325ed2',
+      capitals: [{ at: 'def:play', say: "the frame's sounds, from the ear" }],
+      important: [{ at: 'comment:"loudness = 1 - distance x attenuation"', say: "Quake's law of distance", weight: 2 }],
+    },
+    'Sound.ml': {
+      summary: 'Sounds loaded lazily, volume by distance and attenuation, pan by the right axis.',
+      digest: '5859375370e4',
+      important: [{ at: 'def:play', say: 'SND_Spatialize inside: loudness and pan', weight: 3 }, { at: 'def:clip_dist', say: 'silent past 1,000 units', weight: 1 }],
+    },
+    'Cdaudio.mli': { summary: "The level's music: the CD track worldspawn names, as music/trackNN.ogg.", digest: '59f1a8ad23bc' },
+    'Cdaudio.ml': { summary: "The track's file named, played by Audio.play_ogg.", digest: 'a9a0a18c3b2a' },
+  },
+  skeletons: [{
+    name: 'Sounds and music',
+    bones: [
+      { at: 'Sound.ml:def:play', role: "a frame's sounds" },
+      { at: 'Sound.ml:def:sound', role: 'a WAV, loaded once' },
+      { at: 'Sound.ml:def:clip_dist', role: 'how far a sound carries' },
+      { at: 'Cdaudio.ml:def:track', role: "the level's track" },
+      { at: 'Cdaudio.ml:def:play', role: 'the .ogg played' },
+    ],
+    joints: [
+      { from: 'Sound.ml:def:play', to: 'Sound.ml:def:sound', say: 'by name' },
+      { from: 'Sound.ml:def:play', to: 'Sound.ml:def:clip_dist', say: 'by distance' },
+      { from: 'Cdaudio.ml:def:track', to: 'Cdaudio.ml:def:play', say: 'its file' },
+    ],
+  }],
+}

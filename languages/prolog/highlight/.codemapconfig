@@ -1,0 +1,40 @@
+// languages/prolog/highlight/: what the code map says of it (the code map
+// is tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Prolog's and Datalog's text coloured for the editors: a clause's head is what it defines.",
+  files: {
+    'Highlight_prolog.mli': { digest: '34312ad0a2d9',
+      summary: "A Prolog file's tokens given Highlight_code's categories; a clause starts after a full stop.",
+      important: [
+        { at: 'comment:"A name that starts a clause is what the clause defines"', say: 'the head: a definition', weight: 3 },
+        { at: 'def:lines', weight: 2 },
+      ],
+    },
+    'Highlight_prolog.ml': { digest: '1a8785f521e8',
+      summary: 'The highlighter: variables by their capital, directives as module keywords, quoted atoms.',
+      important: [
+        { at: 'def:declarations', say: ':- dynamic, op: Keyword_module', weight: 1 },
+        { at: 'def:is_upper', say: 'a variable: a capital or _', weight: 1 },
+        { at: 'def:lines', say: 'spans per line, for the editor', weight: 3 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'A Prolog text coloured',
+      bones: [
+        { at: 'Highlight_prolog.ml:def:lines', role: 'the text to spans, line by line' },
+        { at: 'Highlight_prolog.ml:def:declarations', role: 'the directives' },
+        { at: '../../../lib_code/Highlight_code.ml', role: 'the categories every language shares' },
+        { at: '../../../editors/emacs/modes/Prolog_mode.ml', role: "the editor's Prolog mode" },
+      ],
+      joints: [
+        { from: 'Highlight_prolog.ml:def:declarations', to: 'Highlight_prolog.ml:def:lines', say: 'a word looked up' },
+        { from: '../../../lib_code/Highlight_code.ml', to: 'Highlight_prolog.ml:def:lines', say: 'the categories' },
+        { from: 'Highlight_prolog.ml:def:lines', to: '../../../editors/emacs/modes/Prolog_mode.ml', say: 'the spans drawn' },
+      ],
+    },
+  ],
+}

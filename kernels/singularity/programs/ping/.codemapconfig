@@ -1,0 +1,30 @@
+// kernels/singularity/programs/ping/: what the code map says of it (the
+// code map is tinybox codemap, in ~/github/ocaml-elm-playground).
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "A client of pong by the Pong contract, told where by an Intro message; a block sent is no longer its own.",
+  files: {
+    'Main.ml': { digest: '64fd2d12885a',
+      summary: "A client of pong by the Pong contract, told where by an Intro message; a block sent is no longer its own.",
+      capitals: [ { at: "code:\"let () =\"", say: "Pong's client: numbers, then a block given" } ],
+      important: [
+        { at: "code:\"Intro.Exp.receive\"", say: "the Pong endpoint arrives in a message", weight: 3 },
+        { at: "code:\"Sip.Not_held\"", say: "the block sent: no longer its handle", weight: 3 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: "ping: a channel received, then used",
+      bones: [
+        { at: "Main.ml:code:\"let () =\"", role: "Intro: the Pong endpoint received" },
+        { at: "../../contracts/Pong.ml:code:\"module Imp = struct\"", role: "the client end" },
+        { at: "../../lib/Sip.ml:def:send_block", role: "a block sent: its owner changes" },
+      ],
+      joints: [
+        { from: "Main.ml:code:\"let () =\"", to: "../../contracts/Pong.ml:code:\"module Imp = struct\"", say: "ping, text" },
+        { from: "../../contracts/Pong.ml:code:\"module Imp = struct\"", to: "../../lib/Sip.ml:def:send_block", say: "Text" },
+      ],
+    },
+  ],
+}

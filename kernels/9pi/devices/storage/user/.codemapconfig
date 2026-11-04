@@ -1,0 +1,7 @@
+// kernels/9pi/devices/storage/user/: what the code map says of it (the
+// code map is tinybox codemap, in ~/github/ocaml-elm-playground; its
+// guidelines: docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The storage's programs: what Plan 9 leaves out of the kernel, a disk's partition table read.",
+}

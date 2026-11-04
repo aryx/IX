@@ -2,6 +2,11 @@
 # gitignore-like file for Codemap (see https://github.com/aryx/codemap)
 
 _make/
+_mk/
+# build output, copies of the tree (kernels/9pi/build/self/src/), never tracked
+build/
+_build*/
+_cross/
 
 tests/
 *_tests/

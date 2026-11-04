@@ -1,0 +1,134 @@
+// machine/arm32/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The arm32 core of mini-5i and mini-qemu: A32 decoded once, executed, the Pi 1's MMU.",
+  files: {
+    'Arm32_isa.ml': { digest: '05fefa635571',
+      summary: "A32's instructions and the CPU's state as types, no .mli: the variant every word decodes to.",
+      capitals: [
+        { at: 'type:t', say: 'an instruction, decoded' },
+        { at: 'type:state', say: 'the CPU: registers, flags, modes, MMU hook' },
+      ],
+      important: [
+        { at: 'comment:"a word decoded once into"', say: 'a word, its variant, its text', weight: 3 },
+        { at: 'comment:"A word\'s class is in bits 27-25"', weight: 2 },
+        { at: 'type:t', weight: 3 },
+        { at: 'type:state', weight: 3 },
+      ],
+    },
+    'Arm32.mli': { digest: '7daf92b1933c',
+      summary: 'A32 for a reader new to ARM: a word, the barrel shifter, conditions; decode, execute, exceptions.',
+      capitals: [
+        { at: 'def:execute', say: 'one instruction run' },
+      ],
+      important: [
+        { at: 'comment:"Every instruction is 32 bits"', say: 'a data-processing word, bit by bit', weight: 3 },
+        { at: 'comment:"the barrel shifter"', say: 'a[i] in one instruction', weight: 2 },
+        { at: 'def:decode', weight: 2 },
+        { at: 'type:Abort', say: "the MMU's fault, taken by the board", weight: 1 },
+        { at: 'def:take', say: 'an exception: mode, lr, vector', weight: 2 },
+      ],
+    },
+    'Arm32.ml': { digest: 'd7eb7601f758',
+      summary: 'The decoder by bit fields and the executor: conditions, shifter, flags, modes, VFP.',
+      important: [
+        { at: 'section:Decoding', weight: 1 },
+        { at: 'def:decode', say: "the word's class in bits 27-25", weight: 3 },
+        { at: 'def:cond_passed', say: 'every instruction conditional', weight: 2 },
+        { at: 'def:shifted_value', say: 'the barrel shifter and its carry', weight: 2 },
+        { at: 'section:The privileged state: modes, banks, the CPSR, exceptions', weight: 1 },
+        { at: 'def:take', say: 'modes, banks, vectors', weight: 2 },
+        { at: 'def:execute', weight: 3 },
+        { at: 'comment:"a result into pc and the CPSR from the SPSR"', say: 'the return from an exception', weight: 1 },
+      ],
+      links: [
+        { from: 'def:execute', to: 'def:cond_passed' },
+        { from: 'def:execute', to: 'def:operand' },
+      ],
+    },
+    'Arm32_fast.mli': { digest: 'a204a3c216cf',
+      summary: "The commonest instructions again, allocating nothing: for the browser's collector; Arm32's the definition.",
+      important: [
+        { at: 'comment:"Compiled to"', say: "closures made per instruction: the GC's work in JS", weight: 3 },
+        { at: 'def:on', say: 'Board.run chooses', weight: 1 },
+      ],
+    },
+    'Arm32_fast.ml': { digest: '9693ff9b3b38',
+      summary: "Data processing, branches and block transfers with Arm32's local functions lifted out; else Arm32.",
+      important: [
+        { at: 'def:logical', say: "Arm32's closure, its captures as arguments", weight: 2 },
+        { at: 'def:dp', weight: 2 },
+        { at: 'def:execute', say: 'the fast cases, else Arm32.execute', weight: 3 },
+      ],
+    },
+    'Mmu32.mli': { digest: '3fc658bea3ae',
+      summary: "ARMv6's MMU, short descriptors: sections and pages, domains, a TLB before the walk (the Pi 1's).",
+      important: [
+        { at: 'comment:"the short descriptors"', say: 'what is modelled, what left out', weight: 3 },
+        { at: 'def:translate', weight: 2 },
+      ],
+    },
+    'Mmu32.ml': { digest: '17cf8cc7589f',
+      summary: 'A virtual address to a physical one: the TLB hit, else the two-level walk and the rights.',
+      important: [
+        { at: 'type:t', say: 'the CP15 registers and the TLB', weight: 2 },
+        { at: 'def:walk', say: 'first level, then second', weight: 3 },
+        { at: 'def:translate', say: 'hit, or walk, or Abort', weight: 3 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: "A32 as types: an instruction, the CPU",
+      bones: [
+        { at: 'Arm32_isa.ml:type:t', role: 'the variant: Dp, Mem, Block, Branch, VFP...' },
+        { at: 'Arm32_isa.ml:type:cond', role: 'the condition on every instruction' },
+        { at: 'Arm32_isa.ml:type:operand', role: 'operand 2: an immediate or a shifted register' },
+        { at: 'Arm32_isa.ml:type:state', role: 'registers, banks by mode, flags, VFP' },
+        { at: 'Arm32_isa.ml:type:exn_kind', role: 'the exceptions a state may take' },
+      ],
+      joints: [
+        { from: 'Arm32_isa.ml:type:t', to: 'Arm32_isa.ml:type:cond', say: 'each case' },
+        { from: 'Arm32_isa.ml:type:t', to: 'Arm32_isa.ml:type:operand', say: 'Dp' },
+        { from: 'Arm32_isa.ml:type:state', to: 'Arm32_isa.ml:type:exn_kind', say: 'taken' },
+      ],
+    },
+    {
+      name: 'An ARM instruction: decoded, executed',
+      bones: [
+        { at: 'Arm32_isa.ml:type:t', role: 'an instruction as a variant: data processing, loads, branches, VFP...' },
+        { at: 'Arm32.ml:def:decode', role: 'a word to an instruction, by its bit fields' },
+        { at: 'Arm32_isa.ml:type:state', role: 'the CPU: registers banked by mode, flags, CPSR, VFP' },
+        { at: 'Arm32.ml:def:execute', role: 'one instruction run: condition, shifter, flags' },
+        { at: 'Arm32.ml:def:cond_passed', role: 'the condition every instruction carries' },
+        { at: 'Arm32.ml:def:take', role: "an exception taken: the mode, the vector (a board's IRQ, SVC)" },
+        { at: 'Arm32_fast.ml:def:execute', role: 'the commonest cases, allocating nothing' },
+        { at: 'Mmu32.ml:def:translate', role: "the Pi 1's addresses, through the TLB" },
+      ],
+      joints: [
+        { from: 'Arm32.ml:def:decode', to: 'Arm32_isa.ml:type:t' },
+        { from: 'Arm32.ml:def:execute', to: 'Arm32.ml:def:cond_passed' },
+        { from: 'Arm32.ml:def:execute', to: 'Arm32_isa.ml:type:state', say: 'the next state' },
+        { from: 'Arm32.ml:def:take', to: 'Arm32_isa.ml:type:state', say: 'mode, SPSR, pc' },
+        { from: 'Arm32_fast.ml:def:execute', to: 'Arm32.ml:def:execute', say: 'the rest' },
+        { from: 'Arm32.ml:def:execute', to: 'Mmu32.ml:def:translate', say: 'a load or store, MMU on' },
+      ],
+    },
+    {
+      name: "The Pi 1's MMU: a TLB, then the walk",
+      bones: [
+        { at: 'Mmu32.ml:type:t', role: 'TTBR0/1, TTBCR, DACR, the TLB' },
+        { at: 'Mmu32.ml:def:translate', role: 'a hit, or a walk' },
+        { at: 'Mmu32.ml:def:walk', role: 'first-level entry, then second' },
+        { at: 'Mmu32.ml:type:Walk_fault', role: 'a fault: its status for the FSR' },
+      ],
+      joints: [
+        { from: 'Mmu32.ml:def:translate', to: 'Mmu32.ml:type:t', say: 'the TLB' },
+        { from: 'Mmu32.ml:def:translate', to: 'Mmu32.ml:def:walk', say: 'a miss' },
+        { from: 'Mmu32.ml:def:walk', to: 'Mmu32.ml:type:Walk_fault', say: 'no entry, no right' },
+      ],
+    },
+  ],
+}

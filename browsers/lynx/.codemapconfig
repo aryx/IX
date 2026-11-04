@@ -1,0 +1,34 @@
+// browsers/lynx/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-lynx: the web in a terminal after CERN's Line Mode Browser and Lynx, links numbered, a number typed.",
+  files: {
+    'Lynx.ml': { digest: '5f5b5ffbc80d',
+      summary: 'The shortest path through a browser: fetch, decode, tree, lines and links; no styles, scripts or forms.',
+      capitals: [{ at: 'def:main', say: "mini-lynx's entry: -dump, or the session" }],
+      important: [
+        { at: 'comment:"an address --Http_client--> bytes --Charset--> text"', say: 'the whole browser in three lines', weight: 3 },
+        { at: 'def:open_', say: 'a file or a host, then Line_mode', weight: 3 },
+        { at: 'comment:"its whole path: a link of the page is resolved against it"', say: "ix's fix over mini-chrome's", weight: 1 },
+        { at: 'def:step', say: 'q, b, a number, or an address', weight: 2 },
+        { at: 'def:show', weight: 1 },
+      ],
+    },
+  },
+  dirs: {
+    tests: { summary: 'session.sh: two pages served by mini-httpd, followed, back, a 404; against session.expected.' },
+  },
+  skeletons: [
+    skeletons.onefile('mini-lynx: a page, its links, a number typed', 'Lynx.ml', [
+      ['Lynx.ml:def:open_', 'a page fetched and printed as lines', 'the first address'],
+      ['../html/Line_mode.ml:def:render', "the tree as text, its links' numbers", 'the tree'],
+      ['Lynx.ml:def:show', 'the page on the terminal', 'lines and links'],
+      ['Lynx.ml:def:step', 'what is typed: a number, b, q', 'a line read'],
+    ]) + {
+      joints+: [{ from: 'Lynx.ml:def:step', to: 'Lynx.ml:def:open_', say: "a link's address" }],
+    },
+  ],
+}

@@ -1,0 +1,70 @@
+// networking/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The network's small programs, a file each: mini-curl, mini-httpd, mini-timesync; over lib_networking.",
+  files: {
+    'Curl.ml': { digest: 'cd4d52b520e8',
+      summary: "mini-curl after Stenberg's curl: the browser's network stack with no browser; -i -L -v -f -d -o --cacert.",
+      capitals: [{ at: 'def:main', say: "mini-curl's entry: a URL's bytes" }],
+      important: [
+        { at: 'comment:"Url           the string cut"', say: 'each layer a module to read', weight: 3 },
+        { at: 'def:options', weight: 1 },
+        { at: 'code:"let rec fetch"', say: 'its own redirections: ten, -v shown', weight: 2 },
+        { at: 'def:request_lines', say: "-v's > lines", weight: 1 },
+      ],
+    },
+    'Httpd.ml': { digest: '02ae0cc04bc4',
+      summary: "mini-httpd: a directory served to this machine, one client at a time, GET only; the tests' server.",
+      capitals: [{ at: 'def:main', say: "mini-httpd's entry: a port, a directory" }],
+      important: [
+        { at: 'comment:"connect ---------------------------> accept"', say: 'the conversation from the other end', weight: 3 },
+        { at: 'def:serve', say: 'one client at a time, forever', weight: 2 },
+        { at: 'def:read_request', weight: 2 },
+        { at: 'def:answer', say: 'nothing above the root served', weight: 3 },
+        { at: 'def:listing', weight: 1 },
+      ],
+    },
+    'Timesync.ml': { digest: 'ca6056f0e618',
+      summary: "mini-timesync: one SNTP question, the seconds since 1970 for a Pi's /dev/time; not Plan 9's aux/timesync.",
+      capitals: [{ at: 'def:main', say: 'one packet to port 123' }],
+      important: [
+        { at: 'def:since_1900', say: "NTP's epoch is 1900, Unix's 1970", weight: 2 },
+        { at: 'comment:"no delay measured"', say: 'a second is all a certificate needs', weight: 1 },
+      ],
+    },
+  },
+  dirs: {
+    tests: { summary: 'served.sh (mini-curl reads mini-httpd, 19 cases) and tls.sh (against openssl s_server).' },
+  },
+  skeletons: [
+    skeletons.onefile('mini-curl: a URL fetched, layer by layer', 'Curl.ml', [
+      ['Curl.ml:def:options', 'the flags', 'argv'],
+      ['../lib_networking/http/Http_client.ml:def:once', 'one request, over TCP or TLS', 'each hop'],
+      ['../lib_networking/http/Http.ml:def:parse_response', 'the answer read', 'its bytes'],
+    ]),
+    skeletons.onefile('mini-httpd: a request, a file, closed', 'Httpd.ml', [
+      ['Httpd.ml:def:listen', 'a socket on the port', 'the port'],
+      ['Httpd.ml:def:serve', 'accept, read, answer, close, again', 'the socket'],
+      ['Httpd.ml:def:read_request', 'until Http says it is whole', 'a connection'],
+      ['Httpd.ml:def:answer', 'a file, a listing or an error', 'the target'],
+    ]) + {
+      joints+: [{ from: 'Httpd.ml:def:answer', to: 'Httpd.ml:def:serve', say: 'the next client' }],
+    },
+    skeletons.onefile('mini-timesync: one SNTP packet', 'Timesync.ml', [
+      ['../lib_networking/tcp/Udp.ml:def:ask', 'a question to port 123', '48 bytes'],
+    ]),
+    skeletons.parts('Three programs over one library', [
+      ['Curl.ml', 'a client'],
+      ['Httpd.ml', 'a server'],
+      ['Timesync.ml', 'a clock'],
+      ['../lib_networking/', 'TCP, UDP, TLS, HTTP'],
+    ], [
+      ['Curl.ml', '../lib_networking/', 'Http_client'],
+      ['Httpd.ml', '../lib_networking/', 'Http'],
+      ['Timesync.ml', '../lib_networking/', 'Udp'],
+    ]),
+  ],
+}

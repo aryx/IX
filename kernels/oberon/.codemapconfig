@@ -1,0 +1,66 @@
+// kernels/oberon/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+//
+// Not sources to the map: the mkfile (the modules in their starting
+// order, OBERON; built by ix's own tools only), machine/ and tests/
+// (links to the other kernels' files), disk/ (Project Oberon's fonts
+// and System.Tool, our Welcome.Text), survey.sh.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-oberon: Wirth and Gutknecht's Project Oberon as one sees and uses it, in OCaml on the bare Pi.",
+  files: {
+    'Main.ml': { digest: '01876c2e9189',
+      summary: "The boot: the modules have started by their bodies; a text opened, the devices, then Oberon's loop.",
+      capitals: [
+        { at: 'code:"let () ="', say: "mini-oberon's main: a viewer, the devices, the loop" },
+      ],
+      important: [
+        { at: 'comment:"mini-oberon as a whole"', say: 'the screen: two tracks of tiled viewers', weight: 3 },
+        { at: 'def:devices', say: 'Input.poll: the tick, USB, the serial line', weight: 2 },
+        { at: 'code:"Input.poll := devices"', say: 'the loop asks; nothing is pushed', weight: 2 },
+        { at: 'code:"Oberon.loop ()"', say: 'never returns: the central loop', weight: 3 },
+      ],
+      related: ['README.md'],
+    },
+  },
+  skeletons: [
+    {
+      name: "mini-oberon: the book's layers, a directory a part",
+      bones: [
+        { at: 'files/', role: 'the disk in the image: a directory, riders' },
+        { at: 'display/', role: 'the frame, its five operations; tracks and viewers' },
+        { at: 'texts/', role: 'fonts, the piece table, a text frame, the editor' },
+        { at: 'system/', role: 'the central loop, the commands, the log' },
+        { at: 'apps/', role: "programs of others: frames, messages, tasks" },
+        { at: 'Main.ml', role: 'the boot, then the loop' },
+      ],
+      joints: [
+        { from: 'texts/', to: 'files/', say: 'a text is pieces of files' },
+        { from: 'texts/', to: 'display/', say: 'draws with' },
+        { from: 'system/', to: 'display/', say: 'sends messages to viewers' },
+        { from: 'system/', to: 'texts/', say: 'the log, the parameter' },
+        { from: 'apps/', to: 'system/', say: 'commands, tasks' },
+        { from: 'Main.ml', to: 'system/', say: 'Oberon.loop' },
+      ],
+    },
+    {
+      name: 'A click on M.P: the loop, a viewer, a command',
+      bones: [
+        { at: 'Main.ml:code:"Oberon.loop ()"', role: 'the boot hands over' },
+        { at: 'system/Oberon.ml:def:loop', role: 'the mouse and keys asked, a message sent' },
+        { at: 'display/MenuViewers.ml:def:handle', role: 'the viewer: menu or main frame' },
+        { at: 'texts/TextFrames.ml:def:edit', role: "the text frame: the middle key's word" },
+        { at: 'texts/TextFrames.ml:def:call', role: 'M.P read under the mouse, par set' },
+        { at: 'system/Oberon.ml:def:call', role: 'the command found and run, a TRAP logged' },
+      ],
+      joints: [
+        { from: 'Main.ml:code:"Oberon.loop ()"', to: 'system/Oberon.ml:def:loop' },
+        { from: 'system/Oberon.ml:def:loop', to: 'display/MenuViewers.ml:def:handle', say: 'Track (keys, x, y)' },
+        { from: 'display/MenuViewers.ml:def:handle', to: 'texts/TextFrames.ml:def:edit', say: 'to its main frame' },
+        { from: 'texts/TextFrames.ml:def:edit', to: 'texts/TextFrames.ml:def:call', say: 'the middle key' },
+        { from: 'texts/TextFrames.ml:def:call', to: 'system/Oberon.ml:def:call', say: 'the name' },
+      ],
+    },
+  ],
+}

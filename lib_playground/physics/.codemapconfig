@@ -1,0 +1,115 @@
+// lib_playground/physics/: what the code map says of it
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "A 2D physics engine after the playground's libs/physics/2d: integrate, collide, resolve, stack.",
+  files: {
+    'Body.mli': {
+      summary: "A body's state: where, how fast, how heavy, its angle and spin; what every step changes.",
+      digest: '56acf3be6f22',
+      capitals: [{ at: 'type:t', say: 'the state every part of the engine reads' }],
+    },
+    'Body.ml': { summary: 'The body made, and the velocity of one of its points.', digest: '2b5dad95c932' },
+    'Shape.mli': {
+      summary: "Hitboxes: a body's shape for collisions, placed at its position and angle.",
+      digest: 'aca2c0b6e3df',
+      important: [{ at: 'type:placed', say: 'what Collide tests: corners in the world', weight: 2 }],
+    },
+    'Shape.ml': { summary: 'Hitboxes made: corners turned and moved, area and moment of inertia.', digest: 'fea6de7066ff' },
+    'Force.mli': { summary: 'What pushes and pulls, as the acceleration it gives: gravity, drag, springs.', digest: '6982f156a42e' },
+    'Force.ml': { summary: 'The forces made, summed.', digest: '1329344467a5' },
+    'Integrate.mli': {
+      summary: 'One time step, four ways: explicit and semi-implicit Euler, Verlet, RK4.',
+      digest: '53d01448dcfe',
+      important: [{ at: 'type:method_', say: 'the four integrators, side by side', weight: 2 }],
+    },
+    'Integrate.ml': {
+      summary: 'The integrators made over a vector of state.',
+      digest: '5b27b5c13092',
+      important: [{ at: 'def:semi_implicit_euler', say: 'velocity first: what games use', weight: 2 }],
+    },
+    'Broadphase.mli': { summary: 'The broad phase: which pairs are worth testing, by all pairs, a grid, or sort and sweep.', digest: '81f6db68a538' },
+    'Broadphase.ml': { summary: 'The three broad phases made, and how many tests each saved.', digest: 'a90cba0d5e99' },
+    'Collide.mli': {
+      summary: 'The narrow phase: do two placed hitboxes touch, and how (SAT, circles, a manifold).',
+      digest: '0dcd2d11217d',
+      capitals: [{ at: 'def:contact', say: 'two hitboxes: the contact, if they touch' }],
+    },
+    'Collide.ml': {
+      summary: "Collisions made: circles, the separating axis theorem, a polygon's clipped manifold.",
+      digest: '15a40a6163ea',
+      important: [
+        { at: 'def:sat', say: 'the shallowest axis is the normal', weight: 3 },
+        { at: 'def:circle_convex', say: "a circle against a box: Cameltry's moon", weight: 2 },
+        { at: 'def:manifold', say: 'two points of contact: what makes stacks rest', weight: 3 },
+        { at: 'def:segment_polygon', say: 'a ray against a box', weight: 1 },
+      ],
+    },
+    'Contact.mli': { summary: 'A contact: where two hitboxes touch, the normal, how deep.', digest: '7a46d17090b3' },
+    'Contact.ml': { summary: 'The contact record.', digest: '62f160adb07a' },
+    'Resolve.mli': { summary: 'Collision response: an impulse along the normal, friction, the overlap pushed apart.', digest: 'a5b169839448' },
+    'Resolve.ml': {
+      summary: 'The response made: impulses with rotation, the bodies separated.',
+      digest: 'a93390f104a7',
+      important: [{ at: 'def:apply', say: 'an impulse at a point: it spins the body too', weight: 2 }],
+    },
+    'Joint2d.mli': { summary: 'Joints: pin, rod, rope, pulley; each a row of the solver.', digest: '11c9de0725c4' },
+    'Joint2d.ml': {
+      summary: 'Joints made: anchors in each body, a row of constraint, solved by impulses.',
+      digest: 'd9535035f55b',
+      important: [{ at: 'def:solve_row', say: 'a constraint as an impulse, clamped', weight: 2 }],
+    },
+    'Solver.mli': { summary: "Stacking: all a step's contacts solved together, iterated, warm-started.", digest: '5f50ab7ad0e6' },
+    'Solver.ml': {
+      summary: 'The solver made: sequential impulses, the last step remembered.',
+      digest: '395b4d94eb02',
+      important: [
+        { at: 'def:solve', say: 'iterations over every contact and joint', weight: 3 },
+        { at: 'type:memory', say: "warm starting: last step's impulses", weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.parts('A physics step: move, find, answer', [
+      ['Body.ml', 'the state'],
+      ['Force.ml', 'what pushes'],
+      ['Integrate.ml', 'a step in time'],
+      ['Shape.ml', 'hitboxes placed'],
+      ['Broadphase.ml', 'which pairs'],
+      ['Collide.ml', 'do they touch, where'],
+      ['Contact.ml', 'a contact'],
+      ['Resolve.ml', 'one contact answered'],
+      ['Joint2d.ml', 'bodies held together'],
+      ['Solver.ml', 'all contacts answered together'],
+      ['../apis/Physics.ml', 'what a game calls: step_world'],
+    ], [
+      ['../apis/Physics.ml', 'Integrate.ml', '1. move'],
+      ['Integrate.ml', 'Force.ml', 'accelerations'],
+      ['Integrate.ml', 'Body.ml', 'the next state'],
+      ['../apis/Physics.ml', 'Broadphase.ml', '2. pairs'],
+      ['Broadphase.ml', 'Collide.ml', 'tested'],
+      ['Collide.ml', 'Shape.ml', 'placed corners'],
+      ['Collide.ml', 'Contact.ml', 'found'],
+      ['../apis/Physics.ml', 'Solver.ml', '3. answered'],
+      ['Solver.ml', 'Resolve.ml', 'each contact'],
+      ['Solver.ml', 'Joint2d.ml', 'each joint'],
+    ]),
+    {
+      name: 'Collide: two hitboxes, a contact',
+      bones: [
+        { at: 'Collide.ml:def:touching', role: 'yes or no, cheap' },
+        { at: 'Collide.ml:def:contact', role: 'the contact: by shapes, the right test' },
+        { at: 'Collide.ml:def:circles', role: 'two circles' },
+        { at: 'Collide.ml:def:circle_convex', role: 'a circle and a polygon' },
+        { at: 'Collide.ml:def:sat', role: 'two polygons: the separating axis' },
+        { at: 'Collide.ml:def:manifold', role: 'the points of contact, for stacks' },
+      ],
+      joints: [
+        { from: 'Collide.ml:def:contact', to: 'Collide.ml:def:circles', say: 'circle, circle' },
+        { from: 'Collide.ml:def:contact', to: 'Collide.ml:def:circle_convex', say: 'circle, box' },
+        { from: 'Collide.ml:def:contact', to: 'Collide.ml:def:sat', say: 'box, box' },
+        { from: 'Collide.ml:def:manifold', to: 'Collide.ml:def:contact', say: 'the normal' },
+      ],
+    },
+  ],
+}

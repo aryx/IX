@@ -1,0 +1,24 @@
+// kernels/singularity/programs/nothing/: what the code map says of it (the
+// code map is tinybox codemap, in ~/github/ocaml-elm-playground).
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "A process that ends at once: what making one costs, for programs/bench.",
+  files: {
+    'Main.ml': { digest: 'd2f454f34ea8',
+      summary: "A process that ends at once: what making one costs, for programs/bench.",
+      capitals: [ { at: "code:\"let () =\"", say: "exit 0, and nothing else" } ],
+    },
+  },
+  skeletons: [
+    {
+      name: "nothing: the cheapest process",
+      bones: [
+        { at: "Main.ml:code:\"let () =\"", role: "exit 0" },
+        { at: "../bench/Main.ml:def:measure", role: "bench times its making" },
+      ],
+      joints: [
+        { from: "../bench/Main.ml:def:measure", to: "Main.ml:code:\"let () =\"", say: "create, start, join" },
+      ],
+    },
+  ],
+}

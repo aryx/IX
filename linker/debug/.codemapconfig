@@ -1,0 +1,67 @@
+// linker/debug/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). README.md says
+// what of -g lives elsewhere (Program, Link, CLI, Exe, Asm).
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-ld -g: Plan 9's symbol and pc/line tables, 5l's bytes, for mini-acid and mini-nm.",
+  files: {
+    'Debug_link.mli': { digest: 'dfc5d8bc9fb4',
+      summary: "What the linker keeps of each object for a debugger: history, params and locals, acid text.",
+      important: [
+        { at: 'comment:"an object\'s history  -> File symbols"', say: 'the three inputs, and where each goes', weight: 3 },
+        { at: 'def:acid_data', say: "decision 14: declarations as data", weight: 1 },
+      ],
+    },
+    'Debug_link.ml': { digest: '394db228d5b9',
+      summary: "5l's addhist, inopd and histtoauto: an object's paths and frames turned into autos.",
+      important: [
+        { at: 'def:history', say: 'paths as File symbol numbers', weight: 2 },
+        { at: 'def:autos', say: 'n+4(FP), n-8(SP): params and locals', weight: 2 },
+        { at: 'def:acid_data', weight: 1 },
+      ],
+    },
+    'Symtab.mli': { digest: 'dcea61683c50',
+      summary: "Plan 9's two tables after an a.out's data: which function, which line an address is.",
+      capitals: [
+        { at: 'def:symbols', say: "5l's asmsym: the symbol table's bytes" },
+        { at: 'def:lines', say: "5l's asmlc: the pc/line table" },
+      ],
+      important: [
+        { at: 'comment:"T 00001078 etext"', say: 'a table drawn, entry by entry', weight: 3 },
+        { at: 'comment:"1 .. 64      the line goes up by it"', say: 'a byte per line change, mostly', weight: 3 },
+        { at: 'comment:"Two tables for two questions"', say: "Go's pclntab grew from these", weight: 2 },
+      ],
+    },
+    'Symtab.ml': { digest: '1e1013d64649',
+      summary: "The tables written: entries in 5l's hash order, the pc/line deltas, and ELF's symbols.",
+      important: [
+        { at: 'def:symbols', weight: 3 },
+        { at: 'def:put_hist', say: "a z entry: a path as its numbers", weight: 1 },
+        { at: 'def:lines', weight: 3 },
+        { at: 'def:minlc', say: "5l's MINLC: 4 bytes an instruction", weight: 1 },
+        { at: 'def:elf_symbols', say: 'the same names for an ELF -g', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    { name: "-g: an object's history to Plan 9's tables",
+      bones: [
+        { at: '../Link.ml:def:add_object', role: 'an object read' },
+        { at: 'Debug_link.ml:def:history', role: 'its paths: File symbols' },
+        { at: 'Debug_link.ml:def:autos', role: "a function's params, locals, history" },
+        { at: 'Symtab.ml:def:symbols', role: 'the symbol table: names, frames, autos' },
+        { at: 'Symtab.ml:def:lines', role: 'the pc/line table' },
+        { at: '../Exe.ml:def:write', role: 'after the data, sizes in the header' },
+      ],
+      joints: [
+        { from: '../Link.ml:def:add_object', to: 'Debug_link.ml:def:history', say: "the object's history" },
+        { from: 'Debug_link.ml:def:history', to: 'Debug_link.ml:def:autos', say: 'Hist autos' },
+        { from: 'Debug_link.ml:def:autos', to: 'Symtab.ml:def:symbols', say: 'each TEXT\'s autos' },
+        { from: '../Link.ml:def:add_object', to: 'Symtab.ml:def:lines', say: "each prog's line" },
+        { from: 'Symtab.ml:def:symbols', to: '../Exe.ml:def:write', say: 'syms' },
+        { from: 'Symtab.ml:def:lines', to: '../Exe.ml:def:write', say: 'lines' },
+      ],
+    },
+  ],
+}

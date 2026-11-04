@@ -1,0 +1,62 @@
+// typesetting/troff/pic/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+// (Pic_parser.mly, pic's grammar for menhir/ocamlyacc, is no source the
+// map demands; its rule picture is a bone below)
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Kernighan's pic (1981): boxes, arrows and labels placed relative to each other, drawn as Doc marks.",
+  files: {
+    'Pic.mli': { digest: 'b6f3ca2b37ed',
+      summary: 'A picture between .PS and .PE read and drawn: the part of pic that draws.',
+      capitals: [{ at: 'def:read', say: "a picture's text to a Doc picture" }],
+      important: [{ at: 'comment:"arrow from B.s down 0.3"', say: 'placed by the corners of others', weight: 3 }],
+    },
+    'Pic.ml': { digest: '7e0042448d48',
+      summary: 'Statements run in an environment: the current point and direction, labels, objects and their corners.',
+      important: [
+        { at: 'type:env', say: 'where the pen is, which way, what is named', weight: 3 },
+        { at: 'def:corner_of', say: 'B.s, A.ne: the eight corners and centre', weight: 2 },
+        { at: 'def:statement', say: 'a box, a line, an arrow placed and drawn', weight: 3 },
+        { at: 'def:curve', say: 'spline through the points', weight: 1 },
+        { at: 'def:read', weight: 2 },
+      ],
+    },
+    'Pic_ast.ml': { digest: '0c04e759be29',
+      summary: "pic's grammar as types: places, positions, expressions, attributes, statements.",
+      important: [{ at: 'type:statement', weight: 2 }, { at: 'type:attr', weight: 2 }],
+    },
+    'Pic_lexer.mli': { digest: '15a8b9c34f96',
+      summary: "A picture's text as the grammar's tokens, its macros done: text put for text, $1 to $9.",
+      important: [{ at: 'comment:"define pair"', weight: 2 }],
+    },
+    'Pic_lexer.ml': { digest: '6df8c6d95cea',
+      summary: 'Words, numbers, strings and corners tokenized; define and copy expanded first.',
+      important: [
+        { at: 'def:with_arguments', say: '$n replaced, a macro is text', weight: 2 },
+        { at: 'def:tokens', weight: 3 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.chain('A picture drawn', [
+      ['Pic.ml:def:read', 'the entry', ''],
+      ['Pic_lexer.ml:def:tokens', 'macros expanded, words', 'the text'],
+      ['Pic_parser.mly:def:picture', 'the grammar', 'the tokens'],
+      ['Pic.ml:def:statement', 'each statement run', 'the statements'],
+      ['Pic.ml:def:add', 'an object placed and named', 'a shape'],
+    ]) + {
+      bones+: [{ at: 'Pic.ml:type:env', role: 'the drawing state' }],
+      joints+: [{ from: 'Pic.ml:def:statement', to: 'Pic.ml:type:env', say: 'the point moves on' }],
+    },
+    skeletons.module('Pic_lexer.ml', 'Words, macros done', [
+      ['tokens', 'the text to tokens', ''],
+      ['arguments', 'a call: (a, b)', 'a defined name'],
+      ['with_arguments', '$1 to $9 replaced, read again', 'its body'],
+    ]) + {
+      bones+: [{ at: 'Pic_lexer.ml:def:word', role: 'a keyword, a corner or a name' }],
+      joints+: [{ from: 'Pic_lexer.ml:def:tokens', to: 'Pic_lexer.ml:def:word', say: 'each word' }],
+    },
+  ],
+}

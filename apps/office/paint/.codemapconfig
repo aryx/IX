@@ -1,0 +1,86 @@
+// apps/office/paint/: what the code map says of it
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "A picture as bits, after MacPaint (1984): QuickDraw's packed rows, patterns, tools, the bucket.",
+  files: {
+    'Bitmap.mli': {
+      summary: "A grid of bits packed eight a byte, as QuickDraw laid them; changed in place only when fresh.",
+      digest: 'd684144e1418',
+      capitals: [
+        { at: 'type:t', say: 'packed rows of dots' },
+        { at: 'def:change', say: 'a copy changed in place, then frozen' },
+      ],
+      important: [
+        { at: 'comment:"Packing is what made a full-screen picture fit"', weight: 3 },
+        { at: 'def:get' },
+        { at: 'def:to_string', say: 'rows saved with PackBits' },
+      ],
+    },
+    'Bitmap.ml': {
+      summary: "The bits, their byte and mask, a copy changed, and the rows saved with MacPaint's PackBits.",
+      digest: '4836b922f67b',
+      important: [
+        { at: 'def:mask', say: 'the leftmost dot in the high bit', weight: 3 },
+        { at: 'def:change', say: 'the rule of Bytes and String', weight: 3 },
+        { at: 'def:to_string', say: 'PackBits, row by row' },
+        { at: 'def:of_string' },
+      ],
+    },
+    'Pattern.mli': {
+      summary: 'An 8 by 8 tile from the picture origin, so areas painted apart join without a seam.',
+      digest: 'a017342b4d56',
+      capitals: [{ at: 'type:t', say: '8 bytes, a row each' }],
+      important: [{ at: 'comment:"The tiles are laid from the picture"', say: 'why a pattern is not an image', weight: 3 }, { at: 'def:palette' }],
+    },
+    'Pattern.ml': {
+      summary: 'Patterns as 8 bytes, and the palette: black, white, greys, bricks.',
+      digest: '06504bdeeb7c',
+      important: [{ at: 'def:make', weight: 3 }, { at: 'def:palette' }],
+    },
+    'Paint.mli': {
+      summary: "MacPaint's tools, everything through one dot in a pattern: the tool picks dots, the pattern colours.",
+      digest: 'ea0ea3fc1561',
+      capitals: [{ at: 'def:stroke', say: 'pencil, brush, eraser: a drag' }],
+      important: [{ at: 'comment:"One [dot], and everything through it"', weight: 3 }, { at: 'def:dot' }],
+    },
+    'Paint.ml': {
+      summary: 'A dot in a pattern, Bresenham-like lines of brushes, rectangles and ovals of dots.',
+      digest: '09a7948ac64e',
+      important: [
+        { at: 'def:dot', say: "the pattern's dot at x mod 8, y mod 8", weight: 3 },
+        { at: 'def:line_dots', say: 'the dots between two mouse points', weight: 3 },
+        { at: 'def:stroke' },
+        { at: 'def:oval_dots' },
+      ],
+      links: [{ from: 'def:stroke', to: 'def:line_dots' }],
+    },
+    'Seed_fill.mli': {
+      summary: "The paint bucket: find the area as a mask first, then paint -- Smith's span fill (1979).",
+      digest: '8f1c236cdf66',
+      capitals: [{ at: 'def:fill', say: 'pour a pattern into an area' }],
+      important: [{ at: 'comment:"the order is the lesson"', say: 'painting as you go never ends', weight: 3 }, { at: 'def:area' }],
+    },
+    'Seed_fill.ml': {
+      summary: 'The area as a mask, a span at a time from a stack of seeds, then the pattern through it.',
+      digest: 'dc824922fc2d',
+      important: [
+        { at: 'def:area', say: 'spans, and one seed per run above and below', weight: 3 },
+        { at: 'def:fill', weight: 3 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.parts('Paint: tools through one dot', [
+      ['Bitmap.ml', 'the dots'],
+      ['Pattern.ml', 'what colour a dot gets'],
+      ['Paint.ml', 'which dots a tool sets'],
+      ['Seed_fill.ml', 'the bucket: an area, then paint'],
+    ], [
+      ['Paint.ml', 'Bitmap.ml', 'sets dots'],
+      ['Paint.ml', 'Pattern.ml', 'in a pattern'],
+      ['Seed_fill.ml', 'Paint.ml', 'a dot through the mask'],
+      ['Seed_fill.ml', 'Bitmap.ml', 'reads, masks'],
+    ]),
+  ],
+}

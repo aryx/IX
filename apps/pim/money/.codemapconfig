@@ -1,0 +1,78 @@
+// apps/pim/money/: what the code map says of it
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The money, after Quicken: cents not floats, a checkbook's register, reconciling, QIF files.",
+  files: {
+    'Money.ml': {
+      summary: "Amounts as whole cents, parsed and printed, and in words as a check writes them.",
+      digest: '959a33156b59',
+      important: [
+        { at: 'def:of_string', say: 'a third decimal refused, not rounded', weight: 3 },
+        { at: 'def:in_words', say: 'One hundred twenty-three and 45/100' },
+      ],
+    },
+    'Money.mli': {
+      summary: 'Money in cents, never floats: 0.1 +. 0.2 is not 0.3, and the cent will be found.',
+      digest: 'a1914ae0b7b5',
+      capitals: [
+        { at: 'type:cents', say: 'an int: addition exact' },
+        { at: 'def:to_string', say: '123456 -> 1,234.56' },
+      ],
+      important: [{ at: 'comment:"a float"', say: 'why cents: the first thing to know', weight: 3 }],
+    },
+    'Ledger.ml': {
+      summary: "A register's lines: running balances, QuickFill from past payees, totals by category.",
+      digest: '0cf4a13f8c76',
+      important: [
+        { at: 'type:txn', say: 'one line, one signed amount', weight: 3 },
+        { at: 'def:quickfill', say: 'the last line to this payee, copied', weight: 3 },
+        { at: 'def:balances', say: 'each line its running balance' },
+      ],
+    },
+    'Ledger.mli': {
+      summary: "Quicken's register, the checkbook's columns on screen; categories and QuickFill added.",
+      digest: 'f27fd2ff3cb8',
+      capitals: [{ at: 'type:txn', say: "a register's line" }],
+    },
+    'Reconcile.ml': {
+      summary: "A register against the bank's statement: the difference, and the hints that explain it.",
+      digest: 'e34e87aa19aa',
+      important: [
+        { at: 'def:hints', say: 'a missing line, a wrong sign, swapped digits', weight: 3 },
+        { at: 'def:subset', say: 'up to three lines summing to it' },
+        { at: 'def:swaps', say: 'a multiple of 9: two digits swapped', weight: 3 },
+      ],
+    },
+    'Reconcile.mli': {
+      summary: "Reconciling by hand's arithmetic: the difference's size says which mistake was made.",
+      digest: '88e2b28cfcdf',
+    },
+    'Qif.ml': {
+      summary: "Quicken's interchange format read and written: a letter a field, ^ a record's end.",
+      digest: 'cd1485933879',
+      important: [{ at: 'def:of_fields', say: 'unknown letters skipped, no date an error', weight: 3 }],
+    },
+    'Qif.mli': {
+      summary: "QIF, the banks' statement download before OFX: a format with no schema.",
+      digest: 'a5c4ffe1f250',
+    },
+  },
+  skeletons: [
+    {
+      name: 'The money: amounts, register, reconciling',
+      bones: [
+        { at: 'Money.ml:type:cents', role: 'an amount' },
+        { at: 'Ledger.ml:type:txn', role: "a register's line" },
+        { at: 'Qif.ml:def:read', role: "a bank's lines in" },
+        { at: 'Ledger.ml:def:balances', role: 'the running balance' },
+        { at: 'Reconcile.ml:def:hints', role: 'the statement checked' },
+      ],
+      joints: [
+        { from: 'Money.ml:type:cents', to: 'Ledger.ml:type:txn', say: 'its amount' },
+        { from: 'Qif.ml:def:read', to: 'Ledger.ml:type:txn', say: 'lines' },
+        { from: 'Ledger.ml:type:txn', to: 'Ledger.ml:def:balances', say: 'in order' },
+        { from: 'Ledger.ml:type:txn', to: 'Reconcile.ml:def:hints', say: 'ticked or not' },
+      ],
+    },
+  ],
+}

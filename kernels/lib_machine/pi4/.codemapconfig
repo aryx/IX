@@ -9,10 +9,10 @@
 // runtime.c's trap or irq, or machine.c's user_abort64), user_return
 // (eret), swtch (x19-x29, sp, lr); kernel.ld, the link and the stacks.
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "The Raspberry Pi 4 under both kernels: ARMv8's three-level tables, 64-bit words, the GIC-400 and the generic timer.",
   files: {
-    'Arch.ml': { digest: '6a07c8d1a98a',
+    'Arch.ml': { digest: '2482e47a5107',
       summary: "Arch for the Pi4 (arm64, xv6 arm64-pi4's layout): 8-byte words, three levels of 512, arguments in x0-x5.",
       capitals: [
         { at: 'def:encode_page', say: "ARMv8's page descriptor: AP, AF, nG" },
@@ -26,7 +26,7 @@
         { at: 'def:args_on_stack', weight: 1 },
       ],
     },
-    'board.h': { digest: '812a13c902b2',
+    'board.h': { digest: '71a20706194d',
       summary: "What runtime.c and libc.c ask of the Pi4: a trap frame of x0-x30 and three system registers, a context, the addresses.",
       important: [
         { at: 'def:TF_WORDS', weight: 2 },
@@ -34,7 +34,7 @@
         { at: 'def:KERNBASE', weight: 2 },
       ],
     },
-    'machine.c': { digest: '9319a19f0ee2',
+    'machine.c': { digest: '21ffb5868587',
       summary: "The Pi4's machine under Machine.mli's names: physical memory, TTBR0, the PL011 and the GIC-400, the virtual timer, EL0's exceptions.",
       capitals: [
         { at: 'def:pi4_irq', say: 'an IRQ acknowledged at the GIC, then OCaml' },
@@ -50,7 +50,19 @@
       ],
       related: ['start.s', 'kernel.ld'],
     },
-    'start.s': { digest: '2fc27a382d82',
+    'l.s': { digest: 'a8b4fcef6187',
+      summary: "start.s in Plan 9's assembly for mini-asm and mini-ld: EL3 to EL1, the MMU on, EL0's entries.",
+      important: [
+        { at: 'comment:"What differs, the assembler"', say: 'no alignment: the vectors the first bytes', weight: 3 },
+        { at: 'code:"TEXT _start"', say: 'core 0 boots; the others park', weight: 3 },
+        { at: 'code:"TEXT el2"', say: 'EL2 to EL1', weight: 2 },
+        { at: 'code:"TEXT el1"', say: 'the tables, MAIR, TCR, the MMU on', weight: 2 },
+        { at: 'code:"TEXT el0_sync"', say: 'a system call or a fault from EL0', weight: 3 },
+        { at: 'code:"TEXT user_return"', weight: 2 },
+        { at: 'code:"TEXT swtch"', weight: 2 },
+      ],
+    },
+    'start.s': { digest: '0e799db0a95f',
       summary: "The Pi4's AArch64 assembly: the other cores parked, EL3 or EL2 down to EL1, the MMU on, the vector table, EL0's entries and eret, swtch.",
       capitals: [
         { at: 'def:_start', say: 'every core starts here: core 0 boots, at physical addresses' },
@@ -78,6 +90,25 @@
   },
   skeletons: [
     {
+      name: "The Pi 4's boot and traps in Plan 9's assembly (l.s)",
+      bones: [
+        { at: 'l.s:code:"TEXT vectors"', role: "VBAR_EL1's table, the image's first bytes" },
+        { at: 'l.s:code:"TEXT _start"', role: 'core 0; EL3 to EL2' },
+        { at: 'l.s:code:"TEXT el2"', role: 'EL2 to EL1' },
+        { at: 'l.s:code:"TEXT el1"', role: 'tables, the MMU on' },
+        { at: 'l.s:code:"TEXT high"', role: 'linked addresses: kmain' },
+        { at: 'l.s:code:"TEXT el0_sync"', role: 'EL0 traps in' },
+        { at: 'l.s:code:"TEXT user_return"', role: 'back to EL0' },
+      ],
+      joints: [
+        { from: 'l.s:code:"TEXT _start"', to: 'l.s:code:"TEXT el2"', say: 'eret' },
+        { from: 'l.s:code:"TEXT el2"', to: 'l.s:code:"TEXT el1"', say: 'eret' },
+        { from: 'l.s:code:"TEXT el1"', to: 'l.s:code:"TEXT high"', say: 'br, the literal' },
+        { from: 'l.s:code:"TEXT vectors"', to: 'l.s:code:"TEXT el0_sync"', say: 'a synchronous exception' },
+        { from: 'l.s:code:"TEXT el0_sync"', to: 'l.s:code:"TEXT user_return"', say: 'trap returned' },
+      ],
+    },
+    {
       name: "One board under the kernel's names",
       bones: [
         { at: 'machine.c', role: "Machine.mli's externals for the Pi4's ARMv8: memory, TTBR0, timer, UART, mailbox" },
@@ -98,16 +129,16 @@
       name: "the Pi4's ARMv8 as primitives",
       bones: [
         { at: 'machine.c:def:P2V', role: "physical to the kernel's address: OCaml holds only physical ones" },
-        { at: 'machine.c:def:phys_read', role: 'Machine.Phys: bytes at a physical address' },
+        { at: '../machine.c:def:phys_read', role: 'Machine.Phys: bytes at a physical address (the shared part)' },
         { at: 'machine.c:def:mmu_switch', role: "TTBR0 set, the TLB emptied" },
         { at: 'machine.c:def:timer_arm', role: "the next tick: the generic virtual timer, through the GIC" },
-        { at: 'machine.c:def:fb_init', role: "the framebuffer asked of the VideoCore's mailbox" },
+        { at: '../machine.c:def:fb_init', role: "the framebuffer asked of the VideoCore's mailbox" },
         { at: 'machine.c:def:user_abort64', role: "a user's fault, said as arm64 says it" },
         { at: '../runtime.c:def:user_fault', role: "to OCaml's \"fault\"" },
       ],
       joints: [
-        { from: 'machine.c:def:phys_read', to: 'machine.c:def:P2V' },
-        { from: 'machine.c:def:fb_init', to: 'machine.c:def:P2V', say: "REG: the mailbox's registers" },
+        { from: '../machine.c:def:phys_read', to: 'machine.c:def:P2V' },
+        { from: '../machine.c:def:fb_init', to: 'machine.c:def:P2V', say: "REG: the mailbox's registers" },
         { from: 'machine.c:def:user_abort64', to: '../runtime.c:def:user_fault', say: 'class, syndrome, pc, address' },
       ],
     },

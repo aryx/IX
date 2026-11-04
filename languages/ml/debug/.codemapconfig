@@ -1,0 +1,62 @@
+// languages/ml/debug/: what the code map says of it (the code map:
+// tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-ml -g: the .ml's lines and the values' types put in the object, for mini-acid and the runtime's traces.",
+  files: {
+    'Lines_ml.mli': { digest: '54d015b1b9ff',
+      summary: "The .ml's lines in the object, from Gen's and Emit's // line n marks: what mini-ld makes the pc/line table of.",
+      important: [
+        { at: 'def:add', weight: 2 },
+        { at: 'def:source', say: "the file's path from ix's root, as /src has it", weight: 2 },
+      ],
+    },
+    'Lines_ml.ml': { digest: '5be06c07f2e7',
+      summary: "Each item given its last mark's line; the root found by lib_core/units.txt.",
+      important: [
+        { at: 'def:source', weight: 1 },
+        { at: 'def:add', weight: 2 },
+      ],
+    },
+    'Acid_ml.mli': { digest: '277e5f309ca5',
+      summary: "-g's descriptions of a unit's types, globals and exceptions as acid lists, so ml() prints constructors by name.",
+      capitals: [
+        { at: 'def:decls', say: "the unit's types as acid text" },
+      ],
+      important: [
+        { at: 'comment:"Lists of the library\'s (port.acid)"', say: 'the worked example: mltypes, mlglobals...', weight: 3 },
+        { at: "comment:\"DWARF's .debug_info says the same\"", say: "acid's language is the format, as 5c -a's", weight: 2 },
+        { at: 'def:decls', weight: 2 },
+      ],
+    },
+    'Acid_ml.ml': { digest: '60cdabf11a94',
+      summary: 'Types walked from the globals, each described once: variants by tag, records by field position.',
+      important: [
+        { at: 'def:ty', say: 'a type as a nested acid list', weight: 2 },
+        { at: 'def:record', weight: 1 },
+        { at: 'def:types', say: 'the types reached, each once', weight: 3 },
+        { at: 'def:decls', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    { name: '-g: what a debugger and a trace read',
+      bones: [
+        { at: '../CLI.ml:def:output', role: 'each object, under -g' },
+        { at: 'Lines_ml.ml:def:add', role: "the .ml's lines in the object" },
+        { at: 'Acid_ml.ml:def:decls', role: "the values' types as acid" },
+        { at: 'Acid_ml.ml:def:types', role: 'each type reached, once' },
+        { at: '../runtime/typed.c:def:xexn', role: 'reads them at an uncaught raise' },
+        { at: '../runtime/frames.c:def:frames', role: 'reads the pc/line table' },
+      ],
+      joints: [
+        { from: '../CLI.ml:def:output', to: 'Lines_ml.ml:def:add', say: 'the assembly text' },
+        { from: '../CLI.ml:def:output', to: 'Acid_ml.ml:def:decls', say: 'globals, exceptions' },
+        { from: 'Acid_ml.ml:def:decls', to: 'Acid_ml.ml:def:types', say: 'their types' },
+        { from: 'Acid_ml.ml:def:decls', to: '../runtime/typed.c:def:xexn', say: "via mini-ld's .acid" },
+        { from: 'Lines_ml.ml:def:add', to: '../runtime/frames.c:def:frames', say: "via mini-ld's table" },
+      ],
+    },
+  ],
+}

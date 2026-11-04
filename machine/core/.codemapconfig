@@ -1,0 +1,73 @@
+// machine/core/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "What both cores stand on: a 32-bit word's arithmetic, and the guest's memory as a checked bus.",
+  files: {
+    'Bits.mli': { digest: 'efbd5dd84580',
+      summary: "A 32-bit word's arithmetic, the same with OCaml's 63-bit ints natively and 32-bit ones in a browser.",
+      capitals: [
+        { at: 'def:mask32', say: 'a word kept to 32 bits: everywhere' },
+      ],
+      important: [
+        { at: 'comment:"nothing else in machine/ may"', say: 'the rule: words only through here', weight: 3 },
+        { at: 'def:mask32', weight: 2 },
+        { at: 'def:sign_extend', say: "a branch's immediate", weight: 1 },
+        { at: 'def:add_carry', say: 'the flags of an add', weight: 1 },
+      ],
+    },
+    'Bits.ml': { digest: '3b10734a95da',
+      summary: "Masks, sign extension, unsigned comparisons and the flags' carries, computed not written as literals.",
+      important: [
+        { at: 'def:native', say: '63-bit ints or js_of_ocaml', weight: 2 },
+        { at: 'def:mask32', weight: 2 },
+        { at: 'def:add_carry', weight: 1 },
+      ],
+    },
+    'Memory.mli': { digest: '0545a81eacb1',
+      summary: "The guest's memory, its bus: segments of bytes and devices at addresses, each access checked.",
+      capitals: [
+        { at: 'type:t', say: 'the bus every load and store goes through' },
+        { at: 'type:device', say: "a board's registers, mapped as memory" },
+        { at: 'def:load32', say: 'a word read, or Fault' },
+      ],
+      important: [
+        { at: 'comment:"segments of bytes at addresses"', say: 'unaligned allowed, as ARMv6 user mode', weight: 3 },
+        { at: 'type:Fault', say: "the guest's segmentation fault", weight: 2 },
+        { at: 'def:map_device', say: 'how raspberry/ plugs its devices in', weight: 2 },
+        { at: 'def:resize', say: 'brk', weight: 1 },
+        { at: 'def:unmap', say: 'munmap, segdetach', weight: 1 },
+        { at: 'def:store32', weight: 1 },
+      ],
+    },
+    'Memory.ml': { digest: '02a450b5cc56',
+      summary: 'A list of segments, the last found remembered, so that most accesses skip the search.',
+      important: [
+        { at: 'type:segment', weight: 2 },
+        { at: 'def:lookup', say: 'the address to its segment, or Fault', weight: 3 },
+        { at: 'def:slow_load', say: 'a device, or bytes across a boundary', weight: 1 },
+        { at: 'def:load32', say: 'the last segment hit: no search', weight: 2 },
+        { at: 'def:code_written', say: "a store to code: the decoded cache voided", weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'A load: the last segment, else the search, else a device',
+      bones: [
+        { at: 'Memory.ml:def:load32', role: "a word, at once if in the last segment" },
+        { at: 'Memory.ml:def:lookup', role: 'the segment holding the address, or Fault' },
+        { at: 'Memory.ml:type:segment', role: 'bytes or a device, at a base' },
+        { at: 'Memory.ml:def:slow_load', role: 'a device read, or bytes across segments' },
+        { at: 'Bits.ml:def:mask32', role: 'the word kept to 32 bits' },
+      ],
+      joints: [
+        { from: 'Memory.ml:def:load32', to: 'Memory.ml:def:slow_load', say: 'not the last segment' },
+        { from: 'Memory.ml:def:slow_load', to: 'Memory.ml:def:lookup', say: 'the address' },
+        { from: 'Memory.ml:def:lookup', to: 'Memory.ml:type:segment' },
+        { from: 'Memory.ml:def:load32', to: 'Bits.ml:def:mask32', say: 'the offset' },
+      ],
+    },
+  ],
+}

@@ -1,0 +1,56 @@
+// browsers/webapi/net/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "A script asking the network: a request queued for the browser, answered by a later task; the same-origin rule.",
+  files: {
+    'Script_fetch.mli': { digest: '61b993fbc678',
+      summary: "fetch and the mailbox under it: a request left for the browser, its answer a later task.",
+      capitals: [{ at: 'def:ask', say: "a script's request, queued for the browser" }],
+      important: [
+        { at: 'comment:"cannot wait: it runs to its end"', say: 'why asking is two tasks', weight: 3 },
+        { at: 'def:answer', say: 'the browser hands the answer back', weight: 3 },
+      ],
+    },
+    'Script_fetch.ml': { digest: '8fae5a6b54c2',
+      summary: "Requests numbered in the page's state, fetch's promise and Response, JSON parsed by the engine.",
+      important: [
+        { at: 'def:ask', weight: 2 },
+        { at: 'def:answer', weight: 3 },
+        { at: 'def:response', weight: 1 },
+        { at: 'def:install', weight: 1 },
+      ],
+    },
+    'XMLHttpRequest.mli': { digest: '00af71d59f4f',
+      summary: "XHR, the object web applications were built on (Outlook Web Access, 1999), over the same mailbox.",
+      important: [{ at: 'comment:"Where it came from"', weight: 1 }],
+    },
+    'XMLHttpRequest.ml': { digest: '00495a86a5d6',
+      summary: 'open, send, readyState and onload over Script_fetch.ask and answer.',
+      important: [{ at: 'def:make', weight: 2 }],
+    },
+    'Cors.mli': { digest: '19377eb76e3e',
+      summary: 'The same-origin policy and Access-Control-Allow-Origin: who may read what a script asked.',
+      important: [
+        { at: 'comment:"The problem."', weight: 2 },
+        { at: 'comment:"mini-netscape keeps"', say: 'stale: Cookie_jar keeps cookies since', weight: 1 },
+        { at: 'def:readable', weight: 3 },
+      ],
+    },
+    'Cors.ml': { digest: '9fc670534f14',
+      summary: "An origin as scheme, host and port; the answer readable when the same or allowed.",
+    },
+  },
+  skeletons: [
+    skeletons.chain('A request from a script, and back', [
+      ['XMLHttpRequest.ml:def:make', 'XHR: open and send', ''],
+      ['Script_fetch.ml:def:ask', 'queued in the mailbox', 'a request'],
+      ['../run/Browser_script.ml:def:take_requests', 'the browser takes them', 'after the task'],
+      ['../run/Browser_script.ml:def:answer', 'the answer given back', 'fetched by the tab'],
+      ['Script_fetch.ml:def:answer', 'the waiting promise or handler', 'the bytes'],
+      ['Cors.ml:def:readable', 'may the page read it?', 'its headers'],
+    ]),
+  ],
+}

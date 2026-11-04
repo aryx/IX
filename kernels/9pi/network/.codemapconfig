@@ -2,10 +2,10 @@
 // codemap, in ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there)
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "mini-9pi's Ethernet: #l, frames to and from a USB adapter, handed up to the IP stack in ip/.",
   files: {
-    'Devether.mli': { digest: 'ff08c348e0fa',
+    'Devether.mli': { digest: '6a15fe400275',
       summary: "'#l', the Ethernet device (devether.c, netif.c): clone, addr, stats, a directory per connection.",
       important: [
         { at: 'def:register', say: "the IP stack's way in: frames of a type", weight: 3 },
@@ -13,7 +13,7 @@
         { at: 'def:input', say: 'polled from the clock', weight: 2 },
       ],
     },
-    'Devether.ml': { digest: 'a893707b3e93',
+    'Devether.ml': { digest: '1856573df553',
       summary: "Frames fanned out by their Ethernet type: to the connections reading #l's files, and to IP.",
       capitals: [
         { at: 'def:deliver', say: 'a frame in: to the readers of its type, and IP' },
@@ -30,15 +30,16 @@
         { from: 'def:input', to: 'def:deliver' },
       ],
     },
-    'Etherusb.mli': { digest: 'ec6cb3ced16c',
-      summary: "A USB Ethernet adapter (CDC ECM, QEMU's usb-net) driven in the kernel: bulk OUT and a pending bulk IN.",
+    'Etherusb.mli': { digest: 'be55bad6861c',
+      summary: "A USB Ethernet adapter driven in the kernel: QEMU's usb-net (CDC ECM), or the Pi's LAN951x.",
       important: [
         { at: 'comment:"A USB Ethernet adapter"', say: 'why in the kernel: usbd has no driver for it', weight: 3 },
         { at: 'def:poll', say: 'the frames finished since the last tick', weight: 2 },
+        { at: 'comment:"Written from that driver and Linux"', say: 'the LAN951x driver never run on a board', weight: 3 },
       ],
     },
-    'Etherusb.ml': { digest: 'bbfff0761de7',
-      summary: 'The adapter found among the USB devices, configured, its MAC read; frames sent and polled.',
+    'Etherusb.ml': { digest: '2c7dd7d53f7f',
+      summary: "The adapter found by its maker: ECM configured, or SMSC's registers set up as smsc.c does.",
       capitals: [
         { at: 'def:adapter', say: 'a USB device made an Ethernet card' },
       ],
@@ -47,6 +48,10 @@
         { at: 'def:send', say: 'padded to 60; a zero-length packet after 64n', weight: 2 },
         { at: 'def:poll', say: 'each finished bulk IN transfer a frame', weight: 2 },
         { at: 'def:probe', weight: 1 },
+        { at: 'def:cdc', say: "QEMU's usb-net: ECM, the MAC a string", weight: 2 },
+        { at: 'def:lan95xx', say: "the Pi's chip: reset, address, PHY negotiated", weight: 3 },
+        { at: 'def:frames', say: 'a transfer in: frames behind length words', weight: 1 },
+        { at: 'def:board_mac', say: "the firmware's MAC, not the chip's", weight: 1 },
       ],
     },
   },
@@ -73,6 +78,8 @@
       bones: [
         { at: 'Etherusb.ml:def:probe', role: "#l's attach: the adapter looked for among USB's devices" },
         { at: 'Etherusb.ml:def:adapter', role: 'a device configured: its bulk endpoints, its MAC' },
+        { at: 'Etherusb.ml:def:cdc', role: "QEMU's usb-net: a CDC ECM device" },
+        { at: 'Etherusb.ml:def:lan95xx', role: "the Pi 1's and 2's SMSC chip, by its registers" },
         { at: 'Etherusb.ml:def:getdesc', role: 'a descriptor read by a control transfer' },
         { at: 'Etherusb.ml:def:send', role: 'a frame written to the bulk endpoint' },
         { at: 'Etherusb.ml:def:poll', role: 'the finished transfers, a frame each' },
@@ -80,7 +87,9 @@
       ],
       joints: [
         { from: 'Etherusb.ml:def:probe', to: 'Etherusb.ml:def:adapter' },
-        { from: 'Etherusb.ml:def:adapter', to: 'Etherusb.ml:def:getdesc' },
+        { from: 'Etherusb.ml:def:adapter', to: 'Etherusb.ml:def:cdc', say: 'a CDC device' },
+        { from: 'Etherusb.ml:def:adapter', to: 'Etherusb.ml:def:lan95xx', say: "SMSC's vendor id" },
+        { from: 'Etherusb.ml:def:cdc', to: 'Etherusb.ml:def:getdesc', say: 'the MAC string' },
         { from: 'Etherusb.ml:def:poll', to: '../buses/arm/Usbdwc.ml:def:inpoll' },
       ],
     },

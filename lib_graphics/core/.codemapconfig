@@ -1,0 +1,88 @@
+// lib_graphics/core/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Pixels in a program's own memory: a decoded picture, a framebuffer, and a picture laid on it, warped.",
+  files: {
+    'Rgba_image.mli': { digest: '67fa9b0118cd',
+      summary: 'A decoded picture, RGBA straight, row by row: the one type between a file and who shows it.',
+      capitals: [{ at: 'type:t', say: 'what every image reader gives' }],
+      important: [
+        { at: 'comment:"Where it stands in ix"', say: 'its producers and consumers named', weight: 3 },
+        { at: 'comment:"It is not a Framebuffer"', say: 'screen order is blue first, no alpha', weight: 2 },
+      ],
+    },
+    'Rgba_image.ml': { digest: '40e1203ab94f',
+      summary: 'The record of width, height and bytes, and a blank one made.',
+    },
+    'Framebuffer.mli': { digest: '0a8d72a16598',
+      summary: 'The grid of pixels the rasterizers write, four bytes each, blue first, y going down.',
+      capitals: [{ at: 'type:t', say: 'where software/ draws' }],
+      important: [
+        { at: 'comment:"pixel (x, y) is at 4"', say: 'the address of a pixel', weight: 3 },
+        { at: 'def:fill_span', say: 'a row of pixels, what all fills end in', weight: 3 },
+        { at: 'def:plot', weight: 2 },
+      ],
+    },
+    'Framebuffer.ml': { digest: '64f9a56f031b',
+      summary: 'Pixels set, blended by alpha, spans filled; plot direct when Opti is on.',
+      important: [
+        { at: 'def:blend', say: 'src * a + dst * (1 - a), a channel each', weight: 2 },
+        { at: 'def:fill_span', weight: 3 },
+        { at: 'def:clear_simple', say: 'the original kept beside the fast clear', weight: 1 },
+      ],
+    },
+    'Blit.mli': { digest: '28374acd54f0',
+      summary: 'A picture moved, scaled and rotated onto a framebuffer by inverse mapping, BitBLT generalized.',
+      capitals: [{ at: 'def:draw', say: 'an affine warp: each screen pixel asks back' }],
+      important: [
+        { at: 'comment:"Forward or inverse?"', say: 'why forward mapping leaves holes', weight: 3 },
+        { at: 'type:filter', say: 'nearest or bilinear', weight: 2 },
+        { at: 'def:resized', weight: 1 },
+      ],
+    },
+    'Blit.ml': { digest: 'c4f2f7f5c61d',
+      summary: 'The warp three ways: simple, with forward differencing, and a plain copy when only moved.',
+      important: [
+        { at: 'def:draw_simple', say: 'the original: a matrix product per pixel', weight: 3 },
+        { at: 'def:draw_fast', say: 'forward differencing, samplers inlined', weight: 3 },
+        { at: 'def:draw_copy', say: 'no scale, no turn: rows copied', weight: 2 },
+        { at: 'def:sample_bilinear', weight: 1 },
+        { at: 'def:resized', say: 'weights per column made once', weight: 1 },
+      ],
+    },
+    'Opti.mli': { digest: 'f4dbc8cad9c8',
+      summary: 'The switch between optimized code and the simpler original kept runnable beside it.',
+      important: [{ at: 'comment:"Code checking [enabled]"', say: 'where the switch is read', weight: 2 }],
+    },
+    'Opti.ml': { digest: '189484cac23e',
+      summary: 'The flag itself, on by default.',
+    },
+  },
+  skeletons: [
+    skeletons.parts('A picture onto the screen in memory', [
+      ['Rgba_image.mli', 'the picture decoded, RGBA'],
+      ['Blit.mli', 'the warp: screen pixel to picture pixel'],
+      ['Framebuffer.mli', 'the pixels drawn into, BGRX'],
+      ['Opti.mli', 'the simple or the fast path'],
+    ], [
+      ['Rgba_image.mli', 'Blit.mli', 'sampled'],
+      ['Blit.mli', 'Framebuffer.mli', 'plotted'],
+      ['Opti.mli', 'Blit.mli', 'chooses the path'],
+      ['Opti.mli', 'Framebuffer.mli', 'chooses the path'],
+    ]),
+    skeletons.calls('Blit: one warp, three ways', 'Blit.ml:def:draw', 'the entry: chooses a path', [
+      ['Blit.ml:def:draw_simple', 'per pixel, the inverse transform', 'Opti off'],
+      ['Blit.ml:def:draw_fast', 'per row, steps added', 'Opti on'],
+      ['Blit.ml:def:draw_copy', 'only moved: rows copied', 'no scale, no turn'],
+    ]) + {
+      bones+: [{ at: 'Blit.ml:def:covered_box', role: 'the screen pixels it may cover' }],
+      joints+: [
+        { from: 'Blit.ml:def:draw_simple', to: 'Blit.ml:def:covered_box', say: 'the box to walk' },
+        { from: 'Blit.ml:def:draw_fast', to: 'Blit.ml:def:covered_box', say: 'the box to walk' },
+      ],
+    },
+  ],
+}

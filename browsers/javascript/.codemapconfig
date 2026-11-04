@@ -1,0 +1,54 @@
+// browsers/javascript/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "JavaScript by walking its tree, mini-chrome's engine of 2026-10-08; and mini-node, the engine run alone.",
+  files: {
+    'Main.ml': { digest: 'afb4991d30ca',
+      summary: 'mini-node, the program: Cap.main, then the command line.',
+    },
+    'CLI.mli': { digest: 'bf0d42b47e06',
+      summary: "mini-node after Node.js: a file, -e, or a console; and the engine's whole pipeline presented.",
+      important: [
+        { at: 'comment:"characters                         the modules"', say: "a script's way through the engine", weight: 3 },
+        { at: 'def:main', weight: 2 },
+      ],
+    },
+    'CLI.ml': { digest: 'e9a066306762',
+      summary: 'Forty lines: an engine created with the clock, a file or -e evaluated, else a line at a time.',
+      capitals: [{ at: 'def:main', say: "mini-node's entry: a script or a console" }],
+    },
+  },
+  dirs: {
+    tests: { summary: "mini-chrome's JavaScript tests (Testo; MINI_OPTI=off and =walk agree), and scripts for mini-node." },
+  },
+  skeletons: [
+    skeletons.cli('mini-node: a script parsed, then walked', [
+      ['eval/Js_eval.ml:def:eval', 'a text: parsed, then run'],
+      ['parsing/Js_parse.ml:def:parse', 'tokens to a tree'],
+      ['eval/Js_eval.ml:def:run', 'the program run, within its budget'],
+      ['eval/Js_eval.ml:def:exec', 'a statement'],
+      ['eval/Js_eval.ml:def:eval_expr', 'an expression'],
+    ]),
+    {
+      name: 'The engine: text to tree to values',
+      bones: [
+        { at: 'parsing/', role: 'tokens and the tree' },
+        { at: 'eval/', role: 'the tree walked' },
+        { at: 'values/', role: 'values, objects, conversions' },
+        { at: 'library/', role: 'what a script finds there' },
+        { at: 'opti/', role: 'the walk made faster' },
+        { at: 'CLI.ml', role: 'mini-node' },
+      ],
+      joints: [
+        { from: 'CLI.ml', to: 'eval/', say: 'a script' },
+        { from: 'eval/', to: 'parsing/', say: 'text parsed' },
+        { from: 'eval/', to: 'values/', say: 'values made' },
+        { from: 'library/', to: 'eval/', say: 'installed in each engine' },
+        { from: 'opti/', to: 'eval/', say: 'compiler and quickener plugged in' },
+      ],
+    },
+  ],
+}

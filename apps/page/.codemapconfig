@@ -1,0 +1,45 @@
+// apps/page/: what the code map says of it
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-page, after Plan 9's page(1): a PDF's pages or a picture, drawn by the program itself.",
+  files: {
+    'Pageview.ml': {
+      summary: "mini-page: a PDF's pages one under another, drawn ahead when still, each file's place kept.",
+      digest: '4c8df6caeffa',
+      capitals: [{ at: 'def:drawn', say: 'the pages in view drawn, the rest let go' }],
+      important: [
+        { at: 'comment:"Plan 9\'s page is a viewer round other programs"', say: 'Ghostscript there, lib_graphics/pdf here', weight: 3 },
+        { at: 'type:model', say: 'pages, zoom, turn, how far down', weight: 3 },
+        { at: 'def:ahead', say: 'the next page drawn while the window is still', weight: 3 },
+        { at: 'def:tops', say: 'where each page starts, at this zoom', weight: 1 },
+        { at: 'def:link_at', say: "a click on a PDF's link", weight: 1 },
+        { at: 'def:write_places', say: 'where each file was left, for next time', weight: 1 },
+        { at: 'code:"\"-ppm\""', say: 'without a window: a page to a PPM, for tests', weight: 1 },
+      ],
+      links: [{ from: 'def:update', to: 'def:drawn' }, { from: 'def:drawn', to: 'def:draw' }],
+    },
+  },
+  dirs: {
+    sdl: { summary: 'The SDL build of mini-page, for a Unix desktop.' },
+  },
+  skeletons: [
+    skeletons.onefile("mini-page: a PDF's pages in a window", 'Pageview.ml', [
+      ['Pageview.ml:def:start', 'the first model: the file, its place before', 'the file read'],
+      ['Pageview.ml:def:update', 'a frame: keys, mouse, a page drawn', 'Playground.game'],
+      ['Pageview.ml:def:drawn', 'the pages in view drawn', 'where it is'],
+      ['Pageview.ml:def:draw', 'one page at a zoom and a turn', 'a page missing'],
+      ['../../lib_graphics/pdf/Pdf_render.ml:def:render', 'the PDF drawn to pixels', 'the page'],
+    ], main='code:"Playground_platform.flags caps"') + {
+      bones+: [
+        { at: 'Pageview.ml:def:ahead', role: 'the next page, when still' },
+        { at: 'Pageview.ml:def:view', role: 'the Bitmaps kept, shown' },
+      ],
+      joints+: [
+        { from: 'Pageview.ml:def:update', to: 'Pageview.ml:def:ahead', say: 'nothing moved' },
+        { from: 'Pageview.ml:def:ahead', to: 'Pageview.ml:def:draw', say: 'the next page' },
+        { from: 'Pageview.ml:def:update', to: 'Pageview.ml:def:view', say: 'the model' },
+      ],
+    },
+  ],
+}

@@ -1,0 +1,67 @@
+// games/fps/quake/: what the code map says of it
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-quake: Quake (id, 1996) as id wrote it: a .bsp's level, the software renderer, lightmaps, a game.",
+  dirs: {
+    data: { summary: "LibreQuake's lq_e0m1.bsp lit by tools/Light, its palette, colormap, sounds, progs' models, music." },
+    sdl: { summary: 'Quake.ml linked with the SDL platform: a window on Linux (dune).' },
+    tests: { summary: "fight/Fight.ml: the fights a tenth of a second at a time, without the playground, printed." },
+  },
+  files: {
+    'Quake.ml': {
+      summary: "The program: the .bsp loaded, the player's move and the game's frame, Render's bytes as one Bitmap.",
+      digest: 'b64f3f67c650',
+      capitals: [{ at: 'def:view', say: "a frame: Render's picture of the eye" }],
+      important: [
+        { at: 'comment:"A frame (the playground"', say: 'keys to a move, the eye to a picture', weight: 3 },
+        { at: 'type:model', say: 'the level, the renderer, the play, the game', weight: 3 },
+        { at: 'def:update', say: "the player's move, then the game's frame", weight: 3 },
+        { at: 'def:with_gamma', say: "the palette brightened: Quake's gamma", weight: 1 },
+        { at: 'comment:"history:"', say: 'DOS, WinQuake, GLQuake; chocolate-quake read beside', weight: 1 },
+      ],
+      links: [{ from: 'def:view', to: 'def:eye' }],
+      related: ['README.md', '../../../docs/plans/done/plan_quake.md'],
+    },
+  },
+  skeletons: [
+    skeletons.parts("mini-quake: id's files as folders", [
+      ['Quake.ml', 'the program: a playground game'],
+      ['model/', 'the .bsp read: faces, nodes, leaves, the PVS'],
+      ['server/', 'entities, the player, physics, traces (sv_*.c)'],
+      ['game/', 'what QuakeC did: doors, monsters, weapons'],
+      ['render/', 'the software renderer (r_*.c, d_*.c)'],
+      ['sound/', 'the sounds and the music'],
+      ['tools/', 'light: the lightmaps baked; the WAD2 made'],
+    ], [
+      ['Quake.ml', 'server/', 'the move'],
+      ['Quake.ml', 'game/', 'the frame'],
+      ['Quake.ml', 'render/', 'the picture'],
+      ['game/', 'server/', 'entities moved'],
+      ['server/', 'model/', 'hulls traced'],
+      ['render/', 'model/', 'faces drawn'],
+      ['game/', 'sound/', 'sounds'],
+      ['tools/', 'model/', 'lightmaps written'],
+    ]),
+    {
+      name: 'mini-quake: keys to a move, a move to a picture',
+      bones: [
+        { at: 'Quake.ml:code:"Cap.main"', role: 'the program: the .bsp, the game run' },
+        { at: 'Quake.ml:type:model', role: 'the level, play, game, renderer' },
+        { at: 'Quake.ml:def:update', role: 'a frame of time' },
+        { at: 'server/Play.ml:def:frame', role: "the player's move" },
+        { at: 'game/Game.ml:def:frame', role: "the server's frame: entities" },
+        { at: 'Quake.ml:def:view', role: 'a frame: the picture' },
+        { at: 'render/Render.ml:def:frame', role: "the eye's 320x200 bytes" },
+      ],
+      joints: [
+        { from: 'Quake.ml:code:"Cap.main"', to: 'Quake.ml:type:model', say: 'loaded' },
+        { from: 'Quake.ml:type:model', to: 'Quake.ml:def:update', say: 'stepped' },
+        { from: 'Quake.ml:def:update', to: 'server/Play.ml:def:frame', say: 'the keys, dt' },
+        { from: 'Quake.ml:def:update', to: 'game/Game.ml:def:frame', say: 'dt' },
+        { from: 'Quake.ml:type:model', to: 'Quake.ml:def:view', say: 'drawn' },
+        { from: 'Quake.ml:def:view', to: 'render/Render.ml:def:frame', say: 'the eye' },
+      ],
+    },
+  ],
+}

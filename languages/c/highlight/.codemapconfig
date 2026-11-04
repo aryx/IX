@@ -1,0 +1,70 @@
+// languages/c/highlight/: what the code map says of it (the code map:
+// tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "C's colours for mini-emacs: every token kept and given a category, after the author's playground's.",
+  files: {
+    'Token_c.mli': { digest: '43c837127d2a',
+      summary: "C's text as tokens, comments included, each with its text, place, and whether on a # line.",
+      capitals: [
+        { at: 'type:t', say: 'a token: kind, text, place, pp' },
+      ],
+      important: [
+        { at: 'comment:"C has a language above C, the preprocessor"', say: 'directives marked, never run', weight: 2 },
+        { at: 'type:kind', weight: 2 },
+        { at: 'def:is_constant', say: 'NAME in capitals: a constant, by habit', weight: 1 },
+      ],
+    },
+    'Token_c.ml': { digest: '3f32596c0c42',
+      summary: "The token's types, a kind's name, and the capitals' guess of a constant.",
+      important: [
+        { at: 'def:is_constant', weight: 1 },
+      ],
+    },
+    'Lexer_c.mli': { digest: '7486740edeca',
+      summary: "C's text cut into Token_c's by ocamllex: longest match, directives to their line's end.",
+      important: [
+        { at: 'comment:"The preprocessor\'s lines: a # starting a line"', say: 'a directive, then its tokens pp', weight: 2 },
+        { at: 'def:tokens', weight: 1 },
+      ],
+    },
+    'Lexer_c.mll': { digest: 'f555922f78b7',
+      summary: "The rules, C99's and Plan 9 C's: comments, strings, chars, <file> after #include.",
+      important: [
+        { at: 'def:token', say: 'the rules', weight: 3 },
+        { at: 'def:include_file', say: '<u.h> one String after #include', weight: 1 },
+        { at: 'def:tokens', say: 'the whole file, pp lines tracked', weight: 2 },
+      ],
+    },
+    'Highlight_c.mli': { digest: '59708c1c14b0',
+      summary: "Every token's category for a code view; the first pass only, the tree's pass left in the playground.",
+      capitals: [
+        { at: 'def:lines', say: "a file's coloured lines: C_mode's entry" },
+      ],
+      important: [
+        { at: 'comment:"Here only the first pass was copied"', say: "the header's example is the playground's", weight: 3 },
+        { at: 'comment:"C is the language a highlighter cannot parse honestly"', say: 'typedefs in headers: colours are guesses', weight: 2 },
+        { at: 'def:categorize', weight: 1 },
+      ],
+    },
+    'Highlight_c.ml': { digest: '06e03ce9d6cc',
+      summary: "A token's kind to a category: keywords split, banners and constants recognized.",
+      important: [
+        { at: 'def:of_kind', say: 'kind to category', weight: 2 },
+        { at: 'def:is_banner', say: 'a section banner, drawn large', weight: 1 },
+        { at: 'def:lines', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.chain('A C file coloured', [
+      ['Lexer_c.mll:def:tokens', 'the text to tokens', ''],
+      ['Token_c.ml:type:t', 'a token, its place', 'tokens'],
+      ['Highlight_c.ml:def:categorize', 'each its category', 'tokens'],
+      ['Highlight_c.ml:def:lines', 'cut into lines for a view', 'categories'],
+      ['../../../editors/emacs/modes/C_mode.ml', "mini-emacs's C mode", 'spans'],
+    ]),
+  ],
+}

@@ -1,0 +1,32 @@
+// kernels/singularity/programs/init/: what the code map says of it (the
+// code map is tinybox codemap, in ~/github/ocaml-elm-playground).
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The first process, the system's wiring: the console driver and the shell, a Console channel between.",
+  files: {
+    'Main.ml': { digest: 'e8830e68d547',
+      summary: "The first process, the system's wiring: the console driver and the shell, a Console channel between.",
+      capitals: [ { at: "code:\"let () =\"", say: "the system wired: two processes, one channel" } ],
+      important: [
+        { at: "code:\"Sip.give console\"", say: "each end given before the start", weight: 3 },
+        { at: "code:\"Sip.join shell\"", say: "the shell's end is the system's", weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: "init: two processes and their channel",
+      bones: [
+        { at: "Main.ml:code:\"let () =\"", role: "a Console channel made" },
+        { at: "Main.ml:def:create", role: "a process of a program, not started" },
+        { at: "../../lib/Sip.ml:def:give", role: "an endpoint handed to a child" },
+        { at: "../../lib/Sip.ml:def:join", role: "the shell waited for" },
+      ],
+      joints: [
+        { from: "Main.ml:code:\"let () =\"", to: "Main.ml:def:create", say: "console, shell" },
+        { from: "Main.ml:code:\"let () =\"", to: "../../lib/Sip.ml:def:give", say: "each its end" },
+        { from: "Main.ml:code:\"let () =\"", to: "../../lib/Sip.ml:def:join", say: "the shell" },
+      ],
+    },
+  ],
+}

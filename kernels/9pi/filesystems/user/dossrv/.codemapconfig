@@ -1,0 +1,32 @@
+// kernels/9pi/filesystems/user/dossrv/: what the code map says of it (the
+// code map is tinybox codemap, in ~/github/ocaml-elm-playground; its
+// guidelines: docs/claude_notes/codemapconfig_guidelines.md there). A
+// program for mini-9pi, built by its mkfile (mini-ml).
+local skeletons = import '../../../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-dossrv: Plan 9's dossrv, a FAT served as files over 9P by a program, not the kernel.",
+  files: {
+    'Dossrv.ml': { digest: '6ea4fe0376b9',
+      summary: "lib_fat's Fat as a P9_server.fs: /srv/dos posted, a child serving it; names found in any case.",
+      capitals: [
+        { at: 'def:fs', say: "each 9P message's meaning for a FAT" },
+      ],
+      important: [
+        { at: 'comment:"mount -c /srv/dos /mnt/fat /dev/sdM0/dos"', say: 'a mount and a read, message by message', weight: 3 },
+        { at: 'comment:"A file server is a loop"', say: 'no privilege, no place in the kernel', weight: 3 },
+        { at: 'type:file', say: 'a fid: its FAT, its entry, its parent', weight: 2 },
+        { at: 'def:fs', weight: 3 },
+        { at: 'code:"String.lowercase_ascii e.name = wanted"', say: "a name found whatever its case, as dossrv", weight: 1 },
+        { at: 'def:main', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.onefile('mini-dossrv: posted, then a loop of messages', 'Dossrv.ml', [
+      ['Dossrv.ml:code:"P9_server.post caps name"', '/srv/dos: a pipe posted', 'the service name'],
+      ['Dossrv.ml:def:fs', 'attach, walk, read, write... for a FAT', 'a child serves it'],
+      ['../../lib_fat/Fat.ml:def:read', "the FAT's bytes", 'a Tread'],
+    ]),
+  ],
+}

@@ -1,0 +1,69 @@
+// typesetting/troff/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-troff: reads what was written for troff (man, ms, tbl, pic), Markdown's lines and LaTeX, into one Doc.",
+  files: {
+    'Main.ml': { digest: 'ad879cf5be6b',
+      summary: 'mini-troff: the capabilities, then CLI.main.',
+    },
+    'CLI.mli': { digest: '3aa4963aa2c9',
+      summary: "Not troff: the macros' meanings, not their requests; what is not known said with its line.",
+      capitals: [{ at: 'def:typeset', say: 'a source to a page: the whole way' }],
+      important: [
+        { at: 'comment:"The whole way of a page"', say: 'the pipeline, drawn', weight: 3 },
+        { at: 'comment:"troff is Joe Ossanna"', say: 'the C/A/T, ditroff, eqn, tbl, pic', weight: 2 },
+        { at: 'type:package', say: 'man, ms, Markdown or LaTeX', weight: 1 },
+      ],
+    },
+    'CLI.ml': { digest: 'e33dce068531',
+      summary: "The package guessed from the name or the first lines, read into a Doc, written as text, PDF or Markdown.",
+      capitals: [{ at: 'def:main', say: 'mini-troff [-man|-ms|-md|-latex] [-T way]' }],
+      important: [
+        { at: 'def:package_of', say: '.TH: a manual page; \\title: Markdown', weight: 2 },
+        { at: 'def:typeset', say: 'read by the package, written by the way', weight: 3 },
+        { at: 'def:main', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.cli('mini-troff', [
+      ['CLI.ml:def:typeset', 'a reader by the package, a writer by the way'],
+      ['roff/Roff.ml:def:create', 'troff input as lines'],
+      ['roff/Man.ml:def:read', 'man(6) macros to a Doc'],
+      ['doc/To_pdf.ml:def:file', 'the Doc as PDF pages'],
+    ]) + {
+      bones+: [
+        { at: 'ixdoc/Ixdoc.ml:def:read', role: "Markdown's lines to a Doc" },
+        { at: 'latex/Latex.ml:def:read', role: 'LaTeX and noweb to a Doc' },
+        { at: 'doc/To_text.ml:def:page', role: 'the Doc on a terminal' },
+      ],
+      joints+: [
+        { from: 'CLI.ml:def:typeset', to: 'ixdoc/Ixdoc.ml:def:read', say: '-md' },
+        { from: 'CLI.ml:def:typeset', to: 'latex/Latex.ml:def:read', say: '-latex' },
+        { from: 'CLI.ml:def:typeset', to: 'doc/To_text.ml:def:page', say: '-T text' },
+      ],
+    },
+    skeletons.parts('Readers into one Doc, writers out of it', [
+      ['roff/', 'troff input: man, ms, tbl'],
+      ['pic/', "pic's pictures"],
+      ['ixdoc/', "Markdown's lines, read and written"],
+      ['latex/', 'simple LaTeX, noweb, BibTeX'],
+      ['doc/', 'the Doc, laid out, to text and PDF'],
+      ['CLI.mli', 'which reader, which writer'],
+    ], [
+      ['roff/', 'doc/', 'a Doc'],
+      ['pic/', 'roff/', '.PS ... .PE'],
+      ['pic/', 'ixdoc/', 'its pictures too'],
+      ['ixdoc/', 'doc/', 'a Doc'],
+      ['latex/', 'doc/', 'a Doc'],
+      ['CLI.mli', 'roff/', 'reads with'],
+      ['CLI.mli', 'doc/', 'writes with'],
+    ]),
+  ],
+  views: [
+    { name: 'troff: mini-troff and tiny-troff', files: ['./', '../../tiny/TinyTroff.ml'] },
+  ],
+}

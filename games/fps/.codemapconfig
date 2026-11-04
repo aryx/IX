@@ -1,0 +1,61 @@
+// games/fps/: what the code map says of it
+local skeletons = import '../../skeletons.libsonnet';
+// a playground program: Model-View-Update down to its Cap.main, and its
+// heart reached from update or view
+local mvu(file, heart, role, say, from='def:view') = {
+  local at(a) = file + ':' + a,
+  name: 'Model-View-Update, and its heart: ' + std.split(heart, ':')[1],
+  bones: [
+    { at: at('type:model'), role: 'the state' },
+    { at: at('def:initial_model'), role: 'the first state' },
+    { at: at('def:update'), role: 'a frame: model -> model' },
+    { at: at('def:view'), role: 'a picture: model -> shapes' },
+    { at: at('def:app'), role: 'the app: the three given to game' },
+    { at: at('code:"Cap.main"'), role: 'the program: the app run, with the capabilities' },
+    { at: at(heart), role: role },
+  ],
+  joints: [
+    { from: at('def:initial_model'), to: at('type:model') },
+    { from: at('type:model'), to: at('def:update'), say: 'stepped' },
+    { from: at('def:update'), to: at('type:model'), say: 'the next state' },
+    { from: at('type:model'), to: at('def:view'), say: 'drawn' },
+    { from: at('def:app'), to: at('def:update'), say: 'steps with' },
+    { from: at('def:app'), to: at('def:view'), say: 'draws with' },
+    { from: at('code:"Cap.main"'), to: at('def:app'), say: 'runs' },
+    { from: at(from), to: at(heart), say: say },
+  ],
+};
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: 'Seen from inside: a raycast maze on the playground, then Doom and Quake by renderers of their own.',
+  files: {
+    'TinyWolfenstein.ml': {
+      summary: "Wolfenstein 3D (id, 1992) as a raycaster on the 2D playground: a ray a column, after Lode's tutorial.",
+      digest: '7f06ec027039',
+      capitals: [{ at: 'def:cast', say: 'a ray stepped cell by cell (DDA) to a wall' }],
+      important: [
+        { at: 'section:Raycasting -- the trick of this game, in 61 lines (see the header)', say: 'the 2.5D trick', weight: 3 },
+        { at: 'type:model', say: 'where you stand, where you look, the treasure left', weight: 2 },
+        { at: 'type:hit', say: 'perpendicular distance: no fisheye', weight: 3 },
+        { at: 'def:plane_length', say: 'the camera plane: about 66 degrees', weight: 2 },
+        { at: 'def:view_walls', say: 'a column a ray, its height 1/distance', weight: 2 },
+        { at: 'def:view_treasure', say: 'sprites hidden by the walls nearer', weight: 1 },
+        { at: 'def:walk', say: 'sliding along walls: x and y apart', weight: 1 },
+      ],
+      links: [{ from: 'def:view', to: 'def:cast' }, { from: 'def:update', to: 'def:walk' }],
+    },
+  },
+  skeletons: [
+    skeletons.parts('First person, three ways', [
+      ['TinyWolfenstein.ml', 'a raycaster: a ray a column, on the 2D playground'],
+      ['doom/', "Doom's BSP and visplanes, a WAD's level"],
+      ['quake/', "Quake's PVS, edge list and surface cache, a .bsp"],
+      ['../../lib_playground/', 'their window, keys and clock'],
+    ], [
+      ['TinyWolfenstein.ml', '../../lib_playground/', 'shapes'],
+      ['doom/', '../../lib_playground/', 'a bitmap a frame'],
+      ['quake/', '../../lib_playground/', 'a bitmap a frame'],
+    ]),
+    mvu('TinyWolfenstein.ml', 'def:cast', 'a ray cast to the first wall', 'a ray a column'),
+  ],
+}

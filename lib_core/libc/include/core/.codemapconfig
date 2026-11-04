@@ -1,0 +1,28 @@
+// lib_core/libc/include/core/: what the code map says of it (the code map: tinybox codemap,
+// ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The core of libc.h: portable integer types, nil and nelem, setjmp's exceptions, malloc, mem*.",
+  files: {
+    'types.h': { digest: '7b99a2a63ce2', summary: "The portable typedefs: uchar, ushort, uint, ulong, vlong; the sizes are u.h's." },
+    'macros.h': { digest: '432faa5f07a9', summary: 'nil, the null pointer.' },
+    'reflect.h': { digest: '596a978acd9c', summary: 'nelem and offsetof.' },
+    'exn.h': { digest: 'ad0511349ab4',
+      summary: "Poor man's exceptions by setjmp and longjmp; a jmp_buf two words, the compiler keeping no register.",
+      important: [{ at: 'comment:"The compiler keeps no register across a call"', weight: 2 }],
+    },
+    'malloc.h': { digest: '623f7cddbad4', summary: 'malloc, free, mallocz, realloc, declared.' },
+    'mem.h': { digest: '68b3c961e0f1', summary: 'memset, memcpy, memmove, memcmp, memccpy, declared.' },
+  },
+  skeletons: [
+    skeletons.parts('The core declarations', [
+      ['types.h', 'the integer types'], ['macros.h', 'nil'], ['reflect.h', 'nelem'],
+      ['exn.h', 'setjmp'], ['malloc.h', 'the heap'], ['mem.h', 'bytes'],
+    ], [
+      ['types.h', 'malloc.h', 'ulong sizes'],
+      ['types.h', 'mem.h', 'ulong sizes'],
+    ]),
+  ],
+}

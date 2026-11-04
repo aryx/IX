@@ -1,0 +1,32 @@
+// games/fps/doom/tools/: what the code map says of it
+local skeletons = import '../../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The tool that makes mini-doom's WAD from Freedoom's source tree (Linux).",
+  files: {
+    'Mkwad.ml': {
+      summary: "mini-mkwad: the few lumps the levels need, from Freedoom's git tree: palette, colormap, textures, sounds.",
+      digest: '8fa6f3e9952d',
+      capitals: [{ at: 'def:make', say: 'the WAD made, lump by lump' }],
+      important: [
+        { at: 'comment:"COLORMAP  34 maps of 256 indices"', say: "Freedoom's script, the same numbers", weight: 2 },
+        { at: 'def:colormap', say: '32 levels of light, nearest colours', weight: 2 },
+        { at: 'def:patch_of', say: "a PNG made Doom's columns of posts", weight: 3 },
+        { at: 'def:textures_of', say: 'textures.cfg read, only those used', weight: 2 },
+        { at: 'def:dmx_of_wav', say: "a WAV made DMX's lump", weight: 1 },
+        { at: 'def:sprites_of', say: "the levels' things' and Info's sprites", weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.onefile('mini-mkwad: a WAD from a source tree', 'Mkwad.ml', [
+      ['Mkwad.ml:def:make', 'the WAD of the given levels', 'dir, out, maps'],
+      ['Mkwad.ml:def:level_lumps', "each level's lumps", 'the maps'],
+      ['Mkwad.ml:def:textures_of', 'the textures they name', 'their sides'],
+      ['Mkwad.ml:def:patch_of', 'each patch, a PNG made columns', 'their patches'],
+    ], main='code:"Exit.exit caps"') + {
+      bones+: [{ at: '../wad/Wad.ml:def:write', role: 'the lumps as a WAD' }],
+      joints+: [{ from: 'Mkwad.ml:def:make', to: '../wad/Wad.ml:def:write', say: 'written' }],
+    },
+  ],
+}

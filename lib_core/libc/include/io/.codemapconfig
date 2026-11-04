@@ -1,0 +1,8 @@
+// lib_core/libc/include/io/: what the code map says of it (the code map: tinybox codemap,
+// ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "STDIN, STDOUT, STDERR: descriptors named.",
+  files: { 'io.h': { digest: '83560350f404', summary: 'The three standard descriptors as names, and readn.' } },
+}

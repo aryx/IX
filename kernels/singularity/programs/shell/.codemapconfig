@@ -1,0 +1,35 @@
+// kernels/singularity/programs/shell/: what the code map says of it (the
+// code map is tinybox codemap, in ~/github/ocaml-elm-playground).
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The shell: a line from the console driver by contract, a command of its own or a program run and joined.",
+  files: {
+    'Main.ml': { digest: 'b396d545f994',
+      summary: "The shell: a line from the console driver by contract, a command of its own or a program run and joined.",
+      capitals: [ { at: "code:\"let () =\"", say: "the prompt: read a line, run it" } ],
+      important: [
+        { at: "def:print", say: "a block written, lent to the driver, given back", weight: 3 },
+        { at: "def:read_line", say: "keys one by one, echoed", weight: 2 },
+        { at: "def:run", say: "a program by name: create, start, join", weight: 3 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: "The shell: a console by contract, programs by name",
+      bones: [
+        { at: "Main.ml:code:\"let () =\"", role: "the loop: prompt, line, command" },
+        { at: "Main.ml:def:read_line", role: "a line of keys" },
+        { at: "Main.ml:def:key", role: "Read sent, Key received" },
+        { at: "Main.ml:def:print", role: "Write: the block lent" },
+        { at: "Main.ml:def:run", role: "a program started and waited for" },
+      ],
+      joints: [
+        { from: "Main.ml:code:\"let () =\"", to: "Main.ml:def:read_line" },
+        { from: "Main.ml:def:read_line", to: "Main.ml:def:key" },
+        { from: "Main.ml:code:\"let () =\"", to: "Main.ml:def:print", say: "the prompt" },
+        { from: "Main.ml:code:\"let () =\"", to: "Main.ml:def:run", say: "a name" },
+      ],
+    },
+  ],
+}

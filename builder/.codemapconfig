@@ -7,20 +7,23 @@ local with_says(s, says) = s + {
   joints: [s.joints[i] + { say: says[i] } for i in std.range(0, std.length(s.joints) - 1)],
 };
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "mini-mk, Plan 9's mk: mkfiles read as they are evaluated, a target's graph, what is out of date remade, $NPROC at once.",
   files: {
-    'Main.ml': { digest: 'fcab6db52428',
+    'Main.ml': { digest: '4a040c0077b3',
       summary: 'mini-mk, the program: Cap.main and logging, then the command line.',
     },
-    'CLI.mli': { digest: '7b6610411fde',
-      summary: "The command line: mk's options, var=value, the default targets, $NPROC and $NREP.",
+    'CLI.mli': { digest: 'ba436befc91b',
+      summary: "mini-mk's map and history (make, mk, Ninja, Bazel), and its command line: options, var=value, targets.",
       important: [
+        { at: 'comment:"the modules, a build"', say: "a build's way through the modules", weight: 3 },
+        { at: 'comment:"Make is Stuart Feldman"', say: 'the morning lost to a stale object', weight: 2 },
+        { at: 'comment:"Why dates."', say: 'one stat, no database: and its failures', weight: 2 },
         { at: 'def:main', weight: 2 },
         { at: 'comment:"With no target, the targets of the first rule"', say: 'what mk makes when told nothing', weight: 1 },
       ],
     },
-    'CLI.ml': { digest: 'b21563c8ace6',
+    'CLI.ml': { digest: '165b9f13916d',
       summary: 'The outside world given to the build (files, times, processes), and every target made in turn.',
       capitals: [
         { at: 'def:main', say: "mini-mk's entry: -h, or a build" },
@@ -49,7 +52,7 @@ local with_says(s, says) = s + {
         { at: 'def:split', weight: 2 },
       ],
     },
-    'Word.ml': { digest: '63e3cd9427ec',
+    'Word.ml': { digest: '5057b235773b',
       summary: 'A line cut into words outside quotes, variables looked up and glued to their neighbours.',
       important: [
         { at: 'def:split', say: 'the text of a line into its words', weight: 3 },
@@ -59,7 +62,7 @@ local with_says(s, says) = s + {
         { at: 'def:unquote', weight: 1 },
       ],
     },
-    'Pattern.mli': { digest: '01a8f42c4a60',
+    'Pattern.mli': { digest: '2b3456ac7b8d',
       summary: "A rule's target as a pattern: literal, %, & or a regexp, and the stem put back into the prerequisites.",
       capitals: [
         { at: "type:t", say: "a target: literal, or a metarule's pattern" },
@@ -74,7 +77,7 @@ local with_says(s, says) = s + {
         { at: 'def:subst', weight: 1 },
       ],
     },
-    'Pattern.ml': { digest: '2cacd5dded1e',
+    'Pattern.ml': { digest: '15bc0c7fb60f',
       summary: 'Matching a name against a prefix and suffix around % or &, or a whole regexp.',
       important: [
         { at: 'type:t', weight: 2 },
@@ -82,7 +85,7 @@ local with_says(s, says) = s + {
         { at: 'def:subst', weight: 1 },
       ],
     },
-    'Mkfile.mli': { digest: 'ec4f6dcc8205',
+    'Mkfile.mli': { digest: '75f68acaba7d',
       summary: 'A mkfile read in one pass, each line evaluated as read: no syntax tree; rules, attributes, variables.',
       capitals: [
         { at: 'type:rule', say: 'a rule: pattern, prerequisites, recipe, attributes' },
@@ -96,7 +99,7 @@ local with_says(s, says) = s + {
         { at: 'def:read', weight: 2 },
       ],
     },
-    'Mkfile.ml': { digest: 'feb0374636bf',
+    'Mkfile.ml': { digest: '59cdcf30bcc4',
       summary: "lex.c's lines (backslashes, comments, backquotes run now) and parse.c's rules and assignments, as read.",
       important: [
         { at: 'def:read_input', say: 'a line: an include, an assignment, or a rule', weight: 3 },
@@ -112,7 +115,7 @@ local with_says(s, says) = s + {
         { from: 'def:read_input', to: 'def:add_rules' },
       ],
     },
-    'Graph.mli': { digest: 'b1f7f9e9675c',
+    'Graph.mli': { digest: '0c3b16f4a77e',
       summary: 'From a target to all it depends on: which rules apply, NREP, vacuous and ambiguous arcs pruned, cycles.',
       capitals: [
         { at: 'type:node', say: "mk's graph: a name, its arcs, its date" },
@@ -126,7 +129,7 @@ local with_says(s, says) = s + {
         { at: 'def:node', weight: 1 },
       ],
     },
-    'Graph.ml': { digest: 'a24a4ebe3003',
+    'Graph.ml': { digest: 'fab34e1b5ed9',
       summary: "graph.c's applyrules, memoized: each node built once, then pruned of vacuous and ambiguous arcs.",
       capitals: [
         { at: 'def:build', say: 'the rules applied to a name, recursively' },
@@ -144,7 +147,7 @@ local with_says(s, says) = s + {
         { from: 'def:build', to: 'def:prune_ambiguous' },
       ],
     },
-    'Outofdate.mli': { digest: '30f384431cda',
+    'Outofdate.mli': { digest: 'a7a234e2d5b3',
       summary: 'Out of date or not: the date stamps and the <= test; :P: programs; -H, content traces instead of times.',
       capitals: [
         { at: 'def:arc', say: 'the rebuilder: must this arc remake the node?' },
@@ -156,7 +159,7 @@ local with_says(s, says) = s + {
         { at: 'def:after_recipe', say: 'early cutoff: re-stat after the recipe', weight: 2 },
       ],
     },
-    'Outofdate.ml': { digest: '4e924c574aa3',
+    'Outofdate.ml': { digest: 'c7666b3fcf17',
       summary: 'The decision per arc: a :P: program, a trace, or the two times; the stamp a target gets after its recipe.',
       important: [
         { at: 'def:arc', weight: 3 },
@@ -165,7 +168,7 @@ local with_says(s, says) = s + {
         { at: 'def:by_prog', weight: 1 },
       ],
     },
-    'Recipe.mli': { digest: 'd1c5b92ec80e',
+    'Recipe.mli': { digest: '1588a9393539',
       summary: "A job: one recipe, the variables it sees ($target, $stem, $newprereq), how it is printed, the shell it goes to.",
       important: [
         { at: 'type:job', say: 'one recipe to run, and the names it runs with', weight: 3 },
@@ -175,7 +178,7 @@ local with_says(s, says) = s + {
         { at: 'def:start', weight: 1 },
       ],
     },
-    'Recipe.ml': { digest: '541d45de7a15',
+    'Recipe.ml': { digest: '08a11a343ce3',
       summary: "The job's environment, lists joined for rc or sh, the printed recipe, and the shell forked.",
       important: [
         { at: 'def:env', weight: 2 },
@@ -185,7 +188,7 @@ local with_says(s, says) = s + {
         { at: 'def:start', weight: 2 },
       ],
     },
-    'Build.mli': { digest: 'fcc29d2bc3ba',
+    'Build.mli': { digest: '20fa05736d14',
       summary: "The build: the graph walked again after every job, out-of-date nodes queued, $NPROC slots; mk's scheduler.",
       capitals: [
         { at: 'def:make', say: 'a target made: walk, run, wait, walk again' },
@@ -194,11 +197,13 @@ local with_says(s, says) = s + {
         { at: "comment:\"mk's loop, re-walked from the target after every change:\"", say: 'the loop, in six lines', weight: 3 },
         { at: 'comment:"Why not plan everything first and then run it?"', say: 'a recipe may leave its target alone', weight: 3 },
         { at: 'comment:"This is the scheduler of"', weight: 1 },
+        { at: 'comment:"The slots are processes and nothing more"', say: 'fork and wait: no thread, no lock', weight: 2 },
+        { at: 'comment:"Parallel builds and recursion."', say: "no jobserver: NPROC to the n", weight: 1 },
         { at: 'type:io', say: 'the world, given: so tests need none', weight: 2 },
         { at: 'def:make', weight: 2 },
       ],
     },
-    'Build.ml': { digest: 'f381aac9c8f5',
+    'Build.ml': { digest: 'dd1b64d977be',
       summary: "mk.c's work and recipe.c's dorecipe, run.c's sched and waitup: jobs in slots, statuses in tables.",
       capitals: [
         { at: 'def:work', say: 'the walk: out of date and ready, queue it' },
@@ -219,14 +224,14 @@ local with_says(s, says) = s + {
         { from: 'def:make', to: 'def:waitup' },
       ],
     },
-    'Archive.mli': { digest: '35df5b0528d9',
+    'Archive.mli': { digest: '7522e0c2e829',
       summary: 'lib.a(foo.o) as a target: the date of a member read from the ar header, how mklib rebuilds a library.',
       important: [
         { at: 'comment:"Archives: a library as a target, lib.a(foo.o) as a name."', weight: 2 },
         { at: 'def:time', weight: 2 },
       ],
     },
-    'Archive.ml': { digest: 'b13882e6ef05',
+    'Archive.ml': { digest: '26d368022640',
       summary: "The ar format's members walked for a name and its date; archive.c's two corrections.",
       important: [
         { at: 'def:members', weight: 2 },

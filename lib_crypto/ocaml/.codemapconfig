@@ -1,0 +1,10 @@
+// lib_crypto/ocaml/: what the code map says of it (the code map: tinybox codemap,
+// ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "OCaml's side of lib_crypto (dune's ix_crypto_wide): what mini-ml gets as an external.",
+  files: {
+    'Wide.ml': { digest: '38e9bf7489fa', summary: "mul_high by the product's halves, none overflowing: the runtime's ml_mul_high in OCaml." },
+  },
+}

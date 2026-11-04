@@ -2,17 +2,19 @@
 // for byte (the code map's guidelines: docs/claude_notes/
 // codemapconfig_guidelines.md in ~/github/ocaml-elm-playground)
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "What mini-ld does only to match 5l and 7l byte for byte: the code laid out along its flow.",
   files: {
-    'Follow.mli': { digest: '3d7cdebd25b9',
+    'Follow.mli': { digest: '8e92df4fd345',
       summary: "5l's xfol: branches inverted or replaced by copies, dead code dropped; -nofollow skips it.",
       important: [
         { at: 'comment:"it changes no"', say: 'compatibility, not behaviour', weight: 3 },
         { at: 'def:follow', weight: 2 },
+        { at: 'comment:"An if with an else, as a compiler writes it"', say: 'the walk drawn: B gone, RET copied', weight: 3 },
+        { at: "comment:\"This is a compiler's pass put in the linker\"", say: 'straightened once, for asm and compilers', weight: 1 },
       ],
     },
-    'Follow.ml': { digest: '89d626d5db1a',
+    'Follow.ml': { digest: '9724e5e06366',
       summary: "The new order kept in tables of links and marks, where xfol reused the progs' own links.",
       capitals: [
         { at: 'def:follow', say: "5l's code order, reproduced" },
@@ -30,14 +32,14 @@
         { at: 'Follow.ml:comment:"Here the links and the marks are tables"', role: "the new order: links and marks by id" },
         { at: "Follow.ml:comment:\"a TEXT's target is the next TEXT\"", role: "5l's ldobj: functions chained" },
         { at: 'Follow.ml:comment:"up to 4 instructions from p, if they end the flow"', role: 'a short end copied, not branched to' },
-        { at: '../Link.ml:type:t', role: 'the progs, in and out' },
+        { at: '../Program.ml:type:t', role: 'the progs, in and out' },
       ],
       joints: [
-        { from: '../Link.ml:type:t', to: 'Follow.ml:def:follow', say: "the objects' order" },
+        { from: '../Program.ml:type:t', to: 'Follow.ml:def:follow', say: "the objects' order" },
         { from: 'Follow.ml:def:follow', to: 'Follow.ml:comment:"Here the links and the marks are tables"', say: 'each prog placed' },
         { from: "Follow.ml:comment:\"a TEXT's target is the next TEXT\"", to: 'Follow.ml:def:follow', say: 'where the flow goes next' },
         { from: 'Follow.ml:comment:"up to 4 instructions from p, if they end the flow"', to: 'Follow.ml:def:follow', say: 'a copy, or a B' },
-        { from: 'Follow.ml:def:follow', to: '../Link.ml:type:t', say: "5l's order" },
+        { from: 'Follow.ml:def:follow', to: '../Program.ml:type:t', say: "5l's order" },
       ],
     },
     { name: 'compat: an optional pass between the linker\'s own',

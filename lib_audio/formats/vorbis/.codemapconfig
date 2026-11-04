@@ -1,0 +1,64 @@
+// lib_audio/formats/vorbis/: what the code map says of it (the code map
+// is tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Ogg Vorbis decoded, the free codec born of MP3's patents: LibreQuake's music for mini-quake.",
+  files: {
+    'Ogg.mli': { digest: '498dcb221a97',
+      summary: "Ogg's pages read back into the packets a codec wrote, lacing and continuations.",
+      important: [{ at: 'def:packets', weight: 3 }],
+    },
+    'Ogg.ml': { digest: '4e1fb9ef6c28',
+      summary: "OggS pages walked, segments joined until one shorter than 255 ends a packet.",
+    },
+    'Vorbis.mli': { digest: '8e355d55b1b7',
+      summary: 'Vorbis I: codebooks, floor 1, three residue kinds, channel coupling, the inverse MDCT.',
+      capitals: [{ at: 'def:decode', say: 'a packet to its block of samples' }],
+      important: [
+        { at: "comment:\"Fraunhofer institute wrote to the authors\"", say: 'why Vorbis exists', weight: 2 },
+        { at: 'def:create', say: 'the identification and setup headers', weight: 2 },
+      ],
+    },
+    'Vorbis.ml': { digest: '45cc47426ff4',
+      summary: "The setup's codebooks built from lengths, a floor's line segments, residues, then the MDCT by an FFT.",
+      important: [
+        { at: 'def:read_codebook', say: 'lengths to canonical codewords, VQ tables', weight: 3 },
+        { at: 'def:create', weight: 2 },
+        { at: 'def:floor_curve', say: "floor 1: Bresenham's lines in dB", weight: 3 },
+        { at: 'def:read_residue_vectors', say: 'kinds 0, 1, 2 by partitions', weight: 2 },
+        { at: 'def:dct4', say: 'the MDCT through an FFT of a quarter', weight: 2 },
+        { at: 'def:dct4_simple', say: 'the definition, kept for comparison', weight: 1 },
+        { at: 'def:decode', say: 'mode, floors, residues, coupling, IMDCT', weight: 3 },
+      ],
+    },
+    'Vorbis_player.mli': { digest: '2ccdb427b884',
+      summary: 'An .ogg played as it goes, a packet decoded when the samples before it are used up.',
+      important: [{ at: 'comment:"six minutes of stereo at 44,100"', say: '250 MB decoded, 3 MB of packets', weight: 3 }],
+    },
+    'Vorbis_player.ml': { digest: '9bebfe93d4e6',
+      summary: "Blocks read through, linearly interpolated to the mixer's rate, looped or ended at the last page's length.",
+      important: [{ at: 'def:next_sample', weight: 2 }, { at: 'def:fill', weight: 3 }],
+    },
+  },
+  skeletons: [
+    skeletons.chain('An Ogg Vorbis file played', [
+      ['Ogg.ml:def:packets', 'pages to packets', ''],
+      ['Vorbis.ml:def:create', 'the three headers: setup', 'the first packets'],
+      ['Vorbis_player.ml:def:fill', 'samples when asked', 'the decoder'],
+      ['Vorbis.ml:def:decode', 'a packet to a block', 'each packet'],
+    ]),
+    skeletons.chain('A Vorbis packet decoded', [
+      ['Vorbis.ml:def:decode', 'mode and window', ''],
+      ['Vorbis.ml:def:read_floor_points', 'the floor curve', 'each channel'],
+      ['Vorbis.ml:def:read_residue_vectors', 'the fine spectrum', 'the residue'],
+      ['Vorbis.ml:def:floor_curve', 'times the floor', 'the curve'],
+      ['Vorbis.ml:def:imdct', 'back to time', 'the spectrum'],
+      ['Vorbis.ml:def:window', 'overlapped with the previous', 'the block'],
+    ]) + {
+      bones+: [{ at: 'Vorbis.ml:def:read_codebook', role: 'every symbol read through a codebook' }],
+      joints+: [{ from: 'Vorbis.ml:def:read_codebook', to: 'Vorbis.ml:def:read_residue_vectors', say: 'VQ vectors' }],
+    },
+  ],
+}

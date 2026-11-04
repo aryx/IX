@@ -1,0 +1,34 @@
+// games/shmup/kit/: what the code map says of it
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The playground's shoot 'em up kit, its Shots only: a shot as a value that moves.",
+  files: {
+    'Shots.mli': {
+      summary: 'Bullets, lasers, bombs as values: where, how fast; advanced each frame, dropped off screen.',
+      digest: 'fe1431a504be',
+      capitals: [{ at: 'def:aimed', say: 'the one bit of math: towards a target' }],
+      important: [
+        { at: 'type:t', say: 'a position and a speed in pixels a frame', weight: 3 },
+        { at: 'def:advance', say: 'no physics: straight, constant speed', weight: 2 },
+      ],
+    },
+    'Shots.ml': {
+      summary: 'The shots made: a record of position and speed, and five functions over it.',
+      digest: '2ae0e6eae2d1',
+    },
+  },
+  skeletons: [{
+    name: 'A shot: fired, moved, dropped',
+    bones: [
+      { at: 'Shots.ml:type:t', role: 'a shot: where, and its speed' },
+      { at: 'Shots.ml:def:aimed', role: 'fired towards a target' },
+      { at: 'Shots.ml:def:advance', role: 'a frame: moved by its speed' },
+      { at: 'Shots.ml:def:on_screen', role: 'kept while on the screen' },
+    ],
+    joints: [
+      { from: 'Shots.ml:def:aimed', to: 'Shots.ml:type:t', say: 'a new shot' },
+      { from: 'Shots.ml:type:t', to: 'Shots.ml:def:advance', say: 'each frame' },
+      { from: 'Shots.ml:def:advance', to: 'Shots.ml:def:on_screen', say: 'still there?' },
+    ],
+  }],
+}

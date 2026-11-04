@@ -1,0 +1,44 @@
+// utilities/namespace/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+local sys = '../../lib_core/commons/Sys_plan9.mli';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Plan 9's name space commands: bind, mount, unmount, a process's own tree of names.",
+  files: {
+    'Bind.ml': { digest: '00c8d1cfb737',
+      summary: "mini-bind: a directory is also another, before, after (a union), in this process's name space.",
+      important: [
+        { at: 'comment:"/dev/cons is now the window"', say: "rio's trick, drawn", weight: 3 },
+        { at: 'comment:"On Unix the tree of names is the machine\'s"', say: 'per process here', weight: 2 },
+        { at: 'def:main', weight: 2 },
+      ],
+    },
+    'Mount.ml': { digest: 'c389b901231d',
+      summary: "mini-mount: a 9P server's tree on a directory; no authentication (-n always).",
+      important: [
+        { at: 'comment:"FUSE (in Linux since 2005) is the same idea"', weight: 2 },
+        { at: 'def:main', weight: 2 },
+      ],
+    },
+    'Unmount.ml': { digest: 'c74b1ce5ae8e',
+      summary: 'mini-unmount: what was bound or mounted on a directory taken off, or one part of its union.',
+    },
+  },
+  skeletons: [
+    skeletons.onefile('mini-bind', 'Bind.ml', [[sys + ':def:bind', "Plan 9's call; elsewhere it fails", 'new, old, the flags']]),
+    skeletons.onefile('mini-mount', 'Mount.ml', [[sys + ':def:mount', "a server's tree on dir", 'the service, dir, spec']]),
+    skeletons.onefile('mini-unmount', 'Unmount.ml', [[sys + ':def:unmount', 'taken off', 'dir']]),
+    skeletons.parts('Three commands, three system calls', [
+      ['Bind.ml', 'a directory onto another'],
+      ['Mount.ml', "a server's tree onto a directory"],
+      ['Unmount.ml', 'either undone'],
+      [sys, 'the calls, Plan 9 only'],
+    ], [
+      ['Bind.ml', sys, 'bind'],
+      ['Mount.ml', sys, 'mount'],
+      ['Unmount.ml', sys, 'unmount'],
+    ]),
+  ],
+}

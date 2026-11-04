@@ -1,0 +1,96 @@
+// kernels/tools/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). Built by dune
+// on the host (package ix), run by the kernels' Makefiles.
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The kernels' build tools on the host, OCaml not Python: the bootdir, the SD card, xv6's image, pixels.",
+  files: {
+    'Mkbootdir.ml': { digest: '5da587d500c5',
+      summary: "mini-mkbootdir: mini-9pi's /boot packed for Devroot, lines and bytes; 9pi's kerndate found.",
+      capitals: [
+        { at: 'def:main', say: 'files packed as name, size, bytes' },
+      ],
+      important: [
+        { at: 'comment:"Lines and bytes, not a marshalled list"', say: 'read in place: rc is 700 KB, no Marshal', weight: 3 },
+        { at: 'comment:"A kernel that has just"', say: 'why a kernel carries a directory', weight: 2 },
+        { at: 'def:kerndate_9pi', say: "9pi's date, from its image's bytes", weight: 2 },
+      ],
+    },
+    'Mkcard.ml': { digest: 'eb98374ded81',
+      summary: "mini-mkcard: an SD card's image, an MBR, a FAT16 the firmware reads, then the kernel's partition.",
+      capitals: [
+        { at: 'def:main', say: 'the card: MBR, FAT16, a file system' },
+      ],
+      important: [
+        { at: 'comment:"the MBR: four partitions"', say: 'the card in sectors, drawn', weight: 3 },
+        { at: 'comment:"The FAT16, the simplest that the firmware takes"', weight: 2 },
+        { at: 'def:name83', say: '8.3 names only: no VFAT', weight: 1 },
+        { at: 'def:partition', say: 'an MBR entry, LBA only', weight: 1 },
+        { at: 'def:fat16', say: 'each file in consecutive clusters', weight: 3 },
+      ],
+    },
+    'Mkfs.ml': { digest: '7f3224d2127d',
+      summary: "mini-mkfs: an xv6 file system image with files, made by the library the kernel reads it with.",
+      capitals: [
+        { at: 'def:main', say: "the image made in memory by Xv6fs" },
+      ],
+      important: [
+        { at: 'comment:"A file system is first made by a program"', say: 'the format tested on Linux before a boot', weight: 3 },
+        { at: 'code:"Xv6fs.format read write"', say: 'the device is memory', weight: 2 },
+      ],
+    },
+    'Mkpixdata.ml': { digest: '5a6f1783a3e9',
+      summary: "mini-mkpixdata: principia's cmap.c and defont.c as OCaml strings (Memdata.ml), run by hand.",
+      capitals: [
+        { at: 'def:main', say: 'the C data to OCaml strings' },
+      ],
+      important: [
+        { at: 'comment:"Memdata.ml and its interface (lib_graphics/ocaml"', say: 'stale: Memdata.ml is in lib_graphics/ now', weight: 2 },
+        { at: 'def:numbers', say: "a C array's numbers, whatever their base", weight: 1 },
+        { at: 'def:memdata', say: 'Memdata.ml and .mli written', weight: 3 },
+        { at: 'def:font_default', say: "the client's Font_default.ml", weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'The tools and what they make',
+      bones: [
+        { at: 'Mkbootdir.ml', role: "mini-9pi's /boot, linked in its image" },
+        { at: 'Mkcard.ml', role: 'the SD card the Pi boots from' },
+        { at: 'Mkfs.ml', role: "the card's second partition: xv6's file system" },
+        { at: 'Mkpixdata.ml', role: "the pixels' generated data" },
+        { at: '../9pi/devices/sys/Devroot.ml', role: 'serves the bootdir as /boot' },
+        { at: '../9pi/filesystems/lib_xv6fs/Xv6fs.ml', role: 'the format, shared with the kernel' },
+        { at: '../9pi/lib_graphics/Memdata.ml', role: 'the output, checked in' },
+      ],
+      joints: [
+        { from: 'Mkbootdir.ml', to: '../9pi/devices/sys/Devroot.ml', say: 'lines and bytes' },
+        { from: 'Mkfs.ml', to: '../9pi/filesystems/lib_xv6fs/Xv6fs.ml', say: 'written with' },
+        { from: 'Mkcard.ml', to: 'Mkfs.ml', say: '-fs: its image' },
+        { from: 'Mkpixdata.ml', to: '../9pi/lib_graphics/Memdata.ml', say: 'generates' },
+      ],
+    },
+    skeletons.onefile('mini-mkbootdir: a directory for the kernel', 'Mkbootdir.ml', [
+      ['Mkbootdir.ml:def:kerndate_9pi', "the date the devices' files say", 'a directory, not a number'],
+      ['Mkbootdir.ml:code:"9pi bootdir %d"', 'the header line, then name size bytes', 'the date'],
+    ]),
+    skeletons.onefile('mini-mkcard: an SD card made', 'Mkcard.ml', [
+      ['Mkcard.ml:def:name83', 'each name 8.3', 'name=file pairs'],
+      ['Mkcard.ml:def:fat16', 'the FAT16: boot sector, tables, root, clusters', 'the files'],
+      ['Mkcard.ml:def:partition', 'the MBR: the FAT and the data partition', 'the FAT built'],
+    ]),
+    skeletons.onefile('mini-mkfs: an image in memory, then written', 'Mkfs.ml', [
+      ['Mkfs.ml:code:"Xv6fs.format read write"', 'an empty file system', 'size, block size, inodes'],
+      ['../9pi/filesystems/lib_xv6fs/Xv6fs.ml:def:create', 'each file and directory on the way', 'name=file'],
+      ['../9pi/filesystems/lib_xv6fs/Xv6fs.ml:def:write', "the file's bytes", 'its inode'],
+    ]),
+    skeletons.onefile('mini-mkpixdata: C data to OCaml', 'Mkpixdata.ml', [
+      ['Mkpixdata.ml:def:memdata', 'cmap.c and defont.c read, Memdata written', 'principia, a directory'],
+      ['Mkpixdata.ml:def:numbers', "a C array's numbers", "cmap.c's text"],
+      ['Mkpixdata.ml:def:literal', 'an OCaml string literal', 'the bytes'],
+    ]),
+  ],
+}

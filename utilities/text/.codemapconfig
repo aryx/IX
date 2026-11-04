@@ -1,0 +1,107 @@
+// utilities/text/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+local regex = '../../lib_core/commons/Regex.mli';
+local utf8 = '../../lib_core/commons/Utf8.mli';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Plan 9's text filters: grep, sed, sort, tr, uniq, a line at a time, and awk below.",
+  files: {
+    'Grep.ml': { digest: 'f1cd9b8e287b',
+      summary: "mini-grep: lines matching Plan 9's regexps (mini-ed's Regex), each pattern tried in turn.",
+      important: [
+        { at: 'comment:"Not grep.c\'s way"', say: 'no one automaton: simpler, slower', weight: 2 },
+        { at: 'comment:"The name is a command of ed"', say: 'g/re/p, made a program', weight: 2 },
+        { at: 'code:"Regex.compile"', say: 'each pattern, -i folded', weight: 3 },
+        { at: 'def:main', weight: 2 },
+      ],
+    },
+    'Sed.ml': { digest: '0d6c334262d7',
+      summary: "mini-sed: Plan 9's stream editor, a script compiled to commands with jumps, run line by line.",
+      capitals: [
+        { at: 'def:run', say: 'each line through the script, the hold space' },
+      ],
+      important: [
+        { at: 'comment:"Its oddities kept"', say: "sed.c's quirks, each said where it is", weight: 2 },
+        { at: 'type:command', say: 'addresses, !, a range in progress', weight: 3 },
+        { at: 'type:action', weight: 2 },
+        { at: 'def:compile', say: 'the script to an array; { b t jumps', weight: 3 },
+        { at: 'def:run', weight: 3 },
+        { at: 'code:"and hold = ref"', say: "sed's only memory across lines", weight: 2 },
+        { at: 'comment:"sed is ed with the person taken"', weight: 1 },
+      ],
+      links: [
+        { from: 'def:main', to: 'def:compile' },
+        { from: 'def:main', to: 'def:run' },
+      ],
+    },
+    'Sort.ml': { digest: 'fdc00132b267',
+      summary: "mini-sort: each line made a key of bytes once, as sort.c, then sorted as bytes; all in memory.",
+      capitals: [
+        { at: 'code:"let key line"', say: "a line's key: the options turned into bytes" },
+      ],
+      important: [
+        { at: 'comment:"The key made once is what keeps the comparison out of the sort"', weight: 3 },
+        { at: 'type:field', say: '+pos1 -pos2 and its letters', weight: 2 },
+        { at: 'def:text_key', say: '-f -d -i -r as bytes', weight: 2 },
+        { at: 'def:number_key', say: "a number's bytes that sort as numbers", weight: 3 },
+        { at: 'code:"let key line"', weight: 3 },
+        { at: 'comment:"what were they thinking?"', say: "sort.c's own comment on -k", weight: 1 },
+      ],
+    },
+    'Tr.ml': { digest: '4d0394f096d3',
+      summary: "mini-tr: characters (UTF-8's) translated, deleted or squeezed; ranges of any of Unicode's.",
+      important: [
+        { at: 'def:expand', say: 'a-z and \\ooo to a list of runes', weight: 3 },
+        { at: 'comment:"System V\'s tr wanted its ranges in brackets"', weight: 1 },
+      ],
+    },
+    'Uniq.ml': { digest: '5f5e4869daf0',
+      summary: "mini-uniq: adjacent equal lines as one, leaving the grouping to sort (McIlroy's pipeline).",
+      important: [
+        { at: 'comment:"Only lines that follow each other"', say: 'one line in memory, whatever the size', weight: 2 },
+        { at: 'comment:"is Doug McIlroy\'s"', say: "six commands against Knuth's pages", weight: 2 },
+        { at: 'def:main', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.onefile('mini-grep', 'Grep.ml', [
+      ['Grep.ml:code:"Regex.compile"', 'the patterns compiled', 'the patterns'],
+      [regex, "Plan 9's regexp(7)", 'each line'],
+    ]),
+    skeletons.onefile('mini-sed: compile, then run', 'Sed.ml', [
+      ['Sed.ml:def:compile', 'the script to commands', '-e, -f, the script'],
+      ['Sed.ml:type:command', 'a command: addresses, action', 'an array of them'],
+      ['Sed.ml:def:run', 'each line through them', 'the commands'],
+    ]),
+    skeletons.onefile('mini-sort: keys, then bytes', 'Sort.ml', [
+      ['Sort.ml:code:"let key line"', "a line's key, made once", 'the fields, the letters'],
+      ['Sort.ml:def:text_key', 'a text field as bytes', 'a field'],
+    ]) + {
+      bones+: [{ at: 'Sort.ml:def:number_key', role: 'a number as bytes' }],
+      joints+: [{ from: 'Sort.ml:code:"let key line"', to: 'Sort.ml:def:number_key', say: 'a field with n or g' }],
+    },
+    skeletons.onefile('mini-tr', 'Tr.ml', [['Tr.ml:def:expand', 'the two strings expanded', 'string1, string2']]),
+    skeletons.onefile('mini-uniq', 'Uniq.ml', []),
+    skeletons.parts('Filters, joined by the pipe', [
+      ['Grep.ml', 'lines chosen'],
+      ['Sed.ml', 'lines edited'],
+      ['Tr.ml', 'characters changed'],
+      ['Sort.ml', 'lines ordered'],
+      ['Uniq.ml', 'equal neighbours merged'],
+      ['awk/', 'a language for the same jobs'],
+      [regex, "one regexp for ed, grep, sed, awk"],
+      [utf8, 'a character is not a byte'],
+    ], [
+      ['Tr.ml', 'Sort.ml', 'tr -cs | sort: a word a line'],
+      ['Sort.ml', 'Uniq.ml', 'sort | uniq -c: equal lines together'],
+      ['Grep.ml', regex, 'match'],
+      ['Sed.ml', regex, 'addresses, s'],
+      ['awk/', regex, 'via its Re'],
+      ['Tr.ml', utf8, 'runes'],
+      ['Sort.ml', utf8, 'case folding'],
+    ]),
+  ],
+}

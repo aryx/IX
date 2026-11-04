@@ -1,0 +1,126 @@
+// games/fps/quake/server/: what the code map says of it
+local skeletons = import '../../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Quake's server (sv_*.c, world.c): entities as QuakeC knew them, how they move, the player's walk, traces.",
+  files: {
+    'Edict.mli': {
+      summary: "A thing that acts and the world it acts in: edict_t's fields, QuakeC's think and touch, the globals.",
+      digest: '9d4571d22933',
+      capitals: [
+        { at: 'code:"and t = {"', say: 'an entity: origin, box, movetype, think, touch' },
+        { at: 'code:"and world = {"', say: 'the level, its entities, the client' },
+      ],
+      important: [
+        { at: 'comment:"A monster is a chain of thinks"', say: "QuakeC's way: a think a frame", weight: 3 },
+        { at: 'type:movetype', say: 'how Physics moves it', weight: 2 },
+        { at: 'code:"and mclass = {"', say: "a monster kind's functions", weight: 1 },
+      ],
+    },
+    'Edict.ml': {
+      summary: "The entity record and world, spawned and removed, sounds and effects queued for the client.",
+      digest: '0f19e2b1a231',
+      important: [
+        { at: 'def:spawn', say: 'an entity with no think nor touch yet', weight: 2 },
+        { at: 'def:sound', say: 'a sound for the client to play', weight: 1 },
+        { at: 'def:vectoyaw', say: "QuakeC's vectoyaw", weight: 1 },
+      ],
+    },
+    'Physics.mli': {
+      summary: "How entities move (sv_phys.c, sv_move.c): by movetype, a move a trace, the nearest impact touched.",
+      digest: '0f682a2f95c6',
+      capitals: [{ at: 'def:run', say: 'SV_Physics for one entity' }],
+    },
+    'Physics.ml': {
+      summary: "Toss, bounce, fly, step; monsters' walk_move and move_to_goal; thinks run when their time comes.",
+      digest: '93df5dd32ce1',
+      important: [
+        { at: 'def:trace', say: 'the level and the other boxes', weight: 2 },
+        { at: 'def:toss', say: 'gravity, bounce: backoff 1.5', weight: 2 },
+        { at: 'def:walk_move', say: 'SV_movestep: a monster steps, or not', weight: 2 },
+        { at: 'def:move_to_goal', say: 'SV_MoveToGoal: chase, try another way', weight: 3 },
+        { at: 'def:run_think', say: 'e.think: a call no map sees', weight: 3 },
+        { at: 'def:run', say: 'by movetype, then the think', weight: 2 },
+      ],
+    },
+    'Play.mli': {
+      summary: "The player's walk (sv_user.c, sv_phys.c): friction, acceleration, air control, steps, water.",
+      digest: 'c5cd5aa507c6',
+      capitals: [{ at: 'def:frame', say: "a frame of the player's move" }],
+      important: [{ at: 'comment:"air control"', say: 'strafe-jumping comes from here', weight: 2 }],
+    },
+    'Play.ml': {
+      summary: 'SV_ClientThink and SV_WalkMove: wish, friction, accelerate, slide along planes, step up.',
+      digest: 'c4d8a1050a91',
+      important: [
+        { at: 'def:frame', say: 'keys to a wish, then the move', weight: 3 },
+        { at: 'def:user_friction', say: 'stop in a quarter second', weight: 2 },
+        { at: 'def:accelerate_to', say: 'only the part along the wish: air control', weight: 3 },
+        { at: 'def:fly_move', say: 'SV_FlyMove: up to 4 planes slid along', weight: 2 },
+        { at: 'def:walk_move', say: 'stairs: up, across, down', weight: 2 },
+      ],
+    },
+    'Trace.mli': {
+      summary: "A box moved through the level (world.c): the hull its size picks makes it a point.",
+      digest: 'be4e356de1a0',
+      capitals: [{ at: 'def:move', say: 'where a box moving from a to b stops' }],
+      important: [{ at: 'comment:"hull 1 (pushed out by 16)"', say: "qbsp's hulls: a box as a point", weight: 3 }],
+    },
+    'Trace.ml': {
+      summary: 'SV_RecursiveHullCheck: the segment down the clipnodes, split where it crosses, the first solid.',
+      digest: 'cf34442ac51a',
+      important: [
+        { at: 'def:hull_check', say: 'recursive: near side first', weight: 3 },
+        { at: 'def:point_contents', say: 'air, water, solid at a point', weight: 2 },
+        { at: 'def:dist_epsilon', say: 'stop short of the plane: no sticking', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.parts('The server: entities, their moves, the player, traces', [
+      ['Edict.ml', 'the entities and the world'],
+      ['Physics.ml', 'how they move'],
+      ['Play.ml', "the player's walk"],
+      ['Trace.ml', 'a box through the level'],
+      ['../model/Model.ml', 'the hulls'],
+    ], [
+      ['Physics.ml', 'Edict.ml', 'moves'],
+      ['Physics.ml', 'Trace.ml', 'each move'],
+      ['Play.ml', 'Trace.ml', 'each move'],
+      ['Trace.ml', '../model/Model.ml', 'clipnodes'],
+    ]),
+    skeletons.module('Physics.ml', 'An entity moved, by its movetype', [
+      ['run', 'SV_Physics', ''],
+      ['toss', 'Toss, Bounce, Fly_missile', 'by movetype'],
+      ['push_entity', 'the trace, the impact', 'a move'],
+      ['trace', 'level and boxes', 'traced'],
+    ]) + {
+      bones+: [
+        { at: 'Physics.ml:def:run_think', role: 'its think, when due' },
+        { at: 'Physics.ml:def:move_to_goal', role: "a monster's step" },
+      ],
+      joints+: [
+        { from: 'Physics.ml:def:run', to: 'Physics.ml:def:run_think', say: 'nextthink' },
+        { from: 'Physics.ml:def:move_to_goal', to: 'Physics.ml:def:walk_move', say: 'a step' },
+      ],
+    } + { bones+: [{ at: 'Physics.ml:def:walk_move', role: 'one step, or blocked' }] },
+    skeletons.module('Play.ml', "The player's frame", [
+      ['frame', 'keys to a wish', ''],
+      ['user_friction', 'slowed', 'on the ground'],
+      ['accelerate_to', 'towards the wish', 'then'],
+      ['walk_move', 'the move, stairs and all', 'the velocity'],
+      ['fly_move', 'slid along planes', 'traced'],
+    ]),
+    skeletons.module('Trace.ml', 'A box through the hulls', [
+      ['box', 'the hull for its size', ''],
+      ['move', 'a segment through it', 'the hull'],
+      ['hull_check', 'down the clipnodes', 'recursive'],
+      ['point_contents', 'what is at a point', 'at the leaves'],
+    ]),
+    skeletons.module('Edict.ml', 'An entity: spawned, acting, removed', [
+      ['spawn', 'made, by classname', ''],
+      ['sound', 'heard', 'what it does'],
+      ['remove', 'gone at the frame end', 'done'],
+    ]),
+  ],
+}

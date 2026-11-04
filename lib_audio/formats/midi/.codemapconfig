@@ -1,0 +1,37 @@
+// lib_audio/formats/midi/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Standard MIDI Files: not sound but what a player does, read to notes and written from a tune.",
+  files: {
+    'Midi.mli': { digest: '50f51d168879',
+      summary: 'Messages with their times: a status byte and data, deltas as variable-length numbers.',
+      capitals: [{ at: 'def:parse', say: "a file's tracks to timed notes" }],
+      important: [
+        { at: 'comment:"doesn\'t carry sound, only what a player does"', weight: 3 },
+        { at: 'type:score', weight: 2 },
+        { at: 'def:vlq', say: 'seven bits a byte, the high bit: more', weight: 2 },
+      ],
+    },
+    'Midi.ml': { digest: 'ee7520567edd',
+      summary: 'Tracks walked with running status, tempo changes turned to seconds; a tune written back.',
+      important: [
+        { at: 'def:track_events', say: 'running status: the last status kept', weight: 3 },
+        { at: 'def:parse', say: 'ticks to seconds through the tempo map', weight: 3 },
+        { at: 'def:of_tune', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.chain('A MIDI file read', [
+      ['Midi.ml:def:parse', 'MThd, then each MTrk', ''],
+      ['Midi.ml:def:track_events', 'deltas and messages', 'a track'],
+      ['Midi.ml:def:read_vlq', 'a variable-length number', 'each delta'],
+    ]) + {
+      bones+: [{ at: 'Midi.ml:def:of_tune', role: 'an ABC tune written as MIDI' }, { at: 'Midi.ml:def:vlq', role: 'a number written' }],
+      joints+: [{ from: 'Midi.ml:def:of_tune', to: 'Midi.ml:def:vlq', say: 'each delta' }],
+    },
+  ],
+}

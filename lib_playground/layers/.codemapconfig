@@ -1,0 +1,74 @@
+// lib_playground/layers/: what the code map says of it
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "What games are made of, over the playground's shapes: a camera, sprites, tile maps, scenes.",
+  files: {
+    'Scene2d.mli': {
+      summary: 'Scenes: the title, the game, the game over, and a key pressed once, not held.',
+      digest: '0f4ea7856759',
+      capitals: [{ at: 'type:t', say: 'the scene shown, and the keyboard before' }],
+      important: [
+        { at: 'def:go', say: 'to another scene, the time it began kept', weight: 2 },
+        { at: 'def:pressed', say: 'down now, not before: an edge', weight: 2 },
+      ],
+    },
+    'Scene2d.ml': { summary: 'Scenes made: the scene, when it started, the keys of the last frame.', digest: '65d47c1264e2' },
+    'Tilemap.mli': {
+      summary: 'Worlds as grids of tiles, written as strings: get, set, find, and a view of what is seen.',
+      digest: 'be97681ce68a',
+      capitals: [{ at: 'type:t', say: 'a grid of characters: the level as text' }],
+    },
+    'Tilemap.ml': {
+      summary: 'Tile maps made: an array of strings, cells to world coordinates, only the visible drawn.',
+      digest: '3050f92ef408',
+      important: [
+        { at: 'def:of_strings', say: 'a level typed in the source', weight: 2 },
+        { at: 'def:cell', say: 'a tile to its place in the world', weight: 2 },
+      ],
+    },
+    'Sprite.mli': {
+      summary: 'Pixel art typed as strings with a palette, flipped, animated; and XPM in and out.',
+      digest: '17d045d61b88',
+      capitals: [{ at: 'def:pixels', say: 'rows of characters made a picture' }],
+    },
+    'Sprite.ml': {
+      summary: 'Sprites made: each row in runs of one colour, a rectangle each; a Bytes, not a Bigarray.',
+      digest: 'b346c7c34501',
+      important: [
+        { at: 'def:runs', say: 'a run of one colour: one rectangle, not many', weight: 3 },
+        { at: 'def:of_xpm', say: "an XPM file's palette and rows", weight: 1 },
+      ],
+    },
+    'Camera2d.mli': {
+      summary: 'A camera for worlds bigger than the screen: follow, window, clamp, flip rooms, parallax.',
+      digest: 'c92f8b7cc02c',
+      capitals: [{ at: 'type:t', say: 'where it looks, its zoom and its angle' }],
+      important: [{ at: 'type:rect', say: "the world's bounds, a room", weight: 1 }],
+    },
+    'Camera2d.ml': {
+      summary: 'The camera made: the world moved and turned the other way, and the ways to follow.',
+      digest: 'e0ff602c1460',
+      important: [
+        { at: 'def:view', say: 'the inverse transform, once around the shapes', weight: 3 },
+        { at: 'def:follow', say: 'a fraction of the way each frame', weight: 2 },
+        { at: 'def:clamp', say: 'never showing past the edges', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.parts('Layers over shapes', [
+      ['Scene2d.ml', 'which screen, and keys pressed once'],
+      ['Tilemap.ml', 'the world as a grid of characters'],
+      ['Sprite.ml', 'pixel art as strings'],
+      ['Camera2d.ml', 'which part of the world is seen'],
+      ['../Playground.mli', 'the shapes they all become'],
+    ], [
+      ['Tilemap.ml', 'Camera2d.ml', 'the visible part'],
+      ['Tilemap.ml', 'Sprite.ml', 'from XPM'],
+      ['Sprite.ml', '../Playground.mli', 'rectangles'],
+      ['Camera2d.ml', '../Playground.mli', 'a group moved'],
+      ['Scene2d.ml', '../Playground.mli', 'the keyboard'],
+    ]),
+  ],
+}

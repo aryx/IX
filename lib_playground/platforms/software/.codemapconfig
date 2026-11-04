@@ -1,0 +1,30 @@
+// lib_playground/platforms/software/: what the code map says of it
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-9pi's software platform: the pixels computed here, given to the draw device as a picture.",
+  files: {
+    'Playground_platform.ml': {
+      summary: "The playground's software platform, SDL's window become the draw device's: Redraw, then a load.",
+      digest: 'fcb74527e5f2',
+      important: [
+        { at: 'def:show', say: 'the changed parts drawn here, loaded there', weight: 3 },
+        { at: 'def:window', say: 'an image of the device to load into', weight: 2 },
+        { at: 'def:run_app', say: "Plan9_loop's loop, this show", weight: 2 },
+      ],
+    },
+  },
+  skeletons: [{
+    name: 'A frame computed, then shown',
+    bones: [
+      { at: 'Playground_platform.ml:def:run_app', role: 'the platform' },
+      { at: '../Plan9_loop.ml:def:run_app', role: 'the loop' },
+      { at: 'Playground_platform.ml:def:show', role: 'a frame shown' },
+      { at: '../Redraw.ml:def:frame', role: 'the changed parts, in pixels' },
+    ],
+    joints: [
+      { from: 'Playground_platform.ml:def:run_app', to: '../Plan9_loop.ml:def:run_app', say: 'runs' },
+      { from: '../Plan9_loop.ml:def:run_app', to: 'Playground_platform.ml:def:show', say: 'each frame' },
+      { from: 'Playground_platform.ml:def:show', to: '../Redraw.ml:def:frame', say: 'the shapes' },
+    ],
+  }],
+}

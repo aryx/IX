@@ -1,0 +1,70 @@
+// lib_networking/9p/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "9P2000, Plan 9's file protocol, for a program serving files: the messages, their bytes, lib9p's loop.",
+  files: {
+    'P9.ml': { digest: 'c77895e93862',
+      summary: "The thirteen requests and their responses as variants, after xix's Protocol_9P and mini-9pi's kernel.",
+      capitals: [{ at: 'type:message', say: 'a tag and a request or a response' }],
+      important: [
+        { at: 'comment:"Thirteen requests, and they are the whole interface"', weight: 3 },
+        { at: 'comment:"kernel (the client)                 the file server"', say: 'cat over 9P, message by message', weight: 3 },
+        { at: 'type:qid', weight: 1 },
+      ],
+    },
+    'P9_wire.mli': { digest: 'c538647e1898',
+      summary: "9P's messages as bytes (convS2M and convM2S): size, type, tag, fields low byte first.",
+      important: [
+        { at: 'comment:"is these 19 bytes"', say: 'Tversion, worked out', weight: 2 },
+        { at: 'def:read', say: 'one whole message from a descriptor', weight: 2 },
+      ],
+    },
+    'P9_wire.ml': { digest: 'b0c4bb606fee',
+      summary: "Each message's fields encoded and decoded through a cursor; a directory entry as convD2M has it.",
+      important: [
+        { at: 'def:encode', weight: 3 },
+        { at: 'def:decode', weight: 3 },
+        { at: 'def:encode_dir', weight: 1 },
+      ],
+    },
+    'P9_server.mli': { digest: '51ffc5c5f635',
+      summary: "A file server's loop (lib9p's part a simple server asks): fids kept, each request given to the file system.",
+      capitals: [{ at: 'def:serve', say: 'a file system served on a descriptor' }],
+      important: [
+        { at: 'type:fs', say: "a file system: functions on its own files", weight: 3 },
+        { at: 'def:post', say: 'in /srv, for mount to find', weight: 2 },
+      ],
+    },
+    'P9_server.ml': { digest: '205e00493984',
+      summary: "Version, attach, walk, open, read (or Later), write, clunk answered; Rerror from the fs's Error.",
+      important: [
+        { at: 'def:make', say: 'the fids and the answers', weight: 3 },
+        { at: 'code:"Request.Walk (fid, newfid, names)"', weight: 2 },
+        { at: 'def:serve', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.chain('A request served', [
+      ['P9_server.ml:def:serve', 'the loop on a descriptor', ''],
+      ['P9_wire.ml:def:read', 'one whole message', 'bytes'],
+      ['P9_wire.ml:def:decode', 'the request', 'its bytes'],
+      ['P9_server.ml:def:make', 'answered by the fs', 'a Request'],
+      ['P9_wire.ml:def:encode', 'the response as bytes', 'a Response'],
+    ]),
+    skeletons.module('P9_server.ml', 'A file server', [
+      ['serve', 'a descriptor, forever', ''],
+      ['make', 'fids and answers', 'the fs'],
+      ['request', 'one message in', 'bytes'],
+      ['post', 'the server named in /srv', 'a pipe'],
+    ]),
+    skeletons.module('P9_wire.ml', 'Bytes both ways', [
+      ['read', 'a message from a descriptor', ''],
+      ['decode', 'bytes to a message', 'the bytes'],
+      ['encode', 'a message to bytes', 'or back'],
+    ]),
+  ],
+}

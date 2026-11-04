@@ -1,0 +1,39 @@
+// languages/smalltalk/hosts/draw/: what the code map says of it (the
+// code map: tinybox codemap, ~/github/ocaml-elm-playground; its
+// guidelines: docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-squeak under mini-9pi: Squeak's world in a window of mini-rio, over ix's lib_graphics.",
+  files: {
+    'Main.ml': {
+      summary: "The command: -k quiet, squeak or mini, the system the window starts.",
+      digest: 'de67c8944fc0',
+    },
+    'Window.mli': {
+      summary: "Squeak in a mini-rio window: its pixels an image of the draw device, mouse and keys from /dev.",
+      digest: '64768c161656',
+      important: [{ at: 'comment:"by Smalltalk\'s colours"', say: 'red, yellow, blue: left, right, middle', weight: 2 }],
+    },
+    'Window.ml': {
+      summary: "The host's loop: a tick to wait on, events read by threads, a cycle, the changed rows drawn.",
+      digest: 'bef365e0f36e',
+      important: [
+        { at: 'comment:"a tick, so that a pass waits"', say: "mini-ml's threads switch only on a wait", weight: 3 },
+        { at: 'code:"Squeak.cycle squeak"', say: "the world's cycle, a budget a frame", weight: 3 },
+        { at: 'code:"Squeak.bits32 squeak"', say: 'the Display drawn when it changed', weight: 2 },
+        { at: 'def:key_code', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.onefile('mini-squeak in mini-rio', 'Main.ml', [
+      ['Window.ml:def:run', 'the window opened, the world started', 'the system chosen'],
+      ['../../Squeak.ml:def:start_sized', "Squeak's world at the window's size", 'a host'],
+      ['Window.ml:code:"Squeak.cycle squeak"', 'a frame: the world cycled', 'the system'],
+      ['Window.ml:code:"Squeak.bits32 squeak"', 'the Display shown', 'its pixels'],
+    ]) + {
+      joints+: [{ from: 'Window.ml:code:"Squeak.bits32 squeak"', to: 'Window.ml:code:"Squeak.cycle squeak"', say: 'the next tick' }],
+    },
+  ],
+}

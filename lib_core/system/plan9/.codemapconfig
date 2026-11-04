@@ -1,0 +1,58 @@
+// lib_core/system/plan9/: what the code map says of it (the code map:
+// tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Unix and Sys_plan9 on Plan 9's system calls, for ix's programs on mini-9pi (mkconfig's P9DIR picks it).",
+  files: {
+    'Unix.mli': { digest: '6df2ece48b5b',
+      summary: "OCaml's Unix on Plan 9, the part a shell asks: errors as strings, exits strings, /env, notes for signals.",
+      important: [
+        { at: 'comment:"Where Plan 9 is not Unix:"', say: 'strings where Unix has numbers', weight: 3 },
+        { at: 'type:error', weight: 1 },
+      ],
+      related: ['Unix.ml', '../Unix.mli'],
+    },
+    'Unix.ml': { digest: '212fbb44b1b5',
+      summary: "Unix made on Plan 9's calls (libc's sys.h numbers): open modes, rfork for fork, /env, wait's strings.",
+      capitals: [
+        { at: 'def:plan9_call', say: "a Plan 9 call: errstr's words in the error" },
+      ],
+      important: [
+        { at: 'code:"external syscall"', say: "the same primitive as Linux's, other numbers", weight: 2 },
+        { at: 'def:plan9_call', weight: 3 },
+        { at: "comment:\"Plan 9's modes: OREAD 0\"", weight: 1 },
+        { at: "comment:\"Unix's close-on-exec is a descriptor's\"", say: 'OCEXEC is an open mode on Plan 9', weight: 2 },
+        { at: 'def:fork', say: 'rfork RFPROC|RFFDG', weight: 2 },
+        { at: 'def:openfile', weight: 1 },
+      ],
+    },
+    'Sys_plan9.ml': { digest: '28ed33a35244',
+      summary: "Sys_plan9 on Plan 9: rfork, bind, mount, exits by their numbers, through Unix.plan9_call.",
+      important: [
+        { at: 'def:exits', say: 'the channels flushed, then the words', weight: 2 },
+        { at: 'def:rfork', weight: 1 },
+        { at: 'def:bind', weight: 1 },
+      ],
+      related: ['../../commons/Sys_plan9.mli'],
+    },
+  },
+  skeletons: [
+    skeletons.parts("ix's programs on Plan 9's system calls", [
+      ['Unix.ml', "OCaml's Unix, Plan 9's calls"],
+      ['Sys_plan9.ml', 'namespaces, exits'],
+      ['../Unix.ml', "Linux's, the one replaced"],
+    ], [
+      ['Sys_plan9.ml', 'Unix.ml', 'plan9_call'],
+      ['Unix.ml', '../Unix.ml', 'the same interface'],
+    ]),
+    skeletons.module('Unix.ml', 'A Unix function on Plan 9', [
+      ['sys', 'a call by its number', ''],
+      ['check', "a failure: errstr's words", 'the answer'],
+      ['plan9_call', "Sys_plan9's door", 'checked'],
+      ['openfile', "Plan 9's modes", 'a file'],
+      ['fork', 'rfork', 'a process'],
+    ]),
+  ],
+}

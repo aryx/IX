@@ -1,0 +1,28 @@
+// lib_audio/formats/wav/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "WAV, the PPM of sound: what the golden tests compare; bytes only, the files are the caller's.",
+  files: {
+    'Wav.mli': { digest: 'cb269303c246',
+      summary: "RIFF's 44-byte header and 16-bit samples, read and written as strings, mono or stereo.",
+      important: [
+        { at: 'def:of_string', say: 'mixed down to one channel', weight: 2 },
+        { at: 'def:stereo_of_string', say: "a file's two channels kept", weight: 2 },
+      ],
+    },
+    'Wav.ml': { digest: '4446a4019f9f',
+      summary: 'The chunks found, 8-bit unsigned and 16-bit signed samples made floats.',
+      important: [{ at: 'def:chunks', weight: 2 }, { at: 'def:stereo_of_string', weight: 3 }],
+    },
+  },
+  skeletons: [
+    skeletons.chain('A WAV read', [
+      ['Wav.ml:def:of_string', 'mono', ''],
+      ['Wav.ml:def:stereo_of_string', 'fmt and data found', 'both channels'],
+      ['Wav.ml:def:chunks', "RIFF's chunks", 'the bytes'],
+    ]),
+  ],
+}

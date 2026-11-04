@@ -1,0 +1,91 @@
+// lib_core/printing/: what the code map says of it (the code map: tinybox
+// codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Printf, Format and Printexc for mini-ml: OCaml 1.07's, a format read as a string at run time.",
+  files: {
+    'Printf.mli': { digest: '4d63eb985f61',
+      summary: "printf, sprintf, bprintf and ksprintf: the format a string, its directives read when applied.",
+      important: [{ at: 'def:sprintf', weight: 2 }, { at: 'def:ksprintf', weight: 1 }],
+      related: ['Printf.ml', '../dotnet/Printf_dotnet.mli'],
+    },
+    'Printf.ml': { digest: '2c93cf677996',
+      summary: "A format scanned at run time, its pieces kept, its closures made by Obj.magic: C's printf underneath.",
+      important: [
+        { at: 'def:scan_format', say: 'the directives walked, an argument each', weight: 3 },
+        { at: 'comment:"ix: a format applied is its pieces kept"', weight: 2 },
+        { at: 'def:pieces', weight: 2 },
+        { at: 'comment:"ix: %h, a float in hexadecimal"', weight: 1 },
+        { at: 'def:fprintf', weight: 1 },
+      ],
+    },
+    'Format.mli': { digest: '52898f96294a',
+      summary: "Pretty-printing with boxes and breaks (Oppen's algorithm, Pierre Weis's), and its printf.",
+      important: [
+        { at: 'type:formatter', weight: 2 },
+        { at: 'def:pp_open_box', weight: 1 },
+        { at: 'def:pp_print_break', weight: 1 },
+      ],
+      related: ['Format.ml'],
+    },
+    'Format.ml': { digest: '38ea0a19a1ba',
+      summary: "Oppen's pretty-printer: tokens queued with their sizes, a scan stack, lines broken when a box won't fit.",
+      important: [
+        { at: 'type:formatter', weight: 2 },
+        { at: 'def:advance_left', say: 'tokens printed once their size is known', weight: 3 },
+        { at: 'def:format_pp_token', say: 'a break: a new line or spaces', weight: 2 },
+        { at: 'def:set_size', say: 'the scan stack sizes a box', weight: 2 },
+        { at: 'comment:"ix: as OCaml 4.14 (it was 35"', say: 'deep trees no longer printed as .', weight: 1 },
+        { at: 'def:fprintf', weight: 1 },
+      ],
+    },
+    'Printexc.mli': { digest: '04f40949ad2d',
+      summary: "Exceptions as text, printers registered, and the backtraces mini-ml's runtime can give.",
+      important: [{ at: 'def:to_string', weight: 2 }, { at: 'def:register_printer', weight: 1 }],
+      related: ['Printexc.ml'],
+    },
+    'Printexc.ml': { digest: '58fcdafadb45',
+      summary: "Printexc made, without Printf; registers uncaught for the runtime, which calls it on a program's death.",
+      important: [
+        { at: 'comment:"ix: without Printf"', say: 'or every program would link Unix', weight: 2 },
+        { at: 'def:to_string', weight: 2 },
+        { at: 'def:uncaught', say: "the runtime's last call: an exception's words", weight: 3 },
+        { at: 'code:"Callback.register"', say: 'run at link time: why it counts as a program', weight: 2 },
+        { at: "comment:\"ix: mini-ml's runtime says where the last exception was raised\"", weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.parts('Values as text', [
+      ['Printf.ml', 'a format read at run time'],
+      ['Format.ml', 'boxes and breaks'],
+      ['Printexc.ml', 'an exception as text'],
+    ], [
+      ['Printf.ml', 'Format.ml', 'its fprintf, on a formatter'],
+      ['Printexc.ml', 'Printf.ml', 'not used: Unix would follow'],
+    ]),
+    skeletons.module('Printf.ml', 'A format: scanned, its pieces applied', [
+      ['scan_format', 'the directives, an argument each', ''],
+      ['pieces', 'the format as its pieces', 'each directive'],
+      ['fprintf', 'pieces to a channel', 'the pieces'],
+      ['ksprintf', 'pieces to a string, to k', 'the same'],
+      ['sprintf', 'entry: the string', 'k is the identity'],
+    ]),
+    skeletons.module('Format.ml', "Oppen's algorithm: queue, scan stack, output", [
+      ['pp_enqueue', 'a token with its size, queued', ''],
+      ['scan_push', 'an open box or break, sized later', 'unknown sizes'],
+      ['set_size', 'its size known: the scan stack popped', 'sized'],
+      ['advance_left', 'tokens whose size is known printed', 'printable'],
+      ['format_pp_token', 'a token: text, a break, a box', 'each'],
+      ['break_new_line', 'a new line and the indentation', 'a break'],
+    ]),
+    skeletons.module('Printexc.ml', 'An exception, printed', [
+      ['register_printer', "a program's printer added", ''],
+      ['printed', 'the printers tried, last first', 'printers'],
+      ['to_string', 'else the name and arguments by type', 'or'],
+      ['uncaught', 'the runtime asks: its last words', 'the text'],
+    ]),
+  ],
+}

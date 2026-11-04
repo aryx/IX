@@ -1,0 +1,136 @@
+// apps/pim/mail/: what the code map says of it
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-pim's mail: IMAP and SMTP sessions into the store's items, drafts, conversations.",
+  files: {
+    'Mail_sync.ml': {
+      summary: 'The server and the store: list, fetch, archive, star, snooze and send, an IMAP session each.',
+      digest: '41e7610b4d49',
+      important: [
+        { at: 'def:session', say: 'opened, logged in, closed: one per request', weight: 3 },
+        { at: 'def:named', say: "All Mail by its \\All flag, any language's", weight: 3 },
+        { at: 'def:list', say: 'the newest messages, written as items' },
+        { at: 'def:message', say: "a body fetched into the store's cache" },
+        { at: 'def:snooze', say: 'archived now, a date kept in the item' },
+        { at: 'def:wake', say: 'back to the Inbox when its day comes', weight: 3 },
+        { at: 'def:send_draft', say: 'a draft item made a message, sent' },
+      ],
+      links: [{ from: 'def:list', to: 'def:session' }, { from: 'def:snooze', to: 'def:archive' }],
+    },
+    'Mail_sync.mli': {
+      summary: 'What the command line and the window both do to the mail, over one IMAP session each.',
+      digest: 'd37d197db021',
+      capitals: [{ at: 'type:server', say: 'host, port, TLS or not' }, { at: 'def:list', say: 'the server into the store' }],
+    },
+    'Mail_item.ml': {
+      summary: 'A message as an item of the store: its headers, mailboxes and labels, keyed by X-GM-MSGID.',
+      digest: '1fc507c51090',
+      important: [
+        { at: 'def:id', say: 'X-GM-MSGID: the same in every mailbox', weight: 3 },
+        { at: 'def:update', say: "the server's fields replaced, a person's kept", weight: 3 },
+        { at: 'def:summary', say: 'the item back to an IMAP summary' },
+        { at: 'def:listed', say: "a mailbox's messages, from the store alone" },
+      ],
+    },
+    'Mail_item.mli': {
+      summary: 'A message stored as name: value lines, so lists work without the network.',
+      digest: '749b6433e0d6',
+    },
+    'Mail_compose.ml': {
+      summary: 'Writing: a reply, to all, a forward; a draft as an item; the message SMTP sends.',
+      digest: '608b36335287',
+      important: [
+        { at: 'type:draft', say: 'the message being written', weight: 3 },
+        { at: 'def:reply', say: 'Reply-To, the thread ids, the text quoted', weight: 3 },
+        { at: 'def:forward', say: 'Fwd:, the attachments named, not copied' },
+        { at: 'def:to_item', say: 'kept in the store at each change' },
+        { at: 'def:message', say: 'the draft made a Mail.t to send' },
+      ],
+    },
+    'Mail_compose.mli': {
+      summary: "A message being written, kept as a draft item, the Palm's way: no Save.",
+      digest: '403856b8868b',
+    },
+    'Mail_text.ml': {
+      summary: 'A message as text to read: an HTML-only mail through the Line Mode Browser, attachments said.',
+      digest: '71365d7a86f1',
+      important: [{ at: 'def:text', say: 'the plain part, unless it says nothing', weight: 3 }],
+    },
+    'Mail_text.mli': {
+      summary: 'A message made readable text, its HTML laid out by the browsers\' Line_mode.',
+      digest: 'f1dd6e04c60f',
+    },
+    'Conversations.ml': {
+      summary: 'Messages grouped into conversations by X-GM-THRID, and the words a list shows.',
+      digest: '746cd7ccea03',
+      important: [{ at: 'def:group', say: 'Gmail\'s thread id, else Mail_thread\'s', weight: 3 }],
+    },
+    'Conversations.mli': {
+      summary: 'Conversations as Gmail shows them: what the command line and the window both draw.',
+      digest: '7c80f7c79642',
+    },
+  },
+  skeletons: [
+    skeletons.parts('The mail: server, items, screen', [
+      ['Mail_sync.ml', 'the sessions: what the server is asked'],
+      ['Mail_item.ml', 'a message as an item'],
+      ['Mail_compose.ml', 'what is written and sent'],
+      ['Conversations.ml', 'messages grouped for a list'],
+      ['Mail_text.ml', 'a message made text to read'],
+      ['../store/', 'the items, the cache'],
+    ], [
+      ['Mail_sync.ml', 'Mail_item.ml', 'each summary listed'],
+      ['Mail_item.ml', '../store/', 'saved as an item'],
+      ['Mail_compose.ml', 'Mail_sync.ml', 'a draft to send'],
+      ['Mail_item.ml', 'Conversations.ml', 'summaries from the store'],
+      ['../store/', 'Mail_text.ml', "a cached message's bytes"],
+    ]),
+    skeletons.module('Mail_sync.ml', 'Mail_sync: one session per request', [
+      ['list', 'the newest messages, into items', ''],
+      ['session', 'connect, log in, select, log out', 'the mailbox'],
+      ['connect', 'TLS or plain, to host:port', 'the socket'],
+    ]) + {
+      bones+: [
+        { at: 'Mail_sync.ml:def:snooze', role: 'out of the Inbox until a day' },
+        { at: 'Mail_sync.ml:def:wake', role: 'back in it that day' },
+        { at: 'Mail_sync.ml:def:send_draft', role: 'a draft sent by SMTP' },
+        { at: 'Mail_sync.ml:def:send', role: "SMTP's dialogue" },
+      ],
+      joints+: [
+        { from: 'Mail_sync.ml:def:snooze', to: 'Mail_sync.ml:def:wake', say: 'the until: field' },
+        { from: 'Mail_sync.ml:def:wake', to: 'Mail_sync.ml:def:session', say: 'All Mail, by message id' },
+        { from: 'Mail_sync.ml:def:send_draft', to: 'Mail_sync.ml:def:send', say: 'the message' },
+      ],
+    },
+    skeletons.module('Mail_item.ml', 'Mail_item: a summary and its item', [
+      ['update', 'the item from a summary', ''],
+      ['id', 'its id, X-GM-MSGID', 'the key'],
+    ]) + {
+      bones+: [
+        { at: 'Mail_item.ml:def:summary', role: 'the item back to a summary' },
+        { at: 'Mail_item.ml:def:listed', role: "a mailbox's, from the store" },
+      ],
+      joints+: [
+        { from: 'Mail_item.ml:def:update', to: 'Mail_item.ml:def:summary', say: 'stored, read back' },
+        { from: 'Mail_item.ml:def:summary', to: 'Mail_item.ml:def:listed', say: 'each item in the mailbox' },
+      ],
+    },
+    {
+      name: 'Mail_compose: a draft, from start to SMTP',
+      bones: [
+        { at: 'Mail_compose.ml:type:draft', role: 'the message being written' },
+        { at: 'Mail_compose.ml:def:reply', role: 'a reply, to one or all' },
+        { at: 'Mail_compose.ml:def:forward', role: 'a forward' },
+        { at: 'Mail_compose.ml:def:to_item', role: 'kept as an item' },
+        { at: 'Mail_compose.ml:def:message', role: 'made the message sent' },
+      ],
+      joints: [
+        { from: 'Mail_compose.ml:def:reply', to: 'Mail_compose.ml:type:draft', say: 'a draft' },
+        { from: 'Mail_compose.ml:def:forward', to: 'Mail_compose.ml:type:draft', say: 'a draft' },
+        { from: 'Mail_compose.ml:type:draft', to: 'Mail_compose.ml:def:to_item', say: 'at each change' },
+        { from: 'Mail_compose.ml:type:draft', to: 'Mail_compose.ml:def:message', say: 'on Send' },
+      ],
+    },
+  ],
+}

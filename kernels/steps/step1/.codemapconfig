@@ -7,21 +7,23 @@
 // UART must say), the Makefile (ocaml-light's arm backend, the runtime
 // compiled freestanding, one raw kernel.img).
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
-  summary: "mini-xv6's first step: OCaml running bare-metal on the Pi1, its runtime's heap, GC and exceptions checked.",
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Step 1: OCaml's runtime bare-metal on the Pi 1, no system under it; heaps, GC and exceptions checked.",
   files: {
-    'Main.ml': { digest: '2f7ce02f5c14',
+    'Main.ml': { digest: '62687edfe546',
       summary: 'The whole kernel: print, a list long enough to be promoted, a full collection, an exception caught.',
       capitals: [
-        { at: 'line:22', say: "the program: what it checks of the runtime" },  // line: a `let () =` has no name
+        { at: 'code:"let () ="', say: 'the program: what it checks of the runtime' },
       ],
       important: [
         { at: 'comment:"What it checks of the"', weight: 3 },
+        { at: 'comment:"The ladder mini-xv6 was climbed by"', say: 'the six steps, a mechanism each', weight: 3 },
+        { at: 'comment:"To write a kernel in steps"', say: 'the method: the risk first, files last', weight: 2 },
         { at: 'def:upto', say: "tail recursive: 100,000 frames overflow the 64KB stack", weight: 2 },
       ],
       related: ['expected'],
     },
-    'libc.c': { digest: '258c0e0f17aa',
+    'libc.c': { digest: '29694872f75c',
       summary: "What ocaml-light's runtime asks of a C library, bare-metal: the PL011 for stdout, a bump malloc, sprintf; the rest panics.",
       capitals: [
         { at: 'section:The start', say: 'kmain: caml_main, the OCaml program run' },
@@ -31,9 +33,9 @@
         { at: 'def:udivmod', say: "no divide instruction on ARMv6: EABI's helpers", weight: 1 },
         { at: 'def:STUB', say: 'what nothing calls yet panics, naming itself', weight: 1 },
       ],
-      related: ['../lib_machine/libc.c'],
+      related: ['../../lib_machine/libc.c'],
     },
-    'start.s': { digest: '7d9a88d41e14',
+    'start.s': { digest: '52d3c24e256d',
       summary: "The first instructions, at 0x8000 in SVC mode: a stack, the VFP on for the hard-float runtime, the bss cleared, then C's kmain.",
       capitals: [
         { at: 'def:_start', say: "the firmware's jump: the kernel's first instruction" },
@@ -52,14 +54,14 @@
       name: 'OCaml on bare metal',
       bones: [
         { at: 'libc.c:section:The start', role: "kmain, after start.s: the runtime entered" },
-        { at: 'Main.ml:line:22', role: 'the program: heap, GC, exceptions, Printf' },
+        { at: 'Main.ml:code:"let () ="', role: 'the program: heap, GC, exceptions, Printf' },
         { at: 'libc.c:def:malloc', role: "the runtime's heap: RAM after the kernel" },
         { at: 'libc.c:def:write', role: 'stdout: the PL011' },
       ],
       joints: [
-        { from: 'libc.c:section:The start', to: 'Main.ml:line:22', say: 'caml_main' },
-        { from: 'Main.ml:line:22', to: 'libc.c:def:malloc', say: 'the heap grown' },
-        { from: 'Main.ml:line:22', to: 'libc.c:def:write', say: 'the output' },
+        { from: 'libc.c:section:The start', to: 'Main.ml:code:"let () ="', say: 'caml_main' },
+        { from: 'Main.ml:code:"let () ="', to: 'libc.c:def:malloc', say: 'the heap grown' },
+        { from: 'Main.ml:code:"let () ="', to: 'libc.c:def:write', say: 'the output' },
       ],
     },
     {
@@ -68,12 +70,12 @@
         { at: 'start.s:def:_start', role: 'the first instruction: a stack, the VFP' },
         { at: 'start.s:def:clear', role: 'the bss zeroed' },
         { at: 'libc.c:section:The start', role: 'kmain: caml_main' },
-        { at: 'Main.ml:line:22', role: 'the OCaml program' },
+        { at: 'Main.ml:code:"let () ="', role: 'the OCaml program' },
       ],
       joints: [
         { from: 'start.s:def:_start', to: 'start.s:def:clear', say: 'the VFP on' },
         { from: 'start.s:def:clear', to: 'libc.c:section:The start', say: 'bl kmain' },
-        { from: 'libc.c:section:The start', to: 'Main.ml:line:22', say: 'caml_main' },
+        { from: 'libc.c:section:The start', to: 'Main.ml:code:"let () ="', say: 'caml_main' },
       ],
     },
   ],

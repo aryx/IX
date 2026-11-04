@@ -1,0 +1,126 @@
+// utilities/files/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+local sys = '../../lib_core/commons/Sys_plan9.mli';
+local fs = '../../lib_core/commons/FS.mli';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Plan 9's file commands: cat, ls, cp, mv, rm, mkdir, chmod, touch, pwd, mtime, and 9front's walk.",
+  files: {
+    'Cat.ml': { digest: '743968f4ce38',
+      summary: "mini-cat: the first edition's cat again, no option (Pike's \"cat -v Considered Harmful\").",
+      important: [
+        { at: 'comment:"Considered Harmful"', say: 'why Plan 9 dropped -v, -n, -s', weight: 2 },
+        { at: 'def:cat', say: '8 KB at a time, errors with the reason', weight: 3 },
+      ],
+    },
+    'Ls.ml': { digest: '5c0a6d336eb5',
+      summary: "mini-ls: Plan 9's ls byte for byte, a line a 9P stat entry, columns as wide as needed.",
+      important: [
+        { at: 'comment:"A directory is read as a file"', say: 'its bytes are the entries: no readdir', weight: 3 },
+        { at: 'type:line', say: 'a line before its columns are padded', weight: 2 },
+        { at: 'def:format', say: 'an entry as -l says it', weight: 2 },
+        { at: 'def:widen', say: 'the columns as wide as the widest', weight: 1 },
+        { at: 'def:compare_lines', say: '-t, -r, -n: the order', weight: 1 },
+        { at: 'def:ls', say: 'a directory read, or the file itself', weight: 3 },
+      ],
+      links: [
+        { from: 'def:ls', to: 'def:output' },
+        { from: 'def:output', to: 'def:format' },
+      ],
+    },
+    'Cp.ml': { digest: 'bc3e84a2e6e9',
+      summary: "mini-cp: a file's bytes into another or into a directory; no -r, dircp's job on Plan 9.",
+      important: [
+        { at: 'def:copy1', say: 'made with its permissions, or emptied', weight: 3 },
+        { at: 'comment:"Plan 9 left the tree to a script, dircp"', weight: 1 },
+      ],
+    },
+    'Mv.ml': { digest: '4082df9af2d6',
+      summary: 'mini-mv: a rename by wstat in one directory; across two, a copy then a removal, as 9P must.',
+      important: [
+        { at: 'comment:"9P has no way to move one"', say: 'why a copy across directories', weight: 3 },
+        { at: 'def:samefile', say: 'mv a a: nothing to do', weight: 1 },
+        { at: 'def:mv', say: 'rename or copy-and-remove', weight: 3 },
+      ],
+      links: [
+        { from: 'def:mv', to: 'def:copy1' },
+      ],
+    },
+    'Rm.ml': { digest: 'aac9b550cf47',
+      summary: "mini-rm: files and empty directories removed; -r the tree, -f no complaint.",
+    },
+    'Mkdir.ml': { digest: 'd228522460de',
+      summary: 'mini-mkdir: a directory by create with DMDIR, -p the path, -m its mode; history of the call.',
+      important: [
+        { at: 'comment:"For its first twelve years Unix had no call to make a directory"', weight: 1 },
+      ],
+    },
+    'Chmod.ml': { digest: 'cbede4bc1c42',
+      summary: "mini-chmod: octal or u+rwx, with Plan 9's own bits: append only, exclusive, temporary.",
+      important: [
+        { at: 'def:parse', say: '[who]op[what] read into a mask', weight: 2 },
+        { at: 'comment:"What is not there"', say: 'no set-user-id: no root to borrow', weight: 2 },
+      ],
+    },
+    'Touch.ml': { digest: '95e8763bc50a',
+      summary: "mini-touch: a file's write time set to now or -t, made empty when absent unless -c.",
+    },
+    'Pwd.ml': { digest: '2728eda59691',
+      summary: "mini-pwd: one call, since Plan 9's kernel keeps each file's name (Pike's \"Getting Dot-Dot Right\").",
+      important: [
+        { at: 'comment:"walking up is not even"', say: 'with bind, .. is a name, not a link', weight: 2 },
+      ],
+    },
+    'Mtime.ml': { digest: 'f43c4dc95327',
+      summary: "mini-mtime: each file's write time in seconds, for a script (mk's own question).",
+    },
+    'Walk.ml': { digest: 'afc7cf6ef53d',
+      summary: "mini-walk after 9front's: the paths under a directory, the selection left to grep, not find.",
+      important: [
+        { at: 'comment:"Plan 9 never had find"', say: 'walk only; select and act elsewhere', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.onefile('mini-cat', 'Cat.ml', [['Cat.ml:def:cat', 'a file to the standard output', 'each file, or stdin']]),
+    skeletons.onefile('mini-ls: stat, format, columns', 'Ls.ml', [
+      ['Ls.ml:def:ls', 'a directory read, or a file stat', 'each name'],
+      ['Ls.ml:def:output', 'the lines sorted, padded, written', 'the entries'],
+      ['Ls.ml:def:format', 'an entry as a line', 'one entry'],
+    ]),
+    skeletons.onefile('mini-cp', 'Cp.ml', [
+      ['Cp.ml:def:copy', 'to a file, or each into a directory', 'from, to'],
+      ['Cp.ml:def:copy1', "one file's bytes", 'a pair of names'],
+    ]),
+    skeletons.onefile('mini-mv', 'Mv.ml', [
+      ['Mv.ml:def:mv', 'a rename, or a copy and a removal', 'from, to'],
+      ['Mv.ml:def:copy1', 'across directories: the bytes', 'two servers maybe'],
+    ]),
+    skeletons.onefile('mini-rm', 'Rm.ml', []),
+    skeletons.onefile('mini-mkdir', 'Mkdir.ml', []),
+    skeletons.onefile('mini-chmod', 'Chmod.ml', [['Chmod.ml:def:parse', 'the mode argument read', 'the mode']]),
+    skeletons.onefile('mini-touch', 'Touch.ml', []),
+    skeletons.onefile('mini-pwd', 'Pwd.ml', []),
+    skeletons.onefile('mini-mtime', 'Mtime.ml', []),
+    skeletons.onefile('mini-walk', 'Walk.ml', []),
+    skeletons.parts('Each a program, over two libraries', [
+      ['Ls.ml', 'what is there'],
+      ['Cat.ml', 'what is in it'],
+      ['Cp.ml', 'copied'],
+      ['Mv.ml', 'renamed, or copied and removed'],
+      ['Rm.ml', 'removed'],
+      ['Chmod.ml', 'its permissions'],
+      [sys, "9P's stat entry, Plan 9's calls (or Unix's stand-ins)"],
+      [fs, 'files opened, made, removed'],
+    ], [
+      ['Ls.ml', sys, 'dirstat, dirread'],
+      ['Cp.ml', sys, 'the mode copied'],
+      ['Mv.ml', sys, 'wstat: the name changed'],
+      ['Chmod.ml', sys, 'the mode written'],
+      ['Cat.ml', fs, 'open_in_fd'],
+      ['Rm.ml', fs, 'remove_any'],
+    ]),
+  ],
+}

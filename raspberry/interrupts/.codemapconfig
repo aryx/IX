@@ -1,0 +1,60 @@
+// raspberry/interrupts/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The interrupt controllers: the Pi 1's 64 GPU lines, and the Pi 4's GIC-400.",
+  files: {
+    'Intc.mli': { digest: '0fcbe90afcd5',
+      summary: "The Pi 1's interrupt controller: the GPU's 64 lines, level-triggered, enabled by bits.",
+      important: [
+        { at: 'def:set', say: 'a device raises or lowers its line', weight: 2 },
+        { at: 'def:irq', say: 'what the CPU tests each instruction', weight: 3 },
+      ],
+    },
+    'Intc.ml': { digest: '2e44ad05d265',
+      summary: 'The lines as two words of bits, the pending ones the enabled and up; the basic summary.',
+      important: [
+        { at: 'def:irq', weight: 2 },
+        { at: 'def:basic', say: 'lines shown twice: bits 10-20', weight: 1 },
+      ],
+    },
+    'Gic.mli': { digest: '792f04bf2cb1',
+      summary: "The Pi 4's GIC-400: a distributor and a CPU interface per core, private interrupts banked.",
+      important: [
+        { at: 'comment:"Interrupts are level-sensitive"', weight: 2 },
+        { at: 'def:irq', say: "a core's line, tested each instruction", weight: 3 },
+        { at: 'def:set_current', say: 'which core reads the registers', weight: 1 },
+      ],
+    },
+    'Gic.ml': { digest: 'd4c2f2694228',
+      summary: 'Enables, pendings, priorities and targets; IAR acknowledges the highest, EOIR ends it.',
+      important: [
+        { at: 'def:highest', say: 'the pending one to take', weight: 3 },
+        { at: 'def:acknowledge', weight: 2 },
+        { at: 'def:end_of_interrupt', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: "The GIC-400: lines in, one interrupt at a time to a core",
+      bones: [
+        { at: 'Gic.ml:type:t', role: 'enables, pendings, priorities, targets; banked per core below 32' },
+        { at: 'Gic.ml:def:set', role: "a device's line (set_private: a core's timer)" },
+        { at: 'Gic.ml:def:update', role: "each core's line recomputed" },
+        { at: 'Gic.ml:def:highest', role: 'the highest pending interrupt above the running priority' },
+        { at: 'Gic.ml:def:acknowledge', role: 'IAR read: the highest made active' },
+        { at: 'Gic.ml:def:end_of_interrupt', role: 'EOIR written: the priority dropped' },
+        { at: 'Gic.ml:def:irq', role: 'what the core checks between instructions' },
+      ],
+      joints: [
+        { from: 'Gic.ml:def:set', to: 'Gic.ml:def:update' },
+        { from: 'Gic.ml:def:update', to: 'Gic.ml:def:highest' },
+        { from: 'Gic.ml:def:update', to: 'Gic.ml:def:irq', say: 'asserted' },
+        { from: 'Gic.ml:def:acknowledge', to: 'Gic.ml:def:update' },
+        { from: 'Gic.ml:def:end_of_interrupt', to: 'Gic.ml:def:update' },
+      ],
+    },
+  ],
+}

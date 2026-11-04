@@ -1,0 +1,21 @@
+// languages/dotnet/jit/mini-ml/: what the code map says of it (the code
+// map is tinybox codemap, in ~/github/ocaml-elm-playground; its
+// guidelines: docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The JIT's memory as mini-ml's mkfile builds it: system calls by number, no C, Linux arm64 or Plan 9 arm.",
+  files: {
+    'Code_memory.ml': { digest: '80a887fa6818',
+      summary: "Code made executable: memfd, write, mmap on Linux; a segment, a pipe, segflush on Plan 9.",
+      important: [
+        { at: 'def:syscall', say: "the runtime's unix.c: a raw system call", weight: 2 },
+        { at: 'def:load', say: 'never writable and executable at once', weight: 3 },
+        { at: 'comment:"ML writes no memory but its own"', say: 'so the kernel writes it, from a pipe', weight: 3 },
+        { at: 'def:poke', weight: 1 },
+        { at: 'def:cells', say: "the stubs' cells, rewritten by pwrite64", weight: 2 },
+        { at: 'def:closure', say: 'an address made an ML closure', weight: 2 },
+      ],
+      related: ['../Code_memory.mli'],
+    },
+  },
+}

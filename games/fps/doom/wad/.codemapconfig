@@ -1,0 +1,72 @@
+// games/fps/doom/wad/: what the code map says of it
+local skeletons = import '../../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Doom's data: the WAD's lumps, a level's records and BSP, the textures, flats and light tables.",
+  files: {
+    'Wad.mli': {
+      summary: 'The WAD, "Where\'s All the Data?": lumps, a name of eight letters each, a directory at the end.',
+      digest: 'a47f72a18741',
+      capitals: [{ at: 'type:t', say: 'every picture, level and sound of the game' }],
+    },
+    'Wad.ml': { summary: 'A WAD read and written: the header, the directory, lumps by name.', digest: '26f296e0ce16' },
+    'Level.mli': {
+      summary: "One map: what the designer drew (lines, sides, sectors) and what the node builder made (the BSP).",
+      digest: '29cdf8928b8e',
+      capitals: [
+        { at: 'type:t', say: 'a level: what render and play share' },
+        { at: 'type:sector', say: 'a floor, a ceiling, their heights, the light' },
+      ],
+      important: [
+        { at: 'comment:"what the node builder adds"', say: 'the drawing, and the tree made of it', weight: 3 },
+        { at: 'type:node', say: 'a splitting line, two boxes, two children', weight: 2 },
+        { at: 'type:seg', say: 'a piece of a line, in a subsector', weight: 2 },
+      ],
+    },
+    'Level.ml': {
+      summary: 'The lumps read into records, the BSP walked to find where a point is.',
+      digest: 'cf3e657c31ce',
+      important: [
+        { at: 'def:load', say: "VERTEXES to NODES, each lump's records", weight: 3 },
+        { at: 'def:point_on_side', say: 'which side of a partition line', weight: 2 },
+        { at: 'def:sector_at', say: 'down the tree to the subsector', weight: 2 },
+      ],
+    },
+    'Textures.mli': {
+      summary: "What walls, floors and sky are painted with, a byte a pixel, and the light: COLORMAP's 34 tables.",
+      digest: '853063c90633',
+      capitals: [{ at: 'type:t', say: "textures, flats, the palette's light" }],
+    },
+    'Textures.ml': {
+      summary: 'Textures composed from patches (posts of columns), flats read, animations and switches.',
+      digest: 'a7abca01ce30',
+      important: [
+        { at: 'def:make_texture', say: 'patches drawn into one picture, by columns', weight: 3 },
+        { at: 'def:draw_post', say: "a patch's post: a run of a column", weight: 2 },
+        { at: 'def:animate', say: 'NUKAGE1..3 cycled, every 8 tics', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.parts('A WAD read', [
+      ['Wad.ml', 'the lumps'],
+      ['Level.ml', 'a map, from its lumps'],
+      ['Textures.ml', 'the pictures and the light, from theirs'],
+    ], [
+      ['Level.ml', 'Wad.ml', 'reads'],
+      ['Textures.ml', 'Wad.ml', 'reads'],
+      ['Level.ml', 'Textures.ml', 'texture numbers'],
+    ]),
+    skeletons.module('Level.ml', 'A level read, a point located', [
+      ['load', 'the lumps into records', ''],
+      ['root', 'the tree', 'built by the node builder'],
+      ['point_on_side', 'a side of a node', 'walked'],
+      ['sector_at', 'the sector under a point', 'down the tree'],
+    ]),
+    skeletons.module('Textures.ml', 'Textures from patches', [
+      ['load', 'TEXTURE1, PNAMES, the flats', ''],
+      ['make_texture', 'a texture composed', 'each'],
+      ['draw_post', 'a post of a patch', 'its columns'],
+    ]),
+  ],
+}

@@ -1,0 +1,105 @@
+// analyzers/c/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). mini-cc's front
+// end compiled again here, wrapped (C.), its names apart from mini-ml's.
+// tests/ is off the map.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "A C program as Datalog facts: pointers for points-to (Facts), stack code for liveness (Ir_facts).",
+  files: {
+    'C_front.mli': { digest: '77a6f4aaa6a4',
+      summary: "C files through mini-cc's front end into Facts: a whole program, each file's #include history.",
+      important: [
+        { at: 'def:file', weight: 2 },
+        { at: 'def:histories', say: 'a global line back to its file', weight: 2 },
+      ],
+    },
+    'C_front.ml': { digest: 'b5af61a5e736',
+      summary: "Pre, Lexer, Parser, Declare as mini-cc runs them, each function's tree handed to Facts.",
+      important: [
+        { at: 'def:read', say: "mini-cc's CLI, its back end the facts", weight: 3 },
+        { at: 'def:file', weight: 2 },
+      ],
+    },
+    'Facts.mli': { digest: '71324de2eb15',
+      summary: "What each C function does to pointers, in the relations of the author's pointer.dl (2014).",
+      capitals: [
+        { at: 'def:func', say: "a C function's pointer facts" },
+      ],
+      important: [
+        { at: 'comment:"p = q          assign(p, q)."', say: 'C statements to relations: the table', weight: 3 },
+        { at: 'comment:"The compiler\'s part ends at the facts"', say: "the answer is the rules'", weight: 3 },
+        { at: 'type:arg', weight: 1 },
+        { at: 'def:added', say: 'facts as values to Datalog, not text', weight: 2 },
+      ],
+    },
+    'Facts.ml': { digest: '575ca8fe391d',
+      summary: "A function's tree walked: each assignment, address, load, store and call a fact; temporaries named.",
+      important: [
+        { at: 'def:fact', say: 'once each, and to the Datalog base', weight: 2 },
+        { at: 'def:value', say: "an expression's value: a variable, or none", weight: 3 },
+        { at: 'def:address', weight: 2 },
+        { at: 'def:store', weight: 2 },
+        { at: 'def:call', say: 'direct or through a pointer; allocators are objects', weight: 3 },
+        { at: 'def:statement', weight: 1 },
+        { at: 'def:func', weight: 2 },
+      ],
+    },
+    'Ir_facts.mli': { digest: 'ca69579ed391',
+      summary: "A C function's stack code as facts: points, who follows whom, variables read and written.",
+      important: [
+        { at: 'def:func', weight: 2 },
+        { at: 'def:own', say: "Opti's own liveness, to check the rules'", weight: 2 },
+      ],
+    },
+    'Ir_facts.ml': { digest: 'fb5a2347c663',
+      summary: 'Each instruction a point, its successors and its uses and defs, quoted for Datalog.',
+      important: [
+        { at: 'def:func', weight: 2 },
+      ],
+    },
+    'C_flow.mli': { digest: '0316f4eead1c',
+      summary: "mini-analyze -flow for C: functions lowered and optimized as mini-cc does, then Ir_facts.",
+      important: [
+        { at: 'comment:"is checked against the rules"', say: "the compiler's answer against the rules'", weight: 2 },
+      ],
+    },
+    'C_flow.ml': { digest: '61ae376ebf28',
+      summary: 'A file read, each function through Lower and Opti, its facts collected.',
+    },
+  },
+  skeletons: [
+    {
+      name: 'C to facts: two kinds, two analyses',
+      bones: [
+        { at: 'C_front.ml:def:file', role: "a C file through mini-cc's front end" },
+        { at: 'Facts.ml:def:func', role: 'its pointer facts: points_to/' },
+        { at: 'C_flow.ml:def:file', role: '-flow: lowered and optimized' },
+        { at: 'Ir_facts.ml:def:func', role: 'its stack code facts: liveness.dl' },
+      ],
+      joints: [
+        { from: 'C_front.ml:def:file', to: 'Facts.ml:def:func', say: "each function's tree" },
+        { from: 'C_flow.ml:def:file', to: 'Ir_facts.ml:def:func', say: "each function's IR" },
+      ],
+    },
+    {
+      name: "A C function's pointer facts",
+      bones: [
+        { at: 'Facts.ml:def:func', role: 'parameters, then the body' },
+        { at: 'Facts.ml:def:statement', role: 'a statement' },
+        { at: 'Facts.ml:def:value', role: "an expression's value as a variable" },
+        { at: 'Facts.ml:def:store', role: '*p = q, a[i] = q, x->f = q' },
+        { at: 'Facts.ml:def:call', role: 'a call: arguments, result, the callee' },
+        { at: 'Facts.ml:def:fact', role: 'a relation and its arguments, once' },
+      ],
+      joints: [
+        { from: 'Facts.ml:def:func', to: 'Facts.ml:def:statement', say: 'its body' },
+        { from: 'Facts.ml:def:statement', to: 'Facts.ml:def:value' },
+        { from: 'Facts.ml:def:statement', to: 'Facts.ml:def:store' },
+        { from: 'Facts.ml:def:value', to: 'Facts.ml:def:call' },
+        { from: 'Facts.ml:def:value', to: 'Facts.ml:def:fact', say: 'assign_*' },
+        { from: 'Facts.ml:def:call', to: 'Facts.ml:def:fact', say: 'call_*, argument' },
+      ],
+    },
+  ],
+}

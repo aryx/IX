@@ -2,24 +2,37 @@
 // tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there)
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "The compat back end: 5c's and 7c's code generator, so that mini-cc's listings are theirs byte for byte.",
   files: {
-    'Cgen.mli': { digest: 'bb2a014f2d14',
+    'Prtree.mli': { digest: 'da3b56900f53',
+      summary: "mini-cc -x (sub.c's prtree): a function's checked tree dumped, one node a line, to debug and compare.",
+    },
+    'Prtree.ml': { digest: 'db7869f5dac8',
+      summary: 'The tree printed as s-expressions: each node its name, its operands, its type.',
+      important: [
+        { at: 'def:show_expr', say: 'an expression: (ADD x:INT ...)', weight: 2 },
+        { at: 'def:prtree', weight: 1 },
+      ],
+    },
+    'Cgen.mli': { digest: '1161e01da844',
       summary: "The generator both machines share: nodes labelled by addressability and Sethi-Ullman, then recursive descent.",
       capitals: [
         { at: 'def:codgen', say: "a function's code, 5c's" },
       ],
       important: [
         { at: 'comment:"complexity; cgen is a recursive descent that compiles the harder"', say: 'the order: the harder operand first', weight: 3 },
+        { at: 'comment:"The two labels, on autos a, b, x and y"', say: '(a + b) * (a - b) labelled, and its code', weight: 3 },
+        { at: 'comment:"Ravi Sethi and Jeffrey Ullman (1970) proved"', say: "Ershov's numbers; at -O0 all the allocation", weight: 2 },
+        { at: 'comment:"is so small (less than 500 lines of C) and easy"', say: 'no machine description: a directory a machine', weight: 1 },
         { at: 'comment:"compiles to where the program counter goes, not to a value"', say: 'a condition is jumps', weight: 2 },
         { at: 'type:hooks', say: 'what else differs between 5c and 7c', weight: 3 },
         { at: 'def:xcom', weight: 2 },
         { at: 'def:codgen', weight: 2 },
       ],
     },
-    'Cgen.ml': { digest: '730ae8126044',
-      summary: "cgen.c, txt.c's gargs, pgen.c: expressions, arguments, statements and switches, a function.",
+    'Cgen.ml': { digest: '281517add21a',
+      summary: "cgen.c, txt.c's gargs, pgen.c: expressions, arguments, statements and switches, each line recorded.",
       important: [
         { at: 'def:xcom', say: 'addressable? how many registers? bottom up', weight: 3 },
         { at: 'def:cgen', say: 'an expression into a register, or for effect', weight: 3 },
@@ -28,6 +41,7 @@
         { at: 'def:sugen', say: 'a structure moved', weight: 1 },
         { at: 'def:swit', say: "a switch's cases: a table or a binary search", weight: 2 },
         { at: 'def:gen', say: 'a statement', weight: 2 },
+        { at: 'comment:"each instruction has the line of its statement"', say: "Emit.line: the debugger's line table", weight: 1 },
         { at: 'def:codgen', weight: 2 },
       ],
       links: [
@@ -51,7 +65,7 @@
         { at: 'def:regsalloc', say: 'a slot of the safe area', weight: 1 },
       ],
     },
-    'Regs.ml': { digest: '2a45e54d7b86',
+    'Regs.ml': { digest: '3f7f776144b7',
       summary: "txt.c's regalloc and the others: which register next, spills to the safe area, argument slots.",
       important: [
         { at: 'type:backend', weight: 2 },
@@ -61,14 +75,14 @@
         { at: 'def:init', weight: 1 },
       ],
     },
-    'Arm.mli': { digest: '33be86268560',
+    'Arm.mli': { digest: 'eea46872d099',
       summary: "The arm machine as 5c: moves, conversions and instructions, and what Cgen asks of it.",
       important: [
         { at: 'def:backend', weight: 2 },
         { at: 'def:hooks', weight: 2 },
       ],
     },
-    'Arm.ml': { digest: 'f46963357279',
+    'Arm.ml': { digest: 'fed266d10935',
       summary: "5c's txt.c: gmove (loads, stores, conversions), gopcode, structure copies by MOVM.",
       important: [
         { at: 'def:gmove', say: 'every move and conversion, a case each', weight: 3 },
@@ -78,14 +92,14 @@
         { at: 'def:hooks', weight: 2 },
       ],
     },
-    'Arm64.mli': { digest: '879c6eec8282',
+    'Arm64.mli': { digest: '7b06f4c3e051',
       summary: "The arm64 machine as 7c: pointers are vlongs, which it computes itself.",
       important: [
         { at: 'def:backend', weight: 2 },
         { at: 'def:hooks', weight: 2 },
       ],
     },
-    'Arm64.ml': { digest: 'ad76c55f6252',
+    'Arm64.ml': { digest: '9086bff8e030',
       summary: "7c's txt.c: its moves and operators, W for 32 bits, structure copies laid out by size.",
       important: [
         { at: 'def:gmove', say: "every move and conversion, 7c's", weight: 3 },
@@ -102,20 +116,21 @@
         { at: 'def:acom', weight: 2 },
       ],
     },
-    'Acom.ml': { digest: '9eb66f51f386',
+    'Acom.ml': { digest: '7b9ffe974421',
       summary: 'The terms collected, sorted by their multipliers, factored, rebuilt as a tree.',
       important: [
         { at: 'type:term', weight: 2 },
         { at: 'def:acom', weight: 2 },
       ],
     },
-    'Multiply.mli': { digest: 'f671e282683e',
+    'Multiply.mli': { digest: '2be69f7ccaec',
       summary: "A multiplication by a constant as at most three shifts, adds and subtracts (5c's mul.c); arm's barrel shifter.",
       important: [
+        { at: 'comment:"x * 7      SLL"', say: 'x*7, x*10 as shifts; x*100 multiplied', weight: 2 },
         { at: 'def:mulcon0', weight: 2 },
       ],
     },
-    'Multiply.ml': { digest: '8d94803fd358',
+    'Multiply.ml': { digest: 'e8f0d6138654',
       summary: 'The search for the cheapest chain, and the hints for the numbers it misses.',
       important: [
         { at: 'def:hints', say: "5c's table, for what the search misses", weight: 2 },

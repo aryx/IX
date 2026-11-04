@@ -1,0 +1,31 @@
+// lib_playground/platforms/ppm/: what the code map says of it
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: 'No window: a program run some frames by a script, its last frame written as a PPM; the tests.',
+  files: {
+    'Playground_platform.ml': {
+      summary: "After the playground's -dump-frame: frames stepped, the last one rendered to a file, maybe paced.",
+      digest: 'b8f908a81266',
+      important: [
+        { at: 'def:run_app', say: 'the frames stepped, the picture written', weight: 3 },
+        { at: 'code:"Session.frame run cli.script"', say: "the script's keys at each frame", weight: 2 },
+      ],
+    },
+  },
+  skeletons: [{
+    name: 'Frames run, the last one written',
+    bones: [
+      { at: 'Playground_platform.ml:def:run_app', role: 'the platform: n frames' },
+      { at: '../Session.ml:def:frame', role: 'a frame stepped' },
+      { at: '../Session.ml:def:view', role: 'the shapes' },
+      { at: '../Redraw.ml:def:frame', role: 'drawn' },
+      { at: '../Session.ml:def:ppm', role: 'the picture as a file' },
+    ],
+    joints: [
+      { from: 'Playground_platform.ml:def:run_app', to: '../Session.ml:def:frame', say: 'each frame' },
+      { from: 'Playground_platform.ml:def:run_app', to: '../Session.ml:def:view', say: 'the last' },
+      { from: '../Session.ml:def:view', to: '../Redraw.ml:def:frame', say: 'shapes' },
+      { from: '../Redraw.ml:def:frame', to: '../Session.ml:def:ppm', say: 'pixels' },
+    ],
+  }],
+}

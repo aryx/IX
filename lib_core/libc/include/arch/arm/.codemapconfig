@@ -1,0 +1,14 @@
+// lib_core/libc/include/arch/arm/: what the code map says of it (the code map: tinybox codemap,
+// ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "arm's u.h, for mini-cc and 5c: s8 to u64, uintptr of 32 bits, va_list.",
+  files: {
+    'u.h': { digest: 'f794fbee75a9',
+      summary: "arm's types for the compiler: s8, u32, vlong, uintptr, va_list; the first include of every C file.",
+      capitals: [{ at: 'code:"typedef unsigned char u8"', say: "the machine's sizes: what every C file starts with" }],
+      important: [{ at: 'comment:"shorter s8/u8/... like in Rust and Zig"', weight: 1 }],
+    },
+  },
+}

@@ -1,0 +1,69 @@
+// lib_core/libc/arch/arm/: what the code map says of it (the code map: tinybox codemap,
+// ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "arm's assembly: the start, the division arm lacks, memmove and memset 32 bytes a turn, vlong's multiply.",
+  files: {
+    'rt0.s': { digest: '8aa040554669', summary: 'Where a Linux or Plan 9 arm process starts: R12 the static base, main(argc, argv), then exit(0).' },
+    'div.s': { digest: 'a7500ac4af06',
+      summary: "arm has no division: _div, _divu, _mod, _modu by shifts and subtractions, principia's.",
+      important: [
+        { at: 'def:turn', say: 'a quotient bit a turn', weight: 2 },
+        { at: 'code:"_div"', say: 'what the compiler calls for /', weight: 3 },
+      ],
+    },
+    'memmove.s': { digest: 'f88684749b60',
+      summary: 'memmove 32 bytes a turn (MOVM), else words, else bytes; misaligned words shifted into place.',
+      important: [
+        { at: 'def:_memmove', say: 'backward when the ranges overlap', weight: 2 },
+        { at: 'def:_b32loop', say: 'eight registers a turn', weight: 2 },
+        { at: 'def:_forward', weight: 1 },
+      ],
+    },
+    'memset.s': { digest: 'a899bca4e790', summary: 'memset 32 bytes a turn (MOVM), else words, else bytes.' },
+    'vlop.s': { digest: '8a6cdea78bd3', summary: "vlong * vlong: _mulv, the machine's 32 by 32 into 64 multiply, from principia's." },
+    'getcallerpc.s': { digest: '1e44bdce79d3', summary: "principia's getcallerpc: the return address the caller saved; nothing reads it yet." },
+  },
+  skeletons: [
+    skeletons.parts("arm's runtime in assembly", [
+      ['rt0.s', 'the process starts here'],
+      ['div.s', '/ and %, by hand'],
+      ['memmove.s', 'copies, 32 bytes a turn'],
+      ['memset.s', 'fills, the same'],
+      ['vlop.s', 'vlong multiply'],
+    ], [
+      ['rt0.s', 'div.s', 'main, compiled, calls'],
+      ['rt0.s', 'memmove.s', 'main, compiled, calls'],
+    ]),
+    { name: 'Division by shifts: save, div, rest',
+      bones: [
+        { at: 'div.s:code:"_div"', role: "entry: the compiler's /" },
+        { at: 'div.s:def:turn', role: 'one quotient bit' },
+        { at: 'div.s:def:k1', role: 'the shift by powers' },
+        { at: 'div.s:code:"_mod"', role: "the compiler's %" },
+      ],
+      joints: [
+        { from: 'div.s:code:"_div"', to: 'div.s:def:k1', say: 'the divisor aligned' },
+        { from: 'div.s:def:k1', to: 'div.s:def:turn', say: 'subtract, shift' },
+        { from: 'div.s:code:"_mod"', to: 'div.s:def:k1', say: 'the remainder kept' },
+      ],
+    },
+    { name: 'memmove: forward or backward, aligned or shifted',
+      bones: [
+        { at: 'memmove.s:def:_memmove', role: 'entry: which way' },
+        { at: 'memmove.s:def:_back', role: 'from the end: overlap' },
+        { at: 'memmove.s:def:_b32loop', role: '32 bytes a turn' },
+        { at: 'memmove.s:def:_forward', role: 'from the start' },
+        { at: 'memmove.s:def:_f32loop', role: '32 bytes a turn' },
+      ],
+      joints: [
+        { from: 'memmove.s:def:_memmove', to: 'memmove.s:def:_back', say: 'dst above src' },
+        { from: 'memmove.s:def:_back', to: 'memmove.s:def:_b32loop', say: 'aligned' },
+        { from: 'memmove.s:def:_memmove', to: 'memmove.s:def:_forward', say: 'dst below' },
+        { from: 'memmove.s:def:_forward', to: 'memmove.s:def:_f32loop', say: 'aligned' },
+      ],
+    },
+  ],
+}

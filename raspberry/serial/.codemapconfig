@@ -1,0 +1,37 @@
+// raspberry/serial/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The UARTs: the PL011, the kernels' console, and AUX's mini UART, 9pi's.",
+  files: {
+    'Pl011.mli': { digest: '988b82e44a39',
+      summary: "The PL011 UART, the Pi's UART0: the console, characters out at once, a receive queue.",
+    },
+    'Pl011.ml': { digest: 'c764055ed458',
+      summary: 'DR, FR and the interrupt masks; the line up while RIS and IMSC share a bit.',
+      important: [
+        { at: 'def:update', say: 'the interrupt line recomputed', weight: 2 },
+      ],
+    },
+    'Miniuart.mli': { digest: 'ef51a659893b', summary: "AUX's mini UART, 9pi's console: an 8-deep receive FIFO, line 29." },
+    'Miniuart.ml': { digest: 'f25ca421420f', summary: 'The 16550-like registers; the interrupt when enabled and a character, or transmit.' },
+  },
+  skeletons: [
+    {
+      name: 'A character in, a character out',
+      bones: [
+        { at: 'Pl011.ml:def:input', role: 'a host key queued for the guest' },
+        { at: 'Pl011.ml:def:update', role: 'the line: RIS and IMSC' },
+        { at: 'Pl011.ml:def:write', role: 'DR written: out at once' },
+        { at: 'Miniuart.ml:def:input', role: 'the same for the mini UART, an 8-deep FIFO' },
+        { at: 'Miniuart.ml:def:update', role: 'its line 29' },
+      ],
+      joints: [
+        { from: 'Pl011.ml:def:input', to: 'Pl011.ml:def:update', say: 'RXIM' },
+        { from: 'Pl011.ml:def:write', to: 'Pl011.ml:def:update' },
+        { from: 'Miniuart.ml:def:input', to: 'Miniuart.ml:def:update', say: 'rx_int' },
+      ],
+    },
+  ],
+}

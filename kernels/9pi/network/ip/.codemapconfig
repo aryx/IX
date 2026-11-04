@@ -2,10 +2,10 @@
 // tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there)
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
-  summary: "mini-9pi's IPv4 stack: #I's files over one interface, ARP, routes, ICMP echo and a simple TCP.",
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-9pi's IPv4 stack: #I's files over one interface, ARP, routes, ICMP echo, UDP and a simple TCP.",
   files: {
-    'Ip.mli': { digest: '449465908fde',
+    'Ip.mli': { digest: 'ceb26683649c',
       summary: 'IPv4 over the Ethernet: the interface, ARP, routes, and the protocols and connections Devip serves.',
       capitals: [
         { at: 'type:proto', say: 'a protocol as a record of functions: ICMP, TCP' },
@@ -19,7 +19,7 @@
         { at: 'def:deliver', say: 'data queued for a read, the reader woken', weight: 2 },
       ],
     },
-    'Ip.ml': { digest: '524456e2b6ba',
+    'Ip.ml': { digest: '11219869a400',
       summary: 'Packets out through the next hop (ARP asked, the packet kept pending) and in, to their protocol.',
       capitals: [
         { at: 'def:send', say: 'IP out: header, checksum, next hop, ARP' },
@@ -39,14 +39,14 @@
         { from: 'def:bind', to: 'def:input' },
       ],
     },
-    'Tcp.mli': { digest: '7b47182c297a',
+    'Tcp.mli': { digest: '3f5220b9db62',
       summary: 'TCP simply: in-order only, go-back-N from the clock, no congestion control; seqs as Int32s.',
       important: [
         { at: 'comment:"TCP (principia"', say: 'what it does, what an emulated link spares it', weight: 3 },
         { at: 'def:tick', say: 'retransmissions, from the clock', weight: 2 },
       ],
     },
-    'Tcp.ml': { digest: '5ebff4197ebf',
+    'Tcp.ml': { digest: 'e65ff58c0e46',
       summary: "The control blocks and TCP's states: segments in, data out in the peer's window, retransmission.",
       capitals: [
         { at: 'def:input', say: "a segment through TCP's state machine" },
@@ -67,23 +67,23 @@
         { from: 'def:tick', to: 'def:retransmit' },
       ],
     },
-    'Icmp.mli': { digest: '802ef1600956',
+    'Icmp.mli': { digest: '9cc4f63fb225',
       summary: "ICMP: an echo request answered by the kernel; ping's connections read their replies whole.",
     },
-    'Icmp.ml': { digest: '54dfdf98ca96',
+    'Icmp.ml': { digest: '550d8f4099a1',
       summary: 'Echo requests turned into replies; echo replies to the connection of their identifier.',
       important: [
         { at: 'def:input', say: 'the request mirrored; a reply to ping', weight: 3 },
         { at: 'def:init', weight: 1 },
       ],
     },
-    'Devip.mli': { digest: 'dbbc2914e6a3',
+    'Devip.mli': { digest: '88f9ac9f9329',
       summary: "'#I', the IP device: a directory per protocol, clone, ctl, data, listen; ipifc the interfaces.",
       important: [
         { at: 'comment:"clone and its connections"', say: "the files Plan 9's network programs use", weight: 3 },
       ],
     },
-    'Devip.ml': { digest: 'd0458592848a',
+    'Devip.ml': { digest: '7bcfab0c0fcc',
       summary: "#I's file tree over the protocols: a ctl's words to connect, announce; data read and written.",
       capitals: [
         { at: 'def:init', say: "#I: Plan 9's network as files" },
@@ -99,6 +99,25 @@
         { from: 'def:init', to: 'def:readdata' },
       ],
     },
+    'Udp.mli': { digest: 'a0a562edc343',
+      summary: "UDP (udp.c, simply): a datagram to a port; a server's reads behind 52 bytes saying whose.",
+      important: [
+        { at: 'comment:"is only where its writes go"', say: 'nothing on the wire: why the resolver uses it', weight: 2 },
+        { at: 'comment:"so one file answers many clients"', say: 'headers: no recvfrom, no sendto', weight: 3 },
+        { at: 'comment:"Not done: an announced port without headers"', weight: 1 },
+        { at: 'comment:"UDP is what was left when TCP was cut"', say: "Reed's argument, 1978", weight: 1 },
+      ],
+    },
+    'Udp.ml': { digest: 'ee3026f6f076',
+      summary: "Protocol 17 registered with Ip: the pseudo-header's checksum, the headers' IPv6-sized addresses.",
+      important: [
+        { at: 'def:sum', say: "TCP's pseudo-header sum; 0 sent as 0xffff", weight: 2 },
+        { at: 'def:headers', weight: 1 },
+        { at: 'def:v6', say: "an IPv4 address in IPv6's 16 bytes", weight: 1 },
+        { at: 'def:input', say: "a datagram to its connection, or a server's", weight: 3 },
+        { at: 'def:init', say: 'the proto record: connect, announce, write', weight: 2 },
+      ],
+    },
   },
   skeletons: [
     {
@@ -107,6 +126,7 @@
         { at: 'Devip.ml', role: "#I: the files, a ctl's words to a protocol's function" },
         { at: 'Tcp.ml', role: 'a protocol: TCP, connections with states and retransmission' },
         { at: 'Icmp.ml', role: 'a protocol: ICMP, echo for ping' },
+        { at: 'Udp.ml', role: 'a protocol: UDP, a datagram a read or a write' },
         { at: 'Ip.ml', role: 'the layer they share: routes, ARP, packets in and out, the conv and proto records' },
         { at: '../Devether.ml', role: 'the frames below' },
       ],
@@ -115,6 +135,8 @@
         { from: 'Devip.ml', to: 'Icmp.ml' },
         { from: 'Tcp.ml', to: 'Ip.ml', say: 'send; register 6' },
         { from: 'Icmp.ml', to: 'Ip.ml', say: 'send; register 1' },
+        { from: 'Devip.ml', to: 'Udp.ml' },
+        { from: 'Udp.ml', to: 'Ip.ml', say: 'send; register 17' },
         { from: 'Ip.ml', to: '../Devether.ml', say: 'transmit; register 0x800, 0x806' },
       ],
     },

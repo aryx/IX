@@ -1,0 +1,68 @@
+// browsers/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-netscape and mini-lynx: Navigator's window over mini-chrome's engine, on ix's own network and TLS 1.3.",
+  dirs: {
+    survey: { summary: 'Scripts behind the plan: what of mini-chrome and of browsers/ real sites run, its first version.' },
+  },
+  skeletons: [
+    // the README's "A page's way", function by function
+    {
+      name: 'A page fetched, parsed, laid out, drawn',
+      bones: [
+        { at: 'netscape/Netscape.ml:def:update_window', role: 'the window: an address typed, a link clicked' },
+        { at: 'netscape/Tab.ml:def:step', role: 'the tab: a piece of the load a frame' },
+        { at: 'netscape/Tab.ml:def:fetch_any', role: 'about:, data:, a file, or the network' },
+        { at: '../lib_networking/http/Http_client.ml:def:fetch_with', role: 'HTTP over TCP or TLS 1.3, kept alive' },
+        { at: 'engine/page/Browser_page.ml:def:read', role: 'bytes to UTF-8 to tokens to a tree' },
+        { at: 'html/Html_tree.ml:def:parse_with', role: 'the tree, repaired as browsers do' },
+        { at: 'engine/page/Browser_page.ml:def:lay_out', role: 'styles, boxes, shapes' },
+        { at: 'css/Computed.ml:def:styles_with', role: "each element's computed style" },
+        { at: 'engine/layout/Box_layout.ml:def:layout', role: "CSS's boxes placed" },
+        { at: 'engine/display/Browser_boxes.ml:def:draw', role: "the boxes as the playground's shapes" },
+        { at: 'netscape/Netscape.ml:def:view', role: 'scrolled, zoomed, under the toolbar' },
+      ],
+      joints: [
+        { from: 'netscape/Netscape.ml:def:update_window', to: 'netscape/Tab.ml:def:step', say: 'the tab is busy' },
+        { from: 'netscape/Tab.ml:def:step', to: 'netscape/Tab.ml:def:fetch_any', say: 'an address' },
+        { from: 'netscape/Tab.ml:def:fetch_any', to: '../lib_networking/http/Http_client.ml:def:fetch_with', say: 'http:// or https://' },
+        { from: '../lib_networking/http/Http_client.ml:def:fetch_with', to: 'engine/page/Browser_page.ml:def:read', say: "status, type, bytes (a later step)" },
+        { from: 'engine/page/Browser_page.ml:def:read', to: 'html/Html_tree.ml:def:parse_with', say: 'tokens' },
+        { from: 'html/Html_tree.ml:def:parse_with', to: 'engine/page/Browser_page.ml:def:lay_out', say: 'the Dom' },
+        { from: 'engine/page/Browser_page.ml:def:lay_out', to: 'css/Computed.ml:def:styles_with', say: 'the tree and its sheets' },
+        { from: 'css/Computed.ml:def:styles_with', to: 'engine/layout/Box_layout.ml:def:layout', say: 'styles' },
+        { from: 'engine/layout/Box_layout.ml:def:layout', to: 'engine/display/Browser_boxes.ml:def:draw', say: 'boxes' },
+        { from: 'engine/display/Browser_boxes.ml:def:draw', to: 'netscape/Netscape.ml:def:view', say: "the page's shapes" },
+      ],
+    },
+    {
+      name: 'The browsers and what they stand on',
+      bones: [
+        { at: 'netscape/', role: 'mini-netscape: the window and its tabs' },
+        { at: 'lynx/', role: 'mini-lynx: a page as text' },
+        { at: 'engine/', role: 'boxes and shapes' },
+        { at: 'css/', role: 'styles' },
+        { at: 'html/', role: 'the tree' },
+        { at: 'webapi/', role: "what a page's scripts see" },
+        { at: 'javascript/', role: 'the language; mini-node' },
+        { at: '../lib_networking/', role: 'DNS, TCP, TLS, HTTP, cookies' },
+      ],
+      joints: [
+        { from: 'netscape/', to: 'engine/', say: 'a page laid out' },
+        { from: 'netscape/', to: 'webapi/', say: "the page's scripts" },
+        { from: 'netscape/', to: '../lib_networking/', say: 'fetches' },
+        { from: 'lynx/', to: 'html/', say: 'Line_mode' },
+        { from: 'lynx/', to: '../lib_networking/', say: 'fetches' },
+        { from: 'engine/', to: 'css/', say: 'computed styles' },
+        { from: 'css/', to: 'html/', say: 'matched on the Dom' },
+        { from: 'webapi/', to: 'javascript/', say: 'run by' },
+        { from: 'webapi/', to: 'html/', say: 'the tree thawed' },
+      ],
+    },
+  ],
+  views: [
+    { name: 'The two browsers: a window and a terminal', files: ['netscape/Netscape.ml', 'lynx/Lynx.ml'] },
+  ],
+}

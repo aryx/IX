@@ -1,0 +1,27 @@
+// kernels/singularity/programs/tock/: what the code map says of it (the
+// code map is tinybox codemap, in ~/github/ocaml-elm-playground).
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "tock, tick's other half: a line, then the other's turn.",
+  files: {
+    'Main.ml': { digest: 'c227ea4b204e',
+      summary: "tock, tick's other half: a line, then the other's turn.",
+      capitals: [ { at: "code:\"let () =\"", say: "three lines, a yield after each" } ],
+      important: [
+        { at: "code:\"Sip.yield ()\"", say: "cooperative: the turn given", weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: "tock: yield in turn",
+      bones: [
+        { at: "Main.ml:code:\"let () =\"", role: "a line, then yield" },
+        { at: "../../lib/Sip.ml:def:yield", role: "the other runs" },
+      ],
+      joints: [
+        { from: "Main.ml:code:\"let () =\"", to: "../../lib/Sip.ml:def:yield", say: "each round" },
+      ],
+    },
+  ],
+}

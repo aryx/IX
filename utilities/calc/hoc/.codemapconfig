@@ -1,0 +1,134 @@
+// utilities/calc/hoc/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-hoc, Plan 9's hoc (Kernighan and Pike's): a whole language in small, its stack machine a tree walk.",
+  dirs: {
+    tests: { summary: 'A corpus of hoc programs and outputs, run against the C hoc (differential.sh, fuzz.py).' },
+  },
+  files: {
+    'Main.ml': { digest: '83030f0fcb7c',
+      summary: 'mini-hoc, the program: the capabilities, then CLI.main.',
+    },
+    'CLI.mli': { digest: '488a06dd7769',
+      summary: "hoc's language by example, and a line's way through Input, Lexer, Parser, Eval, Symbol.",
+      important: [
+        { at: 'comment:"A line\'s way through the modules"', say: 'the pipeline, drawn', weight: 3 },
+        { at: 'comment:"some 400 lines of OCaml besides"', say: 'read before rc, awk, the compilers', weight: 2 },
+      ],
+    },
+    'CLI.ml': { digest: 'bb27fe7fc15e',
+      summary: "The loop: a line parsed and run at a time; an error warns and the lexer starts anew.",
+      capitals: [
+        { at: 'def:main', say: "mini-hoc's entry: a line parsed, a line run" },
+      ],
+      important: [
+        { at: 'code:"Parser.line Lexer.token"', say: 'one line, then Eval.run', weight: 3 },
+        { at: 'comment:"after an error the lexer starts anew"', say: "execerror's recovery", weight: 2 },
+      ],
+    },
+    'Input.mli': { digest: '13c98ad3a69b',
+      summary: "What hoc reads, a character at a time: the files in turn, - for stdin, -e's text; read(x) too.",
+    },
+    'Input.ml': { digest: 'b8e13118d651',
+      summary: "A Biobuf by hand over each source, and the C's moreinput moving to the next file.",
+      important: [
+        { at: 'def:more', say: 'the next file, or false at the end', weight: 2 },
+        { at: 'def:getc', weight: 2 },
+        { at: 'def:number', say: 'read(x): the next number', weight: 1 },
+      ],
+    },
+    'Lexer.mll': { digest: '62d6bda0fec1',
+      summary: "hoc.y's yylex: a name's token is what it is now (variable, built-in, function, procedure).",
+      important: [
+        { at: 'def:name', say: 'the symbol table decides the token', weight: 3 },
+        { at: 'def:token', weight: 1 },
+      ],
+    },
+    'Parser.mly': { digest: '81c41536d1cc',
+      summary: "hoc.y's grammar a line at a time, making trees; its yacc conflicts each resolved by name.",
+      important: [
+        // a .mly's /* */ header is no comment to the anchors: by line
+        { at: 'line:10', say: "hoc.y's conflicts, made explicit", weight: 2 },
+        { at: 'def:line', weight: 3 },
+      ],
+    },
+    'Ast.ml': { digest: 'e290ae01c2a6',
+      summary: "hoc's trees, where hoc.y emitted code for code.c's stack machine; a symbol and its value.",
+      capitals: [
+        { at: 'type:symbol', say: 'a name and what it is now' },
+      ],
+      important: [
+        { at: 'type:symbol', weight: 3 },
+        { at: 'type:value', say: 'variable, built-in, function, procedure', weight: 2 },
+        { at: 'type:expr', weight: 2 },
+        { at: 'type:stmt', weight: 2 },
+        { at: 'type:line', weight: 1 },
+      ],
+    },
+    'Symbol.mli': { digest: '743aad5df2fe',
+      summary: "The names hoc knows: symbol.c's table with init.c's constants and built-ins, math.c's checks.",
+    },
+    'Symbol.ml': { digest: 'af837e150072',
+      summary: "A Hashtbl of symbols, filled at start with PI, E, GAMMA, DEG, PHI and sin to abs.",
+      important: [
+        { at: 'def:find', say: 'an unknown name made Undef', weight: 2 },
+        { at: 'def:check', say: "math.c's errcheck: domain, range", weight: 1 },
+        { at: 'code:"\"GAMMA\""', say: "init.c's constants", weight: 1 },
+      ],
+    },
+    'Eval.mli': { digest: '233e9ddce242',
+      summary: "The interpreter, code.c's machine on trees; formals are dynamically scoped, as in the C.",
+      important: [
+        { at: 'comment:"That is dynamic scope"', say: "the first Lisp's, rc's; not Scheme's", weight: 3 },
+        { at: 'def:run', weight: 2 },
+      ],
+    },
+    'Eval.ml': { digest: '6d4bbc48b508',
+      summary: "eval on floats, exec on statements, call saving each formal's old value and a return as an exception.",
+      important: [
+        { at: 'def:eval', weight: 3 },
+        { at: 'def:exec', weight: 2 },
+        { at: 'def:call', say: 'formals set, the old values back after', weight: 3 },
+        { at: 'type:Returned', say: "the C's returning flag, as an exception", weight: 1 },
+        { at: 'def:run', say: 'a line: printed unless an assignment', weight: 2 },
+      ],
+      links: [
+        { from: 'def:run', to: 'def:exec' },
+        { from: 'def:exec', to: 'def:eval' },
+        { from: 'def:eval', to: 'def:call' },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.cli('mini-hoc: a line read, a line run', [
+      ['Parser.mly:def:line', 'a line to a tree'],
+      ['Eval.ml:def:run', 'the line run, its value printed'],
+      ['Eval.ml:def:exec', 'a statement'],
+      ['Eval.ml:def:eval', 'an expression to a float'],
+    ]) + {
+      bones+: [{ at: 'Eval.ml:def:call', role: 'a function, formals saved' }],
+      joints+: [
+        { from: 'Eval.ml:def:eval', to: 'Eval.ml:def:call', say: 'f(args): the values' },
+        { from: 'Eval.ml:def:call', to: 'Eval.ml:def:exec', say: 'the body' },
+      ],
+    },
+    skeletons.parts("A line's way through the modules", [
+      ['Input.ml', "the files' characters"],
+      ['Lexer.mll', 'tokens, by what a name is now'],
+      ['Parser.mly', "a line's tree"],
+      ['Ast.ml', 'trees and symbols'],
+      ['Eval.ml', 'the tree walked'],
+      ['Symbol.ml', 'the names'],
+    ], [
+      ['Input.ml', 'Lexer.mll', 'characters'],
+      ['Lexer.mll', 'Parser.mly', 'tokens'],
+      ['Parser.mly', 'Ast.ml', 'a line'],
+      ['Ast.ml', 'Eval.ml', 'run'],
+      ['Symbol.ml', 'Lexer.mll', "a name's kind"],
+      ['Eval.ml', 'Symbol.ml', 'values set'],
+    ]),
+  ],
+}

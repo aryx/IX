@@ -1,0 +1,101 @@
+// utilities/calc/bc/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-bc, Plan 9's bc: a compiler from C-like statements to dc's commands, mini-dc running them.",
+  dirs: {
+    tests: { summary: 'A corpus of bc programs and their outputs, compared with the C bc by differential.sh.' },
+    _mk: { summary: "mk's build directory (empty), not sources." },
+  },
+  files: {
+    'Main.ml': { digest: 'edc2d77c001d',
+      summary: 'mini-bc, the program: the capabilities, then CLI.main.',
+    },
+    'CLI.mli': { digest: '508962e2e697',
+      summary: "bc as a compiler to dc, drawn: expressions, functions as macros in registers, an if.",
+      important: [
+        { at: 'comment:"It computes nothing: it is a compiler"', say: 'dc does the arithmetic', weight: 3 },
+        { at: 'comment:"a + b * c          lalblc*+ps."', say: 'an expression compiled', weight: 2 },
+        { at: 'comment:"recursion for free"', say: "a local is its register's stack top", weight: 2 },
+      ],
+    },
+    'CLI.ml': { digest: '51aa362b1e95',
+      summary: "The command line: -l's library, the files, stdin read a character at a time, fed to Dc or printed (-c).",
+      capitals: [
+        { at: 'def:main', say: "mini-bc's entry: parse, emit to Dc.feed" },
+      ],
+      important: [
+        { at: 'code:"State.emit :="', say: '-c prints the dc text; else Dc.feed', weight: 3 },
+        { at: 'code:"Parser.stuff Lexer.token"', say: 'a statement at a time', weight: 2 },
+        { at: 'type:input', weight: 1 },
+      ],
+    },
+    'Lexer.mll': { digest: '267cc2ad3e15',
+      summary: "bc.y's yylex: a name one letter, a keyword known by its first two, a digit a token.",
+      important: [
+        { at: 'def:keyword', say: 'pr, print, prxyz: the same', weight: 2 },
+        { at: 'def:token', weight: 1 },
+      ],
+    },
+    'Parser.mly': { digest: '6604ed0f69a0',
+      summary: "bc.y's grammar, each rule's value the dc commands it compiles to, strings end to end.",
+      important: [
+        // a .mly's /* */ header is no comment to the anchors: by line
+        { at: 'line:8', say: 'mid-rule actions as empty rules', weight: 2 },
+        { at: 'line:11', say: "principia's bc.y lacks the for loop", weight: 2 },
+        { at: 'def:stuff', say: 'a statement or a definition', weight: 3 },
+      ],
+    },
+    'State.ml': { digest: '8ef23947cbcf',
+      summary: "bc.y's globals while compiling: registers for bodies (from 128), break depth, where output goes.",
+      important: [
+        { at: 'comment:"A function, an if\'s body and a loop are dc macros kept in registers"', weight: 3 },
+        { at: 'def:emit', say: 'Dc.feed, or the standard output', weight: 3 },
+        { at: 'def:lev', say: 'macros entered since the loop: a break', weight: 2 },
+        { at: 'def:crs', say: 'the next register for a body', weight: 1 },
+      ],
+    },
+    'Bclib.ml': { digest: '09b98037a25e',
+      summary: "bc -l's library: Plan 9's /sys/lib/bclib as a string (sine, cosine, arctangent, log, exp, Bessel).",
+      important: [
+        { at: 'def:text', say: 'bc source, compiled before the files', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.cli('mini-bc: compile to dc, dc runs', [
+      ['Parser.mly:def:stuff', 'a statement compiled to dc text'],
+      ['State.ml:def:emit', 'the text sent on'],
+      ['../dc/Dc.ml:def:feed', 'dc runs it'],
+    ]),
+    skeletons.parts('A compiler and its machine', [
+      ['Bclib.ml', 'the library, bc source'],
+      ['Lexer.mll', 'tokens'],
+      ['Parser.mly', 'statements to dc commands'],
+      ['State.ml', 'registers, break depth, the output'],
+      ['CLI.ml', 'the inputs in turn'],
+      ['../dc/', 'the machine'],
+    ], [
+      ['Bclib.ml', 'CLI.ml', 'read first with -l'],
+      ['CLI.ml', 'Lexer.mll', 'characters'],
+      ['Lexer.mll', 'Parser.mly', 'tokens'],
+      ['Parser.mly', 'State.ml', 'dc text emitted'],
+      ['State.ml', '../dc/', 'Dc.feed'],
+    ]),
+    // the library's functions are bc in a string: code: reaches inside it
+    skeletons.parts('The math library, in bc', [
+      ['Bclib.ml:code:"define s(x)"', 'sine, by its series'],
+      ['Bclib.ml:code:"define a(x)"', 'arctangent; a(1) is pi/4'],
+      ['Bclib.ml:code:"define c(x)"', 'cosine: the sine shifted'],
+      ['Bclib.ml:code:"define e(x)"', 'exponential, halved and squared'],
+      ['Bclib.ml:code:"define l(x)"', 'natural logarithm'],
+      ['Bclib.ml:code:"define j(n,x)"', 'Bessel function of order n'],
+    ], [
+      ['Bclib.ml:code:"define c(x)"', 'Bclib.ml:code:"define s(x)"', 's(x + pi/2)'],
+      ['Bclib.ml:code:"define c(x)"', 'Bclib.ml:code:"define a(x)"', 'pi from 4*a(1)'],
+      ['Bclib.ml:code:"define s(x)"', 'Bclib.ml:code:"define a(x)"', 'pi, to reduce x'],
+    ]),
+  ],
+}

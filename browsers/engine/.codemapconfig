@@ -1,0 +1,27 @@
+// browsers/engine/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The web engine: a styled tree laid out as boxes, drawn as the playground's shapes; mini-chrome's first version.",
+  dirs: {
+    tests: { summary: "Layout tests (Testo), and Boxes.ml and Frame.ml: a page's boxes or picture with no window, both builds." },
+  },
+  skeletons: [
+    {
+      name: 'The engine: a page to its shapes',
+      bones: [
+        { at: 'page/', role: 'the page: the pipeline driven, its sheets' },
+        { at: '../css/', role: "the styles: each element's values" },
+        { at: 'layout/', role: 'the boxes: places and sizes' },
+        { at: 'display/', role: "the shapes: the playground's" },
+      ],
+      joints: [
+        { from: 'page/', to: '../css/', say: 'the tree and its sheets' },
+        { from: '../css/', to: 'layout/', say: 'computed styles' },
+        { from: 'layout/', to: 'display/', say: 'boxes and lines' },
+        { from: 'display/', to: 'page/', say: "the page's shapes" },
+      ],
+    },
+  ],
+}

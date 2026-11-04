@@ -1,0 +1,36 @@
+// languages/smalltalk/highlight/: what the code map says of it (the code
+// map: tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Smalltalk's chunk files coloured for mini-emacs: every token its category, from the file alone.",
+  files: {
+    'Highlight_st.mli': {
+      summary: "Every token of a chunk file given a Highlight_code category: definitions, fields, parameters, globals.",
+      digest: 'fe1a22d2ff38',
+      capitals: [{ at: 'def:lines', say: "what mini-emacs's Smalltalk mode calls" }],
+      important: [
+        { at: 'comment:"St_lexer reads a method for the compiler"', say: 'why a second lexer: comments kept', weight: 3 },
+        { at: 'comment:"What a name is, from the file alone"', weight: 2 },
+      ],
+    },
+    'Highlight_st.ml': {
+      summary: "The playground's highlighter less its analysis: a scan of tokens, then names told apart by chunk.",
+      digest: '3792f1caa1cc',
+      important: [
+        { at: 'def:scan', say: 'tokens, comments and all', weight: 2 },
+        { at: 'def:run', say: 'chunk by chunk: definition, header, method', weight: 3 },
+        { at: 'def:spans', say: 'categories as spans of a line', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.module('Highlight_st.ml', 'A chunk file coloured', [
+      ['lines', "a file's lines", ''],
+      ['spans', 'spans per line', 'the categories'],
+      ['run', 'each token categorized', 'the tokens'],
+      ['scan', 'the tokens', 'the text'],
+    ]),
+  ],
+}

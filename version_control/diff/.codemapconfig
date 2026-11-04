@@ -1,0 +1,93 @@
+// version_control/diff/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Plan 9's diff and merge3: Hunt and McIlroy's algorithm, three-way merges, their command lines.",
+  files: {
+    'Difftool.mli': { digest: '5fb5d960b370',
+      summary: 'The diff and merge3 commands: files or directories, standard input, binaries.',
+    },
+    'Difftool.ml': { digest: 'a183c1201c01',
+      summary: 'The command lines of mini-diff and mini-merge3, over Diff and Merge3.',
+      capitals: [
+        { at: 'def:diff_main', say: "mini-diff's main" },
+        { at: 'def:merge3_main', say: "mini-merge3's main" },
+      ],
+      important: [
+        { at: 'def:diff_main', say: 'directories walked, each pair diffed', weight: 3 },
+        { at: 'def:merge3_main', weight: 2 },
+      ],
+    },
+    // diff and merge3
+    'Diff.mli': { digest: '2e74d3eaa505',
+      summary: "Differential file comparison, Plan 9's diff: Stone's (Hunt and McIlroy's) algorithm.",
+      capitals: [
+        { at: 'def:compute', say: 'two files to J, the longest common subsequence' },
+      ],
+      important: [
+        { at: "comment:\"The algorithm is Harold Stone's\"", say: 'k-candidates, a binary search each', weight: 3 },
+        { at: 'def:compute', weight: 3 },
+        { at: 'def:output', weight: 2 },
+      ],
+    },
+    'Diff.ml': { digest: 'ea29186ecc7c',
+      summary: 'Lines hashed, equivalence classes, the candidates; then the changes printed in every format.',
+      important: [
+        { at: "section:Stone's algorithm", weight: 2 },
+        { at: 'def:compute', say: 'prefix, suffix, classes, stone, jackpot', weight: 3 },
+        { at: 'def:changes', weight: 2 },
+        { at: 'def:output', weight: 2 },
+      ],
+    },
+    'Merge3.mli': { digest: '7af6e38bd821',
+      summary: 'Three-way merge of files: two diffs from the base, their changes taken in base order.',
+      important: [
+        { at: 'comment:"Two diffs from the base"', weight: 3 },
+      ],
+    },
+    'Merge3.ml': { digest: 'd4bc6cac48ee',
+      summary: "Both sides' changes walked together; overlaps widened, taken once or written as a conflict.",
+      capitals: [
+        { at: 'def:merge', say: 'base, ours, theirs: merged or a conflict' },
+      ],
+      important: [
+        { at: 'def:merge', weight: 3 },
+      ],
+    },
+  },
+  skeletons: [
+    { name: 'mini-diff and mini-merge3: two command lines',
+      bones: [
+        { at: 'Difftool.ml:def:diff_main', role: 'diff: flags, two files or dirs' },
+        { at: 'Difftool.ml:def:merge3_main', role: 'merge3: ours, base, theirs' },
+        { at: 'Difftool.ml:def:contents', role: "a file's text, - for stdin" },
+        { at: 'Difftool.ml:def:fatal', role: 'an error, the exit status 2' },
+        { at: 'Diff.ml:def:output', role: 'the changes printed' },
+        { at: 'Merge3.ml:def:merge', role: 'the merged text' },
+      ],
+      joints: [
+        { from: 'Difftool.ml:def:contents', to: 'Difftool.ml:def:diff_main', say: 'the texts' },
+        { from: 'Difftool.ml:def:contents', to: 'Difftool.ml:def:merge3_main', say: 'the three texts' },
+        { from: 'Difftool.ml:def:diff_main', to: 'Diff.ml:def:output', say: 'the diff, a format' },
+        { from: 'Difftool.ml:def:merge3_main', to: 'Merge3.ml:def:merge', say: 'three files' },
+      ],
+    },
+    { name: "A three-way merge: both sides' changes walked together",
+      bones: [
+        { at: 'Merge3.ml:def:merge', role: 'entry: left, base, right' },
+        { at: 'Merge3.ml:comment:"collect: the changes backward, then sorted by their first base line"', role: "each side's changes, sorted" },
+        { at: 'Merge3.ml:comment:"the edges aligned, so that same-sized chunks are compared"', role: 'overlaps widened: one change, or a conflict' },
+        { at: 'Diff.ml:def:compute', role: 'base against each side' },
+        { at: 'Diff.ml:def:fetch', role: 'lines copied out' },
+      ],
+      joints: [
+        { from: 'Diff.ml:def:compute', to: 'Merge3.ml:comment:"collect: the changes backward, then sorted by their first base line"', say: 'two diffs' },
+        { from: 'Merge3.ml:comment:"collect: the changes backward, then sorted by their first base line"', to: 'Merge3.ml:comment:"the edges aligned, so that same-sized chunks are compared"', say: 'overlapping changes' },
+        { from: 'Merge3.ml:comment:"the edges aligned, so that same-sized chunks are compared"', to: 'Diff.ml:def:fetch', say: 'one side, or both marked' },
+        { from: 'Diff.ml:def:fetch', to: 'Merge3.ml:def:merge', say: 'the text, the conflict flag' },
+      ],
+    },
+  ],
+}

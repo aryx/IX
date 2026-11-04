@@ -2,10 +2,10 @@
 // tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there)
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "The Pi's USB host controller (DWC2) driven: Usbdwc.mli's implementation, over kernels/lib_machine's usb.c.",
   files: {
-    'Usbdwc.ml': { digest: '05e1d42b6e62',
+    'Usbdwc.ml': { digest: '385da4c6d559',
       summary: "Transfers as usb.c's channel runs: control (SETUP, data, status), bulk and interrupt, the root port.",
       capitals: [
         { at: 'def:chanio', say: 'one channel run: NAK slept on, STALL raised' },

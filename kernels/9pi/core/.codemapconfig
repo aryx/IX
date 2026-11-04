@@ -2,18 +2,18 @@
 // codemap, in ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there)
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "mini-9pi's data, what the whole kernel is written with: channels, the namespace, processes, errors.",
   files: {
-    'Types.mli': { digest: '6da1bb9be7aa',
-      summary: "Plan 9's kernel structures as OCaml records: Chan, Pgrp, Egrp, Fgrp, Segment, Proc, and error().",
+    'Types.ml': { digest: '97c6ac3c4979',
+      summary: "Plan 9's kernel structures as OCaml records: Chan, Pgrp, Egrp, Fgrp, Segment, Proc; no .mli.",
       capitals: [
         { at: 'type:chan', say: "Plan 9's Chan: an open or walked file of a device" },
         { at: 'type:proc', say: 'a process: its memory, files, namespace, notes' },
-        { at: 'type:Error', say: "error(): the system call abandoned, errstr set" },
       ],
       important: [
-        { at: 'comment:"mini-9pi\'s data"', weight: 1 },
+        { at: 'comment:"How they hold together, from a process down"', say: 'the records as one picture', weight: 3 },
+        { at: 'comment:"A channel is not a pipe"', say: "Chan is Unix's file table entry and inode", weight: 1 },
         { at: 'type:qid', say: "a file's identity on its server", weight: 2 },
         { at: 'type:chan', weight: 3 },
         { at: 'type:mhead', say: 'a mount point and its union, in order', weight: 2 },
@@ -22,27 +22,37 @@
         { at: 'type:segment', say: 'memory given a page at a time, at its first touch', weight: 2 },
         { at: 'type:wait_chan', say: 'everything a process can sleep on', weight: 2 },
         { at: 'type:proc', weight: 3 },
-        { at: 'type:Error', weight: 3 },
       ],
     },
-    'Types.ml': { digest: 'a978670de52e',
-      summary: "The same types, and principia's error strings (error.c) spelt out.",
+    'Errors.mli': { digest: '1dad6f4c64aa',
+      summary: "Plan 9's error() as an OCaml exception, and principia's error strings (error.c).",
+      capitals: [
+        { at: 'type:Error', say: 'error(): the system call abandoned, errstr set' },
+      ],
       important: [
-        { at: 'def:nameerror', say: "'name' error, quoted as rc quotes", weight: 1 },
-        { at: 'type:chan', weight: 2 },
-        { at: 'type:proc', weight: 2 },
+        { at: 'comment:"Kchan.namec: the root"', say: 'an error raised up to the system call', weight: 2 },
+        { at: 'comment:"Exceptions, in a kernel written in C"', say: 'waserror/nexterror by hand, here try', weight: 3 },
+        { at: 'comment:"An error is a string, not a number"', say: "no errno: a server's own words", weight: 2 },
+      ],
+    },
+    'Errors.ml': { digest: '0cf5673b1acb',
+      summary: 'The error strings spelt out, and nameerror quoting a name as rc quotes it.',
+      important: [
+        { at: 'def:nameerror', say: "the C's elision of a long name not done", weight: 2 },
       ],
     },
   },
   skeletons: [
     {
-      name: 'The kernel written with one interface',
+      name: 'The kernel written with two modules',
       bones: [
-        { at: 'Types.mli', role: 'the interface every kernel file opens: the records, error()' },
-        { at: 'Types.ml', role: 'the same records, and the error strings spelt out' },
+        { at: 'Types.ml', role: 'the records every kernel file opens' },
+        { at: 'Errors.mli', role: 'error(): the exception and its strings' },
+        { at: 'Errors.ml', role: 'the strings, and a name quoted in one' },
       ],
       joints: [
-        { from: 'Types.ml', to: 'Types.mli', say: 'implements' },
+        { from: 'Errors.ml', to: 'Errors.mli', say: 'implements' },
+        { from: 'Types.ml', to: 'Errors.mli', say: 'beside it, opened together' },
       ],
     },
     {

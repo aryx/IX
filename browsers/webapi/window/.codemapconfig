@@ -1,0 +1,54 @@
+// browsers/webapi/window/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "A page's globals beyond document: window, navigator, history, classes, URLSearchParams, localStorage.",
+  files: {
+    'Script_window.mli': { digest: '9405a455fe59',
+      summary: 'What a library looks for on window before it starts: classes, sizes, observers, getComputedStyle.',
+      capitals: [{ at: 'def:install', say: "window's globals defined" }],
+      important: [{ at: 'comment:"A library"', weight: 1 }],
+    },
+    'Script_window.ml': { digest: 'afde1fa6c1de',
+      summary: 'HTMLElement and its kin as empty classes, matchMedia, observers that never fire, a computed style.',
+      important: [
+        { at: 'def:install_classes', say: 'instanceof HTMLDivElement must not throw', weight: 2 },
+        { at: 'def:computed_style', weight: 2 },
+        { at: 'def:observer', say: 'IntersectionObserver: present, quiet', weight: 1 },
+        { at: 'def:install', weight: 3 },
+      ],
+    },
+    'Script_url.mli': { digest: '06b44bc19db2',
+      summary: "URLSearchParams: a query's fields as a script reads and writes them, '+' a space.",
+    },
+    'Script_url.ml': { digest: '2c52b30589ad',
+      summary: "get, set, append, toString over lib_networking's Urlencoded.",
+    },
+    'LocalStorage.mli': { digest: '912096d53dcb',
+      summary: "localStorage and sessionStorage: names and strings kept as long as the page.",
+    },
+    'LocalStorage.ml': { digest: '4d2db12e81b0',
+      summary: 'A table behind getItem and setItem, each item a property too.',
+    },
+  },
+  skeletons: [
+    skeletons.module('Script_window.ml', 'window furnished', [
+      ['install', 'every global defined', ''],
+      ['install_classes', 'the element classes', 'classes'],
+      ['computed_style', 'getComputedStyle', 'a function'],
+      ['observer', 'observers that never fire', 'constructors'],
+    ]),
+    skeletons.parts("The window's globals", [
+      ['Script_window.ml', 'window and its classes'],
+      ['Script_url.ml', 'URLSearchParams'],
+      ['LocalStorage.ml', 'storage'],
+      ['../run/Browser_script.ml', 'installs them'],
+    ], [
+      ['../run/Browser_script.ml', 'Script_window.ml', 'install'],
+      ['../run/Browser_script.ml', 'Script_url.ml', 'install'],
+      ['../run/Browser_script.ml', 'LocalStorage.ml', 'install'],
+    ]),
+  ],
+}

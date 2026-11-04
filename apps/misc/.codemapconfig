@@ -1,0 +1,24 @@
+// apps/misc/: what the code map says of it
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Small graphical programs of Plan 9's apps/misc, on the draw device directly.",
+  files: {
+    'Colors.ml': {
+      summary: "mini-colors, Plan 9's colors: the 256 of its colour map; the smallest program on /dev/draw.",
+      digest: 'f3ff65c116f7',
+      capitals: [{ at: 'def:main', say: 'the skeleton of every draw program' }],
+      important: [
+        { at: 'comment:"the skeleton of all of them"', say: 'init, color, screen, fill, flush, mouse', weight: 3 },
+        { at: 'def:cmap2rgb', say: "rgbv: the brightest of three gets the value", weight: 1 },
+        { at: 'code:"let rec loop view shown"', say: 'a resize: everything painted again', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.onefile('mini-colors: a program on the draw device', 'Colors.ml', [
+      ['Colors.ml:def:cmap2rgb', 'a colour number to red, green, blue', 'each square'],
+      ['Colors.ml:code:"let rec loop view shown"', 'the mouse waited for, the screen again', 'drawn, flushed'],
+    ]),
+  ],
+}

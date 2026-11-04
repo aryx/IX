@@ -1,0 +1,63 @@
+// lib_core/parsing/: what the code map says of it (the code map: tinybox
+// codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The run time of mini-lex's lexers and mini-yacc's parsers: OCaml's Lexing and Parsing, the engines in OCaml.",
+  files: {
+    'Lexing.mli': { digest: 'e924b3c1fee9',
+      summary: "Lexing for mini-ml: the lexbuf, and a DFA's engine over mini-lex's tables, with an example drawn.",
+      important: [
+        { at: "comment:\"The tables are mini-lex's, not ocamllex's\"", say: 'not compacted: a row a state', weight: 2 },
+        { at: 'comment:"The longest token."', say: 'goes on while a transition exists', weight: 3 },
+        { at: 'type:lexbuf', weight: 2 },
+        { at: 'def:engine', weight: 2 },
+      ],
+      related: ['Lexing.ml'],
+    },
+    'Lexing.ml': { digest: '070cf1881486',
+      summary: "Lexing made: a buffer refilled in place, the DFA run to its longest match, captures for mini-lex's as.",
+      important: [
+        { at: 'type:lexbuf', weight: 2 },
+        { at: 'def:from_function', say: 'refilled where there is room', weight: 2 },
+        { at: 'comment:"mini-ml -dotnet"', say: '23% of a front end was the old refill', weight: 2 },
+        { at: 'def:engine', say: 'a character, a row, a state', weight: 3 },
+        { at: 'def:ways_out', weight: 1 },
+      ],
+    },
+    'Parsing.mli': { digest: '738796f93a98',
+      summary: "Parsing for mini-ml: an LALR(1) automaton run, shift and reduce drawn on 1 + 2; no error recovery.",
+      important: [
+        { at: 'comment:"The parser reads tokens from the left"', say: 'shift or reduce: the table says', weight: 3 },
+        { at: 'type:tables', weight: 2 },
+        { at: 'def:run', weight: 2 },
+      ],
+      related: ['Parsing.ml'],
+    },
+    'Parsing.ml': { digest: '57e18f187afa',
+      summary: "Parsing made: the stack of states, values and positions, saved by run for a parser inside an action.",
+      important: [
+        { at: 'comment:"One parser at a time owns them"', say: 'nested parsers: the stack saved', weight: 2 },
+        { at: 'def:run', say: 'the shift-reduce loop', weight: 3 },
+        { at: 'def:push', weight: 1 },
+        { at: 'def:symbol_start_pos', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.parts('Text to tokens to a tree', [
+      ['Lexing.ml', "a DFA's engine: characters to tokens"],
+      ['Parsing.ml', 'an LALR(1) engine: tokens to values'],
+    ], [
+      ['Lexing.ml', 'Parsing.ml', 'a token and its positions'],
+    ]),
+    skeletons.module('Lexing.ml', 'A lexer run: the buffer and the DFA', [
+      ['from_function', 'a lexbuf refilled by a function', ''],
+      ['from_string', 'one that has it all', 'or'],
+      ['engine', 'states followed, the longest kept', 'characters'],
+      ['ways_out', "the accepting state's clause", 'the last accept'],
+      ['lexeme', 'the token matched', 'its bounds'],
+    ]),
+  ],
+}

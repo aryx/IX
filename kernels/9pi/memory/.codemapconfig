@@ -2,10 +2,10 @@
 // codemap, in ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there)
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "mini-9pi's virtual memory: segments whose pages come at their first touch, demand paging from the file.",
   files: {
-    'Fault.mli': { digest: '9f6663723dd5',
+    'Fault.mli': { digest: '9cc6a83c70c2',
       summary: "Segments and page faults (segment.c, fault.c): a page given at its first touch, a segment shared by sharers.",
       capitals: [
         { at: 'def:fault', say: 'a page fault: the page read, zeroed or shared' },
@@ -18,18 +18,38 @@
         { at: 'def:release', weight: 1 },
       ],
     },
-    'Fault.ml': { digest: 'e21d32fd3f8c',
-      summary: "A segment's pages in its own table, mapped into each process as it touches them.",
+    'Fault.ml': { digest: 'e5136c7906d8',
+      summary: "A segment's pages in its own table, mapped as touched; a fork's data shared until written.",
       important: [
         { at: 'def:make', say: 'the image read first: a read may sleep', weight: 3 },
         { at: 'def:fill', say: "another sharer's page, or a new one", weight: 2 },
         { at: 'def:fault', say: 'a mapped page faulting is a rights fault', weight: 3 },
         { at: 'def:dup', weight: 2 },
         { at: 'def:shrink', say: "brk down: pages freed, the TLB flushed", weight: 1 },
+        { at: 'comment:"Copy on write (Plan 9\'s fork and fixfault)"', say: "a fork's pages shared, read only", weight: 3 },
+        { at: 'def:holders', say: 'how many segments hold a page', weight: 2 },
+        { at: 'def:own', say: 'a write: the page copied if shared', weight: 3 },
+        { at: 'def:set', say: "ocaml-light's Hashtbl.replace overflowed a stack", weight: 1 },
       ],
       links: [
         { from: 'def:fault', to: 'def:fill' },
         { from: 'def:fill', to: 'def:make' },
+      ],
+    },
+    'Sysseg.mli': { digest: 'c1147d099a87',
+      summary: "segattach and segflush: zeros added to a program's memory, a JIT's code made runnable.",
+      important: [
+        { at: 'comment:"That is a JIT\'s memory"', say: "the caches: why segflush exists", weight: 3 },
+        { at: 'comment:"Linux\'s mmap (from 4.2BSD"', say: 'mmap and mprotect, the other way', weight: 1 },
+        { at: 'def:syssegattach', weight: 2 },
+      ],
+    },
+    'Sysseg.ml': { digest: '56a95a5efaa3',
+      summary: 'A Bss-like segment between the bss and the stack, its overlap refused; flush is Fault.sync.',
+      important: [
+        { at: 'def:syssegattach', say: 'a hole found below the stack', weight: 3 },
+        { at: 'def:overlap', weight: 1 },
+        { at: 'def:syssegflush', say: 'the bytes to memory, the I-cache emptied', weight: 2 },
       ],
     },
   },
@@ -51,6 +71,37 @@
         { from: 'Fault.ml:def:fill', to: 'Fault.ml:def:make', say: 'not in the segment yet' },
         { from: 'Fault.ml:def:dup', to: 'Fault.ml:def:create', say: 'a copy' },
         { from: 'Fault.ml:def:create', to: 'Fault.ml:def:release', say: 'its life' },
+      ],
+    },
+    {
+      name: 'A fork, then a write: copy on write',
+      bones: [
+        { at: 'Fault.ml:def:dup', role: "rfork's: the data's pages shared, read only" },
+        { at: 'Fault.ml:def:holders', role: 'each shared page counted' },
+        { at: 'Fault.ml:def:fault', role: 'a write to a read-only page' },
+        { at: 'Fault.ml:def:own', role: 'copied, unless the last holder' },
+        { at: 'Fault.ml:def:let_go', role: 'a holder less; the last frees it' },
+      ],
+      joints: [
+        { from: 'Fault.ml:def:dup', to: 'Fault.ml:def:holders', say: 'one more' },
+        { from: 'Fault.ml:def:fault', to: 'Fault.ml:def:own', say: 'a write' },
+        { from: 'Fault.ml:def:own', to: 'Fault.ml:def:let_go', say: 'the old page' },
+        { from: 'Fault.ml:def:let_go', to: 'Fault.ml:def:holders', say: 'one fewer' },
+      ],
+    },
+    {
+      name: 'A JIT on mini-9pi: segattach, write, segflush, run',
+      bones: [
+        { at: 'Sysseg.ml:def:syssegattach', role: 'zeros mapped below the stack' },
+        { at: 'Fault.ml:def:fill', role: 'its pages at their first touch' },
+        { at: 'Sysseg.ml:def:syssegflush', role: 'the code written made runnable' },
+        { at: 'Fault.ml:def:sync', role: 'the D-cache cleaned, the I-cache emptied' },
+        { at: 'Sysseg.ml:def:syssegdetach', role: 'the segment taken out' },
+      ],
+      joints: [
+        { from: 'Sysseg.ml:def:syssegattach', to: 'Fault.ml:def:fill', say: 'the program writes' },
+        { from: 'Sysseg.ml:def:syssegflush', to: 'Fault.ml:def:sync', say: 'the range' },
+        { from: 'Sysseg.ml:def:syssegattach', to: 'Sysseg.ml:def:syssegdetach', say: 'its life' },
       ],
     },
     {

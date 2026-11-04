@@ -1,0 +1,35 @@
+// lib_playground/platforms/sdl/: what the code map says of it
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "A window on Linux with SDL, the pixels computed here; dune's only, mini-drscheme's and the games'.",
+  files: {
+    'Playground_platform.ml': {
+      summary: "The playground's software platform: Redraw into a texture, SDL's events, the sound queued.",
+      digest: '0b2914afb1dd',
+      important: [
+        { at: 'def:run_app', say: 'the window, the session, the loop', weight: 3 },
+        { at: 'def:key_name', say: "SDL's keycodes as the playground's names", weight: 2 },
+        { at: 'def:picture', say: 'a texture the size of the window', weight: 2 },
+        { at: 'def:play_audio', say: "Audio_source's samples to SDL's queue", weight: 2 },
+      ],
+    },
+  },
+  skeletons: [{
+    name: 'A frame in an SDL window',
+    bones: [
+      { at: 'Playground_platform.ml:def:run_app', role: 'the window and the loop' },
+      { at: 'Playground_platform.ml:def:key_name', role: 'a key from SDL' },
+      { at: '../Session.ml:def:event', role: 'the program told' },
+      { at: '../Session.ml:def:frame', role: 'a frame stepped' },
+      { at: '../Redraw.ml:def:frame', role: 'the changed parts' },
+      { at: 'Playground_platform.ml:def:play_audio', role: 'the sound queued' },
+    ],
+    joints: [
+      { from: 'Playground_platform.ml:def:run_app', to: 'Playground_platform.ml:def:key_name', say: 'an event' },
+      { from: 'Playground_platform.ml:def:run_app', to: '../Session.ml:def:event', say: 'mouse, keys' },
+      { from: 'Playground_platform.ml:def:run_app', to: '../Session.ml:def:frame', say: 'each frame' },
+      { from: 'Playground_platform.ml:def:run_app', to: '../Redraw.ml:def:frame', say: 'shown' },
+      { from: 'Playground_platform.ml:def:run_app', to: 'Playground_platform.ml:def:play_audio', say: 'each frame' },
+    ],
+  }],
+}

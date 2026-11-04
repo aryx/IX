@@ -1,0 +1,64 @@
+// kernels/9pi/filesystems/lib_xv6fs/: what the code map says of it (the
+// code map is tinybox codemap, in ~/github/ocaml-elm-playground; its
+// guidelines: docs/claude_notes/codemapconfig_guidelines.md there). Its
+// tests/ (Xv6test, xv6fs.sh: an image formatted, written, read) are off
+// the map.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "xv6's file system on a device's bytes, with ix's extensions: for #x and mini-mkfs.",
+  files: {
+    'Xv6fs.mli': { digest: 'b5adacaf2d55',
+      summary: "Unix's 1974 file system as xv6 has it: inodes, a bitmap, directories of names; three ix extensions.",
+      capitals: [
+        { at: 'def:make', say: "xv6's file system over the caller's bytes" },
+      ],
+      important: [
+        { at: 'comment:"ONE EXTENSION OF IX"', say: 'a double indirect block: 64 MB files', weight: 3 },
+        { at: 'comment:"the name /usr/pad/notes, found"', say: 'a path walked inode by inode', weight: 3 },
+        { at: 'comment:"The inode is the file"', say: 'names only in directories: links', weight: 2 },
+        { at: 'comment:"This is the Unix file system of 1974"', weight: 1 },
+        { at: 'def:format', say: "mini-mkfs's: an empty file system", weight: 2 },
+      ],
+    },
+    'Xv6fs.ml': { digest: 'a4ab78e0e36c',
+      summary: "fs.c's inodes and bmap, read and written at once with no log; ix's extensions marked.",
+      important: [
+        { at: 'def:double_at', say: "ix's extension: the second indirect block", weight: 2 },
+        { at: 'def:dirent', say: "ix's extension: names of 62", weight: 1 },
+        { at: 'def:balloc', say: 'a block from the bitmap, zeroed', weight: 2 },
+        { at: 'def:slot', say: "the n-th block's number: direct, single, double", weight: 3 },
+        { at: 'def:bmap', weight: 2 },
+        { at: 'def:read', weight: 2 },
+        { at: 'def:write', weight: 2 },
+        { at: 'def:lookup', weight: 2 },
+        { at: 'def:remove', say: 'an entry cleared, the inode freed at 0 links', weight: 1 },
+      ],
+      links: [
+        { from: 'def:read', to: 'def:bmap' },
+        { from: 'def:bmap', to: 'def:slot' },
+        { from: 'def:slot', to: 'def:balloc' },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'An inode, its blocks, its names',
+      bones: [
+        { at: 'Xv6fs.ml:def:make', role: 'the superblock: where the rest is' },
+        { at: 'Xv6fs.ml:def:dinode', role: "an inode's place on the disk" },
+        { at: 'Xv6fs.ml:def:bmap', role: "a file's n-th block" },
+        { at: 'Xv6fs.ml:def:slot', role: 'direct, indirect, double indirect' },
+        { at: 'Xv6fs.ml:def:balloc', role: 'a free block from the bitmap' },
+        { at: 'Xv6fs.ml:def:lookup', role: "a name in a directory's entries" },
+        { at: 'Xv6fs.ml:def:read', role: "a file's bytes" },
+      ],
+      joints: [
+        { from: 'Xv6fs.ml:def:read', to: 'Xv6fs.ml:def:bmap', say: 'each block' },
+        { from: 'Xv6fs.ml:def:bmap', to: 'Xv6fs.ml:def:slot', say: 'the inode' },
+        { from: 'Xv6fs.ml:def:slot', to: 'Xv6fs.ml:def:dinode', say: 'its numbers' },
+        { from: 'Xv6fs.ml:def:slot', to: 'Xv6fs.ml:def:balloc', say: 'a write past the end' },
+        { from: 'Xv6fs.ml:def:lookup', to: 'Xv6fs.ml:def:read', say: 'a directory is a file' },
+      ],
+    },
+  ],
+}

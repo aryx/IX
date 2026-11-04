@@ -1,0 +1,33 @@
+// kernels/singularity/programs/selftest/: what the code map says of it (the
+// code map is tinybox codemap, in ~/github/ocaml-elm-playground).
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The shell's selftest: tick and tock together, hello twice, ping and pong by contract, rogue refused.",
+  files: {
+    'Main.ml': { digest: '1dfaa4921516',
+      summary: "The shell's selftest: tick and tock together, hello twice, ping and pong by contract, rogue refused.",
+      capitals: [ { at: "code:\"let () =\"", say: "what the kernel does, tried by a process" } ],
+      important: [
+        { at: "def:spawn", say: "created and started", weight: 1 },
+        { at: "code:\"Sip.give pong\"", say: "endpoints given, no longer its own", weight: 2 },
+        { at: "code:\"Sip.start rogue\"", say: "the contract broken, on purpose", weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: "selftest: the kernel tried by a process",
+      bones: [
+        { at: "Main.ml:code:\"let () =\"", role: "each test in turn" },
+        { at: "Main.ml:def:spawn", role: "a program started" },
+        { at: "Main.ml:def:create", role: "a process, not started" },
+        { at: "../../lib/Sip.ml:def:join", role: "its status" },
+      ],
+      joints: [
+        { from: "Main.ml:code:\"let () =\"", to: "Main.ml:def:spawn", say: "tick, tock, hello" },
+        { from: "Main.ml:def:spawn", to: "Main.ml:def:create" },
+        { from: "Main.ml:code:\"let () =\"", to: "../../lib/Sip.ml:def:join", say: "each end" },
+      ],
+    },
+  ],
+}

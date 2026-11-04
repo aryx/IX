@@ -1,0 +1,79 @@
+// apps/office/sheet/: what the code map says of it
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: 'A spreadsheet as a graph of cells recomputed in topological order, and how one is drawn.',
+  files: {
+    'Sheet.mli': {
+      summary: "A spreadsheet is a graph, not a grid: a change recomputes what is downstream, by Kahn's order.",
+      digest: '155dff26d5f5',
+      capitals: [
+        { at: 'type:t', say: 'cells, and who reads whom' },
+        { at: 'def:set', say: 'a cell typed: downstream recomputed' },
+      ],
+      important: [
+        { at: 'comment:"topological order"', say: "Kahn (1962); what is left is a cycle", weight: 3 },
+        { at: 'def:recalculate', say: "VisiCalc's way: rows or columns, no graph", weight: 3 },
+        { at: 'def:show' },
+        { at: 'def:of_string' },
+      ],
+    },
+    'Sheet.ml': {
+      summary: 'Cells and their readers, formulas evaluated, the change walked downstream, and 1979 beside it.',
+      digest: 'bab8b237e240',
+      important: [
+        { at: 'def:recompute', say: "Kahn's algorithm, over the dirty cells only", weight: 3 },
+        { at: 'def:downstream', say: 'the change walks forward', weight: 3 },
+        { at: 'def:eval', say: 'a formula over values, errors as Result' },
+        { at: 'def:store', say: 'the arrows of the graph updated' },
+        { at: 'def:recalculate', say: 'same loop with no graph: compare' },
+        { at: 'section:Saving' },
+      ],
+      links: [{ from: 'def:set', to: 'def:recompute' }, { from: 'def:recompute', to: 'def:eval' }],
+    },
+    'Sheet_view.mli': {
+      summary: 'A sheet drawn into a rectangle: headers, cells, the selection as two cells, a click located.',
+      digest: '4781de75ac72',
+      capitals: [{ at: 'def:draw', say: 'a sheet into any rectangle' }],
+      important: [
+        { at: 'comment:"selection is two cells"', say: 'like a caret: a selection of one', weight: 3 },
+        { at: 'type:geometry' },
+        { at: 'def:cell_at' },
+      ],
+    },
+    'Sheet_view.ml': {
+      summary: "The sheet's geometry, a cell's box and the cell at a point, and the drawing.",
+      digest: '390a915bfb23',
+      important: [
+        { at: 'def:draw', weight: 3 },
+        { at: 'def:cell_at', say: 'a click back to a cell', weight: 3 },
+        { at: 'def:cell_box' },
+        { at: 'def:column_letters' },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.module('Sheet.ml', 'A cell typed, its sheet recomputed', [
+      ['set', 'a cell typed into', ''],
+      ['store', 'the formula parsed, the graph updated', 'the text'],
+      ['downstream', 'what can change', 'the cell'],
+      ['recompute', "Kahn's order over them", 'the dirty cells'],
+      ['eval', 'one cell computed', 'each, when ready'],
+    ]) + {
+      joints: [
+        { from: 'Sheet.ml:def:set', to: 'Sheet.ml:def:store', say: 'the text' },
+        { from: 'Sheet.ml:def:set', to: 'Sheet.ml:def:downstream', say: 'the cell' },
+        { from: 'Sheet.ml:def:downstream', to: 'Sheet.ml:def:recompute', say: 'the dirty cells' },
+        { from: 'Sheet.ml:def:recompute', to: 'Sheet.ml:def:eval', say: 'each, when ready' },
+      ],
+    },
+    skeletons.parts('The sheet: engine and view', [
+      ['Sheet.ml', 'the cells and their graph'],
+      ['Sheet_view.ml', 'the cells drawn, clicks found'],
+      ['../formula/Formula.ml', "a cell's formula"],
+    ], [
+      ['Sheet.ml', '../formula/Formula.ml', 'parses with'],
+      ['Sheet_view.ml', 'Sheet.ml', 'shows'],
+    ]),
+  ],
+}

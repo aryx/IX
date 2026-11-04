@@ -1,0 +1,31 @@
+// kernels/9pi/devices/storage/user/fdisk/: what the code map says of it
+// (the code map is tinybox codemap, in ~/github/ocaml-elm-playground; its
+// guidelines: docs/claude_notes/codemapconfig_guidelines.md there). A
+// program for mini-9pi, built by its mkfile, run by the boot script.
+local skeletons = import '../../../../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-fdisk: Plan 9's fdisk -p, the MBR's partitions as lines for the disk's ctl file.",
+  files: {
+    'Fdisk.ml': { digest: '654c661383fd',
+      summary: "The first sector's four entries printed as part lines: the kernel knows no partition table.",
+      capitals: [
+        { at: 'def:main', say: 'fdisk -p: the MBR read, part lines printed' },
+      ],
+      important: [
+        { at: 'comment:"knows nothing of partition tables"', say: 'a program reads the table and tells it', weight: 3 },
+        { at: 'comment:"the first sector, 512 bytes"', say: "the MBR's layout, drawn", weight: 3 },
+        { at: 'comment:"This table is the IBM PC"', say: 'PC DOS 2.0, 1983', weight: 1 },
+        { at: 'def:name_of', say: 'a partition type to a name: dos, plan9...', weight: 2 },
+        { at: 'comment:"a line a write"', say: 'the ctl file takes one command a write', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.onefile('mini-fdisk: a disk told its partitions', 'Fdisk.ml', [
+      ['Fdisk.ml:code:"Binary.le16 mbr 510"', 'the MBR: its 0xaa55 mark', 'the first sector'],
+      ['Fdisk.ml:def:name_of', 'each entry named by its type', 'an entry'],
+      ['../../Devsd.ml', "the disk's ctl: part lines", 'printed, piped by the boot script'],
+    ]),
+  ],
+}

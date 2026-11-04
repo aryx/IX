@@ -1,0 +1,83 @@
+// lib_core/core/: what the code map says of it (the code map: tinybox
+// codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The stdlib's core for mini-ml: Pervasives (opened by every unit), Obj, Gc, Callback, and Marshal in OCaml.",
+  files: {
+    'Pervasives.mli': { digest: 'a0316917caa1',
+      summary: "What every mini-ml unit has open: exceptions, arithmetic, strings, channels, exit; OCaml 1.07's, grown.",
+      important: [
+        { at: 'def:compare', weight: 2 },
+        { at: 'def:raise', weight: 1 },
+        { at: 'def:failwith', weight: 1 },
+      ],
+      related: ['Pervasives.ml'],
+    },
+    'Pervasives.ml': { digest: '2d622eb85b86',
+      summary: "Pervasives made over the runtime's primitives: channels in C, signals run where a read is interrupted.",
+      capitals: [
+        { at: 'def:at_exit', say: 'the exit functions chained: std_exit runs them' },
+      ],
+      important: [
+        { at: 'comment:"ix: a string is not written"', weight: 1 },
+        { at: 'comment:"ix: signals. The runtime only notes a signal"', say: 'handlers run in OCaml, at a read', weight: 3 },
+        { at: 'def:output_string', weight: 1 },
+        { at: 'comment:"ix: flushed, as OCaml"', say: "print_endline flushes: ocaml-light's did not", weight: 2 },
+        { at: 'def:exit_function', weight: 2 },
+      ],
+    },
+    'std_exit.ml': { digest: 'a96806d42cf8',
+      summary: "The last unit linked: at_exit's functions run, the channels flushed, at every program's end.",
+    },
+    'Marshal.mli': { digest: '5682902fe302', summary: "Values as bytes and back, OCaml's format: to_string, from_string.", related: ['Marshal.ml'] },
+    'Marshal.ml': { digest: 'f1cdf7f06bea',
+      summary: "Marshal in OCaml where it was 478 lines of C: OCaml's byte format, sharing kept by a table of seen blocks.",
+      important: [
+        { at: 'comment:"0x80 + tag + size * 16"', say: 'the format, a byte code a thing', weight: 3 },
+        { at: 'comment:"old: 478 lines of C in the runtime"', say: '4 to 6 times slower: the numbers', weight: 2 },
+        { at: 'type:seen', say: 'blocks numbered: sharing and cycles', weight: 2 },
+        { at: 'def:written', say: 'a block met before, written as how long ago', weight: 2 },
+        { at: 'def:write', weight: 2 },
+        { at: 'def:item', say: 'one code read, its value rebuilt', weight: 2 },
+      ],
+    },
+    'Obj.mli': { digest: 'd943bef931a3', summary: 'Values as blocks: tag, size, field, magic; the runtime as OCaml sees it.', related: ['Obj.ml'] },
+    'Obj.ml': { digest: 'ebbbb48ed530', summary: 'Obj made: each function a %-primitive.' },
+    'Gc.mli': { digest: '7d1b7f8232d6', summary: "The collector's controls and counters, as far as mini-ml's runtime keeps them.", related: ['Gc.ml'] },
+    'Gc.ml': { digest: 'cbde0d9ed67a', summary: "Gc made: externals to the runtime's collector." },
+    'Callback.mli': { digest: '4c9fde554f7a', summary: 'OCaml values named for C to find: how the runtime calls back.', related: ['Callback.ml'] },
+    'Callback.ml': { digest: '406d9772ea4e', summary: 'Callback made over register_named_value.' },
+  },
+  skeletons: [
+    skeletons.parts("The core: what a unit has, what the runtime gives", [
+      ['Pervasives.ml', 'opened by every unit'],
+      ['Obj.ml', 'a value as a block'],
+      ['Marshal.ml', 'values to bytes and back'],
+      ['Callback.ml', 'OCaml named for C'],
+      ['Gc.ml', "the collector's knobs"],
+      ['std_exit.ml', 'the last unit: at_exit run'],
+    ], [
+      ['Obj.ml', 'Marshal.ml', 'the blocks walked'],
+      ['Pervasives.ml', 'std_exit.ml', 'exit_function'],
+      ['Pervasives.ml', 'Marshal.ml', 'channels'],
+    ]),
+    skeletons.module('Marshal.ml', 'A value written depth first, read back', [
+      ['number', 'a block numbered as seen', ''],
+      ['written', 'met before: a shared reference', 'its number'],
+      ['write', 'a value: an int, a string, a block', 'not seen'],
+      ['to_string', 'entry: the header, then the value', 'the bytes'],
+      ['item', 'one code read back', 'the bytes'],
+      ['from_string', 'entry: a value rebuilt', 'the value'],
+    ]),
+    skeletons.module('Pervasives.ml', 'Pervasives: errors, channels, the end', [
+      ['raise', 'a primitive', ''],
+      ['failwith', 'Failure raised', 'raised'],
+      ['open_in', 'a channel on a file', 'on a failure'],
+      ['output_string', 'bytes to a channel', 'the channels'],
+      ['at_exit', 'a function before the end', 'flushed at the end'],
+      ['exit', 'at_exit run, then sys_exit', 'chained'],
+    ]),
+  ],
+}

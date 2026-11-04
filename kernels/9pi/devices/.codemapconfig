@@ -2,13 +2,13 @@
 // tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there)
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "mini-9pi's device drivers: each a '#x' tree of files, a record of functions a system call on a file reaches.",
   files: {
     'Devstub.mli': { digest: '852ba16703b7',
       summary: "The devices 9pi has and mini-9pi not yet ('#κ' kbmap, '#t' uart), as empty directories.",
     },
-    'Devstub.ml': { digest: '9e5d9cf27075',
+    'Devstub.ml': { digest: 'ca8f57c24762',
       summary: "The smallest device: Dev.default with a one-directory tree, so boot.rc's binds work as on 9pi.",
       important: [
         { at: 'def:stub', say: 'a whole device in ten lines: default, then a tree', weight: 3 },

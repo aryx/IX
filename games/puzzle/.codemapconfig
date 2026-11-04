@@ -1,0 +1,52 @@
+// games/puzzle/: what the code map says of it
+local mvu(file, heart, role, say, from='def:update') = {
+  local at(a) = file + ':' + a,
+  name: 'Model-View-Update, and its heart: ' + std.split(heart, ':')[1],
+  bones: [
+    { at: at('type:model'), role: 'the state' },
+    { at: at('def:initial_model'), role: 'the first state' },
+    { at: at('def:update'), role: 'a frame or a key: model -> model' },
+    { at: at('def:view'), role: 'a picture: model -> shapes' },
+    { at: at('def:app'), role: 'the app: the three given to the Playground' },
+    { at: at('code:"Cap.main"'), role: 'the program: the app run, with the capabilities' },
+    { at: at(heart), role: role },
+  ],
+  joints: [
+    { from: at('def:initial_model'), to: at('type:model') },
+    { from: at('type:model'), to: at('def:update'), say: 'stepped' },
+    { from: at('def:update'), to: at('type:model'), say: 'the next state' },
+    { from: at('type:model'), to: at('def:view'), say: 'drawn' },
+    { from: at('def:app'), to: at('def:update'), say: 'steps with' },
+    { from: at('def:app'), to: at('def:view'), say: 'draws with' },
+    { from: at('code:"Cap.main"'), to: at('def:app'), say: 'runs' },
+    { from: at(from), to: at(heart), say: say },
+  ],
+};
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: 'Puzzle games: Tetris, the first program of the playground run on mini-9pi (4s).',
+  files: {
+    'Tetris.ml': {
+      summary: 'Tetris (Pajitnov, 1984), with Korobeiniki: a grid, seven pieces, lines cleared; Elm-style messages.',
+      digest: 'ca28d69333d0',
+      capitals: [{ at: 'def:drop_tetrimino', say: 'a piece falls a row, or lands and is stamped' }],
+      important: [
+        { at: 'type:grid', say: 'the well: cells, filled or not', weight: 2 },
+        { at: 'type:piece', say: 'a tetrimino: its cells around a centre', weight: 2 },
+        { at: 'type:model', say: 'the well, the piece falling, the next, the score', weight: 3 },
+        { at: 'def:collide', say: 'every move asks it first', weight: 3 },
+        { at: 'def:rotate', say: 'a quarter turn around the centre of mass', weight: 2 },
+        { at: 'def:clear_lines', say: 'the full rows taken out, the rest falls', weight: 2 },
+        { at: 'def:msg_of_key', say: 'keys become messages, as in Elm', weight: 1 },
+        { at: 'def:korobeiniki', say: 'the theme, as notes for Audio', weight: 1 },
+        { at: 'code:"clock_seed :="', say: 'the seed from the clock, in main', weight: 1 },
+      ],
+      links: [
+        { from: 'def:update', to: 'def:drop_tetrimino' },
+        { from: 'def:drop_tetrimino', to: 'def:clear_lines_and_add_score' },
+        { from: 'def:update', to: 'def:rotate_tetrimino' },
+      ],
+    },
+  },
+  skeletons: [mvu('Tetris.ml', 'def:drop_tetrimino', 'a piece down a row, or landed', 'the fall')],
+}

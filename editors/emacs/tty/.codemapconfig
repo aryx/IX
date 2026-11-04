@@ -1,0 +1,26 @@
+// editors/emacs/tty/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../skeletons.libsonnet';
+
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-emacs-tty: the editor in a terminal by Tty_unix, or a session of keys played headless.",
+  files: {
+    'Main.ml': { digest: '042e790210b0',
+      summary: "The terminal's main: -keys plays a script to a screen, its colors or a picture; else Tty_unix runs it.",
+      important: [
+        { at: 'def:main', say: "the flags, then a terminal or a script", weight: 3 },
+        { at: 'def:session', say: "keys played with no terminal: the tests", weight: 2 },
+        { at: 'def:keys', say: "a script's word to a key's bytes", weight: 1 },
+        { at: 'def:colors', say: "a screen's colors as letters, for the tests", weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.onefile("mini-emacs-tty: in a terminal, or a script of keys", 'Main.ml', [["../Start.ml:def:editor", "the editor made: configuration, first buffer", "the file, -q"], ["Main.ml:def:session", "-keys: the keys played, the screen kept", "a script"]]) + {
+      bones+: [{ at: '../../../lib_terminal/unix/Tty_unix.ml:def:run_sized', role: 'the terminal: raw mode, keys, refresh' }],
+      joints+: [{ from: '../Start.ml:def:editor', to: '../../../lib_terminal/unix/Tty_unix.ml:def:run_sized', say: 'no script' }],
+    },
+  ],
+}

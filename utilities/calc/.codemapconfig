@@ -1,0 +1,17 @@
+// utilities/calc/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Plan 9's three calculators: dc's stack of big decimals, bc compiled to dc, hoc's floats.",
+  skeletons: [
+    skeletons.parts('Three calculators, one under another', [
+      ['dc/', 'the machine: a stack, registers, numbers of any size'],
+      ['bc/', "a compiler from C's notation to dc's commands"],
+      ['hoc/', 'a whole language in small, on floats'],
+    ], [
+      ['bc/', 'dc/', "each statement's dc commands, fed to Dc"],
+    ]),
+  ],
+}

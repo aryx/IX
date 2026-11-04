@@ -1,0 +1,38 @@
+// lib_core/libc/include/: what the code map says of it (the code map: tinybox codemap,
+// ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "libc's headers: Plan 9's libc.h split by topic as Go's packages, each part included by libc.h.",
+  files: {
+    'libc.h': { digest: '62ce5fb1011f',
+      summary: "Plan 9's libc.h split in parts (Go's packages, principia's book): every C file of ix includes it.",
+      capitals: [
+        { at: 'code:"core/types.h"', say: 'the parts, in order: types first' },
+      ],
+      important: [
+        { at: 'comment:"The Goken Not So Standard C library"', weight: 2 },
+        { at: 'comment:"require: this file assumes a per-arch <u.h>"', say: 'u.h before it, always', weight: 3 },
+        { at: 'code:"libc.a"', say: 'the linker adds libc.a by itself', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.parts('The headers, as libc.h includes them', [
+      ['arch/', "u.h: a machine's sizes, first"],
+      ['libc.h', 'the parts, in order'],
+      ['core/', 'types, macros, setjmp, malloc'],
+      ['base/', 'bool, byte, ord, strings'],
+      ['os/', 'files, directories, processes'],
+      ['fmt/', 'print and its verbs'],
+      ['utf/', 'runes'],
+    ], [
+      ['arch/', 'libc.h', 'included first'],
+      ['libc.h', 'core/', 'foundations'],
+      ['libc.h', 'base/', 'data'],
+      ['libc.h', 'os/', 'the system'],
+      ['fmt/', 'utf/', 'Rune'],
+    ]),
+  ],
+}

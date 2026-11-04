@@ -1,0 +1,106 @@
+// typesetting/troff/doc/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The document every reader makes and every writer takes, laid on lines, written for a terminal or as PDF.",
+  files: {
+    'Doc.mli': { digest: 'a52d0a839683',
+      summary: "A document whatever it was written in: a tree of headings, paragraphs, tagged and indented blocks, tables.",
+      capitals: [
+        { at: 'type:t', say: 'the hub of mini-troff' },
+        { at: 'type:block', say: 'Heading, Para, Tagged, Indent, Table...' },
+        { at: 'type:inline', say: 'text in a style, breaks, page refs' },
+      ],
+      important: [
+        { at: 'comment:"It is a tree."', say: 'indents and tags as nesting', weight: 3 },
+        { at: 'comment:"Nothing here is troff"', say: 'no request, no register', weight: 3 },
+        { at: 'type:style', weight: 1 },
+      ],
+    },
+    'Doc.ml': { digest: '1bfa6b12f746',
+      summary: 'The types, and maps over their text and inlines.',
+    },
+    'Doc_image.mli': { digest: '0ae699ace01a',
+      summary: "A picture's file as a block: PNG, JPEG or GIF read once, kept in the document.",
+    },
+    'Doc_image.ml': { digest: '0b9f044069bb',
+      summary: 'Image_file decoded, scaled to the measure.',
+    },
+    'Layout.mli': { digest: '85e366d4c1ec',
+      summary: "A document's blocks on lines: each word placed, lines broken where words stop fitting.",
+      capitals: [{ at: 'def:rows', say: 'blocks to rows of placed words' }],
+      important: [{ at: 'type:row', say: 'a line, a skip, a footnote, a keep', weight: 2 }, { at: 'type:metrics', say: 'width by font: terminal or Times', weight: 2 }],
+    },
+    'Layout.ml': { digest: 'bd34b5592b89',
+      summary: 'First-fit line breaking, justified by spreading spaces; tags hung, tables sized by their cells.',
+      important: [
+        { at: 'def:atoms', say: 'words and spaces, unbreakable pieces', weight: 2 },
+        { at: 'def:paragraph', say: "first fit: troff's, not TeX's", weight: 3 },
+        { at: 'def:table', say: 'columns as wide as their widest', weight: 2 },
+        { at: 'def:blocks', weight: 2 },
+      ],
+    },
+    'To_text.mli': { digest: '52b59a41aa88',
+      summary: "A terminal's page as nroff gave it: a column a letter, 65 letters a line, no fonts.",
+    },
+    'To_text.ml': { digest: 'da99284080ca',
+      summary: 'Rows printed at their column, the header and footer titles.',
+      important: [{ at: 'def:page', weight: 3 }],
+    },
+    'To_pdf.mli': { digest: 'ac210a9eb604',
+      summary: 'PDF pages as a typesetter gave: letters of their widths, even right edge, header and number.',
+      capitals: [{ at: 'def:file', say: 'a document to a PDF file' }],
+    },
+    'To_pdf.ml': { digest: 'bfec70df0143',
+      summary: "Times' widths, pages cut from the rows, words put by Pdf_write; counted again until the page numbers settle.",
+      important: [
+        { at: 'def:metrics', say: 'the standard widths, in thousandths', weight: 2 },
+        { at: 'def:sheets', say: 'rows cut into pages, kept blocks together', weight: 3 },
+        { at: 'def:numbers', say: "anchors' page numbers for the second pass", weight: 2 },
+        { at: 'def:file', say: 'a fixed point: at most four counts', weight: 3 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.parts('One document, two papers', [
+      ['Doc.mli', 'the tree every reader makes'],
+      ['Layout.mli', 'words placed on lines'],
+      ['To_text.mli', 'the terminal'],
+      ['To_pdf.mli', 'PDF'],
+      ['Doc_image.mli', 'pictures from files'],
+      ['../../../lib_graphics/pdf/Pdf_write.mli', 'the PDF written'],
+    ], [
+      ['Doc.mli', 'Layout.mli', 'blocks'],
+      ['Layout.mli', 'To_text.mli', 'rows, a column a letter'],
+      ['Layout.mli', 'To_pdf.mli', 'rows, by Times'],
+      ['To_pdf.mli', '../../../lib_graphics/pdf/Pdf_write.mli', 'pages'],
+      ['Doc_image.mli', 'Doc.mli', 'a block'],
+    ]),
+    skeletons.calls('Blocks on lines', 'Layout.ml:def:blocks', 'each block by its kind', [
+      ['Layout.ml:def:paragraph', 'words broken into lines', 'Para, Tagged'],
+      ['Layout.ml:def:table', 'cells into columns', 'Table'],
+      ['Layout.ml:def:one_line', 'a line never broken', 'a heading, a tag'],
+    ]) + {
+      bones+: [{ at: 'Layout.ml:def:atoms', role: 'words and spaces measured' }, { at: 'Layout.ml:def:rows', role: 'the entry' }],
+      joints+: [
+        { from: 'Layout.ml:def:rows', to: 'Layout.ml:def:blocks', say: 'the document' },
+        { from: 'Layout.ml:def:paragraph', to: 'Layout.ml:def:atoms', say: 'its inlines' },
+      ],
+    },
+    skeletons.chain('A document as PDF', [
+      ['To_pdf.ml:def:file', 'counted until page numbers settle, then written', ''],
+      ['To_pdf.ml:def:sheets', 'pages cut', 'the document'],
+      ['Layout.ml:def:rows', 'rows of placed words', 'the blocks'],
+      ['Layout.ml:def:blocks', 'each block by its kind', 'the tree'],
+      ['Layout.ml:def:paragraph', 'lines broken, justified', 'a paragraph'],
+    ]) + {
+      bones+: [{ at: 'To_pdf.ml:def:put', role: 'a word written' }, { at: 'To_pdf.ml:def:numbers', role: 'where each anchor fell' }],
+      joints+: [
+        { from: 'To_pdf.ml:def:sheets', to: 'To_pdf.ml:def:put', say: 'each piece' },
+        { from: 'To_pdf.ml:def:sheets', to: 'To_pdf.ml:def:numbers', say: 'the anchors met' },
+      ],
+    },
+  ],
+}

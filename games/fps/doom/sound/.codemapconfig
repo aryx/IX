@@ -1,0 +1,50 @@
+// games/fps/doom/sound/: what the code map says of it
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Doom's sound (s_sound.c) through lib_playground's Audio: effects placed by ear, the music as MIDI.",
+  files: {
+    'Sound.mli': {
+      summary: "What the player hears: the WAV's DS lumps, played with id's attenuation and stereo, or Audio3d.",
+      digest: 'f5b7582941c9',
+      capitals: [{ at: 'def:play', say: "the tic's sounds, heard from the player" }],
+    },
+    'Sound.ml': {
+      summary: "DMX lumps made WAVs, S_AdjustSoundParams' distance and angle, or sound=3d's Audio3d.",
+      digest: '5eccae46592e',
+      important: [
+        { at: 'def:dmx_to_wav', say: "DMX's header off: a WAV for Audio", weight: 2 },
+        { at: 'def:adjust', say: "id's volume by distance, pan by angle", weight: 3 },
+        { at: 'def:play', say: 'the sounds the world started this tic', weight: 2 },
+        { at: 'def:music', say: "the level's D_ lump, as MIDI", weight: 1 },
+      ],
+    },
+    'Mus.mli': {
+      summary: "Doom's MUS music made a Standard MIDI File for Audio.midi: the ports' mus2mid.",
+      digest: 'bd6ee64146df',
+      capitals: [{ at: 'def:to_midi', say: 'a lump to a MIDI file' }],
+    },
+    'Mus.ml': {
+      summary: "MUS events to MIDI's: channels swapped (15 is drums), delays as variable-length quantities.",
+      digest: '451205ca51e0',
+      important: [
+        { at: 'def:convert', say: 'event by event', weight: 3 },
+        { at: 'def:add_vlq', say: "MIDI's variable-length numbers", weight: 1 },
+      ],
+    },
+  },
+  skeletons: [{
+    name: 'Sounds and music heard',
+    bones: [
+      { at: 'Sound.ml:def:create', role: "the WAD's sounds loaded" },
+      { at: 'Sound.ml:def:play', role: "a tic's sounds" },
+      { at: 'Sound.ml:def:adjust', role: 'volume and pan by ear' },
+      { at: 'Sound.ml:def:music', role: "the level's music" },
+      { at: 'Mus.ml:def:to_midi', role: 'MUS to MIDI' },
+    ],
+    joints: [
+      { from: 'Sound.ml:def:create', to: 'Sound.ml:def:play', say: 'the sounds' },
+      { from: 'Sound.ml:def:play', to: 'Sound.ml:def:adjust', say: 'where from' },
+      { from: 'Sound.ml:def:music', to: 'Mus.ml:def:to_midi', say: 'the lump' },
+    ],
+  }],
+}

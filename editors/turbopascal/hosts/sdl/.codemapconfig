@@ -1,0 +1,23 @@
+// editors/turbopascal/hosts/sdl/: what the code map says of it (the code map
+// is tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../../skeletons.libsonnet';
+
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-turbopascal in a window on Linux: the IDE's cells painted by Window_sdl.",
+  files: {
+    'Main.ml': { digest: 'cbd0bf11bfe2',
+      summary: "The window's main: scale, rows and columns, then Window_sdl.run.",
+      important: [
+        { at: 'def:main', say: "the flags, then the window", weight: 3 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.onefile("mini-turbopascal: a window on Linux", 'Main.ml', [
+      ["../../editor/Tui_turbo.ml:def:program", "the IDE as a Tui program", "the scale, the size"],
+      ["../../../../lib_terminal/hosts/sdl/Window_sdl.ml:def:run", "the SDL window: keys in, cells painted", "the program"],
+    ]),
+  ],
+}

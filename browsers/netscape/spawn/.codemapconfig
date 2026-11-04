@@ -1,0 +1,34 @@
+// browsers/netscape/spawn/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Worker_spawn's three implementations, one copied as Worker_spawn.ml by the build that compiles it.",
+  files: {
+    'threads.ml': { digest: '2ac2715f2cc2',
+      summary: "OCaml 4.14's threads: one runs at a time, the lock taken from it every 50 ms (dune, before 5.0).",
+    },
+    'domains.ml': { digest: 'b808d5f6cff1',
+      summary: "OCaml 5's domains: the worker on its own core beside the window (dune, 5.0 and after).",
+    },
+    'large_threads.ml': { digest: '776670ff9d56',
+      summary: "mini-ml's cooperative threads with the program's large stacks: a page's deep recursions on it.",
+    },
+  },
+  skeletons: [
+    {
+      name: 'One interface, three runtimes',
+      bones: [
+        { at: '../Worker_spawn.mli', role: 'spawn and parallel: what the window asks' },
+        { at: 'threads.ml', role: 'OCaml 4.14' },
+        { at: 'domains.ml', role: 'OCaml 5' },
+        { at: 'large_threads.ml', role: 'mini-ml' },
+      ],
+      joints: [
+        { from: 'threads.ml', to: '../Worker_spawn.mli', say: 'implements' },
+        { from: 'domains.ml', to: '../Worker_spawn.mli', say: 'implements' },
+        { from: 'large_threads.ml', to: '../Worker_spawn.mli', say: 'implements' },
+      ],
+    },
+  ],
+}

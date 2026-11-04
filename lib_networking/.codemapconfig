@@ -1,0 +1,58 @@
+// lib_networking/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "9P and the internet's protocols from scratch: DNS, TCP, TLS 1.3, HTTP, cookies, mail; the browser's ground.",
+  dirs: {
+    tests: { summary: "Unit tests (Testo): URLs, HTTP, cookies, X.509, TLS 1.3 against RFC 8448's trace, SMTP, IMAP, mail." },
+  },
+  skeletons: [
+    // the README's way down, function by function: what mini-curl -v shows
+    {
+      name: "A request's way down: URL, DNS, TCP, TLS, HTTP",
+      bones: [
+        { at: 'http/Http_client.ml:def:fetch_with', role: 'a URL, redirections followed' },
+        { at: 'http/Url.ml:def:parse', role: 'scheme, host, port, target' },
+        { at: 'http/Http.ml:def:request_to_string', role: 'GET / HTTP/1.1, as text' },
+        { at: 'http/Keep_alive.ml:def:exchange', role: 'a kept TLS connection, or a new one' },
+        { at: 'tls/Tls_client.ml:def:connect', role: 'the socket, the dice, the machine' },
+        { at: 'tcp/Tcp.ml:def:connect', role: 'a host by name: getaddrinfo or Dns' },
+        { at: 'tcp/Dns.ml:def:resolve', role: 'one UDP question to port 53' },
+        { at: 'tls/Tls13.ml:def:received', role: 'the handshake: keys agreed' },
+        { at: 'tls/X509.ml:def:verify', role: "the server's chain, to a root" },
+        { at: 'http/Http.ml:def:parse_response', role: 'status, headers, body, ungzipped' },
+      ],
+      joints: [
+        { from: 'http/Http_client.ml:def:fetch_with', to: 'http/Url.ml:def:parse', say: 'the string' },
+        { from: 'http/Http_client.ml:def:fetch_with', to: 'http/Http.ml:def:request_to_string', say: 'the request' },
+        { from: 'http/Http_client.ml:def:fetch_with', to: 'http/Keep_alive.ml:def:exchange', say: 'https: its bytes' },
+        { from: 'http/Keep_alive.ml:def:exchange', to: 'tls/Tls_client.ml:def:connect', say: 'none kept' },
+        { from: 'tls/Tls_client.ml:def:connect', to: 'tcp/Tcp.ml:def:connect', say: 'host, port' },
+        { from: 'tcp/Tcp.ml:def:connect', to: 'tcp/Dns.ml:def:resolve', say: 'a name unknown' },
+        { from: 'tls/Tls_client.ml:def:connect', to: 'tls/Tls13.ml:def:received', say: "the server's records" },
+        { from: 'tls/Tls13.ml:def:received', to: 'tls/X509.ml:def:verify', say: 'Certificate' },
+        { from: 'http/Keep_alive.ml:def:exchange', to: 'http/Http.ml:def:parse_response', say: 'the decrypted answer' },
+      ],
+    },
+    {
+      name: 'The layers',
+      bones: [
+        { at: 'tcp/', role: 'TCP, UDP, DNS: the bytes leave' },
+        { at: 'tls/', role: 'TLS 1.3 and 1.2, certificates' },
+        { at: 'http/', role: 'URLs, HTTP, keep-alive, cookies' },
+        { at: 'mail/', role: 'messages, SMTP, IMAP' },
+        { at: '9p/', role: "Plan 9's file protocol" },
+        { at: '../lib_crypto/', role: 'hashes, ciphers, curves' },
+      ],
+      joints: [
+        { from: 'tls/', to: 'tcp/', say: 'a stream' },
+        { from: 'tls/', to: '../lib_crypto/', say: 'the arithmetic' },
+        { from: 'http/', to: 'tls/', say: 'https' },
+        { from: 'http/', to: 'tcp/', say: 'http' },
+        { from: 'mail/', to: 'tls/', say: 'Lines over TLS' },
+        { from: 'mail/', to: 'tcp/', say: 'Lines over TCP' },
+      ],
+    },
+  ],
+}

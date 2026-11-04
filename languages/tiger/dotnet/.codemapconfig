@@ -1,0 +1,60 @@
+// languages/tiger/dotnet/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-tiger's back end: Tiger's nested functions on .NET's static methods, a frame an object on the heap.",
+  files: {
+    'Tiger_emit.mli': { digest: 'c5c93f91a988',
+      summary: 'Tiger to an assembly, construct by construct; nested functions by frames and a static link.',
+      important: [
+        { at: 'comment:"Tiger                      .NET"', say: 'the mapping, a construct a line', weight: 3 },
+        { at: 'comment:"Nested functions, which .NET has not."', say: 'the static link as first argument', weight: 3 },
+        { at: 'def:program', weight: 2 },
+      ],
+    },
+    'Tiger_emit.ml': { digest: '18e4fca33343',
+      summary: "IL from the checked tree: classes and members made when first needed, a method per function.",
+      capitals: [
+        { at: 'def:program', say: 'Program, its Main, a method per function' },
+      ],
+      important: [
+        { at: 'type:t', say: 'the writer and the memo of tokens', weight: 2 },
+        { at: 'def:memo', say: 'each class, field, method made once', weight: 1 },
+        { at: 'def:frame', say: 'the escaping variables, the link field', weight: 3 },
+        { at: 'def:frame_of', say: 'link.link...: up the static chain', weight: 2 },
+        { at: 'def:exp', say: 'an expression to IL on the stack', weight: 3 },
+        { at: 'def:func', say: 'the frame filled, then the body', weight: 2 },
+        { at: 'comment:"Tiger\'s strings are bytes"', say: 'Latin-1: a byte a character', weight: 1 },
+      ],
+      links: [
+        { from: 'def:program', to: 'def:func' },
+        { from: 'def:func', to: 'def:exp' },
+        { from: 'def:exp', to: 'def:load_var' },
+        { from: 'def:load_var', to: 'def:frame_of' },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'A function on .NET: frame, static link, IL',
+      bones: [
+        { at: 'Tiger_emit.ml:def:program', role: 'the assembly: Program and Main' },
+        { at: 'Tiger_emit.ml:def:func', role: "a function: a static method of Program" },
+        { at: 'Tiger_emit.ml:def:frame', role: 'its frame: a class, a field per escape' },
+        { at: 'Tiger_emit.ml:def:exp', role: 'its body to IL' },
+        { at: 'Tiger_emit.ml:def:load_var', role: 'a variable: local, argument or field' },
+        { at: 'Tiger_emit.ml:def:frame_of', role: "an outer frame: the links followed" },
+        { at: '../../dotnet/assembly/', role: "the Writer: metadata, IL's bytes" },
+      ],
+      joints: [
+        { from: 'Tiger_emit.ml:def:program', to: 'Tiger_emit.ml:def:func', say: 'main, then each function' },
+        { from: 'Tiger_emit.ml:def:func', to: 'Tiger_emit.ml:def:frame', say: 'if nested: newobj' },
+        { from: 'Tiger_emit.ml:def:func', to: 'Tiger_emit.ml:def:exp', say: 'the body' },
+        { from: 'Tiger_emit.ml:def:exp', to: 'Tiger_emit.ml:def:load_var', say: 'a name used' },
+        { from: 'Tiger_emit.ml:def:load_var', to: 'Tiger_emit.ml:def:frame_of', say: 'declared outside' },
+        { from: 'Tiger_emit.ml:def:program', to: '../../dotnet/assembly/', say: 'the bytes written' },
+      ],
+    },
+  ],
+}

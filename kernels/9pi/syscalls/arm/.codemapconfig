@@ -3,10 +3,10 @@
 // docs/claude_notes/codemapconfig_guidelines.md there). Implements
 // ../Syscall.mli and ../Ureg.mli (the Makefile picks the directory).
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "arm's system call ABI and notes (syscalls/arm/syscall.c), used on both boards: the programs are arm's.",
   files: {
-    'Syscall.ml': { digest: '02b1993c7a8a',
+    'Syscall.ml': { digest: '66fd4ed93f07',
       summary: "A call decoded from R0 and the user's stack, run, its error in errstr; notes pushed as an NFrame.",
       capitals: [
         { at: 'def:syscall', say: 'every system call enters here' },
@@ -18,14 +18,19 @@
         { at: 'def:noted', say: "back from the handler: the Ureg restored", weight: 2 },
         { at: 'def:okaddr', weight: 1 },
         { at: 'def:trap', say: "a fault's note, delivered at once", weight: 1 },
+        { at: 'def:names', say: "a dying program's stack walked by its symbols", weight: 2 },
+        { at: 'code:"let trace = ref false"', say: 'shadows the trace function above: two traces', weight: 1 },
       ],
       links: [
         { from: 'def:syscall', to: 'def:notify' },
         { from: 'def:syscall', to: 'def:noted' },
       ],
     },
-    'Ureg.ml': { digest: '442695078c88',
+    'Ureg.ml': { digest: 'cc286ed595eb',
       summary: "The Pi1's trap frame: the frame's words are the registers.",
+      important: [
+        { at: 'def:get', weight: 1 },
+      ],
     },
   },
   skeletons: [

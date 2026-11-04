@@ -7,17 +7,17 @@
 // system call, process 2 sleeps then kills it, process 3 runs),
 // kernel.ld, expected (the ticks counted), the Makefile.
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "mini-xv6's fifth step: the timer, a tick every 10ms, sleep by ticks, preemption and kill.",
   files: {
-    'Main.ml': { digest: '32252443e5bb',
+    'Main.ml': { digest: '0af1b56a848a',
       summary: "Step 4's address spaces and the timer: the tick wakes sleepers and preempts; kill marks, the process dies on its way out.",
       capitals: [
         { at: 'def:walk', say: "a process's own translation table, TTBR0" },
         { at: 'def:irq', say: 'the tick, then the CPU taken back: preemption' },
       ],
       important: [
-        { at: 'comment:"Addresses as ints"', say: "why the kernel's addresses stay in C", weight: 2 },
+        { at: 'comment:"addresses as ints (step4"', say: "why the kernel's addresses stay in C", weight: 2 },
         { at: 'type:l2', say: "ARMv6's second-level entry", weight: 2 },
         { at: 'def:kalloc', weight: 1 },
         { at: 'def:walk', weight: 3 },
@@ -29,23 +29,11 @@
         { at: 'def:tick', say: 'the sleepers whose time has come', weight: 2 },
         { at: 'def:check_killed', say: 'kill takes effect on the way out', weight: 2 },
         { at: 'def:irq', weight: 3 },
-        { at: 'line:345', say: 'the main: callbacks, three processes, the scheduler', weight: 1 },  // line: `let () =`
+        { at: 'code:"Callback.register"', say: 'the main: callbacks, three processes, the scheduler', weight: 1 },
       ],
       related: ['expected'],
     },
-    'libc.c': { digest: '92559726683b',
-      summary: "What ocaml-light's runtime asks of a C library, bare-metal: the PL011 for stdout, a bump malloc, sprintf; the rest panics. The same as step 4.",
-      capitals: [
-        { at: 'section:The start', say: 'kmain: caml_main, the OCaml program run' },
-      ],
-      important: [
-        { at: 'def:malloc', say: 'a bump pointer up to HEAP_LIMIT', weight: 2 },
-        { at: 'def:udivmod', say: "no divide instruction on ARMv6: EABI's helpers", weight: 1 },
-        { at: 'def:STUB', say: 'what nothing calls yet panics, naming itself', weight: 1 },
-      ],
-      related: ['../lib_machine/libc.c'],
-    },
-    'machine.c': { digest: 'b32725cf9d4e',
+    'machine.c': { digest: 'ca22679009af',
       summary: "Step 4's machine and the timer: the BCM2835's system timer and interrupt controller, a user's IRQ to OCaml, wfi with IRQs masked.",
       capitals: [
         { at: 'def:irq', say: "a user's IRQ, to OCaml's irq" },
@@ -61,7 +49,7 @@
       ],
       related: ['start.s'],
     },
-    'start.s': { digest: '086ae9d00a39',
+    'start.s': { digest: 'c3174796606f',
       summary: "Step 4's boot (the MMU on, the jump high) and trap entries, and the timer's IRQ, taken from user mode only.",
       capitals: [
         { at: 'def:_start', say: 'the MMU off: loaded at 0x8000, linked at KERNBASE' },
@@ -84,16 +72,9 @@
         { at: 'def:data_entry', say: "SPSR's mode: a user's abort is its own, a kernel's halts", weight: 2 },
         { at: 'def:swtch', say: "step 3's", weight: 1 },
       ],
-      related: ['kernel.ld', 'machine.c', 'libc.c'],
+      related: ['kernel.ld', 'machine.c', '../step1/libc.c'],
     },
-    'image.s': { digest: '8fc70bc704e6',
-      summary: "user.bin, the program linked at 0, in the kernel's read-only data: what load_image copies into each process's pages.",
-      capitals: [
-        { at: 'def:user_image', say: "the program's bytes, embedded by .incbin" },
-      ],
-      related: ['user.s', 'user.ld'],
-    },
-    'user.s': { digest: '23c194327ea4',
+    'user.s': { digest: '530876b4d4bf',
       summary: 'Linked at 0, a copy per process, each showing the timer: 1 spins with no call, 2 sleeps then kills it, 3 runs rounds.',
       capitals: [
         { at: 'def:_ustart', say: "the program's entry, at address 0" },
@@ -104,7 +85,7 @@
         { at: 'code:"bl kill"', say: 'the spinner dies on its way out of the kernel', weight: 2 },
         { at: 'def:say', say: "'#' the pid, '@' the round, then write", weight: 1 },
       ],
-      related: ['user.ld', 'image.s', 'expected'],
+      related: ['user.ld', '../step4/image.s', 'expected'],
     },
   },
   skeletons: [
@@ -129,7 +110,7 @@
     {
       name: 'The timer, step 5',
       bones: [
-        { at: 'Main.ml:line:345', role: 'callbacks, the timer armed, the scheduler' },
+        { at: 'Main.ml:code:"Callback.register"', role: 'callbacks, the timer armed, the scheduler' },
         { at: 'Main.ml:def:scheduler', role: 'round robin; nothing runnable: wfi' },
         { at: 'machine.c:def:irq', role: "the timer's IRQ in user mode" },
         { at: 'Main.ml:def:irq', role: 'a tick, the running process preempted' },
@@ -138,7 +119,7 @@
         { at: 'Main.ml:def:check_killed', role: 'a killed process dies' },
       ],
       joints: [
-        { from: 'Main.ml:line:345', to: 'Main.ml:def:scheduler' },
+        { from: 'Main.ml:code:"Callback.register"', to: 'Main.ml:def:scheduler' },
         { from: 'machine.c:def:irq', to: 'Main.ml:def:irq', say: 'callback "irq"' },
         { from: 'Main.ml:def:irq', to: 'Main.ml:def:tick' },
         { from: 'Main.ml:def:irq', to: 'Main.ml:def:sched', say: 'preemption' },
@@ -149,19 +130,19 @@
     {
       name: 'The boot, step 5: the MMU on, the timer armed',
       bones: [
-        { at: 'libc.c:section:The start', role: "kmain, after start.s (the MMU on, IRQ vector): caml_main" },
-        { at: 'Main.ml:line:102', role: "the module's first run: the free pages listed" },
-        { at: 'Main.ml:line:345', role: 'the OCaml main: trap, fault, process_start and irq registered' },
+        { at: '../step1/libc.c:section:The start', role: "kmain, after start.s (the MMU on, IRQ vector): caml_main" },
+        { at: 'Main.ml:code:"let rec fill pa"', role: "the module's first run: the free pages listed" },
+        { at: 'Main.ml:code:"Callback.register"', role: 'the OCaml main: trap, fault, process_start and irq registered' },
         { at: 'machine.c:def:timer_arm', role: 'the timer: a tick every 10ms, from user mode only' },
         { at: 'Main.ml:def:load_image', role: "a process's image in its own pages" },
         { at: 'Main.ml:def:scheduler', role: 'round robin; nothing runnable: wfi' },
       ],
       joints: [
-        { from: 'libc.c:section:The start', to: 'Main.ml:line:102', say: 'caml_main: the module, top down' },
-        { from: 'Main.ml:line:102', to: 'Main.ml:line:345', say: 'the pages, ready' },
-        { from: 'Main.ml:line:345', to: 'machine.c:def:timer_arm', say: 'tick_us' },
-        { from: 'Main.ml:line:345', to: 'Main.ml:def:load_image', say: 'each of three processes' },
-        { from: 'Main.ml:line:345', to: 'Main.ml:def:scheduler', say: 'then' },
+        { from: '../step1/libc.c:section:The start', to: 'Main.ml:code:"let rec fill pa"', say: 'caml_main: the module, top down' },
+        { from: 'Main.ml:code:"let rec fill pa"', to: 'Main.ml:code:"Callback.register"', say: 'the pages, ready' },
+        { from: 'Main.ml:code:"Callback.register"', to: 'machine.c:def:timer_arm', say: 'tick_us' },
+        { from: 'Main.ml:code:"Callback.register"', to: 'Main.ml:def:load_image', say: 'each of three processes' },
+        { from: 'Main.ml:code:"Callback.register"', to: 'Main.ml:def:scheduler', say: 'then' },
       ],
     },
     {
@@ -172,16 +153,16 @@
         { at: 'start.s:def:vectors', role: 'copied to the page at 0xFFFF0000, IRQ now used' },
         { at: 'start.s:code:"c1  c0  0"', role: 'the MMU on, high vectors' },
         { at: 'start.s:def:high', role: 'linked addresses: stacks, TTBCR N = 2, TTBR0 empty, VFP' },
-        { at: 'libc.c:section:The start', role: 'kmain: caml_main' },
-        { at: 'Main.ml:line:345', role: 'the OCaml main: the timer armed, the scheduler' },
+        { at: '../step1/libc.c:section:The start', role: 'kmain: caml_main' },
+        { at: 'Main.ml:code:"Callback.register"', role: 'the OCaml main: the timer armed, the scheduler' },
       ],
       joints: [
         { from: 'start.s:def:_start', to: 'start.s:def:kpgdir', say: 'sections: RAM, devices, the first MB' },
         { from: 'start.s:def:_start', to: 'start.s:def:vectors', say: 'copied to vectors_page' },
         { from: 'start.s:def:_start', to: 'start.s:code:"c1  c0  0"', say: 'DACR, TTBR0/1, TLB' },
         { from: 'start.s:code:"c1  c0  0"', to: 'start.s:def:high', say: 'ldr pc, =high' },
-        { from: 'start.s:def:high', to: 'libc.c:section:The start', say: 'bl kmain' },
-        { from: 'libc.c:section:The start', to: 'Main.ml:line:345', say: 'caml_main' },
+        { from: 'start.s:def:high', to: '../step1/libc.c:section:The start', say: 'bl kmain' },
+        { from: '../step1/libc.c:section:The start', to: 'Main.ml:code:"Callback.register"', say: 'caml_main' },
       ],
     },
     {

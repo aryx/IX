@@ -1,0 +1,213 @@
+// tiny/TinyLibCore/: what the code map says of it (the code map: tinybox
+// codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). tiny-ml's
+// standard library, compiled once and put before every program of
+// tiny-kernel's (../TinyKernel/Makefile's CORE, in Stdlib.mli's order).
+// Each .ml says "See X.mli". Its modules have OCaml's names, so the
+// map credits them with every use of OCaml's own List, String, Printf
+// across ix (List.mli "named by 968 files"): their capitals are what a
+// tiny program calls, not a measure of the uses.
+local skeletons = import '../../skeletons.libsonnet';
+local mli(summary, digest, capital, say) = {
+  summary: summary, digest: digest,
+  capitals: [{ at: capital, say: say }],
+  important: [{ at: capital, weight: 2 }],
+};
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "tiny-ml's standard library: OCaml's modules as a tiny program names them, subsets OCaml checks, in tiny-ml's ML.",
+  files: {
+    'Stdlib.mli': { digest: '0450a07a0144',
+      summary: "The library's plan: Stdlib open in every unit, then the modules in order; each a subset of OCaml's, OCaml-checked.",
+      capitals: [
+        { at: 'comment:"the standard library of tiny-ml"', say: 'one source, two compilers: OCaml and tiny-ml' },
+      ],
+      important: [
+        { at: 'comment:"the standard library of tiny-ml"', weight: 3 },
+        { at: 'comment:"the same names, the same types, the same results"', say: 'why a file builds with both', weight: 3 },
+      ],
+      related: ['../TinyML.ml', '../TinyMLRuntime/core.c'],
+    },
+    'Stdlib.ml': { digest: '3eff037dda27',
+      summary: "Stdlib: the primitives as externals, %-named for tiny-ml's code or ml_ for the runtime's C; the rest in ML.",
+      capitals: [
+        { at: 'def:compare', say: "the runtime's compare: what = and < are not" },
+      ],
+      important: [
+        { at: 'def:raise', say: "'%' primitives: tiny-ml emits them inline", weight: 2 },
+        { at: 'def:compare', weight: 2 },
+        { at: 'code:"ml_concat"', say: "^ is the runtime's: one allocation", weight: 1 },
+        { at: 'def:max_int', say: "tiny-ml's ints have 31 bits", weight: 2 },
+        { at: 'def:int_of_string_opt', weight: 1 },
+      ],
+    },
+    'List.mli': mli("List, OCaml's subset; sort a merge sort, stable.", '98858414d272', 'def:map', 'f called in order: let y = f x first'),
+    'List.ml': { digest: '9c07884af921',
+      summary: "List in tiny-ml's ML: map evaluates in order, sort a stable merge sort.",
+      important: [
+        { at: 'def:map', say: 'y before the rest: the order OCaml leaves open', weight: 2 },
+        { at: 'def:sort', say: 'a merge sort, stable', weight: 2 },
+        { at: 'def:fold_left', weight: 1 },
+      ],
+    },
+    'String.mli': mli("String, OCaml's subset; concat makes its result once, by the runtime.", '29f81c3362f3', 'def:sub', "a string's piece: the runtime copies"),
+    'String.ml': { digest: '0f92e369f1a0',
+      summary: "String over the runtime's primitives (ml_string_*); concat one allocation in C.",
+      important: [
+        { at: 'def:concat', say: "the runtime's: one string made, not a ^ chain", weight: 2 },
+        { at: 'def:sub', weight: 1 },
+        { at: 'def:split_on_char', weight: 1 },
+      ],
+    },
+    'Bytes.mli': mli("Bytes, OCaml's subset: a string that can be changed (its absence cost 2,750 instructions a sample).", '867891817f77', 'def:set', 'a byte changed in place'),
+    'Bytes.ml': { digest: '11eea6cfdb0b',
+      summary: "Bytes as the runtime's strings, set in place: ml_bytes_set, the same block.",
+      important: [
+        { at: 'def:set', weight: 2 },
+        { at: 'def:to_string', say: 'a copy, as OCaml', weight: 1 },
+      ],
+    },
+    'Array.mli': mli("Array, OCaml's subset; a.(i) is Array.get a i.", 'a44bdbe88c98', 'def:get', 'a.(i)'),
+    'Array.ml': { digest: '45527b57a8fd',
+      summary: "Array: a block of tag 0 made and read by the runtime, the rest in ML.",
+      important: [
+        { at: 'def:make', say: 'ml_array_make', weight: 1 },
+        { at: 'def:empty', say: 'the same external, another type: the empty array', weight: 1 },
+        { at: 'def:of_list', weight: 1 },
+      ],
+    },
+    'Buffer.mli': mli("Buffer, OCaml's subset: bytes that double when full, from 256 at most.", 'b3f55b10a232', 'def:add_string', 'amortized: the bytes doubled when full'),
+    'Buffer.ml': { digest: '21776b62aef0',
+      summary: "Buffer: bytes and a length, doubled when full (a string grown by ^ was quadratic).",
+      important: [
+        { at: 'def:grow', say: 'doubled: amortized appends', weight: 2 },
+        { at: 'def:add_string', weight: 1 },
+      ],
+    },
+    'Hashtbl.mli': mli("Hashtbl, OCaml's subset: an array of buckets by the runtime's hash, doubled with its bindings.", 'e19901a9508a', 'def:find', 'a key by its hash, its bucket an assoc list'),
+    'Hashtbl.ml': { digest: '884a6b586c6f',
+      summary: "Hashtbl: buckets of assoc lists, ml_hash's index, resized at twice as many bindings as buckets.",
+      important: [
+        { at: 'def:hash', say: "the runtime's ml_hash: ten values at most", weight: 2 },
+        { at: 'def:resize', say: 'twice the buckets when twice the bindings', weight: 2 },
+        { at: 'def:add', weight: 1 },
+      ],
+    },
+    'Int64.mli': mli("Int64, OCaml's subset: 64-bit integers as four 16-bit pieces, for tiny-c's constants.", '7a58bbd0acb4', 'def:add', 'four pieces, carries between'),
+    'Int64.ml': { digest: '9702e5e5a56d',
+      summary: "Int64 on 31-bit ints: four pieces of 16 bits, the high one signed, so compare's order is the numbers'.",
+      capitals: [
+        { at: 'type:int64', say: 'four pieces of 16: equal numbers, equal tuples' },
+      ],
+      important: [
+        { at: 'type:int64', weight: 3 },
+        { at: 'def:add', say: "each piece's carry into the next", weight: 2 },
+        { at: 'def:mul', say: 'schoolbook, piece by piece', weight: 2 },
+        { at: 'def:udivmod', say: 'long division, unsigned', weight: 2 },
+        { at: 'def:ult', say: 'unsigned order: the sign bit flipped', weight: 1 },
+        { at: 'def:to_string', weight: 1 },
+      ],
+    },
+    'Char.mli': mli("Char, OCaml's subset: a character and its code.", '3e48f8fac0a0', 'def:code', 'a character as an int'),
+    'Char.ml': { digest: '3ff346d11012', summary: 'Char: code and chr, identities on the runtime.' },
+    'Option.mli': mli("Option, OCaml's subset.", 'd87c9be72734', 'def:get', 'the value, or an exception'),
+    'Option.ml': { digest: '50b9d188ec1c', summary: 'Option in four functions.' },
+    'Filename.mli': mli("Filename, OCaml's subset: a path's directory, base and suffix.", '1f5d98fff571', 'def:basename', "a path's last name"),
+    'Filename.ml': { digest: 'd7610e5259f0', summary: "Filename: paths by their text, / only (tiny-kernel's)." },
+    'Printf.mli': { digest: 'e05babb119f9',
+      summary: "Printf as tiny-ml reads it: a format expanded to concatenations, these the helpers it calls (%x, %S, widths).",
+      capitals: [
+        { at: 'line:18', say: "a width: what tiny-ml's expanded format calls" },
+      ],
+      important: [
+        { at: 'comment:"not OCaml\'s module, whose formats have a"', say: "the format is tiny-ml's syntax, not a type", weight: 3 },
+        { at: 'def:hex', weight: 1 },
+        { at: 'line:14', weight: 1 },
+        // claude: lines 12 to 18 by number: the map's lexer, as OCaml's,
+        // reads the lone double quote of line 12 as a string's start, and
+        // the rest of the file as inside it (quoted, pad unreachable)
+        { at: 'line:12', say: 'a lone double quote: ocamlc -c refuses this file', weight: 2 },
+        { at: 'line:18', weight: 2 },
+      ],
+      related: ['../TinyML/TinyMLPrintf.ml'],
+    },
+    'Printf.ml': { digest: '74effad500d1',
+      summary: "Printf's helpers: %x, %S's escapes, a width padded with spaces or zeros.",
+      important: [
+        { at: 'def:pad', weight: 2 },
+        { at: 'def:quoted', weight: 1 },
+      ],
+    },
+    'Seq.mli': { digest: '3aa1b01af18a',
+      summary: "Seq, OCaml's subset: elements made as pulled (tiny-db's rows stop being read at a take).",
+      important: [
+        { at: 'type:t', weight: 2 },
+        { at: 'def:take', weight: 1 },
+      ],
+    },
+    'Seq.ml': { digest: '03e221c7570b', summary: 'Seq: thunks to nodes, each element made when asked for.' },
+    'Marshal.mli': { digest: '0d2680131255',
+      summary: "Marshal, OCaml's format in the runtime: the host's OCaml and tiny-ml's programs read each other's bytes.",
+      important: [
+        { at: 'def:to_string', weight: 2 },
+        { at: 'def:from_string', weight: 1 },
+      ],
+      related: ['../TinyMLRuntime/core.c'],
+    },
+    'Marshal.ml': { digest: 'a5e2f16ad00e', summary: "Marshal: two externals, the runtime's C." },
+    'Sha1.mli': { digest: '22a2514c5e76',
+      summary: "Sha1, lib_crypto's subset: a 20-byte digest computed by the runtime on 32-bit words.",
+      important: [
+        { at: 'def:string', weight: 2 },
+        { at: 'def:reads', say: 'a file digested piece by piece, none kept', weight: 1 },
+      ],
+      related: ['../TinyVCS.ml', '../TinyMLRuntime/core.c'],
+    },
+    'Sha1.ml': { digest: 'd382028e797a', summary: "Sha1: the runtime's SHA-1 named, reads over its context." },
+    'Common.mli': { digest: '72d3ecf39a77', summary: "Common, lib_core/commons/'s subset: the ||| of an option and a default." },
+    'Common.ml': { digest: '2758fe83d34d', summary: 'Common: |||, one line.' },
+  },
+  skeletons: [
+    {
+      name: "tiny-ml's library, in Stdlib's order, over the runtime",
+      bones: [
+        { at: 'Stdlib.ml', role: 'open in every unit: the primitives' },
+        { at: 'List.ml', role: 'lists, in ML' },
+        { at: 'String.ml', role: "strings: the runtime's primitives" },
+        { at: 'Bytes.ml', role: 'strings that change' },
+        { at: 'Buffer.ml', role: 'bytes doubled when full' },
+        { at: 'Hashtbl.ml', role: "buckets by the runtime's hash" },
+        { at: 'Marshal.ml', role: "OCaml's format, in C" },
+        { at: '../TinyMLRuntime/core.c', role: 'the C below: ml_ externals' },
+        { at: '../TinyML.ml', role: 'compiles it once, before every program' },
+      ],
+      joints: [
+        { from: '../TinyML.ml', to: 'Stdlib.ml', say: 'opens' },
+        { from: 'Stdlib.ml', to: '../TinyMLRuntime/core.c', say: 'compare, ^, print_string' },
+        { from: 'String.ml', to: '../TinyMLRuntime/core.c', say: 'ml_string_*' },
+        { from: 'Bytes.ml', to: 'String.ml', say: 'the same blocks' },
+        { from: 'Buffer.ml', to: 'Bytes.ml', say: 'grows' },
+        { from: 'Hashtbl.ml', to: 'List.ml', say: 'assoc in a bucket' },
+        { from: 'Marshal.ml', to: '../TinyMLRuntime/core.c', say: 'ml_marshal_*' },
+      ],
+    },
+    skeletons.module('Int64.ml', 'Int64: four pieces of 16 bits', [
+      ['of_int', 'an int to four pieces, sign extended', ''],
+      ['add', 'piece by piece, the carries up', 'pieces'],
+      ['neg', 'lognot and one added', 'a sum'],
+      ['sub', 'add the negation', 'a negation'],
+    ]) + {
+      bones+: [
+        { at: 'Int64.ml:type:int64', role: 'the representation' },
+        { at: 'Int64.ml:def:mul', role: 'products of pieces' },
+        { at: 'Int64.ml:def:udivmod', role: 'unsigned long division' },
+        { at: 'Int64.ml:def:div', role: 'signed: on the absolute values' },
+      ],
+      joints+: [
+        { from: 'Int64.ml:type:int64', to: 'Int64.ml:def:of_int', say: 'made by' },
+        { from: 'Int64.ml:def:div', to: 'Int64.ml:def:udivmod', say: 'magnitudes' },
+        { from: 'Int64.ml:type:int64', to: 'Int64.ml:def:mul', say: 'as eight bytes' },
+      ],
+    },
+  ],
+}

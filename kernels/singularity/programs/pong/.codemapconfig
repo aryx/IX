@@ -1,0 +1,31 @@
+// kernels/singularity/programs/pong/: what the code map says of it (the
+// code map is tinybox codemap, in ~/github/ocaml-elm-playground).
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The Pong contract's server: a number back plus one, a text block read and freed, a lent block returned.",
+  files: {
+    'Main.ml': { digest: '4415f4a6d5d2',
+      summary: "The Pong contract's server: a number back plus one, a text block read and freed, a lent block returned.",
+      capitals: [ { at: "code:\"let () =\"", say: "Pong's server, until its client closes" } ],
+      important: [
+        { at: "code:\"| Ping n ->\"", say: "one more, back", weight: 2 },
+        { at: "code:\"| Lend b ->\"", say: "returned as it is: ownership back", weight: 2 },
+        { at: "code:\"with Sip.Closed\"", say: "the client gone: its end", weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: "pong: a contract served",
+      bones: [
+        { at: "Main.ml:code:\"let () =\"", role: "ready, then serve" },
+        { at: "../../contracts/Pong.ml:code:\"module Exp = struct\"", role: "the server end" },
+        { at: "../../lib/Sip.ml:def:receive", role: "a request, waited for" },
+      ],
+      joints: [
+        { from: "Main.ml:code:\"let () =\"", to: "../../contracts/Pong.ml:code:\"module Exp = struct\"" },
+        { from: "../../contracts/Pong.ml:code:\"module Exp = struct\"", to: "../../lib/Sip.ml:def:receive", say: "receive" },
+      ],
+    },
+  ],
+}

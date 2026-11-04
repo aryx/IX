@@ -1,0 +1,86 @@
+// windows/desktop/lib/: what the code map says of it
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "What the desktop's programs decide, without a screen: tables, settings, layouts, testable alone.",
+  files: {
+    'Apps.ml': {
+      summary: 'The programs table parsed, its wctl line, and the start menu as groups and items.',
+      digest: '1b0997a19bf7',
+    },
+    'Apps.mli': {
+      summary: 'The table of programs a person opens: group, name, icon, size, command; why not a walk of /progs.',
+      digest: '23288651e7cc',
+      capitals: [{ at: 'type:entry', say: 'a line of /lib/desktop/apps' }],
+      important: [{ at: 'comment:"Why a table and not a walk"', say: 'a directory says nothing of icons or size', weight: 3 }],
+    },
+    'Prefs.ml': {
+      summary: 'The settings as lines of key=value, read with defaults, printed back.',
+      digest: 'f2b6734fbf9f',
+    },
+    'Prefs.mli': {
+      summary: "A person's desktop settings in one file, shared by rereading it rather than by messages.",
+      digest: '4470aaba3fe2',
+      capitals: [{ at: 'type:t', say: 'wallpaper, clock, edge, mouse, volume' }],
+      important: [{ at: 'comment:"No message between the programs"', say: 'a file is what Plan 9 has to share', weight: 3 }],
+    },
+    'Taskbar.ml': {
+      summary: "The panel's buttons laid out, a press found and turned into wctl's words.",
+      digest: '618ff7836964',
+    },
+    'Taskbar.mli': {
+      summary: "What the panel knows of rio's windows and decides, after Windows 95's taskbar.",
+      digest: 'f043fb1500b7',
+      capitals: [{ at: 'type:window', say: "a window as rio's files say it" }],
+      important: [{ at: 'comment:"rio knows nothing"', say: 'the panel is a program like another', weight: 3 }],
+    },
+    'Wsys.ml': {
+      summary: "/dev/wsys read into windows, and a line written to a wctl.",
+      digest: '1549f5264345',
+    },
+    'Wsys.mli': {
+      summary: 'The windows rio says there are and the line to ask it something: the panel and expose share it.',
+      digest: '57369ad9672c',
+    },
+    'Icon.ml': {
+      summary: 'A text icon parsed: palette lines, then a character a pixel; doubled for the desk.',
+      digest: '694a36025557',
+    },
+    'Icon.mli': {
+      summary: 'An icon as a text file, a character a pixel, as 1983 icons were drawn on graph paper.',
+      digest: '7ed7bfb48d3d',
+    },
+    'Paper.ml': {
+      summary: 'A colour made bands of a gradient, a picture scaled to cover.',
+      digest: '78072be5ac1d',
+    },
+    'Paper.mli': {
+      summary: "The desk's wallpaper as pixels: a gradient, or a picture covering the screen, cut not stretched.",
+      digest: '1dadb1adfc1d',
+    },
+    'Tiles.ml': {
+      summary: "Expose's grid: columns the square root of the windows, a whole shrink factor each.",
+      digest: '7095c45a41d0',
+    },
+    'Tiles.mli': {
+      summary: "Where Expose puts each window: a grid cell, shrunk by a whole factor, the draw device's.",
+      digest: 'bc25972539a0',
+    },
+  },
+  skeletons: [
+    skeletons.parts('From the files to what a program draws', [
+      ['Wsys.ml', "reads rio's /dev/wsys"],
+      ['Taskbar.ml', "the panel's buttons"],
+      ['Tiles.ml', "Expose's grid"],
+      ['Apps.ml', 'the table of programs'],
+      ['Icon.ml', 'an icon from text'],
+      ['Prefs.ml', 'the settings file'],
+      ['Paper.ml', 'the wallpaper as pixels'],
+    ], [
+      ['Wsys.ml', 'Taskbar.ml', 'window_of: a window'],
+      ['Taskbar.ml', 'Tiles.ml', 'the windows to tile'],
+      ['Apps.ml', 'Icon.ml', "an entry's icon"],
+      ['Prefs.ml', 'Paper.ml', 'the wallpaper'],
+    ]),
+  ],
+}

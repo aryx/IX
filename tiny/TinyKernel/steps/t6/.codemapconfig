@@ -4,10 +4,11 @@
 // trap's entry, resume) is assembly, not a source to the map. In file.c
 // and proc.c a forward prototype comes before some bodies (pipewrite,
 // piperead, exit1): def: would find the prototype, so those are
-// reached by a comment near them.
+// reached by a line of their code.
+local skeletons = import '../../../../skeletons.libsonnet';
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
-  summary: "v6's free variant: spawn and no fork, one kernel stack (a waiting call runs again), partitions, a FAT, a lottery scheduler.",
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "t6, a kernel in C for tiny-machine: spawn and no fork, one kernel stack (a waiting call reruns), a FAT, a lottery.",
   files: {
     't6.h': { digest: 'bafb89aa71b0',
       summary: "t6's types and constants: a process is its registers and its partition, a file its directory entry; BLOCKED, the rerun's signal.",
@@ -21,8 +22,8 @@
         { at: 'comment:"what a system call returns when it must wait"', say: 'BLOCKED: the pc goes back onto its sys', weight: 2 },
       ],
     },
-    'main.c': { digest: 'fb8587762f24',
-      summary: "The boot and the console, printf, strings; its header is t6's design: what a user keeps from v6, and the research roads taken instead.",
+    'main.c': { digest: 'd1feff9ec492',
+      summary: "The boot and the console, printf, strings; its header is t6's design: what a user keeps of v6, the research roads taken.",
       capitals: [
         { at: 'comment:"One kernel stack; a call that must wait runs again."', say: 'no sleep in the kernel: a blocked call rerun from its start' },
       ],
@@ -30,11 +31,15 @@
         { at: 'comment:"One kernel stack; a call that must wait runs again."', weight: 3 },
         { at: 'comment:"spawn, and no fork."', say: 'descriptors given, never inherited', weight: 3 },
         { at: 'comment:"A lottery for the scheduler."', weight: 2 },
+        { at: 'comment:"References (all from memory)"', say: 'Mach, Fluke, seL4, Capsicum, lottery', weight: 1 },
         { at: 'def:main', weight: 2 },
+        // claude: the banner still says tiny-os, kept as the check records it
+        { at: 'code:"tiny-os"', say: "stale name, kept: check.expected records it", weight: 1 },
+        { at: 'def:printf', weight: 1 },
       ],
-      related: ['entry.tm', 'Makefile', 'check.expected', '../v6/main.c'],
+      related: ['entry.tm', 'Makefile', 'check.expected', '../../../../kernels/xv6/'],
     },
-    'proc.c': { digest: '8bf3dde146c7',
+    'proc.c': { digest: '52f060a07fa9',
       summary: "Processes, the lottery, the trap and the calls on processes: no kernel stack of their own, a call that must wait returns BLOCKED and runs again.",
       capitals: [
         { at: 'def:trap', say: 'the one way in: a call run, or put back to run again' },
@@ -50,7 +55,7 @@
         { at: 'def:sys_tickets', weight: 1 },
       ],
     },
-    'file.c': { digest: 'b0f918d9958f',
+    'file.c': { digest: '1fc6faf42848',
       summary: "Files on a FAT in memory: a file its directory entry, no inodes or buffer cache, '..' resolved by the path's text; pipes, the console.",
       capitals: [
         { at: 'def:bmap', say: "a file's n-th block: its chain followed in the FAT" },
@@ -61,11 +66,28 @@
         { at: 'def:split', say: "a path cleaned by its text, as Plan 9's cleanname", weight: 2 },
         { at: 'def:walk', weight: 2 },
         { at: 'def:fileopen', weight: 1 },
-        // pipewrite's body: def: finds its prototype, and the banner
-        // above it ("// ---- pipes and the console") is no anchor
-        { at: 'line:405', say: 'a full pipe: BLOCKED, the write rerun', weight: 2 },
+        // pipewrite's body: def: finds its prototype
+        { at: 'code:"return block(&pi->w)"', say: 'a full pipe: BLOCKED, the write rerun', weight: 2 },
       ],
-      related: ['../TinyMkfs.ml'],
+      related: ['TinyMkfs.ml'],
+    },
+    'TinyMkfs.ml': { digest: 'd07c2834b463',
+      summary: "tiny-mkfs: t6's disk made on the host, as xv6's mkfs.c: a superblock, a FAT, the root's entries, the files' chains.",
+      important: [
+        { at: 'def:make', say: 'each file a chain of fresh blocks, its entry in root', weight: 3 },
+        { at: 'def:list', say: 'an image read back', weight: 1 },
+        { at: 'def:main', weight: 1 },
+      ],
+      related: ['file.c', '../../TinyKernelFS.ml'],
+    },
+    'TinyMkfs.mli': { digest: '692793c06802',
+      summary: "tiny-mkfs's idea and history: MS-DOS's FAT against Unix's inodes, and why the host makes the disk.",
+      important: [
+        { at: 'comment:"MS-DOS\'s idea, a FAT; the disk, in blocks of 1 KB"', weight: 3 },
+        { at: 'comment:"The two formats are the two answers to one question"', weight: 2 },
+        { at: 'comment:"The file system is made by a program of the host"', say: 'two programs that must agree on every byte', weight: 2 },
+        { at: 'def:make', weight: 2 },
+      ],
     },
   },
   skeletons: [
@@ -76,11 +98,13 @@
         { at: 'proc.c', role: 'the trap, the lottery, spawn' },
         { at: 'file.c', role: 'the FAT, pipes, the console' },
         { at: 'user/', role: 'the programs, given what they hold' },
+        { at: 'TinyMkfs.ml', role: 'the disk, made on the host' },
       ],
       joints: [
         { from: 'main.c', to: 'proc.c', say: '/init, the scheduler' },
         { from: 'user/', to: 'proc.c', say: 'system calls' },
         { from: 'proc.c', to: 'file.c', say: 'calls on files' },
+        { from: 'TinyMkfs.ml', to: 'file.c', say: 'fs.img: a FAT' },
       ],
     },
     {
@@ -105,11 +129,28 @@
         { from: 'proc.c:def:wakeup', to: 'proc.c:def:schedule', say: 'a ticket back in the draw' },
       ],
     },
-    // claude: each module its own skeleton (its parts, who uses whom)
+    {
+      name: 't6 main.c: the boot, then only traps',
+      bones: [
+        { at: 'main.c:def:main', role: 'the FAT, the vector, the timer, /init' },
+        { at: 'file.c:def:fsinit', role: 'the FAT read into memory' },
+        { at: 'main.c:def:printf', role: "the kernel's own printf" },
+        { at: 'main.c:def:consputc', role: 'a byte to the console device' },
+        { at: 'main.c:def:panic', role: 'the machine halted' },
+        { at: 'proc.c:def:schedule', role: 'from here on, traps only' },
+      ],
+      joints: [
+        { from: 'main.c:def:main', to: 'file.c:def:fsinit', say: 'first' },
+        { from: 'main.c:def:main', to: 'main.c:def:printf', say: 'the banner' },
+        { from: 'main.c:def:printf', to: 'main.c:def:consputc', say: 'each byte' },
+        { from: 'main.c:def:panic', to: 'main.c:def:printf', say: 'why' },
+        { from: 'main.c:def:main', to: 'proc.c:def:schedule', say: 'never back' },
+      ],
+    },
     {
       name: 't6 file.c: a FAT, a path by its text, a file its entry',
       bones: [
-        { at: 'file.c:def:fat', role: 'the table: each block its next' },
+        { at: 'file.c:def:fatset', role: 'the table: each block its next' },
         { at: 'file.c:def:bmap', role: "a file's k-th block, down the chain" },
         { at: 'file.c:def:lookup', role: "a name in a directory's blocks" },
         { at: 'file.c:def:walk', role: 'a path to its entry, .. by text' },
@@ -118,12 +159,21 @@
         { at: 'file.c:def:sys_read', role: 'read(fd, buf, n)' },
       ],
       joints: [
-        { from: 'file.c:def:fat', to: 'file.c:def:bmap', say: 'the chain' },
+        { from: 'file.c:def:fatset', to: 'file.c:def:bmap', say: 'the chain' },
         { from: 'file.c:def:lookup', to: 'file.c:def:walk', say: 'each element' },
         { from: 'file.c:def:walk', to: 'file.c:def:fileopen', say: 'the entry, its place' },
         { from: 'file.c:def:bmap', to: 'file.c:def:fileread', say: 'block numbers' },
         { from: 'file.c:def:sys_read', to: 'file.c:def:fileread', say: "the fd's file" },
       ],
     },
+    skeletons.onefile('tiny-mkfs: files to a FAT image', 'TinyMkfs.ml', [
+      ['TinyMkfs.ml:def:make', 'superblock, FAT, root, chains', 'the files, by name'],
+    ]) + {
+      bones+: [{ at: 'TinyMkfs.ml:def:list', role: 'an image listed back (-l)' }],
+      joints+: [{ from: 'TinyMkfs.ml:def:main', to: 'TinyMkfs.ml:def:list', say: '-l img' }],
+    },
+  ],
+  views: [
+    { name: "t6's FAT: made on the host, read by the kernel", files: ['TinyMkfs.ml', 'file.c', 't6.h'] },
   ],
 }

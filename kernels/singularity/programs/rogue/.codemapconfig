@@ -1,0 +1,29 @@
+// kernels/singularity/programs/rogue/: what the code map says of it (the
+// code map is tinybox codemap, in ~/github/ocaml-elm-playground).
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "A client that breaks the Pong contract, a second Ping too soon: it compiles, and the kernel ends it.",
+  files: {
+    'Main.ml': { digest: '39c2b3c97df0',
+      summary: "A client that breaks the Pong contract, a second Ping too soon: it compiles, and the kernel ends it.",
+      capitals: [ { at: "code:\"let () =\"", say: "Ping twice: the kernel ends it" } ],
+      important: [
+        { at: "code:\"Pong.Imp.ping pong 1\"", say: "the first is allowed; the next is not", weight: 3 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: "rogue: a contract broken at run time",
+      bones: [
+        { at: "Main.ml:code:\"let () =\"", role: "two Pings in a row" },
+        { at: "../../Channel.ml:def:allowed", role: "the state says no" },
+        { at: "../../Process.ml:def:ended", role: "the sender ended" },
+      ],
+      joints: [
+        { from: "Main.ml:code:\"let () =\"", to: "../../Channel.ml:def:allowed", say: "the second Ping" },
+        { from: "../../Channel.ml:def:allowed", to: "../../Process.ml:def:ended", say: "refused" },
+      ],
+    },
+  ],
+}

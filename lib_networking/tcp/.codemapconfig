@@ -1,0 +1,72 @@
+// lib_networking/tcp/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Where the bytes leave the machine: a TCP stream, a UDP packet, a name resolved; Unix sockets (plan9/: /net).",
+  files: {
+    'Tcp.mli': { digest: 'ca0a746ce807',
+      summary: "Cerf and Kahn's stream through the Berkeley sockets: connect, send all, receive all, with a timeout.",
+      capitals: [
+        { at: 'def:exchange', say: 'a request out, the whole answer back' },
+        { at: 'def:connect', say: 'a host by name, each address tried' },
+      ],
+      important: [
+        { at: 'comment:"Everything in networking/ is bytes in, bytes out"', say: 'the one module touching the system', weight: 3 },
+        { at: 'def:timeout', say: 'no SO_RCVTIMEO in mini-ml: select', weight: 2 },
+        { at: 'def:arrived', weight: 1 },
+      ],
+    },
+    'Tcp.ml': { digest: '639f22502577',
+      summary: "getaddrinfo, else Dns; each address tried; a read waits by select up to the timeout.",
+      important: [
+        { at: 'def:connect', say: 'getaddrinfo knows no name: ask Dns', weight: 3 },
+        { at: 'def:receive_all', say: 'until the server closes', weight: 2 },
+        { at: 'def:exchange', weight: 2 },
+      ],
+    },
+    'Udp.mli': { digest: 'd6e697f7887e',
+      summary: "Postel's three-page protocol: one packet out, one back, asked again; and peers for a game's netcode.",
+      important: [
+        { at: 'def:ask', say: "a question and its answer: the resolver's", weight: 3 },
+        { at: 'def:join', say: "lib_playground's netcode", weight: 1 },
+      ],
+    },
+    'Udp.ml': { digest: '030da34c49e1',
+      summary: 'A datagram socket: ask with retries, a host or a joiner exchanging packets.',
+      important: [{ at: 'def:ask', weight: 2 }],
+    },
+    'Dns.mli': { digest: 'be446aa43f9e',
+      summary: "Mockapetris's DNS: one question in a UDP packet to resolv.conf's server; mini-ml's Unix has no resolver.",
+      capitals: [{ at: 'def:resolve', say: "a name's IPv4 addresses" }],
+      important: [{ at: 'comment:"id | flags | 1 question | n answers"', say: "the packet's layout", weight: 3 }],
+    },
+    'Dns.ml': { digest: '6060355c429d',
+      summary: 'The question built, the answers read past compressed names; A records only.',
+      important: [
+        { at: 'def:question', weight: 2 },
+        { at: 'def:skip_name', say: 'a pointer: two bytes, 0xC0', weight: 1 },
+        { at: 'def:answers', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.chain('A host by its name, then a stream', [
+      ['Tcp.ml:def:exchange', 'a request and its answer', ''],
+      ['Tcp.ml:def:connect', 'the host resolved, connected', 'the host'],
+      ['Dns.ml:def:resolve', 'a name with no address yet', 'getaddrinfo knew none'],
+      ['Udp.ml:def:ask', 'one packet to port 53', 'the question'],
+    ]),
+    skeletons.parts('Unix or Plan 9', [
+      ['Tcp.ml', 'sockets'],
+      ['Udp.ml', 'datagrams'],
+      ['Dns.ml', 'names'],
+      ['plan9/', "the same on mini-9pi's /net"],
+    ], [
+      ['Tcp.ml', 'Dns.ml', 'a name'],
+      ['Dns.ml', 'Udp.ml', 'a packet'],
+      ['plan9/', 'Tcp.ml', 'the same interface, OS=plan9'],
+    ]),
+  ],
+}

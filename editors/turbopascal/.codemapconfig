@@ -1,0 +1,59 @@
+// editors/turbopascal/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-turbopascal: Turbo Pascal 7's IDE on mini-pascal, the IDE a Tui program and three hosts.",
+  dirs: {
+    tests: { summary: "The playground's sessions played by Keys, their screens and pictures' sums compared, by dune's build and mini-ml's." },
+  },
+  files: {
+    'Keys.mli': { digest: '089970ebb4aa',
+      summary: "The IDE with no screen: a script of keys given to the Tui program, the screen left as text.",
+      important: [
+        { at: 'comment:"A Tui program is a"', say: 'a function of its keys: a session a line', weight: 3 },
+        { at: 'def:run', weight: 2 },
+      ],
+    },
+    'Keys.ml': { digest: '615b8dc98e98',
+      summary: 'Words to the bytes a terminal sends, a tick after each key, 16x60 a resize; the program stepped.',
+      important: [
+        { at: 'def:run_each', say: 'update and view by hand, a key at a time', weight: 3 },
+        { at: 'def:key', say: "Vt.key's names to a terminal's bytes", weight: 1 },
+        { at: 'def:size', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.parts('mini-turbopascal: one IDE, three hosts and a script', [
+      ['editor/', 'the IDE: a model, a key, a screen'],
+      ['tty/', 'a terminal, or a script'],
+      ['hosts/sdl/', 'a window on Linux'],
+      ['hosts/draw/', 'a window on mini-9pi'],
+      ['Keys.ml', 'no host: keys played for the tests'],
+      ['../../languages/pascal/', 'the compiler and the P-machine'],
+    ], [
+      ['../../languages/pascal/', 'editor/', 'compile, run, step'],
+      ['editor/', 'tty/', 'Tui_turbo.program'],
+      ['editor/', 'hosts/sdl/', 'Tui_turbo.program'],
+      ['editor/', 'hosts/draw/', 'Tui_turbo.program'],
+      ['editor/', 'Keys.ml', 'Tui_turbo.program'],
+      ['Keys.ml', 'tty/', '-keys'],
+    ]),
+  ],
+  tours: [
+    { name: 'From F9 to a program paused under the debugger',
+      stops: [
+        { at: 'editor/Tui_turbo.mli:comment:"The modules, a key\'s way."', say: "The IDE's modules on one key's way." },
+        { at: 'editor/Turbo_model.mli:type:model', say: 'All of the IDE is this value: the text, the floppy, the screen, the program.' },
+        { at: 'editor/Turbo_update.ml:def:key_now', say: 'Whose key it is depends on what is on the screen.' },
+        { at: 'editor/Turbo_menus.ml:def:act', say: 'F9 and the Compile menu end here, one function for every command.' },
+        { at: 'editor/Turbo_debug.ml:def:go', say: 'A run or a step: the session started, a goal given.' },
+        { at: 'editor/Turbo_debug.ml:def:advance', say: 'The P-machine run a slice a frame; its stop decides the mode.' },
+        { at: 'editor/Turbo_view.ml:def:view', say: 'The screen drawn in layers, Turbo Pascal 7 blue.' },
+        { at: 'Keys.ml:def:run_each', say: 'The same program with no host: how the tests play it.' },
+      ],
+    },
+  ],
+}

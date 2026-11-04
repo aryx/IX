@@ -1,0 +1,286 @@
+// lib_gui/: what the code map says of it
+local skeletons = import '../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "A GUI toolkit from scratch, the playground's libs/gui: widgets, layout, text, and four ways to wire them.",
+  files: {
+    'Widget.ml': {
+      summary: 'A widget as a box, a hit test and paint: the vocabulary every other module speaks.',
+      digest: '2c77314cefd0',
+    },
+    'Widget.mli': {
+      summary: 'What a widget is: a rectangle, a drawing, a hit test; the state left to the architectures.',
+      digest: '743b9859ee03',
+      capitals: [
+        { at: 'type:box', say: 'placed by its centre, as every shape' },
+        { at: 'type:paint', say: 'rectangles and text: Gui.ml makes shapes' },
+        { at: 'type:input', say: 'the mouse and keys of one frame' },
+      ],
+      important: [
+        { at: 'comment:"the fourth is the whole argument"', say: 'where the four architectures differ', weight: 3 },
+        { at: 'def:text_width', say: 'an average, not a measurement', weight: 1 },
+      ],
+    },
+    'Theme.ml': {
+      summary: "The toolkit's colours and sizes, one record and its default.",
+      digest: '6250f37e00c9',
+    },
+    'Theme.mli': {
+      summary: "Where a toolkit's look lives, after X resources and CSS: face, face_hot, face_down.",
+      digest: '6a3b7272bc38',
+      capitals: [{ at: 'type:t', say: 'every colour and size, in one value' }],
+    },
+    'Layout.ml': {
+      summary: "Flutter's layout in two passes: constraints down and sizes up, then the parent places.",
+      digest: '685000f076be',
+      important: [
+        { at: 'def:child_sizes', say: 'the room left shared among the flexible', weight: 3 },
+        { at: 'def:measure', say: 'pass one: sizes come back up', weight: 3 },
+        { at: 'def:arrange', say: 'pass two: the parent positions', weight: 1 },
+      ],
+      links: [{ from: 'def:arrange', to: 'def:measure' }],
+    },
+    'Layout.mli': {
+      summary: "Where things go, Flutter's three rules, compared with Tk's pack and the web's boxes.",
+      digest: '20d9ce34a590',
+      capitals: [
+        { at: 'def:leaf', say: 'a widget of a size, placed later' },
+        { at: 'def:arrange', say: 'the tree in, every box out' },
+      ],
+      important: [{ at: 'type:constraints', say: 'the room offered, min and max', weight: 1 }],
+    },
+    'Grid.ml': {
+      summary: "Tk's grid: columns as wide as their widest cell, spans, sticky edges, weights.",
+      digest: '1df4cbdb7387',
+    },
+    'Grid.mli': {
+      summary: 'A table whose fields line up, which rows of rows cannot do; Tk 4.1 vocabulary.',
+      digest: 'd5726ad6eaba',
+    },
+    'Text.ml': {
+      summary: 'UTF-8 characters and the fixed-width cells a field lays them in.',
+      digest: '04b73f8b6ee5',
+    },
+    'Text.mli': {
+      summary: 'A string as the person sees it: characters, not bytes, in cells a click can name.',
+      digest: 'df036e9246af',
+      capitals: [
+        { at: 'def:chars', say: 'how many the person sees' },
+        { at: 'def:edit', say: 'one frame of typing in a field' },
+      ],
+      important: [{ at: 'def:prev_char', say: 'backspace steps over a whole sequence', weight: 3 }],
+    },
+    'Text_edit.ml': {
+      summary: 'A piece table with a caret, a selection and every earlier version for undo.',
+      digest: '7c469911a232',
+      important: [
+        { at: 'type:piece', say: 'a slice of the original or the added', weight: 3 },
+        { at: 'def:split', say: 'a piece cut where an edit falls', weight: 3 },
+        { at: 'def:remember', say: 'undo: the old list of pieces kept', weight: 1 },
+        { at: 'def:place', say: 'a click to an offset, through the lines', weight: 1 },
+      ],
+    },
+    'Text_edit.mli': {
+      summary: "A text being edited: a string, a gap buffer or Word's piece table, and why the last.",
+      digest: '3dbf40012007',
+      capitals: [{ at: 'type:t', say: 'the text, its caret and its past' }],
+    },
+    'Look.ml': {
+      summary: 'Every widget drawn once, from its state, for all four architectures to share.',
+      digest: '1bddce735b63',
+      important: [
+        { at: 'def:face', say: 'face, hot or down: the button alive', weight: 3 },
+        { at: 'def:field', say: 'the caret and the cells shown', weight: 1 },
+        { at: 'def:menu_items', say: 'a dropdown, open', weight: 1 },
+      ],
+    },
+    'Look.mli': {
+      summary: 'How a widget is drawn and nothing of who keeps its state, so the four compare fairly.',
+      digest: 'd0fe57037250',
+      important: [{ at: 'comment:"hot is computed now"', say: 'the four answers to "is it hot?"', weight: 3 }],
+    },
+    'Focus.ml': {
+      summary: 'Who gets the keys, and the tab order that comes free from the order asked.',
+      digest: 'af384a1a4045',
+    },
+    'Focus.mli': {
+      summary: 'Keyboard focus in immediate mode: the widgets asked in order are the tab order.',
+      digest: '10142ee90197',
+    },
+    'Immediate.ml': {
+      summary: "Immediate mode after Casey Muratori and Dear ImGui: a widget asked for each frame.",
+      digest: '4ff7674f4a81',
+      important: [
+        { at: 'def:frame', say: 'capture and focus decided before any widget', weight: 3 },
+        { at: 'def:interact', say: 'hot, held, clicked: the capture changes here', weight: 3 },
+        { at: 'def:button', say: 'a bool lasting as long as its if', weight: 1 },
+        { at: 'def:text_area', say: 'a Text_edit with its own caret', weight: 1 },
+      ],
+      links: [{ from: 'def:button', to: 'def:interact' }],
+    },
+    'Immediate.mli': {
+      summary: 'Widgets that do not exist: no tree, no callback, a bool per frame; fits a game loop.',
+      digest: 'b7d65c4e69fc',
+      capitals: [{ at: 'type:t', say: 'all that survives a frame: capture, theme' }],
+    },
+    'Retained.ml': {
+      summary: 'Callback widgets as mutable objects, walked each frame to fire their callbacks.',
+      digest: '5dbccae4a39f',
+      important: [
+        { at: 'def:make', say: 'the object: its own hot, value, text', weight: 3 },
+        { at: 'def:handle', say: 'one frame: find the widget, call its function', weight: 3 },
+      ],
+    },
+    'Retained.mli': {
+      summary: 'The oldest answer, Tk to Swing: objects with callbacks, and the truth scattered.',
+      digest: '8532ce1491d9',
+      important: [{ at: 'comment:"the truth is scattered"', say: 'why it scales badly', weight: 3 }],
+    },
+    'Mvc.ml': {
+      summary: 'A model with a list of watchers, told when it changes.',
+      digest: '49c86713c4f0',
+    },
+    'Mvc.mli': {
+      summary: "Reenskaug's Model-View-Controller of 1979: the model the truth, views notified.",
+      digest: '65e5c21e57f5',
+    },
+    'Mvu.ml': {
+      summary: "Elm's Model-View-Update: a view of widgets carrying messages, the frame's messages found.",
+      digest: 'eeb43bb90556',
+      important: [
+        { at: 'def:events', say: "the frame's input turned into messages", weight: 3 },
+        { at: 'def:step', say: 'view, events, update: one turn of the loop', weight: 3 },
+      ],
+    },
+    'Mvu.mli': {
+      summary: 'Model-View-Update, the idea that won: the view a function of the model.',
+      digest: '4162a62604c4',
+    },
+  },
+  skeletons: [
+    skeletons.parts('A widget, its look, and four ways to wire it', [
+      ['Widget.mli', 'the vocabulary: box, input, paint'],
+      ['Theme.mli', 'the colours a widget asks for'],
+      ['Look.mli', 'the paint, shared by the four'],
+      ['Layout.mli', 'where the boxes go'],
+      ['Text_edit.mli', 'the text in a field or an area'],
+      ['Immediate.mli', 'wired as questions asked each frame'],
+      ['Retained.mli', 'wired as objects with callbacks'],
+      ['Mvu.mli', 'wired as a model and its messages'],
+      ['../lib_playground/apis/Gui.ml', 'the adapter: paint to shapes'],
+    ], [
+      ['Look.mli', 'Widget.mli', 'draws in'],
+      ['Look.mli', 'Theme.mli', 'its colours'],
+      ['Immediate.mli', 'Look.mli', 'drawn by'],
+      ['Retained.mli', 'Look.mli', 'drawn by'],
+      ['Mvu.mli', 'Look.mli', 'drawn by'],
+      ['Immediate.mli', 'Text_edit.mli', 'a text area'],
+      ['Layout.mli', 'Widget.mli', 'boxes out'],
+      ['../lib_playground/apis/Gui.ml', 'Immediate.mli', 'runs'],
+    ]),
+    {
+      name: 'Immediate mode: one frame',
+      bones: [
+        { at: 'Immediate.ml:type:t', role: 'the capture, the focus, the paint so far' },
+        { at: 'Immediate.ml:def:frame', role: "the frame's input: capture and focus first" },
+        { at: 'Immediate.ml:def:button', role: 'a widget asked for' },
+        { at: 'Immediate.ml:def:field', role: 'a field: the keys if it has the focus' },
+        { at: 'Immediate.ml:def:interact', role: 'hot, held, clicked' },
+        { at: 'Immediate.ml:def:draw', role: 'its paint added' },
+      ],
+      joints: [
+        { from: 'Immediate.ml:def:frame', to: 'Immediate.ml:type:t', say: 'the new frame' },
+        { from: 'Immediate.ml:type:t', to: 'Immediate.ml:def:button', say: 'the state asked' },
+        { from: 'Immediate.ml:type:t', to: 'Immediate.ml:def:field', say: 'the state asked' },
+        { from: 'Immediate.ml:def:button', to: 'Immediate.ml:def:interact', say: 'the mouse' },
+        { from: 'Immediate.ml:def:field', to: 'Immediate.ml:def:interact', say: 'the mouse' },
+        { from: 'Immediate.ml:def:interact', to: 'Immediate.ml:def:draw', say: 'drawn as hot or held' },
+      ],
+    },
+    {
+      name: 'Layout: two passes',
+      bones: [
+        { at: 'Layout.ml:type:t', role: 'the tree: leaves, rows, columns' },
+        { at: 'Layout.ml:def:arrange', role: 'the entry: a tree and a box' },
+        { at: 'Layout.ml:def:measure', role: 'pass one: constraints down, sizes up' },
+        { at: 'Layout.ml:def:measure_line', role: 'a row or column measured' },
+        { at: 'Layout.ml:def:child_sizes', role: 'the room shared among the flexible' },
+        { at: 'Layout.ml:def:arrange_line', role: 'pass two: the parent places' },
+      ],
+      joints: [
+        { from: 'Layout.ml:type:t', to: 'Layout.ml:def:arrange', say: 'the tree' },
+        { from: 'Layout.ml:def:arrange', to: 'Layout.ml:def:measure', say: 'how big?' },
+        { from: 'Layout.ml:def:measure', to: 'Layout.ml:def:measure_line', say: 'a line' },
+        { from: 'Layout.ml:def:measure_line', to: 'Layout.ml:def:child_sizes', say: 'its children' },
+        { from: 'Layout.ml:def:arrange', to: 'Layout.ml:def:arrange_line', say: 'the box got' },
+        { from: 'Layout.ml:def:arrange_line', to: 'Layout.ml:def:child_sizes', say: 'their sizes' },
+      ],
+    },
+    skeletons.module_calls('Look.ml', 'The paint of every widget', 'face', 'face, hot or down', [
+      ['button', 'a button', 'its face'],
+      ['slider', 'a slider', 'its face'],
+      ['checkbox', 'a checkbox', 'its face'],
+      ['menu_closed', 'a dropdown, shut', 'its face'],
+    ]) + {
+      bones+: [{ at: 'Look.ml:def:field', role: 'a field: cells and caret' }, { at: 'Look.ml:def:advance', role: 'the width of a cell' }],
+      joints+: [{ from: 'Look.ml:def:field', to: 'Look.ml:def:advance', say: 'where each cell is' }],
+    },
+    {
+      name: 'Retained: objects and their callbacks',
+      bones: [
+        { at: 'Retained.ml:type:t', role: 'the widget object, mutable' },
+        { at: 'Retained.ml:def:make', role: 'one made' },
+        { at: 'Retained.ml:def:window', role: 'the root and the mouse remembered' },
+        { at: 'Retained.ml:def:handle', role: 'a frame: the callbacks fire' },
+        { at: 'Retained.ml:def:leaves', role: 'the tree walked' },
+        { at: 'Retained.ml:def:paint', role: 'each object drawn from its fields' },
+      ],
+      joints: [
+        { from: 'Retained.ml:def:make', to: 'Retained.ml:type:t', say: 'a new object' },
+        { from: 'Retained.ml:type:t', to: 'Retained.ml:def:window', say: 'the tree' },
+        { from: 'Retained.ml:def:window', to: 'Retained.ml:def:handle', say: 'the input' },
+        { from: 'Retained.ml:def:handle', to: 'Retained.ml:def:leaves', say: 'which is hit' },
+        { from: 'Retained.ml:def:window', to: 'Retained.ml:def:paint', say: 'drawn' },
+      ],
+    },
+    {
+      name: 'Model-View-Update: one step',
+      bones: [
+        { at: 'Mvu.ml:type:element', role: 'the view: widgets carrying messages' },
+        { at: 'Mvu.ml:type:t', role: "the toolkit's own state: focus, held" },
+        { at: 'Mvu.ml:def:step', role: 'one turn: view, events, update' },
+        { at: 'Mvu.ml:def:events', role: "the frame's input made messages" },
+        { at: 'Mvu.ml:def:leaves', role: 'the view flattened' },
+      ],
+      joints: [
+        { from: 'Mvu.ml:def:step', to: 'Mvu.ml:type:element', say: 'the view of the model' },
+        { from: 'Mvu.ml:type:element', to: 'Mvu.ml:def:events', say: 'what may be hit' },
+        { from: 'Mvu.ml:def:events', to: 'Mvu.ml:def:leaves', say: 'each widget' },
+        { from: 'Mvu.ml:def:events', to: 'Mvu.ml:type:t', say: 'the new focus' },
+        { from: 'Mvu.ml:def:events', to: 'Mvu.ml:def:step', say: 'the messages, to update' },
+      ],
+    },
+    {
+      name: 'A piece table with undo',
+      bones: [
+        { at: 'Text_edit.ml:type:t', role: 'the pieces, the caret, the past' },
+        { at: 'Text_edit.ml:def:insert', role: 'typing' },
+        { at: 'Text_edit.ml:def:raw_insert', role: 'a piece added' },
+        { at: 'Text_edit.ml:def:split', role: 'a piece cut at the offset' },
+        { at: 'Text_edit.ml:def:remember', role: 'the old pieces kept' },
+        { at: 'Text_edit.ml:def:undo', role: 'an earlier list back' },
+      ],
+      joints: [
+        { from: 'Text_edit.ml:def:insert', to: 'Text_edit.ml:def:remember', say: 'before' },
+        { from: 'Text_edit.ml:def:insert', to: 'Text_edit.ml:def:raw_insert', say: 'the text' },
+        { from: 'Text_edit.ml:def:raw_insert', to: 'Text_edit.ml:def:split', say: 'where' },
+        { from: 'Text_edit.ml:def:raw_insert', to: 'Text_edit.ml:type:t', say: 'a new list' },
+        { from: 'Text_edit.ml:def:remember', to: 'Text_edit.ml:def:undo', say: 'the past' },
+      ],
+    },
+  ],
+  views: [
+    { name: 'The four architectures side by side', files: ['Immediate.mli', 'Retained.mli', 'Mvc.mli', 'Mvu.mli'] },
+    { name: 'The toolkit and its adapter to the playground', files: ['Widget.mli', '../lib_playground/apis/Gui.ml'] },
+  ],
+}

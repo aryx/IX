@@ -1,0 +1,66 @@
+// kernels/9pi/buses/user/usbd/: what the code map says of it (the code map
+// is tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). A program for
+// mini-9pi, built by its mkfile (mini-ml), run by the boot script.
+local skeletons = import '../../../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-usbd: Plan 9's usbd and kb, the bus walked from user space, keyboards and mice driven.",
+  files: {
+    'Usbd.ml': { digest: '3ec6d01fc1d3',
+      summary: 'The bus walked by lib_usb over #u; a process per keyboard or mouse writing #Ι/kbin, #m/mousein.',
+      capitals: [
+        { at: 'def:main', say: 'usbd: the bus walked, then watched' },
+      ],
+      important: [
+        { at: 'comment:"So a device\'s driver is a program"', say: 'the kernel knows no device', weight: 3 },
+        { at: 'def:reports', say: 'a report a packet: a larger read would wait', weight: 3 },
+        { at: 'def:drive', say: "an endpoint made, a process forked to read it", weight: 2 },
+        { at: 'comment:"a note group of its own"', say: "the console's DEL is not for the keyboard's reader", weight: 1 },
+        { at: 'code:"let io : Usbdev.t Usbbus.io"', say: "Usbbus's I/O as #u's files", weight: 3 },
+        { at: 'comment:"the one that stays, and looks again"', say: 'four looks a second: plugged, unplugged', weight: 2 },
+      ],
+    },
+    'Usbdev.mli': { digest: '0b1324497078',
+      summary: "A USB device as #u gives it to a program (usbd's dev.c): an endpoint's ctl and data files.",
+      capitals: [
+        { at: 'type:t', say: 'an endpoint: its ctl and data files' },
+      ],
+      important: [
+        { at: 'comment:"for an endpoint 0, a write is a control request"', weight: 2 },
+        { at: 'def:ask', say: 'a control request and its answer', weight: 2 },
+      ],
+    },
+    'Usbdev.ml': { digest: '83412a4f7a54',
+      summary: "Files under #u/usb/epN.M opened, words written to ctl, the kernel's refusals as Failure.",
+      important: [
+        { at: 'def:failing', say: "the kernel's errstr as a Failure", weight: 2 },
+        { at: 'def:ask', weight: 2 },
+        { at: 'def:said', say: "the ctl's answer: a new device's name", weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.onefile('mini-usbd: the bus walked, a process per device', 'Usbd.ml', [
+      ['Usbd.ml:code:"let io : Usbdev.t Usbbus.io"', "lib_usb's walk given #u's files", 'the root hub opened'],
+      ['../../lib_usb/Usbbus.ml:def:look', 'every port looked at: devices found', 'the bus'],
+      ['Usbd.ml:def:drive', 'a keyboard or a mouse: its endpoint, a process', 'each HID device'],
+      ['Usbd.ml:def:reports', 'reports read, their meaning written', 'the endpoint'],
+      ['../../lib_usb/Hid.ml:def:typed', 'a report to scancodes', 'a report'],
+    ]),
+    {
+      name: "A device's files, as a program uses them",
+      bones: [
+        { at: 'Usbdev.ml:type:t', role: 'an endpoint: its directory, ctl and data' },
+        { at: 'Usbdev.ml:def:ctl', role: 'a setting written to ctl' },
+        { at: 'Usbdev.ml:def:ask', role: 'a control request: setup written, answer read' },
+        { at: 'Usbdev.ml:def:failing', role: "the kernel's refusal as Failure" },
+      ],
+      joints: [
+        { from: 'Usbdev.ml:def:ctl', to: 'Usbdev.ml:type:t', say: 'ctl' },
+        { from: 'Usbdev.ml:def:ask', to: 'Usbdev.ml:type:t', say: 'data' },
+        { from: 'Usbdev.ml:def:ctl', to: 'Usbdev.ml:def:failing', say: 'refused' },
+      ],
+    },
+  ],
+}

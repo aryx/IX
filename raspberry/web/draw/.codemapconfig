@@ -1,0 +1,56 @@
+// raspberry/web/draw/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). Its dune copies
+// mini-9pi's Memchan, Memimage and Memgeneral here, compiled for the host.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "memdraw's general loop run by the emulator on the guest kernel's images: the kernel's own code.",
+  files: {
+    'Hostdraw.mli': { digest: 'c7a334d6ccf8',
+      summary: "mini-9pi's draws done by the host: the kernel's Memgeneral compiled here, on the guest's RAM.",
+      capitals: [
+        { at: 'def:install', say: "Board.host_draw: the kernel's draws, by the host" },
+      ],
+      important: [
+        { at: 'comment:"Memdraw.draw (the kernel, ARM)"', say: 'from the kernel to the host and back', weight: 3 },
+        { at: 'comment:"the loop is not written again here"', say: 'the same pixels by construction', weight: 3 },
+      ],
+    },
+    'Hostdraw.ml': { digest: 'f1b2fd7672f9',
+      summary: "A draw's descriptor read, its three images made over the board's RAM, Memgeneral.general run.",
+      important: [
+        { at: 'def:chan', say: 'a chan the host knows, or declined', weight: 1 },
+        { at: 'def:draw', say: 'images over the RAM: nothing copied', weight: 3 },
+        { at: 'def:install', weight: 2 },
+      ],
+    },
+    'Machine.mli': { digest: 'e0e36959e438',
+      summary: "The kernel's Machine.Imag as Memimage asks it, for the host: OCaml's heap, never freed.",
+    },
+    'Machine.ml': { digest: '4a52a7f8d9e9',
+      summary: "Imag's four functions for the host: alloc in the heap, the rest nothing.",
+    },
+    'Memdata.ml': { digest: '22e0c2dcdf59',
+      summary: "The colour map's tables empty: Hostdraw declines a colour-mapped image.",
+    },
+  },
+  skeletons: [
+    {
+      name: "The kernel's draw, done by the host",
+      bones: [
+        { at: 'Hostdraw.ml:def:install', role: "Board.host_draw set" },
+        { at: 'Hostdraw.ml:def:draw', role: 'the descriptor: three images in the RAM' },
+        { at: 'Hostdraw.ml:def:chan', role: "a chan decoded, or declined" },
+        { at: 'Machine.ml', role: "Imag, the kernel's, stubbed" },
+        { at: 'Memdata.ml', role: 'no colour map' },
+        { at: '../../../kernels/9pi/lib_graphics/lib_memdraw/Memgeneral.ml:def:general', role: "the kernel's loop, compiled for the host" },
+      ],
+      joints: [
+        { from: 'Hostdraw.ml:def:install', to: 'Hostdraw.ml:def:draw' },
+        { from: 'Hostdraw.ml:def:draw', to: 'Hostdraw.ml:def:chan', say: 'each image' },
+        { from: 'Hostdraw.ml:def:draw', to: '../../../kernels/9pi/lib_graphics/lib_memdraw/Memgeneral.ml:def:general', say: 'dst, src, mask' },
+        { from: 'Hostdraw.ml:def:chan', to: 'Memdata.ml', say: 'a CMAP8 declined' },
+      ],
+    },
+  ],
+}

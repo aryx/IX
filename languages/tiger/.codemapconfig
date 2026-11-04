@@ -1,0 +1,131 @@
+// languages/tiger/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-tiger: Appel's Tiger, with fork-tiger's exceptions, compiled to .NET assemblies that mini-dotnet runs.",
+  files: {
+    'Main.ml': { digest: 'caa54e0f0f3f',
+      summary: 'mini-tiger, the program: Cap.main and logging, then the command line.',
+    },
+    'CLI.mli': { digest: '2cd9eddba2a4',
+      summary: "Tiger (Appel's textbooks, 1998) to a .dll: lexer, parser, names and types, frames as classes, IL.",
+      important: [
+        { at: 'comment:"Tiger_lexer, Tiger_parser   ocamllex"', say: 'the pipeline, a pass a line', weight: 3 },
+        { at: 'comment:"is a front end of it"', say: 'the history: Appel, then fork-tiger and C--', weight: 1 },
+        { at: 'def:main', weight: 1 },
+      ],
+    },
+    'CLI.ml': { digest: 'f9c6acc80011',
+      summary: 'A .tig file parsed, checked, emitted: the .dll and the runtimeconfig.json that dotnet asks for.',
+      capitals: [
+        { at: 'def:compile', say: 'the passes, one after the other' },
+      ],
+      important: [
+        { at: 'def:compile', weight: 3 },
+        { at: 'code:"Tiger_parser.program Tiger_lexer.token lexbuf"', say: "ocamlyacc's parser", weight: 2 },
+        { at: 'code:"Tiger_emit.program name prog"', say: 'the back end, in dotnet/', weight: 2 },
+        { at: 'def:main', weight: 1 },
+      ],
+      links: [
+        { from: 'def:main', to: 'def:compile' },
+      ],
+    },
+    'Tiger_ast.ml': { digest: 'cfb9ede0ac45',
+      summary: "Tiger's tree as parsed: Appel's Absyn (chapter 4) with exceptions; & and | already ifs.",
+      capitals: [
+        { at: 'type:exp', say: "Appel's Absyn: what the parser makes" },
+      ],
+      important: [
+        { at: 'type:exp', weight: 3 },
+        { at: 'type:dec', say: 'groups: consecutive declarations', weight: 2 },
+        { at: 'type:var', weight: 1 },
+        { at: 'type:fundec', weight: 1 },
+      ],
+    },
+    'Tiger_tree.ml': { digest: 'bdf70b5a50ca',
+      summary: 'The tree checked: each name its declaration, each expression its type, functions with their nesting.',
+      capitals: [
+        { at: 'type:func', say: 'a function: its static parent, nested or not' },
+        { at: 'type:program', say: 'what the back end reads' },
+      ],
+      important: [
+        { at: 'comment:"which is what decides where it lives on .NET"', say: 'escaping: a field of a frame, or a local', weight: 3 },
+        { at: 'type:var', say: 'escapes: set by Tiger_semant', weight: 2 },
+        { at: 'type:ty', say: 'types by name: a record is one record', weight: 2 },
+        { at: 'type:exp', weight: 1 },
+      ],
+    },
+    'Tiger_semant.mli': { digest: 'e5b4c900e60c',
+      summary: "Names and types checked (Appel's 5) and the escapes found on the way (his 6): the tree remade.",
+      important: [
+        { at: 'comment:"a group of types or functions"', say: 'mutual recursion: a group entered at once', weight: 2 },
+        { at: "comment:\"Tiger's types are by name\"", weight: 2 },
+        { at: 'def:program', weight: 2 },
+      ],
+    },
+    'Tiger_semant.ml': { digest: 'ce4262c866df',
+      summary: 'The checker: environments as lists, innermost first; each use resolved, escapes marked as found.',
+      capitals: [
+        { at: 'def:exp', say: 'an expression checked and resolved' },
+      ],
+      important: [
+        { at: 'type:env', say: 'the current function decides escapes', weight: 2 },
+        { at: 'def:exp', weight: 3 },
+        { at: 'comment:"used by a function other than its own: it escapes"', say: "Appel's escape analysis, one line", weight: 3 },
+        { at: 'def:types', say: 'a group of types, cycles refused', weight: 1 },
+        { at: 'def:funcs', say: 'a group of functions, headers first', weight: 1 },
+        { at: 'def:program', say: 'main: the program as a function', weight: 2 },
+      ],
+      links: [
+        { from: 'def:program', to: 'def:exp' },
+        { from: 'def:exp', to: 'def:dec' },
+        { from: 'def:exp', to: 'def:lvalue' },
+      ],
+    },
+  },
+  dirs: {
+    tests: { summary: "Tiger programs, Appel's test suite among them, compiled and run on mini-dotnet." },
+  },
+  skeletons: [
+    skeletons.cli('mini-tiger: a .tig to a .dll', [
+      ['CLI.ml:def:compile', 'the passes, in order'],
+      ['Tiger_semant.ml:def:program', 'names and types; the escapes'],
+      ['dotnet/Tiger_emit.ml:def:program', 'frames as classes, IL, the assembly'],
+    ]) + {
+      bones+: [
+        { at: 'Tiger_ast.ml:type:exp', role: 'the tree parsed (ocamlyacc)' },
+        { at: 'Tiger_tree.ml:type:program', role: 'the tree resolved' },
+      ],
+      joints+: [
+        { from: 'CLI.ml:def:compile', to: 'Tiger_ast.ml:type:exp', say: 'parsed' },
+        { from: 'Tiger_ast.ml:type:exp', to: 'Tiger_semant.ml:def:program', say: 'checked' },
+        { from: 'Tiger_semant.ml:def:program', to: 'Tiger_tree.ml:type:program', say: 'each name its declaration' },
+        { from: 'Tiger_tree.ml:type:program', to: 'dotnet/Tiger_emit.ml:def:program', say: 'emitted' },
+      ],
+    },
+    {
+      name: 'The checker: a name to its declaration',
+      bones: [
+        { at: 'Tiger_semant.ml:def:program', role: 'main as a function; the lists reset' },
+        { at: 'Tiger_semant.ml:type:env', role: 'types, values, exceptions; the current function' },
+        { at: 'Tiger_semant.ml:def:exp', role: 'an expression: its type, its tree' },
+        { at: 'Tiger_semant.ml:def:dec', role: 'a declaration group entered' },
+        { at: 'Tiger_semant.ml:def:lvalue', role: 'a variable used: escapes?' },
+        { at: 'Tiger_tree.ml:type:var', role: 'escapes: what the back end reads' },
+      ],
+      joints: [
+        { from: 'Tiger_semant.ml:def:program', to: 'Tiger_semant.ml:type:env', say: 'the builtins' },
+        { from: 'Tiger_semant.ml:type:env', to: 'Tiger_semant.ml:def:exp', say: 'the scope' },
+        { from: 'Tiger_semant.ml:def:exp', to: 'Tiger_semant.ml:def:dec', say: 'let ... in' },
+        { from: 'Tiger_semant.ml:def:dec', to: 'Tiger_semant.ml:type:env', say: 'names added' },
+        { from: 'Tiger_semant.ml:def:exp', to: 'Tiger_semant.ml:def:lvalue', say: 'a place' },
+        { from: 'Tiger_semant.ml:def:lvalue', to: 'Tiger_tree.ml:type:var', say: 'marked' },
+      ],
+    },
+  ],
+  views: [
+    { name: 'Tiger on .NET: the compiler and the machine it targets', files: ['dotnet/', '../dotnet/assembly/', '../dotnet/'] },
+  ],
+}

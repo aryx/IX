@@ -3,10 +3,10 @@
 // guidelines: docs/claude_notes/codemapconfig_guidelines.md there).
 // Emmc.ml's interface is ../Emmc.mli.
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "The SD card's driver for the Pi's ARM boards: the EMMC controller's registers and the SD commands.",
   files: {
-    'Emmc.ml': { digest: '98c7f3b1d958',
+    'Emmc.ml': { digest: 'e1fb185e0341',
       summary: "emmc.c and sdmmc.c: a command sent and waited for, the card identified, blocks through the data port.",
       capitals: [
         { at: 'def:online', say: 'GO_IDLE to bus width 4: the card ready' },

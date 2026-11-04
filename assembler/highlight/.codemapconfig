@@ -1,0 +1,45 @@
+// assembler/highlight/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there).
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "An assembly file's colours for mini-emacs, copied from the author's playground: as86, gas, Plan 9.",
+  files: {
+    'Highlight_asm.mli': { digest: '2eacd82a4b64',
+      summary: 'Assembly cut into coloured spans line by line, with no grammar: comments, labels, mnemonics.',
+      capitals: [
+        { at: 'def:lines', say: "mini-emacs's asm mode calls this" },
+      ],
+      important: [
+        { at: 'comment:"Read line by line, without an assembler"', say: 'no grammar: three assemblers at once', weight: 2 },
+        { at: 'comment:"leading underscore in"', say: "stale here: ix's copy keeps no definitions", weight: 2 },
+      ],
+    },
+    'Highlight_asm.ml': { digest: '4520593a6fdf',
+      summary: "The playground's analyze cut down to its spans: no definitions or references, as ix needs none.",
+      important: [
+        { at: "comment:\"the author's playground's languages\"", say: 'what this copy dropped', weight: 2 },
+        { at: 'def:lines', weight: 3 },
+        { at: "comment:\"ARM's assembly comments with @\"", say: "@ comments, # immediates: ARM's not gas's", weight: 2 },
+        { at: 'def:jumps', say: "x86's jumps, coloured apart", weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    { name: 'A file to coloured lines',
+      bones: [
+        { at: 'Highlight_asm.ml:def:lines', role: 'each line: comments, label, mnemonic, operands' },
+        { at: 'Highlight_asm.ml:type:tok', role: 'a word, its place, its category' },
+        { at: 'Highlight_asm.ml:def:is_start', role: 'where a name starts ($ excluded)' },
+        { at: 'Highlight_asm.ml:def:jumps', role: 'the mnemonics drawn as control' },
+        { at: '../../editors/emacs/modes/Asm_mode.ml', role: "mini-emacs: its asm mode's colours" },
+      ],
+      joints: [
+        { from: 'Highlight_asm.ml:def:is_start', to: 'Highlight_asm.ml:def:lines', say: 'words cut' },
+        { from: 'Highlight_asm.ml:def:jumps', to: 'Highlight_asm.ml:def:lines', say: 'a jump told apart' },
+        { from: 'Highlight_asm.ml:def:lines', to: 'Highlight_asm.ml:type:tok', say: 'each token, categorized' },
+        { from: 'Highlight_asm.ml:type:tok', to: '../../editors/emacs/modes/Asm_mode.ml', say: 'spans to draw' },
+      ],
+    },
+  ],
+}

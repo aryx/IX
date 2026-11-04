@@ -1,0 +1,26 @@
+local skeletons = import '../../skeletons.libsonnet';
+// debuggers/where/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground). Built by dune and the mkfile.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-where: a trace's addresses named by the program's own tables -- function, offset, file:line.",
+  files: {
+    'Where.ml': { digest: 'aa7f9c4e6732',
+      summary: "Plan 9's src(1) for a trace: the executable's symbols and pc/line table, a.out or ELF.",
+      capitals: [
+        { at: 'def:main', say: 'each address of the words: name+off file:line' },
+      ],
+      important: [
+        { at: 'comment:"The names come from the program that ran"', say: 'not a map file beside it', weight: 3 },
+        { at: 'def:address', say: 'lr=0x1698 and raised-at words pasted as they are', weight: 2 },
+        { at: 'def:tables', say: "ELF's .plan9.syms and .plan9.lines, or an a.out's", weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.onefile('mini-where: an address to its name and line', 'Where.ml', [
+      ['Where.ml:def:tables', 'the symbol and line tables read', 'the program'],
+      ['Where.ml:def:address', 'a word made an address, or left out', 'each word'],
+    ]),
+  ],
+}

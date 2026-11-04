@@ -1,0 +1,25 @@
+// utilities/byte/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Plan 9's xd, the hex dump: a file's bytes as numbers, in the base and size asked.",
+  files: {
+    'Xd.ml': { digest: 'f555840efe3e',
+      summary: "mini-xd: Plan 9's xd, od's successor in hexadecimal; -c, -b, -w, -l, -v formats, -r, -s.",
+      important: [
+        { at: 'type:format', say: 'a line per format: size and base', weight: 2 },
+        { at: 'def:number', say: 'a group of bytes in a base, swapped or not', weight: 2 },
+        { at: 'comment:"Unix\'s program is od, the octal dump"', say: "octal was the PDP-11's", weight: 1 },
+        { at: 'def:main', weight: 3 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.onefile('mini-xd', 'Xd.ml', [
+      ['Xd.ml:def:number', 'a group in a base', '16 bytes, each format'],
+      ['Xd.ml:def:character', 'or as a character', '-c'],
+    ]),
+  ],
+}

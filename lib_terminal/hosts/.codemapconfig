@@ -1,0 +1,30 @@
+// lib_terminal/hosts/: what the code map says of it (the code map: tinybox codemap,
+// ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Hosts that are no terminal: a Tui's screen of cells painted in a window or a picture, with Plan 9's font.",
+  files: {
+    'Cells.mli': { digest: 'cab0208ebb1e',
+      summary: "A screen of cells shown as a picture, as the PC's text screen was: what changed only, CGA's colours.",
+      important: [{ at: 'type:surface', say: 'a host: a rectangle filled, a character drawn', weight: 3 }, { at: 'def:show', weight: 2 }, { at: 'def:key', weight: 1 }],
+      related: ['Cells.ml'],
+    },
+    'Cells.ml': { digest: '3f85cc6e2440', summary: 'Runs of cells of one colour painted, the changed ones only.', important: [{ at: 'def:cga', weight: 1 }, { at: 'def:runs', weight: 2 }, { at: 'def:show', weight: 2 }] },
+    'Picture.mli': { digest: 'd3dc8ae51490', summary: "A picture in memory with Plan 9's default font drawn in it: pixel for pixel the draw device's.", related: ['Picture.ml'] },
+    'Picture.ml': { digest: 'ddc186f02998', summary: "Font_default's glyphs read as Font reads them, a surface for Cells, a PPM out.", important: [{ at: 'def:surface', weight: 2 }] },
+  },
+  skeletons: [
+    skeletons.parts('Cells painted, on a surface', [
+      ['Cells.ml', 'what changed, as runs'],
+      ['Picture.ml', 'a surface in memory'],
+      ['draw/', "Plan 9's draw device"],
+      ['sdl/', 'an SDL window'],
+    ], [
+      ['draw/', 'Cells.ml', 'its surface'],
+      ['sdl/', 'Picture.ml', 'pixels'],
+      ['Picture.ml', 'Cells.ml', 'a surface'],
+    ]),
+  ],
+}

@@ -1,0 +1,75 @@
+// typesetting/troff/ixdoc/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "IX's own format, Markdown's lines and \\name[options]{text}: read into a Doc, and any Doc written in it.",
+  files: {
+    'Ixdoc.mli': { digest: '6b551251ab24',
+      summary: "The new format: Markdown's lines, and one form, \\name[options]{text}, for all Markdown lacks.",
+      capitals: [{ at: 'def:read', say: 'the new format to a Doc' }],
+      important: [{ at: 'comment:"a paragraph that hangs from a"', say: "troff's .TP as a colon's column", weight: 3 }],
+    },
+    'Ixdoc.ml': { digest: '7bbd6f50fe9f',
+      summary: 'Lines classified, blocks nested by column, inline marks and commands; tables, pictures, labels.',
+      important: [
+        { at: 'def:inlines', say: '** * ` and \\name{...} inside a line', weight: 3 },
+        { at: 'def:command', say: 'a command: \\footnote, \\figure, \\ref...', weight: 2 },
+        { at: 'def:blocks', say: 'the lines grouped by kind and column', weight: 3 },
+        { at: 'def:table', weight: 1 },
+        { at: 'def:labels', say: 'figures and sections numbered first', weight: 2 },
+      ],
+    },
+    'Ixdoc_syntax.mli': { digest: 'd405bb81b658',
+      summary: "The format's marks with no document: what a line is, where a mark ends; the reader's and the writer's.",
+      important: [{ at: 'def:classify', say: 'a line: heading, item, row, command, words', weight: 3 }],
+    },
+    'Ixdoc_syntax.ml': { digest: '6be54000d3d6',
+      summary: 'Lines classified by their first characters, commands and their brackets found.',
+      important: [{ at: 'def:command_at', weight: 2 }, { at: 'def:classify', weight: 3 }],
+    },
+    'To_ixdoc.mli': { digest: '8ec5d245f56d',
+      summary: 'Any Doc written in the new format, read back as the same: a manual page converted by -T md.',
+      important: [{ at: 'comment:"mini-troff -T md tr.1"', weight: 2 }],
+    },
+    'To_ixdoc.ml': { digest: '01c92d2f5655',
+      summary: 'Each Doc thing given its one spelling, text escaped and lines guarded from being misread.',
+      important: [
+        { at: 'def:text_of', weight: 2 },
+        { at: 'def:guard', say: 'a line that would read as a mark, escaped', weight: 3 },
+        { at: 'def:print', weight: 3 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.parts('The new format, both ways', [
+      ['Ixdoc_syntax.mli', 'what a line is'],
+      ['Ixdoc.mli', 'read: lines to a Doc'],
+      ['To_ixdoc.mli', 'written: a Doc to lines'],
+      ['../doc/Doc.mli', 'the document'],
+      ['../pic/Pic.mli', '```pic blocks'],
+    ], [
+      ['Ixdoc_syntax.mli', 'Ixdoc.mli', 'classify'],
+      ['Ixdoc_syntax.mli', 'To_ixdoc.mli', 'what to guard'],
+      ['Ixdoc.mli', '../doc/Doc.mli', 'makes'],
+      ['../doc/Doc.mli', 'To_ixdoc.mli', 'printed'],
+      ['../pic/Pic.mli', 'Ixdoc.mli', 'pictures'],
+    ]),
+    skeletons.chain('A document in the new format read', [
+      ['Ixdoc.ml:def:read', 'labels, then blocks', ''],
+      ['Ixdoc.ml:def:labels', 'the numbers of figures and sections', 'the lines'],
+      ['Ixdoc.ml:def:blocks', 'lines grouped into blocks', 'the lines'],
+      ['Ixdoc.ml:def:inlines', 'the marks of a paragraph', 'its text'],
+      ['Ixdoc.ml:def:command', '\\name[options]{text}', 'a command'],
+    ]),
+    skeletons.module('To_ixdoc.ml', 'A Doc printed back', [
+      ['print', 'block by block', ''],
+      ['text_of', 'inlines to marks', 'a paragraph'],
+      ['escape', 'characters that would be marks', 'its text'],
+    ]) + {
+      bones+: [{ at: 'To_ixdoc.ml:def:guard', role: 'a line read wrong, prevented' }],
+      joints+: [{ from: 'To_ixdoc.ml:def:print', to: 'To_ixdoc.ml:def:guard', say: 'each line' }],
+    },
+  ],
+}

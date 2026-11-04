@@ -1,0 +1,55 @@
+// browsers/javascript/opti/: what the code map says of it (the code map
+// is tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The walk made faster, plugged into Js_eval at start: names' places remembered, bodies compiled to closures.",
+  files: {
+    'Js_quicken.mli': { digest: 'd95d7f67b885',
+      summary: "Quickening: the tree copied with a little memory at each place a name is looked up.",
+      important: [{ at: 'comment:"Looked for by its name, it costs the same"', weight: 2 }],
+    },
+    'Js_quicken.ml': { digest: '6aff1e4bd7af',
+      summary: 'Every Name given a fresh place; registers itself as Js_eval.quickener.',
+      important: [
+        { at: 'def:expr', weight: 2 },
+        { at: 'code:"Js_eval.quickener := Some"', say: 'plugged in when the program starts', weight: 3 },
+      ],
+    },
+    'Js_compile.mli': { digest: '976c505a60cb',
+      summary: "A function's body compiled to OCaml closures: the tree's questions asked once, not at each call.",
+      important: [
+        { at: 'comment:"Js_eval walks the tree"', say: 'the cost the closures remove', weight: 3 },
+        { at: 'def:body', weight: 2 },
+      ],
+    },
+    'Js_compile.ml': { digest: '5e2857133d8e',
+      summary: 'Expressions and statements to closures, small-integer arithmetic fast; registers as Js_eval.compiler.',
+      important: [
+        { at: 'def:binary', say: 'an operator chosen once', weight: 2 },
+        { at: 'def:expr', weight: 3 },
+        { at: 'def:stmt', weight: 3 },
+        { at: 'def:body', weight: 2 },
+        { at: 'code:"E.compiler := Some body"', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.parts('Two optimizations, plugged in', [
+      ['Js_quicken.ml', 'places for names'],
+      ['Js_compile.ml', 'bodies to closures'],
+      ['../eval/Js_eval.ml', 'the walk, which calls them'],
+    ], [
+      ['Js_quicken.ml', '../eval/Js_eval.ml', 'quickener'],
+      ['Js_compile.ml', '../eval/Js_eval.ml', 'compiler'],
+    ]),
+    skeletons.module('Js_compile.ml', 'A body compiled', [
+      ['body', "a function's body", ''],
+      ['block_at', 'statements in a row', 'its block'],
+      ['stmt', 'a statement to a closure', 'each'],
+      ['expr', 'an expression to a closure', 'its expressions'],
+      ['binary', 'the operator chosen once', 'a + b'],
+    ]),
+  ],
+}

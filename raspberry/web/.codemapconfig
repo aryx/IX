@@ -1,0 +1,51 @@
+// raspberry/web/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). Compiled by
+// js_of_ocaml; MiniQemuWeb.html is its page.
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-qemu in a web page: the Pi 1's board in JavaScript, a canvas its screen, a JIT, host drawing.",
+  files: {
+    'MiniQemuWeb.ml': { digest: '7f9cc3675a30',
+      summary: "The board, its kernel and card fetched, run in turns paced by the browser; keys, mouse, canvas.",
+      capitals: [
+        { at: 'def:run', say: 'the board made and run in turns' },
+      ],
+      important: [
+        { at: 'comment:"What makes it fast enough to use"', say: 'the JIT, host drawing, rows: each a switch', weight: 3 },
+        { at: 'comment:"The board runs in turns of some milliseconds"', say: "the board's clock: instructions, paced", weight: 2 },
+        { at: 'def:listen_keys', say: "the UART's bytes, or a USB keyboard's usages", weight: 2 },
+        { at: 'def:mouse_frame', weight: 1 },
+        { at: 'def:screen_show', say: 'only the rows that changed', weight: 2 },
+        { at: 'def:run', weight: 3 },
+        { at: 'def:fetch', say: 'gz undone by DecompressionStream', weight: 1 },
+      ],
+      related: ['MiniQemuWeb.html'],
+    },
+  },
+  skeletons: [
+    {
+      name: 'A Pi 1 in a page',
+      bones: [
+        { at: 'MiniQemuWeb.ml:code:"let search = U.new_obj"', role: "the page's parameters: kernel, card, jit, draw" },
+        { at: 'MiniQemuWeb.ml:def:fetch', role: 'the kernel and the card, fetched' },
+        { at: 'MiniQemuWeb.ml:def:run', role: 'Board.create, the turns started' },
+        { at: 'MiniQemuWeb.ml:def:listen_keys', role: 'keys to the UART or the USB keyboard' },
+        { at: 'MiniQemuWeb.ml:def:screen_show', role: 'the framebuffer to the canvas' },
+        { at: 'jit/Jit.ml:def:attach', role: 'hot blocks translated to JavaScript' },
+        { at: 'draw/Hostdraw.ml:def:install', role: "the kernel's draws done by the host" },
+        { at: '../boards/Board.ml:def:run', role: 'the board, a turn of instructions' },
+      ],
+      joints: [
+        { from: 'MiniQemuWeb.ml:code:"let search = U.new_obj"', to: 'MiniQemuWeb.ml:def:fetch', say: 'the names' },
+        { from: 'MiniQemuWeb.ml:def:fetch', to: 'MiniQemuWeb.ml:def:run', say: 'the bytes' },
+        { from: 'MiniQemuWeb.ml:def:run', to: 'jit/Jit.ml:def:attach', say: 'jit on' },
+        { from: 'MiniQemuWeb.ml:code:"let search = U.new_obj"', to: 'draw/Hostdraw.ml:def:install', say: 'draw on' },
+        { from: 'MiniQemuWeb.ml:def:run', to: '../boards/Board.ml:def:run', say: 'each turn' },
+        { from: 'MiniQemuWeb.ml:def:run', to: 'MiniQemuWeb.ml:def:screen_show', say: 'each frame' },
+        { from: 'MiniQemuWeb.ml:def:listen_keys', to: 'MiniQemuWeb.ml:def:run', say: 'input queued' },
+      ],
+    },
+  ],
+}

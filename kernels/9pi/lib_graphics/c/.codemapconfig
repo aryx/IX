@@ -2,17 +2,17 @@
 // tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there)
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
-  summary: "Draw.mli over Plan 9's own C pixel libraries (principia's libmemdraw, libmemlayer), linked into the kernel.",
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Kdraw.mli over Plan 9's own C pixel libraries (principia's libmemdraw, libmemlayer), linked into the kernel.",
   files: {
-    'Draw.ml': { digest: '4fac1ac287de',
-      summary: "Draw.mli's functions as externals into drawglue.c; the hooks registered for C's callbacks.",
+    'Kdraw.ml': { digest: '5af6aa8c03ea',
+      summary: "Kdraw.mli's functions as externals into drawglue.c; the hooks registered for C's callbacks.",
       important: [
         { at: 'comment:"s callbacks, to the hooks"', say: 'C calls OCaml back: the cursor, a refresh', weight: 2 },
         { at: 'def:drawop', say: 'an external: the work is in C', weight: 2 },
       ],
     },
-    'drawglue.c': { digest: '835522dd7c65',
+    'drawglue.c': { digest: '5cb6390127a8',
       summary: "The OCaml primitives: values taken apart into ints and pointers, then draw9.c's d9_* called.",
       capitals: [
         { at: 'def:draw_init', say: "OCaml's pixels enter Plan 9's C here" },
@@ -25,7 +25,7 @@
         { at: 'def:draw_drawop', weight: 2 },
       ],
     },
-    'draw9.c': { digest: '28639739f6f6',
+    'draw9.c': { digest: '9933f7afe186',
       summary: "The Plan 9 libc memdraw needs (print, qsort, 64-bit division...), and a plain C interface, d9_*.",
       capitals: [
         { at: 'def:d9_drawop', say: "memdraw: Plan 9's own pixels" },
@@ -48,13 +48,13 @@
     {
       name: "Plan 9's memdraw in C, reached from OCaml",
       bones: [
-        { at: 'Draw.ml', role: 'Draw.mli as externals, the hooks registered (the OCaml side)' },
+        { at: 'Kdraw.ml', role: 'Draw.mli as externals, the hooks registered (the OCaml side)' },
         { at: 'drawglue.c', role: "the primitives: OCaml's values to ints and pointers" },
         { at: 'draw9.c', role: "Plan 9's side: the libc memdraw needs, and d9_* over memdraw" },
         { at: 'p9gcc.h', role: "Plan 9's compiler intrinsics, empty for gcc" },
       ],
       joints: [
-        { from: 'Draw.ml', to: 'drawglue.c', say: 'external draw_*' },
+        { from: 'Kdraw.ml', to: 'drawglue.c', say: 'external draw_*' },
         { from: 'drawglue.c', to: 'draw9.c', say: 'd9_*; back: avoid, refresh' },
         { from: 'draw9.c', to: 'p9gcc.h', say: 'USED, SET' },
       ],

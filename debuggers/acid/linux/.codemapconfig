@@ -1,0 +1,45 @@
+// debuggers/acid/linux/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground). Dune's build on
+// Linux; mini-ml/ has the mkfile's, without ptrace.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Ptrace for dune's mini-acid on Linux: a C stub, plan9port's way of making Linux look like /proc.",
+  files: {
+    'Ptrace.ml': { digest: '90da1f722eec',
+      summary: "Ptrace.mli by externals into ptrace.c; available is true.",
+      important: [
+        { at: 'code:"external spawn_"', say: 'OCaml to C: the calls are ptrace.c\'s', weight: 2 },
+        { at: 'def:available', weight: 1 },
+      ],
+    },
+    'ptrace.c': { digest: 'deee2832e0de',
+      summary: "A program run traced and stopped at its exec, registers by GETREGSET, continue, wait, signal.",
+      capitals: [
+        { at: 'def:ml_ptrace_spawn', say: 'TRACEME, no ASLR, exec, the first stop' },
+      ],
+      important: [
+        { at: 'def:ml_ptrace_spawn', weight: 3 },
+        { at: 'def:ml_ptrace_getregs', say: "arm64's user_pt_regs only", weight: 2 },
+        { at: 'def:ml_ptrace_wait', say: 'a stop, an exit or a kill as one int', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'ptrace from OCaml',
+      bones: [
+        { at: '../Proc.ml:def:msg', role: "a ctl message, as Plan 9's" },
+        { at: 'Ptrace.ml:code:"external spawn_"', role: 'the externals' },
+        { at: 'ptrace.c:def:ml_ptrace_spawn', role: 'a traced child' },
+        { at: 'ptrace.c:def:ml_ptrace_cont', role: 'start' },
+        { at: 'ptrace.c:def:ml_ptrace_wait', role: 'waitstop' },
+      ],
+      joints: [
+        { from: '../Proc.ml:def:msg', to: 'Ptrace.ml:code:"external spawn_"' },
+        { from: 'Ptrace.ml:code:"external spawn_"', to: 'ptrace.c:def:ml_ptrace_spawn', say: 'ml_ptrace_spawn' },
+        { from: 'Ptrace.ml:code:"external spawn_"', to: 'ptrace.c:def:ml_ptrace_cont' },
+        { from: 'Ptrace.ml:code:"external spawn_"', to: 'ptrace.c:def:ml_ptrace_wait' },
+      ],
+    },
+  ],
+}

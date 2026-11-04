@@ -1,0 +1,84 @@
+local skeletons = import '../../skeletons.libsonnet';
+// profilers/misc/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). Two programs:
+// mini-prof (Prof.ml, Profiler) and mini-stats (Stats.ml, Sysinfo).
+// tests/ is off the map. Its tiny twin: tiny/TinyProfiler.ml.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-prof, where a program's instructions went, and mini-stats, Plan 9's stats: cores, memory, net, disk.",
+  files: {
+    'Prof.ml': { digest: 'f45a13c2d7f0',
+      summary: "mini-prof's entry: Cap.main, then Profiler.main.",
+    },
+    'Profiler.mli': { digest: '2f288a4f86e0',
+      summary: "mini-prof: a profile of every instruction's count against the link's map, by function.",
+      important: [
+        { at: 'comment:"A count goes to the last function at or before"', say: 'attribution by address alone', weight: 3 },
+        { at: "comment:\"With -a name, one function's instructions\"", say: "per instruction, by mini-5i's decoder", weight: 2 },
+        { at: 'def:main', weight: 1 },
+      ],
+    },
+    'Profiler.ml': { digest: '0bfe22dd35d2',
+      summary: 'Counts read, maybe a second profile subtracted, summed by function and sorted; -a annotates one.',
+      capitals: [
+        { at: 'def:main', say: "mini-prof's main: profile, map, the table" },
+      ],
+      important: [
+        { at: 'def:read_profile', say: "mini-5i's or mini-qemu's -prof file", weight: 2 },
+        { at: 'def:functions', say: "the link's map: addresses, sorted", weight: 2 },
+        { at: 'def:find', say: 'binary search: the function at or before', weight: 3 },
+        { at: 'def:annotate', say: 'one function, instruction by instruction', weight: 2 },
+        { at: 'comment:"a function\'s calls: the count of its first instruction"', say: 'calls guessed from the entry\'s count', weight: 2 },
+      ],
+    },
+    'Stats.ml': { digest: '514b3eeeb154',
+      summary: "mini-stats after Plan 9's stats: a strip per core and one each for memory, network, disk, scrolling.",
+      capitals: [
+        { at: 'def:main', say: "mini-stats' main: meters, a window, the loop" },
+      ],
+      important: [
+        { at: 'comment:"What it reads is the kernel\'s /dev/sysstat"', say: 'text files, read five times a second', weight: 3 },
+        { at: 'type:meter', say: 'a name and a sample: height, words', weight: 2 },
+        { at: 'def:meters', say: 'the ones asked, and the machine has', weight: 2 },
+        { at: 'code:"let step (view"', say: 'no sample drawn twice: the strip moved left', weight: 3 },
+        { at: 'code:"let rec loop view"', say: 'Event.select: mouse or tick', weight: 2 },
+      ],
+    },
+    'Sysinfo.mli': { digest: '9107016617db',
+      summary: "What the kernel's text files say of the machine, for mini-stats, parsed without screen or kernel.",
+      important: [
+        { at: 'comment:"Each is a file of text that cat shows"', say: "Plan 9's way, against sysctl's structures", weight: 3 },
+        { at: 'def:log_percent', say: 'each power of ten the same height', weight: 2 },
+        { at: 'def:grew', weight: 1 },
+      ],
+    },
+    'Sysinfo.ml': { digest: 'e9c5a56a4a28',
+      summary: '/dev/sysstat, /dev/swap, ether stats and the disk ctl, each read to a number or two.',
+      important: [
+        { at: 'def:cores', say: 'the ninth number: percent idle', weight: 2 },
+        { at: 'def:memory', weight: 1 },
+        { at: 'def:log_percent', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.cli('mini-prof: counts to functions', [
+      ['Profiler.ml:def:read_profile', "every instruction's address and count"],
+      ['Profiler.ml:def:functions', "the map's functions by address"],
+      ['Profiler.ml:def:name_at', 'a count to its function'],
+      ['Profiler.ml:def:find', 'the function at or before'],
+    ], main='Prof.ml', cli='Profiler.ml:def:main') + {
+      bones+: [ { at: 'Profiler.ml:def:annotate', role: '-a: one function annotated' } ],
+      joints+: [ { from: 'Profiler.ml:def:main', to: 'Profiler.ml:def:annotate', say: '-a name' } ],
+    },
+    skeletons.onefile('mini-stats: meters sampled, strips scrolled', 'Stats.ml', [
+      ['Stats.ml:def:meters', 'the meters: cores, memory, network, disk', 'the letters asked'],
+      ['Stats.ml:code:"let rec loop view"', 'a tick or the mouse', 'the window'],
+      ['Stats.ml:code:"let step (view"', 'each meter sampled, its strip moved', 'a tick'],
+      ['Sysinfo.ml:def:cores', "/dev/sysstat's idle, per core", 'a sample'],
+    ]) + {
+      joints+: [ { from: 'Stats.ml:code:"let step (view"', to: 'Stats.ml:code:"let rec loop view"', say: 'again' } ],
+    },
+  ],
+}

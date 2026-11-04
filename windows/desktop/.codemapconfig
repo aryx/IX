@@ -1,0 +1,115 @@
+// windows/desktop/: what the code map says of it
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: 'A desktop on rio: wallpaper and icons, a panel, a start menu, Expose and settings, each a program.',
+  files: {
+    'Desk.ml': {
+      summary: "The wallpaper and its icons in rio's desk layer; the Xerox Star's double click.",
+      digest: 'ffa424f3d163',
+      capitals: [{ at: 'def:main', say: 'the icons, then a loop on the mouse' }],
+      important: [
+        { at: 'code:"let rec loop (view"', say: 'draws on a change, Prefs every two seconds', weight: 3 },
+        { at: 'code:"Paper.cover"', say: 'a picture scaled to cover the screen', weight: 1 },
+        { at: 'code:"ask caps (Apps.open_line"', say: 'a double click: a wctl new line', weight: 1 },
+      ],
+    },
+    'Panel.ml': {
+      summary: 'The bar along a side: start button, a button per window, the clock; /dev/wsys read each second.',
+      digest: '8854263b6081',
+      capitals: [{ at: 'def:main', say: 'waits for the mouse and the second' }],
+      important: [
+        { at: 'code:"let rec loop (view"', say: 'draws only when what it shows changed', weight: 3 },
+        { at: 'code:"Taskbar.press ws part"', say: "a press becomes wctl's words", weight: 1 },
+      ],
+    },
+    'Startmenu.ml': {
+      summary: "The start button's menu: the table's programs by group, in a hidden popup window.",
+      digest: '863c511debd2',
+      capitals: [{ at: 'def:main', say: 'the table, its icons, then the loop' }],
+      important: [
+        { at: 'comment:"Why a window and not"', say: "a game below would draw over rio's Menu", weight: 3 },
+        { at: 'def:try_all', say: 'every program opened, for a test', weight: 1 },
+      ],
+    },
+    'Expose.ml': {
+      summary: "Apple's Exposé: every window shrunk side by side, live, read from its image by name.",
+      digest: '03be316e2746',
+      capitals: [{ at: 'def:main', say: 'thumbnails made again twice a second' }],
+      important: [
+        { at: 'comment:"How it can be a program"', say: "the draw device keeps a covered window's pixels", weight: 3 },
+        { at: 'code:"Tiles.layout"', say: 'a grid, a whole shrink factor each', weight: 1 },
+      ],
+    },
+    'Settings.ml': {
+      summary: 'The settings window: wallpaper, clock, panel side, mouse and volume, saved to a file at once.',
+      digest: 'e1a575e7cc7e',
+      capitals: [{ at: 'def:main', say: '-apply, or the window' }],
+      important: [
+        { at: 'def:save', say: 'the panel and the desk read it again', weight: 3 },
+        { at: 'def:apply_devices', say: "the mouse and volume are the kernel's", weight: 1 },
+        { at: 'comment:"No toolkit: a row of boxes"', say: 'rectangles and actions, on lib_graphics', weight: 1 },
+      ],
+    },
+  },
+  dirs: {
+    icons: { summary: "The icons as text, a character a pixel (Icon.mli's format), installed in /lib/desktop/icons." },
+  },
+  skeletons: [
+    skeletons.parts('The desktop: programs that talk to rio through files', [
+      ['Desk.ml', 'the desk layer: wallpaper, icons'],
+      ['Panel.ml', 'the panel layer: buttons, clock'],
+      ['Startmenu.ml', 'a popup: the programs'],
+      ['Expose.ml', 'a popup: all the windows'],
+      ['Settings.ml', 'writes the settings'],
+      ['lib/', 'the logic without a screen'],
+      ['../rio/', 'the window system, its wctl files'],
+    ], [
+      ['Desk.ml', 'lib/', 'Apps, Prefs, Paper'],
+      ['Panel.ml', 'lib/', 'Taskbar, Wsys'],
+      ['Startmenu.ml', 'lib/', 'Apps'],
+      ['Expose.ml', 'lib/', 'Tiles, Wsys'],
+      ['Settings.ml', 'lib/', 'Prefs'],
+      ['lib/', '../rio/', 'reads /dev/wsys, writes wctl'],
+    ]),
+    skeletons.onefile('desk: the wallpaper and its icons', 'Desk.ml', [
+      ['lib/Apps.ml:def:parse', 'the table of programs, as icons', 'the table read'],
+      ['Desk.ml:code:"let rec loop (view"', 'the loop: the mouse, the settings', 'the icons'],
+      ['lib/Apps.ml:def:open_line', 'a double click: the line for wctl', 'opened'],
+    ]) + {
+      bones+: [{ at: 'lib/Prefs.ml:def:parse', role: 'the wallpaper said' }, { at: 'lib/Paper.ml:def:cover', role: 'a picture made the screen\'s size' }],
+      joints+: [
+        { from: 'lib/Prefs.ml:def:parse', to: 'Desk.ml:code:"let rec loop (view"', say: 'every two seconds' },
+        { from: 'Desk.ml:code:"let rec loop (view"', to: 'lib/Paper.ml:def:cover', say: 'a new wallpaper' },
+      ],
+    },
+    skeletons.onefile('panel: a button per window', 'Panel.ml', [
+      ['Panel.ml:code:"let rec loop (view"', 'the loop: the mouse, a second', 'started'],
+      ['lib/Wsys.ml:def:windows', "rio's windows, from /dev/wsys", 'each second'],
+      ['lib/Taskbar.ml:def:layout', 'where each button goes', 'the windows'],
+      ['lib/Taskbar.ml:def:press', 'a press: what to ask', 'a part pressed'],
+      ['lib/Wsys.ml:def:ask', 'the line written to wctl', "wctl's words"],
+    ]),
+    skeletons.onefile('startmenu: the table as a menu', 'Startmenu.ml', [
+      ['lib/Apps.ml:def:parse', 'the table of programs', 'read'],
+      ['lib/Apps.ml:def:left', 'the groups', 'the entries'],
+      ['Startmenu.ml:code:"let rec loop (view"', 'the loop: a group opened, a program chosen', 'the menu'],
+      ['lib/Apps.ml:def:open_line', 'the wctl new line', 'chosen'],
+    ]),
+    skeletons.onefile('expose: the windows shrunk', 'Expose.ml', [
+      ['lib/Wsys.ml:def:windows', 'the windows rio lists', 'read'],
+      ['lib/Tiles.ml:def:layout', 'a cell and a shrink factor each', 'their sizes'],
+      ['Expose.ml:code:"let rec loop (view"', 'the loop: a tick, a click', 'the tiles'],
+      ['lib/Wsys.ml:def:ask', 'current -id: the one clicked', 'a click'],
+    ]),
+    skeletons.onefile('settings: one file of settings', 'Settings.ml', [
+      ['lib/Prefs.ml:def:parse', 'the settings read', 'read'],
+      ['Settings.ml:code:"let rec loop (view"', 'the loop: a box pressed, a key', 'shown'],
+      ['Settings.ml:def:save', 'written at once', 'changed'],
+      ['lib/Prefs.ml:def:print', 'a line a setting', 'the text'],
+    ]) + {
+      bones+: [{ at: 'Settings.ml:def:apply_devices', role: '/dev/mousectl and the volume' }],
+      joints+: [{ from: 'Settings.ml:code:"let rec loop (view"', to: 'Settings.ml:def:apply_devices', say: 'the mouse or volume' }],
+    },
+  ],
+}

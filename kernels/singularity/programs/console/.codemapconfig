@@ -1,0 +1,35 @@
+// kernels/singularity/programs/console/: what the code map says of it (the
+// code map is tinybox codemap, in ~/github/ocaml-elm-playground).
+// Main.manifest (the PL011's registers and its interrupt, by name) is not a source to the map.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The console's driver, a process as the others: the PL011's registers by its manifest, served by contract.",
+  files: {
+    'Main.ml': { digest: '21d3b627eb5f',
+      summary: "The console's driver, a process as the others: the PL011's registers by its manifest, served by contract.",
+      capitals: [ { at: "code:\"let () =\"", say: "the Console contract served: write, read a key" } ],
+      important: [
+        { at: "def:put", say: "the UART polled through granted registers", weight: 2 },
+        { at: "def:key", say: "no key: the process waits for its interrupt", weight: 3 },
+        { at: "code:\"Console.Exp.written e b\"", say: "the block given back to the writer", weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: "The console driver: a contract served over a device",
+      bones: [
+        { at: "Main.ml:code:\"let () =\"", role: "the endpoint its parent gave, served" },
+        { at: "Main.ml:def:put", role: "a byte to the PL011" },
+        { at: "Main.ml:def:key", role: "a key, waiting on interrupt 57" },
+        { at: "../../lib/Sip.ml:def:io_read", role: "a register read, by the kernel's call" },
+      ],
+      joints: [
+        { from: "Main.ml:code:\"let () =\"", to: "Main.ml:def:put", say: "Write: each byte of the block" },
+        { from: "Main.ml:code:\"let () =\"", to: "Main.ml:def:key", say: "Read" },
+        { from: "Main.ml:def:put", to: "../../lib/Sip.ml:def:io_read", say: "FR" },
+        { from: "Main.ml:def:key", to: "../../lib/Sip.ml:def:io_read", say: "FR, DR" },
+      ],
+    },
+  ],
+}

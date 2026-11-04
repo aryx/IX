@@ -1,0 +1,39 @@
+// languages/smalltalk/hosts/sdl/: what the code map says of it (the
+// code map: tinybox codemap, ~/github/ocaml-elm-playground; its
+// guidelines: docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-squeak on Linux: Squeak's world in an SDL window, the one host mini-ml does not build.",
+  files: {
+    'Main.ml': {
+      summary: "The command: -k squeak or mini, -x the window's scale.",
+      digest: 'fe1768315830',
+    },
+    'Window.mli': {
+      summary: "Squeak in an SDL window: the Display shown, the mouse and keys given, the world cycled until closed.",
+      digest: 'cacdab144b6d',
+      important: [{ at: 'comment:"by Smalltalk\'s colours"', say: 'red, yellow, blue: left, right, middle', weight: 2 }],
+    },
+    'Window.ml': {
+      summary: "The host's loop: SDL's events to the machine's mouse and keys, a cycle, the texture updated.",
+      digest: '311950dd7cd5',
+      important: [
+        { at: 'code:"Squeak.start system host"', say: 'a host record over SDL', weight: 2 },
+        { at: 'code:"Squeak.cycle squeak"', say: "the world's cycle, a budget a frame", weight: 3 },
+        { at: 'code:"Squeak.picture squeak"', say: 'the pixels, only when they changed', weight: 2 },
+        { at: 'def:key_code', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.onefile('mini-squeak on Linux', 'Main.ml', [
+      ['Window.ml:def:run', 'the window opened, the world started', 'the system chosen'],
+      ['../../Squeak.ml:def:start', "Squeak's world, 800 by 600", 'a host'],
+      ['Window.ml:code:"Squeak.cycle squeak"', 'a frame: the world cycled', 'the system'],
+      ['Window.ml:code:"Squeak.picture squeak"', 'the Display shown', 'its pixels'],
+    ]) + {
+      joints+: [{ from: 'Window.ml:code:"Squeak.picture squeak"', to: 'Window.ml:code:"Squeak.cycle squeak"', say: 'the next events' }],
+    },
+  ],
+}

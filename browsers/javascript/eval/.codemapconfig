@@ -1,0 +1,109 @@
+// browsers/javascript/eval/: what the code map says of it (the code map
+// is tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "JavaScript run by walking its tree: scopes, closures, classes, exceptions, a budget, await as a coroutine.",
+  files: {
+    'Js_eval.mli': { digest: '5fb1cd9c1bed',
+      summary: "A program run by walking its tree; JavaScript's history from Eich's ten days of May 1995.",
+      capitals: [
+        { at: 'def:create_with', say: 'an engine: globals, prelude, clock' },
+        { at: 'def:eval', say: 'a text parsed and run' },
+        { at: 'def:call', say: "a script's function called from OCaml" },
+      ],
+      important: [
+        { at: 'comment:"Brendan Eich wrote the first JavaScript in ten days"', weight: 2 },
+        { at: 'type:outcome', say: 'normal, return, break, continue', weight: 2 },
+        { at: 'def:set_budget', say: 'a page cannot loop forever', weight: 1 },
+        { at: 'def:compiler', say: 'opti/ plugs itself in here', weight: 2 },
+      ],
+    },
+    'Js_eval.ml': { digest: '1011de450cc5',
+      summary: 'eval_expr and exec mutually recursive over the tree, calls with frames, classes, destructuring, the budget.',
+      important: [
+        { at: 'def:step', say: 'the budget: each statement costs one', weight: 2 },
+        { at: 'def:eval_expr', say: 'an expression, by its kind', weight: 3 },
+        { at: 'def:closure', say: 'a function value keeps its scope', weight: 2 },
+        { at: 'def:call_value', say: 'a call: compiled body, or walked', weight: 3 },
+        { at: 'def:exec', say: 'a statement and its outcome', weight: 3 },
+        { at: 'def:guarded', say: 'promises drained after each run', weight: 1 },
+        { at: 'def:create_with', weight: 2 },
+      ],
+      links: [
+        { from: 'def:eval', to: 'def:run' },
+        { from: 'def:eval_expr', to: 'def:call_value' },
+        { from: 'def:call_value', to: 'def:exec' },
+      ],
+    },
+    'Js_scope.mli': { digest: '590fd4c35b99',
+      summary: "Where names live while a program runs; found by name the simple way, by a remembered place the fast way.",
+      capitals: [{ at: 'def:lookup', say: 'a name to its binding' }],
+      important: [
+        { at: 'comment:"the simple way, and a fast one"', weight: 2 },
+        { at: 'def:at', say: "the fast way: hops and slot, learnt", weight: 2 },
+      ],
+    },
+    'Js_scope.ml': { digest: '587ca383a835',
+      summary: 'Hashtables of names (simple) or arrays of slots (opti); a place in the tree learns its hops and slot.',
+      important: [
+        { at: 'def:learn', say: 'where a name was, kept at its place', weight: 3 },
+        { at: 'def:find_opti', weight: 2 },
+        { at: 'def:declare_opti', weight: 1 },
+        { at: 'def:lookup', weight: 2 },
+      ],
+    },
+    'Js_frame.mli': { digest: '643ce0e1fb3f',
+      summary: "A call's frame: parameters bound, var and function hoisted, arguments, before the body's first line.",
+      important: [
+        { at: 'def:hoist', weight: 2 },
+        { at: 'def:make', weight: 2 },
+      ],
+    },
+    'Js_frame.ml': { digest: '945aa722b461',
+      summary: "Names hoisted from a body; the frame's layout computed once per function, slots filled per call.",
+      important: [
+        { at: 'def:hoisted', weight: 2 },
+        { at: 'def:layout_with', weight: 2 },
+      ],
+    },
+    'Js_coroutine.mli': { digest: 'd57774d76d5e',
+      summary: 'An async function stopped at an await: a thread whose stack is where the script is.',
+      important: [{ at: 'comment:"a script is, is where OCaml"', say: 'why a thread, not a transformation', weight: 3 }],
+    },
+    'Js_coroutine.ml': { digest: '01a5b1ff662c',
+      summary: 'A thread passing the turn back and forth under one lock: suspend and resume.',
+      important: [{ at: 'def:suspend', weight: 2 }, { at: 'def:resume', weight: 2 }],
+    },
+  },
+  skeletons: [
+    skeletons.parts('A tree walked', [
+      ['Js_eval.ml', 'expressions and statements'],
+      ['Js_scope.ml', 'names to bindings'],
+      ['Js_frame.ml', "a call's frame"],
+      ['Js_coroutine.ml', 'await, stopped and resumed'],
+    ], [
+      ['Js_eval.ml', 'Js_scope.ml', 'a name looked up'],
+      ['Js_eval.ml', 'Js_frame.ml', 'a call'],
+      ['Js_frame.ml', 'Js_scope.ml', 'a new scope'],
+      ['Js_eval.ml', 'Js_coroutine.ml', 'an async body'],
+    ]),
+    skeletons.module('Js_eval.ml', 'A program walked', [
+      ['eval', 'text parsed, then run', ''],
+      ['run', 'the program under the budget', 'the program'],
+      ['exec', 'a statement', 'each statement'],
+      ['eval_expr', 'an expression', 'its expressions'],
+      ['call_value', 'a function called', 'a call'],
+      ['closure', 'a function value made', 'a function'],
+    ]) + {
+      joints+: [{ from: 'Js_eval.ml:def:call_value', to: 'Js_eval.ml:def:exec', say: 'the body' }],
+    },
+    skeletons.module('Js_scope.ml', 'A name found', [
+      ['lookup', 'the simple way: by name, up', ''],
+      ['at', 'the fast way: at a place', 'or'],
+      ['learn', 'hops and slot remembered', 'first time'],
+      ['find_opti', 'up the hops to the slot', 'then'],
+    ]),
+  ],
+}

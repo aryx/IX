@@ -1,0 +1,33 @@
+// kernels/singularity/programs/: what the code map says of it (the code
+// map is tinybox codemap, in ~/github/ocaml-elm-playground). Each program
+// a directory, its Main.ml (and maybe Main.manifest), linked at its own
+// slot with lib/ and vetted by mini-singml -safe.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-singularity's processes: init, the console driver and the shell, and the tests the shell runs.",
+  skeletons: [
+    {
+      name: 'The processes: who starts whom, who talks to whom',
+      bones: [
+        { at: 'init/', role: 'the first: wires the console and the shell' },
+        { at: 'console/', role: "the UART's driver, a process" },
+        { at: 'shell/', role: 'the prompt: programs by name' },
+        { at: 'selftest/', role: "the kernel's tests, as a process" },
+        { at: 'ping/', role: "Pong's client" },
+        { at: 'pong/', role: "Pong's server" },
+        { at: 'rogue/', role: 'a client that breaks the contract' },
+        { at: 'bench/', role: "the paper's four costs" },
+      ],
+      joints: [
+        { from: 'init/', to: 'console/', say: 'starts, Console server end' },
+        { from: 'init/', to: 'shell/', say: 'starts, Console client end' },
+        { from: 'shell/', to: 'console/', say: 'Write, Read' },
+        { from: 'shell/', to: 'selftest/', say: 'runs' },
+        { from: 'selftest/', to: 'ping/', say: 'Intro: where pong is' },
+        { from: 'ping/', to: 'pong/', say: 'Pong contract' },
+        { from: 'rogue/', to: 'pong/', say: 'Ping, Ping: refused' },
+        { from: 'bench/', to: 'pong/', say: 'messages timed' },
+      ],
+    },
+  ],
+}

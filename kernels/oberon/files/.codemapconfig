@@ -1,0 +1,60 @@
+// kernels/oberon/files/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Oberon's files: a flat directory read from a text in the kernel's image, and riders; lost at power off.",
+  files: {
+    'FileDir.mli': { digest: '61996ae6134e',
+      summary: "The directory: files by name, one flat list; the disk a text the mkfile puts in the image.",
+      important: [
+        { at: 'comment:"Oberon\'s own is a B-tree of names"', say: "857 lines of Oberon's, a list here", weight: 3 },
+        { at: 'type:file', say: 'its bytes, the first length of data', weight: 2 },
+        { at: 'def:enumerate', weight: 1 },
+      ],
+    },
+    'FileDir.ml': { digest: 'e5d54516cb1d',
+      summary: "The list of files, filled once at the start from the image's disk text: name, length, bytes.",
+      important: [
+        { at: 'code:"let () ="', say: 'the disk read when the module starts', weight: 3 },
+        { at: 'def:insert', say: 'a name replaces the file that had it', weight: 1 },
+      ],
+    },
+    'Files.mli': { digest: '9ad0fc0e84cf',
+      summary: 'Files and riders: found by name or made unnamed, then registered; read and written at a position.',
+      important: [
+        { at: 'def:new_', say: 'a file in no directory until register', weight: 2 },
+        { at: 'def:set', say: 'a rider: a file and a position', weight: 3 },
+        { at: 'def:read_byte', say: 'past the end: 0 and eof', weight: 2 },
+      ],
+    },
+    'Files.ml': { digest: '94e5e08f5e69',
+      summary: "Riders over a file's growing bytes; little-endian ints and zero-ended strings, as Oberon writes.",
+      important: [
+        { at: 'def:read_byte', weight: 2 },
+        { at: 'def:write_byte', say: 'the bytes doubled when full', weight: 2 },
+        { at: 'def:rename', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'A file: the image, the directory, a rider',
+      bones: [
+        { at: 'FileDir.ml:code:"let () ="', role: "the image's disk text read into files" },
+        { at: 'FileDir.ml:def:find', role: 'a name to its file' },
+        { at: 'Files.ml:def:old', role: 'Files.Old: a registered file' },
+        { at: 'Files.ml:def:set', role: 'a rider at a position' },
+        { at: 'Files.ml:def:read_byte', role: 'read, to the end' },
+        { at: 'Files.ml:def:write_byte', role: 'written, the file grown' },
+      ],
+      joints: [
+        { from: 'FileDir.ml:code:"let () ="', to: 'FileDir.ml:def:find', say: 'the list' },
+        { from: 'Files.ml:def:old', to: 'FileDir.ml:def:find', say: 'the name' },
+        { from: 'Files.ml:def:old', to: 'Files.ml:def:set', say: 'the file' },
+        { from: 'Files.ml:def:set', to: 'Files.ml:def:read_byte', say: 'the rider' },
+        { from: 'Files.ml:def:set', to: 'Files.ml:def:write_byte', say: 'the rider' },
+      ],
+    },
+  ],
+}

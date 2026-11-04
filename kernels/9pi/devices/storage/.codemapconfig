@@ -2,13 +2,13 @@
 // is tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there)
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "'#S', the disks: the SD card's partitions as files, read and written by blocks; dossrv's disk.",
   files: {
-    'Devsd.mli': { digest: 'a758ac64f3c3',
+    'Devsd.mli': { digest: 'fc645b9541e3',
       summary: "'#S': sdctl, the card's unit directory (ctl, raw, partitions), brought online at first use.",
     },
-    'Devsd.ml': { digest: '009033766a61',
+    'Devsd.ml': { digest: '64e0193aa2b5',
       summary: "devsd.c's tree of units and partitions, and sdbio: bytes at an offset as whole blocks.",
       capitals: [
         { at: 'def:bio', say: 'a read or write as whole sectors' },
@@ -21,7 +21,7 @@
         { at: 'def:init', weight: 1 },
       ],
     },
-    'Emmc.mli': { digest: '7fef92e146bb',
+    'Emmc.mli': { digest: '085235805838',
       summary: 'The SD card on the BCM2835 host controller, brought online as sdmmc does, polled not DMA.',
       important: [
         { at: 'type:card', weight: 2 },

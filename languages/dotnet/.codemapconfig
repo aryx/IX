@@ -1,0 +1,68 @@
+// languages/dotnet/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-dotnet: .NET's assemblies as Microsoft's csc writes them, read, listed as ildasm, run, and JIT-compiled.",
+  dirs: {
+    survey: { summary: "Ten C# programs and their .dll, Microsoft's: what the runtime and library must do, counted by survey.sh." },
+    tests: { summary: "The survey's programs run here and by Microsoft's dotnet, compared; the JIT's and the writer's checks." },
+  },
+  files: {
+    'Main.ml': { digest: '4bcc41e8cc21',
+      summary: 'mini-dotnet: the capabilities, the logs, then CLI.main.',
+    },
+    'CLI.mli': { digest: 'a64e7091e119',
+      summary: "After Microsoft's CLR (2002) and ECMA-335: a .dll read, its types loaded, its IL interpreted.",
+      important: [
+        { at: 'comment:"a PE file, its metadata a database"', say: 'the pipeline, module by module', weight: 3 },
+        { at: 'comment:"the same file, two runtimes"', say: "checked against Microsoft's dotnet", weight: 2 },
+        { at: 'comment:"Project 7"', say: 'the languages that shaped the machine', weight: 1 },
+      ],
+    },
+    'CLI.ml': { digest: 'b7e58fb5c014',
+      summary: "The modes (run, -S, -tables, -size, -verify, -jit), and the Library's console and files given by caps.",
+      capitals: [
+        { at: 'def:main', say: 'mini-dotnet [flags] file.dll [args]' },
+      ],
+      important: [
+        { at: 'def:run', say: 'hooks filled, references loaded, Main run', weight: 3 },
+        { at: 'def:main', say: "the program's own args after its .dll", weight: 2 },
+        { at: 'comment:"the assemblies it references"', say: 'beside it, loaded before what needs them', weight: 2 },
+        { at: 'def:os', say: "System.IO's files, through the caps", weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.cli('mini-dotnet: a .dll run', [
+      ['assembly/Image.ml:def:read', 'the file read'],
+      ['CLI.ml:def:run', 'the runtime set up'],
+      ['runtime/Types.ml:def:load', 'its classes loaded'],
+      ['interpreter/Machine.ml:def:run_main', 'Main interpreted'],
+      ['jit/Jit_run.ml:def:jit', 'hot methods compiled (-jit)'],
+    ]),
+    skeletons.module_calls('CLI.ml', "The Library's world, given by the caps", 'run', 'a program run', [
+      ['unseekable', 'the console: no Seek', 'stdin, stdout, stderr'],
+      ['open_file', "FileStream's files", 'Library.hooks.file'],
+      ['os', 'File, Directory, Environment', 'Library.hooks.os'],
+    ]) + {
+      bones+: [{ at: 'CLI.ml:def:main', role: 'the modes, the flags' }],
+      joints+: [{ from: 'CLI.ml:def:main', to: 'CLI.ml:def:run', say: 'a .dll and its args' }],
+    },
+    skeletons.parts('The layers', [
+      ['assembly/', 'the file: read, listed, written'],
+      ['runtime/', 'classes, values, System'],
+      ['interpreter/', 'the IL run'],
+      ['jit/', 'the IL compiled to arm'],
+      ['csc/', 'mini-csc: C# to an assembly'],
+    ], [
+      ['assembly/', 'runtime/', 'rows, signatures'],
+      ['runtime/', 'interpreter/', 'classes, methods'],
+      ['interpreter/', 'jit/', 'a hot method'],
+      ['assembly/', 'jit/', 'the IL, verified'],
+      ['runtime/', 'csc/', "System's description"],
+      ['csc/', 'assembly/', 'written by Writer'],
+    ]),
+  ],
+}

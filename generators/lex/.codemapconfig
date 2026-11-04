@@ -1,0 +1,104 @@
+// generators/lex/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there).
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-lex, after Lesk's lex and ocamllex: a .mll's regexps made one DFA, written as OCaml tables.",
+  files: {
+    'Main.ml': { digest: 'b5ae4f58cce0', summary: "mini-lex's executable: Cap.main, the logging, CLI.main." },
+    'CLI.mli': { digest: 'e3aed9b34d5b',
+      summary: "mini-lex: the pipeline drawn, read, automaton, output; lex's history from Lesk to ocamllex.",
+      important: [
+        { at: 'comment:"Lexer.mll                        when the lexer is made"', say: "made once, run by lib_core's engine", weight: 3 },
+        { at: "comment:\"Lex is Mike Lesk's (Bell Labs, 1975)\"", say: 'made to write the yylex yacc calls', weight: 1 },
+      ],
+    },
+    'CLI.ml': { digest: '25b2154667d2',
+      summary: 'The file read, its automaton made, the lexer written; -v the states each rule starts from.',
+      capitals: [
+        { at: 'def:main', say: 'read, make, write: the whole tool' },
+      ],
+      important: [
+        { at: 'def:main', weight: 2 },
+        { at: 'def:help', weight: 1 },
+      ],
+      links: [
+        { from: 'def:main', to: 'Lex.ml:def:read' },
+        { from: 'def:main', to: 'Dfa.ml:def:make' },
+        { from: 'def:main', to: 'Output.ml:def:ocaml' },
+      ],
+    },
+    'Lex.mli': { digest: '4dffc9e98151',
+      summary: "A .mll's description as data, ocamllex's subset ix uses; the actions kept as text.",
+      capitals: [
+        { at: 'type:regexp', say: 'a character set, sequences, stars, as' },
+        { at: 'type:t', say: 'header, rules, trailer' },
+      ],
+      important: [
+        { at: 'comment:"rule token = parse"', say: 'the format, by example', weight: 3 },
+        { at: 'comment:"read, and said so: r1 # r2"', say: 'refused aloud, not misread', weight: 1 },
+        { at: 'type:rule', weight: 2 },
+        { at: 'def:read', weight: 2 },
+      ],
+    },
+    'Lex.ml': { digest: 'c74dc3887665',
+      summary: "The reader by hand: tokens, then rules by recursive descent; OCaml's actions skipped by braces.",
+      important: [
+        { at: 'def:token', say: "a .mll's tokens, braces' code whole", weight: 2 },
+        { at: 'def:code', say: 'strings and comments: braces inside', weight: 2 },
+        { at: 'def:read', weight: 3 },
+        { at: 'comment:"as binds less than |"', say: 'the precedence of the regexps', weight: 1 },
+      ],
+    },
+    'Dfa.mli': { digest: 'e95f38d4cfdc',
+      summary: "Thompson's NFA, then Rabin and Scott's subset construction: the lexer's tables, unminimized.",
+      capitals: [
+        { at: 'def:make', say: "the subset construction: a lexer's states" },
+      ],
+      important: [
+        { at: 'comment:"nondeterministic: both clauses leave one start"', say: 'if vs ident, drawn both ways', weight: 3 },
+        { at: 'comment:"In ix a regular expression is matched three ways"', say: 'Dfa, Regex, Js_regexp compared', weight: 2 },
+        { at: 'comment:"lex and ocamllex skip the nondeterministic"', say: 'followpos, compacted tables: not here', weight: 1 },
+        { at: 'type:t', weight: 2 },
+      ],
+    },
+    'Dfa.ml': { digest: '9bd4c52c6cef',
+      summary: 'The NFA built by free arrows, closures sorted, each set of states a DFA state on demand.',
+      important: [
+        { at: 'type:nstate', say: "an NFA state: free arrows, a character's", weight: 2 },
+        { at: 'def:make', weight: 3 },
+        { at: 'comment:"the states reached for free"', say: 'the closure: the key of a DFA state', weight: 2 },
+      ],
+    },
+    'Output.mli': { digest: '49b3f6570b49',
+      summary: "The lexer as OCaml on lib_core's Lexing.engine: tables, a function a rule, # lines.",
+      important: [
+        { at: 'comment:"An action is copied at its column"', say: "an error names the .mll's line", weight: 2 },
+        { at: 'comment:"r as x"', say: 'captures: matched again on the lexeme', weight: 2 },
+      ],
+    },
+    'Output.ml': { digest: 'd2b12dcf41bd',
+      summary: "The tables packed into strings, each clause's variables bound, each rule a function.",
+      important: [
+        { at: 'def:ocaml', weight: 3 },
+        { at: 'def:packed', say: '16 bits, low first, in a string literal', weight: 2 },
+        { at: 'def:variables', say: 'x a char, a string, or an option', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.cli('mini-lex: a .mll to a lexer', [
+      ['Lex.ml:def:read', 'the description: regexps, actions as text'],
+      ['Dfa.ml:def:make', "every rule's clauses as one automaton"],
+      ['Output.ml:def:ocaml', 'the tables and a function a rule'],
+    ]),
+    skeletons.chain('A .mll read: tokens, then rules', [
+      ['Lex.ml:type:input', 'the text, an offset, a line', ''],
+      ['Lex.ml:def:code', 'an action: braces matched, OCaml skipped', 'the text inside { }'],
+      ['Lex.ml:def:token', 'a token, a code block whole', 'a block'],
+      ['Lex.ml:def:read', 'lets, rules, clauses by recursive descent', 'one token ahead'],
+      ['Lex.ml:type:regexp', 'each clause a regexp and its action', 'the clauses'],
+    ]),
+  ],
+}

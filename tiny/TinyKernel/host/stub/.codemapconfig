@@ -1,0 +1,19 @@
+// tiny/TinyKernel/host/stub/: what the code map says of it (the code
+// map: tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). dune's default
+// implementation of ../TinyCalls.mli.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The tests' TinyCalls: no kernel, what is drawn kept, no key, a clock that never moves.",
+  files: {
+    'TinyCalls.ml': { digest: '43a277e67dda',
+      summary: "TinyCalls with no kernel: descriptor 3's bytes kept in drawn for TinyKernelGraphics, every other call a no.",
+      important: [
+        { at: 'def:drawn', say: "what a test hands to the kernel's drawing", weight: 3 },
+        { at: 'def:u_write', weight: 2 },
+        { at: 'def:u_argc', say: "tiny-ml compiles it too: no Sys.argv", weight: 1 },
+      ],
+      related: ['../TinyCalls.mli', '../../TinyKernelGraphics.ml'],
+    },
+  },
+}

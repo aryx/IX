@@ -1,0 +1,44 @@
+// apps/office/shapes/: what the code map says of it
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The line between the kits and the screen: figures and styled letters as Playground shapes.",
+  files: {
+    'Stroke_text.mli': {
+      summary: "Hershey's strokes in a look: bold a thicker pen, italic a shear; the widths are the drawing's.",
+      digest: '4f1fa33f5873',
+      capitals: [
+        { at: 'def:metrics', say: 'widths from the same strokes drawn' },
+        { at: 'def:glyph', say: 'a letter in a look, as shapes' },
+      ],
+      important: [{ at: 'comment:"a look is then a change to the"', say: 'a pen, not a second font', weight: 3 }],
+    },
+    'Stroke_text.ml': {
+      summary: "A letter's Hershey strokes as thin rectangles, sheared, thickened, underlined.",
+      digest: 'db9a4057d8a6',
+      important: [{ at: 'def:glyph', weight: 3 }, { at: 'def:metrics', weight: 3 }, { at: 'def:scale_of' }],
+    },
+    'Figure_shapes.mli': {
+      summary: "A drawing's figures as shapes: a fill a grey, an outline thin rectangles, text by strokes.",
+      digest: '5d11659b5040',
+      important: [{ at: 'comment:"This is the line"', say: 'Figure is what, this is how it looks', weight: 3 }, { at: 'def:figure' }],
+    },
+    'Figure_shapes.ml': {
+      summary: 'One figure to shapes: its fill, its segments as turned rectangles, its text.',
+      digest: 'a737b18e9811',
+      important: [{ at: 'def:figure', weight: 3 }, { at: 'def:segment', say: 'a line as a turned thin rectangle' }],
+    },
+  },
+  skeletons: [
+    skeletons.parts('From the kits to shapes', [
+      ['Figure_shapes.ml', 'a figure drawn'],
+      ['Stroke_text.ml', 'a letter drawn in a look'],
+      ['../draw/Figure.ml', 'what a figure is'],
+      ['../richtext/Style.ml', 'what a look is'],
+    ], [
+      ['Figure_shapes.ml', '../draw/Figure.ml', 'draws'],
+      ['Figure_shapes.ml', 'Stroke_text.ml', "a text figure's letters"],
+      ['Stroke_text.ml', '../richtext/Style.ml', 'in a look'],
+    ]),
+  ],
+}

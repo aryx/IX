@@ -1,0 +1,116 @@
+// kernels/oberon/system/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Oberon's centre: the one loop, the commands any text calls by name (M.P), the log, the tasks.",
+  files: {
+    'Oberon.mli': { digest: '5d70d735bc30',
+      summary: "The loop that is the whole system's control, its messages, the cursors, par, the log and the tasks.",
+      capitals: [
+        { at: 'def:loop', say: "Oberon's central loop: every event, one viewer" },
+        { at: 'type:par', say: 'where a command was called: its arguments' },
+        { at: 'def:call', say: 'a command run by its name, M.P' },
+      ],
+      important: [
+        { at: "comment:\"The loop, which is the whole system's control\"", say: 'the loop and a click on Hilbert.Draw, drawn', weight: 3 },
+        { at: 'comment:"A command takes no parameter"', say: "the callee reads the caller's screen", weight: 3 },
+        { at: 'comment:"Oberon\'s task is not a process"', say: 'cooperative: one that hangs stops all', weight: 2 },
+        { at: 'type:Track', say: 'the mouse: keys and place, to the viewer under it', weight: 2 },
+        { at: 'def:get_selection', say: 'the latest selection, by its time', weight: 1 },
+        { at: 'def:new_task', weight: 1 },
+      ],
+    },
+    'Oberon.ml': { digest: 'ff1833f0564e',
+      summary: 'Messages as exceptions, the two cursors, the tracks cut, a command called under a trap, the loop.',
+      important: [
+        { at: 'def:loop', say: 'keys first, then the mouse, else the tasks', weight: 3 },
+        { at: 'comment:"a key of the mouse went down"', say: 'tracked until all keys are up: interclicks', weight: 2 },
+        { at: 'def:call', say: "Oberon's trap: logged, the loop goes on", weight: 3 },
+        { at: 'def:run_tasks', weight: 2 },
+        { at: 'def:handle_filler', weight: 1 },
+        { at: 'def:allocate_user_viewer', say: 'where a new viewer opens', weight: 1 },
+      ],
+    },
+    'Modules.mli': { digest: '5120f3b663a4',
+      summary: "The commands' table, Oberon's Modules less its loader: every module is in the image already.",
+      important: [
+        { at: 'comment:"In Oberon a module is loaded"', say: 'no loader: modules said at start', weight: 3 },
+        { at: 'def:command', say: 'a module says its commands as it starts', weight: 2 },
+        { at: 'def:this_command', weight: 1 },
+      ],
+    },
+    'Modules.ml': { digest: 'f010b10485a4',
+      summary: "A list of names to procedures, filled by each module's body as it starts.",
+      important: [
+        { at: 'def:table', weight: 2 },
+      ],
+    },
+    'System.mli': { digest: 'b11520cb06c9',
+      summary: "The system's commands (Open, Close, Copy, Grow, the files', ShowModules...); the log opened at start.",
+      important: [
+        { at: 'def:standard_menu', say: "every viewer's menu, commands to click", weight: 2 },
+      ],
+    },
+    'System.ml': { digest: '8323d0bdb641',
+      summary: "Each command reads its argument after its name or the selection (^), then acts on viewers or files.",
+      important: [
+        { at: 'def:get_arg', say: 'the text after the name, or the selection if ^', weight: 3 },
+        { at: 'def:in_menu', say: "called from a viewer's menu: that viewer", weight: 2 },
+        { at: 'def:open_', weight: 2 },
+        { at: 'def:copy', say: 'a second viewer on the same text', weight: 1 },
+        { at: 'def:directory', weight: 1 },
+        { at: 'comment:"the system\'s start: its commands said"', say: 'the log and System.Tool opened', weight: 3 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'The system: the loop, the table, the commands',
+      bones: [
+        { at: 'Oberon.mli', role: 'the loop, the messages, par, the log, the tasks' },
+        { at: 'Modules.mli', role: 'names to procedures' },
+        { at: 'System.mli', role: "the system's own commands" },
+      ],
+      joints: [
+        { from: 'Oberon.mli', to: 'Modules.mli', say: 'a name looked up' },
+        { from: 'System.mli', to: 'Modules.mli', say: 'its commands said' },
+        { from: 'System.mli', to: 'Oberon.mli', say: 'par, the log' },
+      ],
+    },
+    {
+      name: 'The loop: a key, a click, or the tasks',
+      bones: [
+        { at: 'Oberon.ml:def:loop', role: 'for ever: what happened, to whom' },
+        { at: 'Oberon.ml:def:send_at', role: 'Track to the viewer under the mouse' },
+        { at: 'Oberon.ml:def:send', role: 'Consume to the focus viewer' },
+        { at: 'Oberon.ml:def:run_tasks', role: 'nothing to do: the tasks whose turn came' },
+        { at: 'Oberon.ml:def:call', role: 'a command, from a text frame: run, a TRAP logged' },
+        { at: 'Oberon.ml:def:set_par', role: 'where it was called, before' },
+      ],
+      joints: [
+        { from: 'Oberon.ml:def:loop', to: 'Oberon.ml:def:send', say: 'a character' },
+        { from: 'Oberon.ml:def:loop', to: 'Oberon.ml:def:send_at', say: 'the mouse' },
+        { from: 'Oberon.ml:def:loop', to: 'Oberon.ml:def:run_tasks', say: 'idle' },
+        { from: 'Oberon.ml:def:set_par', to: 'Oberon.ml:def:call', say: 'par set' },
+      ],
+    },
+    {
+      name: 'A system command: its argument, then the viewers',
+      bones: [
+        { at: 'System.ml:code:"let () ="', role: 'the commands said, the log and the tool opened' },
+        { at: 'System.ml:def:open_', role: 'System.Open name: a viewer on the file' },
+        { at: 'System.ml:def:get_arg', role: 'the argument after the name, or ^' },
+        { at: 'System.ml:def:open_viewer', role: 'a menu viewer of a text frame' },
+        { at: 'System.ml:def:close', role: 'System.Close: this viewer or the marked one' },
+        { at: 'System.ml:def:in_menu', role: "called from a viewer's own menu?" },
+      ],
+      joints: [
+        { from: 'System.ml:code:"let () ="', to: 'System.ml:def:open_viewer', say: 'System.Log, System.Tool' },
+        { from: 'System.ml:def:open_', to: 'System.ml:def:get_arg', say: 'the name' },
+        { from: 'System.ml:def:open_', to: 'System.ml:def:open_viewer' },
+        { from: 'System.ml:def:close', to: 'System.ml:def:in_menu' },
+      ],
+    },
+  ],
+}

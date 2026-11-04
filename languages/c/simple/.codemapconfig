@@ -2,26 +2,37 @@
 // tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there)
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "mini-cc -simple: a back end whose contract is the behavior, not 5c's bytes; C's trees to a stack machine, then to arm.",
   files: {
-    'Lower.mli': { digest: 'fd5317b1f5de',
-      summary: "A function's typed tree to a stack machine's code: operands, then the operator; conditions as jumps; 5c's calls.",
+    'Ir.ml': { digest: '2e6cae179327',
+      summary: "The stack machine as types (mini-ml's Ir with C's sizes and signs): what Lower writes, Opti and Gen read.",
       capitals: [
-        { at: 'type:ir', say: "the stack machine's instructions" },
+        { at: 'type:t', say: "the stack machine's instructions" },
       ],
       important: [
-        { at: 'comment:"that needs more of the stack goes first"', say: 'the deeper operand first, then a Swap', weight: 3 },
+        { at: 'comment:"A function, as mini-cc -simple -dir prints it"', say: 'x + y * 2 as stack code, then after -O', weight: 3 },
+        { at: 'comment:"The machine is mini-ml\'s Ir with what C adds"', say: 'addresses (Lea) and typed operations', weight: 2 },
         { at: 'type:ty', say: 'integers of 1 to 8 bytes, floats of 4 or 8', weight: 2 },
-        { at: 'type:ir', weight: 3 },
+        { at: 'type:t', weight: 3 },
+        { at: 'comment:"the forms opti\'s passes make"', say: "Opti's fused forms, in the same type", weight: 2 },
         { at: 'type:func', say: 'a function: frame sizes, R0, code', weight: 2 },
-        { at: 'def:func', weight: 2 },
+        { at: 'def:show', say: 'a stub where no deriving runs (mini-ml)', weight: 1 },
       ],
     },
-    'Lower.ml': { digest: 'aae449947535',
+    'Lower.mli': { digest: 'ba9a64f6bdc8',
+      summary: "A function's typed tree to a stack machine's code: operands, then the operator; conditions as jumps; 5c's calls.",
+      important: [
+        { at: 'comment:"that needs more of the stack goes first"', say: 'the deeper operand first, then a Swap', weight: 3 },
+        { at: 'comment:"A statement, to see the conditions and the addresses"', say: 'a for loop lowered, line by line', weight: 2 },
+        { at: 'comment:"Two passes that do little against one that does much"', say: 'the case for an intermediate language', weight: 3 },
+        { at: 'def:func', weight: 2 },
+        { at: 'def:calls64', say: "xcom's hook: vlongs as calls on arm", weight: 1 },
+      ],
+    },
+    'Lower.ml': { digest: '24c6372f2633',
       summary: "Types and places, a function's state (labels, temporaries), expressions, statements: the tree walked once.",
       important: [
-        { at: 'type:ir', weight: 2 },
         { at: 'def:emit', say: 'an instruction appended', weight: 1 },
         { at: 'def:value', say: "an expression's value pushed", weight: 3 },
         { at: 'def:branch', say: 'a condition: jumps, no 0 or 1', weight: 2 },
@@ -35,7 +46,7 @@
         { from: 'def:value', to: 'def:branch' },
       ],
     },
-    'Gen.mli': { digest: 'ffa034a7f10d',
+    'Gen.mli': { digest: '99ad6833063a',
       summary: 'The stack machine on the registers: the slot at depth i is Ri or Fi; a call spills the slots below it.',
       capitals: [
         { at: 'def:func', say: 'stack code to arm or arm64 instructions' },
@@ -45,7 +56,7 @@
         { at: 'def:func', weight: 2 },
       ],
     },
-    'Gen.ml': { digest: '87974f1062f7',
+    'Gen.ml': { digest: '15bb974e93c1',
       summary: 'The instructions by machine (arm64 or arm mnemonics), then a function: a stack of kinds, each ir to instructions.',
       important: [
         { at: 'type:mach', say: 'what differs: the mnemonics', weight: 2 },

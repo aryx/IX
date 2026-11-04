@@ -1,0 +1,52 @@
+// raspberry/storage/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The storage: the Pi's SD host and card, and the DMA that 9pi's SD driver uses.",
+  files: {
+    'Dma.mli': { digest: '74be1dc2868f', summary: "The BCM2835's DMA: chains of control blocks run at once when ACTIVE is written (9pi's SD card)." },
+    'Dma.ml': { digest: 'dd689b59923d',
+      summary: 'A chain of 32-byte control blocks followed, bus addresses to physical, a peripheral read in place.',
+      important: [
+        { at: 'def:run', weight: 2 },
+        { at: 'def:phys', say: 'bus addresses: 0x7E... to 0x20...', weight: 1 },
+      ],
+    },
+    'Sdhost.mli': { digest: '673dac180e89',
+      summary: "The Arasan SD host and QEMU's SD card on it: commands at once, blocks through the DATA port.",
+      important: [
+        { at: 'type:storage', say: 'the image, as the executable gives it', weight: 2 },
+      ],
+    },
+    'Sdhost.ml': { digest: '8215eaba8682',
+      summary: "SDHCI's registers and the card's state machine: CID, CSD, R1, reads and writes of blocks.",
+      important: [
+        { at: "section:The card, QEMU's (hw/sd/sd.c)", weight: 1 },
+        { at: 'def:command', say: 'a CMD or ACMD answered', weight: 3 },
+        { at: 'def:data_read', weight: 1 },
+      ],
+    },
+    'Storage.ml': { digest: '9c00103e6ce9', summary: "The SD card's image, read and written in place; with snapshot=on, the writes in memory." },
+  },
+  skeletons: [
+    {
+      name: 'An SD card: SDHCI registers over a card state machine',
+      bones: [
+        { at: 'Sdhost.ml:type:storage', role: "the card's bytes: a file" },
+        { at: 'Sdhost.ml:def:write', role: 'a register written: CMDTM starts a command' },
+        { at: 'Sdhost.ml:def:command', role: "the card's answer: R1, CID, CSD, a transfer started (QEMU's sd.c)" },
+        { at: 'Sdhost.ml:def:data_read', role: "the data port: the transfer's next word" },
+        { at: 'Sdhost.ml:def:data_write', role: 'a written word, a block written back when whole' },
+        { at: 'Sdhost.ml:def:raise_', role: 'interrupt bits set: CMDDONE, DATADONE, errors' },
+      ],
+      joints: [
+        { from: 'Sdhost.ml:def:write', to: 'Sdhost.ml:def:command' },
+        { from: 'Sdhost.ml:def:command', to: 'Sdhost.ml:def:raise_' },
+        { from: 'Sdhost.ml:def:data_read', to: 'Sdhost.ml:type:storage' },
+        { from: 'Sdhost.ml:def:data_write', to: 'Sdhost.ml:type:storage' },
+        { from: 'Sdhost.ml:def:data_read', to: 'Sdhost.ml:def:raise_', say: 'the end' },
+      ],
+    },
+  ],
+}

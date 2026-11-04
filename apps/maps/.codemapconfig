@@ -1,0 +1,300 @@
+// apps/maps/: what the code map says of it
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-maps: OpenStreetMap's tiles moved and zoomed, places found, forecasts, and routes by A*.",
+  files: {
+    'Maps.ml': {
+      summary: 'The program: weather and route as lines for a terminal, else the map in a playground window.',
+      digest: '86e8a449daae',
+      important: [
+        { at: 'comment:"The licences"', say: "what is shown is OSM's and Open-Meteo's", weight: 3 },
+        { at: 'code:"Playground.game Map_window.view"', say: 'the window: a playground game', weight: 3 },
+      ],
+    },
+    'Map_window.ml': {
+      summary: 'The map as a playground game: a zoom and a centre, the tiles kept, the Find box, forecast and route.',
+      digest: '3da6fd1a5b3c',
+      capitals: [{ at: 'type:model', say: 'where the window is, the tiles it holds' }],
+      important: [
+        { at: 'def:fetch', say: "a tile from the disk or the server, HTTP's caching", weight: 3 },
+        { at: 'def:placeholder', say: "an ancestor enlarged until its own comes", weight: 3 },
+        { at: 'def:in_store', say: 'the tiles in view, those missing asked', weight: 1 },
+        { at: 'def:zoomed', say: 'zoom about the mouse, not the centre', weight: 1 },
+        { at: 'def:update', say: 'drag, wheel, keys; the worker taken from', weight: 1 },
+        { at: 'def:initial', say: 'the worker started, the cache opened', weight: 1 },
+      ],
+      links: [{ from: 'def:update', to: 'def:in_store' }, { from: 'def:view', to: 'def:drawn' }],
+    },
+    'Map_window.mli': {
+      summary: 'The map as a window: mouse and keys to a zoom and centre, tiles missing to the worker.',
+      digest: 'abadeb68c153',
+    },
+    'Map_worker.ml': {
+      summary: 'One thread fetching tiles in turn, its list replaced by each want; jobs before tiles.',
+      digest: '98c7f3ff46ea',
+      important: [{ at: 'def:lock', say: 'the window and the worker share three lists', weight: 1 }],
+    },
+    'Map_worker.mli': {
+      summary: "What is fetched beside the window, which never waits: want replaces the list, per OSM's policy.",
+      digest: '459562f6aa15',
+      important: [{ at: 'def:want', say: 'only what is in view now', weight: 3 }],
+    },
+    'Mercator.ml': {
+      summary: 'Latitude and longitude to a pixel of the world at a zoom, and back.',
+      digest: '3f66f5cab535',
+    },
+    'Mercator.mli': {
+      summary: "Mercator's map of 1569 and the web's EPSG:3857: why Greenland looks as large as Africa.",
+      digest: '04acdd04ce28',
+      capitals: [{ at: 'def:y_of_latitude', say: 'ln (tan (pi/4 + phi/2))' }],
+    },
+    'Tiles.ml': {
+      summary: 'The tiles a window overlaps, their addresses and an ancestor to enlarge.',
+      digest: '38514f1a134c',
+      important: [
+        { at: 'def:in_view', say: 'x wraps round the world, y does not', weight: 3 },
+        { at: 'def:rezoomed', say: 'the point under the mouse stays put', weight: 1 },
+      ],
+    },
+    'Tiles.mli': {
+      summary: 'The map cut in a pyramid of 256-pixel squares, z/x/y, four times more at each level.',
+      digest: '40966a5d4eb7',
+      capitals: [{ at: 'type:key', say: 'a tile: z/x/y' }],
+    },
+    'Tile_cache.ml': {
+      summary: 'The tiles on disk with an index, their lifetime read from the headers, trimmed to a limit.',
+      digest: '80de9dcc66df',
+      important: [
+        { at: 'def:lifetime', say: 'max-age less Age, or Expires', weight: 3 },
+        { at: 'def:trimmed', say: 'the least used go first', weight: 1 },
+      ],
+    },
+    'Tile_cache.mli': {
+      summary: "HTTP's caching, RFC 9111, as OSM's tile policy asks: how long it is good, and asked politely after.",
+      digest: '67e404027c43',
+    },
+    'Place.ml': {
+      summary: "Nominatim's answer read: a place, its box, the zoom it asks for.",
+      digest: 'b4b7fcb4ea3f',
+    },
+    'Place.mli': {
+      summary: 'Geocoding by Nominatim: a name to a latitude, a longitude and a box, asked only on Enter.',
+      digest: 'ebe306c48863',
+      capitals: [{ at: 'type:t', say: 'a place: name, numbers, box' }],
+    },
+    'Weather.ml': {
+      summary: "Open-Meteo's columns read into days, the WMO's codes into kinds of sky.",
+      digest: '05853581e8bd',
+    },
+    'Weather.mli': {
+      summary: "A place's forecast from Open-Meteo, its answer as columns, the place's own time zone.",
+      digest: 'f19caa69edf3',
+    },
+    'Weather_panel.ml': {
+      summary: 'The forecast drawn over the map: suns and clouds of circles, the day as a curve.',
+      digest: '267f0e2f6583',
+    },
+    'Weather_panel.mli': {
+      summary: "The forecast on the window's right, in whole pixels so both compilers draw the same frame.",
+      digest: 'c17f6aa3d9bb',
+    },
+    'Map_look.ml': {
+      summary: "The window's letters in Hershey's strokes, measured and cut to fit.",
+      digest: '386969df6a17',
+    },
+    'Map_look.mli': {
+      summary: "mini-maps' letters, Hershey's, each at its place.",
+      digest: 'cd0344598986',
+    },
+    'Map_http.ml': {
+      summary: 'A GET with our User-Agent, over one connection kept open.',
+      digest: 'c4759d9ac7f2',
+    },
+    'Map_http.mli': {
+      summary: 'What mini-maps asks of a server, always saying who is asking, as the services require.',
+      digest: 'f7d6b554e448',
+    },
+    'Map_services.ml': {
+      summary: "The flags' servers and cache, and the terminal's weather and route commands.",
+      digest: '2fb53beaf700',
+    },
+    'Map_services.mli': {
+      summary: 'What the flags say of the services and the cache; the commands that print lines.',
+      digest: '3b8bc522fb72',
+    },
+    'Roads.ml': {
+      summary: "Overpass's ways made a graph: an edge per step, timed by the road's class, the largest piece kept.",
+      digest: 'f5d3cfcb2ebd',
+      important: [
+        { at: 'def:speeds', say: 'a guess: no maxspeed, no traffic', weight: 3 },
+        { at: 'def:directions', say: 'oneway, roundabouts, motorways', weight: 1 },
+        { at: 'def:largest_piece', say: 'an island of roads is unreachable', weight: 1 },
+        { at: 'def:nearest', say: 'a place to its nearest node', weight: 1 },
+      ],
+    },
+    'Roads.mli': {
+      summary: "A piece of OSM's road network as a graph, asked of Overpass for a box.",
+      digest: 'ca7bcbacc39c',
+      capitals: [{ at: 'type:t', say: 'the graph: nodes, edges, times' }],
+    },
+    'Route.ml': {
+      summary: 'A* over the road graph with a binary heap; with no guess it is Dijkstra.',
+      digest: '31b7bf139cc5',
+      important: [{ at: 'def:search_turning', say: 'f = g + h, h the straight line', weight: 3 }],
+    },
+    'Route.mli': {
+      summary: "The quickest way by A*: Dijkstra's ring on water, leaning to the goal by an admissible guess.",
+      digest: '797593cd4fd5',
+      capitals: [{ at: 'def:search', say: 'A*, or Dijkstra with guess=false' }],
+    },
+    'Routing.ml': {
+      summary: 'From two places to a route: the extract kept on disk, fetched in a child, searched, put in words.',
+      digest: '689c3077593a',
+      important: [
+        { at: 'def:graph', say: 'from memory, from the file, or asked', weight: 3 },
+        { at: 'def:asked_beside', say: 'fetched in a child process: the window moves', weight: 1 },
+        { at: 'def:find', say: 'the nearest nodes, then A*', weight: 3 },
+        { at: 'def:shapes', say: 'the route on the map', weight: 1 },
+      ],
+    },
+    'Routing.mli': {
+      summary: 'Two places to a box, the extract, Roads, Route: one extract kept for 30 days.',
+      digest: '9a0c9a90d819',
+    },
+  },
+  dirs: {
+    sdl: { summary: "The SDL build of mini-maps, for a Unix desktop." },
+  },
+  skeletons: [
+    skeletons.onefile('mini-maps: a map window, or lines for a terminal', 'Maps.ml', [
+      ['Map_window.ml:def:initial', 'the first map: worker, cache, a place', 'no command: the window'],
+      ['Map_window.ml:def:update', 'a frame: drag, zoom, find, tiles come', 'Playground.game'],
+      ['Map_window.ml:def:view', 'the tiles, the marks, the panels', 'the model'],
+    ], main='code:"Map_services.words_of flags"') + {
+      bones+: [
+        { at: 'Map_services.ml:def:forecast_lines', role: 'mini-maps weather PLACE' },
+        { at: 'Map_services.ml:def:route_lines', role: 'mini-maps route A to B' },
+      ],
+      joints+: [
+        { from: 'Maps.ml:code:"Map_services.words_of flags"', to: 'Map_services.ml:def:forecast_lines', say: 'weather' },
+        { from: 'Maps.ml:code:"Map_services.words_of flags"', to: 'Map_services.ml:def:route_lines', say: 'route' },
+      ],
+    },
+    skeletons.parts('A map: the window, the worker, the services', [
+      ['Map_window.ml', 'the window: model, update, view'],
+      ['Tiles.ml', 'which tiles a window needs'],
+      ['Mercator.ml', 'the Earth on a square'],
+      ['Map_worker.ml', 'fetches beside the window'],
+      ['Tile_cache.ml', 'the tiles kept on disk'],
+      ['Place.ml', 'Nominatim: names to places'],
+      ['Weather.ml', 'Open-Meteo: forecasts'],
+      ['Routing.ml', 'two places to a route'],
+      ['Roads.ml', 'Overpass: the road graph'],
+      ['Route.ml', 'A*'],
+    ], [
+      ['Map_window.ml', 'Tiles.ml', 'in view'],
+      ['Tiles.ml', 'Mercator.ml', 'pixels'],
+      ['Map_window.ml', 'Map_worker.ml', 'want, job'],
+      ['Map_worker.ml', 'Tile_cache.ml', 'fetch: cached or asked'],
+      ['Map_window.ml', 'Place.ml', 'Find'],
+      ['Map_window.ml', 'Weather.ml', 'w'],
+      ['Map_window.ml', 'Routing.ml', 'r'],
+      ['Routing.ml', 'Roads.ml', 'the extract'],
+      ['Routing.ml', 'Route.ml', 'searched'],
+    ]),
+    {
+      name: 'A frame of the map',
+      bones: [
+        { at: 'Map_window.ml:type:model', role: 'zoom, centre, the tiles kept' },
+        { at: 'Map_window.ml:def:update', role: 'the mouse and keys' },
+        { at: 'Map_window.ml:def:zoomed', role: 'about the mouse' },
+        { at: 'Map_window.ml:def:in_store', role: 'the tiles in view, those missing' },
+        { at: 'Map_worker.ml:def:want', role: 'the list the worker takes from' },
+        { at: 'Map_window.ml:def:fetch', role: "the worker's job: cache or server" },
+        { at: 'Map_window.ml:def:view', role: 'what is drawn' },
+        { at: 'Map_window.ml:def:placeholder', role: 'an ancestor, enlarged' },
+      ],
+      joints: [
+        { from: 'Map_window.ml:type:model', to: 'Map_window.ml:def:update', say: 'stepped' },
+        { from: 'Map_window.ml:def:update', to: 'Map_window.ml:def:zoomed', say: 'wheel, + and -' },
+        { from: 'Map_window.ml:def:update', to: 'Map_window.ml:def:in_store', say: 'where it is now' },
+        { from: 'Map_window.ml:def:in_store', to: 'Map_worker.ml:def:want', say: 'the missing keys' },
+        { from: 'Map_worker.ml:def:want', to: 'Map_window.ml:def:fetch', say: 'one at a time' },
+        { from: 'Map_window.ml:def:fetch', to: 'Map_window.ml:type:model', say: 'a picture taken' },
+        { from: 'Map_window.ml:type:model', to: 'Map_window.ml:def:view', say: 'drawn' },
+        { from: 'Map_window.ml:def:view', to: 'Map_window.ml:def:placeholder', say: 'a tile not come' },
+      ],
+    },
+    {
+      name: 'A route: extract, graph, search',
+      bones: [
+        { at: 'Routing.ml:def:find', role: 'two places to a route' },
+        { at: 'Routing.ml:def:graph', role: 'the graph, from memory, disk or Overpass' },
+        { at: 'Routing.ml:def:asked_beside', role: 'Overpass asked in a child' },
+        { at: 'Roads.ml:def:nearest_turning', role: 'each place to a node' },
+        { at: 'Route.ml:def:search_turning', role: 'A*' },
+        { at: 'Routing.ml:def:lines', role: 'the way in words' },
+        { at: 'Routing.ml:def:shapes', role: 'the way on the map' },
+      ],
+      joints: [
+        { from: 'Routing.ml:def:find', to: 'Routing.ml:def:graph', say: 'the box' },
+        { from: 'Routing.ml:def:graph', to: 'Routing.ml:def:asked_beside', say: 'not kept' },
+        { from: 'Routing.ml:def:find', to: 'Roads.ml:def:nearest_turning', say: 'the graph' },
+        { from: 'Roads.ml:def:nearest_turning', to: 'Route.ml:def:search_turning', say: 'two nodes' },
+        { from: 'Route.ml:def:search_turning', to: 'Routing.ml:def:lines', say: 'the edges' },
+        { from: 'Route.ml:def:search_turning', to: 'Routing.ml:def:shapes', say: 'the edges' },
+      ],
+    },
+    {
+      name: 'The road graph from Overpass',
+      bones: [
+        { at: 'Roads.ml:type:t', role: 'nodes, edges, their times' },
+        { at: 'Roads.ml:def:url', role: 'the query for a box' },
+        { at: 'Roads.ml:def:of_json_turning', role: 'ways and nodes made a graph' },
+        { at: 'Roads.ml:def:directions', role: 'one way or both' },
+        { at: 'Roads.ml:def:speeds', role: "a road's class to a speed" },
+        { at: 'Roads.ml:def:largest_piece', role: 'the islands dropped' },
+        { at: 'Roads.ml:def:nearest_turning', role: 'a point to its node' },
+      ],
+      joints: [
+        { from: 'Roads.ml:def:url', to: 'Roads.ml:def:of_json_turning', say: "Overpass's answer" },
+        { from: 'Roads.ml:def:of_json_turning', to: 'Roads.ml:def:directions', say: 'each way' },
+        { from: 'Roads.ml:def:of_json_turning', to: 'Roads.ml:def:speeds', say: 'its cost' },
+        { from: 'Roads.ml:def:of_json_turning', to: 'Roads.ml:def:largest_piece', say: 'the edges' },
+        { from: 'Roads.ml:def:largest_piece', to: 'Roads.ml:type:t', say: 'the graph' },
+        { from: 'Roads.ml:type:t', to: 'Roads.ml:def:nearest_turning', say: 'searched' },
+      ],
+    },
+    skeletons.module_calls('Tile_cache.ml', 'Tiles on disk, as HTTP says', 'find', 'a tile asked: on disk and good?', [
+      ['file', 'its file', 'the name'],
+      ['used', 'counted as used', 'a hit'],
+    ]) + {
+      bones+: [
+        { at: 'Tile_cache.ml:def:put', role: 'a tile kept, with its expiry' },
+        { at: 'Tile_cache.ml:def:lifetime', role: 'how long it is good' },
+        { at: 'Tile_cache.ml:def:trimmed', role: 'the least used dropped' },
+        { at: 'Tile_cache.ml:def:save_index', role: 'the index written' },
+      ],
+      joints+: [
+        { from: 'Tile_cache.ml:def:lifetime', to: 'Tile_cache.ml:def:put', say: 'the expiry' },
+        { from: 'Tile_cache.ml:def:put', to: 'Tile_cache.ml:def:trimmed', say: 'over the limit' },
+        { from: 'Tile_cache.ml:def:trimmed', to: 'Tile_cache.ml:def:save_index', say: 'what remains' },
+      ],
+    },
+  ],
+  tours: [
+    {
+      name: 'A tile, from the window to the screen',
+      stops: [
+        { at: 'Map_window.ml:def:update', say: 'A drag moves the centre; the tiles in view change.' },
+        { at: 'Tiles.ml:def:in_view', say: 'Which tiles a window of that zoom and centre overlaps.' },
+        { at: 'Map_window.ml:def:in_store', say: 'Those not in the store are missing.' },
+        { at: 'Map_worker.mli:def:want', say: 'The list replaced: only what is in view now is fetched.' },
+        { at: 'Map_window.ml:def:fetch', say: 'On disk and good, else asked, with If-None-Match.' },
+        { at: 'Tile_cache.ml:def:lifetime', say: 'How long the server says it stays good.' },
+        { at: 'Map_window.ml:def:placeholder', say: 'Meanwhile an ancestor, enlarged, takes its place.' },
+      ],
+    },
+  ],
+}

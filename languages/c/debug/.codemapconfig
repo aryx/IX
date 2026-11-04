@@ -1,0 +1,51 @@
+// languages/c/debug/: what the code map says of it (the code map:
+// tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "What mini-cc tells a debugger: the program's types in acid's language, 5c -a's text byte for byte.",
+  files: {
+    'Acid.mli': { digest: 'da36965eb9c3',
+      summary: "-a and -g: each struct as acid's aggr and printer, each variable's type, as the compiler declares them.",
+      capitals: [
+        { at: 'def:acidtype', say: "a struct aligned: its aggr and defn" },
+      ],
+      important: [
+        { at: 'comment:"sizeofNode = 20;"', say: 'a struct Node in acid: the example', weight: 3 },
+        { at: 'comment:"the debugger knows no C"', say: 'the compiler speaks the debugger\'s language', weight: 2 },
+        { at: 'def:level', say: '-a, -aa: the #included files or not', weight: 1 },
+        { at: 'def:decls', say: 'kept for the object too (-g)', weight: 1 },
+        { at: 'def:acidvar', weight: 1 },
+      ],
+    },
+    'Acid.ml': { digest: 'eb63cb3bff57',
+      summary: "acid.c's: a member's format letter and offset, a type's aggr, a variable's complex line.",
+      important: [
+        { at: 'def:acidmember', say: "a member: format letter, or a nested aggr", weight: 3 },
+        { at: 'def:acidtype', weight: 2 },
+        { at: 'def:acidvar', say: 'a local as f:v, a global, an enum constant', weight: 2 },
+        { at: 'def:amap', say: 'a keyword of acid as a name: $loop', weight: 1 },
+        { at: 'def:acidsue', say: "a struct's tag, by the symbol table", weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    { name: 'Types to acid, as the compiler declares them',
+      bones: [
+        { at: '../Declare.ml:code:"Acid.acidtype t"', role: 'a struct just aligned' },
+        { at: 'Acid.ml:def:acidtype', role: 'its aggr and its printer' },
+        { at: 'Acid.ml:def:acidmember', role: 'a member: letter and offset' },
+        { at: 'Acid.ml:def:acidvar', role: "a variable's type" },
+        { at: 'Acid.ml:def:decls', role: 'the text, kept' },
+        { at: '../Emit.ml:def:obj', role: 'in the object, for mini-ld -g' },
+      ],
+      joints: [
+        { from: '../Declare.ml:code:"Acid.acidtype t"', to: 'Acid.ml:def:acidtype', say: 'a struct type' },
+        { from: 'Acid.ml:def:acidmember', to: 'Acid.ml:def:acidtype', say: 'lines' },
+        { from: 'Acid.ml:def:acidtype', to: 'Acid.ml:def:decls', say: 'a declaration' },
+        { from: 'Acid.ml:def:acidvar', to: 'Acid.ml:def:decls', say: 'a declaration' },
+        { from: 'Acid.ml:def:decls', to: '../Emit.ml:def:obj', say: 'with -g' },
+      ],
+    },
+  ],
+}

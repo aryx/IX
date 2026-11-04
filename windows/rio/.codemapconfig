@@ -1,0 +1,250 @@
+// windows/rio/: what the code map says of it
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-rio, Plan 9's rio in small: a window system that is a file server, each window a thread.",
+  files: {
+    'Rio.ml': {
+      summary: "The window system's program: the screen, the mouse and keys taken, the right button's menu.",
+      digest: '81a71594b6d2',
+      capitals: [{ at: 'def:main', say: 'one loop over mouse, keys and wctl' }],
+      important: [
+        { at: 'comment:"The trick is Plan 9"', say: 'rio is a file server, mounted before /dev', weight: 3 },
+        { at: 'code:"let rec loop last"', say: 'one event at a time, sent to a window', weight: 3 },
+        { at: 'code:"Fileserver.serve"', say: "the windows' files, in a thread of their own", weight: 1 },
+        { at: 'code:"\"New\"; \"Resize\""', say: "rio's menu, the hidden windows' names in it", weight: 1 },
+      ],
+      related: ['../../tiny/TinyWindows.ml'],
+    },
+    'Window.ml': {
+      summary: "A window's thread: its console's lines, raw keys and mouse reads answered one message at a time.",
+      digest: '93e632218dc0',
+      important: [
+        { at: 'def:run', say: 'the only one to touch the window: no lock', weight: 3 },
+        { at: 'def:send', say: 'how everyone else changes a window', weight: 3 },
+        { at: 'code:"Terminal.put w.text text"', say: 'a write shown, unless the window holds it', weight: 1 },
+        { at: 'def:make', say: 'its image, its text, its thread', weight: 1 },
+      ],
+      links: [{ from: 'def:make', to: 'def:run' }],
+    },
+    'Window.mli': {
+      summary: "A window as a thread, after Rob Pike's design: its rectangle, its text, its messages.",
+      digest: '26bfab161041',
+      capitals: [
+        { at: 'type:t', say: 'a window: image, text, inbox, process' },
+        { at: 'type:message', say: 'all that may happen to a window' },
+        { at: 'def:send', say: 'the one door into a window' },
+      ],
+      important: [{ at: 'comment:"No lock. A window"', say: 'one thread per window, ordered by messages', weight: 3 }],
+    },
+    'Wm.ml': {
+      summary: 'The window manager: the list of windows, which is in front, what a menu or wctl does to one.',
+      digest: '15d8388d0000',
+      important: [
+        { at: 'def:windows', say: 'front first: the order is the stacking', weight: 3 },
+        { at: 'def:control', say: "a wctl's verb, as the menu would do it", weight: 3 },
+        { at: 'def:work_of', say: 'the screen less the panels', weight: 1 },
+        { at: 'def:create', say: 'a window and rc started in it', weight: 1 },
+      ],
+    },
+    'Wm.mli': {
+      summary: "rio's wm.c and wind.c's lists: the windows there are and what the menu does to one.",
+      digest: '0e079d6b8bc2',
+    },
+    'Terminal.ml': {
+      summary: 'A window\'s text: lines added at the end, 1,000 kept to scroll back, a selection, snarf.',
+      digest: 'e84ff363160f',
+      important: [
+        { at: 'def:put', say: 'a write: tabs, newlines, half a UTF-8 character', weight: 3 },
+        { at: 'def:newline', say: 'a line kept, the view held when not scrolling', weight: 1 },
+        { at: 'def:mouse', say: 'the scroll bar, then a selection', weight: 1 },
+        { at: 'def:double', say: 'a double click: a word, or brackets', weight: 1 },
+        { at: 'def:menu', say: 'snarf, paste, send, scroll', weight: 1 },
+      ],
+    },
+    'Terminal.mli': {
+      summary: 'No terminal emulated: text at the end and kept, unlike a VT100 and its escape sequences.',
+      digest: 'bea925f88554',
+      important: [{ at: 'comment:"No terminal is emulated"', say: 'why there is no curses here', weight: 3 }],
+    },
+    'Fileserver.ml': {
+      summary: "A window's files over 9P: a line each, a request turned into a message to its window.",
+      digest: 'e37ee84dea0c',
+      important: [{ at: 'def:serve', say: "the 9P loop, the windows' process's requests", weight: 3 }],
+    },
+    'Fileserver.mli': {
+      summary: "The files a window's process sees, mounted before /dev: its console is the window.",
+      digest: '03ce401662ee',
+    },
+    'Device.ml': {
+      summary: "A window's file as a record of what open, read, write and clunk do.",
+      digest: '4885f2b68cda',
+    },
+    'Device.mli': {
+      summary: 'A file of a window\'s directory: run in the server\'s thread, which must never wait.',
+      digest: '82deecb56c18',
+      important: [{ at: 'def:later', say: 'a read answered when there is something', weight: 1 }],
+    },
+    'Virtual_cons.ml': {
+      summary: 'The cons, consctl and kbd files: a read sent to the window as a message.',
+      digest: 'e0e951970fe0',
+    },
+    'Virtual_cons.mli': {
+      summary: "A window's /dev/cons, cooked or raw; rawon written to consctl, not Unix's termios.",
+      digest: 'ebebbd7473be',
+    },
+    'Virtual_mouse.ml': {
+      summary: 'The mouse and cursor files: a read answered at the mouse\'s next change.',
+      digest: '4e6ae8c592f2',
+    },
+    'Virtual_mouse.mli': {
+      summary: "A window's /dev/mouse and /dev/cursor, for a program that draws in it.",
+      digest: '7a14638c8e09',
+    },
+    'Dev_wm.ml': {
+      summary: "winname, winid, label, text, window, screen, snarf: a window's files about itself.",
+      digest: 'e0a2a80daefe',
+    },
+    'Dev_wm.mli': {
+      summary: "What a window says of itself to its program, rio's Qwinname to Qsnarf.",
+      digest: '01b6ae46e119',
+    },
+    'Wctl.ml': {
+      summary: 'The wctl file: its command lines parsed, the requests handed to the window system.',
+      digest: 'a277f653f5d7',
+      important: [{ at: 'def:requests', say: "a channel to rio's loop: the server must not wait", weight: 3 }],
+    },
+    'Wctl.mli': {
+      summary: "A window's wctl: new, resize, move, hide, written as words; places named, no arithmetic.",
+      digest: '0fe66ece4e74',
+      important: [{ at: 'type:command', say: 'what a line of words becomes', weight: 1 }],
+    },
+    'Mouse_action.ml': {
+      summary: 'Sweep, point, drag and the borders: the mouse read until its buttons are up.',
+      digest: 'b662f08d7772',
+    },
+    'Mouse_action.mli': {
+      summary: "rio's sweep, pointto, drag and bandsize: a rectangle or a window, the cursor saying which.",
+      digest: '7139a0999af8',
+    },
+    'Processes_winshell.ml': {
+      summary: "rc started in a window: rio's files mounted before /dev, $wsys set, then exec.",
+      digest: '51e68909acc9',
+    },
+    'Processes_winshell.mli': {
+      summary: "A window's process: rc in a namespace of its own, its console the window.",
+      digest: 'dbc869616e7f',
+    },
+    'Cursors.ml': {
+      summary: "rio's own cursors, cross, sight, box and corners, their bits as data.c has them.",
+      digest: '66dd1c953605',
+    },
+  },
+  skeletons: [
+    skeletons.onefile('mini-rio: an event, a window, its process', 'Rio.ml', [
+      ['Rio.ml:code:"let rec loop last"', 'the loop: mouse, keys, wctl, one at a time', 'Event.select'],
+      ['Wm.ml:def:control', 'the menu or a wctl line: new, move, delete', 'a command'],
+      ['Wm.ml:def:create', 'a window and its process', 'new'],
+      ['Window.ml:def:make', 'its image, its text', 'a rectangle'],
+      ['Window.ml:def:run', "the window's thread: one message at a time", 'Thread.create'],
+    ]) + {
+      bones+: [
+        { at: 'Processes_winshell.ml:def:start', role: 'rc, with the window before /dev' },
+        { at: 'Fileserver.ml:def:serve', role: "the windows' files, over 9P" },
+        { at: 'Terminal.ml:def:put', role: 'the text shown' },
+      ],
+      joints+: [
+        { from: 'Rio.ml:code:"let rec loop last"', to: 'Window.ml:def:run', say: 'keys, mouse: Window.send' },
+        { from: 'Wm.ml:def:create', to: 'Processes_winshell.ml:def:start', say: 'rc started' },
+        { from: 'Processes_winshell.ml:def:start', to: 'Fileserver.ml:def:serve', say: 'reads /dev/cons' },
+        { from: 'Fileserver.ml:def:serve', to: 'Window.ml:def:run', say: 'Read, Wrote: messages' },
+        { from: 'Window.ml:def:run', to: 'Terminal.ml:def:put', say: 'what is written' },
+      ],
+    },
+    skeletons.parts('The window system, the windows, their files', [
+      ['Rio.ml', 'the window system: screen, mouse, keys'],
+      ['Wm.ml', 'the list of windows and the verbs'],
+      ['Mouse_action.ml', 'sweep, point, drag'],
+      ['Window.ml', 'a window, a thread'],
+      ['Terminal.ml', "the window's text"],
+      ['Fileserver.ml', "the windows' files over 9P"],
+      ['Virtual_cons.ml', 'cons, consctl, kbd'],
+      ['Wctl.ml', 'wctl: the menu as words'],
+      ['Processes_winshell.ml', "the window's rc"],
+    ], [
+      ['Rio.ml', 'Wm.ml', 'the menu done'],
+      ['Rio.ml', 'Mouse_action.ml', 'a rectangle swept'],
+      ['Wm.ml', 'Window.ml', 'made, sent messages'],
+      ['Window.ml', 'Terminal.ml', 'shows'],
+      ['Fileserver.ml', 'Virtual_cons.ml', 'a file'],
+      ['Fileserver.ml', 'Wctl.ml', 'a file'],
+      ['Virtual_cons.ml', 'Window.ml', 'Read, Wrote'],
+      ['Wctl.ml', 'Rio.ml', 'requests'],
+      ['Wm.ml', 'Processes_winshell.ml', 'starts'],
+    ]),
+    {
+      name: "A window's thread",
+      bones: [
+        { at: 'Window.mli:type:t', role: 'the window: image, text, inbox' },
+        { at: 'Window.mli:type:message', role: 'what may happen to it' },
+        { at: 'Window.ml:def:send', role: 'a message put in its inbox' },
+        { at: 'Window.ml:def:make', role: 'made, its thread started' },
+        { at: 'Window.ml:def:run', role: 'the thread: a message at a time' },
+        { at: 'Terminal.ml:def:put', role: 'a write shown' },
+      ],
+      joints: [
+        { from: 'Window.ml:def:make', to: 'Window.ml:def:run', say: 'Thread.create' },
+        { from: 'Window.mli:type:message', to: 'Window.ml:def:send', say: 'Keys, Read, Wrote...' },
+        { from: 'Window.ml:def:send', to: 'Window.ml:def:run', say: 'the inbox' },
+        { from: 'Window.ml:def:run', to: 'Window.mli:type:t', say: 'its state, its alone' },
+        { from: 'Window.ml:def:run', to: 'Terminal.ml:def:put', say: 'the text' },
+      ],
+    },
+    skeletons.module_calls('Wm.ml', 'The window manager: a verb at a time', 'control', "a wctl's verb", [
+      ['reshape', 'resize, move', 'a rectangle'],
+      ['delete', 'its process killed, its thread ended', 'delete'],
+      ['hide', 'off the screen, a name in the menu', 'hide'],
+      ['raise_', 'to the front, or to its layer', 'top'],
+      ['work', 'what the panels leave', 'where'],
+    ]) + {
+      bones+: [{ at: 'Wm.ml:def:windows', role: 'the windows, front first' }, { at: 'Wm.ml:def:front', role: 'one put first' }],
+      joints+: [
+        { from: 'Wm.ml:def:raise_', to: 'Wm.ml:def:front', say: 'a normal window' },
+        { from: 'Wm.ml:def:front', to: 'Wm.ml:def:windows', say: 'the new order' },
+      ],
+    },
+    {
+      name: "A window's text",
+      bones: [
+        { at: 'Terminal.ml:type:t', role: 'the lines, the last, how far back' },
+        { at: 'Terminal.ml:def:put', role: 'a write' },
+        { at: 'Terminal.ml:def:newline', role: 'a line ended and kept' },
+        { at: 'Terminal.ml:def:all', role: 'redrawn' },
+        { at: 'Terminal.ml:def:mouse', role: 'the bar scrolled, text selected' },
+        { at: 'Terminal.ml:def:scroll', role: 'further back or forward' },
+        { at: 'Terminal.ml:def:menu', role: 'snarf, paste, send' },
+      ],
+      joints: [
+        { from: 'Terminal.ml:def:put', to: 'Terminal.ml:def:newline', say: 'a newline' },
+        { from: 'Terminal.ml:def:newline', to: 'Terminal.ml:type:t', say: 'the past' },
+        { from: 'Terminal.ml:def:put', to: 'Terminal.ml:def:all', say: 'the lines moved' },
+        { from: 'Terminal.ml:def:mouse', to: 'Terminal.ml:def:scroll', say: 'in the bar' },
+        { from: 'Terminal.ml:def:scroll', to: 'Terminal.ml:def:all', say: 'the view moved' },
+        { from: 'Terminal.ml:def:menu', to: 'Terminal.ml:type:t', say: 'the selection read' },
+      ],
+    },
+  ],
+  tours: [
+    {
+      name: 'A key typed in a window, read by rc',
+      stops: [
+        { at: 'Rio.ml:code:"let rec loop last"', say: 'The key arrives in the loop and goes to the window in front.' },
+        { at: 'Window.ml:def:send', say: 'Sent as a message: the window thread is the only one to touch it.' },
+        { at: 'Window.ml:def:run', say: 'The thread adds it to the line typed; a newline makes it readable.' },
+        { at: 'Fileserver.ml:def:serve', say: "rc's read of /dev/cons is a 9P request to this server." },
+        { at: 'Virtual_cons.ml:def:cons', say: 'The read becomes a Read message, answered when a line is there.' },
+        { at: 'Terminal.ml:def:put', say: 'What rc then writes comes back the same way, and is shown.' },
+      ],
+    },
+  ],
+}

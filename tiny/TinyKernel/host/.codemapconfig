@@ -1,0 +1,108 @@
+// tiny/TinyKernel/host/: what the code map says of it (the code map:
+// tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). What
+// tiny-machine and tiny-kernel give a tiny program, made by OCaml so
+// that it runs and is tested on the host: three libraries of dune's
+// (this directory's dune), each the twin of a file that tiny-ml
+// compiles for tiny-machine (../TinyMemory.ml, ../libml/TinyCalls.ml,
+// ../libml/TinyLibSystem.ml).
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The host's side of each seam: tiny-machine's memory as an array, the kernel's calls virtual, the system over Unix.",
+  files: {
+    'TinyMemory.ml': { digest: '06f73423b018',
+      summary: "tiny-machine's memory as a 16 MB array, an address the same number as on the machine, for the drawing's tests.",
+      important: [
+        { at: 'def:mem', say: 'the same addresses: the screen at 0xf00000', weight: 2 },
+        { at: 'def:row_copy', say: "byte by byte as draw.tm's loop, not Bytes.blit", weight: 2 },
+        { at: 'def:peekb', weight: 1 },
+      ],
+      related: ['../TinyMemory.ml', '../draw.tm'],
+    },
+    'TinyCalls.mli': { digest: 'c15bd0027506',
+      summary: "tiny-kernel's calls for a program built by OCaml: a virtual library, the tests' stub or an SDL window.",
+      capitals: [
+        { at: 'def:u_write', say: 'descriptor 3: the drawing messages' },
+      ],
+      important: [
+        { at: 'comment:"A virtual library of dune"', say: 'one interface, two implementations', weight: 3 },
+        { at: 'def:u_write', weight: 2 },
+        { at: 'def:u_read', weight: 1 },
+        { at: 'def:u_ready', say: 'the event loop: a key, the mouse, or the clock', weight: 2 },
+        { at: 'def:drawn', say: "the stub's: what was drawn, for a test", weight: 1 },
+      ],
+      related: ['stub/TinyCalls.ml', '../../sdl/TinyCalls.ml', '../libml/TinyCalls.ml'],
+    },
+    'TinyLibSystem.mli': { digest: 'a7ee6bc50f50',
+      summary: "What a tool asks of its system, cut to tiny-kernel's: one interface, two files, so tiny-shell runs on both.",
+      capitals: [
+        { at: 'def:exec', say: 'a program run: the one interface on two systems' },
+      ],
+      important: [
+        { at: 'comment:"So the interface is what both systems can give"', weight: 3 },
+        { at: 'def:main', weight: 2 },
+        { at: 'def:fork', weight: 2 },
+        { at: 'def:exec', weight: 2 },
+        { at: 'def:wait', say: "a status already rc's string", weight: 1 },
+        { at: 'def:dup2', weight: 1 },
+        { at: 'def:shell', say: 'a recipe run by the system shell', weight: 1 },
+      ],
+      related: ['../libml/TinyLibSystem.ml', '../../TinyShell.ml', '../../TinyUtilities.ml'],
+    },
+    'TinyLibSystem.ml': { digest: 'a43276257bbe',
+      summary: "TinyLibSystem on the host: lib_core's Cap, FS and Procs over Unix, a descriptor an int by Obj.magic.",
+      important: [
+        { at: 'def:fd', say: "Unix's descriptor is an int: Obj.magic", weight: 2 },
+        { at: 'def:reason', say: "the system's message in Failure", weight: 1 },
+        { at: 'def:main', say: 'Cap.main, the tool called with all caps', weight: 2 },
+        { at: 'def:exec', weight: 2 },
+        { at: 'def:status', say: "a Unix status as rc's string", weight: 1 },
+        { at: 'def:shell', weight: 1 },
+      ],
+    },
+  },
+  dirs: {},
+  skeletons: [
+    {
+      name: 'The host side of the seams',
+      bones: [
+        { at: 'TinyMemory.ml', role: "the machine's bytes: an array" },
+        { at: 'TinyCalls.mli', role: "the kernel's calls: a virtual interface" },
+        { at: 'stub/', role: "the tests' implementation" },
+        { at: '../../sdl/', role: "a window's implementation" },
+        { at: 'TinyLibSystem.mli', role: "a tool's system, cut to tiny-kernel's" },
+        { at: 'TinyLibSystem.ml', role: 'the host: over Unix and lib_core' },
+        { at: '../libml/', role: 'the same names on tiny-machine' },
+      ],
+      joints: [
+        { from: 'stub/', to: 'TinyCalls.mli', say: 'implements' },
+        { from: '../../sdl/', to: 'TinyCalls.mli', say: 'implements' },
+        { from: '../../sdl/', to: 'TinyMemory.ml', say: 'draws in' },
+        { from: 'TinyLibSystem.ml', to: 'TinyLibSystem.mli', say: 'implements' },
+        { from: '../libml/', to: 'TinyLibSystem.mli', say: 'implements, by tiny-ml' },
+      ],
+    },
+    {
+      name: "TinyLibSystem on the host: a tool's calls to Unix",
+      bones: [
+        { at: 'TinyLibSystem.ml:def:main', role: 'Cap.main, the tool given its caps' },
+        { at: 'TinyLibSystem.ml:def:fd', role: 'a number to a descriptor' },
+        { at: 'TinyLibSystem.ml:def:fork', role: "CapUnix's fork" },
+        { at: 'TinyLibSystem.ml:def:exec', role: 'the program, its argv, its environment' },
+        { at: 'TinyLibSystem.ml:def:wait', role: "Procs.waitpid, rc's status" },
+        { at: 'TinyLibSystem.ml:def:status', role: "a status as rc's string" },
+      ],
+      joints: [
+        { from: 'TinyLibSystem.ml:def:main', to: 'TinyLibSystem.ml:def:fork', say: "the tool's" },
+        { from: 'TinyLibSystem.ml:def:fork', to: 'TinyLibSystem.ml:def:exec', say: 'in the child' },
+        { from: 'TinyLibSystem.ml:def:main', to: 'TinyLibSystem.ml:def:wait', say: 'in the parent' },
+        { from: 'TinyLibSystem.ml:def:wait', to: 'TinyLibSystem.ml:def:status', say: "Unix's" },
+        { from: 'TinyLibSystem.ml:def:exec', to: 'TinyLibSystem.ml:def:fd', say: 'descriptors' },
+      ],
+    },
+  ],
+  views: [
+    { name: 'TinyLibSystem, host and machine', files: ['TinyLibSystem.mli', 'TinyLibSystem.ml', '../libml/TinyLibSystem.ml'] },
+    { name: 'TinyCalls: the interface and its three implementations', files: ['TinyCalls.mli', 'stub/TinyCalls.ml', '../../sdl/TinyCalls.ml', '../libml/TinyCalls.ml'] },
+  ],
+}

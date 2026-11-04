@@ -1,0 +1,60 @@
+// analyzers/summaries/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Library functions' models derived from their facts, in Models' vocabulary, instead of written by hand.",
+  files: {
+    'Summaries.mli': { digest: '1d12506ad4de',
+      summary: "A function's summary from its facts: its tree's calls as assignments, the rest one op a fact.",
+      capitals: [
+        { at: 'def:derive', say: "facts to models: what Models.ml writes by hand" },
+      ],
+      important: [
+        { at: 'comment:"why a summary is the tree and not each function"', say: "the caller's objects, however deep", weight: 3 },
+        { at: 'def:to_text', say: 'written to a file mini-analyze reads', weight: 1 },
+      ],
+    },
+    'Summaries.ml': { digest: '25d26b3b97a1',
+      summary: "Facts indexed by relation; each function's tree turned into ops, simplified, inlined, or refused.",
+      important: [
+        { at: 'def:derive', say: 'the tree: stages, local functions, calls', weight: 3 },
+        { at: 'def:simplify', say: 'copies and dead temporaries removed', weight: 2 },
+        { at: 'def:inline', say: 'a local call as parameter assignments', weight: 3 },
+        { at: 'def:index', weight: 1 },
+        { at: 'def:of_text', weight: 1 },
+      ],
+    },
+    'Derive.ml': { digest: 'd2f7dacb8c5a',
+      summary: "A tool: summaries derived from a facts file for the units named, compared with Models' or written.",
+      capitals: [
+        { at: 'code:"let () ="', say: 'a facts file, units: their summaries' },
+      ],
+      important: [
+        { at: 'code:"Sys.argv"', say: 'reads Sys.argv and files directly: no Cap', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'Summaries: facts to models',
+      bones: [
+        { at: 'Derive.ml:code:"let () ="', role: 'the tool: a facts file, units' },
+        { at: 'Summaries.ml:def:parse', role: 'the facts read back' },
+        { at: 'Summaries.ml:def:index', role: 'by relation and first argument' },
+        { at: 'Summaries.ml:def:derive', role: "each function's tree to ops" },
+        { at: 'Summaries.ml:def:inline', role: 'local calls made assignments' },
+        { at: 'Summaries.ml:def:simplify', role: 'the ops made few' },
+        { at: 'Summaries.ml:def:to_text', role: 'written for mini-analyze -summaries' },
+      ],
+      joints: [
+        { from: 'Derive.ml:code:"let () ="', to: 'Summaries.ml:def:parse', say: 'the file' },
+        { from: 'Derive.ml:code:"let () ="', to: 'Summaries.ml:def:derive', say: 'the units' },
+        { from: 'Summaries.ml:def:derive', to: 'Summaries.ml:def:index' },
+        { from: 'Summaries.ml:def:derive', to: 'Summaries.ml:def:inline' },
+        { from: 'Summaries.ml:def:inline', to: 'Summaries.ml:def:simplify' },
+        { from: 'Derive.ml:code:"let () ="', to: 'Summaries.ml:def:to_text', say: '-o file' },
+      ],
+    },
+  ],
+}

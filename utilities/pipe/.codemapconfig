@@ -1,0 +1,44 @@
+// utilities/pipe/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+local capunix = '../../lib_core/system/CapUnix.ml';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Plan 9's pipe fittings: tail at a stream's end, tee splitting it, xargs making arguments of it.",
+  files: {
+    'Tail.ml': { digest: '8ae7f12bd92a',
+      summary: "mini-tail: the last lines or bytes, from the start with +N, reversed, followed with -f.",
+      important: [
+        { at: 'comment:"Not tail.c\'s way"', say: 'read whole, cut: no seeking back', weight: 2 },
+        { at: 'type:options', weight: 1 },
+        { at: 'def:main', weight: 3 },
+      ],
+    },
+    'Tee.ml': { digest: '9bcdf0596b2c',
+      summary: "mini-tee: the standard input to the output and to files, the plumber's T fitting.",
+    },
+    'Xargs.ml': { digest: 'e28f3089b37c',
+      summary: "mini-xargs: a command run with the input's lines as arguments, ten at a time, -p at once.",
+      important: [
+        { at: 'comment:"Why it exists"', say: "exec's old limit on arguments", weight: 2 },
+        { at: 'code:"CapUnix.fork"', say: 'a child per batch, up to -p at once', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.onefile('mini-tail', 'Tail.ml', []),
+    skeletons.onefile('mini-tee', 'Tee.ml', []),
+    skeletons.onefile('mini-xargs: batches, forks', 'Xargs.ml', [
+      ['Xargs.ml:code:"CapUnix.fork"', 'a batch run in a child', 'ten lines as arguments'],
+    ]),
+    skeletons.parts("A pipe's fittings", [
+      ['Tail.ml', "the stream's end"],
+      ['Tee.ml', 'the stream split in two'],
+      ['Xargs.ml', 'the stream made arguments'],
+      [capunix, 'fork and exec'],
+    ], [
+      ['Xargs.ml', capunix, 'fork, execv, wait'],
+    ]),
+  ],
+}

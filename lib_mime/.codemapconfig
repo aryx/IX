@@ -1,0 +1,56 @@
+// lib_mime/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "What a file is (its magic number, then its name) and which program takes it: Mosaic's helper applications.",
+  files: {
+    'File_kind.mli': { digest: 'bfaf2b981a4f',
+      summary: "A file's content type by its first bytes, then its name: the magic numbers of the formats ix reads.",
+      capitals: [{ at: 'def:of_file', say: 'bytes first, then the name' }],
+      important: [
+        { at: 'comment:"A name can lie"', say: 'why the bytes come first', weight: 3 },
+        { at: 'def:of_path', weight: 1 },
+      ],
+    },
+    'File_kind.ml': { digest: '3462a873cea8',
+      summary: "The playground's Media magic numbers: RIFF, MThd, MOD's tag, MPEG audio frames, Plan 9's a.out, HTML.",
+      important: [
+        { at: 'def:of_bytes', weight: 3 },
+        { at: 'def:mod_tag', say: 'MOD: its tag at byte 1080', weight: 1 },
+        { at: 'def:is_text', weight: 1 },
+      ],
+    },
+    'Helpers.mli': { digest: '5f7c61838046',
+      summary: "A site or a content type to a command: ~/.mailcap (RFC 1524) and built-in rules; run beside the program.",
+      capitals: [{ at: 'def:for_type', say: 'a content type to its program' }],
+      important: [
+        { at: 'comment:"youtube.com/watch   mpv %u"', say: 'the rules drawn', weight: 3 },
+        { at: 'def:for_url', weight: 2 },
+        { at: 'def:run', say: 'Cap.exec: a window of its own on Plan 9', weight: 2 },
+      ],
+    },
+    'Helpers.ml': { digest: '20ffb1591d9d',
+      summary: "Rules from preferences and mailcap, %u and %s filled, the program run in a new rio window or forked.",
+      important: [
+        { at: 'def:defaults', say: 'mpv, mini-page, mini-pim', weight: 2 },
+        { at: 'def:of_mailcap', weight: 2 },
+        { at: 'def:command', weight: 2 },
+        { at: 'def:run_in_window', say: "rio's /dev/wctl: new", weight: 2 },
+        { at: 'def:run', weight: 3 },
+      ],
+    },
+  },
+  dirs: {
+    tests: { summary: 'Unit tests of the magic numbers and the rules.' },
+  },
+  skeletons: [
+    skeletons.chain('A file given to its program', [
+      ['File_kind.ml:def:of_file', 'what the bytes are', ''],
+      ['Helpers.ml:def:for_type', 'the rule for that type', 'a content type'],
+      ['Helpers.ml:def:command', 'its command, %s filled', 'a rule'],
+      ['Helpers.ml:def:run', 'run beside the program', 'the command'],
+    ]),
+  ],
+}

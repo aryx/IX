@@ -1,0 +1,43 @@
+// lib_networking/tcp/plan9/: what the code map says of it (the code map
+// is tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Tcp and Udp for mini-9pi: a connection a directory of /net, as Plan 9's dial makes it; chosen by mini-mk.",
+  files: {
+    'Tcp.ml': { digest: '8e136614c3ca',
+      summary: "Plan 9's dial by hand: clone, connect address!port to ctl, data the stream; a read bounded by an alarm.",
+      important: [
+        { at: 'comment:"No socket: a connection is a directory of /net/tcp"', weight: 3 },
+        { at: 'def:dial', weight: 3 },
+        { at: 'def:alarm', say: 'no select on Plan 9: a timer', weight: 2 },
+      ],
+    },
+    'Udp.ml': { digest: '791ef701309e',
+      summary: '/net/udp: a write a packet, a read a packet; a header in front for a host announcing.',
+      important: [
+        { at: 'comment:"old: no alarm"', say: "a lost packet held mini-9pi's boot", weight: 2 },
+        { at: 'def:ask', weight: 2 },
+        { at: 'def:conversation', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: "A stream on Plan 9's /net",
+      bones: [
+        { at: 'Tcp.ml:def:exchange', role: 'a request and its answer' },
+        { at: 'Tcp.ml:def:connect', role: 'an address, dialled' },
+        { at: 'Tcp.ml:def:dial', role: 'clone, ctl, data' },
+        { at: '../Dns.ml:def:resolve', role: 'a name, as on Linux' },
+        { at: 'Udp.ml:def:ask', role: "a packet to the name server, /net/udp's" },
+      ],
+      joints: [
+        { from: 'Tcp.ml:def:exchange', to: 'Tcp.ml:def:connect', say: 'host, port' },
+        { from: 'Tcp.ml:def:connect', to: 'Tcp.ml:def:dial', say: 'an address' },
+        { from: 'Tcp.ml:def:connect', to: '../Dns.ml:def:resolve', say: 'not an address' },
+        { from: '../Dns.ml:def:resolve', to: 'Udp.ml:def:ask', say: 'the question' },
+      ],
+    },
+  ],
+}

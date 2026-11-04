@@ -1,0 +1,58 @@
+// lib_core/libc/syscall/os/linux/: what the code map says of it (the code map: tinybox codemap,
+// ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Linux's system calls for arm and arm64: one _syscall6 stub each, a C function a call, the numbers.",
+  files: {
+    'zsyscall_linux.c': { digest: 'd5e9cd0d9f63',
+      summary: "Linux's calls a function each over _syscall6: goken's generated files in one, arm64's newer names mapped.",
+      capitals: [{ at: 'def:write', say: 'a call: its number and six arguments' }],
+      important: [
+        { at: 'comment:"A name with _sys is the kernel"', say: 'os/ and port/ make Plan 9s of it', weight: 3 },
+        { at: 'def:write', weight: 2 },
+        { at: 'code:"_sysopen(void"', weight: 2 },
+        { at: 'code:"_syscall6v"', say: "arm's 64-bit offset in two registers", weight: 1 },
+        { at: 'def:_sysrawclone', weight: 1 },
+      ],
+    },
+    'syscall_linux.h': { digest: 'f0b2edc3f6ac',
+      summary: "What zsyscall_linux.c needs: Arg, a register; the numbers' headers; the older names over arm64's.",
+      important: [{ at: 'comment:"An argument is an Arg, a register"', weight: 2 }],
+    },
+    'numbers_arm.h': { digest: '3f7fbf8ce14d', summary: "Linux's call numbers on arm (EABI), the ones asked." },
+    'numbers_arm64.h': { digest: '3b473899de7b', summary: "Linux's call numbers on arm64, the generic table: no open, no fork." },
+    'svc_arm.s': { digest: '28597250413d',
+      summary: 'Into Linux on arm: the number in R7, six arguments R0 to R5, SWI.',
+      important: [{ at: 'code:"SWI"', say: 'the trap', weight: 2 }],
+    },
+    'svc_arm64.s': { digest: '121b9ee65bb3', summary: 'Into Linux on arm64: the number in R8, six arguments R0 to R5, SVC.' },
+  },
+  skeletons: [
+    skeletons.chain('A call, from C to the trap', [
+      ['zsyscall_linux.c:def:write', 'a C function: number and arguments', ''],
+      ['syscall_linux.h', 'the numbers by machine', 'SYS_write'],
+      ['svc_arm.s', 'registers loaded, SWI', '_syscall6'],
+    ]) + {
+      bones+: [
+        { at: 'numbers_arm.h', role: "arm's table" },
+        { at: 'numbers_arm64.h', role: "arm64's table" },
+        { at: 'svc_arm64.s', role: 'the same on arm64: SVC' },
+      ],
+      joints+: [
+        { from: 'numbers_arm.h', to: 'syscall_linux.h', say: 'arm' },
+        { from: 'numbers_arm64.h', to: 'syscall_linux.h', say: 'arm64' },
+        { from: 'zsyscall_linux.c:def:write', to: 'svc_arm64.s', say: 'on arm64' },
+      ],
+    },
+    skeletons.chain('zsyscall_linux.c: the calls Plan 9 names', [
+      ['zsyscall_linux.c:def:read', 'read, as it is', ''],
+      ['zsyscall_linux.c:code:"_sysopen(void"', 'open: os/linux/open.c wraps it', 'beside'],
+      ['zsyscall_linux.c:def:_sysfstat', 'fstat: os/linux/stat.c', 'beside'],
+      ['zsyscall_linux.c:def:_sysgetdents64', 'a directory: dirread', 'beside'],
+      ['zsyscall_linux.c:def:_sysrawclone', 'clone: fork on arm64', 'beside'],
+      ['zsyscall_linux.c:def:_sysexecve', 'execve: exec', 'beside'],
+    ]),
+  ],
+}

@@ -1,0 +1,24 @@
+// kernels/singularity/programs/crash/: what the code map says of it (the
+// code map is tinybox codemap, in ~/github/ocaml-elm-playground).
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "A program that fails: its process ends with the runtime's message; the system goes on.",
+  files: {
+    'Main.ml': { digest: '3e543884d131',
+      summary: "A program that fails: its process ends with the runtime's message; the system goes on.",
+      capitals: [ { at: "code:\"let () =\"", say: "List.hd of [] : uncaught, the process ends" } ],
+    },
+  },
+  skeletons: [
+    {
+      name: "crash: an exception ends only its process",
+      bones: [
+        { at: "Main.ml:code:\"let () =\"", role: "List.hd on an empty list" },
+        { at: "../../Process.ml:def:ended", role: "the kernel: status 2, the others go on" },
+      ],
+      joints: [
+        { from: "Main.ml:code:\"let () =\"", to: "../../Process.ml:def:ended", say: "exit 2" },
+      ],
+    },
+  ],
+}

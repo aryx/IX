@@ -1,0 +1,64 @@
+// raspberry/web/jit/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "A JIT for the web page's Pi 1: hot ARM blocks translated to JavaScript text the browser compiles.",
+  files: {
+    'Jit.mli': { digest: '9f47c95b9831',
+      summary: "Blocks of ARM as JavaScript functions over the emulator's own state; the interpreter does the rest.",
+      capitals: [
+        { at: 'def:attach', say: "the board's blocks become this module's" },
+      ],
+      important: [
+        { at: 'comment:"Board.run, at each instruction, asks Board.blocks"', say: 'interpreter and blocks, taking turns', weight: 3 },
+        { at: 'comment:"ldr r3, [r0, #4]"', say: 'one instruction as the JavaScript made', weight: 3 },
+        { at: 'comment:"design: what is translated and what is not"', weight: 2 },
+        { at: 'comment:"A block is kept by the physical address"', say: 'self-modifying code: compared when caches empty', weight: 2 },
+        { at: 'comment:"To find a wrong translation"', say: 'JIT_CHECK, JIT_WITHOUT: debugging a JIT', weight: 2 },
+        { at: 'comment:"QEMU\'s TCG translates blocks"', say: 'TCG, v86, jslinux', weight: 1 },
+      ],
+    },
+    'Jit.ml': { digest: '4555dd35fa66',
+      summary: "The runtime in JavaScript, an instruction's text by kind, blocks kept by address and by text.",
+      important: [
+        { at: 'def:runtime', say: "TR, L32...: the block's helpers, in JavaScript", weight: 2 },
+        { at: 'def:operand', say: 'operand 2 as an expression', weight: 1 },
+        { at: 'def:dp', say: 'a data-processing instruction, flags inlined', weight: 2 },
+        { at: 'def:mem', say: 'a load or store through the TLB arrays', weight: 2 },
+        { at: 'def:instruction', say: 'one instruction: translated or the interpreter', weight: 3 },
+        { at: 'type:block', weight: 1 },
+        { at: 'def:translate_block', say: 'up to 64 instructions to a function', weight: 3 },
+        { at: 'def:same', say: "a block's words still in memory?", weight: 2 },
+        { at: 'def:attach', weight: 3 },
+      ],
+      links: [
+        { from: 'def:translate_block', to: 'def:instruction' },
+        { from: 'def:instruction', to: 'def:dp' },
+        { from: 'def:instruction', to: 'def:mem' },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'A hot place translated, then run',
+      bones: [
+        { at: 'Jit.ml:def:attach', role: "the board's state given to the JavaScript runtime" },
+        { at: 'Jit.ml:def:translate_block', role: 'a block, from its first word' },
+        { at: 'Jit.ml:def:instruction', role: 'an instruction as JavaScript, or the interpreter' },
+        { at: 'Jit.ml:def:dp', role: 'data processing' },
+        { at: 'Jit.ml:def:mem', role: 'loads and stores' },
+        { at: 'Jit.ml:def:same', role: "kept blocks checked against memory" },
+        { at: 'Jit.ml:def:runtime', role: 'the helpers each block calls' },
+      ],
+      joints: [
+        { from: 'Jit.ml:def:attach', to: 'Jit.ml:def:translate_block', say: '200 jumps here' },
+        { from: 'Jit.ml:def:translate_block', to: 'Jit.ml:def:instruction', say: 'each word' },
+        { from: 'Jit.ml:def:instruction', to: 'Jit.ml:def:dp' },
+        { from: 'Jit.ml:def:instruction', to: 'Jit.ml:def:mem' },
+        { from: 'Jit.ml:def:mem', to: 'Jit.ml:def:runtime', say: 'TR, L32' },
+        { from: 'Jit.ml:def:attach', to: 'Jit.ml:def:same', say: 'caches emptied' },
+      ],
+    },
+  ],
+}

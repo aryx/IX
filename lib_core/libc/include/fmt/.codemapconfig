@@ -1,0 +1,8 @@
+// lib_core/libc/include/fmt/: what the code map says of it (the code map: tinybox codemap,
+// ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Plan 9's formatter, declared: kept for mini-9pi's C pixels though ix's libc has only ix/fmt.c.",
+  files: { 'fmt.h': { digest: '939171060335', summary: "Fmt, fmtinstall, print and its kin: Plan 9's, most of it not in ix's libc." } },
+}

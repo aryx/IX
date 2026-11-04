@@ -1,0 +1,271 @@
+// apps/pim/store/: what the code map says of it
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-pim's store: every thing an item of name: value lines, a file each, stamped and linked.",
+  files: {
+    'Item.ml': {
+      summary: "An item is a Mail.t: the headers' parser reused for messages, events, tasks and notes.",
+      digest: 'b2b528c53ee2',
+      important: [
+        { at: 'type:t', say: 'the same type as a message: Mail.t', weight: 3 },
+        { at: 'def:make', say: 'id and stamp first, then the fields' },
+      ],
+    },
+    'Item.mli': {
+      summary: "What mini-pim keeps, all one thing: name: value lines, stamps saying what it is (Chandler's).",
+      digest: '8995cf3ec29e',
+      capitals: [
+        { at: 'type:t', say: 'every item: a message, an event, a task...' },
+        { at: 'def:field', say: 'a field by name, "" if none' },
+        { at: 'def:has_stamp', say: 'what it is: the views it is in' },
+      ],
+      important: [{ at: 'comment:"Chandler"', say: 'a message stamped task: nothing copied', weight: 3 }],
+    },
+    'Items.ml': {
+      summary: 'The store on disk: a directory of plain text, a file an item, and the mail cache.',
+      digest: 'fbcc98a9b08b',
+      important: [
+        { at: 'def:place', say: '$PIM_STORE, ~/.ix-pim, $home/lib/pim', weight: 3 },
+        { at: 'def:save', say: 'written at once: no Save', weight: 3 },
+        { at: 'def:all', say: 'every item, read again each time' },
+        { at: 'def:cached', say: "a message's bytes, offline" },
+        { at: 'def:secret', say: 'mode 600 files: password, calendars' },
+      ],
+    },
+    'Items.mli': {
+      summary: 'A store ed can fix, grep can search and mini-git can keep: one item, one file.',
+      digest: '0f66e484e891',
+      capitals: [{ at: 'def:save', say: 'an item written' }, { at: 'def:all', say: 'the whole store' }],
+    },
+    'Search.ml': {
+      summary: "One search over every item, Gmail's syntax: from:, is:, label:, before:, -word.",
+      digest: '77ee1beafe9d',
+      important: [
+        { at: 'type:term', say: 'a word, a field, a stamp, a date bound', weight: 3 },
+        { at: 'def:term', say: 'from:alice, is:task, before:...' },
+        { at: 'def:holds', say: 'one term against one item' },
+        { at: 'def:date', say: "ISO dates, used across the suite" },
+      ],
+    },
+    'Search.mli': {
+      summary: 'A query over all items as Gmail writes one, and the title a list shows of an item.',
+      digest: '260c55ab67a5',
+      capitals: [{ at: 'def:search', say: 'the items a query matches' }],
+    },
+    'Links.ml': {
+      summary: "Links both ways: the ids an item names in fields or [[ ]], and the items naming it.",
+      digest: '27a3d472541b',
+      important: [
+        { at: 'def:bracketed', say: "a note's [[id]] links, one line each", weight: 3 },
+        { at: 'def:backlinks', say: 'computed by scanning all items, not kept', weight: 3 },
+        { at: 'comment:"what an item names: its fields"', say: 'named again: the first plus [[ ]], shadowing it' },
+      ],
+    },
+    'Links.mli': { summary: 'Links as words in an item, so the file says them; backlinks computed.', digest: '02378785072a' },
+    'When.ml': {
+      summary: 'A day typed as words, English and French: friday, in 3 days, next week, nov 5.',
+      digest: '8c32ee7eda10',
+      important: [
+        { at: 'def:parse', say: 'words to a date, from today', weight: 3 },
+        { at: 'def:today', say: 'the clock, or the tests\' today=' },
+      ],
+    },
+    'When.mli': { summary: 'Days as people type them, for snoozes, due dates and events.', digest: 'c7e64f09e9c9' },
+    'Capture.ml': {
+      summary: 'An event from one line: "lunch with alice tue 12:30", "standup every monday 9h30".',
+      digest: '7be9aa1cf600',
+      important: [
+        { at: 'def:event', say: 'the words taken out one kind at a time', weight: 3 },
+        { at: 'def:time_of', say: '12:30, 9h30, 3pm' },
+        { at: 'def:repeat_of', say: 'every monday: an RRULE' },
+        { at: 'def:to_item', say: 'the event as an item' },
+      ],
+    },
+    'Capture.mli': { summary: "A calendar's quick add: a line's day, time, repeat and people.", digest: 'd63a1fc7cd16' },
+    'Events.ml': {
+      summary: "Events as items: their occurrences in the days shown, birthdays, an invitation's items.",
+      digest: 'af96dca8dbbd',
+      important: [
+        { at: 'def:occurrences', say: "a rule's days in the window, not stored", weight: 3 },
+        { at: 'def:between', say: 'every event in a range, spans and birthdays' },
+        { at: 'def:local', say: "Google's UTC times at this zone's clock" },
+        { at: 'def:of_ics', say: 'an .ics or an invitation made items', weight: 3 },
+      ],
+    },
+    'Events.mli': {
+      summary: 'Items stamped event: a day, a time, a repeat rule, links to people.',
+      digest: '79c8214e3d3f',
+      important: [{ at: 'comment:"no zone"', say: 'stale: of_ics now converts UTC by Zone' }],
+    },
+    'Today.ml': {
+      summary: "The day: events, tasks late and due, bills, mail back or from people, the day's page.",
+      digest: '7cb2b026d5d3',
+      important: [
+        { at: 'def:lines', say: "Home's Today and mini-pim today", weight: 3 },
+        { at: 'def:from_people', say: 'unread mail from the address book only' },
+        { at: 'def:again', say: "a repeating task's next one" },
+      ],
+    },
+    'Today.mli': { summary: 'What the day holds, computed from every item: Home and the terminal share it.', digest: '88b644e48630' },
+    'Detect.ml': {
+      summary: "Data Detectors (Mac OS 8): the days, amounts and addresses a message's text mentions.",
+      digest: '49cdc461f782',
+      important: [
+        { at: 'def:in_line', say: 'each kind found once a line', weight: 3 },
+        { at: 'def:cents_of', say: 'the last separator before two digits: cents' },
+        { at: 'def:stuck', say: '$62.40, 24,50€: a sign stuck on' },
+        { at: 'def:day_words', say: 'only words that are a day alone', weight: 3 },
+      ],
+    },
+    'Detect.mli': { summary: 'What a text says the suite could keep: an event, a bill, a contact.', digest: '0626fee118de' },
+    'Books.ml': {
+      summary: 'The money as double entry: postings in items, balances, registers, a bank\'s lines matched.',
+      digest: 'c2a9e596bbae',
+      important: [
+        { at: 'type:posting', say: 'an account and its amount', weight: 3 },
+        { at: 'def:postings', say: "an item's posting: lines", weight: 3 },
+        { at: 'def:register', say: "an account's lines, as Ledger's" },
+        { at: 'def:fresh', say: "a bank's lines not there yet" },
+        { at: 'def:report', say: "the month's categories" },
+      ],
+    },
+    'Books.mli': {
+      summary: "Double entry behind Quicken's register: each amount twice, in item fields.",
+      digest: 'ecf931de8dd8',
+    },
+    'Envelopes.ml': {
+      summary: "YNAB's envelopes: money assigned, spent and available, what is left to assign.",
+      digest: 'bbe127ab058a',
+      important: [{ at: 'def:to_assign', say: 'cash less what envelopes hold', weight: 3 }],
+    },
+    'Envelopes.mli': { summary: 'Budgeting by envelopes, each dollar given a job (YNAB).', digest: 'd96d80ad09f3' },
+    'Screen.ml': {
+      summary: "HEY's Screener: a sender's mail to the Imbox, the Feed, the Paper Trail, or out.",
+      digest: '07381e4bbb67',
+      important: [
+        { at: 'def:place', say: "a conversation's list, by its sender", weight: 3 },
+        { at: 'def:decide', say: 'y in, n out: kept as an item' },
+      ],
+    },
+    'Screen.mli': { summary: "Where a sender's mail goes, decided once per sender.", digest: 'fd9b3f77952f' },
+    'Calendars.ml': {
+      summary: "Google's calendars read by their secret iCal addresses, each fetch a mirror.",
+      digest: '5316e79be531',
+      important: [{ at: 'def:merge', say: 'a mirror: gone events removed', weight: 3 }],
+    },
+    'Calendars.mli': { summary: 'Calendars subscribed by URL, no OAuth: the address is the secret.', digest: '320bb29272be' },
+    'Vcard.ml': {
+      summary: "vCard files read, Google's and Apple's contacts, made people items.",
+      digest: '8b194774f508',
+      important: [
+        { at: 'def:ungrouped', say: "Apple's item1. prefixes dropped", weight: 3 },
+        { at: 'def:to_item', say: 'a card made a contact' },
+      ],
+    },
+    'Vcard.mli': { summary: "The address books' format, iCalendar's sibling from Versit.", digest: '1af74efddbd4' },
+    'People.ml': {
+      summary: "The address book, filled from the mail by a key (BBDB's way); the mail with a person.",
+      digest: '0adc7beb7b2f',
+      important: [
+        { at: 'def:of_sender', say: 'p: the sender made a contact', weight: 3 },
+        { at: 'def:with_', say: 'the mail to and from a person' },
+      ],
+    },
+    'People.mli': { summary: 'People as contact items, found by their addresses.', digest: 'f303dae86912' },
+    'Remind.ml': {
+      summary: 'When a reminder is said: an event minutes before, a task by its remind: field.',
+      digest: 'bf923283fa02',
+      important: [{ at: 'def:due', say: 'the reminders of this minute', weight: 3 }],
+    },
+    'Remind.mli': { summary: 'The reminders mini-pim remind says, minute by minute.', digest: 'b11c0f0d5ebb' },
+  },
+  skeletons: [
+    {
+      name: 'The store: items, and what reads them',
+      bones: [
+        { at: 'Item.ml', role: 'the item: name: value lines' },
+        { at: 'Items.ml', role: 'the store: a file an item' },
+        { at: 'Search.ml', role: 'a query over all items' },
+        { at: 'Links.ml', role: 'links both ways' },
+        { at: 'Events.ml', role: 'items with a time' },
+        { at: 'Books.ml', role: 'items with postings' },
+        { at: 'Today.ml', role: 'the day, from all of them' },
+        { at: 'Capture.ml', role: 'a line made an event' },
+      ],
+      joints: [
+        { from: 'Items.ml', to: 'Item.ml', say: 'files parsed' },
+        { from: 'Item.ml', to: 'Search.ml', say: 'fields matched' },
+        { from: 'Item.ml', to: 'Links.ml', say: 'ids in fields' },
+        { from: 'Item.ml', to: 'Events.ml', say: 'stamp: event' },
+        { from: 'Item.ml', to: 'Books.ml', say: 'posting: lines' },
+        { from: 'Events.ml', to: 'Today.ml', say: "the day's events" },
+        { from: 'Capture.ml', to: 'Items.ml', say: 'a new event saved' },
+      ],
+    },
+    {
+      name: 'Events: a rule to the days shown',
+      bones: [
+        { at: 'Events.ml:def:start', role: 'its day and time' },
+        { at: 'Events.ml:def:occurrences', role: 'its days in a window' },
+        { at: 'Events.ml:def:between', role: 'all events in a range' },
+        { at: 'Events.ml:def:of_ics', role: 'an .ics made items' },
+        { at: 'Events.ml:def:local', role: 'UTC at the local clock' },
+      ],
+      joints: [
+        { from: 'Events.ml:def:start', to: 'Events.ml:def:occurrences', say: 'the first' },
+        { from: 'Events.ml:def:occurrences', to: 'Events.ml:def:between', say: 'each repeat' },
+        { from: 'Events.ml:def:local', to: 'Events.ml:def:of_ics', say: 'moments' },
+      ],
+    },
+    {
+      name: 'Detect: a text to what it mentions',
+      bones: [
+        { at: 'Detect.ml:def:find', role: 'a text, line by line' },
+        { at: 'Detect.ml:def:in_line', role: 'days, amounts, addresses' },
+        { at: 'Detect.ml:def:day_words', role: 'the words that are a day alone' },
+        { at: 'Detect.ml:def:stuck', role: 'a currency stuck on' },
+        { at: 'Detect.ml:def:cents_of', role: 'the number as cents' },
+      ],
+      joints: [
+        { from: 'Detect.ml:def:find', to: 'Detect.ml:def:in_line', say: 'each line' },
+        { from: 'Detect.ml:def:day_words', to: 'Detect.ml:def:in_line', say: 'a day' },
+        { from: 'Detect.ml:def:in_line', to: 'Detect.ml:def:stuck', say: 'a word' },
+        { from: 'Detect.ml:def:stuck', to: 'Detect.ml:def:cents_of', say: 'its digits' },
+      ],
+    },
+    {
+      name: 'Capture: one line, an event',
+      bones: [
+        { at: 'Capture.ml:def:event', role: 'the line taken apart' },
+        { at: 'Capture.ml:def:time_of', role: 'a time word' },
+        { at: 'Capture.ml:def:repeat_of', role: 'every monday' },
+        { at: 'Capture.ml:type:event', role: 'what was understood' },
+        { at: 'Capture.ml:def:to_item', role: 'the item saved' },
+      ],
+      joints: [
+        { from: 'Capture.ml:def:event', to: 'Capture.ml:def:time_of', say: 'each word' },
+        { from: 'Capture.ml:def:event', to: 'Capture.ml:def:repeat_of', say: 'every ...' },
+        { from: 'Capture.ml:def:event', to: 'Capture.ml:type:event', say: 'the rest the title' },
+        { from: 'Capture.ml:type:event', to: 'Capture.ml:def:to_item', say: 'stored' },
+      ],
+    },
+    {
+      name: 'Books: postings to registers',
+      bones: [
+        { at: 'Books.ml:type:posting', role: 'an account, an amount' },
+        { at: 'Books.ml:def:postings', role: "an item's postings" },
+        { at: 'Books.ml:def:balance', role: "an account's balance" },
+        { at: 'Books.ml:def:register', role: "an account's register" },
+        { at: 'Books.ml:def:of_txn', role: "a bank's line made an item" },
+        { at: 'Books.ml:def:report', role: "the month's categories" },
+      ],
+      joints: [
+        { from: 'Books.ml:def:postings', to: 'Books.ml:type:posting', say: 'parsed' },
+        { from: 'Books.ml:def:postings', to: 'Books.ml:def:balance', say: 'summed' },
+        { from: 'Books.ml:def:postings', to: 'Books.ml:def:register', say: 'as lines' },
+        { from: 'Books.ml:def:postings', to: 'Books.ml:def:report', say: 'by category' },
+        { from: 'Books.ml:def:of_txn', to: 'Books.ml:def:postings', say: 'two postings' },
+      ],
+    },
+  ],
+}

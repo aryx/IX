@@ -1,0 +1,33 @@
+// utilities/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Plan 9's command-line programs, a file or a few each: cat to tar, grep to awk, dc to bc.",
+  dirs: {
+    tests: { summary: "differential.sh: each utility run beside Plan 9's (or the host's) on the same input, outputs compared." },
+  },
+  skeletons: [
+    skeletons.parts('The utilities by what they work on', [
+      ['files/', 'files: made, copied, moved, listed'],
+      ['text/', 'text: lines filtered, edited, sorted'],
+      ['text/awk/', 'a language for text: patterns, fields'],
+      ['pipe/', 'the pipe: its ends and its fan-out'],
+      ['calc/', 'numbers: three calculators, one compiling to another'],
+      ['archive/', 'many files as one, compressed'],
+      ['process/', 'processes: listed, timed, waited'],
+      ['namespace/', "Plan 9's own: the name space changed"],
+      ['../lib_core/', 'what every utility is written with: FS, Console, Exit'],
+    ], [
+      ['files/', '../lib_core/', 'FS: the system calls'],
+      ['text/', '../lib_core/', 'Regex: one regexp for all'],
+      ['text/awk/', '../lib_core/', 'Regex under awk own'],
+      ['pipe/', '../lib_core/', 'Console: standard input, output'],
+      ['calc/', '../lib_core/', 'Console, Exit'],
+      ['archive/', '../lib_core/', 'FS, and Zlib besides'],
+      ['process/', '../lib_core/', '/proc read as files'],
+      ['namespace/', '../lib_core/', 'Sys_plan9: bind, mount'],
+    ]),
+  ],
+}

@@ -1,0 +1,207 @@
+// games/fps/quake/render/: what the code map says of it
+local skeletons = import '../../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Quake's software renderer (r_*.c, d_*.c): PVS, edge list, spans, surface cache; each pixel drawn once.",
+  files: {
+    'Render.mli': {
+      summary: "A frame of Quake's software renderer (R_RenderView, R_EdgeDrawing): 320x200 bytes of the palette.",
+      digest: 'dab4f503e9e4',
+      capitals: [{ at: 'def:frame', say: 'leaves marked, edges made, scanned, drawn' }],
+    },
+    'Render.ml': { summary: 'A frame: lights, view, PVS, the world and brush models as edges, scan, then models.', digest: 'f9832bef2dec' },
+    'View.mli': {
+      summary: "The renderer's state all parts share: the picture, the eye's axes, the projection, the four planes.",
+      digest: '0fb0a8d0bb72',
+      capitals: [
+        { at: 'type:t', say: 'the state of a frame' },
+        { at: 'def:transform', say: 'a point to the eye: x right, y up, z ahead' },
+      ],
+      important: [{ at: 'comment:"left plane"', say: 'four planes: clip, or cull a box', weight: 2 }],
+    },
+    'View.ml': {
+      summary: 'The eye set up, its frustum planes, the light styles animated as Quake strings them.',
+      digest: '29d8b22365a0',
+      important: [
+        { at: 'def:setup', say: 'R_SetupFrame: axes, planes, scales', weight: 3 },
+        { at: 'def:animate_lights', say: "'mmnmmommommnonmmonqnmmo': a flicker as letters", weight: 2 },
+        { at: 'def:angle_vectors', say: 'pitch and yaw to vpn, vright, vup', weight: 1 },
+      ],
+    },
+    'Bsp.mli': {
+      summary: "The tree walked front to back, what the eye may see made edges (r_bsp.c, R_MarkLeaves).",
+      digest: '8f471242ce75',
+      important: [{ at: 'def:mark_leaves', say: 'the PVS: only the leaves seen from here', weight: 2 }],
+    },
+    'Bsp.ml': {
+      summary: "The PVS marks leaves; nodes walked front to back, culled by the frustum; brush models clipped.",
+      digest: '81f64f014bd9',
+      important: [
+        { at: 'def:mark_leaves', say: "vis's bits: a room's rooms", weight: 3 },
+        { at: 'def:world_node', say: 'R_RecursiveWorldNode: the key grows', weight: 3 },
+        { at: 'def:clip_box', say: 'a box against the four planes', weight: 2 },
+        { at: 'def:render_bmodels', say: 'doors and lifts, clipped by the world', weight: 1 },
+      ],
+    },
+    'Edges.mli': {
+      summary: "A face made screen edges (R_RenderFace, R_ClipEdge, R_EmitEdge) and a frame's edge, surface tables.",
+      digest: 'd941f17a089b',
+      capitals: [
+        { at: 'type:t', say: "a frame's edges, surfaces and spans" },
+        { at: 'def:render_face', say: 'a face: its edges filed by scanline' },
+      ],
+      important: [{ at: 'comment:"Quake does not draw a face as a polygon"', say: 'edges, leading and trailing', weight: 3 }],
+    },
+    'Edges.ml': {
+      summary: "Edges clipped by the view's planes, projected, filed under their first scanline, sorted by u.",
+      digest: '7ddc8f2e1d66',
+      important: [
+        { at: 'def:clip_edge', say: 'R_ClipEdge: against each plane', weight: 2 },
+        { at: 'def:emit_edge', say: 'R_EmitEdge: u and its step, filed', weight: 3 },
+        { at: 'def:render_face', say: "a face: its 1/z plane, its edges", weight: 3 },
+        { at: 'def:sentinel', say: 'the background at each end of a line', weight: 1 },
+      ],
+    },
+    'Scan.mli': {
+      summary: "The edges made spans, scanline by scanline (R_ScanEdges): which face is in front, no z-buffer.",
+      digest: '136f57f00964',
+      capitals: [{ at: 'def:scan_edges', say: "Quake's answer to hidden surfaces" }],
+      important: [{ at: 'comment:"a leading edge pushes its surface"', say: 'a stack of surfaces by key', weight: 3 }],
+    },
+    'Scan.ml': {
+      summary: 'Active edges stepped and resorted, surfaces pushed and popped by key, spans emitted.',
+      digest: '3f5b68fa4b45',
+      important: [
+        { at: 'def:leading_edge', say: 'a surface begins: on top?', weight: 3 },
+        { at: 'def:trailing_edge', say: 'a surface ends: a span', weight: 2 },
+        { at: 'def:nearer', say: 'same key: brush models by 1/z', weight: 2 },
+        { at: 'def:step_active_u', say: 'the next line, an insertion sort', weight: 1 },
+      ],
+    },
+    'Spans.mli': {
+      summary: "The surfaces' spans drawn (D_DrawSurfaces, D_DrawSpans8): textured, turbulent water, the sky.",
+      digest: 'fc6ed83f4ba8',
+      capitals: [{ at: 'def:draw', say: "every surface's spans" }],
+    },
+    'Spans.ml': {
+      summary: "Spans textured with perspective every 8 pixels, water's turbulence, the sky's two layers, z written.",
+      digest: '7d7c7afc5ce8',
+      important: [
+        { at: 'def:calc_gradients', say: 's/z, t/z, 1/z linear on the screen', weight: 2 },
+        { at: 'def:draw_spans', say: 'D_DrawSpans8: a divide every 8 pixels', weight: 3 },
+        { at: 'def:turbulent', say: 'water warped by a sine table', weight: 1 },
+        { at: 'def:draw_zspans', say: "the world's z, for the models", weight: 2 },
+        { at: 'def:mip_level', say: 'far faces: smaller surfaces', weight: 1 },
+      ],
+    },
+    'Surfcache.mli': {
+      summary: "A face's texture lit, made once and kept (r_surf.c): what made a lightmap free at each pixel.",
+      digest: '9070fb058d20',
+      capitals: [{ at: 'def:surface', say: "a face's lit surface, cached" }],
+      important: [{ at: 'comment:"too slow for a Pentium"', say: 'why lighting happens before drawing', weight: 3 }],
+    },
+    'Surfcache.ml': {
+      summary: 'Lightmaps built from the styles, blocks of 16 texels lit bilinearly, kept until the light changes.',
+      digest: '7b19c6e3405e',
+      important: [
+        { at: 'def:build_lightmap', say: 'the samples by their styles now', weight: 2 },
+        { at: 'def:draw_surface', say: 'R_DrawSurfaceBlock8: texel through colormap', weight: 3 },
+        { at: 'def:budget', say: 'the cache has a size: old ones dropped', weight: 1 },
+      ],
+    },
+    'Alias.mli': {
+      summary: "Quake's models, monsters and items (.mdl, alias models): loaded, lit at a point, drawn with z.",
+      digest: '7c1d73dbc115',
+      capitals: [{ at: 'def:draw', say: 'a model at a frame, in the world' }],
+    },
+    'Alias.ml': {
+      summary: "An .mdl's frames and skins read, vertices projected, triangles filled with an affine skin and z.",
+      digest: '357cea960fb5',
+      important: [
+        { at: 'def:load', say: "Mod_LoadAliasModel: compressed vertices, normals' table", weight: 2 },
+        { at: 'def:light_point', say: "R_LightPoint: the floor's lightmap below", weight: 2 },
+        { at: 'def:triangle', say: 'd_polyse.c: a triangle, skin and z', weight: 3 },
+        { at: 'def:draw', say: 'the model, over the world by its z', weight: 2 },
+      ],
+    },
+    'Particles.mli': { summary: "Quake's points of colour (r_part.c): blood, puffs, explosions, trails.", digest: '8e7fb998c2f3' },
+    'Particles.ml': {
+      summary: 'Particles born by an effect, moved and faded by its ramp, drawn as squares with z.',
+      digest: '98767d090783',
+      important: [
+        { at: 'def:explosion', say: 'two ramps of colour, outward', weight: 1 },
+        { at: 'def:run', say: 'a frame: gravity, the ramp, death', weight: 2 },
+        { at: 'def:draw', say: 'a square, its size by distance', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.chain("A Quake frame: PVS, edges, scan, spans", [
+      ['Render.ml:def:frame', 'a frame', ''],
+      ['Bsp.ml:def:mark_leaves', 'the PVS: the leaves that may be seen', 'the eye leaf'],
+      ['Bsp.ml:def:world_node', 'the tree front to back', 'the marked'],
+      ['Edges.ml:def:render_face', 'a face: its edges filed', 'each face'],
+      ['Scan.ml:def:scan_edges', 'scanlines: spans of the nearest', 'the edges'],
+      ['Spans.ml:def:draw', 'each surface its spans', 'the spans'],
+      ['Surfcache.ml:def:surface', 'the lit texture, cached', 'a surface'],
+    ]) + {
+      bones+: [
+        { at: 'Alias.ml:def:draw', role: 'then the models, by z' },
+        { at: 'View.ml:type:t', role: 'what all share' },
+      ],
+      joints+: [
+        { from: 'Render.ml:def:frame', to: 'Alias.ml:def:draw', say: 'the things' },
+        { from: 'Render.ml:def:frame', to: 'View.ml:type:t', say: 'set up' },
+      ],
+    },
+    skeletons.module('Bsp.ml', 'The world walked', [
+      ['mark_leaves', 'the PVS', ''],
+      ['world_node', 'front to back', 'marked leaves'],
+      ['clip_box', 'culled by the frustum', 'a node'],
+    ]),
+    skeletons.module('Edges.ml', 'A face to edges', [
+      ['render_face', 'a face', ''],
+      ['clip_edge', 'an edge clipped', 'each edge'],
+      ['emit_edge', 'filed by scanline', 'what is left'],
+    ]),
+    skeletons.module('Scan.ml', 'Scanlines: edges to spans', [
+      ['scan_edges', 'each scanline', ''],
+      ['generate_spans', 'the active edges walked', 'a line'],
+      ['leading_edge', 'a surface pushed', 'a lead'],
+      ['trailing_edge', 'a surface popped, a span', 'a trail'],
+    ]),
+    skeletons.module('Spans.ml', 'Spans drawn', [
+      ['draw', 'each surface', ''],
+      ['calc_gradients', 'its texture on the screen', 'a surface'],
+      ['draw_spans', 'textured, 8 pixels a divide', 'its spans'],
+      ['draw_zspans', 'z written', 'for the models'],
+    ]),
+    skeletons.module('Surfcache.ml', 'A surface made', [
+      ['surface', 'found, or made', ''],
+      ['build_lightmap', 'the light now', 'made'],
+      ['draw_surface', 'texels lit', 'the light'],
+    ]),
+    skeletons.module('Alias.ml', 'A model drawn', [
+      ['draw', 'at its frame', ''],
+      ['draw_pitched', 'turned, its vertices projected', 'its frame'],
+      ['triangle', 'filled with z', 'each triangle'],
+    ]) + {
+      bones+: [{ at: 'Alias.ml:def:light_point', role: 'its light, from the floor below' }],
+      joints+: [{ from: 'Alias.ml:def:draw_pitched', to: 'Alias.ml:def:light_point', say: 'where it stands' }],
+    },
+    skeletons.module('Alias.ml', 'An .mdl read', [
+      ['load', 'frames, skins, triangles', ''],
+      ['normals', "the vertices' normals", 'for the light'],
+    ]),
+    skeletons.module('View.ml', 'The eye', [
+      ['setup', 'axes, planes, scales', ''],
+      ['angle_vectors', 'pitch and yaw to axes', 'the angles'],
+      ['transform', 'a point to the eye', 'used by all'],
+    ]),
+    skeletons.module('Particles.ml', 'Particles', [
+      ['add', 'born', ''],
+      ['run', 'moved, faded', 'each frame'],
+      ['draw', 'drawn', 'each'],
+    ]),
+  ],
+}

@@ -1,0 +1,124 @@
+// games/racing/virtua/race/: what the code map says of it
+local skeletons = import '../../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The race: the player's car on the road, fifteen rivals, the clock and laps, the display, the sound.",
+  files: {
+    'Topdown.mli': {
+      summary: 'A car on a plane that slides: the velocity turns towards the heading by its grip; bumps.',
+      digest: '54e679954eee',
+      capitals: [{ at: 'def:drive', say: "the arcade's few rules: grip, not tyres" }],
+    },
+    'Topdown.ml': { summary: "The playground's racing kit's car: drive, bounce off a wall, push another.", digest: '883e5c6f46ff' },
+    'Driving.mli': {
+      summary: "The player's car on the road in space, a Topdown car found again on the ribbon each frame.",
+      digest: 'c103789361d5',
+      capitals: [
+        { at: 'type:t', say: 'the car, where it is along and across' },
+        { at: 'def:steer', say: 'a frame of driving' },
+      ],
+      important: [{ at: 'def:world', say: 'the car in the world, for the camera', weight: 2 }],
+    },
+    'Driving.ml': {
+      summary: 'Driving made: the wheel turned a little at a time, the grass, the rail, the spins.',
+      digest: '12441e72bd4e',
+      important: [
+        { at: 'def:steer', say: 'gas, wheel, grip; then where on the road', weight: 3 },
+        { at: 'def:grass_params', say: 'the grass takes the grip', weight: 1 },
+        { at: 'def:slip', say: 'too much slide: a spin', weight: 2 },
+      ],
+    },
+    'Race.mli': {
+      summary: 'One race a frame at a time: the countdown, the clock and checkpoints, laps, the goal.',
+      digest: '2eab9aa7deef',
+      capitals: [{ at: 'def:step', say: 'a frame of the race, and its events' }],
+      important: [{ at: 'type:event', say: 'what the sound and screens hear', weight: 2 }],
+    },
+    'Race.ml': {
+      summary: 'The race made: the player driven, the rivals driven and bumped, the clock counted down.',
+      digest: 'd39ad6eb2f8b',
+      important: [
+        { at: 'type:t', say: 'the drive, the rivals, the clock, the lap', weight: 3 },
+        { at: 'def:drive', say: 'the cars moved, bumps found', weight: 3 },
+        { at: 'def:checkpoint', say: 'time added when passed', weight: 2 },
+        { at: 'def:gear', say: 'gears from speed, for the engine sound', weight: 1 },
+      ],
+    },
+    'Rivals.mli': { summary: "The fifteen other cars, as in the arcade: on lines of the road, each its pace.", digest: '23923bd179cf' },
+    'Rivals.ml': {
+      summary: 'Rivals made: a grid, a line each and a speed, bumped by the player, ranked.',
+      digest: 'ab1d5f8ca2ee',
+      important: [
+        { at: 'def:drive', say: 'each rival along its line', weight: 2 },
+        { at: 'def:bump', say: 'the player and a rival pushed apart', weight: 2 },
+      ],
+    },
+    'Cars.mli': { summary: 'The formula cars as Virtua Racing drew them: a few solids, liveries, grid slots.', digest: '14013b0bb4c9' },
+    'Cars.ml': { summary: 'The car model from boxes and lofts, and the grid.', digest: '2602625aea8a' },
+    'Screens.mli': { summary: "The race's display and the scenes' texts: time, lap, speed, map, tachometer.", digest: '9860e45ad7e5' },
+    'Screens.ml': {
+      summary: "The display drawn as playground shapes over the picture: minimap, tachometer, title, GOAL.",
+      digest: 'f05cf42e7dee',
+      important: [
+        { at: 'def:race', say: "the race's display, over the 3D", weight: 3 },
+        { at: 'def:minimap', say: 'the course outline, the cars on it', weight: 2 },
+        { at: 'def:tachometer', say: 'revs and gear', weight: 1 },
+      ],
+    },
+    'Sound.mli': { summary: "The race's sounds: the V12 through its gears, the tyres, the jingles, the fanfare.", digest: '4416c664f38c' },
+    'Sound.ml': {
+      summary: "The sounds made on lib_playground's Audio, each race event its sound.",
+      digest: '7c692a5db79e',
+      important: [
+        { at: 'def:engine', say: 'a loop changed by the revs', weight: 2 },
+        { at: 'def:event', say: 'a race event, a sound', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.parts('A race: cars, rules, what is heard and shown', [
+      ['Topdown.ml', 'a car that slides'],
+      ['Driving.ml', "the player's car on the road"],
+      ['Rivals.ml', 'the fifteen others'],
+      ['Race.ml', 'the rules of a race'],
+      ['Screens.ml', 'the display'],
+      ['Sound.ml', 'the sound'],
+      ['Cars.ml', "the cars' models"],
+      ['../course/Course.ml', 'the road they are on'],
+    ], [
+      ['Driving.ml', 'Topdown.ml', 'a car'],
+      ['Rivals.ml', 'Topdown.ml', 'bumps'],
+      ['Race.ml', 'Driving.ml', 'steers'],
+      ['Race.ml', 'Rivals.ml', 'drives'],
+      ['Driving.ml', '../course/Course.ml', 'on'],
+      ['Sound.ml', 'Race.ml', 'its events'],
+      ['Screens.ml', 'Race.ml', 'its state'],
+    ]),
+    skeletons.chain('A frame of the race', [
+      ['Race.ml:def:step', 'the race, a frame', ''],
+      ['Race.ml:def:drive', 'the cars moved', 'keys'],
+      ['Driving.ml:def:steer', 'the player', 'gas, wheel'],
+      ['Topdown.ml:def:drive', 'the slide', 'on the plane'],
+    ]) + {
+      bones+: [
+        { at: 'Rivals.ml:def:drive', role: 'the rivals' },
+        { at: 'Race.ml:type:event', role: 'what happened' },
+      ],
+      joints+: [
+        { from: 'Race.ml:def:drive', to: 'Rivals.ml:def:drive', say: 'the others' },
+        { from: 'Race.ml:def:step', to: 'Race.ml:type:event', say: 'laps, checkpoints' },
+      ],
+    },
+    skeletons.module('Driving.ml', 'The car on the road', [
+      ['at', 'a place on the course', ''],
+      ['steer', 'a frame: wheel, gas, grip', 'driven'],
+      ['slip', 'the slide: a spin?', 'how much'],
+      ['world', 'where it is in space', 'for the camera'],
+    ]),
+    skeletons.module('Screens.ml', "The race's screens", [
+      ['race', 'the display over the race', ''],
+      ['minimap', 'the course and the cars', 'its corner'],
+      ['tachometer', 'revs and gear', 'its dial'],
+    ]),
+  ],
+}

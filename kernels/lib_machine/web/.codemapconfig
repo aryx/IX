@@ -1,0 +1,39 @@
+// kernels/lib_machine/web/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). Linked only in
+// the kernel built for a web page (make WEB=1).
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The kernel in a web page asks its emulated board's host to do the slow loops: copies, fills, draws.",
+  files: {
+    'host.s': { digest: '7f0b0b509187',
+      summary: "Calls to mini-qemu's host as reads of a CP15 register no processor has; undefined on a real Pi.",
+      important: [
+        { at: 'comment:"An instruction of the emulator costs some"', say: 'memmove and zeros: a third of a boot', weight: 3 },
+        { at: 'comment:"The request is a read of a register of CP15"', say: "Board.host_call answers: 1 done, 0 do it yourself", weight: 3 },
+        { at: 'def:host_move', weight: 2 },
+        { at: 'def:host_input', say: "the page's keys and mouse", weight: 2 },
+        { at: 'def:host_draw', say: "memdraw's general loop, the host's", weight: 2 },
+        { at: 'def:host_code', say: "code written: the emulator's translation void", weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: "A kernel's call to its emulator's host",
+      bones: [
+        { at: '../machine.c:def:phys_write_sub', role: 'bytes written to physical memory' },
+        { at: 'host.s:def:host_move', role: 'one mrc: the host does it' },
+        { at: 'host.s:def:host_input', role: "the page's events, for Kweb" },
+        { at: 'host.s:def:host_draw', role: "a draw, for Memdraw's hosted" },
+        { at: '../../../raspberry/', role: "mini-qemu's Board: the other side" },
+      ],
+      joints: [
+        { from: '../machine.c:def:phys_write_sub', to: 'host.s:def:host_move', say: 'WEB=1' },
+        { from: 'host.s:def:host_move', to: '../../../raspberry/', say: 'CP15 c15, 7' },
+        { from: 'host.s:def:host_input', to: '../../../raspberry/', say: 'a key or a move' },
+        { from: 'host.s:def:host_draw', to: '../../../raspberry/', say: 'three images' },
+      ],
+    },
+  ],
+}

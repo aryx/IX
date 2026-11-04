@@ -1,0 +1,81 @@
+// languages/smalltalk/graphics/: what the code map says of it (the code
+// map: tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "BitBlt, Smalltalk's one drawing primitive: the Blue Book's of one bit a pixel, and Squeak's in colour.",
+  files: {
+    'St_bitblt.mli': {
+      summary: "Form and BitBlt after Ingalls's Byte article of 1981: a rectangle copied by one of 16 rules of two bits.",
+      digest: '9e58b739071d',
+      capitals: [{ at: 'def:copy_bits', say: 'the primitive: everything on screen' }],
+      important: [
+        { at: 'comment:"copies a rectangle of a source Form"', say: 'source, destination, a rule', weight: 3 },
+        { at: "comment:\"the result's bit being\"", say: "the rule's number is its truth table", weight: 2 },
+        { at: 'def:changes', say: 'a counter: did the Display change?', weight: 1 },
+      ],
+    },
+    'St_bitblt.ml': {
+      summary: "BitBlt on one-bit Forms: a pixel at a time, or a byte at a time when aligned and simple.",
+      digest: '9b4ada3b7edb',
+      important: [
+        { at: 'type:copy', say: "a record: mini-ml's seven parameters at most", weight: 2 },
+        { at: 'def:blit_pixels', say: 'the general case, halftone and clip', weight: 2 },
+        { at: 'def:blit_bytes', say: 'the fast case: whole bytes', weight: 2 },
+        { at: 'def:copy_bits', say: "BitBlt's fields read from the object", weight: 3 },
+      ],
+    },
+    'St_colorblt.mli': {
+      summary: "Squeak's BitBlt in colour (Back to the Future, 1996): Forms of depth 1, 8 or 32, alpha blend, colour maps.",
+      digest: '9a949ba1fbc4',
+      capitals: [{ at: 'def:copy_bits', say: "primitive 96: what Squeak's morphs draw with" }],
+      important: [
+        { at: 'comment:"Three things are new"', say: 'the rules on whole pixels, blend, maps', weight: 3 },
+        { at: 'def:rgba', say: "the Display's pixels for a host", weight: 2 },
+      ],
+    },
+    'St_colorblt.ml': {
+      summary: "BitBlt over pixels of any depth: read, map between depths, combine by rule, write; one-bit to St_bitblt.",
+      digest: '1f5af8c1d3bf',
+      important: [
+        { at: 'def:combine', say: 'rule 24 blends by alpha; 0 to 15 bitwise', weight: 3 },
+        { at: 'def:blit_rows', say: 'whole rows when the rule is a store', weight: 2 },
+        { at: 'def:copy_bits', say: 'depth 1 both: the Blue Book code', weight: 3 },
+        { at: 'def:alpha', say: 'a 32-bit pixel held in 31: alpha on 7', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'A BitBlt, in colour or not',
+      bones: [
+        { at: '../vm/St_primitives.ml:def:install', role: 'primitive 96, copyBits' },
+        { at: 'St_colorblt.ml:def:copy_bits', role: "the fields read, the depths seen" },
+        { at: 'St_bitblt.ml:def:copy_bits', role: 'one bit a pixel: the Blue Book' },
+        { at: 'St_colorblt.ml:def:blit', role: 'rows or pixels' },
+        { at: 'St_colorblt.ml:def:combine', role: 'a source and destination pixel' },
+        { at: 'St_bitblt.ml:def:changes', role: 'the Display changed: a host redraws' },
+      ],
+      joints: [
+        { from: '../vm/St_primitives.ml:def:install', to: 'St_colorblt.ml:def:copy_bits', say: 'a BitBlt object' },
+        { from: 'St_colorblt.ml:def:copy_bits', to: 'St_bitblt.ml:def:copy_bits', say: 'both of depth 1' },
+        { from: 'St_colorblt.ml:def:copy_bits', to: 'St_colorblt.ml:def:blit', say: 'a copy record' },
+        { from: 'St_colorblt.ml:def:blit', to: 'St_colorblt.ml:def:combine', say: 'each pixel' },
+        { from: 'St_colorblt.ml:def:copy_bits', to: 'St_bitblt.ml:def:changes', say: 'counted' },
+      ],
+    },
+    skeletons.module('St_bitblt.ml', 'One-bit BitBlt', [
+      ['copy_bits', "the BitBlt object's fields", ''],
+      ['blit', 'the fast case or the general', 'a copy'],
+      ['blit_bytes', 'whole bytes', 'aligned'],
+      ['blit_pixels', 'a pixel at a time', 'otherwise'],
+    ]),
+    skeletons.module('St_colorblt.ml', 'BitBlt in colour', [
+      ['copy_bits', 'the fields, the forms, the map', ''],
+      ['blit', 'rows or pixels', 'a copy'],
+      ['blit_pixels', 'a pixel at a time', 'each'],
+      ['combine', 'by the rule', 'source and destination'],
+    ]),
+  ],
+}

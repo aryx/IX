@@ -1,15 +1,16 @@
-// lib_compression/: what the code map says of it (the code map: tinybox
-// codemap, ~/github/ocaml-elm-playground; its guidelines:
+// lib_compression/: what the code map says of it (the code map: tinybox codemap,
+// ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../skeletons.libsonnet';
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
-  summary: "Principia's libflate, what git needs of it: zlib's inflate and deflate, for loose objects and packs.",
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Compression from scratch: zlib and gzip for git and HTTP, Huffman, LZW, PackBits, MPEG's bit reading.",
   dirs: {
     tests: { summary: "Sha1 and Zlib checked against Python's hashlib and zlib, on random inputs (check.py)." },
   },
   files: {
-    'Zlib.mli': { digest: '63aaca968c00',
-      summary: 'zlib streams: every kind of deflate block read, fixed-code blocks written; any valid stream is the same object to git.',
+    'Zlib.mli': { digest: '19bf32440f5e',
+      summary: "zlib and gzip streams: every deflate block read, fixed-code blocks written; git's objects, HTTP's gzip.",
       capitals: [
         { at: 'def:inflate', say: 'a stream read: stored, fixed and dynamic blocks' },
         { at: 'def:deflate', say: 'a stream written: greedy LZ77, fixed codes only' },
@@ -17,39 +18,66 @@
       important: [
         { at: 'def:inflate', weight: 3 },
         { at: 'def:deflate', weight: 3 },
-        { at: 'comment:"deflate writes fixed-code blocks"', say: 'why no dynamic codes: the name is of the raw bytes', weight: 2 },
-        { at: 'def:crc32', say: "a pack's index checksums", weight: 1 },
+        { at: 'def:inflate_blocks_at', say: "a pack's object: where it ends too", weight: 1 },
+        { at: 'def:gunzip', say: 'HTTP Content-Encoding, .gz', weight: 2 },
+        { at: 'comment:"Phil Katz designed deflate"', weight: 1 },
+        { at: 'def:crc32_halves', say: "gzip's CRC as two halves: arm's 31 bits", weight: 1 },
       ],
       related: ['Zlib.ml', 'tests/Check.ml'],
     },
-    'Zlib.ml': { digest: 'fb03e0db150b',
-      summary: "RFC 1950 and 1951, as puff.c decodes them (canonical codes by counts), and a greedy compressor over hash chains.",
+    'Zlib.ml': { digest: 'fdf08ab60c21',
+      summary: "RFC 1950-1952 as puff.c decodes them, a greedy compressor over hash chains, CRC-32 in 16-bit halves.",
       important: [
-        { at: 'def:inflate_raw', say: 'the blocks, and a length-distance copy that may overlap itself', weight: 3 },
-        { at: 'def:code_of_lengths', say: "a canonical Huffman code from its lengths alone", weight: 2 },
+        { at: 'def:inflate_raw', say: 'blocks, and copies that may overlap themselves', weight: 3 },
+        { at: 'def:code_of_lengths', say: 'a canonical Huffman code from its lengths', weight: 2 },
         { at: 'def:dynamic', say: 'the code lengths, themselves Huffman-coded', weight: 2 },
         { at: 'def:deflate', say: 'the longest match on a chain of 3-byte hashes', weight: 2 },
+        { at: 'comment:"A CRC is 32 bits and an int has 31"', say: 'a bug on arm: one int was wrong', weight: 2 },
         { at: 'def:adler32', weight: 1 },
-        { at: 'def:crc_table', weight: 1 },
       ],
     },
+    'Huffman.mli': { digest: 'a69a34c48701',
+      summary: "Huffman codes rebuilt from their lengths alone (canonical): deflate's and JPEG's way, from the 1952 paper.",
+      important: [{ at: 'def:of_lengths', weight: 2 }, { at: 'def:decode', weight: 2 }],
+      related: ['Huffman.ml'],
+    },
+    'Huffman.ml': { digest: '8c929a7f2e31',
+      summary: 'Codes from lengths by counting, and lengths from counts; a symbol decoded a bit at a time.',
+      important: [{ at: 'def:of_lengths', say: 'shorter codes first, then by symbol', weight: 3 }, { at: 'def:of_counts', weight: 2 }, { at: 'def:decode', weight: 2 }],
+    },
+    'Lzw.mli': { digest: '92f97f882dc0', summary: "LZW, GIF's compression: a dictionary of sequences built while reading (Welch, 1984).", related: ['Lzw.ml'] },
+    'Lzw.ml': { digest: '2c5e8305c511',
+      summary: 'LZW decoded: codes growing in width, the dictionary reset at its clear code; steps kept for a viewer.',
+      important: [{ at: 'def:run', say: 'the KwKwK case: a code not yet in the table', weight: 3 }, { at: 'type:step', weight: 1 }],
+    },
+    'Packbits.mli': { digest: '3e4d06d3afd2', summary: "PackBits, MacPaint's run-length coding: a run of a byte as a count and the byte.", related: ['Packbits.ml'] },
+    'Packbits.ml': { digest: '50fbedfc4228', summary: 'Runs found and literals grouped, 128 at most each.', important: [{ at: 'def:encode', weight: 2 }, { at: 'def:decode', weight: 1 }] },
+    'Bitstream.mli': { digest: 'ba9f5f3be1c6', summary: "A string read a few bits at a time, high bit first: MPEG's syntax elements.", related: ['Bitstream.ml'] },
+    'Bitstream.ml': { digest: '9e5cf018c92b', summary: 'Bitstream made: a position in bits, zeros past the end, start codes found.', important: [{ at: 'def:read', weight: 2 }] },
+    'Vlc.mli': { digest: 'dfce02f67234', summary: "Variable-length codes fixed in a standard, a table as MPEG prints it, checked by Kraft.", related: ['Vlc.ml'] },
+    'Vlc.ml': { digest: 'd65da8bc89bf', summary: 'A table of bit strings to a decoding table, read off a Bitstream.' },
   },
   skeletons: [
-    {
-      name: 'Inflate: blocks, codes, copies',
-      bones: [
-        { at: 'Zlib.ml:def:inflate', role: "the zlib header and Adler-32 around deflate's blocks" },
-        { at: 'Zlib.ml:def:inflate_raw', role: 'block by block: stored, fixed, dynamic' },
-        { at: 'Zlib.ml:def:dynamic', role: "a block's own codes, read first" },
-        { at: 'Zlib.ml:def:code_of_lengths', role: 'a canonical code from lengths' },
-        { at: 'Zlib.ml:def:decode', role: 'one symbol, bit by bit' },
-      ],
-      joints: [
-        { from: 'Zlib.ml:def:inflate', to: 'Zlib.ml:def:inflate_raw', say: 'the bits' },
-        { from: 'Zlib.ml:def:inflate_raw', to: 'Zlib.ml:def:dynamic', say: 'a dynamic block' },
-        { from: 'Zlib.ml:def:dynamic', to: 'Zlib.ml:def:code_of_lengths', say: 'the lengths' },
-        { from: 'Zlib.ml:def:inflate_raw', to: 'Zlib.ml:def:decode', say: 'literals, lengths, distances' },
-      ],
+    skeletons.parts('Compression: codes, dictionaries, runs', [
+      ['Zlib.ml', 'deflate: LZ77 and Huffman'],
+      ['Huffman.ml', 'canonical codes'],
+      ['Lzw.ml', "GIF's dictionary"],
+      ['Packbits.ml', "MacPaint's runs"],
+      ['Bitstream.ml', 'bits, high first'],
+      ['Vlc.ml', "a standard's fixed codes"],
+    ], [
+      ['Huffman.ml', 'Zlib.ml', 'the same idea, its own code'],
+      ['Bitstream.ml', 'Vlc.ml', 'bits to read'],
+    ]),
+    skeletons.module('Zlib.ml', 'Inflate: blocks, codes, copies', [
+      ['inflate_at', 'the zlib header, Adler-32 at the end', ''],
+      ['inflate_raw', 'block by block: stored, fixed, dynamic', 'the bits'],
+      ['dynamic', "a block's own codes, read first", 'a dynamic block'],
+      ['code_of_lengths', 'a canonical code from lengths', 'the lengths'],
+      ['decode', 'one symbol, bit by bit', 'the code'],
+    ]) + {
+      bones+: [{ at: 'Zlib.ml:def:deflate', role: 'the other way: hash chains, fixed codes' }],
+      joints+: [{ from: 'Zlib.ml:def:deflate', to: 'Zlib.ml:def:inflate_at', say: 'what it reads back' }],
     },
   ],
 }

@@ -1,0 +1,34 @@
+// apps/: what the code map says of it (survey.sh, beside: the playground's
+// files mini-drscheme and mini-turbopascal still need, counted)
+local skeletons = import '../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "m-IX's applications, most the playground's Tiny programs on ix: office, mail and PIM, maps, files, media.",
+  skeletons: [
+    skeletons.parts('The applications and what they are written with', [
+      ['office/', 'mini-office: documents of parts'],
+      ['pim/', 'mini-pim: mail, calendar, money'],
+      ['maps/', 'mini-maps: tiles, places, routes'],
+      ['files/', 'mini-files: folders, opened by kind'],
+      ['page/', 'mini-page: PDFs and pictures'],
+      ['media/', 'mini-play: songs and films'],
+      ['music/', 'mini-rebirth: a studio'],
+      ['misc/', 'mini-colors: the draw device bare'],
+      ['../lib_playground/', 'the Playground: Model-View-Update'],
+      ['../lib_gui/', 'widgets, layout, text editing'],
+      ['../lib_graphics/', 'the draw device, images, PDF, video'],
+    ], [
+      ['office/', '../lib_gui/', 'widgets, text'],
+      ['pim/', '../lib_gui/', 'text editing'],
+      ['office/', '../lib_playground/', 'runs on'],
+      ['pim/', '../lib_playground/', 'runs on'],
+      ['maps/', '../lib_playground/', 'runs on'],
+      ['files/', '../lib_playground/', 'runs on'],
+      ['page/', '../lib_playground/', 'runs on'],
+      ['music/', '../lib_playground/', 'runs on'],
+      ['media/', '../lib_playground/', 'runs on'],
+      ['misc/', '../lib_graphics/', 'draws on /dev/draw'],
+      ['../lib_playground/', '../lib_graphics/', 'stands on'],
+    ]),
+  ],
+}

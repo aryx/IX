@@ -1,0 +1,173 @@
+// languages/smalltalk/compiler/: what the code map says of it (the code
+// map: tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Smalltalk-80's text to the Blue Book's bytecodes: chunks, tokens, a tree, a CompiledMethod.",
+  files: {
+    'St_chunk.mli': {
+      summary: "The chunk format Smalltalk-80 filed code in and out with: text cut at each !, methods after a reader.",
+      digest: 'd64fa8bbf068',
+      capitals: [{ at: 'def:read', say: 'a file: its definitions and its methods' }],
+      important: [{ at: 'type:item', say: 'an expression, or a category of methods', weight: 2 }],
+    },
+    'St_chunk.ml': {
+      summary: "A file read as chunks, the !! doubled, an empty chunk opening a run of methods.",
+      digest: '848a803886b4',
+      important: [
+        { at: 'def:chunks', say: 'cut at each single !', weight: 2 },
+        { at: 'def:read', say: 'after an empty chunk: methods', weight: 3 },
+      ],
+    },
+    'St_lexer.mli': {
+      summary: "Smalltalk-80's tokens: names, keywords, binary selectors, literals; no keyword of the language itself.",
+      digest: '9375ded4d603',
+      important: [
+        { at: 'comment:"Smalltalk has almost no syntax"', say: 'self and ifTrue: are ordinary words', weight: 2 },
+        { at: 'def:max_small', say: '30 bits on every host: an arm int has 31', weight: 2 },
+      ],
+    },
+    'St_lexer.ml': {
+      summary: "The lexer: radix integers of any size, floats, characters, symbols, strings, literal arrays.",
+      digest: '21a841a71d9f',
+      important: [
+        { at: 'def:small_of_bytes', say: 'a large literal kept as bytes', weight: 2 },
+        { at: 'def:tokenize', say: 'one loop over the text', weight: 3 },
+      ],
+    },
+    'St_ast.mli': {
+      summary: "A method as a tree: five kinds of expression and a cascade, no if and no loop, all messages.",
+      digest: 'c5cf08d8e44e',
+      capitals: [{ at: 'type:expr', say: 'literal, variable, assignment, send, block' }],
+      important: [
+        { at: 'comment:"There is no if, no loop, no operator"', say: 'everything a message sent', weight: 3 },
+        { at: 'type:method_', say: 'pattern, temporaries, primitive, statements', weight: 2 },
+      ],
+    },
+    'St_ast.ml': {
+      summary: "The tree's types again and its printer, for the compiler's errors and the debugger.",
+      digest: 'f55f2964dab0',
+      important: [
+        { at: 'type:expr', weight: 2 },
+        { at: 'def:show_expr', say: 'a tree printed back as Smalltalk', weight: 1 },
+      ],
+    },
+    'St_parse.mli': {
+      summary: "Smalltalk-80's grammar in ten lines, by recursive descent, after the Blue Book's syntax diagrams.",
+      digest: '31ee0767771d',
+      capitals: [{ at: 'def:parse_method', say: "a method's text to its tree" }],
+      important: [
+        { at: 'comment:"The grammar fits in ten lines"', say: 'the parser is those lines written out', weight: 3 },
+        { at: 'def:parse_doit', say: 'an expression: a method with no pattern', weight: 2 },
+      ],
+    },
+    'St_parse.ml': {
+      summary: "The recursive descent: a function per rule, unary binding tighter than binary, binary than keyword.",
+      digest: '68d268b4c60c',
+      important: [
+        { at: 'def:cascade', say: 'one receiver, several messages', weight: 2 },
+        { at: 'def:keyword_expr', say: 'at:put: gathered into one selector', weight: 2 },
+        { at: 'def:primary', weight: 1 },
+        { at: 'def:block', say: '[:x | ...] its arguments and body', weight: 2 },
+        { at: 'def:parse_body', weight: 1 },
+      ],
+      links: [
+        { from: 'def:expression', to: 'def:cascade' },
+        { from: 'def:cascade', to: 'def:keyword_expr' },
+        { from: 'def:keyword_expr', to: 'def:binary_expr' },
+        { from: 'def:binary_expr', to: 'def:unary_expr' },
+        { from: 'def:unary_expr', to: 'def:primary' },
+      ],
+    },
+    'St_bytecode.mli': {
+      summary: "The Blue Book's instruction set of chapter 28, byte for byte, and a CompiledMethod's layout.",
+      digest: 'bb3b4de40ac5',
+      capitals: [{ at: 'def:new_method', say: 'header, literals, bytecodes, trailer' }],
+      important: [
+        { at: 'comment:"push receiver variable #iiii"', say: 'the table every bytecode is in', weight: 3 },
+        { at: 'type:header', say: 'primitive, arguments, temporaries, frame', weight: 2 },
+        { at: 'def:pcmap', say: 'a pc back to its place in the text', weight: 1 },
+      ],
+    },
+    'St_bytecode.ml': {
+      summary: "A method's header packed in a SmallInteger, its trailer of source and names, and a disassembler.",
+      digest: '639b013e53c4',
+      important: [
+        { at: 'def:encode_header', say: 'one SmallInteger read once a send', weight: 2 },
+        { at: 'def:trailer', say: "the method's source, temps, pc map", weight: 2 },
+        { at: 'def:disassemble', say: 'bytecodes as the Blue Book prints them', weight: 1 },
+      ],
+    },
+    'St_compile.mli': {
+      summary: "One pass from tree to bytecodes, Blue Book blocks or Squeak's closures, the control messages inlined.",
+      digest: 'c1c4d6b60960',
+      capitals: [{ at: 'def:compile_and_install', say: 'a method compiled into its class' }],
+      important: [
+        { at: 'comment:"**Blocks** are compiled in the middle"', say: "why a Blue Book block can't recurse", weight: 3 },
+        { at: 'comment:"**Closures** came in 2008"', say: 'copied or in a vector: by what changes', weight: 3 },
+        { at: 'def:compile_doit', say: 'an expression as a DoIt method', weight: 1 },
+      ],
+    },
+    'St_compile.ml': {
+      summary: "The code generator: names resolved, ifTrue: and whileTrue: inlined as jumps, blocks and closures.",
+      digest: '91dc50b9ffad',
+      important: [
+        { at: 'def:resolve', say: 'temporaries, instance, class vars, globals', weight: 2 },
+        { at: 'def:gen', say: 'an expression: push its value', weight: 2 },
+        { at: 'def:gen_send', say: 'ifTrue:, whileTrue:, to:do: become jumps', weight: 3 },
+        { at: 'def:gen_block_context', say: "Blue Book's: blockCopy: and a jump", weight: 2 },
+        { at: 'def:gen_closure', say: "Squeak's: copied values, a temp vector", weight: 3 },
+        { at: 'def:generate', say: 'a method: its frame, its code, its header', weight: 2 },
+      ],
+      links: [
+        { from: 'def:compile', to: 'def:generate' },
+        { from: 'def:gen', to: 'def:gen_send' },
+        { from: 'def:gen_block', to: 'def:gen_closure' },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: "A method's text, compiled",
+      bones: [
+        { at: 'St_chunk.ml:def:read', role: 'a file cut in chunks' },
+        { at: 'St_lexer.ml:def:tokenize', role: 'tokens' },
+        { at: 'St_parse.ml:def:parse_method', role: 'by recursive descent' },
+        { at: 'St_ast.mli:type:method_', role: 'the tree' },
+        { at: 'St_compile.ml:def:compile', role: 'one pass, emitting' },
+        { at: 'St_bytecode.ml:def:new_method', role: 'a CompiledMethod' },
+      ],
+      joints: [
+        { from: 'St_chunk.ml:def:read', to: 'St_lexer.ml:def:tokenize', say: "a method's text" },
+        { from: 'St_lexer.ml:def:tokenize', to: 'St_parse.ml:def:parse_method', say: 'tokens' },
+        { from: 'St_parse.ml:def:parse_method', to: 'St_ast.mli:type:method_', say: 'a tree' },
+        { from: 'St_ast.mli:type:method_', to: 'St_compile.ml:def:compile', say: 'walked once' },
+        { from: 'St_compile.ml:def:compile', to: 'St_bytecode.ml:def:new_method', say: 'literals and bytecodes' },
+      ],
+    },
+    skeletons.module('St_compile.ml', 'A tree to bytecodes', [
+      ['compile', 'a method compiled', ''],
+      ['generate', 'its frame and body', 'the tree'],
+      ['statements', 'each statement', 'the body'],
+      ['gen', 'an expression', 'each'],
+      ['gen_send', 'a send, or inlined jumps', 'a message'],
+      ['gen_closure', 'a block as a closure', 'a block argument'],
+    ]),
+    skeletons.module('St_parse.ml', 'The grammar, a function a rule', [
+      ['parse_method', 'a method', ''],
+      ['parse_body', 'temporaries, primitive, statements', 'after its pattern'],
+      ['statements', 'statements', 'the body'],
+      ['expression', 'an assignment or a cascade', 'each'],
+      ['cascade', 'messages to one receiver', ''],
+      ['keyword_expr', 'keyword message', ''],
+      ['binary_expr', 'binary messages', 'arguments'],
+    ]),
+    skeletons.module('St_lexer.ml', 'Text to tokens', [
+      ['tokenize', 'the loop over the text', ''],
+      ['is_letter', 'names and keywords', 'a letter'],
+      ['digit_value', 'radix numbers', 'a digit'],
+      ['small_of_bytes', 'a SmallInteger, or too large', 'its digits'],
+    ]),
+  ],
+}

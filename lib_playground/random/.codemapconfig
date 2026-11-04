@@ -1,0 +1,36 @@
+// lib_playground/random/: what the code map says of it
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Random numbers from a formula, the same everywhere: Lehmer's, under Playground.random.",
+  files: {
+    'Lehmer.mli': {
+      summary: "Park and Miller's minimal standard (Lehmer, 1949), by Schrage's trick: a seed kept in the model.",
+      digest: 'c9518524da25',
+      capitals: [{ at: 'def:next', say: 'seed to seed: 16807 * seed mod 2^31 - 1' }],
+      important: [
+        { at: 'comment:"Schrage"', say: 'never past 31 bits: the same numbers on any int', weight: 3 },
+        { at: 'type:t', say: 'the seed', weight: 2 },
+        { at: 'def:to_unit', say: 'a seed as a float in [0, 1)', weight: 1 },
+      ],
+    },
+    'Lehmer.ml': {
+      summary: "The generator made; here the state a float, exact on the Pi 1's 31-bit ints.",
+      digest: '9308a7440d9b',
+    },
+  },
+  skeletons: [{
+    name: 'A seed, the next, a number',
+    bones: [
+      { at: 'Lehmer.ml:type:t', role: 'the seed, kept by the caller' },
+      { at: 'Lehmer.ml:def:scramble', role: 'any int made a good first seed' },
+      { at: 'Lehmer.ml:def:next', role: "the formula: Schrage's multiply" },
+      { at: 'Lehmer.ml:def:to_unit', role: 'the seed as a number in [0, 1)' },
+    ],
+    joints: [
+      { from: 'Lehmer.ml:def:scramble', to: 'Lehmer.ml:type:t', say: 'the first seed' },
+      { from: 'Lehmer.ml:type:t', to: 'Lehmer.ml:def:next', say: 'stepped' },
+      { from: 'Lehmer.ml:def:next', to: 'Lehmer.ml:type:t', say: 'the next seed' },
+      { from: 'Lehmer.ml:type:t', to: 'Lehmer.ml:def:to_unit', say: 'drawn' },
+    ],
+  }],
+}

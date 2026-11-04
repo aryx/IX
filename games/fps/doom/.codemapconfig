@@ -1,0 +1,70 @@
+// games/fps/doom/: what the code map says of it
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-doom: Doom (id, 1993) as id wrote it, file for file: a WAD's level, its renderer, monsters, sound.",
+  dirs: {
+    data: { summary: "The WAD: Freedoom's, made by tools/Mkwad from its source (data/README.md)." },
+    sdl: { summary: 'Doom.ml linked with the SDL platform: a window on Linux (dune).' },
+    tests: { summary: "compare.sh: frames against chocolate-doom's at given places; the sessions' sums." },
+  },
+  files: {
+    'Doom.ml': {
+      summary: "The program: the WAD loaded, Play's tics 35 a second, Render's 320x200 bytes as one Bitmap shape.",
+      digest: 'b45fdca673b6',
+      capitals: [{ at: 'def:view', say: "a frame: Render's picture of the eye" }],
+      important: [
+        { at: 'comment:"A frame (the playground"', say: 'keys to tics, tics to a picture', weight: 3 },
+        { at: 'type:model', say: 'the play, the renderer, what is shown', weight: 3 },
+        { at: 'def:update', say: "the tics owed since the last frame, 4 at most", weight: 3 },
+        { at: 'def:eye', say: 'between the last two tics: smooth at any fps', weight: 2 },
+        { at: 'def:palettes', say: "PLAYPAL's tints: pain red, items gold", weight: 1 },
+        { at: 'comment:"heap=modest"', say: "a WAD's megabytes alive all game", weight: 1 },
+        { at: 'comment:"history:"', say: "linuxdoom and 9front's doom9", weight: 1 },
+      ],
+      links: [{ from: 'def:update', to: 'def:snapshot' }, { from: 'def:view', to: 'def:eye' }],
+      related: ['README.md', '../../../docs/plans/done/plan_doom.md'],
+    },
+  },
+  skeletons: [
+    skeletons.parts("mini-doom: id's files as folders", [
+      ['Doom.ml', 'the program: a playground game'],
+      ['wad/', 'the WAD: lumps, the level, the textures'],
+      ['play/', 'the world a tic at a time (p_*.c)'],
+      ['actors/', 'things, monsters, weapons (p_*.c, info.c)'],
+      ['render/', 'the picture, column by column (r_*.c)'],
+      ['sound/', 'the sounds and the music (s_sound.c)'],
+      ['tools/', 'the WAD made from Freedoom'],
+    ], [
+      ['Doom.ml', 'play/', 'tics'],
+      ['Doom.ml', 'render/', 'a frame'],
+      ['play/', 'actors/', 'the things think'],
+      ['play/', 'wad/', 'the level changed in place'],
+      ['render/', 'wad/', 'the level, the textures'],
+      ['render/', 'actors/', 'the sprites'],
+      ['play/', 'sound/', 'sounds started'],
+      ['tools/', 'wad/', 'writes'],
+    ]),
+    {
+      name: 'mini-doom: keys to tics, tics to a picture',
+      bones: [
+        { at: 'Doom.ml:code:"Cap.main"', role: 'the program: the WAD, the level, the game run' },
+        { at: 'Doom.ml:type:model', role: 'the play and the renderer' },
+        { at: 'Doom.ml:def:update', role: 'a frame: the tics owed' },
+        { at: 'play/Play.ml:def:command', role: "the keys as Doom's ticcmd" },
+        { at: 'play/Play.ml:def:tic', role: 'a tic of the world' },
+        { at: 'Doom.ml:def:view', role: 'a frame: the picture' },
+        { at: 'render/Render.ml:def:frame', role: "the eye's 320x200 bytes" },
+      ],
+      joints: [
+        { from: 'Doom.ml:code:"Cap.main"', to: 'Doom.ml:type:model', say: 'loaded' },
+        { from: 'Doom.ml:type:model', to: 'Doom.ml:def:update', say: 'stepped' },
+        { from: 'Doom.ml:def:update', to: 'play/Play.ml:def:command', say: 'the keys' },
+        { from: 'play/Play.ml:def:command', to: 'play/Play.ml:def:tic', say: 'a ticcmd' },
+        { from: 'play/Play.ml:def:tic', to: 'Doom.ml:type:model', say: 'the world moved' },
+        { from: 'Doom.ml:type:model', to: 'Doom.ml:def:view', say: 'drawn' },
+        { from: 'Doom.ml:def:view', to: 'render/Render.ml:def:frame', say: 'the eye' },
+      ],
+    },
+  ],
+}

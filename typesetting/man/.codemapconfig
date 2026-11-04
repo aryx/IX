@@ -1,0 +1,29 @@
+// typesetting/man/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-man, Plan 9's man(1): a manual page found in the tree by section and title, shown by mini-troff's modules.",
+  files: {
+    'Main.ml': { digest: 'c42547870ae6',
+      summary: "Pages as files dir/section/name, sections listed by the groups their pages name; man's sections since 1971.",
+      capitals: [{ at: 'def:main', say: 'mini-man [section] title: found, typeset' }],
+      important: [
+        { at: 'comment:"A page is a file, dir/section/name"', say: 'the manual is a tree of directories', weight: 3 },
+        { at: 'comment:"man was a shell script from the start"', weight: 2 },
+        { at: 'def:index', say: 'a section listed by groups', weight: 2 },
+        { at: 'def:summary', say: "a page's group and line from its \\title", weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.onefile('mini-man', 'Main.ml', [
+      ['Main.ml:def:index', 'no title: the sections listed', 'the trees'],
+      ['Main.ml:def:summary', "each page's group and line", 'its first line'],
+    ]) + {
+      bones+: [{ at: '../troff/CLI.ml:def:typeset', role: "mini-troff's whole way, reused" }],
+      joints+: [{ from: 'Main.ml:def:main', to: '../troff/CLI.ml:def:typeset', say: 'a page found' }],
+    },
+  ],
+}

@@ -1,0 +1,100 @@
+// languages/ml/highlight/: what the code map says of it (the code map:
+// tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "OCaml's colours for mini-emacs, from the playground's highlighter: a token guess, then mini-ml's parser's names.",
+  files: {
+    'Highlight_ml.mli': { digest: '76b0047fef64',
+      summary: "Each token of an OCaml file given its category, the guess from tokens overlaid with the parser's facts.",
+      capitals: [
+        { at: 'def:lines', say: "a file's coloured spans, line by line" },
+      ],
+      important: [
+        { at: 'comment:"Here the parser did not have to be waited for"', say: "mini-ml's own parser is asked", weight: 3 },
+        { at: 'def:categorize', weight: 1 },
+        { at: 'def:lines', weight: 2 },
+      ],
+    },
+    'Highlight_ml.ml': { digest: '2b637aa8645d',
+      summary: "pfff's token pass: one walk, a few facts remembered, each token's category from its neighbours.",
+      important: [
+        { at: 'comment:"After pfff\'s highlight_ml.ml"', say: "codemap's ancestor, the rules in a table", weight: 2 },
+        { at: 'def:ends_expression', say: 'a let at the top, without indentation', weight: 2 },
+        { at: 'def:guess', say: 'the one walk over the tokens', weight: 3 },
+        { at: 'def:lines', say: "Names_ml's facts over the guess", weight: 2 },
+      ],
+      links: [
+        { from: 'def:lines', to: 'def:guess' },
+      ],
+    },
+    'Lexer_ml.mli': { digest: '938fbd1fc498',
+      summary: "OCaml's text cut into tokens by ocamllex, comments kept; never fails, so a broken file still colours.",
+      important: [
+        { at: 'comment:"Never fails"', say: 'unclosed comments run to the end', weight: 2 },
+        { at: 'def:tokens', weight: 2 },
+      ],
+    },
+    'Token_ml.mli': { digest: '15b86cb0b15f',
+      summary: "A visualizer's tokens: every one kept, with its text as written and its place.",
+      important: [
+        { at: 'comment:"A compiler\'s lexer throws away what the grammar does not need"', say: 'why a second lexer', weight: 2 },
+        { at: 'type:kind', weight: 2 },
+      ],
+    },
+    'Token_ml.ml': { digest: '21831cab8977',
+      summary: 'The token kinds and their names.',
+    },
+    'Names_ml.mli': { digest: '93faa967aa76',
+      summary: "What mini-ml's parser says of the names: parameters, locals, fields, by their tokens' offsets.",
+      important: [
+        { at: 'comment:"The text is parsed an item of the program at a time"', say: 'the item being typed is left to the guess', weight: 3 },
+        { at: 'def:names', weight: 2 },
+      ],
+    },
+    'Names_ml.ml': { digest: 'd98aa8693f44',
+      summary: "The tree walked with OCaml's scopes, each binder's and use's token marked; the text cut into items.",
+      important: [
+        { at: 'def:tree', say: "scopes: a let's names after it, rec in it", weight: 3 },
+        { at: 'def:starts', say: 'items start after an empty line', weight: 2 },
+        { at: 'def:names', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    { name: 'A file coloured: tokens, a guess, the parser',
+      bones: [
+        { at: 'Highlight_ml.ml:def:lines', role: 'entry: spans per line' },
+        { at: 'Lexer_ml.mll:def:tokens', role: 'the text to tokens' },
+        { at: 'Token_ml.ml:type:t', role: 'a token, its text and place' },
+        { at: 'Highlight_ml.ml:def:guess', role: 'categories from neighbours' },
+        { at: 'Names_ml.ml:def:names', role: "the parser's names, by offset" },
+        { at: 'Names_ml.ml:def:tree', role: 'a scope walk of the tree' },
+      ],
+      joints: [
+        { from: 'Lexer_ml.mll:def:tokens', to: 'Token_ml.ml:type:t', say: 'tokens' },
+        { from: 'Token_ml.ml:type:t', to: 'Highlight_ml.ml:def:guess', say: 'tokens' },
+        { from: 'Highlight_ml.ml:def:guess', to: 'Highlight_ml.ml:def:lines', say: 'the guess' },
+        { from: 'Names_ml.ml:def:tree', to: 'Names_ml.ml:def:names', say: 'found names' },
+        { from: 'Names_ml.ml:def:names', to: 'Highlight_ml.ml:def:lines', say: 'over the guess' },
+      ],
+    },
+    { name: 'The guess: a category from the neighbours',
+      bones: [
+        { at: 'Highlight_ml.ml:def:guess', role: 'the walk, a few facts kept' },
+        { at: 'Highlight_ml.ml:type:binder', role: 'what the last keyword binds' },
+        { at: 'Highlight_ml.ml:def:ends_expression', role: 'a let at the top or inside' },
+        { at: 'Highlight_ml.ml:def:is_banner', role: 'a section banner comment' },
+        { at: 'Highlight_ml.ml:def:is_caps', role: 'a capability, coloured apart' },
+        { at: 'Highlight_ml.ml:def:lines', role: 'spans per line, names over it' },
+      ],
+      joints: [
+        { from: 'Highlight_ml.ml:type:binder', to: 'Highlight_ml.ml:def:guess', say: 'the state' },
+        { from: 'Highlight_ml.ml:def:ends_expression', to: 'Highlight_ml.ml:def:guess', say: 'Let_top or Let_inside' },
+        { from: 'Highlight_ml.ml:def:is_banner', to: 'Highlight_ml.ml:def:guess', say: 'a banner' },
+        { from: 'Highlight_ml.ml:def:is_caps', to: 'Highlight_ml.ml:def:guess', say: 'caps' },
+        { from: 'Highlight_ml.ml:def:guess', to: 'Highlight_ml.ml:def:lines', say: 'categories' },
+      ],
+    },
+  ],
+}

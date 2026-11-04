@@ -1,0 +1,180 @@
+// apps/office/suite/: what the code map says of it
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-office's program in its parts: the model, its update and view, the page, the edits, Export.",
+  files: {
+    'Office_model.ml': {
+      summary: 'The model: the history of versions, the document dragged or edited in place, the File menu.',
+      digest: '29859e439751',
+      important: [
+        { at: 'type:model', say: 'everything the program remembers', weight: 3 },
+        { at: 'def:doc', say: 'editing, else live, else the last version', weight: 3 },
+        { at: 'def:initial', say: 'the start screen, no document yet' },
+      ],
+    },
+    'Office_model.mli': {
+      summary: 'The model, and which of its three documents is the one shown at any moment.',
+      digest: '56a82f0b543b',
+      capitals: [
+        { at: 'type:model', say: "mini-office's state, one value a frame" },
+        { at: 'def:doc', say: 'the document shown: editing, live or history' },
+      ],
+      important: [
+        { at: 'comment:"Which document is the document"', say: 'one version per gesture, with its name', weight: 3 },
+        { at: 'def:initial' },
+      ],
+    },
+    'Office_update.ml': {
+      summary: "A frame's mouse and keys to the next model: dialog, start screen, show, menus, page.",
+      digest: '1428dbdd6baf',
+      important: [
+        { at: 'def:update', say: 'the first that applies takes the frame', weight: 3 },
+        { at: 'def:press', say: 'a corner, an object, the text, a margin', weight: 3 },
+        { at: 'def:dragging', say: 'the live document, from the last version' },
+        { at: 'def:release', say: 'the gesture becomes a version' },
+        { at: 'def:text_keys', say: 'typing into the body' },
+        { at: 'def:follow', say: 'scroll to keep the caret in view' },
+        { at: 'def:reopened', say: 'a document opened from the store' },
+      ],
+      links: [
+        { from: 'def:update', to: 'def:press' },
+        { from: 'def:update', to: 'def:release' },
+      ],
+    },
+    'Office_update.mli': {
+      summary: "Who gets a frame's input, in the order the update asks, drawn as a table.",
+      digest: '21fe6b974a40',
+      important: [{ at: 'comment:"in the order the code asks"', say: 'the precedence of the input', weight: 3 }, { at: 'def:update' }],
+    },
+    'Office_edit.ml': {
+      summary: "The edits, each a document to a document recorded by name, and the menus computed each frame.",
+      digest: '13b8c886f677',
+      important: [
+        { at: 'def:record', say: 'an edit is a new version, named for Undo', weight: 3 },
+        { at: 'def:put_down', say: 'an edit in place counted once, if it changed', weight: 3 },
+        { at: 'def:menus', say: 'the bar computed from the model' },
+        { at: 'def:command', say: "unknown items handed to the part's own" },
+        { at: 'def:insert', say: 'a new object mid-page, selected' },
+        { at: 'def:tie', say: 'an object anchored to its paragraph' },
+      ],
+      links: [{ from: 'def:command', to: 'def:record' }],
+    },
+    'Office_edit.mli': {
+      summary: 'The edits and the menus: no edit changes in place, so none needs an inverse.',
+      digest: '7548a0cf5d9b',
+      important: [{ at: 'def:record', weight: 3 }, { at: 'def:command', say: "a part's commands come with the part" }],
+    },
+    'Office_page.ml': {
+      summary: "Where text, bands and objects are; the text laid out round the objects, page by page.",
+      digest: 'ddcd79fafa9d',
+      important: [
+        { at: 'def:text_around', say: 'the body flowed round the floating objects', weight: 3 },
+        { at: 'def:placed_simple', say: 'two layouts: tied objects find their line', weight: 3 },
+        { at: 'def:kept', say: 'a one-entry cache on the physical document', weight: 3 },
+        { at: 'def:origin', say: 'the page in the screen coordinates' },
+        { at: 'def:between_pages', say: 'the gap between pages as obstacles' },
+        { at: 'def:object_at', say: 'the object under the mouse' },
+      ],
+      links: [{ from: 'def:placed_simple', to: 'def:text_around' }, { from: 'def:layout', to: 'def:placed' }],
+    },
+    'Office_page.mli': {
+      summary: 'The three coordinate systems (screen, page, text), and the only module knowing them all.',
+      digest: '7ce750d98e76',
+      capitals: [
+        { at: 'def:placed', say: 'the objects where they are on the page' },
+        { at: 'def:pages', say: 'the pages a document takes' },
+      ],
+      important: [
+        { at: 'comment:"Three systems of coordinates"', say: 'screen y up, page y down, text in margins', weight: 3 },
+        { at: 'def:layout', weight: 3 },
+        { at: 'def:origin' },
+      ],
+    },
+    'Office_view.ml': {
+      summary: 'The model to shapes, back to front: desk, paper, page contents, bars, dialogs, widgets.',
+      digest: 'a9de315a55ef',
+      important: [
+        { at: 'def:view', say: 'start screen, show, or the pages', weight: 3 },
+        { at: 'def:page_shapes', say: 'also what Export writes', weight: 3 },
+        { at: 'def:glyphs_at', say: 'letters grouped and kept: Redraw compares less' },
+        { at: 'def:start_view', say: 'the five kinds as tiles' },
+        { at: 'def:show_view', say: 'a presentation, one slide filling the screen' },
+      ],
+      links: [{ from: 'def:view', to: 'def:page_shapes' }],
+    },
+    'Office_view.mli': {
+      summary: 'The view as a list of layers, nothing remembered: Redraw makes saying it all affordable.',
+      digest: '76d6dd1de881',
+      important: [{ at: 'def:view', weight: 3 }, { at: 'def:page_shapes' }],
+    },
+    'Office_templates.ml': {
+      summary: 'A new document of each kind, each holding a part of another kind as an example.',
+      digest: '9e58bfd20368',
+      important: [
+        { at: 'def:fresh', say: 'the five kinds of the start screen', weight: 3 },
+        { at: 'def:budget', say: 'a sheet to chart and to embed' },
+        { at: 'def:new_doc' },
+      ],
+    },
+    'Office_templates.mli': {
+      summary: "A new document of each kind: the start screen's tiles.",
+      digest: '28bab1fda815',
+      capitals: [{ at: 'def:fresh', say: 'a new document of a kind' }],
+    },
+    'Office_export.ml': {
+      summary: 'The pages as a PDF: the column drawn once as a form, each page that form moved.',
+      digest: 'a96a791164bb',
+      important: [{ at: 'def:pdf', say: "the paper's edges cut the rest", weight: 3 }],
+    },
+    'Office_export.mli': {
+      summary: "Export: what the view draws, written as PDF paths -- ix's own, not the playground's.",
+      digest: '4c3e79b01348',
+      important: [{ at: 'comment:"The way of a page to the file"', say: 'view, Shape_render_pdf, Pdf_write, store', weight: 3 }],
+    },
+  },
+  skeletons: [
+    skeletons.parts('The suite: Model-View-Update, top down', [
+      ['Office_model.ml', 'the state: versions, live, editing'],
+      ['Office_update.ml', "a frame's input: the next model"],
+      ['Office_edit.ml', 'the edits, each a version; the menus'],
+      ['Office_page.ml', 'where things are; text round objects'],
+      ['Office_view.ml', 'the model: shapes'],
+      ['Office_export.ml', 'the same shapes: a PDF'],
+      ['Office_templates.ml', 'a new document of each kind'],
+    ], [
+      ['Office_model.ml', 'Office_update.ml', 'the model'],
+      ['Office_update.ml', 'Office_edit.ml', 'a menu item, a drop'],
+      ['Office_edit.ml', 'Office_model.ml', 'a new version'],
+      ['Office_update.ml', 'Office_page.ml', 'the mouse on the page'],
+      ['Office_page.ml', 'Office_view.ml', 'places and lines'],
+      ['Office_view.ml', 'Office_export.ml', 'the page shapes'],
+      ['Office_templates.ml', 'Office_model.ml', 'a fresh document'],
+    ]),
+    skeletons.module_calls('Office_update.ml', 'A frame given to the first that wants it', 'update', 'who gets the frame', [
+      ['press', 'a press: corner, object, text, margin', 'the button down'],
+      ['dragging', 'a drag: the live document', 'held'],
+      ['release', 'the gesture a version', 'let go'],
+      ['text_keys', 'the keys typed into the body', 'keys'],
+      ['reopened', 'a document read from the store', 'the dialog done'],
+    ]),
+    skeletons.module_calls('Office_edit.ml', 'An item to an edit to a version', 'command', 'a menu and an item', [
+      ['record', 'the edit kept, named for Undo', 'a document'],
+      ['insert', 'a new object, selected', 'Insert'],
+      ['tie', 'an object tied to its paragraph', 'Arrange'],
+      ['put_down', 'the in-place session ended', 'leaving the part'],
+    ]),
+    skeletons.chain('The page laid out', [
+      ['Office_page.ml:def:layout', 'the text and its pages', ''],
+      ['Office_page.ml:def:placed', 'the objects placed, kept', 'the objects'],
+      ['Office_page.ml:def:placed_simple', 'tied objects: a first layout', 'computed once'],
+      ['Office_page.ml:def:text_around', 'the text round obstacles', 'the obstacles'],
+      ['Office_page.ml:def:wrap_room', 'the room a line has', 'each line'],
+    ]),
+    skeletons.module_calls('Office_view.ml', 'The picture, layer by layer', 'view', 'model to shapes', [
+      ['start_view', 'the start screen', 'no document yet'],
+      ['show_view', 'a slide full screen', 'the show'],
+      ['page_shapes', "the pages' contents", 'editing'],
+    ]) + { bones+: [{ at: 'Office_view.ml:def:glyphs_at', role: 'the letters, kept' }], joints+: [{ from: 'Office_view.ml:def:page_shapes', to: 'Office_view.ml:def:glyphs_at', say: 'a laid-out page' }] },
+  ],
+}

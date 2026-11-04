@@ -1,0 +1,7 @@
+// lib_core/libc/syscall/os/: what the code map says of it (the code map: tinybox codemap,
+// ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The system calls by system: Linux's numbers and convention, Plan 9's.",
+}

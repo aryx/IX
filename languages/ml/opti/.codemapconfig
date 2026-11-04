@@ -2,26 +2,30 @@
 // tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there)
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "mini-ml -O: passes on the stack code where mini-ml's lost to ocamlopt's, the simple back end the same after them.",
   files: {
-    'Opti.mli': { digest: 'ca63d513cf47',
-      summary: "Two switchable passes, each making code of Lower's own instructions: self tail calls as jumps, integer equality.",
+    'Opti.mli': { digest: '22caa3801799',
+      summary: "Switchable passes, each making code of Lower's own instructions: self tail calls as jumps, integer equality.",
       important: [
         { at: "comment:\"tails: a function's tail call of itself, with all its arguments\"", say: "ocamlopt's self tail call", weight: 3 },
         { at: 'comment:"eqs: x = k and x <> k, k an integer, compare the words"', say: 'no call of compare for a constant', weight: 2 },
+        { at: 'comment:"Without tails the call is already a jump"', say: 'what tails saves: prologue and epilogue', weight: 2 },
         { at: 'def:passes', weight: 2 },
         { at: 'def:run', weight: 1 },
       ],
     },
-    'Opti.ml': { digest: '2b18a7b86e6e',
-      summary: 'The passes: tails (a jump into the body, the arguments stored in the parameters) and eqs.',
+    'Opti.ml': { digest: '469901389d6c',
+      summary: "The passes: tails, eqs, refs (a ref that doesn't escape, a slot: Simplif's) and drops (dead pushes).",
       capitals: [
         { at: 'def:passes', say: 'the passes, by name' },
       ],
       important: [
         { at: 'def:tails', say: 'a self tail call is a jump into the body', weight: 3 },
         { at: 'def:eqs', weight: 2 },
+        { at: "comment:\"ocaml-light's Simplif.eliminate_ref, on the stack code\"", say: "a loop's counter off the heap", weight: 3 },
+        { at: 'def:refs', weight: 2 },
+        { at: 'def:drops', say: 'r := e leaves a unit pushed then dropped', weight: 1 },
         { at: 'def:passes', weight: 2 },
         { at: 'def:run', weight: 1 },
       ],
@@ -31,12 +35,14 @@
     },
   },
   skeletons: [
-    { name: 'Two passes over the stack code: tails and eqs',
+    { name: 'Four passes over the stack code',
       bones: [
         { at: 'Opti.ml:def:run', role: 'entry: the passes asked, on each function' },
         { at: 'Opti.ml:def:passes', role: 'the table: name, pass' },
         { at: 'Opti.ml:def:tails', role: 'a self tail call as a jump into the body' },
         { at: 'Opti.ml:def:eqs', role: 'x = n compared as words, no runtime call' },
+        { at: 'Opti.ml:def:refs', role: 'a local ref as a slot' },
+        { at: 'Opti.ml:def:drops', role: 'a push then a drop removed' },
         { at: 'Opti.ml:def:highest', role: "the unit's labels, for fresh ones" },
         { at: '../simple/Ir.ml:type:func', role: "Lower's function, in and out" },
       ],
@@ -45,6 +51,8 @@
         { from: 'Opti.ml:def:passes', to: 'Opti.ml:def:run', say: 'the passes named' },
         { from: 'Opti.ml:def:tails', to: 'Opti.ml:def:passes', say: '-Otails' },
         { from: 'Opti.ml:def:eqs', to: 'Opti.ml:def:passes', say: '-Oeqs' },
+        { from: 'Opti.ml:def:refs', to: 'Opti.ml:def:passes', say: '-Orefs' },
+        { from: 'Opti.ml:def:drops', to: 'Opti.ml:def:passes', say: '-Odrops' },
         { from: '../simple/Ir.ml:type:func', to: 'Opti.ml:def:run', say: 'the code' },
       ],
     },
@@ -53,7 +61,7 @@
         { at: 'Opti.mli', role: 'the passes, switchable' },
         { at: 'Opti.ml', role: 'the rewrites' },
         { at: '../simple/Lower.ml', role: 'the stack code it reads and makes' },
-        { at: '../CLI.ml:def:main', role: '-O, -Otails, -Oeqs' },
+        { at: '../CLI.ml:def:main', role: '-O, -Otails, -Oeqs...' },
       ],
       joints: [
         { from: '../CLI.ml:def:main', to: 'Opti.mli', say: 'the passes named' },

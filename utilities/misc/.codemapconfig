@@ -1,0 +1,83 @@
+// utilities/misc/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+local sys = '../../lib_core/commons/Sys_plan9.mli';
+local fs = '../../lib_core/commons/FS.mli';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Plan 9's small tools for scripts: echo, test, seq, basename, cleanname, wc, du.",
+  files: {
+    'Echo.ml': { digest: '5fd80198cabd',
+      summary: "mini-echo: the Seventh Edition's echo, -n only, one write (a ctl file's message).",
+      important: [
+        { at: 'comment:"in one write"', say: 'a device reads one message a write', weight: 2 },
+      ],
+    },
+    'Test.ml': { digest: '52e7808bf567',
+      summary: "mini-test: a question answered by the status only, with Plan 9's -A, -L, -T and -older.",
+      important: [
+        { at: 'comment:"-A, -L and -T are Plan 9\'s"', say: 'append only, exclusive, temporary', weight: 2 },
+        { at: 'comment:"here the file\'s permissions are read"', say: 'not test.c: it tries to open', weight: 1 },
+        { at: 'def:main', say: 'a little recursive descent: ! -a -o ( )', weight: 3 },
+      ],
+    },
+    'Seq_.ml': { digest: '1497a84deee3',
+      summary: "mini-seq: the numbers a script's for loops over, since rc has no arithmetic; Seq_ not Seq.",
+      important: [
+        { at: 'comment:"rc has no arithmetic"', say: 'why counting is a program', weight: 2 },
+        { at: 'def:fixed', say: '-w: as wide, zeros before', weight: 1 },
+      ],
+    },
+    'Basename.ml': { digest: '987d4da5b462',
+      summary: "mini-basename: a name's last part without its suffix, or with -d its directory.",
+    },
+    'Cleanname.ml': { digest: '2bf9c3908727',
+      summary: "mini-cleanname: a name's shortest form, cleaned as text, which Plan 9 (no symlinks) makes right.",
+      important: [
+        { at: 'comment:"No file is looked at"', say: 'right only without symbolic links', weight: 2 },
+      ],
+    },
+    'Wc.ml': { digest: '83f439d50152',
+      summary: "mini-wc: lines, words, bytes, and -r UTF-8's characters (Pike and Thompson's of 1992).",
+      important: [
+        { at: 'type:counts', weight: 1 },
+        { at: 'def:count', say: 'a buffer counted, a word across buffers', weight: 3 },
+        { at: 'comment:"UTF-8 is Ken Thompson\'s and Rob Pike\'s"', weight: 1 },
+      ],
+    },
+    'Du.ml': { digest: '13e84cd25bbe',
+      summary: "mini-du: a directory's KB, rounded to blocks, a union's directory counted once.",
+      important: [
+        { at: 'comment:"A directory reached twice"', say: 'a bind seen twice, counted once', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.onefile('mini-echo', 'Echo.ml', []),
+    skeletons.onefile('mini-test', 'Test.ml', []),
+    skeletons.onefile('mini-seq', 'Seq_.ml', [['Seq_.ml:def:number', 'an argument as a float', 'first, step, last']]),
+    skeletons.onefile('mini-basename', 'Basename.ml', []),
+    skeletons.onefile('mini-cleanname', 'Cleanname.ml', [['../../lib_core/commons/FS.mli:def:cleanname', 'the lexical cleaning', 'each name']]),
+    skeletons.onefile('mini-wc', 'Wc.ml', [
+      ['Wc.ml:def:contents', 'a file or stdin counted', 'each file'],
+      ['Wc.ml:def:count', 'lines, words, characters', 'a buffer'],
+    ]),
+    skeletons.onefile('mini-du', 'Du.ml', []),
+    skeletons.parts("A script's helpers: answers by status and text", [
+      ['Test.ml', 'a question, the status the answer'],
+      ['Seq_.ml', 'a loop counted'],
+      ['Echo.ml', 'words to a file, one write'],
+      ['Cleanname.ml', 'a name cleaned'],
+      ['Du.ml', 'sizes under a directory'],
+      ['Wc.ml', 'lines, words, bytes'],
+      [sys, "a file's stat"],
+      [fs, 'names, files'],
+    ], [
+      ['Test.ml', sys, 'the mode, the times'],
+      ['Du.ml', sys, 'dirread'],
+      ['Cleanname.ml', fs, 'FS.cleanname'],
+      ['Wc.ml', fs, 'open_in_fd'],
+    ]),
+  ],
+}

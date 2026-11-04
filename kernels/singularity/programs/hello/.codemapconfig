@@ -1,0 +1,30 @@
+// kernels/singularity/programs/hello/: what the code map says of it (the
+// code map is tinybox codemap, in ~/github/ocaml-elm-playground).
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The first process: an OCaml program unaware of where it runs, its own heap and collector.",
+  files: {
+    'Main.ml': { digest: '5ce478673bbd',
+      summary: "The first process: an OCaml program unaware of where it runs, its own heap and collector.",
+      capitals: [ { at: "code:\"let () =\"", say: "lines to the debug line, a million cells collected" } ],
+      important: [
+        { at: "def:sum", say: "a million cells: its own collector at work", weight: 2 },
+        { at: "def:runs", say: "1 again on a second run: a fresh copy", weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: "hello: a plain OCaml program as a process",
+      bones: [
+        { at: "Main.ml:code:\"let () =\"", role: "print_string, a sum, exit 3" },
+        { at: "Main.ml:def:sum", role: "lists allocated and collected in its heap" },
+        { at: "../../lib/sip.c:def:_syscall6", role: "print_string ends here: the debug line" },
+      ],
+      joints: [
+        { from: "Main.ml:code:\"let () =\"", to: "Main.ml:def:sum" },
+        { from: "Main.ml:code:\"let () =\"", to: "../../lib/sip.c:def:_syscall6", say: "write, exit" },
+      ],
+    },
+  ],
+}

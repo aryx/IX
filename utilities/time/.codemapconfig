@@ -1,0 +1,46 @@
+// utilities/time/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Plan 9's date and cal, in GMT: the time as seconds since 1970, England's calendar.",
+  files: {
+    'Cal.ml': { digest: 'a1396f6f391a',
+      summary: "mini-cal: Plan 9's cal byte for byte, Julian until September 1752 and its 19 days.",
+      capitals: [
+        { at: 'def:jan1', say: "a year's first weekday, both calendars" },
+      ],
+      important: [
+        { at: 'comment:"The calendar is England\'s"', say: 'the 2nd, then the 14th', weight: 3 },
+        { at: 'def:jan1', weight: 3 },
+        { at: 'def:days', say: "a month's days, 1752's skipped", weight: 2 },
+        { at: 'def:month', say: 'a month as lines of a grid', weight: 2 },
+        { at: 'comment:"\"This month\" is GMT"', say: 'no /env/timezone read', weight: 1 },
+      ],
+      links: [
+        { from: 'def:month', to: 'def:days' },
+        { from: 'def:days', to: 'def:jan1' },
+      ],
+    },
+    'Date.ml': { digest: '9a6aea40fe51',
+      summary: "mini-date: now, or seconds since 1970 given, as ctime's line; -n the number; GMT only.",
+    },
+  },
+  skeletons: [
+    skeletons.onefile('mini-cal: a month as a grid', 'Cal.ml', [
+      ['Cal.ml:def:month', 'a month, row by row', 'month and year'],
+      ['Cal.ml:def:days', 'its days, September 1752 cut', 'month and year'],
+      ['Cal.ml:def:jan1', "the year's first weekday", 'the year'],
+    ]),
+    skeletons.onefile('mini-date', 'Date.ml', []),
+    skeletons.parts('Two views of the clock', [
+      ['Date.ml', 'an instant as a line'],
+      ['Cal.ml', 'a month or a year as a grid'],
+      ['../../lib_core/system/Unix.ml', 'gmtime'],
+    ], [
+      ['Date.ml', '../../lib_core/system/Unix.ml', 'gmtime of the seconds'],
+      ['Cal.ml', '../../lib_core/system/Unix.ml', 'gmtime: this month'],
+    ]),
+  ],
+}

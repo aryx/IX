@@ -1,0 +1,23 @@
+// languages/smalltalk/hosts/: what the code map says of it (the code
+// map: tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-squeak's windows: Squeak's world shown, fed the mouse and keys, on Linux and under mini-9pi.",
+  skeletons: [
+    {
+      name: 'Two hosts, one Squeak',
+      bones: [
+        { at: 'sdl/', role: 'a window on Linux, SDL' },
+        { at: 'draw/', role: "a window of mini-rio's, ix's own" },
+        { at: '../Squeak.ml', role: 'all a host calls' },
+        { at: '../../../kernels/squeak/', role: 'the third host: the bare Pi' },
+      ],
+      joints: [
+        { from: 'sdl/', to: '../Squeak.ml', say: 'start, cycle, picture' },
+        { from: 'draw/', to: '../Squeak.ml', say: 'start, cycle, bits32' },
+        { from: '../../../kernels/squeak/', to: '../Squeak.ml', say: 'the same calls' },
+      ],
+    },
+  ],
+}

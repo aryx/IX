@@ -1,0 +1,67 @@
+// kernels/9pi/filesystems/lib_fat/: what the code map says of it (the
+// code map is tinybox codemap, in ~/github/ocaml-elm-playground; its
+// guidelines: docs/claude_notes/codemapconfig_guidelines.md there). Its
+// tests/ (Fattest, fat.sh: an image made by mkfs.fat, read and written)
+// are off the map.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "MS-DOS's FAT (12, 16, 32, VFAT's long names) read and written, for dossrv and the kernel's #F.",
+  files: {
+    'Fat.mli': { digest: '729c43920a4d',
+      summary: "A FAT over a caller's read and write: a file a chain in the table, its entry its name.",
+      capitals: [
+        { at: 'type:entry', say: 'a file: its name, first cluster, size' },
+        { at: 'def:make', say: "a FAT over the caller's bytes" },
+      ],
+      important: [
+        { at: 'comment:"CONFIG  TXT  first 5"', say: 'a file as a chain of clusters, drawn', weight: 3 },
+        { at: 'comment:"The table gave the format its name"', say: 'the chain beside the blocks: its idea', weight: 3 },
+        { at: 'comment:"A chain and an entry, against Unix"', say: 'FAT against the inode', weight: 2 },
+        { at: 'comment:"Not here: the free count FAT32"', say: 'fsck finds it stale', weight: 1 },
+        { at: 'comment:"It is the format everything reads"', say: 'why mini-9pi has a FAT at all', weight: 1 },
+      ],
+    },
+    'Fat.ml': { digest: 'd7e1ae6f3f7d',
+      summary: 'The boot sector, the table by 12, 16 or 32 bits, directories and long names, files grown.',
+      important: [
+        { at: 'type:t', say: 'the geometry and the table in pieces', weight: 2 },
+        { at: 'def:make', say: "the boot sector's geometry read", weight: 3 },
+        { at: 'def:slot', say: 'a cluster number of 12, 16 or 32 bits', weight: 2 },
+        { at: 'def:chain', say: "a file's clusters", weight: 2 },
+        { at: 'def:entries', say: 'a directory: long names before short', weight: 2 },
+        { at: 'def:read', weight: 3 },
+        { at: 'def:write', say: 'data first, the table after', weight: 3 },
+        { at: 'def:long_entries', say: "VFAT's long name, 13 characters an entry", weight: 1 },
+        { at: 'def:checksum', say: "the short name's sum in each long entry", weight: 1 },
+        { at: 'def:create', weight: 2 },
+      ],
+      links: [
+        { from: 'def:read', to: 'def:chain' },
+        { from: 'def:write', to: 'def:extend' },
+        { from: 'def:create', to: 'def:long_entries' },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'A FAT: a file a chain in the table',
+      bones: [
+        { at: 'Fat.ml:def:make', role: 'the boot sector: the geometry, the table read' },
+        { at: 'Fat.ml:def:slot', role: "a cluster's next, in 12, 16 or 32 bits" },
+        { at: 'Fat.ml:def:chain', role: "a file's clusters, walked" },
+        { at: 'Fat.ml:def:entries', role: "a directory's 32-byte entries, long names joined" },
+        { at: 'Fat.ml:def:read', role: 'bytes from the chain' },
+        { at: 'Fat.ml:def:write', role: 'the chain extended, data then table' },
+        { at: 'Fat.ml:def:create', role: 'a new entry, its long name, room made' },
+      ],
+      joints: [
+        { from: 'Fat.ml:def:make', to: 'Fat.ml:def:slot', say: 'the table' },
+        { from: 'Fat.ml:def:chain', to: 'Fat.ml:def:slot', say: 'next, next' },
+        { from: 'Fat.ml:def:entries', to: 'Fat.ml:def:chain', say: 'the directory is a file' },
+        { from: 'Fat.ml:def:read', to: 'Fat.ml:def:chain', say: 'its clusters' },
+        { from: 'Fat.ml:def:write', to: 'Fat.ml:def:slot', say: 'clusters taken' },
+        { from: 'Fat.ml:def:create', to: 'Fat.ml:def:entries', say: 'the names taken' },
+      ],
+    },
+  ],
+}

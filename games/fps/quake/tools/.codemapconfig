@@ -1,0 +1,48 @@
+// games/fps/quake/tools/: what the code map says of it
+local skeletons = import '../../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The tools a Quake map goes through, ours: light (lightmaps baked) and a WAD2 of textures for qbsp.",
+  files: {
+    'Light.ml': {
+      summary: "mini-light: id's light (1996) and ericw-tools' bounce: each face's lightmaps baked into the .bsp.",
+      digest: 'ddc8262e34b0',
+      capitals: [{ at: 'def:make', say: 'a .bsp read, lit, written again' }],
+      important: [
+        { at: 'comment:"Its samples: a point every 16 texels"', say: 'the steps of light, in the header', weight: 3 },
+        { at: 'def:first_hit', say: 'a ray through the BSP: a shadow is a miss', weight: 3 },
+        { at: 'def:points', say: "a face's samples, pulled out of the rock", weight: 2 },
+        { at: 'def:direct', say: '(light - distance) x (0.5 + 0.5 cos)', weight: 3 },
+        { at: 'comment:"2. The bounce (ericw-tools"', say: 'a radiosity of a few passes', weight: 2 },
+        { at: 'def:finish', say: 'halved and clamped: a byte a sample', weight: 1 },
+      ],
+    },
+    'Mkwad.ml': {
+      summary: "mini-mkwad2: a WAD2 of Quake's mip textures from a directory of PNGs, what qbsp reads.",
+      digest: 'b5fc9f6a0d3f',
+      important: [
+        { at: 'comment:"A WAD2 is Doom"', say: 'the format laid out', weight: 2 },
+        { at: 'def:miptex', say: "a texture and its three smaller mips, the palette's nearest", weight: 3 },
+        { at: 'def:wad2', say: 'the lumps and their directory', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.onefile('mini-light: lightmaps baked', 'Light.ml', [
+      ['Light.ml:def:make', 'the .bsp lit', 'in, out, palette'],
+      ['Light.ml:def:lights_of', "the map's lights", 'the entities'],
+      ['Light.ml:def:points', "each face's samples", 'each face'],
+      ['Light.ml:def:direct', 'each sample lit by each light it sees', 'the samples'],
+      ['Light.ml:def:bounce', 'light bounced off the faces', 'then'],
+      ['Light.ml:def:finish', 'bytes of lightmap', 'the sums'],
+    ], main='code:"Exit.exit caps"') + {
+      bones+: [{ at: 'Light.ml:def:first_hit', role: 'a ray through the tree' }],
+      joints+: [{ from: 'Light.ml:def:direct', to: 'Light.ml:def:first_hit', say: 'seen?' }],
+    },
+    skeletons.onefile('mini-mkwad2: a WAD2 from PNGs', 'Mkwad.ml', [
+      ['Mkwad.ml:def:make', 'the directories read', 'palette, out, dirs'],
+      ['Mkwad.ml:def:miptex', 'a PNG as a mip texture', 'each PNG'],
+      ['Mkwad.ml:def:wad2', 'the WAD2 written', 'the lumps'],
+    ], main='code:"Exit.exit caps"'),
+  ],
+}

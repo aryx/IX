@@ -2,11 +2,11 @@
 // codemap, ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there)
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
-  summary: "ix's compilers, C and ML, each writing mini-asm's objects: Plan 9's split, where a compiler never knows an address.",
-  // the two compilers onto the one toolchain; mini-cc also compiles
-  // mini-ml's runtime
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "ix's languages: C and ML compiled to the machine, the others run by machines of their own, or put on .NET.",
   skeletons: [
+    // the two compilers onto the one toolchain; mini-cc also compiles
+    // mini-ml's runtime
     {
       name: 'Two languages, one toolchain',
       bones: [
@@ -22,6 +22,45 @@
         { from: 'c/', to: 'ml/runtime/', say: 'compiles' },
         { from: '../assembler/', to: '../linker/', say: 'objects' },
         { from: 'ml/runtime/', to: '../linker/', say: 'an object' },
+      ],
+    },
+    // the languages run, not compiled (the README's second table): each
+    // on a machine of its own, and the environment it is shown in
+    {
+      name: 'Languages run by machines of their own',
+      bones: [
+        { at: 'smalltalk/', role: "the Blue Book's bytecode VM" },
+        { at: 'scheme/', role: "CESK, or Landin's SECD" },
+        { at: 'pascal/', role: 'P-code and the P-machine' },
+        { at: 'prolog/', role: "goals as data, or Warren's WAM" },
+        { at: 'forth/', role: 'threaded code: NEXT' },
+        { at: 'datalog/', role: "bottom up: Prolog's text, tables" },
+        { at: '../editors/drscheme/', role: 'mini-drscheme: Scheme in a window' },
+        { at: '../editors/turbopascal/', role: "TinyTurboPascal's IDE" },
+        { at: '../kernels/squeak/', role: 'mini-squeak: Smalltalk as the system' },
+      ],
+      joints: [
+        { from: 'prolog/', to: 'datalog/', say: 'its reader and terms' },
+        { from: 'scheme/', to: '../editors/drscheme/', say: 'runs in' },
+        { from: 'pascal/', to: '../editors/turbopascal/', say: 'runs in' },
+        { from: 'smalltalk/', to: '../kernels/squeak/', say: 'runs as' },
+      ],
+    },
+    // .NET as a target: mini-dotnet runs what the others write
+    {
+      name: '.NET: one machine, several compilers',
+      bones: [
+        { at: 'dotnet/', role: 'mini-dotnet: assemblies read and run' },
+        { at: 'dotnet/assembly/', role: 'the format: read, listed, written' },
+        { at: 'dotnet/csc/', role: 'mini-csc: a reduced C#' },
+        { at: 'tiger/', role: "mini-tiger: Appel's Tiger" },
+        { at: 'datalog/dotnet/', role: 'Datalog rules as nested loops' },
+      ],
+      joints: [
+        { from: 'dotnet/csc/', to: 'dotnet/assembly/', say: 'writes' },
+        { from: 'tiger/', to: 'dotnet/assembly/', say: 'writes' },
+        { from: 'datalog/dotnet/', to: 'dotnet/assembly/', say: 'writes' },
+        { from: 'dotnet/assembly/', to: 'dotnet/', say: 'a .dll, run' },
       ],
     },
   ],

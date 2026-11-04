@@ -5,7 +5,7 @@
 // Makefile's ML list (link order), an arch's arm/ or arm64/ picked by
 // BOARD; linked with ../lib_machine's C and assembly into kernel-pi1.img.
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "mini-9pi: Plan 9's kernel in OCaml on the Pi, booting Plan 9's own programs up to rio and TCP.",
   dirs: {
     conf: { summary: "The build's Python helpers: the boot directory's programs embedded, KERNDATE, the font's pixels." },
@@ -21,7 +21,13 @@
         { at: 'memory/', role: 'pages given at their first touch' },
         { at: 'files/', role: 'everything a file: names walked, devices, 9P' },
         { at: 'devices/', role: "the devices, each a Dev.t: '#c', '#p', '#M'..." },
-        { at: 'core/', role: 'the data: Chan, Proc, Error' },
+        { at: 'filesystems/', role: "file systems in the kernel (#F, #x), or dossrv's" },
+        { at: 'network/', role: '#l and #I: Ethernet over USB, IP, UDP, TCP' },
+        { at: 'buses/', role: '#u: USB, its drivers in usbd or Kusb' },
+        { at: 'lib_graphics/', role: "the pixels: memdraw in OCaml or principia's C" },
+        { at: 'console/', role: '#c: the console, cooked lines' },
+        { at: 'security/', role: 'fauth, fversion, /dev/random' },
+        { at: 'core/', role: 'the data: Chan, Proc, Errors' },
         { at: '../lib_machine/', role: 'the machine: MMU, trap frames, context switch, in C' },
       ],
       joints: [
@@ -32,6 +38,13 @@
         { from: 'processes/', to: 'memory/', say: 'segments' },
         { from: 'files/', to: 'devices/', say: "a device's functions" },
         { from: 'memory/', to: '../lib_machine/', say: 'page tables' },
+        { from: 'files/', to: 'filesystems/', say: "#F's, #x's functions" },
+        { from: 'files/', to: 'network/', say: "#I's functions" },
+        { from: 'files/', to: 'console/', say: "#c's functions" },
+        { from: 'devices/', to: 'lib_graphics/', say: "#i's drawing" },
+        { from: 'devices/', to: 'buses/', say: 'keyboard and mouse reports' },
+        { from: 'network/', to: 'buses/', say: 'the Ethernet adapter' },
+        { from: 'filesystems/', to: 'devices/', say: "#S's partitions" },
         { from: 'processes/', to: '../lib_machine/', say: 'swtch' },
       ],
     },

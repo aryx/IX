@@ -1,0 +1,95 @@
+// lib_playground/netcode/: what the code map says of it
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "A game on several computers, after the playground's netcode: lockstep or rollback over UDP.",
+  files: {
+    'Inputs.mli': {
+      summary: "Every player's input, tick by tick, as the peers exchange them: acks, resends, checksums.",
+      digest: '8072b1194a0c',
+      capitals: [{ at: 'type:t', say: 'what both netcodes stand on' }],
+    },
+    'Inputs.ml': {
+      summary: 'The exchange made: a table of inputs by tick and player, packets of the unacked, desync found.',
+      digest: '6568ac5cb453',
+      important: [
+        { at: 'type:t', say: 'inputs, the contiguous known, the acks, the sums', weight: 3 },
+        { at: 'def:packet', say: 'every input not yet acked, again: UDP loses', weight: 3 },
+        { at: 'def:receive', say: 'garbage refused by Wire, the rest kept', weight: 2 },
+        { at: 'def:compare', say: 'two checksums of one tick: a desync', weight: 2 },
+      ],
+    },
+    'Lockstep.mli': {
+      summary: 'Lockstep (Age of Empires, Doom): send the inputs, simulate everywhere, wait for the late.',
+      digest: 'a2b6418a8574',
+      capitals: [{ at: 'type:t', say: 'a game stepped only when all inputs are in' }],
+    },
+    'Lockstep.ml': { summary: 'Lockstep made: an input delay, a step when the tick is complete.', digest: '43d2c23d0a68' },
+    'Rollback.mli': {
+      summary: "Rollback (GGPO): guess the others' keys, and replay from the first wrong guess.",
+      digest: '9d7c95ad684e',
+      capitals: [{ at: 'type:t', say: 'the model guessed ahead, and the ticks to replay' }],
+    },
+    'Rollback.ml': {
+      summary: 'Rollback made: each tick played with its guesses kept, rolled back when one was wrong.',
+      digest: 'bd04af0fdb98',
+      important: [
+        { at: 'def:best', say: 'the guess: the last input known holds', weight: 2 },
+        { at: 'def:roll_back', say: 'from the first wrong guess, replay', weight: 3 },
+        { at: 'def:step', say: 'a tick: mine added, the others guessed', weight: 2 },
+      ],
+    },
+    'Checksum.mli': { summary: 'Is your model the same as mine? FNV-1a of its marshalled bytes.', digest: 'da20b76e4460' },
+    'Checksum.ml': { summary: 'FNV-1a over Marshal, on Int32 for 31-bit ints.', digest: '162e10529b3e' },
+    'Wire.mli': { summary: 'Values as bytes and back: varints, zigzag, strings; garbage refused.', digest: '561c2265afe5' },
+    'Wire.ml': { summary: 'The writer and reader made: a buffer, a position, a refusal with its byte.', digest: '58193501bbf1' },
+    'Sim_net.mli': { summary: 'A network in one program, as bad as wanted from a seed: latency, jitter, loss.', digest: '6d8432c6b885' },
+    'Sim_net.ml': { summary: 'The simulated network made: packets in flight, delivered when their time comes.', digest: 'e1cefbd4537c' },
+    'Transport.mli': {
+      summary: "Where a peer's packets go: a record of send and receive, over ix's UDP.",
+      digest: '31cd50851ae6',
+      important: [{ at: 'type:t', say: 'the netcode does not care what carries it', weight: 2 }],
+    },
+    'Transport.ml': {
+      summary: "Host and join over ix's Udp (a process reads the packets): no relay, no TLS.",
+      digest: 'cb1624c97779',
+    },
+  },
+  skeletons: [
+    skeletons.parts('The netcode: two ways to play, one exchange, a wire', [
+      ['Lockstep.ml', 'wait for everyone, then step'],
+      ['Rollback.ml', 'step at once, fix later'],
+      ['Inputs.ml', 'the inputs exchanged, acked, checked'],
+      ['Checksum.ml', 'the model as a number'],
+      ['Wire.ml', 'messages as bytes'],
+      ['Transport.ml', 'UDP between two computers'],
+      ['Sim_net.ml', 'a bad network, simulated'],
+      ['../apis/Multiplayer.ml', 'what a game calls'],
+    ], [
+      ['../apis/Multiplayer.ml', 'Lockstep.ml', 'netcode=lockstep'],
+      ['../apis/Multiplayer.ml', 'Rollback.ml', 'netcode=rollback'],
+      ['Lockstep.ml', 'Inputs.ml', 'stands on'],
+      ['Rollback.ml', 'Inputs.ml', 'stands on'],
+      ['Inputs.ml', 'Wire.ml', 'packets'],
+      ['../apis/Multiplayer.ml', 'Checksum.ml', 'each tick'],
+      ['../apis/Multiplayer.ml', 'Transport.ml', 'net=host, net=join'],
+      ['../apis/Multiplayer.ml', 'Sim_net.ml', 'net=simulate'],
+    ]),
+    {
+      name: 'Inputs: a tick of mine out, theirs in',
+      bones: [
+        { at: 'Inputs.ml:type:t', role: 'the inputs by tick and player' },
+        { at: 'Inputs.ml:def:add_mine', role: 'my input, delayed' },
+        { at: 'Inputs.ml:def:packet', role: 'out: what they have not acked' },
+        { at: 'Inputs.ml:def:receive', role: 'in: theirs, and their acks' },
+        { at: 'Inputs.ml:def:checksum', role: 'a tick summed, compared' },
+      ],
+      joints: [
+        { from: 'Inputs.ml:def:add_mine', to: 'Inputs.ml:type:t', say: 'kept' },
+        { from: 'Inputs.ml:type:t', to: 'Inputs.ml:def:packet', say: 'sent' },
+        { from: 'Inputs.ml:def:receive', to: 'Inputs.ml:type:t', say: 'kept' },
+        { from: 'Inputs.ml:def:checksum', to: 'Inputs.ml:type:t', say: 'a desync?' },
+      ],
+    },
+  ],
+}

@@ -1,0 +1,41 @@
+// lib_playground/ai/movement/: what the code map says of it
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Ways through a map: breadth-first, Dijkstra and A* as one search, and the flow field.",
+  files: {
+    'Pathfind.mli': {
+      summary: 'Finding a way: the same search with three queues, and a field from the goal outward.',
+      digest: '5c8bbba3bc81',
+      capitals: [
+        { at: 'type:problem', say: 'a graph given as functions: neighbours, goal, estimate' },
+        { at: 'def:field', say: "one search for all the monsters: mini-doom's" },
+      ],
+      important: [{ at: 'type:result', say: 'the path, its cost, and what was visited', weight: 2 }],
+    },
+    'Pathfind.ml': {
+      summary: 'The searches made: one loop, unit steps or costs, guided by an estimate or not.',
+      digest: '69a10b3e4dc6',
+      important: [
+        { at: 'def:search', say: 'BFS, Dijkstra, A*: two flags apart', weight: 3 },
+        { at: 'def:insert', say: 'a sorted list as the priority queue', weight: 1 },
+        { at: 'def:downhill', say: 'a step down the field', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [{
+    name: 'One search, three queues, and a field',
+    bones: [
+      { at: 'Pathfind.ml:type:problem', role: 'the graph: neighbours, goal, estimate' },
+      { at: 'Pathfind.ml:def:search', role: 'the loop: the frontier by priority' },
+      { at: 'Pathfind.ml:def:astar', role: 'guided by the estimate' },
+      { at: 'Pathfind.ml:def:field', role: 'every node its cost to the goal' },
+      { at: 'Pathfind.ml:def:downhill', role: 'a step along the field' },
+    ],
+    joints: [
+      { from: 'Pathfind.ml:type:problem', to: 'Pathfind.ml:def:search', say: 'searched' },
+      { from: 'Pathfind.ml:def:astar', to: 'Pathfind.ml:def:search', say: 'guided=true' },
+      { from: 'Pathfind.ml:type:problem', to: 'Pathfind.ml:def:field', say: 'from the goal' },
+      { from: 'Pathfind.ml:def:field', to: 'Pathfind.ml:def:downhill', say: 'followed' },
+    ],
+  }],
+}

@@ -1,0 +1,26 @@
+// lib_core/libc/arch/arm64/: what the code map says of it (the code map: tinybox codemap,
+// ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "arm64's assembly: the start, and memmove and memset by pairs of words.",
+  files: {
+    'rt0.s': { digest: '4dfe305e6061', summary: 'Where a Linux arm64 process starts: argc and argv from the stack, main, then exit(0).' },
+    'memmove.s': { digest: 'fe652f6d11fe',
+      summary: 'memmove 16 bytes a turn (LDP, STP); arm64 needs no alignment work.',
+      important: [{ at: 'comment:"n read as 32 bits"', say: 'a ulong is 32 bits for 7c and mini-cc', weight: 2 }],
+    },
+    'memset.s': { digest: 'ac20297605db', summary: 'memset 16 bytes a turn, the byte spread to a word by shifts.' },
+  },
+  skeletons: [
+    skeletons.parts("arm64's runtime in assembly", [
+      ['rt0.s', 'the process starts here'],
+      ['memmove.s', 'copies by pairs of words'],
+      ['memset.s', 'fills by pairs of words'],
+    ], [
+      ['rt0.s', 'memmove.s', 'main, compiled, calls'],
+      ['rt0.s', 'memset.s', 'main, compiled, calls'],
+    ]),
+  ],
+}

@@ -1,0 +1,81 @@
+// browsers/webapi/run/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "A page's scripts run in order, its events dispatched, its timers on the page's clock, one task at a time.",
+  files: {
+    'Browser_script.mli': { digest: 'b5adfa76e349',
+      summary: "A page's scripts and the DOM they see: what the tab calls, from creation to the mailbox it empties.",
+      capitals: [
+        { at: 'def:create_with', say: "a page's engine, its copy, its globals" },
+        { at: 'def:run_scripts_with', say: "the page's <script>s, in order" },
+        { at: 'def:tree', say: 'the copy frozen back, to lay out' },
+      ],
+      important: [
+        { at: 'comment:"What scripts were given, in order"', say: 'DOM Level 0 to today', weight: 2 },
+        { at: 'def:click', weight: 2 },
+        { at: 'def:advance', say: "the timers, on the frame's clock", weight: 2 },
+        { at: 'def:take_requests', weight: 1 },
+        { at: 'def:answer', weight: 1 },
+      ],
+    },
+    'Browser_script.ml': { digest: 'cf214a286815',
+      summary: 'The engine made with the prelude and the host objects, scripts run, events bubbled, the mailbox emptied.',
+      important: [
+        { at: 'def:create_with', say: 'the globals: document, window, fetch...', weight: 3 },
+        { at: 'def:eval_script', say: 'a script that does not parse: passed over', weight: 2 },
+        { at: 'def:run_scripts_with', weight: 3 },
+        { at: 'def:dispatch_event', say: 'capture, target, bubble', weight: 3 },
+        { at: 'def:page_budget', say: "a page's steps, then stopped", weight: 1 },
+        { at: 'def:tree', weight: 2 },
+        { at: 'def:inserted', say: 'a script added later runs too', weight: 1 },
+      ],
+      links: [
+        { from: 'def:run_scripts_with', to: 'def:eval_script' },
+        { from: 'def:click_at', to: 'def:dispatch_event' },
+      ],
+    },
+    'Event_loop.mli': { digest: '7f67bba510bc',
+      summary: 'Run to completion: timers, events and answers wait in a queue; setTimeout and requestAnimationFrame.',
+      important: [
+        { at: 'comment:"A script is never interrupted"', weight: 3 },
+        { at: 'def:advance', weight: 2 },
+      ],
+    },
+    'Event_loop.ml': { digest: 'fafadd62fe04',
+      summary: "The timers sorted by due time, run as the page's clock passes them.",
+      important: [{ at: 'def:advance', weight: 2 }],
+    },
+    'Script_prelude.mli': { digest: '9c2495b63a75',
+      summary: "Small web APIs written in JavaScript, mini-chrome's data/prelude/web, run before each page's scripts.",
+      important: [{ at: 'def:text', weight: 2 }],
+    },
+    'Script_prelude.ml': { digest: '276244e02e1a',
+      summary: "Twelve JavaScript files in one OCaml string: Node's constants, MutationObserver, CustomElements, and more.",
+    },
+  },
+  skeletons: [
+    skeletons.module('Browser_script.ml', "A page's scripts: made, run, poked", [
+      ['create_with', 'the engine and its globals', ''],
+      ['run_scripts_with', "the page's scripts in order", 'the page'],
+      ['eval_script', 'one script parsed, evaluated', 'each'],
+      ['click_at', 'a click from the window', 'later'],
+      ['dispatch_event', 'its handlers, bubbling', 'the event'],
+      ['tree', 'the copy frozen for layout', 'when changed'],
+    ]),
+    skeletons.parts('The prelude: JavaScript in a string', [
+      ['Script_prelude.ml', 'twelve .js files, one string'],
+      ['Browser_script.ml:def:prelude', 'parsed once, run in each engine'],
+    ], [['Script_prelude.ml', 'Browser_script.ml:def:prelude', 'the text']]),
+    skeletons.parts('Scripts run, one task at a time', [
+      ['Browser_script.ml', 'the tasks the tab asks for'],
+      ['Event_loop.ml', 'timers'],
+      ['Script_prelude.ml', 'APIs in JavaScript'],
+    ], [
+      ['Script_prelude.ml', 'Browser_script.ml', 'run first in each engine'],
+      ['Browser_script.ml', 'Event_loop.ml', 'advance: due timers'],
+    ]),
+  ],
+}

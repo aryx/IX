@@ -1,0 +1,82 @@
+// kernels/squeak/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+//
+// Not sources to the map: the mkfile (Squeak's image made on Linux by
+// languages/smalltalk, linked in as the kernel's disk; SYSTEM=, FROM=,
+// DEPTH=), survey.sh, machine/ (links to lib_machine's files).
+// Smalltalk itself is languages/smalltalk/: this is its third host.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: 'mini-squeak: the Pi 4 boots into Squeak and nothing else, no process, no file; 200 lines of host.',
+  files: {
+    'Main.ml': { digest: '4c1fa025efcd',
+      summary: "The whole kernel: Smalltalk resumed from its image (or started from text), then the world's cycle forever.",
+      capitals: [
+        { at: 'code:"let () ="', say: "mini-squeak's main: the image resumed, the loop" },
+      ],
+      important: [
+        { at: 'comment:"mini-squeak as a whole"', say: 'the layers: Smalltalk, the VM, the host, the board', weight: 3 },
+        { at: 'comment:"The loop below is all of the kernel"', weight: 3 },
+        { at: 'comment:"An operating system is a collection"', say: "Ingalls's line, taken at its word", weight: 2 },
+        { at: 'code:"Squeak.resume host"', say: "the image's objects and pixels, as saved", weight: 2 },
+        { at: 'code:"Squeak.start Which.system"', say: 'no image: bootstrapped from the text', weight: 1 },
+        { at: 'code:"Squeak.cycle squeak"', say: 'one pass of the world, Control-C its interrupt', weight: 3 },
+      ],
+      related: ['README.md', '../../languages/smalltalk/Squeak.mli'],
+    },
+    'Host.mli': { digest: 'd840c1a4adae',
+      summary: "What Smalltalk's machine asks of the board: mouse, keys, clock, Transcript, and the Display shown.",
+      capitals: [
+        { at: 'def:init', say: 'the devices started: the St_interp.host' },
+      ],
+      important: [
+        { at: 'comment:"Nothing is pushed into Smalltalk"', say: 'primitives ask; no event queue', weight: 3 },
+        { at: 'def:poll', say: 'once a pass: the tick waited, devices read', weight: 2 },
+        { at: 'def:show32', weight: 1 },
+        { at: 'comment:"copy of the whole picture at each change"', say: "the Alto's display was the bitmap itself", weight: 2 },
+      ],
+    },
+    'Host.ml': { digest: '64b8af6159a2',
+      summary: "The host as the board gives it: USB and UART keys queued, a 10 ms tick, the Display copied out.",
+      important: [
+        { at: 'def:init', say: "the screen grey at once: the first picture is seconds away", weight: 2 },
+        { at: 'def:typed', say: "Control-C is the kernel's, not Smalltalk's", weight: 2 },
+        { at: 'def:moved', say: "USB's buttons mapped to Smalltalk's red, yellow, blue", weight: 1 },
+        { at: 'def:poll', weight: 3 },
+        { at: 'def:show32', say: 'one copy when the rows line up', weight: 2 },
+        { at: 'def:pointer', say: 'Squeak draws no cursor: the board draws one', weight: 1 },
+      ],
+    },
+    'host.c': { digest: 'd9fc2a1e63d5',
+      summary: 'The C under Host: milliseconds from the generic timer, and 32-bit pixels made 16-bit in a loop.',
+      important: [
+        { at: 'def:squeak_milliseconds', weight: 1 },
+        { at: 'def:squeak_show16', say: 'per pixel: too slow in OCaml for a pass', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'mini-squeak: the board, the host, the world',
+      bones: [
+        { at: 'Main.ml:code:"let () ="', role: 'the boot: host, Smalltalk resumed' },
+        { at: 'Host.ml:def:init', role: 'framebuffer, USB, the tick: a St_interp.host' },
+        { at: 'Main.ml:code:"Squeak.resume host"', role: 'the image, its objects as they were' },
+        { at: 'Host.ml:def:poll', role: 'the tick waited, the keys and mouse read' },
+        { at: 'Main.ml:code:"Squeak.cycle squeak"', role: "a pass of Smalltalk's world" },
+        { at: 'Host.ml:def:show32', role: 'the Display copied to the framebuffer' },
+        { at: 'host.c:def:squeak_show16', role: 'the same at 16 bits, in C' },
+      ],
+      joints: [
+        { from: 'Main.ml:code:"let () ="', to: 'Host.ml:def:init', say: 'the devices' },
+        { from: 'Host.ml:def:init', to: 'Main.ml:code:"Squeak.resume host"', say: 'the host record' },
+        { from: 'Main.ml:code:"Squeak.resume host"', to: 'Host.ml:def:poll', say: 'the loop' },
+        { from: 'Host.ml:def:poll', to: 'Main.ml:code:"Squeak.cycle squeak"', say: 'interrupt?' },
+        { from: 'Main.ml:code:"Squeak.cycle squeak"', to: 'Host.ml:def:show32', say: 'the Display, if changed' },
+        { from: 'Host.ml:def:show32', to: 'host.c:def:squeak_show16', say: 'DEPTH=16' },
+        { from: 'Host.ml:def:show32', to: 'Host.ml:def:poll', say: 'again' },
+      ],
+    },
+  ],
+}

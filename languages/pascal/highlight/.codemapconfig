@@ -1,0 +1,41 @@
+// languages/pascal/highlight/: what the code map says of it (the code map
+// is tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Pascal's text coloured for the editors, from the words alone, case ignored as Pascal does.",
+  files: {
+    'Highlight_pascal.mli': { digest: 'e9e1c142b31c',
+      summary: "A Pascal file's tokens given Highlight_code's categories: keywords, types, the names declared.",
+      important: [
+        { at: 'comment:"A capital and a small letter are the same"', weight: 2 },
+        { at: 'def:lines', weight: 2 },
+      ],
+    },
+    'Highlight_pascal.ml': { digest: '2f886240c86c',
+      summary: 'The highlighter: word lists, comments in braces, the name after program or procedure defined.',
+      important: [
+        { at: 'def:keywords', weight: 1 },
+        { at: 'def:types', weight: 1 },
+        { at: 'comment:"the name that comes is what program, procedure or function names"', say: 'a definition known by the word before', weight: 2 },
+        { at: 'def:lines', say: 'spans per line, for the editor', weight: 3 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'A Pascal text coloured',
+      bones: [
+        { at: 'Highlight_pascal.ml:def:lines', role: 'the text to spans, line by line' },
+        { at: 'Highlight_pascal.ml:def:keywords', role: 'the reserved words' },
+        { at: '../../../lib_code/Highlight_code.ml', role: 'the categories every language shares' },
+        { at: '../../../editors/emacs/modes/Pascal_mode.ml', role: "the editor's Pascal mode" },
+      ],
+      joints: [
+        { from: 'Highlight_pascal.ml:def:keywords', to: 'Highlight_pascal.ml:def:lines', say: 'a word looked up' },
+        { from: '../../../lib_code/Highlight_code.ml', to: 'Highlight_pascal.ml:def:lines', say: 'the categories' },
+        { from: 'Highlight_pascal.ml:def:lines', to: '../../../editors/emacs/modes/Pascal_mode.ml', say: 'the spans drawn' },
+      ],
+    },
+  ],
+}

@@ -1,0 +1,61 @@
+// kernels/9pi/devices/audio/: what the code map says of it (the code map
+// is tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "'#A', the sound (audio(3)): CD samples written to /dev/audio, played by the Pi 1's PWM through DMA.",
+  files: {
+    'Devaudio.mli': { digest: 'f1e164d20f6e',
+      summary: "Plan 9's audio interface on the Pi's jack: PWM as a DAC, a DMA ring kept filled ahead.",
+      capitals: [
+        { at: 'def:init', say: "'#A': /dev/audio, volume, audiostat" },
+      ],
+      important: [
+        { at: 'comment:"For a reader who knows OCaml and not the hardware"', say: 'PWM as a DAC, from zero', weight: 3 },
+        { at: 'comment:"the ring: 32 pages"', say: 'program, kernel, DMA, PWM: the picture', weight: 3 },
+        { at: 'comment:"What is lost when the writer is late"', say: 'empty: silence; away 370 ms: heard twice', weight: 2 },
+        { at: 'comment:"Plan 9\'s interface, as it is"', say: 'cat plays a file; no ioctl', weight: 2 },
+        { at: 'comment:"Circle (R. Stange"', say: 'interrupts, or the VideoCore: the others', weight: 1 },
+        { at: 'def:clock', weight: 2 },
+      ],
+    },
+    'Devaudio.ml': { digest: '8a0e203a1cc8',
+      summary: "The clock manager, PWM and DMA registers set; samples to duty words in a ring of control blocks.",
+      important: [
+        { at: 'def:range_of', say: '250 MHz / 44,100: the period in ticks', weight: 2 },
+        { at: 'def:duty', say: 'a sample to a PWM word, the volume applied', weight: 2 },
+        { at: 'def:position', say: "the DMA's place, read from its register", weight: 2 },
+        { at: 'def:update', say: 'what was played made silence again', weight: 3 },
+        { at: 'def:start', say: 'the clock, PWM and DMA set up at first open', weight: 3 },
+        { at: 'def:write', say: 'the writer sleeps while the ring is full', weight: 3 },
+        { at: 'def:control', say: '"audio out 80", "speed out 22050"', weight: 1 },
+        { at: 'def:init', weight: 1 },
+      ],
+      links: [
+        { from: 'def:clock', to: 'def:update' },
+        { from: 'def:write', to: 'def:put' },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'A sound played: a ring the DMA goes round',
+      bones: [
+        { at: 'Devaudio.ml:def:init', role: "'#A' registered; nothing touched yet" },
+        { at: 'Devaudio.ml:def:start', role: 'first open: PWM, clock, DMA, the ring' },
+        { at: 'Devaudio.ml:def:write', role: "a program's samples, ahead of the DMA" },
+        { at: 'Devaudio.ml:def:put', role: 'each sample a PWM word' },
+        { at: 'Devaudio.ml:def:clock', role: "Main's tick, every 10 ms" },
+        { at: 'Devaudio.ml:def:update', role: 'the played part silenced, the empties counted' },
+        { at: 'Devaudio.ml:def:position', role: "the DMA's control block now" },
+      ],
+      joints: [
+        { from: 'Devaudio.ml:def:init', to: 'Devaudio.ml:def:start', say: '/dev/audio opened' },
+        { from: 'Devaudio.ml:def:write', to: 'Devaudio.ml:def:put', say: 'room in the ring' },
+        { from: 'Devaudio.ml:def:write', to: 'Devaudio.ml:def:update', say: 'before each page' },
+        { from: 'Devaudio.ml:def:clock', to: 'Devaudio.ml:def:update', say: 'a tick' },
+        { from: 'Devaudio.ml:def:update', to: 'Devaudio.ml:def:position', say: 'how far it played' },
+      ],
+    },
+  ],
+}

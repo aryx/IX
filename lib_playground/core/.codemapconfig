@@ -1,0 +1,70 @@
+// lib_playground/core/: what the code map says of it
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Elm's core, the part the playground uses: Basics, Color, Time, Cmd, Sub, Set; the interfaces ix's own.",
+  files: {
+    'Basics.mli': { summary: "Elm's Basics: float-friendly operators and angles, opened by playground code.", digest: '5796a4df17be' },
+    'Basics.ml': { summary: "Elm's Basics made: + - * / on floats, clamp, degrees and turns.", digest: 'e69f5825bc43' },
+    'Color.mli': {
+      summary: "A colour as Elm's Color: rgb and the named colours of the playground.",
+      digest: '08aba5f39690',
+      capitals: [{ at: 'type:t', say: 'what every shape is painted with' }],
+    },
+    'Color.ml': { summary: "The colours made: rgb clamped, Elm's palette by name.", digest: '77a195eb4090' },
+    'Time.mli': { summary: "Elm's Time.Posix, here seconds since 1970 as a float.", digest: 'e4c0f883edf2' },
+    'Time.ml': { summary: 'Posix time and its milliseconds.', digest: 'db470f0032d4' },
+    'Cmd.mli': {
+      summary: "Elm's commands: what init and update ask the platform to do; here no HTTP.",
+      digest: '84bdc5636569',
+      important: [{ at: 'type:t', say: 'a request, done by the platform, not the program', weight: 2 }],
+    },
+    'Cmd.ml': { summary: 'The commands made: none, batch, a list for the platform.', digest: 'b71ab1e15806' },
+    'Sub.mli': {
+      summary: "Elm's subscriptions: what a program asks to be told of, each with its message.",
+      digest: '69b75af17d1e',
+      capitals: [{ at: 'type:t', say: "a program's ears: a frame, a key, the mouse" }],
+      important: [
+        { at: 'type:event', say: "what a platform has: its events, one type", weight: 2 },
+        { at: 'comment:"is the meeting"', say: 'platform events meet program subscriptions', weight: 2 },
+      ],
+    },
+    'Sub.ml': {
+      summary: 'The subscriptions made: one constructor per event, and an event turned into the messages asked.',
+      digest: 'a21de181f785',
+      important: [
+        { at: 'type:onesub', say: 'a subscription: an event kind and its message maker', weight: 3 },
+        { at: 'def:event_to_msgopt', say: 'the first subscription that wants the event', weight: 3 },
+        { at: 'def:on_animation_frame', say: 'the tick every game lives on', weight: 2 },
+      ],
+    },
+    'Set.mli': { summary: "Elm's Set, the three of it the keyboard uses (the keys held).", digest: 'ff4e9f580f12' },
+    'Set.ml': { summary: "Elm's Set over ix's Set_ of lib_core.", digest: '4942021b7172' },
+  },
+  skeletons: [
+    skeletons.parts("Elm's core: what a program and a platform exchange", [
+      ['Basics.ml', 'arithmetic on floats, opened everywhere'],
+      ['Color.ml', 'what shapes are painted with'],
+      ['Time.ml', 'the clock, as Elm sees it'],
+      ['Sub.ml', 'what a program wants told: events to messages'],
+      ['Cmd.ml', 'what a program asks done'],
+      ['Set.ml', 'the keys held'],
+    ], [
+      ['Sub.ml', 'Time.ml', 'a frame carries the time'],
+    ]),
+    {
+      name: 'A subscription: an event becomes a message',
+      bones: [
+        { at: 'Sub.ml:type:onesub', role: 'one subscription: a kind and its message maker' },
+        { at: 'Sub.ml:def:on_animation_frame', role: 'a subscription made: each frame' },
+        { at: 'Sub.ml:type:event', role: "the platform's event" },
+        { at: 'Sub.ml:def:event_to_msgopt', role: 'the meeting: the message, if one is wanted' },
+      ],
+      joints: [
+        { from: 'Sub.ml:def:on_animation_frame', to: 'Sub.ml:type:onesub', say: 'makes' },
+        { from: 'Sub.ml:type:event', to: 'Sub.ml:def:event_to_msgopt', say: 'from the platform' },
+        { from: 'Sub.ml:type:onesub', to: 'Sub.ml:def:event_to_msgopt', say: "the program's" },
+      ],
+    },
+  ],
+}

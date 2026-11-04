@@ -1,0 +1,57 @@
+// lib_core/libc/ix/: what the code map says of it (the code map: tinybox codemap,
+// ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "ix's own C in the libc, not Plan 9's: a short exact formatter, vlong's runtime, a Plan 9 syscall by number.",
+  files: {
+    'fmt.c': { digest: 'd6153edc6d31',
+      summary: "snprint, sprint and strtod, floats exact both ways by big-number expansion: 600 lines for goken's 2,400.",
+      capitals: [
+        { at: 'def:vsnprint', say: "C's conversions: what mini-ml's runtime prints with" },
+      ],
+      important: [
+        { at: 'comment:"Floats are converted exactly, both ways"', say: '%.17g then strtod: the same float', weight: 3 },
+        { at: 'def:expand', say: "m * 2^e's digits, all of them", weight: 3 },
+        { at: 'def:roundto', say: 'half to even, on the digits', weight: 2 },
+        { at: 'def:fltbody', weight: 1 },
+        { at: 'def:strtod', say: 'a guess moved between halfway points', weight: 2 },
+        { at: 'def:cmphalf', weight: 1 },
+      ],
+    },
+    'vlrt.c': { digest: 'b867f92f2083',
+      summary: "vlong on arm's 32 bits: _addv, _divv, _d2v... what 5c and mini-cc call, Plan 9's vlrt.c written shorter.",
+      important: [
+        { at: 'comment:"The compiler (5c"', say: 'a + b on vlongs becomes _addv(&r, a, b)', weight: 3 },
+        { at: 'type:Vlong', weight: 2 },
+        { at: 'def:dodiv', say: 'long division, a bit at a time', weight: 3 },
+        { at: 'def:_vasop', say: 'a += b on any type', weight: 1 },
+        { at: 'def:_d2v', weight: 1 },
+      ],
+    },
+    'syscall6_plan9_arm.s': { digest: '85407cee82e3', summary: "_syscall6 for Plan 9: a call by its number, for mini-ml's Unix on mini-9pi." },
+  },
+  skeletons: [
+    skeletons.parts("ix's own C under the runtime", [
+      ['fmt.c', 'numbers to text and back'],
+      ['vlrt.c', '64-bit arithmetic on arm'],
+      ['syscall6_plan9_arm.s', 'a Plan 9 call by number'],
+    ], [
+      ['fmt.c', 'vlrt.c', 'uvlong digits on arm'],
+    ]),
+    skeletons.chain('A float printed exactly', [
+      ['fmt.c:def:vsnprint', 'entry: the format walked', ''],
+      ['fmt.c:def:fltbody', '%e %f %g of a double', 'a float conversion'],
+      ['fmt.c:def:mantissa', 'm and e of m * 2^e', 'the double'],
+      ['fmt.c:def:expand', 'every decimal digit', 'm, e'],
+      ['fmt.c:def:roundto', 'to the precision, half to even', 'the digits'],
+    ]),
+    skeletons.chain('A vlong divided on arm', [
+      ['vlrt.c:def:_divv', "entry: the compiler's /", ''],
+      ['vlrt.c:def:sdiv', 'signs taken off', 'signed'],
+      ['vlrt.c:def:dodiv', 'unsigned long division', 'magnitudes'],
+      ['vlrt.c:def:vneg', 'the sign put back', 'quotient'],
+    ]),
+  ],
+}

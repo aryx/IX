@@ -1,0 +1,32 @@
+// editors/turbopascal/tty/: what the code map says of it (the code map
+// is tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../skeletons.libsonnet';
+
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-turbopascal-tty: the IDE in a terminal by Tty_unix, or a script of keys played headless.",
+  files: {
+    'Main.ml': { digest: '407d78c67c5e',
+      summary: "The terminal's main: -keys plays a script through Keys, its screen as text or a picture; else Tty_unix.",
+      important: [
+        { at: 'def:main', say: "a terminal, or a script with -views to time", weight: 3 },
+        { at: 'def:frame', say: "the screen as a PPM picture", weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.onefile("mini-turbopascal-tty: a terminal, or a script", 'Main.ml', [
+      ["../editor/Tui_turbo.ml:def:program", "the IDE as a Tui program", "-keys, or none"],
+    ]) + {
+      bones+: [
+        { at: '../Keys.ml:def:run_each', role: '-keys: played with no terminal' },
+        { at: '../../../lib_terminal/unix/Tty_unix.ml:def:run', role: 'a terminal: raw mode, keys, refresh' },
+      ],
+      joints+: [
+        { from: '../editor/Tui_turbo.ml:def:program', to: '../Keys.ml:def:run_each', say: 'a script' },
+        { from: '../editor/Tui_turbo.ml:def:program', to: '../../../lib_terminal/unix/Tty_unix.ml:def:run', say: 'no script' },
+      ],
+    },
+  ],
+}

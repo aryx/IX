@@ -1,0 +1,5 @@
+// lib_playground/ai/: what the code map says of it
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Game AI after the playground's libs/ai, a library per question: for now ways through a map.",
+}

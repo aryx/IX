@@ -1,0 +1,75 @@
+// machine/compat/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). Its own library,
+// ix_machine_compat: the machine runs the same without it.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Instructions printed as binutils' objdump prints them: the decoders' test, and mini-5i -t's trace.",
+  files: {
+    'Show_arm32.mli': { digest: '50840c9ce5d2',
+      summary: "An A32 instruction as objdump 2.42 prints it, aliases and all.",
+      important: [
+        { at: 'comment:"what the decoder is tested against"', say: 'every corpus word, compared', weight: 3 },
+        { at: 'def:print', weight: 2 },
+      ],
+    },
+    'Show_arm32.ml': { digest: '255dff15db31',
+      summary: "Registers' names (sl, fp, ip), conditions, operand 2 and its shift, VFP, as objdump writes them.",
+      important: [
+        { at: 'def:shifted_text', weight: 1 },
+        { at: 'def:operand_text', say: "operand 2: #imm, or a register shifted", weight: 2 },
+        { at: 'def:reglist', say: '{r4, pc}', weight: 1 },
+        { at: 'def:print', say: 'one case per instruction, aliases as objdump', weight: 3 },
+      ],
+    },
+    'Show_arm64.mli': { digest: '7c5adbc3b490',
+      summary: "An A64 instruction as objdump 2.42 prints it, aliases and all.",
+      important: [
+        { at: 'def:print', weight: 2 },
+      ],
+    },
+    'Show_arm64.ml': { digest: '818860bf46ff',
+      summary: "Register 31 as sp or xzr by operand, aliases (mov for orr, cmp for subs), memory operands.",
+      important: [
+        { at: 'def:reg_name', say: 'sp or zero register: by the operand', weight: 2 },
+        { at: 'def:move_wide', say: 'movz, movn as mov', weight: 1 },
+        { at: 'def:mem_operand', weight: 2 },
+        { at: 'def:print', weight: 3 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'An arm32 instruction printed',
+      bones: [
+        { at: 'Show_arm32.ml:def:print', role: 'the instruction to text' },
+        { at: 'Show_arm32.ml:def:cond_name', role: 'its condition suffix' },
+        { at: 'Show_arm32.ml:def:operand_text', role: 'operand 2' },
+        { at: 'Show_arm32.ml:def:shifted_text', role: 'a shift' },
+        { at: 'Show_arm32.ml:def:reglist', role: 'a block transfer' },
+      ],
+      joints: [
+        { from: 'Show_arm32.ml:def:print', to: 'Show_arm32.ml:def:cond_name' },
+        { from: 'Show_arm32.ml:def:print', to: 'Show_arm32.ml:def:operand_text', say: 'Dp' },
+        { from: 'Show_arm32.ml:def:operand_text', to: 'Show_arm32.ml:def:shifted_text' },
+        { from: 'Show_arm32.ml:def:print', to: 'Show_arm32.ml:def:reglist', say: 'push, pop, ldm' },
+      ],
+    },
+    {
+      name: 'An arm64 instruction printed',
+      bones: [
+        { at: 'Show_arm64.ml:def:print', role: 'the instruction to text' },
+        { at: 'Show_arm64.ml:def:reg_name', role: 'w or x, sp or zr' },
+        { at: 'Show_arm64.ml:def:move_wide', role: 'mov aliases' },
+        { at: 'Show_arm64.ml:def:mem_operand', role: '[base, #off]!' },
+        { at: 'Show_arm64.ml:def:pair_operand', role: 'ldp, stp' },
+      ],
+      joints: [
+        { from: 'Show_arm64.ml:def:print', to: 'Show_arm64.ml:def:reg_name' },
+        { from: 'Show_arm64.ml:def:print', to: 'Show_arm64.ml:def:move_wide', say: 'movz, movn' },
+        { from: 'Show_arm64.ml:def:print', to: 'Show_arm64.ml:def:mem_operand', say: 'ldr, str' },
+        { from: 'Show_arm64.ml:def:print', to: 'Show_arm64.ml:def:pair_operand', say: 'ldp, stp' },
+      ],
+    },
+  ],
+}

@@ -1,0 +1,119 @@
+// languages/forth/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-forth: Moore's Forth for its machine, fig-Forth's indirect threaded code, IF and DO written in Forth.",
+  files: {
+    'Main.ml': { digest: 'b0f2e315dffb',
+      summary: 'mini-forth, the program: Cap.main and logging, then the command line.',
+    },
+    'CLI.mli': { digest: '4ce524c44a78',
+      summary: 'mini-forth on a terminal: files and -e texts interpreted in one dictionary, then a prompt saying ok.',
+      important: [
+        { at: 'comment:"There is no more: no tree, no pass."', say: 'the outer and inner interpreters are all', weight: 3 },
+        { at: 'def:main', weight: 1 },
+      ],
+    },
+    'CLI.ml': { digest: 'b205eb1ca187',
+      summary: 'The flags (-e, -trace, -s), the files interpreted in order, then the teletype prompt: ok or compiled.',
+      capitals: [
+        { at: 'def:main', say: "mini-forth's entry: the texts, then the prompt" },
+      ],
+      important: [
+        { at: 'def:help', say: '-h teaches Forth by examples', weight: 1 },
+        { at: 'def:main', weight: 2 },
+        { at: 'code:"if Forth.compiling m then"', say: 'inside a definition the prompt says compiled', weight: 2 },
+      ],
+    },
+    'Forth.mli': { digest: '675ec1b149ea',
+      summary: "Forth (Moore, 1971) and threaded code (Bell, 1973): a dictionary of cells, two stacks, NEXT in three lines.",
+      capitals: [
+        { at: 'type:t', say: 'the machine: memory, two stacks, IP' },
+      ],
+      important: [
+        { at: 'comment:"The inner interpreter is three lines, NEXT"', say: 'the smallest way known to run a language', weight: 3 },
+        { at: 'comment:"The outer interpreter reads a word of the text"', say: 'run, or compiled at HERE: STATE decides', weight: 3 },
+        { at: 'def:create', weight: 1 },
+        { at: 'def:interpret', weight: 2 },
+      ],
+    },
+    'Forth.ml': { digest: '9a6235b7f90d',
+      summary: 'The machine: memory and stacks, headers linked in the dictionary, NEXT and DOCOL, SEE, the primitives.',
+      capitals: [
+        { at: 'def:next', say: 'NEXT: take the cell at IP, run its code field' },
+        { at: 'def:interpret', say: 'the outer interpreter: run it or compile it' },
+      ],
+      important: [
+        { at: 'type:t', say: 'a code field is a number into prims', weight: 3 },
+        { at: 'def:header', say: 'link, name length and flags, name', weight: 1 },
+        { at: 'def:find', say: 'the dictionary searched newest first', weight: 2 },
+        { at: 'def:call', say: 'a word run from OCaml returns to stop_cell', weight: 2 },
+        { at: 'def:next', weight: 3 },
+        { at: 'code:"m.docol <- code"', say: 'DOCOL: IP pushed, set to the parameters', weight: 3 },
+        { at: 'def:see', say: 'a definition read back from its cells', weight: 1 },
+        { at: 'def:reset', say: 'an error takes out the half-made word', weight: 1 },
+        { at: 'code:"Forth_prelude.text"', say: 'the rest of the language, read as text', weight: 2 },
+      ],
+      links: [
+        { from: 'def:interpret', to: 'def:call' },
+        { from: 'def:call', to: 'def:next' },
+        { from: 'def:next', to: 'def:execute' },
+      ],
+    },
+    'Forth_prelude.mli': { digest: 'a79fce53e5ea',
+      summary: "What of Forth is Forth: IF, DO, VARIABLE, CONSTANT over CREATE and DOES>; Lisp's bet without a tree.",
+      important: [
+        { at: 'comment:"CONSTANT has two times in it."', say: 'DOES>: defining words that define words', weight: 3 },
+        { at: 'comment:"The language is its own library."', weight: 2 },
+      ],
+    },
+    'Forth_prelude.ml': { digest: 'b2ec681749ac',
+      summary: 'The prelude as Forth text: the control words compiling jumps, the defining words, stack helpers.',
+      important: [
+        { at: 'def:text', say: 'interpreted by create, line by line', weight: 2 },
+      ],
+    },
+  },
+  dirs: {
+    tests: { summary: 'Forth programs run and compared with their expected output.' },
+  },
+  skeletons: [
+    // the program, then the loop the outer interpreter makes with NEXT
+    skeletons.cli('mini-forth: a text read, a word at a time', [
+      ['Forth.ml:def:create', 'the machine: primitives, then the prelude'],
+      ['Forth.ml:def:interpret', 'the outer interpreter: a word, run or compiled'],
+      ['Forth.ml:def:call', 'a word run from OCaml, NEXT until it returns'],
+      ['Forth.ml:def:next', 'NEXT: the cell at IP, its code field run'],
+    ]) + {
+      bones+: [
+        { at: 'Forth_prelude.ml:def:text', role: 'IF, DO, CONSTANT: Forth in Forth' },
+        { at: 'Forth.ml:def:execute', role: 'a primitive, DOCOL or DOES>' },
+      ],
+      joints+: [
+        { from: 'Forth_prelude.ml:def:text', to: 'Forth.ml:def:interpret', say: 'interpreted at start' },
+        { from: 'Forth.ml:def:next', to: 'Forth.ml:def:execute', say: 'W, the word at IP' },
+        { from: 'Forth.ml:def:execute', to: 'Forth.ml:def:next', say: 'IP moved: again' },
+      ],
+    },
+    {
+      name: 'The machine: a dictionary in the memory, two stacks',
+      bones: [
+        { at: 'Forth.ml:type:t', role: 'memory, stacks, IP, the code fields' },
+        { at: 'Forth.ml:def:header', role: 'a word made: link, name, code field' },
+        { at: 'Forth.ml:def:find', role: 'a name looked up, newest first' },
+        { at: 'Forth.ml:def:comma', role: 'a cell put at HERE: compiling' },
+        { at: 'Forth.ml:def:push', role: 'the data stack' },
+        { at: 'Forth.ml:def:rpush', role: 'the return stack: DOCOL keeps IP there' },
+      ],
+      joints: [
+        { from: 'Forth.ml:def:header', to: 'Forth.ml:type:t', say: 'linked to latest' },
+        { from: 'Forth.ml:def:find', to: 'Forth.ml:def:header', say: 'follows the links' },
+        { from: 'Forth.ml:def:comma', to: 'Forth.ml:type:t', say: 'HERE moved' },
+        { from: 'Forth.ml:def:rpush', to: 'Forth.ml:type:t', say: 'IP saved' },
+        { from: 'Forth.ml:def:push', to: 'Forth.ml:type:t', say: 'a number, a flag' },
+      ],
+    },
+  ],
+}

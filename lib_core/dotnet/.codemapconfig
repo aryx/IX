@@ -1,0 +1,92 @@
+// lib_core/dotnet/: what the code map says of it (the code map: tinybox
+// codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-ml -dotnet's runtime: the C primitives written in ML over .NET, and the units .NET replaces.",
+  files: {
+    'Runtime.mli': { digest: '47865797d2ec',
+      summary: "Pervasives' C externals as ML over .NET members: floats, numbers read and written, channels on Streams.",
+      important: [
+        { at: 'comment:"call float64 Runtime::sqrt_float(float64)"', say: 'an external of C, a call here', weight: 3 },
+        { at: "comment:\"with the microsoft's dotnet and runtime\"", say: 'the assembly runs on real .NET too', weight: 2 },
+        { at: 'comment:"Differences with the native runtime"', say: 'int64 ints, no signals', weight: 2 },
+        { at: 'def:caml_open_descriptor', weight: 1 },
+      ],
+      related: ['Runtime.ml', '../core/Pervasives.mli'],
+    },
+    'Runtime.ml': { digest: 'd5cca2d073ba',
+      summary: "The primitives made: System.Math for libm, strtod and printf's %e %f %g by hand, a channel a 4 KB buffer.",
+      capitals: [
+        { at: 'type:channel', say: "the native's channel, over a .NET Stream" },
+      ],
+      important: [
+        { at: 'section:Floats', weight: 1 },
+        { at: "comment:\"C's fmod from IEEE's remainder\"", weight: 1 },
+        { at: 'def:float_of_string', say: "strtod's syntax in ML, Double.Parse rounds", weight: 2 },
+        { at: 'def:format_float', say: "C's %e %f %g from .NET's E and F", weight: 3 },
+        { at: 'type:channel', weight: 3 },
+        { at: 'def:caml_output', weight: 1 },
+        { at: 'def:sys_open', say: 'descriptors as numbers in a table', weight: 2 },
+        { at: 'comment:"Hashtbl.hash: the compiler"', say: 'the same hash on both runtimes', weight: 1 },
+      ],
+    },
+    'Unix.ml': { digest: 'fba194f1d2cc',
+      summary: "Unix on .NET: no system call by number, so each function fails by name, or is Sys's where .NET has it.",
+      important: [
+        { at: 'def:no', say: "a program's call fails here, by its name", weight: 3 },
+        { at: 'comment:"Generated from Unix.mli, then edited by hand"', weight: 1 },
+        { at: 'type:error', weight: 1 },
+      ],
+      related: ['../system/Unix.mli'],
+    },
+    'Marshal.ml': { digest: '82eb01e74013',
+      summary: "Marshal on .NET: a .NET object has no OCaml blocks to read, so each function fails by its name.",
+      related: ['../core/Marshal.mli'],
+    },
+    'Printf_dotnet.mli': { digest: 'a2e84efb7001',
+      summary: "Printf on .NET: a format is the compiler's function of its literal (F#'s way), not read at run time.",
+      important: [
+        { at: "comment:\"which .NET's typed delegates refuse\"", say: 'why lib_core Printf cannot run there', weight: 3 },
+        { at: 'def:sprintf', weight: 1 },
+      ],
+      related: ['Printf_dotnet.ml'],
+    },
+    'Printf_dotnet.ml': { digest: 'a3bf8b277a85', summary: 'The printf family as a format applied to where its text goes.' },
+    'Format_dotnet.mli': { digest: '428d240ac0e6',
+      summary: "Format's printf on .NET the same way: @ directives as text, no line breaking.",
+      related: ['Format_dotnet.ml'],
+    },
+    'Format_dotnet.ml': { digest: '11acbebd5c38', summary: "The format applied to the formatter's pp_print_string." },
+  },
+  skeletons: [
+    skeletons.parts('A program on .NET: the C runtime, replaced', [
+      ['Runtime.ml', "the externals of C, in ML over .NET"],
+      ['Printf_dotnet.ml', 'printf, the format a function'],
+      ['Format_dotnet.ml', "Format's printf, the same"],
+      ['Unix.ml', 'the system calls: refused by name'],
+      ['Marshal.ml', 'no blocks: refused'],
+    ], [
+      ['Runtime.ml', 'Printf_dotnet.ml', 'print_string'],
+      ['Printf_dotnet.ml', 'Format_dotnet.ml', 'the same idea'],
+      ['Runtime.ml', 'Unix.ml', "Sys's calls where .NET has them"],
+    ]),
+    skeletons.chain('Runtime: an external of C, served by .NET', [
+      ['Runtime.ml:def:sqrt_float', 'libm: System.Math', ''],
+      ['Runtime.ml:def:float_of_string', "a number read: strtod's syntax", 'numbers'],
+      ['Runtime.ml:def:format_float', "a number written: C's %g", 'and back'],
+      ['Runtime.ml:type:channel', 'a buffer over a Stream', 'text'],
+      ['Runtime.ml:def:caml_output', 'bytes into the buffer', 'its buffer'],
+      ['Runtime.ml:def:sys_open', 'a file opened: a descriptor', 'a Stream'],
+    ]),
+    skeletons.module('Unix.ml', "Unix on .NET: refused, or Sys's", [
+      ['no', 'the refusal, by name', ''],
+      ['openfile', 'a system call: refused', 'called'],
+      ['getpid', 'the same', 'called'],
+      ['error_message', 'one message for every error', 'beside'],
+      ['unlink', "Sys's remove: .NET has it", 'not refused'],
+      ['getcwd', "Sys's", 'as unlink'],
+    ]),
+  ],
+}

@@ -1,0 +1,73 @@
+// apps/office/: what the code map says of it
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-office, the playground's TinyOffice: documents of pages and floating parts, after OLE.",
+  files: {
+    'Office.ml': {
+      summary: "mini-office's main, and the suite's layers drawn in its header; the same program on screen or in rio.",
+      digest: '0effc3bc2550',
+      capitals: [{ at: 'def:app', say: 'view, update, model to Playground.game' }],
+      important: [
+        { at: 'comment:"The suite, top down"', say: 'each layer stands only on those under it', weight: 3 },
+        { at: 'comment:"A frame\'s way, which is the whole program"', weight: 3 },
+        { at: 'comment:"mini-office -> Playground"', say: 'no line about windows: /dev/draw is files' },
+        { at: 'comment:"evolution:"', say: 'VisiCalc, Bravo, MacPaint, PowerPoint, OLE' },
+        { at: 'comment:"others:"', say: "Unix's compound document: pic | tbl | troff" },
+        { at: 'code:"Playground_platform.run_app"', say: 'heap=modest, idle=wait added' },
+      ],
+    },
+  },
+  dirs: {
+    pictures: { summary: 'Pictures put on the card for Insert > Image... on mini-9pi.' },
+    sdl: { summary: 'The build of bin/mini-office with an SDL window, on Linux.' },
+    tests: { summary: "Golden frames of the playground's sessions, image and PDF export scripts, unit tests." },
+  },
+  skeletons: [
+    skeletons.chain('mini-office runs', [
+      ['Office.ml:code:"Cap.main"', 'the program: Cap.main, the capabilities', ''],
+      ['Office.ml:def:app', 'the game: view, update, first model', 'the File menu caps'],
+      ['suite/Office_update.ml:def:update', "a frame's input: the next model", 'each frame'],
+      ['suite/Office_view.ml:def:view', 'the model: shapes', 'the model'],
+    ]) + {
+      bones+: [{ at: 'suite/Office_model.ml:def:initial', role: 'the start screen' }],
+      joints+: [{ from: 'Office.ml:def:app', to: 'suite/Office_model.ml:def:initial', say: 'the first model' }],
+    },
+    skeletons.parts('The suite, top down', [
+      ['suite/', 'the program: model, update, view, page'],
+      ['file_menu/', 'New, Open, Save, Export, Exit'],
+      ['document/', 'the document, Undo, Saved'],
+      ['parts/', 'what a part is, and six kinds'],
+      ['richtext/', 'text with looks, laid out'],
+      ['sheet/', 'cells as a graph'],
+      ['formula/', "a cell's formula"],
+      ['paint/', 'a picture of bits'],
+      ['draw/', 'a picture of objects'],
+      ['shapes/', 'kits to Playground shapes'],
+    ], [
+      ['suite/', 'document/', 'edits versions of'],
+      ['suite/', 'file_menu/', 'saves through'],
+      ['document/', 'parts/', 'holds'],
+      ['parts/', 'richtext/', 'a text part'],
+      ['parts/', 'sheet/', 'a sheet part'],
+      ['parts/', 'paint/', 'a picture part'],
+      ['parts/', 'draw/', 'a drawing part'],
+      ['parts/', 'shapes/', 'draws with'],
+      ['sheet/', 'formula/', 'parses with'],
+    ]),
+  ],
+  tours: [{
+    name: 'A frame of mini-office',
+    stops: [
+      { at: 'Office.ml:comment:"The suite, top down"', say: 'The layers: each stands only on those below.' },
+      { at: 'Office.ml:def:app', say: 'Three functions handed to Playground.game: the whole program.' },
+      { at: 'suite/Office_model.mli:comment:"Which document is the document"', say: 'One value, three candidates for the document shown.' },
+      { at: 'suite/Office_update.ml:def:update', say: 'The first of dialog, start, show or page takes the frame.' },
+      { at: 'suite/Office_edit.ml:def:record', say: 'An edit is a new version: Undo needs no inverse.' },
+      { at: 'suite/Office_page.ml:def:text_around', say: 'The body flowed round the floating parts.' },
+      { at: 'parts/Component.mli:type:part', say: 'A part is a record of functions: OLE without COM.' },
+      { at: 'suite/Office_view.ml:def:view', say: 'The picture said again whole each frame; Redraw diffs it.' },
+      { at: 'suite/Office_export.ml:def:pdf', say: 'Export is the view written to a PDF.' },
+    ],
+  }],
+}

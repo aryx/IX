@@ -1,0 +1,293 @@
+// apps/pim/window/: what the code map says of it
+local skeletons = import '../../../skeletons.libsonnet';
+// a view of the suite: its state read from the store, a frame's keys
+// and menus made commands, its picture
+local view(file, name, load='def:load', extra=[]) = {
+  name: name,
+  bones: [
+    { at: file + ':type:model', role: "the view's state" },
+    { at: file + ':' + load, role: 'read again from the store' },
+    { at: file + ':def:update', role: 'a frame: keys, clicks, menus' },
+    { at: file + ':def:command', role: 'what a key or a menu item does' },
+    { at: file + ':def:view', role: 'the picture' },
+  ] + [{ at: file + ':' + e[0], role: e[1] } for e in extra],
+  joints: [
+    { from: file + ':' + load, to: file + ':type:model', say: 'the items' },
+    { from: file + ':def:update', to: file + ':def:command', say: 'a key, a menu item' },
+    { from: file + ':def:command', to: file + ':type:model', say: 'the next state' },
+    { from: file + ':type:model', to: file + ':def:view', say: 'drawn' },
+  ] + [{ from: file + ':def:command', to: file + ':' + e[0], say: e[2] } for e in extra],
+};
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-pim's window: Home and six views (Mail, Calendar, People, Tasks, Notes, Money) over one store.",
+  files: {
+    'Pim_window.ml': {
+      summary: 'The suite: Home and its tiles, the Pim menu, the switcher, one view handing over to another.',
+      digest: '505136a53e1d',
+      capitals: [{ at: 'def:go', say: 'a view asks for another: an item opened where it lives' }],
+      important: [
+        { at: 'type:model', say: 'the view shown and every view\'s state', weight: 3 },
+        { at: 'def:home', say: "the plan's Today, computed", weight: 3 },
+        { at: 'def:switch', say: 'a view read again as it is shown' },
+        { at: 'def:update', say: 'the suite\'s keys first, then the view\'s' },
+        { at: 'def:home_view', say: 'six tiles, the day under them' },
+        { at: 'def:switcher_view', say: "Outlook 2003's buttons" },
+      ],
+      links: [{ from: 'def:update', to: 'def:go' }, { from: 'def:go', to: 'def:switch' }],
+    },
+    'Pim_window.mli': {
+      summary: 'The suite to look around in; the terminal commands are the same suite without a window.',
+      digest: '64ada22ad5b7',
+    },
+    'Pim_look.ml': {
+      summary: "What the views share: menu bar, Hershey letters in columns, title bar, rows, sidebar, scrollbar.",
+      digest: 'b42b8b4d0bac',
+      important: [
+        { at: 'def:chosen', say: 'the menu item clicked, any menu', weight: 3 },
+        { at: 'def:text', say: 'Hershey letters, each at its place', weight: 3 },
+        { at: 'def:sidebar', say: 'the left column of every view' },
+        { at: 'def:row_y', say: "a list's i-th row" },
+        { at: 'def:scrollbar', say: 'drawn, and pressed by scrollbar_press' },
+      ],
+    },
+    'Pim_look.mli': {
+      summary: 'One look for the suite, so it reads as one program and not six.',
+      digest: '4447497a8d56',
+      capitals: [
+        { at: 'type:view', say: 'Home and the six views' },
+        { at: 'type:go', say: 'what a view asks of the suite' },
+        { at: 'def:text', say: "the letters every view draws" },
+      ],
+    },
+    'Mail_window.ml': {
+      summary: "The mail view's keys and menus, Gmail's: open, archive, snooze, compose, the Screener.",
+      digest: 'd46b116e7a7b',
+      important: [
+        { at: 'def:run', say: 'an action needing the server: asks the password once', weight: 3 },
+        { at: 'def:command', say: 'every menu item and key', weight: 3 },
+        { at: 'def:open_', say: 'from the cache, fetched if the password is known' },
+        { at: 'def:task', say: 'a message made a task: the same item' },
+        { at: 'def:invitation', say: 'a text/calendar part to the Calendar' },
+        { at: 'def:writing', say: 'the compose form, lib_gui widgets' },
+        { at: 'def:update', say: 'reading, browsing, writing or asking' },
+      ],
+    },
+    'Mail_window.mli': {
+      summary: "Gmail in a window over the store: it opens at once, offline, on what the last list kept.",
+      digest: 'c7eb92c8d5d9',
+      capitals: [
+        { at: 'type:model', say: "the mail view's state" },
+        { at: 'def:update', say: "the mail view's frame" },
+        { at: 'def:write', say: 'a message to someone, from any view' },
+      ],
+    },
+    'Mail_model.ml': {
+      summary: "The mail view's state read from the store: conversations, mode, the Screener's places.",
+      digest: '5569a16f9c66',
+      important: [
+        { at: 'type:model', say: 'mode, mailbox, conversations, draft', weight: 3 },
+        { at: 'type:mode', say: 'browsing, reading, composing, asking' },
+        { at: 'def:load', say: "the mailbox's items, as conversations", weight: 3 },
+        { at: 'def:places', say: 'the sidebar: Inbox, Screener lists, searches' },
+      ],
+    },
+    'Mail_model.mli': { summary: "The mail view's types, apart from its keys and its picture.", digest: 'ecb8377f479e' },
+    'Mail_view.ml': {
+      summary: "The mail view's picture: the list, a conversation read, the compose form.",
+      digest: 'ee3db145b687',
+      important: [
+        { at: 'def:view', say: 'by mode: list, reading or writing', weight: 3 },
+        { at: 'def:reading_lines', say: 'text with Detect\'s finds underlined', weight: 3 },
+        { at: 'def:list_fits', say: 'how many rows the window holds' },
+      ],
+    },
+    'Mail_view.mli': { summary: 'The mail view drawn, and the boxes its keys and clicks share.', digest: '8cae2fe56af9' },
+    'Calendar_window.ml': {
+      summary: 'The calendar: a day, a week or a month of events, Google Calendar\'s keys, quick add.',
+      digest: '14af0bbcecb1',
+      important: [
+        { at: 'def:step', say: 'j k: a day, a week or a month', weight: 3 },
+        { at: 'def:grid', say: "a month's weeks as a grid" },
+        { at: 'def:lanes', say: 'overlapping events side by side', weight: 3 },
+      ],
+    },
+    'Calendar_window.mli': { summary: 'Events by day, week or month, from items stamped event.', digest: 'f5e335e1a4b2' },
+    'Tasks_window.ml': {
+      summary: "The tasks: To Do, Someday, Done; a task in a line (\"pay the rent by friday\"), snoozed.",
+      digest: '7a1e0cab68ff',
+      important: [
+        { at: 'def:capture', say: 'a line: its title and due day', weight: 3 },
+        { at: 'def:set', say: 'done, due, snooze: a field set' },
+      ],
+    },
+    'Tasks_window.mli': { summary: 'What is stamped task, whatever else it is: a message stays a message.', digest: 'd9f7a13fff9c' },
+    'People_window.ml': {
+      summary: "The address book and a person's page: what links to them, money paid, mail with them.",
+      digest: '76caf7a68731',
+      important: [
+        { at: 'def:show', say: "a person's page: backlinks, mail, money", weight: 3 },
+        { at: 'def:add', say: 'n: Name <address>' },
+      ],
+    },
+    'People_window.mli': { summary: "People, the suite's most useful page.", digest: '7a8192092aaa' },
+    'Notes_window.ml': {
+      summary: "Notes and day pages, [[id]] links to anything, what each names and what names it.",
+      digest: 'a70e1f03d2ae',
+      important: [
+        { at: 'def:edit', say: 'the text in a widget, saved at each key', weight: 3 },
+        { at: 'def:day_note', say: "today's page, made if missing" },
+        { at: 'def:link_click', say: 'a link opens where it lives' },
+      ],
+    },
+    'Notes_window.mli': { summary: 'A text with links to anything, and a page each day.', digest: '33b735576510' },
+    'Money_window.ml': {
+      summary: "Quicken's face over the books: a register, QuickFill, reconciling, categories, envelopes.",
+      digest: 'dbeffbfa84d5',
+      important: [
+        { at: 'def:record', say: 'a register line made postings', weight: 3 },
+        { at: 'def:clear', say: 'c: ticked while reconciling' },
+        { at: 'def:finish', say: 'difference zero: reconciled', weight: 3 },
+      ],
+    },
+    'Money_window.mli': { summary: "An account's register, a month's report, the envelopes.", digest: 'e8ba776cfa6f' },
+    'Search_window.ml': {
+      summary: 'One search over every view as it is typed, results by where they live, Ctrl+E anywhere.',
+      digest: 'a6eb83d0cb3b',
+      important: [
+        { at: 'def:find', say: "Search.search, grouped by view", weight: 3 },
+        { at: 'def:results', say: 'the rows, view headers between' },
+      ],
+    },
+    'Search_window.mli': { summary: "Outlook's Ctrl+E and Gmail's syntax, over the whole store.", digest: 'ed80f2047382' },
+    'Found_window.ml': {
+      summary: "What Detect found in a message, kept by a key: an event, a bill, a contact.",
+      digest: '259218eebfe4',
+      important: [
+        { at: 'type:row', say: 'a find and what it would make', weight: 3 },
+        { at: 'def:make', say: 'the item made from a find', weight: 3 },
+        { at: 'def:topic', say: "the message's subject as a title" },
+      ],
+    },
+    'Found_window.mli': { summary: 'Data Detectors over mail: x shows what a message mentions.', digest: '54f918849269' },
+  },
+  skeletons: [
+    skeletons.parts('The suite: Home and its views', [
+      ['Pim_window.ml', 'the suite: Home, menus, switching'],
+      ['Mail_window.ml', 'Mail'],
+      ['Calendar_window.ml', 'Calendar'],
+      ['People_window.ml', 'People'],
+      ['Tasks_window.ml', 'Tasks'],
+      ['Notes_window.ml', 'Notes'],
+      ['Money_window.ml', 'Money'],
+      ['Search_window.ml', 'one search over all'],
+      ['Pim_look.ml', 'the look they share'],
+    ], [
+      ['Pim_window.ml', 'Mail_window.ml', 'keys, the frame'],
+      ['Pim_window.ml', 'Calendar_window.ml', 'keys, the frame'],
+      ['Pim_window.ml', 'People_window.ml', 'keys, the frame'],
+      ['Pim_window.ml', 'Tasks_window.ml', 'keys, the frame'],
+      ['Pim_window.ml', 'Notes_window.ml', 'keys, the frame'],
+      ['Pim_window.ml', 'Money_window.ml', 'keys, the frame'],
+      ['Pim_window.ml', 'Search_window.ml', 'Ctrl+E'],
+      ['Mail_window.ml', 'Pim_look.ml', 'a go: another view'],
+    ]),
+    {
+      name: 'Pim_window: the suite and its views',
+      bones: [
+        { at: 'Pim_window.ml:def:initial', role: 'Home, or view= for the tests' },
+        { at: 'Pim_window.ml:type:model', role: 'the view shown, and all views' },
+        { at: 'Pim_window.ml:def:update', role: "a frame: the suite's keys, then the view's" },
+        { at: 'Pim_window.ml:def:go', role: 'a view asking for another' },
+        { at: 'Pim_window.ml:def:switch', role: 'another view, read again' },
+        { at: 'Pim_window.ml:def:home', role: "Home's day" },
+        { at: 'Pim_window.ml:def:view', role: 'Home or the view, and the switcher' },
+      ],
+      joints: [
+        { from: 'Pim_window.ml:def:initial', to: 'Pim_window.ml:type:model', say: 'the first state' },
+        { from: 'Pim_window.ml:def:update', to: 'Pim_window.ml:def:go', say: "a view's go" },
+        { from: 'Pim_window.ml:def:go', to: 'Pim_window.ml:def:switch', say: 'the view to show' },
+        { from: 'Pim_window.ml:def:switch', to: 'Pim_window.ml:type:model', say: 'the next state' },
+        { from: 'Pim_window.ml:def:home', to: 'Pim_window.ml:type:model', say: 'Today' },
+        { from: 'Pim_window.ml:type:model', to: 'Pim_window.ml:def:view', say: 'drawn' },
+      ],
+    },
+    {
+      name: 'Mail_window: a key to the server and back',
+      bones: [
+        { at: 'Mail_window.ml:def:update', role: 'a frame, by mode' },
+        { at: 'Mail_window.ml:def:command', role: 'a key or a menu item' },
+        { at: 'Mail_window.ml:def:run', role: 'an action needing the server' },
+        { at: 'Mail_window.ml:def:open_', role: 'a conversation read' },
+        { at: 'Mail_window.ml:def:writing', role: 'the compose form' },
+        { at: 'Mail_model.ml:def:load', role: 'the mailbox from the store' },
+        { at: 'Mail_view.ml:def:view', role: 'the picture' },
+      ],
+      joints: [
+        { from: 'Mail_window.ml:def:update', to: 'Mail_window.ml:def:command', say: 'a key' },
+        { from: 'Mail_window.ml:def:update', to: 'Mail_window.ml:def:writing', say: 'composing' },
+        { from: 'Mail_window.ml:def:command', to: 'Mail_window.ml:def:run', say: 'g, e, s, send' },
+        { from: 'Mail_window.ml:def:command', to: 'Mail_window.ml:def:open_', say: 'o' },
+        { from: 'Mail_window.ml:def:run', to: 'Mail_model.ml:def:load', say: 'the store, after Mail_sync' },
+        { from: 'Mail_model.ml:def:load', to: 'Mail_view.ml:def:view', say: 'conversations' },
+      ],
+    },
+    {
+      name: 'Mail_model: the store to the state',
+      bones: [
+        { at: 'Mail_model.ml:def:initial', role: 'the flags: user, server' },
+        { at: 'Mail_model.ml:def:load', role: 'items read, grouped' },
+        { at: 'Mail_model.ml:type:model', role: 'the state' },
+        { at: 'Mail_model.ml:def:places', role: 'the sidebar' },
+        { at: 'Mail_model.ml:def:refresh', role: 'read again when shown' },
+      ],
+      joints: [
+        { from: 'Mail_model.ml:def:initial', to: 'Mail_model.ml:def:load', say: 'the first read' },
+        { from: 'Mail_model.ml:def:refresh', to: 'Mail_model.ml:def:load', say: 'again' },
+        { from: 'Mail_model.ml:def:load', to: 'Mail_model.ml:type:model', say: 'conversations' },
+        { from: 'Mail_model.ml:type:model', to: 'Mail_model.ml:def:places', say: 'what is shown' },
+      ],
+    },
+    {
+      name: 'Mail_view: the three faces',
+      bones: [
+        { at: 'Mail_view.ml:def:view', role: 'by mode' },
+        { at: 'Mail_view.ml:def:list_fits', role: 'the list: rows that fit' },
+        { at: 'Mail_view.ml:def:reading_lines', role: 'a conversation, underlined' },
+        { at: 'Mail_view.ml:def:field_box', role: 'the compose fields' },
+        { at: 'Mail_view.ml:def:name', role: 'the title: mailbox and account' },
+      ],
+      joints: [
+        { from: 'Mail_view.ml:def:view', to: 'Mail_view.ml:def:list_fits', say: 'browsing' },
+        { from: 'Mail_view.ml:def:view', to: 'Mail_view.ml:def:reading_lines', say: 'reading' },
+        { from: 'Mail_view.ml:def:view', to: 'Mail_view.ml:def:field_box', say: 'composing' },
+        { from: 'Mail_view.ml:def:view', to: 'Mail_view.ml:def:name', say: 'the title bar' },
+      ],
+    },
+    view('Calendar_window.ml', 'Calendar_window: days, weeks, months', extra=[['def:step', 'the next day, week, month', 'j k t']]),
+    view('Tasks_window.ml', 'Tasks_window: to do, someday, done', extra=[['def:capture', 'a task from a line', 'n'], ['def:set', 'a field set', 'x d z']]),
+    view('People_window.ml', "People_window: the book and a person's page", extra=[['def:show', "a person's page", 'o']]),
+    view('Notes_window.ml', 'Notes_window: notes, days, links', extra=[['def:edit', 'the text edited', 'n d']]),
+    view('Money_window.ml', 'Money_window: register and reconciling', extra=[['def:record', 'a line entered', 'n'], ['def:clear', 'a line ticked', 'c'], ['def:finish', 'reconciled', 'f']]),
+    view('Search_window.ml', 'Search_window: as you type', load='def:find'),
+    view('Found_window.ml', 'Found_window: a find kept', load='def:start', extra=[['def:make', 'the item made', 'Enter']]),
+    {
+      name: 'Pim_look: the shared look',
+      bones: [
+        { at: 'Pim_look.ml:type:go', role: 'what a view asks the suite' },
+        { at: 'Pim_look.ml:def:chosen', role: 'the menu item clicked' },
+        { at: 'Pim_look.ml:def:menu_box', role: "a menu's box" },
+        { at: 'Pim_look.ml:def:title_bar', role: "a view's title" },
+        { at: 'Pim_look.ml:def:text', role: 'letters at their places' },
+        { at: 'Pim_look.ml:def:sidebar', role: 'the left column' },
+        { at: 'Pim_look.ml:def:row_y', role: "a row's place" },
+      ],
+      joints: [
+        { from: 'Pim_look.ml:def:menu_box', to: 'Pim_look.ml:def:chosen', say: 'where to click' },
+        { from: 'Pim_look.ml:def:title_bar', to: 'Pim_look.ml:def:text', say: 'the title' },
+        { from: 'Pim_look.ml:def:sidebar', to: 'Pim_look.ml:def:row_y', say: 'each entry' },
+        { from: 'Pim_look.ml:def:sidebar', to: 'Pim_look.ml:def:text', say: 'its words' },
+      ],
+    },
+  ],
+}

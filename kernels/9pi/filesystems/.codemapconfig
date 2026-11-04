@@ -1,0 +1,94 @@
+// kernels/9pi/filesystems/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). lib_fat and
+// lib_xv6fs are linked into the kernel and into programs (mini-dossrv,
+// mini-mkfs); their tests/ are off the map.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "File systems two ways: in the kernel as devices (#F a FAT, #x xv6's), or a server like dossrv.",
+  files: {
+    'Kdos.mli': { digest: '2d6e8c49e85a',
+      summary: "'#F', a FAT as files by the kernel itself, where Plan 9 has a program, dossrv.",
+      important: [
+        { at: 'comment:"a read, the two ways"', say: 'one cat traced in the kernel and by 9P', weight: 3 },
+        { at: 'comment:"In the kernel or outside it"', say: 'the oldest argument, timed both ways', weight: 3 },
+        { at: 'def:init', weight: 1 },
+      ],
+    },
+    'Kdos.ml': { digest: 'd9fb6246e199',
+      summary: "A Dev over lib_fat's Fat: a partition attached by name, its entries walked, read and written.",
+      important: [
+        { at: 'def:attached', say: 'the partitions attached, by devno', weight: 1 },
+        { at: 'def:fat', say: "#S/sdM0's partition opened, a Fat made", weight: 3 },
+        { at: 'def:entries', weight: 1 },
+        { at: 'def:init', say: "the device's functions", weight: 2 },
+      ],
+    },
+    'Kfs.mli': { digest: '39cf48887248',
+      summary: "'#x', xv6's file system by the kernel: the card's second partition, mini-9pi's root.",
+      capitals: [
+        { at: 'def:init', say: "'#x': the root, xv6's file system" },
+      ],
+      important: [
+        { at: 'comment:"A qid\'s path"', say: "a qid's path is an inode's number", weight: 2 },
+        { at: 'comment:"This is mini-9pi\'s root once there is a card"', weight: 2 },
+      ],
+    },
+    'Kfs.ml': { digest: '85217345f1a7',
+      summary: "A Dev over Xv6fs, and a cache of 4 KB pieces in pages, written back by a kernel process.",
+      important: [
+        { at: 'comment:"Xv6fs has no cache"', say: 'cp of 5.6 MB took 58 s without it', weight: 3 },
+        { at: 'def:max_pieces', say: 'a build fits in 32 MB, then all forgotten', weight: 2 },
+        { at: 'def:pieces', say: "in pages, not the kernel's heap: malloc never frees", weight: 3 },
+        { at: 'def:cache_read', weight: 2 },
+        { at: 'def:cache_write', say: 'pieces changed, written later', weight: 2 },
+        { at: 'def:start_writer', say: "the kfs kproc: dirty pieces each second", weight: 2 },
+        { at: 'def:fs', say: 'the partition opened, Xv6fs over the cache', weight: 2 },
+      ],
+      links: [
+        { from: 'def:fs', to: 'def:cache_read' },
+        { from: 'def:cache_read', to: 'def:piece_of' },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'Two file systems, two ways to serve them',
+      bones: [
+        { at: 'lib_fat/', role: 'what a FAT is, written once' },
+        { at: 'lib_xv6fs/', role: "what xv6's file system is, written once" },
+        { at: 'Kdos.ml', role: "#F: the FAT in the kernel" },
+        { at: 'Kfs.ml', role: "#x: xv6's in the kernel, cached" },
+        { at: 'user/dossrv/', role: "dossrv: the FAT served by a program, Plan 9's way" },
+        { at: '../devices/storage/', role: "#S: the card's partitions" },
+      ],
+      joints: [
+        { from: 'Kdos.ml', to: 'lib_fat/', say: 'written with' },
+        { from: 'user/dossrv/', to: 'lib_fat/', say: 'written with' },
+        { from: 'Kfs.ml', to: 'lib_xv6fs/', say: 'written with' },
+        { from: 'Kdos.ml', to: '../devices/storage/', say: "a partition's bytes" },
+        { from: 'Kfs.ml', to: '../devices/storage/', say: "a partition's bytes" },
+        { from: 'user/dossrv/', to: '../devices/storage/', say: 'pread of /dev/sdM0/dos' },
+      ],
+    },
+    {
+      name: "#x: a file of the card, read through the cache",
+      bones: [
+        { at: 'Kfs.ml:def:init', role: "the device's functions" },
+        { at: 'Kfs.ml:def:fs', role: 'the partition opened, Xv6fs made over the cache' },
+        { at: 'Kfs.ml:def:cache_read', role: "a read cut from 4 KB pieces" },
+        { at: 'Kfs.ml:def:piece_of', role: 'a piece, read from the card once' },
+        { at: 'Kfs.ml:def:cache_write', role: 'pieces changed, put on the dirty list' },
+        { at: 'Kfs.ml:def:start_writer', role: 'the kproc writing them each second' },
+        { at: 'Kfs.ml:def:flush', role: 'the dirty pieces to the card' },
+      ],
+      joints: [
+        { from: 'Kfs.ml:def:init', to: 'Kfs.ml:def:fs', say: 'attach' },
+        { from: 'Kfs.ml:def:fs', to: 'Kfs.ml:def:cache_read', say: "Xv6fs's reads" },
+        { from: 'Kfs.ml:def:cache_read', to: 'Kfs.ml:def:piece_of', say: 'a piece missing' },
+        { from: 'Kfs.ml:def:fs', to: 'Kfs.ml:def:cache_write', say: "Xv6fs's writes" },
+        { from: 'Kfs.ml:def:start_writer', to: 'Kfs.ml:def:flush', say: 'each second' },
+      ],
+    },
+  ],
+}

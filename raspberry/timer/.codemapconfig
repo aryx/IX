@@ -1,0 +1,35 @@
+// raspberry/timer/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The Pi 1's system timer: a microsecond counter and four compares.",
+  files: {
+    'Systimer.mli': { digest: '8382d809407f',
+      summary: "The Pi 1's system timer: a microsecond counter, four compares raising lines 0-3.",
+      important: [
+        { at: 'comment:"a compare the counter jumps over still"', say: 'time moves in jumps here', weight: 3 },
+        { at: 'def:advance', weight: 2 },
+        { at: 'def:until_next', say: 'how far an idle CPU may skip', weight: 2 },
+      ],
+    },
+    'Systimer.ml': { digest: 'b99233e24480', summary: 'The counter advanced by the board, a compare matched when passed, not only when equal.' },
+  },
+  skeletons: [
+    {
+      name: 'Time: a counter advanced by the board, compares raising lines',
+      bones: [
+        { at: 'Systimer.ml:type:t', role: 'the counter and the four compares' },
+        { at: 'Systimer.ml:def:advance', role: 'the board says how much time passed' },
+        { at: 'Systimer.ml:def:until_next', role: 'how long a WFI may skip' },
+        { at: 'Systimer.ml:def:write', role: 'a compare set, a match cleared' },
+        { at: 'Systimer.ml:def:lines', role: 'lines 0-3 to the controller' },
+      ],
+      joints: [
+        { from: 'Systimer.ml:def:advance', to: 'Systimer.ml:def:lines', say: 'a compare passed' },
+        { from: 'Systimer.ml:def:write', to: 'Systimer.ml:type:t' },
+        { from: 'Systimer.ml:def:until_next', to: 'Systimer.ml:type:t', say: 'the nearest compare' },
+      ],
+    },
+  ],
+}

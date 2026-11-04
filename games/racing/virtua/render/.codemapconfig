@@ -1,0 +1,98 @@
+// games/racing/virtua/render/: what the code map says of it
+local skeletons = import '../../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-virtuaracing's renderer: flat faces, a depth a pixel, a byte a pixel, a palette a course.",
+  files: {
+    'Mesh.mli': {
+      summary: "The scene's solids written as the playground's 3D writes them, then made arrays once.",
+      digest: '63cc534aa409',
+      capitals: [
+        { at: 'type:shape', say: 'faces: what the courses are written as' },
+        { at: 'type:t', say: 'the faces as flat arrays, for speed' },
+      ],
+    },
+    'Mesh.ml': {
+      summary: 'Meshes made: a list of faces flattened into float arrays, a bounding sphere, shades lit.',
+      digest: 'b99a6d6e2938',
+      important: [
+        { at: 'type:face', say: 'one colour, its corners, one or two sides', weight: 2 },
+        { at: 'def:make', say: 'once: lists become arrays, the sphere found', weight: 3 },
+        { at: 'def:light', say: "each face's shade, a palette index", weight: 2 },
+      ],
+    },
+    'Palette.mli': {
+      summary: "The course's 256 colours, chosen from its faces' colours lit by median cut (Heckbert).",
+      digest: '7829463dcb12',
+      capitals: [{ at: 'def:index', say: 'a lit colour to its byte' }],
+    },
+    'Palette.ml': {
+      summary: "Median cut made: colours counted by weight, boxes cut on their longest side.",
+      digest: 'f0d4458005cf',
+      important: [
+        { at: 'section:The median cut', say: "Heckbert's 1982 algorithm", weight: 3 },
+        { at: 'def:cut', say: 'a box cut at its median', weight: 2 },
+        { at: 'def:make', say: 'the 256 boxes, then their averages', weight: 2 },
+        { at: 'def:nearest', say: 'a colour to the nearest of the 256', weight: 1 },
+      ],
+    },
+    'Render.mli': {
+      summary: 'Meshes drawn as a byte a pixel: cull, turn, cut, project, spans with a depth each pixel.',
+      digest: 'fffa6c8d1147',
+      capitals: [{ at: 'def:draw', say: 'a mesh into the picture' }],
+      important: [
+        { at: 'comment:"A frame, for each mesh the game gives"', say: 'the four steps of a frame', weight: 3 },
+        { at: 'type:t', say: 'the picture, its depths, the scratch arrays', weight: 2 },
+      ],
+    },
+    'Render.ml': {
+      summary: 'The renderer made: three ways to hide (depth, painter, a table), spans in whole numbers.',
+      digest: '9e78e28e7ff2',
+      important: [
+        { at: 'type:algorithm', say: 'render=depth|painter|table: compared', weight: 2 },
+        { at: 'def:span', say: 'a row of one face: 1/z stepped, compared', weight: 3 },
+        { at: 'def:fill_rows', say: 'a face filled edge to edge', weight: 2 },
+        { at: 'def:cut', say: 'Sutherland-Hodgman against the near plane', weight: 2 },
+        { at: 'def:face', say: 'a face: turned, cut, projected, filled', weight: 3 },
+        { at: 'def:outside', say: "the mesh's sphere outside the view: culled", weight: 2 },
+        { at: 'def:fill_layer', say: "the painter's buckets by depth", weight: 1 },
+      ],
+      links: [
+        { from: 'def:draw', to: 'def:faces' },
+        { from: 'def:faces', to: 'def:face' },
+        { from: 'def:face', to: 'def:fill' },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.parts('Meshes, a palette, pixels', [
+      ['Mesh.ml', 'the solids, as arrays'],
+      ['Palette.ml', 'the 256 colours of a course'],
+      ['Render.ml', 'faces into bytes'],
+    ], [
+      ['Palette.ml', 'Mesh.ml', 'its faces counted'],
+      ['Render.ml', 'Mesh.ml', 'draws'],
+      ['Mesh.ml', 'Palette.ml', 'shades as indexes'],
+    ]),
+    skeletons.chain('A mesh drawn: cull, turn, cut, project, fill', [
+      ['Render.ml:def:draw', 'a mesh given', ''],
+      ['Render.ml:def:outside', 'its sphere outside? nothing', 'culled?'],
+      ['Render.ml:def:faces', 'its corners turned, each face', 'turned'],
+      ['Render.ml:def:face', 'a face: projected', 'each face'],
+      ['Render.ml:def:cut', 'cut by the near plane', 'behind the eye'],
+      ['Render.ml:def:fill_rows', 'its rows', 'filled'],
+      ['Render.ml:def:span', 'a span: a depth each pixel', 'each row'],
+    ]),
+    skeletons.module('Mesh.ml', 'A mesh: faces, arrays, shades', [
+      ['polygon3d', 'a face written', ''],
+      ['make', 'the faces made arrays, the sphere', 'a shape'],
+      ['light', "each face's shade", 'lit'],
+    ]),
+    skeletons.module('Palette.ml', 'A palette by median cut', [
+      ['add_mesh', "a mesh's colours counted", ''],
+      ['make', 'the 256 boxes', 'counted'],
+      ['cut', 'a box split at the median', 'each box'],
+      ['index', 'a colour to its byte', 'the boxes'],
+    ]),
+  ],
+}

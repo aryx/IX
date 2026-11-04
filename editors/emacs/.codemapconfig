@@ -1,0 +1,93 @@
+// editors/emacs/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-emacs: an Emacs after efuns, without its Lisp: a key a command, the screen made again each key.",
+  dirs: {
+    tests: { summary: "Text's, Keymap's and the screen's unit tests; key scripts played headless against recorded screens and pictures." },
+  },
+  files: {
+    'Start.mli': { digest: 'c159dcf25c51',
+      summary: "mini-emacs presented whole: a key's way from the keyboard to the screen, Emacs from TECO to efuns.",
+      capitals: [
+        { at: 'def:editor', say: 'the editor made, for any host to run' },
+      ],
+      important: [
+        { at: 'comment:"the keyboard                      the modules, a key\'s way"', say: "a key's way, module by module", weight: 3 },
+        { at: 'comment:"A command changes the text and moves the point; it never draws."', say: 'commands and redisplay apart', weight: 3 },
+        { at: 'comment:"No extension language."', say: 'OCaml compiled in, no Lisp: what is lost', weight: 2 },
+        { at: 'comment:"Emacs, from TECO to here."', weight: 1 },
+        { at: 'comment:"vi (Bill Joy, Berkeley, 1976) is the other answer"', weight: 1 },
+      ],
+    },
+    'Start.ml': { digest: 'ca73f94c84f6',
+      summary: "The keys and modes bound, the author's configuration unless -q, a first buffer or Dired, a top window.",
+      important: [
+        { at: 'def:editor', say: 'configuration, first buffer, 24 by 80', weight: 3 },
+      ],
+    },
+    'Config.mli': { digest: 'cf3bf49cc313',
+      summary: "The configuration as OCaml compiled in: Emacs's keys and a file's mode by its name; no .emacs.",
+      important: [
+        { at: 'comment:"is reading the editor\'s manual"', weight: 2 },
+      ],
+    },
+    'Config.ml': { digest: '244ed4b50d03',
+      summary: "The editor's keys, a line each beside the command; the languages' modes by suffix.",
+      important: [
+        { at: 'def:keys', say: "the manual: Emacs's keys, line by line", weight: 3 },
+        { at: 'def:modes', say: '.ml, .c, .s, .st, .scm, .pas, .pl', weight: 2 },
+      ],
+    },
+    'Config_pad.mli': { digest: '599cb43ddbd5',
+      summary: "The author's .emacs as OCaml: codemap's colors, his dircolors, a few keys; left out by -q.",
+    },
+    'Config_pad.ml': { digest: '5b071d1b2048',
+      summary: 'Wheat on DarkSlateGray, colors per category and file kind, M-g and a few keys bound.',
+      important: [
+        { at: 'def:config', weight: 3 },
+        { at: 'def:color', say: "codemap's colors per category", weight: 1 },
+        { at: 'def:gtd', say: "a path of the author's machine, hard-coded", weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.parts('mini-emacs: the layers, a host to the text', [
+      ['tty/', 'a host: a terminal'],
+      ['sdl/', 'a host: a window on Linux'],
+      ['draw/', 'a host: mini-9pi'],
+      ['Start.ml', 'the editor made, configured'],
+      ['Config.ml', 'the keys bound to the commands'],
+      ['modes/', 'what a kind of buffer adds'],
+      ['features/', 'the commands'],
+      ['core/', 'the structure: buffers, frames, keymaps'],
+    ], [
+      ['Start.ml', 'tty/', 'a Tui program'],
+      ['Start.ml', 'sdl/', 'a Tui program'],
+      ['Start.ml', 'draw/', 'a Tui program'],
+      ['Config.ml', 'Start.ml', 'the keys and modes'],
+      ['features/', 'Config.ml', 'the commands bound'],
+      ['modes/', 'Config.ml', 'the modes by suffix'],
+      ['core/', 'features/', 'a frame to change'],
+      ['core/', 'modes/', 'major and minor modes'],
+    ]),
+  ],
+  tours: [
+    { name: "A key's way: from the keyboard to the screen",
+      stops: [
+        { at: 'Start.mli:comment:"the keyboard                      the modules, a key\'s way"', say: 'The whole path in one diagram, before the code.' },
+        { at: 'tty/Main.ml:def:main', say: 'A host: the flags, then the editor given to Tty_unix.' },
+        { at: 'Start.ml:def:editor', say: 'The keys and modes bound, a buffer read, a top window made.' },
+        { at: 'core/Top_window.ml:def:program', say: 'The editor as a Tui program: Key, Resize, Tick.' },
+        { at: 'core/Top_window.ml:def:handle_key', say: "The key named, looked up in four maps; a prefix waits for the next." },
+        { at: 'Config.ml:def:keys', say: 'Where a key got its command: a line each.' },
+        { at: 'features/Edit.ml:def:self_insert_command', say: 'A letter is a command too: it inserts the key that ran it.' },
+        { at: 'core/Text.ml:def:move_gap', say: 'The text changed where the gap is: one place, cheaply.' },
+        { at: 'core/Frame.ml:def:layout', say: 'The rows made again from the text, not repaired.' },
+        { at: 'core/Top_window.ml:def:display', say: 'The frames and the last line on a screen of cells; the host sends the difference.' },
+      ],
+    },
+  ],
+}

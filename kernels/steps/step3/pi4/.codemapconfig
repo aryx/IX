@@ -1,0 +1,57 @@
+// kernels/steps/step3/pi4/: what the code map says of it (the code map
+// is tinybox codemap, in ~/github/ocaml-elm-playground). Built by
+// ../mkfile with O=7; l.s includes step 2's pi4/l.s.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Step 3 on the Pi 4 (arm64): processes, a kernel stack and a value stack each, swtch between them.",
+  files: {
+    'l.s': { digest: '7449b73a8507',
+      summary: "Step 2's vectors and trap, and swtch: sp, link and R26 (ML's value stack top) saved and restored.",
+      important: [
+        { at: 'comment:"swtch(from, to): what a context keeps"', say: "three registers: 7c's C keeps no other", weight: 3 },
+      ],
+    },
+    'machine.c': { digest: 'ecb4694f6482',
+      summary: "Slots with a trap frame, a kernel stack and a value stack; mini-ml's runtime told which stack runs.",
+      capitals: [
+        { at: 'def:k_swtch', say: 'a switch, the runtime told the value stack' },
+      ],
+      important: [
+        { at: 'comment:"The runtime\'s view of the stacks"', say: "ocaml-light's five globals vs mini-ml's value stacks", weight: 3 },
+        { at: 'type:Context', say: 'sp, lr, vsp: what swtch keeps', weight: 2 },
+        { at: 'def:trampoline', say: "a new process's first run: process_start", weight: 2 },
+        { at: 'def:proc_init', say: 'its frame, its context aimed at the trampoline', weight: 3 },
+        { at: 'def:k_swtch', weight: 3 },
+        { at: 'def:trap', say: 'may switch to others before it returns', weight: 2 },
+      ],
+      related: ['../machine.c', '../pi1/machine.c'],
+    },
+    'user.s': { digest: 'af03baa68461',
+      summary: 'The user program: three rounds of "process P, round R", a sleep each, then exit(10 * P).',
+      important: [
+        { at: 'def:round', weight: 2 },
+        { at: 'comment:"C library has a"', say: 'its calls named <>: the image is one', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'Processes, step 3 on the Pi 4',
+      bones: [
+        { at: 'machine.c:def:proc_init', role: 'a slot: frame, kernel stack, value stack' },
+        { at: 'machine.c:def:k_swtch', role: 'from one slot to another' },
+        { at: 'l.s:comment:"swtch(from, to): what a context keeps"', role: 'swtch: sp, lr, R26' },
+        { at: 'machine.c:def:trampoline', role: "a new slot's first run: OCaml's process_start" },
+        { at: 'user.s', role: 'the user program, in each process' },
+        { at: 'machine.c:def:trap', role: "a system call: OCaml's trap, maybe a switch" },
+      ],
+      joints: [
+        { from: 'machine.c:def:proc_init', to: 'machine.c:def:trampoline', say: 'its first lr' },
+        { from: 'machine.c:def:k_swtch', to: 'l.s:comment:"swtch(from, to): what a context keeps"', say: 'the contexts' },
+        { from: 'l.s:comment:"swtch(from, to): what a context keeps"', to: 'machine.c:def:trampoline', say: 'the first time' },
+        { from: 'machine.c:def:trampoline', to: 'user.s', say: 'user mode' },
+        { from: 'user.s', to: 'machine.c:def:trap', say: 'svc' },
+      ],
+    },
+  ],
+}

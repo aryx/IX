@@ -1,0 +1,10 @@
+// lib_core/libc/include/arch/arm64/: what the code map says of it (the code map: tinybox codemap,
+// ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "arm64's u.h, for mini-cc and 7c: the same names, 64-bit pointers.",
+  files: {
+    'u.h': { digest: '7e336dca0353', summary: "arm64's types for the compiler: s8 to u64, a uintptr of 64 bits, va_list." },
+  },
+}

@@ -1,0 +1,123 @@
+// kernels/oberon/display/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Oberon's screen: a frame of two colours and five operations, tracks of tiled viewers, menus, the mouse.",
+  files: {
+    'Display.mli': { digest: '468eea73559f',
+      summary: "Oberon's Display: 1024 by 768 in two colours, five operations in three modes; frames and messages.",
+      capitals: [
+        { at: 'type:frame', say: 'a rectangle with a handler: all Oberon shows' },
+        { at: 'type:msg', say: "a message is an exception's value: open" },
+        { at: 'def:repl_const', say: 'the rectangle: most of what is drawn' },
+      ],
+      important: [
+        { at: "comment:\"OCaml's exn is the same open\"", say: 'why msg = exn, not record extension', weight: 3 },
+        { at: 'type:mode', say: 'replace, paint, invert: drawn twice, gone', weight: 2 },
+        { at: 'def:send', weight: 2 },
+        { at: 'def:copy_pattern', say: 'characters, cursors, the caret', weight: 1 },
+      ],
+    },
+    'Display.ml': { digest: 'bee07ea05b4e',
+      summary: "The five operations on the Pi's 16-bit framebuffer, read and written a row at a time.",
+      important: [
+        { at: 'def:address', say: "Oberon's y up, the board's rows down", weight: 2 },
+        { at: 'def:apply', say: 'a mode on one pixel: the whole semantics', weight: 3 },
+        { at: 'def:repl_const', weight: 2 },
+        { at: 'def:copy_pattern', weight: 2 },
+        { at: 'def:copy_block', say: 'what scrolling would use; frames draw again instead', weight: 1 },
+      ],
+    },
+    'Input.mli': { digest: '0b6e605ae842',
+      summary: "The mouse and keyboard as Oberon's loop asks them; the other kernels' drivers fill them.",
+      important: [
+        { at: 'def:mouse', say: 'keys, x, y: polled by the loop', weight: 3 },
+        { at: 'def:moved', say: "Usbhost's report, the y flipped", weight: 2 },
+        { at: 'def:typed', weight: 1 },
+      ],
+    },
+    'Input.ml': { digest: 'e6198dde7c53',
+      summary: 'A queue of characters, the pointer and its keys, and the poll the boot sets to the devices.',
+      important: [
+        { at: 'def:poll', say: "Main's devices: asked at each mouse ask", weight: 3 },
+        { at: 'def:moved', weight: 2 },
+      ],
+    },
+    'Viewers.mli': { digest: '6fb137e9e042',
+      summary: "Tracks side by side, viewers tiled in each, no gap and no overlap; a filler at a track's top.",
+      capitals: [
+        { at: 'type:viewer', say: 'a frame in a track, its menu height' },
+      ],
+      important: [
+        { at: 'def:open_', say: "takes a piece of another's place", weight: 2 },
+        { at: 'def:close', say: 'gives its place to the one above', weight: 2 },
+        { at: 'def:broadcast', weight: 2 },
+      ],
+    },
+    'Viewers.ml': { digest: '046319ea8fa5',
+      summary: "The tiling's arithmetic: a viewer opened splits another, closed gives back; each told by message.",
+      important: [
+        { at: 'type:track', say: 'a track may cover others: close_track restores', weight: 2 },
+        { at: 'def:open_', weight: 3 },
+        { at: 'def:change', say: 'its top moved: the one above told', weight: 2 },
+        { at: 'def:close', weight: 2 },
+        { at: 'def:locate', say: 'where a new viewer goes', weight: 1 },
+      ],
+    },
+    'MenuViewers.mli': { digest: '04f637288380',
+      summary: 'A viewer with a one-line menu over a main frame, dragged by its menu with the left key.',
+      important: [
+        { at: 'type:Extend', say: 'a frame grew: draw the new part', weight: 2 },
+        { at: 'def:new_', weight: 2 },
+      ],
+    },
+    'MenuViewers.ml': { digest: 'dd3b7b68aba6',
+      summary: 'Messages to the menu or the main frame by where the mouse is; the drag that moves or reopens it.',
+      capitals: [
+        { at: 'def:handle', say: "a menu viewer's messages, by the mouse's place" },
+      ],
+      important: [
+        { at: 'def:handle', weight: 3 },
+        { at: 'comment:"The left key went down in the menu"', say: 'the drag: move, reopen, or nothing', weight: 3 },
+        { at: 'def:modify', say: 'its rectangle changed: Extend or Reduce', weight: 2 },
+        { at: 'def:restore', weight: 1 },
+        { at: 'def:new_', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'The display: frames, viewers, menu viewers',
+      bones: [
+        { at: 'Display.mli', role: 'the frame and its five operations' },
+        { at: 'Input.mli', role: 'the mouse and the keys, asked' },
+        { at: 'Viewers.mli', role: 'tracks tiled by viewers' },
+        { at: 'MenuViewers.mli', role: 'a viewer: a menu over a main frame' },
+      ],
+      joints: [
+        { from: 'Viewers.mli', to: 'Display.mli', say: 'a viewer is a frame' },
+        { from: 'MenuViewers.mli', to: 'Viewers.mli', say: 'a kind of viewer' },
+        { from: 'MenuViewers.mli', to: 'Input.mli', say: 'the keys held while dragging' },
+      ],
+    },
+    {
+      name: 'A menu viewer: a message routed, its rectangle changed',
+      bones: [
+        { at: 'MenuViewers.ml:def:handle', role: 'every message: by place or to both frames' },
+        { at: 'MenuViewers.ml:def:change', role: 'the left key in the menu: the drag' },
+        { at: 'MenuViewers.ml:def:modify', role: 'Viewers moved its top or bottom' },
+        { at: 'MenuViewers.ml:def:extended', role: 'a frame told it grew' },
+        { at: 'MenuViewers.ml:def:reduced', role: 'a frame told it shrank' },
+        { at: 'MenuViewers.ml:def:restore', role: 'drawn whole: border, menu, main' },
+      ],
+      joints: [
+        { from: 'MenuViewers.ml:def:handle', to: 'MenuViewers.ml:def:change', say: 'Track, left key, in the menu' },
+        { from: 'MenuViewers.ml:def:handle', to: 'MenuViewers.ml:def:modify', say: 'Viewers.Modify' },
+        { from: 'MenuViewers.ml:def:handle', to: 'MenuViewers.ml:def:restore', say: 'Viewers.Restore' },
+        { from: 'MenuViewers.ml:def:modify', to: 'MenuViewers.ml:def:extended', say: 'taller' },
+        { from: 'MenuViewers.ml:def:modify', to: 'MenuViewers.ml:def:reduced', say: 'shorter' },
+      ],
+    },
+  ],
+}

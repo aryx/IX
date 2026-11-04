@@ -1,0 +1,155 @@
+// games/fps/doom/play/: what the code map says of it
+local skeletons = import '../../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The world a tic (1/35 s) at a time (p_*.c): the player's walk, the walls, doors, lifts, lights.",
+  files: {
+    'World.mli': {
+      summary: "The play's state (d_player.h, p_local.h): the player, the level changed in place, things, thinkers.",
+      digest: 'c6e251623f99',
+      capitals: [
+        { at: 'type:t', say: 'all that moves in a level' },
+        { at: 'type:player', say: 'the player: where, health, weapons, keys' },
+        { at: 'type:thinker', say: "id's way of what goes on by itself" },
+      ],
+      important: [
+        { at: 'comment:"A thinker is id"', say: 'doors, lifts, lights: run each tic', weight: 3 },
+        { at: 'type:door', say: 'a sector moving its ceiling', weight: 1 },
+      ],
+    },
+    'World.ml': {
+      summary: "The state's types and what all the play shares: the constants, Doom's random, the sounds started.",
+      digest: '7987ad9e23d2',
+      important: [
+        { at: 'def:busy', say: "a sector has one mover: id's specialdata", weight: 2 },
+        { at: 'def:approx_distance', say: "P_AproxDistance: Doom's cheap hypot", weight: 1 },
+        { at: 'def:add', say: 'a thinker started', weight: 2 },
+      ],
+    },
+    'Play.mli': {
+      summary: "The world moving a tic at a time for one player: the walk, steps, doors, lifts, the exit.",
+      digest: 'c8e2da865b98',
+      capitals: [{ at: 'def:tic', say: 'a tic: the player, the things, the thinkers' }],
+      important: [{ at: 'def:command', say: "G_BuildTiccmd: keys to a ticcmd", weight: 2 }],
+    },
+    'Play.ml': {
+      summary: "P_Ticker for one player: the move, momentum, the view's bob, then every thing and thinker.",
+      digest: 'df4a62ab5131',
+      important: [
+        { at: 'def:tic', say: 'P_RunThinkers: the player first, then the rest', weight: 3 },
+        { at: 'def:move_player', say: 'P_MovePlayer: thrust, turn', weight: 2 },
+        { at: 'def:xy_movement', say: 'momentum, friction, sliding on walls', weight: 2 },
+        { at: 'def:calc_height', say: 'the view bobs as you walk', weight: 1 },
+        { at: 'def:create', say: 'the level, its things, its lights', weight: 1 },
+      ],
+    },
+    'Collision.mli': {
+      summary: 'Where the player can be (p_map.c): a box tried against the lines the blockmap gives.',
+      digest: '23579afc4eef',
+      capitals: [{ at: 'def:try_move', say: 'P_TryMove: moved, or not' }],
+    },
+    'Collision.ml': {
+      summary: "Positions checked against lines and things, steps and drop-offs, use lines found, sight traced.",
+      digest: '87e4e236ccdf',
+      important: [
+        { at: 'def:check_position', say: 'P_CheckPosition: the floor and ceiling here', weight: 3 },
+        { at: 'def:try_move', say: 'too high a step, too low a ceiling: no', weight: 3 },
+        { at: 'def:use_target', say: 'the line in front, for space', weight: 2 },
+        { at: 'def:check_sight', say: 'can a monster see you?', weight: 2 },
+        { at: 'def:intercepts', say: "P_PathTraverse: a line's crossings in order", weight: 2 },
+      ],
+    },
+    'Specials.mli': {
+      summary: 'What lines and sectors do (p_spec.c, p_doors.c, p_plats.c...): doors, lifts, floors, switches, lights.',
+      digest: 'a695ea1ecdb2',
+      capitals: [{ at: 'def:line_special', say: "a line's number: what it does" }],
+    },
+    'Specials.ml': {
+      summary: "The specials made: a line's number to a thinker, each thinker moving a plane a tic.",
+      digest: 'c043b00e8b29',
+      important: [
+        { at: 'def:line_special', say: 'the big match on special numbers', weight: 3 },
+        { at: 'def:do_door', say: 'EV_DoDoor: a door thinker', weight: 2 },
+        { at: 'def:move_plane', say: 'T_MovePlane: crushed? stop', weight: 2 },
+        { at: 'def:think', say: 'a thinker run for a tic', weight: 3 },
+        { at: 'def:spawn_lights', say: "sectors' specials at the start", weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.parts('The play: a state, a tic, where, what lines do', [
+      ['World.ml', 'the state'],
+      ['Play.ml', 'a tic'],
+      ['Collision.ml', 'where things can be'],
+      ['Specials.ml', 'doors, lifts, lights'],
+      ['../actors/', 'the things that act'],
+    ], [
+      ['Play.ml', 'World.ml', 'changes'],
+      ['Play.ml', 'Collision.ml', 'moves'],
+      ['Collision.ml', 'Specials.ml', 'lines crossed, used'],
+      ['Play.ml', 'Specials.ml', 'thinkers run'],
+      ['Play.ml', '../actors/', 'things run'],
+    ]),
+    {
+      name: 'A tic: the player, the things, the thinkers',
+      bones: [
+        { at: 'Play.ml:def:tic', role: 'P_Ticker' },
+        { at: 'Play.ml:def:move_player', role: "the player's thrust" },
+        { at: 'Play.ml:def:xy_movement', role: 'momentum, walls' },
+        { at: 'Collision.ml:def:try_move', role: 'may it go there?' },
+        { at: '../actors/Mobj.ml:def:think', role: 'each thing that acts' },
+        { at: 'Specials.ml:def:think', role: 'each thinker' },
+        { at: 'World.ml:type:t', role: 'the state changed' },
+      ],
+      joints: [
+        { from: 'Play.ml:def:tic', to: 'Play.ml:def:move_player', say: 'the ticcmd' },
+        { from: 'Play.ml:def:tic', to: 'Play.ml:def:xy_movement', say: 'momentum' },
+        { from: 'Play.ml:def:xy_movement', to: 'Collision.ml:def:try_move', say: 'a step' },
+        { from: 'Play.ml:def:tic', to: '../actors/Mobj.ml:def:think', say: 'the things' },
+        { from: 'Play.ml:def:tic', to: 'Specials.ml:def:think', say: 'the thinkers' },
+        { from: 'Specials.ml:def:think', to: 'World.ml:type:t', say: 'sectors moved' },
+      ],
+    },
+    skeletons.module('Collision.ml', 'A move tried, a line used, a sight traced', [
+      ['check_position', 'what is under and over a place', ''],
+      ['try_move', 'moved if it fits', 'tried'],
+    ]) + {
+      bones+: [
+        { at: 'Collision.ml:def:use_target', role: 'the line to use, for space' },
+        { at: 'Collision.ml:def:check_sight', role: 'seen or not: for the monsters' },
+        { at: 'Collision.ml:def:intercepts', role: "a shot's line: what it meets, in order" },
+      ],
+    },
+    skeletons.module('Specials.ml', 'A special: a line used, a thinker run', [
+      ['line_special', 'its number', ''],
+      ['do_door', 'a door started', 'a door'],
+      ['think', 'a tic of a thinker', 'thereafter'],
+      ['move_plane', 'a floor or ceiling moved', 'each tic'],
+    ]),
+    skeletons.module('Play.ml', 'Play: made, then a tic at a time', [
+      ['create', 'the level, its things, its lights', ''],
+      ['command', 'keys to a ticcmd', 'each frame'],
+      ['tic', 'a tic', 'a ticcmd'],
+      ['move_player', 'thrust and turn', 'the player'],
+      ['xy_movement', 'momentum against walls', 'then'],
+      ['calc_height', 'the view bobs', 'then'],
+    ]),
+    {
+      name: 'World: the state and its thinkers',
+      bones: [
+        { at: 'World.ml:type:t', role: 'the play: player, level, things, thinkers' },
+        { at: 'World.ml:type:thinker', role: 'a door, a lift, a light' },
+        { at: 'World.ml:def:add', role: 'a thinker started' },
+        { at: 'World.ml:def:busy', role: "a sector's mover, if any" },
+        { at: 'World.ml:def:tagged', role: 'the sectors a line names' },
+        { at: 'World.ml:def:start_sound', role: 'a sound for Sound to play' },
+      ],
+      joints: [
+        { from: 'World.ml:def:add', to: 'World.ml:type:thinker', say: 'appended' },
+        { from: 'World.ml:type:thinker', to: 'World.ml:type:t', say: 'in its list' },
+        { from: 'World.ml:def:tagged', to: 'World.ml:def:busy', say: 'free to move?' },
+        { from: 'World.ml:def:start_sound', to: 'World.ml:type:t', say: 'queued' },
+      ],
+    },
+  ],
+}

@@ -1,0 +1,85 @@
+// apps/office/document/: what the code map says of it
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-office's document as a value: its parts, its saved form, and Undo as a list of versions.",
+  files: {
+    'Document.mli': {
+      summary: 'One record for the five kinds of document holding its parts, and the same record as saved.',
+      digest: '66652fa2fa0f',
+      capitals: [
+        { at: 'type:doc', say: 'a document: body, objects, bands' },
+        { at: 'type:obj', say: 'a part floating, placed and wrapped' },
+        { at: 'def:of_saved', say: 'each part read back by its kind' },
+      ],
+      important: [
+        { at: 'comment:"A part is a record of functions"', say: 'why the saved form swaps parts for text', weight: 3 },
+        { at: 'type:placed', say: 'where, on which slide, tied to what' },
+        { at: 'def:refreshed', say: "a chart made again from its sheet" },
+        { at: 'def:registry' },
+      ],
+    },
+    'Document.ml': {
+      summary: "The document, the chart's link to its sheet, and the saved form with the parts' registry.",
+      digest: 'c563a34dd711',
+      important: [
+        { at: 'type:doc_', say: "polymorphic in the part: live or saved", weight: 3 },
+        { at: 'def:refreshed', say: 'the link followed at each draw', weight: 3 },
+        { at: 'def:registry', say: 'the six kinds, by name' },
+        { at: 'def:with_parts', say: 'one map for saving and loading' },
+        { at: 'def:to_saved' },
+        { at: 'def:of_saved' },
+      ],
+      links: [{ from: 'def:of_saved', to: 'def:registry' }],
+    },
+    'Undo.mli': {
+      summary: 'Undo as keeping the old values, a list and its mirror -- no command pattern, no inverses.',
+      digest: 'afd5e65d0575',
+      capitals: [
+        { at: 'type:t', say: 'the versions: past, now, future' },
+        { at: 'def:record', say: 'a new version; the future dropped' },
+      ],
+      important: [
+        { at: 'comment:"the famous answer is the other one"', say: 'the famous answer, and its bugs', weight: 3 },
+        { at: 'def:amend', say: 'changed without a new version' },
+        { at: 'def:undo' },
+        { at: 'def:redo' },
+      ],
+    },
+    'Undo.ml': {
+      summary: 'The history of versions: a list behind, a list ahead, a limit on what is kept.',
+      digest: '3a953fffedb0',
+      important: [
+        { at: 'type:step', say: 'a version and its name', weight: 3 },
+        { at: 'def:keep', say: 'the limit: old versions dropped' },
+        { at: 'def:undo', weight: 3 },
+        { at: 'def:redo' },
+      ],
+    },
+    'Saved.mli': {
+      summary: "A value written by Marshal behind a line naming its kind, so a wrong file is refused.",
+      digest: '878e6a53d288',
+      important: [
+        { at: 'comment:"It believes the type it is told"', say: 'the magic line turns a crash into a refusal', weight: 3 },
+        { at: 'def:of_string' },
+      ],
+    },
+    'Saved.ml': {
+      summary: 'The magic line, then Marshal; read back only when the line and length agree.',
+      digest: '0d31191cc1a5',
+      important: [{ at: 'def:of_string', weight: 3 }, { at: 'def:to_string' }],
+    },
+  },
+  skeletons: [
+    skeletons.parts('A document kept and saved', [
+      ['Document.ml', 'the document, its parts in it'],
+      ['Undo.ml', 'its versions'],
+      ['Saved.ml', 'its bytes'],
+      ['../parts/Component.ml', 'what a part is'],
+    ], [
+      ['Undo.ml', 'Document.ml', 'versions of'],
+      ['Document.ml', '../parts/Component.ml', 'holds parts'],
+      ['Document.ml', 'Saved.ml', 'the saved record'],
+    ]),
+  ],
+}

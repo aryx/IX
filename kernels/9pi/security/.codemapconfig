@@ -2,17 +2,36 @@
 // tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there)
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
-  summary: "The authentication's two system calls, over devmnt: fauth and fversion.",
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Security's kernel half: 9P's fauth and fversion over devmnt, and the board's random numbers.",
   files: {
-    'Auth.mli': { digest: '2c25bd7fe42e',
+    'Auth.mli': { digest: 'd7083a88a0ac',
       summary: "fauth, an authentication file on a server's connection; fversion, its 9P version negotiated.",
+      important: [
+        { at: 'comment:"plan9-is-cleaner"', say: 'authentication as a file, not in the kernel', weight: 2 },
+      ],
     },
-    'Auth.ml': { digest: 'aa4a4f02e303',
+    'Auth.ml': { digest: 'e0eff3d6f4c2',
       summary: 'Both handed to Devmnt, on the connection behind the descriptor.',
       important: [
         { at: 'def:sysfauth', weight: 1 },
         { at: 'def:sysfversion', weight: 1 },
+      ],
+    },
+    'Rng.mli': { digest: '564ecd6e9bef',
+      summary: "The BCM2835's and RNG200's hardware generator behind /dev/random, for TLS's secrets.",
+      important: [
+        { at: 'comment:"Random.int\'s, which anyone who knows the seed"', say: 'why not Random', weight: 2 },
+        { at: 'comment:"three registers at the devices"', say: 'the Pi 1 and Pi 4 registers', weight: 2 },
+        { at: 'comment:"a counter sampled by the clock"', say: "Plan 9's own /dev/random", weight: 1 },
+      ],
+    },
+    'Rng.ml': { digest: '364e82bd60a7',
+      summary: 'Started at boot; a word read in two halves of 16 bits, None when no device answers.',
+      important: [
+        { at: 'def:start', say: 'warm-up words thrown away', weight: 2 },
+        { at: 'def:bytes', weight: 3 },
+        { at: 'def:present', say: "QEMU's raspi4b has none: io_probe", weight: 1 },
       ],
     },
   },
@@ -29,6 +48,19 @@
         { from: 'Auth.ml', to: 'Auth.mli', say: 'implements' },
         { from: 'Auth.ml', to: '../devices/sys/Devmnt.ml:def:auth', say: 'sysfauth' },
         { from: 'Auth.ml', to: '../devices/sys/Devmnt.ml:def:version', say: 'sysfversion' },
+      ],
+    },
+    {
+      name: '/dev/random read',
+      bones: [
+        { at: '../init/Main.ml', role: 'the boot: the generator started' },
+        { at: 'Rng.ml:def:start', role: 'the chip started, its first words thrown away' },
+        { at: '../console/Devcons.ml:def:read', role: "#c's random file" },
+        { at: 'Rng.ml:def:bytes', role: 'two bytes a word read' },
+      ],
+      joints: [
+        { from: '../init/Main.ml', to: 'Rng.ml:def:start', say: 'once' },
+        { from: '../console/Devcons.ml:def:read', to: 'Rng.ml:def:bytes', say: 'n bytes' },
       ],
     },
   ],

@@ -1,0 +1,103 @@
+// apps/pim/time/: what the code map says of it
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The calendar's time: repeating rules (RRULE), iCalendar files, and the local zone from TZif.",
+  files: {
+    'Recur.ml': {
+      summary: "A repeating event's rule, iCalendar's RRULE subset: periods cut, days picked in each.",
+      digest: '982802db9f56',
+      important: [
+        { at: 'def:period', say: 'every interval-th day, week, month or year', weight: 3 },
+        { at: 'def:occurrences', say: 'computed for the days shown, never stored', weight: 3 },
+      ],
+    },
+    'Recur.mli': {
+      summary: 'A repetition as a rule, not a list: a rule with no end has infinitely many dates.',
+      digest: '2a5dd2f04164',
+      capitals: [{ at: 'type:rule', say: 'FREQ, INTERVAL, BYDAY, UNTIL' }],
+    },
+    'Ics.ml': {
+      summary: 'iCalendar (RFC 5545) read and written: folded lines, content lines, values, components.',
+      digest: '69cfd0e18135',
+      important: [
+        { at: 'def:unfold', say: 'a line over 75 bytes continued after a space', weight: 3 },
+        { at: 'def:content_line', say: 'NAME;PARAM=value:value' },
+        { at: 'def:rule_of_string', say: 'an RRULE it cannot do refused, not misread', weight: 3 },
+        { at: 'def:event_of', say: 'an event without DTSTART dropped' },
+        { at: 'def:of_string', say: 'lenient: unknown components skipped' },
+      ],
+    },
+    'Ics.mli': {
+      summary: "iCalendar's subset a calendar and a to-do list use, the same shape as vCard.",
+      digest: '895ae9bf42bc',
+      important: [{ at: 'comment:"no tz database"', say: 'stale-ish: Zone reads the local zone now; TZIDs still floating' }],
+    },
+    'Zone.ml': {
+      summary: "The local time: zoneinfo's TZif files, POSIX's footer rule, Plan 9's /env/timezone.",
+      digest: '341a8cb38f63',
+      important: [
+        { at: 'def:of_tzif', say: 'transitions, then the footer rule', weight: 3 },
+        { at: 'def:rule', say: 'CET-1CEST,M3.5.0,M10.5.0/3 parsed' },
+        { at: 'def:rule_offset', say: 'summer or not, by the rule' },
+        { at: 'def:local', say: 'TZ=, /etc/localtime, /env/timezone, UTC', weight: 3 },
+        { at: 'def:clock', say: 'a UTC second as a day and its minute' },
+      ],
+    },
+    'Zone.mli': {
+      summary: "ix's own zone: mini-ml's Unix has gmtime, no localtime.",
+      digest: '2106798d0d6f',
+      capitals: [{ at: 'def:local', say: "this machine's zone" }],
+    },
+  },
+  skeletons: [
+    {
+      name: 'Time: a calendar file to the days shown',
+      bones: [
+        { at: 'Ics.ml:def:of_string', role: 'a calendar file read' },
+        { at: 'Ics.ml:def:rule_of_string', role: 'its RRULE text' },
+        { at: 'Recur.ml:type:rule', role: 'a repetition as a rule' },
+        { at: 'Recur.ml:def:occurrences', role: 'the days in a window' },
+        { at: 'Zone.ml:def:clock', role: 'UTC at the local clock' },
+      ],
+      joints: [
+        { from: 'Ics.ml:def:of_string', to: 'Ics.ml:def:rule_of_string', say: 'RRULE:' },
+        { from: 'Ics.ml:def:rule_of_string', to: 'Recur.ml:type:rule', say: 'the rule' },
+        { from: 'Recur.ml:type:rule', to: 'Recur.ml:def:occurrences', say: 'expanded' },
+      ],
+    },
+    {
+      name: 'Ics: three layers',
+      bones: [
+        { at: 'Ics.ml:def:of_string', role: 'a calendar read' },
+        { at: 'Ics.ml:def:unfold', role: 'lines: folded ones joined' },
+        { at: 'Ics.ml:def:content_line', role: 'a property and its parameters' },
+        { at: 'Ics.ml:def:component', role: 'BEGIN to END' },
+        { at: 'Ics.ml:def:event_of', role: 'a VEVENT made an event' },
+        { at: 'Ics.ml:def:to_string', role: 'written back, folded' },
+      ],
+      joints: [
+        { from: 'Ics.ml:def:of_string', to: 'Ics.ml:def:unfold', say: 'the text' },
+        { from: 'Ics.ml:def:unfold', to: 'Ics.ml:def:content_line', say: 'each line' },
+        { from: 'Ics.ml:def:content_line', to: 'Ics.ml:def:component', say: 'properties' },
+        { from: 'Ics.ml:def:component', to: 'Ics.ml:def:event_of', say: 'a VEVENT' },
+      ],
+    },
+    {
+      name: 'Zone: a TZif file to the clock',
+      bones: [
+        { at: 'Zone.ml:def:local', role: 'which zone: TZ, files, UTC' },
+        { at: 'Zone.ml:def:of_tzif', role: 'TZif: transitions and footer' },
+        { at: 'Zone.ml:def:rule', role: "POSIX's rule" },
+        { at: 'Zone.ml:def:offset', role: 'the offset at a second' },
+        { at: 'Zone.ml:def:rule_offset', role: 'past the last transition' },
+        { at: 'Zone.ml:def:clock', role: 'the local day and minute' },
+      ],
+      joints: [
+        { from: 'Zone.ml:def:local', to: 'Zone.ml:def:of_tzif', say: '/etc/localtime' },
+        { from: 'Zone.ml:def:of_tzif', to: 'Zone.ml:def:rule', say: 'the footer' },
+        { from: 'Zone.ml:def:offset', to: 'Zone.ml:def:rule_offset', say: 'after 2037' },
+        { from: 'Zone.ml:def:clock', to: 'Zone.ml:def:offset', say: 'a UTC second' },
+      ],
+    },
+  ],
+}

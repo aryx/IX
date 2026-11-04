@@ -1,0 +1,42 @@
+// kernels/steps/step0/pi1/: what the code map says of it (the code map
+// is tinybox codemap, in ~/github/ocaml-elm-playground). Not sources to
+// the map: expected-s, expected-c.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Step 0's assembly for the Pi 1 (arm, mini-mk O=5): its hello page and C's start; the C is shared.",
+  files: {
+    'hello.s': { digest: 'f3dd4e02e8b6',
+      summary: "The Pi 1's page of assembly: a line on the PL011 at 0x20201000, then the core waits.",
+      important: [
+        { at: 'code:"0x20201000"', say: "the Pi 1's PL011, not the Pi 4's 0xFE201000", weight: 2 },
+      ],
+    },
+    'l.s': { digest: '328631c94608',
+      summary: "C's start on the Pi 1: the VFP allowed, the bss cleared, a stack, R12 the static base, main.",
+      important: [
+        { at: 'comment:"mini-asm has no coprocessor instruction"', say: 'MRC and MCR written as words', weight: 3 },
+        { at: 'comment:"cp10 and cp11"', say: 'the VFP: the libc\'s and runtime\'s doubles', weight: 2 },
+        { at: 'def:clear', weight: 1 },
+        { at: 'comment:"main(0, nil)"', say: 'main, then halt', weight: 2 },
+      ],
+      related: ['../../step1/start.s'],
+    },
+  },
+  skeletons: [
+    {
+      name: 'Step 0 on the Pi 1: the start and the hello page',
+      bones: [
+        { at: 'l.s:comment:"cp10 and cp11"', role: 'the floating point allowed' },
+        { at: 'l.s:def:clear', role: 'the bss cleared' },
+        { at: 'l.s:def:cleared', role: 'a stack, then boot: main' },
+        { at: '../hello.c:def:main', role: 'the shared C program' },
+        { at: 'hello.s', role: 'the other image: assembly alone' },
+      ],
+      joints: [
+        { from: 'l.s:comment:"cp10 and cp11"', to: 'l.s:def:clear' },
+        { from: 'l.s:def:clear', to: 'l.s:def:cleared' },
+        { from: 'l.s:def:cleared', to: '../hello.c:def:main', say: 'BL main' },
+      ],
+    },
+  ],
+}

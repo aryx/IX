@@ -1,0 +1,119 @@
+// games/racing/virtua/course/: what the code map says of it
+local skeletons = import '../../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Virtua Racing's three courses: a road as a ribbon, the land around it, its landmarks, as meshes.",
+  files: {
+    'Course.mli': {
+      summary: 'A circuit: its road cut in chunks, its land, landmarks and what moves; drawn near the car.',
+      digest: '051d8685f108',
+      capitals: [{ at: 'type:t', say: 'a course: the ribbon, its chunks, its land' }],
+      important: [
+        { at: 'comment:"A course is written on the squares of its map"', say: "traced from the manual's maps", weight: 2 },
+        { at: 'type:span', say: 'a bridge, a tunnel, a wall: the road changed', weight: 2 },
+      ],
+    },
+    'Course.ml': {
+      summary: "The three courses after TinyVirtuaRacing: Big Forest, Bay Bridge's suspension bridge, Acropolis.",
+      digest: '043a9d0d0e19',
+      important: [
+        { at: 'def:segment', say: 'a 2 m segment: kerbs, tarmac, verges, rail', weight: 3 },
+        { at: 'def:make', say: 'a description made a course: chunks, land, sky', weight: 3 },
+        { at: 'def:bridge', say: "Bay Bridge's cables and towers", weight: 2 },
+        { at: 'def:big_forest', say: 'the first course: its points and its sites', weight: 2 },
+        { at: 'def:road_near', say: '7 chunks ahead, and any near the eye', weight: 3 },
+        { at: 'def:lod', say: 'far chunks simpler: lod=off to compare', weight: 1 },
+        { at: 'def:miniature', say: "the course select's model on its table", weight: 1 },
+      ],
+    },
+    'Track3d.mli': {
+      summary: "A circuit in space: a closed Catmull-Rom line through the road's middle, a width and a bank.",
+      digest: '128d4aee51ae',
+      capitals: [
+        { at: 'def:at', say: 'a distance along it to a place: where everything is' },
+        { at: 'type:t', say: 'the ribbon: places every step' },
+      ],
+    },
+    'Track3d.ml': {
+      summary: "The ribbon made, after the playground's racing kit: control points splined, walked by steps.",
+      digest: '41cc074c84eb',
+      important: [
+        { at: 'def:catmull', say: 'a curve through the points, not near them', weight: 2 },
+        { at: 'def:build', say: 'controls to places a step apart, banked', weight: 3 },
+        { at: 'def:locate_near', say: 'a point to its distance: the cars use it', weight: 2 },
+        { at: 'def:across', say: 'a place and an offset to a point', weight: 1 },
+      ],
+    },
+    'Land.mli': {
+      summary: "The ground round a course: a grid of heights, the road's bed flattened, drawn as triangles.",
+      digest: '725c74c178c2',
+      capitals: [{ at: 'type:t', say: 'the heights and their colours' }],
+    },
+    'Land.ml': {
+      summary: 'The land made: hills and rolling noise, eased into the road where it passes, coloured by height.',
+      digest: '3d45f6c6895a',
+      important: [
+        { at: 'def:make', say: "the grid, the road's samples pressing it flat", weight: 3 },
+        { at: 'def:natural', say: 'hills and noise, before the road', weight: 2 },
+        { at: 'def:tiles', say: 'a mesh a tile, two triangles a cell', weight: 2 },
+        { at: 'def:facet_color', say: 'water, sand, grass, rock by height', weight: 1 },
+      ],
+    },
+    'Heightmap.mli': { summary: 'A terrain as a grid of heights, made up by diamond-square; the heightmap kit.', digest: '3a58d5b005c0' },
+    'Heightmap.ml': { summary: "The playground's heightmap kit: diamond-square, and a height between cells.", digest: '7f38038a0ea8' },
+    'Scenery.mli': {
+      summary: 'The solids courses are built of: trees, signs, the grandstand, the Ferris wheel, the temple.',
+      digest: '95b929600aba',
+    },
+    'Scenery.ml': {
+      summary: 'The scenery made of polygons: lofts, cones, wheels, each thing a few boxes and faces.',
+      digest: 'a296f61d2073',
+      important: [
+        { at: 'def:loft', say: 'a profile swept: roofs, sails, a car body', weight: 2 },
+        { at: 'def:cone', say: 'a tree as a cone, jittered', weight: 1 },
+        { at: 'def:ferris_wheel', say: 'what moves: made again each frame', weight: 2 },
+        { at: 'def:jitter', say: 'no two trees alike, from a hash', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.parts('A course: a ribbon, land, things', [
+      ['Track3d.ml', 'the road as a ribbon'],
+      ['Land.ml', 'the ground'],
+      ['Heightmap.ml', 'noise for the ground'],
+      ['Scenery.ml', 'trees, signs, landmarks'],
+      ['Course.ml', 'the three courses made'],
+      ['../render/Mesh.ml', 'what all of it becomes'],
+    ], [
+      ['Course.ml', 'Track3d.ml', 'its road'],
+      ['Course.ml', 'Land.ml', 'its ground'],
+      ['Course.ml', 'Scenery.ml', 'its things'],
+      ['Land.ml', 'Heightmap.ml', 'rolling'],
+      ['Course.ml', '../render/Mesh.ml', 'meshes'],
+    ]),
+    skeletons.chain('A course made, then drawn near the car', [
+      ['Course.ml:def:big_forest', 'a description: points, sites, spans', ''],
+      ['Course.ml:def:make', 'the course made', 'described'],
+      ['Track3d.ml:def:build', 'the ribbon', 'its points'],
+      ['Course.ml:def:segment', 'the road, a segment a step', 'each step'],
+      ['Course.ml:def:road_near', 'the chunks to draw', 'chunks'],
+    ]),
+    skeletons.module('Track3d.ml', 'A ribbon: splined, walked, located', [
+      ['build', 'controls to places', ''],
+      ['catmull', 'the spline', 'between controls'],
+      ['at', 'a distance to a place', 'the places'],
+      ['locate_near', 'a point to a distance', 'the inverse'],
+    ]),
+    skeletons.module('Land.ml', 'Land: heights, the road pressed in, tiles', [
+      ['natural', 'hills and noise', ''],
+      ['make', 'the grid, the road eased in', 'heights'],
+      ['height', 'a height anywhere', 'the grid'],
+      ['tiles', 'meshes of triangles', 'drawn'],
+    ]),
+    skeletons.module('Scenery.ml', 'Scenery: shapes from a few primitives', [
+      ['loft', 'a profile swept', ''],
+      ['cone', 'a tree', 'a primitive'],
+      ['ferris_wheel', 'a landmark that turns', 'built of'],
+    ]),
+  ],
+}

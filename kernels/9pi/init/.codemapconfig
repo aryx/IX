@@ -2,10 +2,10 @@
 // codemap, in ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there)
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "mini-9pi's boot: the devices reset, the first process made, and the entries the C shim calls on a trap.",
   files: {
-    'Main.ml': { digest: '05eedff8309b',
+    'Main.ml': { digest: '431ac9d5c9c5',
       summary: "The kernel's main: the devices in devtab's order, process 1 built by hand, then the scheduler forever.",
       capitals: [
         { at: 'section:The boot', say: "the kernel's main: devices, process 1, scheduler" },
@@ -19,13 +19,19 @@
         { at: 'def:fault', say: 'a page fault resolved, or a note that kills', weight: 2 },
         { at: 'def:process_start', say: "initcode's work done in the kernel: cons, binds, exec", weight: 3 },
         { at: 'def:boot_env', say: "9pi's boot environment, QEMU's values", weight: 1 },
+        { at: 'def:guard', say: "an exception escaping a trap: a panic's message", weight: 2 },
+        { at: 'def:caches', say: "the Pi1's caches on: emptied at each switch", weight: 1 },
       ],
       links: [
         { from: 'def:irq', to: 'def:devices' },
       ],
     },
-    'Main.mli': { digest: '2145c891895d',
-      summary: "Nothing exported: a kernel's main is its callbacks; the header says what the first process does.",
+    'Main.mli': { digest: '24eb27591322',
+      summary: "mini-9pi's map: a system call's way from SWI to a device, and the modules by directory.",
+      important: [
+        { at: 'comment:"A system call\'s way, from the program"', say: 'read(fd) from SWI to the device: the tour', weight: 3 },
+        { at: 'comment:"The modules, by directory"', say: 'the kernel in one table', weight: 2 },
+      ],
     },
   },
   skeletons: [

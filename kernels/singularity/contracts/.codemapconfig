@@ -1,0 +1,48 @@
+// kernels/singularity/contracts/: what the code map says of it (the code
+// map is tinybox codemap, in ~/github/ocaml-elm-playground). Not sources
+// to the map: Console.contract and Intro.contract, declarations in
+// Sing#'s way that mini-singml compiles to a module like Pong's.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The channels' contracts: Pong written by hand as mini-singml would make it; the others declared.",
+  files: {
+    'Pong.mli': { digest: '9f8c15a702c9',
+      summary: "Singularity's PongContract: an end a type, a message an operation; the state left to the kernel.",
+      capitals: [
+        { at: 'def:contract', say: 'the contract as a value, given to the kernel' },
+      ],
+      important: [
+        { at: 'comment:"contract Pong {"', say: "Sing#'s declaration, what it compiles from", weight: 3 },
+        { at: 'comment:"The state is the kernel\'s to check"', say: 'ping twice compiles, and ends its sender', weight: 3 },
+        { at: 'type:imp', weight: 1 },
+        { at: 'type:request', say: 'a block now the receiver\'s', weight: 2 },
+      ],
+    },
+    'Pong.ml': { digest: '1dd569b48ff5',
+      summary: "Tags, the contract's states as numbers, and Imp and Exp over Sip's channels.",
+      important: [
+        { at: 'def:contract', say: 'Start, Serve and the states between', weight: 3 },
+        { at: 'def:channel', weight: 2 },
+        { at: 'code:"module Imp = struct"', say: "the client's sends and receives", weight: 2 },
+        { at: 'code:"module Exp = struct"', say: "the server's", weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'A contract: declared, a value, two typed ends',
+      bones: [
+        { at: 'Pong.ml:def:contract', role: 'messages and states, for the kernel' },
+        { at: 'Pong.ml:def:channel', role: 'a channel of it: Sip.channel' },
+        { at: 'Pong.ml:code:"module Imp = struct"', role: "the importing end's operations" },
+        { at: 'Pong.ml:code:"module Exp = struct"', role: "the exporting end's" },
+        { at: '../lib/Sip.mli:def:send', role: 'what each operation is' },
+      ],
+      joints: [
+        { from: 'Pong.ml:def:channel', to: 'Pong.ml:def:contract' },
+        { from: 'Pong.ml:code:"module Imp = struct"', to: '../lib/Sip.mli:def:send', say: 'a tag, a value' },
+        { from: 'Pong.ml:code:"module Exp = struct"', to: '../lib/Sip.mli:def:send' },
+      ],
+    },
+  ],
+}

@@ -1,0 +1,18 @@
+// lib_terminal/hosts/sdl/: what the code map says of it (the code map: tinybox codemap,
+// ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "A Tui program in an SDL window on Linux: Plan 9's font, scaled, the window resizable.",
+  files: {
+    'Window_sdl.mli': { digest: '885d59ae994d', summary: 'A Tui in an SDL window, its cells 9 by 15 pixels shown scale times.', related: ['Window_sdl.ml'] },
+    'Window_sdl.ml': { digest: 'db98a5d7f1df', summary: "The loop: SDL's keys as a terminal's bytes, the Picture blitted.", important: [{ at: 'def:run', weight: 3 }] },
+  },
+  skeletons: [
+    skeletons.module('Window_sdl.ml', 'A Tui in an SDL window', [
+      ['key_name', 'an SDL key to a Vt name', ''],
+      ['run', 'the loop: events, update, paint', 'keys'],
+    ]),
+  ],
+}

@@ -1,0 +1,82 @@
+// languages/datalog/dotnet/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-datalog -dotnet: the rules compiled to IL as nested loops, Souffle's way, over a runtime in mini-ml.",
+  files: {
+    'Compile_il.mli': { digest: 'd7e6454201a2',
+      summary: "What the interpreter decides as it runs, decided once: strata and plans written as nested loops in IL.",
+      important: [
+        { at: 'comment:"for id in path"', say: 'a rule as the loops it compiles to', weight: 3 },
+        { at: 'comment:"The relations are not compiled"', say: 'the runtime is mini-datalog itself', weight: 2 },
+        { at: 'def:assembly', weight: 2 },
+      ],
+    },
+    'Compile_il.ml': { digest: '5765107fb787',
+      summary: "The compiler: Datalog_eval's plans as IL methods, each scan a loop, each test a branch.",
+      capitals: [
+        { at: 'def:assembly', say: 'a program to a .NET assembly' },
+      ],
+      important: [
+        { at: 'def:call', say: "a call into datalog_rt's classes", weight: 1 },
+        { at: 'def:loop', say: 'a counted loop in IL', weight: 2 },
+        { at: 'def:plan', say: 'a plan: nested loops, the head added inside', weight: 3 },
+        { at: 'def:strata', say: "Datalog_eval's own stratify and plan reused", weight: 3 },
+        { at: 'def:assembly', weight: 2 },
+      ],
+      links: [
+        { from: 'def:assembly', to: 'def:strata' },
+        { from: 'def:strata', to: 'def:plan' },
+        { from: 'def:plan', to: 'def:loop' },
+      ],
+    },
+    'Datalog_rt.mli': { digest: 'b4cdde0e8728',
+      summary: "The runtime the compiled rules call (get, lookup, add, the rounds), compiled by mini-ml -dotnet.",
+      important: [
+        { at: 'comment:"Its functions are the compiled code"', say: "mini-ml's types: an int is an int64", weight: 2 },
+        { at: 'def:main', weight: 2 },
+        { at: 'def:lookup', weight: 1 },
+      ],
+    },
+    'Datalog_rt.ml': { digest: '75c4f25b6113',
+      summary: "The calls over mini-datalog's relations, and the compiled program's entry: load, run the rules, answer.",
+      capitals: [
+        { at: 'def:main', say: 'the compiled program starts here' },
+      ],
+      important: [
+        { at: 'def:load', say: "the rules' texts kept in the assembly", weight: 2 },
+        { at: 'def:lookup', say: "an index's tuples by a key", weight: 2 },
+        { at: 'def:turn', say: 'semi-naive: a round ends', weight: 2 },
+        { at: 'def:main', weight: 3 },
+      ],
+      links: [
+        { from: 'def:main', to: 'def:load' },
+        { from: 'def:main', to: 'def:answers' },
+      ],
+    },
+  },
+  dirs: {
+    tests: { summary: 'Programs compiled to .NET and run, their answers compared with the interpreter.' },
+  },
+  skeletons: [
+    {
+      name: 'Rules compiled, then run on .NET',
+      bones: [
+        { at: 'Compile_il.ml:def:assembly', role: 'the assembly: a class of plans' },
+        { at: 'Compile_il.ml:def:strata', role: 'the strata and their plans' },
+        { at: 'Compile_il.ml:def:plan', role: 'a plan as nested loops' },
+        { at: 'Datalog_rt.ml:def:main', role: 'the program run: load, rules, answers' },
+        { at: 'Datalog_rt.ml:def:lookup', role: 'what a loop calls' },
+        { at: '../Datalog_eval.ml:def:plan', role: "the interpreter's plan, reused" },
+      ],
+      joints: [
+        { from: 'Compile_il.ml:def:assembly', to: 'Compile_il.ml:def:strata', say: 'the program' },
+        { from: '../Datalog_eval.ml:def:plan', to: 'Compile_il.ml:def:strata', say: 'the steps' },
+        { from: 'Compile_il.ml:def:strata', to: 'Compile_il.ml:def:plan', say: 'each rule' },
+        { from: 'Compile_il.ml:def:plan', to: 'Datalog_rt.ml:def:lookup', say: 'call, at run time' },
+        { from: 'Datalog_rt.ml:def:main', to: 'Compile_il.ml:def:assembly', say: 'its rules, run' },
+      ],
+    },
+  ],
+}

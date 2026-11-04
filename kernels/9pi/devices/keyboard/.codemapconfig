@@ -2,23 +2,23 @@
 // is tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there)
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "The keyboard as Plan 9 has it: user space's usb/kb writes PC scan codes, the kernel makes them runes.",
   files: {
     'Devkbin.mli': { digest: '913cfd98f103',
       summary: "'#Ι'/kbin: where usb/kb, a user program, writes the USB keyboard's keys as scan codes.",
     },
-    'Devkbin.ml': { digest: '958bb9999319',
+    'Devkbin.ml': { digest: 'e55cdcac6201',
       summary: 'One writable file, one writer at a time, each byte handed to Kbd.',
       important: [
         { at: 'def:dc', say: 'a Greek letter as a device letter: a private byte', weight: 1 },
         { at: 'def:init', say: 'a write: each byte a scan code', weight: 2 },
       ],
     },
-    'Kbd.mli': { digest: '445e71d536f6',
+    'Kbd.mli': { digest: '5ea55a74c231',
       summary: "PC scan codes to runes for the console (portkbd.c): escapes, releases, modifiers, the tables.",
     },
-    'Kbd.ml': { digest: 'c04cddd7f59d',
+    'Kbd.ml': { digest: 'e2bd68b47012',
       summary: "The scan code tables and the state machine that turns a key's press into a rune.",
       capitals: [
         { at: 'def:kbdputsc', say: 'a scan code in, a rune to the console' },
@@ -30,8 +30,37 @@
         { at: 'def:kbdmouse', say: 'keys acting as mouse buttons', weight: 1 },
       ],
     },
+    'Latin1.mli': { digest: 'ecaaa0f8b09b',
+      summary: "Plan 9's compose sequences (latin1.c): Alt ' e is é, Alt X and four hex digits any rune.",
+      important: [
+        { at: 'comment:"below -1 asks for the next key"', say: "Kbd's protocol: done, give up, more", weight: 2 },
+        { at: 'comment:"Ken Thompson and Rob Pike"', say: "UTF-8, designed for Plan 9 in 1992", weight: 1 },
+      ],
+    },
+    'Latin1.ml': { digest: 'fc2939c42fe7',
+      summary: "latin1.h's table of key pairs and their runes, and Alt X's hexadecimal.",
+      important: [
+        { at: 'def:table', say: 'two keys to a rune, latin1.h', weight: 2 },
+        { at: 'def:unicode', say: 'Alt X: four hex digits', weight: 1 },
+        { at: 'def:latin1', weight: 3 },
+      ],
+    },
   },
   skeletons: [
+    {
+      name: 'Alt and two keys: a rune',
+      bones: [
+        { at: 'Kbd.ml:def:kbdputsc', role: 'the keys since Alt, kept' },
+        { at: 'Latin1.ml:def:latin1', role: 'a rune, give up, or more' },
+        { at: 'Latin1.ml:def:table', role: 'the pairs' },
+        { at: 'Latin1.ml:def:unicode', role: 'Alt X: a hex number' },
+      ],
+      joints: [
+        { from: 'Kbd.ml:def:kbdputsc', to: 'Latin1.ml:def:latin1', say: 'each key after Alt' },
+        { from: 'Latin1.ml:def:latin1', to: 'Latin1.ml:def:table', say: 'two keys' },
+        { from: 'Latin1.ml:def:latin1', to: 'Latin1.ml:def:unicode', say: 'X' },
+      ],
+    },
     {
       name: 'Scan codes in, runes to the console',
       bones: [

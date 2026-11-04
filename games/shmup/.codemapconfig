@@ -1,0 +1,56 @@
+// games/shmup/: what the code map says of it
+// a playground program: Model-View-Update down to its Cap.main, and its
+// heart reached from update (or view)
+local mvu(file, heart, role, say, from="def:update") = {
+  local at(a) = file + ":" + a,
+  name: "Model-View-Update, and its heart: " + std.split(heart, ":")[1],
+  bones: [
+    { at: at("type:model"), role: "the state" },
+    { at: at("def:initial_model"), role: "the first state" },
+    { at: at("def:update"), role: "a frame: model -> model" },
+    { at: at("def:view"), role: "a picture: model -> shapes" },
+    { at: at("def:app"), role: "the app: the three given to the Playground" },
+    { at: at("code:\"Cap.main\""), role: "the program: the app run, with the capabilities" },
+    { at: at(heart), role: role },
+  ],
+  joints: [
+    { from: at("def:initial_model"), to: at("type:model") },
+    { from: at("type:model"), to: at("def:update"), say: "stepped" },
+    { from: at("def:update"), to: at("type:model"), say: "the next state" },
+    { from: at("type:model"), to: at("def:view"), say: "drawn" },
+    { from: at("def:app"), to: at("def:update"), say: "steps with" },
+    { from: at("def:app"), to: at("def:view"), say: "draws with" },
+    { from: at("code:\"Cap.main\""), to: at("def:app"), say: "runs" },
+    { from: at(from), to: at(heart), say: say },
+  ],
+};
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Shoot 'em ups: a gun against waves of enemies, with the playground's kit of shots.",
+  files: {
+    'TinyMissileCommand.ml': {
+      summary: 'Missile Command (Atari, 1980): counter-missiles bursting where you aim, six cities to keep; with sound.',
+      digest: '66a80e3cbf3b',
+      capitals: [{ at: 'def:radius', say: 'an explosion grows then shrinks: what hits' }],
+      important: [
+        { at: 'type:game', say: 'a wave: missiles both ways, explosions, cities, bases', weight: 3 },
+        { at: 'def:update_game', say: 'the rules of a frame', weight: 3 },
+        { at: 'def:split', say: 'an incoming missile forks: MIRVs', weight: 2 },
+        { at: 'def:fire', say: 'from the nearest base with ammunition', weight: 2 },
+        { at: 'def:launch', say: 'the attack: a missile at a city or a base', weight: 1 },
+        { at: 'code:"Playground_platform.run_app"', say: "ix's last line: the flags and the caps", weight: 1 },
+      ],
+      links: [
+        { from: 'def:update', to: 'def:update_game' },
+        { from: 'def:update_game', to: 'def:radius' },
+        { from: 'def:view', to: 'def:view_game' },
+      ],
+    },
+  },
+  skeletons: [
+    mvu('TinyMissileCommand.ml', 'def:radius', "an explosion's circle, growing then shrinking", 'the explosions') + {
+      bones+: [{ at: 'kit/Shots.ml:def:advance', role: 'a missile moves (the kit)' }],
+      joints+: [{ from: 'TinyMissileCommand.ml:def:update', to: 'kit/Shots.ml:def:advance', say: 'the missiles' }],
+    },
+  ],
+}

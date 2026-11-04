@@ -1,0 +1,17 @@
+// windows/: what the code map says of it
+local skeletons = import '../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: 'The window system, mini-rio, and the desktop made of ordinary programs in its windows.',
+  skeletons: [
+    skeletons.parts('A window system and a desktop on it', [
+      ['rio/', 'mini-rio: windows as file servers'],
+      ['desktop/', 'desk, panel, start menu: rio clients'],
+      ['../lib_graphics/', 'the draw device, images, fonts'],
+    ], [
+      ['desktop/', 'rio/', 'wctl, /dev/wsys'],
+      ['rio/', '../lib_graphics/', 'draws with'],
+      ['desktop/', '../lib_graphics/', 'draws with'],
+    ]),
+  ],
+}

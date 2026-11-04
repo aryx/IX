@@ -1,0 +1,45 @@
+// lib_playground/platforms/draw/: what the code map says of it
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-9pi's native platform: a message to the draw device per shape; the kernel makes the pixels.",
+  files: {
+    'Playground_platform.ml': {
+      summary: "After the playground's Cairo platform, Cairo become Plan 9's draw device: no pixel computed here.",
+      digest: 'acf816c68ddc',
+      capitals: [{ at: 'def:shape', say: 'a shape as draw messages' }],
+      important: [
+        { at: 'comment:"A frame is a list of messages"', say: 'the idea: the device draws', weight: 3 },
+        { at: 'def:ink', say: 'a colour as an image of the device, kept', weight: 2 },
+        { at: 'def:rectangle', say: 'upright: a draw; turned: a polygon', weight: 2 },
+        { at: 'def:words', say: "the device's font where it fits, else strokes", weight: 2 },
+        { at: 'def:picture', say: 'pixels loaded once, kept by four', weight: 1 },
+        { at: 'def:show', say: 'the same list as before (==): nothing sent', weight: 3 },
+        { at: 'def:run_app', say: "flags, then Plan9_loop's loop", weight: 2 },
+      ],
+      links: [
+        { from: 'def:run_app', to: 'def:show' },
+        { from: 'def:show', to: 'def:shape' },
+      ],
+    },
+  },
+  skeletons: [{
+    name: 'A frame as draw messages',
+    bones: [
+      { at: 'Playground_platform.ml:def:run_app', role: 'the platform: its options, the loop' },
+      { at: '../Plan9_loop.ml:def:run_app', role: 'the loop, shared with software/' },
+      { at: 'Playground_platform.ml:def:show', role: 'a frame: the changed part, or all' },
+      { at: 'Playground_platform.ml:def:shape', role: 'a shape: its messages' },
+      { at: 'Playground_platform.ml:def:rectangle', role: 'a rectangle: draw or polygon' },
+      { at: 'Playground_platform.ml:def:words', role: 'words: a font or strokes' },
+      { at: 'Playground_platform.ml:def:ink', role: 'the colour, an image kept' },
+    ],
+    joints: [
+      { from: 'Playground_platform.ml:def:run_app', to: '../Plan9_loop.ml:def:run_app', say: 'runs' },
+      { from: '../Plan9_loop.ml:def:run_app', to: 'Playground_platform.ml:def:show', say: 'each frame' },
+      { from: 'Playground_platform.ml:def:show', to: 'Playground_platform.ml:def:shape', say: 'each shape' },
+      { from: 'Playground_platform.ml:def:shape', to: 'Playground_platform.ml:def:rectangle', say: 'a rectangle' },
+      { from: 'Playground_platform.ml:def:shape', to: 'Playground_platform.ml:def:words', say: 'words' },
+      { from: 'Playground_platform.ml:def:rectangle', to: 'Playground_platform.ml:def:ink', say: 'its colour' },
+    ],
+  }],
+}

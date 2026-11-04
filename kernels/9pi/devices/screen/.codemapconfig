@@ -2,16 +2,16 @@
 // is tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there)
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "The screen: '#i', the draw device rio and its clients speak to, the kernel's console, the software cursor.",
   files: {
-    'Devdraw.mli': { digest: '5b0371f88281',
+    'Devdraw.mli': { digest: 'b595ccfb0594',
       summary: "'#i', the draw device: a client per directory, images by number, draw.h's protocol written to data.",
       important: [
         { at: 'comment:"Not as 9pi: no flushes"', say: "what 9pi's draw does that is left out", weight: 2 },
       ],
     },
-    'Devdraw.ml': { digest: 'bd44be0523d4',
+    'Devdraw.ml': { digest: '0fc29f3d430f',
       summary: "devdraw.c and drawmesg.c: clients, their images, screens and windows, the messages decoded and drawn.",
       capitals: [
         { at: 'def:drawmesg', say: "a client's messages: 'b' allocate, 'd' draw, 's' string..." },
@@ -31,10 +31,10 @@
         { from: 'def:drawmesg', to: 'def:drawimage' },
       ],
     },
-    'Swconsole.mli': { digest: '8daab9714c2c',
+    'Swconsole.mli': { digest: 'c8e4bffda1ad',
       summary: "The framebuffer and the kernel's console window on it, before rio: ' Plan 9 Console '.",
     },
-    'Swconsole.ml': { digest: '7d53344d9542',
+    'Swconsole.ml': { digest: 'd13b9cb64328',
       summary: "The console window drawn, each rune of the kernel's output put in it, scrolled 8 lines at a time.",
       important: [
         { at: 'def:putc', say: 'newline, tab, backspace, a rune', weight: 3 },
@@ -44,13 +44,13 @@
         { at: 'def:init', weight: 2 },
       ],
     },
-    'Swcursor.mli': { digest: '989ebe07f23c',
+    'Swcursor.mli': { digest: '781c9ff1676a',
       summary: 'The software cursor: a 16x16 picture drawn over the screen, what it hides kept aside.',
       important: [
         { at: 'comment:"calls [avoid] with its rectangle"', say: 'every drawing asks the cursor to move aside', weight: 2 },
       ],
     },
-    'Swcursor.ml': { digest: '0c955353406b',
+    'Swcursor.ml': { digest: '4a891641e8d0',
       summary: 'The cursor drawn, hidden before any drawing that would touch it, redrawn at each tick.',
       important: [
         { at: 'def:draw', say: 'what is under it saved, then it drawn', weight: 3 },

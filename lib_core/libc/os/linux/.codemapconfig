@@ -1,0 +1,39 @@
+// lib_core/libc/os/linux/: what the code map says of it (the code map: tinybox codemap,
+// ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Plan 9's file calls over Linux's: open's modes, Dir from struct stat, getwd, dirwstat renaming.",
+  files: {
+    'stat.c': { digest: 'ed4f2bf50571',
+      summary: "dirfstat, dirfwstat, dirread: a Dir from Linux's struct stat, arm's and arm64's layouts in one file.",
+      capitals: [{ at: 'def:kstat2dir', say: "Linux's stat made Plan 9's Dir" }],
+      important: [
+        { at: 'comment:"which is not the same on arm64"', say: 'two kernel structs, one #ifdef', weight: 3 },
+        { at: 'type:Kstat', weight: 2 },
+        { at: 'def:kstat2dir', weight: 3 },
+        { at: 'def:dirfwstat', say: 'each field not all ones: changed', weight: 2 },
+        { at: 'def:dirreadbuf', say: 'getdents64 entries, each stat-ed', weight: 2 },
+      ],
+    },
+    'open.c': { digest: '4a679dddd5c9', summary: "Plan 9's open and create over Linux's open: OREAD, OTRUNC, OEXCL to O_ flags." },
+    'getwd.c': { digest: 'b1be02523b00', summary: "getwd over Linux's getcwd, whose answer is a length or -errno." },
+    'dirwstat.c': { digest: 'e2b05d47f870', summary: 'dirwstat for Linux: a new name in the Dir renames the file (mv).' },
+  },
+  skeletons: [
+    skeletons.parts("Plan 9's file calls on Linux", [
+      ['open.c', 'modes translated'], ['stat.c', 'Dir from struct stat'],
+      ['dirwstat.c', 'Dir written: renaming'], ['getwd.c', 'the directory'],
+    ], [
+      ['dirwstat.c', 'stat.c', 'dirfwstat'],
+      ['open.c', 'stat.c', 'a descriptor to stat'],
+    ]),
+    skeletons.chain('A directory read on Linux', [
+      ['stat.c:def:dirread', 'entry: some entries', ''],
+      ['stat.c:def:dirreadbuf', 'getdents64, then each one', 'all or some'],
+      ['stat.c:def:dirfstat', 'one file stat-ed', 'a name'],
+      ['stat.c:def:kstat2dir', 'struct stat to Dir', "the kernel's struct"],
+    ]),
+  ],
+}

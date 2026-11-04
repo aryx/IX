@@ -3,14 +3,15 @@
 // docs/claude_notes/codemapconfig_guidelines.md there). Implements
 // ../Ureg.mli on the Pi4 (the Makefile's ARCH=arm64).
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "The Pi4's side: an arm program run in AArch32 under an arm64 kernel, its registers in x0-x14.",
   files: {
-    'Ureg.ml': { digest: '0a15cd579ae5',
+    'Ureg.ml': { digest: 'f2336fb54c39',
       summary: "The Pi4's trap frame as arm registers: x0-x14, ELR the pc, SPSR the CPSR, their low 32 bits.",
       important: [
         { at: 'def:pc', say: "ELR: the arm program's pc", weight: 2 },
         { at: 'def:regs', weight: 1 },
+        { at: 'def:plan9', say: "a Ureg's words from the 64-bit frame's low halves", weight: 2 },
       ],
     },
   },

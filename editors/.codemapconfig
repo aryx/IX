@@ -1,0 +1,26 @@
+// editors/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The editors, from ed's line at a time to IDEs: mini-ed, mini-emacs, mini-turbopascal, mini-drscheme.",
+  skeletons: [
+    skeletons.parts('The editors and what they stand on', [
+      ['ed/', "Plan 9's ed: commands read and run at once"],
+      ['emacs/', 'a screen editor, a key a command'],
+      ['turbopascal/', 'an IDE: edit, compile, debug'],
+      ['drscheme/', 'an IDE for teaching: run, step'],
+      ['../lib_terminal/', 'a screen of cells, hosts'],
+      ['../languages/', 'mini-pascal, mini-scheme, highlighters'],
+      ['../lib_playground/', "drscheme's window"],
+    ], [
+      ['../lib_terminal/', 'emacs/', 'Tui, Curses, the hosts'],
+      ['../lib_terminal/', 'turbopascal/', 'Tui, Curses, the hosts'],
+      ['../languages/', 'turbopascal/', 'compile, P-machine'],
+      ['../languages/', 'drscheme/', 'the evaluator, the stepper'],
+      ['../languages/', 'emacs/', "the modes' colors"],
+      ['../lib_playground/', 'drscheme/', 'game, shapes'],
+    ]),
+  ],
+}

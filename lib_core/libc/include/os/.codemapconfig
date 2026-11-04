@@ -1,0 +1,47 @@
+// lib_core/libc/include/os/: what the code map says of it (the code map: tinybox codemap,
+// ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Plan 9's system interface, declared: files and Qids, Dir, processes and exits, errstr, time, paths.",
+  files: {
+    'file.h': { digest: 'b18e82ae0e2b',
+      summary: "Files: fdt, OREAD to OEXCL, Qid, open, read, write, seek, pread.",
+      capitals: [{ at: 'type:Qid', say: "a file's identity: path, version, type" }],
+      important: [{ at: 'code:"OREAD"', say: "Plan 9's modes, not O_RDONLY", weight: 2 }, { at: 'code:"fdt"', weight: 1 }],
+    },
+    'dir.h': { digest: 'f8fa502bb1d6',
+      summary: "Dir, a file's metadata as Plan 9's stat gives it; create, remove, getwd, chdir.",
+      capitals: [{ at: 'type:Dir', say: "a file's stat: the same struct as the kernel's" }],
+      important: [{ at: 'code:"DMDIR"', weight: 1 }],
+    },
+    'stat.h': { digest: '79d875a86e5b', summary: 'dirstat and dirwstat, by path over by descriptor (port/), each system its own (os/).' },
+    'proc.h': { digest: 'eda4c7e4b239',
+      summary: "Processes: fork, exec, exits (a string), wait's Waitmsg, atexit; Plan 9's names.",
+      important: [{ at: 'comment:"exits() is the libc exit that performs some cleanup"', weight: 2 }],
+    },
+    'err.h': { digest: 'b2dc384044ae', summary: 'sysfatal, perror, errstr and werrstr.' },
+    'env.h': { digest: 'c82882ee8623', summary: 'getenv, putenv, environ.' },
+    'path.h': { digest: 'b8e267444d51', summary: 'cleanname, and unsharp for plan9port paths.' },
+    'time.h': { digest: '8001a8fc6d23', summary: 'Tm, time, nsec, sleep, alarm.' },
+    'mem.h': { digest: '42b68e4fe504', summary: 'sbrk and brk, the heap grown.' },
+    'ipc.h': { digest: 'e2818dc9ab59', summary: 'pipe.' },
+    'tmp.h': { digest: 'dd9f597e5202', summary: 'mktemp, and mkstemp, the safe one.' },
+    'goos.h': { digest: 'd6ce7ccc34b0', summary: "getgoos: the system's name." },
+  },
+  skeletons: [
+    skeletons.parts('The system, declared', [
+      ['file.h', 'descriptors and Qids'],
+      ['dir.h', "Dir: a file's metadata"],
+      ['stat.h', 'Dir read and written'],
+      ['proc.h', 'processes, exits'],
+      ['err.h', 'errors as strings'],
+      ['env.h', 'the environment'],
+    ], [
+      ['file.h', 'dir.h', 'Qid in a Dir'],
+      ['dir.h', 'stat.h', 'what dirstat gives'],
+      ['proc.h', 'err.h', 'exits with errstr'],
+    ]),
+  ],
+}

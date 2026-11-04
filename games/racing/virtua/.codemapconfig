@@ -1,0 +1,71 @@
+// games/racing/virtua/: what the code map says of it
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-virtuaracing: Virtua Racing (Sega AM2, 1992) by a renderer of its own, three courses, a race.",
+  dirs: {
+    sdl: { summary: 'Virtua.ml linked with the SDL platform: bin/mini-virtuaracing, a window (dune).' },
+    tests: { summary: "compare.sh against the playground's golden frames; perf.sh, a frame's instructions on arm." },
+  },
+  files: {
+    'Virtua.ml': {
+      summary: "The game: title, course select, the race in four views; the 3D a byte-a-pixel bitmap in a playground view.",
+      digest: 'f1b09aa9a915',
+      capitals: [{ at: 'def:draw_course', say: "a frame's 3D: sky, land, road, cars" }],
+      important: [
+        { at: 'comment:"mini-virtuaracing: Virtua Racing"', say: "the plan's stages, the keys, the flags", weight: 2 },
+        { at: 'type:model', say: 'the course loaded, the race, the screens', weight: 3 },
+        { at: 'def:build', say: 'a course loaded: meshes lit, its palette', weight: 2 },
+        { at: 'def:camera', say: "V.R.'s four views", weight: 2 },
+        { at: 'def:draw', say: 'the bytes shown as a bitmap shape', weight: 2 },
+        { at: 'def:update', say: 'the scenes, the race stepped, the sound', weight: 3 },
+        { at: 'code:"P.game view update model"', say: "a playground game: its view is one picture", weight: 2 },
+      ],
+      links: [
+        { from: 'def:view', to: 'def:draw' },
+        { from: 'def:draw', to: 'def:draw_course' },
+        { from: 'def:update', to: 'def:start_race' },
+      ],
+      related: ['README.md'],
+    },
+  },
+  skeletons: [
+    skeletons.parts('mini-virtuaracing: a game, a renderer, courses, a race', [
+      ['Virtua.ml', 'the program: scenes, views, frames'],
+      ['render/', 'meshes into a byte a pixel'],
+      ['course/', 'the three courses'],
+      ['race/', 'the race and its cars'],
+      ['../../../lib_playground/', 'the window, keys, clock, sound'],
+    ], [
+      ['Virtua.ml', 'render/', 'draws with'],
+      ['Virtua.ml', 'course/', 'loads'],
+      ['Virtua.ml', 'race/', 'steps'],
+      ['race/', 'course/', 'drives on'],
+      ['course/', 'render/', 'meshes'],
+      ['Virtua.ml', '../../../lib_playground/', 'a playground game'],
+    ]),
+    {
+      name: 'Model-View-Update, and its picture: draw_course',
+      bones: [
+        { at: 'Virtua.ml:type:model', role: 'the state: course, race, scenes' },
+        { at: 'Virtua.ml:def:start', role: 'the first state' },
+        { at: 'Virtua.ml:def:update', role: 'a frame: scenes, the race, sound' },
+        { at: 'Virtua.ml:def:view', role: 'the picture and the display' },
+        { at: 'Virtua.ml:def:draw_course', role: 'the 3D into bytes' },
+        { at: 'race/Race.ml:def:step', role: 'the race stepped' },
+        { at: 'render/Render.ml:def:draw', role: 'a mesh drawn' },
+        { at: 'Virtua.ml:code:"Cap.main"', role: 'the program: flags, then the game run' },
+      ],
+      joints: [
+        { from: 'Virtua.ml:code:"Cap.main"', to: 'Virtua.ml:def:start', say: 'the flags' },
+        { from: 'Virtua.ml:def:start', to: 'Virtua.ml:type:model' },
+        { from: 'Virtua.ml:type:model', to: 'Virtua.ml:def:update', say: 'stepped' },
+        { from: 'Virtua.ml:def:update', to: 'Virtua.ml:type:model', say: 'the next state' },
+        { from: 'Virtua.ml:def:update', to: 'race/Race.ml:def:step', say: 'the keys' },
+        { from: 'Virtua.ml:type:model', to: 'Virtua.ml:def:view', say: 'drawn' },
+        { from: 'Virtua.ml:def:view', to: 'Virtua.ml:def:draw_course', say: 'the 3D' },
+        { from: 'Virtua.ml:def:draw_course', to: 'render/Render.ml:def:draw', say: 'each mesh' },
+      ],
+    },
+  ],
+}

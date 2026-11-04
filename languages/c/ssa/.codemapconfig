@@ -1,0 +1,121 @@
+// languages/c/ssa/: what the code map says of it (the code map:
+// tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-cc -ssa (-O3): simple's stack code to SSA, registers colored, assembly; mini-ml's ssa/ redone for C.",
+  files: {
+    'Ssa.ml': { digest: '86795ab56cd1',
+      summary: "A C function in SSA form, as types: blocks, numbered values, phis; C's memory kept in the text's order.",
+      capitals: [
+        { at: 'type:ins', say: 'an instruction: a value, named by its number' },
+        { at: 'type:func', say: "a function's blocks, each value's definition and type" },
+      ],
+      important: [
+        { at: 'comment:"mini-ml\'s ssa/ is the model"', say: 'what C changes: typed values, memory in order', weight: 2 },
+        { at: 'comment:"mini-cc -simple -O -dssa, arm"', say: "copyw's loop, SSA then MOVW.P", weight: 3 },
+        { at: 'type:ins', weight: 3 },
+        { at: 'type:term', say: 'a block ends: jump, branch, return', weight: 1 },
+        { at: 'type:block', say: 'phis, body, terminator, predecessors', weight: 2 },
+      ],
+    },
+    'Ssa_build.mli': { digest: 'f3d6aeeb651d',
+      summary: "SSA from the stack code after Opti's forms, by Braun et al.'s construction; trivial phis out, q + 4 sunk.",
+      important: [
+        { at: 'comment:"Two kinds of variable: a C"', say: 'a register-able variable, or a stack slot at an edge', weight: 3 },
+        { at: 'comment:"a block is sealed when all its predecessors are filled"', say: "Braun's sealing", weight: 2 },
+        { at: 'def:func', weight: 1 },
+      ],
+    },
+    'Ssa_build.ml': { digest: '16bfda478e29',
+      summary: "Blocks cut at labels and jumps, the stack simulated into values, phis placed, then simplified and sunk.",
+      important: [
+        { at: 'section:Blocks, from the labels and the jumps', weight: 1 },
+        { at: 'def:split', say: 'runs between labels and jumps', weight: 2 },
+        { at: 'def:build', say: 'the stack machine run on values, block by block', weight: 3 },
+        { at: 'def:simplify', say: 'a phi of one value: that value', weight: 2 },
+        { at: 'def:check', say: 'each use dominated by its definition', weight: 1 },
+        { at: 'def:sink', say: "q + 4 after q's last use: post-indexing", weight: 2 },
+        { at: 'def:show', say: 'mini-cc -dssa', weight: 1 },
+        { at: 'def:func', weight: 2 },
+      ],
+      links: [
+        { from: 'def:func', to: 'def:build' },
+        { from: 'def:func', to: 'def:simplify' },
+        { from: 'def:func', to: 'def:sink' },
+      ],
+    },
+    'Alloc.mli': { digest: 'c672fe4205da',
+      summary: "Where each SSA value lives: a register, a slot, a parameter's home, or nowhere; colored in dominator order.",
+      capitals: [
+        { at: 'def:alloc', say: "every value its place, Plan 9's caller-saves" },
+      ],
+      important: [
+        { at: 'comment:"interference is chordal, that order needs no more colors"', say: 'Hack, Grund and Goos: no spill search', weight: 3 },
+        { at: 'comment:"Plan 9 saves no register at a call"', say: 'across calls: memory or register, by cost', weight: 2 },
+        { at: 'type:loc', weight: 2 },
+      ],
+    },
+    'Alloc.ml': { digest: '52b5d6c8d862',
+      summary: 'Liveness over the blocks, values chosen by uses in loops, then colored on the dominator tree.',
+      important: [
+        { at: 'def:liveness', say: 'backward, to a fixpoint (lib_code)', weight: 2 },
+        { at: 'def:real', say: 'constants and addresses live nowhere', weight: 1 },
+        { at: 'def:alloc', say: 'choose, then color registers and slots', weight: 3 },
+      ],
+      links: [
+        { from: 'def:alloc', to: 'def:liveness' },
+      ],
+    },
+    'Ssa_gen.mli': { digest: 'c6eff91f813d',
+      summary: "The SSA function's assembly, values where Alloc put them; phis as parallel copies on the edges.",
+      important: [
+        { at: 'comment:"A phi is a parallel"', say: 'phis become moves on the edges', weight: 2 },
+        { at: 'comment:"post-indexed access (MOVW.P)"', say: '*q++ in one instruction', weight: 2 },
+        { at: 'def:func', weight: 1 },
+      ],
+    },
+    'Ssa_gen.ml': { digest: 'ce2e8af7d73d',
+      summary: "Gen's instructions by type over Alloc's registers and slots; phi moves sequenced, calls reloaded.",
+      important: [
+        { at: 'def:regs', say: 'the colorable registers, the scratch ones', weight: 2 },
+        { at: 'def:gen', say: 'a function: instructions, edges, blocks', weight: 3 },
+        { at: 'comment:"the registers live across it loaded after it"', say: 'the caller saves: reloads after a call', weight: 2 },
+        { at: 'comment:"a phi\'s moves on the edge p -> s, as one parallel copy"', say: 'sequenced; a cycle through the scratch', weight: 3 },
+        { at: 'comment:"an integer\'s branch inverted to fall into the next block"', weight: 1 },
+        { at: 'def:func', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.chain('mini-cc -ssa: stack code to SSA to assembly', [
+      ['../CLI.ml:def:simple_backend', '-ssa: Opti, then here', ''],
+      ['Ssa_build.ml:def:func', 'SSA built from the stack code', "Opti's forms, not regs"],
+      ['Ssa.ml:type:func', 'blocks of numbered values', 'the function'],
+      ['Alloc.ml:def:alloc', 'a place for each value', 'liveness, colors'],
+      ['Ssa_gen.ml:def:func', 'the assembly', 'locations'],
+      ['../Emit.ml:def:gins', 'instructions to Emit', 'Gen\'s instructions'],
+    ]),
+    skeletons.module('Ssa_build.ml', 'SSA built: blocks, Braun, cleanup', [
+      ['split', 'the code cut into runs', ''],
+      ['successors', 'the edges between them', 'runs'],
+      ['build', 'values and phis, block by block', 'the graph'],
+      ['simplify', 'trivial phis out', 'SSA'],
+      ['sink', 'pure values moved down', 'SSA'],
+      ['func', 'the whole, checked', 'SSA'],
+    ]),
+    skeletons.module('Alloc.ml', 'Values to registers and slots', [
+      ['def', "a value's definition", ''],
+      ['real', 'what needs a place at all', 'definitions'],
+      ['uses', "a value's operands", 'real values'],
+      ['liveness', 'live in and out of each block', 'uses'],
+      ['alloc', 'chosen, colored', 'liveness'],
+    ]),
+    skeletons.module('Ssa_gen.ml', 'SSA to assembly', [
+      ['regs', "Alloc's registers, the scratch ones", ''],
+      ['gen', 'instructions, phi moves, branches', 'registers'],
+      ['func', 'Alloc run, then gen', 'the function'],
+    ]),
+  ],
+}

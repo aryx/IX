@@ -1,0 +1,43 @@
+// apps/office/formula/: what the code map says of it
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "A sheet's formulas, VisiCalc's grammar parsed by recursive descent: one function per rule.",
+  files: {
+    'Formula.mli': {
+      summary: 'What a cell may hold, its grammar, and why recursive descent is the parser to know first.',
+      digest: '3b0c3c959187',
+      capitals: [
+        { at: 'type:cell', say: 'a column and a row' },
+        { at: 'type:expr', say: 'a formula, parsed' },
+        { at: 'def:content_of', say: 'what was typed, understood' },
+      ],
+      important: [
+        { at: 'comment:"The grammar, which is the one"', say: 'precedence from the rules nesting', weight: 3 },
+        { at: 'def:refs', say: 'the cells a formula reads' },
+        { at: 'def:shift', say: 'a formula copied, its refs moved' },
+      ],
+    },
+    'Formula.ml': {
+      summary: "Cell names, tokens, the parser (expr, term, factor, atom), and a formula's references.",
+      digest: '914ea94fac64',
+      important: [
+        { at: 'def:parse', say: 'one local function per grammar rule', weight: 3 },
+        { at: 'code:"let rec expr ()"', say: 'a sum asks for products', weight: 3 },
+        { at: 'def:tokens' },
+        { at: 'def:name_of_cell', say: 'A..Z, AA..: base 26 without a zero' },
+        { at: 'def:refs' },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.chain('Typed text to a formula', [
+      ['Formula.ml:def:content_of', 'number, text, or =formula', ''],
+      ['Formula.ml:def:parse', 'recursive descent', 'after the ='],
+      ['Formula.ml:def:tokens', 'the tokens', 'the text'],
+    ]) + {
+      bones+: [{ at: 'Formula.ml:type:expr', role: 'the tree' }, { at: 'Formula.ml:def:refs', role: 'the cells it reads' }],
+      joints+: [{ from: 'Formula.ml:def:parse', to: 'Formula.ml:type:expr', say: 'built' }, { from: 'Formula.ml:type:expr', to: 'Formula.ml:def:refs', say: 'walked' }],
+    },
+  ],
+}

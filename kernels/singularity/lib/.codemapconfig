@@ -1,0 +1,122 @@
+// kernels/singularity/lib/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "A process's side of mini-singularity, linked into every program: Sip (the kernel's ABI) and contracts.",
+  files: {
+    'Sip.mli': { digest: 'a8dfccf46218',
+      summary: "What a process asks the kernel: processes, channels, blocks, devices, by handles only its own.",
+      capitals: [
+        { at: 'type:endpoint', say: "a channel's end: the only way to another process" },
+        { at: 'type:block', say: 'an exchange heap block, read in place' },
+        { at: 'def:receive', say: 'a message: waits, or Closed' },
+      ],
+      important: [
+        { at: 'comment:"Singularity\'s compiler refuses such a program"', say: 'Not_held: found when it runs', weight: 3 },
+        { at: 'def:create', weight: 1 },
+        { at: 'def:give', say: 'an endpoint to a child before it starts', weight: 2 },
+        { at: 'def:send_block', say: 'the block is no longer the sender\'s', weight: 2 },
+        { at: 'def:io_read', say: "a driver's registers, granted by its manifest", weight: 2 },
+      ],
+    },
+    'Sip.ml': { digest: 'd1b5332762eb',
+      summary: "Each function a numbered call through sip.c, its answer's -2 raised as Not_held.",
+      important: [
+        { at: 'code:"external call :"', say: 'one door: sip.c, then the kernel', weight: 3 },
+        { at: 'def:held', say: '-2: a handle not ours', weight: 2 },
+        { at: 'def:receive', weight: 2 },
+        { at: 'def:alloc', weight: 1 },
+        { at: 'def:get', say: 'a byte read in place, no call of the kernel', weight: 2 },
+      ],
+    },
+    'Contract.mli': { digest: '337083ad48ed',
+      summary: "A channel's contract as a value: messages and states; the kernel refuses what a state disallows.",
+      capitals: [
+        { at: 'type:t', say: 'a contract: its messages, its state machine' },
+      ],
+      important: [
+        { at: 'comment:"Sing#\'s compiler proves that no such message"', weight: 3 },
+        { at: 'type:side', weight: 1 },
+        { at: 'def:encode', say: 'bytes the kernel decodes: no value crosses', weight: 2 },
+      ],
+    },
+    'Contract.ml': { digest: '5268dc5cbdba',
+      summary: 'Contracts built, and encoded to integers and names for the kernel, which decodes them.',
+      important: [
+        { at: 'def:make', weight: 2 },
+        { at: 'def:encode', weight: 2 },
+        { at: 'def:decode', say: 'Bad: a contract the kernel refuses', weight: 2 },
+      ],
+    },
+    'sip.c': { digest: '59af73a664ac',
+      summary: "Under a process's libc and runtime: _syscall6 made the kernel's ABI; the blocks it owns, in place.",
+      capitals: [
+        { at: 'def:sip_main', say: "a process's main, after start_*.s" },
+      ],
+      important: [
+        { at: 'def:abi', say: 'the words, then the kernel by its given address', weight: 3 },
+        { at: 'def:_syscall6', say: 'write is the debug line, exit the end', weight: 2 },
+        { at: 'def:blocks', say: 'addresses only this trusted C sees', weight: 3 },
+        { at: 'def:sip_block_get', weight: 1 },
+        { at: 'def:sip_main', weight: 2 },
+      ],
+    },
+    'malloc.c': { digest: 'd12d9d92f6b6',
+      summary: "A 64 KB arena in place of the libc's 64 MB: a process's memory is its slot.",
+      important: [
+        { at: 'def:malloc', say: 'a bump, never given back', weight: 2 },
+      ],
+    },
+    'start_arm.s': { digest: 'd0074c01bea4',
+      summary: "A Pi 1 program's first bytes: the kernel's entry kept, the bss cleared, sip_main; sip_abi out.",
+      important: [
+        { at: 'def:start', weight: 2 },
+        { at: 'def:clear', say: 'cleared each time it is started', weight: 1 },
+      ],
+    },
+    'start_arm64.s': { digest: '0e234065b057',
+      summary: "The same on the Pi 4: the image's second word is its end, what the kernel reads.",
+      important: [
+        { at: 'def:start', weight: 2 },
+        { at: 'def:cleared', weight: 1 },
+        { at: 'comment:"the kernel returns to the caller"', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: "A process's side: its start, its calls of the kernel",
+      bones: [
+        { at: 'start_arm64.s:def:start', role: "the image's entry: the kernel's address kept" },
+        { at: 'sip.c:def:sip_main', role: "the runtime's main: the program" },
+        { at: 'Sip.ml:def:receive', role: "a program's call, Sip's" },
+        { at: 'Sip.ml:code:"external call :"', role: 'into C' },
+        { at: 'sip.c:def:abi', role: "the words, to the kernel's entry" },
+        { at: 'sip.c:def:_syscall6', role: "the libc's calls: debug line, exit" },
+      ],
+      joints: [
+        { from: 'start_arm64.s:def:start', to: 'sip.c:def:sip_main', say: 'BL' },
+        { from: 'sip.c:def:sip_main', to: 'Sip.ml:def:receive', say: "the program's main" },
+        { from: 'Sip.ml:def:receive', to: 'Sip.ml:code:"external call :"' },
+        { from: 'Sip.ml:code:"external call :"', to: 'sip.c:def:abi', say: 'sip_call' },
+        { from: 'sip.c:def:_syscall6', to: 'sip.c:def:abi', say: 'print_string, exit' },
+      ],
+    },
+    {
+      name: 'The library: Sip over sip.c, contracts over Sip',
+      bones: [
+        { at: 'Sip.mli', role: "the kernel's ABI as OCaml" },
+        { at: 'sip.c', role: 'the C door and the owned blocks' },
+        { at: 'Contract.mli', role: "a contract's description" },
+        { at: 'malloc.c', role: "the C side's small heap" },
+        { at: 'start_arm.s', role: "a program's first bytes (Pi 1)" },
+      ],
+      joints: [
+        { from: 'Sip.mli', to: 'sip.c', say: 'externals' },
+        { from: 'Sip.mli', to: 'Contract.mli', say: 'a channel of a contract' },
+        { from: 'start_arm.s', to: 'sip.c', say: 'sip_main' },
+      ],
+    },
+  ],
+}

@@ -1,0 +1,22 @@
+// profilers/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground).
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The profilers: mini-prof, instruction counts by function, and mini-stats, the machine's activity.",
+  skeletons: [
+    {
+      name: 'Where the counts come from',
+      bones: [
+        { at: '../machine/', role: 'mini-5i -prof: every instruction counted' },
+        { at: '../raspberry/', role: 'mini-qemu -prof: a whole system, sampled' },
+        { at: 'misc/', role: 'mini-prof and mini-stats' },
+        { at: '../tiny/TinyProfiler.ml', role: 'its tiny twin' },
+      ],
+      joints: [
+        { from: '../machine/', to: 'misc/', say: 'a profile' },
+        { from: '../raspberry/', to: 'misc/', say: 'a profile' },
+        { from: '../tiny/TinyProfiler.ml', to: 'misc/', say: 'the essentials of' },
+      ],
+    },
+  ],
+}

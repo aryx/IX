@@ -1,0 +1,77 @@
+// lib_audio/effects/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Effects a sound goes through live, block by block: drive, a tape echo, and the compressor's family.",
+  files: {
+    'Effect.mli': { digest: '5f712ae9041a',
+      summary: "An effect as a rack sees it: blocks through, knobs by their names, whatever its typed interface.",
+      capitals: [
+        { at: 'type:t', say: 'process a block, set a knob by name' },
+        { at: 'type:knob', say: 'a name, a control, a value' },
+      ],
+      important: [{ at: 'def:ramp', say: 'a knob moved without a click', weight: 2 }],
+    },
+    'Effect.ml': { digest: 'e35f06b832cd',
+      summary: 'The record, and the ramp of a value across a block.',
+    },
+    'Drive.mli': { digest: 'ebcc2d3ffbd5',
+      summary: "An overdriven amplifier: every sample through a waveshaper's curve, oversampled so as not to alias.",
+      important: [{ at: 'comment:"*waveshaper*"', weight: 3 }, { at: 'type:shape', weight: 1 }],
+    },
+    'Drive.ml': { digest: '6c744a54f7fd',
+      summary: 'The curves (hard, tanh, cubic, asymmetric), run at L times the rate between Butterworth low-passes.',
+      important: [{ at: 'def:shapes', weight: 2 }, { at: 'def:process', weight: 3 }],
+    },
+    'Delay.mli': { digest: 'ea8a456fa64a',
+      summary: "The echo, live and in stereo, as a tape echo makes it: feedback darkened, times in beats.",
+      important: [{ at: 'def:beats', say: 'the delay synced to the tempo', weight: 2 }],
+    },
+    'Delay.ml': { digest: 'c2a50c3c429b',
+      summary: 'A line per channel read behind the write head, the repeats through a tone low-pass; ping-pong.',
+      important: [{ at: 'type:line', weight: 2 }, { at: 'def:process', weight: 3 }],
+    },
+    'Dynamics.mli': { digest: '3f9999dab4d2',
+      summary: 'Compressor, limiter and noise gate: one machine whose knob the sound itself turns.',
+      capitals: [{ at: 'type:settings', say: 'threshold, ratio, knee, attack, release' }],
+      important: [
+        { at: 'comment:"change its *loudness*, from its loudness"', weight: 3 },
+        { at: 'type:detector', say: 'peak or RMS', weight: 1 },
+      ],
+    },
+    'Dynamics.ml': { digest: 'd10e6dbc2826',
+      summary: 'The gain curve with its soft knee, a detector, attack and release poles, a look-ahead line.',
+      important: [
+        { at: 'def:curve', say: 'input level to gain: the knee', weight: 3 },
+        { at: 'def:process', say: 'detect, smooth, reduce; a key may drive it', weight: 3 },
+        { at: 'def:longest_lookahead', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.parts('Effects in a rack', [
+      ['Effect.mli', 'what a rack sees'],
+      ['Drive.mli', 'distortion'],
+      ['Delay.mli', 'echo'],
+      ['Dynamics.mli', 'loudness'],
+      ['../synthesis/Filter.mli', 'the filters they use'],
+    ], [
+      ['Drive.mli', 'Effect.mli', 'fx'],
+      ['Delay.mli', 'Effect.mli', 'fx'],
+      ['Dynamics.mli', 'Effect.mli', 'fx'],
+      ['Drive.mli', '../synthesis/Filter.mli', 'oversampling filters'],
+      
+    ]),
+    skeletons.chain('A block compressed', [
+      ['Dynamics.ml:def:process', 'each sample of the block', ''],
+      ['Dynamics.ml:def:delayed', 'the look-ahead', 'the input'],
+      ['Dynamics.ml:def:pole', 'attack and release smoothing', 'its level'],
+      ['Dynamics.ml:def:curve', 'the gain for that level', 'the smoothed level'],
+    ]) + {
+      bones+: [{ at: 'Dynamics.ml:def:fx', role: 'the rack face' }],
+      joints+: [{ from: 'Dynamics.ml:def:fx', to: 'Dynamics.ml:def:process', say: 'knobs to settings' }],
+    },
+  ],
+}

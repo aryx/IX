@@ -1,0 +1,112 @@
+// languages/dotnet/runtime/: what the code map says of it (the code
+// map is tinybox codemap, in ~/github/ocaml-elm-playground; its
+// guidelines: docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-dotnet's runtime: the values and classes, the class loader, and System's classes as OCaml functions.",
+  files: {
+    'Value.mli': { digest: 'a93585d8880f',
+      summary: "The runtime's data: a class laid out, its methods and slots, the machine's tagged values.",
+      capitals: [
+        { at: 'type:value', say: 'a value on the stack, in a local, a field' },
+        { at: 'type:cls', say: 'a class loaded: its layout, its vtable' },
+        { at: 'type:meth', say: 'a method: its body IL or OCaml' },
+      ],
+      important: [
+        { at: 'comment:"An object is laid out"', say: 'numbers in bytes, references apart', weight: 3 },
+        { at: 'type:store', say: "an object's or array's two parts", weight: 2 },
+        { at: 'type:typ', weight: 1 },
+        { at: 'type:Thrown', say: 'the second pass: an OCaml exception', weight: 1 },
+        { at: 'def:typ_key', say: 'how a reference names a member', weight: 1 },
+      ],
+    },
+    'Value.ml': { digest: '1b305617a58e',
+      summary: 'Fields read and written at their offsets, stores made and copied: structs flattened.',
+      important: [
+        { at: 'def:footprint', say: "a type's bytes and references", weight: 2 },
+        { at: 'def:load', say: 'a field read, by its type', weight: 2 },
+        { at: 'def:make_store', weight: 1 },
+        { at: 'def:typ_key', weight: 1 },
+      ],
+    },
+    'Types.mli': { digest: '8162bbb957bb',
+      summary: "The class loader: a class made when first named, laid out, its vtable; tokens given meaning.",
+      capitals: [
+        { at: 'def:find_class', say: 'a class by its name, loaded at need' },
+        { at: 'def:virtual_target', say: "callvirt: the object's class's slot" },
+      ],
+      important: [
+        { at: 'comment:"its virtual methods given their slots"', say: 'override takes the slot, new adds one', weight: 3 },
+        { at: 'def:meth_of_token', say: "a call's token to a method", weight: 2 },
+        { at: 'def:load', say: 'an assembly loaded', weight: 1 },
+        { at: 'def:code', say: "a method's IL, decoded once", weight: 1 },
+      ],
+    },
+    'Types.ml': { digest: '3c1a3356d083',
+      summary: "Classes from an assembly's rows or the Library's specs, generics instantiated at run time.",
+      important: [
+        { at: 'def:layout', say: "after the parent's fields: one offset", weight: 3 },
+        { at: 'def:vtable', say: "the parent's table copied, then overrides", weight: 3 },
+        { at: 'def:class_of_spec', say: 'a Library class, loaded as any', weight: 2 },
+        { at: 'def:class_of_def', weight: 2 },
+        { at: 'def:instantiate', say: 'generics reified: a method per instance', weight: 1 },
+      ],
+    },
+    'Library.mli': { digest: '7dc332927fb0',
+      summary: "System's classes the programs name, ix's own: each member an OCaml function over values.",
+      capitals: [
+        { at: 'type:spec', say: 'a class described as data' },
+        { at: 'def:hooks', say: 'what only the machine can do, asked' },
+      ],
+      important: [
+        { at: 'comment:"Microsoft\'s cannot be run"', say: '33,768 methods; the survey asks 47', weight: 3 },
+        { at: 'type:smeth', say: 'a member: its key and its OCaml', weight: 2 },
+        { at: 'type:os', say: "the files and console, CLI's", weight: 1 },
+      ],
+    },
+    'Library.ml': { digest: 'f69c758b14e5',
+      summary: 'Object, String, Console, Math, the streams, the exceptions, List and Dictionary, as adapters.',
+      important: [
+        { at: 'def:hooks', say: 'filled by Machine and CLI', weight: 2 },
+        { at: 'def:format_double', say: ".NET's shortest round-trip text", weight: 2 },
+        { at: 'def:console', weight: 1 },
+        { at: 'def:exception_', say: 'a program may derive from these', weight: 1 },
+        { at: 'def:list', say: 'a growing array', weight: 1 },
+        { at: 'def:dictionary', say: 'a Hashtbl to entries, insertion order', weight: 1 },
+        { at: 'def:specs', say: 'every class, by name', weight: 3 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.parts('The runtime', [
+      ['Value.ml', 'the data: classes, values'],
+      ['Library.ml', "System's classes, described"],
+      ['Types.ml', 'the loader'],
+    ], [
+      ['Value.ml', 'Types.ml', 'what a class is'],
+      ['Library.ml', 'Types.ml', 'specs, loaded as classes'],
+      ['Value.ml', 'Library.ml', 'the values it computes on'],
+    ]),
+    skeletons.module('Types.ml', 'A class loaded', [
+      ['find_class', 'a name', ''],
+      ['class_of_def', "an assembly's TypeDef", 'or class_of_spec'],
+      ['layout', 'its fields placed', 'a class'],
+      ['vtable', 'its slots', 'laid out'],
+      ['meth_of_token', 'a call resolved', 'the class'],
+    ]),
+    skeletons.module('Library.ml', 'System, by hand', [
+      ['hooks', "the machine's services", ''],
+      ['inst', 'an instance member', 'used by'],
+      ['spec', 'a class', 'its members'],
+      ['console', 'Console', 'a spec'],
+      ['specs', 'every class, by name', 'all'],
+    ]),
+    skeletons.module('Value.ml', 'Objects as bytes and references', [
+      ['footprint', 'a type: bytes, references', ''],
+      ['make_store', 'an object made', 'its size'],
+      ['load', 'a field read', 'a store'],
+      ['store_at', 'a field written', 'a store'],
+    ]),
+  ],
+}

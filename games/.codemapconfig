@@ -1,0 +1,26 @@
+// games/: what the code map says of it (the code map's guidelines:
+// ~/github/ocaml-elm-playground's docs/claude_notes/codemapconfig_guidelines.md)
+local skeletons = import '../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The playground's games on lib_playground, and ix's own: mini-doom, mini-quake, mini-virtuaracing.",
+  dirs: {
+    tests: { summary: "Each game run by a script of keys: its last frame's sum, its sound's, two over UDP." },
+  },
+  skeletons: [
+    skeletons.parts('The games, by genre, on one library', [
+      ['puzzle/', 'Tetris, the playground in its simplest use'],
+      ['arcade/', 'Breakout, Cameltry, Tronscroll: juice, physics, netcode'],
+      ['shmup/', 'Missile Command, and its kit of shots'],
+      ['fps/', "Wolfenstein's raycaster, mini-doom and mini-quake"],
+      ['racing/', 'mini-virtuaracing: polygons by a renderer of its own'],
+      ['../lib_playground/', 'what they are all written with'],
+    ], [
+      ['puzzle/', '../lib_playground/', 'written with'],
+      ['arcade/', '../lib_playground/', 'written with'],
+      ['shmup/', '../lib_playground/', 'written with'],
+      ['fps/', '../lib_playground/', 'written with'],
+      ['racing/', '../lib_playground/', 'written with'],
+    ]),
+  ],
+}

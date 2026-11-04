@@ -9,11 +9,54 @@ local process_color = '#f05050';
 local console_color = '#50c8f0';
 local env_color = '#e173eb';
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   title: 'A whole computer system in small, readable OCaml programs, after Plan 9',
+  // the regions by kind, as the README's tables group them: the
+  // libraries blue, the toolchain orange, the machines and kernels red,
+  // the programs green, t-IX yellow
+  colors: {
+    'lib_core/': '#3060c0', 'lib_crypto/': '#3060c0', 'lib_compression/': '#3060c0',
+    'lib_executable/': '#3060c0', 'lib_code/': '#3060c0', 'lib_mime/': '#3060c0',
+    'lib_terminal/': '#3060c0', 'lib_graphics/': '#4070d0', 'lib_gui/': '#4070d0',
+    'lib_audio/': '#4070d0', 'lib_networking/': '#4070d0', 'lib_playground/': '#4070d0',
+    'languages/': '#d07020', 'generators/': '#d07020', 'assembler/': '#d07020',
+    'linker/': '#d07020', 'builder/': '#d07020', 'analyzers/': '#c08030',
+    'debuggers/': '#c08030', 'profilers/': '#c08030',
+    'kernels/': '#c03030', 'raspberry/': '#a02860', 'machine/': '#a02860',
+    'shell/': '#30a050', 'editors/': '#30a050', 'utilities/': '#30a050',
+    'typesetting/': '#30a050', 'version_control/': '#30a050', 'database/': '#30a050',
+    'windows/': '#40b070', 'browsers/': '#40b070', 'apps/': '#40b070',
+    'games/': '#40b070', 'networking/': '#30a050', 'examples/': '#309060',
+    'tiny/': '#d0b020',
+  },
   // the system end to end, a directory each: what makes a binary, what
   // runs it, what it runs
   skeletons: [
+    // m-IX's layers, bottom to top: each written with the ones under it
+    {
+      name: 'm-IX, layer on layer',
+      bones: [
+        { at: 'raspberry/', role: 'mini-qemu: the Pi, emulated' },
+        { at: 'kernels/', role: 'the kernels: mini-9pi, mini-xv6, and others after them' },
+        { at: 'lib_core/', role: 'what every program is written with, and mini-ml\'s libc' },
+        { at: 'lib_graphics/', role: 'the graphics stack: images, fonts, the display' },
+        { at: 'windows/', role: 'mini-rio and a desktop: windows as file servers' },
+        { at: 'lib_gui/', role: 'the widgets the applications are made of' },
+        { at: 'apps/', role: 'the applications: office, music, maps, PIM' },
+        { at: 'browsers/', role: 'mini-netscape: HTML, CSS, JavaScript' },
+        { at: 'languages/', role: 'the compilers that build it all, mini-ml first' },
+      ],
+      joints: [
+        { from: 'kernels/', to: 'raspberry/', say: 'runs on' },
+        { from: 'lib_core/', to: 'kernels/', say: 'system calls' },
+        { from: 'lib_graphics/', to: 'lib_core/', say: 'stands on' },
+        { from: 'windows/', to: 'lib_graphics/', say: 'draws with' },
+        { from: 'lib_gui/', to: 'lib_graphics/', say: 'draws with' },
+        { from: 'apps/', to: 'lib_gui/', say: 'written with' },
+        { from: 'browsers/', to: 'lib_gui/', say: 'written with' },
+        { from: 'languages/', to: 'lib_core/', say: 'compile, with its runtime' },
+      ],
+    },
     {
       name: 'C to a running program',
       bones: [
@@ -59,6 +102,16 @@ local env_color = '#e173eb';
     { name: 'the kernel: mini-9pi and tiny-kernel', files: ['kernels/9pi/', 'tiny/TinyKernel.ml'] },
     { name: 'git: mini-git and tiny-vcs', files: ['version_control/', 'tiny/TinyVCS.ml'] },
     { name: 'chidb: mini-chidb and tiny-db', files: ['database/', 'tiny/TinyDatabase.ml'] },
+    { name: 'rio: mini-rio and tiny-windows', files: ['windows/rio/', 'tiny/TinyWindows.ml'] },
+    { name: 'emacs: mini-emacs and tiny-kernel\'s emacs', files: ['editors/emacs/', 'tiny/TinyEditorScreen.ml'] },
+    { name: 'troff: mini-troff and tiny-troff', files: ['typesetting/troff/', 'tiny/TinyTroff.ml'] },
+    { name: 'the browser: mini-netscape and tiny-browser', files: ['browsers/', 'tiny/TinyBrowser.ml', 'tiny/TinyBrowser/'] },
+    { name: 'the office: mini-office and tiny-office', files: ['apps/office/', 'tiny/TinyOffice.ml', 'tiny/TinyOffice/'] },
+    { name: 'acid: mini-acid and tiny-debugger', files: ['debuggers/acid/', 'tiny/TinyDebugger.ml'] },
+    { name: 'prof: mini-prof and tiny-profiler', files: ['profilers/', 'tiny/TinyProfiler.ml'] },
+    { name: 'the playground: lib_playground and tiny-playground', files: ['lib_playground/', 'tiny/TinyLibPlayground.ml', 'tiny/TinyAppTetris.ml'] },
+    { name: 'the GUI: lib_gui and tiny-gui', files: ['lib_gui/', 'tiny/TinyLibGUI.ml'] },
+    { name: 'play: mini-play and tiny-play', files: ['apps/media/', 'tiny/TinyPlay.ml'] },
   ],
   // the anatomy (the X-ray's plates 3 and 4): where a program senses its
   // user, and where it breathes with the world, as ix writes them

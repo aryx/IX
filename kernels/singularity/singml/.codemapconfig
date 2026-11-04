@@ -1,0 +1,122 @@
+local skeletons = import "../../../skeletons.libsonnet";
+// kernels/singularity/singml/: what the code map says of it (the code map
+// is tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). A Linux program
+// (dune, and the mkfile), run on the host when the image is built.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-singml: Sing#'s checks as a host tool over mini-ml's parser: contracts compiled, programs vetted.",
+  files: {
+    'Main.ml': { digest: 'ac49f17fd9ef',
+      summary: "mini-singml's entry: Cap.main, then CLI.main.",
+    },
+    'CLI.mli': { digest: 'a8a821c44166',
+      summary: 'Its three jobs drawn: a contract to its module, a program refused if unsafe, a manifest to grants.',
+      important: [
+        { at: 'comment:"Its three jobs"', say: 'contract, -safe, manifest: each a pipeline', weight: 3 },
+        { at: "comment:\"A small language inside a big one's syntax\"", say: "OCaml's syntax read as another language", weight: 2 },
+        { at: 'def:main', weight: 1 },
+      ],
+    },
+    'CLI.ml': { digest: 'e00beef49b36',
+      summary: "Flags parsed, the file parsed by mini-ml's parser, then Manifest, Safe or Description and Output.",
+      capitals: [
+        { at: 'def:main', say: "mini-singml's main: one file, one of three jobs" },
+      ],
+      important: [
+        { at: 'def:parse', say: "mini-ml's own parser: no grammar here", weight: 2 },
+        { at: 'code:"Ok tree when !safe"', say: 'a program vetted: file:line, why', weight: 3 },
+        { at: 'code:"match Description.read name tree"', say: 'a contract read, then written out', weight: 2 },
+      ],
+    },
+    'Description.mli': { digest: '9c2f6f336668',
+      summary: "A contract's declaration read: variants are messages, one let rec the states, sends and receives.",
+      capitals: [
+        { at: 'def:read', say: 'a declaration to a contract: messages, states' },
+      ],
+      important: [
+        { at: 'type:t', weight: 2 },
+      ],
+    },
+    'Description.ml': { digest: 'b065dcdc07c3',
+      summary: "The tree interpreted by its shape: messages numbered, senders checked, states between messages named.",
+      important: [
+        { at: 'def:read', say: 'the whole reading, by the tree', weight: 3 },
+        { at: 'comment:"who sends a message: said once"', say: 'an end sends a message, always the same', weight: 2 },
+        { at: 'comment:"the states: the named ones first"', say: 'unnamed states between two messages', weight: 2 },
+        { at: 'def:message', weight: 1 },
+        { at: 'def:error', say: "errors in the contract's words, not OCaml's", weight: 1 },
+      ],
+    },
+    'Output.mli': { digest: '58364cf66c87',
+      summary: "A contract's module written in OCaml, what contracts/Pong.ml is by hand.",
+    },
+    'Output.ml': { digest: 'f6af11c16585',
+      summary: "The contract's value, the ends' abstract types, and per end a module of typed operations.",
+      important: [
+        { at: 'def:ml', weight: 2 },
+        { at: 'def:mli', weight: 1 },
+        { at: 'def:operation', say: 'a message, an operation of the end that sends it', weight: 2 },
+      ],
+    },
+    'Safe.mli': { digest: '4ed7dbed9c3d',
+      summary: "Is a program's source safe: no external, no Obj, only modules on a list -- Singularity's verifier.",
+      capitals: [
+        { at: 'def:check', say: "what keeps a process out of others' memory" },
+      ],
+      important: [
+        { at: 'def:allowed', weight: 2 },
+      ],
+    },
+    'Safe.ml': { digest: '6117a69035e9',
+      summary: 'The tree walked: every module named checked against the list, externals refused, a line each.',
+      important: [
+        { at: 'def:allowed', say: 'the modules a process may name', weight: 3 },
+        { at: 'def:check', weight: 3 },
+      ],
+    },
+    'Manifest.mli': { digest: 'd93e47f81606',
+      summary: "A program's manifest read: what of the machine it needs, given at its start and no more.",
+    },
+    'Manifest.ml': { digest: '83a948bf0f6e',
+      summary: "Registers and interrupts by name, written as the program's Given module and the kernel's grants.",
+      important: [
+        { at: 'type:resource', weight: 2 },
+        { at: 'def:read', weight: 2 },
+        { at: 'def:grants', say: "the kernel's list: a process's first handles", weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.cli('mini-singml: three jobs over one parser', [
+      ['CLI.ml:def:parse', "the file: mini-ml's parser"],
+      ['Description.ml:def:read', 'a contract read'],
+      ['Output.ml:def:ml', 'its module written'],
+    ]) + {
+      bones+: [
+        { at: 'Safe.ml:def:check', role: '-safe: a program vetted' },
+        { at: 'Manifest.ml:def:read', role: '-given, -grants: a manifest' },
+      ],
+      joints+: [
+        { from: 'CLI.ml:def:parse', to: 'Safe.ml:def:check', say: 'a program' },
+        { from: 'CLI.ml:def:parse', to: 'Manifest.ml:def:read', say: 'a manifest' },
+      ],
+    },
+    {
+      name: "A contract's declaration, read by its shape",
+      bones: [
+        { at: 'Description.ml:def:read', role: 'the items: types and one let rec' },
+        { at: 'Description.ml:def:message', role: 'a constructor: a message and what it carries' },
+        { at: 'Description.ml:def:ty_text', role: "an argument's type, said" },
+        { at: 'Description.ml:def:error', role: "a line and the contract's words" },
+        { at: 'Description.ml:type:t', role: 'the contract: messages, states' },
+      ],
+      joints: [
+        { from: 'Description.ml:def:read', to: 'Description.ml:def:message', say: 'each variant case' },
+        { from: 'Description.ml:def:message', to: 'Description.ml:def:ty_text' },
+        { from: 'Description.ml:def:read', to: 'Description.ml:def:error', say: 'a shape not allowed' },
+        { from: 'Description.ml:def:read', to: 'Description.ml:type:t', say: 'the result' },
+      ],
+    },
+  ],
+}

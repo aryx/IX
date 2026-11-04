@@ -1,0 +1,20 @@
+// lib_audio/formats/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: 'The files sounds and songs are kept in, decoded by our own code: WAV, MIDI, ABC, MOD, MP2/MP3, Ogg Vorbis.',
+  skeletons: [
+    skeletons.parts('Songs as notes, songs as samples', [
+      ['abc/', 'tunes as text: notes'],
+      ['midi/', 'messages with times: notes'],
+      ['mod/', 'patterns playing samples'],
+      ['wav/', 'samples, plain'],
+      ['mpeg_audio/', 'samples, perceptually coded'],
+      ['vorbis/', 'samples, perceptually coded'],
+    ], [
+      ['abc/', 'midi/', 'a tune written as MIDI'],
+    ]),
+  ],
+}

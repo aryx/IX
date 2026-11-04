@@ -1,0 +1,38 @@
+// lib_core/libc/os/plan9/: what the code map says of it (the code map: tinybox codemap,
+// ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "Plan 9's libc functions that are no kernel call there: stat's bytes, fork by rfork, getenv from /env.",
+  files: {
+    'stat.c': { digest: '8cf98813bfc2', summary: "dirfstat and dirfwstat over the kernel's fstat and fwstat, whose answer is bytes." },
+    'convM2D.c': { digest: '671d46869a57',
+      summary: "The bytes fstat gives unpacked into a Dir: principia's, 9P's stat format.",
+      important: [{ at: 'def:convM2D', weight: 2 }],
+    },
+    'convD2M.c': { digest: '2b42a049e8c3', summary: 'A Dir packed into the bytes fwstat takes.', important: [{ at: 'def:convD2M', weight: 2 }] },
+    'stat9p.h': { digest: '7be55e404e28', summary: "What the two conv files need of fcall.h: 9P's sizes and byte order." },
+    'dirread.c': { digest: 'fbb0240c90a6', summary: "dirread: a directory's read gives stat records, unpacked one by one." },
+    'fork.c': { digest: 'cb04287cd376', summary: 'fork as rfork(RFPROC|RFFDG|RFREND): no fork in the kernel.' },
+    'getenv.c': { digest: 'ded72edba6ab', summary: 'getenv: /env/name read; a list\'s words end with a 0 each.' },
+    'getpid.c': { digest: '202f8ea5349c', summary: "getpid: #c/pid read, the number in text." },
+    'getwd.c': { digest: '159ed5e04be6', summary: 'getwd: the directory opened, fd2path asked.' },
+    'access.c': { digest: 'd069988a09a8', summary: 'access: no such call, an open tried in the mode asked.' },
+    '_exits.c': { digest: 'fa4fe51f6b54', summary: '_exits is exits: the kernel has one way out.' },
+  },
+  skeletons: [
+    skeletons.parts("libc over Plan 9's kernel", [
+      ['stat.c', 'Dir by descriptor'],
+      ['convM2D.c', 'bytes to Dir'],
+      ['convD2M.c', 'Dir to bytes'],
+      ['dirread.c', 'a directory read'],
+      ['fork.c', 'rfork'],
+      ['getenv.c', '/env read'],
+    ], [
+      ['stat.c', 'convM2D.c', "fstat's bytes"],
+      ['stat.c', 'convD2M.c', "fwstat's bytes"],
+      ['dirread.c', 'convM2D.c', 'each record'],
+    ]),
+  ],
+}

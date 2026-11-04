@@ -1,0 +1,50 @@
+// raspberry/video/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The screen: the framebuffer the mailbox gave, shown in an SDL window or not at all.",
+  files: {
+    'Framebuffer.mli': { digest: '300f11cc43f0',
+      summary: 'The screen the mailbox gave out: a geometry and pixels in RAM, as RGB for a display or a PPM.',
+      important: [
+        { at: 'type:geometry', weight: 2 },
+        { at: 'def:configure', say: "the mailbox's answer", weight: 2 },
+      ],
+    },
+    'Framebuffer.ml': { digest: 'd39d2c3918b8', summary: 'RGB565, 24 and 32 bits read from RAM into RGB bytes.' },
+    'Display.ml': { digest: 'f8037c3baa1c', summary: 'The screen and the input devices as a record of functions: the board needs no SDL.' },
+    'Sdl_display.ml': { digest: '1df42ab8c49a',
+      summary: 'Display.t in an SDL window: a streaming texture, HID scancodes, a grabbed relative mouse, sound.',
+      capitals: [
+        { at: 'def:create', say: 'the window, the texture, the events' },
+      ],
+      important: [
+        { at: 'comment:"which are USB HID usages"', say: "SDL's scancodes are USB's: no table", weight: 3 },
+        { at: 'def:audio', say: "the PWM's samples to SDL's queue", weight: 2 },
+        { at: 'code:"let present"', say: 'a frame: RGB565 uploaded as it is', weight: 2 },
+        { at: 'code:"let grab on"', say: 'relative mode: the guest has the mouse', weight: 2 },
+        { at: 'code:"let poll ()"', say: "SDL's events to Display's", weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'A frame shown, an event read',
+      bones: [
+        { at: 'Display.ml:type:event', role: 'what the board is told: keys, moves, buttons' },
+        { at: 'Sdl_display.ml:def:create', role: 'the window and its functions' },
+        { at: 'Sdl_display.ml:code:"let present"', role: 'the framebuffer to the texture' },
+        { at: 'Sdl_display.ml:code:"let poll ()"', role: 'the host events, translated' },
+        { at: 'Sdl_display.ml:code:"let grab on"', role: 'the mouse grabbed or let go' },
+        { at: 'Framebuffer.ml', role: 'the guest pixels as RGB, for a PPM' },
+      ],
+      joints: [
+        { from: 'Sdl_display.ml:def:create', to: 'Sdl_display.ml:code:"let present"', say: 'show' },
+        { from: 'Sdl_display.ml:def:create', to: 'Sdl_display.ml:code:"let poll ()"', say: 'poll' },
+        { from: 'Sdl_display.ml:code:"let poll ()"', to: 'Display.ml:type:event', say: 'each event' },
+        { from: 'Sdl_display.ml:code:"let poll ()"', to: 'Sdl_display.ml:code:"let grab on"', say: 'a click, Ctrl-Alt-G' },
+      ],
+    },
+  ],
+}

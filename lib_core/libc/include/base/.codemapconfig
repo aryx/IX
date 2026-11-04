@@ -1,0 +1,24 @@
+// lib_core/libc/include/base/: what the code map says of it (the code map: tinybox codemap,
+// ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+local skeletons = import '../../../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "The base types the author adds to Plan 9's C: bool, byte, ord, error kinds; strings and qsort declared.",
+  files: {
+    'bool.h': { digest: '23efd6c91304', summary: "bool, true and false, which principia's mk, rc and 5c use (C23 made them keywords)." },
+    'byte.h': { digest: '5c60bfa7333c', summary: 'byte, clearer than a char for a byte.' },
+    'error.h': { digest: 'c4c1b88e2240', summary: 'error0, error1, errorneg1: which value is the error, in the type.' },
+    'ord.h': { digest: 'aa631d5ecde0', summary: "EQ, INF, SUP: comparisons named, not strcmp's -1." },
+    'sort.h': { digest: '919da8adb223', summary: 'qsort, declared.' },
+    'str.h': { digest: 'd91f390bcb9b', summary: "The string routines' declarations: strlen, strcmp, strchr, strdup..." },
+  },
+  skeletons: [
+    skeletons.parts('Base types, named for what they mean', [
+      ['bool.h', 'truth'], ['byte.h', 'a byte'], ['ord.h', 'an order'],
+      ['error.h', 'which value fails'], ['str.h', 'strings'],
+    ], [
+      ['ord.h', 'str.h', 'strcmp read as one'],
+    ]),
+  ],
+}

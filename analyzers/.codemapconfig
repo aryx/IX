@@ -1,0 +1,103 @@
+local skeletons = import '../skeletons.libsonnet';
+// analyzers/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+//
+// Not sources to the map: datalog/ (the rules, *.dl, read at run time:
+// points_to/, bugs/, dead.dl, exceptions.dl, capabilities.dl, liveness;
+// its README.md and FACTS.md say the relations), tests/ (programs to
+// analyze and their expected reports).
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
+  summary: "mini-analyze: a C or ML program as Datalog facts, mini-datalog's rules run on them, the answers reported.",
+  dirs: {
+    'datalog/': { summary: "The rules, in Datalog: points-to, the call graph, dead code, exceptions, capabilities, the bugs." },
+  },
+  files: {
+    'Main.ml': { digest: 'febe07ac3961',
+      summary: "mini-analyze's entry: Cap.main, then Analyze.main.",
+    },
+    'Analyze.mli': { digest: '3ed17871dc74',
+      summary: "mini-analyze presented: the front ends make facts, Datalog's rules the whole program's, reports.",
+      important: [
+        { at: 'comment:"One program of three parts that were three commands"', say: 'the pipeline, drawn', weight: 3 },
+        { at: 'comment:"Datalog or OCaml"', say: "what is a fixpoint is Datalog's; local is OCaml's", weight: 3 },
+        { at: 'comment:"Doop (Martin Bravenboer"', say: 'the same split, on Java', weight: 2 },
+        { at: 'def:main', weight: 1 },
+      ],
+    },
+    'Analyze.ml': { digest: '0c5baa0e8f04',
+      summary: "The flags pick the analysis; C or ML files made facts, the rules read and run, one report printed.",
+      capitals: [
+        { at: 'def:main', say: "mini-analyze's main: facts, rules, a report" },
+      ],
+      important: [
+        { at: 'def:main', weight: 3 },
+        { at: 'code:"C.C_front.file caps"', say: 'C: through mini-cc\'s front end', weight: 2 },
+        { at: 'code:"Ml_front.program caps"', say: "ML: through mini-ml's front end", weight: 2 },
+        { at: 'code:"Datalog_eval.run ~naive:false p"', say: 'the rules to a fixpoint', weight: 3 },
+        { at: 'code:"if !ambient then caps_report caps p"', say: 'one report by the flag', weight: 2 },
+        { at: 'def:start_facts', say: 'the units in the order they start', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.cli('mini-analyze: facts, rules, answers', [
+      ['c/C_front.ml:def:file', "a C file through mini-cc's front end"],
+      ['c/Facts.ml:def:func', "a function's pointer facts"],
+      ['Analyze.ml:code:"Datalog_eval.run ~naive:false p"', "the rules run: mini-datalog's evaluator"],
+      ['report/C_report.ml:def:report', 'the answers said'],
+    ], main='Main.ml', cli='Analyze.ml:def:main') + {
+      bones+: [
+        { at: 'ml/Ml_front.ml:def:program', role: "ML units through mini-ml's front end" },
+        { at: 'report/Bugs_report.ml:def:bugs_report', role: "-bugs: an ML program's bugs" },
+      ],
+      joints+: [
+        { from: 'Analyze.ml:def:main', to: 'ml/Ml_front.ml:def:program', say: 'ML files' },
+        { from: 'ml/Ml_front.ml:def:program', to: 'Analyze.ml:code:"Datalog_eval.run ~naive:false p"', say: 'facts' },
+        { from: 'Analyze.ml:code:"Datalog_eval.run ~naive:false p"', to: 'report/Bugs_report.ml:def:bugs_report', say: '-bugs' },
+      ],
+    },
+    {
+      name: 'Analyze.main: flags, facts, the rules, one report',
+      bones: [
+        { at: 'Analyze.ml:def:main', role: 'the flags: which analysis, which files' },
+        { at: 'Analyze.ml:def:dirs_from', role: "a library's directories, for ML" },
+        { at: 'Analyze.ml:code:"C.C_front.file caps"', role: 'each C file, its facts' },
+        { at: 'Analyze.ml:code:"Ml_front.program caps"', role: 'the ML files, their facts' },
+        { at: 'Analyze.ml:def:start_facts', role: 'the start order, as facts (-bugs)' },
+        { at: 'Analyze.ml:code:"Datalog_eval.run ~naive:false p"', role: 'the rules run' },
+        { at: 'Analyze.ml:code:"if !ambient then caps_report caps p"', role: 'the report the flag asks' },
+      ],
+      joints: [
+        { from: 'Analyze.ml:def:main', to: 'Analyze.ml:code:"C.C_front.file caps"', say: '.c files' },
+        { from: 'Analyze.ml:def:main', to: 'Analyze.ml:def:dirs_from' },
+        { from: 'Analyze.ml:def:dirs_from', to: 'Analyze.ml:code:"Ml_front.program caps"', say: '.ml files' },
+        { from: 'Analyze.ml:def:main', to: 'Analyze.ml:def:start_facts', say: '-start' },
+        { from: 'Analyze.ml:code:"C.C_front.file caps"', to: 'Analyze.ml:code:"Datalog_eval.run ~naive:false p"', say: 'facts' },
+        { from: 'Analyze.ml:code:"Ml_front.program caps"', to: 'Analyze.ml:code:"Datalog_eval.run ~naive:false p"', say: 'facts' },
+        { from: 'Analyze.ml:code:"Datalog_eval.run ~naive:false p"', to: 'Analyze.ml:code:"if !ambient then caps_report caps p"', say: 'answers' },
+      ],
+    },
+    {
+      name: "The analyzer's parts: two front ends, the rules, the reports",
+      bones: [
+        { at: 'c/', role: "C's facts, by mini-cc's front end" },
+        { at: 'ml/', role: "ML's facts, by mini-ml's front end, and the models" },
+        { at: 'datalog/', role: 'the rules, run by mini-datalog' },
+        { at: 'report/', role: 'the answers said, a report per analysis' },
+        { at: 'summaries/', role: "library functions' models, derived" },
+        { at: 'dotnet/', role: 'the .NET road: the rules compiled' },
+        { at: 'Analyze.ml', role: 'the program that joins them' },
+      ],
+      joints: [
+        { from: 'Analyze.ml', to: 'c/', say: 'C files' },
+        { from: 'Analyze.ml', to: 'ml/', say: 'ML files' },
+        { from: 'Analyze.ml', to: 'datalog/', say: 'the rules read' },
+        { from: 'Analyze.ml', to: 'report/', say: 'the answers' },
+        { from: 'summaries/', to: 'ml/', say: 'derived models' },
+        { from: 'dotnet/', to: 'report/', say: 'the same reports' },
+      ],
+    },
+  ],
+}

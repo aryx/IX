@@ -69,3 +69,6 @@ let first_line f =
   if f = "" then (close_in ic; failwith "no name")
   else (let l = input_line ic in close_in ic; l)
 let line = first_line "Toy.ml"
+
+(* a variable read, one never read and said so (bugs/unused.dl) *)
+let keep_first (x : int) (_y : int) = x

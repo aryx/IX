@@ -182,6 +182,16 @@ let local (v : var) : string =
   typed "vtype" name (Typing.var_type v.vid);
   name
 
+(* a variable read, its value used (said once): dead.dl's unused_param *)
+let reads : (string, unit) Hashtbl.t = Hashtbl.create 256
+let read (v : var) : string =
+  let n = local v in
+  if not (Hashtbl.mem reads n) then begin
+    Hashtbl.add reads n ();
+    fact "read" [ n ]
+  end;
+  n
+
 (* where a value no one reads goes *)
 let junk () : string = !unit_name ^ ":_"
 
@@ -474,18 +484,29 @@ let rec is_function (x : expr) : bool =
   | _ -> false
 
 (* the pattern's variables, from the value in src *)
+(* a local variable bound, in the function being read, _ before its
+ * name saying "not read, meant": bugs/unused.dl's (OCaml's warnings 26
+ * and 27, by rules) *)
+let exported_pattern : bool ref = ref false
+let bound (v : var) : unit =
+  let n = local v in
+  if not !exported_pattern then begin
+    fact "bound_var" [ !inside; n ];
+    if v.vname <> "" && v.vname.[0] = '_' then fact "underscore" [ n ]
+  end
+
 let rec bind (p : pattern) (src : string) : unit =
   let part (field : string) (p : pattern) : unit =
     match p with
     | Pany | Pconst _ | Prange _ -> ()
     | _ ->
-        let t = match plain p with Some v -> local v | None -> temp () in
+        let t = match plain p with Some v -> bound v; local v | None -> temp () in
         fact "assign_load_field" [ t; src; field ];
         if plain p = None then bind p t in
   match p with
   | Pany | Pconst _ | Prange _ -> ()
-  | Pvar v -> fact "assign" [ local v; src ]
-  | Palias (p, v) -> fact "assign" [ local v; src ]; bind p src
+  | Pvar v -> bound v; fact "assign" [ local v; src ]
+  | Palias (p, v) -> bound v; fact "assign" [ local v; src ]; bind p src
   | Pconstraint (p, _) -> bind p src
   | Por (p, q) -> bind p src; bind q src
   | Ptuple ps ->
@@ -623,7 +644,7 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
     List.iter (fun ((field, e) : string * expr) -> fact "assign_store_field" [ dst; field; operand e ]) fields in
   match x.e with
   | Econst _ -> literal x; scalar dst
-  | Evar (Local v) -> fact "assign" [ dst; local v ]
+  | Evar (Local v) -> fact "assign" [ dst; read v ]
   | Evar (Global g) -> fact "assign" [ dst; global g.gsym !inside ]; typed "vtype" g.gsym g.gtype
   | Evar (Prim (p, arity, t)) -> fact "assign_address" [ dst; prim p arity t ]
   | Econstraint (e, _) -> flow name e dst
@@ -938,7 +959,7 @@ and call (x : expr) (f : expr) (args : expr list) (dst : string) : unit =
 (* the variable e's value is in: its own if it is one, or a new one *)
 and operand (x : expr) : string =
   match x.e with
-  | Evar (Local v) -> local v
+  | Evar (Local v) -> read v
   | Evar (Global g) -> typed "vtype" g.gsym g.gtype; global g.gsym !inside
   | Econstraint (e, _) -> operand e
   | Econst _ -> literal x; constant ()
@@ -954,15 +975,22 @@ and lets (bindings : (pattern * expr) list) (exported : (var * global) list) : u
     (fun ((p, e) : pattern * expr) ->
       match plain p with
       | Some v ->
-          let name : string = match List.assq_opt v exported with Some g -> g.gsym | None -> local v in
+          let name : string = match List.assq_opt v exported with Some g -> g.gsym | None -> bound v; local v in
           flow (Some name) e (local v)
-      | None -> bind p (operand e))
+      | None ->
+          (* (a toplevel's pattern, let a, b = ...: the unit's, other
+           * units read them, as OCaml does not say) *)
+          let src = operand e in
+          exported_pattern := exported <> [];
+          bind p src;
+          exported_pattern := false)
     bindings
 
 let unit_ (name : string) (items : item list) : string =
   Buffer.clear out;
   Hashtbl.reset prims;
   Hashtbl.reset mentioned;
+  Hashtbl.reset reads;
   unit_name := name;
   temps := 0;
   calls := 0;

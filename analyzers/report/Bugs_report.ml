@@ -27,6 +27,32 @@ let bugs_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
           Some (Printf.sprintf "%s: physeq: in %s, %s of %s made there: always %s" (site i)
                   (Ml_report.ml_function f) op what (if op = "==" then "false" else "true")))
       (tuples "always" 4) in
+  (* a cache's identity of a value changed in place: a line a comparison,
+   * the first object (where it is made) *)
+  let stale = Hashtbl.create 17 in
+  List.iter
+    (fun (t : string array) ->
+      if Hashtbl.mem Ml_front.own (unit_of t.(0)) then begin
+        let l = match Hashtbl.find_opt stale (t.(0), t.(1)) with Some l -> l | None -> [] in
+        Hashtbl.replace stale (t.(0), t.(1)) (t.(2) :: l)
+      end)
+    (tuples "stale" 3);
+  let physeq =
+    physeq
+    @ Hashtbl.fold
+        (fun ((i, f) : string * string) (hs : string list) acc ->
+          let h = List.hd (List.sort compare hs) in
+          (* (Before:block1@11: made at line 11) *)
+          let h =
+            match String.index_opt h '@', String.index_opt h ':' with
+            | Some a, Some c -> String.sub h 0 c ^ ":" ^ String.sub h (a + 1) (String.length h - a - 1)
+            | _ -> h in
+          Printf.sprintf
+            "%s: physeq: in %s, a kept value compared by identity with one \
+             changed in place (%s): its change not seen"
+            (site i) (Ml_report.ml_function f) (site h)
+          :: acc)
+        stale [] in
   let handlers = Hashtbl.create 17 in
   List.iter (fun (t : string array) -> Hashtbl.replace handlers t.(0) ()) (tuples "in_handler" 2);
   let own (i : string) : bool = Hashtbl.mem Ml_front.own (unit_of i) in
@@ -281,13 +307,30 @@ let bugs_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
             (site a) f (site r) (site c) (exn_name e) more
           :: acc)
       leaks [] in
+  (* a variable never read (unused.dl): Main:x/12, x *)
+  let unused =
+    List.filter_map
+      (fun (t : string array) ->
+        let f = t.(0) and v = t.(1) in
+        (* (the variable's unit: Before:b/12; a function is Before.first) *)
+        if not (own v) then None
+        else
+          let name =
+            match String.index_opt v ':', String.rindex_opt v '/' with
+            | Some a, Some z when z > a -> String.sub v (a + 1) (z - a - 1)
+            | _ -> v in
+          Some
+            (Printf.sprintf "%s: unused: in %s, %s is never read (_%s if meant)"
+               (line_of f) (fun_of (unit_of f) f) name name))
+      (tuples "unused_var" 2) in
+  let unused = List.sort_uniq compare unused in
   let order = List.sort_uniq compare order in
   let sharing = List.sort_uniq compare sharing in
   let race = List.sort_uniq compare race and wait = List.sort_uniq compare wait in
   let all =
     List.sort_uniq compare
       (physeq @ stack @ swallowed @ crash @ int31 @ order @ sharing @ init @ link
-       @ race @ wait @ leak) in
+       @ race @ wait @ leak @ unused) in
   List.iter (fun b -> Console.print caps ("bug? " ^ b ^ "\n")) all;
   (* (the analyses that report, by their number: within 80 columns) *)
   let counts =
@@ -297,7 +340,7 @@ let bugs_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
       [ ("physeq", physeq); ("stack", stack); ("swallowed", swallowed);
         ("crash", crash); ("int31", int31); ("order", order);
         ("sharing", sharing); ("init", init); ("link", link); ("race", race);
-        ("wait", wait); ("leak", leak) ] in
+        ("wait", wait); ("leak", leak); ("unused", unused) ] in
   Console.print caps
     (Printf.sprintf "%d bugs?%s\n" (List.length all)
        (if counts = [] then "" else " (" ^ String.concat ", " counts ^ ")"))

@@ -26,16 +26,22 @@ generators/lex/Output.ml:51: stack: Output.value calls itself, not a tail call, 
 kernels/9pi/buses/user/usbd/Usbd.ml:39: swallowed: in loop, Unix.Unix_error silenced, a constant answered
 kernels/9pi/devices/keyboard/Latin1.ml:133: stack: Latin1.take calls itself, not a tail call, over a list
 kernels/9pi/devices/screen/Devdraw.ml:204: stack: drop calls itself, not a tail call, over a list
+kernels/9pi/devices/screen/Devdraw.ml:316: unused: in Devdraw.drawmesg, bg is never read (_bg if meant)
+kernels/9pi/devices/storage/Devsd.ml:139: unused: in Devsd:fun at line 139, nc is never read (_nc if meant)
 kernels/9pi/devices/storage/user/fdisk/Fdisk.ml:74: swallowed: in Fdisk:fun at line 70, Unix.Unix_error silenced, a constant answered
 kernels/9pi/devices/sys/Devarch.ml:77: stack: go calls itself, not a tail call, over a list
 kernels/9pi/devices/sys/Devenv.ml:45: stack: replace calls itself, not a tail call, over a list
+kernels/9pi/devices/sys/Devenv.ml:56: unused: in Devenv:fun at line 56, nc is never read (_nc if meant)
 kernels/9pi/devices/sys/Devproc.ml:98: stack: go calls itself, not a tail call, over a list
+kernels/9pi/devices/sys/Devsrv.ml:33: unused: in Devsrv:fun at line 33, nc is never read (_nc if meant)
 kernels/9pi/devices/sys/Devsys.ml:21: stack: go calls itself, not a tail call, over a list
 kernels/9pi/files/Kchan.ml:88: stack: try_ calls itself in a try's handler: no tail call by mini-ml
 kernels/9pi/init/Main.ml:67: crash: in Main.guard, Errors.Error caught by all, the handler raising Failure
 kernels/9pi/lib_graphics/lib_memdraw/Memchan.ml:21: stack: place calls itself, not a tail call, over a list
+kernels/9pi/lib_graphics/lib_memdraw/Memgeneral.ml:25: unused: in Memgeneral.general, grey is never read (_grey if meant)
 kernels/9pi/lib_graphics/lib_memlayer/Memlayer.ml:50: stack: front calls itself, not a tail call, over a list
 kernels/9pi/lib_graphics/lib_memlayer/Memshape.ml:38: stack: pairs calls itself, not a tail call, over a list
+kernels/9pi/lib_graphics/lib_memlayer/Memshape.ml:79: unused: in pairs, inside is never read (_inside if meant)
 kernels/9pi/network/Etherusb.ml:49: int31: in Etherusb.rr, a char's code lsl 24, 32 bits: not on the Pi 1's 31 bits
 kernels/9pi/processes/Exec.ml:27: int31: in Exec.be32, a char's code lsl 24, 32 bits: not on the Pi 1's 31 bits
 kernels/9pi/syscalls/arm/Syscall.ml:80: int31: in Syscall.trace/1, a char's code lsl 24, 32 bits: not on the Pi 1's 31 bits
@@ -155,6 +161,8 @@ languages/smalltalk/compiler/St_compile.ml:527: stack: St_compile.gen_block_cont
 languages/smalltalk/compiler/St_compile.ml:577: stack: St_compile.gen_closure calls itself, not a tail call, over a list
 languages/smalltalk/compiler/St_lexer.ml:52: stack: go calls itself, not a tail call, over a list
 languages/smalltalk/compiler/St_lexer.ml:55: stack: go calls itself, not a tail call, over a list
+languages/smalltalk/highlight/Highlight_st.ml:180: unused: in Highlight_st:fun at line 180, name is never read (_name if meant)
+languages/smalltalk/highlight/Highlight_st.ml:248: unused: in method_, selector is never read (_selector if meant)
 languages/smalltalk/highlight/Highlight_st.ml:285: stack: go calls itself, not a tail call, over a list
 languages/tiger/dotnet/Tiger_emit.ml:354: stack: Tiger_emit.load calls itself, not a tail call, over a list
 languages/tiger/dotnet/Tiger_emit.ml:355: stack: Tiger_emit.load calls itself, not a tail call, over a list

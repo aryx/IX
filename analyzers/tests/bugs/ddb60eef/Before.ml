@@ -19,7 +19,7 @@ let basic_sync (genev : (int ref -> Condition.t -> behavior) array) : int =
   bev.(!performed).result ()
 
 let () =
-  let ev (performed : int ref) (c : Condition.t) : behavior =
+  let ev (performed : int ref) (_c : Condition.t) : behavior =
     { poll = (fun () -> false); suspend = (fun () -> ());
       result = (fun () -> !performed) } in
   print_int (basic_sync [| ev |])

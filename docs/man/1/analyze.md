@@ -59,7 +59,9 @@ program's library, lib_core's units it names, is read with it.
 :    An ML program's bugs that may be, each line named by its
      analysis (`docs/plans/plan_bug_analyses.md`): `physeq`, an `==`
      or `!=` with a side made in the comparison (`bugs/physeq.dl`), whose
-     answer is known before it runs; `stack`, a recursion the stack
+     answer is known before it runs, or comparing a value kept (a
+     cache's last) of a type the function does not know with one
+     changed in place; `stack`, a recursion the stack
      may not hold (`bugs/stack.dl`): a function calling itself back in a
      `try`, its result the function's, which mini-ml makes no tail
      call, or not by a tail call over a list, a frame an element;
@@ -85,7 +87,10 @@ program's library, lib_core's units it names, is read with it.
      `Condition.wait` not in a `while` (`bugs/races.dl`); `leak`, a
      channel or a lock taken and given back in one function, but not
      when a call on a path between raises (`bugs/pairs.dl`, over the
-     program's functions in mini-ml's SSA form). C files: the
+     program's functions in mini-ml's SSA form); `unused`, a local
+     variable never read, its name not `_x`: OCaml's warnings 26 and
+     27 by rules (`bugs/unused.dl`), for what no compiler checks (the
+     kernel's ML). C files: the
      report without an option, its `bug?` lines `bugs/pointers.dl`'s.
      C files and ML ones (mini-ml's runtime and lib_core: what
      `analyzers/datalog/tests/raises.sh` gives): each external's

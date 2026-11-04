@@ -1,0 +1,2 @@
+bug? analyzers/tests/bugs/282b689b/Before.ml:10: physeq: in paint, a kept value compared by identity with one changed in place (analyzers/tests/bugs/282b689b/Before.ml:21): its change not seen
+1 bugs? (physeq 1)

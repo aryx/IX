@@ -1,0 +1,45 @@
+% A variable nothing reads (docs/plans/plan_bug_analyses.md, A7):
+% mini-analyze -bugs, over the facts of Closure_facts (FACTS.md):
+%   bound_var(F, V)   in F, a pattern binds the local V: a parameter's,
+%                     a case's, a let's ((a, b) two, x as y two)
+%   read(V)           V is read somewhere: an expression names it, in
+%                     its function or in a closure that captures it
+%   underscore(V)     V's name starts with _: not read, and meant so
+% and says:
+%   unused_var(F, V)  F's variable V is never read, and not said so
+%
+%     let ask caps ~address ~port packet (_seconds : float) = (70b6b2bf^,
+%       ... Unix.read data b 0 1500 ...                       Plan 9's
+%                                                              Udp.ask)
+%
+% A teaching exercise: OCaml's warnings 26 and 27 ("suspicious" and
+% "innocuous unused variable": a let's or an as's, any other pattern's)
+% as three facts and a negation. ix builds with them as errors (dune's
+% dev profile), so on ix this says nothing but where a dune file turns
+% them off; Udp.ask's _seconds, the timeout it did not keep (a time server
+% that did not answer held mini-9pi's boot), was silenced on purpose,
+% "(Not done: giving up after [seconds].)", and is quiet here too.
+% Checked against the compiler: languages/smalltalk/highlight turns 26
+% and 27 off (its text the playground's), and OCaml with them on says
+% two variables there, a parameter's at line 180 and a let's pair's at
+% 257: these rules the same two.
+%
+% design:
+% A read is a variable named as a value (Closure_facts' operand, its
+% flow's Evar): what the compiler's own check sees, the text, not a
+% value's flow: x read only to be given back to the function itself
+% (let rec f x n = if n = 0 then 0 else f x (n - 1)) is read, as OCaml
+% says. A toplevel's variable is the unit's, exported, not said. A rule
+% could say more than the compiler: a parameter whose every read is the
+% same position of a call of its own function carries nothing (an exercise:
+% argument(I, K, V) with target(I, F), and no other read of V, needs
+% read facts with their sites). The whitelist is a fact of the name, not
+% of the rule: Datalog compares no strings' prefixes.
+%
+% others:
+% GCC's -Wunused-parameter (in -Wextra, not -Wall: C19, the runtime's
+% sys_open ignoring its flags, was not said); Plan 9's compilers say
+% "not used" and USED(x) silences it, as _ does in OCaml, Go's _ and
+% Rust's _x the same convention.
+
+unused_var(F, V) :- bound_var(F, V), \+ read(V), \+ underscore(V).

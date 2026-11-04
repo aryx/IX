@@ -5,16 +5,25 @@
 %   fresh_operand(I, What)  ... and one of its sides is made there: a
 %                           constructor applied (What its name), a tuple,
 %                           a record, an array, a string, a float
+%   compared(I, V)          V is one of I's two sides
 % and says:
 %   always(I, F, Op, What)  the answer of I is known before it runs:
 %                           false for ==, true for !=
+%   stale(I, F, H)          I compares by identity a value kept (read from
+%                           a field that is given it, a cache's last one)
+%                           with H, which is changed in place: the same
+%                           block before and after the change, I does not
+%                           see it
 %
 %     if !drawn != Some !model then paint ()      (eb5378a5^, Window.ml)
 %
 % Some !model is a block made at that line, so no other value is it, and
 % the test is always true: the screen was painted again each tick, the
 % program never waited. Meant was what = says, or the model compared:
-% (match !drawn with Some m -> m != !model | None -> true).
+% (match !drawn with Some m -> m != !model | None -> true). Which then
+% never saw mini-emacs's model change: its top window, one record whose
+% fields a key changes, so the screen was not painted again after the
+% first (282b689b; the fix, a box made again after each key).
 %
 % design:
 % The answer is read off the program's text, no fixpoint: what is made in
@@ -25,6 +34,17 @@
 % other half of eb5378a5) needs the pointer analysis, store(V, Fld, _)
 % and pts(V, S) for the S compared. A constant constructor and [] are
 % numbers, not blocks, and a closure may be static: none is fresh.
+% stale needs points-to: a side read from a field (!model) that the
+% comparing function's own store_in gives the object the other side may
+% be (the cache's refresh, drawn := Some !model: a box's field, through
+% the Some), and a store_in into that object (a field set, not a block's
+% making). Identity on a value
+% changed in place is often right (a graph's nodes): what is wrong is a
+% cache of the last one seen, its comparison meant to say "changed", in
+% a function that does not know the value's type ('model): the first
+% sweep's 16 lines were identities meant, rio's windows, ed's marks.
+% A picture changed by its bytes (fbfc0317's) is not seen: Bytes'
+% writes are no store_in.
 %
 % others:
 % OCaml's compiler warns of none of this; Java's == on a new Integer, or
@@ -36,3 +56,20 @@
 % (OOPSLA 2004 companion).
 
 always(I, F, Op, W) :- phys_compare(I, F, Op), fresh_operand(I, W).
+
+% (identity of a value whose type the function does not know, 'model:
+% whether it is changed in place is the caller's, and identity cannot say
+% "changed"; a function that knows the type, a window, a frame, a line,
+% means identity, "another one")
+generic_compare(I, F, V) :- phys_compare(I, F, _), compared(I, V), \+ vtype(V, _).
+% (V read from C, an object the comparing function itself writes into a
+% place: the last value kept, put there again, a cache's refresh, Some m
+% in drawn)
+refreshed(C, F) :- generic_compare(_, F, _), store_in(_, _, W, F), pts(W, C).
+keeps(I, V, H) :-
+  generic_compare(I, F, V), assign_load_field(V, K, _), pts(K, C),
+  refreshed(C, F), pts(V, H).
+changed_in_place(H) :- store_in(O, _, _, _), pts(O, H).
+stale(I, F, H) :-
+  keeps(I, V, H), phys_compare(I, F, _), compared(I, V2), V2 \= V,
+  pts(V2, H), changed_in_place(H), reach(F).

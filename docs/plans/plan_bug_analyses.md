@@ -21,8 +21,8 @@ before the fix (`git show FIX^:path`) and stay quiet on the fixed code.
 Then it runs over ix through the sweep, as `-dead`, `-caps` and `-exn` do.
 
 **Status: A6's first half, A1, A3 and A2 done (2026-11-03), A4's first
-step, A5, A10, A8's handlers and A9's exceptions (2026-11-04), the rest
-planned.**
+step, A5, A10, A8's handlers, A9's exceptions and A6's second half
+(2026-11-04), A7 the compilers', the rest planned.**
 `mini-analyze -bugs` runs `bugs/physeq.dl` (`==` or `!=` with a side
 made in the comparison), `bugs/stack.dl` (a loop through a `try`, a
 frame a list's element), `bugs/swallowed.dl` (an error of the
@@ -35,7 +35,7 @@ raises, over mini-ml's SSA). Each
 reports its bugs on the code before the fix and not after
 (`analyzers/tests/bugs/`: eb5378a5, 021c562b, f46346db, c5086383,
 4f00134c, 4436f60d, e92ae1ec, d22c56e4, 410d04a2, 70b6b2bf,
-6264d271, 11c5d5f0, ddb60eef, f7b1aef0). On today's ix,
+6264d271, 11c5d5f0, ddb60eef, f7b1aef0, 282b689b). On today's ix,
 `physeq` finds nothing; `stack` gives 145 reports on the 44 programs
 and 9 on the kernel, `swallowed` 11 on the programs, `int31` 29,
 `order` 2, `race` 1, `leak` 1 (`analyzers/datalog/tests/bugs_ix.txt`),
@@ -477,6 +477,24 @@ then misses the change: mini-emacs's model behind a cache. This needs
 `pts`, so `-bugs` would then run the pointer analysis (its cost, as
 `-dead`'s).
 
+**Done, the second half** (2026-11-04), `physeq`'s `stale(I, F, H)`:
+`==` or `!=` comparing a value kept, read from an object the comparing
+function itself writes into a place (a cache's refresh, `drawn := Some
+!model`), with H, changed in place somewhere (A8's `store_in`), in a
+function that does not know the value's type (a type variable,
+`'model`). The facts: `compared(I, V)`, the comparison's two sides.
+The last condition is the sweep's: without it, 16 lines on the 44
+programs, each identity meant (rio's window list, ed's marks, a
+selection's text, mini-emacs's buffers and frames: "another one", not
+"changed"), and mini-cc's `-bugs` past the sweep's 180 s; with it, the
+relations restricted to those comparisons, nothing on ix, mini-cc 28 s.
+Test `analyzers/tests/bugs/282b689b/` (mini-emacs's model, one record
+changed in place, behind the generic painter's `m != !model`: reported;
+the fix, a box made again, and a window list's identity: not).
+fbfc0317 is not seen: its picture changed by its bytes, which are no
+`store_in`. 14 lines of rules, 3 of facts, 25 of report. The kernel's
+run is `analyzers/datalog/tests/kernel.sh` now, in the tree.
+
 ### A7. A field that nothing reads, for ML too (`dead.dl`)
 
 **Meant to re-find:** `from_docs.md`'s class 8. mini-asm parsed a
@@ -497,6 +515,42 @@ in a function reached; but the facts say no read of a value used only
 by arithmetic (`n + 1` writes nothing of `n`), so it needs the
 `-flow` facts' `use`, whose names are SSA's, not `Closure_facts`'. Put
 after the others.
+
+**Not an analysis: the compilers' (2026-11-04).** The author: "I
+thought the ocaml checker was already checking for unused parameter,
+and that you had to use the _prefix to whitelist them". It does:
+warning 27, an error in dune's dev profile, which ix keeps (only
+`assembler/highlight` turns 26 and 27 off). C108's diff (70b6b2bf)
+shows it: Plan 9's `Udp.ask` had `_seconds`, silenced on purpose with
+"(Not done: giving up after [seconds].)": known, not hidden. C19,
+`sys_open`'s flags, is the runtime's C, compiled by mini-cc; gcc's
+`-Wall` would not have said it either (`-Wunused-parameter` is
+`-Wextra`'s). Its place is the compiler: kencc's "not used" warning,
+silenced by `USED(x)`, in mini-cc's front end, if it has not it (not
+checked). A local check of the syntax, the compiler's (`Analyze.mli`).
+
+**Done anyway, as a teaching exercise** (2026-11-04; the author: "let's
+implement also A7 as datalog, with the _prefix whitelisting too, as a
+teaching exercise"): `bugs/unused.dl`, `-bugs`' `unused`, OCaml's
+warnings 26 and 27 as one negation over three facts of Closure_facts:
+`bound_var(F, V)` (each local a pattern binds: a parameter's, a case's,
+a let's; not a toplevel's, the unit's), `read(V)` (an expression names
+it), `underscore(V)` (the name's `_`, the whitelist a fact, since
+Datalog compares no prefixes). Checked against the compiler by
+`analyzers/datalog/tests/unused_ocaml.sh` (a make test job): the same
+names as OCaml's 26 and 27 on the test's files and on the two
+highlighters whose dune turns them off (Highlight_st's `name` and
+`selector`, none in Highlight_asm). On the 44 programs: those two, and
+nothing else, warnings being errors there. On the kernel, which dune
+does not build and no compiler of ix warns for: 6, harmless leftovers
+(Devdraw's `bg`, three devices' `walk` not using `nc`, Memshape's
+`inside`, Memgeneral's `grey`: its RGB2K made for every pixel, a grey
+destination or not). Test `analyzers/tests/bugs/unused/` (Udp.ask's
+`_seconds` quiet, the same unsaid reported, a pair's second; read by
+arithmetic only, in a closure, given back to itself: not). A line is
+the function's, not the variable's (a pattern has no line in the
+facts): Highlight_st's `selector` at 248, OCaml's 257. 1 line of rule,
+25 of facts, 15 of report, 40 of check.
 
 ### A8. Races with handlers and threads (`races.dl`)
 
@@ -717,7 +771,7 @@ reproduction.
 | # | analysis | new facts | lines (est.) | bugs re-found | first |
 |---|---|---|---:|---:|---|
 | 1 | A6 physical equality, a side made there | `phys_compare`, `fresh_operand` | 50 | 1 | done |
-| 2 | A6, identity of what is changed in place | `mutates` | 20 | ~3 | `-bugs` then runs `pts` |
+| 2 | A6, identity of what is changed in place | `compared` (and A8's `store_in`) | 40 | 1 | done |
 | 3 | A1 deep recursion | `tail`, `tail_but_try`, `in_handler`, `list_like` | 65 | 3 | done |
 | 4 | A3 errors swallowed | `silent`, `silent_all`, `primitive` | 60 | 3 | done |
 | 5 | A2 roots and primitives | `root_of`, primitive `raise_of` | 25 | ~5 | A8 uses its roots |
@@ -728,7 +782,7 @@ reproduction.
 | 10 | A9 pairs on every path | `site_key`, the SSA's `site` | 125 | 1 | exceptions done, over mini-ml's SSA |
 | 11 | A4 step 2, intervals | `range` (ML) | 200 | ~5 | after numbers in Datalog |
 | 12 | A11 layout, evaluation order | columns, purity | 40+ | ~3 | |
-| 13 | A7 unused parameters (fields: `-dead`'s) | SSA `use` joined | 20 | ~2 | |
+| 13 | A7 unused variables (fields: `-dead`'s) | `bound_var`, `read`, `underscore` | 40 | 0 | the compilers' (OCaml's 26 and 27); done as an exercise, checked against OCaml |
 
 These estimates come from reading the existing rule files (`bugs/pointers.dl` is
 53 lines and `exceptions.dl` 100) and are not measured. The counts of

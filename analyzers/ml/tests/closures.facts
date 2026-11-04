@@ -19,6 +19,7 @@ curried('Kit.iter\'', 'Kit.iter').
 var_in('Kit:f/2', 'Kit.iter').
 vtype('Kit:f/2', '->').
 vfull('Kit:f/2', '(int -> unit)').
+bound_var('Kit.iter', 'Kit:f/2').
 assign('Kit:f/2', 'Kit.iter:arg').
 closure('Kit.iter\'', 'Kit', '7').
 alloc_in('Kit.iter\'', 'Kit').
@@ -35,22 +36,29 @@ var_in('Kit.iter\':ret', 'Kit.iter\'').
 var_in('Kit:xs/3', 'Kit.iter\'').
 vtype('Kit:xs/3', 'list').
 vfull('Kit:xs/3', 'int list').
+bound_var('Kit.iter\'', 'Kit:xs/3').
 assign('Kit:xs/3', 'Kit.iter\':arg').
+read('Kit:xs/3').
 scalar('Kit.iter\':ret').
 var_in('Kit:x/4', 'Kit.iter\'').
 vtype('Kit:x/4', 'int').
 vfull('Kit:x/4', 'int').
+bound_var('Kit.iter\'', 'Kit:x/4').
 assign_load_field('Kit:x/4', 'Kit:xs/3', 'con:::.0').
 var_in('Kit:rest/5', 'Kit.iter\'').
 vtype('Kit:rest/5', 'list').
 vfull('Kit:rest/5', 'int list').
+bound_var('Kit.iter\'', 'Kit:rest/5').
 assign_load_field('Kit:rest/5', 'Kit:xs/3', 'con:::.1').
 var_in('Kit:f/2', 'Kit.iter\'').
+read('Kit:f/2').
 in_function('Kit:8:c1', 'Kit.iter\'').
 site_key('Kit:8:c1', 'Kit:327-328').
 call_indirect('Kit:8:c1', 'Kit:f/2').
+read('Kit:x/4').
 argument('Kit:8:c1', 1, 'Kit:x/4').
 var_in('Kit:iter/1', 'Kit.iter\'').
+read('Kit:iter/1').
 var_in('Kit:t1', 'Kit.iter\'').
 in_function('Kit:8:c2', 'Kit.iter\'').
 site_key('Kit:8:c2', 'Kit:332-336').
@@ -61,6 +69,7 @@ in_function('Kit:8:c3', 'Kit.iter\'').
 site_key('Kit:8:c3', 'Kit:332-336').
 tail('Kit:8:c3').
 call_indirect('Kit:8:c3', 'Kit:t1').
+read('Kit:rest/5').
 argument('Kit:8:c3', 1, 'Kit:rest/5').
 call_ret('Kit:8:c3', 'Kit.iter\':ret').
 global_def('Kit.iter', 'Kit:init').
@@ -87,6 +96,7 @@ curried('Kit.fold\'', 'Kit.fold').
 var_in('Kit:f/7', 'Kit.fold').
 vtype('Kit:f/7', '->').
 vfull('Kit:f/7', '(int -> (int -> int))').
+bound_var('Kit.fold', 'Kit:f/7').
 assign('Kit:f/7', 'Kit.fold:arg').
 closure('Kit.fold\'', 'Kit', '10').
 alloc_in('Kit.fold\'', 'Kit').
@@ -105,6 +115,7 @@ curried('Kit.fold\'\'', 'Kit.fold\'').
 var_in('Kit:acc/8', 'Kit.fold\'').
 vtype('Kit:acc/8', 'int').
 vfull('Kit:acc/8', 'int').
+bound_var('Kit.fold\'', 'Kit:acc/8').
 assign('Kit:acc/8', 'Kit.fold\':arg').
 closure('Kit.fold\'\'', 'Kit', '10').
 alloc_in('Kit.fold\'\'', 'Kit').
@@ -121,23 +132,30 @@ var_in('Kit.fold\'\':ret', 'Kit.fold\'\'').
 var_in('Kit:xs/9', 'Kit.fold\'\'').
 vtype('Kit:xs/9', 'list').
 vfull('Kit:xs/9', 'int list').
+bound_var('Kit.fold\'\'', 'Kit:xs/9').
 assign('Kit:xs/9', 'Kit.fold\'\':arg').
+read('Kit:xs/9').
 var_in('Kit:acc/8', 'Kit.fold\'\'').
+read('Kit:acc/8').
 assign('Kit.fold\'\':ret', 'Kit:acc/8').
 var_in('Kit:x/10', 'Kit.fold\'\'').
 vtype('Kit:x/10', 'int').
 vfull('Kit:x/10', 'int').
+bound_var('Kit.fold\'\'', 'Kit:x/10').
 assign_load_field('Kit:x/10', 'Kit:xs/9', 'con:::.0').
 var_in('Kit:rest/11', 'Kit.fold\'\'').
 vtype('Kit:rest/11', 'list').
 vfull('Kit:rest/11', 'int list').
+bound_var('Kit.fold\'\'', 'Kit:rest/11').
 assign_load_field('Kit:rest/11', 'Kit:xs/9', 'con:::.1').
 var_in('Kit:fold/6', 'Kit.fold\'\'').
+read('Kit:fold/6').
 var_in('Kit:t2', 'Kit.fold\'\'').
 in_function('Kit:11:c4', 'Kit.fold\'\'').
 site_key('Kit:11:c4', 'Kit:459-463').
 call_indirect('Kit:11:c4', 'Kit:fold/6').
 var_in('Kit:f/7', 'Kit.fold\'\'').
+read('Kit:f/7').
 argument('Kit:11:c4', 1, 'Kit:f/7').
 call_ret('Kit:11:c4', 'Kit:t2').
 var_in('Kit:t3', 'Kit.fold\'\'').
@@ -156,6 +174,7 @@ call_ret('Kit:11:c6', 'Kit:t5').
 in_function('Kit:11:c7', 'Kit.fold\'\'').
 site_key('Kit:11:c7', 'Kit:467-468').
 call_indirect('Kit:11:c7', 'Kit:t5').
+read('Kit:x/10').
 argument('Kit:11:c7', 1, 'Kit:x/10').
 call_ret('Kit:11:c7', 'Kit:t4').
 argument('Kit:11:c5', 1, 'Kit:t4').
@@ -164,6 +183,7 @@ in_function('Kit:11:c8', 'Kit.fold\'\'').
 site_key('Kit:11:c8', 'Kit:459-463').
 tail('Kit:11:c8').
 call_indirect('Kit:11:c8', 'Kit:t3').
+read('Kit:rest/11').
 argument('Kit:11:c8', 1, 'Kit:rest/11').
 call_ret('Kit:11:c8', 'Kit.fold\'\':ret').
 global_def('Kit.fold', 'Kit:init').
@@ -188,6 +208,7 @@ var_in('Kit.double:ret', 'Kit.double').
 var_in('Kit:x/12', 'Kit.double').
 vtype('Kit:x/12', 'int').
 vfull('Kit:x/12', 'int').
+bound_var('Kit.double', 'Kit:x/12').
 assign('Kit:x/12', 'Kit.double:arg').
 var_in('Kit:t6', 'Kit.double').
 vtype('Kit:t6', '->').
@@ -208,6 +229,7 @@ scalar('ext').
 scalar('prim:%mulint:ret').
 assign_address('Kit:t6', 'prim:%mulint').
 site_key('Kit:13:c9', 'Kit:513-514').
+read('Kit:x/12').
 global_var('Kit:const').
 var_in('Kit:const', 'Kit.double').
 scalar('Kit:const').
@@ -234,6 +256,7 @@ var_in('Kit.negate:ret', 'Kit.negate').
 var_in('Kit:x/14', 'Kit.negate').
 vtype('Kit:x/14', 'int').
 vfull('Kit:x/14', 'int').
+bound_var('Kit.negate', 'Kit:x/14').
 assign('Kit:x/14', 'Kit.negate:arg').
 var_in('Kit:t7', 'Kit.negate').
 vtype('Kit:t7', '->').
@@ -254,6 +277,7 @@ scalar('prim:%subint:ret').
 assign_address('Kit:t7', 'prim:%subint').
 site_key('Kit:14:c10', 'Kit:548-549').
 var_in('Kit:const', 'Kit.negate').
+read('Kit:x/14').
 scalar('Kit.negate:ret').
 global_def('Kit.negate', 'Kit:init').
 global_var('Kit.negate').
@@ -277,12 +301,14 @@ var_in('Kit.square:ret', 'Kit.square').
 var_in('Kit:x/16', 'Kit.square').
 vtype('Kit:x/16', 'int').
 vfull('Kit:x/16', 'int').
+bound_var('Kit.square', 'Kit:x/16').
 assign('Kit:x/16', 'Kit.square:arg').
 var_in('Kit:t8', 'Kit.square').
 vtype('Kit:t8', '->').
 vfull('Kit:t8', '(int -> (int -> int))').
 assign_address('Kit:t8', 'prim:%mulint').
 site_key('Kit:15:c11', 'Kit:583-584').
+read('Kit:x/16').
 scalar('Kit.square:ret').
 global_def('Kit.square', 'Kit:init').
 global_var('Kit.square').
@@ -308,6 +334,7 @@ curried('Kit.add\'', 'Kit.add').
 var_in('Kit:a/18', 'Kit.add').
 vtype('Kit:a/18', 'int').
 vfull('Kit:a/18', 'int').
+bound_var('Kit.add', 'Kit:a/18').
 assign('Kit:a/18', 'Kit.add:arg').
 closure('Kit.add\'', 'Kit', '16').
 alloc_in('Kit.add\'', 'Kit').
@@ -324,6 +351,7 @@ var_in('Kit.add\':ret', 'Kit.add\'').
 var_in('Kit:b/19', 'Kit.add\'').
 vtype('Kit:b/19', 'int').
 vfull('Kit:b/19', 'int').
+bound_var('Kit.add\'', 'Kit:b/19').
 assign('Kit:b/19', 'Kit.add\':arg').
 var_in('Kit:t9', 'Kit.add\'').
 vtype('Kit:t9', '->').
@@ -344,6 +372,8 @@ scalar('prim:%addint:ret').
 assign_address('Kit:t9', 'prim:%addint').
 site_key('Kit:16:c12', 'Kit:625-626').
 var_in('Kit:a/18', 'Kit.add\'').
+read('Kit:a/18').
+read('Kit:b/19').
 scalar('Kit.add\':ret').
 global_def('Kit.add', 'Kit:init').
 global_var('Kit.add').
@@ -367,6 +397,7 @@ var_in('Kit.cube:ret', 'Kit.cube').
 var_in('Kit:x/21', 'Kit.cube').
 vtype('Kit:x/21', 'int').
 vfull('Kit:x/21', 'int').
+bound_var('Kit.cube', 'Kit:x/21').
 assign('Kit:x/21', 'Kit.cube:arg').
 var_in('Kit:t10', 'Kit.cube').
 vtype('Kit:t10', '->').
@@ -381,6 +412,7 @@ vtype('Kit:t12', '->').
 vfull('Kit:t12', '(int -> (int -> int))').
 assign_address('Kit:t12', 'prim:%mulint').
 site_key('Kit:19:c14', 'Kit:682-683').
+read('Kit:x/21').
 scalar('Kit:t11').
 scalar('Kit.cube:ret').
 global_def('Kit.cube', 'Kit:init').
@@ -405,12 +437,14 @@ var_in('Kit.helper:ret', 'Kit.helper').
 var_in('Kit:x/23', 'Kit.helper').
 vtype('Kit:x/23', 'int').
 vfull('Kit:x/23', 'int').
+bound_var('Kit.helper', 'Kit:x/23').
 assign('Kit:x/23', 'Kit.helper:arg').
 var_in('Kit:t13', 'Kit.helper').
 vtype('Kit:t13', '->').
 vfull('Kit:t13', '(int -> (int -> int))').
 assign_address('Kit:t13', 'prim:%addint').
 site_key('Kit:22:c15', 'Kit:782-783').
+read('Kit:x/23').
 var_in('Kit:const', 'Kit.helper').
 scalar('Kit.helper:ret').
 global_def('Kit.helper', 'Kit:init').
@@ -435,6 +469,7 @@ var_in('Kit.dead:ret', 'Kit.dead').
 var_in('Kit:x/25', 'Kit.dead').
 vtype('Kit:x/25', 'int').
 vfull('Kit:x/25', 'int').
+bound_var('Kit.dead', 'Kit:x/25').
 assign('Kit:x/25', 'Kit.dead:arg').
 var_in('Kit.helper', 'Kit.dead').
 in_function('Kit:23:c16', 'Kit.dead').
@@ -447,6 +482,7 @@ vfull('Kit:t14', 'int').
 in_function('Kit:23:c17', 'Kit.dead').
 site_key('Kit:23:c17', 'Kit:821-827').
 call_indirect('Kit:23:c17', 'Kit.helper').
+read('Kit:x/25').
 argument('Kit:23:c17', 1, 'Kit:x/25').
 call_ret('Kit:23:c17', 'Kit:t14').
 argument('Kit:23:c16', 1, 'Kit:t14').
@@ -475,6 +511,7 @@ curried('Kit.scale\'', 'Kit.scale').
 var_in('Kit:k/27', 'Kit.scale').
 vtype('Kit:k/27', 'int').
 vfull('Kit:k/27', 'int').
+bound_var('Kit.scale', 'Kit:k/27').
 assign('Kit:k/27', 'Kit.scale:arg').
 closure('Kit.scale\'', 'Kit', '26').
 alloc_in('Kit.scale\'', 'Kit').
@@ -491,6 +528,7 @@ var_in('Kit.scale\':ret', 'Kit.scale\'').
 var_in('Kit:x/28', 'Kit.scale\'').
 vtype('Kit:x/28', 'int').
 vfull('Kit:x/28', 'int').
+bound_var('Kit.scale\'', 'Kit:x/28').
 assign('Kit:x/28', 'Kit.scale\':arg').
 var_in('Kit:t15', 'Kit.scale\'').
 vtype('Kit:t15', '->').
@@ -498,6 +536,8 @@ vfull('Kit:t15', '(int -> (int -> int))').
 assign_address('Kit:t15', 'prim:%mulint').
 site_key('Kit:26:c18', 'Kit:921-922').
 var_in('Kit:k/27', 'Kit.scale\'').
+read('Kit:k/27').
+read('Kit:x/28').
 scalar('Kit.scale\':ret').
 global_def('Kit.scale', 'Kit:init').
 global_var('Kit.scale').
@@ -554,12 +594,14 @@ var_in('Kit:fun1@28:ret', 'Kit:fun1@28').
 var_in('Kit:x/30', 'Kit:fun1@28').
 vtype('Kit:x/30', 'int').
 vfull('Kit:x/30', 'int').
+bound_var('Kit:fun1@28', 'Kit:x/30').
 assign('Kit:x/30', 'Kit:fun1@28:arg').
 var_in('Kit:t20', 'Kit:fun1@28').
 vtype('Kit:t20', '->').
 vfull('Kit:t20', '(int -> (int -> int))').
 assign_address('Kit:t20', 'prim:%subint').
 site_key('Kit:28:c19', 'Kit:1036-1037').
+read('Kit:x/30').
 var_in('Kit:const', 'Kit:fun1@28').
 scalar('Kit:fun1@28:ret').
 assign_store_field('Kit:t18', 'fld:run', 'Kit:t19').
@@ -619,6 +661,7 @@ var_in('Kit.last:ret', 'Kit.last').
 var_in('Kit:x/33', 'Kit.last').
 vtype('Kit:x/33', 'int').
 vfull('Kit:x/33', 'int').
+bound_var('Kit.last', 'Kit:x/33').
 assign('Kit:x/33', 'Kit.last:arg').
 raise_in('Kit:30:c21', 'Kit.last').
 raise_of('Kit:30:c21', 'Kit.Stop').
@@ -705,10 +748,12 @@ var_in('Use.run_all:ret', 'Use.run_all').
 var_in('Use:x/2', 'Use.run_all').
 vtype('Use:x/2', 'int').
 vfull('Use:x/2', 'int').
+bound_var('Use.run_all', 'Use:x/2').
 assign('Use:x/2', 'Use.run_all:arg').
 var_in('Use:go/3', 'Use.run_all').
 vtype('Use:go/3', '->').
 vfull('Use:go/3', '(Kit.handler list -> unit)').
+bound_var('Use.run_all', 'Use:go/3').
 closure('Use:go/3', 'Use', '5').
 alloc_in('Use:go/3', 'Use').
 htype('Use:go/3', '->').
@@ -724,15 +769,19 @@ var_in('Use:go/3:ret', 'Use:go/3').
 var_in('Use:hs/4', 'Use:go/3').
 vtype('Use:hs/4', 'list').
 vfull('Use:hs/4', 'Kit.handler list').
+bound_var('Use:go/3', 'Use:hs/4').
 assign('Use:hs/4', 'Use:go/3:arg').
+read('Use:hs/4').
 scalar('Use:go/3:ret').
 var_in('Use:h/5', 'Use:go/3').
 vtype('Use:h/5', 'Kit.handler').
 vfull('Use:h/5', 'Kit.handler').
+bound_var('Use:go/3', 'Use:h/5').
 assign_load_field('Use:h/5', 'Use:hs/4', 'con:::.0').
 var_in('Use:rest/6', 'Use:go/3').
 vtype('Use:rest/6', 'list').
 vfull('Use:rest/6', 'Kit.handler list').
+bound_var('Use:go/3', 'Use:rest/6').
 assign_load_field('Use:rest/6', 'Use:hs/4', 'con:::.1').
 var_in('Use:t2', 'Use:go/3').
 vtype('Use:t2', '->').
@@ -801,11 +850,13 @@ vfull('Use:t7', 'int').
 var_in('Use:t8', 'Use:go/3').
 vtype('Use:t8', '->').
 vfull('Use:t8', '(int -> int)').
+read('Use:h/5').
 assign_load_field('Use:t8', 'Use:h/5', 'fld:run').
 in_function('Use:6:c5', 'Use:go/3').
 site_key('Use:6:c5', 'Use:223-228').
 call_indirect('Use:6:c5', 'Use:t8').
 var_in('Use:x/2', 'Use:go/3').
+read('Use:x/2').
 argument('Use:6:c5', 1, 'Use:x/2').
 call_ret('Use:6:c5', 'Use:t7').
 scalar('Use:t3').
@@ -813,10 +864,12 @@ scalar('Use:_').
 assign_store_field('Use.total', 'fld:contents', 'Use:t3').
 store_in('Use.total', 'fld:contents', 'Use:t3', 'Use:go/3').
 var_in('Use:go/3', 'Use:go/3').
+read('Use:go/3').
 in_function('Use:6:c6', 'Use:go/3').
 site_key('Use:6:c6', 'Use:232-234').
 tail('Use:6:c6').
 call_indirect('Use:6:c6', 'Use:go/3').
+read('Use:rest/6').
 argument('Use:6:c6', 1, 'Use:rest/6').
 call_ret('Use:6:c6', 'Use:go/3:ret').
 in_function('Use:7:c7', 'Use.run_all').
@@ -862,6 +915,7 @@ var_in('Use:fun1@11:ret', 'Use:fun1@11').
 var_in('Use:x/10', 'Use:fun1@11').
 vtype('Use:x/10', 'int').
 vfull('Use:x/10', 'int').
+bound_var('Use:fun1@11', 'Use:x/10').
 assign('Use:x/10', 'Use:fun1@11:arg').
 var_in('Use:t12', 'Use:fun1@11').
 vtype('Use:t12', '->').
@@ -907,6 +961,7 @@ assign_load_field('Use:t18', 'Kit.current', 'tuple:2.0').
 in_function('Use:11:c14', 'Use:fun1@11').
 site_key('Use:11:c14', 'Use:331-343').
 call_indirect('Use:11:c14', 'Use:t18').
+read('Use:x/10').
 argument('Use:11:c14', 1, 'Use:x/10').
 call_ret('Use:11:c14', 'Use:t17').
 scalar('Use:t13').
@@ -1008,6 +1063,7 @@ store_in('Use.total', 'fld:contents', 'Use:t24', 'Use:init').
 var_in('Use:half/8', 'Use:init').
 vtype('Use:half/8', '->').
 vfull('Use:half/8', '(int -> int)').
+bound_var('Use:init', 'Use:half/8').
 global_var('Kit.scale').
 var_in('Kit.scale', 'Use:init').
 in_function('Use:13:c21', 'Use:init').
@@ -1026,6 +1082,7 @@ var_in('prim:%ignore:ret', 'prim:%ignore').
 scalar('prim:%ignore:ret').
 assign_address('Use:t32', 'prim:%ignore').
 site_key('Use:14:c22', 'Use:445-451').
+read('Use:half/8').
 try_in_function('Use:try1@15', 'Use:init').
 var_in('Use:t33', 'Use:init').
 vtype('Use:t33', '->').
@@ -1052,6 +1109,7 @@ var_in('exn', 'Use:init').
 var_in('Use:f/9', 'Use:init').
 vtype('Use:f/9', '->').
 vfull('Use:f/9', '(int -> int)').
+bound_var('Use:init', 'Use:f/9').
 assign_load_field('Use:f/9', 'exn', 'con:Stop.0').
 var_in('Use:t35', 'Use:init').
 vtype('Use:t35', '->').
@@ -1061,6 +1119,7 @@ site_key('Use:15:c25', 'Use:510-512').
 var_in('Use:t36', 'Use:init').
 vtype('Use:t36', 'int').
 vfull('Use:t36', 'int').
+read('Use:f/9').
 in_function('Use:15:c26', 'Use:init').
 site_key('Use:15:c26', 'Use:513-514').
 in_handler('Use:15:c26', 'Use:try1@15').

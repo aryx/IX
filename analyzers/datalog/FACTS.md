@@ -323,12 +323,15 @@ having a field `caps : < Cap.stdout; .. >` (or a record that has one):
 holds_field('Toy.greet', 'stdout').
 ```
 
-**Physical equality.** Each `==` and `!=`, in which function; and a side made
-in the comparison itself, by what it is, which no other value can be
-(`bugs/physeq.dl`). `o == Some 1`, in `is_one`:
+**Physical equality.** Each `==` and `!=`, in which function; its two sides,
+for what points-to says of them (a value kept, compared with one changed in
+place); and a side made in the comparison itself, by what it is, which no other
+value can be (`bugs/physeq.dl`). `o == Some 1`, in `is_one`:
 
 ```
 phys_compare('Toy:43:c43', 'Toy.is_one', '==').
+compared('Toy:43:c43', 'Toy:o/35').
+compared('Toy:43:c43', 'Toy:t51').
 fresh_operand('Toy:43:c43', 'Some').
 ```
 
@@ -402,6 +405,18 @@ and in which function; and a call in a `while` of its function. `ready := 0` and
 ```
 store_in('Toy.ready', 'fld:contents', 'Toy:const', 'Toy.take\'').
 loop_site('Toy:64:c63').
+```
+
+**A variable bound, a variable read**, for `bugs/unused.dl` (OCaml's warnings 26
+and 27 as rules): each local variable a pattern binds, in which function (a
+parameter's, a case's, a let's); each one an expression reads; and one whose name
+starts with `_`, meant not to be read. `keep_first`'s `x` and `_y`:
+
+```
+bound_var('Toy.keep_first', 'Toy:x/62').
+read('Toy:x/62').
+bound_var('Toy.keep_first\'', 'Toy:_y/63').
+underscore('Toy:_y/63').
 ```
 
 **A call by its application**, for `bugs/pairs.dl`, which follows the paths of
@@ -486,13 +501,14 @@ with: `own_live_out(V, P)`, and for ML `own_live_in(V, B)`, `own_idom(D, B)`.
 | `dead.dl` | `defined`, `closure`, `global_def`, `dead_stmt`, `allocator_call` |
 | `capabilities.dl`, `capabilities_types.dl` | `takes_cap`, `declares`, `assign_address`, `global_def` |
 | `bugs/pointers.dl` | `call_direct`, `return`, and `heap`, `local`, `literal`, which mini-analyze makes of the names |
-| `bugs/physeq.dl` | `phys_compare`, `fresh_operand` |
+| `bugs/physeq.dl` | `phys_compare`, `fresh_operand`, `compared`, `store_in`, `assign_load_field`, over `pts`, `reach` |
 | `bugs/stack.dl` | `tail`, `model_call`, `tail_but_try`, `in_handler`, `in_try`, `list_like`, `parameter`, `vtype`, `inner`, `alloc_in`, over `target` and `reach` |
 | `bugs/raises.dl` | ML's `external_prim`, `declares_raise`; C's `call_direct`, `argument`, `parameter`, `in_function`, `global_var`, `defined` |
 | `bugs/swallowed.dl` | `silent`, `silent_all`, `catches`, `primitive`, `curried`, over `exceptions.dl`'s `arrives` |
 | `bugs/intwidth.dl` | `wide_int`, `wide_site`, `unit_dir`, `in_function`, `curried`, over `target`, `entry`, `callback` |
 | `bugs/order.dl` | `walked`, `walk_call`, `model_new`, `shares`, `htype`, `global_var`, `own_unit`, over `pts`, `fpts` |
 | `bugs/init.dl` | `init`, `global_def`, `var_in`, `alloc_in`, `unit_start`, `starts_before`, `unit_file`, over `target` |
+| `bugs/unused.dl` | `bound_var`, `read`, `underscore` |
 | `bugs/pairs.dl` | `site_key`, the SSA's `ssa_site`, `ssa_next`, `ssa_first`, `ssa_last`, `ssa_succ`, `call_ret`, `argument`, `curried`, over `target`, `pts`, `at`, `protected`, `reach` |
 | `bugs/races.dl` | `store_in`, `loop_site`, `parameter`, `vtype`, `alloc_in`, `own_unit`, over `pts`, `fpts`, `target`, `entry`, `callback`, `reach` |
 | `liveness.dl` | C's `-flow` |

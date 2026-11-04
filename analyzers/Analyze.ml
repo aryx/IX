@@ -259,7 +259,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                [ "points_to/instructions.dl"; "points_to/contexts.dl"; "points_to/" ^ context ^ ".dl"; "exceptions.dl";
                  "bugs/physeq.dl"; "bugs/stack.dl"; "bugs/swallowed.dl";
                  "bugs/intwidth.dl"; "bugs/order.dl"; "bugs/init.dl";
-                 "bugs/races.dl"; "bugs/pairs.dl" ]
+                 "bugs/races.dl"; "bugs/pairs.dl";
+                 "bugs/unused.dl" ]
              else if !exns then
                [ "points_to/instructions.dl"; "points_to/andersen.dl"; "points_to/contexts.dl";
                  "points_to/" ^ context ^ ".dl"; "exceptions.dl" ]

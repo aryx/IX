@@ -20,7 +20,7 @@ let rec take (q : int Queue.t) (c : Condition.t) : int =
   if Queue.is_empty q then (Condition.wait c masterlock; take q c) else Queue.take q
 
 let () =
-  let ev (performed : int ref) (c : Condition.t) : behavior =
+  let ev (performed : int ref) (_c : Condition.t) : behavior =
     { poll = (fun () -> false); suspend = (fun () -> ());
       result = (fun () -> !performed) } in
   print_int (basic_sync [| ev |]);

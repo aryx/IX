@@ -369,6 +369,17 @@ external_prim('Toy.remove', 'sys_remove').
 declares_raise('sys_remove', 'caml_exn_Sys_error').
 ```
 
+**An int past 31 bits**, for `bugs/intwidth.dl`: a literal an int of the Pi 1
+does not hold, or a shift past bit 30 (by 31 or more, or of a value whose width is
+said: a constant, a mask, a char's code), in which unit and function; and a call in
+the branch of an `if Sys.int_size >= 63`, which runs only where ints are wide (its
+own literals not said). `mask` and `low`:
+
+```
+wide_int('Toy:55', 'Toy', 'Toy:init', '0xffffffff').
+wide_site('Toy:56:c52').
+```
+
 **Who is where.** As in C. A variable two functions name is what a closure captures:
 
 ```
@@ -432,12 +443,14 @@ with: `own_live_out(V, P)`, and for ML `own_live_in(V, B)`, `own_idom(D, B)`.
 | `bugs/stack.dl` | `tail`, `model_call`, `tail_but_try`, `in_handler`, `in_try`, `list_like`, `parameter`, `vtype`, `inner`, `alloc_in`, over `target` and `reach` |
 | `bugs/raises.dl` | ML's `external_prim`, `declares_raise`; C's `call_direct`, `argument`, `parameter`, `in_function`, `global_var`, `defined` |
 | `bugs/swallowed.dl` | `silent`, `silent_all`, `catches`, `primitive`, `curried`, over `exceptions.dl`'s `arrives` |
+| `bugs/intwidth.dl` | `wide_int`, `wide_site`, `unit_dir`, `in_function`, `curried`, over `target`, `entry`, `callback` |
 | `liveness.dl` | C's `-flow` |
 | `liveness_ssa.dl`, `dominators.dl` | ML's `-flow` |
 
 Not said by a compiler: `heap(L)`, `local(L, F)`, `literal(L)` (mini-analyze, of C's
 names) and `own_unit(U)`, `own_init(I)` (mini-analyze -caps: the program's units,
-not the library's).
+not the library's), `unit_dir(U, D)` (mini-analyze -bugs: each directory of a unit's
+file from the top of the tree, lib_core's parent: `kernels`, `kernels/lib_machine`).
 
 ## What the rules then say
 

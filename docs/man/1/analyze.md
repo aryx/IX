@@ -66,7 +66,11 @@ program's library, lib_core's units it names, is read with it.
      that may arrive at a `try` whose case answers a constant, saying
      nothing (`bugs/swallowed.dl`, over `exceptions.dl`); `crash`, a
      program's own exception that may reach a `try` catching all whose
-     handler raises another (`exceptions.dl`'s `ends_in`). C files: the
+     handler raises another (`exceptions.dl`'s `ends_in`); `int31`, a
+     literal or a shift that an int of the Pi 1, 31 bits, does not hold,
+     a line a function (`bugs/intwidth.dl`): not in a directory meant
+     for 64 bits only (`wide_dir`), nor reached only under an
+     `if Sys.int_size >= 63`. C files: the
      report without an option, its `bug?` lines `bugs/pointers.dl`'s.
      C files and ML ones (mini-ml's runtime and lib_core: what
      `analyzers/datalog/tests/raises.sh` gives): each external's

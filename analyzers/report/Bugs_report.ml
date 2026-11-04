@@ -95,12 +95,38 @@ let bugs_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
                   (site (unit_of tr ^ ":" ^ Exn_report.try_line tr)) f e e2))
       (tuples "ends_in" 2) in
   let crash = List.sort_uniq compare crash in
-  let all = List.sort_uniq compare (physeq @ stack @ swallowed @ crash) in
+  (* an int of 63 bits in code for the Pi 1 too (intwidth.dl): a line a
+   * function, at its first, a table of constants one report *)
+  let by_fun = Hashtbl.create 17 in
+  List.iter
+    (fun (t : string array) ->
+      let s = t.(0) in
+      if own s then begin
+        let line = match String.split_on_char ':' s with _ :: l :: _ -> int_of_string l | _ -> 0 in
+        let l = match Hashtbl.find_opt by_fun (t.(1), t.(2)) with Some l -> l | None -> [] in
+        Hashtbl.replace by_fun (t.(1), t.(2)) ((line, s, t.(3)) :: l)
+      end)
+    (tuples "int31" 4);
+  let int31 =
+    Hashtbl.fold
+      (fun ((u, f) : string * string) (l : (int * string * string) list) acc ->
+        let l = List.sort_uniq compare l in
+        let f = if Filename.check_suffix f ":init" then u ^ "'s toplevel" else Ml_report.ml_function f in
+        let _, s, _ = List.hd l in
+        (* (as written, each once) *)
+        let ws =
+          List.fold_left (fun acc ((_, _, w) : int * string * string) -> if List.mem w acc then acc else acc @ [ w ]) [] l in
+        let n = List.length ws in
+        let shown = String.concat "; " (List.filteri (fun k _ -> k < 3) ws) in
+        let more = if n > 3 then Printf.sprintf " and %d more" (n - 3) else "" in
+        Printf.sprintf "%s: int31: in %s, %s%s: not on the Pi 1's 31 bits" (site s) f shown more :: acc)
+      by_fun [] in
+  let all = List.sort_uniq compare (physeq @ stack @ swallowed @ crash @ int31) in
   List.iter (fun b -> Console.print caps ("bug? " ^ b ^ "\n")) all;
   Console.print caps
-    (Printf.sprintf "%d bugs? (physeq %d, stack %d, swallowed %d, crash %d)\n"
+    (Printf.sprintf "%d bugs? (physeq %d, stack %d, swallowed %d, crash %d, int31 %d)\n"
        (List.length all) (List.length physeq) (List.length stack)
-       (List.length swallowed) (List.length crash))
+       (List.length swallowed) (List.length crash) (List.length int31))
 
 let raises_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
   let tuples r = List.map (fun (t : int array) -> Array.map (name p) t) (D.tuples (D.relation p r 3)) in

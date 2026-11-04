@@ -7,6 +7,7 @@
  *   bug? Devmnt.ml:85: stack: wait calls itself in a try's handler: no tail call by mini-ml
  *   bug? Process.ml:46: swallowed: in fork, Sys_error silenced, a constant answered
  *   bug? Main.ml:67: crash: in Main.guard, Fault.Error caught by all, the handler raising Failure
+ *   bug? Sha1.ml:6: int31: in Sha1's toplevel, 0xffffffff: not on the Pi 1's 31 bits
  *
  * physeq (analyzers/datalog/bugs/physeq.dl): == or != with a side made in
  * the comparison itself. stack (bugs/stack.dl): a recursion the stack may
@@ -15,7 +16,9 @@
  * arrive at a try whose case answers a constant, saying nothing. crash
  * (exceptions.dl's ends_in): a program's own exception that may reach a
  * try catching all whose handler raises another (the kernel's guard and
- * its panic: 4436f60d's page refused). Only
+ * its panic: 4436f60d's page refused). int31 (bugs/intwidth.dl): a
+ * literal or a shift an int of the Pi 1, 31 bits, does not hold, in a
+ * unit meant for it too, a line a function (Sha1's mask, e92ae1ec). Only
  * the program's own units, and code that is reached. *)
 
 (* the report, on the facts and the rules' answers *)

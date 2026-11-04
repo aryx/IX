@@ -45,6 +45,7 @@ program's functions that its toplevel never reaches (calls.dl):
   Before.ml:6: physeq: in Before.loop, != of a Some made there: always true
   Css.ml:13: stack: Css.components calls itself, not a tail call, over a list
   Process.ml:46: swallowed: in fork, Sys_error silenced, a constant answered
+  Sha1.ml:6: int31: in Sha1's toplevel, 0xffffffff: not on the Pi 1's 31 bits
   given C files and ML ones (the runtime's, lib_core's): each external's
   [@@raise E] against what its C raises (bugs/raises.dl)
 -root f: f is also entered from where the facts do not go (assembly)
@@ -90,6 +91,38 @@ let raises_report = Bugs_report.raises_report
 let line (relation : string) (args : C.Facts.arg list) : string =
   let show = function C.Facts.Sym s -> "'" ^ String.concat "\\'" (String.split_on_char '\'' s) ^ "'" | C.Facts.Num n -> string_of_int n in
   relation ^ "(" ^ String.concat ", " (List.map show args) ^ ")."
+
+(* bugs/intwidth.dl's unit_dir: the directories of a unit's file from
+ * the top of the tree, lib_core's parent: kernels, kernels/lib_machine,
+ * kernels/lib_machine/pi4, whether read from kernels/9pi or the top *)
+let dirs_from (caps : < Cap.readdir; .. >) (lib : string) (file : string) :
+    string list =
+  let parts (s : string) : string list =
+    let s =
+      if Filename.is_relative s then Filename.concat (FS.getcwd caps ()) s
+      else s in
+    List.rev
+      (List.fold_left
+         (fun (acc : string list) (c : string) ->
+           match c with
+           | "" | "." -> acc
+           | ".." -> (match acc with _ :: r -> r | [] -> [])
+           | c -> c :: acc)
+         [] (String.split_on_char '/' s)) in
+  let rec under (top : string list) (l : string list) : string list option =
+    match top, l with
+    | [], l -> Some l
+    | t :: ts, c :: cs when t = c -> under ts cs
+    | _ -> None in
+  if file = "" then []
+  else
+    match under (parts (Filename.dirname lib)) (parts (Filename.dirname file)) with
+    | None -> []
+    | Some ds ->
+        List.mapi
+          (fun (k : int) _ ->
+            String.concat "/" (List.filteri (fun j _ -> j <= k) ds))
+          ds
 
 let main (caps : < caps; .. >) (argv : string array) : int =
   let rules = ref "analyzers/datalog" and lib = ref "lib_core" and only = ref false and incs = ref [] and defs = ref [] and files = ref [] in
@@ -170,7 +203,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
              else if !bugs && c <> [] && ml <> [] then [ "bugs/raises.dl" ]
              else if !bugs && c = [] then
                [ "points_to/instructions.dl"; "points_to/contexts.dl"; "points_to/" ^ context ^ ".dl"; "exceptions.dl";
-                 "bugs/physeq.dl"; "bugs/stack.dl"; "bugs/swallowed.dl" ]
+                 "bugs/physeq.dl"; "bugs/stack.dl"; "bugs/swallowed.dl";
+                 "bugs/intwidth.dl" ]
              else if !exns then
                [ "points_to/instructions.dl"; "points_to/andersen.dl"; "points_to/contexts.dl";
                  "points_to/" ^ context ^ ".dl"; "exceptions.dl" ]
@@ -192,6 +226,14 @@ let main (caps : < caps; .. >) (argv : string array) : int =
           c;
         if ml <> [] then
           List.iter (fun m -> Console.eprint caps (m ^ "\n"); incr failed) (Ml_front.program caps (incs @ Ml_front.library caps !lib) (List.map path ml));
+        if !bugs then
+          Hashtbl.iter
+            (fun (u : string) (f : string) ->
+              List.iter
+                (fun (d : string) ->
+                  given p "unit_dir" [ C.Facts.Sym u; C.Facts.Sym d ])
+                (dirs_from caps !lib f))
+            Ml_front.files;
         (* (what they call would be reported dead) *)
         if !dead || !ambient then List.iter (fun m -> Console.eprint caps ("not read: " ^ m ^ "\n"); incr failed) !Ml_front.unread;
         if !ambient then

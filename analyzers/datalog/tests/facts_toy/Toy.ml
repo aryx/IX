@@ -50,3 +50,7 @@ let rec retry n = try if n = 0 then 0 else raise Exit with Exit -> retry (n - 1)
 (* a primitive that raises, Sys_error; a try silencing it (bugs/swallowed.dl) *)
 external remove : string -> unit = "sys_remove" [@@raise Sys_error]
 let clean f = try remove f with Sys_error _ -> () | _ -> ()
+
+(* 32 bits, -1 on the Pi 1; a test of the ints' width (bugs/intwidth.dl) *)
+let mask = 0xffffffff
+let low w = if Sys.int_size >= 63 then Hashtbl.hash (w lsr 32) else w

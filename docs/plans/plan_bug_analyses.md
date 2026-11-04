@@ -20,16 +20,17 @@ checked the same way: it must report the bug on the code as it was
 before the fix (`git show FIX^:path`) and stay quiet on the fixed code.
 Then it runs over ix through the sweep, as `-dead`, `-caps` and `-exn` do.
 
-**Status: A6's first half, A1, A3 and A2 done (2026-11-03), the rest planned.**
+**Status: A6's first half, A1, A3 and A2 done (2026-11-03), A4's first step (2026-11-04), the rest planned.**
 `mini-analyze -bugs` runs `bugs/physeq.dl` (`==` or `!=` with a side
 made in the comparison), `bugs/stack.dl` (a loop through a `try`, a
-frame a list's element) and `bugs/swallowed.dl` (an error of the
-system silenced). Each reports its bugs on the code before the fix and
+frame a list's element), `bugs/swallowed.dl` (an error of the
+system silenced) and `bugs/intwidth.dl` (an int past the Pi 1's 31
+bits). Each reports its bugs on the code before the fix and
 not after (`analyzers/tests/bugs/`: eb5378a5, 021c562b, f46346db,
-c5086383, 4f00134c). On today's ix, `physeq` finds nothing; `stack`
+c5086383, 4f00134c, 4436f60d, e92ae1ec). On today's ix, `physeq` finds nothing; `stack`
 gives 145 reports on the 44 programs and 9 on the kernel, `swallowed`
-12 on the programs (`analyzers/datalog/tests/bugs_ix.txt`), read in A1
-and A3 below. A7 turned out to be
+12 on the programs, `int31` 29 (`analyzers/datalog/tests/bugs_ix.txt`),
+read in A1, A3 and A4 below. A7 turned out to be
 `-dead`'s already (below).
 The evidence is in
 [`bugs/history/`](bugs/history/): `from_git.md` has 73 bug fixes found in
@@ -316,43 +317,77 @@ None was fixed: the author decides.
 says something but drops the error (`with _ -> prerr_endline "?"`);
 the `Invalid_argument` of an index out of bounds (`%array_safe_get`).
 
-### A4. Ints on 31 bits (`intwidth.dl`)
+### A4. Ints on 31 bits (`bugs/intwidth.dl`)
 
-**Re-finds:** e92ae1ec (Sha1's `let mask = 0xffffffff`, seen in the
-diff's parent); Zlib's CRC and Adler; Chacha20; 6a649689, 7a8c6af7,
-cc6eb618 (`lsl 16 lor`, `0x80000000`); 7f15c58f (`2*n+1 < 256`
-wrapping); d47f0829 (a mask keeping the sign bit, then `mod`, then
-`List.nth`).
+**Step 1 done** (2026-11-04), as `int31` in `-bugs`. It re-finds
+e92ae1ec (Sha1's `let mask = 0xffffffff` and its constants), the
+gigabyte bound of cc6eb618's note (`0x40000000`, min_int on the Pi 1),
+and a word read from four bytes, the last `lsl 24`
+(`analyzers/tests/bugs/e92ae1ec/`). Its fix (Int32's words) is quiet,
+and so are a function only called under `if Sys.int_size >= 63`
+(Poly1305's `mac_limbs`), `0x3fffffff`, a char's code `lsl 16`, and
+`x lsl 30` of a value of no known width.
 
-**Two steps:**
-1. **Syntactic, now.** The facts `int_lit(V, Big)` for a literal above
-   `max_int` on 31 bits, and `shift(V, X, K)` for `lsl` by a constant,
-   both with their unit. Every unit is taken to run on the Pi 1 too
-   (Decisions, below), but those named in a file as 64-bit only,
-   `wide_unit(U)` (`kernels/lib_machine/pi4/`, `raspberry/`,
-   `machine/`). Report a big literal
-   or a shift past bit 30 in any other unit. Two hits of today
-   show what must be excused:
-   - `Poly1305.mac_limbs`: 32-bit masks and `f lsr 32`, but `mac` calls
-     it only when `Sys.int_size >= 63`. A call guarded by that test is a
-     fact, `wide_only(F)`, and such a function is not reported.
-   - `Delta`'s gear hash: a table of 32-bit constants, but the hash is
-     only tested by `land 0xff`, and the low bits are the same on
-     31 bits. A value whose only use is a mask below 2^30 is not
-     reported. This needs SSA's `use`, so it comes in step 2.
+**The facts** (`Closure_facts`, 60 lines; `Analyze`, 25):
+- `wide_int(S, U, F, W)`: a literal past `0x3fffffff` (or below
+  `-0x40000000`); a shift by 31 or more; `x lsl k` when x says its
+  width (a constant, a mask `land m`, a char's code, an `lsr` of one)
+  and k takes it past bit 30. Only the primitive: `linker/Arm.ml`'s own
+  `lsl`, Int32's, is not one.
+- `wide_site(I)`: a call in the branch of an `if Sys.int_size >= 63`
+  (or `< 63`'s else), where no `wide_int` is said either.
+- `unit_dir(U, D)`: each directory of a unit's file from the top of the
+  tree, lib_core's parent (`-L`): `kernels/lib_machine/pi4` whether
+  mini-analyze runs from the top or from `kernels/9pi`.
 
-   One to check by hand: `Dbm.key_of`'s `n land 0xffffffff`, which on 31
-   bits keeps a negative key negative where chidb's cast makes it
-   unsigned.
-2. **Intervals, later.** A value's range over the SSA of `-flow`, by
-   abstract interpretation in ML (`Ssa_facts` writing `range(V, Lo, Hi)`).
-   Datalog cannot compute this until plan_datalog.md's stage 3 gives it
-   numbers. It finds the sign that d47f0829's `mod` kept and the guard
-   that 7f15c58f wrapped.
+**The rules** (`bugs/intwidth.dl`, 10 lines): `narrow(F)`, what the
+entries and callbacks reach by calls not in a wide branch; `int31` a
+`wide_int` in a narrow function of a unit not in a `wide_dir`
+(`kernels/lib_machine/pi4`, `raspberry`, `machine`: Decisions). The
+report is a line a function, its first values and how many more: a
+table of constants is one line.
 
-**Cost:** step 1 is about 40 lines of facts (the literal, the shift,
-the file of 64-bit units) and 15 of rules. Step 2 is some 200 lines
-of ML.
+**On ix** (the sweep, 2 min; the kernel), 29 lines in `bugs_ix.txt`,
+read one by one. None was fixed: the author decides.
+- **Worth a look, 7.**
+  - mini-git's pack index (`Pack.ml:215`, `Pack.offset`): on 31 bits
+    `1 lsl 31` is 0 and `0x80000000` is 0. So every offset is written
+    to the 64-bit table, and what is read back is the table's index,
+    taken as the offset.
+  - `Query.probe`: `land 0xffffffff` is `land -1`, so after `mod` the
+    slot may be negative: d47f0829's shape.
+  - Scheme's `random` (`Scheme_eval`, `Scheme_secd`): `mod 2147483647`
+    is `mod -1`, always 0.
+  - mini-dotnet's `ILogB` (`Library.ml:357`): Int32's minimum written as
+    an int, 0 on the Pi 1.
+  - `Dbm.key_of`, the plan's one to check: a negative key stays
+    negative where chidb's cast makes it unsigned.
+- **The same bits on both sides, 12.**
+  - A magic number compared with a word read the same way (`Image.read`'s
+    BSJB).
+  - A header's fields below 2^30 (`Symbols.be32`, `Exec.be32`,
+    `Syscall.trace`'s user addresses, Etherusb's registers, the PE's
+    `0x60000020`, its low 31 bits right).
+  - A mask that is `land -1` on small values (`Record.get4`, Schema's
+    root, Dbm's cursor).
+  - Delta's gear hash (two lines, 191 constants): split by
+    `land 0xff`, the low bits the same.
+  - Packer's murmurhash2, a sort key for deltas, not a name: another
+    pack, not a wrong one.
+- **Host only, 10.** acid's Frame64 (an arm64 program's prologue), Gas
+  (GNU as, compat/), the linker's Mach-O (`Exe.macho`, `CLI.link`'s
+  `1 lsl 32`), mini-ml's .NET ids (`Il_exprs.var`, distinct still).
+
+**Step 2, not done: intervals.** A value's range over the SSA of
+`-flow`, by abstract interpretation in ML (`Ssa_facts` writing
+`range(V, Lo, Hi)`). Datalog cannot compute this until plan_datalog.md's
+stage 3 gives it numbers. It would find:
+- Adler's `(b lsl 16) lor a` (7a8c6af7), b below 65521: no width said,
+  so step 1 is quiet;
+- the sign that d47f0829's `mod` kept;
+- the guard that 7f15c58f wrapped (`2 * n + 1 < 256`);
+- and it would excuse Delta's hash, a value used only through a small
+  mask.
 
 ### A5. Output in a hash table's order (`order.dl`)
 
@@ -533,7 +568,7 @@ reproduction.
 | 3 | A1 deep recursion | `tail`, `tail_but_try`, `in_handler`, `list_like` | 65 | 3 | done |
 | 4 | A3 errors swallowed | `silent`, `silent_all`, `primitive` | 60 | 3 | done |
 | 5 | A2 roots and primitives | `root_of`, primitive `raise_of` | 25 | ~5 | A8 uses its roots |
-| 6 | A4 31 bits, step 1 | `int_lit`, `shift`, `wide_unit`, `wide_only` | 55 | ~12 | |
+| 6 | A4 31 bits, step 1 | `wide_int`, `wide_site`, `unit_dir` | 95 | 3 | done |
 | 7 | A5 output order | sinks file | 30 | ~10 | the fixed points |
 | 8 | A10 init and link order | `link` | 15 | ~3 | |
 | 9 | A8 races | `while` | 25 | ~3 | |

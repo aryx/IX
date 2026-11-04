@@ -1,8 +1,17 @@
+database/dbm/Dbm.ml:140: int31: in Dbm.key_of, 0xffffffff: not on the Pi 1's 31 bits
+database/dbm/Dbm.ml:167: int31: in Dbm:fun at line 165, 0xffffffff: not on the Pi 1's 31 bits
+database/sql/Schema.ml:14: int31: in Schema:fun at line 10, 0xffffffff: not on the Pi 1's 31 bits
+database/storage/Record.ml:11: int31: in Record.get4, 0xffffffff: not on the Pi 1's 31 bits
 debuggers/acid/CLI.ml:79: swallowed: in CLI:fun at line 79, Unix.Unix_error silenced, a constant answered
 debuggers/acid/Code.ml:76: stack: Code.stmt calls itself, not a tail call, over a list
 debuggers/acid/Code.ml:77: stack: Code.stmt calls itself, not a tail call, over a list
 debuggers/acid/Code.ml:78: stack: Code.stmt calls itself, not a tail call, over a list
 debuggers/acid/Code.ml:80: stack: Code.stmt calls itself, not a tail call, over a list
+debuggers/acid/Frame64.ml:19: int31: in Frame64.sub_sp, 0xd10003ff; 0xff8003ff: not on the Pi 1's 31 bits
+debuggers/acid/Frame64.ml:24: int31: in Frame64.stp_fp, 0xa9007bfd; 0xa9807bfd; 0xffc07fff: not on the Pi 1's 31 bits
+debuggers/acid/Frame64.ml:28: int31: in Frame64.add_fp, 0x910003fd; 0xffc003ff: not on the Pi 1's 31 bits
+debuggers/acid/Frame64.ml:31: int31: in word, 0xffffffff: not on the Pi 1's 31 bits
+debuggers/acid/Frame64.ml:36: int31: in Frame64.prologue, 0xf8000ffe; 0xffe00fff; 0xf90003fe: not on the Pi 1's 31 bits
 debuggers/acid/Proc.ml:413: stack: locals calls itself, not a tail call, over a list
 debuggers/acid/Proc.ml:549: stack: exited calls itself in a try's body: no tail call by mini-ml
 debuggers/acid/Value.ml:15: stack: go calls itself, not a tail call, over a list
@@ -26,6 +35,9 @@ kernels/9pi/init/Main.ml:67: crash: in Main.guard, Errors.Error caught by all, t
 kernels/9pi/lib_graphics/lib_memdraw/Memchan.ml:21: stack: place calls itself, not a tail call, over a list
 kernels/9pi/lib_graphics/lib_memlayer/Memlayer.ml:50: stack: front calls itself, not a tail call, over a list
 kernels/9pi/lib_graphics/lib_memlayer/Memshape.ml:38: stack: pairs calls itself, not a tail call, over a list
+kernels/9pi/network/Etherusb.ml:49: int31: in Etherusb.rr, a char's code lsl 24, 32 bits: not on the Pi 1's 31 bits
+kernels/9pi/processes/Exec.ml:27: int31: in Exec.be32, a char's code lsl 24, 32 bits: not on the Pi 1's 31 bits
+kernels/9pi/syscalls/arm/Syscall.ml:80: int31: in Syscall.trace/1, a char's code lsl 24, 32 bits: not on the Pi 1's 31 bits
 kernels/9pi/syscalls/Usermem.ml:29: stack: go calls itself in a try's handler: no tail call by mini-ml
 kernels/oberon/texts/Texts.ml:113: stack: Texts.split calls itself, not a tail call, over a list
 kernels/singularity/singml/Safe.ml:118: stack: module_expr calls itself, not a tail call, over a list
@@ -64,12 +76,14 @@ languages/c/simple/Lower.ml:213: stack: Lower.call calls itself, not a tail call
 languages/c/simple/Lower.ml:231: stack: Lower.call calls itself, not a tail call, over a list
 languages/c/Tree_helpers.ml:323: stack: Tree_helpers.map_lr calls itself, not a tail call, over a list
 languages/datalog/Datalog_eval.ml:96: stack: next calls itself, not a tail call, over a list
+languages/dotnet/assembly/Image.ml:153: int31: in Image.read, 0x424a5342: not on the Pi 1's 31 bits
 languages/dotnet/assembly/Signature.ml:209: stack: Signature.show calls itself, not a tail call, over a list
 languages/dotnet/assembly/Signature.ml:210: stack: Signature.show calls itself, not a tail call, over a list
 languages/dotnet/assembly/Signature.ml:211: stack: Signature.show calls itself, not a tail call, over a list
 languages/dotnet/assembly/Signature.ml:212: stack: Signature.show calls itself, not a tail call, over a list
 languages/dotnet/assembly/Signature.ml:214: stack: Signature.show calls itself, not a tail call, over a list
 languages/dotnet/assembly/Signature.ml:215: stack: Signature.show calls itself, not a tail call, over a list
+languages/dotnet/assembly/Writer.ml:526: int31: in Writer.write, 0x60000020: not on the Pi 1's 31 bits
 languages/dotnet/csc/Csc_emit.ml:323: stack: Csc_emit.expr_to calls itself, not a tail call, over a list
 languages/dotnet/csc/Csc_emit.ml:404: stack: Csc_emit.call_with calls itself, not a tail call, over a list
 languages/dotnet/csc/Csc_emit.ml:573: stack: Csc_emit.binary_on calls itself, not a tail call, over a list
@@ -85,6 +99,7 @@ languages/dotnet/csc/Csc_types.ml:73: stack: Csc_types.show calls itself, not a 
 languages/dotnet/csc/Csc_types.ml:76: stack: Csc_types.show calls itself, not a tail call, over a list
 languages/dotnet/jit/Verifier.ml:133: stack: Verifier.subst calls itself, not a tail call, over a list
 languages/dotnet/jit/Verifier.ml:134: stack: Verifier.subst calls itself, not a tail call, over a list
+languages/dotnet/runtime/Library.ml:357: int31: in Library:fun at line 355, -2147483648; 0x7fffffff: not on the Pi 1's 31 bits
 languages/dotnet/runtime/Types.ml:279: stack: Types.array_class calls itself, not a tail call, over a list
 languages/dotnet/runtime/Types.ml:455: stack: subst calls itself, not a tail call, over a list
 languages/dotnet/runtime/Types.ml:456: stack: subst calls itself, not a tail call, over a list
@@ -93,10 +108,13 @@ languages/dotnet/runtime/Value.ml:189: stack: Value.typ_key calls itself, not a 
 languages/dotnet/runtime/Value.ml:190: stack: Value.typ_key calls itself, not a tail call, over a list
 languages/ml/Ast.ml:209: stack: Ast.pp_module_expr calls itself, not a tail call, over a list
 languages/ml/CLI.ml:497: stack: order calls itself, not a tail call, over a list
+languages/ml/compat/Gas.ml:21: int31: in Gas.encodable, 0xffffffff: not on the Pi 1's 31 bits
+languages/ml/compat/Gas.ml:22: int31: in Gas:fun at line 22, 0xffffffff: not on the Pi 1's 31 bits
 languages/ml/dotnet/Il_exprs.ml:598: stack: Il_exprs.apply calls itself, not a tail call, over a list
 languages/ml/dotnet/Il_exprs.ml:704: stack: Il_exprs.lambda calls itself, not a tail call, over a list
 languages/ml/dotnet/Il_exprs.ml:766: stack: Il_exprs.closure calls itself, not a tail call, over a list
 languages/ml/dotnet/Il_exprs.ml:862: stack: Il_exprs.try_ calls itself, not a tail call, over a list
+languages/ml/dotnet/Il_exprs.ml:951: int31: in var, -2000000000: not on the Pi 1's 31 bits
 languages/ml/dotnet/Il_types.ml:512: stack: Il_types.subst calls itself, not a tail call, over a list
 languages/ml/opti/Opti.ml:52: stack: go calls itself, not a tail call, over a list
 languages/ml/opti/Opti.ml:54: stack: go calls itself, not a tail call, over a list
@@ -122,7 +140,9 @@ languages/pascal/Pascal_compile.ml:780: stack: Pascal_compile.block calls itself
 languages/pascal/Pdebug.ml:52: stack: Pdebug.size_of calls itself, not a tail call, over a list
 languages/prolog/Prolog.ml:41: stack: Prolog.of_list calls itself, not a tail call, over a list
 languages/prolog/Wam_compile.ml:160: stack: Wam_compile.position calls itself, not a tail call, over a list
+languages/scheme/Scheme_eval.ml:124: int31: in Scheme_eval.prim, 0x7fffffff: not on the Pi 1's 31 bits
 languages/scheme/Scheme_prims.ml:312: stack: go calls itself, not a tail call, over a list
+languages/scheme/Scheme_secd.ml:164: int31: in Scheme_secd.prim, 0x7fffffff: not on the Pi 1's 31 bits
 languages/scheme/Scheme_secd.ml:82: stack: Scheme_secd.body_items calls itself, not a tail call, over a list
 languages/scheme/Scheme_step.ml:166: stack: Scheme_step.inside calls itself, not a tail call, over a list
 languages/scheme/Scheme_step.ml:168: stack: Scheme_step.inside calls itself, not a tail call, over a list
@@ -140,7 +160,10 @@ languages/tiger/dotnet/Tiger_emit.ml:355: stack: Tiger_emit.load calls itself, n
 languages/tiger/Tiger_semant.ml:216: stack: Tiger_semant.lvalue calls itself, not a tail call, over a list
 languages/tiger/Tiger_semant.ml:224: stack: Tiger_semant.lvalue calls itself, not a tail call, over a list
 languages/tiger/Tiger_semant.ml:226: stack: Tiger_semant.lvalue calls itself, not a tail call, over a list
+lib_executable/Symbols.ml:12: int31: in Symbols.be32, a char's code lsl 24, 32 bits: not on the Pi 1's 31 bits
 linker/Arm.ml:776: stack: bcases calls itself, not a tail call, over a list
+linker/CLI.ml:84: int31: in CLI.link, 0x1 lsl 32, 33 bits: not on the Pi 1's 31 bits
+linker/Exe.ml:210: int31: in Exe.macho, 0x80000022; 0x80000028; x lsr 32 and 1 more: not on the Pi 1's 31 bits
 machine/CLI.ml:123: stack: run calls itself in a try's handler: no tail call by mini-ml
 machine/CLI.ml:141: stack: run calls itself in a try's handler: no tail call by mini-ml
 machine/CLI.ml:96: stack: go calls itself in a try's handler: no tail call by mini-ml
@@ -162,6 +185,12 @@ utilities/text/awk/Run.ml:594: stack: Run.loop_body calls itself in a try's body
 version_control/commands/Commands.ml:32: swallowed: in Commands.mkdir_p, Unix.Unix_error silenced, a constant answered
 version_control/commands/Save.ml:72: stack: treeify calls itself, not a tail call, over a list
 version_control/diff/Diff.ml:67: stack: take calls itself, not a tail call, over a list
+version_control/objects/Delta.ml:143: int31: in go, 0xffffffff: not on the Pi 1's 31 bits
+version_control/objects/Delta.ml:90: int31: in Delta's toplevel, 0x53d0fee0; 0x67ed26b7; 0xcd406d90 and 188 more: not on the Pi 1's 31 bits
+version_control/objects/Packer.ml:7: int31: in Packer.murmurhash2, 0x5bd1e995; 0xffffffff; 0xae88fef5: not on the Pi 1's 31 bits
+version_control/objects/Pack.ml:215: int31: in Pack:fun at line 214, 0x1 lsl 31, 32 bits: not on the Pi 1's 31 bits
+version_control/objects/Pack.ml:43: int31: in Pack.offset, 0x80000000; 0x7fffffff: not on the Pi 1's 31 bits
+version_control/repo/Query.ml:20: int31: in Query.probe, 0xffffffff: not on the Pi 1's 31 bits
 version_control/wire/Proto.ml:208: stack: dial calls itself in a try's handler: no tail call by mini-ml
 windows/rio/Processes_winshell.ml:13: swallowed: in Processes_winshell.mount_files, Sys_error silenced, a constant answered
 windows/rio/Processes_winshell.ml:26: swallowed: in Processes_winshell.start, Unix.Unix_error silenced, a constant answered

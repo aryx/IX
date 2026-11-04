@@ -24,6 +24,9 @@ let handlers : string list ref = ref []
 let try_count : int ref = ref 0
 let handler_vars : (int * string) list ref = ref []
 
+(* in the branch of an if Sys.int_size >= 63: bugs/intwidth.dl's *)
+let in_wide : bool ref = ref false
+
 let prims : (string, unit) Hashtbl.t = Hashtbl.create 64
 
 let quote (s : string) : string =
@@ -467,7 +470,9 @@ let rec bind (p : pattern) (src : string) : unit =
   | Precord fields -> List.iter (fun ((l, p) : label * pattern) -> part ("fld:" ^ l.lname) p) fields
 
 (* a call's or a raise's site: in which try *)
-let site_in (s : string) : unit = match !tries with t :: _ -> fact "in_try" [ s; t ] | [] -> ()
+let site_in (s : string) : unit =
+  (match !tries with t :: _ -> fact "in_try" [ s; t ] | [] -> ());
+  if !in_wide then fact "wide_site" [ s ]
 
 (* a call's place, for bugs/stack.dl: in a handler (no tail call by mini-ml,
  * whose try is a function of its own); a tail call, its result the
@@ -492,13 +497,84 @@ let rec fresh (x : expr) : string option =
   | Econstraint (e, _) -> fresh e
   | _ -> None
 
+(* an int of 63 bits that an int of the Pi 1, 31 bits, does not hold:
+ * bugs/intwidth.dl's (plan_bug_analyses.md's A4). In the branch of an
+ * if Sys.int_size >= 63 (in_wide), what is there runs only where ints
+ * are wide: its calls are wide_site, its literals not said *)
+let max31 : int = 0x3fffffff
+
+let rec bits (n : int) : int = if n = 0 then 0 else 1 + bits (n lsr 1)
+
+(* the condition c true when ints are wide (Some true), when they are
+ * not (Some false) *)
+let int_size_test (c : expr) : bool option =
+  match c.e with
+  | Eapply ({ e = Evar (Prim (op, _, _)); _ },
+            [ { e = Evar (Global g); _ }; { e = Econst (Ast.Int n); _ } ])
+    when g.gsym = "Sys.int_size" -> (
+      match op with
+      | "%greaterequal" when n > 31 -> Some true
+      | "%greaterthan" when n >= 31 -> Some true
+      | "%lessthan" when n > 31 -> Some false
+      | "%lessequal" when n >= 31 -> Some false
+      | _ -> None)
+  | _ -> None
+
+let is_char (x : expr) : bool =
+  match Typing.expr_type x with
+  | Some (Tconstr ({ tpath = "char"; _ }, [])) -> true
+  | _ -> false
+
+(* the bits x's value needs, when x says it: a constant, a mask, a
+ * char's code; None, any *)
+let rec width (x : expr) : int option =
+  match x.e with
+  | Econst (Ast.Int n) when n >= 0 -> Some (bits n)
+  | Econstraint (e, _) -> width e
+  | Eapply ({ e = Evar (Prim ("%andint", _, _)); _ }, [ a; b ]) -> (
+      match width a, width b with
+      | Some m, Some n -> Some (min m n)
+      | (Some _ as w), None | None, (Some _ as w) -> w
+      | None, None -> None)
+  | Eapply ({ e = Evar (Prim ("%lsrint", _, _)); _ }, [ a; { e = Econst (Ast.Int k); _ } ]) ->
+      Option.map (fun (w : int) -> max 0 (w - k)) (width a)
+  | Eapply ({ e = Evar (Prim ("%identity", _, _)); _ }, [ a ]) when is_char a -> Some 8
+  | _ -> None
+
+let wide_int (site : string) (what : string) : unit =
+  if not !in_wide then fact "wide_int" [ site; !unit_name; !inside; what ]
+
+(* 0xffffffff, Sha1's mask before e92ae1ec: -1 on the Pi 1 *)
+let literal (x : expr) : unit =
+  match x.e with
+  | Econst (Ast.Int n) when n > max31 || n < - max31 - 1 ->
+      wide_int (Printf.sprintf "%s:%d" !unit_name x.loc)
+        (if n > 0 then Printf.sprintf "0x%x" n else string_of_int n)
+  | _ -> ()
+
+(* x lsl k past bit 30, by x's width; a shift by 31 or more *)
+let shift (site : string) (p : string) (args : expr list) : unit =
+  match p, args with
+  | ("%lslint" | "%lsrint" | "%asrint"), [ a; { e = Econst (Ast.Int k); _ } ] ->
+      let op = match p with "%lslint" -> "lsl" | "%lsrint" -> "lsr" | _ -> "asr" in
+      let w = if p = "%lslint" then width a else None in
+      let x =
+        match a.e with
+        | Econst (Ast.Int n) -> Printf.sprintf "0x%x" n
+        | Eapply ({ e = Evar (Prim ("%identity", _, _)); _ }, [ c ]) when is_char c -> "a char's code"
+        | _ -> "x" in
+      (match w with
+       | Some w when w + k > 31 -> wide_int site (Printf.sprintf "%s %s %d, %d bits" x op k (w + k))
+       | _ -> if k >= 31 then wide_int site (Printf.sprintf "%s %s %d" x op k))
+  | _ -> ()
+
 (* e's value goes to the variable dst; name: what a function written
  * here is called (the variable it is bound to) *)
 let rec flow (name : string option) (x : expr) (dst : string) : unit =
   let stores (fields : (string * expr) list) : unit =
     List.iter (fun ((field, e) : string * expr) -> fact "assign_store_field" [ dst; field; operand e ]) fields in
   match x.e with
-  | Econst _ -> scalar dst
+  | Econst _ -> literal x; scalar dst
   | Evar (Local v) -> fact "assign" [ dst; local v ]
   | Evar (Global g) -> fact "assign" [ dst; global g.gsym !inside ]; typed "vtype" g.gsym g.gtype
   | Evar (Prim (p, arity, t)) -> fact "assign_address" [ dst; prim p arity t ]
@@ -678,8 +754,14 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
       List.iter (fun (e : expr) -> fact "assign_store_field" [ dst; elt; operand e ]) es
   | Eif (c, a, b) ->
       flow None c (junk ());
-      flow None a dst;
-      (match b with Some b -> flow None b dst | None -> scalar dst)
+      let wide = int_size_test c in
+      let branch (w : bool) (e : expr) : unit =
+        let old = !in_wide in
+        if w then in_wide := true;
+        flow None e dst;
+        in_wide := old in
+      branch (wide = Some true) a;
+      (match b with Some b -> branch (wide = Some false) b | None -> scalar dst)
   | Eseq (a, b) -> flow None a (junk ()); flow name b dst
   | Ewhile (c, body) -> scalar dst; flow None c (junk ()); flow None body (junk ())
   | Efor (_, lo, hi, _, body) -> scalar dst; flow None lo (junk ()); flow None hi (junk ()); flow None body (junk ())
@@ -705,6 +787,7 @@ and call (x : expr) (f : expr) (args : expr list) (dst : string) : unit =
         let res = match (if last then Typing.expr_type x else None) with Some r -> r | None -> result t arity in
         prim_body p arity res ~arg:(fun k -> given.(k - 1)) ~ret ~inside:(fun _ -> !inside) ~site:i
           ~place:(Some !unit_name);
+        shift i p args;
         if p = "%apply" || p = "%revapply" then begin site_in (i ^ ":call"); position (i ^ ":call") ret end;
         (* (a raise's site, raise_in's: where it runs, what it raises) *)
         if p = "%raise" then begin
@@ -788,7 +871,7 @@ and operand (x : expr) : string =
   | Evar (Local v) -> local v
   | Evar (Global g) -> typed "vtype" g.gsym g.gtype; global g.gsym !inside
   | Econstraint (e, _) -> operand e
-  | Econst _ -> constant ()
+  | Econst _ -> literal x; constant ()
   | _ ->
       let t = temp () in
       typed "vtype" t (Typing.expr_type x);
@@ -817,6 +900,7 @@ let unit_ (name : string) (items : item list) : string =
   tries := [];
   handlers := [];
   handler_vars := [];
+  in_wide := false;
   funs := 0;
   blocks := 0;
   inside := name ^ ":init";

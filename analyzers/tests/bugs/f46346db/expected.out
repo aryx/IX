@@ -2,4 +2,4 @@ bug? analyzers/tests/bugs/f46346db/Before.ml:13: stack: Before.components calls 
 bug? analyzers/tests/bugs/f46346db/Before.ml:16: stack: Before.components calls itself, not a tail call, over a list
 bug? analyzers/tests/bugs/f46346db/Before.ml:17: stack: Before.components calls itself, not a tail call, over a list
 bug? analyzers/tests/bugs/f46346db/Before.ml:20: stack: Before.components calls itself, not a tail call, over a list
-4 bugs? (physeq 0, stack 4, swallowed 0, crash 0)
+4 bugs? (physeq 0, stack 4, swallowed 0, crash 0, int31 0)

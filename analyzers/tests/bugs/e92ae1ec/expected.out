@@ -1,0 +1,5 @@
+bug? analyzers/tests/bugs/e92ae1ec/Before.ml:11: int31: in Before.in_ram, 0x40000000: not on the Pi 1's 31 bits
+bug? analyzers/tests/bugs/e92ae1ec/Before.ml:15: int31: in Before.word, a char's code lsl 24, 32 bits: not on the Pi 1's 31 bits
+bug? analyzers/tests/bugs/e92ae1ec/Before.ml:6: int31: in Before's toplevel, 0xffffffff; 0xf lsl 28, 32 bits: not on the Pi 1's 31 bits
+bug? analyzers/tests/bugs/e92ae1ec/Before.ml:9: int31: in Before.start, 0x67452301; 0x98badcfe; 0xc3d2e1f0 and 1 more: not on the Pi 1's 31 bits
+4 bugs? (physeq 0, stack 0, swallowed 0, crash 0, int31 4)

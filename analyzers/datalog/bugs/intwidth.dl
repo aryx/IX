@@ -1,0 +1,59 @@
+% An int that the Pi 1's 31 bits do not hold (docs/plans/plan_bug_analyses.md,
+% A4, its first step): mini-analyze -bugs, over the call graph of
+% points_to/ (target) and the facts of Closure_facts (FACTS.md):
+%   wide_int(S, U, F, W)  at S, in the unit U and the function F, W: a
+%                         literal past 0x3fffffff (or below -0x40000000),
+%                         a shift by 31 or more, or x lsl k when x says
+%                         its width (a constant, a mask, a char's code)
+%                         and k moves it past bit 30
+%   wide_site(I)          the call I is in the branch of an
+%                         if Sys.int_size >= 63, which runs only where
+%                         ints are wide (its literals no wide_int)
+%   unit_dir(U, D)        U's file is under the directory D, from the
+%                         top of the tree whose lib_core -L names
+% and says:
+%   int31(S, U, F, W)     W may be wrong on the Pi 1: in a unit meant for
+%                         it too, F reached by a call outside a wide
+%                         branch
+%
+%     let mask = 0xffffffff                         (e92ae1ec^, Sha1.ml)
+%     let rol x n = ((x lsl n) lor (x lsr (32 - n))) land mask
+%
+% OCaml's int is 63 bits on a 64-bit machine, 31 on arm's 32: the mask is
+% -1 there, every hash was wrong, and the host's mini-ml, compiling for
+% arm, kept the constant whole where the card's wrapped it (6a649689).
+% And 0x40000000, a gigabyte as a bound, is min_int on the Pi 1
+% (kernel/step4's note, cc6eb618).
+%
+% design:
+% Every unit is taken to run on the Pi 1 too, but those of wide_dir (the
+% author: "assume all of it should run both on pi1 and pi4. what is in
+% lib_machine/pi4 is meant only for pi4"; raspberry/ and machine/ run on
+% the author's arm64 for now). A function only reached under a test of
+% Sys.int_size (Poly1305's mac_limbs, Chacha20's block_wide) is not
+% reported: narrow(F) is what the other calls reach. What a value is
+% used for is not looked at (Delta's gear hash, 32-bit constants tested
+% by land 0xff, the same low bits on 31), nor its range (Adler's
+% (b lsl 16) lor a, b below 65521: d47f0829's sign, 7f15c58f's guard
+% that wrapped): that is the plan's step 2, intervals on the SSA.
+%
+% others:
+% Java fixed int at 32 bits for every machine (1996), C left it to the
+% implementation; OCaml's tagged int is one bit less than the word, so
+% 31 bits on 32-bit machines, which js_of_ocaml (32 bits) and the 32-bit
+% ports still meet. Coverity's and the C compilers' warnings for a
+% constant too large for its type, and for a shift past its width, are
+% the same syntactic check; an interval analysis (Cousot & Cousot, POPL
+% 1977) is what the second step does.
+
+wide_dir('kernels/lib_machine/pi4').
+wide_dir(raspberry).
+wide_dir(machine).
+wide_unit(U) :- unit_dir(U, D), wide_dir(D).
+
+narrow(F) :- entry(F).
+narrow(F) :- callback(F).
+narrow(G) :- narrow(F), in_function(I, F), target(I, G), \+ wide_site(I).
+narrow(G) :- curried(G, F), narrow(F).
+
+int31(S, U, F, W) :- wide_int(S, U, F, W), narrow(F), \+ wide_unit(U).

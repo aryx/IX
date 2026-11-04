@@ -175,7 +175,23 @@ List.mem, `Scalar Ret`, never reads its list: the global read only by
 TinyVCS.lca's order at line 759 (s.branches, printed there, comes from
 the state file, not from lca's table).
 
-Next: Hashtbl derived (its closures over the buckets, the
+Hashtbl derived (2026-11-04): all 17 of its functions, replace's 95 ops
+(Models' 4): the real structure, each call's bucket cells stored in the
+table's own array, each table made at its create's call, so a find
+reaches its own table's buckets, what Models got by one object a table.
+The models test's probe: the code's 83 answers. make check's six:
+-caps, -dead as with List alone; -bugs 19 new evalorder reports and 2
+gone on the 44 programs (functions newly effectful, writing what a
+derived summary made at their call: to find). A store through a copy of
+a New'd variable is the summary's own object (model_body's store_in;
+fold's accu := ...), the hand models' answers the same. The measure,
+the 44 programs' total, Models' Hashtbl against derived: -dead 124 s to
+124, -exn 341 s to 368 (mini-ml 75 s, 5.7 GB to 99 s, 8.3 GB): the
+summaries' size, each written in at every call.
+
+Next: a summary simplified before it is stored (copies propagated, an
+op whose result nothing reads dropped), then the measure again; the
+19 evalorder; then the rest of lib_core (its closures over the buckets, the
 case Models was written for); then the rest of lib_core, the fixed cost
 of step 1 (List's code about 2,400 of the 80,000 to 117,000 facts of
 lib_core in a program: mini-cat's count).

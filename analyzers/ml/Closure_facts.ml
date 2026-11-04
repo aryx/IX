@@ -411,7 +411,14 @@ let model_body (sym : string) (ops : Models.op list) ~(arg : int -> string)
       | Store (o, f, s) ->
           fact "assign_store_field" [ var o; f; var s ];
           (* (a block the model made is being given its fields) *)
-          if not (List.mem (Models.New o) ops) then begin
+          (* (or through copies of its variable: a derived summary's
+           * fold, accu := ..., the ref it made; old: the New'd variable
+           * alone, Models' shape) *)
+          let made =
+            List.exists
+              (function Models.New (Tmp b) -> List.mem o (List.map (fun k -> Models.Tmp k) (copies [] b)) | _ -> false)
+              ops in
+          if not (List.mem (Models.New o) ops) && not made then begin
             fact "store_in" [ var o; f; var s; inside ];
             fact "store_site" [ site ]
           end;

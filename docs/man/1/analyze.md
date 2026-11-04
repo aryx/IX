@@ -87,7 +87,8 @@ program's library, lib_core's units it names, is read with it.
      `Condition.wait` not in a `while` (`bugs/races.dl`); `leak`, a
      channel or a lock taken and given back in one function, but not
      when a call on a path between raises (`bugs/pairs.dl`, over the
-     program's functions in mini-ml's SSA form); `unused`, a local
+     program's functions in mini-ml's SSA form), across a call of a
+     helper that closes its argument or returns what it opens; `unused`, a local
      variable never read, its name not `_x`: OCaml's warnings 26 and
      27 by rules (`bugs/unused.dl`), for what no compiler checks (the
      kernel's ML); `layout`, a statement in the column of an `if`'s

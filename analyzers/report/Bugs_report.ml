@@ -337,6 +337,19 @@ let bugs_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
                (site (u ^ ":" ^ t.(3)))))
       (tuples "dangling" 4) in
   let layout = List.sort_uniq compare layout in
+  (* inside a function that gives back its argument, a raise before it
+   * does (pairs.dl's leak_in): a line a call *)
+  let leak =
+    leak
+    @ List.filter_map
+        (fun (t : string array) ->
+          let f = t.(0) and c = t.(1) and r = t.(2) in
+          if not (own c) then None
+          else
+            Some
+              (Printf.sprintf "%s: leak: in %s, its argument given back at %s, not when this raises %s"
+                 (site c) (fun_of (unit_of c) f) (site r) (exn_name t.(3))))
+        (tuples "leak_in" 4) in
   let order = List.sort_uniq compare order in
   let sharing = List.sort_uniq compare sharing in
   let race = List.sort_uniq compare race and wait = List.sort_uniq compare wait in

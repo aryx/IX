@@ -525,7 +525,7 @@ with: `own_live_out(V, P)`, and for ML `own_live_in(V, B)`, `own_idom(D, B)`.
 | `bugs/init.dl` | `init`, `global_def`, `var_in`, `alloc_in`, `unit_start`, `starts_before`, `unit_file`, over `target` |
 | `bugs/layout.dl` | `expr`, `child`, `pos`, `leading` |
 | `bugs/unused.dl` | `bound_var`, `read`, `underscore` |
-| `bugs/pairs.dl` | `site_key`, the SSA's `ssa_site`, `ssa_next`, `ssa_first`, `ssa_last`, `ssa_succ`, `call_ret`, `argument`, `curried`, over `target`, `pts`, `at`, `protected`, `reach` |
+| `bugs/pairs.dl` | `site_key`, the SSA's `ssa_site`, `ssa_next`, `ssa_first`, `ssa_last`, `ssa_succ`, `ssa_block`, `ssa_entry`, `call_ret`, `argument`, `parameter`, `assign`, `return`, `curried`, over `target`, `pts`, `at`, `protected`, `reach` |
 | `bugs/races.dl` | `store_in`, `loop_site`, `parameter`, `vtype`, `alloc_in`, `own_unit`, over `pts`, `fpts`, `target`, `entry`, `callback`, `reach` |
 | `liveness.dl` | C's `-flow` |
 | `liveness_ssa.dl`, `dominators.dl` | ML's `-flow` |

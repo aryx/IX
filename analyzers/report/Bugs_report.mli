@@ -45,7 +45,9 @@
  * (11c5d5f0's ^C); wait: a Condition.wait not in a while (ddb60eef's
  * Event.sync). leak (bugs/pairs.dl): a resource a function takes and
  * gives back, held on a path to a call that may raise (f7b1aef0's
- * read_file), a line a call taking it. unused (bugs/unused.dl): a local
+ * read_file), a line a call taking it; across a call too, a helper
+ * that closes its argument or returns what it opens, and a raise in the
+ * closing helper before it closes (plan_analysis_summaries.md). unused (bugs/unused.dl): a local
  * variable never read, not named _x: OCaml's warnings 26 and 27 by
  * rules, a line its function's. layout (bugs/layout.dl): a statement in
  * the column of an if's branch above, not in it (b9fea684's else). Only

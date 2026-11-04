@@ -74,12 +74,13 @@ releases('Mutex.unlock').
 stage_of(G, G) :- function(G).
 stage_of(G, P) :- curried(G, G1), stage_of(G1, P).
 
-took(A, H, F) :-
+% (a call of the table's functions: took0, gave0)
+took0(A, H, F) :-
   target(A, G), stage_of(G, P), acquires(P, result), call_ret(A, V),
   pts(V, H), in_function(A, F).
-took(A, H, F) :-
+took0(A, H, F) :-
   target(A, 'Mutex.lock'), argument(A, 1, V), pts(V, H), in_function(A, F).
-gave(R, H, F) :-
+gave0(R, H, F) :-
   target(R, G), stage_of(G, P), releases(P), argument(R, 1, V), pts(V, H),
   in_function(R, F).
 
@@ -91,6 +92,39 @@ step(P, Q) :- ssa_next(P, Q).
 step(T, Q) :- ssa_last(B, T), ssa_succ(B, B2), ssa_first(B2, Q).
 point_of(S, P) :- site_key(S, K), ssa_site(P, K).
 one_application(A, C) :- site_key(A, K), site_key(C, K).
+
+% Summaries (docs/plans/plan_analysis_summaries.md, step 1): a function
+% by its effect on a resource, a call of it a take or a give-back in its
+% caller. One level: made of took0 and gave0, the table's calls, not of
+% other summaries (gives_arg_back is a negation, "no path without it", which
+% the strata do not allow through its own recursion).
+%
+% gives_arg_back(F): the stage F gives back its argument on every path of
+% the SSA from its function's entry to an end (a return, a raise, a tail
+% call): no path avoids a give-back of the variable its argument binds
+param_given(F, R) :-
+  parameter(F, 1, A), assign(V, A), gave0(R, _, _), argument(R, 1, V).
+in_block(P, B) :- ssa_first(B, P).
+in_block(Q, B) :- in_block(P, B), ssa_next(P, Q).
+closing(F, Q) :- param_given(F, R), point_of(R, Q).
+entry_point(F, P) :-
+  closing(F, Q), in_block(Q, B0), ssa_block(B0, Fn), ssa_block(B, Fn),
+  ssa_entry(B), ssa_first(B, P).
+open_from(F, P) :- entry_point(F, P), \+ closing(F, P).
+open_from(F, Q) :- open_from(F, P), step(P, Q), \+ closing(F, Q).
+an_end(T) :- ssa_last(B, T), \+ ssa_succ(B, _).
+not_closing(F) :- open_from(F, T), an_end(T).
+gives_arg_back(F) :- param_given(F, _), \+ not_closing(F).
+% returns_taken(F): F returns what a take of its own made
+returns_taken(F) :- took0(_, H, F), return(F, V), pts(V, H).
+
+took(A, H, F) :- took0(A, H, F).
+took(I, H, F) :-
+  target(I, G), returns_taken(G), call_ret(I, V), pts(V, H), in_function(I, F).
+gave(R, H, F) :- gave0(R, H, F).
+gave(I, H, F) :-
+  target(I, G), gives_arg_back(G), argument(I, 1, V), pts(V, H),
+  in_function(I, F).
 
 % the points after A's call that a path reaches without a give-back
 given_at(A, Q) :- took(A, H, F), gave(R, H, F), point_of(R, Q).
@@ -114,3 +148,10 @@ after_raise(P, Q2) :- after_raise(P, Q), step(Q, Q2).
 leak(A, C, R, E) :-
   raising(A, C, P, E), took(A, H, F), gave(R, H, F), point_of(R, Q),
   after_raise(P, Q).
+
+% a raise inside a function that gives back its argument, before it
+% does: the caller's resource not given back (the caller's path stopped
+% at the call, the give-back the callee's)
+leak_in(F, C, R, E) :-
+  gives_arg_back(F), open_from(F, P), point_of(C, P), param_given(F, R),
+  at(C, _, _, E), \+ another_bug(E), \+ protected(C), reach(F).

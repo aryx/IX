@@ -41,8 +41,7 @@ let random (caps : < Cap.open_in; .. >) (n : int) : string =
    the key now. (ix: no mutex, there being no threads.) *)
 let verified : (string, float) Hashtbl.t = Hashtbl.create 16
 
-let verify_cached ~(trust : X509.roots) ~(host : string) (chain : X509.t list) : (unit, string) result =
-  let now = Unix.gettimeofday () in
+let verify_cached ~(now : float) ~(trust : X509.roots) ~(host : string) (chain : X509.t list) : (unit, string) result =
   let key = host ^ "\000" ^ String.concat "" (List.map (fun (c : X509.t) -> c.der) chain) in
   let known = Hashtbl.find_opt verified key in
   match known with
@@ -64,13 +63,13 @@ type t = {
 
 let write (t : t) (bytes : string) : unit = if bytes <> "" && not t.closed then try Tcp.send_all t.fd bytes with Unix.Unix_error _ -> t.eof <- true
 
-let connect (caps : < Cap.network; Cap.open_in; .. >) ~(trust : X509.roots) ~(host : string) ~(port : int) : (t, string) result =
+let connect (caps : < Cap.network; Cap.open_in; Cap.clock; .. >) ~(trust : X509.roots) ~(host : string) ~(port : int) : (t, string) result =
   match Tcp.connect caps ~host ~port with
   | exception Unix.Unix_error (e, _, _) -> Error (Printf.sprintf "can't reach %s:%d: %s" host port (Unix.error_message e))
   | exception Failure why -> Error why
   | fd ->
       let r = random caps 96 in
-      let verify chain = verify_cached ~trust ~host chain in
+      let verify chain = verify_cached ~now:(CapUnix.gettimeofday caps ()) ~trust ~host chain in
       let machine, hello = Tls13.client ~host ~random:(String.sub r 0 32) ~secret:(String.sub r 32 32) ~session_id:(String.sub r 64 32) ~verify in
       let t = { fd; machine; outbox = ""; eof = false; closed = false } in
       write t hello;

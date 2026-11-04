@@ -7,9 +7,9 @@
 # env (a copy of the rules), mini-analyze -caps over the 44 programs,
 # and the functions that would need one of them, each site once:
 # sites.txt.
-# usage: docs/plans/caps_syscalls/census.sh out-dir   (dune build first;
+# usage: docs/plans/done/caps_syscalls/census.sh out-dir   (dune build first;
 # minutes: sweep.sh's)
-cd "$(dirname "$0")/../../.."
+cd "$(dirname "$0")/../../../.."
 out=$(realpath -m $1); mkdir -p $out
 rm -rf $out/rules; cp -r analyzers/datalog $out/rules
 cat >> $out/rules/capabilities.dl <<'EOF'

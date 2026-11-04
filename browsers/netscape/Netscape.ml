@@ -905,7 +905,7 @@ let app (caps : < caps; .. >) (flags : P.flags) (profile : string option) ((kept
    * (one with a '=' in it, a query's, comes as a flag cut there) *)
   let bare = List.find_map (fun (n, v) -> if String.exists (fun c -> c = ':' || c = '/' || c = '.') n then Some (if v = "" then n else n ^ "=" ^ v) else None) flags in
   let address = match (List.assoc_opt "url" flags, bare) with Some a, _ | None, Some a -> a | None, None -> "about:home" in
-  let jar = Cookie_jar.create cookies in
+  let jar = Cookie_jar.create ~now:(CapUnix.gettimeofday caps) cookies in
   (* the helper programs: the profile's, ~/.mailcap's, the built-in
    * ones, those on the PATH; none with helpers=off (the tests: a
    * frame dumped starts no program) *)

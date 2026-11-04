@@ -60,14 +60,14 @@ val max_redirects : int
 (* the final response (whatever its status, 404 included: the caller
  * decides), or why there is none: a URL we can't get, a network error,
  * a response that doesn't parse, too many redirections *)
-val get : < Cap.network; Cap.open_in; .. > -> string -> (Http.response, string) result
+val get : < Cap.network; Cap.open_in; Cap.clock; .. > -> string -> (Http.response, string) result
 
 (* the same, and the URL the redirections led to; with [post] (its
  * content type and body), the first request a POST *)
-val fetch : < Cap.network; Cap.open_in; .. > -> post:(string * string) option -> string -> (string * Http.response, string) result
+val fetch : < Cap.network; Cap.open_in; Cap.clock; .. > -> post:(string * string) option -> string -> (string * Http.response, string) result
 
 (* one request, no redirection followed (mini-curl without -L) *)
-val once : < Cap.network; Cap.open_in; .. > -> post:(string * string) option -> Url.t -> (Http.response, string) result
+val once : < Cap.network; Cap.open_in; Cap.clock; .. > -> post:(string * string) option -> Url.t -> (Http.response, string) result
 
 (* what to connect to and what to send for [url]: the host for the
  * resolver, the port, the request's bytes (a GET; a POST of [post], its
@@ -87,6 +87,6 @@ type options = { said : Http.header list; keep : bool; jar : Cookie_jar.t option
 (* nothing more said, the connection closed after each answer, no jar *)
 val defaults : options
 
-val fetch_with : options -> < Cap.network; Cap.open_in; .. > -> post:(string * string) option -> string -> (string * Http.response, string) result
-val once_with : options -> < Cap.network; Cap.open_in; .. > -> post:(string * string) option -> Url.t -> (Http.response, string) result
+val fetch_with : options -> < Cap.network; Cap.open_in; Cap.clock; .. > -> post:(string * string) option -> string -> (string * Http.response, string) result
+val once_with : options -> < Cap.network; Cap.open_in; Cap.clock; .. > -> post:(string * string) option -> Url.t -> (Http.response, string) result
 val prepare_with : options -> post:(string * string) option -> Url.t -> (string * int * string, string) result

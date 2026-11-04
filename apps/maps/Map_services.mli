@@ -22,7 +22,7 @@ val known_places : caps -> Playground.flags -> (string * Place.t) list
 val save_places : caps -> Playground.flags -> (string * Place.t) list -> unit
 
 (* [forecast_of caps base lat lon] *)
-val forecast_of : < Cap.network; Cap.open_in; .. > -> string -> float -> float -> (Weather.t, string) result
+val forecast_of : < Cap.network; Cap.clock; Cap.open_in; .. > -> string -> float -> float -> (Weather.t, string) result
 
 (* mini-maps weather PLACE: the place, as the Find box finds it, and its
  * forecast as lines *)

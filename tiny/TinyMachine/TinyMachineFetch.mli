@@ -32,4 +32,4 @@
  * pictures are decoded by the browser there; here both are the host's,
  * so tiny-kernel has no TLS and no decoder of PNG or JPEG. *)
 
-val main : < Cap.network; Cap.open_in; Cap.stdout; Cap.argv; .. > -> int
+val main : < Cap.network; Cap.open_in; Cap.stdout; Cap.argv; Cap.clock; .. > -> int

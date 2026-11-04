@@ -18,7 +18,10 @@ lib_core's erased `Cap` (which mini-ml compiles), `capabilities.dl`
 (which says who needs what), and the 32 callers, then the programs the
 sweep does not read.
 
-**Status: steps 1 to 4 done (2026-11-04), step 5 next.** Part 1, a
+**Status: done (2026-11-04).** Left: `FS.getcwd` asks `Cap.readdir`,
+not `Cap.env` (its callers include tiny/ and `analyzers/`); tiny/'s
+own calls (the author's: later); two bare calls Plan 9's `Unix` lacks
+(`socketpair`, `gethostname`). Part 1, a
 capability held in a record's field, is done (98a593f4). The author's
 answers to the open questions are in the last section.
 
@@ -166,10 +169,18 @@ raspberry/, lib_playground's platforms, and tiny/'s host side, about
    Plan 9's too, whose `Unix` has neither). Left as they were:
    `FS.getcwd`, still `Cap.readdir`'s (its callers include tiny/ and
    `analyzers/Analyze.ml`); tests, benchmarks, mini-ml's own tests of
-   `Unix`. Open: lib_networking's (`Lines`' deadlines, `Keep_alive`'s
-   ages, `Tls_client`'s cache, `Cookie_jar`'s now, `Dns`'s query id)
-   and mini-qemu's `Status` and `Usernet`, library code where no
-   `caps` goes.
+   `Unix`. The library code no `caps` reached, by the author's choice
+   ("yes", of the plan's option 2): a deadline or an age of a
+   connection held is the connection's, as `select`'s timeout is the
+   descriptor's, so `Lines` and `Keep_alive` read the clock bare, with
+   a comment; the rest is given a clock by its holder. `Tls_client`
+   (a certificate's dates: `connect` and `exchange` ask for
+   `Cap.clock`, and so do `Http_client`'s functions and their callers,
+   maps', pim's, netscape's, tiny-machine's fetch's `main` in its
+   `.mli`), `Cookie_jar.create ~now` (Netscape's main gives
+   `CapUnix.gettimeofday caps`; a tab's empty jar a stopped clock),
+   mini-qemu's `Status.create ~clock` and `Usernet.clock` (set by
+   `Main`). `Dns`'s query id needs no time: the name's hash and a count.
 
 Checked at each step: `make test`, `analyzers/tests/run.sh`, the `-caps`
 sweep against the one before (the only new reports are the census's,

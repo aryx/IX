@@ -5,8 +5,8 @@
 
 (* [get caps ~more url]: the answer, whatever its status; [more]: other
  * headers to say. Only the worker calls it. *)
-val get : < Cap.network; Cap.open_in; .. > -> more:Http.header list -> string -> (Http.response, string) result
+val get : < Cap.network; Cap.open_in; Cap.clock; .. > -> more:Http.header list -> string -> (Http.response, string) result
 
 (* [get_once caps url]: on a connection of its own, closed after: what a
  * process of its own may ask (Routing), the kept one being the worker's *)
-val get_once : < Cap.network; Cap.open_in; .. > -> string -> (Http.response, string) result
+val get_once : < Cap.network; Cap.open_in; Cap.clock; .. > -> string -> (Http.response, string) result

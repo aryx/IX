@@ -17,8 +17,9 @@
 
 type t
 
-(* a jar holding [cookies] *)
-val create : Cookie.jar -> t
+(* a jar holding [cookies], their dates against [now] (the clock, given
+ * by the holder of Cap.clock: CapUnix.gettimeofday caps) *)
+val create : now:(unit -> float) -> Cookie.jar -> t
 
 (* what it holds now, without what is past its date *)
 val cookies : t -> Cookie.jar

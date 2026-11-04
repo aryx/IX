@@ -40,7 +40,7 @@ type working = Beside | Waited | Inline
 val working : working ref
 
 (* the piece of [tab] given to the worker (started the first time): its number *)
-val give : < Cap.network; Cap.open_in; .. > -> Tab.t -> int
+val give : < Cap.network; Cap.clock; Cap.open_in; .. > -> Tab.t -> int
 
 (* is a piece out (given, and not taken back)? *)
 val out : unit -> bool

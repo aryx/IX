@@ -12,6 +12,9 @@ let hostmac = "\082\085\010\000\002\002"
  * address really goes: the gateway is this machine, the name server
  * the host's, any other itself *)
 let resolver = ref Unix.inet_addr_loopback
+(* the host's clock, for a conversation's age (Main sets it from its
+ * Cap.clock; 0 before) *)
+let clock : (unit -> float) ref = ref (fun () -> 0.)
 let show a = String.concat "." (List.init 4 (fun i -> string_of_int (Char.code a.[i])))
 let real a = if a = host then Unix.inet_addr_loopback else if a = dns then !resolver else Unix.inet_addr_of_string (show a)
 
@@ -156,7 +159,7 @@ let udpin t pkt hl =
   let gaddr = String.sub pkt 12 4 and faddr = String.sub pkt 16 4 in
   let sport = get16 pkt hl and dport = get16 pkt (hl + 2) and len = get16 pkt (hl + 4) in
   if len >= 8 && hl + len <= String.length pkt then begin
-    let now = Unix.gettimeofday () in
+    let now = !clock () in
     let flow =
       match List.find_opt (fun w -> w.fgport = sport && w.fport = dport && w.fgaddr = gaddr && w.faddr = faddr) t.flows with
       | Some w -> Some w
@@ -207,7 +210,7 @@ let ubuf = Bytes.create 2048
 let poll t =
   (* the datagrams come back, each to its conversation's port; a
    * conversation silent for a minute is forgotten *)
-  let now = Unix.gettimeofday () in
+  let now = !clock () in
   List.iter (fun w ->
     let rec take () =
       match Unix.read w.fsock ubuf 0 (Bytes.length ubuf) with

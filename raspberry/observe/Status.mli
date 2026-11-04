@@ -30,7 +30,7 @@ type cpu = { pc : int64; user : bool; label : string; ran : int; waited : int }
 type t
 
 (* [symbols]: (address, name), from Elf.symbols *)
-val create : every:float -> symbols:(int64 * string) list -> t
+val create : clock:(unit -> float) -> every:float -> symbols:(int64 * string) list -> t
 
 (* after a batch: its CPUs' positions *)
 val sample : t -> cpu list -> unit

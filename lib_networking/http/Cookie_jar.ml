@@ -5,13 +5,13 @@
 
 (* See Cookie_jar.mli *)
 
-type t = { mutable jar : Cookie.jar; mutable changes : int }
+type t = { mutable jar : Cookie.jar; mutable changes : int; now : unit -> float }
 
-let create (cookies : Cookie.jar) : t = { jar = cookies; changes = 0 }
+let create ~(now : unit -> float) (cookies : Cookie.jar) : t =
+  { jar = cookies; changes = 0; now }
 
-let now = Unix.gettimeofday
-let cookies (t : t) : Cookie.jar = Cookie.alive ~now:(now ()) t.jar
-let header (t : t) (url : Url.t) : string option = Cookie.header ~now:(now ()) ~script:false url t.jar
+let cookies (t : t) : Cookie.jar = Cookie.alive ~now:(t.now ()) t.jar
+let header (t : t) (url : Url.t) : string option = Cookie.header ~now:(t.now ()) ~script:false url t.jar
 
 (* the jar after [f], counted if it is another *)
 let write (t : t) (f : Cookie.jar -> Cookie.jar) : unit =
@@ -24,10 +24,10 @@ let write (t : t) (f : Cookie.jar -> Cookie.jar) : unit =
 let received (t : t) (url : Url.t) (headers : Http.header list) : unit =
   match Http.values "Set-Cookie" headers with
   | [] -> ()
-  | values -> write t (fun jar -> List.fold_left (fun jar v -> Cookie.store ~now:(now ()) ~script:false url v jar) jar values)
+  | values -> write t (fun jar -> List.fold_left (fun jar v -> Cookie.store ~now:(t.now ()) ~script:false url v jar) jar values)
 
-let script_cookies (t : t) (url : Url.t) : string = match Cookie.header ~now:(now ()) ~script:true url t.jar with Some h -> h | None -> ""
+let script_cookies (t : t) (url : Url.t) : string = match Cookie.header ~now:(t.now ()) ~script:true url t.jar with Some h -> h | None -> ""
 
-let set_from_script (t : t) (url : Url.t) (value : string) : unit = write t (Cookie.store ~now:(now ()) ~script:true url value)
+let set_from_script (t : t) (url : Url.t) (value : string) : unit = write t (Cookie.store ~now:(t.now ()) ~script:true url value)
 let changes (t : t) : int = t.changes
 let clear (t : t) : unit = write t (fun _ -> [])

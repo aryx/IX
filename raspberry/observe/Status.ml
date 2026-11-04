@@ -9,6 +9,7 @@ type cpu = { pc : int64; user : bool; label : string; ran : int; waited : int }
 
 type t = {
   every : float;
+  clock : unit -> float;              (* the host's, given by create's caller *)
   symbols : (int64 * string) array;   (* by address, unsigned *)
   start : float;
   mutable last : float;
@@ -19,11 +20,11 @@ type t = {
   mutable waiting : string;           (* the last idle sample's place *)
 }
 
-let create ~every ~symbols =
+let create ~(clock : unit -> float) ~every ~symbols =
   let symbols = Array.of_list symbols in
   Array.sort (fun (a, _) (b, _) -> Int64.unsigned_compare a b) symbols;
-  let now = Unix.gettimeofday () in
-  { every; symbols; start = now; last = now; last_now = 0; counts = Hashtbl.create 64; busy = 0; idle = 0; waiting = "" }
+  let now = clock () in
+  { every; clock; symbols; start = now; last = now; last_now = 0; counts = Hashtbl.create 64; busy = 0; idle = 0; waiting = "" }
 
 (* the symbol at or below [pc], and the offset from it *)
 let name t pc =
@@ -54,7 +55,7 @@ let sample t cpus =
     end) cpus
 
 let report t ~now =
-  let host = Unix.gettimeofday () in
+  let host = t.clock () in
   if host -. t.last < t.every then None
   else begin
     let total = max 1 (t.busy + t.idle) in

@@ -25,7 +25,7 @@ val starred : string
 (* [session caps server ~user ~password ~mailbox f]: [f] with the
  * mailbox selected; logged out after *)
 val session :
-  < Cap.network ; Cap.open_in ; .. > -> server -> user:string ->
+  < Cap.network ; Cap.open_in ; Cap.clock ; .. > -> server -> user:string ->
   password:string -> mailbox:string -> (Imap.t -> ('a, string) result) ->
   ('a, string) result
 
@@ -112,7 +112,8 @@ val snooze : < Cap.open_in ; Cap.open_out ; Cap.readdir ; .. > -> Items.t ->
 (* [wake caps store server ~user ~password ~today]: the messages whose
  * day has come back in the Inbox, on the server and in their items;
  * how many *)
-val wake : < Cap.network ; Cap.open_in ; Cap.open_out ; Cap.readdir ; .. > ->
+val wake :
+  < Cap.network ; Cap.open_in ; Cap.open_out ; Cap.readdir ; Cap.clock ; .. > ->
   Items.t -> server -> user:string -> password:string -> today:Civil.date ->
   (int, string) result
 
@@ -125,12 +126,12 @@ val gmail_smtp : server
 
 (* a connection to the server, TLS unless plain; the error says
  * host:port *)
-val connect : < Cap.network ; Cap.open_in ; .. > -> server ->
+val connect : < Cap.network ; Cap.open_in ; Cap.clock ; .. > -> server ->
   (Lines.t, string) result
 
 (* [send caps server ~auth mail]: to whom its To:, Cc: and Bcc: say,
  * from its From: (else the user's); each message's outcome *)
-val send : < Cap.network ; Cap.open_in ; .. > -> server ->
+val send : < Cap.network ; Cap.open_in ; Cap.clock ; .. > -> server ->
   auth:(string * string) option -> Mail.t ->
   (Smtp.outcome list, string) result
 

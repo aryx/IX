@@ -230,6 +230,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; C
         (* a network: 10.0.2.3 is the host's name server, the first of
          * /etc/resolv.conf with an IPv4 address *)
         if List.hd (String.split_on_char ',' d) = "usb-net" then begin
+          Usernet.clock := CapUnix.gettimeofday caps;
           let lines = match FS.read caps (Fpath.v "/etc/resolv.conf") with t -> String.split_on_char '\n' t | exception Sys_error _ -> [] in
           let words l = List.filter (fun w -> w <> "") (String.split_on_char ' ' l) in
           match List.find_map (fun l -> match words l with [ "nameserver"; a ] when not (String.contains a ':') -> Some a | _ -> None) lines with
@@ -295,7 +296,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; C
             (try Elf.symbols (FS.read caps (Fpath.v f)) with
              | Sys_error m | Elf.Bad m -> Console.eprint caps ("mini-qemu: -symbols: " ^ m ^ "\n"); []
              | Invalid_argument _ | Not_found -> Console.eprint caps ("mini-qemu: -symbols " ^ f ^ ": no symbols read\n"); []) in
-      let status = if !status > 0. then Some (Status.create ~every:!status ~symbols) else None in
+      let status = if !status > 0. then Some (Status.create ~clock:(CapUnix.gettimeofday caps) ~every:!status ~symbols) else None in
       (* the serials, QEMU's order: the PL011, the mini UART; stdio (or
        * mon:stdio) the console, null or absent nowhere; with none said,
        * the PL011 on stdio *)

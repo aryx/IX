@@ -70,6 +70,9 @@ val poll_all : unit -> unit
  * set) *)
 val resolver : Unix.inet_addr ref
 
+(* the host's clock, set by Main from its Cap.clock (0 before) *)
+val clock : (unit -> float) ref
+
 (* for who watches (Monitor): what every network carried since the
  * start (the frames' bytes each way), the connections and UDP
  * conversations it holds, and the last things that happened ("tcp

@@ -49,9 +49,14 @@ let answers ~(id : int) (s : string) : string list =
     end
   with Invalid_argument _ | Failure _ -> [] (* a packet shorter than it says *)
 
+let asked = ref 0
+
 let resolve (caps : < Cap.network; Cap.open_in; .. >) (name : string) : string list =
   let ns = server caps in
-  let id = int_of_float (Unix.gettimeofday () *. 1000.) land 0xffff in
+  (* (an id to pair the answer with the question: the name's hash and a
+   * count; old: the clock's milliseconds, which needed Cap.clock) *)
+  incr asked;
+  let id = (Hashtbl.hash name + !asked) land 0xffff in
   (* old: a socket here (SOCK_DGRAM, connect, write, select, read): Udp's now, which Plan 9 has another of *)
   let ask () = Option.map (answers ~id) (Udp.ask caps ~address:ns ~port:53 (question ~id name) 2.0) in
   let rec go (left : int) = if left = 0 || ns = "" then [] else match ask () with Some l -> l | None -> go (left - 1) | exception Unix.Unix_error _ -> go (left - 1) in

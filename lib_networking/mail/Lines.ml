@@ -78,6 +78,9 @@ let take (t : t) : string option =
 
 (* more of what comes, waited for until [deadline]; false when there is
  * no more *)
+(* (the clock bare: a deadline bounds a wait on a connection held, as
+ * select's timeout, the descriptor's, capabilities.dl; the author's choice,
+ * 2026-11-04) *)
 let more (t : t) (deadline : float) : bool =
   let rec go () =
     if t.ended then false

@@ -31,5 +31,5 @@ val merge : Item.t list -> string -> Item.t list -> Item.t list * string list
 (* the calendar fetched and merged into the store: how many saved, how
  * many removed *)
 val fetch :
-  < Cap.network ; Cap.env ; Cap.open_in ; Cap.open_out ; Cap.readdir ; .. > ->
+  < Cap.network ; Cap.clock ; Cap.env ; Cap.open_in ; Cap.open_out ; Cap.readdir ; .. > ->
   source -> (int * int, string) result

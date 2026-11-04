@@ -17,6 +17,8 @@ let reused () = !count
 
 (* the most recent connection at rest for that host, still young; the
  * old ones closed on the way *)
+(* (the clock bare: a connection's age in the pool, one held, as select's
+ * timeout is the descriptor's; the author's choice, 2026-11-04) *)
 let take ~(host : string) ~(port : int) : Tls_client.t option =
   let now = Unix.gettimeofday () in
   let young, old = List.partition (fun r -> now -. r.since < patience && not (Tls_client.ended r.connection)) !pool in

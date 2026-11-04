@@ -164,7 +164,7 @@ val pieces : t -> int * int
  * out, shown without its pictures; then a script's file a call, the
  * scripts run after the last; then a picture a call, and after the
  * last the page laid out again with them all *)
-val step : < Cap.network; Cap.open_in; .. > -> t -> t
+val step : < Cap.network; Cap.clock; Cap.open_in; .. > -> t -> t
 
 (* [merged ~window r]: [r], what [step] made of a copy of the tab (on
  * the window's worker), with what the window did to [window], its own

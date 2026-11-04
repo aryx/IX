@@ -39,7 +39,7 @@ val plain :
 
 (* [tls caps ~trust ~host ~port]: TLS from the first byte *)
 val tls :
-  < Cap.network; Cap.open_in; .. > -> trust:X509.roots -> host:string ->
+  < Cap.network; Cap.open_in; Cap.clock; .. > -> trust:X509.roots -> host:string ->
   port:int -> (t, string) result
 
 (* a connection already made (a test's end of a socketpair) *)

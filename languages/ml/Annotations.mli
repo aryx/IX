@@ -63,5 +63,5 @@ val unboxed_floats : (Ast.span, unit) Hashtbl.t
  * a predefined exception the C code raises, by the primitive's name, a
  * binding each [@@raise]. Not checked, the C not read: the analyses
  * trust it (mini-analyze's Closure_facts, a raise at each call;
- * docs/plans/plan_bug_analyses.md's A2) *)
+ * docs/plans/done/plan_bug_analyses.md's A2) *)
 val raises : (string, string) Hashtbl.t

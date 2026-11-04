@@ -1,4 +1,4 @@
-% An error made silent (docs/plans/plan_bug_analyses.md, A3): mini-analyze
+% An error made silent (docs/plans/done/plan_bug_analyses.md, A3): mini-analyze
 % -bugs, over exceptions.dl's arrives and the facts of Closure_facts
 % (FACTS.md):
 %   silent(T, E)       a case of the try T catches E, its answer a constant

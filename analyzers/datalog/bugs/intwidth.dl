@@ -1,6 +1,7 @@
-% An int that the Pi 1's 31 bits do not hold (docs/plans/plan_bug_analyses.md,
-% A4, its first step): mini-analyze -bugs, over the call graph of
-% points_to/ (target) and the facts of Closure_facts (FACTS.md):
+% An int that the Pi 1's 31 bits do not hold
+% (docs/plans/done/plan_bug_analyses.md, A4, its first step):
+% mini-analyze -bugs, over the call graph of points_to/ (target) and the
+% facts of Closure_facts (FACTS.md):
 %   wide_int(S, U, F, W)  at S, in the unit U and the function F, W: a
 %                         literal past 0x3fffffff (or below -0x40000000),
 %                         a shift by 31 or more, or x lsl k when x says

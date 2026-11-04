@@ -1,4 +1,4 @@
-% Output in a hash table's order (docs/plans/plan_bug_analyses.md, A5):
+% Output in a hash table's order (docs/plans/done/plan_bug_analyses.md, A5):
 % mini-analyze -bugs, over the call graph and the objects of points_to/
 % (target, pts, fpts) and the facts of Closure_facts (FACTS.md):
 %   walked(S, M, V)    the model of M at the call S walks V in order: a

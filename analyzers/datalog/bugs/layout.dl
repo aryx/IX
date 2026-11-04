@@ -1,4 +1,4 @@
-% A statement laid out as a branch's that is not in it (docs/plans/
+% A statement laid out as a branch's that is not in it (docs/plans/done/
 % plan_bug_analyses.md, A11): mini-analyze -bugs, over the tree of the
 % program's own units (Tree_facts, FACTS.md):
 %   expr(N, Kind), child(P, K, N), pos(N, Line, Col), leading(N)

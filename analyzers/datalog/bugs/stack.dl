@@ -1,4 +1,4 @@
-% A recursion the stack may not hold (docs/plans/plan_bug_analyses.md,
+% A recursion the stack may not hold (docs/plans/done/plan_bug_analyses.md,
 % A1): mini-analyze -bugs, over the call graph of points_to/ (target,
 % reach) and the facts of Closure_facts (FACTS.md):
 %   list_like(T)       the type T is a variant shaped as a list, not a tree

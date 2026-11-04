@@ -20,10 +20,18 @@ checked the same way: it must report the bug on the code as it was
 before the fix (`git show FIX^:path`) and stay quiet on the fixed code.
 Then it runs over ix through the sweep, as `-dead`, `-caps` and `-exn` do.
 
-**Status: A6's first half, A1, A3 and A2 done (2026-11-03), A4's first
-step, A5, A10, A8's handlers, A9's exceptions, A6's second half, A7
-as an exercise, A11's layout over A12's tree facts (2026-11-04); A4's
-step 2 not worth it; the rest planned.**
+**Status: done** (2026-11-04; the author: "let's close the plan").
+A1, A2, A3, A6 (both halves) on 2026-11-03 and 11-04; A4's first step,
+A5, A10, A8's handlers, A9's exceptions, A7 (the compilers', then as an
+exercise checked against OCaml), A11's layout over A12's tree facts on
+2026-11-04. Each analysis has its history test and its lines on ix in
+`bugs_ix.txt`. Not done, each with its reason in its section: A4's step
+2 (intervals: none of its bugs re-found), A8's threads (the points
+where ix's threads switch), A9's counts and a resource given back in
+another function (a function's summary), A11's evaluation order
+(56934c32: purity, plan_datalog.md's stage 11), A12's patterns. None of
+the reports on ix was fixed: the author decides (A4's seven worth a
+look, mini-5i's lost signal in bugs/ix.md).
 `mini-analyze -bugs` runs `bugs/physeq.dl` (`==` or `!=` with a side
 made in the comparison), `bugs/stack.dl` (a loop through a `try`, a
 frame a list's element), `bugs/swallowed.dl` (an error of the
@@ -43,7 +51,7 @@ and 9 on the kernel, `swallowed` 11 on the programs, `int31` 29,
 read in A1, A3, A4, A5, A8 and A9 below. A7 turned out to be
 `-dead`'s already (below).
 The evidence is in
-[`bugs/history/`](bugs/history/): `from_git.md` has 73 bug fixes found in
+[`bugs/history/`](../bugs/history/): `from_git.md` has 73 bug fixes found in
 `git log`, with their commits, about 25 of them read diff by diff.
 `from_docs.md` has about 280 rows read from `bugs/*.md`. Both were made
 by two subagents and are not checked row by row. Ten of the commits they

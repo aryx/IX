@@ -1,6 +1,7 @@
-(* An ML unit's tree as Datalog facts (docs/plans/plan_bug_analyses.md,
- * A12): each expression a node, its kind, its children in the text's
- * order, where it starts in the file. For rules over the text's shape,
+(* An ML unit's tree as Datalog facts
+ * (docs/plans/done/plan_bug_analyses.md, A12): each expression a node,
+ * its kind, its children in the text's order, where it starts in the
+ * file. For rules over the text's shape,
  * bugs/layout.dl first, joined if need be with the others' facts:
  *
  *   expr(N, Kind)        N is an expression: if, seq, apply, let, ...

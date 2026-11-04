@@ -1,5 +1,5 @@
 % What an ML external says it raises against what its C does
-% (docs/plans/plan_bug_analyses.md, A2): mini-analyze -bugs given the
+% (docs/plans/done/plan_bug_analyses.md, A2): mini-analyze -bugs given the
 % runtime's C and ML units, the facts of both front ends in one program.
 % From the ML (Closure_facts, FACTS.md):
 %   external_prim(G, P)    the external G is the primitive P

@@ -1,5 +1,5 @@
 % A unit's start reading what another has not made yet, and two units of
-% one name (docs/plans/plan_bug_analyses.md, A10): mini-analyze -bugs,
+% one name (docs/plans/done/plan_bug_analyses.md, A10): mini-analyze -bugs,
 % over the call graph of points_to/ (target) and the facts of
 % Closure_facts and mini-analyze (FACTS.md):
 %   global_def(G, I)       the global G is made by the unit start I

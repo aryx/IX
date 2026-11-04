@@ -1,4 +1,4 @@
-% A variable nothing reads (docs/plans/plan_bug_analyses.md, A7):
+% A variable nothing reads (docs/plans/done/plan_bug_analyses.md, A7):
 % mini-analyze -bugs, over the facts of Closure_facts (FACTS.md):
 %   bound_var(F, V)   in F, a pattern binds the local V: a parameter's,
 %                     a case's, a let's ((a, b) two, x as y two)

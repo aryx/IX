@@ -41,7 +41,7 @@ program's functions that its toplevel never reaches (calls.dl):
 (exceptions.dl), with where they may be raised:
   Main.ml: the toplevel may let Empty escape, raised at Main.ml:11 (Main.first)
 -bugs: instead, an ML program's bugs that may be, each named by its analysis
-(docs/plans/plan_bug_analyses.md; C's are bugs/pointers.dl's, above):
+(docs/plans/done/plan_bug_analyses.md; C's are bugs/pointers.dl's, above):
   Before.ml:6: physeq: in Before.loop, != of a Some made there: always true
   Css.ml:13: stack: Css.components calls itself, not a tail call, over a list
   Process.ml:46: swallowed: in fork, Sys_error silenced, a constant answered

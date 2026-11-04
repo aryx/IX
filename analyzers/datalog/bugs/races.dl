@@ -1,5 +1,5 @@
 % Races with a signal's handler and with threads, and a wait not in a
-% loop (docs/plans/plan_bug_analyses.md, A8): mini-analyze -bugs, over
+% loop (docs/plans/done/plan_bug_analyses.md, A8): mini-analyze -bugs, over
 % the call graph and the objects of points_to/ (target, pts, fpts) and
 % the facts of Closure_facts (FACTS.md):
 %   store_in(O, Fld, W, F)  F writes W in the field Fld of what O points

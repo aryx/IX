@@ -1,5 +1,5 @@
 % Physical equality with a value made in the comparison itself
-% (docs/plans/plan_bug_analyses.md, A6): mini-analyze -bugs, over the facts
+% (docs/plans/done/plan_bug_analyses.md, A6): mini-analyze -bugs, over the facts
 % of Closure_facts (FACTS.md):
 %   phys_compare(I, F, Op)  the call I of == or != (Op) is in F
 %   fresh_operand(I, What)  ... and one of its sides is made there: a

@@ -1,5 +1,5 @@
 (* mini-analyze -bugs' report for an ML program: each analysis of
- * docs/plans/plan_bug_analyses.md written so far, over its rules'
+ * docs/plans/done/plan_bug_analyses.md written so far, over its rules'
  * answers, a line a bug that may be, named by its analysis, the file as
  * mini-analyze was given it:
  *

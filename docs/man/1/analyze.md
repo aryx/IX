@@ -57,7 +57,7 @@ program's library, lib_core's units it names, is read with it.
 
 **-bugs**
 :    An ML program's bugs that may be, each line named by its
-     analysis (`docs/plans/plan_bug_analyses.md`): `physeq`, an `==`
+     analysis (`docs/plans/done/plan_bug_analyses.md`): `physeq`, an `==`
      or `!=` with a side made in the comparison (`bugs/physeq.dl`), whose
      answer is known before it runs, or comparing a value kept (a
      cache's last) of a type the function does not know with one

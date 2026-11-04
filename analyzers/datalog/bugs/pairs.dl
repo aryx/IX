@@ -1,5 +1,5 @@
 % A resource taken and given back, but not when what comes between
-% raises (docs/plans/plan_bug_analyses.md, A9): mini-analyze -bugs, over
+% raises (docs/plans/done/plan_bug_analyses.md, A9): mini-analyze -bugs, over
 % the call graph and the objects of points_to/ (target, pts), what may
 % raise of exceptions.dl (at, protected), the facts of Closure_facts and
 % the program's functions in mini-ml's SSA form, ssa_ before each of

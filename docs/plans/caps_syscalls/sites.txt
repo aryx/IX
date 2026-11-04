@@ -1,0 +1,32 @@
+builder/CLI.ml:56: CLI.touch: has < Cap.open_in; Cap.open_out >, needs Cap.clock (Unix.gettimeofday)
+builder/CLI.ml:79: CLI.run: has < Cap.env; Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.stderr; Cap.stdout; Cap.wait >, needs Cap.clock (Unix.gettimeofday), Cap.signal (Sys.set_signal)
+debuggers/acid/Proc.ml:631: Proc:fun at line 631: has < Cap.exec; Cap.fork; Cap.kill; Cap.open_in; Cap.open_out >, needs Cap.env (Unix.getpid), Cap.exit (Pervasives.exit)
+kernels/9pi/buses/user/usbd/Usbd.ml:70: Usbd:fun at line 70: has < Cap.argv; Cap.fork; Cap.open_in; Cap.open_out; Cap.stderr >, needs Cap.clock (Unix.sleepf)
+kernels/9pi/buses/user/usbd/Usbd.ml:85: Usbd:fun at line 85: has < Cap.argv; Cap.fork; Cap.open_in; Cap.open_out; Cap.stderr >, needs Cap.clock (Unix.sleepf)
+kernels/9pi/filesystems/user/dossrv/Dossrv.ml:128: Dossrv.main: has < Cap.fork; Cap.open_in; Cap.open_out; Cap.stderr >, needs Cap.clock (Unix.time)
+languages/datalog/Datalog_eval.ml:439: Datalog_eval.apply: no capability, needs Cap.clock (sys_time)
+languages/dotnet/CLI.ml:65: CLI.os: has < Cap.chdir; Cap.env; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdin; Cap.stdout >, needs Cap.clock (Unix.gettimeofday); may not need Cap.stderr, Cap.stdin, Cap.stdout
+languages/dotnet/CLI.ml:76: CLI:fun at line 76: has < Cap.chdir; Cap.env; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdin; Cap.stdout >, needs Cap.clock (Unix.gettimeofday)
+languages/prolog/CLI.ml:73: CLI:fun at line 73: has < Cap.open_in; Cap.stderr; Cap.stdin; Cap.stdout >, needs Cap.clock (Unix.gettimeofday)
+languages/smalltalk/vm/St_boot.ml:19: St_boot:fun at line 19: no capability, needs Cap.clock (sys_time)
+lib_core/commons/tests/Sources.ml:11: Sources.main: has < Cap.fork; Cap.stdout >, needs Cap.pipe (Unix.pipe)
+lib_networking/9p/P9_server.ml:152: P9_server.post: has < Cap.open_out >, needs Cap.pipe (Unix.pipe)
+lib_terminal/hosts/draw/Window_draw.ml:32: Window_draw.run: has < Cap.draw; Cap.fork; Cap.keyboard; Cap.mouse >, needs Cap.clock (Unix.gettimeofday)
+lib_terminal/unix/Tty_unix.ml:48: Tty_unix:fun at line 48: no capability, needs Cap.clock (Unix.gettimeofday)
+lib_terminal/unix/Tty_unix.ml:52: loop: no capability, needs Cap.clock (Unix.gettimeofday), Cap.stdin (Unix.stdin)
+machine/CLI.ml:26: CLI.main: has < Cap.argv; Cap.chdir; Cap.env; Cap.exec; Cap.fork; Cap.kill; Cap.open_in; Cap.open_out; Cap.stderr; Cap.stdout; Cap.wait >, needs Cap.clock (Unix.gettimeofday), Cap.signal (Sys.set_signal); may not need Cap.argv
+machine/CLI.ml:58: report: has < Cap.argv; Cap.chdir; Cap.env; Cap.exec; Cap.fork; Cap.kill; Cap.open_in; Cap.open_out; Cap.stderr; Cap.stdout; Cap.wait >, needs Cap.clock (Unix.gettimeofday)
+machine/process/Host.ml:106: Host:fun at line 106: has < Cap.chdir; Cap.fork; Cap.kill; Cap.open_in; Cap.open_out; Cap.wait >, needs Cap.clock (Unix.sleepf)
+machine/process/Host.ml:39: Host.create: has < Cap.chdir; Cap.fork; Cap.kill; Cap.open_in; Cap.open_out; Cap.wait >, needs Cap.clock (Unix.gettimeofday), Cap.env (Unix.getpid, sys_getcwd)
+machine/process/Host.ml:86: Host:fun at line 86: has < Cap.chdir; Cap.fork; Cap.kill; Cap.open_in; Cap.open_out; Cap.wait >, needs Cap.pipe (Unix.pipe)
+shell/Process.ml:91: Process.pipe: no capability, needs Cap.pipe (Unix.pipe)
+utilities/text/awk/Io.ml:61: Io.open_: has < Cap.env; Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.stderr; Cap.stdin; Cap.stdout; Cap.wait >, needs Cap.pipe (Unix.pipe); may not need Cap.wait
+utilities/text/awk/Run.ml:287: Run.builtin: has < Cap.env; Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.stderr; Cap.stdin; Cap.stdout; Cap.wait >, needs Cap.clock (Unix.time)
+version_control/commands/Commands.ml:119: Commands.now: no capability, needs Cap.clock (Unix.time), Cap.env (Sys.getenv_opt)
+version_control/commands/Commands.ml:57: Commands.init: has < Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.stderr; Cap.stdout; Cap.wait >, needs Cap.env (Sys.getenv_opt, sys_getcwd); may not need Cap.exec, Cap.fork, Cap.stderr, Cap.stdout, Cap.wait
+version_control/commands/Commands.ml:600: Commands.clone: has < Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.stderr; Cap.stdout; Cap.wait >, needs Cap.chdir (sys_chdir), Cap.env (sys_getcwd), Cap.readdir (sys_read_directory)
+version_control/objects/Store.ml:79: save: has < Cap.open_in; Cap.open_out >, needs Cap.env (Unix.getpid)
+version_control/repo/Walk.ml:50: Walk.run: has < Cap.open_in; Cap.open_out >, needs Cap.clock (Unix.gettimeofday)
+version_control/wire/Serve.ml:92: Serve:fun at line 92: has < Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.wait >, needs Cap.clock (Unix.sleepf)
+windows/rio/Rio.ml:115: Rio.main: has < Cap.argv; Cap.bind; Cap.chdir; Cap.draw; Cap.exec; Cap.fork; Cap.keyboard; Cap.mount; Cap.mouse; Cap.open_in; Cap.open_out >, needs Cap.env (Display.desktop, Unix.getpid); may not need Cap.argv
+windows/rio/Window.ml:17: Window.name: no capability, needs Cap.env (Unix.getpid)

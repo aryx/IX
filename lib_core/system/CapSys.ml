@@ -5,3 +5,5 @@
 
 let argv _caps = Sys.argv
 let getenv _caps = Sys.getenv
+let time _caps = Sys.time
+let getcwd _caps = Sys.getcwd

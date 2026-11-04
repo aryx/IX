@@ -445,9 +445,18 @@ let fregof = function Some (A.FReg r) -> r | _ -> -1
 
 let regof = function Some (A.Reg r) -> r | Some (A.Mem { base = R r; _ }) -> r | Some (A.Addr { base = R r; _ }) -> r | _ -> -1
 
-(* a shift operand as 5a encodes it: reg | amount or reg<<8|1<<4 | kind<<5 *)
+(* a shift operand as 5a encodes it: reg | amount or reg<<8|1<<4 | kind<<5.
+ * An amount of 0 is the register itself, whatever the kind: ARM reads
+ * LSR #0 and ASR #0 as a shift by 32, ROR #0 as RRX, so LSL #0 is
+ * written (5l writes the amount's bits as they are: 5c never shifts by
+ * 0, mini-ml's ssa did, x lsr k with k 0 once a function was inlined:
+ * Record.put_varint32's last byte 0 on arm, mini-chidb's every record) *)
+let shift_kind k n = if n = 0 then A.Lsl else k
+
 let shift_bits (s : A.shift) =
-  s.reg + shl (Link.shift_bits s.kind) 5 + (match s.by with A.By_imm n -> shl (n land 31) 7 | A.By_reg r -> shl r 8 + 16)
+  match s.by with
+  | A.By_imm n -> s.reg + shl (Link.shift_bits (shift_kind s.kind n)) 5 + shl (n land 31) 7
+  | A.By_reg r -> s.reg + shl (Link.shift_bits s.kind) 5 + shl r 8 + 16
 
 let shift_of = function Some (A.Shifted s) -> s | Some (A.Mem { index = Some s; _ }) -> s | _ -> error "not a shift"
 
@@ -654,7 +663,11 @@ let select ctx (p : prog) : action =
   | Ins (Shift _ as m) ->
       let r = match v.reg with Some r -> r | None -> rt in
       if fits REG REG then one (fun () -> oprrr m sc lor (rt lsl 12) lor (rf lsl 8) lor (1 lsl 4) lor word r)
-      else if fits RCON REG then one (fun () -> oprrr m sc lor (rt lsl 12) lor ((off v.from land 31) lsl 7) lor word r)
+      else if fits RCON REG then
+        one (fun () ->
+          let n = off v.from in
+          let m = match m with Shift k -> Shift (shift_kind k n) | m -> m in
+          oprrr m sc lor (rt lsl 12) lor ((n land 31) lsl 7) lor word r)
       else illegal ()
   | Ins (Mul _ as m) when fits REG REG ->
       one (fun () ->

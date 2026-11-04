@@ -353,6 +353,12 @@ job "mini-ml: files, unix, signals" languages/ml/tests/modern.sh $M/files.ml $M/
 job "mini-ml: the runtime from C" sh_ "languages/ml/tests/run.sh 7 $W/rt languages/ml/tests/runtime/*.ml languages/ml/tests/tiny/exceptions.ml languages/ml/tests/tiny/gc.ml"
 job "mini-ml: the checked annotations, [@tailcall] to [@@unboxed_float]: a call not in tail position, an allocation, a function never inlined, a float boxed refused" languages/ml/tests/annotations.sh
 else skip "mini-ml: its programs run, against OCaml" "$no7"; fi
+# the same on arm, under qemu-arm: arm's code otherwise ran only in
+# test-all's ix-arm, where a shift by 0 encoded as one by 32 broke
+# mini-chidb's records for days (docs/plans/bugs/ix.md, 2026-11-04)
+if command -v qemu-arm > /dev/null; then
+job "mini-ml on arm (qemu-arm): the runtime from C, shifts by 0" sh_ "languages/ml/tests/run.sh 5 $W/rt5 languages/ml/tests/runtime/*.ml languages/ml/tests/tiny/exceptions.ml languages/ml/tests/tiny/gc.ml"
+else skip "mini-ml on arm: the runtime from C" "no qemu-arm"; fi
 # every file of ix compiled by mini-ml: a directory a job, in the group
 # of what it holds (lib_core both systems', tiny t-ix's), one family:
 # a line a group, named by what it compiles (-v: a failing file's error

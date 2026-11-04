@@ -595,3 +595,12 @@ Division_by_zero`, exit 2, from Parser_asm.binary's Int64.div. Now
 "file.s:2: division by zero", exit 1, as its other errors. Found by
 mini-analyze -exn (analyzers/datalog/tests/exn_ix.txt's assembler line,
 then mini-ml's, which links the same parser for its own output).
+
+## CI red since 2026-10-30: what passed here only (2026-11-04)
+
+docker.yml on GitHub (x86-64, the C locale, a fresh tree) against make
+test here (en_US, a tree built before).
+
+| program | input | what it does | where, why |
+|---|---|---|---|
+| mini-ld (arm) | test-all's ix-arm: mini-chidb for arm (`mini-mk O=5` in database/), `CREATE TABLE t (a INTEGER PRIMARY KEY, b TEXT);` under qemu-arm | `Invalid_argument("index out of bounds")` in Record.types (`ML_TRACE=1`, the addresses against mini-chidb.map): every record's header wrong, its types' last byte 0 | Record.put_varint32's `at 3 0 false`, inlined: ssa's Emit writes `SRL $0, R1, R5`, x lsr k with k the constant 0, and Arm.ml encoded the amount's bits as they are, 0: ARM reads LSR #0 (and ASR #0) as a shift by 32, ROR #0 as RRX (objdump: `lsr r5, r1, #32`). 5l does the same; 5c never shifts by 0. Fixed: an amount of 0 is encoded LSL #0, the register itself (Arm.shift_kind), in a shift and a shifted operand; mini-chidb's 7 cases against dune's pass. make test ran mini-ml's code only for arm64 (run.sh 7): now its runtime tests on arm too, under qemu-arm, 27 s, with tests/runtime/shift_zero.ml |

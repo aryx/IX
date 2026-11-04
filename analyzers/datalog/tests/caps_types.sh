@@ -45,7 +45,7 @@ export SHOW LIMIT BLIND
 
 if [ "${1:-}" = -all ] || [ "${1:-}" != -record -a $# -gt 0 ]; then
   printf '%-40s %5s %7s %6s  %s\n' program calls checked wrong 'not seen'
-  if [ "$1" = -all ]; then list=$(git grep -lE '^SRC ?=' -- '*mkfile'); else list=$(for d in "$@"; do echo $d/mkfile; done); fi
+  if [ "$1" = -all ]; then list=$(programs); else list=$(for d in "$@"; do echo $d/mkfile; done); fi
   echo "$list" | xargs -P 8 -n 1 bash -c '. analyzers/datalog/tests/mk_units.sh; one "$0"'
   exit 0
 fi

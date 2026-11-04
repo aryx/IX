@@ -8,6 +8,13 @@
 # MK: where ix built them, _mk/7 if not said (make test: its own build).
 MK=${MK:-_mk/7}
 
+# the programs: each mkfile with a SRC, by the file system, not git (a
+# checkout without its .git, Docker's, has the same files; old: git
+# grep, which gave none there, and every recorded report looked gone)
+programs() {
+  tests/ix_files.sh | grep -E '(^|/)mkfile$' | xargs grep -lE '^SRC ?='
+}
+
 # a mkfile's variable, its \-lines joined, $names inside it expanded
 var() { # mkfile name
   local line v
@@ -31,7 +38,7 @@ unit_file() { # directory, -I's, unit
     [ -n "$f" ] && { echo $f; return; }
   done
   f=$(find $1 -name "$3.ml" 2> /dev/null | head -1)
-  [ -z "$f" ] && f=$(git ls-files '*.ml' | grep -E "/$3\.ml$" | head -1)
+  [ -z "$f" ] && f=$(tests/ix_files.sh | grep -E "/$3\.ml$" | head -1)
   # (a unit made in another program's directory, that alone of its name:
   # St_kernel.ml, made by mini-smalltalk's mkfile for mini-squeak too)
   [ -z "$f" ] && [ "$(find $MK -name "$3.ml" 2> /dev/null | wc -l)" = 1 ] && f=$(find $MK -name "$3.ml")

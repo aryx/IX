@@ -1,7 +1,8 @@
 # analyzers/datalog: the analyses in Datalog
 
 What each rule file reads, every fact the compilers say, on toy programs:
-[`FACTS.md`](FACTS.md).
+[`FACTS.md`](FACTS.md). The ideas behind the rules, on toys:
+[`notes_analysis.md`](../../docs/tutorials/notes_analysis.md).
 
 The rules mini-datalog runs (the engine stays in `languages/datalog/`;
 the author, 2026-10-31: "move the datalog analyses", "not the engine,

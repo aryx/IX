@@ -1,0 +1,29 @@
+== unify.facts by andersen.dl, then steensgaard.dl
+pt(p,a).
+pt(p,b).
+pt(q,b).
+pt(p,a).
+pt(p,b).
+pt(q,a).
+pt(q,b).
+== flow_insensitive.facts, then flow_ssa.facts, by andersen.dl
+pt(q,a).
+pt(q,b).
+pt(q,a).
+== liveness.facts by liveness.dl
+live_in(x,p2).
+live_in(x,p6).
+live_in(y,p3).
+live_in(y,p4).
+across_call(y,p3).
+== paths.dl
+bug(n7).
+null2_in(n4,c).
+null2_in(n5,c).
+null2_in(n6,c).
+== taint.dl
+leak(c3).
+leak(c6).
+leak(c8).
+leak2(c6).
+leak2(c7).

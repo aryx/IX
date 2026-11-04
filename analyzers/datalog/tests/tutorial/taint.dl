@@ -1,0 +1,49 @@
+% Taint, and a function's summary (docs/tutorials/notes_analysis.md,
+% sections 9 and 10), on a toy written as facts:
+%
+%   let read_input () = Sys.argv.(1)      source
+%   let id x = x
+%   let quote s = Filename.quote s        sanitizer
+%   let run cmd = Sys.command cmd         sink, its argument 1
+%   let shell c = run c
+%
+%   let a = id (read_input ())            c0, c1
+%   let b = id "ls"                       c2
+%   let () = run b                        c3: fine, "ls"
+%   let () = run (quote a)                c4, c5: fine, quoted
+%   let () = run a                        c6: the bug
+%   let () = shell a                      c7: the bug, one call down (c8)
+source(read_input).  sanitizer(quote).  sink(run, 1).
+param(id, 1, id_x).        return(id, id_x).
+param(quote, 1, quote_s).  return(quote, quote_r).
+param(shell, 1, shell_c).
+call(c0, read_input).  ret(c0, t0).
+call(c1, id).          arg(c1, 1, t0).    ret(c1, a).
+call(c2, id).          arg(c2, 1, k_ls).  ret(c2, b).
+call(c3, run).         arg(c3, 1, b).
+call(c4, quote).       arg(c4, 1, a).     ret(c4, t4).
+call(c5, run).         arg(c5, 1, t4).
+call(c6, run).         arg(c6, 1, a).
+call(c7, shell).       arg(c7, 1, a).
+call(c8, run).         arg(c8, 1, shell_c).  in_fun(c8, shell).
+
+% context-insensitive: a parameter is one variable for every caller, so
+% id's x holds both a and "ls", and so does what each call returns
+tainted(V) :- call(S, F), source(F), ret(S, V).
+tainted(P) :- call(S, F), \+ sanitizer(F), arg(S, I, A), tainted(A), param(F, I, P).
+tainted(R) :- call(S, F), ret(S, R), return(F, V), tainted(V).
+leak(S) :- call(S, F), sink(F, I), arg(S, I, A), tainted(A).
+
+% with summaries: what a function does to its arguments, said once and
+% used at each call, so a call's result is its own arguments' only
+%   passes(F, I)       F's argument I reaches its result
+%   sinks(F, I)        F's argument I reaches a sink, maybe through calls
+passes(F, I) :- param(F, I, P), return(F, P).
+sinks(F, I) :- sink(F, I).
+sinks(F, I) :- param(F, I, P), in_fun(S, F), call(S, G), arg(S, J, P), sinks(G, J).
+tainted2(V) :- call(S, F), source(F), ret(S, V).
+tainted2(R) :- call(S, F), \+ sanitizer(F), passes(F, I), arg(S, I, A), tainted2(A), ret(S, R).
+leak2(S) :- call(S, F), sinks(F, I), arg(S, I, A), tainted2(A).
+
+?- leak(S).
+?- leak2(S).

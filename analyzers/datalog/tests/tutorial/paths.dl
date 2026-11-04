@@ -1,0 +1,37 @@
+% Path sensitivity on a toy (docs/tutorials/notes_analysis.md, section 7):
+%
+%   n1: if (c)             n1 -c-> n2   n1 -!c-> n3
+%   n2:   p = 0;           n2 ----> n4
+%   n3: else p = &x;       n3 ----> n4
+%   n4: ...                n4 ----> n5
+%   n5: if (!c)            n5 -c-> n6   n5 -!c-> n7
+%   n7:   *p = 1;          the deref: is p null there?
+%
+% No: p is 0 only when c, and *p runs only when not c. An analysis that
+% joins at n4 forgets why p may be 0, and reports n7.
+edge(n1, n2, c).    edge(n1, n3, notc).
+edge(n2, n4, any).  edge(n3, n4, any).  edge(n4, n5, any).
+edge(n5, n6, c).    edge(n5, n7, notc).
+gen_null(n2).       kill_null(n3).      deref(n7).
+
+% path-insensitive: one fact a point, "p may be 0 here"
+null_in(M) :- null_out(N), edge(N, M, _).
+null_out(N) :- gen_null(N).
+null_out(N) :- null_in(N), \+ kill_null(N).
+bug(N) :- deref(N), null_in(N).
+
+% path-sensitive: the fact with what is known of c on the way to it;
+% an edge whose condition contradicts it is no path (meet has no row)
+meet(any, L, L) :- edge(_, _, L).
+meet(C, any, C) :- edge(_, _, C).
+meet(C, C, C) :- edge(_, _, C).
+reach(n1, any).
+reach(M, C2) :- reach(N, C), edge(N, M, L), meet(C, L, C2).
+null2_in(M, C2) :- null2_out(N, C), edge(N, M, L), meet(C, L, C2).
+null2_out(N, C) :- gen_null(N), reach(N, C).
+null2_out(N, C) :- null2_in(N, C), \+ kill_null(N).
+bug2(N) :- deref(N), null2_in(N, _).
+
+?- bug(N).
+?- bug2(N).
+?- null2_in(N, C).

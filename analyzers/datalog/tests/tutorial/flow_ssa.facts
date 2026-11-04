@@ -1,0 +1,4 @@
+% p1 = &a;  q = p1;  p2 = &b;   the same, each write of p a name of its own
+assign_address(p1, a).
+assign(q, p1).
+assign_address(p2, b).

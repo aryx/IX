@@ -1,0 +1,4 @@
+% p = &a;  q = p;  p = &b;      one p for the whole function
+assign_address(p, a).
+assign(q, p).
+assign_address(p, b).

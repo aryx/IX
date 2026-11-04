@@ -1,0 +1,8 @@
+% p1: x = 1;  p2: y = x + 1;  p3: f();  p4: print(y);  p5: x = 2;  p6: print(x);
+def(x, p1).
+use(x, p2).  def(y, p2).
+call(p3).
+use(y, p4).
+def(x, p5).
+use(x, p6).
+succ(p1, p2). succ(p2, p3). succ(p3, p4). succ(p4, p5). succ(p5, p6).

@@ -320,6 +320,7 @@ job "mini-prolog: the language, by text" languages/prolog/tests/run.sh -dune
 job "mini-forth: the words, by text" languages/forth/tests/run.sh -dune
 job "mini-datalog: its programs, naive and semi-naive" languages/datalog/tests/run.sh -dune
 job "pointer analyses (Andersen's, Doop's contexts): what each tells apart in a C and an ML program, each inside the coarser" analyzers/datalog/tests/run.sh
+job "the analysis tutorial's toys (Steensgaard vs Andersen, SSA, liveness, path sensitivity, taint with summaries): notes_analysis.md's answers" analyzers/datalog/tests/tutorial/run.sh
 job "capabilities as OCaml's types, in Datalog: the errors planted in a program OCaml refuses" analyzers/datalog/tests/caps_types.sh
 job "analyzers/datalog/FACTS.md: each fact it shows is what the compilers say, each relation in it" analyzers/datalog/tests/facts_doc.sh
 job "mini-ml's externals: each [@@raise E] in lib_core is what its C in the runtime raises (raises_ix.txt)" analyzers/datalog/tests/raises.sh

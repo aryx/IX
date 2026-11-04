@@ -1,0 +1,4 @@
+% p = &a;  q = &b;  p = q;   (steensgaard.dl's header example)
+assign_address(p, a).
+assign_address(q, b).
+assign(p, q).

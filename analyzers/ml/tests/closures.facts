@@ -47,15 +47,18 @@ vfull('Kit:rest/5', 'int list').
 assign_load_field('Kit:rest/5', 'Kit:xs/3', 'con:::.1').
 var_in('Kit:f/2', 'Kit.iter\'').
 in_function('Kit:8:c1', 'Kit.iter\'').
+site_key('Kit:8:c1', 'Kit:327-328').
 call_indirect('Kit:8:c1', 'Kit:f/2').
 argument('Kit:8:c1', 1, 'Kit:x/4').
 var_in('Kit:iter/1', 'Kit.iter\'').
 var_in('Kit:t1', 'Kit.iter\'').
 in_function('Kit:8:c2', 'Kit.iter\'').
+site_key('Kit:8:c2', 'Kit:332-336').
 call_indirect('Kit:8:c2', 'Kit:iter/1').
 argument('Kit:8:c2', 1, 'Kit:f/2').
 call_ret('Kit:8:c2', 'Kit:t1').
 in_function('Kit:8:c3', 'Kit.iter\'').
+site_key('Kit:8:c3', 'Kit:332-336').
 tail('Kit:8:c3').
 call_indirect('Kit:8:c3', 'Kit:t1').
 argument('Kit:8:c3', 1, 'Kit:rest/5').
@@ -132,28 +135,33 @@ assign_load_field('Kit:rest/11', 'Kit:xs/9', 'con:::.1').
 var_in('Kit:fold/6', 'Kit.fold\'\'').
 var_in('Kit:t2', 'Kit.fold\'\'').
 in_function('Kit:11:c4', 'Kit.fold\'\'').
+site_key('Kit:11:c4', 'Kit:459-463').
 call_indirect('Kit:11:c4', 'Kit:fold/6').
 var_in('Kit:f/7', 'Kit.fold\'\'').
 argument('Kit:11:c4', 1, 'Kit:f/7').
 call_ret('Kit:11:c4', 'Kit:t2').
 var_in('Kit:t3', 'Kit.fold\'\'').
 in_function('Kit:11:c5', 'Kit.fold\'\'').
+site_key('Kit:11:c5', 'Kit:459-463').
 call_indirect('Kit:11:c5', 'Kit:t2').
 var_in('Kit:t4', 'Kit.fold\'\'').
 vtype('Kit:t4', 'int').
 vfull('Kit:t4', 'int').
 var_in('Kit:t5', 'Kit.fold\'\'').
 in_function('Kit:11:c6', 'Kit.fold\'\'').
+site_key('Kit:11:c6', 'Kit:467-468').
 call_indirect('Kit:11:c6', 'Kit:f/7').
 argument('Kit:11:c6', 1, 'Kit:acc/8').
 call_ret('Kit:11:c6', 'Kit:t5').
 in_function('Kit:11:c7', 'Kit.fold\'\'').
+site_key('Kit:11:c7', 'Kit:467-468').
 call_indirect('Kit:11:c7', 'Kit:t5').
 argument('Kit:11:c7', 1, 'Kit:x/10').
 call_ret('Kit:11:c7', 'Kit:t4').
 argument('Kit:11:c5', 1, 'Kit:t4').
 call_ret('Kit:11:c5', 'Kit:t3').
 in_function('Kit:11:c8', 'Kit.fold\'\'').
+site_key('Kit:11:c8', 'Kit:459-463').
 tail('Kit:11:c8').
 call_indirect('Kit:11:c8', 'Kit:t3').
 argument('Kit:11:c8', 1, 'Kit:rest/11').
@@ -199,6 +207,7 @@ var_in('prim:%mulint:ret', 'prim:%mulint\'2').
 scalar('ext').
 scalar('prim:%mulint:ret').
 assign_address('Kit:t6', 'prim:%mulint').
+site_key('Kit:13:c9', 'Kit:513-514').
 global_var('Kit:const').
 var_in('Kit:const', 'Kit.double').
 scalar('Kit:const').
@@ -243,6 +252,7 @@ return('prim:%subint\'2', 'prim:%subint:ret').
 var_in('prim:%subint:ret', 'prim:%subint\'2').
 scalar('prim:%subint:ret').
 assign_address('Kit:t7', 'prim:%subint').
+site_key('Kit:14:c10', 'Kit:548-549').
 var_in('Kit:const', 'Kit.negate').
 scalar('Kit.negate:ret').
 global_def('Kit.negate', 'Kit:init').
@@ -272,6 +282,7 @@ var_in('Kit:t8', 'Kit.square').
 vtype('Kit:t8', '->').
 vfull('Kit:t8', '(int -> (int -> int))').
 assign_address('Kit:t8', 'prim:%mulint').
+site_key('Kit:15:c11', 'Kit:583-584').
 scalar('Kit.square:ret').
 global_def('Kit.square', 'Kit:init').
 global_var('Kit.square').
@@ -331,6 +342,7 @@ return('prim:%addint\'2', 'prim:%addint:ret').
 var_in('prim:%addint:ret', 'prim:%addint\'2').
 scalar('prim:%addint:ret').
 assign_address('Kit:t9', 'prim:%addint').
+site_key('Kit:16:c12', 'Kit:625-626').
 var_in('Kit:a/18', 'Kit.add\'').
 scalar('Kit.add\':ret').
 global_def('Kit.add', 'Kit:init').
@@ -360,6 +372,7 @@ var_in('Kit:t10', 'Kit.cube').
 vtype('Kit:t10', '->').
 vfull('Kit:t10', '(int -> (int -> int))').
 assign_address('Kit:t10', 'prim:%mulint').
+site_key('Kit:19:c13', 'Kit:686-687').
 var_in('Kit:t11', 'Kit.cube').
 vtype('Kit:t11', 'int').
 vfull('Kit:t11', 'int').
@@ -367,6 +380,7 @@ var_in('Kit:t12', 'Kit.cube').
 vtype('Kit:t12', '->').
 vfull('Kit:t12', '(int -> (int -> int))').
 assign_address('Kit:t12', 'prim:%mulint').
+site_key('Kit:19:c14', 'Kit:682-683').
 scalar('Kit:t11').
 scalar('Kit.cube:ret').
 global_def('Kit.cube', 'Kit:init').
@@ -396,6 +410,7 @@ var_in('Kit:t13', 'Kit.helper').
 vtype('Kit:t13', '->').
 vfull('Kit:t13', '(int -> (int -> int))').
 assign_address('Kit:t13', 'prim:%addint').
+site_key('Kit:22:c15', 'Kit:782-783').
 var_in('Kit:const', 'Kit.helper').
 scalar('Kit.helper:ret').
 global_def('Kit.helper', 'Kit:init').
@@ -423,12 +438,14 @@ vfull('Kit:x/25', 'int').
 assign('Kit:x/25', 'Kit.dead:arg').
 var_in('Kit.helper', 'Kit.dead').
 in_function('Kit:23:c16', 'Kit.dead').
+site_key('Kit:23:c16', 'Kit:813-819').
 tail('Kit:23:c16').
 call_indirect('Kit:23:c16', 'Kit.helper').
 var_in('Kit:t14', 'Kit.dead').
 vtype('Kit:t14', 'int').
 vfull('Kit:t14', 'int').
 in_function('Kit:23:c17', 'Kit.dead').
+site_key('Kit:23:c17', 'Kit:821-827').
 call_indirect('Kit:23:c17', 'Kit.helper').
 argument('Kit:23:c17', 1, 'Kit:x/25').
 call_ret('Kit:23:c17', 'Kit:t14').
@@ -479,6 +496,7 @@ var_in('Kit:t15', 'Kit.scale\'').
 vtype('Kit:t15', '->').
 vfull('Kit:t15', '(int -> (int -> int))').
 assign_address('Kit:t15', 'prim:%mulint').
+site_key('Kit:26:c18', 'Kit:921-922').
 var_in('Kit:k/27', 'Kit.scale\'').
 scalar('Kit.scale\':ret').
 global_def('Kit.scale', 'Kit:init').
@@ -541,6 +559,7 @@ var_in('Kit:t20', 'Kit:fun1@28').
 vtype('Kit:t20', '->').
 vfull('Kit:t20', '(int -> (int -> int))').
 assign_address('Kit:t20', 'prim:%subint').
+site_key('Kit:28:c19', 'Kit:1036-1037').
 var_in('Kit:const', 'Kit:fun1@28').
 scalar('Kit:fun1@28:ret').
 assign_store_field('Kit:t18', 'fld:run', 'Kit:t19').
@@ -571,6 +590,7 @@ new_block('prim:%makemutable:ret', 'prim:%makemutable:block').
 htype('prim:%makemutable:block', 'Pervasives.ref').
 assign_store_field('prim:%makemutable:ret', 'fld:contents', 'prim:%makemutable:arg1').
 assign_address('Kit:t22', 'prim:%makemutable').
+site_key('Kit:29:c20', 'Kit:1078-1081').
 scalar('Kit:current/32').
 new_block('Kit:current/32', 'Kit:29:c20:block').
 htype('Kit:29:c20:block', 'Pervasives.ref').
@@ -615,6 +635,7 @@ global_var('exn').
 var_in('exn', 'prim:%raise').
 assign('exn', 'prim:%raise:arg1').
 assign_address('Kit:t23', 'prim:%raise').
+site_key('Kit:30:c21', 'Kit:1116-1121').
 var_in('Kit:t24', 'Kit.last').
 vtype('Kit:t24', 'exn').
 vfull('Kit:t24', 'exn').
@@ -652,6 +673,7 @@ new_block('prim:%makemutable:ret', 'prim:%makemutable:block').
 htype('prim:%makemutable:block', 'Pervasives.ref').
 assign_store_field('prim:%makemutable:ret', 'fld:contents', 'prim:%makemutable:arg1').
 assign_address('Use:t1', 'prim:%makemutable').
+site_key('Use:2:c1', 'Use:79-82').
 global_var('Use:const').
 var_in('Use:const', 'Use:init').
 scalar('Use:const').
@@ -731,6 +753,7 @@ scalar('prim:%setfield0:ret').
 assign_store_field('prim:%setfield0:arg1', 'fld:contents', 'prim:%setfield0:arg2').
 store_in('prim:%setfield0:arg1', 'fld:contents', 'prim:%setfield0:arg2', 'prim:%setfield0\'2').
 assign_address('Use:t2', 'prim:%setfield0').
+site_key('Use:6:c2', 'Use:211-213').
 var_in('Use.total', 'Use:go/3').
 var_in('Use:t3', 'Use:go/3').
 vtype('Use:t3', 'int').
@@ -752,6 +775,7 @@ return('prim:%addint\'2', 'prim:%addint:ret').
 var_in('prim:%addint:ret', 'prim:%addint\'2').
 scalar('prim:%addint:ret').
 assign_address('Use:t4', 'prim:%addint').
+site_key('Use:6:c3', 'Use:221-222').
 var_in('Use:t5', 'Use:go/3').
 vtype('Use:t5', 'int').
 vfull('Use:t5', 'int').
@@ -767,6 +791,7 @@ scalar('prim:%field0:ret').
 assign_load_field('prim:%field0:ret', 'prim:%field0:arg1', 'fld:contents').
 assign_load_field('prim:%field0:ret', 'prim:%field0:arg1', 'tuple:2.0').
 assign_address('Use:t6', 'prim:%field0').
+site_key('Use:6:c4', 'Use:214-220').
 scalar('Use:t5').
 assign_load_field('Use:t5', 'Use.total', 'fld:contents').
 assign_load_field('Use:t5', 'Use.total', 'tuple:2.0').
@@ -778,6 +803,7 @@ vtype('Use:t8', '->').
 vfull('Use:t8', '(int -> int)').
 assign_load_field('Use:t8', 'Use:h/5', 'fld:run').
 in_function('Use:6:c5', 'Use:go/3').
+site_key('Use:6:c5', 'Use:223-228').
 call_indirect('Use:6:c5', 'Use:t8').
 var_in('Use:x/2', 'Use:go/3').
 argument('Use:6:c5', 1, 'Use:x/2').
@@ -788,11 +814,13 @@ assign_store_field('Use.total', 'fld:contents', 'Use:t3').
 store_in('Use.total', 'fld:contents', 'Use:t3', 'Use:go/3').
 var_in('Use:go/3', 'Use:go/3').
 in_function('Use:6:c6', 'Use:go/3').
+site_key('Use:6:c6', 'Use:232-234').
 tail('Use:6:c6').
 call_indirect('Use:6:c6', 'Use:go/3').
 argument('Use:6:c6', 1, 'Use:rest/6').
 call_ret('Use:6:c6', 'Use:go/3:ret').
 in_function('Use:7:c7', 'Use.run_all').
+site_key('Use:7:c7', 'Use:245-247').
 tail('Use:7:c7').
 call_indirect('Use:7:c7', 'Use:go/3').
 global_var('Kit.handlers').
@@ -807,12 +835,14 @@ var_in('Use:t9', 'Use:init').
 vtype('Use:t9', 'unit').
 vfull('Use:t9', 'unit').
 in_function('Use:10:c8', 'Use:init').
+site_key('Use:10:c8', 'Use:273-280').
 call_indirect('Use:10:c8', 'Use.run_all').
 argument('Use:10:c8', 1, 'Use:const').
 global_var('Kit.iter').
 var_in('Kit.iter', 'Use:init').
 var_in('Use:t10', 'Use:init').
 in_function('Use:11:c9', 'Use:init').
+site_key('Use:11:c9', 'Use:286-294').
 call_indirect('Use:11:c9', 'Kit.iter').
 var_in('Use:t11', 'Use:init').
 vtype('Use:t11', '->').
@@ -837,6 +867,7 @@ var_in('Use:t12', 'Use:fun1@11').
 vtype('Use:t12', '->').
 vfull('Use:t12', '(int Pervasives.ref -> (int -> unit))').
 assign_address('Use:t12', 'prim:%setfield0').
+site_key('Use:11:c10', 'Use:319-321').
 var_in('Use.total', 'Use:fun1@11').
 var_in('Use:t13', 'Use:fun1@11').
 vtype('Use:t13', 'int').
@@ -845,6 +876,7 @@ var_in('Use:t14', 'Use:fun1@11').
 vtype('Use:t14', '->').
 vfull('Use:t14', '(int -> (int -> int))').
 assign_address('Use:t14', 'prim:%addint').
+site_key('Use:11:c11', 'Use:329-330').
 var_in('Use:t15', 'Use:fun1@11').
 vtype('Use:t15', 'int').
 vfull('Use:t15', 'int').
@@ -852,6 +884,7 @@ var_in('Use:t16', 'Use:fun1@11').
 vtype('Use:t16', '->').
 vfull('Use:t16', '(int Pervasives.ref -> int)').
 assign_address('Use:t16', 'prim:%field0').
+site_key('Use:11:c12', 'Use:322-328').
 scalar('Use:t15').
 assign_load_field('Use:t15', 'Use.total', 'fld:contents').
 assign_load_field('Use:t15', 'Use.total', 'tuple:2.0').
@@ -865,12 +898,14 @@ var_in('Use:t19', 'Use:fun1@11').
 vtype('Use:t19', '->').
 vfull('Use:t19', '((int -> int) Pervasives.ref -> (int -> int))').
 assign_address('Use:t19', 'prim:%field0').
+site_key('Use:11:c13', 'Use:331-343').
 global_var('Kit.current').
 var_in('Kit.current', 'Use:fun1@11').
 scalar('Use:t18').
 assign_load_field('Use:t18', 'Kit.current', 'fld:contents').
 assign_load_field('Use:t18', 'Kit.current', 'tuple:2.0').
 in_function('Use:11:c14', 'Use:fun1@11').
+site_key('Use:11:c14', 'Use:331-343').
 call_indirect('Use:11:c14', 'Use:t18').
 argument('Use:11:c14', 1, 'Use:x/10').
 call_ret('Use:11:c14', 'Use:t17').
@@ -881,6 +916,7 @@ store_in('Use.total', 'fld:contents', 'Use:t13', 'Use:fun1@11').
 argument('Use:11:c9', 1, 'Use:t11').
 call_ret('Use:11:c9', 'Use:t10').
 in_function('Use:11:c15', 'Use:init').
+site_key('Use:11:c15', 'Use:286-294').
 call_indirect('Use:11:c15', 'Use:t10').
 var_in('Use:t20', 'Use:init').
 vtype('Use:t20', 'list').
@@ -909,6 +945,7 @@ var_in('Use:t23', 'Use:init').
 vtype('Use:t23', '->').
 vfull('Use:t23', '(int Pervasives.ref -> (int -> unit))').
 assign_address('Use:t23', 'prim:%setfield0').
+site_key('Use:12:c16', 'Use:365-367').
 var_in('Use:t24', 'Use:init').
 vtype('Use:t24', 'int').
 vfull('Use:t24', 'int').
@@ -916,6 +953,7 @@ global_var('Kit.fold').
 var_in('Kit.fold', 'Use:init').
 var_in('Use:t25', 'Use:init').
 in_function('Use:12:c17', 'Use:init').
+site_key('Use:12:c17', 'Use:368-376').
 call_indirect('Use:12:c17', 'Kit.fold').
 global_var('Kit.add').
 var_in('Kit.add', 'Use:init').
@@ -923,6 +961,7 @@ argument('Use:12:c17', 1, 'Kit.add').
 call_ret('Use:12:c17', 'Use:t25').
 var_in('Use:t26', 'Use:init').
 in_function('Use:12:c18', 'Use:init').
+site_key('Use:12:c18', 'Use:368-376').
 call_indirect('Use:12:c18', 'Use:t25').
 var_in('Use:t27', 'Use:init').
 vtype('Use:t27', 'int').
@@ -931,12 +970,14 @@ var_in('Use:t28', 'Use:init').
 vtype('Use:t28', '->').
 vfull('Use:t28', '(int Pervasives.ref -> int)').
 assign_address('Use:t28', 'prim:%field0').
+site_key('Use:12:c19', 'Use:385-391').
 scalar('Use:t27').
 assign_load_field('Use:t27', 'Use.total', 'fld:contents').
 assign_load_field('Use:t27', 'Use.total', 'tuple:2.0').
 argument('Use:12:c18', 1, 'Use:t27').
 call_ret('Use:12:c18', 'Use:t26').
 in_function('Use:12:c20', 'Use:init').
+site_key('Use:12:c20', 'Use:368-376').
 call_indirect('Use:12:c20', 'Use:t26').
 var_in('Use:t29', 'Use:init').
 vtype('Use:t29', 'list').
@@ -970,6 +1011,7 @@ vfull('Use:half/8', '(int -> int)').
 global_var('Kit.scale').
 var_in('Kit.scale', 'Use:init').
 in_function('Use:13:c21', 'Use:init').
+site_key('Use:13:c21', 'Use:428-437').
 call_indirect('Use:13:c21', 'Kit.scale').
 argument('Use:13:c21', 1, 'Use:const').
 call_ret('Use:13:c21', 'Use:half/8').
@@ -983,15 +1025,18 @@ return('prim:%ignore', 'prim:%ignore:ret').
 var_in('prim:%ignore:ret', 'prim:%ignore').
 scalar('prim:%ignore:ret').
 assign_address('Use:t32', 'prim:%ignore').
+site_key('Use:14:c22', 'Use:445-451').
 try_in_function('Use:try1@15', 'Use:init').
 var_in('Use:t33', 'Use:init').
 vtype('Use:t33', '->').
 assign_address('Use:t33', 'prim:%ignore').
+site_key('Use:15:c23', 'Use:465-471').
 var_in('Use:t34', 'Use:init').
 global_var('Kit.last').
 var_in('Kit.last', 'Use:init').
 in_function('Use:15:c24', 'Use:init').
 in_try('Use:15:c24', 'Use:try1@15').
+site_key('Use:15:c24', 'Use:473-481').
 call_indirect('Use:15:c24', 'Kit.last').
 argument('Use:15:c24', 1, 'Use:const').
 call_ret('Use:15:c24', 'Use:t34').
@@ -1012,10 +1057,12 @@ var_in('Use:t35', 'Use:init').
 vtype('Use:t35', '->').
 vfull('Use:t35', '(int Pervasives.ref -> (int -> unit))').
 assign_address('Use:t35', 'prim:%setfield0').
+site_key('Use:15:c25', 'Use:510-512').
 var_in('Use:t36', 'Use:init').
 vtype('Use:t36', 'int').
 vfull('Use:t36', 'int').
 in_function('Use:15:c26', 'Use:init').
+site_key('Use:15:c26', 'Use:513-514').
 in_handler('Use:15:c26', 'Use:try1@15').
 call_indirect('Use:15:c26', 'Use:f/9').
 var_in('Use:t37', 'Use:init').
@@ -1025,6 +1072,7 @@ var_in('Use:t38', 'Use:init').
 vtype('Use:t38', '->').
 vfull('Use:t38', '(int Pervasives.ref -> int)').
 assign_address('Use:t38', 'prim:%field0').
+site_key('Use:15:c27', 'Use:515-521').
 scalar('Use:t37').
 assign_load_field('Use:t37', 'Use.total', 'fld:contents').
 assign_load_field('Use:t37', 'Use.total', 'tuple:2.0').
@@ -1037,6 +1085,7 @@ vfull('Pervasives.print_int', '(int -> unit)').
 global_var('Pervasives.print_int').
 var_in('Pervasives.print_int', 'Use:init').
 in_function('Use:16:c28', 'Use:init').
+site_key('Use:16:c28', 'Use:526-535').
 call_indirect('Use:16:c28', 'Pervasives.print_int').
 var_in('Use:t39', 'Use:init').
 vtype('Use:t39', 'int').
@@ -1045,6 +1094,7 @@ var_in('Use:t40', 'Use:init').
 vtype('Use:t40', '->').
 vfull('Use:t40', '(int Pervasives.ref -> int)').
 assign_address('Use:t40', 'prim:%field0').
+site_key('Use:16:c29', 'Use:536-542').
 scalar('Use:t39').
 assign_load_field('Use:t39', 'Use.total', 'fld:contents').
 assign_load_field('Use:t39', 'Use.total', 'tuple:2.0').

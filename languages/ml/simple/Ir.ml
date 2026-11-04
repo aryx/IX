@@ -156,6 +156,10 @@ type t =
    * part, a let's, a branch's...), no code: the pc/line table's
    * (plan_debugger.md's stage 1b), "// line n" in the assembly *)
   | Line of int
+  (* the call that follows is the source's application whose function
+   * is at this span (Ast.span), no code: mini-analyze's, to name a call
+   * of the SSA as its own facts name it (Lower.sites) *)
+  | Site of int * int
 [@@deriving show]
 
 (* line: the line of its body in the .ml, what the pc/line table says

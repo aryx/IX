@@ -128,6 +128,11 @@ let entry n lab = if n = 1 then lab else (if not (List.mem n !arities) then arit
 (* (off: mini-ml -calls) *)
 let calls_whole = ref true
 
+(* each call of an application said by an Ir.Site, the span of its
+ * function: mini-analyze's (Ml_flow), to name the SSA's calls as its
+ * facts do; off for the compiler, whose code is then the same *)
+let sites = ref false
+
 let static_closure lab n = let sym = "c" ^ lab and e = entry n lab in data := Closure (sym, e, lab) :: !data; sym
 
 let strings = Hashtbl.create 16
@@ -850,6 +855,12 @@ and var env (v : Scope.value) =
  * in a tail call *)
 and app env (f : Scope.expr) args tl =
   let m = List.length args in
+  (* (each call of this application, a Site first) *)
+  let emit (i : Ir.t) =
+    (match i with
+     | (Call _ | CallC _) when !sites -> emit (Site (fst f.span, snd f.span))
+     | _ -> ());
+    emit i in
   let first k = List.filteri (fun i _ -> i < k) args and later k = List.filteri (fun i _ -> i >= k) args in
   (* the arguments in slots, the last computed first *)
   let slots es = List.rev (List.map (to_slot env) (List.rev es)) in
@@ -920,7 +931,10 @@ and app env (f : Scope.expr) args tl =
            emit (CallC ("caml_string_equal", 2))
        | Some (Poly Ne) when Hashtbl.mem string_eqs f.span ->
            emit (CallC ("caml_string_notequal", 2))
-       | _ -> prim (Hashtbl.mem immediates f.span) p n);
+       | _ ->
+           (* (an external's CallC named, if it is one: an Op is none) *)
+           if !sites then emit (Site (fst f.span, snd f.span));
+           prim (Hashtbl.mem immediates f.span) p n);
       rest ls
   | Evar _, _, _ when (match copy with Some i -> List.length i.iparams = m | None -> false) ->
       let i = Option.get copy in

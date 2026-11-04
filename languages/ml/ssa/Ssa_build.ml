@@ -21,7 +21,7 @@ let ends : L.t -> bool = function
 let split (code : L.t list) =
   let out = ref [] and label = ref None and cur = ref [] in
   let close last = out := { label = !label; code = List.rev !cur; last } :: !out; label := None; cur := [] in
-  let lines_only = List.for_all (function L.Line _ -> true | _ -> false) in
+  let lines_only = List.for_all (function L.Line _ | L.Site _ -> true | _ -> false) in
   List.iter (fun (i : L.t) ->
     match i with
     (* (Lines after a jump: the label's run's, no run of their own) *)
@@ -75,7 +75,7 @@ let arity : L.t -> int * int = function
   | Op _ -> 2, 1
   | Call (_, _, tail) -> 0, if tail then 0 else 1
   | CallC (_, n) -> n, 1
-  | Label _ | Jmp _ | TryEnter _ | TryExit _ | Line _ -> 0, 0
+  | Label _ | Jmp _ | TryEnter _ | TryExit _ | Line _ | Site _ -> 0, 0
 
 (*****************************************************************************)
 (* Braun et al.'s construction *)
@@ -121,6 +121,10 @@ let build (f : L.func) =
   (* each value the line of the last Line before it, in the code's order
    * (the function's before the first) *)
   let lines = Hashtbl.create 256 and line = ref f.line in
+  (* a Site names the call right after it, a value's or a block's tail
+   * call; any other instruction between, and it names none *)
+  let sites = Hashtbl.create 16 and tail_sites = Hashtbl.create 4 in
+  let site = ref None in
   let emit b ins =
     let v = fresh b ins in
     if !line > 0 then Hashtbl.replace lines v !line;
@@ -154,8 +158,9 @@ let build (f : L.func) =
     let pop () = match !stack with v :: rest -> stack := rest; v | [] -> failwith (f.name ^ ": ssa: the stack is empty") in
     let pops k = List.init k (fun _ -> pop ()) in
     let get i = if memory then emit id (Slot i) else read (Slot_var i) id in
+    site := None;
     List.iter (fun (i : L.t) ->
-      match i with
+      (match i with
       | Int n -> push (emit id (Const n))
       | Block s -> push (emit id (Blk s))
       | Sym s -> push (emit id (Symb s))
@@ -178,13 +183,25 @@ let build (f : L.func) =
           let vs = pops (fst (arity i)) in push (emit id (Prim (i, vs)))
       | Alloc (tag, n) -> let vs = pops n in push (emit id (Alloc (tag, vs)))
       | Op o -> let p, _ = arity i in let vs = pops p in push (emit id (Op (o, vs)))
-      | Call (t, slots, _) -> let vs = List.map get slots in push (emit id (Call (t, vs)))
-      | CallC (g, k) -> let vs = pops k in push (emit id (CallC (g, vs)))
+      | Call (t, slots, _) ->
+          let vs = List.map get slots in
+          let v = emit id (Call (t, vs)) in
+          Option.iter (Hashtbl.replace sites v) !site; push v
+      | CallC (g, k) ->
+          let vs = pops k in
+          let v = emit id (CallC (g, vs)) in
+          Option.iter (Hashtbl.replace sites v) !site; push v
       | Drop -> ignore (pop ())
       | TryExit k -> ignore (emit id (TryExit k))
       | Catch k -> push (emit id (Caught k))
       | Line n -> line := n
-      | Label _ | Jmp _ | Jz _ | Jnz _ | Switch _ | Ret | Raise | Reraise | TryEnter _ -> ()) r.code;
+      | Site _ -> ()
+      | Label _ | Jmp _ | Jz _ | Jnz _ | Switch _ | Ret | Raise | Reraise | TryEnter _ -> ());
+      (* (the site kept for the next instruction only, a Line between) *)
+      match i with
+      | Site (a, z) -> site := Some (a, z)
+      | Line _ -> ()
+      | _ -> site := None) r.code;
     let succs = bsucc id in
     (b.term <-
        match r.last, succs with
@@ -196,7 +213,10 @@ let build (f : L.func) =
        | Some Ret, _ -> Ret (pop ())
        | Some Raise, _ -> Raise (pop ())
        | Some Reraise, _ -> Reraise (pop ())
-       | Some (Call (t, slots, true)), _ -> Tail (t, List.map get slots)
+       | Some (Call (t, slots, true)), _ ->
+           (* (its Site the run's last instruction) *)
+           Option.iter (Hashtbl.replace tail_sites id) !site;
+           Tail (t, List.map get slots)
        | None, [] -> Ret (emit id Zero)
        | _ -> failwith (f.name ^ ": ssa: a block's end"));
     (* the stack left, for the successors *)
@@ -204,7 +224,7 @@ let build (f : L.func) =
     Braun.fill br id;
     seal_ready ()) blocks;
   Braun.seal_rest br;
-  { name = f.name; nparams = f.nparams; line = f.line; blocks; defs; doubles = Hashtbl.create 1; raws = Hashtbl.create 1; slots; lines }
+  { name = f.name; nparams = f.nparams; line = f.line; blocks; defs; doubles = Hashtbl.create 1; raws = Hashtbl.create 1; slots; lines; sites; tail_sites }
 
 (*****************************************************************************)
 (* Trivial phis out *)

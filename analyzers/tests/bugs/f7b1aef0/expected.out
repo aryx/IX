@@ -1,0 +1,2 @@
+bug? analyzers/tests/bugs/f7b1aef0/Before.ml:7: leak: in Before.read_file, taken here, given back at analyzers/tests/bugs/f7b1aef0/Before.ml:9, not when analyzers/tests/bugs/f7b1aef0/Before.ml:8 raises End_of_file
+1 bugs? (leak 1)

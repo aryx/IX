@@ -24,6 +24,4 @@ let () =
     { poll = (fun () -> false); suspend = (fun () -> ());
       result = (fun () -> !performed) } in
   print_int (basic_sync [| ev |]);
-  Mutex.lock masterlock;
-  print_int (take (Queue.create ()) (Condition.create ()));
-  Mutex.unlock masterlock
+  print_int (take (Queue.create ()) (Condition.create ()))

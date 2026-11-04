@@ -860,6 +860,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-29 | Fold wraps a literal to the target's bits, as the card reads it (Chacha20's mask, 0xffffffff, -1 on arm): the summaries by the host the card's | +1 | | |
 | 2026-10-29 | No large blocks outside the halves on Plan 9: there the halves are most of a process's 512 MB, and mini-ld linking mini-netscape on the card went past its stack (self-mix) | +2 (runtime) | | |
 | 2026-11-02 | `Wide.mul_high`, the high part of a product (Ir's MulHigh: arm's MULLU, arm64's UMULH; the runtime's ml_mul_high), for Bignum's limbs of 28 bits on arm, 14 before: X25519, ECDSA, RSA 54% fewer instructions there | +42 (runtime +22, Emit +14, Ir, Lower) | +98 (Bignum +54, Wide's two files, .mli and dune +44) | |
+| 2026-11-04 | `Lower.sites`: each call named by its application (Ir's Site, no code; Ssa's sites and tail_sites), for mini-analyze -bugs' paths (plan_bug_analyses.md's A9); off for the compiler, its code the same. lib_core's Queue.take_opt its own body | +50 (Lower, its .mli, Ssa_build, Ssa, Ir, Gen) | +10 (Queue) | |
 
 Since `92c9b4e`: +771 in ix (edits +141, new files +630) and +133 in
 mini-ml, against ~440 lines mini-ml won't need; and goal 1 reached. `Set_` is also a piece of the

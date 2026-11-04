@@ -13,6 +13,7 @@
 
 (* the file's functions in SSA form, for Ssa_facts.func (-flow) and
  * Ssa_facts.own (-dflow); dirs: where the units it names are; the
- * error, file and line *)
+ * error, file and line. sites: each call named by its application
+ * (Lower.sites, Ssa.func's sites), for -bugs *)
 val file :
-  < CLI.caps; .. > -> Fpath.t list -> Fpath.t -> (Ssa.func list, string) result
+  ?sites:bool -> < CLI.caps; .. > -> Fpath.t list -> Fpath.t -> (Ssa.func list, string) result

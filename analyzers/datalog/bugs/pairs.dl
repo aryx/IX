@@ -1,0 +1,110 @@
+% A resource taken and given back, but not when what comes between
+% raises (docs/plans/plan_bug_analyses.md, A9): mini-analyze -bugs, over
+% the call graph and the objects of points_to/ (target, pts), what may
+% raise of exceptions.dl (at, protected), the facts of Closure_facts and
+% the program's functions in mini-ml's SSA form, ssa_ before each of
+% Ssa_facts' relations (FACTS.md):
+%   site_key(S, K)          the site S is of the application K (its unit
+%                           and its function's span)
+%   ssa_site(P, K)          the SSA's call at P is of it too
+%   ssa_next, ssa_first, ssa_last, ssa_succ: the points and the blocks
+% and says:
+%   leak(A, C, R, E)        the resource the call A takes, which the call
+%                           R in the same function gives back, is held
+%                           when C, on a path from A that R is not on,
+%                           raises E (C in no try of the function)
+%
+%     let ic = open_in file in                      (f7b1aef0^,
+%     let s = really_input_string ic                 builder/CLI.ml)
+%               (in_channel_length ic) in
+%     close_in ic;
+%
+% A read that raised left the channel open: mini-mk reads many files,
+% and the descriptors went. The fix, Files.read, closes in Fun.protect's
+% finally: the close is in another function, the finally's, and no pair
+% is in one function.
+%
+% design:
+% The pairs are a table, below: a channel's open and close (the
+% resource the result), a lock's lock and unlock (the argument). Two
+% calls of a pair are one resource when they point to one object:
+% points-to says what, the SSA's paths say when (Ssa_facts.mli: how an
+% SSA gives an analysis that ignores the order the order back). A call
+% that may raise is an edge to the function's exit that the SSA does
+% not draw: what may raise is the whole program's (exceptions.dl), the
+% path to it the function's. held(A, P): a path from A to P without a
+% give-back; a raise there loses the resource. if bad then (close_in
+% ic; failwith ...) is quiet, its path closed first; a raise in a try's
+% body is the handler's (protected), a handler that gives back and
+% raises again quiet. An exception that is another bug's
+% (Invalid_argument, which nearly every call may raise) is not counted.
+% A call of the SSA not named (a tail call of a
+% function's own lowering, an application written as |>) is no point
+% of a pair: missed, not said. The bugs of A9 that this does not see:
+% 62d811be's dup (a count given back only `when o != c`, the count
+% taken in the caller: a branch's condition, which paths do not say),
+% 35a236d8's USB channel (C), 15f1a021's zombies (a release on a path
+% some callers never take).
+%
+% others:
+% Engler's checkers (Engler, Chelf, Chou and Hallem, "Checking system
+% rules using system-specific, programmer-written compiler extensions",
+% OSDI 2000) followed such pairs, lock and unlock, on each path of a C
+% function, as a state machine; Java's try-with-resources (Java 7,
+% 2011) and C#'s using make the release the language's; OCaml's
+% Fun.protect (4.08, 2019) is the library's.
+
+acquires('Pervasives.open_in', result).
+acquires('Pervasives.open_in_bin', result).
+acquires('Pervasives.open_out', result).
+acquires('Pervasives.open_out_bin', result).
+acquires('CapStdlib.open_in', result).
+acquires('CapStdlib.open_out', result).
+acquires('Unix.openfile', result).
+acquires('Mutex.lock', argument).
+% (close_in an external, its call the primitive's)
+releases('prim:caml_close_channel').
+releases('Pervasives.close_out').
+releases('Pervasives.close_in_noerr').
+releases('Pervasives.close_out_noerr').
+releases('Unix.close').
+releases('Mutex.unlock').
+
+% a call of the function's last stage, or of the function itself
+stage_of(G, G) :- function(G).
+stage_of(G, P) :- curried(G, G1), stage_of(G1, P).
+
+took(A, H, F) :-
+  target(A, G), stage_of(G, P), acquires(P, result), call_ret(A, V),
+  pts(V, H), in_function(A, F).
+took(A, H, F) :-
+  target(A, 'Mutex.lock'), argument(A, 1, V), pts(V, H), in_function(A, F).
+gave(R, H, F) :-
+  target(R, G), stage_of(G, P), releases(P), argument(R, 1, V), pts(V, H),
+  in_function(R, F).
+
+% The function's paths, mini-ml's SSA's (Ssa_facts, ssa_ before each
+% relation): from a point to the next in its block, from a block's end
+% to the first point of a block after it; a call of the SSA is the
+% source's site of its application (site_key, ssa_site)
+step(P, Q) :- ssa_next(P, Q).
+step(T, Q) :- ssa_last(B, T), ssa_succ(B, B2), ssa_first(B2, Q).
+point_of(S, P) :- site_key(S, K), ssa_site(P, K).
+one_application(A, C) :- site_key(A, K), site_key(C, K).
+
+% the points after A's call that a path reaches without a give-back
+given_at(A, Q) :- took(A, H, F), gave(R, H, F), point_of(R, Q).
+held(A, Q) :- took(A, _, _), point_of(A, P), step(P, Q), \+ given_at(A, Q).
+held(A, Q2) :- held(A, Q), step(Q, Q2), \+ given_at(A, Q2).
+
+% (a bug's exception, not a run's: nearly every call may raise
+% Invalid_argument, by an allocation, an index; the resource is then the
+% least of it)
+another_bug(caml_exn_Invalid_argument).
+another_bug(caml_exn_Division_by_zero).
+another_bug(caml_exn_Assert_failure).
+another_bug(caml_exn_Match_failure).
+leak(A, C, R, E) :-
+  took(A, H, F), gave(R, H, F), held(A, P), point_of(C, P),
+  \+ one_application(A, C), at(C, _, _, E), \+ another_bug(E),
+  \+ protected(C), reach(F).

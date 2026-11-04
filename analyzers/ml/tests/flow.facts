@@ -111,6 +111,12 @@ use('Flow.Init:v27', 'Flow.Init:v29').
 def('Flow.Init:v30', 'Flow.Init:v30').
 zero('Flow.Init:v30').
 use('Flow.Init:v30', 'Flow.Init:t0').
+site('Flow.Init:v4', 'Flow:741-748').
+site('Flow.Init:v8', 'Flow:726-734').
+site('Flow.Init:v16', 'Flow:706-712').
+site('Flow.Init:v20', 'Flow:694-697').
+site('Flow.Init:v23', 'Flow:680-688').
+site('Flow.Init:v29', 'Flow:669-678').
 function('f1_triangle<>').
 entry('f1_triangle<>:b0').
 block('f1_triangle<>:b0', 'f1_triangle<>').
@@ -216,6 +222,7 @@ zero('f2_gcd<>:v6').
 use('f2_gcd<>:v6', 'f2_gcd<>:t2').
 use('f2_gcd<>:v2', 'f2_gcd<>:t2').
 use('f2_gcd<>:v5', 'f2_gcd<>:t2').
+site('f2_gcd<>:t2', 'Flow:282-285').
 function('f3_length<>').
 entry('f3_length<>:b0').
 block('f3_length<>:b0', 'f3_length<>').
@@ -269,6 +276,7 @@ zero('f3_length<>:v9').
 use('f3_length<>:v9', 'f3_length<>:t3').
 use('f3_length<>:v6', 'f3_length<>:t3').
 use('f3_length<>:v8', 'f3_length<>:t3').
+site('f3_length<>:t3', 'Flow:391-397').
 block('f3_length<>:b4', 'f3_length<>').
 first('f3_length<>:b4', 'f3_length<>:v10').
 next('f3_length<>:v10', 'f3_length<>:v11').
@@ -436,6 +444,7 @@ zero('f5_collatz<>:v13').
 use('f5_collatz<>:v13', 'f5_collatz<>:t3').
 use('f5_collatz<>:v12', 'f5_collatz<>:t3').
 use('f5_collatz<>:v10', 'f5_collatz<>:t3').
+site('f5_collatz<>:t3', 'Flow:590-597').
 block('f5_collatz<>:b4', 'f5_collatz<>').
 first('f5_collatz<>:b4', 'f5_collatz<>:v14').
 next('f5_collatz<>:v14', 'f5_collatz<>:v15').
@@ -466,3 +475,4 @@ zero('f5_collatz<>:v20').
 use('f5_collatz<>:v20', 'f5_collatz<>:t4').
 use('f5_collatz<>:v19', 'f5_collatz<>:t4').
 use('f5_collatz<>:v15', 'f5_collatz<>:t4').
+site('f5_collatz<>:t4', 'Flow:625-632').

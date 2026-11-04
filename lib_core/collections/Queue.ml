@@ -74,4 +74,14 @@ let iter f q = iter_aux f q.head
 let is_empty q = match q.head with Nil -> true | Cons _ -> false
 let push = add
 let pop = take
-let take_opt q = match q.head with Nil -> None | Cons _ -> Some (take q)
+(* (its own body, as OCaml's: what may raise is read off the code
+ * (mini-analyze's exceptions.dl), and through take every take_opt
+ * would raise Empty, Thread.sleep and Condition.wait too.
+ * old: match q.head with Nil -> None | Cons _ -> Some (take q)) *)
+let take_opt q =
+  match q.head with
+  | Nil -> None
+  | Cons (x, rest) ->
+      q.head <- !rest;
+      (match !rest with Nil -> q.tail <- Nil | _ -> ());
+      Some x

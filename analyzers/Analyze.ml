@@ -53,6 +53,8 @@ program's functions that its toplevel never reaches (calls.dl):
   TinyMachine.ml:66: race: console_type, run by a signal's handler
   (TinyMachine.ml:52), writes a console's queue, as console_poll does
   Event.ml:70: wait: in Event.basic_sync, Condition.wait not in a while
+  CLI.ml:31: leak: in CLI.read_file, taken here, given back at CLI.ml:33,
+  not when CLI.ml:32 raises End_of_file
   given C files and ML ones (the runtime's, lib_core's): each external's
   [@@raise E] against what its C raises (bugs/raises.dl)
 -root f: f is also entered from where the facts do not go (assembly)
@@ -99,6 +101,10 @@ let raises_report = Bugs_report.raises_report
 let line (relation : string) (args : C.Facts.arg list) : string =
   let show = function C.Facts.Sym s -> "'" ^ String.concat "\\'" (String.split_on_char '\'' s) ^ "'" | C.Facts.Num n -> string_of_int n in
   relation ^ "(" ^ String.concat ", " (List.map show args) ^ ")."
+
+(* a file's unit: Bugs.ml, Bugs *)
+let unit_of_file (f : string) : string =
+  String.capitalize_ascii (Filename.remove_extension (Filename.basename f))
 
 (* bugs/intwidth.dl's unit_dir: the directories of a unit's file from
  * the top of the tree, lib_core's parent: kernels, kernels/lib_machine,
@@ -209,7 +215,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         if !files = [] then failwith usage;
         let incs = List.map path (List.rev !incs) in
         if !flow || !dflow then begin
-          let dirs = incs @ Ml_front.library caps !lib in
+          let mls = List.filter (fun f -> not (Filename.check_suffix f ".c")) !files in
+          let own_dirs = List.sort_uniq compare (List.map (fun f -> Fpath.parent (path f)) mls) in
+          let dirs = own_dirs @ incs @ Ml_front.library caps !lib in
           List.fold_left
             (fun status (f : string) ->
               let c own =
@@ -222,9 +230,11 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                 | Ok a, Ok b -> Console.print caps (a ^ b); status
                 | Error m, _ | _, Error m -> Console.eprint caps (m ^ "\n"); 1
               else
-              match Ml_flow.file caps dirs (path f) with
+              match Ml_flow.file ~sites:true caps dirs (path f) with
               | Ok fns ->
-                  if !flow then List.iter (fun fn -> Console.print caps (Ssa_facts.func fn)) fns;
+                  let unit_name = unit_of_file f in
+                  if !flow then
+                    List.iter (fun fn -> Console.print caps (Ssa_facts.func ~unit_name fn)) fns;
                   if !dflow then List.iter (fun fn -> Console.print caps (Ssa_facts.own fn)) fns;
                   status
               | Error m -> Console.eprint caps (m ^ "\n"); 1)
@@ -249,7 +259,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                [ "points_to/instructions.dl"; "points_to/contexts.dl"; "points_to/" ^ context ^ ".dl"; "exceptions.dl";
                  "bugs/physeq.dl"; "bugs/stack.dl"; "bugs/swallowed.dl";
                  "bugs/intwidth.dl"; "bugs/order.dl"; "bugs/init.dl";
-                 "bugs/races.dl" ]
+                 "bugs/races.dl"; "bugs/pairs.dl" ]
              else if !exns then
                [ "points_to/instructions.dl"; "points_to/andersen.dl"; "points_to/contexts.dl";
                  "points_to/" ^ context ^ ".dl"; "exceptions.dl" ]
@@ -272,6 +282,25 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         if ml <> [] then
           List.iter (fun m -> Console.eprint caps (m ^ "\n"); incr failed) (Ml_front.program caps (incs @ Ml_front.library caps !lib) (List.map path ml));
         if !bugs then start_facts (given p) !start ml;
+        (* (the program's own files in SSA form, their calls named as
+         * Closure_facts' sites: bugs/pairs.dl's paths, ssa_ before each
+         * relation; a file mini-ml's lowering refuses, none) *)
+        if !bugs then begin
+          (* (the units it names in each of the program's directories,
+           * _mk's generated parsers, a subfolder's) *)
+          let own_dirs = List.sort_uniq compare (List.map (fun f -> Fpath.parent (path f)) ml) in
+          let dirs = own_dirs @ incs @ Ml_front.library caps !lib in
+          List.iter
+            (fun (f : string) ->
+              let unit_name = unit_of_file f in
+              match Ml_flow.file ~sites:true caps dirs (path f) with
+              | Ok fns ->
+                  List.iter
+                    (fun fn -> D.load p ~from:f (Ssa_facts.func ~prefix:"ssa_" ~unit_name fn))
+                    fns
+              | Error m -> Logs.info (fun l -> l "no SSA: %s" m))
+            ml;
+        end;
         if !bugs then
           Hashtbl.iter
             (fun (u : string) (f : string) ->

@@ -404,6 +404,16 @@ store_in('Toy.ready', 'fld:contents', 'Toy:const', 'Toy.take\'').
 loop_site('Toy:64:c63').
 ```
 
+**A call by its application**, for `bugs/pairs.dl`, which follows the paths of
+the SSA form (below): each site of an application, by its unit and the span of
+the function applied, the name the SSA's calls have too (`site`). `Condition.wait
+c m` in `take` is two sites here, one an argument:
+
+```
+site_key('Toy:64:c63', 'Toy:2324-2338').
+site_key('Toy:64:c64', 'Toy:2324-2338').
+```
+
 **Who is where.** As in C. A variable two functions name is what a closure captures:
 
 ```
@@ -447,6 +457,19 @@ zero('f8_sum<>:v3').
 succ('f8_sum<>:b0', 'f8_sum<>:b1').
 ```
 
+A call is named by its application (`site`), as the facts above name their sites
+(`site_key`): `take`'s `Condition.wait c m` is three calls here, the closure asked
+whether it takes both arguments (then one call), or one then the other:
+
+```
+site('f21_take<>:v13', 'Toy:2324-2338').
+site('f21_take<>:v14', 'Toy:2324-2338').
+site('f21_take<>:v15', 'Toy:2324-2338').
+```
+
+`mini-analyze -bugs` reads the program's own files so too, `ssa_` before each
+relation (its `function` and `entry` are another's there): `bugs/pairs.dl`.
+
 `mini-analyze -dflow` adds what the compiler itself computed, to compare
 with: `own_live_out(V, P)`, and for ML `own_live_in(V, B)`, `own_idom(D, B)`.
 
@@ -470,6 +493,7 @@ with: `own_live_out(V, P)`, and for ML `own_live_in(V, B)`, `own_idom(D, B)`.
 | `bugs/intwidth.dl` | `wide_int`, `wide_site`, `unit_dir`, `in_function`, `curried`, over `target`, `entry`, `callback` |
 | `bugs/order.dl` | `walked`, `walk_call`, `model_new`, `shares`, `htype`, `global_var`, `own_unit`, over `pts`, `fpts` |
 | `bugs/init.dl` | `init`, `global_def`, `var_in`, `alloc_in`, `unit_start`, `starts_before`, `unit_file`, over `target` |
+| `bugs/pairs.dl` | `site_key`, the SSA's `ssa_site`, `ssa_next`, `ssa_first`, `ssa_last`, `ssa_succ`, `call_ret`, `argument`, `curried`, over `target`, `pts`, `at`, `protected`, `reach` |
 | `bugs/races.dl` | `store_in`, `loop_site`, `parameter`, `vtype`, `alloc_in`, `own_unit`, over `pts`, `fpts`, `target`, `entry`, `callback`, `reach` |
 | `liveness.dl` | C's `-flow` |
 | `liveness_ssa.dl`, `dominators.dl` | ML's `-flow` |

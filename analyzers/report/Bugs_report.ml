@@ -257,13 +257,37 @@ let bugs_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
            it goes on"
           (site t.(0)) (fun_of (unit_of t.(0)) t.(1)))
       (tuples "wait_once" 2) in
+  (* a resource not given back when a call between raises (pairs.dl): a
+   * line a call taking it, its first such call and exception *)
+  let leaks = Hashtbl.create 17 in
+  List.iter
+    (fun (t : string array) ->
+      let l = match Hashtbl.find_opt leaks t.(0) with Some l -> l | None -> [] in
+      Hashtbl.replace leaks t.(0) ((t.(1), t.(3), t.(2)) :: l))
+    (tuples "leak" 4);
+  let exn_name (e : string) : string =
+    match C_report.prefix "caml_exn_" e with Some x -> x | None -> e in
+  let leak =
+    Hashtbl.fold
+      (fun (a : string) (l : (string * string * string) list) acc ->
+        if not (own a) then acc
+        else
+          let l = List.sort compare l in
+          let c, e, r = List.hd l in
+          let n = List.length (List.sort_uniq compare (List.map (fun (c, _, _) -> c) l)) in
+          let more = if n > 1 then Printf.sprintf " (and %d more calls)" (n - 1) else "" in
+          let f = match Hashtbl.find_opt walk_fn a with Some f -> fun_of (unit_of a) f | None -> "?" in
+          Printf.sprintf "%s: leak: in %s, taken here, given back at %s, not when %s raises %s%s"
+            (site a) f (site r) (site c) (exn_name e) more
+          :: acc)
+      leaks [] in
   let order = List.sort_uniq compare order in
   let sharing = List.sort_uniq compare sharing in
   let race = List.sort_uniq compare race and wait = List.sort_uniq compare wait in
   let all =
     List.sort_uniq compare
       (physeq @ stack @ swallowed @ crash @ int31 @ order @ sharing @ init @ link
-       @ race @ wait) in
+       @ race @ wait @ leak) in
   List.iter (fun b -> Console.print caps ("bug? " ^ b ^ "\n")) all;
   (* (the analyses that report, by their number: within 80 columns) *)
   let counts =
@@ -273,7 +297,7 @@ let bugs_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
       [ ("physeq", physeq); ("stack", stack); ("swallowed", swallowed);
         ("crash", crash); ("int31", int31); ("order", order);
         ("sharing", sharing); ("init", init); ("link", link); ("race", race);
-        ("wait", wait) ] in
+        ("wait", wait); ("leak", leak) ] in
   Console.print caps
     (Printf.sprintf "%d bugs?%s\n" (List.length all)
        (if counts = [] then "" else " (" ^ String.concat ", " counts ^ ")"))

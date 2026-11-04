@@ -1,2 +1,4 @@
+bug? analyzers/tests/bugs/4f00134c/After.ml:3: leak: in After.put, taken here, given back at analyzers/tests/bugs/4f00134c/After.ml:5, not when analyzers/tests/bugs/4f00134c/After.ml:4 raises Unix.Unix_error
+bug? analyzers/tests/bugs/4f00134c/Before.ml:5: leak: in Before.put, taken here, given back at analyzers/tests/bugs/4f00134c/Before.ml:7, not when analyzers/tests/bugs/4f00134c/Before.ml:6 raises Unix.Unix_error
 bug? analyzers/tests/bugs/4f00134c/Before.ml:9: swallowed: in Before.set, Unix.Unix_error silenced, a constant answered
-1 bugs? (swallowed 1)
+3 bugs? (swallowed 1, leak 2)

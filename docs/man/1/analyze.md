@@ -82,7 +82,10 @@ program's library, lib_core's units it names, is read with it.
      directory (`bugs/init.dl`); `race`, a field written by what a
      signal's handler runs and by the program, of an object the
      program made, a bool being a flag (threads not yet); `wait`, a
-     `Condition.wait` not in a `while` (`bugs/races.dl`). C files: the
+     `Condition.wait` not in a `while` (`bugs/races.dl`); `leak`, a
+     channel or a lock taken and given back in one function, but not
+     when a call on a path between raises (`bugs/pairs.dl`, over the
+     program's functions in mini-ml's SSA form). C files: the
      report without an option, its `bug?` lines `bugs/pointers.dl`'s.
      C files and ML ones (mini-ml's runtime and lib_core: what
      `analyzers/datalog/tests/raises.sh` gives): each external's

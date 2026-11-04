@@ -19,6 +19,8 @@
  *        as console_poll does
  *   bug? Event.ml:70: wait: in Event.basic_sync, Condition.wait not in a
  *        while: woken for another, it goes on
+ *   bug? CLI.ml:31: leak: in CLI.read_file, taken here, given back at
+ *        CLI.ml:33, not when CLI.ml:32 raises End_of_file
  *
  * physeq (analyzers/datalog/bugs/physeq.dl): == or != with a side made in
  * the comparison itself. stack (bugs/stack.dl): a recursion the stack may
@@ -40,7 +42,9 @@
  * by the program, of an object the program made, a line a function of
  * the handler and an object (threads not yet)
  * (11c5d5f0's ^C); wait: a Condition.wait not in a while (ddb60eef's
- * Event.sync). Only
+ * Event.sync). leak (bugs/pairs.dl): a resource a function takes and
+ * gives back, held on a path to a call that may raise (f7b1aef0's
+ * read_file), a line a call taking it. Only
  * the program's own units, and code that is reached. *)
 
 (* the report, on the facts and the rules' answers *)

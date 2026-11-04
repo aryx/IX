@@ -217,6 +217,7 @@ let func m out (fn : func) =
     | Catch k -> dead := false; sp := Hashtbl.find catch_at k; reload (); result ()
     (* (kept after a jump: the code after the next label is its line's) *)
     | Line n -> line (fun _ _ _ -> sprintf "\t// line %d\n" n)
+    | Site _ -> ()
     | _ when !dead -> ()
     | Int n -> ins "%s\t$%Ld, R%d" mov (tagged m n) (push ())
     | Block s -> ins "%s\t$%s+%d(SB), R%d" mov s w (push ())

@@ -16,8 +16,13 @@ let name (fn : Ssa.func) (kind : char) (n : int) : string = quote (Printf.sprint
 let fact (b : Buffer.t) (relation : string) (args : string list) : unit =
   Buffer.add_string b (relation ^ "(" ^ String.concat ", " args ^ ").\n")
 
-let func (fn : Ssa.func) : string =
+(* a call's application, as Closure_facts names it (site_key) *)
+let key (unit_name : string) ((a, z) : int * int) : string =
+  Printf.sprintf "%s:%d-%d" unit_name a z
+
+let func ?(prefix = "") ?(unit_name = "") (fn : Ssa.func) : string =
   let b = Buffer.create 1024 in
+  let fact b relation args = fact b (prefix ^ relation) args in
   let block (n : int) : string = name fn 'b' n and value (v : Ssa.value) : string = name fn 'v' v in
   fact b "function" [ quote fn.name ];
   if Array.length fn.blocks > 0 then fact b "entry" [ block 0 ];
@@ -62,7 +67,17 @@ let func (fn : Ssa.func) : string =
         | Ssa.Br (_, s, t) | Ssa.Try (_, s, t) -> [ s; t ]
         | Ssa.Switch _ -> Ssa_build.successors_of bl
         | Ssa.Ret _ | Ssa.Raise _ | Ssa.Reraise _ | Ssa.Tail _ -> [] in
-      List.iter (fun (s : int) -> fact b "succ" [ here; block s ]) after)
+      List.iter (fun (s : int) -> fact b "succ" [ here; block s ]) after;
+      (* (Lower.sites: the calls by their application) *)
+      List.iter
+        (fun (v : Ssa.value) ->
+          Option.iter
+            (fun sp -> fact b "site" [ value v; quote (key unit_name sp) ])
+            (Hashtbl.find_opt fn.sites v))
+        bl.body;
+      Option.iter
+        (fun sp -> fact b "site" [ last; quote (key unit_name sp) ])
+        (Hashtbl.find_opt fn.tail_sites bl.id))
     fn.blocks;
   Buffer.contents b
 

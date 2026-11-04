@@ -21,7 +21,8 @@ before the fix (`git show FIX^:path`) and stay quiet on the fixed code.
 Then it runs over ix through the sweep, as `-dead`, `-caps` and `-exn` do.
 
 **Status: A6's first half, A1, A3 and A2 done (2026-11-03), A4's first
-step, A5, A10 and A8's handlers (2026-11-04), the rest planned.**
+step, A5, A10, A8's handlers and A9's exceptions (2026-11-04), the rest
+planned.**
 `mini-analyze -bugs` runs `bugs/physeq.dl` (`==` or `!=` with a side
 made in the comparison), `bugs/stack.dl` (a loop through a `try`, a
 frame a list's element), `bugs/swallowed.dl` (an error of the
@@ -29,15 +30,16 @@ system silenced), `bugs/intwidth.dl` (an int past the Pi 1's 31
 bits), `bugs/order.dl` (a table's order given to an output) and
 `bugs/init.dl` (a start reading a later unit's global), `bugs/races.dl`
 (a field a signal's handler and the program both write, a wait not in
-a `while`). Each
+a `while`), `bugs/pairs.dl` (a resource held on a path to a call that
+raises, over mini-ml's SSA). Each
 reports its bugs on the code before the fix and not after
 (`analyzers/tests/bugs/`: eb5378a5, 021c562b, f46346db, c5086383,
 4f00134c, 4436f60d, e92ae1ec, d22c56e4, 410d04a2, 70b6b2bf,
-6264d271, 11c5d5f0, ddb60eef). On today's ix,
+6264d271, 11c5d5f0, ddb60eef, f7b1aef0). On today's ix,
 `physeq` finds nothing; `stack` gives 145 reports on the 44 programs
 and 9 on the kernel, `swallowed` 12 on the programs, `int31` 29,
-`order` 2, `race` 1 (`analyzers/datalog/tests/bugs_ix.txt`), read in
-A1, A3, A4, A5 and A8 below. A7 turned out to be
+`order` 2, `race` 1, `leak` 1 (`analyzers/datalog/tests/bugs_ix.txt`),
+read in A1, A3, A4, A5, A8 and A9 below. A7 turned out to be
 `-dead`'s already (below).
 The evidence is in
 [`bugs/history/`](bugs/history/): `from_git.md` has 73 bug fixes found in
@@ -567,6 +569,51 @@ shape.
 
 **Cost:** about 40 lines of facts and 30 of rules. Later than A1 to A7.
 
+**Done for exceptions** (2026-11-04): `bugs/pairs.dl`, `-bugs`' `leak`:
+a resource a function takes (`open_in`, `open_out`, `Unix.openfile`,
+`Mutex.lock`) and gives back (`close_in`, `Unix.close`,
+`Mutex.unlock`), one object by points-to, held on a path of the
+function to a call that may raise (`exceptions.dl`'s `at`) outside any
+`try`. Not counted: an exception that is another bug's
+(`Invalid_argument`, `Division_by_zero`, `Assert_failure`,
+`Match_failure`): nearly every call may raise the first. Test
+`analyzers/tests/bugs/f7b1aef0/` (read_file's `really_input_string`
+between its open and close: reported; `Fun.protect`, a close before a
+raise, a handler closing and raising again: not); 4f00134c's `put`
+reported too, before and after its fix, rightly (its write may raise).
+
+The paths are mini-ml's own SSA, not a graph of the analyzer's (the
+author: "seems redundant to build both a CFG and both an SSA? Is it
+possible to "higher" a bit the SSA"): the SSA is the lowered code,
+its library calls through closures and a curried call two calls on an
+arity check's branches, but a call can be named by its application.
+`Lower.sites` (off for the compiler, whose code stays the same) puts an
+`Ir.Site` (the applied function's span, no code) before each call of
+an application; `Ssa_build` keeps it, `Ssa.func`'s `sites` and
+`tail_sites`; `Ssa_facts` says `site(P, Unit:start-stop)`, Closure_facts
+`site_key(S, Unit:start-stop)`, so a rule asks points-to what a call
+takes and the blocks when. `-bugs` loads the program's own files in SSA
+form, `ssa_` before each relation (`function` and `entry` are
+`contexts.dl`'s); all 639 files of the 44 programs lower (each of the
+program's directories searched: 97 named a unit of another one).
+`Ssa_facts.mli`'s header says how an SSA gives an analysis that ignores
+the order the order back, and `Analyze.mli` when a question is
+Datalog's and when OCaml's. Found on the way: lib_core's
+`Queue.take_opt` called `take`, whose `raise Empty` the analysis could
+not rule out, so every `Condition.wait` (through `Thread.sleep`) seemed
+to raise `Queue.Empty`; it has its own body now, as OCaml's. 39 lines
+of rules, about 60 of facts and of the compiler, 25 of report.
+
+On ix: the kernel nothing; the 44 programs one, mini-5i's `openat`
+(`Host.ml`), a descriptor kept if `Unix.fstat` of it raises: harmless,
+it does not fail on a descriptor just opened. Few, as expected: ix's
+reads are `Files.read`'s since f7b1aef0, and the other opens are closed
+in another function (ed's `read`, its `read_file`), which a pair in one
+function does not see. Not done: a resource returned or stored and
+given back elsewhere (a function's summary: takes, gives back), a
+count's (62d811be's dup), a path that is not a raise's (a `return`
+without the close), a branch's condition.
+
 ### A10. Toplevel initialization and link order (`bugs/init.dl`)
 
 **Done** (2026-11-04), as `init` and `link` in `-bugs`. Re-found:
@@ -621,6 +668,19 @@ sides both call something that writes.
 **Cost:** about 40 lines of ML for the layout check. Purity is a stage
 of its own.
 
+### A12. The tree as facts, and patterns (an idea, the author's)
+
+The author (2026-11-04): "One idea would be to use semgrep patterns in
+some datalog rules". What is a check of the syntax is OCaml's today
+(Closure_facts' `in_loop`, `wide_int`; A11 a lint in ML). The tree as
+relations, `node(N, Kind)`, `parent(N, P)`, `at(N, Line, Column)`,
+would make such a check a rule (`ancestor`, a while above a wait), and
+joined with the semantic ones (`target`, `pts`, `at`): CodeQL's one
+database. Patterns, semgrep's, would be a small matcher over mini-ml's
+tree giving `matched(Rule, Node, Var, Value)`, which rules join: ix's
+own, written from scratch, not osemgrep. First the tree facts (A11's
+columns with them); patterns when a second check would be one.
+
 ## C
 
 The C bugs are mostly hardware (device registers, the boards, the
@@ -665,7 +725,7 @@ reproduction.
 | 7 | A5 output order | `walked`, `walk_call`, `model_new`, `shares` | 80 | 3 | done |
 | 8 | A10 init and link order | `starts_before`, `unit_start`, `unit_file` | 70 | 2 | done |
 | 9 | A8 races | `store_in`, `loop_site` | 125 | 2 | handlers done; threads need the switch points |
-| 10 | A9 pairs on every path | `call_at`, exception edges | 70 | ~5 | flow facts |
+| 10 | A9 pairs on every path | `site_key`, the SSA's `site` | 125 | 1 | exceptions done, over mini-ml's SSA |
 | 11 | A4 step 2, intervals | `range` (ML) | 200 | ~5 | after numbers in Datalog |
 | 12 | A11 layout, evaluation order | columns, purity | 40+ | ~3 | |
 | 13 | A7 unused parameters (fields: `-dead`'s) | SSA `use` joined | 20 | ~2 | |

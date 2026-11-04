@@ -131,6 +131,12 @@ val curry_funcs : unit -> Ir.func list
  * functions *)
 val calls_whole : bool ref
 
+(* each call of an application preceded by an Ir.Site, the span of the
+ * function applied, which the SSA keeps (Ssa.func's sites): for
+ * mini-analyze -bugs (Ml_flow), to name the SSA's calls as its facts
+ * name them. Off for the compiler: no Site, the same code *)
+val sites : bool ref
+
 (* the code's labels of the functions marked [@@zero_alloc]
  * (Annotations.zero_allocs), each with its name, for ssa's Zero_alloc *)
 val zero_allocs : (string, string) Hashtbl.t

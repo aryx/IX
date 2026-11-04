@@ -830,6 +830,10 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
 (* f a1 ... an: a call for each argument, of what the one before returned *)
 and call (x : expr) (f : expr) (args : expr list) (dst : string) : unit =
   marshal x f args;
+  (* (each site of this application by its function's span, as the
+   * SSA's calls are (Ssa_facts.site): bugs/pairs.dl's) *)
+  let key (i : string) : unit =
+    fact "site_key" [ i; Printf.sprintf "%s:%d-%d" !unit_name (fst f.span) (snd f.span) ] in
   let fn = ref (operand f) in
   (* an external given all its arguments: its own copy, here, its objects
    * this call's, of the type here (an int ref, not 'a ref). Shared, one
@@ -842,6 +846,7 @@ and call (x : expr) (f : expr) (args : expr list) (dst : string) : unit =
         let n = max arity 1 in
         incr calls;
         let i = Printf.sprintf "%s:%d:c%d" !unit_name x.loc !calls in
+        key i;
         let given = Array.of_list (List.map operand (List.filteri (fun k _ -> k < n) args)) in
         let last = List.length args = n in
         let ret = if last then dst else temp () in
@@ -917,6 +922,7 @@ and call (x : expr) (f : expr) (args : expr list) (dst : string) : unit =
       let result = if k = n - 1 then dst else temp () in
       fact "in_function" [ i; !inside ];
       site_in i;
+      key i;
       position i result;
       fact "call_indirect" [ i; !fn ];
       fact1 "argument" i (operand a);

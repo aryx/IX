@@ -3,8 +3,10 @@
 
 (* See Ml_flow.mli *)
 
-let file (caps : < CLI.caps; .. >) (dirs : Fpath.t list) (file : Fpath.t) :
-    (Ssa.func list, string) result =
+let file ?(sites = false) (caps : < CLI.caps; .. >) (dirs : Fpath.t list)
+    (file : Fpath.t) : (Ssa.func list, string) result =
+  Lower.sites := sites;
+  Fun.protect ~finally:(fun () -> Lower.sites := false) @@ fun () ->
   let f = Fpath.to_string file in
   match CLI.parse caps file with
   | Error m -> Error m

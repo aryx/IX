@@ -42,6 +42,23 @@
  * (29 rounds, 20 million lookups for 44,000 tuples): the evaluator,
  * which a Datalog compiled (Soufflé's way, the plan's decision 5)
  * is for.
+ * Datalog or OCaml: what is a fixpoint over the whole program is
+ * Datalog's (what points where, the call graph, where an exception
+ * may go, what a handler or a unit's start runs, where a table's
+ * order flows). Written in OCaml, each analysis would write its own
+ * worklist and closure again; here they are points_to/'s and
+ * exceptions.dl's relations, and an analysis is 10 to 50 lines of
+ * joins over them (bugs/races.dl 30, bugs/init.dl 10), its negations
+ * checked by the strata, each relation between asked by mini-datalog
+ * -q while it is written. What is local, in order or of the syntax
+ * is OCaml's, the facts' (Closure_facts' in_loop, a call in a while;
+ * wide_int, a literal), and so are numbers and their intervals (a
+ * lattice, which plain Datalog has not) and the reports, each as long
+ * as its rules. bugs/pairs.dl is on the line: whether a call between
+ * an open and its close may raise is the call graph's, Datalog's, but
+ * the order of a function's calls is only the walk's (call_seq), its
+ * branches one after the other; a pass over the tree, or the SSA's
+ * blocks, would say it exactly.
  *
  * others:
  * Doop (Martin Bravenboer, Yannis Smaragdakis, OOPSLA 2009) runs
@@ -50,7 +67,11 @@
  * there the analyses of twenty years (Andersen's, k-CFA, object and
  * type sensitivity) are each a choice of contexts in the same rules,
  * which is where pointer.dl would grow: a context a column more
- * (calls.dl says how). CodeQL (Semmle, from .QL, Oege de Moor, 2007)
+ * (calls.dl says how). Both split the work as here: a front end
+ * makes the local facts, the rules the whole program's. Infer
+ * (Facebook, from Cristiano Calcagno and others' bi-abduction, POPL
+ * 2009) is the other way, all in OCaml: abstract interpretation, a
+ * summary for each function. CodeQL (Semmle, from .QL, Oege de Moor, 2007)
  * a database of a program's facts queried in a Datalog with classes;
  * Flix (Magnus Madsen, 2016) the rules inside the language that makes
  * the facts.

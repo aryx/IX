@@ -189,9 +189,33 @@ the 44 programs' total, Models' Hashtbl against derived: -dead 124 s to
 124, -exn 341 s to 368 (mini-ml 75 s, 5.7 GB to 99 s, 8.3 GB): the
 summaries' size, each written in at every call.
 
-Next: a summary simplified before it is stored (copies propagated, an
-op whose result nothing reads dropped), then the measure again; the
-19 evalorder; then the rest of lib_core (its closures over the buckets, the
+A summary simplified before it is stored (2026-11-04, Summaries.simplify):
+copies merged (a cycle of Assigns one variable, a Tmp whose one
+definition is a copy its source), a definition no op reads dropped (a
+Load kept: a field read, dead.dl's; a Store kept: two variables may
+point to one object); List's and Hashtbl's 2,468 ops to 1,685 (replace
+95 to 55). The same answers, the probe and make check's six against the
+summaries unsimplified. The measure, the 44 programs' total, hand /
+derived / simplified: -dead 124 / 124 / 120 s; -exn 341 / 368 / 364 s,
+mini-ml 75 s and 5.7 GB / 99 s and 8.3 GB / 99 s and 8.0 GB.
+
+So -exn's cost is not the ops but the objects: a derived Hashtbl makes
+a record, an array and cells at each call, Models' one object a table,
+and call1_rec's contexts multiply each. A summary written in at each
+call is a polymorphic type's instantiation (its effect in terms of its
+arguments, fresh at each use) and context sensitivity to the bottom of
+the call tree, a fresh New per call a heap context: the equivalence of
+Rehof and Fähndrich, "Type-based flow analysis: from polymorphic
+subtyping to CFL-reachability" (POPL 2001), made an analysis by
+Fähndrich, Rehof and Das, "Scalable context-sensitive flow analysis
+using instantiation constraints" (PLDI 2000). The author: "I've read
+that summaries and polymorphic types and context sensitive analysis
+have a lot in common".
+
+Next: a summary's heap as a type's: the objects one instantiation makes
+of the same type and role one object (Models' table, its key and value
+fields), each call's own still, fewer; then the measure (-exn toward
+Models'); the 19 evalorder; then the rest of lib_core (its closures over the buckets, the
 case Models was written for); then the rest of lib_core, the fixed cost
 of step 1 (List's code about 2,400 of the 80,000 to 117,000 facts of
 lib_core in a program: mini-cat's count).

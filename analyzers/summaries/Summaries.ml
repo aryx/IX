@@ -285,9 +285,83 @@ let rec derive ~(units : string list) (facts : fact list) :
   List.iter (function f, Ok s -> Hashtbl.replace table f s | _ -> ()) raw;
   List.map
     (function
-      | f, Ok (n, ops) -> (f, Ok (n, inline table [ f ] ops))
+      | f, Ok (n, ops) -> (f, Ok (n, simplify (inline table [ f ] ops)))
       | r -> r)
     raw
+
+(* ---- a summary simplified, what it says the same (the analysis is
+ * flow-insensitive: a variable is the set of what it may point to)
+ *
+ * 1. copies merged: Tmps in a cycle of Assigns have one set, one
+ *    variable; a Tmp defined only by a copy is its source;
+ * 2. a definition no op reads dropped (Load, Assign, Scalar, New,
+ *    Global into a Tmp read by none), until none is left; a Load kept,
+ *    a field read, what dead.dl asks.
+ * A Store is kept: two variables may point to one object, a value
+ * stored through one loaded through the other, which this does not
+ * see. *)
+and simplify (ops : op list) : op list =
+  let subst (f : Models.v -> Models.v) (ops : op list) : op list =
+    List.sort_uniq compare (List.map (map_op f) ops)
+    |> List.filter (function Assign (a, b) -> a <> b | _ -> true) in
+  (* the Tmps a definition writes *)
+  let dst (o : op) : Models.v option =
+    match o with
+    | Assign (d, _) | Load (d, _, _) | New d | Scalar d | Call (d, _, _) | Global (d, _) -> Some d
+    | Store _ | Raise _ -> None in
+  let defs (ops : op list) (v : Models.v) : op list =
+    List.filter (fun o -> dst o = Some v) ops in
+  (* 1. a cycle of copies one variable: the Tmps reached both ways *)
+  let rec merge_cycles (ops : op list) : op list =
+    let edges = List.filter_map (function Assign ((Tmp _ as d), (Tmp _ as s)) -> Some (s, d) | _ -> None) ops in
+    let rec reach (seen : Models.v list) (x : Models.v) : Models.v list =
+      if List.mem x seen then seen
+      else List.fold_left (fun acc (s, d) -> if s = x then reach acc d else acc) (x :: seen) edges in
+    let tmps = List.sort_uniq compare (List.concat_map (fun (s, d) -> [ s; d ]) edges) in
+    match
+      List.find_map
+        (fun x ->
+          let fwd = reach [] x in
+          match List.filter (fun y -> y <> x && List.mem x (reach [] y) && List.mem y fwd) tmps with
+          | [] -> None
+          | ys -> Some (x, ys))
+        tmps
+    with
+    | Some (x, ys) -> merge_cycles (subst (fun v -> if List.mem v ys then x else v) ops)
+    | None -> ops in
+  (* 1. a Tmp whose one definition is a copy: its source *)
+  let rec copies (ops : op list) : op list =
+    match
+      List.find_map
+        (fun o ->
+          match o with
+          | Assign ((Tmp _ as a), b) when defs ops a = [ o ] && b <> a -> Some (a, b)
+          | _ -> None)
+        ops
+    with
+    | Some (a, b) -> copies (subst (fun v -> if v = a then b else v) (List.filter (( <> ) (Assign (a, b))) ops))
+    | None -> ops in
+  (* 2. a definition of a Tmp no op reads *)
+  let reads (o : op) : Models.v list =
+    match o with
+    | Assign (_, s) | Load (_, s, _) -> [ s ]
+    | Store (a, _, b) -> [ a; b ]
+    | Call (_, f, a) -> [ f; a ]
+    | New _ | Scalar _ | Global _ | Raise _ -> [] in
+  let rec unused (ops : op list) : op list =
+    let read = List.concat_map reads ops in
+    let dead (o : op) =
+      match o, dst o with
+      (* (a Load is a field read, what dead.dl's dead fields ask: kept,
+       * its value unread or not; old: dropped, Hashtbl's size dead) *)
+      | (Call _ | Load _), _ -> false
+      | _, Some (Tmp _ as d) -> not (List.mem d read)
+      | _ -> false in
+    if List.exists dead ops then unused (List.filter (fun o -> not (dead o)) ops) else ops in
+  let rec fix (ops : op list) : op list =
+    let ops' = unused (copies (merge_cycles ops)) in
+    if ops' = ops then ops else fix ops' in
+  fix (List.sort_uniq compare ops)
 
 (* a call of a summarized function given all its arguments, its summary
  * in its place, renumbered (List.rev's List.rev_append: rev's cells its

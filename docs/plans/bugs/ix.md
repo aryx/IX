@@ -448,6 +448,13 @@ On clean copies of 529ce2ea and c7a5deb2: `mk: don't know how to make
 need assembler's objects for that O and OS, and nothing there has made them.
 Reproduce: `git archive HEAD | tar -x -C copy; cd copy; make self-quick-mix`. Not
 fixed: found while checking another change. Not looked at: since when.
+Fixed 2026-11-04: IXDIRS listed languages/dotnet (f7696b07) before
+assembler, one directory after the other, and since 09a5132e (the JIT)
+its mkfile takes assembler's objects; here _mk/5-plan9 had assembler's objects
+from an earlier build. make self-mix on GitHub, a fresh tree, stopped
+there every night from 2026-10-31. Now after assembler and linker;
+kernels/9pi/tests/ixdirs.sh, in make test, checks each directory comes
+after those whose objects its mkfile takes (static, a quarter second).
 
 ## lib_core's string_of_float: no point after a whole number (2026-10-31, not fixed)
 

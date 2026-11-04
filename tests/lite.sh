@@ -508,6 +508,9 @@ elif [ ! -x /tmp/ix-ocaml-light-arm/bin/ocamlopt ]; then
 elif ! command -v arm-linux-gnueabihf-gcc > /dev/null; then
   skip "$t9" "no arm-linux-gnueabihf-gcc"
 else job "$t9" kernels/9pi/tests/smoke.sh $W/9pi-smoke; fi
+# make self-mix's make ix in a fresh tree: each directory after those
+# whose objects it takes (here _mk/5-plan9 hides a wrong order)
+job "make self-mix's order: each directory after those whose objects it takes" kernels/9pi/tests/ixdirs.sh
 # mini-9pi for the Pi 1 built by ix (mini-ml's OCaml, mini-cc -O3's C),
 # from nothing in this run's own directory, booted under mini-qemu to
 # rc's prompt on principia's card (about 75 s): the other jobs' kernels

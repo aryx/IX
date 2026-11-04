@@ -18,7 +18,7 @@ lib_core's erased `Cap` (which mini-ml compiles), `capabilities.dl`
 (which says who needs what), and the 32 callers, then the programs the
 sweep does not read.
 
-**Status: steps 1 and 2 done (2026-11-04), step 3 next.** Part 1, a
+**Status: steps 1 to 3 done (2026-11-04), step 4 next.** Part 1, a
 capability held in a record's field, is done (98a593f4). The author's
 answers to the open questions are in the last section.
 
@@ -34,8 +34,8 @@ later must be put in one.
 
 | group | functions |
 |---|---|
-| needs a capability already | `stdin stdout stderr openfile stat lstat access readlink realpath unlink link rename chmod utimes mkdir mkfifo rmdir chdir opendir fork execv execve create_process wait waitpid kill _exit environment socket bind listen accept connect getaddrinfo setitimer`; `Sys`'s `file_exists is_directory remove rename getenv command chdir readdir mkdir`, `argv`, `exit`, `set_signal` |
-| a descriptor already held | `close read write write_substring lseek ftruncate fstat fchmod isatty dup dup2 set_nonblock clear_nonblock set_close_on_exec in_channel_of_descr out_channel_of_descr readdir closedir getsockname setsockopt recvfrom sendto_substring shutdown select tcgetattr tcsetattr` |
+| needs a capability already | `stdin stdout stderr openfile stat lstat LargeFile.stat LargeFile.lstat access readlink realpath unlink link rename chmod utimes mkdir mkfifo rmdir chdir opendir fork execv execve create_process wait waitpid kill _exit environment socket bind listen accept connect getaddrinfo setitimer`; `Sys`'s `file_exists is_directory remove rename getenv command chdir readdir mkdir`, `argv`, `exit`, `set_signal` |
+| a descriptor already held | `close read write write_substring lseek ftruncate fstat fchmod isatty dup dup2 set_nonblock clear_nonblock set_close_on_exec in_channel_of_descr out_channel_of_descr readdir closedir getsockname setsockopt recvfrom sendto_substring shutdown select tcgetattr tcsetattr`, `LargeFile.lseek fstat` |
 | computes only | `error_message gmtime inet_addr_any inet_addr_loopback inet_addr_of_string string_of_inet_addr` |
 | new: `clock` | `time gettimeofday sleepf`, `Sys.time` |
 | new: `pipe` | `pipe socketpair` |
@@ -117,6 +117,14 @@ raspberry/, lib_playground's platforms, and tiny/'s host side, about
    the other two groups, and `unclassified(F)`, a `Unix` function that
    reaches `prim:unix_syscall` and is in no group. A test in
    `analyzers/tests/caps/` asks that none is.
+   Done: the test is `analyzers/tests/run.sh`'s, on both of lib_core's
+   `Unix` (Linux's 80 vals, plan9's 43), given its `.mli`'s vals as
+   `unix_val`; it reports a row taken out (tried with `Unix.pipe`). It
+   found what the table above missed: `Unix.LargeFile.stat` and `lstat`
+   (machine/process's `Host`), now `open_in`'s, `LargeFile.lseek` and
+   `fstat` a descriptor's, and plan9's `Unix.plan9_call`, Plan 9's call
+   by number, under `Sys_plan9`, whose functions each take their
+   capability by type, but `exits`, now `Cap.exit`'s (`raw_call`).
 4. **The 32 callers.** Each takes the capability, or calls `CapUnix`'s
    function. Where a module needs only the time, a closure can be
    given instead of the object: `Datalog_eval` taking `now : unit ->

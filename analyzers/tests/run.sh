@@ -42,4 +42,24 @@ else
   echo "FAIL mini-analyze: models, not as the library's code (< models, > as written)"
   diff $W/models.answers $W/no-models.answers | head -10; failures=$((failures + 1))
 fi
+# capabilities.dl's groups: each function of lib_core's two Unix (Linux's,
+# plan9's) that makes a system call is in one (needs a capability, acts on
+# a descriptor, computes), its .mli's vals as unix_val
+for u in system system/plan9; do
+  $ANALYZE -facts -alone -I lib_core/$u lib_core/$u/Unix.ml > $W/unix.facts 2>&1
+  awk '/^module LargeFile/ { m = "LargeFile." } /^end/ { m = "" }
+    match($0, /^ *val [a-z_0-9]+/) { v = substr($0, RSTART, RLENGTH)
+      sub(/^ *val /, "", v); printf "unix_val(\047Unix.%s%s\047).\n", m, v }' \
+    lib_core/$u/Unix.mli > $W/vals.facts
+  $DATALOG -q 'unclassified(F)' $P/instructions.dl $P/contexts.dl \
+    $P/insensitive.dl $R/dead.dl $R/capabilities.dl $W/unix.facts \
+    $W/vals.facts > $W/unclassified 2> /dev/null
+  n=$(wc -l < $W/vals.facts)
+  if [ $n -gt 20 ] && [ ! -s $W/unclassified ]; then
+    echo "ok mini-analyze: each system call of $u's Unix in a group ($n vals)"
+  else
+    echo "FAIL mini-analyze: $u's Unix, in no group of capabilities.dl ($n):"
+    head -10 $W/unclassified; failures=$((failures + 1))
+  fi
+done
 exit $failures

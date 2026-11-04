@@ -37,8 +37,11 @@
 %
 % Not authority: a channel or a descriptor already held (Cap.mli's reframe: a
 % descriptor is a capability), so Unix.read is nothing here and Unix.openfile
-% is; the clock, a pipe, a process's own number, for which xix's Cap has none
-% yet (each system call is to have one, the author's: 2026-11-03).
+% is. Each system call needs a capability or acts on a descriptor (the
+% author's, 2026-11-03): unclassified(F) is a function of Unix that reaches
+% unix_syscall and is in no group, the check that the table is whole.
+% old: the clock, a pipe, a process's own number were not authority, xix's
+% Cap having none for them.
 %
 % design:
 % unused_cap is a may too, and quieter by choice: not said of a function that lets
@@ -88,6 +91,8 @@ requires('Unix.openfile', open_in).
 requires('Unix.openfile', open_out).
 requires('Unix.stat', open_in).
 requires('Unix.lstat', open_in).
+requires('Unix.LargeFile.stat', open_in).
+requires('Unix.LargeFile.lstat', open_in).
 requires('Unix.access', open_in).
 requires('Unix.readlink', open_in).
 requires('Unix.realpath', open_in).
@@ -117,6 +122,7 @@ requires('Unix.chdir', chdir).
 requires('prim:sys_exit', exit).
 requires('Pervasives.exit', exit).
 requires('Unix._exit', exit).
+requires('Sys_plan9.exits', exit).
 % (a forked child's way out: not a capability of its own to ask for)
 requires('Unix._exit', fork).
 requires('prim:sys_getenv', env).
@@ -146,6 +152,20 @@ requires('Unix.accept', network).
 requires('Unix.connect', network).
 requires('Unix.getaddrinfo', network).
 
+% the time, read or waited for (Sys.time the processor's: two runs differ)
+requires('Unix.gettimeofday', clock).
+requires('Unix.time', clock).
+requires('Unix.sleepf', clock).
+requires('prim:sys_time', clock).
+requires('Unix.pipe', pipe).
+requires('Unix.socketpair', pipe).
+% what the process is told about where it runs, as a variable is
+requires('Unix.getpid', env).
+requires('Unix.getppid', env).
+requires('Unix.getcwd', env).
+requires('Unix.gethostname', env).
+requires('prim:sys_getcwd', env).
+
 % xix's Cap.mli's groups
 cap_includes(console, stdin).
 cap_includes(console, stdout).
@@ -156,6 +176,7 @@ cap_includes(console, mouse).
 cap_includes(process_multi, fork).
 cap_includes(process_multi, wait).
 cap_includes(process_multi, kill).
+cap_includes(process_multi, pipe).
 cap_includes(process_single, signal).
 cap_includes(process_single, time_limit).
 cap_includes(process_single, memory_limit).
@@ -173,6 +194,7 @@ cap_includes(forkew, fork).
 cap_includes(forkew, exec).
 cap_includes(forkew, wait).
 cap_includes(misc, random).
+cap_includes(misc, clock).
 cap_includes(all_caps, console).
 cap_includes(all_caps, process).
 cap_includes(all_caps, fs).
@@ -181,6 +203,44 @@ cap_includes(all_caps, network).
 cap_includes(all_caps, misc).
 
 authority(S) :- requires(S, _).
+
+% ---- the rest of Unix: on a descriptor held, or computing only
+
+on_descriptor('Unix.close'). on_descriptor('Unix.read').
+on_descriptor('Unix.write'). on_descriptor('Unix.write_substring').
+on_descriptor('Unix.lseek'). on_descriptor('Unix.ftruncate').
+on_descriptor('Unix.fstat'). on_descriptor('Unix.fchmod').
+on_descriptor('Unix.isatty'). on_descriptor('Unix.dup').
+on_descriptor('Unix.dup2'). on_descriptor('Unix.set_nonblock').
+on_descriptor('Unix.clear_nonblock'). on_descriptor('Unix.set_close_on_exec').
+on_descriptor('Unix.in_channel_of_descr').
+on_descriptor('Unix.out_channel_of_descr').
+on_descriptor('Unix.readdir'). on_descriptor('Unix.closedir').
+on_descriptor('Unix.getsockname'). on_descriptor('Unix.setsockopt').
+on_descriptor('Unix.recvfrom'). on_descriptor('Unix.sendto_substring').
+on_descriptor('Unix.shutdown'). on_descriptor('Unix.tcgetattr').
+on_descriptor('Unix.tcsetattr').
+on_descriptor('Unix.LargeFile.lseek'). on_descriptor('Unix.LargeFile.fstat').
+% (its timeout bounds a wait on what is held; one on no descriptor would be a
+% sleep, CapUnix.sleepf)
+on_descriptor('Unix.select').
+computes('Unix.error_message'). computes('Unix.gmtime').
+computes('Unix.inet_addr_any'). computes('Unix.inet_addr_loopback').
+computes('Unix.inet_addr_of_string'). computes('Unix.string_of_inet_addr').
+% (plan9's Unix: any of Plan 9's calls by its number, Sys_plan9's way down;
+% each of its functions takes its capability by its type, but exits)
+raw_call('Unix.plan9_call').
+
+% the check, given unix_val(F), Unix.mli's (analyzers/tests/caps/groups.sh)
+syscall_prim('prim:unix_syscall').
+syscall_prim('prim:unix_execve').
+reaches_syscall(R) :- names_known(R, P), syscall_prim(P).
+reaches_syscall(R) :- names_function(R, G), reaches_syscall(G).
+classified(F) :- authority(F).
+classified(F) :- on_descriptor(F).
+classified(F) :- computes(F).
+classified(F) :- raw_call(F).
+unclassified(F) :- unix_val(F), reaches_syscall(F), \+ classified(F).
 
 % ---- who names what: a variable a toplevel or a let bound to a function
 

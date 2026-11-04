@@ -205,16 +205,20 @@ nothing; the last line says which capabilities are missing most. A function answ
 for what it names, called or passed on, not for what it calls through a parameter:
 `List.iter print_int l` is its writer's, no other caller of `List.iter`'s. A
 descriptor is a capability, so `Unix.read` is nothing here, `Unix.openfile` is.
+Every other system call needs one: `Cap.clock`, `Cap.pipe`, the pid and the
+directory `Cap.env`'s (plan_caps_syscalls.md); `tests/run.sh` checks that each
+function of lib_core's two `Unix` that makes one is in a group (`unclassified`).
 `Cap.draw`, `keyboard`, `mouse` allow `Unix.openfile`, a device being a file.
 
-`sweep.sh` with `FLAG=-caps`, on the 44 programs: 151 functions
-(`tests/caps_ix.txt`; 172 before a record's capabilities were held, 149 on the
-35 read on 11-02, 40 on the 23 before them).
+`sweep.sh` with `FLAG=-caps`, on the 44 programs: 173 functions
+(`tests/caps_ix.txt`; 151 before the clock, pipes and the pid had a capability,
+172 before a record's capabilities were held, 149 on the 35 read on 11-02, 40 on
+the 23 before them).
 
 | | functions | |
 |---|---:|---|
-| no capability | 50 | `Eval.print`, version_control's commands 11, `Tty_unix` 6; test programs' prints |
-| holds some, not the one | 30 | `Sys.set_signal` in mini-rc's, mini-ed's, mini-mk's, mini-5i's mains; `Host.dir_of`'s `Unix.opendir` with no `Cap.readdir`; by a record's: version_control's `Fs.branch`, `Walk` (no `Cap.readdir`), mini-rc's `Eval.redirect` (no `Cap.stdout`) |
+| no capability | 55 | `Eval.print`, version_control's commands 11, `Tty_unix` 7; test programs' prints; by the clock, a pipe, the pid: `Datalog_eval.apply`, `St_boot`, mini-rc's `Process.pipe`, rio's `Window.name` |
+| holds some, not the one | 50 | the clock, a pipe or the pid 20 (plan_caps_syscalls.md's census); `Sys.set_signal` in mini-rc's, mini-ed's, mini-mk's, mini-5i's mains; `Host.dir_of`'s `Unix.opendir` with no `Cap.readdir`; by a record's: version_control's `Fs.branch`, `Walk` (no `Cap.readdir`), mini-rc's `Eval.redirect` (no `Cap.stdout`) |
 | holds one it may not need | 73 | mini-acid's `Proc` and `CLI` 16, awk's `Io` 7, hoc's `Eval` 6, `Dc` 6; of the 9 programs read since, 23, each given the program's whole `caps` (mini-ml's `CLI` 11, mini-cc's 3, mini-tiger's and mini-csc's `compile`, mini-asm's `data_items`) |
 
 Of the 23 programs read first, those holding some were read at the source, but for
@@ -228,7 +232,7 @@ parameters rather than big structures, but sometimes it's hard to do otherwise")
 quiet, 11 became "not the one", the record holding others; "may not need" is not
 asked of a record's, given for what else it has. What it does not say:
 `Unix.openfile`'s flags are not read, so `Cap.open_in|Cap.open_out`;
-the clock, a pipe have no capability in xix's `Cap`; `may not need` is not said of a
+`may not need` is not said of a
 function that lets its capability go into a structure or a call through a parameter;
 a function that names and never calls is reported.
 

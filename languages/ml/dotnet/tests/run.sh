@@ -67,7 +67,9 @@
 # usage: languages/ml/dotnet/tests/run.sh [-dune] [-mini] [-ms] [-record]
 #   (dune build, and mini-mk in languages/ml and languages/dotnet, first)
 # MINIML, MINIDOTNET: mini-ml's builds, if not _mk/7's (ix built by
-# ix: its own); DUNEML, DUNEDOTNET: dune's, if not _build's.
+# ix: its own); DUNEML, DUNEDOTNET: dune's, if not _build's; MK: where
+# mini-cc's and mini-datalog's generated parsers are, if not _mk/7 (ix
+# built by ix: its own; a fresh tree has no _mk/7)
 cd "$(dirname "$0")/../../../.."
 record=; only=; ms=
 for a in "$@"; do
@@ -148,7 +150,7 @@ interop() {
 # -facts and -flow until 2026-11-02, now mini-analyze's; -S aborts:
 # its back ends not run on .NET yet)
 front_end() {
-  local ml=$1 run=$2 what=$3 C=languages/c P=_mk/7/languages/c u f files=
+  local ml=$1 run=$2 what=$3 C=languages/c P=$(abs $MK/languages/c) u f files=
   [ -f $P/Parser.ml ] && [ -f $P/Lexer.ml ] || { echo "skipped: mini-cc to .NET ($P's Parser.ml not built)"; return; }
   for u in Asm Show_asm $(sed -n '/^SRC=/,/[^\\]$/p' $C/mkfile | sed 's/^SRC=//; s/\\$//'); do
     # (the first there, in this order: ls would sort them)
@@ -157,7 +159,7 @@ front_end() {
   done
   local mla=$(abs $ml)
   if ! (cd $C && $mla -L ../../lib_core -I . -I ../../assembler -I debug -I compat -I simple -I opti -I ssa -I facts -I dotnet -I ../dotnet/assembly \
-          -I ../../lib_code -I ../../$P -dotnet -o $W/mini-cc.dll $files) > $W/cc.err 2>&1; then
+          -I ../../lib_code -I $P -dotnet -o $W/mini-cc.dll $files) > $W/cc.err 2>&1; then
     fail "mini-cc compiled to .NET, by $what"; head -3 $W/cc.err; return
   fi
   local r=$(abs $run) T=$PWD/analyzers/c/tests CC=${DUNECC:-_build/default/languages/c/Main.exe}
@@ -174,18 +176,19 @@ front_end() {
 # pointer analysis's and liveness's answers the native's
 # (with -ms: Microsoft's dotnet, 18 s; mini-dotnet's interpreter takes 81)
 pipeline() {
-  local ml=$(abs $1) run=$2 D=languages/datalog P=_mk/7/languages/datalog u f files=
+  local ml=$(abs $1) run=$2 D=languages/datalog P=$(abs $MK/languages/datalog) u f files=
   for u in $(sed -n '/^SRC=/,/[^\\]$/p' $D/mkfile | sed 's/^SRC=//; s/\\$//'); do
     for f in $D/$u.ml $D/dotnet/$u.ml languages/prolog/$u.ml languages/dotnet/assembly/$u.ml $P/$u.ml; do [ -f $f ] && break; done
     files="$files $(realpath $f)"
   done
-  if ! (cd $D && $ml -L ../../lib_core -I . -I ../prolog -I dotnet -I ../dotnet/assembly -I ../../$P -dotnet -o $W/mini-datalog.dll $files) > $W/dl.err 2>&1; then
+  if ! (cd $D && $ml -L ../../lib_core -I . -I ../prolog -I dotnet -I ../dotnet/assembly -I $P -dotnet -o $W/mini-datalog.dll $files) > $W/dl.err 2>&1; then
     fail "mini-datalog compiled to .NET"; head -3 $W/dl.err; return
   fi
   if DATALOG="$run $W/mini-datalog.dll" analyzers/c/tests/run.sh > $W/pipeline.out 2>&1; then
     ok "the facts pipeline on .NET: mini-datalog's pointer analysis and liveness, the native's, by $3"
   else fail "the facts pipeline on .NET, by $3"; grep -v '^ok' $W/pipeline.out | head -5; fi
 }
+MK=${MK:-_mk/7}
 ML=${DUNEML:-_build/default/languages/ml/Main.exe}
 DOTNET=${DUNEDOTNET:-_build/default/languages/dotnet/Main.exe}
 if [ -n "$record" ]; then check dune $ML $DOTNET; exit 0; fi

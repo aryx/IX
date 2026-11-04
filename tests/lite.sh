@@ -572,7 +572,7 @@ if [ -n "$runs7" ]; then
   job $a "mini-prolog built by ix" noskip env MINIPROLOG=$K/languages/prolog/mini-prolog languages/prolog/tests/run.sh -mini
   job $a "mini-forth built by ix" noskip env MINIFORTH=$K/languages/forth/mini-forth languages/forth/tests/run.sh -mini
   job $a "mini-datalog built by ix" noskip env MINIDATALOG=$K/languages/datalog/mini-datalog languages/datalog/tests/run.sh -mini
-  job $a "mini-ml -dotnet built by ix, its assemblies run by dune's mini-dotnet" noskip env MINIML=$K/languages/ml/mini-ml MINIDOTNET=_build/default/languages/dotnet/Main.exe languages/ml/dotnet/tests/run.sh -mini
+  job $a "mini-ml -dotnet built by ix, its assemblies run by dune's mini-dotnet" noskip env MK=$K MINIML=$K/languages/ml/mini-ml MINIDOTNET=_build/default/languages/dotnet/Main.exe languages/ml/dotnet/tests/run.sh -mini
   job $a "mini-cc -dotnet built by ix, its assemblies run by dune's mini-dotnet" noskip env MINICC=$K/languages/c/mini-cc MINIDOTNET=_build/default/languages/dotnet/Main.exe languages/c/dotnet/tests/run.sh -mini
   job $a "mini-datalog built by ix: the pointer analysis and liveness on C's facts" by_ix_facts
   job $a "games built by ix: recorded frames" nofail games/tests/frames.sh $K/games

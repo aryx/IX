@@ -326,5 +326,26 @@ calls its call-outs by their address, reached before only by the one
 `Obj.magic`. `dynamic.sh`: 0 missed on all five, fewer reached (mini-forth 686,
 mini-datalog 1,499, mini-rc 1,048, mini-prolog 1,301, mini-dc 602).
 
+road-not-taken:
+Contexts for the polymorphic functions alone (2026-11-03, a `poly.dl` tried
+and deleted): a call-site context and a heap context for a function whose
+parameter's type has a variable or is a `->` (`List.iter`, `List.map`), a
+recursive call in its caller's context as `call1_rec`'s, the others in one, as
+`insensitive.dl`. In ML polymorphism is what merges callers: `List.iter`'s `l`
+is every list of the program, about half of Andersen's work on mini-cc. It did
+not take it apart:
+
+| mini-cc, `-dead`'s rules | firings | s |
+|---|---:|---:|
+| `insensitive` | 159 M | 67 |
+| contexts for the polymorphic functions | 152 M | 67 |
+| and a wrapper's call (`List.rev`'s `rev_append`) in its caller's context | 164 M | 72 |
+
+And on mini-prolog's `-exn` (4 s against `call1_rec`'s 16.5 s) the false
+`Halt` came back: `call1_rec`'s answer there comes from heap contexts in
+monomorphic code, machines made in two places. What did it: a model at each
+call of the library's containers (`analyzers/ml/Models`, List's and Hashtbl's),
+and `call1_rec.dl`'s held objects for `-exn`.
+
 mini-datalog reading a large file of facts overflowed the stack (fixed:
 `Datalog.questions`'s `List.map`, `docs/plans/bugs/ix.md`).

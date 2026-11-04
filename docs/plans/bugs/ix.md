@@ -629,3 +629,25 @@ test here (en_US, a tree built before).
 | mini-files' frames | `apps/files/tests/frames.sh` on GitHub (every frame since the job's first run), here with `TMPDIR=/dev/shm/...` (tmpfs): 23 of 23 | another frame than the recorded one, here and in docker passed | the scratch tree's days given in `find . -depth`'s order, the directory's: on ext4 by a hash seeded per file system, so the runner's disk gave each file another day. Now in the names' order; and Folder's By_size kept folders by their st_size, not shown and the file system's (4096 on ext4, tmpfs's by its entries): folders now stay by name. Re-recorded; ext4 and tmpfs the same |
 | mini-play's AVI frame | `apps/media/tests/film.sh`'s avi-later on GitHub's x86-64; here in an x86-64 container (qemu-user, Ubuntu's OCaml 4.14.1) the same | the frame recorded on arm64 not x86's | ocamlopt on arm64 fuses a *. b +. c (fmadd, one rounding), x86 and mini-ml do not: Jpeg's upsampling and YCbCr to RGB, Dct's idct_1d (MPEG-1's passed by luck). Each product a let, which ocamlopt (4.14 and 5.5) does not fuse: no fmadd left in Jpeg's and Dct's objects; re-recorded, the same sum on x86-64 |
 | mini-ml -dotnet's test | make test in docker from a fresh tree (`git archive HEAD`, `make build-docker`): "mini-ml -dotnet built by ix, its assemblies run by dune's mini-dotnet" | `skipped: mini-cc to .NET (_mk/7/languages/c's Parser.ml not built)`, which the job's noskip counts as a failure | languages/ml/dotnet/tests/run.sh's front_end (3af9407f, 2026-11-01) and pipeline took mini-cc's and mini-datalog's generated parsers from _mk/7, there from earlier builds here; make test's ix builds into its own directory. Now MK (default _mk/7), which tests/lite.sh gives as its build. Not in docker.yml's log: on x86-64 the jobs on ix's programs are skipped (arm64's do not run there); only make build-docker on arm64 runs them |
+
+## mini-office's Unit_store: a temporary directory taken, now and then (2026-11-04, fixed)
+
+make test's "mini-office: unit tests", once: `Unix.Unix_error(Unix.EEXIST,
+"mkdir", "/tmp/ix-store-1620184-89809344")` in Unit_store.fresh; run
+again, it passed. The directory's name was the pid and `Random.bits ()`,
+never seeded: 89809344 in every run. Each run leaves its directory (10
+were in /tmp), so a run given a pid seen before found its name taken.
+Not reproduced by hand (the pid a run gets is not known before):
+`mkdir /tmp/ix-store-<pid>-89809344` for it would. Now the pid and a
+number, the next one tried while the name is taken (Unit_store.made).
+
+## mini-ld: a file that is not an object, an uncaught exception (2026-11-04, fixed)
+
+`echo 'not an object' > junk.7; mini-ld -m 7 -o a.out junk.7`: `Fatal
+error: exception Invalid_argument("Marshal.from_bytes")`, exit 2, from
+Asm.load's Marshal.from_string (seen 2026-11-03 while reading -exn's
+reports). Now "mini-ld: junk.7: not an object", exit 1, as its other
+errors: Asm.marshalled checks the header (the magic number, by
+Marshal.total_size, and the size against the file's) first, the same
+under OCaml's Marshal and lib_core's. A file with the magic number and
+too short a size says so too.

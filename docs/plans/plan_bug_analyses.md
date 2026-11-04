@@ -37,7 +37,7 @@ reports its bugs on the code before the fix and not after
 4f00134c, 4436f60d, e92ae1ec, d22c56e4, 410d04a2, 70b6b2bf,
 6264d271, 11c5d5f0, ddb60eef, f7b1aef0). On today's ix,
 `physeq` finds nothing; `stack` gives 145 reports on the 44 programs
-and 9 on the kernel, `swallowed` 12 on the programs, `int31` 29,
+and 9 on the kernel, `swallowed` 11 on the programs, `int31` 29,
 `order` 2, `race` 1, `leak` 1 (`analyzers/datalog/tests/bugs_ix.txt`),
 read in A1, A3, A4, A5, A8 and A9 below. A7 turned out to be
 `-dead`'s already (below).

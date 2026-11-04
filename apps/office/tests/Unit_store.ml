@@ -10,9 +10,18 @@
 
 let t = Testo.create
 
+(* (a name not taken: the pid comes back, and a run's directory stays;
+ * old: the pid and Random.bits, unseeded, the same number each run, so a
+ * pid seen before failed on EEXIST) *)
+let rec made (n : int) : string =
+  let name = Printf.sprintf "ix-store-%d-%d" (Unix.getpid ()) n in
+  let d = Filename.concat (Filename.get_temp_dir_name ()) name in
+  match Unix.mkdir d 0o755 with
+  | () -> d
+  | exception Unix.Unix_error (Unix.EEXIST, _, _) -> made (n + 1)
+
 let fresh () =
-  let d = Filename.concat (Filename.get_temp_dir_name ()) (Printf.sprintf "ix-store-%d-%d" (Unix.getpid ()) (Random.bits ())) in
-  Unix.mkdir d 0o755;
+  let d = made 0 in
   let dir = Filename.concat (Filename.concat d "not") "yet" in
   Unix.putenv "PLAYGROUND_STORE" dir;
   dir

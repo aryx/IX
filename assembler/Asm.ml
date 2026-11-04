@@ -231,8 +231,18 @@ let of_bytes b : obj = with_history b 0 (Marshal.from_string b 0)
 let save caps file (o : obj) =
   FS.write caps file (Marshal.to_string (version, stored o) [ Marshal.No_sharing ] ^ history_bytes o)
 
+(* (a file that is not one, its header's magic number and size checked
+ * first: Marshal.from_string's own errors are Invalid_argument, read as
+ * a bug of the linker, docs/plans/bugs/ix.md) *)
+let marshalled (b : string) : bool =
+  String.length b >= Marshal.header_size
+  && (match Marshal.total_size (Bytes.unsafe_of_string b) 0 with
+      | n -> n <= String.length b
+      | exception Failure _ -> false)
+
 let load caps file : obj =
   let b = FS.read caps file in
+  if not (marshalled b) then failwith (Fpath.to_string file ^ ": not an object");
   let v, (st : stored) = Marshal.from_string b 0 in
   if v <> version then failwith (Fpath.to_string file ^ ": an object of another version");
   with_history b 0 st

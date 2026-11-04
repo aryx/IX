@@ -35,8 +35,15 @@
 #     languages_c, languages_dotnet, linker, machine, awk; not tried.
 #     Not given by a sweep since the models (7b8fad96): languages_dotnet's
 #     Arm.ml and Arm64.ml Link.Error
-#   2026-11-04, languages_ml read first: 5, not tried (CLI.ml:171
-#     catches Resolve.Error and Pp.Error: a handler not seen, maybe)
+#   2026-11-04, languages_ml read first: 5. Tried: Resolve.Error (a
+#     unit named that does not parse) and Pp.Error ([%mli], no .mli)
+#     false, an error said in each mode (-i, -M, -pp, -dotnet): a
+#     handler not seen; Division_by_zero false in Fold.int2 (b <> 0L
+#     tested), real in Parser_asm's $(1/0), fixed (docs/plans/bugs/
+#     ix.md), and the assembler's line with it: the report stays, the
+#     test before Int64.div not seen. Parser_asm.Error and Il.Bad_il:
+#     mini-ml's own output parsed, an opcode of its own table, a
+#     compiler's bug only (not tried)
 #   the rest: not tried yet
 assembler: Main.ml: the toplevel may let Division_by_zero escape
 database: Main.ml: the toplevel may let Btree.Bad_node escape

@@ -587,3 +587,11 @@ where its `look` says "file system full" when no block is free. A block
 past the image's end was taken: what `t.blocks` counts and what the
 image holds do not agree at the end. Not fixed: the card made larger
 (256 MB) instead; found while making it.
+
+## mini-asm: a constant divided by zero, an uncaught exception (2026-11-04, fixed)
+
+`MOVW $(1/0), R1` (or `%0`) in a .s file: `Fatal error: exception
+Division_by_zero`, exit 2, from Parser_asm.binary's Int64.div. Now
+"file.s:2: division by zero", exit 1, as its other errors. Found by
+mini-analyze -exn (analyzers/datalog/tests/exn_ix.txt's assembler line,
+then mini-ml's, which links the same parser for its own output).

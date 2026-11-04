@@ -45,6 +45,8 @@ and binary st level =
       | L.Punct p when List.mem p ops.(level) ->
           ignore (next st);
           let w = binary st (level + 1) in
+          (* (an error at the line, not OCaml's exception: $(1/0)) *)
+          if (p = "/" || p = "%") && w = 0L then error st "division by zero";
           v := (match p with
             | "|" -> Int64.logor !v w | "^" -> Int64.logxor !v w | "&" -> Int64.logand !v w
             | "<<" -> Int64.shift_left !v (Int64.to_int w) | ">>" -> Int64.shift_right !v (Int64.to_int w)

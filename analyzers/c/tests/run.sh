@@ -11,7 +11,7 @@
 # And mini-analyze -flow (stage 9): flow.c's stack code as facts against
 # flow.facts; what analyzers/datalog/liveness.dl finds live
 # after each call against flow.out, with the rules' liveness against
-# the compiler's own (-dflow: Opti's), no difference expected, and
+# the compiler's own (-flow-answers: Opti's), no difference expected, and
 # that this check sees one: the rule that a write ends a life taken
 # out, differences are found.
 # (Was mini-cc -facts and -flow until 2026-11-02: C_front, C_flow.)
@@ -31,7 +31,7 @@ $DATALOG -q 'call_edge(I, F)' $W/rules.dl $W/pointers.facts 2>&1 | grep -v '^war
 for v in p q r pp l s; do $DATALOG -q "point_to(main__$v, L)" $W/rules.dl $W/pointers.facts 2> /dev/null; done >> $W/pointers.out
 $DATALOG -q 'point_to(gp, L)' -q "point_to('_fld__next', L)" -q "point_to('_fld__visit', L)" $W/rules.dl $W/pointers.facts 2> /dev/null >> $W/pointers.out
 $ANALYZE -flow $T/flow.c > $W/flow.facts 2>&1
-$ANALYZE -dflow $T/flow.c > $W/own.dl 2>&1
+$ANALYZE -flow-answers $T/flow.c > $W/own.dl 2>&1
 A=analyzers/datalog
 { $DATALOG -q 'across_call(V, P)' $A/liveness.dl $W/flow.facts
   echo "differences: $(($($DATALOG -q 'differs(Who, V, P)' $A/liveness.dl $T/flow_check.dl $W/flow.facts $W/own.dl | wc -l)))"

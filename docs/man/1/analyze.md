@@ -5,7 +5,8 @@ analyze – what C and ML programs may do, by facts and Datalog rules
 
 # SYNOPSIS
 **mini-analyze**
-[ **-dead** | **-caps** | **-exn** | **-bugs** | **-facts** | **-flow** | **-dflow** ]
+[ **-dead** | **-caps** | **-exn** | **-bugs** ]
+[ **-facts** | **-flow** | **-flow-answers** ]
 [ **-r** *rules* ]
 [ **-L** *lib* ]
 [ **-I** *dir* ] ...
@@ -111,8 +112,9 @@ program's library, lib_core's units it names, is read with it.
 **-flow**
 :    Each function's code as facts: ML's in SSA form, for
      `liveness_ssa.dl` and `dominators.dl`; C's as mini-cc's stack
-     code, for `liveness.dl`. **-dflow**: the compilers' own liveness
-     and dominators, to compare.
+     code, for `liveness.dl`. **-flow-answers**: the compilers' own
+     answers on those facts, their liveness and dominators, as facts:
+     what the rules must find (the tests compare them).
 
 **-r** *rules*
 :    The directory of the `.dl` files and `points_to/`; by default

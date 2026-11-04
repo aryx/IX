@@ -4,7 +4,7 @@
 #
 # The rules' liveness and dominators against the compiler's own, on
 # ix's own programs (docs/plans/plan_prolog.md, stage 9's check): for
-# each .ml of the directories given, mini-analyze -flow and -dflow, then
+# each .ml of the directories given, mini-analyze -flow and -flow-answers, then
 # mini-datalog with analyzers/datalog/liveness_ssa.dl and
 # dominators.dl and tests/check.dl; a line per directory (its files,
 # functions, blocks, facts, the tuples the rules find, those that
@@ -32,7 +32,7 @@ for d in "$@"; do
   files=0; funcs=0; blocks=0; facts=0; tuples=0; differ=0; tml=0; tdl=0
   for f in $(find $d -name '*.ml' -not -path '*/tests/*' -not -path '*/runtime/*' | sort); do
     t0=$(now)
-    if ! $ANALYZE -flow -dflow $incs $f > $W/f.dl 2> $W/err; then echo "  not compiled: $f: $(head -1 $W/err | cut -c1-90)"; continue; fi
+    if ! $ANALYZE -flow -flow-answers $incs $f > $W/f.dl 2> $W/err; then echo "  not compiled: $f: $(head -1 $W/err | cut -c1-90)"; continue; fi
     t1=$(now)
     $DATALOG -s -q 'differs(What, Who, V, B)' $A/liveness_ssa.dl $A/dominators.dl $T/check.dl $W/f.dl > $W/out 2> $W/stats
     t2=$(now)

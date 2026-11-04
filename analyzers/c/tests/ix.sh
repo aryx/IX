@@ -4,7 +4,7 @@
 #
 # The rules' liveness against the compiler's own, on ix's own C
 # (docs/plans/plan_prolog.md, stage 9's check): for mini-ml's runtime
-# and each file of lib_core's libc, mini-analyze -flow and -dflow, then
+# and each file of lib_core's libc, mini-analyze -flow and -flow-answers, then
 # mini-datalog with analyzers/datalog/liveness.dl and
 # tests/flow_check.dl; a line for each of the two (its files,
 # functions, instructions, facts, the tuples the rules find, those that
@@ -28,7 +28,7 @@ group() {   # $1: its name, the rest: its files
   files=0; funcs=0; points=0; facts=0; tuples=0; differ=0; tcc=0; tdl=0
   for f in "$@"; do
     t0=$(now)
-    if ! { $ANALYZE $INC -flow $f > $W/f.dl && $ANALYZE $INC -dflow $f > $W/own.dl; } 2> $W/err; then echo "  not compiled: $f: $(head -1 $W/err | cut -c1-90)"; continue; fi
+    if ! { $ANALYZE $INC -flow $f > $W/f.dl && $ANALYZE $INC -flow-answers $f > $W/own.dl; } 2> $W/err; then echo "  not compiled: $f: $(head -1 $W/err | cut -c1-90)"; continue; fi
     t1=$(now)
     $DATALOG -s -q 'differs(Who, V, P)' $A/liveness.dl $T/flow_check.dl $W/f.dl $W/own.dl > $W/out 2> $W/stats
     t2=$(now)

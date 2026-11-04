@@ -514,7 +514,7 @@ site('f21_take<>:v15', 'Toy:2324-2338').
 `mini-analyze -bugs` reads the program's own files so too, `ssa_` before each
 relation (its `function` and `entry` are another's there): `bugs/pairs.dl`.
 
-`mini-analyze -dflow` adds what the compiler itself computed, to compare
+`mini-analyze -flow-answers` adds what the compiler itself computed, to compare
 with: `own_live_out(V, P)`, and for ML `own_live_in(V, B)`, `own_idom(D, B)`.
 
 ## Who reads what

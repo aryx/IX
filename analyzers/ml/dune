@@ -8,7 +8,7 @@
  (modules Ml_front Models Closure_facts Tree_facts)
  (libraries ix_ml ix_ml_pp ix_datalog ix_prolog ix_core fpath logs caps))
 
-; mini-analyze -flow and -dflow: a function's SSA form as facts
+; mini-analyze -flow and -flow-answers: a function's SSA form as facts
 ; (Ssa_facts), the unit compiled by mini-ml's own way to Lower (Ml_flow);
 ; the native road's only, mini-ml's back end in it
 (library

@@ -7,7 +7,7 @@
 # flow.facts; what the rules of analyzers/datalog/ find (the
 # loops' headers, each block's immediate dominator, what is live round
 # triangle's loop) against flow.out; the rules' liveness and dominators
-# against the compiler's own (-dflow: Alloc's and Ssa_build's), tuple
+# against the compiler's own (-flow-answers: Alloc's and Ssa_build's), tuple
 # by tuple, no difference expected; and that this check sees one: the
 # rule for a phi's operands taken out, differences are found.
 # And mini-analyze -facts -alone (stage 10): closures/'s two units as
@@ -26,7 +26,7 @@ W=$(mktemp -d); trap 'rm -rf $W' EXIT
 failures=0
 I=$(for u in $(grep -v '^#' lib_core/units.txt); do echo "-I lib_core/$(dirname $u)"; done | sort -u)
 $ANALYZE -flow $I $T/flow.ml > $W/flow.facts 2>&1
-$ANALYZE -dflow $I $T/flow.ml > $W/own.dl 2>&1
+$ANALYZE -flow-answers $I $T/flow.ml > $W/own.dl 2>&1
 rules="$A/liveness_ssa.dl $A/dominators.dl $T/check.dl"
 { $DATALOG -q 'back_edge(M, N)' -q 'idom(D, B)' $rules $W/flow.facts $W/own.dl
   $DATALOG -q "live_in(V, 'f1_triangle<>:b1')" -q "live_out(V, 'f1_triangle<>:b2')" $rules $W/flow.facts $W/own.dl

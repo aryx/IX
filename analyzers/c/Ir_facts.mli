@@ -13,5 +13,5 @@
 val func : Ir.func -> string
 
 (* What the compiler itself computed, to check the rules' answers
- * against (mini-cc -dflow): Opti's liveness, own_live_out(V, P). *)
+ * against (mini-analyze -flow-answers): Opti's liveness, own_live_out(V, P). *)
 val own : Ir.func -> string

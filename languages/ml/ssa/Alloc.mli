@@ -81,6 +81,6 @@ val safepoint : Ssa.ins -> bool
 val alloc : Ssa.func -> nregs:int -> nfregs:int -> base:int -> (Ssa.value -> loc) * int * int
 
 (* the liveness alone: for each block, the values live at its start
- * and at its end (mini-analyze -dflow prints it, for an analysis
+ * and at its end (mini-analyze -flow-answers prints it, for an analysis
  * written in Datalog to be checked against) *)
 val liveness : Ssa.func -> int Set_.t array * int Set_.t array

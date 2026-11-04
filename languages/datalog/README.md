@@ -68,7 +68,7 @@ reads and writes, by each compiler, and the rules in `analyzers/datalog/`:
 | mini-ml | `mini-analyze -flow` (`analyzers/ml/Ssa_facts`, mini-ml's SSA form): the SSA form's blocks, points, definitions, uses, phis | `liveness_ssa.dl` (a phi's operand is live at its predecessor's end), `dominators.dl` (and the loops' back edges) | `Alloc`'s liveness and `Ssa_build`'s dominators |
 | mini-cc | `mini-analyze -flow` (`analyzers/c/Ir_facts`, mini-cc's stack code): the stack code's instructions, the variables a register may hold | `liveness.dl` (the textbook's three rules, and what is live across a call) | `Opti`'s liveness (its `regs` pass) |
 
-Each compiler prints its own answer as facts of other names (`-dflow`:
+Each compiler prints its own answer as facts of other names (`-flow-answers`:
 `own_live_in`, `own_idom`...), and a file of rules beside the tests
 (`check.dl`, `flow_check.dl`) asks for each tuple one has and the
 other has not: the comparison is a Datalog question, and its answer

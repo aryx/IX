@@ -14,7 +14,7 @@
 #   pointer     analyzers/datalog/pointer.dl on mini-analyze -facts of
 #               analyzers/c/tests/pointers.c: the calls, point_to
 #   liveness    liveness.dl on mini-analyze -flow of flow.c; without its
-#               writes, with flow_check.dl and -dflow's facts, the
+#               writes, with flow_check.dl and -flow-answers's facts, the
 #               differences (none with the writes)
 #   points_to/  each of the eleven analyses on mini-analyze -facts of
 #               analyzers/datalog/tests/contexts.c: pt or pts, reach; with
@@ -81,7 +81,7 @@ $AN -facts analyzers/c/tests/pointers.c > $W/pointers.facts
 grep -v '^point_to(A,B)?' $A/pointer.dl > $W/pointer.dl
 job case_ pointer $W/pointer.dl $W/pointers.facts 'call_edge(I, F)' 'point_to(V, L)'
 $AN -flow analyzers/c/tests/flow.c > $W/flow.facts
-$AN -dflow analyzers/c/tests/flow.c > $W/own.dl
+$AN -flow-answers analyzers/c/tests/flow.c > $W/own.dl
 job case_ liveness $A/liveness.dl $W/flow.facts 'across_call(V, P)'
 # (the liveness without its writes: the differences none would show)
 sed 's/, \\+ def(V, P)//' $A/liveness.dl > $W/broken.dl

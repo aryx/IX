@@ -7,9 +7,9 @@ module D = Datalog
 
 type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout; Cap.stderr >
 
-let usage = "usage: mini-analyze [-r rules-dir] [-Idir] [-Dname=value] [-L lib] [-facts] [-flow] [-dflow] [-dead] [-caps] [-exn] [-bugs] [-root f]... file.c|file.ml...   (-h: how)"
+let usage = "usage: mini-analyze [-r rules-dir] [-Idir] [-Dname=value] [-L lib] [-facts | -flow | -flow-answers] [-dead | -caps | -exn | -bugs] [-root f]... file.c|file.ml...   (-h: how)"
 
-let help = {|usage: mini-analyze [-r rules-dir] [-Idir] [-Dname=value] [-L lib] [-facts] [-flow] [-dflow] [-dead] [-caps] [-exn] [-bugs] [-root f]... file.c|file.ml...
+let help = {|usage: mini-analyze [-r rules-dir] [-Idir] [-Dname=value] [-L lib] [-facts | -flow | -flow-answers] [-dead | -caps | -exn | -bugs] [-root f]... file.c|file.ml...
 The C files read as one program, each call through a pointer said with the
 functions it may reach, by an analysis of where each pointer may point
 (points_to/'s: Andersen's first pass, then a context file, -context):
@@ -64,16 +64,17 @@ program's functions that its toplevel never reaches (calls.dl):
 -library: every function may be called from outside, not main alone: a runtime
   ML calls, a library; without it what main does not reach is not looked at
 -r: the directory of points_to/ and the .dl files (analyzers/datalog)
--I, -D: as mini-cc's; -L: lib_core's directory (lib_core); -facts: the facts
-made, not the analysis; -alone: an ML file's own facts, without those of the
+-I, -D: as mini-cc's; -L: lib_core's directory (lib_core)
+-facts, -flow, -flow-answers: facts printed, nothing analyzed. -facts: the
+facts the analyses load, not the analysis; -alone: an ML file's own facts, without those of the
 library units it names; -no-models: List's, Hashtbl's and @'s code read as
 written, not their models at each call (analyzers/ml/Models: to compare, slower)
 -flow: ML's files each as its functions in SSA form, the facts of
 analyzers/datalog/liveness_ssa.dl and dominators.dl (Ssa_facts, by mini-ml's
 own way to its SSA: Ml_flow); C's as each function's stack code, the facts of
-liveness.dl (Ir_facts, by mini-cc's simple back end: C_flow); -dflow: the
-compiler's own liveness (ML's dominators too), to compare (analyzers/ml/tests/
-and analyzers/c/tests/run.sh):
+liveness.dl (Ir_facts, by mini-cc's simple back end: C_flow); -flow-answers:
+the compiler's own answers on those facts, its liveness (ML's dominators
+too), what the rules must find (analyzers/ml/tests/ and analyzers/c/tests/):
   mini-analyze -flow -L lib_core fact.ml > fact.dl
   mini-datalog -q 'live_in(V, B)' analyzers/datalog/liveness_ssa.dl fact.dl
   mini-analyze -flow hello.c > flow.dl
@@ -175,7 +176,7 @@ let start_facts (fact : string -> C.Facts.arg list -> unit) (start : string)
 let main (caps : < caps; .. >) (argv : string array) : int =
   let rules = ref "analyzers/datalog" and lib = ref "lib_core" and only = ref false and incs = ref [] and defs = ref [] and files = ref [] in
   let dead = ref false and ambient = ref false and roots = ref [] and context = ref "" and library = ref false in
-  let fingerprint = ref false and exns = ref false and flow = ref false and dflow = ref false in
+  let fingerprint = ref false and exns = ref false and flow = ref false and answers = ref false in
   let bugs = ref false and start = ref "" in
   let options =
     Logging.flags
@@ -183,8 +184,16 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         ("-facts", Arg.Set only, " the facts, not the analysis");
         ("-alone", Arg.Set Ml_front.alone, " ML: the files' facts alone, not their library's units'");
         ("-no-models", Arg.Clear Models.on, " ML: List's and Hashtbl's code as written, not their models");
+        ("-summaries",
+         Arg.String
+           (fun (f : string) ->
+             Models.derived_on := true;
+             List.iter (fun (s, m) -> Hashtbl.replace Models.derived s m)
+               (Summaries.of_text (FS.read caps (Fpath.v f)))),
+         " file: ML: the library's summaries derived from its code (analyzers/summaries/), not Models' own");
         ("-flow", Arg.Set flow, " ML's functions in SSA form, C's stack code, as facts");
-        ("-dflow", Arg.Set dflow, " the compiler's own liveness and dominators, as facts");
+        ("-flow-answers", Arg.Set answers,
+         " the compiler's own liveness and dominators on -flow's facts, as facts");
         ("-dead", Arg.Set dead, " what no run can reach, not the calls and the bugs");
         ("-caps", Arg.Set ambient, " whether ML's own functions hold the capabilities they need");
         ("-exn", Arg.Set exns, " the exceptions ML's toplevels may let escape");
@@ -214,7 +223,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       try
         if !files = [] then failwith usage;
         let incs = List.map path (List.rev !incs) in
-        if !flow || !dflow then begin
+        if !flow || !answers then begin
           let mls = List.filter (fun f -> not (Filename.check_suffix f ".c")) !files in
           let own_dirs = List.sort_uniq compare (List.map (fun f -> Fpath.parent (path f)) mls) in
           let dirs = own_dirs @ incs @ Ml_front.library caps !lib in
@@ -226,7 +235,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
               if Filename.check_suffix f ".c" then
                 let none = Ok "" in
                 match (if !flow then c false else none),
-                      (if !dflow then c true else none) with
+                      (if !answers then c true else none) with
                 | Ok a, Ok b -> Console.print caps (a ^ b); status
                 | Error m, _ | _, Error m -> Console.eprint caps (m ^ "\n"); 1
               else
@@ -235,7 +244,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                   let unit_name = unit_of_file f in
                   if !flow then
                     List.iter (fun fn -> Console.print caps (Ssa_facts.func ~unit_name fn)) fns;
-                  if !dflow then List.iter (fun fn -> Console.print caps (Ssa_facts.own fn)) fns;
+                  if !answers then List.iter (fun fn -> Console.print caps (Ssa_facts.own fn)) fns;
                   status
               | Error m -> Console.eprint caps (m ^ "\n"); 1)
             0 (List.rev !files)

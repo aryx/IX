@@ -64,7 +64,7 @@ val func : ?prefix:string -> ?unit_name:string -> Ssa.func -> string
 val key : string -> int * int -> string
 
 (* What the compiler itself computed, as facts of other names, to check
- * the rules' answers against (mini-analyze -dflow): Alloc's liveness
+ * the rules' answers against (mini-analyze -flow-answers): Alloc's liveness
  * (own_live_in(V, B), own_live_out(V, B)) and Ssa_build's dominators
  * (own_idom(D, B)). *)
 val own : Ssa.func -> string

@@ -89,7 +89,7 @@ val passes : (string * (Ir.t list -> Ir.t list)) list
 val run : string list -> Ir.func -> Ir.func
 
 (* regs' own analysis, for an analysis written elsewhere to be checked
- * against (mini-analyze -dflow; Ir_facts): the variables a register
+ * against (mini-analyze -flow-answers; Ir_facts): the variables a register
  * may hold, each instruction's successors, and the variables (their
  * numbers in that list) live after each instruction *)
 val variables : Ir.t array -> (Ir.mem * Ir.ty) list

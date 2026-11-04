@@ -2,8 +2,9 @@
 # FLAG=-exn, 2026-11-02): each program's own exceptions its toplevels
 # may let escape (not lib_core's Invalid_argument, Failure, Not_found,
 # Unix_error, End_of_file, Sys_error, Queue.Empty, which most programs
-# may raise), 43 programs read (2026-11-03), mini-ml out of memory
-# (16 GB). Triage, tried on the programs:
+# may raise), the 44 programs read (2026-11-04: mini-ml, out of memory
+# at 16 GB before call1_rec.dl's held objects). Triage, tried on the
+# programs:
 #   real: utilities_text_awk Run.Next_file (END { nextfile }, fixed:
 #     docs/plans/bugs/ix.md); languages_prolog Prolog_read.Error and
 #     languages_scheme Scheme_syntax.Error (their built-in preludes
@@ -34,6 +35,8 @@
 #     languages_c, languages_dotnet, linker, machine, awk; not tried.
 #     Not given by a sweep since the models (7b8fad96): languages_dotnet's
 #     Arm.ml and Arm64.ml Link.Error
+#   2026-11-04, languages_ml read first: 5, not tried (CLI.ml:171
+#     catches Resolve.Error and Pp.Error: a handler not seen, maybe)
 #   the rest: not tried yet
 assembler: Main.ml: the toplevel may let Division_by_zero escape
 database: Main.ml: the toplevel may let Btree.Bad_node escape
@@ -59,6 +62,11 @@ languages_dotnet: Main.ml: the toplevel may let Types.Load_error escape
 languages_dotnet: Main.ml: the toplevel may let Value.Thrown escape
 languages_dotnet: Main.ml: the toplevel may let Verifier.Bad escape
 languages_forth: Main.ml: the toplevel may let Forth.Error escape
+languages_ml: Main.ml: the toplevel may let Division_by_zero escape
+languages_ml: Main.ml: the toplevel may let Il.Bad_il escape
+languages_ml: Main.ml: the toplevel may let Parser_asm.Error escape
+languages_ml: Main.ml: the toplevel may let Pp.Error escape
+languages_ml: Main.ml: the toplevel may let Resolve.Error escape
 languages_pascal: Main.ml: the toplevel may let Pmachine.Runtime escape
 languages_prolog: Main.ml: the toplevel may let Prolog_machine.Throw escape
 languages_prolog: Main.ml: the toplevel may let Prolog_read.Error escape

@@ -46,6 +46,7 @@
  *     -dead               51.3 s  3.8 GB    10.1 s  1.0 GB
  *     -caps               51.0 s  3.9 GB    10.4 s  1.0 GB
  *     -exn                out of memory at 14 GB, both
+ *                         (66 s, 5.7 GB: call1_rec.dl's held objects)
  *
  * mini-cc's -exn read for the first time in the sweep's 180 s (its 6
  * exceptions; analyzers/datalog/tests/exn_ix.txt). Each model's share, on

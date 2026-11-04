@@ -6,4 +6,22 @@
 recursive(I) :- call_edge(I, F), in_function(I, G), root(G, R), root(F, R).
 callee(I, C1, C2, F, I, none) :- fresh(I, C1, C2, F, _, _), \+ recursive(I).
 callee(I, C1, C2, F, C1, C2) :- fresh(I, C1, C2, F, _, _), recursive(I).
-flow(V, C1, C2, H, C1, none) :- new_site(V, H, C1, C2).
+% An object a captured variable may hold (andersen.dl's pt says) is made
+% with no context: that variable has one set for all contexts
+% (contexts.dl), seen in each context of its function, so the same
+% object known by each of its N makers' contexts was N objects in N
+% contexts. Printf's scan_flags: its widths, captured by a '*''s closure,
+% 1,162 contexts of one cell in each of 1,559, 1.7 million tuples of the
+% 6 million of mini-ml's pt when -exn ran out of memory (16 GB).
+% With it, mini-ml's -exn 66 s and 5.7 GB; the sweep of the 44 programs
+% 377 s to 308 s, every report the same (mini-prolog 16 s to 9, mini-
+% dotnet 42 to 27); mini-cc 49 s to 64: its objects held so merged, each
+% with the fields of all its contexts (fpt 655,000 tuples to 908,000).
+% road-not-taken: any global's objects, a toplevel's too (mini-cc's
+% context analysis 55 s either way, as a captured variable's); not
+% copying a global's set into each context (contexts.dl's two rules):
+% a global given as an argument makes the same product in passed.
+% old: flow(V, C1, C2, H, C1, none) :- new_site(V, H, C1, C2).
+held(H) :- shared(G), pt(G, H).
+flow(V, C1, C2, H, C1, none) :- new_site(V, H, C1, C2), \+ held(H).
+flow(V, C1, C2, H, none, none) :- new_site(V, H, C1, C2), held(H).

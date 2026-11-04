@@ -284,5 +284,5 @@ Built by dune only, not by ix. A C function of the same name in two
 files is one function. A capability is held by its type alone: a
 `< .. >`, or a parameter named `caps` of no written type, holds none
 that can be named. `Unix.openfile`'s flags are not read, so it needs
-`Cap.open_in` or `Cap.open_out`. **-exn** on mini-cc or mini-ml runs
-past three minutes.
+`Cap.open_in` or `Cap.open_out`. **-exn** on mini-cc or mini-ml takes
+a minute and 4 to 6 GB.

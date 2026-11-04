@@ -1,0 +1,41 @@
+% A statement laid out as a branch's that is not in it (docs/plans/
+% plan_bug_analyses.md, A11): mini-analyze -bugs, over the tree of the
+% program's own units (Tree_facts, FACTS.md):
+%   expr(N, Kind), child(P, K, N), pos(N, Line, Col), leading(N)
+% and says:
+%   dangling(I, A, B, L)  after the if I, whose last branch A starts a
+%                         line, B (line L) starts in A's column: laid out
+%                         as A's next statement, it is the if's, and runs
+%                         whatever the test
+%
+%     else                                        (b9fea684^, Helpers.run)
+%     running := List.filter ... !running;
+%     match command with
+%     | prog :: args -> ... Procs.create_process ...
+%
+% The else was the line running := ... alone; the match, which starts a
+% program beside the caller, also ran after a new window had been asked
+% of mini-rio for it: the program started twice, in its window and in
+% the caller's. The fix, begin ... end.
+%
+% design:
+% OCaml's ; binds looser than if: if c then a else b; d is
+% (if c then a else b); d. A layout is what a reader goes by, and a
+% branch started on a line of its own, its next line in its column,
+% reads as a block. The then of an if without an else the same
+% (if c then\n  a;\n  b). A branch on the else's line (else a;) is not
+% laid out as a block: quiet. The tree's spans say where an expression
+% starts, so a column is a fact, and the rule a join; this is a check
+% of the syntax, which a compiler or a formatter could do (ocamlformat
+% would move the match), here because the tree is facts now (A12).
+%
+% others:
+% Apple's "goto fail" (CVE-2014-1266, 2014): two lines indented under
+% an if, the second always run; GCC 6's -Wmisleading-indentation (2016)
+% and clang's warn of it, OCaml has no such warning.
+
+last_branch(I, A) :- expr(I, if), child(I, 2, A).
+last_branch(I, A) :- expr(I, if), child(I, 1, A), \+ child(I, 2, _).
+dangling(I, A, B, LB) :-
+  expr(S, seq), child(S, 0, I), last_branch(I, A), child(S, 1, B),
+  leading(A), pos(A, LA, C), pos(B, LB, C), LA < LB.

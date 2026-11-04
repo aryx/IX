@@ -419,6 +419,21 @@ bound_var('Toy.keep_first\'', 'Toy:_y/63').
 underscore('Toy:_y/63').
 ```
 
+**The tree**, for `bugs/layout.dl` (`Tree_facts`, the program's own units only):
+each expression a node of its kind, its children in the text's order (an `if`'s
+test 0, its then 1, its else 2), where it starts, and whether it starts its line.
+`first_line`'s `if` (line 69), its then a sequence, its else a `let` (line 70):
+
+```
+expr('Toy:e261', 'if').
+pos('Toy:e261', 69, 2).
+leading('Toy:e261').
+child('Toy:e261', 1, 'Toy:e266').
+child('Toy:e261', 2, 'Toy:e273').
+expr('Toy:e266', 'seq').
+pos('Toy:e273', 70, 7).
+```
+
 **A call by its application**, for `bugs/pairs.dl`, which follows the paths of
 the SSA form (below): each site of an application, by its unit and the span of
 the function applied, the name the SSA's calls have too (`site`). `Condition.wait
@@ -508,6 +523,7 @@ with: `own_live_out(V, P)`, and for ML `own_live_in(V, B)`, `own_idom(D, B)`.
 | `bugs/intwidth.dl` | `wide_int`, `wide_site`, `unit_dir`, `in_function`, `curried`, over `target`, `entry`, `callback` |
 | `bugs/order.dl` | `walked`, `walk_call`, `model_new`, `shares`, `htype`, `global_var`, `own_unit`, over `pts`, `fpts` |
 | `bugs/init.dl` | `init`, `global_def`, `var_in`, `alloc_in`, `unit_start`, `starts_before`, `unit_file`, over `target` |
+| `bugs/layout.dl` | `expr`, `child`, `pos`, `leading` |
 | `bugs/unused.dl` | `bound_var`, `read`, `underscore` |
 | `bugs/pairs.dl` | `site_key`, the SSA's `ssa_site`, `ssa_next`, `ssa_first`, `ssa_last`, `ssa_succ`, `call_ret`, `argument`, `curried`, over `target`, `pts`, `at`, `protected`, `reach` |
 | `bugs/races.dl` | `store_in`, `loop_site`, `parameter`, `vtype`, `alloc_in`, `own_unit`, over `pts`, `fpts`, `target`, `entry`, `callback`, `reach` |

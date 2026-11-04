@@ -21,8 +21,9 @@ before the fix (`git show FIX^:path`) and stay quiet on the fixed code.
 Then it runs over ix through the sweep, as `-dead`, `-caps` and `-exn` do.
 
 **Status: A6's first half, A1, A3 and A2 done (2026-11-03), A4's first
-step, A5, A10, A8's handlers, A9's exceptions and A6's second half
-(2026-11-04), A7 the compilers', the rest planned.**
+step, A5, A10, A8's handlers, A9's exceptions, A6's second half, A7
+as an exercise, A11's layout over A12's tree facts (2026-11-04); A4's
+step 2 not worth it; the rest planned.**
 `mini-analyze -bugs` runs `bugs/physeq.dl` (`==` or `!=` with a side
 made in the comparison), `bugs/stack.dl` (a loop through a `try`, a
 frame a list's element), `bugs/swallowed.dl` (an error of the
@@ -398,6 +399,17 @@ stage 3 gives it numbers. It would find:
 - and it would excuse Delta's hash, a value used only through a small
   mask.
 
+**Step 2 not worth it (2026-11-04),** read against the diffs before
+writing it (the author: "yes", of skipping it). Adler's `b` is a ref,
+its value in the heap, where intervals over the SSA's locals do not
+go; d47f0829's `land 0x7fffffff` is step 1's already (`Query.probe`,
+the same shape); 7f15c58f's `n` is only `>= 0`, an unbounded range, so
+`2 * n + 1` "may wrap" as every sum of an unbounded int in ix would
+(thousands), and the bug was a compiler judging the target's ints by
+its host's, fixed by comparing as the target's word holds it. None
+re-found, at 200 lines and numbers in mini-datalog. Delta's hash is
+triaged already.
+
 ### A5. Output in a hash table's order (`bugs/order.dl`)
 
 **Done** (2026-11-04), as `order` and `sharing` in `-bugs`. Re-found:
@@ -722,6 +734,19 @@ sides both call something that writes.
 **Cost:** about 40 lines of ML for the layout check. Purity is a stage
 of its own.
 
+**Done, the layout** (2026-11-04), over A12's tree facts rather than in
+ML: `bugs/layout.dl`, `-bugs`' `layout`, `dangling(I, A, B, L)`: after
+an `if`, its last branch starting a line, the next statement in that
+branch's column, which OCaml runs whatever the test (`;` binds looser
+than `if`). A branch on the `else`'s line is quiet. Test
+`analyzers/tests/bugs/b9fea684/` (Helpers.run's `else` line then its
+`match`: reported; `begin ... end`, an `else` on its line, an `if`'s
+next statement in the `if`'s column: not). On the 44 programs nothing;
+on the kernel one, Memdraw's `else for ... done; true`, the `true`
+meant after both branches (right, its layout only misleading). 5 lines
+of rules, 15 of report. Not done: 56934c32's order of evaluation,
+which needs purity.
+
 ### A12. The tree as facts, and patterns (an idea, the author's)
 
 The author (2026-11-04): "One idea would be to use semgrep patterns in
@@ -734,6 +759,11 @@ database. Patterns, semgrep's, would be a small matcher over mini-ml's
 tree giving `matched(Rule, Node, Var, Value)`, which rules join: ix's
 own, written from scratch, not osemgrep. First the tree facts (A11's
 columns with them); patterns when a second check would be one.
+
+**The tree facts done** (2026-11-04): `analyzers/ml/Tree_facts`, for
+the program's own units: `expr(N, Kind)`, `child(P, K, N)`,
+`pos(N, Line, Col)`, `leading(N)` (60 lines). A11's layout is their
+first rule. Patterns not done.
 
 ## C
 
@@ -780,8 +810,8 @@ reproduction.
 | 8 | A10 init and link order | `starts_before`, `unit_start`, `unit_file` | 70 | 2 | done |
 | 9 | A8 races | `store_in`, `loop_site` | 125 | 2 | handlers done; threads need the switch points |
 | 10 | A9 pairs on every path | `site_key`, the SSA's `site` | 125 | 1 | exceptions done, over mini-ml's SSA |
-| 11 | A4 step 2, intervals | `range` (ML) | 200 | ~5 | after numbers in Datalog |
-| 12 | A11 layout, evaluation order | columns, purity | 40+ | ~3 | |
+| 11 | A4 step 2, intervals | `range` (ML) | 200 | 0 | not worth it: none of its bugs re-found (above) |
+| 12 | A11 layout, evaluation order | A12's tree: `expr`, `child`, `pos`, `leading` | 80 | 1 | layout done; evaluation order needs purity |
 | 13 | A7 unused variables (fields: `-dead`'s) | `bound_var`, `read`, `underscore` | 40 | 0 | the compilers' (OCaml's 26 and 27); done as an exercise, checked against OCaml |
 
 These estimates come from reading the existing rule files (`bugs/pointers.dl` is

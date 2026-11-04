@@ -78,6 +78,8 @@ let unit_ (caps : < Cap.open_in; .. >) (dirs : Fpath.t list) (file : Fpath.t) (t
         List.iter (fun (u : string) -> Hashtbl.replace wanted (dir, u) ()) named;
         ignore (Typing.unit_ name items);
         ignore (Closure_facts.unit_ name items);
+        (* (the program's own units' trees: bugs/layout.dl's) *)
+        if Hashtbl.mem own name then Tree_facts.unit_ name text items;
         Ok named
       with Resolve.Error (l, m) | Typing.Error (l, m) -> Error (Printf.sprintf "%s:%d: %s" f l m))
 

@@ -90,7 +90,9 @@ program's library, lib_core's units it names, is read with it.
      program's functions in mini-ml's SSA form); `unused`, a local
      variable never read, its name not `_x`: OCaml's warnings 26 and
      27 by rules (`bugs/unused.dl`), for what no compiler checks (the
-     kernel's ML). C files: the
+     kernel's ML); `layout`, a statement in the column of an `if`'s
+     branch above it, which OCaml runs whatever the test
+     (`bugs/layout.dl`, over the program's tree as facts). C files: the
      report without an option, its `bug?` lines `bugs/pointers.dl`'s.
      C files and ML ones (mini-ml's runtime and lib_core: what
      `analyzers/datalog/tests/raises.sh` gives): each external's

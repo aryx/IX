@@ -324,13 +324,26 @@ let bugs_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
                (line_of f) (fun_of (unit_of f) f) name name))
       (tuples "unused_var" 2) in
   let unused = List.sort_uniq compare unused in
+  (* a statement laid out in an if's branch, run after it (layout.dl) *)
+  let layout =
+    List.filter_map
+      (fun (t : string array) ->
+        let u = unit_of t.(0) in
+        if not (Hashtbl.mem Ml_front.own u) then None
+        else
+          Some
+            (Printf.sprintf
+               "%s: layout: in the column of the if's branch above, not in it: run whatever the test"
+               (site (u ^ ":" ^ t.(3)))))
+      (tuples "dangling" 4) in
+  let layout = List.sort_uniq compare layout in
   let order = List.sort_uniq compare order in
   let sharing = List.sort_uniq compare sharing in
   let race = List.sort_uniq compare race and wait = List.sort_uniq compare wait in
   let all =
     List.sort_uniq compare
       (physeq @ stack @ swallowed @ crash @ int31 @ order @ sharing @ init @ link
-       @ race @ wait @ leak @ unused) in
+       @ race @ wait @ leak @ unused @ layout) in
   List.iter (fun b -> Console.print caps ("bug? " ^ b ^ "\n")) all;
   (* (the analyses that report, by their number: within 80 columns) *)
   let counts =
@@ -340,7 +353,8 @@ let bugs_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
       [ ("physeq", physeq); ("stack", stack); ("swallowed", swallowed);
         ("crash", crash); ("int31", int31); ("order", order);
         ("sharing", sharing); ("init", init); ("link", link); ("race", race);
-        ("wait", wait); ("leak", leak); ("unused", unused) ] in
+        ("wait", wait); ("leak", leak); ("unused", unused);
+        ("layout", layout) ] in
   Console.print caps
     (Printf.sprintf "%d bugs?%s\n" (List.length all)
        (if counts = [] then "" else " (" ^ String.concat ", " counts ^ ")"))

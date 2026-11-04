@@ -47,7 +47,8 @@
  * gives back, held on a path to a call that may raise (f7b1aef0's
  * read_file), a line a call taking it. unused (bugs/unused.dl): a local
  * variable never read, not named _x: OCaml's warnings 26 and 27 by
- * rules, a line its function's. Only
+ * rules, a line its function's. layout (bugs/layout.dl): a statement in
+ * the column of an if's branch above, not in it (b9fea684's else). Only
  * the program's own units, and code that is reached. *)
 
 (* the report, on the facts and the rules' answers *)

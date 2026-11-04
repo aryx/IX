@@ -5,7 +5,7 @@
 (library
  (name ix_analyze_ml)
  (wrapped false)
- (modules Ml_front Models Closure_facts)
+ (modules Ml_front Models Closure_facts Tree_facts)
  (libraries ix_ml ix_ml_pp ix_datalog ix_prolog ix_core fpath logs caps))
 
 ; mini-analyze -flow and -dflow: a function's SSA form as facts

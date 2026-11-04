@@ -38,6 +38,7 @@ kernels/9pi/devices/sys/Devsys.ml:21: stack: go calls itself, not a tail call, o
 kernels/9pi/files/Kchan.ml:88: stack: try_ calls itself in a try's handler: no tail call by mini-ml
 kernels/9pi/init/Main.ml:67: crash: in Main.guard, Errors.Error caught by all, the handler raising Failure
 kernels/9pi/lib_graphics/lib_memdraw/Memchan.ml:21: stack: place calls itself, not a tail call, over a list
+kernels/9pi/lib_graphics/lib_memdraw/Memdraw.ml:196: layout: in the column of the if's branch above, not in it: run whatever the test
 kernels/9pi/lib_graphics/lib_memdraw/Memgeneral.ml:25: unused: in Memgeneral.general, grey is never read (_grey if meant)
 kernels/9pi/lib_graphics/lib_memlayer/Memlayer.ml:50: stack: front calls itself, not a tail call, over a list
 kernels/9pi/lib_graphics/lib_memlayer/Memshape.ml:38: stack: pairs calls itself, not a tail call, over a list

@@ -33,7 +33,7 @@ if [ -s $W/not_real ]; then
 else echo "ok FACTS.md: its $(wc -l < $W/shown) facts are what the compilers say"; fi
 
 # each relation the compilers can say
-{ grep -ohE '(fact1?|load|put|typed) "[a-z_]+"' analyzers/c/Facts.ml analyzers/ml/Closure_facts.ml
+{ grep -ohE '(fact1?|load|put|typed) "[a-z_]+"' analyzers/c/Facts.ml analyzers/ml/Closure_facts.ml analyzers/ml/Tree_facts.ml
   grep -ohE 'fact b "[a-z_]+"' analyzers/c/Ir_facts.ml analyzers/ml/Ssa_facts.ml
 } | sed -E 's/.*"(.*)"/\1/' | sort -u > $W/relations
 # (those passed by name to Facts.load, Facts.store's put)

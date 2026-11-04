@@ -285,9 +285,86 @@ let rec derive ~(units : string list) (facts : fact list) :
   List.iter (function f, Ok s -> Hashtbl.replace table f s | _ -> ()) raw;
   List.map
     (function
-      | f, Ok (n, ops) -> (f, Ok (n, simplify (inline table [ f ] ops)))
+      | f, Ok (n, ops) -> (f, Ok (n, simplify (one_heap (simplify (inline table [ f ] ops)))))
       | r -> r)
     raw
+
+(* ---- a summary's heap as a type's: the objects it makes at one call
+ * that are one structure, one object (plan_analysis_scale.md)
+ *
+ * Two objects one stored in the other's field (through copies of their
+ * variables) are one structure: Hashtbl's record, its array, its bucket
+ * cells; a list's cells. Each structure one object at each call, as
+ * Models' table, its fields kept apart by their names (fld:data,
+ * arr:elt, con:Cons.1): a find of a table still reaches its own
+ * table's values. The object untyped (a fresh Tmp the result copies):
+ * typed as the result, a cell loaded out of it into a variable of the
+ * bucket's type would be filtered out, its values lost.
+ * old: an object each New of the summary, a derived Hashtbl's record,
+ * array, cells each, multiplied by -exn's contexts: mini-ml 8 GB *)
+and one_heap (ops : op list) : op list =
+  let news = List.filter_map (function New (Tmp k) -> Some k | _ -> None) ops in
+  (* the News whose object a variable may hold, through copies *)
+  let holds (v : Models.v) : int list =
+    List.filter
+      (fun n ->
+        let rec reach (seen : Models.v list) (x : Models.v) =
+          if List.mem x seen then seen
+          else List.fold_left (fun acc o -> match o with Assign (d, s) when s = x -> reach acc d | _ -> acc) (x :: seen) ops in
+        List.mem v (reach [] (Tmp n)))
+      news in
+  (* a group a structure: union of the News a Store joins *)
+  let parent = Hashtbl.create 16 in
+  let rec find (k : int) = match Hashtbl.find_opt parent k with Some p when p <> k -> find p | _ -> k in
+  let union a b = let ra = find a and rb = find b in if ra <> rb then Hashtbl.replace parent ra rb in
+  List.iter
+    (function
+      | Store (o, _, s) -> (
+          match holds o @ holds s with
+          | k :: rest -> List.iter (union k) rest
+          | [] -> ())
+      | _ -> ())
+    ops;
+  (* a structure stored into an object the caller gave (a variable an
+   * argument reaches through copies and loads): that object itself, no
+   * object of its own. Hashtbl.resize's new array and the cells put in
+   * it, stored into the table (h.data <- ndata): the table, Models' one
+   * object; old: an array each call site of replace, shared by every
+   * table a helper replaces into, their buckets merged through it
+   * (mini-ml's pt/6 3.1 to 4.3 million) *)
+  let rec from_arg (seen : Models.v list) (v : Models.v) : bool =
+    match v with
+    | Arg _ -> true
+    | _ when List.mem v seen -> false
+    | _ ->
+        List.exists
+          (function
+            | Assign (d, s) | Load (d, s, _) when d = v -> from_arg (v :: seen) s
+            | _ -> false)
+          ops in
+  let into : (int, Models.v) Hashtbl.t = Hashtbl.create 8 in
+  List.iter
+    (function
+      | Store (o, _, s) when holds o = [] && from_arg [] o ->
+          List.iter (fun k -> if not (Hashtbl.mem into (find k)) then Hashtbl.replace into (find k) o) (holds s)
+      | _ -> ())
+    ops;
+  let groups = List.sort_uniq compare (List.map find news) in
+  if List.length groups = List.length news && Hashtbl.length into = 0 then ops
+  else
+    let top = List.fold_left (fun m o -> max m (top_tmp o)) 0 ops in
+    let fresh =
+      List.mapi (fun i g -> (g, top + 1 + i)) (List.filter (fun g -> not (Hashtbl.mem into g)) groups) in
+    List.concat_map
+      (fun o ->
+        match o with
+        | New (Tmp k) -> (
+            match Hashtbl.find_opt into (find k) with
+            | Some v -> [ Assign (Tmp k, v) ]
+            | None -> [ Assign (Tmp k, Tmp (List.assoc (find k) fresh)) ])
+        | o -> [ o ])
+      ops
+    @ List.map (fun (_, t) -> New (Tmp t)) fresh
 
 (* ---- a summary simplified, what it says the same (the analysis is
  * flow-insensitive: a variable is the set of what it may point to)

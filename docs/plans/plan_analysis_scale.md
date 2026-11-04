@@ -212,10 +212,25 @@ using instantiation constraints" (PLDI 2000). The author: "I've read
 that summaries and polymorphic types and context sensitive analysis
 have a lot in common".
 
-Next: a summary's heap as a type's: the objects one instantiation makes
-of the same type and role one object (Models' table, its key and value
-fields), each call's own still, fewer; then the measure (-exn toward
-Models'); the 19 evalorder; then the rest of lib_core (its closures over the buckets, the
+A summary's heap (2026-11-04, Summaries.one_heap): the objects one
+call makes that are one structure (one stored in the other's field) one
+object, untyped; and a structure stored into an object the caller gave
+that object itself. Objects alone (148 to 62) changed nothing: mini-ml's
+-exn the same 99 s. mini-datalog's sizes said why: pt/6 3.1 million
+tuples with Models, 4.3 derived, a precision lost: Hashtbl.resize's new
+array, one each call site of replace, shared by every table a helper
+replaces into, stored into each (h.data <- ndata), their buckets merged.
+With the caller's object for it (Models' one object a table): pt/6 3.4
+million, mini-datalog on mini-ml's -exn 67.7 s and 5.8 GB (Models' 66.0
+s, 5.6 GB). The same answers (the probe, make check's six against the
+summaries before). The measure, the 44 programs' total, Models' against
+derived: -dead 124 to 119 s, -exn 341 to 331 s, mini-ml's -exn 75.5 s
+5.7 GB to 73.5 s 5.6 GB: List and Hashtbl derived as fast as written by
+hand, or faster.
+
+Next: the 19 evalorder and 2 gone of -bugs with Hashtbl derived; then
+the rest of lib_core (the fixed cost of step 1), the summaries file made
+by the build (a stored file, make test checking it is the derivation's) (its closures over the buckets, the
 case Models was written for); then the rest of lib_core, the fixed cost
 of step 1 (List's code about 2,400 of the 80,000 to 117,000 facts of
 lib_core in a program: mini-cat's count).

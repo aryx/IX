@@ -380,6 +380,19 @@ wide_int('Toy:55', 'Toy', 'Toy:init', '0xffffffff').
 wide_site('Toy:56:c52').
 ```
 
+**A walk in order**, for `bugs/order.dl`: a model that goes through a table's
+bindings or a list's cells, what it walks; the calls it makes of the closure it was
+given; the blocks it makes (`List.map`'s list). And a `Marshal` whose flags do not
+say `No_sharing`. `names` and `saved`, and the toplevel's `List.map` (line 29):
+
+```
+walked('Toy:59:c56', 'Hashtbl.fold', 'Toy:t/47').
+walk_call('Toy:59:c56:call1', 'Toy:59:c56').
+walked('Toy:29:c23', 'List.map', 'Toy:t24').
+model_new('Toy:29:c23', 'Toy:29:c23:block').
+shares('Toy:60', 'Toy.saved').
+```
+
 **Who is where.** As in C. A variable two functions name is what a closure captures:
 
 ```
@@ -444,12 +457,13 @@ with: `own_live_out(V, P)`, and for ML `own_live_in(V, B)`, `own_idom(D, B)`.
 | `bugs/raises.dl` | ML's `external_prim`, `declares_raise`; C's `call_direct`, `argument`, `parameter`, `in_function`, `global_var`, `defined` |
 | `bugs/swallowed.dl` | `silent`, `silent_all`, `catches`, `primitive`, `curried`, over `exceptions.dl`'s `arrives` |
 | `bugs/intwidth.dl` | `wide_int`, `wide_site`, `unit_dir`, `in_function`, `curried`, over `target`, `entry`, `callback` |
+| `bugs/order.dl` | `walked`, `walk_call`, `model_new`, `shares`, `htype`, `global_var`, `own_unit`, over `pts`, `fpts` |
 | `liveness.dl` | C's `-flow` |
 | `liveness_ssa.dl`, `dominators.dl` | ML's `-flow` |
 
 Not said by a compiler: `heap(L)`, `local(L, F)`, `literal(L)` (mini-analyze, of C's
-names) and `own_unit(U)`, `own_init(I)` (mini-analyze -caps: the program's units,
-not the library's), `unit_dir(U, D)` (mini-analyze -bugs: each directory of a unit's
+names) and `own_unit(U)`, `own_init(I)` (mini-analyze -caps and -bugs: the
+program's units, not the library's), `unit_dir(U, D)` (mini-analyze -bugs: each directory of a unit's
 file from the top of the tree, lib_core's parent: `kernels`, `kernels/lib_machine`).
 
 ## What the rules then say

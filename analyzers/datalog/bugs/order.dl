@@ -1,0 +1,118 @@
+% Output in a hash table's order (docs/plans/plan_bug_analyses.md, A5):
+% mini-analyze -bugs, over the call graph and the objects of points_to/
+% (target, pts, fpts) and the facts of Closure_facts (FACTS.md):
+%   walked(S, M, V)    the model of M at the call S walks V in order: a
+%                      table's bindings (Hashtbl.iter, fold), a list's
+%                      cells (List.iter, map, fold_left, @, ...)
+%   walk_call(I, S)    I is a call the model at S makes, of the closure
+%                      it was given
+%   model_new(S, H)    H is a block the model at S makes (List.map's
+%                      list)
+%   shares(S, F)       at S in F, Marshal's flags without No_sharing
+% and says:
+%   order_out(S0, I)   the table walked at S0 gives its order to the
+%                      output at I: a walk in that order (the table's,
+%                      a list's made in it) whose closure writes, or
+%                      Marshal given such a list
+%   shared(S, F)       a Marshal whose bytes depend on what the compiler
+%                      shared, in a function reached
+%
+%     Hashtbl.iter (fun x sites -> ...                 (d22c56e4^, Unbox.ml)
+%         starts.(b) <- bx :: starts.(b)) reads
+%
+% A table's order is its hash function's, and mini-ml built by OCaml and
+% by ix has two (OCaml's runtime's, lib_core's): the boxes of a block came
+% in another order, the fixed point's programs were not the same. So were
+% Typing's places, a Hashtbl.fold into a list marshalled in X.inline
+% (410d04a2), and Asm.save's object file, Marshal sharing what the
+% compiler had made one value (ca664887).
+%
+% design:
+% A taint of the objects, its source the walk S0: what a walk's closure
+% makes is in the walk's order (the cells of k :: acc), and so is a list a
+% model makes from a list in that order (List.map, List.rev, @), and what
+% a walk of such a list makes. List.sort and sort_uniq make a list of
+% their own and are not walks: what they make is in no table's order,
+% the cure of each fix above. A write is a call of lib_core's writers
+% (output_string, print_string, Console.print, printf, FS.write), or an
+% add to a global Buffer, or a call of a program's own function that
+% makes one. A Buffer given around is not one: every Buffer.create's
+% object is one object here, and most build a string (a string made in a
+% walk's order, then written, is not found). Only lists and
+% Marshal's argument carry the order; a sum, a table built from another,
+% a string made by ^ are not followed, nor a walk written by hand (let
+% rec go = function x :: r -> ...): what only the models make known.
+%
+% others:
+% Go randomizes its maps' order (Go 1, 2012) so that no program comes to
+% depend on it; Python's dicts keep the insertion order (3.7, 2018).
+% Reproducible builds (Debian's, from 2013) found the same bugs by
+% building twice and comparing: what ix's fixed points do.
+
+% the walks of a table, and those of a list that keep its order
+table_walk(S) :- walked(S, 'Hashtbl.iter', _).
+table_walk(S) :- walked(S, 'Hashtbl.fold', _).
+in_order('List.iter'). in_order('List.iteri'). in_order('List.map').
+in_order('List.mapi'). in_order('List.rev_map'). in_order('List.rev').
+in_order('List.rev_append'). in_order('List.filter').
+in_order('List.filteri'). in_order('List.find_all').
+in_order('List.filter_map'). in_order('List.concat_map').
+in_order('List.fold_left'). in_order('List.fold_right').
+in_order('List.iter2'). in_order('List.concat'). in_order('List.flatten').
+in_order('Pervasives.@').
+
+% the walk at S follows the order of the table walked at S0
+order_of(S, S) :- table_walk(S).
+order_of(S, S0) :- walked(S, M, V), in_order(M), pts(V, H), ordered(H, S0).
+
+% what a walk calls, its closure's stages, and its unit's functions they call
+in_walk(F, S0) :- order_of(S, S0), walk_call(I, S), target(I, F).
+in_walk(G, S0) :- in_walk(F, S0), curried(G, F).
+in_walk(G, S0) :-
+  in_walk(F, S0), in_function(I, F), target(I, G), alloc_in(F, U), alloc_in(G, U).
+
+% a list's cell in the table's order: one that accumulates, its tail a
+% cell of its own site (x :: acc, l := x :: !l), not a list written there
+% ([a; b], a term's arguments)
+ordered(H, S0) :-
+  in_walk(F, S0), var_in(V, F), new_block(V, H), htype(H, list),
+  fpts(H, 'con:::.1', H).
+ordered(H, S0) :- order_of(S, S0), model_new(S, H).
+
+sink('Pervasives.output_string'). sink('Pervasives.output_substring').
+sink('Pervasives.output'). sink('Pervasives.output_char').
+sink('Pervasives.output_bytes'). sink('Pervasives.print_string').
+sink('Pervasives.print_char'). sink('Pervasives.print_int').
+sink('Pervasives.print_endline'). sink('Pervasives.print_float').
+sink('Console.print'). sink('Printf.printf'). sink('Printf.fprintf').
+sink('FS.write').
+buffer_add('Buffer.add_char'). buffer_add('Buffer.add_string').
+buffer_add('Buffer.add_bytes'). buffer_add('Buffer.add_substring').
+buffer_add('Buffer.add_buffer'). buffer_add('Printf.bprintf').
+
+own_fun(G) :- alloc_in(G, U), own_unit(U).
+% (a Buffer an output when it is a global, acid's out: one made in a
+% function and given to others is a string being built, Show_ast's
+% to_string, and every Buffer.create's object is one, so which is which
+% is not known)
+writes(F) :- in_function(I, F), target(I, G), sink(G).
+writes(F) :-
+  in_function(I, F), target(I, G), buffer_add(G), argument(I, 1, B), global_var(B).
+writes(F) :- in_function(I, F), target(I, G), own_fun(G), writes(G).
+writes(F) :- curried(G, F), writes(G).
+
+% (the walk at S, its closure writing: S the place, in the program)
+writer(F) :- sink(F).
+writer(F) :- writes(F).
+order_out(S0, S) :- order_of(S, S0), walk_call(I, S), target(I, F), writer(F).
+
+% Marshal given what holds a list in that order
+marshalled(I, V) :- target(I, 'Marshal.to_string'), argument(I, 1, V).
+marshalled(I, V) :- target(I, 'Marshal.to_bytes'), argument(I, 1, V).
+marshalled(I, V) :-
+  target(I, F), curried(F, 'Marshal.to_channel'), argument(I, 1, V).
+within(V, H) :- marshalled(_, V), pts(V, H).
+within(V, L) :- within(V, H), fpts(H, _, L).
+order_out(S0, I) :- marshalled(I, V), within(V, H), ordered(H, S0).
+
+shared(S, F) :- shares(S, F), reach(F).

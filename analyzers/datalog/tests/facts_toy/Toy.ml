@@ -54,3 +54,7 @@ let clean f = try remove f with Sys_error _ -> () | _ -> ()
 (* 32 bits, -1 on the Pi 1; a test of the ints' width (bugs/intwidth.dl) *)
 let mask = 0xffffffff
 let low w = if Sys.int_size >= 63 then Hashtbl.hash (w lsr 32) else w
+
+(* a table walked into a list, marshalled sharing (bugs/order.dl) *)
+let names (t : (string, int) Hashtbl.t) = Hashtbl.fold (fun k _ acc -> k :: acc) t []
+let saved (l : string list) = Marshal.to_string (List.rev l) []

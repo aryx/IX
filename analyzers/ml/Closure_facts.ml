@@ -342,6 +342,18 @@ let model_body (sym : string) (ops : Models.op list) ~(arg : int -> string)
     | Ret -> ret
     | Tmp k -> own (Printf.sprintf "%s:m%d" site k) in
   let calls = ref 0 and news = ref 0 in
+  (* (what the model walks, in order: a list's cells, c = c.tl after
+   * c = l, or a table's bindings; bugs/order.dl's) *)
+  let rec walked (ops : Models.op list) : unit =
+    match ops with
+    | Assign (Tmp j, (Arg _ as a)) :: (Load (Tmp j', Tmp j'', f) :: _ as rest)
+      when j = j' && j = j'' && f = "con:::.1" ->
+        fact "walked" [ site; sym; var a ]; walked rest
+    | Load (_, (Arg _ as a), f) :: rest when f = "tbl:key" ->
+        fact "walked" [ site; sym; var a ]; walked rest
+    | _ :: rest -> walked rest
+    | [] -> () in
+  walked ops;
   List.concat_map
     (fun (op : Models.op) ->
       match op with
@@ -351,6 +363,7 @@ let model_body (sym : string) (ops : Models.op list) ~(arg : int -> string)
             if !news = 1 then site ^ ":block"
             else Printf.sprintf "%s:block%d" site !news in
           fact "new_block" [ var v; b ];
+          fact "model_new" [ site; b ];
           (* (of the result's type; another's is not known: no filter) *)
           if v = Ret then typed "htype" b res;
           Option.iter (fun (u : string) -> fact "alloc_in" [ b; u ]) place;
@@ -369,6 +382,7 @@ let model_body (sym : string) (ops : Models.op list) ~(arg : int -> string)
           (* (the library's call: bugs/stack.dl does not follow it, as it
            * did not follow List.map's own, in another unit) *)
           fact "model_call" [ i; sym ];
+          fact "walk_call" [ i; site ];
           [ i ]
       | Raise e ->
           let i = site ^ ":raise" in
@@ -550,6 +564,28 @@ let literal (x : expr) : unit =
   | Econst (Ast.Int n) when n > max31 || n < - max31 - 1 ->
       wide_int (Printf.sprintf "%s:%d" !unit_name x.loc)
         (if n > 0 then Printf.sprintf "0x%x" n else string_of_int n)
+  | _ -> ()
+
+(* Marshal.to_string v flags, flags without No_sharing: the bytes then
+ * depend on what the compiler shared (ca664887's Asm.save); bugs/order.dl's *)
+let marshal (x : expr) (f : expr) (args : expr list) : unit =
+  let rec no_sharing (e : expr) : bool =
+    match e.e with
+    | Econs ({ cname = "No_sharing"; _ }, _) -> true
+    | Econs (_, es) -> List.exists no_sharing es
+    | Econstraint (e, _) -> no_sharing e
+    | _ -> false in
+  match f.e with
+  | Evar (Global g) -> (
+      let flags =
+        match g.gsym with
+        | "Marshal.to_string" | "Marshal.to_bytes" -> List.nth_opt args 1
+        | "Marshal.to_channel" -> List.nth_opt args 2
+        | _ -> None in
+      match flags with
+      | Some e when not (no_sharing e) ->
+          fact "shares" [ Printf.sprintf "%s:%d" !unit_name x.loc; !inside ]
+      | _ -> ())
   | _ -> ()
 
 (* x lsl k past bit 30, by x's width; a shift by 31 or more *)
@@ -769,6 +805,7 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
 
 (* f a1 ... an: a call for each argument, of what the one before returned *)
 and call (x : expr) (f : expr) (args : expr list) (dst : string) : unit =
+  marshal x f args;
   let fn = ref (operand f) in
   (* an external given all its arguments: its own copy, here, its objects
    * this call's, of the type here (an int ref, not 'a ref). Shared, one

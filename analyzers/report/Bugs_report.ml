@@ -121,12 +121,59 @@ let bugs_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
         let more = if n > 3 then Printf.sprintf " and %d more" (n - 3) else "" in
         Printf.sprintf "%s: int31: in %s, %s%s: not on the Pi 1's 31 bits" (site s) f shown more :: acc)
       by_fun [] in
-  let all = List.sort_uniq compare (physeq @ stack @ swallowed @ crash @ int31) in
+  (* a table's order given to an output (order.dl): a line a walk, the
+   * outputs it reaches; a Marshal sharing what the compiler shared *)
+  let outs = Hashtbl.create 17 in
+  List.iter
+    (fun (t : string array) ->
+      let l = match Hashtbl.find_opt outs t.(0) with Some l -> l | None -> [] in
+      Hashtbl.replace outs t.(0) (t.(1) :: l))
+    (tuples "order_out" 2);
+  let walk_fn = Hashtbl.create 17 in
+  List.iter (fun (t : string array) -> Hashtbl.replace walk_fn t.(0) t.(1))
+    (tuples "in_function" 2);
+  let fun_of (u : string) (f : string) : string =
+    if Filename.check_suffix f ":init" then u ^ "'s toplevel"
+    else Ml_report.ml_function f in
+  let order =
+    Hashtbl.fold
+      (fun (s0 : string) (is : string list) acc ->
+        if not (own s0) then acc
+        else
+          let f =
+            (* (the closure's call, S0:call1, is in the walk's function) *)
+            match Hashtbl.find_opt walk_fn (s0 ^ ":call1") with
+            | Some f -> fun_of (unit_of s0) f
+            | None -> "?" in
+          let is = List.sort_uniq compare (List.map site is) in
+          let n = List.length is in
+          let shown = String.concat ", " (List.filteri (fun k _ -> k < 3) is) in
+          let more = if n > 3 then Printf.sprintf " and %d more" (n - 3) else "" in
+          Printf.sprintf "%s: order: in %s, a table's order reaches the output at %s%s"
+            (site s0) f shown more
+          :: acc)
+      outs [] in
+  let sharing =
+    List.filter_map
+      (fun (t : string array) ->
+        if not (own t.(0)) then None
+        else
+          Some
+            (Printf.sprintf "%s: sharing: in %s, Marshal without No_sharing: its bytes the compiler's"
+               (site t.(0)) (fun_of (unit_of t.(0)) t.(1))))
+      (tuples "shared" 2) in
+  let order = List.sort_uniq compare order in
+  let sharing = List.sort_uniq compare sharing in
+  let all =
+    List.sort_uniq compare
+      (physeq @ stack @ swallowed @ crash @ int31 @ order @ sharing) in
   List.iter (fun b -> Console.print caps ("bug? " ^ b ^ "\n")) all;
   Console.print caps
-    (Printf.sprintf "%d bugs? (physeq %d, stack %d, swallowed %d, crash %d, int31 %d)\n"
+    (Printf.sprintf
+       "%d bugs? (physeq %d, stack %d, swallowed %d, crash %d, int31 %d, order %d, sharing %d)\n"
        (List.length all) (List.length physeq) (List.length stack)
-       (List.length swallowed) (List.length crash) (List.length int31))
+       (List.length swallowed) (List.length crash) (List.length int31)
+       (List.length order) (List.length sharing))
 
 let raises_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
   let tuples r = List.map (fun (t : int array) -> Array.map (name p) t) (D.tuples (D.relation p r 3)) in

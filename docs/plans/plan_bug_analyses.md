@@ -20,17 +20,20 @@ checked the same way: it must report the bug on the code as it was
 before the fix (`git show FIX^:path`) and stay quiet on the fixed code.
 Then it runs over ix through the sweep, as `-dead`, `-caps` and `-exn` do.
 
-**Status: A6's first half, A1, A3 and A2 done (2026-11-03), A4's first step (2026-11-04), the rest planned.**
+**Status: A6's first half, A1, A3 and A2 done (2026-11-03), A4's first
+step and A5 (2026-11-04), the rest planned.**
 `mini-analyze -bugs` runs `bugs/physeq.dl` (`==` or `!=` with a side
 made in the comparison), `bugs/stack.dl` (a loop through a `try`, a
 frame a list's element), `bugs/swallowed.dl` (an error of the
-system silenced) and `bugs/intwidth.dl` (an int past the Pi 1's 31
-bits). Each reports its bugs on the code before the fix and
-not after (`analyzers/tests/bugs/`: eb5378a5, 021c562b, f46346db,
-c5086383, 4f00134c, 4436f60d, e92ae1ec). On today's ix, `physeq` finds nothing; `stack`
-gives 145 reports on the 44 programs and 9 on the kernel, `swallowed`
-12 on the programs, `int31` 29 (`analyzers/datalog/tests/bugs_ix.txt`),
-read in A1, A3 and A4 below. A7 turned out to be
+system silenced), `bugs/intwidth.dl` (an int past the Pi 1's 31
+bits) and `bugs/order.dl` (a table's order given to an output). Each
+reports its bugs on the code before the fix and not after
+(`analyzers/tests/bugs/`: eb5378a5, 021c562b, f46346db, c5086383,
+4f00134c, 4436f60d, e92ae1ec, d22c56e4, 410d04a2). On today's ix,
+`physeq` finds nothing; `stack` gives 145 reports on the 44 programs
+and 9 on the kernel, `swallowed` 12 on the programs, `int31` 29,
+`order` 2 (`analyzers/datalog/tests/bugs_ix.txt`), read in A1, A3, A4
+and A5 below. A7 turned out to be
 `-dead`'s already (below).
 The evidence is in
 [`bugs/history/`](bugs/history/): `from_git.md` has 73 bug fixes found in
@@ -389,31 +392,57 @@ stage 3 gives it numbers. It would find:
 - and it would excuse Delta's hash, a value used only through a small
   mask.
 
-### A5. Output in a hash table's order (`order.dl`)
+### A5. Output in a hash table's order (`bugs/order.dl`)
 
-**Re-finds:** d22c56e4 (the Unbox pass's boxes in `Hashtbl` order),
-410d04a2, 423d5e76, `ssa/Alloc`, mini-cc `-O`, `Typing.places`, tiny-ml's
-interfaces; ca664887 (`Marshal` without `No_sharing` in `Asm.save`).
-Each broke ix's fixed points: the same input gave different bytes
-depending on which compiler built the tool.
+**Done** (2026-11-04), as `order` and `sharing` in `-bugs`. Re-found:
+- **d22c56e4**, the Unbox pass's boxes in `Hashtbl` order
+  (`analyzers/tests/bugs/d22c56e4/`). Also on the whole of mini-ml with
+  Unbox.ml as it was before the fix: its `Hashtbl.iter` (line 129) is
+  reported, its order reaching the objects' `Marshal` (`Asm.ml:214`,
+  `232`) and the summaries' (`Summary.ml:112`).
+- **410d04a2**, Typing's places, a `Hashtbl.fold` marshalled in X.inline
+  without `No_sharing` (`analyzers/tests/bugs/410d04a2/`, both reports).
+- **ca664887**'s class, `Marshal` without `No_sharing`: `sharing`.
 
-**Rules:** taint over Andersen's `pts`, which no rule does yet:
-- **Sources:** what a closure given to `Hashtbl.iter` or `fold` stores
-  or returns. These are its `return` and its stores, found through
-  `argument` at a call to those functions.
-- **Propagation:** `copy`, `load`, `store`, and an accumulator's list
-  cells.
-- **Cleaned:** the objects `List.sort` (and `sort_uniq`, `Array.sort`)
-  makes or reorders.
-- **Sinks:** `output_string`, `Buffer.add_*` reached by the program's
-  writers, `Marshal.to_*`.
+The fixes are quiet: the list sorted first, `No_sharing`. So are the
+look-alikes in `After.ml`: a sum over a table, a table filled from
+another, a message to stderr, a string built in a Buffer of its own.
 
-**False reports:** an order that does not matter (a sum, a set rebuilt).
-The sinks are limited to the tools whose output ix compares
-(the toolchain, tiny-ml, typesetting), named in a file.
+**The facts** (`Closure_facts`, 36 lines), at each model's call
+(`analyzers/ml/Models`):
+- `walked(S, M, V)`: the model of M walks V in order, a table's
+  bindings or a list's cells;
+- `walk_call(I, S)`: the calls of the closure it was given;
+- `model_new(S, H)`: the blocks it makes;
+- `shares(S, F)`: `Marshal.to_string`, `to_bytes` or `to_channel`
+  whose flags do not say `No_sharing`.
 
-**Cost:** about 30 lines of rules. `Marshal` without `No_sharing` is one
-fact on the call's arguments.
+**The rules** (`bugs/order.dl`, 43 lines): a taint of the objects whose
+source is the table's walk.
+- In the walk's order: a list cell that a walk's closure makes and that
+  accumulates (its tail a cell of its own site: `k :: acc`,
+  `l := x :: !l`; not a list literal, Prolog's `$ops` terms); the list
+  a model makes from a list in that order (`List.map`, `rev`, `@`); and
+  what a walk of such a list makes.
+- `List.sort`, `sort_uniq`: a list of their own, in no table's order.
+- Output: a walk in that order whose closure writes (`output_string`,
+  `print_*`, `Console.print`, `printf`, `FS.write`, or an add to a
+  global Buffer, through the program's own functions); or `Marshal`
+  given what holds such a list.
+- A Buffer given around is not one. Every `Buffer.create`'s object is
+  one object here, and most build a string (Show_ast's `to_string`,
+  Prolog's `atom_text`: their walks were the first sweep's false ones).
+  So a string built in a walk's order and written later is not found,
+  nor a walk written by hand (`let rec go = function x :: r -> ...`).
+
+**On ix** (the sweep: no time added; the kernel): 2 lines in
+`bugs_ix.txt`. Both are a table's order shown to the user: acid's
+`whatis` lists the variables in it, mini-5i's profile writes its counts
+in it (machine/CLI.ml:50). Not among the 44 programs: mini-ar's
+`Link.write_library` (`sharing`, run by hand: the libraries' bytes
+are the compiler's, as Asm.save's were before ca664887), and office's
+`Saved.to_string` (a document, not compared). None was fixed: the
+author decides.
 
 ### A6. Physical equality (`bugs/physeq.dl`)
 
@@ -569,7 +598,7 @@ reproduction.
 | 4 | A3 errors swallowed | `silent`, `silent_all`, `primitive` | 60 | 3 | done |
 | 5 | A2 roots and primitives | `root_of`, primitive `raise_of` | 25 | ~5 | A8 uses its roots |
 | 6 | A4 31 bits, step 1 | `wide_int`, `wide_site`, `unit_dir` | 95 | 3 | done |
-| 7 | A5 output order | sinks file | 30 | ~10 | the fixed points |
+| 7 | A5 output order | `walked`, `walk_call`, `model_new`, `shares` | 80 | 3 | done |
 | 8 | A10 init and link order | `link` | 15 | ~3 | |
 | 9 | A8 races | `while` | 25 | ~3 | |
 | 10 | A9 pairs on every path | `call_at`, exception edges | 70 | ~5 | flow facts |

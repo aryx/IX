@@ -1,0 +1,2 @@
+bug? analyzers/tests/bugs/d22c56e4/Before.ml:9: order: in Before.sink, a table's order reaches the output at analyzers/tests/bugs/d22c56e4/After.ml:17, analyzers/tests/bugs/d22c56e4/Before.ml:16
+1 bugs? (physeq 0, stack 0, swallowed 0, crash 0, int31 0, order 1, sharing 0)

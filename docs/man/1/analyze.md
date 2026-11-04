@@ -70,7 +70,12 @@ program's library, lib_core's units it names, is read with it.
      literal or a shift that an int of the Pi 1, 31 bits, does not hold,
      a line a function (`bugs/intwidth.dl`): not in a directory meant
      for 64 bits only (`wide_dir`), nor reached only under an
-     `if Sys.int_size >= 63`. C files: the
+     `if Sys.int_size >= 63`; `order`, a `Hashtbl.iter` or `fold`
+     whose order reaches an output: a write in its closure, in a walk
+     of a list made in that order, or `Marshal` given one
+     (`bugs/order.dl`; `List.sort` makes a list in no table's order);
+     `sharing`, a `Marshal` without `No_sharing`, its bytes depending
+     on what the compiler shared. C files: the
      report without an option, its `bug?` lines `bugs/pointers.dl`'s.
      C files and ML ones (mini-ml's runtime and lib_core: what
      `analyzers/datalog/tests/raises.sh` gives): each external's

@@ -46,6 +46,7 @@ program's functions that its toplevel never reaches (calls.dl):
   Css.ml:13: stack: Css.components calls itself, not a tail call, over a list
   Process.ml:46: swallowed: in fork, Sys_error silenced, a constant answered
   Sha1.ml:6: int31: in Sha1's toplevel, 0xffffffff: not on the Pi 1's 31 bits
+  Unbox.ml:129: order: in Unbox.func, a table's order reaches the output at Asm.ml:214
   given C files and ML ones (the runtime's, lib_core's): each external's
   [@@raise E] against what its C raises (bugs/raises.dl)
 -root f: f is also entered from where the facts do not go (assembly)
@@ -204,7 +205,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
              else if !bugs && c = [] then
                [ "points_to/instructions.dl"; "points_to/contexts.dl"; "points_to/" ^ context ^ ".dl"; "exceptions.dl";
                  "bugs/physeq.dl"; "bugs/stack.dl"; "bugs/swallowed.dl";
-                 "bugs/intwidth.dl" ]
+                 "bugs/intwidth.dl"; "bugs/order.dl" ]
              else if !exns then
                [ "points_to/instructions.dl"; "points_to/andersen.dl"; "points_to/contexts.dl";
                  "points_to/" ^ context ^ ".dl"; "exceptions.dl" ]
@@ -236,7 +237,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
             Ml_front.files;
         (* (what they call would be reported dead) *)
         if !dead || !ambient then List.iter (fun m -> Console.eprint caps ("not read: " ^ m ^ "\n"); incr failed) !Ml_front.unread;
-        if !ambient then
+        if !ambient || !bugs then
           Hashtbl.iter (fun u () -> given p "own_unit" [ C.Facts.Sym u ]; given p "own_init" [ C.Facts.Sym (u ^ ":init") ]) Ml_front.own;
         if !only then Console.print caps (Buffer.contents text)
         else begin

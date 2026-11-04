@@ -7,6 +7,7 @@ debuggers/acid/Code.ml:76: stack: Code.stmt calls itself, not a tail call, over 
 debuggers/acid/Code.ml:77: stack: Code.stmt calls itself, not a tail call, over a list
 debuggers/acid/Code.ml:78: stack: Code.stmt calls itself, not a tail call, over a list
 debuggers/acid/Code.ml:80: stack: Code.stmt calls itself, not a tail call, over a list
+debuggers/acid/Eval.ml:101: order: in Eval.whatis, a table's order reaches the output at debuggers/acid/Eval.ml:101
 debuggers/acid/Frame64.ml:19: int31: in Frame64.sub_sp, 0xd10003ff; 0xff8003ff: not on the Pi 1's 31 bits
 debuggers/acid/Frame64.ml:24: int31: in Frame64.stp_fp, 0xa9007bfd; 0xa9807bfd; 0xffc07fff: not on the Pi 1's 31 bits
 debuggers/acid/Frame64.ml:28: int31: in Frame64.add_fp, 0x910003fd; 0xffc003ff: not on the Pi 1's 31 bits
@@ -166,6 +167,7 @@ linker/CLI.ml:84: int31: in CLI.link, 0x1 lsl 32, 33 bits: not on the Pi 1's 31 
 linker/Exe.ml:210: int31: in Exe.macho, 0x80000022; 0x80000028; x lsr 32 and 1 more: not on the Pi 1's 31 bits
 machine/CLI.ml:123: stack: run calls itself in a try's handler: no tail call by mini-ml
 machine/CLI.ml:141: stack: run calls itself in a try's handler: no tail call by mini-ml
+machine/CLI.ml:50: order: in CLI:fun at line 49, a table's order reaches the output at machine/CLI.ml:50
 machine/CLI.ml:96: stack: go calls itself in a try's handler: no tail call by mini-ml
 machine/CLI.ml:99: stack: run calls itself in a try's handler: no tail call by mini-ml
 _mk/7/editors/emacs/draw/Parser.ml:53: stack: Parser.mklist calls itself, not a tail call, over a list

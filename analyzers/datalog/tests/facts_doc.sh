@@ -19,7 +19,11 @@ $ANALYZE -facts -L lib_core $T/Toy.ml > $W/ml.facts 2>&1
 $ANALYZE -flow $T/toy.c > $W/c.flow 2>&1
 $ANALYZE -flow -L lib_core $T/Toy.ml > $W/ml.flow 2>&1
 $DATALOG -q 'target(I, F)' $D/instructions.dl $D/contexts.dl $D/insensitive.dl $W/c.facts > $W/c.answers 2> /dev/null
-cat $W/c.facts $W/ml.facts $W/c.flow $W/ml.flow $W/c.answers | sort -u > $W/real
+# (pairs.dl's paths: ML's facts and its SSA's, ssa_ before each, as -bugs)
+sed 's/^/ssa_/' $W/ml.flow > $W/ml.ssa
+$DATALOG -q 'held(A, P)' -q 'leak(A, C, R, E)' $D/instructions.dl $D/contexts.dl \
+  $D/insensitive.dl $R/exceptions.dl $W/ml.facts $W/ml.ssa $R/bugs/pairs.dl > $W/ml.answers 2> /dev/null
+cat $W/c.facts $W/ml.facts $W/c.flow $W/ml.flow $W/c.answers $W/ml.answers | sort -u > $W/real
 
 # each line of the document that is a fact
 grep -E '^[a-z_]+\(.*\)\.$' $R/FACTS.md | sort -u > $W/shown

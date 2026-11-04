@@ -518,3 +518,62 @@ target('_in_main_line_72_3',show).
 The chain, each a rule over the facts above: `assign('handler', 'show')` copies what
 `show` points to, `point_to('show', 'show')`, so `handler` points to `show`, a
 function, since `return('show', 'ret_show')`.
+
+**A path**, in `Toy.ml`'s `first_line`: the order a flow-insensitive analysis does
+not have, found again by joining the two kinds of facts (`Ssa_facts.mli` says why
+it works). The open, then an `if`; one branch closes and then raises, the other
+reads, which may raise, then closes:
+
+```
+let first_line f =
+  let ic = open_in f in
+  if f = "" then (close_in ic; failwith "no name")
+  else (let l = input_line ic in close_in ic; l)
+```
+
+Closure_facts names the calls by their applications: `open_in` at line 68, the
+first `close_in` and `failwith` at 69, `input_line` and the second `close_in` at 70:
+
+```
+site_key('Toy:68:c66', 'Toy:2468-2475').
+site_key('Toy:69:c68', 'Toy:2499-2507').
+site_key('Toy:69:c69', 'Toy:2512-2520').
+site_key('Toy:70:c70', 'Toy:2548-2558').
+site_key('Toy:70:c71', 'Toy:2565-2573').
+```
+
+The SSA form (`-flow`, `ssa_` before each relation under `-bugs`) names its calls
+the same way, in its blocks: b0 ends with the `if`, b1 is its first branch (the
+close at v7, then `failwith` as a tail call, the block's end t1), b2 the other
+(the read at v11, the close at v13):
+
+```
+site('f22_first_line<>:v3', 'Toy:2468-2475').
+succ('f22_first_line<>:b0', 'f22_first_line<>:b1').
+succ('f22_first_line<>:b0', 'f22_first_line<>:b2').
+first('f22_first_line<>:b1', 'f22_first_line<>:v6').
+next('f22_first_line<>:v6', 'f22_first_line<>:v7').
+site('f22_first_line<>:v7', 'Toy:2499-2507').
+site('f22_first_line<>:t1', 'Toy:2512-2520').
+first('f22_first_line<>:b2', 'f22_first_line<>:v10').
+next('f22_first_line<>:v10', 'f22_first_line<>:v11').
+site('f22_first_line<>:v11', 'Toy:2548-2558').
+site('f22_first_line<>:v13', 'Toy:2565-2573').
+```
+
+`bugs/pairs.dl` joins them with points-to (`took`, `gave`: the channel `open_in`
+returns is the object `close_in` is given) and walks the steps from the open, a
+close stopping the walk: `held` is where the channel is open on some path. In b1
+the walk stops at the close, v7, so the `failwith` after it is not held; in b2 the
+read is, and it may raise `End_of_file` (`exceptions.dl`'s `at`), in no try: a
+leak, its close the one the raise skips:
+
+```
+held('Toy:68:c66','f22_first_line<>:v6').
+held('Toy:68:c66','f22_first_line<>:v11').
+leak('Toy:68:c66','Toy:70:c70','Toy:70:c71',caml_exn_End_of_file).
+```
+
+Each step is the SSA's, so the two branches are two paths; a numbering of the calls
+in the order the text has them would put the `failwith` between the open and the
+second close, and could not tell it from the read.

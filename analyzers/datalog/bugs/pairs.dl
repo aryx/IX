@@ -104,7 +104,13 @@ another_bug(caml_exn_Invalid_argument).
 another_bug(caml_exn_Division_by_zero).
 another_bug(caml_exn_Assert_failure).
 another_bug(caml_exn_Match_failure).
+raising(A, C, P, E) :-
+  took(A, _, F), held(A, P), point_of(C, P), \+ one_application(A, C),
+  at(C, _, _, E), \+ another_bug(E), \+ protected(C), reach(F).
+% (R the give-back on a path after C, the one a raise skips: not one of
+% another branch)
+after_raise(P, Q) :- raising(_, _, P, _), step(P, Q).
+after_raise(P, Q2) :- after_raise(P, Q), step(Q, Q2).
 leak(A, C, R, E) :-
-  took(A, H, F), gave(R, H, F), held(A, P), point_of(C, P),
-  \+ one_application(A, C), at(C, _, _, E), \+ another_bug(E),
-  \+ protected(C), reach(F).
+  raising(A, C, P, E), took(A, H, F), gave(R, H, F), point_of(R, Q),
+  after_raise(P, Q).

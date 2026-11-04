@@ -62,3 +62,10 @@ let saved (l : string list) = Marshal.to_string (List.rev l) []
 (* a ref written, a wait in a while (bugs/races.dl) *)
 let ready = ref 0
 let take m c = while !ready = 0 do Condition.wait c m done; ready := 0
+
+(* a channel closed before one raise, held during another (bugs/pairs.dl) *)
+let first_line f =
+  let ic = open_in f in
+  if f = "" then (close_in ic; failwith "no name")
+  else (let l = input_line ic in close_in ic; l)
+let line = first_line "Toy.ml"

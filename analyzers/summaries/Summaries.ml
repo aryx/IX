@@ -299,19 +299,24 @@ and inline table (stack : string list) (ops : op list) : op list =
     List.length (List.filter (fun o -> List.mem x (vars_of_op o)) ops) in
   let calls = List.filter_map (function Call (d, f, a) -> Some (d, f, a) | _ -> None) ops in
   let removed = ref [] and added = ref [] in
+  (* each chain on its own: a global's variable may serve several calls
+   * (stable_sort's four of rev_append); old: one call through it only *)
+  let globals = List.filter_map (function Global (v, g) -> Some (v, g) | _ -> None) ops in
   List.iter
-    (function
-      | Global (v, g) when Hashtbl.mem table g && not (List.mem g stack) ->
+    (fun ((d0, f0, a0) : Models.v * Models.v * Models.v) ->
+      match List.assoc_opt f0 globals with
+      | Some g when Hashtbl.mem table g && not (List.mem g stack) ->
           let n, body = Hashtbl.find table g in
           (* the chain: f a1, then what it returned applied to a2, ... *)
-          let rec chain (f : Models.v) (k : int) (acc : (Models.v * Models.v * Models.v) list) =
+          let rec chain (d : Models.v) (k : int) (acc : (Models.v * Models.v * Models.v) list) =
             if k > n then Some (List.rev acc)
             else
-              match List.filter (fun (_, f', _) -> f' = f) calls with
-              | [ ((d, _, _) as c) ] when k = n || uses d = 2 -> chain d (k + 1) (c :: acc)
+              match List.filter (fun (_, f', _) -> f' = d) calls with
+              | [ ((d', _, _) as c) ] when uses d = 2 -> chain d' (k + 1) (c :: acc)
               | _ -> None in
-          (match chain v 1 [] with
-           | Some cs when List.length cs = n && uses v = 2 ->
+          let first = (d0, f0, a0) in
+          (match if n = 1 then Some [ first ] else chain d0 2 [ first ] with
+           | Some cs when List.length cs = n ->
                let args = List.map (fun (_, _, a) -> a) cs in
                let ret = (match List.rev cs with (d, _, _) :: _ -> d | [] -> Models.Ret) in
                let base = !next in
@@ -326,7 +331,7 @@ and inline table (stack : string list) (ops : op list) : op list =
                added := !added @ List.map (map_op sub) body
            | _ -> ())
       | _ -> ())
-    ops;
+    calls;
   List.filter (fun o -> not (List.mem o !removed)) ops @ !added
 
 and vars_of_op (o : op) : Models.v list =

@@ -362,16 +362,37 @@ let model_body (sym : string) (ops : Models.op list) ~(arg : int -> string)
   let calls = ref 0 and news = ref 0 in
   (* (what the model walks, in order: a list's cells, c = c.tl after
    * c = l, or a table's bindings; bugs/order.dl's) *)
-  let rec walked (ops : Models.op list) : unit =
-    match ops with
-    | Assign (Tmp j, (Arg _ as a)) :: (Load (Tmp j', Tmp j'', f) :: _ as rest)
-      when j = j' && j = j'' && f = "con:::.1" ->
-        fact "walked" [ site; sym; var a ]; walked rest
-    | Load (_, (Arg _ as a), f) :: rest when f = "tbl:key" ->
-        fact "walked" [ site; sym; var a ]; walked rest
-    | _ :: rest -> walked rest
-    | [] -> () in
-  walked ops;
+  (* (the loop, wherever its ops are: c copied from an argument, a tail of
+   * c put back in c, at once (Models' Load (Tmp j, Tmp j, tl)) or by a
+   * copy (a derived summary's Load (Tmp x, Tmp j, tl), Assign (Tmp j,
+   * Tmp x)); old: the two ops next to each other, Models' shape alone) *)
+  let tails_back (j : int) : bool =
+    List.exists
+      (function
+        | Models.Load (Tmp x, Tmp j', f) when j' = j && f = "con:::.1" ->
+            x = j || List.mem (Models.Assign (Tmp j, Tmp x)) ops
+        | _ -> false)
+      ops in
+  (* (c the argument through copies: a derived summary's loop is often
+   * its local function's parameter, rev_map's rmap_f's) *)
+  let rec copies (seen : int list) (j : int) : int list =
+    if List.mem j seen then seen
+    else
+      List.fold_left
+        (fun acc (op : Models.op) ->
+          match op with Assign (Tmp k, Tmp j') when j' = j -> copies acc k | _ -> acc)
+        (j :: seen) ops in
+  let walked_args = ref [] in
+  List.iter
+    (fun (op : Models.op) ->
+      match op with
+      | Assign (Tmp j, (Arg _ as a))
+        when List.exists tails_back (copies [] j) && not (List.mem a !walked_args) ->
+          walked_args := a :: !walked_args; fact "walked" [ site; sym; var a ]
+      | Load (_, (Arg _ as a), f) when f = "tbl:key" ->
+          fact "walked" [ site; sym; var a ]
+      | _ -> ())
+    ops;
   List.concat_map
     (fun (op : Models.op) ->
       match op with

@@ -280,12 +280,19 @@ let on : bool ref = ref true
 let derived : (string, int * op list) Hashtbl.t = Hashtbl.create 256
 let derived_on : bool ref = ref false
 
+(* (Models' own even with the derived ones: a sort's result is a list of
+ * its own, in its own order, what bugs/order.dl needs; the code says it
+ * only as cells, some of them the input's: a list shorter than 2 comes
+ * back itself) *)
+let meant : string list = [ "List.sort"; "List.stable_sort"; "List.sort_uniq" ]
+
 let find (sym : string) : (int * op list) option =
   match String.index_opt sym '.' with
   | Some _ when not !on -> None
   (* (a derived one first, plan_analysis_scale.md's step 3; these for
    * what has none) *)
-  | Some _ when !derived_on && Hashtbl.mem derived sym -> Hashtbl.find_opt derived sym
+  | Some _ when !derived_on && Hashtbl.mem derived sym && not (List.mem sym meant) ->
+      Hashtbl.find_opt derived sym
   | Some i -> (
       match List.assoc_opt (String.sub sym 0 i) units with
       | Some fs ->

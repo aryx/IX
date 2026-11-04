@@ -150,8 +150,21 @@ List's functions, 52 written to the file, every one summarized:
 - the measure, the 44 programs' total: -dead 124 s to 115, -exn 341 s
   to 314 (8% faster than Models' List), the memory the same.
 
-Next: `walked` made of a derived summary's loads (or said by the
-derivation); then Hashtbl derived (its closures over the buckets, the
+Then (2026-11-04, uncommitted): every call chain of a summarized
+function written in, a global's variable serving several (stable_sort's
+four of rev_append; no List function called through a global left: the
+shared body had made sort_uniq's callers write each other's cells, six
+evalorder reports, gone); `walked` the loop wherever its ops are and
+through copies (a local function's parameter, rev_map's rmap_f), the
+hand models' answers the same; the sorts Models' own even with
+-summaries (`Models.meant`: a sort's result a list of its own, what
+bugs/order.dl needs, the code saying only cells, some its input's).
+Left: two order reports in mini-ml's Typing (places, min_max_globals:
+a table's contents sorted, then marshalled; false), TinyVCS.lca one
+output place of two, and TinyBrowserTokens.wanted no longer dead: which
+derived function carries the order is to find, through order.dl's taint.
+
+Next: those three; then Hashtbl derived (its closures over the buckets, the
 case Models was written for); then the rest of lib_core, the fixed cost
 of step 1 (List's code about 2,400 of the 80,000 to 117,000 facts of
 lib_core in a program: mini-cat's count).

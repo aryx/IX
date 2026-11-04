@@ -95,7 +95,8 @@ for i in $(seq ${JOBS:-$(nproc)}); do echo >&3; done
 # the last `family`'s, a line of the report with the others' (below; a
 # job of none, a line of its own), and its kind, the color of its name:
 # build (compiles), system (boots one, in an emulator), reference
-# (against another program or a recorded output), test (none: its own)
+# (against another program or a recorded output), check (ix's own code
+# by its analyses: no new report), test (none: its own)
 families=()
 kinds=()
 F=
@@ -597,6 +598,16 @@ job -after-ix "a kernel's step built by ix, booted" boot $K/kernels/steps/step3/
 job -after-ix "each unit compiled after those it inlines (else builds differ)" env B=$B tests/depend_edges.sh
 [ -n "$xv6" ] && job -after-ix "mini-xv6 built by ix, booted" boot $K/kernels/xv6/kernel8.img 'init: starting sh'
 
+# ix's own code read by mini-analyze: its reports the recorded ones, read
+# and known; a new one fails (new code around a capability, say)
+group t-ix
+family "ix's code by its analyses: no new report" check
+job "mini-analyze -caps on tiny/'s host programs: no report but the recorded one (caps_tiny.txt)" analyzers/datalog/tests/tiny_caps.sh -check
+group m-ix
+if [ -n "$runs7" ]; then
+  job -after-ix "mini-analyze -caps on m-ix's 44 programs: no report but the recorded ones (caps_ix.txt)" env MK=$K analyzers/datalog/tests/caps_ix.sh -check
+else skip "mini-analyze -caps on m-ix's 44 programs" "$no7"; fi
+
 # The report, a tree: a line a group (shared, t-ix, m-ix), and under it
 # a line a family, each with its bar, its jobs ended and its failures,
 # then its time when done, or its longest running job. On a terminal it
@@ -620,7 +631,8 @@ gtag() { case $1 in shared) paint 90 "$(tag $1)";; t-ix) paint '1;36' "$(tag $1)
 # within half, yellow within, red past: $2, a job's 60 s, the whole's 120)
 kpaint() {
   case $1 in build) paint '38;5;69' "$2";; system) paint '38;5;208' "$2";;
-    reference) paint '38;5;139' "$2";; *) echo -n "$2";; esac
+    reference) paint '38;5;139' "$2";; check) paint '38;5;37' "$2";;
+    *) echo -n "$2";; esac
 }
 tpaint() {
   local c=32; [ $(( $1 * 2 )) -ge $2 ] && c=33; [ $1 -gt $2 ] && c=31
@@ -727,8 +739,9 @@ tree() {
     done
   done
   # (the colors' legend)
-  [ -n "$color" ] && printf "%s: %s %s %s test;  %s: %s, %s, %s\n" kinds \
+  [ -n "$color" ] && printf "%s: %s %s %s %s test;  %s: %s, %s, %s\n" kinds \
     "$(kpaint build compile)" "$(kpaint system boot)" "$(kpaint reference compare)" \
+    "$(kpaint check check)" \
     "time" "$(tpaint 0 1 'under half the budget')" "$(tpaint 1 1 under)" "$(tpaint 2 1 over)"
 }
 # a terminal's: the tree made first, then written over the one drawn

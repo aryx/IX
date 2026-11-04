@@ -5,6 +5,8 @@
 # sourced). A unit's file: in the program's directory or its -I's, then
 # _mk/7's (a generated lexer or parser), then anywhere under the directory,
 # then the one of that name elsewhere in the tree. Run from ix's root.
+# MK: where ix built them, _mk/7 if not said (make test: its own build).
+MK=${MK:-_mk/7}
 
 # a mkfile's variable, its \-lines joined, $names inside it expanded
 var() { # mkfile name
@@ -25,14 +27,14 @@ unit_file() { # directory, -I's, unit
   # (a generated lexer or parser: the program's own, or an -I's, before any
   # other of that name, as shell's hand-written Parser.ml; generated: needs_gen)
   for d in $1 $2; do
-    f=$(find _mk/7/$d -maxdepth 2 -name "$3.ml" 2> /dev/null | head -1)
+    f=$(find $MK/$d -maxdepth 2 -name "$3.ml" 2> /dev/null | head -1)
     [ -n "$f" ] && { echo $f; return; }
   done
   f=$(find $1 -name "$3.ml" 2> /dev/null | head -1)
   [ -z "$f" ] && f=$(git ls-files '*.ml' | grep -E "/$3\.ml$" | head -1)
   # (a unit made in another program's directory, that alone of its name:
   # St_kernel.ml, made by mini-smalltalk's mkfile for mini-squeak too)
-  [ -z "$f" ] && [ "$(find _mk/7 -name "$3.ml" 2> /dev/null | wc -l)" = 1 ] && f=$(find _mk/7 -name "$3.ml")
+  [ -z "$f" ] && [ "$(find $MK -name "$3.ml" 2> /dev/null | wc -l)" = 1 ] && f=$(find $MK -name "$3.ml")
   echo $f
 }
 
@@ -51,7 +53,7 @@ needs_gen() { # mkfile
   local dir=$(dirname $1) g u
   for g in $(find $dir -name '*.mly' -o -name '*.mll' 2> /dev/null); do
     u=$(basename $g); u=${u%.*}; u=${u^}
-    [ -n "$(find _mk/7/$dir -name "$u.ml" 2> /dev/null | head -1)" ] || return 0
+    [ -n "$(find $MK/$dir -name "$u.ml" 2> /dev/null | head -1)" ] || return 0
   done
   [ -n "$(missing_units $1)" ]
 }
@@ -97,7 +99,7 @@ program_args() { # mkfile
     done
   done
   # (and their objects' directories, where a generated unit is: mini-ml's Parser)
-  for i in $incs; do [ -d _mk/7/$i ] && flags="$flags,-I,_mk/7/$i"; done
+  for i in $incs; do [ -d $MK/$i ] && flags="$flags,-I,$MK/$i"; done
   for u in $(units_of $mk); do
     f=$(unit_file $dir "$incs" $u)
     [ -n "$f" ] && files="$files $f"

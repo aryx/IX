@@ -24,10 +24,12 @@ one() { # a mkfile
   case "$(var $mk SRC)$(var $mk UNITS)" in *'`'*'`'*) printf '%-44s computed units, not analysed\n' $dir; return;; esac
   read flags files < <(program_args $mk)
   flags=${flags//,/ }
+  # (its files said even when not read: ix_check.sh -dead's, a file it has
+  # not dead for ix unless it says so)
+  echo $files > $out/$name.files
   # (a unit missing: what it calls would look dead, as in a unit not read)
   local missing=$(missing_units $mk | tr '\n' ' ')
   if [ -n "$missing" ]; then printf '%-44s    - NOT READ: no file for %s\n' $dir "$missing"; return; fi
-  echo $files > $out/$name.files
   local t0=$(date +%s)
   # (-start: the units' order, mkprog's, for -bugs's init.dl)
   (ulimit -v 12000000; timeout $limit $ANALYZE ${FLAG:--dead} -L lib_core \

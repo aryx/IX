@@ -41,7 +41,7 @@ TINY_W = /tmp/ix-tiny
 # test-all's suite long: the random tests' full counts, tiny-c's and
 # tiny-ml's fuzzers, tiny-kernel's steps and its whole check (26
 # sessions, its screens and sounds), the decoders' random words and
-# their system instructions (docs/plans/done/plan_tests.md)
+# their system instructions (docs/plans/done/plan_tests.md), make check
 test: test-lite
 test-long: all
 	./tiny/tests/TinyDatabase_test.sh 20
@@ -63,6 +63,20 @@ test-long: all
 	./machine/tests/random_blocks.py -64 3000 30
 	./machine/tests/random_blocks.py -vfp 1000 30
 	./machine/tests/random_blocks.py -64fp 1000 30
+	$(MAKE) check
+
+# ix's code by its analyses (analyzers/datalog/README.md): mini-analyze
+# -caps, -dead, -bugs, each against its recording, the baseline; printed:
+# the new reports whole, those gone. make test runs tiny/'s three and
+# m-ix's -caps; these all, a longer budget (check-mix: a minute an
+# analysis, the developers' ix build in _mk/7 read: make ix first)
+check: check-tix check-mix
+check-tix:
+	@st=0; for f in -caps -dead -bugs; do \
+	  ./analyzers/datalog/tests/tiny_check.sh $$f -check || st=1; done; exit $$st
+check-mix:
+	@st=0; for f in -caps -dead -bugs; do \
+	  ./analyzers/datalog/tests/ix_check.sh $$f -check || st=1; done; exit $$st
 
 # The website's machine (docs/t-ix.html; plan_web.md): tiny-machine by
 # js_of_ocaml and the kernels' images, put in the assets' repository,
@@ -349,6 +363,7 @@ visual-all:
 	codemap -screen_size 3                 -efuns_client efuns_client -emacs_client /dev/null .
 
 .PHONY: all tix mix install website website-mini website-mini-js test \
+  check check-tix check-mix \
   test-vs-mk test-vs-goken test-vs-ocaml-light test-vs-chidb test-vs-qemu \
   clean loc loc-v build-docker build-docker-ocaml5 build-docker-test-all \
   test-vs-ocaml ix ix-arm kernels-ix test-ix test-ix-fixpoint test-ix-arm \

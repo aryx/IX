@@ -1,0 +1,399 @@
+_mk/7/editors/emacs/draw/Lexer_c.ml:134: dead field: pp stored in go, nothing live reads it
+_mk/7/editors/emacs/draw/Parser.ml:1578: dead field: aargs stored in Parser:fun at line 1578, nothing live reads it
+_mk/7/editors/emacs/draw/Parser.ml:1578: dead field: aend stored in Parser:fun at line 1578, nothing live reads it
+_mk/7/editors/emacs/draw/Parser.ml:1578: dead field: aloc stored in Parser:fun at line 1578, nothing live reads it
+_mk/7/editors/emacs/draw/Parser.ml:1578: dead field: aname stored in Parser:fun at line 1578, nothing live reads it
+_mk/7/editors/emacs/draw/Parser.ml:2774: dead field: tkind stored in Parser:fun at line 2774, nothing live reads it
+_mk/7/editors/emacs/draw/Parser.ml:2774: dead field: tloc stored in Parser:fun at line 2774, nothing live reads it
+_mk/7/editors/emacs/draw/Parser.ml:2774: dead field: tmanifest stored in Parser:fun at line 2774, nothing live reads it
+_mk/7/editors/emacs/draw/Parser.ml:2774: dead field: tname stored in Parser:fun at line 2774, nothing live reads it
+_mk/7/editors/emacs/draw/Parser.ml:2774: dead field: tparams stored in Parser:fun at line 2774, nothing live reads it
+_mk/7/editors/emacs/draw/Parser.ml:2774: dead field: tspan stored in Parser:fun at line 2774, nothing live reads it
+_mk/7/editors/emacs/draw/Parser.ml:32: dead field: ploc stored in Parser.mkpat, nothing live reads it
+_mk/7/editors/emacs/draw/Parser.ml:33: dead field: iloc stored in Parser.mkitem, nothing live reads it
+_mk/7/editors/emacs/draw/Parser.ml:34: dead field: s stored in Parser.mksig, nothing live reads it
+_mk/7/editors/emacs/draw/Parser.ml:34: dead field: sloc stored in Parser.mksig, nothing live reads it
+_mk/7/editors/emacs/draw/Parser.ml:3676: dead: Parser.interface, nothing names it
+_mk/7/editors/emacs/tty/Lexer_c.ml:134: dead field: pp stored in go, nothing live reads it
+_mk/7/editors/emacs/tty/Parser.ml:1601: dead field: aargs stored in Parser:fun at line 1601, nothing live reads it
+_mk/7/editors/emacs/tty/Parser.ml:1601: dead field: aend stored in Parser:fun at line 1601, nothing live reads it
+_mk/7/editors/emacs/tty/Parser.ml:1601: dead field: aloc stored in Parser:fun at line 1601, nothing live reads it
+_mk/7/editors/emacs/tty/Parser.ml:1601: dead field: aname stored in Parser:fun at line 1601, nothing live reads it
+_mk/7/editors/emacs/tty/Parser.ml:2812: dead field: tkind stored in Parser:fun at line 2812, nothing live reads it
+_mk/7/editors/emacs/tty/Parser.ml:2812: dead field: tloc stored in Parser:fun at line 2812, nothing live reads it
+_mk/7/editors/emacs/tty/Parser.ml:2812: dead field: tmanifest stored in Parser:fun at line 2812, nothing live reads it
+_mk/7/editors/emacs/tty/Parser.ml:2812: dead field: tname stored in Parser:fun at line 2812, nothing live reads it
+_mk/7/editors/emacs/tty/Parser.ml:2812: dead field: tparams stored in Parser:fun at line 2812, nothing live reads it
+_mk/7/editors/emacs/tty/Parser.ml:2812: dead field: tspan stored in Parser:fun at line 2812, nothing live reads it
+_mk/7/editors/emacs/tty/Parser.ml:32: dead field: ploc stored in Parser.mkpat, nothing live reads it
+_mk/7/editors/emacs/tty/Parser.ml:33: dead field: iloc stored in Parser.mkitem, nothing live reads it
+_mk/7/editors/emacs/tty/Parser.ml:34: dead field: s stored in Parser.mksig, nothing live reads it
+_mk/7/editors/emacs/tty/Parser.ml:34: dead field: sloc stored in Parser.mksig, nothing live reads it
+_mk/7/editors/emacs/tty/Parser.ml:3714: dead: Parser.interface, nothing names it
+assembler/Asm.ml:176: dead: Asm.invert, nothing names it
+assembler/Asm.ml:181: dead: Asm.cond_bits, nothing names it
+assembler/Asm.ml:209: dead field: s_arch stored in Asm.stored, nothing live reads it
+assembler/Asm.ml:209: dead field: s_file stored in Asm.stored, nothing live reads it
+assembler/Asm.ml:209: dead field: s_items stored in Asm.stored, nothing live reads it
+assembler/Asm.ml:218: dead: Asm.with_history, in init but no call goes through the pointer
+assembler/Asm.ml:226: dead: Asm.to_bytes, nothing names it
+assembler/Asm.ml:227: dead: Asm.of_bytes, nothing names it
+assembler/Asm.ml:237: dead: Asm.marshalled, in init but no call goes through the pointer
+assembler/Asm.ml:243: dead: Asm.load, nothing names it
+assembler/CLI.ml:34: dead field: static stored in CLI:fun at line 34, nothing live reads it
+assembler/CLI.ml:34: dead field: sym stored in CLI:fun at line 34, nothing live reads it
+assembler/Parser_asm.ml:133: dead field: by stored in Parser_asm.index, nothing live reads it
+assembler/Parser_asm.ml:133: dead field: kind stored in Parser_asm.index, nothing live reads it
+assembler/Parser_asm.ml:133: dead field: reg stored in Parser_asm.index, nothing live reads it
+assembler/Parser_asm.ml:147: dead field: index stored in Parser_asm.named, nothing live reads it
+assembler/Parser_asm.ml:261: dead field: op stored in lines, nothing live reads it
+assembler/Parser_asm.ml:261: dead field: suffixes stored in lines, nothing live reads it
+assembler/Show_asm.ml:13: dead: Show_asm.show_mem, in init but no call goes through the pointer
+assembler/Show_asm.ml:23: dead: Show_asm.pp_mem, nothing names it
+assembler/Show_asm.ml:25: dead: Show_asm.show_operand, in init but no call goes through the pointer
+assembler/Show_asm.ml:40: dead: Show_asm.show_item, nothing names it
+assembler/Show_asm.ml:7: dead: Show_asm.show_name, in init but no call goes through the pointer
+assembler/Show_asm.ml:9: dead: Show_asm.show_shift, in init but no call goes through the pointer
+builder/Build.ml:266: dead: Build.errors, nothing names it
+database/dbm/Dbm.ml:228: dead: Dbm.n_registers, nothing names it
+database/dbm/Dbm.ml:229: dead: Dbm.register, nothing names it
+database/dbm/Dbmfile.ml:55: dead field: registers stored in Dbmfile.parse, nothing live reads it
+database/dbm/Dbmfile.ml:55: dead field: results stored in Dbmfile.parse, nothing live reads it
+database/dbm/Dbmfile.ml:99: dead: Dbmfile.show_row, nothing names it
+database/sql/Show_ast.ml: dead global: Show_ast.show_cond, nothing live names it
+database/sql/Show_ast.ml: dead global: Show_ast.show_expr, nothing live names it
+database/sql/Show_ast.ml: dead global: Show_ast.show_sra, nothing live names it
+database/storage/Btree.ml:131: dead: Btree.find, nothing names it
+database/storage/Btree.ml:30: dead: Btree.pager, nothing names it
+database/storage/Record.ml:71: dead: Record.packed_size, nothing names it
+debuggers/acid/Frame64.ml:51: dead field: pc stored in go, nothing live reads it
+editors/ed/Input.ml:21: dead: Input.of_string, nothing names it
+editors/ed/Input.ml:62: dead: Input.lastc, nothing names it
+editors/emacs/modes/Paren_mode.ml: dead field: min_name stored in init, nothing live reads it
+editors/turbopascal/Keys.ml:55: dead: Keys.run, in init but no call goes through the pointer
+editors/turbopascal/Keys.ml:57: dead: Keys.screen, nothing names it
+editors/turbopascal/editor/Tui_turbo.ml: dead global: Tui_turbo.execution_line, nothing live names it
+editors/turbopascal/editor/Tui_turbo.ml:27: dead: Tui_turbo.lines, nothing names it
+editors/turbopascal/editor/Tui_turbo.ml:28: dead: Tui_turbo.cursor, nothing names it
+editors/turbopascal/editor/Tui_turbo.ml:29: dead: Tui_turbo.error, nothing names it
+editors/turbopascal/editor/Tui_turbo.ml:31: dead: Tui_turbo.screen, nothing names it
+editors/turbopascal/editor/Tui_turbo.ml:41: dead: Tui_turbo.file, nothing names it
+kernels/9pi/tests/tone/Tone.ml: dead global: Tone.pairs, nothing live names it
+kernels/oberon/display/Display.ml: dead global: Display.cross, nothing live names it
+kernels/oberon/display/Display.ml: dead global: Display.grey, nothing live names it
+kernels/oberon/machine/Machine.ml:139: dead: Machine.le16, in init but no call goes through the pointer
+kernels/oberon/machine/Machine.ml:141: dead: Machine.le32, nothing names it
+kernels/oberon/machine/Machine.ml:143: dead: Machine.get_le32, nothing names it
+kernels/oberon/system/Oberon.ml:60: dead: Oberon.fade_mouse, nothing names it
+kernels/oberon/texts/Fonts.ml:24: dead field: max_x stored in Fonts.read, nothing live reads it
+kernels/oberon/texts/Fonts.ml:24: dead field: min_x stored in Fonts.read, nothing live reads it
+kernels/oberon/texts/TextFrames.ml:223: dead field: org stored in TextFrames.locate_pos, nothing live reads it
+kernels/oberon/texts/Texts.ml:184: dead field: col stored in Texts.open_reader, nothing live reads it
+kernels/oberon/texts/Texts.ml:184: dead field: voff stored in Texts.open_reader, nothing live reads it
+kernels/squeak/machine/Machine.ml:128: dead: Machine.panic, nothing names it
+kernels/squeak/machine/Machine.ml:139: dead: Machine.le16, in init but no call goes through the pointer
+kernels/squeak/machine/Machine.ml:141: dead: Machine.le32, nothing names it
+kernels/squeak/machine/Machine.ml:143: dead: Machine.get_le32, nothing names it
+languages/c/Emit.ml:293: dead field: op stored in Emit:fun at line 293, nothing live reads it
+languages/c/Emit.ml:293: dead field: suffixes stored in Emit:fun at line 293, nothing live reads it
+languages/c/Tree.ml:121: dead: Tree.show_binop, nothing names it
+languages/c/highlight/Token_c.ml:12: dead: Token_c.show_kind, nothing names it
+languages/c/simple/Ir.ml:42: dead: Ir.show/1, nothing names it
+languages/c/simple/Ir.ml:48: dead: Ir.show_ty, nothing names it
+languages/c/simple/Ir.ml:54: dead: Ir.show_target, nothing names it
+languages/datalog/Btree.ml:34: dead: Btree.count, nothing names it
+languages/datalog/Index.ml:32: dead: Index.first, nothing names it
+languages/datalog/Index.ml:41: dead: Index.exists_array, nothing names it
+languages/datalog/Tuples.ml:20: dead: Tuples.count, nothing names it
+languages/dotnet/assembly/Il.ml: dead global: Il.opcodes, nothing live names it
+languages/dotnet/assembly/Image.ml:57: dead: Image.guid, nothing names it
+languages/dotnet/assembly/Metadata.ml: dead global: Metadata.t_class_layout, nothing live names it
+languages/dotnet/assembly/Metadata.ml: dead global: Metadata.t_constant, nothing live names it
+languages/dotnet/assembly/Metadata.ml: dead global: Metadata.t_custom_attribute, nothing live names it
+languages/dotnet/assembly/Metadata.ml: dead global: Metadata.t_method_semantics, nothing live names it
+languages/dotnet/assembly/Metadata.ml: dead global: Metadata.t_property_map, nothing live names it
+languages/dotnet/assembly/Signature.ml:130: dead: Signature.property, nothing names it
+languages/dotnet/csc/Csc_compile.ml:34: dead field: spec stored in Csc_compile:fun at line 34, nothing live reads it
+languages/dotnet/runtime/Library.ml:866: dead field: sgeneric stored in Library.delegate, nothing live reads it
+languages/dotnet/runtime/Types.ml:132: dead field: origin stored in Types.new_cls, nothing live reads it
+languages/dotnet/runtime/Types.ml:348: dead field: abstract stored in Types.method_of_def, nothing live reads it
+languages/dotnet/runtime/Types.ml:525: dead field: hend stored in Types:fun at line 525, nothing live reads it
+languages/dotnet/runtime/Types.ml:537: dead field: types stored in Types.load, nothing live reads it
+languages/ml/Ast.ml:126: dead: Ast.show_pattern, nothing names it
+languages/ml/Ast.ml:130: dead: Ast.show_pat, nothing names it
+languages/ml/Ast.ml:178: dead: Ast.show_type_decl, nothing names it
+languages/ml/Ast.ml:179: dead: Ast.show_expr, nothing names it
+languages/ml/Ast.ml:182: dead: Ast.show_attribute, nothing names it
+languages/ml/Ast.ml:183: dead: Ast.show_exp, nothing names it
+languages/ml/Ast.ml:186: dead: Ast.show_tkind, nothing names it
+languages/ml/Ast.ml:187: dead: Ast.show_binding, nothing names it
+languages/ml/Ast.ml:191: dead: Ast.show_case, nothing names it
+languages/ml/Ast.ml:198: dead: Ast.pp_source, in init but no call goes through the pointer
+languages/ml/Ast.ml:201: dead: Ast.show_source, nothing names it
+languages/ml/Ast.ml:223: dead: Ast.show_structure, nothing names it
+languages/ml/Ast.ml:231: dead: Ast.show_it, nothing names it
+languages/ml/Ast.ml:235: dead: Ast.show_module_expr, nothing names it
+languages/ml/Ast.ml:239: dead: Ast.show_module_type, nothing names it
+languages/ml/Ast.ml:243: dead: Ast.show_signature, nothing names it
+languages/ml/Ast.ml:251: dead: Ast.show_sg, nothing names it
+languages/ml/Ast.ml:50: dead: Ast.show_item/1, nothing names it
+languages/ml/Ast.ml:52: dead: Ast.show_sig_item/2, nothing names it
+languages/ml/Ast.ml:56: dead: Ast.show_loc, nothing names it
+languages/ml/Ast.ml:60: dead: Ast.show_span, nothing names it
+languages/ml/Ast.ml:63: dead: Ast.show_longid, nothing names it
+languages/ml/Ast.ml:71: dead: Ast.show_rec_flag, nothing names it
+languages/ml/Ast.ml:72: dead: Ast.show_dir, nothing names it
+languages/ml/Ast.ml:73: dead: Ast.show_constant, nothing names it
+languages/ml/Ast.ml:90: dead: Ast.show_ty, nothing names it
+languages/ml/Main.ml: dead field: space_overhead stored in init, nothing live reads it
+languages/ml/Scope.ml:128: dead: Scope.show_pattern, nothing names it
+languages/ml/Scope.ml:169: dead: Scope.show_expr, nothing names it
+languages/ml/Scope.ml:173: dead: Scope.show_exp, nothing names it
+languages/ml/Scope.ml:177: dead: Scope.show_case, nothing names it
+languages/ml/Scope.ml:70: dead: Scope.show_item/3, nothing names it
+languages/ml/Scope.ml:84: dead: Scope.show_value, nothing names it
+languages/ml/highlight/Highlight_ml.ml:229: dead: Highlight_ml.categorize, nothing names it
+languages/ml/highlight/Token_ml.ml:26: dead: Token_ml.show_kind, nothing names it
+languages/ml/simple/Ir.ml:56: dead: Ir.show_op/4, nothing names it
+languages/ml/simple/Ir.ml:58: dead: Ir.show/5, nothing names it
+languages/ml/simple/Ir.ml:74: dead: Ir.show_float1, nothing names it
+languages/ml/simple/Ir.ml:77: dead: Ir.show_target, nothing names it
+languages/ml/ssa/Ssa_build.ml:88: dead field: sites stored in Ssa_build.build, nothing live reads it
+languages/ml/ssa/Ssa_build.ml:88: dead field: tail_sites stored in Ssa_build.build, nothing live reads it
+languages/pascal/Pmachine.ml:241: dead: Pmachine.sp, nothing names it
+languages/pascal/Pmachine.ml:250: dead: Pmachine.run, in init but no call goes through the pointer
+languages/pascal/Pmachine.ml:271: dead: Pmachine.execute, nothing names it
+languages/scheme/CLI.ml:109: dead field: stop stored in CLI:fun at line 109, nothing live reads it
+languages/scheme/Scheme.ml:130: dead: Scheme.kind, nothing names it
+languages/scheme/Scheme_eval.ml:139: dead field: handlers stored in Scheme_eval.step, nothing live reads it
+languages/scheme/Scheme_eval.ml:139: dead field: init stored in Scheme_eval.step, nothing live reads it
+languages/scheme/Scheme_eval.ml:198: dead: Scheme_eval.resume, nothing names it
+languages/scheme/Scheme_eval.ml:200: dead: Scheme_eval.call, nothing names it
+languages/scheme/Scheme_eval.ml:233: dead field: builtins stored in Scheme_eval.create, nothing live reads it
+languages/scheme/Scheme_eval.ml:240: dead: Scheme_eval.defined, nothing names it
+languages/scheme/Scheme_step.ml:194: dead field: contractum stored in run, nothing live reads it
+languages/scheme/Scheme_step.ml:194: dead field: redex stored in run, nothing live reads it
+languages/smalltalk/Squeak.ml:157: dead: Squeak.picture, nothing names it
+languages/smalltalk/compiler/St_ast.ml:45: dead: St_ast.show_literal, in init but no call goes through the pointer
+languages/smalltalk/compiler/St_ast.ml:63: dead: St_ast.show_message, in init but no call goes through the pointer
+languages/smalltalk/compiler/St_ast.ml:71: dead: St_ast.show_expr, nothing names it
+languages/smalltalk/compiler/St_ast.ml:87: dead: St_ast.show_stmt, nothing names it
+languages/smalltalk/compiler/St_bytecode.ml:59: dead: St_bytecode.literals, nothing names it
+languages/smalltalk/compiler/St_bytecode.ml:63: dead: St_bytecode.literal, nothing names it
+languages/smalltalk/compiler/St_bytecode.ml:74: dead: St_bytecode.temp_names, in init but no call goes through the pointer
+languages/smalltalk/compiler/St_bytecode.ml:76: dead: St_bytecode.pcmap, in init but no call goes through the pointer
+languages/smalltalk/compiler/St_bytecode.ml:84: dead: St_bytecode.length_at, in init but no call goes through the pointer
+languages/smalltalk/compiler/St_bytecode.ml:92: dead: St_bytecode.is_send, nothing names it
+languages/smalltalk/compiler/St_bytecode.ml:95: dead: St_bytecode.disassemble, nothing names it
+languages/smalltalk/compiler/St_chunk.ml:83: dead: St_chunk.chunk, in init but no call goes through the pointer
+languages/smalltalk/compiler/St_chunk.ml:89: dead: St_chunk.methods_chunk, nothing names it
+languages/smalltalk/compiler/St_lexer.ml:280: dead: St_lexer.to_string, nothing names it
+languages/smalltalk/compiler/St_parse.ml:323: dead: St_parse.selector_of, nothing names it
+languages/smalltalk/graphics/St_bitblt.ml:167: dead: St_bitblt.form, nothing names it
+languages/smalltalk/highlight/Highlight_st.ml:149: dead field: binds stored in Highlight_st.run, nothing live reads it
+languages/smalltalk/highlight/Highlight_st.ml:149: dead field: refs stored in Highlight_st.run, nothing live reads it
+languages/smalltalk/highlight/Highlight_st.ml:314: dead: Highlight_st.categorize, nothing names it
+languages/smalltalk/vm/St_class.ml:106: dead: St_class.class_var_names, in init but no call goes through the pointer
+languages/smalltalk/vm/St_class.ml:119: dead: St_class.definition, nothing names it
+languages/smalltalk/vm/St_class.ml:174: dead: St_class.categories, nothing names it
+languages/smalltalk/vm/St_class.ml:175: dead: St_class.category_selectors, nothing names it
+languages/smalltalk/vm/St_class.ml:261: dead: St_class.remove, nothing names it
+languages/smalltalk/vm/St_class.ml:45: dead: St_class.metaclass, nothing names it
+languages/smalltalk/vm/St_class.ml:60: dead: St_class.category, in init but no call goes through the pointer
+languages/smalltalk/vm/St_class.ml:65: dead: St_class.comment, nothing names it
+languages/smalltalk/vm/St_debug.ml:106: dead: St_debug.run_until, in init but no call goes through the pointer
+languages/smalltalk/vm/St_debug.ml:117: dead: St_debug.over_condition, in init but no call goes through the pointer
+languages/smalltalk/vm/St_debug.ml:140: dead: St_debug.step, nothing names it
+languages/smalltalk/vm/St_debug.ml:142: dead: St_debug.step_into, nothing names it
+languages/smalltalk/vm/St_debug.ml:151: dead: St_debug.restart, nothing names it
+languages/smalltalk/vm/St_debug.ml:180: dead: St_debug.proceed, nothing names it
+languages/smalltalk/vm/St_debug.ml:182: dead: St_debug.not_understood, nothing names it
+languages/smalltalk/vm/St_debug.ml:196: dead: St_debug.template, nothing names it
+languages/smalltalk/vm/St_debug.ml:21: dead: St_debug.dead, in init but no call goes through the pointer
+languages/smalltalk/vm/St_debug.ml:23: dead: St_debug.label, in init but no call goes through the pointer
+languages/smalltalk/vm/St_debug.ml:37: dead: St_debug.highlight, in init but no call goes through the pointer
+languages/smalltalk/vm/St_debug.ml:50: dead: St_debug.frames, nothing names it
+languages/smalltalk/vm/St_debug.ml:67: dead: St_debug.variables, nothing names it
+languages/smalltalk/vm/St_debug.ml:76: dead: St_debug.fields, nothing names it
+languages/smalltalk/vm/St_interp.ml:104: dead: St_interp.set_host, nothing names it
+languages/smalltalk/vm/St_interp.ml:106: dead: St_interp.set_extra_roots, nothing names it
+languages/smalltalk/vm/St_interp.ml:112: dead: St_interp.cache_stats, nothing names it
+languages/smalltalk/vm/St_interp.ml:120: dead: St_interp.is_closure_context, in init but no call goes through the pointer
+languages/smalltalk/vm/St_interp.ml:131: dead: St_interp.context_method, in init but no call goes through the pointer
+languages/smalltalk/vm/St_interp.ml:154: dead: St_interp.home_context, nothing names it
+languages/smalltalk/vm/St_interp.ml:604: dead field: id stored in St_interp.new_process, nothing live reads it
+languages/smalltalk/vm/St_interp.ml:684: dead: St_interp.run_until, in init but no call goes through the pointer
+languages/smalltalk/vm/St_interp.ml:686: dead: St_interp.resume, in init but no call goes through the pointer
+languages/smalltalk/vm/St_memory.ml:147: dead: St_memory.set_body, nothing names it
+languages/smalltalk/vm/St_memory.ml:162: dead: St_memory.float_of, nothing names it
+languages/smalltalk/vm/St_memory.ml:172: dead: St_memory.symbols, nothing names it
+languages/tiger/Tiger_semant.ml:266: dead field: aid stored in Tiger_semant:fun at line 266, nothing live reads it
+languages/tiger/Tiger_semant.ml:318: dead field: fid stored in Tiger_semant.program, nothing live reads it
+languages/tiger/Tiger_semant.ml:318: dead field: records stored in Tiger_semant.program, nothing live reads it
+lib_graphics/Display.ml:100: dead field: format stored in Display.init, nothing live reads it
+lib_graphics/Display.ml:112: dead: Display.format, nothing names it
+lib_graphics/Display.ml:113: dead: Display.hold, nothing names it
+lib_graphics/Display.ml:121: dead field: repl stored in Display.alloc_on, nothing live reads it
+lib_graphics/Display.ml:147: dead: Display.free, nothing names it
+lib_graphics/Display.ml:150: dead: Display.clip, nothing names it
+lib_graphics/Display.ml:160: dead: Display.desktop, nothing names it
+lib_graphics/Display.ml:166: dead: Display.window, nothing names it
+lib_graphics/Display.ml:169: dead: Display.top, nothing names it
+lib_graphics/Display.ml:170: dead: Display.bottom, nothing names it
+lib_graphics/Display.ml:175: dead: Display.origin, nothing names it
+lib_graphics/Display.ml:181: dead: Display.name, nothing names it
+lib_graphics/Display.ml:243: dead: Display.file, nothing names it
+lib_graphics/Display.ml:88: dead: Display.accepted, in init but no call goes through the pointer
+lib_graphics/Draw.ml:20: dead: Draw.scale_message, in init but no call goes through the pointer
+lib_graphics/Draw.ml:23: dead: Draw.scale, nothing names it
+lib_graphics/Draw.ml:26: dead: Draw.shrink_message, in init but no call goes through the pointer
+lib_graphics/Draw.ml:29: dead: Draw.shrink, nothing names it
+lib_graphics/Draw.ml:31: dead: Draw.can_shrink, nothing names it
+lib_graphics/Draw.ml:36: dead: Draw.can_scale, nothing names it
+lib_graphics/Draw.ml:43: dead: Draw.border, nothing names it
+lib_graphics/Draw.ml:51: dead: Draw.line, nothing names it
+lib_graphics/Draw.ml:59: dead: Draw.coord, in init but no call goes through the pointer
+lib_graphics/Draw.ml:68: dead: Draw.polygon, in init but no call goes through the pointer
+lib_graphics/Draw.ml:78: dead: Draw.poly, nothing names it
+lib_graphics/Draw.ml:79: dead: Draw.fillpoly, nothing names it
+lib_graphics/Draw.ml:83: dead: Draw.ellipse_, in init but no call goes through the pointer
+lib_graphics/Draw.ml:88: dead: Draw.ellipse, nothing names it
+lib_graphics/Draw.ml:89: dead: Draw.fillellipse, nothing names it
+lib_graphics/Font.ml:14: dead: Font.ascent, nothing names it
+lib_graphics/Font.ml:21: dead field: ascent stored in Font.default, nothing live reads it
+lib_graphics/Keyboard.ml: dead global: Keyboard.down, nothing live names it
+lib_graphics/Keyboard.ml: dead global: Keyboard.end_, nothing live names it
+lib_graphics/Keyboard.ml: dead global: Keyboard.home, nothing live names it
+lib_graphics/Keyboard.ml: dead global: Keyboard.left, nothing live names it
+lib_graphics/Keyboard.ml: dead global: Keyboard.page_down, nothing live names it
+lib_graphics/Keyboard.ml: dead global: Keyboard.page_up, nothing live names it
+lib_graphics/Keyboard.ml: dead global: Keyboard.right, nothing live names it
+lib_graphics/Keyboard.ml: dead global: Keyboard.shift, nothing live names it
+lib_graphics/Keyboard.ml: dead global: Keyboard.up, nothing live names it
+lib_graphics/Mouse.ml:16: dead field: msec stored in Mouse.state_of, nothing live reads it
+lib_graphics/Rectangle.ml:47: dead: Rectangle.contains, nothing names it
+lib_networking/9p/P9_server.ml:136: dead: response, in P9_server:fun at line 130 but no call goes through the pointer
+lib_networking/9p/P9_server.ml:137: dead: P9_server:fun at line 137, nothing names it
+lib_networking/9p/P9_server.ml:25: dead: P9_server.no_write, nothing names it
+lib_networking/9p/P9_server.ml:26: dead: P9_server.no_create, nothing names it
+lib_networking/9p/P9_server.ml:27: dead: P9_server.no_remove, nothing names it
+lib_networking/9p/P9_server.ml:28: dead: P9_server.no_wstat, nothing names it
+lib_playground/random/Lehmer.ml:52: dead: Lehmer.make, nothing names it
+lib_playground/random/Lehmer.ml:54: dead: Lehmer.draw, in init but no call goes through the pointer
+lib_playground/random/Lehmer.ml:58: dead: Lehmer.int, nothing names it
+lib_playground/random/Lehmer.ml:59: dead: Lehmer.float, nothing names it
+lib_terminal/Curses.ml:102: dead: Curses.box, nothing names it
+lib_terminal/Line_discipline.ml:17: dead: Line_discipline.mode, nothing names it
+lib_terminal/Line_discipline.ml:19: dead: Line_discipline.set_echo, nothing names it
+lib_terminal/Line_discipline.ml:20: dead: Line_discipline.pending, nothing names it
+lib_terminal/Line_discipline.ml:53: dead: Line_discipline.drop_last, in init but no call goes through the pointer
+lib_terminal/Line_discipline.ml:61: dead: Line_discipline.length, in init but no call goes through the pointer
+lib_terminal/Line_discipline.ml:63: dead: Line_discipline.rubout, in init but no call goes through the pointer
+lib_terminal/Line_discipline.ml:70: dead: Line_discipline.cooked, in init but no call goes through the pointer
+lib_terminal/Talk.ml: dead global: Talk.output_buffer, nothing live names it
+lib_terminal/Talk.ml: dead global: Talk.read_key, nothing live names it
+lib_terminal/Talk.ml: dead global: Talk.step, nothing live names it
+lib_terminal/Talk.ml: dead global: Talk.steps_per_frame, nothing live names it
+lib_terminal/Talk.ml:121: dead: Talk.add, in init but no call goes through the pointer
+lib_terminal/Talk.ml:122: dead: Talk.pending, in init but no call goes through the pointer
+lib_terminal/Talk.ml:126: dead: Talk.flush, in init but no call goes through the pointer
+lib_terminal/Talk.ml:13: dead: Talk.initial_seed, in init but no call goes through the pointer
+lib_terminal/Talk.ml:140: dead: Talk.full, in init but no call goes through the pointer
+lib_terminal/Talk.ml:145: dead: Talk.advance, in init but no call goes through the pointer
+lib_terminal/Talk.ml:159: dead: Talk.exit_child, in init but no call goes through the pointer
+lib_terminal/Talk.ml:15: dead: Talk.random_int, in init but no call goes through the pointer
+lib_terminal/Talk.ml:164: dead: Talk.start, nothing names it
+lib_terminal/Talk.ml:183: dead: Talk.input, nothing names it
+lib_terminal/Talk.ml:199: dead: Talk.tick, nothing names it
+lib_terminal/Talk.ml:212: dead: Talk.screen, nothing names it
+lib_terminal/Talk.ml:213: dead: Talk.reading, nothing names it
+lib_terminal/Talk.ml:214: dead: Talk.finished, nothing names it
+lib_terminal/Talk.ml:34: dead: Talk.return, nothing names it
+lib_terminal/Talk.ml:35: dead: Talk.print, in init but no call goes through the pointer
+lib_terminal/Talk.ml:36: dead: Talk:fun at line 36, nothing names it
+lib_terminal/Talk.ml:37: dead: Talk:fun at line 37, nothing names it
+lib_terminal/Talk.ml:38: dead: Talk.random, nothing names it
+lib_terminal/Talk.ml:39: dead: Talk.spawn, nothing names it
+lib_terminal/Talk.ml:40: dead: Talk:fun at line 40, nothing names it
+lib_terminal/Talk.ml:44: dead: Talk.let*, in init but no call goes through the pointer
+lib_terminal/Talk.ml:56: dead: Talk.ask, nothing names it
+lib_terminal/Talk.ml:64: dead: Talk.run, in init but no call goes through the pointer
+lib_terminal/Vt.ml:350: dead: Vt.cursor_visible, nothing names it
+lib_terminal/Vt.ml:351: dead: Vt.bells, nothing names it
+lib_terminal/Vt.ml:353: dead: Vt.rtrim, in init but no call goes through the pointer
+lib_terminal/Vt.ml:360: dead: Vt.text, nothing names it
+linker/Link.ml:137: dead: Link.defined_names, in init but no call goes through the pointer
+linker/Link.ml:163: dead: Link.member_of, nothing names it
+linker/Link.ml:165: dead: Link.member_file, nothing names it
+linker/Link.ml:181: dead: Link.write_library, nothing names it
+machine/arm32/Arm32.ml:196: dead field: exclusive_value stored in Arm32.create, nothing live reads it
+machine/arm32/Arm32.ml:196: dead field: loaded stored in Arm32.create, nothing live reads it
+machine/arm32/Arm32.ml:196: dead field: vectors stored in Arm32.create, nothing live reads it
+machine/arm32/Arm32.ml:254: dead: Arm32.take, nothing names it
+machine/arm32/Arm32_fast.ml: dead global: Arm32_fast.on, nothing live names it
+machine/arm32/Arm32_fast.ml:11: dead: Arm32_fast.set, in init but no call goes through the pointer
+machine/arm32/Arm32_fast.ml:18: dead: Arm32_fast.set_nz, in init but no call goes through the pointer
+machine/arm32/Arm32_fast.ml:22: dead: Arm32_fast.logical, in init but no call goes through the pointer
+machine/arm32/Arm32_fast.ml:26: dead: Arm32_fast.arith, in init but no call goes through the pointer
+machine/arm32/Arm32_fast.ml:31: dead: Arm32_fast.compare, in init but no call goes through the pointer
+machine/arm32/Arm32_fast.ml:35: dead: Arm32_fast.not32, in init but no call goes through the pointer
+machine/arm32/Arm32_fast.ml:39: dead: Arm32_fast.dp, in init but no call goes through the pointer
+machine/arm32/Arm32_fast.ml:64: dead: Arm32_fast.execute, nothing names it
+machine/arm32/Mmu32.ml: dead global: Mmu32.m10, nothing live names it
+machine/arm32/Mmu32.ml: dead global: Mmu32.m12, nothing live names it
+machine/arm32/Mmu32.ml: dead global: Mmu32.m16, nothing live names it
+machine/arm32/Mmu32.ml: dead global: Mmu32.m20, nothing live names it
+machine/arm32/Mmu32.ml: dead global: Mmu32.m24, nothing live names it
+machine/arm32/Mmu32.ml: dead global: Mmu32.tlb_bits, nothing live names it
+machine/arm32/Mmu32.ml:102: dead: Mmu32.translate, nothing names it
+machine/arm32/Mmu32.ml:16: dead: Mmu32.create, nothing names it
+machine/arm32/Mmu32.ml:20: dead: Mmu32.flush, nothing names it
+machine/arm32/Mmu32.ml:22: dead: Mmu32.enabled, nothing names it
+machine/arm32/Mmu32.ml:23: dead: Mmu32.xp, in init but no call goes through the pointer
+machine/arm32/Mmu32.ml:30: dead: Mmu32.right_of, in init but no call goes through the pointer
+machine/arm32/Mmu32.ml:35: dead: Mmu32.rights_of, in init but no call goes through the pointer
+machine/arm32/Mmu32.ml:53: dead: Mmu32.walk, in init but no call goes through the pointer
+machine/arm64/Arm64.ml: dead global: Arm64.ec_brk, nothing live names it
+machine/arm64/Arm64.ml: dead global: Arm64.ec_dabort, nothing live names it
+machine/arm64/Arm64.ml: dead global: Arm64.ec_dabort_lower, nothing live names it
+machine/arm64/Arm64.ml: dead global: Arm64.ec_hvc, nothing live names it
+machine/arm64/Arm64.ml: dead global: Arm64.ec_iabort, nothing live names it
+machine/arm64/Arm64.ml: dead global: Arm64.ec_iabort_lower, nothing live names it
+machine/arm64/Arm64.ml: dead global: Arm64.ec_smc, nothing live names it
+machine/arm64/Arm64.ml: dead global: Arm64.ec_svc, nothing live names it
+machine/arm64/Arm64.ml: dead global: Arm64.ec_unknown, nothing live names it
+machine/arm64/Arm64.ml:109: dead: Arm64.sysreg, nothing names it
+machine/arm64/Arm64.ml:413: dead field: aarch32 stored in Arm64.create, nothing live reads it
+machine/arm64/Arm64.ml:590: dead: Arm64.take, nothing names it
+machine/arm64/Arm64.ml:606: dead: Arm64.syndrome, nothing names it
+machine/arm64/Mmu64.ml: dead global: Mmu64.permission, nothing live names it
+machine/arm64/Mmu64.ml: dead global: Mmu64.tlb_bits, nothing live names it
+machine/arm64/Mmu64.ml:11: dead: Mmu64.create, nothing names it
+machine/arm64/Mmu64.ml:15: dead: Mmu64.flush, nothing names it
+machine/arm64/Mmu64.ml:17: dead: Mmu64.enabled, nothing names it
+machine/arm64/Mmu64.ml:24: dead: Mmu64.bits, in init but no call goes through the pointer
+machine/arm64/Mmu64.ml:27: dead: Mmu64.output, in init but no call goes through the pointer
+machine/arm64/Mmu64.ml:30: dead: Mmu64.rights_of, in init but no call goes through the pointer
+machine/arm64/Mmu64.ml:39: dead: Mmu64.walk, in init but no call goes through the pointer
+machine/arm64/Mmu64.ml:66: dead: Mmu64.translate, nothing names it
+machine/core/Memory.ml:133: dead: Memory.direct, nothing names it
+machine/core/Memory.ml:29: dead: Memory.map_bytes, nothing names it
+machine/core/Memory.ml:35: dead: Memory.map_device, nothing names it
+machine/process/Elf.ml:24: dead field: exec stored in Elf:fun at line 24, nothing live reads it
+machine/process/Elf.ml:24: dead field: paddr stored in Elf:fun at line 24, nothing live reads it
+machine/process/Elf.ml:35: dead: Elf.symbols, nothing names it
+shell/Env.ml:41: dead: Env.vars, nothing names it
+shell/Process.ml:79: dead: Process.wait_any, nothing names it
+utilities/calc/dc/Dc.ml:116: dead: Dc.of_string, in init but no call goes through the pointer
+utilities/calc/dc/Dc.ml:627: dead: Dc.feed, nothing names it
+utilities/calc/dc/Num.ml:64: dead: Num.sub, nothing names it
+utilities/text/awk/Cell.ml: dead global: Cell._ofmt, nothing live names it
+utilities/text/awk/Cell.ml: dead global: Cell._symtab, nothing live names it
+version_control/diff/Diff.ml:265: dead: Diff.differ, in init but no call goes through the pointer
+version_control/diff/Difftool.ml:109: dead: Difftool.merge3_main, nothing names it
+version_control/diff/Difftool.ml:10: dead: Difftool.fatal, in init but no call goes through the pointer
+version_control/diff/Difftool.ml:14: dead: Difftool.stat, in init but no call goes through the pointer
+version_control/diff/Difftool.ml:22: dead: Difftool.contents, in init but no call goes through the pointer
+version_control/diff/Difftool.ml:45: dead: Difftool.diff_main, nothing names it
+version_control/repo/Refs.ml:43: dead: Refs.head_ref, nothing names it
+windows/rio/Window.ml: dead field: resized stored in init, nothing live reads it

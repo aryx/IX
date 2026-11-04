@@ -225,7 +225,7 @@ Of the 23 programs read first, those holding some were read at the source, but f
 5 of dc's of one kind, of which one was; of the 12 read since, 2 (`Host.dir_of`,
 mini-sql's prompt loop), the others not.
 
-tiny/'s host programs, the 17 OCaml builds (`tests/tiny_caps.sh`, seconds;
+tiny/'s host programs, the 17 OCaml builds (`tests/tiny_check.sh -caps`, seconds;
 `tests/caps_tiny.txt`): 45 functions at first (2026-11-04), 10 of them every
 CLI's "may not need `Cap.argv`", `Sys.argv` not in the table (now
 `requires('Sys.argv', argv)`); `TinyLibSystem`'s 17 functions that asked for
@@ -236,6 +236,27 @@ helper, the shell's `run` and `interactive` given what they use: 1 left.
 script written to a file for rc): one interface, two systems, the host's
 alone read. Not read: the SDL programs, and what runs on tiny-kernel, whose
 system is tiny's kernel.
+
+In make test (2026-11-04, the author: "at least we detect when new code
+introduce new one and prevent that"): a family of kind check, `-caps`,
+`-dead` and `-bugs` of tiny/'s host programs (`tests/tiny_check.sh`, the 17
+at once, seconds: `caps_tiny.txt` 1, `dead_tiny.txt` 75, `bugs_tiny.txt`
+55), and `-caps` of the 44 programs (`tests/ix_check.sh`: `caps_ix.txt`
+149); all six are make check's (check-tix, check-mix; 2 minutes), which
+prints the new reports whole and those gone, the recording the baseline;
+m-ix's `-dead` and `-bugs` not in make test: a minute each, two
+under make test's load (`dead_all_ix.txt` 399, `bugs_ix.txt` 213 with
+mini-9pi's kernel). Each against its recording, made by HEAD's analyzer
+and rules: a new report fails; one gone fails too, until recorded again.
+Compared without line numbers, the reports' own too. `-dead`'s is what
+every program that has the file says dead: a shared unit's function one
+program does not call is not dead in ix (a library function only programs
+outside the sweep call is, until recorded). The 44 programs read the
+developers' ix build, `_mk/7`, skipped without one (CI's fresh tree): make
+test's own build makes part of ix, and a program whose generated units are
+missing is read wrong (its `Ast` found elsewhere: two false `link`
+reports). A program not read, and a generated file not made, are left out
+of both sides. Not `-exn`: mini-ml's alone is a minute and 6 GB.
 
 A capability in a record's field is held (2026-11-03, the author: "yes a record
 field count as held, but in practice we should prefer to store capabilities via

@@ -599,14 +599,20 @@ job -after-ix "each unit compiled after those it inlines (else builds differ)" e
 [ -n "$xv6" ] && job -after-ix "mini-xv6 built by ix, booted" boot $K/kernels/xv6/kernel8.img 'init: starting sh'
 
 # ix's own code read by mini-analyze: its reports the recorded ones, read
-# and known; a new one fails (new code around a capability, say)
+# and known; a new one fails (new code around a capability, dead, a bug
+# the rules know). m-ix's -dead and -bugs: make check's (a minute each
+# here, two under make test's load); not -exn: mini-ml's alone a minute, 6 GB
 group t-ix
 family "ix's code by its analyses: no new report" check
-job "mini-analyze -caps on tiny/'s host programs: no report but the recorded one (caps_tiny.txt)" analyzers/datalog/tests/tiny_caps.sh -check
+job "mini-analyze -caps on tiny/'s host programs: no report but the recorded one (caps_tiny.txt)" analyzers/datalog/tests/tiny_check.sh -caps -check
+job "mini-analyze -dead on tiny/'s host programs: no dead code but the recorded (dead_tiny.txt)" analyzers/datalog/tests/tiny_check.sh -dead -check
+job "mini-analyze -bugs on tiny/'s host programs: no bug report but the recorded (bugs_tiny.txt)" analyzers/datalog/tests/tiny_check.sh -bugs -check
 group m-ix
-if [ -n "$runs7" ]; then
-  job -after-ix "mini-analyze -caps on m-ix's 44 programs: no report but the recorded ones (caps_ix.txt)" env MK=$K analyzers/datalog/tests/caps_ix.sh -check
-else skip "mini-analyze -caps on m-ix's 44 programs" "$no7"; fi
+# (with the developers' ix, _mk/7, whole: make test's own builds part of it,
+# and a program partly built is read wrong, its generated units missing)
+if [ -n "$runs7" ] && [ -d _mk/7/languages/ml ]; then
+  job "mini-analyze -caps on m-ix's 44 programs: no report but the recorded ones (caps_ix.txt)" analyzers/datalog/tests/ix_check.sh -caps -check
+else skip "mini-analyze -caps on m-ix's 44 programs" "no ix build in _mk/7 (make ix), or $no7"; fi
 
 # The report, a tree: a line a group (shared, t-ix, m-ix), and under it
 # a line a family, each with its bar, its jobs ended and its failures,

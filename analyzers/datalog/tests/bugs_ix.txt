@@ -1,3 +1,9 @@
+_mk/7/editors/emacs/draw/Parser.ml:53: stack: Parser.mklist calls itself, not a tail call, over a list
+_mk/7/editors/emacs/draw/Parser.ml:57: stack: Parser.mkpatlist calls itself, not a tail call, over a list
+_mk/7/editors/emacs/tty/Parser.ml:53: stack: Parser.mklist calls itself, not a tail call, over a list
+_mk/7/editors/emacs/tty/Parser.ml:57: stack: Parser.mkpatlist calls itself, not a tail call, over a list
+_mk/7/languages/ml/Parser.ml:53: stack: Parser.mklist calls itself, not a tail call, over a list
+_mk/7/languages/ml/Parser.ml:57: stack: Parser.mkpatlist calls itself, not a tail call, over a list
 database/dbm/Dbm.ml:140: int31: in Dbm.key_of, 0xffffffff: not on the Pi 1's 31 bits
 database/dbm/Dbm.ml:167: int31: in Dbm:fun at line 165, 0xffffffff: not on the Pi 1's 31 bits
 database/sql/Schema.ml:14: int31: in Schema:fun at line 10, 0xffffffff: not on the Pi 1's 31 bits
@@ -45,8 +51,8 @@ kernels/9pi/lib_graphics/lib_memlayer/Memshape.ml:38: stack: pairs calls itself,
 kernels/9pi/lib_graphics/lib_memlayer/Memshape.ml:79: unused: in pairs, inside is never read (_inside if meant)
 kernels/9pi/network/Etherusb.ml:49: int31: in Etherusb.rr, a char's code lsl 24, 32 bits: not on the Pi 1's 31 bits
 kernels/9pi/processes/Exec.ml:27: int31: in Exec.be32, a char's code lsl 24, 32 bits: not on the Pi 1's 31 bits
-kernels/9pi/syscalls/arm/Syscall.ml:80: int31: in Syscall.trace/1, a char's code lsl 24, 32 bits: not on the Pi 1's 31 bits
 kernels/9pi/syscalls/Usermem.ml:29: stack: go calls itself in a try's handler: no tail call by mini-ml
+kernels/9pi/syscalls/arm/Syscall.ml:80: int31: in Syscall.trace/1, a char's code lsl 24, 32 bits: not on the Pi 1's 31 bits
 kernels/oberon/texts/Texts.ml:113: stack: Texts.split calls itself, not a tail call, over a list
 kernels/singularity/singml/Safe.ml:118: stack: module_expr calls itself, not a tail call, over a list
 languages/c/Check.ml:454: stack: go calls itself, not a tail call, over a list
@@ -55,6 +61,7 @@ languages/c/Check.ml:457: stack: go calls itself, not a tail call, over a list
 languages/c/Declare.ml:194: stack: Declare.protos calls itself, not a tail call, over a list
 languages/c/Declare.ml:200: stack: Declare.protos calls itself, not a tail call, over a list
 languages/c/Declare.ml:293: stack: Declare.chain calls itself, not a tail call, over a list
+languages/c/Tree_helpers.ml:323: stack: Tree_helpers.map_lr calls itself, not a tail call, over a list
 languages/c/dotnet/Cil_exprs.ml:556: stack: Cil_exprs.call calls itself, not a tail call, over a list
 languages/c/dotnet/Cil_exprs.ml:559: stack: Cil_exprs.call calls itself, not a tail call, over a list
 languages/c/dotnet/Cil_exprs.ml:560: stack: Cil_exprs.call calls itself, not a tail call, over a list
@@ -82,7 +89,6 @@ languages/c/opti/Opti.ml:96: stack: Opti.imm calls itself, not a tail call, over
 languages/c/opti/Opti.ml:99: stack: Opti.imm calls itself, not a tail call, over a list
 languages/c/simple/Lower.ml:213: stack: Lower.call calls itself, not a tail call, over a list
 languages/c/simple/Lower.ml:231: stack: Lower.call calls itself, not a tail call, over a list
-languages/c/Tree_helpers.ml:323: stack: Tree_helpers.map_lr calls itself, not a tail call, over a list
 languages/datalog/Datalog_eval.ml:96: stack: next calls itself, not a tail call, over a list
 languages/dotnet/assembly/Image.ml:153: int31: in Image.read, 0x424a5342: not on the Pi 1's 31 bits
 languages/dotnet/assembly/Signature.ml:209: stack: Signature.show calls itself, not a tail call, over a list
@@ -116,6 +122,14 @@ languages/dotnet/runtime/Value.ml:189: stack: Value.typ_key calls itself, not a 
 languages/dotnet/runtime/Value.ml:190: stack: Value.typ_key calls itself, not a tail call, over a list
 languages/ml/Ast.ml:209: stack: Ast.pp_module_expr calls itself, not a tail call, over a list
 languages/ml/CLI.ml:497: stack: order calls itself, not a tail call, over a list
+languages/ml/Resolve.ml:431: stack: Resolve.subst calls itself, not a tail call, over a list
+languages/ml/Resolve.ml:583: stack: Resolve.rename calls itself, not a tail call, over a list
+languages/ml/Resolve.ml:587: stack: Resolve.rename calls itself, not a tail call, over a list
+languages/ml/Resolve.ml:588: stack: Resolve.rename calls itself, not a tail call, over a list
+languages/ml/Resolve.ml:647: stack: given calls itself, not a tail call, over a list
+languages/ml/Resolve.ml:773: stack: go calls itself, not a tail call, over a list
+languages/ml/Resolve.ml:774: stack: go calls itself, not a tail call, over a list
+languages/ml/Typing.ml:438: stack: Typing.infer calls itself, not a tail call, over a list
 languages/ml/compat/Gas.ml:21: int31: in Gas.encodable, 0xffffffff: not on the Pi 1's 31 bits
 languages/ml/compat/Gas.ml:22: int31: in Gas:fun at line 22, 0xffffffff: not on the Pi 1's 31 bits
 languages/ml/dotnet/Il_exprs.ml:598: stack: Il_exprs.apply calls itself, not a tail call, over a list
@@ -132,16 +146,8 @@ languages/ml/pp/Derive.ml:62: stack: last calls itself, not a tail call, over a 
 languages/ml/pp/Pp.ml:235: stack: go calls itself, not a tail call, over a list
 languages/ml/pp/Pp.ml:236: stack: go calls itself, not a tail call, over a list
 languages/ml/pp/Pp.ml:402: stack: module_expr calls itself, not a tail call, over a list
-languages/ml/Resolve.ml:431: stack: Resolve.subst calls itself, not a tail call, over a list
-languages/ml/Resolve.ml:583: stack: Resolve.rename calls itself, not a tail call, over a list
-languages/ml/Resolve.ml:587: stack: Resolve.rename calls itself, not a tail call, over a list
-languages/ml/Resolve.ml:588: stack: Resolve.rename calls itself, not a tail call, over a list
-languages/ml/Resolve.ml:647: stack: given calls itself, not a tail call, over a list
-languages/ml/Resolve.ml:773: stack: go calls itself, not a tail call, over a list
-languages/ml/Resolve.ml:774: stack: go calls itself, not a tail call, over a list
 languages/ml/simple/Lower.ml:832: stack: Lower.match_cases calls itself, not a tail call, over a list
 languages/ml/simple/Lower.ml:992: stack: Lower.to_slot calls itself, not a tail call, over a list
-languages/ml/Typing.ml:438: stack: Typing.infer calls itself, not a tail call, over a list
 languages/pascal/Pascal_compile.ml:29: stack: Pascal_compile.size calls itself, not a tail call, over a list
 languages/pascal/Pascal_compile.ml:44: stack: Pascal_compile.type_name calls itself, not a tail call, over a list
 languages/pascal/Pascal_compile.ml:780: stack: Pascal_compile.block calls itself, not a tail call, over a list
@@ -165,26 +171,22 @@ languages/smalltalk/compiler/St_lexer.ml:55: stack: go calls itself, not a tail 
 languages/smalltalk/highlight/Highlight_st.ml:180: unused: in Highlight_st:fun at line 180, name is never read (_name if meant)
 languages/smalltalk/highlight/Highlight_st.ml:248: unused: in method_, selector is never read (_selector if meant)
 languages/smalltalk/highlight/Highlight_st.ml:285: stack: go calls itself, not a tail call, over a list
-languages/tiger/dotnet/Tiger_emit.ml:354: stack: Tiger_emit.load calls itself, not a tail call, over a list
-languages/tiger/dotnet/Tiger_emit.ml:355: stack: Tiger_emit.load calls itself, not a tail call, over a list
 languages/tiger/Tiger_semant.ml:216: stack: Tiger_semant.lvalue calls itself, not a tail call, over a list
 languages/tiger/Tiger_semant.ml:224: stack: Tiger_semant.lvalue calls itself, not a tail call, over a list
 languages/tiger/Tiger_semant.ml:226: stack: Tiger_semant.lvalue calls itself, not a tail call, over a list
+languages/tiger/dotnet/Tiger_emit.ml:354: stack: Tiger_emit.load calls itself, not a tail call, over a list
+languages/tiger/dotnet/Tiger_emit.ml:355: stack: Tiger_emit.load calls itself, not a tail call, over a list
 lib_executable/Symbols.ml:12: int31: in Symbols.be32, a char's code lsl 24, 32 bits: not on the Pi 1's 31 bits
 linker/Arm.ml:789: stack: bcases calls itself, not a tail call, over a list
 linker/CLI.ml:84: int31: in CLI.link, 0x1 lsl 32, 33 bits: not on the Pi 1's 31 bits
 linker/Exe.ml:210: int31: in Exe.macho, 0x80000022; 0x80000028; x lsr 32 and 1 more: not on the Pi 1's 31 bits
-machine/CLI.ml:123: stack: run calls itself in a try's handler: no tail call by mini-ml
-machine/CLI.ml:141: stack: run calls itself in a try's handler: no tail call by mini-ml
-machine/CLI.ml:50: order: in CLI:fun at line 49, a table's order reaches the output at machine/CLI.ml:50
-machine/CLI.ml:96: stack: go calls itself in a try's handler: no tail call by mini-ml
-machine/CLI.ml:99: stack: run calls itself in a try's handler: no tail call by mini-ml
-machine/process/Host.ml:58: leak: in Host:fun at line 51, taken here, given back at machine/process/Host.ml:60, not when machine/process/Host.ml:60 raises Plan9.Error
-machine/process/Linux.ml:143: race: Linux.raise_signal, run by a signal's handler (machine/process/Host.ml:117), writes the ref of machine/process/Linux.ml:141, as Linux.deliver, Linux.deliver64 and 2 more does
-_mk/7/editors/emacs/draw/Parser.ml:53: stack: Parser.mklist calls itself, not a tail call, over a list
-_mk/7/editors/emacs/draw/Parser.ml:57: stack: Parser.mkpatlist calls itself, not a tail call, over a list
-_mk/7/languages/ml/Parser.ml:53: stack: Parser.mklist calls itself, not a tail call, over a list
-_mk/7/languages/ml/Parser.ml:57: stack: Parser.mkpatlist calls itself, not a tail call, over a list
+machine/CLI.ml:101: stack: run calls itself in a try's handler: no tail call by mini-ml
+machine/CLI.ml:125: stack: run calls itself in a try's handler: no tail call by mini-ml
+machine/CLI.ml:143: stack: run calls itself in a try's handler: no tail call by mini-ml
+machine/CLI.ml:52: order: in CLI:fun at line 51, a table's order reaches the output at machine/CLI.ml:52
+machine/CLI.ml:98: stack: go calls itself in a try's handler: no tail call by mini-ml
+machine/process/Host.ml:60: leak: in Host:fun at line 53, taken here, given back at machine/process/Host.ml:62, not when machine/process/Host.ml:62 raises Plan9.Error
+machine/process/Linux.ml:143: race: Linux.raise_signal, run by a signal's handler (machine/process/Host.ml:119), writes the ref of machine/process/Linux.ml:141, as Linux.deliver, Linux.deliver64 and 2 more does
 shell/CLI.ml:156: swallowed: in finish, Sys_error or Unix.Unix_error silenced, a constant answered
 shell/Glob.ml:83: stack: literal calls itself, not a tail call, over a list
 typesetting/man/Main.ml:82: stack: para calls itself, not a tail call, over a list
@@ -200,11 +202,11 @@ version_control/commands/Save.ml:72: stack: treeify calls itself, not a tail cal
 version_control/diff/Diff.ml:67: stack: take calls itself, not a tail call, over a list
 version_control/objects/Delta.ml:143: int31: in go, 0xffffffff: not on the Pi 1's 31 bits
 version_control/objects/Delta.ml:90: int31: in Delta's toplevel, 0x53d0fee0; 0x67ed26b7; 0xcd406d90 and 188 more: not on the Pi 1's 31 bits
-version_control/objects/Packer.ml:7: int31: in Packer.murmurhash2, 0x5bd1e995; 0xffffffff; 0xae88fef5: not on the Pi 1's 31 bits
 version_control/objects/Pack.ml:215: int31: in Pack:fun at line 214, 0x1 lsl 31, 32 bits: not on the Pi 1's 31 bits
 version_control/objects/Pack.ml:43: int31: in Pack.offset, 0x80000000; 0x7fffffff: not on the Pi 1's 31 bits
+version_control/objects/Packer.ml:7: int31: in Packer.murmurhash2, 0x5bd1e995; 0xffffffff; 0xae88fef5: not on the Pi 1's 31 bits
 version_control/repo/Query.ml:20: int31: in Query.probe, 0xffffffff: not on the Pi 1's 31 bits
-version_control/wire/Proto.ml:208: stack: dial calls itself in a try's handler: no tail call by mini-ml
+version_control/wire/Proto.ml:210: stack: dial calls itself in a try's handler: no tail call by mini-ml
 windows/rio/Processes_winshell.ml:13: swallowed: in Processes_winshell.mount_files, Sys_error silenced, a constant answered
 windows/rio/Processes_winshell.ml:26: swallowed: in Processes_winshell.start, Unix.Unix_error silenced, a constant answered
 windows/rio/Processes_winshell.ml:46: swallowed: in Processes_winshell.note, Sys_error silenced, a constant answered

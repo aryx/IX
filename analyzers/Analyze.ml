@@ -46,10 +46,14 @@ program's functions that its toplevel never reaches (calls.dl):
   Css.ml:13: stack: Css.components calls itself, not a tail call, over a list
   Process.ml:46: swallowed: in fork, Sys_error silenced, a constant answered
   Sha1.ml:6: int31: in Sha1's toplevel, 0xffffffff: not on the Pi 1's 31 bits
-  Unbox.ml:129: order: in Unbox.func, a table's order reaches the output at Asm.ml:214
+  Unbox.ml:129: order: in Unbox.func, a table's order reaches the output at
+  Asm.ml:214
+  Poly1305.ml: init: Poly1305's start reads Bignum.modulus (in Poly1305's
+  toplevel), Bignum starting after it (-start: the units' order, mini-ml's)
   given C files and ML ones (the runtime's, lib_core's): each external's
   [@@raise E] against what its C raises (bugs/raises.dl)
 -root f: f is also entered from where the facts do not go (assembly)
+-start "units": their order of start, mini-ml -start's, for -bugs's init
 -context file: of points_to/, C's (call1_heap1), -exn's (call1_rec) and
   -bugs's (insensitive); the sharper, the longer
 -library: every function may be called from outside, not main alone: a runtime
@@ -125,11 +129,45 @@ let dirs_from (caps : < Cap.readdir; .. >) (lib : string) (file : string) :
             String.concat "/" (List.filteri (fun j _ -> j <= k) ds))
           ds
 
+(* bugs/init.dl's: unit_start; starts_before, the units' starts in
+ * -start's order, or (none given) the library's before the files', no
+ * order known among either; unit_file, Ml_front.homes *)
+let start_facts (fact : string -> C.Facts.arg list -> unit) (start : string)
+    (ml : string list) : unit =
+  let read (u : string) : bool =
+    match Hashtbl.find_opt Ml_front.files u with Some f -> f <> "" | None -> false in
+  let sym (s : string) : C.Facts.arg = C.Facts.Sym s in
+  let init (u : string) : C.Facts.arg = sym (u ^ ":init") in
+  Hashtbl.iter
+    (fun (u : string) _ -> if read u then fact "unit_start" [ sym u; init u ])
+    Ml_front.files;
+  let before (u : string) (v : string) : unit =
+    fact "starts_before" [ init u; init v ] in
+  let rec in_order (l : string list) : unit =
+    match l with
+    | [] -> ()
+    | u :: more -> List.iter (before u) more; in_order more in
+  if start <> "" then
+    in_order (List.filter read (String.split_on_char ' ' (String.trim start)))
+  else begin
+    let unit_of (f : string) : string =
+      String.capitalize_ascii (Filename.remove_extension (Filename.basename f)) in
+    let mine = List.map unit_of ml in
+    Hashtbl.iter
+      (fun (u : string) _ ->
+        if read u && not (List.mem u mine) then List.iter (before u) mine)
+      Ml_front.files
+  end;
+  Hashtbl.iter
+    (fun (u : string) (fs : string list) ->
+      List.iter (fun (f : string) -> fact "unit_file" [ sym u; sym f ]) fs)
+    Ml_front.homes
+
 let main (caps : < caps; .. >) (argv : string array) : int =
   let rules = ref "analyzers/datalog" and lib = ref "lib_core" and only = ref false and incs = ref [] and defs = ref [] and files = ref [] in
   let dead = ref false and ambient = ref false and roots = ref [] and context = ref "" and library = ref false in
   let fingerprint = ref false and exns = ref false and flow = ref false and dflow = ref false in
-  let bugs = ref false in
+  let bugs = ref false and start = ref "" in
   let options =
     Logging.flags
     @ [ ("-r", Arg.Set_string rules, " the directory of points_to/ and bugs/");
@@ -142,6 +180,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         ("-caps", Arg.Set ambient, " whether ML's own functions hold the capabilities they need");
         ("-exn", Arg.Set exns, " the exceptions ML's toplevels may let escape");
         ("-bugs", Arg.Set bugs, " the bugs an ML program may have (plan_bug_analyses.md)");
+        ("-start", Arg.Set_string start,
+         " ML: the units in the order they start, as mini-ml -start's (-bugs)");
         ("-root", Arg.String (fun f -> roots := f :: !roots), " a function entered from where the facts do not go");
         ("-context", Arg.Set_string context, " the context file of points_to/: C's (call1_heap1), -exn's (call1_rec)");
         ("-library", Arg.Set library, " every function may be called from outside: a runtime, a library");
@@ -205,7 +245,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
              else if !bugs && c = [] then
                [ "points_to/instructions.dl"; "points_to/contexts.dl"; "points_to/" ^ context ^ ".dl"; "exceptions.dl";
                  "bugs/physeq.dl"; "bugs/stack.dl"; "bugs/swallowed.dl";
-                 "bugs/intwidth.dl"; "bugs/order.dl" ]
+                 "bugs/intwidth.dl"; "bugs/order.dl"; "bugs/init.dl" ]
              else if !exns then
                [ "points_to/instructions.dl"; "points_to/andersen.dl"; "points_to/contexts.dl";
                  "points_to/" ^ context ^ ".dl"; "exceptions.dl" ]
@@ -227,6 +267,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
           c;
         if ml <> [] then
           List.iter (fun m -> Console.eprint caps (m ^ "\n"); incr failed) (Ml_front.program caps (incs @ Ml_front.library caps !lib) (List.map path ml));
+        if !bugs then start_facts (given p) !start ml;
         if !bugs then
           Hashtbl.iter
             (fun (u : string) (f : string) ->

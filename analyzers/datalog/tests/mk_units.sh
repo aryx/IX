@@ -65,6 +65,16 @@ missing_units() { # mkfile
   done
 }
 
+# the units in the order they start, as mkprog's mini-ml -start: the
+# stdlib's, COMMONS, each library's UNITS (LIBDIRS's order), LIBUNITS, the
+# program's (init.dl's -start)
+start_of() { # mkfile
+  local mk=$1 top=$(dirname $1)/$(var $1 TOP) d
+  echo $(var mkfiles/mkconfig STD) $(var mkfiles/mkconfig COMMONS) \
+    $(for d in $(var $mk LIBDIRS); do var $top/$d/mkfile UNITS; done) \
+    $(var $mk LIBUNITS) $(units_of $mk)
+}
+
 # the -I's (as -I,dir, words) and the files, of a mkfile, on one line;
 # units not found are missing="..." to the caller
 program_args() { # mkfile

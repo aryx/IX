@@ -11,6 +11,7 @@ analyze – what C and ML programs may do, by facts and Datalog rules
 [ **-I** *dir* ] ...
 [ **-D** *name*`=`*value* ] ...
 [ **-root** *f* ] ...
+[ **-start** *units* ]
 [ **-context** *file* ]
 [ **-library** ]
 [ **-alone** ]
@@ -75,7 +76,10 @@ program's library, lib_core's units it names, is read with it.
      of a list made in that order, or `Marshal` given one
      (`bugs/order.dl`; `List.sort` makes a list in no table's order);
      `sharing`, a `Marshal` without `No_sharing`, its bytes depending
-     on what the compiler shared. C files: the
+     on what the compiler shared; `init`, a unit's start reading a
+     global of a unit that starts after it, in `-start`'s order;
+     `link`, two files of one unit's name, each named by units of its
+     directory (`bugs/init.dl`). C files: the
      report without an option, its `bug?` lines `bugs/pointers.dl`'s.
      C files and ML ones (mini-ml's runtime and lib_core: what
      `analyzers/datalog/tests/raises.sh` gives): each external's
@@ -106,6 +110,12 @@ program's library, lib_core's units it names, is read with it.
 **-root** *f*
 :    *F* is entered from where the facts do not go: assembly, a
      kernel's trap.
+
+**-start** *"units"*
+:    The units in the order they start, as **mini-ml -start** is given
+     them (mkprog's: the stdlib's, the libraries', the program's), for
+     **-bugs**' `init`. Without it, only the library's units start
+     before the files'.
 
 **-context** *file*
 :    The context file of `points_to/`: `call1_heap1` for C,

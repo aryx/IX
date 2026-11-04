@@ -1,2 +1,2 @@
 bug? analyzers/tests/bugs/4436f60d/Before.ml:14: crash: in Before.guard, Before.Error caught by all, the handler raising Failure
-1 bugs? (physeq 0, stack 0, swallowed 0, crash 1, int31 0, order 0, sharing 0)
+1 bugs? (crash 1)

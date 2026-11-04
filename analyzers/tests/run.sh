@@ -17,8 +17,10 @@ failures=0
 for d in analyzers/tests/c/*/ analyzers/tests/ml/*/ analyzers/tests/dead/*/ analyzers/tests/caps/*/ analyzers/tests/exn/*/ analyzers/tests/bugs/*/ analyzers/tests/raises/*/; do
   d=${d%/}; n=$(basename $d)
   case $d in */dead/*) n=dead_$n; flag=-dead;; */caps/*) n=caps_$n; flag=-caps;; */exn/*) n=exn_$n; flag=-exn;; */bugs/*) n=bugs_$n; flag=-bugs;; */raises/*) n=raises_$n; flag=-bugs;; *) flag=;; esac
-  # (a .mli is found beside its .ml)
-  $ANALYZE $flag $(ls $d/*.c $d/*.ml 2> /dev/null) > $W/$n.out 2>&1
+  # (a .mli is found beside its .ml; args, the options a test needs: its
+  # units' -start order, an -I)
+  args=$([ -f $d/args ] && cat $d/args)
+  eval "$ANALYZE $flag $args $(ls $d/*.c $d/*.ml 2> /dev/null | tr '\n' ' ')" > $W/$n.out 2>&1
   if [ "${1:-}" = -record ]; then cp $W/$n.out $d/expected.out; echo "recorded $d/expected.out"
   elif cmp -s $W/$n.out $d/expected.out; then echo "ok mini-analyze: $n"
   else echo "FAIL mini-analyze: $n"; diff $d/expected.out $W/$n.out | head -10; failures=$((failures + 1)); fi

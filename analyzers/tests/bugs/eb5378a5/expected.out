@@ -1,2 +1,2 @@
 bug? analyzers/tests/bugs/eb5378a5/Before.ml:6: physeq: in Before.loop, != of a Some made there: always true
-1 bugs? (physeq 1, stack 0, swallowed 0, crash 0, int31 0, order 0, sharing 0)
+1 bugs? (physeq 1)

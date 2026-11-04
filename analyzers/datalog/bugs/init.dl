@@ -1,0 +1,55 @@
+% A unit's start reading what another has not made yet, and two units of
+% one name (docs/plans/plan_bug_analyses.md, A10): mini-analyze -bugs,
+% over the call graph of points_to/ (target) and the facts of
+% Closure_facts and mini-analyze (FACTS.md):
+%   global_def(G, I)       the global G is made by the unit start I
+%                          (U:init)
+%   var_in(G, F)           F names G: reads it, calls it
+%   starts_before(I, J)    the unit start I runs before J (mini-analyze
+%                          -start's order, as mini-ml -start's; else
+%                          only the library's units before the files')
+%   unit_start(U, I)       I is the unit U's start
+%   unit_file(U, F)        a file of the unit U's name in a directory
+%                          whose units name U
+% and says:
+%   early(I, G, F, J)      I's start, in F, reads G, which the start J
+%                          makes, J running after I: G not made yet
+%   twice(U, F1, F2)       two files of U's name, one program: which one
+%                          is linked is the build's choice
+%
+%     let field = Bignum.of_int (1 lsl Bignum.base_bits)   (70b6b2bf^,
+%                                                         Poly1305.ml)
+%
+% Poly1305 linked before Bignum: base_bits was 0 when Poly1305's toplevel
+% read it, and the program did not start (a loop that never ended). And
+% mini-doom's Collide beside lib_physics's, both libraries unwrapped:
+% dune linked one silently, the walks a segmentation fault (6264d271).
+%
+% design:
+% OCaml's linker refuses the first (a unit given before those it names:
+% "Reference to undefined global"), and dune the second only in one
+% library; ix's mini-ld runs the starts in -start's order, which the
+% mkfiles write (mkprog: STD, COMMONS, the libraries' UNITS, SRC), and
+% checks neither. What a start runs is its code and the functions it
+% calls, through the call graph; a function made there and called later
+% is not (its body another function). A start with no order against
+% another (two of the files, without -start) is not compared.
+%
+% others:
+% C++'s "static initialization order fiasco" is the same bug across
+% translation units (its cure a function's local static, made at its
+% first use); Java runs a class's initializer at its first use (JLS
+% 12.4), so the order is the uses', not the link's; OCaml's -linkall and
+% its check of the order at link time are what mini-ld has not.
+
+runs_at(I, I) :- init(I).
+runs_at(G, I) :- runs_at(F, I), in_function(C, F), target(C, G).
+
+% (a function of a unit that starts later runs at I's start only as a
+% value it gave, registered by its own start, later: what the call graph
+% does not order, Oberon's tasks; one I's code calls is named there)
+late_code(F, I) :- alloc_in(F, U), unit_start(U, J), starts_before(I, J).
+early(I, G, F, J) :-
+  runs_at(F, I), \+ late_code(F, I), var_in(G, F), global_def(G, J), starts_before(I, J).
+
+twice(U, F1, F2) :- unit_file(U, F1), unit_file(U, F2), F1 \= F2.

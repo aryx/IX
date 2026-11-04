@@ -6,6 +6,9 @@
 let files : (string, string) Hashtbl.t = Hashtbl.create 64
 let own : (string, unit) Hashtbl.t = Hashtbl.create 16
 
+(* (a directory, a unit its units name: homes's) *)
+let wanted : (string * string, unit) Hashtbl.t = Hashtbl.create 64
+
 let library (caps : < Cap.open_in; .. >) (d : string) : Fpath.t list =
   let text = match FS.read_opt caps (Fpath.v (Filename.concat d "units.txt")) with Some t -> t | None -> "" in
   let dirs = List.filter_map (fun u -> if u = "" || u.[0] = '#' then None else Some (Filename.dirname u)) (String.split_on_char '\n' text) in
@@ -71,12 +74,15 @@ let unit_ (caps : < Cap.open_in; .. >) (dirs : Fpath.t list) (file : Fpath.t) (t
       try
         let items = Resolve.implementation ~implicit:true (loader caps (Fpath.parent file :: dirs)) name items in
         let named = Resolve.units_named () in
+        let dir = FS.cleanname (Filename.dirname f) in
+        List.iter (fun (u : string) -> Hashtbl.replace wanted (dir, u) ()) named;
         ignore (Typing.unit_ name items);
         ignore (Closure_facts.unit_ name items);
         Ok named
       with Resolve.Error (l, m) | Typing.Error (l, m) -> Error (Printf.sprintf "%s:%d: %s" f l m))
 
 let unread : string list ref = ref []
+let homes : (string, string list) Hashtbl.t = Hashtbl.create 64
 let alone : bool ref = ref false
 
 let program (caps : < Cap.open_in; .. >) (dirs : Fpath.t list) (paths : Fpath.t list) : string list =
@@ -107,4 +113,28 @@ let program (caps : < Cap.open_in; .. >) (dirs : Fpath.t list) (paths : Fpath.t 
       | None -> ()
     end
   done;
+  (* (a file of the name in a directory whose units name it: the unit
+   * those units link; one in an -I's that only gives interfaces, or
+   * whose units do not name it, is not linked) *)
+  Hashtbl.iter
+    (fun (u : string) (f : string) ->
+      if f <> "" then begin
+        let names =
+          List.sort_uniq compare [ String.uncapitalize_ascii u ^ ".ml"; u ^ ".ml" ] in
+        let found =
+          List.concat_map
+            (fun (d : Fpath.t) ->
+              List.filter_map
+                (fun (n : string) ->
+                  let p = Fpath.(d / n) in
+                  Option.map (fun _ -> Fpath.to_string p) (FS.read_opt caps p))
+                names)
+            dirs in
+        (* (one file by two names, lib_crypto/../lib_crypto: once) *)
+        let found = List.map FS.cleanname found in
+        Hashtbl.replace homes u
+          (List.sort_uniq compare
+             (List.filter (fun (f : string) -> Hashtbl.mem wanted (Filename.dirname f, u)) found))
+      end)
+    files;
   List.rev !errors

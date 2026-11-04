@@ -458,13 +458,17 @@ with: `own_live_out(V, P)`, and for ML `own_live_in(V, B)`, `own_idom(D, B)`.
 | `bugs/swallowed.dl` | `silent`, `silent_all`, `catches`, `primitive`, `curried`, over `exceptions.dl`'s `arrives` |
 | `bugs/intwidth.dl` | `wide_int`, `wide_site`, `unit_dir`, `in_function`, `curried`, over `target`, `entry`, `callback` |
 | `bugs/order.dl` | `walked`, `walk_call`, `model_new`, `shares`, `htype`, `global_var`, `own_unit`, over `pts`, `fpts` |
+| `bugs/init.dl` | `init`, `global_def`, `var_in`, `alloc_in`, `unit_start`, `starts_before`, `unit_file`, over `target` |
 | `liveness.dl` | C's `-flow` |
 | `liveness_ssa.dl`, `dominators.dl` | ML's `-flow` |
 
 Not said by a compiler: `heap(L)`, `local(L, F)`, `literal(L)` (mini-analyze, of C's
 names) and `own_unit(U)`, `own_init(I)` (mini-analyze -caps and -bugs: the
 program's units, not the library's), `unit_dir(U, D)` (mini-analyze -bugs: each directory of a unit's
-file from the top of the tree, lib_core's parent: `kernels`, `kernels/lib_machine`).
+file from the top of the tree, lib_core's parent: `kernels`, `kernels/lib_machine`),
+`unit_start(U, I)`, `starts_before(I, J)` (the units' starts in `-start`'s order, else
+the library's before the files'), `unit_file(U, F)` (each file of a unit's name in a
+directory whose units name it).
 
 ## What the rules then say
 

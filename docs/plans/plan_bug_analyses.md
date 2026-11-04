@@ -21,15 +21,17 @@ before the fix (`git show FIX^:path`) and stay quiet on the fixed code.
 Then it runs over ix through the sweep, as `-dead`, `-caps` and `-exn` do.
 
 **Status: A6's first half, A1, A3 and A2 done (2026-11-03), A4's first
-step and A5 (2026-11-04), the rest planned.**
+step, A5 and A10 (2026-11-04), the rest planned.**
 `mini-analyze -bugs` runs `bugs/physeq.dl` (`==` or `!=` with a side
 made in the comparison), `bugs/stack.dl` (a loop through a `try`, a
 frame a list's element), `bugs/swallowed.dl` (an error of the
 system silenced), `bugs/intwidth.dl` (an int past the Pi 1's 31
-bits) and `bugs/order.dl` (a table's order given to an output). Each
+bits), `bugs/order.dl` (a table's order given to an output) and
+`bugs/init.dl` (a start reading a later unit's global). Each
 reports its bugs on the code before the fix and not after
 (`analyzers/tests/bugs/`: eb5378a5, 021c562b, f46346db, c5086383,
-4f00134c, 4436f60d, e92ae1ec, d22c56e4, 410d04a2). On today's ix,
+4f00134c, 4436f60d, e92ae1ec, d22c56e4, 410d04a2, 70b6b2bf,
+6264d271). On today's ix,
 `physeq` finds nothing; `stack` gives 145 reports on the 44 programs
 and 9 on the kernel, `swallowed` 12 on the programs, `int31` 29,
 `order` 2 (`analyzers/datalog/tests/bugs_ix.txt`), read in A1, A3, A4
@@ -528,21 +530,46 @@ shape.
 
 **Cost:** about 40 lines of facts and 30 of rules. Later than A1 to A7.
 
-### A10. Toplevel initialization and link order (`init.dl`)
+### A10. Toplevel initialization and link order (`bugs/init.dl`)
 
-**Re-finds:** Poly1305's toplevel reading `Bignum.base_bits` before
-`Bignum` was initialized (the program looped); two units named `Collide`
-linked into one program (a segmentation fault); tiny-ml exporting the
-first of two toplevel definitions of the same name.
+**Done** (2026-11-04), as `init` and `link` in `-bugs`. Re-found:
+- **70b6b2bf's Poly1305**, its toplevel reading Bignum before Bignum
+  started: `analyzers/tests/bugs/70b6b2bf/`. Also on the real files:
+  Poly1305.ml and Bignum.ml as of 70b6b2bf, with `-start "Poly1305
+  Bignum"`, give "Poly1305's start reads Bignum.modulus and 4 more";
+  with the fixed order, nothing.
+- **6264d271's two `Collide`**, mini-doom's beside lib_physics's:
+  `analyzers/tests/bugs/6264d271/`.
+- Not done: tiny-ml exporting the first of two toplevel definitions of
+  one name, a check of tiny-ml's own rule, not the link's.
 
-**Facts:** `global_def(G, 'M:init')` exists. Reads by a toplevel's code
-come from `var_in`. The link order, `link(Prog, Unit, N)`, comes from the
-mkfiles or the linker's command.
+**The facts** (mini-analyze, 65 lines; none from Closure_facts):
+- `starts_before(I, J)`: the order of the units' starts, by a new
+  option, `-start "units"`, the list mini-ml -start is given.
+  `mk_units.sh`'s `start_of` makes it from a mkfile as mkprog does:
+  STD, COMMONS, each `LIBDIRS` library's `UNITS`, `LIBUNITS`, `SRC`.
+  The sweep passes it. Without it, only "the library's units before the
+  files'" is known.
+- `unit_start(U, I)`: a unit's start.
+- `unit_file(U, F)`: each file of a unit's name in a directory whose
+  units name it. A file of the name in an `-I` that only gives
+  interfaces, or whose units do not name it, is not linked: the first
+  sweep's 24 false reports (`Main`, `CLI` beside the programs they read
+  from).
 
-**Rule:** M's init reaches a read of a global defined by N's init, and N
-comes after M. Two units of one name in one `link`.
+**The rules** (`bugs/init.dl`, 6 lines):
+- `early(I, G, F, J)`: what a start runs (its code and what it calls,
+  through `target`) names a global that a later start makes.
+- A function of a unit that starts later is not counted. It could run
+  there only as a value its own start registered, later: the
+  flow-insensitive call graph does not order that (Oberon's tasks, the
+  first sweep's 40 false reports). A call of it from the earlier code
+  is reported where it is named.
+- `twice(U, F1, F2)`: two such files.
 
-**Cost:** about 15 lines, plus reading the link lines.
+**On ix** (the sweep with `-start`: no time added; the kernel with its
+`KML` as the order): nothing. The order bug was fixed by 70b6b2bf, and
+no two linked units share a name.
 
 ### A11. Layout and evaluation order (a lint over the tree)
 
@@ -599,7 +626,7 @@ reproduction.
 | 5 | A2 roots and primitives | `root_of`, primitive `raise_of` | 25 | ~5 | A8 uses its roots |
 | 6 | A4 31 bits, step 1 | `wide_int`, `wide_site`, `unit_dir` | 95 | 3 | done |
 | 7 | A5 output order | `walked`, `walk_call`, `model_new`, `shares` | 80 | 3 | done |
-| 8 | A10 init and link order | `link` | 15 | ~3 | |
+| 8 | A10 init and link order | `starts_before`, `unit_start`, `unit_file` | 70 | 2 | done |
 | 9 | A8 races | `while` | 25 | ~3 | |
 | 10 | A9 pairs on every path | `call_at`, exception edges | 70 | ~5 | flow facts |
 | 11 | A4 step 2, intervals | `range` (ML) | 200 | ~5 | after numbers in Datalog |

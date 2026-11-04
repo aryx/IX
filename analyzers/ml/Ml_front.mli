@@ -25,3 +25,7 @@ val files : (string, string) Hashtbl.t
 
 (* the program's own units, not the library's *)
 val own : (string, unit) Hashtbl.t
+
+(* each unit read, every file of its name in a directory whose units
+ * name it (bugs/init.dl's: two, one of them linked silently) *)
+val homes : (string, string list) Hashtbl.t

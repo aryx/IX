@@ -29,7 +29,9 @@ one() { # a mkfile
   if [ -n "$missing" ]; then printf '%-44s    - NOT READ: no file for %s\n' $dir "$missing"; return; fi
   echo $files > $out/$name.files
   local t0=$(date +%s)
-  (ulimit -v 12000000; timeout $limit $ANALYZE ${FLAG:--dead} -L lib_core $flags $files) > $out/$name.out 2> $out/$name.err
+  # (-start: the units' order, mkprog's, for -bugs's init.dl)
+  (ulimit -v 12000000; timeout $limit $ANALYZE ${FLAG:--dead} -L lib_core \
+     -start "$(start_of $mk)" $flags $files) > $out/$name.out 2> $out/$name.err
   local st=$? t1=$(date +%s)
   if [ $st = 0 ]; then
     printf '%-44s %4ds %s\n' $dir $((t1 - t0)) "$(tail -1 $out/$name.out | sed -E 's/, 0 only through a pointer//' | cut -c1-90)"

@@ -10,6 +10,10 @@
  *   bug? Sha1.ml:6: int31: in Sha1's toplevel, 0xffffffff: not on the Pi 1's 31 bits
  *   bug? Unbox.ml:129: order: in Unbox.func, a table's order reaches the output at Asm.ml:214
  *   bug? Link.ml:181: sharing: in Link.write_library, Marshal without No_sharing: its bytes the compiler's
+ *   bug? Poly1305.ml: init: Poly1305's start reads Bignum.modulus (in
+ *        Poly1305's toplevel), Bignum starting after it
+ *   bug? Collide.ml: link: two units Collide, Collide.ml and
+ *        physics/Collide.ml: which one is linked the build's
  *
  * physeq (analyzers/datalog/bugs/physeq.dl): == or != with a side made in
  * the comparison itself. stack (bugs/stack.dl): a recursion the stack may
@@ -23,7 +27,10 @@
  * unit meant for it too, a line a function (Sha1's mask, e92ae1ec).
  * order (bugs/order.dl): a walk of a Hashtbl whose order reaches an
  * output, a line a walk with the outputs (d22c56e4's Unbox); sharing: a
- * Marshal without No_sharing (ca664887's Asm.save). Only
+ * Marshal without No_sharing (ca664887's Asm.save). init
+ * (bugs/init.dl): a unit's start reading a global of a unit that starts
+ * after it (70b6b2bf's Poly1305); link: two files of one unit's name,
+ * each named by units of its directory (6264d271's Collide). Only
  * the program's own units, and code that is reached. *)
 
 (* the report, on the facts and the rules' answers *)

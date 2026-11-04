@@ -1,0 +1,2 @@
+bug? analyzers/tests/bugs/70b6b2bf/Before.ml: init: Before's start reads Late.base_bits and 1 more (in Before's toplevel), Late starting after it
+1 bugs? (init 1)

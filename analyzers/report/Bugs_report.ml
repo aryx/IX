@@ -162,18 +162,56 @@ let bugs_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
             (Printf.sprintf "%s: sharing: in %s, Marshal without No_sharing: its bytes the compiler's"
                (site t.(0)) (fun_of (unit_of t.(0)) t.(1))))
       (tuples "shared" 2) in
+  (* a start reading what a later one makes (init.dl): a line a pair of
+   * units, the first global; two files of one unit's name *)
+  let reads = Hashtbl.create 17 in
+  List.iter
+    (fun (t : string array) ->
+      let i = t.(0) and j = t.(3) in
+      if own i then begin
+        let l = match Hashtbl.find_opt reads (i, j) with Some l -> l | None -> [] in
+        Hashtbl.replace reads (i, j) ((t.(1), t.(2)) :: l)
+      end)
+    (tuples "early" 4);
+  let init =
+    Hashtbl.fold
+      (fun ((i, j) : string * string) (l : (string * string) list) acc ->
+        let u = unit_of i and v = unit_of j in
+        let g, f = List.hd (List.sort compare l) in
+        let n = List.length (List.sort_uniq compare (List.map fst l)) in
+        let more = if n > 1 then Printf.sprintf " and %d more" (n - 1) else "" in
+        let file =
+          match Hashtbl.find_opt Ml_front.files u with Some f -> f | None -> u ^ ".ml" in
+        Printf.sprintf "%s: init: %s's start reads %s%s (in %s), %s starting after it"
+          file u g more (fun_of u f) v
+        :: acc)
+      reads [] in
+  let link =
+    List.filter_map
+      (fun (t : string array) ->
+        if t.(1) < t.(2) then
+          Some
+            (Printf.sprintf "%s: link: two units %s, %s and %s: which one is linked the build's"
+               t.(1) t.(0) t.(1) t.(2))
+        else None)
+      (tuples "twice" 3) in
   let order = List.sort_uniq compare order in
   let sharing = List.sort_uniq compare sharing in
   let all =
     List.sort_uniq compare
-      (physeq @ stack @ swallowed @ crash @ int31 @ order @ sharing) in
+      (physeq @ stack @ swallowed @ crash @ int31 @ order @ sharing @ init @ link) in
   List.iter (fun b -> Console.print caps ("bug? " ^ b ^ "\n")) all;
+  (* (the analyses that report, by their number: within 80 columns) *)
+  let counts =
+    List.filter_map
+      (fun ((k, l) : string * string list) ->
+        if l = [] then None else Some (Printf.sprintf "%s %d" k (List.length l)))
+      [ ("physeq", physeq); ("stack", stack); ("swallowed", swallowed);
+        ("crash", crash); ("int31", int31); ("order", order);
+        ("sharing", sharing); ("init", init); ("link", link) ] in
   Console.print caps
-    (Printf.sprintf
-       "%d bugs? (physeq %d, stack %d, swallowed %d, crash %d, int31 %d, order %d, sharing %d)\n"
-       (List.length all) (List.length physeq) (List.length stack)
-       (List.length swallowed) (List.length crash) (List.length int31)
-       (List.length order) (List.length sharing))
+    (Printf.sprintf "%d bugs?%s\n" (List.length all)
+       (if counts = [] then "" else " (" ^ String.concat ", " counts ^ ")"))
 
 let raises_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
   let tuples r = List.map (fun (t : int array) -> Array.map (name p) t) (D.tuples (D.relation p r 3)) in

@@ -47,6 +47,10 @@ export PATH=$ROOT/bin:$PATH
 # the games' frames and sounds against ~/playground's own: test-all's
 # suite playground, not here (its TinyVirtuaRacing alone was 4 minutes)
 export PLAYGROUND=/nonexistent
+# the C locale and UTC, as in CI's docker build: a sort's order or a
+# day's text recorded under the author's en_US and CET is caught here
+# (caps_types.sh's expected.out, read differently by CI for days)
+export LC_ALL=C TZ=UTC
 W=$(mktemp -d)
 # milliseconds: GNU's date has %N, BSD's (macOS) prints it as is, so perl there
 if [ "$(date +%3N)" = 3N ]; then now() { perl -MTime::HiRes=time -e 'printf "%d\n", time * 1000'; }

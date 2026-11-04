@@ -11,6 +11,9 @@
 # usage: analyzers/datalog/tests/caps_types.sh [-record] [-all | dir...]   (dune build first)
 # ANALYZE, DATALOG: the programs, if not dune's.
 cd "$(dirname "$0")/../../.."
+# sort's order the bytes', not the locale's (en_US put lacks_closure
+# before lacks, a recording CI's C locale did not read the same)
+export LC_ALL=C
 R=analyzers/datalog; D=$R/points_to; T=$R/tests
 export ANALYZE=${ANALYZE:-$PWD/_build/default/analyzers/Main.exe}
 export DATALOG=${DATALOG:-$PWD/_build/default/languages/datalog/Main.exe}

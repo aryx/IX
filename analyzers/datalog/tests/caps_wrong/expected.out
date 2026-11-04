@@ -1,5 +1,5 @@
-Planted.lacks_closure gives Planted.g, which asks stdout
 Planted.lacks gives Planted.g, which asks stdout
+Planted.lacks_closure gives Planted.g, which asks stdout
 Planted.lacks_one gives Planted.opens, which asks stderr
 Planted.lacks_renamed gives Planted.g, which asks stdout
 31 calls, 12 checked

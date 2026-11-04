@@ -195,11 +195,75 @@ let bugs_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
                t.(1) t.(0) t.(1) t.(2))
         else None)
       (tuples "twice" 3) in
+  (* a write of a root's racing another (races.dl): a line a function
+   * of the root and a field, its first other writer; a wait not in a
+   * loop. A function's line is its closure's (f' is f's) *)
+  let lines = Hashtbl.create 17 in
+  List.iter
+    (fun (t : string array) -> Hashtbl.replace lines t.(0) (t.(1) ^ ":" ^ t.(2)))
+    (tuples "closure" 3);
+  let rec line_of (f : string) : string =
+    match Hashtbl.find_opt lines f with
+    | Some l -> site l
+    | None ->
+        let n = String.length f in
+        if n > 0 && f.[n - 1] = '\'' then line_of (String.sub f 0 (n - 1))
+        else unit_of f ^ ".ml" in
+  let htypes = Hashtbl.create 17 in
+  List.iter (fun (t : string array) -> Hashtbl.replace htypes t.(0) t.(1))
+    (tuples "htype" 2);
+  (* (a record's fields named, a ref, an array, a table by where made) *)
+  let written (h : string) (flds : string list) : string =
+    let labels = List.filter_map (C_report.prefix "fld:") flds in
+    match flds with
+    | [ "fld:contents" ] -> "the ref of " ^ site h
+    | _ when labels <> [] && not (List.mem "contents" labels) ->
+        let t =
+          match Hashtbl.find_opt htypes h with Some t -> t | None -> "record" in
+        Printf.sprintf "a %s's %s" t (String.concat " and " labels)
+    | [ "arr:elt" ] -> "the array of " ^ site h
+    | _ when List.for_all (fun f -> C_report.prefix "tbl:" f <> None) flds ->
+        "the table of " ^ site h
+    | _ -> Printf.sprintf "%s of %s" (String.concat " and " flds) (site h) in
+  let writers = Hashtbl.create 17 in
+  List.iter
+    (fun (t : string array) ->
+      let k = (t.(2), t.(3), t.(0)) in
+      let l = match Hashtbl.find_opt writers k with Some l -> l | None -> [] in
+      Hashtbl.replace writers k ((t.(1), t.(4)) :: l))
+    (tuples "raced" 5);
+  let race =
+    Hashtbl.fold
+      (fun ((f1, r, h) : string * string * string) (l : (string * string) list)
+           acc ->
+        let flds = List.sort_uniq compare (List.map fst l) in
+        let fs = List.sort_uniq compare (List.map snd l) in
+        let n = List.length fs in
+        let shown = List.filteri (fun k _ -> k < 2) fs in
+        let others =
+          String.concat ", " (List.map (fun f -> fun_of (unit_of f) f) shown)
+          ^ (if n > 2 then Printf.sprintf " and %d more" (n - 2) else "") in
+        Printf.sprintf
+          "%s: race: %s, run by a signal's handler (%s), writes %s, as %s does"
+          (line_of f1) (fun_of (unit_of f1) f1) (line_of r) (written h flds)
+          others
+        :: acc)
+      writers [] in
+  let wait =
+    List.map
+      (fun (t : string array) ->
+        Printf.sprintf
+          "%s: wait: in %s, Condition.wait not in a while: woken for another, \
+           it goes on"
+          (site t.(0)) (fun_of (unit_of t.(0)) t.(1)))
+      (tuples "wait_once" 2) in
   let order = List.sort_uniq compare order in
   let sharing = List.sort_uniq compare sharing in
+  let race = List.sort_uniq compare race and wait = List.sort_uniq compare wait in
   let all =
     List.sort_uniq compare
-      (physeq @ stack @ swallowed @ crash @ int31 @ order @ sharing @ init @ link) in
+      (physeq @ stack @ swallowed @ crash @ int31 @ order @ sharing @ init @ link
+       @ race @ wait) in
   List.iter (fun b -> Console.print caps ("bug? " ^ b ^ "\n")) all;
   (* (the analyses that report, by their number: within 80 columns) *)
   let counts =
@@ -208,7 +272,8 @@ let bugs_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
         if l = [] then None else Some (Printf.sprintf "%s %d" k (List.length l)))
       [ ("physeq", physeq); ("stack", stack); ("swallowed", swallowed);
         ("crash", crash); ("int31", int31); ("order", order);
-        ("sharing", sharing); ("init", init); ("link", link) ] in
+        ("sharing", sharing); ("init", init); ("link", link); ("race", race);
+        ("wait", wait) ] in
   Console.print caps
     (Printf.sprintf "%d bugs?%s\n" (List.length all)
        (if counts = [] then "" else " (" ^ String.concat ", " counts ^ ")"))

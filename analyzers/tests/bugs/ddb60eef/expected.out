@@ -1,0 +1,2 @@
+bug? analyzers/tests/bugs/ddb60eef/Before.ml:16: wait: in Before.basic_sync, Condition.wait not in a while: woken for another, it goes on
+1 bugs? (wait 1)

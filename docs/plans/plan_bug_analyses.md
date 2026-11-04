@@ -21,21 +21,23 @@ before the fix (`git show FIX^:path`) and stay quiet on the fixed code.
 Then it runs over ix through the sweep, as `-dead`, `-caps` and `-exn` do.
 
 **Status: A6's first half, A1, A3 and A2 done (2026-11-03), A4's first
-step, A5 and A10 (2026-11-04), the rest planned.**
+step, A5, A10 and A8's handlers (2026-11-04), the rest planned.**
 `mini-analyze -bugs` runs `bugs/physeq.dl` (`==` or `!=` with a side
 made in the comparison), `bugs/stack.dl` (a loop through a `try`, a
 frame a list's element), `bugs/swallowed.dl` (an error of the
 system silenced), `bugs/intwidth.dl` (an int past the Pi 1's 31
 bits), `bugs/order.dl` (a table's order given to an output) and
-`bugs/init.dl` (a start reading a later unit's global). Each
+`bugs/init.dl` (a start reading a later unit's global), `bugs/races.dl`
+(a field a signal's handler and the program both write, a wait not in
+a `while`). Each
 reports its bugs on the code before the fix and not after
 (`analyzers/tests/bugs/`: eb5378a5, 021c562b, f46346db, c5086383,
 4f00134c, 4436f60d, e92ae1ec, d22c56e4, 410d04a2, 70b6b2bf,
-6264d271). On today's ix,
+6264d271, 11c5d5f0, ddb60eef). On today's ix,
 `physeq` finds nothing; `stack` gives 145 reports on the 44 programs
 and 9 on the kernel, `swallowed` 12 on the programs, `int31` 29,
-`order` 2 (`analyzers/datalog/tests/bugs_ix.txt`), read in A1, A3, A4
-and A5 below. A7 turned out to be
+`order` 2, `race` 1 (`analyzers/datalog/tests/bugs_ix.txt`), read in
+A1, A3, A4, A5 and A8 below. A7 turned out to be
 `-dead`'s already (below).
 The evidence is in
 [`bugs/history/`](bugs/history/): `from_git.md` has 73 bug fixes found in
@@ -511,6 +513,41 @@ nothing now and only prevents regressions.
 
 **Cost:** about 20 lines of rules, and 5 of facts for `while`.
 
+**Done for handlers** (2026-11-04): `bugs/races.dl`, two kinds of
+`-bugs` line. `race`: a field written by what a signal's handler runs
+and by the program, of an object the program made. The roots are what
+`Sys.signal` is given in `Signal_handle` and what `Thread.make` is
+given (not C callbacks: Pervasives keeps the handlers and runs them
+where the program waits, `run_signals`); the program's code is what
+the entries and C's callbacks run, not through a root. Not reported: a
+bool (a flag, the fix's), an object the handler makes, a handler that
+ends the program (`exit`: ed's hangup saving the buffer). `wait`: a
+`Condition.wait` neither in a `while` nor in a function calling itself.
+New facts: `store_in(O, Fld, W, F)`, a field written once its block is
+made, in which function (`assign_store_field` did not say it of a
+global), and `loop_site(I)`. 30 lines of rules, 25 of facts, 70 of
+report. Tests `analyzers/tests/bugs/11c5d5f0/` (TinyMachine's handler
+typing the ^C into the queue console_poll replaces: reported; the flag:
+not) and `ddb60eef/` (basic_sync's one wait: reported; in a `while`,
+and in a recursive retry: not).
+
+On ix: the kernel, nothing (no signals, no threads); the 44 programs,
+one `race`, mini-5i's `Linux.raise_signal` appending to `pending`
+while `deliver` filters it (`pending := List.filter ... !pending`).
+Under ix's runtime a handler runs only at a system call, none between
+that read and that write: harmless. Under OCaml 4.14 a signal is
+handled at an allocation too, `List.filter`'s: a signal arriving there
+is lost, in OCaml's build of mini-5i (not reproduced;
+`docs/plans/bugs/ix.md`).
+
+**Not done: threads.** The first sweep gave 406 lines, 88 once a
+model's new cells and an object the root makes were left out; 75 of
+those were threads, mini-emacs's and lib_graphics' `Display`, none
+seen a race: ix's threads switch only where one yields or waits, and
+every thread of `Source`'s is one root. They need the switch points
+and the lockset (a function calling `Mutex.lock` as holding it) before
+they are reported.
+
 ### A9. Resources and counts on every path (`pairs.dl`, flow)
 
 **Re-finds:** 62d811be (`dup(1, 1)`: a reference taken, then the old
@@ -627,7 +664,7 @@ reproduction.
 | 6 | A4 31 bits, step 1 | `wide_int`, `wide_site`, `unit_dir` | 95 | 3 | done |
 | 7 | A5 output order | `walked`, `walk_call`, `model_new`, `shares` | 80 | 3 | done |
 | 8 | A10 init and link order | `starts_before`, `unit_start`, `unit_file` | 70 | 2 | done |
-| 9 | A8 races | `while` | 25 | ~3 | |
+| 9 | A8 races | `store_in`, `loop_site` | 125 | 2 | handlers done; threads need the switch points |
 | 10 | A9 pairs on every path | `call_at`, exception edges | 70 | ~5 | flow facts |
 | 11 | A4 step 2, intervals | `range` (ML) | 200 | ~5 | after numbers in Datalog |
 | 12 | A11 layout, evaluation order | columns, purity | 40+ | ~3 | |

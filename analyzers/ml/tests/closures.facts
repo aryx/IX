@@ -729,6 +729,7 @@ return('prim:%setfield0\'2', 'prim:%setfield0:ret').
 var_in('prim:%setfield0:ret', 'prim:%setfield0\'2').
 scalar('prim:%setfield0:ret').
 assign_store_field('prim:%setfield0:arg1', 'fld:contents', 'prim:%setfield0:arg2').
+store_in('prim:%setfield0:arg1', 'fld:contents', 'prim:%setfield0:arg2', 'prim:%setfield0\'2').
 assign_address('Use:t2', 'prim:%setfield0').
 var_in('Use.total', 'Use:go/3').
 var_in('Use:t3', 'Use:go/3').
@@ -784,6 +785,7 @@ call_ret('Use:6:c5', 'Use:t7').
 scalar('Use:t3').
 scalar('Use:_').
 assign_store_field('Use.total', 'fld:contents', 'Use:t3').
+store_in('Use.total', 'fld:contents', 'Use:t3', 'Use:go/3').
 var_in('Use:go/3', 'Use:go/3').
 in_function('Use:6:c6', 'Use:go/3').
 tail('Use:6:c6').
@@ -875,6 +877,7 @@ call_ret('Use:11:c14', 'Use:t17').
 scalar('Use:t13').
 scalar('Use:fun1@11:ret').
 assign_store_field('Use.total', 'fld:contents', 'Use:t13').
+store_in('Use.total', 'fld:contents', 'Use:t13', 'Use:fun1@11').
 argument('Use:11:c9', 1, 'Use:t11').
 call_ret('Use:11:c9', 'Use:t10').
 in_function('Use:11:c15', 'Use:init').
@@ -960,6 +963,7 @@ assign_store_field('Use:t29', 'con:::.1', 'Use:t30').
 argument('Use:12:c20', 1, 'Use:t29').
 call_ret('Use:12:c20', 'Use:t24').
 assign_store_field('Use.total', 'fld:contents', 'Use:t24').
+store_in('Use.total', 'fld:contents', 'Use:t24', 'Use:init').
 var_in('Use:half/8', 'Use:init').
 vtype('Use:half/8', '->').
 vfull('Use:half/8', '(int -> int)').
@@ -1027,6 +1031,7 @@ assign_load_field('Use:t37', 'Use.total', 'tuple:2.0').
 argument('Use:15:c26', 1, 'Use:t37').
 call_ret('Use:15:c26', 'Use:t36').
 assign_store_field('Use.total', 'fld:contents', 'Use:t36').
+store_in('Use.total', 'fld:contents', 'Use:t36', 'Use:init').
 vtype('Pervasives.print_int', '->').
 vfull('Pervasives.print_int', '(int -> unit)').
 global_var('Pervasives.print_int').

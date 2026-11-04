@@ -14,6 +14,11 @@
  *        Poly1305's toplevel), Bignum starting after it
  *   bug? Collide.ml: link: two units Collide, Collide.ml and
  *        physics/Collide.ml: which one is linked the build's
+ *   bug? TinyMachine.ml:66: race: console_type, run by a signal's
+ *        handler (TinyMachine.ml:52), writes a console's next and queue,
+ *        as console_poll does
+ *   bug? Event.ml:70: wait: in Event.basic_sync, Condition.wait not in a
+ *        while: woken for another, it goes on
  *
  * physeq (analyzers/datalog/bugs/physeq.dl): == or != with a side made in
  * the comparison itself. stack (bugs/stack.dl): a recursion the stack may
@@ -30,7 +35,12 @@
  * Marshal without No_sharing (ca664887's Asm.save). init
  * (bugs/init.dl): a unit's start reading a global of a unit that starts
  * after it (70b6b2bf's Poly1305); link: two files of one unit's name,
- * each named by units of its directory (6264d271's Collide). Only
+ * each named by units of its directory (6264d271's Collide). race
+ * (bugs/races.dl): a field written by what a signal's handler runs and
+ * by the program, of an object the program made, a line a function of
+ * the handler and an object (threads not yet)
+ * (11c5d5f0's ^C); wait: a Condition.wait not in a while (ddb60eef's
+ * Event.sync). Only
  * the program's own units, and code that is reached. *)
 
 (* the report, on the facts and the rules' answers *)

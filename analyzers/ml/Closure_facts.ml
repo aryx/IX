@@ -26,6 +26,8 @@ let handler_vars : (int * string) list ref = ref []
 
 (* in the branch of an if Sys.int_size >= 63: bugs/intwidth.dl's *)
 let in_wide : bool ref = ref false
+(* in a while's condition or body, in this function: bugs/races.dl's *)
+let in_loop : bool ref = ref false
 
 let prims : (string, unit) Hashtbl.t = Hashtbl.create 64
 
@@ -263,9 +265,13 @@ let prim_body (name : string) (arity : int) (res : ty) ~(arg : int -> string)
       fact "assign_load_field" [ ret; arg 1; "fld:contents" ];
       fact "assign_load_field" [ ret; arg 1; "tuple:2.0" ]
   | "%field1" -> fact "assign_load_field" [ ret; arg 1; "tuple:2.1" ]
-  | "%setfield0" -> fact "assign_store_field" [ arg 1; "fld:contents"; arg 2 ]
+  | "%setfield0" ->
+      fact "assign_store_field" [ arg 1; "fld:contents"; arg 2 ];
+      fact "store_in" [ arg 1; "fld:contents"; arg 2; inside 2 ]
   | "%array_safe_get" | "%array_unsafe_get" -> fact "assign_load_field" [ ret; arg 1; elt ]
-  | "%array_safe_set" | "%array_unsafe_set" -> fact "assign_store_field" [ arg 1; elt; arg 3 ]
+  | "%array_safe_set" | "%array_unsafe_set" ->
+      fact "assign_store_field" [ arg 1; elt; arg 3 ];
+      fact "store_in" [ arg 1; elt; arg 3; inside 3 ]
   | "make_vect" ->
       ignore (new_block "block");
       fact "assign_store_field" [ ret; elt; arg 2 ]
@@ -369,7 +375,12 @@ let model_body (sym : string) (ops : Models.op list) ~(arg : int -> string)
           Option.iter (fun (u : string) -> fact "alloc_in" [ b; u ]) place;
           []
       | Load (d, o, f) -> fact "assign_load_field" [ var d; var o; f ]; []
-      | Store (o, f, s) -> fact "assign_store_field" [ var o; f; var s ]; []
+      | Store (o, f, s) ->
+          fact "assign_store_field" [ var o; f; var s ];
+          (* (a block the model made is being given its fields) *)
+          if not (List.mem (Models.New o) ops) then
+            fact "store_in" [ var o; f; var s; inside ];
+          []
       | Assign (d, s) -> fact "assign" [ var d; var s ]; []
       | Scalar v -> scalar (var v); []
       | Call (d, f, a) ->
@@ -486,7 +497,8 @@ let rec bind (p : pattern) (src : string) : unit =
 (* a call's or a raise's site: in which try *)
 let site_in (s : string) : unit =
   (match !tries with t :: _ -> fact "in_try" [ s; t ] | [] -> ());
-  if !in_wide then fact "wide_site" [ s ]
+  if !in_wide then fact "wide_site" [ s ];
+  if !in_loop then fact "loop_site" [ s ]
 
 (* a call's place, for bugs/stack.dl: in a handler (no tail call by mini-ml,
  * whose try is a function of its own); a tail call, its result the
@@ -639,10 +651,13 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
         (fun (c : string) -> fact "holds_field" [ f; c ])
         (List.sort_uniq compare (List.concat_map (fun ((p, _, _) : case) -> held_in_fields p) cases));
       let outer = !inside and outer_tries = !tries and outer_handlers = !handlers in
-      (* (its body runs where it is called, not in the trys around it) *)
+      let outer_loop = !in_loop in
+      (* (its body runs where it is called, not in the trys around it,
+       * nor in the while) *)
       inside := f;
       tries := [];
       handlers := [];
+      in_loop := false;
       (* let f x y = ...: the function of y is f' *)
       let inner : string option =
         match cases with
@@ -659,7 +674,8 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
         cases;
       inside := outer;
       tries := outer_tries;
-      handlers := outer_handlers
+      handlers := outer_handlers;
+      in_loop := outer_loop
   | Eapply (({ e = Evar (Prim ("%raise", _, _)); _ } as f), [ a ]) ->
       (* (a raise: its site, its call's, the exception's constructor
        * when it is written, a handler's variable raised again; else
@@ -784,7 +800,9 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
   | Efield (e, l) -> fact "assign_load_field" [ dst; operand e; "fld:" ^ l.lname ]
   | Esetfield (e, l, v) ->
       scalar dst;
-      fact "assign_store_field" [ operand e; "fld:" ^ l.lname; operand v ]
+      let o = operand e and w = operand v in
+      fact "assign_store_field" [ o; "fld:" ^ l.lname; w ];
+      fact "store_in" [ o; "fld:" ^ l.lname; w; !inside ]
   | Earray es ->
       block dst x;
       List.iter (fun (e : expr) -> fact "assign_store_field" [ dst; elt; operand e ]) es
@@ -799,7 +817,13 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
       branch (wide = Some true) a;
       (match b with Some b -> branch (wide = Some false) b | None -> scalar dst)
   | Eseq (a, b) -> flow None a (junk ()); flow name b dst
-  | Ewhile (c, body) -> scalar dst; flow None c (junk ()); flow None body (junk ())
+  | Ewhile (c, body) ->
+      scalar dst;
+      let old = !in_loop in
+      in_loop := true;
+      flow None c (junk ());
+      flow None body (junk ());
+      in_loop := old
   | Efor (_, lo, hi, _, body) -> scalar dst; flow None lo (junk ()); flow None hi (junk ()); flow None body (junk ())
   | Eassert e -> scalar dst; flow None e (junk ())
 
@@ -938,6 +962,7 @@ let unit_ (name : string) (items : item list) : string =
   handlers := [];
   handler_vars := [];
   in_wide := false;
+  in_loop := false;
   funs := 0;
   blocks := 0;
   inside := name ^ ":init";

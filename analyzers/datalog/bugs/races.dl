@@ -1,0 +1,96 @@
+% Races with a signal's handler and with threads, and a wait not in a
+% loop (docs/plans/plan_bug_analyses.md, A8): mini-analyze -bugs, over
+% the call graph and the objects of points_to/ (target, pts, fpts) and
+% the facts of Closure_facts (FACTS.md):
+%   store_in(O, Fld, W, F)  F writes W in the field Fld of what O points
+%                           to (a mutable field, a ref, an array's
+%                           element, a table's model): not a block's
+%                           fields given where it is made
+%   loop_site(I)            the call I is in a while, of its function
+% and says:
+%   raced(H, Fld, F1, R, F2)  F1, run by the signal's handler R, writes
+%                           H's Fld, and so does F2, run by the program
+%   wait_once(I, F)         Condition.wait at I, in F, not in a while
+%
+%     Sys.set_signal Sys.sigint                      (11c5d5f0^,
+%       (Sys.Signal_handle (fun _ ->                   TinyMachine.ml)
+%          TinyLibMachine.console_type k "\003"))
+%
+% The handler's ^C was added to the console's queue, while console_poll
+% put there what it had just read: a key typed right after the ^C, and
+% the ^C was lost. The fix, a flag the handler sets and the loop reads.
+% And lib_core's Event.sync waited once on its condition, woken then by
+% another thread than the one performing its event; it read bev.(-1),
+% and its thread died (ddb60eef).
+%
+% design:
+% The roots: what Sys.signal is given in Signal_handle, and what
+% Thread.create (Thread.make) is given; the program's code is what the
+% entries and the callbacks run, not through a root (Pervasives runs the
+% handlers where the program waits, Thread.make's function is C's).
+% A handler's write races one of the program's to the same object's
+% field, an object the program made (one the handler makes is a new one
+% each run). A thread's are not reported yet: ix's threads switch only
+% where one yields or waits, which the rules do not see, and every
+% thread of Source's is one root: the first sweep gave 75 such, emacs's
+% and Display's, none a race (Eraser's lockset, Savage and others,
+% 1997, made static, is what they would need: a function calling
+% Mutex.lock as holding it, and the switch points). A thread's function
+% is still a root: what only it runs is not the program's. A bool
+% written is a flag, the fix's (sig_atomic_t's): a handler runs only
+% where the program waits, at a system call, so a flag read then
+% cleared loses nothing. Both writes in the program's own units.
+% Reads are not: OCaml's write of a field is whole, a read sees the old
+% value or the new.
+% A wait is in a loop if it is in a while, or its function calls
+% itself (let rec loop () = ... wait ...; loop ()).
+%
+% others:
+% Eraser checked locksets as the program ran; RacerX (Engler and
+% Ashcroft, 2003) and Locksmith (Pratikakis, Foster and Hicks, 2006)
+% statically, the lock held at each access by a flow analysis; this one
+% takes a function as holding the lock or not. POSIX allows a
+% condition's wait to return with nothing signalled (a "spurious
+% wakeup"): its manual says to wait in a loop on the predicate.
+
+handler_root(F) :-
+  parameter('Sys.signal\'', 1, V), pts(V, H),
+  fpts(H, 'con:Signal_handle.0', F), function(F).
+thread_root(F) :- parameter('Thread.make\'', 1, V), pts(V, F), function(F).
+root_kind(F, handler) :- handler_root(F).
+root_kind(F, thread) :- thread_root(F).
+
+% what a root runs, and what the program runs not through one
+runs_in(F, F) :- root_kind(F, _).
+runs_in(G, R) :-
+  runs_in(F, R), in_function(I, F), target(I, G), \+ root_kind(G, _).
+program_runs(F) :- entry(F).
+program_runs(F) :- c_callback(F), \+ root_kind(F, _).
+program_runs(G) :-
+  program_runs(F), in_function(I, F), target(I, G), \+ root_kind(G, _).
+
+own_code(F) :- alloc_in(F, U), own_unit(U).
+% (a write, not a flag's)
+writes_field(F, H, Fld) :-
+  store_in(O, Fld, W, F), \+ vtype(W, bool), pts(O, H), own_code(F).
+
+% (an object the root makes is its own, a new one each run: a ref, a
+% lexbuf made in a function the root and the program both run is one
+% object here, not one they share)
+made_by_program(H, R) :-
+  root_kind(R, _), new_block(V, H), var_in(V, G), program_runs(G),
+  \+ runs_in(G, R).
+
+% (a handler that ends the program, exit: what it writes the program
+% never reads after; ed's hangup, which saves the buffer)
+ends_program(R) :- in_function(I, R), target(I, 'Pervasives.exit').
+raced(H, Fld, F1, R, F2) :-
+  root_kind(R, handler), \+ ends_program(R), runs_in(F1, R),
+  writes_field(F1, H, Fld), made_by_program(H, R), program_runs(F2),
+  writes_field(F2, H, Fld).
+
+wait_once(I, F) :-
+  target(I, 'Condition.wait'), in_function(I, F), reach(F),
+  \+ loop_site(I), \+ calls_itself(F).
+calls_itself(F) :- in_function(I, F), target(I, F).
+calls_itself(F) :- curried(G, F), in_function(I, G), target(I, F).

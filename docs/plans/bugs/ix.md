@@ -603,6 +603,20 @@ Division_by_zero`, exit 2, from Parser_asm.binary's Int64.div. Now
 mini-analyze -exn (analyzers/datalog/tests/exn_ix.txt's assembler line,
 then mini-ml's, which links the same parser for its own output).
 
+## mini-5i: a signal may be lost while one is delivered, in OCaml's build (2026-11-04)
+
+Found by `mini-analyze -bugs`' `race` (plan_bug_analyses.md, A8), not
+reproduced. machine/process/Linux.ml: the host's handler (Host.ml's
+`Signal_handle (fun _ -> Linux.raise_signal n)`) appends to `pending`,
+and `deliver` and `deliver64` take one out by
+`pending := List.filter (( <> ) sg) !pending`. Under ix's runtime a
+handler runs only at a system call, none between that read and that
+write. Under OCaml 4.14 a signal is also handled at an allocation, and
+`List.filter` allocates: a signal arriving there is added to the list
+the write then replaces. The cure is TinyMachine's (11c5d5f0): the
+handler only notes the signal, the loop moves it to `pending`. Not
+fixed.
+
 ## CI red since 2026-10-30: what passed here only (2026-11-04)
 
 docker.yml on GitHub (x86-64, the C locale, a fresh tree) against make

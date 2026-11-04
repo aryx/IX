@@ -1,0 +1,2 @@
+bug? analyzers/tests/bugs/11c5d5f0/Before.ml:7: race: Before.console_type, run by a signal's handler (analyzers/tests/bugs/11c5d5f0/Before.ml:18), writes a Before.console's next and queue, as Before.console_read, Before:fun at line 23 does
+1 bugs? (race 1)

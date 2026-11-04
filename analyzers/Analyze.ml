@@ -50,6 +50,9 @@ program's functions that its toplevel never reaches (calls.dl):
   Asm.ml:214
   Poly1305.ml: init: Poly1305's start reads Bignum.modulus (in Poly1305's
   toplevel), Bignum starting after it (-start: the units' order, mini-ml's)
+  TinyMachine.ml:66: race: console_type, run by a signal's handler
+  (TinyMachine.ml:52), writes a console's queue, as console_poll does
+  Event.ml:70: wait: in Event.basic_sync, Condition.wait not in a while
   given C files and ML ones (the runtime's, lib_core's): each external's
   [@@raise E] against what its C raises (bugs/raises.dl)
 -root f: f is also entered from where the facts do not go (assembly)
@@ -245,7 +248,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
              else if !bugs && c = [] then
                [ "points_to/instructions.dl"; "points_to/contexts.dl"; "points_to/" ^ context ^ ".dl"; "exceptions.dl";
                  "bugs/physeq.dl"; "bugs/stack.dl"; "bugs/swallowed.dl";
-                 "bugs/intwidth.dl"; "bugs/order.dl"; "bugs/init.dl" ]
+                 "bugs/intwidth.dl"; "bugs/order.dl"; "bugs/init.dl";
+                 "bugs/races.dl" ]
              else if !exns then
                [ "points_to/instructions.dl"; "points_to/andersen.dl"; "points_to/contexts.dl";
                  "points_to/" ^ context ^ ".dl"; "exceptions.dl" ]

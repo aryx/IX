@@ -79,7 +79,10 @@ program's library, lib_core's units it names, is read with it.
      on what the compiler shared; `init`, a unit's start reading a
      global of a unit that starts after it, in `-start`'s order;
      `link`, two files of one unit's name, each named by units of its
-     directory (`bugs/init.dl`). C files: the
+     directory (`bugs/init.dl`); `race`, a field written by what a
+     signal's handler runs and by the program, of an object the
+     program made, a bool being a flag (threads not yet); `wait`, a
+     `Condition.wait` not in a `while` (`bugs/races.dl`). C files: the
      report without an option, its `bug?` lines `bugs/pointers.dl`'s.
      C files and ML ones (mini-ml's runtime and lib_core: what
      `analyzers/datalog/tests/raises.sh` gives): each external's

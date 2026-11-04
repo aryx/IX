@@ -393,6 +393,17 @@ model_new('Toy:29:c23', 'Toy:29:c23:block').
 shares('Toy:60', 'Toy.saved').
 ```
 
+**A write and a loop**, for `bugs/races.dl`: a field written once its block is
+made (`:=`, `<-`, an array's element, a table by its model; not a record's fields
+given where it is written, nor a list's cells a model makes), with what is written
+and in which function; and a call in a `while` of its function. `ready := 0` and
+`Condition.wait` in `take` (line 64):
+
+```
+store_in('Toy.ready', 'fld:contents', 'Toy:const', 'Toy.take\'').
+loop_site('Toy:64:c63').
+```
+
 **Who is where.** As in C. A variable two functions name is what a closure captures:
 
 ```
@@ -459,6 +470,7 @@ with: `own_live_out(V, P)`, and for ML `own_live_in(V, B)`, `own_idom(D, B)`.
 | `bugs/intwidth.dl` | `wide_int`, `wide_site`, `unit_dir`, `in_function`, `curried`, over `target`, `entry`, `callback` |
 | `bugs/order.dl` | `walked`, `walk_call`, `model_new`, `shares`, `htype`, `global_var`, `own_unit`, over `pts`, `fpts` |
 | `bugs/init.dl` | `init`, `global_def`, `var_in`, `alloc_in`, `unit_start`, `starts_before`, `unit_file`, over `target` |
+| `bugs/races.dl` | `store_in`, `loop_site`, `parameter`, `vtype`, `alloc_in`, `own_unit`, over `pts`, `fpts`, `target`, `entry`, `callback`, `reach` |
 | `liveness.dl` | C's `-flow` |
 | `liveness_ssa.dl`, `dominators.dl` | ML's `-flow` |
 

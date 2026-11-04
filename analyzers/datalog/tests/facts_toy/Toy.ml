@@ -58,3 +58,7 @@ let low w = if Sys.int_size >= 63 then Hashtbl.hash (w lsr 32) else w
 (* a table walked into a list, marshalled sharing (bugs/order.dl) *)
 let names (t : (string, int) Hashtbl.t) = Hashtbl.fold (fun k _ acc -> k :: acc) t []
 let saved (l : string list) = Marshal.to_string (List.rev l) []
+
+(* a ref written, a wait in a while (bugs/races.dl) *)
+let ready = ref 0
+let take m c = while !ready = 0 do Condition.wait c m done; ready := 0

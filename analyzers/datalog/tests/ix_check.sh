@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
@@ -46,7 +46,7 @@ case $flag in
       gen > $W/all
     # (the kernel's paths are kernels/9pi's: the tree's)
     grep '^bug? ' $W/kernel.out | sed 's/^bug? //' |
-      sed -E 's|^\.\./\.\./||; t; s|^|kernels/9pi/|' >> $W/all
+      sed -E -e 's|^\.\./\.\./||' -e t -e 's|^|kernels/9pi/|' >> $W/all
     sort -u $W/all > $out;;
   -exn)
     # (a program's name first: many have a Main.ml)

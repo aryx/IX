@@ -63175,3 +63175,50 @@ Claude also asked whether mini-cc's Opti and Peep should move to the new framewo
 **Yoann:**
 
 > I need to turn off the machine soon, let's commit and close this session
+
+------------------------------------------------------------------------
+
+## 2026-11-04 21:24
+
+**Yoann:**
+
+> make check is failing; might be related to the case insensitive filesystem?
+
+**Claude (summary):**
+
+Claude traced the `make check` failures to macOS differences, not the case-insensitive filesystem: bash 3.2, BSD `realpath`, `find` order, and `wc -l`.
+Claude replaced the GNU-only `realpath --relative-to` with a portable `cd && pwd -P`, and rewrote the `find | head -1` lookup in the Ptrace unit so it no longer depends on directory order.
+Claude moved the Ptrace build target and threaded `Cap.readdir` through the callers to get an exact directory listing.
+Claude recorded the Ptrace move and reran the full check, and the kernel and tiny/ results now match.
+Claude fixed the BSD `wc -l` space-padding in an analyzer test, a one-line change, and did not run `make build-docker`.
+
+------------------------------------------------------------------------
+
+## 2026-11-05 07:42
+
+**Yoann:**
+
+> but will those tests pass also on Linux? Can you run make build-docker to sanity check, I think it emulates a Linux env even on macOS
+
+**Claude (summary):**
+
+Claude found the Docker daemon wasn't running and tried starting Docker Desktop to build the image.
+Claude noted that `test-lite` already covers the tiny/ checks and analyzer suites, but skips `_mk/7` in Docker.
+Claude planned to run `make ix && make check` in a container to cover m-ix's checks on Linux.
+Yoann's follow-up points to `make test` also running some of these checks, so Claude's coverage claims need checking against it.
+Claude was still waiting for the Docker build to finish, so no Linux results were reported yet.
+
+------------------------------------------------------------------------
+
+## 2026-11-05 07:47
+
+**Yoann:**
+
+> I think make test is also running some of the checks
+
+**Claude (summary):**
+
+Claude explained that `make test` runs `tests/lite.sh`, which includes tiny's four checks and skips m-ix's `-caps` check when no ix build exists.
+Claude noted that Docker has no ix build, so `-caps` was skipped there, while `make check` adds m-ix's `-dead`, `-bugs` and `-exn`.
+Claude said the container running `make ix && make check` should cover the remaining four checks on Linux, including the skipped `-caps` one.
+Claude committed to reporting back once that container run finishes.

@@ -11,8 +11,8 @@ debuggers/acid/CLI.ml:77: CLI.stdin_lexbuf: has < Cap.env; Cap.exec; Cap.fork; C
 debuggers/acid/CLI.ml:82: CLI.run_text: has < Cap.env; Cap.exec; Cap.fork; Cap.kill; Cap.open_in; Cap.open_out; Cap.stderr; Cap.stdin; Cap.stdout >, may not need Cap.env, Cap.exec, Cap.fork, Cap.kill, Cap.open_in, Cap.open_out, Cap.stderr, Cap.stdin
 debuggers/acid/CLI.ml:88: CLI.library: has < Cap.env; Cap.exec; Cap.fork; Cap.kill; Cap.open_in; Cap.open_out; Cap.stderr; Cap.stdin; Cap.stdout >, may not need Cap.env, Cap.exec, Cap.fork, Cap.kill, Cap.open_out, Cap.stderr, Cap.stdin
 debuggers/acid/CLI.ml:94: CLI.libdir: has < Cap.env; Cap.exec; Cap.fork; Cap.kill; Cap.open_in; Cap.open_out; Cap.stderr; Cap.stdin; Cap.stdout >, may not need Cap.exec, Cap.fork, Cap.kill, Cap.open_out, Cap.stderr, Cap.stdin, Cap.stdout
-debuggers/acid/linux/Ptrace.ml:14: Ptrace.spawn: has < Cap.exec; Cap.fork >, may not need Cap.exec, Cap.fork
-debuggers/acid/linux/Ptrace.ml:15: Ptrace.signal: has < Cap.kill >, may not need Cap.kill
+debuggers/acid/linux/mini-ml/Ptrace.ml:9: Ptrace.spawn: has < Cap.exec; Cap.fork >, may not need Cap.exec, Cap.fork
+debuggers/acid/linux/mini-ml/Ptrace.ml:14: Ptrace.signal: has < Cap.kill >, may not need Cap.kill
 debuggers/acid/Proc.ml:172: Proc.install: has < Cap.env; Cap.exec; Cap.fork; Cap.kill; Cap.open_in; Cap.open_out >, may not need Cap.env, Cap.exec, Cap.fork, Cap.kill
 debuggers/acid/Proc.ml:190: Proc.linux_msg: has < Cap.env; Cap.exec; Cap.fork; Cap.kill; Cap.open_in; Cap.open_out >, may not need Cap.env, Cap.exec, Cap.fork, Cap.kill, Cap.open_in, Cap.open_out
 debuggers/acid/Proc.ml:208: Proc.msg: has < Cap.env; Cap.exec; Cap.fork; Cap.kill; Cap.open_in; Cap.open_out >, may not need Cap.env, Cap.exec, Cap.fork, Cap.kill, Cap.open_in, Cap.open_out

@@ -50,7 +50,7 @@ answers $W/ml.facts Contexts.a Contexts.c Contexts.pf Contexts.f1 Contexts.h1 Co
 same_reach() { # facts a b
   $DATALOG -q 'reach(F)' $base $D/contexts.dl $D/$2.dl $1 2> /dev/null | sort -u > $W/a
   $DATALOG -q 'reach(F)' $base $D/contexts.dl $D/$3.dl $1 2> /dev/null | sort -u > $W/b
-  echo "$3 reaches what $2 reaches: $(comm -23 $W/a $W/b | wc -l) not"
+  echo "$3 reaches what $2 reaches: $(comm -23 $W/a $W/b | wc -l | tr -d " ") not"
 }
 
 # the tuples of a's answers that b has not
@@ -58,18 +58,18 @@ outside() { # facts a b: each a context file
   local facts=$1 a=$2 b=$3
   { $DATALOG -q 'pts(V, H)' $base $D/contexts.dl $D/$a.dl $facts 2> /dev/null | sort -u > $W/a
     $DATALOG -q 'pts(V, H)' $base $D/contexts.dl $D/$b.dl $facts 2> /dev/null | sort -u > $W/b
-    echo "$a inside $b: $(comm -23 $W/a $W/b | wc -l)"; }
+    echo "$a inside $b: $(comm -23 $W/a $W/b | wc -l | tr -d " ")"; }
 }
 inside_andersen() { # facts a
   local facts=$1 a=$2
   $DATALOG -q 'pts(V, H)' $base $D/contexts.dl $D/$a.dl $facts 2> /dev/null | sed 's/^pts/pt/' | sort -u > $W/a
   $DATALOG -q 'pt(V, H)' $base $facts 2> /dev/null | grep -v ',scalar)' | sort -u > $W/b
-  echo "$a inside andersen: $(comm -23 $W/a $W/b | wc -l)"
+  echo "$a inside andersen: $(comm -23 $W/a $W/b | wc -l | tr -d " ")"
 }
 inside_steensgaard() { # facts
   $DATALOG -q 'pt(V, H)' $base $1 2> /dev/null | grep -v ',scalar)' | sort -u > $W/a
   $DATALOG -q 'pt(V, H)' $D/instructions.dl $D/steensgaard.dl $1 2> /dev/null | sort -u > $W/b
-  echo "andersen inside steensgaard: $(comm -23 $W/a $W/b | wc -l)"
+  echo "andersen inside steensgaard: $(comm -23 $W/a $W/b | wc -l | tr -d " ")"
 }
 { echo "== hole.c: a first argument with an object only in dead code"
   for a in object1 object2_heap1 type2_heap1 hybrid; do same_reach $W/hole.facts call2_heap1 $a; done

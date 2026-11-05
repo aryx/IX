@@ -43,11 +43,33 @@ let rewritten (caps : < Cap.open_in; .. >) (file : string) (text : string) (tree
   | text' when text' == text -> Ok tree
   | text' -> parse file text'
 
+(* A directory's files, read once. A name is looked up in them rather than
+ * opened: on a case-insensitive file system (macOS's) fS.mli opens Fs.mli,
+ * another unit than FS, and png.ml opens Png.ml, the one file twice. *)
+let listings : (string, (string, unit) Hashtbl.t) Hashtbl.t = Hashtbl.create 64
+
+let listed (_ : < Cap.readdir; .. >) (d : Fpath.t) (n : string) : bool =
+  let d = Fpath.to_string d in
+  let names =
+    match Hashtbl.find_opt listings d with
+    | Some names -> names
+    | None ->
+        let names = Hashtbl.create 64 in
+        (try Array.iter (fun (n : string) -> Hashtbl.replace names n ()) (Sys.readdir d) with Sys_error _ -> ());
+        Hashtbl.replace listings d names;
+        names in
+  Hashtbl.mem names n
+
 (* a unit's file in the directories: its .mli for the names, or its .ml *)
-let find (caps : < Cap.open_in; .. >) (dirs : Fpath.t list) (name : string) (exts : string list) : (Fpath.t * string) option =
+let find (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (name : string) (exts : string list) : (Fpath.t * string) option =
   let names = List.concat_map (fun ext -> [ String.uncapitalize_ascii name ^ ext; name ^ ext ]) exts in
   List.find_map
-    (fun (d : Fpath.t) -> List.find_map (fun n -> let f = Fpath.(d / n) in Option.map (fun t -> (f, t)) (FS.read_opt caps f)) names)
+    (fun (d : Fpath.t) ->
+      List.find_map
+        (fun n ->
+          let f = Fpath.(d / n) in
+          if listed caps d n then Option.map (fun t -> (f, t)) (FS.read_opt caps f) else None)
+        names)
     dirs
 
 let parsed (caps : < Cap.open_in; .. >) (f : string) (text : string) : (Ast.source, string) result =
@@ -56,14 +78,14 @@ let parsed (caps : < Cap.open_in; .. >) (f : string) (text : string) : (Ast.sour
   | Ok tree -> rewritten caps f text tree
 
 (* CLI's loader *)
-let loader (caps : < Cap.open_in; .. >) (dirs : Fpath.t list) : Scope.loader =
+let loader (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) : Scope.loader =
  fun name ->
   match find caps dirs name [ ".mli"; ".ml" ] with
   | None -> None
   | Some (f, text) -> (match parsed caps (Fpath.to_string f) text with Ok src -> Some src | Error m -> raise (Resolve.Error (0, m)))
 
 (* one unit: its facts made; the units it names *)
-let unit_ (caps : < Cap.open_in; .. >) (dirs : Fpath.t list) (file : Fpath.t) (text : string) : (string list, string) result =
+let unit_ (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (file : Fpath.t) (text : string) : (string list, string) result =
   let f = Fpath.to_string file in
   let name = String.capitalize_ascii (Filename.remove_extension (Filename.basename f)) in
   Hashtbl.replace files name f;
@@ -87,7 +109,7 @@ let unread : string list ref = ref []
 let homes : (string, string list) Hashtbl.t = Hashtbl.create 64
 let alone : bool ref = ref false
 
-let program (caps : < Cap.open_in; .. >) (dirs : Fpath.t list) (paths : Fpath.t list) : string list =
+let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (paths : Fpath.t list) : string list =
   let errors = ref [] in
   let todo = Queue.create () in
   (* (a variable's type, for what is a capability) *)
@@ -128,8 +150,7 @@ let program (caps : < Cap.open_in; .. >) (dirs : Fpath.t list) (paths : Fpath.t 
             (fun (d : Fpath.t) ->
               List.filter_map
                 (fun (n : string) ->
-                  let p = Fpath.(d / n) in
-                  Option.map (fun _ -> Fpath.to_string p) (FS.read_opt caps p))
+                  if listed caps d n then Some (Fpath.to_string Fpath.(d / n)) else None)
                 names)
             dirs in
         (* (one file by two names, lib_crypto/../lib_crypto: once) *)

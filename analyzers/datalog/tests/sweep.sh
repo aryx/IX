@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
@@ -32,7 +32,7 @@ one() { # a mkfile
   if [ -n "$missing" ]; then printf '%-44s    - NOT READ: no file for %s\n' $dir "$missing"; return; fi
   local t0=$(date +%s)
   # (-start: the units' order, mkprog's, for -bugs's init.dl)
-  (ulimit -v 12000000; timeout $limit $ANALYZE ${FLAG:--dead} -L lib_core \
+  (ulimit -v 12000000 2> /dev/null; timeout $limit $ANALYZE ${FLAG:--dead} -L lib_core \
      -start "$(start_of $mk)" $flags $files) > $out/$name.out 2> $out/$name.err
   local st=$? t1=$(date +%s)
   if [ $st = 0 ]; then

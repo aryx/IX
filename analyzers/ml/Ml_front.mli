@@ -10,7 +10,7 @@ val library : < Cap.open_in; .. > -> string -> Fpath.t list
  * directories (the files' own first) and read too, until no new one;
  * the errors of the program's files (a library unit not read is left
  * out) *)
-val program : < Cap.open_in; .. > -> Fpath.t list -> Fpath.t list -> string list
+val program : < Cap.open_in; Cap.readdir; .. > -> Fpath.t list -> Fpath.t list -> string list
 
 (* the files alone, their units, not the library units they name: their
  * names resolved by their interfaces, their code not read (-alone, the

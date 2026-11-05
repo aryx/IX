@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
@@ -19,7 +19,7 @@ list() { # the mkfile's variable $1, a word each, $UREG and $GFX said
 KML=$(list KML); KI=$(list KI)
 files=""; for u in $KML; do files="$files $u.ml"; done
 START=$(for u in $KML; do b=$(basename $u); echo -n "${b^} "; done)
-(ulimit -v 12000000
+(ulimit -v 12000000 2> /dev/null
  timeout 900 ${ANALYZE:-$T/_build/default/analyzers/Main.exe} $F \
    -r $T/analyzers/datalog -start "$START" "$@" -L ../../lib_core $KI \
    -I ../lib_machine $files) > $O 2>&1

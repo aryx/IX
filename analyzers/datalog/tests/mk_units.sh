@@ -37,7 +37,13 @@ unit_file() { # directory, -I's, unit
     f=$(find $MK/$d -maxdepth 2 -name "$3.ml" 2> /dev/null | head -1)
     [ -n "$f" ] && { echo $f; return; }
   done
-  f=$(find $1 -name "$3.ml" 2> /dev/null | head -1)
+  # (a file the mkfile names in a rule of its own: acid's
+  # "$D/Ptrace.$O: linux/mini-ml/Ptrace.ml", not linux/Ptrace.ml, dune's)
+  f=$(sed -nE "s|^\\\$D/$3\\.\\\$O: *([^ ]+\\.ml).*|\\1|p" $1/mkfile 2> /dev/null | head -1)
+  [ -n "$f" ] && [ -f $1/$f ] && { echo $1/$f; return; }
+  # (sorted: the order of find's, the file system's, differs from one to
+  # another, ext4's and APFS's)
+  f=$(find $1 -name "$3.ml" 2> /dev/null | LC_ALL=C sort | head -1)
   [ -z "$f" ] && f=$(tests/ix_files.sh | grep -E "/$3\.ml$" | head -1)
   # (a unit made in another program's directory, that alone of its name:
   # St_kernel.ml, made by mini-smalltalk's mkfile for mini-squeak too)
@@ -87,14 +93,16 @@ start_of() { # mkfile
 # the -I's (as -I,dir, words) and the files, of a mkfile, on one line;
 # units not found are missing="..." to the caller
 program_args() { # mkfile
-  local mk=$1 dir=$(dirname $1) incs= flags= files= i u f
+  local mk=$1 dir=$(dirname $1) incs= flags= files= i u f root
   missing=
   # (-I's of LIBI, and of INCLUDES where a mkfile writes its own; LIBDIRS,
   # from ix's top; a directory that is not there, as $B's, left out)
   for i in $(var $mk LIBI) $(var $mk INCLUDES) $(for d in $(var $mk LIBDIRS); do echo "$(var $mk TOP)/$d"; done); do
     case $i in -I|.|'') continue;; esac
     [ -d $dir/$i ] || continue
-    i=$(realpath --relative-to=. $dir/$i)
+    # (relative to ix's root; not realpath --relative-to, GNU's only)
+    i=$(cd $dir/$i && pwd -P); root=$(pwd -P)
+    case $i in "$root") i=.;; "$root"/*) i=${i#"$root"/};; esac
     case " $incs " in *" $i "*) continue;; esac
     incs="$incs $i"; flags="$flags,-I,$i"
   done

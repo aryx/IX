@@ -61,11 +61,15 @@ END
 if command -v gcc > /dev/null && command -v nm > /dev/null; then
   printf 'static int counter = 3;\nint table[100];\nstatic int leaf(int a) { return a * 2 + counter; }\nint main(void) { return leaf(table[0]); }\n' > elf.c
   gcc -g -O0 -o elf elf.c
+  # (macOS's gcc, clang, makes a Mach-O: no ELF to read there)
+  if [ "$(head -c 4 elf | tail -c 3)" = ELF ]; then
+  # (a value without its leading zeros: not strtonum, GNU awk's only)
   same "mini-nm: an ELF's values and names, as binutils' nm" \
-    "$(nm --defined-only elf | awk '$2 ~ /^[TtDdBbRrWV]$/ {printf "%x %s\n", strtonum("0x"$1), $3}' | sort)" \
-    "$($IX/linker/tools/Nm.exe elf | awk '{printf "%x %s\n", strtonum("0x"$1), $3}' | sort)"
+    "$(nm --defined-only elf | awk '$2 ~ /^[TtDdBbRrWV]$/ {v = $1; sub(/^0+/, "", v); print (v == "" ? "0" : v), $3}' | sort)" \
+    "$($IX/linker/tools/Nm.exe elf | awk '{v = $1; sub(/^0+/, "", v); print (v == "" ? "0" : v), $3}' | sort)"
   same "mini-nm: an ELF's letters" "$(printf 'D counter\nT leaf\nT main\nB table\n')" \
     "$($IX/linker/tools/Nm.exe elf | awk '$3 ~ /^(counter|leaf|main|table)$/ {print toupper($2), $3}')"
+  fi
 fi
 if [ "$1" = live ]; then
   P=$HOME/principia/ROOT/arch/arm/bin

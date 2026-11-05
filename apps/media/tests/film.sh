@@ -76,7 +76,7 @@ run 30 '' $C/testsrc_mjpeg.avi $T/t.ppm
 alike "half a second in, the sound's clock and the timer's show one frame" $T/s.ppm $T/t.ppm
 
 check "a sound is still a sound: its samples on standard output" \
-  "$(HOME=$T timeout 30 $F -c -s 1 lib_audio/tests/data/bell.mp2 | wc -c)" 176400
+  "$(HOME=$T timeout 30 $F -c -s 1 lib_audio/tests/data/bell.mp2 | wc -c | tr -d " ")" 176400
 head -c 200 $C/testsrc_mjpeg.avi > $T/broken.avi
 HOME=$T timeout 30 $F -dump-frame 2 $T/x.ppm $T/broken.avi > $T/said 2>&1
 [ $? != 0 ] && echo "ok a broken film: a failure, no window" || { echo "FAIL a broken film ran"; r=1; }

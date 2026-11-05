@@ -58,7 +58,8 @@ for u in Tree Tree_helpers Pre Acid Check Declare Machines Emit Com64 Parser Lex
   for f in languages/c/$u.ml languages/c/*/$u.ml analyzers/c/$u.ml $P/$u.ml; do [ -f $f ] && break; done
   for x in ml mli; do
     for g in ${f%.ml}.$x languages/c/$u.$x $P/$u.$x; do
-      [ -f $g ] && { sed -E 's/\bParser\b/C_parser/g; s/\bLexer\b/C_lexer/g' $g > $W/c/$(rename $u).$x; break; }
+      # (perl: sed's \b is GNU's only, BSD's sed renamed nothing)
+      [ -f $g ] && { perl -pe 's/\bParser\b/C_parser/g; s/\bLexer\b/C_lexer/g' $g > $W/c/$(rename $u).$x; break; }
     done
   done
   files="$files $W/c/$(rename $u).ml"

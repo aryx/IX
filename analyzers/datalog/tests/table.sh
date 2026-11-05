@@ -16,7 +16,7 @@ DATALOG=${DATALOG:-_build/default/languages/datalog/Main.exe}
 limit=$1; facts=$2; shift 2
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 base="$D/instructions.dl $D/andersen.dl"
-ulimit -v 16000000
+ulimit -v 16000000 2> /dev/null
 printf '%-14s %8s %9s %8s %8s %7s %6s\n' analysis seconds pt edges several reached lost
 count() { if [ "$1" = none ]; then echo -; else grep -c "$2" $W/out; fi; }
 row() { # name, pt's relation, edges' relation, reached's query (or none), then the rules

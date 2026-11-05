@@ -22,7 +22,7 @@ export W R D
 . $T/mk_units.sh
 
 queries() { # out, facts
-  (ulimit -v 12000000; timeout ${LIMIT:-180} $DATALOG -q 'mismatch(R, I, H, C)' -q 'by_need(R, I, H, S)' -q 'cap_call(I, H)' -q 'checked(I, H)' -q 'not_seen(I, H, W)' -q 'handed_unknown(I, G, V)' -q 'handed_in_dead(I, V)' \
+  (ulimit -v 12000000 2> /dev/null; timeout ${LIMIT:-180} $DATALOG -q 'mismatch(R, I, H, C)' -q 'by_need(R, I, H, S)' -q 'cap_call(I, H)' -q 'checked(I, H)' -q 'not_seen(I, H, W)' -q 'handed_unknown(I, G, V)' -q 'handed_in_dead(I, V)' \
     $D/instructions.dl $D/contexts.dl $D/insensitive.dl $R/dead.dl $R/capabilities.dl $R/capabilities_types.dl $2 2> /dev/null) > $1
 }
 
@@ -31,7 +31,7 @@ one() { # a mkfile
   name=$(echo $dir | tr / _)
   case $(var $mk SRC) in *'`'*) return;; esac
   read flags files < <(program_args $mk)
-  (ulimit -v 12000000; timeout 120 $ANALYZE -facts -L lib_core ${flags//,/ } $files) > $W/$name.facts 2> $W/$name.err
+  (ulimit -v 12000000 2> /dev/null; timeout 120 $ANALYZE -facts -L lib_core ${flags//,/ } $files) > $W/$name.facts 2> $W/$name.err
   if [ -s $W/$name.err ]; then printf '%-40s not read\n' $dir; return; fi
   queries $W/$name.out $W/$name.facts || { printf '%-40s past the limit\n' $dir; return; }
   printf '%-40s %5d %7d %6d  %s\n' $dir $(grep -c '^cap_call' $W/$name.out) $(grep -c '^checked' $W/$name.out) $(grep -c '^mismatch' $W/$name.out) \
@@ -56,7 +56,9 @@ $ANALYZE -facts $d/*.ml > $W/facts 2>&1
 queries $W/out $W/facts
 { grep '^mismatch' $W/out | sed -E "s/mismatch\('?([^,']*)'?,'[^']*','?([^,']*)'?,'?([^,')]*)'?\)\./\1 gives \2, which asks \3/" | sort
   echo "$(grep -c '^cap_call' $W/out) calls, $(grep -c '^checked' $W/out) checked"
-  grep '^not_seen' $W/out | sed -E "s/.*,'?([^,']*)'?\)\.$/not seen: \1/" | sort | uniq -c
+  grep '^not_seen' $W/out | sed -E "s/.*,'?([^,']*)'?\)\.$/not seen: \1/" | sort | uniq -c |
+    # (the count in 7 columns, GNU's uniq's; BSD's, macOS's, pads to 4)
+    awk '{ n = $1; sub(/^ *[0-9]+ /, ""); printf "%7d %s\n", n, $0 }'
 } > $W/expected.out
 if [ "${1:-}" = -record ]; then cp $W/expected.out $d/expected.out; echo "recorded $d/expected.out"
 elif cmp -s $W/expected.out $d/expected.out; then echo "ok capabilities as OCaml's types: what it refuses found"

@@ -11,7 +11,11 @@
 # usage: kernels/9pi/tests/ixdirs.sh
 cd "$(dirname "$0")/../../.."
 libs=$(sed -n '/^LIBS=/,/[^\\]$/p' mkfile | sed 's/^LIBS=//; s/\\$//; s/\${[^}]*}//g')
-dirs=$(make -s --no-print-directory -C kernels/9pi --eval='ixdirs: ; @echo $(IXDIRS)' ixdirs)
+# (the rule in a makefile of its own beside the Makefile: not --eval,
+# which GNU make 3.81, macOS's, does not have)
+W=$(mktemp -d); trap 'rm -rf $W' EXIT
+printf 'ixdirs: ; @echo $(IXDIRS)\n' > $W/ixdirs.mk
+dirs=$(make -s --no-print-directory -C kernels/9pi -f Makefile -f $W/ixdirs.mk ixdirs)
 [ -n "$dirs" ] || { echo "FAIL no IXDIRS read in kernels/9pi/Makefile"; exit 1; }
 made=" $libs "; bad=0
 for d in $dirs; do
@@ -21,5 +25,5 @@ for d in $dirs; do
   done
   made="$made$d "
 done
-[ $bad = 0 ] && echo "ok make ix's order: $(echo $dirs | wc -w) directories, each after those whose objects it takes"
+[ $bad = 0 ] && echo "ok make ix's order: $(echo $dirs | wc -w | tr -d " ") directories, each after those whose objects it takes"
 exit $bad

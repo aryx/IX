@@ -104,7 +104,8 @@ References: <1@ix> <2@ix>
 
 On Thu, 29 Oct 2026 11:00:00 +0100, Carol <carol@ix> wrote:
 > “Yes”, à midi." "a reply's draft"
-sed -i '0,/^$/s//\nAgreed./' $W/r
+# (after the first empty line; not sed -i '0,/^$/...', GNU sed's only)
+awk '!d && /^$/ { print; print "Agreed."; d = 1; next } 1' $W/r > $W/r.new && mv $W/r.new $W/r
 echo secret | timeout 20 $PIM -s $S -plain -u erin@ix send $W/r > $W/out 2>&1
 is "sent to 1" "the reply sent"
 f=$W/spool/carol/1
@@ -249,7 +250,7 @@ printf '!Type:Bank\nD10/1/2026\nT2000.00\nPAcme\nLSalary\n^
 D10/6/2026\nT-62.40\nPEDF SA\n^\nD10/9/2026\nT-42.17\nPSafeway
 LGroceries\n^\n' > $W/bank.qif
 $PIM import $W/bank.qif > $W/out
-[ "$(wc -l < $W/out)" = 2 ] || { echo "FAIL import: $(cat $W/out)"; fail=1; }
+[ $(wc -l < $W/out) = 2 ] || { echo "FAIL import: $(cat $W/out)"; fail=1; }
 $PIM add task:rent title=rent due=2026-11-01 stamp='task money' \
   'posting=Expenses:Rent  900.00' posting=Assets:Checking \
   'repeat=FREQ=MONTHLY;BYMONTHDAY=1'

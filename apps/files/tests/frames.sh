@@ -38,9 +38,10 @@ printf '\001\002\003' > $T/tree/data.bin
 for i in $(seq -w 10 69); do echo $i > $T/tree/many/file$i; done
 # (the days by the names' order: find's is the directory's, on ext4 by
 # a hash seeded per file system, so CI's disk gave other days)
-(cd $T/tree && i=0; for f in $(find . | LC_ALL=C sort); do i=$((i+1)); touch -d "2026-01-$(printf %02d $((i%28+1))) 12:00:00 UTC" "$f"; done)
-touch -d "2026-02-01 12:00:00 UTC" $T/tree/report.pdf $T/tree
-touch -d "2025-12-25 12:00:00 UTC" $T/tree/notes.txt
+# (touch -t, in UTC: BSD's touch, macOS's, does not read -d's "... UTC")
+(cd $T/tree && i=0; for f in $(find . | LC_ALL=C sort); do i=$((i+1)); TZ=UTC touch -t 202601$(printf %02d $((i%28+1)))1200.00 "$f"; done)
+TZ=UTC touch -t 202602011200.00 $T/tree/report.pdf $T/tree
+TZ=UTC touch -t 202512251200.00 $T/tree/notes.txt
 
 run() { # frames script file
   HOME=$T/home PATH=$T/bin:/usr/bin:/bin $F -dump-frame $1 $3 ${2:+-script "$2"} root=$T/tree $T/tree > /dev/null 2>&1

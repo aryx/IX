@@ -86,7 +86,7 @@ same "x, v where the name is taken: refused, the source still there" \
 fresh; run "$B,type(c):10,up:12,up:14,return:16,type(v):18"
 same "a copy keeps the bytes" "$(cat $T/tree/music/b.txt)" b
 [ -x $T/tree/music/b.txt ] && echo "ok a copy keeps the execute bit" || { echo "FAIL a copy loses the execute bit"; r=1; }
-fresh; touch -d "2020-02-02 12:00:00 UTC" $T/tree/b.txt
+fresh; TZ=UTC touch -t 202002021200.00 $T/tree/b.txt
 run "$B,type(x):10,up:12,up:14,return:16,type(v):18"
 same "a move keeps the day" "$(date -u -r $T/tree/music/b.txt +%F)" 2020-02-02
 

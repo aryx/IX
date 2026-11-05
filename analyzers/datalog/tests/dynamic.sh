@@ -41,7 +41,7 @@ all="forth datalog rc prolog dc"
 # one run: prog args, stdin from /dev/null unless $IN; profile added to $W/prof
 run() {
   n=$((n + 1))
-  (cd $W/cwd; ulimit -v 12000000; timeout 120 $MINI5I -prof $W/prof.$n $W/prog "$@" < ${IN:-/dev/null} > /dev/null 2>&1)
+  (cd $W/cwd; ulimit -v 12000000 2> /dev/null; timeout 120 $MINI5I -prof $W/prof.$n $W/prog "$@" < ${IN:-/dev/null} > /dev/null 2>&1)
 }
 
 workload() { # a program's own tests

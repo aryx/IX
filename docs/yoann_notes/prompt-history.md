@@ -63222,3 +63222,72 @@ Claude explained that `make test` runs `tests/lite.sh`, which includes tiny's fo
 Claude noted that Docker has no ix build, so `-caps` was skipped there, while `make check` adds m-ix's `-dead`, `-bugs` and `-exn`.
 Claude said the container running `make ix && make check` should cover the remaining four checks on Linux, including the skipped `-caps` one.
 Claude committed to reporting back once that container run finishes.
+
+------------------------------------------------------------------------
+
+## 2026-11-05 07:48
+
+**Yoann:**
+
+> ok let's commit then those fixes
+
+**Claude (summary):**
+
+Claude committed the fixes as `2fad6f82` on main, unpushed, covering nine analyzer files plus `prompt-history.md`.
+Claude amended the commit once to drop an unmeasured report count from its message.
+Claude reported `make build-docker` passed and `make test` ran 187 jobs with 0 failures and 6 skipped on Linux.
+Those results cover tiny/'s four checks, which were the ones failing for Yoann.
+Claude said m-ix's four checks had not run on Linux yet, with a container still running `make ix && make check`.
+
+------------------------------------------------------------------------
+
+## 2026-11-05 07:50
+
+**Yoann:**
+
+> GHA seems to indicate test-all is failing in CI
+
+**Claude (summary):**
+
+Claude said the summary table's cut-off `FAIL` line, with its excerpt, was the part that mattered.
+Claude was checking which CI run the failing test-all output came from.
+Yoann's follow-up is that `make test` still shows some failures locally.
+
+------------------------------------------------------------------------
+
+## 2026-11-05 08:05
+
+**Yoann:**
+
+> I just run make test and it still has some failures locally
+
+------------------------------------------------------------------------
+
+## 2026-11-05 08:14
+
+**Yoann:**
+
+> why it's failing when I think it's passing in CI and was passing on Linux yesterday?
+
+**Claude (summary):**
+
+Claude traced CI's test-all failure to `make test-long`, which runs `make check` without `make ix` first.
+So `Pic_parser.ml` is never generated: `-dead` and `-caps` skip man, but `-exn` counts a recorded line as gone.
+Claude changed `analyzers/Analyze.ml:323` so `-exn` and `-bugs` also fail on an unread library unit.
+With the parser hidden as in CI, `-exn` and `-bugs` pass, and `make check` with it present still passes.
+Claude left the fix uncommitted, asked whether to commit it, then fix the macOS failures one by one.
+
+------------------------------------------------------------------------
+
+## 2026-11-05 08:15
+
+**Yoann:**
+
+> what is this fix? why it's needed on macOS but was not needed on Linux?
+
+**Claude (summary):**
+
+Claude explained that the `Analyze.ml` fix targets a Linux CI failure, reproduced in a Docker container, not macOS.
+Claude traced the failure: `make check` runs before `make ix`, so `Pic_parser.ml` is missing and `Pic.ml` cannot be read.
+The `-dead` and `-caps` analyses reported the unread unit as "not read here", but `-exn` and `-bugs` silently passed.
+Claude changed `analyzers/Analyze.ml:323` so `-exn` and `-bugs` also fail on unread units, making man "not read here" in all four analyses.

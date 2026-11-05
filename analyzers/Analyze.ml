@@ -319,8 +319,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                   given p "unit_dir" [ C.Facts.Sym u; C.Facts.Sym d ])
                 (dirs_from caps !lib f))
             Ml_front.files;
-        (* (what they call would be reported dead) *)
-        if !dead || !ambient then List.iter (fun m -> Console.eprint caps ("not read: " ^ m ^ "\n"); incr failed) !Ml_front.unread;
+        (* (what they call would be reported dead; -exn's and -bugs's
+         * reports through them would be missing, gone from a recording) *)
+        if !dead || !ambient || !exns || !bugs then List.iter (fun m -> Console.eprint caps ("not read: " ^ m ^ "\n"); incr failed) !Ml_front.unread;
         if !ambient || !bugs then
           Hashtbl.iter (fun u () -> given p "own_unit" [ C.Facts.Sym u ]; given p "own_init" [ C.Facts.Sym (u ^ ":init") ]) Ml_front.own;
         if !only then Console.print caps (Buffer.contents text)

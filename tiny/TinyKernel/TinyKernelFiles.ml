@@ -164,7 +164,9 @@ let rec walk node ns =
   | n :: rest, Dir d ->
       (match List.assoc_opt n !d with Some c -> walk c rest | None -> None)
   | n :: rest, Disk (r, i) when fs_is_dir r i ->
-      (match fs_lookup r i n with 0 -> None | j -> walk (Disk (r, j)) rest)
+      (match fs_lookup r i n with
+       | None -> None
+       | Some j -> walk (Disk (r, j)) rest)
   | n :: rest, Union l ->
       (match List.fold_left (fun acc m ->
          match walk m [ n ] with Some c -> acc @ [ c ] | None -> acc) [] l with
@@ -227,7 +229,9 @@ let entry name n =
     | Dir _ -> 1, 0, links n
     | Data d -> 2, d.dsize, links n
     | Rom (_, k) -> 2, k, links n
-    | Disk (r, i) -> fs_kind r i
+    | Disk (r, i) ->
+        let k, size, l = fs_kind r i in
+        (match k with Fs_dir -> 1 | Fs_file -> 2), size, l
     | Union _ -> 1, 0, 1
     | _ -> 3, 0, links n in
   let date =

@@ -58,15 +58,18 @@ let () =
    * first shell starts in /usr/glenda. *)
   let blocks = peek disk_dev in
   if blocks > 0 then begin
-    fs_io := (fun b a cmd ->
+    fs_io := (fun b a io ->
       poke disk_dev b;
       poke (disk_dev + 4) a;
-      poke (disk_dev + 8) cmd;
+      (* (the device's commands: 1 the block to memory, 2 back) *)
+      poke (disk_dev + 8) (match io with Disk_read -> 1 | Disk_write -> 2);
       poke (disk_dev + 12) 0);
     fs_clock := date;
     fs_mount blocks;
     let made d name =
-      match fs_lookup 0 d name with 0 -> fs_create d name 1 | j -> j in
+      match fs_lookup 0 d name with
+      | None -> fs_create d name Fs_dir
+      | Some j -> j in
     ignore (made 1 "bin");
     ignore (made (made 1 "usr") "glenda");
     fs_commit ();

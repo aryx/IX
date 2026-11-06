@@ -1,10 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyKernelFS.mli *)
-
-(* OCaml builds this file too, on the host, where it is tested with a
- * disk of bytes in memory (tests/TinyKernelFS_tests/Host.ml) *)
+(* testing:
+ * OCaml builds this file too, on the host, where it is tested with a
+ * disk of bytes in memory (tests/TinyKernelFS_tests/Host.ml)
+ *)
 
 open TinyMemory
 
@@ -12,12 +12,23 @@ open TinyMemory
 (* The disk, and the kernel's memory the file system works in *)
 (*****************************************************************************)
 
-(* The transfer of block b to memory at a (command 1) or from it (2). The
- * kernel sets it to its disk device; the test sets it to a string of
- * bytes. *)
-let fs_io = ref (fun b a cmd -> ignore (b + a + cmd))
-let fs_read b a = !fs_io b a 1
-let fs_write b a = !fs_io b a 2
+(* a file's number: a tree's (0 the live one), an inode's in it *)
+type tree = int
+type inode = int
+
+(* an inode's type: a directory or a file (1 and 2 on the disk, as in
+ * the entries the kernel gives ls; old: the numbers, at the
+ * interface too) *)
+type file_kind = Fs_dir | Fs_file
+let kind_code k = match k with Fs_dir -> 1 | Fs_file -> 2
+
+(* The transfer of block b to memory at a, or from it. The kernel sets
+ * it to its disk device (its commands 1 and 2); the test sets it to a
+ * string of bytes. *)
+type disk_io = Disk_read | Disk_write
+let fs_io = ref (fun (b : int) (a : int) (_ : disk_io) -> ignore (b + a))
+let fs_read b a = !fs_io b a Disk_read
+let fs_write b a = !fs_io b a Disk_write
 
 let fs_bsize = 1024
 
@@ -234,7 +245,9 @@ let fs_new typ =
 (*****************************************************************************)
 
 (* the type, the size and the links of inode n of tree r; its date *)
-let fs_kind r n = fs_load r n; fs_word 0, fs_word 1, fs_word 2
+let fs_kind (r : tree) (n : inode) : file_kind * int * int =
+  fs_load r n;
+  (if fs_word 0 = 1 then Fs_dir else Fs_file), fs_word 1, fs_word 2
 let fs_date r n = fs_load r n; fs_word 3
 let fs_is_dir r n = fs_load r n; fs_word 0 = 1
 
@@ -330,9 +343,9 @@ let fs_entries r d =
     end in
   go 0 []
 
-(* the inode under a name in directory d of tree r (0: none) *)
-let fs_lookup r d name =
-  match List.assoc_opt name (fs_entries r d) with Some n -> n | None -> 0
+(* the inode under a name in directory d of tree r *)
+let fs_lookup (r : tree) (d : inode) name : inode option =
+  List.assoc_opt name (fs_entries r d)
 
 (* one more name for inode n, in directory d *)
 let fs_link d name n =
@@ -341,8 +354,9 @@ let fs_link d name n =
   fs_setw 2 (fs_word 2 + 1);
   fs_save n
 
-(* a new file (type 2) or directory (1) under a name in d *)
-let fs_create d name typ = let n = fs_new typ in fs_link d name n; n
+(* a new file or directory under a name in d *)
+let fs_create (d : inode) name (k : file_kind) : inode =
+  let n = fs_new (kind_code k) in fs_link d name n; n
 
 (* A name removed from d, the directory written again without it. The
  * inode is freed with its last name. (A program that still has it open
@@ -355,12 +369,13 @@ let fs_unlink d name =
     (String.concat ""
        (List.map (fun (m, k) -> fs_entry m k)
           (List.filter (fun (m, _) -> m <> name) l)));
-  if n <> 0 then begin
-    fs_load 0 n;
-    fs_setw 2 (fs_word 2 - 1);
-    if fs_word 2 <= 0 then row_fill fs_ino 0 64;
-    fs_save n
-  end
+  match n with
+  | Some n ->
+      fs_load 0 n;
+      fs_setw 2 (fs_word 2 - 1);
+      if fs_word 2 <= 0 then row_fill fs_ino 0 64;
+      fs_save n
+  | None -> ()
 
 (*****************************************************************************)
 (* Commits, snapshots, the mount *)

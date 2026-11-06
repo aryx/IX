@@ -1,11 +1,11 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyShell.mli *)
-
-(* The tests: tests/TinyShell_test.sh runs scripts written in this
+(* testing:
+ * The tests: tests/TinyShell_test.sh runs scripts written in this
  * subset both through this shell and through 9base's rc, which must
- * print the same thing. *)
+ * print the same thing.
+ *)
 
 (* -h: the usage, and the language by example, as it runs *)
 open Common

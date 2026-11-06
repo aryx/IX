@@ -308,14 +308,14 @@ let sys_open p =
         n
     | None, Some (Disk (0, i), last)
       when mode land o_create <> 0 && String.length last <= 64 ->
-        Disk (0, fs_create i last 2)
+        Disk (0, fs_create i last Fs_file)
     | _ -> raise Bad in
   (* (a file of the image opened to be written is in memory from now on;
    * or a file of the disk, when its directory is there too: /bin's) *)
   let node =
     match node, dir_of ns with
     | Rom (at, n), Some (Disk (0, i), last) when writes ->
-        let j = fs_create i last 2 in
+        let j = fs_create i last Fs_file in
         if mode land o_trunc = 0 then fs_write_at j 0 at n;
         Disk (0, j)
     | Rom (at, n), Some (Dir d, last) when writes ->
@@ -424,7 +424,7 @@ let sys_mkdir p =
   | None, Some (Dir d, last) when String.length last <= 64 ->
       d := !d @ [ last, Dir (ref []) ]; result p 0
   | None, Some (Disk (0, i), last) when String.length last <= 64 ->
-      ignore (fs_create i last 1); result p 0
+      ignore (fs_create i last Fs_dir); result p 0
   | _ -> raise Bad
 
 (* a name removed; a directory only if empty *)
@@ -438,8 +438,8 @@ let sys_unlink p =
        | None -> raise Bad)
   | Some (Disk (0, i), last) ->
       (match fs_lookup 0 i last with
-       | 0 -> raise Bad
-       | j when fs_is_dir 0 j && fs_entries 0 j <> [] -> raise Bad
+       | None -> raise Bad
+       | Some j when fs_is_dir 0 j && fs_entries 0 j <> [] -> raise Bad
        | _ -> fs_unlink i last; result p 0)
   | _ -> raise Bad
 

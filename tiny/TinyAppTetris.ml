@@ -1,8 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
  *)
-(* See TinyAppTetris.mli *)
-(* The rules are tested on the host by feeding keys and frames to these
+(* testing:
+ * The rules are tested on the host by feeding keys and frames to these
  * functions and printing the well as text (tests/TinyAppTetris_test.sh);
  * the picture can be tested with TinyKernelGraphics.ml. *)
 open TinyLibPlayground

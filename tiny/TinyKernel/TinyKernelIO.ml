@@ -149,7 +149,7 @@ let hex_bytes l =
 
 (* A tracer's command (plan_tiny_debugger.md), the numbers in decimal:
  * b addr, a breakpoint, the word there kept and 0 written in its place
- * (no instruction is 0: the process traps there, c_illegal); d addr,
+ * (no instruction is 0: the process traps there, Trap_illegal); d addr,
  * the breakpoint removed, its word put back; r, the registers (r1 to
  * r15, then the pc); m addr n, n bytes in hexadecimal (1024 at most; a
  * breakpoint's are the word it hides); w addr v, a word written; y and

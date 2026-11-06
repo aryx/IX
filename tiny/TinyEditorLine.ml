@@ -1,10 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyEditorLine.mli *)
-
-(* Testing: tests/TinyEditorLine_test.sh runs scripts through this
- * editor and through 9base's sam -d, and compares the results. *)
+(* testing:
+ * tests/TinyEditorLine_test.sh runs scripts through this
+ * editor and through 9base's sam -d, and compares the results.
+ *)
 
 open Common
 

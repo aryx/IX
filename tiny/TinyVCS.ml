@@ -1,13 +1,13 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyVCS.mli *)
-
-(* The tests, in tests/TinyVCS_test.sh, check the laws: switching to a
+(* testing:
+ * The tests, in tests/TinyVCS_test.sh, check the laws: switching to a
  * commit restores its tree exactly; merging disjoint changes is
  * symmetric and keeps both; undo restores the branches; a clone has the
  * same log. They also check diff against GNU patch (applying the diff
- * gives back the new file). *)
+ * gives back the new file).
+ *)
 
 (* -h: how, by examples, each one as it runs *)
 open Common

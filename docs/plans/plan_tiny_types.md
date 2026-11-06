@@ -279,3 +279,21 @@ space comes before), not a mode; the word as a record goes with
 stage 7. dead_tiny.txt recorded again (the tokenizer's dead in the
 host programs, which link it unused, under its new names). +22 code
 lines.
+
+2026-11-06, stage 5 built (the author: "let's commit and move
+forward"): the kernel's numbers that were enumerations, a variant
+each where they enter the kernel, the number kept where it is the
+machine's or the disk's:
+- a trap's cause: TinyKernelMachine's `cause` (`Trap_sys`,
+  `Trap_illegal`, `Trap_fault`, `Trap_intr`), `cause_of` where
+  k_run, k_step or a core's mailbox gives it; the scheduler's
+  `trapped` a match (old: c_sys... compared in an if chain);
+  `cause_code` for the one message that says the number ("trap 3
+  at ..."), the same output; tiny-machine's side (TinyMachineDevices)
+  keeps the numbers, its registers';
+- the FS: `tree` and `inode` aliases in its signatures, `file_kind`
+  (`Fs_dir | Fs_file`) in `fs_kind` and `fs_create` (1 and 2 kept on
+  the disk and in the entries the kernel gives ls), `fs_lookup` an
+  `inode option` (old: 0 for none), `fs_io`'s command a `disk_io`
+  (`Disk_read | Disk_write`), made the device's 1 or 2 where the
+  kernel pokes it. +33 code lines (8 of them the FS's tests).

@@ -71,7 +71,7 @@ let count_ticks () =
  * [back], given a process's trap on another core, is the scheduler's
  * (below) *)
 let on = Array.make cores None
-let back_hook = ref (fun (_ : int) (_ : proc) (_ : int) (_ : int) -> ())
+let back_hook = ref (fun (_ : int) (_ : proc) (_ : cause) (_ : int) -> ())
 
 let interrupts sources =
   (* the cores' traps, each from the core that raised the interrupt *)
@@ -82,7 +82,8 @@ let interrupts sources =
       | Some p when from land (1 lsl k) <> 0 ->
           on.(k) <- None;
           p.core <- -1;
-          !back_hook k p (peek (mailbox k + 16)) (peek (mailbox k + 20))
+          !back_hook k p (cause_of (peek (mailbox k + 16)))
+            (peek (mailbox k + 20))
       | _ -> ()
     done
   end;
@@ -214,7 +215,7 @@ and run p =
   | _ ->
       p.core <- 0;
       mem_window p.mem;
-      let cause = k_run (frame p.slot) in
+      let cause = cause_of (k_run (frame p.slot)) in
       next p (trapped p cause (k_tval ()))
 
 (* A traced process run for one instruction: a step, or a breakpoint's
@@ -225,10 +226,10 @@ and run p =
  * makes a call that waits stops when the call ends (waited). *)
 and step p t =
   mem_window p.mem;
-  let cause = k_step (frame p.slot) in
-  let ran = cause <> c_intr || k_tval () land 1 <> 0 in
+  let cause = cause_of (k_step (frame p.slot)) in
+  let ran = cause <> Trap_intr || k_tval () land 1 <> 0 in
   let timer = trapped p cause (k_tval ()) in
-  if cause <> c_intr then count_ticks ();
+  if cause <> Trap_intr then count_ticks ();
   if ran && List.exists (fun q -> q.pid = p.pid) !procs then begin
     if t.over >= 0 && List.exists (fun (b, _) -> b = t.over) t.stops then
       mem_store p.mem t.over 0;
@@ -238,23 +239,23 @@ and step p t =
   next p timer
 
 (* a trap handled, its cause and its value; whether it was the timer's *)
-and trapped p cause tval =
-  if cause = c_sys then (call p tval; false)
-  else if cause = c_intr then interrupts tval
-  else if cause = c_illegal && traced p then
-    (stop p (if tval = 0 then "break" else "illegal " ^ string_of_int tval);
-     false)
+and trapped p (cause : cause) tval =
+  match cause with
+  | Trap_sys -> call p tval; false
+  | Trap_intr -> interrupts tval
+  | Trap_illegal when traced p ->
+      stop p (if tval = 0 then "break" else "illegal " ^ string_of_int tval);
+      false
   (* (a page not touched yet, or one a fork shares: pages) *)
-  else if cause = c_fault && mem_fault p.mem tval then false
-  else if cause = c_fault && traced p then
-    (stop p ("fault " ^ string_of_int tval); false)
-  else begin
-    puts ("ml: " ^ string_of_int p.pid ^ ": trap " ^ string_of_int cause
+  | Trap_fault when mem_fault p.mem tval -> false
+  | Trap_fault when traced p -> stop p ("fault " ^ string_of_int tval); false
+  | Trap_illegal | Trap_fault ->
+    puts ("ml: " ^ string_of_int p.pid ^ ": trap "
+          ^ string_of_int (cause_code cause)
           ^ " at " ^ string_of_int (reg p 16) ^ ", "
           ^ string_of_int tval ^ ": killed\n");
     exit_proc p (-1);
     false
-  end
 
 (* the same process again unless its time is up or it cannot go on
  * (the other cores given what can run first: what p's call made ready) *)
@@ -274,7 +275,7 @@ and next p timer =
 let back k p cause tval =
   if p.doomed then exit_proc p (-1)
   else begin
-    let timer = cause = c_intr || trapped p cause tval in
+    let timer = cause = Trap_intr || trapped p cause tval in
     let alive = List.exists (fun q -> q.pid = p.pid) !procs in
     if alive && (not timer) && elsewhere p
        && (match p.state with Ready -> true | _ -> false)

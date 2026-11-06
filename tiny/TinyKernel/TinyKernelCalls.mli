@@ -1,4 +1,4 @@
-(* TinyKernel's system calls: a process's trap with c_sys, its number
+(* TinyKernel's system calls: a process's trap with Trap_sys, its number
  * the sys instruction's (the trap's value), its arguments in r1..r3,
  * its result put back in r1; and what they need, a process ended, a
  * program loaded in a process's memory.

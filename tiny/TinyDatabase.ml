@@ -1,11 +1,11 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyDatabase.mli *)
-
-(* The test, tests/TinyDatabase_test.sh, runs pipelines through this
+(* testing:
+ * The test, tests/TinyDatabase_test.sh, runs pipelines through this
  * database and the equivalent SQL through SQLite (Python's sqlite3),
- * and compares the resulting rows. *)
+ * and compares the resulting rows.
+ *)
 
 open Common
 

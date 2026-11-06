@@ -1,10 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyKernelAudio.mli *)
-
-(* OCaml builds this file too, on the host, where its sounds are tested
- * without a machine (tests/TinyKernelAudio_tests/Host.ml) *)
+(* testing:
+ * OCaml builds this file too, on the host, where its sounds are tested
+ * without a machine (tests/TinyKernelAudio_tests/Host.ml)
+ *)
 
 open TinyMemory
 

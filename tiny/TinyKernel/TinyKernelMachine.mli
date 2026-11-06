@@ -7,7 +7,7 @@
  *     the kernel in ML   ──peek/poke──►   a device's words (-16: the last
  *                                         16 bytes, whatever the size)
  *                        ──k_run──────►   a process, until its trap: the
- *                                         cause (c_sys, c_fault...) back
+ *                                         cause (Trap_sys, Trap_fault...) back
  *
  * The first 32 MB are the kernel's (runtime.c says how): its image,
  * the processes' frames, the images it draws, the screen, its heap;
@@ -73,11 +73,11 @@ val mailbox : int -> int
 val k_ie : int -> unit
 
 (* a trap's causes: a system call, an illegal instruction, a fault, an
- * interrupt *)
-val c_sys : int
-val c_illegal : int
-val c_fault : int
-val c_intr : int
+ * interrupt; [cause_of n]: the machine's number's (k_run's, k_step's,
+ * a mailbox's), read once; [cause_code]: the number, for a message *)
+type cause = Trap_sys | Trap_illegal | Trap_fault | Trap_intr
+val cause_of : int -> cause
+val cause_code : cause -> int
 
 (* the timer's period: a 400th of a second of the machine's instructions *)
 val tick : int

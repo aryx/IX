@@ -74,11 +74,25 @@ let mailbox k = 0xb41000 + (64 * k)
 (* the interrupts taken, the cores' always when there are several *)
 let k_ie sources = k_ie (if cores > 1 then sources lor 32 else sources)
 
-(* a trap's causes (TinyMachine.ml's), the timer's period *)
-let c_sys = 1
-let c_illegal = 2
-let c_fault = 3
-let c_intr = 4
+(* a trap's cause, the machine's number (TinyMachineDevices's 1 to 4)
+ * read once, where k_run, k_step or a core's mailbox gives it (old:
+ * c_sys... the numbers, compared at each use) *)
+type cause = Trap_sys | Trap_illegal | Trap_fault | Trap_intr
+let cause_of n =
+  match n with
+  | 1 -> Trap_sys
+  | 2 -> Trap_illegal
+  | 3 -> Trap_fault
+  | _ -> Trap_intr
+(* the number again, for a message *)
+let cause_code c =
+  match c with
+  | Trap_sys -> 1
+  | Trap_illegal -> 2
+  | Trap_fault -> 3
+  | Trap_intr -> 4
+
+(* the timer's period *)
 (* The timer's period is 2.5 ms of the machine's time, whatever its
  * speed: 20,000 instructions at 8 million a second. The programs count
  * time in these ticks (a game's frames, IL's waits, ping), so they run

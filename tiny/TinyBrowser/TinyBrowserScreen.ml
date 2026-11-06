@@ -170,14 +170,15 @@ let draw_slice sc dst y (r : run) =
   let pc = picture_of sc.sc_page id in
   let x = r.col * 8 and from = s * 16 in
   let high = min 16 (pc.pc_h - from) in
+  let rows = match pc.pc_got with Pic_rows n -> n | _ -> 0 in
   if high > 0 then begin
-    let have = if pc.pc_got > from then min high (pc.pc_got - from) else 0 in
+    let have = if rows > from then min high (rows - from) else 0 in
     if have > 0 then
       put sc
         (d_draw dst (image_of id) (-1) (x, y, x + pc.pc_w, y + have) (0, from));
     if have < high then begin
       put sc (d_fill dst c_code (x, y + have, x + pc.pc_w, y + high));
-      if s = 0 && pc.pc_got <= 0 && pc.pc_w >= 24 && high = 16 then begin
+      if s = 0 && rows = 0 && pc.pc_w >= 24 && high = 16 then begin
         let alt = if pc.pc_alt = "" then "picture" else pc.pc_alt in
         let fits = (pc.pc_w / 8) - 1 in
         put sc (d_text dst c_text (x + 4, y)

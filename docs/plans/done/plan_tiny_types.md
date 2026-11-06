@@ -481,3 +481,8 @@ the speaker, then B and the kernel's trace. A commit each.
   (rows got, -1 not asked, -2 failed, -3 asked: a state, a variant),
   the document's `dc_file` (-1 none), next_picture's -1 for no
   picture; u_dial's -1 is the system call's (kept, C).
+- A picture's `pc_got` (rows got, -1 not asked, -3 asked, -2 none to
+  be had): `Pic_unasked | Pic_asked | Pic_failed | Pic_rows of int`.
+  picture_message a match on it (the answer's first line when asked,
+  a row while rows come); draw_slice's rows got from it, 0 before.
+  +8 lines.

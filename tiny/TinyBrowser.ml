@@ -110,7 +110,9 @@ let hang_up sc =
 let load sc url =
   hang_up sc;
   for i = 0 to pictures sc.sc_page - 1 do
-    if (picture_of sc.sc_page i).pc_got >= 0 then put sc (d_free (image_of i))
+    match (picture_of sc.sc_page i).pc_got with
+    | Pic_rows _ -> put sc (d_free (image_of i))
+    | _ -> ()
   done;
   hover sc false;
   let address, id = fragment url in
@@ -147,7 +149,7 @@ let load sc url =
  * pixels a message, which go into the picture's image as they come. *)
 let rec next_picture sc =
   let p = sc.sc_page in
-  let pending id = (picture_of p id).pc_got = -1 in
+  let pending id = (picture_of p id).pc_got = Pic_unasked in
   let rec on_screen = function
     | [] -> -1
     | (l : line) :: rest ->
@@ -170,9 +172,9 @@ let rec next_picture sc =
   if id >= 0 then begin
     let pc = picture_of p id in
     let fd = u_dial "10.0.0.1" 70 in
-    if fd < 0 then begin pc.pc_got <- -2; next_picture sc end
+    if fd < 0 then begin pc.pc_got <- Pic_failed; next_picture sc end
     else begin
-      pc.pc_got <- -3;
+      pc.pc_got <- Pic_asked;
       let url = resolve sc.sc_nav.nv_address (base p) pc.pc_src in
       ignore (u_write fd ("img " ^ string_of_int pc.pc_w ^ " "
                           ^ string_of_int pc.pc_h ^ " " ^ url ^ "\r\n"));
@@ -186,17 +188,16 @@ let rec next_picture sc =
  * screen, so a picture is painted as it arrives. *)
 let picture_message sc (id : int) s =
   let pc = picture_of sc.sc_page id in
-  if pc.pc_got = -3 then begin
+  match pc.pc_got with
+  | Pic_asked -> (
     match String.split_on_char ' ' s with
     | [ _; w; h ] when number w = pc.pc_w && number h = pc.pc_h ->
         put sc (d_image (image_of id) (0, 0, pc.pc_w, pc.pc_h) 255);
-        pc.pc_got <- 0
-    | _ -> pc.pc_got <- -2
-  end
-  else if pc.pc_got >= 0 && pc.pc_got < pc.pc_h then begin
-    let y = pc.pc_got in
+        pc.pc_got <- Pic_rows 0
+    | _ -> pc.pc_got <- Pic_failed)
+  | Pic_rows y when y < pc.pc_h ->
     put sc (d_pixels (image_of id) (0, y) s);
-    pc.pc_got <- y + 1;
+    pc.pc_got <- Pic_rows (y + 1);
     let slice = (id * 256) + (y / 16) and first = sc.sc_y / 16 in
     List.iteri (fun k (l : line) ->
       List.iter (fun (r : run) ->
@@ -208,7 +209,7 @@ let picture_message sc (id : int) s =
               (d_draw 0 (image_of id) (-1) (x, sy, x + pc.pc_w, sy + 1) (0, y))
         end) l.runs)
       (lines_between sc.sc_page first ((sc.sc_y + area sc + 15) / 16))
-  end
+  | _ -> ()
 
 (* Goes to an address, remembering where we were. A link to a place of
  * the page shown (#cite_note-2) only moves to it. *)
@@ -397,7 +398,9 @@ let browse typed =
         if s = "" then begin
           hang_up sc;
           let pc = picture_of sc.sc_page id in
-          if pc.pc_got < 0 then pc.pc_got <- -2;
+          (match pc.pc_got with
+           | Pic_rows _ -> ()
+           | _ -> pc.pc_got <- Pic_failed);
           next_picture sc
         end
         else picture_message sc id s;

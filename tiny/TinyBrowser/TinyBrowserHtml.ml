@@ -10,12 +10,13 @@ open TinyBrowserLines
 (* The tags *)
 (*****************************************************************************)
 
+type got = Pic_unasked | Pic_asked | Pic_failed | Pic_rows of int
+
 (* A picture of the page: where it is, the size it is shown at in
- * pixels, its alternative text, and how far it has come: -1 not asked
- * yet, -3 asked, -2 not to be had, or the rows of it received. *)
+ * pixels, its alternative text, and how far it has come *)
 type picture = {
   pc_src : string; pc_w : int; pc_h : int; pc_alt : string;
-  mutable pc_got : int }
+  mutable pc_got : got }
 
 (* An open element. Besides its tag, it records how its text should be
  * shown, combining what it says with what its parents say, so the top
@@ -259,7 +260,7 @@ let picture p attrs =
     else begin
       let id = p.npictures in
       p.pictures <-
-        { pc_src = src; pc_w = w; pc_h = h; pc_alt = alt; pc_got = -1 }
+        { pc_src = src; pc_w = w; pc_h = h; pc_alt = alt; pc_got = Pic_unasked }
         :: p.pictures;
       p.npictures <- id + 1;
       let cols = (w + 7) / 8 and rows = (h + 15) / 16 and link = (top p).href in

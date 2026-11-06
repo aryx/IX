@@ -52,12 +52,15 @@ val lines_between : page -> int -> int -> TinyBrowserLines.line list
 (* the line where the element with that id starts, if it came *)
 val anchor : page -> string -> int option
 
-(* The page's pictures: how many, and one by its number. A picture's
- * pc_got is -1 before it is asked for, -3 once asked, -2 when there is
- * none to be had, and the rows received so far after that. *)
+(* how far a picture has come: not asked for yet, asked, none to be
+ * had, or the rows received so far (its image made, at the answer's
+ * first line) *)
+type got = Pic_unasked | Pic_asked | Pic_failed | Pic_rows of int
+
+(* The page's pictures: how many, and one by its number *)
 type picture = {
   pc_src : string; pc_w : int; pc_h : int; pc_alt : string;
-  mutable pc_got : int
+  mutable pc_got : got
 }
 val pictures : page -> int
 val picture_of : page -> int -> picture

@@ -35,8 +35,10 @@ let result = ref Void
 let data = Buffer.create 4096             (* the DATA and GLOBL *)
 
 (* a global's name in the assembly: Plan 9's name<> for a static is,
- * the link being one namespace, the file's name and the name *)
-let sym s =
+ * the link being one namespace, the file's name and the name; a
+ * label, not a C name (type sym) *)
+type sym = string
+let sym s : sym =
   if Filename.check_suffix s "<>" then
     !unit_name ^ "." ^ Filename.chop_suffix s "<>"
   else s

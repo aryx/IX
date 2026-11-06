@@ -9,8 +9,8 @@ in tiny/ for such use of clearer types than string and int (and even
 maybe bool sometimes). Analyze and report."; then, of the report: "let's
 make a plan_tiny_xxx document out of this. This is nice."
 
-Proposed, nothing of it built yet. Status, at the end, says what is
-done.
+Built on 2026-11-06, the eight stages, but for TinyLibSystem's fd,
+postponed (stage 2). Status, at the end, says what each stage did.
 
 ## The short answer
 
@@ -346,3 +346,20 @@ the word) is the HTML reader's data, carried by its `Word` items: a
 record for the word would change the reader for one bool, not done;
 `TinyLinker.aout`'s two ints (the memory, where the data starts)
 left. +35 code lines (8 the tests', 12 TinyLibDraw's types).
+
+2026-11-06, stage 8 built (the author: "le's commit and move
+forward"), the strings' kinds, aliases each: TinyBrowserAddress's
+`url` (in its functions, TinyBrowserHttp's `request` and `asked`,
+tiny-machine's peer's `www_`); TinyKernelNetwork's `ip_addr` (four
+bytes in a string, stage 6's left: `net_machine`, `ip_packet`,
+`ip_read`, the connections' and the stack's fields, the peer's
+`net_dotted`); TinyMLMachine's `sym`, an assembly's label (the
+targets, `DCode` and `DVal`, `block`, `entry`, `closure_sym`...);
+tiny-c's `sym`; TinyLibSymbols's `label` and `symbols`, a program's
+labels with their addresses. +6 code lines.
+
+The plan done but for fd (stage 2), postponed until the Chan work has
+taken the files read and written whole; then the shell's plumbing
+and tiny-db's file are what a `type fd` would name. In all, the
+eight stages: +164 code lines (stage 3 -5, the others +2 to +36),
+for signatures that say what their ints, strings and bools are.

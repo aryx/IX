@@ -18,21 +18,26 @@
  * reads for db and acid. Here a label is a line, as in the map: no
  * kind, no source lines, nothing to decode. *)
 
+(* a label, the linker's; the labels of a program, each with its
+ * address, by address (old: string * int, the pairs unnamed) *)
+type label = string
+type symbols = (label * int) array
+
 (* [local name]: whether it is a label a compiler made inside a function *)
-val local : string -> bool
+val local : label -> bool
 
 (* [clean name]: a function's name as shown (browse for
  * TinyBrowser.f151_browse, but an anonymous one's whole) *)
-val clean : string -> string
+val clean : label -> string
 
 (* [labels text]: the labels of "address label" lines, but the local
  * ones, by address *)
-val labels : string -> (string * int) array
+val labels : string -> symbols
 
 (* [find funcs pc]: the function pc is in (the last label at or before
  * it), its name cleaned, and its address *)
-val find : (string * int) array -> int -> (string * int) option
+val find : symbols -> int -> (string * int) option
 
 (* [address funcs name]: the address of the function of that name, or
  * cleaned name (main, browse) *)
-val address : (string * int) array -> string -> int option
+val address : symbols -> string -> int option

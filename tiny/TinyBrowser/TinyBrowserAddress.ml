@@ -8,8 +8,11 @@ open TinyBrowserText
 (* Addresses *)
 (*****************************************************************************)
 
+(* an address, a URL's text (TinyBrowserAddress.mli) *)
+type url = string
+
 (* an address and its #fragment, apart ("" when there is none) *)
-let fragment url =
+let fragment (url : url) =
   match String.index_opt url '#' with
   | Some i ->
     String.sub url 0 i, String.sub url (i + 1) (String.length url - i - 1)

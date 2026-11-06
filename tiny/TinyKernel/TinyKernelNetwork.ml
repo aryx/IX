@@ -33,8 +33,10 @@ let net_sum s =
 (*****************************************************************************)
 
 (* an address is its four bytes, a string: nothing is computed on one,
- * and 32 bits do not fit tiny-ml's int. "10.0.0.2" to it and back; ""
- * when the text is not an address *)
+ * and 32 bits do not fit tiny-ml's int *)
+type ip_addr = string
+
+(* "10.0.0.2" to an address and back; "" when the text is not one *)
 let net_address text =
   let n = String.length text in
   let rec go i v digits acc =
@@ -214,7 +216,7 @@ type il_receiving = {
 }
 
 type il = {
-  il_me : string; il_peer : string; il_lport : int; il_rport : int;
+  il_me : ip_addr; il_peer : ip_addr; il_lport : int; il_rport : int;
   mutable il_at : il_at; il_start : int; il_s : il_sending;
   il_r : il_receiving;
 }
@@ -470,10 +472,10 @@ let il_tick c now =
  * gateway): the addresses and ports, not its own, that it will answer
  * the next sync for, as if it were them *)
 type net_stack = {
-  ns_me : string; mutable ns_conns : il list; mutable ns_ports : int list;
+  ns_me : ip_addr; mutable ns_conns : il list; mutable ns_ports : int list;
   mutable ns_fresh : il list; mutable ns_start : int;
   mutable ns_port : int; mutable ns_gate : bool;
-  mutable ns_others : (string * int) list;
+  mutable ns_others : (ip_addr * int) list;
 }
 
 let net_stack me start =

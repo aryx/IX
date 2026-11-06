@@ -16,10 +16,14 @@ type rel = Eq | Ne | Lt | Le | Gt | Ge
 type op =
   | Add | Sub | Mul | Div | Mod | And | Or | Xor | Lsl | Lsr | Asr | Cmp of rel
   | Neg | Lnot | Not | IsInt | Tag
+(* an assembly's label: a function's code, a static block, a string
+ * (old: a string, which said nothing of it) *)
+type sym = string
+
 (* a function's n-ary code, or a closure's field (Indirect, old: Code,
  * which tiny-ml took for Exit.Code: one name space for the
  * constructors) *)
-type target = Direct of string | Indirect of int
+type target = Direct of sym | Indirect of int
 
 (* a binary operation's first operand is on top, as every operation's:
  * arguments are pushed from the last, as OCaml evaluates them *)
@@ -410,7 +414,7 @@ let machine name nparams nslots (code : ir list) =
 
 (* a word of data: a number, a function's code, or a static block's
  * value (its first field's address) *)
-type dword = DNum of string | DCode of string | DVal of string
+type dword = DNum of string | DCode of sym | DVal of sym
 
 (* each a piece of its own, as a function is *)
 let fields sym ws =

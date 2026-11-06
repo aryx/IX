@@ -36,10 +36,10 @@
  *)
 
 (* [request url]: www's request for [url], to the wire's other end *)
-val request : string -> string
+val request : TinyBrowserAddress.url -> string
 
 (* the address a request asks for, if it is a GET *)
-val asked : string -> string option
+val asked : string -> TinyBrowserAddress.url option
 
 (* [response status headers body]: an answer, with its Content-Length *)
 val response : int -> (string * string) list -> string -> string

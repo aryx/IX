@@ -119,9 +119,9 @@ val messages : string -> string list
  * out. [www_kept_response] is the answer such a copy makes, its
  * Content-Type by its name's extension ([www_type]); [www_failed] the
  * answer when there is no page, a 502 whose text says why. *)
-val www_request : string -> string option
-val www_address : string -> string
-val www_kept : string -> string option
+val www_request : string -> TinyBrowserAddress.url option
+val www_address : string -> TinyBrowserAddress.url
+val www_kept : TinyBrowserAddress.url -> string option
 val www_type : string -> string
 val www_kept_response : string -> string -> string
 val www_failed : string -> string
@@ -134,8 +134,9 @@ val www_failed : string -> string
  * carry (0, or w past a message's bytes). [www_picture_kept] is the
  * name of the file that holds a kept copy: the address's last part,
  * without its ?query (250px-OCaml_Logo.svg.png). *)
-val www_picture_request : string -> (int * int * string) option
-val www_picture_kept : string -> string option
+val www_picture_request :
+  string -> (int * int * TinyBrowserAddress.url) option
+val www_picture_kept : TinyBrowserAddress.url -> string option
 
 (* What "img w h address" is answered: a first message "t w h", then t
  * messages of text, then h messages of w bytes, a row of the picture
@@ -154,5 +155,5 @@ val tick : unit -> int
 (* an address said ("10.0.0.2"); a packet in a few words, for who
  * watches the wire (-net-trace, the page's wire): the host's, which
  * the kernel has no use for *)
-val net_dotted : string -> string
+val net_dotted : TinyKernelNetwork.ip_addr -> string
 val net_describe : string -> string

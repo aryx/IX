@@ -14,20 +14,24 @@
  * (TinyMachinePeer.www_address).
  *)
 
+(* an address, a URL's text (old: a string that said nothing of it) *)
+type url = string
+
 (* an address and its #fragment, apart ("" when there is none) *)
-val fragment : string -> string * string
+val fragment : url -> url * string
 
 (* What was typed, as a full address: a title is an English Wikipedia
  * article, a name with a dot is https://, and ?words a search of
  * DuckDuckGo's page for text browsers (lite.duckduckgo.com). *)
-val absolute : string -> string
+val absolute : string -> url
 
 (* the search's address, its words after it *)
-val search_engine : string
+val search_engine : url
 
 (* "https://host" of an address *)
-val site : string -> string
+val site : url -> url
 
 (* [resolve url base href]: where a link goes, from the page at [url]
- * whose <base> is [base] ("" when it has none). *)
-val resolve : string -> string -> string -> string
+ * whose <base> is [base] ("" when it has none), [href] as the page
+ * writes it *)
+val resolve : url -> url -> string -> url

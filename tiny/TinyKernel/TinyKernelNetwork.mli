@@ -170,12 +170,15 @@
  * Presotto and Winterbottom, "The IL Protocol" (Plan 9's manual,
  * volume 2). *)
 
-(* an address, its four bytes; "" when the text is not one *)
-val net_address : string -> string
+(* an address, its four bytes in a string (old: a string that said
+ * nothing of it); [net_address text]: the text's, "" when it is not
+ * one *)
+type ip_addr = string
+val net_address : string -> ip_addr
 
 (* the machine's address and its host's, at the wire's two ends *)
-val net_machine : string
-val net_peer : string
+val net_machine : ip_addr
+val net_peer : ip_addr
 
 (* 16 bits, the high byte first; the Internet's checksum of some bytes *)
 val net16 : int -> string
@@ -185,8 +188,8 @@ val net_sum : string -> int
 (* IP: a packet (what it carries, from, to, the bytes), and one that
  * came read for an address: what it carries, who sent it, the bytes *)
 val ip_icmp : int
-val ip_packet : int -> string -> string -> string -> string
-val ip_read : string -> string -> (int * string * string) option
+val ip_packet : int -> ip_addr -> ip_addr -> string -> string
+val ip_read : ip_addr -> string -> (int * ip_addr * string) option
 
 (* ICMP's echo: a message (its kind, whose, which one, the bytes), read;
  * its kinds, echo's question (8) and answer (0), or another *)
@@ -224,7 +227,7 @@ type il_receiving = {
 }
 
 type il = {
-  il_me : string; il_peer : string; il_lport : int; il_rport : int;
+  il_me : ip_addr; il_peer : ip_addr; il_lport : int; il_rport : int;
   mutable il_at : il_at; il_start : int; il_s : il_sending;
   il_r : il_receiving;
 }
@@ -259,18 +262,18 @@ val il_done : il -> unit
  * connection's [il_me] is then that address, and what is at the
  * gateway's other side is its caller's. *)
 type net_stack = {
-  ns_me : string; mutable ns_conns : il list; mutable ns_ports : int list;
+  ns_me : ip_addr; mutable ns_conns : il list; mutable ns_ports : int list;
   mutable ns_fresh : il list; mutable ns_start : int;
   mutable ns_port : int; mutable ns_gate : bool;
-  mutable ns_others : (string * int) list;
+  mutable ns_others : (ip_addr * int) list;
 }
 
-val net_stack : string -> int -> net_stack
+val net_stack : ip_addr -> int -> net_stack
 
 (* a connection asked for, to an address and a port, at a time: it and
  * the packet to send. It is Il_established when the other end agreed,
  * Il_closed when it refused or never answered. *)
-val net_dial : net_stack -> string -> int -> int -> il * string
+val net_dial : net_stack -> ip_addr -> int -> int -> il * string
 
 (* {b The stack's heart}: two functions, which read no device and no
  * clock. A packet that came, at a time: the packets to send back, and
@@ -280,5 +283,5 @@ val net_dial : net_stack -> string -> int -> int -> il * string
  * change the connections: messages heard, a state, [ns_fresh]. *)
 val net_input :
   net_stack -> int -> string ->
-  string list * (string * int * int * string) option
+  string list * (ip_addr * int * int * string) option
 val net_tick : net_stack -> int -> string list

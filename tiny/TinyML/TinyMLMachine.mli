@@ -17,7 +17,9 @@ type op =
   | Not
   | IsInt
   | Tag
-type target = Direct of string | Indirect of int
+(* an assembly's label: a function's code, a static block, a string *)
+type sym = string
+type target = Direct of sym | Indirect of int
 type ir =
     Imm of int64
   | Addr of string * int
@@ -45,19 +47,20 @@ type ir =
 val label : unit -> int
 val text : Buffer.t
 val data : Buffer.t
-val machine : string -> int -> int -> ir list -> unit
-type dword = DNum of string | DCode of string | DVal of string
+val machine : sym -> int -> int -> ir list -> unit
+(* a static word: a number's text, a code's label, a block's *)
+type dword = DNum of string | DCode of sym | DVal of sym
 
-val words : string -> dword list -> unit
-val block : string -> string -> dword list -> unit
+val words : sym -> dword list -> unit
+val block : sym -> string -> dword list -> unit
 val header : int -> int -> string
 val closure_tag : int
-val static_string : string -> string
+val static_string : string -> sym
 val arities : int list ref
-val curry : int -> int -> string
-val entry : int -> string -> string
-val closure_sym : string -> string
-val static_closure : string -> int -> string
-val exn_id : string -> string
-val exn_const : string -> string
+val curry : int -> int -> sym
+val entry : int -> sym -> sym
+val closure_sym : sym -> sym
+val static_closure : sym -> int -> sym
+val exn_id : string -> sym
+val exn_const : string -> sym
 val tagged : int -> int64

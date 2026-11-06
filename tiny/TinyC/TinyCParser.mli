@@ -13,7 +13,8 @@ val scopes : (string, var) Hashtbl.t list ref
 val frame : int ref
 val result : TinyCTypes.ty ref
 val data : Buffer.t
-val sym : string -> string
+type sym = string
+val sym : string -> sym
 type datum = Bytes of string | Value of int * int64 | Address of string
 val datum : string -> int -> datum -> unit
 val word : int64 -> string

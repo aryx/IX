@@ -774,7 +774,8 @@ let start (caps : Cap.all_caps) : int =
         if String.contains a 'i' then iflag := true;
         flags rest
     | "-c" :: cmd :: args -> set "*" args; Some cmd
-    | file :: args -> set "*" args; Some (TinyLibSystem.read_file caps file)
+    | file :: args ->
+        set "*" args; Some (TinyLibSystem.read_file caps (Fpath.v file))
     | [] when !iflag || TinyLibSystem.isatty 0 -> None
     | [] -> Some (TinyLibSystem.read_all 0)
   in

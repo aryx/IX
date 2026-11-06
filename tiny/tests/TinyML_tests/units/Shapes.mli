@@ -8,3 +8,8 @@ val scaled : int -> shape -> shape
 val boxes : box list
 val largest : box list -> box
 val sides : shape -> int pair
+module Ops : sig
+  val ( +: ) : int -> shape -> int
+  val ( !^ ) : shape -> int
+  val ( @@@ ) : string -> string -> string
+end

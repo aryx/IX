@@ -87,8 +87,8 @@ val seek_end : int -> int
 
 (* a file's text; Failure with the reason. [write_file caps file s]: the
  * file made s, created or emptied first *)
-val read_file : < Cap.open_in; .. > -> string -> string
-val write_file : < Cap.open_out; .. > -> string -> string -> unit
+val read_file : < Cap.open_in; .. > -> Fpath.t -> string
+val write_file : < Cap.open_out; .. > -> Fpath.t -> string -> unit
 
 (* all that a descriptor gives, to its end *)
 val read_all : int -> string

@@ -92,8 +92,13 @@
  * type word = piece list, or with parameters, type 'a t = unit -> 'a
  * node (Seq's). A module is a file, a unit (M.x, open M); its types,
  * constructors and labels are the program's, one name space, so M.C
- * is C. {|quoted strings|}, OCaml's, are read (a help's text). Left
- * out: modules inside a file and functors, floats, labels, objects,
+ * is C. A unit's module N = struct ... end has values only, N.x for
+ * the units after (open M.N, as open Fpath_.Operators); in it a name
+ * is not found by its short name. An operator is OCaml's, any run of
+ * its characters, defined by let ( // ) = ...: its precedence is its
+ * first character's, a prefix one starts with !, ~ or ?. {|quoted
+ * strings|}, OCaml's, are read (a help's text). Left out: modules
+ * inside modules, types in them, functors, floats, labels, objects,
  * or-patterns with names in their
  * alternatives, character ranges and inline records: the tools and the
  * toolchain were written again without them.

@@ -534,7 +534,9 @@ let menu name = (if !modified then "'" else " ") ^ "-. " ^ name ^ "\n"
 
 let read_file (caps : < Cap.open_in; .. >) name =
   if name = "" then None
-  else try Some (TinyLibSystem.read_file caps name) with Failure _ -> None
+  else
+    try Some (TinyLibSystem.read_file caps (Fpath.v name))
+    with Failure _ -> None
 
 let rec exec
     (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
@@ -669,7 +671,8 @@ let rec exec
   | File (Write, name) ->
       let name = if name = "" then !file else name in
       if name = "" then raise (Error "no file name");
-      TinyLibSystem.write_file caps name (String.sub !text q0 (q1 - q0));
+      TinyLibSystem.write_file caps (Fpath.v name)
+        (String.sub !text q0 (q1 - q0));
       if name = !file && q0 = 0 && q1 = len () then begin
         modified := false;
         let differ r = { r with rmodified = true } in

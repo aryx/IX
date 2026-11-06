@@ -78,7 +78,8 @@
 (* [link split objects]: the objects (a name, its text), linked: the
  * image, each label with its address, by address, and where the data
  * starts (split, -n: the text first; else 0, .text and .data ignored) *)
-val link : bool -> (string * string) list -> string * (string * int) list * int
+val link :
+  bool -> (Fpath.t * string) list -> string * (string * int) list * int
 
 (* [aout memory data_at image]: an executable for tiny-kernel: a header
  * of three words (a magic number, the image's size, the memory the

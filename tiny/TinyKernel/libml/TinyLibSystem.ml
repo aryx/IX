@@ -123,7 +123,7 @@ let read_all fd =
   in
   go []
 let read_file caps file =
-  let fd = open_in caps file in
+  let fd = open_in caps (Fpath.to_string file) in
   let s = read_all fd in
   close fd;
   s
@@ -184,7 +184,7 @@ let is_directory caps file = try fst (stat caps file) with Failure _ -> false
 let read fd max = u_read fd max
 let write fd s = if u_write fd s < 0 then failwith "cannot write"
 let write_file caps file s =
-  let fd = open_out caps file in
+  let fd = open_out caps (Fpath.to_string file) in
   write fd s;
   close fd
 let mkdir caps dir = if u_mkdir dir < 0 then failwith "cannot"
@@ -303,7 +303,7 @@ let shell caps vars script =
   incr scripts;
   let file =
     ".shell" ^ string_of_int (u_getpid ()) ^ "." ^ string_of_int !scripts in
-  write_file caps file
+  write_file caps (Fpath.v file)
     ("rm " ^ file ^ "\n"
      ^ String.concat ""
          (List.map

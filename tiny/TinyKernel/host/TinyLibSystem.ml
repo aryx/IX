@@ -61,8 +61,8 @@ let open_rw (caps : < Cap.open_in; Cap.open_out; .. >) file =
     number (FS.open_rw_fd caps file))
 let seek n off = ignore (reason (fun () -> Unix.lseek (fd n) off Unix.SEEK_SET))
 let seek_end n = reason (fun () -> Unix.lseek (fd n) 0 Unix.SEEK_END)
-let read_file (caps : < Cap.open_in; .. >) file =
-  reason (fun () -> FS.read caps (Fpath.v file))
+let read_file (caps : < Cap.open_in; .. >) (file : Fpath.t) =
+  reason (fun () -> FS.read caps file)
 let read_all n = Procs.read_all (fd n)
 let readdir (_ : < Cap.readdir; .. >) dir =
   try Array.to_list (Sys.readdir dir) with Sys_error _ -> []
@@ -82,8 +82,8 @@ let write n s =
         Unix.write_substring (fd n) s at (String.length s - at)))
   in
   go 0
-let write_file (caps : < Cap.open_out; .. >) file s =
-  let fd = open_out caps file in
+let write_file (caps : < Cap.open_out; .. >) (file : Fpath.t) s =
+  let fd = open_out caps (Fpath.to_string file) in
   write fd s;
   close fd
 

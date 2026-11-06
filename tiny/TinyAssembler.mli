@@ -107,7 +107,7 @@
  * format avoids; J. R. Levine, Linkers and Loaders (2000). *)
 
 (* a file's text (its name for the errors) to its object's text *)
-val assemble : string -> string -> string
+val assemble : Fpath.t -> string -> string
 
 (* the program: its arguments (-h: how) to its exit status *)
 val main : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. > -> int

@@ -45,17 +45,34 @@ let abbreviation c ts =
   | Some (_, (ps, te)) -> Some (of_texpr (ref (List.combine ps ts)) te)
   | None -> None
 
-(* the operators: precedence and right associativity; "," is 1 *)
-let binops =
-  [ ":=", 0, true; "<-", 0, true; "||", 2, true; "or", 2, true; "&&", 3, true;
-    "&", 3, true; "=", 4, false; "<>", 4, false; "<", 4, false; ">", 4, false;
-    "<=", 4, false; ">=", 4, false; "==", 4, false; "!=", 4, false;
-    "|>", 4, false; "|||", 4, false; "@", 5, true; "^", 5, true; "::", 6, true;
-    "+", 7, false; "-", 7, false; "*", 8, false; "/", 8, false; "mod", 8, false;
-    "land", 8, false; "lor", 8, false;
-    "lxor", 8, false; "lsl", 9, true; "lsr", 9, true; "asr", 9, true ]
+(* the operators, OCaml's rules: a prefix one starts with !, ~ or ?; an
+ * infix one's precedence and right associativity are its first
+ * character's, but for the words and those listed ("," is 1). So a
+ * program defines its own, let ( // ) = ..., with no table to extend
+ * (old: a table of the standard library's, |> and ||| added to it) *)
+let is_prefix o =
+  o <> "" && o <> "!="
+  && (o.[0] = '!' || (String.length o > 1 && (o.[0] = '~' || o.[0] = '?')))
+let binop o =
+  match o with
+  | ":=" | "<-" -> Some (0, true)
+  | "||" | "or" -> Some (2, true)
+  | "&&" | "&" -> Some (3, true)
+  | "::" -> Some (6, true)
+  | "mod" | "land" | "lor" | "lxor" -> Some (8, false)
+  | "lsl" | "lsr" | "asr" -> Some (9, true)
+  | "->" | "|" -> None
+  | _ when o = "" || is_prefix o -> None
+  | _ when String.length o > 1 && o.[0] = '*' && o.[1] = '*' -> Some (9, true)
+  | _ ->
+      (match o.[0] with
+       | '*' | '/' | '%' -> Some (8, false)
+       | '+' | '-' -> Some (7, false)
+       | '@' | '^' -> Some (5, true)
+       | '=' | '<' | '>' | '|' | '&' | '$' | '!' -> Some (4, false)
+       | _ -> None)
 
-let is_op o = List.exists (fun (b, _, _) -> b = o) binops || o = "!" || o = "~-"
+let is_op o = binop o <> None || is_prefix o
 
 (* C (a, b) is a constructor of two arguments, the tuple its parser saw *)
 let con_args c args untuple =
@@ -76,7 +93,8 @@ let con_args c args untuple =
 
 let starts_atom = function
   | INT _ | CHAR _ | STR _ | LID _ | UID _
-  | KW ("(" | "[" | "{" | "begin" | "!") -> true
+  | KW ("(" | "[" | "{" | "begin") -> true
+  | KW o -> is_prefix o
   | _ -> false
 let starts_patom = function
   | INT _ | CHAR _ | STR _ | LID _ | UID _ | KW ("_" | "(" | "[" | "{") -> true
@@ -147,8 +165,8 @@ and binary min =
         in
         loop (Tuple (lhs :: more ()))
     | KW op -> (
-        match List.find_opt (fun (o, _, _) -> o = op) binops with
-        | Some (_, p, right) when p >= min ->
+        match binop op with
+        | Some (p, right) when p >= min ->
             advance ();
             let rhs = binary (if right then p else p + 1) in
             loop
@@ -213,7 +231,7 @@ and atom () =
     | STR s -> advance (); Const (CStr s)
     | LID x -> advance (); var x
     | UID c -> advance (); Con (c, con_args c [] (fun _ _ -> None))
-    | KW "!" -> advance (); App (var "!", [ atom () ])
+    | KW o when is_prefix o -> advance (); App (var o, [ atom () ])
     | KW "(" -> (
         advance ();
         if accept (KW ")") then Con ("()", [])
@@ -558,7 +576,7 @@ let rec type_decl () =
 let rec items () : (item * int) list =
   let l = line () in
   match peek () with
-  | EOF -> []
+  | EOF | KW "end" -> []
   | KW ";;" -> advance (); items ()
   | KW "let" ->
       advance ();
@@ -569,6 +587,26 @@ let rec items () : (item * int) list =
         (ILet (false, [ PAny, e ]), l) :: items ())
       else (ILet (r, bs), l) :: items ()
   | KW "type" -> advance (); type_decl (); items ()
+  (* module M = struct ... end, one level: its names M.x, for the units
+   * after (open A.M); in it, a name is not found by its short name *)
+  | KW "module" ->
+      advance ();
+      let m = match peek () with UID m -> advance (); m | _ -> fail () in
+      expect (KW "=");
+      if peek () <> KW "struct" then fail ();
+      advance ();
+      let inner = items () in
+      expect (KW "end");
+      let rec named p = match p with
+        | PVar x -> PVar (m ^ "." ^ x)
+        | PAnnot (p, t) -> PAnnot (named p, t)
+        | _ -> fail () in
+      List.map (fun (it, l) ->
+          match it with
+          | ILet (r, bs) -> ILet (r, List.map (fun (p, e) -> named p, e) bs), l
+          | IExt (x, t, p) -> IExt (m ^ "." ^ x, t, p), l
+          | _ -> fail ()) inner
+      @ items ()
   | KW "open" ->
       advance ();
       (match peek () with

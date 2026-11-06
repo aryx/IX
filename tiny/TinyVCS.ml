@@ -188,9 +188,13 @@ type repo = {
 let dir r = Filename.concat r.root ".tvcs"
 let path r f = Filename.concat (dir r) f
 
-let read_file (caps : < Cap.open_in; .. >) p = TinyLibSystem.read_file caps p
+(* (the store's paths are strings, as TinyLibSystem's other calls take
+ * them: a path at the door) *)
+let read_file (caps : < Cap.open_in; .. >) p =
+  TinyLibSystem.read_file caps (Fpath.v p)
 
-let write_file = TinyLibSystem.write_file
+let write_file (caps : < Cap.open_out; .. >) p s =
+  TinyLibSystem.write_file caps (Fpath.v p) s
 
 let exists caps p =
   try ignore (TinyLibSystem.stat caps p); true with Failure _ -> false

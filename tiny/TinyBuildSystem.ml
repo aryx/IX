@@ -267,8 +267,10 @@ let order (root : node) : node list =
 let exists caps file =
   try ignore (TinyLibSystem.stat caps file); true with Failure _ -> false
 
+(* (a target's name is text, matched by the rules: a path at the door) *)
 let read_file caps file =
-  if exists caps file then Some (TinyLibSystem.read_file caps file) else None
+  if exists caps file then Some (TinyLibSystem.read_file caps (Fpath.v file))
+  else None
 
 (* A file's digest, the SHA-1 of its bytes, read once in a run
  * (file_digests), and not at all when its size and date are the ones
@@ -336,7 +338,7 @@ let save (caps : < Cap.open_out; .. >) (stamps : (string, string) Hashtbl.t) =
   Hashtbl.iter (fun k v -> Printf.bprintf b "%s %s\n" k v) stamps;
   Hashtbl.iter (fun k (size, date, d) ->
     Printf.bprintf b "file %s %d %d %s\n" k size date d) known;
-  TinyLibSystem.write_file caps stampfile (Buffer.contents b)
+  TinyLibSystem.write_file caps (Fpath.v stampfile) (Buffer.contents b)
 
 let build
     (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.open_in; Cap.open_out;

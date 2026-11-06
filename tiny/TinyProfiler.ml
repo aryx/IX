@@ -14,7 +14,7 @@ let add tbl k n =
 
 (* A profile's lines "k|u base pc count" (TinyMachineCPU.profile_lines):
  * the counts by (the kernel's?, base, pc). *)
-let read_profile caps file =
+let read_profile caps (file : Fpath.t) =
   let int_of_hex h = int_of_string ("0x" ^ h) in
   let counts = Hashtbl.create 4096 in
   List.iter (fun line ->
@@ -27,7 +27,7 @@ let read_profile caps file =
 
 (* the functions of tiny-linker's maps (-map: "address label" lines),
  * by address (TinyLibSymbols's, as the function an address is in) *)
-let functions caps files =
+let functions caps (files : Fpath.t list) =
   TinyLibSymbols.labels
     (String.concat "\n" (List.map (TinyLibSystem.read_file caps) files))
 let find funcs pc =
@@ -55,7 +55,7 @@ let main (caps : < Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; .. >) =
   let print = TinyLibSystem.print caps in
   let rec options top diff base = function
     | "-n" :: n :: rest -> options (int_of_string n) diff base rest
-    | "-diff" :: f :: rest -> options top (Some f) base rest
+    | "-diff" :: f :: rest -> options top (Some (Fpath.v f)) base rest
     | "-base" :: b :: rest ->
         options top diff (Some (int_of_string ("0x" ^ b))) rest
     | file :: rest when file.[0] <> '-' ->
@@ -66,8 +66,9 @@ let main (caps : < Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; .. >) =
           | f :: rest ->
               if kernel then files (f :: k) u kernel rest
               else files k (f :: u) kernel rest
-          | [] -> List.rev k, List.rev u in
-        Some (top, diff, base, file, files [] [] false rest)
+          | [] ->
+              Fpath_.of_strings (List.rev k), Fpath_.of_strings (List.rev u) in
+        Some (top, diff, base, Fpath.v file, files [] [] false rest)
     | _ -> None in
   match options 20 None None (List.tl (TinyLibSystem.argv caps)) with
   | None -> TinyLibSystem.eprint caps (usage ^ "\n"); 2

@@ -4,9 +4,9 @@
  * Seq, List, String, Bytes, Array, Option, Int64, Filename, Buffer, Printf
  * (what tiny-ml's reading of a format calls: Printf.mli), Marshal
  * (OCaml's format, in the runtime), Hashtbl, and
- * ix's Common and Sha1 (lib_core's and lib_crypto's, which the tools
- * name). Each .mli but Printf's and Marshal's is a subset of OCaml's (lib_core's,
- * lib_crypto's):
+ * ix's Common, Sha1, Fpath and Fpath_ (lib_core's and lib_crypto's,
+ * which the tools name). Each .mli but Printf's and Marshal's is a
+ * subset of OCaml's (lib_core's, lib_crypto's):
  * the same names, the same types, the same results, so that a file
  * is built by OCaml on its own library for the host and by tiny-ml on
  * this one; TinyLibCore_test.sh has OCaml check each .mli against its
@@ -23,6 +23,7 @@
  *
  *     Stdlib  Char  Seq  List  String  Bytes  Array  Option  Int64
  *        Filename  Buffer  Printf  Marshal  Hashtbl  Common  Sha1
+ *        Fpath  Fpath_
  *     (each after those before it: String.map is List.init's)
  *
  * (old: TinyLibCore.ml, a prelude whose dotted names, List.map, were

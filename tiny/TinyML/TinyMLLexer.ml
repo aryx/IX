@@ -21,7 +21,8 @@ let keywords =
   [ "let"; "rec"; "in"; "fun"; "function"; "match"; "with"; "if"; "then";
     "else"; "begin"; "end"; "try"; "type"; "of"; "exception"; "external";
     "and"; "when"; "as"; "while"; "for"; "to"; "downto"; "do"; "done"; "mod";
-    "land"; "lor"; "lxor"; "lsl"; "lsr"; "asr"; "or"; "open" ]
+    "land"; "lor"; "lxor"; "lsl"; "lsr"; "asr"; "or"; "open"; "module";
+    "struct"; "sig" ]
 
 let symbols =
   [ "|||"; ";;"; "->"; "::"; ":="; ":>"; "<-"; "<="; ">="; "<>"; "==";
@@ -89,10 +90,13 @@ let lex (s : string) : (token * int) array =
             else j
           in
           let w = String.sub s i (j - i) in
-          (* (M.C is the constructor C: constructors are one namespace) *)
+          (* (M.C is the constructor C: constructors are one namespace;
+           * but open M.N opens M's module N, its whole path) *)
           add
             (match String.rindex_opt w '.' with
              | Some k when w.[k + 1] >= 'a' -> LID w
+             | Some _ when (match !out with (KW "open", _) :: _ -> true
+                                             | _ -> false) -> UID w
              | Some k -> UID (String.sub w (k + 1) (String.length w - k - 1))
              | None -> UID w);
           go j
@@ -125,6 +129,15 @@ let lex (s : string) : (token * int) array =
           in
           let j = str (i + 1) in
           add (STR (Buffer.contents b));
+          go j
+      (* an operator, OCaml's: its characters as many as follow (a user's
+       * operator as the standard library's: !!, //, @@) *)
+      | c when String.contains "!$%&*+-/=>@^|~?<" c ->
+          let rec op j =
+            if j < n && String.contains "!$%&*+-/=>@^|~?<.:" s.[j]
+            then op (j + 1) else j in
+          let j = op (i + 1) in
+          add (KW (String.sub s i (j - i)));
           go j
       | _ ->
           (* the longest symbol here, 3 characters, 2, or this one *)

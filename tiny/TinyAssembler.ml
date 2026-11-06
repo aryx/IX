@@ -278,15 +278,17 @@ let decimal (h, l) =
     "-" ^ digits (((h lxor 0xffff) + (l' lsr 16)) land 0xffff) (l' land 0xffff)
             ""
 
+open Fpath_.Operators
+
 (* A file's items as lines, in their order, for tiny-linker
  * (TinyLinker.mli has the format): a word whose operand is a number is
  * made here, one whose operand is a label is made with 0 there and a
  * reloc line says what goes in it; a branch to a number too, its
  * offset being from an address the link chooses *)
-let assemble name text =
+let assemble (name : Fpath.t) text =
   let b = Buffer.create 4096 in
   let line s = Buffer.add_string b (s ^ "\n") in
-  let at n e = name ^ ":" ^ string_of_int (n + 1) ^ ": " ^ e in
+  let at n e = !!name ^ ":" ^ string_of_int (n + 1) ^ ": " ^ e in
   let target e = match e with Num n -> decimal n | Sym s -> s in
   let relocs_of rs =
     (* (by offset: a list's words are made from the last) *)
@@ -337,17 +339,18 @@ let assemble name text =
 let main
     (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     =
-  let assemble_to f out =
+  let assemble_to (f : Fpath.t) (out : Fpath.t) =
     TinyLibSystem.write_file caps out
       (assemble f (TinyLibSystem.read_file caps f));
     0 in
   (* x.tm's object: x.o, here *)
-  let default f = Filename.chop_suffix (Filename.basename f) ".tm" ^ ".o" in
+  let default f = Fpath.set_ext ".o" (Fpath.base f) in
+  let tm f = Filename.check_suffix f ".tm" in
   try
     match List.tl (TinyLibSystem.argv caps) with
     | ("-h" | "--help") :: _ -> TinyLibSystem.print caps help; 0
-    | [ "-o"; out; f ] when Filename.check_suffix f ".tm" -> assemble_to f out
-    | [ f ] when Filename.check_suffix f ".tm" -> assemble_to f (default f)
+    | [ "-o"; out; f ] when tm f -> assemble_to (Fpath.v f) (Fpath.v out)
+    | [ f ] when tm f -> assemble_to (Fpath.v f) (default (Fpath.v f))
     | _ -> TinyLibSystem.eprint caps (usage ^ "   (-h: how)\n"); 2
   with Error e ->
     TinyLibSystem.eprint caps (Printf.sprintf "tiny-assembler: %s\n" e); 1

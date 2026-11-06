@@ -26,7 +26,7 @@ tiny/TinyKernel/steps/t6/TinyMkfs.ml:80: int31: in get32, 0xffffffff: not on the
 tiny/TinyLinker.ml:177: stack: go calls itself, not a tail call, over a list
 tiny/TinyLinker.ml:178: stack: go calls itself, not a tail call, over a list
 tiny/TinyLinker.ml:179: stack: go calls itself, not a tail call, over a list
-tiny/TinyML.ml:420: evalorder: operands at 420:10 and 421:10, both with an effect: their order the compiler's
+tiny/TinyML.ml:439: evalorder: operands at 439:10 and 440:10, both with an effect: their order the compiler's
 tiny/TinyML/TinyMLCompile.ml:382: stack: TinyMLCompile.match_cases calls itself, not a tail call, over a list
 tiny/TinyML/TinyMLCompile.ml:420: stack: TinyMLCompile.app calls itself, not a tail call, over a list
 tiny/TinyML/TinyMLCompile.ml:423: stack: TinyMLCompile.app calls itself, not a tail call, over a list

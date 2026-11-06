@@ -18,10 +18,12 @@ let puncts = [ "<<="; ">>="; "..."; "->"; "++"; "--"; "<<"; ">>"; "<="; ">=";
 (* where a token is, for the errors: its file (an #include's own) and line *)
 type loc = string * int
 
+open Fpath_.Operators
+
 (* a file's tokens, its #includes' in their place, #defines expanded
  * (a macro's tokens where it is used) *)
 let rec tokens (macros : (string, (token * loc) list) Hashtbl.t)
-    (read : string -> string) file : (token * loc) list =
+    (read : Fpath.t -> string) (file : Fpath.t) : (token * loc) list =
   let s = read file in
   let n = String.length s in
   let out = ref [] in
@@ -31,7 +33,7 @@ let rec tokens (macros : (string, (token * loc) list) Hashtbl.t)
   let loc i =
     for k = !counted to min i n - 1 do if s.[k] = '\n' then incr line done;
     counted := max !counted i;
-    (file, !line)
+    (!!file, !line)
   in
   let emit i t =
     let l = loc i in
@@ -71,12 +73,10 @@ let rec tokens (macros : (string, (token * loc) list) Hashtbl.t)
                    (String.split_on_char ' '
                       (String.map (function '\t' -> ' ' | c -> c) line)) with
            | "include" :: f :: _ when f.[0] = '"' ->
-               let f = String.sub f 1 (String.length f - 2) in
-               let dir = Filename.dirname file in
-               let f =
-                 if Filename.is_relative f && dir <> "." then
-                   Filename.concat dir f
-                 else f in
+               let f = Fpath.v (String.sub f 1 (String.length f - 2)) in
+               (* (beside the file; dir // f is f when it is absolute) *)
+               let dir = Fpath.parent file in
+               let f = if !!dir = "./" then f else dir // f in
                out := List.rev_append (tokens macros read f) !out
            | "define" :: name :: _ ->
                (* the rest of the line, lexed *)

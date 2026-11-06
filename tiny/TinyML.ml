@@ -269,17 +269,30 @@ let read_interface text env tenv =
   env, tenv, (iname, iglobals), icurry
 
 (* M.mli's vals, their types in place of what M.ml's inferred: its
- * types and exceptions are M.ml's too, and skipped *)
+ * types and exceptions are M.ml's too, and skipped; a val of module
+ * N : sig ... end is N.x *)
 let mli_types text =
   toks := lex text; pos := 0;
+  let prefix = ref "" in
   let starts () =
     match peek () with
-    | LID "val" | KW ("type" | "exception" | "external") | EOF -> true
+    | LID "val" | KW ("module" | "type" | "exception" | "external" | "end")
+    | EOF -> true
     | _ -> false
   in
   let rec go acc =
     match peek () with
     | EOF -> acc
+    | KW "module" ->
+        advance ();
+        (match peek () with
+         | UID m -> advance (); prefix := m ^ "."
+         | _ -> fail ());
+        expect (KW ":");
+        if peek () <> KW "sig" then fail ();
+        advance ();
+        go acc
+    | KW "end" -> advance (); prefix := ""; go acc
     | LID "val" ->
         advance ();
         let x =
@@ -294,7 +307,7 @@ let mli_types text =
         in
         expect (KW ":");
         let t = ty () in
-        go ((x, of_texpr (ref []) t) :: acc)
+        go ((!prefix ^ x, of_texpr (ref []) t) :: acc)
     | _ -> advance (); while not (starts ()) do advance () done; go acc in
   go []
 
@@ -310,12 +323,16 @@ let start =
       "stw\tr2, 0(r3)"; "ldw\tr2, 8(r1)"; "jalr\tzero, 0(r2)" ]
   ^ "\n"
 
-let parse s = toks := lex s; pos := 0; items ()
+let parse s =
+  toks := lex s; pos := 0;
+  let is = items () in
+  if peek () <> EOF then fail ();
+  is
 
 (* a file's unit: its name without the directory and the extension,
  * capitalized, as OCaml's module *)
-let unit_of f =
-  String.capitalize_ascii (Filename.remove_extension (Filename.basename f))
+let unit_of (f : Fpath.t) =
+  String.capitalize_ascii (Fpath.to_string (Fpath.rem_ext (Fpath.base f)))
 
 (* the standard library, TinyLibCore/'s modules in their order, the
  * first units of every program: each compiled once, by tiny-ml -c
@@ -331,32 +348,34 @@ let unit_of f =
 let library =
   [ "Stdlib"; "Char"; "Seq"; "List"; "String"; "Bytes"; "Array"; "Option";
     "Int64"; "Filename"; "Buffer"; "Printf"; "Marshal"; "Hashtbl"; "Common";
-    "Sha1" ]
+    "Sha1"; "Fpath"; "Fpath_" ]
 
 (* a file that cannot be read or made, said apart from an error in one *)
 exception File_error of string
 
+open Fpath_.Operators
+
 let main
     (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     =
-  let output = ref "" and file = ref "" and files = ref []
+  let output = ref None and file = ref "" and files = ref []
   and separate = ref false and lib = ref (Some "/lib/ml") in
   let rec args l = match l with
-    | "-o" :: o :: r -> output := o; args r
+    | "-o" :: o :: r -> output := Some (Fpath.v o); args r
     | "-c" :: r -> separate := true; args r
     | "-L" :: d :: r -> lib := Some d; args r
     | "-nostdlib" :: r -> lib := None; args r
-    | f :: r -> files := f :: !files; args r
+    | f :: r -> files := Fpath.v f :: !files; args r
     | [] -> ()
   in
   let argl = List.tl (TinyLibSystem.argv caps) in
   args argl;
   let files = List.rev !files in
   let read f =
-    file := f;
+    file := !!f;
     try TinyLibSystem.read_file caps f with Failure m -> raise (File_error m) in
-  let tmis = List.filter (fun f -> Filename.check_suffix f ".tmi") files
-  and mls = List.filter (fun f -> Filename.check_suffix f ".ml") files in
+  let tmis = List.filter (Fpath.has_ext ".tmi") files
+  and mls = List.filter (Fpath.has_ext ".ml") files in
   if List.mem "-h" argl || List.mem "--help" argl then
     (TinyLibSystem.print caps help; 0)
   else if List.length mls + List.length tmis <> List.length files || files = []
@@ -365,7 +384,7 @@ let main
   else
   let write f text =
     let fd =
-      try TinyLibSystem.open_out caps f with Failure m -> raise (File_error m)
+      try TinyLibSystem.open_out caps !!f with Failure m -> raise (File_error m)
     in
     TinyLibSystem.write fd text; TinyLibSystem.close fd in
   try
@@ -373,7 +392,7 @@ let main
      * units before this one *)
     let lib =
       match !lib with
-      | Some d -> List.map (fun m -> d ^ "/" ^ m ^ ".tmi") library
+      | Some d -> List.map (fun m -> Fpath.v d / (m ^ ".tmi")) library
       | None -> []
     in
     let env, tenv, units, needed =
@@ -392,20 +411,20 @@ let main
       let items = parse (read f) in
       let _, tdefs = type_unit tenv items in
       let _, exports, n = compile_unit env items in
-      let mli = Filename.remove_extension f ^ ".mli" in
+      let mli = Fpath.set_ext ".mli" f in
       (* (old: Sys.file_exists mli, then read) *)
       let mli_text =
         try Some (TinyLibSystem.read_file caps mli) with Failure _ -> None in
       let types =
-        (match mli_text with Some t -> file := mli; mli_types t | None -> [])
+        (match mli_text with Some t -> file := !!mli; mli_types t | None -> [])
         @ tdefs in
       let out =
-        if !output = "" then
-          Filename.remove_extension (Filename.basename f) ^ ".tm"
-        else !output in
+        match !output with
+        | Some o -> o
+        | None -> Fpath.set_ext ".tm" (Fpath.base f) in
       (* (.data: tiny-linker -n's, the statics after the text) *)
       write out (Buffer.contents text ^ "\t.data\n" ^ Buffer.contents data);
-      write (Filename.remove_extension out ^ ".tmi")
+      write (Fpath.set_ext ".tmi" out)
         (write_interface old exports types n)
     end else begin
       (* the files one after the other, a unit each, then the main *)
@@ -425,7 +444,9 @@ let main
       compile_main units needed;
       let asm =
         start ^ Buffer.contents text ^ "\t.data\n" ^ Buffer.contents data in
-      if !output = "" then TinyLibSystem.print caps asm else write !output asm
+      (match !output with
+       | None -> TinyLibSystem.print caps asm
+       | Some o -> write o asm)
     end;
     0
   with

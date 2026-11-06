@@ -45,9 +45,9 @@ let unhex s =
   String.init (String.length s / 2) (fun i ->
     Char.chr ((16 * digit s.[2 * i]) + digit s.[(2 * i) + 1]))
 
-let read name text =
+let read (name : Fpath.t) text =
   if not (String.length text >= 11 && String.sub text 0 11 = "tiny-object")
-  then error (name ^ ": not an object of tiny-assembler's");
+  then error (Fpath.to_string name ^ ": not an object of tiny-assembler's");
   let items = ref [] in
   List.iteri (fun n l ->
     match String.split_on_char ' ' l, !items with
@@ -62,7 +62,8 @@ let read name text =
     | [ "reloc"; off; k; t ], Code (s, rs) :: rest ->
         items := Code (s, (int_of_string off, k, t) :: rs) :: rest
     | _ ->
-        error (name ^ ":" ^ string_of_int (n + 1) ^ ": not an object's line"))
+        error (Fpath.to_string name ^ ":" ^ string_of_int (n + 1)
+               ^ ": not an object's line"))
     (String.split_on_char '\n' text);
   List.rev !items
 
@@ -194,7 +195,7 @@ let gather items =
 
 (* the image, the labels by address, and where the data starts (-n; 0
  * otherwise, the sections then ignored) *)
-let link split (objects : (string * string) list) =
+let link split (objects : (Fpath.t * string) list) =
   let items =
     sweep (List.map (fun (f, text) -> sectioned (read f text)) objects) in
   let labels, order, placed, data_at =
@@ -254,7 +255,7 @@ let main
     | "-s" :: r -> args mb split true map r
     | "-map" :: r -> args mb split syms true r
     | "-o" :: out :: files when files <> [] ->
-        Some (mb, split, syms, map, out, files)
+        Some (mb, split, syms, map, Fpath.v out, Fpath_.of_strings files)
     | _ -> None in
   match List.tl (TinyLibSystem.argv caps) with
   | ("-h" | "--help") :: _ -> TinyLibSystem.print caps help; 0
@@ -279,7 +280,8 @@ let main
                    ^ lines (List.filter (fun (l, _) ->
                        not (TinyLibSymbols.local l)) labels)
                | None, false -> image);
-            if map then write (out ^ ".map") (lines labels);
+            if map then
+              write (Fpath.v (Fpath.to_string out ^ ".map")) (lines labels);
             0
           with Error e ->
             TinyLibSystem.eprint caps (Printf.sprintf "tiny-linker: %s\n" e); 1

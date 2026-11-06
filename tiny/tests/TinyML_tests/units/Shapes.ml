@@ -3,8 +3,9 @@
 
 (* A unit for TinyML_test.sh's separate compilation: a variant, a record,
  * an exception, a function of two arguments, a value computed at its
- * init, a type's second name with a parameter, and a function nothing
- * uses (left out by tiny-linker) *)
+ * init, a type's second name with a parameter, a function nothing
+ * uses (left out by tiny-linker), and operators of its own in a module
+ * of one level (open Shapes.Ops) *)
 
 type shape = Square of int | Rect of int * int | Dot
 type box = { name : string; shape : shape }
@@ -26,3 +27,10 @@ let largest l =
 let sides s : int pair =
   match s with Square n -> n, n | Rect (w, h) -> w, h | Dot -> 0, 0
 let unused x = x + 41
+
+module Ops = struct
+  (* a shape's area added, a shape's sides: precedence as + and as ! *)
+  let ( +: ) n s = n + area s
+  let ( !^ ) s = let w, h = sides s in w + h
+  let ( @@@ ) a b = a ^ "/" ^ b
+end

@@ -115,11 +115,11 @@ exception File_error of string
 let main
     (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     =
-  let output = ref "" and file = ref "" in
+  let output = ref None and file = ref None in
   let rec args l = match l with
     | "-ir" :: r -> ir_only := true; args r
-    | "-o" :: o :: r -> output := o; args r
-    | f :: r -> file := f; args r
+    | "-o" :: o :: r -> output := Some (Fpath.v o); args r
+    | f :: r -> file := Some (Fpath.v f); args r
     | [] -> ()
   in
   let argl = List.tl (TinyLibSystem.argv caps) in
@@ -127,9 +127,10 @@ let main
     (TinyLibSystem.print caps help; 0)
   else begin
     args argl;
-    if !file = "" then (TinyLibSystem.eprint caps (usage ^ "   (-h: how)\n"); 2)
-    else begin
-      unit_name := Filename.remove_extension (Filename.basename !file);
+    match !file with
+    | None -> TinyLibSystem.eprint caps (usage ^ "   (-h: how)\n"); 2
+    | Some file ->
+      unit_name := Fpath.to_string (Fpath.rem_ext (Fpath.base file));
       (* intptr, Plan 9's uintptr's signed twin: an integer as wide as a
        * pointer (TinyMLRuntime/'s values, a word each) *)
       Hashtbl.replace typedefs "intptr" int_t;
@@ -137,7 +138,7 @@ let main
         try TinyLibSystem.read_file caps f
         with Failure m -> raise (File_error m) in
       try
-        let ts = tokens (Hashtbl.create 16) read !file in
+        let ts = tokens (Hashtbl.create 16) read file in
         toks := Array.of_list (List.map fst ts);
         locs := Array.of_list (List.map snd ts);
         while peek () <> EOF do external_decl () done;
@@ -145,13 +146,13 @@ let main
           Buffer.contents out
           ^ (if !ir_only then "" else "\t.data\n" ^ Buffer.contents data)
         in
-        if !output = "" then TinyLibSystem.print caps text
-        else begin
-          let fd =
-            try TinyLibSystem.open_out caps !output
-            with Failure m -> raise (File_error m) in
-          TinyLibSystem.write fd text; TinyLibSystem.close fd
-        end;
+        (match !output with
+         | None -> TinyLibSystem.print caps text
+         | Some o ->
+             let fd =
+               try TinyLibSystem.open_out caps (Fpath.to_string o)
+               with Failure m -> raise (File_error m) in
+             TinyLibSystem.write fd text; TinyLibSystem.close fd);
         0
       with
       | Failure m ->
@@ -160,7 +161,7 @@ let main
            * have none *)
           let ls = !locs in
           if Array.length ls = 0 then
-            TinyLibSystem.eprint caps (!file ^ ": " ^ m ^ "\n")
+            TinyLibSystem.eprint caps (Fpath.to_string file ^ ": " ^ m ^ "\n")
           else
             (let f, l = ls.(max 0 (min (!pos - 1) (Array.length ls - 1))) in
              TinyLibSystem.eprint caps
@@ -168,7 +169,6 @@ let main
           1
       | File_error m ->
           TinyLibSystem.eprint caps (Printf.sprintf "tiny-c: %s\n" m); 1
-    end
   end
 
 let () = TinyLibSystem.main "tiny-c" main

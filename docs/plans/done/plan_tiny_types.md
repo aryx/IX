@@ -9,8 +9,8 @@ in tiny/ for such use of clearer types than string and int (and even
 maybe bool sometimes). Analyze and report."; then, of the report: "let's
 make a plan_tiny_xxx document out of this. This is nice."
 
-Built on 2026-11-06, the eight stages, but for TinyLibSystem's fd,
-postponed (stage 2). Status, at the end, says what each stage did.
+Done (2026-11-06): the eight stages and fd, in docs/plans/done/.
+Status, at the end, says what each stage did and what was left.
 
 ## The short answer
 
@@ -385,3 +385,17 @@ written as the input comes), `cp` (each_path says a failure after
 the source's name, where a channel's open would say its own file
 again). The messages the same in 17 cases, but cmp's missing file,
 now named ("cmp: nofile: ...").
+
+Done, 2026-11-06 (the author: "let's close the plan"): the eight
+stages and fd built, the plan moved to docs/plans/done/. Left, each
+on purpose and said in its stage: TinyLibPlayground's styles (a
+colour's byte with its style above it, kept ints); TinyBrowserLines'
+word's bool (the HTML reader's data, a record for one bool not done);
+TinyLinker.aout's two ints; tee and cp on descriptors; mem_address's
+-1 (an option would allocate at each read and write); tiny-machine's
+-net directory a string (its uses Sys's and messages, to take with the
+host-only programs' capabilities). Learnt on the way: tiny-ml's one
+name space for constructors and labels makes a new type's names carry
+its prefix (Trap_, Fs_, Il_, ih_, end_, st_), and a common one (Code)
+was taken twice by a program's own; mini-ml reads no `private`, so the
+numbers' types are aliases, readable but not checked.

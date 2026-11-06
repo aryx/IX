@@ -43,8 +43,13 @@
 (* The names of what the calls give, each an int or a string still:
  * what it is said by its type, not by a comment only. *)
 
-(* a process's number, the system's *)
+(* a process's number, the system's; a file's descriptor, a number too
+ * (0, 1, 2 the standard input, output, error): where a program does
+ * have one, the shell's plumbing (dup2, pipe), a file read and
+ * written at offsets (tiny-db's); a file read or written whole, or a
+ * piece at a time, is a channel (with_open_in, with_open_out) *)
 type pid = int
+type fd = int
 
 (* how a child ended, as rc says it: "" when all went well, its code,
  * or "signal: " and the signal's name *)
@@ -83,7 +88,7 @@ val flush : < Cap.stdout; Cap.stderr; .. > -> unit
 val read_line : < Cap.stdin; .. > -> string option
 
 (* whether a descriptor is a terminal, where someone types *)
-val isatty : int -> bool
+val isatty : fd -> bool
 
 (* an interrupt typed at the terminal is for the program that runs,
  * not for this one *)
@@ -95,19 +100,19 @@ val ignore_interrupt : < Cap.signal; .. > -> unit
 
 (* a file's descriptor: to read it, to write it from nothing (made if
  * it is not there), to write at its end. Failure with the reason *)
-val open_in : < Cap.open_in; .. > -> Fpath.t -> int
-val open_out : < Cap.open_out; .. > -> Fpath.t -> int
-val open_append : < Cap.open_out; .. > -> Fpath.t -> int
-val close : int -> unit
+val open_in : < Cap.open_in; .. > -> Fpath.t -> fd
+val open_out : < Cap.open_out; .. > -> Fpath.t -> fd
+val open_append : < Cap.open_out; .. > -> Fpath.t -> fd
+val close : fd -> unit
 
 (* a file's descriptor to read and write it, at any place (a database's
  * file); made empty when it is not there. Failure with the reason *)
-val open_rw : < Cap.open_in; Cap.open_out; .. > -> Fpath.t -> int
+val open_rw : < Cap.open_in; Cap.open_out; .. > -> Fpath.t -> fd
 
 (* [seek fd off]: the next read or write at off from the file's start;
  * [seek_end fd]: at its end, which is the offset given *)
-val seek : int -> int -> unit
-val seek_end : int -> int
+val seek : fd -> int -> unit
+val seek_end : fd -> int
 
 (* a file's text; Failure with the reason. [write_file caps file s]: the
  * file made s, created or emptied first *)
@@ -115,7 +120,7 @@ val read_file : < Cap.open_in; .. > -> Fpath.t -> string
 val write_file : < Cap.open_out; .. > -> Fpath.t -> string -> unit
 
 (* all that a descriptor gives, to its end *)
-val read_all : int -> string
+val read_all : fd -> string
 
 (* [with_open_in caps f file]: f on the file opened, a channel that
  * knows its name (In_channel.input_all reads it), closed when f
@@ -140,10 +145,10 @@ val chdir : < Cap.chdir; .. > -> Fpath.t -> unit
 (* [read fd max]: what fd gives next, up to max bytes, without waiting
  * for more; "" at the end. For a program that must work on its input
  * as it comes (cat at the console) *)
-val read : int -> int -> string
+val read : fd -> int -> string
 
 (* all of the string, written to the descriptor *)
-val write : int -> string -> unit
+val write : fd -> string -> unit
 
 (* whether a file is a directory, and its size; Failure with the
  * reason when it is not there *)
@@ -202,13 +207,13 @@ val millis : < Cap.clock; .. > -> milliseconds
 
 (* [save n]: a copy of descriptor n, away from the low numbers and not
  * given to a program run; None when n is not open *)
-val save : int -> int option
+val save : fd -> fd option
 
 (* [dup2 a b]: b is now what a is *)
-val dup2 : int -> int -> unit
+val dup2 : fd -> fd -> unit
 
 (* a pipe: where to read, where to write; not given to a program run *)
-val pipe : < Cap.pipe; .. > -> int * int
+val pipe : < Cap.pipe; .. > -> fd * fd
 
 (*****************************************************************************)
 (* Processes *)

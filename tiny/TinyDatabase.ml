@@ -43,7 +43,7 @@ type node = Leaf of (key * row) array | Inner of key array * int array
 
 (* (a descriptor, TinyLibSystem's: a number on the host and on
  * tiny-kernel) *)
-type file = { fd : int; cache : (int, node) Hashtbl.t }
+type file = { fd : TinyLibSystem.fd; cache : (int, node) Hashtbl.t }
 
 let read_at f off len =
   TinyLibSystem.seek f.fd off;

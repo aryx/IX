@@ -500,7 +500,7 @@ let exec (caps : < Cap.exec; Cap.stderr; .. >) (argv : string list) =
 (* [with_fds changes f]: each fd changed (the file, or another fd), f
  * run, then each fd put back *)
 (* a redirection's target: a file opened, or another fd *)
-type target = To_file of string * mode | To_fd of int
+type target = To_file of string * mode | To_fd of TinyLibSystem.fd
 
 let with_fds (caps : < Cap.open_in; Cap.open_out; .. >)
     (changes : (int * target) list) f =

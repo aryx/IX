@@ -46,6 +46,7 @@ type Cap.all_caps = < >
 
 (* the host's .mli's names (TinyLibSystem.mli) *)
 type pid = int
+type fd = int
 type status = string
 type stat = { st_dir : bool; st_size : int }
 type seconds = int

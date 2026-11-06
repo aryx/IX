@@ -7,6 +7,7 @@ open Fpath_.Operators
 
 (* See TinyLibSystem.mli for the types' names *)
 type pid = int
+type fd = int
 type status = string
 type stat = { st_dir : bool; st_size : int }
 type seconds = int

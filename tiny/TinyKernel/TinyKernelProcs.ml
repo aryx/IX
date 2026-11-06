@@ -18,7 +18,7 @@ open TinyKernelFiles
 type state = Ready | Waiting of (unit -> bool) | Stopped
 
 (* A process: its slot (where its frame is), its memory, its pid, its
- * state, its parent's pid (0: none), its
+ * state, its parent's pid, if any, its
  * descriptors, its current directory; while it waits for a child's
  * end, how many processes had ended when it last looked (-1: it waits
  * for something else); and its trace, when it is traced. The core it
@@ -29,7 +29,7 @@ type state = Ready | Waiting of (unit -> bool) | Stopped
  * forked. *)
 type proc = {
   slot : int; mem : space; pid : int;
-  mutable state : state; mutable parent : int;
+  mutable state : state; mutable parent : int option;
   mutable fds : (int * file) list; mutable cwd : string list;
   mutable since : int; mutable traced : trace option;
   mutable core : int; mutable doomed : bool;
@@ -57,7 +57,9 @@ let () =
         | Ready -> "ready"
         | Waiting _ -> "waiting"
         | Stopped -> "stopped" in
-      string_of_int p.pid ^ " " ^ string_of_int p.parent ^ " " ^ state ^ " "
+      string_of_int p.pid ^ " "
+      ^ (match p.parent with Some pp -> string_of_int pp | None -> "0")
+      ^ " " ^ state ^ " "
       ^ string_of_int (p.memory / 1024) ^ " " ^ p.cmd ^ "\n") !procs))
 
 (* a register of its frame (r1..r15, the pc as 16), as entry.tm saved it *)

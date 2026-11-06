@@ -92,7 +92,7 @@ let () =
               3, Draw { conn = connect screen font; refs = 1 };
               4, Peek mouse ] in
   let p = {
-    slot = 0; mem = mem_empty (); pid = 1; state = Ready; parent = 0;
+    slot = 0; mem = mem_empty (); pid = 1; state = Ready; parent = None;
     fds = fds; cwd = (if blocks > 0 then [ "usr"; "glenda" ] else []);
     since = -1; traced = None; core = -1; doomed = false;
     cmd = ""; memory = 0;

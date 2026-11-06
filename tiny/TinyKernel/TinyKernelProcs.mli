@@ -47,7 +47,7 @@
 type state = Ready | Waiting of (unit -> bool) | Stopped
 
 (* A process: its slot (where its frame is), its memory, its pid, its
- * state, its parent's pid (0: none), its descriptors, its current
+ * state, its parent's pid, if any, its descriptors, its current
  * directory; while it waits for a child's end, how many processes had
  * ended when it last looked (-1: it waits for something else); and its
  * trace, when it is traced. The core it runs on (-1: none; 0 while core
@@ -60,7 +60,7 @@ type proc = {
   mem : TinyKernelMemory.space;
   pid : int;
   mutable state : state;
-  mutable parent : int;
+  mutable parent : int option;
   mutable fds : (int * TinyKernelFiles.file) list;
   mutable cwd : string list;
   mutable since : int;

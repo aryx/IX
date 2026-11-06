@@ -557,3 +557,10 @@ the speaker, then B and the kernel's trace. A commit each.
   it (`Some x when j = x`), so the loop over a line's characters makes
   no option; the line's Some is made once a picture. +4 lines.
   Checked by tiny-kernel's emacs sessions (their screens).
+- TinyKernelProcs' `parent` an int option (old: 0 none: the first
+  process's, and an orphan's): exit orphans its children with None and
+  records its end for a parent it has; wait and trace(0) match on it;
+  /dev/ps prints 0 for none as before. Only system calls read it.
+  +6 lines. Seen and left, for a timing: `since` (-1: waiting for
+  something else) and `core` (-1: none), both read, and `since` set,
+  in the scheduler's loop over the processes.

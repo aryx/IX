@@ -74,13 +74,14 @@ let rec exit_proc p status =
   (match p.traced with
    | Some t -> t.said <- t.said @ [ "exited " ^ string_of_int status ^ "\n" ]
    | None -> ());
-  List.iter (fun q -> if q.parent = p.pid then q.parent <- 0) !procs;
+  List.iter (fun q -> if q.parent = Some p.pid then q.parent <- None) !procs;
   ended := List.filter (fun e -> e.end_parent <> p.pid) !ended;
   if p.pid = 1 then halt status;
-  if p.parent <> 0 then
-    ended :=
-      !ended
-      @ [ { end_parent = p.parent; end_pid = p.pid; end_status = status } ];
+  (match p.parent with
+   | Some pp ->
+     ended :=
+       !ended @ [ { end_parent = pp; end_pid = p.pid; end_status = status } ]
+   | None -> ());
   release p
 
 and release q =
@@ -118,7 +119,7 @@ let with_room p f =
  * when p's children are; its pid the next *)
 let child p s = {
   slot = s; mem = mem_empty (); pid = !next_pid; state = Ready;
-  parent = p.pid; fds = p.fds; cwd = p.cwd; since = -1; traced = None;
+  parent = Some p.pid; fds = p.fds; cwd = p.cwd; since = -1; traced = None;
   core = -1; doomed = false; cmd = p.cmd; memory = p.memory;
 }
 
@@ -289,7 +290,7 @@ let sys_wait p =
         result p e.end_pid;
         true
     | [] ->
-        if List.exists (fun q -> q.parent = p.pid) !procs then false
+        if List.exists (fun q -> q.parent = Some p.pid) !procs then false
         else (result p (-1); true));
   (* (a shell waits most of its life: its call is retried when a process
    * ended, not at each turn) *)
@@ -509,8 +510,11 @@ let sys_trace p =
     t in
   if reg p 1 = 0 then begin
     (match p.traced with
-     | Some t -> if t.tracer <> p.parent then raise Bad
-     | None -> if p.parent = 0 then raise Bad else ignore (make p p.parent));
+     | Some t -> if Some t.tracer <> p.parent then raise Bad
+     | None ->
+       match p.parent with
+       | Some pp -> ignore (make p pp)
+       | None -> raise Bad);
     result p 0
   end
   else

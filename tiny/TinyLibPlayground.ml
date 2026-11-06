@@ -172,12 +172,14 @@ let sound_message snd =
  * p, how many, then them *)
 let samples_message s = msg 'p' [ String.length s ] ^ s
 
-(* where they are played: tiny-kernel's speaker, -1 when there is none *)
-let speaker = ref (-1)
+(* where they are played: tiny-kernel's speaker, if there is one *)
+let speaker : int option ref = ref None
 let play sounds =
-  if !speaker >= 0 && sounds <> [] then
-    ignore (u_write !speaker
-      (List.fold_left (fun acc snd -> acc ^ sound_message snd) "" sounds))
+  match !speaker with
+  | Some fd when sounds <> [] ->
+      ignore (u_write fd
+        (List.fold_left (fun acc snd -> acc ^ sound_message snd) "" sounds))
+  | _ -> ()
 
 (* The music: a voice of /dev/audio a part (the kernel mixes them, and
  * the sounds), its next note, and the time its notes so far end at, in
@@ -268,7 +270,8 @@ let run g =
   in
   put (d_image picture (0, 0, g.width, g.height) 0
        ^ d_image ground (0, 0, g.width, g.height) 0);
-  speaker := u_open "/dev/audio" 1;
+  (let fd = u_open "/dev/audio" 1 in
+   speaker := if fd < 0 then None else Some fd);
   let first = g.init (u_seed ()) in
   let shapes = g.view first in
   show g [] shapes;

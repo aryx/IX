@@ -24,11 +24,11 @@ let text f =
   sink := was;
   Buffer.contents b
 
-(* the process, the trace's descriptor, where the process is (-1:
- * running), whether debug started it, its breakpoints *)
+(* the process, the trace's descriptor, where the process is stopped,
+ * whether debug started it, its breakpoints *)
 let pid = ref 0
 let t = ref (-1)
-let pc = ref (-1)
+let pc : int option ref = ref None
 let started = ref false
 let stops = ref []
 
@@ -129,7 +129,7 @@ let listing a =
  * said; the next stop said, false when the process ended *)
 let stopped () =
   match String.split_on_char ' ' (next ()) with
-  | "stopped" :: p :: why -> pc := int_of_string p; Some why
+  | "stopped" :: p :: why -> pc := Some (int_of_string p); Some why
   | "exited" :: rest -> say ("exited " ^ String.concat " " rest ^ "\n"); None
   | _ -> say "the trace ended\n"; None
 let show why =
@@ -138,13 +138,13 @@ let show why =
    | [ "fault"; a ] -> say ("fault at " ^ hex (int_of_string a) ^ "\n")
    | [ "illegal"; w ] -> say ("illegal " ^ hex (int_of_string w) ^ "\n")
    | _ -> say (String.concat " " why ^ "\n"));
-  say (listing !pc)
+  match !pc with Some at -> say (listing at) | None -> ()
 let wait () = match stopped () with Some why -> show why; true | None -> false
 
 (* an address typed: a number, pc, a function's name and maybe +n *)
 let address s =
   let at base =
-    if base = "pc" then (if !pc >= 0 then Some !pc else None)
+    if base = "pc" then !pc
     else
       match int_of_string_opt base with
       | Some a -> Some a
@@ -174,13 +174,14 @@ let reg name = match List.assoc_opt name (regs ()) with Some v -> v | None -> 0
 
 (* c, s and n; false when the process ended *)
 let continue () =
-  if !pc >= 0 then (ignore (u_write !t "c"); pc := -1);
+  if !pc <> None then (ignore (u_write !t "c"); pc := None);
   wait ()
 let step () =
-  if !pc < 0 then (say "?\n"; true)
-  else (ignore (u_write !t "s"); pc := -1; wait ())
-let over () =
-  let s = bytes !pc 4 in
+  match !pc with
+  | None -> say "?\n"; true
+  | Some _ -> ignore (u_write !t "s"); pc := None; wait ()
+let over (at : int) =
+  let s = bytes at 4 in
   let call =
     String.length s = 4
     && (match instr s 0 with
@@ -193,15 +194,15 @@ let over () =
      * recursive function the call's own return is told by its sp, the
      * same as at the call: one with a lower sp is a deeper call's, run
      * past *)
-    let a = !pc + 4 and sp = reg "r14" in
+    let a = at + 4 and sp = reg "r14" in
     let mine = not (List.mem a !stops) in
     if mine then ok (ask ("b " ^ string_of_int a));
     let rec go () =
       ignore (u_write !t "c");
-      pc := -1;
+      pc := None;
       match stopped () with
-      | Some [ "break" ] when !pc = a && reg "r14" < sp -> go ()
-      | Some [ "break" ] when !pc = a -> say (listing !pc); true
+      | Some [ "break" ] when !pc = Some a && reg "r14" < sp -> go ()
+      | Some [ "break" ] when !pc = Some a -> say (listing a); true
       | Some why -> show why; true
       | None -> false in
     let alive = go () in
@@ -296,17 +297,17 @@ let backtrace () =
     match frame with
     | Some (ret, sp) when ret > 0 && k < 64 -> go (k + 1) (ret - 4) sp vsp
     | _ -> () in
-  if !pc < 0 then say "?\n"
-  else begin
-    let b = start !pc in
+  match !pc with
+  | None -> say "?\n"
+  | Some at ->
+    let b = start at in
     let vsp =
       if b >= 0 && ml b > 0 then reg "r12"
       else
         match TinyLibSymbols.address !funcs "ml_vsp" with
         | Some a -> (match word a with Some v -> v | None -> 0)
         | None -> 0 in
-    go 0 !pc (reg "r14") vsp
-  end
+    go 0 at (reg "r14") vsp
 
 (* the registers, four a line in columns, and the instruction at the pc *)
 let registers () =
@@ -362,7 +363,7 @@ let command line =
       true
   | [ "c" ] -> continue ()
   | [ "s" ] -> step ()
-  | [ "n" ] -> if !pc < 0 then (say "?\n"; true) else over ()
+  | [ "n" ] -> (match !pc with None -> say "?\n"; true | Some at -> over at)
   | [ "r" ] -> registers (); true
   | [ "bt" ] -> backtrace (); true
   | "x" :: a :: rest -> examine words a rest; true
@@ -420,20 +421,20 @@ let rec last n l =
  * instructions around the pc (=> at it, * at a breakpoint), the
  * backtrace (its first 5 frames) *)
 let panes () =
-  if !pc < 0 then [ "(no process)" ]
-  else begin
+  match !pc with
+  | None -> [ "(no process)" ]
+  | Some at ->
     let r = lines (text registers) in
     let r = List.filteri (fun i _ -> i < List.length r - 1) r in
     let code =
       List.init 6 (fun k ->
-        let a = !pc + (4 * (k - 1)) in
+        let a = at + (4 * (k - 1)) in
         String.concat ""
-          (lines ((if a = !pc then "=> "
+          (lines ((if a = at then "=> "
                    else if List.mem a !stops then " * " else "   ")
                   ^ listing a))) in
     let bt = List.filteri (fun i _ -> i < 5) (lines (text backtrace)) in
     r @ [ "" ] @ code @ [ "" ] @ bt
-  end
 
 (* what was said since, to the log, and the panes made again *)
 let out = Buffer.create 1024

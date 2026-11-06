@@ -493,3 +493,9 @@ the speaker, then B and the kernel's trace. A commit each.
   picture's slice) and `link` ("" none), in every run of a page;
   `dc_type` ("" until the head has come) and `dc_status` (0 when no
   head said). +7 lines.
+- The debugger's `pc` an int option ref, where the process is stopped
+  (old: -1 running): `over` takes it, `n` giving it, backtrace and
+  panes a match. Its `t`, the trace's descriptor, kept: -1 only until
+  u_trace at start, which ends the program when it fails, then always
+  one. TinyLibPlayground's `speaker` an int option (u_open's -1 made
+  None where it returns).

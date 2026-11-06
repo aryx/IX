@@ -36,36 +36,39 @@ let escaped s =
        | '&' -> "&amp;"
        | c -> String.make 1 c))
 
-(* bytes of the body: read as HTML, as a text, or kept for a helper *)
-let body sc s =
-  let d = sc.sc_doc in
-  match d.dc_file with
+(* bytes of the body, of a media type: read as HTML, as a text, or kept
+ * for a helper *)
+let body sc (media : string) s =
+  match sc.sc_doc.dc_file with
   | Some fd -> ignore (u_write fd s)
   | None ->
-    if is_html d.dc_type then feed sc.sc_page s
-    else if String.starts_with "text/" d.dc_type then
-      feed sc.sc_page (escaped s)
+    if is_html media then feed sc.sc_page s
+    else if String.starts_with "text/" media then feed sc.sc_page (escaped s)
 
-(* The head's end: the status, and what the body is (HTML when the head
- * does not say, as when there is no head) *)
-let body_start sc =
+(* The head's end: the status, and the body's media type, returned (HTML
+ * when the head does not say, as when there is no head) *)
+let body_start sc : string =
   let d = sc.sc_doc in
+  let media =
+    match media_type d.dc_head with "" -> "text/html" | t -> t in
   d.dc_status <- status d.dc_head;
-  d.dc_type <- (match media_type d.dc_head with "" -> "text/html" | t -> t);
-  match List.assoc_opt d.dc_type helpers with
-  | Some (_, file) ->
-    let fd = u_open file 0x601 in
-    d.dc_file <- (if fd < 0 then None else Some fd)
-  | None ->
-    if is_html d.dc_type then ()
-    else if String.starts_with "text/" d.dc_type then feed sc.sc_page "<pre>"
-    else feed sc.sc_page ("<p>" ^ d.dc_type ^ ": www does not show it.</p>")
+  d.dc_type <- Some media;
+  (match List.assoc_opt media helpers with
+   | Some (_, file) ->
+     let fd = u_open file 0x601 in
+     d.dc_file <- (if fd < 0 then None else Some fd)
+   | None ->
+     if is_html media then ()
+     else if String.starts_with "text/" media then feed sc.sc_page "<pre>"
+     else feed sc.sc_page ("<p>" ^ media ^ ": www does not show it.</p>"));
+  media
 
 (* A message of the page: the head kept until it ends, then the body *)
 let take sc s =
   let d = sc.sc_doc in
-  if d.dc_type <> "" then body sc s
-  else begin
+  match d.dc_type with
+  | Some media -> body sc media s
+  | None ->
     d.dc_head <- d.dc_head ^ s;
     let headless =
       String.length d.dc_head >= 5
@@ -75,20 +78,21 @@ let take sc s =
     | Some e ->
       let rest = String.sub d.dc_head e (String.length d.dc_head - e) in
       d.dc_head <- String.sub d.dc_head 0 e;
-      body_start sc;
-      body sc rest
-  end
+      body sc (body_start sc) rest
 
 (* The page's end: a helper's file closed and its program started *)
 let body_end sc =
   let d = sc.sc_doc in
-  if d.dc_type = "" then begin
-    let rest = d.dc_head in
-    d.dc_head <- "";
-    body_start sc;
-    body sc rest
-  end;
-  match List.assoc_opt d.dc_type helpers with
+  let media =
+    match d.dc_type with
+    | Some media -> media
+    | None ->
+      let rest = d.dc_head in
+      d.dc_head <- "";
+      let media = body_start sc in
+      body sc media rest;
+      media in
+  match List.assoc_opt media helpers with
   | Some (prog, file) ->
     let what =
       match d.dc_file with
@@ -99,7 +103,7 @@ let body_end sc =
         if u_spawn ("/bin/" ^ prog) [ prog; file ] < 0 then
           "kept in " ^ file ^ ", but there is no " ^ prog ^ " to show it"
         else "kept in " ^ file ^ ", given to " ^ prog in
-    feed sc.sc_page ("<p>" ^ d.dc_type ^ ": " ^ what ^ ".</p>")
+    feed sc.sc_page ("<p>" ^ media ^ ": " ^ what ^ ".</p>")
   | None -> ()
 
 (* the connection to the wire's other end closed, if there is one *)
@@ -130,8 +134,8 @@ let load sc url =
    | None -> ());
   sc.sc_doc.dc_got <- 0;
   sc.sc_doc.dc_head <- "";
-  sc.sc_doc.dc_type <- "";
-  sc.sc_doc.dc_status <- 0;
+  sc.sc_doc.dc_type <- None;
+  sc.sc_doc.dc_status <- None;
   sc.sc_doc.dc_file <- None;
   sc.sc_state <- "reading";
   sc.sc_tools.tb_field <- url;
@@ -379,7 +383,7 @@ let browse typed =
     { sc_page = create (w / 8); sc_nav = nav;
       sc_tools = { tb_field = ""; tb_mouse = up; tb_menu = menu_closed () };
       sc_cols = w / 8; sc_rows = h / 16; sc_y = 0; sc_drawn = 0;
-      sc_doc = { dc_got = 0; dc_head = ""; dc_type = ""; dc_status = 0;
+      sc_doc = { dc_got = 0; dc_head = ""; dc_type = None; dc_status = None;
                  dc_file = None };
       sc_state = "reading"; sc_msgs = [] } in
   put sc colours;

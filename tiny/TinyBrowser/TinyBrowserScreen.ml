@@ -72,14 +72,14 @@ type tools = {
 }
 
 (* The document being read: HTTP's answer, its head first, then its
- * body, which goes by the head's Content-Type ([dc_type], "" until the
- * head has come): read as HTML, shown as a text, or kept in a file
+ * body, which goes by the head's Content-Type ([dc_type], None until
+ * the head has come): read as HTML, shown as a text, or kept in a file
  * ([dc_file]) for a program that shows it. *)
 type doc = {
   mutable dc_got : int;              (* the bytes read so far *)
   mutable dc_head : string;          (* the head so far, until it ends *)
-  mutable dc_type : string;
-  mutable dc_status : int;           (* 200, or 0 when no head said *)
+  mutable dc_type : string option;
+  mutable dc_status : int option;    (* 200, if a head said *)
   mutable dc_file : int option;      (* the file a helper's bytes go to *)
 }
 
@@ -293,8 +293,9 @@ let draw_status sc =
   let text =
     (if sc.sc_state = "reading" then "reading, " ^ kb
      else if sc.sc_state = "done" then
-       (if d.dc_status <> 200 && d.dc_status <> 0 then
-          string_of_int d.dc_status ^ ", " else "")
+       (match d.dc_status with
+        | Some n when n <> 200 -> string_of_int n ^ ", "
+        | _ -> "")
        ^ kb ^ ", " ^ string_of_int (count sc.sc_page) ^ " lines"
        ^ (match sc.sc_nav.nv_wire with
           | Wire_picture (_, id) ->

@@ -48,8 +48,8 @@ val response : int -> (string * string) list -> string -> string
  * byte), if it has yet *)
 val head_end : string -> int option
 
-(* a head's status (200), 0 if its first line is not HTTP's *)
-val status : string -> int
+(* a head's status (200), if its first line is HTTP's *)
+val status : string -> int option
 
 (* [header head name]: the header's value, "" if it has none; a name
  * is the same in any case *)

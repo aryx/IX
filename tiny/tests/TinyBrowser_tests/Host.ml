@@ -27,7 +27,10 @@ let () =
         match TinyBrowserHttp.head_end s with
         | None -> s, "-"
         | Some e -> String.sub s 0 e, String.sub s e (String.length s - e) in
-      Printf.printf "%d|%s|%s\n" (TinyBrowserHttp.status head)
+      Printf.printf "%s|%s|%s\n"
+        (match TinyBrowserHttp.status head with
+         | Some n -> string_of_int n
+         | None -> "0")
         (TinyBrowserHttp.media_type head) body
   | [ _; width; file ] | [ _; width; file; _ ] ->
       let ic = open_in_bin file in

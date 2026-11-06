@@ -48,13 +48,13 @@ let head_end s : int option =
   | None, Some b -> Some (b + 2)
   | None, None -> None
 
-let status head =
-  if not (String.starts_with "HTTP/" head) then 0
+let status head : int option =
+  if not (String.starts_with "HTTP/" head) then None
   else
     match String.index_opt head ' ' with
     | Some i when String.length head >= i + 4 ->
-      number (String.sub head (i + 1) 3)
-    | _ -> 0
+      Some (number (String.sub head (i + 1) 3))
+    | _ -> None
 
 let header head name =
   let name = String.lowercase_ascii name in

@@ -529,3 +529,11 @@ the speaker, then B and the kernel's trace. A commit each.
   lines, most the record and the type a field a line in the .ml and
   .mli. Left: `dc_type` ("" until the head has come) and `dc_status`
   (0 when no head said).
+- The document's `dc_type` a string option (old: "" until the head
+  has come) and `dc_status` an int option (old: 0 when no head said),
+  from TinyBrowserHttp.status, now an int option (None when the first
+  line is not HTTP's; the test's host prints it 0 as before). take a
+  match on dc_type; body_start returns the media type it sets, and
+  body is given it, so neither reads the field after the head. +8
+  lines. Seen and left: the screen's `sc_state`, a string that is
+  "reading", "done", or why there is no page (a variant).

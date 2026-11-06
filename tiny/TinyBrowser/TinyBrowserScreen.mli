@@ -75,14 +75,14 @@ type tools = {
 }
 
 (* The document being read: HTTP's answer, its head first, then its
- * body, which goes by the head's Content-Type ([dc_type], "" until the
- * head has come): read as HTML, shown as a text, or kept in a file
+ * body, which goes by the head's Content-Type ([dc_type], None until
+ * the head has come): read as HTML, shown as a text, or kept in a file
  * ([dc_file]) for a program that shows it. *)
 type doc = {
   mutable dc_got : int;              (* the bytes read so far *)
   mutable dc_head : string;          (* the head so far, until it ends *)
-  mutable dc_type : string;
-  mutable dc_status : int;           (* 200, or 0 when no head said *)
+  mutable dc_type : string option;
+  mutable dc_status : int option;    (* 200, if a head said *)
   mutable dc_file : int option;      (* the file a helper's bytes go to *)
 }
 

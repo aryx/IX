@@ -1,5 +1,5 @@
 (* The annotations that check what mini-ml makes of a hot path
- * (docs/plans/plan_ml_annotations.md): not hints, assertions, the
+ * (docs/plans/done/plan_ml_annotations.md): not hints, assertions, the
  * program refused when its code is not what they say. The parser
  * records what each marks, by the span of the expression; the pass
  * that decides it checks it (Lower for the tail calls and [@inline],

@@ -20,7 +20,7 @@ Companions:
 (where mini-analyze sits among the real analyzers, and the papers),
 [`plan_datalog.md`](../plans/plan_datalog.md) (the engine and the
 pointer analyses), [`plan_bug_analyses.md`](../plans/done/plan_bug_analyses.md)
-(the bugs), [`plan_analysis_summaries.md`](../plans/plan_analysis_summaries.md)
+(the bugs), [`plan_analysis_summaries.md`](../plans/done/plan_analysis_summaries.md)
 and [`plan_analysis_scale.md`](../plans/plan_analysis_scale.md) (the
 summaries), and [`FACTS.md`](../../analyzers/datalog/FACTS.md), the
 facts' vocabulary.

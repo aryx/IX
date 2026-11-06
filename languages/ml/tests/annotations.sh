@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # mini-ml's checked annotations (languages/ml/Annotations.mli,
-# docs/plans/plan_ml_annotations.md): annotations/holds.ml, where they
+# docs/plans/done/plan_ml_annotations.md): annotations/holds.ml, where they
 # hold, run by OCaml then compiled by mini-ml -O3 and run (run.sh 7),
 # both against holds.out; each of annotations/refused/, where one does
 # not hold, refused by mini-ml with its .err's message, and compiled

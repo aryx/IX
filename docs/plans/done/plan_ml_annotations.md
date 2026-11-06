@@ -14,6 +14,13 @@ still have some control on the generated code and have assumptions
 validated about its performance", then "yes let's write a plan
 document for it".
 
+**Status: done** (2026-11-06; the author: "let's move the ready to move
+one"), and this file kept as its record: steps 1 to 4 ([@tailcall],
+[@@tailrec], [@@zero_alloc], [@inline], [@@unboxed_float]), used in
+mini-doom and mini-quake. Left, for a plan of their own if they are
+wanted: Int32 unboxed (a pass, then its annotation), integer angles in
+mini-doom.
+
 ## The idea: assertions, not hints
 
 A hint asks the compiler for something it may not do (GCC's

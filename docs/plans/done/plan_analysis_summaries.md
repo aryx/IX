@@ -6,7 +6,10 @@ know another session was also mentioning using summaries to scale to
 100 000 LOC; I dunno how much those 2 overlap", then "ok let's start
 them with the short plan you mentioned".
 
-**Status: steps 1 and 2 done (2026-11-04), step 3 planned.**
+**Status: done** (2026-11-06; the author: "let's move the ready to move
+one"): steps 1 and 2 (2026-11-04). Step 3, lib_core's summaries
+stored, is [`plan_analysis_scale.md`](../plan_analysis_scale.md)'s,
+where it goes on (its step 3.1 in a883e446).
 
 ## Two kinds of summary
 

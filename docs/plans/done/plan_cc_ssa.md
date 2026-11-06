@@ -14,6 +14,14 @@ The goal, measurable: **gc.c's C scan, compiled by mini-cc, close to
 the runtime (compare, ml_modify, ml_alloc, the strings' functions,
 some 45% of mini-ml's compile is C), libc and every C program of ix.
 
+**Status: done** (2026-11-06; the author: "let's move the ready to move
+one"), and this file kept as its record: steps 1 to 3, mini-cc -O3;
+gc.c's scan in C as fast as `scan_arm.s`, which is gone; the runtime,
+the libc and the kernels' C by -O3; the two ssa/'s shared algorithms
+in lib_code/. Left, for a plan of their own if they are wanted: more
+registers on arm (the scan's lo and hi in slots), a first argument's
+store and reload into R0 at a call, ZR for a stored 0 on arm64.
+
 ## Where mini-cc is (2026-10-29)
 
 Two back ends (`done/plan_cc.md`): compat, 5c's code byte for byte

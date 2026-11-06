@@ -107,7 +107,7 @@ step(T, Q) :- ssa_last(B, T), ssa_succ(B, B2), ssa_first(B2, Q).
 point_of(S, P) :- site_key(S, K), ssa_site(P, K).
 one_application(A, C) :- site_key(A, K), site_key(C, K).
 
-% Summaries (docs/plans/plan_analysis_summaries.md, step 1): a function
+% Summaries (docs/plans/done/plan_analysis_summaries.md, step 1): a function
 % by its effect on a resource, a call of it a take or a give-back in its
 % caller. One level: made of took0 and gave0, the table's calls, not of
 % other summaries (gives_arg_back is a negation, "no path without it", which

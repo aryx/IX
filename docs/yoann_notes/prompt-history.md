@@ -63851,3 +63851,1068 @@ Claude said the three hunks are separate from Yoann's own changes, so they can b
 Claude planned to build HEAD plus only its hunks for each of the three files, to check each commit compiles alone.
 Claude applied all three changes, leaving no `with_open_out` calls in the code.
 Claude then set up a scratch copy of HEAD with just the commit's changes to confirm it builds before committing.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 13:53
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude found the other session had already committed, so the shared files differed from HEAD only by Claude's hunks.
+Claude checked bugs_tiny.txt against the new HEAD before touching anything.
+Claude put Out_channel between In_channel and Chan in the Makefile's CORE list, a mechanical edit.
+Claude noted that commit 9c025704 touched the same five lines, then committed the change.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 13:55
+
+**Yoann:**
+
+> what's next?
+
+------------------------------------------------------------------------
+
+## 2026-11-06 13:55
+
+**Yoann:**
+
+> can I close this session?
+
+**Claude (summary):**
+
+Claude confirmed the session can be closed, since all three steps are committed with `99955c5f` as the last commit.
+Claude noted that the modified `TinyLibGUI.mli` belongs to the other session, and that nothing is running.
+Claude saved a memory that a new TinyLibCore module must be registered in five places, since missing one broke `make test`.
+Claude recommended running `make self-quick-tix` first on return, since it is the only check on the edited transcripts.
+Claude suggested moving the remaining whole-file reads to `Chan.i`, leaving the `fd` type work until tiny-build's digest, `cat` and `cmp` are covered.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 13:54
+
+**Yoann:**
+
+> let's move forward
+
+**Claude (summary):**
+
+Claude recommended treating TinyLibGUI's box as stage 3, starting with the `int * int * int * int` occurrences.
+Claude annotated the TinyLibGUI `.mli` and `.ml` with two new types, and typed the `boxes` parameters.
+Claude updated TinyDebugger's model and TinyBrowserScreen's `laid_tools` so the `boxes` type and field coexist.
+Claude confirmed the host build passes and test-tix passes, including the tiny-kernel graphics tests.
+Claude recorded stage 3 as done in the plan, after the other session's work was committed.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 14:02
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Yoann's follow-up "let's commit and move forward" points to the commit step, so the summary focuses on that.
+Claude committed the stage as b2967da5, covering the section 3 bools and `TinyEditorScreen.create`.
+Claude replaced `bind`'s recursive bool with a `Recursive | Nonrecursive` type in the tree's `Let` and `ILet`, touching 16 places.
+Claude also changed `tiny-ml`, `tiny-c`, and `tiny-linker` to use named types and fixed tokens and scan naming in the browser.
+Claude then made the `TinyEditorScreen.create` and `TinyOffice` name and text arguments explicit, and updated the callers.
+Claude finished `mem_load` in the kernel, ran `test-tix` and `self-quick`, and recorded the stage with 22 added code lines.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 14:28
+
+**Yoann:**
+
+> in TinyAppCalculator.ml I can see some comments like 
+>
+> (* The arithmetic is tested on the host by sending messages to [update],
+>  * and the buttons by sending mouse events to TinyLibGUI
+>  * (tests/TinyLibGUI_test.sh). *)
+>
+>  which seems test related. Maybe we could add a tags (see tags.md) for those kind of comments? test-xxx?:
+
+**Claude (summary):**
+
+Claude recommended a single `testing:` tag for the paragraphs describing how modules are tested, about 30 across `tiny/`.
+Claude proposed option 1, moving the paragraphs into the `.mli` header, as its recommended placement.
+Claude also proposed option 2, keeping them in the `.ml` merged into the header comment, as the alternative.
+Claude noted that `loc.py` counts those lines as t-ix code unless they sit in a header, and that the `make loc` numbers would change.
+Claude asked whether to do the full sweep or only update tags.md and `loc.py` for now.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 14:21
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude reported committing the stage as d4b26eba, though its closing lines call Stage 5 built and uncommitted.
+Claude named Stage 6 as next: network message kinds, IL's header as a record, and the memory's address alias.
+Claude also said Stage 6 would turn the ended processes' triples into a record.
+For Stage 5, Claude added a `cause` type for trap numbers and typed the file system's signatures.
+Claude checked the work with `make test-tix` (34 jobs, 0 failures) and `make self-quick-tix`, both passing.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 14:30
+
+**Yoann:**
+
+> I think I prefer those in the .ml actually than in the .mli and testing: it is. Regarding merging or not, I'm not sure the "See XXx.mli" is very useful
+
+**Claude (summary):**
+
+Claude recommended adding a `testing:` tag to tags.md and loc.py, then retagging the roughly fifteen tiny `.ml` files.
+Claude kept each file's line count unchanged, since bugs_tiny.txt records line numbers.
+Claude reflowed the three files that merged the "See XXX.mli" pointer with the test sentence, keeping their counts the same.
+Yoann preferred putting the pointers in the `.ml` files rather than the `.mli` files, and the testing note too.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 14:34
+
+**Yoann:**
+
+> let's commit
+
+------------------------------------------------------------------------
+
+## 2026-11-06 14:34
+
+**Yoann:**
+
+> What's next?
+
+**Claude (summary):**
+
+Claude ran the test suite, which passed with 192 jobs and 0 failures.
+Claude found that another session had already committed its TinyKernelFS.ml hunk, and restored the working copy to match HEAD.
+Claude discovered that commit 48485212 from another session had already included its 15 retagged .ml files.
+Claude left that commit unchanged rather than rewriting it.
+Claude then committed the remaining changes, tags.md and loc.py.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 14:34
+
+**Yoann:**
+
+> excellent! Let's commit and move forward
+
+**Claude (summary):**
+
+Claude reviewed the IL, ICMP, memory and process changes for Stage 6, which touched the network and its callers.
+Claude converted IL's message kinds to a variant and its header to a record, and kept ICMP's `Icmp_other of int` for the peer's trace.
+Claude rewrote the network test's headers with a small helper and switched tiny-ml's array literals to `Array.of_list`.
+Claude changed `ended` to a list of `ending` records with `end_`-prefixed fields, since tiny-ml shares one namespace for labels.
+Claude reported +35 code lines and that `make test-tix` (34 jobs, 0 failures) passes, with Stage 6 not yet committed.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 15:03
+
+**Yoann:**
+
+> excellent, let's commit and move forward
+
+**Claude (summary):**
+
+Claude gave TinyLibDraw named types: image, pixel, rect, point, style, and a cursor variant.
+Claude changed `d_draw` to take a rect tuple, replacing nine ints across about 45 calls.
+Claude made the kernel mixer take a tone record with a wave variant, replacing its eight ints.
+Claude added `key` and `look` aliases, and kept the playground's style-shifted bold and italic as ints.
+Claude confirmed `make test-tix` passes with Stage 7 built but uncommitted, and started `self-quick`.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 15:18
+
+**Yoann:**
+
+> le's commit and move forward
+
+**Claude (summary):**
+
+Claude committed stage 8 as 80270d14, adding string aliases for URLs, IP addresses, assembly labels, and TinyLibSymbols.
+Claude identified `fd` as the one open item, waiting on the Chan work to take over whole-file reads and writes.
+Claude said a `type fd` would belong in the shell's plumbing and in tiny-db's file handling, once those are built.
+Claude left the plan in docs/plans/ instead of docs/plans/done/, since `fd` remains open.
+Claude offered to move the plan to done/ with `fd` noted as remaining, in the same commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 16:12
+
+**Yoann:**
+
+> let's commit. let's do the renaming fd if needed, unless Chan or in_channel would be better types where it's currently used
+
+**Claude (summary):**
+
+Claude renamed descriptor-typed values to fd in TinyLibSystem, the shell's redirection target, and tiny-db's file record.
+Claude wrote the .mli header marking which values stay descriptors, namely shell plumbing and tiny-db's offset I/O.
+Claude's Part A build passed, but the fd alias was not yet tested or committed at that point.
+Yoann chose to commit Part A and move forward, so Claude would proceed with the channel moves.
+Claude had found that with_open_* error messages differ across systems and proposed making them name the file.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 16:26
+
+**Yoann:**
+
+> in TinyAppCalculator.ml, why the first testing: comment has a newline between the tag and the explanation? usuaully we have cs-history: xxx, without newline for instance
+
+**Claude (summary):**
+
+Claude recommended keeping the `testing:` tag on its own line, matching the repo's dominant layout.
+Claude reported that `cs-history:` sits alone on its line in 224 cases, with only 3 having text after it.
+Claude explained the `.ml` files put the tag on the opening `(*` line, from commit 48485212, to keep line counts.
+Claude noted that rewrapping the comment to put text on the same line would change line counts and require redoing recordings.
+Claude suggested the inline `cs-history: xxx` form may come from principia `.nw` books, where `%cs-history:` begins prose.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 16:28
+
+**Yoann:**
+
+> ok I didn't realize the rules was actually the newline. But why then 3 cases for cs-history where there is no newline? Why the inconsistency?
+
+------------------------------------------------------------------------
+
+## 2026-11-06 16:28
+
+**Yoann:**
+
+> same for others: and design:
+
+**Claude (summary):**
+
+Claude traced the misplaced tags to docs/tags.md, which requires each tag on its own line before its paragraph.
+Claude found 15 comments with text after the tag, including cs-history:, others:, and design: lines, and two false matches.
+Claude said these paragraphs are missing from make loc's per-tag counts, while code-line totals stay correct.
+Claude proposed moving each tag text onto its own line and rewrapping, and having loc.py report such lines instead of skipping them.
+Yoann approved, so Claude was set to apply both fixes.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 16:22
+
+**Yoann:**
+
+> let's commit part a and move forward
+
+------------------------------------------------------------------------
+
+## 2026-11-06 16:29
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude rewrapped the 15 tagged comments with a scratchpad script, fixing lost periods and lowercase paragraph starts.
+Claude extended `loc.py` to report `tag: text` lines instead of skipping them, verifying it finds 15 in HEAD and none in the working tree.
+Claude caught three more tags with different indentation that the grep had missed, and fixed those too.
+Claude then ran `make test`, since `Models.ml` line numbers shifted and the analysis recordings cite them.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 16:37
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the 16 commented files and `scripts/stats/loc.py` as 78ac4921, leaving other sessions' changes untouched.
+Claude confirmed `make test` passed (192 jobs, 0 failures) before committing, but skipped `make self-quick`.
+The skipped `make self-quick` was because the two kernel `.mli` changes were comment-only.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 16:40
+
+**Yoann:**
+
+> I've slightly modified TinyAppCalculator.ml for you to learn my style; I think it's sometimes good to put the return type of some functions, especially when it's not trivial from the name what the function does. Also why use ' ' = None ? Why not make the op field an option from the start so we don't need then those comments.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 16:32
+
+**Yoann:**
+
+> progress?
+
+**Claude (summary):**
+
+Claude reported Part A committed as 3f19609b and Part B's channel work built, with all checks passing.
+Claude moved the utilities' inputs (cat, wc, grep, sort, tail, xd, ps, cmp) from descriptors to channels via each_input.
+Claude made tiny-build's digest read piecewise and switched tiny-vcs's store append to with_open_append, keeping crash safety.
+Claude added In_channel.input to TinyLibCore and lib_core, fixing a compile failure and 11 false dead-code reports.
+Claude kept shell plumbing, tiny-db, tee, and cp on descriptors, and recorded a tiny-vcs diff warning in bugs_tiny.txt.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 16:41
+
+**Yoann:**
+
+> we should leverage the type system when we can and when it arguable leads to clearer code
+
+**Claude (summary):**
+
+Claude changed `op` to a `char option` in `tiny/TinyAppCalculator.ml` and its `.mli`, removing the `' '` sentinel comments.
+Claude updated `result`, `operate`, `view`, and the GUI test's `Host.ml` to match on the option, and saved a memory of Yoann's style.
+Claude confirmed the GUI test and `make test` pass (192 jobs, 0 failures), with nothing committed yet.
+Claude proposed replacing `char` with an `operation = Add | Sub | Mul | Div` variant, making `result`'s match exhaustive and removing the `| _ -> b` arms.
+Claude estimated that change at about 4 lines and asked whether to make it before committing or commit the option version now.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 16:45
+
+**Yoann:**
+
+> let's commit. Could we cleanup even more result? What is this int * bool ? should we use an option there again? or something else? also the comment is not really useful; it should focus to help the reader find the purpose of the function I think first
+
+**Claude (summary):**
+
+Claude committed the option-based version as 47fc24d1 before turning to the `result` value.
+Claude explained that `result`'s `int * bool` is a number paired with a flag saying whether it is present, which is what `int option` expresses.
+Yoann's follow-up asks to commit the cleanup, so the focus is on that proposed change.
+Claude recommended replacing `int * bool` with `int option` in `result`, since the flag only duplicates the option's presence check.
+Claude also noted the function comment should describe the function's purpose for readers rather than its mechanics.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 16:43
+
+**Yoann:**
+
+> let's commit. What's next?
+
+**Claude (summary):**
+
+Claude committed the finished `fd` work as f9aa80b0, leaving the other session's calculator changes out of it.
+Claude recommended next moving plan_tiny_types.md to docs/plans/done/, updating its docs/README.md row in the same commit.
+The move is mechanical, since the Status section already records the deliberate leftovers: Playground's styles, `word`'s bool, `aout`'s ints, and descriptor-based `tee`/`cp`.
+Claude then planned to fix tiny-c's crash on an unclosed parameter list, where `params` recurses without consuming a token.
+Claude would add an "expected )" error and a regression test for that fix, with capabilities for host plumbing as a later step.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 17:07
+
+**Yoann:**
+
+> yes let's commit
+
+**Claude (summary):**
+
+Claude committed the calculator change as 958ce4b0, naming only `tiny/TinyAppCalculator.ml`.
+Claude added two style points to the memory: a value paired with an existence bool should be an option instead.
+Claude also noted that a function's comment should open with what the function is for.
+Claude skipped the `Add | Sub | Mul | Div` variant and offered it as a separate commit if wanted.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 17:10
+
+**Yoann:**
+
+> it's fine to not use the variant for now for this toy example; for a more complex program we should. I've reindended some code a little bit, you can have a look
+
+**Claude (summary):**
+
+Claude laid out two options for the `testing:` header move, noting that `scripts/stats/loc.py` and `docs/tags.md` assume a separate header comment.
+Claude said the merged form would require changing `header()` in `loc.py`, updating `docs/tags.md`, and rewriting the other 10 tiny `.ml` files.
+Claude also flagged the trailing spaces on the `let v = ` and `Some '-' -> a - b ` lines for removal before committing.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 17:11
+
+**Yoann:**
+
+> yes remove the trailing spaces; I often forget them. I prefer the merged form here, teach header() or whatever to handle more patterns.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 17:12
+
+**Yoann:**
+
+> Finally, should we change the type of a key from an int to something more readable? It's again this (ab)use of string and int
+
+------------------------------------------------------------------------
+
+## 2026-11-06 17:12
+
+**Yoann:**
+
+> is the key a Rune like in plan 9?
+
+**Claude (summary):**
+
+Claude started checking that header() finds the same header lines in both forms.
+Claude was comparing HEAD's two-comment header against the merged header form.
+Claude aimed to confirm that header() matches identically across the old and merged versions.
+Claude's reply stopped at that check and did not report a result yet.
+Claude did not address the Rune-key question in this particular reply at all.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 17:07
+
+**Yoann:**
+
+> let's close the plan
+
+**Claude (summary):**
+
+Claude moved the plan to docs/plans/done/plan_tiny_types.md in commit de1499a9, since nothing else linked to it.
+Claude added an introduction marking the plan done, plus a closing Status paragraph of deliberate omissions.
+Claude recorded two lessons: tiny-ml needs prefixed constructor names, and mini-ml's number types are unchecked aliases.
+Claude pointed docs/README.md's row at the new path, restoring it from HEAD after a stray sed replaced it.
+Claude listed what stays open: tiny-c's crash on an unclosed parameter list and tiny-machine's host-only capabilities.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 17:14
+
+**Yoann:**
+
+> ok, what's next?
+
+**Claude (summary):**
+
+Claude recommended fixing tiny-c's crash on an unclosed parameter list first, since the cause is already recorded.
+Claude proposed the fix as an "expected )" error in `params`, with a test beside tiny-c's other error tests.
+Claude also proposed moving tiny-machine's host plumbing (disk `Unix.openfile`, fifos, sdl/TinyCalls) behind capabilities, roughly 20–30 call sites.
+That second item would need a check of what lib_core's FS offers for fifos and sockets first.
+Claude offered to draft a plan instead if Yoann wanted something other than cleanup.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 17:13
+
+**Yoann:**
+
+> let's commit the headers changes first, and the current version of TinyAppCalculator.ml
+
+**Claude (summary):**
+
+Claude was waiting for the running test to finish before committing anything.
+Claude was also editing docs/tags.md while the test run was still going.
+Claude prepared TinyUtilities.ml as HEAD plus only its own header hunk, not the other session's edits.
+Claude found the other session had already committed its TinyUtilities.ml work, so a path commit suffices.
+Claude shifted the one recorded line and planned to re-run the tiny analyses checks before committing.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 17:19
+
+**Yoann:**
+
+> should we imitate what the playground in m-ix is doing?
+
+**Claude (summary):**
+
+Claude recommended not copying m-ix's Playground keyboard model wholesale, since it relies on string key names and polled held-key state.
+Claude's main point: tiny's keyboard only delivers a stream of bytes, so held-key state cannot be known.
+Claude recommended splitting typed characters from special keys, using a variant like `type key = Char of char | Up | Down | Left | Right`.
+Claude noted the Plan 9 alternative, `type key = int` holding Runes with the arrows at private-use numbers, but rejected it as magic-number checking.
+Claude asked whether to implement the variant as its own commit, and Yoann chose to proceed with it.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 17:15
+
+**Yoann:**
+
+> let's do 1 and then 2. For 2, are they flagged by the -caps analysis?
+
+**Claude (summary):**
+
+Claude recommended option b: a new mini-analyze check for raw primitives called outside lib_core's wrappers.
+Claude found that -caps checks each function's held capabilities, so it never flags bare Unix or Sys calls.
+Claude counted about 60 bare calls in tiny/'s host-only files, with sdl/TinyCalls.ml the largest at 24.
+Claude noted that mini-analyze never reads the SDL programs, so those 24 calls would stay unchecked.
+Claude fixed tiny-c's parameter-loop crash, added two error tests, and left the fix uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 17:21
+
+**Yoann:**
+
+> ok let's use the variant and we can always revisit later
+
+**Claude (summary):**
+
+Claude mapped every use of the key type across about ten files, since the editor and office compared keys as numbers.
+Claude replaced the numeric key codes with named `Char` constructors and or-patterns, and updated the editor, office, browser, debugger and Tetris.
+Claude confirmed tiny-ml accepts the `Char` constructor and `'\b'`, and rewrapped lines past 85 columns.
+Claude fixed the tests, and all six pass, including the editor and office tests that run keys through tiny-ml.
+`make test` passed with 192 jobs and 0 failures, and Claude rewrapped the overlong GUI and Playground comments.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 17:33
+
+**Yoann:**
+
+> let's commit. Looks better no?
+
+**Claude (summary):**
+
+Claude committed the change as 386502e1, containing only the 28 files of the key change.
+Claude argued the typed keys read better, since `| Left -> moved m { p with x = p.x - 1 }` explains itself where `k = 130` did not.
+Claude noted the compiler now warns on unreachable or missing match arms, which a wrong integer key never would.
+Claude proposed the remaining fix: a `Ctrl of char` variant so `Ctrl 's'` replaces the `Char '\019'` escapes, with `key_of_byte` mapping bytes 1 to 26.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 17:36
+
+**Yoann:**
+
+> yes let's do it while we're at it
+
+**Claude (summary):**
+
+Claude proposed mapping each `Char '\0NN'` byte literal to a `Ctrl` constructor with its letter, using a script.
+Claude kept the editor's C-x prefix as a manual edit, since it does not fit the mechanical mapping.
+Claude checked that C-s (save), C-g (quit), and C-_ (undo) keep their original meanings after the mapping.
+Claude made the compiler-flagged non-exhaustive matches exhaustive by turning the final `Char _` arms into `_`.
+The build passed, and Claude was checking `key_of_byte` on disk before running the tests.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 17:29
+
+**Yoann:**
+
+> let's commit 1, and do b. I used to implement 'b' via semgrep.jsonnet rules, forbidding to call the raw Sys and Unix functions, but we can also do it via -caps. Regarding the first bug, is it something that a datalog analysis could have detected? (and detected similar bugs on the rest of the codebase)?
+
+**Claude (summary):**
+
+Claude recommended widening the `-caps` report to flag raw `Unix`, `Sys` and `Stdlib` calls, the Semgrep wrapper rule's equivalent.
+Claude added a `unit_init` fact, the `around` rule in capabilities.dl, and fixed the report-line filters in both check scripts.
+Claude found 21 flagged functions in tiny/ and 111 in m-ix, and left them unfixed for Yoann to decide on exemptions.
+Claude built part b and got `make test` passing (192 jobs, 0 failures), but did not commit it yet.
+Claude proposed a Datalog termination analysis using size-change reasoning to catch the tiny-c recursion bug and similar ones.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 17:44
+
+**Yoann:**
+
+> let's commit. Is the code cleaner?
+
+**Claude (summary):**
+
+Claude committed the change as c1044a69 across 11 files, judging the code cleaner for readers.
+Claude argued that `Ctrl 's'` in a C-x prefix now reads as the Emacs binding it implements, instead of a translated integer like 19.
+Claude pointed out that C-x, the arrow keys, and similar keys were each spelled two ways before, and now each is one constructor.
+Claude noted the compiler caught five matches that would otherwise have silently fallen through, at a cost of about 37 added lines.
+Claude suggested `Enter` and `Backspace` constructors to remove the remaining `Char ('\n' | '\r')` duplication across a dozen matches.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 17:47
+
+**Yoann:**
+
+> let's commit part b and start this termination analysis if it's too many LOC otherwise add it in the (done) plan with the recently fixed bug as an example to find back automatically
+
+**Claude (summary):**
+
+Claude committed part b as 1aad237d and left the two plan documentation edits uncommitted.
+Claude added A13, "a recursion that takes nothing," to docs/plans/done/plan_bug_analyses.md, instead of the roughly 250-line termination analysis.
+Claude used the tiny-c `params` bug as A13's example, checking that every path to the recursive call consumes a token.
+Claude's rule is a "may be idle" reachability search, tested on analyzers/tests/bugs/a18dbc6d/ and sibling lexers.
+Claude gave A13 a row in the Order table and pointed docs/plans/bugs/ix.md at it.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 17:52
+
+**Yoann:**
+
+> excellent. What's next?
+
+**Claude (summary):**
+
+Claude recommended a sentinel-value report for tiny/, starting with `TinyOfficeModel.office.sel`'s `-1` and about 100 similar candidates.
+Each case would list its uses and whether an `int option` or a variant reads better, so Yoann picks which to change.
+Claude kept `mem_address`'s `-1` on purpose, since an option there would allocate on every memory access.
+Claude also proposed replacing the repeated `Char ('\n' | '\r')` and `Char ('\b' | '\127')` pairs with `Enter` and `Backspace` keys.
+Claude flagged the generic constructor names (`Char`, `Up`, `Left`) as a future clash risk and left the rest unchanged.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 17:54
+
+**Yoann:**
+
+> I like your plan. Let's do 1 and 2
+
+**Claude (summary):**
+
+Claude named the escape byte `Char '\027'` as `Escape`, alongside `Enter` and `Backspace`.
+Claude added a key type and `key_of_byte`, mapping those special bytes to named constructors.
+Claude removed needless parentheses from two match arms, then reported that all six tests pass.
+Claude ran `make test` in the background while surveying the sentinel values for the report.
+Claude said it would send the sentinel report once `make test` for the key change reports back.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 17:52
+
+**Yoann:**
+
+> let's commit. What's next?
+
+**Claude (summary):**
+
+Claude committed the work as cc84883e and proposed next steps for the tiny/ tools, starting with the system-layer decision.
+Claude recommended exempting system-layer files such as Host.ml, Linux.ml, Tty_unix.ml, and lib_graphics' Display and Keyboard via a `system_unit` exemption.
+Claude flagged that tiny/'s 21 reports need socket, fifo, signal, and stat capabilities that CapUnix lacks in lib_core.
+Claude suggested either adding those functions to CapUnix first or making the socket helper a system unit itself.
+Claude also asked whether the socket helper should be a system unit, plus the m-ix reports and A13 termination analysis were left for later.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 18:03
+
+**Yoann:**
+
+> let's commit and start with sel (and extend plan_tiny_types.md done plan as we go)
+
+**Claude (summary):**
+
+Claude confirmed the parts compiled and hand-wrote TinyOffice.ml, and reported the office test and `make test` passing.
+Claude took up Yoann's request to extend the done plan, plan_tiny_types.md, as the work proceeded.
+Claude looked at how plan_tiny_types.md ends, to see where the new entries should continue.
+Claude had only read the end of plan_tiny_types.md so far, without editing it yet.
+Claude did not commit anything in this reply, so the sel start and the plan update remain uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 18:05
+
+**Yoann:**
+
+> let's focus on tiny/ for now. Let's extend CapUnix so code can use it instead of the Unix version (same for CapSys) as ultimately we want every syscall to go through the use of a capability
+
+------------------------------------------------------------------------
+
+## 2026-11-06 18:10
+
+**Yoann:**
+
+> why CapSys.mli take those < .. > instead of the actually relevant cap?
+
+------------------------------------------------------------------------
+
+## 2026-11-06 18:11
+
+**Yoann:**
+
+> hmm because they aif they are erased, then why not put the actual cap, as a useful comment
+
+------------------------------------------------------------------------
+
+## 2026-11-06 18:11
+
+**Yoann:**
+
+> and the -caps analysis may use this file no?
+
+------------------------------------------------------------------------
+
+## 2026-11-06 18:11
+
+**Yoann:**
+
+> or it use the caps installed in opam/
+
+------------------------------------------------------------------------
+
+## 2026-11-06 18:10
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed the work as 2deb8e73 and added TinyLibGUI's menu code: `opened`, `item`, `title_at`, and `item_at`, where the lookups return `-1` when nothing matches.
+Claude built the code and ran the three menu-equipped programs (the GUI, the browser, and the office) before running `make test`.
+Claude confirmed all five changed hunks sit in the menu code, so they are its own work to commit.
+Claude then added a paragraph about the menu to the plan document.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 18:12
+
+**Yoann:**
+
+> ?
+
+**Claude (summary):**
+
+Claude recommended option a: give Plan 9's Unix the socket types and seven network calls, failing with ENOSYS.
+Claude proposed that this would let the shared CapUnix wrap them on both systems, so mini-analyze can read the socket helper.
+Claude also noted that a program calling these calls on mini-9pi would fail clearly, while none does today.
+Claude had converted all 21 `around` reports in tiny/, building against an ocaml-caps extended and installed into the opam switch.
+Claude also found the m-ix sweep already catches unbound values via exit status; only tiny_check's text check had missed one.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 18:19
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude changed `fragment` in TinyBrowser to return `string option`, since two callers feed `nv_goal_id`.
+Claude also fixed `wire` to use an `int option` instead of a local `-1`, and turned the loop's last three branches into match arms.
+Claude wrote the type in TinyBrowserScreen's `.ml` and `.mli`, and reworked `load`, the picture fetch, `quit`, `browse`, and `hang_up`.
+The build passed, and Claude ran the browser test and `make test`.
+The analyses reported "not all read" through mini-analyze, and Claude was tracing whether its browser changes or the other session's work caused it.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 18:27
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude committed the previous work as 4d53c36f and moved on to `pc_got`, the picture-state field with 13 uses.
+Claude proposed replacing the integer picture state with a variant: `type got = Pic_unasked | Pic_asked | Pic_failed | Pic_rows of int`.
+Claude read `picture_message`, the main user, and confirmed no `pc_got` comparison was still made against a number.
+Claude ran the build and tests: analyses, mini-lex and mini-yacc pass, and only the OCaml 5 job still fails.
+Claude traced that failure to the other session's capability work in TinyMachine and TinyMachineSocket, not this change, and added `pc_got` to the plan.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 18:21
+
+**Yoann:**
+
+> let's do a and move forward
+
+------------------------------------------------------------------------
+
+## 2026-11-06 18:34
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed the work as fdef7341 and said the browser's last two spots were next.
+Claude's stated next targets were `next_picture`'s `-1` case and `dc_file`.
+Claude was indenting the `None` arm of `body` when it reported that progress.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 18:39
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude checked whether `make -C tiny/TinyKernel check` replays the debugger's `debug.events` sessions, since no `TinyDebugger_test.sh` exists.
+Claude built tiny-kernel's image from HEAD's sources in a scratch copy, with the same tool binaries, to compare screens.
+Claude found the scratch copy picked up an older `tiny-ml` from PATH, so it linked ix's `bin/` in.
+The baseline without the change also differed from the recording, so the screen had already drifted before this edit.
+Only `debug.events` failed, and Claude updated the plan, with the commit and re-recording still pending.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 18:34
+
+**Yoann:**
+
+> I can push ocaml-caps if you need
+
+**Claude (summary):**
+
+Claude proposed having `-caps` check the wrappers themselves, since lib_core's copies now declare each function's capability.
+Claude's example was flagging any `CapSys` function whose type omits the capability its primitive needs.
+That check would catch a wrapper missing its capability before any caller comes to depend on it.
+Claude listed this as the first of two next steps, ahead of the m-ix `around` reports.
+Claude also asked Yoann to push ocaml-caps e1b05e7 before ix 63103fb1, since ix's Docker pin needs it.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 18:47
+
+**Yoann:**
+
+> let's commit and re-record if it looks legit
+
+**Claude (summary):**
+
+Claude reported that the recording screen now passes but the final output comparison still differs.
+Claude said it would show the full diff to confirm that only addresses had moved.
+Yoann's reply "ok" points at this diff check as the step he is waiting on.
+Claude did not commit or re-record anything yet, since the diff had not been reviewed.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 18:48
+
+**Yoann:**
+
+> I pushed. let's do 1; like I say let's focuds on tiny/ for now so let's not try to fix m-ix
+
+**Claude (summary):**
+
+Claude built Part 1, a `-caps` check that audits library capability wrappers, limited to tiny/.
+It flags `wrong_cap` when a wrapper's written capability misses what its body does, and `untyped_cap` for bare `_caps`.
+Claude annotated lib_core's CapStdlib, CapSys and CapUnix copies with the capabilities their `.mli` files declare, so none is wrong.
+On tiny/ it found one real issue: lib_networking's Keep_alive.exchange reads the clock without Cap.clock, logged in caps_tiny.txt.
+Claude left m-ix's four wrapper findings unfixed and left TinyDebugger.ml and TinyLibPlayground.ml out of the commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 18:58
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed 317e06ff with the wrapper check, typed CapStdlib, CapSys and CapUnix in lib_core, and the recordings.
+Claude noted the modified plan_tiny_types.md and TinyKernel files in the tree belong to the other session.
+Claude reported two remaining issues in tiny/'s `-caps` report: an old `start` in tiny-build that holds `Cap.open_out`.
+Claude also flagged `Keep_alive.exchange` reading the clock without `Cap.clock`, where fixing it would change lib_networking's signatures shared with m-ix.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 19:00
+
+**Yoann:**
+
+> ok what's next for tiny/ related things ?
+
+**Claude (summary):**
+
+Claude recommended converting tiny-machine's -net directory argument to an Fpath.t type.
+Claude called it the last open item from the types plan, and cheap to do now.
+Claude noted its six uses already go through CapSys, so Fpath costs little there.
+Claude placed it second in the list, behind the bugs_tiny.txt triage it recommended starting with.
+Claude listed the other open items as the SDL bare calls, termination analysis, and two -caps lines.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 19:04
+
+**Yoann:**
+
+> let's do 2.
+
+**Claude (summary):**
+
+Claude proposed converting tiny-machine's `-net` option to an `Fpath.t option`, with `document` and `store` taking a path.
+Claude replaced the four `Filename.concat` joins with a local `in_dir dir name` helper built on `Fpath.add_seg`, after checking names contain no `/`.
+The `CapSys` calls and picture decoder still take strings, so they receive `Fpath.to_string` of the path.
+Claude reported that `test-tix` passes, including the kernel's network test, but nothing is committed yet.
+Claude left `docs/plans/done/plan_tiny_types.md` untouched because another session is editing it, and asked whether to commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 18:54
+
+**Yoann:**
+
+> ok
+
+**Claude (summary):**
+
+Claude chose option 2, the kernel's trace fields, and confirmed the code builds.
+Claude checked the `.mli` comment for `-1` values, then ran the kernel check, which replays trace and debug sessions.
+The kernel check passed, including the debug screen, and Claude fixed the `.mli` comment to match the `.ml`.
+Claude reported that `make test` now passes fully, since the other session's work had landed.
+Claude started `make self-quick-tix` (about 6 minutes) because a kernel changed, and is running it now.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 19:07
+
+**Yoann:**
+
+> yes, let's commit and move forward
+
+**Claude (summary):**
+
+Claude committed the work as 62e970af and moved on to tier B, the "where, or -1" functions. It replaced `entity`'s 27-arm match with a `List.assoc_opt` table covering all 30 entities. It removed a stray `end` left in `take`, then ran the browser, editor, and `make test` suites, all passing. It also ran the kernel check for the browser's pages under tiny-kernel.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 20:15
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude committed the previous work as 89dc36a2 and named the browser's `run` (`pic`, `link`) and `dc_type`/`dc_status` as next.
+Claude converted the run type and the HTML side, then the screen, picture loading, link lookup, and test helper.
+Claude confirmed the build was clean and the browser test passed for both the OCaml and tiny-ml versions.
+Claude ran `make test` and the kernel check, which renders the browser's pages on tiny-kernel, and both came back green.
+Claude added the matching paragraph to the plan.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 20:29
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude committed the pending work as 9c5de764 and reported the commit.
+Claude then moved on to `dc_type` and `dc_status`, first checking the other users of `status`.
+The build succeeded, and Claude started the browser test.
+Claude planned to run `make test` and the kernel check after the browser test.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 20:38
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed the previous work as 38b91e01 and moved on to the `sc_state` type.
+Claude checked constructor names in `sc_state` for clashes before making any changes.
+Claude found that `Reading` already exists in TinyCalls, which the browser opens.
+Claude decided to prefix the `sc_state` constructors with `Page_` to avoid the clash.
+Claude did not yet edit `sc_state`; the rename was the next step.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 21:30
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude checked that tiny-ml's library provides `Option.map` and renamed the items to `Item_` to avoid clashing with `Exit` and `Delete`.
+Claude confirmed the build passes, checked line widths, and ran `make test` plus the kernel check.
+The kernel check replays the windows sessions, which open the menu, release on New, and sweep a window.
+Claude verified the replayed screens are compared, so the new menu path is actually exercised.
+Claude then added the plan paragraph.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 21:36
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude reported that the builds and the editor test pass.
+Claude was updating the comment on the cache field before running the checks.
+Claude planned to run `make test` and the kernel check, whose emacs sessions compare screens.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 21:41
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude reported that the build passed, with `make test` at 192 jobs and no failures, plus the TinyKernel check.
+Claude committed the editor's `cut` as 0c2a162d, but the TinyKernelProcs change was still uncommitted.
+Claude converted TinyKernelProcs' `parent` to `int option`, with `exit`, `wait` and `trace` updated to match.
+Claude kept `/dev/ps` printing 0 for no parent, so its output stays the same.
+Claude split off `since` as a separate timed change, since making it an option would allocate on the scheduler's hot path.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 21:58
+
+**Yoann:**
+
+> let's do it
+
+**Claude (summary):**
+
+Claude updated the `proc` comments that still said -1 to match the new option type.
+Claude wrote the plan paragraph, including the measurement command so the baseline can be redone.
+Claude confirmed the comments and plan were done and kept self-quick-tix running in the background.
+Claude had promised a report once self-quick-tix finished, since that run was still in progress.
+Claude committed the earlier work as 83957150 and began converting `since` and `core` to `int option`.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 19:07
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude recommended starting the next step with triage of tiny/'s 65 recorded bug reports.
+Claude pointed to bugs_tiny.txt as the source, with the 31-bit int reports as the first batch.
+Claude said it would start with those 31-bit int reports ahead of the other listed options.
+Claude's recommendation was that triage over sdl/TinyCalls.ml, A13 termination, and the two -caps reports.
+Claude also committed b9dbcc88, confirmed the OCaml 5 build passes, and left the plan note uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 22:24
+
+**Yoann:**
+
+> yes. Can we close this session then?
+
+**Claude (summary):**
+
+Claude committed the session's work as 795a9c3b before closing.
+Claude then planned to add this session's timing lesson to the existing memory note.
+Claude's reply was short and did not include any other recommendations or findings.
+Claude treated the commit as the last step before the session wrap-up.

@@ -46,13 +46,6 @@
  * (or ExitCode n raised), n. name is for the host's logs too *)
 val main : string -> (Cap.all_caps -> string array -> Exit.t) -> unit
 
-(* the old main, its result the exit's code: for the programs not yet
- * on the new one *)
-val main_int : string -> (Cap.all_caps -> int) -> unit
-
-(* the program's name, then its arguments *)
-val argv : < Cap.argv; .. > -> string list
-
 (* the variables the program was started with, each with its value *)
 val environment : < Cap.env; .. > -> (string * string) list
 val getpid : < Cap.env; .. > -> int

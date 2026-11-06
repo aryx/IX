@@ -137,6 +137,6 @@ val source :
     Cap.readdir > ->
   string -> unit
 
-(* the program: its arguments (-h: the language by example) to its exit
- * status *)
-val main : Cap.all_caps -> int
+(* the program: its arguments (its name first; -h: the language by
+ * example) to how it ends *)
+val main : Cap.all_caps -> string array -> Exit.t

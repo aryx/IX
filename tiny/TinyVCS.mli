@@ -164,3 +164,8 @@
 val run :
   < Cap.env; Cap.open_in; Cap.open_out; Cap.stdout; Cap.readdir; Cap.clock > ->
   string list -> unit
+
+(* the program: its arguments (its name first; -h: how) to how it ends *)
+val main :
+  < Cap.env; Cap.open_in; Cap.open_out; Cap.stdout; Cap.readdir; Cap.clock > ->
+  string array -> Exit.t

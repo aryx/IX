@@ -170,8 +170,7 @@ type stmt
  * run stage after stage and printed *)
 val exec : < Cap.stdout; .. > -> db -> stmt -> unit
 
-(* the program: its arguments (-h: how) to its exit status *)
+(* the program: its arguments (its name first; -h: how) to how it ends *)
 val main :
-  < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr;
-    .. > ->
-  int
+  < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr; .. > ->
+  string array -> Exit.t

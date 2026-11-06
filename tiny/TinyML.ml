@@ -355,9 +355,8 @@ exception File_error of string
 
 open Fpath_.Operators
 
-let main
-    (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
-    =
+let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
+    (argv : string array) : Exit.t =
   let output = ref None and file = ref "" and files = ref []
   and separate = ref false and lib = ref (Some "/lib/ml") in
   let rec args l = match l with
@@ -368,7 +367,7 @@ let main
     | f :: r -> files := Fpath.v f :: !files; args r
     | [] -> ()
   in
-  let argl = List.tl (TinyLibSystem.argv caps) in
+  let argl = List.tl (Array.to_list argv) in
   args argl;
   let files = List.rev !files in
   let read f =
@@ -377,10 +376,10 @@ let main
   let tmis = List.filter (Fpath.has_ext ".tmi") files
   and mls = List.filter (Fpath.has_ext ".ml") files in
   if List.mem "-h" argl || List.mem "--help" argl then
-    (TinyLibSystem.print caps help; 0)
+    (TinyLibSystem.print caps help; Exit.OK)
   else if List.length mls + List.length tmis <> List.length files || files = []
           || (!separate && List.length mls <> 1) then
-    (TinyLibSystem.eprint caps (usage ^ "   (-h: how)\n"); 2)
+    (TinyLibSystem.eprint caps (usage ^ "   (-h: how)\n"); Exit.Code 2)
   else
   let write f text =
     let fd =
@@ -448,9 +447,11 @@ let main
        | None -> TinyLibSystem.print caps asm
        | Some o -> write o asm)
     end;
-    0
+    Exit.OK
   with
-  | Failure m -> TinyLibSystem.eprint caps (!file ^ ": " ^ m ^ "\n"); 1
-  | File_error m -> TinyLibSystem.eprint caps (Printf.sprintf "tiny-ml: %s\n" m); 1
+  (* (said after the file, not the program's name) *)
+  | Failure m ->
+      TinyLibSystem.eprint caps (!file ^ ": " ^ m ^ "\n"); Exit.Code 1
+  | File_error m -> Exit.Err m
 
-let () = TinyLibSystem.main_int "tiny-ml" main
+let () = TinyLibSystem.main "tiny-ml" main

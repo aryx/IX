@@ -16,8 +16,10 @@ type rel = Eq | Ne | Lt | Le | Gt | Ge
 type op =
   | Add | Sub | Mul | Div | Mod | And | Or | Xor | Lsl | Lsr | Asr | Cmp of rel
   | Neg | Lnot | Not | IsInt | Tag
-(* a function's n-ary code, or a closure's field *)
-type target = Direct of string | Code of int
+(* a function's n-ary code, or a closure's field (Indirect, old: Code,
+ * which tiny-ml took for Exit.Code: one name space for the
+ * constructors) *)
+type target = Direct of string | Indirect of int
 
 (* a binary operation's first operand is on top, as every operation's:
  * arguments are pushed from the last, as OCaml evaluates them *)
@@ -283,14 +285,14 @@ let machine name nparams nslots (code : ir list) =
           epilogue ();
           (match t with
            | Direct f -> ins ("la\tr11, " ^ f)
-           | Code k -> ins (Printf.sprintf "ldw\tr11, %d(r13)" (4 * k)));
+           | Indirect k -> ins (Printf.sprintf "ldw\tr11, %d(r13)" (4 * k)));
           ins "jalr\tzero, 0(r11)";
           dead := true
         end
         else begin
           (match t with
            | Direct f -> ins ("la\tlr, " ^ f)
-           | Code k -> ins (Printf.sprintf "ldw\tlr, %d(r13)" (4 * k)));
+           | Indirect k -> ins (Printf.sprintf "ldw\tlr, %d(r13)" (4 * k)));
           ins "jalr\tlr, 0(lr)";
           reload ();
           result ()

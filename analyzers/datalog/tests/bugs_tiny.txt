@@ -23,10 +23,10 @@ tiny/TinyKernel/steps/t6/TinyMkfs.ml:30: int31: in TinyMkfs's toplevel, 0x7f5f00
 tiny/TinyKernel/steps/t6/TinyMkfs.ml:48: int31: in chain, 0xffffffff: not on the Pi 1's 31 bits
 tiny/TinyKernel/steps/t6/TinyMkfs.ml:69: int31: in TinyMkfs.make, 0xffffffff: not on the Pi 1's 31 bits
 tiny/TinyKernel/steps/t6/TinyMkfs.ml:80: int31: in get32, 0xffffffff: not on the Pi 1's 31 bits
-tiny/TinyLinker.ml:177: stack: go calls itself, not a tail call, over a list
-tiny/TinyLinker.ml:178: stack: go calls itself, not a tail call, over a list
-tiny/TinyLinker.ml:179: stack: go calls itself, not a tail call, over a list
-tiny/TinyML.ml:439: evalorder: operands at 439:10 and 440:10, both with an effect: their order the compiler's
+tiny/TinyLinker.ml:180: stack: go calls itself, not a tail call, over a list
+tiny/TinyLinker.ml:181: stack: go calls itself, not a tail call, over a list
+tiny/TinyLinker.ml:182: stack: go calls itself, not a tail call, over a list
+tiny/TinyML.ml:438: evalorder: operands at 438:10 and 439:10, both with an effect: their order the compiler's
 tiny/TinyML/TinyMLCompile.ml:382: stack: TinyMLCompile.match_cases calls itself, not a tail call, over a list
 tiny/TinyML/TinyMLCompile.ml:420: stack: TinyMLCompile.app calls itself, not a tail call, over a list
 tiny/TinyML/TinyMLCompile.ml:423: stack: TinyMLCompile.app calls itself, not a tail call, over a list
@@ -61,5 +61,5 @@ tiny/TinyMachine/TinyMachineDevices.ml:830: int31: in until, 0x40000000: not on 
 tiny/TinyMachine/TinyMachineDevices.ml:835: int31: in TinyMachineDevices.calm, 0x40000000: not on the Pi 1's 31 bits
 tiny/TinyMachine/TinyMachineSocket.ml:59: swallowed: in TinyMachineSocket.relay, Unix.Unix_error silenced, a constant answered
 tiny/TinyShell.ml:260: evalorder: operands at 260:8 and 260:19, both with an effect: their order the compiler's
-tiny/TinyVCS.ml:461: stack: groups calls itself, not a tail call, over a list
-tiny/TinyVCS.ml:545: order: in TinyVCS.lca, a table's order reaches the output at tiny/TinyVCS.ml:704, tiny/TinyVCS.ml:759
+tiny/TinyVCS.ml:462: stack: groups calls itself, not a tail call, over a list
+tiny/TinyVCS.ml:546: order: in TinyVCS.lca, a table's order reaches the output at tiny/TinyVCS.ml:701, tiny/TinyVCS.ml:756

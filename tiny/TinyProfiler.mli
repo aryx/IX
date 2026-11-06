@@ -111,5 +111,6 @@
  * time went, before this program existed); raspberry/observe/Prof.mli.
  *)
 
-(* the program: its arguments to its exit status *)
-val main : < Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; .. > -> int
+(* the program: its arguments (its name first) to how it ends *)
+val main :
+  < Cap.stdout; Cap.stderr; Cap.open_in; .. > -> string array -> Exit.t

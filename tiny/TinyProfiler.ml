@@ -51,7 +51,8 @@ let percent n total =
     string_of_int (t / 10) ^ "." ^ string_of_int (t mod 10)
 
 
-let main (caps : < Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; .. >) =
+let main (caps : < Cap.stdout; Cap.stderr; Cap.open_in; .. >)
+    (argv : string array) : Exit.t =
   let print = TinyLibSystem.print caps in
   let rec options top diff base = function
     | "-n" :: n :: rest -> options (int_of_string n) diff base rest
@@ -70,8 +71,8 @@ let main (caps : < Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; .. >) =
               Fpath_.of_strings (List.rev k), Fpath_.of_strings (List.rev u) in
         Some (top, diff, base, Fpath.v file, files [] [] false rest)
     | _ -> None in
-  match options 20 None None (List.tl (TinyLibSystem.argv caps)) with
-  | None -> TinyLibSystem.eprint caps (usage ^ "\n"); 2
+  match options 20 None None (List.tl (Array.to_list argv)) with
+  | None -> TinyLibSystem.eprint caps (usage ^ "\n"); Exit.Code 2
   | Some (top, diff, base, file, (kfiles, ufiles)) ->
       let counts = read_profile caps file in
       Option.iter (fun f ->
@@ -124,6 +125,6 @@ let main (caps : < Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; .. >) =
         if i < top && n > 0 then
           print (Printf.sprintf "%12s %6s  %s  %s\n" (commas n)
             (percent n total) mode name)) rows;
-      0
+      Exit.OK
 
-let () = TinyLibSystem.main_int "tiny-prof" main
+let () = TinyLibSystem.main "tiny-prof" main

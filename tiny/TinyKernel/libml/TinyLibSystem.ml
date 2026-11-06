@@ -55,8 +55,6 @@ let main name f =
      with
      | Failure m -> said m
      | Exit.ExitCode n -> n)
-let main_int name f = main name (fun caps _ -> Exit.Code (f caps))
-let argv caps = List.init (u_argc ()) u_arg
 let environment caps = [ "PATH", "/bin" ]
 let getpid _caps = u_getpid ()
 

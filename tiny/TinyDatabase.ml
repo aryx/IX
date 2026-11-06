@@ -826,9 +826,9 @@ let exec caps db (s : stmt) =
   | Update (name, stages, items) -> change db name stages (Some items)
 
 let main
-    (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout;
-              Cap.stderr; .. >) =
-  match TinyLibSystem.argv caps with
+    (caps : < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr;
+              .. >) (argv : string array) : Exit.t =
+  match Array.to_list argv with
   | [ _; ("-h" | "--help") ] ->
       (* help's first lines, a table made and queried *)
       let session =
@@ -840,7 +840,7 @@ let main
                   ^ String.concat "\n" session
                   ^ "\nThen help, at the prompt: the stages, the other"
                   ^ " statements, and the tables.\n");
-      0
+      Exit.OK
   | [ _; path ] ->
       let db = open_db caps (Fpath.v path) in
       (* at a terminal, a prompt, as sqlite's *)
@@ -850,7 +850,7 @@ let main
       let rec loop n =
         if tty then (print caps "tiny-db> "; TinyLibSystem.flush caps);
         match TinyLibSystem.read_line caps with
-        | None -> if tty then print caps "\n"; 0
+        | None -> if tty then print caps "\n"
         | Some line ->
             (try match tokens line with [] -> () | ts -> exec caps db (parse ts)
              with Error m ->
@@ -859,9 +859,11 @@ let main
                  (Printf.sprintf "tiny-db: line %d: %s\n" n m));
             loop (n + 1)
       in
-      let code = loop 1 in
+      loop 1;
       TinyLibSystem.flush caps;
-      code
-  | _ -> TinyLibSystem.eprint caps "usage: tiny-db file.db   (-h: how)\n"; 1
+      Exit.OK
+  | _ ->
+      TinyLibSystem.eprint caps "usage: tiny-db file.db   (-h: how)\n";
+      Exit.Code 1
 
-let () = TinyLibSystem.main_int "tiny-db" main
+let () = TinyLibSystem.main "tiny-db" main

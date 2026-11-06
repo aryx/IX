@@ -88,5 +88,7 @@ val link :
  * memory first (old: ~memory, a label, which tiny-ml does not read) *)
 val aout : int -> int -> string -> string
 
-(* the program: its arguments (-h: how) to its exit status *)
-val main : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. > -> int
+(* the program: its arguments (its name first; -h: how) to how it ends *)
+val main :
+  < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. > ->
+  string array -> Exit.t

@@ -402,7 +402,7 @@ and app env f args tl =
   let m = List.length args in
   let rest k =
     let n = m - k in
-    for i = 1 to n do emit (Call (Code 0, 1, tl && i = n)) done;
+    for i = 1 to n do emit (Call (Indirect 0, 1, tl && i = n)) done;
     tl && n > 0
   in
   let args_in k =
@@ -561,5 +561,5 @@ let curry_fun n k =
     emit (Addr (curry n (k + 1), 0));
     emit (Alloc (closure_tag, k + 3));
     emit Ret)
-  else emit (Call (Code 1, n, true));
+  else emit (Call (Indirect 1, n, true));
   machine (curry n k) 1 (!cur).nslots (List.rev (!cur).code)

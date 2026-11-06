@@ -32,11 +32,6 @@ let main (name : string) (f : Cap.all_caps -> string array -> Exit.t) : unit =
        | Failure m -> said m
        | Exit.ExitCode n -> n))
 
-(* the old main, for the programs not yet on the new one *)
-let main_int (name : string) (f : Cap.all_caps -> int) : unit =
-  main name (fun caps _ -> Exit.Code (f caps))
-
-let argv (caps : < Cap.argv; .. >) = Array.to_list (CapSys.argv caps)
 let environment (caps : < Cap.env; .. >) =
   Procs.split_env (CapUnix.environment caps ())
 let getpid (caps : < Cap.env; .. >) = CapUnix.getpid caps ()

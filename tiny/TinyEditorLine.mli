@@ -145,5 +145,6 @@ type cmd
 val exec :
   < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; Cap.exit; .. > -> cmd -> unit
 
-(* the program: the files named, then the commands of its input *)
-val main : Cap.all_caps -> int
+(* the program: its arguments (its name first), the files named, then
+ * the commands of its input, to how it ends *)
+val main : Cap.all_caps -> string array -> Exit.t

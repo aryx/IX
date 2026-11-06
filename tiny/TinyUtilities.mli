@@ -80,4 +80,6 @@ val fold :
   < Cap.open_in; Cap.readdir; .. > ->
   string -> (string -> bool -> int -> (unit -> 'a list) -> 'a) -> 'a
 
-val main : Cap.all_caps -> int
+(* the program: its arguments (its name first, the utility's when it
+ * is run by a link named after one) to how it ends *)
+val main : Cap.all_caps -> string array -> Exit.t

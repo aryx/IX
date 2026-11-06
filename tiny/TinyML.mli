@@ -293,5 +293,8 @@ val compile_unit :
   (string * TinyMLCompile.binding) list * (string * TinyMLCompile.binding) list
   * int
 
-(* the program: files of ML to a file of assembly (-h: how) *)
-val main : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. > -> int
+(* the program: its arguments (its name first), files of ML to a file
+ * of assembly (-h: how), to how it ends *)
+val main :
+  < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. > ->
+  string array -> Exit.t

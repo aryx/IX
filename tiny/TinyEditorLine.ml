@@ -711,11 +711,11 @@ let rec exec
           Buffer.add_string out (String.sub !text (fst r) (snd r - fst r));
           dot := r)
 
-let main (caps : Cap.all_caps) : int =
+let main (caps : Cap.all_caps) (argv : string array) : Exit.t =
   next_line := (fun () -> TinyLibSystem.read_line caps);
-  match TinyLibSystem.argv caps with
+  match Array.to_list argv with
   | [ _; ("-h" | "--help") ] ->
-      TinyLibSystem.print caps help; TinyLibSystem.flush caps; 0
+      TinyLibSystem.print caps help; TinyLibSystem.flush caps; Exit.OK
   | argv ->
       (match argv with
        | [ _; name ] ->
@@ -752,6 +752,6 @@ let main (caps : Cap.all_caps) : int =
       if !modified && not !warned then
         (flush caps; TinyLibSystem.eprint caps "?changed files\n");
       flush caps;
-      0
+      Exit.OK
 
-let () = TinyLibSystem.main_int "tiny-editor" main
+let () = TinyLibSystem.main "tiny-editor" main

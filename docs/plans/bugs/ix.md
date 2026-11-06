@@ -651,3 +651,14 @@ errors: Asm.marshalled checks the header (the magic number, by
 Marshal.total_size, and the size against the file's) first, the same
 under OCaml's Marshal and lib_core's. A file with the magic number and
 too short a size says so too.
+
+## tiny-c: an unclosed parameter list, a segmentation fault (2026-11-06)
+
+`printf 'int f( {\n' > bad.c; tiny-c bad.c` (or `int f(`, the file's
+end): a segmentation fault, exit 139, where `int f() {` says
+"bad.c: line 1: expected an expression", exit 1 (seen comparing
+tiny-c's messages before and after its main returned an Exit.t: the
+same crash in both). TinyCParser's `params`, in `declarator`, calls
+itself until it reads `)` or `...`: on `{` or at the end, base_type and
+declarator take no token, and the recursion never ends. Not fixed: an
+error ("expected )") when a parameter took no token would do.

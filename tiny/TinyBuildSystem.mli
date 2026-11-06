@@ -178,5 +178,5 @@ type node
  * whose prerequisites can be made; exists says whether a file is there *)
 val graph : rule list -> (string -> bool) -> string -> node
 
-(* the program: its arguments (-h: how) to its exit status *)
-val main : Cap.all_caps -> int
+(* the program: its arguments (its name first; -h: how) to how it ends *)
+val main : Cap.all_caps -> string array -> Exit.t

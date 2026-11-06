@@ -491,7 +491,7 @@ let report caps total =
          recipes (recipes / max 1 total) (recipes * 10 / max 1 total mod 10)
          total)
 
-let run (caps : Cap.all_caps) : int =
+let run (caps : Cap.all_caps) (argv : string array) : Exit.t =
   let file = ref "Buildfile" and jobs = ref 1 and dry = ref false
   and dot = ref false and timed = ref false in
   let began = TinyLibSystem.millis caps in
@@ -514,7 +514,7 @@ let run (caps : Cap.all_caps) : int =
     | t :: rest -> targets := !targets @ [ t ]; options rest
     | [] -> ()
   in
-  options (List.tl (TinyLibSystem.argv caps));
+  options (List.tl (Array.to_list argv));
   try
     let text =
       match read_file caps !file with
@@ -554,16 +554,15 @@ let run (caps : Cap.all_caps) : int =
     in
     if not !dry then save caps stamps;
     if !timed then report caps (TinyLibSystem.millis caps - began);
-    if ok then 0 else 1
-  with Error msg ->
-    TinyLibSystem.flush caps;
-    TinyLibSystem.eprint caps (Printf.sprintf "tiny-build: %s\n" msg);
-    1
+    if ok then Exit.OK else Exit.Code 1
+  with Error msg -> Exit.Err msg
 
 (* -h, and an unknown option said, not raised *)
-let main (caps : Cap.all_caps) : int =
-  match TinyLibSystem.argv caps with
-  | [ _; ("-h" | "--help") ] -> TinyLibSystem.print caps help; 0
-  | _ -> (try run caps with Bad m -> TinyLibSystem.eprint caps m; 2)
+let main (caps : Cap.all_caps) (argv : string array) : Exit.t =
+  match Array.to_list argv with
+  | [ _; ("-h" | "--help") ] -> TinyLibSystem.print caps help; Exit.OK
+  | _ ->
+      (try run caps argv
+       with Bad m -> TinyLibSystem.eprint caps m; Exit.Code 2)
 
-let () = TinyLibSystem.main_int "tiny-build" main
+let () = TinyLibSystem.main "tiny-build" main

@@ -769,7 +769,7 @@ let interactive
   in
   loop ()
 
-let start (caps : Cap.all_caps) : int =
+let start (caps : Cap.all_caps) (argv : string array) : Exit.t =
   (* the environment, with rc's lists split back *)
   TinyLibSystem.environment caps
   |> List.iter (fun (k, v) -> set k (String.split_on_char '\001' v));
@@ -790,18 +790,18 @@ let start (caps : Cap.all_caps) : int =
   in
   let st =
     try
-      (match flags (List.tl (TinyLibSystem.argv caps)) with
+      (match flags (List.tl (Array.to_list argv)) with
        | Some text -> source (caps :> caps) text
        | None -> interactive (caps :> caps));
       status ()
     with Exits s -> s | Error m -> die caps m | Failure m -> die caps m
   in
   TinyLibSystem.flush caps;
-  code st
+  match code st with 0 -> Exit.OK | n -> Exit.Code n
 
-let main (caps : Cap.all_caps) : int =
-  match TinyLibSystem.argv caps with
-  | [ _; ("-h" | "--help") ] -> TinyLibSystem.print caps help; 0
-  | _ -> start caps
+let main (caps : Cap.all_caps) (argv : string array) : Exit.t =
+  match Array.to_list argv with
+  | [ _; ("-h" | "--help") ] -> TinyLibSystem.print caps help; Exit.OK
+  | _ -> start caps argv
 
-let () = TinyLibSystem.main_int "tiny-shell" main
+let () = TinyLibSystem.main "tiny-shell" main

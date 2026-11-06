@@ -17,7 +17,7 @@ type op =
   | Not
   | IsInt
   | Tag
-type target = Direct of string | Code of int
+type target = Direct of string | Indirect of int
 type ir =
     Imm of int64
   | Addr of string * int

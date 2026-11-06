@@ -853,9 +853,10 @@ let help () =
       "  " ^ u ^ String.make (max 1 (32 - String.length u)) ' ' ^ what ^ "\n")
       utilities)
 
-let main (caps : Cap.all_caps) : int =
+(* (each utility's status a number: test's answer is one) *)
+let main (caps : Cap.all_caps) (argv : string array) : Exit.t =
   let status =
-    match TinyLibSystem.argv caps with
+    match Array.to_list argv with
     | [] -> 1
     | arg0 :: args -> begin
         (* the utility is the name the program was run by, else its first
@@ -879,6 +880,6 @@ let main (caps : Cap.all_caps) : int =
         | None -> TinyLibSystem.eprint caps (help ()); 1
       end in
   TinyLibSystem.flush caps;
-  status
+  match status with 0 -> Exit.OK | n -> Exit.Code n
 
-let () = TinyLibSystem.main_int "tiny-utils" main
+let () = TinyLibSystem.main "tiny-utils" main

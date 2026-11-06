@@ -901,9 +901,8 @@ let run (caps : caps) (args : string list) =
                  ^ "  |show path"))
   | [] -> error "usage: tiny-vcs CMD   (-h: how)"
 
-let () =
-  TinyLibSystem.main_int "tiny-vcs" (fun caps ->
-    try run (caps :> caps) (List.tl (TinyLibSystem.argv caps)); 0
-    with Error m ->
-      TinyLibSystem.eprint caps (Printf.sprintf "tiny-vcs: %s\n" m);
-      1)
+let main (caps : caps) (argv : string array) : Exit.t =
+  try run caps (List.tl (Array.to_list argv)); Exit.OK
+  with Error m -> Exit.Err m
+
+let () = TinyLibSystem.main "tiny-vcs" (fun caps -> main (caps :> caps))

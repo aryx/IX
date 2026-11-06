@@ -112,9 +112,8 @@ let external_decl () =
 (* a file that cannot be read or made, said apart from an error in one *)
 exception File_error of string
 
-let main
-    (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
-    =
+let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
+    (argv : string array) : Exit.t =
   let output = ref None and file = ref None in
   let rec args l = match l with
     | "-ir" :: r -> ir_only := true; args r
@@ -122,13 +121,14 @@ let main
     | f :: r -> file := Some (Fpath.v f); args r
     | [] -> ()
   in
-  let argl = List.tl (TinyLibSystem.argv caps) in
+  let argl = List.tl (Array.to_list argv) in
   if List.mem "-h" argl || List.mem "--help" argl then
-    (TinyLibSystem.print caps help; 0)
+    (TinyLibSystem.print caps help; Exit.OK)
   else begin
     args argl;
     match !file with
-    | None -> TinyLibSystem.eprint caps (usage ^ "   (-h: how)\n"); 2
+    | None ->
+        TinyLibSystem.eprint caps (usage ^ "   (-h: how)\n"); Exit.Code 2
     | Some file ->
       unit_name := Fpath.to_string (Fpath.rem_ext (Fpath.base file));
       (* intptr, Plan 9's uintptr's signed twin: an integer as wide as a
@@ -153,7 +153,7 @@ let main
                try TinyLibSystem.open_out caps o
                with Failure m -> raise (File_error m) in
              TinyLibSystem.write fd text; TinyLibSystem.close fd);
-        0
+        Exit.OK
       with
       | Failure m ->
           (* where: the last token read (a missing ; is then on its line, not
@@ -166,9 +166,9 @@ let main
             (let f, l = ls.(max 0 (min (!pos - 1) (Array.length ls - 1))) in
              TinyLibSystem.eprint caps
                (f ^ ": line " ^ string_of_int l ^ ": " ^ m ^ "\n"));
-          1
-      | File_error m ->
-          TinyLibSystem.eprint caps (Printf.sprintf "tiny-c: %s\n" m); 1
+          (* (said here, after the file, not the program's name) *)
+          Exit.Code 1
+      | File_error m -> Exit.Err m
   end
 
-let () = TinyLibSystem.main_int "tiny-c" main
+let () = TinyLibSystem.main "tiny-c" main

@@ -34,10 +34,11 @@ An error names the label: undefined label main
 
 (* an object's items (TinyAssembler's lines): a code's bytes come with
  * the places in them to fill, each its offset, its kind, its label or
- * number *)
+ * number (Chunk, old: Code, which tiny-ml took for Exit.Code: one name
+ * space for the constructors) *)
 type item =
   | Label of string | Align of int | Space of int
-  | Code of string * (int * string * string) list | Piece
+  | Chunk of string * (int * string * string) list | Piece
   | Section of bool   (* .data (true) or .text: what follows is *)
 
 let unhex s =
@@ -58,9 +59,9 @@ let read (name : Fpath.t) text =
     | [ "piece" ], _ -> items := Piece :: !items
     | [ "text" ], _ -> items := Section false :: !items
     | [ "data" ], _ -> items := Section true :: !items
-    | [ "code"; h ], _ -> items := Code (unhex h, []) :: !items
-    | [ "reloc"; off; k; t ], Code (s, rs) :: rest ->
-        items := Code (s, (int_of_string off, k, t) :: rs) :: rest
+    | [ "code"; h ], _ -> items := Chunk (unhex h, []) :: !items
+    | [ "reloc"; off; k; t ], Chunk (s, rs) :: rest ->
+        items := Chunk (s, (int_of_string off, k, t) :: rs) :: rest
     | _ ->
         error (Fpath.to_string name ^ ":" ^ string_of_int (n + 1)
                ^ ": not an object's line"))
@@ -88,7 +89,8 @@ let layout (items : item list) =
         placed := (!pc, Space (a - !pc)) :: !placed;
         pc := a
     | Space n -> placed := (!pc, it) :: !placed; pc := !pc + n
-    | Code (s, _) -> placed := (!pc, it) :: !placed; pc := !pc + String.length s
+    | Chunk (s, _) ->
+        placed := (!pc, it) :: !placed; pc := !pc + String.length s
     | Section true -> data_at := !pc
     | Piece | Section false -> ()) items;
   labels, List.rev !order, List.rev !placed, !data_at
@@ -157,7 +159,7 @@ let sweep (objects : item list list) =
   let kept = Array.map fst pieces in
   let rec keep i =
     List.iter (fun it -> match it with
-      | Code (_, relocs) ->
+      | Chunk (_, relocs) ->
           List.iter (fun (_, _, t) ->
             match Hashtbl.find_opt where t with
             | Some j when not kept.(j) -> kept.(j) <- true; keep j
@@ -209,7 +211,7 @@ let link split (objects : (Fpath.t * string) list) =
   List.iter (fun (a, it) ->
     match it with
     | Space n -> Buffer.add_string b (String.make n '\000')
-    | Code (s, relocs) ->
+    | Chunk (s, relocs) ->
         let s = Bytes.of_string s in
         List.iter (fun (off, k, t) ->
           try fill s off k (a + off) (resolve t)
@@ -240,9 +242,8 @@ let aout memory data_at image =
   List.iteri (fun i v -> set_word h (4 * i) v) words;
   Bytes.to_string h ^ image
 
-let main
-    (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
-    =
+let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
+    (argv : string array) : Exit.t =
   let write = TinyLibSystem.write_file caps in
   let megabytes n =
     match int_of_string_opt n with
@@ -257,11 +258,12 @@ let main
     | "-o" :: out :: files when files <> [] ->
         Some (mb, split, syms, map, Fpath.v out, Fpath_.of_strings files)
     | _ -> None in
-  match List.tl (TinyLibSystem.argv caps) with
-  | ("-h" | "--help") :: _ -> TinyLibSystem.print caps help; 0
+  match List.tl (Array.to_list argv) with
+  | ("-h" | "--help") :: _ -> TinyLibSystem.print caps help; Exit.OK
   | l ->
       match args None false false false l with
-      | None -> TinyLibSystem.eprint caps (usage ^ "   (-h: how)\n"); 2
+      | None ->
+          TinyLibSystem.eprint caps (usage ^ "   (-h: how)\n"); Exit.Code 2
       | Some (mb, split, syms, map, out, files) ->
           try
             let image, labels, data_at =
@@ -282,8 +284,7 @@ let main
                | None, false -> image);
             if map then
               write (Fpath.v (Fpath.to_string out ^ ".map")) (lines labels);
-            0
-          with Error e ->
-            TinyLibSystem.eprint caps (Printf.sprintf "tiny-linker: %s\n" e); 1
+            Exit.OK
+          with Error e -> Exit.Err e
 
-let () = TinyLibSystem.main_int "tiny-linker" main
+let () = TinyLibSystem.main "tiny-linker" main

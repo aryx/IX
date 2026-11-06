@@ -29,10 +29,11 @@
    thread runs until it waits: the window yields at each frame while
    a piece is out, and the worker does it whole.
 
-   modern: Chrome's tab (2008) is a process of its own, its renderer;
-   Firefox moved its pages out of the window's process with
-   Electrolysis (2016). Here the renderer is a thread, and a page's
-   work is still done one piece after the other. *)
+   modern:
+   Chrome's tab (2008) is a process of its own, its renderer; Firefox
+   moved its pages out of the window's process with Electrolysis
+   (2016). Here the renderer is a thread, and a page's work is still
+   done one piece after the other. *)
 
 type working = Beside | Waited | Inline
 

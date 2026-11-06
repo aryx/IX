@@ -36,9 +36,10 @@
  * short is an int32, as C passes them; an array's element and a
  * member keep their width (stelem.i1 truncates, ldelem.i1 extends).
  *
- * others: decision 4's first plan was C++/CLI's int32& for a pointer
- * into an array. Microsoft's C++/CLI (2005) compiled all of C++ with
- * /clr (unverifiable: raw pointers into the native heap) and refused
+ * others:
+ * Decision 4's first plan was C++/CLI's int32& for a pointer into an
+ * array. Microsoft's C++/CLI (2005) compiled all of C++ with /clr
+ * (unverifiable: raw pointers into the native heap) and refused
  * pointers with /clr:safe, where a program used .NET's handles (T^);
  * Ptr here is the safe C a fat pointer makes, as Cyclone's (2002) and
  * CCured's (2002) did for safety on native machines. *)

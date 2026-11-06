@@ -27,10 +27,11 @@
  * (Mesh.light then asks each face's index), and what moves (the
  * cars) is lit at each frame by [index] too.
  *
- * cs-history: Paul Heckbert's "Color Image Quantization for Frame
- * Buffer Display" (SIGGRAPH 1982) is the median cut; the hardware of
- * the time had 256 colours at most, as did VGA's mode 13h, where
- * Doom and Quake drew (their palettes fixed by hand, a ramp of each
+ * cs-history:
+ * Paul Heckbert's "Color Image Quantization for Frame Buffer
+ * Display" (SIGGRAPH 1982) is the median cut; the hardware of the
+ * time had 256 colours at most, as did VGA's mode 13h, where Doom
+ * and Quake drew (their palettes fixed by hand, a ramp of each
  * colour towards black for the light). Sega's Model 1 had no palette
  * to choose: Virtua Racing's faces were shaded by its own processor.
  *

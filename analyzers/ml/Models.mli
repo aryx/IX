@@ -30,9 +30,10 @@
  * functions, and a function whose closure is a model's (model:...,
  * written where the real one is).
  *
- * others: Doop analyzes the JDK's collections as written, and pays for
- * it (its "heap abstractions" for HashMap); Infer and Facebook's Pulse
- * model them; Soot's Spark and WALA give a few native methods models.
+ * others:
+ * Doop analyzes the JDK's collections as written, and pays for it (its
+ * "heap abstractions" for HashMap); Infer and Facebook's Pulse model
+ * them; Soot's Spark and WALA give a few native methods models.
  *)
 
 (* a model's variables: its k-th argument (1 ...), its result, a variable

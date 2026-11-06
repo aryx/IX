@@ -19,11 +19,12 @@
  * are D or T here, Plan 9 has no such letter; an undefined one (a
  * shared library's) is left out.
  *
- * others: Plan 9's a.out has one table of its own after the data, and
- * no sections: the linker writes names and lines for the debugger only.
+ * others:
+ * Plan 9's a.out has one table of its own after the data, and no
+ * sections: the linker writes names and lines for the debugger only.
  * ELF (System V, 1988) is a container of sections a linker, a loader
- * and a debugger each read their part of; DWARF's lines and types
- * are sections too.
+ * and a debugger each read their part of; DWARF's lines and types are
+ * sections too.
  *
  * References: the System V ABI, "Object Files" (gabi41); elf(5). *)
 

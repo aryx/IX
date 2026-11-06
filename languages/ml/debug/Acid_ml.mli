@@ -31,7 +31,8 @@
  * (int, string, list, array...) have none: the printer knows them; an
  * abstract type none: its words.
  *
- * others: DWARF's .debug_info says the same (a DW_TAG_variant_part, a
+ * others:
+ * DWARF's .debug_info says the same (a DW_TAG_variant_part, a
  * DW_TAG_member each), in a binary form a debugger must parse; here a
  * debugger's language is the format, as 5c -a's (C's: Acid). *)
 

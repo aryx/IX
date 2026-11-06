@@ -8,9 +8,10 @@
  *   Main.ml: Main.trap, called from C, may let Failure escape, raised at ...
  *   Main.ml:67: the try in Main.guard, its handler raising, may be reached by Not_found, ...
  *
- * cs-history: Xavier Leroy and François Pessaux's ocamlexc (2000) found
- * the same by types; here it is the call graph's closure (pointer.dl's
- * call_edge) and a subtraction at each try. *)
+ * cs-history:
+ * Xavier Leroy and François Pessaux's ocamlexc (2000) found the same by
+ * types; here it is the call graph's closure (pointer.dl's call_edge)
+ * and a subtraction at each try. *)
 
 (* a name's unit: Main of Main:init, Main.trap, Main:try2@67 *)
 val unit_of : string -> string

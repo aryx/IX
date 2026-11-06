@@ -6,12 +6,13 @@
  *     dst(x, y) <- fs * src + fd * dst      (each channel, MUL's rounding)
  *     SoverD:  fs = the mask's coverage, fd = 255 - MUL(src's alpha, coverage)
  *
- * design: a file of its own because a machine's host can run it too.
- * It reads and writes an image's bytes through Memimage only, and an
- * image's bytes may be anyone's: mini-qemu's board, asked by the kernel
- * built for a web page (Memdraw's draw there, Hostdraw on the board's
- * side), runs this same file compiled for the host on the images where
- * they are in the board's memory. The pixels are then the same by
+ * design:
+ * A file of its own because a machine's host can run it too. It reads
+ * and writes an image's bytes through Memimage only, and an image's
+ * bytes may be anyone's: mini-qemu's board, asked by the kernel built
+ * for a web page (Memdraw's draw there, Hostdraw on the board's side),
+ * runs this same file compiled for the host on the images where they
+ * are in the board's memory. The pixels are then the same by
  * construction, and the loop is the host's and not the emulator's: a
  * menu of rio's was 20 million instructions here.
  *

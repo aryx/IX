@@ -45,14 +45,14 @@
  * back of its own would replace [fill], the front the same
  * (plan_virtuaracing.md, decision 9). Keep the two apart.
  *
- * cs-history: the z-buffer is Edwin Catmull's (his thesis, Utah,
- * 1974); a memory the size of the screen was too dear for a game until
- * the 1990s, and the arcade's Model 1 (Virtua Racing, 1992) had one
- * among its processors. The PC's polygon games of the time sorted
- * their faces instead (the painter's algorithm): fewer instructions a
- * pixel, wrong where faces cross. Quake (1996) drew its world's spans
- * without one and wrote the depth for its models only (Spans,
- * Edges).
+ * cs-history:
+ * The z-buffer is Edwin Catmull's (his thesis, Utah, 1974); a memory
+ * the size of the screen was too dear for a game until the 1990s, and
+ * the arcade's Model 1 (Virtua Racing, 1992) had one among its
+ * processors. The PC's polygon games of the time sorted their faces
+ * instead (the painter's algorithm): fewer instructions a pixel, wrong
+ * where faces cross. Quake (1996) drew its world's spans without one
+ * and wrote the depth for its models only (Spans, Edges).
  *
  * What is ours: every face drawn whole, both its sides (the game's
  * cables, wheels and sails are seen from both; its sky from below):

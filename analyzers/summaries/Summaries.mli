@@ -12,9 +12,10 @@
  *     a call through anything else: Call (the caller's analysis makes it)
  *     a global read: Global;  raise_of: Raise;  the rest one op a fact
  *
- * design: why a summary is the tree and not each function. A call of a
- * local function, or of the function itself, is written as assignments
- * to its parameters, not as a call: the tree's objects are then the
+ * design:
+ * Why a summary is the tree and not each function. A call of a local
+ * function, or of the function itself, is written as assignments to
+ * its parameters, not as a call: the tree's objects are then the
  * caller's call's, however deep the code went, which is what makes
  * Models precise (Models.ml's design note); a loop over a list becomes
  * c = l, c = c.tl. A tree with a try, a global written, or a primitive

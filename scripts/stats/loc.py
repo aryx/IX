@@ -283,6 +283,24 @@ def tagged(text):
     return counts, times
 
 
+# a tag with its paragraph's text after it, "cs-history: The first ...":
+# tagged above does not see it, and its paragraph would go uncounted
+TAG_WITH_TEXT = re.compile(r"^\s*\*?\s*(" + "|".join(TAGS) + r"): \S")
+
+
+def misplaced(text):
+    """the line numbers of the tags written with text after them, when
+    they start a paragraph (a tag's word inside a sentence is not one)"""
+    found = []
+    before = ""
+    for i, line in enumerate(text.splitlines(), 1):
+        start = before.strip() in ("", "*") or before.rstrip().endswith("*)")
+        if start and TAG_WITH_TEXT.match(line):
+            found.append(i)
+        before = line
+    return found
+
+
 # ---------------------------------------------------------------------
 # Grouping the files
 # ---------------------------------------------------------------------
@@ -595,6 +613,10 @@ def main():
             code, comment, blank = count(text, ext == "mly")
         else:
             code, comment, blank = count_c(text)
+        if LANGUAGE[ext] == "ocaml":
+            for n in misplaced(text):
+                print(f"{path}:{n}: the tag on a line of its own, its text "
+                      "on the next (docs/tags.md)", file=sys.stderr)
         group, sub = classify(path, verbose)
         if apart(path):
             # only in its own row, at the end

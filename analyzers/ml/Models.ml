@@ -64,15 +64,16 @@
  * decoders, called by List.init's one call of f). -dead's and -caps's
  * reports the same on the 44 programs (sweep.sh); dynamic.sh none missed.
  *
- * road-not-taken: contexts, the textbook answer to a polymorphic
- * function's callers merged. One for each call of a polymorphic or
- * higher-order function (call-site sensitivity for those alone): 152
- * million firings against 159 without contexts; the merge moved to
- * Hashtbl's buckets, made in replace's local replace_bucket, whose key
- * and info, captured, have one set for all callers (contexts.dl's
- * global). Then a local function in its closure's context (m-CFA's, as
- * contexts.dl's curried stages): 123 million, and mini-prolog's Halt
- * reported again. Cells of one type made one (every int list's): 5%.
+ * road-not-taken:
+ * Contexts, the textbook answer to a polymorphic function's callers
+ * merged. One for each call of a polymorphic or higher-order function
+ * (call-site sensitivity for those alone): 152 million firings against
+ * 159 without contexts; the merge moved to Hashtbl's buckets, made in
+ * replace's local replace_bucket, whose key and info, captured, have
+ * one set for all callers (contexts.dl's global). Then a local
+ * function in its closure's context (m-CFA's, as contexts.dl's curried
+ * stages): 123 million, and mini-prolog's Halt reported again. Cells
+ * of one type made one (every int list's): 5%.
  *
  * Why a model does what a clone, or a context, would not, though it is
  * one, the library's code copied at each call:
@@ -100,8 +101,9 @@
  * contexts are automatic. Worth it for a few containers, called
  * everywhere: 53 functions here (16 of Hashtbl, 36 of List, @).
  *
- * design: what keeps it sound. A modeled function's body is not read, so
- * the model and the real code never meet (Models.mli). The facts after a
+ * design:
+ * What keeps it sound. A modeled function's body is not read, so the
+ * model and the real code never meet (Models.mli). The facts after a
  * model are named as without it (Closure_facts.call: the calls' and the
  * temporaries' numbers it replaces), so a change of the facts is only
  * the model's. Its calls of what it is given say so (model_call), for

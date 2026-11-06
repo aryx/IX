@@ -9,11 +9,12 @@
  *                     a keyboard's report --> Hid.typed --> Kbd.kbdputsc
  *                     the mouse's state   --> Devmouse.at
  *
- * design: a USB mouse that moves cost 5 of the 6 million instructions
- * a page runs in a second: the controller's registers, the driver's
- * process, the cursor drawn again. An emulator's host has the mouse's
- * place on the screen already; here it gives it, and draws the cursor
- * too (Swcursor's load). The keys come as a USB keyboard's reports, so
+ * design:
+ * A USB mouse that moves cost 5 of the 6 million instructions a page
+ * runs in a second: the controller's registers, the driver's process,
+ * the cursor drawn again. An emulator's host has the mouse's place on
+ * the screen already; here it gives it, and draws the cursor too
+ * (Swcursor's load). The keys come as a USB keyboard's reports, so
  * that Hid's tables are the only ones.
  *
  * On a Raspberry Pi, and under an emulator with no page, there is

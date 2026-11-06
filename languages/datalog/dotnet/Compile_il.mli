@@ -30,8 +30,9 @@
  * The symbols are the runtime's numbers: a constant of a rule is a
  * field set from its text when the program starts.
  *
- * others: Souffle (2016) compiles to C++ through its RAM, a language
- * of loops, scans and index lookups, Datalog_eval's plan here; the
+ * others:
+ * Souffle (2016) compiles to C++ through its RAM, a language of
+ * loops, scans and index lookups, Datalog_eval's plan here; the
  * interpreter it later got (2019) runs the same RAM. Here the plan is
  * the interpreter's, the same code choosing it for both. *)
 

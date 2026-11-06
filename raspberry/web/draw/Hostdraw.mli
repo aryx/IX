@@ -10,17 +10,17 @@
  *                                             images in the board's RAM
  *       else Memgeneral.general (the kernel's own)
  *
- * design: the loop is not written again here. Memgeneral, Memimage and
- * Memchan are the kernel's files (this directory's dune copies them),
- * compiled for the host; an image here is the kernel's, its bytes the
- * board's RAM itself and its xbase moved by where the image's bytes
- * are in it, so that Memimage's byteaddr gives a place in the RAM:
- * nothing is copied, and two images on the same bytes are still so.
- * The pixels are the kernel's own loop's by construction. What the
- * host saves is the interpreter: a pixel composed is about a thousand
- * of the board's instructions, each some hundreds of the host's; a
- * menu of mini-rio's, 20 million instructions, was 4 seconds in a
- * page.
+ * design:
+ * The loop is not written again here. Memgeneral, Memimage and Memchan
+ * are the kernel's files (this directory's dune copies them), compiled
+ * for the host; an image here is the kernel's, its bytes the board's
+ * RAM itself and its xbase moved by where the image's bytes are in it,
+ * so that Memimage's byteaddr gives a place in the RAM: nothing is
+ * copied, and two images on the same bytes are still so. The pixels
+ * are the kernel's own loop's by construction. What the host saves is
+ * the interpreter: a pixel composed is about a thousand of the board's
+ * instructions, each some hundreds of the host's; a menu of
+ * mini-rio's, 20 million instructions, was 4 seconds in a page.
  *
  * Declined (0, and the kernel's loop runs): an image with a colour
  * map (Memdata's tables are not here), bytes that are not RAM in one

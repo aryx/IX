@@ -356,7 +356,8 @@ let sort caps args =
 let entries caps dir = List.sort compare (TinyLibSystem.readdir caps (path dir))
 
 let rec fold caps p f =
-  let is_dir, size = TinyLibSystem.stat caps (path p) in
+  let (st : TinyLibSystem.stat) = TinyLibSystem.stat caps (path p) in
+  let is_dir = st.st_dir and size = st.st_size in
   f p is_dir size (fun () ->
     if is_dir then
       List.map (fun e -> fold caps (Filename.concat p e) f) (entries caps p)
@@ -380,14 +381,16 @@ let ls caps args =
     if paths = [] then begin names := entries caps "."; 0 end
     else
       each_path caps "ls" paths (fun p ->
-        let is_dir, _ = TinyLibSystem.stat caps (path p) in
+        let (st : TinyLibSystem.stat) = TinyLibSystem.stat caps (path p) in
+        let is_dir = st.st_dir in
         names :=
           (if is_dir then List.map (Filename.concat p) (entries caps p) else [ p ])
           @ !names) in
   let long name =
     if not (List.mem 'l' flags) then ""
     else begin
-      let is_dir, size = TinyLibSystem.stat caps (path name) in
+      let (st : TinyLibSystem.stat) = TinyLibSystem.stat caps (path name) in
+      let is_dir = st.st_dir and size = st.st_size in
       (if is_dir then "d" else "-")
       ^ Printf.sprintf "%4d%9d " (TinyLibSystem.links caps (path name)) size
     end in
@@ -403,8 +406,8 @@ let walk caps args =
   if paths = [] then begin List.iter (fun e -> fold caps e pre) (entries caps "."); 0 end
   else
     each_path caps "walk" paths (fun p ->
-      let is_dir, _ = TinyLibSystem.stat caps (path p) in
-      if is_dir then
+      let (st : TinyLibSystem.stat) = TinyLibSystem.stat caps (path p) in
+      if st.st_dir then
         List.iter (fun e -> fold caps (Filename.concat p e) pre) (entries caps p)
       else print caps (p ^ "\n"))
 
@@ -488,7 +491,8 @@ let resolved caps p =
 let cp caps args =
   let _, paths = options "" args in
   into_last caps "cp" paths (fun from dest ->
-    if fst (TinyLibSystem.stat caps (path from)) then failwith "is a directory";
+    let (st : TinyLibSystem.stat) = TinyLibSystem.stat caps (path from) in
+    if st.st_dir then failwith "is a directory";
     if resolved caps from = resolved caps dest then failwith "the same file";
     let src = TinyLibSystem.open_in caps (path from) in
     let fd =
@@ -658,7 +662,7 @@ let test caps args =
   let rest = ref args in
   let peek () = match !rest with a :: _ -> Some a | [] -> None in
   let next () = match !rest with a :: l -> rest := l; a | [] -> raise Usage in
-  let file f =
+  let file f : TinyLibSystem.stat option =
     try Some (TinyLibSystem.stat caps (path f)) with Failure _ -> None in
   let number s =
     match int_of_string_opt s with Some n -> n | None -> raise Usage in
@@ -683,12 +687,12 @@ let test caps args =
     | "-e" -> file (next ()) <> None
     | "-f" ->
         (match file (next ()) with
-         | Some (is_dir, _) -> not is_dir
+         | Some st -> not st.st_dir
          | None -> false)
     | "-d" ->
-        (match file (next ()) with Some (is_dir, _) -> is_dir | None -> false)
+        (match file (next ()) with Some st -> st.st_dir | None -> false)
     | "-s" ->
-        (match file (next ()) with Some (_, size) -> size > 0 | None -> false)
+        (match file (next ()) with Some st -> st.st_size > 0 | None -> false)
     | "-n" -> next () <> ""
     | "-z" -> next () = ""
     | a -> begin

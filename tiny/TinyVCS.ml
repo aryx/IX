@@ -299,7 +299,10 @@ let snapshot r =
       else
         let p = dir / name in
         match
-          (try Some (fst (TinyLibSystem.stat r.caps p)) with Failure _ -> None)
+          (try
+             let (st : TinyLibSystem.stat) = TinyLibSystem.stat r.caps p in
+             Some st.st_dir
+           with Failure _ -> None)
         with
         | Some true ->
             let sub =

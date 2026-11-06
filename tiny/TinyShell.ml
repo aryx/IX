@@ -445,13 +445,15 @@ let code s =
     match int_of_string_opt (List.hd (String.split_on_char '|' s)) with
     | Some n when n > 0 -> n
     | _ -> 1
+(* the end of the shell, or of a child, by a status *)
+let ending s = match code s with 0 -> Exit.OK | n -> Exit.Code n
 
 (*****************************************************************************)
 (* Processes and fds *)
 (*****************************************************************************)
 
 (* a child's status; one a signal ended is said, as rc says it *)
-let wait caps pid =
+let wait caps (pid : TinyLibSystem.pid) : TinyLibSystem.status =
   let s = TinyLibSystem.wait caps pid in
   if String.length s >= 6 && String.sub s 0 6 = "signal" then
     TinyLibSystem.eprint caps (string_of_int pid ^ ": " ^ s ^ "\n");
@@ -460,19 +462,19 @@ let wait caps pid =
 let die (caps : < Cap.stderr; .. >) m =
   TinyLibSystem.eprint caps ("tiny-shell: " ^ m ^ "\n"); "error"
 
-(* f in a child, which exits with the status it leaves *)
-let fork (caps : < Cap.fork; Cap.stderr; .. >) (f : unit -> unit) : int =
+(* f in a child, which exits with the status it leaves; Error when
+ * there can be none (tiny-kernel's eight processes taken: "try again",
+ * rc's word for it), the shell's own, which a child's handler takes *)
+let fork (caps : < Cap.fork; Cap.stderr; .. >) (f : unit -> unit)
+    : TinyLibSystem.pid =
   TinyLibSystem.flush caps;
-  match TinyLibSystem.fork caps with
-  (* tiny-kernel's fork fails when its eight processes are taken (the
-   * host's raises); "try again" is rc's word for it *)
-  | -1 -> raise (Error "try again")
-  | 0 ->
+  match (try TinyLibSystem.fork caps with Failure m -> raise (Error m)) with
+  | None ->
       let st =
         try f (); status () with Exits s -> s | Error m -> die caps m in
       TinyLibSystem.flush caps;
-      TinyLibSystem.exit caps (code st)
-  | pid -> pid
+      TinyLibSystem.exit caps (ending st)
+  | Some pid -> pid
 
 (* lists, rc's way: joined by \001 *)
 let environment () =
@@ -493,7 +495,7 @@ let exec (caps : < Cap.exec; Cap.stderr; .. >) (argv : string list) =
         TinyLibSystem.exec caps (Fpath.v f) argv (environment ()))
       "not found" files in
   TinyLibSystem.eprint caps (name ^ ": " ^ why ^ "\n");
-  TinyLibSystem.exit caps 1
+  TinyLibSystem.exit caps (Exit.Code 1)
 
 (* [with_fds changes f]: each fd changed (the file, or another fd), f
  * run, then each fd put back *)
@@ -797,7 +799,7 @@ let start (caps : Cap.all_caps) (argv : string array) : Exit.t =
     with Exits s -> s | Error m -> die caps m | Failure m -> die caps m
   in
   TinyLibSystem.flush caps;
-  match code st with 0 -> Exit.OK | n -> Exit.Code n
+  ending st
 
 let main (caps : Cap.all_caps) (argv : string array) : Exit.t =
   match Array.to_list argv with

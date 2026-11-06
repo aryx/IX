@@ -5,6 +5,13 @@
 
 open Fpath_.Operators
 
+(* See TinyLibSystem.mli for the types' names *)
+type pid = int
+type status = string
+type stat = { st_dir : bool; st_size : int }
+type seconds = int
+type milliseconds = int
+
 (* a descriptor is a number, on Unix *)
 let fd (n : int) : Unix.file_descr = Obj.magic n
 let number (f : Unix.file_descr) : int = Obj.magic f
@@ -99,10 +106,11 @@ let write_file (caps : < Cap.open_out; .. >) (file : Fpath.t) s =
   write fd s;
   close fd
 
-let stat (_ : < Cap.open_in; .. >) (file : Fpath.t) =
+let stat (_ : < Cap.open_in; .. >) (file : Fpath.t) : stat =
   reason (fun () ->
-    let st = Unix.stat !!file in
-    st.st_kind = Unix.S_DIR, st.st_size)
+    (* (Unix's labels: ours have the same prefix) *)
+    let (st : Unix.stats) = Unix.stat !!file in
+    { st_dir = st.st_kind = Unix.S_DIR; st_size = st.st_size })
 let links (_ : < Cap.open_in; .. >) (file : Fpath.t) =
   reason (fun () -> (Unix.stat !!file).st_nlink)
 let mtime (_ : < Cap.open_in; .. >) (file : Fpath.t) =
@@ -152,7 +160,8 @@ let pipe (caps : < Cap.pipe; .. >) =
 (* Processes *)
 (*****************************************************************************)
 
-let fork (caps : < Cap.fork; .. >) = CapUnix.fork caps ()
+let fork (caps : < Cap.fork; .. >) : pid option =
+  reason (fun () -> match CapUnix.fork caps () with 0 -> None | p -> Some p)
 
 let kill (caps : < Cap.kill; .. >) pid =
   try CapUnix.kill caps pid Sys.sigkill; true with Unix.Unix_error _ -> false
@@ -197,6 +206,12 @@ let shell (caps : < Cap.fork; Cap.exec; Cap.env; Cap.stdout; Cap.stderr; .. >) v
          (Array.of_list env)
      with _ -> ());
     Unix._exit 127
-  | pid -> pid
+  | pid -> Some pid
+  | exception Unix.Unix_error _ -> None
 
-let exit (_ : < Cap.exit; .. >) n = Unix._exit n
+let exit (caps : < Cap.exit; Cap.stderr; .. >) (e : Exit.t) =
+  Unix._exit
+    (match e with
+     | Exit.OK -> 0
+     | Exit.Err m -> Console.eprint caps (m ^ "\n"); 1
+     | Exit.Code n -> n)

@@ -298,8 +298,9 @@ let digest_file (caps : < Cap.open_in; Cap.readdir; .. >) (file : string) :
       let d =
         if exists caps file && not (TinyLibSystem.is_directory caps path)
         then begin
-          let _, size = TinyLibSystem.stat caps path
+          let (st : TinyLibSystem.stat) = TinyLibSystem.stat caps path
           and date = TinyLibSystem.mtime caps path in
+          let size = st.st_size in
           match Hashtbl.find_opt known file with
           | Some (s, t, d) when s = size && t = date -> Some d
           | _ ->
@@ -318,10 +319,11 @@ let digest_file (caps : < Cap.open_in; Cap.readdir; .. >) (file : string) :
       d
 
 (* a recipe run by the system's shell: sh -e on the host, rc -e on
- * tiny-kernel (TinyLibSystem.shell); its pid (old: CapUnix.fork and
- * execve of /bin/sh -e -c here) *)
+ * tiny-kernel (TinyLibSystem.shell); its pid, None when no process
+ * could run it (old: CapUnix.fork and execve of /bin/sh -e -c here) *)
 let start (caps : < Cap.fork; Cap.exec; Cap.env; Cap.open_out; .. >)
-    (vars : (string * string list) list) (recipe : string) : int =
+    (vars : (string * string list) list) (recipe : string)
+    : TinyLibSystem.pid option =
   TinyLibSystem.shell caps vars recipe
 
 (*****************************************************************************)
@@ -391,10 +393,10 @@ let build
       if dry then (Hashtbl.replace digests n.name ("dry " ^ n.name); true)
       else
         match start caps (own @ env) r.text with
-        | pid when pid > 0 ->
+        | Some pid ->
             Hashtbl.replace running pid (n, TinyLibSystem.millis caps); true
-        | _ when Hashtbl.length running > 0 -> false
-        | _ ->
+        | None when Hashtbl.length running > 0 -> false
+        | None ->
             TinyLibSystem.flush caps;
             TinyLibSystem.eprint caps
               (Printf.sprintf "tiny-build: %s: no process to run it\n" n.name);

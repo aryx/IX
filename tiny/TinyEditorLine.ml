@@ -698,7 +698,7 @@ let rec exec
       if !modified && not !warned then
         (warned := true; raise (Error "changed files"));
       flush caps;
-      TinyLibSystem.exit caps 0
+      TinyLibSystem.exit caps Exit.OK
   | Undo n -> undo n
   | Newline -> (
       (* the next line, or the line dot is in if it is not one *)

@@ -44,6 +44,13 @@ open TinyCalls
 
 type Cap.all_caps = < >
 
+(* the host's .mli's names (TinyLibSystem.mli) *)
+type pid = int
+type status = string
+type stat = { st_dir : bool; st_size : int }
+type seconds = int
+type milliseconds = int
+
 let main name f =
   let said m = u_flush (); ignore (u_write 2 (name ^ ": " ^ m ^ "\n")); 1 in
   exit
@@ -191,11 +198,12 @@ let entry file =
       String.get_uint16_le s i + (String.get_uint16_le s (i + 2) lsl 16) in
     Char.code s.[64] = 1, word 72, word 68, word 76
 
-let stat _caps file = let is_dir, size, _, _ = entry file in is_dir, size
+let stat _caps file =
+  let is_dir, size, _, _ = entry file in { st_dir = is_dir; st_size = size }
 let links _caps file = let _, _, n, _ = entry file in n
 let mtime _caps file = let _, _, _, d = entry file in d
 
-let is_directory caps file = try fst (stat caps file) with Failure _ -> false
+let is_directory caps file = try (stat caps file).st_dir with Failure _ -> false
 
 let read fd max = u_read fd max
 let write fd s = if u_write fd s < 0 then failwith "cannot write"
@@ -209,7 +217,7 @@ let link caps a b = if u_link (str a) (str b) < 0 then failwith "cannot"
 
 let rename caps a b =
   if path_names (str a) <> path_names (str b) then begin
-    if fst (stat caps a) then failwith "a directory, which tiny-kernel cannot move";
+    if (stat caps a).st_dir then failwith "a directory, which tiny-kernel cannot move";
     (* (a piece at a time, as cp: a big file does not fit in the heap) *)
     let src = open_in caps a in
     let fd = open_out caps b in
@@ -269,7 +277,13 @@ let pipe _caps =
 (* Processes *)
 (*****************************************************************************)
 
-let fork caps = u_fork ()
+(* (u_fork's -1: the kernel's processes all taken, which rc says "try
+ * again") *)
+let fork caps =
+  match u_fork () with
+  | -1 -> failwith "try again"
+  | 0 -> None
+  | p -> Some p
 
 let kill caps pid = u_kill pid >= 0
 
@@ -312,8 +326,8 @@ let scripts = ref 0
 (* The script in a file that removes itself, run by rc in a child made
  * by spawn: nothing of this process copied, where a fork copied it
  * whole (tiny-build's 16 MB at each recipe) for rc's exec to drop it.
- * Its pid, or -1. (old: u_fork, and the child wrote the file, named by
- * its pid, and exec'ed rc) *)
+ * Its pid, or None (old: -1; older: u_fork, and the child wrote the
+ * file, named by its pid, and exec'ed rc) *)
 let shell caps vars script =
   u_flush ();
   incr scripts;
@@ -328,7 +342,11 @@ let shell caps vars script =
             vars)
      ^ script ^ "\n");
   let pid = u_spawn "/bin/rc" [ "rc"; "-e"; file ] in
-  if pid < 0 then ignore (u_unlink file);
-  pid
+  if pid < 0 then (ignore (u_unlink file); None) else Some pid
 
-let exit _caps n = exit n
+let exit _caps e =
+  exit
+    (match e with
+     | Exit.OK -> 0
+     | Exit.Err m -> ignore (u_write 2 (m ^ "\n")); 1
+     | Exit.Code n -> n)

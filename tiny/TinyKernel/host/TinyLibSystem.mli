@@ -40,6 +40,24 @@
  * names a directory has (readdir) are segments, strings.
  *)
 
+(* The names of what the calls give, each an int or a string still:
+ * what it is said by its type, not by a comment only. *)
+
+(* a process's number, the system's *)
+type pid = int
+
+(* how a child ended, as rc says it: "" when all went well, its code,
+ * or "signal: " and the signal's name *)
+type status = string
+
+(* a file's kind and size, in bytes (st_, Unix's prefix: the labels
+ * are one name space in tiny-ml) *)
+type stat = { st_dir : bool; st_size : int }
+
+(* the date, seconds since 2000-01-01 UTC; a time taken *)
+type seconds = int
+type milliseconds = int
+
 (* [main name f]: the program: f with every capability and its
  * arguments (its name first), its result how it ends: Err's words, or
  * a Failure's that f lets out, said after name, the status 1; Code n
@@ -50,7 +68,7 @@ val main : string -> (Cap.all_caps -> string array -> Exit.t) -> unit
 
 (* the variables the program was started with, each with its value *)
 val environment : < Cap.env; .. > -> (string * string) list
-val getpid : < Cap.env; .. > -> int
+val getpid : < Cap.env; .. > -> pid
 
 (*****************************************************************************)
 (* The terminal *)
@@ -120,18 +138,17 @@ val read : int -> int -> string
 (* all of the string, written to the descriptor *)
 val write : int -> string -> unit
 
-(* whether a file is a directory, and its size in bytes; Failure with
- * the reason when it is not there *)
-val stat : < Cap.open_in; .. > -> Fpath.t -> bool * int
+(* whether a file is a directory, and its size; Failure with the
+ * reason when it is not there *)
+val stat : < Cap.open_in; .. > -> Fpath.t -> stat
 
 (* how many names a file has (its hard links); Failure with the reason
  * when it is not there *)
 val links : < Cap.open_in; .. > -> Fpath.t -> int
 
-(* the date of a file's last write, seconds since 2000-01-01 (the image's
- * files on tiny-kernel: 0); Failure with the reason when it is not
- * there *)
-val mtime : < Cap.open_in; .. > -> Fpath.t -> int
+(* the date of a file's last write (the image's files on tiny-kernel:
+ * 0); Failure with the reason when it is not there *)
+val mtime : < Cap.open_in; .. > -> Fpath.t -> seconds
 
 (* a new directory; a file, or a directory that is empty, removed.
  * Failure with the reason *)
@@ -159,18 +176,18 @@ val touch : < Cap.open_in; Cap.open_out; .. > -> Fpath.t -> unit
 (* the directory the process is in *)
 val getcwd : < Cap.env; .. > -> Fpath.t
 
-(* the date, in seconds since 2000-01-01 UTC, on both sides: a 31-bit
- * integer of tiny-ml's holds them until 2034, where 1970's would not
- * fit (old: Unix's seconds on the host, 0 on tiny-kernel, which had no
- * clock of the day) *)
-val time : < Cap.clock; .. > -> int
+(* the date, the same on both sides: a 31-bit integer of tiny-ml's
+ * holds 2000's seconds until 2034, where 1970's would not fit (old:
+ * Unix's seconds on the host, 0 on tiny-kernel, which had no clock of
+ * the day) *)
+val time : < Cap.clock; .. > -> seconds
 
-(* nothing done for so many milliseconds *)
-val sleep : < Cap.clock; .. > -> int -> unit
+(* nothing done for so long *)
+val sleep : < Cap.clock; .. > -> milliseconds -> unit
 
-(* a clock in milliseconds, from some start (the boot on tiny-kernel, 2.5
- * at a time, its ticks): for a time taken, the difference of two *)
-val millis : < Cap.clock; .. > -> int
+(* a clock, from some start (the boot on tiny-kernel, 2.5 ms at a
+ * time, its ticks): for a time taken, the difference of two *)
+val millis : < Cap.clock; .. > -> milliseconds
 
 (*****************************************************************************)
 (* Descriptors *)
@@ -190,36 +207,38 @@ val pipe : < Cap.pipe; .. > -> int * int
 (* Processes *)
 (*****************************************************************************)
 
-(* a copy of this process: 0 in the copy, the copy's number here *)
-val fork : < Cap.fork; .. > -> int
+(* a copy of this process: None in the copy, Some of the copy's pid
+ * here; Failure when there can be none ("try again" on tiny-kernel,
+ * its processes all taken; old: -1 there, an int for three answers) *)
+val fork : < Cap.fork; .. > -> pid option
 
 (* [kill caps pid]: that process ended at once (the host's SIGKILL);
  * false when there is none, or it is not ours to end *)
-val kill : < Cap.kill; .. > -> int -> bool
+val kill : < Cap.kill; .. > -> pid -> bool
 
 (* [exec caps file argv env]: this process becomes the program in file,
  * env its variables as name=value; when it cannot, the reason *)
 val exec :
   < Cap.exec; .. > -> Fpath.t -> string list -> string list -> string
 
-(* a child's end, as rc's status: "" when all went well, its code, or
- * "signal: " and the signal's name *)
-val wait : < Cap.wait; .. > -> int -> string
+(* a child's end *)
+val wait : < Cap.wait; .. > -> pid -> status
 
-(* the next child to end, and its status as wait's; None when there is
- * no child *)
-val wait_any : < Cap.wait; .. > -> (int * string) option
+(* the next child to end, and how; None when there is no child *)
+val wait_any : < Cap.wait; .. > -> (pid * status) option
 
 (* [shell caps vars script]: a child that runs script by the system's
  * shell, vars among its variables (each a list of words), what was
- * printed flushed first; its pid. The
+ * printed flushed first; its pid, None when no child could be made
+ * (old: -1). The
  * script is in that shell's language: the host's sh -e, tiny-kernel's
  * rc -e (there in a file, an argument having 64 bytes at most, which
  * rc reads whole and removes first; no environment: vars are rc's
  * assignments before it) *)
 val shell :
   < Cap.fork; Cap.exec; Cap.env; Cap.open_out; Cap.stdout; Cap.stderr; .. > ->
-  (string * string list) list -> string -> int
+  (string * string list) list -> string -> pid option
 
-(* the end of this process, at once: nothing flushed *)
-val exit : < Cap.exit; .. > -> int -> 'a
+(* the end of this process, at once: nothing flushed; Err's words said
+ * first, on the standard error *)
+val exit : < Cap.exit; Cap.stderr; .. > -> Exit.t -> 'a

@@ -225,3 +225,23 @@ dune stanzas, tiny/mkfile (tiny-cpu, tiny-machine, tiny-mkfs) and
 tiny_check.sh's lists take TinyLibSystem. The same messages and
 statuses as before in 15 cases (usage, a missing file, a bad image
 or font); +2 code lines over the six.
+
+2026-11-06, stage 2 built, without fd (the author: "maybe fd should be
+postpone, given we now use in_channel (and Chan.i) a bit more?", then
+"ok let's postpone and do the orthogonal one like pid, rc's status,
+etc., as planned"): fd waits for the Chan work, which takes the
+files read whole (tiny-build's digest, cat, cmp); what stays a
+descriptor is the shell's plumbing (dup2, save, pipe, redirections)
+and tiny-db's file read and written at offsets, where `type fd` is
+then worth it; tiny-kernel's in_channel is the descriptor itself, a
+third name for one number. Built: TinyLibSystem's `pid`, `status`
+(rc's), `stat` (`st_dir`, `st_size`: Unix's prefix, the labels one
+name space in tiny-ml), `seconds` and `milliseconds`, in both
+systems. pid an alias, not abstract: mini-ml reads no `private`, and
+an abstract pid would need a conversion at each print. `fork` and
+`shell` give a `pid option` (old: an int for three answers, -1 when
+tiny-kernel's processes are all taken, 0 in the child; fork's
+failure now a Failure, which the shell's fork makes its own Error
+again, the one its children's handler takes); `exit` takes an Exit.t
+(Err's words said first: Cap.stderr). +36 code lines over seven
+files.

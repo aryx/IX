@@ -31,7 +31,9 @@ where ix's threads switch), A9's counts and a resource given back in
 another function (a function's summary), A11's evaluation order
 (56934c32: purity, plan_datalog.md's stage 11), A12's patterns. None of
 the reports on ix was fixed: the author decides (A4's seven worth a
-look, mini-5i's lost signal in bugs/ix.md).
+look, mini-5i's lost signal in bugs/ix.md). A13, a recursion that
+takes nothing (termination), proposed after the plan closed
+(2026-11-06), on tiny-c's crash fixed by a18dbc6d: not written.
 `mini-analyze -bugs` runs `bugs/physeq.dl` (`==` or `!=` with a side
 made in the comparison), `bugs/stack.dl` (a loop through a `try`, a
 frame a list's element), `bugs/swallowed.dl` (an error of the
@@ -773,6 +775,80 @@ the program's own units: `expr(N, Kind)`, `child(P, K, N)`,
 `pos(N, Line, Col)`, `leading(N)` (60 lines). A11's layout is their
 first rule. Patterns not done.
 
+### A13. A recursion that takes nothing (termination; proposed 2026-11-06)
+
+The author (2026-11-06), of tiny-c's crash on `int f( {` (a18dbc6d,
+docs/plans/bugs/ix.md): "is it something that a datalog analysis could
+have detected? (and detected similar bugs on the rest of the
+codebase)?", then "start this termination analysis if [not] too many
+LOC otherwise add it in the (done) plan with the recently fixed bug as
+an example to find back automatically".
+
+**Re-finds:** a18dbc6d. TinyCParser's `params` called itself until it
+read `)` or `...`; on `{`, or at the file's end, `base_type` and
+`declarator` took no token and raised nothing, and the recursion went
+on until the stack was gone (a segmentation fault):
+
+```
+let rec params () =
+  if accept ")" then [], false                (* takes ) on true *)
+  else if accept "..." then (expect ")"; [], true)
+  else begin
+    let _, pt = base_type () in               (* may take nothing *)
+    let pname, pt = declarator pt in          (* may take nothing *)
+    ignore (accept ",");                      (* may take nothing *)
+    let rest, variadic = params () in         (* <- reached, nothing taken *)
+```
+
+**The question:** does a recursive function call itself on a path
+where the measure that bounds it has not moved? Here the measure is the
+tokens left, `Array.length !toks - !pos`: the recursion must take one at
+least (`incr pos`) on every path to its own call. The general form is
+the size-change principle (Chin Soon Lee, Neil Jones, Amir Ben-Amram,
+"The size-change principle for program termination", POPL 2001): every
+cycle of calls decreases a measure. Coq's and Agda's structural
+recursion is its strictest case (an argument smaller at each call).
+
+**A rule, a may-analysis over mini-ml's SSA (A9's paths):**
+
+```
+taken(P)      a call at P that takes a token on every path through it
+                (next, expect: a must-summary, which takes or raises)
+taken_on(P, true)  a call whose true result means taken (accept)
+idle(P)       P reached from the function's entry with nothing taken:
+                idle(entry); idle(Q) :- idle(P), edge(P, Q), \+ taken(P);
+                an edge out of a test of accept's result idle only
+                on its false side
+report        a call to the function itself at an idle point; a path
+              that raises ends: base_type raising on { reports nothing
+```
+
+**New facts:** the side of an edge (`branch(T, V, Then, Else)`: the
+test of value V at the end of block T, which `Ssa_facts` does not
+say); what a function returns on each path, to know that `accept`
+returns true exactly where it took (a constant returned, by path).
+The cursor: a global ref that a function increments (`incr pos`,
+points-to's object), or an index parameter (`go (i + 1)` against `go
+i`), the two shapes of ix's hand-written readers.
+
+**Where else it would look:** every reader with a position, tiny-ml's
+parser (the same `pos` and `accept`), tiny-build's and tiny-vcs's
+parsers, TinyLibRegex, TinyBrowserTokens, mini-rc's and mini-mk's
+lexers, awk's. What it finds there is not known until it is written;
+the false reports to expect are recursions bounded by a callee that
+raises, which the rule follows, and a measure other than tokens (a
+depth, a list's length: A1's `list_like`).
+
+**Its history test:** `analyzers/tests/bugs/a18dbc6d/`, `Before.ml`
+(the `params` above, with a `peek`, `accept` and `next` over an array
+of tokens) reported, `After.ml` (a18dbc6d's `if not (accept ",") &&
+peek () <> P ")" then error "expected )"`) quiet.
+
+**Cost:** about 40 lines of facts (the edge's side, the returned
+constants), 80 of rules with the must-summary, the history test: 250
+lines in all, with the report's hookup. Not written: proposed after
+the plan closed.
+
 ## C
 
 The C bugs are mostly hardware (device registers, the boards, the
@@ -821,6 +897,7 @@ reproduction.
 | 11 | A4 step 2, intervals | `range` (ML) | 200 | 0 | not worth it: none of its bugs re-found (above) |
 | 12 | A11 layout, evaluation order | A12's tree: `expr`, `child`, `pos`, `leading` | 80 | 1 | layout done; evaluation order needs purity |
 | 13 | A7 unused variables (fields: `-dead`'s) | `bound_var`, `read`, `underscore` | 40 | 0 | the compilers' (OCaml's 26 and 27); done as an exercise, checked against OCaml |
+| 14 | A13 a recursion that takes nothing | `branch`, returned constants | 250 | 1 | proposed 2026-11-06, a18dbc6d its test |
 
 These estimates come from reading the existing rule files (`bugs/pointers.dl` is
 53 lines and `exceptions.dl` 100) and are not measured. The counts of

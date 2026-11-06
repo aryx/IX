@@ -664,4 +664,5 @@ declarator take no token, and the recursion never ends. Fixed the
 same day: after a parameter, a , or the ) must come, else "expected )"
 (`int f(int a b)`, which the optional comma took, is refused too);
 TinyC_test.sh's errors have both cases, `int f( {` and a file ending
-in `int g(int a`.
+in `int g(int a`. The analysis that would find it, and its like in
+ix's other readers: plan_bug_analyses.md's A13 (proposed).

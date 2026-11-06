@@ -89,7 +89,7 @@ let stroked (tool : int) (x0 : int) (y0 : int) (x1 : int) (y1 : int)
  * click, not a shape *)
 let draw_stroke (o : office) (tool : int)
     ((x0, y0, x1, y1) : int * int * int * int) =
-  let b = List.nth o.page o.sel in
+  let b = selected_box o in
   if tool = 2 || (tool = 0 && abs (x1 - x0) >= 8 && abs (y1 - y0) >= 8)
      || (tool = 1 && abs (x1 - x0) + abs (y1 - y0) >= 8) then
     change o (b.data ^ figure_line (stroked tool x0 y0 x1 y1))
@@ -98,7 +98,7 @@ let draw_stroke (o : office) (tool : int)
  * label longer; Backspace shorter, and an empty label's shape removed;
  * C-g the drawing left *)
 let sketch_key (o : office) (tool : int) (k : key) =
-  let b = List.nth o.page o.sel in
+  let b = selected_box o in
   let figs = figures b.data in
   let relabel f = match List.rev figs with
     | (kind, nums, label) :: rest ->

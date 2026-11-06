@@ -76,9 +76,9 @@ let painted (b : obj) (letter : char) (brush : int) (c0 : int) (r0 : int)
  * kept when the stroke began) *)
 let paint (o : office) (ink : int) (brush : int) (c0 : int) (r0 : int)
     (c1 : int) (r1 : int) =
-  let b = List.nth o.page o.sel in
+  let b = selected_box o in
   o.page <-
-    replace o.page o.sel
+    replace o.page (selected o)
       (Some { b with data = painted b pixel_letters.[ink] brush c0 r0 c1 r1 })
 
 (* a key in a paint: a digit a colour (0 white, 1 black...); C-g leaves it *)

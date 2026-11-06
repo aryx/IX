@@ -181,7 +181,7 @@ let edit (o : office) (i : int) (x : int) (y : int) (selecting : bool) =
   let d = { txt; sty; cur = 0; anchor = 0; typing = 0; selecting } in
   go_to d
     (index_at (lay_out (b.w - 8) txt sty) txt sty (x - b.x - 4) (y - b.y - 2));
-  o.sel <- i;
+  o.sel <- Some i;
   o.editing <- Writing d
 
 (* A key in a text: a character typed, in the style of what is typed
@@ -190,7 +190,7 @@ let edit (o : office) (i : int) (x : int) (y : int) (selecting : bool) =
  * italic, C-u underlined, C-l large; C-w cut, C-y pasted; C-g no
  * selection. The box grows to show it all. *)
 let write_key (o : office) (d : doc) (k : key) =
-  let b = List.nth o.page o.sel in
+  let b = selected_box o in
   let lay = lay_out (b.w - 8) d.txt d.sty and n = String.length d.txt in
   let (a, z) = selection d and line = lay.ln.(d.cur) in
   let vertical l =
@@ -230,7 +230,7 @@ let write_key (o : office) (d : doc) (k : key) =
   let lay = lay_out (b.w - 8) d.txt d.sty in
   let last = Array.length lay.top - 1 in
   let need = lay.top.(last) + lay.tall.(last) + 6 in
-  if need > b.h then o.page <- replace o.page o.sel (Some { b with h = need })
+  if need > b.h then o.page <- replace o.page (selected o) (Some { b with h = need })
 
 (*****************************************************************************)
 (* The view *)

@@ -109,7 +109,7 @@ let name_key (o : office) (typed : string) (k : key) =
   | Backspace when typed <> "" ->
       o.editing <- Naming (String.sub typed 0 (String.length typed - 1))
   | Enter ->
-      let s = List.nth o.page o.sel in
+      let s = selected_box o in
       if not (good_name typed) then
         o.message <- "a name: a letter, then letters, digits, _"
       else if List.exists (fun (b : obj) -> b.called = typed && b != s) o.page
@@ -137,7 +137,7 @@ let name_key (o : office) (typed : string) (k : key) =
  * the page is too narrow): its cells from the first number to the last,
  * the column at its left their labels *)
 let make_chart (o : office) (c : int) =
-  let s = List.nth o.page o.sel in
+  let s = selected_box o in
   let value = values s.data in
   let rows =
     List.filter (fun r ->
@@ -159,5 +159,5 @@ let make_chart (o : office) (c : int) =
       o.page <-
         o.page @ [ { kind = "chart"; x; y; w = 200; h = 120; data;
                      called = ""; page_no = s.page_no } ];
-      o.sel <- List.length o.page - 1;
+      o.sel <- Some (List.length o.page - 1);
       o.editing <- Nothing

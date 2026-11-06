@@ -11,6 +11,8 @@ make a plan_tiny_xxx document out of this. This is nice."
 
 Done (2026-11-06): the eight stages and fd, in docs/plans/done/.
 Status, at the end, says what each stage did and what was left.
+Extended the same day, inside the code rather than the signatures:
+"After the plan", at the end.
 
 ## The short answer
 
@@ -399,3 +401,66 @@ name space for constructors and labels makes a new type's names carry
 its prefix (Trap_, Fs_, Il_, ih_, end_, st_), and a common one (Code)
 was taken twice by a program's own; mini-ml reads no `private`, so the
 numbers' types are aliases, readable but not checked.
+
+## After the plan: inside the code (2026-11-06)
+
+The plan typed what a signature says. The author then went on in the
+code, from their own edit of TinyAppCalculator.ml: "we should
+leverage the type system when we can and when it arguably leads to
+clearer code"; a magic value said by a comment ("' ' = None") is the
+case to look for.
+
+- The calculator (47fc24d1, 958ce4b0): the model's op a char option,
+  result an int option (old: an int and a bool saying whether there
+  is one). An `operation` variant for the four was left: "it's fine
+  to not use the variant for now for this toy example; for a more
+  complex program we should".
+- The keys (386502e1, c1044a69, 9411d9d8): TinyLibPlayground.key, an
+  int (the console's byte, the arrows 128 to 131), is
+  `Char of char | Ctrl of char | Enter | Backspace | Escape | Up |
+  Down | Left | Right`; key_of_byte, where a loop reads the console,
+  the one place that knows the bytes. m-ix's Playground keyboard
+  (held keys as bools, the browser's names as strings) was looked at
+  and not taken: tiny-machine sends no key-up, and the programs want
+  each key in order. Plan 9's runes, its arrows in the private use
+  area, left for later ("we can always revisit later"). The editor's
+  and the office's commands read as Emacs's (`Some (Ctrl 'x'), Ctrl
+  's'`); five last arms `Char _` became `_`, the compiler refusing
+  them once Ctrl came. Names this common (Char, Up, Left) may meet a
+  program's own in tiny-ml's one name space: none does today.
+
+### The sentinels: a survey
+
+About 50 documented -1, 0 or "" meaning none in tiny/, in three
+kinds:
+
+- A, a program's state, an option or a variant reads better: the
+  office's `sel` (43 uses) and `hit`; TinyLibGUI's menu_state
+  (`opened`, `item`, -1 none each); the browser's nav (`nv_goal` or
+  -1, `nv_goal_id` "" for none, `nv_fetch` -1 for the page, a variant
+  Page | Picture, `nv_wire` -1 when the page is all there, an fd
+  option); TinyLibPlayground's `speaker` and TinyDebugger's `t` and
+  `pc` (-1: running).
+- B, a function's "where, or -1": TinyEditorScreen.find,
+  TinyBrowserText.find and its entities, TinyBrowserTokens' tag,
+  TinyBrowserHttp's; an int option as OCaml's index_from_opt, after
+  a timing where they run at each character (an option allocates).
+  TinyLibRegex's groups (-1 unmatched, an array as Str's) kept.
+- C, the machine's and the system calls' formats, kept: the calls'
+  -1 (Plan 9's), the devices' registers (0: off), the disk's 0 hole,
+  the draw messages' -1 no mask, the kernel's addresses (0: not
+  made), as mem_address's -1 was. Between: TinyKernelProcs' `parent`
+  (0), its ended count and `core` (-1; the scheduler reads `core` at
+  each switch, a timing first), TinyKernelFiles' trace's three -1
+  (cold: an option each).
+
+The order: sel, the GUI's menu, the browser's nav, the debugger and
+the speaker, then B and the kernel's trace. A commit each.
+
+- sel: TinyOfficeModel's `sel` an int option and `hit` one too (they
+  are compared: the click is on the box edited, `on_it`). Inside an
+  edit a box is selected, so `selected` and `selected_box` give it
+  (Invalid_argument when none: an editing without its box is a bug),
+  for the parts' 13 `List.nth o.page o.sel`. A click's or a right
+  button's box a match. +18 lines.
+

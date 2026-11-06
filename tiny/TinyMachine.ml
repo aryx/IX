@@ -103,7 +103,7 @@ let console_open (caps : < Cap.stdin; Cap.signal; .. >)
       k.queue <- Procs.read_all (Console.stdin_fd caps);
       k.eof <- true)
     else
-      Sys.set_signal Sys.sigint
+      CapSys.set_signal caps Sys.sigint
         (Sys.Signal_handle (fun _ -> interrupted := true))
   end
 
@@ -196,7 +196,7 @@ let window_open
     ~stdin:screen_r ~stdout:events_w);
   Unix.close screen_r; Unix.close events_w;
   (* the window closed while a screen is written: its end is read next *)
-  Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
+  CapSys.set_signal caps Sys.sigpipe Sys.Signal_ignore;
   { to_w; from_w; shown = ""; frame = 0.; partial = ""; cursor = 0;
     heard = Buffer.create 4096; due = CapUnix.gettimeofday caps ();
     now = CapUnix.gettimeofday caps; sleep = CapUnix.sleepf caps }
@@ -290,7 +290,7 @@ let helper (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.pipe; Cap.signal; .. >)
       ~stdin:in_r ~stdout:out_w
     :: !helpers;
   Unix.close in_r; Unix.close out_w;
-  Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
+  CapSys.set_signal caps Sys.sigpipe Sys.Signal_ignore;
   to_, from
 
 (* what it wrote, if it wrote: None when nothing waits, "" at its end *)
@@ -388,7 +388,10 @@ let pcap_packet instructions packet =
  * M3 Pro at 50 to 66 (plan_tiny_web.md, tests/TinyMachine_bench.sh). *)
 let window_rate = 20_000_000
 
-let run caps o image =
+let run
+    (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.open_in; Cap.open_out;
+              Cap.readdir; Cap.fork; Cap.exec; Cap.wait; Cap.pipe; Cap.signal;
+              Cap.clock; Cap.exit; .. >) o image =
   TinyMachineDevices.rate :=
     (match o.rate with
      | Some r -> r
@@ -398,14 +401,14 @@ let run caps o image =
   TinyMachineDevices.date :=
     (match o.date with
      | Some d -> d
-     | None -> int_of_float (Unix.time ()) - 946684800);
+     | None -> int_of_float (CapUnix.time caps ()) - 946684800);
   TinyMachineDevices.seed := (match o.seed with Some s -> s | None -> 0);
   TinyMachineDevices.cores := o.cores;
   let disk_file = o.disk_file in
   (* the disk: the file's, or a blank one of 8 MB when there is no such
    * file; each block the kernel writes, written to it at once *)
   let disk = match disk_file with
-    | Some f when Sys.file_exists (Fpath.to_string f) ->
+    | Some f when CapSys.file_exists caps (Fpath.to_string f) ->
         Bytes.of_string (FS.read caps f)
     | Some f ->
         let blank = Bytes.make (8 * 1024 * 1024) '\000' in
@@ -413,7 +416,7 @@ let run caps o image =
         blank
     | None -> Bytes.empty in
   let disk_fd =
-    Option.map (fun f -> Unix.openfile (Fpath.to_string f) [ Unix.O_WRONLY ] 0)
+    Option.map (fun f -> FS.open_device_fd caps (Fpath.to_string f))
       disk_file in
   (* a session's keys are the console's input: the host's is then not
    * read, and a session's last event is its end. A window's keys are
@@ -487,7 +490,7 @@ let run caps o image =
             Some (TinyMachinePeer.picture "" w h pixels)
         | _ -> None in
       let kept () = match TinyMachinePeer.www_picture_kept url with
-        | Some name when Sys.file_exists (Filename.concat dir name) ->
+        | Some name when CapSys.file_exists caps (Filename.concat dir name) ->
             decode (Filename.concat dir name)
         | _ -> None in
       messages
@@ -502,8 +505,9 @@ let run caps o image =
         (String.concat "" (List.map (fun n -> n ^ "\n")
           (List.filter (fun n ->
                n.[0] <> '.'
-               && not (Sys.is_directory (Filename.concat dir n)))
-             (List.sort compare (Array.to_list (Sys.readdir dir)))))))
+               && not (CapSys.is_directory caps (Filename.concat dir n)))
+             (List.sort compare
+                (Array.to_list (CapSys.readdir caps dir)))))))
     else
       messages (match file line with
         | Some text -> TinyMachinePeer.messages text
@@ -557,9 +561,10 @@ let run caps o image =
             match String.split_on_char ' ' line with
             | [ "+" ] -> lines more
             | [ inp; out ] ->
-                let opened f how = Unix.openfile f [ how; Unix.O_CLOEXEC ] 0 in
-                let to_ = opened inp Unix.O_WRONLY in
-                let from = opened out Unix.O_RDONLY in
+                (* (not given to a helper started later) *)
+                let kept fd = Unix.set_close_on_exec fd; fd in
+                let to_ = kept (FS.open_device_fd caps inp) in
+                let from = kept (FS.open_in_fd caps out) in
                 TinyMachinePeer.dial peer port (helper_relay (to_, from) "");
                 lines more
             | _ ->
@@ -613,7 +618,8 @@ let run caps o image =
           FS.write caps f (TinyMachineCPU.profile_lines profile));
         (* and when killed, as by timeout: what ran so far (tiny-ml on
          * tiny-kernel, a run of minutes) *)
-        Sys.set_signal Sys.sigterm (Sys.Signal_handle (fun _ -> exit 1));
+        CapSys.set_signal caps Sys.sigterm
+          (Sys.Signal_handle (fun _ -> CapStdlib.exit caps 1));
         TinyMachineCPU.profiled env profile (fun _ ->
           if TinyMachineDevices.supervisor mc then 1, 0
           else 0, TinyMachineDevices.window_base mc) in
@@ -695,8 +701,9 @@ let run caps o image =
   with TinyMachineDevices.Halt n -> halted n
 
 let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.open_in;
-                   Cap.open_out; Cap.fork; Cap.exec; Cap.wait; Cap.pipe;
-                   Cap.signal; Cap.clock; .. >) (argv : string array) : Exit.t =
+                   Cap.open_out; Cap.readdir; Cap.fork; Cap.exec; Cap.wait;
+                   Cap.pipe; Cap.signal; Cap.clock; Cap.exit; .. >)
+    (argv : string array) : Exit.t =
   let args = List.tl (Array.to_list argv) in
   TinyMachineCPU.memsize := TinyMachineDevices.memsize;
   let image files =

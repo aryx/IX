@@ -32,12 +32,11 @@ let syscall (caps : < caps; .. >) (m : TinyMachineCPU.machine) n =
   | 1 ->
       let s = String.init r.(3) (fun i -> Bytes.get m.mem (addr (r.(2) + i))) in
       if r.(1) = 2 then Console.eprint caps s
-      else (Console.print caps s; flush stdout);
+      else (Console.print caps s; flush (Console.stdout caps));
       r.(1) <- r.(3)
   | 2 ->
-      let (_ : < Cap.stdin; .. >) = caps in
       let b = Bytes.create r.(3) in
-      let k = try input stdin b 0 r.(3) with Sys_error _ -> 0 in
+      let k = try input (Console.stdin caps) b 0 r.(3) with Sys_error _ -> 0 in
       Bytes.iteri
         (fun i c -> if i < k then Bytes.set m.mem (addr (r.(2) + i)) c) b;
       r.(1) <- k

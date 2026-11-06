@@ -178,14 +178,14 @@ let sheet_rows (b : obj) = max 1 ((b.h - 18) / 16)
 
 (* what is typed in cell (c, r) of the selected sheet put in it *)
 let put_cell (o : office) (c : int) (r : int) (t : string) =
-  change o (set_cell (List.nth o.page o.sel).data (name c r) t);
+  change o (set_cell (selected_box o).data (name c r) t);
   o.editing <- Cell (c, r, None)
 
 (* the cell of box i under (x, y): chosen, nothing typed yet *)
 let choose (o : office) (i : int) (x : int) (y : int) =
   let b = List.nth o.page i in
   let c = (x - sheet_left b) / cell_w and r = (y - sheet_top b) / 16 in
-  o.sel <- i;
+  o.sel <- Some i;
   o.editing <-
     (if x >= sheet_left b && y >= sheet_top b && c < sheet_cols b
         && r < sheet_rows b then Cell (c, r, None)
@@ -198,7 +198,7 @@ let choose (o : office) (i : int) (x : int) (y : int) =
  * there, to change it; Backspace there empties the cell. *)
 let cell_key (o : office) (c : int) (r : int) (typed : string option)
     (k : key) =
-  let b = List.nth o.page o.sel in
+  let b = selected_box o in
   let move dc dr =
     o.editing <-
       Cell (max 0 (min 25 (c + dc)), max 0 (min 98 (r + dr)), None) in

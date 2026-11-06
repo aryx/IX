@@ -62,8 +62,8 @@ type office = {
   mutable page : obj list;       (* the objects, the bottom one first *)
   mutable undo : obj list list;  (* the pages before, the last first *)
   mutable clean : obj list;      (* the page as it was last saved *)
-  mutable sel : int;             (* the selected object, its place in page;
-                                  * -1 none *)
+  mutable sel : int option;      (* the selected object, its place in
+                                  * page *)
   mutable editing : edit;        (* what the selected box is edited by *)
   mutable drag : (int * int * int * obj * bool) option;
                                  (* a box grabbed: the object, where the
@@ -91,16 +91,22 @@ let rec replace (l : obj list) (i : int) (b : obj option) : obj list =
     else (match b with Some b -> b :: rest | None -> rest)
   | [] -> []
 
-(* the topmost object under (x, y) on the page shown: its place, -1 *)
-let hit (o : office) (x : int) (y : int) : int =
+let hit (o : office) (x : int) (y : int) : int option =
   let rec go i found = function
     | (b : obj) :: rest ->
       go (i + 1)
         (if b.page_no = o.where.shown && x >= b.x && x < b.x + b.w
-            && y >= b.y && y < b.y + b.h then i
+            && y >= b.y && y < b.y + b.h then Some i
          else found) rest
     | [] -> found in
-  go 0 (-1) o.page
+  go 0 None o.page
+
+let selected (o : office) : int =
+  match o.sel with
+  | Some i -> i
+  | None -> invalid_arg "TinyOfficeModel.selected: no box selected"
+
+let selected_box (o : office) : obj = List.nth o.page (selected o)
 
 (* a change about to be made: the page as it is, kept for undo *)
 let keep (o : office) = o.undo <- o.page :: o.undo
@@ -109,6 +115,6 @@ let keep (o : office) = o.undo <- o.page :: o.undo
 (* the selected box's data changed (a change, for undo, when it is
  * other data) *)
 let change (o : office) (data : string) =
-  let b = List.nth o.page o.sel in
+  let b = selected_box o in
   if data <> b.data then
-    (keep o; o.page <- replace o.page o.sel (Some { b with data }))
+    (keep o; o.page <- replace o.page (selected o) (Some { b with data }))

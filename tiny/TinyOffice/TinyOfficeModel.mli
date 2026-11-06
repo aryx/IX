@@ -77,8 +77,8 @@ type office = {
   mutable page : obj list;       (* the objects, the bottom one first *)
   mutable undo : obj list list;  (* the pages before, the last first *)
   mutable clean : obj list;      (* the page as it was last saved *)
-  mutable sel : int;             (* the selected object, its place in page;
-                                  * -1 none *)
+  mutable sel : int option;      (* the selected object, its place in
+                                  * page *)
   mutable editing : edit;        (* what the selected box is edited by *)
   mutable drag : (int * int * int * obj * bool) option;
                                  (* a box grabbed: the object, where the
@@ -95,8 +95,13 @@ type office = {
 (* the page with its i-th object replaced, or removed (None) *)
 val replace : obj list -> int -> obj option -> obj list
 
-(* the topmost object under (x, y) on the page shown: its place, -1 *)
-val hit : office -> int -> int -> int
+(* the topmost object under (x, y) on the page shown: its place *)
+val hit : office -> int -> int -> int option
+
+(* the selected object's place, and the object, while a box is edited:
+ * an editing has its box selected (Invalid_argument when none is) *)
+val selected : office -> int
+val selected_box : office -> obj
 
 (* a change about to be made: the page as it is, kept for undo *)
 val keep : office -> unit

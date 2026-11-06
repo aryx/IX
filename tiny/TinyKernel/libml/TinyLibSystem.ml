@@ -142,11 +142,19 @@ let read_file caps file =
   close fd;
   s
 
-(* (an in_channel is the descriptor: TinyLibCore's Stdlib.ml) *)
+(* (a channel is the descriptor: TinyLibCore's Stdlib.ml) *)
 external in_channel_of_descr : int -> in_channel = "%identity"
 let with_open_in caps f file =
   let fd = open_in caps file in
   let chan : Chan.i = { ic = in_channel_of_descr fd; origin = File file } in
+  let r = try f chan with e -> close fd; raise e in
+  close fd;
+  r
+
+external out_channel_of_descr : int -> out_channel = "%identity"
+let with_open_out caps f file =
+  let fd = open_out caps file in
+  let chan : Chan.o = { oc = out_channel_of_descr fd; dest = OutFile file } in
   let r = try f chan with e -> close fd; raise e in
   close fd;
   r

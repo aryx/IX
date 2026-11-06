@@ -10,7 +10,13 @@ type origin =
   | Channel
   | Network
 
+type destination =
+  | OutFile of Fpath.t
+  | Stdout
+
 type i = { ic : in_channel; origin : origin }
+
+type o = { oc : out_channel; dest : destination }
 
 let origin (chani : i) =
   match chani.origin with
@@ -19,3 +25,8 @@ let origin (chani : i) =
   | String -> "<string>"
   | Channel -> "<channel>"
   | Network -> "<network>"
+
+let destination (chano : o) =
+  match chano.dest with
+  | OutFile f -> Fpath.to_string f
+  | Stdout -> "<stdout>"

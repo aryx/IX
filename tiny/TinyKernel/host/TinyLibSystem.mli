@@ -123,6 +123,13 @@ val read_all : int -> string
  * Sys_error on the host *)
 val with_open_in : < Cap.open_in; .. > -> (Chan.i -> 'a) -> Fpath.t -> 'a
 
+(* [with_open_out caps f file]: f on the file opened to write, from
+ * nothing (made if it is not there), a channel that knows its name
+ * (Out_channel.output_string writes it), closed when f returns or
+ * raises; Failure with the reason *)
+val with_open_out :
+  < Cap.open_out; .. > -> (Chan.o -> 'a) -> Fpath.t -> 'a
+
 (* a directory's names, in no order; none when it cannot be read *)
 val readdir : < Cap.readdir; .. > -> Fpath.t -> string list
 val is_directory : < Cap.readdir; .. > -> Fpath.t -> bool

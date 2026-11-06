@@ -152,10 +152,10 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
         (match !output with
          | None -> TinyLibSystem.print caps text
          | Some o ->
-             let fd =
-               try TinyLibSystem.open_out caps o
-               with Failure m -> raise (File_error m) in
-             TinyLibSystem.write fd text; TinyLibSystem.close fd);
+             (try
+                TinyLibSystem.with_open_out caps
+                  (fun (ch : Chan.o) -> Out_channel.output_string ch.oc text) o
+              with Failure m -> raise (File_error m)));
         Exit.OK
       with
       | Failure m ->

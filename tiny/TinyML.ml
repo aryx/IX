@@ -349,7 +349,8 @@ let unit_of (f : Fpath.t) =
 let library =
   [ "Stdlib"; "Char"; "Seq"; "List"; "String"; "Bytes"; "Array"; "Option";
     "Int64"; "Filename"; "Buffer"; "Printf"; "Marshal"; "Hashtbl"; "Common";
-    "Sha1"; "Fpath"; "Fpath_"; "Exit"; "In_channel"; "Chan" ]
+    "Sha1"; "Fpath"; "Fpath_"; "Exit"; "In_channel"; "Out_channel";
+    "Chan" ]
 
 (* a file that cannot be read or made, said apart from an error in one *)
 exception File_error of string
@@ -388,10 +389,10 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     (TinyLibSystem.eprint caps (usage ^ "   (-h: how)\n"); Exit.Code 2)
   else
   let write f text =
-    let fd =
-      try TinyLibSystem.open_out caps f with Failure m -> raise (File_error m)
-    in
-    TinyLibSystem.write fd text; TinyLibSystem.close fd in
+    try
+      TinyLibSystem.with_open_out caps
+        (fun (ch : Chan.o) -> Out_channel.output_string ch.oc text) f
+    with Failure m -> raise (File_error m) in
   try
     (* the interfaces read, in their order: the library's, then the
      * units before this one *)

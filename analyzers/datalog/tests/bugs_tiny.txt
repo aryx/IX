@@ -26,7 +26,7 @@ tiny/TinyKernel/steps/t6/TinyMkfs.ml:80: int31: in get32, 0xffffffff: not on the
 tiny/TinyLinker.ml:180: stack: go calls itself, not a tail call, over a list
 tiny/TinyLinker.ml:181: stack: go calls itself, not a tail call, over a list
 tiny/TinyLinker.ml:182: stack: go calls itself, not a tail call, over a list
-tiny/TinyML.ml:442: evalorder: operands at 442:10 and 443:10, both with an effect: their order the compiler's
+tiny/TinyML.ml:443: evalorder: operands at 443:10 and 444:10, both with an effect: their order the compiler's
 tiny/TinyML/TinyMLCompile.ml:382: stack: TinyMLCompile.match_cases calls itself, not a tail call, over a list
 tiny/TinyML/TinyMLCompile.ml:420: stack: TinyMLCompile.app calls itself, not a tail call, over a list
 tiny/TinyML/TinyMLCompile.ml:423: stack: TinyMLCompile.app calls itself, not a tail call, over a list
@@ -61,5 +61,5 @@ tiny/TinyMachine/TinyMachineDevices.ml:830: int31: in until, 0x40000000: not on 
 tiny/TinyMachine/TinyMachineDevices.ml:835: int31: in TinyMachineDevices.calm, 0x40000000: not on the Pi 1's 31 bits
 tiny/TinyMachine/TinyMachineSocket.ml:59: swallowed: in TinyMachineSocket.relay, Unix.Unix_error silenced, a constant answered
 tiny/TinyShell.ml:260: evalorder: operands at 260:8 and 260:19, both with an effect: their order the compiler's
-tiny/TinyVCS.ml:462: stack: groups calls itself, not a tail call, over a list
-tiny/TinyVCS.ml:546: order: in TinyVCS.lca, a table's order reaches the output at tiny/TinyVCS.ml:701, tiny/TinyVCS.ml:756
+tiny/TinyVCS.ml:465: stack: groups calls itself, not a tail call, over a list
+tiny/TinyVCS.ml:549: order: in TinyVCS.lca, a table's order reaches the output at tiny/TinyVCS.ml:704, tiny/TinyVCS.ml:759

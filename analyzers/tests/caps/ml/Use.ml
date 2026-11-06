@@ -14,8 +14,9 @@ let say caps s = Console.print caps s
 let contents caps f = FS.read caps f
 let leave caps = CapStdlib.exit caps 0
 
-(* the right capability: nothing said; a closure in it keeps it; a type by
- * another name, and a group, are the same *)
+(* the right capability: none needed; a closure in it keeps it; a type by
+ * another name, and a group, are the same. But each names print_string
+ * itself, around Console's print: said (around) *)
 type stdout_caps = < Cap.stdout; .. >
 type both = < stdout_caps; Cap.stderr >
 let held (_ : < Cap.stdout; .. >) s = print_string s
@@ -60,7 +61,8 @@ let write oc s = output_string oc s
 let on_fd fd b = Unix.read fd b 0 1
 let opens_fd f = Unix.openfile f [ Unix.O_RDONLY ] 0
 
-(* never called: dead, not an ambient use *)
+(* never called: dead, not an ambient use; named all the same (around: what
+ * is written, as a Semgrep rule reads it) *)
 let unused () = print_string "dead"
 
 let () =

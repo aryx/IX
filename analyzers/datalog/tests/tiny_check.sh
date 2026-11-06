@@ -25,7 +25,7 @@ export LC_ALL=C
 [ -x "${ANALYZE%% *}" ] || { echo "no analyzer: $ANALYZE"; exit 2; }
 flag=$1; out=$2; check=
 case $flag in
-  -caps) expected=caps_tiny.txt; said=': (no capability|has <)';;
+  -caps) expected=caps_tiny.txt; said=': (no capability|has <|names .* itself)';;
   -bugs) expected=bugs_tiny.txt; said='^bug\? ';;
   -dead) expected=dead_tiny.txt; said=': dead( [a-z]+)?:';;
   -exn) expected=exn_tiny.txt; said='the toplevel may let ';;

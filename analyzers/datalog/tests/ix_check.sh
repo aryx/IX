@@ -38,7 +38,7 @@ notes=$(notes_of $expected)
 # (a generated file by its place in _mk/7, wherever MK built it)
 gen() { sed "s|^${MK:-_mk/7}/|_mk/7/|"; }
 case $flag in
-  -caps) cat $W/sweep/*.out 2> /dev/null | grep -E ': (no capability|has <)' |
+  -caps) cat $W/sweep/*.out 2> /dev/null | grep -E ': (no capability|has <|names .* itself)' |
            gen | sort -u > $out;;
   -bugs)
     analyzers/datalog/tests/kernel.sh -bugs $W/kernel.out

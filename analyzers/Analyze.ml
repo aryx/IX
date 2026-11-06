@@ -323,7 +323,12 @@ let main (caps : < caps; .. >) (argv : string array) : int =
          * reports through them would be missing, gone from a recording) *)
         if !dead || !ambient || !exns || !bugs then List.iter (fun m -> Console.eprint caps ("not read: " ^ m ^ "\n"); incr failed) !Ml_front.unread;
         if !ambient || !bugs then
-          Hashtbl.iter (fun u () -> given p "own_unit" [ C.Facts.Sym u ]; given p "own_init" [ C.Facts.Sym (u ^ ":init") ]) Ml_front.own;
+          Hashtbl.iter (fun u () ->
+              given p "own_unit" [ C.Facts.Sym u ];
+              given p "own_init" [ C.Facts.Sym (u ^ ":init") ];
+              (* (a unit's init by its unit, for -caps's system units) *)
+              given p "unit_init" [ C.Facts.Sym u; C.Facts.Sym (u ^ ":init") ])
+            Ml_front.own;
         if !only then Console.print caps (Buffer.contents text)
         else begin
           ignore (Datalog_eval.run ~naive:false p);

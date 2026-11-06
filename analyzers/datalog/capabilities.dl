@@ -318,3 +318,39 @@ lets_go(R) :- names_function(R, G), lets_go(G), gate(G).
 
 unused_cap(O, C) :-
   own(O), reach(O), declares(F, C), root(F, O), \+ needed(O, C), \+ lets_go(O).
+
+% ---- around(O, S): the program's own code names a system call itself
+%
+% Cap.mli's convention, which xix checks by a Semgrep rule (the author's
+% semgrep.jsonnet: the raw Sys and Unix forbidden): a program reaches the
+% system through the functions that take a capability (FS, CapUnix,
+% Console...), never by Stdlib's, Unix's or Sys's own, whether or not it
+% holds the capability they need. wrong_cap and no_cap ask whether the
+% authority is held; this asks whether it goes around the functions that
+% check it. Named anywhere, called or not, as Semgrep's: what is written
+% is what a reader trusts.
+%
+%     let size (caps : < Cap.open_in; .. >) f = (Unix.stat f).st_size
+%                                       around: Unix.stat, though it holds
+%                                       Cap.open_in (FS's stat would do)
+%
+% A system unit is a program's own lib_core, whose functions are the ones
+% that take a capability and call the system: tiny's TinyLibSystem, the
+% host's half (its tiny-kernel half calls the kernel, not Unix).
+system_unit('TinyLibSystem').
+in_system(O) :- closure(O, U, _), system_unit(U).
+in_system(O) :- unit_init(U, O), system_unit(U).
+% (the name written: a primitive, or the library's function that reaches
+% one asking for no capability, as Sys.set_signal, Pervasives.print_string)
+named_raw(O, S) :- own(O), uses(O, S), \+ in_system(O).
+named_raw(O, Via) :-
+  own(O), names_function(O, Via), in_library(Via, _), \+ in_system(O).
+% (said once: no_cap and wrong_cap name the call already, "needs Cap.stdout
+% (Pervasives.print_string)"; around is what they do not say, the call made
+% with the capability held, or in code nothing reaches)
+said_raw(O, S) :- no_cap(O, S, itself).
+said_raw(O, S) :- wrong_cap(O, S, itself).
+said_raw(O, Via) :- no_cap(O, _, Via).
+said_raw(O, Via) :- wrong_cap(O, _, Via).
+around(O, X) :- named_raw(O, X), \+ said_raw(O, X).
+

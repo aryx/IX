@@ -238,6 +238,21 @@ script written to a file for rc): one interface, two systems, the host's
 alone read. Not read: the SDL programs, and what runs on tiny-kernel, whose
 system is tiny's kernel.
 
+Around the wrappers (`around`, 2026-11-06; the author: "I used to implement
+'b' via semgrep.jsonnet rules, forbidding to call the raw Sys and Unix
+functions, but we can also do it via -caps"): a function of the program
+that names a system call itself, `Unix.openfile`, `Sys.file_exists`,
+`print_string`, or the library's function that reaches one asking nothing
+(`Sys.set_signal`), where the convention says a capability's function
+(`FS`, `CapUnix`, `Console`): "names Unix.stat itself". Said only where
+`no_cap` and `wrong_cap` say nothing, which name the call already: the
+call made with the capability held, or in code nothing reaches (named
+anywhere, as Semgrep's rule). A program's own system layer is not blamed
+(`system_unit`: tiny's `TinyLibSystem`, its lib_core). At first: tiny/ 21
+functions (tiny-machine's disk, its www directory, its signals;
+tiny-cpu's stdin; the socket helper's sockets and fifos), m-ix 111
+(version_control's `Commands` 11, mini-5i's `Host` 10, mini-mk's `CLI` 7...).
+
 In make test (2026-11-04, the author: "at least we detect when new code
 introduce new one and prevent that"): a family of kind check, `-caps`,
 `-dead`, `-bugs` and `-exn` of tiny/'s host programs (`tests/tiny_check.sh`,

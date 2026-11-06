@@ -66,7 +66,10 @@ let main (texts : string array) (queries : string array) (rules : D.t -> unit) :
           * mini-analyze gives them) *)
          if ambient then
            Hashtbl.iter
-             (fun (u : string) () -> given p "own_unit" [ Facts.Sym u ]; given p "own_init" [ Facts.Sym (u ^ ":init") ])
+             (fun (u : string) () ->
+               given p "own_unit" [ Facts.Sym u ];
+               given p "own_init" [ Facts.Sym (u ^ ":init") ];
+               given p "unit_init" [ Facts.Sym u; Facts.Sym (u ^ ":init") ])
              Ml_front.own;
          rules p;
          (* (no query: mini-analyze's reports, C's then ML's) *)

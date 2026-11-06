@@ -330,7 +330,7 @@ let four (face : string) : string =
         0 [ 0; 1; 2; 3 ])) in
   String.concat "" [ face; bold; large face; large bold ]
 
-let main (caps : < caps; .. >) (argv : string array) : int =
+let main (caps : < caps; .. >) (argv : string array) : Exit.t =
   (* -cell w h: a cell other than 8 by 16 (a preview's; tiny-kernel
    * reads 8 by 16 alone) *)
   let w, h, args =
@@ -341,7 +341,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   try
     match args with
     | args when List.mem "-h" args || List.mem "--help" args ->
-        Console.print caps help; 0
+        Console.print caps help; Exit.OK
     | [ "-coverage"; c; file ] when String.length c = 1 ->
         let f = face (Truetype.of_string (FS.read caps (Fpath.v file))) w h in
         let dx = shift f in
@@ -359,11 +359,11 @@ let main (caps : < caps; .. >) (argv : string array) : int =
             (String.init f.w (fun x -> tenths cov.(i x)) ^ "  "
              ^ String.init f.w (fun x -> if set.(i x) then '#' else '.') ^ "\n")
         done;
-        0
+        Exit.OK
     | [ "-plan9"; subfont; out ] ->
         FS.write caps (Fpath.v out)
           (four (plan9 (FS.read caps (Fpath.v subfont))));
-        0
+        Exit.OK
     | ([ regular; bold; out ] | [ "-grey"; regular; bold; out ]) as args ->
         let read f = Truetype.of_string (FS.read caps (Fpath.v f)) in
         let r = read regular and b = read bold in
@@ -373,14 +373,12 @@ let main (caps : < caps; .. >) (argv : string array) : int =
              [ bits (face r w h) depth; bits (face b w h) depth;
                bits (face r (2 * w) (2 * h)) depth;
                bits (face b (2 * w) (2 * h)) depth ]);
-        0
+        Exit.OK
     | _ ->
         Console.eprint caps
           "usage: Mkfont.exe regular.ttf bold.ttf out.font   (-h: how)\n";
-        1
-  with Sys_error m | Failure m -> Console.eprint caps ("Mkfont: " ^ m ^ "\n"); 1
+        Exit.Code 1
+  (* (a Failure too would be said so, by TinyLibSystem.main) *)
+  with Sys_error m -> Exit.Err m
 
-let () =
-  Cap.main (fun caps ->
-    Logging.setup caps ~name:"Mkfont";
-    CapStdlib.exit caps (main caps (CapSys.argv caps)))
+let () = TinyLibSystem.main "Mkfont" main

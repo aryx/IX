@@ -693,10 +693,10 @@ let run caps o image =
     0
   with TinyMachineDevices.Halt n -> halted n
 
-let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in;
+let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.open_in;
                    Cap.open_out; Cap.fork; Cap.exec; Cap.wait; Cap.pipe;
-                   Cap.signal; Cap.clock; .. >) =
-  let args = List.tl (Array.to_list (CapSys.argv caps)) in
+                   Cap.signal; Cap.clock; .. >) (argv : string array) : Exit.t =
+  let args = List.tl (Array.to_list argv) in
   TinyMachineCPU.memsize := TinyMachineDevices.memsize;
   let image files =
     match files with
@@ -705,12 +705,12 @@ let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in;
     | _ -> raise Exit in
   try
     match args with
-    | ("-h" | "--help") :: _ -> Console.print caps help; 0
+    | ("-h" | "--help") :: _ -> Console.print caps help; Exit.OK
     | "-l" :: files ->
         Console.print caps
           (TinyMachineCPU.listing ~show:TinyMachineDevices.show ~origin:0
              (image files));
-        0
+        Exit.OK
     | args ->
         let rec options o = function
           (* (the files' options as paths, here once) *)
@@ -759,7 +759,11 @@ let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in;
                   | None -> false) ->
               options { o with cores = int_of_string n } rest
           | "-cores-parallel" :: rest -> options { o with parallel = true } rest
-          | files -> run caps o (image files) in
+          | files ->
+              (* the kernel's halt code *)
+              (match run caps o (image files) with
+               | 0 -> Exit.OK
+               | n -> Exit.Code n) in
         options { disk_file = None; screen_file = None; audio_file = None;
                   events_file = None; window = false; rate = None;
                   date = None; seed = None; net_loop = None; net = None;
@@ -767,11 +771,8 @@ let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in;
                   net_forward = []; net_pcap = None; prof = None; cores = 1;
                   parallel = false } args
   with
-  | Exit -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
-  | TinyMachineISA.Error e | Sys_error e ->
-      Console.eprint caps ("tiny-machine: " ^ e ^ "\n"); 1
+  | Exit -> Console.eprint caps (usage ^ "   (-h: how)\n"); Exit.Code 2
+  | TinyMachineISA.Error e | Sys_error e -> Exit.Err e
 
-let () =
-  Cap.main (fun caps ->
-    Logging.setup caps ~name:"tiny-machine";
-    CapStdlib.exit caps (main caps))
+(* (TinyLibSystem.main sets the logs up, by the program's name) *)
+let () = TinyLibSystem.main "tiny-machine" main

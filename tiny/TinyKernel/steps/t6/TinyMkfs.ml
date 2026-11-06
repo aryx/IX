@@ -94,19 +94,19 @@ let list disk =
         (get32 (at + 24)) (get32 (at + 28)))
   |> String.concat ""
 
-let main
-    (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
-    =
+let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
+    (argv : string array) : Exit.t =
   let read f = FS.read caps (Fpath.v f) in
   try
-    match List.tl (Array.to_list (CapSys.argv caps)) with
-    | ("-h" | "--help") :: _ -> Console.print caps help; 0
-    | [ "-l"; img ] -> Console.print caps (list (read img)); 0
+    match List.tl (Array.to_list argv) with
+    | ("-h" | "--help") :: _ -> Console.print caps help; Exit.OK
+    | [ "-l"; img ] -> Console.print caps (list (read img)); Exit.OK
     | img :: files when img.[0] <> '-' ->
         FS.write caps (Fpath.v img)
           (make (List.map (fun f -> Filename.basename f, read f) files));
-        0
-    | _ -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
-  with Failure e | Sys_error e -> Console.eprint caps ("tiny-mkfs: " ^ e ^ "\n"); 1
+        Exit.OK
+    | _ -> Console.eprint caps (usage ^ "   (-h: how)\n"); Exit.Code 2
+  (* (a Failure too would be said so, by TinyLibSystem.main) *)
+  with Sys_error e -> Exit.Err e
 
-let () = Cap.main (fun caps -> CapStdlib.exit caps (main caps))
+let () = TinyLibSystem.main "tiny-mkfs" main

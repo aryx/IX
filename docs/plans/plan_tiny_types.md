@@ -210,4 +210,18 @@ where the kernel and the draw protocol meet numbers.
 
 ## Status
 
-2026-11-06: proposed; the survey above. Nothing built.
+2026-11-06: proposed; the survey above.
+
+2026-11-06, stage 1 built (the author: "let's start"): the six
+host-only mains on Exit.t, and on TinyLibSystem.main, which says
+Err's words after the program's name as the others' (lib_core's
+Exit.exit logs them instead): tiny-cpu, tiny-machine, tiny-mkfs,
+Mkfont, tiny-machine-fetch, tiny-machine-socket. tiny-cpu's
+`interpret` and tiny-machine's `run` keep an int, the image's exit
+and the kernel's halt code, numbers the guest gives; main makes
+them OK or Code. tiny-machine-fetch says its failures on the
+standard output, the kernel's answer, so Code 1, not Err. Their
+dune stanzas, tiny/mkfile (tiny-cpu, tiny-machine, tiny-mkfs) and
+tiny_check.sh's lists take TinyLibSystem. The same messages and
+statuses as before in 15 cases (usage, a missing file, a bad image
+or font); +2 code lines over the six.

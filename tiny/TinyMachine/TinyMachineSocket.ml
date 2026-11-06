@@ -118,26 +118,27 @@ let listen
       wait ()
 
 let main
-    (caps : < Cap.network; Cap.argv; Cap.stdin; Cap.stdout; Cap.stderr; Cap.fork;
-             Cap.signal; Cap.open_in; Cap.open_out; .. >) =
+    (caps : < Cap.network; Cap.stdin; Cap.stdout; Cap.stderr; Cap.fork;
+             Cap.signal; Cap.open_in; Cap.open_out; .. >) (argv : string array)
+    : Exit.t =
   Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
   (* (a terminal's ^C is for the kernel in the machine, which the one that
    * ran this gives it) *)
   Sys.set_signal Sys.sigint Sys.Signal_ignore;
-  match List.tl (Array.to_list (CapSys.argv caps)) with
+  match List.tl (Array.to_list argv) with
   | [ "dial"; host; port ] when int_of_string_opt port <> None ->
       let fd = dial caps host (int_of_string port) in
       say caps (if fd = None then "-" else "+");
       Option.iter (relay (Console.stdin_fd caps) (Console.stdout_fd caps)) fd;
-      0
+      Exit.OK
   | [ "listen"; port ] when int_of_string_opt port <> None ->
       listen caps (int_of_string port);
-      0
+      Exit.OK
   | [ "name"; host ] ->
       Option.iter
         (fun a -> Console.print caps (Unix.string_of_inet_addr a ^ "\n"))
         (address caps host);
-      0
-  | _ -> Console.eprint caps (usage ^ "\n"); 2
+      Exit.OK
+  | _ -> Console.eprint caps (usage ^ "\n"); Exit.Code 2
 
-let () = Cap.main (fun caps -> CapStdlib.exit caps (main caps))
+let () = TinyLibSystem.main "tiny-machine-socket" main

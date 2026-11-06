@@ -4,4 +4,4 @@
  (public_name tiny-mkfs)
  (package ix)
  (modules TinyMkfs)
- (libraries ix_core fpath caps))
+ (libraries ix_core fpath caps tiny_lib_system))

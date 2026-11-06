@@ -68,26 +68,29 @@ let interpret caps prof image args =
   m.r.(TinyMachineISA.sp) <- sp;
   try while true do TinyMachineCPU.step env m done; 0 with Exit n -> n
 
-let main (caps : < caps; Cap.argv; Cap.open_in; Cap.open_out; .. >) =
-  let args = List.tl (Array.to_list (CapSys.argv caps)) in
+let main (caps : < caps; Cap.open_in; Cap.open_out; .. >)
+    (argv : string array) : Exit.t =
+  let args = List.tl (Array.to_list argv) in
   let image f = TinyMachineCPU.image f (FS.read caps (Fpath.v f)) in
+  (* the program's exit, tiny-cpu's *)
+  let exited n = if n = 0 then Exit.OK else Exit.Code n in
   try
     match args with
-    | ("-h" | "--help") :: _ -> Console.print caps help; 0
+    | ("-h" | "--help") :: _ -> Console.print caps help; Exit.OK
     | [ "-l"; f ] ->
         Console.print caps
           (TinyMachineCPU.listing ~show:(fun _ -> None) ~origin:0 (image f));
-        0
+        Exit.OK
     | "-prof" :: out :: f :: rest ->
         let p = TinyMachineCPU.profile () in
         let status = interpret caps (Some p) (image f) (f :: rest) in
         FS.write caps (Fpath.v out) (TinyMachineCPU.profile_lines p);
-        status
-    | f :: rest when f.[0] <> '-' -> interpret caps None (image f) (f :: rest)
+        exited status
+    | f :: rest when f.[0] <> '-' ->
+        exited (interpret caps None (image f) (f :: rest))
     | _ -> raise Usage
   with
-  | Usage -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
-  | TinyMachineISA.Error e | Sys_error e ->
-      Console.eprint caps ("tiny-cpu: " ^ e ^ "\n"); 1
+  | Usage -> Console.eprint caps (usage ^ "   (-h: how)\n"); Exit.Code 2
+  | TinyMachineISA.Error e | Sys_error e -> Exit.Err e
 
-let () = Cap.main (fun caps -> CapStdlib.exit caps (main caps))
+let () = TinyLibSystem.main "tiny-cpu" main

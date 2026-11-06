@@ -32,12 +32,15 @@ let reduce (img : Rgba_image.t) w h =
   done;
   Bytes.to_string out
 
-let main (caps : < Cap.network; Cap.open_in; Cap.stdout; Cap.argv; .. >) =
+let main (caps : < Cap.network; Cap.open_in; Cap.stdout; .. >)
+    (argv : string array) : Exit.t =
   let get url =
     match Http_client.get caps url with
     | Ok (r : Http.response) -> Ok r.body
     | Error why -> Error why in
-  match Array.to_list (CapSys.argv caps) with
+  (* (the failures said on the standard output, the answer the kernel
+   * reads, not after the program's name: Code 1, not Err) *)
+  match Array.to_list argv with
   | [ _; "-picture"; w; h; source ] -> (
       let w = int_of_string w and h = int_of_string h in
       let bytes =
@@ -46,11 +49,13 @@ let main (caps : < Cap.network; Cap.open_in; Cap.stdout; Cap.argv; .. >) =
       match bytes with
       | Ok bytes -> (
           match Image_file.decode bytes with
-          | img -> Console.print caps (reduce img w h); 0
+          | img -> Console.print caps (reduce img w h); Exit.OK
           | exception Failure why ->
-              Console.print caps ("www: " ^ source ^ ": " ^ why ^ "\n"); 1)
+              Console.print caps ("www: " ^ source ^ ": " ^ why ^ "\n");
+              Exit.Code 1)
       | Error why ->
-          Console.print caps ("www: " ^ source ^ ": " ^ why ^ "\n"); 1)
+          Console.print caps ("www: " ^ source ^ ": " ^ why ^ "\n");
+          Exit.Code 1)
   | [ _; url ] -> (
       match Http_client.get caps url with
       | Ok (r : Http.response) ->
@@ -62,11 +67,12 @@ let main (caps : < Cap.network; Cap.open_in; Cap.stdout; Cap.argv; .. >) =
               (fun (n, _) -> not (List.mem (String.lowercase_ascii n) framing))
               r.headers in
           Console.print caps (TinyBrowserHttp.response r.status headers r.body);
-          0
-      | Error why -> Console.print caps ("www: " ^ url ^ ": " ^ why ^ "\n"); 1)
+          Exit.OK
+      | Error why ->
+          Console.print caps ("www: " ^ url ^ ": " ^ why ^ "\n"); Exit.Code 1)
   | _ ->
       Console.print caps
         "www: usage: tiny-machine-fetch url | -picture w h url-or-file\n";
-      2
+      Exit.Code 2
 
-let () = Cap.main (fun caps -> CapStdlib.exit caps (main caps))
+let () = TinyLibSystem.main "tiny-machine-fetch" main

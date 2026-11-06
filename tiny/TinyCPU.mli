@@ -56,8 +56,8 @@ val interpret :
   < Cap.stdin; Cap.stdout; Cap.stderr; .. > ->
   TinyMachineCPU.profile option -> string -> string list -> int
 
-(* the program: its arguments (-h: how) to its exit status *)
+(* the program: its arguments (its name first; -h: how) to how it
+ * ends, the image's exit status *)
 val main :
-  < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; Cap.open_out;
-    .. > ->
-  int
+  < Cap.stdin; Cap.stdout; Cap.stderr; Cap.open_in; Cap.open_out; .. > ->
+  string array -> Exit.t

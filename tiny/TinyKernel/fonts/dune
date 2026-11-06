@@ -4,4 +4,5 @@
 (executable
  (name Mkfont)
  (modules Mkfont)
- (libraries ix_graphics_fonts ix_graphics_software ix_core fpath caps))
+ (libraries ix_graphics_fonts ix_graphics_software ix_core fpath caps
+  tiny_lib_system))

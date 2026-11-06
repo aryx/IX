@@ -328,8 +328,9 @@ val run :
     Cap.exec; Cap.wait; Cap.pipe; Cap.signal; Cap.clock; .. > ->
   options -> string -> int
 
-(* the program: its arguments (-h: how) to its exit status *)
+(* the program: its arguments (its name first; -h: how) to how it
+ * ends, the kernel's halt code *)
 val main :
-  < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; Cap.open_out;
+  < Cap.stdin; Cap.stdout; Cap.stderr; Cap.open_in; Cap.open_out;
     Cap.fork; Cap.exec; Cap.wait; Cap.pipe; Cap.signal; Cap.clock; .. > ->
-  int
+  string array -> Exit.t

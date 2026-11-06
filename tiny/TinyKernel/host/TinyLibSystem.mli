@@ -43,7 +43,9 @@
 (* [main name f]: the program: f with every capability and its
  * arguments (its name first), its result how it ends: Err's words, or
  * a Failure's that f lets out, said after name, the status 1; Code n
- * (or ExitCode n raised), n. name is for the host's logs too *)
+ * (or ExitCode n raised), n. name is for the host's logs too. The
+ * host-only programs (tiny-cpu, tiny-machine and its helpers, tiny-mkfs,
+ * Mkfont) end by it too, for the same words said the same way *)
 val main : string -> (Cap.all_caps -> string array -> Exit.t) -> unit
 
 (* the variables the program was started with, each with its value *)

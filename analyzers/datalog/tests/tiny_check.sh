@@ -56,14 +56,14 @@ tiny-db|-|$S $T/TinyDatabase.ml
 tiny-vcs|-I lib_crypto|$S $T/TinyVCS.ml
 tiny-assembler|-|$CPU $S $T/TinyLibSymbols.ml $T/TinyAssembler.ml
 tiny-linker|-|$CPU $S $T/TinyLibSymbols.ml $T/TinyLinker.ml
-tiny-cpu|-|$CPU $T/TinyCPU.ml
+tiny-cpu|-|$CPU $S $T/TinyCPU.ml
 tiny-prof|-|$S $T/TinyLibSymbols.ml $T/TinyProfiler.ml
 tiny-ml|-|$S $TML $T/TinyML.ml
-tiny-machine|-I lib_core/parallel|$CPU $M/TinyMachineDevices.ml $T/TinyKernel/TinyKernelNetwork.ml $BROWSER $M/TinyMachinePeer.ml $T/TinyMachine.ml
-tiny-machine-socket|-|$M/TinyMachineSocket.ml
-tiny-machine-fetch|$NET -I lib_graphics/core -I lib_graphics/images|$CPU $M/TinyMachineDevices.ml $BROWSER $M/TinyMachineFetch.ml
-tiny-mkfs|-|$T/TinyKernel/steps/t6/TinyMkfs.ml
-mkfont|-I lib_graphics/core -I lib_graphics/geometry -I lib_graphics/fonts -I lib_graphics/software|$T/TinyKernel/fonts/Mkfont.ml
+tiny-machine|-I lib_core/parallel|$CPU $S $M/TinyMachineDevices.ml $T/TinyKernel/TinyKernelNetwork.ml $BROWSER $M/TinyMachinePeer.ml $T/TinyMachine.ml
+tiny-machine-socket|-|$S $M/TinyMachineSocket.ml
+tiny-machine-fetch|$NET -I lib_graphics/core -I lib_graphics/images|$CPU $S $M/TinyMachineDevices.ml $BROWSER $M/TinyMachineFetch.ml
+tiny-mkfs|-|$S $T/TinyKernel/steps/t6/TinyMkfs.ml
+mkfont|-I lib_graphics/core -I lib_graphics/geometry -I lib_graphics/fonts -I lib_graphics/software|$S $T/TinyKernel/fonts/Mkfont.ml
 EOF
 }
 W=$(mktemp -d); trap 'rm -rf $W' EXIT

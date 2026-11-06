@@ -1,10 +1,11 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
- *)
-(* testing:
+ *
+ * testing:
  * The arithmetic is tested on the host by sending messages to [update],
  * and the buttons by sending mouse events to TinyLibGUI
- * (tests/TinyLibGUI_test.sh). *)
+ * (tests/TinyLibGUI_test.sh).
+ *)
 open TinyLibGUI
 
 (*****************************************************************************)
@@ -14,13 +15,13 @@ open TinyLibGUI
 (* the number shown; the one kept, with the operation that awaits its
  * second number.
  *)
-type model = { 
-  shown : int; 
-  kept : int; 
+type model = {
+  shown : int;
+  kept : int;
   op : char option;
   (* whether the next digit begins a number; whether there is no number to show *)
-  fresh : bool; 
-  wrong : bool 
+  fresh : bool;
+  wrong : bool
 }
 
 let start = { shown = 0; kept = 0; op = None; fresh = true; wrong = false }
@@ -44,7 +45,12 @@ let result { kept = a; shown = b; op; _ } : int option =
   | Some '*' ->
       if a <> 0 && abs b > limit / abs a then None else Some (a * b)
   | _ ->
-      let v = match op with Some '+' -> a + b | Some '-' -> a - b | _ -> b in
+      let v =
+        match op with
+        | Some '+' -> a + b
+        | Some '-' -> a - b
+        | _ -> b
+      in
       if abs v <= limit then Some v else None
 
 (* an operation asked (None: the equals): the one that awaited is done,

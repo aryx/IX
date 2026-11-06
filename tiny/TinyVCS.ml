@@ -1,7 +1,7 @@
 (* Claude Code
- * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
-
-(* testing:
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+ *
+ * testing:
  * The tests, in tests/TinyVCS_test.sh, check the laws: switching to a
  * commit restores its tree exactly; merging disjoint changes is
  * symmetric and keeps both; undo restores the branches; a clone has the

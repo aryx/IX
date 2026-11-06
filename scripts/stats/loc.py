@@ -250,6 +250,14 @@ def header(path, text):
     # header ("(* ix: the author's playground's ... *)": its place is
     # after): the header is the comment after them
     while "Copyright (C)" in text[i:end] or (text.startswith("(* ix:", i) and "\n" not in text[i:end]):
+        # or the header goes on in the license's comment, after a " *"
+        # line (an .ml's testing:, the author's shape)
+        c = text.find("Copyright (C)", i, end)
+        nl = text.find("\n", c, end) if c != -1 else -1
+        if nl != -1:
+            more = re.search(r"\n *\*[ \t]*\n *\* *\S", text[nl:end])
+            if more and more.start() == 0:
+                return nl + text[nl + 1:end].index("\n") + 2, end
         i = end + len(text[end:]) - len(text[end:].lstrip())
         if not text.startswith("(*", i):
             return None

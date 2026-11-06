@@ -1,7 +1,7 @@
 (* Claude Code
- * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
-
-(* testing:
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+ *
+ * testing:
  * The tests: tests/TinyShell_test.sh runs scripts written in this
  * subset both through this shell and through 9base's rc, which must
  * print the same thing.

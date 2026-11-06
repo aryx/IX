@@ -1,7 +1,7 @@
 (* Claude Code
- * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
-
-(* testing:
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+ *
+ * testing:
  * tests/TinyEditorLine_test.sh runs scripts through this
  * editor and through 9base's sam -d, and compares the results.
  *)

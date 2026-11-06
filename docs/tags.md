@@ -18,7 +18,7 @@ become boxes in the books. Here they are words in an OCaml comment.
 | The file | Its header comment |
 |---|---|
 | `X.mli` | the first thing in the file: no author's line, no copyright (an interface is not copyrightable) |
-| `X.ml` with an `X.mli` | none needed: the `.mli` next to it is the module's. When the `.ml` has something of its own to say (how it is tested: `testing:`), that comment, after the two lines, in place of the old `(* See X.mli *)` |
+| `X.ml` with an `X.mli` | none needed: the `.mli` next to it is the module's. When the `.ml` has something of its own to say (how it is tested: `testing:`), that paragraph, in the two lines' comment after a ` *` line (below), in place of the old `(* See X.mli *)` |
 | `X.ml` without one (a program in one file, `utilities/files/Cat.ml`; a module that is its types, `shell/Ast.ml`) | the comment after the two lines |
 | a program in several files | its `CLI.mli`'s: the program as a whole, its history, then the command line. Its modules' interfaces each have their own part of the story |
 
@@ -32,7 +32,23 @@ blank line, then the header comment, a comment of its own:
 (* mini-cat: Plan 9's cat (principia's utilities/files/cat.c) ...
 ```
 
-`scripts/stats/header_shape.py` puts a file in that shape
+An `.ml` whose header is only a few lines, as a `testing:` paragraph
+in tiny/, may put it in the two lines' comment instead, after a ` *`
+line, the comment closed on a line of its own (the author's shape,
+2026-11-06); `loc.py` counts it as the header all the same:
+
+```ocaml
+(* Claude Code
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+ *
+ * testing:
+ * The arithmetic is tested on the host by sending messages to [update],
+ * ...
+ *)
+```
+
+`scripts/stats/header_shape.py` puts a file in the first shape (it
+would cut the second in two: not for those)
 (`short_header.py` first, for the nine lines of a license). A file
 copied from the playground, principia or goken keeps its line of
 origin (`(* ix: the author's playground's libs/compression/Lzw.mli

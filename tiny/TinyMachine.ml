@@ -1,8 +1,9 @@
 (* Claude Code
- * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
-
-(* testing:
- * tests/TinyMachine_test.sh, on v0's kernel and tests/TinyMachine_tests/ *)
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+ *
+ * testing:
+ * tests/TinyMachine_test.sh, on v0's kernel and tests/TinyMachine_tests/
+ *)
 
 let usage = {|usage: tiny-machine [-l | -d disk | -window | -rate n | -date n
          | -seed n | -prof file | -screen ppm | -audio wav | -events file

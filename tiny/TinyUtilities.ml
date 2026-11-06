@@ -1,7 +1,7 @@
 (* Claude Code
- * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
-
-(* testing:
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+ *
+ * testing:
  * The test (tests/TinyUtilities_test.sh) runs each utility and its
  * twin, mini-wc, mini-xd..., on the same arguments, and compares what
  * they print and their exit status: the twins' output is kept where it

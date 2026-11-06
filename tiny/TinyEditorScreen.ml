@@ -233,11 +233,11 @@ let searching (e : editor) (sub : string) (k : key) : bool =
       let sub = sub ^ String.make 1 c in
       e.x.search <- Some sub; look e sub (e.t.col - m); true
   | Ctrl 's' -> look e sub e.t.col; true
-  | Char ('\b' | '\127') ->
+  | Backspace ->
       e.x.search <- Some (String.sub sub 0 (max 0 (m - 1))); true
   | _ ->
       e.x.search <- None;
-      k = Char '\n' || k = Char '\r' || k = Ctrl 'g'
+      k = Enter || k = Ctrl 'g'
 
 (*****************************************************************************)
 (* M-x *)
@@ -333,11 +333,11 @@ let reading (e : editor) (what : answer) (typed : string) (k : key) =
   match k with
   | Char c when c >= ' ' && c < '\127' ->
       e.x.reading <- Some (what, typed ^ String.make 1 c)
-  | Char ('\b' | '\127') ->
+  | Backspace ->
       e.x.reading <- Some (what, String.sub typed 0 (max 0 (m - 1)))
   | Char '\t' when what = Command -> e.x.reading <- Some (what, complete typed)
   | Ctrl 'g' -> e.x.reading <- None; e.message <- "Quit"
-  | Char ('\n' | '\r') -> e.x.reading <- None; answered e what typed
+  | Enter -> e.x.reading <- None; answered e what typed
   | _ -> ()
 
 (*****************************************************************************)
@@ -415,14 +415,14 @@ let key (e : editor) (k : key) : request =
        | None, Ctrl 'v' ->
            lines (h - 1); e.top <- min (e.top + h - 1) t.row
        | None, Ctrl 'd' -> delete t
-       | None, Char ('\b' | '\127') -> backspace t
-       | None, Char ('\n' | '\r') -> newline t
+       | None, Backspace -> backspace t
+       | None, Enter -> newline t
        | None, Ctrl 'k' -> kill e again
        | None, Ctrl 'y' -> yank e
        | None, Ctrl 'l' -> e.top <- max 0 (t.row - h / 2)
        | None, Ctrl 's' -> e.x.search <- Some ""
        | None, Ctrl 'g' -> e.message <- "Quit"
-       | None, (Ctrl 'x' | Char '\027') -> e.prefix <- Some k
+       | None, (Ctrl 'x' | Escape) -> e.prefix <- Some k
        | None, Char c when c = '\t' || (c >= ' ' && c < '\127') ->
            insert t (String.make 1 c)
        | None, _ -> e.message <- "Not a command");

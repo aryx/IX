@@ -319,8 +319,8 @@ let on_mouse sc x y buttons =
 let on_key sc (k : key) : bool =
   if focused sc then begin
     (match k with
-     | Char ('\n' | '\r') -> focus sc false; ignore (act sc Go_typed)
-     | Char '\027' ->
+     | Enter -> focus sc false; ignore (act sc Go_typed)
+     | Escape ->
          focus sc false; sc.sc_tools.tb_field <- sc.sc_nav.nv_address
      | _ ->
          sc.sc_tools.tb_field <-
@@ -336,7 +336,7 @@ let on_key sc (k : key) : bool =
      | Char '-' | Left -> glide sc (- page)
      | Down -> scroll_by sc 16
      | Up -> scroll_by sc (-16)
-     | Char ('b' | '\b' | '\127') -> back sc
+     | Char 'b' | Backspace -> back sc
      | Char 'g' -> ignore (act sc Address)
      | Char 's' -> ignore (act sc Search)
      | _ -> ());

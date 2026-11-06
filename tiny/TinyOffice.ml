@@ -263,7 +263,7 @@ let key (o : office) (k : key) : request =
         (match k with
          | Ctrl 'x' -> o.prefix <- true
          | Ctrl 'o' -> ignore (command o (Do_add "text"))
-         | Char ('\b' | '\127') when o.sel >= 0 -> ignore (command o Do_delete)
+         | Backspace when o.sel >= 0 -> ignore (command o Do_delete)
          | Ctrl '_' -> ignore (command o Do_undo)
          | Ctrl 'g' -> o.sel <- -1; o.message <- "Quit"
          | _ -> o.message <- help);

@@ -106,9 +106,9 @@ let name_key (o : office) (typed : string) (k : key) =
   match k with
   | Char c when c >= ' ' && c < '\127' ->
       o.editing <- Naming (typed ^ String.make 1 c)
-  | Char ('\b' | '\127') when typed <> "" ->
+  | Backspace when typed <> "" ->
       o.editing <- Naming (String.sub typed 0 (String.length typed - 1))
-  | Char ('\r' | '\n') ->
+  | Enter ->
       let s = List.nth o.page o.sel in
       if not (good_name typed) then
         o.message <- "a name: a letter, then letters, digits, _"

@@ -204,9 +204,9 @@ let write_key (o : office) (d : doc) (k : key) =
     else i in
   let style = String.make 1 (Char.chr d.typing) in
   (match k with
-   | Char ('\n' | '\r') -> put_text d "\n" style
+   | Enter -> put_text d "\n" style
    | Char c when c >= ' ' && c < '\127' -> put_text d (String.make 1 c) style
-   | Char ('\b' | '\127') ->
+   | Backspace ->
        (if a = z && a > 0 then d.anchor <- a - 1); put_text d "" ""
    | Ctrl 'd' ->
        (if a = z && z < n then d.anchor <- z + 1); put_text d "" ""

@@ -237,7 +237,7 @@ let editing boxes m =
  * program's messages for the key, one after the other *)
 let key (g : ('m, 'msg) gui) (boxes : 'msg boxes) model m (k : key) =
   match editing boxes m, k with
-  | (_, Edit (s, f)) :: _, Char ('\b' | '\127') ->
+  | (_, Edit (s, f)) :: _, Backspace ->
       if s = "" then model
       else g.update (f (String.sub s 0 (String.length s - 1))) model
   | (_, Edit (s, f)) :: _, Char c when c >= ' ' && c < '\127' ->

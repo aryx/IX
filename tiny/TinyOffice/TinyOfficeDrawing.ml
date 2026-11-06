@@ -110,7 +110,7 @@ let sketch_key (o : office) (tool : int) (k : key) =
   | Char '\t' -> o.editing <- Sketch ((tool + 1) mod 3, None)
   | Char c when c >= ' ' && c < '\127' ->
       relabel (fun kind nums label -> [ kind, nums, label ^ String.make 1 c ])
-  | Char ('\b' | '\127') ->
+  | Backspace ->
       relabel (fun kind nums label ->
         if label = "" then []
         else [ kind, nums, String.sub label 0 (String.length label - 1) ])

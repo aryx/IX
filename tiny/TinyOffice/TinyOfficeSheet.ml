@@ -211,19 +211,19 @@ let cell_key (o : office) (c : int) (r : int) (typed : string option)
   match typed, k with
   | None, Char ch when ch >= ' ' && ch < '\127' ->
       o.editing <- Cell (c, r, Some (String.make 1 ch))
-  | None, Char ('\n' | '\r') ->
+  | None, Enter ->
       o.editing <- Cell (c, r, Some (typed_in b.data (name c r)))
   | None, (Up | Down | Left | Right) -> arrow ()
-  | None, Char ('\b' | '\127') -> change o (set_cell b.data (name c r) "")
+  | None, Backspace -> change o (set_cell b.data (name c r) "")
   | None, Ctrl 'g' -> o.editing <- Nothing
   | None, _ -> o.message <- "a cell: type, Enter, the arrows; C-g"
   | Some t, Char ch when ch >= ' ' && ch < '\127' ->
       o.editing <- Cell (c, r, Some (t ^ String.make 1 ch))
-  | Some t, Char ('\b' | '\127') ->
+  | Some t, Backspace ->
       o.editing <-
         Cell (c, r, Some (if t = "" then ""
                           else String.sub t 0 (String.length t - 1)))
-  | Some t, Char ('\n' | '\r') -> put_cell o c r t; move 0 1
+  | Some t, Enter -> put_cell o c r t; move 0 1
   | Some t, (Up | Down | Left | Right) -> put_cell o c r t; arrow ()
   | Some _, Ctrl 'g' -> o.editing <- Cell (c, r, None)
   | Some _, _ -> ()

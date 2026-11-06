@@ -101,7 +101,7 @@ let key (k : key) : msg list =
   match k with
   | Char c when c >= '0' && c <= '9' -> [ Digit (Char.code c - 48) ]
   | Char ('+' | '-' | '*' | '/' as c) -> [ Op c ]
-  | Char ('=' | '\n' | '\r') -> [ Equals ]
+  | Char '=' | Enter -> [ Equals ]
   | Char 'c' -> [ Clear ]
   | _ -> []
 

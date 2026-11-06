@@ -465,11 +465,11 @@ let picture m =
  * run at once when nothing is typed; a click on a button its command *)
 let typed (k : key) m =
   match k with
-  | Char '\027' -> None
-  | Char ('\r' | '\n') ->
+  | Escape -> None
+  | Enter ->
       if m.cmd = "q" then None
       else Some (run_command m.cmd { m with cmd = "" })
-  | Char ('\b' | '\127') ->
+  | Backspace ->
       Some { m with cmd =
                (if m.cmd = "" then ""
                 else String.sub m.cmd 0 (String.length m.cmd - 1)) }

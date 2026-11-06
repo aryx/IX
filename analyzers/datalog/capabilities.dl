@@ -354,3 +354,24 @@ said_raw(O, Via) :- no_cap(O, _, Via).
 said_raw(O, Via) :- wrong_cap(O, _, Via).
 around(O, X) :- named_raw(O, X), \+ said_raw(O, X).
 
+
+% ---- the library's wrappers: what they hold allows what they do
+%
+% A function of the library that takes a capability (CapSys's, CapUnix's,
+% FS's, Console's) is where the convention is kept: it asks for the
+% capability its system call needs. wrong_cap asks it of the program's own
+% functions; here of the library's the program reaches, by the type written
+% on the capability: CapSys.set_signal (_ : < Cap.open_in; .. >) is wrong,
+% the signal's being Cap.signal. One whose capability has no written type
+% (_caps, which any object is) says nothing to its reader and is not checked:
+% untyped_cap, so that its type gets written.
+lib_gate(R) :- library_function(R), reach(R), takes_cap(F), root(F, R).
+lib_does(R, S) :- uses(R, S).
+lib_does(R, S) :- names_function(R, Via), in_library(Via, _), uses(Via, S).
+lib_does(R, S) :- names_function(R, Via), in_library(Via, S).
+wrong_cap(R, S, itself) :-
+  lib_gate(R), holds_named(R), uses(R, S), \+ allowed(R, S).
+wrong_cap(R, S, Via) :-
+  lib_gate(R), holds_named(R), names_function(R, Via), in_library(Via, S),
+  \+ allowed(R, S).
+untyped_cap(R) :- lib_gate(R), \+ holds_named(R), lib_does(R, _).

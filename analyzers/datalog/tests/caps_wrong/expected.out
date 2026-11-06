@@ -3,6 +3,6 @@ Planted.lacks_closure gives Planted.g, which asks stdout
 Planted.lacks_one gives Planted.opens, which asks stderr
 Planted.lacks_renamed gives Planted.g, which asks stdout
 31 calls, 12 checked
-      5 not seen: callee has no capability named
-     13 not seen: caller has no capability named
+      4 not seen: callee has no capability named
+     14 not seen: caller has no capability named
       1 not seen: from a field

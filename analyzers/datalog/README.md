@@ -261,6 +261,19 @@ network's six calls; lib_core's erased copies the same, their types the
 capabilities (mini-ml reads no object's names, the reader does), Plan 9's
 Unix the socket types and calls failing with ENOSYS.
 
+The wrappers checked too (`lib_gate`, 2026-11-06; the author: "and the
+-caps analysis may use this file no?"): a function of the library that
+takes a capability, which the program reaches, holds what its body does
+(`wrong_cap`, as for the program's own), the capability's type written in
+its `.ml` (`untyped_cap` when it is `_caps`, any object, which says
+nothing). lib_core's erased CapStdlib, CapSys and CapUnix had `_caps`: 16
+untyped for tiny/'s socket helper alone; typed, none wrong. Found: tiny/,
+lib_networking's `Keep_alive.exchange` reads the clock by `take` and
+`give` with no `Cap.clock`; m-ix, `FS.getcwd` (`Cap.readdir` for
+`Cap.env`'s `Unix.getcwd`), `Sys_plan9.dirstat`, `Source.alarm` and
+`Source.source`. Recorded, not fixed: lib_networking and lib_core are
+m-ix's too, and their callers' types would change.
+
 In make test (2026-11-04, the author: "at least we detect when new code
 introduce new one and prevent that"): a family of kind check, `-caps`,
 `-dead`, `-bugs` and `-exn` of tiny/'s host programs (`tests/tiny_check.sh`,

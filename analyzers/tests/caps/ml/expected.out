@@ -21,4 +21,4 @@ analyzers/tests/caps/ml/Use.ml:51: Use.found: no capability, needs Cap.open_in|C
 analyzers/tests/caps/ml/Use.ml:56: Use.helper: no capability, needs Cap.stdout (Pervasives.print_newline)
 analyzers/tests/caps/ml/Use.ml:62: Use.opens_fd: no capability, needs Cap.open_in|Cap.open_out (Unix.openfile)
 analyzers/tests/caps/ml/Use.ml:66: Use.unused: names Pervasives.print_string itself
-11 functions with no capability, 4 with the wrong one, 4 with one they may not need, 9 naming a system call themselves; missing: Cap.stdout 7, Cap.open_in 3, Cap.open_in|Cap.open_out 2, Cap.open_in|Cap.readdir 1, Cap.exit 1, Cap.env 1
+11 functions with no capability, 4 with the wrong one, 4 with one they may not need, 9 naming a system call themselves, 0 wrappers of an untyped capability; missing: Cap.stdout 7, Cap.open_in 3, Cap.open_in|Cap.open_out 2, Cap.open_in|Cap.readdir 1, Cap.exit 1, Cap.env 1

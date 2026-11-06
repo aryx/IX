@@ -48,6 +48,8 @@ let caps_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
   let none = tuples "no_cap" 3 and wrong = tuples "wrong_cap" 3 and unused = tuples "unused_cap" 2 in
   (* the system calls a function names itself (capabilities.dl's around) *)
   let around = tuples "around" 2 in
+  (* the library's wrappers whose capability has no written type *)
+  let untyped = tuples "untyped_cap" 1 in
   let names_itself (o : string) : string list =
     List.sort_uniq compare
       (List.filter_map
@@ -67,12 +69,15 @@ let caps_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
           @ (if unneeded = [] then [] else [ "may not need " ^ String.concat ", " unneeded ])
           @ (match names_itself o with
              | [] -> []
-             | l -> [ "names " ^ String.concat ", " l ^ " itself" ]) in
+             | l -> [ "names " ^ String.concat ", " l ^ " itself" ])
+          @ (if List.exists (fun t -> t.(0) = o) untyped
+             then [ "takes a capability of no written type" ] else []) in
         let has = match held o with [] -> "" | h -> Printf.sprintf "has < %s >, " (String.concat "; " h) in
         (f, l, Printf.sprintf "%s: %s%s" (ml_function o) has (String.concat "; " says)))
       (functions
          (none @ wrong @ List.map (fun t -> [| t.(0) |]) unused
-          @ List.map (fun t -> [| t.(0) |]) around)) in
+          @ List.map (fun t -> [| t.(0) |]) around
+          @ List.map (fun t -> [| t.(0) |]) untyped)) in
   List.iter
     (fun (f, l, msg) -> Console.print caps (if l > 0 then Printf.sprintf "%s:%d: %s\n" f l msg else Printf.sprintf "%s: %s\n" f msg))
     (List.sort compare report);
@@ -88,7 +93,7 @@ let caps_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
     |> List.sort (fun a b -> compare b a)
     |> List.map (fun (k, n) -> Printf.sprintf "%s %d" n k) in
   Console.print caps
-    (Printf.sprintf "%d functions with no capability, %d with the wrong one, %d with one they may not need, %d naming a system call themselves%s\n"
+    (Printf.sprintf "%d functions with no capability, %d with the wrong one, %d with one they may not need, %d naming a system call themselves, %d wrappers of an untyped capability%s\n"
        (List.length (functions none)) (List.length (functions wrong)) (List.length (functions unused))
-       (List.length (functions around))
+       (List.length (functions around)) (List.length (functions untyped))
        (if by_cap = [] then "" else "; missing: " ^ String.concat ", " by_cap))

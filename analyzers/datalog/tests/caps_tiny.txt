@@ -1,1 +1,2 @@
+lib_networking/http/Keep_alive.ml:84: Keep_alive.exchange: has < Cap.network; Cap.open_in >, needs Cap.clock (Keep_alive.take)
 tiny/TinyBuildSystem.ml:326: TinyBuildSystem.start: has < Cap.env; Cap.exec; Cap.fork; Cap.open_out >, may not need Cap.open_out

@@ -1,7 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See CapStdlib.mli *)
+(* See CapStdlib.mli: the capability's type written, which -caps checks
+ * against what the function does (capabilities.dl's lib_gate) *)
 
-let exit _caps = exit
-let open_in _caps file = open_in file
+let exit (_ : < Cap.exit; .. >) = exit
+let open_in (_ : < Cap.open_in; .. >) file = open_in file

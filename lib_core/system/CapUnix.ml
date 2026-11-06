@@ -1,28 +1,29 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See CapUnix.mli *)
+(* See CapUnix.mli: the capability's type written, which -caps checks
+ * against what the function does (capabilities.dl's lib_gate) *)
 
-let fork _caps = Unix.fork
-let execv _caps = Unix.execv
-let execve _caps = Unix.execve
-let wait _caps = Unix.wait
-let waitpid _caps = Unix.waitpid
-let kill _caps = Unix.kill
-let chdir _caps = Unix.chdir
-let environment _caps = Unix.environment
-let gettimeofday _caps = Unix.gettimeofday
-let time _caps = Unix.time
-let sleepf _caps = Unix.sleepf
-let pipe _caps = Unix.pipe
-let getpid _caps = Unix.getpid
-let getcwd _caps = Unix.getcwd
-let setitimer _caps = Unix.setitimer
-let _exit _caps = Unix._exit
-let mkfifo _caps = Unix.mkfifo
-let getaddrinfo _caps = Unix.getaddrinfo
-let socket _caps = Unix.socket
-let connect _caps = Unix.connect
-let bind _caps = Unix.bind
-let listen _caps = Unix.listen
-let accept _caps = Unix.accept
+let fork (_ : < Cap.fork; .. >) = Unix.fork
+let execv (_ : < Cap.exec; .. >) = Unix.execv
+let execve (_ : < Cap.exec; .. >) = Unix.execve
+let wait (_ : < Cap.wait; .. >) = Unix.wait
+let waitpid (_ : < Cap.wait; .. >) = Unix.waitpid
+let kill (_ : < Cap.kill; .. >) = Unix.kill
+let chdir (_ : < Cap.chdir; .. >) = Unix.chdir
+let environment (_ : < Cap.env; .. >) = Unix.environment
+let gettimeofday (_ : < Cap.clock; .. >) = Unix.gettimeofday
+let time (_ : < Cap.clock; .. >) = Unix.time
+let sleepf (_ : < Cap.clock; .. >) = Unix.sleepf
+let pipe (_ : < Cap.pipe; .. >) = Unix.pipe
+let getpid (_ : < Cap.env; .. >) = Unix.getpid
+let getcwd (_ : < Cap.env; .. >) = Unix.getcwd
+let setitimer (_ : < Cap.signal; .. >) = Unix.setitimer
+let _exit (_ : < Cap.exit; .. >) = Unix._exit
+let mkfifo (_ : < Cap.open_out; .. >) = Unix.mkfifo
+let getaddrinfo (_ : < Cap.network; .. >) = Unix.getaddrinfo
+let socket (_ : < Cap.network; .. >) = Unix.socket
+let connect (_ : < Cap.network; .. >) = Unix.connect
+let bind (_ : < Cap.network; .. >) = Unix.bind
+let listen (_ : < Cap.network; .. >) = Unix.listen
+let accept (_ : < Cap.network; .. >) = Unix.accept

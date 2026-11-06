@@ -87,7 +87,11 @@ languages/ml/CLI.ml:92: CLI.parse: has < Cap.open_in; Cap.open_out; Cap.readdir;
 languages/ml/debug/Lines_ml.ml:6: Lines_ml.source: has < Cap.open_in; Cap.readdir >, may not need Cap.readdir
 languages/pascal/CLI.ml:29: CLI.run: has < Cap.open_in; Cap.stderr; Cap.stdin; Cap.stdout >, may not need Cap.open_in
 languages/tiger/CLI.ml:10: CLI.compile: has < Cap.open_in; Cap.open_out; Cap.stderr; Cap.stdout >, may not need Cap.stderr, Cap.stdout
+lib_core/commons/FS.ml:69: FS.getcwd: has < Cap.readdir >, needs Cap.env (Unix.getcwd)
+lib_core/commons/Sys_plan9.ml:35: Sys_plan9.dirstat: has < Cap.readdir >, needs Cap.open_in (Sys_plan9.dir_of)
 lib_core/commons/tests/Sources.ml:11: Sources.main: has < Cap.fork; Cap.pipe; Cap.stdout >, names Thread.create itself
+lib_core/concurrency/Source.ml:117: Source.alarm: has < Cap.clock; Cap.fork >, needs Cap.pipe (Unix.pipe)
+lib_core/concurrency/Source.ml:69: Source.source: has < Cap.fork >, needs Cap.kill (Source.start), Cap.pipe (Source.start, Unix.pipe), Cap.stderr (Unix.stderr)
 lib_graphics/Display.ml:100: Display.init: has < Cap.draw >, names Unix.openfile itself
 lib_graphics/Display.ml:223: Display.screen: no capability, needs Cap.open_in|Cap.open_out (Unix.openfile)
 lib_graphics/Keyboard.ml:31: Keyboard.held: has < Cap.fork; Cap.keyboard >, names Unix.openfile itself

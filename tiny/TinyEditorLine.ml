@@ -754,4 +754,4 @@ let main (caps : Cap.all_caps) : int =
       flush caps;
       0
 
-let () = TinyLibSystem.main "tiny-editor" main
+let () = TinyLibSystem.main_int "tiny-editor" main

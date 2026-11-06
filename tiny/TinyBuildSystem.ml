@@ -566,4 +566,4 @@ let main (caps : Cap.all_caps) : int =
   | [ _; ("-h" | "--help") ] -> TinyLibSystem.print caps help; 0
   | _ -> (try run caps with Bad m -> TinyLibSystem.eprint caps m; 2)
 
-let () = TinyLibSystem.main "tiny-build" main
+let () = TinyLibSystem.main_int "tiny-build" main

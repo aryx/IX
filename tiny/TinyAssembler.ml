@@ -336,23 +336,22 @@ let assemble (name : Fpath.t) text =
     (String.split_on_char '\n' text);
   Buffer.contents b
 
-let main
-    (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
-    =
+let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
+    (argv : string array) : Exit.t =
   let assemble_to (f : Fpath.t) (out : Fpath.t) =
     TinyLibSystem.write_file caps out
       (assemble f (TinyLibSystem.read_file caps f));
-    0 in
+    Exit.OK in
   (* x.tm's object: x.o, here *)
   let default f = Fpath.set_ext ".o" (Fpath.base f) in
   let tm f = Filename.check_suffix f ".tm" in
   try
-    match List.tl (TinyLibSystem.argv caps) with
-    | ("-h" | "--help") :: _ -> TinyLibSystem.print caps help; 0
+    match List.tl (Array.to_list argv) with
+    | ("-h" | "--help") :: _ -> TinyLibSystem.print caps help; Exit.OK
     | [ "-o"; out; f ] when tm f -> assemble_to (Fpath.v f) (Fpath.v out)
     | [ f ] when tm f -> assemble_to (Fpath.v f) (default (Fpath.v f))
-    | _ -> TinyLibSystem.eprint caps (usage ^ "   (-h: how)\n"); 2
-  with Error e ->
-    TinyLibSystem.eprint caps (Printf.sprintf "tiny-assembler: %s\n" e); 1
+    | _ -> TinyLibSystem.eprint caps (usage ^ "   (-h: how)\n"); Exit.Code 2
+  (* (said after the program's name by TinyLibSystem.main) *)
+  with Error e -> Exit.Err e
 
 let () = TinyLibSystem.main "tiny-assembler" main

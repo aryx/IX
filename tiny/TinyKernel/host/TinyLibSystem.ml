@@ -15,15 +15,26 @@ let reason f =
   | Unix.Unix_error (e, _, _) -> failwith (Unix.error_message e)
   | Sys_error m -> failwith m
 
-let main (name : string) (f : Cap.all_caps -> int) : unit =
+(* (Err's words as a Failure's, the same on both systems: not
+ * Exit.exit's, which logs them) *)
+let main (name : string) (f : Cap.all_caps -> string array -> Exit.t) : unit =
   Cap.main (fun caps ->
     Logging.setup caps ~name;
+    let said m =
+      flush_all (); Console.eprint caps (name ^ ": " ^ m ^ "\n"); 1 in
     CapStdlib.exit caps
-      (try f caps with
-       | Failure m ->
-         flush_all ();
-         Console.eprint caps (name ^ ": " ^ m ^ "\n");
-         1))
+      (try
+         match f caps (CapSys.argv caps) with
+         | Exit.OK -> 0
+         | Exit.Err m -> said m
+         | Exit.Code n -> n
+       with
+       | Failure m -> said m
+       | Exit.ExitCode n -> n))
+
+(* the old main, for the programs not yet on the new one *)
+let main_int (name : string) (f : Cap.all_caps -> int) : unit =
+  main name (fun caps _ -> Exit.Code (f caps))
 
 let argv (caps : < Cap.argv; .. >) = Array.to_list (CapSys.argv caps)
 let environment (caps : < Cap.env; .. >) =

@@ -864,4 +864,4 @@ let main
       code
   | _ -> TinyLibSystem.eprint caps "usage: tiny-db file.db   (-h: how)\n"; 1
 
-let () = TinyLibSystem.main "tiny-db" main
+let () = TinyLibSystem.main_int "tiny-db" main

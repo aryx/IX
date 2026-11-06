@@ -40,10 +40,15 @@
  * names a directory has (readdir) are segments, strings.
  *)
 
-(* [main name f]: the program: f with every capability, its result the
- * exit's code; a Failure that f lets out said after name, the code 1.
- * name is for the host's logs too *)
-val main : string -> (Cap.all_caps -> int) -> unit
+(* [main name f]: the program: f with every capability and its
+ * arguments (its name first), its result how it ends: Err's words, or
+ * a Failure's that f lets out, said after name, the status 1; Code n
+ * (or ExitCode n raised), n. name is for the host's logs too *)
+val main : string -> (Cap.all_caps -> string array -> Exit.t) -> unit
+
+(* the old main, its result the exit's code: for the programs not yet
+ * on the new one *)
+val main_int : string -> (Cap.all_caps -> int) -> unit
 
 (* the program's name, then its arguments *)
 val argv : < Cap.argv; .. > -> string list

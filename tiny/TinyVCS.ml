@@ -902,7 +902,7 @@ let run (caps : caps) (args : string list) =
   | [] -> error "usage: tiny-vcs CMD   (-h: how)"
 
 let () =
-  TinyLibSystem.main "tiny-vcs" (fun caps ->
+  TinyLibSystem.main_int "tiny-vcs" (fun caps ->
     try run (caps :> caps) (List.tl (TinyLibSystem.argv caps)); 0
     with Error m ->
       TinyLibSystem.eprint caps (Printf.sprintf "tiny-vcs: %s\n" m);

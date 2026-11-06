@@ -804,4 +804,4 @@ let main (caps : Cap.all_caps) : int =
   | [ _; ("-h" | "--help") ] -> TinyLibSystem.print caps help; 0
   | _ -> start caps
 
-let () = TinyLibSystem.main "tiny-shell" main
+let () = TinyLibSystem.main_int "tiny-shell" main

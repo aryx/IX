@@ -348,7 +348,7 @@ let unit_of (f : Fpath.t) =
 let library =
   [ "Stdlib"; "Char"; "Seq"; "List"; "String"; "Bytes"; "Array"; "Option";
     "Int64"; "Filename"; "Buffer"; "Printf"; "Marshal"; "Hashtbl"; "Common";
-    "Sha1"; "Fpath"; "Fpath_" ]
+    "Sha1"; "Fpath"; "Fpath_"; "Exit" ]
 
 (* a file that cannot be read or made, said apart from an error in one *)
 exception File_error of string
@@ -453,4 +453,4 @@ let main
   | Failure m -> TinyLibSystem.eprint caps (!file ^ ": " ^ m ^ "\n"); 1
   | File_error m -> TinyLibSystem.eprint caps (Printf.sprintf "tiny-ml: %s\n" m); 1
 
-let () = TinyLibSystem.main "tiny-ml" main
+let () = TinyLibSystem.main_int "tiny-ml" main

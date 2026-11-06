@@ -45,12 +45,17 @@ open TinyCalls
 type Cap.all_caps = < >
 
 let main name f =
+  let said m = u_flush (); ignore (u_write 2 (name ^ ": " ^ m ^ "\n")); 1 in
   exit
-    (try f () with
-     | Failure m ->
-         u_flush ();
-         ignore (u_write 2 (name ^ ": " ^ m ^ "\n"));
-         1)
+    (try
+       match f () (Array.init (u_argc ()) u_arg) with
+       | Exit.OK -> 0
+       | Exit.Err m -> said m
+       | Exit.Code n -> n
+     with
+     | Failure m -> said m
+     | Exit.ExitCode n -> n)
+let main_int name f = main name (fun caps _ -> Exit.Code (f caps))
 let argv caps = List.init (u_argc ()) u_arg
 let environment caps = [ "PATH", "/bin" ]
 let getpid _caps = u_getpid ()

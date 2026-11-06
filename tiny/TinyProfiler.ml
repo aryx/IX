@@ -126,4 +126,4 @@ let main (caps : < Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; .. >) =
             (percent n total) mode name)) rows;
       0
 
-let () = TinyLibSystem.main "tiny-prof" main
+let () = TinyLibSystem.main_int "tiny-prof" main

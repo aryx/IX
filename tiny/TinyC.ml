@@ -171,4 +171,4 @@ let main
           TinyLibSystem.eprint caps (Printf.sprintf "tiny-c: %s\n" m); 1
   end
 
-let () = TinyLibSystem.main "tiny-c" main
+let () = TinyLibSystem.main_int "tiny-c" main

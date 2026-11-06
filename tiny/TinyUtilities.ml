@@ -881,4 +881,4 @@ let main (caps : Cap.all_caps) : int =
   TinyLibSystem.flush caps;
   status
 
-let () = TinyLibSystem.main "tiny-utils" main
+let () = TinyLibSystem.main_int "tiny-utils" main

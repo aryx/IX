@@ -286,4 +286,4 @@ let main
           with Error e ->
             TinyLibSystem.eprint caps (Printf.sprintf "tiny-linker: %s\n" e); 1
 
-let () = TinyLibSystem.main "tiny-linker" main
+let () = TinyLibSystem.main_int "tiny-linker" main

@@ -259,7 +259,7 @@ type options = {
   disk_file : Fpath.t option; screen_file : Fpath.t option;
   audio_file : Fpath.t option; events_file : Fpath.t option; window : bool;
   rate : int option; date : int option; seed : int option;
-  net_loop : int option; net : string option; net_trace : bool;
+  net_loop : int option; net : Fpath.t option; net_trace : bool;
   net_lose : int list; net_out : bool; net_forward : (int * int) list;
   net_pcap : Fpath.t option; prof : Fpath.t option; cores : int;
   parallel : bool }
@@ -448,10 +448,13 @@ let run
   (* -net dir: the peer (TinyMachinePeer: TinyKernelNetwork.ml as the kernel
    * has it, at the other address), its documents the directory's files by
    * their names, no path; -net-lose: which of its packets are lost *)
-  let document dir line messages =
+  (* a file of the directory, by its name: no / in it (the names
+   * checked, a directory's, a picture's the address's last part) *)
+  let in_dir (dir : Fpath.t) name = Fpath.add_seg dir name in
+  let document (dir : Fpath.t) line messages =
     let file name =
       if name = "" || name.[0] = '.' || String.contains name '/' then None
-      else FS.read_opt caps (Fpath.v (Filename.concat dir name)) in
+      else FS.read_opt caps (in_dir dir name) in
     (* "GET address HTTP/1.0": a web page for tiny-kernel's browser. With
      * -net-out it is fetched; without, or when the fetch fails, a kept
      * copy in dir (OCaml.html) answers. *)
@@ -473,7 +476,7 @@ let run
           | Some answer -> answer
           | None ->
               TinyMachinePeer.www_failed
-                ("www: " ^ url ^ ":\nno copy kept in " ^ dir
+                ("www: " ^ url ^ ":\nno copy kept in " ^ Fpath.to_string dir
                  ^ " (with -net-out, tiny-machine fetches it)\n") in
       messages (TinyMachinePeer.messages page)
     | None ->
@@ -490,8 +493,9 @@ let run
             Some (TinyMachinePeer.picture "" w h pixels)
         | _ -> None in
       let kept () = match TinyMachinePeer.www_picture_kept url with
-        | Some name when CapSys.file_exists caps (Filename.concat dir name) ->
-            decode (Filename.concat dir name)
+        | Some name
+          when CapSys.file_exists caps (Fpath.to_string (in_dir dir name)) ->
+            decode (Fpath.to_string (in_dir dir name))
         | _ -> None in
       messages
         (if w = 0 then none
@@ -505,20 +509,21 @@ let run
         (String.concat "" (List.map (fun n -> n ^ "\n")
           (List.filter (fun n ->
                n.[0] <> '.'
-               && not (CapSys.is_directory caps (Filename.concat dir n)))
+               && not
+                    (CapSys.is_directory caps (Fpath.to_string (in_dir dir n))))
              (List.sort compare
-                (Array.to_list (CapSys.readdir caps dir)))))))
+                (Array.to_list (CapSys.readdir caps (Fpath.to_string dir))))))))
     else
       messages (match file line with
         | Some text -> TinyMachinePeer.messages text
         | None -> [ "get: no " ^ line ^ "\n" ]) in
   (* put: a file the machine keeps in dir, so that it outlives it; a
    * name only, as get's *)
-  let store dir name bytes =
+  let store (dir : Fpath.t) name bytes =
     if name = "" || name.[0] = '.' || String.contains name '/' then
       "a name has no / and no . first"
     else
-      try FS.write caps (Fpath.v (Filename.concat dir name)) bytes; ""
+      try FS.write caps (in_dir dir name) bytes; ""
       with Sys_error why | Failure why -> why in
   (* -net-pcap: the packets that crossed, written at the halt *)
   let capture = Buffer.create 4096 in
@@ -740,7 +745,8 @@ let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.open_in;
               options { o with date = int_of_string_opt n } rest
           | "-seed" :: n :: rest when int_of_string_opt n <> None ->
               options { o with seed = int_of_string_opt n } rest
-          | "-net" :: dir :: rest -> options { o with net = Some dir } rest
+          | "-net" :: dir :: rest ->
+              options { o with net = Some (Fpath.v dir) } rest
           | "-net-trace" :: rest -> options { o with net_trace = true } rest
           | "-net-lose" :: n :: rest when int_of_string_opt n <> None ->
               options { o with net_lose = int_of_string n :: o.net_lose } rest

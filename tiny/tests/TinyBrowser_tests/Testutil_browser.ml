@@ -10,19 +10,21 @@ let show_line p width (l : TinyBrowserLines.line) =
   else begin
     let at = ref 0 in
     String.concat "" (List.map (fun (r : TinyBrowserLines.run) ->
-      let pad =
-        if r.pic = -2 then ""
-        else if r.col > !at then String.make (r.col - !at) ' '
-        else "" in
-      let text =
-        if r.pic >= 0 && r.pic mod 256 = 0 then
-          let pc = TinyBrowserHtml.picture_of p (r.pic / 256) in
-          "[" ^ (if pc.pc_alt = "" then "picture" else pc.pc_alt) ^ ", "
-          ^ string_of_int pc.pc_w ^ "x" ^ string_of_int pc.pc_h ^ "]"
-        else if r.pic = -2 then ""
-        else r.text in
-      if r.pic <> -2 then at := max !at r.col + String.length text;
-      pad ^ text) l.runs)
+      match r.part with
+      | TinyBrowserLines.Run_lower -> ""
+      | part ->
+          let pad =
+            if r.col > !at then String.make (r.col - !at) ' ' else "" in
+          let text =
+            match part with
+            | TinyBrowserLines.Run_slice (id, 0) ->
+                let pc = TinyBrowserHtml.picture_of p id in
+                "[" ^ (if pc.pc_alt = "" then "picture" else pc.pc_alt) ^ ", "
+                ^ string_of_int pc.pc_w ^ "x" ^ string_of_int pc.pc_h ^ "]"
+            | TinyBrowserLines.Run_slice _ -> ""
+            | _ -> r.text in
+          at := max !at r.col + String.length text;
+          pad ^ text) l.runs)
   end
 
 let dump p width =

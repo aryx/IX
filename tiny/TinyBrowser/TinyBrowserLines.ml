@@ -15,7 +15,17 @@ let code = 4
 let big = 8
 let under = 16
 
-type run = { col : int; text : string; look : look; link : string; pic : int }
+type part =
+  | Run_text
+  | Run_lower
+  | Run_slice of int * int
+type run = {
+  col : int;
+  text : string;
+  look : look;
+  link : string option;
+  part : part;
+}
 type line = { runs : run list; rule : bool }
 
 (* A flow wraps words into lines of a given width, starting at a left
@@ -73,10 +83,10 @@ let carry (f : flow) =
     if r.col + n <= g then keep := r :: !keep
     else if r.col >= g then move := r :: !move
     else begin
-      keep := { col = r.col; text = String.sub r.text 0 (g - r.col);
-                look = r.look; link = r.link; pic = r.pic } :: !keep;
-      move := { col = g; text = String.sub r.text (g - r.col) (n - g + r.col);
-                look = r.look; link = r.link; pic = r.pic } :: !move
+      keep := { r with text = String.sub r.text 0 (g - r.col) } :: !keep;
+      move := { r with col = g;
+                       text = String.sub r.text (g - r.col) (n - g + r.col) }
+              :: !move
     end) (List.rev f.made);
   (* the line kept without the spaces at its end *)
   let rec strip s =
@@ -86,14 +96,12 @@ let carry (f : flow) =
     | r :: rest ->
       let t = strip r.text in
       if t = "" then rest
-      else { col = r.col; text = t; look = r.look; link = r.link;
-             pic = r.pic } :: rest
+      else { r with text = t } :: rest
     | [] -> []);
   end_line f;
   let shift = g - f.left in
   f.made <- List.map (fun (r : run) ->
-    { col = r.col - shift; text = r.text; look = r.look; link = r.link;
-      pic = r.pic }) !move;
+    { r with col = r.col - shift }) !move;
   f.at <- f.at - shift;
   f.glue <- f.left
 
@@ -113,24 +121,23 @@ let word (f : flow) text (look : look) link space =
      when r.look = look && r.link = link
           && r.col + String.length r.text = f.at ->
        f.made <- { col = r.col; text = r.text ^ (if space then " " else "") ^ text;
-                   look = look; link = link; pic = -1 } :: rest
+                   look = look; link = link; part = Run_text } :: rest
    | _ ->
        (* The space between two different runs belongs to neither, so a
         * link's underline stops where its text stops. *)
        f.made <-
-         { col = col; text = text; look = look; link = link; pic = -1 }
+         { col = col; text = text; look = look; link = link; part = Run_text }
          :: f.made);
   f.at <- col + len
 
 (* A picture of [rows] rows of the screen: a line for
- * each row, whose one run is the picture's slice there (its number
- * times 256, plus the row), at the left margin. The text goes on under
- * it. *)
+ * each row, whose one run is the picture's slice there, at the left
+ * margin. The text goes on under it. *)
 let picture_block (f : flow) id rows link =
   end_line f;
   for s = 0 to rows - 1 do
     push f { runs = [ { col = f.left; text = ""; look = 0; link = link;
-                        pic = (id * 256) + s } ];
+                        part = Run_slice (id, s) } ];
              rule = false }
   done
 
@@ -139,7 +146,8 @@ let verbatim (f : flow) text look link =
   if f.made = [] then f.at <- f.left;
   if text <> "" then begin
     f.made <-
-      { col = f.at; text = text; look = look; link = link; pic = -1 } :: f.made;
+      { col = f.at; text = text; look = look; link = link; part = Run_text }
+      :: f.made;
     f.at <- f.at + String.length text
   end
 
@@ -150,9 +158,9 @@ let verbatim (f : flow) text look link =
 (* The words of a cell are kept until the end of the table, when the
  * widths of its columns are known. *)
 type item =
-  | Word of string * look * string * bool
+  | Word of string * look * string option * bool
   | Break
-  | Pic of int * int * int * string
+  | Pic of int * int * int * string option
 
 type cell = { mutable items : item list; span : int; head : bool }
 type table = {
@@ -256,9 +264,7 @@ let lay_table (f : flow) (t : table) =
         let runs = List.concat (List.map (fun (at, ls) ->
           match List.nth_opt ls i with
           | Some (l : line) ->
-            List.map (fun (r : run) ->
-              { col = r.col + at; text = r.text; look = r.look; link = r.link;
-                pic = r.pic }) l.runs
+            List.map (fun (r : run) -> { r with col = r.col + at }) l.runs
           | None -> []) laid) in
         push f { runs = runs; rule = false }
       done) rows;

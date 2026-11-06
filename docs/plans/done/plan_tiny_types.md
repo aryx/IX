@@ -516,3 +516,16 @@ the speaker, then B and the kernel's trace. A commit each.
   and left: TinyWindows' item under the mouse (-1), TinyEditorScreen's
   cursor `cut` in a line's pieces (-1), TinyLibDraw's message reader
   (-1 when no message: the protocol's, C).
+- The browser's run: TinyBrowserLines.run's `pic`, three meanings in
+  an int (-1 text, -2 the bottom half of a large heading's line, the
+  picture's number times 256 plus the slice), a variant `part`:
+  `Run_text | Run_lower | Run_slice of int * int`; draw_line a match
+  on it, next_picture a filter_map of the slices' pictures not yet
+  asked. Its `link` a string option (old: "" none), and so the
+  element's `href` it comes from and the table's items. No timing:
+  Run_text and Run_lower are constants, a slice's pair is made once a
+  picture's row of lines, and a link's Some once an <a>, shared by its
+  runs. The run's copies `{ r with ... }`, one field a line. +23
+  lines, most the record and the type a field a line in the .ml and
+  .mli. Left: `dc_type` ("" until the head has come) and `dc_status`
+  (0 when no head said).

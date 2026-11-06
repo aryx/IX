@@ -161,10 +161,12 @@ let rec next_picture sc =
     | [] -> None
     | (l : line) :: rest ->
         (match
-           List.filter (fun (r : run) -> r.pic >= 0 && pending (r.pic / 256))
-             l.runs
+           List.filter_map (fun (r : run) ->
+             match r.part with
+             | Run_slice (id, _) when pending id -> Some id
+             | _ -> None) l.runs
          with
-         | r :: _ -> Some (r.pic / 256)
+         | id :: _ -> Some id
          | [] -> on_screen rest) in
   let rec first id =
     if id >= pictures p then None
@@ -207,10 +209,10 @@ let picture_message sc (id : int) s =
   | Pic_rows y when y < pc.pc_h ->
     put sc (d_pixels (image_of id) (0, y) s);
     pc.pc_got <- Pic_rows (y + 1);
-    let slice = (id * 256) + (y / 16) and first = sc.sc_y / 16 in
+    let slice = Run_slice (id, y / 16) and first = sc.sc_y / 16 in
     List.iteri (fun k (l : line) ->
       List.iter (fun (r : run) ->
-        if r.pic = slice then begin
+        if r.part = slice then begin
           let x = r.col * 8
           and sy = area_top + ((first + k) * 16) - sc.sc_y + (y mod 16) in
           if sy >= area_top && sy < area_top + area sc then
@@ -260,12 +262,12 @@ let link_at sc x y =
     | [ l ] ->
         (match
            List.filter (fun (r : run) ->
-             r.link <> "" && col >= r.col
+             r.link <> None && col >= r.col
              && col < r.col + (String.length r.text
                                * if r.look land big <> 0 then 2 else 1))
              l.runs
          with
-         | r :: _ -> Some r.link
+         | r :: _ -> r.link
          | [] -> None)
     | _ -> None
 

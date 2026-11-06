@@ -24,7 +24,7 @@ type picture = {
 type elem = {
   tag : string;
   face : int;                 (* the look of its text: bold, emph, code *)
-  href : string;
+  href : string option;       (* where its text links to *)
   hide : bool;
   pre : bool;
   margin : int;               (* the column where its lines start *)
@@ -45,12 +45,12 @@ type page = {
                                            * starts at *)
   mutable pictures : picture list;        (* the page's pictures, the last first *)
   mutable npictures : int;
-  mutable heading : (string * int * string * bool) list;
+  mutable heading : (string * int * string option * bool) list;
     (* a large heading's words, the last first *)
 }
 
 let root =
-  { tag = ""; face = 0; href = ""; hide = false; pre = false; margin = 0;
+  { tag = ""; face = 0; href = None; hide = false; pre = false; margin = 0;
     count = 0 }
 
 (* (the reader and the flow made first: tiny-ml computes a record's
@@ -204,8 +204,8 @@ let rule p =
 
 (* A large heading (<h1>, <h2>): its words laid out at half the width,
  * each of its lines two of the page's, its top half and its bottom half
- * (the same runs, their pic -2), so that the page is still rows of 16
- * pixels, each drawn on its own. *)
+ * (the same runs, their part Run_lower), so that the page is still rows
+ * of 16 pixels, each drawn on its own. *)
 let lay_heading p =
   let f = p.page_flow in
   let g = flow (max 1 ((f.width - f.left) / 2)) in
@@ -216,12 +216,10 @@ let lay_heading p =
   end_line f;
   List.iter (fun (l : line) ->
     let runs = List.map (fun (r : run) ->
-      { col = f.left + (2 * r.col); text = r.text; look = r.look;
-        link = r.link; pic = -1 }) l.runs in
+      { r with col = f.left + (2 * r.col); part = Run_text }) l.runs in
     push f { runs = runs; rule = false };
-    push f { runs = List.map (fun (r : run) ->
-               { col = r.col; text = r.text; look = r.look; link = r.link;
-                 pic = -2 }) runs;
+    push f { runs = List.map (fun (r : run) -> { r with part = Run_lower })
+                      runs;
              rule = false })
     (List.rev g.out)
 
@@ -397,8 +395,10 @@ let open_tag p tag k attrs =
   if not (is k void) then begin
     let face = e.face lor (k / 32) in
     let href =
-      if tag = "a" && attr attrs "href" <> "" then attr attrs "href"
-      else e.href in
+      match attr attrs "href" with
+      | "" -> e.href
+      | h when tag = "a" -> Some h
+      | _ -> e.href in
     let margin =
       if p.tables = [] && is k deeper then
         min (e.margin + 3) (p.page_flow.width / 2)
@@ -421,7 +421,8 @@ let open_tag p tag k attrs =
             let f = p.page_flow in
             f.at <- max 0 (margin - String.length mark - 1);
             f.made <-
-              [ { col = f.at; text = mark; look = 0; link = ""; pic = -1 } ];
+              [ { col = f.at; text = mark; look = 0; link = None;
+                  part = Run_text } ];
             (* If the number is wider than the margin, the item's text
              * starts after it. *)
             f.at <- max margin (f.at + String.length mark + 1)

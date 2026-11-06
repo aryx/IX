@@ -164,8 +164,7 @@ let image_of id = 272 + id
 (* A slice of a picture (16 rows of it) into dst at row y: the rows that
  * have come, from the picture's image, and a grey box for the rest;
  * until its first rows come, its alternative text on the grey. *)
-let draw_slice sc dst y (r : run) =
-  let id = r.pic / 256 and s = r.pic mod 256 in
+let draw_slice sc dst y (r : run) id s =
   let pc = picture_of sc.sc_page id in
   let x = r.col * 8 and from = s * 16 in
   let high = min 16 (pc.pc_h - from) in
@@ -193,7 +192,8 @@ let draw_slice sc dst y (r : run) =
  * an m's gaps kept: drawn twice, a pixel apart, an m was a block);
  * emphasis is italic; a link is blue and underlined; code is on light
  * grey; a large heading's characters are 16 by 32, the kernel's large
- * font, its top half on one line, its bottom half (pic -2) on the next. *)
+ * font, its top half on one line, its bottom half (Run_lower) on the
+ * next. *)
 let draw_line sc i (l : line) =
   let w = sc.sc_cols * 8 and at = area_top + (i * 16) - sc.sc_y in
   let tall = List.exists (fun (r : run) -> r.look land big <> 0) l.runs in
@@ -203,16 +203,17 @@ let draw_line sc i (l : line) =
   if l.rule then put sc (d_fill dst c_rule (0, y + 7, w, y + 9))
   else
     List.iter (fun (r : run) ->
-      if r.pic >= 0 then draw_slice sc dst y r
-      else if r.col < sc.sc_cols && r.text <> "" then begin
+      match r.part with
+      | Run_slice (id, s) -> draw_slice sc dst y r id s
+      | _ when r.col < sc.sc_cols && r.text <> "" ->
         let k = if r.look land big <> 0 then 2 else 1 in
         let n = min (String.length r.text) ((sc.sc_cols - r.col) / k) in
         let t = String.sub r.text 0 n and x = r.col * 8
-        and ry = if r.pic = -2 then y - 16 else y in
+        and ry = if r.part = Run_lower then y - 16 else y in
         if r.look land code <> 0 then
           put sc (d_fill dst c_code (x, y, x + (n * 8), y + 16));
         let ink =
-          if r.link <> "" then c_link
+          if r.link <> None then c_link
           else if r.look land bold <> 0 then c_black else c_text in
         (* (a look's bold and emph are the kernel's style's bits) *)
         let style =
@@ -221,10 +222,10 @@ let draw_line sc i (l : line) =
           lor (if k = 2 then 8 else 0) in
         put sc (if style = 0 then d_text dst ink (x, ry) t
                 else d_styled dst ink (x, ry) style t);
-        if r.link <> "" then
+        if r.link <> None then
           put sc (d_line dst c_link (x, ry + (16 * k) - 1)
                     (x + (n * 8 * k) - 1, ry + (16 * k) - 1))
-      end) l.runs;
+      | _ -> ()) l.runs;
   if not whole then begin
     let y0 = max at area_top and y1 = min (at + 16) (area_top + area sc) in
     if y0 < y1 then put sc (d_draw 0 c_strip (-1) (0, y0, w, y1) (0, y0 - at))

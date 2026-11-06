@@ -38,12 +38,23 @@ val big : look
 val under : look
 
 (* A run is a piece of text at a column, with a look and the address it
- * links to ("" if it is not a link); or, when [pic] is not -1, a slice
- * of a picture 16 pixels high: the picture's number times 256, plus
- * which slice (-2: the bottom half of a large heading's line). A line
- * is a list of runs, from left to right. A rule is a line drawn across
- * the screen, under a heading or for an <hr>. *)
-type run = { col : int; text : string; look : look; link : string; pic : int }
+ * links to, if any; its part says what it shows: its text, the bottom
+ * half of a large heading's line (the top half is the line above, the
+ * same runs as text), or a slice of a picture 16 pixels high (the
+ * picture's number, which slice from the top). A line is a list of
+ * runs, from left to right. A rule is a line drawn across the screen,
+ * under a heading or for an <hr>. *)
+type part =
+  | Run_text
+  | Run_lower
+  | Run_slice of int * int
+type run = {
+  col : int;
+  text : string;
+  look : look;
+  link : string option;
+  part : part;
+}
 type line = { runs : run list; rule : bool }
 
 (* A flow wraps words into lines of a given width, starting at a left
@@ -75,23 +86,23 @@ val end_line : flow -> unit
 (* [word flow text look link space] adds a word, after a space if
  * [space]: on this line if it fits, else on the next one, with the
  * pieces of the same word before it (a link and the comma after it). *)
-val word : flow -> string -> look -> string -> bool -> unit
+val word : flow -> string -> look -> string option -> bool -> unit
 
 (* [picture_block flow id rows link]: [rows] lines, each a slice of the
  * picture [id], at the left margin. *)
-val picture_block : flow -> int -> int -> string -> unit
+val picture_block : flow -> int -> int -> string option -> unit
 
 (* [verbatim flow text look link] adds a text as it is, with no
  * wrapping (<pre>'s). *)
-val verbatim : flow -> string -> int -> string -> unit
+val verbatim : flow -> string -> int -> string option -> unit
 
 (* A cell's words, kept until the end of its table: a word (its text,
  * look, link and whether a space was before it), a line's end, or a
  * picture (its number, columns, rows and link). *)
 type item =
-  | Word of string * look * string * bool
+  | Word of string * look * string option * bool
   | Break
-  | Pic of int * int * int * string
+  | Pic of int * int * int * string option
 
 (* A cell spans [span] columns (a caption: 1000, all of them); a head
  * (<th>, <caption>) is bold. *)

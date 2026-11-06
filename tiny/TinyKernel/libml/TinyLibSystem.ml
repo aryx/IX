@@ -135,6 +135,15 @@ let read_file caps file =
   close fd;
   s
 
+(* (an in_channel is the descriptor: TinyLibCore's Stdlib.ml) *)
+external in_channel_of_descr : int -> in_channel = "%identity"
+let with_open_in caps f file =
+  let fd = open_in caps file in
+  let chan : Chan.i = { ic = in_channel_of_descr fd; origin = File file } in
+  let r = try f chan with e -> close fd; raise e in
+  close fd;
+  r
+
 (* a directory is read as a file of entries of 80 bytes (user.h's
  * dirent): a name of 64 bytes ended by a 0 when shorter, its type (1
  * for a directory), its links, its size and its date *)

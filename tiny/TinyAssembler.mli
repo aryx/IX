@@ -106,8 +106,9 @@
  * Span-dependent Instructions" (CACM, 1978), the problem a fixed
  * format avoids; J. R. Levine, Linkers and Loaders (2000). *)
 
-(* a file's text (its name for the errors) to its object's text *)
-val assemble : Fpath.t -> string -> string
+(* a file's text to its object's text, the file opened by the caller
+ * (its name in the errors: Chan.origin) *)
+val assemble : Chan.i -> string
 
 (* the program: its arguments (its name first; -h: how) to how it ends *)
 val main :

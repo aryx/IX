@@ -51,6 +51,9 @@ external stdlib_length : string -> int = "ml_string_length"
 external stdlib_get : string -> int -> char = "ml_string_get"
 
 type 'a option = None | Some of 'a
+(* tiny-kernel's descriptor itself, no buffer of ours: In_channel reads
+ * it by the kernel's call *)
+type in_channel = int
 exception Match_failure
 exception Not_found
 exception Failure of string

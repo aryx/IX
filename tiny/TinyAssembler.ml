@@ -278,17 +278,15 @@ let decimal (h, l) =
     "-" ^ digits (((h lxor 0xffff) + (l' lsr 16)) land 0xffff) (l' land 0xffff)
             ""
 
-open Fpath_.Operators
-
 (* A file's items as lines, in their order, for tiny-linker
  * (TinyLinker.mli has the format): a word whose operand is a number is
  * made here, one whose operand is a label is made with 0 there and a
  * reloc line says what goes in it; a branch to a number too, its
  * offset being from an address the link chooses *)
-let assemble (name : Fpath.t) text =
+let assemble (chan : Chan.i) =
   let b = Buffer.create 4096 in
   let line s = Buffer.add_string b (s ^ "\n") in
-  let at n e = !!name ^ ":" ^ string_of_int (n + 1) ^ ": " ^ e in
+  let at n e = Chan.origin chan ^ ":" ^ string_of_int (n + 1) ^ ": " ^ e in
   let target e = match e with Num n -> decimal n | Sym s -> s in
   let relocs_of rs =
     (* (by offset: a list's words are made from the last) *)
@@ -333,14 +331,14 @@ let assemble (name : Fpath.t) text =
           List.iter (fun w -> add_word b (w lsr 16, w land 0xffff)) ws;
           Buffer.add_char b '\n';
           relocs_of !relocs) items)
-    (String.split_on_char '\n' text);
+    (String.split_on_char '\n' (In_channel.input_all chan.ic));
   Buffer.contents b
 
 let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     (argv : string array) : Exit.t =
   let assemble_to (f : Fpath.t) (out : Fpath.t) =
     TinyLibSystem.write_file caps out
-      (assemble f (TinyLibSystem.read_file caps f));
+      (TinyLibSystem.with_open_in caps assemble f);
     Exit.OK in
   (* x.tm's object: x.o, here *)
   let default f = Fpath.set_ext ".o" (Fpath.base f) in

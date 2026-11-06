@@ -99,6 +99,12 @@ val write_file : < Cap.open_out; .. > -> Fpath.t -> string -> unit
 (* all that a descriptor gives, to its end *)
 val read_all : int -> string
 
+(* [with_open_in caps f file]: f on the file opened, a channel that
+ * knows its name (In_channel.input_all reads it), closed when f
+ * returns or raises; Failure with the reason, as FS.with_open_in's
+ * Sys_error on the host *)
+val with_open_in : < Cap.open_in; .. > -> (Chan.i -> 'a) -> Fpath.t -> 'a
+
 (* a directory's names, in no order; none when it cannot be read *)
 val readdir : < Cap.readdir; .. > -> Fpath.t -> string list
 val is_directory : < Cap.readdir; .. > -> Fpath.t -> bool

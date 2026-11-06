@@ -73,6 +73,8 @@ let seek_end n = reason (fun () -> Unix.lseek (fd n) 0 Unix.SEEK_END)
 let read_file (caps : < Cap.open_in; .. >) (file : Fpath.t) =
   reason (fun () -> FS.read caps file)
 let read_all n = Procs.read_all (fd n)
+let with_open_in (caps : < Cap.open_in; .. >) f (file : Fpath.t) =
+  reason (fun () -> FS.with_open_in caps f file)
 let readdir (_ : < Cap.readdir; .. >) (dir : Fpath.t) =
   try Array.to_list (Sys.readdir !!dir) with Sys_error _ -> []
 let is_directory (_ : < Cap.readdir; .. >) (file : Fpath.t) =

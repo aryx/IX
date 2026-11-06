@@ -45,8 +45,8 @@ val asked : string -> TinyBrowserAddress.url option
 val response : int -> (string * string) list -> string -> string
 
 (* where the head of a response that begins [s] ends (the body's first
- * byte), -1 if it has not yet *)
-val head_end : string -> int
+ * byte), if it has yet *)
+val head_end : string -> int option
 
 (* a head's status (200), 0 if its first line is not HTTP's *)
 val status : string -> int

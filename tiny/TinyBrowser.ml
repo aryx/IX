@@ -70,13 +70,13 @@ let take sc s =
     let headless =
       String.length d.dc_head >= 5
       && not (String.starts_with "HTTP/" d.dc_head) in
-    let e = if headless then 0 else head_end d.dc_head in
-    if e >= 0 then begin
+    match (if headless then Some 0 else head_end d.dc_head) with
+    | None -> ()
+    | Some e ->
       let rest = String.sub d.dc_head e (String.length d.dc_head - e) in
       d.dc_head <- String.sub d.dc_head 0 e;
       body_start sc;
       body sc rest
-    end
   end
 
 (* The page's end: a helper's file closed and its program started *)

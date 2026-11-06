@@ -41,11 +41,12 @@ let response status headers body =
   ^ body
 
 (* an empty line ends the head, its line ends \r\n or \n alone *)
-let head_end s =
-  let a = find s "\r\n\r\n" 0 and b = find s "\n\n" 0 in
-  if a >= 0 && (b < 0 || a + 2 <= b) then a + 4
-  else if b >= 0 then b + 2
-  else -1
+let head_end s : int option =
+  match find s "\r\n\r\n" 0, find s "\n\n" 0 with
+  | Some a, Some b when a + 2 > b -> Some (b + 2)
+  | Some a, _ -> Some (a + 4)
+  | None, Some b -> Some (b + 2)
+  | None, None -> None
 
 let status head =
   if not (String.starts_with "HTTP/" head) then 0

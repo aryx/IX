@@ -71,15 +71,15 @@ let tag s =
 type reader = { mutable tail : string; mutable raw : string }
 
 (* Finds the > that ends a tag, starting just after its <. A > inside
- * quotes does not count. Returns -1 if the tag is not complete yet. *)
-let tag_end s i =
+ * quotes does not count. None if the tag is not complete yet. *)
+let tag_end s i : int option =
   let n = String.length s in
   let rec go j q =
-    if j >= n then -1
+    if j >= n then None
     else
       let c = s.[j] in
       if q <> ' ' then go (j + 1) (if c = q then ' ' else q)
-      else if c = '>' then j
+      else if c = '>' then Some j
       else if c = '"' || c = '\'' then go (j + 1) c
       else go (j + 1) ' ' in
   go i ' '
@@ -94,32 +94,33 @@ let scan (r : reader) chunk last =
   let rec go i acc =
     if i >= n then acc
     else if r.raw <> "" then begin
-      let j = find s ("</" ^ r.raw) i in
-      if j < 0 then begin keep (max i (n - 10)); acc end
-      else (match String.index_from_opt s j '>' with
-        | Some k ->
-          let name = r.raw in r.raw <- ""; go (k + 1) (Close name :: acc)
-        | None -> keep j; acc)
+      match find s ("</" ^ r.raw) i with
+      | None -> keep (max i (n - 10)); acc
+      | Some j ->
+        (match String.index_from_opt s j '>' with
+         | Some k ->
+           let name = r.raw in r.raw <- ""; go (k + 1) (Close name :: acc)
+         | None -> keep j; acc)
     end
     else if s.[i] = '<' then begin
       if i + 3 < n && s.[i + 1] = '!' && s.[i + 2] = '-' && s.[i + 3] = '-'
       then begin
-        let j = find s "-->" (i + 4) in
-        if j < 0 then begin keep i; acc end else go (j + 3) acc
+        match find s "-->" (i + 4) with
+        | None -> keep i; acc
+        | Some j -> go (j + 3) acc
       end
       else begin
-        let k = tag_end s (i + 1) in
-        if k < 0 then begin keep i; acc end
-        else if i + 1 < n && (s.[i + 1] = '!' || s.[i + 1] = '?') then
+        match tag_end s (i + 1) with
+        | None -> keep i; acc
+        | Some k when i + 1 < n && (s.[i + 1] = '!' || s.[i + 1] = '?') ->
           go (k + 1) acc
-        else begin
+        | Some k ->
           let t = tag (String.sub s (i + 1) (k - i - 1)) in
           (match t with
            | Open (name, _) when name = "style" || name = "script" ->
              r.raw <- name
            | _ -> ());
           go (k + 1) (t :: acc)
-        end
       end
     end
     else begin

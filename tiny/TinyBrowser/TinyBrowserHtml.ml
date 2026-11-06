@@ -129,7 +129,7 @@ let hides k attrs =
   || (let cl = attr attrs "class" in
       cl <> "" && List.exists (has_class cl) hidden_classes)
   || (let st = attr attrs "style" in
-      find st "display:none" 0 >= 0 || find st "display: none" 0 >= 0)
+      find st "display:none" 0 <> None || find st "display: none" 0 <> None)
 
 (* the line's end a table's cell waits for, put in before what comes *)
 let unbreak (t : table) c =

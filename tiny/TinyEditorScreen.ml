@@ -197,31 +197,32 @@ let yank (e : editor) =
 (* Searching *)
 (*****************************************************************************)
 
-(* where sub is in s at from or after; -1 *)
-let find (sub : string) (s : string) (from : int) : int =
+(* where sub is in s at from or after *)
+let find (sub : string) (s : string) (from : int) : int option =
   let n = String.length s and m = String.length sub in
   let rec same i j = j >= m || (s.[i + j] = sub.[j] && same i (j + 1)) in
-  let rec go i = if i + m > n then - 1 else if same i 0 then i else go (i + 1) in
+  let rec go i =
+    if i + m > n then None else if same i 0 then Some i else go (i + 1) in
   go (max from 0)
 
 (* the cursor after the next sub, from a column of its line on, then in
  * the lines below; a message when there is none (view says "Failing") *)
 let look (e : editor) (sub : string) (from : int) =
   let t = e.t in
-  let i = find sub t.line from in
-  if i >= 0 then t.col <- i + String.length sub
-  else begin
+  match find sub t.line from with
+  | Some i -> t.col <- i + String.length sub
+  | None ->
     let rec go n = function
       | [] -> None
       | l :: rest ->
-          let i = find sub l 0 in
-          if i >= 0 then Some (n, i) else go (n + 1) rest in
+          (match find sub l 0 with
+           | Some i -> Some (n, i)
+           | None -> go (n + 1) rest) in
     match go 1 t.below with
     | Some (n, i) ->
         for _i = 1 to n do ignore (down t) done;
         t.col <- i + String.length sub
     | None -> e.message <- "Failing search: " ^ sub
-  end
 
 (* a key while searching: a character more to look for (from where what
  * is found starts), C-s the next one, Backspace a character less; any
@@ -285,12 +286,13 @@ let complete (typed : string) : string =
 
 (* s with each from replaced by to_, and how many were *)
 let rec replace (from : string) (to_ : string) (s : string) : string * int =
-  let i = find from s 0 and m = String.length from in
-  if i < 0 then s, 0
-  else
-    (let rest, n =
-       replace from to_ (String.sub s (i + m) (String.length s - i - m)) in
-     String.sub s 0 i ^ to_ ^ rest, n + 1)
+  let m = String.length from in
+  match find from s 0 with
+  | None -> s, 0
+  | Some i ->
+    let rest, n =
+      replace from to_ (String.sub s (i + m) (String.length s - i - m)) in
+    String.sub s 0 i ^ to_ ^ rest, n + 1
 
 (* Enter after a prompt: what is typed done *)
 let rec answered (e : editor) (what : answer) (typed : string) =

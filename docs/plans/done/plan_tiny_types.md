@@ -394,9 +394,9 @@ on purpose and said in its stage: TinyLibPlayground's styles (a
 colour's byte with its style above it, kept ints); TinyBrowserLines'
 word's bool (the HTML reader's data, a record for one bool not done);
 TinyLinker.aout's two ints; tee and cp on descriptors; mem_address's
--1 (an option would allocate at each read and write); tiny-machine's
--net directory a string (its uses Sys's and messages, to take with the
-host-only programs' capabilities). Learnt on the way: tiny-ml's one
+-1 (an option would allocate at each read and write). Tiny-machine's
+-net directory, left a string here, became an Fpath.t later
+(b9dbcc88), once its Sys calls went by CapSys. Learnt on the way: tiny-ml's one
 name space for constructors and labels makes a new type's names carry
 its prefix (Trap_, Fs_, Il_, ih_, end_, st_), and a common one (Code)
 was taken twice by a program's own; mini-ml reads no `private`, so the
@@ -505,3 +505,14 @@ the speaker, then B and the kernel's trace. A commit each.
   none each); the scheduler's run matches `Some { call = Some n; _ }`,
   waited `Some ({ ret = Some n; _ } as t)`. Only a traced process
   reaches them. +2 lines.
+- B, the "where, or -1" functions, int options: TinyBrowserText.find
+  (its callers in the HTTP head, the hidden styles, the site and the
+  tokens), the entities (a table and List.assoc_opt, old: a match of
+  30 cases and -1), entity_code, TinyBrowserTokens.tag_end,
+  TinyBrowserHttp.head_end (a match of the two ends' four cases), and
+  TinyEditorScreen.find (search, replace-string). No timing: the
+  option is made once, at the function's return, not in its loop over
+  the characters (mem_address's was at each access). -5 lines. Seen
+  and left: TinyWindows' item under the mouse (-1), TinyEditorScreen's
+  cursor `cut` in a line's pieces (-1), TinyLibDraw's message reader
+  (-1 when no message: the protocol's, C).

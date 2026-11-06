@@ -60,8 +60,8 @@ let absolute typed =
 (* "https://host" of an address *)
 let site url =
   match find url "://" 0 with
-  | -1 -> ""
-  | i ->
+  | None -> ""
+  | Some i ->
     (match String.index_from_opt url (i + 3) '/' with
      | Some j -> String.sub url 0 j
      | None -> url)

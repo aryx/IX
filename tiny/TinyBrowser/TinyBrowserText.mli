@@ -12,8 +12,8 @@
  *     "Caf&eacute; &ndash; na\xc3\xafve"  ──►  "Cafe - naive"
  *)
 
-(* [find s pat i] is the position of pat in s, searching from i, or -1. *)
-val find : string -> string -> int -> int
+(* [find s pat i] is the position of pat in s, searching from i *)
+val find : string -> string -> int -> int option
 
 val is_space : char -> bool
 

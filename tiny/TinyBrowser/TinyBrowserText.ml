@@ -7,11 +7,11 @@
 (* Strings *)
 (*****************************************************************************)
 
-(* Returns the position of pat in s, searching from i, or -1. *)
-let find s pat i =
+let find s pat i : int option =
   let n = String.length s and m = String.length pat in
   let rec at j k = k >= m || (s.[j + k] = pat.[k] && at j (k + 1)) in
-  let rec go j = if j + m > n then -1 else if at j 0 then j else go (j + 1) in
+  let rec go j =
+    if j + m > n then None else if at j 0 then Some j else go (j + 1) in
   go i
 
 let is_space c = c = ' ' || c = '\n' || c = '\t' || c = '\r'
@@ -67,35 +67,25 @@ let of_code u =
   | 0x200a | 0x2061 -> "" 
   | _ -> "?"
 
-let entity name =
-  match name with
-  | "amp" -> 38 | "lt" -> 60 | "gt" -> 62 | "quot" -> 34 | "apos" -> 39
-  | "nbsp" -> 0xa0
-  | "ndash" -> 0x2013 | "mdash" -> 0x2014 | "minus" -> 0x2212
-  | "hellip" -> 0x2026
-  | "lsquo" -> 0x2018 | "rsquo" -> 0x2019 | "ldquo" -> 0x201c
-  | "rdquo" -> 0x201d
-  | "middot" -> 0xb7 | "bull" -> 0x2022 | "times" -> 0xd7 | "copy" -> 0xa9
-  | "reg" -> 0xae
-  | "shy" -> 0xad
-  | "rarr" -> 0x2192 | "larr" -> 0x2190 | "laquo" -> 0xab | "raquo" -> 0xbb
-  | "deg" -> 0xb0
-  | "eacute" -> 0xe9 | "egrave" -> 0xe8 | "aacute" -> 0xe1 | "ouml" -> 0xf6
-  | "uuml" -> 0xfc
-  | _ -> -1
+(* the named entities known, and their code points *)
+let entities =
+  [ "amp", 38; "lt", 60; "gt", 62; "quot", 34; "apos", 39; "nbsp", 0xa0;
+    "ndash", 0x2013; "mdash", 0x2014; "minus", 0x2212; "hellip", 0x2026;
+    "lsquo", 0x2018; "rsquo", 0x2019; "ldquo", 0x201c; "rdquo", 0x201d;
+    "middot", 0xb7; "bull", 0x2022; "times", 0xd7; "copy", 0xa9; "reg", 0xae;
+    "shy", 0xad; "rarr", 0x2192; "larr", 0x2190; "laquo", 0xab;
+    "raquo", 0xbb; "deg", 0xb0; "eacute", 0xe9; "egrave", 0xe8;
+    "aacute", 0xe1; "ouml", 0xf6; "uuml", 0xfc ]
+
+let entity (name : string) : int option = List.assoc_opt name entities
 
 (* Returns the code point of an entity, given the text between its &
- * and its ; (like "amp", "#8211" or "#x2013"), or -1 if it is unknown:
- * a number's, as int_of_string reads 08211 and 0x2013 *)
-let entity_code s =
+ * and its ; (like "amp", "#8211" or "#x2013"), if it is known: a
+ * number's, as int_of_string reads 08211 and 0x2013 *)
+let entity_code s : int option =
   let n = String.length s in
   if n > 1 && s.[0] = '#' then
-    (match
-       int_of_string_opt
-         ("0" ^ String.lowercase_ascii (String.sub s 1 (n - 1)))
-     with
-     | Some u -> u
-     | None -> -1)
+    int_of_string_opt ("0" ^ String.lowercase_ascii (String.sub s 1 (n - 1)))
   else entity s
 
 (* How many bytes a UTF-8 character has, given its first byte. *)
@@ -126,11 +116,11 @@ let ascii s =
         let u =
           if !j < n && s.[!j] = ';' then
             entity_code (String.sub s (!i + 1) (!j - !i - 1))
-          else -1 in
-        if u >= 0 then begin
-          cut !i; pieces := of_code u :: !pieces; i := !j + 1; plain := !i
-        end
-        else incr i
+          else None in
+        match u with
+        | Some u ->
+            cut !i; pieces := of_code u :: !pieces; i := !j + 1; plain := !i
+        | None -> incr i
       end
       else if Char.code c >= 128 then begin
         let b = Char.code c in

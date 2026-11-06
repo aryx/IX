@@ -23,11 +23,12 @@ let () =
            ~default:"none")
   | [ _; "-http" ] ->
       let s = In_channel.input_all stdin in
-      let e = TinyBrowserHttp.head_end s in
-      let head = if e < 0 then s else String.sub s 0 e in
+      let head, body =
+        match TinyBrowserHttp.head_end s with
+        | None -> s, "-"
+        | Some e -> String.sub s 0 e, String.sub s e (String.length s - e) in
       Printf.printf "%d|%s|%s\n" (TinyBrowserHttp.status head)
-        (TinyBrowserHttp.media_type head)
-        (if e < 0 then "-" else String.sub s e (String.length s - e))
+        (TinyBrowserHttp.media_type head) body
   | [ _; width; file ] | [ _; width; file; _ ] ->
       let ic = open_in_bin file in
       let s = really_input_string ic (in_channel_length ic) in

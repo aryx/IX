@@ -203,7 +203,7 @@ let command t q words =
   | [ ("c" | "s") as c ], Stopped ->
       let pc = reg q 16 in
       (match List.assoc_opt pc t.stops with
-       | Some w when t.call < 0 -> mem_store q.mem pc w; t.over <- pc
+       | Some w when t.call = None -> mem_store q.mem pc w; t.over <- Some pc
        | _ -> ());
       t.step <- c = "s";
       q.state <- Ready

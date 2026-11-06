@@ -158,7 +158,7 @@ let detach t =
   match traced_proc t with
   | Some q ->
       List.iter (fun (a, w) -> mem_store q.mem a w) t.stops;
-      if t.call >= 0 then set_reg q 16 (reg q 16 - 4);
+      if t.call <> None then set_reg q 16 (reg q 16 - 4);
       t.stops <- [];
       q.traced <- None;
       (match q.state with Stopped -> q.state <- Ready | _ -> ())

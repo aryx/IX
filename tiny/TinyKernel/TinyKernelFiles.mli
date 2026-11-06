@@ -107,11 +107,10 @@ and voice = { mutable ahead : int }
  * their pids, the breakpoints (an address and the word that was there),
  * what is said to the tracer and not yet read, and the tracer's
  * descriptors on it; whether it stops at its calls (trace), the call
- * it is stopped before or let in (-1: none), the call whose end it
- * waits for, to stop then (-1: none); whether it runs one instruction
- * and stops (a step), and the breakpoint it runs the word of, the 0
- * written again after (-1: none); whether its children are traced too
- * (trace -f) *)
+ * it is stopped before or let in, the call whose end it waits for, to
+ * stop then; whether it runs one instruction and stops (a step), and
+ * the breakpoint it runs the word of, the 0 written again after;
+ * whether its children are traced too (trace -f) *)
 and trace = {
   tpid : int;
   tracer : int;
@@ -119,10 +118,10 @@ and trace = {
   mutable said : string list;
   mutable watchers : int;
   mutable calls : bool;
-  mutable call : int;
-  mutable ret : int;
+  mutable call : int option;
+  mutable ret : int option;
   mutable step : bool;
-  mutable over : int;
+  mutable over : int option;
   mutable follow : bool;
 }
 

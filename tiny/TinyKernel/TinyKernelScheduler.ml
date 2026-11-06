@@ -210,8 +210,8 @@ and idle () =
 
 and run p =
   match p.traced with
-  | Some t when t.call >= 0 -> call p t.call; next p false
-  | Some t when t.step || t.over >= 0 -> step p t
+  | Some { call = Some n; _ } -> call p n; next p false
+  | Some t when t.step || t.over <> None -> step p t
   | _ ->
       p.core <- 0;
       mem_window p.mem;
@@ -231,9 +231,11 @@ and step p t =
   let timer = trapped p cause (k_tval ()) in
   if cause <> Trap_intr then count_ticks ();
   if ran && List.exists (fun q -> q.pid = p.pid) !procs then begin
-    if t.over >= 0 && List.exists (fun (b, _) -> b = t.over) t.stops then
-      mem_store p.mem t.over 0;
-    t.over <- -1;
+    (match t.over with
+     | Some a when List.exists (fun (b, _) -> b = a) t.stops ->
+         mem_store p.mem a 0
+     | _ -> ());
+    t.over <- None;
     match p.state with Ready when t.step -> stop p "step" | _ -> ()
   end;
   next p timer

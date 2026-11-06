@@ -499,3 +499,9 @@ the speaker, then B and the kernel's trace. A commit each.
   u_trace at start, which ends the program when it fails, then always
   one. TinyLibPlayground's `speaker` an int option (u_open's -1 made
   None where it returns).
+- The kernel's trace: TinyKernelFiles.trace's `call` (the call a
+  process is stopped before), `ret` (the call whose end it waits for)
+  and `over` (the breakpoint whose word it runs) int options (old: -1
+  none each); the scheduler's run matches `Some { call = Some n; _ }`,
+  waited `Some ({ ret = Some n; _ } as t)`. Only a traced process
+  reaches them. +2 lines.

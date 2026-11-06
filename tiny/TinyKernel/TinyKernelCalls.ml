@@ -130,8 +130,8 @@ let adopt p q =
   (match p.traced with
    | Some t when t.follow ->
        q.traced <- Some { t with tpid = q.pid; stops = []; said = [];
-                                 watchers = 0; call = -1; ret = -1;
-                                 step = false; over = -1 }
+                                 watchers = 0; call = None; ret = None;
+                                 step = false; over = None }
    | _ -> ());
   List.iter (fun (_, f) -> share f) p.fds;
   procs := !procs @ [ q ];
@@ -503,7 +503,7 @@ let sys_trace p =
   let make q tracer =
     let t =
       { tpid = q.pid; tracer = tracer; stops = []; said = []; watchers = 0;
-        calls = false; call = -1; ret = -1; step = false; over = -1;
+        calls = false; call = None; ret = None; step = false; over = None;
         follow = false } in
     q.traced <- Some t;
     t in
@@ -653,13 +653,13 @@ let called p n =
   | _ when not (List.exists (fun q -> q.pid = p.pid) !procs) -> ()
   | Some t, Ready when t.calls -> returned p n
   | Some t, Ready when t.step -> stop p "step"
-  | Some t, Waiting _ when t.calls -> t.ret <- n
+  | Some t, Waiting _ when t.calls -> t.ret <- Some n
   | _ -> ()
 let call p n =
   match p.traced with
-  | Some t when t.call >= 0 -> t.call <- -1; called p n
+  | Some t when t.call <> None -> t.call <- None; called p n
   | Some t when t.calls ->
-      t.call <- n;
+      t.call <- Some n;
       pause p ("call " ^ String.concat " " (List.map string_of_int
                                              [ n; reg p 1; reg p 2; reg p 3 ]))
   | _ -> syscall p n
@@ -668,6 +668,6 @@ let call p n =
  * the call's end or a step *)
 let waited p =
   match p.traced with
-  | Some t when t.ret >= 0 -> let n = t.ret in t.ret <- -1; returned p n; true
+  | Some ({ ret = Some n; _ } as t) -> t.ret <- None; returned p n; true
   | Some t when t.step -> stop p "step"; true
   | _ -> false

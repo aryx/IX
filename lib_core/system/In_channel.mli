@@ -12,3 +12,8 @@ val input_line : t -> string option
 
 (* what is left of the channel *)
 val input_all : t -> string
+
+(* [input ic b pos len]: up to len bytes into b at pos, what the
+ * channel has, waiting for one at least; 0 at the end (tiny/'s
+ * utilities, a piece at a time) *)
+val input : t -> bytes -> int -> int -> int

@@ -238,10 +238,13 @@ let commit r h =
  * leaves head naming the old state, whole *)
 let save r (o : op) =
   let h = put r (Op o) in
-  let fd = TinyLibSystem.open_append r.caps (path r "objects") in
-  TinyLibSystem.write fd (String.concat "" (List.map (fun (h, z) ->
-    h ^ " " ^ string_of_int (String.length z) ^ "\n" ^ z) (List.rev r.fresh)));
-  TinyLibSystem.close fd;
+  (* (closed, so written, before head is) *)
+  TinyLibSystem.with_open_append r.caps (fun (c : Chan.o) ->
+      Out_channel.output_string c.oc
+        (String.concat "" (List.map (fun (h, z) ->
+           h ^ " " ^ string_of_int (String.length z) ^ "\n" ^ z)
+           (List.rev r.fresh))))
+    (path r "objects");
   r.fresh <- [];
   let tmp = path r "head.tmp" in
   write_file r.caps tmp (h ^ "\n");

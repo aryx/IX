@@ -85,6 +85,18 @@ let with_open_in (caps : < Cap.open_in; .. >) f (file : Fpath.t) =
   reason (fun () -> FS.with_open_in caps f file)
 let with_open_out (caps : < Cap.open_out; .. >) f (file : Fpath.t) =
   reason (fun () -> FS.with_open_out caps f file)
+let with_open_append (caps : < Cap.open_out; .. >) f (file : Fpath.t) =
+  (* (the file named, as FS.with_open_in's Sys_error does) *)
+  let fd =
+    try FS.open_append_fd caps !!file 0o666
+    with Unix.Unix_error (e, _, _) ->
+      failwith (!!file ^ ": " ^ Unix.error_message e) in
+  let oc = Unix.out_channel_of_descr fd in
+  let chan : Chan.o = { oc; dest = OutFile file } in
+  reason (fun () ->
+    Fun.protect ~finally:(fun () -> close_out oc) (fun () -> f chan))
+let stdin (caps : < Cap.stdin; .. >) : Chan.i =
+  { ic = Console.stdin caps; origin = Stdin }
 let readdir (_ : < Cap.readdir; .. >) (dir : Fpath.t) =
   try Array.to_list (Sys.readdir !!dir) with Sys_error _ -> []
 let is_directory (_ : < Cap.readdir; .. >) (file : Fpath.t) =

@@ -145,8 +145,12 @@ let read_file caps file =
 
 (* (a channel is the descriptor: TinyLibCore's Stdlib.ml) *)
 external in_channel_of_descr : int -> in_channel = "%identity"
+(* the file named in an open's failure, as the host's Sys_error names it
+ * ("f: cannot open"; old: "cannot open", the file said by no one) *)
+let named file g =
+  try g () with Failure m -> failwith (str file ^ ": " ^ m)
 let with_open_in caps f file =
-  let fd = open_in caps file in
+  let fd = named file (fun () -> open_in caps file) in
   let chan : Chan.i = { ic = in_channel_of_descr fd; origin = File file } in
   let r = try f chan with e -> close fd; raise e in
   close fd;
@@ -154,11 +158,18 @@ let with_open_in caps f file =
 
 external out_channel_of_descr : int -> out_channel = "%identity"
 let with_open_out caps f file =
-  let fd = open_out caps file in
+  let fd = named file (fun () -> open_out caps file) in
   let chan : Chan.o = { oc = out_channel_of_descr fd; dest = OutFile file } in
   let r = try f chan with e -> close fd; raise e in
   close fd;
   r
+let with_open_append caps f file =
+  let fd = named file (fun () -> open_append caps file) in
+  let chan : Chan.o = { oc = out_channel_of_descr fd; dest = OutFile file } in
+  let r = try f chan with e -> close fd; raise e in
+  close fd;
+  r
+let stdin _caps : Chan.i = { ic = in_channel_of_descr 0; origin = Stdin }
 
 (* a directory is read as a file of entries of 80 bytes (user.h's
  * dirent): a name of 64 bytes ended by a 0 when shorter, its type (1

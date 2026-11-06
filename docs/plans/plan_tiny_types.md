@@ -363,3 +363,25 @@ taken the files read and written whole; then the shell's plumbing
 and tiny-db's file are what a `type fd` would name. In all, the
 eight stages: +164 code lines (stage 3 -5, the others +2 to +36),
 for signatures that say what their ints, strings and bools are.
+
+2026-11-06, fd, after the Chan work (the author: "let's do the
+renaming fd if needed, unless Chan or in_channel would be better types
+where it's currently used", then "let's commit part a and move
+forward"): part A, TinyLibSystem's descriptor calls on `type fd` (an
+alias, as pid), the shell's redirection target and tiny-db's file
+record on it (3f19609b). Part B, a channel where it says more than a
+descriptor: the utilities' inputs (cat, wc, grep, sort, tail, xd, ps,
+by `each_input`, the standard input `TinyLibSystem.stdin`), `cmp`,
+tiny-build's digest (a piece at a time: a file need not fit in the
+heap) and tiny-vcs's append to its store (`with_open_append`, closed
+before head is written). For them `In_channel.input`, OCaml 4.14's,
+in TinyLibCore and in lib_core's In_channel (mini-ml's, which
+mini-analyze reads ix by too). `with_open_*`'s Failure names the file
+on both systems ("f: cannot open" on tiny-kernel, where it said only
+"cannot open": tiny-assembler, tiny-c, tiny-ml now say which file
+there too), as the host's Sys_error did. Left on descriptors: the
+shell's plumbing, tiny-db's file at offsets, `tee` (several files
+written as the input comes), `cp` (each_path says a failure after
+the source's name, where a channel's open would say its own file
+again). The messages the same in 17 cases, but cmp's missing file,
+now named ("cmp: nofile: ...").

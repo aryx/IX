@@ -13,6 +13,7 @@ let with_open_bin file f = with_open open_in_bin file f
 let with_open_text file f = with_open open_in file f
 
 let input_line ic = try Some (Pervasives.input_line ic) with End_of_file -> None
+let input ic b pos len = Pervasives.input ic b pos len
 
 (* by pieces: a terminal or a pipe has no length to ask for *)
 let input_all ic =

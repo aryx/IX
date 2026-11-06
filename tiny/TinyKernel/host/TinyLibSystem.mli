@@ -124,8 +124,9 @@ val read_all : fd -> string
 
 (* [with_open_in caps f file]: f on the file opened, a channel that
  * knows its name (In_channel.input_all reads it), closed when f
- * returns or raises; Failure with the reason, as FS.with_open_in's
- * Sys_error on the host *)
+ * returns or raises; an open's Failure says the file and the reason,
+ * on both systems ("f: No such file or directory", "f: cannot open"),
+ * as FS.with_open_in's Sys_error on the host *)
 val with_open_in : < Cap.open_in; .. > -> (Chan.i -> 'a) -> Fpath.t -> 'a
 
 (* [with_open_out caps f file]: f on the file opened to write, from
@@ -134,6 +135,14 @@ val with_open_in : < Cap.open_in; .. > -> (Chan.i -> 'a) -> Fpath.t -> 'a
  * raises; Failure with the reason *)
 val with_open_out :
   < Cap.open_out; .. > -> (Chan.o -> 'a) -> Fpath.t -> 'a
+
+(* the same, to write at the file's end (made if it is not there) *)
+val with_open_append :
+  < Cap.open_out; .. > -> (Chan.o -> 'a) -> Fpath.t -> 'a
+
+(* the standard input as a channel (In_channel.input reads what comes;
+ * not with read_line, which keeps what it read past a line) *)
+val stdin : < Cap.stdin; .. > -> Chan.i
 
 (* a directory's names, in no order; none when it cannot be read *)
 val readdir : < Cap.readdir; .. > -> Fpath.t -> string list

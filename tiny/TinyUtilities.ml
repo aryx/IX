@@ -64,18 +64,26 @@ let options letters args =
 (* Filters *)
 (*****************************************************************************)
 
-(* [pieces fd f]: f on each piece of what fd gives, as soon as it is
- * read, until the end *)
-let rec pieces fd f =
-  let s = TinyLibSystem.read fd 8192 in
-  if s <> "" then begin f s; pieces fd f end
+(* [piece c n]: what the channel gives next, up to n bytes, without
+ * waiting for more ("" at the end); [pieces c f]: f on each piece, as
+ * soon as it is read, until the end (old: a descriptor's, the files
+ * opened and closed by hand) *)
+let piece (c : Chan.i) n =
+  let b = Bytes.make n ' ' in
+  Bytes.sub_string b 0 (In_channel.input c.ic b 0 n)
+let pieces (c : Chan.i) f =
+  let b = Bytes.make 8192 ' ' in
+  let rec go () =
+    let n = In_channel.input c.ic b 0 8192 in
+    if n > 0 then begin f (Bytes.sub_string b 0 n); go () end in
+  go ()
 
-(* [lines fd f]: f on each line of fd, without its newline, as soon as
+(* [lines c f]: f on each line of c, without its newline, as soon as
  * it is whole, and whether a newline ended it: the last one may have
  * none *)
-let lines fd f =
+let lines (c : Chan.i) f =
   let rest = ref "" in
-  pieces fd (fun s ->
+  pieces c (fun s ->
     let s = !rest ^ s in
     let rec go i =
       match String.index_from_opt s i '\n' with
@@ -84,29 +92,29 @@ let lines fd f =
     go 0);
   if !rest <> "" then f !rest false
 
-let each_input caps tool files f =
-  let one status name fd =
-    try f name fd; status
-    with Failure m ->
-      complain caps tool ((if name = "" then "stdin" else name) ^ ": " ^ m);
-      1 in
-  if files = [] then one 0 "" 0
+(* [named name g]: g's Failure said after the name *)
+let named name g = try g () with Failure m -> failwith (name ^ ": " ^ m)
+
+(* [each_input caps tool files f]: f on each file's channel (with its
+ * name), or on the standard input's ("") when there is none; one that
+ * fails is said, "name: reason" (an open's already names its file),
+ * and the status is then 1 *)
+let each_input caps tool files (f : string -> Chan.i -> unit) =
+  let one status run =
+    try run (); status with Failure m -> complain caps tool m; 1 in
+  if files = [] then
+    one 0 (fun () -> named "stdin" (fun () -> f "" (TinyLibSystem.stdin caps)))
   else
     List.fold_left (fun status file ->
-      match
-        (try Some (TinyLibSystem.open_in caps (path file))
-         with Failure m -> complain caps tool (file ^ ": " ^ m); None)
-      with
-      | None -> 1
-      | Some fd ->
-          let status = one status file fd in
-          TinyLibSystem.close fd;
-          status) 0 files
+      one status (fun () ->
+        let p = named file (fun () -> path file) in
+        TinyLibSystem.with_open_in caps
+          (fun c -> named file (fun () -> f file c)) p)) 0 files
 
 let cat caps args =
   let _, files = options "" args in
-  each_input caps "cat" files (fun _ fd ->
-    pieces fd (fun s -> print caps s; TinyLibSystem.flush caps))
+  each_input caps "cat" files (fun _ c ->
+    pieces c (fun s -> print caps s; TinyLibSystem.flush caps))
 
 (* the counts so far, and whether the last byte counted was inside a
  * word: a word can be cut in two by the end of a piece *)
@@ -141,9 +149,9 @@ let wc caps args =
        ^ "\n") in
   let total = counts () and files_counted = ref 0 in
   let status =
-    each_input caps "wc" files (fun name fd ->
+    each_input caps "wc" files (fun name chan ->
       let c = counts () in
-      pieces fd (count c);
+      pieces chan (count c);
       report c name;
       incr files_counted;
       total.lines <- total.lines + c.lines;
@@ -187,8 +195,8 @@ let tail caps args =
     | _ -> true, "10", args in
   match int_of_string_opt n, files with
   | Some n, ([] | [ _ ]) when n >= 0 ->
-      each_input caps "tail" files (fun _ fd ->
-        print caps (lines_of from_end n (TinyLibSystem.read_all fd)))
+      each_input caps "tail" files (fun _ (c : Chan.i) ->
+        print caps (lines_of from_end n (In_channel.input_all c.ic)))
   | _ -> raise Usage
 
 let tee caps args =
@@ -199,7 +207,9 @@ let tee caps args =
       try [ TinyLibSystem.open_out caps (path file) ]
       with Failure m ->
         complain caps "tee" (file ^ ": " ^ m); status := 1; []) files in
-  pieces 0 (fun s ->
+  (* (the files written as the input comes, several at once: their
+   * descriptors) *)
+  pieces (TinyLibSystem.stdin caps) (fun s ->
     print caps s;
     TinyLibSystem.flush caps;
     List.iter (fun fd -> TinyLibSystem.write fd s) fds);
@@ -232,7 +242,7 @@ let xd caps args =
           if i < String.length g then Printf.sprintf "%02x" (Char.code g.[i])
           else "00"))) in
   let address a = Printf.sprintf "%07x " a in
-  each_input caps "xd" files (fun _ fd ->
+  each_input caps "xd" files (fun _ c ->
     let pending = ref "" and addr = ref 0 in
     let line s =
       let groups =
@@ -248,7 +258,7 @@ let xd caps args =
         pending := String.sub !pending 16 (String.length !pending - 16);
         whole_lines ()
       end in
-    pieces fd (fun s -> pending := !pending ^ s; whole_lines ());
+    pieces c (fun s -> pending := !pending ^ s; whole_lines ());
     (* the end: the line that is shorter than 16, empty after a text of
      * whole lines, then the address alone *)
     line !pending;
@@ -267,9 +277,9 @@ let grep caps args =
       let named name = if List.length files > 1 then name ^ ":" else "" in
       let found = ref false in
       let status =
-        each_input caps "grep" files (fun name fd ->
+        each_input caps "grep" files (fun name c ->
           let count = ref 0 and number = ref 0 in
-          lines fd (fun line ended ->
+          lines c (fun line ended ->
             incr number;
             if matches re (fold line) <> List.mem 'v' flags then begin
               incr count;
@@ -332,8 +342,8 @@ let sort caps args =
     | _ -> 0, rest in
   let all = ref [] in
   let status =
-    each_input caps "sort" files (fun _ fd ->
-      lines fd (fun line _ -> all := line :: !all)) in
+    each_input caps "sort" files (fun _ c ->
+      lines c (fun line _ -> all := line :: !all)) in
   let key line =
     let text = from_field field line in
     if List.mem 'n' flags then (number_of text, "") else (0, text) in
@@ -494,11 +504,16 @@ let cp caps args =
     let (st : TinyLibSystem.stat) = TinyLibSystem.stat caps (path from) in
     if st.st_dir then failwith "is a directory";
     if resolved caps from = resolved caps dest then failwith "the same file";
+    (* (descriptors: each_path says a failure after the source's name,
+     * where a channel's open would say its own file again) *)
     let src = TinyLibSystem.open_in caps (path from) in
     let fd =
       (try TinyLibSystem.open_out caps (path dest)
        with Failure m -> TinyLibSystem.close src; failwith m) in
-    pieces src (TinyLibSystem.write fd);
+    let rec copy () =
+      let s = TinyLibSystem.read src 8192 in
+      if s <> "" then begin TinyLibSystem.write fd s; copy () end in
+    copy ();
     TinyLibSystem.close fd;
     TinyLibSystem.close src)
 
@@ -535,8 +550,8 @@ let ps caps args =
     match files with [] -> "/dev/ps" | [ f ] -> f | _ -> raise Usage in
   let rows = ref [] in
   let status =
-    each_input caps "ps" [ file ] (fun _ fd ->
-      lines fd (fun line _ ->
+    each_input caps "ps" [ file ] (fun _ c ->
+      lines c (fun line _ ->
         match String.split_on_char ' ' line with
         | pid :: parent :: state :: kb :: cmd ->
             let cmd =
@@ -775,32 +790,34 @@ let cmp caps args =
   let flags, files = options "s" args in
   match files with
   | [ f1; f2 ] -> begin
+      (* pos bytes the same so far; sa and sb what is read past them *)
+      let compare fa fb =
+        let rec go pos sa sb =
+          let sa = if sa = "" then piece fa 4096 else sa
+          and sb = if sb = "" then piece fb 4096 else sb in
+          let n = min (String.length sa) (String.length sb) in
+          let rec first i =
+            if i < n && sa.[i] = sb.[i] then first (i + 1) else i in
+          let i = first 0 in
+          if i < n then Differ_at (pos + i)
+          else if n = 0 then
+            (if sa = "" && sb = "" then Same_bytes
+             else Ends_first ((if sa = "" then f1 else f2), pos))
+          else
+            go (pos + n) (String.sub sa n (String.length sa - n))
+              (String.sub sb n (String.length sb - n)) in
+        go 0 "" "" in
+      (* (an open's failure names its file: "cmp: f1: reason") *)
       match
         (try
-           let a = TinyLibSystem.open_in caps (path f1) in
-           Some (a, try TinyLibSystem.open_in caps (path f2)
-                    with Failure m -> TinyLibSystem.close a; failwith m)
+           Some
+             (TinyLibSystem.with_open_in caps (fun fa ->
+                TinyLibSystem.with_open_in caps (compare fa) (path f2))
+                (path f1))
          with Failure m -> complain caps "cmp" m; None)
       with
       | None -> 1
-      | Some (fa, fb) ->
-          (* pos bytes the same so far; sa and sb what is read past them *)
-          let rec go pos sa sb =
-            let sa = if sa = "" then TinyLibSystem.read fa 4096 else sa
-            and sb = if sb = "" then TinyLibSystem.read fb 4096 else sb in
-            let n = min (String.length sa) (String.length sb) in
-            let rec first i =
-              if i < n && sa.[i] = sb.[i] then first (i + 1) else i in
-            let i = first 0 in
-            if i < n then Differ_at (pos + i)
-            else if n = 0 then
-              (if sa = "" && sb = "" then Same_bytes
-               else Ends_first ((if sa = "" then f1 else f2), pos))
-            else
-              go (pos + n) (String.sub sa n (String.length sa - n))
-                (String.sub sb n (String.length sb - n)) in
-          let r = go 0 "" "" in
-          TinyLibSystem.close fa; TinyLibSystem.close fb;
+      | Some r ->
           let say s = if not (List.mem 's' flags) then print caps (s ^ "\n") in
           match r with
           | Same_bytes -> 0

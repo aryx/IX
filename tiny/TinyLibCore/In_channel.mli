@@ -8,3 +8,8 @@ type t = in_channel
 
 (* what is left of the channel, to its end *)
 val input_all : t -> string
+
+(* [input ic buf pos len]: what the channel gives next, up to len bytes,
+ * into buf at pos, without waiting for more; how many, 0 at the end
+ * (a file read a piece at a time, the console's input as it comes) *)
+val input : t -> bytes -> int -> int -> int

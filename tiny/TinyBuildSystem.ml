@@ -305,11 +305,13 @@ let digest_file (caps : < Cap.open_in; Cap.readdir; .. >) (file : string) :
           | Some (s, t, d) when s = size && t = date -> Some d
           | _ ->
               let now = TinyLibSystem.time caps in
-              let fd = TinyLibSystem.open_in caps path in
+              (* (a piece at a time: a file need not fit in the heap) *)
+              let b = Bytes.make 4096 ' ' in
               let d =
-                Sha1.to_hex (Sha1.reads (fun () -> TinyLibSystem.read fd 4096))
-              in
-              TinyLibSystem.close fd;
+                TinyLibSystem.with_open_in caps (fun (c : Chan.i) ->
+                    Sha1.to_hex (Sha1.reads (fun () ->
+                      Bytes.sub_string b 0 (In_channel.input c.ic b 0 4096))))
+                  path in
               if date < now then Hashtbl.replace known file (size, date, d)
               else Hashtbl.remove known file;
               Some d

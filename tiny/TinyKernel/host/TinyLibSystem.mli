@@ -32,6 +32,12 @@
  * The capabilities are the host's: there, a function that reaches the
  * system takes the object that allows it, and OCaml checks it. tiny-ml
  * reads them and forgets them.
+ *
+ * A file's name is an Fpath.t, not a string: a tool decides where a
+ * word becomes a path, once, and the empty word is refused there
+ * (Fpath.v "" raises), where it went before as a name to the system
+ * (old: strings, each tool's "" handled, or not, at each call). The
+ * names a directory has (readdir) are segments, strings.
  *)
 
 (* [main name f]: the program: f with every capability, its result the
@@ -71,14 +77,14 @@ val ignore_interrupt : < Cap.signal; .. > -> unit
 
 (* a file's descriptor: to read it, to write it from nothing (made if
  * it is not there), to write at its end. Failure with the reason *)
-val open_in : < Cap.open_in; .. > -> string -> int
-val open_out : < Cap.open_out; .. > -> string -> int
-val open_append : < Cap.open_out; .. > -> string -> int
+val open_in : < Cap.open_in; .. > -> Fpath.t -> int
+val open_out : < Cap.open_out; .. > -> Fpath.t -> int
+val open_append : < Cap.open_out; .. > -> Fpath.t -> int
 val close : int -> unit
 
 (* a file's descriptor to read and write it, at any place (a database's
  * file); made empty when it is not there. Failure with the reason *)
-val open_rw : < Cap.open_in; Cap.open_out; .. > -> string -> int
+val open_rw : < Cap.open_in; Cap.open_out; .. > -> Fpath.t -> int
 
 (* [seek fd off]: the next read or write at off from the file's start;
  * [seek_end fd]: at its end, which is the offset given *)
@@ -94,11 +100,11 @@ val write_file : < Cap.open_out; .. > -> Fpath.t -> string -> unit
 val read_all : int -> string
 
 (* a directory's names, in no order; none when it cannot be read *)
-val readdir : < Cap.readdir; .. > -> string -> string list
-val is_directory : < Cap.readdir; .. > -> string -> bool
+val readdir : < Cap.readdir; .. > -> Fpath.t -> string list
+val is_directory : < Cap.readdir; .. > -> Fpath.t -> bool
 
 (* Failure with the reason *)
-val chdir : < Cap.chdir; .. > -> string -> unit
+val chdir : < Cap.chdir; .. > -> Fpath.t -> unit
 
 (* [read fd max]: what fd gives next, up to max bytes, without waiting
  * for more; "" at the end. For a program that must work on its input
@@ -110,42 +116,42 @@ val write : int -> string -> unit
 
 (* whether a file is a directory, and its size in bytes; Failure with
  * the reason when it is not there *)
-val stat : < Cap.open_in; .. > -> string -> bool * int
+val stat : < Cap.open_in; .. > -> Fpath.t -> bool * int
 
 (* how many names a file has (its hard links); Failure with the reason
  * when it is not there *)
-val links : < Cap.open_in; .. > -> string -> int
+val links : < Cap.open_in; .. > -> Fpath.t -> int
 
 (* the date of a file's last write, seconds since 2000-01-01 (the image's
  * files on tiny-kernel: 0); Failure with the reason when it is not
  * there *)
-val mtime : < Cap.open_in; .. > -> string -> int
+val mtime : < Cap.open_in; .. > -> Fpath.t -> int
 
 (* a new directory; a file, or a directory that is empty, removed.
  * Failure with the reason *)
-val mkdir : < Cap.open_out; .. > -> string -> unit
-val remove : < Cap.open_out; .. > -> string -> unit
+val mkdir : < Cap.open_out; .. > -> Fpath.t -> unit
+val remove : < Cap.open_out; .. > -> Fpath.t -> unit
 
 (* [link caps old new]: a second name for a file (not a directory).
  * Failure with the reason *)
-val link : < Cap.open_out; .. > -> string -> string -> unit
+val link : < Cap.open_out; .. > -> Fpath.t -> Fpath.t -> unit
 
 (* [rename caps from to]: the file, or the directory, under another
  * name. Failure with the reason *)
-val rename : < Cap.open_out; .. > -> string -> string -> unit
+val rename : < Cap.open_out; .. > -> Fpath.t -> Fpath.t -> unit
 
 (* whether a file is a program to run, its x bit for its owner; [set_executable
  * caps file x]: its bit set, or cleared (tiny-kernel has no modes: no
  * file is one there, and the call does nothing) *)
-val is_executable : < Cap.open_in; .. > -> string -> bool
-val set_executable : < Cap.open_out; .. > -> string -> bool -> unit
+val is_executable : < Cap.open_in; .. > -> Fpath.t -> bool
+val set_executable : < Cap.open_out; .. > -> Fpath.t -> bool -> unit
 
 (* a file that is there written now, as far as its time says; one that
  * is not there made, empty. Failure with the reason *)
-val touch : < Cap.open_in; Cap.open_out; .. > -> string -> unit
+val touch : < Cap.open_in; Cap.open_out; .. > -> Fpath.t -> unit
 
 (* the directory the process is in *)
-val getcwd : < Cap.env; .. > -> string
+val getcwd : < Cap.env; .. > -> Fpath.t
 
 (* the date, in seconds since 2000-01-01 UTC, on both sides: a 31-bit
  * integer of tiny-ml's holds them until 2034, where 1970's would not
@@ -187,7 +193,8 @@ val kill : < Cap.kill; .. > -> int -> bool
 
 (* [exec caps file argv env]: this process becomes the program in file,
  * env its variables as name=value; when it cannot, the reason *)
-val exec : < Cap.exec; .. > -> string -> string list -> string list -> string
+val exec :
+  < Cap.exec; .. > -> Fpath.t -> string list -> string list -> string
 
 (* a child's end, as rc's status: "" when all went well, its code, or
  * "signal: " and the signal's name *)

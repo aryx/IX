@@ -384,7 +384,7 @@ let main
   else
   let write f text =
     let fd =
-      try TinyLibSystem.open_out caps !!f with Failure m -> raise (File_error m)
+      try TinyLibSystem.open_out caps f with Failure m -> raise (File_error m)
     in
     TinyLibSystem.write fd text; TinyLibSystem.close fd in
   try

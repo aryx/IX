@@ -3,6 +3,8 @@
 
 (* See TinyLibSystem.mli; this is the host's *)
 
+open Fpath_.Operators
+
 (* a descriptor is a number, on Unix *)
 let fd (n : int) : Unix.file_descr = Obj.magic n
 let number (f : Unix.file_descr) : int = Obj.magic f
@@ -47,28 +49,30 @@ let ignore_interrupt (_ : < Cap.signal; .. >) =
 (* Files *)
 (*****************************************************************************)
 
-let open_in (caps : < Cap.open_in; .. >) file =
-  reason (fun () -> number (FS.open_in_fd caps file))
-let open_out (caps : < Cap.open_out; .. >) file =
-  reason (fun () -> number (FS.open_out_fd caps file 0o666))
-let open_append (caps : < Cap.open_out; .. >) file =
-  reason (fun () -> number (FS.open_append_fd caps file 0o666))
+let open_in (caps : < Cap.open_in; .. >) (file : Fpath.t) =
+  reason (fun () -> number (FS.open_in_fd caps !!file))
+let open_out (caps : < Cap.open_out; .. >) (file : Fpath.t) =
+  reason (fun () -> number (FS.open_out_fd caps !!file 0o666))
+let open_append (caps : < Cap.open_out; .. >) (file : Fpath.t) =
+  reason (fun () -> number (FS.open_append_fd caps !!file 0o666))
 let close n = Unix.close (fd n)
 
-let open_rw (caps : < Cap.open_in; Cap.open_out; .. >) file =
+let open_rw (caps : < Cap.open_in; Cap.open_out; .. >) (file : Fpath.t) =
   reason (fun () ->
-    if not (Sys.file_exists file) then Unix.close (FS.create_fd caps file 0o666);
-    number (FS.open_rw_fd caps file))
+    if not (Sys.file_exists !!file) then
+      Unix.close (FS.create_fd caps !!file 0o666);
+    number (FS.open_rw_fd caps !!file))
 let seek n off = ignore (reason (fun () -> Unix.lseek (fd n) off Unix.SEEK_SET))
 let seek_end n = reason (fun () -> Unix.lseek (fd n) 0 Unix.SEEK_END)
 let read_file (caps : < Cap.open_in; .. >) (file : Fpath.t) =
   reason (fun () -> FS.read caps file)
 let read_all n = Procs.read_all (fd n)
-let readdir (_ : < Cap.readdir; .. >) dir =
-  try Array.to_list (Sys.readdir dir) with Sys_error _ -> []
-let is_directory (_ : < Cap.readdir; .. >) file =
-  try Sys.is_directory file with Sys_error _ -> false
-let chdir (caps : < Cap.chdir; .. >) dir = reason (fun () -> CapUnix.chdir caps dir)
+let readdir (_ : < Cap.readdir; .. >) (dir : Fpath.t) =
+  try Array.to_list (Sys.readdir !!dir) with Sys_error _ -> []
+let is_directory (_ : < Cap.readdir; .. >) (file : Fpath.t) =
+  try Sys.is_directory !!file with Sys_error _ -> false
+let chdir (caps : < Cap.chdir; .. >) (dir : Fpath.t) =
+  reason (fun () -> CapUnix.chdir caps !!dir)
 
 let read n max =
   let buf = Bytes.create max in
@@ -83,37 +87,40 @@ let write n s =
   in
   go 0
 let write_file (caps : < Cap.open_out; .. >) (file : Fpath.t) s =
-  let fd = open_out caps (Fpath.to_string file) in
+  let fd = open_out caps file in
   write fd s;
   close fd
 
-let stat (_ : < Cap.open_in; .. >) file =
+let stat (_ : < Cap.open_in; .. >) (file : Fpath.t) =
   reason (fun () ->
-    let st = Unix.stat file in
+    let st = Unix.stat !!file in
     st.st_kind = Unix.S_DIR, st.st_size)
-let links (_ : < Cap.open_in; .. >) file =
-  reason (fun () -> (Unix.stat file).st_nlink)
-let mtime (_ : < Cap.open_in; .. >) file =
-  reason (fun () -> int_of_float (Unix.stat file).st_mtime - 946684800)
-let mkdir (caps : < Cap.open_out; .. >) dir =
-  reason (fun () -> FS.mkdir caps dir 0o777)
-let remove (caps : < Cap.open_out; .. >) file =
-  reason (fun () -> FS.remove_any caps file)
-let rename (_caps : < Cap.open_out; .. >) a b = reason (fun () -> Unix.rename a b)
-let link (_caps : < Cap.open_out; .. >) a b = reason (fun () -> Unix.link a b)
+let links (_ : < Cap.open_in; .. >) (file : Fpath.t) =
+  reason (fun () -> (Unix.stat !!file).st_nlink)
+let mtime (_ : < Cap.open_in; .. >) (file : Fpath.t) =
+  reason (fun () -> int_of_float (Unix.stat !!file).st_mtime - 946684800)
+let mkdir (caps : < Cap.open_out; .. >) (dir : Fpath.t) =
+  reason (fun () -> FS.mkdir caps !!dir 0o777)
+let remove (caps : < Cap.open_out; .. >) (file : Fpath.t) =
+  reason (fun () -> FS.remove_any caps !!file)
+let rename (_caps : < Cap.open_out; .. >) (a : Fpath.t) (b : Fpath.t) =
+  reason (fun () -> Unix.rename !!a !!b)
+let link (_caps : < Cap.open_out; .. >) (a : Fpath.t) (b : Fpath.t) =
+  reason (fun () -> Unix.link !!a !!b)
 
-let is_executable (_ : < Cap.open_in; .. >) file =
-  try (Unix.stat file).st_perm land 0o100 <> 0 with Unix.Unix_error _ -> false
-let set_executable (_caps : < Cap.open_out; .. >) file x =
-  reason (fun () -> Unix.chmod file (if x then 0o755 else 0o644))
+let is_executable (_ : < Cap.open_in; .. >) (file : Fpath.t) =
+  try (Unix.stat !!file).st_perm land 0o100 <> 0
+  with Unix.Unix_error _ -> false
+let set_executable (_caps : < Cap.open_out; .. >) (file : Fpath.t) x =
+  reason (fun () -> Unix.chmod !!file (if x then 0o755 else 0o644))
 
 (* (utimes with two zeros: now) *)
-let touch (caps : < Cap.open_in; Cap.open_out; .. >) file =
+let touch (caps : < Cap.open_in; Cap.open_out; .. >) (file : Fpath.t) =
   reason (fun () ->
-    if Sys.file_exists file then Unix.utimes file 0.0 0.0
-    else Unix.close (FS.create_fd caps file 0o666))
+    if Sys.file_exists !!file then Unix.utimes !!file 0.0 0.0
+    else Unix.close (FS.create_fd caps !!file 0o666))
 
-let getcwd (caps : < Cap.env; .. >) = CapSys.getcwd caps ()
+let getcwd (caps : < Cap.env; .. >) = Fpath.v (CapSys.getcwd caps ())
 (* (946684800: 2000-01-01 in Unix's seconds) *)
 let time (caps : < Cap.clock; .. >) =
   int_of_float (CapUnix.time caps ()) - 946684800
@@ -142,9 +149,9 @@ let fork (caps : < Cap.fork; .. >) = CapUnix.fork caps ()
 let kill (caps : < Cap.kill; .. >) pid =
   try CapUnix.kill caps pid Sys.sigkill; true with Unix.Unix_error _ -> false
 
-let exec (caps : < Cap.exec; .. >) file (argv : string list)
+let exec (caps : < Cap.exec; .. >) (file : Fpath.t) (argv : string list)
     (env : string list) : string =
-  try CapUnix.execve caps file (Array.of_list argv) (Array.of_list env); ""
+  try CapUnix.execve caps !!file (Array.of_list argv) (Array.of_list env); ""
   with Unix.Unix_error (e, _, _) -> Unix.error_message e
 
 (* a signal by rc's name for it; OCaml numbers its own from -1: abrt,

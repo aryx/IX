@@ -89,22 +89,26 @@ let ignore_interrupt _caps = ()
 let private_fds = ref []
 let keep fd = private_fds := fd :: !private_fds; fd
 
+(* a path for the kernel's calls, which take strings (not !!: / is
+ * the integers' division in this file) *)
+let str = Fpath.to_string
+
 (* user.h's O_RDONLY, O_WRONLY | O_CREATE | O_TRUNC, and O_WRONLY |
  * O_CREATE then a seek to the end *)
 let open_in caps file =
-  let fd = u_open file 0 in
+  let fd = u_open (str file) 0 in
   if fd < 0 then failwith "cannot open" else fd
 let open_out caps file =
-  let fd = u_open file 0x601 in
+  let fd = u_open (str file) 0x601 in
   if fd < 0 then failwith "cannot create" else fd
 let open_append caps file =
-  let fd = u_open file 0x201 in
+  let fd = u_open (str file) 0x201 in
   if fd < 0 then failwith "cannot create"
   else if u_seek fd 0 2 < 0 then (ignore (u_close fd); failwith "cannot seek")
   else fd
 (* user.h's O_RDWR | O_CREATE; seek's whence 0 the start, 2 the end *)
 let open_rw caps file =
-  let fd = u_open file 0x202 in
+  let fd = u_open (str file) 0x202 in
   if fd < 0 then failwith "cannot open" else fd
 let seek fd off = if u_seek fd off 0 < 0 then failwith "cannot seek"
 let seek_end fd =
@@ -123,7 +127,7 @@ let read_all fd =
   in
   go []
 let read_file caps file =
-  let fd = open_in caps (Fpath.to_string file) in
+  let fd = open_in caps file in
   let s = read_all fd in
   close fd;
   s
@@ -132,7 +136,7 @@ let read_file caps file =
  * dirent): a name of 64 bytes ended by a 0 when shorter, its type (1
  * for a directory), its links, its size and its date *)
 let entries dir =
-  let fd = u_open (if dir = "" then "." else dir) 0 in
+  let fd = u_open dir 0 in
   if fd < 0 then []
   else begin
     let s = read_all fd in
@@ -153,7 +157,7 @@ let entries dir =
        word (k * 80 + 76)))
   end
 
-let readdir _caps dir = List.map fst (entries dir)
+let readdir _caps dir = List.map fst (entries (str dir))
 
 (* a path's names from the root, as the kernel finds them *)
 let path_names file =
@@ -168,7 +172,7 @@ let path_names file =
 (* the file's entry, the kernel's stat: whether it is a directory, its
  * size, its links, its date (old: its directory read whole for it) *)
 let entry file =
-  let s = u_stat (if file = "" then "." else file) in
+  let s = u_stat (str file) in
   if s = "" then failwith "not there"
   else
     let word i =
@@ -184,15 +188,15 @@ let is_directory caps file = try fst (stat caps file) with Failure _ -> false
 let read fd max = u_read fd max
 let write fd s = if u_write fd s < 0 then failwith "cannot write"
 let write_file caps file s =
-  let fd = open_out caps (Fpath.to_string file) in
+  let fd = open_out caps file in
   write fd s;
   close fd
-let mkdir caps dir = if u_mkdir dir < 0 then failwith "cannot"
-let remove caps file = if u_unlink file < 0 then failwith "cannot"
-let link caps a b = if u_link a b < 0 then failwith "cannot"
+let mkdir caps dir = if u_mkdir (str dir) < 0 then failwith "cannot"
+let remove caps file = if u_unlink (str file) < 0 then failwith "cannot"
+let link caps a b = if u_link (str a) (str b) < 0 then failwith "cannot"
 
 let rename caps a b =
-  if path_names a <> path_names b then begin
+  if path_names (str a) <> path_names (str b) then begin
     if fst (stat caps a) then failwith "a directory, which tiny-kernel cannot move";
     (* (a piece at a time, as cp: a big file does not fit in the heap) *)
     let src = open_in caps a in
@@ -214,7 +218,7 @@ let touch caps file =
   if not (try ignore (stat caps file); true with Failure _ -> false) then
     close (open_out caps file)
 
-let getcwd caps = u_getcwd ()
+let getcwd caps = Fpath.v (u_getcwd ())
 
 let time _caps = u_time ()
 
@@ -225,7 +229,7 @@ let sleep _caps ms =
   if ms > 0 then
     ignore (u_ready (Array.make 0 0) 0 (u_ticks () + ((ms * 2) + 4) / 5))
 
-let chdir caps dir = if u_chdir dir < 0 then failwith "cannot"
+let chdir caps dir = if u_chdir (str dir) < 0 then failwith "cannot"
 
 (*****************************************************************************)
 (* Descriptors *)
@@ -261,7 +265,7 @@ let exec caps file argv env =
   List.iter (fun d -> ignore (u_close d)) !private_fds;
   private_fds := [];
   if List.length argv > 63 then "more than 63 arguments"
-  else if u_exec file argv < 0 then "not found" else ""
+  else if u_exec (str file) argv < 0 then "not found" else ""
 
 (* the children that ended while another was waited for: pid, status *)
 let ended = ref []

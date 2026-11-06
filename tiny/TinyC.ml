@@ -150,7 +150,7 @@ let main
          | None -> TinyLibSystem.print caps text
          | Some o ->
              let fd =
-               try TinyLibSystem.open_out caps (Fpath.to_string o)
+               try TinyLibSystem.open_out caps o
                with Failure m -> raise (File_error m) in
              TinyLibSystem.write fd text; TinyLibSystem.close fd);
         0

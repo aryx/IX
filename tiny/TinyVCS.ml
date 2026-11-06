@@ -178,28 +178,25 @@ let decode s =
 type caps =
   < Cap.open_in; Cap.open_out; Cap.stdout; Cap.env; Cap.readdir; Cap.clock >
 
+open Fpath_.Operators
+
 type repo = {
   caps : caps;
-  root : string;
+  root : Fpath.t;
   index : (hash, string) Hashtbl.t;
   mutable fresh : (hash * string) list;
 }
 
-let dir r = Filename.concat r.root ".tvcs"
-let path r f = Filename.concat (dir r) f
+let dir r = r.root / ".tvcs"
+let path r f = dir r / f
 
-(* (the store's paths are strings, as TinyLibSystem's other calls take
- * them: a path at the door) *)
-let read_file (caps : < Cap.open_in; .. >) p =
-  TinyLibSystem.read_file caps (Fpath.v p)
+let read_file = TinyLibSystem.read_file
+let write_file = TinyLibSystem.write_file
 
-let write_file (caps : < Cap.open_out; .. >) p s =
-  TinyLibSystem.write_file caps (Fpath.v p) s
-
-let exists caps p =
+let exists caps (p : Fpath.t) =
   try ignore (TinyLibSystem.stat caps p); true with Failure _ -> false
 
-let load (caps : caps) root =
+let load (caps : caps) (root : Fpath.t) =
   let r = { caps; root; index = Hashtbl.create 1024; fresh = [] } in
   let s = try read_file caps (path r "objects") with Failure _ -> "" in
   let rec go pos =
@@ -280,7 +277,7 @@ let ignored caps root =
     try
       List.filter (( <> ) "")
         (String.split_on_char '\n'
-           (read_file caps (Filename.concat root ".tvcsignore")))
+           (read_file caps (root / ".tvcsignore")))
     with Failure _ -> []
   in
   fun name ->
@@ -300,7 +297,7 @@ let snapshot r =
     let es = List.filter_map (fun name ->
       if ign name then None
       else
-        let p = Filename.concat dir name in
+        let p = dir / name in
         match
           (try Some (fst (TinyLibSystem.stat r.caps p)) with Failure _ -> None)
         with
@@ -327,7 +324,7 @@ let snapshot r =
 let checkout r (old : hash option) (nw : hash) =
   let rec rm_rf p =
     if TinyLibSystem.is_directory r.caps p then
-      List.iter (fun f -> rm_rf (Filename.concat p f)) (TinyLibSystem.readdir r.caps p);
+      List.iter (fun f -> rm_rf (p / f)) (TinyLibSystem.readdir r.caps p);
     TinyLibSystem.remove r.caps p
   in
   (* (old: File h | Exec h | Conflict { text = h; _ }, an or-pattern
@@ -339,9 +336,9 @@ let checkout r (old : hash option) (nw : hash) =
   let rec go dir (old : (string * entry) list) (nw : (string * entry) list) =
     List.iter (fun (name, _) ->
       if not (List.mem_assoc name nw) then
-        (try rm_rf (Filename.concat dir name) with Failure _ -> ())) old;
+        (try rm_rf (dir / name) with Failure _ -> ())) old;
     List.iter (fun (name, e) ->
-      let p = Filename.concat dir name in
+      let p = dir / name in
       if List.assoc_opt name old <> Some e then
         match e with
         | Dir h ->
@@ -638,20 +635,22 @@ let short h = String.sub h 0 10
 let first_line s =
   match String.index_opt s '\n' with Some i -> String.sub s 0 i | None -> s
 
+(* (up by the text: Fpath.parent would end the root with a /, which
+ * push records) *)
 let find_root caps =
   let rec up d =
-    if exists caps (Filename.concat d ".tvcs/head") then d
+    if exists caps (Fpath.v d / ".tvcs" / "head") then Fpath.v d
     else if Filename.dirname d = d then error "not a tiny-vcs repository"
     else up (Filename.dirname d)
   in
-  up (TinyLibSystem.getcwd caps)
+  up !!(TinyLibSystem.getcwd caps)
 
 let author caps =
   getenv_opt caps "TINYVCS_AUTHOR" ||| (getenv_opt caps "USER" ||| "nobody")
 
-let init (caps : caps) dir =
-  if exists caps (Filename.concat dir ".tvcs") then error (dir ^ "/.tvcs exists");
-  TinyLibSystem.mkdir caps (Filename.concat dir ".tvcs");
+let init (caps : caps) (dir : Fpath.t) =
+  if exists caps (dir / ".tvcs") then error (!!dir ^ "/.tvcs exists");
+  TinyLibSystem.mkdir caps (dir / ".tvcs");
   let r = load caps dir in
   save r { prev = None; odate = now caps; what = "init"; current = "master";
            branches = [] }
@@ -669,19 +668,13 @@ let run (caps : caps) (args : string list) =
   match args with
   | [ ("-h" | "--help") ] -> print help
   | [ "init" ] | [ "init"; _ ] ->
-      init caps (match args with [ _; d ] -> d | _ -> ".")
+      init caps (Fpath.v (match args with [ _; d ] -> d | _ -> "."))
   | "clone" :: [ src; dst ] ->
-      let s = load caps src in
-      let st =
-        match
-          get s (String.trim (read_file caps (Filename.concat src ".tvcs/head")))
-        with
-        | Op o -> o
-        | _ -> error "bad head"
-      in
-      TinyLibSystem.mkdir caps dst;
-      init caps dst;
-      let r = load caps dst in
+      let s = load caps (Fpath.v src) in
+      let st = match get s (head s) with Op o -> o | _ -> error "bad head" in
+      TinyLibSystem.mkdir caps (Fpath.v dst);
+      init caps (Fpath.v dst);
+      let r = load caps (Fpath.v dst) in
       List.iter (fun (_, h) -> copy s r h) st.branches;
       record_at r st.current ("clone " ^ src) st.branches;
       Option.iter (fun c -> checkout r None (commit r c).tree) (tip r)
@@ -838,15 +831,9 @@ let run (caps : caps) (args : string list) =
           print (Printf.sprintf "undid: %s\n" s.what)
       | "pull", [ src ] -> (
           clean r;
-          let sr = load caps src in
+          let sr = load caps (Fpath.v src) in
           let st =
-            match
-              get sr
-                (String.trim (read_file caps (Filename.concat src ".tvcs/head")))
-            with
-            | Op o -> o
-            | _ -> error "bad head"
-          in
+            match get sr (head sr) with Op o -> o | _ -> error "bad head" in
           let theirs =
             match List.assoc_opt s.current st.branches with
             | Some h -> h
@@ -874,15 +861,9 @@ let run (caps : caps) (args : string list) =
                      (("pulled/" ^ s.current, theirs) :: s.branches);
                    print (Printf.sprintf "diverged: merge pulled/%s\n" s.current)))
       | "push", [ dst ] ->
-          let dr = load caps dst in
+          let dr = load caps (Fpath.v dst) in
           let dst_state =
-            match
-              get dr
-                (String.trim (read_file caps (Filename.concat dst ".tvcs/head")))
-            with
-            | Op o -> o
-            | _ -> error "bad head"
-          in
+            match get dr (head dr) with Op o -> o | _ -> error "bad head" in
           let ours =
             match tip r with Some h -> h | None -> error "no commit yet"
           in
@@ -892,10 +873,8 @@ let run (caps : caps) (args : string list) =
            | _ -> ());
           copy r dr ours;
           save dr
-            { prev =
-                Some (String.trim
-                        (read_file caps (Filename.concat dst ".tvcs/head")));
-              odate = now caps; what = "push from " ^ r.root;
+            { prev = Some (head dr);
+              odate = now caps; what = "push from " ^ !!(r.root);
               current = dst_state.current;
               branches =
                 (s.current, ours)

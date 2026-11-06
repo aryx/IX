@@ -264,10 +264,12 @@ let order (root : node) : node list =
 (* The outside world *)
 (*****************************************************************************)
 
+(* (a target's name is text, matched by the rules and the digests'
+ * key: a path at this section's door) *)
 let exists caps file =
-  try ignore (TinyLibSystem.stat caps file); true with Failure _ -> false
+  try ignore (TinyLibSystem.stat caps (Fpath.v file)); true
+  with Failure _ -> false
 
-(* (a target's name is text, matched by the rules: a path at the door) *)
 let read_file caps file =
   if exists caps file then Some (TinyLibSystem.read_file caps (Fpath.v file))
   else None
@@ -292,15 +294,17 @@ let digest_file (caps : < Cap.open_in; Cap.readdir; .. >) (file : string) :
   match Hashtbl.find_opt file_digests file with
   | Some d -> d
   | None ->
+      let path = Fpath.v file in
       let d =
-        if exists caps file && not (TinyLibSystem.is_directory caps file) then begin
-          let _, size = TinyLibSystem.stat caps file
-          and date = TinyLibSystem.mtime caps file in
+        if exists caps file && not (TinyLibSystem.is_directory caps path)
+        then begin
+          let _, size = TinyLibSystem.stat caps path
+          and date = TinyLibSystem.mtime caps path in
           match Hashtbl.find_opt known file with
           | Some (s, t, d) when s = size && t = date -> Some d
           | _ ->
               let now = TinyLibSystem.time caps in
-              let fd = TinyLibSystem.open_in caps file in
+              let fd = TinyLibSystem.open_in caps path in
               let d =
                 Sha1.to_hex (Sha1.reads (fun () -> TinyLibSystem.read fd 4096))
               in

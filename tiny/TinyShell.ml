@@ -367,6 +367,12 @@ let matches (pat : string) (s : string) : bool =
   in
   go 0 0
 
+(* a word as a file's path: Failure for the empty word ('' is no file),
+ * which the callers say as any file's error (Fpath.v's
+ * Invalid_argument would end the shell) *)
+let path (w : string) : Fpath.t =
+  if w = "" then failwith "no file name" else Fpath.v w
+
 (* the files a pattern names, sorted, a component at a time; the
  * pattern itself when there are none. A component without a wildcard
  * after one, the g of */g, names a file only where it is there.
@@ -375,17 +381,19 @@ let matches (pat : string) (s : string) : bool =
 let glob (caps : < Cap.open_in; Cap.readdir; .. >) (w : string) : string list =
   let rec expand dir = function
     | [] ->
-        if (try ignore (TinyLibSystem.stat caps dir); true with Failure _ -> false)
+        if (try ignore (TinyLibSystem.stat caps (path dir)); true
+            with Failure _ -> false)
         then [ dir ]
         else []
     | comp :: rest when not (has_meta comp 0) ->
         expand (dir ^ unescape comp ^ if rest = [] then "" else "/") rest
     | comp :: rest ->
-        List.sort compare (TinyLibSystem.readdir caps (if dir = "" then "." else dir))
+        List.sort compare
+          (TinyLibSystem.readdir caps (path (if dir = "" then "." else dir)))
         |> List.filter (matches comp)
         |> List.concat_map (fun e ->
             if rest = [] then [ dir ^ e ]
-            else if TinyLibSystem.is_directory caps (dir ^ e) then
+            else if TinyLibSystem.is_directory caps (path (dir ^ e)) then
               expand (dir ^ e ^ "/") rest
             else [])
   in
@@ -481,7 +489,8 @@ let exec (caps : < Cap.exec; Cap.stderr; .. >) (argv : string list) =
         (String.split_on_char ':' (String.concat "" (get "PATH")))
   in
   let why =
-    List.fold_left (fun _ f -> TinyLibSystem.exec caps f argv (environment ()))
+    List.fold_left (fun _ f ->
+        TinyLibSystem.exec caps (Fpath.v f) argv (environment ()))
       "not found" files in
   TinyLibSystem.eprint caps (name ^ ": " ^ why ^ "\n");
   TinyLibSystem.exit caps 1
@@ -510,9 +519,9 @@ let with_fds (caps : < Cap.open_in; Cap.open_out; .. >)
         let f =
           try
             (match mode with
-             | Read -> TinyLibSystem.open_in caps file
-             | Write -> TinyLibSystem.open_out caps file
-             | Append -> TinyLibSystem.open_append caps file)
+             | Read -> TinyLibSystem.open_in caps (path file)
+             | Write -> TinyLibSystem.open_out caps (path file)
+             | Append -> TinyLibSystem.open_append caps (path file))
           with Failure m -> raise (Error (file ^ ": " ^ m)) in
         TinyLibSystem.dup2 f n;
         TinyLibSystem.close f
@@ -655,7 +664,7 @@ and command caps (inplace : bool) (argv : string list) =
   | [ "cd" ] | [ "cd"; _ ] ->
       let dir =
         match argv with [ _; d ] -> d | _ -> String.concat "" (get "HOME") in
-      (try TinyLibSystem.chdir caps dir; set_status ""
+      (try TinyLibSystem.chdir caps (path dir); set_status ""
        with Failure m ->
          TinyLibSystem.eprint caps ("Can't cd " ^ dir ^ ": " ^ m ^ "\n");
          set_status "can't cd")
@@ -775,7 +784,7 @@ let start (caps : Cap.all_caps) : int =
         flags rest
     | "-c" :: cmd :: args -> set "*" args; Some cmd
     | file :: args ->
-        set "*" args; Some (TinyLibSystem.read_file caps (Fpath.v file))
+        set "*" args; Some (TinyLibSystem.read_file caps (path file))
     | [] when !iflag || TinyLibSystem.isatty 0 -> None
     | [] -> Some (TinyLibSystem.read_all 0)
   in

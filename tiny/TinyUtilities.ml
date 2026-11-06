@@ -26,6 +26,12 @@ exception Usage
 let print caps s = TinyLibSystem.print caps s
 let complain caps tool s = TinyLibSystem.eprint caps (tool ^ ": " ^ s ^ "\n")
 
+(* an operand as a file's path, at the system's door (the operand is
+ * what is printed, as it was typed): Failure for the empty word, said
+ * as any file's error *)
+let path (w : string) : Fpath.t =
+  if w = "" then failwith "no file name" else Fpath.v w
+
 (* what follows the last slash of a path *)
 let last_part path =
   match String.rindex_opt path '/' with
@@ -88,7 +94,7 @@ let each_input caps tool files f =
   else
     List.fold_left (fun status file ->
       match
-        (try Some (TinyLibSystem.open_in caps file)
+        (try Some (TinyLibSystem.open_in caps (path file))
          with Failure m -> complain caps tool (file ^ ": " ^ m); None)
       with
       | None -> 1
@@ -190,7 +196,7 @@ let tee caps args =
   let status = ref 0 in
   let fds =
     List.concat_map (fun file ->
-      try [ TinyLibSystem.open_out caps file ]
+      try [ TinyLibSystem.open_out caps (path file) ]
       with Failure m ->
         complain caps "tee" (file ^ ": " ^ m); status := 1; []) files in
   pieces 0 (fun s ->
@@ -347,13 +353,13 @@ let sort caps args =
 (* Walkers *)
 (*****************************************************************************)
 
-let entries caps dir = List.sort compare (TinyLibSystem.readdir caps dir)
+let entries caps dir = List.sort compare (TinyLibSystem.readdir caps (path dir))
 
-let rec fold caps path f =
-  let is_dir, size = TinyLibSystem.stat caps path in
-  f path is_dir size (fun () ->
+let rec fold caps p f =
+  let is_dir, size = TinyLibSystem.stat caps (path p) in
+  f p is_dir size (fun () ->
     if is_dir then
-      List.map (fun e -> fold caps (Filename.concat path e) f) (entries caps path)
+      List.map (fun e -> fold caps (Filename.concat p e) f) (entries caps p)
     else [])
 
 (* [each_path caps tool paths f]: f on each path; one that fails is
@@ -374,16 +380,16 @@ let ls caps args =
     if paths = [] then begin names := entries caps "."; 0 end
     else
       each_path caps "ls" paths (fun p ->
-        let is_dir, _ = TinyLibSystem.stat caps p in
+        let is_dir, _ = TinyLibSystem.stat caps (path p) in
         names :=
           (if is_dir then List.map (Filename.concat p) (entries caps p) else [ p ])
           @ !names) in
   let long name =
     if not (List.mem 'l' flags) then ""
     else begin
-      let is_dir, size = TinyLibSystem.stat caps name in
+      let is_dir, size = TinyLibSystem.stat caps (path name) in
       (if is_dir then "d" else "-")
-      ^ Printf.sprintf "%4d%9d " (TinyLibSystem.links caps name) size
+      ^ Printf.sprintf "%4d%9d " (TinyLibSystem.links caps (path name)) size
     end in
   List.iter (fun name -> print caps (long name ^ quote name ^ "\n"))
     (List.sort compare !names);
@@ -397,7 +403,7 @@ let walk caps args =
   if paths = [] then begin List.iter (fun e -> fold caps e pre) (entries caps "."); 0 end
   else
     each_path caps "walk" paths (fun p ->
-      let is_dir, _ = TinyLibSystem.stat caps p in
+      let is_dir, _ = TinyLibSystem.stat caps (path p) in
       if is_dir then
         List.iter (fun e -> fold caps (Filename.concat p e) pre) (entries caps p)
       else print caps (p ^ "\n"))
@@ -424,8 +430,8 @@ let rm caps args =
   each_path caps "rm" paths (fun root ->
     if List.mem 'r' flags then
       fold caps root (fun p _ _ entries ->
-        ignore (entries ()); TinyLibSystem.remove caps p)
-    else TinyLibSystem.remove caps root)
+        ignore (entries ()); TinyLibSystem.remove caps (path p))
+    else TinyLibSystem.remove caps (path root))
 
 (* -p: the directories above it too, and no complaint when it is there *)
 let mkdir caps args =
@@ -438,14 +444,14 @@ let mkdir caps args =
         if i <= String.length dir then begin
           if i = String.length dir || dir.[i] = '/' then begin
             let d = String.sub dir 0 i in
-            if not (TinyLibSystem.is_directory caps d) then
-              TinyLibSystem.mkdir caps d
+            if not (TinyLibSystem.is_directory caps (path d)) then
+              TinyLibSystem.mkdir caps (path d)
           end;
           make (i + 1)
         end in
       make 1
     end
-    else TinyLibSystem.mkdir caps dir)
+    else TinyLibSystem.mkdir caps (path dir))
 
 (* [into_last caps tool paths f]: f from dest for each path but the last,
  * dest being the last path, or the source's name in it when the last
@@ -453,7 +459,7 @@ let mkdir caps args =
 let into_last caps tool paths f =
   match List.rev paths with
   | dest :: sources when sources <> [] ->
-      let into = TinyLibSystem.is_directory caps dest in
+      let into = TinyLibSystem.is_directory caps (path dest) in
       if List.length sources > 1 && not into then begin
         complain caps tool (dest ^ ": not a directory"); 1
       end
@@ -466,7 +472,8 @@ let into_last caps tool paths f =
  * is relative, "." dropped and ".." resolved by the text *)
 let resolved caps p =
   let p =
-    if p <> "" && p.[0] = '/' then p else TinyLibSystem.getcwd caps ^ "/" ^ p in
+    if p <> "" && p.[0] = '/' then p
+    else Fpath.to_string (TinyLibSystem.getcwd caps) ^ "/" ^ p in
   List.fold_left (fun acc n ->
       if n = "" || n = "." then acc
       else if n = ".." then (match acc with [] -> [] | _ :: r -> r)
@@ -481,11 +488,11 @@ let resolved caps p =
 let cp caps args =
   let _, paths = options "" args in
   into_last caps "cp" paths (fun from dest ->
-    if fst (TinyLibSystem.stat caps from) then failwith "is a directory";
+    if fst (TinyLibSystem.stat caps (path from)) then failwith "is a directory";
     if resolved caps from = resolved caps dest then failwith "the same file";
-    let src = TinyLibSystem.open_in caps from in
+    let src = TinyLibSystem.open_in caps (path from) in
     let fd =
-      (try TinyLibSystem.open_out caps dest
+      (try TinyLibSystem.open_out caps (path dest)
        with Failure m -> TinyLibSystem.close src; failwith m) in
     pieces src (TinyLibSystem.write fd);
     TinyLibSystem.close fd;
@@ -494,18 +501,20 @@ let cp caps args =
 let mv caps args =
   let _, paths = options "" args in
   into_last caps "mv" paths (fun from dest ->
-    TinyLibSystem.rename caps from dest)
+    TinyLibSystem.rename caps (path from) (path dest))
 
 (* a second name for a file: its bytes are not copied, and a change by
  * one name is seen by the other *)
 let ln caps args =
   let _, paths = options "" args in
-  into_last caps "ln" paths (fun from dest -> TinyLibSystem.link caps from dest)
+  into_last caps "ln" paths (fun from dest ->
+    TinyLibSystem.link caps (path from) (path dest))
 
 let touch caps args =
   let _, files = options "" args in
   if files = [] then raise Usage;
-  each_path caps "touch" files (fun file -> TinyLibSystem.touch caps file)
+  each_path caps "touch" files (fun file ->
+    TinyLibSystem.touch caps (path file))
 
 (*****************************************************************************)
 (* Processes *)
@@ -563,7 +572,7 @@ let kill caps args =
 
 let pwd caps args =
   if args <> [] then raise Usage;
-  print caps (TinyLibSystem.getcwd caps ^ "\n");
+  print caps (Fpath.to_string (TinyLibSystem.getcwd caps) ^ "\n");
   0
 
 (* seconds, and thousandths after a point: sleep .5 *)
@@ -649,7 +658,8 @@ let test caps args =
   let rest = ref args in
   let peek () = match !rest with a :: _ -> Some a | [] -> None in
   let next () = match !rest with a :: l -> rest := l; a | [] -> raise Usage in
-  let file f = try Some (TinyLibSystem.stat caps f) with Failure _ -> None in
+  let file f =
+    try Some (TinyLibSystem.stat caps (path f)) with Failure _ -> None in
   let number s =
     match int_of_string_opt s with Some n -> n | None -> raise Usage in
   let rec either () =
@@ -763,8 +773,8 @@ let cmp caps args =
   | [ f1; f2 ] -> begin
       match
         (try
-           let a = TinyLibSystem.open_in caps f1 in
-           Some (a, try TinyLibSystem.open_in caps f2
+           let a = TinyLibSystem.open_in caps (path f1) in
+           Some (a, try TinyLibSystem.open_in caps (path f2)
                     with Failure m -> TinyLibSystem.close a; failwith m)
          with Failure m -> complain caps "cmp" m; None)
       with

@@ -285,11 +285,11 @@ let tables_of_bytes s : table list =
       indexes = get_list (fun r -> let c = get_str r in (c, get_int r)) r })
     (s, ref 0)
 
-let open_db (caps : < Cap.open_in; Cap.open_out; .. >) path =
+let open_db (caps : < Cap.open_in; Cap.open_out; .. >) (path : Fpath.t) =
   (* (made when it is not there) *)
   let fd =
     try TinyLibSystem.open_rw caps path
-    with Failure m -> failwith (path ^ ": " ^ m)
+    with Failure m -> failwith (Fpath.to_string path ^ ": " ^ m)
   in
   let file = { fd; cache = Hashtbl.create 256 } in
   (* (an empty file is a new database; old: one under 16 bytes, so a
@@ -300,7 +300,7 @@ let open_db (caps : < Cap.open_in; Cap.open_out; .. >) path =
     { file; tables = [] }
   end
   else if size < 16 || read_at file 0 8 <> magic then
-    failwith (path ^ ": not a tiny-db file")
+    failwith (Fpath.to_string path ^ ": not a tiny-db file")
   else
     let off = int_at (read_at file 8 8) 0 in
     { file; tables = (if off = 0 then [] else tables_of_bytes (load file off)) }
@@ -842,7 +842,7 @@ let main
                   ^ " statements, and the tables.\n");
       0
   | [ _; path ] ->
-      let db = open_db caps path in
+      let db = open_db caps (Fpath.v path) in
       (* at a terminal, a prompt, as sqlite's *)
       let tty = TinyLibSystem.isatty 0 in
       if tty then

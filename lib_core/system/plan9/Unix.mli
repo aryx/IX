@@ -136,3 +136,25 @@ val plan9_call : string -> string -> int -> Obj.t array -> int
 type interval_timer = ITIMER_REAL | ITIMER_VIRTUAL | ITIMER_PROF
 type interval_timer_status = { it_interval : float; it_value : float }
 val setitimer : interval_timer -> interval_timer_status -> interval_timer_status
+
+(* a named pipe, and the sockets: Plan 9 has neither (it dials, by
+ * /net). The types are OCaml's, so that a function of both systems
+ * (CapUnix's) names them; each call fails, Unix_error (ENOSYS), as
+ * OCaml's Unix does on Windows for what Windows lacks *)
+val mkfifo : string -> file_perm -> unit
+type socket_domain = PF_UNIX | PF_INET | PF_INET6
+type socket_type = SOCK_STREAM | SOCK_DGRAM | SOCK_RAW | SOCK_SEQPACKET
+type inet_addr
+type sockaddr = ADDR_UNIX of string | ADDR_INET of inet_addr * int
+val socket : socket_domain -> socket_type -> int -> file_descr
+val bind : file_descr -> sockaddr -> unit
+val listen : file_descr -> int -> unit
+val accept : file_descr -> file_descr * sockaddr
+val connect : file_descr -> sockaddr -> unit
+type addr_info = {
+  ai_family : socket_domain; ai_socktype : socket_type; ai_protocol : int;
+  ai_addr : sockaddr; ai_canonname : string }
+type getaddrinfo_option =
+  | AI_FAMILY of socket_domain | AI_SOCKTYPE of socket_type
+  | AI_PROTOCOL of int | AI_NUMERICHOST | AI_CANONNAME | AI_PASSIVE
+val getaddrinfo : string -> string -> getaddrinfo_option list -> addr_info list

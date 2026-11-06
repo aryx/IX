@@ -445,3 +445,26 @@ type interval_timer_status = { it_interval : float; it_value : float }
 let setitimer (_which : interval_timer) (t : interval_timer_status) : interval_timer_status =
   Sys.set_signal Sys.sigalrm Sys.Signal_ignore;
   { it_interval = 0.; it_value = float_of_int (sys 24 (i (int_of_float (t.it_value *. 1000.))) z z z z) /. 1000. }
+
+(* a named pipe, and the sockets: none on Plan 9 (see Unix.mli); the
+ * types OCaml's, for CapUnix, which both systems compile *)
+let unsupported fn = raise (Unix_error (ENOSYS, fn, ""))
+let mkfifo (_ : string) (_ : file_perm) : unit = unsupported "mkfifo"
+type socket_domain = PF_UNIX | PF_INET | PF_INET6
+type socket_type = SOCK_STREAM | SOCK_DGRAM | SOCK_RAW | SOCK_SEQPACKET
+type inet_addr = string
+type sockaddr = ADDR_UNIX of string | ADDR_INET of inet_addr * int
+let socket (_ : socket_domain) (_ : socket_type) (_ : int) : file_descr =
+  unsupported "socket"
+let bind (_ : file_descr) (_ : sockaddr) : unit = unsupported "bind"
+let listen (_ : file_descr) (_ : int) : unit = unsupported "listen"
+let accept (_ : file_descr) : file_descr * sockaddr = unsupported "accept"
+let connect (_ : file_descr) (_ : sockaddr) : unit = unsupported "connect"
+type addr_info = {
+  ai_family : socket_domain; ai_socktype : socket_type; ai_protocol : int;
+  ai_addr : sockaddr; ai_canonname : string }
+type getaddrinfo_option =
+  | AI_FAMILY of socket_domain | AI_SOCKTYPE of socket_type
+  | AI_PROTOCOL of int | AI_NUMERICHOST | AI_CANONNAME | AI_PASSIVE
+let getaddrinfo (_ : string) (_ : string) (_ : getaddrinfo_option list) : addr_info list =
+  unsupported "getaddrinfo"

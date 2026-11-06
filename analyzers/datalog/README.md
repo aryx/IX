@@ -252,6 +252,14 @@ anywhere, as Semgrep's rule). A program's own system layer is not blamed
 functions (tiny-machine's disk, its www directory, its signals;
 tiny-cpu's stdin; the socket helper's sockets and fifos), m-ix 111
 (version_control's `Commands` 11, mini-5i's `Host` 10, mini-mk's `CLI` 7...).
+tiny/'s 21 fixed the same day (the author: "let's extend CapUnix so code
+can use it instead of the Unix version (same for CapSys) as ultimately
+we want every syscall to go through the use of a capability"):
+ocaml-caps' CapSys gained `set_signal`, `file_exists`, `is_directory`,
+`readdir`, `remove`, its CapUnix `setitimer`, `_exit`, `mkfifo` and the
+network's six calls; lib_core's erased copies the same, their types the
+capabilities (mini-ml reads no object's names, the reader does), Plan 9's
+Unix the socket types and calls failing with ENOSYS.
 
 In make test (2026-11-04, the author: "at least we detect when new code
 introduce new one and prevent that"): a family of kind check, `-caps`,

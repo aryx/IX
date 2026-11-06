@@ -77,8 +77,8 @@ done; wait; }
 programs | while IFS='|' read -r name flags files; do
   n=$(grep -cE "$said" $W/$name.out)
   # (a unit not read: its program's 0 would say nothing)
-  unread=$(grep -cE 'unbound module|not read' $W/$name.out)
-  [ -z "$check" ] && printf '%-20s %3d%s\n' $name $n "$([ $unread -gt 0 ] && echo "  NOT READ: $(grep -m1 -E 'unbound module|not read' $W/$name.out)")"
+  unread=$(grep -cE 'unbound (module|value)|not read' $W/$name.out)
+  [ -z "$check" ] && printf '%-20s %3d%s\n' $name $n "$([ $unread -gt 0 ] && echo "  NOT READ: $(grep -m1 -E 'unbound (module|value)|not read' $W/$name.out)")"
   [ $unread -gt 0 ] && echo "$name NOT READ" >> $W/unread
   if [ $flag = -exn ]; then
     # (a program's name first: its exceptions, not a file's)

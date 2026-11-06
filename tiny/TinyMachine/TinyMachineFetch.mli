@@ -33,5 +33,5 @@
  * so tiny-kernel has no TLS and no decoder of PNG or JPEG. *)
 
 val main :
-  < Cap.network; Cap.open_in; Cap.stdout; Cap.clock; .. > ->
+  < Cap.network; Cap.open_in; Cap.readdir; Cap.stdout; Cap.clock; .. > ->
   string array -> Exit.t

@@ -32,7 +32,7 @@ let reduce (img : Rgba_image.t) w h =
   done;
   Bytes.to_string out
 
-let main (caps : < Cap.network; Cap.open_in; Cap.stdout; .. >)
+let main (caps : < Cap.network; Cap.open_in; Cap.readdir; Cap.stdout; .. >)
     (argv : string array) : Exit.t =
   let get url =
     match Http_client.get caps url with
@@ -44,7 +44,7 @@ let main (caps : < Cap.network; Cap.open_in; Cap.stdout; .. >)
   | [ _; "-picture"; w; h; source ] -> (
       let w = int_of_string w and h = int_of_string h in
       let bytes =
-        if Sys.file_exists source then Ok (FS.read caps (Fpath.v source))
+        if CapSys.file_exists caps source then Ok (FS.read caps (Fpath.v source))
         else get source in
       match bytes with
       | Ok bytes -> (

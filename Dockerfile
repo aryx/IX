@@ -42,8 +42,10 @@ WORKDIR /src
 COPY dune-project ./
 # caps by its commit on GitHub, not opam's release: ix takes what
 # ocaml-caps has before opam's repository has it (0.1.1: Cap.clock,
-# Cap.pipe, CapUnix.getpid). A new ocaml-caps for ix is a new hash here
-RUN eval $(opam env) && opam pin add -y -n caps git+https://github.com/aryx/ocaml-caps.git#21b183117bebf1136799a710084fdeb6c952d00f
+# Cap.pipe, CapUnix.getpid; CapSys.set_signal and the files', CapUnix's
+# network, mkfifo, setitimer, _exit). A new ocaml-caps for ix is a new
+# hash here
+RUN eval $(opam env) && opam pin add -y -n caps git+https://github.com/aryx/ocaml-caps.git#e1b05e74f5326187491125dad1312df87d109afb
 RUN eval $(opam env) && opam install -y dune caps fpath logs fmt testo alcotest tsdl js_of_ocaml-compiler js_of_ocaml ppx_deriving menhir
 
 # For make self (.github/workflows/self.yml, --build-arg SELF=tix or

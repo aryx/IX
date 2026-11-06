@@ -80,8 +80,7 @@ type doc = {
   mutable dc_head : string;          (* the head so far, until it ends *)
   mutable dc_type : string;
   mutable dc_status : int;           (* 200, or 0 when no head said *)
-  mutable dc_file : int;             (* the file a helper's bytes go to, or
-                                      * -1 *)
+  mutable dc_file : int option;      (* the file a helper's bytes go to *)
 }
 
 type screen = {

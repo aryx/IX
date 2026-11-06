@@ -486,3 +486,10 @@ the speaker, then B and the kernel's trace. A commit each.
   picture_message a match on it (the answer's first line when asked,
   a row while rows come); draw_slice's rows got from it, 0 before.
   +8 lines.
+- The browser's last: the document's `dc_file` an int option (None
+  before a helper's file is open, or when it could not be: body_end
+  says so); next_picture's on_screen and first int options (old: -1
+  for none). Seen and left: TinyBrowserLines.run's `pic` (-1: not a
+  picture's slice) and `link` ("" none), in every run of a page;
+  `dc_type` ("" until the head has come) and `dc_status` (0 when no
+  head said). +7 lines.

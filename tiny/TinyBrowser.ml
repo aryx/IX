@@ -39,9 +39,12 @@ let escaped s =
 (* bytes of the body: read as HTML, as a text, or kept for a helper *)
 let body sc s =
   let d = sc.sc_doc in
-  if d.dc_file >= 0 then ignore (u_write d.dc_file s)
-  else if is_html d.dc_type then feed sc.sc_page s
-  else if String.starts_with "text/" d.dc_type then feed sc.sc_page (escaped s)
+  match d.dc_file with
+  | Some fd -> ignore (u_write fd s)
+  | None ->
+    if is_html d.dc_type then feed sc.sc_page s
+    else if String.starts_with "text/" d.dc_type then
+      feed sc.sc_page (escaped s)
 
 (* The head's end: the status, and what the body is (HTML when the head
  * does not say, as when there is no head) *)
@@ -50,7 +53,9 @@ let body_start sc =
   d.dc_status <- status d.dc_head;
   d.dc_type <- (match media_type d.dc_head with "" -> "text/html" | t -> t);
   match List.assoc_opt d.dc_type helpers with
-  | Some (_, file) -> d.dc_file <- u_open file 0x601
+  | Some (_, file) ->
+    let fd = u_open file 0x601 in
+    d.dc_file <- (if fd < 0 then None else Some fd)
   | None ->
     if is_html d.dc_type then ()
     else if String.starts_with "text/" d.dc_type then feed sc.sc_page "<pre>"
@@ -86,14 +91,14 @@ let body_end sc =
   match List.assoc_opt d.dc_type helpers with
   | Some (prog, file) ->
     let what =
-      if d.dc_file < 0 then "could not be kept in " ^ file
-      else begin
-        ignore (u_close d.dc_file);
-        d.dc_file <- -1;
+      match d.dc_file with
+      | None -> "could not be kept in " ^ file
+      | Some fd ->
+        ignore (u_close fd);
+        d.dc_file <- None;
         if u_spawn ("/bin/" ^ prog) [ prog; file ] < 0 then
           "kept in " ^ file ^ ", but there is no " ^ prog ^ " to show it"
-        else "kept in " ^ file ^ ", given to " ^ prog
-      end in
+        else "kept in " ^ file ^ ", given to " ^ prog in
     feed sc.sc_page ("<p>" ^ d.dc_type ^ ": " ^ what ^ ".</p>")
   | None -> ()
 
@@ -120,12 +125,14 @@ let load sc url =
   sc.sc_nav.nv_address <- address;
   sc.sc_nav.nv_goal_id <- id;
   sc.sc_y <- 0;
-  if sc.sc_doc.dc_file >= 0 then ignore (u_close sc.sc_doc.dc_file);
+  (match sc.sc_doc.dc_file with
+   | Some fd -> ignore (u_close fd)
+   | None -> ());
   sc.sc_doc.dc_got <- 0;
   sc.sc_doc.dc_head <- "";
   sc.sc_doc.dc_type <- "";
   sc.sc_doc.dc_status <- 0;
-  sc.sc_doc.dc_file <- -1;
+  sc.sc_doc.dc_file <- None;
   sc.sc_state <- "reading";
   sc.sc_tools.tb_field <- url;
   draw_bar sc;
@@ -151,25 +158,28 @@ let rec next_picture sc =
   let p = sc.sc_page in
   let pending id = (picture_of p id).pc_got = Pic_unasked in
   let rec on_screen = function
-    | [] -> -1
+    | [] -> None
     | (l : line) :: rest ->
         (match
            List.filter (fun (r : run) -> r.pic >= 0 && pending (r.pic / 256))
              l.runs
          with
-         | r :: _ -> r.pic / 256
+         | r :: _ -> Some (r.pic / 256)
          | [] -> on_screen rest) in
   let rec first id =
-    if id >= pictures p then -1 else if pending id then id else first (id + 1)
-  in
-  let id =
+    if id >= pictures p then None
+    else if pending id then Some id
+    else first (id + 1) in
+  let next =
     match
       on_screen
         (lines_between p (sc.sc_y / 16) ((sc.sc_y + area sc + 15) / 16))
     with
-    | -1 -> first 0
-    | id -> id in
-  if id >= 0 then begin
+    | Some id -> Some id
+    | None -> first 0 in
+  (match next with
+   | None -> ()
+   | Some id ->
     let pc = picture_of p id in
     let fd = u_dial "10.0.0.1" 70 in
     if fd < 0 then begin pc.pc_got <- Pic_failed; next_picture sc end
@@ -179,8 +189,7 @@ let rec next_picture sc =
       ignore (u_write fd ("img " ^ string_of_int pc.pc_w ^ " "
                           ^ string_of_int pc.pc_h ^ " " ^ url ^ "\r\n"));
       sc.sc_nav.nv_wire <- Wire_picture (fd, id)
-    end
-  end;
+    end);
   draw_status sc
 
 (* A message of the picture being fetched: its first line, then its
@@ -369,7 +378,7 @@ let browse typed =
       sc_tools = { tb_field = ""; tb_mouse = up; tb_menu = menu_closed () };
       sc_cols = w / 8; sc_rows = h / 16; sc_y = 0; sc_drawn = 0;
       sc_doc = { dc_got = 0; dc_head = ""; dc_type = ""; dc_status = 0;
-                 dc_file = -1 };
+                 dc_file = None };
       sc_state = "reading"; sc_msgs = [] } in
   put sc colours;
   put sc (d_image c_strip (0, 0, sc.sc_cols * 8, 16) 255);

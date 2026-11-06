@@ -56,8 +56,12 @@ printf 'int main(void) {\n  int x;\n  x = 1\n  return x;\n}\n' > $W/err/semi.c
 printf '/* a header */\nint g(int a);\nint h(int a) { return a +* ; }\n' > $W/err/bad.h
 printf '#include "bad.h"\nint main(void) {\n  return 0;\n}\n' > $W/err/include.c
 printf '#define BAD 1 +\nint main(void) {\n\n  return BAD;\n}\n' > $W/err/macro.c
+# (a parameter list not closed: a segmentation fault before, 2026-11-06)
+printf 'int f( {\n' > $W/err/params.c
+printf 'int g(int a' > $W/err/end.c
 for want in "expr.c: line 3: expected an expression" "semi.c: line 3: expected ;" \
-            "bad.h: line 3: expected an expression" "macro.c: line 4: expected an expression"; do
+            "bad.h: line 3: expected an expression" "macro.c: line 4: expected an expression" \
+            "params.c: line 1: expected )" "end.c: line 1: expected )"; do
   c=${want%%.*}.c; [ $c = bad.c ] && c=include.c
   got=$(cd $W/err && $TC -o /dev/null $c 2>&1)
   if [ "$got" = "$want" ]; then echo "ok error in $c"; else echo "FAIL error in $c: $got"; failures=$((failures + 1)); fi

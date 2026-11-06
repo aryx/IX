@@ -237,7 +237,11 @@ and declarator_rec () : string * (ty -> ty) * string list =
         let _, pt = base_type () in
         let pname, pt = declarator pt in
         let pt = match pt with Arr (e, _) -> Ptr e | t -> t in
-        ignore (accept ",");
+        (* a , or the ) next: else the list is not closed (old: the
+         * comma optional, and on { or at the file's end params called
+         * itself on no token taken, until the stack was gone: a
+         * segmentation fault) *)
+        if not (accept ",") && peek () <> P ")" then error "expected )";
         let rest, variadic = params () in
         (if pt <> Void || pname <> "" then (pname, pt) :: rest else rest),
         variadic

@@ -195,13 +195,17 @@ let gather items =
     | it -> add it) items;
   List.rev !text @ [ Align 4096; Section true ] @ List.rev !data
 
+(* the image's order: the objects', or the text first (-n) *)
+type sections = In_order | Text_first
+
 (* the image, the labels by address, and where the data starts (-n; 0
  * otherwise, the sections then ignored) *)
-let link split (objects : (Fpath.t * string) list) =
+let link (sections : sections) (objects : (Fpath.t * string) list) =
   let items =
     sweep (List.map (fun (f, text) -> sectioned (read f text)) objects) in
   let labels, order, placed, data_at =
-    layout (if split then gather items else items) in
+    layout
+      (match sections with Text_first -> gather items | In_order -> items) in
   let resolve t =
     match int_of_string_opt t, Hashtbl.find_opt labels t with
     | Some n, _ -> n
@@ -267,7 +271,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
       | Some (mb, split, syms, map, out, files) ->
           try
             let image, labels, data_at =
-              link split
+              link (if split then Text_first else In_order)
                 (List.map (fun f -> f, TinyLibSystem.read_file caps f) files)
             in
             let lines l =

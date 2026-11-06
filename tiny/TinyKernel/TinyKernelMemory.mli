@@ -179,13 +179,17 @@ val mem_release : space -> unit
 val segments : bool ref
 val pages : bool ref
 
+(* a program's text when it is loaded: new, its image's to write; or
+ * shared, a copy that runs has it (segments) *)
+type text_state = Text_new | Text_shared
+
 (* [mem_load sp key stamp tsize isize size]: sp given the memory of a
  * program of size bytes (its a.out's), its image isize, its old memory
  * let go; tsize of them the text (0: none; ignored with partitions),
- * shared with segments when one from the same key and stamp runs. True
- * when the image's text is to be written, else only its data (from
- * tsize). No_room, sp as it was *)
-val mem_load : space -> string -> string -> int -> int -> int -> bool
+ * shared with segments when one from the same key and stamp runs: then
+ * only the image's data is written (from tsize; old: a bool). No_room,
+ * sp as it was *)
+val mem_load : space -> string -> string -> int -> int -> int -> text_state
 
 (* [mem_forget key]: the texts of that file not shared by a next exec
  * (the file is being written) *)

@@ -195,8 +195,8 @@ let rec infer env e : ty =
   | Fun (xs, b) ->
       let ts = List.map (fun _ -> newvar ()) xs in
       List.fold_right arrow ts (infer (List.rev (List.combine xs ts) @ env) b)
-  | Let (false, bs, b) -> infer (let_types env bs) b
-  | Let (true, bs, b) -> infer (rec_types env bs) b
+  | Let (Nonrecursive, bs, b) -> infer (let_types env bs) b
+  | Let (Recursive, bs, b) -> infer (rec_types env bs) b
   | Match (e, cases) -> cases_type env (infer env e) cases
   | Try (e, cases) ->
       let t = infer env e in unify t (cases_type env (tcon "exn") cases); t
@@ -296,8 +296,8 @@ and rec_types env bs =
 let type_item env (it, l) =
   try
     match it with
-    | ILet (false, bs) -> let_types env bs
-    | ILet (true, bs) -> rec_types env bs
+    | ILet (Nonrecursive, bs) -> let_types env bs
+    | ILet (Recursive, bs) -> rec_types env bs
     | IExt (x, t, _) -> (x, of_texpr (ref []) t) :: env
     | IExn _ | IOpen _ -> env
   with Failure m -> error (Printf.sprintf "line %d: %s" l m)

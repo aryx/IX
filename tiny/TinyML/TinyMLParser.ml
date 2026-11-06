@@ -116,7 +116,7 @@ and stmt () =
   match peek () with
   | KW "let" ->
       advance ();
-      let r = accept (KW "rec") in
+      let r = if accept (KW "rec") then Recursive else Nonrecursive in
       let bs = bindings () in
       expect (KW "in");
       Let (r, bs, expr ())
@@ -182,8 +182,8 @@ and binary min =
                        incr fresh;
                        let a' = Printf.sprintf "%%a%d" !fresh
                        and i' = Printf.sprintf "%%i%d" !fresh in
-                       Let (false, [ PVar i', i ],
-                         Let (false, [ PVar a', a ],
+                       Let (Nonrecursive, [ PVar i', i ],
+                         Let (Nonrecursive, [ PVar a', a ],
                            App (var "Array.set", [ var a'; var i'; rhs ])))
                    | _ ->
                        error
@@ -404,7 +404,7 @@ and fun_of ps body =
       | p ->
           incr fresh;
           let x = Printf.sprintf "%%p%d" !fresh in
-          x :: names, Let (false, [ p, var x ], body))
+          x :: names, Let (Nonrecursive, [ p, var x ], body))
       ps ([], body)
   in
   (* fun x -> function ...: one function of both, as OCaml makes it
@@ -580,11 +580,11 @@ let rec items () : (item * int) list =
   | KW ";;" -> advance (); items ()
   | KW "let" ->
       advance ();
-      let r = accept (KW "rec") in
+      let r = if accept (KW "rec") then Recursive else Nonrecursive in
       let bs = bindings () in
       if accept (KW "in") then (
         let e = Let (r, bs, expr ()) in
-        (ILet (false, [ PAny, e ]), l) :: items ())
+        (ILet (Nonrecursive, [ PAny, e ]), l) :: items ())
       else (ILet (r, bs), l) :: items ()
   | KW "type" -> advance (); type_decl (); items ()
   (* module M = struct ... end, one level: its names M.x, for the units
@@ -640,4 +640,4 @@ let rec items () : (item * int) list =
       expect (KW "=");
       let p = match peek () with STR p -> advance (); p | _ -> fail () in
       (IExt (x, t, p), l) :: items ()
-  | _ -> let e = expr () in (ILet (false, [ PAny, e ]), l) :: items ()
+  | _ -> let e = expr () in (ILet (Nonrecursive, [ PAny, e ]), l) :: items ()

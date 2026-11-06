@@ -60,5 +60,5 @@ type msg = Celsius of string | Fahrenheit of string
 (* The converter, for TinyLibGUI's run *)
 val temperature : (model, msg) TinyLibGUI.gui
 
-(* a text's whole number, and whether it is one *)
-val number : string -> int * bool
+(* a text's whole number, None when it is not one *)
+val number : string -> int option

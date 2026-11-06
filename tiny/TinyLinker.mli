@@ -75,11 +75,15 @@
  * linker descends from Plan 9's, and moved the encoding to its
  * assembler in 2014, for speed. *)
 
-(* [link split objects]: the objects (a name, its text), linked: the
+(* the image's order: the objects', .text and .data ignored; or all the
+ * text first, then all the data (-n) *)
+type sections = In_order | Text_first
+
+(* [link order objects]: the objects (a name, its text), linked: the
  * image, each label with its address, by address, and where the data
- * starts (split, -n: the text first; else 0, .text and .data ignored) *)
+ * starts (0 in order) *)
 val link :
-  bool -> (Fpath.t * string) list -> string * (string * int) list * int
+  sections -> (Fpath.t * string) list -> string * (string * int) list * int
 
 (* [aout memory data_at image]: an executable for tiny-kernel: a header
  * of three words (a magic number, the image's size, the memory the

@@ -147,8 +147,9 @@
 
 (* [create width height file text]: the office on a page of that size
  * in pixels, file the page's name, text the file's text ("" for a new
- * page) *)
-val create : int -> int -> string -> string -> TinyOfficeModel.office
+ * page; the file a path, so that the two cannot be given one for the
+ * other) *)
+val create : int -> int -> Fpath.t -> string -> TinyOfficeModel.office
 
 (* what a key or the mouse asks of the program around: nothing, to save
  * the file, to quit *)

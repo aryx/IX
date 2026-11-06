@@ -37,7 +37,7 @@ let () =
     && (match pending e with Some k -> given e (key e k) | None -> true)
   in
   run_canvas {
-    first = (fun w h -> (create (w / 8) (h / 16) file (read_file path), w, h));
+    first = (fun w h -> (create (w / 8) (h / 16) path (read_file path), w, h));
     picture = (fun (e, w, h) -> Rect (255, w, h) :: shapes e (h / 16));
     typed =
       (fun k m ->

@@ -112,7 +112,7 @@
  (name tiny_editor_screen)
  (wrapped false)
  (modules TinyEditorScreen)
- (libraries tiny_lib_playground))
+ (libraries fpath tiny_lib_playground))
 
 ; TinyOffice.ml, tiny-office's page and its parts, with no system under it
 ; (tests/TinyOffice_tests/'s test types keys and moves the mouse at it)
@@ -120,7 +120,7 @@
  (name tiny_office)
  (wrapped false)
  (modules TinyOffice)
- (libraries tiny_lib_gui tiny_office_parts))
+ (libraries fpath tiny_lib_gui tiny_office_parts))
 
 ; TinyTroff.ml, tiny-troff: a page of the office (or a Markdown file) as
 ; text or HTML (tests/TinyTroff_tests/'s test prints a page both ways)

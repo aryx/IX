@@ -201,7 +201,10 @@ let load_prog p node argv =
   if size > memory - 0x10000 || memory > mem_high - mem_low then raise Bad;
   (* the text written only when it is not shared already *)
   let stamp = if date = "" then "" else date ^ " " ^ string_of_int n in
-  let from = if mem_load p.mem key stamp tsize size memory then 0 else tsize in
+  let from =
+    match mem_load p.mem key stamp tsize size memory with
+    | Text_new -> 0
+    | Text_shared -> tsize in
   (* Only the image is written, its statics in it (tiny-linker writes a
    * .space as zeros); the rest of the
    * partition, the stack and the heap, is left as the last process to

@@ -132,8 +132,13 @@ let own_text sp =
  * no segments), the rest of size its data. A text that runs already,
  * from the same file unchanged, is shared; else a block of its own. True
  * when the text is new, for the caller to write; No_room, sp as it was *)
+(* a program's text when it is loaded: new, its image's to write; or
+ * shared, a copy that runs has it (segments) *)
+type text_state = Text_new | Text_shared
+
 let seg_load sp key stamp tsize size =
-  if not !segments || tsize = 0 then (mem_place sp size; drop_text sp; true)
+  if not !segments || tsize = 0 then
+    (mem_place sp size; drop_text sp; Text_new)
   else begin
     let found =
       if key = "" then None
@@ -151,7 +156,7 @@ let seg_load sp key stamp tsize size =
     t.users <- t.users + 1;
     drop_text sp;
     sp.text <- Some t;
-    found = None
+    if found = None then Text_new else Text_shared
   end
 
 (* the texts of a file no longer taken by an exec: it is being written *)
@@ -345,7 +350,7 @@ let satp sp = if sp.root = 0 then 0 else -0x40000000 lor (sp.root lsr 12)
 (*****************************************************************************)
 
 let mem_load sp key stamp tsize isize size =
-  if !pages then (pg_load sp tsize isize size; true)
+  if !pages then (pg_load sp tsize isize size; Text_new)
   else seg_load sp key stamp tsize size
 let mem_release sp = if !pages then pg_release sp else seg_release sp
 let mem_copy dst src = if !pages then pg_copy dst src else seg_copy dst src

@@ -30,7 +30,7 @@ let keys e s =
   | Quit -> print_string "asks: quit"; print_newline ()
 
 let () =
-  let e = create 24 7 "notes" "" in
+  let e = create 24 7 (Fpath.v "notes") "" in
   show "an empty text" e;
   keys e "hello world\nsecond line\nthird";
   show "three lines typed" e;
@@ -59,7 +59,7 @@ let () =
       "line " ^ string_of_int (i + 1)
       ^ (if i mod 4 = 3 then " needle" else "")))
   in
-  let e = create 24 7 "twelve" text in
+  let e = create 24 7 (Fpath.v "twelve") text in
   show "a text of twelve lines" e;
   keys e "\022";
   show "C-v: a screen down" e;
@@ -84,7 +84,7 @@ let () =
 
 let () =
   let e =
-    create 24 7 "wide"
+    create 24 7 (Fpath.v "wide")
       "\tif(x)\n\t\treturn a\tb;\nabcdefghijklmnopqrstuvwxyz0123456789" in
   show "tabs, and a line wider than the screen" e;
   keys e "\006\014";
@@ -95,7 +95,7 @@ let () =
   show "back up: the screen as it was" e
 
 let () =
-  let e = create 24 7 "mx" "one fish\ntwo fish\nred fish\nblue fish" in
+  let e = create 24 7 (Fpath.v "mx") "one fish\ntwo fish\nred fish\nblue fish" in
   keys e "\027x";
   show "Escape x: M-x asks for a command" e;
   keys e "end-of-b\t";
@@ -114,7 +114,7 @@ let () =
   show "C-g: never mind" e
 
 let () =
-  let e = create 24 7 "macro" "a\nb\nc\nd" in
+  let e = create 24 7 (Fpath.v "macro") "a\nb\nc\nd" in
   keys e "\024(";
   show "C-x (: a macro, Def on the line below the text" e;
   keys e "\001- \014\024)";
@@ -142,16 +142,16 @@ let () =
     "let x = 'a' (* a (* nested *)\n  comment *) in\n"
     ^ "if s = \"say \\\"hi\\\"\" then 'b'\nlet f x' = x' :: []"
   in
-  let e = create 32 7 "a.ml" ml in
+  let e = create 32 7 (Fpath.v "a.ml") ml in
   show_faces
     "OCaml: a comment over two lines, nested; strings, characters, x'" e;
   let e =
-    create 32 7 "a.c"
+    create 32 7 (Fpath.v "a.c")
       ("#include <u.h>\nint f(char *s) /* a\n comment */ {\n"
        ^ "\treturn s[0] == '\\n'; // end\n}")
   in
   show_faces "C: #include, a comment over two lines, a tab, // to the end" e;
-  let e = create 32 7 "notes" "let x = 1" in
+  let e = create 32 7 (Fpath.v "notes") "let x = 1" in
   print_string ("a file of no language: "
     ^ string_of_int (List.length (faces e)) ^ " lines of faces");
   print_newline ()
@@ -162,6 +162,6 @@ let () =
       if i = 2 then "(* open"
       else if i = 6 then "closed *) let"
       else "let " ^ string_of_int i)) in
-  let e = create 24 5 "b.ml" text in
+  let e = create 24 5 (Fpath.v "b.ml") text in
   keys e "\022\022";
   show_faces "two screens down: the comment opened above the first line shown" e

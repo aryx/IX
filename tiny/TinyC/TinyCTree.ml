@@ -32,6 +32,10 @@ let asg_ops =
  * offset below SP, a parameter's from FP *)
 type place = Global of string | Local of int | Param of int
 
+(* an assignment: x = y, or x op= y, whose new value reads the old one
+ * (Cur) *)
+type asg = Asg_set | Asg_update
+
 type expr = { d : desc; t : ty }
 
 and desc =
@@ -43,8 +47,8 @@ and desc =
   | Bin of binop * expr * expr
       (* both operands of one type; a relation's value an int *)
   | Cond of expr * expr * expr        (* && || ! are made of it *)
-  | Asg of expr * expr * bool
-      (* an lvalue, its new value, which uses Cur *)
+  | Asg of expr * expr * asg
+      (* an lvalue, its new value *)
   | Apply of string * expr list       (* a call (old: Call, the stack machine's
                                        * name too: tiny-ml's constructors are
                                        * one name space) *)
@@ -121,13 +125,13 @@ let deref (e : expr) =
   match e.t with Ptr t -> mk (Deref e) t | _ -> error "not a pointer"
 
 (* (old: ~cur, a label, which tiny-ml does not read) *)
-let assign cur (l : expr) (r : expr) =
+let assign (kind : asg) (l : expr) (r : expr) =
   match l.d with
-  | Deref _ -> mk (Asg (l, conv (rv r) l.t, cur)) l.t
+  | Deref _ -> mk (Asg (l, conv (rv r) l.t, kind)) l.t
   | _ -> error "not an lvalue"
 
 (* x op= y: the value computed from x's, loaded once *)
-let asg_op o (l : expr) r = assign true l (binary (A o) (mk Cur l.t) r)
+let asg_op o (l : expr) r = assign Asg_update l (binary (A o) (mk Cur l.t) r)
 
 (* a variable, as an lvalue *)
 let var p t = mk (Deref (mk (Addr p) (Ptr t))) t

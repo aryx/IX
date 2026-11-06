@@ -62,7 +62,7 @@ let drag o b x y x' y' = at o b x y; at o b x' y'; at o 0 x' y'
 let jump o b x y x' y' = at o b x y; at o 0 x' y'
 
 let () =
-  let o = create 320 200 "notes" "" in
+  let o = create 320 200 (Fpath.v "notes") "" in
   show "an empty page" o;
   click o 1 20 40;
   keys o
@@ -89,7 +89,7 @@ let () =
 let () =
   let page =
     "\\box[10 40 150 52]{\nhello there\n}\n\n\\box[100 50 120 52]{\ntop\n}\n" in
-  let o = create 320 200 "two" page in
+  let o = create 320 200 (Fpath.v "two") page in
   show "a page of two boxes, from its file" o;
   click o 1 110 54;
   show
@@ -111,7 +111,7 @@ let () =
   file "now" o
 
 let () =
-  let o = create 400 220 "budget" "" in
+  let o = create 400 220 (Fpath.v "budget") "" in
   click o 1 10 40;
   keys o "\024t";
   show "C-x t: a sheet, where the last click was, its first cell chosen" o;
@@ -133,7 +133,7 @@ let () =
   show "C-g: no cell chosen" o
 
 let () =
-  let o = create 400 220 "diagram" "" in
+  let o = create 400 220 (Fpath.v "diagram") "" in
   click o 1 10 40;
   keys o "\024d";
   show "C-x d: a drawing, where the last click was; the tool a box" o;
@@ -159,7 +159,7 @@ let () =
   show "C-g: the drawing left" o
 
 let () =
-  let o = create 400 220 "menus" "" in
+  let o = create 400 220 (Fpath.v "menus") "" in
   click o 1 100 5;
   show "a click on Insert: its menu open" o;
   click o 1 110 40;
@@ -189,7 +189,7 @@ let () =
   click o 1 10 38
 
 let () =
-  let o = create 320 200 "moves" "\\box[40 60 150 52]{\nhello\n}\n" in
+  let o = create 320 200 (Fpath.v "moves") "\\box[40 60 150 52]{\nhello\n}\n" in
   click o 1 60 80;
   show "a click in the box: edited, its tab above it, its corner" o;
   jump o 1 50 50 150 70;
@@ -202,7 +202,7 @@ let () =
   file "the page" o
 
 let () =
-  let o = create 320 220 "styles" "" in
+  let o = create 320 220 (Fpath.v "styles") "" in
   click o 1 20 40;
   keys o "\015Plain, \002bold\002, \tslanted\t and \021under\021.";
   show "C-o, a text in four styles (C-b, Tab, C-u: each on, then off)" o;
@@ -218,7 +218,7 @@ let () =
   file "the page" o
 
 let () =
-  let o = create 320 200 "picture" "" in
+  let o = create 320 200 (Fpath.v "picture") "" in
   click o 1 10 40;
   keys o "\024p";
   show "a click at 10 40, C-x p: a paint there, its colour black" o;
@@ -269,19 +269,19 @@ let page = String.concat "\n" [
   "" ]
 
 let () =
-  let o = create 400 220 "doc" page in
+  let o = create 400 220 (Fpath.v "doc") page in
   show "a page of the four kinds read from its file" o;
   file "written again" o
 
 let () =
   let o =
-    create 400 220 "notes.md"
+    create 400 220 (Fpath.v "notes.md")
       "# Notes\n\nA *Markdown* file, with no box.\nIts second line.\n" in
   show "a Markdown file: one text box" o;
   file "written" o
 
 let () =
-  let o = create 420 220 "chart" "" in
+  let o = create 420 220 (Fpath.v "chart") "" in
   click o 1 10 40;
   keys o "\024tRent\nFood\n\128\128\131500\n300\n";
   show "a sheet (sheet1): Rent, Food, 500, 300" o;
@@ -302,7 +302,7 @@ let () =
   file "the page" o
 
 let () =
-  let o = create 400 220 "book" "" in
+  let o = create 400 220 (Fpath.v "book") "" in
   click o 1 10 40;
   keys o "\015First page";
   click o 1 300 150;
@@ -323,6 +323,6 @@ let () =
   show "C-_: the page back, and its sheet (C-x ] to see it)" o;
   keys o "\024]";
   show "C-x ]" o;
-  let o = create 400 220 "again" (text o) in
+  let o = create 400 220 (Fpath.v "again") (text o) in
   keys o "\024]";
   show "the file read again, its second page shown" o

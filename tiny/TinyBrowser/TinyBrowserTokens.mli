@@ -32,6 +32,9 @@ type token =
  * both "" to begin. *)
 type reader = { mutable tail : string; mutable raw : string }
 
-(* [tokens reader message last]: the tokens of a message. [last] is
- * true when no message follows, so nothing is kept for later. *)
-val tokens : reader -> string -> bool -> token list
+(* [tokens reader message]: the tokens of a message, what it ends with
+ * unfinished kept in the reader for the next one; [tokens_end reader]:
+ * at the end, what was kept (old: a bool, whether the message was the
+ * last) *)
+val tokens : reader -> string -> token list
+val tokens_end : reader -> token list

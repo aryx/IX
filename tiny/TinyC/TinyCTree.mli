@@ -6,6 +6,7 @@ val binops : (string * binop) list
 val binop_name : binop -> string
 val asg_ops : (string * arith) list
 type place = Global of string | Local of int | Param of int
+type asg = Asg_set | Asg_update
 type expr = { d : desc; t : TinyCTypes.ty; }
 and desc =
     Const of int64
@@ -15,7 +16,7 @@ and desc =
   | Un of unop * expr
   | Bin of binop * expr * expr
   | Cond of expr * expr * expr
-  | Asg of expr * expr * bool
+  | Asg of expr * expr * asg
   | Apply of string * expr list
   | ApplyPtr of expr * expr list
   | Conv of expr
@@ -29,7 +30,7 @@ val common : TinyCTypes.ty -> TinyCTypes.ty -> TinyCTypes.ty
 val binary : binop -> expr -> expr -> expr
 val addr : expr -> expr
 val deref : expr -> expr
-val assign : bool -> expr -> expr -> expr
+val assign : asg -> expr -> expr -> expr
 val asg_op : arith -> expr -> expr -> expr
 val var : place -> TinyCTypes.ty -> expr
 val lnot : expr -> expr

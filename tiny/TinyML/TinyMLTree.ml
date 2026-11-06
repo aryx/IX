@@ -25,6 +25,9 @@ type pat = PAny | PVar of string | PConst of const | PCon of string * pat list
   | PAnnot of pat * texpr
   | PRecord of (string * pat) list * int list ref * int ref
 
+(* a let's: let rec, or not (OCaml's names; old: a bool) *)
+type rec_flag = Nonrecursive | Recursive
+
 type expr =
   | Const of const
   (* its type where it is used, which a comparison reads *)
@@ -34,7 +37,7 @@ type expr =
   | App of expr * expr list
   (* a parameter's pattern is a let in the body *)
   | Fun of string list * expr
-  | Let of bool * (pat * expr) list * expr
+  | Let of rec_flag * (pat * expr) list * expr
   | Match of expr * case list
   | Try of expr * case list
   | If of expr * expr * expr
@@ -52,7 +55,7 @@ type expr =
 and case = pat * expr option * expr
 
 type item =
-  | ILet of bool * (pat * expr) list | IExt of string * texpr * string
+  | ILet of rec_flag * (pat * expr) list | IExt of string * texpr * string
   | IExn of string | IOpen of string
 
 (* a constructor: its number among its type's constant ones or among

@@ -31,7 +31,7 @@ let () =
       Some o
     | Quit -> None in
   run_canvas {
-    first = (fun w h -> create w h file (read_file path));
+    first = (fun w h -> create w h path (read_file path));
     picture = view;
     typed = (fun k o -> answer o (key o k));
     moved = (fun x y b o -> answer o (mouse o x y b)) };

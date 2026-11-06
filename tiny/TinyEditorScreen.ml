@@ -83,7 +83,10 @@ let language_of (file : string) : language =
   else if ends ".c" || ends ".h" then C
   else Plain
 
-let create (cols : int) (rows : int) (file : string) (text : string) : editor =
+let create (cols : int) (rows : int) (path : Fpath.t) (text : string)
+    : editor =
+  (* (its name as text: shown, and its suffix for the colours) *)
+  let file = Fpath.to_string path in
   let first, rest =
     match String.split_on_char '\n' text with l :: r -> l, r | [] -> "", [] in
   let t =

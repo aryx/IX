@@ -67,9 +67,11 @@ tiny/TinyBrowser/TinyBrowserText.ml:39: dead: TinyBrowserText.of_code, in init b
 tiny/TinyBrowser/TinyBrowserText.ml:70: dead: TinyBrowserText.entity, in init but no call goes through the pointer
 tiny/TinyBrowser/TinyBrowserText.ml:90: dead: TinyBrowserText.entity_code, in init but no call goes through the pointer
 tiny/TinyBrowser/TinyBrowserTokens.ml: dead global: TinyBrowserTokens.wanted, nothing live names it
+tiny/TinyBrowser/TinyBrowserTokens.ml:136: dead: TinyBrowserTokens.tokens, in init but no call goes through the pointer
+tiny/TinyBrowser/TinyBrowserTokens.ml:137: dead: TinyBrowserTokens.tokens_end, in init but no call goes through the pointer
 tiny/TinyBrowser/TinyBrowserTokens.ml:23: dead: TinyBrowserTokens.tag, in init but no call goes through the pointer
 tiny/TinyBrowser/TinyBrowserTokens.ml:75: dead: TinyBrowserTokens.tag_end, in init but no call goes through the pointer
-tiny/TinyBrowser/TinyBrowserTokens.ml:89: dead: TinyBrowserTokens.tokens, in init but no call goes through the pointer
+tiny/TinyBrowser/TinyBrowserTokens.ml:89: dead: TinyBrowserTokens.scan, in init but no call goes through the pointer
 tiny/TinyKernel/TinyKernelNetwork.ml:273: dead: TinyKernelNetwork.il_readable, nothing names it
 tiny/TinyLibSymbols.ml:57: dead: TinyLibSymbols.address, nothing names it
-tiny/TinyMachine.ml:632: dead: TinyMachine:fun at line 632, nothing names it
+tiny/TinyMachine.ml:633: dead: TinyMachine:fun at line 633, nothing names it

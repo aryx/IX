@@ -469,10 +469,10 @@ let token p = function
   | Open (tag, attrs) -> open_tag p tag (kind tag) attrs
   | Close tag -> close_tag p tag (kind tag)
 
-let feed p chunk = List.iter (token p) (tokens p.reader chunk false)
+let feed p chunk = List.iter (token p) (tokens p.reader chunk)
 
 let finish p =
-  List.iter (token p) (tokens p.reader "" true);
+  List.iter (token p) (tokens_end p.reader);
   (match p.tables with
    | t :: _ ->
      (if t.row <> [] then t.rows <- t.row :: t.rows);

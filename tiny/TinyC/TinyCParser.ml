@@ -267,7 +267,7 @@ and expr () =
 and assign_expr () =
   let l = cond_expr () in
   match peek () with
-  | P "=" -> ignore (next ()); assign false l (assign_expr ())
+  | P "=" -> ignore (next ()); assign Asg_set l (assign_expr ())
   | P op when List.mem_assoc op asg_ops ->
       ignore (next ()); asg_op (List.assoc op asg_ops) l (assign_expr ())
   | _ -> l
@@ -509,7 +509,7 @@ and locals () =
         no_vlong t;
         let p = local t in
         Hashtbl.replace (List.hd !scopes) name { vty = t; where = p };
-        if accept "=" then [ Expr (assign false (var p t) (assign_expr ())) ]
+        if accept "=" then [ Expr (assign Asg_set (var p t) (assign_expr ())) ]
         else []
       end
     in

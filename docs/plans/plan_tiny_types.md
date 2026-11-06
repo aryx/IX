@@ -254,3 +254,28 @@ boxes model ...]): `laid`, `place`, `over`, `mouse`, `key`, `redraw`,
 and TinyDebugger's model on them. TinyOffice's strokes and
 TinyWindows' sweeps are two corners, not a box: left. -5 code lines
 (the .mli's shorter; the .ml +2, its two types).
+
+2026-11-06, stage 4 built (the author: "let's commit and move
+forward"): the bools that said nothing at the call, each a variant
+named for what it chooses, or two functions:
+- tiny-linker's `link`: `sections`, `In_order | Text_first` (-n);
+- tiny-c's assignment: `Asg_set | Asg_update`, in `assign` and the
+  tree's `Asg` (x op= y's new value reads the old one: the address
+  kept for it, Dup);
+- tiny-ml's let: `rec_flag`, `Nonrecursive | Recursive` (OCaml's
+  names), in the tree's `Let` and `ILet` and `bind` (16 places);
+- the browser's tokenizer: `tokens reader message` and `tokens_end
+  reader`, the old bool (the last message) left inside, `scan`;
+- the temperature converter's `number`: `int option`, not the number
+  and whether it was one;
+- the kernel's `mem_load`: `text_state`, `Text_new | Text_shared` (a
+  copy that runs has it, segments), which the exec makes an offset.
+`TinyEditorScreen.create` and `TinyOffice.create` take the file as
+an Fpath.t, so that its name and its text, two strings, cannot be
+given one for the other (the name kept as text inside, for the
+messages and the editor's colours). Left: `TinyBrowserLines.word`'s
+bool is a word's own data (a `Word` the HTML reader made: whether a
+space comes before), not a mode; the word as a record goes with
+stage 7. dead_tiny.txt recorded again (the tokenizer's dead in the
+host programs, which link it unused, under its new names). +22 code
+lines.

@@ -84,8 +84,9 @@
 type editor
 
 (* [create cols rows file text]: an editor of the text, the cursor at
- * its start, on a screen of that size; file is its name, to show *)
-val create : int -> int -> string -> string -> editor
+ * its start, on a screen of that size; file is its name, to show (a
+ * path, so that the two cannot be given one for the other) *)
+val create : int -> int -> Fpath.t -> string -> editor
 
 (* what a key asks of the program around the editor *)
 type request = Continue | Save | Quit

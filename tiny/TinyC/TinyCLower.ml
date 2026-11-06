@@ -68,9 +68,10 @@ let rec value (e : expr) : unit =
       emit (Label other);
       value b;
       emit (Label out)
-  | Asg (l, r, cur) ->
+  | Asg (l, r, kind) ->
       value (addr l);
-      if cur then emit Dup;
+      (* (the address again, for Cur's load) *)
+      if kind = Asg_update then emit Dup;
       value r;
       emit (Store l.t)
   | Apply (f, args) ->
@@ -125,7 +126,7 @@ let rec lower (k : targets) (s : stmt) =
       emit (Jmp top); emit (Label out)
   | Switch (tmp, v, body) ->
       (* the value in a temporary, the cases after the body *)
-      for_effect (assign false tmp v);
+      for_effect (assign Asg_set tmp v);
       let dispatch = label () and out = label () in
       emit (Jmp dispatch);
       let cases = ref [] in

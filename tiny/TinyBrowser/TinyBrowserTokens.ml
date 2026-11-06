@@ -85,8 +85,8 @@ let tag_end s i =
   go i ' '
 
 (* Returns the tokens of a message. [last] is true when no message
- * follows, so nothing is kept for later. *)
-let tokens (r : reader) chunk last =
+ * follows, so nothing is kept for later: tokens' and tokens_end's *)
+let scan (r : reader) chunk last =
   let s = if r.tail = "" then chunk else r.tail ^ chunk in
   let n = String.length s in
   r.tail <- "";
@@ -132,3 +132,6 @@ let tokens (r : reader) chunk last =
       if e < j then acc else go j acc
     end in
   List.rev (go 0 [])
+
+let tokens r chunk = scan r chunk false
+let tokens_end r = scan r "" true

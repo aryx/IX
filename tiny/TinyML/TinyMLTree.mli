@@ -12,6 +12,7 @@ type pat =
   | POr of pat * pat
   | PAnnot of pat * texpr
   | PRecord of (string * pat) list * int list ref * int ref
+type rec_flag = Nonrecursive | Recursive
 type expr =
     Const of const
   | Var of string * ty ref
@@ -19,7 +20,7 @@ type expr =
   | Tuple of expr list
   | App of expr * expr list
   | Fun of string list * expr
-  | Let of bool * (pat * expr) list * expr
+  | Let of rec_flag * (pat * expr) list * expr
   | Match of expr * case list
   | Try of expr * case list
   | If of expr * expr * expr
@@ -32,7 +33,7 @@ type expr =
   | SetDot of expr * string * int ref * expr
 and case = pat * expr option * expr
 type item =
-    ILet of bool * (pat * expr) list
+    ILet of rec_flag * (pat * expr) list
   | IExt of string * texpr * string
   | IExn of string
   | IOpen of string

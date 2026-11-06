@@ -22,7 +22,9 @@ type request = Continue | Save | Quit
 
 let say (o : office) (m : string) = o.message <- m
 
-let create (width : int) (height : int) (file : string) (s : string) : office =
+let create (width : int) (height : int) (path : Fpath.t) (s : string)
+    : office =
+  let file = Fpath.to_string path in
   let page = parse width height s in
   let where = { file; width; height; shown = 0; pages = pages_in s } in
   { page; undo = []; clean = page; sel = -1; editing = Nothing; drag = None;

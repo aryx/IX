@@ -13,6 +13,6 @@ type closure =
     Closure_static of string * string * int
   | Closure_pushed of string * int
 val bind :
-  (string * binding) list ->
-  bool -> (TinyMLTree.pat * TinyMLTree.expr) list -> (string * binding) list
+  (string * binding) list -> TinyMLTree.rec_flag ->
+  (TinyMLTree.pat * TinyMLTree.expr) list -> (string * binding) list
 val curry_fun : int -> int -> unit

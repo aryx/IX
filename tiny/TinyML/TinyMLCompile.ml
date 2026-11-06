@@ -86,7 +86,8 @@ let rec free bound e acc =
       let vs = List.concat_map (fun (p, _) -> pat_vars p) bs in
       let acc =
         List.fold_left
-          (fun acc (_, e) -> free (if r then vs @ bound else bound) e acc)
+          (fun acc (_, e) ->
+             free (if r = Recursive then vs @ bound else bound) e acc)
           acc bs
       in
       free (vs @ bound) b acc
@@ -424,8 +425,8 @@ and app env f args tl =
   | _ -> args_in m; value env f; rest 0
 
 (* let: the values in env, then their names *)
-and bind env r bs =
-  if r then bind_rec env bs
+and bind env (r : rec_flag) bs =
+  if r = Recursive then bind_rec env bs
   else
     List.concat_map (fun (p, e) ->
       match p, e with

@@ -155,9 +155,8 @@ val create : int -> int -> Fpath.t -> string -> TinyOfficeModel.office
  * the file, to quit *)
 type request = Continue | Save | Quit
 
-(* a key (a byte, as the console gives it: the arrows 128 to 131), and
- * what it asks *)
-val key : TinyOfficeModel.office -> int -> request
+(* a key, and what it asks *)
+val key : TinyOfficeModel.office -> TinyLibPlayground.key -> request
 
 (* the mouse: where it is, its buttons (1 left, 2 middle, 4 right); and
  * what it asks of the program around (the File menu's) *)

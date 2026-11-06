@@ -97,7 +97,7 @@ let draw_stroke (o : office) (tool : int)
 (* A key in a drawing: Tab another tool; a character the last shape's
  * label longer; Backspace shorter, and an empty label's shape removed;
  * C-g the drawing left *)
-let sketch_key (o : office) (tool : int) (k : int) =
+let sketch_key (o : office) (tool : int) (k : key) =
   let b = List.nth o.page o.sel in
   let figs = figures b.data in
   let relabel f = match List.rev figs with
@@ -106,16 +106,16 @@ let sketch_key (o : office) (tool : int) (k : int) =
         (String.concat ""
            (List.map figure_line (List.rev rest @ f kind nums label)))
     | [] -> () in
-  if k = 9 then o.editing <- Sketch ((tool + 1) mod 3, None)
-  else if k >= 32 && k < 127 then
-    relabel (fun kind nums label ->
-      [ kind, nums, label ^ String.make 1 (Char.chr k) ])
-  else if k = 8 || k = 127 then
-    relabel (fun kind nums label ->
-      if label = "" then []
-      else [ kind, nums, String.sub label 0 (String.length label - 1) ])
-  else if k = 7 then o.editing <- Nothing
-  else o.message <- "a drawing: Tab, the mouse, a label typed; C-g"
+  match k with
+  | Char '\t' -> o.editing <- Sketch ((tool + 1) mod 3, None)
+  | Char c when c >= ' ' && c < '\127' ->
+      relabel (fun kind nums label -> [ kind, nums, label ^ String.make 1 c ])
+  | Char ('\b' | '\127') ->
+      relabel (fun kind nums label ->
+        if label = "" then []
+        else [ kind, nums, String.sub label 0 (String.length label - 1) ])
+  | Char '\007' -> o.editing <- Nothing
+  | _ -> o.message <- "a drawing: Tab, the mouse, a label typed; C-g"
 
 
 (* A drawing: its shapes, and the stroke being made, in blue *)

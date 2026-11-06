@@ -39,7 +39,7 @@ val chart_view :
 (* [name_key office typed key]: a key while the selected sheet's name is
  * typed: a character, Backspace, Enter (the name given, to the charts
  * of the sheet too), C-g *)
-val name_key : TinyOfficeModel.office -> string -> int -> unit
+val name_key : TinyOfficeModel.office -> string -> TinyLibPlayground.key -> unit
 
 (* [make_chart office c]: a chart of column c of the selected sheet,
  * beside it (under it, if the page is too narrow): its cells from the

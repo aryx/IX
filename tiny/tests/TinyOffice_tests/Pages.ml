@@ -49,7 +49,7 @@ let asked r =
 
 let keys o s =
   let last = ref Continue in
-  String.iter (fun c -> last := key o (Char.code c)) s;
+  String.iter (fun c -> last := key o (key_of_byte c)) s;
   asked !last
 
 (* the mouse at (x, y), its buttons b; a click of a button at (x, y),

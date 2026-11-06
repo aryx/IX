@@ -143,7 +143,7 @@ type 'msg widget =
  * message, a key's messages when no field has the keys (none: []) *)
 type ('m, 'msg) gui = {
   init : 'm; view : 'm -> 'msg widget; update : 'msg -> 'm -> 'm;
-  key : int -> 'msg list;
+  key : TinyLibPlayground.key -> 'msg list;
 }
 
 (* The program's loop, with no end but an Escape, a q that no field

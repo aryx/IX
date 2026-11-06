@@ -38,10 +38,10 @@ type extra = {
   mutable search : string option;         (* C-s typed: the text looked for *)
   mutable reading : (answer * string) option;
     (* a prompt, and what is typed after it *)
-  mutable recording : int list option;
+  mutable recording : key list option;
     (* C-x ( typed: the keys since, the last first *)
-  mutable macro : int list;               (* the last macro, for C-x e *)
-  mutable queue : int list;
+  mutable macro : key list;               (* the last macro, for C-x e *)
+  mutable queue : key list;
     (* keys to give back: a macro's, a command's *)
   mutable lexed : (string * int) list;
     (* the lines above the screen, each with the comments open at its end *)
@@ -63,8 +63,8 @@ type editor = {
   file : string;
   mutable quitting : bool;       (* a quit was refused: the next is done *)
   mutable message : string;      (* the last line of the screen *)
-  mutable prefix : int;
-    (* C-x or Escape typed, waiting for its key; or 0 *)
+  mutable prefix : char option;
+    (* C-x or Escape typed, waiting for its key *)
   x : extra;
   cols : int;
   rows : int;
@@ -99,7 +99,7 @@ let create (cols : int) (rows : int) (path : Fpath.t) (text : string)
       recording = None; macro = []; queue = []; lexed = []; faced = [];
       pieced = [] } in
   { t; top = 0; killed = ""; killing = false; file; quitting = false;
-    message = ""; prefix = 0; x; cols; rows }
+    message = ""; prefix = None; x; cols; rows }
 
 (* (a text that ends by a newline has an empty last line, which is
  * where one types after it: the lines joined by newlines are the text) *)
@@ -226,15 +226,18 @@ let look (e : editor) (sub : string) (from : int) =
 (* a key while searching: a character more to look for (from where what
  * is found starts), C-s the next one, Backspace a character less; any
  * other key ends the search, and Enter and C-g do nothing more *)
-let searching (e : editor) (sub : string) (k : int) : bool =
+let searching (e : editor) (sub : string) (k : key) : bool =
   let m = String.length sub in
-  if k >= 32 && k < 127 then
-    (let sub = sub ^ String.make 1 (Char.chr k) in
-     e.x.search <- Some sub; look e sub (e.t.col - m); true)
-  else if k = 19 then (look e sub e.t.col; true)
-  else if k = 8 || k = 127 then
-    (e.x.search <- Some (String.sub sub 0 (max 0 (m - 1))); true)
-  else (e.x.search <- None; k = 10 || k = 13 || k = 7)
+  match k with
+  | Char c when c >= ' ' && c < '\127' ->
+      let sub = sub ^ String.make 1 c in
+      e.x.search <- Some sub; look e sub (e.t.col - m); true
+  | Char '\019' -> look e sub e.t.col; true
+  | Char ('\b' | '\127') ->
+      e.x.search <- Some (String.sub sub 0 (max 0 (m - 1))); true
+  | _ ->
+      e.x.search <- None;
+      k = Char '\n' || k = Char '\r' || k = Char '\007'
 
 (*****************************************************************************)
 (* M-x *)
@@ -302,7 +305,7 @@ let rec answered (e : editor) (what : answer) (typed : string) =
       | _ when typed = "replace-string" -> e.x.reading <- Some (Replace_from, "")
       | Some keys, _ ->
           e.x.queue <-
-            List.init (String.length keys) (fun i -> Char.code keys.[i])
+            List.init (String.length keys) (fun i -> key_of_byte keys.[i])
             @ e.x.queue
       | None, [ name ] when typed <> "" -> answered e Command name
       | _ -> e.message <- "No command: " ^ typed)
@@ -325,15 +328,17 @@ let rec answered (e : editor) (what : answer) (typed : string) =
 
 (* a key after a prompt: a character more, Backspace one less, Tab a
  * command's name completed, Enter done, C-g never mind *)
-let reading (e : editor) (what : answer) (typed : string) (k : int) =
+let reading (e : editor) (what : answer) (typed : string) (k : key) =
   let m = String.length typed in
-  if k >= 32 && k < 127 then
-    e.x.reading <- Some (what, typed ^ String.make 1 (Char.chr k))
-  else if k = 8 || k = 127 then
-    e.x.reading <- Some (what, String.sub typed 0 (max 0 (m - 1)))
-  else if k = 9 && what = Command then e.x.reading <- Some (what, complete typed)
-  else if k = 7 then (e.x.reading <- None; e.message <- "Quit")
-  else if k = 10 || k = 13 then (e.x.reading <- None; answered e what typed)
+  match k with
+  | Char c when c >= ' ' && c < '\127' ->
+      e.x.reading <- Some (what, typed ^ String.make 1 c)
+  | Char ('\b' | '\127') ->
+      e.x.reading <- Some (what, String.sub typed 0 (max 0 (m - 1)))
+  | Char '\t' when what = Command -> e.x.reading <- Some (what, complete typed)
+  | Char '\007' -> e.x.reading <- None; e.message <- "Quit"
+  | Char ('\n' | '\r') -> e.x.reading <- None; answered e what typed
+  | _ -> ()
 
 (*****************************************************************************)
 (* Macros *)
@@ -344,15 +349,16 @@ let reading (e : editor) (what : answer) (typed : string) (k : int) =
  * the queue, read before what is typed: a macro does what its keys
  * did, a save included. C-x e while recording ends the macro first, as
  * in Emacs *)
-let macro (e : editor) (k : int) =
+let macro (e : editor) (k : key) =
   match k, e.x.recording with
-  | 40, None -> e.x.recording <- Some []; e.message <- "Defining kbd macro..."
-  | 40, Some _ -> e.message <- "Already defining kbd macro"
-  | (41 | 101), Some (_ :: _ :: l) ->
+  | Char '(', None ->
+      e.x.recording <- Some []; e.message <- "Defining kbd macro..."
+  | Char '(', Some _ -> e.message <- "Already defining kbd macro"
+  | Char (')' | 'e'), Some (_ :: _ :: l) ->
       e.x.macro <- List.rev l; e.x.recording <- None;
-      if k = 41 then e.message <- "Keyboard macro defined"
+      if k = Char ')' then e.message <- "Keyboard macro defined"
       else e.x.queue <- e.x.macro @ e.x.queue
-  | 41, _ -> e.message <- "Not defining kbd macro"
+  | Char ')', _ -> e.message <- "Not defining kbd macro"
   | _ ->
       if e.x.macro = [] then e.message <- "No kbd macro has been defined"
       else e.x.queue <- e.x.macro @ e.x.queue
@@ -365,8 +371,8 @@ let pending (e : editor) : key option =
 (* The keys *)
 (*****************************************************************************)
 
-(* a key is a byte: a character, a control character (C-a is 1), and
- * tiny-machine's arrows, 128 to 131: up, down, left, right *)
+(* a key: a character (C-a is '\001'), an arrow; after C-x or Escape,
+ * the second key of a command *)
 let key (e : editor) (k : key) : request =
   let t = e.t and again = e.killing and quitting = e.quitting
   and h = e.rows - 2 in
@@ -383,44 +389,43 @@ let key (e : editor) (k : key) : request =
    | _, Some sub when searching e sub k -> ()
    | _ ->
        let prefix = e.prefix in
-       e.prefix <- 0;
-       if prefix = 24 then begin
-         (* C-x C-s; C-x C-q and C-x C-c; C-x ( ) e, the macros *)
-         if k = 19 then request := Save
-         else if k = 40 || k = 41 || k = 101 then macro e k
-         else if k = 17 || k = 3 then begin
+       e.prefix <- None;
+       match prefix, k with
+       (* C-x C-s; C-x C-q and C-x C-c; C-x ( ) e, the macros *)
+       | Some '\024', Char '\019' -> request := Save
+       | Some '\024', Char ('(' | ')' | 'e') -> macro e k
+       | Some '\024', Char ('\017' | '\003') ->
            if t.modified && not quitting then
              (e.quitting <- true;
               e.message <- "Not saved: C-x C-s saves, C-x C-q again quits")
            else request := Quit
-         end else e.message <- "C-x: not a command"
-       end else if prefix = 27 then begin
-         (* Escape, then < > v x: Meta *)
-         if k = 60 then lines (- t.row)
-         else if k = 120 then e.x.reading <- Some (Command, "")
-         else if k = 62 then lines (List.length t.below)
-         else if k = 118 then (lines (1 - h); e.top <- max 0 (e.top - (h - 1)))
-         else e.message <- "Escape: not a command"
-       end
-       else if k = 1 then t.col <- 0
-       else if k = 5 then t.col <- String.length t.line
-       else if k = 6 || k = 131 then forward t
-       else if k = 2 || k = 130 then backward t
-       else if k = 14 || k = 129 then lines 1
-       else if k = 16 || k = 128 then lines (- 1)
-       else if k = 22 then (lines (h - 1); e.top <- min (e.top + h - 1) t.row)
-       else if k = 4 then delete t
-       else if k = 8 || k = 127 then backspace t
-       else if k = 10 || k = 13 then newline t
-       else if k = 11 then kill e again
-       else if k = 25 then yank e
-       else if k = 12 then e.top <- max 0 (t.row - h / 2)
-       else if k = 19 then e.x.search <- Some ""
-       else if k = 7 then e.message <- "Quit"
-       else if k = 24 || k = 27 then e.prefix <- k
-       else if k = 9 || (k >= 32 && k < 127) then
-         insert t (String.make 1 (Char.chr k))
-       else e.message <- "Not a command");
+       | Some '\024', _ -> e.message <- "C-x: not a command"
+       (* Escape, then < > v x: Meta *)
+       | Some _, Char '<' -> lines (- t.row)
+       | Some _, Char 'x' -> e.x.reading <- Some (Command, "")
+       | Some _, Char '>' -> lines (List.length t.below)
+       | Some _, Char 'v' -> lines (1 - h); e.top <- max 0 (e.top - (h - 1))
+       | Some _, _ -> e.message <- "Escape: not a command"
+       | None, Char '\001' -> t.col <- 0
+       | None, Char '\005' -> t.col <- String.length t.line
+       | None, (Char '\006' | Right) -> forward t
+       | None, (Char '\002' | Left) -> backward t
+       | None, (Char '\014' | Down) -> lines 1
+       | None, (Char '\016' | Up) -> lines (- 1)
+       | None, Char '\022' ->
+           lines (h - 1); e.top <- min (e.top + h - 1) t.row
+       | None, Char '\004' -> delete t
+       | None, Char ('\b' | '\127') -> backspace t
+       | None, Char ('\n' | '\r') -> newline t
+       | None, Char '\011' -> kill e again
+       | None, Char '\025' -> yank e
+       | None, Char '\012' -> e.top <- max 0 (t.row - h / 2)
+       | None, Char '\019' -> e.x.search <- Some ""
+       | None, Char '\007' -> e.message <- "Quit"
+       | None, Char c when c = '\024' || c = '\027' -> e.prefix <- Some c
+       | None, Char c when c = '\t' || (c >= ' ' && c < '\127') ->
+           insert t (String.make 1 c)
+       | None, Char _ -> e.message <- "Not a command");
   if not !vertical then t.goal <- t.col;
   !request
 
@@ -582,9 +587,10 @@ let view (e : editor) : string list =
     | None, Some sub ->
         (if e.message = "" then "" else "Failing ") ^ "I-search: " ^ sub
     | None, None ->
-        if e.prefix = 24 then "C-x-"
-        else if e.prefix = 27 then "ESC-"
-        else e.message in
+        (match e.prefix with
+         | Some '\024' -> "C-x-"
+         | Some _ -> "ESC-"
+         | None -> e.message) in
   text @ [ mode; String.sub last 0 (min e.cols (String.length last)) ]
 
 (* the faces of view's text lines (its first rows - 2), each a string

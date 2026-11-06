@@ -102,35 +102,36 @@ let good_name (n : string) =
 
 (* A key while the selected sheet's name is typed: a character, Backspace,
  * Enter (the name given, to the charts of the sheet too), C-g *)
-let name_key (o : office) (typed : string) (k : int) =
-  if k >= 32 && k < 127 then
-    o.editing <- Naming (typed ^ String.make 1 (Char.chr k))
-  else if (k = 8 || k = 127) && typed <> "" then
-    o.editing <- Naming (String.sub typed 0 (String.length typed - 1))
-  else if k = 13 || k = 10 then begin
-    let s = List.nth o.page o.sel in
-    if not (good_name typed) then
-      o.message <- "a name: a letter, then letters, digits, _"
-    else if List.exists (fun (b : obj) -> b.called = typed && b != s) o.page
-    then o.message <- "another sheet is " ^ typed
-    else begin
-      let renamed l =
-        match String.split_on_char ' ' l with
-        | "bars" :: was :: rest when was = s.called ->
-          String.concat " " ("bars" :: typed :: rest)
-        | _ -> l in
-      keep o;
-      o.page <- List.map (fun (b : obj) ->
-        if b == s then { b with called = typed }
-        else if b.kind = "chart" then
-          { b with data =
-                     String.concat "\n"
-                       (List.map renamed (String.split_on_char '\n' b.data)) }
-        else b) o.page;
-      o.editing <- Nothing
-    end
-  end
-  else if k = 7 then o.editing <- Nothing
+let name_key (o : office) (typed : string) (k : key) =
+  match k with
+  | Char c when c >= ' ' && c < '\127' ->
+      o.editing <- Naming (typed ^ String.make 1 c)
+  | Char ('\b' | '\127') when typed <> "" ->
+      o.editing <- Naming (String.sub typed 0 (String.length typed - 1))
+  | Char ('\r' | '\n') ->
+      let s = List.nth o.page o.sel in
+      if not (good_name typed) then
+        o.message <- "a name: a letter, then letters, digits, _"
+      else if List.exists (fun (b : obj) -> b.called = typed && b != s) o.page
+      then o.message <- "another sheet is " ^ typed
+      else begin
+        let renamed l =
+          match String.split_on_char ' ' l with
+          | "bars" :: was :: rest when was = s.called ->
+            String.concat " " ("bars" :: typed :: rest)
+          | _ -> l in
+        keep o;
+        o.page <- List.map (fun (b : obj) ->
+          if b == s then { b with called = typed }
+          else if b.kind = "chart" then
+            { b with data =
+                       String.concat "\n"
+                         (List.map renamed (String.split_on_char '\n' b.data)) }
+          else b) o.page;
+        o.editing <- Nothing
+      end
+  | Char '\007' -> o.editing <- Nothing
+  | _ -> ()
 
 (* a chart of the chosen cell's column, beside its sheet (under it, if
  * the page is too narrow): its cells from the first number to the last,

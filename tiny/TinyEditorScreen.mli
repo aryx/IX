@@ -91,8 +91,7 @@ val create : int -> int -> Fpath.t -> string -> editor
 (* what a key asks of the program around the editor *)
 type request = Continue | Save | Quit
 
-(* a key (TinyLibPlayground's: a byte, tiny-machine's arrows 128 to
- * 131) *)
+(* a key (TinyLibPlayground's), and what it asks *)
 val key : editor -> TinyLibPlayground.key -> request
 
 (* a key the editor gives itself, a macro's or an M-x command's: the

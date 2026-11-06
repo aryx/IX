@@ -27,14 +27,15 @@ let view m =
                   Move (2, 2, Rect ((if m.frames / 15 mod 2 = 0 then yellow
                                      else white), 12, 12)) ]) ]
 
-let key k m =
+let key (k : key) m =
   let at x y =
     { x = max 0 (min 304 x); y = max 24 (min 196 y); frames = m.frames } in
-  if k = 128 then at m.x (m.y - 8)
-  else if k = 129 then at m.x (m.y + 8)
-  else if k = 130 then at (m.x - 8) m.y
-  else if k = 131 then at (m.x + 8) m.y
-  else m
+  match k with
+  | Up -> at m.x (m.y - 8)
+  | Down -> at m.x (m.y + 8)
+  | Left -> at (m.x - 8) m.y
+  | Right -> at (m.x + 8) m.y
+  | Char _ -> m
 
 (* (a model at each frame; its shapes are others twice a second, when it
  * blinks, and the playground draws then) *)

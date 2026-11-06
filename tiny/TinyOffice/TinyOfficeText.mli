@@ -65,7 +65,8 @@ val edit : TinyOfficeModel.office -> int -> int -> int -> bool -> unit
 
 (* a key in the text being edited (TinyOffice.mli's table); the box
  * grows to show it all *)
-val write_key : TinyOfficeModel.office -> TinyOfficeModel.doc -> int -> unit
+val write_key :
+  TinyOfficeModel.office -> TinyOfficeModel.doc -> TinyLibPlayground.key -> unit
 
 (* [text_view box txt sty editing]: a word for each run of characters
  * of a style on a line, the lines that fit; being edited, its selection

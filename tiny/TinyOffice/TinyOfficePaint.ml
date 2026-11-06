@@ -82,10 +82,12 @@ let paint (o : office) (ink : int) (brush : int) (c0 : int) (r0 : int)
       (Some { b with data = painted b pixel_letters.[ink] brush c0 r0 c1 r1 })
 
 (* a key in a paint: a digit a colour (0 white, 1 black...); C-g leaves it *)
-let paint_key (o : office) (brush : int) (k : int) =
-  if k >= 48 && k < 58 then o.editing <- Painting (k - 48, brush, None)
-  else if k = 7 then o.editing <- Nothing
-  else
+let paint_key (o : office) (brush : int) (k : key) =
+  match k with
+  | Char c when c >= '0' && c <= '9' ->
+      o.editing <- Painting (Char.code c - 48, brush, None)
+  | Char '\007' -> o.editing <- Nothing
+  | _ ->
     o.message <-
       "a paint: the left button paints; the Paint menu, or a digit a colour; C-g"
 

@@ -189,7 +189,7 @@ let edit (o : office) (i : int) (x : int) (y : int) (selecting : bool) =
  * arrows (C-f, C-p, C-n), C-a, C-e the cursor moved; C-b bold, Tab
  * italic, C-u underlined, C-l large; C-w cut, C-y pasted; C-g no
  * selection. The box grows to show it all. *)
-let write_key (o : office) (d : doc) (k : int) =
+let write_key (o : office) (d : doc) (k : key) =
   let b = List.nth o.page o.sel in
   let lay = lay_out (b.w - 8) d.txt d.sty and n = String.length d.txt in
   let (a, z) = selection d and line = lay.ln.(d.cur) in
@@ -202,29 +202,31 @@ let write_key (o : office) (d : doc) (k : int) =
   let rec forth i =
     if i < n && d.txt.[i] <> '\n' && lay.ln.(i + 1) = line then forth (i + 1)
     else i in
-  if (k >= 32 && k < 127) || k = 10 || k = 13 then
-    put_text d (String.make 1 (if k = 13 then '\n' else Char.chr k))
-      (String.make 1 (Char.chr d.typing))
-  else if k = 8 || k = 127 then
-    ((if a = z && a > 0 then d.anchor <- a - 1); put_text d "" "")
-  else if k = 4 then
-    ((if a = z && z < n then d.anchor <- z + 1); put_text d "" "")
-  else if k = 130 then go_to d (if a < z then a else d.cur - 1)
-  else if k = 131 || k = 6 then go_to d (if a < z then z else d.cur + 1)
-  else if k = 128 || k = 16 then vertical (line - 1)
-  else if k = 129 || k = 14 then vertical (line + 1)
-  else if k = 1 then go_to d (back d.cur)
-  else if k = 5 then go_to d (forth d.cur)
-  else if k = 2 then restyle d 1
-  else if k = 9 then restyle d 2
-  else if k = 21 then restyle d 4
-  else if k = 12 then restyle d 8
-  else if k = 23 then (copy d; put_text d "" "")
-  else if k = 25 then (let (t, st) = !clipboard in put_text d t st)
-  else if k = 7 then d.anchor <- d.cur
-  else
-    o.message <-
-      "a text: C-b bold, Tab italic, C-u underlined, C-l large; C-w cut, C-y paste";
+  let style = String.make 1 (Char.chr d.typing) in
+  (match k with
+   | Char ('\n' | '\r') -> put_text d "\n" style
+   | Char c when c >= ' ' && c < '\127' -> put_text d (String.make 1 c) style
+   | Char ('\b' | '\127') ->
+       (if a = z && a > 0 then d.anchor <- a - 1); put_text d "" ""
+   | Char '\004' ->
+       (if a = z && z < n then d.anchor <- z + 1); put_text d "" ""
+   | Left -> go_to d (if a < z then a else d.cur - 1)
+   | Right | Char '\006' -> go_to d (if a < z then z else d.cur + 1)
+   | Up | Char '\016' -> vertical (line - 1)
+   | Down | Char '\014' -> vertical (line + 1)
+   | Char '\001' -> go_to d (back d.cur)
+   | Char '\005' -> go_to d (forth d.cur)
+   | Char '\002' -> restyle d 1
+   | Char '\t' -> restyle d 2
+   | Char '\021' -> restyle d 4
+   | Char '\012' -> restyle d 8
+   | Char '\023' -> copy d; put_text d "" ""
+   | Char '\025' -> let (t, st) = !clipboard in put_text d t st
+   | Char '\007' -> d.anchor <- d.cur
+   | Char _ ->
+       o.message <-
+         "a text: C-b bold, Tab italic, C-u underlined, C-l large; "
+         ^ "C-w cut, C-y paste");
   let lay = lay_out (b.w - 8) d.txt d.sty in
   let last = Array.length lay.top - 1 in
   let need = lay.top.(last) + lay.tall.(last) + 6 in

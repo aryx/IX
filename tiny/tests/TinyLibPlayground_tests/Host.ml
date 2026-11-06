@@ -16,8 +16,10 @@ let () =
   (* right three times, down twice, a second and a half; up against the
    * field's top *)
   let m =
-    g.init 1 |> after [ 131; 131; 131; 129; 129 ] |> frames 45
-    |> after (List.init 20 (fun _ -> 128)) in
+    g.init 1
+    |> after TinyLibPlayground.[ Right; Right; Right; Down; Down ]
+    |> frames 45
+    |> after (List.init 20 (fun _ -> TinyLibPlayground.Up)) in
   Printf.printf "the square at %d, %d after %d frames\n" m.x m.y m.frames;
   TinyCalls.u_write 3
     (TinyLibDraw.d_image TinyLibPlayground.picture (0, 0, g.width, g.height) 0)

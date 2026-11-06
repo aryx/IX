@@ -24,7 +24,7 @@ type ('m, 'msg) gui = {
   init : 'm;
   view : 'm -> 'msg widget;
   update : 'msg -> 'm -> 'm;
-  key : int -> 'msg list;
+  key : key -> 'msg list;
 }
 
 (* a box: x, y, width, height, in pixels *)
@@ -235,15 +235,14 @@ let editing boxes m =
 (* A key: the field that has the keys sends its text with the
  * character more, or one less at a backspace; with no such field, the
  * program's messages for the key, one after the other *)
-let key (g : ('m, 'msg) gui) (boxes : 'msg boxes) model m k =
-  match editing boxes m with
-  | (_, Edit (s, f)) :: _ ->
-      if k = 8 || k = 127 then
-        (if s = "" then model
-         else g.update (f (String.sub s 0 (String.length s - 1))) model)
-      else if k >= 32 && k < 127 then
-        g.update (f (s ^ String.make 1 (Char.chr k))) model
-      else model
+let key (g : ('m, 'msg) gui) (boxes : 'msg boxes) model m (k : key) =
+  match editing boxes m, k with
+  | (_, Edit (s, f)) :: _, Char ('\b' | '\127') ->
+      if s = "" then model
+      else g.update (f (String.sub s 0 (String.length s - 1))) model
+  | (_, Edit (s, f)) :: _, Char c when c >= ' ' && c < '\127' ->
+      g.update (f (s ^ String.make 1 c)) model
+  | (_, Edit _) :: _, _ -> model
   | _ -> List.fold_left (fun model msg -> g.update msg model) model (g.key k)
 
 (*****************************************************************************)
@@ -273,7 +272,7 @@ let run (g : ('m, 'msg) gui) =
            | [] -> if s.[i] = 'q' then exit 0
            | _ -> ());
           if s.[i] = '\027' then exit 0;
-          let model' = key g (snd view) model m (Char.code s.[i]) in
+          let model' = key g (snd view) model m (key_of_byte s.[i]) in
           typed (i + 1) model' (if model' != model then laid g model' else view)
         end
       in
@@ -622,7 +621,7 @@ let run_canvas (c : 'm canvas) =
       let rec typed i model =
         if i >= String.length s then loop model now
         else
-          match c.typed (Char.code s.[i]) model with
+          match c.typed (key_of_byte s.[i]) model with
           | Some m -> typed (i + 1) m
           | None -> () in
       if s <> "" then typed 0 model

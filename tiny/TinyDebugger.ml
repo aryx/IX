@@ -463,19 +463,21 @@ let picture m =
 
 (* a key: Escape quits, Return runs the command (q quits), s, n and c
  * run at once when nothing is typed; a click on a button its command *)
-let typed k m =
-  if k = 27 then None
-  else if k = 13 || k = 10 then
-    (if m.cmd = "q" then None else Some (run_command m.cmd { m with cmd = "" }))
-  else if k = 8 || k = 127 then
-    Some { m with cmd =
-             (if m.cmd = "" then ""
-              else String.sub m.cmd 0 (String.length m.cmd - 1)) }
-  else if m.cmd = "" && (k = 115 || k = 110 || k = 99) then
-    Some (run_command (String.make 1 (Char.chr k)) m)
-  else if k >= 32 && k < 127 then
-    Some { m with cmd = m.cmd ^ String.make 1 (Char.chr k) }
-  else Some m
+let typed (k : key) m =
+  match k with
+  | Char '\027' -> None
+  | Char ('\r' | '\n') ->
+      if m.cmd = "q" then None
+      else Some (run_command m.cmd { m with cmd = "" })
+  | Char ('\b' | '\127') ->
+      Some { m with cmd =
+               (if m.cmd = "" then ""
+                else String.sub m.cmd 0 (String.length m.cmd - 1)) }
+  | Char ('s' | 'n' | 'c' as c) when m.cmd = "" ->
+      Some (run_command (String.make 1 c) m)
+  | Char c when c >= ' ' && c < '\127' ->
+      Some { m with cmd = m.cmd ^ String.make 1 c }
+  | _ -> Some m
 let moved x y b m =
   let pressed =
     if b = 0 || m.held <> 0 then []

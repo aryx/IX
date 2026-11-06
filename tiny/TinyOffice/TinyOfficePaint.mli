@@ -34,7 +34,7 @@ val paint :
 
 (* [paint_key office brush key]: a digit a colour (0 white, 1
  * black...); C-g leaves it *)
-val paint_key : TinyOfficeModel.office -> int -> int -> unit
+val paint_key : TinyOfficeModel.office -> int -> TinyLibPlayground.key -> unit
 
 (* each row a word of fat pixels, the rows that fit, as much of each as
  * fits *)

@@ -23,7 +23,7 @@ let keys e s =
   let last = ref Continue in
   let rec given () =
     match pending e with Some k -> last := key e k; given () | None -> () in
-  String.iter (fun c -> last := key e (Char.code c); given ()) s;
+  String.iter (fun c -> last := key e (TinyLibPlayground.key_of_byte c); given ()) s;
   match !last with
   | Continue -> ()
   | Save -> print_string "asks: save"; print_newline ()

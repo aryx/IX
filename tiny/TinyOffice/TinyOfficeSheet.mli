@@ -65,7 +65,8 @@ val choose : TinyOfficeModel.office -> int -> int -> int -> unit
  * the cell and goes down, an arrow puts it and goes that way, C-g
  * forgets it *)
 val cell_key :
-  TinyOfficeModel.office -> int -> int -> string option -> int -> unit
+  TinyOfficeModel.office -> int -> int -> string option -> TinyLibPlayground.key
+  -> unit
 
 (* [sheet_view box chosen]: the grid, each cell's value, the chosen cell
  * in a blue frame *)

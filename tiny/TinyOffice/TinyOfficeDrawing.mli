@@ -38,7 +38,7 @@ val draw_stroke :
 (* [sketch_key office tool key]: Tab another tool; a character the last
  * shape's label longer; Backspace shorter, and an empty label's shape
  * removed; C-g the drawing left *)
-val sketch_key : TinyOfficeModel.office -> int -> int -> unit
+val sketch_key : TinyOfficeModel.office -> int -> TinyLibPlayground.key -> unit
 
 (* [drawing_view box tool stroke]: its shapes, and the stroke being
  * made, in blue *)

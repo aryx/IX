@@ -21,7 +21,8 @@ let text (m : model) =
 let boxes g m = snd (TinyLibGUI.laid g m)
 let typed s =
   String.fold_left (fun m c ->
-      TinyLibGUI.key g (boxes g m) m TinyLibGUI.up (Char.code c))
+      TinyLibGUI.key g (boxes g m) m TinyLibGUI.up
+        (TinyLibPlayground.key_of_byte c))
     g.init s
 
 (* the middle of the button that sends a message *)
@@ -51,7 +52,8 @@ let convert script =
       let m, ms = TinyLibGUI.mouse t b m ms (x + 2) (y + 2) 1 in
       TinyLibGUI.mouse t b m ms (x + 2) (y + 2) 0
     end
-    else TinyLibGUI.key t b m ms (if c = '<' then 8 else Char.code c), ms in
+    else TinyLibGUI.key t b m ms
+        (TinyLibPlayground.key_of_byte (if c = '<' then '\b' else c)), ms in
   let (m : TinyAppTemperature.model), ms =
     String.fold_left step (t.init, TinyLibGUI.up) script in
   Printf.printf "temp %-18s [%s] Celsius = [%s] Fahrenheit, %d over\n"

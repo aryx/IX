@@ -4,6 +4,7 @@
 (* See TinyBrowser.mli *)
 open TinyCalls
 open TinyLibDraw
+open TinyLibPlayground
 open TinyLibGUI
 open TinyBrowserText
 open TinyBrowserLines
@@ -311,36 +312,35 @@ let on_mouse sc x y buttons =
 
 (* What a key does; false for q, which quits. While the field has the
  * keys (a click in it, g, or s), they are TinyLibGUI's: its characters,
- * Backspace; Enter goes, Escape gives up. Otherwise the arrows are 128
- * to 131 (up, down, left, right): up and down scroll a line (the wheel
- * and the trackpad come as these: tiny-machine's window and page send
- * a step of the wheel as an arrow), left and right a screenful, as -
- * and space do. Backspace is 8 or 127. *)
-let on_key sc k =
+ * Backspace; Enter goes, Escape gives up. Otherwise up and down scroll
+ * a line (the wheel and the trackpad come as these: tiny-machine's
+ * window and page send a step of the wheel as an arrow), left and right
+ * a screenful, as - and space do. *)
+let on_key sc (k : key) : bool =
   if focused sc then begin
-    (if k = 10 || k = 13 then begin
-       focus sc false; ignore (act sc Go_typed)
-     end
-     else if k = 27 then begin
-       focus sc false; sc.sc_tools.tb_field <- sc.sc_nav.nv_address
-     end
-     else
-       sc.sc_tools.tb_field <-
-         key (toolbar sc) (snd (laid_tools sc)) sc.sc_tools.tb_field
-           sc.sc_tools.tb_mouse k);
+    (match k with
+     | Char ('\n' | '\r') -> focus sc false; ignore (act sc Go_typed)
+     | Char '\027' ->
+         focus sc false; sc.sc_tools.tb_field <- sc.sc_nav.nv_address
+     | _ ->
+         sc.sc_tools.tb_field <-
+           key (toolbar sc) (snd (laid_tools sc)) sc.sc_tools.tb_field
+             sc.sc_tools.tb_mouse k);
     draw_tools sc;
     true
   end
   else begin
     let page = area sc - 16 in
-    (if k = Char.code ' ' || k = 131 then glide sc page
-     else if k = Char.code '-' || k = 130 then glide sc (- page)
-     else if k = 129 then scroll_by sc 16
-     else if k = 128 then scroll_by sc (-16)
-     else if k = Char.code 'b' || k = 8 || k = 127 then back sc
-     else if k = Char.code 'g' then ignore (act sc Address)
-     else if k = Char.code 's' then ignore (act sc Search));
-    k <> Char.code 'q'
+    (match k with
+     | Char ' ' | Right -> glide sc page
+     | Char '-' | Left -> glide sc (- page)
+     | Down -> scroll_by sc 16
+     | Up -> scroll_by sc (-16)
+     | Char ('b' | '\b' | '\127') -> back sc
+     | Char 'g' -> ignore (act sc Address)
+     | Char 's' -> ignore (act sc Search)
+     | Char _ -> ());
+    k <> Char 'q'
   end
 
 (* the end: the page's connection closed, the screen white *)
@@ -434,7 +434,7 @@ let browse typed =
         else begin
           let rec each i =
             i >= String.length typed
-            || (on_key sc (Char.code typed.[i]) && each (i + 1)) in
+            || (on_key sc (key_of_byte typed.[i]) && each (i + 1)) in
           if each 0 then begin send sc; loop keys end else quit sc
         end
       end

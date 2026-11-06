@@ -55,12 +55,12 @@ let play seed script =
         print_newline () in
   List.iter (fun w ->
     match w with
-    | "l" -> step (game.key 130)
-    | "r" -> step (game.key 131)
-    | "u" -> step (game.key 128)
-    | "d" -> step (game.key 129)
-    | "s" -> step (game.key 32)
-    | "m" -> step (game.key 109)
+    | "l" -> step (game.key TinyLibPlayground.Left)
+    | "r" -> step (game.key TinyLibPlayground.Right)
+    | "u" -> step (game.key TinyLibPlayground.Up)
+    | "d" -> step (game.key TinyLibPlayground.Down)
+    | "s" -> step (game.key (TinyLibPlayground.Char ' '))
+    | "m" -> step (game.key (TinyLibPlayground.Char 'm'))
     | "p" -> print !m; music !m
     | n -> for _ = 1 to int_of_string n do step game.frame done)
     (String.split_on_char ' ' script);

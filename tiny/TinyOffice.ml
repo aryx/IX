@@ -230,40 +230,43 @@ let office_menus (o : office) : (string * (string * command) list) list =
                  ("New page", Do_new_page);
                  ("Delete page", Do_delete_page) ]) ]
 
-let key (o : office) (k : int) : request =
+let key (o : office) (k : key) : request =
+  (* C-x and C-_ (undo) are the office's even while a box is edited *)
+  let own = k = Char '\024' || k = Char '\031' in
   match o.editing with
-  | Writing d when not o.prefix && k <> 24 && k <> 31 ->
+  | Writing d when not o.prefix && not own ->
       o.message <- ""; write_key o d k; Continue
-  | Cell (c, r, typed) when not o.prefix && k <> 24 ->
+  | Cell (c, r, typed) when not o.prefix && k <> Char '\024' ->
       o.message <- ""; cell_key o c r typed k; Continue
-  | Sketch (tool, _) when not o.prefix && k <> 24 ->
+  | Sketch (tool, _) when not o.prefix && k <> Char '\024' ->
       o.message <- ""; sketch_key o tool k; Continue
-  | Painting (_, brush, _) when not o.prefix && k <> 24 && k <> 31 ->
+  | Painting (_, brush, _) when not o.prefix && not own ->
       o.message <- ""; paint_key o brush k; Continue
-  | Naming typed when not o.prefix && k <> 24 ->
+  | Naming typed when not o.prefix && k <> Char '\024' ->
       o.message <- ""; name_key o typed k; Continue
   | _ ->
       let was = o.message in
       o.message <- "";
       if o.prefix then begin
         o.prefix <- false;
-        if k = 19 then command o Do_save
-        else if k = 3 || k = 17 then (o.message <- was; command o Do_quit)
-        else if k = 116 then command o (Do_add "sheet")
-        else if k = 100 then command o (Do_add "drawing")
-        else if k = 112 then command o (Do_add "paint")
-        else if k = 93 then command o (Do_page 1)
-        else if k = 91 then command o (Do_page (-1))
-        else (o.message <- "C-x: not a command"; Continue)
+        match k with
+        | Char '\019' -> command o Do_save
+        | Char ('\003' | '\017') -> o.message <- was; command o Do_quit
+        | Char 't' -> command o (Do_add "sheet")
+        | Char 'd' -> command o (Do_add "drawing")
+        | Char 'p' -> command o (Do_add "paint")
+        | Char ']' -> command o (Do_page 1)
+        | Char '[' -> command o (Do_page (-1))
+        | _ -> o.message <- "C-x: not a command"; Continue
       end
       else begin
-        if k = 24 then o.prefix <- true
-        else if k = 15 then ignore (command o (Do_add "text"))
-        else if (k = 8 || k = 127) && o.sel >= 0 then
-          ignore (command o Do_delete)
-        else if k = 31 then ignore (command o Do_undo)
-        else if k = 7 then (o.sel <- -1; o.message <- "Quit")
-        else o.message <- help;
+        (match k with
+         | Char '\024' -> o.prefix <- true
+         | Char '\015' -> ignore (command o (Do_add "text"))
+         | Char ('\b' | '\127') when o.sel >= 0 -> ignore (command o Do_delete)
+         | Char '\031' -> ignore (command o Do_undo)
+         | Char '\007' -> o.sel <- -1; o.message <- "Quit"
+         | _ -> o.message <- help);
         Continue
       end
 

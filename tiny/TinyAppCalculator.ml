@@ -6,6 +6,7 @@
  * and the buttons by sending mouse events to TinyLibGUI
  * (tests/TinyLibGUI_test.sh).
  *)
+open TinyLibPlayground
 open TinyLibGUI
 
 (*****************************************************************************)
@@ -96,12 +97,12 @@ let view { shown; kept; op; wrong; _ } : msg widget =
 
 (* a key is its button: the digits, the four operations, = or the
  * Enter, c *)
-let key (k : int) : msg list =
-  let c = Char.chr k in
-  if c >= '0' && c <= '9' then [ Digit (k - 48) ]
-  else if c = '+' || c = '-' || c = '*' || c = '/' then [ Op c ]
-  else if c = '=' || k = 10 || k = 13 then [ Equals ]
-  else if c = 'c' then [ Clear ]
-  else []
+let key (k : key) : msg list =
+  match k with
+  | Char c when c >= '0' && c <= '9' -> [ Digit (Char.code c - 48) ]
+  | Char ('+' | '-' | '*' | '/' as c) -> [ Op c ]
+  | Char ('=' | '\n' | '\r') -> [ Equals ]
+  | Char 'c' -> [ Clear ]
+  | _ -> []
 
 let calculator = { init = start; view; update; key }

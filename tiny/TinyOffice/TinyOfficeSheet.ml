@@ -197,36 +197,36 @@ let choose (o : office) (i : int) (x : int) (y : int) =
  * Enter on a cell where nothing is typed brings back what was typed
  * there, to change it; Backspace there empties the cell. *)
 let cell_key (o : office) (c : int) (r : int) (typed : string option)
-    (k : int) =
+    (k : key) =
   let b = List.nth o.page o.sel in
   let move dc dr =
     o.editing <-
       Cell (max 0 (min 25 (c + dc)), max 0 (min 98 (r + dr)), None) in
   let arrow () =
-    if k = 128 then move 0 (-1)
-    else if k = 129 then move 0 1
-    else if k = 130 then move (-1) 0
-    else move 1 0 in
-  match typed with
-  | None ->
-      if k >= 32 && k < 127 then
-        o.editing <- Cell (c, r, Some (String.make 1 (Char.chr k)))
-      else if k = 10 || k = 13 then
-        o.editing <- Cell (c, r, Some (typed_in b.data (name c r)))
-      else if k >= 128 && k <= 131 then arrow ()
-      else if k = 8 || k = 127 then change o (set_cell b.data (name c r) "")
-      else if k = 7 then o.editing <- Nothing
-      else o.message <- "a cell: type, Enter, the arrows; C-g"
-  | Some t ->
-      if k >= 32 && k < 127 then
-        o.editing <- Cell (c, r, Some (t ^ String.make 1 (Char.chr k)))
-      else if k = 8 || k = 127 then
-        o.editing <-
-          Cell (c, r, Some (if t = "" then ""
-                            else String.sub t 0 (String.length t - 1)))
-      else if k = 10 || k = 13 then (put_cell o c r t; move 0 1)
-      else if k >= 128 && k <= 131 then (put_cell o c r t; arrow ())
-      else if k = 7 then o.editing <- Cell (c, r, None)
+    match k with
+    | Up -> move 0 (-1)
+    | Down -> move 0 1
+    | Left -> move (-1) 0
+    | _ -> move 1 0 in
+  match typed, k with
+  | None, Char ch when ch >= ' ' && ch < '\127' ->
+      o.editing <- Cell (c, r, Some (String.make 1 ch))
+  | None, Char ('\n' | '\r') ->
+      o.editing <- Cell (c, r, Some (typed_in b.data (name c r)))
+  | None, (Up | Down | Left | Right) -> arrow ()
+  | None, Char ('\b' | '\127') -> change o (set_cell b.data (name c r) "")
+  | None, Char '\007' -> o.editing <- Nothing
+  | None, Char _ -> o.message <- "a cell: type, Enter, the arrows; C-g"
+  | Some t, Char ch when ch >= ' ' && ch < '\127' ->
+      o.editing <- Cell (c, r, Some (t ^ String.make 1 ch))
+  | Some t, Char ('\b' | '\127') ->
+      o.editing <-
+        Cell (c, r, Some (if t = "" then ""
+                          else String.sub t 0 (String.length t - 1)))
+  | Some t, Char ('\n' | '\r') -> put_cell o c r t; move 0 1
+  | Some t, (Up | Down | Left | Right) -> put_cell o c r t; arrow ()
+  | Some _, Char '\007' -> o.editing <- Cell (c, r, None)
+  | Some _, Char _ -> ()
 
 
 (*****************************************************************************)

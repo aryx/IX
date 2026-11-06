@@ -6,8 +6,15 @@
 open TinyLibDraw
 open TinyCalls
 
-(* a key: a byte (TinyLibPlayground.mli) *)
-type key = int
+type key = Char of char | Up | Down | Left | Right
+
+let key_of_byte (c : char) : key =
+  match Char.code c with
+  | 128 -> Up
+  | 129 -> Down
+  | 130 -> Left
+  | 131 -> Right
+  | _ -> Char c
 
 (* a rectangle of a colour (its width, its height), words of a colour,
  * shapes together, a shape moved (to the right, down) *)
@@ -59,10 +66,9 @@ type tune = { pace : int; parts : part list }
 
 (* a game: its picture's size; its first model, from a seed; the model
  * as shapes (the first ones under the next; the first of all is the
- * ground, below); the model after a key
- * (its byte: the arrows are 128 to 131, up, down, left, right), and
- * after a frame; the sounds of a change, from a model to the next; the
- * tune the model wants playing, if any *)
+ * ground, below); the model after a key, and after a frame; the sounds
+ * of a change, from a model to the next; the tune the model wants
+ * playing, if any *)
 type 'm game = {
   width : int; height : int; init : int -> 'm; view : 'm -> shape list;
   key : key -> 'm -> 'm; frame : 'm -> 'm;
@@ -242,7 +248,7 @@ let run g =
       let rec typed i m =
         if i >= String.length s then m
         else if s.[i] = 'q' then exit 0
-        else typed (i + 1) (g.key (Char.code s.[i]) m) in
+        else typed (i + 1) (g.key (key_of_byte s.[i]) m) in
       loop (typed 0 model) model shapes next
     end
     else

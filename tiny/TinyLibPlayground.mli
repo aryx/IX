@@ -128,9 +128,14 @@
  *    update
  *)
 
-(* a key typed, a byte: a character, a control character (C-a is 1),
- * and tiny-machine's arrows, 128 to 131 (up, down, left, right) *)
-type key = int
+(* a key typed: a character, a control character too (C-a is
+ * '\001', Enter '\r' or '\n', Backspace '\b' or '\127'), or an arrow.
+ * The console gives bytes, tiny-machine's arrows 128 to 131 (up, down,
+ * left, right); Plan 9's console gives runes, its arrows among them *)
+type key = Char of char | Up | Down | Left | Right
+
+(* the key a byte of the console is *)
+val key_of_byte : char -> key
 
 (* what a view is made of: a rectangle (its width, its height, its
  * colour), a text in a colour, shapes together, a shape moved. A text's

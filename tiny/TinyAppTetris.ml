@@ -188,25 +188,25 @@ let frame m =
   else if m.wait > 1 then { m with wait = m.wait - 1; over = false }
   else fall m
 
-(* the arrows (128 up: a quarter turn, where it is, or a cell to the
- * left, or to the right; 129 down; 130 left; 131 right), the space; m
- * the music off or on *)
-let key k m =
+(* the arrows (up: a quarter turn, where it is, or a cell to the left,
+ * or to the right), the space; m the music off or on *)
+let key (k : key) (m : model) : model =
   let p = m.piece in
-  if k = 109 then { m with quiet = not m.quiet }
-  else if m.over then (if k = 32 then start m.board.seed m.quiet else m)
-  else if k = 130 then moved m { p with x = p.x - 1 }
-  else if k = 131 then moved m { p with x = p.x + 1 }
-  else if k = 129 then fall m
-  else if k = 32 then drop m
-  else if k = 128 then begin
-    let turned dx = { p with turn = (p.turn + 1) mod 4; x = p.x + dx } in
-    let a = moved m (turned 0) in
-    if a != m then a
-    else (let b = moved m (turned (-1)) in
-          if b != m then b else moved m (turned 1))
-  end
-  else m
+  match k with
+  | Char 'm' -> { m with quiet = not m.quiet }
+  | Char ' ' when m.over -> start m.board.seed m.quiet
+  | _ when m.over -> m
+  | Left -> moved m { p with x = p.x - 1 }
+  | Right -> moved m { p with x = p.x + 1 }
+  | Down -> fall m
+  | Char ' ' -> drop m
+  | Up ->
+      let turned dx = { p with turn = (p.turn + 1) mod 4; x = p.x + dx } in
+      let a = moved m (turned 0) in
+      if a != m then a
+      else (let b = moved m (turned (-1)) in
+            if b != m then b else moved m (turned 1))
+  | _ -> m
 
 (*****************************************************************************)
 (* The sounds *)

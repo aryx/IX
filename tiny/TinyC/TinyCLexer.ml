@@ -20,11 +20,18 @@ type loc = string * int
 
 open Fpath_.Operators
 
-(* a file's tokens, its #includes' in their place, #defines expanded
- * (a macro's tokens where it is used) *)
+(* a file's tokens, its #includes' in their place (each opened by
+ * open_), #defines expanded (a macro's tokens where it is used) *)
 let rec tokens (macros : (string, (token * loc) list) Hashtbl.t)
-    (read : Fpath.t -> string) (file : Fpath.t) : (token * loc) list =
-  let s = read file in
+    (open_ : (Chan.i -> (token * loc) list) -> Fpath.t -> (token * loc) list)
+    (chan : Chan.i) : (token * loc) list =
+  (* (an #include's file beside this one) *)
+  let dir =
+    match chan.origin with Chan.File f -> Fpath.parent f | _ -> Fpath.v "./" in
+  text macros open_ (Chan.origin chan) dir (In_channel.input_all chan.ic)
+
+(* s's tokens, where in their locs (a #define's body: its file's) *)
+and text macros open_ (where : string) (dir : Fpath.t) (s : string) =
   let n = String.length s in
   let out = ref [] in
   (* the line of position i, counted from the last one asked: tokens come
@@ -33,7 +40,7 @@ let rec tokens (macros : (string, (token * loc) list) Hashtbl.t)
   let loc i =
     for k = !counted to min i n - 1 do if s.[k] = '\n' then incr line done;
     counted := max !counted i;
-    (!!file, !line)
+    (where, !line)
   in
   let emit i t =
     let l = loc i in
@@ -74,10 +81,9 @@ let rec tokens (macros : (string, (token * loc) list) Hashtbl.t)
                       (String.map (function '\t' -> ' ' | c -> c) line)) with
            | "include" :: f :: _ when f.[0] = '"' ->
                let f = Fpath.v (String.sub f 1 (String.length f - 2)) in
-               (* (beside the file; dir // f is f when it is absolute) *)
-               let dir = Fpath.parent file in
+               (* (dir // f is f when it is absolute) *)
                let f = if !!dir = "./" then f else dir // f in
-               out := List.rev_append (tokens macros read f) !out
+               out := List.rev_append (open_ (tokens macros open_) f) !out
            | "define" :: name :: _ ->
                (* the rest of the line, lexed *)
                let rest =
@@ -87,7 +93,7 @@ let rec tokens (macros : (string, (token * loc) list) Hashtbl.t)
                let rest =
                  String.sub rest (String.length name)
                    (String.length rest - String.length name) in
-               Hashtbl.replace macros name (tokens macros (fun _ -> rest) file)
+               Hashtbl.replace macros name (text macros open_ where dir rest)
            | _ -> ());
           go e true
       | '/' when i + 1 < n && s.[i + 1] = '/' ->

@@ -227,7 +227,8 @@ let write_interface (old_con, old_label, old_abbrev, old_forgotten)
 
 (* an interface read: its types the program's, its names in the tables
  * (globals, tglobals); its unit's name, globals and curry functions *)
-let read_interface text env tenv =
+let read_interface (chan : Chan.i) env tenv =
+  let text = In_channel.input_all chan.ic in
   if String.length text < 4 || String.sub text 0 4 <> "\132\149\166\190" then
     error "not an interface of tiny-ml's";
   let (i : interface) = Marshal.from_string text 0 in
@@ -271,8 +272,8 @@ let read_interface text env tenv =
 (* M.mli's vals, their types in place of what M.ml's inferred: its
  * types and exceptions are M.ml's too, and skipped; a val of module
  * N : sig ... end is N.x *)
-let mli_types text =
-  toks := lex text; pos := 0;
+let mli_types (chan : Chan.i) =
+  toks := lex (In_channel.input_all chan.ic); pos := 0;
   let prefix = ref "" in
   let starts () =
     match peek () with
@@ -323,8 +324,8 @@ let start =
       "stw\tr2, 0(r3)"; "ldw\tr2, 8(r1)"; "jalr\tzero, 0(r2)" ]
   ^ "\n"
 
-let parse s =
-  toks := lex s; pos := 0;
+let parse (chan : Chan.i) =
+  toks := lex (In_channel.input_all chan.ic); pos := 0;
   let is = items () in
   if peek () <> EOF then fail ();
   is
@@ -370,9 +371,14 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
   let argl = List.tl (Array.to_list argv) in
   args argl;
   let files = List.rev !files in
-  let read f =
-    file := !!f;
-    try TinyLibSystem.read_file caps f with Failure m -> raise (File_error m) in
+  (* g on the file opened, its name the errors' (file); one that cannot be
+   * opened apart from g's errors, which are Failures too *)
+  let with_file g f =
+    let opened = ref false in
+    try
+      TinyLibSystem.with_open_in caps
+        (fun ch -> opened := true; file := Chan.origin ch; g ch) f
+    with Failure m when not !opened -> raise (File_error m) in
   let tmis = List.filter (Fpath.has_ext ".tmi") files
   and mls = List.filter (Fpath.has_ext ".ml") files in
   if List.mem "-h" argl || List.mem "--help" argl then
@@ -396,7 +402,8 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     in
     let env, tenv, units, needed =
       List.fold_left (fun (env, tenv, units, needed) f ->
-          let env, tenv, u, n = read_interface (read f) env tenv in
+          let env, tenv, u, n =
+            with_file (fun ch -> read_interface ch env tenv) f in
           env, tenv, units @ [ u ], needed @ n)
         ([], [], [], []) (lib @ tmis) in
     if !separate then begin
@@ -407,16 +414,13 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
       known_units := !unit_name :: !known_units;
       (* (before the parse: a type's constructors are the parser's) *)
       let old = snapshot () in
-      let items = parse (read f) in
+      let items = with_file parse f in
       let _, tdefs = type_unit tenv items in
       let _, exports, n = compile_unit env items in
       let mli = Fpath.set_ext ".mli" f in
       (* (old: Sys.file_exists mli, then read) *)
-      let mli_text =
-        try Some (TinyLibSystem.read_file caps mli) with Failure _ -> None in
       let types =
-        (match mli_text with Some t -> file := !!mli; mli_types t | None -> [])
-        @ tdefs in
+        (try with_file mli_types mli with File_error _ -> []) @ tdefs in
       let out =
         match !output with
         | Some o -> o
@@ -431,7 +435,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
         List.fold_left (fun (env, tenv, units, needed) f ->
           unit_name := unit_of f;
           known_units := !unit_name :: !known_units;
-          let items = parse (read f) in
+          let items = with_file parse f in
           let _, tdefs = type_unit tenv items in
           let _, defs, n = compile_unit env items in
           unit_done ();

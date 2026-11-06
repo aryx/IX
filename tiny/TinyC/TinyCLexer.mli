@@ -7,4 +7,5 @@ type token =
 type loc = string * int
 val tokens :
   (string, (token * loc) list) Hashtbl.t ->
-  (Fpath.t -> string) -> Fpath.t -> (token * loc) list
+  ((Chan.i -> (token * loc) list) -> Fpath.t -> (token * loc) list) ->
+  Chan.i -> (token * loc) list

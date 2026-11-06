@@ -134,11 +134,14 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
       (* intptr, Plan 9's uintptr's signed twin: an integer as wide as a
        * pointer (TinyMLRuntime/'s values, a word each) *)
       Hashtbl.replace typedefs "intptr" int_t;
-      let read f =
-        try TinyLibSystem.read_file caps f
-        with Failure m -> raise (File_error m) in
+      (* (a file that cannot be opened apart from its errors, which are
+       * Failures too) *)
+      let with_file g f =
+        let opened = ref false in
+        try TinyLibSystem.with_open_in caps (fun ch -> opened := true; g ch) f
+        with Failure m when not !opened -> raise (File_error m) in
       try
-        let ts = tokens (Hashtbl.create 16) read file in
+        let ts = with_file (tokens (Hashtbl.create 16) with_file) file in
         toks := Array.of_list (List.map fst ts);
         locs := Array.of_list (List.map snd ts);
         while peek () <> EOF do external_decl () done;

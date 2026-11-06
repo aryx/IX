@@ -68,32 +68,44 @@ val i16 : int -> string
 val int16 : string -> int -> int
 val msg : char -> int list -> string
 
-(* an image [d_image id x0 y0 x1 y1 colour], a colour (one pixel that
- * repeats), an image freed *)
-val d_image : int -> int -> int -> int -> int -> int -> string
-val d_colour : int -> int -> string
-val d_free : int -> string
+(* What the messages are about, each an int or ints still: an image's
+ * number (a colour is an image too, one pixel that repeats); a colour's
+ * value, a pixel's byte; a rectangle by its corners, x0 y0 in it, x1
+ * y1 out; a point; a text's style, bits (below); the mouse's look
+ * (old: ints in a row, up to nine) *)
+type image = int
+type pixel = int
+type rect = int * int * int * int
+type point = int * int
+type style = int
+type cursor = Cursor_arrow | Cursor_hand
 
-(* [d_draw dst src mask x0 y0 x1 y1 px py], TinyKernelGraphics's draw (-1: no
- * mask); a rectangle of a colour; a line; a text at a corner *)
-val d_draw : int -> int -> int -> int -> int -> int -> int -> int -> int -> string
-val d_fill : int -> int -> int -> int -> int -> int -> string
-val d_line : int -> int -> int -> int -> int -> int -> string
-val d_text : int -> int -> int -> int -> string -> string
+(* an image [d_image id r colour], a colour, an image freed *)
+val d_image : image -> rect -> pixel -> string
+val d_colour : image -> pixel -> string
+val d_free : image -> string
 
-(* [d_styled dst src x y style s]: a text in a style, bold 1, italic 2,
+(* [d_draw dst src mask r p], TinyKernelGraphics's draw (-1: no mask),
+ * src's pixels from p on; a rectangle of a colour; a line between two
+ * points; a text at a corner *)
+val d_draw : image -> image -> image -> rect -> point -> string
+val d_fill : image -> image -> rect -> string
+val d_line : image -> image -> point -> point -> string
+val d_text : image -> image -> point -> string -> string
+
+(* [d_styled dst src p style s]: a text in a style, bold 1, italic 2,
  * underlined 4, large 8 (16 by 32 a character); or 16, fat pixels, each
  * byte a colour, a square of 4 by 4 (src unused) *)
-val d_styled : int -> int -> int -> int -> int -> string -> string
+val d_styled : image -> image -> point -> style -> string -> string
 
-(* [d_pixels dst x y bytes]: a row of pixels, its left end at (x, y) *)
-val d_pixels : int -> int -> int -> string -> string
+(* [d_pixels dst p bytes]: a row of pixels, its left end at p *)
+val d_pixels : image -> point -> string -> string
 
-(* [d_cursor kind]: the mouse's look, 0 the arrow, 1 a hand (a browser's
- * over a link). The kernel sets the machine's (by writing the mouse's
+(* [d_cursor c]: the mouse's look, the arrow or a hand (a browser's over
+ * a link). The kernel sets the machine's (by writing the mouse's
  * word), which the host shows; tiny-windows keeps each window's, and
  * shows the front window's while the mouse is in it. *)
-val d_cursor : int -> string
+val d_cursor : cursor -> string
 
 (* the message at i of a string: its length (beyond the string's end
  * when it is not all there, -1 when it is no message) and how many of

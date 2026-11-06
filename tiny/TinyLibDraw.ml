@@ -32,30 +32,44 @@ let screen_h = 768
 let msg letter args =
   List.fold_left (fun s v -> s ^ i16 v) bytes.(Char.code letter) args
 
+(* See TinyLibDraw.mli for the types' names *)
+type image = int
+type pixel = int
+type rect = int * int * int * int
+type point = int * int
+type style = int
+type cursor = Cursor_arrow | Cursor_hand
+
 (* an image of that rectangle, filled with a colour's byte (the one
  * that had this number freed); a colour: one pixel, repeating *)
-let d_image id x0 y0 x1 y1 colour = msg 'a' [ id; x0; y0; x1; y1; 0; colour ]
-let d_colour id colour = msg 'a' [ id; 0; 0; 1; 1; 1; colour ]
-let d_free id = msg 'f' [ id ]
+let d_image (id : image) ((x0, y0, x1, y1) : rect) (colour : pixel) =
+  msg 'a' [ id; x0; y0; x1; y1; 0; colour ]
+let d_colour (id : image) (colour : pixel) =
+  msg 'a' [ id; 0; 0; 1; 1; 1; colour ]
+let d_free (id : image) = msg 'f' [ id ]
 
 (* dst's rectangle: src's pixels from (px, py) on, where mask's are
  * set (-1: no mask); a rectangle of a colour *)
-let d_draw dst src mask x0 y0 x1 y1 px py =
+let d_draw (dst : image) (src : image) (mask : image)
+    ((x0, y0, x1, y1) : rect) ((px, py) : point) =
   msg 'd' [ dst; src; mask; x0; y0; x1; y1; px; py ]
-let d_fill dst src x0 y0 x1 y1 = d_draw dst src (-1) x0 y0 x1 y1 0 0
+let d_fill dst src (r : rect) = d_draw dst src (-1) r (0, 0)
 
 (* a line, both ends drawn; a text (a character is 8 by 16), its top
  * left corner at (x, y) *)
-let d_line dst src xa ya xb yb = msg 'l' [ dst; src; xa; ya; xb; yb ]
-let d_text dst src x y s = msg 's' [ dst; src; x; y; String.length s ] ^ s
-let d_styled dst src x y style s =
+let d_line (dst : image) (src : image) ((xa, ya) : point) ((xb, yb) : point) =
+  msg 'l' [ dst; src; xa; ya; xb; yb ]
+let d_text (dst : image) (src : image) ((x, y) : point) s =
+  msg 's' [ dst; src; x; y; String.length s ] ^ s
+let d_styled (dst : image) (src : image) ((x, y) : point) (style : style) s =
   msg 't' [ dst; src; x; y; String.length s; style ] ^ s
 
 (* a row of pixels, a byte each, its left end at (x, y) *)
-let d_pixels dst x y s = msg 'p' [ dst; x; y; String.length s ] ^ s
+let d_pixels (dst : image) ((x, y) : point) s =
+  msg 'p' [ dst; x; y; String.length s ] ^ s
 
-(* the mouse's look: 0 the arrow, 1 a hand (over a link) *)
-let d_cursor kind = msg 'c' [ kind ]
+(* the mouse's look, 0 or 1 on the wire *)
+let d_cursor c = msg 'c' [ (match c with Cursor_arrow -> 0 | Cursor_hand -> 1) ]
 
 (* The message at i of s: its length, and how many of its first numbers
  * are images. The length is beyond s's end when the message is not all

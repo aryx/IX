@@ -57,18 +57,23 @@
 (* the samples a millisecond (8,000 a second) *)
 val per_ms : int
 
-(* [mix ring size at wave hz to_hz n volume]: a sound of n samples added
- * to the ring of [size] samples at [ring] (size a power of two), from
- * the sample numbered [at] (the ring's place: at modulo size), each
- * sum kept from -128 to 127. The wave: 0 a square, 1 a triangle, 2 a
- * sawtooth, 3 noise; the pitch from hz to to_hz, a volume 0 to 127. *)
-val mix : int -> int -> int -> int -> int -> int -> int -> int -> unit
+(* a tone: its wave (0 to 3 in a message), its pitch from hz to to_hz,
+ * its samples, its volume, 0 to 127 *)
+type wave = Square | Triangle | Sawtooth | Noise
+type tone =
+  { t_wave : wave; t_hz : int; t_to_hz : int; t_samples : int;
+    t_volume : int }
 
-(* A message's sound: a tone (wave, hz, to_hz, samples, volume, as
- * [mix]'s), or samples, a byte each, signed, 8,000 a second (`p n`
- * then the n bytes, as /dev/draw's row of pixels: what is no recipe, a
- * file's sound); its length in samples; added to a ring as [mix] adds *)
-type sound = Tone of int * int * int * int * int | Samples of string
+(* [mix ring size at tone]: a tone added to the ring of [size] samples
+ * at [ring] (size a power of two), from the sample numbered [at] (the
+ * ring's place: at modulo size), each sum kept from -128 to 127 *)
+val mix : int -> int -> int -> tone -> unit
+
+(* A message's sound: a tone, or samples, a byte each, signed, 8,000 a
+ * second (`p n` then the n bytes, as /dev/draw's row of pixels: what
+ * is no recipe, a file's sound); its length in samples; added to a
+ * ring as [mix] adds *)
+type sound = Tone of tone | Samples of string
 val sound_length : sound -> int
 val mix_sound : int -> int -> int -> sound -> unit
 

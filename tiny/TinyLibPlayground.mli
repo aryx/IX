@@ -128,6 +128,10 @@
  *    update
  *)
 
+(* a key typed, a byte: a character, a control character (C-a is 1),
+ * and tiny-machine's arrows, 128 to 131 (up, down, left, right) *)
+type key = int
+
 (* what a view is made of: a rectangle (its width, its height, its
  * colour), a text in a colour, shapes together, a shape moved. A text's
  * colour is a byte, and above it the text's style, for the office's
@@ -174,7 +178,7 @@ type tune = { pace : int; parts : part list }
  * the other); and the tune the model wants playing, None for silence *)
 type 'm game = {
   width : int; height : int; init : int -> 'm; view : 'm -> shape list;
-  key : int -> 'm -> 'm; frame : 'm -> 'm;
+  key : key -> 'm -> 'm; frame : 'm -> 'm;
   sound : 'm -> 'm -> sound list; music : 'm -> tune option;
 }
 

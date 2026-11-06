@@ -358,7 +358,7 @@ let macro (e : editor) (k : int) =
       else e.x.queue <- e.x.macro @ e.x.queue
 
 (* the next key the editor gives itself, before one typed *)
-let pending (e : editor) : int option =
+let pending (e : editor) : key option =
   match e.x.queue with k :: rest -> e.x.queue <- rest; Some k | [] -> None
 
 (*****************************************************************************)
@@ -367,7 +367,7 @@ let pending (e : editor) : int option =
 
 (* a key is a byte: a character, a control character (C-a is 1), and
  * tiny-machine's arrows, 128 to 131: up, down, left, right *)
-let key (e : editor) (k : int) : request =
+let key (e : editor) (k : key) : request =
   let t = e.t and again = e.killing and quitting = e.quitting
   and h = e.rows - 2 in
   e.killing <- false;

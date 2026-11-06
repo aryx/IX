@@ -30,11 +30,12 @@
 
 (* The look of a run is a combination of these bits (big: a large
  * heading's, drawn twice the size; under: underlined, <u> and <ins>). *)
-val bold : int
-val emph : int
-val code : int
-val big : int
-val under : int
+type look = int
+val bold : look
+val emph : look
+val code : look
+val big : look
+val under : look
 
 (* A run is a piece of text at a column, with a look and the address it
  * links to ("" if it is not a link); or, when [pic] is not -1, a slice
@@ -42,7 +43,7 @@ val under : int
  * which slice (-2: the bottom half of a large heading's line). A line
  * is a list of runs, from left to right. A rule is a line drawn across
  * the screen, under a heading or for an <hr>. *)
-type run = { col : int; text : string; look : int; link : string; pic : int }
+type run = { col : int; text : string; look : look; link : string; pic : int }
 type line = { runs : run list; rule : bool }
 
 (* A flow wraps words into lines of a given width, starting at a left
@@ -74,7 +75,7 @@ val end_line : flow -> unit
 (* [word flow text look link space] adds a word, after a space if
  * [space]: on this line if it fits, else on the next one, with the
  * pieces of the same word before it (a link and the comma after it). *)
-val word : flow -> string -> int -> string -> bool -> unit
+val word : flow -> string -> look -> string -> bool -> unit
 
 (* [picture_block flow id rows link]: [rows] lines, each a slice of the
  * picture [id], at the left margin. *)
@@ -88,7 +89,7 @@ val verbatim : flow -> string -> int -> string -> unit
  * look, link and whether a space was before it), a line's end, or a
  * picture (its number, columns, rows and link). *)
 type item =
-  | Word of string * int * string * bool
+  | Word of string * look * string * bool
   | Break
   | Pic of int * int * int * string
 

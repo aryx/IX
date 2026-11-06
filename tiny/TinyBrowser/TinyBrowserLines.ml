@@ -7,13 +7,15 @@
 (* Lines *)
 (*****************************************************************************)
 
+(* a run's look, these bits (TinyBrowserLines.mli) *)
+type look = int
 let bold = 1
 let emph = 2
 let code = 4
 let big = 8
 let under = 16
 
-type run = { col : int; text : string; look : int; link : string; pic : int }
+type run = { col : int; text : string; look : look; link : string; pic : int }
 type line = { runs : run list; rule : bool }
 
 (* A flow wraps words into lines of a given width, starting at a left
@@ -95,7 +97,7 @@ let carry (f : flow) =
   f.at <- f.at - shift;
   f.glue <- f.left
 
-let word (f : flow) text look link space =
+let word (f : flow) text (look : look) link space =
   let len = String.length text in
   if f.made = [] then f.at <- f.left;
   let space = space && f.made <> [] in
@@ -148,7 +150,7 @@ let verbatim (f : flow) text look link =
 (* The words of a cell are kept until the end of the table, when the
  * widths of its columns are known. *)
 type item =
-  | Word of string * int * string * bool
+  | Word of string * look * string * bool
   | Break
   | Pic of int * int * int * string
 

@@ -20,10 +20,10 @@ let () =
     |> after (List.init 20 (fun _ -> 128)) in
   Printf.printf "the square at %d, %d after %d frames\n" m.x m.y m.frames;
   TinyCalls.u_write 3
-    (TinyLibDraw.d_image TinyLibPlayground.picture 0 0 g.width g.height 0)
+    (TinyLibDraw.d_image TinyLibPlayground.picture (0, 0, g.width, g.height) 0)
   |> ignore;
   TinyCalls.u_write 3
-    (TinyLibDraw.d_image TinyLibPlayground.ground 0 0 g.width g.height 0)
+    (TinyLibDraw.d_image TinyLibPlayground.ground (0, 0, g.width, g.height) 0)
   |> ignore;
   TinyLibPlayground.show g [] (g.view m);
   (* twice the same random numbers from a seed *)

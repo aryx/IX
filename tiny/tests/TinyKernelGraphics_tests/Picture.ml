@@ -13,10 +13,12 @@ open TinyLibDraw
 
 let colour = d_colour
 let image id x0 y0 x1 y1 v = msg 'a' [ id; x0; y0; x1; y1; 0; v ]
-let draw_ = d_draw
-let fill = d_fill
-let line_ = d_line
-let text_ = d_text
+(* (the messages' numbers flat, as the kernel reads them) *)
+let draw_ dst src mask x0 y0 x1 y1 px py =
+  d_draw dst src mask (x0, y0, x1, y1) (px, py)
+let fill dst src x0 y0 x1 y1 = d_fill dst src (x0, y0, x1, y1)
+let line_ dst src xa ya xb yb = d_line dst src (xa, ya) (xb, yb)
+let text_ dst src x y s = d_text dst src (x, y) s
 
 (* the font's size bytes are at [bits]; the screen at its address, the
  * images' memory after it, to the last page *)

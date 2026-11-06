@@ -318,3 +318,31 @@ move forward"):
   `end_pid`, `end_status`; old: a triple).
 +35 code lines (24 the network's: its types, the numbers' two ways,
 the headers written whole).
+
+2026-11-06, stage 7 built (the author: "excellent, let's commit and
+move forward"):
+- the draw protocol: TinyLibDraw's `image` (an image's number, a
+  colour one too), `pixel` (a colour's byte), `rect` (two corners),
+  `point`, `style`, and `cursor` (`Cursor_arrow | Cursor_hand`, 0 and
+  1 on the wire); `d_draw : image -> image -> image -> rect -> point
+  -> string` (old: nine ints), `d_fill`, `d_line`, `d_text`,
+  `d_styled`, `d_pixels`, `d_image` on them; the calls, which
+  computed two corners each time, give them as a tuple; TinyWindows'
+  rectangles were these tuples already; the messages' bytes the same
+  (the recorded screens unchanged); the graphics test's own wrappers
+  keep its flat numbers;
+- the kernel's mixer: `wave` (`Square | Triangle | Sawtooth | Noise`,
+  TinyLibPlayground's names) and a `tone` record (`t_wave`, `t_hz`,
+  `t_to_hz`, `t_samples`, `t_volume`), which `Tone` carries and `mix`
+  takes after the ring's three numbers (old: eight ints, the wave's
+  number compared in an if chain, now a match);
+- a key: TinyLibPlayground's `key`, in its game, TinyLibGUI's `key`
+  and canvas, and TinyEditorScreen's `key` and `pending`;
+- the browser's `look`, a run's bits, in TinyBrowserLines.
+Left: TinyLibPlayground's `bold`, `italic`... are not TinyLibDraw's
+style bits but the style shifted above a colour's byte, a colour with
+its style, kept ints; `TinyBrowserLines.word`'s bool (a space before
+the word) is the HTML reader's data, carried by its `Word` items: a
+record for the word would change the reader for one bool, not done;
+`TinyLinker.aout`'s two ints (the memory, where the data starts)
+left. +35 code lines (8 the tests', 12 TinyLibDraw's types).

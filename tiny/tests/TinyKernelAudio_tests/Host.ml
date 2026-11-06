@@ -26,33 +26,42 @@ let say name at n =
     "%s: %d samples, %d crossings, largest %d, last %d, after %d\n"
     name n !crossings !largest (sample (at + n - 1)) (sample (at + n))
 
+(* a tone, its wave by its number in a message (0 a square, 1 a
+ * triangle, 2 a sawtooth, 3 noise), and back *)
+let tone w hz to_hz n volume : TinyKernelAudio.tone =
+  { t_wave = (match w with 0 -> Square | 1 -> Triangle | 2 -> Sawtooth
+                           | _ -> Noise);
+    t_hz = hz; t_to_hz = to_hz; t_samples = n; t_volume = volume }
+let wave_number (w : TinyKernelAudio.wave) =
+  match w with Square -> 0 | Triangle -> 1 | Sawtooth -> 2 | Noise -> 3
+
 let () =
   (* a square of 1,000 Hz for 10 ms: 80 samples, two crossings a period *)
   clear ();
-  TinyKernelAudio.mix ring size 0 0 1000 1000 80 100;
+  TinyKernelAudio.mix ring size 0 (tone 0 1000 1000 80 100);
   say "square 1000 Hz" 0 80;
   (* sliding from 500 to 1,500 Hz: more crossings in its second half *)
   clear ();
-  TinyKernelAudio.mix ring size 0 0 500 1500 800 100;
+  TinyKernelAudio.mix ring size 0 (tone 0 500 1500 800 100);
   say "slide, first half" 0 400;
   say "slide, second half" 400 400;
   (* the other waves *)
   clear ();
-  TinyKernelAudio.mix ring size 0 1 440 440 800 100;
+  TinyKernelAudio.mix ring size 0 (tone 1 440 440 800 100);
   say "triangle 440 Hz" 0 800;
   clear ();
-  TinyKernelAudio.mix ring size 0 2 440 440 800 100;
+  TinyKernelAudio.mix ring size 0 (tone 2 440 440 800 100);
   say "sawtooth 440 Hz" 0 800;
   clear ();
-  TinyKernelAudio.mix ring size 0 3 2000 2000 800 100;
+  TinyKernelAudio.mix ring size 0 (tone 3 2000 2000 800 100);
   say "noise" 0 800;
   (* two sounds at the same place add up, and stop at 127 *)
   clear ();
-  TinyKernelAudio.mix ring size 0 0 1000 1000 80 100;
-  TinyKernelAudio.mix ring size 0 0 1000 1000 80 100;
+  TinyKernelAudio.mix ring size 0 (tone 0 1000 1000 80 100);
+  TinyKernelAudio.mix ring size 0 (tone 0 1000 1000 80 100);
   say "twice the square" 0 80;
   (* the ring goes round: from its last two samples to its first six *)
-  clear (); TinyKernelAudio.mix ring size (size - 2) 0 1000 1000 8 100;
+  clear (); TinyKernelAudio.mix ring size (size - 2) (tone 0 1000 1000 8 100);
   Printf.printf "round the ring: %s\n"
     (String.concat " "
        (List.map (fun i -> string_of_int (sample i))
@@ -62,10 +71,10 @@ let () =
     TinyLibDraw.msg 's' [ 0; 784; 784; 60; 40 ]
     ^ TinyLibDraw.msg 's' [ 1; 440; 80; 700; 90 ] in
   List.iter (function
-    | TinyKernelAudio.Tone (w, a, b, n, v) ->
+    | TinyKernelAudio.Tone t ->
         Printf.printf
           "message: wave %d, %d to %d Hz, %d samples, volume %d\n"
-          w a b n v
+          (wave_number t.t_wave) t.t_hz t.t_to_hz t.t_samples t.t_volume
     | TinyKernelAudio.Samples s ->
         Printf.printf "message: %d samples, %s\n" (String.length s)
           (String.concat " "

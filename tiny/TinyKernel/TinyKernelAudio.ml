@@ -18,8 +18,17 @@ let per_ms = 8
  * 16 samples rise from nothing (2 ms: a sound that starts at its full
  * volume clicks). A noise is a random value at each period, by a
  * congruential generator. *)
-let mix ring size at wave hz to_hz n volume =
-  let n = max 1 n in
+(* a tone: its wave, its pitch from hz to to_hz, its samples, its
+ * volume (TinyLibPlayground's names for the waves; t_: the labels are
+ * one name space; old: eight ints in a row to mix) *)
+type wave = Square | Triangle | Sawtooth | Noise
+type tone =
+  { t_wave : wave; t_hz : int; t_to_hz : int; t_samples : int;
+    t_volume : int }
+
+let mix ring size at (t : tone) =
+  let n = max 1 t.t_samples and wave = t.t_wave and hz = t.t_hz
+  and to_hz = t.t_to_hz and volume = t.t_volume in
   let step0 = hz * 8192 / 1000 * 256 in
   let dstep = ((to_hz * 8192 / 1000 * 256) - step0) / n in
   let damp = volume * 65536 / n in
@@ -29,12 +38,13 @@ let mix ring size at wave hz to_hz n volume =
     let v = if i < 16 then ((!amp lsr 16) * i) lsr 4 else !amp lsr 16 in
     let q = !phase land 0xffff in
     let x =
-      if wave = 0 then (if q < 32768 then v else - v)
-      else if wave = 1 then (
-        let t = (q * 4 * v) lsr 16 in
-        if t < 2 * v then t - v else (3 * v) - t)
-      else if wave = 2 then ((q * 2 * v) lsr 16) - v
-      else ((((!noise lsr 16) land 255) * 2 * v) lsr 8) - v in
+      match wave with
+      | Square -> if q < 32768 then v else - v
+      | Triangle ->
+          let t = (q * 4 * v) lsr 16 in
+          if t < 2 * v then t - v else (3 * v) - t
+      | Sawtooth -> ((q * 2 * v) lsr 16) - v
+      | Noise -> ((((!noise lsr 16) land 255) * 2 * v) lsr 8) - v in
     let r = ring + ((at + i) land (size - 1)) in
     let b = peekb r in
     let y = (if b > 127 then b - 256 else b) + x in
@@ -47,12 +57,11 @@ let mix ring size at wave hz to_hz n volume =
     amp := !amp - damp
   done
 
-(* a sound of a message: a tone (a wave, a pitch from and to, its
- * samples, a volume), or samples *)
-type sound = Tone of int * int * int * int * int | Samples of string
+(* a sound of a message: a tone, or samples *)
+type sound = Tone of tone | Samples of string
 
 let sound_length snd =
-  match snd with Tone (_, _, _, n, _) -> n | Samples s -> String.length s
+  match snd with Tone t -> t.t_samples | Samples s -> String.length s
 
 (* samples added to the ring as a tone's are *)
 let add_samples ring size at s =
@@ -65,7 +74,7 @@ let add_samples ring size at s =
 
 let mix_sound ring size at snd =
   match snd with
-  | Tone (wave, hz, to_hz, n, volume) -> mix ring size at wave hz to_hz n volume
+  | Tone t -> mix ring size at t
   | Samples s -> add_samples ring size at s
 
 exception Bad_sound
@@ -87,6 +96,12 @@ let sounds s =
       if wave > 3 || hz > 4000 || to_hz > 4000 || ms > 1000 || volume > 127 then
         raise Bad_sound;
 
-      Tone (wave, hz, to_hz, ms * per_ms, volume) :: from (i + 11)
+      (* (the wave's number, 0 to 3, a variant here) *)
+      Tone { t_wave = (match wave with
+                       | 0 -> Square | 1 -> Triangle | 2 -> Sawtooth
+                       | _ -> Noise);
+             t_hz = hz; t_to_hz = to_hz; t_samples = ms * per_ms;
+             t_volume = volume }
+      :: from (i + 11)
     end in
   from 0

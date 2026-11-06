@@ -188,7 +188,8 @@ val over : 'msg boxes -> mouse -> (box * TinyLibPlayground.shape) list
 val mouse :
   ('m, 'msg) gui -> 'msg boxes -> 'm -> mouse -> int -> int -> int ->
   'm * mouse
-val key : ('m, 'msg) gui -> 'msg boxes -> 'm -> mouse -> int -> 'm
+val key :
+  ('m, 'msg) gui -> 'msg boxes -> 'm -> mouse -> TinyLibPlayground.key -> 'm
 
 (* [redraw shown was now is]: after the shapes shown and what was over
  * them, the shapes now and what is over them, drawn where they differ
@@ -245,7 +246,8 @@ val inside : int -> int -> box -> bool
  * next model, or None *)
 type 'm canvas = {
   first : int -> int -> 'm; picture : 'm -> TinyLibPlayground.shape list;
-  typed : int -> 'm -> 'm option; moved : int -> int -> int -> 'm -> 'm option;
+  typed : TinyLibPlayground.key -> 'm -> 'm option;
+  moved : int -> int -> int -> 'm -> 'm option;
 }
 
 (* [run_canvas c]: the program until its typed says None or the keys

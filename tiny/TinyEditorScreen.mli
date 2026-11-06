@@ -91,13 +91,13 @@ val create : int -> int -> Fpath.t -> string -> editor
 (* what a key asks of the program around the editor *)
 type request = Continue | Save | Quit
 
-(* a key, a byte: a character, a control character (C-a is 1), and
- * tiny-machine's arrows, 128 to 131 (up, down, left, right) *)
-val key : editor -> int -> request
+(* a key (TinyLibPlayground's: a byte, tiny-machine's arrows 128 to
+ * 131) *)
+val key : editor -> TinyLibPlayground.key -> request
 
 (* a key the editor gives itself, a macro's or an M-x command's: the
  * program around gives it to [key] before the next one typed *)
-val pending : editor -> int option
+val pending : editor -> TinyLibPlayground.key option
 
 (* the screen: rows lines of at most cols characters, the last two a
  * line on the file and the cursor's place, and a message *)

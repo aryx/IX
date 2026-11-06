@@ -85,8 +85,10 @@ let () =
   let font = In_channel.with_open_bin Sys.argv.(1) In_channel.input_all in
   Bytes.blit_string font 0 TinyMemory.mem 0x1000 (String.length font);
   let both =
-    TinyLibDraw.d_image TinyLibPlayground.picture 0 0 game.width game.height 0
-    ^ TinyLibDraw.d_image TinyLibPlayground.ground 0 0 game.width game.height 0
+    TinyLibDraw.d_image TinyLibPlayground.picture
+      (0, 0, game.width, game.height) 0
+    ^ TinyLibDraw.d_image TinyLibPlayground.ground
+        (0, 0, game.width, game.height) 0
   in
   ignore (TinyCalls.u_write 3 both);
   TinyLibPlayground.show game [] (game.view m);

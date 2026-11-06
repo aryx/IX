@@ -138,7 +138,7 @@ let clip sc s =
 
 (* a row, filled with a colour *)
 let fill_row sc row colour =
-  put sc (d_fill 0 colour 0 (row * 16) (sc.sc_cols * 8) ((row * 16) + 16))
+  put sc (d_fill 0 colour (0, row * 16, sc.sc_cols * 8, (row * 16) + 16))
 
 (* The page's area on the screen: from under the toolbar to the status
  * row, [area sc] pixels high. The page scrolls by pixels: its line i is
@@ -170,13 +170,13 @@ let draw_slice sc dst y (r : run) =
     let have = if pc.pc_got > from then min high (pc.pc_got - from) else 0 in
     if have > 0 then
       put sc
-        (d_draw dst (image_of id) (-1) x y (x + pc.pc_w) (y + have) 0 from);
+        (d_draw dst (image_of id) (-1) (x, y, x + pc.pc_w, y + have) (0, from));
     if have < high then begin
-      put sc (d_fill dst c_code x (y + have) (x + pc.pc_w) (y + high));
+      put sc (d_fill dst c_code (x, y + have, x + pc.pc_w, y + high));
       if s = 0 && pc.pc_got <= 0 && pc.pc_w >= 24 && high = 16 then begin
         let alt = if pc.pc_alt = "" then "picture" else pc.pc_alt in
         let fits = (pc.pc_w / 8) - 1 in
-        put sc (d_text dst c_text (x + 4) y
+        put sc (d_text dst c_text (x + 4, y)
                   (if String.length alt > fits then String.sub alt 0 (max 0 fits)
                    else alt))
       end
@@ -195,8 +195,8 @@ let draw_line sc i (l : line) =
   let tall = List.exists (fun (r : run) -> r.look land big <> 0) l.runs in
   let whole = not tall && at >= area_top && at + 16 <= area_top + area sc in
   let dst = if whole then 0 else c_strip and y = if whole then at else 0 in
-  put sc (d_fill dst c_white 0 y w (y + 16));
-  if l.rule then put sc (d_fill dst c_rule 0 (y + 7) w (y + 9))
+  put sc (d_fill dst c_white (0, y, w, y + 16));
+  if l.rule then put sc (d_fill dst c_rule (0, y + 7, w, y + 9))
   else
     List.iter (fun (r : run) ->
       if r.pic >= 0 then draw_slice sc dst y r
@@ -206,7 +206,7 @@ let draw_line sc i (l : line) =
         let t = String.sub r.text 0 n and x = r.col * 8
         and ry = if r.pic = -2 then y - 16 else y in
         if r.look land code <> 0 then
-          put sc (d_fill dst c_code x y (x + (n * 8)) (y + 16));
+          put sc (d_fill dst c_code (x, y, x + (n * 8), y + 16));
         let ink =
           if r.link <> "" then c_link
           else if r.look land bold <> 0 then c_black else c_text in
@@ -215,15 +215,15 @@ let draw_line sc i (l : line) =
           (r.look land (bold + emph))
           lor (if r.look land under <> 0 then 4 else 0)
           lor (if k = 2 then 8 else 0) in
-        put sc (if style = 0 then d_text dst ink x ry t
-                else d_styled dst ink x ry style t);
+        put sc (if style = 0 then d_text dst ink (x, ry) t
+                else d_styled dst ink (x, ry) style t);
         if r.link <> "" then
-          put sc (d_line dst c_link x (ry + (16 * k) - 1) (x + (n * 8 * k) - 1)
-                    (ry + (16 * k) - 1))
+          put sc (d_line dst c_link (x, ry + (16 * k) - 1)
+                    (x + (n * 8 * k) - 1, ry + (16 * k) - 1))
       end) l.runs;
   if not whole then begin
     let y0 = max at area_top and y1 = min (at + 16) (area_top + area sc) in
-    if y0 < y1 then put sc (d_draw 0 c_strip (-1) 0 y0 w y1 0 (y0 - at))
+    if y0 < y1 then put sc (d_draw 0 c_strip (-1) (0, y0, w, y1) (0, y0 - at))
   end
 
 (* The bar of menus, the page's title at the right of their titles, and
@@ -297,7 +297,7 @@ let draw_status sc =
           else "")
      else sc.sc_state)
     ^ "   space -: page, b: back, g: address, q: quit" in
-  put sc (d_text 0 c_black 8 (row * 16) (clip sc text))
+  put sc (d_text 0 c_black (8, row * 16) (clip sc text))
 
 (* The page's lines that fall in its area, from pixel [a] to pixel [b]
  * of the page, drawn; white where the page has ended. *)
@@ -308,7 +308,7 @@ let draw_between sc a b =
   let bottom = area_top + ((first + List.length ls) * 16) - sc.sc_y in
   let y0 = max bottom (area_top + a - sc.sc_y)
   and y1 = area_top + b - sc.sc_y in
-  if y0 < y1 then put sc (d_fill 0 c_white 0 y0 (sc.sc_cols * 8) y1);
+  if y0 < y1 then put sc (d_fill 0 c_white (0, y0, sc.sc_cols * 8, y1));
   first + List.length ls
 
 (* the whole area drawn again *)
@@ -326,8 +326,8 @@ let scroll_by sc d =
   if delta <> 0 then begin
     if abs delta >= h then begin sc.sc_y <- y; redraw sc end
     else if delta > 0 then begin
-      put sc (d_draw 0 0 (-1) 0 area_top w (area_top + h - delta) 0
-                (area_top + delta));
+      put sc (d_draw 0 0 (-1) (0, area_top, w, area_top + h - delta)
+                (0, area_top + delta));
       sc.sc_y <- y;
       let first = (y + h - delta) / 16 in
       let drawn = draw_between sc (y + h - delta) (y + h) in
@@ -335,7 +335,7 @@ let scroll_by sc d =
     end
     else begin
       put sc
-        (d_draw 0 0 (-1) 0 (area_top - delta) w (area_top + h) 0 area_top);
+        (d_draw 0 0 (-1) (0, area_top - delta, w, area_top + h) (0, area_top));
       sc.sc_y <- y;
       ignore (draw_between sc y (y - delta));
       sc.sc_drawn <- min sc.sc_drawn ((y + h + 15) / 16)
@@ -393,5 +393,5 @@ let show_new sc =
 let hover sc over =
   if over <> sc.sc_nav.nv_hover then begin
     sc.sc_nav.nv_hover <- over;
-    put sc (d_cursor (if over then 1 else 0))
+    put sc (d_cursor (if over then Cursor_hand else Cursor_arrow))
   end

@@ -414,7 +414,7 @@ let menu_view width menus st =
 type 'm canvas = {
   first : int -> int -> 'm;
   picture : 'm -> shape list;
-  typed : int -> 'm -> 'm option;
+  typed : key -> 'm -> 'm option;
   moved : int -> int -> int -> 'm -> 'm option;
 }
 

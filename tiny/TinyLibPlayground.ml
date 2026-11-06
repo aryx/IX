@@ -6,6 +6,9 @@
 open TinyLibDraw
 open TinyCalls
 
+(* a key: a byte (TinyLibPlayground.mli) *)
+type key = int
+
 (* a rectangle of a colour (its width, its height), words of a colour,
  * shapes together, a shape moved (to the right, down) *)
 type shape =
@@ -62,7 +65,7 @@ type tune = { pace : int; parts : part list }
  * tune the model wants playing, if any *)
 type 'm game = {
   width : int; height : int; init : int -> 'm; view : 'm -> shape list;
-  key : int -> 'm -> 'm; frame : 'm -> 'm;
+  key : key -> 'm -> 'm; frame : 'm -> 'm;
   sound : 'm -> 'm -> sound list; music : 'm -> tune option;
 }
 
@@ -100,12 +103,12 @@ let ink c =
 
 let rec draw dst x y shape =
   match shape with
-  | Rect (c, w, h) -> put (d_fill dst (ink c) x y (x + w) (y + h))
+  | Rect (c, w, h) -> put (d_fill dst (ink c) (x, y, x + w, y + h))
   | Words (c, s) ->
-      put (if c < 256 then d_text dst (ink c) x y s
+      put (if c < 256 then d_text dst (ink c) (x, y) s
            else if c land fat_pixels <> 0 then
-             d_styled dst (ink c) x y 16 (fat_bytes s)
-           else d_styled dst (ink c) x y (c lsr 8) s)
+             d_styled dst (ink c) (x, y) 16 (fat_bytes s)
+           else d_styled dst (ink c) (x, y) (c lsr 8) s)
   | Group l -> List.iter (draw dst x y) l
   | Move (dx, dy, s) -> draw dst (x + dx) (y + dy) s
 
@@ -123,10 +126,10 @@ let show g shown shapes =
            | was :: _ -> was != first && was <> first
            | [] -> true)
        then draw ground 0 0 first;
-       put (d_draw picture ground (-1) 0 0 g.width g.height 0 0);
+       put (d_draw picture ground (-1) (0, 0, g.width, g.height) (0, 0));
        List.iter (draw picture 0 0) rest
    | [] -> ());
-  put (d_draw 0 picture (-1) 0 0 g.width g.height 0 0);
+  put (d_draw 0 picture (-1) (0, 0, g.width, g.height) (0, 0));
   flush ()
 
 (* whether these are other shapes than those shown: the ground the same
@@ -247,8 +250,8 @@ let run g =
         (if u_ticks () > next + period then u_ticks () + period
          else next + period)
   in
-  put (d_image picture 0 0 g.width g.height 0
-       ^ d_image ground 0 0 g.width g.height 0);
+  put (d_image picture (0, 0, g.width, g.height) 0
+       ^ d_image ground (0, 0, g.width, g.height) 0);
   speaker := u_open "/dev/audio" 1;
   let first = g.init (u_seed ()) in
   let shapes = g.view first in

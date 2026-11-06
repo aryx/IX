@@ -180,13 +180,13 @@ let picture_message sc s =
   if pc.pc_got = -3 then begin
     match String.split_on_char ' ' s with
     | [ _; w; h ] when number w = pc.pc_w && number h = pc.pc_h ->
-        put sc (d_image (image_of id) 0 0 pc.pc_w pc.pc_h 255);
+        put sc (d_image (image_of id) (0, 0, pc.pc_w, pc.pc_h) 255);
         pc.pc_got <- 0
     | _ -> pc.pc_got <- -2
   end
   else if pc.pc_got >= 0 && pc.pc_got < pc.pc_h then begin
     let y = pc.pc_got in
-    put sc (d_pixels (image_of id) 0 y s);
+    put sc (d_pixels (image_of id) (0, y) s);
     pc.pc_got <- y + 1;
     let slice = (id * 256) + (y / 16) and first = sc.sc_y / 16 in
     List.iteri (fun k (l : line) ->
@@ -195,7 +195,8 @@ let picture_message sc s =
           let x = r.col * 8
           and sy = area_top + ((first + k) * 16) - sc.sc_y + (y mod 16) in
           if sy >= area_top && sy < area_top + area sc then
-            put sc (d_draw 0 (image_of id) (-1) x sy (x + pc.pc_w) (sy + 1) 0 y)
+            put sc
+              (d_draw 0 (image_of id) (-1) (x, sy, x + pc.pc_w, sy + 1) (0, y))
         end) l.runs)
       (lines_between sc.sc_page first ((sc.sc_y + area sc + 15) / 16))
   end
@@ -362,7 +363,7 @@ let browse typed =
                  dc_file = -1 };
       sc_state = "reading"; sc_msgs = [] } in
   put sc colours;
-  put sc (d_image c_strip 0 0 (sc.sc_cols * 8) 16 255);
+  put sc (d_image c_strip (0, 0, sc.sc_cols * 8, 16) 255);
   load sc (absolute typed);
   send sc;
   let fds = Array.make 3 0 in

@@ -56,7 +56,7 @@ let empty (x0, y0, x1, y1) = x1 <= x0 || y1 <= y0
 let inside (x0, y0, x1, y1) x y = x >= x0 && x < x1 && y >= y0 && y < y1
 let fill dst colour r =
   if not (empty r) then
-    (let x0, y0, x1, y1 = r in send (d_fill dst colour x0 y0 x1 y1))
+    send (d_fill dst colour r)
 let everything = 0, 0, screen_w, screen_h
 
 (*****************************************************************************)
@@ -98,7 +98,9 @@ let current w = match !windows with v :: _ -> v == w | [] -> false
 let shown_cursor = ref 0
 let show_cursor kind =
   if kind <> !shown_cursor then begin
-    shown_cursor := kind; send (d_cursor kind)
+    (* (the number its program's message carried: 1 a hand) *)
+    shown_cursor := kind;
+    send (d_cursor (if kind = 1 then Cursor_hand else Cursor_arrow))
   end
 
 let border = 3
@@ -117,10 +119,9 @@ let show r w =
     fill screen (if current w then blue else pale) (clip r side));
   let c = clip r (inner w) in
   if not (empty c) then begin
-    let x0, y0, x1, y1 = c in
+    let x0, y0, _, _ = c in
     send
-      (d_draw screen w.image (-1) x0 y0 x1 y1
-         (x0 - w.x - border) (y0 - w.y - border))
+      (d_draw screen w.image (-1) c (x0 - w.x - border, y0 - w.y - border))
   end
 
 (* a rectangle of the screen again: the background, the windows back to
@@ -168,7 +169,7 @@ let newline w =
   if (w.page.row + 1) * 16 <= last then w.page.row <- w.page.row + 1
   else
     (incr scrolls;
-     send (d_draw w.image w.image (-1) 0 0 w.w last 0 16);
+     send (d_draw w.image w.image (-1) (0, 0, w.w, last) (0, 16));
      fill w.image white (0, last, w.w, w.h))
 
 (* what a program printed: the characters that fit the line are one
@@ -200,7 +201,7 @@ let print w s =
         let j = max (i + 1) (upto i) in
         cells (j - i);
         send
-          (d_text w.image black (w.page.col * 8) (w.page.row * 16)
+          (d_text w.image black (w.page.col * 8, w.page.row * 16)
              (String.sub s i (j - i)));
         w.page.col <- w.page.col + j - i;
         from j
@@ -350,7 +351,7 @@ let create (x0, y0, x1, y1) =
     let w =
       { image = fresh (); w = wide; h = high; x = snap x0; y = y0; pid = pid;
         ends = ends; page = page } in
-    send (d_image w.image 0 0 w.w w.h 255);
+    send (d_image w.image (0, 0, w.w, w.h) 255);
     windows := w :: !windows;
     refresh everything
   end
@@ -396,7 +397,7 @@ let menu mx my chosen =
       (mx, my + (16 * i), mx + 64, my + (16 * i) + 16);
     send
       (d_text screen (if i = chosen then white else black)
-         (mx + 4) (my + (16 * i)) name)) items
+         (mx + 4, my + (16 * i)) name)) items
 
 (* a rectangle's four sides, two pixels thick: drawn in red, or what is
  * under them again *)

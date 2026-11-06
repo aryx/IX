@@ -374,7 +374,7 @@ hello
 [13] close(7) = 0
 [13] close(6) = 0
 [13] close(5) = 0
-[13] exec("/bin/cat", 0xffd78) = 0
+[13] exec("/bin/cat", 0xffd68) = 0
 [13] open("f", 0) = 5
 [13] read(5, "hello\n", 4096) = 6
 [13] write(1, "hello\n", 6) = 6
@@ -383,7 +383,7 @@ hello
 [13] exit(0)
 [13] exited 0
 [14] close(5) = 0
-[14] exec("/bin/wc", 0xffd48) = 0
+[14] exec("/bin/wc", 0xffd38) = 0
 [14] read(0, "hello\n", 4096) = 6
 [14] read(0, "", 4096) = 0
 [14] write(1, "      1       1       6\n", 24) = 24
@@ -409,19 +409,19 @@ _start:	jal	r15, 0x7248 <main>
 break
 u_write:	addi	r14, r14, -40
 0	u_write
-1	say+0x50	0x26968 0x26968 2
+1	say+0x50	0x27974 0x27974 2
 2	main+0x1cc	0 0 1 1 _ _ ...
-3	Trace.init+0x40	_ 0 0x2681c
-4	ml_init+0x24c	0
+3	Trace.init+0x40	_ 0 0x27828
+4	ml_init+0x2f4	0
 5	ml_run+0x164
 6	main+0x1ec
 7	_start
 % % fork() = 25
-wait(0xffe00) = 25
+wait(0xffdf0) = 25
 fork() = 26
-wait(0xffde0) = 26
+wait(0xffdd0) = 26
 fork() = 27
-wait(0xffe00) = 27
+wait(0xffdf0) = 27
 close(1) = 0
 dup(5) = 1
 close(5) = 0

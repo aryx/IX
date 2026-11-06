@@ -283,7 +283,7 @@ let on_mouse sc x y buttons =
   let st = sc.sc_tools.tb_menu in
   let was = st.opened and item = st.item in
   let answer = menu_mouse (menus sc) st x y buttons in
-  if was >= 0 && st.opened <> was then begin draw_tools sc; redraw sc end;
+  if was <> None && st.opened <> was then begin draw_tools sc; redraw sc end;
   if st.opened <> was || st.item <> item then draw_bar sc;
   match answer with
   | Picked a -> act sc a

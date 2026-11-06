@@ -214,7 +214,11 @@ val redraw :
  * history, what counts is where it is when the button goes up: a press
  * on a title and a let go on an item, with nothing seen between, is a
  * choice. *)
-type menu_state = { mutable opened : int; mutable item : int; mutable held : int }
+type menu_state = {
+  mutable opened : int option;
+  mutable item : int option;
+  mutable held : int;
+}
 val menu_closed : unit -> menu_state
 
 (* the menus' height in pixels, at the top of the window *)

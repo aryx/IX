@@ -464,3 +464,9 @@ the speaker, then B and the kernel's trace. A commit each.
   for the parts' 13 `List.nth o.page o.sel`. A click's or a right
   button's box a match. +18 lines.
 
+- The GUI's menu: TinyLibGUI.menu_state's `opened` and `item` int
+  options (old: -1 none each), and `title_at` and `item_at`, which
+  find them, too; menu_mouse a match on the menu open, the title and
+  the item under the mouse, in the old order of its four cases;
+  menu_view's open menu a match. The office and the browser use it;
+  the browser's two tests of `opened` against -1 now against None.

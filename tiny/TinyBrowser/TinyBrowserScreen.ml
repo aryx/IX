@@ -124,7 +124,7 @@ let send sc =
   if sc.sc_msgs <> [] then begin
     ignore (u_write 3 (String.concat "" (List.rev sc.sc_msgs)));
     sc.sc_msgs <- [];
-    if sc.sc_tools.tb_menu.opened >= 0 then begin
+    if sc.sc_tools.tb_menu.opened <> None then begin
       List.iter (draw 0 0 0)
         (List.tl (menu_view (sc.sc_cols * 8) (menus sc) sc.sc_tools.tb_menu));
       flush ()

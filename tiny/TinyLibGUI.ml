@@ -295,16 +295,16 @@ let run (g : ('m, 'msg) gui) =
 
 (* A bar of menus is a list, each menu a title and its items, each item
  * a text and the message it sends. What is kept under the model, as
- * for the mouse of the widgets: the menu open (-1 none), the item under
- * the mouse in it (-1 none), the buttons as last seen. *)
+ * for the mouse of the widgets: the menu open, the item under the mouse
+ * in it, the buttons as last seen. *)
 type menu_state = {
-  mutable opened : int;
-  mutable item : int;
+  mutable opened : int option;
+  mutable item : int option;
   mutable held : int;
 }
 type 'msg menu_answer = Ignored | Taken | Picked of 'msg
 
-let menu_closed () = { opened = -1; item = -1; held = 0 }
+let menu_closed () = { opened = None; item = None; held = 0 }
 let bar_height = 18
 
 let title_width t = (8 * String.length t) + 16
@@ -312,27 +312,27 @@ let rec title_x menus i =
   match menus with
   | (t, _) :: rest -> if i = 0 then 0 else title_width t + title_x rest (i - 1)
   | [] -> 0
-let rec title_at menus x i at =
+let rec title_at menus x i at : int option =
   match menus with
   | (t, _) :: rest ->
-      if x >= at && x < at + title_width t then i
+      if x >= at && x < at + title_width t then Some i
       else title_at rest x (i + 1) (at + title_width t)
-  | [] -> -1
+  | [] -> None
 let list_width items =
   16 + (8 * List.fold_left (fun m (s, _) -> max m (String.length s)) 0 items)
 
-(* the item of the open menu under (x, y), or -1 *)
-let item_at menus st x y =
-  if st.opened < 0 then -1
-  else begin
-    let (_, items) = List.nth menus st.opened
-    and x0 = title_x menus st.opened in
-    let n = List.length items in
-    if x >= x0 && x < x0 + list_width items
-       && y >= bar_height && y < bar_height + (16 * n) + 4
-    then min (n - 1) ((y - bar_height - 2) / 16)
-    else -1
-  end
+(* the item of the open menu under (x, y) *)
+let item_at menus st x y : int option =
+  match st.opened with
+  | None -> None
+  | Some opened ->
+      let (_, items) = List.nth menus opened
+      and x0 = title_x menus opened in
+      let n = List.length items in
+      if x >= x0 && x < x0 + list_width items
+         && y >= bar_height && y < bar_height + (16 * n) + 4
+      then Some (min (n - 1) ((y - bar_height - 2) / 16))
+      else None
 
 (* The mouse at (x, y), its buttons b: whether the menus take it, and
  * the message of an item chosen. A press on a title opens its menu;
@@ -346,24 +346,24 @@ let menu_mouse menus st x y b =
   let pressed = b land 1 <> 0 && st.held land 1 = 0
   and released = b land 1 = 0 && st.held land 1 <> 0 in
   st.held <- b;
-  let title = if y < bar_height then title_at menus x 0 0 else -1
+  let title = if y < bar_height then title_at menus x 0 0 else None
   and item = item_at menus st x y in
-  if st.opened < 0 then
-    (if pressed && y < bar_height then (st.opened <- title; st.item <- -1; Taken)
-     else Ignored)
-  else if title >= 0 && b land 1 <> 0 then begin
-    (if pressed && title = st.opened then st.opened <- -1
-     else if title <> st.opened then (st.opened <- title; st.item <- -1));
-    Taken
-  end
-  else if released && item >= 0 then begin
-    let (_, items) = List.nth menus st.opened in
-    st.opened <- -1; st.item <- -1;
-    Picked (snd (List.nth items item))
-  end
-  else if (released && y >= bar_height) || (pressed && item < 0) then
-    (st.opened <- -1; st.item <- -1; Taken)
-  else (st.item <- item; Taken)
+  match st.opened, title, item with
+  | None, _, _ ->
+      if pressed && y < bar_height then
+        (st.opened <- title; st.item <- None; Taken)
+      else Ignored
+  | Some _, Some _, _ when b land 1 <> 0 ->
+      (if pressed && title = st.opened then st.opened <- None
+       else if title <> st.opened then (st.opened <- title; st.item <- None));
+      Taken
+  | Some opened, _, Some i when released ->
+      let (_, items) = List.nth menus opened in
+      st.opened <- None; st.item <- None;
+      Picked (snd (List.nth items i))
+  | Some _, _, _ when (released && y >= bar_height) || (pressed && item = None) ->
+      st.opened <- None; st.item <- None; Taken
+  | Some _, _, _ -> st.item <- item; Taken
 
 (* The bar, the width of the window, and the open menu under its title,
  * the item under the mouse in white on blue; two groups, so that a
@@ -372,7 +372,7 @@ let menu_view width menus st =
   let rec titles l i x =
     match l with
     | (t, _) :: rest ->
-        (if i = st.opened then
+        (if st.opened = Some i then
            [ Move (x, 0, Rect (selected, title_width t, bar_height - 1));
              Move (x + 8, 1, Words (light, t)) ]
          else [ Move (x + 8, 1, Words (black, t)) ])
@@ -381,22 +381,22 @@ let menu_view width menus st =
   let rec rows l k w =
     match l with
     | (s, _) :: rest ->
-        (if k = st.item then
+        (if st.item = Some k then
            [ Move (1, 2 + (16 * k), Rect (selected, w - 2, 16));
              Move (8, 2 + (16 * k), Words (light, s)) ]
          else [ Move (8, 2 + (16 * k), Words (black, s)) ])
         @ rows rest (k + 1) w
     | [] -> [] in
   let opened =
-    if st.opened < 0 then []
-    else begin
-      let (_, items) = List.nth menus st.opened in
-      let w = list_width items and h = (16 * List.length items) + 4 in
-      [ Move (title_x menus st.opened, bar_height,
-          Group (Rect (black, w, h)
-                 :: Move (1, 1, Rect (light, w - 2, h - 2))
-                 :: rows items 0 w)) ]
-    end in
+    match st.opened with
+    | None -> []
+    | Some opened ->
+        let (_, items) = List.nth menus opened in
+        let w = list_width items and h = (16 * List.length items) + 4 in
+        [ Move (title_x menus opened, bar_height,
+            Group (Rect (black, w, h)
+                   :: Move (1, 1, Rect (light, w - 2, h - 2))
+                   :: rows items 0 w)) ] in
   [ Group (Rect (face, width, bar_height - 1)
            :: Move (0, bar_height - 1, Rect (dark, width, 1))
            :: titles menus 0 0);

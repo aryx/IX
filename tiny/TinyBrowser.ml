@@ -137,7 +137,7 @@ let load sc url =
   sc.sc_doc.dc_type <- None;
   sc.sc_doc.dc_status <- None;
   sc.sc_doc.dc_file <- None;
-  sc.sc_state <- "reading";
+  sc.sc_state <- Page_reading;
   sc.sc_tools.tb_field <- url;
   draw_bar sc;
   draw_tools sc;
@@ -145,7 +145,8 @@ let load sc url =
   (* the page asked of the wire's other end, on its port 70 *)
   let fd = u_dial "10.0.0.1" 70 in
   if fd < 0 then begin
-    sc.sc_state <- "www: no network (tiny-machine -net dir gives one)";
+    sc.sc_state <-
+      Page_none "www: no network (tiny-machine -net dir gives one)";
     finish sc.sc_page
   end
   else begin
@@ -385,7 +386,7 @@ let browse typed =
       sc_cols = w / 8; sc_rows = h / 16; sc_y = 0; sc_drawn = 0;
       sc_doc = { dc_got = 0; dc_head = ""; dc_type = None; dc_status = None;
                  dc_file = None };
-      sc_state = "reading"; sc_msgs = [] } in
+      sc_state = Page_reading; sc_msgs = [] } in
   put sc colours;
   put sc (d_image c_strip (0, 0, sc.sc_cols * 8, 16) 255);
   load sc (absolute typed);
@@ -427,7 +428,7 @@ let browse typed =
           body_end sc;
           finish sc.sc_page;
           hang_up sc;
-          sc.sc_state <- "done";
+          sc.sc_state <- Page_done;
           (* a page that sends us on (a search's result), not to itself *)
           let on =
             resolve sc.sc_nav.nv_address (base sc.sc_page)

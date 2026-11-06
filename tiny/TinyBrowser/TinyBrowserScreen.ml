@@ -83,6 +83,12 @@ type doc = {
   mutable dc_file : int option;      (* the file a helper's bytes go to *)
 }
 
+(* where the page is: being read, read, or none, and why *)
+type state =
+  | Page_reading
+  | Page_done
+  | Page_none of string
+
 type screen = {
   mutable sc_page : page;
   sc_nav : nav;
@@ -93,7 +99,7 @@ type screen = {
   mutable sc_drawn : int;           (* the lines before this one that are in
                                      * the area are drawn *)
   sc_doc : doc;
-  mutable sc_state : string;        (* "reading", "done", or why there is no page *)
+  mutable sc_state : state;
   mutable sc_msgs : string list;    (* drawing messages not yet written, last
                                      * first *)
 }
@@ -291,8 +297,9 @@ let draw_status sc =
   let d = sc.sc_doc in
   let kb = string_of_int ((d.dc_got + 1023) / 1024) ^ " KB" in
   let text =
-    (if sc.sc_state = "reading" then "reading, " ^ kb
-     else if sc.sc_state = "done" then
+    (match sc.sc_state with
+     | Page_reading -> "reading, " ^ kb
+     | Page_done ->
        (match d.dc_status with
         | Some n when n <> 200 -> string_of_int n ^ ", "
         | _ -> "")
@@ -302,7 +309,7 @@ let draw_status sc =
               ", picture " ^ string_of_int (id + 1) ^ " of "
               ^ string_of_int (pictures sc.sc_page)
           | _ -> "")
-     else sc.sc_state)
+     | Page_none why -> why)
     ^ "   space -: page, b: back, g: address, q: quit" in
   put sc (d_text 0 c_black (8, row * 16) (clip sc text))
 

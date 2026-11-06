@@ -537,3 +537,9 @@ the speaker, then B and the kernel's trace. A commit each.
   body is given it, so neither reads the field after the head. +8
   lines. Seen and left: the screen's `sc_state`, a string that is
   "reading", "done", or why there is no page (a variant).
+- The screen's `sc_state`, a string that was "reading", "done", or
+  why there is no page: `Page_reading | Page_done | Page_none of
+  string` (Page_, as TinyCalls, which the browser opens, has a
+  Reading); draw_status a match on it. +14 lines, most the type, a
+  case a line, in the .ml and the .mli. The survey's browser items
+  are all done.

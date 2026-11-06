@@ -86,6 +86,12 @@ type doc = {
   mutable dc_file : int option;      (* the file a helper's bytes go to *)
 }
 
+(* where the page is: being read, read, or none, and why *)
+type state =
+  | Page_reading
+  | Page_done
+  | Page_none of string
+
 type screen = {
   mutable sc_page : TinyBrowserHtml.page;
   sc_nav : nav;
@@ -96,7 +102,7 @@ type screen = {
   mutable sc_drawn : int;           (* the lines before this one that are in
                                      * the area are drawn *)
   sc_doc : doc;
-  mutable sc_state : string;        (* "reading", "done", or why there is no page *)
+  mutable sc_state : state;
   mutable sc_msgs : string list;    (* drawing messages not yet written, last
                                      * first *)
 }

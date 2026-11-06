@@ -27,9 +27,15 @@ type ('m, 'msg) gui = {
   key : int -> 'msg list;
 }
 
+(* a box: x, y, width, height, in pixels *)
+type box = int * int * int * int
+
 (* what a box does with the mouse or the keys: a button's message; a
  * field's text, and the message of another one *)
 type 'msg action = Send of 'msg | Edit of string * (string -> 'msg)
+
+(* the boxes that answer the mouse or the keys, each with its action *)
+type 'msg boxes = (box * 'msg action) list
 
 (* what is kept under the model: where the mouse's button went down
  * (px -1: it is up), where the mouse is, where its button last went
@@ -71,7 +77,7 @@ and widest l =
     let (cw, ch) = size c in
     max w cw, max h ch) (0, 0) l
 
-let inside x y (x0, y0, w, h) = x >= x0 && y >= y0 && x < x0 + w && y < y0 + h
+let inside x y ((x0, y0, w, h) : box) = x >= x0 && y >= y0 && x < x0 + w && y < y0 + h
 
 (* a text in a white box, tx from its left *)
 let boxed x y w h tx s =
@@ -133,7 +139,7 @@ let laid (g : ('m, 'msg) gui) model =
  * box it is in: the button held (the mouse went down in it and is
  * still in it), its edges the other way round; the caret of the field
  * that has the keys, after its text *)
-let over boxes m =
+let over (boxes : 'msg boxes) m =
   List.concat (List.map (fun ((x, y, w, h), action) ->
     let box = x, y, w, h in
     match action with
@@ -204,7 +210,7 @@ let redraw shown was now is =
  * sends its message (so a press is taken back by leaving the button).
  * A mouse that moves with its button up is the same mouse, the same
  * value. *)
-let mouse (g : ('m, 'msg) gui) boxes model m x y b =
+let mouse (g : ('m, 'msg) gui) (boxes : 'msg boxes) model m x y b =
   if b land 1 = 1 then
     model,
     (if m.px < 0 then { px = x; py = y; x = x; y = y; fx = x; fy = y }
@@ -229,7 +235,7 @@ let editing boxes m =
 (* A key: the field that has the keys sends its text with the
  * character more, or one less at a backspace; with no such field, the
  * program's messages for the key, one after the other *)
-let key (g : ('m, 'msg) gui) boxes model m k =
+let key (g : ('m, 'msg) gui) (boxes : 'msg boxes) model m k =
   match editing boxes m with
   | (_, Edit (s, f)) :: _ ->
       if k = 8 || k = 127 then
@@ -548,7 +554,7 @@ let paint erased (l, mark) =
  * into only when an erasing meets the box) *)
 type part =
   | Changed of ((int * int * shape) * (int * int)) list
-  | Same of (int * int * shape) list * (int * int * int * int)
+  | Same of (int * int * shape) list * box
 
 let repaint shown now =
   let rec pairs olds news erased parts =

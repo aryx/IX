@@ -245,3 +245,12 @@ failure now a Failure, which the shell's fork makes its own Error
 again, the one its children's handler takes); `exit` takes an Exit.t
 (Err's words said first: Cap.stderr). +36 code lines over seven
 files.
+
+2026-11-06, stage 3 built (the author: "let's move forward"):
+TinyLibGUI's `box` (x, y, width, height) and `'msg boxes`, the boxes
+with their actions, which the comments already called so ([mouse g
+boxes model ...]): `laid`, `place`, `over`, `mouse`, `key`, `redraw`,
+`inside` and the repaint's `Same`; TinyBrowserScreen's `laid_tools`
+and TinyDebugger's model on them. TinyOffice's strokes and
+TinyWindows' sweeps are two corners, not a box: left. -5 code lines
+(the .mli's shorter; the .ml +2, its two types).

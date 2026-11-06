@@ -157,47 +157,46 @@ val run : ('m, 'msg) gui -> 'a
 type mouse = { px : int; py : int; x : int; y : int; fx : int; fy : int }
 val up : mouse
 
-(* what a box (x, y, width, height) does: a button's message; a field's
- * text and the message of another one *)
+(* a box: x, y, width, height, in pixels *)
+type box = int * int * int * int
+
+(* what a box does: a button's message; a field's text and the message
+ * of another one *)
 type 'msg action = Send of 'msg | Edit of string * (string -> 'msg)
+
+(* the boxes that answer the mouse or the keys, each with its action *)
+type 'msg boxes = (box * 'msg action) list
 
 (* the size a widget asks for; a model's widgets at their places: a
  * shape each, and the boxes that answer the mouse or the keys *)
 val size : 'msg widget -> int * int
-val laid :
-  ('m, 'msg) gui -> 'm ->
-  TinyLibPlayground.shape list * ((int * int * int * int) * 'msg action) list
+val laid : ('m, 'msg) gui -> 'm -> TinyLibPlayground.shape list * 'msg boxes
 
 (* [place x y w h widget]: a widget given that box, as [laid] places a
  * model's (a program that draws its own window and has a few widgets
  * on it: the browser's toolbar) *)
 val place :
   int -> int -> int -> int -> 'msg widget ->
-  TinyLibPlayground.shape list * ((int * int * int * int) * 'msg action) list
+  TinyLibPlayground.shape list * 'msg boxes
 
 (* what is drawn over the widgets, by the mouse: a held button's edges,
  * the caret of the field that has the keys; each with its box *)
-val over :
-  ((int * int * int * int) * 'msg action) list -> mouse ->
-  ((int * int * int * int) * TinyLibPlayground.shape) list
+val over : 'msg boxes -> mouse -> (box * TinyLibPlayground.shape) list
 
 (* [mouse g boxes model m x y buttons]: the model and the mouse after
  * the mouse is there; [key g boxes model m k]: the model after a key *)
 val mouse :
-  ('m, 'msg) gui -> ((int * int * int * int) * 'msg action) list -> 'm ->
-  mouse -> int -> int -> int -> 'm * mouse
-val key :
-  ('m, 'msg) gui -> ((int * int * int * int) * 'msg action) list -> 'm ->
-  mouse -> int -> 'm
+  ('m, 'msg) gui -> 'msg boxes -> 'm -> mouse -> int -> int -> int ->
+  'm * mouse
+val key : ('m, 'msg) gui -> 'msg boxes -> 'm -> mouse -> int -> 'm
 
 (* [redraw shown was now is]: after the shapes shown and what was over
  * them, the shapes now and what is over them, drawn where they differ
  * (a test's: on the window, image 0) *)
 val redraw :
-  TinyLibPlayground.shape list ->
-  ((int * int * int * int) * TinyLibPlayground.shape) list ->
-  TinyLibPlayground.shape list ->
-  ((int * int * int * int) * TinyLibPlayground.shape) list -> unit
+  TinyLibPlayground.shape list -> (box * TinyLibPlayground.shape) list ->
+  TinyLibPlayground.shape list -> (box * TinyLibPlayground.shape) list ->
+  unit
 
 (* Pull-down menus, for a program that draws its whole window (the
  * office): a bar of titles across its top, each a menu of items, each
@@ -235,8 +234,8 @@ val menu_view :
   int -> (string * (string * 'msg) list) list -> menu_state ->
   TinyLibPlayground.shape list
 
-(* a point in a box (x, y, width, height) *)
-val inside : int -> int -> int * int * int * int -> bool
+(* a point in a box *)
+val inside : int -> int -> box -> bool
 
 (* A program that draws its whole window, below the widgets (emacs,
  * the office): its first model, given its window's size in pixels; its

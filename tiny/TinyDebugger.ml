@@ -397,7 +397,7 @@ let rec loop () =
 type model = {
   log : string list; cmd : string; panes : string list; held : int;
   w : int; h : int; bar : shape list;
-  boxes : ((int * int * int * int) * string action) list;
+  boxes : string boxes;
 }
 
 (* a text's lines, the tabs as spaces to the next multiple of 8 *)

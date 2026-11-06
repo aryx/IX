@@ -131,9 +131,7 @@ val image_of : int -> int
  * shapes and boxes), the status row *)
 val draw_bar : screen -> unit
 val laid_tools :
-  screen ->
-  TinyLibPlayground.shape list
-  * ((int * int * int * int) * act TinyLibGUI.action) list
+  screen -> TinyLibPlayground.shape list * act TinyLibGUI.boxes
 val draw_tools : screen -> unit
 val draw_status : screen -> unit
 

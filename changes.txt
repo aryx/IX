@@ -30,8 +30,6 @@
   instructions there
 - make's test targets named by category
 
-* -----------------------------------------------------------
-
 * 0.2 (Q4.1 2026) (mini-9pi built by ix and on real Pi 1 and Pi 2 boards, mini-rio, a browser, an office, sound, IX in a web page, Doom and Quake, a PIM, a debugger, dotnet, ix built in its own system)
 
 ** kernels
@@ -274,8 +272,6 @@
 - finished plans in docs/plans/done/; plans proposed: riscv, l4, xen,
   dos, wifi, the GPU, swap, cmm, the gaps a textbook would show,
   replay in the debugger
-
-* -----------------------------------------------------------
 
 * 0.1 (Q3.3 2026) (first commit, m-ix and t-ix, toolchain v0, mini-qemu boots xv6 and 9pi, mini-xv6, mini-9pi, mini-ml, ix built by ix)
 

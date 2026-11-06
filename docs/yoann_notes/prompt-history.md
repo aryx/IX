@@ -63374,3 +63374,49 @@ Claude moved self-mix's makefile invocation to a `-f` file, since macOS's GNU ma
 Claude set mini-files' frame dates with `TZ=UTC touch -t`, because BSD `touch -d` rejected the timestamp.
 Claude reran `make test` on macOS (158 jobs, 0 failures) and on Linux via `make build-docker` (187 jobs, 0 failures).
 Claude then checked that the ELF test skipped on macOS in `tables.sh` had actually run on Linux.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 08:08
+
+**Yoann:**
+
+> ./mini-pi -g -q mini-9pi is taking again a very long tine; it used to take 20s max
+
+------------------------------------------------------------------------
+
+## 2026-11-06 08:08
+
+**Yoann:**
+
+> I am running make test-all amd make check in parallel, but I didn't expect it would influence the run of mini-pi
+
+------------------------------------------------------------------------
+
+## 2026-11-06 08:08
+
+**Yoann:**
+
+> does it cause the recompilation again and again of files for mini-pi?
+
+------------------------------------------------------------------------
+
+## 2026-11-06 08:09
+
+**Yoann:**
+
+> I've finish the other make test-all and make check
+
+------------------------------------------------------------------------
+
+## 2026-11-06 08:09
+
+**Yoann:**
+
+> to avoid noise
+
+**Claude (summary):**
+
+Claude checked whether mini-ml was responsible for the rebuilds and found it unchanged since Nov 4.
+Claude concluded that mini-ml is not what triggers the rebuilds.
+Claude's next step is to look for what in test-all or check writes into `_mk/5-plan9`.

@@ -47,9 +47,9 @@ type extra = {
     (* the lines above the screen, each with the comments open at its end *)
   mutable faced : (string * int * string * int) list;
     (* the screen's: a line, the comments open before and after, its faces *)
-  mutable pieced : (string * string * int * shape) list;
+  mutable pieced : (string * string * int option * shape) list;
     (* the screen's lines as shapes: a line, its faces, the cursor's column
-     * in it, its shape *)
+     * in it if it is there, its shape *)
 }
 
 (* (three records: tiny-ml makes one of 11 fields at most on
@@ -664,14 +664,18 @@ let colour_of (face : char) =
 
 let face_at (f : string) (k : int) = if k < String.length f then f.[k] else '.'
 
-(* line i's pieces from column k on, the last first on acc *)
-let rec pieces (i : int) (l : string) (f : string) (cut : int) (k : int) acc =
+(* line i's pieces from column k on, the last first on acc, cut at the
+ * cursor's column if the cursor is on the line *)
+let rec pieces (i : int) (l : string) (f : string) (cut : int option)
+    (k : int) acc =
   let n = String.length l in
   if k >= n then acc
   else begin
     let c = face_at f k in
     let rec stop j =
-      if j < n && j <> cut && face_at f j = c then stop (j + 1) else j in
+      match cut with
+      | Some x when j = x -> j
+      | _ -> if j < n && face_at f j = c then stop (j + 1) else j in
     let j = stop (k + 1) in
     pieces i l f cut j
       (Move (8 * k, 16 * i, Words (colour_of c, String.sub l k (j - k))) :: acc)
@@ -687,7 +691,7 @@ let shapes (e : editor) (n : int) : shape list =
     match lines with
     | l :: rest when i < n ->
         let f, fs = match fs with f :: more -> f, more | [] -> "", [] in
-        let cut = if i = cy then cx else -1 in
+        let cut = if i = cy then Some cx else None in
         let old, olds =
           match olds with o :: more -> Some o, more | [] -> None, [] in
         let g = match old with

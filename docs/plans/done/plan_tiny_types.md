@@ -551,3 +551,9 @@ the speaker, then B and the kernel's trace. A commit each.
   List.nth_opt. The release a match: exit, chosen, or nothing. +15
   lines, most the type a case a line. Checked by tiny-kernel's
   sessions, which open the menu and choose New (their screens).
+- TinyEditorScreen's `cut`, the column where the cursor's line is cut
+  into pieces, an int option (old: -1 on the other lines), and so in
+  the screen's lines kept as shapes (`pieced`). pieces' stop matches
+  it (`Some x when j = x`), so the loop over a line's characters makes
+  no option; the line's Some is made once a picture. +4 lines.
+  Checked by tiny-kernel's emacs sessions (their screens).

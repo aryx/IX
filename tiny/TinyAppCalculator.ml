@@ -35,16 +35,17 @@ let limit = 999999999
 (* what a button or a key says *)
 type msg = Digit of int | Op of char | Equals | Clear
 
-(* kept op shown: the number, and whether there is one (none by 0, none
- * past the limit: a product is asked by a division, before it is made) *)
-let result { kept = a; shown = b; op; _ } : int * bool =
+(* the operation that awaits, done on the kept number and the shown one;
+ * None when it has no result: a division by 0, or past [limit] (a
+ * product is checked by a division before it is made) *)
+let result { kept = a; shown = b; op; _ } : int option =
   match op with
-  | Some '/' -> if b = 0 then 0, false else a / b, true
+  | Some '/' -> if b = 0 then None else Some (a / b)
   | Some '*' ->
-      if a <> 0 && abs b > limit / abs a then 0, false else a * b, true
+      if a <> 0 && abs b > limit / abs a then None else Some (a * b)
   | _ ->
       let v = match op with Some '+' -> a + b | Some '-' -> a - b | _ -> b in
-      v, abs v <= limit
+      if abs v <= limit then Some v else None
 
 (* an operation asked (None: the equals): the one that awaited is done,
  * this one awaits; asked right after another, it takes its place *)
@@ -52,8 +53,9 @@ let operate (m : model) (op : char option) : model =
   if m.fresh && m.op <> None && op <> None then
     { m with op; fresh = true; wrong = false }
   else
-    (let (v, ok) = result m in
-     { shown = v; kept = v; op = op; fresh = true; wrong = not ok })
+    (match result m with
+     | Some v -> { shown = v; kept = v; op; fresh = true; wrong = false }
+     | None -> { shown = 0; kept = 0; op; fresh = true; wrong = true })
 
 let update (msg : msg) (m : model) : model =
   match msg with

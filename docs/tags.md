@@ -18,7 +18,7 @@ become boxes in the books. Here they are words in an OCaml comment.
 | The file | Its header comment |
 |---|---|
 | `X.mli` | the first thing in the file: no author's line, no copyright (an interface is not copyrightable) |
-| `X.ml` with an `X.mli` | `(* See X.mli *)`, after the two lines |
+| `X.ml` with an `X.mli` | none needed: the `.mli` next to it is the module's. When the `.ml` has something of its own to say (how it is tested: `testing:`), that comment, after the two lines, in place of the old `(* See X.mli *)` |
 | `X.ml` without one (a program in one file, `utilities/files/Cat.ml`; a module that is its types, `shell/Ast.ml`) | the comment after the two lines |
 | a program in several files | its `CLI.mli`'s: the program as a whole, its history, then the command line. Its modules' interfaces each have their own part of the story |
 
@@ -124,8 +124,12 @@ the module's own, and has no tag.
 | `wib:` | worse is better: a deliberate simplification, and what it costs | cat with no option (`utilities/files/Cat.ml`) |
 | `why-study:` | why this old or small thing is worth reading | |
 | `plan9-is-cleaner:` | what Plan 9 made simpler than Unix, seen in this module | /env, a file a variable (`shell/Env.mli`); a directory made by create (`utilities/files/Mkdir.ml`) |
+| `testing:` | how the module is checked: the test script, what it compares with, the laws it checks | arithmetic by messages to `update`, buttons by mouse events (`tiny/TinyAppCalculator.ml`) |
 
-The last one is principia's and not mini-chrome's: ix follows Plan 9.
+`plan9-is-cleaner:` is principia's and not mini-chrome's: ix follows
+Plan 9. `testing:` is ix's own, and it goes in the `.ml`'s header,
+not the `.mli`'s: the interface tells the module, the implementation
+how it is made sure of.
 
 ## Counting them
 

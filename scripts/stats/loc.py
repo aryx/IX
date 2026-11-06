@@ -261,7 +261,7 @@ def header(path, text):
 # comment, before the paragraph it is about
 TAGS = ["cs-history", "modern", "others", "evolution", "design",
         "terminology", "why-win", "comeback", "road-not-taken", "reframe",
-        "wib", "why-study", "plan9-is-cleaner"]
+        "wib", "why-study", "plan9-is-cleaner", "testing"]
 
 
 def tagged(text):

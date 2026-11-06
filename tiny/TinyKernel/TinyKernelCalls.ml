@@ -75,9 +75,12 @@ let rec exit_proc p status =
    | Some t -> t.said <- t.said @ [ "exited " ^ string_of_int status ^ "\n" ]
    | None -> ());
   List.iter (fun q -> if q.parent = p.pid then q.parent <- 0) !procs;
-  ended := List.filter (fun (parent, _, _) -> parent <> p.pid) !ended;
+  ended := List.filter (fun e -> e.end_parent <> p.pid) !ended;
   if p.pid = 1 then halt status;
-  if p.parent <> 0 then ended := !ended @ [ (p.parent, p.pid, status) ];
+  if p.parent <> 0 then
+    ended :=
+      !ended
+      @ [ { end_parent = p.parent; end_pid = p.pid; end_status = status } ];
   release p
 
 and release q =
@@ -279,11 +282,11 @@ let sys_wait p =
   let a = reg p 1 in
   if a <> 0 then ignore (user_out p a 4);
   block p (fun () ->
-    match List.filter (fun (parent, _, _) -> parent = p.pid) !ended with
-    | (_, pid, s) :: _ ->
-        if a <> 0 then poke (user_out p a 4) s;
-        ended := List.filter (fun (_, q, _) -> q <> pid) !ended;
-        result p pid;
+    match List.filter (fun e -> e.end_parent = p.pid) !ended with
+    | e :: _ ->
+        if a <> 0 then poke (user_out p a 4) e.end_status;
+        ended := List.filter (fun e' -> e'.end_pid <> e.end_pid) !ended;
+        result p e.end_pid;
         true
     | [] ->
         if List.exists (fun q -> q.parent = p.pid) !procs then false

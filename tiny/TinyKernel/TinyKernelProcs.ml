@@ -42,8 +42,10 @@ let procs = ref []
 let next_pid = ref 1
 let deaths = ref 0
 
-(* the children ended, not waited for: parent, pid, status *)
-let ended = ref []
+(* the children ended, not waited for (end_: the labels are one name
+ * space, and a process has a pid and a parent too) *)
+type ending = { end_parent : int; end_pid : int; end_status : int }
+let ended : ending list ref = ref []
 
 (* /dev/ps: a line a process, in the scheduler's order; running is on a
  * core now (the reader itself, on core 0 for its call) *)

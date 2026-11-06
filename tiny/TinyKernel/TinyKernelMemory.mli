@@ -169,6 +169,12 @@ val mem_high : int
  * with segments a text *)
 type space
 
+(* an address: the process's (its va), the kernel's (where the machine's
+ * memory has it); [mem_address]'s -1 for none, not an option: it is
+ * asked at each read and write, and allocates nothing *)
+type vaddr = int
+type kaddr = int
+
 (* no block of the size asked for is free now *)
 exception No_room
 
@@ -204,13 +210,13 @@ val mem_copy : space -> space -> unit
  * a page not touched yet, given (zeroed), or a page a fork shares,
  * copied; true when the process goes on, false when it is to die (and
  * always without pages) *)
-val mem_fault : space -> int -> bool
+val mem_fault : space -> vaddr -> bool
 
 (* [mem_address sp va n]: the kernel's address of the n bytes at the
  * process's va, -1 if they are not all the process's, or (with pages)
  * not in one piece; a word or a byte is (an aligned word is in one
  * page) *)
-val mem_address : space -> int -> int -> int
+val mem_address : space -> vaddr -> int -> kaddr
 
 (* [mem_pieces sp va n]: the n bytes at va as the pieces of the
  * machine's memory that hold them, in order, (the kernel's address, the
@@ -218,26 +224,26 @@ val mem_address : space -> int -> int -> int
  * a partition; two with segments when they cross from the text to the
  * data; with pages, a piece a page (the frames are anywhere):
  * for a buffer, the kernel goes by them (TinyKernelProcs's user_iter) *)
-val mem_pieces : space -> int -> int -> (int * int) list option
+val mem_pieces : space -> vaddr -> int -> (kaddr * int) list option
 
 (* [mem_writable sp va n]: whether the kernel may write those bytes for
  * the process: not in its text *)
-val mem_writable : space -> int -> int -> bool
+val mem_writable : space -> vaddr -> int -> bool
 
 (* a word read at va; a word, a byte, a string written at va; [mem_blit
  * sp va a n] the kernel's n bytes at a written at va. va is checked by
  * the caller ([mem_address]). A word or a byte written in the text
  * makes it sp's own (a copy: No_room); a string and n bytes are the
  * loader's, written where it says, in the text too *)
-val mem_fetch : space -> int -> int
-val mem_store : space -> int -> int -> unit
-val mem_store_byte : space -> int -> int -> unit
-val mem_write : space -> int -> string -> unit
-val mem_blit : space -> int -> int -> int -> unit
+val mem_fetch : space -> vaddr -> int
+val mem_store : space -> vaddr -> int -> unit
+val mem_store_byte : space -> vaddr -> int -> unit
+val mem_write : space -> vaddr -> string -> unit
+val mem_blit : space -> vaddr -> kaddr -> int -> unit
 
 (* the machine set to run a process in sp: core 0's windows
  * ([mem_window]: the data's, the text's), or another core's, the
  * mailbox's words at m, m + 4 (the data), m + 20, m + 24 (the text)
  * ([mem_post sp m]) *)
 val mem_window : space -> unit
-val mem_post : space -> int -> unit
+val mem_post : space -> kaddr -> unit

@@ -113,22 +113,27 @@ let rec prefix l m =
   | _ -> false
 let numbered who n = List.init n (fun i -> Printf.sprintf "%s's message %d" who i)
 
+(* a header, its fields in the wire's order *)
+let header ih_kind ih_sport ih_dport ih_id ih_ack =
+  { ih_kind; ih_sport; ih_dport; ih_id; ih_ack }
+
 let il_laws () =
   let a = net_machine and b = net_peer in
-  let sync = ip_packet ip_il a b (il_message il_sync 5000 70 1000 0 "") in
+  let sync =
+    ip_packet ip_il a b (il_message (header Il_sync 5000 70 1000 0) "") in
   print_endline (hex sync);
-  let data = il_message il_data 5000 70 1001 5000 "hello.txt" in
+  let data = il_message (header Il_data 5000 70 1001 5000) "hello.txt" in
   check "IL's header is 18 bytes, and read back"
     (String.length data = 27
-     && il_read data = Some (il_data, 5000, 70, 1001, 5000, "hello.txt"));
+     && il_read data = Some (header Il_data 5000 70 1001 5000, "hello.txt"));
   check "a byte damaged, anywhere: not read"
     (List.for_all (fun i -> il_read (damaged data i) = None)
        (List.init 27 Fun.id));
   check "cut, or longer than it says: not read"
     (il_read (String.sub data 0 26) = None && il_read (data ^ "x") = None);
   check "a number over 2^30: not read"
-    (il_read (il_message il_data 1 2 0x40000000 0 "") = None
-     && il_read (il_message il_data 1 2 0x3fffffff 0 "") <> None);
+    (il_read (il_message (header Il_data 1 2 0x40000000 0) "") = None
+     && il_read (il_message (header Il_data 1 2 0x3fffffff 0) "") <> None);
   (* a conversation with nothing lost, and its packets *)
   let got_a, got_b, ended, sent, _, _, trace =
     converse (fun _ -> false) [ "hello.txt" ]
@@ -156,7 +161,7 @@ let il_laws () =
           (fun (_, p) ->
             ip_read a p <> None
             && (match il_read (String.sub p 20 (String.length p - 20)) with
-                | Some (k, _, _, id, _, _) -> k = il_dataquery && id = 5003
+                | Some (h, _) -> h.ih_kind = Il_dataquery && h.ih_id = 5003
                 | None -> false))
           trace)
      = 1);
@@ -170,7 +175,7 @@ let il_laws () =
       (List.filter
          (fun (_, p) ->
            match il_read (String.sub p 20 (String.length p - 20)) with
-           | Some (k, _, _, _, _, _) -> k = il_dataquery || k = il_query
+           | Some (h, _) -> h.ih_kind = Il_dataquery || h.ih_kind = Il_query
            | None -> false)
          trace) in
   Printf.printf "a slow reader: %d packets, %d ticks, at most %d waiting, "
@@ -189,15 +194,15 @@ let il_laws () =
       (List.filter
          (fun (_, p) ->
            match il_read (String.sub p 20 (String.length p - 20)) with
-           | Some (k', _, _, _, _, _) -> k' = k
+           | Some (h, _) -> h.ih_kind = k
            | None -> false)
          trace) in
   Printf.printf
     "a slower reader: %d packets, %d ticks, %d queries, %d states, %d sent again\n"
-    sent ticks (kinds il_query) (kinds il_state) (kinds il_dataquery);
+    sent ticks (kinds Il_query) (kinds Il_state) (kinds Il_dataquery);
   check
     "read every 60 ticks: all 30, asked where it is, nothing sent again"
-    (got_a = slower && ended && kinds il_query > 0 && kinds il_dataquery = 0);
+    (got_a = slower && ended && kinds Il_query > 0 && kinds Il_dataquery = 0);
   (* nobody listens; nobody is there *)
   let s = net_stack a 1000 and t = net_stack b 5000 in
   let c, sync = net_dial s b 71 0 in
@@ -284,11 +289,11 @@ let () =
     ^ "\x00\x00\xc0\xa8\x00\x01\xc0\xa8\x00\xc7" in
   check "the checksum of a known header" (net_sum book = 0xb861);
   check "an odd number of bytes" (net_sum "\x01\x02\x03" = 0xffff - 0x0402);
-  let question = ip_packet ip_icmp a b (icmp_message icmp_ask 7 1 "ping") in
+  let question = ip_packet ip_icmp a b (icmp_message Echo_ask 7 1 "ping") in
   print_endline (hex question);
   check "a packet is 20 bytes and what it carries" (String.length question = 32);
   check "a packet read by whom it is for"
-    (ip_read b question = Some (ip_icmp, a, icmp_message icmp_ask 7 1 "ping"));
+    (ip_read b question = Some (ip_icmp, a, icmp_message Echo_ask 7 1 "ping"));
   check "not read by another" (ip_read a question = None);
   check "a byte of the header damaged: dropped"
     (List.for_all (fun i -> ip_read b (damaged question i) = None)
@@ -314,7 +319,7 @@ let () =
   check "an empty question"
     (net_input a
        (List.hd
-          (fst (net_input b (ip_packet ip_icmp a b (icmp_message icmp_ask 1 2 "")))))
+          (fst (net_input b (ip_packet ip_icmp a b (icmp_message Echo_ask 1 2 "")))))
      = ([], Some (b, 1, 2, "")));
   let big = String.make 1024 'x' in
   check "a question of 1,024 bytes"
@@ -322,7 +327,7 @@ let () =
        (List.hd
           (fst
              (net_input b
-                (ip_packet ip_icmp a b (icmp_message icmp_ask 9 300 big)))))
+                (ip_packet ip_icmp a b (icmp_message Echo_ask 9 300 big)))))
      = ([], Some (b, 9, 300, big)));
   check "another protocol: nothing"
     (net_input b (ip_packet 40 a b "hello") = ([], None));

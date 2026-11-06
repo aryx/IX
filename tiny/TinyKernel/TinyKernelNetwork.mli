@@ -188,26 +188,24 @@ val ip_icmp : int
 val ip_packet : int -> string -> string -> string -> string
 val ip_read : string -> string -> (int * string * string) option
 
-(* ICMP's echo: a message (its kind, whose, which one, the bytes), read *)
-val icmp_ask : int
-val icmp_answer : int
-val icmp_message : int -> int -> int -> string -> string
-val icmp_read : string -> (int * int * int * string) option
+(* ICMP's echo: a message (its kind, whose, which one, the bytes), read;
+ * its kinds, echo's question (8) and answer (0), or another *)
+type icmp_kind = Echo_ask | Echo_answer | Icmp_other of int
+val icmp_message : icmp_kind -> int -> int -> string -> string
+val icmp_read : string -> (icmp_kind * int * int * string) option
 
-(* IL (IP's number 40). A packet: its kind (one of seven), the sender's
- * port, the other's, its number, the last number its sender received
- * in order, a message; read back, None when cut, damaged, or its
- * numbers over 2^30 *)
+(* IL (IP's number 40). A packet: its header (its kind, one of seven,
+ * the sender's port, the other's, its number, the last number its
+ * sender received in order), a message; read back, None when cut,
+ * damaged, or its numbers over 2^30 *)
 val ip_il : int
-val il_sync : int
-val il_data : int
-val il_dataquery : int
-val il_ack : int
-val il_query : int
-val il_state : int
-val il_close : int
-val il_message : int -> int -> int -> int -> int -> string -> string
-val il_read : string -> (int * int * int * int * int * string) option
+type il_kind =
+  | Il_sync | Il_data | Il_dataquery | Il_ack | Il_query | Il_state | Il_close
+type il_header =
+  { ih_kind : il_kind; ih_sport : int; ih_dport : int; ih_id : int;
+    ih_ack : int }
+val il_message : il_header -> string -> string
+val il_read : string -> (il_header * string) option
 
 (* One end of a connection: where it is, what it sends, what it
  * receives (TinyKernelNetwork.ml says each field) *)

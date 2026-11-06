@@ -297,3 +297,24 @@ machine's or the disk's:
   `inode option` (old: 0 for none), `fs_io`'s command a `disk_io`
   (`Disk_read | Disk_write`), made the device's 1 or 2 where the
   kernel pokes it. +33 code lines (8 of them the FS's tests).
+
+2026-11-06, stage 6 built (the author: "excellent! Let's commit and
+move forward"):
+- the network: IL's seven kinds a variant, `il_kind` (`Il_sync` ...
+  `Il_close`), Plan 9's numbers only on the wire (`il_code`,
+  `il_kinds`: an array by Array.of_list, tiny-ml reading no [| |]);
+  IL's header a record, `il_header` (`ih_kind`, `ih_sport`,
+  `ih_dport`, `ih_id`, `ih_ack`), which `il_message` takes and
+  `il_read` gives with the message (old: five ints, and a 6-tuple
+  back); ICMP's kinds `Echo_ask | Echo_answer | Icmp_other of int`
+  (the peer's trace says another's number); tiny-machine's peer and
+  the network's test on them;
+- the memory: `vaddr` and `kaddr`, the process's address and the
+  kernel's, in TinyKernelMemory's signatures; `mem_address`'s -1
+  kept, not an option: it is asked at each read and write, and an
+  option allocates (the comment above sys_rw: an allocation a call
+  once slowed the kernel enough to reorder a test's lines);
+- the processes: `ended` a list of `ending` records (`end_parent`,
+  `end_pid`, `end_status`; old: a triple).
++35 code lines (24 the network's: its types, the numbers' two ways,
+the headers written whole).

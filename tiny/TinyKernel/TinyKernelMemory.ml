@@ -41,6 +41,10 @@ and text = {
   mutable users : int; mutable known : bool;
 }
 
+(* an address: the process's, the kernel's (TinyKernelMemory.mli) *)
+type vaddr = int
+type kaddr = int
+
 (* the blocks given: the spaces' and the texts' *)
 let used = ref []
 let next_sid = ref 1

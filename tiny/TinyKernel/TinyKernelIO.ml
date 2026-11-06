@@ -216,7 +216,7 @@ let write f a n =
       else begin
         l.asked <- l.asked + 1;
         net_send (ip_packet ip_icmp net_machine l.peer
-          (icmp_message icmp_ask l.lid l.asked (k_string a n)));
+          (icmp_message Echo_ask l.lid l.asked (k_string a n)));
         Some n
       end
   (* a message: now, or when the other end has acknowledged enough of

@@ -81,8 +81,9 @@ val deaths : int ref
  * pid, theirs, their status, the first ended first; dropped if the
  * parent ends first. (old: a Zombie state, the process kept whole for
  * its status until its parent's wait: www's helpers, never waited for,
- * held a slot and 4 MB each while www ran) *)
-val ended : (int * int * int) list ref
+ * held a slot and 4 MB each while www ran; old: a triple) *)
+type ending = { end_parent : int; end_pid : int; end_status : int }
+val ended : ending list ref
 
 (* a register of its frame (r1..r15, the pc as 16), read and written *)
 val reg : proc -> int -> int

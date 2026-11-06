@@ -27,15 +27,16 @@ let net_describe p =
       if Char.code p.[9] = TinyKernelNetwork.ip_il then (
         match TinyKernelNetwork.il_read body with
         | None -> "il, damaged"
-        | Some (kind, _, _, id, ack, data) ->
-            (if kind = TinyKernelNetwork.il_sync then "sync"
-             else if kind = TinyKernelNetwork.il_data then "data"
-             else if kind = TinyKernelNetwork.il_dataquery then "data?"
-             else if kind = TinyKernelNetwork.il_ack then "ack"
-             else if kind = TinyKernelNetwork.il_query then "query"
-             else if kind = TinyKernelNetwork.il_state then "state"
-             else "close")
-            ^ " id " ^ string_of_int id ^ " ack " ^ string_of_int ack
+        | Some ((h : TinyKernelNetwork.il_header), data) ->
+            (match h.ih_kind with
+             | Il_sync -> "sync"
+             | Il_data -> "data"
+             | Il_dataquery -> "data?"
+             | Il_ack -> "ack"
+             | Il_query -> "query"
+             | Il_state -> "state"
+             | Il_close -> "close")
+            ^ " id " ^ string_of_int h.ih_id ^ " ack " ^ string_of_int h.ih_ack
             ^ (if data = "" then "" else ", " ^ bytes data))
       else if Char.code p.[9] <> TinyKernelNetwork.ip_icmp then
         "protocol " ^ string_of_int (Char.code p.[9]) ^ ", " ^ bytes body
@@ -43,9 +44,10 @@ let net_describe p =
         match TinyKernelNetwork.icmp_read body with
         | None -> "icmp, damaged"
         | Some (kind, _, seq, data) ->
-            (if kind = TinyKernelNetwork.icmp_ask then "echo? "
-             else if kind = TinyKernelNetwork.icmp_answer then "echo! "
-             else "icmp " ^ string_of_int kind ^ " ")
+            (match kind with
+             | TinyKernelNetwork.Echo_ask -> "echo? "
+             | Echo_answer -> "echo! "
+             | Icmp_other n -> "icmp " ^ string_of_int n ^ " ")
             ^ string_of_int seq ^ ", " ^ bytes data) in
     what ^ ", from " ^ net_dotted (String.sub p 12 4)
     ^ " to " ^ net_dotted (String.sub p 16 4)
@@ -249,9 +251,9 @@ let gate p packet =
          && String.sub packet 16 4 <> TinyKernelNetwork.net_peer -> (
       let to_ = String.sub packet 16 4 in
       match TinyKernelNetwork.il_read body with
-      | Some (kind, sport, dport, _, 0, _)
-        when kind = TinyKernelNetwork.il_sync
-             && not (List.exists (fun (c : TinyKernelNetwork.il) ->
+      | Some ({ ih_kind = Il_sync; ih_sport = sport; ih_dport = dport;
+                ih_ack = 0; _ }, _)
+        when not (List.exists (fun (c : TinyKernelNetwork.il) ->
                   c.il_me = to_ && c.il_lport = dport && c.il_rport = sport)
                   p.stack.ns_conns) -> (
           match outside.connect (net_dotted to_) dport with

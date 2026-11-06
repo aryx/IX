@@ -91,14 +91,17 @@ let ip_read me p =
 (* "are you there?" and "yes": the question's kind is 8, the answer's
  * 0, and the answer returns the question's two numbers (whose
  * question, which one of them) and its bytes *)
-let icmp_ask = 8
-let icmp_answer = 0
+(* an ICMP message's kind: echo's question, its answer, another (old:
+ * the numbers, 8 and 0) *)
+type icmp_kind = Echo_ask | Echo_answer | Icmp_other of int
+let icmp_code k =
+  match k with Echo_ask -> 8 | Echo_answer -> 0 | Icmp_other n -> n
 
-let icmp_message kind id seq data =
+let icmp_message (kind : icmp_kind) id seq data =
   (* old: let m sum = kind ^ 0 ^ net16 sum ^ net16 id ^ net16 seq ^ data in
    * m (net_sum (m 0)): the data copied at each ^ (it joins from the
    * right), ten times in all *)
-  let head = net_byte.(kind) ^ net_byte.(0) in
+  let head = net_byte.(icmp_code kind) ^ net_byte.(0) in
   let rest = (net16 id ^ net16 seq) ^ data in
   head ^ net16 (net_sum (head ^ rest)) ^ rest
 
@@ -106,8 +109,11 @@ let icmp_message kind id seq data =
 let icmp_read b =
   if String.length b < 8 || net_sum b <> 0 then None
   else
-    Some (Char.code b.[0], net_get16 b 4, net_get16 b 6,
-          String.sub b 8 (String.length b - 8))
+    Some ((match Char.code b.[0] with
+           | 8 -> Echo_ask
+           | 0 -> Echo_answer
+           | n -> Icmp_other n),
+          net_get16 b 4, net_get16 b 6, String.sub b 8 (String.length b - 8))
 
 (*****************************************************************************)
 (* IL: its packets *)
@@ -123,41 +129,55 @@ let net_get32 s i =
   if net_get16 s i >= 0x4000 then -1
   else (65536 * net_get16 s i) + net_get16 s (i + 2)
 
-(* a packet's seven kinds, Plan 9's numbers *)
-let il_sync = 0
-let il_data = 1
-let il_dataquery = 2
-let il_ack = 3
-let il_query = 4
-let il_state = 5
-let il_close = 6
+(* a packet's seven kinds, Plan 9's numbers 0 to 6 on the wire (old:
+ * the numbers, compared in if chains) *)
+type il_kind =
+  | Il_sync | Il_data | Il_dataquery | Il_ack | Il_query | Il_state | Il_close
+(* (by their numbers; Array.of_list: tiny-ml reads no [| |]) *)
+let il_kinds =
+  Array.of_list
+    [ Il_sync; Il_data; Il_dataquery; Il_ack; Il_query; Il_state; Il_close ]
+let il_code k =
+  match k with
+  | Il_sync -> 0 | Il_data -> 1 | Il_dataquery -> 2 | Il_ack -> 3
+  | Il_query -> 4 | Il_state -> 5 | Il_close -> 6
+
+(* a packet's header, but its checksum and length: its kind, the
+ * sender's port and the other's, its number, the last number its
+ * sender received in order (ih_: the labels are one name space) *)
+type il_header =
+  { ih_kind : il_kind; ih_sport : int; ih_dport : int; ih_id : int;
+    ih_ack : int }
 
 (* IL's header, 18 bytes after IP's: a checksum of all of it and of the
  * message, the length of both, the kind, a byte not used here, the
  * sender's port and the other's, the packet's number (its id) and the
  * last number its sender received in order (its ack); then the
  * message, in a packet of data *)
-let il_message kind sport dport id ack data =
+let il_message (h : il_header) data =
   (* (the header first, then the message joined once: ^ joins from the
    * right, and a ^ b ^ data copies data at each ^. The sum's own two
    * bytes, 0 while adding and at an even place, add nothing: the sum
    * is the rest's) *)
   let head =
-    net16 (18 + String.length data) ^ net_byte.(kind) ^ net_byte.(0)
-    ^ net16 sport ^ net16 dport ^ net32 id ^ net32 ack in
+    net16 (18 + String.length data) ^ net_byte.(il_code h.ih_kind)
+    ^ net_byte.(0) ^ net16 h.ih_sport ^ net16 h.ih_dport ^ net32 h.ih_id
+    ^ net32 h.ih_ack in
   let rest = head ^ data in
   net16 (net_sum rest) ^ rest
 
-(* its kind, the two ports, its id, its ack, the message; None when
- * cut, damaged or not ours to read *)
-let il_read b =
+(* its header and the message; None when cut, damaged or not ours to
+ * read *)
+let il_read b : (il_header * string) option =
   let n = String.length b in
   if n < 18 || net_get16 b 2 <> n || net_sum b <> 0
-     || Char.code b.[4] > il_close || net_get32 b 10 < 0 || net_get32 b 14 < 0
+     || Char.code b.[4] > 6 || net_get32 b 10 < 0 || net_get32 b 14 < 0
   then None
   else
-    Some (Char.code b.[4], net_get16 b 6, net_get16 b 8, net_get32 b 10,
-          net_get32 b 14, String.sub b 18 (n - 18))
+    Some ({ ih_kind = il_kinds.(Char.code b.[4]); ih_sport = net_get16 b 6;
+            ih_dport = net_get16 b 8; ih_id = net_get32 b 10;
+            ih_ack = net_get32 b 14 },
+          String.sub b 18 (n - 18))
 
 (*****************************************************************************)
 (* IL: a connection *)
@@ -232,12 +252,15 @@ let il_taken c = c.il_r.il_recvd - List.length c.il_r.il_heard
  * "where are you?", for the other end to know what is missing and not
  * send again what only waits to be read; after a close nothing more
  * will be *)
-let il_out c kind id data =
+let il_out c (kind : il_kind) id data =
   let ack =
-    if kind = il_close || kind = il_state then c.il_r.il_recvd
+    if kind = Il_close || kind = Il_state then c.il_r.il_recvd
     else (c.il_r.il_told <- il_taken c; c.il_r.il_told) in
   ip_packet ip_il c.il_me c.il_peer
-    (il_message kind c.il_lport c.il_rport id ack data)
+    (il_message
+       { ih_kind = kind; ih_sport = c.il_lport; ih_dport = c.il_rport;
+         ih_id = id; ih_ack = ack }
+       data)
 
 let il_arm c now = c.il_s.il_timeout <- now + (il_wait lsl c.il_s.il_tries)
 let il_fresh c now = c.il_s.il_tries <- 0; il_arm c now
@@ -254,7 +277,7 @@ let il_write c data now =
   c.il_s.il_next <- id + 1;
   (match c.il_s.il_unacked with [] -> il_fresh c now | _ -> ());
   c.il_s.il_unacked <- c.il_s.il_unacked @ [ id, data ];
-  il_out c il_data id data
+  il_out c Il_data id data
 
 (* the program is done: the end is said by [il_tick], once what was
  * written has arrived *)
@@ -312,7 +335,7 @@ let il_take c id data =
  * that was lost *)
 let il_where c =
   c.il_r.il_told <- -1;
-  [ il_out c il_state c.il_s.il_next "" ]
+  [ il_out c Il_state c.il_s.il_next "" ]
 
 (* A packet for a connection where both ends talk. A question (query,
  * or data sent again, which asks too) is answered by where this end
@@ -323,27 +346,30 @@ let il_where c =
  * the timer asks again). It frees nothing here: only what the other
  * end's program took does. *)
 let il_talk c kind id ack data now =
-  if kind = il_sync then
+  if kind = Il_sync then
     (if id = c.il_r.il_rstart then
        [ ip_packet ip_il c.il_me c.il_peer
-           (il_message il_ack c.il_lport c.il_rport c.il_s.il_next
-              c.il_r.il_rstart "") ]
+           (il_message
+              { ih_kind = Il_ack; ih_sport = c.il_lport;
+                ih_dport = c.il_rport; ih_id = c.il_s.il_next;
+                ih_ack = c.il_r.il_rstart }
+              "") ]
      else (c.il_at <- Il_closed; []))
-  else if kind = il_data || kind = il_dataquery then begin
+  else if kind = Il_data || kind = Il_dataquery then begin
     ignore (il_ackto c ack now);
     il_take c id data;
-    if kind = il_dataquery then il_where c else []
+    if kind = Il_dataquery then il_where c else []
   end
-  else if kind = il_ack then (ignore (il_ackto c ack now); [])
-  else if kind = il_query then (ignore (il_ackto c ack now); il_where c)
-  else if kind = il_state then begin
+  else if kind = Il_ack then (ignore (il_ackto c ack now); [])
+  else if kind = Il_query then (ignore (il_ackto c ack now); il_where c)
+  else if kind = Il_state then begin
     (* (of those sent before the question: one sent since may be on
      * its way still. il.c's qt) *)
     match
       List.filter (fun (i, _) -> i > ack && i < c.il_s.il_asked)
         c.il_s.il_unacked
     with
-    | (first, message) :: _ -> [ il_out c il_dataquery first message ]
+    | (first, message) :: _ -> [ il_out c Il_dataquery first message ]
     | [] -> []
   end
   else if ack >= c.il_start && ack <= c.il_s.il_next then begin
@@ -352,7 +378,7 @@ let il_talk c kind id ack data now =
     c.il_at <- Il_closing;
     c.il_s.il_unacked <- [];
     il_fresh c now;
-    [ il_out c il_close c.il_s.il_next "" ]
+    [ il_out c Il_close c.il_s.il_next "" ]
   end
   else []
 
@@ -363,34 +389,34 @@ let il_input c kind id ack data now =
   match c.il_at with
   | Il_closed -> []
   | Il_syncer ->
-      if kind = il_sync && ack = c.il_start then begin
+      if kind = Il_sync && ack = c.il_start then begin
         c.il_r.il_recvd <- id;
         c.il_r.il_rstart <- id;
         c.il_at <- Il_established;
         il_fresh c now;
-        [ il_out c il_ack c.il_s.il_next "" ]
+        [ il_out c Il_ack c.il_s.il_next "" ]
       end
-      else if kind = il_close && ack = c.il_start then (c.il_at <- Il_closed; [])
+      else if kind = Il_close && ack = c.il_start then (c.il_at <- Il_closed; [])
       else []
   | Il_syncee ->
-      if kind = il_sync then
-        (if id = c.il_r.il_rstart then [ il_out c il_sync c.il_start "" ]
+      if kind = Il_sync then
+        (if id = c.il_r.il_rstart then [ il_out c Il_sync c.il_start "" ]
          else [])
-      else if kind = il_close then
+      else if kind = Il_close then
         (if ack = c.il_start then c.il_at <- Il_closed; [])
-      else if (kind = il_ack || kind = il_data) && ack = c.il_start then
+      else if (kind = Il_ack || kind = Il_data) && ack = c.il_start then
         (c.il_at <- Il_established;
          il_fresh c now;
          il_talk c kind id ack data now)
       else []
   | Il_established -> il_talk c kind id ack data now
   | Il_closing ->
-      if kind = il_close then begin
+      if kind = Il_close then begin
         (* the end said by both: over when the other end has heard
          * this one's; said once more by who said it first, for the
          * other to be over too (il.c: by both, the last to nobody) *)
         c.il_r.il_recvd <- id;
-        let back = il_out c il_close c.il_s.il_next "" in
+        let back = il_out c Il_close c.il_s.il_next "" in
         if ack = c.il_s.il_next then
           (c.il_at <- Il_closed; if c.il_s.il_leaving then [ back ] else [])
         else [ back ]
@@ -403,7 +429,7 @@ let il_input c kind id ack data now =
  * hear, and the connection is over *)
 let il_again c kind id now =
   if c.il_s.il_silent >= il_patience then
-    (c.il_at <- Il_closed; [ il_out c il_close c.il_s.il_next "" ])
+    (c.il_at <- Il_closed; [ il_out c Il_close c.il_s.il_next "" ])
   else begin
     c.il_s.il_silent <- c.il_s.il_silent + 1;
     c.il_s.il_tries <- min 5 (c.il_s.il_tries + 1);
@@ -420,17 +446,17 @@ let il_tick c now =
   let late = now >= c.il_s.il_timeout in
   match c.il_at with
   | Il_closed -> []
-  | Il_syncer | Il_syncee -> if late then il_again c il_sync c.il_start now else []
-  | Il_closing -> if late then il_again c il_close c.il_s.il_next now else []
+  | Il_syncer | Il_syncee -> if late then il_again c Il_sync c.il_start now else []
+  | Il_closing -> if late then il_again c Il_close c.il_s.il_next now else []
   | Il_established ->
       if c.il_s.il_unacked = [] && c.il_s.il_leaving then
         (c.il_at <- Il_closing;
          il_fresh c now;
-         [ il_out c il_close c.il_s.il_next "" ])
+         [ il_out c Il_close c.il_s.il_next "" ])
       else if c.il_s.il_unacked <> [] && late then
         (c.il_s.il_asked <- c.il_s.il_next;
-         il_again c il_query c.il_s.il_next now)
-      else if c.il_r.il_told <> il_taken c then [ il_out c il_ack c.il_s.il_next "" ]
+         il_again c Il_query c.il_s.il_next now)
+      else if c.il_r.il_told <> il_taken c then [ il_out c Il_ack c.il_s.il_next "" ]
       else []
 
 (*****************************************************************************)
@@ -464,7 +490,7 @@ let net_conn s me peer lport rport at now =
 let net_dial s peer port now =
   let c = net_conn s s.ns_me peer s.ns_port port Il_syncer now in
   s.ns_port <- 5000 + ((s.ns_port - 4999) land 0x3fff);
-  c, il_out c il_sync c.il_start ""
+  c, il_out c Il_sync c.il_start ""
 
 (* time passed for every connection; those that are over forgotten *)
 let net_tick s now =
@@ -483,7 +509,8 @@ let net_tick s now =
 let net_il s now from to_ body =
   match il_read body with
   | None -> []
-  | Some (kind, sport, dport, id, ack, data) -> (
+  | Some ({ ih_kind = kind; ih_sport = sport; ih_dport = dport; ih_id = id;
+            ih_ack = ack }, data) -> (
       match
         List.filter
           (fun c -> c.il_peer = from && c.il_me = to_ && c.il_lport = dport
@@ -494,17 +521,21 @@ let net_il s now from to_ body =
       | [] ->
           let mine = to_ = s.ns_me && List.mem dport s.ns_ports
           and other = List.mem (to_, dport) s.ns_others in
-          if kind = il_sync && ack = 0 && (mine || other) then begin
+          if kind = Il_sync && ack = 0 && (mine || other) then begin
             if other then
               s.ns_others <- List.filter (fun o -> o <> (to_, dport)) s.ns_others;
             let c = net_conn s to_ from dport sport Il_syncee now in
             c.il_r.il_rstart <- id;
             c.il_r.il_recvd <- id;
             s.ns_fresh <- s.ns_fresh @ [ c ];
-            [ il_out c il_sync c.il_start "" ]
+            [ il_out c Il_sync c.il_start "" ]
           end
-          else if kind <> il_close then
-            [ ip_packet ip_il to_ from (il_message il_close dport sport 0 id "") ]
+          else if kind <> Il_close then
+            [ ip_packet ip_il to_ from
+                (il_message
+                   { ih_kind = Il_close; ih_sport = dport; ih_dport = sport;
+                     ih_id = 0; ih_ack = id }
+                   "") ]
           else [])
 
 (*****************************************************************************)
@@ -528,8 +559,9 @@ let net_input s now packet =
         match icmp_read body with
         | None -> [], None
         | Some (kind, id, seq, data) ->
-            if kind = icmp_ask then
-              [ ip_packet ip_icmp s.ns_me from
-                  (icmp_message icmp_answer id seq data) ], None
-            else if kind = icmp_answer then [], Some (from, id, seq, data)
-            else [], None)
+            match kind with
+            | Echo_ask ->
+                [ ip_packet ip_icmp s.ns_me from
+                    (icmp_message Echo_answer id seq data) ], None
+            | Echo_answer -> [], Some (from, id, seq, data)
+            | Icmp_other _ -> [], None)

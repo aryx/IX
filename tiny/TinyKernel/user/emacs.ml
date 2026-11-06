@@ -23,11 +23,12 @@ open TinyEditorScreen
 let () =
   if u_argc () <> 2 then (ignore (u_write 2 "usage: emacs file\n"); exit 1);
   let file = u_arg 1 in
+  let path = Fpath.v file in
   let answer e r =
     match r with
     | Continue -> true
     | Save ->
-      (if write_file file (text e) then saved e
+      (if write_file path (text e) then saved e
        else say e ("Cannot write " ^ file));
       true
     | Quit -> false in
@@ -36,7 +37,7 @@ let () =
     && (match pending e with Some k -> given e (key e k) | None -> true)
   in
   run_canvas {
-    first = (fun w h -> (create (w / 8) (h / 16) file (read_file file), w, h));
+    first = (fun w h -> (create (w / 8) (h / 16) file (read_file path), w, h));
     picture = (fun (e, w, h) -> Rect (255, w, h) :: shapes e (h / 16));
     typed =
       (fun k m ->

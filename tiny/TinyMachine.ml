@@ -255,12 +255,12 @@ let window_poll w (m : TinyMachineCPU.machine)
 (*****************************************************************************)
 
 type options = {
-  disk_file : string option; screen_file : string option;
-  audio_file : string option; events_file : string option; window : bool;
+  disk_file : Fpath.t option; screen_file : Fpath.t option;
+  audio_file : Fpath.t option; events_file : Fpath.t option; window : bool;
   rate : int option; date : int option; seed : int option;
   net_loop : int option; net : string option; net_trace : bool;
   net_lose : int list; net_out : bool; net_forward : (int * int) list;
-  net_pcap : string option; prof : string option; cores : int;
+  net_pcap : Fpath.t option; prof : Fpath.t option; cores : int;
   parallel : bool }
 
 (* The way out (TinyMachineSocket.mli): a connection of the host's is
@@ -404,22 +404,23 @@ let run caps o image =
   (* the disk: the file's, or a blank one of 8 MB when there is no such
    * file; each block the kernel writes, written to it at once *)
   let disk = match disk_file with
-    | Some f when Sys.file_exists f ->
-        Bytes.of_string (FS.read caps (Fpath.v f))
+    | Some f when Sys.file_exists (Fpath.to_string f) ->
+        Bytes.of_string (FS.read caps f)
     | Some f ->
         let blank = Bytes.make (8 * 1024 * 1024) '\000' in
-        FS.write caps (Fpath.v f) (Bytes.to_string blank);
+        FS.write caps f (Bytes.to_string blank);
         blank
     | None -> Bytes.empty in
   let disk_fd =
-    Option.map (fun f -> Unix.openfile f [ Unix.O_WRONLY ] 0) disk_file in
+    Option.map (fun f -> Unix.openfile (Fpath.to_string f) [ Unix.O_WRONLY ] 0)
+      disk_file in
   (* a session's keys are the console's input: the host's is then not
    * read, and a session's last event is its end. A window's keys are
    * the console's too, with the host's: a kernel that writes on the
    * console and not yet on the screen is typed at where it answers *)
   let events =
     Option.map (fun f ->
-        TinyMachineDevices.timed_events (FS.read caps (Fpath.v f)))
+        TinyMachineDevices.timed_events (FS.read caps f))
       o.events_file in
   let stdin_keys = events = None in
   let put ch =
@@ -608,7 +609,7 @@ let run caps o image =
     | None -> env
     | Some f ->
         at_exit (fun () ->
-          FS.write caps (Fpath.v f) (TinyMachineCPU.profile_lines profile));
+          FS.write caps f (TinyMachineCPU.profile_lines profile));
         (* and when killed, as by timeout: what ran so far (tiny-ml on
          * tiny-kernel, a run of minutes) *)
         Sys.set_signal Sys.sigterm (Sys.Signal_handle (fun _ -> exit 1));
@@ -652,17 +653,17 @@ let run caps o image =
   let halted n =
     ignore (Atomic.compare_and_set failed None (Some Exit));
     if others <> [] then spent ();
-    Option.iter (fun f -> FS.write caps (Fpath.v f) (ppm m)) o.screen_file;
+    Option.iter (fun f -> FS.write caps f (ppm m)) o.screen_file;
     Option.iter (fun f ->
       TinyMachineDevices.speaker_hear mc;
       let sound = Buffer.contents recorded in
       let rec last i =
         if i > 0 && sound.[i - 1] = '\000' then last (i - 1) else i in
-      FS.write caps (Fpath.v f)
+      FS.write caps f
         (wav (String.sub sound 0 (last (String.length sound)))))
       o.audio_file;
     Option.iter (fun f ->
-        FS.write caps (Fpath.v f) (pcap_header ^ Buffer.contents capture))
+        FS.write caps f (pcap_header ^ Buffer.contents capture))
       o.net_pcap;
     (* (the helpers that wait for a connection: their input's end is
      * theirs) *)
@@ -712,10 +713,15 @@ let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in;
         0
     | args ->
         let rec options o = function
-          | "-d" :: f :: rest -> options { o with disk_file = Some f } rest
-          | "-screen" :: f :: rest -> options { o with screen_file = Some f } rest
-          | "-audio" :: f :: rest -> options { o with audio_file = Some f } rest
-          | "-events" :: f :: rest -> options { o with events_file = Some f } rest
+          (* (the files' options as paths, here once) *)
+          | "-d" :: f :: rest ->
+              options { o with disk_file = Some (Fpath.v f) } rest
+          | "-screen" :: f :: rest ->
+              options { o with screen_file = Some (Fpath.v f) } rest
+          | "-audio" :: f :: rest ->
+              options { o with audio_file = Some (Fpath.v f) } rest
+          | "-events" :: f :: rest ->
+              options { o with events_file = Some (Fpath.v f) } rest
           | "-window" :: rest -> options { o with window = true } rest
           | "-rate" :: n :: rest
             when (match int_of_string_opt n with
@@ -731,8 +737,10 @@ let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in;
           | "-net-lose" :: n :: rest when int_of_string_opt n <> None ->
               options { o with net_lose = int_of_string n :: o.net_lose } rest
           | "-net-out" :: rest -> options { o with net_out = true } rest
-          | "-net-pcap" :: f :: rest -> options { o with net_pcap = Some f } rest
-          | "-prof" :: f :: rest -> options { o with prof = Some f } rest
+          | "-net-pcap" :: f :: rest ->
+              options { o with net_pcap = Some (Fpath.v f) } rest
+          | "-prof" :: f :: rest ->
+              options { o with prof = Some (Fpath.v f) } rest
           | "-net-forward" :: ports :: rest
             when (match List.map int_of_string_opt
                           (String.split_on_char ':' ports) with

@@ -265,5 +265,5 @@ val window_size : unit -> int * int
 
 (* the file such a program edits: its text ("" when it is not there);
  * the text written, and whether all of it was *)
-val read_file : string -> string
-val write_file : string -> string -> bool
+val read_file : Fpath.t -> string
+val write_file : Fpath.t -> string -> bool

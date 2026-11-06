@@ -21,16 +21,17 @@ open TinyOffice
 let () =
   if u_argc () <> 2 then (ignore (u_write 2 "usage: office file\n"); exit 1);
   let file = u_arg 1 in
+  let path = Fpath.v file in
   let answer o r =
     match r with
     | Continue -> Some o
     | Save ->
-      (if write_file file (text o) then saved o
+      (if write_file path (text o) then saved o
        else say o ("Cannot write " ^ file));
       Some o
     | Quit -> None in
   run_canvas {
-    first = (fun w h -> create w h file (read_file file));
+    first = (fun w h -> create w h file (read_file path));
     picture = view;
     typed = (fun k o -> answer o (key o k));
     moved = (fun x y b o -> answer o (mouse o x y b)) };

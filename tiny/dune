@@ -144,7 +144,7 @@
  (name tiny_lib_gui)
  (wrapped false)
  (modules TinyLibGUI)
- (libraries tiny_lib_playground))
+ (libraries fpath tiny_lib_playground))
 
 (library
  (name tiny_app_calculator)

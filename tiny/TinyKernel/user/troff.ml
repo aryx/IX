@@ -27,7 +27,7 @@ let () =
   if n <> 2 && flag <> "-h" && flag <> "-p" then
     (ignore (u_write 2 "usage: troff [-h | -p] file\n"); exit 1);
   let file = u_arg (n - 1) in
-  let doc = read_file file in
+  let doc = read_file (Fpath.v file) in
   ignore
     (u_write 1
        (if flag = "-h" then to_html file doc

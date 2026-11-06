@@ -637,8 +637,8 @@ let run_canvas (c : 'm canvas) =
 (* the file such a program edits: its text, "" when it is not there;
  * the text written, and whether all of it was (user.h's O_WRONLY |
  * O_CREATE | O_TRUNC; u_write is 0 when all was written) *)
-let read_file file =
-  let fd = u_open file 0 in
+let read_file (file : Fpath.t) =
+  let fd = u_open (Fpath.to_string file) 0 in
   if fd < 0 then ""
   else begin
     (* the pieces read, the last first, then joined once by String.concat
@@ -654,6 +654,6 @@ let read_file file =
     String.concat "" (List.rev pieces)
   end
 
-let write_file file text =
-  let fd = u_open file 0x601 in
+let write_file (file : Fpath.t) text =
+  let fd = u_open (Fpath.to_string file) 0x601 in
   fd >= 0 && (let r = u_write fd text in ignore (u_close fd); r = 0)

@@ -63420,3 +63420,44 @@ Claude then checked that the ELF test skipped on macOS in `tables.sh` had actual
 Claude checked whether mini-ml was responsible for the rebuilds and found it unchanged since Nov 4.
 Claude concluded that mini-ml is not what triggers the rebuilds.
 Claude's next step is to look for what in test-all or check writes into `_mk/5-plan9`.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 09:00
+
+**Yoann:**
+
+> any plans we could move to done/ now?
+
+**Claude (summary):**
+
+Claude said many plans have no Status line, so it checked their first lines.
+Claude reported it had read the Status of all 34 plans and was checking the last few candidates.
+Claude had not yet named any plan ready to move to done/.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 09:14
+
+**Yoann:**
+
+> let's move the ready to move one
+
+**Claude (summary):**
+
+Claude announced it would next fix the relative links inside the moved files.
+Claude also planned to update the path references elsewhere that pointed to those files.
+
+------------------------------------------------------------------------
+
+## 2026-11-06 09:16
+
+**Yoann:**
+
+> let's commit and close this session
+
+**Claude (summary):**
+
+Claude reported that `make test` passes before committing anything.
+Claude said it would commit only the files from this session.
+Claude left `prompt-history.md` out of the commit and flagged it for Yoann to handle.

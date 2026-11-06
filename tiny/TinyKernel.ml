@@ -94,7 +94,7 @@ let () =
   let p = {
     slot = 0; mem = mem_empty (); pid = 1; state = Ready; parent = None;
     fds = fds; cwd = (if blocks > 0 then [ "usr"; "glenda" ] else []);
-    since = -1; traced = None; core = -1; doomed = false;
+    since = None; traced = None; core = None; doomed = false;
     cmd = ""; memory = 0;
   } in
   incr next_pid;

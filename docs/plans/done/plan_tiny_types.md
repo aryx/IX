@@ -564,3 +564,17 @@ the speaker, then B and the kernel's trace. A commit each.
   +6 lines. Seen and left, for a timing: `since` (-1: waiting for
   something else) and `core` (-1: none), both read, and `since` set,
   in the scheduler's loop over the processes.
+- TinyKernelProcs' `since` (None: waiting for something else than a
+  child's end, old -1) and `core` (None: on no core, old -1) int
+  options, timed, as both are in the scheduler's loop. Measured by
+  tiny-machine -prof, the kernel's instructions on one workload (the
+  self-ld image, -date 820540800 -seed 1, rc running twenty echos and
+  a cmp of kernel.img, the same output): HEAD 113,002,938. Written
+  plainly, 121.0 million (+7%): ml_alloc +2.1 million, from
+  runnable's `p.since = Some !deaths` at each look at a waiting
+  process and run's `Some 0` at each trap. With runnable's test a
+  match (`Some n -> n = !deaths`) and core 0's Some made once
+  (`core0`), 113,706,465 (+0.6%, the run's whole +0.4%), runnable's
+  match the most of it (+258,000). kill and trace match `Some k when
+  k > 0` for a process on another core. +10 lines. The survey's list
+  is done.

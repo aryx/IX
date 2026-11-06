@@ -20,7 +20,7 @@ open TinyKernelIO
 (* a call that may wait: tried now, and until it finishes by the
  * scheduler, the process Waiting meanwhile *)
 let block p attempt =
-  if not (attempt ()) then (p.state <- Waiting attempt; p.since <- -1)
+  if not (attempt ()) then (p.state <- Waiting attempt; p.since <- None)
 
 let result p v = set_reg p 1 v
 
@@ -113,14 +113,14 @@ let with_room p f =
           then false
           else (result p (-1); true)
       | Bad -> result p (-1); true);
-    match p.state with Waiting _ -> p.since <- !deaths | _ -> ()
+    match p.state with Waiting _ -> p.since <- Some !deaths | _ -> ()
 
 (* a child of p's, in slot s: its descriptors and directory p's; traced
  * when p's children are; its pid the next *)
 let child p s = {
   slot = s; mem = mem_empty (); pid = !next_pid; state = Ready;
-  parent = Some p.pid; fds = p.fds; cwd = p.cwd; since = -1; traced = None;
-  core = -1; doomed = false; cmd = p.cmd; memory = p.memory;
+  parent = Some p.pid; fds = p.fds; cwd = p.cwd; since = None; traced = None;
+  core = None; doomed = false; cmd = p.cmd; memory = p.memory;
 }
 
 (* the child made a process: its trace if p's children are traced, its
@@ -294,7 +294,7 @@ let sys_wait p =
         else (result p (-1); true));
   (* (a shell waits most of its life: its call is retried when a process
    * ended, not at each turn) *)
-  (match p.state with Waiting _ -> p.since <- !deaths | _ -> ())
+  (match p.state with Waiting _ -> p.since <- Some !deaths | _ -> ())
 
 let o_create = 0x200
 let o_trunc = 0x400
@@ -486,8 +486,9 @@ let sys_rawcons p = raw := (if reg p 1 <> 0 then p.pid else 0); result p 0
  * another core, at its next trap, which the cores' interrupt makes
  * now (its partition is not another's before) *)
 let kill q =
-  if q.core > 0 then (q.doomed <- true; poke ipi_dev q.core)
-  else exit_proc q (-1)
+  match q.core with
+  | Some k when k > 0 -> q.doomed <- true; poke ipi_dev k
+  | _ -> exit_proc q (-1)
 let sys_kill p =
   match List.filter (fun q -> q.pid = reg p 1) !procs with
   | [ q ] -> kill q; result p 0
@@ -533,9 +534,14 @@ let sys_trace p =
         (* on another core: called back (a traced process stays on core
          * 0), the descriptor given when it is back, its frame then its
          * registers *)
-        if q.core > 0 then
-          (poke ipi_dev q.core; block p (fun () -> q.core <= 0 && (given (); true)))
-        else given ()
+        match q.core with
+        | Some k when k > 0 ->
+          poke ipi_dev k;
+          block p (fun () ->
+            match q.core with
+            | Some k when k > 0 -> false
+            | _ -> given (); true)
+        | _ -> given ()
     | _ -> raise Bad
 
 (* seek(fd, n, whence): a file's offset at n from its start (0), from

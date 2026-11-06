@@ -20,9 +20,9 @@ type state = Ready | Waiting of (unit -> bool) | Stopped
 (* A process: its slot (where its frame is), its memory, its pid, its
  * state, its parent's pid, if any, its
  * descriptors, its current directory; while it waits for a child's
- * end, how many processes had ended when it last looked (-1: it waits
- * for something else); and its trace, when it is traced. The core it
- * runs on (-1: none; 0 while core 0 runs it or handles its trap), and
+ * end, how many processes had ended when it last looked (None: it
+ * waits for something else); and its trace, when it is traced. The core
+ * it runs on, if any (0 while core 0 runs it or handles its trap), and
  * whether it was killed there, its end then at its next trap. Its
  * command line and its memory, for /dev/ps: its program's (exec's
  * arguments, the bytes it asked for), or its parent's when it was
@@ -31,8 +31,8 @@ type proc = {
   slot : int; mem : space; pid : int;
   mutable state : state; mutable parent : int option;
   mutable fds : (int * file) list; mutable cwd : string list;
-  mutable since : int; mutable traced : trace option;
-  mutable core : int; mutable doomed : bool;
+  mutable since : int option; mutable traced : trace option;
+  mutable core : int option; mutable doomed : bool;
   mutable cmd : string; mutable memory : int;
 }
 
@@ -53,7 +53,7 @@ let () =
   ps_hook := (fun () ->
     String.concat "" (List.map (fun p ->
       let state = match p.state with
-        | Ready when p.core >= 0 -> "running"
+        | Ready when p.core <> None -> "running"
         | Ready -> "ready"
         | Waiting _ -> "waiting"
         | Stopped -> "stopped" in

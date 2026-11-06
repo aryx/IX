@@ -81,7 +81,7 @@ let interrupts sources =
       match on.(k) with
       | Some p when from land (1 lsl k) <> 0 ->
           on.(k) <- None;
-          p.core <- -1;
+          p.core <- None;
           !back_hook k p (cause_of (peek (mailbox k + 16)))
             (peek (mailbox k + 20))
       | _ -> ()
@@ -148,24 +148,27 @@ let rec runnable ok l =
       (match p.state with
        | Ready -> if ok p then Some p else runnable ok rest
        | Waiting attempt ->
-           if p.since = !deaths then runnable ok rest
+           if (match p.since with Some n -> n = !deaths | None -> false)
+           then runnable ok rest
            else if attempt () then
              (p.state <- Ready;
               if waited p then runnable ok !procs
               else if ok p then Some p
               else runnable ok rest)
-           else (if p.since >= 0 then p.since <- !deaths; runnable ok rest)
+           else (if p.since <> None then p.since <- Some !deaths;
+                 runnable ok rest)
        | Stopped -> runnable ok rest)
 
 (* what core 0 may run: a process on no core; what another may: one
  * not traced too (a tracer reads its frame, steps it: core 0's) *)
-let anywhere p = p.core < 0
-let elsewhere p = p.core < 0 && not (traced p)
+let core0 = Some 0
+let anywhere p = p.core = None
+let elsewhere p = p.core = None && not (traced p)
 
 (* The other cores (entry.tm's slave). A process given to core k: its
  * frame, its window and a slice in k's mailbox, then k's interrupt *)
 let give k p =
-  p.core <- k;
+  p.core <- Some k;
   on.(k) <- Some p;
   let m = mailbox k in
   mem_post p.mem (m + 4);
@@ -208,12 +211,13 @@ and idle () =
   then (alarm := 0; net_news := false; schedule ())
   else idle ()
 
+(* (core 0's Some made once: run gives it at each trap) *)
 and run p =
   match p.traced with
   | Some { call = Some n; _ } -> call p n; next p false
   | Some t when t.step || t.over <> None -> step p t
   | _ ->
-      p.core <- 0;
+      p.core <- core0;
       mem_window p.mem;
       let cause = cause_of (k_run (frame p.slot)) in
       next p (trapped p cause (k_tval ()))
@@ -266,7 +270,7 @@ and next p timer =
   if alive && (not timer) && (match p.state with Ready -> true | _ -> false)
   then (dispatch (); run p)
   else begin
-    p.core <- -1;
+    p.core <- None;
     if alive then last p;
     schedule ()
   end

@@ -14,7 +14,9 @@ open TinyAppCalculator
 
 let g = calculator
 let text (m : model) =
-  (if m.op = ' ' then "" else Printf.sprintf "%d %c | " m.kept m.op)
+  (match m.op with
+   | None -> ""
+   | Some c -> Printf.sprintf "%d %c | " m.kept c)
   ^ if m.wrong then "error" else string_of_int m.shown
 let boxes g m = snd (TinyLibGUI.laid g m)
 let typed s =

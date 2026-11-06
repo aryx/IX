@@ -60,10 +60,16 @@
  * is the smallest program that is nothing but buttons.
  *)
 
-(* the number shown, the number kept with the operation that awaits
- * (' ': none), whether the next digit begins a number, whether there
- * is no number to show *)
-type model = { shown : int; kept : int; op : char; fresh : bool; wrong : bool }
+(* the number shown, the number kept with the operation that awaits,
+ * whether the next digit begins a number, whether there is no number
+ * to show *)
+type model = {
+  shown : int;
+  kept : int;
+  op : char option;
+  fresh : bool;
+  wrong : bool
+}
 
 (* what a button or a key says *)
 type msg = Digit of int | Op of char | Equals | Clear

@@ -17,13 +17,13 @@ open TinyLibGUI
 type model = { 
   shown : int; 
   kept : int; 
-  op : char; (* ' ' = None *)
+  op : char option;
   (* whether the next digit begins a number; whether there is no number to show *)
   fresh : bool; 
   wrong : bool 
 }
 
-let start = { shown = 0; kept = 0; op = ' '; fresh = true; wrong = false }
+let start = { shown = 0; kept = 0; op = None; fresh = true; wrong = false }
 
 (* nine digits, which the machine's integers of 31 bits hold *)
 let limit = 999999999
@@ -37,18 +37,19 @@ type msg = Digit of int | Op of char | Equals | Clear
 
 (* kept op shown: the number, and whether there is one (none by 0, none
  * past the limit: a product is asked by a division, before it is made) *)
-let result { kept = a; shown = b; op; _ } =
-  if op = '/' then (if b = 0 then 0, false else a / b, true)
-  else if op = '*' then
-    (if a <> 0 && abs b > limit / abs a then 0, false else a * b, true)
-  else
-    (let v = if op = '+' then a + b else if op = '-' then a - b else b in
-     v, abs v <= limit)
+let result { kept = a; shown = b; op; _ } : int * bool =
+  match op with
+  | Some '/' -> if b = 0 then 0, false else a / b, true
+  | Some '*' ->
+      if a <> 0 && abs b > limit / abs a then 0, false else a * b, true
+  | _ ->
+      let v = match op with Some '+' -> a + b | Some '-' -> a - b | _ -> b in
+      v, abs v <= limit
 
-(* an operation asked (' ': the equals): the one that awaited is done,
+(* an operation asked (None: the equals): the one that awaited is done,
  * this one awaits; asked right after another, it takes its place *)
-let operate m op =
-  if m.fresh && m.op <> ' ' && op <> ' ' then
+let operate (m : model) (op : char option) : model =
+  if m.fresh && m.op <> None && op <> None then
     { m with op; fresh = true; wrong = false }
   else
     (let (v, ok) = result m in
@@ -62,8 +63,8 @@ let update (msg : msg) (m : model) : model =
       if m.fresh then { m with shown = d; fresh = false; wrong = false }
       else if m.shown > limit / 10 then m
       else { m with shown = (10 * m.shown) + d; fresh = false; wrong = false }
-  | Op c -> operate m c
-  | Equals -> operate m ' '
+  | Op c -> operate m (Some c)
+  | Equals -> operate m None
 
 (*****************************************************************************)
 (* The view, the keys *)
@@ -73,7 +74,12 @@ let update (msg : msg) (m : model) : model =
 let view { shown; kept; op; wrong; _ } : msg widget =
   let d n = Button (string_of_int n, Digit n) in
   let o c = Button (String.make 1 c, Op c) in
-  Col [ Label (if op = ' ' then "" else string_of_int kept ^ " " ^ String.make 1 op);
+  let pending =
+    match op with
+    | None -> ""
+    | Some c -> string_of_int kept ^ " " ^ String.make 1 c
+  in
+  Col [ Label pending;
         Field (if wrong then "error" else string_of_int shown);
         Row [ d 7; d 8; d 9; o '/' ];
         Row [ d 4; d 5; d 6; o '*' ];

@@ -114,7 +114,7 @@ let sketch_key (o : office) (tool : int) (k : key) =
       relabel (fun kind nums label ->
         if label = "" then []
         else [ kind, nums, String.sub label 0 (String.length label - 1) ])
-  | Char '\007' -> o.editing <- Nothing
+  | Ctrl 'g' -> o.editing <- Nothing
   | _ -> o.message <- "a drawing: Tab, the mouse, a label typed; C-g"
 
 

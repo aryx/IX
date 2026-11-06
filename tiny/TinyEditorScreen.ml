@@ -63,7 +63,7 @@ type editor = {
   file : string;
   mutable quitting : bool;       (* a quit was refused: the next is done *)
   mutable message : string;      (* the last line of the screen *)
-  mutable prefix : char option;
+  mutable prefix : key option;
     (* C-x or Escape typed, waiting for its key *)
   x : extra;
   cols : int;
@@ -232,12 +232,12 @@ let searching (e : editor) (sub : string) (k : key) : bool =
   | Char c when c >= ' ' && c < '\127' ->
       let sub = sub ^ String.make 1 c in
       e.x.search <- Some sub; look e sub (e.t.col - m); true
-  | Char '\019' -> look e sub e.t.col; true
+  | Ctrl 's' -> look e sub e.t.col; true
   | Char ('\b' | '\127') ->
       e.x.search <- Some (String.sub sub 0 (max 0 (m - 1))); true
   | _ ->
       e.x.search <- None;
-      k = Char '\n' || k = Char '\r' || k = Char '\007'
+      k = Char '\n' || k = Char '\r' || k = Ctrl 'g'
 
 (*****************************************************************************)
 (* M-x *)
@@ -336,7 +336,7 @@ let reading (e : editor) (what : answer) (typed : string) (k : key) =
   | Char ('\b' | '\127') ->
       e.x.reading <- Some (what, String.sub typed 0 (max 0 (m - 1)))
   | Char '\t' when what = Command -> e.x.reading <- Some (what, complete typed)
-  | Char '\007' -> e.x.reading <- None; e.message <- "Quit"
+  | Ctrl 'g' -> e.x.reading <- None; e.message <- "Quit"
   | Char ('\n' | '\r') -> e.x.reading <- None; answered e what typed
   | _ -> ()
 
@@ -371,7 +371,7 @@ let pending (e : editor) : key option =
 (* The keys *)
 (*****************************************************************************)
 
-(* a key: a character (C-a is '\001'), an arrow; after C-x or Escape,
+(* a key: a character, a control key, an arrow; after C-x or Escape,
  * the second key of a command *)
 let key (e : editor) (k : key) : request =
   let t = e.t and again = e.killing and quitting = e.quitting
@@ -392,40 +392,40 @@ let key (e : editor) (k : key) : request =
        e.prefix <- None;
        match prefix, k with
        (* C-x C-s; C-x C-q and C-x C-c; C-x ( ) e, the macros *)
-       | Some '\024', Char '\019' -> request := Save
-       | Some '\024', Char ('(' | ')' | 'e') -> macro e k
-       | Some '\024', Char ('\017' | '\003') ->
+       | Some (Ctrl 'x'), Ctrl 's' -> request := Save
+       | Some (Ctrl 'x'), Char ('(' | ')' | 'e') -> macro e k
+       | Some (Ctrl 'x'), Ctrl ('q' | 'c') ->
            if t.modified && not quitting then
              (e.quitting <- true;
               e.message <- "Not saved: C-x C-s saves, C-x C-q again quits")
            else request := Quit
-       | Some '\024', _ -> e.message <- "C-x: not a command"
+       | Some (Ctrl 'x'), _ -> e.message <- "C-x: not a command"
        (* Escape, then < > v x: Meta *)
        | Some _, Char '<' -> lines (- t.row)
        | Some _, Char 'x' -> e.x.reading <- Some (Command, "")
        | Some _, Char '>' -> lines (List.length t.below)
        | Some _, Char 'v' -> lines (1 - h); e.top <- max 0 (e.top - (h - 1))
        | Some _, _ -> e.message <- "Escape: not a command"
-       | None, Char '\001' -> t.col <- 0
-       | None, Char '\005' -> t.col <- String.length t.line
-       | None, (Char '\006' | Right) -> forward t
-       | None, (Char '\002' | Left) -> backward t
-       | None, (Char '\014' | Down) -> lines 1
-       | None, (Char '\016' | Up) -> lines (- 1)
-       | None, Char '\022' ->
+       | None, Ctrl 'a' -> t.col <- 0
+       | None, Ctrl 'e' -> t.col <- String.length t.line
+       | None, (Ctrl 'f' | Right) -> forward t
+       | None, (Ctrl 'b' | Left) -> backward t
+       | None, (Ctrl 'n' | Down) -> lines 1
+       | None, (Ctrl 'p' | Up) -> lines (- 1)
+       | None, Ctrl 'v' ->
            lines (h - 1); e.top <- min (e.top + h - 1) t.row
-       | None, Char '\004' -> delete t
+       | None, Ctrl 'd' -> delete t
        | None, Char ('\b' | '\127') -> backspace t
        | None, Char ('\n' | '\r') -> newline t
-       | None, Char '\011' -> kill e again
-       | None, Char '\025' -> yank e
-       | None, Char '\012' -> e.top <- max 0 (t.row - h / 2)
-       | None, Char '\019' -> e.x.search <- Some ""
-       | None, Char '\007' -> e.message <- "Quit"
-       | None, Char c when c = '\024' || c = '\027' -> e.prefix <- Some c
+       | None, Ctrl 'k' -> kill e again
+       | None, Ctrl 'y' -> yank e
+       | None, Ctrl 'l' -> e.top <- max 0 (t.row - h / 2)
+       | None, Ctrl 's' -> e.x.search <- Some ""
+       | None, Ctrl 'g' -> e.message <- "Quit"
+       | None, (Ctrl 'x' | Char '\027') -> e.prefix <- Some k
        | None, Char c when c = '\t' || (c >= ' ' && c < '\127') ->
            insert t (String.make 1 c)
-       | None, Char _ -> e.message <- "Not a command");
+       | None, _ -> e.message <- "Not a command");
   if not !vertical then t.goal <- t.col;
   !request
 
@@ -588,7 +588,7 @@ let view (e : editor) : string list =
         (if e.message = "" then "" else "Failing ") ^ "I-search: " ^ sub
     | None, None ->
         (match e.prefix with
-         | Some '\024' -> "C-x-"
+         | Some (Ctrl 'x') -> "C-x-"
          | Some _ -> "ESC-"
          | None -> e.message) in
   text @ [ mode; String.sub last 0 (min e.cols (String.length last)) ]

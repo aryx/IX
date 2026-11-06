@@ -215,8 +215,8 @@ let cell_key (o : office) (c : int) (r : int) (typed : string option)
       o.editing <- Cell (c, r, Some (typed_in b.data (name c r)))
   | None, (Up | Down | Left | Right) -> arrow ()
   | None, Char ('\b' | '\127') -> change o (set_cell b.data (name c r) "")
-  | None, Char '\007' -> o.editing <- Nothing
-  | None, Char _ -> o.message <- "a cell: type, Enter, the arrows; C-g"
+  | None, Ctrl 'g' -> o.editing <- Nothing
+  | None, _ -> o.message <- "a cell: type, Enter, the arrows; C-g"
   | Some t, Char ch when ch >= ' ' && ch < '\127' ->
       o.editing <- Cell (c, r, Some (t ^ String.make 1 ch))
   | Some t, Char ('\b' | '\127') ->
@@ -225,8 +225,8 @@ let cell_key (o : office) (c : int) (r : int) (typed : string option)
                           else String.sub t 0 (String.length t - 1)))
   | Some t, Char ('\n' | '\r') -> put_cell o c r t; move 0 1
   | Some t, (Up | Down | Left | Right) -> put_cell o c r t; arrow ()
-  | Some _, Char '\007' -> o.editing <- Cell (c, r, None)
-  | Some _, Char _ -> ()
+  | Some _, Ctrl 'g' -> o.editing <- Cell (c, r, None)
+  | Some _, _ -> ()
 
 
 (*****************************************************************************)

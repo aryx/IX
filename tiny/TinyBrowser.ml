@@ -339,7 +339,7 @@ let on_key sc (k : key) : bool =
      | Char ('b' | '\b' | '\127') -> back sc
      | Char 'g' -> ignore (act sc Address)
      | Char 's' -> ignore (act sc Search)
-     | Char _ -> ());
+     | _ -> ());
     k <> Char 'q'
   end
 

@@ -86,7 +86,7 @@ let paint_key (o : office) (brush : int) (k : key) =
   match k with
   | Char c when c >= '0' && c <= '9' ->
       o.editing <- Painting (Char.code c - 48, brush, None)
-  | Char '\007' -> o.editing <- Nothing
+  | Ctrl 'g' -> o.editing <- Nothing
   | _ ->
     o.message <-
       "a paint: the left button paints; the Paint menu, or a digit a colour; C-g"

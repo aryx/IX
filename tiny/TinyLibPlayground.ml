@@ -6,14 +6,19 @@
 open TinyLibDraw
 open TinyCalls
 
-type key = Char of char | Up | Down | Left | Right
+type key = Char of char | Ctrl of char | Up | Down | Left | Right
 
+(* Backspace, Tab, Enter and Escape are C-h, C-i, C-j or C-m, and C-[ on
+ * the console: they stay characters *)
 let key_of_byte (c : char) : key =
-  match Char.code c with
-  | 128 -> Up
-  | 129 -> Down
-  | 130 -> Left
-  | 131 -> Right
+  match c with
+  | '\b' | '\t' | '\n' | '\r' | '\027' -> Char c
+  | _ when c >= '\001' && c <= '\026' -> Ctrl (Char.chr (Char.code c + 96))
+  | _ when c >= '\028' && c <= '\031' -> Ctrl (Char.chr (Char.code c + 64))
+  | '\128' -> Up
+  | '\129' -> Down
+  | '\130' -> Left
+  | '\131' -> Right
   | _ -> Char c
 
 (* a rectangle of a colour (its width, its height), words of a colour,

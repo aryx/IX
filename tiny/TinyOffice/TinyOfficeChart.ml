@@ -130,7 +130,7 @@ let name_key (o : office) (typed : string) (k : key) =
           else b) o.page;
         o.editing <- Nothing
       end
-  | Char '\007' -> o.editing <- Nothing
+  | Ctrl 'g' -> o.editing <- Nothing
   | _ -> ()
 
 (* a chart of the chosen cell's column, beside its sheet (under it, if

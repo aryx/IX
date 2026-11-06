@@ -35,7 +35,7 @@ let key (k : key) m =
   | Down -> at m.x (m.y + 8)
   | Left -> at (m.x - 8) m.y
   | Right -> at (m.x + 8) m.y
-  | Char _ -> m
+  | _ -> m
 
 (* (a model at each frame; its shapes are others twice a second, when it
  * blinks, and the playground draws then) *)

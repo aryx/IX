@@ -208,22 +208,22 @@ let write_key (o : office) (d : doc) (k : key) =
    | Char c when c >= ' ' && c < '\127' -> put_text d (String.make 1 c) style
    | Char ('\b' | '\127') ->
        (if a = z && a > 0 then d.anchor <- a - 1); put_text d "" ""
-   | Char '\004' ->
+   | Ctrl 'd' ->
        (if a = z && z < n then d.anchor <- z + 1); put_text d "" ""
    | Left -> go_to d (if a < z then a else d.cur - 1)
-   | Right | Char '\006' -> go_to d (if a < z then z else d.cur + 1)
-   | Up | Char '\016' -> vertical (line - 1)
-   | Down | Char '\014' -> vertical (line + 1)
-   | Char '\001' -> go_to d (back d.cur)
-   | Char '\005' -> go_to d (forth d.cur)
-   | Char '\002' -> restyle d 1
+   | Right | Ctrl 'f' -> go_to d (if a < z then z else d.cur + 1)
+   | Up | Ctrl 'p' -> vertical (line - 1)
+   | Down | Ctrl 'n' -> vertical (line + 1)
+   | Ctrl 'a' -> go_to d (back d.cur)
+   | Ctrl 'e' -> go_to d (forth d.cur)
+   | Ctrl 'b' -> restyle d 1
    | Char '\t' -> restyle d 2
-   | Char '\021' -> restyle d 4
-   | Char '\012' -> restyle d 8
-   | Char '\023' -> copy d; put_text d "" ""
-   | Char '\025' -> let (t, st) = !clipboard in put_text d t st
-   | Char '\007' -> d.anchor <- d.cur
-   | Char _ ->
+   | Ctrl 'u' -> restyle d 4
+   | Ctrl 'l' -> restyle d 8
+   | Ctrl 'w' -> copy d; put_text d "" ""
+   | Ctrl 'y' -> let (t, st) = !clipboard in put_text d t st
+   | Ctrl 'g' -> d.anchor <- d.cur
+   | _ ->
        o.message <-
          "a text: C-b bold, Tab italic, C-u underlined, C-l large; "
          ^ "C-w cut, C-y paste");

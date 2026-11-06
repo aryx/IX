@@ -232,17 +232,17 @@ let office_menus (o : office) : (string * (string * command) list) list =
 
 let key (o : office) (k : key) : request =
   (* C-x and C-_ (undo) are the office's even while a box is edited *)
-  let own = k = Char '\024' || k = Char '\031' in
+  let own = k = Ctrl 'x' || k = Ctrl '_' in
   match o.editing with
   | Writing d when not o.prefix && not own ->
       o.message <- ""; write_key o d k; Continue
-  | Cell (c, r, typed) when not o.prefix && k <> Char '\024' ->
+  | Cell (c, r, typed) when not o.prefix && k <> Ctrl 'x' ->
       o.message <- ""; cell_key o c r typed k; Continue
-  | Sketch (tool, _) when not o.prefix && k <> Char '\024' ->
+  | Sketch (tool, _) when not o.prefix && k <> Ctrl 'x' ->
       o.message <- ""; sketch_key o tool k; Continue
   | Painting (_, brush, _) when not o.prefix && not own ->
       o.message <- ""; paint_key o brush k; Continue
-  | Naming typed when not o.prefix && k <> Char '\024' ->
+  | Naming typed when not o.prefix && k <> Ctrl 'x' ->
       o.message <- ""; name_key o typed k; Continue
   | _ ->
       let was = o.message in
@@ -250,8 +250,8 @@ let key (o : office) (k : key) : request =
       if o.prefix then begin
         o.prefix <- false;
         match k with
-        | Char '\019' -> command o Do_save
-        | Char ('\003' | '\017') -> o.message <- was; command o Do_quit
+        | Ctrl 's' -> command o Do_save
+        | Ctrl ('c' | 'q') -> o.message <- was; command o Do_quit
         | Char 't' -> command o (Do_add "sheet")
         | Char 'd' -> command o (Do_add "drawing")
         | Char 'p' -> command o (Do_add "paint")
@@ -261,11 +261,11 @@ let key (o : office) (k : key) : request =
       end
       else begin
         (match k with
-         | Char '\024' -> o.prefix <- true
-         | Char '\015' -> ignore (command o (Do_add "text"))
+         | Ctrl 'x' -> o.prefix <- true
+         | Ctrl 'o' -> ignore (command o (Do_add "text"))
          | Char ('\b' | '\127') when o.sel >= 0 -> ignore (command o Do_delete)
-         | Char '\031' -> ignore (command o Do_undo)
-         | Char '\007' -> o.sel <- -1; o.message <- "Quit"
+         | Ctrl '_' -> ignore (command o Do_undo)
+         | Ctrl 'g' -> o.sel <- -1; o.message <- "Quit"
          | _ -> o.message <- help);
         Continue
       end

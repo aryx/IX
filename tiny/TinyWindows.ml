@@ -373,30 +373,41 @@ let delete w =
 (* The mouse *)
 (*****************************************************************************)
 
+(* the menu's items, from the top *)
+type item =
+  | Item_new
+  | Item_move
+  | Item_delete
+  | Item_exit
+
 (* what the mouse is doing: nothing; in the menu (its corner, the item
- * under the mouse); an item chosen, the left button awaited; a
+ * under the mouse, if any); an item chosen, the left button awaited; a
  * rectangle swept (its first corner, the last one drawn); a window
  * dragged (the mouse in it, its last place drawn) *)
 type doing =
   | Idle
-  | Menu of int * int * int
-  | Chosen of int
+  | Menu of int * int * item option
+  | Chosen of item
   | Sweep of int * int * int * int
   | Drag of window * int * int * int * int
 
 let doing = ref Idle
 let buttons = ref 0
 
-let items = [ "New"; "Move"; "Delete"; "Exit" ]
+let items =
+  [ Item_new, "New"; Item_move, "Move"; Item_delete, "Delete";
+    Item_exit, "Exit" ]
 let menu_box mx my = mx - 1, my - 1, mx + 65, my + 65
 
-let menu mx my chosen =
+(* the menu at (mx, my), the item chosen lit *)
+let menu mx my (chosen : item option) =
   fill screen black (menu_box mx my);
-  List.iteri (fun i name ->
-    fill screen (if i = chosen then blue else white)
+  List.iteri (fun i (item, name) ->
+    let lit = chosen = Some item in
+    fill screen (if lit then blue else white)
       (mx, my + (16 * i), mx + 64, my + (16 * i) + 16);
     send
-      (d_text screen (if i = chosen then white else black)
+      (d_text screen (if lit then white else black)
          (mx + 4, my + (16 * i)) name)) items
 
 (* a rectangle's four sides, two pixels thick: drawn in red, or what is
@@ -429,28 +440,32 @@ let mouse x y b =
           ignore
             (u_write w.ends.mouse
                (word (x - w.x - border) ^ word (y - w.y - border) ^ word b))
-      | _ when right -> doing := Menu (x, y, -1); menu x y (-1)
+      | _ when right -> doing := Menu (x, y, None); menu x y None
       | Some w when left && not (current w) ->
           windows := w :: List.filter (fun v -> v != w) !windows;
           refresh everything
       | _ -> ())
   | Menu (mx, my, was) ->
       let item =
-        if inside (mx, my, mx + 64, my + 64) x y then (y - my) / 16 else -1 in
+        if inside (mx, my, mx + 64, my + 64) x y then
+          Option.map fst (List.nth_opt items ((y - my) / 16))
+        else None in
       if b land 4 <> 0 then
         (if item <> was then (doing := Menu (mx, my, item); menu mx my item))
       else begin
         refresh (menu_box mx my);
-        if item = 3 then finish ();
-        doing := if item >= 0 then Chosen item else Idle
+        match item with
+        | Some Item_exit -> finish ()
+        | Some item -> doing := Chosen item
+        | None -> doing := Idle
       end
   | Chosen item ->
       if right then doing := Idle
       else if left then begin
         match item, over x y !windows with
-        | 0, _ -> doing := Sweep (x, y, x, y)
-        | 1, Some w -> doing := Drag (w, x - w.x, y - w.y, w.x, w.y)
-        | 2, Some w -> doing := Idle; delete w
+        | Item_new, _ -> doing := Sweep (x, y, x, y)
+        | Item_move, Some w -> doing := Drag (w, x - w.x, y - w.y, w.x, w.y)
+        | Item_delete, Some w -> doing := Idle; delete w
         | _ -> doing := Idle
       end
   | Sweep (sx, sy, lx, ly) ->

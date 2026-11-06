@@ -543,3 +543,11 @@ the speaker, then B and the kernel's trace. A commit each.
   Reading); draw_status a match on it. +14 lines, most the type, a
   case a line, in the .ml and the .mli. The survey's browser items
   are all done.
+- TinyWindows' menu: its items a variant, `Item_new | Item_move |
+  Item_delete | Item_exit` (old: their places, 0 to 3, matched as
+  numbers, `item = 3` the exit; Item_, as lib_core has an Exit and
+  TinyDatabase a Delete), the list of items each with its name; the
+  item under the mouse an item option (old: -1 none), from
+  List.nth_opt. The release a match: exit, chosen, or nothing. +15
+  lines, most the type a case a line. Checked by tiny-kernel's
+  sessions, which open the menu and choose New (their screens).

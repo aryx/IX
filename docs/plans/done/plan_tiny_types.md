@@ -470,3 +470,14 @@ the speaker, then B and the kernel's trace. A commit each.
   the item under the mouse, in the old order of its four cases;
   menu_view's open menu a match. The office and the browser use it;
   the browser's two tests of `opened` against -1 now against None.
+- The browser's nav: `nv_wire` and `nv_fetch`, which changed together
+  (a descriptor, -1 when the page is all there; the picture it
+  brings, -1 for the page), one variant, `Wire_off | Wire_page of fd
+  | Wire_picture of fd * id`; `hang_up` closes it (written twice
+  before); the loop a match on it, the keys and the mouse its last
+  arms. `nv_goal` an int option, `nv_goal_id` a string option, and
+  TinyBrowserAddress.fragment, which makes it, gives one (old: "" for
+  none). Seen on the way and left for later: a picture's `pc_got`
+  (rows got, -1 not asked, -2 failed, -3 asked: a state, a variant),
+  the document's `dc_file` (-1 none), next_picture's -1 for no
+  picture; u_dial's -1 is the system call's (kept, C).

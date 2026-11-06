@@ -17,8 +17,8 @@
 (* an address, a URL's text (old: a string that said nothing of it) *)
 type url = string
 
-(* an address and its #fragment, apart ("" when there is none) *)
-val fragment : url -> url * string
+(* an address and its #fragment, apart *)
+val fragment : url -> url * string option
 
 (* What was typed, as a full address: a title is an English Wikipedia
  * article, a name with a dot is https://, and ?words a search of

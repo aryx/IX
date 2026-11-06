@@ -97,14 +97,21 @@ let body_end sc =
     feed sc.sc_page ("<p>" ^ d.dc_type ^ ": " ^ what ^ ".</p>")
   | None -> ()
 
+(* the connection to the wire's other end closed, if there is one *)
+let hang_up sc =
+  (match sc.sc_nav.nv_wire with
+   | Wire_page fd -> ignore (u_close fd)
+   | Wire_picture (fd, _) -> ignore (u_close fd)
+   | Wire_off -> ());
+  sc.sc_nav.nv_wire <- Wire_off
+
 (* Asks for the page at [url] (a full address), which replaces the one
  * shown; its #fragment, if any, is shown when it comes. *)
 let load sc url =
-  if sc.sc_nav.nv_wire >= 0 then ignore (u_close sc.sc_nav.nv_wire);
+  hang_up sc;
   for i = 0 to pictures sc.sc_page - 1 do
     if (picture_of sc.sc_page i).pc_got >= 0 then put sc (d_free (image_of i))
   done;
-  sc.sc_nav.nv_fetch <- -1;
   hover sc false;
   let address, id = fragment url in
   sc.sc_page <- create sc.sc_cols;
@@ -123,12 +130,15 @@ let load sc url =
   draw_tools sc;
   redraw sc;
   (* the page asked of the wire's other end, on its port 70 *)
-  sc.sc_nav.nv_wire <- u_dial "10.0.0.1" 70;
-  if sc.sc_nav.nv_wire < 0 then begin
+  let fd = u_dial "10.0.0.1" 70 in
+  if fd < 0 then begin
     sc.sc_state <- "www: no network (tiny-machine -net dir gives one)";
     finish sc.sc_page
   end
-  else ignore (u_write sc.sc_nav.nv_wire (request url));
+  else begin
+    sc.sc_nav.nv_wire <- Wire_page fd;
+    ignore (u_write fd (request url))
+  end;
   draw_status sc
 
 (* The pictures, once the page is all there: the next one asked of the
@@ -166,8 +176,7 @@ let rec next_picture sc =
       let url = resolve sc.sc_nav.nv_address (base p) pc.pc_src in
       ignore (u_write fd ("img " ^ string_of_int pc.pc_w ^ " "
                           ^ string_of_int pc.pc_h ^ " " ^ url ^ "\r\n"));
-      sc.sc_nav.nv_wire <- fd;
-      sc.sc_nav.nv_fetch <- id
+      sc.sc_nav.nv_wire <- Wire_picture (fd, id)
     end
   end;
   draw_status sc
@@ -175,8 +184,7 @@ let rec next_picture sc =
 (* A message of the picture being fetched: its first line, then its
  * rows. A row that comes is drawn at once if its slice is on the
  * screen, so a picture is painted as it arrives. *)
-let picture_message sc s =
-  let id = sc.sc_nav.nv_fetch in
+let picture_message sc (id : int) s =
   let pc = picture_of sc.sc_page id in
   if pc.pc_got = -3 then begin
     match String.split_on_char ' ' s with
@@ -208,15 +216,15 @@ let go sc url =
   let address, id = fragment url in
   sc.sc_nav.nv_history <-
     (sc.sc_nav.nv_address, sc.sc_y) :: sc.sc_nav.nv_history;
-  if address = sc.sc_nav.nv_address && id <> "" then begin
-    (match anchor sc.sc_page id with
-     | Some line -> show_from sc line
-     | None -> ());
-    sc.sc_tools.tb_field <- url;
-    draw_tools sc;
-    draw_status sc
-  end
-  else load sc url
+  match id with
+  | Some id when address = sc.sc_nav.nv_address ->
+      (match anchor sc.sc_page id with
+       | Some line -> show_from sc line
+       | None -> ());
+      sc.sc_tools.tb_field <- url;
+      draw_tools sc;
+      draw_status sc
+  | _ -> load sc url
 
 (* Back to the page before, scrolled where it was: moved to if it is the
  * same page, asked for again if not. *)
@@ -231,7 +239,7 @@ let back sc =
         sc.sc_tools.tb_field <- address;
         draw_tools sc
       end
-      else begin load sc address; sc.sc_nav.nv_goal <- y end
+      else begin load sc address; sc.sc_nav.nv_goal <- Some y end
 
 (* the link under the mouse, if any *)
 let link_at sc x y =
@@ -345,7 +353,7 @@ let on_key sc (k : key) : bool =
 
 (* the end: the page's connection closed, the screen white *)
 let quit sc =
-  if sc.sc_nav.nv_wire >= 0 then ignore (u_close sc.sc_nav.nv_wire);
+  hang_up sc;
   hover sc false;
   for row = 0 to sc.sc_rows - 1 do fill_row sc row c_white done;
   send sc
@@ -353,8 +361,8 @@ let quit sc =
 let browse typed =
   let w, h = window_size () in
   let nav =
-    { nv_address = ""; nv_wire = -1; nv_history = []; nv_goal = -1;
-      nv_goal_id = ""; nv_pressed = false; nv_fetch = -1; nv_hover = false } in
+    { nv_address = ""; nv_wire = Wire_off; nv_history = []; nv_goal = None;
+      nv_goal_id = None; nv_pressed = false; nv_hover = false } in
   let sc =
     { sc_page = create (w / 8); sc_nav = nav;
       sc_tools = { tb_field = ""; tb_mouse = up; tb_menu = menu_closed () };
@@ -371,35 +379,36 @@ let browse typed =
    * page is all there, the program ends and leaves the page on the
    * screen. *)
   let rec loop keys =
-    if sc.sc_nav.nv_wire >= 0 || keys then begin
+    let wire =
+      match sc.sc_nav.nv_wire with
+      | Wire_page fd -> Some fd
+      | Wire_picture (fd, _) -> Some fd
+      | Wire_off -> None in
+    if wire <> None || keys then begin
       let n = ref 0 in
       if keys then begin fds.(0) <- 0; fds.(1) <- 4; n := 2 end;
-      if sc.sc_nav.nv_wire >= 0 then begin
-        fds.(!n) <- sc.sc_nav.nv_wire; n := !n + 1
-      end;
+      (match wire with
+       | Some fd -> fds.(!n) <- fd; n := !n + 1
+       | None -> ());
       let ready = u_ready fds !n 0 in
-      if sc.sc_nav.nv_wire >= 0 && ready = sc.sc_nav.nv_wire
-         && sc.sc_nav.nv_fetch >= 0 then begin
-        let s = u_read sc.sc_nav.nv_wire 1024 in
+      match sc.sc_nav.nv_wire with
+      | Wire_picture (fd, id) when ready = fd ->
+        let s = u_read fd 1024 in
         if s = "" then begin
-          ignore (u_close sc.sc_nav.nv_wire);
-          sc.sc_nav.nv_wire <- -1;
-          let pc = picture_of sc.sc_page sc.sc_nav.nv_fetch in
+          hang_up sc;
+          let pc = picture_of sc.sc_page id in
           if pc.pc_got < 0 then pc.pc_got <- -2;
-          sc.sc_nav.nv_fetch <- -1;
           next_picture sc
         end
-        else picture_message sc s;
+        else picture_message sc id s;
         send sc;
         loop keys
-      end
-      else if sc.sc_nav.nv_wire >= 0 && ready = sc.sc_nav.nv_wire then begin
-        let s = u_read sc.sc_nav.nv_wire 1024 in
+      | Wire_page fd when ready = fd ->
+        let s = u_read fd 1024 in
         if s = "" then begin
           body_end sc;
           finish sc.sc_page;
-          ignore (u_close sc.sc_nav.nv_wire);
-          sc.sc_nav.nv_wire <- -1;
+          hang_up sc;
           sc.sc_state <- "done";
           (* a page that sends us on (a search's result), not to itself *)
           let on =
@@ -421,14 +430,12 @@ let browse typed =
         end;
         send sc;
         loop keys
-      end
-      else if keys && ready = 4 then begin
+      | _ when keys && ready = 4 ->
         let s = u_read 4 12 in
         if String.length s = 12 && int16 s 8 >= 0
            && not (on_mouse sc (int16 s 0) (int16 s 4) (int16 s 8)) then quit sc
         else begin send sc; loop keys end
-      end
-      else if keys && ready = 0 then begin
+      | _ when keys && ready = 0 ->
         let typed = u_read 0 16 in
         if typed = "" then loop false
         else begin
@@ -437,7 +444,6 @@ let browse typed =
             || (on_key sc (key_of_byte typed.[i]) && each (i + 1)) in
           if each 0 then begin send sc; loop keys end else quit sc
         end
-      end
-      else loop keys
+      | _ -> loop keys
     end in
   loop true

@@ -41,23 +41,27 @@ val colours : string
  * says how the reading goes, and the rows between show the page's
  * lines, scrolled by pixels (sc_y). A line that arrives is drawn if it
  * falls in the page's area.
- * A page is read from [nv_wire], the connection to the wire's other end,
- * -1 when the page is all there; [nv_history] holds the pages seen
- * before, each with the first line that was shown. Where the browsing
- * is (the nav) is a record of its own, as tiny-ml builds a record's
- * fields on its 11 registers. *)
+ * A page is read from [nv_wire], the connection to the wire's other end
+ * and what it brings; [nv_history] holds the pages seen before, each
+ * with the first line that was shown. Where the browsing is (the nav)
+ * is a record of its own, as tiny-ml builds a record's fields on its 11
+ * registers. *)
+
+(* the connection to the wire's other end: none (the page and its
+ * pictures are all there), the page's, or picture i's *)
+type wire = Wire_off | Wire_page of int | Wire_picture of int * int
+
 type nav = {
   mutable nv_address : string;       (* the page's full address, without its
                                       * #fragment *)
-  mutable nv_wire : int;
+  mutable nv_wire : wire;
   mutable nv_history : (string * int) list;
-  mutable nv_goal : int;             (* a line to show first once it has come
-                                      * (back), or -1 *)
-  mutable nv_goal_id : string;       (* an anchor to show once it has come
-                                      * (#fragment), or "" *)
+  mutable nv_goal : int option;      (* a line to show first once it has come
+                                      * (back) *)
+  mutable nv_goal_id : string option;
+                                     (* an anchor to show once it has come
+                                      * (#fragment) *)
   mutable nv_pressed : bool;         (* the mouse's button is down *)
-  mutable nv_fetch : int;            (* the picture [nv_wire] brings, or -1 for
-                                      * the page *)
   mutable nv_hover : bool;           (* the mouse is over a link: its look is
                                       * a hand *)
 }

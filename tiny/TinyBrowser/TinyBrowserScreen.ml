@@ -38,23 +38,27 @@ let colours =
  * says how the reading goes, and the rows between show the page's
  * lines, scrolled by pixels (sc_y). A line that arrives is drawn if it
  * falls in the page's area.
- * A page is read from [nv_wire], the connection to the wire's other end,
- * -1 when the page is all there; [nv_history] holds the pages seen
- * before, each with the first line that was shown. Where the browsing
- * is (the nav) is a record of its own, as tiny-ml builds a record's
- * fields on its 11 registers. *)
+ * A page is read from [nv_wire], the connection to the wire's other end
+ * and what it brings; [nv_history] holds the pages seen before, each
+ * with the first line that was shown. Where the browsing is (the nav)
+ * is a record of its own, as tiny-ml builds a record's fields on its 11
+ * registers. *)
+
+(* the connection to the wire's other end: none (the page and its
+ * pictures are all there), the page's, or picture i's *)
+type wire = Wire_off | Wire_page of int | Wire_picture of int * int
+
 type nav = {
   mutable nv_address : string;       (* the page's full address, without its
                                       * #fragment *)
-  mutable nv_wire : int;
+  mutable nv_wire : wire;
   mutable nv_history : (string * int) list;
-  mutable nv_goal : int;             (* a line to show first once it has come
-                                      * (back), or -1 *)
-  mutable nv_goal_id : string;       (* an anchor to show once it has come
-                                      * (#fragment), or "" *)
+  mutable nv_goal : int option;      (* a line to show first once it has come
+                                      * (back) *)
+  mutable nv_goal_id : string option;
+                                     (* an anchor to show once it has come
+                                      * (#fragment) *)
   mutable nv_pressed : bool;         (* the mouse's button is down *)
-  mutable nv_fetch : int;            (* the picture [nv_wire] brings, or -1 for
-                                      * the page *)
   mutable nv_hover : bool;           (* the mouse is over a link: its look is
                                       * a hand *)
 }
@@ -291,10 +295,11 @@ let draw_status sc =
        (if d.dc_status <> 200 && d.dc_status <> 0 then
           string_of_int d.dc_status ^ ", " else "")
        ^ kb ^ ", " ^ string_of_int (count sc.sc_page) ^ " lines"
-       ^ (if sc.sc_nav.nv_fetch >= 0 then
-            ", picture " ^ string_of_int (sc.sc_nav.nv_fetch + 1) ^ " of "
-            ^ string_of_int (pictures sc.sc_page)
-          else "")
+       ^ (match sc.sc_nav.nv_wire with
+          | Wire_picture (_, id) ->
+              ", picture " ^ string_of_int (id + 1) ^ " of "
+              ^ string_of_int (pictures sc.sc_page)
+          | _ -> "")
      else sc.sc_state)
     ^ "   space -: page, b: back, g: address, q: quit" in
   put sc (d_text 0 c_black (8, row * 16) (clip sc text))
@@ -366,21 +371,22 @@ let show_from sc line =
  * place a page was asked to show (back, or a #fragment), once it has
  * come. *)
 let show_new sc =
-  if sc.sc_nav.nv_goal_id <> "" then
-    (match anchor sc.sc_page sc.sc_nav.nv_goal_id with
-     | Some line
-       when line + rows_of_page sc <= count sc.sc_page
-            || sc.sc_nav.nv_wire < 0 ->
-       sc.sc_nav.nv_goal_id <- ""; show_from sc line
-     | _ -> ());
-  if sc.sc_nav.nv_goal >= 0
-     && ((sc.sc_nav.nv_goal / 16) + rows_of_page sc <= count sc.sc_page
-         || sc.sc_nav.nv_wire < 0) then begin
-    let goal = sc.sc_nav.nv_goal in
-    sc.sc_nav.nv_goal <- -1;
-    let y = max 0 (min goal (max_y sc)) in
-    if y <> sc.sc_y then begin sc.sc_y <- y; redraw sc end
-  end;
+  let all_there = sc.sc_nav.nv_wire = Wire_off in
+  (match sc.sc_nav.nv_goal_id with
+   | Some id ->
+       (match anchor sc.sc_page id with
+        | Some line
+          when line + rows_of_page sc <= count sc.sc_page || all_there ->
+            sc.sc_nav.nv_goal_id <- None; show_from sc line
+        | _ -> ())
+   | None -> ());
+  (match sc.sc_nav.nv_goal with
+   | Some goal
+     when (goal / 16) + rows_of_page sc <= count sc.sc_page || all_there ->
+       sc.sc_nav.nv_goal <- None;
+       let y = max 0 (min goal (max_y sc)) in
+       if y <> sc.sc_y then begin sc.sc_y <- y; redraw sc end
+   | _ -> ());
   let last = min (count sc.sc_page) ((sc.sc_y + area sc + 15) / 16) in
   if sc.sc_drawn < last then begin
     List.iteri (fun k l -> draw_line sc (sc.sc_drawn + k) l)

@@ -12,11 +12,12 @@ open TinyBrowserText
 type url = string
 
 (* an address and its #fragment, apart ("" when there is none) *)
-let fragment (url : url) =
+let fragment (url : url) : url * string option =
   match String.index_opt url '#' with
   | Some i ->
-    String.sub url 0 i, String.sub url (i + 1) (String.length url - i - 1)
-  | None -> url, ""
+    String.sub url 0 i,
+    Some (String.sub url (i + 1) (String.length url - i - 1))
+  | None -> url, None
 
 (* DuckDuckGo's page for text browsers: its results are plain HTML, no
  * script (as Lynx is given), each a link through a page that a <meta>

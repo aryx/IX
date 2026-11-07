@@ -1,4 +1,4 @@
-1(* Claude Code
+(* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
  *
  * testing:
@@ -740,7 +740,7 @@ let source caps (text : string) =
  * quote, is continued, prompted by a tab; an interrupt is only for the
  * program running *)
 let interactive
-    (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.chdir; Cap.open_in; Cap.open_out;
+    (caps : < Cap.forkew; Cap.chdir; Cap.open_in; Cap.open_out;
              Cap.stdin; Cap.stderr; Cap.stdout; Cap.exit; Cap.pipe; Cap.signal;
              Cap.readdir; .. >) =
   TSys.ignore_interrupt caps;

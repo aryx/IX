@@ -345,6 +345,10 @@ let assemble (chan : Chan.i) =
   ;
   Buffer.contents b
 
+(*****************************************************************************)
+(* Entry point *)
+(*****************************************************************************)
+
 let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     (argv : string array) : Exit.t =
   let assemble_to (f : Fpath.t) (out : Fpath.t) : Exit.t =

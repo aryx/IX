@@ -65388,3 +65388,16 @@ Claude recommended adding a `design:` paragraph to the `.mli`, placed before the
 Claude noted the `.mli` already mentions "the object is text" in passing, so the new paragraph would expand on that.
 Yoann's follow-up approves the change, so the focus is the design paragraph itself.
 Claude had not yet written the file or committed anything at the time of this answer.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 17:37
+
+**Yoann:**
+
+> yes let's commit
+
+**Claude (summary):**
+
+Claude committed the design note as 042cbfb8, together with prompt-history.md, to the repository.
+Claude reported that the working tree was clean after the commit.

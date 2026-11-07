@@ -3,13 +3,15 @@
  * tiny-assembler -h prints).
  *
  * The machine was designed for it: one format, every instruction 4
- * bytes, every immediate the word's low 16 bits. So an instruction's
- * size is known from its name alone (li and la with a label: two
- * words, lui and ori), and its words are made here, at once, but for
- * what the file cannot know: where a label is. That is left as 0 in the
- * word, and a line of the object says what goes there (the words
- * 30100000, then 20200000 and 17220000, as bytes in the memory's order,
- * the low first):
+ * bytes, every immediate the word's low 16 bits. Only the
+ * pseudo-instructions are bigger: la, and li unless its number is small,
+ * are two words, lui then ori. So a line's size is known as it is
+ * read, from its name and whether its operand is a number or a label,
+ * never from a label's address; and its words are made here, at once,
+ * but for what the file cannot know: where a label is. That is left as
+ * 0 in the word, and a line of the object says what goes there (the
+ * words 30100000, then 20200000 and 17220000, as bytes in the memory's
+ * order, the low first):
  *
  *     beq   r1, zero, done        code 00001030
  *                                 reloc 0 pc done

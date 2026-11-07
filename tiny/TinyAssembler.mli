@@ -84,6 +84,22 @@
  * no #include or #define, no TEXT with its frame's size: a function is
  * a label, its frame the compiler's instructions.
  *
+ * design:
+ * The object could be marshalled instead, as mini-asm and mini-ld do,
+ * and tiny-ml has Marshal (TinyML.ml writes its .tmi interfaces with
+ * it). That would save some 40 to 60 lines: TinyLinker's read and
+ * unhex, this format's description above (a type shared through
+ * TinyMachineISA instead), and the hexadecimal writing here. Text was
+ * kept for what it shows: cat hello.o puts each instruction's words
+ * and relocs beside the line they came from, which is how the format
+ * above teaches what a relocation is; a marshalled object would need a
+ * dump option to be read, giving back part of the lines saved. Text
+ * also fails loudly on an object from an older format ("not an
+ * object's line"), where a marshalled one is read as garbage unless it
+ * carries a version, as mini-asm's Asm.ml does. Marshal pays off for
+ * mini-asm's objects, big and full of structures (the history, acid's
+ * types); here an object is a flat list of a handful of kinds of line.
+ *
  * cs-history:
  * The first assemblers assembled and loaded in one step: the EDSAC's
  * initial orders (David Wheeler, 1949) read orders punched on paper

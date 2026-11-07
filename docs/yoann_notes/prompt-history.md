@@ -65357,3 +65357,34 @@ Yoann's follow-up asks why `TinyAssembler.ml` writes its object file as text ins
 **Yoann:**
 
 > wouldn't that reduce the LOC to use marshal?
+
+------------------------------------------------------------------------
+
+## 2026-11-07 17:30
+
+**Yoann:**
+
+> just asking
+
+**Claude (summary):**
+
+Claude estimated Marshal would save about 40–60 of the ~660 lines in TinyAssembler.ml and TinyLinker.ml, without writing any code.
+Claude recommended keeping text objects for tiny, since they are flat, cheap to read, and teach relocation well.
+Claude noted that Marshal would work in tiny-ml, since TinyLibCore already provides it and TinyML.ml:219 uses it.
+Claude flagged the tradeoff: text fails loudly on old objects, while marshalled ones need a version number like mini-asm's Asm.ml.
+Claude said switching to Marshal is about an hour's change if Yoann prefers the smaller code.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 17:35
+
+**Yoann:**
+
+> ok, let's add this design decision somewhere in the .ml or .mli (maybe with a design: or alt: comment tag)
+
+**Claude (summary):**
+
+Claude recommended adding a `design:` paragraph to the `.mli`, placed before the `cs-history:` tag, following TinyML.mli's style.
+Claude noted the `.mli` already mentions "the object is text" in passing, so the new paragraph would expand on that.
+Yoann's follow-up approves the change, so the focus is the design paragraph itself.
+Claude had not yet written the file or committed anything at the time of this answer.

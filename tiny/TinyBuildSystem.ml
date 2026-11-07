@@ -64,6 +64,12 @@ let show_target = function Exact s -> s | Pattern (pre, suf) -> pre ^ "%" ^ suf
 
 exception Error of string
 
+(* what the program asks for: main is given more (Cap.main's all), its
+ * type a row (..) *)
+type caps =
+  < Cap.fork; Cap.exec; Cap.wait; Cap.env; Cap.open_in; Cap.open_out;
+    Cap.readdir; Cap.clock; Cap.stdout; Cap.stderr >
+
 (* (old: a format, Printf.ksprintf's: tiny-ml reads a format only where
  * it is written, Printf.sprintf at the call) *)
 let error s = raise (Error s)
@@ -495,7 +501,7 @@ let report caps total =
          recipes (recipes / max 1 total) (recipes * 10 / max 1 total mod 10)
          total)
 
-let run (caps : Cap.all_caps) (argv : string array) : Exit.t =
+let run (caps : < caps; .. >) (argv : string array) : Exit.t =
   let file = ref "Buildfile" and jobs = ref 1 and dry = ref false
   and dot = ref false and timed = ref false in
   let began = TinyLibSystem.millis caps in
@@ -562,7 +568,7 @@ let run (caps : Cap.all_caps) (argv : string array) : Exit.t =
   with Error msg -> Exit.Err msg
 
 (* -h, and an unknown option said, not raised *)
-let main (caps : Cap.all_caps) (argv : string array) : Exit.t =
+let main (caps : < caps; .. >) (argv : string array) : Exit.t =
   match Array.to_list argv with
   | [ _; ("-h" | "--help") ] -> TinyLibSystem.print caps help; Exit.OK
   | _ ->

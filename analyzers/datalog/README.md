@@ -238,6 +238,23 @@ script written to a file for rc): one interface, two systems, the host's
 alone read. Not read: the SDL programs, and what runs on tiny-kernel, whose
 system is tiny's kernel.
 
+Holding all of them (`all_caps`, 2026-11-07; the author: "why
+TinyBuildSystem.mli has all_caps in the .mli? why not a more precise set
+of caps?"): `Cap.all_caps` is `< >` in lib_core's erased `Cap.mli`, so a
+function given it declared nothing and was asked nothing, neither "may
+not need" nor "needs". Now read as every capability, and a function
+holding it, but for the one given to `Cap.main`, is said with what it
+asks for: what the functions it hands its capabilities to want (their
+types' sets, and through a row's `..` what they hand on, as OCaml infers
+it: `build`'s `< Cap.fork; .. >` given to `digest_file`'s
+`Cap.readdir`), its closures' too, and what it does itself:
+"has < Cap.all_caps >, asks only for Cap.open_in, Cap.stdout". At first
+tiny/ 5 (the mains and starts of tiny-build, tiny-shell, tiny-editor;
+tiny-utils' main lets its capabilities go into a table's functions, not
+said, but given its `caps` the same), m-ix none (its holders the
+functions given to `Cap.main`); fixed the same day, each main of
+`< caps; .. >`, its program's set, the row taking `Cap.main`'s whole.
+
 Around the wrappers (`around`, 2026-11-06; the author: "I used to implement
 'b' via semgrep.jsonnet rules, forbidding to call the raw Sys and Unix
 functions, but we can also do it via -caps"): a function of the program

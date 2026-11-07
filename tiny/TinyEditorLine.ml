@@ -33,6 +33,11 @@ the commands on standard input, one a line, each on dot, a range of the text:
 
 exception Error of string
 
+(* what the editor asks for: main is given more (Cap.main's all), its
+ * type a row (..) *)
+type caps =
+  < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr; Cap.exit >
+
 (*****************************************************************************)
 (* Commands *)
 (*****************************************************************************)
@@ -711,7 +716,7 @@ let rec exec
           Buffer.add_string out (String.sub !text (fst r) (snd r - fst r));
           dot := r)
 
-let main (caps : Cap.all_caps) (argv : string array) : Exit.t =
+let main (caps : < caps; .. >) (argv : string array) : Exit.t =
   next_line := (fun () -> TinyLibSystem.read_line caps);
   match Array.to_list argv with
   | [ _; ("-h" | "--help") ] ->

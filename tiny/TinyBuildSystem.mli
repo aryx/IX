@@ -9,14 +9,12 @@
  *
  * A Buildfile has five kinds of lines, shown by example in the
  * [help] string of the .ml (which build -h prints along with the
- * usage), and
- * that is the whole syntax. Variables in rule lines are expanded as
- * the lines are read. A recipe receives the variables, plus $target,
+ * usage), and that is the whole syntax. Variables in rule lines are expanded
+ * as the lines are read. A recipe receives the variables, plus $target,
  * $prereq and $stem, in its environment (on tiny-kernel, which has
  * none, as the shell's assignments before the recipe), so the shell
  * does the expansion and there is no second expansion language. There
- * are no
- * attributes: a target whose recipe creates no file (clean, all) is
+ * are no attributes: a target whose recipe creates no file (clean, all) is
  * simply never up to date.
  *
  * {b Up to date by content, not by time.} The stamp of each target is
@@ -178,5 +176,11 @@ type node
  * whose prerequisites can be made; exists says whether a file is there *)
 val graph : rule list -> (string -> bool) -> string -> node
 
+(* what the program asks for: main is given more (Cap.main's all), its
+ * type a row (..) *)
+type caps =
+  < Cap.fork; Cap.exec; Cap.wait; Cap.env; Cap.open_in; Cap.open_out;
+    Cap.readdir; Cap.clock; Cap.stdout; Cap.stderr >
+
 (* the program: its arguments (its name first; -h: how) to how it ends *)
-val main : Cap.all_caps -> string array -> Exit.t
+val main : < caps; .. > -> string array -> Exit.t

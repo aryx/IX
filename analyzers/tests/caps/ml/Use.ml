@@ -78,3 +78,9 @@ let () =
     excess caps "o"; ignore (through caps (Fpath.v "p")); ignore (keeps caps); gives caps ignore;
     ignore (on_fd (opens_fd "k") (Bytes.create 1));
     bye (); leave caps)
+
+(* every capability held: what it asks for is said, the set its type could
+ * name (old: nothing said, Cap.all_caps < > in lib_core's Cap.mli); not
+ * of the function Cap.main is given *)
+let all (caps : Cap.all_caps) f = Console.print caps (FS.read caps f)
+let () = Cap.main (fun (caps : Cap.all_caps) -> all caps "x")

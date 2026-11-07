@@ -3,6 +3,7 @@
 %   no_cap(O, S, Via)     the program's O does S and holds no capability
 %   wrong_cap(O, S, Via)  O holds capabilities, none that allows S
 %   unused_cap(O, C)      O is given C, and nothing it reaches needs it
+%   all_caps(O, C)        O is given Cap.all_caps, and what it calls asks for C
 % S done by O itself (Via = itself) or by calling the library's Via.
 %
 %     let log s = print_string s               no_cap: needs Cap.stdout
@@ -318,6 +319,48 @@ lets_go(R) :- names_function(R, G), lets_go(G), gate(G).
 
 unused_cap(O, C) :-
   own(O), reach(O), declares(F, C), root(F, O), \+ needed(O, C), \+ lets_go(O).
+
+% ---- all_caps(O, C): O holds every capability, and C is one it asks for
+%
+% Cap.all_caps is what Cap.main gives the program, for the function it
+% calls to hand down; any other function holding it says nothing of what
+% it does, the question unused_cap asks of a written set:
+%
+%     let main (caps : Cap.all_caps) argv = Console.print caps "hi"
+%                                       all_caps: asks for Cap.stdout
+%
+% What it asks for is the set its type could name instead: what the
+% functions it calls declare (a holder of all_caps it calls, what that one
+% asks for), and what it does itself. Not needed's alternatives: Unix.openfile
+% is Cap.open_in or Cap.open_out by its flags, which the callee's type says.
+% Not said of the function given to Cap.main, nor of one that lets its
+% capabilities go.
+main_entry(F) :-
+  call_indirect(I, 'Cap.main'), argument(I, _, V), known_callee(V, F).
+all_caps_holder(O) :-
+  own(O), reach(O), declares(F, all_caps), root(F, O), \+ main_entry(O),
+  \+ lets_go(O).
+% (wants: what a function's capabilities must have, as OCaml infers it
+% through the row variable: what its type names, and what the functions it
+% hands them to want, as build's < Cap.fork; .. > to digest_file's
+% Cap.readdir)
+hands(G, R) :-
+  cap_owner(V, G), argument(I, _, V), call_indirect(I, W), known_callee(W, H),
+  root(H, R), R \= G.
+wants(G, C) :- declared_by(G, C), C \= all_caps.
+wants(G, C) :- hands(G, H), wants(H, C).
+% (asks: of a holder and of its closures, which hold what it holds, as
+% next_line := (fun () -> read_line caps); a function called, not a
+% primitive, which declared_by's closure rule gives what holds it: raise)
+asks(O, C) :-
+  declared_by(O, all_caps), names_function(O, G), closure(G, _, _),
+  wants(G, C).
+asks(O, C) :- declared_by(O, all_caps), hands(O, G), wants(G, C).
+asks(O, C) :-
+  declared_by(O, all_caps), names_function(O, G), closure(G, _, _),
+  declared_by(G, all_caps), asks(G, C).
+asks(O, C) :- declared_by(O, all_caps), does(O, S, _), requires(S, C).
+all_caps(O, C) :- all_caps_holder(O), asks(O, C).
 
 % ---- around(O, S): the program's own code names a system call itself
 %

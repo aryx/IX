@@ -875,7 +875,7 @@ let help () =
       utilities)
 
 (* (each utility's status a number: test's answer is one) *)
-let main (caps : Cap.all_caps) (argv : string array) : Exit.t =
+let main (caps : < caps; .. >) (argv : string array) : Exit.t =
   let status =
     match Array.to_list argv with
     | [] -> 1

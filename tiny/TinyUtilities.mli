@@ -83,4 +83,4 @@ val fold :
 
 (* the program: its arguments (its name first, the utility's when it
  * is run by a link named after one) to how it ends *)
-val main : Cap.all_caps -> string array -> Exit.t
+val main : < caps; .. > -> string array -> Exit.t

@@ -487,9 +487,18 @@ let rec takes_capability (p : pattern) : bool =
       | Some t -> is_object t)
   | _ -> false
 
+(* Cap.all_caps is every capability, the one Cap.main gives, though
+ * lib_core's erased Cap.mli writes it < > (old: read as that, no
+ * capability declared, so that a function holding it was never asked
+ * what it uses) *)
+let type_capabilities (t : ty) : string list =
+  match t with
+  | Tconstr ({ tpath = "Cap.all_caps"; _ }, _) -> [ "all_caps" ]
+  | _ -> Resolve.capabilities t
+
 let rec declared (p : pattern) : string list =
   match p with
-  | Pconstraint (p, t) -> Resolve.capabilities t @ declared p
+  | Pconstraint (p, t) -> type_capabilities t @ declared p
   | _ -> []
 
 (* the capabilities a record keeps in its fields, Eval.t's caps, and in its

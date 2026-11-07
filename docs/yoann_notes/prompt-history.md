@@ -65114,3 +65114,49 @@ Claude removed the temporary worktree it had used to compare against HEAD.
 Claude noted that a leftover background `grep` may still be running, but it only reads files and stops when the session closes.
 Claude said nothing it started is still needed, so the session can be closed safely.
 Claude flagged an optional follow-up: having the TinyKernel Makefile call its tools by full path so the check works on macOS without `bin/` on PATH.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 14:13
+
+**Yoann:**
+
+> why TinyBuildSystem.mli has all_caps in the .mli? why not a more precise set of caps? make check-tix does not report the overuse of caps?
+
+**Claude (summary):**
+
+Claude investigated why the `-caps` analyzer stays silent on `main` and `run` in tiny-build.
+Claude found that `Cap.all_caps` produces `takes_cap` facts but no `declares` facts, so the overuse goes unreported.
+Claude traced this through `Resolve.capabilities` and compared it with m-ix's mains, which declare precise capability sets.
+Claude proposed fixing both the analyzer's handling of `all_caps` and the overly broad capabilities in `TinyBuildSystem.mli`.
+Claude was reading the definition of `Cap.all_caps` to decide how the analyzer should treat it.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 13:58
+
+**Yoann:**
+
+> is there any DSL or use of other language that could significantly reduce the LOC of m-ix (and t-ix)? I've introduced ML for example because I think it uses less code that C to express similar ideas. I've also used datatalog for mini-analyze for the same reason. Any other DSL or language that could benefit to IX?
+
+**Claude (summary):**
+
+Claude said it was surveying the repo's code by area to ground its answer.
+Claude then said it would run a couple more checks before giving the answer.
+No recommendation about DSLs or other languages appeared in this part of the reply.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 14:17
+
+**Yoann:**
+
+> yes let's do both
+
+**Claude (summary):**
+
+Claude implemented the analyzer side, with a declared `all_caps` fact and a new "holds all_caps, uses only" report.
+Claude wrote a `caps` type in each tiny-build module, matching TinyUtilities and TinyShell's existing pattern.
+Claude changed `main` to take `< caps; .. >`, so it still fits `TinyLibSystem.main`'s `Cap.all_caps`.
+Claude checked the tiny-build sets against the inferred types, and real OCaml accepted all four.
+Claude ran the builds and full test suite, all green, and corrected the mini-mk memory note.

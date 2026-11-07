@@ -145,6 +145,11 @@ type cmd
 val exec :
   < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; Cap.exit; .. > -> cmd -> unit
 
+(* what the editor asks for: main is given more (Cap.main's all), its
+ * type a row (..) *)
+type caps =
+  < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr; Cap.exit >
+
 (* the program: its arguments (its name first), the files named, then
  * the commands of its input, to how it ends *)
-val main : Cap.all_caps -> string array -> Exit.t
+val main : < caps; .. > -> string array -> Exit.t

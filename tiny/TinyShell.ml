@@ -771,7 +771,7 @@ let interactive
   in
   loop ()
 
-let start (caps : Cap.all_caps) (argv : string array) : Exit.t =
+let start (caps : < caps; .. >) (argv : string array) : Exit.t =
   (* the environment, with rc's lists split back *)
   TinyLibSystem.environment caps
   |> List.iter (fun (k, v) -> set k (String.split_on_char '\001' v));
@@ -801,7 +801,7 @@ let start (caps : Cap.all_caps) (argv : string array) : Exit.t =
   TinyLibSystem.flush caps;
   ending st
 
-let main (caps : Cap.all_caps) (argv : string array) : Exit.t =
+let main (caps : < caps; .. >) (argv : string array) : Exit.t =
   match Array.to_list argv with
   | [ _; ("-h" | "--help") ] -> TinyLibSystem.print caps help; Exit.OK
   | _ -> start caps argv

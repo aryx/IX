@@ -687,7 +687,7 @@ $(O)/check/%.sum: $(T)/%.events $(O)/boot.img
 $(O)/check/tetris.wav.heard: $(O)/boot.img
 	timeout 300 $(MACHINE) -events $(T)/tetris.events -audio $(O)/check/tetris.wav $(O)/boot.img > /dev/null
 	n=$$(wc -c < $(O)/check/tetris.wav); \
-	  s=$$(tail -c +45 $(O)/check/tetris.wav | tr -d '\200' | wc -c); \
+	  s=$$(tail -c +45 $(O)/check/tetris.wav | LC_ALL=C tr -d '\200' | wc -c); \
 	  echo "$$n bytes, $$s samples not silent" > $@; \
 	  [ $$n -gt 100000 ] && [ $$((s * 2)) -gt $$n ] || \
 	  { echo "tiny-kernel: tetris.events: no music ($(O)/check/tetris.wav: $$n bytes, $$s not silent)"; exit 1; }

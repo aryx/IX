@@ -885,8 +885,22 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
   | Efor (_, lo, hi, _, body) -> scalar dst; flow None lo (junk ()); flow None hi (junk ()); flow None body (junk ())
   | Eassert e -> scalar dst; flow None e (junk ())
 
-(* f a1 ... an: a call for each argument, of what the one before returned *)
+(* x |> g a and g a @@ x: the call g a x, as mini-ml's Lower compiles it,
+ * so that a container's function gets its model here, as when written
+ * g a x (old: g a a closure that the external called, all of a program's
+ * l |> List.iter f one walk in List.iter's code, every list the same; a
+ * table's order from one reached another's writes: bugs/order.dl's
+ * TinyMLTypes.opened to TinyMLMachine's output) *)
 and call (x : expr) (f : expr) (args : expr list) (dst : string) : unit =
+  match f.e, args with
+  | Evar (Prim (("%revapply" | "%apply") as p, _, _)), a :: b :: more ->
+      let g, y = if p = "%revapply" then (b, a) else (a, b) in
+      let g, ys = match g.e with Eapply (h, zs) -> (h, zs @ [ y ]) | _ -> (g, [ y ]) in
+      call x g (ys @ more) dst
+  | _ -> applied x f args dst
+
+(* f a1 ... an: a call for each argument, of what the one before returned *)
+and applied (x : expr) (f : expr) (args : expr list) (dst : string) : unit =
   marshal x f args;
   (* (each site of this application by its function's span, as the
    * SSA's calls are (Ssa_facts.site): bugs/pairs.dl's) *)

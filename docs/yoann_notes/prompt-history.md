@@ -65026,3 +65026,60 @@ Claude confirmed the dune build passes after the hand-edited section 3 changes.
 Claude built the project with mini-mk, ix's own compiler, and it built cleanly.
 Claude started `make test` and a TinyKernel check, since it had touched `TinyLibSystem.ml`.
 Claude was reviewing the full diff while the tests ran, and had not yet reported their results.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 12:44
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude reported that the Tetris test failure also happens at HEAD, so it predates this change.
+Claude said it was cleaning up the worktree, confirming the analyzer check passes, and then committing.
+Claude's answer was a short status update with no further detail on the commit contents.
+Yoann's follow-up asks what comes next, so the pending step is the commit itself.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 12:56
+
+**Yoann:**
+
+> what;s next?
+
+**Claude (summary):**
+
+Claude suggested bisecting the tetris "no music" failure in `make -C tiny/TinyKernel check`, since it already fails at HEAD. Yoann pushed back: `make test` passes, so the regression may not be real. He chose option 1 instead. Claude's recommended fix for option 1 is to make mini-analyze treat `x |> f` like `f x`, so both forms produce the same finding.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 13:00
+
+**Yoann:**
+
+> make test is passing, are you sure about the tetris regression? In any case I would do 1
+
+**Claude (summary):**
+
+Claude said the analyzer already models `|>` as a `%revapply` primitive, and it was checking why it was less precise than a direct call.
+Claude reported that the false finding is gone, with no new findings, and started `make test`.
+Claude said `Before.ml` is now reported and `After.ml` stays quiet, then planned to rerun the test against the unfixed analyzer to confirm it catches the old behavior.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 13:05
+
+**Yoann:**
+
+> Check the make test / TinyKernel check results for the |> rewrite.
+
+**Claude (summary):**
+
+Claude found the `|>` finding was a false positive, and fixed it in `analyzers/ml/Closure_facts.ml` by rewriting `x |> g a` and `g a @@ x` into direct calls.
+Claude explained that `|> List.iter` shared one List.iter model across the program, mixing unrelated lists, and the commit message for `c41fabdb` had this backwards.
+Claude added `analyzers/tests/bugs/pipe/` with `Before.ml` (real bug, still reported) and `After.ml` (fixed, not reported), and verified the test catches the old behavior.
+`make test` passed (158 jobs, 0 failures) and `analyzers/tests/run.sh` passed, with the recorded results on all of ix unchanged.
+Claude also diagnosed tetris as a `tr -d '\200'` UTF-8 issue on macOS and proposed `LC_ALL=C tr` in `tiny/TinyKernel/Makefile`.

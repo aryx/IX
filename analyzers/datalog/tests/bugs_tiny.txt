@@ -39,7 +39,6 @@ tiny/TinyML/TinyMLPrintf.ml:100: stack: adds calls itself, not a tail call, over
 tiny/TinyML/TinyMLPrintf.ml:105: stack: adds calls itself, not a tail call, over a list
 tiny/TinyML/TinyMLPrintf.ml:83: stack: build calls itself, not a tail call, over a list
 tiny/TinyML/TinyMLPrintf.ml:85: stack: build calls itself, not a tail call, over a list
-tiny/TinyML/TinyMLTypes.ml:317: order: in TinyMLTypes.opened, a table's order reaches the output at tiny/TinyML/TinyMLMachine.ml:408
 tiny/TinyML/TinyMLTypes.ml:45: evalorder: operands at 45:12 and 45:21, both with an effect: their order the compiler's
 tiny/TinyMachine.ml:376: int31: in TinyMachine's toplevel, 0xa1b2c3d4: not on the Pi 1's 31 bits
 tiny/TinyMachine/TinyMachineCPU.ml:13: int31: in TinyMachineCPU.m32, 0xffffffff: not on the Pi 1's 31 bits

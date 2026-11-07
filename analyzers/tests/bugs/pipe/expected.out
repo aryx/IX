@@ -1,0 +1,2 @@
+bug? analyzers/tests/bugs/pipe/Before.ml:6: order: in Before.dump, a table's order reaches the output at analyzers/tests/bugs/pipe/Before.ml:6
+1 bugs? (order 1)

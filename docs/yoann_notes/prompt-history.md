@@ -64979,3 +64979,50 @@ Claude confirmed that tiny-ml has no floats, citing the `TinyML.mli:101` exclusi
 Claude pointed out that mini-ml does support floats, so the calculator sentence at `TinyAppCalculator.mli:42` is accurate only because tiny/ must build with tiny-ml.
 Claude suggested rewording the sentence to "tiny-ml, which compiles tiny/, has no floats" to make the constraint explicit.
 Claude did not look into how tiny-machine handles graphics, since Yoann's follow-up question came after this answer.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 10:05
+
+**Yoann:**
+
+> how does tiny-machine handle graphics then without floats?
+
+**Claude (summary):**
+
+Claude explained that tiny-machine needs no floats because all screen drawing is whole-pixel integer work.
+Claude described Bresenham line drawing in TinyKernelGraphics.ml, using only integer error terms and comparisons.
+Claude noted that fills, copies and clipping use integer rectangle arithmetic with peekb and pokeb.
+Claude pointed out that text is scaled by whole numbers from an 8×16 bitmap font.
+Claude suggested fixed point for fractional needs, and noted that m-ix has floats for TinyOffice's Hershey fonts.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 12:33
+
+**Yoann:**
+
+> I rewrote slightly TinyAssembler.ml to use |> when using List.iter or List.map or similar functions where it helps for readability to see first the "object" (the actual list) the operation is on before seing the operation (the passed closure). It's especially useful when the body of this closure is long. Can you find more opportunities for such rewrite under tiny/? Analyze and report
+
+**Claude (summary):**
+
+Claude scanned the tiny/ directory and found about 214 spots where a multi-line closure precedes the list it operates on.
+Claude said it would read the largest of these to judge which ones are worth rewriting with `|>`.
+Yoann's reply, "yes let's do it," approves going ahead with the rewrites.
+Claude had not yet edited any files at the point of this answer.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 12:39
+
+**Yoann:**
+
+> yes let's do it
+
+**Claude (summary):**
+
+Claude rewrote the loops, split_on_char pipelines, and nested chains across sections 1 through 3.
+Claude confirmed the dune build passes after the hand-edited section 3 changes.
+Claude built the project with mini-mk, ix's own compiler, and it built cleanly.
+Claude started `make test` and a TinyKernel check, since it had touched `TinyLibSystem.ml`.
+Claude was reviewing the full diff while the tests ran, and had not yet reported their results.

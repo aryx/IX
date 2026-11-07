@@ -292,7 +292,7 @@ let relay_turn p (r : relaying) =
  * the connection has room, and after the last the end said; the
  * relays' turns *)
 let serve p =
-  List.iter (fun (conn : TinyKernelNetwork.il) ->
+  p.stack.ns_fresh |> List.iter (fun (conn : TinyKernelNetwork.il) ->
     let key = conn.il_me, conn.il_lport, conn.il_rport in
     match List.assoc_opt key p.agreed with
     | Some relay ->
@@ -308,15 +308,14 @@ let serve p =
           { conn = conn;
             ask = (if conn.il_lport = 53 then name else p.document);
             todo = None; asked = false; taking = None }
-          :: p.serving)
-    p.stack.ns_fresh;
+          :: p.serving);
   p.stack.ns_fresh <- [];
   List.iter (relay_turn p) p.relays;
   p.relays <-
     List.filter (fun (r : relaying) ->
       if TinyKernelNetwork.il_over r.rconn then (r.relay.shut (); false)
       else true) p.relays;
-  List.iter (fun (s : serving) ->
+  p.serving |> List.iter (fun (s : serving) ->
     if not s.asked then (
       match TinyKernelNetwork.il_hear s.conn with
       | Some line -> (
@@ -351,7 +350,7 @@ let serve p =
           push ()
       | Some [] -> TinyKernelNetwork.il_done s.conn
       | _ -> () in
-    push ()) p.serving;
+    push ());
   p.serving <-
     List.filter (fun (s : serving) ->
       not (TinyKernelNetwork.il_over s.conn || s.todo = Some []))

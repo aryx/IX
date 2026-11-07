@@ -529,8 +529,8 @@ and bind_rec env bs =
       enqueue (fun () -> compile_fun lab xs benv b);
       alloc_closure env lab n fvs;
       emit (Set (List.nth slots i))) (List.combine fs fvss);
-    List.iteri (fun i fvs ->
-      List.iteri (fun j y ->
+    fvss |> List.iteri (fun i fvs ->
+      fvs |> List.iteri (fun j y ->
         let rec index k = function
           | [] -> None
           | z :: l -> if z = y then Some k else index (k + 1) l in
@@ -539,7 +539,7 @@ and bind_rec env bs =
             emit (Get (List.nth slots m));
             emit (Get (List.nth slots i));
             emit (SetField (2 + j))
-        | _ -> ()) fvs) fvss;
+        | _ -> ()));
     env
   end
 

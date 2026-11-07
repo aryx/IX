@@ -316,7 +316,9 @@ let event (ms : mouse) k line =
 
 (* a file's: each event's time, and the event *)
 let timed_events text =
-  List.filter_map (fun l ->
+  text
+  |> String.split_on_char '\n'
+  |> List.filter_map (fun l ->
     match String.index_opt l ' ' with
     | _ when l = "" -> None
     | Some i ->
@@ -324,7 +326,6 @@ let timed_events text =
          | Some t -> Some (t, String.sub l (i + 1) (String.length l - i - 1))
          | None -> TinyMachineCPU.error "not an event: %s" l)
     | None -> TinyMachineCPU.error "not an event: %s" l)
-    (String.split_on_char '\n' text)
 
 (*****************************************************************************)
 (* The speaker (plan_tiny_audio.md) *)

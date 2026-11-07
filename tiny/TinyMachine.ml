@@ -558,7 +558,8 @@ let run
              host, port, helper caps [ "listen"; string_of_int host ], ref "")
            o.net_forward) in
   let forwards peer =
-    waiting := List.filter_map (fun ((host, port, pipes, part) as w) ->
+    waiting :=
+      !waiting |> List.filter_map (fun ((host, port, pipes, part) as w) ->
       let rec lines = function
         | [] -> Some w
         | [ rest ] -> part := rest; Some w
@@ -581,8 +582,7 @@ let run
       match helper_read (snd pipes) 0. with
       | None -> Some w
       | Some "" -> lines [ "-"; "" ]
-      | Some bytes -> lines (String.split_on_char '\n' (!part ^ bytes)))
-      !waiting in
+      | Some bytes -> lines (String.split_on_char '\n' (!part ^ bytes))) in
   (* the speaker's samples: to the window, and kept for -audio *)
   let window = if o.window then Some (window_open caps) else None in
   let recorded = Buffer.create 0 in

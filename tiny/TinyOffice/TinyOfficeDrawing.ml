@@ -25,7 +25,9 @@ let tools = [ "box"; "arrow"; "text" ]
 
 (* a drawing's shapes: their kind, their numbers, their label *)
 let figures (data : string) : (string * int list * string) list =
-  List.concat_map (fun l ->
+  data
+  |> String.split_on_char '\n'
+  |> List.concat_map (fun l ->
     match String.split_on_char ' ' l with
     | kind :: rest when List.mem kind tools ->
         let rec take k l =
@@ -40,7 +42,7 @@ let figures (data : string) : (string * int list * string) list =
                 let nums, words = take (k - 1) r in v :: nums, words) in
         let nums, words = take (if kind = "text" then 2 else 4) rest in
         [ kind, nums, String.concat " " words ]
-    | _ -> []) (String.split_on_char '\n' data)
+    | _ -> [])
 
 let figure_line ((kind, nums, label) : string * int list * string) : string =
   String.concat ""

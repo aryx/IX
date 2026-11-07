@@ -50,7 +50,9 @@ let read (name : Fpath.t) text =
   if not (String.length text >= 11 && String.sub text 0 11 = "tiny-object")
   then error (Fpath.to_string name ^ ": not an object of tiny-assembler's");
   let items = ref [] in
-  List.iteri (fun n l ->
+  text
+  |> String.split_on_char '\n'
+  |> List.iteri (fun n l ->
     match String.split_on_char ' ' l, !items with
     | [ "tiny-object" ], [] | [ "" ], _ -> ()
     | [ "label"; s ], _ -> items := Label s :: !items
@@ -64,8 +66,7 @@ let read (name : Fpath.t) text =
         items := Chunk (s, (int_of_string off, k, t) :: rs) :: rest
     | _ ->
         error (Fpath.to_string name ^ ":" ^ string_of_int (n + 1)
-               ^ ": not an object's line"))
-    (String.split_on_char '\n' text);
+               ^ ": not an object's line"));
   List.rev !items
 
 (*****************************************************************************)
@@ -77,7 +78,7 @@ let read (name : Fpath.t) text =
 let layout (items : item list) =
   let labels = Hashtbl.create 64 and order = ref [] in
   let pc = ref 0 and placed = ref [] and data_at = ref 0 in
-  List.iter (fun it ->
+  items |> List.iter (fun it ->
     match it with
     | Label l ->
         if Hashtbl.mem labels l then
@@ -92,7 +93,7 @@ let layout (items : item list) =
     | Chunk (s, _) ->
         placed := (!pc, it) :: !placed; pc := !pc + String.length s
     | Section true -> data_at := !pc
-    | Piece | Section false -> ()) items;
+    | Piece | Section false -> ());
   labels, List.rev !order, List.rev !placed, !data_at
 
 (* a word in the code's bytes, the low first; an instruction's, which
@@ -158,18 +159,20 @@ let sweep (objects : item list list) =
   done;
   let kept = Array.map fst pieces in
   let rec keep i =
-    List.iter (fun it -> match it with
+    snd pieces.(i) |> List.iter (fun it -> match it with
       | Chunk (_, relocs) ->
           List.iter (fun (_, _, t) ->
             match Hashtbl.find_opt where t with
             | Some j when not kept.(j) -> kept.(j) <- true; keep j
             | _ -> ()) relocs
-      | _ -> ()) (snd pieces.(i)) in
+      | _ -> ()) in
   (* (the roots, as they were before keep marks more) *)
   let roots = Array.copy kept in
   for i = 0 to Array.length roots - 1 do if roots.(i) then keep i done;
-  List.concat
-    (List.filteri (fun i _ -> kept.(i)) (List.map snd (Array.to_list pieces)))
+  Array.to_list pieces
+  |> List.map snd
+  |> List.filteri (fun i _ -> kept.(i))
+  |> List.concat
 
 (* Each piece its section: an object starts in the text, and a piece
  * goes on in the section its object was in (sweep keeps or drops it
@@ -212,7 +215,7 @@ let link (sections : sections) (objects : (Fpath.t * string) list) =
     | None, Some n -> n
     | None, None -> error ("undefined label " ^ t) in
   let b = Buffer.create 4096 in
-  List.iter (fun (a, it) ->
+  placed |> List.iter (fun (a, it) ->
     match it with
     | Space n -> Buffer.add_string b (String.make n '\000')
     | Chunk (s, relocs) ->
@@ -221,7 +224,7 @@ let link (sections : sections) (objects : (Fpath.t * string) list) =
           try fill s off k (a + off) (resolve t)
           with Error e -> error (e ^ " (" ^ t ^ ")")) relocs;
         Buffer.add_string b (Bytes.to_string s)
-    | Label _ | Align _ | Piece | Section _ -> ()) placed;
+    | Label _ | Align _ | Piece | Section _ -> ());
   (* (old: the table's labels sorted by address, those at one address in
    * the table's order, which is OCaml's or TinyLibCore's) *)
   Buffer.contents b, order, data_at

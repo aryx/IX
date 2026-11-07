@@ -59,7 +59,7 @@ let machine name locals (body : ir list) =
       ^ "\n\tret\n") in
   (* an instruction of three registers *)
   let three op a b c = ins (op ^ "\t" ^ r a ^ ", " ^ r b ^ ", " ^ r c) in
-  List.iter (fun i ->
+  body |> List.iter (fun i ->
     match i with
     | Label l ->
         (match Hashtbl.find_opt depth_at l with
@@ -165,8 +165,7 @@ let machine name locals (body : ir list) =
         decr sp; jump l; ins ("bne\t" ^ r a ^ ", zero, " ^ lab l)
     | Ret v ->
         if v then (ins ("mov\tr13, " ^ r (top ())); decr sp);
-        epilogue (); dead := true)
-    body;
+        epilogue (); dead := true);
   if not !dead then epilogue ();
   let frame = round (!outgoing + 4 + (4 * !saves) + locals) 8 in
   Buffer.add_string out

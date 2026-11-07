@@ -36,14 +36,16 @@ let clean name =
 
 let labels text =
   let l =
-    List.filter_map (fun line ->
+    text
+    |> String.split_on_char '\n'
+    |> List.filter_map (fun line ->
       match String.split_on_char ' ' line with
       | [ a; l ] when not (local l) ->
           (match int_of_string_opt ("0x" ^ a) with
            | Some a -> Some (l, a)
            | None -> None)
-      | _ -> None) (String.split_on_char '\n' text) in
-  Array.of_list (List.sort (fun (_, a) (_, b) -> compare a b) l)
+      | _ -> None) in
+  l |> List.sort (fun (_, a) (_, b) -> compare a b) |> Array.of_list
 
 (* by halves *)
 let find funcs pc =

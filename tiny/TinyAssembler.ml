@@ -74,6 +74,7 @@ type expr = Num of (int * int) | Sym of string
  * whole word (.word), the immediate (addi's, a load's offset...), its
  * high or low half (la: lui then ori), or a branch's offset in words *)
 type kind = Word | Abs | Hi | Lo | Pc
+
 let kinds = [ Word, "word"; Abs, "abs"; Hi, "hi"; Lo, "lo"; Pc, "pc" ]
 
 (* an item: an instruction's words, made from what the operands resolve
@@ -298,9 +299,11 @@ let assemble (chan : Chan.i) =
   (* each file on a word's boundary: one may end with bytes, the next
    * begin with code *)
   line "align 4";
-  List.iteri (fun n l ->
+  In_channel.input_all chan.ic 
+  |> String.split_on_char '\n'
+  |> List.iteri (fun n l ->
     let items = try parse_line l with Error e -> error (at n e) in
-    List.iter (fun it ->
+    items |> List.iter (fun it ->
       match it with
       | Label l -> line ("label " ^ l)
       | Align k -> line (Printf.sprintf "align %d" k)
@@ -330,15 +333,18 @@ let assemble (chan : Chan.i) =
           Buffer.add_string b "code ";
           List.iter (fun w -> add_word b (w lsr 16, w land 0xffff)) ws;
           Buffer.add_char b '\n';
-          relocs_of !relocs) items)
-    (String.split_on_char '\n' (In_channel.input_all chan.ic));
+          relocs_of !relocs
+       )
+     )
+  ;
   Buffer.contents b
 
 let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     (argv : string array) : Exit.t =
   let assemble_to (f : Fpath.t) (out : Fpath.t) =
-    TinyLibSystem.write_file caps out
-      (TinyLibSystem.with_open_in caps assemble f);
+    f |> TinyLibSystem.with_open_in caps assemble
+      |> TinyLibSystem.write_file caps out
+    ;
     Exit.OK in
   (* x.tm's object: x.o, here *)
   let default f = Fpath.set_ext ".o" (Fpath.base f) in

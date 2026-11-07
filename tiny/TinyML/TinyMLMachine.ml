@@ -227,7 +227,7 @@ let machine name nparams nslots (code : ir list) =
     ins (Printf.sprintf "li\tr13, %d" n); ins "stw\tr13, 0(sp)";
     ins (Printf.sprintf "li\tr13, %d" tag); ins "stw\tr13, 4(sp)";
     c_call "ml_alloc" in
-  List.iter (fun i ->
+  code |> List.iter (fun i ->
     match i with
     | Label l ->
         (match Hashtbl.find_opt depth_at l with
@@ -383,8 +383,7 @@ let machine name nparams nslots (code : ir list) =
         ins "stw\tr13, 0(lr)"
     | TryExit k ->
         at k 12 ((fun x0 -> Printf.sprintf "ldw\tr13, %d(sp)" x0));
-        ins "la\tlr, ml_handler"; ins "stw\tr13, 0(lr)")
-    code;
+        ins "la\tlr, ml_handler"; ins "stw\tr13, 0(lr)");
   if nparams > 10 then
     error
       (name ^ ": " ^ string_of_int nparams

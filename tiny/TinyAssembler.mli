@@ -1,4 +1,4 @@
-(* tiny-assembler: tiny-machine's assembly to an object, a file at a
+(* tiny-assembler: tiny-machine's assembly to an object, one file at a
  * time, for tiny-linker. Its usage, by examples, is in [help] (what
  * tiny-assembler -h prints).
  *

@@ -533,7 +533,7 @@ let run (caps : Cap.all_caps) (argv : string array) : Exit.t =
       | ts, _ -> ts
     in
     let stamps = Hashtbl.create 101 in
-    Option.iter (fun s ->
+    read_file caps stampfile |> Option.iter (fun s ->
       String.split_on_char '\n' s |> List.iter (fun l ->
         match String.split_on_char ' ' l with
         | [ name; st ] -> Hashtbl.replace stamps name st
@@ -541,9 +541,9 @@ let run (caps : Cap.all_caps) (argv : string array) : Exit.t =
             (match int_of_string_opt size, int_of_string_opt date with
              | Some s, Some t -> Hashtbl.replace known name (s, t, d)
              | _ -> ())
-        | _ -> ())) (read_file caps stampfile);
+        | _ -> ()));
     let ok =
-      List.for_all (fun t ->
+      targets |> List.for_all (fun t ->
         let root = graph rules (exists caps) t in
         if !dot then begin
           TinyLibSystem.print caps "digraph G {\n";
@@ -554,7 +554,7 @@ let run (caps : Cap.all_caps) (argv : string array) : Exit.t =
           TinyLibSystem.print caps "}\n";
           true
         end
-        else build caps vars stamps (max 1 !jobs) !dry !timed root) targets
+        else build caps vars stamps (max 1 !jobs) !dry !timed root)
     in
     if not !dry then save caps stamps;
     if !timed then report caps (TinyLibSystem.millis caps - began);

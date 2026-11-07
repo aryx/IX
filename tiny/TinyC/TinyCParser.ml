@@ -63,23 +63,27 @@ let globl name n =
   Buffer.add_string data ("\t.align\t4\n" ^ sym name ^ ":\n");
   let bytes l =
     line (".byte\t" ^ String.concat ", " (List.map string_of_int l)) in
-  let at = List.fold_left (fun at (off, d) ->
-    if off > at then line (Printf.sprintf ".space\t%d" (off - at));
-    match d with
-    | Bytes b ->
-        bytes (List.map Char.code (List.init (String.length b) (String.get b)));
-        off + String.length b
-    | Value (1, v) -> bytes [ Int64.to_int v land 0xff ]; off + 1
-    | Value (2, v) ->
-        bytes [ Int64.to_int v land 0xff; (Int64.to_int v lsr 8) land 0xff ];
-        off + 2
-    | Value (k, v) ->
-        line (".word\t" ^ word v);
-        if k = 8 then line (".word\t" ^ word (Int64.shift_right v 32));
-        off + k
-    | Address s -> line (".word\t" ^ sym s); off + 4)
-    0 (List.sort (fun (a, _) (b, _) -> compare a b)
-         (List.rev (Hashtbl.find_opt pending name ||| []))) in
+  let at =
+    (Hashtbl.find_opt pending name ||| [])
+    |> List.rev
+    |> List.sort (fun (a, _) (b, _) -> compare a b)
+    |> List.fold_left (fun at (off, d) ->
+      if off > at then line (Printf.sprintf ".space\t%d" (off - at));
+      match d with
+      | Bytes b ->
+          bytes
+            (List.map Char.code (List.init (String.length b) (String.get b)));
+          off + String.length b
+      | Value (1, v) -> bytes [ Int64.to_int v land 0xff ]; off + 1
+      | Value (2, v) ->
+          bytes [ Int64.to_int v land 0xff; (Int64.to_int v lsr 8) land 0xff ];
+          off + 2
+      | Value (k, v) ->
+          line (".word\t" ^ word v);
+          if k = 8 then line (".word\t" ^ word (Int64.shift_right v 32));
+          off + k
+      | Address s -> line (".word\t" ^ sym s); off + 4
+      ) 0 in
   if n > at then line (Printf.sprintf ".space\t%d" (n - at));
   Hashtbl.remove pending name
 let strings = ref 0

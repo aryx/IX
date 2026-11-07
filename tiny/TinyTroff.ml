@@ -123,7 +123,7 @@ let drawing_lines (b : obj) : string list =
   let put_free c r s = if free c r then g.(r).(c) <- s in
   let label c r s = List.iteri (fun k ch -> put (c + k) r ch) (chars s) in
   let shapes = figures b.data in
-  List.iter (fun (kind, nums, text) ->
+  shapes |> List.iter (fun (kind, nums, text) ->
     match kind, nums with
     | "box", [ x; y; w; h ] ->
         let c0 = x / 8 and r0 = y / 8 and c1 = (x + w) / 8
@@ -134,8 +134,8 @@ let drawing_lines (b : obj) : string list =
           [ (c0, r0); (c1, r0); (c0, r1); (c1, r1) ];
         label ((c0 + c1 + 1 - String.length text) / 2) ((r0 + r1) / 2) text
     | "text", [ x; y ] -> label (x / 8) ((y + 8) / 8) text
-    | _ -> ()) shapes;
-  List.iter (fun (kind, nums, _) ->
+    | _ -> ());
+  shapes |> List.iter (fun (kind, nums, _) ->
     match kind, nums with
     | "arrow", [ x0; y0; x1; y1 ] ->
         let c0 = x0 / 8 and r0 = y0 / 8 and c1 = x1 / 8 and r1 = y1 / 8 in
@@ -148,7 +148,7 @@ let drawing_lines (b : obj) : string list =
         put hc hr
           (if dr > 0 then "v" else if dr < 0 then "^"
            else if dc > 0 then ">" else "<")
-    | _ -> ()) shapes;
+    | _ -> ());
   grid_lines g
 
 (* a paint: its rows, white a space *)

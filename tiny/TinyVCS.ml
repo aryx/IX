@@ -297,7 +297,7 @@ let snapshot r =
   let old = match tip r with Some c -> Some (commit r c).tree | None -> None in
   let rec go dir (prev : (string * entry) list) =
     let names = List.sort compare (TinyLibSystem.readdir r.caps dir) in
-    let es = List.filter_map (fun name ->
+    let es = names |> List.filter_map (fun name ->
       if ign name then None
       else
         let p = dir / name in
@@ -321,7 +321,7 @@ let snapshot r =
             Some (name, match List.assoc_opt name prev with
               | Some (Conflict c) when c.text = h -> Conflict c
               | _ -> if TinyLibSystem.is_executable r.caps p then Exec h else File h)
-        | None -> None) names in
+        | None -> None) in
     es in
   put r (Tree (go r.root (match old with Some t -> tree r t | None -> [])))
 
@@ -343,7 +343,7 @@ let checkout r (old : hash option) (nw : hash) =
     List.iter (fun (name, _) ->
       if not (List.mem_assoc name nw) then
         (try rm_rf (dir / name) with Failure _ -> ())) old;
-    List.iter (fun (name, e) ->
+    nw |> List.iter (fun (name, e) ->
       let p = dir / name in
       if List.assoc_opt name old <> Some e then
         match e with
@@ -359,7 +359,7 @@ let checkout r (old : hash option) (nw : hash) =
             go p sub (tree r h)
         | File h -> write p h false
         | Exec h -> write p h true
-        | Conflict c -> write p c.text false) nw in
+        | Conflict c -> write p c.text false) in
   go r.root (match old with Some t -> tree r t | None -> []) (tree r nw)
 
 (* the files of two trees that differ: path, before, after *)
@@ -425,7 +425,7 @@ let matches (a : string array) (b : string array) =
   let d = if max = 0 then 0 else step 0 in
   (* back from (n, m) through the saved rows *)
   let pairs = ref [] and x = ref n and y = ref m in
-  List.iteri (fun i vd ->
+  !trace |> List.iteri (fun i vd ->
     let d = d - i in
     let k = !x - !y in
     let pk =
@@ -437,7 +437,7 @@ let matches (a : string array) (b : string array) =
     while !x > px && !y > py do
       decr x; decr y; pairs := (!x, !y) :: !pairs
     done;
-    if d > 0 then (x := px; y := py)) !trace;
+    if d > 0 then (x := px; y := py));
   !pairs
 
 (* unified diff, 3 lines of context *)
@@ -466,7 +466,7 @@ let unified name_a name_b a b =
             | rest -> List.rev acc, rest in
           let g, rest = take e [ e ] rest in
           g :: groups rest in
-    List.iter (fun g ->
+    groups edits |> List.iter (fun g ->
       let (a0, _, b0, _) = List.hd g
       and (_, a1, _, b1) = List.nth g (List.length g - 1) in
       let s = max 0 (a0 - 3) and e = min (Array.length a) (a1 + 3) in
@@ -480,8 +480,7 @@ let unified name_a name_b a b =
         for i = a0 to a1 - 1 do Buffer.add_string buf (line "-" a.(i)) done;
         for j = b0 to b1 - 1 do Buffer.add_string buf (line "+" b.(j)) done;
         at := a1) g;
-      for i = !at to e - 1 do Buffer.add_string buf (line " " a.(i)) done)
-      (groups edits);
+      for i = !at to e - 1 do Buffer.add_string buf (line " " a.(i)) done);
     Buffer.contents buf
   end
 
@@ -570,7 +569,7 @@ let rec merge_trees r base ours theirs prefix =
       (List.concat_map (List.map fst) [ base; ours; theirs ])
   in
   let conflicts = ref [] in
-  let es = List.filter_map (fun name ->
+  let es = names |> List.filter_map (fun name ->
     let b = List.assoc_opt name base and o = List.assoc_opt name ours
     and t = List.assoc_opt name theirs in
     let p = if prefix = "" then name else prefix ^ "/" ^ name in
@@ -608,7 +607,7 @@ let rec merge_trees r base ours theirs prefix =
             Some (name, Conflict { text = h; base = content b;
                                    ours = content o; theirs = content t })
           end
-          else Some (name, if exec then Exec h else File h)) names in
+          else Some (name, if exec then Exec h else File h)) in
   es, !conflicts
 
 (*****************************************************************************)

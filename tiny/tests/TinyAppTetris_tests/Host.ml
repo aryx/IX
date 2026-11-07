@@ -53,7 +53,9 @@ let play seed script =
             Printf.printf " %d-%d Hz %d ms" snd.hz snd.to_hz snd.ms)
           sounds;
         print_newline () in
-  List.iter (fun w ->
+  script
+  |> String.split_on_char ' '
+  |> List.iter (fun w ->
     match w with
     | "l" -> step (game.key TinyLibPlayground.Left)
     | "r" -> step (game.key TinyLibPlayground.Right)
@@ -62,8 +64,7 @@ let play seed script =
     | "s" -> step (game.key (TinyLibPlayground.Char ' '))
     | "m" -> step (game.key (TinyLibPlayground.Char 'm'))
     | "p" -> print !m; music !m
-    | n -> for _ = 1 to int_of_string n do step game.frame done)
-    (String.split_on_char ' ' script);
+    | n -> for _ = 1 to int_of_string n do step game.frame done);
   !m
 
 let () =

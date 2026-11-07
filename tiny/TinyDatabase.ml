@@ -695,7 +695,7 @@ let stage db (cols, (rs : row Seq.t)) = function
           if acc <> 0 then acc
           else (if desc then -1 else 1) * compare (f a) (f b)) 0 fs
       in
-      cols, List.to_seq (List.stable_sort cmp (List.of_seq rs))
+      cols, rs |> List.of_seq |> List.stable_sort cmp |> List.to_seq
   | Take n -> cols, Seq.take n rs
 
 let run_query db t stages =

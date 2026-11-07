@@ -244,9 +244,9 @@ let lay_table (f : flow) (t : table) =
     for k = 1 to n do x.(k) <- x.(k - 1) + w.(k - 1) + gap done;
     end_line f;
     f.blank <- true;
-    List.iter (fun row ->
+    rows |> List.iter (fun row ->
       let k = ref 0 in
-      let laid = List.map (fun (c : cell) ->
+      let laid = row |> List.map (fun (c : cell) ->
         let cw = if !k < n then max 1 (span_width !k c.span) else 1 in
         let g = flow cw in
         List.iter (function
@@ -257,7 +257,7 @@ let lay_table (f : flow) (t : table) =
         end_line g;
         let at = if !k < n then x.(!k) else x.(n) in
         k := !k + c.span;
-        at, List.rev g.out) row in
+        at, List.rev g.out) in
       let height =
         List.fold_left (fun h (_, ls) -> max h (List.length ls)) 0 laid in
       for i = 0 to height - 1 do
@@ -267,6 +267,6 @@ let lay_table (f : flow) (t : table) =
             List.map (fun (r : run) -> { r with col = r.col + at }) l.runs
           | None -> []) laid) in
         push f { runs = runs; rule = false }
-      done) rows;
+      done);
     f.blank <- true
   end

@@ -208,7 +208,7 @@ let draw_line sc i (l : line) =
   put sc (d_fill dst c_white (0, y, w, y + 16));
   if l.rule then put sc (d_fill dst c_rule (0, y + 7, w, y + 9))
   else
-    List.iter (fun (r : run) ->
+    l.runs |> List.iter (fun (r : run) ->
       match r.part with
       | Run_slice (id, s) -> draw_slice sc dst y r id s
       | _ when r.col < sc.sc_cols && r.text <> "" ->
@@ -231,7 +231,7 @@ let draw_line sc i (l : line) =
         if r.link <> None then
           put sc (d_line dst c_link (x, ry + (16 * k) - 1)
                     (x + (n * 8 * k) - 1, ry + (16 * k) - 1))
-      | _ -> ()) l.runs;
+      | _ -> ());
   if not whole then begin
     let y0 = max at area_top and y1 = min (at + 16) (area_top + area sc) in
     if y0 < y1 then put sc (d_draw 0 c_strip (-1) (0, y0, w, y1) (0, y0 - at))

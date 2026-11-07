@@ -3,7 +3,7 @@
 
 (* See TinyAssembler.mli *)
 
-open TinyMachineISA
+module ISA = TinyMachineISA
 
 let usage = "usage: tiny-assembler [-o file.o] file.tm"
 
@@ -58,8 +58,8 @@ let halves s =
 
 (* a word as an int, when it fits in 31 bits (so on both sides) *)
 let int_of (h, l) =
-  if h < 0x4000 || h >= 0xc000 then (sext16 h * 0x10000) + l
-  else error "number out of range"
+  if h < 0x4000 || h >= 0xc000 then (ISA.sext16 h * 0x10000) + l
+  else ISA.error "number out of range"
 
 (* -1 is two words of ffff; a small number one *)
 let small (h, l) = (h = 0 && l < 0x8000) || (h = 0xffff && l >= 0x8000)
@@ -89,12 +89,12 @@ type item =
 
 let reg s =
   match String.trim s with
-  | "zero" -> 0 | "sp" -> sp | "lr" -> lr
+  | "zero" -> 0 | "sp" -> ISA.sp | "lr" -> ISA.lr
   | s when String.length s >= 2 && s.[0] = 'r' ->
       (match int_of_string_opt (String.sub s 1 (String.length s - 1)) with
        | Some n when n >= 0 && n < 16 -> n
-       | _ -> error ("not a register: " ^ s))
-  | s -> error ("not a register: " ^ s)
+       | _ -> ISA.error ("not a register: " ^ s))
+  | s -> ISA.error ("not a register: " ^ s)
 
 let expr s =
   let s = String.trim s in
@@ -110,17 +110,17 @@ let mem_operand s =
       let off = String.trim (String.sub s 0 i) in
       reg (String.sub s (i + 1) (String.length s - i - 2)),
       (if off = "" then Num (0, 0) else expr off)
-  | _ -> error ("not a memory operand: " ^ s)
+  | _ -> ISA.error ("not a memory operand: " ^ s)
 
-let one f = Words (4, fun res -> [ encode (f (res 0)) ])
+let one f = Words (4, fun res -> [ ISA.encode (f (res 0)) ])
 
 (* the machine's own instructions (TinyMachineDevices runs them): a
  * register of control by its name *)
 let machine name args =
   let csr s =
     match List.assoc_opt (String.trim s)
-            (List.mapi (fun k n -> n, k) (Array.to_list csr_names)) with
-    | Some k -> k | None -> error ("not a register of control: " ^ s) in
+            (List.mapi (fun k n -> n, k) (Array.to_list ISA.csr_names)) with
+    | Some k -> k | None -> ISA.error ("not a register of control: " ^ s) in
   let w op d a k =
     Words (4, fun _ -> [ (op lsl 24) lor (d lsl 20) lor (a lsl 16) lor k ]) in
 
@@ -133,61 +133,65 @@ let machine name args =
   | "amoswap", [ d; a; b ] ->
       let b = String.trim b in
       if String.length b < 2 || b.[0] <> '(' || b.[String.length b - 1] <> ')'
-      then error "amoswap's address: (rN)";
+      then ISA.error "amoswap's address: (rN)";
       w 0x3d (reg d) (reg a) (reg (String.sub b 1 (String.length b - 2)))
-  | _ -> error ("bad instruction: " ^ name ^ " " ^ String.concat ", " args)
+  | _ -> ISA.error ("bad instruction: " ^ name ^ " " ^ String.concat ", " args)
 
 (* the instructions named by a table: the ALU's, their immediate forms,
  * the branches (old: each name looked for in the three arrays at each
  * line, and imm_name's string made for each operation) *)
-type named = Op of alu | Imm of alu | Test of cmp
+type named = Op of ISA.alu | Imm of ISA.alu | Test of ISA.cmp
 let named = Hashtbl.create 64
 let () =
   Array.iter (fun op ->
-    Hashtbl.replace named alu_names.(index alus op) (Op op);
-    if has_imm op then Hashtbl.replace named (imm_name op) (Imm op)) alus;
+    Hashtbl.replace named ISA.alu_names.(ISA.index ISA.alus op) (Op op);
+    if ISA.has_imm op then Hashtbl.replace named (ISA.imm_name op) (Imm op))
+    ISA.alus;
   Array.iter (fun c ->
-    Hashtbl.replace named cmp_names.(index cmps c) (Test c)) cmps
+    Hashtbl.replace named ISA.cmp_names.(ISA.index ISA.cmps c) (Test c))
+    ISA.cmps
 
 let rec instruction name args : item =
   let args =
     List.map String.trim
       (if String.trim args = "" then [] else String.split_on_char ',' args) in
   match Hashtbl.find_opt named name, args with
-  | Some (Op op), [ d; a; b ] -> one (fun _ -> Alu (op, reg d, reg a, reg b))
+  | Some (Op op), [ d; a; b ] ->
+      one (fun _ -> ISA.Alu (op, reg d, reg a, reg b))
   | Some (Imm op), [ d; a; v ] ->
-      one (fun res -> Alui (op, reg d, reg a, res Abs (expr v)))
+      one (fun res -> ISA.Alui (op, reg d, reg a, res Abs (expr v)))
   | Some (Test c), [ d; a; t ] ->
-      one (fun res -> Branch (c, reg d, reg a, res Pc (expr t)))
+      one (fun res -> ISA.Branch (c, reg d, reg a, res Pc (expr t)))
   | _ -> others name args
 
 (* the others, by their names *)
 and others name args =
   match name, args with
-  | "lui", [ d; v ] -> one (fun res -> Lui (reg d, res Abs (expr v) land 0xffff))
+  | "lui", [ d; v ] ->
+      one (fun res -> ISA.Lui (reg d, res Abs (expr v) land 0xffff))
   | ("ldw" | "ldb" | "stw" | "stb"), [ d; m ] ->
       one (fun res ->
         let a, off = mem_operand m in
-        let s = if name.[2] = 'w' then W else B in
-        if name.[0] = 'l' then Load (s, reg d, a, res Abs off)
-        else Store (s, reg d, a, res Abs off))
-  | "jal", [ d; t ] -> one (fun res -> Jal (reg d, res Pc (expr t)))
+        let s = if name.[2] = 'w' then ISA.W else ISA.B in
+        if name.[0] = 'l' then ISA.Load (s, reg d, a, res Abs off)
+        else ISA.Store (s, reg d, a, res Abs off))
+  | "jal", [ d; t ] -> one (fun res -> ISA.Jal (reg d, res Pc (expr t)))
   | "jalr", [ d; m ] ->
       one (fun res ->
-        let a, off = mem_operand m in Jalr (reg d, a, res Abs off))
-  | "sys", [ n ] -> one (fun res -> Sys (res Abs (expr n)))
+        let a, off = mem_operand m in ISA.Jalr (reg d, a, res Abs off))
+  | "sys", [ n ] -> one (fun res -> ISA.Sys (res Abs (expr n)))
   (* the pseudo-instructions *)
   | "li", [ d; v ] when (match expr v with Num n -> small n | Sym _ -> false) ->
-      one (fun res -> Alui (Add, reg d, 0, res Abs (expr v)))
+      one (fun res -> ISA.Alui (ISA.Add, reg d, 0, res Abs (expr v)))
   | ("li" | "la"), [ d; v ] ->
       Words (8, fun res ->
-        [ encode (Lui (reg d, res 0 Hi (expr v)));
-          encode (Alui (Or, reg d, reg d, res 1 Lo (expr v))) ])
-  | "mov", [ d; a ] -> one (fun _ -> Alui (Add, reg d, reg a, 0))
-  | "call", [ t ] -> one (fun res -> Jal (lr, res Pc (expr t)))
-  | "j", [ t ] -> one (fun res -> Jal (0, res Pc (expr t)))
-  | "ret", [] -> one (fun _ -> Jalr (0, lr, 0))
-  | "nop", [] -> one (fun _ -> Alui (Add, 0, 0, 0))
+        [ ISA.encode (ISA.Lui (reg d, res 0 Hi (expr v)));
+          ISA.encode (ISA.Alui (ISA.Or, reg d, reg d, res 1 Lo (expr v))) ])
+  | "mov", [ d; a ] -> one (fun _ -> ISA.Alui (ISA.Add, reg d, reg a, 0))
+  | "call", [ t ] -> one (fun res -> ISA.Jal (ISA.lr, res Pc (expr t)))
+  | "j", [ t ] -> one (fun res -> ISA.Jal (0, res Pc (expr t)))
+  | "ret", [] -> one (fun _ -> ISA.Jalr (0, ISA.lr, 0))
+  | "nop", [] -> one (fun _ -> ISA.Alui (ISA.Add, 0, 0, 0))
   | _ -> machine name args
 
 (* a string's escapes: backslash and n, t or 0, or the character *)
@@ -210,12 +214,12 @@ let directive d args : item =
       Bytes_ (String.concat "" (List.map (fun e ->
         match expr e with
         | Num (_, l) -> String.make 1 (Char.chr (l land 0xff))
-        | Sym _ -> error ".byte takes numbers")
+        | Sym _ -> ISA.error ".byte takes numbers")
         (String.split_on_char ',' args)))
   | ".ascii" | ".asciz" ->
       let a = String.trim args in
       if String.length a < 2 || a.[0] <> '"' || a.[String.length a - 1] <> '"'
-      then error ("not a string: " ^ a);
+      then ISA.error ("not a string: " ^ a);
       Bytes_ (unescape (String.sub a 1 (String.length a - 2))
               ^ if d = ".asciz" then "\000" else "")
   | ".space" -> Space (int_of_string (String.trim args))
@@ -223,7 +227,7 @@ let directive d args : item =
   | ".piece" -> Piece
   | ".text" -> Section "text"
   | ".data" -> Section "data"
-  | _ -> error ("unknown directive " ^ d)
+  | _ -> ISA.error ("unknown directive " ^ d)
 
 (* a line: labels, then an instruction or a directive; ; starts a comment *)
 let parse_line line : item list =
@@ -305,7 +309,7 @@ let assemble (chan : Chan.i) =
   In_channel.input_all chan.ic 
   |> String.split_on_char '\n'
   |> List.iteri (fun n l ->
-    let items = try parse_line l with Error e -> error (at n e) in
+    let items = try parse_line l with ISA.Error e -> ISA.error (at n e) in
     items |> List.iter (fun it ->
       match it with
       | Label l -> line ("label " ^ l)
@@ -332,7 +336,7 @@ let assemble (chan : Chan.i) =
             | Hi, Num (h, _) -> h
             | Lo, Num (_, l) -> l
             | _, Num n -> int_of n in
-          let ws = try f res with Error e -> error (at n e) in
+          let ws = try f res with ISA.Error e -> ISA.error (at n e) in
           Buffer.add_string b "code ";
           List.iter (fun w -> add_word b (w lsr 16, w land 0xffff)) ws;
           Buffer.add_char b '\n';
@@ -359,6 +363,6 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     | [ f ] when tm f -> assemble_to (Fpath.v f) (default (Fpath.v f))
     | _ -> TinyLibSystem.eprint caps (usage ^ "   (-h: how)\n"); Exit.Code 2
   (* (said after the program's name by TinyLibSystem.main) *)
-  with Error e -> Exit.Err e
+  with ISA.Error e -> Exit.Err e
 
 let () = TinyLibSystem.main "tiny-assembler" main

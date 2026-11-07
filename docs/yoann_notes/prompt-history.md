@@ -65296,3 +65296,34 @@ Claude also asked which short name he preferred before making any changes.
 **Claude (summary):**
 
 Claude explained that tiny-ml now accepts `module TSys = TinyLibSystem`, with the alias handled generically so `TDraw` and `TGui` can follow later. Claude added `IAlias` to the parser, type checker and compiler, about 20 lines across five files. Claude converted TinyShell, TinyUtilities, TinyBuildSystem, TinyVCS and TinyDatabase to use `TSys.`. Claude re-recorded the `-bugs` baseline after the inserted lines shifted findings; `make self-quick-tix` has not been run and nothing is committed yet.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 16:38
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude reported that the change was committed as `95f21789`, with a clean working tree.
+Claude said the commit covers tiny-ml alias support, five files converted to `TSys.`, and re-recorded `bugs_tiny.txt` and `prompt-history.md`.
+Claude flagged two checks not yet run: `make test` after re-recording the bugs baseline, and `make self-quick-tix`, about six minutes.
+Claude gave no detail on the TinyAssembler.ml change Yoann asked about next.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 17:16
+
+**Yoann:**
+
+> ok in TinyAssembler.ml, can we then do an module ISA = TinyMachineISA instead of the open and qualify a few calls and entities with ISA.xxx ?
+
+**Claude (summary):**
+
+Claude replaced the `open` with `module ISA = TinyMachineISA` in TinyAssembler.ml and let dune flag the names needing qualification.
+Claude found that most constructors resolve by type, so only a few needed the `ISA.` prefix.
+Claude reported that dune builds clean, with two polish items: the lopsided `ISA.W else B` and a possibly overlong line 148.
+Claude noted that mini-ml can't disambiguate constructors by type, so it planned to qualify instruction constructors like `ISA.Alu` and `ISA.Jal` in two functions.
+Claude had not committed anything yet; the answer ended with that qualification still to do.

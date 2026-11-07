@@ -64916,3 +64916,35 @@ Claude committed the session's work as 795a9c3b before closing.
 Claude then planned to add this session's timing lesson to the existing memory note.
 Claude's reply was short and did not include any other recommendations or findings.
 Claude treated the commit as the last step before the session wrap-up.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 08:14
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude proposed a second survey for strings compared against literals in tiny/, such as kind = "sheet".
+Claude flagged TinyOffice's string kind field, tested against "sheet" and "paint" at TinyOffice.ml:70-85, as the first candidate.
+Claude noted that a typo in kind compiles and silently does nothing, while a variant would be exhaustively checked.
+Claude planned to sort each hit into program state worth a variant or external formats that stay strings.
+Claude planned one commit per change, starting with kind, and deferred the -1 values and runes.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 08:15
+
+**Yoann:**
+
+> yes, and extend the plan_tiny_types doc with it
+
+**Claude (summary):**
+
+Claude added a string survey to plan_tiny_types.md, finding two program-chosen string fields, A1 and A2.
+Claude turned TinyOffice's kind string into a variant: Box_text, Box_sheet, Box_drawing, Box_paint, Box_chart.
+Claude replaced nine string-comparison chains with matches across TinyOffice, the file code, and TinyTroff, dropping the unused fallback.
+Claude ran the TinyOffice, TinyTroff and TinyKernel checks, all passing, though make test skipped one m-ix job.
+Claude left A1 uncommitted and asked whether to commit and move on to A2, the packet direction.

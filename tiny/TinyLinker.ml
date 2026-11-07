@@ -1,13 +1,12 @@
 (* Claude Code
- * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
-
-(* See TinyLinker.mli *)
-
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+ *
+ * See TinyLinker.mli
+ *)
 open TinyMachineISA
 
 let usage =
   "usage: tiny-linker [-a megabytes] [-n] [-s] [-map] -o out file.o..."
-
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
 
@@ -248,6 +247,10 @@ let aout memory data_at image =
   let h = Bytes.make (4 * List.length words) '\000' in
   List.iteri (fun i v -> set_word h (4 * i) v) words;
   Bytes.to_string h ^ image
+
+(*****************************************************************************)
+(* main *)
+(*****************************************************************************)
 
 let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     (argv : string array) : Exit.t =

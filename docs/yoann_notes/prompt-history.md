@@ -65160,3 +65160,33 @@ Claude wrote a `caps` type in each tiny-build module, matching TinyUtilities and
 Claude changed `main` to take `< caps; .. >`, so it still fits `TinyLibSystem.main`'s `Cap.all_caps`.
 Claude checked the tiny-build sets against the inferred types, and real OCaml accepted all four.
 Claude ran the builds and full test suite, all green, and corrected the mini-mk memory note.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 15:08
+
+**Yoann:**
+
+> write a plan document based on your analysis
+
+**Claude (summary):**
+
+Claude drafted an outline and then wrote the plan section by section, covering goals, selection rules, and duplication inventory.
+Claude wrote the instruction-set table, binary-format codecs, and lex/yacc phases as plan sections.
+Claude added a "what not to do" section, plus order of work, measurement, risks, and a roadmap drawing.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 15:18
+
+**Yoann:**
+
+> ok let's commit
+
+**Claude (summary):**
+
+Claude committed the work as 19704716 on main, staging explicit paths, leaving the working tree clean.
+Claude noted the commit holds all 15 files, including two changes it had not written itself.
+Claude named those two as the TinyBuildSystem.mli comment re-wrap and prompt-history.md entries, and disclosed them in the message.
+Claude listed passing checks in the message: dune, mini-mk, tiny-kernel, analyzer tests, both -caps sweeps, make test.
+Claude did not run make self-quick-tix, which takes about six minutes, so it remains unverified.

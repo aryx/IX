@@ -50,11 +50,10 @@ type node = {
 (* a node is a source, or made by a recipe (a pattern's, with its stem) *)
 (* old: recipe and stem strings, "" for none: a stem without a recipe
  * could be built, and each use re-tested recipe = "" *)
-(* (old: Recipe's own inline record, which tiny-ml does not read) *)
 and make = Source | Recipe of step
 and step = { text : string; stem : string }
 
-let target_of (s : string) =
+let target_of (s : string) : target =
   match String.index_opt s '%' with
   | None -> Exact s
   | Some i ->
@@ -64,15 +63,14 @@ let show_target = function Exact s -> s | Pattern (pre, suf) -> pre ^ "%" ^ suf
 
 exception Error of string
 
-(* what the program asks for: main is given more (Cap.main's all), its
- * type a row (..) *)
-type caps =
-  < Cap.fork; Cap.exec; Cap.wait; Cap.env; Cap.open_in; Cap.open_out;
-    Cap.readdir; Cap.clock; Cap.stdout; Cap.stderr >
-
 (* (old: a format, Printf.ksprintf's: tiny-ml reads a format only where
  * it is written, Printf.sprintf at the call) *)
 let error s = raise (Error s)
+
+type caps =
+  < Cap.forkew; Cap.env; Cap.open_in; Cap.open_out;
+    Cap.readdir; Cap.clock; Cap.stdout; Cap.stderr >
+
 
 (*****************************************************************************)
 (* Reading a Buildfile *)

@@ -19,6 +19,7 @@ open TinyLibGUI
 type model = {
   shown : int;
   kept : int;
+  (* alt: Add | Sub | ... instead of char *)
   op : char option;
   (* whether the next digit begins a number; whether there is no number to show *)
   fresh : bool;

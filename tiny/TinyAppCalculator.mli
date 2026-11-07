@@ -4,7 +4,7 @@
  *
  * The calculator is a value of TinyLibGUI's [gui] type: a model, its
  * view, an update function and the keys. There is no loop, no drawing
- * and no mouse handling in this file.
+ * and no mouse handling in this file; this is done by TinyLibGUI.
  *
  * The model is the state of a pocket calculator, not an expression: the
  * number shown, the number kept, and the operation waiting for its
@@ -21,6 +21,7 @@
  * 2 + 3 * 4 = gives 20: there are no priorities, as on real
  * four-operation calculators.
  *
+ * A few notes:
  * - {b A key is the same as its button}: [key] returns the message the
  *   button would send, so the keyboard and the mouse cannot behave
  *   differently.

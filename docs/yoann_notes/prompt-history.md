@@ -64948,3 +64948,34 @@ Claude turned TinyOffice's kind string into a variant: Box_text, Box_sheet, Box_
 Claude replaced nine string-comparison chains with matches across TinyOffice, the file code, and TinyTroff, dropping the unused fallback.
 Claude ran the TinyOffice, TinyTroff and TinyKernel checks, all passing, though make test skipped one m-ix job.
 Claude left A1 uncommitted and asked whether to commit and move on to A2, the packet direction.
+
+------------------------------------------------------------------------
+
+## 2026-11-05 13:56
+
+**Yoann:**
+
+> ok let's commit
+
+**Claude (summary):**
+
+Claude committed the fixes as `958fd4c9` on main, without pushing it.
+The commit contains the 10 test scripts and `prompt-history.md`, and the working tree is otherwise clean.
+Claude noted that pushing will retrigger CI, which had not been rerun against these changes yet.
+On Linux, `make test` passes in Docker with 187 jobs and 0 failures, so `build` should stay green.
+Claude flagged that `test-all` runs longer suites that were not rerun, so its result is the one to watch.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 10:04
+
+**Yoann:**
+
+> in TinyAppCalculator.mli, is it true tiny-ml has no float now?
+
+**Claude (summary):**
+
+Claude confirmed that tiny-ml has no floats, citing the `TinyML.mli:101` exclusion list, the lexer, the type checker, and `core.c:861`.
+Claude pointed out that mini-ml does support floats, so the calculator sentence at `TinyAppCalculator.mli:42` is accurate only because tiny/ must build with tiny-ml.
+Claude suggested rewording the sentence to "tiny-ml, which compiles tiny/, has no floats" to make the constraint explicit.
+Claude did not look into how tiny-machine handles graphics, since Yoann's follow-up question came after this answer.

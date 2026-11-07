@@ -1,4 +1,4 @@
-(* Claude Code
+1(* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
  *
  * testing:
@@ -6,12 +6,10 @@
  * subset both through this shell and through 9base's rc, which must
  * print the same thing.
  *)
-
 module TSys = TinyLibSystem
-
-(* -h: the usage, and the language by example, as it runs *)
 open Common
 
+(* -h: the usage, and the language by example, as it runs *)
 let help = "usage: tiny-shell [-eiI] [-c cmd | file] [arg ...]
 
 A subset of rc's language (mini-rc is rc, faithfully): runs the file, the -c

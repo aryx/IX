@@ -65327,3 +65327,33 @@ Claude found that most constructors resolve by type, so only a few needed the `I
 Claude reported that dune builds clean, with two polish items: the lopsided `ISA.W else B` and a possibly overlong line 148.
 Claude noted that mini-ml can't disambiguate constructors by type, so it planned to qualify instruction constructors like `ISA.Alu` and `ISA.Jal` in two functions.
 Claude had not committed anything yet; the answer ended with that qualification still to do.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 17:26
+
+**Yoann:**
+
+> yes let's commit
+
+**Claude (summary):**
+
+Claude said it had left `prompt-history.md` out of the commit, since its notes require it in every commit.
+Claude amended that file into the pending commit before going ahead.
+Yoann's follow-up asks why `TinyAssembler.ml` writes its object file as text instead of marshalling it like `mini-asm` and `mini-ld`.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 17:29
+
+**Yoann:**
+
+> why save the object file in textual form in TinyAssembler.ml? Why not marshall it so that it can also be easily loaded from the linker, like we do in mini-asm and mini-ld?
+
+------------------------------------------------------------------------
+
+## 2026-11-07 17:30
+
+**Yoann:**
+
+> wouldn't that reduce the LOC to use marshal?

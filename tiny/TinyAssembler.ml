@@ -1,12 +1,11 @@
 (* Claude Code
- * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
-
-(* See TinyAssembler.mli *)
-
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+ *
+ * See TinyAssembler.mli
+ *)
 module ISA = TinyMachineISA
 
 let usage = "usage: tiny-assembler [-o file.o] file.tm"
-
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
 

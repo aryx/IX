@@ -578,3 +578,47 @@ the speaker, then B and the kernel's trace. A commit each.
   match the most of it (+258,000). kill and trace match `Some k when
   k > 0` for a process on another core. +10 lines. The survey's list
   is done.
+
+### Strings as enumerations: a survey (2026-11-07)
+
+The sentinels' survey looked for "none" written as -1, 0 or "". A
+string can also be a variant in disguise: a field or a parameter that
+holds one of a few words the program itself chose, tested by `=`
+against literals (the author: "yes, and extend the plan_tiny_types
+doc with it"). Read: every field and name compared with a string
+literal in tiny/ (tests aside), and every field assigned one.
+
+- A, program state, a variant:
+  - TinyOffice's object `kind` ("text", "sheet", "drawing", "paint",
+    "chart"), in TinyOfficeModel's obj: chains of `if b.kind =
+    "sheet" ... else if` in TinyOffice (add, the click, the view),
+    TinyOfficeChart, TinyOfficeFile (the Markdown written and read)
+    and TinyTroff (lines, HTML, PDF: twelve tests), and the menu's
+    `Do_add kind`. The file names a kind in a fence (```` ```paint ````),
+    any word: the conversion is there, and a word we do not know
+    shown as now ("kind?"), so a variant with a case for it.
+  - tiny-machine's packet direction, `said dir packet` with dir "<",
+    ">" or "x" (to the machine, from it, lost), made by TinyMachinePeer
+    and read by TinyMachine (-net-pcap leaves the lost out) and
+    TinyMachineWeb (the colour, the trace's line, where "<" is
+    printed): a variant and its character where the line is written.
+- C, words from outside, kept: HTML's tags (TinyBrowserHtml,
+  TinyBrowserTokens), the commands typed (the editor's M-x
+  goto-line, the debugger's q and pc, the tracer's s), a WAV file's
+  chunks (TinyPlay's "fmt ", "data"), a profile's k (TinyProfiler),
+  the lexer's keywords, a drawing's figures in its data ("line",
+  "box", "text": the data is the format, read at each view), and
+  messages (TinyOffice's `message`, TinyVCS's `what`).
+- A1, TinyOffice's object kind: `Box_text | Box_sheet | Box_drawing
+  | Box_paint | Box_chart` (old: the five words), the menu's `Do_add
+  of kind`; kind_name gives the word for a box's tab and the file's
+  fence. The chains of `if b.kind = "sheet" ... else if` matches (add,
+  the click, the view, the file, the chart, and TinyTroff's text, HTML
+  and PDF), so a sixth kind would be shown everywhere it is missing.
+  The survey's case for a word we do not know was not needed:
+  TinyOfficeFile reads only ```` ```drawing ````, `paint` and `chart`
+  fences as such, any other as a text, so no box ever had another
+  kind, and the view's "kind?" was never drawn (gone). +41 lines: the
+  type and kind_name, a case a line, and the chains' cases a line
+  each. Checked: the TinyOffice and TinyTroff tests, make test,
+  make -C tiny/TinyKernel check (the office sessions' screens).

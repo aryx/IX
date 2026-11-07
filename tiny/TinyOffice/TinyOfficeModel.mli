@@ -28,12 +28,23 @@ val blue : int
 val light_grey : int
 val pale_blue : int
 
-(* an object of the document: its kind ("text", "sheet", "drawing",
- * "paint", "chart"), its box in pixels, its data, its name (a sheet's,
- * which a chart names; "" for the others), the page it is on (from 0) *)
+(* an object's kind *)
+type kind =
+  | Box_text
+  | Box_sheet
+  | Box_drawing
+  | Box_paint
+  | Box_chart
+
+(* an object of the document: its kind, its box in pixels, its data, its
+ * name (a sheet's, which a chart names; "" for the others), the page it
+ * is on (from 0) *)
 type obj = {
-  kind : string; x : int; y : int; w : int; h : int; data : string;
+  kind : kind; x : int; y : int; w : int; h : int; data : string;
   called : string; page_no : int }
+
+(* a kind's word, as a file and a box's tab say it *)
+val kind_name : kind -> string
 
 (* the window on the document: its file, its size in pixels, the page
  * shown, how many pages there are (a page with nothing on it counts) *)
@@ -67,7 +78,7 @@ type edit = Nothing | Writing of doc | Cell of int * int * string option
  * the picture cleared; in a sheet, a name typed, a chart of the chosen
  * cell's column; the next page shown (1) or the one before (-1), a new
  * page after it, the page deleted *)
-type command = Do_save | Do_quit | Do_undo | Do_delete | Do_add of string
+type command = Do_save | Do_quit | Do_undo | Do_delete | Do_add of kind
   | Do_tool of int | Do_cut | Do_copy | Do_paste | Do_style of int
   | Do_ink of int | Do_brush of int | Do_clear | Do_name | Do_chart
   | Do_page of int | Do_new_page | Do_delete_page

@@ -44,7 +44,7 @@ let chart_bars (page : obj list) (b : obj) : (string * int) list * string =
   match String.split_on_char ' ' first with
   | "bars" :: sheet :: range :: rest -> (
       match
-        List.filter (fun (s : obj) -> s.kind = "sheet" && s.called = sheet)
+        List.filter (fun (s : obj) -> s.kind = Box_sheet && s.called = sheet)
           page
       with
       | s :: _ ->
@@ -123,7 +123,7 @@ let name_key (o : office) (typed : string) (k : key) =
         keep o;
         o.page <- List.map (fun (b : obj) ->
           if b == s then { b with called = typed }
-          else if b.kind = "chart" then
+          else if b.kind = Box_chart then
             { b with data =
                        String.concat "\n"
                          (List.map renamed (String.split_on_char '\n' b.data)) }
@@ -157,7 +157,7 @@ let make_chart (o : office) (c : int) =
         else s.x, s.y + s.h + 24 in
       keep o;
       o.page <-
-        o.page @ [ { kind = "chart"; x; y; w = 200; h = 120; data;
+        o.page @ [ { kind = Box_chart; x; y; w = 200; h = 120; data;
                      called = ""; page_no = s.page_no } ];
       o.sel <- Some (List.length o.page - 1);
       o.editing <- Nothing

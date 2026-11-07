@@ -177,16 +177,17 @@ let sheet_of_md (ls : string list) : string =
 (* a box's lines in the file *)
 let box_lines (b : obj) : string list =
   let content =
-    if b.kind = "sheet" then md_of_sheet b.data
-    else if b.kind = "drawing" || b.kind = "paint" || b.kind = "chart" then
+    match b.kind with
+    | Box_sheet -> md_of_sheet b.data
+    | Box_drawing | Box_paint | Box_chart ->
       (* (its lines as they are, a paint's empty rows too; not the empty
        * one after the last newline) *)
-      [ "```" ^ b.kind ]
+      [ "```" ^ kind_name b.kind ]
       @ (match List.rev (String.split_on_char '\n' b.data) with
          | "" :: r -> List.rev r
          | l -> List.rev l)
       @ [ "```" ]
-    else md_of_text b.data in
+    | Box_text -> md_of_text b.data in
   ("\\box[" ^ string_of_int b.x ^ " " ^ string_of_int b.y ^ " "
    ^ string_of_int b.w ^ " " ^ string_of_int b.h
    ^ (if b.called = "" then "" else " " ^ b.called) ^ "]{")
@@ -209,16 +210,21 @@ let text (o : office) : string =
 let obj_of (page_no : int) (x : int) (y : int) (w : int) (h : int)
     (called : string) (ls : string list) : obj =
   let lines_data l = String.concat "" (List.map (fun s -> s ^ "\n") l) in
-  match ls with
-  | first :: _ when String.length first > 0 && first.[0] = '|' ->
-    { kind = "sheet"; x; y; w; h; data = sheet_of_md ls; called; page_no }
-  | first :: rest
-    when first = "```drawing" || first = "```paint" || first = "```chart" ->
-      { kind = String.sub first 3 (String.length first - 3); x; y; w; h;
+  let fenced =
+    match ls with
+    | "```drawing" :: _ -> Some Box_drawing
+    | "```paint" :: _ -> Some Box_paint
+    | "```chart" :: _ -> Some Box_chart
+    | _ -> None in
+  match ls, fenced with
+  | first :: _, _ when String.length first > 0 && first.[0] = '|' ->
+    { kind = Box_sheet; x; y; w; h; data = sheet_of_md ls; called; page_no }
+  | _ :: rest, Some kind ->
+      { kind; x; y; w; h;
         data = lines_data (List.filter (fun l -> l <> "```") rest);
         called = ""; page_no }
   | _ ->
-    { kind = "text"; x; y; w; h; data = text_of_md ls; called = ""; page_no }
+    { kind = Box_text; x; y; w; h; data = text_of_md ls; called = ""; page_no }
 
 let parse (width : int) (height : int) (s : string) : obj list =
   let is_box l =

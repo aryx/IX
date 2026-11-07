@@ -175,11 +175,12 @@ let chart_lines (page : obj list) (b : obj) : string list =
 let to_text (width : int) (doc : string) : string =
   let parts = in_order (parse 640 480 doc) in
   let one (b : obj) =
-    if b.kind = "sheet" then sheet_lines b.data
-    else if b.kind = "drawing" then drawing_lines b
-    else if b.kind = "paint" then paint_lines b.data
-    else if b.kind = "chart" then chart_lines parts b
-    else text_lines width b.data in
+    match b.kind with
+    | Box_sheet -> sheet_lines b.data
+    | Box_drawing -> drawing_lines b
+    | Box_paint -> paint_lines b.data
+    | Box_chart -> chart_lines parts b
+    | Box_text -> text_lines width b.data in
   let page bs =
     List.concat (List.mapi (fun k b -> (if k = 0 then [] else [ "" ]) @ one b) bs) in
   (* (a page after a form feed, as nroff's) *)
@@ -352,11 +353,12 @@ let to_html (title : string) (doc : string) : string =
     ^ glue (List.map (fun (b : obj) ->
         "<div class=box style=\"left:" ^ num b.x ^ "px;top:" ^ num b.y
         ^ "px;width:" ^ num b.w ^ "px;height:" ^ num b.h ^ "px\">\n"
-        ^ (if b.kind = "sheet" then sheet_html b.data
-           else if b.kind = "drawing" then drawing_html b
-           else if b.kind = "paint" then paint_html b
-           else if b.kind = "chart" then chart_html parts b
-           else text_html b.data)
+        ^ (match b.kind with
+           | Box_sheet -> sheet_html b.data
+           | Box_drawing -> drawing_html b
+           | Box_paint -> paint_html b
+           | Box_chart -> chart_html parts b
+           | Box_text -> text_html b.data)
         ^ "</div>\n") bs)
     ^ "</div>\n" in
   glue ([ "<!doctype html>\n<html><head><meta charset=\"utf-8\"><title>";
@@ -518,11 +520,12 @@ let to_pdf (doc : string) : string =
   let width = List.fold_left (fun m (b : obj) -> max m (b.x + b.w)) 1 parts
   and height = List.fold_left (fun m (b : obj) -> max m (b.y + b.h)) 1 parts in
   let drawn bs = glue (List.map (fun (b : obj) ->
-    if b.kind = "sheet" then sheet_pdf height b
-    else if b.kind = "drawing" then drawing_pdf height b
-    else if b.kind = "paint" then paint_pdf height b
-    else if b.kind = "chart" then chart_pdf height parts b
-    else text_pdf_box height b) bs) in
+    match b.kind with
+    | Box_sheet -> sheet_pdf height b
+    | Box_drawing -> drawing_pdf height b
+    | Box_paint -> paint_pdf height b
+    | Box_chart -> chart_pdf height parts b
+    | Box_text -> text_pdf_box height b) bs) in
   let num k = string_of_int k in
   let font k name =
     num (3 + k) ^ " 0 obj << /Type /Font /Subtype /Type1 /BaseFont /" ^ name

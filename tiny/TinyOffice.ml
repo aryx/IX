@@ -67,7 +67,7 @@ let quit (o : office) : request =
 
 (* a new box where the last click was, of a kind, edited at once (the
  * menus' Insert) *)
-let add (o : office) (kind : string) (w : int) (h : int) =
+let add (o : office) (kind : kind) (w : int) (h : int) =
   let x, y = o.at in
   keep o;
   let rec fresh k =
@@ -76,14 +76,15 @@ let add (o : office) (kind : string) (w : int) (h : int) =
     else n in
   o.page <-
     o.page @ [ { kind; x; y; w; h; data = "";
-                 called = (if kind = "sheet" then fresh 1 else "");
+                 called = (if kind = Box_sheet then fresh 1 else "");
                  page_no = o.where.shown } ];
   let i = List.length o.page - 1 in
   o.sel <- Some i;
-  if kind = "text" then edit o i x y false
-  else if kind = "sheet" then o.editing <- Cell (0, 0, None)
-  else if kind = "paint" then o.editing <- Painting (1, 0, None)
-  else o.editing <- Sketch (0, None)
+  match kind with
+  | Box_text -> edit o i x y false
+  | Box_sheet -> o.editing <- Cell (0, 0, None)
+  | Box_paint -> o.editing <- Painting (1, 0, None)
+  | _ -> o.editing <- Sketch (0, None)
 
 (* what a menu's item asks for (the keys ask for the same) *)
 let command (o : office) (c : command) : request =
@@ -104,9 +105,11 @@ let command (o : office) (c : command) : request =
       Continue
   | Do_add kind ->
       finish o;
-      (if kind = "sheet" then add o "sheet" (26 + (4 * cell_w)) (18 + (6 * 16))
-       else if kind = "drawing" then add o "drawing" 300 160
-       else if kind = "paint" then add o "paint" 200 124 else add o "text" 200 84);
+      (match kind with
+       | Box_sheet -> add o kind (26 + (4 * cell_w)) (18 + (6 * 16))
+       | Box_drawing -> add o kind 300 160
+       | Box_paint -> add o kind 200 124
+       | _ -> add o Box_text 200 84);
       Continue
   | Do_tool t ->
       (match o.editing with
@@ -196,10 +199,10 @@ let office_menus (o : office) : (string * (string * command) list) list =
     ("Edit", [ ("Undo       C-_", Do_undo); ("Cut        C-w", Do_cut);
                ("Copy", Do_copy); ("Paste      C-y", Do_paste);
                ("Delete box", Do_delete) ]);
-    ("Insert", [ ("Text       C-o", Do_add "text");
-                 ("Sheet    C-x t", Do_add "sheet");
-                 ("Drawing  C-x d", Do_add "drawing");
-                 ("Paint    C-x p", Do_add "paint") ]) ]
+    ("Insert", [ ("Text       C-o", Do_add Box_text);
+                 ("Sheet    C-x t", Do_add Box_sheet);
+                 ("Drawing  C-x d", Do_add Box_drawing);
+                 ("Paint    C-x p", Do_add Box_paint) ]) ]
   @ (match o.editing with
      | Writing d ->
          let mark k s = (if d.typing land k <> 0 then "* " else "  ") ^ s in
@@ -253,9 +256,9 @@ let key (o : office) (k : key) : request =
         match k with
         | Ctrl 's' -> command o Do_save
         | Ctrl ('c' | 'q') -> o.message <- was; command o Do_quit
-        | Char 't' -> command o (Do_add "sheet")
-        | Char 'd' -> command o (Do_add "drawing")
-        | Char 'p' -> command o (Do_add "paint")
+        | Char 't' -> command o (Do_add Box_sheet)
+        | Char 'd' -> command o (Do_add Box_drawing)
+        | Char 'p' -> command o (Do_add Box_paint)
         | Char ']' -> command o (Do_page 1)
         | Char '[' -> command o (Do_page (-1))
         | _ -> o.message <- "C-x: not a command"; Continue
@@ -263,7 +266,7 @@ let key (o : office) (k : key) : request =
       else begin
         (match k with
          | Ctrl 'x' -> o.prefix <- true
-         | Ctrl 'o' -> ignore (command o (Do_add "text"))
+         | Ctrl 'o' -> ignore (command o (Do_add Box_text))
          | Backspace when o.sel <> None -> ignore (command o Do_delete)
          | Ctrl '_' -> ignore (command o Do_undo)
          | Ctrl 'g' -> o.sel <- None; o.message <- "Quit"
@@ -274,7 +277,8 @@ let key (o : office) (k : key) : request =
 (* where the selected box is moved by the left button, its tab above
  * it (its kind written in it, or a sheet's name); where it is resized,
  * its corner *)
-let tab_text (b : obj) = if b.called <> "" then b.called else b.kind
+let tab_text (b : obj) =
+  if b.called <> "" then b.called else kind_name b.kind
 let tab (b : obj) = (b.x, b.y - 16, (8 * String.length (tab_text b)) + 8, 16)
 let corner (b : obj) = (b.x + b.w - 8, b.y + b.h - 8, 8, 8)
 
@@ -365,11 +369,12 @@ let page_mouse (o : office) (was : int) (x : int) (y : int) (b : int) =
     o.sel <- i;
     match i with
     | Some i ->
-        let kind = (List.nth o.page i).kind in
-        if kind = "text" then edit o i x y true
-        else if kind = "sheet" then choose o i x y
-        else if kind = "drawing" then o.editing <- Sketch (0, None)
-        else if kind = "paint" then o.editing <- Painting (1, 0, None)
+        (match (List.nth o.page i).kind with
+         | Box_text -> edit o i x y true
+         | Box_sheet -> choose o i x y
+         | Box_drawing -> o.editing <- Sketch (0, None)
+         | Box_paint -> o.editing <- Painting (1, 0, None)
+         | Box_chart -> ())
     | None -> ()
   end
   else if pressed 4 || pressed 2 then begin
@@ -488,12 +493,11 @@ let view (o : office) : shape list =
          | Sketch (tool, stroke) when o.sel = Some !i ->
              drawing_view b tool stroke
          | _ ->
-             if b.kind = "text" then
-               (let (t, st) = decode b.data in text_view b t st None)
-             else if b.kind = "sheet" then sheet_view b None
-             else if b.kind = "drawing" then drawing_view b 0 None
-             else if b.kind = "paint" then paint_view b
-             else if b.kind = "chart" then chart_view o.page b
-             else [ Move (b.x + 4, b.y + 2, Words (black, b.kind ^ "?")) ] in
+             match b.kind with
+             | Box_text -> let (t, st) = decode b.data in text_view b t st None
+             | Box_sheet -> sheet_view b None
+             | Box_drawing -> drawing_view b 0 None
+             | Box_paint -> paint_view b
+             | Box_chart -> chart_view o.page b in
        [ Group (frame b (o.sel = Some !i) @ content) ]) o.page)
   @ [ Group (status o) ] @ menu_view width (office_menus o) o.menu

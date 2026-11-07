@@ -289,7 +289,14 @@ let read_file caps file =
  * tiny-build, in 16, out of memory).
  * (old: every file read at each run, twice, its digest computed again:
  * minutes of tiny-kernel's for its own build; older: Digest's MD5,
- * where SHA-1 was in t-ix already, tiny-vcs's) *)
+ * where SHA-1 was in t-ix already, tiny-vcs's)
+ *
+ * The tables are keyed by a node's name, a string and not an Fpath.t,
+ * and digest_file takes one too: a name need *not* be a file (all, whose
+ * digest is None), the rules match names as text (matches), and known
+ * and the stamps are read from and written to .tiny-build as text. An
+ * Fpath.t is made only where TinyLibSystem is called.
+ *)
 let file_digests : (string, string option) Hashtbl.t = Hashtbl.create 101
 let known : (string, int * int * string) Hashtbl.t = Hashtbl.create 101
 
@@ -353,7 +360,7 @@ let save (caps : < Cap.open_out; .. >) (stamps : (string, string) Hashtbl.t) =
   TinyLibSystem.write_file caps (Fpath.v stampfile) (Buffer.contents b)
 
 let build
-    (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.open_in; Cap.open_out;
+    (caps : < Cap.forkew; Cap.open_in; Cap.open_out;
               Cap.env; Cap.stdout; Cap.stderr; .. >)
     (vars : (string, string list) Hashtbl.t)
     (stamps : (string, string) Hashtbl.t)

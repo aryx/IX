@@ -123,6 +123,7 @@ let machine name args =
     | Some k -> k | None -> error ("not a register of control: " ^ s) in
   let w op d a k =
     Words (4, fun _ -> [ (op lsl 24) lor (d lsl 20) lor (a lsl 16) lor k ]) in
+
   match name, args with
   | "csrr", [ d; c ] -> w 0x3a (reg d) 0 (csr c)
   | "csrw", [ c; a ] -> w 0x3b 0 (reg a) (csr c)
@@ -286,6 +287,7 @@ let decimal (h, l) =
  * offset being from an address the link chooses *)
 let assemble (chan : Chan.i) =
   let b = Buffer.create 4096 in
+
   let line s = Buffer.add_string b (s ^ "\n") in
   let at n e = Chan.origin chan ^ ":" ^ string_of_int (n + 1) ^ ": " ^ e in
   let target e = match e with Num n -> decimal n | Sym s -> s in
@@ -295,6 +297,7 @@ let assemble (chan : Chan.i) =
         line ("reloc " ^ string_of_int off ^ " " ^ List.assoc k kinds ^ " "
               ^ target e))
       (List.sort (fun (a, _, _) (b, _, _) -> compare a b) rs) in
+
   line "tiny-object";
   (* each file on a word's boundary: one may end with bytes, the next
    * begin with code *)
@@ -341,7 +344,7 @@ let assemble (chan : Chan.i) =
 
 let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     (argv : string array) : Exit.t =
-  let assemble_to (f : Fpath.t) (out : Fpath.t) =
+  let assemble_to (f : Fpath.t) (out : Fpath.t) : Exit.t =
     f |> TinyLibSystem.with_open_in caps assemble
       |> TinyLibSystem.write_file caps out
     ;

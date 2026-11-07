@@ -11,6 +11,7 @@
 open Common
 
 let help = "usage: tiny-shell [-eiI] [-c cmd | file] [arg ...]
+
 A subset of rc's language (mini-rc is rc, faithfully): runs the file, the -c
 command, or the commands typed at a terminal, with a prompt (-i: always).
 -e: a command that fails, not in a condition, ends the shell.
@@ -68,9 +69,9 @@ exception Error of string
 exception Exits of string
 
 type caps =
-  < Cap.fork; Cap.exec; Cap.wait; Cap.chdir; Cap.open_in; Cap.open_out;
-    Cap.stdin; Cap.stderr; Cap.stdout; Cap.exit; Cap.pipe; Cap.signal; Cap.env;
-    Cap.readdir >
+  < Cap.forkew; Cap.chdir; Cap.open_in; Cap.open_out;
+    Cap.stdin; Cap.stderr; Cap.stdout;
+    Cap.exit; Cap.pipe; Cap.signal; Cap.env; Cap.readdir >
 
 (*****************************************************************************)
 (* Lexing *)
@@ -82,7 +83,7 @@ type token =
 
 type lexer = { text : string; mutable pos : int }
 
-let peekc lx =
+let peekc (lx : lexer) : char option =
   if lx.pos < String.length lx.text then Some lx.text.[lx.pos] else None
 let skip lx = lx.pos <- lx.pos + 1
 let wordchr c = not (String.contains " \t\n#;&|`'{}()<>^$" c)
@@ -92,7 +93,7 @@ let idchr c =
 let while_ lx p =
   while (match peekc lx with Some c -> p c | None -> false) do skip lx done
 
-let rec token lx : token =
+let rec token (lx : lexer) : token =
   let op tok = skip lx; tok in
   let two c tok1 tok2 = skip lx; if peekc lx = Some c then op tok2 else tok1 in
   match peekc lx with
@@ -180,13 +181,14 @@ and more lx =
 
 type parser = { lx : lexer; mutable ahead : token option }
 
-let peek p =
+let peek (p : parser) : token =
   match p.ahead with
   | Some t -> t
   | None -> let t = token p.lx in p.ahead <- Some t; t
 let next p = let t = peek p in p.ahead <- None; t
 let expect p t = if next p <> t then raise (Error "syntax error")
 let rec skipnl p = if peek p = NL then (ignore (next p); skipnl p)
+
 (* old: the keyword's string, matched as Some "if": a misspelling was
  * silently a command's name *)
 type keyword = Kbang | Kat | Kif | Kwhile | Kfor | Kin | Kfn | Ktilde
@@ -420,6 +422,7 @@ let get x =
 
 let set x v =
   if v = [] then Hashtbl.remove vars x else Hashtbl.replace vars x v
+
 let status () = String.concat "" (get "status")
 let set_status s = set "status" [ s ]
 

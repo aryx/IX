@@ -65230,3 +65230,19 @@ Claude did not commit anything, and the `mini-mk` run failed on an `sh` syntax e
 **Claude (summary):**
 
 Claude said it was checking where TinyCPU's encoder and decoder live before writing the repo plan file.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 15:35
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the work as commit 84b89171, covering docs/plans/plan_dsl.md and docs/yoann_notes/prompt-history.md.
+Claude noted that prompt-history.md also picked up another session's notes about TinyBuildSystem.
+Claude left tiny/TinyBuildSystem.ml out of the commit, because its changes came from that other session.
+Those TinyBuildSystem.ml changes remain uncommitted in the working tree, so Claude flagged them rather than touching them.
+Claude did not run any tests or build steps, since the request was only to commit.

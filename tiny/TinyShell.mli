@@ -129,12 +129,11 @@
  * shells/rc, rc's C, which mini-rc follows and this file knows only
  * through mini-rc. *)
 
-(* what the shell asks for: main is given more (Cap.main's all), its type
- * a row (..), and hands these down *)
+(* what the shell asks for *)
 type caps =
-  < Cap.fork; Cap.exec; Cap.wait; Cap.chdir; Cap.open_in; Cap.open_out;
-    Cap.stdin; Cap.stderr; Cap.stdout; Cap.exit; Cap.pipe; Cap.signal; Cap.env;
-    Cap.readdir >
+  < Cap.forkew; Cap.chdir; Cap.open_in; Cap.open_out;
+    Cap.stdin; Cap.stderr; Cap.stdout;
+    Cap.exit; Cap.pipe; Cap.signal; Cap.env; Cap.readdir >
 
 (* the commands of a text, each run once it is read: the lexer, the
  * parser and [run] at work, without the command line around them *)

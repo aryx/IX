@@ -65401,3 +65401,85 @@ Claude had not yet written the file or committed anything at the time of this an
 
 Claude committed the design note as 042cbfb8, together with prompt-history.md, to the repository.
 Claude reported that the working tree was clean after the commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 17:39
+
+**Yoann:**
+
+> in the same .mli you say "every instruction 4
+>  * bytes, every immediate the word's low 16 bits. So an instruction's
+>  * size is known from its name alone" but this is confusing because if every instruction is 4 butes, you don't even need the name to know the size of the instr; it's just 4 always
+
+**Claude (summary):**
+
+Claude replied only that it was fixing the wrapping of the .mli comment and noted that "where a label is" appeared twice.
+Claude did not yet address the claim that the instruction size comment is misleading.
+Claude's reply gave no details on which lines or files it changed.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 17:54
+
+**Yoann:**
+
+> why not use Fpath.t for TinyPlay.wav ?
+
+**Claude (summary):**
+
+Claude explained that `wav` takes the WAV file's bytes rather than a path, so `Fpath.t` would be the wrong type.
+Claude said the `.mli` comment "a file's WAV" is misleading and proposed rewording it to say "the WAV in a file's bytes".
+Claude asked whether Yoann wanted that comment tweak made.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 17:55
+
+**Yoann:**
+
+> yes, and should play() type be changed too? int and string are vague. is there a file path in there?
+
+------------------------------------------------------------------------
+
+## 2026-11-07 17:55
+
+**Yoann:**
+
+> also usually we put the type of main in .mli (see the other TinyXxx.mli)
+
+**Claude (summary):**
+
+Claude checked how the other TinyXxx.mli files declare `main` and where TinyPlay's program lives.
+Claude noted TinyPlay already depends on TinyLibGUI through the kernel Makefile's `I_TinyPlay = $(GUI)`, so only dune needed a change.
+Claude moved the TinyPlay code and updated dune, which Yoann now asks whether to keep or revert.
+Claude did not add a `main` declaration to TinyPlay.mli, since that step was not yet done.
+Yoann's follow-up asks whether to revert and add a comment like TinyShell.mli and TinyAssembler.mli, or keep the change.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 18:00
+
+**Yoann:**
+
+> oh, ok, so maybe you can revert and just add a comment explaining why there is no main here like in TinyShell.mli and TinyAssembler.mli ?  or maybe the change you did is useful ?
+
+**Claude (summary):**
+
+Claude recommended reverting the play.ml split and keeping the clearer comments and the `s` to `data` rename.
+Claude explained the split had moved about ten lines of command-line handling into `user/`, adding a new dependency on tiny_lib_gui.
+Claude said the new file would be removed and a comment added explaining why TinyPlay has no `main`, like TinyShell and TinyAssembler.
+Claude also corrected its claim that TinyShell and TinyAssembler are host-only, since tiny-ml compiles them for tiny-kernel via TinyLibSystem.
+Claude noticed the edit tool reported `TinyPlay.mli` changed on disk, and planned to check the diff for others' edits.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 18:02
+
+**Yoann:**
+
+> ok so if TinyAssembler.ml is working both on host and tiny-kernel thx to TinyLibSystem, can't it be the case also for TinyPlay.ml ?
+
+**Claude (summary):**
+
+Claude added the reason to the "No main here" comment at the end of `tiny/TinyPlay.mli`. On the host, play's `/dev/audio` is the device `sdl/TinyCalls.ml` provides, not Unix's. Claude confirmed the dune build succeeds. Nothing was committed at that point. Claude offered to commit `TinyPlay.ml`, `TinyPlay.mli`, and `prompt-history.md` together.

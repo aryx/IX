@@ -82,12 +82,12 @@ let piece w s k n =
 
 let block = 2048
 
-let play out s =
-  let w = wav s in
+let play out data =
+  let w = wav data in
   let n = samples w in
   let rec from k =
     if k < n then begin
-      ignore (u_write out (samples_message (piece w s k block)));
+      ignore (u_write out (samples_message (piece w data k block)));
       from (k + block)
     end in
   from 0

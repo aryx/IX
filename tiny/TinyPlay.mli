@@ -41,7 +41,8 @@
  * samples start and how many bytes they are *)
 type wav = { rate : int; channels : int; bits : int; at : int; bytes : int }
 
-(* a file's WAV, or Failure why (not RIFF's, not PCM, not 8 or 16 bits) *)
+(* the WAV in a file's bytes (its contents, not its name), or Failure
+ * why (not RIFF's, not PCM, not 8 or 16 bits) *)
 val wav : string -> wav
 
 (* how many of the speaker's samples (8,000 a second) its sound is *)
@@ -54,6 +55,18 @@ val piece : wav -> string -> int -> int -> string
 (* the samples a block *)
 val block : int
 
-(* [play out data]: the file's sound written to out (/dev/audio), a block
- * at a time; Failure why when it is no WAV this plays *)
+(* [play out data]: the sound in data, a WAV file's bytes (as for
+ * [wav]), written to the file descriptor out (/dev/audio, opened by
+ * the caller), a block at a time; Failure why when it is no WAV this
+ * plays *)
 val play : int -> string -> unit
+
+(* No main here, unlike TinyShell's or TinyAssembler's: those are
+ * written on TinyLibSystem.main and its capabilities, the same on the
+ * host and on tiny-kernel. play is written on TinyCalls, as the
+ * programs with a screen are, for the same reason: on the host its
+ * device, /dev/audio, is not Unix's (the host's TinyLibSystem) but the
+ * one ../sdl/TinyCalls.ml makes, as it makes their window. Its command
+ * line (the file read, /dev/audio opened, why not said) is
+ * TinyKernel/user/play.ml's, a few lines, as troff's is
+ * user/troff.ml's; the host's tiny-play compiles that same file. *)

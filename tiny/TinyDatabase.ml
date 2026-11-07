@@ -7,6 +7,8 @@
  * and compares the resulting rows.
  *)
 
+module TSys = TinyLibSystem
+
 open Common
 
 exception Error of string
@@ -43,20 +45,20 @@ type node = Leaf of (key * row) array | Inner of key array * int array
 
 (* (a descriptor, TinyLibSystem's: a number on the host and on
  * tiny-kernel) *)
-type file = { fd : TinyLibSystem.fd; cache : (int, node) Hashtbl.t }
+type file = { fd : TSys.fd; cache : (int, node) Hashtbl.t }
 
 let read_at f off len =
-  TinyLibSystem.seek f.fd off;
+  TSys.seek f.fd off;
   let rec go acc n =
     if n >= len then String.concat "" (List.rev acc)
     else
-      match TinyLibSystem.read f.fd (len - n) with
+      match TSys.read f.fd (len - n) with
       | "" -> error "truncated file"
       | s -> go (s :: acc) (n + String.length s)
   in
   go [] 0
 
-let write_at f off s = TinyLibSystem.seek f.fd off; TinyLibSystem.write f.fd s
+let write_at f off s = TSys.seek f.fd off; TSys.write f.fd s
 
 (* an int as 8 bytes, the most significant first; the bytes above the
  * int's own are its sign's (tiny-ml's int has 31 bits: a larger
@@ -80,8 +82,8 @@ let int_at s p =
 
 (* a value at the end of the file: its length, then its bytes *)
 let append f (s : string) =
-  let off = TinyLibSystem.seek_end f.fd in
-  TinyLibSystem.write f.fd (int_bytes (String.length s) ^ s);
+  let off = TSys.seek_end f.fd in
+  TSys.write f.fd (int_bytes (String.length s) ^ s);
   off
 
 let load f off = read_at f (off + 8) (int_at (read_at f off 8) 0)
@@ -288,13 +290,13 @@ let tables_of_bytes s : table list =
 let open_db (caps : < Cap.open_in; Cap.open_out; .. >) (path : Fpath.t) =
   (* (made when it is not there) *)
   let fd =
-    try TinyLibSystem.open_rw caps path
+    try TSys.open_rw caps path
     with Failure m -> failwith (Fpath.to_string path ^ ": " ^ m)
   in
   let file = { fd; cache = Hashtbl.create 256 } in
   (* (an empty file is a new database; old: one under 16 bytes, so a
    * short file that was not one was written over) *)
-  let size = TinyLibSystem.seek_end fd in
+  let size = TSys.seek_end fd in
   if size = 0 then begin
     write_at file 0 (magic ^ String.make 8 '\000');
     { file; tables = [] }
@@ -706,7 +708,7 @@ let run_query db t stages =
 (* The statements *)
 (*****************************************************************************)
 
-let print (caps : < Cap.stdout; .. >) s = TinyLibSystem.print caps s
+let print (caps : < Cap.stdout; .. >) s = TSys.print caps s
 
 (* help: a database made and queried first, then the rest; the tables
  * after it *)
@@ -844,26 +846,26 @@ let main
   | [ _; path ] ->
       let db = open_db caps (Fpath.v path) in
       (* at a terminal, a prompt, as sqlite's *)
-      let tty = TinyLibSystem.isatty 0 in
+      let tty = TSys.isatty 0 in
       if tty then
         print caps (Printf.sprintf "tiny-db: %s; help for how, ^D to end\n" path);
       let rec loop n =
-        if tty then (print caps "tiny-db> "; TinyLibSystem.flush caps);
-        match TinyLibSystem.read_line caps with
+        if tty then (print caps "tiny-db> "; TSys.flush caps);
+        match TSys.read_line caps with
         | None -> if tty then print caps "\n"
         | Some line ->
             (try match tokens line with [] -> () | ts -> exec caps db (parse ts)
              with Error m ->
-               TinyLibSystem.flush caps;
-               TinyLibSystem.eprint caps
+               TSys.flush caps;
+               TSys.eprint caps
                  (Printf.sprintf "tiny-db: line %d: %s\n" n m));
             loop (n + 1)
       in
       loop 1;
-      TinyLibSystem.flush caps;
+      TSys.flush caps;
       Exit.OK
   | _ ->
-      TinyLibSystem.eprint caps "usage: tiny-db file.db   (-h: how)\n";
+      TSys.eprint caps "usage: tiny-db file.db   (-h: how)\n";
       Exit.Code 1
 
-let () = TinyLibSystem.main "tiny-db" main
+let () = TSys.main "tiny-db" main

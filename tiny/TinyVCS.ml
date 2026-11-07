@@ -9,6 +9,8 @@
  * gives back the new file).
  *)
 
+module TSys = TinyLibSystem
+
 (* -h: how, by examples, each one as it runs *)
 open Common
 
@@ -190,11 +192,11 @@ type repo = {
 let dir r = r.root / ".tvcs"
 let path r f = dir r / f
 
-let read_file = TinyLibSystem.read_file
-let write_file = TinyLibSystem.write_file
+let read_file = TSys.read_file
+let write_file = TSys.write_file
 
 let exists caps (p : Fpath.t) =
-  try ignore (TinyLibSystem.stat caps p); true with Failure _ -> false
+  try ignore (TSys.stat caps p); true with Failure _ -> false
 
 let load (caps : caps) (root : Fpath.t) =
   let r = { caps; root; index = Hashtbl.create 1024; fresh = [] } in
@@ -239,7 +241,7 @@ let commit r h =
 let save r (o : op) =
   let h = put r (Op o) in
   (* (closed, so written, before head is) *)
-  TinyLibSystem.with_open_append r.caps (fun (c : Chan.o) ->
+  TSys.with_open_append r.caps (fun (c : Chan.o) ->
       Out_channel.output_string c.oc
         (String.concat "" (List.map (fun (h, z) ->
            h ^ " " ^ string_of_int (String.length z) ^ "\n" ^ z)
@@ -248,19 +250,19 @@ let save r (o : op) =
   r.fresh <- [];
   let tmp = path r "head.tmp" in
   write_file r.caps tmp (h ^ "\n");
-  TinyLibSystem.rename r.caps tmp (path r "head")
+  TSys.rename r.caps tmp (path r "head")
 
 let head r = String.trim (read_file r.caps (path r "head"))
 let state r =
   match get r (head r) with Op o -> o | _ -> error "head is not an operation"
 
 let getenv_opt (caps : < Cap.env; .. >) v =
-  List.assoc_opt v (TinyLibSystem.environment caps)
+  List.assoc_opt v (TSys.environment caps)
 
 let now caps =
   match getenv_opt caps "TINYVCS_DATE" with
   | Some d -> int_of_string d
-  | None -> TinyLibSystem.time caps
+  | None -> TSys.time caps
 
 (* a new state: the branches changed, the current branch too for
  * record_at, the rest kept *)
@@ -296,14 +298,14 @@ let snapshot r =
   let ign = ignored r.caps r.root in
   let old = match tip r with Some c -> Some (commit r c).tree | None -> None in
   let rec go dir (prev : (string * entry) list) =
-    let names = List.sort compare (TinyLibSystem.readdir r.caps dir) in
+    let names = List.sort compare (TSys.readdir r.caps dir) in
     let es = names |> List.filter_map (fun name ->
       if ign name then None
       else
         let p = dir / name in
         match
           (try
-             let (st : TinyLibSystem.stat) = TinyLibSystem.stat r.caps p in
+             let (st : TSys.stat) = TSys.stat r.caps p in
              Some st.st_dir
            with Failure _ -> None)
         with
@@ -320,7 +322,7 @@ let snapshot r =
             let h = put r (Blob (read_file r.caps p)) in
             Some (name, match List.assoc_opt name prev with
               | Some (Conflict c) when c.text = h -> Conflict c
-              | _ -> if TinyLibSystem.is_executable r.caps p then Exec h else File h)
+              | _ -> if TSys.is_executable r.caps p then Exec h else File h)
         | None -> None) in
     es in
   put r (Tree (go r.root (match old with Some t -> tree r t | None -> [])))
@@ -329,16 +331,16 @@ let snapshot r =
  * removed, what differs written *)
 let checkout r (old : hash option) (nw : hash) =
   let rec rm_rf p =
-    if TinyLibSystem.is_directory r.caps p then
-      List.iter (fun f -> rm_rf (p / f)) (TinyLibSystem.readdir r.caps p);
-    TinyLibSystem.remove r.caps p
+    if TSys.is_directory r.caps p then
+      List.iter (fun f -> rm_rf (p / f)) (TSys.readdir r.caps p);
+    TSys.remove r.caps p
   in
   (* (old: File h | Exec h | Conflict { text = h; _ }, an or-pattern
    * with variables, which tiny-ml does not read) *)
   let write p h x =
-    if exists r.caps p && TinyLibSystem.is_directory r.caps p then rm_rf p;
+    if exists r.caps p && TSys.is_directory r.caps p then rm_rf p;
     write_file r.caps p (blob r h);
-    TinyLibSystem.set_executable r.caps p x in
+    TSys.set_executable r.caps p x in
   let rec go dir (old : (string * entry) list) (nw : (string * entry) list) =
     List.iter (fun (name, _) ->
       if not (List.mem_assoc name nw) then
@@ -353,9 +355,9 @@ let checkout r (old : hash option) (nw : hash) =
               | Some (Dir o) -> tree r o
               | _ -> []
             in
-            if exists r.caps p && not (TinyLibSystem.is_directory r.caps p) then
-              TinyLibSystem.remove r.caps p;
-            if not (exists r.caps p) then TinyLibSystem.mkdir r.caps p;
+            if exists r.caps p && not (TSys.is_directory r.caps p) then
+              TSys.remove r.caps p;
+            if not (exists r.caps p) then TSys.mkdir r.caps p;
             go p sub (tree r h)
         | File h -> write p h false
         | Exec h -> write p h true
@@ -648,14 +650,14 @@ let find_root caps =
     else if Filename.dirname d = d then error "not a tiny-vcs repository"
     else up (Filename.dirname d)
   in
-  up !!(TinyLibSystem.getcwd caps)
+  up !!(TSys.getcwd caps)
 
 let author caps =
   getenv_opt caps "TINYVCS_AUTHOR" ||| (getenv_opt caps "USER" ||| "nobody")
 
 let init (caps : caps) (dir : Fpath.t) =
   if exists caps (dir / ".tvcs") then error (!!dir ^ "/.tvcs exists");
-  TinyLibSystem.mkdir caps (dir / ".tvcs");
+  TSys.mkdir caps (dir / ".tvcs");
   let r = load caps dir in
   save r { prev = None; odate = now caps; what = "init"; current = "master";
            branches = [] }
@@ -669,7 +671,7 @@ let clean r =
   if snap <> tipt then error "uncommitted changes: commit first"
 
 let run (caps : caps) (args : string list) =
-  let print s = TinyLibSystem.print caps s in
+  let print s = TSys.print caps s in
   match args with
   | [ ("-h" | "--help") ] -> print help
   | [ "init" ] | [ "init"; _ ] ->
@@ -677,7 +679,7 @@ let run (caps : caps) (args : string list) =
   | "clone" :: [ src; dst ] ->
       let s = load caps (Fpath.v src) in
       let st = match get s (head s) with Op o -> o | _ -> error "bad head" in
-      TinyLibSystem.mkdir caps (Fpath.v dst);
+      TSys.mkdir caps (Fpath.v dst);
       init caps (Fpath.v dst);
       let r = load caps (Fpath.v dst) in
       List.iter (fun (_, h) -> copy s r h) st.branches;
@@ -910,4 +912,4 @@ let main (caps : caps) (argv : string array) : Exit.t =
   try run caps (List.tl (Array.to_list argv)); Exit.OK
   with Error m -> Exit.Err m
 
-let () = TinyLibSystem.main "tiny-vcs" (fun caps -> main (caps :> caps))
+let () = TSys.main "tiny-vcs" (fun caps -> main (caps :> caps))

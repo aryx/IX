@@ -6,6 +6,7 @@ val unit_done : unit -> unit
 val implicit : string -> bool
 val qualify : string -> string -> string
 val opened : (string, 'a) Hashtbl.t -> string -> unit
+val aliased : (string, 'a) Hashtbl.t -> string -> string -> unit
 val export :
   (string, 'a) Hashtbl.t -> string -> (string * 'a) list -> 'b -> 'b
 val type_unit :

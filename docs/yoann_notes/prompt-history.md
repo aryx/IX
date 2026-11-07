@@ -65246,3 +65246,53 @@ Claude noted that prompt-history.md also picked up another session's notes about
 Claude left tiny/TinyBuildSystem.ml out of the commit, because its changes came from that other session.
 Those TinyBuildSystem.ml changes remain uncommitted in the working tree, so Claude flagged them rather than touching them.
 Claude did not run any tests or build steps, since the request was only to commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 16:29
+
+**Yoann:**
+
+> those TinyLibSystem.xxx are a big long. Maybe we should rename this module to something shorter, or handle module XXX = YYY aliases in tiny-ml?
+
+**Claude (summary):**
+
+Claude said it would check whether mini-ml, which also compiles tiny/, supports module aliases.
+Yoann's follow-up rejects `open` because the provenance of outside functions stays visible when they are qualified.
+That makes module aliases the option he is leaning toward, so the answer's focus is on aliasing rather than opening.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 16:30
+
+**Yoann:**
+
+> we could also open Xxx, but I prefer to avoid open because I think it;'s makes the code less readable; the provenance of functions outside the current module is useful to see
+
+**Claude (summary):**
+
+Claude recommended avoiding `open` and using a module alias, since `S.print` keeps the provenance of functions visible.
+Claude said the alias should be recognizable, like `TLS`, `Sys_` or `TSys`, not a single letter, and consistent across programs.
+Claude proposed adding alias support to tiny-ml, then converting TinyShell, TinyUtilities, TinyBuildSystem, TinyVCS and TinyDatabase to use it.
+Yoann picked `TSys` as the short name, so Claude will use it across tiny/.
+Claude also asked which short name he preferred before making any changes.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 16:32
+
+**Yoann:**
+
+> go ahead, use TSys
+
+------------------------------------------------------------------------
+
+## 2026-11-07 16:33
+
+**Yoann:**
+
+> and we could use TDraw TGui later too
+
+**Claude (summary):**
+
+Claude explained that tiny-ml now accepts `module TSys = TinyLibSystem`, with the alias handled generically so `TDraw` and `TGui` can follow later. Claude added `IAlias` to the parser, type checker and compiler, about 20 lines across five files. Claude converted TinyShell, TinyUtilities, TinyBuildSystem, TinyVCS and TinyDatabase to use `TSys.`. Claude re-recorded the `-bugs` baseline after the inserted lines shifted findings; `make self-quick-tix` has not been run and nothing is committed yet.

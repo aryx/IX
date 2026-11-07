@@ -71,6 +71,7 @@ let compile_unit env (items : (item * int) list) =
     try
       match it with
       | IOpen u -> opened globals u; env, defs
+      | IAlias (a, u) -> aliased globals a u; env, defs
       | IExt (x, t, p) ->
           let b = Ext (p, arity t) in
           add_name globals x b;

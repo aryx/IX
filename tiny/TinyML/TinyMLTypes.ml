@@ -299,7 +299,7 @@ let type_item env (it, l) =
     | ILet (Nonrecursive, bs) -> let_types env bs
     | ILet (Recursive, bs) -> rec_types env bs
     | IExt (x, t, _) -> (x, of_texpr (ref []) t) :: env
-    | IExn _ | IOpen _ -> env
+    | IExn _ | IOpen _ | IAlias _ -> env
   with Failure m -> error (Printf.sprintf "line %d: %s" l m)
 
 (* Scopes. A unit's names are M.x for the units after it; open M gives
@@ -310,16 +310,20 @@ let type_item env (it, l) =
  * name with a dot) *)
 let implicit u = u = "Stdlib"
 let qualify u x = u ^ "." ^ x
-(* open M: M.x as x too, for this unit *)
-let opened tbl u =
+(* M.x as a ^ x too, for this unit *)
+let renamed tbl u a =
   let p = u ^ "." in
   let n = String.length p in
   Hashtbl.fold (fun x b acc ->
       if String.length x > n && String.sub x 0 n = p then
-        (String.sub x n (String.length x - n), b) :: acc
+        (a ^ String.sub x n (String.length x - n), b) :: acc
       else acc)
     tbl []
   |> List.iter (fun (x, b) -> add_name tbl x b)
+(* open M: M.x as x too *)
+let opened tbl u = renamed tbl u ""
+(* module A = M: M.x as A.x too *)
+let aliased tbl a u = renamed tbl u (a ^ ".")
 (* a unit's names, M.x, into the table for the units after it (and
  * Stdlib's x); the list for them is the one before it *)
 let export tbl u defs before =
@@ -335,6 +339,7 @@ let type_unit env items =
   List.fold_left (fun (env, defs) (it, l) ->
     match it with
     | IOpen u -> opened tglobals u; env, defs
+    | IAlias (a, u) -> aliased tglobals a u; env, defs
     | _ ->
         let added = type_item [] (it, l) in
         List.iter (fun (x, t) -> add_name tglobals x t) (List.rev added);

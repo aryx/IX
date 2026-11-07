@@ -37,6 +37,7 @@ type item =
   | IExt of string * texpr * string
   | IExn of string
   | IOpen of string
+  | IAlias of string * string
 type kind = KConst of int | KBlock of int | KExn
 type cinfo = {
   kind : kind;

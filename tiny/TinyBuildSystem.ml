@@ -1,6 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
+module TSys = TinyLibSystem
+
 (* See TinyBuildSystem.mli *)
 
 (* -h: the usage, and a Buildfile's five kinds of lines, by example, as
@@ -271,11 +273,11 @@ let order (root : node) : node list =
 (* (a target's name is text, matched by the rules and the digests'
  * key: a path at this section's door) *)
 let exists caps file =
-  try ignore (TinyLibSystem.stat caps (Fpath.v file)); true
+  try ignore (TSys.stat caps (Fpath.v file)); true
   with Failure _ -> false
 
 let read_file caps file =
-  if exists caps file then Some (TinyLibSystem.read_file caps (Fpath.v file))
+  if exists caps file then Some (TSys.read_file caps (Fpath.v file))
   else None
 
 (* A file's digest, the SHA-1 of its bytes, read once in a run
@@ -307,19 +309,19 @@ let digest_file (caps : < Cap.open_in; Cap.readdir; .. >) (file : string) :
   | None ->
       let path = Fpath.v file in
       let d =
-        if exists caps file && not (TinyLibSystem.is_directory caps path)
+        if exists caps file && not (TSys.is_directory caps path)
         then begin
-          let (st : TinyLibSystem.stat) = TinyLibSystem.stat caps path
-          and date = TinyLibSystem.mtime caps path in
+          let (st : TSys.stat) = TSys.stat caps path
+          and date = TSys.mtime caps path in
           let size = st.st_size in
           match Hashtbl.find_opt known file with
           | Some (s, t, d) when s = size && t = date -> Some d
           | _ ->
-              let now = TinyLibSystem.time caps in
+              let now = TSys.time caps in
               (* (a piece at a time: a file need not fit in the heap) *)
               let b = Bytes.make 4096 ' ' in
               let d =
-                TinyLibSystem.with_open_in caps (fun (c : Chan.i) ->
+                TSys.with_open_in caps (fun (c : Chan.i) ->
                     Sha1.to_hex (Sha1.reads (fun () ->
                       Bytes.sub_string b 0 (In_channel.input c.ic b 0 4096))))
                   path in
@@ -332,12 +334,12 @@ let digest_file (caps : < Cap.open_in; Cap.readdir; .. >) (file : string) :
       d
 
 (* a recipe run by the system's shell: sh -e on the host, rc -e on
- * tiny-kernel (TinyLibSystem.shell); its pid, None when no process
+ * tiny-kernel (TSys.shell); its pid, None when no process
  * could run it (old: CapUnix.fork and execve of /bin/sh -e -c here) *)
 let start (caps : < Cap.fork; Cap.exec; Cap.env; Cap.open_out; .. >)
     (vars : (string * string list) list) (recipe : string)
-    : TinyLibSystem.pid option =
-  TinyLibSystem.shell caps vars recipe
+    : TSys.pid option =
+  TSys.shell caps vars recipe
 
 (*****************************************************************************)
 (* Building *)
@@ -357,7 +359,7 @@ let save (caps : < Cap.open_out; .. >) (stamps : (string, string) Hashtbl.t) =
   Hashtbl.iter (fun k v -> Printf.bprintf b "%s %s\n" k v) stamps;
   Hashtbl.iter (fun k (size, date, d) ->
     Printf.bprintf b "file %s %d %d %s\n" k size date d) known;
-  TinyLibSystem.write_file caps (Fpath.v stampfile) (Buffer.contents b)
+  TSys.write_file caps (Fpath.v stampfile) (Buffer.contents b)
 
 let build
     (caps : < Cap.forkew; Cap.open_in; Cap.open_out;
@@ -368,7 +370,7 @@ let build
   let digests = Hashtbl.create 101 in    (* the nodes done: their digest *)
   let running = Hashtbl.create 7 in      (* pid -> node, its start *)
   let ran = ref 0 and failed = ref false in
-  (* the Buildfile's variables, then the environment's (TinyLibSystem.shell's;
+  (* the Buildfile's variables, then the environment's (TSys.shell's;
    * old: the environment's first) *)
   let env = Hashtbl.fold (fun k v acc -> (k, v) :: acc) vars [] in
   (* a source's recipe is "", as .tiny-build's stamps have it *)
@@ -400,24 +402,24 @@ let build
       List.iter (fun (k, v) -> Hashtbl.replace shown k v) own;
       if not (Hashtbl.mem said n.name) then begin
         Hashtbl.replace said n.name ();
-        TinyLibSystem.print caps (expand true shown r.text ^ "\n");
+        TSys.print caps (expand true shown r.text ^ "\n");
         incr ran
       end;
       if dry then (Hashtbl.replace digests n.name ("dry " ^ n.name); true)
       else
         match start caps (own @ env) r.text with
         | Some pid ->
-            Hashtbl.replace running pid (n, TinyLibSystem.millis caps); true
+            Hashtbl.replace running pid (n, TSys.millis caps); true
         | None when Hashtbl.length running > 0 -> false
         | None ->
-            TinyLibSystem.flush caps;
-            TinyLibSystem.eprint caps
+            TSys.flush caps;
+            TSys.eprint caps
               (Printf.sprintf "tiny-build: %s: no process to run it\n" n.name);
             failed := true;
             true
   in
   let wait () =
-    match TinyLibSystem.wait_any caps with
+    match TSys.wait_any caps with
     | None -> ()
     | Some (pid, st) ->
     match Hashtbl.find_opt running pid with
@@ -426,9 +428,9 @@ let build
         Hashtbl.remove running pid;
         (* (said at once: a build that fails later keeps them) *)
         if timed then begin
-          let ms = TinyLibSystem.millis caps - began in
+          let ms = TSys.millis caps - began in
           times := (n.name, ms) :: !times;
-          TinyLibSystem.print caps (Printf.sprintf "%8d ms  %s\n" ms n.name)
+          TSys.print caps (Printf.sprintf "%8d ms  %s\n" ms n.name)
         end;
         (* (its file made again: its digest too) *)
         if st = "" then (
@@ -437,8 +439,8 @@ let build
           finish n;
           save caps stamps)
         else (
-          TinyLibSystem.flush caps;
-          TinyLibSystem.eprint caps
+          TSys.flush caps;
+          TSys.eprint caps
             (Printf.sprintf "tiny-build: %s failed\n" n.name);
           failed := true)
   in
@@ -456,7 +458,7 @@ let build
   in
   loop (order root);
   if !ran = 0 && not !failed then
-    TinyLibSystem.print caps
+    TSys.print caps
       (Printf.sprintf "tiny-build: %s is up to date\n" root.name);
   not !failed
 
@@ -491,16 +493,16 @@ let report caps total =
       (Hashtbl.fold (fun k v acc -> (k, v) :: acc) by [])
   in
   List.iter (fun (k, (n, t)) ->
-    TinyLibSystem.print caps (Printf.sprintf "%8d ms  %4d  %s\n" t n k)) rows;
+    TSys.print caps (Printf.sprintf "%8d ms  %4d  %s\n" t n k)) rows;
   let recipes = List.fold_left (fun acc (_, ms) -> acc + ms) 0 !times in
   (* (with -j the recipes overlap: their sum may pass the whole's, and
    * how many ran at once on average is what is worth saying) *)
   if recipes <= total then
-    TinyLibSystem.print caps
+    TSys.print caps
       (Printf.sprintf "%8d ms        not a recipe's\n%8d ms        in all\n"
          (total - recipes) total)
   else
-    TinyLibSystem.print caps
+    TSys.print caps
       (Printf.sprintf
          "%8d ms        the recipes', %d.%d at once\n%8d ms        in all\n"
          recipes (recipes / max 1 total) (recipes * 10 / max 1 total mod 10)
@@ -509,7 +511,7 @@ let report caps total =
 let run (caps : < caps; .. >) (argv : string array) : Exit.t =
   let file = ref "Buildfile" and jobs = ref 1 and dry = ref false
   and dot = ref false and timed = ref false in
-  let began = TinyLibSystem.millis caps in
+  let began = TSys.millis caps in
   let targets = ref [] in
   (* old: Arg.parse_argv, for these four options *)
   let bad o =
@@ -557,27 +559,27 @@ let run (caps : < caps; .. >) (argv : string array) : Exit.t =
       targets |> List.for_all (fun t ->
         let root = graph rules (exists caps) t in
         if !dot then begin
-          TinyLibSystem.print caps "digraph G {\n";
+          TSys.print caps "digraph G {\n";
           order root |> List.iter (fun n ->
             List.iter (fun d ->
-              TinyLibSystem.print caps
+              TSys.print caps
                 (Printf.sprintf "  %S -> %S;\n" n.name d.name)) n.deps);
-          TinyLibSystem.print caps "}\n";
+          TSys.print caps "}\n";
           true
         end
         else build caps vars stamps (max 1 !jobs) !dry !timed root)
     in
     if not !dry then save caps stamps;
-    if !timed then report caps (TinyLibSystem.millis caps - began);
+    if !timed then report caps (TSys.millis caps - began);
     if ok then Exit.OK else Exit.Code 1
   with Error msg -> Exit.Err msg
 
 (* -h, and an unknown option said, not raised *)
 let main (caps : < caps; .. >) (argv : string array) : Exit.t =
   match Array.to_list argv with
-  | [ _; ("-h" | "--help") ] -> TinyLibSystem.print caps help; Exit.OK
+  | [ _; ("-h" | "--help") ] -> TSys.print caps help; Exit.OK
   | _ ->
       (try run caps argv
-       with Bad m -> TinyLibSystem.eprint caps m; Exit.Code 2)
+       with Bad m -> TSys.eprint caps m; Exit.Code 2)
 
-let () = TinyLibSystem.main "tiny-build" main
+let () = TSys.main "tiny-build" main

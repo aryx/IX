@@ -588,25 +588,33 @@ let rec items () : (item * int) list =
       else (ILet (r, bs), l) :: items ()
   | KW "type" -> advance (); type_decl (); items ()
   (* module M = struct ... end, one level: its names M.x, for the units
-   * after (open A.M); in it, a name is not found by its short name *)
+   * after (open A.M); in it, a name is not found by its short name.
+   * Or module A = M, a shorter name for a unit: A.x is M.x, in this
+   * unit alone, and A.t M's type t *)
   | KW "module" ->
       advance ();
       let m = match peek () with UID m -> advance (); m | _ -> fail () in
       expect (KW "=");
-      if peek () <> KW "struct" then fail ();
-      advance ();
-      let inner = items () in
-      expect (KW "end");
-      let rec named p = match p with
-        | PVar x -> PVar (m ^ "." ^ x)
-        | PAnnot (p, t) -> PAnnot (named p, t)
-        | _ -> fail () in
-      List.map (fun (it, l) ->
-          match it with
-          | ILet (r, bs) -> ILet (r, List.map (fun (p, e) -> named p, e) bs), l
-          | IExt (x, t, p) -> IExt (m ^ "." ^ x, t, p), l
-          | _ -> fail ()) inner
-      @ items ()
+      (match peek () with
+       | UID u ->
+           advance ();
+           known_units := m :: !known_units;
+           (IAlias (m, u), l) :: items ()
+       | KW "struct" ->
+           advance ();
+           let inner = items () in
+           expect (KW "end");
+           let rec named p = match p with
+             | PVar x -> PVar (m ^ "." ^ x)
+             | PAnnot (p, t) -> PAnnot (named p, t)
+             | _ -> fail () in
+           List.map (fun (it, l) ->
+               match it with
+               | ILet (r, bs) -> ILet (r, List.map (fun (p, e) -> named p, e) bs), l
+               | IExt (x, t, p) -> IExt (m ^ "." ^ x, t, p), l
+               | _ -> fail ()) inner
+           @ items ()
+       | _ -> fail ())
   | KW "open" ->
       advance ();
       (match peek () with

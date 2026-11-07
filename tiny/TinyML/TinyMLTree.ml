@@ -57,6 +57,7 @@ and case = pat * expr option * expr
 type item =
   | ILet of rec_flag * (pat * expr) list | IExt of string * texpr * string
   | IExn of string | IOpen of string
+  | IAlias of string * string          (* module A = M *)
 
 (* a constructor: its number among its type's constant ones or among
  * the others (a block's tag), or an exception; its type as

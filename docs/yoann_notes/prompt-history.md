@@ -65190,3 +65190,43 @@ Claude noted the commit holds all 15 files, including two changes it had not wri
 Claude named those two as the TinyBuildSystem.mli comment re-wrap and prompt-history.md entries, and disclosed them in the message.
 Claude listed passing checks in the message: dune, mini-mk, tiny-kernel, analyzer tests, both -caps sweeps, make test.
 Claude did not run make self-quick-tix, which takes about six minutes, so it remains unverified.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 15:30
+
+**Yoann:**
+
+> why not use Fpath.t for TinyBuildSystem.file_digests? and also digest_file for the file parameter?
+
+**Claude (summary):**
+
+Claude explained that strings are kept for `file_digests` because its keys are node names, which include non-file targets like `all`. Claude argued that switching to `Fpath.t` would add conversions at three call sites rather than remove them. Claude offered a narrower option: change only `digest_file`'s parameter to `Fpath.t` and keep the table keyed by `Fpath.to_string`. Claude left the code unchanged and asked whether Yoann wanted that narrower change.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 15:33
+
+**Yoann:**
+
+> ok then maybe we should add somewhere in a comment, maybe next to file_digests that we use string and not Fpath.t here and why, as a reminder
+
+**Claude (summary):**
+
+Claude added a reminder paragraph to the comment above `file_digests` in `tiny/TinyBuildSystem.ml`.
+The paragraph explains why the tables and `digest_file` use string names rather than `Fpath.t`.
+It notes that `all` has no digest, rules match names as text, and `.tiny-build` stores stamps as text.
+It says an `Fpath.t` is only made where `TinyLibSystem` is called, and `dune build` passes.
+Claude did not commit anything, and the `mini-mk` run failed on an `sh` syntax error in `../mkfiles/config.rc`.
+
+------------------------------------------------------------------------
+
+## 2026-11-07 15:18
+
+**Yoann:**
+
+> I mean a docs/plans/ document
+
+**Claude (summary):**
+
+Claude said it was checking where TinyCPU's encoder and decoder live before writing the repo plan file.

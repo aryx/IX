@@ -1,13 +1,14 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+ *
+ * See TinyAppTemperature.mli
  *)
-(* See TinyAppTemperature.mli *)
 open TinyLibGUI
 
 (* the two fields' texts, as typed *)
 type model = { c : string; f : string }
 
-let init = { c = ""; f = "" }
+let init : model = { c = ""; f = "" }
 
 (* a field's new text *)
 type msg = Celsius of string | Fahrenheit of string

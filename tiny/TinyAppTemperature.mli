@@ -19,6 +19,7 @@
  *     -40 (after three     -40        -40
  *     backspaces)
  *
+ * A few notes:
  * - {b The model is the two texts}, not a temperature. A field must be
  *   able to show "10x" or "-" while they are being typed, and no number
  *   can represent those. The field being typed in keeps its text,

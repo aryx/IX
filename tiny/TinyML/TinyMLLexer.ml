@@ -116,6 +116,15 @@ let lex (s : string) : (token * int) array =
           let j = close (i + 2) in
           add (STR (String.sub s (i + 2) (j - i - 2)));
           go (j + 2)
+      (* an attribute, [@@deriving show] or [@@warning "-32"], up to its
+       * ], dropped: mini-ml derives from it, tiny-ml and OCaml keep the
+       * show_x the file defines before its type, "NO DERIVING" *)
+      | '[' when i + 1 < n && s.[i + 1] = '@' ->
+          let rec close j =
+            if j >= n then error "unterminated attribute"
+            else if s.[j] = ']' then j + 1
+            else (if s.[j] = '\n' then incr line; close (j + 1)) in
+          go (close (i + 2))
       | '"' ->
           let b = Buffer.create 16 in
           let rec str j =

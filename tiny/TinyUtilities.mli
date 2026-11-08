@@ -68,20 +68,20 @@ type caps =
   < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdin; Cap.stdout; Cap.stderr;
     Cap.kill; Cap.clock; Cap.exit; Cap.env >
 
-(* [each_input caps tool files f]: f on each file named, as its name
- * and a channel open on it, or on None and the standard input's when
- * no file is named (old: a descriptor; then "" for the name). A file
- * that cannot be opened is reported, and the result, the exit status,
- * is then 1 *)
+(* [each_input caps tool files f]: f on a channel open on each file
+ * named, or on the standard input's when no file is named; the channel
+ * says which, its origin (old: a descriptor; then the name beside it,
+ * "" for the standard input). A file that cannot be opened is
+ * reported, and the result, the exit status, is then 1 *)
 val each_input :
   < Cap.open_in; Cap.stdin; Cap.stderr; .. > ->
-  string -> string list -> (string option -> Chan.i -> unit) -> int
+  string -> Fpath.t list -> (Chan.i -> unit) -> int
 
 (* [fold caps path f]: f path is_directory size entries, where entries ()
  * folds each entry of a directory (none for a file), in name order *)
 val fold :
   < Cap.open_in; Cap.readdir; .. > ->
-  string -> (string -> bool -> int -> (unit -> 'a list) -> 'a) -> 'a
+  Fpath.t -> (Fpath.t -> bool -> int -> (unit -> 'a list) -> 'a) -> 'a
 
 (* the program: its arguments (its name first, the utility's when it
  * is run by a link named after one) to how it ends *)

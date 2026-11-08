@@ -66159,3 +66159,78 @@ Claude wrapped the seven lines over 80 columns, three of them its own (`cp`, `da
 **Yoann:**
 
 > |||
+
+------------------------------------------------------------------------
+
+## 2026-11-08 21:09
+
+**Yoann:**
+
+> at a few places to factorize code
+
+**Claude (summary):**
+
+Claude proposed adding `open Common` to TinyUtilities, matching what TinyShell already does.
+Claude said it would search TinyUtilities for every option-with-default `match` expression.
+Claude planned to factorize those repeated option matches at a few places in the code.
+Claude had only announced these edits, not yet made them, when the answer ended.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 21:46
+
+**Yoann:**
+
+> excellent, let's commit
+
+**Claude (summary):**
+
+Claude reported that nothing remained to commit, since the `|||` change was already in as `5b0e4f92`.
+Claude said the debugger checksum and `prompt-history.md` were included in that commit, and the working tree was clean.
+Yoann's follow-up asked why `TinyUtilities.mli` uses a plain string rather than `Fpath.t` in signatures like `each_input`.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 21:49
+
+**Yoann:**
+
+> can you remind me why we don't use Fpath.t in the signature in TinyUtilities.mli like each_input ? do we pass a names that are not filenames?
+
+**Claude (summary):**
+
+Claude explained that every string in `each_input`'s list is opened as a file, so those names are real filenames.
+Claude said the strings are kept for other reasons, and it was about to check whether `Fpath.v` keeps an operand exactly as typed.
+Yoann's follow-up accepts simplifying `a//b` to `a/b` and raising an exception on an empty filename in `tiny/`, since compatibility is not required there.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 21:51
+
+**Yoann:**
+
+> actually for tiny/ we don't have to be compliant and backward compatible, so simplifying a//b in a/b does not seem to be a problem to me, as well as raise exn when passing "" for a filename (we can always catch and change the error message).
+
+------------------------------------------------------------------------
+
+## 2026-11-08 21:52
+
+**Yoann:**
+
+> you can also use !! operator (via Fpath_.Operators open I think)
+
+------------------------------------------------------------------------
+
+## 2026-11-08 21:58
+
+**Yoann:**
+
+> in each_input, why pass Fpath.t option and Chan.i when Chan.i already has similar information no? We can also know whether stdin was passed via Chan.i origin
+
+**Claude (summary):**
+
+Claude proposed that `Chan.i` already records the input source, via `origin` set to `File p` or `Stdin`, so the extra arguments are redundant.
+Claude checked the kernel's `with_open_in`, which sets `File file`, and the `stdin` helpers, which set `Stdin`, and asked whether the host's `with_open_in` does the same.
+Claude then removed the unused `_` name from five callers, and `wc` and `grep` now read the source from the channel.
+Claude reran the tests and hand checks, and everything passed after the debugger checksum was updated for the moved `ls` code.
+Claude also checked which of the four over-80-column lines it had introduced.

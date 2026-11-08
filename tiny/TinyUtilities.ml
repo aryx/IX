@@ -14,6 +14,9 @@ module TSys = TinyLibSystem
 open TinyLibRegex
 (* (|||: an option's value, or a default) *)
 open Common
+(* a path's text (Fpath_.Operators' !!, not opened: its / would hide the
+ * division) *)
+let ( !! ) = Fpath.to_string
 
 type caps =
   < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdin; Cap.stdout; Cap.stderr;
@@ -41,11 +44,14 @@ exception Usage
 let print caps s = TSys.print caps s
 let complain caps tool s = TSys.eprint caps (tool ^ ": " ^ s ^ "\n")
 
-(* an operand as a file's path, at the system's door (the operand is
- * what is printed, as it was typed): Failure for the empty word, said
- * as any file's error *)
+(* the operands as files' paths, made as a utility reads its
+ * arguments, printed as Fpath.to_string says them (a//b as a/b): the
+ * empty word a Failure, the utility's (old: kept as typed, a string
+ * to the system's door, to say each as typed and '' as one file's
+ * error among the others; compatibility, which tiny/ does not keep) *)
 let path (w : string) : Fpath.t =
   if w = "" then failwith "no file name" else Fpath.v w
+let paths_of ws = List.map path ws
 
 (* what follows the last slash of a path *)
 let last_part path =
@@ -110,25 +116,29 @@ let lines (c : Chan.i) f =
 (* [named name g]: g's Failure said after the name *)
 let named name g = try g () with Failure m -> failwith (name ^ ": " ^ m)
 
-(* [each_input caps tool files f]: f on each file's channel (with its
- * name), or on the standard input's (None) when there is none; one that
- * fails is said, "name: reason" (an open's already names its file),
- * and the status is then 1 *)
-let each_input caps tool files (f : string option -> Chan.i -> unit) : status =
+(* [each_input caps tool files f]: f on each file's channel, or on the
+ * standard input's when there is none; one that fails is said, "name:
+ * reason" (an open's already names its file), and the status is then
+ * 1. A channel says where it reads (name_of) *)
+let each_input caps tool (files : Fpath.t list) (f : Chan.i -> unit)
+    : status =
   let one status run =
     try run (); status with Failure m -> complain caps tool m; 1 in
   if files = [] then
-    one 0 (fun () -> named "stdin" (fun () -> f None (TSys.stdin caps)))
+    one 0 (fun () -> named "stdin" (fun () -> f (TSys.stdin caps)))
   else
     List.fold_left (fun status file ->
       one status (fun () ->
-        let p = named file (fun () -> path file) in
         TSys.with_open_in caps
-          (fun c -> named file (fun () -> f (Some file) c)) p)) 0 files
+          (fun c -> named !!file (fun () -> f c)) file)) 0 files
+
+(* the file a channel reads, None for the standard input *)
+let name_of (c : Chan.i) : Fpath.t option =
+  match c.origin with Chan.File p -> Some p | _ -> None
 
 let cat (caps : < filter; .. >) args =
   let _, files = options "" args in
-  each_input caps "cat" files (fun _ c ->
+  each_input caps "cat" (paths_of files) (fun c ->
     pieces c (fun s -> print caps s; TSys.flush caps))
 
 (* the counts so far, and whether the last byte counted was inside a
@@ -164,10 +174,10 @@ let wc (caps : < filter; .. >) args =
        ^ "\n") in
   let total = counts () and files_counted = ref 0 in
   let status =
-    each_input caps "wc" files (fun name chan ->
+    each_input caps "wc" (paths_of files) (fun chan ->
       let c = counts () in
       pieces chan (count c);
-      report c name;
+      report c (Option.map Fpath.to_string (name_of chan));
       incr files_counted;
       total.lines <- total.lines + c.lines;
       total.words <- total.words + c.words;
@@ -210,7 +220,7 @@ let tail (caps : < filter; .. >) args =
     | _ -> true, "10", args in
   match int_of_string_opt n, files with
   | Some n, ([] | [ _ ]) when n >= 0 ->
-      each_input caps "tail" files (fun _ (c : Chan.i) ->
+      each_input caps "tail" (paths_of files) (fun (c : Chan.i) ->
         print caps (lines_of from_end n (In_channel.input_all c.ic)))
   | _ -> raise Usage
 
@@ -219,9 +229,10 @@ let tee (caps : < Cap.stdout; Cap.stderr; Cap.stdin; Cap.open_out; .. >) args =
   let status = ref 0 in
   let fds =
     List.concat_map (fun file ->
-      try [ TSys.open_out caps (path file) ]
+      try [ TSys.open_out caps file ]
       with Failure m ->
-        complain caps "tee" (file ^ ": " ^ m); status := 1; []) files in
+        complain caps "tee" (!!file ^ ": " ^ m); status := 1; [])
+      (paths_of files) in
   (* (the files written as the input comes, several at once: their
    * descriptors) *)
   pieces (TSys.stdin caps) (fun s ->
@@ -257,7 +268,7 @@ let xd (caps : < filter; .. >) args =
           if i < String.length g then Printf.sprintf "%02x" (Char.code g.[i])
           else "00"))) in
   let address a = Printf.sprintf "%07x " a in
-  each_input caps "xd" files (fun _ c ->
+  each_input caps "xd" (paths_of files) (fun c ->
     let pending = ref "" and addr = ref 0 in
     let line s =
       let groups =
@@ -292,8 +303,8 @@ let grep (caps : < filter; .. >) args =
       let named name = if List.length files > 1 then name ^ ":" else "" in
       let found = ref false in
       let status =
-        each_input caps "grep" files (fun name c ->
-          let name = name ||| "" in
+        each_input caps "grep" (paths_of files) (fun c ->
+          let name = Option.map Fpath.to_string (name_of c) ||| "" in
           let count = ref 0 and number = ref 0 in
           lines c (fun line ended ->
             incr number;
@@ -358,7 +369,7 @@ let sort (caps : < filter; .. >) args =
     | _ -> 0, rest in
   let all = ref [] in
   let status =
-    each_input caps "sort" files (fun _ c ->
+    each_input caps "sort" (paths_of files) (fun c ->
       lines c (fun line _ -> all := line :: !all)) in
   let key line =
     let text = from_field field line in
@@ -379,22 +390,26 @@ let sort (caps : < filter; .. >) args =
 (* Walkers *)
 (*****************************************************************************)
 
-let entries caps dir = List.sort compare (TSys.readdir caps (path dir))
+(* a directory's entries, their names sorted; the current directory's
+ * as paths: alone, as ls and walk say them (a, not ./a) *)
+let entries caps (dir : Fpath.t) : string list =
+  List.sort compare (TSys.readdir caps dir)
+let here caps : Fpath.t list = List.map Fpath.v (entries caps (Fpath.v "."))
 
-let rec fold caps p f =
-  let (st : TSys.stat) = TSys.stat caps (path p) in
+let rec fold caps (p : Fpath.t) f =
+  let (st : TSys.stat) = TSys.stat caps p in
   let is_dir = st.st_dir and size = st.st_size in
   f p is_dir size (fun () ->
     if is_dir then
-      List.map (fun e -> fold caps (Filename.concat p e) f) (entries caps p)
+      List.map (fun e -> fold caps (Fpath.add_seg p e) f) (entries caps p)
     else [])
 
 (* [each_path caps tool paths f]: f on each path; one that fails is
  * reported, and the status is then 1 *)
-let each_path caps tool paths f : status =
+let each_path caps tool (paths : Fpath.t list) f : status =
   List.fold_left (fun status p ->
     try f p; status
-    with Failure m -> complain caps tool (p ^ ": " ^ m); 1) 0 paths
+    with Failure m -> complain caps tool (!!p ^ ": " ^ m); 1) 0 paths
 
 (* a directory's entries, or a file's name; all of them sorted together,
  * and quoted for rc. -l: each with its kind (d for a directory), its
@@ -404,23 +419,22 @@ let ls (caps : < Cap.stdout; Cap.stderr; Cap.open_in; Cap.readdir; .. >) args =
   let flags, paths = options "l" args in
   let names = ref [] in
   let status =
-    if paths = [] then begin names := entries caps "."; 0 end
+    if paths = [] then begin names := here caps; 0 end
     else
-      each_path caps "ls" paths (fun p ->
-        let (st : TSys.stat) = TSys.stat caps (path p) in
-        let is_dir = st.st_dir in
+      each_path caps "ls" (paths_of paths) (fun p ->
+        let (st : TSys.stat) = TSys.stat caps p in
         names :=
-          (if is_dir then List.map (Filename.concat p) (entries caps p) else [ p ])
+          (if st.st_dir then List.map (Fpath.add_seg p) (entries caps p)
+           else [ p ])
           @ !names) in
   let long name =
     if not (List.mem 'l' flags) then ""
     else begin
-      let (st : TSys.stat) = TSys.stat caps (path name) in
-      let is_dir = st.st_dir and size = st.st_size in
-      (if is_dir then "d" else "-")
-      ^ Printf.sprintf "%4d%9d " (TSys.links caps (path name)) size
+      let (st : TSys.stat) = TSys.stat caps name in
+      (if st.st_dir then "d" else "-")
+      ^ Printf.sprintf "%4d%9d " (TSys.links caps name) st.st_size
     end in
-  List.iter (fun name -> print caps (long name ^ quote name ^ "\n"))
+  List.iter (fun name -> print caps (long name ^ quote !!name ^ "\n"))
     (List.sort compare !names);
   status
 
@@ -429,20 +443,22 @@ let ls (caps : < Cap.stdout; Cap.stderr; Cap.open_in; Cap.readdir; .. >) args =
 let walk
     (caps : < Cap.stdout; Cap.stderr; Cap.open_in; Cap.readdir; .. >) args =
   let _, paths = options "" args in
-  let pre p _ _ entries = print caps (p ^ "\n"); ignore (entries ()) in
-  if paths = [] then begin List.iter (fun e -> fold caps e pre) (entries caps "."); 0 end
+  let pre p _ _ entries = print caps (!!p ^ "\n"); ignore (entries ()) in
+  if paths = [] then begin
+    List.iter (fun e -> fold caps e pre) (here caps); 0
+  end
   else
-    each_path caps "walk" paths (fun p ->
-      let (st : TSys.stat) = TSys.stat caps (path p) in
+    each_path caps "walk" (paths_of paths) (fun p ->
+      let (st : TSys.stat) = TSys.stat caps p in
       if st.st_dir then
-        List.iter (fun e -> fold caps (Filename.concat p e) pre) (entries caps p)
-      else print caps (p ^ "\n"))
+        List.iter (fun e -> fold caps (Fpath.add_seg p e) pre) (entries caps p)
+      else print caps (!!p ^ "\n"))
 
 (* the kilobytes under each directory, after what it has; -a: each file
  * too *)
 let du (caps : < Cap.stdout; Cap.stderr; Cap.open_in; Cap.readdir; .. >) args =
   let flags, paths = options "a" args in
-  let paths = if paths = [] then [ "." ] else paths in
+  let paths = if paths = [] then [ Fpath.v "." ] else paths_of paths in
   each_path caps "du" paths (fun root ->
     ignore
       (fold caps root (fun p is_dir size entries ->
@@ -450,7 +466,7 @@ let du (caps : < Cap.stdout; Cap.stderr; Cap.open_in; Cap.readdir; .. >) args =
            List.fold_left (fun a b -> a + b)
              (if is_dir then 0 else (size + 1023) / 1024) (entries ()) in
          if is_dir || p = root || List.mem 'a' flags then
-           print caps (string_of_int k ^ "\t" ^ quote p ^ "\n");
+           print caps (string_of_int k ^ "\t" ^ quote !!p ^ "\n");
          k)))
 
 (* -r: a directory with what it has, its entries first *)
@@ -458,19 +474,20 @@ let rm
     (caps : < Cap.stderr; Cap.open_in; Cap.readdir; Cap.open_out; .. >) args =
   let flags, paths = options "r" args in
   if paths = [] then raise Usage;
-  each_path caps "rm" paths (fun root ->
+  each_path caps "rm" (paths_of paths) (fun root ->
     if List.mem 'r' flags then
       fold caps root (fun p _ _ entries ->
-        ignore (entries ()); TSys.remove caps (path p))
-    else TSys.remove caps (path root))
+        ignore (entries ()); TSys.remove caps p)
+    else TSys.remove caps root)
 
 (* -p: the directories above it too, and no complaint when it is there *)
 let mkdir (caps : < Cap.stderr; Cap.readdir; Cap.open_out; .. >) args =
   let flags, dirs = options "p" args in
   if dirs = [] then raise Usage;
-  each_path caps "mkdir" dirs (fun dir ->
+  each_path caps "mkdir" (paths_of dirs) (fun dir ->
     if List.mem 'p' flags then begin
       (* each part of the path up to a slash, then the whole *)
+      let dir = !!dir in
       let rec make i =
         if i <= String.length dir then begin
           if i = String.length dir || dir.[i] = '/' then begin
@@ -482,26 +499,27 @@ let mkdir (caps : < Cap.stderr; Cap.readdir; Cap.open_out; .. >) args =
         end in
       make 1
     end
-    else TSys.mkdir caps (path dir))
+    else TSys.mkdir caps dir)
 
 (* [into_last caps tool paths f]: f from dest for each path but the last,
  * dest being the last path, or the source's name in it when the last
  * is a directory; several sources need a directory *)
-let into_last caps tool paths f : status =
+let into_last caps tool (paths : Fpath.t list) f : status =
   match List.rev paths with
   | dest :: sources when sources <> [] ->
-      let into = TSys.is_directory caps (path dest) in
+      let into = TSys.is_directory caps dest in
       if List.length sources > 1 && not into then begin
-        complain caps tool (dest ^ ": not a directory"); 1
+        complain caps tool (!!dest ^ ": not a directory"); 1
       end
       else
         each_path caps tool (List.rev sources) (fun from ->
-          f from (if into then Filename.concat dest (last_part from) else dest))
+          f from (if into then Fpath.add_seg dest (last_part !!from) else dest))
   | _ -> raise Usage
 
 (* a path's names from the root: the current directory's first when it
  * is relative, "." dropped and ".." resolved by the text *)
-let resolved caps p =
+let resolved caps (p : Fpath.t) =
+  let p = !!p in
   let p =
     if p <> "" && p.[0] = '/' then p
     else Fpath.to_string (TSys.getcwd caps) ^ "/" ^ p in
@@ -520,15 +538,15 @@ let cp
     (caps : < Cap.stderr; Cap.open_in; Cap.open_out; Cap.readdir; Cap.env; .. >)
     args =
   let _, paths = options "" args in
-  into_last caps "cp" paths (fun from dest ->
-    let (st : TSys.stat) = TSys.stat caps (path from) in
+  into_last caps "cp" (paths_of paths) (fun from dest ->
+    let (st : TSys.stat) = TSys.stat caps from in
     if st.st_dir then failwith "is a directory";
     if resolved caps from = resolved caps dest then failwith "the same file";
     (* (descriptors: each_path says a failure after the source's name,
      * where a channel's open would say its own file again) *)
-    let src = TSys.open_in caps (path from) in
+    let src = TSys.open_in caps from in
     let fd =
-      (try TSys.open_out caps (path dest)
+      (try TSys.open_out caps dest
        with Failure m -> TSys.close src; failwith m) in
     let rec copy () =
       let s = TSys.read src 8192 in
@@ -539,21 +557,21 @@ let cp
 
 let mv (caps : < Cap.stderr; Cap.readdir; Cap.open_out; .. >) args =
   let _, paths = options "" args in
-  into_last caps "mv" paths (fun from dest ->
-    TSys.rename caps (path from) (path dest))
+  into_last caps "mv" (paths_of paths) (fun from dest ->
+    TSys.rename caps from dest)
 
 (* a second name for a file: its bytes are not copied, and a change by
  * one name is seen by the other *)
 let ln (caps : < Cap.stderr; Cap.readdir; Cap.open_out; .. >) args =
   let _, paths = options "" args in
-  into_last caps "ln" paths (fun from dest ->
-    TSys.link caps (path from) (path dest))
+  into_last caps "ln" (paths_of paths) (fun from dest ->
+    TSys.link caps from dest)
 
 let touch (caps : < Cap.stderr; Cap.open_in; Cap.open_out; .. >) args =
   let _, files = options "" args in
   if files = [] then raise Usage;
-  each_path caps "touch" files (fun file ->
-    TSys.touch caps (path file))
+  each_path caps "touch" (paths_of files) (fun file ->
+    TSys.touch caps file)
 
 (*****************************************************************************)
 (* Processes *)
@@ -567,10 +585,11 @@ let touch (caps : < Cap.stderr; Cap.open_in; Cap.open_out; .. >) args =
 let ps (caps : < filter; .. >) args =
   let flags, files = options "a" args in
   let file =
-    match files with [] -> "/dev/ps" | [ f ] -> f | _ -> raise Usage in
+    match files with
+    | [] -> Fpath.v "/dev/ps" | [ f ] -> path f | _ -> raise Usage in
   let rows = ref [] in
   let status =
-    each_input caps "ps" [ file ] (fun _ c ->
+    each_input caps "ps" [ file ] (fun c ->
       lines c (fun line _ ->
         match String.split_on_char ' ' line with
         | pid :: parent :: state :: kb :: cmd ->
@@ -807,6 +826,7 @@ let cmp (caps : < Cap.stdout; Cap.stderr; Cap.open_in; .. >) args =
   let flags, files = options "s" args in
   match files with
   | [ f1; f2 ] -> begin
+      let f1 = path f1 and f2 = path f2 in
       (* pos bytes the same so far; sa and sb what is read past them *)
       let compare fa fb =
         let rec go pos sa sb =
@@ -819,7 +839,7 @@ let cmp (caps : < Cap.stdout; Cap.stderr; Cap.open_in; .. >) args =
           if i < n then Differ_at (pos + i)
           else if n = 0 then
             (if sa = "" && sb = "" then Same_bytes
-             else Ends_first ((if sa = "" then f1 else f2), pos))
+             else Ends_first (!!(if sa = "" then f1 else f2), pos))
           else
             go (pos + n) (String.sub sa n (String.length sa - n))
               (String.sub sb n (String.length sb - n)) in
@@ -829,8 +849,8 @@ let cmp (caps : < Cap.stdout; Cap.stderr; Cap.open_in; .. >) args =
         (try
            Some
              (TSys.with_open_in caps (fun fa ->
-                TSys.with_open_in caps (compare fa) (path f2))
-                (path f1))
+                TSys.with_open_in caps (compare fa) f2)
+                f1)
          with Failure m -> complain caps "cmp" m; None)
       with
       | None -> 1
@@ -839,7 +859,9 @@ let cmp (caps : < Cap.stdout; Cap.stderr; Cap.open_in; .. >) args =
           match r with
           | Same_bytes -> 0
           | Differ_at i ->
-              say (f1 ^ " " ^ f2 ^ " differ: char " ^ string_of_int (i + 1)); 1
+              say (!!f1 ^ " " ^ !!f2 ^ " differ: char "
+                   ^ string_of_int (i + 1));
+              1
           | Ends_first (f, n) ->
               say ("EOF on " ^ f ^ " after " ^ string_of_int n ^ " bytes"); 1
     end

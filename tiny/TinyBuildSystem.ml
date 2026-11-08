@@ -6,10 +6,10 @@
 module TSys = TinyLibSystem
 
 let usage =
-  "usage: tiny-build [-f file] [-j N] [-n] [-g] [-t] [target ...]   (-h: how)"
+  "usage: tiny-build [-f Buildfile] [-j N] [-n] [-g] [-t] [target ...]"
 
 (* -h: the usage, and a Buildfile's five kinds of lines, by example *)
-let help = {|usage: tiny-build [-f Buildfile] [-j N] [-n] [-g] [-t] [target ...]
+let help = usage ^ {|
 
 The targets out of date remade, by the rules of the Buildfile (-f: another),
 N recipes at once (-j); up to date by content, not time (the stamps kept in
@@ -511,7 +511,8 @@ let run (caps : < caps; .. >) (argv : string array) : Exit.t =
   let targets = ref [] in
   (* old: Arg.parse_argv, for these four options *)
   let bad o =
-    raise (Bad (Printf.sprintf "tiny-build: unknown option '%s'\n%s\n" o usage))
+    raise (Bad ("tiny-build: unknown option '" ^ o ^ "'\n" ^ usage
+                ^ "   (-h: how)\n"))
   in
   let rec options = function
     | "-f" :: f :: rest -> file := f; options rest

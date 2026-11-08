@@ -66234,3 +66234,32 @@ Claude checked the kernel's `with_open_in`, which sets `File file`, and the `std
 Claude then removed the unused `_` name from five callers, and `wc` and `grep` now read the source from the channel.
 Claude reran the tests and hand checks, and everything passed after the debugger checksum was updated for the moved `ls` code.
 Claude also checked which of the four over-80-column lines it had introduced.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 22:06
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude made `TinyUtilities` operands `Fpath.t`, with `each_input`'s callback taking just the channel.
+Claude committed this as `1b9f73c4`, together with the debug-screen checksum and `prompt-history.md`.
+The working tree was left clean after the commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 22:20
+
+**Yoann:**
+
+> ok what's next? which program?
+
+**Claude (summary):**
+
+Claude recommended starting with TinyVCS next, since it is the closest sibling of TinyBuildSystem.
+Claude proposed reviewing its `.mli` for the tiny-twist story and tightening types: paths, branch aliases, and remaining hash strings.
+Claude suggested TinyDatabase, then the toolchain (TinyC, TinyML), then the debugging tools, with screen programs last.
+Claude then asked whether to start on TinyVCS, and Yoann replied yes.

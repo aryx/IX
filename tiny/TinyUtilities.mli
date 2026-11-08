@@ -70,8 +70,7 @@ type caps =
 
 (* [each_input caps tool files f]: f on a channel open on each file
  * named, or on the standard input's when no file is named; the channel
- * says which, its origin (old: a descriptor; then the name beside it,
- * "" for the standard input). A file that cannot be opened is
+ * says which, its origin. A file that cannot be opened is
  * reported, and the result, the exit status, is then 1 *)
 val each_input :
   < Cap.open_in; Cap.stdin; Cap.stderr; .. > ->

@@ -7,16 +7,16 @@
  * they print and their exit status: the twins' output is kept where it
  * costs nothing.
  *)
-
 module TSys = TinyLibSystem
-
-(* (grep's patterns: compile, matches) *)
-open TinyLibRegex
-(* (|||: an option's value, or a default) *)
-open Common
+open TinyLibRegex (* (grep's patterns: compile, matches) *)
+open Common (* (|||: an option's value, or a default) *)
 (* a path's text (Fpath_.Operators' !!, not opened: its / would hide the
  * division) *)
 let ( !! ) = Fpath.to_string
+
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
 
 type caps =
   < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdin; Cap.stdout; Cap.stderr;
@@ -135,6 +135,10 @@ let each_input caps tool (files : Fpath.t list) (f : Chan.i -> unit)
 (* the file a channel reads, None for the standard input *)
 let name_of (c : Chan.i) : Fpath.t option =
   match c.origin with Chan.File p -> Some p | _ -> None
+
+(*****************************************************************************)
+(* cat, wc *)
+(*****************************************************************************)
 
 let cat (caps : < filter; .. >) args =
   let _, files = options "" args in
@@ -290,6 +294,10 @@ let xd (caps : < filter; .. >) args =
     line !pending;
     print caps (address (!addr + String.length !pending) ^ "\n"))
 
+(*****************************************************************************)
+(* grep *)
+(*****************************************************************************)
+
 (* the lines that match; -v: that do not; -i: whatever the letters'
  * case; -n: with their numbers; -c: how many; -l: the files' names.
  * The status is 0 when a line was found *)
@@ -410,6 +418,10 @@ let each_path caps tool (paths : Fpath.t list) f : status =
   List.fold_left (fun status p ->
     try f p; status
     with Failure m -> complain caps tool (!!p ^ ": " ^ m); 1) 0 paths
+
+(*****************************************************************************)
+(* ls, walk, du *)
+(*****************************************************************************)
 
 (* a directory's entries, or a file's name; all of them sorted together,
  * and quoted for rc. -l: each with its kind (d for a directory), its

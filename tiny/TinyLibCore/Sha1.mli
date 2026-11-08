@@ -7,3 +7,5 @@ val string : string -> t
 (* the digest of the pieces [next ()] gives until "", none kept *)
 val reads : (unit -> string) -> t
 val to_hex : t -> string
+(* 40 lowercase hex digits, or Invalid_argument *)
+val of_hex : string -> t

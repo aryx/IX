@@ -27,3 +27,10 @@ let to_hex t =
   String.init (2 * String.length t) (fun i ->
     let c = Char.code (String.get t (i / 2)) in
     digit (if i mod 2 = 0 then c lsr 4 else c land 15))
+
+let of_hex s =
+  if String.length s <> 40 then invalid_arg "Sha1.of_hex";
+  let digit c = let k = Char.code c in if c <= '9' then k - 48 else k - 87 in
+  String.init 20 (fun i ->
+    Char.chr ((16 * digit (String.get s (2 * i)))
+              + digit (String.get s ((2 * i) + 1))))

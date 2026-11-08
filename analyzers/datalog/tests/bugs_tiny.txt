@@ -23,9 +23,9 @@ tiny/TinyKernel/steps/t6/TinyMkfs.ml:30: int31: in TinyMkfs's toplevel, 0x7f5f00
 tiny/TinyKernel/steps/t6/TinyMkfs.ml:48: int31: in chain, 0xffffffff: not on the Pi 1's 31 bits
 tiny/TinyKernel/steps/t6/TinyMkfs.ml:69: int31: in TinyMkfs.make, 0xffffffff: not on the Pi 1's 31 bits
 tiny/TinyKernel/steps/t6/TinyMkfs.ml:80: int31: in get32, 0xffffffff: not on the Pi 1's 31 bits
+tiny/TinyLinker.ml:142: stack: go calls itself, not a tail call, over a list
 tiny/TinyLinker.ml:143: stack: go calls itself, not a tail call, over a list
 tiny/TinyLinker.ml:144: stack: go calls itself, not a tail call, over a list
-tiny/TinyLinker.ml:145: stack: go calls itself, not a tail call, over a list
 tiny/TinyML.ml:445: evalorder: operands at 445:10 and 446:10, both with an effect: their order the compiler's
 tiny/TinyML/TinyMLCompile.ml:383: stack: TinyMLCompile.match_cases calls itself, not a tail call, over a list
 tiny/TinyML/TinyMLCompile.ml:421: stack: TinyMLCompile.app calls itself, not a tail call, over a list
@@ -61,6 +61,6 @@ tiny/TinyMachine/TinyMachineDevices.ml:831: int31: in until, 0x40000000: not on 
 tiny/TinyMachine/TinyMachineDevices.ml:836: int31: in TinyMachineDevices.calm, 0x40000000: not on the Pi 1's 31 bits
 tiny/TinyMachine/TinyMachineSocket.ml:59: swallowed: in TinyMachineSocket.relay, Unix.Unix_error silenced, a constant answered
 tiny/TinyShell.ml:262: evalorder: operands at 262:8 and 262:19, both with an effect: their order the compiler's
-tiny/TinyVCS.ml:470: stack: groups calls itself, not a tail call, over a list
-tiny/TinyVCS.ml:553: order: in TinyVCS.lca, a table's order reaches the output at tiny/TinyVCS.ml:708, tiny/TinyVCS.ml:763
-tiny/TinyVCS.ml:713: evalorder: operands at 713:20 and 713:46, both with an effect: their order the compiler's
+tiny/TinyVCS.ml:478: stack: groups calls itself, not a tail call, over a list
+tiny/TinyVCS.ml:561: order: in TinyVCS.lca, a table's order reaches the output at tiny/TinyVCS.ml:716, tiny/TinyVCS.ml:775
+tiny/TinyVCS.ml:725: evalorder: operands at 725:20 and 725:46, both with an effect: their order the compiler's

@@ -39,7 +39,10 @@ let error s = raise (Error s)
 (* Objects *)
 (*****************************************************************************)
 
-type hash = string   (* 40 hex digits *)
+(* an object's name, its digest; 40 hex digits where it is text: in an
+ * object, the store, head, and what is printed *)
+type hash = Sha1.t
+let hex = Sha1.to_hex
 
 (* the text with markers, and the three versions, None for absent
  * (old: an inline record, Conflict's own, which tiny-ml does not read) *)
@@ -81,25 +84,26 @@ type obj =
 let encode = function
   | Blob s -> "blob\n" ^ s
   | Tree es ->
-      let opt = function Some h -> h | None -> "-" in
+      let opt = function Some h -> hex h | None -> "-" in
       "tree\n" ^ String.concat "" (List.map (fun (name, e) ->
         (match e with
-         | File h -> "f " ^ h | Exec h -> "x " ^ h | Dir h -> "d " ^ h
+         | File h -> "f " ^ hex h | Exec h -> "x " ^ hex h
+         | Dir h -> "d " ^ hex h
          | Conflict c ->
-             "c " ^ c.text ^ " " ^ opt c.base ^ " " ^ opt c.ours ^ " "
+             "c " ^ hex c.text ^ " " ^ opt c.base ^ " " ^ opt c.ours ^ " "
              ^ opt c.theirs)
         ^ " " ^ name ^ "\n") es)
   | Commit c ->
-      Printf.sprintf "commit\ntree %s\n%sdate %d\nauthor %s\n\n%s" c.tree
+      Printf.sprintf "commit\ntree %s\n%sdate %d\nauthor %s\n\n%s" (hex c.tree)
         (String.concat ""
-           (List.map (fun p -> Printf.sprintf "parent %s\n" p) c.parents))
+           (List.map (fun p -> Printf.sprintf "parent %s\n" (hex p)) c.parents))
         c.date c.author c.msg
   | Op o ->
       Printf.sprintf "op\n%sdate %d\nwhat %s\ncurrent %s\n"
-        (match o.prev with Some p -> "prev " ^ p ^ "\n" | None -> "")
+        (match o.prev with Some p -> "prev " ^ hex p ^ "\n" | None -> "")
         o.odate o.what o.current
       ^ String.concat ""
-          (List.map (fun (b, h) -> Printf.sprintf "branch %s %s\n" h b)
+          (List.map (fun (b, h) -> Printf.sprintf "branch %s %s\n" (hex h) b)
              o.branches)
 
 (* "key value" lines, until a blank line; the rest *)
@@ -137,10 +141,12 @@ let decode s =
       let entry l =
         match String.split_on_char ' ' l with
         | "c" :: t :: b :: o :: th :: name ->
-            let opt = function "-" -> None | h -> Some h in
+            let opt = function "-" -> None | h -> Some (Sha1.of_hex h) in
             String.concat " " name,
-            Conflict { text = t; base = opt b; ours = opt o; theirs = opt th }
+            Conflict { text = Sha1.of_hex t; base = opt b; ours = opt o;
+                       theirs = opt th }
         | k :: h :: name ->
+            let h = Sha1.of_hex h in
             String.concat " " name,
             (match k with
              | "f" -> File h
@@ -152,18 +158,20 @@ let decode s =
               (List.filter (( <> ) "") (String.split_on_char '\n' body)))
   | "commit" ->
       let hs, msg = headers body in
-      Commit { tree = one "tree" hs; parents = all "parent" hs;
+      Commit { tree = Sha1.of_hex (one "tree" hs);
+               parents = List.map Sha1.of_hex (all "parent" hs);
                date = int_of_string (one "date" hs); author = one "author" hs;
                msg }
   | "op" ->
       let hs, _ = headers (body ^ "\n") in
-      Op { prev = (match all "prev" hs with p :: _ -> Some p | [] -> None);
+      Op { prev = (match all "prev" hs with
+                   | p :: _ -> Some (Sha1.of_hex p) | [] -> None);
            odate = int_of_string (one "date" hs);
            what = one "what" hs; current = one "current" hs;
            branches = List.map (fun v -> match String.index_opt v ' ' with
              | Some i ->
                  String.sub v (i + 1) (String.length v - i - 1),
-                 String.sub v 0 i
+                 Sha1.of_hex (String.sub v 0 i)
              | None -> error "bad op") (all "branch" hs) }
   | k -> error ("bad object kind " ^ k)
 
@@ -207,18 +215,18 @@ let load (caps : caps) (root : Fpath.t) =
       match String.split_on_char ' ' (String.sub s pos (nl - pos)) with
       | [ h; n ] ->
           let n = int_of_string n in
-          Hashtbl.replace r.index h (String.sub s (nl + 1) n);
+          Hashtbl.replace r.index (Sha1.of_hex h) (String.sub s (nl + 1) n);
           go (nl + 1 + n)
       | _ -> error "corrupt store" in
   go 0;
   r
 
-let hash_of s = Sha1.to_hex (Sha1.string s)
+let hash_of s = Sha1.string s
 
 let get r h =
   match Hashtbl.find_opt r.index h with
   | Some s -> decode s
-  | None -> error ("missing object " ^ h)
+  | None -> error ("missing object " ^ hex h)
 
 let put r o =
   let s = encode o in
@@ -230,11 +238,11 @@ let put r o =
   h
 
 let blob r h =
-  match get r h with Blob s -> s | _ -> error (h ^ ": not a blob")
+  match get r h with Blob s -> s | _ -> error (hex h ^ ": not a blob")
 let tree r h =
-  match get r h with Tree es -> es | _ -> error (h ^ ": not a tree")
+  match get r h with Tree es -> es | _ -> error (hex h ^ ": not a tree")
 let commit r h =
-  match get r h with Commit c -> c | _ -> error (h ^ ": not a commit")
+  match get r h with Commit c -> c | _ -> error (hex h ^ ": not a commit")
 
 (* the new objects appended, then head replaced: a crash between
  * leaves head naming the old state, whole *)
@@ -244,15 +252,15 @@ let save r (o : op) =
   TSys.with_open_append r.caps (fun (c : Chan.o) ->
       Out_channel.output_string c.oc
         (String.concat "" (List.map (fun (h, z) ->
-           h ^ " " ^ string_of_int (String.length z) ^ "\n" ^ z)
+           hex h ^ " " ^ string_of_int (String.length z) ^ "\n" ^ z)
            (List.rev r.fresh))))
     (path r "objects");
   r.fresh <- [];
   let tmp = path r "head.tmp" in
-  write_file r.caps tmp (h ^ "\n");
+  write_file r.caps tmp (hex h ^ "\n");
   TSys.rename r.caps tmp (path r "head")
 
-let head r = String.trim (read_file r.caps (path r "head"))
+let head r = Sha1.of_hex (String.trim (read_file r.caps (path r "head")))
 let state r =
   match get r (head r) with Op o -> o | _ -> error "head is not an operation"
 
@@ -638,7 +646,7 @@ let rec copy src dst h =
 (* The commands *)
 (*****************************************************************************)
 
-let short h = String.sub h 0 10
+let short h = String.sub (hex h) 0 10
 let first_line s =
   match String.index_opt s '\n' with Some i -> String.sub s 0 i | None -> s
 
@@ -708,7 +716,11 @@ let run (caps : caps) (args : string list) =
           List.iter (fun p -> print (Printf.sprintf "C %s\n" p))
             (conflicts "" (tree r snap))
       | "diff", ([] | [ _ ] | [ _; _ ]) ->
-          let tree_at h = tree r (commit r h).tree in
+          (* (a commit typed, its 40 digits) *)
+          let tree_at c =
+            let h = try Sha1.of_hex c
+                    with Invalid_argument _ -> error ("missing object " ^ c) in
+            tree r (commit r h).tree in
           let a, b = match rest with
             | [] -> tree_of_commit r (tip r), tree r (snapshot r)
             | [ c ] -> tree_at c, tree r (snapshot r)
@@ -736,7 +748,7 @@ let run (caps : caps) (args : string list) =
           in
           record r ("commit " ^ short c)
             ((s.current, c) :: List.remove_assoc s.current s.branches);
-          print (s.current ^ ": " ^ c ^ "\n")
+          print (s.current ^ ": " ^ hex c ^ "\n")
       | "log", [] ->
           (* newest first, each commit once; the same dates (tiny-kernel's
            * are all 0: no clock) in the order reached, breadth first
@@ -813,7 +825,7 @@ let run (caps : caps) (args : string list) =
                 ((s.current, c) :: List.remove_assoc s.current s.branches);
               List.iter (fun p -> print (Printf.sprintf "conflict: %s\n" p))
                 conflicts;
-              print (s.current ^ ": " ^ c ^ "\n"))
+              print (s.current ^ ": " ^ hex c ^ "\n"))
       | "ops", [] ->
           let rec go h =
             let o = match get r h with Op o -> o | _ -> error "bad op" in

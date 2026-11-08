@@ -65903,3 +65903,27 @@ Claude said `to_hex` should only run where a digest becomes text, inside `stamp`
 Claude proposed bumping the `.tiny-build` magic to `tiny-build 2`, so 20-byte digests replace 40-character hex and old files force one rebuild.
 Claude suggested pairing this with the recipe fix in a single full rebuild, as two commits: recipe fix first, then `Sha1.t`.
 Claude postponed TinyVCS, since its hex string is an object name that already has a `hash` type.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 17:34
+
+**Yoann:**
+
+> we can also change lib_crypto/ if the change makes sense and improve readability
+
+**Claude (summary):**
+
+Claude recommended no lib_crypto change, since its `Sha1` already has the abstract `t` and `to_hex`.
+Claude added two regression tests to `TinyBuildSystem_test.sh` for variable and recipe-text changes, then fixed the recipe bug.
+Claude corrected a comment that wrongly claimed prerequisites cover environment variables, and documented the fourth problem in the `.mli`.
+Claude committed the recipe fix as `7f6f9893`.
+Claude switched the dry run's fake digest to `Sha1.string ("dry " ^ n.name)` so digests use `Sha1.t`, then ran all checks and a manual `.tiny-build` round trip.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 17:41
+
+**Yoann:**
+
+> use Sha1.t in TinyVCS too

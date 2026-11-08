@@ -12,6 +12,8 @@ module TSys = TinyLibSystem
 
 (* (grep's patterns: compile, matches) *)
 open TinyLibRegex
+(* (|||: an option's value, or a default) *)
+open Common
 
 type caps =
   < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdin; Cap.stdout; Cap.stderr;
@@ -291,7 +293,7 @@ let grep (caps : < filter; .. >) args =
       let found = ref false in
       let status =
         each_input caps "grep" files (fun name c ->
-          let name = match name with Some n -> n | None -> "" in
+          let name = name ||| "" in
           let count = ref 0 and number = ref 0 in
           lines c (fun line ended ->
             incr number;
@@ -578,7 +580,7 @@ let ps (caps : < filter; .. >) args =
             rows := (pid, parent, state, kb, cmd) :: !rows
         | _ -> ())) in
   let pid (p, _, _, _, _) =
-    match int_of_string_opt p with Some n -> n | None -> 0 in
+    int_of_string_opt p ||| 0 in
   let all =
     ("PID", "PARENT", "STATE", "KB", "CMD")
     :: List.sort (fun a b -> compare (pid a) (pid b)) !rows in
@@ -616,10 +618,7 @@ let pwd (caps : < Cap.stdout; Cap.env; .. >) args =
 let sleep (caps : < Cap.clock; .. >) args =
   match args with
   | [ a ] ->
-      let point =
-        match String.index_opt a '.' with
-        | Some i -> i
-        | None -> String.length a in
+      let point = String.index_opt a '.' ||| String.length a in
       let thousandths =
         String.sub
           (String.sub a (min (point + 1) (String.length a))

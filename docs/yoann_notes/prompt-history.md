@@ -66128,3 +66128,34 @@ Claude committed the change as e84d7319.
 Claude picked TinyUtilities as the next program, since it pairs with the shell.
 Claude pointed out it shares TinyLibSystem and runs both on the host and as tiny-kernel's tools.
 Claude's plan was to read the code first, then propose concrete changes.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 20:37
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude tightened each utility's capability annotation in the `.mli` so it lists only what the utility uses.
+Claude updated the `each_input` declaration to take an option and dropped unused capabilities, matching `fold`'s declaration.
+OCaml's compiler confirmed no utility uses more than its annotation says, and `mini-analyze` now reports exact capabilities.
+Claude wrapped the seven lines over 80 columns, three of them its own (`cp`, `date`, `tail`), and rechecked the debug window test.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 21:09
+
+**Yoann:**
+
+> if you open Common you can use the
+
+------------------------------------------------------------------------
+
+## 2026-11-08 21:09
+
+**Yoann:**
+
+> |||

@@ -69,22 +69,15 @@ type expr = Num of (int * int) | Sym of string
 (* The items *)
 (*****************************************************************************)
 
-(* where a label's address goes in a word, the linker's to fill: the
- * whole word (.word), the immediate (addi's, a load's offset...), its
- * high or low half (la: lui then ori), or a branch's offset in words *)
-type kind = Word | Abs | Hi | Lo | Pc
-
-let kinds = [ Word, "word"; Abs, "abs"; Hi, "hi"; Lo, "lo"; Pc, "pc" ]
-
 (* an item: an instruction's words, made from what the operands resolve
- * to, given the word's index in the item and the place's kind; .word's
- * words; or bytes, zeros, a label, an alignment, which the linker does
- * (an address's, not the file's) *)
+ * to, given the word's index in the item and the kind of place
+ * (TinyMachineISA's, where the linker puts a label's address); .word's
+ * words; or the object's own item (bytes, zeros, a label, an alignment,
+ * which the linker does: an address's, not the file's) *)
 type item =
-  | Label of string
-  | Words of int * ((int -> kind -> expr -> int) -> int list)
-  | Data of expr list | Bytes_ of string | Space of int | Align of int | Piece
-  | Section of string
+  | Obj of ISA.item
+  | Words of int * ((int -> ISA.place -> expr -> int) -> int list)
+  | Data of expr list
 
 let reg s =
   match String.trim s with
@@ -158,37 +151,37 @@ let rec instruction name args : item =
   | Some (Op op), [ d; a; b ] ->
       one (fun _ -> ISA.Alu (op, reg d, reg a, reg b))
   | Some (Imm op), [ d; a; v ] ->
-      one (fun res -> ISA.Alui (op, reg d, reg a, res Abs (expr v)))
+      one (fun res -> ISA.Alui (op, reg d, reg a, res ISA.Abs (expr v)))
   | Some (Test c), [ d; a; t ] ->
-      one (fun res -> ISA.Branch (c, reg d, reg a, res Pc (expr t)))
+      one (fun res -> ISA.Branch (c, reg d, reg a, res ISA.Pc (expr t)))
   | _ -> others name args
 
 (* the others, by their names *)
 and others name args =
   match name, args with
   | "lui", [ d; v ] ->
-      one (fun res -> ISA.Lui (reg d, res Abs (expr v) land 0xffff))
+      one (fun res -> ISA.Lui (reg d, res ISA.Abs (expr v) land 0xffff))
   | ("ldw" | "ldb" | "stw" | "stb"), [ d; m ] ->
       one (fun res ->
         let a, off = mem_operand m in
         let s = if name.[2] = 'w' then ISA.W else ISA.B in
-        if name.[0] = 'l' then ISA.Load (s, reg d, a, res Abs off)
-        else ISA.Store (s, reg d, a, res Abs off))
-  | "jal", [ d; t ] -> one (fun res -> ISA.Jal (reg d, res Pc (expr t)))
+        if name.[0] = 'l' then ISA.Load (s, reg d, a, res ISA.Abs off)
+        else ISA.Store (s, reg d, a, res ISA.Abs off))
+  | "jal", [ d; t ] -> one (fun res -> ISA.Jal (reg d, res ISA.Pc (expr t)))
   | "jalr", [ d; m ] ->
       one (fun res ->
-        let a, off = mem_operand m in ISA.Jalr (reg d, a, res Abs off))
-  | "sys", [ n ] -> one (fun res -> ISA.Sys (res Abs (expr n)))
+        let a, off = mem_operand m in ISA.Jalr (reg d, a, res ISA.Abs off))
+  | "sys", [ n ] -> one (fun res -> ISA.Sys (res ISA.Abs (expr n)))
   (* the pseudo-instructions *)
   | "li", [ d; v ] when (match expr v with Num n -> small n | Sym _ -> false) ->
-      one (fun res -> ISA.Alui (ISA.Add, reg d, 0, res Abs (expr v)))
+      one (fun res -> ISA.Alui (ISA.Add, reg d, 0, res ISA.Abs (expr v)))
   | ("li" | "la"), [ d; v ] ->
       Words (8, fun res ->
-        [ ISA.encode (ISA.Lui (reg d, res 0 Hi (expr v)));
-          ISA.encode (ISA.Alui (ISA.Or, reg d, reg d, res 1 Lo (expr v))) ])
+        [ ISA.encode (ISA.Lui (reg d, res 0 ISA.Hi (expr v)));
+          ISA.encode (ISA.Alui (ISA.Or, reg d, reg d, res 1 ISA.Lo (expr v))) ])
   | "mov", [ d; a ] -> one (fun _ -> ISA.Alui (ISA.Add, reg d, reg a, 0))
-  | "call", [ t ] -> one (fun res -> ISA.Jal (ISA.lr, res Pc (expr t)))
-  | "j", [ t ] -> one (fun res -> ISA.Jal (0, res Pc (expr t)))
+  | "call", [ t ] -> one (fun res -> ISA.Jal (ISA.lr, res ISA.Pc (expr t)))
+  | "j", [ t ] -> one (fun res -> ISA.Jal (0, res ISA.Pc (expr t)))
   | "ret", [] -> one (fun _ -> ISA.Jalr (0, ISA.lr, 0))
   | "nop", [] -> one (fun _ -> ISA.Alui (ISA.Add, 0, 0, 0))
   | _ -> machine name args
@@ -210,22 +203,21 @@ let directive d args : item =
   match d with
   | ".word" -> Data (List.map expr (String.split_on_char ',' args))
   | ".byte" ->
-      Bytes_ (String.concat "" (List.map (fun e ->
+      Obj (ISA.Chunk (String.concat "" (List.map (fun e ->
         match expr e with
         | Num (_, l) -> String.make 1 (Char.chr (l land 0xff))
         | Sym _ -> ISA.error ".byte takes numbers")
-        (String.split_on_char ',' args)))
+        (String.split_on_char ',' args)), []))
   | ".ascii" | ".asciz" ->
       let a = String.trim args in
       if String.length a < 2 || a.[0] <> '"' || a.[String.length a - 1] <> '"'
       then ISA.error ("not a string: " ^ a);
-      Bytes_ (unescape (String.sub a 1 (String.length a - 2))
-              ^ if d = ".asciz" then "\000" else "")
-  | ".space" -> Space (int_of_string (String.trim args))
-  | ".align" -> Align (int_of_string (String.trim args))
-  | ".piece" -> Piece
-  | ".text" -> Section "text"
-  | ".data" -> Section "data"
+      Obj (ISA.Chunk (unescape (String.sub a 1 (String.length a - 2))
+                      ^ (if d = ".asciz" then "\000" else ""), []))
+  | ".space" -> Obj (ISA.Space (int_of_string (String.trim args)))
+  | ".align" -> Obj (ISA.Align (int_of_string (String.trim args)))
+  | ".piece" -> Obj ISA.Piece
+  | ".text" | ".data" -> Obj (ISA.Section (d = ".data"))
   | _ -> ISA.error ("unknown directive " ^ d)
 
 (* a line: labels, then an instruction or a directive; ; starts a comment *)
@@ -240,7 +232,7 @@ let parse_line line : item list =
     | Some i when not (String.contains (String.sub s 0 i) ' ')
                   && not (String.contains (String.sub s 0 i) '"') ->
         go (String.sub s (i + 1) (String.length s - i - 1))
-          (Label (String.sub s 0 i) :: acc)
+          (Obj (ISA.Label (String.sub s 0 i)) :: acc)
     | _ when s = "" -> List.rev acc
     | _ ->
         let first c =
@@ -259,91 +251,51 @@ let parse_line line : item list =
 (* The object *)
 (*****************************************************************************)
 
-(* a byte, a word's bytes (the low first: the memory's order), in
- * hexadecimal, added to the object (old: Printf's %02x, then strings
- * joined by ^, a new string at each) *)
-let add_hex b n =
-  Buffer.add_char b "0123456789abcdef".[n lsr 4];
-  Buffer.add_char b "0123456789abcdef".[n land 15]
-let add_word b (h, l) =
-  add_hex b (l land 0xff); add_hex b (l lsr 8);
-  add_hex b (h land 0xff); add_hex b (h lsr 8)
+(* a word's bytes, the low first: the memory's order *)
+let word_bytes (h, l) =
+  String.init 4 (fun i ->
+    Char.chr (((if i < 2 then l else h) lsr (8 * (i mod 2))) land 0xff))
 
-(* a word in decimal, signed (a branch's number as a reloc's target) *)
-let decimal (h, l) =
-  let rec digits h l acc =
-    if h = 0 && l = 0 then acc
-    else
-      let r = ((h mod 10) * 0x10000) + l in
-      digits (h / 10) (r / 10) (string_of_int (r mod 10) ^ acc) in
-  if (h, l) = (0, 0) then "0"
-  else if h < 0x8000 then digits h l ""
-  else
-    let l' = (l lxor 0xffff) + 1 in
-    "-" ^ digits (((h lxor 0xffff) + (l' lsr 16)) land 0xffff) (l' land 0xffff)
-            ""
-
-(* A file's items as lines, in their order, for tiny-linker
- * (TinyLinker.mli has the format): a word whose operand is a number is
- * made here, one whose operand is a label is made with 0 there and a
- * reloc line says what goes in it; a branch to a number too, its
- * offset being from an address the link chooses *)
+(* A file's items, in their order, for tiny-linker, marshalled
+ * (TinyMachineISA's to_object): a word whose operand is a number is made
+ * here, one whose operand is a label is made with 0 there and a reloc
+ * says what goes in it; a branch to a number too, its offset being from
+ * an address the link chooses *)
 let assemble (chan : Chan.i) =
-  let b = Buffer.create 4096 in
-
-  let line s = Buffer.add_string b (s ^ "\n") in
   let at n e = Chan.origin chan ^ ":" ^ string_of_int (n + 1) ^ ": " ^ e in
-  let target e = match e with Num n -> decimal n | Sym s -> s in
-  let relocs_of rs =
-    (* (by offset: a list's words are made from the last) *)
-    List.iter (fun (off, k, e) ->
-        line ("reloc " ^ string_of_int off ^ " " ^ List.assoc k kinds ^ " "
-              ^ target e))
-      (List.sort (fun (a, _, _) (b, _, _) -> compare a b) rs) in
-
-  line "tiny-object";
+  let target e =
+    match e with Num n -> ISA.Address (int_of n) | Sym s -> ISA.Name s in
+  let chunk words relocs =
+    ISA.Chunk (String.concat "" (List.map word_bytes words),
+               List.map (fun (off, k, e) -> off, k, target e) relocs) in
   (* each file on a word's boundary: one may end with bytes, the next
    * begin with code *)
-  line "align 4";
-  In_channel.input_all chan.ic 
+  let items = ref [ ISA.Align 4 ] in
+  In_channel.input_all chan.ic
   |> String.split_on_char '\n'
   |> List.iteri (fun n l ->
-    let items = try parse_line l with ISA.Error e -> ISA.error (at n e) in
-    items |> List.iter (fun it ->
-      match it with
-      | Label l -> line ("label " ^ l)
-      | Align k -> line (Printf.sprintf "align %d" k)
-      | Piece -> line "piece"
-      | Section k -> line k
-      | Space k -> line (Printf.sprintf "space %d" k)
-      | Bytes_ s ->
-          Buffer.add_string b "code ";
-          String.iter (fun c -> add_hex b (Char.code c)) s;
-          Buffer.add_char b '\n'
-      | Data es ->
-          Buffer.add_string b "code ";
-          List.iter (fun e ->
-            add_word b (match e with Num n -> n | Sym _ -> (0, 0))) es;
-          Buffer.add_char b '\n';
-          relocs_of (List.concat (List.mapi (fun i e ->
-            match e with Sym _ -> [ (4 * i, Word, e) ] | Num _ -> []) es))
-      | Words (_, f) ->
-          let relocs = ref [] in
-          let res i k e =
-            match k, e with
-            | Pc, _ | _, Sym _ -> relocs := (4 * i, k, e) :: !relocs; 0
-            | Hi, Num (h, _) -> h
-            | Lo, Num (_, l) -> l
-            | _, Num n -> int_of n in
-          let ws = try f res with ISA.Error e -> ISA.error (at n e) in
-          Buffer.add_string b "code ";
-          List.iter (fun w -> add_word b (w lsr 16, w land 0xffff)) ws;
-          Buffer.add_char b '\n';
-          relocs_of !relocs
-       )
-     )
-  ;
-  Buffer.contents b
+    let parsed = try parse_line l with ISA.Error e -> ISA.error (at n e) in
+    parsed |> List.iter (fun it ->
+      items := (match it with
+        | Obj it -> it
+        | Data es ->
+            chunk
+              (List.map (fun e -> match e with Num n -> n | Sym _ -> (0, 0)) es)
+              (List.concat (List.mapi (fun i e ->
+                 match e with Sym _ -> [ (4 * i, ISA.Word, e) ] | Num _ -> [])
+                 es))
+        | Words (_, f) ->
+            let relocs = ref [] in
+            let res i k e =
+              match k, e with
+              | ISA.Pc, _ | _, Sym _ -> relocs := (4 * i, k, e) :: !relocs; 0
+              | ISA.Hi, Num (h, _) -> h
+              | ISA.Lo, Num (_, l) -> l
+              | _, Num n -> int_of n in
+            let ws = try f res with ISA.Error e -> ISA.error (at n e) in
+            chunk (List.map (fun w -> (w lsr 16, w land 0xffff)) ws) !relocs)
+        :: !items));
+  ISA.to_object (List.rev !items)
 
 (*****************************************************************************)
 (* Entry point *)

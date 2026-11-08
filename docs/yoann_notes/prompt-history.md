@@ -65596,3 +65596,35 @@ Claude argued the readable text shows why targets rebuilt, and cited TinyDatabas
 **Yoann:**
 
 > that way with deriving we can retaing some of the debuggability, and maybe use a -debug, -v, like we do for the m-ix programs
+
+------------------------------------------------------------------------
+
+## 2026-11-08 16:03
+
+**Yoann:**
+
+> and there are probably more places in tiny/ where we could use marshall instead of adhoc formats, to reduce LOC. we can track the LOC it saves as we do that
+
+------------------------------------------------------------------------
+
+## 2026-11-08 16:08
+
+**Yoann:**
+
+> note that when the type is 't' there is just show by default, so not show_t
+
+------------------------------------------------------------------------
+
+## 2026-11-08 16:08
+
+**Yoann:**
+
+> (see the deriving opam pakcage; I think we use the same convention in mini-ml implementation of deriving under the pp/ I think dir
+
+------------------------------------------------------------------------
+
+## 2026-11-08 16:08
+
+**Yoann:**
+
+> oh you corrected it yourself, bravo

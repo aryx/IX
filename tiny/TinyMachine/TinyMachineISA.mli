@@ -60,3 +60,31 @@ val error : string -> 'a
 
 (* a number in hexadecimal: 0x1f *)
 val hex : int -> string
+
+(* An object, tiny-assembler's for tiny-linker: a file's items in its
+ * order. A label is an address the link chooses. A chunk is an
+ * instruction's words or data's bytes, in the memory's order, with the
+ * places in them to fill: an offset in the chunk, the kind of place
+ * (word: all 32 bits; abs: the immediate; hi and lo: the immediate,
+ * the address's high or low half; pc: the immediate, the words from
+ * the next instruction to the target) and the target, a label or an
+ * address (a branch to a number). Space is zeros (.space); an
+ * alignment stays an item, since what it pads depends on the address;
+ * after a piece (.piece), what follows up to the next one is left out
+ * by the link when nothing reaches it (tiny-ml's functions and static
+ * blocks); a section is the data's (true, .data) or the text's. *)
+type place = Word | Abs | Hi | Lo | Pc
+type target = Name of string | Address of int
+type item =
+  | Label of string | Align of int | Space of int
+  | Chunk of string * (int * place * target) list | Piece
+  | Section of bool
+
+(* an item as OCaml writes it, derived by mini-ml ("NO DERIVING" when
+ * OCaml or tiny-ml compiles this file): tiny-linker -v's *)
+val show_item : item -> string
+
+(* the object's bytes, marshalled after a magic line, and back (Error
+ * when it is not one) *)
+val to_object : item list -> string
+val of_object : string -> item list

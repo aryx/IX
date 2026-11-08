@@ -6,7 +6,7 @@
 open TinyMachineISA
 
 let usage =
-  "usage: tiny-linker [-a megabytes] [-n] [-s] [-map] -o out file.o..."
+  "usage: tiny-linker [-a megabytes] [-n] [-s] [-map] [-v] -o out file.o..."
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
 
@@ -19,6 +19,8 @@ text's size in a fourth word (another magic number): tiny-kernel's segments
 share the text between the runs of a program. With -s, an executable too (of 1 MB unless -a says), with its
 labels after the image, but the compilers' local ones (what debug reads). With
 -map, out.map too: each label's address, by address (what tiny-prof reads).
+With -v, each object's items printed (derived by mini-ml: NO DERIVING when
+OCaml or tiny-ml built tiny-linker).
 A label's line is its address in hexadecimal and its name. In
 tiny/tests/TinyCPU_tests/, for example:
   tiny-assembler hello.tm && tiny-linker -o hello hello.o
@@ -26,47 +28,6 @@ tiny/tests/TinyCPU_tests/, for example:
   tiny-linker -a 10 -o prog start.o prog.o  an a.out of 10 MB, for tiny-kernel
 An error names the label: undefined label main
 |}
-
-(*****************************************************************************)
-(* The objects *)
-(*****************************************************************************)
-
-(* an object's items (TinyAssembler's lines): a code's bytes come with
- * the places in them to fill, each its offset, its kind, its label or
- * number (Chunk, old: Code, which tiny-ml took for Exit.Code: one name
- * space for the constructors) *)
-type item =
-  | Label of string | Align of int | Space of int
-  | Chunk of string * (int * string * string) list | Piece
-  | Section of bool   (* .data (true) or .text: what follows is *)
-
-let unhex s =
-  let digit c = let k = Char.code c in if c <= '9' then k - 48 else k - 87 in
-  String.init (String.length s / 2) (fun i ->
-    Char.chr ((16 * digit s.[2 * i]) + digit s.[(2 * i) + 1]))
-
-let read (name : Fpath.t) text =
-  if not (String.length text >= 11 && String.sub text 0 11 = "tiny-object")
-  then error (Fpath.to_string name ^ ": not an object of tiny-assembler's");
-  let items = ref [] in
-  text
-  |> String.split_on_char '\n'
-  |> List.iteri (fun n l ->
-    match String.split_on_char ' ' l, !items with
-    | [ "tiny-object" ], [] | [ "" ], _ -> ()
-    | [ "label"; s ], _ -> items := Label s :: !items
-    | [ "align"; k ], _ -> items := Align (int_of_string k) :: !items
-    | [ "space"; k ], _ -> items := Space (int_of_string k) :: !items
-    | [ "piece" ], _ -> items := Piece :: !items
-    | [ "text" ], _ -> items := Section false :: !items
-    | [ "data" ], _ -> items := Section true :: !items
-    | [ "code"; h ], _ -> items := Chunk (unhex h, []) :: !items
-    | [ "reloc"; off; k; t ], Chunk (s, rs) :: rest ->
-        items := Chunk (s, (int_of_string off, k, t) :: rs) :: rest
-    | _ ->
-        error (Fpath.to_string name ^ ":" ^ string_of_int (n + 1)
-               ^ ": not an object's line"));
-  List.rev !items
 
 (*****************************************************************************)
 (* The link *)
@@ -118,13 +79,12 @@ let fill s off kind pc v =
     | Jalr (d, a, _) -> Jalr (d, a, v) | Sys _ -> Sys v
     | Alu _ -> error ("no immediate in " ^ hex (get_word s off)) in
   let v = match kind with
-    | "word" | "abs" -> v | "hi" -> (v asr 16) land 0xffff
-    | "lo" -> v land 0xffff
-    | "pc" ->
+    | Word | Abs -> v | Hi -> (v asr 16) land 0xffff
+    | Lo -> v land 0xffff
+    | Pc ->
         if v land 3 <> 0 then error ("unaligned target " ^ hex v);
-        (v - (pc + 4)) / 4
-    | k -> error ("not a kind of place: " ^ k) in
-  if kind = "word" then set_word s off v
+        (v - (pc + 4)) / 4 in
+  if kind = Word then set_word s off v
   else match decode (get_word s off) with
     | Some i -> set_word s off (encode (imm v i))
     | None -> error ("not an instruction at " ^ hex pc)
@@ -161,7 +121,8 @@ let sweep (objects : item list list) =
     snd pieces.(i) |> List.iter (fun it -> match it with
       | Chunk (_, relocs) ->
           List.iter (fun (_, _, t) ->
-            match Hashtbl.find_opt where t with
+            match (match t with Name l -> Hashtbl.find_opt where l
+                              | Address _ -> None) with
             | Some j when not kept.(j) -> kept.(j) <- true; keep j
             | _ -> ()) relocs
       | _ -> ()) in
@@ -202,17 +163,17 @@ type sections = In_order | Text_first
 
 (* the image, the labels by address, and where the data starts (-n; 0
  * otherwise, the sections then ignored) *)
-let link (sections : sections) (objects : (Fpath.t * string) list) =
-  let items =
-    sweep (List.map (fun (f, text) -> sectioned (read f text)) objects) in
+let link (sections : sections) (objects : item list list) =
+  let items = sweep (List.map sectioned objects) in
   let labels, order, placed, data_at =
     layout
       (match sections with Text_first -> gather items | In_order -> items) in
   let resolve t =
-    match int_of_string_opt t, Hashtbl.find_opt labels t with
-    | Some n, _ -> n
-    | None, Some n -> n
-    | None, None -> error ("undefined label " ^ t) in
+    match t with
+    | Address n -> n
+    | Name l ->
+        (match Hashtbl.find_opt labels l with
+         | Some n -> n | None -> error ("undefined label " ^ l)) in
   let b = Buffer.create 4096 in
   placed |> List.iter (fun (a, it) ->
     match it with
@@ -221,7 +182,9 @@ let link (sections : sections) (objects : (Fpath.t * string) list) =
         let s = Bytes.of_string s in
         List.iter (fun (off, k, t) ->
           try fill s off k (a + off) (resolve t)
-          with Error e -> error (e ^ " (" ^ t ^ ")")) relocs;
+          with Error e ->
+            error (e ^ " (" ^ (match t with Name l -> l | Address n -> hex n)
+                   ^ ")")) relocs;
         Buffer.add_string b (Bytes.to_string s)
     | Label _ | Align _ | Piece | Section _ -> ());
   (* (old: the table's labels sorted by address, those at one address in
@@ -259,7 +222,9 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     match int_of_string_opt n with
     | Some n -> n > 0 && n <= 100
     | None -> false in
+  let verbose = ref false in
   let rec args mb split syms map l = match l with
+    | "-v" :: r -> verbose := true; args mb split syms map r
     | "-a" :: n :: r when megabytes n ->
         args (Some (int_of_string n)) split syms map r
     | "-n" :: r -> args mb true syms map r
@@ -276,10 +241,17 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
           TinyLibSystem.eprint caps (usage ^ "   (-h: how)\n"); Exit.Code 2
       | Some (mb, split, syms, map, out, files) ->
           try
+            let objects = files |> List.map (fun f ->
+              let items =
+                try of_object (TinyLibSystem.read_file caps f)
+                with Error e -> error (Fpath.to_string f ^ ": " ^ e) in
+              (* -v: each object's items, as OCaml writes them *)
+              if !verbose then
+                List.iter (fun it -> TinyLibSystem.print caps
+                  (Fpath.to_string f ^ ": " ^ show_item it ^ "\n")) items;
+              items) in
             let image, labels, data_at =
-              link (if split then Text_first else In_order)
-                (List.map (fun f -> f, TinyLibSystem.read_file caps f) files)
-            in
+              link (if split then Text_first else In_order) objects in
             let lines l =
               String.concat "" (List.map (fun (l, a) ->
                 Printf.sprintf "%x %s\n" a l) l) in

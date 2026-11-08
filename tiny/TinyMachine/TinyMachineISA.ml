@@ -139,3 +139,32 @@ let print pc i =
   | Jal (d, off) -> "jal\t" ^ r d ^ ", " ^ target off
   | Jalr (d, a, off) -> "jalr\t" ^ r d ^ ", " ^ mem off a
   | Sys n -> "sys\t" ^ string_of_int n
+
+(*****************************************************************************)
+(* The objects *)
+(*****************************************************************************)
+
+(* (OCaml's and tiny-ml's; mini-ml derives the real one, after it) *)
+let show_item _ = "NO DERIVING"
+[@@warning "-32"]
+
+type place = Word | Abs | Hi | Lo | Pc
+[@@deriving show]
+type target = Name of string | Address of int
+[@@deriving show]
+type item =
+  | Label of string | Align of int | Space of int
+  | Chunk of string * (int * place * target) list | Piece
+  | Section of bool
+[@@deriving show]
+
+(* (Marshal's bytes after it: tiny-ml's Marshal stops the program on
+ * bytes it cannot read, so another file is said not an object first) *)
+let magic = "tiny-object 1\n"
+let to_object (items : item list) =
+  magic ^ Marshal.to_string items [ Marshal.No_sharing ]
+let of_object (s : string) : item list =
+  let n = String.length magic in
+  if String.length s < n || String.sub s 0 n <> magic then
+    error "not an object of tiny-assembler's";
+  Marshal.from_string s n

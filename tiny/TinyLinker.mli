@@ -4,9 +4,9 @@
  *
  * Passes over the objects' items, in the order of the command line:
  *
- *     a.o b.o ...      (TinyAssembler.mli has the format)
- *        | read        each object's lines: labels, alignments,
- *        |             code with its relocs, zeros
+ *     a.o b.o ...      (TinyMachineISA's items, marshalled)
+ *        | read        each object's items: labels, alignments,
+ *        |             code with its relocs, zeros (-v: printed)
  *        | sweep       the pieces nothing reaches left out: what an
  *        |             object without pieces names, and what that
  *        |             names... (tiny-ml's functions and static
@@ -79,11 +79,12 @@
  * text first, then all the data (-n) *)
 type sections = In_order | Text_first
 
-(* [link order objects]: the objects (a name, its text), linked: the
- * image, each label with its address, by address, and where the data
- * starts (0 in order) *)
+(* [link order objects]: the objects' items (TinyMachineISA's), linked:
+ * the image, each label with its address, by address, and where the
+ * data starts (0 in order) *)
 val link :
-  sections -> (Fpath.t * string) list -> string * (string * int) list * int
+  sections -> TinyMachineISA.item list list ->
+  string * (string * int) list * int
 
 (* [aout memory data_at image]: an executable for tiny-kernel: a header
  * of three words (a magic number, the image's size, the memory the

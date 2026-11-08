@@ -9,46 +9,19 @@
  * read, from its name and whether its operand is a number or a label,
  * never from a label's address; and its words are made here, at once,
  * but for what the file cannot know: where a label is. That is left as
- * 0 in the word, and a line of the object says what goes there (the
- * words 30100000, then 20200000 and 17220000, as bytes in the memory's
- * order, the low first):
+ * 0 in the word, and the word's chunk in the object carries a reloc
+ * saying what goes there, its offset, its kind of place, its target:
  *
- *     beq   r1, zero, done        code 00001030
- *                                 reloc 0 pc done
- *     la    r2, table             code 0000202000002217
- *                                 reloc 0 hi table
- *                                 reloc 4 lo table
- *     .word main                  code 00000000
- *                                 reloc 0 word main
+ *     beq   r1, zero, done        words 30100000, (0, Pc, Name "done")
+ *     la    r2, table             words 20200000 17220000,
+ *                                 (0, Hi, Name "table"), (4, Lo, ...)
+ *     .word main                  a word 0, (0, Word, Name "main")
  *
- * The object is text, a line an item, in the file's order (the format
- * is t-ix's own):
- *
- *     tiny-object
- *     align 4                     each file starts on a word
- *     label NAME                  here, an address the link chooses
- *     code HEX                    an instruction's words, or data's
- *                                 bytes, in hexadecimal, in the
- *                                 memory's order
- *     reloc OFF KIND TARGET       in the code just before, OFF bytes in:
- *                                 word (all 32 bits), abs (the
- *                                 immediate), hi or lo (the immediate:
- *                                 the address's high or low half), pc
- *                                 (the immediate: the words from the
- *                                 next instruction to TARGET); TARGET a
- *                                 label, or a number (a branch to an
- *                                 address)
- *     space N                     N zeros (.space)
- *     piece                       (.piece) what follows, up to the next
- *                                 one, is left out by the link when
- *                                 nothing reaches it (tiny-ml's
- *                                 functions and static blocks)
- *
- * An .align stays an item: what it pads depends on the address, which
- * only the link knows (v0's kernel aligns its programs on 64 KB). Every
- * label is the program's: the link is one name space, as the
- * compilers write it (tiny-c's statics carry their file's name, tiny-ml's
- * labels their unit's).
+ * The object is TinyMachineISA's items, in the file's order, marshalled
+ * (that file has what each is; tiny-linker -v prints them). Every label
+ * is the program's: the link is one name space, as the compilers write
+ * it (tiny-c's statics carry their file's name, tiny-ml's labels their
+ * unit's).
  *
  * What makes it small:
  *
@@ -87,20 +60,13 @@
  * a label, its frame the compiler's instructions.
  *
  * design:
- * The object could be marshalled instead, as mini-asm and mini-ld do,
- * and tiny-ml has Marshal (TinyML.ml writes its .tmi interfaces with
- * it). That would save some 40 to 60 lines: TinyLinker's read and
- * unhex, this format's description above (a type shared through
- * TinyMachineISA instead), and the hexadecimal writing here. Text was
- * kept for what it shows: cat hello.o puts each instruction's words
- * and relocs beside the line they came from, which is how the format
- * above teaches what a relocation is; a marshalled object would need a
- * dump option to be read, giving back part of the lines saved. Text
- * also fails loudly on an object from an older format ("not an
- * object's line"), where a marshalled one is read as garbage unless it
- * carries a version, as mini-asm's Asm.ml does. Marshal pays off for
- * mini-asm's objects, big and full of structures (the history, acid's
- * types); here an object is a flat list of a handful of kinds of line.
+ * The object is marshalled, as mini-asm's and mini-ld's are (old: text,
+ * a line an item, "code HEX" and "reloc OFF KIND TARGET": cat hello.o
+ * showed each word beside its relocs, but at the cost of a format of
+ * t-ix's own, written here and read back by TinyLinker). What the text
+ * showed, tiny-linker -v prints, by the items' show that mini-ml
+ * derives. A magic line comes first, since tiny-ml's Marshal stops the
+ * program on bytes it cannot read.
  *
  * cs-history:
  * The first assemblers assembled and loaded in one step: the EDSAC's

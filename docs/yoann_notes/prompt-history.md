@@ -66053,3 +66053,20 @@ Claude said the fix belongs in mini-analyze, which should skip generated code, t
 **Yoann:**
 
 > oh I see, then yes we need to teach mini-analyze about this probably
+
+------------------------------------------------------------------------
+
+## 2026-11-08 18:21
+
+**Yoann:**
+
+> Is     | ("-v" | "-debug" | "-quiet" as a) :: rest ->
+> pattern handled by tiny-ml?
+
+**Claude (summary):**
+
+Claude suspected the old evalorder finding at Commands.ml line 359 might have disappeared with the baseline.
+Claude re-recorded findings into a scratch file to see all of Commands.ml's current findings.
+Claude ruled out sweep.sh's 300-second timeout, since version_control finishes in about two seconds.
+Claude found that the version_control sweep run had failed and printed no findings, then pulled its errors.
+Claude checked that about a hundred entries dropped from dead_all_ix.txt were all derived printers.

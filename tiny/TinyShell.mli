@@ -72,6 +72,16 @@
  * other than an interrupt at the prompt, and $prompt. These make good
  * exercises, roughly in that order.
  *
+ * One more, which rc does not have: > as a transaction, the output
+ * written to a new file beside the target and renamed over it only when
+ * the command succeeds (TSys.rename, as tiny-vcs writes its head). Then
+ * sort f > f sorts f instead of emptying it (> truncates f before sort
+ * reads it: sponge exists for that), and a command that fails leaves
+ * the old file, not half a new one that looks whole. The price: the
+ * output appears only at the end (no tail -f on a log), a hard link to
+ * the file keeps the old one, and devices, >> and >[2] must be left as
+ * they are.
+ *
  * Usage: rc -h (the [help] string of the .ml) shows the language by
  * example.
  *

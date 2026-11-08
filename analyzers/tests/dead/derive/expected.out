@@ -1,0 +1,2 @@
+analyzers/tests/dead/derive/Main.ml:13: dead: Main.unused, nothing names it
+1 functions dead (1 nothing names), 0 only through a pointer; 0 globals, 0 fields, 0 constructors, 0 statements

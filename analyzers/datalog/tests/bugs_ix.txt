@@ -2,7 +2,7 @@ _mk/7/editors/emacs/draw/Parser.ml:53: stack: Parser.mklist calls itself, not a 
 _mk/7/editors/emacs/draw/Parser.ml:57: stack: Parser.mkpatlist calls itself, not a tail call, over a list
 _mk/7/editors/emacs/tty/Parser.ml:53: stack: Parser.mklist calls itself, not a tail call, over a list
 _mk/7/editors/emacs/tty/Parser.ml:57: stack: Parser.mkpatlist calls itself, not a tail call, over a list
-_mk/7/languages/c/Parser.ml:1102: evalorder: operands at 1104:42 and 1104:66, both with an effect: their order the compiler's
+_mk/7/languages/c/Parser.ml:1102: evalorder: operands at 115:42 and 115:66, both with an effect: their order the compiler's
 _mk/7/languages/ml/Parser.ml:53: stack: Parser.mklist calls itself, not a tail call, over a list
 _mk/7/languages/ml/Parser.ml:57: stack: Parser.mkpatlist calls itself, not a tail call, over a list
 database/dbm/Dbm.ml:140: int31: in Dbm.key_of, 0xffffffff: not on the Pi 1's 31 bits
@@ -299,7 +299,7 @@ machine/CLI.ml:125: stack: run calls itself in a try's handler: no tail call by 
 machine/CLI.ml:143: stack: run calls itself in a try's handler: no tail call by mini-ml
 machine/CLI.ml:52: order: in CLI:fun at line 51, a table's order reaches the output at machine/CLI.ml:52
 machine/CLI.ml:98: stack: go calls itself in a try's handler: no tail call by mini-ml
-machine/core/Memory.ml:134: evalorder: operands at 134:0 and 135:19, both with an effect: their order the compiler's
+machine/core/Memory.ml:130: evalorder: operands at 130:16 and 130:36, both with an effect: their order the compiler's
 machine/process/Host.ml:60: leak: in Host:fun at line 53, taken here, given back at machine/process/Host.ml:62, not when machine/process/Host.ml:62 raises Plan9.Error
 machine/process/Linux.ml:143: race: Linux.raise_signal, run by a signal's handler (machine/process/Host.ml:119), writes the ref of machine/process/Linux.ml:141, as Linux.deliver, Linux.deliver64 and 2 more does
 machine/process/Linux.ml:240: evalorder: operands at 240:25 and 240:36, both with an effect: their order the compiler's
@@ -366,13 +366,12 @@ utilities/text/awk/Run.ml:475: stack: Run.format calls itself, not a tail call, 
 utilities/text/awk/Run.ml:554: stack: Run.exec calls itself in a try's body: no tail call by mini-ml
 utilities/text/awk/Run.ml:594: stack: Run.loop_body calls itself in a try's body: no tail call by mini-ml
 version_control/commands/Commands.ml:32: swallowed: in Commands.mkdir_p, Unix.Unix_error silenced, a constant answered
-version_control/commands/Commands.ml:359: evalorder: operands at 359:17 and 362:23, both with an effect: their order the compiler's
-version_control/commands/Commands.ml:428: evalorder: operands at 428:72 and 428:118, both with an effect: their order the compiler's
-version_control/commands/Commands.ml:510: evalorder: operands at 510:18 and 510:52, both with an effect: their order the compiler's
-version_control/commands/Commands.ml:512: evalorder: operands at 512:34 and 513:4, both with an effect: their order the compiler's
-version_control/commands/Commands.ml:512: evalorder: operands at 512:34 and 514:0, both with an effect: their order the compiler's
-version_control/commands/Commands.ml:512: evalorder: operands at 513:4 and 514:0, both with an effect: their order the compiler's
-version_control/commands/Commands.ml:739: evalorder: operands at 740:62 and 740:73, both with an effect: their order the compiler's
+version_control/commands/Commands.ml:415: evalorder: operands at 415:60 and 415:106, both with an effect: their order the compiler's
+version_control/commands/Commands.ml:491: evalorder: operands at 491:58 and 491:92, both with an effect: their order the compiler's
+version_control/commands/Commands.ml:493: evalorder: operands at 493:41 and 493:68, both with an effect: their order the compiler's
+version_control/commands/Commands.ml:493: evalorder: operands at 493:41 and 493:97, both with an effect: their order the compiler's
+version_control/commands/Commands.ml:493: evalorder: operands at 493:68 and 493:97, both with an effect: their order the compiler's
+version_control/commands/Commands.ml:716: evalorder: operands at 716:88 and 716:99, both with an effect: their order the compiler's
 version_control/commands/Log.ml:34: evalorder: operands at 34:46 and 34:56, both with an effect: their order the compiler's
 version_control/commands/Save.ml:72: stack: treeify calls itself, not a tail call, over a list
 version_control/diff/Diff.ml:67: stack: take calls itself, not a tail call, over a list
@@ -382,8 +381,8 @@ version_control/objects/Pack.ml:215: int31: in Pack:fun at line 214, 0x1 lsl 31,
 version_control/objects/Pack.ml:43: int31: in Pack.offset, 0x80000000; 0x7fffffff: not on the Pi 1's 31 bits
 version_control/objects/Packer.ml:7: int31: in Packer.murmurhash2, 0x5bd1e995; 0xffffffff; 0xae88fef5: not on the Pi 1's 31 bits
 version_control/repo/Query.ml:20: int31: in Query.probe, 0xffffffff: not on the Pi 1's 31 bits
-version_control/repo/Query.ml:240: evalorder: operands at 241:5 and 241:19, both with an effect: their order the compiler's
-version_control/repo/Query.ml:?: evalorder: operands at ? and ?, both with an effect: their order the compiler's
+version_control/repo/Query.ml:234: evalorder: operands at 234:76 and 234:90, both with an effect: their order the compiler's
+version_control/repo/Query.ml:246: evalorder: operands at 246:10 and 246:19, both with an effect: their order the compiler's
 version_control/wire/Proto.ml:210: stack: dial calls itself in a try's handler: no tail call by mini-ml
 windows/rio/Processes_winshell.ml:13: swallowed: in Processes_winshell.mount_files, Sys_error silenced, a constant answered
 windows/rio/Processes_winshell.ml:26: swallowed: in Processes_winshell.start, Unix.Unix_error silenced, a constant answered

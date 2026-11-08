@@ -34,7 +34,13 @@ let dead_report (caps : < Cap.stdout; .. >) (p : D.t) (ml : bool) : unit =
     if f = "?" then msg else if l > 0 then Printf.sprintf "%s:%d: %s" f l msg else Printf.sprintf "%s: %s" f msg in
   let names r n f = List.sort_uniq compare (List.filter_map (fun t -> if t.(0) = f then Some (shown t.(1)) else None) (tuples r n)) in
   let unnamed = List.map (fun t -> t.(0)) (tuples "never_named" 1) in
-  let dead = List.filter is_own (List.map (fun t -> t.(0)) (tuples "dead" 1)) in
+  (* (a printer [@@deriving show] made, or a binding it shadows, the one a
+   * file writes before its types for a compiler without deriving: the
+   * deriver's, not the author's to remove) *)
+  let derived (f : string) : bool =
+    ml && (let s = shown f in
+           Hashtbl.mem Ml_front.derived (match String.index_opt s '/' with Some i -> String.sub s 0 i | None -> s)) in
+  let dead = List.filter (fun f -> is_own f && not (derived f)) (List.map (fun t -> t.(0)) (tuples "dead" 1)) in
   let functions =
     List.map
       (fun f ->
@@ -86,5 +92,5 @@ let dead_report (caps : < Cap.stdout; .. >) (p : D.t) (ml : bool) : unit =
   List.iter (fun x -> Console.print caps (one x ^ "\n")) (List.sort_uniq compare all);
   Console.print caps
     (Printf.sprintf "%d functions dead (%d nothing names), %d only through a pointer; %d globals, %d fields, %d constructors, %d statements\n"
-       (List.length dead) (List.length (List.filter is_own unnamed)) (List.length (tuples "through_pointer" 1))
+       (List.length dead) (List.length (List.filter (fun f -> is_own f && not (derived f)) unnamed)) (List.length (tuples "through_pointer" 1))
        (List.length globals) (List.length fields) (List.length constructors) (List.length stmts))

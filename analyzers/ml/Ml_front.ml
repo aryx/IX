@@ -27,7 +27,7 @@ let parse (file : string) (text : string) : (Ast.source, string) result =
   | Lexer.Error m -> Error (where () ^ ": " ^ m)
 
 (* mlpp: a .ml's type t = [%mli] and the like rewritten, as CLI's parse does *)
-let rewritten (caps : < Cap.open_in; .. >) (file : string) (text : string) (tree : Ast.source) : (Ast.source, string) result =
+let rewritten (caps : < Cap.open_in; .. >) (file : string) (text : string) (tree : Ast.source) : (Ast.source * string, string) result =
   let mli () =
     let f = Filename.remove_extension file ^ ".mli" in
     let rec decls (s : Ast.signature) =
@@ -40,8 +40,8 @@ let rewritten (caps : < Cap.open_in; .. >) (file : string) (text : string) (tree
         | _ -> None) in
   match Pp.file ~file text tree ~mli with
   | exception Pp.Error (l, m) -> Error (Printf.sprintf "%s:%d: %s" file l m)
-  | text' when text' == text -> Ok tree
-  | text' -> parse file text'
+  | text' when text' == text -> Ok (tree, text)
+  | text' -> Result.map (fun t -> (t, text')) (parse file text')
 
 (* A directory's files, read once. A name is looked up in them rather than
  * opened: on a case-insensitive file system (macOS's) fS.mli opens Fs.mli,
@@ -72,7 +72,8 @@ let find (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (name :
         names)
     dirs
 
-let parsed (caps : < Cap.open_in; .. >) (f : string) (text : string) : (Ast.source, string) result =
+(* a tree, and the text it was parsed from: mlpp's when it rewrote it *)
+let parsed (caps : < Cap.open_in; .. >) (f : string) (text : string) : (Ast.source * string, string) result =
   match parse f text with
   | Error m -> Error m
   | Ok tree -> rewritten caps f text tree
@@ -82,7 +83,27 @@ let loader (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) : Sco
  fun name ->
   match find caps dirs name [ ".mli"; ".ml" ] with
   | None -> None
-  | Some (f, text) -> (match parsed caps (Fpath.to_string f) text with Ok src -> Some src | Error m -> raise (Resolve.Error (0, m)))
+  | Some (f, text) -> (match parsed caps (Fpath.to_string f) text with Ok (src, _) -> Some src | Error m -> raise (Resolve.Error (0, m)))
+
+(* the printers [@@deriving show] makes, "Unit.show_x" and "Unit.pp_x"
+ * (show and pp for a t), for each type of a group the attribute
+ * follows: the deriver's code, not the author's (Dead_report leaves
+ * them out) *)
+let derived : (string, unit) Hashtbl.t = Hashtbl.create 64
+
+let derives (name : string) (items : Ast.item list) : unit =
+  List.iter (fun (i : Ast.item) ->
+      match i.i with
+      | Itype ds
+        when List.exists (fun (d : Ast.type_decl) ->
+                 List.exists (fun (a : Ast.attribute) -> a.aname = "deriving" && List.mem "show" a.aargs) d.tattrs) ds ->
+          List.iter (fun (d : Ast.type_decl) ->
+              let x = if d.tname = "t" then "" else "_" ^ d.tname in
+              Hashtbl.replace derived (name ^ ".show" ^ x) ();
+              Hashtbl.replace derived (name ^ ".pp" ^ x) ())
+            ds
+      | _ -> ())
+    items
 
 (* one unit: its facts made; the units it names *)
 let unit_ (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (file : Fpath.t) (text : string) : (string list, string) result =
@@ -91,8 +112,9 @@ let unit_ (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (file 
   Hashtbl.replace files name f;
   match parsed caps f text with
   | Error m -> Error m
-  | Ok (Ast.Signature _) -> Ok []
-  | Ok (Ast.Structure items) -> (
+  | Ok (Ast.Signature _, _) -> Ok []
+  | Ok (Ast.Structure items, text) -> (
+      derives name items;
       try
         let items = Resolve.implementation ~implicit:true (loader caps (Fpath.parent file :: dirs)) name items in
         let named = Resolve.units_named () in

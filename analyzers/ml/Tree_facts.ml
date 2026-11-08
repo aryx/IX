@@ -44,6 +44,20 @@ let unit_ (name : string) (text : string) (items : item list) : unit =
   let starts = ref [ 0 ] in
   String.iteri (fun (i : int) (c : char) -> if c = '\n' then starts := (i + 1) :: !starts) text;
   let starts = Array.of_list (List.rev !starts) in
+  (* each line's line in the source: a text mlpp rewrote says it by its
+   * # n "file" lines, the next line's number (the derived printers'
+   * lines numbered from their type's, then the source's again) *)
+  let source = Array.make (Array.length starts) 0 in
+  let next = ref 1 in
+  Array.iteri (fun (i : int) (s : int) ->
+      let directive =
+        if s + 2 < String.length text && text.[s] = '#' && text.[s + 1] = ' ' then
+          let e = match String.index_from_opt text (s + 2) ' ' with Some e -> e | None -> String.length text in
+          int_of_string_opt (String.sub text (s + 2) (e - s - 2))
+        else None in
+      source.(i) <- !next;
+      match directive with Some n -> next := n | None -> incr next)
+    starts;
   let line_of (off : int) : int =
     (* (the last start at or before off: a binary search) *)
     let rec go lo hi = if lo >= hi then lo else
@@ -63,7 +77,7 @@ let unit_ (name : string) (text : string) (items : item list) : unit =
     if a >= 0 && a < String.length text then begin
       let l = line_of a in
       let col = a - starts.(l) in
-      fact "pos" [ Sym n; Num (l + 1); Num col ];
+      fact "pos" [ Sym n; Num source.(l); Num col ];
       (* (nothing but blanks before it on its line) *)
       let lead = ref true in
       for i = starts.(l) to a - 1 do if text.[i] <> ' ' && text.[i] <> '\t' then lead := false done;

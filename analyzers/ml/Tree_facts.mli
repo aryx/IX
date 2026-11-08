@@ -17,7 +17,11 @@
  * The tree is mini-ml's scoped one (Scope), the one Closure_facts reads:
  * a parenthesis is gone, but an expression's span still says where it
  * starts. A text rewritten by mlpp (a class, a [@@deriving]) has its
- * spans in the rewritten text: its columns may be off.
+ * spans in the rewritten text, which is the one given: a line is said
+ * as the source's by mlpp's # n "file" lines, a column as it is, since
+ * mlpp starts a copy at its column (old: the source's text given, the
+ * rewritten text's offsets counted in it: below a [@@deriving], the
+ * lines hundreds too far, or none).
  *
  * others:
  * CodeQL keeps a program's whole tree in its database beside the
@@ -26,6 +30,7 @@
  * back to Paul Klint's and Jurgen Vinju's Rascal and to "Scalable and
  * flexible ... Doop"'s fact generators, which also say each node. *)
 
-(* the unit [name]'s facts, through Closure_facts.added; [text] the file's,
- * for the lines and the columns *)
+(* the unit [name]'s facts, through Closure_facts.added; [text] the one
+ * parsed, mlpp's when it rewrote the file, for the lines and the
+ * columns *)
 val unit_ : string -> string -> Scope.item list -> unit

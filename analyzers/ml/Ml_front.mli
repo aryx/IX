@@ -26,6 +26,11 @@ val files : (string, string) Hashtbl.t
 (* the program's own units, not the library's *)
 val own : (string, unit) Hashtbl.t
 
+(* the printers [@@deriving show] makes in the units read, "Unit.show_x"
+ * and "Unit.pp_x" (show and pp for a t): the deriver's code, which
+ * -dead does not say dead *)
+val derived : (string, unit) Hashtbl.t
+
 (* each unit read, every file of its name in a directory whose units
  * name it (bugs/init.dl's: two, one of them linked silently) *)
 val homes : (string, string list) Hashtbl.t

@@ -80,7 +80,11 @@
  * the old file, not half a new one that looks whole. The price: the
  * output appears only at the end (no tail -f on a log), a hard link to
  * the file keeps the old one, and devices, >> and >[2] must be left as
- * they are.
+ * they are. Two more, as Tcl and es went: a block as a value, its text,
+ * with if, while, for and fn builtins over blocks, so a function is a
+ * variable (fn#f) and eval, whatis, switch and functions in the
+ * environment come almost free; and $status as a list, a|b|c's
+ * (1 '' 3), not rc's string 1|3.
  *
  * Usage: rc -h (the [help] string of the .ml) shows the language by
  * example.

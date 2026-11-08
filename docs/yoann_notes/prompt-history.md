@@ -66070,3 +66070,31 @@ Claude re-recorded findings into a scratch file to see all of Commands.ml's curr
 Claude ruled out sweep.sh's 300-second timeout, since version_control finishes in about two seconds.
 Claude found that the version_control sweep run had failed and printed no findings, then pulled its errors.
 Claude checked that about a hundred entries dropped from dead_all_ix.txt were all derived printers.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 19:20
+
+**Yoann:**
+
+> we could add it as an exercise in the .mli, but I'm not super impressed and it's not in the same category than the "twist" for the build system where a small feature and design core choice simplifies then many things later on (even though it has also a cost).
+
+**Claude (summary):**
+
+Claude agreed the exercise-only idea fixes two annoyances without simplifying anything else, so it is a feature, not a design choice like content stamps. Claude proposed adding it as an exercise after the list of dropped features. Claude then noticed the edit tool reported `TinyShell.mli` had changed on disk since its last read, so its commit might have included someone else's edit. Claude said it was checking what the file now contains.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 19:45
+
+**Yoann:**
+
+> Think! Think hard to a great "twist" simplifiications for the tiny shell.
+
+**Claude (summary):**
+
+Claude recommended making blocks first-class string values, so if, while, and for become builtins that take blocks.
+Claude said fn f would set a variable fn#f, giving environment functions and whatis for free.
+Claude also proposed $status as a list, such as status=(1 '' 3), replacing rc's piped status string.
+Claude listed costs: reparsing loop bodies, dynamic scope, and errors naming only the block text.
+Claude offered to prototype the block-values idea first and measure its line count before keeping it.

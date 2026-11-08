@@ -65927,3 +65927,19 @@ Claude switched the dry run's fake digest to `Sha1.string ("dry " ^ n.name)` so 
 **Yoann:**
 
 > use Sha1.t in TinyVCS too
+
+------------------------------------------------------------------------
+
+## 2026-11-08 17:42
+
+**Yoann:**
+
+> Dont you think the code is now cleaner in TinyBuildSystem (.ml and .mli) for the changes in this last week? especially clearer types (instead of using string everywhere instead of Fpath, Sha1.t, etc.
+
+**Claude (summary):**
+
+Claude removed a wrong comment on `of_hex` in TinyVCS, since tiny has no older version to compare against.
+Claude switched hash printing and reading in TinyVCS to the typed `hex` and `of_hex` helpers, then confirmed the build is clean.
+Claude re-recorded the bugs baseline, which shifted four lines rather than one, and checked those moves by hand.
+Claude also checked `diff` output with a typed hash and noted the `.mli` needs no edit, since the on-disk format is unchanged.
+Claude then committed the changes.

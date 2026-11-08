@@ -1,8 +1,7 @@
 (* A tiny shell, in one file, with pipes, redirections, variables and
  * basic control flow. mini-rc (shell/) is a faithful copy of rc; this
- * shell is what remains when compatibility is dropped. It was written
- * after mini-rc, using what mini-rc taught. The language is a cut-down
- * version of rc's:
+ * shell is what remains when compatibility is dropped. The language is
+ * a cut-down version of rc's:
  *
  *     ls -l *.c | wc -l >count         words, globs, a pipe, redirections
  *     x=(a b c); echo $x $#x $x.o      lists, the only value; a.o b.o c.o

@@ -1,4 +1,4 @@
-(* A tiny C compiler for tiny-machine, in one file, that goes through an
+(* A tiny C compiler for tiny-machine with an
  * intermediate language of its own.
  *
  * The full-size compiler in ix, mini-cc (languages/c/), is a faithful
@@ -92,8 +92,9 @@
  * system call table); every operator, including op=, ++,
  * --, ?:, casts, sizeof and the comma, with constant expressions
  * folded (for an array size or a case); if, while, do, for, switch,
- * break, continue, return and blocks; #include "file" and #define of a
- * name. Left out, because of what each would cost here: floats,
+ * break, continue, return and blocks; #include "file" and #define of a name.
+ *
+ * Left out, because of what each would cost here: floats,
  * unions, bitfields, structs by value, goto, macros with arguments,
  * and #if.
  *

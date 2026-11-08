@@ -1,8 +1,8 @@
 (* Claude Code
- * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
-
-(* See TinyC.mli *)
-
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+ *
+ * See TinyC.mli
+ *)
 open TinyCTypes
 open TinyCLexer
 open TinyCTree
@@ -111,6 +111,10 @@ let external_decl () =
 
 (* a file that cannot be read or made, said apart from an error in one *)
 exception File_error of string
+
+(*****************************************************************************)
+(* main *)
+(*****************************************************************************)
 
 let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     (argv : string array) : Exit.t =

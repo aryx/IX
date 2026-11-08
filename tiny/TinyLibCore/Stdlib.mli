@@ -33,6 +33,20 @@
  * tool's file; a Buffer a string grown by ^, a Hashtbl a list of pairs:
  * plan_tiny_self_hosting.md, step 5)
  *
+ * design:
+ * A directory, a module a file, and not one TinyLibCore.ml: the
+ * prelude's dotted names were not modules, and its text was the
+ * compiler's, compiled again at each run (47 s for a unit of one line
+ * on tiny-kernel, 420 KB of the library's assembly in every program).
+ * A module a file is compiled once, to its object and its interface;
+ * its name is OCaml's, so the same source builds both ways;
+ * TinyLibCore_test.sh checks each .mli against OCaml's module; and
+ * tiny-linker leaves out what a program does not call (its pieces).
+ * The price is the list of the modules, kept in several places
+ * (TinyKernel/Makefile's CORE, TinyML.ml's library, tests/link.sh, the
+ * list above). The system's side is not here: TinyLibSystem.mli says
+ * why.
+ *
  * This module: the operators, the machine's and the runtime's
  * (core.c's) as externals; option and the exceptions; the few
  * functions OCaml's Stdlib has that tiny programs name. max_int and

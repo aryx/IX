@@ -38,6 +38,24 @@
  * (Fpath.v "" raises), where it went before as a name to the system
  * (old: strings, each tool's "" handled, or not, at each call). The
  * names a directory has (readdir) are segments, strings.
+ *
+ * design:
+ * Why a module of its own, and not Sys.ml and Unix.ml in TinyLibCore/
+ * beside List.ml and Hashtbl.ml: TinyLibCore is a subset of OCaml's
+ * own modules, the same names, types and results, so that a file
+ * naming List compiles unchanged by OCaml on the host and by tiny-ml
+ * on TinyLibCore. That works because those modules are pure: one file
+ * serves tiny-kernel, OCaml's own serves the host. The system cannot
+ * be split that way: on the host it is Unix, Cap, FS and Procs, on
+ * tiny-kernel its calls, and a TinyLibCore Unix.ml would have to be a
+ * subset of OCaml's Unix, an interface far larger than tiny-kernel
+ * gives, of strings and Unix_error, without the capabilities or
+ * Fpath.t. So this is a new interface, cut to the smaller system's,
+ * with one .mli and a file for each side, as TinyCalls (a virtual
+ * library in dune). The other road, Sys and Unix subsets, would let
+ * the tools use the names OCaml programmers know, but a tool could
+ * then ask the host for what tiny-kernel lacks and no compiler would
+ * say so.
  *)
 
 (* The names of what the calls give, each an int or a string still:

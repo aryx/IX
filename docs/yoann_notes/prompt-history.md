@@ -65692,3 +65692,31 @@ Claude ran the database test, which passed with 40 sessions, and listed the rema
 **Yoann:**
 
 > I also don't fully understand this TinyLibSystem.ml. For many standard modules we have a TinyLibCore/ so why another mechnanism for TinyLibSystem? why not Sys.ml and Unix.ml ? or conversely why we did TinyLibCore/ and not instead a TinyLibCore.ml too?
+
+------------------------------------------------------------------------
+
+## 2026-11-08 16:38
+
+**Yoann:**
+
+> (just asking for design explanations/alternatives, not any specific change to do)
+
+**Claude (summary):**
+
+Claude's answer was mostly process: it found the `$(CORE:...)` lists where Logs belongs after Chan, checked LOC, and committed as `dbc23fc3`. Claude then said it would read how TinyLibSystem explains itself before answering Yoann's design questions. Yoann's reply focuses on those explanations of why the code lives in TinyLibSystem.ml rather than TinyLibCore.ml. Claude had not yet written any of them, so the reaction targets a part it had only announced.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 17:05
+
+**Yoann:**
+
+> ok I like the explanations for why TinyLibSystem.ml and not the TinyLibCore.ml. let's add those explanations in the relevant file (TinyLibSystem.mli maybe)
+
+**Claude (summary):**
+
+Claude proposed putting the TinyLibSystem rationale into a `design:` paragraph in `TinyLibSystem.mli`.
+Claude also planned a matching `design:` paragraph in `TinyLibCore/Stdlib.mli` for the "why a directory" reasoning, drawn from its existing `(old: ...)` note.
+Yoann's "yes" approves that plan, so Claude's stated next step is to write both paragraphs.
+The change is limited to documentation comments in those two interface files, with no code edits.
+Nothing has been written yet; the answer only described the intended edits.

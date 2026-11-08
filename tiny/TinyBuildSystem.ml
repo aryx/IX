@@ -60,7 +60,7 @@ type vars = (string, string list) Hashtbl.t
 
 (* the last build's stamps (.tiny-build's), by node's name: a node, not
  * a file, so all has one too *)
-type stamps = (string, string) Hashtbl.t
+type stamps = (string, Sha1.t) Hashtbl.t
 
 let target_of (s : string) : target =
   match String.index_opt s '%' with
@@ -301,11 +301,11 @@ let read_file caps file =
  * digest is None), and the rules match names as text (matches). An
  * Fpath.t is made only where TinyLibSystem is called.
  *)
-let file_digests : (string, string option) Hashtbl.t = Hashtbl.create 101
-let known : (string, int * int * string) Hashtbl.t = Hashtbl.create 101
+let file_digests : (string, Sha1.t option) Hashtbl.t = Hashtbl.create 101
+let known : (string, int * int * Sha1.t) Hashtbl.t = Hashtbl.create 101
 
 let digest_file (caps : < Cap.open_in; Cap.readdir; .. >) (file : string) :
-    string option =
+    Sha1.t option =
   match Hashtbl.find_opt file_digests file with
   | Some d -> d
   | None ->
@@ -324,8 +324,8 @@ let digest_file (caps : < Cap.open_in; Cap.readdir; .. >) (file : string) :
               let b = Bytes.make 4096 ' ' in
               let d =
                 TSys.with_open_in caps (fun (c : Chan.i) ->
-                    Sha1.to_hex (Sha1.reads (fun () ->
-                      Bytes.sub_string b 0 (In_channel.input c.ic b 0 4096))))
+                    Sha1.reads (fun () ->
+                      Bytes.sub_string b 0 (In_channel.input c.ic b 0 4096)))
                   path in
               if date < now then Hashtbl.replace known file (size, date, d)
               else Hashtbl.remove known file;
@@ -355,7 +355,7 @@ let times : (string * int) list ref = ref []
 (* .tiny-build: magic, then the stamps and known, marshalled; without
  * magic, no stamps (tiny-ml's Marshal stops on bytes it cannot read).
  * old: text, a line each, read back by hand *)
-let magic = "tiny-build 1\n"
+let magic = "tiny-build 2\n"  (* (1: the digests in hexadecimal) *)
 
 (* the stamps of the last build, the digests it knew put back in known *)
 let load (caps : < Cap.open_in; .. >) : stamps =
@@ -395,8 +395,8 @@ let build
   let stamp n =
     let recipe =
       match n.make with Source -> "" | Recipe r -> expand true vars r.text in
-    Sha1.to_hex (Sha1.string (String.concat "\n" (recipe :: List.map (fun d ->
-      d.name ^ " " ^ Hashtbl.find digests d.name) n.deps)))
+    Sha1.string (String.concat "\n" (recipe :: List.map (fun d ->
+      d.name ^ " " ^ Sha1.to_hex (Hashtbl.find digests d.name)) n.deps))
   in
   (* a node is done: its digest is its file's, or, without one, its stamp *)
   let finish n = Hashtbl.replace digests n.name
@@ -424,7 +424,8 @@ let build
         TSys.print caps (expand true shown r.text ^ "\n");
         incr ran
       end;
-      if dry then (Hashtbl.replace digests n.name ("dry " ^ n.name); true)
+      if dry then
+        (Hashtbl.replace digests n.name (Sha1.string ("dry " ^ n.name)); true)
       else
         match start caps (own @ env) r.text with
         | Some pid ->

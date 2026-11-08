@@ -59,25 +59,31 @@ type entry =
   | Dir of hash
   | Conflict of conflict
 
+(* a directory: its entries by name, sorted *)
+type tree = (string * entry) list
+
+(* a branch's name *)
+type branch = string
+
 type commit = {
   tree : hash;
   parents : hash list;
-  date : int;
+  date : TSys.seconds;
   author : string;
   msg : string;
 }
 
 type op = {
   prev : hash option;
-  odate : int;
+  odate : TSys.seconds;
   what : string;
-  current : string;
-  branches : (string * hash) list;
+  current : branch;
+  branches : (branch * hash) list;
 }
 
 type obj =
   | Blob of string
-  | Tree of (string * entry) list
+  | Tree of tree
   | Commit of commit
   | Op of op
 
@@ -305,7 +311,7 @@ let ignored caps root =
 let snapshot r =
   let ign = ignored r.caps r.root in
   let old = match tip r with Some c -> Some (commit r c).tree | None -> None in
-  let rec go dir (prev : (string * entry) list) =
+  let rec go dir (prev : tree) =
     let names = List.sort compare (TSys.readdir r.caps dir) in
     let es = names |> List.filter_map (fun name ->
       if ign name then None
@@ -349,7 +355,7 @@ let checkout r (old : hash option) (nw : hash) =
     if exists r.caps p && TSys.is_directory r.caps p then rm_rf p;
     write_file r.caps p (blob r h);
     TSys.set_executable r.caps p x in
-  let rec go dir (old : (string * entry) list) (nw : (string * entry) list) =
+  let rec go dir (old : tree) (nw : tree) =
     List.iter (fun (name, _) ->
       if not (List.mem_assoc name nw) then
         (try rm_rf (dir / name) with Failure _ -> ())) old;
@@ -373,8 +379,7 @@ let checkout r (old : hash option) (nw : hash) =
   go r.root (match old with Some t -> tree r t | None -> []) (tree r nw)
 
 (* the files of two trees that differ: path, before, after *)
-let rec changes r prefix (a : (string * entry) list)
-    (b : (string * entry) list) =
+let rec changes r prefix (a : tree) (b : tree) =
   let names = List.sort_uniq compare (List.map fst a @ List.map fst b) in
   List.concat_map (fun name ->
     let p = if prefix = "" then name else prefix ^ "/" ^ name in
@@ -678,250 +683,275 @@ let clean r =
   in
   if snap <> tipt then error "uncommitted changes: commit first"
 
+(* The commands: each a function of the repository (and its state, the
+ * current operation, for those that change it), what it prints on
+ * stdout; run dispatches *)
+
+(* the branches, the current one moved to c *)
+let moved (s : op) (c : hash) : (branch * hash) list =
+  (s.current, c) :: List.remove_assoc s.current s.branches
+
+let tip_or_fail r = match tip r with Some h -> h | None -> error "no commit yet"
+
+let branch_or_fail (s : op) b =
+  match List.assoc_opt b s.branches with
+  | Some h -> h
+  | None -> error ("no branch " ^ b)
+
+(* an operation, by its hash *)
+let op_at r h = match get r h with Op o -> o | _ -> error "bad op"
+
+let say r s = TSys.print r.caps s
+
+(* the files changed since the tip, then the conflicts committed and not
+ * yet resolved *)
+let status r =
+  let snap = snapshot r in
+  List.iter (fun (p, a, b) ->
+    say r ((match a, b, b with
+      | _, _, Some (Conflict _) -> "C"
+      | None, _, _ -> "A"
+      | _, None, _ -> "R"
+      | _ -> "M") ^ " " ^ p ^ "\n"))
+    (changes r "" (tree_of_commit r (tip r)) (tree r snap));
+  let rec conflicts prefix es = List.concat_map (fun (n, e) ->
+    let p = if prefix = "" then n else prefix ^ "/" ^ n in
+    match e with
+    | Conflict _ -> [ p ]
+    | Dir h -> conflicts p (tree r h)
+    | _ -> []) es in
+  List.iter (fun p -> say r (Printf.sprintf "C %s\n" p))
+    (conflicts "" (tree r snap))
+
+(* the work tree against the tip, or against a commit, or two commits
+ * against each other (a commit typed, its 40 digits) *)
+let diff r commits =
+  let tree_at c =
+    let h = try Sha1.of_hex c
+            with Invalid_argument _ -> error ("missing object " ^ c) in
+    tree r (commit r h).tree in
+  let a, b = match commits with
+    | [] -> tree_of_commit r (tip r), tree r (snapshot r)
+    | [ c ] -> tree_at c, tree r (snapshot r)
+    | c1 :: c2 :: _ -> tree_at c1, tree_at c2 in
+  let text = function
+    | Some (File h) -> blob r h
+    | Some (Exec h) -> blob r h
+    | Some (Conflict c) -> blob r c.text
+    | _ -> ""
+  in
+  List.iter (fun (p, x, y) ->
+    say r (unified (if x = None then "/dev/null" else "a/" ^ p)
+             (if y = None then "/dev/null" else "b/" ^ p)
+             (text x) (text y)))
+    (changes r "" a b)
+
+(* the work tree's snapshot, committed on the current branch *)
+let new_commit r (s : op) msg =
+  let snap = snapshot r in
+  (match tip r with
+   | Some c when (commit r c).tree = snap -> error "nothing to commit"
+   | _ -> ());
+  let c =
+    put r (Commit { tree = snap; parents = Option.to_list (tip r);
+                    date = now r.caps; author = author r.caps;
+                    msg = msg ^ "\n" })
+  in
+  record r ("commit " ^ short c) (moved s c);
+  say r (s.current ^ ": " ^ hex c ^ "\n")
+
+(* newest first, each commit once; the same dates (tiny-kernel's are all
+ * 0: no clock) in the order reached, breadth first (old: a commit's
+ * parents before the commits waiting, so a branch's first commit came
+ * before its second) *)
+let log r =
+  let seen = Hashtbl.create 64 in
+  let rec go = function
+    | [] -> ()
+    | hs ->
+        let hs =
+          List.sort (fun a b -> compare (commit r b).date (commit r a).date) hs
+        in
+        let h = List.hd hs in
+        let c = commit r h in
+        Hashtbl.add seen h ();
+        say r (short h ^ " " ^ c.author ^ " " ^ first_line c.msg ^ "\n");
+        go (List.tl hs
+            @ List.filter (fun p ->
+                not (Hashtbl.mem seen p) && not (List.mem p (List.tl hs)))
+                c.parents) in
+  go (Option.to_list (tip r))
+
+let list_branches r (s : op) =
+  List.iter (fun (b, h) ->
+    say r ((if b = s.current then "*" else " ") ^ " " ^ b ^ " " ^ short h
+           ^ "\n")) s.branches
+
+(* a branch at the tip *)
+let new_branch r (s : op) b =
+  if List.mem_assoc b s.branches then
+    error (Printf.sprintf "branch %s exists" b);
+  record r ("branch " ^ b) ((b, tip_or_fail r) :: s.branches)
+
+let switch r (s : op) b =
+  clean r;
+  let h = branch_or_fail s b in
+  checkout r (Option.map (fun c -> (commit r c).tree) (tip r))
+    (commit r h).tree;
+  record_at r b ("switch " ^ b) s.branches
+
+(* a branch merged into the current one: nothing when it is an
+ * ancestor, a fast-forward when it descends from the tip, else a merge
+ * commit, its conflicts committed *)
+let merge r (s : op) b =
+  clean r;
+  let theirs = branch_or_fail s b and ours = tip_or_fail r in
+  match lca r ours theirs with
+  | Some base when base = theirs -> say r "already merged\n"
+  | Some base when base = ours ->
+      checkout r (Some (commit r ours).tree) (commit r theirs).tree;
+      record r (Printf.sprintf "merge %s (fast-forward)" b) (moved s theirs);
+      say r ("fast-forward to " ^ short theirs ^ "\n")
+  | base ->
+      let es, conflicts =
+        merge_trees r (tree_of_commit r base)
+          (tree_of_commit r (Some ours))
+          (tree_of_commit r (Some theirs)) ""
+      in
+      let t = put r (Tree es) in
+      let c =
+        put r (Commit { tree = t; parents = [ ours; theirs ];
+                        date = now r.caps; author = author r.caps;
+                        msg = Printf.sprintf "merge %s\n" b })
+      in
+      checkout r (Some (commit r ours).tree) t;
+      record r ("merge " ^ b) (moved s c);
+      List.iter (fun p -> say r (Printf.sprintf "conflict: %s\n" p)) conflicts;
+      say r (s.current ^ ": " ^ hex c ^ "\n")
+
+(* the operations, newest first *)
+let ops r =
+  let rec go h =
+    let o = op_at r h in
+    say r (short h ^ " " ^ o.what ^ "\n");
+    Option.iter go o.prev in
+  go (head r)
+
+(* back to the state before; the work tree follows when clean *)
+let undo r (s : op) =
+  let prev = match s.prev with Some p -> p | None -> error "nothing to undo" in
+  let before = op_at r prev in
+  let old_tree = Option.map (fun c -> (commit r c).tree) (tip r) in
+  let back =
+    Option.map (fun c -> (commit r c).tree)
+      (List.assoc_opt before.current before.branches) in
+  if Some (snapshot r) = old_tree || old_tree = None then
+    (match back with Some t -> checkout r old_tree t | None -> ());
+  record_at r before.current ("undo " ^ s.what) before.branches;
+  say r (Printf.sprintf "undid: %s\n" s.what)
+
+(* the current branch from another repository: fast-forwarded, or, when
+ * the two diverged, kept as pulled/branch, to merge *)
+let pull r (s : op) src =
+  clean r;
+  let sr = load r.caps (Fpath.v src) in
+  let theirs =
+    match List.assoc_opt s.current (state sr).branches with
+    | Some h -> h
+    | None -> error (src ^ " has no branch " ^ s.current)
+  in
+  copy sr r theirs;
+  match tip r with
+  | None ->
+      checkout r None (commit r theirs).tree;
+      record r ("pull " ^ src) (moved s theirs)
+  | Some ours ->
+      (match lca r ours theirs with
+       | Some b when b = theirs ->
+           say r "up to date\n";
+           record r ("pull " ^ src) s.branches
+       | Some b when b = ours ->
+           checkout r (Some (commit r ours).tree) (commit r theirs).tree;
+           record r ("pull " ^ src) (moved s theirs);
+           say r ("fast-forward to " ^ short theirs ^ "\n")
+       | _ ->
+           record r ("pull " ^ src)
+             (("pulled/" ^ s.current, theirs) :: s.branches);
+           say r (Printf.sprintf "diverged: merge pulled/%s\n" s.current))
+
+(* the current branch to another repository, a fast-forward only *)
+let push r (s : op) dst =
+  let dr = load r.caps (Fpath.v dst) in
+  let ds = state dr and ours = tip_or_fail r in
+  (match List.assoc_opt s.current ds.branches with
+   | Some theirs when not (Hashtbl.mem (ancestors r ours) theirs) ->
+       error "not a fast-forward: pull first"
+   | _ -> ());
+  copy r dr ours;
+  save dr
+    { prev = Some (head dr); odate = now r.caps;
+      what = "push from " ^ !!(r.root); current = ds.current;
+      branches = (s.current, ours) :: List.remove_assoc s.current ds.branches };
+  say r (s.current ^ ": " ^ short ours ^ "\n")
+
+(* a file of the tip *)
+let show r path =
+  let rec find es = function
+    | [ n ] ->
+        (match List.assoc_opt n es with
+         | Some (File h) -> blob r h
+         | Some (Exec h) -> blob r h
+         | Some (Conflict c) -> blob r c.text
+         | _ -> error ("no file " ^ path))
+    | n :: rest ->
+        (match List.assoc_opt n es with
+         | Some (Dir h) -> find (tree r h) rest
+         | _ -> error ("no file " ^ path))
+    | [] -> error "no file" in
+  say r (find (tree_of_commit r (tip r)) (String.split_on_char '/' path))
+
+(* a repository copied: its branches' objects, its state, its tip's files *)
+let clone (caps : caps) src dst =
+  let s = load caps (Fpath.v src) in
+  let st = state s in
+  TSys.mkdir caps (Fpath.v dst);
+  init caps (Fpath.v dst);
+  let r = load caps (Fpath.v dst) in
+  List.iter (fun (_, h) -> copy s r h) st.branches;
+  record_at r st.current ("clone " ^ src) st.branches;
+  Option.iter (fun c -> checkout r None (commit r c).tree) (tip r)
+
 let run (caps : caps) (args : string list) =
-  let print s = TSys.print caps s in
   match args with
-  | [ ("-h" | "--help") ] -> print help
-  | [ "init" ] | [ "init"; _ ] ->
-      init caps (Fpath.v (match args with [ _; d ] -> d | _ -> "."))
-  | "clone" :: [ src; dst ] ->
-      let s = load caps (Fpath.v src) in
-      let st = match get s (head s) with Op o -> o | _ -> error "bad head" in
-      TSys.mkdir caps (Fpath.v dst);
-      init caps (Fpath.v dst);
-      let r = load caps (Fpath.v dst) in
-      List.iter (fun (_, h) -> copy s r h) st.branches;
-      record_at r st.current ("clone " ^ src) st.branches;
-      Option.iter (fun c -> checkout r None (commit r c).tree) (tip r)
+  | [ ("-h" | "--help") ] -> TSys.print caps help
+  | [ "init" ] -> init caps (Fpath.v ".")
+  | [ "init"; d ] -> init caps (Fpath.v d)
+  | [ "clone"; src; dst ] -> clone caps src dst
   | cmd :: rest -> (
       let r = load caps (find_root caps) in
       let s = state r in
       match cmd, rest with
-      | "status", [] ->
-          let snap = snapshot r in
-          List.iter (fun (p, a, b) ->
-            print ((match a, b, b with
-              | _, _, Some (Conflict _) -> "C"
-              | None, _, _ -> "A"
-              | _, None, _ -> "R"
-              | _ -> "M") ^ " " ^ p ^ "\n"))
-            (changes r "" (tree_of_commit r (tip r)) (tree r snap));
-          (* conflicts committed and not yet resolved *)
-          let rec conflicts prefix es = List.concat_map (fun (n, e) ->
-            let p = if prefix = "" then n else prefix ^ "/" ^ n in
-            match e with
-            | Conflict _ -> [ p ]
-            | Dir h -> conflicts p (tree r h)
-            | _ -> []) es in
-          List.iter (fun p -> print (Printf.sprintf "C %s\n" p))
-            (conflicts "" (tree r snap))
-      | "diff", ([] | [ _ ] | [ _; _ ]) ->
-          (* (a commit typed, its 40 digits) *)
-          let tree_at c =
-            let h = try Sha1.of_hex c
-                    with Invalid_argument _ -> error ("missing object " ^ c) in
-            tree r (commit r h).tree in
-          let a, b = match rest with
-            | [] -> tree_of_commit r (tip r), tree r (snapshot r)
-            | [ c ] -> tree_at c, tree r (snapshot r)
-            | c1 :: c2 :: _ -> tree_at c1, tree_at c2 in
-          let text = function
-            | Some (File h) -> blob r h
-            | Some (Exec h) -> blob r h
-            | Some (Conflict c) -> blob r c.text
-            | _ -> ""
-          in
-          List.iter (fun (p, x, y) ->
-            print (unified (if x = None then "/dev/null" else "a/" ^ p)
-                     (if y = None then "/dev/null" else "b/" ^ p)
-                     (text x) (text y)))
-            (changes r "" a b)
-      | "commit", [ "-m"; msg ] ->
-          let snap = snapshot r in
-          let parents = Option.to_list (tip r) in
-          (match tip r with
-           | Some c when (commit r c).tree = snap -> error "nothing to commit"
-           | _ -> ());
-          let c =
-            put r (Commit { tree = snap; parents; date = now caps;
-                            author = author caps; msg = msg ^ "\n" })
-          in
-          record r ("commit " ^ short c)
-            ((s.current, c) :: List.remove_assoc s.current s.branches);
-          print (s.current ^ ": " ^ hex c ^ "\n")
-      | "log", [] ->
-          (* newest first, each commit once; the same dates (tiny-kernel's
-           * are all 0: no clock) in the order reached, breadth first
-           * (old: a commit's parents before the commits waiting, so a
-           * branch's first commit came before its second) *)
-          let seen = Hashtbl.create 64 in
-          let rec go = function
-            | [] -> ()
-            | hs ->
-                let hs =
-                  List.sort (fun a b -> compare (commit r b).date (commit r a).date)
-                    hs
-                in
-                let h = List.hd hs in
-                let c = commit r h in
-                Hashtbl.add seen h ();
-                print (short h ^ " " ^ c.author ^ " " ^ first_line c.msg ^ "\n");
-                go (List.tl hs
-                    @ List.filter (fun p ->
-                        not (Hashtbl.mem seen p) && not (List.mem p (List.tl hs)))
-                        c.parents) in
-          go (Option.to_list (tip r))
-      | "branch", [] ->
-          List.iter (fun (b, h) ->
-            print ((if b = s.current then "*" else " ") ^ " " ^ b ^ " "
-                   ^ short h ^ "\n")) s.branches
-      | "branch", [ b ] ->
-          if List.mem_assoc b s.branches then
-            error (Printf.sprintf "branch %s exists" b);
-          (match tip r with
-           | Some h -> record r ("branch " ^ b) ((b, h) :: s.branches)
-           | None -> error "no commit yet")
-      | "switch", [ b ] ->
-          clean r;
-          let h =
-            match List.assoc_opt b s.branches with
-            | Some h -> h
-            | None -> error ("no branch " ^ b)
-          in
-          checkout r (Option.map (fun c -> (commit r c).tree) (tip r))
-            (commit r h).tree;
-          record_at r b ("switch " ^ b) s.branches
-      | "merge", [ b ] -> (
-          clean r;
-          let theirs =
-            match List.assoc_opt b s.branches with
-            | Some h -> h
-            | None -> error ("no branch " ^ b)
-          in
-          let ours =
-            match tip r with Some h -> h | None -> error "no commit yet"
-          in
-          match lca r ours theirs with
-          | Some base when base = theirs -> print "already merged\n"
-          | Some base when base = ours ->
-              checkout r (Some (commit r ours).tree) (commit r theirs).tree;
-              record r (Printf.sprintf "merge %s (fast-forward)" b)
-                ((s.current, theirs) :: List.remove_assoc s.current s.branches);
-              print ("fast-forward to " ^ short theirs ^ "\n")
-          | base ->
-              let es, conflicts =
-                merge_trees r (tree_of_commit r base)
-                  (tree_of_commit r (Some ours))
-                  (tree_of_commit r (Some theirs)) ""
-              in
-              let t = put r (Tree es) in
-              let c =
-                put r (Commit { tree = t; parents = [ ours; theirs ];
-                                date = now caps; author = author caps;
-                                msg = Printf.sprintf "merge %s\n" b })
-              in
-              checkout r (Some (commit r ours).tree) t;
-              record r ("merge " ^ b)
-                ((s.current, c) :: List.remove_assoc s.current s.branches);
-              List.iter (fun p -> print (Printf.sprintf "conflict: %s\n" p))
-                conflicts;
-              print (s.current ^ ": " ^ hex c ^ "\n"))
-      | "ops", [] ->
-          let rec go h =
-            let o = match get r h with Op o -> o | _ -> error "bad op" in
-            print (short h ^ " " ^ o.what ^ "\n");
-            Option.iter go o.prev in
-          go (head r)
-      | "undo", [] ->
-          (* back to the state before; the work tree follows when clean *)
-          let prev =
-            match s.prev with Some p -> p | None -> error "nothing to undo"
-          in
-          let before = match get r prev with Op o -> o | _ -> error "bad op" in
-          let old_tree = Option.map (fun c -> (commit r c).tree) (tip r) in
-          let back =
-            match List.assoc_opt before.current before.branches with
-            | Some c -> Some (commit r c).tree
-            | None -> None
-          in
-          if Some (snapshot r) = old_tree || old_tree = None then
-            (match back with Some t -> checkout r old_tree t | None -> ());
-          record_at r before.current ("undo " ^ s.what) before.branches;
-          print (Printf.sprintf "undid: %s\n" s.what)
-      | "pull", [ src ] -> (
-          clean r;
-          let sr = load caps (Fpath.v src) in
-          let st =
-            match get sr (head sr) with Op o -> o | _ -> error "bad head" in
-          let theirs =
-            match List.assoc_opt s.current st.branches with
-            | Some h -> h
-            | None -> error (src ^ " has no branch " ^ s.current)
-          in
-          copy sr r theirs;
-          let with_ours c =
-            (s.current, c) :: List.remove_assoc s.current s.branches
-          in
-          match tip r with
-          | None ->
-              checkout r None (commit r theirs).tree;
-              record r ("pull " ^ src) (with_ours theirs)
-          | Some ours ->
-              (match lca r ours theirs with
-               | Some b when b = theirs ->
-                   print "up to date\n";
-                   record r ("pull " ^ src) s.branches
-               | Some b when b = ours ->
-                   checkout r (Some (commit r ours).tree) (commit r theirs).tree;
-                   record r ("pull " ^ src) (with_ours theirs);
-                   print ("fast-forward to " ^ short theirs ^ "\n")
-               | _ ->
-                   record r ("pull " ^ src)
-                     (("pulled/" ^ s.current, theirs) :: s.branches);
-                   print (Printf.sprintf "diverged: merge pulled/%s\n" s.current)))
-      | "push", [ dst ] ->
-          let dr = load caps (Fpath.v dst) in
-          let dst_state =
-            match get dr (head dr) with Op o -> o | _ -> error "bad head" in
-          let ours =
-            match tip r with Some h -> h | None -> error "no commit yet"
-          in
-          (match List.assoc_opt s.current dst_state.branches with
-           | Some theirs when not (Hashtbl.mem (ancestors r ours) theirs) ->
-               error "not a fast-forward: pull first"
-           | _ -> ());
-          copy r dr ours;
-          save dr
-            { prev = Some (head dr);
-              odate = now caps; what = "push from " ^ !!(r.root);
-              current = dst_state.current;
-              branches =
-                (s.current, ours)
-                :: List.remove_assoc s.current dst_state.branches };
-          print (s.current ^ ": " ^ short ours ^ "\n")
-      | "show", [ path ] ->
-          (* a file of the tip *)
-          let rec find es = function
-            | [ n ] ->
-                (match List.assoc_opt n es with
-                 | Some (File h) -> blob r h
-                 | Some (Exec h) -> blob r h
-                 | Some (Conflict c) -> blob r c.text
-                 | _ -> error ("no file " ^ path))
-            | n :: rest ->
-                (match List.assoc_opt n es with
-                 | Some (Dir h) -> find (tree r h) rest
-                 | _ -> error ("no file " ^ path))
-            | [] -> error "no file" in
-          print (find (tree_of_commit r (tip r)) (String.split_on_char '/' path))
+      | "status", [] -> status r
+      | "diff", ([] | [ _ ] | [ _; _ ]) -> diff r rest
+      | "commit", [ "-m"; msg ] -> new_commit r s msg
+      | "log", [] -> log r
+      | "branch", [] -> list_branches r s
+      | "branch", [ b ] -> new_branch r s b
+      | "switch", [ b ] -> switch r s b
+      | "merge", [ b ] -> merge r s b
+      | "ops", [] -> ops r
+      | "undo", [] -> undo r s
+      | "pull", [ src ] -> pull r s src
+      | "push", [ dst ] -> push r s dst
+      | "show", [ path ] -> show r path
       | _ ->
           error ("usage: tiny-vcs init|status|diff|commit -m msg|log|branch [b]\n"
                  ^ "  |switch b|merge b|ops|undo|clone src dst|pull src|push dst\n"
                  ^ "  |show path"))
   | [] -> error "usage: tiny-vcs CMD   (-h: how)"
 
-let main (caps : caps) (argv : string array) : Exit.t =
-  try run caps (List.tl (Array.to_list argv)); Exit.OK
+let main (caps : < caps; .. >) (argv : string array) : Exit.t =
+  try run (caps :> caps) (List.tl (Array.to_list argv)); Exit.OK
   with Error m -> Exit.Err m
 
-let () = TSys.main "tiny-vcs" (fun caps -> main (caps :> caps))
+let () = TSys.main "tiny-vcs" main

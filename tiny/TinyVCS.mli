@@ -159,13 +159,14 @@
  *    algorithm, diffreg.c) where this file has Myers'
  *)
 
+(* the capabilities a command needs: a repository is opened with them
+ * and keeps them, for its files; output is printed with them *)
+type caps =
+  < Cap.open_in; Cap.open_out; Cap.stdout; Cap.env; Cap.readdir; Cap.clock >
+
 (* a command and its arguments, done in the repository found from the
  * current directory: init, commit, log, diff, switch, merge, undo... *)
-val run :
-  < Cap.env; Cap.open_in; Cap.open_out; Cap.stdout; Cap.readdir; Cap.clock > ->
-  string list -> unit
+val run : caps -> string list -> unit
 
 (* the program: its arguments (its name first; -h: how) to how it ends *)
-val main :
-  < Cap.env; Cap.open_in; Cap.open_out; Cap.stdout; Cap.readdir; Cap.clock > ->
-  string array -> Exit.t
+val main : < caps; .. > -> string array -> Exit.t

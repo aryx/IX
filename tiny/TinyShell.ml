@@ -10,7 +10,7 @@ module TSys = TinyLibSystem
 open Common
 
 (* -h: the usage, and the language by example, as it runs *)
-let help = "usage: tiny-shell [-eiI] [-c cmd | file] [arg ...]
+let help = "usage: tiny-shell [-eiI] [-debug] [-c cmd | file] [arg ...]
 
 A subset of rc's language (mini-rc is rc, faithfully): runs the file, the -c
 command, or the commands typed at a terminal, with a prompt (-i: always).
@@ -30,6 +30,15 @@ The language, by example, one line after the other at its prompt:
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
+
+(* (tiny-ml's; ppx_deriving and mini-ml derive the real one, after the
+ * types: -debug says each command's tree by it) *)
+let show_cmd _ = "NO DERIVING"
+[@@warning "-32"]
+
+(* a file descriptor, TSys.fd, an int: written int here so that its
+ * printer is derived, which the tree's printer calls *)
+type fd = int [@@deriving show]
 
 type piece =
   | Lit of string * bool     (* text, quoted *)
@@ -57,21 +66,27 @@ and cmd =
   | Fn of string * cmd
   | Assign of string * word list * cmd option   (* x=v, or x=v cmd *)
 
-and redir = Open of int * mode * word | Dup of int * int
+and redir = Open of fd * mode * word | Dup of fd * fd
 
 (* < > >> *)
 (* old: the Unix.open_flag list itself, which said the kind only to open *)
 and mode = Read | Write | Append
+[@@deriving show]
+
+(* rc's one kind of value: a variable's, a word's, $*, a command's
+ * output; never split again *)
+type value = string list
 
 exception Error of string
 (* (not Exit: that is the standard library's, and tiny-ml has one space of
  * names) *)
 exception Exits of string
 
+(* what running a command asks for; the functions that ask more say so
+ * after it, < caps; Cap.stdin; .. > *)
 type caps =
-  < Cap.forkew; Cap.chdir; Cap.open_in; Cap.open_out;
-    Cap.stdin; Cap.stderr; Cap.stdout;
-    Cap.exit; Cap.pipe; Cap.signal; Cap.env; Cap.readdir >
+  < Cap.forkew; Cap.chdir; Cap.open_in; Cap.open_out; Cap.pipe;
+    Cap.readdir; Cap.stdout; Cap.stderr; Cap.exit >
 
 (*****************************************************************************)
 (* Lexing *)
@@ -410,21 +425,21 @@ let glob (caps : < Cap.open_in; Cap.readdir; .. >) (w : string) : string list =
 (* Variables and statuses *)
 (*****************************************************************************)
 
-let vars : (string, string list) Hashtbl.t = Hashtbl.create 64
+let vars : (string, value) Hashtbl.t = Hashtbl.create 64
 let fns : (string, cmd) Hashtbl.t = Hashtbl.create 16
 
-let get x =
+let get x : value =
   let find x = Hashtbl.find_opt vars x ||| [] in
   match int_of_string_opt x with
   | Some n when n > 0 ->
       (match List.nth_opt (find "*") (n - 1) with Some v -> [ v ] | None -> [])
   | _ -> find x
 
-let set x v =
+let set x (v : value) =
   if v = [] then Hashtbl.remove vars x else Hashtbl.replace vars x v
 
-let status () = String.concat "" (get "status")
-let set_status s = set "status" [ s ]
+let status () : TSys.status = String.concat "" (get "status")
+let set_status (s : TSys.status) = set "status" [ s ]
 
 (* [protect f finally]: f, then finally, whether f ends or raises
  * (Fun.protect's, without its label) *)
@@ -439,10 +454,10 @@ let local x v f =
   protect f (fun () -> set x old)
 
 (* true when all its parts are: "", "0|", "|" *)
-let truth s = String.for_all (fun c -> c = '0' || c = '|') s
+let truth (s : TSys.status) = String.for_all (fun c -> c = '0' || c = '|') s
 
 (* an exit code: rc's, the leading number, or 1 *)
-let code s =
+let code (s : TSys.status) =
   if truth s then 0
   else
     match int_of_string_opt (List.hd (String.split_on_char '|' s)) with
@@ -462,7 +477,7 @@ let wait caps (pid : TSys.pid) : TSys.status =
     TSys.eprint caps (string_of_int pid ^ ": " ^ s ^ "\n");
   s
 
-let die (caps : < Cap.stderr; .. >) m =
+let die (caps : < Cap.stderr; .. >) m : TSys.status =
   TSys.eprint caps ("tiny-shell: " ^ m ^ "\n"); "error"
 
 (* f in a child, which exits with the status it leaves; Error when
@@ -500,13 +515,13 @@ let exec (caps : < Cap.exec; Cap.stderr; .. >) (argv : string list) =
   TSys.eprint caps (name ^ ": " ^ why ^ "\n");
   TSys.exit caps (Exit.Code 1)
 
+(* a redirection's target: a file opened, or another fd *)
+type target = To_file of Fpath.t * mode | To_fd of TSys.fd
+
 (* [with_fds changes f]: each fd changed (the file, or another fd), f
  * run, then each fd put back *)
-(* a redirection's target: a file opened, or another fd *)
-type target = To_file of string * mode | To_fd of TSys.fd
-
 let with_fds (caps : < Cap.open_in; Cap.open_out; .. >)
-    (changes : (int * target) list) f =
+    (changes : (TSys.fd * target) list) f =
   TSys.flush caps;
   let saved = List.map (fun (n, _) -> n, TSys.save n) changes in
   let restore () =
@@ -524,10 +539,10 @@ let with_fds (caps : < Cap.open_in; Cap.open_out; .. >)
         let f =
           try
             (match mode with
-             | Read -> TSys.open_in caps (path file)
-             | Write -> TSys.open_out caps (path file)
-             | Append -> TSys.open_append caps (path file))
-          with Failure m -> raise (Error (file ^ ": " ^ m)) in
+             | Read -> TSys.open_in caps file
+             | Write -> TSys.open_out caps file
+             | Append -> TSys.open_append caps file)
+          with Failure m -> raise (Error (Fpath.to_string file ^ ": " ^ m)) in
         TSys.dup2 f n;
         TSys.close f
   in
@@ -543,11 +558,11 @@ let into caps w r f =
 (* Evaluation *)
 (*****************************************************************************)
 
-let background = ref []
+let background : TSys.pid list ref = ref []
 let eflag = ref false
 
 (* a list joined to another: distributing, or pairwise *)
-let join (a : string list) (b : string list) : string list =
+let join (a : value) (b : value) : value =
   match a, b with
   | [], _ | _, [] -> raise (Error "null list in concatenation")
   | [ x ], l -> List.map (fun y -> x ^ y) l
@@ -555,13 +570,10 @@ let join (a : string list) (b : string list) : string list =
   | l1, l2 when List.length l1 = List.length l2 -> List.map2 ( ^ ) l1 l2
   | _ -> raise (Error "mismatched list lengths in concatenation")
 
-(* e: -e applies here, not in a condition *)
-(* old: a global count of the conditions being run, still raised in a
- * function called from one: its failures were ignored *)
-let rec run
-    (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.chdir; Cap.open_in; Cap.open_out;
-             Cap.stderr; Cap.stdout; Cap.exit; Cap.pipe; Cap.readdir; .. >)
-    (e : bool) (c : cmd) : unit =
+(* [run caps e c]: c run; e, whether -e applies here: not in a
+ * condition (old: a global count of the conditions being run, still
+ * raised in a function called from one: its failures were ignored) *)
+let rec run (caps : < caps; .. >) (e : bool) (c : cmd) : unit =
   let run = run caps e and cond = run caps false and words = words caps in
   match c with
   | Empty -> ()
@@ -691,11 +703,12 @@ and redirs caps rs =
     | Dup (a, b) -> a, To_fd b
     | Open (n, mode, w) -> (
         match words caps [ w ] with
-        | [ file ] -> n, To_file (file, mode)
+        | [ "" ] -> raise (Error ": no file name")
+        | [ file ] -> n, To_file (Fpath.v file, mode)
         | _ -> raise (Error "a redirection needs one file")))
 
 (* a word's values, escaped where not to glob *)
-and word caps (w : word) : string list =
+and word caps (w : word) : value =
   let piece = function
     | Lit (s, quoted) -> [ if quoted then escape s else s ]
     | Var x -> List.map escape (get x)
@@ -718,7 +731,7 @@ and word caps (w : word) : string list =
   | first :: rest ->
       List.fold_left (fun acc p -> join acc (piece p)) (piece first) rest
 
-and words caps (ws : word list) : string list =
+and words caps (ws : word list) : value =
   List.concat_map (fun w -> List.concat_map (glob caps) (word caps w)) ws
 
 (*****************************************************************************)
@@ -726,12 +739,17 @@ and words caps (ws : word list) : string list =
 (*****************************************************************************)
 
 (* the commands of a text, each run once it is read *)
-let source caps (text : string) =
+(* a command parsed, its tree said (-debug) *)
+let parsed (c : cmd) =
+  Logs.debug (fun m -> m "%s" (show_cmd c));
+  c
+
+let source (caps : < caps; .. >) (text : string) =
   let p = { lx = { text; pos = 0 }; ahead = None } in
   let rec loop () =
     skipnl p;
     if peek p <> EOF then
-      (run caps true (body p (fun t -> t = NL || t = EOF)); loop ())
+      (run caps true (parsed (body p (fun t -> t = NL || t = EOF))); loop ())
   in
   loop ()
 
@@ -739,10 +757,7 @@ let source caps (text : string) =
  * line that leaves the parser at the end of the text, in a brace or a
  * quote, is continued, prompted by a tab; an interrupt is only for the
  * program running *)
-let interactive
-    (caps : < Cap.forkew; Cap.chdir; Cap.open_in; Cap.open_out;
-             Cap.stdin; Cap.stderr; Cap.stdout; Cap.exit; Cap.pipe; Cap.signal;
-             Cap.readdir; .. >) =
+let interactive (caps : < caps; Cap.stdin; Cap.signal; .. >) =
   TSys.ignore_interrupt caps;
   let buf = Buffer.create 80 in
   let rec loop () =
@@ -757,7 +772,7 @@ let interactive
         (* an error at the text's end: the command goes on, on the next
          * line *)
         (match
-           (try Some (body p (( = ) EOF))
+           (try Some (parsed (body p (( = ) EOF)))
             with Error m ->
               if p.lx.pos < String.length text then
                 (Buffer.clear buf; set_status (die caps m));
@@ -774,13 +789,16 @@ let interactive
   in
   loop ()
 
-let start (caps : < caps; .. >) (argv : string array) : Exit.t =
+let start (caps : < caps; Cap.stdin; Cap.signal; Cap.env; .. >)
+    (argv : string array) : Exit.t =
   (* the environment, with rc's lists split back *)
   TSys.environment caps
   |> List.iter (fun (k, v) -> set k (String.split_on_char '\001' v));
   set "pid" [ string_of_int (TSys.getpid caps) ];
   let iflag = ref false in
   let rec flags = function
+    | ("-v" | "-debug" | "-quiet" as a) :: rest ->
+        ignore (TSys.logging [ a ]); flags rest
     | a :: rest
       when String.length a > 1 && a.[0] = '-'
            && String.for_all (fun c -> String.contains "-eIi" c) a ->
@@ -796,15 +814,16 @@ let start (caps : < caps; .. >) (argv : string array) : Exit.t =
   let st =
     try
       (match flags (List.tl (Array.to_list argv)) with
-       | Some text -> source (caps :> caps) text
-       | None -> interactive (caps :> caps));
+       | Some text -> source caps text
+       | None -> interactive caps);
       status ()
     with Exits s -> s | Error m -> die caps m | Failure m -> die caps m
   in
   TSys.flush caps;
   ending st
 
-let main (caps : < caps; .. >) (argv : string array) : Exit.t =
+let main (caps : < caps; Cap.stdin; Cap.signal; Cap.env; .. >)
+    (argv : string array) : Exit.t =
   match Array.to_list argv with
   | [ _; ("-h" | "--help") ] -> TSys.print caps help; Exit.OK
   | _ -> start caps argv

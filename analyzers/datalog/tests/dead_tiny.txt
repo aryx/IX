@@ -78,3 +78,9 @@ tiny/TinyMachine.ml:645: dead: TinyMachine:fun at line 645, nothing names it
 tiny/TinyMachine/TinyMachineISA.ml:148: dead: TinyMachineISA.show_item/1, nothing names it
 tiny/TinyMachine/TinyMachineISA.ml:157: dead: TinyMachineISA.show_target, nothing names it
 tiny/TinyMachine/TinyMachineISA.ml:158: dead: TinyMachineISA.show_place, nothing names it
+tiny/TinyShell.ml:104: dead: TinyShell.show_piece, nothing names it
+tiny/TinyShell.ml:108: dead: TinyShell.show_word, nothing names it
+tiny/TinyShell.ml:116: dead: TinyShell.show_redir, nothing names it
+tiny/TinyShell.ml:120: dead: TinyShell.show_mode, nothing names it
+tiny/TinyShell.ml:36: dead: TinyShell.show_cmd/1, nothing names it
+tiny/TinyShell.ml:42: dead: TinyShell.show_fd, nothing names it

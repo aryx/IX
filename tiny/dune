@@ -17,6 +17,8 @@
  (public_names tiny-shell tiny-editor tiny-utils)
  (package ix)
  (modules TinyShell TinyEditorLine TinyUtilities)
+ ; (the shell's tree, said by -debug)
+ (preprocess (per_module ((pps ppx_deriving.show) TinyShell)))
  (libraries ix_core fpath unix caps tiny_lib_system tiny_lib_regex))
 
 (executable

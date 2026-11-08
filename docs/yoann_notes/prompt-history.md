@@ -65943,3 +65943,58 @@ Claude switched hash printing and reading in TinyVCS to the typed `hex` and `of_
 Claude re-recorded the bugs baseline, which shifted four lines rather than one, and checked those moves by hand.
 Claude also checked `diff` output with a typed hash and noted the `.mli` needs no edit, since the on-disk format is unchanged.
 Claude then committed the changes.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 17:53
+
+**Yoann:**
+
+> ok, I like the recent changes we did on TinyBuildSystem. I also like TinyBuildSystem has a good example of the tiny spirit with a useful program, keeping core ideas, and even giving cool twist like the sha1 stamp that actually with very few lines allow to fix many issues in make/mk. Could we do similar things for the ohter TinyPrograms? Use better types, Fpath.t, type aliases to improve readability, cool twist, improving comments, etc. ? Maybe starting with TinyShell.ml and .mli ? What do you think?
+
+**Claude (summary):**
+
+Claude agreed TinyBuildSystem's content-stamp twist is worth repeating in the other tiny programs.
+Claude read TinyShell's `.mli` and judged it already in good shape.
+Claude then began reading the `.ml`, starting with its types and top-level definitions.
+Claude's answer ended there, before any concrete changes were proposed or applied.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 18:01
+
+**Yoann:**
+
+> yes, and let's do also 5. Also why interactive is repeating what is in caps? or the list is slightly different than caps? maybe we could factorize by having caps being a type alias for the core subset of needed caps, and then a few function doing < caps; xxx; yyy; ... > so we see what is needed more than the core caps
+
+------------------------------------------------------------------------
+
+## 2026-11-08 18:03
+
+**Yoann:**
+
+> Also the "twist" you proposed is not a twist but a debugging help that is useful (and easier now with the deriving and -debug). I wish we had a better twist for tiny-shell, a cool feature that simplifies things and is also cool, like the use of sha1 stamps in TinyBuildSystem. But maybe it's too hard to find one for TinyShell? (or maybe a cool capability system ala shill? just thinking out loud as an idea but maybe you can find better)
+
+------------------------------------------------------------------------
+
+## 2026-11-08 18:04
+
+**Yoann:**
+
+> also you can use Cap.forkew; as an alias, since those 3 caps (fork, exec, wait) are often needed together)
+
+------------------------------------------------------------------------
+
+## 2026-11-08 18:04
+
+**Yoann:**
+
+> dunno if we want something similar for the open_xxx and stdxxx (or maybe not)
+
+------------------------------------------------------------------------
+
+## 2026-11-08 18:04
+
+**Yoann:**
+
+> you can defined a show maybe for fd

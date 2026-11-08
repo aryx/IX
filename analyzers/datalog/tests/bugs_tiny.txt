@@ -60,7 +60,7 @@ tiny/TinyMachine/TinyMachineDevices.ml:751: stack: place calls itself, not a tai
 tiny/TinyMachine/TinyMachineDevices.ml:831: int31: in until, 0x40000000: not on the Pi 1's 31 bits
 tiny/TinyMachine/TinyMachineDevices.ml:836: int31: in TinyMachineDevices.calm, 0x40000000: not on the Pi 1's 31 bits
 tiny/TinyMachine/TinyMachineSocket.ml:59: swallowed: in TinyMachineSocket.relay, Unix.Unix_error silenced, a constant answered
-tiny/TinyShell.ml:262: evalorder: operands at 262:8 and 262:19, both with an effect: their order the compiler's
+tiny/TinyShell.ml:576: evalorder: operands at 576:21 and 576:32, both with an effect: their order the compiler's
 tiny/TinyVCS.ml:478: stack: groups calls itself, not a tail call, over a list
 tiny/TinyVCS.ml:561: order: in TinyVCS.lca, a table's order reaches the output at tiny/TinyVCS.ml:716, tiny/TinyVCS.ml:775
 tiny/TinyVCS.ml:725: evalorder: operands at 725:20 and 725:46, both with an effect: their order the compiler's

@@ -128,16 +128,17 @@
  * shells/rc, rc's C, which mini-rc follows and this file knows only
  * through mini-rc. *)
 
-(* what the shell asks for *)
+(* what running a command asks for; the program asks more: a terminal
+ * (stdin, an interrupt's signal) and the environment *)
 type caps =
-  < Cap.forkew; Cap.chdir; Cap.open_in; Cap.open_out;
-    Cap.stdin; Cap.stderr; Cap.stdout;
-    Cap.exit; Cap.pipe; Cap.signal; Cap.env; Cap.readdir >
+  < Cap.forkew; Cap.chdir; Cap.open_in; Cap.open_out; Cap.pipe;
+    Cap.readdir; Cap.stdout; Cap.stderr; Cap.exit >
 
 (* the commands of a text, each run once it is read: the lexer, the
  * parser and [run] at work, without the command line around them *)
-val source : caps -> string -> unit
+val source : < caps; .. > -> string -> unit
 
 (* the program: its arguments (its name first; -h: the language by
- * example) to how it ends *)
-val main : < caps; .. > -> string array -> Exit.t
+ * example; -debug: each command's tree said) to how it ends *)
+val main :
+  < caps; Cap.stdin; Cap.signal; Cap.env; .. > -> string array -> Exit.t

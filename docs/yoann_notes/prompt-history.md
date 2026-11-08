@@ -65564,3 +65564,35 @@ Claude noticed `TinyBuildSystem.ml` showed uncommitted changes, and found anothe
 Claude planned to make small in-place edits that preserve the other editor's changes, since its own change touched different parts of the file.
 Claude proposed adding a `load` function right before `save` in the file, so the reader comes first.
 Both `load` and `save` need only `Cap.open_in`, so the symmetric pair stays simple.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 15:56
+
+**Yoann:**
+
+> yes you can commit both. Also should we use marshal to factorize even more code for save/load ?
+
+**Claude (summary):**
+
+Claude committed the save/load work as fa62d95e, amending the message to note a moved TinyLinker.ml finding.
+Claude recommended keeping the text format, since Marshal would save only about 12 lines in save and load.
+Claude warned that timestamps near 1.8 billion overflow tiny-ml's 31-bit ints, breaking Marshal's host format.
+Claude warned that a truncated or older Marshal file could crash, losing the text format's skip-and-rebuild recovery.
+Claude argued the readable text shows why targets rebuilt, and cited TinyDatabase.ml:95 dropping Marshal before.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 16:02
+
+**Yoann:**
+
+> I think we should use marshall; It saves LOC and allows to stop inventing a new file format each time. I see the advantage for the teaching aspect and debuggability for having a clear file, but this adds up to many LOC. we did the same for TinyAssembler.ml and I now think it was a mistake. we should use marshall of objects too. For debugging, I think we should use deriving attributes, but we can extend tiny-ml to just parse those attributes and ignore them for now, and have a fake show_xxx in .ml that is then overrident when compiling the tiny .ml with mini-ml or ocaml.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 16:03
+
+**Yoann:**
+
+> that way with deriving we can retaing some of the debuggability, and maybe use a -debug, -v, like we do for the m-ix programs

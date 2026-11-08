@@ -293,8 +293,7 @@ let read_file caps file =
  *
  * The tables are keyed by a node's name, a string and not an Fpath.t,
  * and digest_file takes one too: a name need *not* be a file (all, whose
- * digest is None), the rules match names as text (matches), and known
- * and the stamps are read from and written to .tiny-build as text. An
+ * digest is None), and the rules match names as text (matches). An
  * Fpath.t is made only where TinyLibSystem is called.
  *)
 let file_digests : (string, string option) Hashtbl.t = Hashtbl.create 101
@@ -348,32 +347,30 @@ let stampfile = ".tiny-build"
 (* the recipes run, each with its time in milliseconds (-t) *)
 let times : (string * int) list ref = ref []
 
-(* the stamps of the last build, read from .tiny-build (none when it is
- * missing), and the digests it knew put back in known; a line that is
- * neither is skipped *)
+(* .tiny-build: magic, then the stamps and known, marshalled; without
+ * magic, no stamps (tiny-ml's Marshal stops on bytes it cannot read).
+ * old: text, a line each, read back by hand *)
+let magic = "tiny-build 1\n"
+
+(* the stamps of the last build, the digests it knew put back in known *)
 let load (caps : < Cap.open_in; .. >) : (string, string) Hashtbl.t =
-  let stamps = Hashtbl.create 101 in
-  read_file caps stampfile |> Option.iter (fun s ->
-    String.split_on_char '\n' s |> List.iter (fun l ->
-      match String.split_on_char ' ' l with
-      | [ name; st ] -> Hashtbl.replace stamps name st
-      | [ "file"; name; size; date; d ] ->
-          (match int_of_string_opt size, int_of_string_opt date with
-           | Some s, Some t -> Hashtbl.replace known name (s, t, d)
-           | _ -> ())
-      | _ -> ()));
-  stamps
+  let n = String.length magic in
+  match read_file caps stampfile with
+  | Some s when String.length s >= n && String.sub s 0 n = magic ->
+      let ((stamps, digests) : (string, string) Hashtbl.t
+                               * (string, int * int * string) Hashtbl.t) =
+        Marshal.from_string s n in
+      Hashtbl.iter (Hashtbl.replace known) digests;
+      stamps
+  | _ -> Hashtbl.create 101
 
 (* the stamps and the digests known, written to .tiny-build: after each
  * recipe that ends well, so that a build stopped (killed, the machine
  * halted) keeps what it made (old: at the end only: tiny-kernel's
  * build of itself, stopped after 5 hours, began again from nothing) *)
 let save (caps : < Cap.open_out; .. >) (stamps : (string, string) Hashtbl.t) =
-  let b = Buffer.create 4096 in
-  Hashtbl.iter (fun k v -> Printf.bprintf b "%s %s\n" k v) stamps;
-  Hashtbl.iter (fun k (size, date, d) ->
-    Printf.bprintf b "file %s %d %d %s\n" k size date d) known;
-  TSys.write_file caps (Fpath.v stampfile) (Buffer.contents b)
+  TSys.write_file caps (Fpath.v stampfile)
+    (magic ^ Marshal.to_string (stamps, known) [ Marshal.No_sharing ])
 
 let build
     (caps : < Cap.forkew; Cap.open_in; Cap.open_out;

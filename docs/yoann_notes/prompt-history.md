@@ -65720,3 +65720,93 @@ Claude also planned a matching `design:` paragraph in `TinyLibCore/Stdlib.mli` f
 Yoann's "yes" approves that plan, so Claude's stated next step is to write both paragraphs.
 The change is limited to documentation comments in those two interface files, with no code edits.
 Nothing has been written yet; the answer only described the intended edits.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 17:08
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed the two design paragraphs as aad7a2c7, alongside prompt-history.md.
+Claude kept tiny/TinyBuildSystem.mli out of that commit, since another session is editing it.
+Claude left that modification in the working tree, neither reverting nor committing it.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 17:09
+
+**Yoann:**
+
+> also for TinyLibSystem.mli, "
+>
+> (* A tiny build system. It keeps the idea of make (Stuart Feldman,
+>  * 1976) and mk (Andrew Hume, 1987) -- describe the dependencies between
+>  * files concisely, and maintain them efficiently -- but not their
+>  * language.
+>
+> " I find the end not great; the BuildFile keeps most of the same language than mk really, it's very close, mostly a subset of the core of it
+
+**Claude (summary):**
+
+Claude said the quoted comment is in `TinyBuildSystem.mli`, not `TinyLibSystem.mli`, and planned to fix it there. Claude noted that file has someone else's uncommitted changes, so it would edit only the opening sentence. Claude then began checking the surrounding comment and how close the Buildfile language is to mk's.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 17:12
+
+**Yoann:**
+
+> Is there any repetition and redundancy now in the .mli when reading the whole thing
+
+**Claude (summary):**
+
+Claude identified repetition in the new .mli comment: attributes, archives and options were each stated two or three times across the file.
+Claude proposed fixing it by keeping the opening paragraph to mk's core and content stamps, and moving everything left out into the "does not do" paragraph.
+Claude also planned to cut the syntax listing duplicated between the opening parenthesis and the "five kinds of lines" paragraph.
+Claude suggested moving "The path through this file" below the content-argument paragraph, and relocating the reading-once and racy-files sentences after the stamps paragraph.
+Claude noted the SHA-1 mention and the racy-files explanation in TinyBuildSystem.ml were acceptable, so it left them alone.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 17:12
+
+**Yoann:**
+
+> yes, do 1-4
+
+**Claude (summary):**
+
+Claude said the paragraph "The path through this file is just as short" no longer followed the short propagation example it referred to.
+Claude moved that paragraph so it sat after the stamps paragraph, and started rewording the phrase "just as short."
+Claude was applying four fixes to the file, with the earlier edit as the only pending change.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 17:18
+
+**Yoann:**
+
+> For graph's signature, should we use Fpath.t instead of string for the exists parameter?
+
+**Claude (summary):**
+
+Claude recommended keeping `string` for `graph`'s signature, citing the deliberate choice in `TinyBuildSystem.ml`'s `file_digests` comment.
+Claude argued `graph` works on node names and only the single `exists caps` spot converts them via `Fpath.v` before `TSys.stat`.
+Claude said switching to `Fpath.t` would push conversions into `graph` and its tests, which might be virtual targets like `all`.
+Claude noted the only argument for `Fpath.t` is documentation, and the parameter comment already covers that.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 17:20
+
+**Yoann:**
+
+> I understand a node name must be a string, because of target like all, but here it looks like we are actually passing a function (exists) that check whether the target is actually a file and whether it exists no?
+
+**Claude (summary):**
+
+Claude explained that `exists` is a file-check function, and that switching `graph` to a different representation depends on how many call sites use it and who passes it in. Claude had not yet made any change or commit at that point. The next message asks Claude to go ahead, implement the change, and commit it.

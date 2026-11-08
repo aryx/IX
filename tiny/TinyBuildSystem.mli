@@ -1,11 +1,11 @@
 (* A tiny build system. It keeps the idea of make (Stuart Feldman,
  * 1976) and mk (Andrew Hume, 1987) -- describe the dependencies between
- * files concisely, and maintain them efficiently -- but not their
- * language.
+ * files concisely, and maintain them efficiently -- and most of mk's
+ * language: a Buildfile is a subset of its core.
  *
  * The full-size version in ix, mini-mk (builder/), is a faithful copy
- * of mk; this one is what remains when compatibility is dropped and
- * only the idea is kept.
+ * of mk; this one is what remains when compatibility is dropped: that
+ * core, and a target out of date by its content, not by its time.
  *
  * A Buildfile has five kinds of lines, shown by example in the
  * [help] string of the .ml (which build -h prints along with the
@@ -13,9 +13,7 @@
  * as the lines are read. A recipe receives the variables, plus $target,
  * $prereq and $stem, in its environment (on tiny-kernel, which has
  * none, as the shell's assignments before the recipe), so the shell
- * does the expansion and there is no second expansion language. There
- * are no attributes: a target whose recipe creates no file (clean, all) is
- * simply never up to date.
+ * does the expansion and there is no second expansion language.
  *
  * {b Up to date by content, not by time.} The stamp of each target is
  * a digest of its recipe and of the contents of its prerequisites:
@@ -39,12 +37,6 @@
  * unchanged. The stamp of hello, computed from that digest, is then
  * the same as the one stored in .tiny-build, and hello is up to date.
  *
- * The path through this file is just as short: the lines of the
- * Buildfile become rules ([parse]), the rules become the graph under
- * the target ([graph], which also chooses the pattern rule), the graph
- * becomes a list with prerequisites first ([order]), and the list is
- * turned into recipes run ([build]).
- *
  * The stamps of the last build are stored in .tiny-build; a target is
  * rebuilt when it is missing or when its stamp has changed. This is the
  * "verifying traces" rebuilder of Mokhov, Mitchell and Peyton Jones,
@@ -53,6 +45,18 @@
  * considered "equal", the new timestamps from a git checkout do not
  * trigger any rebuild, and a recipe that regenerates an identical file
  * stops the rebuild there (early cutoff), without mk's cmp -s trick.
+ * A file is read for its digest once a run, and not at all when its
+ * size and date are the ones .tiny-build recorded with its digest, as
+ * git's index does: the date says only "unchanged", never "newer", and
+ * a digest is recorded only for a file dated before the second it was
+ * read in (one written again within it, at the same size, would keep
+ * its date: git's "racy" files).
+ *
+ * The path through this file is short too: the lines of the
+ * Buildfile become rules ([parse]), the rules become the graph under
+ * the target ([graph], which also chooses the pattern rule), the graph
+ * becomes a list with prerequisites first ([order]), and the list is
+ * turned into recipes run ([build]).
  *
  * {b One pass, no re-walk.} mk walks its whole graph again after every
  * job, because the only way to know what a recipe did is to look at
@@ -83,17 +87,13 @@
  * comment to Recipe.ml recompiles only Recipe.ml: its object file comes
  * out identical, so nothing is relinked.
  *
- * What it deliberately does not do, to stay tiny: quoting (names cannot
- * contain blanks), ${X:%.c=%.o} substitutions, a single recipe making
- * several targets at once (a b: c runs the recipe once per target),
- * archives, and mk's -t, -w, -k and -e options. A file is read for its
- * digest once a run, and not at all when its size and date are the
- * ones .tiny-build recorded with its digest, as git's index does: the
- * date says only "unchanged", never "newer", and a digest is recorded
- * only for a file dated before the second it was read in (one written
- * again within it, at the same size, would keep its date: git's "racy"
- * files). A file that has the name of a virtual target
- * (a file called "clean") makes that target look like a real one.
+ * What it deliberately does not do, to stay tiny: mk's attributes (a
+ * target whose recipe creates no file, clean or all, is simply never up
+ * to date, and a file that has its name, a file called "clean", makes
+ * it look like a real one), its regular-expression rules, quoting
+ * (names cannot contain blanks), ${X:%.c=%.o} substitutions, a single
+ * recipe making several targets at once (a b: c runs the recipe once
+ * per target), archives, and mk's -t, -w, -k and -e options.
  *
  * Exercises: add ${X:%.c=%.o}; replace the scan with a count of pending
  * prerequisites per node, and measure the difference; let a recipe
@@ -172,13 +172,13 @@ type node
 
 (* [graph rules exists target]: from a target to its node, and its
  * prerequisites' under it: the rules naming it, or the one pattern rule
- * whose prerequisites can be made; exists says whether a file is there *)
-val graph : rule list -> (string -> bool) -> string -> node
+ * whose prerequisites can be made; exists says whether a file is at a
+ * path (a node's name is a string, since all is no file) *)
+val graph : rule list -> (Fpath.t -> bool) -> string -> node
 
-(* what the program asks for: main is given more (Cap.main's all), its
- * type a row (..) *)
+(* what the program asks for *)
 type caps =
-  < Cap.fork; Cap.exec; Cap.wait; Cap.env; Cap.open_in; Cap.open_out;
+  < Cap.forkew; Cap.env; Cap.open_in; Cap.open_out;
     Cap.readdir; Cap.clock; Cap.stdout; Cap.stderr >
 
 (* the program: its arguments (its name first; -h: how) to how it ends *)

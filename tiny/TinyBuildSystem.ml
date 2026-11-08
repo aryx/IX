@@ -188,8 +188,9 @@ let subst stem (p : string) = String.concat stem (String.split_on_char '%' p)
 
 (* From a target to its node: the rules naming it exactly, merged (at
  * most one with a recipe); if none has a recipe, the one pattern rule
- * whose prerequisites can all be made. *)
-let graph (rules : rule list) (exists : string -> bool) (target : string) :
+ * whose prerequisites can all be made. exists asks the system whether a
+ * file is at a name's path: the name made an Fpath.t there. *)
+let graph (rules : rule list) (exists : Fpath.t -> bool) (target : string) :
     node =
   let memo = Hashtbl.create 101 in
   let exact, patterns =
@@ -234,13 +235,13 @@ let graph (rules : rule list) (exists : string -> bool) (target : string) :
           { name; make;
             deps = List.map (node (name :: path) used) (prereqs @ extra) }
         in
-        if make = Source && n.deps = [] && not (exists name) then
+        if make = Source && n.deps = [] && not (exists (Fpath.v name)) then
           error ("don't know how to make " ^ name);
         Hashtbl.replace memo name n;
         n
   (* can this name be made: a file, or a target of some rule? *)
   and makeable path used name =
-    exists name || List.exists (fun r -> r.target = Exact name) exact
+    exists (Fpath.v name) || List.exists (fun r -> r.target = Exact name) exact
     || List.exists (fun r ->
          not (List.memq r used) && not (List.mem name path)
          && match matches r.target name with
@@ -270,13 +271,12 @@ let order (root : node) : node list =
 
 (* (a target's name is text, matched by the rules and the digests'
  * key: a path at this section's door) *)
-let exists caps file =
-  try ignore (TSys.stat caps (Fpath.v file)); true
-  with Failure _ -> false
+let exists caps (path : Fpath.t) =
+  try ignore (TSys.stat caps path); true with Failure _ -> false
 
 let read_file caps file =
-  if exists caps file then Some (TSys.read_file caps (Fpath.v file))
-  else None
+  let path = Fpath.v file in
+  if exists caps path then Some (TSys.read_file caps path) else None
 
 (* A file's digest, the SHA-1 of its bytes, read once in a run
  * (file_digests), and not at all when its size and date are the ones
@@ -306,7 +306,7 @@ let digest_file (caps : < Cap.open_in; Cap.readdir; .. >) (file : string) :
   | None ->
       let path = Fpath.v file in
       let d =
-        if exists caps file && not (TSys.is_directory caps path)
+        if exists caps path && not (TSys.is_directory caps path)
         then begin
           let (st : TSys.stat) = TSys.stat caps path
           and date = TSys.mtime caps path in

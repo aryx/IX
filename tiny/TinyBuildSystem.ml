@@ -1,12 +1,14 @@
 (* Claude Code
- * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
-
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+ *
+ * See TinyBuildSystem.mli
+ *)
 module TSys = TinyLibSystem
 
-(* See TinyBuildSystem.mli *)
+let usage =
+  "usage: tiny-build [-f file] [-j N] [-n] [-g] [-t] [target ...]   (-h: how)"
 
-(* -h: the usage, and a Buildfile's five kinds of lines, by example, as
- * it runs *)
+(* -h: the usage, and a Buildfile's five kinds of lines, by example *)
 let help = {|usage: tiny-build [-f Buildfile] [-j N] [-n] [-g] [-t] [target ...]
 
 The targets out of date remade, by the rules of the Buildfile (-f: another),
@@ -64,15 +66,11 @@ let target_of (s : string) : target =
 let show_target = function Exact s -> s | Pattern (pre, suf) -> pre ^ "%" ^ suf
 
 exception Error of string
-
-(* (old: a format, Printf.ksprintf's: tiny-ml reads a format only where
- * it is written, Printf.sprintf at the call) *)
 let error s = raise (Error s)
 
 type caps =
   < Cap.forkew; Cap.env; Cap.open_in; Cap.open_out;
     Cap.readdir; Cap.clock; Cap.stdout; Cap.stderr >
-
 
 (*****************************************************************************)
 (* Reading a Buildfile *)
@@ -466,8 +464,6 @@ let build
 (* Entry point *)
 (*****************************************************************************)
 
-let usage =
-  "usage: tiny-build [-f file] [-j N] [-n] [-g] [-t] [target ...]   (-h: how)"
 exception Bad of string
 
 (* -t, at the end: the times by kind of target: its

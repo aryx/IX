@@ -17,6 +17,17 @@ type caps =
   < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdin; Cap.stdout; Cap.stderr;
     Cap.kill; Cap.clock; Cap.exit; Cap.env >
 
+(* what each utility asks, said by it: the table says what each may do
+ * (one that only prints, < Cap.stdout; .. >; one that changes files,
+ * < Cap.stderr; Cap.open_out; .. >, said only when it fails). A
+ * filter's: its files read, or the standard input, printed, and what
+ * failed said *)
+type filter = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr >
+
+(* a utility's exit status: 0 when it went well (a number, not an
+ * Exit.t: test's answer is one) *)
+type status = int
+
 (* raised by a utility given arguments it does not take: the driver
  * then prints the utility's usage *)
 exception Usage
@@ -98,22 +109,22 @@ let lines (c : Chan.i) f =
 let named name g = try g () with Failure m -> failwith (name ^ ": " ^ m)
 
 (* [each_input caps tool files f]: f on each file's channel (with its
- * name), or on the standard input's ("") when there is none; one that
+ * name), or on the standard input's (None) when there is none; one that
  * fails is said, "name: reason" (an open's already names its file),
  * and the status is then 1 *)
-let each_input caps tool files (f : string -> Chan.i -> unit) =
+let each_input caps tool files (f : string option -> Chan.i -> unit) : status =
   let one status run =
     try run (); status with Failure m -> complain caps tool m; 1 in
   if files = [] then
-    one 0 (fun () -> named "stdin" (fun () -> f "" (TSys.stdin caps)))
+    one 0 (fun () -> named "stdin" (fun () -> f None (TSys.stdin caps)))
   else
     List.fold_left (fun status file ->
       one status (fun () ->
         let p = named file (fun () -> path file) in
         TSys.with_open_in caps
-          (fun c -> named file (fun () -> f file c)) p)) 0 files
+          (fun c -> named file (fun () -> f (Some file) c)) p)) 0 files
 
-let cat caps args =
+let cat (caps : < filter; .. >) args =
   let _, files = options "" args in
   each_input caps "cat" files (fun _ c ->
     pieces c (fun s -> print caps s; TSys.flush caps))
@@ -138,7 +149,7 @@ let count c s =
   done;
   c.bytes <- c.bytes + String.length s
 
-let wc caps args =
+let wc (caps : < filter; .. >) args =
   let asked, files = options "lwc" args in
   let asked = if asked = [] then [ 'l'; 'w'; 'c' ] else asked in
   let report c name =
@@ -147,7 +158,7 @@ let wc caps args =
         [ 'l', c.lines; 'w', c.words; 'c', c.bytes ] in
     let columns = List.map (fun (_, n) -> Printf.sprintf "%7d" n) columns in
     print caps
-      (String.concat " " (columns @ (if name = "" then [] else [ name ]))
+      (String.concat " " (columns @ Option.to_list name)
        ^ "\n") in
   let total = counts () and files_counted = ref 0 in
   let status =
@@ -159,7 +170,7 @@ let wc caps args =
       total.lines <- total.lines + c.lines;
       total.words <- total.words + c.words;
       total.bytes <- total.bytes + c.bytes) in
-  if !files_counted > 1 then report total "total";
+  if !files_counted > 1 then report total (Some "total");
   status
 
 (* the text from its nth line from the end, or from its nth line (+n).
@@ -188,7 +199,7 @@ let lines_of from_end n s =
     end in
   String.sub s start (len - start)
 
-let tail caps args =
+let tail (caps : < filter; .. >) args =
   let from_end, n, files =
     match args with
     | "-n" :: n :: rest -> true, n, rest
@@ -201,7 +212,7 @@ let tail caps args =
         print caps (lines_of from_end n (In_channel.input_all c.ic)))
   | _ -> raise Usage
 
-let tee caps args =
+let tee (caps : < Cap.stdout; Cap.stderr; Cap.stdin; Cap.open_out; .. >) args =
   let _, files = options "" args in
   let status = ref 0 in
   let fds =
@@ -232,7 +243,7 @@ let character c =
  * last one filled with zeros), or each byte (-b), or each character
  * (-c). The bytes of a line not yet complete are kept from one piece to
  * the next *)
-let xd caps args =
+let xd (caps : < filter; .. >) args =
   let flags, files = options "bc" args in
   let size, show =
     if List.mem 'c' flags then 1, (fun g -> character g.[0])
@@ -269,7 +280,7 @@ let xd caps args =
 (* the lines that match; -v: that do not; -i: whatever the letters'
  * case; -n: with their numbers; -c: how many; -l: the files' names.
  * The status is 0 when a line was found *)
-let grep caps args =
+let grep (caps : < filter; .. >) args =
   let flags, rest = options "vincl" args in
   match rest with
   | [] -> raise Usage
@@ -280,6 +291,7 @@ let grep caps args =
       let found = ref false in
       let status =
         each_input caps "grep" files (fun name c ->
+          let name = match name with Some n -> n | None -> "" in
           let count = ref 0 and number = ref 0 in
           lines c (fun line ended ->
             incr number;
@@ -332,7 +344,7 @@ let from_field k line =
  * reversed; -u: one of the lines the order says equal. A line's key is
  * made once, as a pair the sort compares (the line itself after, so
  * that lines the key says equal are in the order of their bytes) *)
-let sort caps args =
+let sort (caps : < filter; .. >) args =
   let flags, rest = options "nru" args in
   let field, files =
     match rest with
@@ -377,7 +389,7 @@ let rec fold caps p f =
 
 (* [each_path caps tool paths f]: f on each path; one that fails is
  * reported, and the status is then 1 *)
-let each_path caps tool paths f =
+let each_path caps tool paths f : status =
   List.fold_left (fun status p ->
     try f p; status
     with Failure m -> complain caps tool (p ^ ": " ^ m); 1) 0 paths
@@ -386,7 +398,7 @@ let each_path caps tool paths f =
  * and quoted for rc. -l: each with its kind (d for a directory), its
  * links (how many names it has: more than one, and the others are the
  * same file) and its size *)
-let ls caps args =
+let ls (caps : < Cap.stdout; Cap.stderr; Cap.open_in; Cap.readdir; .. >) args =
   let flags, paths = options "l" args in
   let names = ref [] in
   let status =
@@ -412,7 +424,8 @@ let ls caps args =
 
 (* every path under a directory (under the current one, without "./",
  * when none is named), a directory before what it has *)
-let walk caps args =
+let walk
+    (caps : < Cap.stdout; Cap.stderr; Cap.open_in; Cap.readdir; .. >) args =
   let _, paths = options "" args in
   let pre p _ _ entries = print caps (p ^ "\n"); ignore (entries ()) in
   if paths = [] then begin List.iter (fun e -> fold caps e pre) (entries caps "."); 0 end
@@ -425,7 +438,7 @@ let walk caps args =
 
 (* the kilobytes under each directory, after what it has; -a: each file
  * too *)
-let du caps args =
+let du (caps : < Cap.stdout; Cap.stderr; Cap.open_in; Cap.readdir; .. >) args =
   let flags, paths = options "a" args in
   let paths = if paths = [] then [ "." ] else paths in
   each_path caps "du" paths (fun root ->
@@ -439,7 +452,8 @@ let du caps args =
          k)))
 
 (* -r: a directory with what it has, its entries first *)
-let rm caps args =
+let rm
+    (caps : < Cap.stderr; Cap.open_in; Cap.readdir; Cap.open_out; .. >) args =
   let flags, paths = options "r" args in
   if paths = [] then raise Usage;
   each_path caps "rm" paths (fun root ->
@@ -449,7 +463,7 @@ let rm caps args =
     else TSys.remove caps (path root))
 
 (* -p: the directories above it too, and no complaint when it is there *)
-let mkdir caps args =
+let mkdir (caps : < Cap.stderr; Cap.readdir; Cap.open_out; .. >) args =
   let flags, dirs = options "p" args in
   if dirs = [] then raise Usage;
   each_path caps "mkdir" dirs (fun dir ->
@@ -471,7 +485,7 @@ let mkdir caps args =
 (* [into_last caps tool paths f]: f from dest for each path but the last,
  * dest being the last path, or the source's name in it when the last
  * is a directory; several sources need a directory *)
-let into_last caps tool paths f =
+let into_last caps tool paths f : status =
   match List.rev paths with
   | dest :: sources when sources <> [] ->
       let into = TSys.is_directory caps (path dest) in
@@ -500,7 +514,9 @@ let resolved caps p =
  * is refused, as Plan 9's cp does: opening the copy would empty the file
  * before it is read. Only the same path is seen; two names of one file
  * (ln) are not. *)
-let cp caps args =
+let cp
+    (caps : < Cap.stderr; Cap.open_in; Cap.open_out; Cap.readdir; Cap.env; .. >)
+    args =
   let _, paths = options "" args in
   into_last caps "cp" paths (fun from dest ->
     let (st : TSys.stat) = TSys.stat caps (path from) in
@@ -519,19 +535,19 @@ let cp caps args =
     TSys.close fd;
     TSys.close src)
 
-let mv caps args =
+let mv (caps : < Cap.stderr; Cap.readdir; Cap.open_out; .. >) args =
   let _, paths = options "" args in
   into_last caps "mv" paths (fun from dest ->
     TSys.rename caps (path from) (path dest))
 
 (* a second name for a file: its bytes are not copied, and a change by
  * one name is seen by the other *)
-let ln caps args =
+let ln (caps : < Cap.stderr; Cap.readdir; Cap.open_out; .. >) args =
   let _, paths = options "" args in
   into_last caps "ln" paths (fun from dest ->
     TSys.link caps (path from) (path dest))
 
-let touch caps args =
+let touch (caps : < Cap.stderr; Cap.open_in; Cap.open_out; .. >) args =
   let _, files = options "" args in
   if files = [] then raise Usage;
   each_path caps "touch" files (fun file ->
@@ -546,7 +562,7 @@ let touch caps args =
  * line, in the scheduler's order; printed by pid, in columns under
  * their names, the numbers to the right, a program by its name alone
  * (-a: its whole command line, as Plan 9's ps -a) *)
-let ps caps args =
+let ps (caps : < filter; .. >) args =
   let flags, files = options "a" args in
   let file =
     match files with [] -> "/dev/ps" | [ f ] -> f | _ -> raise Usage in
@@ -580,7 +596,7 @@ let ps caps args =
   status
 
 (* each process named by its pid ended, as a fault ends one *)
-let kill caps args =
+let kill (caps : < Cap.stderr; Cap.kill; .. >) args =
   if args = [] then raise Usage;
   List.fold_left (fun status a ->
     match int_of_string_opt a with
@@ -591,13 +607,13 @@ let kill caps args =
 (* The rest *)
 (*****************************************************************************)
 
-let pwd caps args =
+let pwd (caps : < Cap.stdout; Cap.env; .. >) args =
   if args <> [] then raise Usage;
   print caps (Fpath.to_string (TSys.getcwd caps) ^ "\n");
   0
 
 (* seconds, and thousandths after a point: sleep .5 *)
-let sleep caps args =
+let sleep (caps : < Cap.clock; .. >) args =
   match args with
   | [ a ] ->
       let point =
@@ -626,7 +642,7 @@ let month_names =
   [ "Jan"; "Feb"; "Mar"; "Apr"; "May"; "Jun";
     "Jul"; "Aug"; "Sep"; "Oct"; "Nov"; "Dec" ]
 
-let date caps args =
+let date (caps : < Cap.stdout; Cap.clock; .. >) args =
   let flags, rest = options "n" args in
   let t =
     match rest with
@@ -675,7 +691,7 @@ let date caps args =
  *
  * The questions kept are those tiny-kernel can answer: it has no
  * permissions and no times *)
-let test caps args =
+let test (caps : < Cap.open_in; .. >) args =
   let rest = ref args in
   let peek () = match !rest with a :: _ -> Some a | [] -> None in
   let next () = match !rest with a :: l -> rest := l; a | [] -> raise Usage in
@@ -736,18 +752,18 @@ let test caps args =
   end
 
 (* test, run as [ expression ] *)
-let bracket caps args =
+let bracket (caps : < Cap.open_in; .. >) args =
   match List.rev args with
   | "]" :: l -> test caps (List.rev l)
   | _ -> raise Usage
 
-let echo caps args =
+let echo (caps : < Cap.stdout; .. >) args =
   let newline, words =
     match args with "-n" :: rest -> false, rest | _ -> true, args in
   print caps (String.concat " " words ^ (if newline then "\n" else ""));
   0
 
-let seq caps args =
+let seq (caps : < Cap.stdout; .. >) args =
   let numbers =
     List.map (fun a ->
       match int_of_string_opt a with Some n -> n | None -> raise Usage) args in
@@ -766,7 +782,7 @@ let seq caps args =
   0
 
 (* the last part of a path, without the suffix; -d: all but the last part *)
-let basename caps args =
+let basename (caps : < Cap.stdout; .. >) args =
   let dir, args =
     match args with "-d" :: rest -> true, rest | _ -> false, args in
   let name, suffix =
@@ -788,7 +804,7 @@ let basename caps args =
  * tiny-kernel) *)
 type compared = Same_bytes | Differ_at of int | Ends_first of string * int
 
-let cmp caps args =
+let cmp (caps : < Cap.stdout; Cap.stderr; Cap.open_in; .. >) args =
   let flags, files = options "s" args in
   match files with
   | [ f1; f2 ] -> begin
@@ -834,46 +850,55 @@ let cmp caps args =
 (* The driver *)
 (*****************************************************************************)
 
-(* each utility: its name, its arguments, what it does, and itself *)
-let utilities =
-  [ "basename", "[-d] name [suffix]", "the last part of a path", basename;
-    "cat", "[file ...]", "the files, one after the other", cat;
-    "[", "expression ]", "test", bracket;
-    "cmp", "[-s] file1 file2", "where two files differ", cmp;
-    "cp", "from to | from ... dir", "files copied", cp;
-    "date", "[-n] [seconds]", "the date, now or of seconds since 2000", date;
-    "du", "[-a] [path ...]", "the kilobytes under each directory", du;
-    "echo", "[-n] [word ...]", "the words", echo;
-    "grep", "[-vincl] pattern [file ...]", "the lines that match", grep;
-    "kill", "pid ...", "processes ended", kill;
-    "ln", "old new | old ... dir", "second names for files", ln;
-    "ls", "[-l] [path ...]", "a directory's entries, sorted", ls;
-    "mkdir", "[-p] dir ...", "new directories", mkdir;
-    "mv", "from to | from ... dir", "files renamed", mv;
-    "ps", "[-a] [file]", "the processes, from /dev/ps", ps;
-    "pwd", "", "the directory the process is in", pwd;
-    "rm", "[-r] path ...", "files removed", rm;
-    "seq", "[first [step]] last", "the numbers from first to last", seq;
-    "sleep", "seconds[.thousandths]", "nothing, for that long", sleep;
-    "sort", "[-nru] [+field] [file ...]", "the lines in order", sort;
-    "tail", "[-n N | -N | +N] [file]", "the last lines, or from line N", tail;
-    "tee", "[file ...]", "the input, to the files too", tee;
-    "test", "expression", "whether it is true, by the status", test;
-    "touch", "file ...", "files written now, or made", touch;
-    "walk", "[path ...]", "every path under a directory", walk;
-    "wc", "[-lwc] [file ...]", "the lines, words and bytes", wc;
-    "xd", "[-b | -c] [file ...]", "the bytes, in hexadecimal", xd ]
+(* a utility: its name, its arguments, what it does, and itself *)
+type utility = {
+  name : string;
+  usage : string;
+  what : string;
+  run : caps -> string list -> status;
+}
 
-let rec find name = function
-  | [] -> None
-  | (n, usage, _, f) :: rest ->
-      if n = name then Some (n, usage, f) else find name rest
+let utility name usage what run = { name; usage; what; run }
+
+let utilities =
+  [ utility "basename" "[-d] name [suffix]" "the last part of a path" basename;
+    utility "cat" "[file ...]" "the files, one after the other" cat;
+    utility "[" "expression ]" "test" bracket;
+    utility "cmp" "[-s] file1 file2" "where two files differ" cmp;
+    utility "cp" "from to | from ... dir" "files copied" cp;
+    utility "date" "[-n] [seconds]"
+      "the date, now or of seconds since 2000" date;
+    utility "du" "[-a] [path ...]" "the kilobytes under each directory" du;
+    utility "echo" "[-n] [word ...]" "the words" echo;
+    utility "grep" "[-vincl] pattern [file ...]" "the lines that match" grep;
+    utility "kill" "pid ..." "processes ended" kill;
+    utility "ln" "old new | old ... dir" "second names for files" ln;
+    utility "ls" "[-l] [path ...]" "a directory's entries, sorted" ls;
+    utility "mkdir" "[-p] dir ..." "new directories" mkdir;
+    utility "mv" "from to | from ... dir" "files renamed" mv;
+    utility "ps" "[-a] [file]" "the processes, from /dev/ps" ps;
+    utility "pwd" "" "the directory the process is in" pwd;
+    utility "rm" "[-r] path ..." "files removed" rm;
+    utility "seq" "[first [step]] last" "the numbers from first to last" seq;
+    utility "sleep" "seconds[.thousandths]" "nothing, for that long" sleep;
+    utility "sort" "[-nru] [+field] [file ...]" "the lines in order" sort;
+    utility "tail" "[-n N | -N | +N] [file]"
+      "the last lines, or from line N" tail;
+    utility "tee" "[file ...]" "the input, to the files too" tee;
+    utility "test" "expression" "whether it is true, by the status" test;
+    utility "touch" "file ..." "files written now, or made" touch;
+    utility "walk" "[path ...]" "every path under a directory" walk;
+    utility "wc" "[-lwc] [file ...]" "the lines, words and bytes" wc;
+    utility "xd" "[-b | -c] [file ...]" "the bytes, in hexadecimal" xd ]
+
+let find name = List.find_opt (fun u -> u.name = name) utilities
 
 let help () =
   "usage: tiny-utils name [arg ...], or name [arg ...] by a link named after it\n"
-  ^ String.concat "" (List.map (fun (n, usage, what, _) ->
-      let u = n ^ " " ^ usage in
-      "  " ^ u ^ String.make (max 1 (32 - String.length u)) ' ' ^ what ^ "\n")
+  ^ String.concat "" (List.map (fun u ->
+      let line = u.name ^ " " ^ u.usage in
+      "  " ^ line ^ String.make (max 1 (32 - String.length line)) ' ' ^ u.what
+      ^ "\n")
       utilities)
 
 (* (each utility's status a number: test's answer is one) *)
@@ -886,17 +911,17 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
          * argument *)
         let called = last_part arg0 in
         let name, args =
-          match find called utilities, args with
+          match find called, args with
           | Some _, _ -> called, args
           | None, n :: rest -> n, rest
           | None, [] -> "", [] in
-        match find name utilities with
-        | Some (n, usage, f) -> begin
-            try f (caps :> caps) args with
+        match find name with
+        | Some u -> begin
+            try u.run (caps :> caps) args with
             | Usage ->
-                TSys.eprint caps ("usage: " ^ n ^ " " ^ usage ^ "\n");
+                TSys.eprint caps ("usage: " ^ u.name ^ " " ^ u.usage ^ "\n");
                 1
-            | Failure m -> complain caps n m; 1
+            | Failure m -> complain caps u.name m; 1
           end
         | None when name = "-h" || name = "--help" ->
             TSys.print caps (help ()); 0

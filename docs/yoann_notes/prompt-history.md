@@ -66098,3 +66098,33 @@ Claude said fn f would set a variable fn#f, giving environment functions and wha
 Claude also proposed $status as a list, such as status=(1 '' 3), replacing rc's piped status string.
 Claude listed costs: reparsing loop bodies, dynamic scope, and errors naming only the block text.
 Claude offered to prototype the block-values idea first and measure its line count before keeping it.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 19:50
+
+**Yoann:**
+
+> no, those are good ideas but not as radical and deep as the sha1 use in TinyBuildSystem. You can put those ideas as one-liner in the exercise section maybe
+
+**Claude (summary):**
+
+Claude placed both ideas as one-liners in the exercise section of tiny/TinyShell.mli, right after the transactional redirection exercise.
+The first one proposed blocks as values, with if, while, for and fn builtins, so functions become plain variables like fn#f.
+The second proposed $status as a list, so a|b|c's status reads (1 '' 3) rather than rc's string 1|3.
+Claude kept both as brief asides rather than the deeper design work Yoann wanted from the sha1 idea in TinyBuildSystem.
+Claude committed the change as e84d7319.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 19:52
+
+**Yoann:**
+
+> ok next program.
+
+**Claude (summary):**
+
+Claude picked TinyUtilities as the next program, since it pairs with the shell.
+Claude pointed out it shares TinyLibSystem and runs both on the host and as tiny-kernel's tools.
+Claude's plan was to read the code first, then propose concrete changes.

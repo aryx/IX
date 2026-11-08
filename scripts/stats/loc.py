@@ -40,11 +40,13 @@
 # rather than the module's own has a tag before it (docs/tags.md:
 # cs-history:, modern:, ...): counted by tag.
 #
-# Usage: scripts/stats/loc.py [-v | -l]
+# Usage: scripts/stats/loc.py [-v | -l | -t]
 #   -v: every subdirectory (kernels/xv6/, lib_core/libc/, ...) and every
 #       tests/ directory rather than one line per program (without -v,
 #       the tests are their total alone, with no line per program)
 #   -l: only today's line for docs/loc.md, the log of those last numbers
+#   -t: only t-ix: tiny/'s rows, its total with and without its header
+#       comments, and what of tiny/ is not counted (tiny/'s make loc)
 #
 # The lines come first, next to the name they count; then the files,
 # the lines of each language (ocaml, c, asm), and the code, comment and
@@ -686,6 +688,22 @@ def main():
 
     print(f"{'lines':>7}  {'':<{WIDTH}}"
           + "".join(f"{TITLE.get(f, f):>{CELL[f]}}" for f in REST))
+    if "-t" in sys.argv[1:]:
+        # t-ix alone: the same rows and numbers as below, tiny/'s only
+        subs = stats.get("tiny", {})
+        tiny = total(subs.values())
+        row("t-ix: tiny", tiny)
+        for sub in sorted(subs, key=lambda k: (k == MLIS, k)):
+            row(sub + ("*" if ("tiny", sub) in starred else ""), subs[sub], 2)
+        print()
+        print(f"{tiny['lines'] - taught['tiny']:>7,}  t-ix, less {taught['tiny']:,} "
+              f"lines in {headers['tiny']:,} header comments")
+        print()
+        print("not counted above, * a row with some (ix is the same without them):")
+        for name in dict(LINES)["tiny/"] + ["tiny/'s apps and games"]:
+            if name in extra:
+                row(name, extra[name], 2)
+        return
     order = [g for g, _ in GROUPS] + ["tests", "other"]
     first = True
     for group in order:

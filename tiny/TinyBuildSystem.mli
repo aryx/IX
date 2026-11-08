@@ -22,8 +22,7 @@
  *
  *     stamp(hello) = sha1(recipe, "hello.o", sha1(hello.o), "world.o", ...)
  *
- * (The digest is SHA-1, Sha1's, which tiny-vcs uses too; it used to
- * be MD5.) For the Buildfile in [help],
+ * For the Buildfile in [help],
  * the graph under hello is:
  *
  *     hello                 has its own recipe: cc -o $target $prereq

@@ -221,6 +221,13 @@ and app () =
         when p = "Printf.sprintf" || p = "Printf.ksprintf"
              || p = "Printf.bprintf" ->
           printf_call p l
+      (* Logs.debug (fun m -> m "%s" x): m given the message made, as
+       * Printf.sprintf makes it (TinyLibCore's Logs.mli) *)
+      | Var (p, _),
+        [ Fun ([ m ], App (Var (m', _), (Const (CStr _) :: _ as l))) ]
+        when String.length p > 5 && String.sub p 0 5 = "Logs." && m = m' ->
+          let msg = printf_call "Printf.sprintf" l in
+          App (f, [ Fun ([ m ], App (var m, [ msg ])) ])
       | _, l -> App (f, l))
 
 and atom () =

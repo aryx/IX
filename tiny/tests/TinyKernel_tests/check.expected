@@ -409,10 +409,10 @@ _start:	jal	r15, 0x7248 <main>
 break
 u_write:	addi	r14, r14, -40
 0	u_write
-1	say+0x50	0x27974 0x27974 2
+1	say+0x50	0x2797c 0x2797c 2
 2	main+0x1cc	0 0 1 1 _ _ ...
-3	Trace.init+0x40	_ 0 0x27828
-4	ml_init+0x2f4	0
+3	Trace.init+0x40	_ 0 0x27830
+4	ml_init+0x310	0
 5	ml_run+0x164
 6	main+0x1ec
 7	_start

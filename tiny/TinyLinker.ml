@@ -6,7 +6,7 @@
 open TinyMachineISA
 
 let usage =
-  "usage: tiny-linker [-a megabytes] [-n] [-s] [-map] [-v] -o out file.o..."
+  "usage: tiny-linker [-a megabytes] [-n] [-s] [-map] [-debug] -o out file.o..."
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
 
@@ -19,8 +19,7 @@ text's size in a fourth word (another magic number): tiny-kernel's segments
 share the text between the runs of a program. With -s, an executable too (of 1 MB unless -a says), with its
 labels after the image, but the compilers' local ones (what debug reads). With
 -map, out.map too: each label's address, by address (what tiny-prof reads).
-With -v, each object's items printed (derived by mini-ml: NO DERIVING when
-OCaml or tiny-ml built tiny-linker).
+With -debug, each object's items said (-v, -quiet: TinyLibSystem.logging's).
 A label's line is its address in hexadecimal and its name. In
 tiny/tests/TinyCPU_tests/, for example:
   tiny-assembler hello.tm && tiny-linker -o hello hello.o
@@ -222,9 +221,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     match int_of_string_opt n with
     | Some n -> n > 0 && n <= 100
     | None -> false in
-  let verbose = ref false in
   let rec args mb split syms map l = match l with
-    | "-v" :: r -> verbose := true; args mb split syms map r
     | "-a" :: n :: r when megabytes n ->
         args (Some (int_of_string n)) split syms map r
     | "-n" :: r -> args mb true syms map r
@@ -236,7 +233,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
   match List.tl (Array.to_list argv) with
   | ("-h" | "--help") :: _ -> TinyLibSystem.print caps help; Exit.OK
   | l ->
-      match args None false false false l with
+      match args None false false false (TinyLibSystem.logging l) with
       | None ->
           TinyLibSystem.eprint caps (usage ^ "   (-h: how)\n"); Exit.Code 2
       | Some (mb, split, syms, map, out, files) ->
@@ -245,10 +242,9 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
               let items =
                 try of_object (TinyLibSystem.read_file caps f)
                 with Error e -> error (Fpath.to_string f ^ ": " ^ e) in
-              (* -v: each object's items, as OCaml writes them *)
-              if !verbose then
-                List.iter (fun it -> TinyLibSystem.print caps
-                  (Fpath.to_string f ^ ": " ^ show_item it ^ "\n")) items;
+              items |> List.iter (fun it ->
+                Logs.debug (fun m ->
+                  m "%s: %s" (Fpath.to_string f) (show_item it)));
               items) in
             let image, labels, data_at =
               link (if split then Text_first else In_order) objects in

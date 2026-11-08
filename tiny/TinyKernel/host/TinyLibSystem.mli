@@ -71,6 +71,13 @@ type milliseconds = int
  * Mkfont) end by it too, for the same words said the same way *)
 val main : string -> (Cap.all_caps -> string array -> Exit.t) -> unit
 
+(* [logging args]: args without -v, -debug and -quiet, the level of
+ * Logs' messages set by them (info, debug, none; warnings by default),
+ * as m-ix's Logging.flags. A program that wants them calls it on its
+ * arguments; it is not done for all of them, since grep has its own
+ * -v. The messages go to stderr after the program's name (main's) *)
+val logging : string list -> string list
+
 (* the variables the program was started with, each with its value *)
 val environment : < Cap.env; .. > -> (string * string) list
 val getpid : < Cap.env; .. > -> pid

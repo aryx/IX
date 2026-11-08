@@ -23,7 +23,7 @@ link_tm() {
   done
   $TL -o $out "${objs[@]}"
 }
-CORE="Stdlib Char Seq List String Bytes Array Option Int64 Filename Buffer Printf Marshal Hashtbl Common Sha1 Fpath Fpath_ Exit In_channel Out_channel Chan"
+CORE="Stdlib Char Seq List String Bytes Array Option Int64 Filename Buffer Printf Marshal Hashtbl Common Sha1 Fpath Fpath_ Exit In_channel Out_channel Chan Logs"
 ml_lib() {
   local dir=$1 m before=
   mkdir -p $dir

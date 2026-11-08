@@ -352,7 +352,7 @@ let library =
   [ "Stdlib"; "Char"; "Seq"; "List"; "String"; "Bytes"; "Array"; "Option";
     "Int64"; "Filename"; "Buffer"; "Printf"; "Marshal"; "Hashtbl"; "Common";
     "Sha1"; "Fpath"; "Fpath_"; "Exit"; "In_channel"; "Out_channel";
-    "Chan" ]
+    "Chan"; "Logs" ]
 
 (* a file that cannot be read or made, said apart from an error in one *)
 exception File_error of string

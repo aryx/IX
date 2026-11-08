@@ -144,7 +144,7 @@ let print pc i =
 (* The objects *)
 (*****************************************************************************)
 
-(* (OCaml's and tiny-ml's; mini-ml derives the real one, after it) *)
+(* (tiny-ml's; ppx_deriving and mini-ml derive the real one, after it) *)
 let show_item _ = "NO DERIVING"
 [@@warning "-32"]
 

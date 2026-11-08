@@ -18,7 +18,7 @@
  *     .word main                  a word 0, (0, Word, Name "main")
  *
  * The object is TinyMachineISA's items, in the file's order, marshalled
- * (that file has what each is; tiny-linker -v prints them). Every label
+ * (that file has what each is; tiny-linker -debug says them). Every label
  * is the program's: the link is one name space, as the compilers write
  * it (tiny-c's statics carry their file's name, tiny-ml's labels their
  * unit's).
@@ -64,7 +64,7 @@
  * a line an item, "code HEX" and "reloc OFF KIND TARGET": cat hello.o
  * showed each word beside its relocs, but at the cost of a format of
  * t-ix's own, written here and read back by TinyLinker). What the text
- * showed, tiny-linker -v prints, by the items' show that mini-ml
+ * showed, tiny-linker -debug says, by the items' show that mini-ml
  * derives. A magic line comes first, since tiny-ml's Marshal stops the
  * program on bytes it cannot read.
  *

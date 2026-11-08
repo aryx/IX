@@ -65628,3 +65628,67 @@ Claude argued the readable text shows why targets rebuilt, and cited TinyDatabas
 **Yoann:**
 
 > oh you corrected it yourself, bravo
+
+------------------------------------------------------------------------
+
+## 2026-11-08 16:12
+
+**Yoann:**
+
+> I think I did some things in xix with some Hashtbl_.t trick in some Common.ml to allow deriving standard lib types (also for Either and a few other). See the xix Common.ml I Think. maybe we need a similar trick here to get deriving fully working for every types
+
+**Claude (summary):**
+
+Claude said it would look at the xix Hashtbl trick for deriving, but gave no findings.
+Claude recorded the show_kind functions in dead_tiny.txt, matching the m-ix baselines for Token_c and Token_ml.
+Claude committed tiny-ml's attributes as 53083739, separate from the marshalled-objects commit 209d0100.
+Claude bumped the file magic to tinydb2 so old Marshal databases are refused, committed as e08b31b4.
+Claude ran the database test, which passed with 40 sessions, and listed the remaining candidates for a decision.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 16:28
+
+**Yoann:**
+
+> let's postpone for now TinyVCS. regarding -v, first dune should build the deriving since it use OCaml 4 (or 5) which supportw deriving; maybe just need to adda  ppx line in the dune file for it. Moreover it should be -debug to display debug info. Maybe we should add a Logs module (and Logs_?) in tiny/TinyLibCore/ too? so we can start use Logs and -debug output.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 16:28
+
+**Yoann:**
+
+> where we can use those show and show_xxx in Logs.debug line
+
+------------------------------------------------------------------------
+
+## 2026-11-08 16:29
+
+**Yoann:**
+
+> we still want -v, but Logs.info, not for the kind of debugging output that deriving helps to produce
+
+------------------------------------------------------------------------
+
+## 2026-11-08 16:30
+
+**Yoann:**
+
+> we usually want  in tiny/ to keep the strict minimum, but I think Fpath and Logs are useful libraries to alse use in tiny/. What do you think? I'm also on the fence for using Arg in tiny/ instead of those adhoc argv options parsing. It's true it can add LOC but when put in a library it can also help factorize code in the long run and also have more consistent code. What do you think? using marshall, Logs, Arg, are good idea for tiny/ ?
+
+------------------------------------------------------------------------
+
+## 2026-11-08 16:30
+
+**Yoann:**
+
+> (we could also setup logging in TSys.main)
+
+------------------------------------------------------------------------
+
+## 2026-11-08 16:37
+
+**Yoann:**
+
+> I also don't fully understand this TinyLibSystem.ml. For many standard modules we have a TinyLibCore/ so why another mechnanism for TinyLibSystem? why not Sys.ml and Unix.ml ? or conversely why we did TinyLibCore/ and not instead a TinyLibCore.ml too?

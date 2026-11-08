@@ -54,6 +54,8 @@ type milliseconds = int
 
 let main name f =
   let said m = u_flush (); ignore (u_write 2 (name ^ ": " ^ m ^ "\n")); 1 in
+  (* Logs' messages said as an error is *)
+  Logs.set_reporter (fun _ m -> ignore (said m));
   exit
     (try
        match f () (Array.init (u_argc ()) u_arg) with
@@ -63,6 +65,15 @@ let main name f =
      with
      | Failure m -> said m
      | Exit.ExitCode n -> n)
+
+let logging args =
+  List.filter (fun a ->
+    match a with
+    | "-v" -> Logs.set_level (Some Logs.Info); false
+    | "-debug" -> Logs.set_level (Some Logs.Debug); false
+    | "-quiet" -> Logs.set_level None; false
+    | _ -> true) args
+
 let environment caps = [ "PATH", "/bin" ]
 let getpid _caps = u_getpid ()
 

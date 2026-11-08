@@ -5,7 +5,9 @@
 (library
  (name tiny_machine_cpu)
  (wrapped false)
- (modules TinyMachineISA TinyMachineCPU))
+ (modules TinyMachineISA TinyMachineCPU)
+ ; (the objects' show_item, tiny-linker -debug's)
+ (preprocess (pps ppx_deriving.show)))
 
 ; tiny-machine's machine without a host: TinyMachine's and TinyMachineWeb's
 (library

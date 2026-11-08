@@ -80,8 +80,9 @@ type item =
   | Chunk of string * (int * place * target) list | Piece
   | Section of bool
 
-(* an item as OCaml writes it, derived by mini-ml ("NO DERIVING" when
- * OCaml or tiny-ml compiles this file): tiny-linker -v's *)
+(* an item as OCaml writes it, derived by ppx_deriving (dune) and by
+ * mini-ml; "NO DERIVING" when tiny-ml compiles this file:
+ * tiny-linker -debug's *)
 val show_item : item -> string
 
 (* the object's bytes, marshalled after a magic line, and back (Error

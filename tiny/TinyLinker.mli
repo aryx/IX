@@ -6,7 +6,7 @@
  *
  *     a.o b.o ...      (TinyMachineISA's items, marshalled)
  *        | read        each object's items: labels, alignments,
- *        |             code with its relocs, zeros (-v: printed)
+ *        |             code with its relocs, zeros (-debug: said)
  *        | sweep       the pieces nothing reaches left out: what an
  *        |             object without pieces names, and what that
  *        |             names... (tiny-ml's functions and static

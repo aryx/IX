@@ -40,6 +40,14 @@ let main (name : string) (f : Cap.all_caps -> string array -> Exit.t) : unit =
        | Failure m -> said m
        | Exit.ExitCode n -> n))
 
+let logging args =
+  List.filter (fun a ->
+    match a with
+    | "-v" -> Logs.set_level (Some Logs.Info); false
+    | "-debug" -> Logs.set_level (Some Logs.Debug); false
+    | "-quiet" -> Logs.set_level None; false
+    | _ -> true) args
+
 let environment (caps : < Cap.env; .. >) =
   Procs.split_env (CapUnix.environment caps ())
 let getpid (caps : < Cap.env; .. >) = CapUnix.getpid caps ()

@@ -89,6 +89,17 @@ echo 'v1 another comment' > config.in
 check "early cutoff" "echo gen; cut -d' ' -f1 config.in > config.h
 gen" "$TB"
 
+# a recipe is in its target's stamp, its variables' values too: a
+# changed recipe, or a changed variable in it, remakes the target
+fresh
+printf 'FLAGS = one\nout: in\n\techo $FLAGS > out\n' > Buildfile
+echo in > in
+"$TB" > /dev/null
+printf 'FLAGS = one\nout: in\n\techo $FLAGS  > out\n' > Buildfile
+check "a recipe edited" "echo one  > out" "$TB"
+printf 'FLAGS = two\nout: in\n\techo $FLAGS  > out\n' > Buildfile
+check "a variable of the recipe changed" "echo two  > out" "$TB"
+
 # -j 2: two one-second recipes in about a second
 fresh
 cat > Buildfile <<'EOF'

@@ -40,11 +40,17 @@
  * The stamps of the last build are stored in .tiny-build; a target is
  * rebuilt when it is missing or when its stamp has changed. This is the
  * "verifying traces" rebuilder of Mokhov, Mitchell and Peyton Jones,
- * "Build Systems a la Carte" (2018), and it fixes three problems of mk
+ * "Build Systems a la Carte" (2018), and it fixes four problems of mk
  * at once: two files written in the same second are no longer
  * considered "equal", the new timestamps from a git checkout do not
- * trigger any rebuild, and a recipe that regenerates an identical file
- * stops the rebuild there (early cutoff), without mk's cmp -s trick.
+ * trigger any rebuild, a recipe that regenerates an identical file
+ * stops the rebuild there (early cutoff), without mk's cmp -s trick,
+ * and a recipe edited, or a variable of it changed (CFLAGS), remakes
+ * what it makes, since the recipe is in the stamp with its variables'
+ * values. make and mk see neither; a Makefile fakes it by making
+ * every target depend on the Makefile, which remakes everything, or by
+ * boilerplate that saves each command line to compare it (Linux's
+ * kbuild, its .cmd files and if_changed).
  * A file is read for its digest once a run, and not at all when its
  * size and date are the ones .tiny-build recorded with its digest, as
  * git's index does: the date says only "unchanged", never "newer", and

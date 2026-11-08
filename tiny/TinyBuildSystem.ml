@@ -52,10 +52,15 @@ type node = {
 }
 
 (* a node is a source, or made by a recipe (a pattern's, with its stem) *)
-(* old: recipe and stem strings, "" for none: a stem without a recipe
- * could be built, and each use re-tested recipe = "" *)
 and make = Source | Recipe of step
 and step = { text : string; stem : string }
+
+(* the Buildfile's variables, each with its words *)
+type vars = (string, string list) Hashtbl.t
+
+(* the last build's stamps (.tiny-build's), by node's name: a node, not
+ * a file, so all has one too *)
+type stamps = (string, string) Hashtbl.t
 
 let target_of (s : string) : target =
   match String.index_opt s '%' with
@@ -83,7 +88,7 @@ let words (s : string) : string list =
 (* $X and ${X}, by the value of X; an unknown X is an error, or, when
  * printing a recipe (keep), left for the shell (old: ~keep and the
  * other labels: tiny-ml reads none) *)
-let expand keep (vars : (string, string list) Hashtbl.t) (s : string) : string =
+let expand keep (vars : vars) (s : string) : string =
   let is_name c =
     c = '_' || ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
     || ('0' <= c && c <= '9')
@@ -115,7 +120,7 @@ let expand keep (vars : (string, string list) Hashtbl.t) (s : string) : string =
 (* the rules, in order, and the variables; [read] gives an included
  * file's text (None: it doesn't exist yet, e.g. a generated .depend) *)
 let parse (read : string -> string option) (text : string) :
-    rule list * (string, string list) Hashtbl.t =
+    rule list * vars =
   let vars = Hashtbl.create 17 and rules = ref [] in
   (* a backslash-newline continues a line, as ocamldep writes them *)
   let lines text =
@@ -353,13 +358,12 @@ let times : (string * int) list ref = ref []
 let magic = "tiny-build 1\n"
 
 (* the stamps of the last build, the digests it knew put back in known *)
-let load (caps : < Cap.open_in; .. >) : (string, string) Hashtbl.t =
+let load (caps : < Cap.open_in; .. >) : stamps =
   let n = String.length magic in
   match read_file caps stampfile with
   | Some s when String.length s >= n && String.sub s 0 n = magic ->
-      let ((stamps, digests) : (string, string) Hashtbl.t
-                               * (string, int * int * string) Hashtbl.t) =
-        Marshal.from_string s n in
+      (* (their types load's and known's) *)
+      let stamps, digests = Marshal.from_string s n in
       Hashtbl.iter (Hashtbl.replace known) digests;
       stamps
   | _ -> Hashtbl.create 101
@@ -368,15 +372,14 @@ let load (caps : < Cap.open_in; .. >) : (string, string) Hashtbl.t =
  * recipe that ends well, so that a build stopped (killed, the machine
  * halted) keeps what it made (old: at the end only: tiny-kernel's
  * build of itself, stopped after 5 hours, began again from nothing) *)
-let save (caps : < Cap.open_out; .. >) (stamps : (string, string) Hashtbl.t) =
+let save (caps : < Cap.open_out; .. >) (stamps : stamps) =
   TSys.write_file caps (Fpath.v stampfile)
     (magic ^ Marshal.to_string (stamps, known) [ Marshal.No_sharing ])
 
 let build
     (caps : < Cap.forkew; Cap.open_in; Cap.open_out;
               Cap.env; Cap.stdout; Cap.stderr; .. >)
-    (vars : (string, string list) Hashtbl.t)
-    (stamps : (string, string) Hashtbl.t)
+    (vars : vars) (stamps : stamps)
     jobs dry timed (root : node) : bool =
   let digests = Hashtbl.create 101 in    (* the nodes done: their digest *)
   let running = Hashtbl.create 7 in      (* pid -> node, its start *)
@@ -384,9 +387,14 @@ let build
   (* the Buildfile's variables, then the environment's (TSys.shell's;
    * old: the environment's first) *)
   let env = Hashtbl.fold (fun k v acc -> (k, v) :: acc) vars [] in
-  (* a source's recipe is "", as .tiny-build's stamps have it *)
+  (* a source's recipe is "", as .tiny-build's stamps have it; a
+   * recipe with the Buildfile's variables by their values, as -n
+   * prints it, so that a changed variable remakes what its recipes
+   * make ($target, $prereq and $stem left, which the node and its
+   * prerequisites say; the environment's left too, not followed) *)
   let stamp n =
-    let recipe = match n.make with Source -> "" | Recipe r -> r.text in
+    let recipe =
+      match n.make with Source -> "" | Recipe r -> expand true vars r.text in
     Sha1.to_hex (Sha1.string (String.concat "\n" (recipe :: List.map (fun d ->
       d.name ^ " " ^ Hashtbl.find digests d.name) n.deps)))
   in

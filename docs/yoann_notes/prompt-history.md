@@ -65810,3 +65810,96 @@ Claude noted the only argument for `Fpath.t` is documentation, and the parameter
 **Claude (summary):**
 
 Claude explained that `exists` is a file-check function, and that switching `graph` to a different representation depends on how many call sites use it and who passes it in. Claude had not yet made any change or commit at that point. The next message asks Claude to go ahead, implement the change, and commit it.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 17:22
+
+**Yoann:**
+
+> yes, do it and commit
+
+**Claude (summary):**
+
+Claude reported that dune builds and that the two long lines it flagged were already present before its changes.
+Claude then began running the build system's checks, which was the step it had reached when the answer ended.
+Yoann's follow-up asks whether a type alias should replace the repeated `(string, string list) Hashtbl.t` annotations.
+Claude's answer did not address that question, so it was not part of this reply.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 17:28
+
+**Yoann:**
+
+> should we use a type alias vars for the (string, string list) Hashtbl.t instead of repeating it a few times?
+
+**Claude (summary):**
+
+Claude said the `(string, string list) Hashtbl.t` type appears three times, in `expand`, `parse`'s result, and `build`. Claude noticed uncommitted changes in `TinyBuildSystem.ml` that weren't its own and began checking them before editing. Yoann's follow-up asks about the stamps table, so the type-alias question was the part he reacted to.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 17:30
+
+**Yoann:**
+
+> for the stamps table should the key be an Fpath.t instead?
+
+**Claude (summary):**
+
+Claude's answer only said it would explain how the stamps table is keyed and used, with no actual content. Yoann replied "yes", so the reply does not point to a specific part of the answer. Summarizing normally is not possible from this message alone, so nothing substantive is reported.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 17:31
+
+**Yoann:**
+
+> yes
+
+------------------------------------------------------------------------
+
+## 2026-11-08 17:32
+
+**Yoann:**
+
+> worth adding, but maybe it was said already, that by having recipe sha1 used in the stamp, we automatically get the nice feature of modifying a recipe trigger a recompilation for the files, which is trickier usually in mkfile and Makefile which often requires complex boilerplate to achieve the same
+
+**Claude (summary):**
+
+Claude edited the pending `Sha1` aliases around another session's uncommitted two-line deletion, as the answer described.
+Claude added type aliases after `node`'s types and switched six sites to use them.
+Claude removed the type annotation on the `load` binding, since `stamps` and `digests` get their types from inference.
+Claude did not address Yoann's point that hashing the recipe into the stamp gives recipe-change rebuilds for free.
+Yoann then asked whether a dedicated `Sha1.t` type with a `Sha1.str` constructor would be worth having.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 17:33
+
+**Yoann:**
+
+> should we have a Sha1.t and Sha1.str or something type
+
+**Claude (summary):**
+
+Claude recommended checking whether the stamp's recipe text has its variables expanded before changing the design.
+Claude noted the `.mli` says the stamp digests the recipe but doesn't credit recipe edits with remaking targets.
+Claude's first test failed because macOS `cat` lacks `-a`, so it reran the check with a working recipe.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 17:33
+
+**Yoann:**
+
+> so instead of abusing string we know if a string is really an sha1
+
+**Claude (summary):**
+
+Claude recommended making `digest_file` return `Sha1.t option` and typing the digest tables and `stamps` as `Sha1.t`.
+Claude said `to_hex` should only run where a digest becomes text, inside `stamp`, where prerequisite digests are hashed.
+Claude proposed bumping the `.tiny-build` magic to `tiny-build 2`, so 20-byte digests replace 40-character hex and old files force one rebuild.
+Claude suggested pairing this with the recipe fix in a single full rebuild, as two commits: recipe fix first, then `Sha1.t`.
+Claude postponed TinyVCS, since its hex string is an object name that already has a `hash` type.

@@ -203,7 +203,7 @@ tiny-db> range n.i = 20 (key) | where
 tiny-db> 20|400
 tiny-db> 
 $ usage: tiny-db file.db   (-h: how)
-$ -   1    36352 t.db
+$ -   1     9302 t.db
 $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ % % % A a.txt
 A b.txt

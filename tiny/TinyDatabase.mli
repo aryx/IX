@@ -24,10 +24,10 @@
  *   without ever being invalidated, and a reader holding an old root
  *   would see a consistent old database (this is not used here). The
  *   price is that the file only grows: nothing is ever reused, as in an
- *   append-only log. Nodes are values serialized by hand (an int takes
- *   8 bytes, a list is its length followed by its elements; this used
- *   to be done with Marshal). They can have any size; fixed-size pages
- *   are only needed when you change pages in place.
+ *   append-only log. Nodes are marshalled (for a while they were
+ *   serialized by hand, an int in 8 bytes: four times the file, 50
+ *   lines more). They can have any size; fixed-size pages are only
+ *   needed when you change pages in place.
  * - {b Evaluation pulls rows through the stages} (one Seq per stage:
  *   the iterator model). The first where stage chooses an access path
  *   depending on its shape: a key range on the table, a range on an
@@ -43,7 +43,7 @@
  * Here is the layout of the file. The catalog offset is the only part
  * that is ever written twice:
  *
- *     0     tinydb1 and a newline     the magic number, 8 bytes
+ *     0     tinydb2 and a newline     the magic number, 8 bytes
  *     8     the catalog's offset      8 bytes, rewritten by each commit
  *     16    a length, a value         what was appended: each entry
  *     ...   a length, a value         is a length (8 bytes) followed

@@ -35,7 +35,7 @@ let of_bool b = Int (if b then 1 else 0)
 (*****************************************************************************)
 
 (* the header: a magic string and the offset of the committed catalog *)
-let magic = "tinydb1\n"
+let magic = "tinydb2\n"  (* (1: the nodes written by hand) *)
 
 type key = value list
 
@@ -88,56 +88,12 @@ let append f (s : string) =
 
 let load f off = read_at f (off + 8) (int_at (read_at f off 8) 0)
 
-(* A value's bytes, written by hand: an int is 8 bytes, the most
- * significant first; a string, a list and an array their length then
- * what is in them; a constructor its number first. A reader is the
- * bytes and where it is in them. *)
-(* old: Marshal.to_string v [] and Marshal.from_bytes: two calls for
- * these forty lines, and 376 lines of library under them *)
-let put_int b n = Buffer.add_string b (int_bytes n)
-let put_str b s = put_int b (String.length s); Buffer.add_string b s
-let put_list put b l = put_int b (List.length l); List.iter (put b) l
-let put_value b = function
-  | Int n -> put_int b 0; put_int b n
-  | Text s -> put_int b 1; put_str b s
-let put_values b l = put_list put_value b l
-
-let get_int (s, p) = let n = int_at s !p in p := !p + 8; n
-let get_str (s, p) =
-  let n = get_int (s, p) in
-  let v = String.sub s !p n in
-  p := !p + n;
-  v
-let get_list get r =
-  let rec go n = if n = 0 then [] else let x = get r in x :: go (n - 1) in
-  go (get_int r)
-let get_value r =
-  match get_int r with 0 -> Int (get_int r) | _ -> Text (get_str r)
-let get_values r = get_list get_value r
-
-let node_bytes (n : node) =
-  let b = Buffer.create 256 in
-  (match n with
-   | Leaf a ->
-       put_int b 0;
-       put_list (fun b (k, r) -> put_values b k; put_values b (Array.to_list r))
-         b (Array.to_list a)
-   | Inner (ks, cs) ->
-       put_int b 1;
-       put_list put_values b (Array.to_list ks);
-       put_list put_int b (Array.to_list cs));
-  Buffer.contents b
-
-let node_of_bytes s : node =
-  let r = (s, ref 0) in
-  match get_int r with
-  | 0 ->
-      Leaf (Array.of_list (get_list (fun r ->
-        let k = get_values r in
-        (k, Array.of_list (get_values r))) r))
-  | _ ->
-      let ks = get_list get_values r in
-      Inner (Array.of_list ks, Array.of_list (get_list get_int r))
+(* A node and the catalog as bytes: Marshal's. An int beyond 31 bits
+ * written by OCaml on the host stops tiny-ml's reader (old: by hand, an
+ * int 8 bytes, a string, a list and an array their length then what is
+ * in them, a constructor its number first: 50 lines) *)
+let node_bytes (n : node) = Marshal.to_string n [ Marshal.No_sharing ]
+let node_of_bytes s : node = Marshal.from_string s 0
 
 let node f off =
   match Hashtbl.find_opt f.cache off with
@@ -263,29 +219,8 @@ type table = {
 type db = { file : file; mutable tables : table list }
 
 let tables_bytes (ts : table list) =
-  let b = Buffer.create 256 in
-  put_list (fun b (t : table) ->
-    put_str b t.name;
-    put_list (fun b (c, ty) ->
-      put_str b c;
-      put_int b (match ty with TInt -> 0 | TText -> 1)) b t.cols;
-    put_int b t.key; put_int b t.root;
-    put_list (fun b (c, root) -> put_str b c; put_int b root) b t.indexes) b ts;
-  Buffer.contents b
-
-let tables_of_bytes s : table list =
-  get_list (fun r ->
-    let name = get_str r in
-    let cols =
-      get_list (fun r ->
-        let c = get_str r in
-        (c, if get_int r = 0 then TInt else TText)) r
-    in
-    let key = get_int r in
-    let root = get_int r in
-    { name; cols; key; root;
-      indexes = get_list (fun r -> let c = get_str r in (c, get_int r)) r })
-    (s, ref 0)
+  Marshal.to_string ts [ Marshal.No_sharing ]
+let tables_of_bytes s : table list = Marshal.from_string s 0
 
 let open_db (caps : < Cap.open_in; Cap.open_out; .. >) (path : Fpath.t) =
   (* (made when it is not there) *)

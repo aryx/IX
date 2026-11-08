@@ -65521,3 +65521,46 @@ Claude said loc.py counts the entire tree with no directory filter, then showed 
 
 Claude committed the `make loc` work for tiny/ as `6412029d`, covering `tiny/Makefile`, the `-t` option in `scripts/stats/loc.py`, and `prompt-history.md`.
 Claude confirmed the working tree was clean after the commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 15:40
+
+**Yoann:**
+
+> in TinyBuildSystem.ml I think you can factorize usage and help first line, like we did in some of the other files
+
+**Claude (summary):**
+
+Claude noticed `TinyBuildSystem.ml` had staged changes from someone else and checked them before editing.
+Claude confirmed those staged changes were since committed by someone else, so the file was clear to edit.
+Claude looked at how `usage` is used in the file to factor out the usage and help first line.
+Yoann's follow-up "yes" accepted Claude's proposal to wrap the over-80-column lines 8 and 513, matching TinyLinker.
+Claude then reported the output as correct after the factorization.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 15:44
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed the usage change as `894c4b86` together with `prompt-history.md`, leaving the working tree clean.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 15:53
+
+**Yoann:**
+
+> should we have a function load (or something similar) close to save() that takes cares of loading the stamps; I think right now the code is nested in run but it would be better in a separate function with good symetry with save()
+
+**Claude (summary):**
+
+Claude noticed `TinyBuildSystem.ml` showed uncommitted changes, and found another person was editing the same file concurrently.
+Claude planned to make small in-place edits that preserve the other editor's changes, since its own change touched different parts of the file.
+Claude proposed adding a `load` function right before `save` in the file, so the reader comes first.
+Both `load` and `save` need only `Cap.open_in`, so the symmetric pair stays simple.

@@ -348,6 +348,22 @@ let stampfile = ".tiny-build"
 (* the recipes run, each with its time in milliseconds (-t) *)
 let times : (string * int) list ref = ref []
 
+(* the stamps of the last build, read from .tiny-build (none when it is
+ * missing), and the digests it knew put back in known; a line that is
+ * neither is skipped *)
+let load (caps : < Cap.open_in; .. >) : (string, string) Hashtbl.t =
+  let stamps = Hashtbl.create 101 in
+  read_file caps stampfile |> Option.iter (fun s ->
+    String.split_on_char '\n' s |> List.iter (fun l ->
+      match String.split_on_char ' ' l with
+      | [ name; st ] -> Hashtbl.replace stamps name st
+      | [ "file"; name; size; date; d ] ->
+          (match int_of_string_opt size, int_of_string_opt date with
+           | Some s, Some t -> Hashtbl.replace known name (s, t, d)
+           | _ -> ())
+      | _ -> ()));
+  stamps
+
 (* the stamps and the digests known, written to .tiny-build: after each
  * recipe that ends well, so that a build stopped (killed, the machine
  * halted) keeps what it made (old: at the end only: tiny-kernel's
@@ -461,10 +477,8 @@ let build
   not !failed
 
 (*****************************************************************************)
-(* Entry point *)
+(* Reporting times (-t) *)
 (*****************************************************************************)
-
-exception Bad of string
 
 (* -t, at the end: the times by kind of target: its
  * directory and its extension (bin/*, ml/*.tm, *.o), and the rest of the
@@ -504,6 +518,12 @@ let report caps total =
          recipes (recipes / max 1 total) (recipes * 10 / max 1 total mod 10)
          total)
 
+(*****************************************************************************)
+(* Entry point *)
+(*****************************************************************************)
+
+exception Bad of string
+
 let run (caps : < caps; .. >) (argv : string array) : Exit.t =
   let file = ref "Buildfile" and jobs = ref 1 and dry = ref false
   and dot = ref false and timed = ref false in
@@ -542,16 +562,7 @@ let run (caps : < caps; .. >) (argv : string array) : Exit.t =
       | [], [] -> error "nothing to build"
       | ts, _ -> ts
     in
-    let stamps = Hashtbl.create 101 in
-    read_file caps stampfile |> Option.iter (fun s ->
-      String.split_on_char '\n' s |> List.iter (fun l ->
-        match String.split_on_char ' ' l with
-        | [ name; st ] -> Hashtbl.replace stamps name st
-        | [ "file"; name; size; date; d ] ->
-            (match int_of_string_opt size, int_of_string_opt date with
-             | Some s, Some t -> Hashtbl.replace known name (s, t, d)
-             | _ -> ())
-        | _ -> ()));
+    let stamps = load caps in
     let ok =
       targets |> List.for_all (fun t ->
         let root = graph rules (exists caps) t in

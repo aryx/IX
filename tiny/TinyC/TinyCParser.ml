@@ -2,7 +2,6 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See TinyCParser.mli *)
-open Common
 open TinyCTypes
 open TinyCLexer
 open TinyCTree
@@ -32,47 +31,10 @@ let structs : (string, sdef) Hashtbl.t = Hashtbl.create 16
 let scopes : (string, var) Hashtbl.t list ref = ref []
 let frame = ref 0                         (* the current function's locals *)
 let result = ref Void
-let data = Buffer.create 4096             (* the DATA and GLOBL *)
+(* the definitions of the declaration being read, the last first: a
+ * string literal's data before the function or the global it is in *)
+let defs : def list ref = ref []
 
-type datum = Bytes of string | Value of int * int64 | Address of sym
-
-(* each global's data, at their offsets, until its label is written
- * (a string in an initializer is written before its array) *)
-let pending : (sym, (int * datum) list) Hashtbl.t = Hashtbl.create 16
-
-let datum (name : sym) off d =
-  Hashtbl.replace pending name
-    ((off, d) :: (Hashtbl.find_opt pending name ||| []))
-
-(* a global of n bytes: its label and its data, the gaps zeros *)
-let globl (name : sym) n =
-  let line s = Printf.bprintf data "\t%s\n" s in
-  Buffer.add_string data ("\t.align\t4\n" ^ name ^ ":\n");
-  let bytes l =
-    line (".byte\t" ^ String.concat ", " (List.map string_of_int l)) in
-  let at =
-    (Hashtbl.find_opt pending name ||| [])
-    |> List.rev
-    |> List.sort (fun (a, _) (b, _) -> compare a b)
-    |> List.fold_left (fun at (off, d) ->
-      if off > at then line (Printf.sprintf ".space\t%d" (off - at));
-      match d with
-      | Bytes b ->
-          bytes
-            (List.map Char.code (List.init (String.length b) (String.get b)));
-          off + String.length b
-      | Value (1, v) -> bytes [ Int64.to_int v land 0xff ]; off + 1
-      | Value (2, v) ->
-          bytes [ Int64.to_int v land 0xff; (Int64.to_int v lsr 8) land 0xff ];
-          off + 2
-      | Value (k, v) ->
-          line (".word\t" ^ word v);
-          if k = 8 then line (".word\t" ^ word (Int64.shift_right v 32));
-          off + k
-      | Address s -> line (".word\t" ^ s); off + 4
-      ) 0 in
-  if n > at then line (Printf.sprintf ".space\t%d" (n - at));
-  Hashtbl.remove pending name
 let strings = ref 0
 let tags = ref 0                          (* the anonymous structures' *)
 
@@ -93,12 +55,12 @@ let string_lit s =
   incr strings;
   let name = static_sym (Printf.sprintf "s%d" !strings) in
   let s = s ^ "\000" in
-  for i = 0 to (String.length s - 1) / 8 do
-    datum name (8 * i)
-      (Bytes (String.sub s (8 * i) (min 8 (String.length s - (8 * i)))))
-  done;
-  globl name (String.length s);
-  var (Global name) (Arr (char_t, String.length s))
+  let n = String.length s in
+  let pieces =
+    List.init (((n - 1) / 8) + 1) (fun i ->
+      8 * i, Bytes (String.sub s (8 * i) (min 8 (n - (8 * i))))) in
+  defs := Data (name, n, pieces) :: !defs;
+  var (Global name) (Arr (char_t, n))
 
 let is_type () =
   match peek () with
@@ -519,3 +481,82 @@ and locals () =
   let l = go () in
   expect ";";
   l
+
+(*****************************************************************************)
+(* The file: its declarations *)
+(*****************************************************************************)
+
+let sym_of storage name : sym =
+  if storage = Static then static_sym name else name
+
+(* a global's initializer: its data added to ds, at their offsets; how
+ * many elements it has, for an array whose size it gives *)
+let rec init_data (name : sym) (ds : (int * datum) list ref) t off =
+  let add off d = ds := (off, d) :: !ds in
+  match t, peek () with
+  | Arr (e, _), P "{" ->
+      ignore (next ());
+      (* the elements, counted *)
+      let rec elems i =
+        if accept "}" then i
+        else
+          (ignore (init_data name ds e (off + (i * size e)));
+           ignore (accept ",");
+           elems (i + 1)) in
+      elems 0
+  | Arr (Int (1, _), n), Str s ->
+      ignore (next ());
+      String.iteri (fun i c ->
+        add (off + i) (Value (1, Int64.of_int (Char.code c)))) s;
+      max n (String.length s + 1)
+  | _ ->
+      let e = rv (assign_expr ()) in
+      (match e.d, e.t with
+       | Const v, _ -> add off (Value (size t, v))
+       | Addr (Global s), _ -> add off (Address s)
+       | _ -> error (name ^ ": not a constant initializer"));
+      1
+
+(* a declaration of the file's: what it defines, in their order *)
+let external_decl () : def list =
+  defs := [];
+  let storage, bt = base_type () in
+  let rec go () =
+    let name, t, pnames = declarator3 bt in
+    if storage <> Typedef then no_vlong t;
+    let sym = sym_of storage name in
+    match t with
+    | Func (rt, ps, _) when storage <> Typedef && peek () = P "{" ->
+        (* a definition *)
+        Hashtbl.replace globals name { vty = t; where = Global sym };
+        ignore (next ());
+        scopes := [ Hashtbl.create 8 ];
+        List.iteri (fun i (p, pt) ->
+          Hashtbl.replace (List.hd !scopes) p
+            { vty = pt; where = Param (4 * i) })
+          (List.combine pnames ps);
+        frame := 0;
+        result := rt;
+        let body = block () in
+        defs := Function (sym, round !frame 8, body) :: !defs;
+        scopes := []
+    | _ ->
+        (match storage, t with
+         | Typedef, _ -> Hashtbl.replace typedefs name t
+         | _, Func _ ->
+             Hashtbl.replace globals name { vty = t; where = Global sym }
+         | _ ->
+             let ds = ref [] in
+             let t =
+               if accept "=" then
+                 (match t with
+                  | Arr (e, 0) -> Arr (e, init_data sym ds t 0)
+                  | _ -> ignore (init_data sym ds t 0); t)
+               else t in
+             Hashtbl.replace globals name { vty = t; where = Global sym };
+             if storage <> Extern then
+               defs := Data (sym, size t, List.rev !ds) :: !defs);
+        if accept "," then go () else expect ";"
+  in
+  if not (accept ";") then go ();
+  List.rev !defs

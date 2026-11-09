@@ -12,6 +12,10 @@ open TinyCLower
 
 let out = Buffer.create 65536
 
+(* a value's low 32 bits, signed, in decimal, as the assembly writes a
+ * word (old: Printf's %ld of Int64.to_int32) *)
+let word v = Int64.to_string (Int64.shift_right (Int64.shift_left v 32) 32)
+
 (* TinyCPU (TinyMachineCPU.ml) has 32-bit registers, r0 zero, no flags, and
  * no unsigned division; its calling convention is ours, simpler than
  * 7c's: every argument in memory, 4 bytes each, the result in r13. The
@@ -171,3 +175,39 @@ let machine (name : sym) locals (body : ir list) =
     (name ^ ":\n\taddi\tsp, sp, " ^ n (- frame) ^ "\n\tstw\tlr, "
      ^ n (lr_at ()) ^ "(sp)\n");
   List.iter (fun f -> Buffer.add_string out (f frame)) (List.rev !lines)
+
+(*****************************************************************************)
+(* The data: the globals *)
+(*****************************************************************************)
+
+(* the globals' DATA, after the functions' code *)
+let data = Buffer.create 4096
+
+(* [global g n ds]: a global of n bytes, its label and its data at their
+ * offsets, the gaps zeros *)
+let global (name : sym) n (ds : (int * datum) list) =
+  let line s = Printf.bprintf data "\t%s\n" s in
+  Buffer.add_string data ("\t.align\t4\n" ^ name ^ ":\n");
+  let bytes l =
+    line (".byte\t" ^ String.concat ", " (List.map string_of_int l)) in
+  let at =
+    ds
+    |> List.sort (fun (a, _) (b, _) -> compare a b)
+    |> List.fold_left (fun at (off, d) ->
+      if off > at then line (Printf.sprintf ".space\t%d" (off - at));
+      match d with
+      | Bytes b ->
+          bytes
+            (List.map Char.code (List.init (String.length b) (String.get b)));
+          off + String.length b
+      | Value (1, v) -> bytes [ Int64.to_int v land 0xff ]; off + 1
+      | Value (2, v) ->
+          bytes [ Int64.to_int v land 0xff; (Int64.to_int v lsr 8) land 0xff ];
+          off + 2
+      | Value (k, v) ->
+          line (".word\t" ^ word v);
+          if k = 8 then line (".word\t" ^ word (Int64.shift_right v 32));
+          off + k
+      | Address s -> line (".word\t" ^ s); off + 4
+      ) 0 in
+  if n > at then line (Printf.sprintf ".space\t%d" (n - at))

@@ -15,10 +15,6 @@ let unit_name = ref ""  (* the file's name, its local names' prefix *)
 type sym = string
 let static_sym (name : string) : sym = !unit_name ^ "." ^ name
 
-(* a value's low 32 bits, signed, in decimal, as the assembly writes a
- * word (old: Printf's %ld of Int64.to_int32) *)
-let word v = Int64.to_string (Int64.shift_right (Int64.shift_left v 32) 32)
-
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)

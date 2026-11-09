@@ -9,3 +9,10 @@ val out : Buffer.t
 (* [machine f locals code]: f's assembly, its locals taking that many
  * bytes of its frame, added to out *)
 val machine : TinyCTypes.sym -> int -> TinyCLower.ir list -> unit
+
+(* the globals' assembly *)
+val data : Buffer.t
+(* [global g n ds]: a global of n bytes, its label and its data at their
+ * offsets, added to data *)
+val global :
+  TinyCTypes.sym -> int -> (int * TinyCTree.datum) list -> unit

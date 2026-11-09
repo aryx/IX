@@ -187,9 +187,10 @@
  *    back ends
  *)
 
-(* one declaration or function, from the tokens: parsed, typed, its
- * code for the stack machine, then the assembly added to the output *)
-val external_decl : unit -> unit
+(* a declaration's definition compiled: a function's tree lowered to the
+ * stack machine's code then to TinyCPU's, a global's data, added to
+ * the output *)
+val compile : TinyCTree.def -> unit
 
 (* the program: its arguments (its name first), a file of C to a file
  * of assembly (-h: how), to how it ends *)

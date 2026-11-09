@@ -66,3 +66,15 @@ type stmt =
   | Break
   | Continue
   | Return of expr option
+
+(* a piece of a global's initial value: bytes, an integer of a size,
+ * an address *)
+type datum = Bytes of string | Value of int * int64 | Address of TinyCTypes.sym
+
+(* what a declaration defines (a typedef, a prototype or an extern
+ * nothing): a function, its label, its locals' bytes and its body; a
+ * global, its label, its size, its data at their offsets (a string
+ * literal one too) *)
+type def =
+  | Function of TinyCTypes.sym * int * stmt
+  | Data of TinyCTypes.sym * int * (int * datum) list

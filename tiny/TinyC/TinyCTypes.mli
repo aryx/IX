@@ -13,9 +13,6 @@ val unit_name : string ref
 type sym = string
 val static_sym : string -> sym
 
-(* a value's low 32 bits, as the assembly writes a word *)
-val word : int64 -> string
-
 type ty =
   | Void
   | Int of int * bool                 (* bytes, signed *)

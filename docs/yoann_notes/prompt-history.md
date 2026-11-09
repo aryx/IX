@@ -66964,3 +66964,75 @@ Claude made static labels at their declaration with static_sym, removing the sym
 Claude added label, located, and field types, renamed long_t to vlong_t, and numbered parameters by byte offset.
 Claude moved word into TinyCTypes so TinyCMachine no longer opens TinyCParser, and gave each .mli a header.
 Claude waited for make self-quick-tix to pass, then committed the TinyC changes.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 15:22
+
+**Yoann:**
+
+> yes, let's do TinyML's types phase
+
+**Claude (summary):**
+
+Claude rewrote the TinyML part interfaces so each .mli header names its pass and what to read first.
+Claude added pass headers to the Lexer, Tree and Printf modules, and fixed TinyML.mli's stale header.
+Claude rewrote the TinyMLTypes, TinyMLParser and TinyMLCompile interfaces with headers, hiding the parser's cursor functions.
+Claude moved parse and mli_types into TinyMLParser, start into TinyMLMachine, and dropped TinyML.ml's opens.
+Claude removed dead env/tenv parameters and split machine into a state record, with all 84 outputs byte-identical.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 15:39
+
+**Yoann:**
+
+> it's a bit sad the signature of external_decl is unit -> unit; it makes the code harder to read. usually a compiler is a lexer, then a parser, then some AST, then some IR, but all of this disappear or is not very visible in TinyC.ml
+
+------------------------------------------------------------------------
+
+## 2026-11-09 15:41
+
+**Yoann:**
+
+> seems like we're using lots of globals in TinyC and maybe some could be removed and switched to a more functional approach to make the code more readabiel don't you think?
+
+------------------------------------------------------------------------
+
+## 2026-11-09 15:42
+
+**Yoann:**
+
+> I also wonder why the code was written that was to begin with
+
+------------------------------------------------------------------------
+
+## 2026-11-09 15:42
+
+**Yoann:**
+
+> way
+
+------------------------------------------------------------------------
+
+## 2026-11-09 15:42
+
+**Yoann:**
+
+> I also usually try to avoid using open and prefer to qualify things (possibly using some module X = Y aliases to use shorter names if the module is too long)
+
+------------------------------------------------------------------------
+
+## 2026-11-09 15:43
+
+**Yoann:**
+
+> this also makes the code more readable and help to see a function is actually defined in another file
+
+**Claude (summary):**
+
+Claude reported that the TinyC pipeline refactor passes build, tests, mini-mk and kernel checks, with byte-identical output.
+Claude proposed moving output buffers and flags such as `Machine.out`, `Lower.code` and `Parser.defs` into return values.
+Claude suggested a per-function record for `scopes`, `frame` and `result` in the machine, and replacing the 15 opens with module aliases.
+Claude recommended committing the pipeline first, then doing those steps, with each step checked byte-identical.
+Claude asked whether to proceed and whether to also move the parser's environment into an `env` record.

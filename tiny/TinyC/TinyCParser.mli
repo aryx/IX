@@ -1,8 +1,7 @@
 (* tiny-c's parser: C's declarations, statements and expressions read
  * from the tokens, recursive descent, the tree built typed as it reads
- * (TinyCTree's functions); and the globals' data, written in the
- * assembly's DATA. TinyC.ml reads the file's declarations with it.
- * Read TinyCTree.mli first. *)
+ * (TinyCTree's functions): a declaration at a time, its definitions,
+ * a function's tree or a global's data. Read TinyCTree.mli first. *)
 
 type storage = Auto | Static | Extern | Typedef
 
@@ -19,28 +18,9 @@ val next : unit -> TinyCLexer.token
 val accept : string -> bool
 val expect : string -> unit
 
-(* the names: the globals, the typedefs, the current function's scopes
- * (innermost first), its locals' size and its result's type *)
-val globals : (string, var) Hashtbl.t
+(* the typedefs (TinyC.ml adds intptr) *)
 val typedefs : (string, TinyCTypes.ty) Hashtbl.t
-val scopes : (string, var) Hashtbl.t list ref
-val frame : int ref
-val result : TinyCTypes.ty ref
 
-(* the DATA and GLOBL of the globals *)
-val data : Buffer.t
-(* a piece of a global's initial value: bytes, an integer of a size,
- * an address *)
-type datum = Bytes of string | Value of int * int64 | Address of TinyCTypes.sym
-(* [datum g off d]: d in g's data, at that offset *)
-val datum : TinyCTypes.sym -> int -> datum -> unit
-(* [globl g n]: g's label and data in data, n bytes *)
-val globl : TinyCTypes.sym -> int -> unit
-
-(* a declaration's storage and base type (int, struct s...); then a
- * declarator's name, type, and its parameters' names, for a function *)
-val base_type : unit -> storage * TinyCTypes.ty
-val declarator3 : TinyCTypes.ty -> string * TinyCTypes.ty * string list
-val assign_expr : unit -> TinyCTree.expr
-(* a function's body *)
-val block : unit -> TinyCTree.stmt
+(* a declaration of the file's: what it defines, in their order (a
+ * string literal's data before the function or the global it is in) *)
+val external_decl : unit -> TinyCTree.def list

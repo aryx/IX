@@ -30,84 +30,34 @@ An error names the file and the line: fact.c: line 3: expected ;
 |}
 
 (*****************************************************************************)
-(* The file: globals and functions *)
+(* The compiler: its passes *)
 (*****************************************************************************)
+
+(* The compiler's passes, a declaration at a time (so that an error in
+ * a function's lowering is said at its line):
+ *
+ *     the file's text      TinyCLexer.tokens (#includes, #defines)
+ *        | tokens
+ *     Parser.external_decl  typed as it is read (TinyCTree)
+ *        | defs: a function's tree, a global's data
+ *     Lower.lower_function  the tree to the stack machine
+ *        | ir list
+ *     Machine.machine       TinyCPU's assembly (Machine.global: data)
+ *)
 
 (* -ir: the stack machine's code instead of the machine's *)
 let ir_only = ref false
 
-let sym_of storage name : sym =
-  if storage = Static then static_sym name else name
-
-(* a global's initializer, as DATA at offsets *)
-let rec init_data (name : sym) t off =
-  match t, peek () with
-  | Arr (e, _), P "{" ->
-      ignore (next ());
-      (* the elements, counted *)
-      let rec elems i =
-        if accept "}" then i
-        else
-          (ignore (init_data name e (off + (i * size e)));
-           ignore (accept ",");
-           elems (i + 1)) in
-      elems 0
-  | Arr (Int (1, _), n), Str s ->
-      ignore (next ());
-      String.iteri (fun i c ->
-        datum name (off + i) (Value (1, Int64.of_int (Char.code c)))) s;
-      max n (String.length s + 1)
-  | _ ->
-      let e = rv (assign_expr ()) in
-      (match e.d, e.t with
-       | Const v, _ -> datum name off (Value (size t, v))
-       | Addr (Global s), _ -> datum name off (Address s)
-       | _ -> error (name ^ ": not a constant initializer"));
-      1
-
-let external_decl () =
-  let storage, bt = base_type () in
-  let rec go () =
-    let name, t, pnames = declarator3 bt in
-    if storage <> Typedef then no_vlong t;
-    match t with
-    | Func (rt, ps, _) when storage <> Typedef && peek () = P "{" ->
-        (* a definition *)
-        let sym = sym_of storage name in
-        Hashtbl.replace globals name { vty = t; where = Global sym };
-        ignore (next ());
-        let params = List.combine pnames ps in
-        scopes := [ Hashtbl.create 8 ];
-        List.iteri (fun i (p, pt) ->
-          Hashtbl.replace (List.hd !scopes) p
-            { vty = pt; where = Param (4 * i) }) params;
-        frame := 0;
-        result := rt;
-        let code = Lower.lower_function (block ()) in
-        if !ir_only then
-          (Buffer.add_string Machine.out (name ^ ":\n");
-           List.iter (fun i ->
-             Buffer.add_string Machine.out ("\t" ^ Lower.show i ^ "\n")) code)
-        else Machine.machine sym (round !frame 8) code;
-        scopes := []
-    | _ ->
-        let sym = sym_of storage name in
-        (match storage, t with
-         | Typedef, _ -> Hashtbl.replace typedefs name t
-         | _, Func _ ->
-             Hashtbl.replace globals name { vty = t; where = Global sym }
-         | _ ->
-             let t =
-               if accept "=" then
-                 (match t with
-                  | Arr (e, 0) -> let n = init_data sym t 0 in Arr (e, n)
-                  | _ -> ignore (init_data sym t 0); t)
-               else t in
-             Hashtbl.replace globals name { vty = t; where = Global sym };
-             if storage <> Extern then globl sym (size t));
-        if accept "," then go () else expect ";"
-  in
-  if not (accept ";") then go ()
+let compile (d : def) =
+  match d with
+  | Function (f, locals, body) ->
+      let code = Lower.lower_function body in
+      if !ir_only then
+        (Buffer.add_string Machine.out (f ^ ":\n");
+         List.iter (fun i ->
+           Buffer.add_string Machine.out ("\t" ^ Lower.show i ^ "\n")) code)
+      else Machine.machine f locals code
+  | Data (g, n, ds) -> if not !ir_only then Machine.global g n ds
 
 (*****************************************************************************)
 (* main *)
@@ -148,10 +98,11 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
         let ts = with_file (tokens (Hashtbl.create 16) with_file) file in
         toks := Array.of_list (List.map fst ts);
         locs := Array.of_list (List.map snd ts);
-        while peek () <> EOF do external_decl () done;
+        while peek () <> EOF do List.iter compile (external_decl ()) done;
         let text =
           Buffer.contents Machine.out
-          ^ (if !ir_only then "" else "\t.data\n" ^ Buffer.contents data)
+          ^ (if !ir_only then ""
+             else "\t.data\n" ^ Buffer.contents Machine.data)
         in
         (match !output with
          | None -> TSys.print caps text

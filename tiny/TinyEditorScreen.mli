@@ -44,8 +44,7 @@
  * M-x knows each of these keys by its name in Emacs (kill-line,
  * save-buffer...), and two commands that have no key and ask on the
  * last line what they need: goto-line, and replace-string, from the
- * cursor to the end. A command is the keys it is: M-x kill-line gives
- * the editor a C-k.
+ * cursor to the end (what M-x kill-line does: twist:, below).
  *
  * A macro is the keys typed between C-x ( and C-x ). C-x e gives them
  * again to the editor, which reads them before the keys typed
@@ -80,6 +79,17 @@
  * count (C-u), wrapping long lines (a long line is cut at the edge of
  * the screen, and the screen scrolls to follow the cursor), and
  * characters beyond ASCII.
+ *
+ * twist:
+ * A command is the keys it is: M-x kill-line gives the editor a C-k,
+ * where mini-emacs, after efuns, looks each key up in a keymap to find
+ * its command. So M-x and a macro both come down to keys queued for the
+ * editor ([pending]), and there is no table of commands beside the
+ * keys.
+ *
+ * exercises:
+ * - undo as a list of earlier texts, as the office and mini-office do
+ *   (the text's record made a value, so that an earlier one is kept).
  *)
 
 type editor

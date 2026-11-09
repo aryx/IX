@@ -36,30 +36,38 @@
  * instructions (the assembler did), the code laid along its flow
  * (mini-ld's Follow), literal pools, the prologues a linker writes for
  * a TEXT, libraries (mini-ar's archives, below), ELF's and Mach-O's
- * headers: the a.out's is three words of its own. Added: the sweep,
- * which neither 5l nor mini-ld has (a library's member is taken
- * whole); and -s writes the labels as text lines, where 5l writes a
- * binary table (debugging.c's putsymb: a value, a type letter, a
- * name) and a table of the pcs' source lines beside it.
+ * headers: the a.out's is three words of its own.
  *
  * kept:
- * It is small because:
+ * {b The layout is the one the assembler made when it linked} (a file
+ * on a word, an .align on its address): an object without pieces, all
+ * of tiny-c's and the hand-written .tm, is placed as it was, and the
+ * split checked byte for byte on make check's images
+ * (plan_tiny_self_hosting.md, step 3).
+ *
+ * twist:
+ * Added, against the twin:
+ * - {b The sweep}, which neither 5l nor mini-ld has (a library's
+ *   member is taken whole there): what nothing reaches is left out.
+ * - {b No archive}, which the sweep makes unneeded: every object given
+ *   is linked, but for its pieces that nothing reaches. TinyLibCore/'s
+ *   objects are given to every program in ML (/lib/ml/*.o), the sweep
+ *   keeping what it calls, so an archive (objects one after the other,
+ *   a member linked when it defines what another needs) is not needed
+ *   yet.
  * - {b A place is filled by encoding again}: the word is decoded
  *   (TinyMachineISA.decode), its immediate replaced, and encoded, so
  *   [encode]'s checks say what does not fit (an addi of an address
  *   above 32 KB, a branch too far), as they did when the assembler
  *   linked; there is no table of where each kind of instruction keeps
  *   its field.
- * - {b No archive}: every object given is linked, but for its pieces
- *   that nothing reaches. TinyLibCore/'s objects are given to every
- *   program in ML (/lib/ml/*.o), the sweep keeping what it calls, so an
- *   archive (objects one after the other, a member linked when it
- *   defines what another needs) is not needed yet.
- * - {b The layout is the one the assembler made when it linked} (a
- *   file on a word, an .align on its address): an object without
- *   pieces, all of tiny-c's and the hand-written .tm, is placed as it
- *   was, and the split checked byte for byte on make check's images
- *   (plan_tiny_self_hosting.md, step 3).
+ * - -s writes the labels as text lines, where 5l writes a binary table
+ *   (debugging.c's putsymb: a value, a type letter, a name) and a
+ *   table of the pcs' source lines beside it.
+ *
+ * exercises:
+ * - identical pieces folded: two pieces of the same bytes and the same
+ *   relocations kept once, found by their hash (gold's --icf).
  *
  * others:
  * Wirth's Oberon (Project Oberon, 1992) links modules as they are

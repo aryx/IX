@@ -44,15 +44,6 @@
  *   their messages. A button sends its message when the mouse is
  *   released inside the same button it was pressed in; moving out of
  *   the button cancels the press.
- * - {b The state below the model.} There is one such value, the mouse:
- *   where its button went down, where it is now, and where it last
- *   went down. This state does not belong in the model (no program
- *   wants to know about a half-pressed button or a caret), and no
- *   widget can keep it, since widgets are rebuilt every time. The
- *   button being held is the one whose box contains the first two
- *   points; the field that receives the keys is the one whose box
- *   contains the third. So no widget needs a name, and the focus is
- *   just a position.
  * - {b The picture of the model, and what is drawn over it.} The
  *   shapes of the widgets depend only on the model; they are built and
  *   placed only when the model changes. The edges of a held button and
@@ -79,6 +70,18 @@
  * user does something); and the three other ways to write a program
  * (immediate, retained, model-view-controller).
  *
+ * twist:
+ * {b The state below the model} is three points, where lib_gui keeps a
+ * focus of its own (its Focus module) and leans on the platform for
+ * the rest. There is one such value, the mouse: where its button went
+ * down, where it is now, and where it last went down. This state does
+ * not belong in the model (no program wants to know about a
+ * half-pressed button or a caret), and no widget can keep it, since
+ * widgets are rebuilt every time. The button being held is the one
+ * whose box contains the first two points; the field that receives the
+ * keys is the one whose box contains the third. So no widget needs a
+ * name, and the focus is just a position.
+ *
  * context:
  * Below it are TinyLibPlayground (its shapes and
  * their drawing, but not its loop, because a game has frames and no
@@ -102,7 +105,10 @@
  *   model;
  * - a row that gives each widget the width it asked for, and the rest
  *   to one of them;
- * - a clock: a message every second, for a timer.
+ * - a clock: a message every second, for a timer;
+ * - undo and redo in the library, a stack of past models: every
+ *   program's for free, since update is the only change (Elm's time
+ *   travel).
  *
  * cs-history:
  * A screen of widgets that send messages comes from Smalltalk (Xerox

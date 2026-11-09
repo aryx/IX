@@ -60,12 +60,6 @@
  * kept:
  * The idea is implemented each time in the cheapest way that still
  * keeps it:
- * - {b The kernel holds every pixel.} A window is an off-screen image
- *   created by a message; tiny-windows only knows its number, never
- *   its bytes. What appears on the screen is composed by drawing the
- *   windows back to front, clipped to the rectangle that changed.
- *   There are no layers: mini-9pi's Memlayer saves the hidden parts
- *   of windows separately, but here nothing needs saving.
  * - {b Forwarding is renumbering.} The program in a window names its
  *   images with its own numbers, 0 being its window. tiny-windows
  *   reads these messages from a pipe, replaces each number with one of
@@ -84,10 +78,6 @@
  *   delivered as it is typed, and the mouse in the window belongs to
  *   the program. This lasts until something is printed again (for
  *   example the shell's prompt, once the program ends).
- * - {b A mouse is a box}: the position of the mouse in the window is
- *   written to a special kind of kernel pipe that keeps only the last
- *   write. So a program that never reads its mouse does not block
- *   anything.
  *
  * dropped:
  * A menu specific to each window, scroll bars and the kept text of a
@@ -96,6 +86,19 @@
  * window names, and the files a window serves. rio is a file server,
  * but here the descriptors are simply handed over, because
  * TinyKernel.ml has no name space.
+ *
+ * twist:
+ * Against rio and mini-rio:
+ * - {b The kernel holds every pixel.} A window is an off-screen image
+ *   created by a message; tiny-windows only knows its number, never
+ *   its bytes. What appears on the screen is composed by drawing the
+ *   windows back to front, clipped to the rectangle that changed.
+ *   There are no layers: mini-9pi's Memlayer saves the hidden parts
+ *   of windows separately, but here nothing needs saving.
+ * - {b A mouse is a box}: the position of the mouse in the window is
+ *   written to a special kind of kernel pipe that keeps only the last
+ *   write. So a program that never reads its mouse does not block
+ *   anything.
  *
  * context:
  * TinyKernel provides the five descriptors, the pipes, the box and
@@ -108,7 +111,10 @@
  * - Resize: make a new image, draw the old one in it, free the old one;
  * - keep the text and add a scroll bar; add selection, snarf and paste;
  * - tell a program the size of its window (a message read on its 4);
- * - let New start a program other than the shell (an argument).
+ * - let New start a program other than the shell (an argument);
+ * - remote windows: a window's draw messages are a byte stream
+ *   already, so sent over an IL connection they are drawn by another
+ *   machine's tiny-windows (drawterm's idea).
  *
  * cs-history:
  * The idea comes from the Blit (Rob Pike, Bell Labs, 1982). Its window

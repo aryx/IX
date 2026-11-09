@@ -15,6 +15,24 @@
  * name of up to 64 bytes and an inode's number. This is the file system
  * of Unix since 1971, and of xv6.
  *
+ * twin:
+ * mini-9pi's disk, '#x' (kernels/9pi/'s Kfs), on
+ * lib_xv6fs's Xv6fs: xv6's file system (xv6's fs.c, which ix's
+ * mini-xv6 has too, kernels/xv6's Fs), in the kernel, with a bitmap
+ * of free blocks and, as here, no log and no cache. Kept from it: the
+ * inode, its direct then indirect blocks, the directory as a file of
+ * (name, number), names longer than xv6's 14 (ix's extension there).
+ * Plan 9 itself has no disk file system in its kernel
+ * (principia's kernel/filesystems/ is devfs.c, and dossrv and ramfs as
+ * programs): a disk is served by a program, as Kdos says; here, as in
+ * mini-9pi's Kfs and in Unix, the kernel calls it as functions.
+ *
+ * twist:
+ * Against the twin: nothing written in place, so the commit is one
+ * block where xv6's log.c writes each change twice; free blocks found by
+ * a collector, not a bitmap kept right; the snapshots, which xv6 has no
+ * way to keep.
+ *
  * {b What is different: nothing is ever written over.} A classic file
  * system changes a block where it is. If the machine stops in the middle
  * of a change that touches several blocks (a new file is an inode, a
@@ -67,21 +85,6 @@
  * kernel shows them as /dump/N, the files as they were at the end of
  * boot N, read only. A file deleted by mistake can be copied back from
  * there.
- *
- * twin:
- * mini-9pi's disk, '#x' (kernels/9pi/'s Kfs), on
- * lib_xv6fs's Xv6fs: xv6's file system (xv6's fs.c, which ix's
- * mini-xv6 has too, kernels/xv6's Fs), in the kernel, with a bitmap
- * of free blocks and, as here, no log and no cache. Kept from it: the
- * inode, its direct then indirect blocks, the directory as a file of
- * (name, number), names longer than xv6's 14 (ix's extension there).
- * Ours: nothing written in place, so the commit is one block where
- * xv6's log.c writes each change twice; free blocks found by a
- * collector, not a bitmap kept right; the snapshots, which xv6 has no
- * way to keep. Plan 9 itself has no disk file system in its kernel
- * (principia's kernel/filesystems/ is devfs.c, and dossrv and ramfs as
- * programs): a disk is served by a program, as Kdos says; here, as in
- * mini-9pi's Kfs and in Unix, the kernel calls it as functions.
  *
  * cs-history:
  * The inode, the direct and indirect blocks, and directories as files of

@@ -69,8 +69,7 @@
  * The twin, mini-5i, keeps its decoded words as this CPU does, but by
  * address (Cpu): a program that wrote over its code would run the old
  * one, and mini-qemu's loop empties the cache when a mapping changes.
- * Here they are kept by the word itself ([keep_decoded], in the .ml),
- * which no store can make wrong. mini-5i also has a second execute for
+ * mini-5i also has a second execute for
  * what a kernel runs most, which allocates nothing (Arm32_fast),
  * Arm32's staying the definition; here [step] is both.
  *
@@ -90,6 +89,12 @@
  *   assembly again, which reassembled gives the same words (print,
  *   parse, encode and decode agree; not for data, whose words may
  *   decode as instructions with bits the encoding ignores).
+ *
+ * twist:
+ * The decoded words are kept by the word itself ([keep_decoded], in the
+ * .ml), not by their address as the twin's: no store can make the
+ * cache wrong, so nothing empties it, and a program that writes over
+ * its code runs the new one.
  *
  * context:
  *     .tm files: by hand (v0), by tiny-c, by tiny-ml

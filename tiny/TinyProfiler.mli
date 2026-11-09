@@ -88,17 +88,20 @@
  * twin:
  * mini-qemu has the same pair, with sampling: -prof F counts every
  * 1024th pc (raspberry/observe/Prof.ml), and a script maps them to a
- * kernel's functions (kernels/9pi/tests/perf/pcprof.py). Here every
- * instruction is counted: the machine is slow enough for that to cost
- * little more than running it, and two runs give the same profile.
+ * kernel's functions (kernels/9pi/tests/perf/pcprof.py).
  *
  * Plan 9's emulators had the idea first: vi and 5i count every
  * instruction fetched by its address and print, by the program's
  * symbol table, each function's count and share ($ip: principia's
  * machine/5i, stats.c's iprofile, its columns cycles, %, symbol and
- * file); mini-5i left it out. What is ours: the counts a file of their
+ * file); mini-5i left it out.
+ *
+ * twist:
+ * Here every instruction is counted, where the twin samples: the
+ * machine is slow enough for that to cost little more than running it,
+ * and two runs give the same profile. The counts are a file of their
  * own, so that a run can be taken off another (-diff), and a machine
- * with a kernel, whose counts and each program's are told apart.
+ * with a kernel has its counts and each program's told apart.
  *
  * cs-history:
  * Unix's prof (1973 or so) counted where the program was at each tick

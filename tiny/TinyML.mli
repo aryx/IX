@@ -225,7 +225,9 @@
  *   there);
  * - a switch on constructor tags instead of one test per clause;
  * - exhaustiveness warnings (Maranget, "Warnings for pattern
- *   matching", 2007).
+ *   matching", 2007);
+ * - -debug saying the typed tree, by [@@deriving show] and Logs.debug,
+ *   as tiny-linker and tiny-shell do.
  *
  * cs-history:
  * ML is the Meta Language of Edinburgh's LCF, a proof assistant (Robin

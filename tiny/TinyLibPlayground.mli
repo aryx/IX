@@ -52,13 +52,6 @@
  *   single message: nothing flickers, and a window system only has to
  *   show one rectangle. The first shape, the background, is kept
  *   already drawn in an image of its own.
- * - {b The sounds}: a sound is what changed, as the picture is what
- *   is: [sound] is given the model before and the model after, and
- *   says what is heard (Tetris: rows that went, a piece that landed).
- *   So a game keeps nothing of what it played, and its sounds are
- *   tested as its rules are, with two models and no speaker. A sound
- *   is written to tiny-kernel's /dev/audio as a message of 11 bytes, and
- *   the kernel makes its samples, mixed with the other programs'.
  * - {b The music}: the tune a model wants playing, as the picture is
  *   the one it wants shown ([music]: Tetris's theme, faster at each
  *   level; none when the game is over). The library gives each of its
@@ -85,6 +78,16 @@
  * platforms (there is only one: the file descriptor the program draws
  * on).
  *
+ * twist:
+ * {b A sound is what changed}, as the picture is what is, where the
+ * twin's playground renders audio by its sources and has no sound of
+ * a model: [sound] is given the model before and the model after, and
+ * says what is heard (Tetris: rows that went, a piece that landed). So
+ * a game keeps nothing of what it played, and its sounds are tested as
+ * its rules are, with two models and no speaker. A sound is written to
+ * tiny-kernel's /dev/audio as a message of 11 bytes, and the kernel
+ * makes its samples, mixed with the other programs'.
+ *
  * context:
  * Below it are TinyCalls (four kernel calls: write,
  * read, ready, ticks) and TinyLibDraw (the drawing messages); above it
@@ -99,7 +102,10 @@
  * - redraw only what changed, for every shape and not just the
  *   background, by comparing the shapes of two models;
  * - circles and polygons, using TinyKernelGraphics.ml's;
- * - a second game: a Snake, or a Pong.
+ * - a second game: a Snake, or a Pong;
+ * - record and replay: a game is pure and init takes a seed, so the
+ *   seed and the keys by frame reproduce a whole game (demos, bug
+ *   reports, tests written as recordings).
  *
  * cs-history:
  * Writing a program with a screen as a value plus a few functions on

@@ -96,7 +96,9 @@
  *   gets to keep the old pieces for free;
  * - several dots instead of one: keep the matches of an x as a set of
  *   selections, and run the next command on each of them (the editing
- *   model of Kakoune and vis, which grew out of sam's x).
+ *   model of Kakoune and vis, which grew out of sam's x);
+ * - a journal of each command's changes, appended to a file as they are
+ *   applied: crash recovery, and undo across sessions.
  *
  * cs-history:
  * The line as the unit of editing comes from the teletype. QED

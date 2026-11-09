@@ -21,17 +21,6 @@
  *                                "wc: f2: reason",      at once; the
  *                                the status is now 1    end of each file
  *
- * {b The others walk a file tree}, and they are one fold: [fold caps path f]
- * calls f with the path, whether it is a directory, its size, and a
- * function that folds its entries, in name order, when it is called.
- * When f calls it decides the order:
- *
- *     walk     prints the path, then calls it          pre-order
- *     du       calls it, sums its results with the     post-order
- *              path's own size, then prints the sum
- *     rm -r    calls it, then removes the path         post-order
- *     ls       does not call it: one level only
- *
  * twin:
  * m-ix's utilities/ has a program per file, each a faithful copy of
  * Plan 9's, with its options and its quirks. This file is what remains
@@ -60,11 +49,29 @@
  * are all "tool: file: reason". The plan, and what was found on the
  * way: docs/plans/done/plan_tiny_utilities.md.
  *
+ * twist:
+ * The utilities that walk a file tree are one fold, where the twins
+ * each walk the tree their own way (Plan 9's du.c and rm.c each recur
+ * on their own). [fold caps path f] calls f with the path, whether it
+ * is a directory, its size, and a function that folds its entries, in
+ * name order, when it is called. When f calls it decides the order:
+ *
+ *     walk     prints the path, then calls it          pre-order
+ *     du       calls it, sums its results with the     post-order
+ *              path's own size, then prints the sum
+ *     rm -r    calls it, then removes the path         post-order
+ *     ls       does not call it: one level only
+ *
  * context:
  * The same file on two systems: as TinyShell.ml, it names only
  * TinyLibSystem (TinyKernel/host/TinyLibSystem.mli) and the pure
  * functions of the standard library, so it is tiny-kernel's utils and
  * the host's tiny-utils.
+ *
+ * exercises:
+ * - the utilities run in tiny-shell's own process (BusyBox's NOFORK
+ *   applets), so that a pipeline of them is not bound by tiny-kernel's
+ *   eight processes.
  *)
 
 type caps =

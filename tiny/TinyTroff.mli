@@ -41,11 +41,9 @@
  * mini-troff (typesetting/) reads what was written for troff (a manual
  * page's and a paper's macros, tbl, pic), LaTeX, and the same
  * Markdown's lines, into one document (Doc) laid out for a terminal or
- * a PDF in Times. What is ours: one format only, the office's, read by
- * the office's functions, so there is no document type of troff's own,
- * no roff and no LaTeX; a part kept at its place on its page, where
- * mini-troff fills a flow of paragraphs; HTML, which mini-troff does
- * not write; PDF in Courier, one width for every character, so no
+ * a PDF in Times. Beside it, a part is kept at its place on its page,
+ * where mini-troff fills a flow of paragraphs; HTML, which mini-troff
+ * does not write; PDF in Courier, one width for every character, so no
  * font's metrics are needed. Plan 9's troff (principia's
  * typesetting/troff/) is the original of both; Plan 9 makes HTML with
  * other programs, troff2html from troff's output and htmlroff from -ms
@@ -55,6 +53,12 @@
  * A text that flows onto the next page, the paint as a picture (a BMP:
  * SVG's rectangles instead), and the office's own colours and fonts in
  * the HTML (the browser's monospace).
+ *
+ * twist:
+ * One format only, the office's, read by the office's own functions,
+ * where mini-troff reads troff's macros, LaTeX and Markdown into a
+ * document type of its own: here there is none, no roff and no LaTeX,
+ * and the format is written down once, for the office, emacs and troff.
  *
  * cs-history:
  * troff (Joe Ossanna, 1973) made the documents of Unix from a text

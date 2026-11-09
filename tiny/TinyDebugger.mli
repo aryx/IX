@@ -45,10 +45,6 @@
  *                               step), the 0 written again,
  *                               cat Ready
  *
- * - {b A step is the timer's interrupt}: entry.tm's k_step sets the
- *   timer to ring after one instruction of the process, then runs it
- *   as any other. No instruction is decoded to find where the next
- *   one is.
  * - {b n is a breakpoint after the call}: on a jal or jalr to lr, a
  *   breakpoint at the next instruction, and c. In a recursive function
  *   a deeper call of the same one comes back there first; the sp tells
@@ -80,10 +76,6 @@
  *   instruction itself, through /proc/n/mem, and keeps the words in its
  *   own table (db's runpcs.c, with a flag per breakpoint to skip it
  *   once when continuing from it).
- * - {b The step by the timer} (above), where db's runstep asks libmach
- *   for the addresses the instruction can go to next (machdata's foll:
- *   a branch's two) and puts temporary breakpoints there (db's
- *   trcrun.c), and Unix's PTRACE_SINGLESTEP sets the CPU's trap flag.
  * - {b bt by the prologues}, where Plan 9's linkers write each
  *   function's frame size in the symbol table (a .frame symbol, read
  *   by libmach's sym.c) and its stack walk reads it.
@@ -99,9 +91,23 @@
  * value by its type (that needs the compilers to describe their frames:
  * acid's road), the kernel itself.
  *
+ * twist:
+ * {b A step is the timer's interrupt}: entry.tm's k_step sets the timer
+ * to ring after one instruction of the process, then runs it as any
+ * other. No instruction is decoded to find where the next one is, where
+ * db's runstep asks libmach for the addresses the instruction can go to
+ * next (machdata's foll: a branch's two) and puts temporary breakpoints
+ * there (db's trcrun.c), and Unix's PTRACE_SINGLESTEP sets the CPU's
+ * trap flag.
+ *
  * context:
  * Its sibling is trace (TinyTracer), strace's idea on the same
  * descriptor: a stop before each system call and after it.
+ *
+ * exercises:
+ * - reverse step by replay: tiny-machine is deterministic (-events,
+ *   -seed, -date), so a step back is the session run again to the
+ *   instruction before, as rr does, with no log of undos.
  *
  * cs-history:
  * Unix's first debugger was db, then adb (Steve Bourne, Seventh

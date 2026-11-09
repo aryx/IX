@@ -30,9 +30,6 @@
  * for TinyLibGUI.
  *
  * kept:
- * - {b A key is the same as its button}: [key] returns the message the
- *   button would send, so the keyboard and the mouse cannot behave
- *   differently.
  * - {b Overflow and division by zero show an error instead of
  *   trapping}: dividing by 0 or getting a number longer than nine
  *   digits shows "error" until c is pressed. A product is checked with
@@ -43,6 +40,10 @@
  * dropped:
  * Fractions (tiny-ml has no floats), a sign key, a memory, deleting the
  * last digit, priorities and parentheses.
+ *
+ * twist:
+ * A key is the same as its button: [key] returns the message the button
+ * would send, so the keyboard and the mouse cannot behave differently.
  *
  * exercises:
  * - a key that deletes the last digit; one that changes the sign;

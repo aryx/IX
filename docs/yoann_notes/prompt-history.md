@@ -66406,3 +66406,51 @@ Claude flagged that TinyVCS.mli in its header repeats `archi:` six times, five o
 Claude proposed that a diagram belong to the paragraph that introduces it and take no label of its own.
 Claude left that rule change for your review, since the convention currently labels every paragraph, diagrams included.
 Claude also converted 38 headers across three agents, without committing, after dune and loc.py checks.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 08:34
+
+**Yoann:**
+
+> looks good. Yes do (1). For TinyBuildSystem, the kept: tag is wrong because the use of sha1 for stamp is actually not in mini-mk (nor mk), so it's really more a twist: or tag indicating a nice originality of the free variant spirit of tiny/ taking liberty towards its twin and offering something original and interesting
+
+**Claude (summary):**
+
+Claude recommended adding a `twist:` label for original ideas in tiny/ programs, placed between `dropped:` and `archi:`.
+Claude updated `docs/tags.md` with the new `twist:` row and a one-label-per-section rule.
+Claude applied `twist:` to TinyBuildSystem's content-hash stamps, replacing the wrong `kept:` label, since mk compares timestamps.
+Claude removed duplicate label lines across tiny/ headers, then ran the build, `loc.py` checks, and a diff-scope check.
+Claude's first commit failed because zsh passed the file list as one argument, so it recommitted with split paths.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 08:41
+
+**Yoann:**
+
+> actually it would be good to try to find more twist: for the other tiny programs, and even invent new twist that are not yet implemented but that would be great ideas simplifying the code while at the same time making the program more powerful (like the use of sha1 stamp in TinyBuildSystem)
+
+**Claude (summary):**
+
+Claude recommended labelling five toolchain twists already present, such as the CPU's address-free decode cache.
+Claude also listed seven kernel and library twists already there, led by TinyKernelFS's never-in-place writes.
+Claude proposed new twists for the plan: one stack back end shared by tiny-c and tiny-ml, plus jump-counting profiling.
+Claude found the kernel runs on several cores, so the dropped entry about multiple cores is stale.
+Claude launched three read-only analyses in parallel and was checking their strongest claims against the code.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 08:53
+
+**Yoann:**
+
+> let's do 1, and for the new twists let's store then in a plan_tiny_twists.md plan document. For C we can add them as exercise in their respective headers
+
+**Claude (summary):**
+
+Claude split the work into relabelling twists, fixing the kernel cores line, adding exercises, and writing the plan document.
+Claude noted that the two agent groups share no files, so they could run in parallel without conflicts.
+Claude said it would wait for both agent groups to finish before reviewing their diffs.
+Claude said it would run the checks on the combined changes once both groups were done.
+Claude said it would commit all the changes together in a single commit after review.

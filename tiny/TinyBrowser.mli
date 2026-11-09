@@ -20,6 +20,16 @@
  * cost, and a page cut anywhere reads the same.
  *
  * kept:
+ * The machine's font has only 128 characters, so UTF-8 and HTML
+ * entities are converted to ASCII here. A dash becomes -, a curly quote
+ * becomes a straight one, an accented letter loses its accent, and
+ * anything else becomes ?.
+ *
+ * dropped:
+ * With the tree go style sheets (but a display:none, hidden), scripts,
+ * forms, a page's colours and fonts, anything but ASCII.
+ *
+ * twist:
  * {b A page is read only once, as it arrives, and turned directly into
  * lines}. There is no document tree and no style sheet. Instead, the
  * meaning of each tag is a row in a table that says whether it starts a
@@ -55,15 +65,6 @@
  * word, its whole text if there is room, and otherwise a share of the
  * remaining room proportional to what it would need. Finally the rows
  * are laid out side by side.
- *
- * The machine's font has only 128 characters, so UTF-8 and HTML
- * entities are converted to ASCII here. A dash becomes -, a curly quote
- * becomes a straight one, an accented letter loses its accent, and
- * anything else becomes ?.
- *
- * dropped:
- * With the tree go style sheets (but a display:none, hidden), scripts,
- * forms, a page's colours and fonts, anything but ASCII.
  *
  * cs-history:
  * Mosaic (1993) displayed a page progressively as it came over the

@@ -133,22 +133,23 @@
  * echo (ping). The world, which speaks TCP, is reached through the
  * wire's other end (TinyMachinePeer, a translator).
  *
- * kept:
- * {b The stack is functions of strings}. A packet is a
- * string; a packet that came gives the packets to send back and what a
- * program is to hear. Nothing here reads a device, keeps a clock or
- * knows who calls. So the same file is three things: the kernel's
- * stack (TinyKernel.ml takes the packets from the machine's device and
- * gives them here), the host's test of it (no machine), and the wire's
- * other end (TinyMachine.ml's -net: the host answering with this very
- * code, where mini-qemu needed a second stack, raspberry/Usernet).
- *
  * dropped:
  * Each of these is left out because the wire has two ends and one
  * program at each: Ethernet and its addresses, ARP (who has this
  * address?), routes, fragments (a packet cut to pass a narrow road),
  * options, the hops counted down. A packet that is not well made or
  * not for us is dropped without a word.
+ *
+ * twist:
+ * {b The stack is functions of strings}, where mini-9pi's is tied to
+ * its devices. A packet is a string; a packet that came gives the
+ * packets to send back and what a program is to hear. Nothing here
+ * reads a device, keeps a clock or knows who calls. So the same file is
+ * three things: the kernel's stack (TinyKernel.ml takes the packets
+ * from the machine's device and gives them here), the host's test of it
+ * (no machine), and the wire's other end (TinyMachine.ml's -net: the
+ * host answering with this very code, where mini-qemu needed a second
+ * stack, raspberry/Usernet).
  *
  * cs-history:
  * IP is Cerf and Kahn's (1974), split from TCP in 1978 so that what

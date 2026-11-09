@@ -82,14 +82,7 @@
  * until it traps, handle the trap, and choose again. A process has a
  * slot (a partition, and a frame of 17 words where entry.tm saves its
  * registers), a pid, a state, a parent, its descriptors and its
- * current directory. A system call that must wait (a read on an empty
- * pipe, or a wait) leaves its process Waiting, with the rest of the
- * call stored as a closure. The scheduler calls that closure when it
- * looks for a process to run, and the process becomes ready again once
- * the closure can finish. So there is no wakeup to forget (the
- * lost-wakeup bug of sleep and wakeup) and no channel: a process waits
- * on a condition, as with Brinch Hansen's await and Plan 9's
- * sleep(r, cond), at the price of one retry per scheduling round.
+ * current directory.
  *
  * Several cores (tiny-machine -cores n, plan_tiny_multicore.md). The
  * kernel stays core 0's, whole: one heap, one collector, written for
@@ -156,6 +149,27 @@
  * (tiny-build starts each recipe's rc with it: its own partition is
  * 16 MB).
  *
+ * dropped:
+ * Paging, the kernel itself on several cores at once (only processes
+ * run on the others, above), users and permissions, and signals
+ * except the simplest: kill(pid) ends a process as a fault does (with
+ * status -1), and ^C at the console kills every process except the
+ * shell. The system calls are specific to this kernel (its programs
+ * are in TinyKernel/user/), but t6's cat, echo, ls, wc, mkdir and rm
+ * run unchanged, because they use only calls the two kernels have in
+ * common.
+ *
+ * twist:
+ * A system call that must wait (a read on an empty pipe, or a wait)
+ * leaves its process Waiting, with the rest of the call stored as a
+ * closure, where Unix's and Plan 9's kernels, and mini-9pi's, keep a
+ * kernel stack per process and sleep on it. The scheduler calls that
+ * closure when it looks for a process to run, and the process becomes
+ * ready again once the closure can finish. So there is no wakeup to
+ * forget (the lost-wakeup bug of sleep and wakeup) and no channel: a
+ * process waits on a condition, as with Brinch Hansen's await and Plan
+ * 9's sleep(r, cond), at the price of one retry per scheduling round.
+ *
  * A process consists of two very different things. One is its
  * partition and its frame, plain memory that the collector never sees
  * and that is accessed with peek and poke. The other is its record, an
@@ -183,15 +197,6 @@
  * channel, no wakeup. The closure holds the file, the address and the
  * count, which is exactly what a C kernel keeps the sleeping process's
  * kernel stack for.
- *
- * dropped:
- * Paging, multiple cores, users and permissions, and signals
- * except the simplest: kill(pid) ends a process as a fault does (with
- * status -1), and ^C at the console kills every process except the
- * shell. The system calls are specific to this kernel (its programs
- * are in TinyKernel/user/), but t6's cat, echo, ls, wc, mkdir and rm
- * run unchanged, because they use only calls the two kernels have in
- * common.
  *
  * archi:
  * The toolchain is entirely ix's own, and so is the bridge between ML

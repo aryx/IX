@@ -41,9 +41,7 @@
  * {b A sheet's data is a line a cell}: its name and what was typed in
  * it, "a1 Rent", "b1 500", "b3 =b1+b2". What was typed is a number, a
  * formula after an = (+ - * /, parentheses, cells, sum(b1:b2)), or
- * text. The values are computed at each view, each cell once, those it
- * needs first: a cell being computed counts as #CYCLE, which is what a
- * cell that needs itself shows. Integers only (tiny-ml's). It is edited
+ * text (its values: twist:, below). Integers only (tiny-ml's). It is edited
  * as any spreadsheet: a cell chosen (a click, the arrows), what is
  * typed replaces what was, shown in the status line as in a formula
  * bar, Enter puts it and goes down; Enter on a cell brings back what is
@@ -75,8 +73,7 @@
  *
  * {b A chart draws a sheet's cells as bars}, its data a line, "bars
  * budget b1:b3 a1:a3": the sheet by its name, the cells of the values,
- * of the labels. The values are the sheet's at each view, so a chart
- * follows its sheet. A sheet is named when made (sheet1, sheet2...), its
+ * of the labels. A sheet is named when made (sheet1, sheet2...), its
  * name on its tab and in its \box line; the Sheet menu, a cell chosen,
  * names it (its charts renamed too) or makes a chart of the cell's
  * column, its numbers, the column at its left their labels.
@@ -139,6 +136,14 @@
  * page, and undo of the typing inside a box (undo takes the document
  * back to before the box was edited).
  *
+ * twist:
+ * A sheet's values are computed at each view, each cell once, those it
+ * needs first, where mini-office's Sheet builds a dependency graph and
+ * recalculates what a change reaches. With no graph there is nothing to
+ * invalidate: a cell being computed counts as #CYCLE, which is what a
+ * cell that needs itself shows, and a chart, whose values are the
+ * sheet's at each view, follows its sheet with no code of its own.
+ *
  * archi:
  * The shell is this file; the parts are TinyOffice/'s modules, a kind
  * each: TinyOfficeText, TinyOfficeSheet, TinyOfficeDrawing,
@@ -149,6 +154,10 @@
  * context:
  * This file uses no system calls: the program around reads the keys and
  * the mouse, draws and writes the file.
+ *
+ * exercises:
+ * - a save that is a tiny-vcs commit: the document is Markdown's lines,
+ *   so tiny-vcs's diff of two saves reads well.
  *)
 
 (* [create width height file text]: the office on a page of that size

@@ -27,21 +27,6 @@
  * kept:
  * The parts that are not obvious:
  *
- * - {b Each rotation of a piece is 16 bits}: a 4 by 4 square, one
- *   hexadecimal digit per row, all stored in a string ([turns]). There
- *   is no table of tables, and turning a piece just means moving to
- *   the next four digits. Here are the T's sixteen digits, 4E00 4640
- *   0E40 4C40; each column of the picture is one rotation, and the
- *   high bit of a digit is the leftmost cell:
- *
- *       4  . # . .     4  . # . .     0  . . . .     4  . # . .
- *       E  # # # .     6  . # # .     E  # # # .     C  # # . .
- *       0  . . . .     4  . # . .     4  . # . .     4  . # . .
- *       0  . . . .     0  . . . .     0  . . . .     0  . . . .
- *
- *   Checking whether a piece fits is then sixteen bit tests against
- *   the well, whatever the piece: nowhere do the rules need a case per
- *   kind of piece.
  * - {b The well is an array that is never modified once it is in a
  *   model}: when a piece lands, a new array is made. So a model is a
  *   value like any other, that can be kept or compared, even though
@@ -61,6 +46,24 @@
  * Korobeiniki, the melody on a square and an octave bass on a triangle,
  * a tenth faster each level ([music]: the tune a model wants, as [view]
  * is the picture it wants; none when the game is over).
+ *
+ * twist:
+ * {b Each rotation of a piece is 16 bits}: a 4 by 4 square, one
+ * hexadecimal digit per row, all stored in a string ([turns]). There
+ * is no table of tables, and turning a piece just means moving to
+ * the next four digits. Here are the T's sixteen digits, 4E00 4640
+ * 0E40 4C40; each column of the picture is one rotation, and the
+ * high bit of a digit is the leftmost cell:
+ *
+ *     4  . # . .     4  . # . .     0  . . . .     4  . # . .
+ *     E  # # # .     6  . # # .     E  # # # .     C  # # . .
+ *     0  . . . .     4  . # . .     4  . # . .     4  . # . .
+ *     0  . . . .     0  . . . .     0  . . . .     0  . . . .
+ *
+ * Checking whether a piece fits is then sixteen bit tests against
+ * the well, whatever the piece: nowhere do the rules need a case per
+ * kind of piece, where the twin, games/puzzle/Tetris.ml, keeps a
+ * piece's cells and turns them with a function (rotate).
  *
  * exercises:
  * - the shadow; a pause; the bag of seven;

@@ -9,8 +9,9 @@
  * TinyMachine/TinyMachineISA.mli has the instructions' words, which
  * this file makes.
  *
- * The machine was designed for it: one format, every instruction 4
- * bytes, every immediate the word's low 16 bits. Only the
+ * tiny-machine's instructions were designed to keep this assembler
+ * simple: one format, every instruction 4 bytes, every immediate the
+ * word's low 16 bits. Only the
  * pseudo-instructions are bigger: la, and li unless its number is small,
  * are two words, lui then ori. So a line's size is known as it is
  * read, from its name and whether its operand is a number or a label,

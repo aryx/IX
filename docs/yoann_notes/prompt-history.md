@@ -66592,3 +66592,19 @@ Claude noted that commit 444758d4 had moved the same four evalorders, then re-re
 Claude reported that the assembler and linker changes were committed as cd015166, with the re-recorded bugs baseline.
 Claude noted that only prompt-history.md remained modified, with a new entry added after the commit.
 Claude listed the TinyC and TinyML compilers as the next items, and asked whether to start with TinyC.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 11:10
+
+**Yoann:**
+
+> TinyAssembler.mli mention instructions like la, li early one that have not even been introduced, making the reading of the .mli harder than it should; is there another file the reader should read first? Then it should be documented so
+
+**Claude (summary):**
+
+Claude recommended that readers come to TinyAssembler.mli from TinyMachine/, since the instructions are defined there.
+Claude pointed to the two TinyMachine headers as the files to read before the assembler.
+Claude explained that the assembler header assumes instructions such as la and li are already known.
+Claude said the two machine headers are where those instructions get introduced.
+Claude then began listing what each machine header introduces, and the answer ends mid-list.

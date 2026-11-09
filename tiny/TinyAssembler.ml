@@ -62,12 +62,13 @@ let halves s : word option =
     | r -> r
 
 (* a word as an int, when it fits in 31 bits (so on both sides) *)
-let int_of ((h, l) : word) =
+let int_of ((h, l) : word) : int =
   if h < 0x4000 || h >= 0xc000 then (ISA.sext16 h * 0x10000) + l
   else ISA.error "number out of range"
 
 (* -1 is two words of ffff; a small number one *)
-let small ((h, l) : word) = (h = 0 && l < 0x8000) || (h = 0xffff && l >= 0x8000)
+let small ((h, l) : word) : bool =
+  (h = 0 && l < 0x8000) || (h = 0xffff && l >= 0x8000)
 
 type expr = Num of word | Sym of string
 
@@ -85,10 +86,10 @@ type resolve = int -> ISA.place -> expr -> int
  * alignment, which the linker does: an address's, not the file's) *)
 type item =
   | Obj of ISA.item
-  | Words of int * (resolve -> int list)
+  | Words of int (* size instr *) * (resolve -> int list)
   | Data of expr list
 
-let reg s =
+let reg (s : string) : ISA.reg =
   match String.trim s with
   | "zero" -> 0 | "sp" -> ISA.sp | "lr" -> ISA.lr
   | s when String.length s >= 2 && s.[0] = 'r' ->
@@ -97,14 +98,14 @@ let reg s =
        | _ -> ISA.error ("not a register: " ^ s))
   | s -> ISA.error ("not a register: " ^ s)
 
-let expr s =
+let expr (s : string) : expr =
   let s = String.trim s in
   if String.length s = 3 && s.[0] = '\'' && s.[2] = '\'' then
     Num (0, Char.code s.[1])
   else match halves s with Some n -> Num n | None -> Sym s
 
 (* "off(ra)" or "(ra)" *)
-let mem_operand s =
+let mem_operand (s : string) : ISA.reg * expr =
   let s = String.trim s in
   match String.index_opt s '(' with
   | Some i when s.[String.length s - 1] = ')' ->
@@ -117,7 +118,7 @@ let one f = Words (4, fun res -> [ ISA.encode (f (res 0)) ])
 
 (* the machine's own instructions (TinyMachineDevices runs them): a
  * register of control by its name *)
-let machine name args =
+let machine (name : string) (args : string list) : item =
   let csr s =
     match List.assoc_opt (String.trim s)
             (List.mapi (fun k n -> n, k) (Array.to_list ISA.csr_names)) with
@@ -152,7 +153,7 @@ let () =
     Hashtbl.replace named ISA.cmp_names.(ISA.index ISA.cmps c) (Test c))
     ISA.cmps
 
-let rec instruction name args : item =
+let rec instruction (name : string) (args : string) : item =
   let args =
     List.map String.trim
       (if String.trim args = "" then [] else String.split_on_char ',' args) in
@@ -208,7 +209,7 @@ let unescape s =
       else (Buffer.add_char b s.[i]; go (i + 1)) in
   go 0; Buffer.contents b
 
-let directive d args : item =
+let directive (d : string) (args : string) : item =
   match d with
   | ".word" -> Data (List.map expr (String.split_on_char ',' args))
   | ".byte" ->
@@ -230,7 +231,7 @@ let directive d args : item =
   | _ -> ISA.error ("unknown directive " ^ d)
 
 (* a line: labels, then an instruction or a directive; ; starts a comment *)
-let parse_line line : item list =
+let parse_line (line : string) : item list =
   let line = match String.index_opt line ';' with
     | Some i when not (String.contains (String.sub line 0 i) '"') ->
         String.sub line 0 i
@@ -270,7 +271,7 @@ let word_bytes ((h, l) : word) =
  * here, one whose operand is a label is made with 0 there and a reloc
  * says what goes in it; a branch to a number too, its offset being from
  * an address the link chooses *)
-let assemble (chan : Chan.i) =
+let assemble (chan : Chan.i) : string =
   let at n e = Chan.origin chan ^ ":" ^ string_of_int (n + 1) ^ ": " ^ e in
   let target e =
     match e with Num n -> ISA.Address (int_of n) | Sym s -> ISA.Name s in

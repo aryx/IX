@@ -66830,3 +66830,32 @@ Claude gave three reasons: screen caches use physical equality, drawing takes li
 Claude named the costs: copying a whole long line on each key, and far jumps costing one step per crossed line.
 Claude edited the parenthesis in `TinyEditorScreen.mli` to mention a possible gap buffer with tiny-ml's `Bytes`, but left it uncommitted.
 Claude then asked whether to commit the change or only keep the analysis.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 13:22
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the corrected comment as `99102cc0`, dropping the claim that tiny-ml forced the immutable lines.
+The new comment says a gap buffer would be possible with `Bytes`, then gives three reasons for immutable lines: the `==` screen caches, a screen built from lines, and cheap undo.
+Claude also named the price of that choice in the comment.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 13:36
+
+**Yoann:**
+
+> I don't think TinyEditorScreen.mli twist is really a twist
+
+**Claude (summary):**
+
+Claude said the TinyEditorScreen.mli paragraph was not a twist, so it changed the label to `wib:`.
+Claude explained that M-x and macros both reduce to keys queued for the editor, with a per-command key cost.
+Claude updated the "twist:, below" pointer to "wib:, below" and confirmed `dune build` passes.
+Claude asked whether to commit, noting the commit would also pick up Yoann's uncommitted return-type and blank-line edits.

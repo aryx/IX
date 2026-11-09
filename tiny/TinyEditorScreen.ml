@@ -19,6 +19,7 @@ type text = {
   mutable above : string list;
   mutable line : string;
   mutable below : string list;
+
   mutable col : int;             (* the cursor, in its line: 0 to its length *)
   mutable row : int;             (* the cursor's line, from 0: above's length *)
   mutable goal : int;            (* the column C-n and C-p go back to *)
@@ -120,24 +121,24 @@ let say (e : editor) (message : string) = e.message <- message
 (* Moving *)
 (*****************************************************************************)
 
-let up (t : text) =
+let up (t : text) : bool =
   match t.above with
   | [] -> false
   | l :: rest ->
       t.below <- t.line :: t.below; t.line <- l; t.above <- rest;
       t.row <- t.row - 1; true
 
-let down (t : text) =
+let down (t : text) : bool =
   match t.below with
   | [] -> false
   | l :: rest ->
       t.above <- t.line :: t.above; t.line <- l; t.below <- rest;
       t.row <- t.row + 1; true
 
-let forward (t : text) =
+let forward (t : text) : unit =
   if t.col < String.length t.line then t.col <- t.col + 1
   else if down t then t.col <- 0
-let backward (t : text) =
+let backward (t : text) : unit =
   if t.col > 0 then t.col <- t.col - 1
   else if up t then t.col <- String.length t.line
 
@@ -718,3 +719,13 @@ let shapes (e : editor) (n : int) : shape list =
   @ (if cy < n then
        [ Move (8 * cx, 16 * cy, Group [ Rect (0, 8, 16); Words (255, c) ]) ]
      else [])
+
+(*****************************************************************************)
+(* Entry point *)
+(*****************************************************************************)
+(* There is no main here: the editor makes no system calls (see the .mli).
+ * The program around it is TinyKernel/user/emacs.ml, a single file for
+ * both places it runs. In tiny-kernel it is the user program emacs, built
+ * by TinyKernel/Makefile, its calls the kernel's. On the host it is
+ * tiny-emacs, built by tiny/sdl/dune, its calls those of tiny/sdl/TinyCalls.ml
+ * (an SDL window). *)

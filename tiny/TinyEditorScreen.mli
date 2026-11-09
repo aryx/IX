@@ -49,7 +49,7 @@
  * M-x knows each of these keys by its name in Emacs (kill-line,
  * save-buffer...), and two commands that have no key and ask on the
  * last line what they need: goto-line, and replace-string, from the
- * cursor to the end (what M-x kill-line does: twist:, below).
+ * cursor to the end (what M-x kill-line does: wib:, below).
  *
  * A macro is the keys typed between C-x ( and C-x ). C-x e gives them
  * again to the editor, which reads them before the keys typed
@@ -66,7 +66,7 @@
  *
  * twin:
  * mini-emacs (editors/emacs/), its full-size counterpart in m-ix, has
- * buffers, windows, modes and a Lisp. tiny-editor (TinyEditorLine.ml)
+ * buffers, windows, modes and more. tiny-editor (TinyEditorLine.ml)
  * is the line editor, with sam's command language and no screen. This
  * one is what you want for changing a program: one text, one window,
  * and what you type goes where the cursor is.
@@ -85,12 +85,13 @@
  * the screen, and the screen scrolls to follow the cursor), and
  * characters beyond ASCII.
  *
- * twist:
+ * wib:
  * A command is the keys it is: M-x kill-line gives the editor a C-k,
  * where mini-emacs, after efuns, looks each key up in a keymap to find
  * its command. So M-x and a macro both come down to keys queued for the
  * editor ([pending]), and there is no table of commands beside the
- * keys.
+ * keys. The price: a command needs a key; the two that have none,
+ * goto-line and replace-string, are cases of their own ([answered]).
  *
  * exercises:
  * - undo as a list of earlier texts, as the office and mini-office do

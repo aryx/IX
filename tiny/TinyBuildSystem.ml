@@ -59,7 +59,7 @@ and step = { text : string; stem : string }
 type vars = (string, string list) Hashtbl.t
 
 (* the last build's stamps (.tiny-build's), by node's name: a node, not
- * a file, so all has one too *)
+ * a file, so the target 'all' has one too *)
 type stamps = (string, Sha1.t) Hashtbl.t
 
 let target_of (s : string) : target =
@@ -344,13 +344,10 @@ let start (caps : < Cap.fork; Cap.exec; Cap.env; Cap.open_out; .. >)
   TSys.shell caps vars recipe
 
 (*****************************************************************************)
-(* Building *)
+(* .tiny-build *)
 (*****************************************************************************)
 
 let stampfile = ".tiny-build"
-
-(* the recipes run, each with its time in milliseconds (-t) *)
-let times : (string * int) list ref = ref []
 
 (* .tiny-build: magic, then the stamps and known, marshalled; without
  * magic, no stamps (tiny-ml's Marshal stops on bytes it cannot read).
@@ -375,6 +372,17 @@ let load (caps : < Cap.open_in; .. >) : stamps =
 let save (caps : < Cap.open_out; .. >) (stamps : stamps) =
   TSys.write_file caps (Fpath.v stampfile)
     (magic ^ Marshal.to_string (stamps, known) [ Marshal.No_sharing ])
+
+(*****************************************************************************)
+(* Extra features *)
+(*****************************************************************************)
+
+(* the recipes run, each with its time in milliseconds (-t) *)
+let times : (string * int) list ref = ref []
+
+(*****************************************************************************)
+(* Building *)
+(*****************************************************************************)
 
 let build
     (caps : < Cap.forkew; Cap.open_in; Cap.open_out;

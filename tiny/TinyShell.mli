@@ -10,6 +10,7 @@
  *     cc -c x.c >[2]errs >[2=1]        other fds
  *     ~ $x *.c && echo matched         matching: ~ subject pattern ...
  *
+ * archi:
  * How a line is processed: its characters are split into tokens, the
  * tokens are parsed into a tree ([cmd], by recursive descent), and the
  * tree is walked ([run]). Along the way each word is turned into a

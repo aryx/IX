@@ -330,7 +330,7 @@ type options
  * the window), then the machine's instruction; to the exit status *)
 val run :
   < Cap.stdin; Cap.stdout; Cap.stderr; Cap.open_in; Cap.open_out; Cap.readdir;
-    Cap.fork; Cap.exec; Cap.wait; Cap.pipe; Cap.signal; Cap.clock; Cap.exit;
+    Cap.forkew; Cap.pipe; Cap.signal; Cap.clock; Cap.exit;
     .. > ->
   options -> string -> int
 
@@ -338,6 +338,6 @@ val run :
  * ends, the kernel's halt code *)
 val main :
   < Cap.stdin; Cap.stdout; Cap.stderr; Cap.open_in; Cap.open_out; Cap.readdir;
-    Cap.fork; Cap.exec; Cap.wait; Cap.pipe; Cap.signal; Cap.clock; Cap.exit;
+    Cap.forkew; Cap.pipe; Cap.signal; Cap.clock; Cap.exit;
     .. > ->
   string array -> Exit.t

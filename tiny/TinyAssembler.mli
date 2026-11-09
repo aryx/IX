@@ -64,11 +64,7 @@
  *
  * context:
  * tiny-c and tiny-ml write the .tm files, tiny-linker reads the
- * objects, tiny-cpu and tiny-machine run the image. (old:
- * TinyMachineCPU.ml's assembler, which read all of a program's .tm
- * files at once and wrote the image, no object between; and before
- * plan_tiny_self_hosting.md, a TinyAssembler.ml for arm64, 7a and 7l
- * made one, in git's history.)
+ * objects, tiny-cpu and tiny-machine run the image.
  *
  * cs-history:
  * The first assemblers assembled and loaded in one step: the EDSAC's
@@ -79,10 +75,7 @@
  * addresses left open, the parts bound together later.
  *
  * design:
- * The object is marshalled, as mini-asm's and mini-ld's are (old: text,
- * a line an item, "code HEX" and "reloc OFF KIND TARGET": cat hello.o
- * showed each word beside its relocs, but at the cost of a format of
- * t-ix's own, written here and read back by TinyLinker). What the text
+ * The object is marshalled, as mini-asm's and mini-ld's are. What the text
  * showed, tiny-linker -debug says, by the items' show that mini-ml
  * derives. A magic line comes first, since tiny-ml's Marshal stops the
  * program on bytes it cannot read.
@@ -96,16 +89,18 @@
  * most of the assembler's work: its assemblers do not encode.
  *
  * references:
- * M. V. Wilkes, D. J. Wheeler and S. Gill, The Preparation of Programs
- * for an Electronic Digital Computer (1951), the initial orders; T. G.
- * Szymanski, "Assembling Code for Machines with Span-dependent
- * Instructions" (CACM, 1978), the problem a fixed format avoids; J. R.
- * Levine, Linkers and Loaders (2000). *)
+ *  - M. V. Wilkes, D. J. Wheeler and S. Gill, The Preparation of
+ *    Programs for an Electronic Digital Computer (1951): the initial
+ *    orders
+ *  - T. G. Szymanski, "Assembling Code for Machines with Span-dependent
+ *    Instructions" (CACM, 1978): the problem a fixed format avoids
+ *  - J. R. Levine, Linkers and Loaders (2000)
+ *)
 
 (* what tiny-assembler asks for: its file read, its object written *)
 type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 
-(* a file's text to its object's text, the file opened by the caller
+(* a file's text to its object, marshalled, the file opened by the caller
  * (its name in the errors: Chan.origin) *)
 val assemble : Chan.i -> string
 

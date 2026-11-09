@@ -66608,3 +66608,33 @@ Claude pointed to the two TinyMachine headers as the files to read before the as
 Claude explained that the assembler header assumes instructions such as la and li are already known.
 Claude said the two machine headers are where those instructions get introduced.
 Claude then began listing what each machine header introduces, and the answer ends mid-list.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 11:15
+
+**Yoann:**
+
+> "the machine was designed for it". what it refers too. seems a bit vague
+
+**Claude (summary):**
+
+Claude explained that "it" refers to the assembler, since the machine's instruction format was chosen to keep the assembler simple.
+Claude noted the payoff: each line's size is known as soon as it is read, so words can be produced immediately.
+Claude then offered a reworded version of the paragraph to make that reference explicit.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 11:20
+
+**Yoann:**
+
+> the references could used an itemized (-) list instead of a single paragraph?
+
+**Claude (summary):**
+
+Claude converted TinyAssembler's references into a dash-list, each item a work followed by a colon and its purpose.
+Claude confirmed the dune build passes but did not commit, since Yoann's in-progress edit to the same file would be included.
+Claude noted that 12 tiny/ headers already use a list while 12 others still use a paragraph, and proposed converting them.
+Claude also proposed adding the list shape to `docs/tags.md` and fixing the stale `assemble` comment in the `.mli`.
+Claude asked whether to commit TinyAssembler.mli with Yoann's edit and whether to convert the remaining 12 and fix the comment.

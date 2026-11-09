@@ -46,12 +46,14 @@ val alus : alu array
 val alu_names : string array
 val cmps : cmp array
 val cmp_names : string array
+
 val index : 'a array -> 'a -> int
 val imm_name : alu -> string
 
 val unsigned_imm : alu -> bool
 val has_imm : alu -> bool
 val sext16 : int -> int
+
 val encode : instr -> int
 val decode : int -> instr option
 
@@ -78,6 +80,7 @@ type machine_instr =
   | Wfi
   | Csrrw of reg * int * reg          (* d, csr, a: both at once *)
   | Amoswap of reg * reg * reg        (* d, a, (b) *)
+
 val encode_machine : machine_instr -> int
 
 (* a number in hexadecimal: 0x1f *)

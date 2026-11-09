@@ -144,14 +144,17 @@
  * A process's memory is TinyKernelMemory's (TinyKernel/): a partition
  * by default, the simplest way, with its history and what came after;
  * segments with MEMORY=segments (the program's text shared by its
- * runs, read only; pages next: plan_tiny_memory.md). fork copies the
- * parent's partition whole; spawn, fork and exec in one, copies nothing
- * (tiny-build starts each recipe's rc with it: its own partition is
- * 16 MB).
+ * runs, read only); pages of 4 KB with MEMORY=pages (tiny-machine's
+ * Sv32: a page given at its first touch, fork's copy made page by
+ * page, at the first write: plan_tiny_memory.md). With partitions, fork
+ * copies the parent's partition whole; spawn, fork and exec in one,
+ * copies nothing (tiny-build starts each recipe's rc with it: its own
+ * partition is 16 MB).
  *
  * dropped:
- * Paging, the kernel itself on several cores at once (only processes
- * run on the others, above), users and permissions, and signals
+ * Swapping (pages on the disk), the kernel itself on several cores at
+ * once (only processes run on the others, above), users and
+ * permissions, and signals
  * except the simplest: kill(pid) ends a process as a fault does (with
  * status -1), and ^C at the console kills every process except the
  * shell. The system calls are specific to this kernel (its programs
@@ -230,9 +233,6 @@
  * - keep each waiting process's closure together with what it waits
  *   for, and retry it only when that changes (a wakeup again, but a
  *   typed one);
- * - copy-on-write fork: share the partition until one side writes,
- *   using pages (tiny-machine's Sv32), which is why pages were
- *   invented (plan_tiny_memory.md's stage 4);
  * - measure the kernel's own heap: print its live words after each
  *   collection, and at halt.
  *

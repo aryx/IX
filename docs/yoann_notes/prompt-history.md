@@ -66859,3 +66859,30 @@ Claude said the TinyEditorScreen.mli paragraph was not a twist, so it changed th
 Claude explained that M-x and macros both reduce to keys queued for the editor, with a per-command key cost.
 Claude updated the "twist:, below" pointer to "wib:, below" and confirmed `dune build` passes.
 Claude asked whether to commit, noting the commit would also pick up Yoann's uncommitted return-type and blank-line edits.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 13:38
+
+**Yoann:**
+
+> let's commit. Also I've added in the .ml an Entry point section at the end; can you add a comment explaining the entry point for the host is in file X and for the tiny-kernel userspace prog is in file Y
+
+**Claude (summary):**
+
+Claude said both entry points live in one file, `TinyKernel/user/emacs.ml`, which `tiny/sdl/dune` builds for the host. Claude then announced it would add the comment explaining that shared entry point. Claude's reply was brief and only stated the finding and the intended edit.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 13:41
+
+**Yoann:**
+
+> ok let's commit
+
+**Claude (summary):**
+
+Claude found nothing to commit, because everything had already landed in commit c7514776.
+Claude noticed that TinyKernel.mli's "dropped:" line says "Paging", though paging exists as the MEMORY=pages option.
+Claude recommended rewording that dropped entry to "paging to disk (swap)" so it matches the option.
+Claude also listed the GUI layer and the compilers (TinyC, then TinyML) as the next programs to tidy.

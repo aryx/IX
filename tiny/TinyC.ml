@@ -38,7 +38,7 @@ An error names the file and the line: fact.c: line 3: expected ;
  *
  *     the file's text      TinyCLexer.tokens (#includes, #defines)
  *        | tokens
- *     Parser.external_decl  typed as it is read (TinyCTree)
+ *     Parser.declaration    typed as it is read (TinyCTree)
  *        | defs: a function's tree, a global's data
  *     Lower.lower_function  the tree to the stack machine
  *        | ir list
@@ -101,7 +101,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
           List.iter (fun d ->
             let c, dt = compile !ir_only d in
             Buffer.add_string code c; Buffer.add_string data dt)
-            (Parser.external_decl ())
+            (Parser.declaration ())
         done;
         let text =
           Buffer.contents code

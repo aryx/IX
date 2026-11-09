@@ -561,7 +561,7 @@ let rec init_data (name : Ty.sym) (ds : (int * Tree.datum) list ref) t off =
       1
 
 (* a declaration of the file's: what it defines, in their order *)
-let external_decl () : Tree.def list =
+let declaration () : Tree.def list =
   defs := [];
   let storage, bt = base_type () in
   let rec go () =

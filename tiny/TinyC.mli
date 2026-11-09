@@ -22,7 +22,7 @@
  *     TinyCLexer.mli     the tokens ([token]), the preprocessor
  *     TinyCTree.mli      the typed tree: [expr], [stmt], [def]
  *     TinyCLower.mli     the stack machine: [ir], lower_function
- *     TinyCParser.mli    external_decl: tokens to a declaration's [def]s
+ *     TinyCParser.mli    declaration: tokens to a declaration's [def]s
  *     TinyCMachine.mli   machine and global: [ir] and data to assembly
  *
  * This file is the program around them: compile, a definition through

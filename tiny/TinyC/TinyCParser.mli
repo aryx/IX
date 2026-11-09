@@ -14,4 +14,4 @@ val typedefs : (string, TinyCTypes.ty) Hashtbl.t
 
 (* a declaration of the file's: what it defines, in their order (a
  * string literal's data before the function or the global it is in) *)
-val external_decl : unit -> TinyCTree.def list
+val declaration : unit -> TinyCTree.def list

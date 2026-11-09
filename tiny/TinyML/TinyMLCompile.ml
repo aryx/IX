@@ -29,6 +29,10 @@ let globals : (string, binding) Hashtbl.t = Hashtbl.create 1024
 type fn =
   { mutable code : Machine.ir list; mutable nslots : int; mutable ntries : int }
 
+(* The function being compiled: its code (emit's), its slots and its
+ * handlers so far. One at a time, from start_fun to finish_fun: a
+ * closure's own function is queued (dequeue), compiled after, so cur
+ * is module state rather than a parameter of every function below *)
 let cur = ref { code = []; nslots = 1; ntries = 0 }
 let emit i = (!cur).code <- i :: (!cur).code
 let slot () : Machine.slot = let s = (!cur).nslots in (!cur).nslots <- s + 1; s
@@ -38,7 +42,8 @@ let slot () : Machine.slot = let s = (!cur).nslots in (!cur).nslots <- s + 1; s
 let start_fun nslots ntries =
   cur := { code = []; nslots = nslots; ntries = ntries }
 let finish_fun (lab : Machine.sym) nparams =
-  Machine.machine lab nparams (!cur).nslots (List.rev (!cur).code)
+  Machine.add_text
+    (Machine.machine lab nparams (!cur).nslots (List.rev (!cur).code))
 (* the functions to compile, in their order: a queue as two lists, the
  * next ones and the ones added since, last first (old: OCaml's Queue,
  * which TinyLibCore does not have) *)

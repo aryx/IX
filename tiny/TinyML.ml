@@ -132,7 +132,7 @@ let compile_main (units : (string * int) list) needed =
     (List.sort_uniq compare needed);
   let total = List.fold_left (fun t (_, n) -> t + n) 0 units in
   Machine.words "ml_nglobals" [ Machine.DNum (Int64.of_int total) ];
-  Machine.out Machine.data
+  Machine.add_data
     ([ Asm.Piece; Asm.Label "ml_globals" ]
      @ List.concat_map (fun (u, n) ->
          [ Asm.Label (u ^ ".globals"); Asm.Space (4 * n) ]) units
@@ -392,7 +392,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     if !separate then begin
       (* one unit: its object and its interface *)
       let f = List.hd mls in
-      Buffer.clear Machine.text; Buffer.clear Machine.data;
+      let asm = Machine.start_asm () in
       (* (before the parse: a type's constructors are the parser's) *)
       let old = snapshot () in
       let tdefs, exports, n = compile_file f in
@@ -407,13 +407,13 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
         | Some o -> o
         | None -> Fpath.set_ext ".tm" (Fpath.base f) in
       (* (.data: tiny-linker -n's, the statics after the text) *)
-      write out
-        (Buffer.contents Machine.text ^ Asm.print Asm.SectionData
-         ^ Buffer.contents Machine.data);
+      write out (Machine.asm_text asm);
       write (Fpath.set_ext ".tmi" out)
         (write_interface old exports types n)
     end else begin
-      (* the files one after the other, a unit each, then the main *)
+      (* the files one after the other, a unit each, then the main, in
+       * one assembly *)
+      let asm = Machine.start_asm () in
       let units, needed =
         List.fold_left (fun (units, needed) f ->
           let tdefs, defs, n = compile_file f in
@@ -423,12 +423,10 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
           units @ [ (!Tree.unit_name, n) ], needed @ !Machine.arities)
           (units, needed) mls in
       compile_main units needed;
-      let asm =
-        Machine.start ^ Buffer.contents Machine.text ^ Asm.print Asm.SectionData
-        ^ Buffer.contents Machine.data in
+      let text = Machine.start ^ Machine.asm_text asm in
       (match !output with
-       | None -> TinyLibSystem.print caps asm
-       | Some o -> write o asm)
+       | None -> TinyLibSystem.print caps text
+       | Some o -> write o text)
     end;
     Exit.OK
   with

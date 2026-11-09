@@ -62,19 +62,23 @@ type ir =
 
 val label : unit -> label
 
-(* the assembly made: the functions' code, the static blocks *)
-val text : Buffer.t
-val data : Buffer.t
-
-(* [machine f nparams nslots code]: f's assembly, in text; its frame
- * nslots slots, its parameters the first after its closure *)
-val machine : sym -> int -> int -> ir list -> unit
+(* [machine f nparams nslots code]: f's assembly; its frame nslots
+ * slots, its parameters the first after its closure *)
+val machine : sym -> int -> int -> ir list -> TinyMachineAsm.line list
 
 (* the program's ml_start, called by C, and ml_raise *)
 val start : string
 
-(* lines of assembly added to a buffer, text or data *)
-val out : Buffer.t -> TinyMachineAsm.line list -> unit
+(* A unit's assembly, or the whole program's, as it is made: its
+ * functions' code (text), its static blocks (data), printed *)
+type asm = { text : Buffer.t; data : Buffer.t }
+(* a new assembly, from then on the current one: what add_text, and the
+ * static blocks below, add to *)
+val start_asm : unit -> asm
+val add_text : TinyMachineAsm.line list -> unit
+val add_data : TinyMachineAsm.line list -> unit
+(* its text, for tiny-assembler: the code, then the data (.data) *)
+val asm_text : asm -> string
 
 (* a static word: a number's text, a code's label, a block's *)
 type dword = DNum of int64 | DCode of sym | DVal of sym

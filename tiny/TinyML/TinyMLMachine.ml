@@ -67,11 +67,32 @@ type ir =
 
 let labels = ref 0
 let label () : label = incr labels; !labels
-let text = Buffer.create 65536 and data = Buffer.create 16384
+(* A unit's assembly, or the whole program's, as it is made: its
+ * functions' code, its static blocks' data, their lines printed (old:
+ * two buffers, text and data, which TinyML.ml cleared and read) *)
+type asm = { text : Buffer.t; data : Buffer.t }
 
-(* lines of assembly added to text or data *)
-let out (b : Buffer.t) (ls : Asm.line list) =
-  List.iter (fun l -> Buffer.add_string b (Asm.print l)) ls
+(* the assembly being made: what the code (machine's, add_text) and the
+ * static blocks (words, block) go to; one at a time, as the units are
+ * compiled one after the other *)
+let current =
+  ref { text = Buffer.create 0; data = Buffer.create 0 }
+
+(* a new assembly, from then on the current one *)
+let start_asm () : asm =
+  let a = { text = Buffer.create 65536; data = Buffer.create 16384 } in
+  current := a;
+  a
+
+(* lines added to the current assembly's code, or to its data *)
+let add_text (ls : Asm.line list) =
+  List.iter (fun l -> Buffer.add_string (!current).text (Asm.print l)) ls
+let add_data (ls : Asm.line list) =
+  List.iter (fun l -> Buffer.add_string (!current).data (Asm.print l)) ls
+
+(* its text, for tiny-assembler: the code, then the data (.data) *)
+let asm_text (a : asm) : string =
+  Buffer.contents a.text ^ Asm.print Asm.SectionData ^ Buffer.contents a.data
 
 (*****************************************************************************)
 (* The machine: tiny-machine, the stack in r1..r11, the value stack at r12 *)
@@ -412,8 +433,8 @@ let instruction (st : state) (i : ir) =
   | TryEnter (k, handler) -> try_enter st k handler
   | TryExit k -> try_exit st k
 
-(* [machine f nparams nslots code]: f's assembly, in text *)
-let machine (name : sym) nparams nslots (code : ir list) =
+(* [machine f nparams nslots code]: f's assembly *)
+let machine (name : sym) nparams nslots (code : ir list) : Asm.line list =
   let st =
     { mname = name; mslots = nslots; mlines = [];
       msp = 0; mmaxsp = 0; mtries = 0; mcargs = 0; mdead = false;
@@ -428,20 +449,16 @@ let machine (name : sym) nparams nslots (code : ir list) =
   let store r i = Asm.Instr (ISA.Store (ISA.W, r, vsp, 4 * (i - f))) in
   (* a piece: tiny-linker leaves it out when nothing names its labels;
    * the frames made, the closure and the parameters in their slots *)
-  out text
-    ([ Asm.Piece; Asm.Label name;
-       Asm.Instr (ISA.Alui (ISA.Add, sp, sp, - m));
-       Asm.Instr (ISA.Store (ISA.W, lr, sp, c));
-       Asm.Instr (ISA.Alui (ISA.Add, vsp, vsp, 4 * f));
-       store r13 0 ]
-     @ List.init nparams (fun i -> store (i + 1) (i + 1))
-     (* the other slots zeroed: the collector scans them *)
-     @ List.init (max 0 (f - 1 - nparams))
-       (fun k -> store 0 (nparams + 1 + k)));
-  List.iter (fun l ->
-      Buffer.add_string text
-        (Asm.print (match l with Known l -> l | Framed g -> g f m c)))
-    (List.rev st.mlines)
+  [ Asm.Piece; Asm.Label name;
+    Asm.Instr (ISA.Alui (ISA.Add, sp, sp, - m));
+    Asm.Instr (ISA.Store (ISA.W, lr, sp, c));
+    Asm.Instr (ISA.Alui (ISA.Add, vsp, vsp, 4 * f));
+    store r13 0 ]
+  @ List.init nparams (fun i -> store (i + 1) (i + 1))
+  (* the other slots zeroed: the collector scans them *)
+  @ List.init (max 0 (f - 1 - nparams)) (fun k -> store 0 (nparams + 1 + k))
+  @ List.rev_map (fun l -> match l with Known l -> l | Framed g -> g f m c)
+      st.mlines
 
 (* ml_start called by C (the value stack's base at 0(sp)), ml_init's
  * closure slot 1, a unit (not what r13 held, which the collector would
@@ -473,12 +490,12 @@ let fields sym ws =
        | DCode x -> Asm.Word_sym x
        | DVal x -> Asm.Word_sym x) ws
 (* each a piece of its own, as a function is *)
-let words sym ws = out data (Asm.Piece :: fields sym ws)
+let words sym ws = add_data (Asm.Piece :: fields sym ws)
 
 (* a static block, its header then its fields. Its symbol is the first
  * field's, the value itself (the assembler's expressions have no
  * sym+n) *)
-let block sym hdr ws = out data (Asm.Piece :: Asm.Word hdr :: fields sym ws)
+let block sym hdr ws = add_data (Asm.Piece :: Asm.Word hdr :: fields sym ws)
 
 let header n tag = Int64.of_int ((n lsl 10) lor tag)
 let closure_tag = 247 and string_tag = 252

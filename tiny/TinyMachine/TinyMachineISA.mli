@@ -57,7 +57,17 @@ val sext16 : int -> int
 val encode : instr -> int
 val decode : int -> instr option
 
-(* an instruction as assembly, given its address *)
+(* a register's name: zero, sp, lr, or r1 to r13 *)
+val reg_name : reg -> string
+
+(* [text i imm]: an instruction's text, its registers by their names;
+ * its immediate, or its offset, imm when there is one (a label's name,
+ * an address): the one printer of the instructions, the listings' and
+ * the assembly's (TinyMachineAsm.print) *)
+val text : instr -> string option -> string
+
+(* [print pc i]: an instruction as a listing shows it, at the address
+ * pc: a branch's or a jal's target as an address *)
 val print : int -> instr -> string
 
 (* the stack pointer's register and the link's; the machine's
@@ -82,6 +92,8 @@ type machine_instr =
   | Amoswap of reg * reg * reg        (* d, a, (b) *)
 
 val encode_machine : machine_instr -> int
+(* its text, a register of control by its name *)
+val machine_text : machine_instr -> string
 
 (* a number in hexadecimal: 0x1f *)
 val hex : int -> string

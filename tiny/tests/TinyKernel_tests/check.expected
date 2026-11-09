@@ -390,24 +390,24 @@ hello
 [14] exit(0)
 [14] exited 0
 % exec
-_start:	jal	r15, 0xfec <main>
+_start:	jal	lr, 0xfec <main>
 break
-write:	ldw	r1, 0(r14)
+write:	ldw	r1, 0(sp)
 0	write
 1	print+0xb4
 2	main+0xac
 3	_start
-write:	ldw	r1, 0(r14)
-write+0x4:	ldw	r2, 4(r14)
-write+0x8:	ldw	r3, 8(r14)
-write+0x4:	ldw	r2, 4(r14)
-write+0x8:	ldw	r3, 8(r14)
+write:	ldw	r1, 0(sp)
+write+0x4:	ldw	r2, 4(sp)
+write+0x8:	ldw	r3, 8(sp)
+write+0x4:	ldw	r2, 4(sp)
+write+0x8:	ldw	r3, 8(sp)
 ping: no network, or not an address: 10.0.0.1
 exited 1
 % exec
-_start:	jal	r15, 0x7248 <main>
+_start:	jal	lr, 0x7248 <main>
 break
-u_write:	addi	r14, r14, -40
+u_write:	addi	sp, sp, -40
 0	u_write
 1	say+0x50	0x2797c 0x2797c 2
 2	main+0x1cc	0 0 1 1 _ _ ...
@@ -428,7 +428,7 @@ close(5) = 0
 exit(0)
 exited 0
 % % break
-wait:	ldw	r1, 0(r14)
+wait:	ldw	r1, 0(sp)
 % % 1
 2
 1

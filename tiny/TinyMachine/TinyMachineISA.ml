@@ -139,27 +139,58 @@ let decode w =
   | 0x3f -> Some (Sys imm)
   | _ -> None
 
-(* an instruction as assembly again, [pc] its address (a branch's
- * target is shown as an address) *)
-let print pc i =
-  let r k = "r" ^ string_of_int k in
-  let target off = hex (pc + 4 + (4 * off)) in
-  let mem off a = string_of_int off ^ "(" ^ r a ^ ")" in
+(* a register's name: zero, sp, lr, or r1 to r13 *)
+let reg_name (r : reg) =
+  if r = 0 then "zero" else if r = sp then "sp" else if r = lr then "lr"
+  else "r" ^ string_of_int r
+
+(* An instruction's text, its registers by their names; its immediate,
+ * or its offset, the given text when there is one (a label's name, an
+ * address). The one printer of the instructions: a listing's (print,
+ * below) and the assembly's (TinyMachineAsm's). (old: two, the
+ * listing's registers r0, r14, r15) *)
+let text (i : instr) (imm_text : string option) : string =
+  let r = reg_name in
+  let imm k = match imm_text with Some s -> s | None -> string_of_int k in
+  let mem off a = imm off ^ "(" ^ r a ^ ")" in
   match i with
   | Alu (op, d, a, b) ->
       alu_names.(index alus op) ^ "\t" ^ r d ^ ", " ^ r a ^ ", " ^ r b
-  | Alui (op, d, a, imm) ->
-      imm_name op ^ "\t" ^ r d ^ ", " ^ r a ^ ", " ^ string_of_int imm
-  | Lui (d, imm) -> "lui\t" ^ r d ^ ", " ^ hex imm
+  | Alui (op, d, a, k) ->
+      imm_name op ^ "\t" ^ r d ^ ", " ^ r a ^ ", " ^ imm k
+  | Lui (d, k) ->
+      "lui\t" ^ r d ^ ", "
+      ^ (match imm_text with Some s -> s | None -> hex k)
   | Load (s, d, a, off) ->
       (if s = W then "ldw" else "ldb") ^ "\t" ^ r d ^ ", " ^ mem off a
   | Store (s, d, a, off) ->
       (if s = W then "stw" else "stb") ^ "\t" ^ r d ^ ", " ^ mem off a
   | Branch (c, d, a, off) ->
-      cmp_names.(index cmps c) ^ "\t" ^ r d ^ ", " ^ r a ^ ", " ^ target off
-  | Jal (d, off) -> "jal\t" ^ r d ^ ", " ^ target off
+      cmp_names.(index cmps c) ^ "\t" ^ r d ^ ", " ^ r a ^ ", " ^ imm off
+  | Jal (d, off) -> "jal\t" ^ r d ^ ", " ^ imm off
   | Jalr (d, a, off) -> "jalr\t" ^ r d ^ ", " ^ mem off a
-  | Sys n -> "sys\t" ^ string_of_int n
+  | Sys k -> "sys\t" ^ imm k
+
+(* an instruction as a listing shows it, [pc] its address: a branch's
+ * or a jal's target as an address *)
+let print pc i =
+  let target off = Some (hex (pc + 4 + (4 * off))) in
+  match i with
+  | Branch (_, _, _, off) -> text i (target off)
+  | Jal (_, off) -> text i (target off)
+  | _ -> text i None
+
+(* a machine instruction's text, a register of control by its name *)
+let machine_text (m : machine_instr) =
+  let r = reg_name and csr c = csr_names.(c) in
+  match m with
+  | Csrr (d, c) -> "csrr\t" ^ r d ^ ", " ^ csr c
+  | Csrw (c, a) -> "csrw\t" ^ csr c ^ ", " ^ r a
+  | Eret -> "eret"
+  | Wfi -> "wfi"
+  | Csrrw (d, c, a) -> "csrrw\t" ^ r d ^ ", " ^ csr c ^ ", " ^ r a
+  | Amoswap (d, a, b) ->
+      "amoswap\t" ^ r d ^ ", " ^ r a ^ ", (" ^ r b ^ ")"
 
 (*****************************************************************************)
 (* The objects *)

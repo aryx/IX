@@ -32,11 +32,8 @@ type line =
 (* Printing *)
 (*****************************************************************************)
 
-let reg (r : ISA.reg) =
-  if r = 0 then "zero"
-  else if r = ISA.sp then "sp"
-  else if r = ISA.lr then "lr"
-  else "r" ^ string_of_int r
+(* (a register by its name, TinyMachineISA's) *)
+let reg = ISA.reg_name
 
 (* a number's low 32 bits, signed, in decimal (old: Printf's %ld of
  * Int64.to_int32, in each compiler) *)
@@ -44,42 +41,6 @@ let word v = Int64.to_string (Int64.shift_right (Int64.shift_left v 32) 32)
 
 let target (t : ISA.target) =
   match t with ISA.Name s -> s | ISA.Address n -> string_of_int n
-
-(* an instruction's text, its registers by their names; its immediate,
- * or its offset, the given text when it is a label's (Instr_at) *)
-let instr (i : ISA.instr) (at : string option) =
-  let r = reg in
-  let imm k = match at with Some s -> s | None -> string_of_int k in
-  let mem off a = imm off ^ "(" ^ r a ^ ")" in
-  match i with
-  | ISA.Alu (op, d, a, b) ->
-      ISA.alu_names.(ISA.index ISA.alus op) ^ "\t" ^ r d ^ ", " ^ r a ^ ", "
-      ^ r b
-  | ISA.Alui (op, d, a, k) ->
-      ISA.imm_name op ^ "\t" ^ r d ^ ", " ^ r a ^ ", " ^ imm k
-  | ISA.Lui (d, k) ->
-      "lui\t" ^ r d ^ ", " ^ (match at with Some s -> s | None -> ISA.hex k)
-  | ISA.Load (s, d, a, off) ->
-      (if s = ISA.W then "ldw" else "ldb") ^ "\t" ^ r d ^ ", " ^ mem off a
-  | ISA.Store (s, d, a, off) ->
-      (if s = ISA.W then "stw" else "stb") ^ "\t" ^ r d ^ ", " ^ mem off a
-  | ISA.Branch (c, d, a, off) ->
-      ISA.cmp_names.(ISA.index ISA.cmps c) ^ "\t" ^ r d ^ ", " ^ r a ^ ", "
-      ^ imm off
-  | ISA.Jal (d, off) -> "jal\t" ^ r d ^ ", " ^ imm off
-  | ISA.Jalr (d, a, off) -> "jalr\t" ^ r d ^ ", " ^ mem off a
-  | ISA.Sys k -> "sys\t" ^ imm k
-
-let machine (m : ISA.machine_instr) =
-  let csr c = ISA.csr_names.(c) in
-  match m with
-  | ISA.Csrr (d, c) -> "csrr\t" ^ reg d ^ ", " ^ csr c
-  | ISA.Csrw (c, a) -> "csrw\t" ^ csr c ^ ", " ^ reg a
-  | ISA.Eret -> "eret"
-  | ISA.Wfi -> "wfi"
-  | ISA.Csrrw (d, c, a) -> "csrrw\t" ^ reg d ^ ", " ^ csr c ^ ", " ^ reg a
-  | ISA.Amoswap (d, a, b) ->
-      "amoswap\t" ^ reg d ^ ", " ^ reg a ^ ", (" ^ reg b ^ ")"
 
 (* a string as .ascii writes it: a quote, a backslash, a newline, a tab
  * and a 0 escaped *)
@@ -100,9 +61,9 @@ let quoted s =
 let print (l : line) =
   let ins s = "\t" ^ s ^ "\n" in
   match l with
-  | Instr i -> ins (instr i None)
-  | Instr_at (i, _, t) -> ins (instr i (Some (target t)))
-  | Machine m -> ins (machine m)
+  | Instr i -> ins (ISA.text i None)
+  | Instr_at (i, _, t) -> ins (ISA.text i (Some (target t)))
+  | Machine m -> ins (ISA.machine_text m)
   | Li (d, v) -> ins ("li\t" ^ reg d ^ ", " ^ word v)
   | La (d, s) -> ins ("la\t" ^ reg d ^ ", " ^ s)
   | Mov (d, a) -> ins ("mov\t" ^ reg d ^ ", " ^ reg a)

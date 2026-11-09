@@ -72,10 +72,38 @@ let cons : (string, cinfo) Hashtbl.t = Hashtbl.create 64
 type linfo =
   { lrec : string; idx : int; mut : bool; lnames : string list; lscheme : ty }
 let record_labels : (string, linfo) Hashtbl.t = Hashtbl.create 64
+
+(* A constructor is in cons twice: C, the latest declared, and M.C, its
+ * unit's, so that two units' Add are told apart where they are
+ * qualified (TinyCTree.Add, TinyMachineISA.Add, in tiny-c). (old: M.C
+ * was C, the lexer's, and the second unit's Add was both.) *)
+
+(* module A = M in the current unit: A.C is M.C *)
+let con_aliases : (string * string) list ref = ref []
+
+(* C, of M.C *)
+let con_base c =
+  match String.rindex_opt c '.' with
+  | Some k -> String.sub c (k + 1) (String.length c - k - 1)
+  | None -> c
+
+(* M.C, M's (an alias's unit's); else, or C, the latest declared *)
 let find_con c =
-  match Hashtbl.find_opt cons c with
+  let qualified =
+    match String.rindex_opt c '.' with
+    | Some k ->
+        let m = String.sub c 0 k in
+        let m = match List.assoc_opt m !con_aliases with
+          | Some u -> u
+          | None -> m in
+        Hashtbl.find_opt cons (m ^ "." ^ con_base c)
+    | None -> None in
+  match qualified with
   | Some ci -> ci
-  | None -> error ("unknown constructor " ^ c)
+  | None ->
+      (match Hashtbl.find_opt cons (con_base c) with
+       | Some ci -> ci
+       | None -> error ("unknown constructor " ^ c))
 
 let generic = max_int
 let level = ref 1 and counter = ref 0
@@ -104,6 +132,11 @@ let () =
  * space, as the constructors' and the values') *)
 let unit_name = ref "Stdlib"
 let known_units : string list ref = ref []
+
+(* a constructor declared in the current unit, C and M.C *)
+let add_con c (ci : cinfo) =
+  Hashtbl.replace cons c ci;
+  Hashtbl.replace cons (!unit_name ^ "." ^ c) ci
 
 let rec of_texpr vars = function
   | TEVar v ->

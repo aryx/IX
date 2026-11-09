@@ -109,6 +109,19 @@ if $TML -L $W/lib -c -o $W/units/Twice.tm $W/units/Twice.ml && $TML -L $W/lib -c
    && link_tm $W/units/twice $L/start.tm $L/udivmod.tm $W/exit.tm $W/units/rmain.tm $W/units/Twice.tm $W/units/R.tm $W/main4096.tm $LIB_O \
    && [ "$(timeout 60 $CPU $W/units/twice 2>&1)" = 30 ]
 then echo "ok units: a name defined twice, the later"; else echo "FAIL units: a name defined twice"; failures=$((failures + 1)); fi
+# two units' constructors of one name, told apart where qualified, an
+# alias's too (A.Add, I.Mul), an unqualified one the latest; and a
+# constructor's tag its own type's (old: the second unit's Add was both,
+# a type error, so tiny-c could not use TinyMachineISA's types)
+printf 'type arith = Add | Sub\nlet show = function Add -> "add" | Sub -> "sub"\n' > $W/units/A.ml
+printf 'type alu = Sub | Add | Mul\nlet show = function Add -> "ADD" | Sub -> "SUB" | Mul -> "MUL"\n' > $W/units/Isa.ml
+printf 'module I = Isa\nlet () = print_string (A.show A.Add ^ " " ^ I.show I.Mul ^ " " ^ A.show A.Sub ^ " " ^ Isa.show Add)\n' > $W/units/C.ml
+if $TML -L $W/lib -c -o $W/units/A.tm $W/units/A.ml && $TML -L $W/lib -c -o $W/units/Isa.tm $W/units/A.tmi $W/units/Isa.ml \
+   && $TML -L $W/lib -c -o $W/units/C.tm $W/units/A.tmi $W/units/Isa.tmi $W/units/C.ml \
+   && $TML -L $W/lib -o $W/units/cmain.tm $W/units/A.tmi $W/units/Isa.tmi $W/units/C.tmi \
+   && link_tm $W/units/clash $L/start.tm $L/udivmod.tm $W/exit.tm $W/units/cmain.tm $W/units/A.tm $W/units/Isa.tm $W/units/C.tm $W/main4096.tm $LIB_O \
+   && [ "$(timeout 60 $CPU $W/units/clash 2>&1)" = "add MUL sub ADD" ]
+then echo "ok units: two units' constructors of one name, qualified"; else echo "FAIL units: two units' constructors of one name"; failures=$((failures + 1)); fi
 TL="$TL -map" link_tm $W/units/prog $L/start.tm $L/udivmod.tm $W/exit.tm $W/units/prog_main.tm $W/units/Shapes.tm $W/units/Main.tm $W/main4096.tm $LIB_O
 if grep -q "Shapes.f[0-9]*_area$" $W/units/prog.map && ! grep -q "_unused" $W/units/prog.map; then echo "ok units: what nothing uses left out"
 else echo "FAIL units: the sweep"; failures=$((failures + 1)); fi

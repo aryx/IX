@@ -67234,3 +67234,19 @@ Claude did not define the places themselves, only said the chunk leaves them to 
 Claude proposed splitting the comment so that `place` gets its own explanation, with an example of each kind.
 Claude's examples were a line of assembly, the words the assembler emits, and what the linker fills into the hole.
 Yoann's follow-up suggests Claude consider a separate intermediate Asm type, which Claude's answer did not address.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 17:06
+
+**Yoann:**
+
+> don't you think it's cleaner to have this intermediate Asm type?
+
+**Claude (summary):**
+
+Claude agreed that a separate TinyMachineAsm module is cleaner than folding the type into ISA.
+Claude proposed that Asm lines reuse ISA.instr for known operands, adding only labels, pseudo-instructions, and directives.
+Claude noted that ISA would drop its text syntax, leaving Asm as the single place for printing and parsing.
+Claude planned five steps, starting with the place-comment commit and a tiny-ml constructor fix, then the Asm module.
+Claude noted the object format might later move out of ISA, then asked for the go-ahead.

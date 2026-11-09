@@ -532,8 +532,8 @@ let static_closure lab n =
 
 (* an exception: a block with its name, compared by address; its value
  * a block [the exception; its arguments], a static one without them *)
-let exn_id c = "ml_exn_" ^ c
-let exn_const c = "ml_exv_" ^ c
+let exn_id c = "ml_exn_" ^ con_base c
+let exn_const c = "ml_exv_" ^ con_base c
 
 (* (old: 2L, 1L, literals tiny-ml does not read) *)
 let tagged n = Int64.add (Int64.mul (Int64.of_int 2) (Int64.of_int n)) Int64.one

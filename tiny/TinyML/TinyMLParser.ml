@@ -573,7 +573,7 @@ let rec type_decl () =
         if args = [] then (incr ic; KConst (!ic - 1))
         else (incr ib; KBlock (!ib - 1))
       in
-      Hashtbl.replace cons c
+      add_con c
         { kind; arity = List.length args; nconst; nblock;
           scheme = TCon ("%c", res :: args) })
       cs
@@ -617,6 +617,7 @@ let rec items () : (item * int) list =
        | UID u ->
            advance ();
            known_units := m :: !known_units;
+           con_aliases := (m, u) :: !con_aliases;
            (IAlias (m, u), l) :: items ()
        | KW "struct" ->
            advance ();
@@ -645,7 +646,7 @@ let rec items () : (item * int) list =
         if accept (KW "of") then List.map (of_texpr (ref [])) (ty_args ())
         else []
       in
-      Hashtbl.replace cons c
+      add_con c
         { kind = KExn; arity = List.length args; nconst = 0; nblock = 0;
           scheme = TCon ("%c", tcon "exn" :: args) };
       (IExn c, l) :: items ()
@@ -662,6 +663,8 @@ let rec items () : (item * int) list =
 (* a file's text, its items, each with its line *)
 let parse (text : string) =
   toks := lex text; pos := 0;
+  (* (a unit's aliases its own) *)
+  con_aliases := [];
   let is = items () in
   if peek () <> EOF then fail ();
   is

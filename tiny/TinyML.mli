@@ -91,9 +91,10 @@
  * type, and a coercion to one, (e :> t), is just e; OCaml checks them
  * when it builds the same file. A type can have a second name, as in
  * type word = piece list, or with parameters, type 'a t = unit -> 'a
- * node (Seq's). A module is a file, a unit (M.x, open M); its types,
- * constructors and labels are the program's, one name space, so M.C
- * is C. A unit's module N = struct ... end has values only, N.x for
+ * node (Seq's). A module is a file, a unit (M.x, open M); its types
+ * and labels are the program's, one name space; a constructor C is the
+ * latest declared, and M.C is M's, so that two units' Add are told
+ * apart. A unit's module N = struct ... end has values only, N.x for
  * the units after (open M.N, as open Fpath_.Operators); in it a name
  * is not found by its short name. module A = M names a unit again
  * (module ISA = TinyMachineISA: ISA.x is M.x). An attribute,
@@ -186,11 +187,12 @@
  *   open M; Stdlib is open in all, and with it TinyLibCore/'s modules,
  *   the standard library, are the first units of every program, each
  *   compiled once (-nostdlib), their interfaces read from a directory
- *   (/lib/ml, or -L's). The types, the constructors and the labels
- *   are the program's, one name space: a record's label is the latest
- *   record's unless the type says which. Each function and static block
- *   is a piece (.piece), which tiny-linker leaves out when nothing
- *   reaches it: a function of the toplevel has no free variable, so
+ *   (/lib/ml, or -L's). The types and the labels are the program's,
+ *   one name space: a record's label is the latest record's unless the
+ *   type says which; a constructor too, unless its unit says which
+ *   (M.C). Each function and static block is a piece (.piece), which
+ *   tiny-linker leaves out when nothing reaches it: a function of the
+ *   toplevel has no free variable, so
  *   its closure is static and the init does not name it, and a library
  *   costs a program only what it calls: tiny-kernel's calc is 153 KB,
  *   206 KB with all of its libraries.

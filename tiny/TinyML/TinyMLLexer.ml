@@ -102,15 +102,12 @@ let lex (s : string) : (token * int) array =
             else j
           in
           let w = String.sub s i (j - i) in
-          (* (M.C is the constructor C: constructors are one namespace;
-           * but open M.N opens M's module N, its whole path) *)
+          (* (M.C is kept whole, M's constructor C: find_con; and open
+           * M.N opens M's module N, its whole path. old: M.C was C) *)
           add
             (match String.rindex_opt w '.' with
              | Some k when w.[k + 1] >= 'a' -> LID w
-             | Some _ when (match !out with (KW "open", _) :: _ -> true
-                                             | _ -> false) -> UID w
-             | Some k -> UID (String.sub w (k + 1) (String.length w - k - 1))
-             | None -> UID w);
+             | _ -> UID w);
           go j
       | '\'' when i + 2 < n && (s.[i + 2] = '\'' || s.[i + 1] = '\\') ->
           let c, j =

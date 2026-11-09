@@ -75,8 +75,15 @@ type cinfo = {
   nblock : int;
   scheme : ty;
 }
+(* the constructors, each by C, the latest declared, and by M.C, its
+ * unit's *)
 val cons : (string, cinfo) Hashtbl.t
+(* M.C, M's (module A = M: A.C is M.C), else C, the latest declared *)
 val find_con : string -> cinfo
+(* C, of M.C *)
+val con_base : string -> string
+(* the current unit's module A = M *)
+val con_aliases : (string * string) list ref
 
 (* a record's label: its field's index, and its type as %l(record,
  * field), as a constructor's; several records may have it *)
@@ -104,6 +111,8 @@ val string_t : ty
 (* the unit being compiled, and the units whose interfaces it read *)
 val unit_name : string ref
 val known_units : string list ref
+(* a constructor declared in the current unit: as C and as M.C *)
+val add_con : string -> cinfo -> unit
 (* a type expression as a type, its variables' names in vars *)
 val of_texpr : (string * ty) list ref -> texpr -> ty
 (* a name, its type not known yet *)

@@ -66279,3 +66279,76 @@ Claude then read `run` at lines 681 to 920 before making any proposal.
 Claude's reading of `run` was the step Yoann chose to follow up on, so the proposal builds on that inspection.
 Yoann's "yes and 5 too" suggests he wants item 5 included alongside the earlier suggestion.
 Claude did not edit any files or make commits in this exchange.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 22:38
+
+**Yoann:**
+
+> yes and 5 too
+
+**Claude (summary):**
+
+Claude fixed the evaluation order in `diff`, the only code change in this step.
+The tuple now reads `tree_of_commit r (tip r)` before `tree r (snapshot r)`, because snapshot writes.
+Claude recorded the reordered diff line, which now sits at its new line number in the file.
+Claude then ran `make test` and a LOC count after recording that change.
+Earlier, Claude exported the `caps` type, got the code compiling, and left two usage lines over 80 columns.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 22:44
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude reported that the TinyVCS changes were committed as 600c041f, with the re-recorded bugs baseline and prompt-history.md.
+Claude confirmed the working tree is clean and asked whether to start on TinyDatabase next.
+Yoann's follow-up asks for a reminder of the pros and cons of using Marshal for git objects in TinyVCS.ml.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 22:48
+
+**Yoann:**
+
+> can you remind me the pro/cons of using marshall for git objects and possibly more things in TinyVCS.ml ?
+
+**Claude (summary):**
+
+Claude recommended keeping text encoding for TinyVCS objects, since their bytes are the identity under content addressing.
+Claude said Marshal would cut about 85 lines of encode, headers and decode, but changes every object hash.
+The key issue: a commit's date in seconds is about 1.8 billion, beyond tiny-ml's 31-bit ints.
+A host-written Marshal int64 would be truncated or refused on tiny-kernel, so the same repository could hash differently or fail there.
+Claude suggested fixing date parsing separately, by storing dates as text or using kernel-sized ints, if repositories must cross machines.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 22:56
+
+**Yoann:**
+
+> what is the issue with the date and 31bits. I've seen you mentioning it a few times today in different context
+
+**Claude (summary):**
+
+Claude explained that tiny-ml's `int` is 31 bits, so its maximum is 2^30 − 1, about 1.07 billion.
+Claude assumed dates were Unix seconds, around 1.8 billion today, which would overflow that range.
+Claude then noticed TinyLibSystem.mli defines time as seconds since 2000-01-01, and planned to check what the host returns.
+Claude had not yet verified the host's return value or changed any code when this answer ended.
+
+------------------------------------------------------------------------
+
+## 2026-11-08 22:59
+
+**Yoann:**
+
+> anything to fix then? any wrong assumption related to dates in the code?
+
+**Claude (summary):**
+
+Claude checked the date handling and found two problems, both in TinyVCS: a stale `log` comment claiming tiny-kernel has no clock, and a test using Unix-style dates that would overflow on tiny-kernel. Claude fixed the test to use 800,000,000 and up with a unit comment, and added a comment on `now`. Claude re-recorded the `-bugs` baseline, since the new comment shifted three TinyVCS findings down two lines. Claude ran the VCS test (0 failures), mini-mk, and the TinyKernel check. Nothing is committed yet; Claude asked whether to commit.

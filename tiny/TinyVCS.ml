@@ -273,6 +273,8 @@ let state r =
 let getenv_opt (caps : < Cap.env; .. >) v =
   List.assoc_opt v (TSys.environment caps)
 
+(* the date: TSys.time's, or TINYVCS_DATE's, a test's, in the same
+ * seconds since 2000 (a 31-bit int of tiny-ml's until 2034) *)
 let now caps =
   match getenv_opt caps "TINYVCS_DATE" with
   | Some d -> int_of_string d
@@ -760,10 +762,10 @@ let new_commit r (s : op) msg =
   record r ("commit " ^ short c) (moved s c);
   say r (s.current ^ ": " ^ hex c ^ "\n")
 
-(* newest first, each commit once; the same dates (tiny-kernel's are all
- * 0: no clock) in the order reached, breadth first (old: a commit's
- * parents before the commits waiting, so a branch's first commit came
- * before its second) *)
+(* newest first, each commit once; the same dates (commits within a
+ * second, or TINYVCS_DATE's) in the order reached, breadth first (old:
+ * a commit's parents before the commits waiting, so a branch's first
+ * commit came before its second) *)
 let log r =
   let seen = Hashtbl.create 64 in
   let rec go = function

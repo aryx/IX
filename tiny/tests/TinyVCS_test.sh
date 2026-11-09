@@ -35,9 +35,10 @@ def fail(what):
     failures += 1
     print("FAIL", what)
 
+# (TINYVCS_DATE: seconds since 2000, TSys.time's; 800000000 is 2025)
 def tv(d, *args, ok=True):
     p = subprocess.run([V] + list(args), cwd=d, capture_output=True, text=True,
-                       env=dict(os.environ, TINYVCS_AUTHOR="glenda", TINYVCS_DATE=str(1600000000 + r.randrange(10**6))))
+                       env=dict(os.environ, TINYVCS_AUTHOR="glenda", TINYVCS_DATE=str(800000000 + r.randrange(10**6))))
     if ok and p.returncode != 0:
         raise RuntimeError("tiny-vcs %s: %s" % (" ".join(args), p.stderr.strip()))
     return p.stdout

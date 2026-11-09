@@ -61,6 +61,6 @@ tiny/TinyMachine/TinyMachineDevices.ml:831: int31: in until, 0x40000000: not on 
 tiny/TinyMachine/TinyMachineDevices.ml:836: int31: in TinyMachineDevices.calm, 0x40000000: not on the Pi 1's 31 bits
 tiny/TinyMachine/TinyMachineSocket.ml:59: swallowed: in TinyMachineSocket.relay, Unix.Unix_error silenced, a constant answered
 tiny/TinyShell.ml:277: evalorder: operands at 277:8 and 277:19, both with an effect: their order the compiler's
-tiny/TinyVCS.ml:483: stack: groups calls itself, not a tail call, over a list
-tiny/TinyVCS.ml:566: order: in TinyVCS.lca, a table's order reaches the output at tiny/TinyVCS.ml:723, tiny/TinyVCS.ml:786
-tiny/TinyVCS.ml:734: evalorder: operands at 734:12 and 734:38, both with an effect: their order the compiler's
+tiny/TinyVCS.ml:485: stack: groups calls itself, not a tail call, over a list
+tiny/TinyVCS.ml:568: order: in TinyVCS.lca, a table's order reaches the output at tiny/TinyVCS.ml:725, tiny/TinyVCS.ml:788
+tiny/TinyVCS.ml:736: evalorder: operands at 736:12 and 736:38, both with an effect: their order the compiler's

@@ -31,12 +31,21 @@
  *        |                   static blocks into .word
  *     file.tm, for tiny-assembler (with M.tmi when alone, -c)
  *
- * The passes are TinyML/'s modules: TinyMLLexer, then TinyMLParser,
- * which makes the tree of TinyMLTree (and reads Printf's formats as the
- * concatenations they make, TinyMLPrintf), TinyMLTypes, the type
- * checker, then TinyMLCompile, the tree to the stack machine, whose
- * [ir] and assembly are TinyMLMachine's. This file is the program
- * around them: a unit compiled, the program's main, the interfaces
+ * Each pass is a part in TinyML/, whose .mli has its types and its
+ * functions, in the order they are compiled and best read:
+ *
+ *     TinyMLLexer.mli    the tokens ([token]), lex
+ *     TinyMLTree.mli     the tree: [ty], [expr], [pat], a unit's [item]s;
+ *                        the constructors' and labels' tables
+ *     TinyMLPrintf.mli   Printf's formats as the concatenations they make
+ *     TinyMLParser.mli   parse: a file's text to its [item]s
+ *     TinyMLTypes.mli    type_unit: the items typed (Hindley-Milner)
+ *     TinyMLMachine.mli  the stack machine ([ir]) and its assembly,
+ *                        TinyMachine/TinyMachineAsm.mli's [line]s
+ *     TinyMLCompile.mli  bind: the typed tree to the stack machine
+ *
+ * This file is the program around them: compile_unit, a unit's items
+ * through them; compile_main, the program's main; and the interfaces
  * (M.tmi) a unit leaves for the next ones.
  *
  * What a value looks like at run time (TinyMLRuntime/core.c has the

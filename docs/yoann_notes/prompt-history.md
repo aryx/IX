@@ -67036,3 +67036,83 @@ Claude proposed moving output buffers and flags such as `Machine.out`, `Lower.co
 Claude suggested a per-function record for `scopes`, `frame` and `result` in the machine, and replacing the 15 opens with module aliases.
 Claude recommended committing the pipeline first, then doing those steps, with each step checked byte-identical.
 Claude asked whether to proceed and whether to also move the parser's environment into an `env` record.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 15:45
+
+**Yoann:**
+
+> yes commit, then do 1, 2 and the opens
+
+**Claude (summary):**
+
+Claude committed the TinyC changes as fa9130b7 after the replaced opens built and matched the baseline output.
+Claude replaced the opens in TinyC.ml, the parser, TinyCTree and the lexer, and checked mini-ml and tiny-ml accepted the changes.
+Claude fixed a parser keyword bug where the substitution had turned `"unsigned"` into `"Ty.unsigned"` in three places.
+Claude then ran `make self-quick-tix` with `PATH=$PWD/bin` after the first run failed for lack of `tiny-ml` on the PATH.
+Claude mentioned the TinyC.mli header in passing but did not address the file.tm comment you asked about.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 16:42
+
+**Yoann:**
+
+> in TinyC.mli the " *     file.tm, for tiny-cpu
+> " is actually for tiny-assembler now no?
+
+**Claude (summary):**
+
+Claude reported that the Edit tool warned TinyC.mli had changed on disk since its last read.
+Claude said it was checking the diff to confirm the file held only its own change.
+Claude did not reach the long long question or the dropped section in this answer.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 16:48
+
+**Yoann:**
+
+> in context: "
+>
+>  * Its usage, with examples, is in [help] below, which is what tiny-c -h
+>  * prints. It reads one C file and writes its assembly for TinyCPU
+>  * (TinyMachineCPU.ml), whose words are 4 bytes: pointers too, and long
+>  * long is refused. Its runtime is in TinyCRuntime/ (built by
+>  * TinyKernel/steps/Makefile): start.tm holds the program start and the
+>  * system calls, udivmod.tm the unsigned division, and the rest of libc
+>  * is C compiled by tiny-c. Plan 9's names (print, exits), ANSI's rules:
+>  * the tests compare it with the host's cc (TinyC_tests/host.h).
+>
+> " is it true long long is not supported? then why it's not in the dropped: section  just before?
+
+**Claude (summary):**
+
+Claude said it was checking the claim about wide constants before keeping it, and did not reach a conclusion.
+Claude had not yet confirmed whether long long is actually refused by tiny-c, so the claim stood unverified.
+Yoann's follow-up asked what the header comment at the top of the tiny-assembler text refers to, so that is the focus.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 16:50
+
+**Yoann:**
+
+> in "
+>
+>  * tiny-assembler reads what it writes. It compiles TinyML's runtime
+>  * (whose collector and primitives are in C), TinyKernel's programs, and
+>  * t6, a kernel in C, together with its own programs. TinyML's code
+>  * generator has the same design, a stack machine kept in registers, for
+>  * another language.
+>
+> " what it refers to at the beginning?
+
+**Claude (summary):**
+
+Claude said it had already started editing the opening line of that comment block.
+Claude reported that the edited line now reads "tinc-c", which it identified as a typo.
+Claude then said it would read the paragraph around that line to find the referent.
+Its answer ended at that point, before naming what the opening phrase referred to.
+The rest of the answer was cut off, so no referent was given.

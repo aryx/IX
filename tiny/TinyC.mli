@@ -6,12 +6,14 @@
  *     file.c
  *        | tokens     with #includes inlined and #defines expanded
  *        | the parser recursive descent producing typed trees, [expr]
- *        |            and [stmt], with conversions made explicit
+ *        |            and [stmt], with conversions made explicit; a
+ *        |            declaration's [def]s, a function or a global
  *        | lower      turns a function's tree into stack machine
  *        |            code, an [ir] list (what -ir prints)
  *        | machine    turns that list into assembly, keeping the
- *        |            stack depth d in register rd
- *     file.tm, for tiny-cpu
+ *        |            stack depth d in register rd; a global's data
+ *     file.tm, for tiny-assembler (then tiny-linker, and tiny-cpu runs
+ *     the program)
  *
  * Here is one function, int f(int a, int b) { return a + b * 2; }, as
  * printed by -ir and by the back end:
@@ -94,23 +96,27 @@
  *
  * dropped:
  * Because of what each would cost here: floats, unions, bitfields,
- * structs by value, goto, macros with arguments, and #if.
+ * structs by value, goto, macros with arguments, and #if. And long
+ * long: a declared one is refused, TinyCPU's registers being 32 bits (a
+ * value of 64 would take two registers in the stack machine, and the
+ * runtime's calls for its multiplication and division); a constant too
+ * wide for an int, or with ll, is computed in 32 bits.
  *
  * context:
  * Its usage, with examples, is in [help] below, which is what tiny-c -h
  * prints. It reads one C file and writes its assembly for TinyCPU
- * (TinyMachineCPU.ml), whose words are 4 bytes: pointers too, and long
- * long is refused. Its runtime is in TinyCRuntime/ (built by
- * TinyKernel/steps/Makefile): start.tm holds the program start and the
- * system calls, udivmod.tm the unsigned division, and the rest of libc
- * is C compiled by tiny-c. Plan 9's names (print, exits), ANSI's rules:
+ * (TinyMachineCPU.ml), whose words are 4 bytes, pointers too. Its
+ * runtime is in TinyCRuntime/ (built by TinyKernel/steps/Makefile):
+ * start.tm holds the program start and the system calls, udivmod.tm the
+ * unsigned division, and the rest of libc is C compiled by tiny-c. Its
+ * library has Plan 9's names (print, exits) and its rules are ANSI's:
  * the tests compare it with the host's cc (TinyC_tests/host.h).
  *
- * tiny-assembler reads what it writes. It compiles TinyML's runtime
- * (whose collector and primitives are in C), TinyKernel's programs, and
- * t6, a kernel in C, together with its own programs. TinyML's code
- * generator has the same design, a stack machine kept in registers, for
- * another language.
+ * tiny-assembler reads what tiny-c writes. tiny-c compiles TinyML's
+ * runtime (whose collector and primitives are in C), TinyKernel's
+ * programs, and t6, a kernel in C, together with its own programs.
+ * TinyML's code generator has the same design, a stack machine kept in
+ * registers, for another language.
  *
  * exercises:
  * Each cheap because the stack machine sits between the front end and

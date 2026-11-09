@@ -66666,3 +66666,42 @@ The commit failed because xargs and `-F -` both wanted stdin, so Claude retried 
 **Claude (summary):**
 
 Claude said `make test` passes now (158 jobs, 0 failures, 7 skipped) on HEAD `d9fd4c80` plus Yoann's uncommitted TinyMachineISA.mli edit. Claude suggested the earlier failure was probably intermittent, from timeouts under load in TinyLibCore and browser tests, or a half-finished edit. Claude asked for the failing job name or log path to inspect it directly. Claude also recommended running `make self-quick-tix` (about 6 minutes) after the TinyAssembler cleanup, since the toolchain changed.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 11:52
+
+**Yoann:**
+
+> could we use a module ISA = ... in TinyLinker.ml too?
+
+**Claude (summary):**
+
+Claude recommended replacing `open TinyMachineISA` with `module ISA = TinyMachineISA` in TinyLinker.ml, as in TinyAssembler.
+Claude qualified the constructors and names the compiler flagged, using a Python loop after a NUL byte broke the shell loop.
+Claude annotated `sectioned`, `gather`, `sweep`, and `link` with `ISA.item list` so their items resolve.
+Claude annotated the inner `fun it` functions in `layout`, `sweep`, and `gather`, whose types the compiler could not infer.
+Claude found `git status` clean, with no TinyLinker.ml changes, suspected a concurrent commit, and began checking the log.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 11:59
+
+**Yoann:**
+
+> do 2
+
+------------------------------------------------------------------------
+
+## 2026-11-09 12:03
+
+**Yoann:**
+
+> use simpler commands
+
+**Claude (summary):**
+
+Claude switched the Makefile edit to the Edit tool instead of a script, following the request for simpler commands.
+Claude found the host interface was stale, last built Nov 8, and had not been rebuilt.
+Claude confirmed that make now lists the `.mli` as a prerequisite, and the check passed.
+Claude saved the preference for simpler commands to memory so it carries into future sessions.

@@ -338,7 +338,9 @@ UNITS = TinyCalls TinyLibSystem TinyLibSymbols TinyLibRegex TinyLibDraw TinyLibP
   TinyWindows TinyAppTetris TinyAppCalculator TinyAppTemperature TinyEditorScreen $(OFFICE) TinyOffice TinyTroff TinyPlay $(BROWSER) TinyBrowserScreen TinyBrowser TinyTracer TinyDebugger \
   TinyShell TinyUtilities TinyEditorLine Square Machine Tetris Calc Temp Emacs Office Troff Play Www Bigmem Trace Debug
 .SECONDEXPANSION:
-$(UNITS:%=$(U)/%.tm): $(U)/%.tm: $$(addprefix $(U)/,$$(addsuffix .tmi,$$(I_$$*))) $$(or $$(F_$$*),../$$*.ml) $(O)/lib/Stdlib.tm $(TMLBIN)
+# (the .mli too, when there is one: its vals' types are the .tmi's;
+# old: the .ml only, so a .tmi kept an old .mli's types)
+$(UNITS:%=$(U)/%.tm): $(U)/%.tm: $$(addprefix $(U)/,$$(addsuffix .tmi,$$(I_$$*))) $$(or $$(F_$$*),../$$*.ml) $$(wildcard $$(basename $$(or $$(F_$$*),../$$*.ml)).mli) $(O)/lib/Stdlib.tm $(TMLBIN)
 	@mkdir -p $(@D)
 	$(TML_L) -c -o $@ $(filter %.tmi,$^) $(filter %.ml,$^)
 $(UNITS:%=$(U)/%.tmi): $(U)/%.tmi: $(U)/%.tm ;

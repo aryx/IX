@@ -67322,3 +67322,67 @@ Claude committed all five steps, sharing TinyMachineAsm.line across tiny-c, tiny
 **Yoann:**
 
 > Can we change TinyAssembler.assemble to then take a channel and return a better type than string?
+
+------------------------------------------------------------------------
+
+## 2026-11-09 18:38
+
+**Yoann:**
+
+> maybe TinyLinker.mli can also have more precise types for some of the important functions exposed in the .mli?
+
+**Claude (summary):**
+
+Claude committed the assemble change after all checks passed, including the self-quick check.
+The reply gives no detail on what the assemble change contained or how it touched TinyAssembler.mli.
+Claude then opened TinyLinker.mli to look at its interface for more precise types.
+Claude confirmed the TinyLinker.mli build, then ran checks, which build tiny-kernel's ld with tiny-ml.
+Claude noted that tiny-ml's record labels share one namespace, then committed again after the checks passed.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 19:25
+
+**Yoann:**
+
+> it would be good maybe in TinyAssembler.mli to get an intermediate function exposed that produce a TinyMachineAsm.line from a Chan.i ?
+
+------------------------------------------------------------------------
+
+## 2026-11-09 19:25
+
+**Yoann:**
+
+> so then it's clearer that we go from a Fpath.t, to Chan.i, to Asm.line, to ISA.item, to Chan.o
+
+------------------------------------------------------------------------
+
+## 2026-11-09 19:25
+
+**Yoann:**
+
+> the .mli tells the whole story of the pipeline
+
+**Claude (summary):**
+
+Claude made the last step a function, `write : Chan.o -> TinyMachineISA.item list -> unit`, in TinyAssembler.mli.
+Claude listed the pipeline's `read`, `encode` and `write` in the interface, with the diagram above them.
+Claude had `main` call those three steps directly, opening the `.tm` and `.o` files around them.
+Claude kept each text line's number through `read`, so parse and encoding errors still report file and line.
+Claude removed the now-redundant `assemble`, committed as e642a250, and left the staged prompt-history file out.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 20:02
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended fixing the TinyKernel Makefile pitfall first, since it cost two failed runs already.
+Claude proposed passing `$(PWD)/bin/...` paths from the top-level Makefile so stale tiny-ml and tiny-assembler objects can't survive.
+The tiny-linker follow-up was next: split its `main` into `read`, `link` and `write` in the `.mli`.
+Claude also planned to make the `-s`/`-map` label lines a function of `linked`, so the pipeline reads from the `.mli` alone.
+The round-trip law `parse (print l) = l`, the duplicate printer cleanup, TinyML globals and the GUI layer came after.

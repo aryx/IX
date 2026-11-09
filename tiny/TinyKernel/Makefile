@@ -104,12 +104,23 @@
 
 export PATH := $(abspath ../../bin):$(PATH)
 
-TML = tiny-ml
-TC = tiny-c
-AS = tiny-assembler
-LD = tiny-linker
-CPU = tiny-cpu
-MACHINE = tiny-machine
+# Each tool by its path, ix's bin/'s when it is there: so that what a
+# tool makes depends on it (TMLBIN, TCBIN, ASBIN, LDBIN below: a new
+# tiny-ml remakes the units, a new tiny-assembler the objects), and so
+# that make 3.81 (macOS's), which runs a command without a shell from
+# the PATH it started with, not the one exported above, finds it.
+# (old: tiny-ml, a name: the objects of an older tiny-assembler were
+# kept, the new tiny-linker refused them, and make self-quick-tix from
+# a shell without bin/ in its PATH did not find tiny-ml)
+tool = $(firstword $(wildcard $(abspath ../../bin)/$(1)) $(1))
+TML = $(call tool,tiny-ml)
+TC = $(call tool,tiny-c)
+AS = $(call tool,tiny-assembler)
+LD = $(call tool,tiny-linker)
+CPU = $(call tool,tiny-cpu)
+MACHINE = $(call tool,tiny-machine)
+TCBIN = $(wildcard $(TC))
+LDBIN = $(wildcard $(LD))
 
 # how the kernel gives the processes memory (TinyKernelMemory.mli)
 MEMORY = partitions
@@ -138,9 +149,9 @@ all: $(O)/boot.img
 
 # an object: of a .tm made in _make/, or of one here, or of the C
 # runtime's; the .tm made are kept (make deletes what it made on the
-# way to another target). (An object depends on tiny-assembler too,
-# when AS is a path, as TMLBIN below: an object's format changes with
-# it, tiny-object 2, and one of the old would be refused by the linker)
+# way to another target). (An object depends on tiny-assembler too, its
+# path, as TMLBIN below: an object's format changes with it, tiny-object
+# 2, and one of the old would be refused by the linker)
 ASBIN = $(wildcard $(AS))
 $(O)/%.o: $(O)/%.tm $(ASBIN)
 	$(AS) -o $@ $<
@@ -152,8 +163,8 @@ $(O)/%.o: $(L)/%.tm $(ASBIN)
 	$(AS) -o $@ $<
 .SECONDARY:
 
-# (what tiny-ml compiles depends on tiny-ml too, when TML is a path, as
-# ../../tiny-machine gives it: its binary carries TinyLibCore/, the
+# (what tiny-ml compiles depends on tiny-ml too, its path (above, or
+# ../../tiny-machine's): its binary carries TinyLibCore/, the
 # first units of every program; old: a change there left the objects
 # made before, some units of a program on the old library)
 TMLBIN = $(wildcard $(TML))
@@ -186,21 +197,21 @@ $(O)/font.tm: $(FONT)
 
 $(O)/runtime.tm: ../TinyMLRuntime/core.c
 
-$(O)/kernel.img: $(KERNEL)
+$(O)/kernel.img: $(KERNEL) $(LDBIN)
 	$(LD) -map -o $@ $(KERNEL)
 
-$(O)/libc.tm: $(L)/libc.c $(L)/libc.h
+$(O)/libc.tm: $(L)/libc.c $(L)/libc.h $(TCBIN)
 	@mkdir -p $(@D)
 	$(TC) -o $@ $<
 
 # a file in C: the kernel's runtime.c, a program of user/, or what a
 # program is linked with besides: libc/ for one in C (draw.c, net.c),
 # libml/ for one in ML (mlsys.c)
-$(O)/%.tm: %.c libc/user.h
+$(O)/%.tm: %.c libc/user.h $(TCBIN)
 	@mkdir -p $(@D)
 	$(TC) -o $@ $<
 
-$(O)/bin/%: $(ULIB) $(O)/user/%.o
+$(O)/bin/%: $(ULIB) $(O)/user/%.o $(LDBIN)
 	@mkdir -p $(@D)
 	$(LD) -map -s -n -o $@ $(ULIB) $(O)/user/$*.o
 
@@ -407,20 +418,20 @@ $(O)/main/%.tm: $$(addprefix $(U)/,$$(addsuffix .tmi,$$(UNITS_$$*))) $(O)/lib/St
 # (the main right after mlsys.c, which calls its ml_start by a jal: 128 KB)
 # (end.o last: _end, where mlsys.c puts its stack of values when the
 # program is past 384 KB; old: a program past it refused here)
-$(ML:%=$(O)/bin/%): $(O)/bin/%: $(ULIB) $(O)/libml/mlsys.o $(O)/main/%.o $$(addprefix $(U)/,$$(addsuffix .o,$$(UNITS_$$*))) $(LIB) $(O)/end.o
+$(ML:%=$(O)/bin/%): $(O)/bin/%: $(ULIB) $(O)/libml/mlsys.o $(O)/main/%.o $$(addprefix $(U)/,$$(addsuffix .o,$$(UNITS_$$*))) $(LIB) $(O)/end.o $(LDBIN)
 	@mkdir -p $(@D)
 	$(LD) -map -s -n $(MEM_$*) -o $@ $(filter %.o,$^)
 
 # a program that draws: with draw.c, the messages (draw.h); a demo, in
 # examples/ (not counted by make loc)
-$(O)/user/paint.tm: examples/paint.c libc/user.h libc/draw.h
+$(O)/user/paint.tm: examples/paint.c libc/user.h libc/draw.h $(TCBIN)
 	@mkdir -p $(@D)
 	$(TC) -o $@ $<
-$(O)/bin/paint: $(ULIB) $(O)/libc/draw.o $(O)/user/paint.o
+$(O)/bin/paint: $(ULIB) $(O)/libc/draw.o $(O)/user/paint.o $(LDBIN)
 	@mkdir -p $(@D)
 	$(LD) -map -s -n -o $@ $(ULIB) $(O)/libc/draw.o $(O)/user/paint.o
 # a program that reaches a machine by its name: with net.c
-$(O)/bin/get $(O)/bin/put: $(O)/bin/%: $(ULIB) $(O)/libc/net.o $(O)/user/%.o
+$(O)/bin/get $(O)/bin/put: $(O)/bin/%: $(ULIB) $(O)/libc/net.o $(O)/user/%.o $(LDBIN)
 	@mkdir -p $(@D)
 	$(LD) -map -s -n -o $@ $(ULIB) $(O)/libc/net.o $(O)/user/$*.o
 

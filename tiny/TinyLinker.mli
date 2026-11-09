@@ -103,17 +103,37 @@ type linked = {
   data_start : address option;
 }
 
-(* [link order objects]: the objects (each its items, TinyMachineISA's,
- * tiny-assembler's), linked *)
+(* The pipeline, a step a function (main opens and writes the files):
+ *
+ *     x.o ...        Fpath.t, each
+ *       | opened     Chan.i
+ *       | read       TinyMachineISA.item list, an object
+ *       | link       linked: the image, the labels' addresses
+ *       | contents   string: the image, or an a.out (output)
+ *     x              (and x.map, map's lines, with -map)
+ *
+ * An object file's items (TinyMachineISA's of_object), each said with
+ * -debug; an error said with the file (Chan.origin) *)
+val read : Chan.i -> TinyMachineISA.item list
+
+(* [link order objects]: the objects, each its items, linked *)
 val link : sections -> TinyMachineISA.item list list -> linked
 
-(* [aout memory linked]: an executable for tiny-kernel: a header of
- * three words (a magic number, the image's size, the memory the
- * program asks for in bytes), then the image, linked at 0; with a
- * data_start (-n), a fourth word, it, and the magic number
- * aout_split's. The memory first (old: ~memory, a label, which tiny-ml
- * does not read) *)
-val aout : int -> linked -> string
+(* what the output file is: the image alone, for tiny-cpu and
+ * tiny-machine; or an a.out for tiny-kernel, asking for that much
+ * memory in bytes (-a), with its labels after the image but the
+ * compilers' local ones (Aout_labels, -s: 1 MB unless -a says). An
+ * a.out is a header of three words, a magic number, the image's size,
+ * the memory, then the image, linked at 0; with a data_start (-n), a
+ * fourth word, it, and another magic number *)
+type output = Image | Aout of int | Aout_labels of int
+
+(* the output file's bytes *)
+val contents : output -> linked -> string
+
+(* -map's: each label's line, its address in hexadecimal and its name,
+ * by address *)
+val map : linked -> string
 
 (* the program: its arguments (its name first; -h: how) to how it ends *)
 val main : < caps; .. > -> string array -> Exit.t

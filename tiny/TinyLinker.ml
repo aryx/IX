@@ -256,12 +256,53 @@ let aout (memory : int) (l : linked) : string =
 
 (* the command line's options: -a's megabytes, -n (Text_first), -s,
  * -map *)
+(* what the output file is: the image alone; an a.out for tiny-kernel,
+ * asking for that much memory in bytes (-a); or one with its labels
+ * after the image, but the compilers' local ones (-s, 1 MB unless -a) *)
+type output = Image | Aout of int | Aout_labels of int
+
+(* the labels' lines, each its address in hexadecimal and its name *)
+let label_lines (ls : (Sym.label * address) list) : string =
+  String.concat ""
+    (List.map (fun (l, a) -> Printf.sprintf "%x %s\n" a l) ls)
+
+(* -map's: every label's line *)
+let map (l : linked) : string = label_lines l.addresses
+
+(* the output file's bytes *)
+let contents (out : output) (l : linked) : string =
+  match out with
+  | Image -> l.image
+  | Aout memory -> aout memory l
+  | Aout_labels memory ->
+      aout memory l
+      ^ label_lines
+          (List.filter (fun (x, _) -> not (Sym.local x)) l.addresses)
+
+(* an object file's items (TinyMachineISA's of_object), each said with
+ * -debug *)
+let read (chan : Chan.i) : ISA.item list =
+  let f = Chan.origin chan in
+  let items =
+    try ISA.of_object (In_channel.input_all chan.ic)
+    with ISA.Error e -> ISA.error (f ^ ": " ^ e) in
+  List.iter (fun it ->
+    Logs.debug (fun m -> m "%s: %s" f (ISA.show_item it))) items;
+  items
+
 type options = {
   megabytes : int option;
   sections : sections;
   symbols : bool;
   map : bool;
 }
+
+(* -a's and -s's output *)
+let output (o : options) : output =
+  match o.megabytes, o.symbols with
+  | None, false -> Image
+  | Some n, false -> Aout (n * 0x100000)
+  | m, true -> Aout_labels ((m ||| 1) * 0x100000)
 
 let main (caps : < caps; .. >) (argv : string array) : Exit.t =
   let write = TSys.write_file caps in
@@ -288,29 +329,13 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
           TSys.eprint caps (usage ^ "   (-h: how)\n"); Exit.Code 2
       | Some (o, out, files) ->
           try
-            let objects = files |> List.map (fun f ->
-              let items =
-                try ISA.of_object (TSys.read_file caps f)
-                with ISA.Error e -> ISA.error (Fpath.to_string f ^ ": " ^ e) in
-              items |> List.iter (fun it ->
-                Logs.debug (fun m ->
-                  m "%s: %s" (Fpath.to_string f) (ISA.show_item it)));
-              items) in
+            (* the pipeline: the objects' paths, their channels, their
+             * items, linked, the output's bytes *)
+            let objects = List.map (TSys.with_open_in caps read) files in
             let linked = link o.sections objects in
-            let lines l =
-              String.concat "" (List.map (fun (l, a) ->
-                Printf.sprintf "%x %s\n" a l) l) in
-            write out
-              (match o.megabytes, o.symbols with
-               | Some n, false -> aout (n * 0x100000) linked
-               | _, true ->
-                   aout ((o.megabytes ||| 1) * 0x100000) linked
-                   ^ lines (List.filter (fun (l, _) -> not (Sym.local l))
-                              linked.addresses)
-               | None, false -> linked.image);
+            write out (contents (output o) linked);
             if o.map then
-              write (Fpath.v (Fpath.to_string out ^ ".map"))
-                (lines linked.addresses);
+              write (Fpath.v (Fpath.to_string out ^ ".map")) (map linked);
             Exit.OK
           with ISA.Error e -> Exit.Err e
 

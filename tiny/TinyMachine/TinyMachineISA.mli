@@ -11,17 +11,25 @@
  * decodes a word into a variant of its own, checked against objdump.
  * Here one type serves both directions, in one file, so the listing's law
  * (TinyMachineCPU's: a listing reassembled gives the same words) is a
- * test of this file. *)
+ * test of this file.
+ *)
 
 (* The instructions, and their words (an immediate is a word's low 16
  * bits, encode says what does not fit); the ALU's operations and the
  * branches' tests in their opcodes' order, with their names; an
- * immediate form's name *)
+ * immediate form's name 
+ *)
+
 type reg = int
+
 type alu =
-  | Add | Sub | Mul | Div | Rem | And | Or | Xor | Shl | Shr | Sar | Slt | Sltu
+  | Add | Sub | Mul | Div | Rem
+  | And | Or | Xor
+  | Shl | Shr | Sar | Slt | Sltu
 type cmp = Eq | Ne | Lt | Ge | Ltu | Geu
 type size = W | B
+
+(* op dest, src *)
 type instr =
   | Alu of alu * reg * reg * reg          (* d, a, b *)
   | Alui of alu * reg * reg * int
@@ -33,12 +41,14 @@ type instr =
   | Jal of reg * int
   | Jalr of reg * reg * int
   | Sys of int
+
 val alus : alu array
 val alu_names : string array
 val cmps : cmp array
 val cmp_names : string array
 val index : 'a array -> 'a -> int
 val imm_name : alu -> string
+
 val unsigned_imm : alu -> bool
 val has_imm : alu -> bool
 val sext16 : int -> int
@@ -50,8 +60,8 @@ val print : int -> instr -> string
 
 (* the stack pointer's register and the link's; the machine's
  * registers of control, by number (csrr's, csrw's) *)
-val sp : int
-val lr : int
+val sp : reg
+val lr : reg
 val csr_names : string array
 
 (* what is wrong in a program's text, said to the person *)
@@ -76,13 +86,13 @@ val hex : int -> string
 type place = Word | Abs | Hi | Lo | Pc
 type target = Name of string | Address of int
 type item =
-  | Label of string | Align of int | Space of int
-  | Chunk of string * (int * place * target) list | Piece
+  | Label of string
+  | Align of int | Space of int
+  | Chunk of string * (int * place * target) list
+  | Piece
   | Section of bool
 
-(* an item as OCaml writes it, derived by ppx_deriving (dune) and by
- * mini-ml; "NO DERIVING" when tiny-ml compiles this file:
- * tiny-linker -debug's *)
+(* for tiny-linker -debug's *)
 val show_item : item -> string
 
 (* the object's bytes, marshalled after a magic line, and back (Error

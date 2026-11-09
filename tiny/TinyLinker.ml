@@ -3,7 +3,7 @@
  *
  * See TinyLinker.mli
  *)
-open TinyMachineISA
+module ISA = TinyMachineISA
 (* (|||: an option's value, or a default) *)
 open Common
 module TSys = TinyLibSystem
@@ -48,23 +48,23 @@ An error names the label: undefined label main
 type layout = {
   labels : (Sym.label, address) Hashtbl.t;
   order : (Sym.label * address) list;
-  placed : (address * item) list;
+  placed : (address * ISA.item) list;
   data_at : address;
 }
 
-let layout (items : item list) : layout =
+let layout (items : ISA.item list) : layout =
   let labels = Hashtbl.create 64 and order = ref [] in
   let pc = ref 0 and placed = ref [] and data_at = ref 0 in
-  items |> List.iter (fun it ->
+  items |> List.iter (fun (it : ISA.item) ->
     match it with
     | Label l ->
         if Hashtbl.mem labels l then
-          error (Printf.sprintf "label %s defined twice" l);
+          ISA.error (Printf.sprintf "label %s defined twice" l);
         Hashtbl.replace labels l !pc;
         order := (l, !pc) :: !order
     | Align n ->
         let a = (!pc + n - 1) / n * n in
-        placed := (!pc, Space (a - !pc)) :: !placed;
+        placed := (!pc, ISA.Space (a - !pc)) :: !placed;
         pc := a
     | Space n -> placed := (!pc, it) :: !placed; pc := !pc + n
     | Chunk (s, _) ->
@@ -88,24 +88,24 @@ let set_word s off v =
 (* a word with an address, or what an address makes, in its place: the
  * whole word, or the instruction made again with it as its immediate,
  * so that encode says what does not fit *)
-let fill s off kind (pc : address) (v : address) =
-  let imm v i = match i with
+let fill s off (kind : ISA.place) (pc : address) (v : address) =
+  let imm v (i : ISA.instr) : ISA.instr = match i with
     | Alui (op, d, a, _) -> Alui (op, d, a, v) | Lui (d, _) -> Lui (d, v)
     | Load (s, d, a, _) -> Load (s, d, a, v)
     | Store (s, d, a, _) -> Store (s, d, a, v)
     | Branch (c, d, a, _) -> Branch (c, d, a, v) | Jal (d, _) -> Jal (d, v)
     | Jalr (d, a, _) -> Jalr (d, a, v) | Sys _ -> Sys v
-    | Alu _ -> error ("no immediate in " ^ hex (get_word s off)) in
+    | Alu _ -> ISA.error ("no immediate in " ^ ISA.hex (get_word s off)) in
   let v = match kind with
     | Word | Abs -> v | Hi -> (v asr 16) land 0xffff
     | Lo -> v land 0xffff
     | Pc ->
-        if v land 3 <> 0 then error ("unaligned target " ^ hex v);
+        if v land 3 <> 0 then ISA.error ("unaligned target " ^ ISA.hex v);
         (v - (pc + 4)) / 4 in
-  if kind = Word then set_word s off v
-  else match decode (get_word s off) with
-    | Some i -> set_word s off (encode (imm v i))
-    | None -> error ("not an instruction at " ^ hex pc)
+  if kind = ISA.Word then set_word s off v
+  else match ISA.decode (get_word s off) with
+    | Some i -> set_word s off (ISA.encode (imm v i))
+    | None -> ISA.error ("not an instruction at " ^ ISA.hex pc)
 
 (* What nothing reaches, left out. A piece is what follows a piece line
  * (tiny-ml's: a function, a static block) up to the next one, or the
@@ -114,11 +114,11 @@ let fill s off kind (pc : address) (v : address) =
  * a kept one names one of its labels, so what is kept is what the
  * objects without pieces reach (the start, the C runtime, which calls
  * ml_start). Each piece kept starts on a word. *)
-let sweep (objects : item list list) =
+let sweep (objects : ISA.item list list) =
   let pieces = List.concat_map (fun items ->
-    let rec split cur acc l = match l with
+    let rec split cur acc (l : ISA.item list) = match l with
       | [] -> List.rev (List.rev cur :: acc)
-      | Piece :: l -> split [ Align 4 ] (List.rev cur :: acc) l
+      | Piece :: l -> split [ ISA.Align 4 ] (List.rev cur :: acc) l
       | it :: l -> split (it :: cur) acc l in
     match split [] [] items with
     | first :: rest -> (true, first) :: List.map (fun p -> false, p) rest
@@ -126,19 +126,19 @@ let sweep (objects : item list list) =
   let pieces = Array.of_list pieces in
   let where = Hashtbl.create 256 in
   for i = 0 to Array.length pieces - 1 do
-    List.iter (fun it ->
+    List.iter (fun (it : ISA.item) ->
       match it with
       | Label l ->
           if Hashtbl.mem where l then
-            error (Printf.sprintf "label %s defined twice" l);
+            ISA.error (Printf.sprintf "label %s defined twice" l);
           Hashtbl.replace where l i
       | _ -> ()) (snd pieces.(i))
   done;
   let kept = Array.map fst pieces in
   let rec keep i =
-    snd pieces.(i) |> List.iter (fun it -> match it with
+    snd pieces.(i) |> List.iter (fun (it : ISA.item) -> match it with
       | Chunk (_, relocs) ->
-          List.iter (fun (_, _, t) ->
+          List.iter (fun ((_, _, t) : int * ISA.place * ISA.target) ->
             match (match t with Name l -> Hashtbl.find_opt where l
                               | Address _ -> None) with
             | Some j when not kept.(j) -> kept.(j) <- true; keep j
@@ -155,8 +155,8 @@ let sweep (objects : item list list) =
 (* Each piece its section: an object starts in the text, and a piece
  * goes on in the section its object was in (sweep keeps or drops it
  * whole, with its section) *)
-let sectioned items =
-  let rec go cur l = match l with
+let sectioned (items : ISA.item list) : ISA.item list =
+  let rec go cur (l : ISA.item list) : ISA.item list = match l with
     | [] -> []
     | Piece :: l -> Piece :: Section cur :: go cur l
     | (Section d as it) :: l -> it :: go d l
@@ -167,43 +167,45 @@ let sectioned items =
  * kernel's segments, plan_tiny_memory.md), Unix's 0410 (whose ld -n
  * rounded the data to the PDP-11's 8 KB). One Section true is left
  * between them, where layout notes the data's start *)
-let gather items =
+let gather (items : ISA.item list) : ISA.item list =
   let text = ref [] and data = ref [] and in_data = ref false in
   let add it = if !in_data then data := it :: !data else text := it :: !text in
-  List.iter (fun it ->
+  List.iter (fun (it : ISA.item) ->
     match it with
-    | Section d -> in_data := d; add (Align 4)
+    | Section d -> in_data := d; add (ISA.Align 4)
     | it -> add it) items;
-  List.rev !text @ [ Align 4096; Section true ] @ List.rev !data
+  List.rev !text @ [ ISA.Align 4096; Section true ] @ List.rev !data
 
 (* the image's order: the objects', or the text first (-n) *)
 type sections = In_order | Text_first
 
 (* the image, the labels by address, and where the data starts (-n; 0
  * otherwise, the sections then ignored) *)
-let link (sections : sections) (objects : item list list)
+let link (sections : sections) (objects : ISA.item list list)
     : string * (Sym.label * address) list * address =
   let items = sweep (List.map sectioned objects) in
   let lay =
     layout
       (match sections with Text_first -> gather items | In_order -> items) in
-  let resolve t : address =
+  let resolve (t : ISA.target) : address =
     match t with
     | Address n -> n
     | Name l ->
         (match Hashtbl.find_opt lay.labels l with
-         | Some n -> n | None -> error ("undefined label " ^ l)) in
+         | Some n -> n | None -> ISA.error ("undefined label " ^ l)) in
   let b = Buffer.create 4096 in
-  lay.placed |> List.iter (fun (a, it) ->
+  (* a target as an error says it *)
+  let said (t : ISA.target) =
+    match t with Name l -> l | Address n -> ISA.hex n in
+  lay.placed |> List.iter (fun ((a, it) : address * ISA.item) ->
     match it with
     | Space n -> Buffer.add_string b (String.make n '\000')
     | Chunk (s, relocs) ->
         let s = Bytes.of_string s in
         List.iter (fun (off, k, t) ->
           try fill s off k (a + off) (resolve t)
-          with Error e ->
-            error (e ^ " (" ^ (match t with Name l -> l | Address n -> hex n)
-                   ^ ")")) relocs;
+          with ISA.Error e ->
+            ISA.error (e ^ " (" ^ said t ^ ")")) relocs;
         Buffer.add_string b (Bytes.to_string s)
     | Label _ | Align _ | Piece | Section _ -> ());
   (* (old: the table's labels sorted by address, those at one address in
@@ -269,11 +271,11 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
           try
             let objects = files |> List.map (fun f ->
               let items =
-                try of_object (TSys.read_file caps f)
-                with Error e -> error (Fpath.to_string f ^ ": " ^ e) in
+                try ISA.of_object (TSys.read_file caps f)
+                with ISA.Error e -> ISA.error (Fpath.to_string f ^ ": " ^ e) in
               items |> List.iter (fun it ->
                 Logs.debug (fun m ->
-                  m "%s: %s" (Fpath.to_string f) (show_item it)));
+                  m "%s: %s" (Fpath.to_string f) (ISA.show_item it)));
               items) in
             let image, labels, data_at =
               link (if o.split then Text_first else In_order) objects in
@@ -291,6 +293,6 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
             if o.map then
               write (Fpath.v (Fpath.to_string out ^ ".map")) (lines labels);
             Exit.OK
-          with Error e -> Exit.Err e
+          with ISA.Error e -> Exit.Err e
 
 let () = TSys.main "tiny-linker" main

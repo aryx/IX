@@ -66638,3 +66638,31 @@ Claude confirmed the dune build passes but did not commit, since Yoann's in-prog
 Claude noted that 12 tiny/ headers already use a list while 12 others still use a paragraph, and proposed converting them.
 Claude also proposed adding the list shape to `docs/tags.md` and fixing the stale `assemble` comment in the `.mli`.
 Claude asked whether to commit TinyAssembler.mli with Yoann's edit and whether to convert the remaining 12 and fix the comment.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 11:21
+
+**Yoann:**
+
+> let's commit and convert the other 12
+
+**Claude (summary):**
+
+Claude committed TinyAssembler.mli as ef9f188a with the edit and the `assemble` comment fixed.
+Claude read all 12 paragraph-form references first, since each one was written differently.
+Claude converted 11 of them to the new form and confirmed that dune builds.
+Claude verified that only headers changed and added the list shape to docs/tags.md.
+The commit failed because xargs and `-F -` both wanted stdin, so Claude retried with a message file.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 11:39
+
+**Yoann:**
+
+> make test is failing
+
+**Claude (summary):**
+
+Claude said `make test` passes now (158 jobs, 0 failures, 7 skipped) on HEAD `d9fd4c80` plus Yoann's uncommitted TinyMachineISA.mli edit. Claude suggested the earlier failure was probably intermittent, from timeouts under load in TinyLibCore and browser tests, or a half-finished edit. Claude asked for the failing job name or log path to inspect it directly. Claude also recommended running `make self-quick-tix` (about 6 minutes) after the TinyAssembler cleanup, since the toolchain changed.

@@ -31,14 +31,14 @@ $D/%.$O: %.ml
 $D/TinyMachineCPU.$O $D/TinyAssembler.$O $D/TinyLinker.$O $D/TinyCPU.$O $D/TinyMachineDevices.$O $D/TinyMachine.$O: TinyMachine/TinyMachineISA.ml
 $D/TinyCPU.$O $D/TinyMachineDevices.$O $D/TinyMachine.$O: TinyMachine/TinyMachineCPU.ml
 $D/TinyAssembler.$O $D/TinyLinker.$O $D/TinyC.$O $D/TinyML.$O $D/TinyCPU.$O $D/TinyMachine.$O $D/TinyMkfs.$O: $D/TinyLibSystem.$O
-# (tiny-ml's passes, TinyML/, each after the ones before it)
-MLC=TinyMLLexer TinyMLTree TinyMLPrintf TinyMLParser TinyMLTypes TinyMLMachine TinyMLCompile
+# (tiny-ml's passes, TinyML/, each after the ones before it, after TinyMachineAsm, the lines they make)
+MLC=TinyMachineISA TinyMachineAsm TinyMLLexer TinyMLTree TinyMLPrintf TinyMLParser TinyMLTypes TinyMLMachine TinyMLCompile
 MLCO=${MLC:%=$D/%.$O}
 $D/TinyMLTree.$O: $D/TinyMLLexer.$O
 $D/TinyMLPrintf.$O: $D/TinyMLTree.$O
 $D/TinyMLParser.$O: $D/TinyMLPrintf.$O
 $D/TinyMLTypes.$O: $D/TinyMLParser.$O
-$D/TinyMLMachine.$O: $D/TinyMLTypes.$O
+$D/TinyMLMachine.$O: $D/TinyMLTypes.$O $D/TinyMachineAsm.$O
 $D/TinyMLCompile.$O: $D/TinyMLMachine.$O
 $D/TinyML.$O: $D/TinyMLCompile.$O
 

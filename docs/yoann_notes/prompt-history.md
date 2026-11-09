@@ -67250,3 +67250,35 @@ Claude proposed that Asm lines reuse ISA.instr for known operands, adding only l
 Claude noted that ISA would drop its text syntax, leaving Asm as the single place for printing and parsing.
 Claude planned five steps, starting with the place-comment commit and a tiny-ml constructor fix, then the Asm module.
 Claude noted the object format might later move out of ISA, then asked for the go-ahead.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 17:08
+
+**Yoann:**
+
+> yes, go ahead
+
+------------------------------------------------------------------------
+
+## 2026-11-09 17:29
+
+**Yoann:**
+
+> not a fan of this Section of bool where true means data
+
+------------------------------------------------------------------------
+
+## 2026-11-09 17:30
+
+**Yoann:**
+
+> SectionData SectionCode would be cleaner I think no?
+
+------------------------------------------------------------------------
+
+## 2026-11-09 17:30
+
+**Yoann:**
+
+> (abusing bool sometimes hurt readability)

@@ -5,4 +5,4 @@
  (wrapped false)
  (modules TinyMLLexer TinyMLTree TinyMLPrintf TinyMLParser TinyMLTypes
   TinyMLMachine TinyMLCompile)
- (libraries ix_core))
+ (libraries ix_core tiny_machine_cpu))

@@ -38,7 +38,7 @@ M=$T/TinyMachine
 CPU="$M/TinyMachineISA.ml $M/TinyMachineCPU.ml"
 BROWSER=$(for m in Text Tokens Lines Html Address Http; do
   printf "%s " $T/TinyBrowser/TinyBrowser$m.ml; done)
-TML=$(for m in Lexer Tree Printf Parser Types Machine Compile; do
+TML="$M/TinyMachineISA.ml $M/TinyMachineAsm.ml "$(for m in Lexer Tree Printf Parser Types Machine Compile; do
   printf "%s " $T/TinyML/TinyML$m.ml; done)
 TC="$M/TinyMachineISA.ml $M/TinyMachineAsm.ml "$(for m in Types Lexer Tree Lower Parser Machine; do
   printf "%s " $T/TinyC/TinyC$m.ml; done)

@@ -2,8 +2,9 @@
  * instructions on a stack of values, as tiny-machine's assembly (the
  * stack's values in registers r1 to r11, the frames on the value stack
  * at r12); and the static blocks, in the data: strings, closures,
- * exceptions. Read TinyMachine/TinyMachineCPU.mli for the
- * instructions, and TinyMLRuntime/core.c for the blocks. *)
+ * exceptions; each made as TinyMachine/TinyMachineAsm.mli's lines, then
+ * printed. Read TinyMachine/TinyMachineCPU.mli for the instructions,
+ * and TinyMLRuntime/core.c for the blocks. *)
 
 type rel = Eq | Ne | Lt | Le | Gt | Ge
 type op =
@@ -72,15 +73,18 @@ val machine : sym -> int -> int -> ir list -> unit
 (* the program's ml_start, called by C, and ml_raise *)
 val start : string
 
+(* lines of assembly added to a buffer, text or data *)
+val out : Buffer.t -> TinyMachineAsm.line list -> unit
+
 (* a static word: a number's text, a code's label, a block's *)
-type dword = DNum of string | DCode of sym | DVal of sym
+type dword = DNum of int64 | DCode of sym | DVal of sym
 
 (* [words g ws]: g's words in the data *)
 val words : sym -> dword list -> unit
 (* [block g header ws]: a static block, g its value *)
-val block : sym -> string -> dword list -> unit
+val block : sym -> int64 -> dword list -> unit
 (* [header n tag]: a block's header *)
-val header : int -> int -> string
+val header : int -> int -> int64
 val closure_tag : int
 (* a string's static block, made once *)
 val static_string : string -> sym

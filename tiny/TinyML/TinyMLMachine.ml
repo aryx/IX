@@ -4,6 +4,8 @@
 (* See TinyMLMachine.mli *)
 open TinyMLLexer
 open TinyMLTree
+module ISA = TinyMachineISA
+module Asm = TinyMachineAsm
 
 (*****************************************************************************)
 (* The stack machine *)
@@ -61,9 +63,14 @@ type ir =
   | TryExit of int
   | Catch of int                      (* the handler's entry: the exception pushed *)
 
+
 let labels = ref 0
 let label () : label = incr labels; !labels
 let text = Buffer.create 65536 and data = Buffer.create 16384
+
+(* lines of assembly added to text or data *)
+let out (b : Buffer.t) (ls : Asm.line list) =
+  List.iter (fun l -> Buffer.add_string b (Asm.print l)) ls
 
 (*****************************************************************************)
 (* The machine: tiny-machine, the stack in r1..r11, the value stack at r12 *)
@@ -88,19 +95,26 @@ let text = Buffer.create 65536 and data = Buffer.create 16384
  * programs is bigger. After a call of C, r12 comes back from ml_vsp (C
  * keeps no register). *)
 
-(* A function's code as it is made. Its lines: the text, and those that
- * the frame's sizes make (f, m, c, known at the end) as functions of
- * them; the text between two of those in one buffer (old: a function a
- * line, every line's string made at the end). The stack machine's
- * depth (its top register) and the deepest; the handlers and the words
- * of C's arguments, the most of a call; dead after a jump, until a
- * label; the depth at each label jumped to, and at each handler.
- * (old: refs local to machine, its 320 lines a closure each) *)
+(* the registers by their roles: the value stack's top, the scratch and
+ * the result, a tail call's target; lr is also a scratch one *)
+let vsp = 12 and r13 = 13 and r11 = 11
+let lr = ISA.lr and sp = ISA.sp
+
+(* a line as it is made: known, or made of the frame's sizes (f, m, c),
+ * known at the end (old: the text, in a buffer, between two lines of
+ * the frame, each a function) *)
+type made = Known of Asm.line | Framed of (int -> int -> int -> Asm.line)
+
+(* A function's code as it is made. Its lines, the last first; the
+ * stack machine's depth (its top register) and the deepest; the
+ * handlers and the words of C's arguments, the most of a call; dead
+ * after a jump, until a label; the depth at each label jumped to, and
+ * at each handler. (old: refs local to machine, its 320 lines a
+ * closure each; the lines strings, Printf's) *)
 type state = {
   mname : sym;
   mslots : int;
-  mutable mlines : (int -> int -> int -> string) list;
-  mchunk : Buffer.t;
+  mutable mlines : made list;
   mutable msp : int;
   mutable mmaxsp : int;
   mutable mtries : int;
@@ -110,21 +124,15 @@ type state = {
   mcatch_at : (int, int) Hashtbl.t;
 }
 
-let flush (st : state) =
-  if Buffer.length st.mchunk > 0 then (
-    let s = Buffer.contents st.mchunk in
-    Buffer.clear st.mchunk;
-    st.mlines <- (fun _ _ _ -> s) :: st.mlines)
-let line (st : state) f = flush st; st.mlines <- f :: st.mlines
-let ins (st : state) s =
-  Buffer.add_char st.mchunk '\t'; Buffer.add_string st.mchunk s;
-  Buffer.add_char st.mchunk '\n'
+let emit (st : state) (l : Asm.line) = st.mlines <- Known l :: st.mlines
+let ins st (i : ISA.instr) = emit st (Asm.Instr i)
+let framed (st : state) f = st.mlines <- Framed f :: st.mlines
 
 (* a slot to a register, and back, at r12, the frame's top *)
 let get st (i : slot) r =
-  line st (fun f _ _ -> Printf.sprintf "\tldw\tr%d, %d(r12)\n" r (4 * (i - f)))
+  framed st (fun f _ _ -> Asm.Instr (ISA.Load (ISA.W, r, vsp, 4 * (i - f))))
 let put st r (i : slot) =
-  line st (fun f _ _ -> Printf.sprintf "\tstw\tr%d, %d(r12)\n" r (4 * (i - f)))
+  framed st (fun f _ _ -> Asm.Instr (ISA.Store (ISA.W, r, vsp, 4 * (i - f))))
 (* where a register is spilled *)
 let spill_slot (st : state) r : slot = st.mslots + r - 1
 let push (st : state) =
@@ -141,106 +149,83 @@ let spill (st : state) =
 let reload (st : state) =
   for r = 1 to st.msp do get st (spill_slot st r) r done
 (* r13, a call's result, pushed *)
-let result st = ins st (Printf.sprintf "mov\tr%d, r13" (push st))
+let result st = emit st (Asm.Mov (push st, r13))
 let lab (l : label) = !unit_name ^ ".L" ^ string_of_int l
 let jump (st : state) l = Hashtbl.replace st.mdepth_at l st.msp
 let epilogue st =
-  line st (fun f _ _ -> Printf.sprintf "\taddi\tr12, r12, %d\n" (-4 * f));
-  line st (fun _ _ c -> Printf.sprintf "\tldw\tlr, %d(sp)\n" c);
-  line st (fun _ m _ -> Printf.sprintf "\taddi\tsp, sp, %d\n" m)
+  framed st (fun f _ _ -> Asm.Instr (ISA.Alui (ISA.Add, vsp, vsp, -4 * f)));
+  framed st (fun _ _ c -> Asm.Instr (ISA.Load (ISA.W, lr, sp, c)));
+  framed st (fun _ m _ -> Asm.Instr (ISA.Alui (ISA.Add, sp, sp, m)))
 (* the k-th handler's record on the machine stack, above the link *)
 let record c k = c + 4 + (16 * k)
-let at st k d f = line st (fun _ _ c -> "\t" ^ f (record c k + d) ^ "\n")
+(* an instruction at the offset d of the k-th handler's record *)
+let at st k d (f : int -> ISA.instr) =
+  framed st (fun _ _ c -> Asm.Instr (f (record c k + d)))
 let c_call st f =
-  ins st "la\tlr, ml_vsp"; ins st "stw\tr12, 0(lr)";
-  ins st ("la\tlr, " ^ f); ins st "jalr\tlr, 0(lr)";
-  ins st "la\tlr, ml_vsp"; ins st "ldw\tr12, 0(lr)"
+  emit st (Asm.La (lr, "ml_vsp")); ins st (ISA.Store (ISA.W, vsp, lr, 0));
+  emit st (Asm.La (lr, f)); ins st (ISA.Jalr (lr, lr, 0));
+  emit st (Asm.La (lr, "ml_vsp")); ins st (ISA.Load (ISA.W, vsp, lr, 0))
 (* a binary operation's registers, the result in the second *)
 let bin (st : state) f = let a = st.msp in pop st; f a st.msp
 (* the integer in register d tagged *)
 let tag_int st d =
-  ins st (Printf.sprintf "shli\tr%d, r%d, 1" d d);
-  ins st (Printf.sprintf "ori\tr%d, r%d, 1" d d)
+  ins st (ISA.Alui (ISA.Shl, d, d, 1));
+  ins st (ISA.Alui (ISA.Or, d, d, 1))
 
+(* an operation on tagged integers: 2n+1 *)
 let op (st : state) o =
   let ins = ins st and bin = bin st and tagged = tag_int st in
+  let alu op d a b = ins (ISA.Alu (op, d, a, b))
+  and alui op d a k = ins (ISA.Alui (op, d, a, k)) in
   let a = st.msp in
   match o with
-  | Add ->
-      bin (fun a b ->
-        ins (Printf.sprintf "add\tr%d, r%d, r%d" b a b);
-        ins (Printf.sprintf "addi\tr%d, r%d, -1" b b))
-  | Sub ->
-      bin (fun a b ->
-        ins (Printf.sprintf "sub\tr%d, r%d, r%d" b a b);
-        ins (Printf.sprintf "addi\tr%d, r%d, 1" b b))
+  | Add -> bin (fun a b -> alu ISA.Add b a b; alui ISA.Add b b (-1))
+  | Sub -> bin (fun a b -> alu ISA.Sub b a b; alui ISA.Add b b 1)
   | Mul ->
       bin (fun a b ->
-        ins (Printf.sprintf "addi\tr%d, r%d, -1" a a);
-        ins (Printf.sprintf "sari\tr%d, r%d, 1" b b);
-        ins (Printf.sprintf "mul\tr%d, r%d, r%d" b a b);
-        ins (Printf.sprintf "addi\tr%d, r%d, 1" b b))
+        alui ISA.Add a a (-1); alui ISA.Sar b b 1; alu ISA.Mul b a b;
+        alui ISA.Add b b 1)
   | Div | Mod ->
       bin (fun a b ->
-        ins (Printf.sprintf "sari\tr%d, r%d, 1" a a);
-        ins (Printf.sprintf "sari\tr%d, r%d, 1" b b);
-        ins ((if o = Div then "div" else "rem") ^ "\tr" ^ string_of_int b
-             ^ ", r" ^ string_of_int a ^ ", r" ^ string_of_int b);
+        alui ISA.Sar a a 1; alui ISA.Sar b b 1;
+        alu (if o = Div then ISA.Div else ISA.Rem) b a b;
         tagged b)
-  | And -> bin (fun a b -> ins (Printf.sprintf "and\tr%d, r%d, r%d" b a b))
-  | Or -> bin (fun a b -> ins (Printf.sprintf "or\tr%d, r%d, r%d" b a b))
-  | Xor ->
-      bin (fun a b ->
-        ins (Printf.sprintf "xor\tr%d, r%d, r%d" b a b);
-        ins (Printf.sprintf "ori\tr%d, r%d, 1" b b))
+  | And -> bin (fun a b -> alu ISA.And b a b)
+  | Or -> bin (fun a b -> alu ISA.Or b a b)
+  | Xor -> bin (fun a b -> alu ISA.Xor b a b; alui ISA.Or b b 1)
   | Lsl ->
       bin (fun a b ->
-        ins (Printf.sprintf "addi\tr%d, r%d, -1" a a);
-        ins (Printf.sprintf "sari\tr%d, r%d, 1" b b);
-        ins (Printf.sprintf "shl\tr%d, r%d, r%d" b a b);
-        ins (Printf.sprintf "ori\tr%d, r%d, 1" b b))
+        alui ISA.Add a a (-1); alui ISA.Sar b b 1; alu ISA.Shl b a b;
+        alui ISA.Or b b 1)
   | Lsr | Asr ->
       bin (fun a b ->
-        ins (Printf.sprintf "sari\tr%d, r%d, 1" b b);
-        ins ((if o = Lsr then "shr" else "sar") ^ "\tr" ^ string_of_int b
-             ^ ", r" ^ string_of_int a ^ ", r" ^ string_of_int b);
-        ins (Printf.sprintf "ori\tr%d, r%d, 1" b b))
+        alui ISA.Sar b b 1;
+        alu (if o = Lsr then ISA.Shr else ISA.Sar) b a b;
+        alui ISA.Or b b 1)
   | Cmp r ->
       (* a r b, 1 or 0, then tagged *)
       bin (fun a b ->
         (match r with
-         | Lt -> ins (Printf.sprintf "slt\tr%d, r%d, r%d" b a b)
-         | Gt -> ins (Printf.sprintf "slt\tr%d, r%d, r%d" b b a)
-         | Le ->
-             ins (Printf.sprintf "slt\tr%d, r%d, r%d" b b a);
-             ins (Printf.sprintf "xori\tr%d, r%d, 1" b b)
-         | Ge ->
-             ins (Printf.sprintf "slt\tr%d, r%d, r%d" b a b);
-             ins (Printf.sprintf "xori\tr%d, r%d, 1" b b)
-         | Eq ->
-             ins (Printf.sprintf "sub\tr%d, r%d, r%d" b a b);
-             ins (Printf.sprintf "sltiu\tr%d, r%d, 1" b b)
-         | Ne ->
-             ins (Printf.sprintf "sub\tr%d, r%d, r%d" b a b);
-             ins (Printf.sprintf "sltu\tr%d, zero, r%d" b b));
+         | Lt -> alu ISA.Slt b a b
+         | Gt -> alu ISA.Slt b b a
+         | Le -> alu ISA.Slt b b a; alui ISA.Xor b b 1
+         | Ge -> alu ISA.Slt b a b; alui ISA.Xor b b 1
+         | Eq -> alu ISA.Sub b a b; alui ISA.Sltu b b 1
+         | Ne -> alu ISA.Sub b a b; alu ISA.Sltu b 0 b);
         tagged b)
-  | Neg ->
-      ins (Printf.sprintf "sub\tr%d, zero, r%d" a a);
-      ins (Printf.sprintf "addi\tr%d, r%d, 2" a a)
-  | Lnot ->
-      ins "addi\tr13, zero, -1";
-      ins (Printf.sprintf "xor\tr%d, r%d, r13" a a);
-      ins (Printf.sprintf "ori\tr%d, r%d, 1" a a)
-  | Not -> ins (Printf.sprintf "xori\tr%d, r%d, 2" a a)
-  | IsInt -> ins (Printf.sprintf "andi\tr%d, r%d, 1" a a); tagged a
-  | Tag -> ins (Printf.sprintf "ldb\tr%d, -4(r%d)" a a); tagged a
+  | Neg -> alu ISA.Sub a 0 a; alui ISA.Add a a 2
+  | Lnot -> alui ISA.Add r13 0 (-1); alu ISA.Xor a a r13; alui ISA.Or a a 1
+  | Not -> alui ISA.Xor a a 2
+  | IsInt -> alui ISA.And a a 1; tagged a
+  | Tag -> ins (ISA.Load (ISA.B, a, a, -4)); tagged a
 
 (* a block of n fields from the runtime, in r13 *)
 let alloc (st : state) tag n =
   spill st;
   st.mcargs <- max st.mcargs 2;
-  ins st (Printf.sprintf "li\tr13, %d" n); ins st "stw\tr13, 0(sp)";
-  ins st (Printf.sprintf "li\tr13, %d" tag); ins st "stw\tr13, 4(sp)";
+  emit st (Asm.Li (r13, Int64.of_int n)); ins st (ISA.Store (ISA.W, r13, sp, 0));
+  emit st (Asm.Li (r13, Int64.of_int tag));
+  ins st (ISA.Store (ISA.W, r13, sp, 4));
   c_call st "ml_alloc"
 
 (* a call of ML: the closure in r13, the arguments in r1..rn *)
@@ -250,22 +235,22 @@ let call (st : state) t n tail =
       (st.mname ^ ": " ^ string_of_int n
        ^ " arguments (tiny-machine passes 10 at most)");
   spill st;
-  get st (spill_slot st st.msp) 13;
+  get st (spill_slot st st.msp) r13;
   for k = 1 to n do get st (spill_slot st (st.msp - k)) k done;
   st.msp <- st.msp - n - 1;
+  (* the code's address in r, then a jump to it, with the link in d *)
+  let go r d =
+    (match t with
+     | Direct f -> emit st (Asm.La (r, f))
+     | Indirect k -> ins st (ISA.Load (ISA.W, r, r13, 4 * k)));
+    ins st (ISA.Jalr (d, r, 0)) in
   if tail then begin
     epilogue st;
-    (match t with
-     | Direct f -> ins st ("la\tr11, " ^ f)
-     | Indirect k -> ins st (Printf.sprintf "ldw\tr11, %d(r13)" (4 * k)));
-    ins st "jalr\tzero, 0(r11)";
+    go r11 0;
     st.mdead <- true
   end
   else begin
-    (match t with
-     | Direct f -> ins st ("la\tlr, " ^ f)
-     | Indirect k -> ins st (Printf.sprintf "ldw\tlr, %d(r13)" (4 * k)));
-    ins st "jalr\tlr, 0(lr)";
+    go lr lr;
     reload st;
     result st
   end
@@ -275,8 +260,8 @@ let call_c (st : state) f n =
   spill st;
   st.mcargs <- max st.mcargs n;
   for k = 0 to n - 1 do
-    get st (spill_slot st (st.msp - k)) 13;
-    ins st (Printf.sprintf "stw\tr13, %d(sp)" (4 * k))
+    get st (spill_slot st (st.msp - k)) r13;
+    ins st (ISA.Store (ISA.W, r13, sp, 4 * k))
   done;
   st.msp <- st.msp - n;
   c_call st f;
@@ -292,17 +277,17 @@ let call_c (st : state) f n =
 
 (* the length of the string in register s, untagged, into r13; lr used *)
 let length_of st s =
-  ins st (Printf.sprintf "ldw\tr13, -4(r%d)" s);
-  ins st "shri\tr13, r13, 10";
-  ins st "shli\tr13, r13, 2";
-  ins st (Printf.sprintf "add\tlr, r%d, r13" s);
-  ins st "ldb\tlr, -1(lr)";
-  ins st "sub\tr13, r13, lr";
-  ins st "addi\tr13, r13, -1"
+  ins st (ISA.Load (ISA.W, r13, s, -4));
+  ins st (ISA.Alui (ISA.Shr, r13, r13, 10));
+  ins st (ISA.Alui (ISA.Shl, r13, r13, 2));
+  ins st (ISA.Alu (ISA.Add, lr, s, r13));
+  ins st (ISA.Load (ISA.B, lr, lr, -1));
+  ins st (ISA.Alu (ISA.Sub, r13, r13, lr));
+  ins st (ISA.Alui (ISA.Add, r13, r13, -1))
 
 let string_length (st : state) =
   length_of st st.msp;
-  ins st (Printf.sprintf "mov\tr%d, r13" st.msp);
+  emit st (Asm.Mov (st.msp, r13));
   tag_int st st.msp
 
 (* s.[i]: s is on top of the stack, i below it, and the byte takes i's
@@ -312,21 +297,21 @@ let string_get (st : state) =
   let s = st.msp and i = st.msp - 1 in
   let slow = label () and done_ = label () in
   length_of st s;
-  ins st (Printf.sprintf "sari\tlr, r%d, 1" i);
-  ins st ("bgeu\tlr, r13, " ^ lab slow);
-  ins st (Printf.sprintf "add\tlr, r%d, lr" s);
-  ins st (Printf.sprintf "ldb\tr%d, 0(lr)" i);
+  ins st (ISA.Alui (ISA.Sar, lr, i, 1));
+  emit st (Asm.Branch (ISA.Geu, lr, r13, lab slow));
+  ins st (ISA.Alu (ISA.Add, lr, s, lr));
+  ins st (ISA.Load (ISA.B, i, lr, 0));
   tag_int st i;
-  ins st ("j\t" ^ lab done_);
-  line st (fun _ _ _ -> lab slow ^ ":\n");
+  emit st (Asm.Jump (lab done_));
+  emit st (Asm.Label (lab slow));
   call_c st "ml_string_get" 2;
-  line st (fun _ _ _ -> lab done_ ^ ":\n")
+  emit st (Asm.Label (lab done_))
 
-(* a jump if the top is false (beq), or true (bne) *)
-let branch (st : state) b l =
+(* a jump if the top is false, the tagged 0 (Eq), or true (Ne) *)
+let branch (st : state) c l =
   let r = st.msp in
-  pop st; jump st l; ins st "li\tr13, 1";
-  ins st (Printf.sprintf "%s\tr%d, r13, %s" b r (lab l))
+  pop st; jump st l; emit st (Asm.Li (r13, Int64.one));
+  emit st (Asm.Branch (c, r, r13, lab l))
 
 (* the handler's record: sp, r12, the handler's address (call's link:
  * the j after it), the previous record *)
@@ -335,31 +320,31 @@ let try_enter (st : state) k handler =
   Hashtbl.replace st.mcatch_at k st.msp;
   st.mtries <- max st.mtries (k + 1);
   let set = label () in
-  ins st ("call\t" ^ lab set);
-  ins st ("j\t" ^ lab handler);
-  line st (fun _ _ _ -> lab set ^ ":\n");
-  at st k 0 (fun o -> Printf.sprintf "stw\tsp, %d(sp)" o);
-  at st k 4 (fun o -> Printf.sprintf "stw\tr12, %d(sp)" o);
-  at st k 8 (fun o -> Printf.sprintf "stw\tlr, %d(sp)" o);
-  ins st "la\tlr, ml_handler";
-  ins st "ldw\tr13, 0(lr)";
-  at st k 12 (fun o -> Printf.sprintf "stw\tr13, %d(sp)" o);
-  at st k 0 (fun o -> Printf.sprintf "addi\tr13, sp, %d" o);
-  ins st "stw\tr13, 0(lr)"
+  emit st (Asm.Call (lab set));
+  emit st (Asm.Jump (lab handler));
+  emit st (Asm.Label (lab set));
+  at st k 0 (fun o -> ISA.Store (ISA.W, sp, sp, o));
+  at st k 4 (fun o -> ISA.Store (ISA.W, vsp, sp, o));
+  at st k 8 (fun o -> ISA.Store (ISA.W, lr, sp, o));
+  emit st (Asm.La (lr, "ml_handler"));
+  ins st (ISA.Load (ISA.W, r13, lr, 0));
+  at st k 12 (fun o -> ISA.Store (ISA.W, r13, sp, o));
+  at st k 0 (fun o -> ISA.Alui (ISA.Add, r13, sp, o));
+  ins st (ISA.Store (ISA.W, r13, lr, 0))
 
 let try_exit st k =
-  at st k 12 (fun o -> Printf.sprintf "ldw\tr13, %d(sp)" o);
-  ins st "la\tlr, ml_handler"; ins st "stw\tr13, 0(lr)"
+  at st k 12 (fun o -> ISA.Load (ISA.W, r13, sp, o));
+  emit st (Asm.La (lr, "ml_handler"));
+  ins st (ISA.Store (ISA.W, r13, lr, 0))
 
 let instruction (st : state) (i : ir) =
-  let ins = ins st in
   match i with
   | Label l ->
       (match Hashtbl.find_opt st.mdepth_at l with
        | Some d when st.mdead -> st.msp <- d
        | _ -> ());
       st.mdead <- false;
-      line st (fun _ _ _ -> lab l ^ ":\n")
+      emit st (Asm.Label (lab l))
   | Catch k ->
       st.mdead <- false;
       st.msp <- Hashtbl.find st.mcatch_at k;
@@ -371,36 +356,36 @@ let instruction (st : state) (i : ir) =
   | Imm v ->
       if low32 v <> v then
         error "an integer beyond 31 bits: not on TinyCPU (a 32-bit machine)";
-      ins ("li\tr" ^ string_of_int (push st) ^ ", " ^ Int64.to_string v)
-  | Addr s -> ins (Printf.sprintf "la\tr%d, %s" (push st) s)
+      emit st (Asm.Li (push st, v))
+  | Addr s -> emit st (Asm.La (push st, s))
   | Get i -> get st i (push st)
   | Set i -> put st st.msp i; pop st
   | GetG (t, g) ->
       let r = push st in
-      ins (Printf.sprintf "la\tr%d, %s" r t);
-      ins (Printf.sprintf "ldw\tr%d, %d(r%d)" r (4 * g) r)
+      emit st (Asm.La (r, t));
+      ins st (ISA.Load (ISA.W, r, r, 4 * g))
   | SetG (t, g) ->
-      ins ("la\tr13, " ^ t);
-      ins (Printf.sprintf "stw\tr%d, %d(r13)" st.msp (4 * g));
+      emit st (Asm.La (r13, t));
+      ins st (ISA.Store (ISA.W, st.msp, r13, 4 * g));
       pop st
-  | Field k -> ins (Printf.sprintf "ldw\tr%d, %d(r%d)" st.msp (4 * k) st.msp)
+  | Field k -> ins st (ISA.Load (ISA.W, st.msp, st.msp, 4 * k))
   | SetField k ->
-      ins (Printf.sprintf "stw\tr%d, %d(r%d)" (st.msp - 1) (4 * k) st.msp);
+      ins st (ISA.Store (ISA.W, st.msp - 1, st.msp, 4 * k));
       st.msp <- st.msp - 2
   | Alloc (tag, n) ->
       alloc st tag n;
       for k = 0 to n - 1 do
-        get st (spill_slot st (st.msp - k)) 15;
-        ins (Printf.sprintf "stw\tr15, %d(r13)" (4 * k))
+        get st (spill_slot st (st.msp - k)) lr;
+        ins st (ISA.Store (ISA.W, lr, r13, 4 * k))
       done;
       st.msp <- st.msp - n;
       reload st;
       result st
   | Blank (tag, n) ->
       alloc st tag n;
-      ins "li\tr15, 1";
+      emit st (Asm.Li (lr, Int64.one));
       for k = 0 to n - 1 do
-        ins (Printf.sprintf "stw\tr15, %d(r13)" (4 * k))
+        ins st (ISA.Store (ISA.W, lr, r13, 4 * k))
       done;
       reload st;
       result st
@@ -409,23 +394,25 @@ let instruction (st : state) (i : ir) =
   | CallC ("ml_string_length", 1) -> string_length st
   | CallC ("ml_string_get", 2) -> string_get st
   | CallC (f, n) -> call_c st f n
-  | Jmp l -> jump st l; ins ("j\t" ^ lab l); st.mdead <- true
-  | Jz l -> branch st "beq" l
-  | Jnz l -> branch st "bne" l
+  | Jmp l -> jump st l; emit st (Asm.Jump (lab l)); st.mdead <- true
+  | Jz l -> branch st ISA.Eq l
+  | Jnz l -> branch st ISA.Ne l
   | Drop -> pop st
   | Ret ->
-      ins (Printf.sprintf "mov\tr13, r%d" st.msp);
-      pop st; epilogue st; ins "ret"; st.mdead <- true
+      emit st (Asm.Mov (r13, st.msp));
+      pop st; epilogue st; emit st Asm.Ret; st.mdead <- true
   | Raise ->
-      ins (Printf.sprintf "mov\tr13, r%d" st.msp);
-      ins "la\tlr, ml_raise"; ins "jalr\tzero, 0(lr)"; st.mdead <- true
+      emit st (Asm.Mov (r13, st.msp));
+      emit st (Asm.La (lr, "ml_raise"));
+      ins st (ISA.Jalr (0, lr, 0));
+      st.mdead <- true
   | TryEnter (k, handler) -> try_enter st k handler
   | TryExit k -> try_exit st k
 
 (* [machine f nparams nslots code]: f's assembly, in text *)
 let machine (name : sym) nparams nslots (code : ir list) =
   let st =
-    { mname = name; mslots = nslots; mlines = []; mchunk = Buffer.create 256;
+    { mname = name; mslots = nslots; mlines = [];
       msp = 0; mmaxsp = 0; mtries = 0; mcargs = 0; mdead = false;
       mdepth_at = Hashtbl.create 16; mcatch_at = Hashtbl.create 4 } in
   List.iter (instruction st) code;
@@ -435,34 +422,36 @@ let machine (name : sym) nparams nslots (code : ir list) =
        ^ " parameters (tiny-machine passes 10 at most)");
   let f = nslots + st.mmaxsp and c = 4 * st.mcargs in
   let m = (record c st.mtries + 7) land lnot 7 in
-  let out s = Buffer.add_string text s in
-  (* a piece: tiny-linker leaves it out when nothing names its labels *)
-  out "\t.piece\n";
-  out (name ^ ":\n\taddi\tsp, sp, " ^ string_of_int (- m) ^ "\n\tstw\tlr, "
-       ^ string_of_int c ^ "(sp)\n\taddi\tr12, r12, " ^ string_of_int (4 * f)
-       ^ "\n");
-  out (Printf.sprintf "\tstw\tr13, %d(r12)\n" (-4 * f));
-  for i = 1 to nparams do
-    out (Printf.sprintf "\tstw\tr%d, %d(r12)\n" i (4 * (i - f)))
-  done;
-  (* the other slots zeroed: the collector scans them *)
-  for i = nparams + 1 to f - 1 do
-    out (Printf.sprintf "\tstw\tzero, %d(r12)\n" (4 * (i - f)))
-  done;
-  flush st;
-  List.iter (fun l -> Buffer.add_string text (l f m c)) (List.rev st.mlines)
+  let store r i = Asm.Instr (ISA.Store (ISA.W, r, vsp, 4 * (i - f))) in
+  (* a piece: tiny-linker leaves it out when nothing names its labels;
+   * the frames made, the closure and the parameters in their slots *)
+  out text
+    ([ Asm.Piece; Asm.Label name;
+       Asm.Instr (ISA.Alui (ISA.Add, sp, sp, - m));
+       Asm.Instr (ISA.Store (ISA.W, lr, sp, c));
+       Asm.Instr (ISA.Alui (ISA.Add, vsp, vsp, 4 * f));
+       store r13 0 ]
+     @ List.init nparams (fun i -> store (i + 1) (i + 1))
+     (* the other slots zeroed: the collector scans them *)
+     @ List.init (max 0 (f - 1 - nparams)) (fun k -> store 0 (nparams + 1 + k)));
+  List.iter (fun l ->
+      Buffer.add_string text
+        (Asm.print (match l with Known l -> l | Framed g -> g f m c)))
+    (List.rev st.mlines)
 
 (* ml_start called by C (the value stack's base at 0(sp)), ml_init's
  * closure slot 1, a unit (not what r13 held, which the collector would
  * scan); ml_raise: to the latest handler, the exception in r13 *)
 let start =
-  String.concat "\n\t"
-    [ "ml_start:"; "ldw\tr12, 0(sp)"; "li\tr13, 1"; "la\tr11, ml_init";
-      "jalr\tzero, 0(r11)";
-      "ml_raise:\n\tla\tr1, ml_handler"; "ldw\tr1, 0(r1)"; "ldw\tsp, 0(r1)";
-      "ldw\tr12, 4(r1)"; "ldw\tr2, 12(r1)"; "la\tr3, ml_handler";
-      "stw\tr2, 0(r3)"; "ldw\tr2, 8(r1)"; "jalr\tzero, 0(r2)" ]
-  ^ "\n"
+  let ldw d a off = Asm.Instr (ISA.Load (ISA.W, d, a, off)) in
+  String.concat ""
+    (List.map Asm.print
+       [ Asm.Label "ml_start"; ldw vsp sp 0; Asm.Li (r13, Int64.one);
+         Asm.La (r11, "ml_init"); Asm.Instr (ISA.Jalr (0, r11, 0));
+         Asm.Label "ml_raise"; Asm.La (1, "ml_handler"); ldw 1 1 0;
+         ldw sp 1 0; ldw vsp 1 4; ldw 2 1 12; Asm.La (3, "ml_handler");
+         Asm.Instr (ISA.Store (ISA.W, 2, 3, 0)); ldw 2 1 8;
+         Asm.Instr (ISA.Jalr (0, 2, 0)) ])
 
 (*****************************************************************************)
 (* Data: static blocks *)
@@ -470,24 +459,24 @@ let start =
 
 (* a word of data: a number, a function's code, or a static block's
  * value (its first field's address) *)
-type dword = DNum of string | DCode of sym | DVal of sym
+type dword = DNum of int64 | DCode of sym | DVal of sym
 
-(* each a piece of its own, as a function is *)
 let fields sym ws =
-  Buffer.add_string data (sym ^ ":\n");
-  List.iter (fun w ->
-      Printf.bprintf data "\t.word\t%s\n"
-        (match w with DNum x -> x | DCode x -> x | DVal x -> x))
-    ws
-let words sym ws = Buffer.add_string data "\t.piece\n"; fields sym ws
+  Asm.Label sym
+  :: List.map (fun w ->
+       match w with
+       | DNum x -> Asm.Word x
+       | DCode x -> Asm.Word_sym x
+       | DVal x -> Asm.Word_sym x) ws
+(* each a piece of its own, as a function is *)
+let words sym ws = out data (Asm.Piece :: fields sym ws)
 
 (* a static block, its header then its fields. Its symbol is the first
  * field's, the value itself (the assembler's expressions have no
  * sym+n) *)
-let block sym hdr ws =
-  Printf.bprintf data "\t.piece\n\t.word\t%s\n" hdr; fields sym ws
+let block sym hdr ws = out data (Asm.Piece :: Asm.Word hdr :: fields sym ws)
 
-let header n tag = string_of_int ((n lsl 10) lor tag)
+let header n tag = Int64.of_int ((n lsl 10) lor tag)
 let closure_tag = 247 and string_tag = 252
 
 (* a string: its words, the last byte the number of the others that are
@@ -497,7 +486,7 @@ let static_string s =
   match Hashtbl.find_opt strings s with
   | Some sym -> sym
   | None ->
-      let sym = (!unit_name ^ ".s" ^ string_of_int (Hashtbl.length strings)) in
+      let sym = !unit_name ^ ".s" ^ string_of_int (Hashtbl.length strings) in
       let n = (String.length s / 4) + 1 in
       let b = Bytes.make (4 * n) '\000' in
       Bytes.blit_string s 0 b 0 (String.length s);
@@ -507,18 +496,17 @@ let static_string s =
            let byte k = Char.code (Bytes.get b ((4 * i) + k)) in
            (* (old: Int32.to_string of Bytes.get_int32_le) *)
            DNum
-             (Int64.to_string
-                (low32
-                   (Int64.logor (Int64.shift_left (Int64.of_int (byte 3)) 24)
-                      (Int64.of_int
-                         (byte 0 lor (byte 1 lsl 8) lor (byte 2 lsl 16))))))));
+             (low32
+                (Int64.logor (Int64.shift_left (Int64.of_int (byte 3)) 24)
+                   (Int64.of_int
+                      (byte 0 lor (byte 1 lsl 8) lor (byte 2 lsl 16)))))));
       Hashtbl.replace strings s sym;
       sym
 
 (* the curry functions an arity needs (the program's, its main's to
  * make: each unit says the arities it needs) *)
 let arities = ref []
-let curry n k = (Printf.sprintf "ml_curry%d_%d" n k)
+let curry n k = Printf.sprintf "ml_curry%d_%d" n k
 let entry n lab =
   if n = 1 then lab
   else (

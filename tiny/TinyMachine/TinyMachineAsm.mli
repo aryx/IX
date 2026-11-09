@@ -39,7 +39,8 @@ type line =
   | Word_sym of sym                   (* .word a label's address *)
   | Piece                             (* what follows left out by the link
                                        * when nothing reaches it *)
-  | Section of bool                   (* .data (true) or .text *)
+  | SectionCode                       (* .text: what follows is code *)
+  | SectionData                       (* .data: what follows is data *)
 
 (* a register's name: zero, sp, lr, or r1 to r13 *)
 val reg : TinyMachineISA.reg -> string

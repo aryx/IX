@@ -116,7 +116,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
         let text =
           Buffer.contents code
           ^ (if !ir_only then ""
-             else Asm.print (Asm.Section true) ^ Buffer.contents data)
+             else Asm.print Asm.SectionData ^ Buffer.contents data)
         in
         (match !output with
          | None -> TSys.print caps text

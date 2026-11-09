@@ -22,7 +22,8 @@ type line =
   | Word of int64
   | Word_sym of sym
   | Piece
-  | Section of bool
+  | SectionCode
+  | SectionData
 
 let reg (r : ISA.reg) =
   if r = 0 then "zero"
@@ -77,4 +78,5 @@ let print (l : line) =
   | Word v -> ins (".word\t" ^ word v)
   | Word_sym s -> ins (".word\t" ^ s)
   | Piece -> ins ".piece"
-  | Section d -> ins (if d then ".data" else ".text")
+  | SectionCode -> ins ".text"
+  | SectionData -> ins ".data"

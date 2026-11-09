@@ -9,6 +9,7 @@
 
 open TinyMLTree
 module Parser = TinyMLParser
+module Asm = TinyMachineAsm
 open TinyMLTypes
 open TinyMLMachine
 open TinyMLCompile
@@ -127,13 +128,12 @@ let compile_main (units : (string * int) list) needed =
   List.iter (fun n -> for k = 0 to n - 1 do curry_fun n k done)
     (List.sort_uniq compare needed);
   let total = List.fold_left (fun t (_, n) -> t + n) 0 units in
-  words "ml_nglobals" [ DNum (string_of_int total) ];
-  Buffer.add_string data "\t.piece\nml_globals:\n";
-  List.iter (fun (u, n) ->
-      Buffer.add_string data
-        (u ^ ".globals:\n\t.space\t" ^ string_of_int (4 * n) ^ "\n"))
-    units;
-  if total = 0 then Buffer.add_string data "\t.space\t4\n"
+  words "ml_nglobals" [ DNum (Int64.of_int total) ];
+  out data
+    ([ Asm.Piece; Asm.Label "ml_globals" ]
+     @ List.concat_map (fun (u, n) ->
+         [ Asm.Label (u ^ ".globals"); Asm.Space (4 * n) ]) units
+     @ (if total = 0 then [ Asm.Space 4 ] else []))
 
 (*****************************************************************************)
 (* Interfaces *)
@@ -395,7 +395,9 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
         | Some o -> o
         | None -> Fpath.set_ext ".tm" (Fpath.base f) in
       (* (.data: tiny-linker -n's, the statics after the text) *)
-      write out (Buffer.contents text ^ "\t.data\n" ^ Buffer.contents data);
+      write out
+        (Buffer.contents text ^ Asm.print Asm.SectionData
+         ^ Buffer.contents data);
       write (Fpath.set_ext ".tmi" out)
         (write_interface old exports types n)
     end else begin
@@ -410,7 +412,8 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
           (units, needed) mls in
       compile_main units needed;
       let asm =
-        start ^ Buffer.contents text ^ "\t.data\n" ^ Buffer.contents data in
+        start ^ Buffer.contents text ^ Asm.print Asm.SectionData
+        ^ Buffer.contents data in
       (match !output with
        | None -> TinyLibSystem.print caps asm
        | Some o -> write o asm)

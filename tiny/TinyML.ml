@@ -7,12 +7,12 @@
  * back end this compiler also had until plan_tiny_self_hosting.md).
  *)
 
-open TinyMLTree
+module Tree = TinyMLTree
 module Parser = TinyMLParser
 module Asm = TinyMachineAsm
-open TinyMLTypes
-open TinyMLMachine
-open TinyMLCompile
+module Types = TinyMLTypes
+module Machine = TinyMLMachine
+module Compile = TinyMLCompile
 
 let usage = {|usage: tiny-ml [-L dir | -nostdlib] [-o out.tm] file.ml...
        | tiny-ml -c [-o out.tm] file.tmi... file.ml
@@ -28,7 +28,7 @@ without -o. A fact.ml, for example:
   tiny-ml -o fact.tm fact.ml               ml_start: ldw r12, 0(sp) ...
   tiny-c -o main.tm main.c
   L=tiny/TinyCRuntime
-  for f in $L/start $L/udivmod exit fact main
+  for f in $L/Machine.start $L/udivmod exit fact main
   do tiny-assembler -o $f.o $f.tm; done
   tiny-linker -o fact $L/start.o $L/udivmod.o exit.o fact.o main.o \
     /lib/ml/*.o
@@ -39,7 +39,7 @@ standard library, TinyLibCore/'s modules, is read from /lib/ml (-L: another
 directory), its interfaces Stdlib.tmi ... Sha1.tmi, and linked from there,
 each module compiled once by tiny-ml -c -nostdlib after the ones before it.
 Several files are a module each, one after the other, then their main: a's
-x is A.x in b, or x after open A. Or a module at a time, then the main:
+x is A.x in b, or x after open A. Machine.Or a module at a time, then the main:
   tiny-ml -c a.ml                          a.tm, its code; a.tmi, its interface
   tiny-ml -c a.tmi b.ml                    b.tm and b.tmi, after a
   tiny-ml -o main.tm a.tmi b.tmi           the library's, a's and b's init,
@@ -62,44 +62,47 @@ An error names the file and the line: fact.ml: line 2: this has type int ...
  * toplevel lets that nothing used dropped before the code was made,
  * when a program was compiled whole: a library cost a program only
  * what it called, which the link's pieces now do) *)
-let compile_unit (items : (item * int) list) =
-  start_fun 1 0;
-  arities := [];
-  let table = !unit_name ^ ".globals" and nglobals = ref 0 in
-  let rec arity = function TE ("->", [ _; r ]) -> 1 + arity r | _ -> 0 in
+let compile_unit (items : (Tree.item * int) list) =
+  Compile.start_fun 1 0;
+  Machine.arities := [];
+  let table = !Tree.unit_name ^ ".globals" and nglobals = ref 0 in
+  let rec arity = function Tree.TE ("->", [ _; r ]) -> 1 + arity r | _ -> 0 in
   let defs = List.fold_left (fun defs (it, l) ->
     try
       match it with
-      | IOpen u -> opened globals u; defs
-      | IAlias (a, u) -> aliased globals a u; defs
-      | IExt (x, t, p) ->
-          let b = Ext (p, arity t) in
-          add_name globals x b;
+      | Tree.IOpen u -> Types.opened Compile.globals u; defs
+      | Tree.IAlias (a, u) -> Types.aliased Compile.globals a u; defs
+      | Tree.IExt (x, t, p) ->
+          let b = Compile.Ext (p, arity t) in
+          Types.add_name Compile.globals x b;
           (x, b) :: defs
-      | IExn c ->
-          block (exn_id c) (header 1 0) [ DVal (static_string c) ];
-          if (find_con c).arity = 0 then
-            block (exn_const c) (header 1 0) [ DVal (exn_id c) ];
+      | Tree.IExn c ->
+          Machine.block (Machine.exn_id c) (Machine.header 1 0)
+            [ Machine.DVal (Machine.static_string c) ];
+          if (Tree.find_con c).arity = 0 then
+            Machine.block (Machine.exn_const c) (Machine.header 1 0)
+              [ Machine.DVal (Machine.exn_id c) ];
           defs
-      | ILet (r, bs) ->
+      | Tree.ILet (r, bs) ->
           (* (the names it adds, in the table: old, the env's first
            * names, counted) *)
           let added = List.map (function
-            | x, Loc (Slot s, k) ->
-                emit (Get s);
-                emit (SetG (table, !nglobals));
+            | x, Compile.Loc (Compile.Slot s, k) ->
+                Compile.emit (Machine.Get s);
+                Compile.emit (Machine.SetG (table, !nglobals));
                 incr nglobals;
-                x, Loc (Glob (table, !nglobals - 1), k)
-            | b -> b) (bind [] r bs) in
-          List.iter (fun (x, b) -> add_name globals x b) (List.rev added);
+                x, Compile.Loc (Compile.Glob (table, !nglobals - 1), k)
+            | b -> b) (Compile.bind [] r bs) in
+          List.iter (fun (x, b) -> Types.add_name Compile.globals x b)
+            (List.rev added);
           added @ defs
     with Failure m -> TinyMLLexer.error (Printf.sprintf "line %d: %s" l m))
     [] items in
-  emit (Imm (tagged 0));
-  emit Ret;
-  finish_fun (!unit_name ^ ".init") 0;
+  Compile.emit (Machine.Imm (Machine.tagged 0));
+  Compile.emit Machine.Ret;
+  Compile.finish_fun (!Tree.unit_name ^ ".init") 0;
   let rec drain () =
-    match dequeue () with Some f -> f (); drain () | None -> () in
+    match Compile.dequeue () with Some f -> f (); drain () | None -> () in
   drain ();
   defs, !nglobals
 
@@ -108,28 +111,28 @@ let compile_unit (items : (item * int) list) =
  * units need; the globals' tables one after the other, ml_globals, and
  * their count, ml_nglobals (what TinyMLRuntime/core.c scans) *)
 let compile_main (units : (string * int) list) needed =
-  unit_name := "ml";
-  start_fun 1 1;
-  let handler = label () in
-  emit (TryEnter (0, handler));
+  Tree.unit_name := "ml";
+  Compile.start_fun 1 1;
+  let handler = Machine.label () in
+  Compile.emit (Machine.TryEnter (0, handler));
   List.iter (fun (u, _) ->
-      emit (Imm (tagged 0));
-      emit (Call (Direct (u ^ ".init"), 0, false));
-      emit Drop)
+      Compile.emit (Machine.Imm (Machine.tagged 0));
+      Compile.emit (Machine.Call (Machine.Direct (u ^ ".init"), 0, false));
+      Compile.emit Machine.Drop)
     units;
-  emit (TryExit 0);
-  emit (Imm (tagged 0));
-  emit Ret;
-  emit (Label handler);
-  emit (Catch 0);
-  emit (CallC ("ml_uncaught", 1));
-  emit Ret;
-  finish_fun "ml_init" 0;
-  List.iter (fun n -> for k = 0 to n - 1 do curry_fun n k done)
+  Compile.emit (Machine.TryExit 0);
+  Compile.emit (Machine.Imm (Machine.tagged 0));
+  Compile.emit Machine.Ret;
+  Compile.emit (Machine.Label handler);
+  Compile.emit (Machine.Catch 0);
+  Compile.emit (Machine.CallC ("ml_uncaught", 1));
+  Compile.emit Machine.Ret;
+  Compile.finish_fun "ml_init" 0;
+  List.iter (fun n -> for k = 0 to n - 1 do Compile.curry_fun n k done)
     (List.sort_uniq compare needed);
   let total = List.fold_left (fun t (_, n) -> t + n) 0 units in
-  words "ml_nglobals" [ DNum (Int64.of_int total) ];
-  out data
+  Machine.words "ml_nglobals" [ Machine.DNum (Int64.of_int total) ];
+  Machine.out Machine.data
     ([ Asm.Piece; Asm.Label "ml_globals" ]
      @ List.concat_map (fun (u, n) ->
          [ Asm.Label (u ^ ".globals"); Asm.Space (4 * n) ]) units
@@ -158,41 +161,42 @@ let compile_main (units : (string * int) list) needed =
  * writes as records: the same blocks) *)
 (* a constructor: its name, kind, arity, its type's constant and other
  * constructors' counts, its type *)
-type icon = string * kind * int * int * int * texpr
+type icon = string * Tree.kind * int * int * int * Tree.texpr
 (* a label: its name, its record's type, its index, mutable, the
  * record's labels, its type *)
-type ilabel = string * string * int * bool * string list * texpr
+type ilabel = string * string * int * bool * string list * Tree.texpr
 
 type interface = {
   iunit : string * int * int list;  (* its name, globals, curry functions *)
   icons : icon list;
   ilabels : ilabel list;
-  iabbrevs : (string * (string list * texpr)) list;
+  iabbrevs : (string * (string list * Tree.texpr)) list;
   iforgotten : string list;
-  ivals : (string * binding * texpr) list;
+  ivals : (string * Compile.binding * Tree.texpr) list;
 }
 
 (* a type as its expression: what is linked followed, a variable by its
  * number *)
 let rec texpr_of_ty t =
-  match repr t with
-  | TVar { contents = Unbound (n, _) } -> TEVar ("v" ^ string_of_int n)
-  | TCon (c, ts) -> TE (c, List.map texpr_of_ty ts)
-  | TVar _ -> TE ("?", [])
+  match Types.repr t with
+  | Tree.TVar { contents = Tree.Unbound (n, _) } ->
+    Tree.TEVar ("v" ^ string_of_int n)
+  | Tree.TCon (c, ts) -> Tree.TE (c, List.map texpr_of_ty ts)
+  | Tree.TVar _ -> Tree.TE ("?", [])
 
 (* what the program's tables held before a unit: its interface has only
  * what the unit added, as OCaml's .cmi (old: the whole program's so far,
  * each unit's .tmi repeating every one before it, all read again by
  * each unit after: 310 KB of interfaces for tiny-kernel's programs) *)
 type before = {
-  old_con : string -> cinfo -> bool;
-  old_label : string -> linfo -> bool;
-  old_abbrev : string * (string list * texpr) -> bool;
+  old_con : string -> Tree.cinfo -> bool;
+  old_label : string -> Tree.linfo -> bool;
+  old_abbrev : string * (string list * Tree.texpr) -> bool;
   old_forgotten : string -> bool;
 }
 
 let snapshot () : before =
-  let c = Hashtbl.copy cons and l = Hashtbl.copy record_labels
+  let c = Hashtbl.copy Tree.cons and l = Hashtbl.copy Tree.record_labels
   and a = !Parser.abbreviations and f = !Parser.forgotten in
   { old_con = (fun k ci ->
       match Hashtbl.find_opt c k with Some ci' -> ci' == ci | None -> false);
@@ -200,7 +204,8 @@ let snapshot () : before =
     old_abbrev = (fun ab -> List.memq ab a);
     old_forgotten = (fun t -> List.mem t f) }
 
-let write_interface (old : before) (exports : (string * binding) list) types
+let write_interface (old : before) (exports : (string * Compile.binding) list)
+  types
     nglobals =
   (* the tables by their names, a label's records the latest first, as
    * the table has them (old: Hashtbl.iter's order, which is OCaml's
@@ -209,16 +214,16 @@ let write_interface (old : before) (exports : (string * binding) list) types
   let names tbl =
     List.sort_uniq compare (Hashtbl.fold (fun k _ acc -> k :: acc) tbl []) in
   let icons = List.filter_map (fun c ->
-    let ci = Hashtbl.find cons c in
+    let ci = Hashtbl.find Tree.cons c in
     if old.old_con c ci then None
     else
       Some (c, ci.kind, ci.arity, ci.nconst, ci.nblock, texpr_of_ty ci.scheme))
-    (names cons) in
+    (names Tree.cons) in
   let ilabels = List.concat_map (fun l -> List.filter_map (fun li ->
     if old.old_label l li then None
     else
       Some (l, li.lrec, li.idx, li.mut, li.lnames, texpr_of_ty li.lscheme))
-    (Hashtbl.find_all record_labels l)) (names record_labels) in
+    (Hashtbl.find_all Tree.record_labels l)) (names Tree.record_labels) in
   (* a name defined twice: the later, first in exports, as OCaml's
    * shadowing (old: both, the earlier read last, so the one the units
    * after saw, with the later's type: www's trap, bugs/ix.md) *)
@@ -228,12 +233,15 @@ let write_interface (old : before) (exports : (string * binding) list) types
     else begin
       Hashtbl.add seen x ();
       match List.assoc_opt x types, bd with
-      | Some t, (Loc ((Static _ | Glob _), _) | Ext _) ->
-          Some (qualify !unit_name x, bd, texpr_of_ty t)
+      | Some t,
+        (Compile.Loc ((Compile.Static _ | Compile.Glob _), _) | Compile.Ext _)
+          ->
+          Some (Types.qualify !Tree.unit_name x, bd, texpr_of_ty t)
       | _ -> None
     end) exports in
   Marshal.to_string
-    { iunit = !unit_name, nglobals, !arities; icons = icons; ilabels = ilabels;
+    { iunit = !Tree.unit_name, nglobals, !Machine.arities; icons = icons;
+      ilabels = ilabels;
       iabbrevs =
         List.filter (fun a -> not (old.old_abbrev a))
           (List.rev !Parser.abbreviations);
@@ -253,19 +261,21 @@ let read_interface (chan : Chan.i) =
     TinyMLLexer.error "not an interface of tiny-ml's";
   let (i : interface) = Marshal.from_string text 0 in
   let iname, iglobals, icurry = i.iunit in
-  let ty te = of_texpr (ref []) te in
-  known_units := iname :: !known_units;
+  let ty te = Tree.of_texpr (ref []) te in
+  Tree.known_units := iname :: !Tree.known_units;
   List.iter (fun (c, kind, arity, nconst, nblock, te) ->
-      Hashtbl.replace cons c
+      Hashtbl.replace Tree.cons c
         { kind = kind; arity = arity; nconst = nconst; nblock = nblock;
           scheme = ty te })
     i.icons;
   List.iter (fun (l, r, idx, mut, lnames, te) ->
     let others =
-      List.filter (fun li -> li.lrec <> r) (Hashtbl.find_all record_labels l) in
-    while Hashtbl.mem record_labels l do Hashtbl.remove record_labels l done;
-    List.iter (Hashtbl.add record_labels l) (List.rev others);
-    Hashtbl.add record_labels l
+      List.filter (fun (li : Tree.linfo) -> li.lrec <> r)
+        (Hashtbl.find_all Tree.record_labels l) in
+    while Hashtbl.mem Tree.record_labels l do Hashtbl.remove Tree.record_labels
+      l done;
+    List.iter (Hashtbl.add Tree.record_labels l) (List.rev others);
+    Hashtbl.add Tree.record_labels l
       { lrec = r; idx = idx; mut = mut; lnames = lnames; lscheme = ty te })
     i.ilabels;
   List.iter (fun (t, (ps, te)) ->
@@ -276,14 +286,17 @@ let read_interface (chan : Chan.i) =
            !Parser.abbreviations)
     i.iabbrevs;
   List.iter (fun t ->
-      if not (List.mem t !Parser.forgotten) then Parser.forgotten := t :: !Parser.forgotten)
+      if not (List.mem t !Parser.forgotten) then Parser.forgotten := t
+        :: !Parser.forgotten)
     i.iforgotten;
   (* (a val's name is M.x already; Stdlib's x too) *)
   let n = String.length iname in
   List.iter (fun (x, b, te) ->
     let t = ty te in
-    List.iter (fun x -> Hashtbl.replace globals x b; Hashtbl.replace tglobals x t)
-      (if implicit iname then
+    List.iter
+      (fun x -> Hashtbl.replace Compile.globals x b;
+        Hashtbl.replace Types.tglobals x t)
+      (if Types.implicit iname then
          [ x; String.sub x (n + 1) (String.length x - n - 1) ]
        else [ x ]))
     i.ivals;
@@ -316,8 +329,6 @@ let library =
 
 (* a file that cannot be read or made, said apart from an error in one *)
 exception File_error of string
-
-open Fpath_.Operators
 
 let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     (argv : string array) : Exit.t =
@@ -360,7 +371,8 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
      * units before this one *)
     let lib =
       match !lib with
-      | Some d -> List.map (fun m -> Fpath.v d / (m ^ ".tmi")) library
+      | Some d ->
+          List.map (fun m -> Fpath.add_seg (Fpath.v d) (m ^ ".tmi")) library
       | None -> []
     in
     let units, needed =
@@ -371,16 +383,16 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     (* a file's unit typed and compiled: its names' types, its names'
      * values, its globals' count *)
     let compile_file f =
-      unit_name := unit_of f;
-      known_units := !unit_name :: !known_units;
+      Tree.unit_name := unit_of f;
+      Tree.known_units := !Tree.unit_name :: !Tree.known_units;
       let items = with_file (fun ch -> Parser.parse (text_of ch)) f in
-      let tdefs = type_unit items in
+      let tdefs = Types.type_unit items in
       let defs, n = compile_unit items in
       tdefs, defs, n in
     if !separate then begin
       (* one unit: its object and its interface *)
       let f = List.hd mls in
-      Buffer.clear text; Buffer.clear data;
+      Buffer.clear Machine.text; Buffer.clear Machine.data;
       (* (before the parse: a type's constructors are the parser's) *)
       let old = snapshot () in
       let tdefs, exports, n = compile_file f in
@@ -396,8 +408,8 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
         | None -> Fpath.set_ext ".tm" (Fpath.base f) in
       (* (.data: tiny-linker -n's, the statics after the text) *)
       write out
-        (Buffer.contents text ^ Asm.print Asm.SectionData
-         ^ Buffer.contents data);
+        (Buffer.contents Machine.text ^ Asm.print Asm.SectionData
+         ^ Buffer.contents Machine.data);
       write (Fpath.set_ext ".tmi" out)
         (write_interface old exports types n)
     end else begin
@@ -405,15 +417,15 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
       let units, needed =
         List.fold_left (fun (units, needed) f ->
           let tdefs, defs, n = compile_file f in
-          unit_done ();
-          export globals !unit_name defs;
-          export tglobals !unit_name tdefs;
-          units @ [ (!unit_name, n) ], needed @ !arities)
+          Types.unit_done ();
+          Types.export Compile.globals !Tree.unit_name defs;
+          Types.export Types.tglobals !Tree.unit_name tdefs;
+          units @ [ (!Tree.unit_name, n) ], needed @ !Machine.arities)
           (units, needed) mls in
       compile_main units needed;
       let asm =
-        start ^ Buffer.contents text ^ Asm.print Asm.SectionData
-        ^ Buffer.contents data in
+        Machine.start ^ Buffer.contents Machine.text ^ Asm.print Asm.SectionData
+        ^ Buffer.contents Machine.data in
       (match !output with
        | None -> TinyLibSystem.print caps asm
        | Some o -> write o asm)

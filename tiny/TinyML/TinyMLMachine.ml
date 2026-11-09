@@ -2,8 +2,8 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See TinyMLMachine.mli *)
-open TinyMLLexer
-open TinyMLTree
+module Lexer = TinyMLLexer
+module Tree = TinyMLTree
 module ISA = TinyMachineISA
 module Asm = TinyMachineAsm
 
@@ -61,7 +61,8 @@ type ir =
   | TryEnter of int * label           (* the k-th handler of the function, its
                                        * code *)
   | TryExit of int
-  | Catch of int                      (* the handler's entry: the exception pushed *)
+  | Catch of int
+    (* the handler's entry: the exception pushed *)
 
 
 let labels = ref 0
@@ -138,7 +139,7 @@ let spill_slot (st : state) r : slot = st.mslots + r - 1
 let push (st : state) =
   st.msp <- st.msp + 1;
   if st.msp > 11 then
-    error
+    Lexer.error
       (st.mname
        ^ ": an expression too deep (tiny-machine has 11 registers for it)");
   st.mmaxsp <- max st.mmaxsp st.msp;
@@ -150,7 +151,7 @@ let reload (st : state) =
   for r = 1 to st.msp do get st (spill_slot st r) r done
 (* r13, a call's result, pushed *)
 let result st = emit st (Asm.Mov (push st, r13))
-let lab (l : label) = !unit_name ^ ".L" ^ string_of_int l
+let lab (l : label) = !Tree.unit_name ^ ".L" ^ string_of_int l
 let jump (st : state) l = Hashtbl.replace st.mdepth_at l st.msp
 let epilogue st =
   framed st (fun f _ _ -> Asm.Instr (ISA.Alui (ISA.Add, vsp, vsp, -4 * f)));
@@ -223,7 +224,8 @@ let op (st : state) o =
 let alloc (st : state) tag n =
   spill st;
   st.mcargs <- max st.mcargs 2;
-  emit st (Asm.Li (r13, Int64.of_int n)); ins st (ISA.Store (ISA.W, r13, sp, 0));
+  emit st (Asm.Li (r13, Int64.of_int n));
+  ins st (ISA.Store (ISA.W, r13, sp, 0));
   emit st (Asm.Li (r13, Int64.of_int tag));
   ins st (ISA.Store (ISA.W, r13, sp, 4));
   c_call st "ml_alloc"
@@ -231,7 +233,7 @@ let alloc (st : state) tag n =
 (* a call of ML: the closure in r13, the arguments in r1..rn *)
 let call (st : state) t n tail =
   if n > 10 then
-    error
+    Lexer.error
       (st.mname ^ ": " ^ string_of_int n
        ^ " arguments (tiny-machine passes 10 at most)");
   spill st;
@@ -355,7 +357,8 @@ let instruction (st : state) (i : ir) =
    * the program printed something else than OCaml *)
   | Imm v ->
       if low32 v <> v then
-        error "an integer beyond 31 bits: not on TinyCPU (a 32-bit machine)";
+        Lexer.error
+          "an integer beyond 31 bits: not on TinyCPU (a 32-bit machine)";
       emit st (Asm.Li (push st, v))
   | Addr s -> emit st (Asm.La (push st, s))
   | Get i -> get st i (push st)
@@ -417,7 +420,7 @@ let machine (name : sym) nparams nslots (code : ir list) =
       mdepth_at = Hashtbl.create 16; mcatch_at = Hashtbl.create 4 } in
   List.iter (instruction st) code;
   if nparams > 10 then
-    error
+    Lexer.error
       (name ^ ": " ^ string_of_int nparams
        ^ " parameters (tiny-machine passes 10 at most)");
   let f = nslots + st.mmaxsp and c = 4 * st.mcargs in
@@ -433,7 +436,8 @@ let machine (name : sym) nparams nslots (code : ir list) =
        store r13 0 ]
      @ List.init nparams (fun i -> store (i + 1) (i + 1))
      (* the other slots zeroed: the collector scans them *)
-     @ List.init (max 0 (f - 1 - nparams)) (fun k -> store 0 (nparams + 1 + k)));
+     @ List.init (max 0 (f - 1 - nparams))
+       (fun k -> store 0 (nparams + 1 + k)));
   List.iter (fun l ->
       Buffer.add_string text
         (Asm.print (match l with Known l -> l | Framed g -> g f m c)))
@@ -486,7 +490,8 @@ let static_string s =
   match Hashtbl.find_opt strings s with
   | Some sym -> sym
   | None ->
-      let sym = !unit_name ^ ".s" ^ string_of_int (Hashtbl.length strings) in
+      let sym = !Tree.unit_name ^ ".s"
+        ^ string_of_int (Hashtbl.length strings) in
       let n = (String.length s / 4) + 1 in
       let b = Bytes.make (4 * n) '\000' in
       Bytes.blit_string s 0 b 0 (String.length s);
@@ -520,8 +525,8 @@ let static_closure lab n =
 
 (* an exception: a block with its name, compared by address; its value
  * a block [the exception; its arguments], a static one without them *)
-let exn_id c = "ml_exn_" ^ con_base c
-let exn_const c = "ml_exv_" ^ con_base c
+let exn_id c = "ml_exn_" ^ Tree.con_base c
+let exn_const c = "ml_exv_" ^ Tree.con_base c
 
 (* (old: 2L, 1L, literals tiny-ml does not read) *)
 let tagged n = Int64.add (Int64.mul (Int64.of_int 2) (Int64.of_int n)) Int64.one

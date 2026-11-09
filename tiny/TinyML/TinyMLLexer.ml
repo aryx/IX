@@ -2,6 +2,8 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See TinyMLLexer.mli *)
+(* (for its operator |||, an option's value or a default: tiny-ml does not
+ * read Common.( ||| )) *)
 open Common
 
 (* (old: a format, Printf.ksprintf's: tiny-ml reads a format only where

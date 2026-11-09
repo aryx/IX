@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See TinyMLTree.mli *)
-open TinyMLLexer
+module Lexer = TinyMLLexer
 
 (*****************************************************************************)
 (* The tree *)
@@ -103,7 +103,7 @@ let find_con c =
   | None ->
       (match Hashtbl.find_opt cons (con_base c) with
        | Some ci -> ci
-       | None -> error ("unknown constructor " ^ c))
+       | None -> Lexer.error ("unknown constructor " ^ c))
 
 let generic = max_int
 let level = ref 1 and counter = ref 0

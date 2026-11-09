@@ -2,26 +2,30 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See TinyMLParser.mli *)
-open TinyMLLexer
-open TinyMLTree
-open TinyMLPrintf
+module Lexer = TinyMLLexer
+module Tree = TinyMLTree
+module Fmt = TinyMLPrintf
 
 (*****************************************************************************)
 (* The parser *)
 (*****************************************************************************)
 
-let toks : (token * int) array ref = ref (Array.of_list []) and pos = ref 0
+let toks : (Lexer.token * int) array ref = ref (Array.of_list []) and pos =
+  ref 0
 let peek () = fst (!toks).(!pos)
 let peek_at k = fst (!toks).(min (!pos + k) (Array.length !toks - 1))
 let line () = snd (!toks).(!pos)
-let advance () = if peek () <> EOF then incr pos
+let advance () = if peek () <> Lexer.EOF then incr pos
 let accept t = if peek () = t then (advance (); true) else false
 let show_tok = function
-  | INT n -> string_of_int n | CHAR _ -> "a character" | STR _ -> "a string"
-  | LID x -> x | UID x -> x | KW x -> x | EOF -> "the end"
+  | Lexer.INT n -> string_of_int n | Lexer.CHAR _ -> "a character"
+    | Lexer.STR _ -> "a string"
+  | Lexer.LID x -> x | Lexer.UID x -> x | Lexer.KW x -> x
+    | Lexer.EOF -> "the end"
 let fail () =
-  error
-    (Printf.sprintf "line %d: syntax error at %s" (line ()) (show_tok (peek ())))
+  Lexer.error
+    (Printf.sprintf "line %d: syntax error at %s" (line ())
+      (show_tok (peek ())))
 let expect t = if not (accept t) then fail ()
 let fresh = ref 0
 
@@ -34,15 +38,16 @@ let forgotten : string list ref = ref []
  * declaration. A name and its number of parameters say which: Sha1's
  * t and Seq's 'a t are two
  * (old: no parameter, a name only) *)
-let abbreviations : (string * (string list * texpr)) list ref = ref []
+let abbreviations : (string * (string list * Tree.texpr)) list ref = ref []
 
 (* the abbreviation that a name with these arguments is *)
 let abbreviation c ts =
   match
-    List.find_opt (fun (c', (ps, _)) -> c' = c && List.length ps = List.length ts)
+    List.find_opt
+      (fun (c', (ps, _)) -> c' = c && List.length ps = List.length ts)
       !abbreviations
   with
-  | Some (_, (ps, te)) -> Some (of_texpr (ref (List.combine ps ts)) te)
+  | Some (_, (ps, te)) -> Some (Tree.of_texpr (ref (List.combine ps ts)) te)
   | None -> None
 
 (* the operators, OCaml's rules: a prefix one starts with !, ~ or ?; an
@@ -76,7 +81,7 @@ let is_op o = binop o <> None || is_prefix o
 
 (* C (a, b) is a constructor of two arguments, the tuple its parser saw *)
 let con_args c args untuple =
-  let ci = find_con c in
+  let ci = Tree.find_con c in
   match args with
   | [] when ci.arity = 0 -> []
   | [ a ] when ci.arity = 1 -> [ a ]
@@ -84,113 +89,122 @@ let con_args c args untuple =
       (match untuple ci.arity a with
        | Some l when List.length l = ci.arity -> l
        | _ ->
-           error
+           Lexer.error
              (Printf.sprintf "line %d: %s expects %d arguments" (line ()) c
                 ci.arity))
   | _ ->
-      error
+      Lexer.error
         (Printf.sprintf "line %d: %s expects %d arguments" (line ()) c ci.arity)
 
 let starts_atom = function
-  | INT _ | CHAR _ | STR _ | LID _ | UID _
-  | KW ("(" | "[" | "{" | "begin") -> true
-  | KW o -> is_prefix o
+  | Lexer.INT _ | Lexer.CHAR _ | Lexer.STR _ | Lexer.LID _ | Lexer.UID _
+  | Lexer.KW ("(" | "[" | "{" | "begin") -> true
+  | Lexer.KW o -> is_prefix o
   | _ -> false
 let starts_patom = function
-  | INT _ | CHAR _ | STR _ | LID _ | UID _ | KW ("_" | "(" | "[" | "{") -> true
+  | Lexer.INT _ | Lexer.CHAR _ | Lexer.STR _ | Lexer.LID _ | Lexer.UID _
+    | Lexer.KW ("_" | "(" | "[" | "{") -> true
   | _ -> false
 
 (* expressions: a sequence, then let/match/fun/if, then the operators
  * by precedence climbing, then application *)
 let rec expr () =
   let e = stmt () in
-  if accept (KW ";") then
+  if accept (Lexer.KW ";") then
     match peek () with
-    | KW ("end" | ")" | "done" | "in" | ";;" | "|" | "]" | "with" | "else"
+    | Lexer.KW ("end" | ")" | "done" | "in" | ";;" | "|" | "]" | "with" | "else"
          | "then")
-    | EOF -> e
-    | _ -> Seq (e, expr ())
+    | Lexer.EOF -> e
+    | _ -> Tree.Seq (e, expr ())
   else e
 
 and stmt () =
   match peek () with
-  | KW "let" ->
+  | Lexer.KW "let" ->
       advance ();
-      let r = if accept (KW "rec") then Recursive else Nonrecursive in
+      let r = if accept (Lexer.KW "rec") then Tree.Recursive else
+        Tree.Nonrecursive in
       let bs = bindings () in
-      expect (KW "in");
-      Let (r, bs, expr ())
-  | KW "match" ->
-      advance (); let e = expr () in expect (KW "with"); Match (e, cases ())
-  | KW "try" ->
-      advance (); let e = expr () in expect (KW "with"); Try (e, cases ())
-  | KW "function" -> advance (); Fun ([ "%f" ], Match (var "%f", cases ()))
-  | KW "fun" ->
-      advance (); let ps = params () in expect (KW "->"); fun_of ps (expr ())
-  | KW "if" ->
+      expect (Lexer.KW "in");
+      Tree.Let (r, bs, expr ())
+  | Lexer.KW "match" ->
+      advance (); let e = expr () in expect (Lexer.KW "with");
+      Tree.Match (e, cases ())
+  | Lexer.KW "try" ->
+      advance (); let e = expr () in expect (Lexer.KW "with");
+      Tree.Try (e, cases ())
+  | Lexer.KW "function" -> advance ();
+  Tree.Fun ([ "%f" ], Tree.Match (Tree.var "%f", cases ()))
+  | Lexer.KW "fun" ->
+      advance (); let ps = params () in expect (Lexer.KW "->");
+      fun_of ps (expr ())
+  | Lexer.KW "if" ->
       advance ();
       let c = expr () in
-      expect (KW "then");
+      expect (Lexer.KW "then");
       let a = stmt () in
-      If (c, a, if accept (KW "else") then stmt () else Con ("()", []))
-  | KW "while" ->
+      Tree.If (c, a,
+        if accept (Lexer.KW "else") then stmt () else Tree.Con ("()", []))
+  | Lexer.KW "while" ->
       advance ();
       let c = expr () in
-      expect (KW "do");
+      expect (Lexer.KW "do");
       let b = expr () in
-      expect (KW "done");
-      While (c, b)
-  | KW "for" ->
+      expect (Lexer.KW "done");
+      Tree.While (c, b)
+  | Lexer.KW "for" ->
       advance ();
-      let x = match peek () with LID x -> advance (); x | _ -> fail () in
-      expect (KW "=");
+      let x = match peek () with Lexer.LID x -> advance (); x | _ -> fail () in
+      expect (Lexer.KW "=");
       let a = expr () in
       let up =
-        if accept (KW "to") then true else (expect (KW "downto"); false) in
+        if accept (Lexer.KW "to") then true else
+          (expect (Lexer.KW "downto"); false) in
       let b = expr () in
-      expect (KW "do");
+      expect (Lexer.KW "do");
       let body = expr () in
-      expect (KW "done");
-      For (x, a, b, up, body)
+      expect (Lexer.KW "done");
+      Tree.For (x, a, b, up, body)
   | _ -> binary 0
 
 and binary min =
   let rec loop lhs =
     match peek () with
-    | KW "," when min <= 1 ->
+    | Lexer.KW "," when min <= 1 ->
         let rec more () =
           advance ();
           let e = binary 2 in
-          if peek () = KW "," then e :: more () else [ e ]
+          if peek () = Lexer.KW "," then e :: more () else [ e ]
         in
-        loop (Tuple (lhs :: more ()))
-    | KW op -> (
+        loop (Tree.Tuple (lhs :: more ()))
+    | Lexer.KW op -> (
         match binop op with
         | Some (p, right) when p >= min ->
             advance ();
             let rhs = binary (if right then p else p + 1) in
             loop
               (match op with
-               | "::" -> Con ("::", [ lhs; rhs ])
-               | "&&" | "&" -> If (lhs, rhs, Con ("false", []))
-               | "||" | "or" -> If (lhs, Con ("true", []), rhs)
+               | "::" -> Tree.Con ("::", [ lhs; rhs ])
+               | "&&" | "&" -> Tree.If (lhs, rhs, Tree.Con ("false", []))
+               | "||" | "or" -> Tree.If (lhs, Tree.Con ("true", []), rhs)
                | "<-" -> (
                    match lhs with
-                   | Dot (e, l, i) -> SetDot (e, l, i, rhs)
-                   | App (Var ("Array.get", _), [ a; i ]) ->
+                   | Tree.Dot (e, l, i) -> Tree.SetDot (e, l, i, rhs)
+                   | Tree.App (Tree.Var ("Array.get", _), [ a; i ]) ->
                        (* i, a, then the value, ocamlopt's order *)
                        incr fresh;
                        let a' = Printf.sprintf "%%a%d" !fresh
                        and i' = Printf.sprintf "%%i%d" !fresh in
-                       Let (Nonrecursive, [ PVar i', i ],
-                         Let (Nonrecursive, [ PVar a', a ],
-                           App (var "Array.set", [ var a'; var i'; rhs ])))
+                       Tree.Let (Tree.Nonrecursive, [ Tree.PVar i', i ],
+                         Tree.Let (Tree.Nonrecursive, [ Tree.PVar a', a ],
+                           Tree.App (Tree.var "Array.set",
+                             [ Tree.var a'; Tree.var i'; rhs ])))
                    | _ ->
-                       error
+                       Lexer.error
                          (Printf.sprintf
                             "line %d: <- on a field or an array's element only"
                             (line ())))
-               | _ -> App (var op, [ lhs; rhs ]))
+               | _ -> Tree.App (Tree.var op, [ lhs; rhs ]))
         | _ -> lhs)
     | _ -> lhs
   in
@@ -198,95 +212,103 @@ and binary min =
 
 and unary () =
   match peek () with
-  | KW "-" ->
+  | Lexer.KW "-" ->
       advance ();
       (match peek () with
-       | INT n -> advance (); Const (CInt (-n))
-       | _ -> App (var "~-", [ unary () ]))
+       | Lexer.INT n -> advance (); Tree.Const (Tree.CInt (-n))
+       | _ -> Tree.App (Tree.var "~-", [ unary () ]))
   | _ -> app ()
 
 and app () =
   match peek () with
-  | UID c when starts_atom (peek_at 1) && (find_con c).arity > 0 ->
+  | Lexer.UID c when starts_atom (peek_at 1) && (Tree.find_con c).arity > 0 ->
       advance ();
       let a = atom () in
-      Con (c, con_args c [ a ] (fun _ -> function Tuple l -> Some l | _ -> None))
+      Tree.Con (c,
+        con_args c [ a ] (fun _ -> function Tree.Tuple l -> Some l | _ -> None))
   | _ -> (
       let f = atom () in
       let rec args () =
         if starts_atom (peek ()) then let a = atom () in a :: args () else [] in
       match f, args () with
       | _, [] -> f
-      | Var (p, _), l
+      | Tree.Var (p, _), l
         when p = "Printf.sprintf" || p = "Printf.ksprintf"
              || p = "Printf.bprintf" ->
-          printf_call p l
+          Fmt.printf_call p l
       (* Logs.debug (fun m -> m "%s" x): m given the message made, as
        * Printf.sprintf makes it (TinyLibCore's Logs.mli) *)
-      | Var (p, _),
-        [ Fun ([ m ], App (Var (m', _), (Const (CStr _) :: _ as l))) ]
+      | Tree.Var (p, _),
+        [ Tree.Fun
+          ([ m ], Tree.App
+            (Tree.Var (m', _), (Tree.Const (Tree.CStr _) :: _ as l))) ]
         when String.length p > 5 && String.sub p 0 5 = "Logs." && m = m' ->
-          let msg = printf_call "Printf.sprintf" l in
-          App (f, [ Fun ([ m ], App (var m, [ msg ])) ])
-      | _, l -> App (f, l))
+          let msg = Fmt.printf_call "Printf.sprintf" l in
+          Tree.App (f, [ Tree.Fun ([ m ], Tree.App (Tree.var m, [ msg ])) ])
+      | _, l -> Tree.App (f, l))
 
 and atom () =
   let e =
     match peek () with
-    | INT n -> advance (); Const (CInt n)
-    | CHAR c -> advance (); Const (CChar c)
-    | STR s -> advance (); Const (CStr s)
-    | LID x -> advance (); var x
-    | UID c -> advance (); Con (c, con_args c [] (fun _ _ -> None))
-    | KW o when is_prefix o -> advance (); App (var o, [ atom () ])
-    | KW "(" -> (
+    | Lexer.INT n -> advance (); Tree.Const (Tree.CInt n)
+    | Lexer.CHAR c -> advance (); Tree.Const (Tree.CChar c)
+    | Lexer.STR s -> advance (); Tree.Const (Tree.CStr s)
+    | Lexer.LID x -> advance (); Tree.var x
+    | Lexer.UID c -> advance (); Tree.Con (c, con_args c [] (fun _ _ -> None))
+    | Lexer.KW o when is_prefix o -> advance ();
+    Tree.App (Tree.var o, [ atom () ])
+    | Lexer.KW "(" -> (
         advance ();
-        if accept (KW ")") then Con ("()", [])
+        if accept (Lexer.KW ")") then Tree.Con ("()", [])
         else
           match peek (), peek_at 1 with
-          | KW op, KW ")" when is_op op -> advance (); advance (); var op
+          | Lexer.KW op, Lexer.KW ")" when is_op op -> advance (); advance ();
+          Tree.var op
           | _ ->
               let e = expr () in
-              if accept (KW ":") || accept (KW ":>") then ignore (ty ());
-              expect (KW ")");
+              if accept (Lexer.KW ":") || accept (Lexer.KW ":>") then
+                ignore (ty ());
+              expect (Lexer.KW ")");
               e)
-    | KW "begin" ->
+    | Lexer.KW "begin" ->
         advance ();
-        if accept (KW "end") then Con ("()", [])
-        else (let e = expr () in expect (KW "end"); e)
-    | KW "[" ->
+        if accept (Lexer.KW "end") then Tree.Con ("()", [])
+        else (let e = expr () in expect (Lexer.KW "end"); e)
+    | Lexer.KW "[" ->
         advance ();
         let rec elems () =
-          if accept (KW "]") then Con ("[]", [])
+          if accept (Lexer.KW "]") then Tree.Con ("[]", [])
           else (
             let e = stmt () in
-            ignore (accept (KW ";"));
-            Con ("::", [ e; elems () ]))
+            ignore (accept (Lexer.KW ";"));
+            Tree.Con ("::", [ e; elems () ]))
         in
         elems ()
-    | KW "{" ->
+    | Lexer.KW "{" ->
         advance ();
         let rec fields () =
-          if accept (KW "}") then []
+          if accept (Lexer.KW "}") then []
           else match peek () with
             (* { text; pos = 0 }: a field alone is the variable of its name *)
-            | LID l ->
+            | Lexer.LID l ->
                 advance ();
-                let e = if accept (KW "=") then stmt () else var l in
-                ignore (accept (KW ";"));
+                let e = if accept (Lexer.KW "=") then stmt () else Tree.var l in
+                ignore (accept (Lexer.KW ";"));
                 (l, e) :: fields ()
             | _ -> fail () in
         (* a label followed by =, ; or } begins the fields; anything else
          * is the record that { e with ... } copies *)
         (match peek (), peek_at 1 with
-         | LID _, KW ("=" | ";" | "}") -> Record (fields (), ref [])
+         | Lexer.LID _,
+           Lexer.KW ("=" | ";" | "}") -> Tree.Record (fields (), ref [])
          | _ ->
              let e = atom () in
-             expect (KW "with");
+             expect (Lexer.KW "with");
              (match fields () with
               | [] -> fail ()
-              | fs -> With (e, fs, ref [], ref 0)))
-    | KW ("let" | "match" | "try" | "fun" | "function" | "if" | "while" | "for")
+              | fs -> Tree.With (e, fs, ref [], ref 0)))
+    | Lexer.KW
+      ("let" | "match" | "try" | "fun" | "function" | "if" | "while" | "for")
       ->
         stmt ()
     | _ -> fail ()
@@ -294,109 +316,114 @@ and atom () =
   postfix e
 
 and postfix e =
-  if accept (KW ".[") then (
+  if accept (Lexer.KW ".[") then (
     let i = expr () in
-    expect (KW "]");
-    postfix (App (var "String.get", [ e; i ])))
-  else if peek () = KW "." then (
+    expect (Lexer.KW "]");
+    postfix (Tree.App (Tree.var "String.get", [ e; i ])))
+  else if peek () = Lexer.KW "." then (
     advance ();
     match peek () with
-    | LID l -> advance (); postfix (Dot (e, l, ref 0))
-    | KW "(" ->
+    | Lexer.LID l -> advance (); postfix (Tree.Dot (e, l, ref 0))
+    | Lexer.KW "(" ->
         advance ();
         let i = expr () in
-        expect (KW ")");
-        postfix (App (var "Array.get", [ e; i ]))
+        expect (Lexer.KW ")");
+        postfix (Tree.App (Tree.var "Array.get", [ e; i ]))
     | _ -> fail ())
   else e
 
 and cases () =
-  ignore (accept (KW "|"));
+  ignore (accept (Lexer.KW "|"));
   let p = pattern () in
-  let g = if accept (KW "when") then Some (expr ()) else None in
-  expect (KW "->");
+  let g = if accept (Lexer.KW "when") then Some (expr ()) else None in
+  expect (Lexer.KW "->");
   let e = expr () in
-  (p, g, e) :: (if peek () = KW "|" then cases () else [])
+  (p, g, e) :: (if peek () = Lexer.KW "|" then cases () else [])
 
 (* patterns: as, then |, then the tuple, then ::, then a constructor's *)
 and pattern () =
   let p = por () in
-  if accept (KW "as") then
-    (match peek () with LID x -> advance (); PAlias (p, x) | _ -> fail ())
+  if accept (Lexer.KW "as") then
+    (match peek () with Lexer.LID x -> advance (); Tree.PAlias (p, x)
+      | _ -> fail ())
   else p
 
-and por () = let p = ptuple () in if accept (KW "|") then POr (p, por ()) else p
+and por () = let p = ptuple () in if accept (Lexer.KW "|") then
+  Tree.POr (p, por ()) else p
 
 and ptuple () =
   let p = pcons () in
-  if peek () = KW "," then (
+  if peek () = Lexer.KW "," then (
     let rec more () =
-      if accept (KW ",") then let q = pcons () in q :: more () else [] in
-    PTuple (p :: more ()))
+      if accept (Lexer.KW ",") then let q = pcons () in q :: more () else [] in
+    Tree.PTuple (p :: more ()))
   else p
 
 and pcons () =
   let p = papp () in
-  if accept (KW "::") then PCon ("::", [ p; pcons () ]) else p
+  if accept (Lexer.KW "::") then Tree.PCon ("::", [ p; pcons () ]) else p
 
 and papp () =
   match peek () with
-  | UID c when starts_patom (peek_at 1) && (find_con c).arity > 0 ->
+  | Lexer.UID c when starts_patom (peek_at 1) && (Tree.find_con c).arity > 0 ->
       advance ();
       let a = patom () in
-      PCon (c,
+      Tree.PCon (c,
         con_args c [ a ] (fun n -> function
-          | PTuple l -> Some l
-          | PAny -> Some (List.init n (fun _ -> PAny))
+          | Tree.PTuple l -> Some l
+          | Tree.PAny -> Some (List.init n (fun _ -> Tree.PAny))
           | _ -> None))
   | _ -> patom ()
 
 and patom () =
   match peek () with
-  | LID x -> advance (); PVar x
-  | KW "_" -> advance (); PAny
-  | INT n -> advance (); PConst (CInt n)
-  | CHAR c -> advance (); PConst (CChar c)
-  | STR s -> advance (); PConst (CStr s)
-  | KW "-" ->
+  | Lexer.LID x -> advance (); Tree.PVar x
+  | Lexer.KW "_" -> advance (); Tree.PAny
+  | Lexer.INT n -> advance (); Tree.PConst (Tree.CInt n)
+  | Lexer.CHAR c -> advance (); Tree.PConst (Tree.CChar c)
+  | Lexer.STR s -> advance (); Tree.PConst (Tree.CStr s)
+  | Lexer.KW "-" ->
       advance ();
-      (match peek () with INT n -> advance (); PConst (CInt (-n)) | _ -> fail ())
-  | UID c -> advance (); PCon (c, con_args c [] (fun _ _ -> None))
-  | KW "(" ->
+      (match peek () with Lexer.INT n -> advance ();
+        Tree.PConst (Tree.CInt (-n)) | _ -> fail ())
+  | Lexer.UID c -> advance (); Tree.PCon (c, con_args c [] (fun _ _ -> None))
+  | Lexer.KW "(" ->
       advance ();
-      if accept (KW ")") then PCon ("()", [])
+      if accept (Lexer.KW ")") then Tree.PCon ("()", [])
       else (
         let p = pattern () in
-        let p = if accept (KW ":") then PAnnot (p, ty ()) else p in
-        expect (KW ")");
+        let p = if accept (Lexer.KW ":") then Tree.PAnnot (p, ty ()) else p in
+        expect (Lexer.KW ")");
         p)
-  | KW "[" ->
+  | Lexer.KW "[" ->
       advance ();
       let rec elems () =
-        if accept (KW "]") then PCon ("[]", [])
+        if accept (Lexer.KW "]") then Tree.PCon ("[]", [])
         else (
           let p = pattern () in
-          ignore (accept (KW ";"));
-          PCon ("::", [ p; elems () ]))
+          ignore (accept (Lexer.KW ";"));
+          Tree.PCon ("::", [ p; elems () ]))
       in
       elems ()
-  | KW "{" ->
+  | Lexer.KW "{" ->
       advance ();
       (* { view; update = u; _ }: a field alone binds the variable of its
        * name, and _ allows the fields not named *)
       let rec fields () =
-        if accept (KW "}") then []
+        if accept (Lexer.KW "}") then []
         else match peek () with
-          | LID l ->
+          | Lexer.LID l ->
               advance ();
-              let p = if accept (KW "=") then pattern () else PVar l in
-              ignore (accept (KW ";"));
+              let p = if accept (Lexer.KW "=") then pattern () else
+                Tree.PVar l in
+              ignore (accept (Lexer.KW ";"));
               (l, p) :: fields ()
-          | KW "_" -> advance (); ignore (accept (KW ";")); expect (KW "}"); []
+          | Lexer.KW "_" -> advance (); ignore (accept (Lexer.KW ";"));
+          expect (Lexer.KW "}"); []
           | _ -> fail () in
       (match fields () with
        | [] -> fail ()
-       | fs -> PRecord (fs, ref [], ref 0))
+       | fs -> Tree.PRecord (fs, ref [], ref 0))
   | _ -> fail ()
 
 and params () =
@@ -407,11 +434,11 @@ and fun_of ps body =
   let names, body =
     List.fold_right (fun p (names, body) ->
       match p with
-      | PVar x -> x :: names, body
+      | Tree.PVar x -> x :: names, body
       | p ->
           incr fresh;
           let x = Printf.sprintf "%%p%d" !fresh in
-          x :: names, Let (Nonrecursive, [ p, var x ], body))
+          x :: names, Tree.Let (Tree.Nonrecursive, [ p, Tree.var x ], body))
       ps ([], body)
   in
   (* fun x -> function ...: one function of both, as OCaml makes it
@@ -419,36 +446,40 @@ and fun_of ps body =
    * len n = function ..., an allocation an element: half of tiny-ml's
    * time on tiny-kernel) *)
   match body with
-  | Fun (more, body)
+  | Tree.Fun (more, body)
     when List.length names + List.length more <= 10
          && not (List.exists (fun x -> List.mem x names) more) ->
-      Fun (names @ more, body)
-  | _ -> Fun (names, body)
+      Tree.Fun (names @ more, body)
+  | _ -> Tree.Fun (names, body)
 
 and bindings () =
   let b = binding () in
-  if accept (KW "and") then b :: bindings () else [ b ]
+  if accept (Lexer.KW "and") then b :: bindings () else [ b ]
 
 and binding () =
   let name =
     match peek (), peek_at 1 with
-    | LID x, t when not (List.mem t [ KW "="; KW ","; KW ":"; KW "as"; KW "::" ])
+    | Lexer.LID x,
+      t when not
+        (List.mem t
+          [ Lexer.KW "="; Lexer.KW ","; Lexer.KW ":"; Lexer.KW "as";
+            Lexer.KW "::" ])
       ->
         advance (); Some x
-    | KW "(", KW op when is_op op && peek_at 2 = KW ")" ->
+    | Lexer.KW "(", Lexer.KW op when is_op op && peek_at 2 = Lexer.KW ")" ->
         advance (); advance (); advance (); Some op
     | _ -> None
   in
   match name with
   | Some f ->
       let ps = params () in
-      if accept (KW ":") then ignore (ty ());
-      expect (KW "=");
-      PVar f, (if ps = [] then expr () else fun_of ps (expr ()))
+      if accept (Lexer.KW ":") then ignore (ty ());
+      expect (Lexer.KW "=");
+      Tree.PVar f, (if ps = [] then expr () else fun_of ps (expr ()))
   | None ->
       let p = pattern () in
-      let p = if accept (KW ":") then PAnnot (p, ty ()) else p in
-      expect (KW "=");
+      let p = if accept (Lexer.KW ":") then Tree.PAnnot (p, ty ()) else p in
+      expect (Lexer.KW "=");
       p, expr ()
 
 (* types: ->, then *, then applications of names (int list). An
@@ -460,48 +491,52 @@ and binding () =
  * gives the arguments in their order, without their labels, which
  * OCaml accepts of a whole application *)
 and ty () =
-  (match peek (), peek_at 1 with LID _, KW ":" -> advance (); advance () | _ -> ());
-  let t = ty_tuple () in if accept (KW "->") then TE ("->", [ t; ty () ]) else t
+  (match peek (), peek_at 1 with Lexer.LID _, Lexer.KW ":" -> advance ();
+    advance () | _ -> ());
+  let t = ty_tuple () in if accept (Lexer.KW "->") then
+    Tree.TE ("->", [ t; ty () ]) else t
 
-and ty_tuple () = match ty_args () with [ t ] -> t | l -> TE ("*", l)
+and ty_tuple () = match ty_args () with [ t ] -> t | l -> Tree.TE ("*", l)
 
 and ty_args () =
   let t = ty_app () in
-  if accept (KW "*") then t :: ty_args () else [ t ]
+  if accept (Lexer.KW "*") then t :: ty_args () else [ t ]
 
 and ty_app () =
   let args =
     match peek () with
-    | KW "'" ->
+    | Lexer.KW "'" ->
         advance ();
-        (match peek () with LID v -> advance (); [ TEVar v ] | _ -> fail ())
-    | KW "(" ->
+        (match peek () with Lexer.LID v -> advance (); [ Tree.TEVar v ]
+          | _ -> fail ())
+    | Lexer.KW "(" ->
         advance ();
         let rec go () =
           let t = ty () in
-          if accept (KW ",") then t :: go () else [ t ]
+          if accept (Lexer.KW ",") then t :: go () else [ t ]
         in
         let l = go () in
-        expect (KW ")");
+        expect (Lexer.KW ")");
         l
-    | KW "<" -> skip_object (); [ any () ]
-    | LID c when List.mem c !forgotten -> advance (); [ any () ]
-    | LID c -> advance (); [ TE (c, []) ]
+    | Lexer.KW "<" -> skip_object (); [ any () ]
+    | Lexer.LID c when List.mem c !forgotten -> advance (); [ any () ]
+    | Lexer.LID c -> advance (); [ Tree.TE (c, []) ]
     | _ -> fail ()
   in
   (* (val: OCaml's keyword, not tiny-ml's: an .mli's next item) *)
   let rec post args =
     match peek () with
-    | LID c when c <> "val" -> advance (); post [ TE (c, args) ]
+    | Lexer.LID c when c <> "val" -> advance (); post [ Tree.TE (c, args) ]
     | _ -> args
   in
   match post args with [ t ] -> t | _ -> fail ()
 
-and any () = incr fresh; TEVar (Printf.sprintf "%%o%d" !fresh)
+and any () = incr fresh; Tree.TEVar (Printf.sprintf "%%o%d" !fresh)
 
 and skip_object () =
   advance ();
-  while peek () <> KW ">" do (if peek () = EOF then fail ()); advance () done;
+  while peek () <> Lexer.KW ">" do (if peek () = Lexer.EOF then fail ());
+  advance () done;
   advance ()
 
 (* type ('a, 'b) t = A | B of 'a * t and ...: the constructors
@@ -510,59 +545,64 @@ and skip_object () =
  * type's second name, type word = piece list (abbreviations) *)
 let rec type_decl () =
   let tvar () =
-    expect (KW "'"); match peek () with LID v -> advance (); v | _ -> fail () in
+    expect (Lexer.KW "'"); match peek () with Lexer.LID v -> advance (); v
+      | _ -> fail () in
   let params =
     match peek () with
-    | KW "'" -> [ tvar () ]
-    | KW "(" ->
+    | Lexer.KW "'" -> [ tvar () ]
+    | Lexer.KW "(" ->
         advance ();
         let rec go () =
           let v = tvar () in
-          if accept (KW ",") then v :: go () else [ v ]
+          if accept (Lexer.KW ",") then v :: go () else [ v ]
         in
         let l = go () in
-        expect (KW ")");
+        expect (Lexer.KW ")");
         l
     | _ -> []
   in
-  let name = match peek () with LID x -> advance (); x | _ -> fail () in
-  expect (KW "=");
-  ignore (accept (KW "|"));
-  let vars = ref (List.map (fun v -> v, genvar ()) params) in
-  let res = TCon (name, List.map snd !vars) in
-  if peek () = KW "<" then (skip_object (); forgotten := name :: !forgotten)
-  else if accept (KW "{") then begin
+  let name = match peek () with Lexer.LID x -> advance (); x | _ -> fail () in
+  expect (Lexer.KW "=");
+  ignore (accept (Lexer.KW "|"));
+  let vars = ref (List.map (fun v -> v, Tree.genvar ()) params) in
+  let res = Tree.TCon (name, List.map snd !vars) in
+  if peek () = Lexer.KW "<" then
+    (skip_object (); forgotten := name :: !forgotten)
+  else if accept (Lexer.KW "{") then begin
     let rec fields () =
-      if accept (KW "}") then []
+      if accept (Lexer.KW "}") then []
       else
-        let mut = accept (LID "mutable") in
-        let l = match peek () with LID l -> advance (); l | _ -> fail () in
-        expect (KW ":");
-        let t = of_texpr vars (ty ()) in
-        ignore (accept (KW ";"));
+        let mut = accept (Lexer.LID "mutable") in
+        let l = match peek () with Lexer.LID l -> advance (); l
+          | _ -> fail () in
+        expect (Lexer.KW ":");
+        let t = Tree.of_texpr vars (ty ()) in
+        ignore (accept (Lexer.KW ";"));
         (l, mut, t) :: fields () in
     let fs = fields () in
     let lnames = List.map (fun (l, _, _) -> l) fs in
     List.iteri (fun idx (l, mut, t) ->
-      Hashtbl.add record_labels l
-        { lrec = name; idx; mut; lnames; lscheme = TCon ("%l", [ res; t ]) })
+      Hashtbl.add Tree.record_labels l
+        { lrec = name; idx; mut; lnames;
+          lscheme = Tree.TCon ("%l", [ res; t ]) })
       fs
-  end else if (match peek () with UID _ -> false | _ -> true) then begin
+  end else if (match peek () with Lexer.UID _ -> false | _ -> true) then begin
     abbreviations := (name, (params, ty ())) :: !abbreviations
   end else begin
     let rec ctors () =
       let c =
         match peek () with
-        | UID c -> advance (); c
+        | Lexer.UID c -> advance (); c
         | _ ->
-            error
+            Lexer.error
               (Printf.sprintf "line %d: a constructor or a record expected"
                  (line ()))
       in
       let args =
-        if accept (KW "of") then List.map (of_texpr vars) (ty_args ()) else []
+        if accept (Lexer.KW "of") then
+          List.map (Tree.of_texpr vars) (ty_args ()) else []
       in
-      (c, args) :: (if accept (KW "|") then ctors () else [])
+      (c, args) :: (if accept (Lexer.KW "|") then ctors () else [])
     in
     let cs = ctors () in
     let nconst = List.length (List.filter (fun (_, a) -> a = []) cs) in
@@ -570,135 +610,140 @@ let rec type_decl () =
     let ic = ref 0 and ib = ref 0 in
     List.iter (fun (c, args) ->
       let kind =
-        if args = [] then (incr ic; KConst (!ic - 1))
-        else (incr ib; KBlock (!ib - 1))
+        if args = [] then (incr ic; Tree.KConst (!ic - 1))
+        else (incr ib; Tree.KBlock (!ib - 1))
       in
-      add_con c
+      Tree.add_con c
         { kind; arity = List.length args; nconst; nblock;
-          scheme = TCon ("%c", res :: args) })
+          scheme = Tree.TCon ("%c", res :: args) })
       cs
   end;
-  if accept (KW "and") then type_decl ()
+  if accept (Lexer.KW "and") then type_decl ()
 
 (* an external's or a val's name: x, or an operator ( op ) *)
 let val_name () =
   match peek () with
-  | LID x -> advance (); x
-  | KW "(" ->
+  | Lexer.LID x -> advance (); x
+  | Lexer.KW "(" ->
       advance ();
-      let o = (match peek () with KW o -> advance (); o | _ -> fail ()) in
-      expect (KW ")");
+      let o = (match peek () with Lexer.KW o -> advance (); o | _ -> fail ()) in
+      expect (Lexer.KW ")");
       o
   | _ -> fail ()
 
-let rec items () : (item * int) list =
+let rec items () : (Tree.item * int) list =
   let l = line () in
   match peek () with
-  | EOF | KW "end" -> []
-  | KW ";;" -> advance (); items ()
-  | KW "let" ->
+  | Lexer.EOF | Lexer.KW "end" -> []
+  | Lexer.KW ";;" -> advance (); items ()
+  | Lexer.KW "let" ->
       advance ();
-      let r = if accept (KW "rec") then Recursive else Nonrecursive in
+      let r = if accept (Lexer.KW "rec") then Tree.Recursive else
+        Tree.Nonrecursive in
       let bs = bindings () in
-      if accept (KW "in") then (
-        let e = Let (r, bs, expr ()) in
-        (ILet (Nonrecursive, [ PAny, e ]), l) :: items ())
-      else (ILet (r, bs), l) :: items ()
-  | KW "type" -> advance (); type_decl (); items ()
+      if accept (Lexer.KW "in") then (
+        let e = Tree.Let (r, bs, expr ()) in
+        (Tree.ILet (Tree.Nonrecursive, [ Tree.PAny, e ]), l) :: items ())
+      else (Tree.ILet (r, bs), l) :: items ()
+  | Lexer.KW "type" -> advance (); type_decl (); items ()
   (* module M = struct ... end, one level: its names M.x, for the units
    * after (open A.M); in it, a name is not found by its short name.
    * Or module A = M, a shorter name for a unit: A.x is M.x, in this
    * unit alone, and A.t M's type t *)
-  | KW "module" ->
+  | Lexer.KW "module" ->
       advance ();
-      let m = match peek () with UID m -> advance (); m | _ -> fail () in
-      expect (KW "=");
+      let m = match peek () with Lexer.UID m -> advance (); m | _ -> fail () in
+      expect (Lexer.KW "=");
       (match peek () with
-       | UID u ->
+       | Lexer.UID u ->
            advance ();
-           known_units := m :: !known_units;
-           con_aliases := (m, u) :: !con_aliases;
-           (IAlias (m, u), l) :: items ()
-       | KW "struct" ->
+           Tree.known_units := m :: !Tree.known_units;
+           Tree.con_aliases := (m, u) :: !Tree.con_aliases;
+           (Tree.IAlias (m, u), l) :: items ()
+       | Lexer.KW "struct" ->
            advance ();
            let inner = items () in
-           expect (KW "end");
+           expect (Lexer.KW "end");
            let rec named p = match p with
-             | PVar x -> PVar (m ^ "." ^ x)
-             | PAnnot (p, t) -> PAnnot (named p, t)
+             | Tree.PVar x -> Tree.PVar (m ^ "." ^ x)
+             | Tree.PAnnot (p, t) -> Tree.PAnnot (named p, t)
              | _ -> fail () in
            List.map (fun (it, l) ->
                match it with
-               | ILet (r, bs) -> ILet (r, List.map (fun (p, e) -> named p, e) bs), l
-               | IExt (x, t, p) -> IExt (m ^ "." ^ x, t, p), l
+               | Tree.ILet (r, bs) ->
+                 Tree.ILet (r, List.map (fun (p, e) -> named p, e) bs), l
+               | Tree.IExt (x, t, p) -> Tree.IExt (m ^ "." ^ x, t, p), l
                | _ -> fail ()) inner
            @ items ()
        | _ -> fail ())
-  | KW "open" ->
+  | Lexer.KW "open" ->
       advance ();
       (match peek () with
-       | UID m -> advance (); (IOpen m, l) :: items ()
+       | Lexer.UID m -> advance (); (Tree.IOpen m, l) :: items ()
        | _ -> fail ())
-  | KW "exception" ->
+  | Lexer.KW "exception" ->
       advance ();
-      let c = match peek () with UID c -> advance (); c | _ -> fail () in
+      let c = match peek () with Lexer.UID c -> advance (); c | _ -> fail () in
       let args =
-        if accept (KW "of") then List.map (of_texpr (ref [])) (ty_args ())
+        if accept (Lexer.KW "of") then
+          List.map (Tree.of_texpr (ref [])) (ty_args ())
         else []
       in
-      add_con c
-        { kind = KExn; arity = List.length args; nconst = 0; nblock = 0;
-          scheme = TCon ("%c", tcon "exn" :: args) };
-      (IExn c, l) :: items ()
-  | KW "external" ->
+      Tree.add_con c
+        { kind = Tree.KExn; arity = List.length args; nconst = 0; nblock = 0;
+          scheme = Tree.TCon ("%c", Tree.tcon "exn" :: args) };
+      (Tree.IExn c, l) :: items ()
+  | Lexer.KW "external" ->
       advance ();
       let x = val_name () in
-      expect (KW ":");
+      expect (Lexer.KW ":");
       let t = ty () in
-      expect (KW "=");
-      let p = match peek () with STR p -> advance (); p | _ -> fail () in
-      (IExt (x, t, p), l) :: items ()
-  | _ -> let e = expr () in (ILet (Nonrecursive, [ PAny, e ]), l) :: items ()
+      expect (Lexer.KW "=");
+      let p = match peek () with Lexer.STR p -> advance (); p | _ -> fail () in
+      (Tree.IExt (x, t, p), l) :: items ()
+  | _ -> let e = expr () in (Tree.ILet (Tree.Nonrecursive, [ Tree.PAny, e ]), l)
+    :: items ()
 
 (* a file's text, its items, each with its line *)
 let parse (text : string) =
-  toks := lex text; pos := 0;
+  toks := Lexer.lex text; pos := 0;
   (* (a unit's aliases its own) *)
-  con_aliases := [];
+  Tree.con_aliases := [];
   let is = items () in
-  if peek () <> EOF then fail ();
+  if peek () <> Lexer.EOF then fail ();
   is
 
 (* M.mli's vals and their types, in place of what M.ml's inferred: its
  * types and exceptions are M.ml's too, and skipped; a val of module
  * N : sig ... end is N.x *)
-let mli_types (text : string) : (string * ty) list =
-  toks := lex text; pos := 0;
+let mli_types (text : string) : (string * Tree.ty) list =
+  toks := Lexer.lex text; pos := 0;
   let prefix = ref "" in
   let starts () =
     match peek () with
-    | LID "val" | KW ("module" | "type" | "exception" | "external" | "end")
-    | EOF -> true
+    | Lexer.LID "val"
+      | Lexer.KW ("module" | "type" | "exception" | "external" | "end")
+    | Lexer.EOF -> true
     | _ -> false
   in
   let rec go acc =
     match peek () with
-    | EOF -> acc
-    | KW "module" ->
+    | Lexer.EOF -> acc
+    | Lexer.KW "module" ->
         advance ();
         (match peek () with
-         | UID m -> advance (); prefix := m ^ "."
+         | Lexer.UID m -> advance (); prefix := m ^ "."
          | _ -> fail ());
-        expect (KW ":");
-        if peek () <> KW "sig" then fail ();
+        expect (Lexer.KW ":");
+        if peek () <> Lexer.KW "sig" then fail ();
         advance ();
         go acc
-    | KW "end" -> advance (); prefix := ""; go acc
-    | LID "val" ->
+    | Lexer.KW "end" -> advance (); prefix := ""; go acc
+    | Lexer.LID "val" ->
         advance ();
         let x = val_name () in
-        expect (KW ":");
+        expect (Lexer.KW ":");
         let t = ty () in
-        go ((!prefix ^ x, of_texpr (ref []) t) :: acc)
+        go ((!prefix ^ x, Tree.of_texpr (ref []) t) :: acc)
     | _ -> advance (); while not (starts ()) do advance () done; go acc in
   go []

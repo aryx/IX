@@ -2,8 +2,8 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See TinyMLPrintf.mli *)
-open TinyMLLexer
-open TinyMLTree
+module Lexer = TinyMLLexer
+module Tree = TinyMLTree
 
 (* Printf's sprintf, ksprintf and bprintf, their format a string written
  * there, read as the concatenation they make: Printf.sprintf "r%d, %s"
@@ -32,14 +32,16 @@ let pieces fmt =
   let rec go i =
     if i < n then
       if fmt.[i] <> '%' then (Buffer.add_char b fmt.[i]; go (i + 1))
-      else if i + 1 < n && fmt.[i + 1] = '%' then (Buffer.add_char b '%'; go (i + 2))
+      else if i + 1 < n && fmt.[i + 1] = '%' then
+        (Buffer.add_char b '%'; go (i + 2))
       else begin
         let left = i + 1 < n && fmt.[i + 1] = '-' in
         let j = if left then i + 2 else i + 1 in
         let zero = j < n && fmt.[j] = '0' in
         let k, width = digits j 0 in
         if k >= n || not (String.contains "dscxS" fmt.[k]) then
-          error ("a format of Printf's that tiny-ml does not read: " ^ fmt);
+          Lexer.error
+            ("a format of Printf's that tiny-ml does not read: " ^ fmt);
         text ();
         out := Hole (fmt.[k], left, zero, width) :: !out;
         go (k + 1)
@@ -54,10 +56,10 @@ let printf_call name args =
     else
       match args with
       | a :: r -> Some a, r
-      | [] -> error (name ^ ": no format")
+      | [] -> Lexer.error (name ^ ": no format")
   in
   match args with
-  | Const (CStr fmt) :: given ->
+  | Tree.Const (Tree.CStr fmt) :: given ->
       let ps = pieces fmt in
       let holes =
         List.length (List.filter (function Hole _ -> true | Text _ -> false) ps)
@@ -66,55 +68,68 @@ let printf_call name args =
         List.init (max 0 (holes - List.length given))
           (fun i -> Printf.sprintf "%%p%d" i)
       in
-      let bool b = Con ((if b then "true" else "false"), []) in
+      let bool b = Tree.Con ((if b then "true" else "false"), []) in
       let hole c left zero w v =
         let s = match c with
-          | 'd' -> App (var "string_of_int", [ v ])
-          | 'c' -> App (var "String.make", [ Const (CInt 1); v ])
-          | 'x' -> App (var "Printf.hex", [ v ])
-          | 'S' -> App (var "Printf.quoted", [ v ])
+          | 'd' -> Tree.App (Tree.var "string_of_int", [ v ])
+          | 'c' -> Tree.App
+            (Tree.var "String.make", [ Tree.Const (Tree.CInt 1); v ])
+          | 'x' -> Tree.App (Tree.var "Printf.hex", [ v ])
+          | 'S' -> Tree.App (Tree.var "Printf.quoted", [ v ])
           | _ -> v in
         if w = 0 then s
-        else App (var "Printf.pad", [ bool left; bool zero; Const (CInt w); s ])
+        else Tree.App
+          (Tree.var "Printf.pad",
+            [ bool left; bool zero; Tree.Const (Tree.CInt w); s ])
       in
       let rec build ps vs =
         match ps, vs with
-        | [], _ -> Con ("[]", [])
-        | Text t :: r, _ -> Con ("::", [ Const (CStr t); build r vs ])
+        | [], _ -> Tree.Con ("[]", [])
+        | Text t :: r,
+          _ -> Tree.Con ("::", [ Tree.Const (Tree.CStr t); build r vs ])
         | Hole (c, left, zero, w) :: r, v :: vr ->
-            Con ("::", [ hole c left zero w v; build r vr ])
-        | Hole _ :: _, [] -> error "printf: a hole without its value" in
+            Tree.Con ("::", [ hole c left zero w v; build r vr ])
+        | Hole _ :: _, [] -> Lexer.error "printf: a hole without its value" in
       let values =
-        List.filteri (fun i _ -> i < holes) given @ List.map var missing in
-      let s = App (var "String.concat", [ Const (CStr ""); build ps values ]) in
+        List.filteri (fun i _ -> i < holes) given @ List.map Tree.var missing in
+      let s = Tree.App
+        (Tree.var "String.concat",
+          [ Tree.Const (Tree.CStr ""); build ps values ]) in
       (* bprintf's pieces each added to the buffer, when the values are
        * names or constants (evaluated in any order, the same; else the
        * concatenation, its values evaluated as OCaml's are) *)
       let simple =
-        List.for_all (function Var _ | Const _ -> true | _ -> false) values in
+        List.for_all (function Tree.Var _ | Tree.Const _ -> true | _ -> false)
+          values in
       let rec adds b ps vs =
         match ps, vs with
-        | [], _ -> Con ("()", [])
-        | [ Text t ], _ -> App (var "Buffer.add_string", [ b; Const (CStr t) ])
+        | [], _ -> Tree.Con ("()", [])
+        | [ Text t ],
+          _ -> Tree.App
+            (Tree.var "Buffer.add_string", [ b; Tree.Const (Tree.CStr t) ])
         | Text t :: r, _ ->
-            Seq (App (var "Buffer.add_string", [ b; Const (CStr t) ]), adds b r vs)
+            Tree.Seq (Tree.App
+              (Tree.var "Buffer.add_string", [ b; Tree.Const (Tree.CStr t) ]),
+                adds b r vs)
         | [ Hole (c, left, zero, w) ], v :: _ ->
-            App (var "Buffer.add_string", [ b; hole c left zero w v ])
+            Tree.App (Tree.var "Buffer.add_string", [ b; hole c left zero w v ])
         | Hole (c, left, zero, w) :: r, v :: vr ->
-            Seq (App (var "Buffer.add_string", [ b; hole c left zero w v ]),
+            Tree.Seq (Tree.App
+              (Tree.var "Buffer.add_string", [ b; hole c left zero w v ]),
               adds b r vr)
-        | Hole _ :: _, [] -> error "printf: a hole without its value" in
+        | Hole _ :: _, [] -> Lexer.error "printf: a hole without its value" in
       let e = match name, first with
-        | "Printf.ksprintf", Some k -> App (k, [ s ])
+        | "Printf.ksprintf", Some k -> Tree.App (k, [ s ])
         | "Printf.bprintf", Some b
-          when simple && (match b with Var _ -> true | _ -> false) ->
+          when simple && (match b with Tree.Var _ -> true | _ -> false) ->
             adds b ps values
-        | "Printf.bprintf", Some b -> App (var "Buffer.add_string", [ b; s ])
+        | "Printf.bprintf",
+          Some b -> Tree.App (Tree.var "Buffer.add_string", [ b; s ])
         | _ -> s in
-      let e = if missing = [] then e else Fun (missing, e) in
+      let e = if missing = [] then e else Tree.Fun (missing, e) in
       (match List.filteri (fun i _ -> i >= holes) given with
        | [] -> e
-       | extra -> App (e, extra))
+       | extra -> Tree.App (e, extra))
   | _ ->
-      error
+      Lexer.error
         (name ^ ": its format must be a string written there (tiny-ml reads it)")

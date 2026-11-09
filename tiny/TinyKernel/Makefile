@@ -138,13 +138,16 @@ all: $(O)/boot.img
 
 # an object: of a .tm made in _make/, or of one here, or of the C
 # runtime's; the .tm made are kept (make deletes what it made on the
-# way to another target)
-$(O)/%.o: $(O)/%.tm
+# way to another target). (An object depends on tiny-assembler too,
+# when AS is a path, as TMLBIN below: an object's format changes with
+# it, tiny-object 2, and one of the old would be refused by the linker)
+ASBIN = $(wildcard $(AS))
+$(O)/%.o: $(O)/%.tm $(ASBIN)
 	$(AS) -o $@ $<
-$(O)/%.o: %.tm
+$(O)/%.o: %.tm $(ASBIN)
 	@mkdir -p $(@D)
 	$(AS) -o $@ $<
-$(O)/%.o: $(L)/%.tm
+$(O)/%.o: $(L)/%.tm $(ASBIN)
 	@mkdir -p $(@D)
 	$(AS) -o $@ $<
 .SECONDARY:
@@ -253,8 +256,8 @@ I_TinyProfiler = TinyCalls TinyLibSystem TinyLibSymbols
 I_TinyDatabase = TinyCalls TinyLibSystem
 I_TinyVCS = TinyCalls TinyLibSystem
 I_TinyBuildSystem = TinyCalls TinyLibSystem
-I_TinyAssembler = TinyCalls TinyLibSystem TinyMachineISA
-I_TinyLinker = $(I_TinyAssembler) TinyLibSymbols
+I_TinyAssembler = TinyCalls TinyLibSystem TinyMachineISA TinyMachineAsm
+I_TinyLinker = TinyCalls TinyLibSystem TinyMachineISA TinyLibSymbols
 # (TinyC.ml on its parts, TinyC/, the compiler's passes; each part after
 # the ones before it)
 CC_PARTS = TinyCTypes TinyCLexer TinyCTree TinyCLower TinyCParser TinyCMachine

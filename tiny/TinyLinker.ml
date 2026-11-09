@@ -69,8 +69,8 @@ let layout (items : ISA.item list) : layout =
     | Space n -> placed := (!pc, it) :: !placed; pc := !pc + n
     | Chunk (s, _) ->
         placed := (!pc, it) :: !placed; pc := !pc + String.length s
-    | Section true -> data_at := !pc
-    | Piece | Section false -> ());
+    | SectionData -> data_at := !pc
+    | Piece | SectionCode -> ());
   { labels; order = List.rev !order; placed = List.rev !placed;
     data_at = !data_at }
 
@@ -156,25 +156,33 @@ let sweep (objects : ISA.item list list) =
  * goes on in the section its object was in (sweep keeps or drops it
  * whole, with its section) *)
 let sectioned (items : ISA.item list) : ISA.item list =
-  let rec go cur (l : ISA.item list) : ISA.item list = match l with
-    | [] -> []
-    | Piece :: l -> Piece :: Section cur :: go cur l
-    | (Section d as it) :: l -> it :: go d l
-    | it :: l -> it :: go cur l in
-  Section false :: go false items
+  let section in_data : ISA.item =
+    if in_data then SectionData else SectionCode in
+  (* (tail-recursive: an image's items are many, the kernel's tens of
+   * thousands, and tiny-kernel's stack is small: old, it :: go l,
+   * a frame an item, ld's stack overflowed on it) *)
+  let rec go in_data (l : ISA.item list) (acc : ISA.item list) =
+    match l with
+    | [] -> List.rev acc
+    | Piece :: l -> go in_data l (section in_data :: Piece :: acc)
+    | SectionCode :: l -> go false l (SectionCode :: acc)
+    | SectionData :: l -> go true l (SectionData :: acc)
+    | it :: l -> go in_data l (it :: acc) in
+  go false items [ SectionCode ]
 
 (* -n: the text first, then the data from the next 4 KB (a page: the
  * kernel's segments, plan_tiny_memory.md), Unix's 0410 (whose ld -n
- * rounded the data to the PDP-11's 8 KB). One Section true is left
+ * rounded the data to the PDP-11's 8 KB). One SectionData is left
  * between them, where layout notes the data's start *)
 let gather (items : ISA.item list) : ISA.item list =
   let text = ref [] and data = ref [] and in_data = ref false in
   let add it = if !in_data then data := it :: !data else text := it :: !text in
   List.iter (fun (it : ISA.item) ->
     match it with
-    | Section d -> in_data := d; add (ISA.Align 4)
+    | SectionCode -> in_data := false; add (ISA.Align 4)
+    | SectionData -> in_data := true; add (ISA.Align 4)
     | it -> add it) items;
-  List.rev !text @ [ ISA.Align 4096; Section true ] @ List.rev !data
+  List.rev !text @ [ ISA.Align 4096; ISA.SectionData ] @ List.rev !data
 
 (* the image's order: the objects', or the text first (-n) *)
 type sections = In_order | Text_first
@@ -207,7 +215,7 @@ let link (sections : sections) (objects : ISA.item list list)
           with ISA.Error e ->
             ISA.error (e ^ " (" ^ said t ^ ")")) relocs;
         Buffer.add_string b (Bytes.to_string s)
-    | Label _ | Align _ | Piece | Section _ -> ());
+    | Label _ | Align _ | Piece | SectionCode | SectionData -> ());
   (* (old: the table's labels sorted by address, those at one address in
    * the table's order, which is OCaml's or TinyLibCore's) *)
   Buffer.contents b, lay.order, lay.data_at

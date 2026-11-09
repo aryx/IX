@@ -68,6 +68,18 @@ val csr_names : string array
 exception Error of string
 val error : string -> 'a
 
+(* the machine's own instructions, which TinyMachineDevices runs, not
+ * the CPU (whose decode does not know them): a register of control by
+ * its number in csr_names *)
+type machine_instr =
+  | Csrr of reg * int                 (* d, csr *)
+  | Csrw of int * reg                 (* csr, a *)
+  | Eret
+  | Wfi
+  | Csrrw of reg * int * reg          (* d, csr, a: both at once *)
+  | Amoswap of reg * reg * reg        (* d, a, (b) *)
+val encode_machine : machine_instr -> int
+
 (* a number in hexadecimal: 0x1f *)
 val hex : int -> string
 
@@ -107,8 +119,8 @@ type item =
       (* .piece: what follows, up to the next piece, is left out by the
        * link when nothing reaches it (tiny-ml's functions and static
        * blocks) *)
-  | Section of bool                   (* the data's (true, .data) or the
-                                       * text's *)
+  | SectionCode                       (* .text: what follows is code *)
+  | SectionData                       (* .data: what follows is data *)
 
 (* for tiny-linker -debug's *)
 val show_item : item -> string

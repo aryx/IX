@@ -59,6 +59,27 @@ exception Error of string
 (* old: Printf.ksprintf's, a format and its values *)
 let error s = raise (Error s)
 
+(* the machine's own instructions, which TinyMachineDevices runs, not
+ * the CPU: a register of control (csr) by its number *)
+type machine_instr =
+  | Csrr of reg * int                 (* d, csr *)
+  | Csrw of int * reg                 (* csr, a *)
+  | Eret
+  | Wfi
+  | Csrrw of reg * int * reg          (* d, csr, a: both at once *)
+  | Amoswap of reg * reg * reg        (* d, a, (b) *)
+
+(* (old: the assembler's, by hand) *)
+let encode_machine (m : machine_instr) : int =
+  let w op d a k = (op lsl 24) lor (d lsl 20) lor (a lsl 16) lor k in
+  match m with
+  | Csrr (d, c) -> w 0x3a d 0 c
+  | Csrw (c, a) -> w 0x3b 0 a c
+  | Eret -> w 0x3c 0 0 0
+  | Wfi -> w 0x37 0 0 0
+  | Csrrw (d, c, a) -> w 0x3e d a c
+  | Amoswap (d, a, b) -> w 0x3d d a b
+
 (* a number in hexadecimal, 0x and its digits *)
 let hex n = Printf.sprintf "0x%x" n
 
@@ -155,12 +176,14 @@ type target = Name of string | Address of int
 type item =
   | Label of string | Align of int | Space of int
   | Chunk of string * (int * place * target) list | Piece
-  | Section of bool
+  | SectionCode | SectionData
 [@@deriving show]
 
 (* (Marshal's bytes after it: tiny-ml's Marshal stops the program on
- * bytes it cannot read, so another file is said not an object first) *)
-let magic = "tiny-object 1\n"
+ * bytes it cannot read, so another file is said not an object first.
+ * 2: the sections two constructors, old Section of bool, true the
+ * data's: an object of 1 is refused, not misread) *)
+let magic = "tiny-object 2\n"
 let to_object (items : item list) =
   magic ^ Marshal.to_string items [ Marshal.No_sharing ]
 let of_object (s : string) : item list =

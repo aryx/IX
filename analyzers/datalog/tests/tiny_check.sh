@@ -54,7 +54,7 @@ tiny-utils|-|$S $R $T/TinyUtilities.ml
 tiny-c|-|$S $TC $T/TinyC.ml
 tiny-db|-|$S $T/TinyDatabase.ml
 tiny-vcs|-I lib_crypto|$S $T/TinyVCS.ml
-tiny-assembler|-|$CPU $S $T/TinyLibSymbols.ml $T/TinyAssembler.ml
+tiny-assembler|-|$CPU $M/TinyMachineAsm.ml $S $T/TinyLibSymbols.ml $T/TinyAssembler.ml
 tiny-linker|-|$CPU $S $T/TinyLibSymbols.ml $T/TinyLinker.ml
 tiny-cpu|-|$CPU $S $T/TinyCPU.ml
 tiny-prof|-|$S $T/TinyLibSymbols.ml $T/TinyProfiler.ml

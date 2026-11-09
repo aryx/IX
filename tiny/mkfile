@@ -51,6 +51,7 @@ $D/TinyCLower.$O: $D/TinyCTree.$O
 $D/TinyCParser.$O: $D/TinyCLower.$O
 $D/TinyCMachine.$O: $D/TinyCParser.$O $D/TinyMachineAsm.$O
 $D/TinyMachineAsm.$O: $D/TinyMachineISA.$O
+$D/TinyAssembler.$O: $D/TinyMachineAsm.$O
 $D/TinyC.$O: $D/TinyCMachine.$O
 $D/TinyMachine.$O: TinyMachine/TinyMachineDevices.ml TinyKernel/TinyKernelNetwork.ml TinyMachine/TinyMachinePeer.ml $D/Parallel.$O
 
@@ -113,9 +114,9 @@ $D/tiny-c: $D/TinyLibSystem.$O $CCPO $D/TinyC.$O $LIBS
 $D/tiny-ml: $D/TinyLibSystem.$O $MLCO $D/TinyML.$O $LIBS
 	$START TinyLibSystem $MLC TinyML Std_exit -o $D/TinyML.start.$O
 	$LINK -o $target $D/TinyML.start.$O $STDOBJS $D/TinyLibSystem.$O $MLCO $D/TinyML.$O $STDEND
-$D/tiny-assembler: $D/TinyLibSystem.$O $D/TinyMachineISA.$O $D/TinyAssembler.$O $LIBS
-	$START TinyLibSystem TinyMachineISA TinyAssembler Std_exit -o $D/TinyAssembler.start.$O
-	$LINK -o $target $D/TinyAssembler.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyMachineISA.$O $D/TinyAssembler.$O $STDEND
+$D/tiny-assembler: $D/TinyLibSystem.$O $D/TinyMachineISA.$O $D/TinyMachineAsm.$O $D/TinyAssembler.$O $LIBS
+	$START TinyLibSystem TinyMachineISA TinyMachineAsm TinyAssembler Std_exit -o $D/TinyAssembler.start.$O
+	$LINK -o $target $D/TinyAssembler.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyMachineISA.$O $D/TinyMachineAsm.$O $D/TinyAssembler.$O $STDEND
 $D/tiny-linker: $D/TinyLibSystem.$O $D/TinyMachineISA.$O $D/TinyLibSymbols.$O $D/TinyLinker.$O $LIBS
 	$START TinyLibSystem TinyMachineISA TinyLibSymbols TinyLinker Std_exit -o $D/TinyLinker.start.$O
 	$LINK -o $target $D/TinyLinker.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyMachineISA.$O $D/TinyLibSymbols.$O $D/TinyLinker.$O $STDEND

@@ -7,7 +7,9 @@
  * this file adds (li and la, a value or a label's address put in a
  * register; mov, call, ret, j, nop), and a listing worked out by hand.
  * TinyMachine/TinyMachineISA.mli has the instructions' words, which
- * this file makes.
+ * this file makes; TinyMachine/TinyMachineAsm.mli the lines a text is
+ * read as (its parse), what the compilers make too: this file is their
+ * encoding, a line an item of the object.
  *
  * tiny-machine's instructions were designed to keep this assembler
  * simple: one format, every instruction 4 bytes, every immediate the

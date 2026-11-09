@@ -1,12 +1,12 @@
-tiny/TinyC/TinyCLower.ml:111: stack: TinyCLower.lower calls itself, not a tail call, over a list
-tiny/TinyC/TinyCLower.ml:115: stack: TinyCLower.lower calls itself, not a tail call, over a list
 tiny/TinyC/TinyCLower.ml:120: stack: TinyCLower.lower calls itself, not a tail call, over a list
-tiny/TinyC/TinyCLower.ml:127: stack: TinyCLower.lower calls itself, not a tail call, over a list
-tiny/TinyC/TinyCLower.ml:137: stack: TinyCLower.lower calls itself, not a tail call, over a list
-tiny/TinyC/TinyCParser.ml:196: stack: TinyCParser.declarator calls itself, not a tail call, over a list
-tiny/TinyC/TinyCParser.ml:199: stack: TinyCParser.declarator3 calls itself, not a tail call, over a list
-tiny/TinyC/TinyCParser.ml:355: stack: TinyCParser.call_args calls itself, not a tail call, over a list
-tiny/TinyC/TinyCTypes.ml:55: stack: TinyCTypes.size calls itself, not a tail call, over a list
+tiny/TinyC/TinyCLower.ml:124: stack: TinyCLower.lower calls itself, not a tail call, over a list
+tiny/TinyC/TinyCLower.ml:129: stack: TinyCLower.lower calls itself, not a tail call, over a list
+tiny/TinyC/TinyCLower.ml:136: stack: TinyCLower.lower calls itself, not a tail call, over a list
+tiny/TinyC/TinyCLower.ml:146: stack: TinyCLower.lower calls itself, not a tail call, over a list
+tiny/TinyC/TinyCParser.ml:174: stack: TinyCParser.declarator calls itself, not a tail call, over a list
+tiny/TinyC/TinyCParser.ml:177: stack: TinyCParser.declarator3 calls itself, not a tail call, over a list
+tiny/TinyC/TinyCParser.ml:342: stack: TinyCParser.call_args calls itself, not a tail call, over a list
+tiny/TinyC/TinyCTypes.ml:51: stack: TinyCTypes.size calls itself, not a tail call, over a list
 tiny/TinyDatabase.ml:173: evalorder: operands at 173:13 and 174:13, both with an effect: their order the compiler's
 tiny/TinyDatabase.ml:177: stack: TinyDatabase.ins calls itself, not a tail call, over a list
 tiny/TinyDatabase.ml:190: evalorder: operands at 190:17 and 192:17, both with an effect: their order the compiler's
@@ -23,9 +23,6 @@ tiny/TinyKernel/steps/t6/TinyMkfs.ml:30: int31: in TinyMkfs's toplevel, 0x7f5f00
 tiny/TinyKernel/steps/t6/TinyMkfs.ml:48: int31: in chain, 0xffffffff: not on the Pi 1's 31 bits
 tiny/TinyKernel/steps/t6/TinyMkfs.ml:69: int31: in TinyMkfs.make, 0xffffffff: not on the Pi 1's 31 bits
 tiny/TinyKernel/steps/t6/TinyMkfs.ml:80: int31: in get32, 0xffffffff: not on the Pi 1's 31 bits
-tiny/TinyLinker.ml:161: stack: go calls itself, not a tail call, over a list
-tiny/TinyLinker.ml:162: stack: go calls itself, not a tail call, over a list
-tiny/TinyLinker.ml:163: stack: go calls itself, not a tail call, over a list
 tiny/TinyML/TinyMLCompile.ml:393: stack: TinyMLCompile.match_cases calls itself, not a tail call, over a list
 tiny/TinyML/TinyMLCompile.ml:430: stack: TinyMLCompile.app calls itself, not a tail call, over a list
 tiny/TinyML/TinyMLCompile.ml:433: stack: TinyMLCompile.app calls itself, not a tail call, over a list

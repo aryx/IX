@@ -67282,3 +67282,19 @@ Claude noted the object format might later move out of ISA, then asked for the g
 **Yoann:**
 
 > (abusing bool sometimes hurt readability)
+
+------------------------------------------------------------------------
+
+## 2026-11-09 17:33
+
+**Yoann:**
+
+> dont you think it's more readable that way?
+
+**Claude (summary):**
+
+Claude committed step 4 as ba4aefc8 and held step 5 until the design choices were settled.
+Claude proposed replacing ISA's `Section of bool` with `SectionCode` and `SectionData` constructors, so section kinds read by name.
+Claude noted this changes the object format, so objects built by the old assembler must be rebuilt rather than misread.
+Claude also proposed the same constructors in the object, so the `.mli` signatures state which section is meant.
+The other open choices were an `Instr_sym` case, machine instructions moved into ISA, and `Ascii` and `Word` data directives.

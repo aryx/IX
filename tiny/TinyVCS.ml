@@ -8,15 +8,15 @@
  * same log. They also check diff against GNU patch (applying the diff
  * gives back the new file).
  *)
-
+open Common
 module TSys = TinyLibSystem
 
 (* -h: how, by examples, each one as it runs *)
-open Common
-
 let help = {|usage: tiny-vcs CMD [args], in a directory with .tvcs, or below it
+
 git's ideas, the roads after git: no staging (every file tracked but dotfiles
 and .tvcsignore's), every command undoable, a merge's conflicts committed.
+
   tiny-vcs init; echo hello > a.txt
   tiny-vcs status                    A a.txt
   tiny-vcs commit -m first           master: d1c4126e...
@@ -31,8 +31,6 @@ and .tvcsignore's), every command undoable, a merge's conflicts committed.
 
 exception Error of string
 
-(* (old: a format, Printf.ksprintf's: tiny-ml reads a format only where
- * it is written, Printf.sprintf at the call) *)
 let error s = raise (Error s)
 
 (*****************************************************************************)

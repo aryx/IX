@@ -5,9 +5,7 @@
  * tests/TinyEditorLine_test.sh runs scripts through this
  * editor and through 9base's sam -d, and compares the results.
  *)
-
 open Common
-
 (* the regular expressions: compile, search, search_back *)
 open TinyLibRegex
 

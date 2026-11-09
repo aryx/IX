@@ -270,6 +270,11 @@ let music m =
   if m.over || m.quiet then None
   else Some { pace = 2000 / (10 + (m.board.rows / 10)); parts = theme }
 
+(*****************************************************************************)
+(* Entry point *)
+(*****************************************************************************)
+
+(* see TinyKernel/user/tetris.ml for main() *)
 let game = { 
     width = 288; height = 336;
     init = (fun seed -> start seed false);

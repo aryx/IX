@@ -82,7 +82,7 @@ let options letters args =
   go [] args
 
 (*****************************************************************************)
-(* Filters *)
+(* Filters, each_input() *)
 (*****************************************************************************)
 
 (* [piece c n]: what the channel gives next, up to n bytes, without
@@ -188,6 +188,10 @@ let wc (caps : < filter; .. >) args =
       total.bytes <- total.bytes + c.bytes) in
   if !files_counted > 1 then report total (Some "total");
   status
+
+(*****************************************************************************)
+(* tail, tee, xd *)
+(*****************************************************************************)
 
 (* the text from its nth line from the end, or from its nth line (+n).
  * tail is the one filter that reads all its input first: until the
@@ -295,7 +299,7 @@ let xd (caps : < filter; .. >) args =
     print caps (address (!addr + String.length !pending) ^ "\n"))
 
 (*****************************************************************************)
-(* grep *)
+(* grep, sort *)
 (*****************************************************************************)
 
 (* the lines that match; -v: that do not; -i: whatever the letters'
@@ -395,7 +399,7 @@ let sort (caps : < filter; .. >) args =
   status
 
 (*****************************************************************************)
-(* Walkers *)
+(* Walkers, fold (), each_path() *)
 (*****************************************************************************)
 
 (* a directory's entries, their names sorted; the current directory's
@@ -481,6 +485,10 @@ let du (caps : < Cap.stdout; Cap.stderr; Cap.open_in; Cap.readdir; .. >) args =
            print caps (string_of_int k ^ "\t" ^ quote !!p ^ "\n");
          k)))
 
+(*****************************************************************************)
+(* rm, mkdir, cp, mv, ln, touch *)
+(*****************************************************************************)
+
 (* -r: a directory with what it has, its entries first *)
 let rm
     (caps : < Cap.stderr; Cap.open_in; Cap.readdir; Cap.open_out; .. >) args =
@@ -534,7 +542,7 @@ let resolved caps (p : Fpath.t) =
   let p = !!p in
   let p =
     if p <> "" && p.[0] = '/' then p
-    else Fpath.to_string (TSys.getcwd caps) ^ "/" ^ p in
+    else !!(TSys.getcwd caps) ^ "/" ^ p in
   List.fold_left (fun acc n ->
       if n = "" || n = "." then acc
       else if n = ".." then (match acc with [] -> [] | _ :: r -> r)
@@ -586,7 +594,7 @@ let touch (caps : < Cap.stderr; Cap.open_in; Cap.open_out; .. >) args =
     TSys.touch caps file)
 
 (*****************************************************************************)
-(* Processes *)
+(* Processes, ps, kill *)
 (*****************************************************************************)
 
 (* the processes, a line each in /dev/ps (or the file given, a copy of
@@ -642,7 +650,7 @@ let kill (caps : < Cap.stderr; Cap.kill; .. >) args =
 
 let pwd (caps : < Cap.stdout; Cap.env; .. >) args =
   if args <> [] then raise Usage;
-  print caps (Fpath.to_string (TSys.getcwd caps) ^ "\n");
+  print caps (!!(TSys.getcwd caps) ^ "\n");
   0
 
 (* seconds, and thousandths after a point: sleep .5 *)

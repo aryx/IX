@@ -106,4 +106,9 @@ let key (k : key) : msg list =
   | Char 'c' -> [ Clear ]
   | _ -> []
 
+(*****************************************************************************)
+(* Entry point *)
+(*****************************************************************************)
+
+(* see TinyKernel/user/calc.ml for main() *)
 let calculator = { init = start; view; update; key }

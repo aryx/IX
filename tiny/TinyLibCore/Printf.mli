@@ -9,8 +9,8 @@
 (* %x: an integer, not negative, in hexadecimal, lower case *)
 val hex : int -> string
 
-(* %S: a string as OCaml writes it, between quotes, " \ and the
- * control characters escaped *)
+(* %S: a string as OCaml writes it, between quotes, the quote, the
+ * backslash and the control characters escaped *)
 val quoted : string -> string
 
 (* a width: [pad left zero w s] s to w characters, spaces before it

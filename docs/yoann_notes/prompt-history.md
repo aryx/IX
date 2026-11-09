@@ -66886,3 +66886,49 @@ Claude found nothing to commit, because everything had already landed in commit 
 Claude noticed that TinyKernel.mli's "dropped:" line says "Paging", though paging exists as the MEMORY=pages option.
 Claude recommended rewording that dropped entry to "paging to disk (swap)" so it matches the option.
 Claude also listed the GUI layer and the compilers (TinyC, then TinyML) as the next programs to tidy.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 14:50
+
+**Yoann:**
+
+> yes fix TinyKernel.mli
+
+**Claude (summary):**
+
+Claude found that the pages already exist, and line 414 mentions copy-on-write.
+Claude suspected the copy-on-write exercise might already be done, and began checking it.
+Claude also reflowed an overlong dropped line while verifying the TinyKernel.mli fix.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 14:54
+
+**Yoann:**
+
+> ok let's do the compilers
+
+**Claude (summary):**
+
+Claude confirmed five TinyC bugs in the code before reporting them.
+Claude found `10UL` parsed as an 8-byte long long, silently dropping the unsigned suffix.
+Claude found the `do ... while` parser accepting any token where `while` should appear.
+Claude found `volatile` missing from `is_type`, and parameters still numbered `Param (8 * i)` from 8-byte slots.
+Claude was still waiting on a TinyML agent, so its TinyML findings were not yet reported.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 15:03
+
+**Yoann:**
+
+> I just wanted to do the "use fpath, introduce type aliases, etc." phase I did before on TinyBuildSystem and other files; why so many leftover and bugs on TinyC and TinyML?
+
+**Claude (summary):**
+
+Claude proposed fixing the four TinyC bugs first, in a small commit of one or two lines each.
+Claude traced them to C the tiny programs never write, such as `10UL`, `volatile`, and `"*)"` inside strings.
+Claude noted that slots shrank from 8 bytes to 4, leaving `8 * i` and `/ 8` that still compute correctly.
+Claude also found `env` and `tenv` still passed around as always `[]` after the name list was split.
+Claude then listed the TinyC and TinyML cleanup items and said Fpath would add little.

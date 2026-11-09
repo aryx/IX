@@ -16,6 +16,7 @@ val int_t : ty
 val long_t : ty
 val char_t : ty
 val int_max : int64
+val uint_max : int64
 val size : ty -> int
 val align : ty -> int
 val round : int -> int -> int

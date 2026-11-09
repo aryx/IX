@@ -61,7 +61,19 @@ let lex (s : string) : (token * int) array =
     else if s.[i] = '*' && s.[i + 1] = ')' then
       if depth = 1 then i + 2 else comment (i + 2) (depth - 1)
     else if s.[i] = '(' && s.[i + 1] = '*' then comment (i + 2) (depth + 1)
+    (* a string in a comment is skipped whole, as OCaml does, so that a
+     * comment's end in it does not end the comment; and so is the
+     * character '"', which would start one *)
+    else if s.[i] = '"' then comment (in_string (i + 1)) depth
+    else if s.[i] = '\'' && i + 2 < n && s.[i + 1] = '"' && s.[i + 2] = '\''
+    then comment (i + 3) depth
     else (if s.[i] = '\n' then incr line; comment (i + 1) depth)
+  (* the index after the string's closing quote *)
+  and in_string i =
+    if i >= n then error "unterminated string in a comment"
+    else if s.[i] = '"' then i + 1
+    else if s.[i] = '\\' then in_string (i + 2)
+    else (if s.[i] = '\n' then incr line; in_string (i + 1))
   in
   let rec go i =
     if i < n then

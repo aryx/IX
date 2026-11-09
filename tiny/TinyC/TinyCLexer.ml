@@ -8,7 +8,9 @@
 (*****************************************************************************)
 
 type token =
-  | Id of string | Num of int64 * bool (* LL *) | Str of string | P of string
+  | Id of string
+  | Num of int64 * bool * bool (* unsigned, long long *)
+  | Str of string | P of string
   | EOF
 
 let puncts = [ "<<="; ">>="; "..."; "->"; "++"; "--"; "<<"; ">>"; "<="; ">=";
@@ -121,17 +123,18 @@ and text macros open_ (where : string) (dir : Fpath.t) (s : string) =
           let j =
             span k (function 'u' | 'U' | 'l' | 'L' -> true | _ -> false) in
           let suffix = String.lowercase_ascii (String.sub s k (j - k)) in
-          emit i (Num (Int64.of_string lit,
-                       String.length suffix >= 2
-                       && String.contains
-                            (String.sub suffix 1 (String.length suffix - 1))
-                            'l'));
+          (* u makes it unsigned, and two l's a long long; one l alone
+           * changes nothing, a long being an int here *)
+          let ls = ref 0 in
+          String.iter (fun c -> if c = 'l' then incr ls) suffix;
+          emit i (Num (Int64.of_string lit, String.contains suffix 'u',
+                       !ls >= 2));
           go j false
       | '\'' ->
           let v, j =
             if s.[i + 1] = '\\' then escape (i + 2)
             else Char.code s.[i + 1], i + 2 in
-          emit i (Num (Int64.of_int v, false));
+          emit i (Num (Int64.of_int v, false, false));
           go (j + 1) false
       | '"' ->
           let b = Buffer.create 16 in

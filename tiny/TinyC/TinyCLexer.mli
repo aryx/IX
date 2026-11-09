@@ -1,6 +1,6 @@
 type token =
     Id of string
-  | Num of int64 * bool
+  | Num of int64 * bool * bool (* unsigned, long long *)
   | Str of string
   | P of string
   | EOF

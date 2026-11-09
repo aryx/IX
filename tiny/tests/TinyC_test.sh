@@ -59,9 +59,12 @@ printf '#define BAD 1 +\nint main(void) {\n\n  return BAD;\n}\n' > $W/err/macro.
 # (a parameter list not closed: a segmentation fault before, 2026-11-06)
 printf 'int f( {\n' > $W/err/params.c
 printf 'int g(int a' > $W/err/end.c
+# (any word taken for the while: until compiled as one, 2026-11-09)
+printf 'int main(void) {\n  int i;\n  do i++; until (i);\n  return i;\n}\n' > $W/err/do.c
 for want in "expr.c: line 3: expected an expression" "semi.c: line 3: expected ;" \
             "bad.h: line 3: expected an expression" "macro.c: line 4: expected an expression" \
-            "params.c: line 1: expected )" "end.c: line 1: expected )"; do
+            "params.c: line 1: expected )" "end.c: line 1: expected )" \
+            "do.c: line 3: expected while"; do
   c=${want%%.*}.c; [ $c = bad.c ] && c=include.c
   got=$(cd $W/err && $TC -o /dev/null $c 2>&1)
   if [ "$got" = "$want" ]; then echo "ok error in $c"; else echo "FAIL error in $c: $got"; failures=$((failures + 1)); fi

@@ -37,7 +37,7 @@ let ir_only = ref false
 
 let asm_name storage name = if storage = Static then name ^ "<>" else name
 
-(* a global's init_data, as DATA at offsets *)
+(* a global's initializer, as DATA at offsets *)
 let rec init_data name t off =
   match t, peek () with
   | Arr (e, _), P "{" ->
@@ -60,7 +60,7 @@ let rec init_data name t off =
       (match e.d, e.t with
        | Const v, _ -> datum name off (Value (size t, v))
        | Addr (Global s), _ -> datum name off (Address s)
-       | _ -> error (name ^ ": not a constant init_data"));
+       | _ -> error (name ^ ": not a constant initializer"));
       1
 
 let external_decl () =

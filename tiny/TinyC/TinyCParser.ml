@@ -116,7 +116,8 @@ let string_lit s =
 let is_type () =
   match peek () with
   | Id ("void" | "char" | "short" | "int" | "long" | "unsigned" | "signed"
-        | "struct" | "enum" | "static" | "extern" | "const" | "typedef") -> true
+        | "struct" | "enum" | "static" | "extern" | "const" | "volatile"
+        | "typedef") -> true
   | Id x ->
       Hashtbl.mem typedefs x
       && not (List.exists (fun s -> Hashtbl.mem s x) !scopes)
@@ -408,8 +409,11 @@ and member e f =
 
 and primary () =
   match next () with
-  | Num (v, ll) ->
-      num v (if ll || Int64.compare v int_max > 0 then long_t else int_t)
+  | Num (v, u, ll) ->
+      (* C's rule, shortened: the first of int, long long that holds the
+       * value (unsigned ones with a u), an int being 4 bytes *)
+      let max = if u then uint_max else int_max in
+      num v (Int ((if ll || Int64.compare v max > 0 then 8 else 4), not u))
   | Str s -> string_lit s
   | P "(" -> let e = expr () in expect ")"; e
   | Id f when peek () = P "("
@@ -470,7 +474,7 @@ let rec statement () : stmt =
   | Id "while" -> let c = cond () in For (None, Some c, None, statement ())
   | Id "do" ->
       let body = statement () in
-      ignore (next ());
+      if next () <> Id "while" then error "expected while";
       let c = cond () in
       expect ";"; Do (body, c)
   | Id "for" ->

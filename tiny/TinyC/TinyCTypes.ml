@@ -32,6 +32,8 @@ let int_t = Int (4, true) and long_t = Int (8, true) and char_t = Int (1, true)
 (* an int's largest value (old: 0x7fffffffL, a literal tiny-ml does
  * not read) *)
 let int_max = Int64.of_string "0x7fffffff"
+(* an unsigned int's *)
+let uint_max = Int64.of_string "0xffffffff"
 let rec size = function
   | Void -> 1 | Int (n, _) -> n | Ptr _ | Func _ -> 4
   | Arr (t, n) -> n * size t | Struct s -> s.ssize

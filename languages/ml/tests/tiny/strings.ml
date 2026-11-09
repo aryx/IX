@@ -1,4 +1,6 @@
 (* strings and characters *)
+(* a string in a comment, "with a comment's end *) in it", and the
+ * character '"', are skipped whole, as OCaml does *)
 let rec repeat s n = if n = 0 then "" else s ^ repeat s (n - 1)
 let rev s =
   let n = String.length s in

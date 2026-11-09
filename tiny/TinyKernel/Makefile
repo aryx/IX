@@ -262,8 +262,9 @@ I_TinyCLexer = TinyCTypes
 I_TinyCTree = $(I_TinyCLexer) TinyCLexer
 I_TinyCLower = $(I_TinyCTree) TinyCTree
 I_TinyCParser = $(I_TinyCLower) TinyCLower
-I_TinyCMachine = $(I_TinyCParser) TinyCParser
-I_TinyC = TinyCalls TinyLibSystem $(CC_PARTS)
+I_TinyMachineAsm = TinyMachineISA
+I_TinyCMachine = TinyMachineISA TinyMachineAsm $(I_TinyCParser) TinyCParser
+I_TinyC = TinyCalls TinyLibSystem TinyMachineISA TinyMachineAsm $(CC_PARTS)
 # (TinyML.ml on its parts, TinyML/, the compiler's passes; each part
 # after the ones before it)
 MLC = TinyMLLexer TinyMLTree TinyMLPrintf TinyMLParser TinyMLTypes TinyMLMachine TinyMLCompile
@@ -305,6 +306,7 @@ F_Bigmem = user/bigmem.ml
 F_Trace = user/trace.ml
 F_Debug = user/debug.ml
 F_TinyMachineISA = ../TinyMachine/TinyMachineISA.ml
+F_TinyMachineAsm = ../TinyMachine/TinyMachineAsm.ml
 F_TinyBrowserText = ../TinyBrowser/TinyBrowserText.ml
 F_TinyBrowserTokens = ../TinyBrowser/TinyBrowserTokens.ml
 F_TinyBrowserLines = ../TinyBrowser/TinyBrowserLines.ml
@@ -334,7 +336,7 @@ F_TinyCParser = ../TinyC/TinyCParser.ml
 F_TinyCMachine = ../TinyC/TinyCMachine.ml
 # (a static pattern's targets: make uses an implicit rule once in a
 # chain, and a unit's interface is another unit's prerequisite)
-UNITS = TinyCalls TinyLibSystem TinyLibSymbols TinyLibRegex TinyLibDraw TinyLibPlayground TinyLibGUI TinyProfiler TinyDatabase TinyVCS TinyBuildSystem TinyMachineISA TinyAssembler TinyLinker $(CC_PARTS) TinyC $(MLC) TinyML \
+UNITS = TinyCalls TinyLibSystem TinyLibSymbols TinyLibRegex TinyLibDraw TinyLibPlayground TinyLibGUI TinyProfiler TinyDatabase TinyVCS TinyBuildSystem TinyMachineISA TinyMachineAsm TinyAssembler TinyLinker $(CC_PARTS) TinyC $(MLC) TinyML \
   TinyWindows TinyAppTetris TinyAppCalculator TinyAppTemperature TinyEditorScreen $(OFFICE) TinyOffice TinyTroff TinyPlay $(BROWSER) TinyBrowserScreen TinyBrowser TinyTracer TinyDebugger \
   TinyShell TinyUtilities TinyEditorLine Square Machine Tetris Calc Temp Emacs Office Troff Play Www Bigmem Trace Debug
 .SECONDEXPANSION:

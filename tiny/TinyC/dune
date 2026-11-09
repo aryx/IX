@@ -5,4 +5,4 @@
  (wrapped false)
  (modules TinyCTypes TinyCLexer TinyCTree TinyCLower TinyCParser
   TinyCMachine)
- (libraries ix_core fpath))
+ (libraries ix_core fpath tiny_machine_cpu))

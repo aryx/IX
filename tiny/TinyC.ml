@@ -9,6 +9,7 @@ module Tree = TinyCTree
 module Parser = TinyCParser
 module Lower = TinyCLower
 module Machine = TinyCMachine
+module Asm = TinyMachineAsm
 module TSys = TinyLibSystem
 
 let usage = "usage: tiny-c [-ir] [-o out.tm] file.c"
@@ -45,18 +46,23 @@ An error names the file and the line: fact.c: line 3: expected ;
  *     Machine.machine       TinyCPU's assembly (Machine.global: data)
  *)
 
-(* [compile ir_only d]: d's assembly, the code of a function or the data
- * of a global (-ir: a function's stack machine's code, and no data) *)
-let compile (ir_only : bool) (d : Tree.def) : string * string =
+(* [compile d]: d's assembly, the code of a function or the data of a
+ * global *)
+let compile (d : Tree.def) : Asm.line list * Asm.line list =
   match d with
   | Tree.Function (f, locals, body) ->
-      let code = Lower.lower_function body in
-      if ir_only then
-        String.concat ""
-          ((f ^ ":\n") :: List.map (fun i -> "\t" ^ Lower.show i ^ "\n") code),
-        ""
-      else Machine.machine f locals code, ""
-  | Tree.Data (g, n, ds) -> "", if ir_only then "" else Machine.global g n ds
+      Machine.machine f locals (Lower.lower_function body), []
+  | Tree.Data (g, n, ds) -> [], Machine.global g n ds
+
+(* -ir: a function's stack machine's code, as text; a global's nothing *)
+let show_ir (d : Tree.def) : string =
+  match d with
+  | Tree.Function (f, _, body) ->
+      String.concat ""
+        ((f ^ ":\n")
+         :: List.map (fun i -> "\t" ^ Lower.show i ^ "\n")
+              (Lower.lower_function body))
+  | Tree.Data _ -> ""
 
 (*****************************************************************************)
 (* main *)
@@ -99,13 +105,18 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
         let code = Buffer.create 65536 and data = Buffer.create 4096 in
         while not (Parser.at_end ()) do
           List.iter (fun d ->
-            let c, dt = compile !ir_only d in
-            Buffer.add_string code c; Buffer.add_string data dt)
+            if !ir_only then Buffer.add_string code (show_ir d)
+            else begin
+              let c, dt = compile d in
+              List.iter (fun l -> Buffer.add_string code (Asm.print l)) c;
+              List.iter (fun l -> Buffer.add_string data (Asm.print l)) dt
+            end)
             (Parser.declaration ())
         done;
         let text =
           Buffer.contents code
-          ^ (if !ir_only then "" else "\t.data\n" ^ Buffer.contents data)
+          ^ (if !ir_only then ""
+             else Asm.print (Asm.Section true) ^ Buffer.contents data)
         in
         (match !output with
          | None -> TSys.print caps text

@@ -42,14 +42,15 @@ $D/TinyMLMachine.$O: $D/TinyMLTypes.$O
 $D/TinyMLCompile.$O: $D/TinyMLMachine.$O
 $D/TinyML.$O: $D/TinyMLCompile.$O
 
-# (tiny-c's passes, TinyC/, the same way)
-CCP=TinyCTypes TinyCLexer TinyCTree TinyCLower TinyCParser TinyCMachine
+# (tiny-c's passes, TinyC/, the same way, after TinyMachineAsm, the lines they make)
+CCP=TinyMachineISA TinyMachineAsm TinyCTypes TinyCLexer TinyCTree TinyCLower TinyCParser TinyCMachine
 CCPO=${CCP:%=$D/%.$O}
 $D/TinyCLexer.$O: $D/TinyCTypes.$O
 $D/TinyCTree.$O: $D/TinyCLexer.$O
 $D/TinyCLower.$O: $D/TinyCTree.$O
 $D/TinyCParser.$O: $D/TinyCLower.$O
-$D/TinyCMachine.$O: $D/TinyCParser.$O
+$D/TinyCMachine.$O: $D/TinyCParser.$O $D/TinyMachineAsm.$O
+$D/TinyMachineAsm.$O: $D/TinyMachineISA.$O
 $D/TinyC.$O: $D/TinyCMachine.$O
 $D/TinyMachine.$O: TinyMachine/TinyMachineDevices.ml TinyKernel/TinyKernelNetwork.ml TinyMachine/TinyMachinePeer.ml $D/Parallel.$O
 

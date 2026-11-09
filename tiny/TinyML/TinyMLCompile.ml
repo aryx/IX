@@ -12,10 +12,13 @@ open TinyMLMachine
 (* From the tree to the stack machine *)
 (*****************************************************************************)
 
-(* where a name's value is, and, for a function whose code is known,
- * that code and its arity *)
-type loc = Slot of int | Env of int | Glob of string * int | Static of string
-type binding = Loc of loc * (string * int) option | Ext of string * int
+(* where a name's value is: a slot of the frame, a field of the
+ * closure, a global of a unit (its table, its index), a static block *)
+type loc = Slot of slot | Env of int | Glob of sym * int | Static of sym
+(* a function whose code is known: that code, and its arity *)
+type known = sym * int
+(* a name's value, or a primitive (its name, its arity) *)
+type binding = Loc of loc * known option | Ext of string * int
 
 (* the values' table, as the types' (tglobals) *)
 let globals : (string, binding) Hashtbl.t = Hashtbl.create 1024
@@ -25,7 +28,14 @@ type fn =
 
 let cur = ref { code = []; nslots = 1; ntries = 0 }
 let emit i = (!cur).code <- i :: (!cur).code
-let slot () = let s = (!cur).nslots in (!cur).nslots <- s + 1; s
+let slot () : slot = let s = (!cur).nslots in (!cur).nslots <- s + 1; s
+
+(* a function's code begun, its frame of that many slots and handlers
+ * so far; then made, its label and parameters' count *)
+let start_fun nslots ntries =
+  cur := { code = []; nslots = nslots; ntries = ntries }
+let finish_fun (lab : sym) nparams =
+  machine lab nparams (!cur).nslots (List.rev (!cur).code)
 (* the functions to compile, in their order: a queue as two lists, the
  * next ones and the ones added since, last first (old: OCaml's Queue,
  * which TinyLibCore does not have) *)
@@ -156,7 +166,7 @@ let rec test acc s p fail =
   | PConst (CInt n) -> check [ Imm (tagged n); Op (Cmp Eq) ]; acc
   | PConst (CChar n) -> check [ Imm (tagged n); Op (Cmp Eq) ]; acc
   | PConst (CStr str) ->
-      check [ Addr (static_string str, 8); CallC ("ml_equal", 2) ]; acc
+      check [ Addr (static_string str); CallC ("ml_equal", 2) ]; acc
   | PTuple ps -> fields 0 ps acc
   (* a record is a tuple: the fields not named are _ *)
   | PRecord (fs, idxs, n) ->
@@ -170,7 +180,7 @@ let rec test acc s p fail =
        | KBlock t ->
            if ci.nconst > 0 then (emit (Get s); emit (Op IsInt); emit (Jnz fail));
            if ci.nblock > 1 then check [ Op Tag; Imm (tagged t); Op (Cmp Eq) ]
-       | KExn -> check [ Field 0; Addr (exn_id c, 8); Op (Cmp Eq) ]);
+       | KExn -> check [ Field 0; Addr (exn_id c); Op (Cmp Eq) ]);
       fields (if ci.kind = KExn then 1 else 0) ps acc
   | POr (a, b) ->
       let other = label () and ok = label () in
@@ -181,7 +191,7 @@ let rec test acc s p fail =
       emit (Label ok);
       acc
 
-let match_failure () = emit (Addr (exn_const "Match_failure", 8)); emit Raise
+let match_failure () = emit (Addr (exn_const "Match_failure")); emit Raise
 
 (* a primitive: an instruction, or a call of the runtime; a comparison
  * of integers inlined, the others the runtime's compare *)
@@ -228,15 +238,15 @@ let prim p n ty =
 (* a closure: static, its symbol, when it captures nothing, else
  * built on the stack; each with its code's label and arity *)
 type closure =
-  | Closure_static of string * string * int
-  | Closure_pushed of string * int
+  | Closure_static of sym * sym * int
+  | Closure_pushed of sym * int
 
 (* e's value pushed *)
 let rec value env e =
   match e with
   | Const (CInt n) -> emit (Imm (tagged n))
   | Const (CChar n) -> emit (Imm (tagged n))
-  | Const (CStr s) -> emit (Addr (static_string s, 8))
+  | Const (CStr s) -> emit (Addr (static_string s))
   | Var (x, _) -> var env x
   | Con (c, args) -> (
       match (find_con c).kind with
@@ -244,10 +254,10 @@ let rec value env e =
       | KBlock t ->
           List.iter (value env) (List.rev args);
           emit (Alloc (t, List.length args))
-      | KExn when args = [] -> emit (Addr (exn_const c, 8))
+      | KExn when args = [] -> emit (Addr (exn_const c))
       | KExn ->
           List.iter (value env) (List.rev args);
-          emit (Addr (exn_id c, 8));
+          emit (Addr (exn_id c));
           emit (Alloc (0, 1 + List.length args)))
   | Tuple es -> fields_block (List.map (fun e () -> value env e) es)
   (* a record is a tuple of its fields in their declaration's order,
@@ -280,7 +290,7 @@ let rec value env e =
   | App (f, args) -> ignore (app env f args false)
   | Fun (xs, b) ->
       (match closure env "fun" xs b with
-       | Closure_static (sym, _, _) -> emit (Addr (sym, 8))
+       | Closure_static (sym, _, _) -> emit (Addr sym)
        | Closure_pushed _ -> ())
   | Let _ | Match _ | If _ | Seq _ -> control env e false
   | Try (b, cases) ->
@@ -388,13 +398,12 @@ and var env x =
   | Loc (Slot s, _) -> emit (Get s)
   | Loc (Env j, _) -> emit (Get 0); emit (Field (2 + j))
   | Loc (Glob (t, g), _) -> emit (GetG (t, g))
-  | Loc (Static sym, _) -> emit (Addr (sym, 8))
+  | Loc (Static sym, _) -> emit (Addr sym)
   | Ext (_, n) ->
       (* a primitive as a value: the function that applies it *)
       let xs = List.init n (fun i -> Printf.sprintf "%%e%d" i) in
-      value env (Fun (xs, App (var_ x, List.map var_ xs)))
-
-and var_ x = Var (x, ref (tcon "?"))
+      value env
+        (Fun (xs, App (TinyMLTree.var x, List.map TinyMLTree.var xs)))
 
 (* f args: a primitive, a known function's code called with its
  * arguments, or the closure applied to one at a time; whether it ended
@@ -473,8 +482,8 @@ and closure env name xs b =
 and alloc_closure env lab n fvs =
   if List.length fvs <= 8 then begin
     List.iter (var env) (List.rev fvs);
-    emit (Addr (lab, 0));
-    emit (Addr (entry n lab, 0));
+    emit (Addr lab);
+    emit (Addr (entry n lab));
     emit (Alloc (closure_tag, 2 + List.length fvs))
   end
   else begin
@@ -482,8 +491,8 @@ and alloc_closure env lab n fvs =
     let field k push = push (); emit (Get s); emit (SetField k) in
     emit (Blank (closure_tag, 2 + List.length fvs));
     emit (Set s);
-    field 0 (fun () -> emit (Addr (entry n lab, 0)));
-    field 1 (fun () -> emit (Addr (lab, 0)));
+    field 0 (fun () -> emit (Addr (entry n lab)));
+    field 1 (fun () -> emit (Addr lab));
     List.iteri (fun j y -> field (2 + j) (fun () -> var env y)) fvs;
     emit (Get s)
   end
@@ -544,23 +553,23 @@ and bind_rec env bs =
   end
 
 and compile_fun lab xs benv b =
-  cur := { code = []; nslots = 1 + List.length xs; ntries = 0 };
+  start_fun (1 + List.length xs) 0;
   let env =
     List.rev (List.mapi (fun i x -> x, Loc (Slot (i + 1), None)) xs) @ benv in
   tail env b;
-  machine lab (List.length xs) (!cur).nslots (List.rev (!cur).code)
+  finish_fun lab (List.length xs)
 
 (* ml_curry<n>_<k>: a closure of arity n given its k+1-th argument; a
  * block [the next one; the closure; the k arguments...], or the call *)
 let curry_fun n k =
-  cur := { code = []; nslots = 2; ntries = 0 };
+  start_fun 2 0;
   emit (Get 1);
   for i = k downto 1 do emit (Get 0); emit (Field (1 + i)) done;
   emit (Get 0);
   if k > 0 then emit (Field 1);
   if k < n - 1 then (
-    emit (Addr (curry n (k + 1), 0));
+    emit (Addr (curry n (k + 1)));
     emit (Alloc (closure_tag, k + 3));
     emit Ret)
   else emit (Call (Indirect 1, n, true));
-  machine (curry n k) 1 (!cur).nslots (List.rev (!cur).code)
+  finish_fun (curry n k) 1

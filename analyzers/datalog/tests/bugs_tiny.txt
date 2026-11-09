@@ -1,12 +1,12 @@
-tiny/TinyC/TinyCLower.ml:107: stack: TinyCLower.lower calls itself, not a tail call, over a list
 tiny/TinyC/TinyCLower.ml:111: stack: TinyCLower.lower calls itself, not a tail call, over a list
-tiny/TinyC/TinyCLower.ml:116: stack: TinyCLower.lower calls itself, not a tail call, over a list
-tiny/TinyC/TinyCLower.ml:123: stack: TinyCLower.lower calls itself, not a tail call, over a list
-tiny/TinyC/TinyCLower.ml:133: stack: TinyCLower.lower calls itself, not a tail call, over a list
-tiny/TinyC/TinyCParser.ml:208: stack: TinyCParser.declarator calls itself, not a tail call, over a list
-tiny/TinyC/TinyCParser.ml:211: stack: TinyCParser.declarator3 calls itself, not a tail call, over a list
-tiny/TinyC/TinyCParser.ml:367: stack: TinyCParser.call_args calls itself, not a tail call, over a list
-tiny/TinyC/TinyCTypes.ml:37: stack: TinyCTypes.size calls itself, not a tail call, over a list
+tiny/TinyC/TinyCLower.ml:115: stack: TinyCLower.lower calls itself, not a tail call, over a list
+tiny/TinyC/TinyCLower.ml:120: stack: TinyCLower.lower calls itself, not a tail call, over a list
+tiny/TinyC/TinyCLower.ml:127: stack: TinyCLower.lower calls itself, not a tail call, over a list
+tiny/TinyC/TinyCLower.ml:137: stack: TinyCLower.lower calls itself, not a tail call, over a list
+tiny/TinyC/TinyCParser.ml:196: stack: TinyCParser.declarator calls itself, not a tail call, over a list
+tiny/TinyC/TinyCParser.ml:199: stack: TinyCParser.declarator3 calls itself, not a tail call, over a list
+tiny/TinyC/TinyCParser.ml:355: stack: TinyCParser.call_args calls itself, not a tail call, over a list
+tiny/TinyC/TinyCTypes.ml:55: stack: TinyCTypes.size calls itself, not a tail call, over a list
 tiny/TinyDatabase.ml:173: evalorder: operands at 173:13 and 174:13, both with an effect: their order the compiler's
 tiny/TinyDatabase.ml:177: stack: TinyDatabase.ins calls itself, not a tail call, over a list
 tiny/TinyDatabase.ml:190: evalorder: operands at 190:17 and 192:17, both with an effect: their order the compiler's
@@ -26,15 +26,14 @@ tiny/TinyKernel/steps/t6/TinyMkfs.ml:80: int31: in get32, 0xffffffff: not on the
 tiny/TinyLinker.ml:161: stack: go calls itself, not a tail call, over a list
 tiny/TinyLinker.ml:162: stack: go calls itself, not a tail call, over a list
 tiny/TinyLinker.ml:163: stack: go calls itself, not a tail call, over a list
-tiny/TinyML.ml:445: evalorder: operands at 445:10 and 446:10, both with an effect: their order the compiler's
-tiny/TinyML/TinyMLCompile.ml:383: stack: TinyMLCompile.match_cases calls itself, not a tail call, over a list
-tiny/TinyML/TinyMLCompile.ml:421: stack: TinyMLCompile.app calls itself, not a tail call, over a list
-tiny/TinyML/TinyMLCompile.ml:424: stack: TinyMLCompile.app calls itself, not a tail call, over a list
-tiny/TinyML/TinyMLCompile.ml:425: stack: TinyMLCompile.app calls itself, not a tail call, over a list
-tiny/TinyML/TinyMLCompile.ml:465: stack: TinyMLCompile.closure calls itself, not a tail call, over a list
-tiny/TinyML/TinyMLCompile.ml:485: stack: TinyMLCompile.alloc_closure calls itself, not a tail call, over a list
-tiny/TinyML/TinyMLCompile.ml:486: stack: TinyMLCompile.alloc_closure calls itself, not a tail call, over a list
-tiny/TinyML/TinyMLCompile.ml:76: stack: cases calls itself, not a tail call, over a list
+tiny/TinyML/TinyMLCompile.ml:393: stack: TinyMLCompile.match_cases calls itself, not a tail call, over a list
+tiny/TinyML/TinyMLCompile.ml:430: stack: TinyMLCompile.app calls itself, not a tail call, over a list
+tiny/TinyML/TinyMLCompile.ml:433: stack: TinyMLCompile.app calls itself, not a tail call, over a list
+tiny/TinyML/TinyMLCompile.ml:434: stack: TinyMLCompile.app calls itself, not a tail call, over a list
+tiny/TinyML/TinyMLCompile.ml:474: stack: TinyMLCompile.closure calls itself, not a tail call, over a list
+tiny/TinyML/TinyMLCompile.ml:494: stack: TinyMLCompile.alloc_closure calls itself, not a tail call, over a list
+tiny/TinyML/TinyMLCompile.ml:495: stack: TinyMLCompile.alloc_closure calls itself, not a tail call, over a list
+tiny/TinyML/TinyMLCompile.ml:86: stack: cases calls itself, not a tail call, over a list
 tiny/TinyML/TinyMLPrintf.ml:100: stack: adds calls itself, not a tail call, over a list
 tiny/TinyML/TinyMLPrintf.ml:105: stack: adds calls itself, not a tail call, over a list
 tiny/TinyML/TinyMLPrintf.ml:83: stack: build calls itself, not a tail call, over a list

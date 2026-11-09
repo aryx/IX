@@ -7,9 +7,8 @@
  * back end this compiler also had until plan_tiny_self_hosting.md).
  *)
 
-open TinyMLLexer
 open TinyMLTree
-open TinyMLParser
+module Parser = TinyMLParser
 open TinyMLTypes
 open TinyMLMachine
 open TinyMLCompile
@@ -62,25 +61,25 @@ An error names the file and the line: fact.ml: line 2: this has type int ...
  * toplevel lets that nothing used dropped before the code was made,
  * when a program was compiled whole: a library cost a program only
  * what it called, which the link's pieces now do) *)
-let compile_unit env (items : (item * int) list) =
-  cur := { code = []; nslots = 1; ntries = 0 };
+let compile_unit (items : (item * int) list) =
+  start_fun 1 0;
   arities := [];
   let table = !unit_name ^ ".globals" and nglobals = ref 0 in
   let rec arity = function TE ("->", [ _; r ]) -> 1 + arity r | _ -> 0 in
-  let env, defs = List.fold_left (fun (env, defs) (it, l) ->
+  let defs = List.fold_left (fun defs (it, l) ->
     try
       match it with
-      | IOpen u -> opened globals u; env, defs
-      | IAlias (a, u) -> aliased globals a u; env, defs
+      | IOpen u -> opened globals u; defs
+      | IAlias (a, u) -> aliased globals a u; defs
       | IExt (x, t, p) ->
           let b = Ext (p, arity t) in
           add_name globals x b;
-          env, (x, b) :: defs
+          (x, b) :: defs
       | IExn c ->
           block (exn_id c) (header 1 0) [ DVal (static_string c) ];
           if (find_con c).arity = 0 then
             block (exn_const c) (header 1 0) [ DVal (exn_id c) ];
-          env, defs
+          defs
       | ILet (r, bs) ->
           (* (the names it adds, in the table: old, the env's first
            * names, counted) *)
@@ -90,17 +89,18 @@ let compile_unit env (items : (item * int) list) =
                 emit (SetG (table, !nglobals));
                 incr nglobals;
                 x, Loc (Glob (table, !nglobals - 1), k)
-            | b -> b) (bind env r bs) in
+            | b -> b) (bind [] r bs) in
           List.iter (fun (x, b) -> add_name globals x b) (List.rev added);
-          env, added @ defs
-    with Failure m -> error (Printf.sprintf "line %d: %s" l m)) (env, []) items in
+          added @ defs
+    with Failure m -> TinyMLLexer.error (Printf.sprintf "line %d: %s" l m))
+    [] items in
   emit (Imm (tagged 0));
   emit Ret;
-  machine (!unit_name ^ ".init") 0 (!cur).nslots (List.rev (!cur).code);
+  finish_fun (!unit_name ^ ".init") 0;
   let rec drain () =
     match dequeue () with Some f -> f (); drain () | None -> () in
   drain ();
-  env, defs, !nglobals
+  defs, !nglobals
 
 (* The program's main: ml_init, each unit's init in their order, in a
  * handler that prints an uncaught exception; the curry functions the
@@ -108,7 +108,7 @@ let compile_unit env (items : (item * int) list) =
  * their count, ml_nglobals (what TinyMLRuntime/core.c scans) *)
 let compile_main (units : (string * int) list) needed =
   unit_name := "ml";
-  cur := { code = []; nslots = 1; ntries = 1 };
+  start_fun 1 1;
   let handler = label () in
   emit (TryEnter (0, handler));
   List.iter (fun (u, _) ->
@@ -123,7 +123,7 @@ let compile_main (units : (string * int) list) needed =
   emit (Catch 0);
   emit (CallC ("ml_uncaught", 1));
   emit Ret;
-  machine "ml_init" 0 (!cur).nslots (List.rev (!cur).code);
+  finish_fun "ml_init" 0;
   List.iter (fun n -> for k = 0 to n - 1 do curry_fun n k done)
     (List.sort_uniq compare needed);
   let total = List.fold_left (fun t (_, n) -> t + n) 0 units in
@@ -154,10 +154,19 @@ let compile_main (units : (string * int) list) needed =
  * block of 8 or more with two bits of its header set, 4.14's and
  * TinyLibCore's do not, and the host's interface was not tiny-kernel's
  * (bugs/ix.md). old: iname, iglobals, icurry, three fields of eight) *)
+(* (tuples, as cinfo's and linfo's fields but the type, which Marshal
+ * writes as records: the same blocks) *)
+(* a constructor: its name, kind, arity, its type's constant and other
+ * constructors' counts, its type *)
+type icon = string * kind * int * int * int * texpr
+(* a label: its name, its record's type, its index, mutable, the
+ * record's labels, its type *)
+type ilabel = string * string * int * bool * string list * texpr
+
 type interface = {
   iunit : string * int * int list;  (* its name, globals, curry functions *)
-  icons : (string * kind * int * int * int * texpr) list;
-  ilabels : (string * string * int * bool * string list * texpr) list;
+  icons : icon list;
+  ilabels : ilabel list;
   iabbrevs : (string * (string list * texpr)) list;
   iforgotten : string list;
   ivals : (string * binding * texpr) list;
@@ -175,17 +184,24 @@ let rec texpr_of_ty t =
  * what the unit added, as OCaml's .cmi (old: the whole program's so far,
  * each unit's .tmi repeating every one before it, all read again by
  * each unit after: 310 KB of interfaces for tiny-kernel's programs) *)
-let snapshot () =
-  let c = Hashtbl.copy cons and l = Hashtbl.copy record_labels
-  and a = !abbreviations and f = !forgotten in
-  (fun k ci ->
-    match Hashtbl.find_opt c k with Some ci' -> ci' == ci | None -> false),
-  (fun k li -> List.memq li (Hashtbl.find_all l k)),
-  (fun ab -> List.memq ab a),
-  (fun t -> List.mem t f)
+type before = {
+  old_con : string -> cinfo -> bool;
+  old_label : string -> linfo -> bool;
+  old_abbrev : string * (string list * texpr) -> bool;
+  old_forgotten : string -> bool;
+}
 
-let write_interface (old_con, old_label, old_abbrev, old_forgotten)
-    (exports : (string * binding) list) types nglobals =
+let snapshot () : before =
+  let c = Hashtbl.copy cons and l = Hashtbl.copy record_labels
+  and a = !Parser.abbreviations and f = !Parser.forgotten in
+  { old_con = (fun k ci ->
+      match Hashtbl.find_opt c k with Some ci' -> ci' == ci | None -> false);
+    old_label = (fun k li -> List.memq li (Hashtbl.find_all l k));
+    old_abbrev = (fun ab -> List.memq ab a);
+    old_forgotten = (fun t -> List.mem t f) }
+
+let write_interface (old : before) (exports : (string * binding) list) types
+    nglobals =
   (* the tables by their names, a label's records the latest first, as
    * the table has them (old: Hashtbl.iter's order, which is OCaml's
    * or TinyLibCore's: an interface was not the same from the two
@@ -194,12 +210,12 @@ let write_interface (old_con, old_label, old_abbrev, old_forgotten)
     List.sort_uniq compare (Hashtbl.fold (fun k _ acc -> k :: acc) tbl []) in
   let icons = List.filter_map (fun c ->
     let ci = Hashtbl.find cons c in
-    if old_con c ci then None
+    if old.old_con c ci then None
     else
       Some (c, ci.kind, ci.arity, ci.nconst, ci.nblock, texpr_of_ty ci.scheme))
     (names cons) in
   let ilabels = List.concat_map (fun l -> List.filter_map (fun li ->
-    if old_label l li then None
+    if old.old_label l li then None
     else
       Some (l, li.lrec, li.idx, li.mut, li.lnames, texpr_of_ty li.lscheme))
     (Hashtbl.find_all record_labels l)) (names record_labels) in
@@ -219,8 +235,10 @@ let write_interface (old_con, old_label, old_abbrev, old_forgotten)
   Marshal.to_string
     { iunit = !unit_name, nglobals, !arities; icons = icons; ilabels = ilabels;
       iabbrevs =
-        List.filter (fun a -> not (old_abbrev a)) (List.rev !abbreviations);
-      iforgotten = List.filter (fun t -> not (old_forgotten t)) !forgotten;
+        List.filter (fun a -> not (old.old_abbrev a))
+          (List.rev !Parser.abbreviations);
+      iforgotten =
+        List.filter (fun t -> not (old.old_forgotten t)) !Parser.forgotten;
       ivals = ivals }
     (* (No_sharing: which of two equal names is the same string depends
      * on a table's order, OCaml's or TinyLibCore's; shared, the host's
@@ -229,10 +247,10 @@ let write_interface (old_con, old_label, old_abbrev, old_forgotten)
 
 (* an interface read: its types the program's, its names in the tables
  * (globals, tglobals); its unit's name, globals and curry functions *)
-let read_interface (chan : Chan.i) env tenv =
+let read_interface (chan : Chan.i) =
   let text = In_channel.input_all chan.ic in
   if String.length text < 4 || String.sub text 0 4 <> "\132\149\166\190" then
-    error "not an interface of tiny-ml's";
+    TinyMLLexer.error "not an interface of tiny-ml's";
   let (i : interface) = Marshal.from_string text 0 in
   let iname, iglobals, icurry = i.iunit in
   let ty te = of_texpr (ref []) te in
@@ -251,14 +269,14 @@ let read_interface (chan : Chan.i) env tenv =
       { lrec = r; idx = idx; mut = mut; lnames = lnames; lscheme = ty te })
     i.ilabels;
   List.iter (fun (t, (ps, te)) ->
-    abbreviations :=
+    Parser.abbreviations :=
       (t, (ps, te))
       :: List.filter
            (fun (t', (ps', _)) -> t' <> t || List.length ps' <> List.length ps)
-           !abbreviations)
+           !Parser.abbreviations)
     i.iabbrevs;
   List.iter (fun t ->
-      if not (List.mem t !forgotten) then forgotten := t :: !forgotten)
+      if not (List.mem t !Parser.forgotten) then Parser.forgotten := t :: !Parser.forgotten)
     i.iforgotten;
   (* (a val's name is M.x already; Stdlib's x too) *)
   let n = String.length iname in
@@ -269,68 +287,10 @@ let read_interface (chan : Chan.i) env tenv =
          [ x; String.sub x (n + 1) (String.length x - n - 1) ]
        else [ x ]))
     i.ivals;
-  env, tenv, (iname, iglobals), icurry
+  (iname, iglobals), icurry
 
-(* M.mli's vals, their types in place of what M.ml's inferred: its
- * types and exceptions are M.ml's too, and skipped; a val of module
- * N : sig ... end is N.x *)
-let mli_types (chan : Chan.i) =
-  toks := lex (In_channel.input_all chan.ic); pos := 0;
-  let prefix = ref "" in
-  let starts () =
-    match peek () with
-    | LID "val" | KW ("module" | "type" | "exception" | "external" | "end")
-    | EOF -> true
-    | _ -> false
-  in
-  let rec go acc =
-    match peek () with
-    | EOF -> acc
-    | KW "module" ->
-        advance ();
-        (match peek () with
-         | UID m -> advance (); prefix := m ^ "."
-         | _ -> fail ());
-        expect (KW ":");
-        if peek () <> KW "sig" then fail ();
-        advance ();
-        go acc
-    | KW "end" -> advance (); prefix := ""; go acc
-    | LID "val" ->
-        advance ();
-        let x =
-          match peek () with
-          | LID x -> advance (); x
-          | KW "(" ->
-              advance ();
-              let o = (match peek () with KW o -> advance (); o | _ -> fail ()) in
-              expect (KW ")");
-              o
-          | _ -> fail ()
-        in
-        expect (KW ":");
-        let t = ty () in
-        go ((!prefix ^ x, of_texpr (ref []) t) :: acc)
-    | _ -> advance (); while not (starts ()) do advance () done; go acc in
-  go []
-
-(* ml_start called by C (the value stack's base at 0(sp)), ml_init's
- * closure slot 1, a unit (not what r13 held, which the collector would
- * scan); ml_raise: to the latest handler, the exception in r13 *)
-let start =
-  String.concat "\n\t"
-    [ "ml_start:"; "ldw\tr12, 0(sp)"; "li\tr13, 1"; "la\tr11, ml_init";
-      "jalr\tzero, 0(r11)";
-      "ml_raise:\n\tla\tr1, ml_handler"; "ldw\tr1, 0(r1)"; "ldw\tsp, 0(r1)";
-      "ldw\tr12, 4(r1)"; "ldw\tr2, 12(r1)"; "la\tr3, ml_handler";
-      "stw\tr2, 0(r3)"; "ldw\tr2, 8(r1)"; "jalr\tzero, 0(r2)" ]
-  ^ "\n"
-
-let parse (chan : Chan.i) =
-  toks := lex (In_channel.input_all chan.ic); pos := 0;
-  let is = items () in
-  if peek () <> EOF then fail ();
-  is
+(* a file's text *)
+let text_of (chan : Chan.i) = In_channel.input_all chan.ic
 
 (* a file's unit: its name without the directory and the extension,
  * capitalized, as OCaml's module *)
@@ -403,27 +363,33 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
       | Some d -> List.map (fun m -> Fpath.v d / (m ^ ".tmi")) library
       | None -> []
     in
-    let env, tenv, units, needed =
-      List.fold_left (fun (env, tenv, units, needed) f ->
-          let env, tenv, u, n =
-            with_file (fun ch -> read_interface ch env tenv) f in
-          env, tenv, units @ [ u ], needed @ n)
-        ([], [], [], []) (lib @ tmis) in
+    let units, needed =
+      List.fold_left (fun (units, needed) f ->
+          let u, n = with_file read_interface f in
+          units @ [ u ], needed @ n)
+        ([], []) (lib @ tmis) in
+    (* a file's unit typed and compiled: its names' types, its names'
+     * values, its globals' count *)
+    let compile_file f =
+      unit_name := unit_of f;
+      known_units := !unit_name :: !known_units;
+      let items = with_file (fun ch -> Parser.parse (text_of ch)) f in
+      let tdefs = type_unit items in
+      let defs, n = compile_unit items in
+      tdefs, defs, n in
     if !separate then begin
       (* one unit: its object and its interface *)
       let f = List.hd mls in
       Buffer.clear text; Buffer.clear data;
-      unit_name := unit_of f;
-      known_units := !unit_name :: !known_units;
       (* (before the parse: a type's constructors are the parser's) *)
       let old = snapshot () in
-      let items = with_file parse f in
-      let _, tdefs = type_unit tenv items in
-      let _, exports, n = compile_unit env items in
+      let tdefs, exports, n = compile_file f in
       let mli = Fpath.set_ext ".mli" f in
       (* (old: Sys.file_exists mli, then read) *)
       let types =
-        (try with_file mli_types mli with File_error _ -> []) @ tdefs in
+        (try with_file (fun ch -> Parser.mli_types (text_of ch)) mli
+         with File_error _ -> [])
+        @ tdefs in
       let out =
         match !output with
         | Some o -> o
@@ -434,19 +400,14 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
         (write_interface old exports types n)
     end else begin
       (* the files one after the other, a unit each, then the main *)
-      let _, _, units, needed =
-        List.fold_left (fun (env, tenv, units, needed) f ->
-          unit_name := unit_of f;
-          known_units := !unit_name :: !known_units;
-          let items = with_file parse f in
-          let _, tdefs = type_unit tenv items in
-          let _, defs, n = compile_unit env items in
+      let units, needed =
+        List.fold_left (fun (units, needed) f ->
+          let tdefs, defs, n = compile_file f in
           unit_done ();
-          export globals !unit_name defs env,
-          export tglobals !unit_name tdefs tenv,
-          units @ [ (!unit_name, n) ],
-          needed @ !arities)
-          (env, tenv, units, needed) mls in
+          export globals !unit_name defs;
+          export tglobals !unit_name tdefs;
+          units @ [ (!unit_name, n) ], needed @ !arities)
+          (units, needed) mls in
       compile_main units needed;
       let asm =
         start ^ Buffer.contents text ^ "\t.data\n" ^ Buffer.contents data in

@@ -66948,3 +66948,19 @@ Claude fixed the parser's number rule to use unsigned long long, renamed its loc
 Claude fixed TinyML's lexer to skip strings and char literals inside comments, and reworded a comment containing `*)`.
 Claude added TinyC tests for unsigned literals and a `do` without `while` error; all TinyC tests passed.
 Claude ran the tiny-ml, mini-mk, and kernel checks, then fixed the commit message from "four bugs" to five after `make test-tix` failed in run.sh's setup.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 15:15
+
+**Yoann:**
+
+> ok let's do TinyC's types phase
+
+**Claude (summary):**
+
+Claude verified the TinyC types phase with dune build, the TinyC tests, mini-mk, the kernel check, and test-tix.
+Claude made static labels at their declaration with static_sym, removing the sym function and Plan 9's name<> handling.
+Claude added label, located, and field types, renamed long_t to vlong_t, and numbered parameters by byte offset.
+Claude moved word into TinyCTypes so TinyCMachine no longer opens TinyCParser, and gave each .mli a header.
+Claude waited for make self-quick-tix to pass, then committed the TinyC changes.

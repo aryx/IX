@@ -580,6 +580,17 @@ let rec type_decl () =
   end;
   if accept (KW "and") then type_decl ()
 
+(* an external's or a val's name: x, or an operator ( op ) *)
+let val_name () =
+  match peek () with
+  | LID x -> advance (); x
+  | KW "(" ->
+      advance ();
+      let o = (match peek () with KW o -> advance (); o | _ -> fail ()) in
+      expect (KW ")");
+      o
+  | _ -> fail ()
+
 let rec items () : (item * int) list =
   let l = line () in
   match peek () with
@@ -640,19 +651,51 @@ let rec items () : (item * int) list =
       (IExn c, l) :: items ()
   | KW "external" ->
       advance ();
-      let x =
-        match peek () with
-        | LID x -> advance (); x
-        | KW "(" ->
-            advance ();
-            let o = (match peek () with KW o -> advance (); o | _ -> fail ()) in
-            expect (KW ")");
-            o
-        | _ -> fail ()
-      in
+      let x = val_name () in
       expect (KW ":");
       let t = ty () in
       expect (KW "=");
       let p = match peek () with STR p -> advance (); p | _ -> fail () in
       (IExt (x, t, p), l) :: items ()
   | _ -> let e = expr () in (ILet (Nonrecursive, [ PAny, e ]), l) :: items ()
+
+(* a file's text, its items, each with its line *)
+let parse (text : string) =
+  toks := lex text; pos := 0;
+  let is = items () in
+  if peek () <> EOF then fail ();
+  is
+
+(* M.mli's vals and their types, in place of what M.ml's inferred: its
+ * types and exceptions are M.ml's too, and skipped; a val of module
+ * N : sig ... end is N.x *)
+let mli_types (text : string) : (string * ty) list =
+  toks := lex text; pos := 0;
+  let prefix = ref "" in
+  let starts () =
+    match peek () with
+    | LID "val" | KW ("module" | "type" | "exception" | "external" | "end")
+    | EOF -> true
+    | _ -> false
+  in
+  let rec go acc =
+    match peek () with
+    | EOF -> acc
+    | KW "module" ->
+        advance ();
+        (match peek () with
+         | UID m -> advance (); prefix := m ^ "."
+         | _ -> fail ());
+        expect (KW ":");
+        if peek () <> KW "sig" then fail ();
+        advance ();
+        go acc
+    | KW "end" -> advance (); prefix := ""; go acc
+    | LID "val" ->
+        advance ();
+        let x = val_name () in
+        expect (KW ":");
+        let t = ty () in
+        go ((!prefix ^ x, of_texpr (ref []) t) :: acc)
+    | _ -> advance (); while not (starts ()) do advance () done; go acc in
+  go []

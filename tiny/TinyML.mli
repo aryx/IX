@@ -1,9 +1,9 @@
-(* A tiny ML compiler for tiny-machine, in one file. Its full-size twin
- * is mini-ml (languages/ml/, planned in docs/plans/plan_ml.md), which
- * behaves like ocaml-light's native compiler: same dialect, modules,
- * and the kernel as a target. This file is what is left of an ML
- * compiler when the language is small and the code only needs to be
- * correct. Its usage, by examples, is in [help] below, which is what
+(* A tiny ML compiler for tiny-machine, this file and its passes in
+ * TinyML/. Its full-size twin is mini-ml (languages/ml/, planned in
+ * docs/plans/plan_ml.md), which behaves like ocaml-light's native
+ * compiler: same dialect, modules, and the kernel as a target. It is
+ * what is left of an ML compiler when the language is small and the
+ * code only needs to be correct. Its usage, by examples, is in [help] below, which is what
  * tiny-ml -h prints.
  *
  * It reads ML files, a unit each (with -c, one, after the interfaces
@@ -23,9 +23,10 @@
  *        | lexer, parser     tokens to a tree, by recursive descent
  *        | type checker      checks types; records each label's index
  *        |                   and which comparisons are on integers
- *        | tree to stack     finds each function's free variables,
- *        | machine           turns patterns into tests, marks tail
- *        |                   calls: one [ir] list per function
+ *        | compiler          finds each function's free variables,
+ *        |                   turns patterns into tests, marks tail
+ *        |                   calls: one [ir] list per function, the
+ *        |                   stack machine's code
  *        | machine           turns the list into assembly, and
  *        |                   static blocks into .word
  *     file.tm, for tiny-assembler (with M.tmi when alone, -c)
@@ -94,7 +95,11 @@
  * constructors and labels are the program's, one name space, so M.C
  * is C. A unit's module N = struct ... end has values only, N.x for
  * the units after (open M.N, as open Fpath_.Operators); in it a name
- * is not found by its short name. An operator is OCaml's, any run of
+ * is not found by its short name. module A = M names a unit again
+ * (module ISA = TinyMachineISA: ISA.x is M.x). An attribute,
+ * [@@deriving show] or another, is read and dropped (OCaml derives
+ * show on the host), and Logs.debug (fun m -> m "fmt" args)'s format is
+ * read as Printf's (TinyMLPrintf). An operator is OCaml's, any run of
  * its characters, defined by let ( // ) = ...: its precedence is its
  * first character's, a prefix one starts with !, ~ or ?. {|quoted
  * strings|}, OCaml's, are read (a help's text). Left out: modules
@@ -144,7 +149,8 @@
  *   records can share a label name. This is OCaml's type-directed
  *   disambiguation, done cheaply (ocaml-light just takes the last
  *   declared label).
- * - {b A stack machine in between}, the same as TinyC's (IR, below):
+ * - {b A stack machine in between}, the same design as TinyC's
+ *   (TinyC/TinyCLower.mli), written again (TinyMLMachine):
  *   each expression pushes its value, the stack is kept in r1..r11, and
  *   a pattern becomes a sequence of tests, each jumping to the next
  *   clause on failure.
@@ -204,9 +210,8 @@
  *   uses is linked (above).
  *
  * context:
- * Every program in ML of tiny-kernel is its, the
- * kernel first and tiny-ml itself, and OCaml compiles the same files
- * on the host. Its runtime is C compiled by TinyC, and its
+ * It compiles every ML program of tiny-kernel, the kernel first and
+ * tiny-ml itself, and OCaml compiles the same files on the host. Its runtime is C compiled by TinyC, and its
  * assembly is TinyMachineCPU's. The stack machine, with
  * its stack kept in registers, comes from TinyC, so the two compilers
  * read as one design used twice: what differs is everything C does not
@@ -290,14 +295,11 @@
  *    values
  *)
 
-(* a unit's phrases (each with its line), with the names of the units
- * before it, to assembly added to the output: every function's code,
- * and <unit>.init, its toplevel; the names then, those it defined, and
- * its globals' count *)
+(* a unit's items (each with its line), typed, to assembly added to the
+ * output: every function's code, and <unit>.init, its toplevel; the
+ * names it defined, and its globals' count *)
 val compile_unit :
-  (string * TinyMLCompile.binding) list -> (TinyMLTree.item * int) list ->
-  (string * TinyMLCompile.binding) list * (string * TinyMLCompile.binding) list
-  * int
+  (TinyMLTree.item * int) list -> (string * TinyMLCompile.binding) list * int
 
 (* the program: its arguments (its name first), files of ML to a file
  * of assembly (-h: how), to how it ends *)

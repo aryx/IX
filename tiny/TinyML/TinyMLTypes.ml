@@ -325,22 +325,22 @@ let opened tbl u = renamed tbl u ""
 (* module A = M: M.x as A.x too *)
 let aliased tbl a u = renamed tbl u (a ^ ".")
 (* a unit's names, M.x, into the table for the units after it (and
- * Stdlib's x); the list for them is the one before it *)
-let export tbl u defs before =
+ * Stdlib's x) *)
+let export tbl u defs =
   List.iter (fun (x, b) ->
       Hashtbl.replace tbl (qualify u x) b;
       if implicit u then Hashtbl.replace tbl x b)
-    (List.rev defs);
-  before
+    (List.rev defs)
 
-(* a unit's items typed: the env then, and the names it defined, each
- * in the table as it comes *)
-let type_unit env items =
-  List.fold_left (fun (env, defs) (it, l) ->
+(* a unit's items typed: the names it defined, each in the table as it
+ * comes (old: an env too, always empty, from when the names were one
+ * list) *)
+let type_unit items =
+  List.fold_left (fun defs (it, l) ->
     match it with
-    | IOpen u -> opened tglobals u; env, defs
-    | IAlias (a, u) -> aliased tglobals a u; env, defs
+    | IOpen u -> opened tglobals u; defs
+    | IAlias (a, u) -> aliased tglobals a u; defs
     | _ ->
         let added = type_item [] (it, l) in
         List.iter (fun (x, t) -> add_name tglobals x t) (List.rev added);
-        env, added @ defs) (env, []) items
+        added @ defs) [] items

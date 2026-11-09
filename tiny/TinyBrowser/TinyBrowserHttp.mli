@@ -22,9 +22,10 @@
  * it is, and what www does not show itself is given to a program
  * that does (a WAV file to play), as Mosaic did.
  *
- * What is dropped: every method but GET, a request's other headers
- * (cookies, a range, a cache's), keeping a connection for the next
- * request, and a head's continued lines.
+ * dropped:
+ * Every method but GET, a request's other headers (cookies, a range, a
+ * cache's), keeping a connection for the next request, and a head's
+ * continued lines.
  *
  * cs-history:
  * HTTP/0.9 (Tim Berners-Lee, 1991) was a line "GET /path" and the

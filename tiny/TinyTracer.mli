@@ -44,17 +44,11 @@
  *   gives it, the child's stops kept till then), and waits on them all
  *   with ready.
  *
- * What is ours: a call's bytes shown as C strings, their first 32
- *   (strace's), and a read of nothing as "" rather than its buffer's
- *   address; one descriptor a process, rather than strace's one
- *   ptrace for all of them; a fault stops the process, which trace
- *   then kills.
- *
- * plan9-is-cleaner:
- * Plan 9's ratrace is a program over /proc: it writes startsyscall to
- * the process's ctl and reads each stop's line from /proc/n/syscall
- * (principia's debuggers/tracers/ratrace.c); the kernel adds a word to
- * ctl, not a system call. Here the same is the trace descriptor's y.
+ * kept:
+ * The choices of ours: a call's bytes shown as C strings, their first
+ * 32 (strace's), and a read of nothing as "" rather than its buffer's
+ * address; one descriptor a process, rather than strace's one ptrace
+ * for all of them; a fault stops the process, which trace then kills.
  *
  * others:
  * Linux's strace stops the process at each call's entry and exit with
@@ -62,8 +56,15 @@
  * DTrace (Solaris, 2005) and Linux's eBPF trace without stopping the
  * process, by code the kernel runs at the call.
  *
- * References: plan_tiny_debugger.md; Plan 9's ratrace(1) and proc(3)
- * manual pages; strace(1). *)
+ * plan9-is-cleaner:
+ * Plan 9's ratrace is a program over /proc: it writes startsyscall to
+ * the process's ctl and reads each stop's line from /proc/n/syscall
+ * (principia's debuggers/tracers/ratrace.c); the kernel adds a word to
+ * ctl, not a system call. Here the same is the trace descriptor's y.
+ *
+ * references:
+ * plan_tiny_debugger.md; Plan 9's ratrace(1) and proc(3) manual pages;
+ * strace(1). *)
 
 (* the program: its command line, the stops of its processes, its exit *)
 val main : unit -> unit

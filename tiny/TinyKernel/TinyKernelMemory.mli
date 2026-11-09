@@ -24,22 +24,6 @@
  * ([mem_release]), when it ends (its parent's wait reads only a record
  * of its status: TinyKernelProcs.ended).
  *
- * Where it stands: TinyKernel.ml calls it for every process's memory
- * (its [user] for a word or a byte of a system call's, [mem_address];
- * its [user_iter] for a buffer, [mem_pieces]; [mem_writable] before it
- * writes one); entry.tm
- * sets core 0's window ([mem_window]), and a core given a process gets
- * its window in its mailbox ([mem_post]: plan_tiny_multicore.md). The
- * other kernels on the same machine: t6 (steps/), fixed partitions of
- * 1 MB; v6, removed, pages (tiny-machine's Sv32, which no kernel uses
- * now).
- *
- * What is ours: the block's size is a guess made when the program is
- * linked (ld's 32 MB was too small for bin/ml's link: 48 now); the
- * block is not zeroed (exec writes the image only: zeroing ml's 32 MB
- * cost 35 million instructions an exec); there is no swapping, so a
- * fork or an exec with no room waits (TinyKernelCalls's with_room).
- *
  * Segments (the boot's choice: /lib/memory says segments; the
  * Makefile's MEMORY=segments) split a process in two, its text and
  * its data, at the address tiny-linker -n put the data at (a page past
@@ -91,6 +75,24 @@
  * text shared between execs (segments' texts; pages would need a cache
  * of a file's pages), a guard page under the stack (where a program's
  * stack ends is its runtime's: mlsys.c's), swapping.
+ *
+ * kept:
+ * A partition's block size is a guess made when the program is
+ * linked (ld's 32 MB was too small for bin/ml's link: 48 now); the
+ * block is not zeroed (exec writes the image only: zeroing ml's 32 MB
+ * cost 35 million instructions an exec); there is no swapping, so a
+ * fork or an exec with no room waits (TinyKernelCalls's with_room).
+ *
+ * context:
+ * TinyKernel.ml calls it for every process's memory
+ * (its [user] for a word or a byte of a system call's, [mem_address];
+ * its [user_iter] for a buffer, [mem_pieces]; [mem_writable] before it
+ * writes one); entry.tm
+ * sets core 0's window ([mem_window]), and a core given a process gets
+ * its window in its mailbox ([mem_post]: plan_tiny_multicore.md). The
+ * other kernels on the same machine: t6 (steps/), fixed partitions of
+ * 1 MB; v6, removed, pages (tiny-machine's Sv32, which no kernel uses
+ * now).
  *
  * cs-history:
  * Partitions are how IBM's OS/360 (1966) shared a machine between
@@ -150,7 +152,7 @@
  * core was memory before it was a processor: magnetic cores, hence a
  * core dump.
  *
- * References:
+ * references:
  *  - P. Denning, "Virtual Memory" (Computing Surveys 1970): partitions,
  *    relocation, then pages
  *  - D. Knuth, The Art of Computer Programming, vol. 1 (1968), 2.5:

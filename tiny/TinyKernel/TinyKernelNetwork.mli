@@ -8,15 +8,6 @@
  *     ./tiny-machine -net tiny/tests/www -net-trace tiny-kernel
  *         then: ping, get il.txt
  *
- * The idea kept: {b the stack is functions of strings}. A packet is a
- * string; a packet that came gives the packets to send back and what a
- * program is to hear. Nothing here reads a device, keeps a clock or
- * knows who calls. So the same file is three things: the kernel's
- * stack (TinyKernel.ml takes the packets from the machine's device and
- * gives them here), the host's test of it (no machine), and the wire's
- * other end (TinyMachine.ml's -net: the host answering with this very
- * code, where mini-qemu needed a second stack, raspberry/Usernet).
- *
  * Two things are here. The first, a ping's way there and back:
  *
  *     tiny-kernel, 10.0.0.2                      the host, 10.0.0.1
@@ -45,12 +36,6 @@
  *     echo?   its   whose  which
  *             own   ping   one
  *             check
- *
- * What is left out, each because the wire has two ends and one
- * program at each: Ethernet and its addresses, ARP (who has this
- * address?), routes, fragments (a packet cut to pass a narrow road),
- * options, the hops counted down. A packet that is not well made or
- * not for us is dropped without a word.
  *
  * An address is its four bytes in a string: nothing is computed on
  * one, and tiny-ml's int has 31 bits.
@@ -135,8 +120,9 @@
  * A number of IL's has 32 bits and tiny-ml's int 31: both ends here
  * start small and stay under 2^30; a packet with more is not read.
  *
- * Against its twin, mini-9pi's stack (kernels/9pi/network/: Ip, Icmp,
- * Udp, Tcp, and Devip's files), which speaks to the Internet: there,
+ * twin:
+ * mini-9pi's stack (kernels/9pi/network/: Ip, Icmp, Udp, Tcp, and
+ * Devip's files) speaks to the Internet: there,
  * Ethernet and ARP, routes, UDP for names and the time, TCP (the
  * twin of principia's tcp.c, a stream of bytes; no IL), and a program
  * reaches it by Plan 9's files, /net/tcp/clone, its ctl and its data,
@@ -146,6 +132,23 @@
  * listen(port), each giving a descriptor of messages; port 0 is the
  * echo (ping). The world, which speaks TCP, is reached through the
  * wire's other end (TinyMachinePeer, a translator).
+ *
+ * kept:
+ * {b The stack is functions of strings}. A packet is a
+ * string; a packet that came gives the packets to send back and what a
+ * program is to hear. Nothing here reads a device, keeps a clock or
+ * knows who calls. So the same file is three things: the kernel's
+ * stack (TinyKernel.ml takes the packets from the machine's device and
+ * gives them here), the host's test of it (no machine), and the wire's
+ * other end (TinyMachine.ml's -net: the host answering with this very
+ * code, where mini-qemu needed a second stack, raspberry/Usernet).
+ *
+ * dropped:
+ * Each of these is left out because the wire has two ends and one
+ * program at each: Ethernet and its addresses, ARP (who has this
+ * address?), routes, fragments (a packet cut to pass a narrow road),
+ * options, the hops counted down. A packet that is not well made or
+ * not for us is dropped without a word.
  *
  * cs-history:
  * IP is Cerf and Kahn's (1974), split from TCP in 1978 so that what
@@ -166,7 +169,8 @@
  * in any order of bytes; a wire that damages more than that has its
  * own check below.
  *
- * References: RFC 791 (IP), RFC 792 (ICMP), RFC 1071 (the checksum);
+ * references:
+ * RFC 791 (IP), RFC 792 (ICMP), RFC 1071 (the checksum);
  * Presotto and Winterbottom, "The IL Protocol" (Plan 9's manual,
  * volume 2). *)
 

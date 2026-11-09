@@ -1,20 +1,6 @@
 (* A tiny screen editor, in one file: the text on the screen, a cursor
  * in it, and the keys of Emacs.
  *
- * Its full-size counterpart in m-ix is
- * mini-emacs (editors/emacs/), with buffers, windows, modes and a
- * Lisp. tiny-editor (TinyEditorLine.ml) is the line editor, with sam's
- * command language and no screen. This one is what you want for
- * changing a program: one text, one window, and what you type goes
- * where the cursor is.
- *
- * mini-emacs is written after efuns (Fabrice Le Fessant's Emacs in
- * OCaml, 1998): its text a gap buffer (its Text), a key looked up in
- * keymaps, each key a command, a function on the editor's structure.
- * This one keeps Emacs's keys and their names, but a key
- * is a case of [key]'s match, with no keymap; a command's name is
- * only the keys it stands for (M-x below); the text is lines (below).
- *
  * The text is stored as its lines, split at the line of the cursor:
  *
  *     above    the lines before the cursor's line, nearest first
@@ -74,11 +60,26 @@
  * A string over several lines, or a C macro continued by a backslash,
  * is colored wrong; Emacs's modes get them right, with much more.
  *
- * What is left out: multiple buffers and windows, undo, the mark and
- * the region, searching backward, replacing with a question at each,
- * a macro's count (C-u), wrapping long lines (a long line is cut at
- * the edge of the screen, and the screen scrolls to follow the
- * cursor), and characters beyond ASCII.
+ * twin:
+ * mini-emacs (editors/emacs/), its full-size counterpart in m-ix, has
+ * buffers, windows, modes and a Lisp. tiny-editor (TinyEditorLine.ml)
+ * is the line editor, with sam's command language and no screen. This
+ * one is what you want for changing a program: one text, one window,
+ * and what you type goes where the cursor is.
+ *
+ * mini-emacs is written after efuns (Fabrice Le Fessant's Emacs in
+ * OCaml, 1998): its text a gap buffer (its Text), a key looked up in
+ * keymaps, each key a command, a function on the editor's structure.
+ * This one keeps Emacs's keys and their names, but a key is a case of
+ * [key]'s match, with no keymap; a command's name is only the keys it
+ * stands for (M-x above); the text is lines (above).
+ *
+ * dropped:
+ * Multiple buffers and windows, undo, the mark and the region,
+ * searching backward, replacing with a question at each, a macro's
+ * count (C-u), wrapping long lines (a long line is cut at the edge of
+ * the screen, and the screen scrolls to follow the cursor), and
+ * characters beyond ASCII.
  *)
 
 type editor

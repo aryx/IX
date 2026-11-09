@@ -19,11 +19,11 @@
  * comes in; a line cut by the area's edge is drawn in a strip image
  * first, then copied, so it never draws over the bar or the status.
  *
- * What is ours, against the twins: mini-netscape lays out boxes and
- * paints them into a framebuffer of its own (the engine's display);
- * here a page is lines of runs, each run a text at a column, drawn by
- * the kernel's text and fills, a picture's slice by a copy of its
- * image.
+ * twin:
+ * mini-netscape lays out boxes and paints them into a framebuffer of
+ * its own (the engine's display); here a page is lines of runs, each
+ * run a text at a column, drawn by the kernel's text and fills, a
+ * picture's slice by a copy of its image.
  *)
 
 (* the colours, images of a pixel on the connection to the screen, and

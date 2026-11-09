@@ -8,8 +8,8 @@
  *
  * The model is the state of a pocket calculator, not an expression: the
  * number shown, the number kept, and the operation waiting for its
- * second operand. Here is 12 * 3 = followed by + 6, one button per
- * column:
+ * second operand. Here is 12 * 3 = followed by + 6, one button
+ * per column:
  *
  *     button pressed    1    2    *    3    =    +    6
  *  => number shown      1   12   12    3   36   36    6
@@ -21,7 +21,15 @@
  * 2 + 3 * 4 = gives 20: there are no priorities, as on real
  * four-operation calculators.
  *
- * A few notes:
+ * twin:
+ * There is none in m-ix: lib_gui's small programs are the 7GUIs
+ * (examples/Gui7Counter.ml and the others), and a calculator is not one
+ * of them. Plan 9's calculators are text programs, hoc and dc
+ * (principia's utilities/calc/); this one follows the pocket calculator
+ * instead (below), the smallest program that is all buttons, written
+ * for TinyLibGUI.
+ *
+ * kept:
  * - {b A key is the same as its button}: [key] returns the message the
  *   button would send, so the keyboard and the mouse cannot behave
  *   differently.
@@ -32,17 +40,11 @@
  *   have only 31 bits; this way the answers are the same on the host,
  *   whose integers have 63 bits.
  *
- * It has no twin in m-ix: lib_gui's small programs are the 7GUIs
- * (examples/Gui7Counter.ml and the others), and a calculator is not
- * one of them. Plan 9's calculators are text programs, hoc and dc
- * (principia's utilities/calc/); this one follows the pocket
- * calculator instead (below), the smallest program that is all
- * buttons, written for TinyLibGUI.
+ * dropped:
+ * Fractions (tiny-ml has no floats), a sign key, a memory, deleting the
+ * last digit, priorities and parentheses.
  *
- * What is dropped: fractions (tiny-ml has no floats), a sign key, a
- * memory, deleting the last digit, priorities and parentheses.
- *
- * Exercises:
+ * exercises:
  * - a key that deletes the last digit; one that changes the sign;
  * - a memory: M+, MR;
  * - drawing a button as pressed while its key is held down (this needs

@@ -1,7 +1,6 @@
 (* A tiny window system, written in ML as a program that runs on
- * TinyKernel.ml. It keeps the essentials of Plan 9's rio; the
- * full-size version in ix is windows/rio/ (mini-rio). The design is in
- * plan_tiny_windows.md.
+ * TinyKernel.ml. It keeps the essentials of Plan 9's rio. The design is
+ * in plan_tiny_windows.md.
  *
  * The main idea comes from rio: {b a window looks like the machine}.
  * Every program on TinyKernel.ml is given five file descriptors: 0, 1
@@ -47,9 +46,20 @@
  * again by the one above, and only the outermost 0 is the kernel's
  * real screen.
  *
- * How the idea is implemented, each time in the cheapest way that
- * still keeps it:
+ * The mouse: clicking the left button on a window brings it to the
+ * front, where it receives the keys. The right button opens the menu
+ * (New, Move, Delete, Exit), and then the left button says where: you
+ * sweep a rectangle, drag a window, or point at a window.
  *
+ * twin:
+ * The full-size version in ix is mini-rio (windows/rio/), the complete
+ * one: Wm and Window, a Terminal for the text of a window, and
+ * Fileserver, Virtual_cons and Virtual_mouse for the files that a
+ * window's program opens.
+ *
+ * kept:
+ * The idea is implemented each time in the cheapest way that still
+ * keeps it:
  * - {b The kernel holds every pixel.} A window is an off-screen image
  *   created by a message; tiny-windows only knows its number, never
  *   its bytes. What appears on the screen is composed by drawing the
@@ -79,32 +89,26 @@
  *   write. So a program that never reads its mouse does not block
  *   anything.
  *
- * The mouse: clicking the left button on a window brings it to the
- * front, where it receives the keys. The right button opens the menu
- * (New, Move, Delete, Exit), and then the left button says where: you
- * sweep a rectangle, drag a window, or point at a window.
- *
- * What is dropped: a menu specific to each window, scroll bars and the
- * kept text of a window (what scrolls off the top is lost), selection,
- * snarf and paste, Resize and Hide, cursor shapes, using the border as
- * a handle, window names, and the files a window serves. rio is a file
- * server, but here the descriptors are simply handed over, because
+ * dropped:
+ * A menu specific to each window, scroll bars and the kept text of a
+ * window (what scrolls off the top is lost), selection, snarf and
+ * paste, Resize and Hide, cursor shapes, using the border as a handle,
+ * window names, and the files a window serves. rio is a file server,
+ * but here the descriptors are simply handed over, because
  * TinyKernel.ml has no name space.
  *
- * Exercises:
+ * context:
+ * TinyKernel provides the five descriptors, the pipes, the box and
+ * ready; TinyKernelGraphics, inside the kernel, holds the images;
+ * TinyLibDraw builds and parses the messages. The programs that run in
+ * a window (paint in C, TinyKernel/examples/paint.c, and TinyAppTetris
+ * on TinyLibPlayground) also run without it.
+ *
+ * exercises:
  * - Resize: make a new image, draw the old one in it, free the old one;
  * - keep the text and add a scroll bar; add selection, snarf and paste;
  * - tell a program the size of its window (a message read on its 4);
  * - let New start a program other than the shell (an argument).
- *
- * Where it stands: TinyKernel provides the five descriptors, the
- * pipes, the box and ready; TinyKernelGraphics, inside the kernel,
- * holds the images; TinyLibDraw builds and parses the messages. The
- * programs that run in a window (paint in C, TinyKernel/examples/paint.c, and
- * TinyAppTetris on TinyLibPlayground) also run without it. mini-rio is
- * the complete version: Wm and Window, a Terminal for the text of a
- * window, and Fileserver, Virtual_cons and Virtual_mouse for the files
- * that a window's program opens.
  *
  * cs-history:
  * The idea comes from the Blit (Rob Pike, Bell Labs, 1982). Its window
@@ -119,17 +123,6 @@
  * inside one of its own windows is the test of the idea, and both
  * 8 1/2 and rio pass it.
  *
- * plan9-is-cleaner:
- * In X, a program does not draw on something it was given. It
- * connects to a server through a socket and speaks a protocol of
- * about a hundred and twenty requests. Which window goes where is
- * decided by a third program, the window manager, following its own
- * rules. And running a server inside a window requires a special
- * server written for that purpose (Xnest, Xephyr). Here, as in rio,
- * there is no real protocol and no separate manager, because what a
- * window's program sees is the kernel's own interface, and nesting
- * needs no extra code.
- *
  * modern:
  * Making each window an off-screen image and composing the screen from
  * them back to front is where window systems ended up once memory and
@@ -143,14 +136,26 @@
  * old way saves memory; the new way made shadows, transparency and
  * smooth moves almost free.
  *
- * References: R. Pike, "The Blit: A Multiplexed Graphics Terminal"
- * (1984), "8½, the Plan 9 Window System" (1991) and "Rio: Design of a
- * Concurrent Window System" (2000), on a window system as a
- * multiplexer that gives programs the same interface it uses itself;
- * N. Wirth and J. Gutknecht, "Project Oberon" (1992), for the other
- * road, where windows are part of the system; principia's
- * windows/rio/ (rio's C: wm.c, fsys.c, terminal.c...) and xix's rio in
- * OCaml, which mini-rio follows, module by module. *)
+ * plan9-is-cleaner:
+ * In X, a program does not draw on something it was given. It
+ * connects to a server through a socket and speaks a protocol of
+ * about a hundred and twenty requests. Which window goes where is
+ * decided by a third program, the window manager, following its own
+ * rules. And running a server inside a window requires a special
+ * server written for that purpose (Xnest, Xephyr). Here, as in rio,
+ * there is no real protocol and no separate manager, because what a
+ * window's program sees is the kernel's own interface, and nesting
+ * needs no extra code.
+ *
+ * references:
+ * R. Pike, "The Blit: A Multiplexed Graphics Terminal" (1984), "8½, the
+ * Plan 9 Window System" (1991) and "Rio: Design of a Concurrent Window
+ * System" (2000), on a window system as a multiplexer that gives
+ * programs the same interface it uses itself; N. Wirth and J.
+ * Gutknecht, "Project Oberon" (1992), for the other road, where windows
+ * are part of the system; principia's windows/rio/ (rio's C: wm.c,
+ * fsys.c, terminal.c...) and xix's rio in OCaml, which mini-rio
+ * follows, module by module. *)
 
 (* A program: its last lines are its loop, and it gives nothing to
  * another file. OCaml only checks it (its system calls are the

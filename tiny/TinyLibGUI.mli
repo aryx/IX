@@ -67,7 +67,8 @@
  *   text with the new character added, and what is displayed next is
  *   whatever the model made of it.
  *
- * What is dropped from lib_gui: a caret that moves inside the text (it
+ * dropped:
+ * From lib_gui, this drops: a caret that moves inside the text (it
  * stays at the end, where a key adds and a backspace removes), a
  * selection, Tab to go from one field to the next; sliders, check
  * boxes, lists; themes and looks (there is only one: grey, with two
@@ -78,18 +79,8 @@
  * user does something); and the three other ways to write a program
  * (immediate, retained, model-view-controller).
  *
- * Exercises:
- * - a check box: a button whose text shows its state, which lives in
- *   the model;
- * - Tab: send the keys to the next field (the focus is a point, so it
- *   becomes a point in the next box);
- * - a caret that moves with the arrows, its position kept below the
- *   model;
- * - a row that gives each widget the width it asked for, and the rest
- *   to one of them;
- * - a clock: a message every second, for a timer.
- *
- * Where it stands: below it are TinyLibPlayground (its shapes and
+ * context:
+ * Below it are TinyLibPlayground (its shapes and
  * their drawing, but not its loop, because a game has frames and no
  * mouse), TinyLibDraw and TinyCalls; above it are TinyAppCalculator
  * and TinyAppTemperature. It draws on its descriptor 3 and reads its
@@ -101,6 +92,17 @@
  * strings of its four messages; a click that changes the model costs
  * 540,000, for building, placing and comparing the 18 widgets of the
  * calculator.
+ *
+ * exercises:
+ * - a check box: a button whose text shows its state, which lives in
+ *   the model;
+ * - Tab: send the keys to the next field (the focus is a point, so it
+ *   becomes a point in the next box);
+ * - a caret that moves with the arrows, its position kept below the
+ *   model;
+ * - a row that gives each widget the width it asked for, and the rest
+ *   to one of them;
+ * - a clock: a message every second, for a timer.
  *
  * cs-history:
  * A screen of widgets that send messages comes from Smalltalk (Xerox
@@ -122,7 +124,8 @@
  * and their awkward corner is the same one described above: the state
  * below the model, such as the focus, a caret, or a scroll position.
  *
- * References: E. Czaplicki, The Elm Architecture (guide.elm-lang.org);
+ * references:
+ * E. Czaplicki, The Elm Architecture (guide.elm-lang.org);
  * E. Kiss, "7GUIs: A GUI Programming Benchmark" (2014); T. Duff,
  * "A Quick Introduction to the Panel Library" (Plan 9); J. Ousterhout,
  * "Tcl and the Tk Toolkit" (1994), for the packer. *)

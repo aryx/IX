@@ -76,37 +76,6 @@
  * its CD (and the name of its bunny). With no disk, the tree is the
  * image's alone and lives in memory until the halt.
  *
- * What is dropped: paging, multiple cores, users and permissions, and signals
- * except the simplest: kill(pid) ends a process as a fault does (with
- * status -1), and ^C at the console kills every process except the
- * shell. The system calls are specific to this kernel (its programs
- * are in TinyKernel/user/), but t6's cat, echo, ls, wc, mkdir and rm
- * run unchanged, because they use only calls the two kernels have in
- * common.
- *
- * Where it fits: it is the tiny program in ix's Kernel row (see the
- * README), as mini-9pi is the mini one. It is not a new version of the
- * kernels that came before it on the same machine (v0 and t6 in
- * steps/, written in assembly and C). TinyKernel/ holds the rest:
- * entry.tm, runtime.c, the user programs, and the Makefile.
- *
- * The toolchain is entirely ix's own, and so is the bridge between ML
- * and the machine. It is small, where the bridge of mini-9pi and
- * mini-xv6 (kernels/lib_machine/: ocaml-light's C runtime, gcc, boot
- * code, C glue) cannot be:
- * - tiny-ml: the second back end of the stack machine (TinyML.ml);
- * - the runtime: TinyMLRuntime/core.c, shared with every tiny-ml
- *   program, and runtime.c, which holds the kernel's memory layout and
- *   ten functions on bytes (peek, poke, copying a string from memory
- *   and to it);
- * - entry.tm, one page of assembly: k_run (which runs the process until
- *   its next trap, so the kernel calls a process like a function, the
- *   way a hypervisor's KVM_RUN runs a guest), the trap entry, the
- *   timer, and the window; memory.tm, the loops that copy a partition
- *   at fork and zero memory.
- * The compiler needs no new primitive: the machine is reached through
- * externals, which are functions written in C or in assembly.
- *
  * How it runs. The toplevel reads the files carried by the image,
  * creates the first process (/bin/sh, with the console as its 0, 1 and 2),
  * and enters [schedule], a loop that never returns: run a process
@@ -215,7 +184,42 @@
  * count, which is exactly what a C kernel keeps the sleeping process's
  * kernel stack for.
  *
- * Exercises, each cheap in this design:
+ * dropped:
+ * Paging, multiple cores, users and permissions, and signals
+ * except the simplest: kill(pid) ends a process as a fault does (with
+ * status -1), and ^C at the console kills every process except the
+ * shell. The system calls are specific to this kernel (its programs
+ * are in TinyKernel/user/), but t6's cat, echo, ls, wc, mkdir and rm
+ * run unchanged, because they use only calls the two kernels have in
+ * common.
+ *
+ * archi:
+ * The toolchain is entirely ix's own, and so is the bridge between ML
+ * and the machine. It is small, where the bridge of mini-9pi and
+ * mini-xv6 (kernels/lib_machine/: ocaml-light's C runtime, gcc, boot
+ * code, C glue) cannot be:
+ * - tiny-ml: the second back end of the stack machine (TinyML.ml);
+ * - the runtime: TinyMLRuntime/core.c, shared with every tiny-ml
+ *   program, and runtime.c, which holds the kernel's memory layout and
+ *   ten functions on bytes (peek, poke, copying a string from memory
+ *   and to it);
+ * - entry.tm, one page of assembly: k_run (which runs the process until
+ *   its next trap, so the kernel calls a process like a function, the
+ *   way a hypervisor's KVM_RUN runs a guest), the trap entry, the
+ *   timer, and the window; memory.tm, the loops that copy a partition
+ *   at fork and zero memory.
+ * The compiler needs no new primitive: the machine is reached through
+ * externals, which are functions written in C or in assembly.
+ *
+ * context:
+ * It is the tiny program in ix's Kernel row (see the
+ * README), as mini-9pi is the mini one. It is not a new version of the
+ * kernels that came before it on the same machine (v0 and t6 in
+ * steps/, written in assembly and C). TinyKernel/ holds the rest:
+ * entry.tm, runtime.c, the user programs, and the Makefile.
+ *
+ * exercises:
+ * Each cheap in this design:
  * - a cache of the disk's blocks, and the count of the instructions it
  *   saves (each access reads its blocks again: the disk is instant);
  * - keep each waiting process's closure together with what it waits
@@ -238,39 +242,6 @@
  * sleep. This file's waiting has no such window, because the test
  * itself is the waiting.
  *
- * design:
- * A kernel either keeps a stack for each process and blocks in the
- * middle of a call (Unix, Linux, xv6, Plan 9), or has a single stack
- * and must record, when a call cannot finish, what remains to be done
- * (Mach after Draves's continuations, and every event loop). Lauer and
- * Needham argued in 1978 that the two are duals: a program written in
- * one style can be mechanically turned into the other. In C the second
- * style costs a structure and a function for each place where a call
- * may stop, which is why C kernels choose stacks. In ML the compiler
- * builds that structure for us, a closure, and the second style is the
- * shorter one.
- *
- * wib:
- * Two costs are accepted. First, a waiting call is retried at every
- * round instead of being woken up, which wastes work while nothing
- * changes (the two shortcuts in [runnable] and [idle] exist because
- * this showed up). Second, fork copies the parent's whole partition
- * (16 MB for tiny-build: hence spawn), a program's memory is a guess
- * made when it is linked, and there can be only sixteen processes.
- * Both are things a real kernel spends its cleverness on, and both
- * can be measured here (the machine counts instructions).
- *
- * comeback:
- * A kernel written in a language with a garbage collector and no
- * pointer arithmetic is an old idea that keeps coming back: Burroughs's
- * MCP in an Algol dialect (1961), the Lisp machines, Xerox's Pilot in
- * Mesa (1980), SPIN in Modula-3 (1995), Microsoft's Singularity (from
- * 2003), MirageOS in OCaml (2013), and, for safety without a
- * collector, Rust in Linux (2022). Each time, the argument is that the
- * language can do some of the protection that hardware and discipline
- * do in C. Here protection is still done by the hardware (the window);
- * what the language provides is the file tree and the closures.
- *
  * others:
  * Not every system makes a process the way Unix does. VMS's $CREPRC
  * and Windows's CreateProcess start a process in a program, with no
@@ -284,7 +255,40 @@
  * spawn because a parent of 16 MB that starts rc should not copy
  * itself first.
  *
- * References:
+ * design:
+ * A kernel either keeps a stack for each process and blocks in the
+ * middle of a call (Unix, Linux, xv6, Plan 9), or has a single stack
+ * and must record, when a call cannot finish, what remains to be done
+ * (Mach after Draves's continuations, and every event loop). Lauer and
+ * Needham argued in 1978 that the two are duals: a program written in
+ * one style can be mechanically turned into the other. In C the second
+ * style costs a structure and a function for each place where a call
+ * may stop, which is why C kernels choose stacks. In ML the compiler
+ * builds that structure for us, a closure, and the second style is the
+ * shorter one.
+ *
+ * comeback:
+ * A kernel written in a language with a garbage collector and no
+ * pointer arithmetic is an old idea that keeps coming back: Burroughs's
+ * MCP in an Algol dialect (1961), the Lisp machines, Xerox's Pilot in
+ * Mesa (1980), SPIN in Modula-3 (1995), Microsoft's Singularity (from
+ * 2003), MirageOS in OCaml (2013), and, for safety without a
+ * collector, Rust in Linux (2022). Each time, the argument is that the
+ * language can do some of the protection that hardware and discipline
+ * do in C. Here protection is still done by the hardware (the window);
+ * what the language provides is the file tree and the closures.
+ *
+ * wib:
+ * Two costs are accepted. First, a waiting call is retried at every
+ * round instead of being woken up, which wastes work while nothing
+ * changes (the two shortcuts in [runnable] and [idle] exist because
+ * this showed up). Second, fork copies the parent's whole partition
+ * (16 MB for tiny-build: hence spawn), a program's memory is a guess
+ * made when it is linked, and there can be only sixteen processes.
+ * Both are things a real kernel spends its cleverness on, and both
+ * can be measured here (the machine counts instructions).
+ *
+ * references:
  *  - P. Brinch Hansen, "Structured Multiprogramming" (CACM 1972): await
  *  - R. Pike et al., "The Use of Name Spaces in Plan 9" (1993), and
  *    Plan 9's sleep and wakeup

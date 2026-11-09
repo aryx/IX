@@ -1,12 +1,6 @@
 (* The small programs of a system, cat, ls, wc and the others, in one
  * file and one executable.
  *
- * m-ix's utilities/ has a program per file,
- * each a faithful copy of Plan 9's, with its options and its quirks.
- * This file is what remains when compatibility is dropped: once most
- * options are gone, what the programs have in common is most of each
- * one, and it can be written once.
- *
  * {b One executable, many names.} tiny-utils wc f runs wc, and so does
  * a link named wc (BusyBox, Bruce Perens, 1995). A utility is a row of
  * a table: its name, its usage, and a function from its arguments to
@@ -38,22 +32,12 @@
  *     rm -r    calls it, then removes the path         post-order
  *     ls       does not call it: one level only
  *
- * {b The same file on two systems.} As TinyShell.ml, it names only
- * TinyLibSystem (TinyKernel/host/TinyLibSystem.mli) and the pure functions
- * of the standard library, so it is tiny-kernel's utils and the host's
- * tiny-utils.
- *
- * What is kept of the twins is their output, where it costs nothing:
- * wc's columns, xd's lines, du's kilobytes, cmp's messages, ls's
- * sorted names.
- *
- * What is dropped: most options (each utility keeps the one or two that
- * carry its idea), UTF-8 (wc counts bytes), floating point in seq, most
- * of ls -l (tiny-kernel has no owners, modes or times: it is a file's
- * kind, links and size), and
- * the wording of each program's errors: here they are all "tool: file:
- * reason". The plan, and what was found on the way:
- * docs/plans/done/plan_tiny_utilities.md.
+ * twin:
+ * m-ix's utilities/ has a program per file, each a faithful copy of
+ * Plan 9's, with its options and its quirks. This file is what remains
+ * when compatibility is dropped: once most options are gone, what the
+ * programs have in common is most of each one, and it can be written
+ * once.
  *
  * The originals are principia's utilities/, Plan 9's C (files/cat.c,
  * misc/wc.c, byte/xd.c, text/grep/...), known here through m-ix's
@@ -62,6 +46,25 @@
  * lines over TinyLibSystem.link. ps is ours too: Plan 9's reads a
  * directory a process in /proc, its status file; tiny-kernel gives one
  * file, /dev/ps, a line a process, which ps puts in columns.
+ *
+ * kept:
+ * Of the twins, their output is kept, where it costs nothing: wc's
+ * columns, xd's lines, du's kilobytes, cmp's messages, ls's sorted
+ * names.
+ *
+ * dropped:
+ * Most options (each utility keeps the one or two that carry its idea),
+ * UTF-8 (wc counts bytes), floating point in seq, most of ls -l
+ * (tiny-kernel has no owners, modes or times: it is a file's kind,
+ * links and size), and the wording of each program's errors: here they
+ * are all "tool: file: reason". The plan, and what was found on the
+ * way: docs/plans/done/plan_tiny_utilities.md.
+ *
+ * context:
+ * The same file on two systems: as TinyShell.ml, it names only
+ * TinyLibSystem (TinyKernel/host/TinyLibSystem.mli) and the pure
+ * functions of the standard library, so it is tiny-kernel's utils and
+ * the host's tiny-utils.
  *)
 
 type caps =

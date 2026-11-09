@@ -65,20 +65,16 @@
  * is -2, fffe. Zero is no opcode, so memory never written stops a
  * program that runs into it.
  *
- * Who is around it:
+ * twin:
+ * The twin, mini-5i, keeps its decoded words as this CPU does, but by
+ * address (Cpu): a program that wrote over its code would run the old
+ * one, and mini-qemu's loop empties the cache when a mapping changes.
+ * Here they are kept by the word itself ([keep_decoded], in the .ml),
+ * which no store can make wrong. mini-5i also has a second execute for
+ * what a kernel runs most, which allocates nothing (Arm32_fast),
+ * Arm32's staying the definition; here [step] is both.
  *
- *     .tm files: by hand (v0), by tiny-c, by tiny-ml
- *                  |  tiny-assembler, tiny-linker: an image
- *     this file:   the CPU ([step], given an [env]), the encoding
- *                  they use, the listing
- *                 /                          \
- *     TinyCPU: the env is memory and       TinyMachineDevices: the env is
- *     three calls of the host's            pages, devices and a trap;
- *                                          TinyMachine's and
- *                                          TinyMachineWeb's
- *
- * What makes it small:
- *
+ * kept:
  * - {b The interpreter is the definition.} [step] is the machine's
  *   semantics, a match on the decoded word; memory holds the program,
  *   so a program may compute its code.
@@ -95,8 +91,20 @@
  *   parse, encode and decode agree; not for data, whose words may
  *   decode as instructions with bits the encoding ignores).
  *
- * Exercises, each cheap because the interpreter is the definition and
- * a machine changes the CPU only through env:
+ * context:
+ *     .tm files: by hand (v0), by tiny-c, by tiny-ml
+ *                  |  tiny-assembler, tiny-linker: an image
+ *     this file:   the CPU ([step], given an [env]), the encoding
+ *                  they use, the listing
+ *                 /                          \
+ *     TinyCPU: the env is memory and       TinyMachineDevices: the env is
+ *     three calls of the host's            pages, devices and a trap;
+ *                                          TinyMachine's and
+ *                                          TinyMachineWeb's
+ *
+ * exercises:
+ * Each one is cheap because the interpreter is the definition and a
+ * machine changes the CPU only through env:
  * - a translator back (to arm32, as QEMU's): written once, 185 lines,
  *   then removed as a second topic (git history has it); the law, the
  *   same output interpreted and translated;
@@ -108,14 +116,6 @@
  *   law checking them;
  * - a debugger by env: breakpoints as a word decode does not know,
  *   caught by illegal, the program's registers and memory then shown.
- *
- * The twin, mini-5i, keeps its decoded words too, by address (Cpu): a
- * program that wrote over its code would run the old one, and
- * mini-qemu's loop empties the cache when a mapping changes. Here they
- * are kept by the word itself ([keep_decoded], in the .ml), which no
- * store can make wrong. mini-5i also has a second execute for what a
- * kernel runs most, which allocates nothing (Arm32_fast), Arm32's
- * staying the definition; here [step] is both.
  *
  * cs-history:
  * Knuth designed MIX in the 1960s for The Art of Computer Programming
@@ -129,6 +129,15 @@
  * architects of MIPS and Alpha. The lesson kept here is
  * the first one: the machine a book is written for can be drawn to
  * fit the book.
+ *
+ * others:
+ * The other machines drawn for a course: Hennessy and Patterson's
+ * DLX (1990), MIPS with its accidents removed, the one this is
+ * nearest to; Patt and Patel's LC-3, 16 bits and eight registers,
+ * with flags; Nisan and Schocken's Hack, two kinds of instruction
+ * and no call. RISC-V (Berkeley, 2010) began as a summer's project
+ * for a laboratory's own research and courses, and is the case of an
+ * academic machine that became an industry's.
  *
  * design:
  * Leaving out the flags removes a register that every instruction
@@ -150,23 +159,14 @@
  * a kernel's variable) an offset from r0, with no register to load
  * first.
  *
- * others:
- * The other machines drawn for a course: Hennessy and Patterson's
- * DLX (1990), MIPS with its accidents removed, the one this is
- * nearest to; Patt and Patel's LC-3, 16 bits and eight registers,
- * with flags; Nisan and Schocken's Hack, two kinds of instruction
- * and no call. RISC-V (Berkeley, 2010) began as a summer's project
- * for a laboratory's own research and courses, and is the case of an
- * academic machine that became an industry's.
- *
- * References: D. E. Knuth, The Art of Computer Programming, vol. 1
- * (MIX, 1968; MMIX, fascicle 1, 2005): a machine designed to teach;
- * D. A. Patterson and J. L. Hennessy, the MIPS and RISC-V books: the
- * load-store machine; J. R. Bell, "Threaded Code" (CACM,
- * 1973); F. Bellard, "QEMU, a Fast and Portable Dynamic Translator"
- * (USENIX, 2005); A. Waterman, "Design of the RISC-V
- * Instruction Set Architecture" (PhD thesis, 2016), the
- * compressed instructions. *)
+ * references:
+ * D. E. Knuth, The Art of Computer Programming, vol. 1 (MIX, 1968;
+ * MMIX, fascicle 1, 2005): a machine designed to teach; D. A. Patterson
+ * and J. L. Hennessy, the MIPS and RISC-V books: the load-store
+ * machine; J. R. Bell, "Threaded Code" (CACM, 1973); F. Bellard, "QEMU,
+ * a Fast and Portable Dynamic Translator" (USENIX, 2005); A. Waterman,
+ * "Design of the RISC-V Instruction Set Architecture" (PhD thesis,
+ * 2016), the compressed instructions. *)
 
 (* a word's 32 bits of an int that may have more; a < b, both unsigned
  * words *)

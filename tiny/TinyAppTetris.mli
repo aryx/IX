@@ -13,16 +13,18 @@
  * three functions. There is no loop, no clock and no drawing in this
  * file.
  *
- * Its twin is m-ix's games/puzzle/Tetris.ml, on lib_playground: the
+ * twin:
+ * m-ix's games/puzzle/Tetris.ml is its twin, on lib_playground: the
  * author's playground's port of elm-flatris, in Elm's way, where the
  * well is the list of its full cells, a piece four cells turned by
- * computing their places again, and the falling piece's height a
- * float, for the speed of its fall. What is ours is below: the
- * rotations a table of bits, the well an array, integers only (a
- * level's speed is a number of frames); a turn that does not fit is
- * tried one cell to each side, where the twin tries two. Plan 9 has
- * its own, games/4s (not in principia; from memory).
+ * computing their places again, and the falling piece's height a float,
+ * for the speed of its fall. What is ours is below: the rotations a
+ * table of bits, the well an array, integers only (a level's speed is a
+ * number of frames); a turn that does not fit is tried one cell to each
+ * side, where the twin tries two. Plan 9 has its own, games/4s (not in
+ * principia; from memory).
  *
+ * kept:
  * The parts that are not obvious:
  *
  * - {b Each rotation of a piece is 16 bits}: a 4 by 4 square, one
@@ -50,17 +52,17 @@
  *   redraws its first shape when it changes, so a moving piece costs
  *   five shapes, not a hundred.
  *
- * What is dropped: the shadow showing where the piece would land,
- * holding a piece aside, wall kicks further than one cell to either
- * side, dealing the seven pieces as a bag, a pause, and high scores.
- * Its sounds are m-ix's (a piece landed, rows gone, four at once, a
- * level, the game over; [sound] says which from two models), and so is
- * its music, Korobeiniki, the melody on a square and an octave bass on
- * a triangle, a tenth faster each level ([music]: the tune a model
- * wants, as [view] is the picture it wants; none when the game is
- * over).
+ * dropped:
+ * The shadow showing where the piece would land, holding a piece aside,
+ * wall kicks further than one cell to either side, dealing the seven
+ * pieces as a bag, a pause, and high scores. Its sounds are m-ix's (a
+ * piece landed, rows gone, four at once, a level, the game over;
+ * [sound] says which from two models), and so is its music,
+ * Korobeiniki, the melody on a square and an octave bass on a triangle,
+ * a tenth faster each level ([music]: the tune a model wants, as [view]
+ * is the picture it wants; none when the game is over).
  *
- * Exercises:
+ * exercises:
  * - the shadow; a pause; the bag of seven;
  * - showing a completed row before it is removed (a frame or two of
  *   white);
@@ -88,7 +90,7 @@
  * the deal is random too, and a rotation that does not fit tries
  * shifting one cell to either side.
  *
- * References:
+ * references:
  *  - A. Pajitnov's Tetris (1984)
  *  - https://en.wikipedia.org/wiki/Tetris
  *)

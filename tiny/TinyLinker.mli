@@ -28,8 +28,22 @@
  *                      table; the loader reads the header's size only
  *     (-map: out.map)  "address label" a line, by address: tiny-prof's
  *
- * What makes it small:
+ * twin:
+ * mini-ld (linker/) is Plan 9's 5l and 7l (principia's
+ * linkers/5l), goken's output byte for byte. Kept: the three classical
+ * jobs, resolution, allocation and relocation. Dropped, as what 5l
+ * does for its machine and its system: choosing and encoding the
+ * instructions (the assembler did), the code laid along its flow
+ * (mini-ld's Follow), literal pools, the prologues a linker writes for
+ * a TEXT, libraries (mini-ar's archives, below), ELF's and Mach-O's
+ * headers: the a.out's is three words of its own. Added: the sweep,
+ * which neither 5l nor mini-ld has (a library's member is taken
+ * whole); and -s writes the labels as text lines, where 5l writes a
+ * binary table (debugging.c's putsymb: a value, a type letter, a
+ * name) and a table of the pcs' source lines beside it.
  *
+ * kept:
+ * It is small because:
  * - {b A place is filled by encoding again}: the word is decoded
  *   (TinyMachineISA.decode), its immediate replaced, and encoded, so
  *   [encode]'s checks say what does not fit (an addi of an address
@@ -47,18 +61,11 @@
  *   was, and the split checked byte for byte on make check's images
  *   (plan_tiny_self_hosting.md, step 3).
  *
- * Its twin, mini-ld (linker/), is Plan 9's 5l and 7l (principia's
- * linkers/5l), goken's output byte for byte. Kept: the three classical
- * jobs, resolution, allocation and relocation. Dropped, as what 5l
- * does for its machine and its system: choosing and encoding the
- * instructions (the assembler did), the code laid along its flow
- * (mini-ld's Follow), literal pools, the prologues a linker writes for
- * a TEXT, libraries (mini-ar's archives, above), ELF's and Mach-O's
- * headers: the a.out's is three words of its own. Added: the sweep,
- * which neither 5l nor mini-ld has (a library's member is taken
- * whole); and -s writes the labels as text lines, where 5l writes a
- * binary table (debugging.c's putsymb: a value, a type letter, a
- * name) and a table of the pcs' source lines beside it.
+ * others:
+ * Wirth's Oberon (Project Oberon, 1992) links modules as they are
+ * loaded, an object's fixups chained through the code itself; Go's
+ * linker descends from Plan 9's, and moved the encoding to its
+ * assembler in 2014, for speed.
  *
  * plan9-is-cleaner:
  * Plan 9's assemblers do not encode: an object holds the instructions
@@ -67,13 +74,7 @@
  * encode, and leave relocations, with a table per machine of all the
  * ways an address can sit in an instruction. A machine of one format
  * makes the two the same: the assembler encodes, and the linker's one
- * way to fill a place is the encoder.
- *
- * others:
- * Wirth's Oberon (Project Oberon, 1992) links modules as they are
- * loaded, an object's fixups chained through the code itself; Go's
- * linker descends from Plan 9's, and moved the encoding to its
- * assembler in 2014, for speed. *)
+ * way to fill a place is the encoder. *)
 
 (* the image's order: the objects', .text and .data ignored; or all the
  * text first, then all the data (-n) *)

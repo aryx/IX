@@ -72,7 +72,8 @@
  *   colour table; the image the kernel needs for that colour is
  *   created the first time it is used.
  *
- * What is dropped from the full playground: floating-point
+ * dropped:
+ * From the full playground, this drops: floating-point
  * coordinates under a transformation (move, scale, rotate, fade; here
  * a shape is in pixels, at integer positions, with y going down from
  * the top left corner of the window); circles, polygons and images;
@@ -84,20 +85,21 @@
  * platforms (there is only one: the file descriptor the program draws
  * on).
  *
- * Exercises:
- * - the mouse: a fourth function, reading the program's descriptor 4;
- * - redraw only what changed, for every shape and not just the
- *   background, by comparing the shapes of two models;
- * - circles and polygons, using TinyKernelGraphics.ml's;
- * - a second game: a Snake, or a Pong.
- *
- * Where it stands: below it are TinyCalls (four kernel calls: write,
+ * context:
+ * Below it are TinyCalls (four kernel calls: write,
  * read, ready, ticks) and TinyLibDraw (the drawing messages); above it
  * is TinyAppTetris. It draws on its file descriptor 3 and reads keys on
  * its descriptor 0, so a game runs either on the whole screen or in a
  * window of TinyWindows without knowing which. Playground in
  * lib_playground is the full version, with floats, transformations,
  * the mouse and several platforms.
+ *
+ * exercises:
+ * - the mouse: a fourth function, reading the program's descriptor 4;
+ * - redraw only what changed, for every shape and not just the
+ *   background, by comparing the shapes of two models;
+ * - circles and polygons, using TinyKernelGraphics.ml's;
+ * - a second game: a Snake, or a Pong.
  *
  * cs-history:
  * Writing a program with a screen as a value plus a few functions on
@@ -121,7 +123,7 @@
  * TinyVCS's hashes: if things are never changed, knowing whether
  * something changed is free.
  *
- * References:
+ * references:
  *  - E. Czaplicki, "Elm: Concurrent FRP for Functional GUIs" (2012),
  *    and The Elm Architecture
  *  - Elm's Playground package (2019): a game as a model, a view and an

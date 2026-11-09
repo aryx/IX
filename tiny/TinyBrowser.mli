@@ -12,14 +12,21 @@
  * TinyLibGUI's menus and an address field), and follows links
  * (TinyBrowserAddress finds where they go).
  *
- * The main idea: {b a page is read only once, as it arrives, and turned
- * directly into lines}. There is no document tree and no style sheet.
- * Instead, the meaning of each tag is a row in a table that says
- * whether it starts a block, whether it is bold, monospace or hidden,
- * and how much it indents a list. What we keep of a page is exactly
- * what gets drawn: a list of lines, where each line is a few runs of
- * text, and each run has a column, a look (bold, etc.) and an optional
- * link.
+ * twin:
+ * mini-netscape reads a page into a tree (html's Dom), styles it by its
+ * style sheets, lays out boxes and runs its scripts; even mini-lynx,
+ * the text one, builds that tree first and walks it (Line_mode's
+ * render). Here the tree is never made: a page costs what its lines
+ * cost, and a page cut anywhere reads the same.
+ *
+ * kept:
+ * {b A page is read only once, as it arrives, and turned directly into
+ * lines}. There is no document tree and no style sheet. Instead, the
+ * meaning of each tag is a row in a table that says whether it starts a
+ * block, whether it is bold, monospace or hidden, and how much it
+ * indents a list. What we keep of a page is exactly what gets drawn: a
+ * list of lines, where each line is a few runs of text, and each run
+ * has a column, a look (bold, etc.) and an optional link.
  *
  *     messages ──► tokens ──► open tags ──► words ──► lines
  *     (raw bytes   (a tag and  (a stack giving  (wrapped    (each line a
@@ -35,12 +42,11 @@
  *     the words, the lines and the tables: TinyBrowserLines; and
  *     TinyBrowserText under them all, the entities and UTF-8 to ASCII)
  *
- * A message can end anywhere, even in the middle of a tag, of an
- * entity like &amp;, or of a multi-byte UTF-8 character. The reader
- * keeps the unfinished end and re-reads it together with the next
- * message. This way the resulting lines are the same no matter how the
- * page was split (the tests check this by feeding a page one byte at a
- * time).
+ * A message can end anywhere, even in the middle of a tag, of an entity
+ * like &amp;, or of a multi-byte UTF-8 character. The reader keeps the
+ * unfinished end and re-reads it together with the next message. This
+ * way the resulting lines are the same no matter how the page was split
+ * (the tests check this by feeding a page one byte at a time).
  *
  * Tables are the one place where we cannot produce a line right away,
  * because a column must be as wide as its widest cell, which we only
@@ -50,19 +56,22 @@
  * remaining room proportional to what it would need. Finally the rows
  * are laid out side by side.
  *
- * Characters: the machine's font has only 128 characters, so UTF-8 and
- * HTML entities are converted to ASCII here. A dash becomes -, a curly
- * quote becomes a straight one, an accented letter loses its accent,
- * and anything else becomes ?.
+ * The machine's font has only 128 characters, so UTF-8 and HTML
+ * entities are converted to ASCII here. A dash becomes -, a curly quote
+ * becomes a straight one, an accented letter loses its accent, and
+ * anything else becomes ?.
  *
- * What is ours, against the twins: mini-netscape reads a page into a
- * tree (html's Dom), styles it by its style sheets, lays out boxes and
- * runs its scripts; even mini-lynx, the text one, builds that tree
- * first and walks it (Line_mode's render). Here the tree is never
- * made: a page costs what its lines cost, and a page cut anywhere
- * reads the same. Dropped with it: style sheets (but a display:none,
- * hidden), scripts, forms, a page's colours and fonts, anything but
- * ASCII.
+ * dropped:
+ * With the tree go style sheets (but a display:none, hidden), scripts,
+ * forms, a page's colours and fonts, anything but ASCII.
+ *
+ * cs-history:
+ * Mosaic (1993) displayed a page progressively as it came over the
+ * modem, and this browser works the same way: there are no style sheets
+ * (CSS arrived in 1996), and the browser alone decides how each tag
+ * looks. The name www comes from the command of CERN's line-mode
+ * browser (1991), which wrapped pages to a terminal's 80 columns, just
+ * as this one does on an 80-column screen of 8x16 characters.
  *
  * others:
  * Plan 9's mothra (principia's browsers/mothra/) reads a page the same
@@ -73,15 +82,7 @@
  * came after it, reads a page with libhtml's parsehtml into a list of
  * items, a table one of them, sized as a whole (abaco's html.c).
  *
- * cs-history:
- * Mosaic (1993) displayed a page progressively as it came over the
- * modem, and this browser works the same way: there are no style sheets
- * (CSS arrived in 1996), and the browser alone decides how each tag
- * looks. The name www comes from the command of CERN's line-mode
- * browser (1991), which wrapped pages to a terminal's 80 columns, just
- * as this one does on an 80-column screen of 8x16 characters.
- *
- * References:
+ * references:
  *  - docs/plans/done/plan_tiny_browser.md: the reasons for each choice, and
  *    what Wikipedia actually sends
  *  - browsers/README.md: the full-size browser this one is a tiny

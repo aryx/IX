@@ -166,14 +166,6 @@
  *   Atomic; amoswap is then no longer atomic, which tiny-kernel does
  *   not need.
  *
- * terminology:
- * RISC-V says hart (a hardware thread: hartid, its number) where this
- * machine says core. They differ only on a core that runs several
- * threads at once, sharing its units (Intel's Hyper-Threading, SMT),
- * which the kernel then sees as several CPUs: Linux's /proc/cpuinfo
- * counts those. tiny-machine has no such core, so a core is one CPU,
- * the word a reader knows.
- *
  * Here is all of it as a kernel sees it. Memory is 256 MB, with the
  * devices at its top. An address is taken modulo the size, so r0 minus
  * 16 is 0xffffff0: reaching a device costs no register.
@@ -221,29 +213,7 @@
  * amoswap, or else it traps. The loop around [step] adds the rest: the time and
  * the interrupts.
  *
- * Exercises. Each one is cheap, because time is counted in instructions
- * and everything else is a hook of the CPU:
- * - the cores' turns in an order drawn from a seed (-cores takes them
- *   in a fixed one), so a race can be replayed from its seed, which
- *   real hardware never allows;
- * - a slow disk: the transfer completes N instructions after the
- *   command, so a kernel must sleep while waiting (v6's diskrw becomes
- *   xv6's);
- * - a TLB: the last translations are cached and flushed by a write to
- *   satp, so a kernel that forgets a flush shows its bug, as on real
- *   machines;
- * - the A and D bits of pages, set by loads and stores, so that a
- *   kernel can do clock page replacement.
- *
- * The machine itself is in TinyMachineDevices.ml (the control
- * registers, the traps, the pages, the state of the devices, and one
- * instruction's worth of time). This file is its terminal front end:
- * the console, the files, the window, and the main loop.
- * TinyMachineWeb.ml is the same front end for a web page.
- *
- * Where it stands: below it is TinyMachineCPU, the instructions; above
- * it are its kernels, TinyKernel (in ML, compiled by tiny-ml) and
- * the steps before it (v0 in assembly, t6 in C compiled by tiny-c).
+ * twin:
  * Its twins are machines that ix did not design: mini-qemu's Board and
  * Pi4. There, the same five ideas (modes, trap registers, a timer,
  * devices at addresses, an image loaded at a fixed place) have ARM's
@@ -276,6 +246,33 @@
  * there are, and which core handles which, is the board's business,
  * not the processor's.
  *
+ * archi:
+ * The machine itself is in TinyMachineDevices.ml (the control
+ * registers, the traps, the pages, the state of the devices, and one
+ * instruction's worth of time). This file is its terminal front end:
+ * the console, the files, the window, and the main loop.
+ * TinyMachineWeb.ml is the same front end for a web page.
+ *
+ * context:
+ * Below it is TinyMachineCPU, the instructions; above it are its
+ * kernels, TinyKernel (in ML, compiled by tiny-ml) and the steps before
+ * it (v0 in assembly, t6 in C compiled by tiny-c).
+ *
+ * exercises:
+ * Each one is cheap, because time is counted in instructions
+ * and everything else is a hook of the CPU:
+ * - the cores' turns in an order drawn from a seed (-cores takes them
+ *   in a fixed one), so a race can be replayed from its seed, which
+ *   real hardware never allows;
+ * - a slow disk: the transfer completes N instructions after the
+ *   command, so a kernel must sleep while waiting (v6's diskrw becomes
+ *   xv6's);
+ * - a TLB: the last translations are cached and flushed by a write to
+ *   satp, so a kernel that forgets a flush shows its bug, as on real
+ *   machines;
+ * - the A and D bits of pages, set by loads and stores, so that a
+ *   kernel can do clock page replacement.
+ *
  * cs-history:
  * Two modes with a trap between them come from the Atlas (Manchester,
  * 1962), and from then on every machine that ran more than one program
@@ -288,16 +285,6 @@
  * part of a program, grow it in the middle, or leave part of it on
  * disk, which is why pages were invented, on the Atlas again.
  *
- * design:
- * Counting time in instructions is what makes this machine a tool for
- * learning. A run is a function of the image and the input: the same
- * interleaving of processes, the same screen at the halt, the same bug
- * at the same instruction, on any host and under a debugger. On a real
- * board the timer follows a crystal, and an interrupt lands wherever it
- * lands. The cost is that nothing can be learned here about the real
- * timing of devices; mini-qemu also counts instructions and has the
- * same limit.
- *
  * others:
  * Other machines were made to carry a teaching system. Wirth's RISC for
  * Project Oberon (2013 edition) runs on an FPGA and has no modes at
@@ -308,7 +295,25 @@
  * a PDP-11), and v6, while it was here, brought that kind of kernel to
  * our own machine.
  *
- * References:
+ * design:
+ * Counting time in instructions is what makes this machine a tool for
+ * learning. A run is a function of the image and the input: the same
+ * interleaving of processes, the same screen at the halt, the same bug
+ * at the same instruction, on any host and under a debugger. On a real
+ * board the timer follows a crystal, and an interrupt lands wherever it
+ * lands. The cost is that nothing can be learned here about the real
+ * timing of devices; mini-qemu also counts instructions and has the
+ * same limit.
+ *
+ * terminology:
+ * RISC-V says hart (a hardware thread: hartid, its number) where this
+ * machine says core. They differ only on a core that runs several
+ * threads at once, sharing its units (Intel's Hyper-Threading, SMT),
+ * which the kernel then sees as several CPUs: Linux's /proc/cpuinfo
+ * counts those. tiny-machine has no such core, so a core is one CPU,
+ * the word a reader knows.
+ *
+ * references:
  *  - the RISC-V privileged specification: the trap registers, their
  *    names, mret
  *  - Wirth and Gutknecht, Project Oberon (1992): a machine and its

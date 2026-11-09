@@ -66374,3 +66374,35 @@ Yoann's follow-up centers on the repeated "Where it stands:" paragraphs in the t
 **Yoann:**
 
 > I see lots of similar structure in the tiny/ .mli, such as the "Where it stands:" paragraph. Should we use a tag for that instead? for consistency? and what could be the (short) tag for it? And whether there are more of those repetitive structures in the .mli where we could also use a tag (and have more structure shared among the .mli, with the tags in a similar order)
+
+------------------------------------------------------------------------
+
+## 2026-11-09 08:06
+
+**Yoann:**
+
+> analyze and report
+
+**Claude (summary):**
+
+Claude proposed adding section labels to tiny/ headers, with a fixed order: twin, kept, dropped, stands, exercises, then theme tags, then references.
+Claude recommended `stands:` as the label name, with `archi:` or `context:` as alternatives, and suggested keeping them separate from theme tags.
+Claude estimated about 30 tiny/ headers would need changes, done one file at a time with a reread, since some paragraphs cross-reference each other.
+Claude asked Yoann to decide whether to cover all of ix or only tiny/, and to choose the label names.
+Yoann chose tiny/ only and proposed splitting `stands:` into `archi:` for the program's internal structure and `context:` for how it fits the system.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 08:15
+
+**Yoann:**
+
+> let's just do tiny/ for now, and for stands: I wonder if archi: or context: could be used, depending on the paragraph, because they document different things (the soft architecture of the program itself, in the .ml, or the context and how this programs fits with the rest, what is used from the system, how it's called)
+
+**Claude (summary):**
+
+Claude recommended `archi:` for a program's internal structure and `context:` for how it fits into ix.
+Claude flagged that TinyVCS.mli in its header repeats `archi:` six times, five of them before diagrams.
+Claude proposed that a diagram belong to the paragraph that introduces it and take no label of its own.
+Claude left that rule change for your review, since the convention currently labels every paragraph, diagrams included.
+Claude also converted 38 headers across three agents, without committing, after dune and loc.py checks.

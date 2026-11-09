@@ -33,7 +33,8 @@
  * (TinyPlay.ml).
 
  *
- * Its twins are mini-9pi's /dev/audio (kernels/9pi/'s Devaudio, Plan
+ * twin:
+ * mini-9pi's /dev/audio (kernels/9pi/'s Devaudio, Plan
  * 9's audio(3)) and lib_audio: there the device takes samples only, 16
  * bits, two ears, 44,100 a second, and one program at a time (an open
  * while another has it fails, Einuse, as in principia's devaudio.c),

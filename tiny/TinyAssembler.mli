@@ -23,6 +23,21 @@
  * it (tiny-c's statics carry their file's name, tiny-ml's labels their
  * unit's).
  *
+ * twin:
+ * mini-asm (assembler/) is Plan 9's 5a and 7a (principia's
+ * assemblers/5a), and the two are opposites. mini-asm encodes nothing:
+ * it parses Plan 9's syntax (TEXT, GLOBL, DATA, the destination last)
+ * and marshals the instructions as it read them, the linker choosing
+ * each one's words (TinyLinker's plan9-is-cleaner compares the two
+ * roads). Here the words are made at once, a Unix assembler's way,
+ * which costs little since an address goes in five kinds of place
+ * (word, abs, hi, lo, pc), not a table per machine.
+ * The syntax is ours too, the RISC manuals' (a label and a colon, the
+ * destination first, gas's .word and .align, a ; comment); no #include
+ * or #define, no TEXT with its frame's size: a function is a label, its
+ * frame the compiler's instructions.
+ *
+ * kept:
  * What makes it small:
  *
  * - {b Sizes before addresses, for free.} No instruction's size
@@ -39,25 +54,21 @@
  *   program; on tiny-cpu, or in a program of tiny-kernel's, they are
  *   illegal words, as on a real machine in user mode.
  *
- * Where it fits: tiny-c and tiny-ml write the .tm files, tiny-linker
- * reads the objects, tiny-cpu and tiny-machine run the image.
- * (old: TinyMachineCPU.ml's assembler, which read all of a program's
- * .tm files at once and wrote the image, no object between; and before
+ * context:
+ * tiny-c and tiny-ml write the .tm files, tiny-linker reads the
+ * objects, tiny-cpu and tiny-machine run the image. (old:
+ * TinyMachineCPU.ml's assembler, which read all of a program's .tm
+ * files at once and wrote the image, no object between; and before
  * plan_tiny_self_hosting.md, a TinyAssembler.ml for arm64, 7a and 7l
  * made one, in git's history.)
  *
- * Its twin, mini-asm (assembler/), is Plan 9's 5a and 7a (principia's
- * assemblers/5a), and the two are opposites. mini-asm encodes nothing:
- * it parses Plan 9's syntax (TEXT, GLOBL, DATA, the destination last)
- * and marshals the instructions as it read them, the linker choosing
- * each one's words (TinyLinker's plan9-is-cleaner compares the two
- * roads). Here the words are made at once and the object is text, a
- * Unix assembler's way, which costs little since an address goes in
- * five kinds of place (word, abs, hi, lo, pc), not a table per
- * machine. The syntax is ours too, the RISC manuals' (a label and a
- * colon, the destination first, gas's .word and .align, a ; comment);
- * no #include or #define, no TEXT with its frame's size: a function is
- * a label, its frame the compiler's instructions.
+ * cs-history:
+ * The first assemblers assembled and loaded in one step: the EDSAC's
+ * initial orders (David Wheeler, 1949) read orders punched on paper
+ * tape as a letter and a decimal address, and stored them in memory as
+ * binary. The object came with libraries and with programs too big to
+ * translate again after each change: each part translated once, its
+ * addresses left open, the parts bound together later.
  *
  * design:
  * The object is marshalled, as mini-asm's and mini-ld's are (old: text,
@@ -68,14 +79,6 @@
  * derives. A magic line comes first, since tiny-ml's Marshal stops the
  * program on bytes it cannot read.
  *
- * cs-history:
- * The first assemblers assembled and loaded in one step: the EDSAC's
- * initial orders (David Wheeler, 1949) read orders punched on paper
- * tape as a letter and a decimal address, and stored them in memory as
- * binary. The object came with libraries and with programs too big to
- * translate again after each change: each part translated once, its
- * addresses left open, the parts bound together later.
- *
  * terminology:
  * An assembler translates mnemonics into words but leaves open the
  * addresses it cannot know; a linker puts the objects one after the
@@ -84,11 +87,12 @@
  * Plan 9 calls its linker the loader (5l, 7l: l for load) and gives it
  * most of the assembler's work: its assemblers do not encode.
  *
- * References: M. V. Wilkes, D. J. Wheeler and S. Gill, The Preparation
- * of Programs for an Electronic Digital Computer (1951), the initial
- * orders; T. G. Szymanski, "Assembling Code for Machines with
- * Span-dependent Instructions" (CACM, 1978), the problem a fixed
- * format avoids; J. R. Levine, Linkers and Loaders (2000). *)
+ * references:
+ * M. V. Wilkes, D. J. Wheeler and S. Gill, The Preparation of Programs
+ * for an Electronic Digital Computer (1951), the initial orders; T. G.
+ * Szymanski, "Assembling Code for Machines with Span-dependent
+ * Instructions" (CACM, 1978), the problem a fixed format avoids; J. R.
+ * Levine, Linkers and Loaders (2000). *)
 
 (* a file's text to its object's text, the file opened by the caller
  * (its name in the errors: Chan.origin) *)

@@ -6,11 +6,16 @@
  * without the screen. The commands, with examples, and the usage are
  * the [help] string of the .ml, which is what ed -h prints.
  *
- * It is tiny-kernel's ed (and sam, the same program by another name):
- * as TinyShell.ml, it asks the system only through TinyLibSystem.
+ * twin:
+ * The original is principia's editors/sam/ (mini-ed's is editors/ed/):
+ * its parallel changes are file.c's log, the changes a command makes
+ * kept aside and applied together at its end, as undo applies its own.
+ * [commit] is the same trick on a list of triples; sam pages its text
+ * and its logs to a temporary file, where here the text is one string.
  *
- * Three ideas make it sam rather than ed, and they are the core of
- * this file:
+ * kept:
+ * Three ideas make it sam rather than ed, and they are the core
+ * of this file:
  *
  * - {b The buffer is one string, and dot is a range of characters},
  *   not a line. A line is just one kind of address among others: 3 is
@@ -30,9 +35,9 @@
  *   old text. The changes must come in order and must not overlap
  *   (otherwise the error is "changes not in sequence").
  *
- * Here are the three ideas at work on a file with the single line
- * "ab ab" and the command ,x/a/c/ba/ (in the whole file, replace each
- * a by ba):
+ * Here are the three ideas at work on a file with the single line "ab
+ * ab" and the command ,x/a/c/ba/ (in the whole file, replace each a by
+ * ba):
  *
  *     the text before        a  b  _  a  b  \n       dot is #0,#6, set
  *                            0  1  2  3  4  5        by the comma address
@@ -49,31 +54,37 @@
  * the first change. Worse, a loop whose replacement contains its own
  * pattern (here ba contains a) could keep matching what it just wrote.
  *
- * What is dropped from sam: the screen; multiple files (the b B D n X
- * Y commands and addresses that name a file); the mark (k and its
- * address); ! < > |; and cd. In a few places sam sets dot oddly after
- * a loop or a move (the range of the first change after an x, an empty
- * range after t). Here dot is simply the text the command produced;
- * after u, dot is restored to what it was before the undone command.
+ * {b Undo is cheap for the same reason}: a command's changes are a list
+ * against the old text, so their inverse (for each change, its range in
+ * the new text and the text it replaced) is also a list, and is applied
+ * the same way ([commit]). Undoing pushes the inverse of the inverse,
+ * so a redo is just an undo that is undone. The regexp matcher is
+ * TinyLibRegex's, which grep uses too: a small backtracker that returns
+ * the leftmost-longest match like sam's, with a memo of (node,
+ * position) pairs. libregexp gives different answers in some corner
+ * cases (see lib_core's Regex.mli, which mini-ed uses).
  *
- * {b Undo is cheap for the same reason}: a command's changes are a
- * list against the old text, so their inverse (for each change, its
- * range in the new text and the text it replaced) is also a list, and
- * is applied the same way ([commit]). Undoing pushes the inverse of
- * the inverse, so a redo is just an undo that is undone. The regexp
- * matcher is TinyLibRegex's, which grep uses too: a small backtracker
- * that returns the leftmost-longest match like sam's, with a memo of
- * (node, position) pairs. libregexp gives different answers in some
- * corner cases (see lib_core's Regex.mli, which mini-ed uses).
+ * dropped:
+ * From sam: the screen; multiple files (the b B D n X Y commands and
+ * addresses that name a file); the mark (k and its address); ! < > |;
+ * and cd. In a few places sam sets dot oddly after a loop or a move
+ * (the range of the first change after an x, an empty range after t).
+ * Here dot is simply the text the command produced; after u, dot is
+ * restored to what it was before the undone command.
  *
- * The original is principia's editors/sam/ (mini-ed's is editors/ed/):
- * its parallel changes are file.c's log, the changes a command makes
- * kept aside and applied together at its end, as undo applies its own.
- * [commit] is the same trick on a list of triples; sam pages its text
- * and its logs to a temporary file, where here the text is one string.
+ * context:
+ * It is tiny-kernel's ed (and sam, the same program by another name):
+ * as TinyShell.ml, it asks the system only through TinyLibSystem.
  *
- * Exercises. Each is cheap because a command's changes are a list,
- * made against the old text and applied together:
+ * ix has three editors, mini-ed (lines, an editor for a teletype), this
+ * one (ranges, but still no screen) and mini-emacs (with a screen).
+ * Recording changes and then applying them in one step is the same idea
+ * as a statement in TinyDatabase and a command in TinyVCS: nothing is
+ * ever half done, and undoing is cheap.
+ *
+ * exercises:
+ * Each is cheap because a command's changes are a list, made against
+ * the old text and applied together:
  * - several files: one buffer and one dot per file, addresses that
  *   name a file ("name"), and X/re/cmd and Y/re/cmd that run cmd in
  *   each file whose name matches re, or does not (as in sam);
@@ -86,12 +97,6 @@
  * - several dots instead of one: keep the matches of an x as a set of
  *   selections, and run the next command on each of them (the editing
  *   model of Kakoune and vis, which grew out of sam's x).
- *
- * Where it stands: ix has three editors, mini-ed (lines, an editor for
- * a teletype), this one (ranges, but still no screen) and mini-emacs
- * (with a screen). Recording changes and then applying them in one step is the same
- * idea as a statement in TinyDatabase and a command in TinyVCS:
- * nothing is ever half done, and undoing is cheap.
  *
  * cs-history:
  * The line as the unit of editing comes from the teletype. QED
@@ -106,14 +111,6 @@
  * reason for a selection to be whole lines, and the command language
  * was designed to work on whatever the mouse can select.
  *
- * others:
- * Acme (Pike, 1994), Plan 9's other editor, kept sam's language as a
- * single command, Edit. Kakoune and vis turned sam's x into their
- * whole way of editing: every command works on a set of selections,
- * which x and y refine. vi and Emacs kept lines and a single point,
- * and loop by repeating a command or a macro. sed and awk are the loop
- * over lines turned into a program of its own.
- *
  * modern:
  * The buffer here is an OCaml string, rebuilt entirely by each command
  * that changes it: a one-megabyte file means a megabyte copied for
@@ -124,7 +121,15 @@
  * was typed); others use a rope (a tree of strings). The third
  * exercise above is one of these.
  *
- * References:
+ * others:
+ * Acme (Pike, 1994), Plan 9's other editor, kept sam's language as a
+ * single command, Edit. Kakoune and vis turned sam's x into their
+ * whole way of editing: every command works on a set of selections,
+ * which x and y refine. vi and Emacs kept lines and a single point,
+ * and loop by repeating a command or a macro. sed and awk are the loop
+ * over lines turned into a program of its own.
+ *
+ * references:
  *  - Rob Pike, "The Text Editor sam" (Software -- Practice and
  *    Experience, 1987): the command language, addresses as character
  *    ranges, and applying a command's changes together at its end

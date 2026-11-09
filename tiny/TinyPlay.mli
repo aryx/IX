@@ -1,16 +1,19 @@
 (* tiny-play: a WAV file played, on tiny-kernel's speaker
- * (plan_tiny_audio.md, step 4). m-ix's twin is mini-play
- * (apps/media/play/, on lib_audio/formats/), which plays MOD, MIDI,
- * MP3, WAV and ABC to Plan 9's /dev/audio.
+ * (plan_tiny_audio.md, step 4).
  *
  *     play /examples/korobeiniki.wav        on tiny-kernel
  *     tiny-play song.wav                    on the host (../sdl/)
  *
- * The idea kept: a file's sound is its samples made into the speaker's,
- * a block at a time, each written when the last was taken, so the
- * kernel, which takes a voice's samples a second ahead of the speaker
- * at most, paces the program, and the first is heard after a block, not
- * after the whole file:
+ * twin:
+ * mini-play (apps/media/play/, on lib_audio/formats/) plays MOD,
+ * MIDI, MP3, WAV and ABC to Plan 9's /dev/audio.
+ *
+ * kept:
+ * A file's sound is its samples made into the speaker's, a block at a
+ * time, each written when the last was taken, so the kernel, which
+ * takes a voice's samples a second ahead of the speaker at most, paces
+ * the program, and the first is heard after a block, not after the
+ * whole file:
  *
  *     the file's bytes --> [wav]: RIFF's chunks, "fmt " and "data"
  *                             |  2,048 samples at a time ([block])
@@ -27,9 +30,10 @@
  * a second loses what is above 4,000 Hz, and what is above folds down
  * (aliasing), which a filter before the taking would prevent.
  *
- * What is dropped: every other format (MOD, MIDI, MP3: lib_audio has
- * thousands of lines for them), floats, a WAV's other encodings
- * (24 or 32 bits, floats, ADPCM, A-law), and the -c and -s options.
+ * dropped:
+ * Every other format (MOD, MIDI, MP3: lib_audio has thousands of lines
+ * for them), floats, a WAV's other encodings (24 or 32 bits, floats,
+ * ADPCM, A-law), and the -c and -s options.
  *
  * cs-history:
  * WAV is Microsoft's and IBM's RIFF (1991), itself Electronic Arts'

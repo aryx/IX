@@ -147,6 +147,35 @@ Plan 9. `testing:` is ix's own, and it goes in the `.ml`'s header,
 not the `.mli`'s: the interface tells the module, the implementation
 how it is made sure of.
 
+## The section labels (tiny/)
+
+tiny/'s headers share sections that are the module's own, not around
+it (the test above says no tag), and were each written in several
+words ("What is dropped", "What is left out", "Left out"...) and in
+several orders. They are marked as the tags are, a word and a colon
+on a line of their own, so that every header reads in the same order
+(the author, 2026-11-09, "for consistency", tiny/ first):
+
+| Label | The section |
+|---|---|
+| `twin:` | m-ix's version (mini-mk, mini-rc...), and what this one is beside it: what remains when compatibility is dropped |
+| `kept:` | the ideas kept, what makes it small: the core, each choice with its reason |
+| `dropped:` | what is left out, and what that costs |
+| `twist:` | what this one does that its twin does not: an idea of its own, taken in the liberty tiny/ has, that simplifies or fixes things (tiny-build's stamps by content, mk's being by time) |
+| `archi:` | how the program is made inside: its parts, its pipeline, how the file is cut (the soft architecture of the `.ml`) |
+| `context:` | how it fits with the rest: who calls it, what it calls, what it asks of the system, the same idea elsewhere in ix |
+| `exercises:` | what to add, roughly in order, each cheap because of a choice above |
+| `references:` | the papers, manuals and files read, each with what for |
+
+In this order, each only when there is something to say: the
+sentence and how it works (no label), `twin:`, `kept:`, `dropped:`,
+`twist:`, `archi:`, `context:`, `exercises:`, then the tags, in the
+order of the table above (`cs-history:` first), then `references:`. A
+label holds to the next label or tag, so a section of several
+paragraphs, a diagram among them, has it once (a tag holds for its
+paragraph only). A label is not a tag: `loc.py` does not count it
+among the themes, which are what is around the module.
+
 ## Counting them
 
 m-ix and t-ix are numbers to keep small (`docs/loc.md`), and a number

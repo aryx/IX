@@ -68,7 +68,8 @@
  * boot N, read only. A file deleted by mistake can be copied back from
  * there.
  *
- * Its twin in m-ix is mini-9pi's disk, '#x' (kernels/9pi/'s Kfs), on
+ * twin:
+ * mini-9pi's disk, '#x' (kernels/9pi/'s Kfs), on
  * lib_xv6fs's Xv6fs: xv6's file system (xv6's fs.c, which ix's
  * mini-xv6 has too, kernels/xv6's Fs), in the kernel, with a bitmap
  * of free blocks and, as here, no log and no cache. Kept from it: the

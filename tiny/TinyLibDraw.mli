@@ -31,10 +31,12 @@
  * place, and everything above them is tested by dune before
  * tiny-machine ever runs it.
  *
- * Its twin in m-ix is lib_graphics's Draw and Display (libdraw's, by
- * way of xix): a Display that keeps the messages until [flush], images
- * as records, numbers of four bytes. What is ours:
+ * twin:
+ * m-ix's lib_graphics has Draw and Display (libdraw's, by way of xix):
+ * a Display that keeps the messages until [flush], images as records,
+ * numbers of four bytes.
  *
+ * kept:
  * - {b A message is a string returned}: no Display, no Image record,
  *   no buffer of the library's; the program concatenates them and
  *   writes them when it wants them shown.

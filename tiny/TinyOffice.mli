@@ -1,10 +1,8 @@
 (* tiny-office: a page of objects, each a kind of document in a box,
  * in one program (docs/plans/done/plan_tiny_office.md).
  *
- * Its full-size counterpart in m-ix is mini-office (apps/office/,
- * about 5,200 lines): a document of parts (text, sheet, picture,
- * drawing, chart), each a record of functions. This is the same idea
- * cut down, the compound document of the Xerox Star and of Smalltalk:
+ * It is the compound document of the Xerox Star and of Smalltalk, cut
+ * down:
  *
  *     the shell          the page: selecting, moving, resizing, a new
  *         |              box, deleting, undo, the file
@@ -12,12 +10,6 @@
  *         |              drawn, how it is edited (here: text, sheet,
  *         |              drawing)
  *     its data           a string, whatever the kind
- *
- * The shell is this file; the parts are TinyOffice/'s modules, a kind
- * each: TinyOfficeText, TinyOfficeSheet, TinyOfficeDrawing,
- * TinyOfficePaint and TinyOfficeChart (its data read, its keys, its
- * view), on TinyOfficeModel (the page's objects, what is being edited,
- * the office's record); TinyOfficeFile reads and writes the file.
  *
  * {b Every object's data is text}, and undo is the earlier pages, kept
  * in a list (an edit makes a new page, the old one is not changed).
@@ -119,8 +111,10 @@
  * draws a character in some 13,000 instructions, and a page redrawn at
  * each key would be seconds of tiny-machine.
  *
- * This file uses no system calls: the program around reads the keys and
- * the mouse, draws and writes the file.
+ * twin:
+ * Its full-size counterpart in m-ix is mini-office (apps/office/, about
+ * 5,200 lines): a document of parts (text, sheet, picture, drawing,
+ * chart), each a record of functions.
  *
  * mini-office is the author's playground's apps/office/TinyOffice.ml,
  * brought to ix under that name: a part there is a record of
@@ -135,14 +129,26 @@
  * font and its looks; the page drawn by run_canvas where it changed;
  * PDF left to tiny-troff.
  *
- * What is left out, for now: charts other than bars (a pie, lines),
- * moving a drawing's shapes once drawn, a sheet's floating point, its
- * other functions than sum, and formulas that follow a cell moved, a
- * paint's fill and its colours other than ten, other fonts and sizes
- * (one font, 8 by 16, its bold, italic and large), colours of text,
- * paragraphs centred or justified, a text that flows from a box to the
- * next or onto the next page, and undo of the typing inside a box (undo
- * takes the document back to before the box was edited).
+ * dropped:
+ * For now: charts other than bars (a pie, lines), moving a drawing's
+ * shapes once drawn, a sheet's floating point, its other functions than
+ * sum, and formulas that follow a cell moved, a paint's fill and its
+ * colours other than ten, other fonts and sizes (one font, 8 by 16, its
+ * bold, italic and large), colours of text, paragraphs centred or
+ * justified, a text that flows from a box to the next or onto the next
+ * page, and undo of the typing inside a box (undo takes the document
+ * back to before the box was edited).
+ *
+ * archi:
+ * The shell is this file; the parts are TinyOffice/'s modules, a kind
+ * each: TinyOfficeText, TinyOfficeSheet, TinyOfficeDrawing,
+ * TinyOfficePaint and TinyOfficeChart (its data read, its keys, its
+ * view), on TinyOfficeModel (the page's objects, what is being edited,
+ * the office's record); TinyOfficeFile reads and writes the file.
+ *
+ * context:
+ * This file uses no system calls: the program around reads the keys and
+ * the mouse, draws and writes the file.
  *)
 
 (* [create width height file text]: the office on a page of that size

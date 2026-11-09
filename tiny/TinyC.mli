@@ -1,19 +1,6 @@
 (* A tiny C compiler for tiny-machine with an
  * intermediate language of its own.
  *
- * The full-size compiler in ix, mini-cc (languages/c/), is a faithful
- * byte-for-byte twin of Plan 9's 5c and 7c: it has their front end,
- * their trees, their code generator, and a record per machine. This
- * file is what is left when the code only needs to be correct. (Its
- * usage, with examples, is in [help] below, which is what tiny-c -h
- * prints.) It reads one C file and writes its assembly for TinyCPU
- * (TinyMachineCPU.ml), whose words are 4 bytes: pointers too, and long
- * long is refused. Its runtime is in TinyCRuntime/ (built by
- * TinyKernel/steps/Makefile): start.tm holds the program start and
- * the system calls, udivmod.tm the unsigned division, and the rest of
- * libc is C compiled by tiny-c. Plan 9's names (print, exits), ANSI's
- * rules: the tests compare it with the host's cc (TinyC_tests/host.h).
- *
  * A file goes through these steps, each with its own type:
  *
  *     file.c
@@ -49,6 +36,17 @@
  * optimizing compiler with both arguments in registers would need only
  * one, an add with a shifted second operand.
  *
+ * twin:
+ * mini-cc (languages/c/), ix's full-size compiler, is a faithful
+ * byte-for-byte twin of Plan 9's 5c and 7c: it has their front end,
+ * their trees, their code generator, and a record per machine. This
+ * file is what is left when the code only needs to be correct.
+ *
+ * mini-cc has what this one leaves out: 7c's trees rewritten using
+ * Sethi and Ullman's numbers, addressing modes, a register allocator, a
+ * peephole pass, and an object file format.
+ *
+ * kept:
  * What makes it small while still being a C compiler:
  *
  * - {b A stack machine in between} (IR, below): expressions become
@@ -82,24 +80,41 @@
  *   function, print, walks them from its last named one's address),
  *   the result in r13, every register but sp the callee's.
  *
- * The language supported: char, short, int, long (4 bytes, as in
- * Plan 9), signed and unsigned; pointers, arrays, structs (members,
- * . and ->, but not passed by value); enums; void;
- * globals with initializers (numbers, strings, addresses, and arrays
- * of them); static, extern, typedef; functions and prototypes, and
- * calls to variadic functions; function pointers (C's inside-out
- * declarators, and calls through any expression, as needed by t6's
- * system call table); every operator, including op=, ++,
- * --, ?:, casts, sizeof and the comma, with constant expressions
- * folded (for an array size or a case); if, while, do, for, switch,
- * break, continue, return and blocks; #include "file" and #define of a name.
+ * The language supported: char, short, int, long (4 bytes, as in Plan
+ * 9), signed and unsigned; pointers, arrays, structs (members, . and
+ * ->, but not passed by value); enums; void; globals with initializers
+ * (numbers, strings, addresses, and arrays of them); static, extern,
+ * typedef; functions and prototypes, and calls to variadic functions;
+ * function pointers (C's inside-out declarators, and calls through any
+ * expression, as needed by t6's system call table); every operator,
+ * including op=, ++, --, ?:, casts, sizeof and the comma, with constant
+ * expressions folded (for an array size or a case); if, while, do, for,
+ * switch, break, continue, return and blocks; #include "file" and
+ * #define of a name.
  *
- * Left out, because of what each would cost here: floats,
- * unions, bitfields, structs by value, goto, macros with arguments,
- * and #if.
+ * dropped:
+ * Because of what each would cost here: floats, unions, bitfields,
+ * structs by value, goto, macros with arguments, and #if.
  *
- * Exercises, each cheap because the stack machine sits between the
- * front end and the machine:
+ * context:
+ * Its usage, with examples, is in [help] below, which is what tiny-c -h
+ * prints. It reads one C file and writes its assembly for TinyCPU
+ * (TinyMachineCPU.ml), whose words are 4 bytes: pointers too, and long
+ * long is refused. Its runtime is in TinyCRuntime/ (built by
+ * TinyKernel/steps/Makefile): start.tm holds the program start and the
+ * system calls, udivmod.tm the unsigned division, and the rest of libc
+ * is C compiled by tiny-c. Plan 9's names (print, exits), ANSI's rules:
+ * the tests compare it with the host's cc (TinyC_tests/host.h).
+ *
+ * tiny-assembler reads what it writes. It compiles TinyML's runtime
+ * (whose collector and primitives are in C), TinyKernel's programs, and
+ * t6, a kernel in C, together with its own programs. TinyML's code
+ * generator reuses this file's stack machine and register stack for
+ * another language.
+ *
+ * exercises:
+ * Each cheap because the stack machine sits between the front end and
+ * the machine:
  * - a second back end: arm32 (with 5c's calling convention, for mini-5i
  *   and the Pi1), or x86-64; TinyCPU's took 100 lines;
  * - running the stack machine: a 60-line interpreter of its code would
@@ -115,15 +130,6 @@
  *   second register class on the same stack (started once, then
  *   abandoned).
  *
- * Status: tiny-assembler reads what it writes. It
- * compiles TinyML's runtime (whose collector and primitives are in
- * C), TinyKernel's programs, and t6, a kernel in C, together with its
- * own programs. TinyML's code generator reuses this file's stack
- * machine and register stack for another language. Its twin, mini-cc,
- * has what this one leaves out: 7c's trees rewritten using Sethi and
- * Ullman's numbers, addressing modes, a register allocator, a peephole
- * pass, and an object file format.
- *
  * cs-history:
  * C was created by Dennis Ritchie (Bell Labs, 1972), out of Ken
  * Thompson's B (1969), which was itself Martin Richards's BCPL (1967)
@@ -136,15 +142,13 @@
  * (late 1970s) did the same for C using trees, and it took C and Unix
  * beyond the PDP-11.
  *
- * comeback:
- * Pascal's P-code (Zurich, 1970s; interpreted by the UCSD system) was
- * also stack machine code placed between a language and the machines.
- * Optimizing compilers abandoned it in favor of code with named
- * values, three addresses per operation, and then SSA (as in LLVM),
- * where the uses of a value are easy to find and change. Stack code
- * came back as the format that gets shipped: the Java virtual machine
- * (1995), then WebAssembly (2017), because it is compact and can be
- * checked in one pass.
+ * modern:
+ * A production compiler does not keep the values of an expression in
+ * a fixed stack of registers. It gives every value a name, computes
+ * where each one is live, and puts values that are never live at the
+ * same time in the same register (graph coloring: Gregory Chaitin,
+ * 1982; or linear scan). A variable then stays in a register for a
+ * whole loop, whereas here it is loaded and stored at each use.
  *
  * others:
  * Several small C compilers were written to be read. Small-C (Ron
@@ -158,15 +162,17 @@
  * of small commits. chibicc is the closest to this file: its stack is
  * the machine's, while ours is in registers.
  *
- * modern:
- * A production compiler does not keep the values of an expression in
- * a fixed stack of registers. It gives every value a name, computes
- * where each one is live, and puts values that are never live at the
- * same time in the same register (graph coloring: Gregory Chaitin,
- * 1982; or linear scan). A variable then stays in a register for a
- * whole loop, whereas here it is loaded and stored at each use.
+ * comeback:
+ * Pascal's P-code (Zurich, 1970s; interpreted by the UCSD system) was
+ * also stack machine code placed between a language and the machines.
+ * Optimizing compilers abandoned it in favor of code with named
+ * values, three addresses per operation, and then SSA (as in LLVM),
+ * where the uses of a value are easy to find and change. Stack code
+ * came back as the format that gets shipped: the Java virtual machine
+ * (1995), then WebAssembly (2017), because it is compact and can be
+ * checked in one pass.
  *
- * References:
+ * references:
  *  - Niklaus Wirth, Compiler Construction (1996): registers used as a
  *    stack of the expression's values, and one-pass recursive descent
  *  - Ken Thompson, "Plan 9 C Compilers" (1990): the dialect, its

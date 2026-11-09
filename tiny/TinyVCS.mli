@@ -1,16 +1,27 @@
-(* A tiny version control system, in one file. The full-size version
- * in ix, mini-git (version_control/), is a faithful copy of git: it
- * uses git's formats, a staging file, packs, and a wire protocol. This
- * one keeps git's ideas -- objects named by the hash of their content,
- * trees of objects, a DAG of commits, three-way merge -- and for
- * everything else follows the roads taken by the systems that came
- * after git (e.g., jj, mercurial).
+(* A tiny version control system, in one file. It keeps git's ideas --
+ * objects named by the hash of their content, trees of objects, a DAG
+ * of commits, three-way merge -- and for everything else follows the
+ * roads taken by the systems that came after git (e.g., jj, mercurial).
  *
  * Its commands are shown by example in the [help] string of
  * the .ml (which is what vcs -h prints).
  *
- * A few notes:
+ * twin:
+ * The full-size version in ix, mini-git (version_control/), is a
+ * faithful copy of git: it uses git's formats, a staging file, packs,
+ * and a wire protocol.
  *
+ * kept:
+ * - Diff uses Myers' O(ND) algorithm, with unified output; merge is
+ *   diff3, built on two diffs. Remotes are directories: clone, pull and
+ *   push copy the objects that the other side is missing.
+ *
+ * dropped:
+ * git's formats, compression, packs and deltas, the wire protocol, the
+ * index, submodules and symbolic links, rename detection, tags, and
+ * rebase.
+ *
+ * twist:
  * - {b The repository is one hash.} Objects are appended to a single
  *   file and never changed. The state of the repository (the branches,
  *   and which one is current) is an object too, an {e operation}, and
@@ -32,11 +43,9 @@
  *   markers. status shows it, and editing the file resolves it at the
  *   next commit (jj's first-class conflicts). The common ancestor is
  *   found by walking the DAG, not by comparing dates.
- * - Diff uses Myers' O(ND) algorithm, with unified output; merge is
- *   diff3, built on two diffs. Remotes are directories: clone, pull and
- *   push copy the objects that the other side is missing.
  *
- * So a repository is two files, plus what one of them names:
+ * archi:
+ * A repository is two files, plus what one of them names:
  *
  *     .tvcs/head       the hash of an operation, on one line;
  *                      replaced by a rename
@@ -68,17 +77,25 @@
  * did not change is stored only once, and the 40 hex digits in head
  * stand for the whole repository along with its history.
  *
- * The text of the objects uses a format specific to this file, which
- * is canonical and readable ("tree\nf HASH name\n..."); it is hashed
- * with SHA-1 (Sha1) and stored as it is. What is dropped: git's formats,
- * compression , packs and deltas, the wire protocol,
- * the index, submodules and symbolic links, rename detection, tags,
- * and rebase.
+ * The text of the objects uses a format specific to this file, which is
+ * canonical and readable ("tree\nf HASH name\n..."); it is hashed with
+ * SHA-1 (Sha1) and stored as it is.
  *
- * Exercises, all cheap because the repository is made of objects that
- * never change and are named by their hash, with its state being one
- * of those objects, an operation (redo needs no work at all: undo is
- * itself an operation, so undoing an undo is a redo):
+ * context:
+ * Sha1 is an ix library (lib_crypto), also used by mini-git, which
+ * deflates its objects with Zlib (lib_compression; Zlib.mli explains
+ * what a deflated object is). mini-git's Object, Loose, Pack and Index9
+ * implement git's own formats for what is, here, one text format and
+ * one file. A file that is only appended to, plus one small write to
+ * commit, is also how TinyDatabase works; and the stamps of
+ * TinyBuildSystem are digests of contents for the same reason as here:
+ * a name derived from the content can never be stale.
+ *
+ * exercises:
+ * All cheap because the repository is made of objects that never change
+ * and are named by their hash, with its state being one of those
+ * objects, an operation (redo needs no work at all: undo is itself an
+ * operation, so undoing an undo is a redo):
  * - time travel: log @3 or switch @3 shows the repository as it was
  *   three operations ago; each operation still holds its branches, so
  *   this is just following prev three times;
@@ -100,16 +117,6 @@
  * - a lazy clone: copy the operations and commits, and fetch a blob
  *   from the source only when it is read; its hash names it wherever
  *   it is.
- *
- * Where it stands: Sha1 is an ix library (lib_crypto), also used by
- * mini-git, which deflates its objects with Zlib (lib_compression;
- * Zlib.mli explains what a deflated object is). mini-git's Object,
- * Loose, Pack and Index9
- * implement git's own formats for what is, here, one text format and
- * one file. A file that is only appended to, plus one small write to
- * commit, is also how TinyDatabase works; and the stamps of
- * TinyBuildSystem are digests of contents for the same reason as here:
- * a name derived from the content can never be stale.
  *
  * cs-history:
  * Version control went from tracking one file, to one tree, to one
@@ -143,7 +150,7 @@
  * git is the same idea applied to source code, with a commit where
  * Venti has a root.
  *
- * References:
+ * references:
  *  - E. W. Myers, "An O(ND) Difference Algorithm and Its Variations"
  *    (Algorithmica, 1986)
  *  - S. Khanna, K. Kunal and B. C. Pierce, "A Formal Investigation of

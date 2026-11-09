@@ -1,12 +1,24 @@
 (* A tiny relational database, in one file, whose query language is the
- * relational algebra itself. The full-size version in ix, mini-chidb
- * (database/), is a faithful copy of chidb: it compiles SQL to a
- * program for a register machine, which works on B-trees made of
- * fixed-size pages that are changed in place. This one keeps the same
- * ideas but takes the other road at each choice. Its statements are
- * shown by example in the [help] string of the .ml (which is also what
- * help prints at its prompt, and the start of what db -h prints):
+ * relational algebra itself. Its statements are shown by example in the
+ * [help] string of the .ml (which is also what help prints at its
+ * prompt, and the start of what db -h prints).
  *
+ * twin:
+ * mini-chidb (database/), ix's full-size version, is a faithful copy of
+ * chidb: it compiles SQL to a program for a register machine, which
+ * works on B-trees made of fixed-size pages that are changed in place.
+ * This one keeps the same ideas but takes the other road at each
+ * choice, and the two read well side by side.
+ *
+ * kept:
+ * From chidb, it keeps tables with a key, int and text columns,
+ * indexes, joins, and a file that outlives the program.
+ *
+ * dropped:
+ * SQL, NULL, the register machine and its programs, the 1,024-byte
+ * pages, and SQLite's file format.
+ *
+ * twist:
  * - {b A query is a pipeline of the operators of the algebra}, read
  *   from left to right like a Unix pipe: a table, then where (sigma),
  *   select (pi, with computed columns), join (the natural join), group
@@ -77,14 +89,22 @@
  * table of n rows, an insert rewrites as many nodes as the tree is
  * high, each with up to 16 entries: that is how fast the file grows.
  *
- * What is kept from chidb: tables with a key, int and text columns,
- * indexes, joins, and a file that outlives the program. What is added:
- * delete, update (set), group and the aggregate functions, sort, take,
- * computed columns, and atomic statements. What is dropped: SQL, NULL,
- * the register machine and its programs, the 1,024-byte pages, and
- * SQLite's file format.
+ * It adds delete, update (set), group and the aggregate functions,
+ * sort, take, computed columns, and atomic statements.
  *
- * Exercises, all cheap because nodes never change:
+ * context:
+ * A file that only grows, plus one small write to commit, is also how
+ * TinyVCS stores things (its objects file and its head). Pulling the
+ * rows of a statement through stages is what Seq does; it is the
+ * shell's pipe, inside a single process. Underneath, the database uses
+ * only four kernel calls: open, seek, read, and write (through
+ * TinyLibSystem: Unix on the host, tiny-kernel's own calls there, its
+ * seek for this). It never asks for the data to actually reach the disk
+ * (no fsync), so "atomic" here means safe if the program dies, not if
+ * the machine does.
+ *
+ * exercises:
+ * All cheap because nodes never change:
  * - transactions of several statements: begin ... commit, where the
  *   header is written only at commit (and rollback just forgets the
  *   catalog in memory); about 10 lines, since a single statement is
@@ -98,19 +118,6 @@
  * - readers running beside a writer: a reader keeps the root it
  *   started with, as a snapshot, without any lock (LMDB's design);
  * - rebalancing on delete: merge an underfull node with a sibling.
- *
- * Where it stands: mini-chidb takes the other road at each fork (SQL,
- * a compiler to programs for a machine, 1,024-byte pages changed in
- * place), and the two read well side by side. A file that only grows,
- * plus one small write to commit, is also how TinyVCS stores things
- * (its objects file and its head). Pulling the rows of a statement
- * through stages is what Seq does; it is the shell's pipe, inside a
- * single process. Underneath, the database uses only four kernel
- * calls: open, seek, read, and write (through TinyLibSystem: Unix on
- * the host, tiny-kernel's own calls there, its seek for this). It never
- * asks for the data to actually reach the disk (no fsync), so
- * "atomic" here means safe if the program dies, not if the machine
- * does.
  *
  * cs-history:
  * Edgar Codd's papers at IBM San Jose (1970 to 1972) introduced the
@@ -126,6 +133,14 @@
  * small machine: see Codegen and Dbm). Here the user writes the tree
  * directly, and for a pipeline that tree is just a list.
  *
+ * others:
+ * Writing a query as a pipeline is how people write queries outside
+ * SQL: the shell's grep, sort, uniq and head on lines of text, R's
+ * dplyr, the languages of log tools (Splunk's, Microsoft's Kusto),
+ * PRQL, and, since 2024, a pipe syntax for SQL itself proposed by
+ * Google. The complaint they all answer is SQL's order: SELECT is
+ * written first but runs nearly last.
+ *
  * comeback:
  * Never writing over a page was System R's first recovery scheme,
  * shadow pages (Raymond Lorie, 1977): a transaction writes new pages
@@ -138,15 +153,7 @@
  * CouchDB's files, in LMDB (Howard Chu, 2011), and in the ZFS and
  * btrfs file systems.
  *
- * others:
- * Writing a query as a pipeline is how people write queries outside
- * SQL: the shell's grep, sort, uniq and head on lines of text, R's
- * dplyr, the languages of log tools (Splunk's, Microsoft's Kusto),
- * PRQL, and, since 2024, a pipe syntax for SQL itself proposed by
- * Google. The complaint they all answer is SQL's order: SELECT is
- * written first but runs nearly last.
- *
- * References:
+ * references:
  *  - R. Bayer and E. McCreight, "Organization and Maintenance of Large
  *    Ordered Indexes" (Acta Informatica, 1972): the B-tree
  *  - O. Rodeh, "B-trees, Shadowing, and Clones" (ACM Transactions on

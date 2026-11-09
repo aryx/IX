@@ -85,6 +85,7 @@
  * answer: draw was not slow, it was called 80 times where once would
  * do; the profile says where, reading the code says why.
  *
+ * twin:
  * mini-qemu has the same pair, with sampling: -prof F counts every
  * 1024th pc (raspberry/observe/Prof.ml), and a script maps them to a
  * kernel's functions (kernels/9pi/tests/perf/pcprof.py). Here every
@@ -107,8 +108,9 @@
  * it counts every instruction, and disturbs nothing, not even the
  * kernel with its interrupts off.
  *
- * References: plan_tiny_browser.md (the profile that found where www's
- * time went, before this program existed); raspberry/observe/Prof.mli.
+ * references:
+ * plan_tiny_browser.md (the profile that found where www's time went,
+ * before this program existed); raspberry/observe/Prof.mli.
  *)
 
 (* the program: its arguments (its name first) to how it ends *)

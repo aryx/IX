@@ -9,8 +9,8 @@
  * is set, a colour mixed by a mask's levels; a text's characters),
  * which are assembly on tiny-machine and an array's on the host.
  *
- * What is kept of Plan 9's:
- *
+ * kept:
+ * Of Plan 9's, this keeps:
  * - {b One operation}, [draw dst r src mask p]: the pixels of dst's
  *   rectangle r are src's from the point p on, where mask's are set
  *   (everywhere without one). A rectangle filled, a window copied to
@@ -58,18 +58,6 @@
  *     d   00 00   01 00   ff ff   0a 00 14 00 1e 00 28 00   00 00 00 00
  *         dst 0   src 1   no mask the rectangle             p
  *
- * Dropped: pixels of other depths and channels (one byte, the table's
- * index), alpha and Porter and Duff's operators (a mask is set or not,
- * but for a colour through a font of levels, grey.font: mixed by a
- * table made for the colour),
- * a clipping rectangle apart from an image's own, a mask's own point
- * (it is the source's, as libdraw's draw), ellipses, arcs, polygons and
- * thick lines, fonts (one, the machine's 8 by 16, its bold and its
- * large 16 by 32, and italic made of them, slanted; or font1.bin alone,
- * the bold and the large made of it too) and their cache,
- * layers and windows (TinyWindows.ml composes whole images), the
- * screen's refresh.
- *
  * The messages, each a letter then 16-bit numbers, the low byte first,
  * signed; an image 0 is the connection's own (its window, or the
  * screen):
@@ -88,17 +76,23 @@
  *
  * They are a few of Plan 9's own draw messages (principia's
  * kernel/devices/screen/drawmesg.c has 27), f, d and s keeping their
- * letters; what is dropped of them is said above.
+ * letters; what is dropped of them is said below.
  *
- * Exercises:
- * - a row copied a word at a time where it can (draw.tm's row_copy);
- * - ellipses and filled polygons, for the playground's shapes;
- * - a mask of any level, 0 to 255, and a source of more than a colour
- *   mixed through it (here four levels, a colour's, the font's);
- * - a clipping rectangle per image, set by a message (a window's part
- *   that shows).
+ * dropped:
+ * Pixels of other depths and channels (one byte, the table's
+ * index), alpha and Porter and Duff's operators (a mask is set or not,
+ * but for a colour through a font of levels, grey.font: mixed by a
+ * table made for the colour),
+ * a clipping rectangle apart from an image's own, a mask's own point
+ * (it is the source's, as libdraw's draw), ellipses, arcs, polygons and
+ * thick lines, fonts (one, the machine's 8 by 16, its bold and its
+ * large 16 by 32, and italic made of them, slanted; or font1.bin alone,
+ * the bold and the large made of it too) and their cache,
+ * layers and windows (TinyWindows.ml composes whole images), the
+ * screen's refresh.
  *
- * Where it stands: under it TinyMemory (bytes, and three loops over a
+ * context:
+ * Under it TinyMemory (bytes, and three loops over a
  * row); around it TinyKernel, which gives each program a connection
  * and calls [messages] with what the program writes on its
  * descriptor 3; on the other side of those bytes TinyLibDraw, which
@@ -106,6 +100,14 @@
  * same three are lib_graphics's Draw (the program's side), the
  * kernel's draw device, and lib_memdraw (the pixels), with channels,
  * depths and alpha.
+ *
+ * exercises:
+ * - a row copied a word at a time where it can (draw.tm's row_copy);
+ * - ellipses and filled polygons, for the playground's shapes;
+ * - a mask of any level, 0 to 255, and a source of more than a colour
+ *   mixed through it (here four levels, a colour's, the font's);
+ * - a clipping rectangle per image, set by a message (a window's part
+ *   that shows).
  *
  * cs-history:
  * One operation that copies a rectangle of bits, combined with what
@@ -118,6 +120,14 @@
  * 2000) replaced the sixteen ways and the pattern by
  * two ideas kept here: a mask, and a source that repeats.
  *
+ * others:
+ * The mask of levels left as an exercise is Porter and Duff's
+ * compositing, which is what every system now draws with: PDF,
+ * Quartz, Cairo, the HTML canvas (ix's own: lib_graphics's software
+ * renderer, and mini-netscape's painting). They add paths filled
+ * with antialiasing and a matrix on the coordinates; the rectangle
+ * copied through a mask is still the operation at the bottom.
+ *
  * plan9-is-cleaner:
  * In X11 a program sets up a graphics context (a function, a
  * foreground, a fill style, a tile, a stipple, a clip mask...) and
@@ -127,15 +137,8 @@
  * with three images does what those requests do; the library is
  * small because there is one inner loop to get right.
  *
- * others:
- * The mask of levels left as an exercise is Porter and Duff's
- * compositing, which is what every system now draws with: PDF,
- * Quartz, Cairo, the HTML canvas (ix's own: lib_graphics's software
- * renderer, and mini-netscape's painting). They add paths filled
- * with antialiasing and a matrix on the coordinates; the rectangle
- * copied through a mask is still the operation at the bottom.
- *
- * References: R. Pike, "Graphics in Overlapping Bitmap
+ * references:
+ * R. Pike, "Graphics in Overlapping Bitmap
  * Layers" (ACM TOG 1983), the Blit's bitblt; R. Pike et al., "Plan 9
  * from Bell Labs" (1995) and draw(2), draw(3): the one operation, an
  * image a file's number; T. Porter and T. Duff, "Compositing Digital

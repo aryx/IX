@@ -68,10 +68,8 @@
  *   at once on an empty line, and buttons for them. While the program
  *   runs (c) the window waits for its stop.
  *
- * Its sibling is trace (TinyTracer), strace's idea on the same
- * descriptor: a stop before each system call and after it.
- *
- * What is ours, where Plan 9's tools and gdb go another way:
+ * kept:
+ * Where Plan 9's tools and gdb go another way:
  *
  * - {b One descriptor and a system call}, not a directory of files.
  *   trace(pid) gives it, trace(0) asks to be traced by the parent
@@ -95,20 +93,15 @@
  *   rather than a binary symbol table, and only the functions': no
  *   line numbers, no types. A function and an instruction is what db
  *   shows too.
- * - Left out: watchpoints, conditional breakpoints, printing a C
- *   variable or an ML value by its type (that needs the compilers to
- *   describe their frames: acid's road), the kernel itself.
  *
- * plan9-is-cleaner:
- * On Unix a debugger drives its program with ptrace, a system call of
- * a dozen requests (peek a word, poke a word, get the registers,
- * continue, step), one word at a time, and only a parent or an
- * attached tracer may call it. Plan 9 makes a process a directory of
- * files, /proc/n: mem its memory, regs its registers, ctl a file of
- * text commands (stop, start, waitstop), note its signals; a debugger
- * is a program that reads and writes files, and can debug a process
- * of another machine by importing its /proc. The trace descriptor is
- * that idea in a single file.
+ * dropped:
+ * Watchpoints, conditional breakpoints, printing a C variable or an ML
+ * value by its type (that needs the compilers to describe their frames:
+ * acid's road), the kernel itself.
+ *
+ * context:
+ * Its sibling is trace (TinyTracer), strace's idea on the same
+ * descriptor: a stop before each system call and after it.
  *
  * cs-history:
  * Unix's first debugger was db, then adb (Steve Bourne, Seventh
@@ -125,13 +118,25 @@
  * lines on a wire, as here. LLDB (2010) is built on LLVM's
  * disassemblers and its compiler's knowledge of types.
  *
- * References: plan_tiny_debugger.md (the design and its steps);
- * principia's debuggers/ (db, acid, libmach, tracers/ratrace.c), read
- * for the comparisons above, not copied;
- * T. J. Killian, "Processes as Files" (USENIX, 1984); P. Winterbottom,
- * "Acid: A Debugger Built From A Language" (USENIX, 1994); Plan 9's
- * proc(3), db(1) and ratrace(1) manual pages; S. R. Bourne, "A.
- * Debugging with adb" (Seventh Edition's manual, 1979; from memory). *)
+ * plan9-is-cleaner:
+ * On Unix a debugger drives its program with ptrace, a system call of
+ * a dozen requests (peek a word, poke a word, get the registers,
+ * continue, step), one word at a time, and only a parent or an
+ * attached tracer may call it. Plan 9 makes a process a directory of
+ * files, /proc/n: mem its memory, regs its registers, ctl a file of
+ * text commands (stop, start, waitstop), note its signals; a debugger
+ * is a program that reads and writes files, and can debug a process
+ * of another machine by importing its /proc. The trace descriptor is
+ * that idea in a single file.
+ *
+ * references:
+ * plan_tiny_debugger.md (the design and its steps); principia's
+ * debuggers/ (db, acid, libmach, tracers/ratrace.c), read for the
+ * comparisons above, not copied; T. J. Killian, "Processes as Files"
+ * (USENIX, 1984); P. Winterbottom, "Acid: A Debugger Built From A
+ * Language" (USENIX, 1994); Plan 9's proc(3), db(1) and ratrace(1)
+ * manual pages; S. R. Bourne, "A. Debugging with adb" (Seventh
+ * Edition's manual, 1979; from memory). *)
 
 (* the program: its command line, its commands, its exit *)
 val main : unit -> unit

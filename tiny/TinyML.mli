@@ -103,8 +103,33 @@
  * alternatives, character ranges and inline records: the tools and the
  * toolchain were written again without them.
  *
- * What keeps it small while still being an ML compiler:
+ * Its behavior follows ocaml-light's arm64 ocamlopt, which was the
+ * contract, quirks included (plan_tiny_self_hosting.md takes the quirks
+ * out, OCaml being the reference now): arguments, tuples and record fields are
+ * evaluated right to left, except a.(i) <- v, which evaluates i, then
+ * a, then v; stdout is buffered by 4096 bytes and the buffer is lost on
+ * an uncaught exception; that exception is printed the way
+ * ocaml-light's printexc.c prints it, with exit status 2; division by
+ * zero gives what the machine's div does instead of raising an
+ * exception; an
+ * out-of-bounds index into a string or an array is a fatal error; and
+ * the empty array is a static block (OCaml's atom).
  *
+ * twin:
+ * What it shares with mini-ml, and where it parts: mini-ml's simple
+ * back end (Gen) is the same design, a stack machine kept in
+ * registers, the values on a stack of their own, Cheney's collector in
+ * C (plan_ml.md's decision 5 is both's), and mini-ml has no functor
+ * either. Its parser is ocamlyacc's, tiny-ml's recursive descent; it
+ * writes Plan 9's assembly for arm and arm64, and has -O and an SSA
+ * back end with a register allocator, where tiny-ml has one machine
+ * and no optimization. One road goes the other way: mini-ml has no
+ * compiled interface (a unit's .mli is read again by each unit that
+ * names it), tiny-ml writes M.tmi, OCaml's .cmi, with where each value
+ * is, which an .mli does not say.
+ *
+ * kept:
+ * It stays small while still being an ML compiler:
  * - {b Types are checked, then forgotten.} The checker (Hindley-Milner,
  *   with Rémy's levels for generalization) is a pass whose result the
  *   code generator uses in only two places: a comparison whose operands
@@ -178,19 +203,19 @@
  *   the others are ML, TinyLibCore/'s units, and only what the program
  *   uses is linked (above).
  *
- * Its behavior follows ocaml-light's arm64 ocamlopt, which was the
- * contract, quirks included (plan_tiny_self_hosting.md takes the quirks
- * out, OCaml being the reference now): arguments, tuples and record fields are
- * evaluated right to left, except a.(i) <- v, which evaluates i, then
- * a, then v; stdout is buffered by 4096 bytes and the buffer is lost on
- * an uncaught exception; that exception is printed the way
- * ocaml-light's printexc.c prints it, with exit status 2; division by
- * zero gives what the machine's div does instead of raising an
- * exception; an
- * out-of-bounds index into a string or an array is a fatal error; and
- * the empty array is a static block (OCaml's atom).
+ * context:
+ * Every program in ML of tiny-kernel is its, the
+ * kernel first and tiny-ml itself, and OCaml compiles the same files
+ * on the host. Its runtime is C compiled by TinyC, and its
+ * assembly is TinyMachineCPU's. The stack machine, with
+ * its stack kept in registers, comes from TinyC, so the two compilers
+ * read as one design used twice: what differs is everything C does not
+ * have (type inference, closures, patterns, a collector). The ML
+ * compiler that compiles ix itself is the other one, mini-ml (with
+ * Typing, Resolve, and one back end per machine).
  *
- * Exercises, each cheap thanks to the stack machine or the value stack:
+ * exercises:
+ * Each cheap thanks to the stack machine or the value stack:
  * - arm32: a second back end for the stack machine (tiny-machine's
  *   took 150 lines);
  * - inline allocation: keep the heap pointer and limit in two
@@ -201,28 +226,6 @@
  * - a switch on constructor tags instead of one test per clause;
  * - exhaustiveness warnings (Maranget, "Warnings for pattern
  *   matching", 2007).
- *
- * Where it stands: every program in ML of tiny-kernel is its, the
- * kernel first and tiny-ml itself, and OCaml compiles the same files
- * on the host. Its runtime is C compiled by TinyC, and its
- * assembly is TinyMachineCPU's. The stack machine, with
- * its stack kept in registers, comes from TinyC, so the two compilers
- * read as one design used twice: what differs is everything C does not
- * have (type inference, closures, patterns, a collector). The ML
- * compiler that compiles ix itself is the other one, mini-ml (with
- * Typing, Resolve, and one back end per machine).
- *
- * What it shares with its twin, and where it parts: mini-ml's simple
- * back end (Gen) is the same design, a stack machine kept in
- * registers, the values on a stack of their own, Cheney's collector in
- * C (plan_ml.md's decision 5 is both's), and mini-ml has no functor
- * either. Its parser is ocamlyacc's, tiny-ml's recursive descent; it
- * writes Plan 9's assembly for arm and arm64, and has -O and an SSA
- * back end with a register allocator, where tiny-ml has one machine
- * and no optimization. One road goes the other way: mini-ml has no
- * compiled interface (a unit's .mli is read again by each unit that
- * names it), tiny-ml writes M.tmi, OCaml's .cmi, with where each value
- * is, which an .mli does not say.
  *
  * cs-history:
  * ML is the Meta Language of Edinburgh's LCF, a proof assistant (Robin
@@ -236,17 +239,6 @@
  * Doligez's Caml Light (1990), small enough for a PC, and OCaml
  * (1996). ocaml-light, whose outputs this compiler first matched, is
  * OCaml 1.07 without objects and functors (plan_ml.md).
- *
- * design:
- * Using one representation for every value, a word, is what makes
- * polymorphism free: List.map is compiled once and works on a list of
- * anything, since it only moves words around. The price is paid
- * elsewhere: an integer loses a bit to say it is not a pointer, a float
- * would need a block of its own, and comparing two values of unknown
- * type means walking them at run time. The other road compiles a
- * function again for each type it is used at (MLton, C++ templates,
- * Rust): no tags, no boxes, but more code, and the whole program is
- * needed at once.
  *
  * modern:
  * OCaml and Go keep values in the machine's registers and stack, and
@@ -267,7 +259,19 @@
  * the other road, through CPS, the one taken by Standard ML of New
  * Jersey.
  *
- * References (plan_ml.md's related work lists them too):
+ * design:
+ * Using one representation for every value, a word, is what makes
+ * polymorphism free: List.map is compiled once and works on a list of
+ * anything, since it only moves words around. The price is paid
+ * elsewhere: an integer loses a bit to say it is not a pointer, a float
+ * would need a block of its own, and comparing two values of unknown
+ * type means walking them at run time. The other road compiles a
+ * function again for each type it is used at (MLton, C++ templates,
+ * Rust): no tags, no boxes, but more code, and the whole program is
+ * needed at once.
+ *
+ * references:
+ * plan_ml.md's related work lists them too:
  *  - Robin Milner, "A Theory of Type Polymorphism in Programming"
  *    (1978)
  *  - Didier Rémy's levels, as explained in Oleg Kiselyov's "How OCaml

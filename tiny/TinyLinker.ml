@@ -187,10 +187,17 @@ let gather (items : ISA.item list) : ISA.item list =
 (* the image's order: the objects', or the text first (-n) *)
 type sections = In_order | Text_first
 
-(* the image, the labels by address, and where the data starts (-n; 0
- * otherwise, the sections then ignored) *)
-let link (sections : sections) (objects : ISA.item list list)
-    : string * (Sym.label * address) list * address =
+(* a link's result: the image; the labels, each with its address, by
+ * address; where the data starts, with the text first (-n; None in
+ * the objects' order, the sections then ignored) *)
+type linked = {
+  image : string;
+  addresses : (Sym.label * address) list;
+  data_start : address option;
+}
+
+(* (old: a triple, the data's start 0 when not split) *)
+let link (sections : sections) (objects : ISA.item list list) : linked =
   let items = sweep (List.map sectioned objects) in
   let lay =
     layout
@@ -218,7 +225,9 @@ let link (sections : sections) (objects : ISA.item list list)
     | Label _ | Align _ | Piece | SectionCode | SectionData -> ());
   (* (old: the table's labels sorted by address, those at one address in
    * the table's order, which is OCaml's or TinyLibCore's) *)
-  Buffer.contents b, lay.order, lay.data_at
+  { image = Buffer.contents b; addresses = lay.order;
+    data_start =
+      (match sections with Text_first -> Some lay.data_at | In_order -> None) }
 
 (* An executable for tiny-kernel: a header of three words, then the
  * image, linked at 0. The words are a magic number, the image's size,
@@ -232,22 +241,24 @@ let aout_magic = 0x7a0ce5
  * 0407 and 0410, the magic number says the layout *)
 let aout_split = 0x7a0ce6
 
-let aout memory data_at image =
+let aout (memory : int) (l : linked) : string =
   let words =
-    [ (if data_at > 0 then aout_split else aout_magic); String.length image;
-      memory ] @ (if data_at > 0 then [ data_at ] else []) in
+    match l.data_start with
+    | Some d -> [ aout_split; String.length l.image; memory; d ]
+    | None -> [ aout_magic; String.length l.image; memory ] in
   let h = Bytes.make (4 * List.length words) '\000' in
   List.iteri (fun i v -> set_word h (4 * i) v) words;
-  Bytes.to_string h ^ image
+  Bytes.to_string h ^ l.image
 
 (*****************************************************************************)
 (* main *)
 (*****************************************************************************)
 
-(* the command line's options: -a's megabytes, -n, -s, -map *)
+(* the command line's options: -a's megabytes, -n (Text_first), -s,
+ * -map *)
 type options = {
   megabytes : int option;
-  split : bool;
+  sections : sections;
   symbols : bool;
   map : bool;
 }
@@ -261,14 +272,14 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
   let rec args o l = match l with
     | "-a" :: n :: r when megabytes n ->
         args { o with megabytes = Some (int_of_string n) } r
-    | "-n" :: r -> args { o with split = true } r
+    | "-n" :: r -> args { o with sections = Text_first } r
     | "-s" :: r -> args { o with symbols = true } r
     | "-map" :: r -> args { o with map = true } r
     | "-o" :: out :: files when files <> [] ->
         Some (o, Fpath.v out, Fpath_.of_strings files)
     | _ -> None in
   let none =
-    { megabytes = None; split = false; symbols = false; map = false } in
+    { megabytes = None; sections = In_order; symbols = false; map = false } in
   match List.tl (Array.to_list argv) with
   | ("-h" | "--help") :: _ -> TSys.print caps help; Exit.OK
   | l ->
@@ -285,21 +296,21 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
                 Logs.debug (fun m ->
                   m "%s: %s" (Fpath.to_string f) (ISA.show_item it)));
               items) in
-            let image, labels, data_at =
-              link (if o.split then Text_first else In_order) objects in
+            let linked = link o.sections objects in
             let lines l =
               String.concat "" (List.map (fun (l, a) ->
                 Printf.sprintf "%x %s\n" a l) l) in
             write out
               (match o.megabytes, o.symbols with
-               | Some n, false -> aout (n * 0x100000) data_at image
+               | Some n, false -> aout (n * 0x100000) linked
                | _, true ->
-                   aout ((o.megabytes ||| 1) * 0x100000) data_at image
+                   aout ((o.megabytes ||| 1) * 0x100000) linked
                    ^ lines (List.filter (fun (l, _) -> not (Sym.local l))
-                              labels)
-               | None, false -> image);
+                              linked.addresses)
+               | None, false -> linked.image);
             if o.map then
-              write (Fpath.v (Fpath.to_string out ^ ".map")) (lines labels);
+              write (Fpath.v (Fpath.to_string out ^ ".map"))
+                (lines linked.addresses);
             Exit.OK
           with ISA.Error e -> Exit.Err e
 

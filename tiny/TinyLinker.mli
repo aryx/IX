@@ -91,19 +91,29 @@ type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
  * text first, then all the data (-n) *)
 type sections = In_order | Text_first
 
-(* [link order objects]: the objects' items (TinyMachineISA's), linked:
- * the image, each label with its address, by address, and where the
- * data starts (0 in order) *)
-val link :
-  sections -> TinyMachineISA.item list list ->
-  string * (string * int) list * int
+(* an address in the image, from 0 *)
+type address = int
 
-(* [aout memory data_at image]: an executable for tiny-kernel: a header
- * of three words (a magic number, the image's size, the memory the
- * program asks for in bytes), then the image, linked at 0; with data_at
- * (-n), a fourth word, it, and the magic number aout_split's. The
- * memory first (old: ~memory, a label, which tiny-ml does not read) *)
-val aout : int -> int -> string -> string
+(* a link's result: the image; the labels, each with its address, by
+ * address (-map's lines, -s's); where the data starts, with the text
+ * first (Text_first, -n; None in the objects' order) *)
+type linked = {
+  image : string;
+  addresses : (TinyLibSymbols.label * address) list;
+  data_start : address option;
+}
+
+(* [link order objects]: the objects (each its items, TinyMachineISA's,
+ * tiny-assembler's), linked *)
+val link : sections -> TinyMachineISA.item list list -> linked
+
+(* [aout memory linked]: an executable for tiny-kernel: a header of
+ * three words (a magic number, the image's size, the memory the
+ * program asks for in bytes), then the image, linked at 0; with a
+ * data_start (-n), a fourth word, it, and the magic number
+ * aout_split's. The memory first (old: ~memory, a label, which tiny-ml
+ * does not read) *)
+val aout : int -> linked -> string
 
 (* the program: its arguments (its name first; -h: how) to how it ends *)
 val main : < caps; .. > -> string array -> Exit.t

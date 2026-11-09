@@ -66784,3 +66784,49 @@ Claude asked Yoann which of these he wanted to tackle next.
 **Claude (summary):**
 
 Claude explained that Command-< failed because tiny-machine's SDL window mapped only Alt, not Command, to Meta, so emacs got a plain `<`. Claude made Command act as Meta in `TinyMachineSDL.ml`, with a comment saying so. Claude also updated the key description in `sdl/TinyCalls.ml` and the emacs key list in `TinyEditorScreen.mli`. The web version was left alone so the browser keeps its Command shortcuts. Claude asked Yoann to test Command-< and Command-> in the Mac window before committing.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 12:27
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the fix as a5e22d76, changing tiny-machine's window so Command acts like Option.
+Claude made Command-< and Command-> reach emacs as M-< and M->, since Command now acts as Meta.
+Claude could not press the keys itself, so it asked you to report back if they still fail.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 13:19
+
+**Yoann:**
+
+> in TinyEditorScreen.mli it says "
+>
+> (Emacs keeps a gap in a
+>  * single array of characters, at the place of the last change, for
+>  * the same reason. A list of lines split at the cursor is the same
+>  * idea, built from what tiny-ml has: lists, and strings that cannot
+>  * be modified.)
+>
+> " but tiny-ml has modifiable bytes no? and also array of chars if needed, so using those list of lines is still a good idea for tiny/ ?
+
+------------------------------------------------------------------------
+
+## 2026-11-09 13:19
+
+**Yoann:**
+
+> analyze and report
+
+**Claude (summary):**
+
+Claude recommended keeping the immutable list of lines rather than switching to a gap buffer for the editor.
+Claude gave three reasons: screen caches use physical equality, drawing takes lines directly, and undo shares unchanged lines.
+Claude named the costs: copying a whole long line on each key, and far jumps costing one step per crossed line.
+Claude edited the parenthesis in `TinyEditorScreen.mli` to mention a possible gap buffer with tiny-ml's `Bytes`, but left it uncommitted.
+Claude then asked whether to commit the change or only keep the analysis.

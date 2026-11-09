@@ -11,9 +11,13 @@
  * line, whatever the size of the text, and moving down a line moves
  * one string from one list to the other. (Emacs keeps a gap in a
  * single array of characters, at the place of the last change, for
- * the same reason. A list of lines split at the cursor is the same
- * idea, built from what tiny-ml has: lists, and strings that cannot
- * be modified.)
+ * the same reason; tiny-ml's Bytes would do for one. Lines that are
+ * never modified do more here: a line not changed is the very same
+ * string, so the screen's caches know it by == (faces, below) with no
+ * bookkeeping of what changed; the screen is lines, taken from the
+ * lists as they are; and an earlier text would share all its lines
+ * but one (undo, an exercise). The price: a long line is copied at
+ * each key, and a far move moves the lines one by one.)
  *
  * archi:
  * The editor is a state plus the keys that change it. [key] takes a

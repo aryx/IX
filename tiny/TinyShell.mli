@@ -139,13 +139,16 @@
  * pieces, so there is nothing to protect later.
  *
  * references:
- * Tom Duff, "Rc -- The Plan 9 Shell" (1990), for the language and for
- * the principle that the lists protect: input "is never scanned more
- * than once"; D. M. Ritchie and K. Thompson, "The UNIX Time-Sharing
- * System" (CACM, 1974), for fork and exec as two separate calls,
- * between which the child sets up its own file descriptors, and for the
- * shell as an ordinary program; principia's shells/rc, rc's C, which
- * mini-rc follows and this file knows only through mini-rc. *)
+ *  - Tom Duff, "Rc -- The Plan 9 Shell" (1990): the language, and the
+ *    principle that the lists protect: input "is never scanned more
+ *    than once"
+ *  - D. M. Ritchie and K. Thompson, "The UNIX Time-Sharing System"
+ *    (CACM, 1974): fork and exec as two separate calls, between which
+ *    the child sets up its own file descriptors, and the shell as an
+ *    ordinary program
+ *  - principia's shells/rc, rc's C, which mini-rc follows and this file
+ *    knows only through mini-rc
+ *)
 
 (* what running a command asks for; the program asks more: a terminal
  * (stdin, an interrupt's signal) and the environment *)

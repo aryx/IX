@@ -112,8 +112,9 @@
  * kernel with its interrupts off.
  *
  * references:
- * plan_tiny_browser.md (the profile that found where www's time went,
- * before this program existed); raspberry/observe/Prof.mli.
+ *  - plan_tiny_browser.md: the profile that found where www's time
+ *    went, before this program existed
+ *  - raspberry/observe/Prof.mli
  *)
 
 (* the program: its arguments (its name first) to how it ends *)

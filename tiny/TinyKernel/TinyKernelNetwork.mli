@@ -171,9 +171,12 @@
  * own check below.
  *
  * references:
- * RFC 791 (IP), RFC 792 (ICMP), RFC 1071 (the checksum);
- * Presotto and Winterbottom, "The IL Protocol" (Plan 9's manual,
- * volume 2). *)
+ *  - RFC 791: IP
+ *  - RFC 792: ICMP
+ *  - RFC 1071: the checksum
+ *  - Presotto and Winterbottom, "The IL Protocol" (Plan 9's manual,
+ *    volume 2)
+ *)
 
 (* an address, its four bytes in a string (old: a string that said
  * nothing of it); [net_address text]: the text's, "" when it is not

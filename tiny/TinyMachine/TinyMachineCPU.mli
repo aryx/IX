@@ -165,13 +165,16 @@
  * first.
  *
  * references:
- * D. E. Knuth, The Art of Computer Programming, vol. 1 (MIX, 1968;
- * MMIX, fascicle 1, 2005): a machine designed to teach; D. A. Patterson
- * and J. L. Hennessy, the MIPS and RISC-V books: the load-store
- * machine; J. R. Bell, "Threaded Code" (CACM, 1973); F. Bellard, "QEMU,
- * a Fast and Portable Dynamic Translator" (USENIX, 2005); A. Waterman,
- * "Design of the RISC-V Instruction Set Architecture" (PhD thesis,
- * 2016), the compressed instructions. *)
+ *  - D. E. Knuth, The Art of Computer Programming, vol. 1 (MIX, 1968;
+ *    MMIX, fascicle 1, 2005): a machine designed to teach
+ *  - D. A. Patterson and J. L. Hennessy, the MIPS and RISC-V books: the
+ *    load-store machine
+ *  - J. R. Bell, "Threaded Code" (CACM, 1973)
+ *  - F. Bellard, "QEMU, a Fast and Portable Dynamic Translator"
+ *    (USENIX, 2005)
+ *  - A. Waterman, "Design of the RISC-V Instruction Set Architecture"
+ *    (PhD thesis, 2016): the compressed instructions
+ *)
 
 (* a word's 32 bits of an int that may have more; a < b, both unsigned
  * words *)

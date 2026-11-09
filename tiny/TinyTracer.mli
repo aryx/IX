@@ -63,8 +63,10 @@
  * ctl, not a system call. Here the same is the trace descriptor's y.
  *
  * references:
- * plan_tiny_debugger.md; Plan 9's ratrace(1) and proc(3) manual pages;
- * strace(1). *)
+ *  - plan_tiny_debugger.md
+ *  - Plan 9's ratrace(1) and proc(3) manual pages
+ *  - strace(1)
+ *)
 
 (* the program: its command line, the stops of its processes, its exit *)
 val main : unit -> unit

@@ -154,14 +154,15 @@
  * needs no extra code.
  *
  * references:
- * R. Pike, "The Blit: A Multiplexed Graphics Terminal" (1984), "8½, the
- * Plan 9 Window System" (1991) and "Rio: Design of a Concurrent Window
- * System" (2000), on a window system as a multiplexer that gives
- * programs the same interface it uses itself; N. Wirth and J.
- * Gutknecht, "Project Oberon" (1992), for the other road, where windows
- * are part of the system; principia's windows/rio/ (rio's C: wm.c,
- * fsys.c, terminal.c...) and xix's rio in OCaml, which mini-rio
- * follows, module by module. *)
+ *  - R. Pike, "The Blit: A Multiplexed Graphics Terminal" (1984), "8½,
+ *    the Plan 9 Window System" (1991) and "Rio: Design of a Concurrent
+ *    Window System" (2000): a window system as a multiplexer that gives
+ *    programs the same interface it uses itself
+ *  - N. Wirth and J. Gutknecht, "Project Oberon" (1992): the other
+ *    road, where windows are part of the system
+ *  - principia's windows/rio/ (rio's C: wm.c, fsys.c, terminal.c...)
+ *    and xix's rio in OCaml, which mini-rio follows, module by module
+ *)
 
 (* A program: its last lines are its loop, and it gives nothing to
  * another file. OCaml only checks it (its system calls are the

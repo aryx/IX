@@ -169,7 +169,7 @@ on a line of their own, so that every header reads in the same order
 | `archi:` | how the program is made inside: its parts, its pipeline, how the file is cut (the soft architecture of the `.ml`) |
 | `context:` | how it fits with the rest: who calls it, what it calls, what it asks of the system, the same idea elsewhere in ix |
 | `exercises:` | what to add, roughly in order, each cheap because of a choice above |
-| `references:` | the papers, manuals and files read, each with what for |
+| `references:` | the papers, manuals and files read, a list, an item each: the work, then after a colon what it is read for |
 
 In this order, each only when there is something to say: the
 sentence and how it works (no label), `twin:`, `kept:`, `dropped:`,

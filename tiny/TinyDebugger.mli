@@ -136,13 +136,16 @@
  * that idea in a single file.
  *
  * references:
- * plan_tiny_debugger.md (the design and its steps); principia's
- * debuggers/ (db, acid, libmach, tracers/ratrace.c), read for the
- * comparisons above, not copied; T. J. Killian, "Processes as Files"
- * (USENIX, 1984); P. Winterbottom, "Acid: A Debugger Built From A
- * Language" (USENIX, 1994); Plan 9's proc(3), db(1) and ratrace(1)
- * manual pages; S. R. Bourne, "A. Debugging with adb" (Seventh
- * Edition's manual, 1979; from memory). *)
+ *  - plan_tiny_debugger.md: the design and its steps
+ *  - principia's debuggers/ (db, acid, libmach, tracers/ratrace.c):
+ *    read for the comparisons above, not copied
+ *  - T. J. Killian, "Processes as Files" (USENIX, 1984)
+ *  - P. Winterbottom, "Acid: A Debugger Built From A Language" (USENIX,
+ *    1994)
+ *  - Plan 9's proc(3), db(1) and ratrace(1) manual pages
+ *  - S. R. Bourne, "A. Debugging with adb" (Seventh Edition's manual,
+ *    1979; from memory)
+ *)
 
 (* the program: its command line, its commands, its exit *)
 val main : unit -> unit

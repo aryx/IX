@@ -60,11 +60,13 @@
  * own disk can be wrong the same way twice.
  *
  * references:
- * D. Ritchie and K. Thompson, "The UNIX Time-Sharing
- * System" (CACM, 1974), the inodes; T. Kowalski, "FSCK --
- * The UNIX File System Check Program" (1979); T.
- * Paterson, 86-DOS (1980), the FAT; R. Cox, F. Kaashoek, R. Morris,
- * xv6's mkfs.c (2006-), made on the host. *)
+ *  - D. Ritchie and K. Thompson, "The UNIX Time-Sharing System" (CACM,
+ *    1974): the inodes
+ *  - T. Kowalski, "FSCK -- The UNIX File System Check Program" (1979)
+ *  - T. Paterson, 86-DOS (1980): the FAT
+ *  - R. Cox, F. Kaashoek, R. Morris, xv6's mkfs.c (2006-): made on the
+ *    host
+ *)
 
 (* a disk's bytes, from the files (each a name and its contents): the
  * superblock, the FAT, the root directory, the data *)

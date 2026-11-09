@@ -138,13 +138,15 @@
  * small because there is one inner loop to get right.
  *
  * references:
- * R. Pike, "Graphics in Overlapping Bitmap
- * Layers" (ACM TOG 1983), the Blit's bitblt; R. Pike et al., "Plan 9
- * from Bell Labs" (1995) and draw(2), draw(3): the one operation, an
- * image a file's number; T. Porter and T. Duff, "Compositing Digital
- * Images" (SIGGRAPH 1984), what a mask of levels would bring; J.
- * Bresenham, "Algorithm for computer control of a digital plotter"
- * (IBM Systems Journal 1965), the line. *)
+ *  - R. Pike, "Graphics in Overlapping Bitmap Layers" (ACM TOG 1983):
+ *    the Blit's bitblt
+ *  - R. Pike et al., "Plan 9 from Bell Labs" (1995) and draw(2),
+ *    draw(3): the one operation, an image a file's number
+ *  - T. Porter and T. Duff, "Compositing Digital Images" (SIGGRAPH
+ *    1984): what a mask of levels would bring
+ *  - J. Bresenham, "Algorithm for computer control of a digital
+ *    plotter" (IBM Systems Journal 1965): the line
+ *)
 
 (* what a bad message or a drawing that cannot be is answered with *)
 exception Graphics of string

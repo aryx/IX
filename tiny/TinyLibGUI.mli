@@ -131,10 +131,11 @@
  * below the model, such as the focus, a caret, or a scroll position.
  *
  * references:
- * E. Czaplicki, The Elm Architecture (guide.elm-lang.org);
- * E. Kiss, "7GUIs: A GUI Programming Benchmark" (2014); T. Duff,
- * "A Quick Introduction to the Panel Library" (Plan 9); J. Ousterhout,
- * "Tcl and the Tk Toolkit" (1994), for the packer. *)
+ *  - E. Czaplicki, The Elm Architecture (guide.elm-lang.org)
+ *  - E. Kiss, "7GUIs: A GUI Programming Benchmark" (2014)
+ *  - T. Duff, "A Quick Introduction to the Panel Library" (Plan 9)
+ *  - J. Ousterhout, "Tcl and the Tk Toolkit" (1994): the packer
+ *)
 
 (* a widget: a text; a text in a box, at its right; a field typed in,
  * with the message of another text; a button and the message it

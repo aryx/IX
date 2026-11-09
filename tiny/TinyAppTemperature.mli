@@ -53,7 +53,8 @@
  * - Kelvin: add a third field, computed from either of the two others.
  *
  * references:
- * E. Kiss, "7GUIs: A GUI Programming Benchmark" (2014), task 2. *)
+ *  - E. Kiss, "7GUIs: A GUI Programming Benchmark" (2014): task 2
+ *)
 
 (* the two fields' texts, as typed; a field's new text *)
 type model = { c : string; f : string }

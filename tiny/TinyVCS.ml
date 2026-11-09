@@ -10,6 +10,7 @@
  *)
 open Common
 module TSys = TinyLibSystem
+open Fpath_.Operators
 
 (* -h: how, by examples, each one as it runs *)
 let help = {|usage: tiny-vcs CMD [args], in a directory with .tvcs, or below it
@@ -34,7 +35,7 @@ exception Error of string
 let error s = raise (Error s)
 
 (*****************************************************************************)
-(* Objects *)
+(* Object types *)
 (*****************************************************************************)
 
 (* an object's name, its digest; 40 hex digits where it is text: in an
@@ -42,8 +43,7 @@ let error s = raise (Error s)
 type hash = Sha1.t
 let hex = Sha1.to_hex
 
-(* the text with markers, and the three versions, None for absent
- * (old: an inline record, Conflict's own, which tiny-ml does not read) *)
+(* the text with markers, and the three versions, None for absent. *)
 type conflict = {
   text : hash;
   base : hash option;
@@ -84,6 +84,10 @@ type obj =
   | Tree of tree
   | Commit of commit
   | Op of op
+
+(*****************************************************************************)
+(* Object IO *)
+(*****************************************************************************)
 
 let encode = function
   | Blob s -> "blob\n" ^ s
@@ -192,8 +196,6 @@ let decode s =
 type caps =
   < Cap.open_in; Cap.open_out; Cap.stdout; Cap.env; Cap.readdir; Cap.clock >
 
-open Fpath_.Operators
-
 type repo = {
   caps : caps;
   root : Fpath.t;
@@ -210,7 +212,7 @@ let write_file = TSys.write_file
 let exists caps (p : Fpath.t) =
   try ignore (TSys.stat caps p); true with Failure _ -> false
 
-let load (caps : caps) (root : Fpath.t) =
+let load (caps : caps) (root : Fpath.t) : repo =
   let r = { caps; root; index = Hashtbl.create 1024; fresh = [] } in
   let s = try read_file caps (path r "objects") with Failure _ -> "" in
   let rec go pos =
@@ -250,7 +252,7 @@ let commit r h =
 
 (* the new objects appended, then head replaced: a crash between
  * leaves head naming the old state, whole *)
-let save r (o : op) =
+let save r (o : op) : unit =
   let h = put r (Op o) in
   (* (closed, so written, before head is) *)
   TSys.with_open_append r.caps (fun (c : Chan.o) ->
@@ -265,7 +267,8 @@ let save r (o : op) =
   TSys.rename r.caps tmp (path r "head")
 
 let head r = Sha1.of_hex (String.trim (read_file r.caps (path r "head")))
-let state r =
+
+let state (r : repo) : op =
   match get r (head r) with Op o -> o | _ -> error "head is not an operation"
 
 let getenv_opt (caps : < Cap.env; .. >) v =
@@ -308,7 +311,7 @@ let ignored caps root =
 
 (* the work tree as a tree, its blobs written; a conflicted file whose
  * text still has the markers stays a conflict *)
-let snapshot r =
+let snapshot (r : repo) : hash =
   let ign = ignored r.caps r.root in
   let old = match tip r with Some c -> Some (commit r c).tree | None -> None in
   let rec go dir (prev : tree) =
@@ -343,7 +346,7 @@ let snapshot r =
 
 (* the work tree made a tree's: what the old one had and the new lacks
  * removed, what differs written *)
-let checkout r (old : hash option) (nw : hash) =
+let checkout r (old : hash option) (nw : hash) : unit =
   let rec rm_rf p =
     if TSys.is_directory r.caps p then
       List.iter (fun f -> rm_rf (p / f)) (TSys.readdir r.caps p);
@@ -657,7 +660,7 @@ let first_line s =
 
 (* (up by the text: Fpath.parent would end the root with a /, which
  * push records) *)
-let find_root caps =
+let find_root (caps : < Cap.readdir; ..>) : Fpath.t =
   let rec up d =
     if exists caps (Fpath.v d / ".tvcs" / "head") then Fpath.v d
     else if Filename.dirname d = d then error "not a tiny-vcs repository"
@@ -667,6 +670,9 @@ let find_root caps =
 
 let author caps =
   getenv_opt caps "TINYVCS_AUTHOR" ||| (getenv_opt caps "USER" ||| "nobody")
+
+
+
 
 let init (caps : caps) (dir : Fpath.t) =
   if exists caps (dir / ".tvcs") then error (!!dir ^ "/.tvcs exists");
@@ -921,15 +927,19 @@ let clone (caps : caps) src dst =
   record_at r st.current ("clone " ^ src) st.branches;
   Option.iter (fun c -> checkout r None (commit r c).tree) (tip r)
 
-let run (caps : caps) (args : string list) =
+(*****************************************************************************)
+(* Command dispatcher *)
+(*****************************************************************************)
+
+let run (caps : caps) (args : string list) : unit =
   match args with
   | [ ("-h" | "--help") ] -> TSys.print caps help
   | [ "init" ] -> init caps (Fpath.v ".")
   | [ "init"; d ] -> init caps (Fpath.v d)
   | [ "clone"; src; dst ] -> clone caps src dst
   | cmd :: rest -> (
-      let r = load caps (find_root caps) in
-      let s = state r in
+      let r : repo = load caps (find_root caps) in
+      let s : op = state r in
       match cmd, rest with
       | "status", [] -> status r
       | "diff", ([] | [ _ ] | [ _; _ ]) -> diff r rest

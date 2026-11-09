@@ -12,9 +12,9 @@
  * and a wire protocol.
  *
  * kept:
- * - Diff uses Myers' O(ND) algorithm, with unified output; merge is
- *   diff3, built on two diffs. Remotes are directories: clone, pull and
- *   push copy the objects that the other side is missing.
+ * Diff uses Myers' O(ND) algorithm, with unified output; merge is
+ * diff3, built on two diffs. Remotes are directories: clone, pull and
+ * push copy the objects that the other side is missing.
  *
  * dropped:
  * git's formats, compression, packs and deltas, the wire protocol, the
@@ -23,9 +23,9 @@
  *
  * twist:
  * - {b The repository is one hash.} Objects are appended to a single
- *   file and never changed. The state of the repository (the branches,
- *   and which one is current) is an object too, an {e operation}, and
- *   .tvcs/head names the current operation. A command first writes its
+ *   file (.tvcs/objects) and never changed. The state of the repository
+ *   (the branches, and which one is current) is an object too, an {e operation},
+ *   and .tvcs/head names the current operation. A command first writes its
  *   objects, then replaces head with one rename, so every command is
  *   atomic, just like the statements of TinyDatabase.ml.
  * - {b Every command can be undone.} Each operation points to the

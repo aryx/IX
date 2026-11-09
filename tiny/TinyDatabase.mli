@@ -169,6 +169,11 @@
  *    has Plan 9's ndb, and no chidb)
  *)
 
+(* what tiny-db asks for: its file, read and written; the statements
+ * read, the answers printed, the errors said *)
+type caps =
+  < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr >
+
 (* the open file with its tables; a line, parsed *)
 type db
 type stmt
@@ -178,6 +183,4 @@ type stmt
 val exec : < Cap.stdout; .. > -> db -> stmt -> unit
 
 (* the program: its arguments (its name first; -h: how) to how it ends *)
-val main :
-  < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr; .. > ->
-  string array -> Exit.t
+val main : < caps; .. > -> string array -> Exit.t

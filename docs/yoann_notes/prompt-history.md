@@ -66470,3 +66470,65 @@ Claude confirmed both groups were done, dune built, `loc.py` raised no warnings,
 Claude committed the work as `f919bad4` and left the working tree clean.
 Claude also flagged a possible mismatch: TinyKernel.mli's dropped list says "Paging" while line 137 mentions "pages".
 Claude said it would check that paging question after the commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 09:32
+
+**Yoann:**
+
+> make test-tix is failing
+
+**Claude (summary):**
+
+Claude reported that `make test-tix` passes again, with 33 jobs and 0 failures.
+Claude said it was committing the re-recorded baseline.
+Yoann's follow-up shows he cleaned up TinyVCS.ml and asked what to tidy next, so the focus is that.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 10:07
+
+**Yoann:**
+
+> ok I've cleaned up a bit TinyVCS.ml; What's next? What is the next program to "tidy up" ?
+
+**Claude (summary):**
+
+Claude recommended TinyDatabase as the next program to tidy, since it's the last storage sibling.
+Claude noted its storage was recently simplified to Marshal, and it has a similar parser, evaluator, and REPL shape to TinyVCS.
+Claude suggested the same review pass: type aliases for tuples, one function per statement, capabilities stated once in the `.mli`, and stale comments.
+Claude laid out a follow-on order: TinyC and TinyML, then the debugger, tracer and profiler, then the screen programs.
+Claude then asked whether to start on TinyDatabase with the same read-then-propose pass.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 10:08
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude recommended a type offset for B-tree node positions, replacing bare ints in Inner and table roots.
+Claude proposed aliases column = string and rel = column list * row Seq.t for stage types.
+Claude recommended splitting exec into create, insert, index, query, describe, and change functions, with exec as dispatcher.
+Claude proposed factoring key_name, typ_name, and Create's key search, plus a caps type in the mli.
+Claude left the mli header, file format and Marshal unchanged, since the sections already read well.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 10:22
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude announced six changes, starting with the offset alias in the B-tree code.
+Claude introduced a `caps` type in the `.ml` and `.mli` files to back the `main` alias.
+Claude reverted the `-caps` file to its recorded state and re-recorded the `-bugs` baseline.
+Claude ran `make test-tix` and LOC, and both passed when run on their own.
+Claude attributed the earlier failures to timeouts under load and started one more full run.

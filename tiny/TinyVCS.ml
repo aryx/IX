@@ -660,7 +660,7 @@ let first_line s =
 
 (* (up by the text: Fpath.parent would end the root with a /, which
  * push records) *)
-let find_root (caps : < Cap.readdir; ..>) : Fpath.t =
+let find_root (caps : < Cap.open_in; Cap.env; .. >) : Fpath.t =
   let rec up d =
     if exists caps (Fpath.v d / ".tvcs" / "head") then Fpath.v d
     else if Filename.dirname d = d then error "not a tiny-vcs repository"

@@ -9,6 +9,11 @@
 
 module TSys = TinyLibSystem
 
+(* what tiny-db asks for: its file, read and written; the statements
+ * read, the answers printed, the errors said *)
+type caps =
+  < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr >
+
 open Common
 
 exception Error of string
@@ -39,13 +44,17 @@ let magic = "tinydb2\n"  (* (1: the nodes written by hand) *)
 
 type key = value list
 
+(* a node's place in the file, where it was appended: the tree's
+ * pointers, never changed (copy-on-write) *)
+type offset = int
+
 (* children.(i) holds the keys below seps.(i) (and at or above
  * seps.(i - 1)); the last child the rest *)
-type node = Leaf of (key * row) array | Inner of key array * int array
+type node = Leaf of (key * row) array | Inner of key array * offset array
 
 (* (a descriptor, TinyLibSystem's: a number on the host and on
  * tiny-kernel) *)
-type file = { fd : TSys.fd; cache : (int, node) Hashtbl.t }
+type file = { fd : TSys.fd; cache : (offset, node) Hashtbl.t }
 
 let read_at f off len =
   TSys.seek f.fd off;
@@ -95,7 +104,7 @@ let load f off = read_at f (off + 8) (int_at (read_at f off 8) 0)
 let node_bytes (n : node) = Marshal.to_string n [ Marshal.No_sharing ]
 let node_of_bytes s : node = Marshal.from_string s 0
 
-let node f off =
+let node f (off : offset) : node =
   match Hashtbl.find_opt f.cache off with
   | Some n -> n
   | None ->
@@ -103,7 +112,7 @@ let node f off =
       Hashtbl.replace f.cache off n;
       n
 
-let write f (n : node) =
+let write f (n : node) : offset =
   let off = append f (node_bytes n) in
   Hashtbl.replace f.cache off n;
   off
@@ -146,9 +155,10 @@ let insert_at a i x =
     [ Array.sub a 0 i; Array.make 1 x; Array.sub a i (Array.length a - i) ]
 
 (* the new subtree: one node, or two and the separator between *)
-type split = One of int | Two of int * key * int
+type split = One of offset | Two of offset * key * offset
 
-(* the new subtree: one node, or two and the separator between *)
+(* k and its row r put in the subtree at off, copied on the way down:
+ * the new subtree's nodes, the old ones left as they were *)
 let rec ins f off k r =
   match node f off with
   | Leaf es ->
@@ -188,7 +198,7 @@ let rec ins f off k r =
                                  Array.sub kids (m + 1)
                                    (Array.length kids - m - 1)))))
 
-let insert f root k r =
+let insert f (root : offset) k r : offset =
   match ins f root k r with
   | One root -> root
   | Two (a, sep, b) -> write f (Inner (Array.make 1 sep, Array.of_list [ a; b ]))
@@ -208,12 +218,15 @@ let rec delete f off k =
 (* The catalog *)
 (*****************************************************************************)
 
+(* a column's name *)
+type column = string
+
 type table = {
   name : string;
-  cols : (string * typ) list;
+  cols : (column * typ) list;
   key : int;                       (* the key column's position *)
-  root : int;
-  indexes : (string * int) list;   (* a column, its index's root *)
+  root : offset;
+  indexes : (column * offset) list;   (* a column, its index's root *)
 }
 
 type db = { file : file; mutable tables : table list }
@@ -256,14 +269,16 @@ let table db name =
 let replace db (t : table) =
   List.map (fun t' -> if t'.name = t.name then t else t') db.tables
 
-(* a table's columns; a column's place among columns *)
-let names (t : table) = List.map fst t.cols
-let col_pos cols c =
+(* a table's columns; a column's place among columns; the key's *)
+let names (t : table) : column list = List.map fst t.cols
+let col_pos (cols : column list) (c : column) =
   let rec go i = function
     | x :: rest -> if x = c then i else go (i + 1) rest
     | [] -> error ("no column " ^ c)
   in
   go 0 cols
+let key_name (t : table) : column = fst (List.nth t.cols t.key)
+let typ_name ty = if ty = TInt then "int" else "text"
 
 (* an index's entry has no row *)
 let no_row : row = Array.of_list []
@@ -532,7 +547,7 @@ let rec conjuncts = function
   | e -> [ e ]
 
 let plan (t : table) (stages : stage list) =
-  let key = fst (List.nth t.cols t.key) in
+  let key = key_name t in
   let ranges op = List.mem op [ Eq; Lt; Le; Gt; Ge ] in
   let usable = function
     | Bin (op, Col c, Lit v) when ranges op -> Some (c, v, op)
@@ -557,7 +572,7 @@ let show_access (t : table) = function
   | Scan -> "scan " ^ t.name
   | Range (c, v, op) ->
       Printf.sprintf "range %s.%s %s %s%s" t.name
-        (match c with Some c -> c | None -> fst (List.nth t.cols t.key))
+        (match c with Some c -> c | None -> key_name t)
         (List.assoc op [ Eq, "="; Lt, "<"; Le, "<="; Gt, ">"; Ge, ">=" ])
         (show v) (if c = None then " (key)" else " (index)")
 
@@ -578,8 +593,11 @@ let rows db (t : table) (a : access) : row Seq.t =
       |> Seq.filter_map (fun (k, _) ->
            match k with [ _; pk ] -> find f t.root [ pk ] | _ -> None)
 
-(* a stage: its output columns and rows, from its input's *)
-let stage db (cols, (rs : row Seq.t)) = function
+(* a relation: its columns, and its rows as they are pulled *)
+type rel = column list * row Seq.t
+
+(* a stage: its output relation, from its input's *)
+let stage db ((cols, rs) : rel) : stage -> rel = function
   | Where e ->
       let f = compile cols e in
       cols, Seq.filter (fun r -> truth (f r)) rs
@@ -635,7 +653,7 @@ let stage db (cols, (rs : row Seq.t)) = function
       cols, rs |> List.of_seq |> List.stable_sort cmp |> List.to_seq
   | Take n -> cols, Seq.take n rs
 
-let run_query db t stages =
+let run_query db t stages : access * rel =
   let a = plan t stages in
   a, List.fold_left (stage db) (names t, rows db t a) stages
 
@@ -691,80 +709,89 @@ let change db name stages (items : (string * expr) list option) =
     | None -> t in
   commit db (replace db t)
 
-let exec caps db (s : stmt) =
-  let f = db.file in
-  match s with
-  | Create (name, cols) ->
-      if List.exists (fun t -> t.name = name) db.tables then
-        error (Printf.sprintf "table %s exists" name);
-      let key = match List.filteri (fun _ (_, _, k) -> k) cols with
-        | [ _ ] ->
-            let rec go i = function
-              | (_, _, true) :: _ -> i
-              | _ :: rest -> go (i + 1) rest
-              | [] -> 0
-            in
-            go 0 cols
-        | [] -> 0 | _ -> error "one key" in
-      commit db (db.tables @
-        [ { name; cols = List.map (fun (c, ty, _) -> c, ty) cols; key;
-            root = empty_tree f; indexes = [] } ])
-  | Insert (name, tuples) ->
-      let t = table db name in
-      let t = List.fold_left (fun t vs ->
-        if List.length vs <> List.length t.cols then
-          error (name ^ " has " ^ string_of_int (List.length t.cols)
-                 ^ " columns");
-        List.iter2 (fun v (c, ty) ->
-          if type_of v <> ty then
-            error (c ^ ": a " ^ (if ty = TInt then "int" else "text")))
-          vs t.cols;
-        add f t (Array.of_list vs)) t tuples in
-      commit db (replace db t)
-  | Index (name, c) ->
-      let t = table db name in
-      if not (List.mem_assoc c t.cols) then error ("no column " ^ c);
-      if List.mem_assoc c t.indexes then
-        error (Printf.sprintf "index on %s exists" c);
-      let pos = col_pos (names t) c in
-      let root =
-        Seq.fold_left (fun root r ->
-          insert f root [ r.(pos); r.(t.key) ] no_row)
-          (empty_tree f) (rows db t Scan)
-      in
-      commit db (replace db { t with indexes = t.indexes @ [ c, root ] })
-  | Query (explain, name, stages) ->
-      let t = table db name in
-      let a, (_, rs) = run_query db t stages in
-      if explain then
-        print caps (String.concat " | " (show_access t a :: List.map (function
-          | Where _ -> "where" | Select _ -> "select"
-          | Join t -> "hash join " ^ t | Group _ -> "group"
-          | Sort _ -> "sort" | Take n -> Printf.sprintf "take %d" n) stages)
-          ^ "\n")
-      else
-        Seq.iter (fun r ->
-          print caps
-            (String.concat "|" (Array.to_list (Array.map show r)) ^ "\n")) rs
-  | Help ->
-      let col (c, ty) = c ^ if ty = TInt then " int" else " text" in
-      let tables = List.map (fun t ->
-        "  " ^ t.name ^ " ("
-        ^ String.concat ", " (List.mapi (fun i c ->
-            col c ^ if i = t.key then " key" else "") t.cols)
-        ^ ")"
-        ^ String.concat "" (List.map (fun (c, _) -> ", index " ^ c) t.indexes)
-        ^ "\n") db.tables in
+(* a table made, empty; its key the column said key, or the first *)
+let create_table db name (cols : (column * typ * bool) list) =
+  if List.exists (fun t -> t.name = name) db.tables then
+    error (Printf.sprintf "table %s exists" name);
+  let keys =
+    List.filter (fun (_, (_, _, k)) -> k) (List.mapi (fun i c -> i, c) cols) in
+  let key =
+    match keys with
+    | [ (i, _) ] -> i
+    | [] -> 0
+    | _ -> error "one key" in
+  commit db (db.tables @
+    [ { name; cols = List.map (fun (c, ty, _) -> c, ty) cols; key;
+        root = empty_tree db.file; indexes = [] } ])
+
+(* rows added, each checked against the table's columns *)
+let insert_rows db name tuples =
+  let t = table db name in
+  let t = List.fold_left (fun t vs ->
+    if List.length vs <> List.length t.cols then
+      error (name ^ " has " ^ string_of_int (List.length t.cols)
+             ^ " columns");
+    List.iter2 (fun v (c, ty) ->
+      if type_of v <> ty then error (c ^ ": a " ^ typ_name ty))
+      vs t.cols;
+    add db.file t (Array.of_list vs)) t tuples in
+  commit db (replace db t)
+
+(* an index on a column, made from the table's rows *)
+let create_index db name c =
+  let t = table db name in
+  if not (List.mem_assoc c t.cols) then error ("no column " ^ c);
+  if List.mem_assoc c t.indexes then
+    error (Printf.sprintf "index on %s exists" c);
+  let pos = col_pos (names t) c in
+  let root =
+    Seq.fold_left (fun root r ->
+      insert db.file root [ r.(pos); r.(t.key) ] no_row)
+      (empty_tree db.file) (rows db t Scan)
+  in
+  commit db (replace db { t with indexes = t.indexes @ [ c, root ] })
+
+(* a query's rows printed, or, explained, how it reads its table *)
+let query caps db explain name stages =
+  let t = table db name in
+  let a, (_, rs) = run_query db t stages in
+  if explain then
+    print caps (String.concat " | " (show_access t a :: List.map (function
+      | Where _ -> "where" | Select _ -> "select"
+      | Join t -> "hash join " ^ t | Group _ -> "group"
+      | Sort _ -> "sort" | Take n -> Printf.sprintf "take %d" n) stages)
+      ^ "\n")
+  else
+    Seq.iter (fun r ->
       print caps
-        (help
-         ^ (if tables = [] then "No tables yet.\n"
-            else "The tables:\n" ^ String.concat "" tables))
+        (String.concat "|" (Array.to_list (Array.map show r)) ^ "\n")) rs
+
+(* help, then the tables *)
+let describe caps db =
+  let col (c, ty) = c ^ " " ^ typ_name ty in
+  let tables = List.map (fun t ->
+    "  " ^ t.name ^ " ("
+    ^ String.concat ", " (List.mapi (fun i c ->
+        col c ^ if i = t.key then " key" else "") t.cols)
+    ^ ")"
+    ^ String.concat "" (List.map (fun (c, _) -> ", index " ^ c) t.indexes)
+    ^ "\n") db.tables in
+  print caps
+    (help
+     ^ (if tables = [] then "No tables yet.\n"
+        else "The tables:\n" ^ String.concat "" tables))
+
+let exec caps db (s : stmt) =
+  match s with
+  | Create (name, cols) -> create_table db name cols
+  | Insert (name, tuples) -> insert_rows db name tuples
+  | Index (name, c) -> create_index db name c
+  | Query (explain, name, stages) -> query caps db explain name stages
+  | Help -> describe caps db
   | Delete (name, stages) -> change db name stages None
   | Update (name, stages, items) -> change db name stages (Some items)
 
-let main
-    (caps : < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr;
-              .. >) (argv : string array) : Exit.t =
+let main (caps : < caps; .. >) (argv : string array) : Exit.t =
   match Array.to_list argv with
   | [ _; ("-h" | "--help") ] ->
       (* help's first lines, a table made and queried *)

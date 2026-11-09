@@ -4,6 +4,16 @@
  * See TinyLinker.mli
  *)
 open TinyMachineISA
+(* (|||: an option's value, or a default) *)
+open Common
+module TSys = TinyLibSystem
+module Sym = TinyLibSymbols
+
+(* what tiny-linker asks for: the objects read, the image written *)
+type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
+
+(* an address in the image, from 0 *)
+type address = int
 
 let usage =
   "usage: tiny-linker [-a megabytes] [-n] [-s] [-map] [-debug] -o out file.o..."
@@ -19,7 +29,7 @@ text's size in a fourth word (another magic number): tiny-kernel's segments
 share the text between the runs of a program. With -s, an executable too (of 1 MB unless -a says), with its
 labels after the image, but the compilers' local ones (what debug reads). With
 -map, out.map too: each label's address, by address (what tiny-prof reads).
-With -debug, each object's items said (-v, -quiet: TinyLibSystem.logging's).
+With -debug, each object's items said (-v, -quiet: TSys.logging's).
 A label's line is its address in hexadecimal and its name. In
 tiny/tests/TinyCPU_tests/, for example:
   tiny-assembler hello.tm && tiny-linker -o hello hello.o
@@ -33,8 +43,16 @@ An error names the label: undefined label main
 (*****************************************************************************)
 
 (* the first pass: each item its address, each label its own (and the
- * labels in their order, which is their addresses') *)
-let layout (items : item list) =
+ * labels in their order, which is their addresses'), and where the data
+ * starts (-n; 0 otherwise) *)
+type layout = {
+  labels : (Sym.label, address) Hashtbl.t;
+  order : (Sym.label * address) list;
+  placed : (address * item) list;
+  data_at : address;
+}
+
+let layout (items : item list) : layout =
   let labels = Hashtbl.create 64 and order = ref [] in
   let pc = ref 0 and placed = ref [] and data_at = ref 0 in
   items |> List.iter (fun it ->
@@ -53,7 +71,8 @@ let layout (items : item list) =
         placed := (!pc, it) :: !placed; pc := !pc + String.length s
     | Section true -> data_at := !pc
     | Piece | Section false -> ());
-  labels, List.rev !order, List.rev !placed, !data_at
+  { labels; order = List.rev !order; placed = List.rev !placed;
+    data_at = !data_at }
 
 (* a word in the code's bytes, the low first; an instruction's, which
  * fits in an int on both sides (its opcode under 0x40) *)
@@ -69,7 +88,7 @@ let set_word s off v =
 (* a word with an address, or what an address makes, in its place: the
  * whole word, or the instruction made again with it as its immediate,
  * so that encode says what does not fit *)
-let fill s off kind pc v =
+let fill s off kind (pc : address) (v : address) =
   let imm v i = match i with
     | Alui (op, d, a, _) -> Alui (op, d, a, v) | Lui (d, _) -> Lui (d, v)
     | Load (s, d, a, _) -> Load (s, d, a, v)
@@ -162,19 +181,20 @@ type sections = In_order | Text_first
 
 (* the image, the labels by address, and where the data starts (-n; 0
  * otherwise, the sections then ignored) *)
-let link (sections : sections) (objects : item list list) =
+let link (sections : sections) (objects : item list list)
+    : string * (Sym.label * address) list * address =
   let items = sweep (List.map sectioned objects) in
-  let labels, order, placed, data_at =
+  let lay =
     layout
       (match sections with Text_first -> gather items | In_order -> items) in
-  let resolve t =
+  let resolve t : address =
     match t with
     | Address n -> n
     | Name l ->
-        (match Hashtbl.find_opt labels l with
+        (match Hashtbl.find_opt lay.labels l with
          | Some n -> n | None -> error ("undefined label " ^ l)) in
   let b = Buffer.create 4096 in
-  placed |> List.iter (fun (a, it) ->
+  lay.placed |> List.iter (fun (a, it) ->
     match it with
     | Space n -> Buffer.add_string b (String.make n '\000')
     | Chunk (s, relocs) ->
@@ -188,7 +208,7 @@ let link (sections : sections) (objects : item list list) =
     | Label _ | Align _ | Piece | Section _ -> ());
   (* (old: the table's labels sorted by address, those at one address in
    * the table's order, which is OCaml's or TinyLibCore's) *)
-  Buffer.contents b, order, data_at
+  Buffer.contents b, lay.order, lay.data_at
 
 (* An executable for tiny-kernel: a header of three words, then the
  * image, linked at 0. The words are a magic number, the image's size,
@@ -214,55 +234,63 @@ let aout memory data_at image =
 (* main *)
 (*****************************************************************************)
 
-let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
-    (argv : string array) : Exit.t =
-  let write = TinyLibSystem.write_file caps in
+(* the command line's options: -a's megabytes, -n, -s, -map *)
+type options = {
+  megabytes : int option;
+  split : bool;
+  symbols : bool;
+  map : bool;
+}
+
+let main (caps : < caps; .. >) (argv : string array) : Exit.t =
+  let write = TSys.write_file caps in
   let megabytes n =
     match int_of_string_opt n with
     | Some n -> n > 0 && n <= 100
     | None -> false in
-  let rec args mb split syms map l = match l with
+  let rec args o l = match l with
     | "-a" :: n :: r when megabytes n ->
-        args (Some (int_of_string n)) split syms map r
-    | "-n" :: r -> args mb true syms map r
-    | "-s" :: r -> args mb split true map r
-    | "-map" :: r -> args mb split syms true r
+        args { o with megabytes = Some (int_of_string n) } r
+    | "-n" :: r -> args { o with split = true } r
+    | "-s" :: r -> args { o with symbols = true } r
+    | "-map" :: r -> args { o with map = true } r
     | "-o" :: out :: files when files <> [] ->
-        Some (mb, split, syms, map, Fpath.v out, Fpath_.of_strings files)
+        Some (o, Fpath.v out, Fpath_.of_strings files)
     | _ -> None in
+  let none =
+    { megabytes = None; split = false; symbols = false; map = false } in
   match List.tl (Array.to_list argv) with
-  | ("-h" | "--help") :: _ -> TinyLibSystem.print caps help; Exit.OK
+  | ("-h" | "--help") :: _ -> TSys.print caps help; Exit.OK
   | l ->
-      match args None false false false (TinyLibSystem.logging l) with
+      match args none (TSys.logging l) with
       | None ->
-          TinyLibSystem.eprint caps (usage ^ "   (-h: how)\n"); Exit.Code 2
-      | Some (mb, split, syms, map, out, files) ->
+          TSys.eprint caps (usage ^ "   (-h: how)\n"); Exit.Code 2
+      | Some (o, out, files) ->
           try
             let objects = files |> List.map (fun f ->
               let items =
-                try of_object (TinyLibSystem.read_file caps f)
+                try of_object (TSys.read_file caps f)
                 with Error e -> error (Fpath.to_string f ^ ": " ^ e) in
               items |> List.iter (fun it ->
                 Logs.debug (fun m ->
                   m "%s: %s" (Fpath.to_string f) (show_item it)));
               items) in
             let image, labels, data_at =
-              link (if split then Text_first else In_order) objects in
+              link (if o.split then Text_first else In_order) objects in
             let lines l =
               String.concat "" (List.map (fun (l, a) ->
                 Printf.sprintf "%x %s\n" a l) l) in
             write out
-              (match mb, syms with
+              (match o.megabytes, o.symbols with
                | Some n, false -> aout (n * 0x100000) data_at image
                | _, true ->
-                   aout ((match mb with Some n -> n | None -> 1) * 0x100000)
-                     data_at image
-                   ^ lines (List.filter (fun (l, _) ->
-                       not (TinyLibSymbols.local l)) labels)
+                   aout ((o.megabytes ||| 1) * 0x100000) data_at image
+                   ^ lines (List.filter (fun (l, _) -> not (Sym.local l))
+                              labels)
                | None, false -> image);
-            if map then
+            if o.map then
               write (Fpath.v (Fpath.to_string out ^ ".map")) (lines labels);
             Exit.OK
           with Error e -> Exit.Err e
 
-let () = TinyLibSystem.main "tiny-linker" main
+let () = TSys.main "tiny-linker" main

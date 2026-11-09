@@ -4,6 +4,10 @@
  * See TinyAssembler.mli
  *)
 module ISA = TinyMachineISA
+module TSys = TinyLibSystem
+
+(* what tiny-assembler asks for: its file read, its object written *)
+type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 
 let usage = "usage: tiny-assembler [-o file.o] file.tm"
 (* -h: how, by examples, each one as it runs *)
@@ -28,7 +32,9 @@ An error names the file and the line: hello.tm:3: not a register: r16
  * 2147483647) or of its strings' bytes needs the 32nd. (old: an int,
  * and m32 n.) Read as int_of_string does, in decimal or after 0x, its
  * bits past 32 dropped. *)
-let halves s =
+type word = int * int   (* the high half, the low *)
+
+let halves s : word option =
   let neg = String.length s > 0 && s.[0] = '-' in
   let s = if neg then String.sub s 1 (String.length s - 1) else s in
   let base, start =
@@ -56,27 +62,30 @@ let halves s =
     | r -> r
 
 (* a word as an int, when it fits in 31 bits (so on both sides) *)
-let int_of (h, l) =
+let int_of ((h, l) : word) =
   if h < 0x4000 || h >= 0xc000 then (ISA.sext16 h * 0x10000) + l
   else ISA.error "number out of range"
 
 (* -1 is two words of ffff; a small number one *)
-let small (h, l) = (h = 0 && l < 0x8000) || (h = 0xffff && l >= 0x8000)
+let small ((h, l) : word) = (h = 0 && l < 0x8000) || (h = 0xffff && l >= 0x8000)
 
-type expr = Num of (int * int) | Sym of string
+type expr = Num of word | Sym of string
 
 (*****************************************************************************)
 (* The items *)
 (*****************************************************************************)
 
-(* an item: an instruction's words, made from what the operands resolve
- * to, given the word's index in the item and the kind of place
- * (TinyMachineISA's, where the linker puts a label's address); .word's
- * words; or the object's own item (bytes, zeros, a label, an alignment,
- * which the linker does: an address's, not the file's) *)
+(* what an operand resolves to, given the word's index in its item and
+ * the kind of place (TinyMachineISA's, where the linker puts a label's
+ * address): a number at once, a label 0 and a reloc *)
+type resolve = int -> ISA.place -> expr -> int
+
+(* an item: an instruction's words, made by what its operands resolve
+ * to; .word's words; or the object's own item (bytes, zeros, a label, an
+ * alignment, which the linker does: an address's, not the file's) *)
 type item =
   | Obj of ISA.item
-  | Words of int * ((int -> ISA.place -> expr -> int) -> int list)
+  | Words of int * (resolve -> int list)
   | Data of expr list
 
 let reg s =
@@ -252,7 +261,7 @@ let parse_line line : item list =
 (*****************************************************************************)
 
 (* a word's bytes, the low first: the memory's order *)
-let word_bytes (h, l) =
+let word_bytes ((h, l) : word) =
   String.init 4 (fun i ->
     Char.chr (((if i < 2 then l else h) lsr (8 * (i mod 2))) land 0xff))
 
@@ -301,11 +310,10 @@ let assemble (chan : Chan.i) =
 (* Entry point *)
 (*****************************************************************************)
 
-let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
-    (argv : string array) : Exit.t =
+let main (caps : < caps; .. >) (argv : string array) : Exit.t =
   let assemble_to (f : Fpath.t) (out : Fpath.t) : Exit.t =
-    f |> TinyLibSystem.with_open_in caps assemble
-      |> TinyLibSystem.write_file caps out
+    f |> TSys.with_open_in caps assemble
+      |> TSys.write_file caps out
     ;
     Exit.OK in
   (* x.tm's object: x.o, here *)
@@ -313,11 +321,11 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
   let tm f = Filename.check_suffix f ".tm" in
   try
     match List.tl (Array.to_list argv) with
-    | ("-h" | "--help") :: _ -> TinyLibSystem.print caps help; Exit.OK
+    | ("-h" | "--help") :: _ -> TSys.print caps help; Exit.OK
     | [ "-o"; out; f ] when tm f -> assemble_to (Fpath.v f) (Fpath.v out)
     | [ f ] when tm f -> assemble_to (Fpath.v f) (default (Fpath.v f))
-    | _ -> TinyLibSystem.eprint caps (usage ^ "   (-h: how)\n"); Exit.Code 2
-  (* (said after the program's name by TinyLibSystem.main) *)
+    | _ -> TSys.eprint caps (usage ^ "   (-h: how)\n"); Exit.Code 2
+  (* (said after the program's name by TSys.main) *)
   with ISA.Error e -> Exit.Err e
 
-let () = TinyLibSystem.main "tiny-assembler" main
+let () = TSys.main "tiny-assembler" main

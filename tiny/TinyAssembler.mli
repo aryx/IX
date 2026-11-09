@@ -94,11 +94,12 @@
  * Instructions" (CACM, 1978), the problem a fixed format avoids; J. R.
  * Levine, Linkers and Loaders (2000). *)
 
+(* what tiny-assembler asks for: its file read, its object written *)
+type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
+
 (* a file's text to its object's text, the file opened by the caller
  * (its name in the errors: Chan.origin) *)
 val assemble : Chan.i -> string
 
 (* the program: its arguments (its name first; -h: how) to how it ends *)
-val main :
-  < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. > ->
-  string array -> Exit.t
+val main : < caps; .. > -> string array -> Exit.t

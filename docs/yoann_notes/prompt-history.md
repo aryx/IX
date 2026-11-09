@@ -66532,3 +66532,33 @@ Claude introduced a `caps` type in the `.ml` and `.mli` files to back the `main`
 Claude reverted the `-caps` file to its recorded state and re-recorded the `-bugs` baseline.
 Claude ran `make test-tix` and LOC, and both passed when run on their own.
 Claude attributed the earlier failures to timeouts under load and started one more full run.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 10:41
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude reported that TinyDatabase was committed as `6a01cea4`, with the `find_root` fix in TinyVCS and the re-recorded bugs baseline.
+Claude noted the working tree is clean after that commit.
+Claude said the next items on the plan are TinyC and TinyML, the two compilers and the largest files.
+Claude pointed out that their shared stack machine is the second twist in the plan.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 11:00
+
+**Yoann:**
+
+> what about TinyAssembler and TinyLinker before?
+
+**Claude (summary):**
+
+Claude said TinyAssembler and TinyLinker are a better starting point, being about 320 and 270 lines.
+Claude noted that both sit under the compilers and this week received Marshal, the `ISA` alias, and `-debug`.
+Claude said neither has had the tidy-up pass yet, and it planned to read both files next.
+Claude did not make any edits in this answer.

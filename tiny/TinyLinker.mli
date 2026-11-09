@@ -84,6 +84,9 @@
  * makes the two the same: the assembler encodes, and the linker's one
  * way to fill a place is the encoder. *)
 
+(* what tiny-linker asks for: the objects read, the image written *)
+type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
+
 (* the image's order: the objects', .text and .data ignored; or all the
  * text first, then all the data (-n) *)
 type sections = In_order | Text_first
@@ -103,6 +106,4 @@ val link :
 val aout : int -> int -> string -> string
 
 (* the program: its arguments (its name first; -h: how) to how it ends *)
-val main :
-  < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. > ->
-  string array -> Exit.t
+val main : < caps; .. > -> string array -> Exit.t

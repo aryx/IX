@@ -2,9 +2,9 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See TinyCParser.mli *)
-open TinyCTypes
-open TinyCLexer
-open TinyCTree
+module Ty = TinyCTypes
+module Lexer = TinyCLexer
+module Tree = TinyCTree
 
 (*****************************************************************************)
 (* The parser: declarations, and statements *)
@@ -12,28 +12,42 @@ open TinyCTree
 
 type storage = Auto | Static | Extern | Typedef
 
-type var = { vty : ty; where : place }
+type var = { vty : Ty.ty; where : Tree.place }
 
-let toks : token array ref = ref (Array.of_list []) and pos = ref 0
+let toks : Lexer.token array ref = ref (Array.of_list []) and pos = ref 0
 (* each token's, for the errors *)
-let locs : loc array ref = ref (Array.of_list [])
-let peek () = if !pos < Array.length !toks then (!toks).(!pos) else EOF
+let locs : Lexer.loc array ref = ref (Array.of_list [])
+(* the file's tokens to read *)
+let start (ts : Lexer.located list) =
+  toks := Array.of_list (List.map fst ts);
+  locs := Array.of_list (List.map snd ts);
+  pos := 0
+(* where the last token read is, for an error: a missing ; is then on
+ * its line, not the next one's (None: no token yet) *)
+let last_loc () : Lexer.loc option =
+  let ls = !locs in
+  if Array.length ls = 0 then None
+  else Some ls.(max 0 (min (!pos - 1) (Array.length ls - 1)))
+let peek () = if !pos < Array.length !toks then (!toks).(!pos) else Lexer.EOF
+let at_end () = peek () = Lexer.EOF
 let next () = let t = peek () in incr pos; t
-let accept p = if peek () = P p then (incr pos; true) else false
-let expect p = if not (accept p) then error ("expected " ^ p)
-let ident () = match next () with Id x -> x | _ -> error "expected a name"
+let accept p = if peek () = Lexer.P p then (incr pos; true) else false
+let accept_word w = if peek () = Lexer.Id w then (incr pos; true) else false
+let expect p = if not (accept p) then Ty.error ("expected " ^ p)
+let ident () =
+  match next () with Lexer.Id x -> x | _ -> Ty.error "expected a name"
 
 let globals : (string, var) Hashtbl.t = Hashtbl.create 64
-let typedefs : (string, ty) Hashtbl.t = Hashtbl.create 16
+let typedefs : (string, Ty.ty) Hashtbl.t = Hashtbl.create 16
 (* an enum's constants, ints *)
 let enums : (string, int64) Hashtbl.t = Hashtbl.create 16
-let structs : (string, sdef) Hashtbl.t = Hashtbl.create 16
+let structs : (string, Ty.sdef) Hashtbl.t = Hashtbl.create 16
 let scopes : (string, var) Hashtbl.t list ref = ref []
 let frame = ref 0                         (* the current function's locals *)
-let result = ref Void
+let result = ref Ty.Void
 (* the definitions of the declaration being read, the last first: a
  * string literal's data before the function or the global it is in *)
-let defs : def list ref = ref []
+let defs : Tree.def list ref = ref []
 
 let strings = ref 0
 let tags = ref 0                          (* the anonymous structures' *)
@@ -44,30 +58,31 @@ let lookup x =
   | None ->
       (match Hashtbl.find_opt globals x with
        | Some v -> v
-       | None -> error ("undeclared: " ^ x))
+       | None -> Ty.error ("undeclared: " ^ x))
 
 (* a local's place, below SP at its alignment *)
 let local t =
-  frame := round (!frame + size t) (max 1 (min 8 (align t))); Local !frame
+  frame := Ty.round (!frame + Ty.size t) (max 1 (min 8 (Ty.align t)));
+  Tree.Local !frame
 
 (* a string, as a static array of bytes *)
 let string_lit s =
   incr strings;
-  let name = static_sym (Printf.sprintf "s%d" !strings) in
+  let name = Ty.static_sym (Printf.sprintf "s%d" !strings) in
   let s = s ^ "\000" in
   let n = String.length s in
   let pieces =
     List.init (((n - 1) / 8) + 1) (fun i ->
-      8 * i, Bytes (String.sub s (8 * i) (min 8 (n - (8 * i))))) in
-  defs := Data (name, n, pieces) :: !defs;
-  var (Global name) (Arr (char_t, n))
+      8 * i, Tree.Bytes (String.sub s (8 * i) (min 8 (n - (8 * i))))) in
+  defs := Tree.Data (name, n, pieces) :: !defs;
+  Tree.var (Tree.Global name) (Ty.Arr (Ty.char_t, n))
 
 let is_type () =
   match peek () with
-  | Id ("void" | "char" | "short" | "int" | "long" | "unsigned" | "signed"
+  | Lexer.Id ("void" | "char" | "short" | "int" | "long" | "unsigned" | "signed"
         | "struct" | "enum" | "static" | "extern" | "const" | "volatile"
         | "typedef") -> true
-  | Id x ->
+  | Lexer.Id x ->
       Hashtbl.mem typedefs x
       && not (List.exists (fun s -> Hashtbl.mem s x) !scopes)
   | _ -> false
@@ -77,19 +92,20 @@ let rec base_type () =
   let storage = ref Auto and words = ref [] and t = ref None in
   let rec go () =
     match peek () with
-    | Id (("static" | "extern" | "typedef") as w) ->
+    | Lexer.Id (("static" | "extern" | "typedef") as w) ->
         ignore (next ());
         storage :=
           List.assoc w
             [ "static", Static; "extern", Extern; "typedef", Typedef ];
         go ()
-    | Id ("const" | "volatile") -> ignore (next ()); go ()
-    | Id (("void" | "char" | "short" | "int" | "long" | "unsigned" | "signed")
-          as w) ->
+    | Lexer.Id ("const" | "volatile") -> ignore (next ()); go ()
+    | Lexer.Id
+        (("void" | "char" | "short" | "int" | "long" | "unsigned" | "signed")
+         as w) ->
         ignore (next ()); words := w :: !words; go ()
-    | Id "struct" -> ignore (next ()); t := Some (struct_type ()); go ()
-    | Id "enum" -> ignore (next ()); t := Some (enum_type ()); go ()
-    | Id x when !words = [] && !t = None && Hashtbl.mem typedefs x ->
+    | Lexer.Id "struct" -> ignore (next ()); t := Some (struct_type ()); go ()
+    | Lexer.Id "enum" -> ignore (next ()); t := Some (enum_type ()); go ()
+    | Lexer.Id x when !words = [] && !t = None && Hashtbl.mem typedefs x ->
         ignore (next ()); t := Some (Hashtbl.find typedefs x); go ()
     | _ -> ()
   in
@@ -103,19 +119,19 @@ let rec base_type () =
   let t =
     match !t with
     | Some t -> t
-    | None -> if List.mem "void" w then Void else Int (width, signed) in
+    | None -> if List.mem "void" w then Ty.Void else Ty.Int (width, signed) in
   !storage, t
 
 and struct_type () =
   let tag =
     match peek () with
-    | Id x -> ignore (next ()); x
+    | Lexer.Id x -> ignore (next ()); x
     | _ -> incr tags; Printf.sprintf ".%d" !tags in
   let s =
     match Hashtbl.find_opt structs tag with
     | Some s -> s
     | None ->
-        let s = { fields = []; ssize = 0; salign = 1 } in
+        let s : Ty.sdef = { fields = []; ssize = 0; salign = 1 } in
         Hashtbl.replace structs tag s; s in
   if accept "{" then begin
     (* each member at its size's alignment, the whole rounded to 8, as 7c *)
@@ -124,24 +140,24 @@ and struct_type () =
       let _, bt = base_type () in
       let rec members () =
         let name, t = declarator bt in
-        no_vlong t;
-        off := round !off (align t);
+        Ty.no_vlong t;
+        off := Ty.round !off (Ty.align t);
         s.fields <- s.fields @ [ { fname = name; fty = t; foff = !off } ];
-        off := !off + size t;
-        s.salign <- max s.salign (align t);
+        off := !off + Ty.size t;
+        s.salign <- max s.salign (Ty.align t);
         if accept "," then members ()
       in
       members ();
       expect ";"
     done;
-    s.ssize <- round !off 8
+    s.ssize <- Ty.round !off 8
   end;
-  Struct s
+  Ty.Struct s
 
 (* enum tag { A, B = 5, C }: its constants numbered from 0, or from the
  * last given; the type an int *)
 and enum_type () =
-  (match peek () with Id _ -> ignore (next ()) | _ -> ());
+  (match peek () with Lexer.Id _ -> ignore (next ()) | _ -> ());
   if accept "{" then begin
     let rec go v =
       if not (accept "}") then
@@ -152,7 +168,7 @@ and enum_type () =
          go (Int64.succ v)) in
     go Int64.zero
   end;
-  int_t
+  Ty.int_t
 
 (* * name [n]... or name(params), with the parameters' names *)
 and declarator bt = let name, t, _ = declarator3 bt in name, t
@@ -166,13 +182,14 @@ and declarator3 bt =
  * base outward, the parenthesized one applied last: int ( *f[3])(int)
  * is an array of pointers to functions. The parameters' names are the
  * innermost function's (a definition's) *)
-and declarator_rec () : string * (ty -> ty) * string list =
+and declarator_rec () : string * (Ty.ty -> Ty.ty) * string list =
   let stars = ref 0 in
   while accept "*" do incr stars; ignore (accept "const") done;
-  let ptrs t = let t = ref t in for _i = 1 to !stars do t := Ptr !t done; !t in
+  let ptrs t =
+    let t = ref t in for _i = 1 to !stars do t := Ty.Ptr !t done; !t in
   let name, inner, inner_names =
-    if peek () = P "("
-       && (incr pos; let star = peek () = P "*" in decr pos; star)
+    if peek () = Lexer.P "("
+       && (incr pos; let star = peek () = Lexer.P "*" in decr pos; star)
     then begin
       ignore (next ());
       let r = declarator_rec () in
@@ -180,7 +197,7 @@ and declarator_rec () : string * (ty -> ty) * string list =
       r
     end
     else
-      ((match peek () with Id x -> ignore (next ()); x | _ -> ""),
+      ((match peek () with Lexer.Id x -> ignore (next ()); x | _ -> ""),
        (fun t -> t), []) in
   if accept "(" then begin
     (* the parameters, named or not, an array's as a pointer; ... *)
@@ -190,59 +207,61 @@ and declarator_rec () : string * (ty -> ty) * string list =
       else begin
         let _, pt = base_type () in
         let pname, pt = declarator pt in
-        let pt = match pt with Arr (e, _) -> Ptr e | t -> t in
+        let pt = match pt with Ty.Arr (e, _) -> Ty.Ptr e | t -> t in
         (* a , or the ) next: else the list is not closed (old: the
          * comma optional, and on { or at the file's end params called
          * itself on no token taken, until the stack was gone: a
          * segmentation fault) *)
-        if not (accept ",") && peek () <> P ")" then error "expected )";
+        if not (accept ",") && peek () <> Lexer.P ")" then
+          Ty.error "expected )";
         let rest, variadic = params () in
-        (if pt <> Void || pname <> "" then (pname, pt) :: rest else rest),
+        (if pt <> Ty.Void || pname <> "" then (pname, pt) :: rest else rest),
         variadic
       end
     in
     let ps, variadic = params () in
-    name, (fun t -> inner (Func (ptrs t, List.map snd ps, variadic))),
+    name, (fun t -> inner (Ty.Func (ptrs t, List.map snd ps, variadic))),
     (if inner_names <> [] then inner_names else List.map fst ps)
   end
   else begin
     let rec dims () =
       if accept "[" then
         (let n =
-           if peek () = P "]" then 0 else Int64.to_int (const_expr ()) in
+           if peek () = Lexer.P "]" then 0 else Int64.to_int (const_expr ()) in
          expect "]";
          n :: dims ())
       else [] in
     let ds = dims () in
     name,
-    (fun t -> inner (List.fold_right (fun n t -> Arr (t, n)) ds (ptrs t))),
+    (fun t -> inner (List.fold_right (fun n t -> Ty.Arr (t, n)) ds (ptrs t))),
     inner_names
   end
 
 (* expressions, by precedence climbing *)
 and expr () =
   let e = assign_expr () in
-  if accept "," then (let r = expr () in mk (Comma (e, r)) r.t) else e
+  if accept "," then (let r = expr () in Tree.mk (Tree.Comma (e, r)) r.t) else e
 
 and assign_expr () =
   let l = cond_expr () in
   match peek () with
-  | P "=" -> ignore (next ()); assign Asg_set l (assign_expr ())
-  | P op when List.mem_assoc op asg_ops ->
-      ignore (next ()); asg_op (List.assoc op asg_ops) l (assign_expr ())
+  | Lexer.P "=" -> ignore (next ()); Tree.assign Tree.Asg_set l (assign_expr ())
+  | Lexer.P op when List.mem_assoc op Tree.asg_ops ->
+      ignore (next ());
+      Tree.asg_op (List.assoc op Tree.asg_ops) l (assign_expr ())
   | _ -> l
 
 and cond_expr () =
   let c = binary_expr 0 in
   if accept "?" then begin
-    let a = rv (expr ()) in
+    let a = Tree.rv (expr ()) in
     expect ":";
-    let b = rv (cond_expr ()) in
+    let b = Tree.rv (cond_expr ()) in
     let t =
-      if is_int a.t && is_int b.t then common a.t b.t
-      else if is_ptr a.t then a.t
+      if Ty.is_int a.t && Ty.is_int b.t then Tree.common a.t b.t
+      else if Ty.is_ptr a.t then a.t
       else b.t in
-    mk (Cond (rv c, conv a t, conv b t)) t
+    Tree.mk (Tree.Cond (Tree.rv c, Tree.conv a t, Tree.conv b t)) t
   end
   else c
 
@@ -252,7 +271,7 @@ and binary_expr min =
                  [ "*"; "/"; "%" ] ] in
   let rec loop l =
     match peek () with
-    | P op -> (
+    | Lexer.P op -> (
         let rec index i = function
           | [] -> None
           | l :: r -> if List.mem op l then Some i else index (i + 1) r in
@@ -261,9 +280,9 @@ and binary_expr min =
             ignore (next ());
             let r = binary_expr (lv + 1) in
             loop (match op with
-                  | "&&" -> both l r
-                  | "||" -> either l r
-                  | op -> binary (List.assoc op binops) l r)
+                  | "&&" -> Tree.both l r
+                  | "||" -> Tree.either l r
+                  | op -> Tree.binary (List.assoc op Tree.binops) l r)
         | _ -> l)
     | _ -> l
   in
@@ -271,35 +290,41 @@ and binary_expr min =
 
 and unary () =
   match peek () with
-  | P "-" ->
+  | Lexer.P "-" ->
       ignore (next ());
-      let e = rv (unary ()) in
-      let t = promote e.t in
+      let e = Tree.rv (unary ()) in
+      let t = Tree.promote e.t in
       (match e.d with
-       | Const v -> num (Int64.neg v) t
-       | _ -> mk (Un (Neg, conv e t)) t)
-  | P "+" -> ignore (next ()); let e = rv (unary ()) in conv e (promote e.t)
-  | P "~" ->
+       | Tree.Const v -> Tree.num (Int64.neg v) t
+       | _ -> Tree.mk (Tree.Un (Tree.Neg, Tree.conv e t)) t)
+  | Lexer.P "+" ->
       ignore (next ());
-      let e = rv (unary ()) in
-      let t = promote e.t in
-      mk (Un (Com, conv e t)) t
-  | P "!" -> ignore (next ()); lnot (unary ())
-  | P "*" -> ignore (next ()); deref (unary ())
-  | P "&" -> ignore (next ()); addr (unary ())
-  | P (("++" | "--") as op) ->
+      let e = Tree.rv (unary ()) in
+      Tree.conv e (Tree.promote e.t)
+  | Lexer.P "~" ->
       ignore (next ());
-      asg_op (if op = "++" then Add else Sub) (unary ()) (num Int64.one int_t)
-  | Id "sizeof" ->
+      let e = Tree.rv (unary ()) in
+      let t = Tree.promote e.t in
+      Tree.mk (Tree.Un (Tree.Com, Tree.conv e t)) t
+  | Lexer.P "!" -> ignore (next ()); Tree.lnot (unary ())
+  | Lexer.P "*" -> ignore (next ()); Tree.deref (unary ())
+  | Lexer.P "&" -> ignore (next ()); Tree.addr (unary ())
+  | Lexer.P (("++" | "--") as op) ->
+      ignore (next ());
+      Tree.asg_op (if op = "++" then Tree.Add else Tree.Sub) (unary ())
+        (Tree.num Int64.one Ty.int_t)
+  | Lexer.Id "sizeof" ->
       ignore (next ());
       let t = if paren_type () then type_name () else (unary ()).t in
-      num (Int64.of_int (size t)) (Int (4, false))
-  | P "(" when paren_type () -> let t = type_name () in conv (rv (unary ())) t
+      Tree.num (Int64.of_int (Ty.size t)) (Ty.Int (4, false))
+  | Lexer.P "(" when paren_type () ->
+      let t = type_name () in
+      Tree.conv (Tree.rv (unary ())) t
   | _ -> postfix (primary ())
 
 (* ( type ...: a cast, or sizeof's type *)
 and paren_type () =
-  peek () = P "(" && (incr pos; let ty = is_type () in decr pos; ty)
+  peek () = Lexer.P "(" && (incr pos; let ty = is_type () in decr pos; ty)
 
 (* a type in parentheses: a cast's, sizeof's *)
 and type_name () =
@@ -312,146 +337,162 @@ and type_name () =
  * type, else promoted *)
 and call_args ps =
   let rec go () =
-    let a = rv (assign_expr ()) in
+    let a = Tree.rv (assign_expr ()) in
     if accept "," then a :: go () else (expect ")"; [ a ]) in
   let args = if accept ")" then [] else go () in
-  List.mapi (fun i (a : expr) ->
+  List.mapi (fun i (a : Tree.expr) ->
     match List.nth_opt ps i with
-    | Some t -> conv a t
-    | None -> conv a (promote a.t)) args
+    | Some t -> Tree.conv a t
+    | None -> Tree.conv a (Tree.promote a.t)) args
 
 and postfix e =
   match peek () with
-  | P "(" ->
+  | Lexer.P "(" ->
       (* a call through a function's address: a pointer, or ( *f ) *)
       ignore (next ());
-      let f = rv e in
+      let f = Tree.rv e in
       let rt, ps =
         match f.t with
-        | Ptr (Func (r, p, _)) -> r, p
-        | _ -> error "not a function" in
-      postfix (mk (ApplyPtr (f, call_args ps)) rt)
-  | P "[" ->
+        | Ty.Ptr (Ty.Func (r, p, _)) -> r, p
+        | _ -> Ty.error "not a function" in
+      postfix (Tree.mk (Tree.ApplyPtr (f, call_args ps)) rt)
+  | Lexer.P "[" ->
       ignore (next ());
       let i = expr () in
-      expect "]"; postfix (deref (binary (A Add) e i))
-  | P "." -> ignore (next ()); postfix (member e (ident ()))
-  | P "->" -> ignore (next ()); postfix (member (deref e) (ident ()))
-  | P (("++" | "--") as op) ->
+      expect "]"; postfix (Tree.deref (Tree.binary (Tree.A Tree.Add) e i))
+  | Lexer.P "." -> ignore (next ()); postfix (member e (ident ()))
+  | Lexer.P "->" -> ignore (next ()); postfix (member (Tree.deref e) (ident ()))
+  | Lexer.P (("++" | "--") as op) ->
       ignore (next ());
       (* x++ is (x += 1) - 1, and so on *)
-      let o, back = if op = "++" then Add, Sub else Sub, Add in
+      let o, back =
+        if op = "++" then Tree.Add, Tree.Sub else Tree.Sub, Tree.Add in
+      let one () = Tree.num Int64.one Ty.int_t in
       postfix
-        (conv (binary (A back) (asg_op o e (num Int64.one int_t))
-                 (num Int64.one int_t)) e.t)
+        (Tree.conv
+           (Tree.binary (Tree.A back) (Tree.asg_op o e (one ())) (one ())) e.t)
   | _ -> e
 
-and member e f =
+and member (e : Tree.expr) f =
   match e.t with
-  | Struct s -> (
-      match List.find_opt (fun (m : field) -> m.fname = f) s.fields with
+  | Ty.Struct s -> (
+      match List.find_opt (fun (m : Ty.field) -> m.fname = f) s.fields with
       | Some { fty = t; foff = off; _ } ->
-          mk (Deref (mk (Bin (A Add, conv (addr e) vlong_t,
-                              num (Int64.of_int off) vlong_t)) (Ptr t))) t
-      | None -> error ("no member " ^ f))
-  | _ -> error "not a structure"
+          let w = Ty.vlong_t in
+          let at =
+            Tree.Bin (Tree.A Tree.Add, Tree.conv (Tree.addr e) w,
+                      Tree.num (Int64.of_int off) w) in
+          Tree.mk (Tree.Deref (Tree.mk at (Ty.Ptr t))) t
+      | None -> Ty.error ("no member " ^ f))
+  | _ -> Ty.error "not a structure"
 
 and primary () =
   match next () with
-  | Num (v, u, ll) ->
+  | Lexer.Num (v, u, ll) ->
       (* C's rule, shortened: the first of int, long long that holds the
        * value (unsigned ones with a u), an int being 4 bytes *)
-      let max = if u then uint_max else int_max in
-      num v (Int ((if ll || Int64.compare v max > 0 then 8 else 4), not u))
-  | Str s -> string_lit s
-  | P "(" -> let e = expr () in expect ")"; e
-  | Id f when peek () = P "("
+      let max = if u then Ty.uint_max else Ty.int_max in
+      let bytes = if ll || Int64.compare v max > 0 then 8 else 4 in
+      Tree.num v (Ty.Int (bytes, not u))
+  | Lexer.Str s -> string_lit s
+  | Lexer.P "(" -> let e = expr () in expect ")"; e
+  | Lexer.Id f when peek () = Lexer.P "("
               && (match (try Some (lookup f) with Failure _ -> None) with
-                  | Some { vty = Func _; _ } | None -> true
+                  | Some { vty = Ty.Func _; _ } | None -> true
                   | _ -> false) ->
       ignore (next ());
       let rt, ps, sym =
         match (try Some (lookup f) with Failure _ -> None) with
-        | Some { vty = Func (r, p, _); where = Global s } -> r, p, s
-        | _ -> int_t, [], f in
-      mk (Apply (sym, call_args ps)) rt
-  | Id x when Hashtbl.mem enums x
+        | Some { vty = Ty.Func (r, p, _); where = Tree.Global s } -> r, p, s
+        | _ -> Ty.int_t, [], f in
+      Tree.mk (Tree.Apply (sym, call_args ps)) rt
+  | Lexer.Id x when Hashtbl.mem enums x
               && not (List.exists (fun s -> Hashtbl.mem s x) !scopes
                       || Hashtbl.mem globals x) ->
-      num (Hashtbl.find enums x) int_t
-  | Id x -> let v = lookup x in var v.where v.vty
-  | _ -> error "expected an expression"
+      Tree.num (Hashtbl.find enums x) Ty.int_t
+  | Lexer.Id x -> let v = lookup x in Tree.var v.where v.vty
+  | _ -> Ty.error "expected an expression"
 
 (* a constant expression, folded: an array's size, a case, an enum's
  * value (NDIRECT + 1, sizeof a / sizeof a[0]); 64-bit arithmetic, as the
  * values are *)
 and const_expr () =
-  let rec fold (e : expr) =
+  let rec fold (e : Tree.expr) =
     match e.d with
-    | Const v -> v
-    | Conv a -> fold a
-    | Un (Neg, a) -> Int64.neg (fold a)
-    | Un (Com, a) -> Int64.lognot (fold a)
-    | Bin (A o, a, b) ->
+    | Tree.Const v -> v
+    | Tree.Conv a -> fold a
+    | Tree.Un (Tree.Neg, a) -> Int64.neg (fold a)
+    | Tree.Un (Tree.Com, a) -> Int64.lognot (fold a)
+    | Tree.Bin (Tree.A o, a, b) ->
         let a = fold a and b = fold b in
         (match o with
-         | Add -> Int64.add a b | Sub -> Int64.sub a b | Mul -> Int64.mul a b
-         | Div ->
-             if b = Int64.zero then error "division by zero" else Int64.div a b
-         | Mod ->
-             if b = Int64.zero then error "division by zero" else Int64.rem a b
-         | And -> Int64.logand a b | Or -> Int64.logor a b
-         | Xor -> Int64.logxor a b
-         | Shl -> Int64.shift_left a (Int64.to_int b)
-         | Shr -> Int64.shift_right a (Int64.to_int b))
-    | _ -> error "not a constant" in
+         | Tree.Add -> Int64.add a b | Tree.Sub -> Int64.sub a b
+         | Tree.Mul -> Int64.mul a b
+         | Tree.Div | Tree.Mod when b = Int64.zero ->
+             Ty.error "division by zero"
+         | Tree.Div -> Int64.div a b
+         | Tree.Mod -> Int64.rem a b
+         | Tree.And -> Int64.logand a b | Tree.Or -> Int64.logor a b
+         | Tree.Xor -> Int64.logxor a b
+         | Tree.Shl -> Int64.shift_left a (Int64.to_int b)
+         | Tree.Shr -> Int64.shift_right a (Int64.to_int b))
+    | _ -> Ty.error "not a constant" in
   fold (cond_expr ())
 
 (* statements *)
-let cond () = expect "("; let c = rv (expr ()) in expect ")"; c
+let cond () = expect "("; let c = Tree.rv (expr ()) in expect ")"; c
 
-let rec statement () : stmt =
+let rec statement () : Tree.stmt =
   match next () with
-  | P "{" -> block ()
-  | P ";" -> Block []
-  | Id "if" ->
+  | Lexer.P "{" -> block ()
+  | Lexer.P ";" -> Tree.Block []
+  | Lexer.Id "if" ->
       let c = cond () in
       let a = statement () in
-      If (c, a,
-          if peek () = Id "else" then (ignore (next ()); Some (statement ()))
-          else None)
-  | Id "while" -> let c = cond () in For (None, Some c, None, statement ())
-  | Id "do" ->
-      let body = statement () in
-      if next () <> Id "while" then error "expected while";
+      let b =
+        if accept_word "else" then Some (statement ()) else None in
+      Tree.If (c, a, b)
+  | Lexer.Id "while" ->
       let c = cond () in
-      expect ";"; Do (body, c)
-  | Id "for" ->
+      Tree.For (None, Some c, None, statement ())
+  | Lexer.Id "do" ->
+      let body = statement () in
+      if next () <> Lexer.Id "while" then Ty.error "expected while";
+      let c = cond () in
+      expect ";"; Tree.Do (body, c)
+  | Lexer.Id "for" ->
       (* an expression, or none, then the token that ends it *)
       let opt close =
-        let e = if peek () = P close then None else Some (expr ()) in
+        let e = if peek () = Lexer.P close then None else Some (expr ()) in
         expect close; e in
       expect "(";
       let init = opt ";" in
-      let c = Option.map rv (opt ";") in
+      let c = Option.map Tree.rv (opt ";") in
       let step = opt ")" in
-      For (init, c, step, statement ())
-  | Id "switch" ->
-      let v = conv (cond ()) vlong_t in
-      let tmp = var (local vlong_t) vlong_t in
-      Switch (tmp, v, statement ())
-  | Id "case" ->
-      let v = const_expr () in expect ":"; Block [ Case (Some v); statement () ]
-  | Id "default" -> expect ":"; Block [ Case None; statement () ]
-  | Id "break" -> expect ";"; Break
-  | Id "continue" -> expect ";"; Continue
-  | Id "return" ->
-      if accept ";" then Return None
-      else (let e = conv (rv (expr ())) !result in expect ";"; Return (Some e))
+      Tree.For (init, c, step, statement ())
+  | Lexer.Id "switch" ->
+      let v = Tree.conv (cond ()) Ty.vlong_t in
+      let tmp = Tree.var (local Ty.vlong_t) Ty.vlong_t in
+      Tree.Switch (tmp, v, statement ())
+  | Lexer.Id "case" ->
+      let v = const_expr () in
+      expect ":";
+      Tree.Block [ Tree.Case (Some v); statement () ]
+  | Lexer.Id "default" ->
+      expect ":"; Tree.Block [ Tree.Case None; statement () ]
+  | Lexer.Id "break" -> expect ";"; Tree.Break
+  | Lexer.Id "continue" -> expect ";"; Tree.Continue
+  | Lexer.Id "return" ->
+      if accept ";" then Tree.Return None
+      else begin
+        let e = Tree.conv (Tree.rv (expr ())) !result in
+        expect ";";
+        Tree.Return (Some e)
+      end
   | _ ->
       decr pos;
-      if is_type () then Block (locals ())
-      else (let e = expr () in expect ";"; Expr e)
+      if is_type () then Tree.Block (locals ())
+      else (let e = expr () in expect ";"; Tree.Expr e)
 
 and block () =
   scopes := Hashtbl.create 8 :: !scopes;
@@ -459,7 +500,7 @@ and block () =
     if accept "}" then List.rev acc else go (statement () :: acc) in
   let l = go [] in
   scopes := List.tl !scopes;
-  Block l
+  Tree.Block l
 
 (* a declaration of locals: their initializations *)
 and locals () =
@@ -469,10 +510,12 @@ and locals () =
     let init =
       if storage = Typedef then (Hashtbl.replace typedefs name t; [])
       else begin
-        no_vlong t;
+        Ty.no_vlong t;
         let p = local t in
         Hashtbl.replace (List.hd !scopes) name { vty = t; where = p };
-        if accept "=" then [ Expr (assign Asg_set (var p t) (assign_expr ())) ]
+        if accept "=" then
+          [ Tree.Expr
+              (Tree.assign Tree.Asg_set (Tree.var p t) (assign_expr ())) ]
         else []
       end
     in
@@ -486,76 +529,76 @@ and locals () =
 (* The file: its declarations *)
 (*****************************************************************************)
 
-let sym_of storage name : sym =
-  if storage = Static then static_sym name else name
+let sym_of storage name : Ty.sym =
+  if storage = Static then Ty.static_sym name else name
 
 (* a global's initializer: its data added to ds, at their offsets; how
  * many elements it has, for an array whose size it gives *)
-let rec init_data (name : sym) (ds : (int * datum) list ref) t off =
+let rec init_data (name : Ty.sym) (ds : (int * Tree.datum) list ref) t off =
   let add off d = ds := (off, d) :: !ds in
   match t, peek () with
-  | Arr (e, _), P "{" ->
+  | Ty.Arr (e, _), Lexer.P "{" ->
       ignore (next ());
       (* the elements, counted *)
       let rec elems i =
         if accept "}" then i
         else
-          (ignore (init_data name ds e (off + (i * size e)));
+          (ignore (init_data name ds e (off + (i * Ty.size e)));
            ignore (accept ",");
            elems (i + 1)) in
       elems 0
-  | Arr (Int (1, _), n), Str s ->
+  | Ty.Arr (Ty.Int (1, _), n), Lexer.Str s ->
       ignore (next ());
       String.iteri (fun i c ->
-        add (off + i) (Value (1, Int64.of_int (Char.code c)))) s;
+        add (off + i) (Tree.Value (1, Int64.of_int (Char.code c)))) s;
       max n (String.length s + 1)
   | _ ->
-      let e = rv (assign_expr ()) in
+      let e = Tree.rv (assign_expr ()) in
       (match e.d, e.t with
-       | Const v, _ -> add off (Value (size t, v))
-       | Addr (Global s), _ -> add off (Address s)
-       | _ -> error (name ^ ": not a constant initializer"));
+       | Tree.Const v, _ -> add off (Tree.Value (Ty.size t, v))
+       | Tree.Addr (Tree.Global s), _ -> add off (Tree.Address s)
+       | _ -> Ty.error (name ^ ": not a constant initializer"));
       1
 
 (* a declaration of the file's: what it defines, in their order *)
-let external_decl () : def list =
+let external_decl () : Tree.def list =
   defs := [];
   let storage, bt = base_type () in
   let rec go () =
     let name, t, pnames = declarator3 bt in
-    if storage <> Typedef then no_vlong t;
+    if storage <> Typedef then Ty.no_vlong t;
     let sym = sym_of storage name in
     match t with
-    | Func (rt, ps, _) when storage <> Typedef && peek () = P "{" ->
+    | Ty.Func (rt, ps, _) when storage <> Typedef && peek () = Lexer.P "{" ->
         (* a definition *)
-        Hashtbl.replace globals name { vty = t; where = Global sym };
+        Hashtbl.replace globals name { vty = t; where = Tree.Global sym };
         ignore (next ());
         scopes := [ Hashtbl.create 8 ];
         List.iteri (fun i (p, pt) ->
           Hashtbl.replace (List.hd !scopes) p
-            { vty = pt; where = Param (4 * i) })
+            { vty = pt; where = Tree.Param (4 * i) })
           (List.combine pnames ps);
         frame := 0;
         result := rt;
         let body = block () in
-        defs := Function (sym, round !frame 8, body) :: !defs;
+        defs := Tree.Function (sym, Ty.round !frame 8, body) :: !defs;
         scopes := []
     | _ ->
         (match storage, t with
          | Typedef, _ -> Hashtbl.replace typedefs name t
-         | _, Func _ ->
-             Hashtbl.replace globals name { vty = t; where = Global sym }
+         | _, Ty.Func _ ->
+             Hashtbl.replace globals name { vty = t; where = Tree.Global sym }
          | _ ->
              let ds = ref [] in
              let t =
                if accept "=" then
                  (match t with
-                  | Arr (e, 0) -> Arr (e, init_data sym ds t 0)
+                  | Ty.Arr (e, 0) -> Ty.Arr (e, init_data sym ds t 0)
                   | _ -> ignore (init_data sym ds t 0); t)
                else t in
-             Hashtbl.replace globals name { vty = t; where = Global sym };
+             Hashtbl.replace globals name { vty = t; where = Tree.Global sym };
              if storage <> Extern then
-               defs := Data (sym, size t, List.rev !ds) :: !defs);
+               defs := Tree.Data (sym, Ty.size t, List.rev !ds) :: !defs);
         if accept "," then go () else expect ";"
   in
   if not (accept ";") then go ();

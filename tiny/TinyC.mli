@@ -40,7 +40,7 @@
  * mini-cc (languages/c/), ix's full-size compiler, is a faithful
  * byte-for-byte twin of Plan 9's 5c and 7c: it has their front end,
  * their trees, their code generator, and a record per machine. This
- * file is what is left when the code only needs to be correct.
+ * compiler is what is left when the code only needs to be correct.
  *
  * mini-cc has what this one leaves out: 7c's trees rewritten using
  * Sethi and Ullman's numbers, addressing modes, a register allocator, a
@@ -49,13 +49,13 @@
  * kept:
  * What makes it small while still being a C compiler:
  *
- * - {b A stack machine in between} (IR, below): expressions become
+ * - {b A stack machine in between} (TinyCLower): expressions become
  *   pushes and operations on a stack, and statements become labels
  *   and jumps; [-ir] prints it. The compiler plan left open the
  *   question of what an intermediate language buys compared to
  *   emitting machine instructions directly. Here is the answer: the
  *   front end knows nothing about registers or instructions, the back
- *   end knows nothing about C (its 100 lines are the whole machine),
+ *   end knows nothing about C (TinyCMachine is the whole machine),
  *   each can be read and tested on its own, and another machine is
  *   just another back end (there was arm64's, 7c's convention, until
  *   plan_tiny_self_hosting.md). The price is code quality: no
@@ -109,7 +109,7 @@
  * tiny-assembler reads what it writes. It compiles TinyML's runtime
  * (whose collector and primitives are in C), TinyKernel's programs, and
  * t6, a kernel in C, together with its own programs. TinyML's code
- * generator reuses this file's stack machine and register stack for
+ * generator has the same design, a stack machine kept in registers, for
  * another language.
  *
  * exercises:
@@ -138,7 +138,7 @@
  * words of different sizes. BCPL's compiler already stopped at code
  * for an abstract stack machine, O-code, with a small back end for
  * each computer. That is how BCPL moved from machine to machine, and
- * it is the plan of this file. Steve Johnson's portable C compiler
+ * it is the plan of this compiler. Steve Johnson's portable C compiler
  * (late 1970s) did the same for C using trees, and it took C and Unix
  * beyond the PDP-11.
  *
@@ -159,7 +159,7 @@
  * text to machine code in memory, with no intermediate language at
  * all. Rui Ueyama's chibicc (2019) builds a tree and then emits code
  * that pushes and pops the real stack, and it is written as a history
- * of small commits. chibicc is the closest to this file: its stack is
+ * of small commits. chibicc is the closest to this compiler: its stack is
  * the machine's, while ours is in registers.
  *
  * comeback:
@@ -187,10 +187,11 @@
  *    back ends
  *)
 
-(* a declaration's definition compiled: a function's tree lowered to the
- * stack machine's code then to TinyCPU's, a global's data, added to
- * the output *)
-val compile : TinyCTree.def -> unit
+(* [compile ir_only d]: a declaration's definition compiled, its
+ * assembly's code and data: a function's tree lowered to the stack
+ * machine's code then to TinyCPU's (-ir: the stack machine's), a
+ * global's data *)
+val compile : bool -> TinyCTree.def -> string * string
 
 (* the program: its arguments (its name first), a file of C to a file
  * of assembly (-h: how), to how it ends *)

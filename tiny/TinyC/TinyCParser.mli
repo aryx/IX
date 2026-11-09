@@ -3,20 +3,11 @@
  * (TinyCTree's functions): a declaration at a time, its definitions,
  * a function's tree or a global's data. Read TinyCTree.mli first. *)
 
-type storage = Auto | Static | Extern | Typedef
-
-(* a name's type and place *)
-type var = { vty : TinyCTypes.ty; where : TinyCTree.place; }
-
-(* the tokens, the position of the next, and each token's file and line *)
-val toks : TinyCLexer.token array ref
-val pos : int ref
-val locs : TinyCLexer.loc array ref
-val peek : unit -> TinyCLexer.token
-val next : unit -> TinyCLexer.token
-(* the next token if it is that punctuation *)
-val accept : string -> bool
-val expect : string -> unit
+(* the file's tokens to read; read all of them *)
+val start : TinyCLexer.located list -> unit
+val at_end : unit -> bool
+(* where the last token read is, for an error (None: no token yet) *)
+val last_loc : unit -> TinyCLexer.loc option
 
 (* the typedefs (TinyC.ml adds intptr) *)
 val typedefs : (string, TinyCTypes.ty) Hashtbl.t

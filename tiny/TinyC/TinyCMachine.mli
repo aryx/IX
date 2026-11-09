@@ -1,18 +1,13 @@
 (* tiny-c's code generator: the stack machine's code of a function as
- * TinyCPU's assembly, the stack's values in registers r1 to r12. Read
- * TinyCLower.mli first, and TinyMachine/TinyMachineCPU.mli for the
- * instructions. *)
-
-(* the functions' assembly, as it is made *)
-val out : Buffer.t
+ * TinyCPU's assembly, the stack's values in registers r1 to r12; and a
+ * global's data. Read TinyCLower.mli first, and
+ * TinyMachine/TinyMachineCPU.mli for the instructions. *)
 
 (* [machine f locals code]: f's assembly, its locals taking that many
- * bytes of its frame, added to out *)
-val machine : TinyCTypes.sym -> int -> TinyCLower.ir list -> unit
+ * bytes of its frame *)
+val machine : TinyCTypes.sym -> int -> TinyCLower.ir list -> string
 
-(* the globals' assembly *)
-val data : Buffer.t
 (* [global g n ds]: a global of n bytes, its label and its data at their
- * offsets, added to data *)
+ * offsets *)
 val global :
-  TinyCTypes.sym -> int -> (int * TinyCTree.datum) list -> unit
+  TinyCTypes.sym -> int -> (int * TinyCTree.datum) list -> string

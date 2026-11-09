@@ -21,8 +21,6 @@ let puncts = [ "<<="; ">>="; "..."; "->"; "++"; "--"; "<<"; ">>"; "<="; ">=";
 type loc = string * int
 type located = token * loc
 
-open Fpath_.Operators
-
 (* a file's tokens, its #includes' in their place (each opened by
  * open_), #defines expanded (a macro's tokens where it is used) *)
 let rec tokens (macros : (string, located list) Hashtbl.t)
@@ -84,8 +82,9 @@ and text macros open_ (where : string) (dir : Fpath.t) (s : string) =
                       (String.map (function '\t' -> ' ' | c -> c) line)) with
            | "include" :: f :: _ when f.[0] = '"' ->
                let f = Fpath.v (String.sub f 1 (String.length f - 2)) in
-               (* (dir // f is f when it is absolute) *)
-               let f = if !!dir = "./" then f else dir // f in
+               (* (Fpath.append dir f is f when it is absolute) *)
+               let f =
+                 if Fpath.to_string dir = "./" then f else Fpath.append dir f in
                out := List.rev_append (open_ (tokens macros open_) f) !out
            | "define" :: name :: _ ->
                (* the rest of the line, lexed *)

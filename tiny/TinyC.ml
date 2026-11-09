@@ -3,10 +3,10 @@
  *
  * See TinyC.mli
  *)
-open TinyCTypes
-open TinyCLexer
-open TinyCTree
-open TinyCParser
+module Ty = TinyCTypes
+module Lexer = TinyCLexer
+module Tree = TinyCTree
+module Parser = TinyCParser
 module Lower = TinyCLower
 module Machine = TinyCMachine
 module TSys = TinyLibSystem
@@ -45,19 +45,18 @@ An error names the file and the line: fact.c: line 3: expected ;
  *     Machine.machine       TinyCPU's assembly (Machine.global: data)
  *)
 
-(* -ir: the stack machine's code instead of the machine's *)
-let ir_only = ref false
-
-let compile (d : def) =
+(* [compile ir_only d]: d's assembly, the code of a function or the data
+ * of a global (-ir: a function's stack machine's code, and no data) *)
+let compile (ir_only : bool) (d : Tree.def) : string * string =
   match d with
-  | Function (f, locals, body) ->
+  | Tree.Function (f, locals, body) ->
       let code = Lower.lower_function body in
-      if !ir_only then
-        (Buffer.add_string Machine.out (f ^ ":\n");
-         List.iter (fun i ->
-           Buffer.add_string Machine.out ("\t" ^ Lower.show i ^ "\n")) code)
-      else Machine.machine f locals code
-  | Data (g, n, ds) -> if not !ir_only then Machine.global g n ds
+      if ir_only then
+        String.concat ""
+          ((f ^ ":\n") :: List.map (fun i -> "\t" ^ Lower.show i ^ "\n") code),
+        ""
+      else Machine.machine f locals code, ""
+  | Tree.Data (g, n, ds) -> "", if ir_only then "" else Machine.global g n ds
 
 (*****************************************************************************)
 (* main *)
@@ -68,7 +67,7 @@ exception File_error of string
 
 let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     (argv : string array) : Exit.t =
-  let output = ref None and file = ref None in
+  let output = ref None and file = ref None and ir_only = ref false in
   let rec args l = match l with
     | "-ir" :: r -> ir_only := true; args r
     | "-o" :: o :: r -> output := Some (Fpath.v o); args r
@@ -84,10 +83,10 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     | None ->
         TSys.eprint caps (usage ^ "   (-h: how)\n"); Exit.Code 2
     | Some file ->
-      unit_name := Fpath.to_string (Fpath.rem_ext (Fpath.base file));
+      Ty.unit_name := Fpath.to_string (Fpath.rem_ext (Fpath.base file));
       (* intptr, Plan 9's uintptr's signed twin: an integer as wide as a
        * pointer (TinyMLRuntime/'s values, a word each) *)
-      Hashtbl.replace typedefs "intptr" int_t;
+      Hashtbl.replace Parser.typedefs "intptr" Ty.int_t;
       (* (a file that cannot be opened apart from its errors, which are
        * Failures too) *)
       let with_file g f =
@@ -95,14 +94,18 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
         try TSys.with_open_in caps (fun ch -> opened := true; g ch) f
         with Failure m when not !opened -> raise (File_error m) in
       try
-        let ts = with_file (tokens (Hashtbl.create 16) with_file) file in
-        toks := Array.of_list (List.map fst ts);
-        locs := Array.of_list (List.map snd ts);
-        while peek () <> EOF do List.iter compile (external_decl ()) done;
+        Parser.start
+          (with_file (Lexer.tokens (Hashtbl.create 16) with_file) file);
+        let code = Buffer.create 65536 and data = Buffer.create 4096 in
+        while not (Parser.at_end ()) do
+          List.iter (fun d ->
+            let c, dt = compile !ir_only d in
+            Buffer.add_string code c; Buffer.add_string data dt)
+            (Parser.external_decl ())
+        done;
         let text =
-          Buffer.contents Machine.out
-          ^ (if !ir_only then ""
-             else "\t.data\n" ^ Buffer.contents Machine.data)
+          Buffer.contents code
+          ^ (if !ir_only then "" else "\t.data\n" ^ Buffer.contents data)
         in
         (match !output with
          | None -> TSys.print caps text
@@ -114,16 +117,13 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
         Exit.OK
       with
       | Failure m ->
-          (* where: the last token read (a missing ; is then on its line, not
-           * the next one's), in its file (an #include's); the lexer's errors
-           * have none *)
-          let ls = !locs in
-          if Array.length ls = 0 then
-            TSys.eprint caps (Fpath.to_string file ^ ": " ^ m ^ "\n")
-          else
-            (let f, l = ls.(max 0 (min (!pos - 1) (Array.length ls - 1))) in
-             TSys.eprint caps
-               (f ^ ": line " ^ string_of_int l ^ ": " ^ m ^ "\n"));
+          (* where: the last token read, in its file (an #include's); the
+           * lexer's errors have none *)
+          (match Parser.last_loc () with
+           | None -> TSys.eprint caps (Fpath.to_string file ^ ": " ^ m ^ "\n")
+           | Some (f, l) ->
+               TSys.eprint caps
+                 (f ^ ": line " ^ string_of_int l ^ ": " ^ m ^ "\n"));
           (* (said here, after the file, not the program's name) *)
           Exit.Code 1
       | File_error m -> Exit.Err m

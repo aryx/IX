@@ -2,9 +2,8 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See TinyCLower.mli *)
-open Common
-open TinyCTypes
-open TinyCTree
+module Ty = TinyCTypes
+module Tree = TinyCTree
 
 (*****************************************************************************)
 (* The stack machine *)
@@ -15,54 +14,59 @@ type label = int
 
 type ir =
   | Imm of int64
-  | Place of place                    (* a variable's address *)
-  | Load of ty                        (* the address on top by its value *)
-  | Store of ty                       (* value and address by the value *)
-  | Op of binop * ty
+  | Place of Tree.place               (* a variable's address *)
+  | Load of Ty.ty                     (* the address on top by its value *)
+  | Store of Ty.ty                    (* value and address by the value *)
+  | Op of Tree.binop * Ty.ty
       (* a b by a op b, of the operands' type; a relation 1 or 0 *)
-  | Unop of unop * ty
-  | Ext of ty                         (* the value on top to a type *)
+  | Unop of Tree.unop * Ty.ty
+  | Ext of Ty.ty                      (* the value on top to a type *)
   | Dup | Drop
-  | Call of sym option * int * bool
+  | Call of Ty.sym option * int * bool
       (* the name, or the address on top of the arguments; their number;
        * a result *)
   | Label of label | Jmp of label | Jz of label | Jnz of label
   | Ret of bool
 
 let show i =
-  let w t = string_of_int (size t) ^ (if unsigned t then "u" else "") in
+  let w t = string_of_int (Ty.size t) ^ (if Ty.unsigned t then "u" else "") in
   let l k = Printf.sprintf "L%d" k in
   match i with
-  | Imm v -> "imm " ^ Int64.to_string v | Place (Global s) -> "addr " ^ s
-  | Place (Local o) -> Printf.sprintf "frame -%d" o
-  | Place (Param o) -> Printf.sprintf "param %d" o
+  | Imm v -> "imm " ^ Int64.to_string v
+  | Place (Tree.Global s) -> "addr " ^ s
+  | Place (Tree.Local o) -> Printf.sprintf "frame -%d" o
+  | Place (Tree.Param o) -> Printf.sprintf "param %d" o
   | Load t -> "load " ^ w t | Store t -> "store " ^ w t
-  | Op (o, t) -> "op " ^ binop_name o ^ " " ^ w t
-  | Unop (o, _) -> if o = Neg then "neg" else "com" | Ext t -> "ext " ^ w t
+  | Op (o, t) -> "op " ^ Tree.binop_name o ^ " " ^ w t
+  | Unop (o, _) -> if o = Tree.Neg then "neg" else "com"
+  | Ext t -> "ext " ^ w t
   | Dup -> "dup" | Drop -> "drop"
   | Call (f, n, r) ->
-      Printf.sprintf "call %s %d%s" (f ||| "*") n (if r then " ->" else "")
+      Printf.sprintf "call %s %d%s"
+        (match f with Some f -> f | None -> "*") n (if r then " ->" else "")
   | Label k -> l k ^ ":" | Jmp k -> "jmp " ^ l k | Jz k -> "jz " ^ l k
   | Jnz k -> "jnz " ^ l k | Ret v -> if v then "ret value" else "ret"
 
-(* the current function's, the last first *)
-let code : ir list ref = ref []
-let emit i = code := i :: !code
+(* the file's labels, each a new number: a label's name is the file's
+ * (TinyCMachine's lab), not its function's *)
 let labels = ref 0
 let label () : label = incr labels; !labels
 
-(* the value of e, pushed *)
-let rec value (e : expr) : unit =
+(* the value of e pushed: its code given to emit *)
+let rec value (emit : ir -> unit) (e : Tree.expr) : unit =
+  let value = value emit in
   match e.d with
-  | Const v -> emit (Imm v)
-  | Addr p -> emit (Place p)
-  | Deref a ->
+  | Tree.Const v -> emit (Imm v)
+  | Tree.Addr p -> emit (Place p)
+  | Tree.Deref a ->
       value a;
-      (match e.t with Arr _ | Struct _ | Func _ -> () | t -> emit (Load t))
-  | Cur -> emit (Load e.t)
-  | Un (o, a) -> value a; emit (Unop (o, e.t))
-  | Bin (o, a, b) -> value a; value b; emit (Op (o, a.t))
-  | Cond (c, a, b) ->
+      (match e.t with
+       | Ty.Arr _ | Ty.Struct _ | Ty.Func _ -> ()
+       | t -> emit (Load t))
+  | Tree.Cur -> emit (Load e.t)
+  | Tree.Un (o, a) -> value a; emit (Unop (o, e.t))
+  | Tree.Bin (o, a, b) -> value a; value b; emit (Op (o, a.t))
+  | Tree.Cond (c, a, b) ->
       let other = label () and out = label () in
       value c;
       emit (Jz other);
@@ -71,40 +75,45 @@ let rec value (e : expr) : unit =
       emit (Label other);
       value b;
       emit (Label out)
-  | Asg (l, r, kind) ->
-      value (addr l);
+  | Tree.Asg (l, r, kind) ->
+      value (Tree.addr l);
       (* (the address again, for Cur's load) *)
-      if kind = Asg_update then emit Dup;
+      if kind = Tree.Asg_update then emit Dup;
       value r;
       emit (Store l.t)
-  | Apply (f, args) ->
-      List.iter value args; emit (Call (Some f, List.length args, e.t <> Void))
-  | ApplyPtr (f, args) ->
+  | Tree.Apply (f, args) ->
+      List.iter value args;
+      emit (Call (Some f, List.length args, e.t <> Ty.Void))
+  | Tree.ApplyPtr (f, args) ->
       List.iter value args; value f;
-      emit (Call (None, List.length args, e.t <> Void))
-  | Conv a ->
+      emit (Call (None, List.length args, e.t <> Ty.Void))
+  | Tree.Conv a ->
       value a;
       (match a.t, e.t with
-       | (Arr _ | Ptr _ | Void), _ | _, Void -> ()
+       | (Ty.Arr _ | Ty.Ptr _ | Ty.Void), _ | _, Ty.Void -> ()
        | _ -> emit (Ext e.t))
-  | Comma (a, b) -> value a; if a.t <> Void then emit Drop; value b
+  | Tree.Comma (a, b) ->
+      value a; if a.t <> Ty.Void then emit Drop; value b
 
 (* an expression as a statement *)
-let for_effect (e : expr) = value e; if e.t <> Void then emit Drop
+let for_effect emit (e : Tree.expr) =
+  value emit e; if e.t <> Ty.Void then emit Drop
 
 (* where break and continue go; the labels of a switch's cases *)
 type targets = {
   brk : label option; cont : label option;
   cases : (int64 option * label) list ref }
 
-let rec lower (k : targets) (s : stmt) =
+let rec lower (emit : ir -> unit) (k : targets) (s : Tree.stmt) =
+  let value = value emit and for_effect = for_effect emit
+  and lower = lower emit in
   let jump = function
     | Some l -> emit (Jmp l)
-    | None -> error "break or continue outside a loop" in
+    | None -> Ty.error "break or continue outside a loop" in
   match s with
-  | Expr e -> for_effect e
-  | Block l -> List.iter (lower k) l
-  | If (c, a, b) ->
+  | Tree.Expr e -> for_effect e
+  | Tree.Block l -> List.iter (lower k) l
+  | Tree.If (c, a, b) ->
       let other = label () in
       value c;
       emit (Jz other);
@@ -114,12 +123,12 @@ let rec lower (k : targets) (s : stmt) =
            let out = label () in
            emit (Jmp out); emit (Label other); lower k b; emit (Label out)
        | None -> emit (Label other))
-  | Do (body, c) ->
+  | Tree.Do (body, c) ->
       let top = label () and cont = label () and out = label () in
       emit (Label top);
       lower { k with brk = Some out; cont = Some cont } body;
       emit (Label cont); value c; emit (Jnz top); emit (Label out)
-  | For (init, c, step, body) ->
+  | Tree.For (init, c, step, body) ->
       Option.iter for_effect init;
       let top = label () and cont = label () and out = label () in
       emit (Label top);
@@ -128,9 +137,9 @@ let rec lower (k : targets) (s : stmt) =
       emit (Label cont);
       Option.iter for_effect step;
       emit (Jmp top); emit (Label out)
-  | Switch (tmp, v, body) ->
+  | Tree.Switch (tmp, v, body) ->
       (* the value in a temporary, the cases after the body *)
-      for_effect (assign Asg_set tmp v);
+      for_effect (Tree.assign Tree.Asg_set tmp v);
       let dispatch = label () and out = label () in
       emit (Jmp dispatch);
       let cases = ref [] in
@@ -140,21 +149,25 @@ let rec lower (k : targets) (s : stmt) =
       emit (Label dispatch);
       List.iter (fun (c, l) ->
         match c with
-        | Some v -> value (binary (R Eq) tmp (num v vlong_t)); emit (Jnz l)
+        | Some v ->
+            value (Tree.binary (Tree.R Tree.Eq) tmp (Tree.num v Ty.vlong_t));
+            emit (Jnz l)
         | None -> ()) mine;
       emit (Jmp (match List.assoc_opt None mine with
                  | Some l -> l
                  | None -> out));
       emit (Label out)
-  | Case v ->
+  | Tree.Case v ->
       let l = label () in k.cases := (v, l) :: !(k.cases); emit (Label l)
-  | Break -> jump k.brk
-  | Continue -> jump k.cont
-  | Return None -> emit (Ret false)
-  | Return (Some e) -> value e; emit (Ret true)
+  | Tree.Break -> jump k.brk
+  | Tree.Continue -> jump k.cont
+  | Tree.Return None -> emit (Ret false)
+  | Tree.Return (Some e) -> value e; emit (Ret true)
 
-(* a function's body, its code *)
-let lower_function (body : stmt) : ir list =
-  code := [];
-  lower { brk = None; cont = None; cases = ref [] } body;
+(* a function's body, its code (old: a global, the current function's
+ * code, which lower_function reset) *)
+let lower_function (body : Tree.stmt) : ir list =
+  let code = ref [] in
+  let emit i = code := i :: !code in
+  lower emit { brk = None; cont = None; cases = ref [] } body;
   List.rev !code

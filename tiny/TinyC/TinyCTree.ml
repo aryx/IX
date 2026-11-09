@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See TinyCTree.mli *)
-open TinyCTypes
+module Ty = TinyCTypes
 
 (*****************************************************************************)
 (* Expressions, typed as they are built *)
@@ -31,13 +31,13 @@ let asg_ops =
 (* where a variable is: a global's label; a local's offset in bytes
  * down from the frame's top; a parameter's up from it (the caller's
  * outgoing arguments, 4 bytes each) *)
-type place = Global of sym | Local of int | Param of int
+type place = Global of Ty.sym | Local of int | Param of int
 
 (* an assignment: x = y, or x op= y, whose new value reads the old one
  * (Cur) *)
 type asg = Asg_set | Asg_update
 
-type expr = { d : desc; t : ty }
+type expr = { d : desc; t : Ty.ty }
 
 and desc =
   | Const of int64
@@ -50,7 +50,7 @@ and desc =
   | Cond of expr * expr * expr        (* && || ! are made of it *)
   | Asg of expr * expr * asg
       (* an lvalue, its new value *)
-  | Apply of sym * expr list          (* a call (old: Call, the stack machine's
+  | Apply of Ty.sym * expr list       (* a call (old: Call, the stack machine's
                                        * name too: tiny-ml's constructors are
                                        * one name space) *)
   | ApplyPtr of expr * expr list      (* through a function's address *)
@@ -63,14 +63,14 @@ let num v t = mk (Const v) t
 (* an array is its address, a value of a small integer an int *)
 let rv (e : expr) =
   match e.t, e.d with
-  | Arr (t, _), Deref a -> { a with t = Ptr t }
-  | Func _, Deref a -> { a with t = Ptr e.t }
+  | Ty.Arr (t, _), Deref a -> { a with t = Ty.Ptr t }
+  | Ty.Func _, Deref a -> { a with t = Ty.Ptr e.t }
   | _ -> e
 
 let conv (e : expr) t =
   match e.t, t, e.d with
-  | a, b, _ when same a b -> e
-  | Int _, Int (n, sg), Const v ->
+  | a, b, _ when Ty.same a b -> e
+  | Ty.Int _, Ty.Int (n, sg), Const v ->
       (* a constant converted now: truncated, extended *)
       let bits = 8 * n in
       let v =
@@ -79,7 +79,9 @@ let conv (e : expr) t =
           Int64.shift_right (Int64.shift_left v (64 - bits)) (64 - bits)
         else Int64.logand v (Int64.pred (Int64.shift_left Int64.one bits)) in
       num v t
-  | (Ptr _ | Arr _), Ptr _, _ | Ptr _, Int (8, _), _ | Int (8, _), Ptr _, _ ->
+  | (Ty.Ptr _ | Ty.Arr _), Ty.Ptr _, _
+  | Ty.Ptr _, Ty.Int (8, _), _
+  | Ty.Int (8, _), Ty.Ptr _, _ ->
       { e with t }
   | _ -> mk (Conv e) t
 
@@ -88,61 +90,65 @@ let conv (e : expr) t =
  * (old: Int (4, s), Plan 9's, which keeps the sign: uint, as 7c, the
  * reference while tiny-c had an arm64 back end; TinyC_fuzz.py's
  * x2 <= -128, x2 a uchar 0, was then 1) *)
-let promote = function Int (n, _) when n < 4 -> Int (4, true) | t -> t
+let promote = function Ty.Int (n, _) when n < 4 -> Ty.Int (4, true) | t -> t
 
 (* the usual arithmetic conversions: the wider, unsigned if either is *)
 let common a b =
   match promote a, promote b with
-  | Int (n, s), Int (m, u) -> Int (max n m, s && u)
+  | Ty.Int (n, s), Ty.Int (m, u) -> Ty.Int (max n m, s && u)
   | t, _ -> t
 
 let scale (i : expr) t =
-  if size t = 1 then conv i vlong_t
-  else
-    mk (Bin (A Mul, conv i vlong_t, num (Int64.of_int (size t)) vlong_t))
-      vlong_t
+  let w = Ty.vlong_t in
+  if Ty.size t = 1 then conv i w
+  else mk (Bin (A Mul, conv i w, num (Int64.of_int (Ty.size t)) w)) w
 
 let rec binary op (a : expr) (b : expr) =
   let a = rv a and b = rv b in
   match op, a.t, b.t with
-  | A (Add | Sub), Ptr t, Int _ -> mk (Bin (op, a, scale b t)) a.t
-  | A Add, Int _, Ptr _ -> binary op b a
-  | A Sub, Ptr t, Ptr _ ->
-      mk (Bin (A Div, mk (Bin (op, conv a vlong_t, conv b vlong_t)) vlong_t,
-               num (Int64.of_int (size t)) vlong_t)) vlong_t
-  | R _, Ptr _, _ | R _, _, Ptr _ ->
-      let t = if is_ptr a.t then a.t else b.t in
-      mk (Bin (op, conv a t, conv b t)) int_t
-  | R _, Int _, Int _ ->
-      let t = common a.t b.t in mk (Bin (op, conv a t, conv b t)) int_t
-  | A o, Int _, Int _ ->
+  | A (Add | Sub), Ty.Ptr t, Ty.Int _ -> mk (Bin (op, a, scale b t)) a.t
+  | A Add, Ty.Int _, Ty.Ptr _ -> binary op b a
+  | A Sub, Ty.Ptr t, Ty.Ptr _ ->
+      let w = Ty.vlong_t in
+      mk (Bin (A Div, mk (Bin (op, conv a w, conv b w)) w,
+               num (Int64.of_int (Ty.size t)) w)) w
+  | R _, Ty.Ptr _, _ | R _, _, Ty.Ptr _ ->
+      let t = if Ty.is_ptr a.t then a.t else b.t in
+      mk (Bin (op, conv a t, conv b t)) Ty.int_t
+  | R _, Ty.Int _, Ty.Int _ ->
+      let t = common a.t b.t in mk (Bin (op, conv a t, conv b t)) Ty.int_t
+  | A o, Ty.Int _, Ty.Int _ ->
       let t = if o = Shl || o = Shr then promote a.t else common a.t b.t in
       mk (Bin (op, conv a t, conv b t)) t
-  | _ -> error ("bad operands for " ^ binop_name op)
+  | _ -> Ty.error ("bad operands for " ^ binop_name op)
 
 let addr (e : expr) =
-  match e.d with Deref a -> { a with t = Ptr e.t } | _ -> error "not an lvalue"
+  match e.d with
+  | Deref a -> { a with t = Ty.Ptr e.t }
+  | _ -> Ty.error "not an lvalue"
 let deref (e : expr) =
   let e = rv e in
-  match e.t with Ptr t -> mk (Deref e) t | _ -> error "not a pointer"
+  match e.t with Ty.Ptr t -> mk (Deref e) t | _ -> Ty.error "not a pointer"
 
 (* (old: ~cur, a label, which tiny-ml does not read) *)
 let assign (kind : asg) (l : expr) (r : expr) =
   match l.d with
   | Deref _ -> mk (Asg (l, conv (rv r) l.t, kind)) l.t
-  | _ -> error "not an lvalue"
+  | _ -> Ty.error "not an lvalue"
 
 (* x op= y: the value computed from x's, loaded once *)
 let asg_op o (l : expr) r = assign Asg_update l (binary (A o) (mk Cur l.t) r)
 
 (* a variable, as an lvalue *)
-let var p t = mk (Deref (mk (Addr p) (Ptr t))) t
+let var p t = mk (Deref (mk (Addr p) (Ty.Ptr t))) t
 
 (* a condition's value, 1 or 0; !, && and || as ?: of them *)
-let truth c = mk (Cond (rv c, num Int64.one int_t, num Int64.zero int_t)) int_t
-let lnot c = mk (Cond (rv c, num Int64.zero int_t, num Int64.one int_t)) int_t
-let both a b = mk (Cond (rv a, truth b, num Int64.zero int_t)) int_t
-let either a b = mk (Cond (rv a, num Int64.one int_t, truth b)) int_t
+let one () = num Int64.one Ty.int_t
+let zero () = num Int64.zero Ty.int_t
+let truth c = mk (Cond (rv c, one (), zero ())) Ty.int_t
+let lnot c = mk (Cond (rv c, zero (), one ())) Ty.int_t
+let both a b = mk (Cond (rv a, truth b, zero ())) Ty.int_t
+let either a b = mk (Cond (rv a, one (), truth b)) Ty.int_t
 
 (*****************************************************************************)
 (* Statements *)
@@ -168,12 +174,12 @@ type stmt =
 
 (* a piece of a global's initial value: bytes, an integer of a size,
  * an address *)
-type datum = Bytes of string | Value of int * int64 | Address of sym
+type datum = Bytes of string | Value of int * int64 | Address of Ty.sym
 
 (* what a declaration defines (a typedef, a prototype or an extern
  * nothing): a function, its label, its locals' bytes and its body; a
  * global, its label, its size, its data at their offsets (a string
  * literal one too) *)
 type def =
-  | Function of sym * int * stmt
-  | Data of sym * int * (int * datum) list
+  | Function of Ty.sym * int * stmt
+  | Data of Ty.sym * int * (int * datum) list

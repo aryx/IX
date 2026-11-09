@@ -172,6 +172,7 @@ job "tiny-editor: sam's commands against 9base's sam" tiny/tests/TinyEditorLine_
 job "tiny-db: random sessions against SQLite" tiny/tests/TinyDatabase_test.sh 5
 job "tiny-vcs: its laws on random work" tiny/tests/TinyVCS_test.sh 3
 job "tiny-cpu, tiny-assembler: programs, random listings" tiny/tests/TinyCPU_test.sh 50
+job "the assembly's lines: printed then parsed, the same" tiny/tests/TinyMachineAsm_test.sh
 job "tiny-machine: unit tests" tiny/tests/TinyMachine_test.sh
 job "tiny-kernel: its graphics" tiny/tests/TinyKernelGraphics_test.sh
 job "TinyLibPlayground: unit tests" tiny/tests/TinyLibPlayground_test.sh

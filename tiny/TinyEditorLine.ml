@@ -313,9 +313,17 @@ let rec parse () : cmd option =
 (* The buffer, and changes made in parallel *)
 (*****************************************************************************)
 
-let text = ref "" and dot = ref (0, 0) and file = ref "" and modified = ref false
-and warned = ref false
-let changes : (int * int * string) list ref = ref []   (* reversed *)
+(* a range of the text, its characters from q0 to q1 (sam's): dot, and
+ * what an address gives *)
+type range = int * int
+
+(* the text from p0 to p1 replaced by s; a command's changes are made in
+ * parallel, and an undo is the inverse changes *)
+type change = int * int * string
+
+let text = ref "" and dot : range ref = ref (0, 0) and file = ref ""
+and modified = ref false and warned = ref false
+let changes : change list ref = ref []   (* reversed *)
 let hi = ref 0      (* the changes so far end here: the next must not start before *)
 
 let change p0 p1 s =
@@ -325,7 +333,7 @@ let change p0 p1 s =
 
 (* the changes applied, and their inverse: in the new text, each
  * change's range replaced by the text it replaced, in order too *)
-let commit () =
+let commit () : change list =
   let cs = List.rev !changes in
   let b = Buffer.create (String.length !text) and at = ref 0
   and delta = ref 0 in
@@ -352,8 +360,8 @@ let commit () =
  * x, the first match); a w makes every other state modified (sam's
  * menu says unmodified after an undo past a w) *)
 type record = {
-  edits : (int * int * string) list;
-  rdot : int * int;
+  edits : change list;
+  rdot : range;
   rmodified : bool;
   rfile : string;
 }
@@ -397,7 +405,7 @@ let compile p = try compile p with Failure m -> raise (Error m)
 let len () = String.length !text
 
 (* address.c's lineaddr: line n, relative to (q0, q1) in direction sign *)
-let lineaddr n (q0, q1) sign =
+let lineaddr n ((q0, q1) : range) sign : range =
   let t = !text and nc = len () in
   if sign >= 0 then begin
     if n = 0 && (sign = 0 || q1 = 0) then (0, 0)
@@ -437,7 +445,7 @@ let lineaddr n (q0, q1) sign =
 
 (* nextmatch: a search from p, wrapping; an empty match right at p is
  * skipped *)
-let next_match pat (q0, q1) forward =
+let next_match pat ((q0, q1) : range) forward : range =
   let re = compile pat in
   let t = !text in
   if forward then begin
@@ -469,7 +477,7 @@ let next_match pat (q0, q1) forward =
 
 (* address.c's address(): a simple address, absolute (sign 0) or
  * relative to a in a direction (1 or -1) *)
-let simple_address (s : simple) (a : int * int) (sign : int) : int * int =
+let simple_address (s : simple) (a : range) (sign : int) : range =
   match s with
   | Chars n ->
       let q0, q1 = a in
@@ -485,7 +493,7 @@ let simple_address (s : simple) (a : int * int) (sign : int) : int * int =
   | Dot -> !dot
   | Dollar -> (len (), len ())
 
-let chain_address (c : chain) (a : int * int) : int * int =
+let chain_address (c : chain) (a : range) : range =
   let a = match c.first with Some s -> simple_address s a 0 | None -> a in
   List.fold_left (fun a (d, s) ->
     let sign = if d = Fwd then 1 else -1 in
@@ -493,7 +501,7 @@ let chain_address (c : chain) (a : int * int) : int * int =
     | Some s -> simple_address s a sign
     | None -> lineaddr 1 a sign) a c.steps
 
-let rec address (ad : addr) (a : int * int) : int * int =
+let rec address (ad : addr) (a : range) : range =
   match ad with
   | Chain c -> chain_address c a
   | Range (sep, l, r) ->
@@ -516,7 +524,7 @@ let flush (caps : < Cap.stdout; Cap.stderr; .. >) =
   Buffer.clear out;
   TinyLibSystem.flush caps
 
-let print_posn (q0, q1) chars =
+let print_posn ((q0, q1) : range) chars =
   let t = !text in
   let count a b =
     let n = ref 0 in
@@ -543,6 +551,97 @@ let read_file (caps : < Cap.open_in; .. >) name =
     try Some (TinyLibSystem.read_file caps (Fpath.v name))
     with Failure _ -> None
 
+(* s's replacement for a match m: \1 to \9 the groups, & the whole *)
+let expand rep (m : int array) =
+  let b = Buffer.create 16 in
+  let group g =
+    if m.(2 * g) >= 0 && m.((2 * g) + 1) >= 0 then
+      Buffer.add_string b
+        (String.sub !text m.(2 * g) (m.((2 * g) + 1) - m.(2 * g))) in
+  let i = ref 0 in
+  while !i < String.length rep do
+    (match rep.[!i] with
+     | '\\' when !i + 1 < String.length rep ->
+         incr i;
+         (match rep.[!i] with
+          | d when d >= '1' && d <= '9' -> group (Char.code d - 48)
+          | c -> Buffer.add_char b c)
+     | '&' -> group 0
+     | c -> Buffer.add_char b c);
+    incr i
+  done;
+  Buffer.contents b
+
+(* s/pat/rep/: the nth match in the range replaced, or with g each one
+ * from it; dot the range as it is after *)
+let substitute ((q0, q1) : range) n pat rep g =
+  let re = compile pat in
+  let n = ref n and p = ref q0 and op = ref (-1) and did = ref false
+  and delta = ref 0 in
+  (try
+     while !p <= q1 do
+       match search re !text !p q1 with
+       | None -> raise Exit
+       | Some m ->
+           let s, e = m.(0), m.(1) in
+           if s = e && s = !op then incr p
+           else begin
+             p := if s = e then e + 1 else e;
+             op := e;
+             decr n;
+             if !n <= 0 then begin
+               let r = expand rep m in
+               change s e r;
+               delta := !delta + String.length r - (e - s);
+               did := true;
+               if not g then raise Exit
+             end
+           end
+     done
+   with Exit -> ());
+  if not !did then raise (Error "substitution");
+  dot := (q0, q1 + !delta)
+
+(* r w e f: the range read from a file, written to one; another file
+ * edited; the file's name *)
+let file_command
+    (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
+    ((q0, q1) : range) (kind : file) name =
+  match kind with
+  | Read -> (
+      match read_file caps name with
+      | Some s ->
+          change q0 q1 s;
+          dot := (q0, q0 + String.length s);
+          Buffer.add_string out ("#" ^ string_of_int (String.length s) ^ "\n")
+      | None -> raise (Error ("can't open " ^ name)))
+  | Write ->
+      let name = if name = "" then !file else name in
+      if name = "" then raise (Error "no file name");
+      TinyLibSystem.write_file caps (Fpath.v name)
+        (String.sub !text q0 (q1 - q0));
+      if name = !file && q0 = 0 && q1 = len () then begin
+        modified := false;
+        let differ r = { r with rmodified = true } in
+        undos := List.map differ !undos; redos := List.map differ !redos
+      end;
+      if !file = "" then file := name;
+      Buffer.add_string out (name ^ ": ");
+      if q1 > q0 && (!text).[q1 - 1] <> '\n' then
+        (flush caps;
+         TinyLibSystem.eprint caps "?warning: last char not newline\n");
+      Buffer.add_string out ("#" ^ string_of_int (q1 - q0) ^ "\n")
+  | Edit ->
+      let name = if name = "" then !file else name in
+      (match read_file caps name with
+       | Some s ->
+           change 0 (len ()) s; apply (); file := name; dot := (0, 0);
+           modified := false
+       | None -> raise (Error ("can't open " ^ name)));
+      Buffer.add_string out (menu name)
+  | Name ->
+      if name <> "" then file := name; Buffer.add_string out (menu !file)
+
 let rec exec
     (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     (c : cmd) : unit =
@@ -560,50 +659,7 @@ let rec exec
       change p0 p1 s;
       dot := (p0, p0 + String.length s)
   | Delete -> change q0 q1 ""; dot := (q0, q0)
-  | Subst (n, pat, rep, g) ->
-      let re = compile pat in
-      let n = ref n and p = ref q0 and op = ref (-1) and did = ref false
-      and delta = ref 0 in
-      (try
-         while !p <= q1 do
-           match search re !text !p q1 with
-           | None -> raise Exit
-           | Some m ->
-               let s, e = m.(0), m.(1) in
-               if s = e && s = !op then incr p
-               else begin
-                 p := if s = e then e + 1 else e;
-                 op := e;
-                 decr n;
-                 if !n <= 0 then begin
-                   let b = Buffer.create 16 in
-                   let i = ref 0 in
-                   while !i < String.length rep do
-                     (match rep.[!i] with
-                      | '\\' when !i + 1 < String.length rep ->
-                          incr i;
-                          (match rep.[!i] with
-                           | d when d >= '1' && d <= '9' ->
-                               let g = Char.code d - 48 in
-                               if m.(2 * g) >= 0 && m.((2 * g) + 1) >= 0 then
-                                 Buffer.add_string b
-                                   (String.sub !text m.(2 * g)
-                                      (m.((2 * g) + 1) - m.(2 * g)))
-                           | c -> Buffer.add_char b c)
-                      | '&' -> Buffer.add_string b (String.sub !text s (e - s))
-                      | c -> Buffer.add_char b c);
-                     incr i
-                   done;
-                   change s e (Buffer.contents b);
-                   delta := !delta + Buffer.length b - (e - s);
-                   did := true;
-                   if not g then raise Exit
-                 end
-               end
-         done
-       with Exit -> ());
-      if not !did then raise (Error "substitution");
-      dot := (q0, q1 + !delta)
+  | Subst (n, pat, rep, g) -> substitute a n pat rep g
   | Print -> Buffer.add_string out (String.sub !text q0 (q1 - q0)); dot := a
   | Eq chars -> print_posn a chars
   | Move (m, dest) ->
@@ -611,8 +667,8 @@ let rec exec
       let s = String.sub !text q0 (q1 - q0) in
       let p = snd d in
       if m then begin
-        (* claude: as sam's move: after the range, or before it (its
-         * start included: 2m1 is allowed) *)
+        (* as sam's move: after the range, or before it (its start
+         * included: 2m1 is allowed) *)
         if q1 <= p then (change q0 q1 ""; change p p s)
         else if q0 >= p then (change p p s; change q0 q1 "")
         else raise (Error "addresses overlap");
@@ -621,10 +677,36 @@ let rec exec
            shift p - (if p >= q1 then q1 - q0 else 0) + String.length s)
       end
       else (change p p s; dot := (p, p + String.length s))
-  | Loop (If (g, pat), sub) ->
+  | Loop (k, sub) -> loop caps a k sub
+  | Block cmds -> List.iter (fun c -> dot := a; exec caps c) cmds
+  | File (kind, name) -> file_command caps a kind name
+  | Quit ->
+      if !modified && not !warned then
+        (warned := true; raise (Error "changed files"));
+      flush caps;
+      TinyLibSystem.exit caps Exit.OK
+  | Undo n -> undo n
+  | Newline -> (
+      (* the next line, or the line dot is in if it is not one *)
+      match c.addr with
+      | Some _ ->
+          Buffer.add_string out (String.sub !text q0 (q1 - q0)); dot := a
+      | None ->
+          let b0, _ = lineaddr 0 !dot (-1) and _, b1 = lineaddr 0 !dot 1 in
+          let r = if (b0, b1) = !dot then lineaddr 1 !dot 1 else (b0, b1) in
+          Buffer.add_string out (String.sub !text (fst r) (snd r - fst r));
+          dot := r)
+
+(* the loops, each running sub with dot set: g/v once if the range
+ * matches or not, the lines on each line of the range, x on each
+ * match, y on each text between two (looper(); tiny-ml has no
+ * or-pattern that binds a name, (Matches pat | Between pat)) *)
+and loop caps ((q0, q1) as a : range) (k : loop) (sub : cmd) =
+  match k with
+  | If (g, pat) ->
       let found = search (compile pat) !text q0 q1 <> None in
       if found = g then (dot := a; exec caps sub)
-  | Loop (Lines, sub) ->
+  | Lines ->
       let p = ref q0 in
       while !p < q1 do
         let e =
@@ -635,10 +717,7 @@ let rec exec
         exec caps sub;
         p := e
       done
-  | Loop (k, sub) ->
-      (* looper(): x on each match, y on the text between (the two
-       * other loops are the cases above; tiny-ml has no or-pattern
-       * that binds a name, (Matches pat | Between pat)) *)
+  | _ ->
       let x, pat =
         match k with
         | Matches p -> true, p
@@ -665,56 +744,6 @@ let rec exec
                end
          done
        with Exit -> ())
-  | Block cmds -> List.iter (fun c -> dot := a; exec caps c) cmds
-  | File (Read, name) -> (
-      match read_file caps name with
-      | Some s ->
-          change q0 q1 s;
-          dot := (q0, q0 + String.length s);
-          Buffer.add_string out ("#" ^ string_of_int (String.length s) ^ "\n")
-      | None -> raise (Error ("can't open " ^ name)))
-  | File (Write, name) ->
-      let name = if name = "" then !file else name in
-      if name = "" then raise (Error "no file name");
-      TinyLibSystem.write_file caps (Fpath.v name)
-        (String.sub !text q0 (q1 - q0));
-      if name = !file && q0 = 0 && q1 = len () then begin
-        modified := false;
-        let differ r = { r with rmodified = true } in
-        undos := List.map differ !undos; redos := List.map differ !redos
-      end;
-      if !file = "" then file := name;
-      Buffer.add_string out (name ^ ": ");
-      if q1 > q0 && (!text).[q1 - 1] <> '\n' then
-        (flush caps;
-         TinyLibSystem.eprint caps "?warning: last char not newline\n");
-      Buffer.add_string out ("#" ^ string_of_int (q1 - q0) ^ "\n")
-  | File (Edit, name) ->
-      let name = if name = "" then !file else name in
-      (match read_file caps name with
-       | Some s ->
-           change 0 (len ()) s; apply (); file := name; dot := (0, 0);
-           modified := false
-       | None -> raise (Error ("can't open " ^ name)));
-      Buffer.add_string out (menu name)
-  | File (Name, name) ->
-      if name <> "" then file := name; Buffer.add_string out (menu !file)
-  | Quit ->
-      if !modified && not !warned then
-        (warned := true; raise (Error "changed files"));
-      flush caps;
-      TinyLibSystem.exit caps Exit.OK
-  | Undo n -> undo n
-  | Newline -> (
-      (* the next line, or the line dot is in if it is not one *)
-      match c.addr with
-      | Some _ ->
-          Buffer.add_string out (String.sub !text q0 (q1 - q0)); dot := a
-      | None ->
-          let b0, _ = lineaddr 0 !dot (-1) and _, b1 = lineaddr 0 !dot 1 in
-          let r = if (b0, b1) = !dot then lineaddr 1 !dot 1 else (b0, b1) in
-          Buffer.add_string out (String.sub !text (fst r) (snd r - fst r));
-          dot := r)
 
 let main (caps : < caps; .. >) (argv : string array) : Exit.t =
   next_line := (fun () -> TinyLibSystem.read_line caps);

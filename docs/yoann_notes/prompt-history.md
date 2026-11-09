@@ -66705,3 +66705,47 @@ Claude switched the Makefile edit to the Edit tool instead of a script, followin
 Claude found the host interface was stale, last built Nov 8, and had not been rebuilt.
 Claude confirmed that make now lists the `.mli` as a prerequisite, and the check passed.
 Claude saved the preference for simpler commands to memory so it carries into future sessions.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 12:09
+
+**Yoann:**
+
+> yes. Now which programs we should scan for cleanups?
+
+**Claude (summary):**
+
+Claude committed the change as `96b73f05` and offered to suggest what to tidy next.
+Claude then listed the sizes of the remaining programs so the cleanup candidates could be compared.
+Yoann picked option 4 from that list, so that program is the focus of the next step.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 12:11
+
+**Yoann:**
+
+> let's do 4
+
+**Claude (summary):**
+
+Claude proposed five changes to the editors: named `range` and `change` types, splitting `exec` into `substitute`, `loop`, and `file_command`, records for the emacs screen caches, and `file : Fpath.t`.
+Claude suggested leaving the two editors' shared design alone until sam's piece table exists.
+Claude asked whether to apply all five changes.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 12:12
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude read TinyEditorLine's position-using code and added two types where the buffer section begins, then annotated the functions.
+Claude rewrote the old `exec` with the new code, and the types and `exec` build.
+Claude ran mini-mk and the editor's tests, and TinyEditorLine passed both mini-mk and the kernel check.
+Claude changed TinyEditorScreen's two screen caches into records and made `file` an `Fpath.t`, converting to text only for the save message and mode line.
+The screen editor's test passed with tiny-ml on tiny-cpu, but a `cd` failed, so Claude reran the kernel check with an absolute path and both passed.

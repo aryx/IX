@@ -32,6 +32,16 @@ type answer = Command | Goto | Replace_from | Replace_to of string
 (* the language of the file, by its name: its colors *)
 type language = Plain | OCaml | C
 
+(* a line on the screen, lexed: the comments open before it, its faces
+ * (a character each), the comments open after *)
+type faced = { fline : string; fdepth : int; ffaces : string; fafter : int }
+
+(* a line on the screen as a shape: its text, its faces, the cursor's
+ * column in it if it is there, the shape drawn *)
+type pieced = {
+  pline : string; pfaces : string; pcursor : int option; pshape : shape;
+}
+
 (* the last line's other uses, and the keys the editor gives itself *)
 type extra = {
   language : language;
@@ -45,11 +55,8 @@ type extra = {
     (* keys to give back: a macro's, a command's *)
   mutable lexed : (string * int) list;
     (* the lines above the screen, each with the comments open at its end *)
-  mutable faced : (string * int * string * int) list;
-    (* the screen's: a line, the comments open before and after, its faces *)
-  mutable pieced : (string * string * int option * shape) list;
-    (* the screen's lines as shapes: a line, its faces, the cursor's column
-     * in it if it is there, its shape *)
+  mutable faced : faced list;      (* the screen's lines, lexed *)
+  mutable pieced : pieced list;    (* the screen's lines, as shapes *)
 }
 
 (* (three records: tiny-ml makes one of 11 fields at most on
@@ -60,7 +67,7 @@ type editor = {
   mutable killed : string;       (* what C-k took, for C-y *)
   mutable killing : bool;
     (* the last key was C-k: the next adds to killed *)
-  file : string;
+  file : Fpath.t;
   mutable quitting : bool;       (* a quit was refused: the next is done *)
   mutable message : string;      (* the last line of the screen *)
   mutable prefix : key option;
@@ -85,8 +92,6 @@ let language_of (file : string) : language =
 
 let create (cols : int) (rows : int) (path : Fpath.t) (text : string)
     : editor =
-  (* (its name as text: shown, and its suffix for the colours) *)
-  let file = Fpath.to_string path in
   let first, rest =
     match String.split_on_char '\n' text with l :: r -> l, r | [] -> "", [] in
   let t =
@@ -95,10 +100,11 @@ let create (cols : int) (rows : int) (path : Fpath.t) (text : string)
   (* (the inner record made first: tiny-ml computes a record's fields
    * in tiny-machine's 11 registers, and both are 19) *)
   let x =
-    { language = language_of file; search = None; reading = None;
+    { language = language_of (Fpath.to_string path); search = None;
+      reading = None;
       recording = None; macro = []; queue = []; lexed = []; faced = [];
       pieced = [] } in
-  { t; top = 0; killed = ""; killing = false; file; quitting = false;
+  { t; top = 0; killed = ""; killing = false; file = path; quitting = false;
     message = ""; prefix = None; x; cols; rows }
 
 (* (a text that ends by a newline has an empty last line, which is
@@ -106,7 +112,8 @@ let create (cols : int) (rows : int) (path : Fpath.t) (text : string)
 let lines (e : editor) : string list =
   List.rev e.t.above @ (e.t.line :: e.t.below)
 
-let saved (e : editor) = e.t.modified <- false; e.message <- "Wrote " ^ e.file
+let saved (e : editor) =
+  e.t.modified <- false; e.message <- "Wrote " ^ Fpath.to_string e.file
 let say (e : editor) (message : string) = e.message <- message
 
 (*****************************************************************************)
@@ -576,7 +583,7 @@ let view (e : editor) : string list =
       (List.rev (take y t.above) @ (t.line :: take (h - 1 - y) t.below)) in
   let text = text @ List.init (h - List.length text) (fun _ -> "") in
   let mode =
-    "-- " ^ e.file ^ (if t.modified then " (modified)" else "")
+    "-- " ^ Fpath.to_string e.file ^ (if t.modified then " (modified)" else "")
     ^ " -- L" ^ string_of_int (t.row + 1) ^ " C" ^ string_of_int t.col
     ^ (if e.x.recording <> None then " Def " else " ") in
   let mode =
@@ -631,14 +638,16 @@ let faces (e : editor) : string list =
       | line :: rest when k < h ->
           let f, after =
             match
-              List.filter (fun (l, d, _, _) -> l == line && d = depth) old
+              List.filter
+                (fun (o : faced) -> o.fline == line && o.fdepth = depth) old
             with
-            | (_, _, f, after) :: _ -> f, after
+            | o :: _ -> o.ffaces, o.fafter
             | [] -> lex language true (shown line) depth in
-          (line, depth, f, after) :: go (k + 1) after rest
+          { fline = line; fdepth = depth; ffaces = f; fafter = after }
+          :: go (k + 1) after rest
       | _ -> [] in
     e.x.faced <- go 0 depth rest;
-    List.map (fun (_, _, f, _) -> cut f) e.x.faced
+    List.map (fun (o : faced) -> cut o.ffaces) e.x.faced
   end
 
 (* where the cursor is on the screen: its column, its line; after a
@@ -695,12 +704,14 @@ let shapes (e : editor) (n : int) : shape list =
         let old, olds =
           match olds with o :: more -> Some o, more | [] -> None, [] in
         let g = match old with
-          | Some (l', f', cut', g) when cut' = cut && l' = l && f' = f -> g
+          | Some (o : pieced)
+            when o.pcursor = cut && o.pline = l && o.pfaces = f -> o.pshape
           | _ -> Group (List.rev (pieces i l f cut 0 [])) in
-        (l, f, cut, g) :: go (i + 1) rest fs olds
+        { pline = l; pfaces = f; pcursor = cut; pshape = g }
+        :: go (i + 1) rest fs olds
     | _ -> [] in
   e.x.pieced <- go 0 lines fs e.x.pieced;
-  let shown = List.map (fun (_, _, _, g) -> g) e.x.pieced in
+  let shown = List.map (fun (o : pieced) -> o.pshape) e.x.pieced in
   let line = if cy < List.length lines then List.nth lines cy else "" in
   let c = if cx < String.length line then String.sub line cx 1 else " " in
   shown

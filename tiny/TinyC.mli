@@ -15,6 +15,19 @@
  *     file.tm, for tiny-assembler (then tiny-linker, and tiny-cpu runs
  *     the program)
  *
+ * Each step is a part in TinyC/, whose .mli has its types and its
+ * functions, in the order they are compiled and best read:
+ *
+ *     TinyCTypes.mli     C's types ([ty]), their sizes on TinyCPU, [sym]
+ *     TinyCLexer.mli     the tokens ([token]), the preprocessor
+ *     TinyCTree.mli      the typed tree: [expr], [stmt], [def]
+ *     TinyCLower.mli     the stack machine: [ir], lower_function
+ *     TinyCParser.mli    external_decl: tokens to a declaration's [def]s
+ *     TinyCMachine.mli   machine and global: [ir] and data to assembly
+ *
+ * This file is the program around them: compile, a definition through
+ * lower and machine, and main, the loop over the declarations.
+ *
  * Here is one function, int f(int a, int b) { return a + b * 2; }, as
  * printed by -ir and by the back end:
  *

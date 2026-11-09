@@ -67116,3 +67116,37 @@ Claude reported that the edited line now reads "tinc-c", which it identified as 
 Claude then said it would read the paragraph around that line to find the referent.
 Its answer ended at that point, before naming what the opening phrase referred to.
 The rest of the answer was cut off, so no referent was given.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 16:51
+
+**Yoann:**
+
+> yes.
+
+**Claude (summary):**
+
+Claude reflowed the last edited line, which ran past 80 columns because of "TinyML's code", before committing.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 16:54
+
+**Yoann:**
+
+> for compile(), would it be cleaner to see the assembly ADTs instead of string * string? Can it reuse TinyMachineISA types? instead of going directly to strings?
+
+------------------------------------------------------------------------
+
+## 2026-11-09 16:54
+
+**Yoann:**
+
+> also we should refer from this .mli to the other mli under TinyC/ that contains the types and signatures for the lexer, parser, lower, etc.
+
+**Claude (summary):**
+
+Claude proposed adding a section right after the diagram that walks through the passes in order.
+Each pass would be listed with its `.mli` file and the types it defines.
+The answer was a short lead-in, cut off before any cross-reference to the TinyC `.mli` files was written.

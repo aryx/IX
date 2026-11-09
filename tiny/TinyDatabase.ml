@@ -6,7 +6,7 @@
  * database and the equivalent SQL through SQLite (Python's sqlite3),
  * and compares the resulting rows.
  *)
-
+open Common
 module TSys = TinyLibSystem
 
 (* what tiny-db asks for: its file, read and written; the statements
@@ -14,12 +14,7 @@ module TSys = TinyLibSystem
 type caps =
   < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr >
 
-open Common
-
 exception Error of string
-
-(* (old: a format, Printf.ksprintf's: tiny-ml reads a format only where
- * it is written, Printf.sprintf at the call) *)
 let error s = raise (Error s)
 
 (*****************************************************************************)
@@ -56,7 +51,7 @@ type node = Leaf of (key * row) array | Inner of key array * offset array
  * tiny-kernel) *)
 type file = { fd : TSys.fd; cache : (offset, node) Hashtbl.t }
 
-let read_at f off len =
+let read_at f off len : string =
   TSys.seek f.fd off;
   let rec go acc n =
     if n >= len then String.concat "" (List.rev acc)
@@ -67,7 +62,7 @@ let read_at f off len =
   in
   go [] 0
 
-let write_at f off s = TSys.seek f.fd off; TSys.write f.fd s
+let write_at f off s : unit = TSys.seek f.fd off; TSys.write f.fd s
 
 (* an int as 8 bytes, the most significant first; the bytes above the
  * int's own are its sign's (tiny-ml's int has 31 bits: a larger
@@ -90,21 +85,22 @@ let int_at s p =
   go 0 0
 
 (* a value at the end of the file: its length, then its bytes *)
-let append f (s : string) =
+let append (f : file) (s : string) =
   let off = TSys.seek_end f.fd in
   TSys.write f.fd (int_bytes (String.length s) ^ s);
   off
 
-let load f off = read_at f (off + 8) (int_at (read_at f off 8) 0)
+let load (f : file) (off : offset) : string =
+  read_at f (off + 8) (int_at (read_at f off 8) 0)
 
 (* A node and the catalog as bytes: Marshal's. An int beyond 31 bits
  * written by OCaml on the host stops tiny-ml's reader (old: by hand, an
  * int 8 bytes, a string, a list and an array their length then what is
  * in them, a constructor its number first: 50 lines) *)
-let node_bytes (n : node) = Marshal.to_string n [ Marshal.No_sharing ]
-let node_of_bytes s : node = Marshal.from_string s 0
+let node_bytes (n : node) : string = Marshal.to_string n [ Marshal.No_sharing ]
+let node_of_bytes (s : string) : node = Marshal.from_string s 0
 
-let node f (off : offset) : node =
+let node (f : file) (off : offset) : node =
   match Hashtbl.find_opt f.cache off with
   | Some n -> n
   | None ->
@@ -112,7 +108,7 @@ let node f (off : offset) : node =
       Hashtbl.replace f.cache off n;
       n
 
-let write f (n : node) : offset =
+let write (f : file) (n : node) : offset =
   let off = append f (node_bytes n) in
   Hashtbl.replace f.cache off n;
   off
@@ -231,11 +227,12 @@ type table = {
 
 type db = { file : file; mutable tables : table list }
 
-let tables_bytes (ts : table list) =
+let tables_bytes (ts : table list) : string =
   Marshal.to_string ts [ Marshal.No_sharing ]
-let tables_of_bytes s : table list = Marshal.from_string s 0
+let tables_of_bytes (s : string) : table list =
+  Marshal.from_string s 0
 
-let open_db (caps : < Cap.open_in; Cap.open_out; .. >) (path : Fpath.t) =
+let open_db (caps : < Cap.open_in; Cap.open_out; .. >) (path : Fpath.t) : db =
   (* (made when it is not there) *)
   let fd =
     try TSys.open_rw caps path
@@ -781,7 +778,7 @@ let describe caps db =
      ^ (if tables = [] then "No tables yet.\n"
         else "The tables:\n" ^ String.concat "" tables))
 
-let exec caps db (s : stmt) =
+let exec caps (db : db) (s : stmt) : unit =
   match s with
   | Create (name, cols) -> create_table db name cols
   | Insert (name, tuples) -> insert_rows db name tuples
@@ -790,6 +787,10 @@ let exec caps db (s : stmt) =
   | Help -> describe caps db
   | Delete (name, stages) -> change db name stages None
   | Update (name, stages, items) -> change db name stages (Some items)
+
+(*****************************************************************************)
+(* Entry point *)
+(*****************************************************************************)
 
 let main (caps : < caps; .. >) (argv : string array) : Exit.t =
   match Array.to_list argv with
@@ -819,8 +820,7 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
             (try match tokens line with [] -> () | ts -> exec caps db (parse ts)
              with Error m ->
                TSys.flush caps;
-               TSys.eprint caps
-                 (Printf.sprintf "tiny-db: line %d: %s\n" n m));
+               TSys.eprint caps (Printf.sprintf "tiny-db: line %d: %s\n" n m));
             loop (n + 1)
       in
       loop 1;

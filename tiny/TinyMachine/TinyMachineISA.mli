@@ -72,25 +72,43 @@ val error : string -> 'a
 val hex : int -> string
 
 (* An object, tiny-assembler's for tiny-linker: a file's items in its
- * order. A label is an address the link chooses. A chunk is an
- * instruction's words or data's bytes, in the memory's order, with the
- * places in them to fill: an offset in the chunk, the kind of place
- * (word: all 32 bits; abs: the immediate; hi and lo: the immediate,
- * the address's high or low half; pc: the immediate, the words from
- * the next instruction to the target) and the target, a label or an
- * address (a branch to a number). Space is zeros (.space); an
- * alignment stays an item, since what it pads depends on the address;
- * after a piece (.piece), what follows up to the next one is left out
- * by the link when nothing reaches it (tiny-ml's functions and static
- * blocks); a section is the data's (true, .data) or the text's. *)
+ * order. A chunk is an instruction's words or data's bytes, already
+ * made, but where an operand is a label, whose address only the link
+ * knows: there the assembler leaves 0, and says what the linker must
+ * put in its place.
+ *
+ * The places, by example (msg a label the link puts at 0x12345678):
+ *
+ *     the assembly     the words, the 0s        the place, and its 0 becomes
+ *     la r1, msg       lui r1, 0                Hi    0x1234, the high half
+ *                      ori r1, r1, 0            Lo    0x5678, the low half
+ *     call f           jal lr, 0                Pc    the words from the
+ *     beq r1, zero, f  beq r1, zero, 0                next instruction to f
+ *     ldw r1, x(r2)    ldw r1, 0(r2)            Abs   x, in the 16 bits of
+ *                                                     the immediate
+ *     .word msg        0                        Word  0x12345678, all 32
+ *                                                     bits of the word
+ *)
 type place = Word | Abs | Hi | Lo | Pc
+
+(* what goes there: a label's address, or a number (a branch to an
+ * address, its offset from where the link puts the branch) *)
 type target = Name of string | Address of int
+
 type item =
-  | Label of string
-  | Align of int | Space of int
+  | Label of string                   (* an address the link chooses *)
+  | Align of int                      (* stays an item: what it pads
+                                       * depends on the address *)
+  | Space of int                      (* zeros, .space *)
   | Chunk of string * (int * place * target) list
+      (* the bytes, in the memory's order, and the places to fill: an
+       * offset in the bytes, its kind, what goes there *)
   | Piece
-  | Section of bool
+      (* .piece: what follows, up to the next piece, is left out by the
+       * link when nothing reaches it (tiny-ml's functions and static
+       * blocks) *)
+  | Section of bool                   (* the data's (true, .data) or the
+                                       * text's *)
 
 (* for tiny-linker -debug's *)
 val show_item : item -> string

@@ -67150,3 +67150,87 @@ Claude reflowed the last edited line, which ran past 80 columns because of "Tiny
 Claude proposed adding a section right after the diagram that walks through the passes in order.
 Each pass would be listed with its `.mli` file and the types it defines.
 The answer was a short lead-in, cut off before any cross-reference to the TinyC `.mli` files was written.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 16:59
+
+**Yoann:**
+
+> let's commit. regarding the assembly, I thought there was already an ADT for it, in TinyMachineISA. Also external_decl is not a very evocative name
+
+**Claude (summary):**
+
+Claude found the stale codemap entry `TinyC.ml:def:external_decl` in tiny/.codemapconfig, left over from the pipeline commit.
+Claude renamed `external_decl` to a more descriptive name, since its unclear name was the problem.
+Claude updated the codemap entries to the new name so they point at live code instead of untyped strings.
+Claude dropped the `compile_file` anchor rather than guess, since it is local to `main` and may not resolve.
+Claude confirmed the config still evaluates as Jsonnet, then ran the TinyC tests and mini-mk before committing.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 17:03
+
+**Yoann:**
+
+> yes I think so. It would remove some of use of untyped strings and clarify some code I think.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 17:04
+
+**Yoann:**
+
+> the marshalled objects should contain this new type? or not?
+
+------------------------------------------------------------------------
+
+## 2026-11-09 17:04
+
+**Yoann:**
+
+> what the marshalled object produced by tiny-assembler contains right now?
+
+------------------------------------------------------------------------
+
+## 2026-11-09 17:04
+
+**Yoann:**
+
+> (and that the linker reads)
+
+**Claude (summary):**
+
+Claude proposed three commits in order: the Asm module with tiny-c using it, then tiny-ml, then tiny-assembler.
+Claude planned to check each step by comparing the generated objects.
+Claude said it would read the assembler source first to see its full syntax.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 17:04
+
+**Yoann:**
+
+> so we have TinyMachineCPU, ISA, and Asm now?
+
+**Claude (summary):**
+
+Claude said no Asm module exists yet, and proposed folding its line type into TinyMachineISA.
+Claude's diagram showed three forms: assembly lines, then instr and word, then object items.
+Claude placed the middle form, instr and word, in a chunk with the places to fill.
+Claude described that object item as Chunk (bytes, relocs), which tiny-linker reads.
+Claude did not define the places themselves, only said the chunk leaves them to be filled.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 17:05
+
+**Yoann:**
+
+> btw it's not clear what this 'place' type is. Hi, Lo, Pc ? an example might help before the type?
+
+**Claude (summary):**
+
+Claude proposed splitting the comment so that `place` gets its own explanation, with an example of each kind.
+Claude's examples were a line of assembly, the words the assembler emits, and what the linker fills into the hole.
+Yoann's follow-up suggests Claude consider a separate intermediate Asm type, which Claude's answer did not address.

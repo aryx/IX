@@ -102,10 +102,31 @@
 (* what tiny-assembler asks for: its file read, its object written *)
 type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 
-(* a file's text to its object, its items (TinyMachineISA.to_object
- * marshals them), the file opened by the caller (its name in the
- * errors: Chan.origin) *)
-val assemble : Chan.i -> TinyMachineISA.item list
+(* The pipeline, a step a function (main opens and closes the files):
+ *
+ *     x.tm          Fpath.t
+ *       | opened    Chan.i
+ *       | read      (int * TinyMachineAsm.line list) list, each line of
+ *       |           text's lines, with its number
+ *       | encode    TinyMachineISA.item list, the object
+ *       | write     Chan.o, marshalled
+ *     x.o
+ *
+ * A file's text read as lines of assembly (TinyMachineAsm's parse):
+ * each line of text, its number from 1, and its lines (none for a blank
+ * one, a comment); an error said with the file (Chan.origin) and the
+ * line *)
+val read : Chan.i -> (int * TinyMachineAsm.line list) list
+
+(* [encode file lines]: the lines' object, its items, in their order
+ * (TinyMachineISA.to_object marshals them); file, their file's name, for
+ * an error *)
+val encode :
+  string -> (int * TinyMachineAsm.line list) list -> TinyMachineISA.item list
+
+(* the object written, marshalled (TinyMachineISA.to_object): what
+ * tiny-linker reads (of_object) *)
+val write : Chan.o -> TinyMachineISA.item list -> unit
 
 (* the program: its arguments (its name first; -h: how) to how it ends *)
 val main : < caps; .. > -> string array -> Exit.t

@@ -107,31 +107,44 @@ let rec items (ls : Asm.line list) : ISA.item list =
 (* The object *)
 (*****************************************************************************)
 
-(* A file's object: its items, in their order, for tiny-linker; its
- * text's lines (TinyMachineAsm's parse), each line's items. (old: the
- * object marshalled, a string) *)
-let assemble (chan : Chan.i) : ISA.item list =
-  let at n e = Chan.origin chan ^ ":" ^ string_of_int (n + 1) ^ ": " ^ e in
-  (* each file on a word's boundary: one may end with bytes, the next
-   * begin with code *)
-  let all = ref [ ISA.Align 4 ] in
+(* an error at a file's line *)
+let at (file : string) n e = ISA.error (file ^ ":" ^ string_of_int n ^ ": " ^ e)
+
+(* A file's text as lines of assembly (TinyMachineAsm's parse): each
+ * line of text, its number from 1, and its lines (none for a blank
+ * one, a comment) *)
+let read (chan : Chan.i) : (int * Asm.line list) list =
   In_channel.input_all chan.ic
   |> String.split_on_char '\n'
-  |> List.iteri (fun n text ->
-    let its = try items (Asm.parse text) with ISA.Error e -> ISA.error (at n e) in
-    all := List.rev_append its !all);
-  List.rev !all
+  |> List.mapi (fun i text ->
+    try i + 1, Asm.parse text
+    with ISA.Error e -> at (Chan.origin chan) (i + 1) e)
+
+(* The lines' object: its items, in their order, for tiny-linker, each
+ * text line's items; an error said with its file and line *)
+let encode (file : string) (lines : (int * Asm.line list) list)
+    : ISA.item list =
+  (* each file on a word's boundary: one may end with bytes, the next
+   * begin with code *)
+  ISA.Align 4
+  :: List.concat_map (fun (n, ls) ->
+       try items ls with ISA.Error e -> at file n e) lines
+
+(* the object written, marshalled (TinyMachineISA's to_object) *)
+let write (chan : Chan.o) (items : ISA.item list) : unit =
+  Out_channel.output_string chan.oc (ISA.to_object items)
 
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
 
 let main (caps : < caps; .. >) (argv : string array) : Exit.t =
-  (* (the object marshalled, TinyMachineISA's to_object) *)
+  (* the pipeline: a path, its channel, the lines, the items, the
+   * object's channel *)
   let assemble_to (f : Fpath.t) (out : Fpath.t) : Exit.t =
-    f |> TSys.with_open_in caps assemble
-      |> ISA.to_object
-      |> TSys.write_file caps out;
+    let lines = TSys.with_open_in caps read f in
+    let items = encode (Fpath.to_string f) lines in
+    TSys.with_open_out caps (fun ch -> write ch items) out;
     Exit.OK in
   (* x.tm's object: x.o, here *)
   let default f = Fpath.set_ext ".o" (Fpath.base f) in

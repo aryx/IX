@@ -2,6 +2,13 @@
  * time, for tiny-linker. Its usage, by examples, is in [help] (what
  * tiny-assembler -h prints).
  *
+ * Read TinyMachine/TinyMachineCPU.mli first: it has the machine, its
+ * instructions (addi, lui, ori, beq, jal...), the pseudo-instructions
+ * this file adds (li and la, a value or a label's address put in a
+ * register; mov, call, ret, j, nop), and a listing worked out by hand.
+ * TinyMachine/TinyMachineISA.mli has the instructions' words, which
+ * this file makes.
+ *
  * The machine was designed for it: one format, every instruction 4
  * bytes, every immediate the word's low 16 bits. Only the
  * pseudo-instructions are bigger: la, and li unless its number is small,

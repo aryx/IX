@@ -60,7 +60,11 @@ In this order, each only when there is something to say:
 
 1. **One sentence**: what the module is, with the name a reader
    would search for ("Huffman codes: short codes for common symbols,
-   rebuilt from their lengths alone").
+   rebuilt from their lengths alone"). Then, when the module builds on
+   words another file defines, **the file to read first** ("Read
+   TinyMachine/TinyMachineCPU.mli first: ... li and la ...",
+   `tiny/TinyAssembler.mli`), so that no word is used before it is
+   introduced.
 2. **How it works**, on the smallest example that shows it: a diagram
    in ASCII (a tree, a layout of bytes, who calls whom), a session, a
    table worked out by hand. The tests check those examples: change

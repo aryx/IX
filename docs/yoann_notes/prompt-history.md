@@ -66562,3 +66562,33 @@ Claude said TinyAssembler and TinyLinker are a better starting point, being abou
 Claude noted that both sit under the compilers and this week received Marshal, the `ISA` alias, and `-debug`.
 Claude said neither has had the tidy-up pass yet, and it planned to read both files next.
 Claude did not make any edits in this answer.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 11:01
+
+**Yoann:**
+
+> yes, you can also use a module Sym = TinyLibSymbol alias if needed
+
+**Claude (summary):**
+
+Claude adopted Yoann's suggestion and added `module Sym = TinyLibSymbols` alias in the linker.
+Claude used `Sym.label` and `Sym.local` there, since the qualified names read well.
+Claude built the assembler, then converted the linker's address, options, layout, TSys, and caps code.
+Claude renamed the layout variable `l` to `lay`, to avoid clashing with the label `l` in `resolve`.
+Claude noted that commit 444758d4 had moved the same four evalorders, then re-recorded and ran `make test-tix`.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 11:08
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude reported that the assembler and linker changes were committed as cd015166, with the re-recorded bugs baseline.
+Claude noted that only prompt-history.md remained modified, with a new entry added after the commit.
+Claude listed the TinyC and TinyML compilers as the next items, and asked whether to start with TinyC.

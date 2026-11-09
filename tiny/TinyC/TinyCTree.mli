@@ -1,49 +1,68 @@
+(* tiny-c's tree: the expressions, typed as the parser builds them (C's
+ * conversions made then, explicit in the tree), and the statements.
+ * Read TinyCTypes.mli first. *)
+
 type arith = Add | Sub | Mul | Div | Mod | And | Or | Xor | Shl | Shr
 type rel = Lt | Gt | Le | Ge | Eq | Ne
 type binop = A of arith | R of rel
 type unop = Neg | Com
+(* each operator's token *)
 val binops : (string * binop) list
 val binop_name : binop -> string
+(* x op= y's tokens *)
 val asg_ops : (string * arith) list
-type place = Global of string | Local of int | Param of int
+
+(* where a variable is: a global's label; a local's offset in bytes
+ * down from the frame's top; a parameter's up from it *)
+type place = Global of TinyCTypes.sym | Local of int | Param of int
+
+(* an assignment: x = y, or x op= y, whose new value reads the old one *)
 type asg = Asg_set | Asg_update
+
 type expr = { d : desc; t : TinyCTypes.ty; }
 and desc =
-    Const of int64
+  | Const of int64
   | Addr of place
-  | Deref of expr
-  | Cur
+  | Deref of expr                     (* the object at an address: an lvalue *)
+  | Cur                               (* in x op= y, x's value *)
   | Un of unop * expr
-  | Bin of binop * expr * expr
-  | Cond of expr * expr * expr
-  | Asg of expr * expr * asg
-  | Apply of string * expr list
-  | ApplyPtr of expr * expr list
-  | Conv of expr
+  | Bin of binop * expr * expr        (* both operands of one type *)
+  | Cond of expr * expr * expr        (* && || ! are made of it *)
+  | Asg of expr * expr * asg          (* an lvalue, its new value *)
+  | Apply of TinyCTypes.sym * expr list
+  | ApplyPtr of expr * expr list      (* through a function's address *)
+  | Conv of expr                      (* to the expression's type *)
   | Comma of expr * expr
+
 val mk : desc -> TinyCTypes.ty -> expr
 val num : int64 -> TinyCTypes.ty -> expr
+(* an array its address, a function its pointer *)
 val rv : expr -> expr
 val conv : expr -> TinyCTypes.ty -> expr
+(* ANSI's integer promotion, and the usual arithmetic conversions *)
 val promote : TinyCTypes.ty -> TinyCTypes.ty
 val common : TinyCTypes.ty -> TinyCTypes.ty -> TinyCTypes.ty
+(* the expressions of C's operators, their operands converted *)
 val binary : binop -> expr -> expr -> expr
 val addr : expr -> expr
 val deref : expr -> expr
 val assign : asg -> expr -> expr -> expr
 val asg_op : arith -> expr -> expr -> expr
+(* a variable, as an lvalue *)
 val var : place -> TinyCTypes.ty -> expr
+(* !, && and ||, as conditions *)
 val lnot : expr -> expr
 val both : expr -> expr -> expr
 val either : expr -> expr -> expr
+
 type stmt =
-    Expr of expr
+  | Expr of expr
   | Block of stmt list
   | If of expr * stmt * stmt option
   | Do of stmt * expr
-  | For of expr option * expr option * expr option * stmt
-  | Switch of expr * expr * stmt
-  | Case of int64 option
+  | For of expr option * expr option * expr option * stmt   (* while too *)
+  | Switch of expr * expr * stmt      (* its temporary, its value, its body *)
+  | Case of int64 option              (* default: None *)
   | Break
   | Continue
   | Return of expr option

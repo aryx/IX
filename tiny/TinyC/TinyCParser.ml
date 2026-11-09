@@ -34,33 +34,20 @@ let frame = ref 0                         (* the current function's locals *)
 let result = ref Void
 let data = Buffer.create 4096             (* the DATA and GLOBL *)
 
-(* a global's name in the assembly: Plan 9's name<> for a static is,
- * the link being one namespace, the file's name and the name; a
- * label, not a C name (type sym) *)
-type sym = string
-let sym s : sym =
-  if Filename.check_suffix s "<>" then
-    !unit_name ^ "." ^ Filename.chop_suffix s "<>"
-  else s
-
-type datum = Bytes of string | Value of int * int64 | Address of string
+type datum = Bytes of string | Value of int * int64 | Address of sym
 
 (* each global's data, at their offsets, until its label is written
  * (a string in an initializer is written before its array) *)
-let pending : (string, (int * datum) list) Hashtbl.t = Hashtbl.create 16
+let pending : (sym, (int * datum) list) Hashtbl.t = Hashtbl.create 16
 
-let datum name off d =
+let datum (name : sym) off d =
   Hashtbl.replace pending name
     ((off, d) :: (Hashtbl.find_opt pending name ||| []))
 
-(* a value's low 32 bits, signed, in decimal (old: Printf's %ld of
- * Int64.to_int32) *)
-let word v = Int64.to_string (Int64.shift_right (Int64.shift_left v 32) 32)
-
 (* a global of n bytes: its label and its data, the gaps zeros *)
-let globl name n =
+let globl (name : sym) n =
   let line s = Printf.bprintf data "\t%s\n" s in
-  Buffer.add_string data ("\t.align\t4\n" ^ sym name ^ ":\n");
+  Buffer.add_string data ("\t.align\t4\n" ^ name ^ ":\n");
   let bytes l =
     line (".byte\t" ^ String.concat ", " (List.map string_of_int l)) in
   let at =
@@ -82,7 +69,7 @@ let globl name n =
           line (".word\t" ^ word v);
           if k = 8 then line (".word\t" ^ word (Int64.shift_right v 32));
           off + k
-      | Address s -> line (".word\t" ^ sym s); off + 4
+      | Address s -> line (".word\t" ^ s); off + 4
       ) 0 in
   if n > at then line (Printf.sprintf ".space\t%d" (n - at));
   Hashtbl.remove pending name
@@ -104,7 +91,7 @@ let local t =
 (* a string, as a static array of bytes *)
 let string_lit s =
   incr strings;
-  let name = Printf.sprintf "s%d<>" !strings in
+  let name = static_sym (Printf.sprintf "s%d" !strings) in
   let s = s ^ "\000" in
   for i = 0 to (String.length s - 1) / 8 do
     datum name (8 * i)
@@ -177,7 +164,7 @@ and struct_type () =
         let name, t = declarator bt in
         no_vlong t;
         off := round !off (align t);
-        s.fields <- s.fields @ [ name, t, !off ];
+        s.fields <- s.fields @ [ { fname = name; fty = t; foff = !off } ];
         off := !off + size t;
         s.salign <- max s.salign (align t);
         if accept "," then members ()
@@ -400,10 +387,10 @@ and postfix e =
 and member e f =
   match e.t with
   | Struct s -> (
-      match List.find_opt (fun (n, _, _) -> n = f) s.fields with
-      | Some (_, t, off) ->
-          mk (Deref (mk (Bin (A Add, conv (addr e) long_t,
-                              num (Int64.of_int off) long_t)) (Ptr t))) t
+      match List.find_opt (fun (m : field) -> m.fname = f) s.fields with
+      | Some { fty = t; foff = off; _ } ->
+          mk (Deref (mk (Bin (A Add, conv (addr e) vlong_t,
+                              num (Int64.of_int off) vlong_t)) (Ptr t))) t
       | None -> error ("no member " ^ f))
   | _ -> error "not a structure"
 
@@ -488,8 +475,8 @@ let rec statement () : stmt =
       let step = opt ")" in
       For (init, c, step, statement ())
   | Id "switch" ->
-      let v = conv (cond ()) long_t in
-      let tmp = var (local long_t) long_t in
+      let v = conv (cond ()) vlong_t in
+      let tmp = var (local vlong_t) vlong_t in
       Switch (tmp, v, statement ())
   | Id "case" ->
       let v = const_expr () in expect ":"; Block [ Case (Some v); statement () ]

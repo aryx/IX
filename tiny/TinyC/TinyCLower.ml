@@ -10,6 +10,9 @@ open TinyCTree
 (* The stack machine *)
 (*****************************************************************************)
 
+(* a place in a function's code, a number *)
+type label = int
+
 type ir =
   | Imm of int64
   | Place of place                    (* a variable's address *)
@@ -20,10 +23,10 @@ type ir =
   | Unop of unop * ty
   | Ext of ty                         (* the value on top to a type *)
   | Dup | Drop
-  | Call of string option * int * bool
+  | Call of sym option * int * bool
       (* the name, or the address on top of the arguments; their number;
        * a result *)
-  | Label of int | Jmp of int | Jz of int | Jnz of int
+  | Label of label | Jmp of label | Jz of label | Jnz of label
   | Ret of bool
 
 let show i =
@@ -46,7 +49,7 @@ let show i =
 let code : ir list ref = ref []
 let emit i = code := i :: !code
 let labels = ref 0
-let label () = incr labels; !labels
+let label () : label = incr labels; !labels
 
 (* the value of e, pushed *)
 let rec value (e : expr) : unit =
@@ -91,7 +94,8 @@ let for_effect (e : expr) = value e; if e.t <> Void then emit Drop
 
 (* where break and continue go; the labels of a switch's cases *)
 type targets = {
-  brk : int option; cont : int option; cases : (int64 option * int) list ref }
+  brk : label option; cont : label option;
+  cases : (int64 option * label) list ref }
 
 let rec lower (k : targets) (s : stmt) =
   let jump = function
@@ -136,7 +140,7 @@ let rec lower (k : targets) (s : stmt) =
       emit (Label dispatch);
       List.iter (fun (c, l) ->
         match c with
-        | Some v -> value (binary (R Eq) tmp (num v long_t)); emit (Jnz l)
+        | Some v -> value (binary (R Eq) tmp (num v vlong_t)); emit (Jnz l)
         | None -> ()) mine;
       emit (Jmp (match List.assoc_opt None mine with
                  | Some l -> l
@@ -148,3 +152,9 @@ let rec lower (k : targets) (s : stmt) =
   | Continue -> jump k.cont
   | Return None -> emit (Ret false)
   | Return (Some e) -> value e; emit (Ret true)
+
+(* a function's body, its code *)
+let lower_function (body : stmt) : ir list =
+  code := [];
+  lower { brk = None; cont = None; cases = ref [] } body;
+  List.rev !code

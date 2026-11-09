@@ -66932,3 +66932,19 @@ Claude traced them to C the tiny programs never write, such as `10UL`, `volatile
 Claude noted that slots shrank from 8 bytes to 4, leaving `8 * i` and `/ 8` that still compute correctly.
 Claude also found `env` and `tenv` still passed around as always `[]` after the name list was split.
 Claude then listed the TinyC and TinyML cleanup items and said Fpath would add little.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 15:09
+
+**Yoann:**
+
+> ok let's fix the bugs first
+
+**Claude (summary):**
+
+Claude fixed the TinyC lexer so number literals carry unsigned and long-long flags.
+Claude fixed the parser's number rule to use unsigned long long, renamed its local to `max`, and checked `while` explicitly.
+Claude fixed TinyML's lexer to skip strings and char literals inside comments, and reworded a comment containing `*)`.
+Claude added TinyC tests for unsigned literals and a `do` without `while` error; all TinyC tests passed.
+Claude ran the tiny-ml, mini-mk, and kernel checks, then fixed the commit message from "four bugs" to five after `make test-tix` failed in run.sh's setup.

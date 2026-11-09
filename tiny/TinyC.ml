@@ -6,9 +6,10 @@
 open TinyCTypes
 open TinyCLexer
 open TinyCTree
-open TinyCLower
 open TinyCParser
-open TinyCMachine
+module Lower = TinyCLower
+module Machine = TinyCMachine
+module TSys = TinyLibSystem
 
 let usage = "usage: tiny-c [-ir] [-o out.tm] file.c"
 
@@ -35,10 +36,11 @@ An error names the file and the line: fact.c: line 3: expected ;
 (* -ir: the stack machine's code instead of the machine's *)
 let ir_only = ref false
 
-let asm_name storage name = if storage = Static then name ^ "<>" else name
+let sym_of storage name : sym =
+  if storage = Static then static_sym name else name
 
 (* a global's initializer, as DATA at offsets *)
-let rec init_data name t off =
+let rec init_data (name : sym) t off =
   match t, peek () with
   | Arr (e, _), P "{" ->
       ignore (next ());
@@ -71,27 +73,25 @@ let external_decl () =
     match t with
     | Func (rt, ps, _) when storage <> Typedef && peek () = P "{" ->
         (* a definition *)
-        Hashtbl.replace globals name
-          { vty = t; where = Global (asm_name storage name) };
+        let sym = sym_of storage name in
+        Hashtbl.replace globals name { vty = t; where = Global sym };
         ignore (next ());
         let params = List.combine pnames ps in
         scopes := [ Hashtbl.create 8 ];
         List.iteri (fun i (p, pt) ->
           Hashtbl.replace (List.hd !scopes) p
-            { vty = pt; where = Param (8 * i) }) params;
+            { vty = pt; where = Param (4 * i) }) params;
         frame := 0;
         result := rt;
-        let body = block () in
-        code := [];
-        lower { brk = None; cont = None; cases = ref [] } body;
+        let code = Lower.lower_function (block ()) in
         if !ir_only then
-          (Buffer.add_string out (name ^ ":\n");
-           List.iter (fun i -> Buffer.add_string out ("\t" ^ show i ^ "\n"))
-             (List.rev !code))
-        else machine (asm_name storage name) (round !frame 8) (List.rev !code);
+          (Buffer.add_string Machine.out (name ^ ":\n");
+           List.iter (fun i ->
+             Buffer.add_string Machine.out ("\t" ^ Lower.show i ^ "\n")) code)
+        else Machine.machine sym (round !frame 8) code;
         scopes := []
     | _ ->
-        let sym = asm_name storage name in
+        let sym = sym_of storage name in
         (match storage, t with
          | Typedef, _ -> Hashtbl.replace typedefs name t
          | _, Func _ ->
@@ -109,12 +109,12 @@ let external_decl () =
   in
   if not (accept ";") then go ()
 
-(* a file that cannot be read or made, said apart from an error in one *)
-exception File_error of string
-
 (*****************************************************************************)
 (* main *)
 (*****************************************************************************)
+
+(* a file that cannot be read or made, said apart from an error in one *)
+exception File_error of string
 
 let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     (argv : string array) : Exit.t =
@@ -127,12 +127,12 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
   in
   let argl = List.tl (Array.to_list argv) in
   if List.mem "-h" argl || List.mem "--help" argl then
-    (TinyLibSystem.print caps help; Exit.OK)
+    (TSys.print caps help; Exit.OK)
   else begin
     args argl;
     match !file with
     | None ->
-        TinyLibSystem.eprint caps (usage ^ "   (-h: how)\n"); Exit.Code 2
+        TSys.eprint caps (usage ^ "   (-h: how)\n"); Exit.Code 2
     | Some file ->
       unit_name := Fpath.to_string (Fpath.rem_ext (Fpath.base file));
       (* intptr, Plan 9's uintptr's signed twin: an integer as wide as a
@@ -142,7 +142,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
        * Failures too) *)
       let with_file g f =
         let opened = ref false in
-        try TinyLibSystem.with_open_in caps (fun ch -> opened := true; g ch) f
+        try TSys.with_open_in caps (fun ch -> opened := true; g ch) f
         with Failure m when not !opened -> raise (File_error m) in
       try
         let ts = with_file (tokens (Hashtbl.create 16) with_file) file in
@@ -150,14 +150,14 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
         locs := Array.of_list (List.map snd ts);
         while peek () <> EOF do external_decl () done;
         let text =
-          Buffer.contents out
+          Buffer.contents Machine.out
           ^ (if !ir_only then "" else "\t.data\n" ^ Buffer.contents data)
         in
         (match !output with
-         | None -> TinyLibSystem.print caps text
+         | None -> TSys.print caps text
          | Some o ->
              (try
-                TinyLibSystem.with_open_out caps
+                TSys.with_open_out caps
                   (fun (ch : Chan.o) -> Out_channel.output_string ch.oc text) o
               with Failure m -> raise (File_error m)));
         Exit.OK
@@ -168,14 +168,14 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
            * have none *)
           let ls = !locs in
           if Array.length ls = 0 then
-            TinyLibSystem.eprint caps (Fpath.to_string file ^ ": " ^ m ^ "\n")
+            TSys.eprint caps (Fpath.to_string file ^ ": " ^ m ^ "\n")
           else
             (let f, l = ls.(max 0 (min (!pos - 1) (Array.length ls - 1))) in
-             TinyLibSystem.eprint caps
+             TSys.eprint caps
                (f ^ ": line " ^ string_of_int l ^ ": " ^ m ^ "\n"));
           (* (said here, after the file, not the program's name) *)
           Exit.Code 1
       | File_error m -> Exit.Err m
   end
 
-let () = TinyLibSystem.main "tiny-c" main
+let () = TSys.main "tiny-c" main

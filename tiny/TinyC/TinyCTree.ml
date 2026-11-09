@@ -28,9 +28,10 @@ let binop_name o = fst (List.find (fun (_, o') -> o' = o) binops)
 let asg_ops =
   List.filter_map (function s, A o -> Some (s ^ "=", o) | _ -> None) binops
 
-(* where a variable is: a global's name in the assembly, a local's
- * offset below SP, a parameter's from FP *)
-type place = Global of string | Local of int | Param of int
+(* where a variable is: a global's label; a local's offset in bytes
+ * down from the frame's top; a parameter's up from it (the caller's
+ * outgoing arguments, 4 bytes each) *)
+type place = Global of sym | Local of int | Param of int
 
 (* an assignment: x = y, or x op= y, whose new value reads the old one
  * (Cur) *)
@@ -49,7 +50,7 @@ and desc =
   | Cond of expr * expr * expr        (* && || ! are made of it *)
   | Asg of expr * expr * asg
       (* an lvalue, its new value *)
-  | Apply of string * expr list       (* a call (old: Call, the stack machine's
+  | Apply of sym * expr list          (* a call (old: Call, the stack machine's
                                        * name too: tiny-ml's constructors are
                                        * one name space) *)
   | ApplyPtr of expr * expr list      (* through a function's address *)
@@ -96,9 +97,10 @@ let common a b =
   | t, _ -> t
 
 let scale (i : expr) t =
-  if size t = 1 then conv i long_t
+  if size t = 1 then conv i vlong_t
   else
-    mk (Bin (A Mul, conv i long_t, num (Int64.of_int (size t)) long_t)) long_t
+    mk (Bin (A Mul, conv i vlong_t, num (Int64.of_int (size t)) vlong_t))
+      vlong_t
 
 let rec binary op (a : expr) (b : expr) =
   let a = rv a and b = rv b in
@@ -106,8 +108,8 @@ let rec binary op (a : expr) (b : expr) =
   | A (Add | Sub), Ptr t, Int _ -> mk (Bin (op, a, scale b t)) a.t
   | A Add, Int _, Ptr _ -> binary op b a
   | A Sub, Ptr t, Ptr _ ->
-      mk (Bin (A Div, mk (Bin (op, conv a long_t, conv b long_t)) long_t,
-               num (Int64.of_int (size t)) long_t)) long_t
+      mk (Bin (A Div, mk (Bin (op, conv a vlong_t, conv b vlong_t)) vlong_t,
+               num (Int64.of_int (size t)) vlong_t)) vlong_t
   | R _, Ptr _, _ | R _, _, Ptr _ ->
       let t = if is_ptr a.t then a.t else b.t in
       mk (Bin (op, conv a t, conv b t)) int_t

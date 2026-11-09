@@ -19,14 +19,15 @@ let puncts = [ "<<="; ">>="; "..."; "->"; "++"; "--"; "<<"; ">>"; "<="; ">=";
 
 (* where a token is, for the errors: its file (an #include's own) and line *)
 type loc = string * int
+type located = token * loc
 
 open Fpath_.Operators
 
 (* a file's tokens, its #includes' in their place (each opened by
  * open_), #defines expanded (a macro's tokens where it is used) *)
-let rec tokens (macros : (string, (token * loc) list) Hashtbl.t)
-    (open_ : (Chan.i -> (token * loc) list) -> Fpath.t -> (token * loc) list)
-    (chan : Chan.i) : (token * loc) list =
+let rec tokens (macros : (string, located list) Hashtbl.t)
+    (open_ : (Chan.i -> located list) -> Fpath.t -> located list)
+    (chan : Chan.i) : located list =
   (* (an #include's file beside this one) *)
   let dir =
     match chan.origin with Chan.File f -> Fpath.parent f | _ -> Fpath.v "./" in

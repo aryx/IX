@@ -5,7 +5,6 @@
 open TinyCTypes
 open TinyCTree
 open TinyCLower
-open TinyCParser
 
 (*****************************************************************************)
 (* The machine: TinyCPU, the stack in r1..r12 *)
@@ -22,7 +21,7 @@ let out = Buffer.create 65536
  * variadic function (print) walks its arguments from its last named
  * one's address. *)
 
-let machine name locals (body : ir list) =
+let machine (name : sym) locals (body : ir list) =
   let sp = ref 0 and saves = ref 0 and outgoing = ref 0
   and dead = ref false in
   let depth_at = Hashtbl.create 16 in
@@ -69,13 +68,13 @@ let machine name locals (body : ir list) =
         at (fun _ -> lab l ^ ":\n")
     | _ when !dead -> ()
     | Imm v -> let a = push () in ins ("li\t" ^ r a ^ ", " ^ word v)
-    | Place (Global s) -> let a = push () in ins ("la\t" ^ r a ^ ", " ^ sym s)
+    | Place (Global s) -> let a = push () in ins ("la\t" ^ r a ^ ", " ^ s)
     | Place (Local o) ->
         let a = push () in
         at (fun f -> "\taddi\t" ^ r a ^ ", sp, " ^ n (f - o) ^ "\n")
     | Place (Param o) ->
         let a = push () in
-        at (fun f -> "\taddi\t" ^ r a ^ ", sp, " ^ n (f + (4 * (o / 8))) ^ "\n")
+        at (fun f -> "\taddi\t" ^ r a ^ ", sp, " ^ n (f + o) ^ "\n")
     | Load t ->
         let a = top () in
         (match t with
@@ -149,7 +148,7 @@ let machine name locals (body : ir list) =
         done;
         outgoing := max !outgoing (4 * k);
         (match f with
-         | Some f -> ins ("call\t" ^ sym f)
+         | Some f -> ins ("call\t" ^ f)
          | None -> ins ("jalr\tlr, 0(" ^ r (base + k + 1) ^ ")"));
         for j = 1 to base do
           at (fun fr -> "\tldw\t" ^ r j ^ ", " ^ n (fr - slot j) ^ "(sp)\n")
@@ -169,6 +168,6 @@ let machine name locals (body : ir list) =
   if not !dead then epilogue ();
   let frame = round (!outgoing + 4 + (4 * !saves) + locals) 8 in
   Buffer.add_string out
-    (sym name ^ ":\n\taddi\tsp, sp, " ^ n (- frame) ^ "\n\tstw\tlr, "
+    (name ^ ":\n\taddi\tsp, sp, " ^ n (- frame) ^ "\n\tstw\tlr, "
      ^ n (lr_at ()) ^ "(sp)\n");
   List.iter (fun f -> Buffer.add_string out (f frame)) (List.rev !lines)

@@ -7,9 +7,17 @@
  * it is written, Printf.sprintf at the call) *)
 let error s = failwith s
 
-(* the machine, TinyCPU, has words of 4 bytes: pointers too, and no
- * long long *)
 let unit_name = ref ""  (* the file's name, its local names' prefix *)
+
+(* a global's name in the assembly, a label, not a C name: a static's
+ * is the file's name and its own, the link being one name space
+ * (old: Plan 9's name<>, made a label when written) *)
+type sym = string
+let static_sym (name : string) : sym = !unit_name ^ "." ^ name
+
+(* a value's low 32 bits, signed, in decimal, as the assembly writes a
+ * word (old: Printf's %ld of Int64.to_int32) *)
+let word v = Int64.to_string (Int64.shift_right (Int64.shift_left v 32) 32)
 
 (*****************************************************************************)
 (* Types *)
@@ -24,16 +32,24 @@ type ty =
   | Func of ty * ty list * bool       (* result, parameters, variadic *)
 
 and sdef = {
-  mutable fields : (string * ty * int) list;
+  mutable fields : field list;
   mutable ssize : int;
   mutable salign : int }
 
-let int_t = Int (4, true) and long_t = Int (8, true) and char_t = Int (1, true)
+(* a structure's member, at its offset in bytes *)
+and field = { fname : string; fty : ty; foff : int }
+
+let int_t = Int (4, true) and char_t = Int (1, true)
+(* the compiler's own wide integer: a pointer's difference, a scaled
+ * index, a switch's value; a long long in its type, of 32 bits on
+ * TinyCPU (no_vlong refuses a declared one) *)
+let vlong_t = Int (8, true)
 (* an int's largest value (old: 0x7fffffffL, a literal tiny-ml does
  * not read) *)
 let int_max = Int64.of_string "0x7fffffff"
 (* an unsigned int's *)
 let uint_max = Int64.of_string "0xffffffff"
+(* the machine, TinyCPU, has words of 4 bytes: pointers too *)
 let rec size = function
   | Void -> 1 | Int (n, _) -> n | Ptr _ | Func _ -> 4
   | Arr (t, n) -> n * size t | Struct s -> s.ssize

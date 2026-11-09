@@ -21,7 +21,7 @@
  *                                                stw  lr, 0(sp)
  *     param 0             &a                 addi r1, sp, 8
  *     load 4              a                  ldw  r1, 0(r1)
- *     param 8             a &b               addi r2, sp, 12
+ *     param 4             a &b               addi r2, sp, 12
  *     load 4              a b                ldw  r2, 0(r2)
  *     imm 2               a b 2              li   r3, 2
  *     op * 4              a b*2              mul  r2, r2, r3

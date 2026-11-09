@@ -15,6 +15,7 @@
  * idea, built from what tiny-ml has: lists, and strings that cannot
  * be modified.)
  *
+ * archi:
  * The editor is a state plus the keys that change it. [key] takes a
  * byte and says what it asks of the surrounding program (nothing, to
  * save the file, or to quit). [view] computes the lines of the screen
@@ -38,7 +39,7 @@
  *     C-l                            the cursor's line in the middle
  *     C-x C-s, C-x C-c (or C-x C-q)  save, quit
  *     C-g                            never mind
- *     M-x (Escape x, or Alt-x)       a command by its name, Tab completing
+ *     M-x (Escape x, Alt-x, Cmd-x)   a command by its name, Tab completing
  *     C-x (, C-x ), C-x e            a macro started, ended, done again
  *
  * M-x knows each of these keys by its name in Emacs (kill-line,

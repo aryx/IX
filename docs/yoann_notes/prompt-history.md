@@ -66749,3 +66749,38 @@ Claude rewrote the old `exec` with the new code, and the types and `exec` build.
 Claude ran mini-mk and the editor's tests, and TinyEditorLine passed both mini-mk and the kernel check.
 Claude changed TinyEditorScreen's two screen caches into records and made `file` an `Fpath.t`, converting to text only for the save message and mode line.
 The screen editor's test passed with tiny-ml on tiny-cpu, but a `cd` failed, so Claude reran the kernel check with an absolute path and both passed.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 12:18
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude recommended committing the editor changes as `3f3e6d8c` and proposed the next steps in order.
+Claude listed the GUI layer (TinyLibGUI, TinyLibPlayground, TinyLibDraw, TinyWindows) as the next block of work.
+Claude suggested the compilers next, starting with TinyC and then TinyML.
+Claude asked Yoann which of these he wanted to tackle next.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 12:24
+
+**Yoann:**
+
+> on my mac Command-< does not go the start of the file (or Command-> to the end). Why?
+
+------------------------------------------------------------------------
+
+## 2026-11-09 12:24
+
+**Yoann:**
+
+> Command should behave like M- no?
+
+**Claude (summary):**
+
+Claude explained that Command-< failed because tiny-machine's SDL window mapped only Alt, not Command, to Meta, so emacs got a plain `<`. Claude made Command act as Meta in `TinyMachineSDL.ml`, with a comment saying so. Claude also updated the key description in `sdl/TinyCalls.ml` and the emacs key list in `TinyEditorScreen.mli`. The web version was left alone so the browser keeps its Command shortcuts. Claude asked Yoann to test Command-< and Command-> in the Mac window before committing.

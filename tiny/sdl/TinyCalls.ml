@@ -11,7 +11,8 @@
  * TinyMemory's, and shown (TinyMachineSDL, the palette tiny-machine's)
  * when the program next waits. The window's mouse is the box of the
  * program's descriptor 4, its keys the bytes of its 0 (as tiny-machine's
- * window makes them: Alt a key's Escape, a key held typed again, the
+ * window makes them: Alt or a Mac's Command a key's Escape, a key held
+ * typed again, the
  * wheel the arrows). An ENQ written to the console is answered in the
  * box, as tiny-windows answers it: the window's size. A file is the
  * host's, read whole when opened, written when closed; /dev/audio is the

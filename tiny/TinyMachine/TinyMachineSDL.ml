@@ -48,7 +48,9 @@ let keyboard () =
 let typed k now = function
   | Key ((225 | 229), down) -> k.shift <- down; []
   | Key ((224 | 228), down) -> k.ctrl <- down; []
-  | Key ((226 | 230), down) -> k.alt <- down; []
+  (* Alt, and a Mac's Command (227, 231: the GUI keys) too: Meta, the key
+   * sent after an Escape *)
+  | Key ((226 | 227 | 230 | 231), down) -> k.alt <- down; []
   | Key (usage, true) -> (
       match key_byte usage ~shift:k.shift ~ctrl:k.ctrl with
       | Some byte ->

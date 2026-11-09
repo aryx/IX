@@ -20,8 +20,7 @@
  *
  *     stamp(hello) = sha1(recipe, "hello.o", sha1(hello.o), "world.o", ...)
  *
- * For the Buildfile in [help],
- * the graph under hello is:
+ * For the Buildfile in [help], the graph under hello is:
  *
  *     hello                 has its own recipe: cc -o $target $prereq
  *      |-- hello.o          made by the pattern rule, with stem hello:

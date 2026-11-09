@@ -1,11 +1,15 @@
 (* A tiny version control system, in one file. The full-size version
- * in ix, mini-git (version_control/), is a faithful copy of git9: it
+ * in ix, mini-git (version_control/), is a faithful copy of git: it
  * uses git's formats, a staging file, packs, and a wire protocol. This
  * one keeps git's ideas -- objects named by the hash of their content,
  * trees of objects, a DAG of commits, three-way merge -- and for
  * everything else follows the roads taken by the systems that came
- * after git. Its commands are shown by example in the [help] string of
- * the .ml (which is what vcs -h prints):
+ * after git (e.g., jj, mercurial).
+ *
+ * Its commands are shown by example in the [help] string of
+ * the .ml (which is what vcs -h prints).
+ *
+ * A few notes:
  *
  * - {b The repository is one hash.} Objects are appended to a single
  *   file and never changed. The state of the repository (the branches,
@@ -67,9 +71,7 @@
  * The text of the objects uses a format specific to this file, which
  * is canonical and readable ("tree\nf HASH name\n..."); it is hashed
  * with SHA-1 (Sha1) and stored as it is. What is dropped: git's formats,
- * compression (old: deflate, lib_compression's Zlib; gone when tiny-vcs
- * went to tiny-kernel, as plan_tiny_self_hosting.md says), packs and
- * deltas, the wire protocol,
+ * compression , packs and deltas, the wire protocol,
  * the index, submodules and symbolic links, rename detection, tags,
  * and rebase.
  *

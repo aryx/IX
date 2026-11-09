@@ -66352,3 +66352,25 @@ Claude had not yet verified the host's return value or changed any code when thi
 **Claude (summary):**
 
 Claude checked the date handling and found two problems, both in TinyVCS: a stale `log` comment claiming tiny-kernel has no clock, and a test using Unix-style dates that would overflow on tiny-kernel. Claude fixed the test to use 800,000,000 and up with a unit comment, and added a comment on `now`. Claude re-recorded the `-bugs` baseline, since the new comment shifted three TinyVCS findings down two lines. Claude ran the VCS test (0 failures), mini-mk, and the TinyKernel check. Nothing is committed yet; Claude asked whether to commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 07:34
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude reported that the date fixes were committed as `baa3c7b4`, covering the `log` comment, `now` note, test dates, and bugs baseline.
+Claude noted the working tree is clean with nothing left uncommitted.
+Yoann's follow-up centers on the repeated "Where it stands:" paragraphs in the tiny/ `.mli` files, so Claude's answer is mostly about that.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 08:06
+
+**Yoann:**
+
+> I see lots of similar structure in the tiny/ .mli, such as the "Where it stands:" paragraph. Should we use a tag for that instead? for consistency? and what could be the (short) tag for it? And whether there are more of those repetitive structures in the .mli where we could also use a tag (and have more structure shared among the .mli, with the tags in a similar order)

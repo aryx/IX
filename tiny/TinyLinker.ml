@@ -3,9 +3,9 @@
  *
  * See TinyLinker.mli
  *)
-module ISA = TinyMachineISA
 (* (|||: an option's value, or a default) *)
 open Common
+module ISA = TinyMachineISA
 module TSys = TinyLibSystem
 module Sym = TinyLibSymbols
 

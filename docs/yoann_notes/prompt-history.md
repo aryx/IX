@@ -67386,3 +67386,35 @@ Claude proposed passing `$(PWD)/bin/...` paths from the top-level Makefile so st
 The tiny-linker follow-up was next: split its `main` into `read`, `link` and `write` in the `.mli`.
 Claude also planned to make the `-s`/`-map` label lines a function of `linked`, so the pipeline reads from the `.mli` alone.
 The round-trip law `parse (print l) = l`, the duplicate printer cleanup, TinyML globals and the GUI layer came after.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 20:04
+
+**Yoann:**
+
+> let's do 5 then 1
+
+**Claude (summary):**
+
+Claude made TinyKernel's Makefile name each tool by full path, so stale outputs and missing-PATH failures stop, and committed it as 45f97ad4.
+Claude confirmed with a dry run that touching tiny-assembler's binary makes make remake `entry.o`, and kernel checks passed without tool paths.
+Claude then laid out tiny-linker's pipeline in TinyLinker.mli, matching the assembler's diagram, with a new `type output = Image | Aout of int | Aout_labels of int`.
+Claude made `aout` internal to `contents` and reduced `main` to four lines, committed as 8d84f780, with all checks passing.
+Claude suggested the next steps as the `parse (print l) = l` assembly syntax test or merging the duplicate instruction printer.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 20:24
+
+**Yoann:**
+
+> ok what's next?
+
+**Claude (summary):**
+
+Claude listed four remaining items and recommended doing items 1 and 2 together, then item 3.
+Claude's plan for items 1 and 2 was a test that `parse (print l) = l` across the repo's `.tm` files and the tiny-c and tiny-ml outputs.
+That test would check the assembly syntax in both directions, since printing and parsing now live in one module.
+Item 2 would merge `TinyMachineISA.print` with TinyMachineAsm's printer, which differ only in register names and branch targets.
+Claude noted that the linker in `tiny/TinyLinker.ml` has uncommitted edits, so it would not touch that file.

@@ -107,10 +107,10 @@ let rec items (ls : Asm.line list) : ISA.item list =
 (* The object *)
 (*****************************************************************************)
 
-(* A file's items, in their order, for tiny-linker, marshalled
- * (TinyMachineISA's to_object): its text's lines (TinyMachineAsm's
- * parse), each line's items *)
-let assemble (chan : Chan.i) : string =
+(* A file's object: its items, in their order, for tiny-linker; its
+ * text's lines (TinyMachineAsm's parse), each line's items. (old: the
+ * object marshalled, a string) *)
+let assemble (chan : Chan.i) : ISA.item list =
   let at n e = Chan.origin chan ^ ":" ^ string_of_int (n + 1) ^ ": " ^ e in
   (* each file on a word's boundary: one may end with bytes, the next
    * begin with code *)
@@ -120,17 +120,18 @@ let assemble (chan : Chan.i) : string =
   |> List.iteri (fun n text ->
     let its = try items (Asm.parse text) with ISA.Error e -> ISA.error (at n e) in
     all := List.rev_append its !all);
-  ISA.to_object (List.rev !all)
+  List.rev !all
 
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
 
 let main (caps : < caps; .. >) (argv : string array) : Exit.t =
+  (* (the object marshalled, TinyMachineISA's to_object) *)
   let assemble_to (f : Fpath.t) (out : Fpath.t) : Exit.t =
     f |> TSys.with_open_in caps assemble
-      |> TSys.write_file caps out
-    ;
+      |> ISA.to_object
+      |> TSys.write_file caps out;
     Exit.OK in
   (* x.tm's object: x.o, here *)
   let default f = Fpath.set_ext ".o" (Fpath.base f) in

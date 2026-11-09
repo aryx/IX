@@ -67298,3 +67298,27 @@ Claude proposed replacing ISA's `Section of bool` with `SectionCode` and `Sectio
 Claude noted this changes the object format, so objects built by the old assembler must be rebuilt rather than misread.
 Claude also proposed the same constructors in the object, so the `.mli` signatures state which section is meant.
 The other open choices were an `Instr_sym` case, machine instructions moved into ISA, and `Ascii` and `Word` data directives.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 17:37
+
+**Yoann:**
+
+> yes, whatever you think makes the code more readable and the signatures in the .mli clearer
+
+**Claude (summary):**
+
+Claude shrank TinyAssembler from 332 to 147 lines, leaving it only the encoding step.
+Claude moved assembly parsing out of TinyAssembler into TinyMachineAsm, which now provides parse and print.
+Claude made TinyAssembler map one parsed line to one object item, with no string handling left.
+Claude then checked TinyAssembler.mli's header for text the refactor had made stale.
+Claude committed all five steps, sharing TinyMachineAsm.line across tiny-c, tiny-ml and tiny-assembler.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 18:36
+
+**Yoann:**
+
+> Can we change TinyAssembler.assemble to then take a channel and return a better type than string?

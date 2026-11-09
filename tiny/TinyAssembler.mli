@@ -102,9 +102,10 @@
 (* what tiny-assembler asks for: its file read, its object written *)
 type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 
-(* a file's text to its object, marshalled, the file opened by the caller
- * (its name in the errors: Chan.origin) *)
-val assemble : Chan.i -> string
+(* a file's text to its object, its items (TinyMachineISA.to_object
+ * marshals them), the file opened by the caller (its name in the
+ * errors: Chan.origin) *)
+val assemble : Chan.i -> TinyMachineISA.item list
 
 (* the program: its arguments (its name first; -h: how) to how it ends *)
 val main : < caps; .. > -> string array -> Exit.t

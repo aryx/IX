@@ -3,8 +3,8 @@
  * docs/plans/plan_ml.md), which behaves like ocaml-light's native
  * compiler: same dialect, modules, and the kernel as a target. It is
  * what is left of an ML compiler when the language is small and the
- * code only needs to be correct. Its usage, by examples, is in [help] below, which is what
- * tiny-ml -h prints.
+ * code only needs to be correct. Its usage, by examples, is in [help]
+ * below, which is what tiny-ml -h prints.
  *
  * It reads ML files, a unit each (with -c, one, after the interfaces
  * of the units it uses), and writes

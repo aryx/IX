@@ -29,6 +29,29 @@
  * copy kept in dir when the fetch fails (as tiny-machine -net dir); the
  * answer's messages read one at a time, as a link's are. *)
 
+module G = TinyKernelGraphics
+module Audio = TinyKernelAudio
+module Peer = TinyMachinePeer
+module SDL = TinyMachineSDL
+
+(*****************************************************************************)
+(* Descriptors *)
+(*****************************************************************************)
+
+(* a program's first descriptors (../TinyCalls.mli) *)
+let fd_stdin = 0
+let fd_stdout = 1
+let fd_stderr = 2
+let fd_draw = 3
+let fd_mouse = 4
+
+(* what a program writes to its console to ask for its window's size,
+ * answered in its mouse's box, as tiny-windows answers it *)
+let enq = "\005"
+
+(* the files open from 5 on, after the descriptors above *)
+let first_file = 5
+
 (*****************************************************************************)
 (* The screen *)
 (*****************************************************************************)
@@ -52,17 +75,16 @@ let conn = lazy (
     | None -> TinyFont.bits
   in
   Bytes.blit_string font 0 TinyMemory.mem 0x1000 (String.length font);
-  TinyKernelGraphics.arena 0xd00000 0x200000;
-  TinyKernelGraphics.free 0xfc0000 0x3f000;
-  let screen =
-    { TinyKernelGraphics.r = TinyKernelGraphics.rect 0 0 width height;
-      at = screen_at; repl = false } in
-  TinyKernelGraphics.connect screen
-    (TinyKernelGraphics.font_mask 0x1000 (String.length font)
-       (TinyKernelGraphics.alloc 16384)))
+  G.arena 0xd00000 0x200000;
+  G.free 0xfc0000 0x3f000;
+  let (screen : G.image) =
+    { r = G.rect 0 0 width height; at = screen_at; repl = false } in
+  G.connect screen
+    (G.font_mask 0x1000 (String.length font)
+       (G.alloc 16384)))
 
 let display =
-  lazy (TinyMachineSDL.create ~title:(Filename.basename Sys.argv.(0)))
+  lazy (SDL.create ~title:(Filename.basename Sys.argv.(0)))
 
 (* TINY_SCREEN=file: the screen written there as a PPM when the program
  * ends, a TERM signal ending it (for a look without a window:
@@ -98,7 +120,7 @@ let show () =
 (* the drawing's messages; one refused is said, and the write is -1, as
  * tiny-kernel's write of /dev/draw does (old: the program ended) *)
 let draw s =
-  match TinyKernelGraphics.messages (Lazy.force conn) s with
+  match G.messages (Lazy.force conn) s with
   | () -> dirty := true; 0
   | exception TinyKernelGraphics.Graphics why ->
       prerr_string ("draw: " ^ why ^ "\n"); dirty := true; -1
@@ -117,31 +139,33 @@ let draw s =
 let ring_at = 0xc00000
 let ring = 8192
 let fed = ref 0
-let since = ref 0.
+(* when the speaker started, at the first open of /dev/audio (old: 0.
+ * until then) *)
+let started : float option ref = ref None
 
 let feed () =
-  if !since > 0. then begin
-    let due =
-      int_of_float ((Unix.gettimeofday () -. !since) *. 8000.) + 1600 in
-    if due > !fed then begin
-      let n = min (due - !fed) ring in
-      let b = Bytes.create n in
-      for i = 0 to n - 1 do
-        let a = ring_at + ((!fed + i) land (ring - 1)) in
-        Bytes.set b i (Bytes.get TinyMemory.mem a);
-        Bytes.set TinyMemory.mem a '\000'
-      done;
-      fed := due;
-      (Lazy.force display).play (Bytes.unsafe_to_string b)
-    end
-  end
+  match !started with
+  | None -> ()
+  | Some t0 ->
+      let due = int_of_float ((Unix.gettimeofday () -. t0) *. 8000.) + 1600 in
+      if due > !fed then begin
+        let n = min (due - !fed) ring in
+        let b = Bytes.create n in
+        for i = 0 to n - 1 do
+          let a = ring_at + ((!fed + i) land (ring - 1)) in
+          Bytes.set b i (Bytes.get TinyMemory.mem a);
+          Bytes.set TinyMemory.mem a '\000'
+        done;
+        fed := due;
+        (Lazy.force display).play (Bytes.unsafe_to_string b)
+      end
 
 let speak (ahead : int ref) s =
-  match TinyKernelAudio.sounds s with
+  match Audio.sounds s with
   | sounds ->
       let total =
         List.fold_left
-          (fun n snd -> n + TinyKernelAudio.sound_length snd) 0 sounds in
+          (fun n snd -> n + Audio.sound_length snd) 0 sounds in
       let rec room () =
         feed ();
         if !ahead < !fed then ahead := !fed;
@@ -150,11 +174,11 @@ let speak (ahead : int ref) s =
         room ();
         List.iter
           (fun snd ->
-            TinyKernelAudio.mix_sound ring_at ring !ahead snd;
-            ahead := !ahead + TinyKernelAudio.sound_length snd)
+            Audio.mix_sound ring_at ring !ahead snd;
+            ahead := !ahead + Audio.sound_length snd)
           sounds
       end
-  | exception TinyKernelAudio.Bad_sound -> ()
+  | exception Audio.Bad_sound -> ()
 
 (*****************************************************************************)
 (* The clock *)
@@ -163,21 +187,26 @@ let speak (ahead : int ref) s =
 (* the clock, 400 ticks a second *)
 let start = Unix.gettimeofday ()
 let u_ticks () = int_of_float ((Unix.gettimeofday () -. start) *. 400.)
-(* (946684800: 2000-01-01 in Unix's seconds) *)
-let u_time () = int_of_float (Unix.time ()) - 946684800
+(* 2000-01-01 in Unix's seconds, tiny-kernel's dates' start *)
+let y2000 = 946684800
+let u_time () = int_of_float (Unix.time ()) - y2000
 let u_seed () = u_ticks ()
 
 (*****************************************************************************)
 (* The keys and the mouse *)
 (*****************************************************************************)
 
+(* the mouse, as its box says it: where it is, its buttons held (a bit
+ * each) (old: a triple) *)
+type pointer = { p_x : int; p_y : int; p_buttons : int }
+
 (* the keys typed and not read; the mouse, and whether it moved since it
- * was read; an ENQ to answer *)
+ * was read; whether the window's size was asked (an ENQ written) *)
 let typed = ref ""
-let mouse = ref (0, 0, 0)
+let mouse = ref { p_x = 0; p_y = 0; p_buttons = 0 }
 let fresh = ref false
-let enq = ref false
-let keys = TinyMachineSDL.keyboard ()
+let size_asked = ref false
+let keys = SDL.keyboard ()
 
 (* the window's events, made keys and the mouse *)
 let pump () =
@@ -185,21 +214,23 @@ let pump () =
     let key byte = typed := !typed ^ String.make 1 (Char.chr byte) in
     let now = Unix.gettimeofday () in
     List.iter (function
-      | TinyMachineSDL.Quit -> exit 0
-      | TinyMachineSDL.At (x, y) ->
-          let (_, _, b) = !mouse in
-          mouse := (x, y, b);
+      | SDL.Quit -> exit 0
+      | SDL.At (x, y) ->
+          mouse := { !mouse with p_x = x; p_y = y };
           fresh := true
-      | TinyMachineSDL.Button (b, down) ->
-          let (x, y, bs) = !mouse in
-          mouse := (x, y, if down then bs lor b else bs land lnot b);
+      | SDL.Button (b, down) ->
+          let m = !mouse in
+          let held =
+            if down then m.p_buttons lor b else m.p_buttons land lnot b in
+          mouse := { m with p_buttons = held };
           fresh := true
-      | e -> List.iter key (TinyMachineSDL.typed keys now e))
+      | e -> List.iter key (SDL.typed keys now e))
       ((Lazy.force display).poll ());
-    Option.iter key (TinyMachineSDL.repeated keys now)
+    Option.iter key (SDL.repeated keys now)
   end
 
-(* a word of the mouse's box: 4 bytes, the low first *)
+(* a word as tiny-kernel writes one, 4 bytes, the low first: the mouse's
+ * box's, an entry's *)
 let word v = String.init 4 (fun k -> Char.chr ((v asr (8 * k)) land 255))
 
 (*****************************************************************************)
@@ -215,10 +246,19 @@ type file =
   | Answer of string list ref
   | Speaker of int ref
 let files = Hashtbl.create 8
-let next = ref 5
+let next = ref first_file
+
+(* a file open, its descriptor the next (old: the same three lines in
+ * u_open, three times, and in u_dial) *)
+let opened (f : file) : int =
+  let fd = !next in
+  Hashtbl.replace files fd f;
+  incr next;
+  fd
 
 let ready fd =
-  (fd = 0 && !typed <> "") || (fd = 4 && (!fresh || !enq))
+  (fd = fd_stdin && !typed <> "")
+  || (fd = fd_mouse && (!fresh || !size_asked))
   || (match Hashtbl.find_opt files fd with
       | Some (Asking _) | None -> false
       | Some _ -> true)
@@ -228,12 +268,14 @@ let ready fd =
 (*****************************************************************************)
 
 (* tiny-machine-fetch's output for its arguments, or why not; beside
- * this program, as tiny-machine finds it *)
+ * this program, as tiny-machine finds it, or in dune's _build, from
+ * tiny/user/sdl/ (old: ../TinyMachine/, from tiny/sdl/, where the
+ * programs were built before 6ccdff26) *)
 let fetch args =
   let dir = Filename.dirname Sys.executable_name in
   let helper =
     if Filename.check_suffix Sys.executable_name ".exe" then
-      Filename.concat dir "../TinyMachine/TinyMachineFetch.exe"
+      Filename.concat dir "../../TinyMachine/TinyMachineFetch.exe"
     else Filename.concat dir "tiny-machine-fetch" in
   let ic = Unix.open_process_args_in helper (Array.of_list (helper :: args)) in
   let out = In_channel.input_all ic in
@@ -248,32 +290,32 @@ let kept name = match Sys.getenv_opt "TINY_WWW", name with
 (* the answer to a line asked of port 70, its messages *)
 let answer line =
   match String.split_on_char ' ' (String.trim line) with
-  | "GET" :: _ when TinyMachinePeer.www_request line <> None ->
-      let url = Option.get (TinyMachinePeer.www_request line) in
-      TinyMachinePeer.messages (match fetch [ url ] with
+  | "GET" :: _ when Peer.www_request line <> None ->
+      let url = Option.get (Peer.www_request line) in
+      Peer.messages (match fetch [ url ] with
         | Ok answer -> answer
         | Error why -> (
-            match kept (TinyMachinePeer.www_kept url) with
+            match kept (Peer.www_kept url) with
             | Some f ->
-                TinyMachinePeer.www_kept_response f
+                Peer.www_kept_response f
                   (In_channel.with_open_bin f In_channel.input_all)
-            | None -> TinyMachinePeer.www_failed why))
+            | None -> Peer.www_failed why))
   | "img" :: _ ->
       let w, h, url =
-        Option.get (TinyMachinePeer.www_picture_request (String.trim line)) in
+        Option.get (Peer.www_picture_request (String.trim line)) in
       let decode source =
         match fetch [ "-picture"; string_of_int w; string_of_int h; source ] with
         | Ok pixels when String.length pixels = w * h ->
-            Some (TinyMachinePeer.picture "" w h pixels)
+            Some (Peer.picture "" w h pixels)
         | _ -> None in
       (match if w = 0 then None else decode url with
        | Some l -> l
        | None -> (
            match
-             Option.bind (kept (TinyMachinePeer.www_picture_kept url)) decode
+             Option.bind (kept (Peer.www_picture_kept url)) decode
            with
            | Some l -> l
-           | None -> TinyMachinePeer.picture "" 0 0 ""))
+           | None -> Peer.picture "" 0 0 ""))
   | _ -> []
 
 (*****************************************************************************)
@@ -292,16 +334,21 @@ let rec u_ready (fds : int array) (n : int) (until : int) : int =
   | fd -> fd
 
 let u_read (fd : int) (n : int) : string =
-  if fd = 0 then begin
-    ignore (u_ready [| 0 |] 1 0);
+  if fd = fd_stdin then begin
+    ignore (u_ready [| fd_stdin |] 1 0);
     let k = min n (String.length !typed) in
     let s = String.sub !typed 0 k in
     typed := String.sub !typed k (String.length !typed - k);
     s
   end
-  else if fd = 4 then begin
-    if !enq then (enq := false; word width ^ word height ^ word (-1))
-    else (let (x, y, b) = !mouse in fresh := false; word x ^ word y ^ word b)
+  else if fd = fd_mouse then begin
+    if !size_asked then (
+      size_asked := false;
+      word width ^ word height ^ word (-1))
+    else (
+      let m = !mouse in
+      fresh := false;
+      word m.p_x ^ word m.p_y ^ word m.p_buttons)
   end
   else
     match Hashtbl.find_opt files fd with
@@ -318,11 +365,11 @@ let u_read (fd : int) (n : int) : string =
     | _ -> ""
 
 let u_write (fd : int) (s : string) : int =
-  if fd = 3 then draw s
+  if fd = fd_draw then draw s
   else begin
-    if fd = 1 && s = "\005" then enq := true
-    else if fd = 1 then (print_string s; flush stdout)
-    else if fd = 2 then (prerr_string s; flush stderr)
+    if fd = fd_stdout && s = enq then size_asked := true
+    else if fd = fd_stdout then (print_string s; flush stdout)
+    else if fd = fd_stderr then (prerr_string s; flush stderr)
     else (match Hashtbl.find_opt files fd with
           | Some (Writing (_, b)) -> Buffer.add_string b s
           | Some (Speaker ahead) -> speak ahead s
@@ -338,14 +385,17 @@ let u_write (fd : int) (s : string) : int =
     0
   end
 
+(* whether flags open a file to write: o_write's and o_anew's low bit,
+ * O_WRONLY's (o_read_write's file is read, as o_read's) *)
+let writing flags = flags land 1 <> 0
+
 let u_open (name : string) (flags : int) : int =
-  let fd = !next in
   if name = "/dev/audio" then begin
     (* the speaker started at the first open; what was written is heard
      * to its end, as tiny-kernel's speaker plays on after a program
      * ends *)
-    if !since = 0. then begin
-      since := Unix.gettimeofday ();
+    if !started = None then begin
+      started := Some (Unix.gettimeofday ());
       at_exit (fun () ->
         let last =
           Hashtbl.fold
@@ -354,20 +404,14 @@ let u_open (name : string) (flags : int) : int =
         while !fed < last + 1600 do feed (); Unix.sleepf 0.02 done;
         while (Lazy.force display).queued () > 0 do Unix.sleepf 0.02 done)
     end;
-    Hashtbl.replace files fd (Speaker (ref 0)); incr next; fd
+    opened (Speaker (ref 0))
   end
-  else if flags land 1 <> 0 then (
-    Hashtbl.replace files fd (Writing (name, Buffer.create 4096));
-    incr next;
-    fd)
-  else if Sys.file_exists name && not (Sys.is_directory name) then (
-    Hashtbl.replace files fd
-      (Reading (ref (In_channel.with_open_bin name In_channel.input_all)));
-    incr next;
-    fd)
+  else if writing flags then opened (Writing (name, Buffer.create 4096))
+  else if Sys.file_exists name && not (Sys.is_directory name) then
+    opened (Reading (ref (In_channel.with_open_bin name In_channel.input_all)))
   else -1
 
-(* u_open's flags (TinyCalls.mli) *)
+(* u_open's flags (../TinyCalls.mli) *)
 let o_read = 0
 let o_anew = 0x601
 let o_write = 0x201
@@ -384,11 +428,7 @@ let u_close (fd : int) : int =
 let u_rawcons (_ : int) = 0
 
 let u_dial (address : string) (port : int) =
-  if address = "10.0.0.1" && port = 70 then (
-    let fd = !next in
-    Hashtbl.replace files fd (Asking (Buffer.create 64));
-    incr next;
-    fd)
+  if address = "10.0.0.1" && port = 70 then opened (Asking (Buffer.create 64))
   else -1
 
 (*****************************************************************************)
@@ -399,15 +439,14 @@ let u_dial (address : string) (port : int) =
 let u_stat (path : string) : string =
   match Unix.stat path with
   | st ->
-      let word n =
-        String.init 4 (fun k -> Char.chr ((n lsr (8 * k)) land 255)) in
       let name = Filename.basename path in
       let name =
         if String.length name > 64 then String.sub name 0 64 else name in
+      (* (word, the one above; old: a second word here, by lsr) *)
       name ^ String.make (64 - String.length name) '\000'
       ^ word (if st.st_kind = Unix.S_DIR then 1 else 2)
       ^ word st.st_nlink ^ word st.st_size
-      ^ word (int_of_float st.st_mtime - 946684800)
+      ^ word (int_of_float st.st_mtime - y2000)
   | exception Unix.Unix_error _ -> ""
 
 (* /bin/play is tiny-play, else m-ix's mini-play (/bin/page: mini-page,

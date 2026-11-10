@@ -16,12 +16,26 @@
  *                           network (dune's default)
  *
  * On the host, a virtual library of dune's (dune, beside this file).
- *
- * The descriptors are tiny-kernel's: 0 the keys, 1 the console, 3 where
- * a program draws, 4 its mouse (a box: x, y, the buttons, a word each). *)
+ * tinykernel/'s has more calls than these (fork, exec, pipe...): those
+ * of TinyLibSystem, which on the host is over Unix instead.
+ *)
 
-(* [u_write fd s]: 0 when all of s was written (where a program draws:
- * the drawing messages, TinyKernelGraphics.mli's) *)
+(*****************************************************************************)
+(* Descriptors *)
+(*****************************************************************************)
+
+(* A program's first descriptors, as tiny-kernel or a window gives them:
+ * its input (a window's keys), its output (the console), its errors,
+ * where it draws (the drawing messages, TinyKernelGraphics.mli's), and
+ * its mouse (a box: x, y, the buttons, a word each, the low bytes
+ * first). (old: the numbers, 0 to 4, where they were read and written) *)
+val fd_stdin : int
+val fd_stdout : int
+val fd_stderr : int
+val fd_draw : int
+val fd_mouse : int
+
+(* [u_write fd s]: 0 when all of s was written *)
 val u_write : int -> string -> int
 
 (* [u_read fd n]: up to n bytes, "" at the end *)
@@ -31,22 +45,14 @@ val u_read : int -> int -> string
  * read, waiting until the clock is until (0: no end), -1 then *)
 val u_ready : int array -> int -> int -> int
 
-(* the clock, 400 ticks a second *)
-val u_ticks : unit -> int
+(* the console raw (1) or not (0): its ^C a key *)
+val u_rawcons : int -> int
 
-(* the date, seconds since 2000-01-01 *)
-val u_time : unit -> int
+(*****************************************************************************)
+(* Files *)
+(*****************************************************************************)
 
-(* a seed for a program's first random number: the machine's, or the
- * clock when it has none *)
-val u_seed : unit -> int
-
-(* a path's entry (user.h's dirent: a name of 64 bytes, its type, links,
- * size and date, a word each), or "" when it is not there *)
-val u_stat : string -> string
-
-(* a file opened, flags as user.h's (below), its descriptor, or -1;
- * closed *)
+(* a file opened, flags as user.h's (below): its descriptor, or -1 *)
 val u_open : string -> int -> int
 
 (* u_open's flags: to read (O_RDONLY, 0); to write it anew (O_WRONLY |
@@ -58,13 +64,31 @@ val o_read : int
 val o_anew : int
 val o_write : int
 val o_read_write : int
+
+(* a descriptor closed: 0 *)
 val u_close : int -> int
 
-(* the console raw (1) or not (0): its ^C a key *)
-val u_rawcons : int -> int
+(* a path's entry (user.h's dirent: a name of 64 bytes, its type, links,
+ * size and date, a word each), or "" when it is not there *)
+val u_stat : string -> string
 
-(* a connection to a machine's port: -1, none on the host *)
-val u_dial : string -> int -> int
+(*****************************************************************************)
+(* The clock *)
+(*****************************************************************************)
+
+(* the clock, 400 ticks a second *)
+val u_ticks : unit -> int
+
+(* the date, seconds since 2000-01-01 *)
+val u_time : unit -> int
+
+(* a seed for a program's first random number: the machine's, or the
+ * clock when it has none *)
+val u_seed : unit -> int
+
+(*****************************************************************************)
+(* Programs *)
+(*****************************************************************************)
 
 (* [u_spawn path args]: a child running the program at path (args: its
  * name first), not waited for; its pid, or -1. The window's: a program
@@ -76,6 +100,20 @@ val u_spawn : string -> string list -> int
 (* the program's arguments: how many, the i-th (0 its name) *)
 val u_argc : unit -> int
 val u_arg : int -> string
+
+(*****************************************************************************)
+(* The network *)
+(*****************************************************************************)
+
+(* [u_dial address port]: a connection, its descriptor, or -1. The
+ * window answers the wire's other end, port 70 of 10.0.0.1, as
+ * tiny-machine does (a web page, a picture); the stub answers nothing
+ * (old: "-1, none on the host", from before the window answered) *)
+val u_dial : string -> int -> int
+
+(*****************************************************************************)
+(* For a test *)
+(*****************************************************************************)
 
 (* what was written where a program draws, kept for a test (the stub's;
  * the window's draws it at once and keeps nothing) *)

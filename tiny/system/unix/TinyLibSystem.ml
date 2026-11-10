@@ -3,9 +3,10 @@
 
 (* See ../TinyLibSystem.mli; this is the host's, over OCaml's Unix *)
 
-open Fpath_.Operators
+(* a path as Unix takes it (old: open Fpath_.Operators) *)
+let ( !! ) = Fpath_.Operators.( !! )
 
-(* See TinyLibSystem.mli for the types' names *)
+(* See ../TinyLibSystem.mli for the types' names *)
 type pid = int
 type fd = int
 type status = string
@@ -136,8 +137,10 @@ let stat (_ : < Cap.open_in; .. >) (file : Fpath.t) : stat =
     { st_dir = st.st_kind = Unix.S_DIR; st_size = st.st_size })
 let links (_ : < Cap.open_in; .. >) (file : Fpath.t) =
   reason (fun () -> (Unix.stat !!file).st_nlink)
+(* 2000-01-01 in Unix's seconds, tiny-kernel's dates' start *)
+let y2000 = 946684800
 let mtime (_ : < Cap.open_in; .. >) (file : Fpath.t) =
-  reason (fun () -> int_of_float (Unix.stat !!file).st_mtime - 946684800)
+  reason (fun () -> int_of_float (Unix.stat !!file).st_mtime - y2000)
 let mkdir (caps : < Cap.open_out; .. >) (dir : Fpath.t) =
   reason (fun () -> FS.mkdir caps !!dir 0o777)
 let remove (caps : < Cap.open_out; .. >) (file : Fpath.t) =
@@ -160,9 +163,8 @@ let touch (caps : < Cap.open_in; Cap.open_out; .. >) (file : Fpath.t) =
     else Unix.close (FS.create_fd caps !!file 0o666))
 
 let getcwd (caps : < Cap.env; .. >) = Fpath.v (CapSys.getcwd caps ())
-(* (946684800: 2000-01-01 in Unix's seconds) *)
 let time (caps : < Cap.clock; .. >) =
-  int_of_float (CapUnix.time caps ()) - 946684800
+  int_of_float (CapUnix.time caps ()) - y2000
 let sleep (caps : < Cap.clock; .. >) ms =
   CapUnix.sleepf caps (float_of_int ms /. 1000.0)
 let millis (caps : < Cap.clock; .. >) =

@@ -53,7 +53,10 @@ type seconds = int
 type milliseconds = int
 
 let main name f =
-  let said m = u_flush (); ignore (u_write 2 (name ^ ": " ^ m ^ "\n")); 1 in
+  let said m =
+    u_flush ();
+    ignore (u_write fd_stderr (name ^ ": " ^ m ^ "\n"));
+    1 in
   (* Logs' messages said as an error is *)
   Logs.set_reporter (fun _ m -> ignore (said m));
   exit
@@ -82,7 +85,7 @@ let getpid _caps = u_getpid ()
 (*****************************************************************************)
 
 let print caps s = print_string s
-let eprint caps s = ignore (u_write 2 s)
+let eprint caps s = ignore (u_write fd_stderr s)
 let flush _caps = u_flush ()
 
 (* what was read of the input and is not yet a line given *)
@@ -95,7 +98,7 @@ let rec read_line caps =
       pending := String.sub !pending (i + 1) (String.length !pending - i - 1);
       Some line
   | None ->
-      let s = u_read 0 4096 in
+      let s = u_read fd_stdin 4096 in
       if s <> "" then (pending := !pending ^ s; read_line caps)
       else if !pending = "" then None
       else (let line = !pending in pending := ""; Some line)
@@ -115,6 +118,11 @@ let keep fd = private_fds := fd :: !private_fds; fd
  * the integers' division in this file) *)
 let str = Fpath.to_string
 
+(* where u_seek's offset counts from: the file's start, its end (Unix's
+ * SEEK_SET and SEEK_END; old: 0 and 2 where it was called) *)
+let from_start = 0
+let from_end = 2
+
 (* to read, to write anew, and to write then a seek to the end
  * (TinyCalls' flags) *)
 let open_in caps file =
@@ -126,16 +134,17 @@ let open_out caps file =
 let open_append caps file =
   let fd = u_open (str file) o_write in
   if fd < 0 then failwith "cannot create"
-  else if u_seek fd 0 2 < 0 then (ignore (u_close fd); failwith "cannot seek")
+  else if u_seek fd 0 from_end < 0 then (
+    ignore (u_close fd);
+    failwith "cannot seek")
   else fd
-(* to read and write, made when it is not there; seek's whence 0 the
- * start, 2 the end *)
+(* to read and write, made when it is not there *)
 let open_rw caps file =
   let fd = u_open (str file) o_read_write in
   if fd < 0 then failwith "cannot open" else fd
-let seek fd off = if u_seek fd off 0 < 0 then failwith "cannot seek"
+let seek fd off = if u_seek fd off from_start < 0 then failwith "cannot seek"
 let seek_end fd =
-  let off = u_seek fd 0 2 in
+  let off = u_seek fd 0 from_end in
   if off < 0 then failwith "cannot seek" else off
 let close fd =
   ignore (u_close fd);
@@ -179,13 +188,18 @@ let with_out opener caps f file =
   r
 let with_open_out caps f file = with_out open_out caps f file
 let with_open_append caps f file = with_out open_append caps f file
-let stdin _caps : Chan.i = { ic = in_channel_of_descr 0; origin = Stdin }
+let stdin _caps : Chan.i = { ic = in_channel_of_descr fd_stdin; origin = Stdin }
 
 (* A directory entry, 80 bytes (user.h's dirent): a name of 64 bytes
  * ended by a 0 when shorter, its type (1 for a directory), its links,
  * its size and its date, a word each, the low bytes first. A directory
  * is read as a file of them; the kernel's stat gives one. *)
 type dirent = { e_dir : bool; e_links : int; e_size : int; e_mtime : int }
+
+(* an entry's size, and its name's, the words after it (old: 80 and 64
+ * where an entry was read) *)
+let entry_size = 80
+let name_size = 64
 
 (* the word at i of s *)
 let word s i =
@@ -194,8 +208,9 @@ let word s i =
 (* the entry at i of s, but its name (old: a 4-tuple, taken apart with
  * _ by its readers) *)
 let dirent s i =
-  { e_dir = Char.code s.[i + 64] = 1; e_links = word s (i + 68);
-    e_size = word s (i + 72); e_mtime = word s (i + 76) }
+  let w = i + name_size in
+  { e_dir = Char.code s.[w] = 1; e_links = word s (w + 4);
+    e_size = word s (w + 8); e_mtime = word s (w + 12) }
 
 (* the names in a directory (old: its entries decoded whole, then all
  * but their names dropped) *)
@@ -206,14 +221,14 @@ let names dir =
     let s = read_all fd in
     ignore (u_close fd);
     let name i =
-      let e = i + 64 in
+      let e = i + name_size in
       String.sub s i
         ((match String.index_from_opt s i '\000' with
           | Some j when j < e -> j
           | _ -> e)
          - i)
     in
-    List.init (String.length s / 80) (fun k -> name (k * 80))
+    List.init (String.length s / entry_size) (fun k -> name (k * entry_size))
   end
 
 let readdir _caps dir = names (str dir)
@@ -337,21 +352,26 @@ let ended = ref []
 let status st =
   if st = 0 then "" else if st = 255 then "signal: kill" else string_of_int st
 
-(* u_waits's number: the child's pid, and 256 times it, its status's
- * low byte *)
+(* the next child that ends, its pid and its status's low byte, or None
+ * without children: u_waits's number is the pid times 256 plus that
+ * byte (mlsys.c's; old: decoded twice here, and its comment "the
+ * child's pid, and 256 times it, its status's low byte") *)
+let waits () =
+  let r = u_waits () in
+  if r < 0 then None else Some (r / 256, r mod 256)
+
 let rec wait caps pid =
   match List.assoc_opt pid !ended with
   | Some st -> ended := List.filter (fun (p, _) -> p <> pid) !ended; status st
   | None ->
-      let r = u_waits () in
-      if r < 0 then "" else (ended := (r / 256, r mod 256) :: !ended; wait caps pid)
+      (match waits () with
+       | None -> ""
+       | Some ended_one -> ended := ended_one :: !ended; wait caps pid)
 
 let wait_any caps =
   match !ended with
   | (p, st) :: rest -> ended := rest; Some (p, status st)
-  | [] ->
-      let r = u_waits () in
-      if r < 0 then None else Some (r / 256, status (r mod 256))
+  | [] -> Option.map (fun (p, st) -> (p, status st)) (waits ())
 
 (* rc's words quoted, '' a quote inside *)
 let quote w = "'" ^ String.concat "''" (String.split_on_char '\'' w) ^ "'"
@@ -384,5 +404,5 @@ let exit _caps e =
   exit
     (match e with
      | Exit.OK -> 0
-     | Exit.Err m -> ignore (u_write 2 (m ^ "\n")); 1
+     | Exit.Err m -> ignore (u_write fd_stderr (m ^ "\n")); 1
      | Exit.Code n -> n)

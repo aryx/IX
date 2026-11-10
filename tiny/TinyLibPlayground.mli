@@ -57,9 +57,10 @@
  *   level; none when the game is over). The library gives each of its
  *   parts, a voice of /dev/audio each, its next notes up to half a
  *   second ahead at each turn of its loop; another tune goes on from
- *   the same notes (a faster pace: m-ix's change_loop), and no tune
- *   stops it. A note is a sound, so a tune is a few messages a second
- *   and the kernel makes the samples (m-ix's playground renders them,
+ *   the same notes (a faster pace: m-ix's change_loop), and None, no
+ *   tune, closes the voices. A note is a sound, so a tune is a few
+ *   messages a second and the kernel makes the samples (m-ix's
+ *   playground renders them,
  *   which cost a Pi 1 seconds: notes_audio.md's 8 and 14).
  * - {b The colours}: a shape's colour is a byte, an index in Plan 9's
  *   colour table; the image the kernel needs for that colour is
@@ -155,9 +156,10 @@ val key_of_byte : char -> key
  * words: its colour plus bold, italic, underlined, large (a character
  * 16 by 32), as many as it has; or fat_pixels, a paint's row: each
  * character a colour's letter (pixel_letters), a square of 4 by 4 *)
+type colour = int
 type shape =
-  | Rect of int * int * int
-  | Words of int * string
+  | Rect of colour * int * int
+  | Words of colour * string
   | Group of shape list
   | Move of int * int * shape
 val bold : int
@@ -199,18 +201,13 @@ type 'm game = {
   sound : 'm -> 'm -> sound list; music : 'm -> tune option;
 }
 
-(* The program of a game: its loop, with no end (a key or the next
- * frame's time waited for, the picture drawn when the shapes are
- * others) *)
+(* The program of a game: its loop, a key or the next frame's time
+ * waited for, the picture drawn when the shapes are others; it ends at
+ * a q or at the keys' end, so a game is never given a q *)
 val run : 'm game -> 'a
 
 (* the number after a seed, 1 to 2^30 - 36 (Lehmer's generator) *)
 val random : int -> int
-
-(* a sound as tiny-kernel's /dev/audio takes it: a message (s, then the
- * five numbers, TinyKernelAudio.mli), which the kernel makes into
- * samples *)
-val sound_message : sound -> string
 
 (* samples as /dev/audio takes them (a byte each, signed, 8,000 a second;
  * no more than 8,192): a message too (p, how many, then them) *)
@@ -219,7 +216,7 @@ val samples_message : string -> string
 (* a shape drawn in an image, its corner at (x, y): messages gathered,
  * which [flush] writes (TinyLibGUI's, which draws a widget and not a
  * picture) *)
-val draw : int -> int -> int -> shape -> unit
+val draw : TinyLibDraw.image -> int -> int -> shape -> unit
 val flush : unit -> unit
 
 (* a picture: the shapes before (its first, the ground, drawn again

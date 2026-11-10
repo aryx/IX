@@ -3,7 +3,7 @@
 
 (* See TinyLibPlayground.mli *)
 
-open TinyLibDraw
+module D = TinyLibDraw
 open TinyCalls
 
 type key =
@@ -26,11 +26,15 @@ let key_of_byte (c : char) : key =
   | '\131' -> Right
   | _ -> Char c
 
+(* a colour: a byte of the palette; for words, their style's bits above
+ * it (bold and the others, below) *)
+type colour = int
+
 (* a rectangle of a colour (its width, its height), words of a colour,
  * shapes together, a shape moved (to the right, down) *)
 type shape =
-  | Rect of int * int * int
-  | Words of int * string
+  | Rect of colour * int * int
+  | Words of colour * string
   | Group of shape list
   | Move of int * int * shape
 let bold = 256
@@ -114,17 +118,17 @@ let ground = 2
 let made = Array.make 256 false
 let ink c =
   let c = c land 255 in
-  if not made.(c) then (made.(c) <- true; put (d_colour (3 + c) c));
+  if not made.(c) then (made.(c) <- true; put (D.d_colour (3 + c) c));
   3 + c
 
 let rec draw dst x y shape =
   match shape with
-  | Rect (c, w, h) -> put (d_fill dst (ink c) (x, y, x + w, y + h))
+  | Rect (c, w, h) -> put (D.d_fill dst (ink c) (x, y, x + w, y + h))
   | Words (c, s) ->
-      put (if c < 256 then d_text dst (ink c) (x, y) s
+      put (if c < 256 then D.d_text dst (ink c) (x, y) s
            else if c land fat_pixels <> 0 then
-             d_styled dst (ink c) (x, y) 16 (fat_bytes s)
-           else d_styled dst (ink c) (x, y) (c lsr 8) s)
+             D.d_styled dst (ink c) (x, y) (fat_pixels lsr 8) (fat_bytes s)
+           else D.d_styled dst (ink c) (x, y) (c lsr 8) s)
   | Group l -> List.iter (draw dst x y) l
   | Move (dx, dy, s) -> draw dst (x + dx) (y + dy) s
 
@@ -142,10 +146,10 @@ let show g shown shapes =
            | was :: _ -> was != first && was <> first
            | [] -> true)
        then draw ground 0 0 first;
-       put (d_draw picture ground (-1) (0, 0, g.width, g.height) (0, 0));
+       put (D.d_draw picture ground (-1) (0, 0, g.width, g.height) (0, 0));
        List.iter (draw picture 0 0) rest
    | [] -> ());
-  put (d_draw 0 picture (-1) (0, 0, g.width, g.height) (0, 0));
+  put (D.d_draw 0 picture (-1) (0, 0, g.width, g.height) (0, 0));
   flush ()
 
 (* whether these are other shapes than those shown: the ground the same
@@ -163,19 +167,19 @@ let same shown shapes =
  * (TinyKernelAudio.mli): s, the wave, the pitch from and to, the
  * milliseconds, the volume *)
 let sound_message snd =
-  msg 's'
+  D.msg 's'
     [ (match snd.wave with
        | Square -> 0 | Triangle -> 1 | Sawtooth -> 2 | Noise -> 3);
       snd.hz; snd.to_hz; snd.ms; snd.volume ]
 
 (* samples, a byte each, signed, 8,000 a second, as /dev/audio takes them:
  * p, how many, then them *)
-let samples_message s = msg 'p' [ String.length s ] ^ s
+let samples_message s = D.msg 'p' [ String.length s ] ^ s
 
-(* where they are played: tiny-kernel's speaker, if there is one *)
-let speaker : int option ref = ref None
-let play sounds =
-  match !speaker with
+(* [play speaker sounds]: played on tiny-kernel's speaker, if there is
+ * one (old: the speaker a global, set by run) *)
+let play (speaker : int option) sounds =
+  match speaker with
   | Some fd when sounds <> [] ->
       ignore (u_write fd
         (List.fold_left (fun acc snd -> acc ^ sound_message snd) "" sounds))
@@ -190,9 +194,9 @@ let play sounds =
  * fell behind (the program busy) goes on from now. Another tune (a
  * level's faster pace) goes on from the same notes, as m-ix's
  * change_loop; none closes the voices, and the next tune starts at its
- * beginning. *)
+ * beginning. The voices are the loop's, given to play_music and given
+ * back (old: a global). *)
 type voice = { vfd : int; mutable vnext : int; mutable vuntil : int }
-let voices = ref []
 let ahead = 500
 
 let feed pace p v now =
@@ -211,24 +215,27 @@ let feed pace p v now =
   let m = gather "" in
   if m <> "" && v.vfd >= 0 then ignore (u_write v.vfd m)
 
-let play_music tune =
-  match tune, !voices with
-  | None, [] -> ()
+(* [play_music voices tune]: the voices after the tune is fed to them *)
+let play_music (voices : voice list) tune : voice list =
+  match tune, voices with
+  | None, [] -> []
   | None, vs ->
       List.iter (fun v -> if v.vfd >= 0 then ignore (u_close v.vfd)) vs;
-      voices := []
+      []
   | Some t, vs ->
       let now = u_ticks () * 5 / 2 in
-      (match vs with
-       | [] ->
-           voices := List.map (fun _ ->
-             { vfd = u_open "/dev/audio" 1; vnext = 0; vuntil = now }) t.parts
-       | _ -> ());
+      let vs =
+        match vs with
+        | [] ->
+            List.map (fun _ ->
+              { vfd = u_open "/dev/audio" 1; vnext = 0; vuntil = now }) t.parts
+        | vs -> vs in
       let rec each parts vs =
         match parts, vs with
         | p :: ps, v :: rest -> feed t.pace p v now; each ps rest
         | _ -> () in
-      each t.parts !voices
+      each t.parts vs;
+      vs
 
 (*****************************************************************************)
 (* The loop *)
@@ -249,9 +256,12 @@ let period = 13
  * not run to catch up). *)
 let run g =
   let keys = Array.make 1 0 in
-  let rec loop model seen shown next =
-    if model != seen then play (g.sound seen model);
-    play_music (g.music model);
+  let speaker =
+    let fd = u_open "/dev/audio" 1 in
+    if fd < 0 then None else Some fd in
+  let rec loop model seen shown next voices =
+    if model != seen then play speaker (g.sound seen model);
+    let voices = play_music voices (g.music model) in
     let shapes = if model != seen then g.view model else shown in
     if not (same shown shapes) then show g shown shapes;
     if u_ready keys 1 next = 0 then begin
@@ -261,18 +271,17 @@ let run g =
         if i >= String.length s then m
         else if s.[i] = 'q' then exit 0
         else typed (i + 1) (g.key (key_of_byte s.[i]) m) in
-      loop (typed 0 model) model shapes next
+      loop (typed 0 model) model shapes next voices
     end
     else
       loop (g.frame model) model shapes
         (if u_ticks () > next + period then u_ticks () + period
          else next + period)
+        voices
   in
-  put (d_image picture (0, 0, g.width, g.height) 0
-       ^ d_image ground (0, 0, g.width, g.height) 0);
-  (let fd = u_open "/dev/audio" 1 in
-   speaker := if fd < 0 then None else Some fd);
+  put (D.d_image picture (0, 0, g.width, g.height) 0
+       ^ D.d_image ground (0, 0, g.width, g.height) 0);
   let first = g.init (u_seed ()) in
   let shapes = g.view first in
   show g [] shapes;
-  loop first first shapes (u_ticks () + period)
+  loop first first shapes (u_ticks () + period) []

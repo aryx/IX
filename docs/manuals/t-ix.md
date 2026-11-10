@@ -857,7 +857,7 @@ loop (another tune, a faster pace, goes on from the same notes;
 
 `random s` is the next state of a generator of the model's. A game is
 several files given to tiny-ml as one program (TinyKernel's
-Makefile: `TinyLibSystem/tinykernel/`'s `TinyCalls.ml` and
+Makefile: `TinyLibSystem/tinykernel/`'s
 `TinyLibSystem.ml`, `TinyLibDraw.ml`, `TinyLibPlayground.ml`, the game,
 and a last file that says `let () = TinyLibSystem.main "tetris"
 TinyAppTetris.main`); the same files
@@ -891,7 +891,7 @@ only the widgets that are others than those shown are drawn.
 | `Col widgets` | one under the other, the column's width each |
 
 It is given to tiny-ml after the playground, whose shapes it draws by
-(TinyKernel's Makefile: `TinyLibSystem/tinykernel/`'s `TinyCalls.ml` and
+(TinyKernel's Makefile: `TinyLibSystem/tinykernel/`'s
 `TinyLibSystem.ml`, `TinyLibDraw.ml`, `TinyLibPlayground.ml`, `TinyLibGUI.ml`, the program, and a last file that
 says `let () = TinyLibSystem.main "calc" TinyAppCalculator.main`). `calc` is
 `tiny/TinyAppCalculator.ml`:

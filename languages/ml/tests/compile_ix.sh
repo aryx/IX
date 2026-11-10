@@ -29,7 +29,7 @@ shared="$(dirs lib_core) $(dirs lib_code) $(dirs lib_mime) $(dirs lib_compressio
 # use Testo and Alcotest), nor the stdlib itself, nor what needs SDL (Tsdl: mini-qemu's
 # window, and its Main, which opens it; "it would require too many things"; tiny-machine's
 # window the same, the one tiny program over Sdl_display, which tiny/mkfile does not build,
-# its SDL module (TinyMachineSDL), tiny/user/sdl/, the tiny programs in a window of it, and their TinyCalls, tiny/TinyLibSystem/sdl/;
+# its SDL module (TinyMachineSDL), tiny/user/sdl/, the tiny programs in a window of it, and their system, tiny/TinyLibSystem/sdl/;
 # mini-squeak's window, and lib_playground's platform with one, mini-drscheme's)
 # nor tiny-machine's page and mini-qemu's (raspberry/web), which are js_of_ocaml's (Js_of_ocaml: built by dune only)
 # nor OCaml 5's domains (mini-netscape's Worker_spawn by OCaml 5: dune's only; mini-ml's is spawn/large_threads.ml)
@@ -89,9 +89,6 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
   # build makes, TinyMLPrelude.ml: dune's)
   # (tiny/ and TinyLibSystem/, the interfaces, then its unix/: tiny-shell's TinyLibSystem is the Unix one, TinyLibSystem/tinykernel/'s is tiny-ml's)
   # (not TinyLibCore/: tiny-ml's standard library, whose List would be lib_core's)
-  # (the debugger and the tracer: tiny-kernel's alone, dune builds neither; their TinyCalls is
-  # TinyLibSystem/tinykernel/'s, the kernel's every call: fork, exec, trace..., which the host's has not)
-  tiny/TinyDebugger.ml|tiny/TinyTracer.ml) root=tiny/TinyLibSystem/tinykernel; incs[$root]="-I tiny/TinyLibSystem/tinykernel -I tiny/TinyLibSystem $(dirs tiny | sed -E 's|-I [^ ]*tiny/TinyLibCore ||g') -I _build/default/tiny";;
   tiny/*) incs[$root]="-I tiny -I tiny/TinyLibSystem -I tiny/TinyLibSystem/unix $(dirs tiny | sed -E 's|-I [^ ]*tiny/TinyLibCore ||g') -I _build/default/tiny";;
   esac
   [ -z "${incs[$root]:-}" ] && incs[$root]=$(dirs $root)

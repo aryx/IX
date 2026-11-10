@@ -12,17 +12,16 @@ the parts of that `.mli`, beside the programs that name it, as
 | implementation | what it is over | who runs on it |
 |---|---|---|
 | `unix/` | OCaml's `Unix` and lib_core (Linux, macOS) | the tools on the host: tiny-shell, tiny-utils, tiny-editor, tiny-c, tiny-ml, tiny-assembler, tiny-linker, tiny-build, tiny-db, tiny-vcs, tiny-prof |
-| `tinykernel/` | tiny-kernel's calls (`TinyCalls.ml`, externals, `mlsys.c`'s functions) | every ML program on tiny-kernel, tools and windows alike |
+| `tinykernel/` | tiny-kernel's calls (externals, `mlsys.c`'s functions) | every ML program on tiny-kernel, tools and windows alike |
 | `sdl/` | `unix/`'s code for files and processes, and an SDL window for the rest: the drawing on `fd_draw` by tiny-kernel's own `TinyKernelGraphics.ml`, the keys and the mouse, the speaker, the wire's port 70 | the window's programs on the host (`../user/sdl/`: tiny-emacs, tiny-office, tiny-www, tiny-calc, tiny-tetris, tiny-play) |
 | `teststub/` | nothing: what is drawn kept (`TinySystemTest.drawn`), no key, a still clock, every file a `Failure`; compiled by tiny-ml too | the tests of the window's programs, on the host and on tiny-cpu |
 
-On tiny-kernel the system is two layers: `tinykernel/TinyCalls.ml`, the
-kernel's calls themselves (ints, `-1` for a refusal), and
-`tinykernel/TinyLibSystem.ml` over them (`Fpath.t`, capabilities,
-`Failure` with a reason, and what the kernel lacks made up: `dup2`, a
-wait for one child, descriptors closed at an exec). `TinyCalls` is
-tiny-kernel's own: the debugger and the tracer, tiny-kernel's alone,
-call it for `trace`, which no other system has.
+On tiny-kernel, `tinykernel/TinyLibSystem.ml` starts with the kernel's
+calls themselves (externals: ints, `-1` for a refusal) and is written
+over them (`Fpath.t`, capabilities, `Failure` with a reason, and what
+the kernel lacks made up: `dup2`, a wait for one child, descriptors
+closed at an exec). The debugger and the tracer, tiny-kernel's alone,
+declare the one more they call, `u_trace`, which no other system has.
 
 ```
      a tool (TinyShell.ml...)       a window's program (user/office.ml...)
@@ -33,7 +32,6 @@ call it for `trace`, which no other system has.
              unix/     tinykernel/     sdl/      teststub/
        OCaml's Unix   TinyLibSystem.ml  unix/'s   the tests
        Linux, macOS         |           + a window
-                       TinyCalls.ml
                        mlsys.c, tiny-kernel
 ```
 

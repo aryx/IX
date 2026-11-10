@@ -3,17 +3,24 @@
 
 (* See TinyDebugger.mli *)
 
-open TinyCalls
+module TSys = TinyLibSystem
 open TinyLibPlayground
 open TinyLibGUI
 open TinyLibMachine
+
+(* the kernel's trace of a process, a descriptor (-1 refused): tiny-kernel's
+ * alone, no other system's, so not TinyLibSystem's (mlsys.c's u_trace) *)
+external u_trace : int -> int = "u_trace"
+
+(* written, a refusal not a reason to end *)
+let put fd s = try TSys.write fd s with Failure _ -> ()
 
 (* what debug says: on its output, or kept for the window *)
 let sink = ref None
 let say s =
   match !sink with
   | Some b -> Buffer.add_string b s
-  | None -> ignore (u_write fd_stdout s)
+  | None -> put TSys.fd_stdout s
 
 (* what f says, as a string *)
 let text f =
@@ -39,40 +46,40 @@ let word_of s i =
 (* the program's labels, by address, from its file: after the image,
  * whose size the header says *)
 let funcs = ref (Array.of_list [])
-let symbols file =
-  let fd = u_open file 0 in
-  if fd >= 0 then begin
-    let h = u_read fd 16 in
-    let word i = word_of h i in
-    (* (tiny-linker -n's header has a fourth word, the text's size) *)
-    let split = String.length h = 16 && word 0 = 0x7a0ce6 in
-    if String.length h >= 12 && (word 0 = 0x7a0ce5 || split)
-       && u_seek fd ((if split then 16 else 12) + word 4) 0 >= 0 then begin
-      let rec rest acc =
-        let s = u_read fd 4096 in
-        if s = "" then String.concat "" (List.rev acc) else rest (s :: acc) in
-      funcs := TinyLibMachine.labels (rest [])
-    end;
-    ignore (u_close fd)
-  end
+let symbols caps file =
+  (* (the header read, then a seek past the image: the image is not read,
+   * the debugger's heap too small for a big program's whole file) *)
+  match (try Some (TSys.open_in caps (Fpath.v file)) with Failure _ -> None) with
+  | None -> ()
+  | Some fd ->
+      (try
+         let h = TSys.read fd 16 in
+         let word i = word_of h i in
+         (* (tiny-linker -n's header has a fourth word, the text's size) *)
+         let split = String.length h = 16 && word 0 = 0x7a0ce6 in
+         if String.length h >= 12 && (word 0 = 0x7a0ce5 || split) then begin
+           TSys.seek fd ((if split then 16 else 12) + word 4);
+           funcs := TinyLibMachine.labels (TSys.read_all fd)
+         end
+       with Failure _ -> ());
+      TSys.close fd
 
 (* the next line of the trace, and a command and its answer ("" when
  * the kernel refused it). In a window, the program's output is read
  * meanwhile, before its stops (its pipe never full) *)
 let output = ref (-1)
 let rec next () =
-  let fds = Array.make 2 !output in
-  fds.(1) <- !t;
-  if !output >= 0 && u_ready fds 2 0 = !output then begin
-    let s = u_read !output 512 in
-    if s = "" then (ignore (u_close !output); output := -1) else say s;
+  if !output >= 0 && TSys.ready [ !output; !t ] None = Some !output then begin
+    let s = TSys.read !output 512 in
+    if s = "" then (TSys.close !output; output := -1) else say s;
     next ()
   end
   else
-  let s = u_read !t 4096 in
+  let s = TSys.read !t 4096 in
   let n = String.length s in
   if n > 0 && s.[n - 1] = '\n' then String.sub s 0 (n - 1) else s
-let ask c = if u_write !t c < 0 then "" else next ()
+let ask c =
+  if (try TSys.write !t c; true with Failure _ -> false) then next () else ""
 
 let hex a = if a < 0 then string_of_int a else hex a
 
@@ -174,12 +181,12 @@ let reg name = match List.assoc_opt name (regs ()) with Some v -> v | None -> 0
 
 (* c, s and n; false when the process ended *)
 let continue () =
-  if !pc <> None then (ignore (u_write !t "c"); pc := None);
+  if !pc <> None then (put !t "c"; pc := None);
   wait ()
 let step () =
   match !pc with
   | None -> say "?\n"; true
-  | Some _ -> ignore (u_write !t "s"); pc := None; wait ()
+  | Some _ -> put !t "s"; pc := None; wait ()
 let over (at : int) =
   let s = bytes at 4 in
   let call =
@@ -198,7 +205,7 @@ let over (at : int) =
     let mine = not (List.mem a !stops) in
     if mine then ok (ask ("b " ^ string_of_int a));
     let rec go () =
-      ignore (u_write !t "c");
+      put !t "c";
       pc := None;
       match stopped () with
       | Some [ "break" ] when !pc = Some a && reg "r14" < sp -> go ()
@@ -387,7 +394,7 @@ let rec read_line () =
       pending := String.sub !pending (i + 1) (String.length !pending - i - 1);
       Some l
   | None ->
-      let s = u_read fd_stdin 4096 in
+      let s = TSys.read TSys.fd_stdin 4096 in
       if s = "" then None else (pending := !pending ^ s; read_line ())
 let rec loop () =
   match read_line () with
@@ -509,57 +516,59 @@ let window caps =
   run_canvas caps
     { first = first; picture = picture; typed = typed; moved = moved }
 
-let main caps (_ : string array) =
-  let n = u_argc () in
-  let windowed = n > 1 && u_arg 1 = "-window" in
+let main caps argv =
+  let n = Array.length argv in
+  let windowed = n > 1 && argv.(1) = "-window" in
   let first = if windowed then 2 else 1 in
   if n <= first then
     (say "usage: debug [-window] prog [args] | debug [-window] pid [prog]\n";
      exit 1);
   let file prog = if String.contains prog '/' then prog else "/bin/" ^ prog in
-  (* in a window, the program's output and errors on a pipe *)
-  let pipe = if windowed then u_pipe () else -1 in
-  (match int_of_string_opt (u_arg first) with
+  (* in a window, the program's output and errors on a pipe: where to
+   * read, where to write *)
+  let pipe = if windowed then Some (TSys.pipe caps) else None in
+  (match int_of_string_opt argv.(first) with
    | Some p ->
        pid := p;
-       if n > first + 1 then symbols (file (u_arg (first + 1)))
+       if n > first + 1 then symbols caps (file argv.(first + 1))
    | None ->
-       let prog = u_arg first in
+       let prog = argv.(first) in
        let file = file prog in
-       symbols file;
-       let p = u_fork () in
-       if p = 0 then begin
-         if pipe >= 0 then begin
-           List.iter (fun fd ->
-             ignore (u_close fd); ignore (u_dup (pipe / 256))) [ 1; 2 ];
-           ignore (u_close (pipe / 256));
-           ignore (u_close (pipe mod 256))
-         end;
-         ignore (u_trace 0);
-         ignore (u_exec file
-                   (List.init (n - first) (fun i -> u_arg (i + first))));
-         say ("debug: " ^ prog ^ ": not found\n");
-         exit 127
-       end;
-       pid := p;
-       started := true);
-  if pipe >= 0 then begin
-    ignore (u_close (pipe / 256));
-    if !started then output := pipe mod 256
-    else ignore (u_close (pipe mod 256))
-  end;
+       symbols caps file;
+       (match TSys.fork caps with
+        | None ->
+            (match pipe with
+             | Some (r, w) ->
+                 TSys.dup2 w TSys.fd_stdout;
+                 TSys.dup2 w TSys.fd_stderr;
+                 TSys.close w;
+                 TSys.close r
+             | None -> ());
+            ignore (u_trace 0);
+            ignore (TSys.exec caps (Fpath.v file)
+                      (List.init (n - first) (fun i -> argv.(i + first))) []);
+            say ("debug: " ^ prog ^ ": not found\n");
+            exit 127
+        | Some p ->
+            pid := p;
+            started := true));
+  (match pipe with
+   | Some (r, w) ->
+       TSys.close w;
+       if !started then output := r else TSys.close r
+   | None -> ());
   if windowed then sink := Some out;
   t := u_trace !pid;
   if !t < 0 && not !started then
-    (say ("debug: " ^ u_arg first ^ ": no such process\n"); exit 1);
+    (say ("debug: " ^ argv.(first) ^ ": no such process\n"); exit 1);
   (* (a program not found: its child said so, in the window's case on
    * the pipe, read into what is said) *)
   if !t < 0 || (!started && not (wait ())) then begin
-    ignore (u_write fd_stdout (Buffer.contents out));
+    put TSys.fd_stdout (Buffer.contents out);
     exit 1
   end;
   (* the process killed if debug started it and it still runs *)
   let quit = if windowed then (window caps; true) else not (loop ()) in
-  if quit && !started then ignore (u_kill !pid);
-  if !started then ignore (u_waits ());
+  if quit && !started then ignore (TSys.kill caps !pid);
+  if !started then ignore (TSys.wait_any caps);
   exit 0

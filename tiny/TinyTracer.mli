@@ -69,4 +69,5 @@
  *)
 
 (* the program: its command line, the stops of its processes, its exit *)
-val main : unit -> unit
+val main :
+  < Cap.fork; Cap.exec; Cap.kill; Cap.wait; .. > -> string array -> Exit.t

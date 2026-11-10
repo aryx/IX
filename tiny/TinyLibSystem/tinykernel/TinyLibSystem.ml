@@ -5,7 +5,7 @@
  * shell, the utilities, the compilers, the assembler and the linker,
  * the build system, the editor...; ../../TinyLibSystem.mli says each
  * function), over tiny-kernel's calls (mlsys.c's, beside this file;
- * TinyCalls.ml names them).
+ * the first section names them).
  *
  * Not in tiny/ with the other TinyLibXxx.ml: the host's file (../unix/) has the
  * same name, as it must (TinyShell.ml names one module), and mini-ml
@@ -40,7 +40,69 @@
  * - a file's modes: no file is a program to run (x)
  *)
 
-open TinyCalls
+(*****************************************************************************)
+(* The kernel's calls *)
+(*****************************************************************************)
+
+(* mlsys.c's functions, as externals, their values ML's; -1 when the
+ * kernel refuses: what the rest of this file is written over. The
+ * debugger and the tracer declare the one more they call, u_trace,
+ * tiny-kernel's alone.
+ *
+ * This section is ML's list of the calls, as a C program's is
+ * ../../TinyKernel/libc/user.h, with sys.tm's stubs beside it: the
+ * two lists side by side, a call in both. *)
+
+(* a program's first descriptors (../../TinyLibSystem.mli says them) *)
+let fd_stdin = 0
+let fd_stdout = 1
+let fd_stderr = 2
+let fd_draw = 3
+let fd_mouse = 4
+
+external u_write : int -> string -> int = "u_write"
+external u_read : int -> int -> string = "u_read"
+external u_ready : int array -> int -> int -> int = "u_ready"
+external u_rawcons : int -> int = "u_rawcons"
+external u_flush : unit -> unit = "u_flush"
+external u_dup : int -> int = "u_dup"
+external u_pipe : unit -> int = "u_pipe"
+
+external u_open : string -> int -> int = "u_open"
+
+(* u_open's flags: to read (O_RDONLY, 0); to write anew (O_WRONLY |
+ * O_CREATE | O_TRUNC); to write, made when it is not there (O_WRONLY |
+ * O_CREATE: an append seeks its end); to read and write, made when it is
+ * not there (O_RDWR | O_CREATE) *)
+let o_read = 0
+let o_anew = 0x601
+let o_write = 0x201
+let o_read_write = 0x202
+
+external u_close : int -> int = "u_close"
+external u_seek : int -> int -> int -> int = "u_seek"
+external u_stat : string -> string = "u_stat"
+external u_chdir : string -> int = "u_chdir"
+external u_mkdir : string -> int = "u_mkdir"
+external u_unlink : string -> int = "u_unlink"
+external u_link : string -> string -> int = "u_link"
+external u_getcwd : unit -> string = "u_getcwd"
+
+external u_ticks : unit -> int = "u_ticks"
+external u_time : unit -> int = "u_time"
+external u_seed : unit -> int = "u_seed"
+
+external u_fork : unit -> int = "u_fork"
+external u_exec : string -> string list -> int = "u_exec"
+external u_spawn : string -> string list -> int = "u_spawn"
+external u_waits : unit -> int = "u_waits"
+external u_kill : int -> int = "u_kill"
+external u_trace : int -> int = "u_trace"
+external u_getpid : unit -> int = "u_getpid"
+external u_argc : unit -> int = "u_argc"
+external u_arg : int -> string = "u_arg"
+
+external u_dial : string -> int -> int = "u_dial"
 
 type Cap.all_caps = < >
 
@@ -125,7 +187,7 @@ let from_start = 0
 let from_end = 2
 
 (* to read, to write anew, and to write then a seek to the end
- * (TinyCalls' flags) *)
+ * (u_open's flags, above) *)
 let open_in caps file =
   let fd = u_open (str file) o_read in
   if fd < 0 then failwith "cannot open" else fd
@@ -310,11 +372,6 @@ let chdir caps dir = if u_chdir (str dir) < 0 then failwith "cannot"
 (* Descriptors *)
 (*****************************************************************************)
 
-let fd_stdin = TinyCalls.fd_stdin
-let fd_stdout = TinyCalls.fd_stdout
-let fd_stderr = TinyCalls.fd_stderr
-let fd_draw = TinyCalls.fd_draw
-let fd_mouse = TinyCalls.fd_mouse
 
 (* (u_ready's until in ticks, 0 none: a deadline already passed is the
  * first tick, not none) *)

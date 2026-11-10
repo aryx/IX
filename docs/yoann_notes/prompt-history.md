@@ -68386,3 +68386,82 @@ Claude fixed the moved plan's companion link, now pointing to `tiny/TinyLibSyste
 Claude updated its link to `plan_tiny_windows.md` to a sibling link, since both plans now live in `done/`.
 Claude also repointed the link in `plan_tiny_libmach.md` to the moved plan through `done/`.
 The libmach plan stays in `docs/plans/` with stages 2 to 4 still outstanding.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 17:53
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude listed three remaining items from today's work: libmach stages 2 and 3, the `make self` hang, and housekeeping.
+Claude picked libmach stages 2 and 3 as the next step, moving the assembler into `TinyLibMachine` as `assemble`.
+Stage 3 would have tiny-c and tiny-ml emit `.o` files directly, with `-S` printing assembly, and drop the `as` step from the Makefile and Buildfile.
+Claude planned to verify it byte for byte against stage 1, with the objects and images unchanged.
+Claude proposed doing libmach first, then reproducing the `make self` hang on a small image.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 17:55
+
+**Yoann:**
+
+> Do we still need TinyCalls.ml in tiny/tinykernel/ ?
+
+**Claude (summary):**
+
+Claude recommended folding TinyCalls.ml into tinykernel/TinyLibSystem.ml as an externals section at its top.
+Claude proposed moving the TinyDebugger and TinyTracer onto TinyLibSystem, declaring only the tiny-kernel-only u_trace external.
+Claude flagged the risk that u_waits packed status and -1 refusals differ from TinyLibSystem.wait_any's Failure behavior.
+Claude noted the kernel check's scripted debug and trace sessions would expose any semantic difference.
+Claude offered a smaller alternative of giving the debugger and tracer their own externals, and Yoann chose the full plan.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 17:59
+
+**Yoann:**
+
+> let's do it
+
+**Claude (summary):**
+
+Claude folded TinyCalls into tiny-kernel's TinyLibSystem.ml under a "The kernel's calls" section, deleting TinyCalls.ml.
+The debugger and tracer now go through TinyLibSystem with capabilities, each declaring only the external u_trace call.
+Claude also added an unrequested typecheck-only tiny_debugger library in tiny/dune, offering to drop it if unwanted.
+The folding changed debug.cksum addresses and 16 lines of check.expected, which Claude inspected and re-recorded.
+All checks pass, the .codemapconfig digests are stale, and Claude is waiting for a go-ahead to commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 18:51
+
+**Yoann:**
+
+> is it cleaner that way?
+
+------------------------------------------------------------------------
+
+## 2026-11-10 18:51
+
+**Yoann:**
+
+> what do we lose?
+
+**Claude (summary):**
+
+Claude recommended naming `libc/sys.tm` as the C counterpart in the section header of the 400-line file.
+That way a reader of t-ix.md would find the C and ML syscall lists side by side, despite the missing separate file.
+Claude named the lost standalone ABI file as the loss that matters most, since the codemap entry for it is gone.
+Claude also flagged the lost raw `-1` returns, the debugger and tracer inheriting TinyLibSystem's workarounds, and the per-program `external` escape hatch.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 18:54
+
+**Yoann:**
+
+> ok add that comment and let's commit

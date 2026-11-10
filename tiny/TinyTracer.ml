@@ -3,9 +3,15 @@
 
 (* See TinyTracer.mli *)
 
-open TinyCalls
+module TSys = TinyLibSystem
 
-let say s = ignore (u_write fd_stderr s)
+(* the kernel's trace of a process, a descriptor (-1 refused): tiny-kernel's
+ * alone, no other system's, so not TinyLibSystem's (mlsys.c's u_trace) *)
+external u_trace : int -> int = "u_trace"
+
+(* written, a refusal not a reason to end *)
+let put fd s = try TSys.write fd s with Failure _ -> ()
+let say s = put TSys.fd_stderr s
 
 (* the calls, by their numbers (TinyKernel.ml's syscall, user.h's
  * order), and the kind of each argument: a number, a path, bytes
@@ -29,12 +35,13 @@ let calls =
  * refused it: an address outside the process) *)
 let pid = ref 0
 let t = ref (-1)
-let tell c = ignore (u_write !t c)
+let tell c = put !t c
 let next () =
-  let s = u_read !t 4096 in
+  let s = TSys.read !t 4096 in
   let n = String.length s in
   if n > 0 && s.[n - 1] = '\n' then String.sub s 0 (n - 1) else s
-let ask c = if u_write !t c < 0 then "" else next ()
+let ask c =
+  if (try TSys.write !t c; true with Failure _ -> false) then next () else ""
 
 (* n bytes of the process at a, from the kernel's hexadecimal *)
 let bytes a n =
@@ -120,7 +127,7 @@ let say_of s =
 
 (* a stop of the process p, read from its descriptor; false when it
  * ended *)
-let handle p =
+let handle caps p =
   pid := p.tpid;
   t := p.fd;
   let s = next () in
@@ -149,57 +156,58 @@ let handle p =
   | "exited" :: rest, _ -> say_of ("exited " ^ String.concat " " rest); false
   | "stopped" :: pc :: why, _ ->
       say_of ("stopped at " ^ hex (num pc) ^ ": " ^ String.concat " " why);
-      ignore (u_kill p.tpid); go None
+      ignore (TSys.kill caps p.tpid); go None
   | _ -> say_of ("trace: " ^ s); go None
 
 (* the stops of all the processes, the first one ready first, until
  * none is left *)
-let rec follow () =
+let rec follow caps =
   match !procs with
   | [] -> ()
   | l ->
-      let fds = Array.of_list (List.map (fun p -> p.fd) l) in
-      let k = u_ready fds (Array.length fds) 0 in
+      let k =
+        match TSys.ready (List.map (fun p -> p.fd) l) None with
+        | Some k -> k
+        | None -> -1 in
       (match List.filter (fun p -> p.fd = k) l with
        | [ p ] ->
-           if not (handle p) then begin
-             ignore (u_close p.fd);
+           if not (handle caps p) then begin
+             TSys.close p.fd;
              procs := List.filter (fun q -> q.fd <> p.fd) !procs
            end
        | _ -> procs := []);
-      follow ()
+      follow caps
 
-let main () =
-  let n = u_argc () in
-  let first = if n > 1 && u_arg 1 = "-f" then 2 else 1 in
+let main caps argv =
+  let n = Array.length argv in
+  let first = if n > 1 && argv.(1) = "-f" then 2 else 1 in
   children := first = 2;
   if n <= first then (say "usage: trace [-f] prog [args] | trace [-f] pid\n";
                       exit 1);
   let p, started =
-    match int_of_string_opt (u_arg first) with
+    match int_of_string_opt argv.(first) with
     | Some p -> p, false
     | None ->
-        let prog = u_arg first in
+        let prog = argv.(first) in
         let file = if String.contains prog '/' then prog else "/bin/" ^ prog in
-        let pid = u_fork () in
-        if pid = 0 then begin
-          ignore (u_trace 0);
-          ignore (u_exec file
-                    (List.init (n - first) (fun i -> u_arg (i + first))));
-          say ("trace: " ^ prog ^ ": not found\n");
-          exit 127
-        end;
-        pid, true in
+        (match TSys.fork caps with
+         | None ->
+             ignore (u_trace 0);
+             ignore (TSys.exec caps (Fpath.v file)
+                       (List.init (n - first) (fun i -> argv.(i + first))) []);
+             say ("trace: " ^ prog ^ ": not found\n");
+             exit 127
+         | Some pid -> pid, true) in
   pid := p;
   t := u_trace p;
   (* (a program not found: its child said so) *)
   if started && (!t < 0 || next () <> "stopped 0 exec") then exit 1;
   if !t < 0 then
-    (say ("trace: " ^ u_arg first ^ ": no such process\n"); exit 1);
+    (say ("trace: " ^ argv.(first) ^ ": no such process\n"); exit 1);
   ignore (ask "y");
   if !children then ignore (ask "f");
   if started then tell "c";
   procs := [ { tpid = p; fd = !t; pending = None } ];
-  follow ();
-  if started then ignore (u_waits ());
+  follow caps;
+  if started then ignore (TSys.wait_any caps);
   exit 0

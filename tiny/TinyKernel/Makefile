@@ -93,7 +93,7 @@
 # its module's main run by TinyLibSystem.main, is ../user/'s); libc/ what
 # a C program is linked with to
 # call this kernel (user.h, sys.tm, draw.c, net.c); ../TinyLibSystem/tinykernel/
-# the same for an ML one (mlsys.c, TinyCalls.ml, TinyLibSystem.ml), beside
+# the same for an ML one (mlsys.c, TinyLibSystem.ml), beside
 # the other systems' TinyLibSystem (../TinyLibSystem/README.md).
 #
 # What is built goes to _make/ and nowhere else, so that this
@@ -145,7 +145,7 @@ LINKS = editor:emacs sam:ed
 # utils's names (TinyUtilities.ml's table)
 UTILS = [ basename cat cmp cp date du echo grep kill ln ls mkdir mv ps pwd rm seq sleep sort tail tee test touch walk wc xd
 L = ../TinyCRuntime
-# an ML program's system on tiny-kernel: mlsys.c, TinyCalls.ml and
+# an ML program's system on tiny-kernel: mlsys.c and
 # TinyLibSystem.ml
 SYS = ../TinyLibSystem/tinykernel
 ULIB = $(O)/start.o $(O)/udivmod.o $(O)/libc.o $(O)/libc/sys.o
@@ -257,15 +257,14 @@ $(O)/bin/%: $(ULIB) $(O)/user/%.o $(LDBIN)
 # program, the library's unused toplevel left out by tiny-ml:
 # plan_tiny_self_hosting.md, step 4)
 U = $(O)/ml
-I_TinyLibSystem = TinyCalls
-I_TinyLibRegex = TinyCalls TinyLibSystem
-I_TinyLibPlayground = TinyCalls TinyLibSystem TinyLibDraw
-I_TinyLibGUI = TinyCalls TinyLibSystem TinyLibDraw TinyLibPlayground
+I_TinyLibRegex = TinyLibSystem
+I_TinyLibPlayground = TinyLibSystem TinyLibDraw
+I_TinyLibGUI = TinyLibSystem TinyLibDraw TinyLibPlayground
 I_TinyWindows = TinyLibDraw
 I_TinyAppTetris = $(I_TinyLibGUI)
 I_TinyAppCalculator = $(I_TinyLibGUI) TinyLibGUI
 I_TinyAppTemperature = $(I_TinyAppCalculator)
-GUI = TinyCalls TinyLibSystem TinyLibDraw TinyLibPlayground TinyLibGUI
+GUI = TinyLibSystem TinyLibDraw TinyLibPlayground TinyLibGUI
 I_TinyEditorScreen = $(GUI)
 # (TinyOffice.ml on its parts, TinyOffice/, which TinyTroff.ml reads a
 # page with)
@@ -291,12 +290,12 @@ I_TinyBrowser = $(GUI) $(BROWSER) TinyBrowserScreen
 I_TinyShell = $(I_TinyLibRegex)
 I_TinyUtilities = $(I_TinyLibRegex) TinyLibRegex
 I_TinyEditorLine = $(I_TinyUtilities)
-I_TinyProfiler = TinyCalls TinyLibSystem TinyLibMachine
-I_TinyDatabase = TinyCalls TinyLibSystem
-I_TinyVCS = TinyCalls TinyLibSystem
-I_TinyBuildSystem = TinyCalls TinyLibSystem
-I_TinyAssembler = TinyCalls TinyLibSystem TinyLibMachine
-I_TinyLinker = TinyCalls TinyLibSystem TinyLibMachine
+I_TinyProfiler = TinyLibSystem TinyLibMachine
+I_TinyDatabase = TinyLibSystem
+I_TinyVCS = TinyLibSystem
+I_TinyBuildSystem = TinyLibSystem
+I_TinyAssembler = TinyLibSystem TinyLibMachine
+I_TinyLinker = TinyLibSystem TinyLibMachine
 # (TinyC.ml on its parts, TinyC/, the compiler's passes; each part after
 # the ones before it)
 CC_PARTS = TinyCTypes TinyCLexer TinyCTree TinyCLower TinyCParser TinyCMachine
@@ -305,7 +304,7 @@ I_TinyCTree = $(I_TinyCLexer) TinyCLexer
 I_TinyCLower = $(I_TinyCTree) TinyCTree
 I_TinyCParser = $(I_TinyCLower) TinyCLower
 I_TinyCMachine = TinyLibMachine $(I_TinyCParser) TinyCParser
-I_TinyC = TinyCalls TinyLibSystem TinyLibMachine $(CC_PARTS)
+I_TinyC = TinyLibSystem TinyLibMachine $(CC_PARTS)
 # (TinyML.ml on its parts, TinyML/, the compiler's passes; each part
 # after the ones before it)
 MLC = TinyMLLexer TinyMLTree TinyMLPrintf TinyMLParser TinyMLTypes TinyMLMachine TinyMLCompile
@@ -315,7 +314,7 @@ I_TinyMLParser = $(I_TinyMLPrintf) TinyMLPrintf
 I_TinyMLTypes = $(I_TinyMLParser) TinyMLParser
 I_TinyMLMachine = TinyLibMachine $(I_TinyMLTypes) TinyMLTypes
 I_TinyMLCompile = $(I_TinyMLMachine) TinyMLMachine
-I_TinyML = TinyCalls TinyLibSystem TinyLibMachine $(MLC)
+I_TinyML = TinyLibSystem TinyLibMachine $(MLC)
 I_Square = $(I_TinyLibGUI)
 I_Machine = $(I_TinyLibGUI) Square
 I_Tetris = $(I_TinyAppTetris) TinyAppTetris
@@ -326,12 +325,11 @@ I_Office = $(I_TinyOffice) TinyOffice
 I_Troff = $(I_TinyTroff) TinyTroff
 I_Play = $(GUI) TinyPlay
 I_Www = $(I_TinyBrowser) TinyBrowser
-I_TinyTracer = TinyCalls
+I_TinyTracer = TinyLibSystem
 I_TinyDebugger = $(GUI) TinyLibMachine
-I_Trace = TinyCalls TinyTracer
+I_Trace = TinyLibSystem TinyTracer
 I_Debug = $(I_TinyDebugger) TinyDebugger
 # each unit's file
-F_TinyCalls = $(SYS)/TinyCalls.ml
 F_TinyLibSystem = $(SYS)/TinyLibSystem.ml
 F_Square = ../tests/TinyLibPlayground_tests/Square.ml
 F_Machine = ../tests/TinyLibPlayground_tests/machine.ml
@@ -375,7 +373,7 @@ F_TinyCParser = ../TinyC/TinyCParser.ml
 F_TinyCMachine = ../TinyC/TinyCMachine.ml
 # (a static pattern's targets: make uses an implicit rule once in a
 # chain, and a unit's interface is another unit's prerequisite)
-UNITS = $(KUNITS) TinyCalls TinyLibSystem TinyLibMachine TinyLibRegex TinyLibDraw TinyLibPlayground TinyLibGUI TinyProfiler TinyDatabase TinyVCS TinyBuildSystem TinyAssembler TinyLinker $(CC_PARTS) TinyC $(MLC) TinyML \
+UNITS = $(KUNITS) TinyLibSystem TinyLibMachine TinyLibRegex TinyLibDraw TinyLibPlayground TinyLibGUI TinyProfiler TinyDatabase TinyVCS TinyBuildSystem TinyAssembler TinyLinker $(CC_PARTS) TinyC $(MLC) TinyML \
   TinyWindows TinyAppTetris TinyAppCalculator TinyAppTemperature TinyEditorScreen $(OFFICE) TinyOffice TinyTroff TinyPlay $(BROWSER) TinyBrowserScreen TinyBrowser TinyTracer TinyDebugger \
   TinyShell TinyUtilities TinyEditorLine Square Machine Tetris Calc Temp Emacs Office Troff Play Www Bigmem Trace Debug
 .SECONDEXPANSION:

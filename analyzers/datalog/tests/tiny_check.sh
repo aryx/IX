@@ -7,7 +7,8 @@
 # with the modules of its tiny libraries, lib_core's found by itself, the
 # other ix libraries by -I. Not here: the SDL programs (tsdl, which
 # mini-analyze does not read: tiny-machine-window, tiny/user/sdl/'s apps) and
-# what runs on tiny-kernel (its system is tiny's kernel, TinyCalls).
+# what runs on tiny-kernel alone (TinyWindows, TinyDebugger, TinyTracer:
+# libraries that OCaml only checks, no program here).
 # Each report once, sorted, recorded: -caps caps_tiny.txt (its one line
 # TinyBuildSystem.start's, analyzers/datalog/README.md), -bugs
 # bugs_tiny.txt, -dead dead_tiny.txt (what every program that has the

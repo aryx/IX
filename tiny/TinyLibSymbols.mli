@@ -18,10 +18,12 @@
  * reads for db and acid. Here a label is a line, as in the map: no
  * kind, no source lines, nothing to decode. *)
 
-(* a label, the linker's; the labels of a program, each with its
- * address, by address (old: string * int, the pairs unnamed) *)
+(* a label, the linker's; an address, from the image's start; the
+ * labels of a program, each with its address, by address (old: string
+ * * int, the pairs unnamed) *)
 type label = string
-type symbols = (label * int) array
+type address = int
+type symbols = (label * address) array
 
 (* [local name]: whether it is a label a compiler made inside a function *)
 val local : label -> bool
@@ -36,7 +38,7 @@ val labels : string -> symbols
 
 (* [find funcs pc]: the function pc is in (the last label at or before
  * it), its name cleaned, and its address *)
-val find : symbols -> int -> (string * int) option
+val find : symbols -> address -> (string * address) option
 
 (* [address funcs name]: the address of the function of that name, or
  * cleaned name (main, browse) *)

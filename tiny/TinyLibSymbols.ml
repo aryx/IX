@@ -4,7 +4,8 @@
 (* See TinyLibSymbols.mli *)
 
 type label = string
-type symbols = (label * int) array
+type address = int
+type symbols = (label * address) array
 
 (* a dot, an L, digits *)
 let local name =

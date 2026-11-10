@@ -67486,3 +67486,35 @@ Claude's answer covered item 1 and item 2, and Yoann's "ok let's do 1, and 2" po
 **Claude (summary):**
 
 Claude proposed a four-part cleanup of the ix libraries, with part A (types) as the core. It covered replacing TinyLibGUI's mouse tuple and redraw mark with real variant types, and TinyLibRegex's negated-set bool with In_set/Not_in_set. It also proposed records for tiny-kernel's entry tuple, plus several smaller type fixes. Claude asked whether to use `P.` qualifiers for the shape constructors in TinyLibGUI, and whether to start with A.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 08:16
+
+**Yoann:**
+
+> let's do it. I like your plan, let's fix all of A-B-C-D plan items
+
+------------------------------------------------------------------------
+
+## 2026-11-10 08:31
+
+**Yoann:**
+
+> I think tiny/sdl/TinyCalls.ml would benefit from some (****) sectioning comments to group things and improve the organization and readability of the structure of the file
+
+------------------------------------------------------------------------
+
+## 2026-11-10 08:32
+
+**Yoann:**
+
+> in the same way, tiny/dune file could better group things, like the dune entry for TinyC and TinyML could be closer to each other no?
+
+------------------------------------------------------------------------
+
+## 2026-11-10 08:33
+
+**Yoann:**
+
+> we could also use sectioning comments in this dune file to better understand its structure

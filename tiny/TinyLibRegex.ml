@@ -8,7 +8,9 @@ type re = { id : int; kind : kind }
 and kind =
   | Chr of char
   | Any
-  | Set of bool * (char * char) list   (* negated, and its ranges *)
+  | In_set of (char * char) list       (* [a-z...]: its ranges *)
+  | Not_in_set of (char * char) list   (* [^a-z...] (old: Set of a bool,
+                                        * negated, and the ranges) *)
   | Bol
   | Eol
   | Cat of re * re
@@ -22,8 +24,12 @@ type pchar = Plain of char | Quoted of char
 
 let byte_of pc = match pc with Plain c -> c | Quoted c -> c
 
+(* a pattern compiled: its tree, and its number of nodes (a match's
+ * memo has a bit per node and position). (old: a pair) *)
+type regex = { rx_root : re; rx_nodes : int }
+
 (* Plan 9's notation, as ed and sam have it; \n is a newline *)
-let parse_re (p : string) : re * int =
+let parse_re (p : string) : regex =
   let pos = ref 0 and ids = ref 0 and groups = ref 0 and after = ref ' ' in
   let mk kind = incr ids; { id = !ids - 1; kind } in
   let peek () = if !pos < String.length p then Some p.[!pos] else None in
@@ -95,7 +101,8 @@ let parse_re (p : string) : re * int =
               end
               else ranges ((c, c) :: acc)
         in
-        mk (Set (neg, ranges []))
+        let rs = ranges [] in
+        mk (if neg then Not_in_set rs else In_set rs)
     | Plain (('*' | '+' | '?') as c) -> missing c
     | Plain ('|' | ')') -> missing !after
     | Plain c -> mk (Chr c)
@@ -111,11 +118,12 @@ let parse_re (p : string) : re * int =
    * its empty pattern is the last one) *)
   let r = if p = "" then mk Empty else alt () in
   if !pos < String.length p then failwith "unmatched `)'";
-  r, !ids
+  { rx_root = r; rx_nodes = !ids }
 
-(* [ends re text s lim k]: k end captures, for each way re matches
- * text from s, ending by lim, in priority order; a (node, position)
- * pair is tried once (a second visit could only find the same ends) *)
+(* a character in one of a set's ranges *)
+let in_ranges (rs : (char * char) list) c =
+  List.exists (fun (a, b) -> a <= c && c <= b) rs
+
 (* [memo size base lim]: a bit per pair of a node and a position from
  * base to lim, 30 in an int: tiny-ml has no Bytes, and a word per pair
  * would be four times the memory *)
@@ -133,12 +141,11 @@ let ends_in seen base re (text : string) (s : int) (lim : int)
       match n.kind with
       | Chr c -> if i < lim && text.[i] = c then k (i + 1)
       | Any -> if i < lim && text.[i] <> '\n' then k (i + 1)
-      | Set (neg, rs) ->
-          if
-            i < lim && text.[i] <> '\n'
-            && List.exists (fun (a, b) -> a <= text.[i] && text.[i] <= b) rs
-               <> neg
-          then k (i + 1)
+      | In_set rs ->
+          if i < lim && text.[i] <> '\n' && in_ranges rs text.[i] then k (i + 1)
+      | Not_in_set rs ->
+          if i < lim && text.[i] <> '\n' && not (in_ranges rs text.[i]) then
+            k (i + 1)
       | Bol -> if i = 0 || text.[i - 1] = '\n' then k i
       | Eol -> if i = String.length text || text.[i] = '\n' then k i
       | Empty -> k i
@@ -158,7 +165,11 @@ let ends_in seen base re (text : string) (s : int) (lim : int)
   in
   m re s (fun j -> caps.(0) <- s; caps.(1) <- j; k j caps)
 
-let ends (re, size) text s lim k = ends_in (memo size s lim) s re text s lim k
+(* [ends rx text s lim k]: k end captures, for each way rx matches
+ * text from s, ending by lim, in priority order; a (node, position)
+ * pair is tried once (a second visit could only find the same ends) *)
+let ends (rx : regex) text s lim k =
+  ends_in (memo rx.rx_nodes s lim) s rx.rx_root text s lim k
 
 (* a copy of the captures (tiny-ml has no Array.copy) *)
 let copy a =
@@ -197,18 +208,18 @@ let search_back re text p =
   done;
   !best
 
-type regex = re * int
-
 let compile p = parse_re p
 
 (* One memo for all the starts. A node is always followed by the same
  * rest of the pattern, so a (node, position) pair that led to no match
  * from one start leads to none from another: each pair is tried once
  * for the whole line. *)
-let matches (re, size) line =
+let matches (rx : regex) line =
   let n = String.length line in
-  let seen = memo size 0 n in
+  let seen = memo rx.rx_nodes 0 n in
   try
-    for s = 0 to n do ends_in seen 0 re line s n (fun _ _ -> raise Exit) done;
+    for s = 0 to n do
+      ends_in seen 0 rx.rx_root line s n (fun _ _ -> raise Exit)
+    done;
     false
   with Exit -> true

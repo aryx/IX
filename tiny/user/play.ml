@@ -1,14 +1,14 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* play, a program of TinyKernel.ml's: ../../TinyPlay.ml, a WAV file's
+(* play, a program of TinyKernel.ml's: ../TinyPlay.ml, a WAV file's
  * sound written to /dev/audio a block at a time.
  *
  *     play /examples/korobeiniki.wav
  *
  * What is here: the file read (TinyLibGUI's read_file), the speaker
  * opened, why not said. OCaml compiles it too, for the host (tiny-play,
- * ../../sdl/): its calls TinyCalls's, the speaker SDL's. *)
+ * sdl/): its calls TinyCalls's, the speaker SDL's. *)
 open TinyCalls
 open TinyLibGUI
 open TinyPlay

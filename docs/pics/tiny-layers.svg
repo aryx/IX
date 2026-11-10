@@ -45,7 +45,7 @@
 <text x="622" y="173" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">tiny-ml&#x27;s ML</text>
 <text x="352" y="194" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyAppCalculator.ml (or</text>
 <text x="352" y="211" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyWindows.ml...), and a last file that</text>
-<text x="352" y="228" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">runs it, TinyKernel/user/calc.ml</text>
+<text x="352" y="228" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">runs it, tiny/user/calc.ml</text>
 <line x1="486" y1="241" x2="486" y2="259" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <rect x="338" y="261" width="296" height="108" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
 <text x="352" y="284" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The libraries it asks for</text>

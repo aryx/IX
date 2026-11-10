@@ -20,7 +20,7 @@
 
 ; TinyKernelAudio.ml, tiny-kernel's part that makes the sounds (tiny-ml
 ; compiles it there), here for the host: its test, and the window's
-; tiny programs (../sdl/)
+; tiny programs (../user/sdl/)
 (library
  (name tiny_kernel_audio)
  (wrapped false)

@@ -89,8 +89,8 @@
 # cat, echo, ls, wc, mkdir and rm in C are not in the image any more,
 # but t6's (TinyKernel/steps/t6/user/ has links to them).
 #
-# user/ has the programs, a file each (the ones in C; an ML one's
-# last file, which runs it); libc/ what a C program is linked with to
+# user/ has the programs in C, a file each (an ML one's last file, which
+# runs it, is ../user/'s); libc/ what a C program is linked with to
 # call this kernel (user.h, sys.tm, draw.c, net.c); ../system/tinykernel/
 # the same for an ML one (mlsys.c, TinyCalls.ml, TinyLibSystem.ml), beside
 # the other systems' TinyCalls and TinyLibSystem (../system/README.md).
@@ -315,17 +315,17 @@ F_TinyCalls = $(SYS)/TinyCalls.ml
 F_TinyLibSystem = $(SYS)/TinyLibSystem.ml
 F_Square = ../tests/TinyLibPlayground_tests/Square.ml
 F_Machine = ../tests/TinyLibPlayground_tests/machine.ml
-F_Tetris = user/tetris.ml
-F_Calc = user/calc.ml
-F_Temp = user/temp.ml
-F_Emacs = user/emacs.ml
-F_Office = user/office.ml
-F_Troff = user/troff.ml
-F_Play = user/play.ml
-F_Www = user/www.ml
-F_Bigmem = user/bigmem.ml
-F_Trace = user/trace.ml
-F_Debug = user/debug.ml
+F_Tetris = ../user/tetris.ml
+F_Calc = ../user/calc.ml
+F_Temp = ../user/temp.ml
+F_Emacs = ../user/emacs.ml
+F_Office = ../user/office.ml
+F_Troff = ../user/troff.ml
+F_Play = ../user/play.ml
+F_Www = ../user/www.ml
+F_Bigmem = ../user/bigmem.ml
+F_Trace = ../user/trace.ml
+F_Debug = ../user/debug.ml
 F_TinyMachineISA = ../TinyMachine/TinyMachineISA.ml
 F_TinyMachineAsm = ../TinyMachine/TinyMachineAsm.ml
 F_TinyBrowserText = ../TinyBrowser/TinyBrowserText.ml
@@ -455,7 +455,7 @@ BINS = $(addprefix $(O)/bin/,$(PROGS))
 # -map and run by tiny-cpu -prof); a unit's object and interface as
 # the host's tiny-ml and tiny-assembler made them, which ml's and as's on
 # tiny-kernel are compared with (make check)
-EXAMPLES = steps/t6/user/wc.c user/sh.c user/emacs.ml ../TinyEditorScreen.ml examples/report.ixd examples/korobeiniki.wav $(O)/spin.prof $(O)/spin.map \
+EXAMPLES = steps/t6/user/wc.c user/sh.c ../user/emacs.ml ../TinyEditorScreen.ml examples/report.ixd examples/korobeiniki.wav $(O)/spin.prof $(O)/spin.map \
 	$(U)/TinyMachineISA.tm $(U)/TinyMachineISA.tmi $(U)/TinyMachineISA.o
 
 # the sources, in /src as they are in tiny/, what tiny-kernel builds

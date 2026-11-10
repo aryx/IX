@@ -1,5 +1,5 @@
 ; TinyCalls in a window of SDL's (../TinyCalls.mli): what the graphical
-; programs of ../../sdl/ run on, on the host. Their drawing and sound
+; programs of ../../user/sdl/ run on, on the host. Their drawing and sound
 ; are made by tiny-kernel's own code, TinyKernelGraphics.ml and
 ; TinyKernelAudio.ml, in TinyMemory's array.
 (library

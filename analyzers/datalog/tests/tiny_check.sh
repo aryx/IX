@@ -6,7 +6,7 @@
 # checks (tiny/dune's executables: Cap.main or TinyLibSystem.main), each
 # with the modules of its tiny libraries, lib_core's found by itself, the
 # other ix libraries by -I. Not here: the SDL programs (tsdl, which
-# mini-analyze does not read: tiny-machine-window, tiny/sdl/'s apps) and
+# mini-analyze does not read: tiny-machine-window, tiny/user/sdl/'s apps) and
 # what runs on tiny-kernel (its system is tiny's kernel, TinyCalls).
 # Each report once, sorted, recorded: -caps caps_tiny.txt (its one line
 # TinyBuildSystem.start's, analyzers/datalog/README.md), -bugs

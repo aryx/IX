@@ -86,8 +86,8 @@ of the system:
   - `TinyKernel.ml` and `TinyKernel/`: the kernel's parts in ML that
     are files of their own (`TinyKernelGraphics`, `TinyKernelNetwork`,
     `TinyKernelAudio`),
-    its assembly and C, its programs (`user/`: the ones in C, and
-    the last file of the ones in ML) and what they are linked with
+    its assembly and C, its programs in C (`user/`; the last file of
+    the ones in ML is `tiny/user/`'s) and what they are linked with
     to call it, `libc/` for C (`user.h`, `sys.tm`, `draw.c`, `net.c`);
     for ML, `system/tinykernel/` (below);
   - `TinyMachine.ml` (and `TinyCPU.ml`) and `TinyMachine/`: the CPU
@@ -168,9 +168,9 @@ virtual library of dune's with two implementations: the tests' stub
 ([`system/sdl/`](system/sdl/TinyCalls.ml): what is drawn drawn by
 `TinyKernelGraphics.ml` and shown by SDL, the window's mouse and keys,
 the host's files, clock and web), on which
-the programs' own few lines in `TinyKernel/user/` are built for the
-host as they are: tiny-office, tiny-emacs, tiny-calc, tiny-tetris,
-tiny-www, tiny-troff, tiny-play.
+the programs' own few lines in [`user/`](user/) are built for the
+host as they are, by `user/sdl/`: tiny-office, tiny-emacs, tiny-calc,
+tiny-tetris, tiny-www, tiny-troff, tiny-play.
 [`docs/plans/done/plan_tiny_windows.md`](../docs/plans/done/plan_tiny_windows.md)
 is their plan and what was found.
 
@@ -181,7 +181,7 @@ OCaml's standard library and `lib_core/commons/`; and by ix
 This directory's `dune` has a section for each group: the compilers,
 the machine's tools, the host's tools on `TinyLibSystem`, the
 `TinyLib*` libraries, and tiny-kernel's applications (libraries here,
-for their tests and for `sdl/`).
+for their tests and for `user/sdl/`).
 
 `TinyKernel/steps/` has what ran on tiny-cpu and tiny-machine before
 a kernel in ML did, kept as `kernels/steps/` keeps m-ix's kernel's:

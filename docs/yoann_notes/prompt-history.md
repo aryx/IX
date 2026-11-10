@@ -67605,3 +67605,74 @@ Claude made `TinyLibSystem` a virtual dune library like `TinyCalls`, so its inte
 Claude renamed the dune libraries to `tiny_calls`, `tiny_calls_stub`, and `tiny_calls_sdl`, and updated paths in the mkfile, scripts, and docs.
 Claude kept `TinyMemory.ml` in `TinyKernel/host/` and left the build output in `_make/libml/`, and it checked dune, tests, and self-quick, but not full `make self`.
 Claude proposed committing only the move, leaving out `tiny/Makefile` and `prompt-history.md`, which another session's commit 0d60ab2b already touched.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 10:05
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the file move as 3197e143, touching 48 files, with git recording the moves as renames.
+Claude included `docs/yoann_notes/prompt-history.md` in the commit, per the standing rule.
+Claude left `tiny/Makefile` uncommitted because it contains Yoann's own unrelated edit.
+Claude flagged that `tiny/tests/TinyKernel_tests/self.expected` was already stale, predating `TinyMachineAsm`.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 10:10
+
+**Yoann:**
+
+> should we move tiny/TinyKernel/user/ to tiny/user/ now?
+
+------------------------------------------------------------------------
+
+## 2026-11-10 10:10
+
+**Yoann:**
+
+> and even have a tiny/user/sdl/ instead of tiny/sdl/  ?
+
+**Claude (summary):**
+
+Claude recommended moving all eleven ML mains into tiny/user/, with the sdl/ build under it, instead of the partial move.
+Claude said user/ would mirror system/, both meaning programs above the system interface, while the C programs stay in TinyKernel/user/.
+Claude argued user/sdl/ mirrors system/sdl/ and keeps make loc's sdl skip working, since it would hold only a dune file.
+Claude listed the costs: two user/ directories, Makefile F_* entries, self-hosting paths, compile_ix.sh exclusions, and changed dune output paths.
+Claude said it would run the same checks as for system/, including make self-quick-tix, and asked for the go-ahead.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 10:13
+
+**Yoann:**
+
+> what do you think? I saw you were against initially.
+
+**Claude (summary):**
+
+Claude recommended only a mild move: relocating the ML mains under `tiny/` while leaving the C programs in `TinyKernel/user/`.
+Claude's main reason was that seven of the mains are shared by both systems, mirroring the earlier `system/` move.
+Claude noted the gain is mostly structural: `sdl/` would sit beside what it builds, and the top of `tiny/` would read cleanly.
+Claude flagged the cost as a mechanical batch of moves plus a second directory named `user/`, with no functional benefit.
+Claude still argued against the original plan of moving the C programs out of `TinyKernel/`.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 10:14
+
+**Yoann:**
+
+> ok let's do it, let's do the partial move like you suggested
+
+**Claude (summary):**
+
+Claude read the partial move as the layout settled earlier, not the seven-mains-in-sdl idea.
+Claude moved the 11 ML mains into tiny/user/ and renamed tiny/sdl/ to tiny/user/sdl/.
+Claude kept the C programs in TinyKernel/user/ and repointed the TinyKernel Makefile and examples at ../user/.
+Claude updated the dune files, compile_ix, tiny_check, docs and comments, and split the code-map config between the two directories.
+Claude ran the dune build, test-tix and self-hosting checks, all passing, and left the commit pending your approval.

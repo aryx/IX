@@ -45,7 +45,7 @@
   tiny_lib_system))
 
 ; an SDL window (tsdl), the C library tiny programs link: tiny-machine's
-; window, and the tiny programs on the host (../sdl/)
+; window, and the tiny programs on the host (../user/sdl/)
 (library
  (name tiny_machine_sdl)
  (wrapped false)

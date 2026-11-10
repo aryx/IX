@@ -724,8 +724,8 @@ let shapes (e : editor) (n : int) : shape list =
 (* Entry point *)
 (*****************************************************************************)
 (* There is no main here: the editor makes no system calls (see the .mli).
- * The program around it is TinyKernel/user/emacs.ml, a single file for
+ * The program around it is user/emacs.ml, a single file for
  * both places it runs. In tiny-kernel it is the user program emacs, built
  * by TinyKernel/Makefile, its calls the kernel's. On the host it is
- * tiny-emacs, built by tiny/sdl/dune, its calls those of
+ * tiny-emacs, built by tiny/user/sdl/dune, its calls those of
  * tiny/system/sdl/TinyCalls.ml (an SDL window). *)

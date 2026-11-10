@@ -110,5 +110,5 @@ let key (k : key) : msg list =
 (* Entry point *)
 (*****************************************************************************)
 
-(* see TinyKernel/user/calc.ml for main() *)
+(* see user/calc.ml for main() *)
 let calculator = { init = start; view; update; key }

@@ -1,8 +1,8 @@
 ; tiny-kernel's graphical programs (tiny-emacs, tiny-office, tiny-www,
 ; tiny-calc, tiny-tetris...) run on the host, each in a window of SDL's.
 ;
-; A program here is the same few lines as on tiny-kernel
-; (../TinyKernel/user/), copied and compiled by OCaml. Under them,
+; A program here is the same few lines as on tiny-kernel, its last file
+; in ../, copied and compiled by OCaml. Under them,
 ; ../system/sdl/TinyCalls.ml makes the kernel's calls
 ; (../system/TinyCalls.mli) with the window: its screen, its keys and
 ; mouse, and its sound.
@@ -10,13 +10,13 @@
 ; make loc does not count this directory, as it does not count
 ; tiny-machine-window: both are a host for the programs, not part of t-ix.
 
-(copy_files# ../TinyKernel/user/office.ml)
-(copy_files# ../TinyKernel/user/emacs.ml)
-(copy_files# ../TinyKernel/user/calc.ml)
-(copy_files# ../TinyKernel/user/tetris.ml)
-(copy_files# ../TinyKernel/user/www.ml)
-(copy_files# ../TinyKernel/user/troff.ml)
-(copy_files# ../TinyKernel/user/play.ml)
+(copy_files# ../office.ml)
+(copy_files# ../emacs.ml)
+(copy_files# ../calc.ml)
+(copy_files# ../tetris.ml)
+(copy_files# ../www.ml)
+(copy_files# ../troff.ml)
+(copy_files# ../play.ml)
 
 (executable
  (name emacs)

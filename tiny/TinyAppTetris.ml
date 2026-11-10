@@ -274,7 +274,7 @@ let music m =
 (* Entry point *)
 (*****************************************************************************)
 
-(* see TinyKernel/user/tetris.ml for main() *)
+(* see user/tetris.ml for main() *)
 let game = { 
     width = 288; height = 336;
     init = (fun seed -> start seed false);

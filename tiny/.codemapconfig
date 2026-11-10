@@ -7,7 +7,7 @@
 // its own config): its skeleton is its own pipeline, from its main
 // down to the idea it keeps. Most start at TinyLibSystem.main (the
 // host's Unix, or tiny-kernel's calls: [prog] below); the graphical
-// ones are a value run by TinyKernel/user/'s few lines.
+// ones are a value run by user/'s few lines.
 local skeletons = import '../skeletons.libsonnet';
 local chain = skeletons.chain;
 // a tool on TinyLibSystem: its main given the capabilities by
@@ -161,7 +161,7 @@ local prog(name, file, core) = chain(name, [
         { at: 'def:lex', say: 'colours by a small lexer, a line at a time', weight: 1 },
         { at: 'def:shapes', say: "the screen as shapes; unchanged lines' kept", weight: 2 },
       ],
-      related: ['TinyKernel/user/emacs.ml', 'tests/TinyEditorScreen_test.sh', '../editors/emacs/'],
+      related: ['user/emacs.ml', 'tests/TinyEditorScreen_test.sh', '../editors/emacs/'],
     },
     'TinyEditorScreen.mli': { digest: '55504e0f6a31',
       summary: 'The screen editor as a state and the keys that change it, with no system under it.',
@@ -241,7 +241,7 @@ local prog(name, file, core) = chain(name, [
         { at: 'def:to_pdf', say: 'PDF by hand: objects, then the cross-reference table', weight: 3 },
         { at: 'def:text_pdf', say: 'Courier, a standard font: no font to embed', weight: 1 },
       ],
-      related: ['TinyOffice/TinyOfficeFile.ml', 'TinyKernel/user/troff.ml', 'tests/TinyTroff_test.sh', '../typesetting/troff/'],
+      related: ['TinyOffice/TinyOfficeFile.ml', 'user/troff.ml', 'tests/TinyTroff_test.sh', '../typesetting/troff/'],
     },
     'TinyTroff.mli': { digest: '4f95efa967f1',
       summary: 'A page published three ways, each kind of part printed as text, HTML or PDF asks.',
@@ -304,7 +304,7 @@ local prog(name, file, core) = chain(name, [
         { at: 'def:symbols', say: "the names after the a.out's image (tiny-linker -s)", weight: 1 },
         { at: 'def:window', say: '-window: the same commands on TinyLibGUI', weight: 1 },
       ],
-      related: ['TinyKernel/user/debug.ml', 'TinyLibSymbols.ml', 'TinyTracer.ml', '../debuggers/acid/'],
+      related: ['user/debug.ml', 'TinyLibSymbols.ml', 'TinyTracer.ml', '../debuggers/acid/'],
     },
     'TinyDebugger.mli': { digest: 'fda01e0cec4c',
       summary: "debug's commands, and its conversation with the kernel through trace(pid), drawn.",
@@ -319,7 +319,7 @@ local prog(name, file, core) = chain(name, [
         { at: 'def:line', say: "an exec's path read before, a read's bytes after", weight: 2 },
         { at: 'def:follow', say: '-f: every traced process, by u_ready', weight: 2 },
       ],
-      related: ['TinyKernel/user/trace.ml', 'TinyDebugger.ml'],
+      related: ['user/trace.ml', 'TinyDebugger.ml'],
     },
     'TinyTracer.mli': { digest: 'a069dced035b',
       summary: "trace's output, and the kernel's two stops per call that let it read what it needs.",
@@ -453,7 +453,7 @@ local prog(name, file, core) = chain(name, [
         { at: 'def:act', weight: 1 },
         { at: 'def:browse', weight: 3 },
       ],
-      related: ['TinyBrowser/', 'TinyKernel/user/www.ml', 'TinyLibGUI.ml', 'tests/TinyBrowser_test.sh', '../browsers/'],
+      related: ['TinyBrowser/', 'user/www.ml', 'TinyLibGUI.ml', 'tests/TinyBrowser_test.sh', '../browsers/'],
     },
     'TinyBrowser.mli': { digest: 'f46e7efb0150',
       summary: "www's idea: a page read once, as it arrives, straight to lines; no tree, a tag a row in a table.",
@@ -469,7 +469,7 @@ local prog(name, file, core) = chain(name, [
         { at: 'def:page_mouse', say: 'select, drag, resize by a corner', weight: 2 },
         { at: 'def:view', say: 'a box a group: run_canvas draws what changed', weight: 3 },
       ],
-      related: ['TinyOffice/', 'TinyKernel/user/office.ml', 'TinyLibGUI.ml', 'TinyTroff.ml', 'tests/TinyOffice_test.sh', '../apps/office/'],
+      related: ['TinyOffice/', 'user/office.ml', 'TinyLibGUI.ml', 'TinyTroff.ml', 'tests/TinyOffice_test.sh', '../apps/office/'],
     },
     'TinyOffice.mli': { digest: '1ec4509d5dfc',
       summary: "The compound document cut down: a shell, parts, and data that is always text; the file mini-troff's.",
@@ -481,7 +481,7 @@ local prog(name, file, core) = chain(name, [
         { at: 'def:piece', say: "the frame at each of the speaker's 8,000 samples", weight: 3 },
         { at: 'def:play', say: 'a block written when the last was taken: paced', weight: 2 },
       ],
-      related: ['TinyKernel/user/play.ml', 'TinyKernel/TinyKernelAudio.ml', 'tests/TinyPlay_test.sh', '../apps/media/play/'],
+      related: ['user/play.ml', 'TinyKernel/TinyKernelAudio.ml', 'tests/TinyPlay_test.sh', '../apps/media/play/'],
     },
     'TinyPlay.mli': { digest: '0af14546ee2b',
       summary: "How a WAV's samples become the speaker's, with no division and no filter; aliasing said.",
@@ -499,7 +499,7 @@ local prog(name, file, core) = chain(name, [
         { at: 'def:music', weight: 1 },
         { at: 'def:game', weight: 2 },
       ],
-      related: ['TinyKernel/user/tetris.ml', 'tests/TinyAppTetris_test.sh', '../lib_playground/'],
+      related: ['user/tetris.ml', 'tests/TinyAppTetris_test.sh', '../lib_playground/'],
     },
     'TinyAppTetris.mli': { digest: '114c4e494b0f',
       summary: "Tetris's rules, what is ours against elm-flatris's port, and the bit tricks drawn.",
@@ -512,7 +512,7 @@ local prog(name, file, core) = chain(name, [
         { at: 'def:update', weight: 3 },
         { at: 'def:key', say: 'a key is its button: the same message', weight: 2 },
       ],
-      related: ['TinyKernel/user/calc.ml', 'TinyLibGUI.ml'],
+      related: ['user/calc.ml', 'TinyLibGUI.ml'],
     },
     'TinyAppCalculator.mli': { digest: 'af4b0edec7b6',
       summary: "The calculator as TinyLibGUI's gui, and its model traced through 12 * 3 = + 6.",
@@ -524,7 +524,7 @@ local prog(name, file, core) = chain(name, [
         { at: 'def:update', say: 'the other field set only from a number', weight: 3 },
         { at: 'def:nearest', weight: 1 },
       ],
-      related: ['TinyKernel/user/temp.ml', 'TinyLibGUI.ml'],
+      related: ['user/temp.ml', 'TinyLibGUI.ml'],
     },
     'TinyAppTemperature.mli': { digest: '770163ff1d06',
       summary: 'Why a change propagates both ways with no echo: the field typed in is in the message.',
@@ -559,7 +559,7 @@ local prog(name, file, core) = chain(name, [
       ['TinyOffice.ml', 'a page of parts'],
       ['TinyBrowser.ml', 'www'],
       ['TinyDebugger.ml', 'debug, its window on the GUI'],
-      ['TinyKernel/user/', "each program's few lines of main"],
+      ['user/', "each program's few lines of main"],
     ], [
       ['TinyLibPlayground.ml', 'TinyLibDraw.ml', 'shapes as messages'],
       ['TinyLibGUI.ml', 'TinyLibPlayground.ml', 'draws with'],
@@ -568,7 +568,7 @@ local prog(name, file, core) = chain(name, [
       ['TinyOffice.ml', 'TinyLibGUI.ml', 'run_canvas, menus'],
       ['TinyBrowser.ml', 'TinyLibGUI.ml', 'menus, a field'],
       ['TinyDebugger.ml', 'TinyLibGUI.ml', 'run_canvas'],
-      ['TinyKernel/user/', 'TinyOffice.ml', 'runs'],
+      ['user/', 'TinyOffice.ml', 'runs'],
     ]),
     // the toolchain
     prog('tiny-c: parse, lower, emit', 'TinyC.ml', [
@@ -728,7 +728,7 @@ local prog(name, file, core) = chain(name, [
       // not a program itself: troff.ml's main reads the file and calls these
       name: 'tiny-troff: a page, three outputs',
       bones: [
-        { at: 'TinyKernel/user/troff.ml', role: 'the program: the file read, a format chosen' },
+        { at: 'user/troff.ml', role: 'the program: the file read, a format chosen' },
         { at: 'TinyTroff.ml:def:pages_of', role: "the pages, by TinyOfficeFile's parse" },
         { at: 'TinyTroff.ml:def:in_order', role: 'the parts in reading order' },
         { at: 'TinyTroff.ml:def:to_text', role: 'text: a part a block of lines' },
@@ -736,9 +736,9 @@ local prog(name, file, core) = chain(name, [
         { at: 'TinyTroff.ml:def:to_pdf', role: 'PDF: objects and their table' },
       ],
       joints: [
-        { from: 'TinyKernel/user/troff.ml', to: 'TinyTroff.ml:def:to_text', say: 'text' },
-        { from: 'TinyKernel/user/troff.ml', to: 'TinyTroff.ml:def:to_html', say: 'HTML' },
-        { from: 'TinyKernel/user/troff.ml', to: 'TinyTroff.ml:def:to_pdf', say: 'PDF' },
+        { from: 'user/troff.ml', to: 'TinyTroff.ml:def:to_text', say: 'text' },
+        { from: 'user/troff.ml', to: 'TinyTroff.ml:def:to_html', say: 'HTML' },
+        { from: 'user/troff.ml', to: 'TinyTroff.ml:def:to_pdf', say: 'PDF' },
         { from: 'TinyTroff.ml:def:to_text', to: 'TinyTroff.ml:def:pages_of', say: 'the file' },
         { from: 'TinyTroff.ml:def:pages_of', to: 'TinyTroff.ml:def:in_order', say: 'a page' },
       ],
@@ -780,14 +780,14 @@ local prog(name, file, core) = chain(name, [
       ['TinyDebugger.ml:def:command', 'b, d, c, s, n, r, bt, x', 'a line'],
     ]) + {
       bones+: [
-        { at: 'TinyKernel/user/debug.ml', role: 'the program' },
+        { at: 'user/debug.ml', role: 'the program' },
         { at: 'TinyDebugger.ml:def:main', role: 'started stopped, or attached' },
         { at: 'TinyDebugger.ml:def:ask', role: 'a line on trace(pid), its answer' },
         { at: 'TinyDebugger.ml:def:backtrace', role: 'the calls from the prologues' },
         { at: 'TinyDebugger.ml:def:window', role: '-window: panes on TinyLibGUI' },
       ],
       joints+: [
-        { from: 'TinyKernel/user/debug.ml', to: 'TinyDebugger.ml:def:main', say: 'the arguments' },
+        { from: 'user/debug.ml', to: 'TinyDebugger.ml:def:main', say: 'the arguments' },
         { from: 'TinyDebugger.ml:def:main', to: 'TinyDebugger.ml:def:loop', say: 'on the console' },
         { from: 'TinyDebugger.ml:def:main', to: 'TinyDebugger.ml:def:window', say: '-window' },
         { from: 'TinyDebugger.ml:def:command', to: 'TinyDebugger.ml:def:ask', say: 'b 4096, c, s' },
@@ -798,13 +798,13 @@ local prog(name, file, core) = chain(name, [
       ['TinyTracer.ml:def:handle', 'a stop: before, or after', 'its line'],
     ]) + {
       bones+: [
-        { at: 'TinyKernel/user/trace.ml', role: 'the program' },
+        { at: 'user/trace.ml', role: 'the program' },
         { at: 'TinyTracer.ml:def:main', role: 'started stopped, or attached; y: stop at calls' },
         { at: 'TinyTracer.ml:def:line', role: 'a call and its result, as strace prints' },
         { at: 'TinyTracer.ml:def:calls', role: "the calls' names and arguments' kinds" },
       ],
       joints+: [
-        { from: 'TinyKernel/user/trace.ml', to: 'TinyTracer.ml:def:main', say: 'the arguments' },
+        { from: 'user/trace.ml', to: 'TinyTracer.ml:def:main', say: 'the arguments' },
         { from: 'TinyTracer.ml:def:main', to: 'TinyTracer.ml:def:follow', say: 'the processes' },
         { from: 'TinyTracer.ml:def:handle', to: 'TinyTracer.ml:def:line', say: 'after the call' },
         { from: 'TinyTracer.ml:def:line', to: 'TinyTracer.ml:def:calls', say: 'the number' },
@@ -832,12 +832,12 @@ local prog(name, file, core) = chain(name, [
       ['TinyBrowser.ml:def:on_mouse', 'a link, a menu, the toolbar', 'the mouse'],
     ]) + {
       bones+: [
-        { at: 'TinyKernel/user/www.ml', role: 'the program' },
+        { at: 'user/www.ml', role: 'the program' },
         { at: 'TinyBrowser.ml:def:load', role: 'a page asked of the wire' },
         { at: 'TinyBrowser/TinyBrowserHtml.ml', role: 'the reading: tags to lines' },
       ],
       joints+: [
-        { from: 'TinyKernel/user/www.ml', to: 'TinyBrowser.ml:def:browse', say: 'an address' },
+        { from: 'user/www.ml', to: 'TinyBrowser.ml:def:browse', say: 'an address' },
         { from: 'TinyBrowser.ml:def:on_mouse', to: 'TinyBrowser.ml:def:load', say: 'a link' },
         { from: 'TinyBrowser.ml:def:take', to: 'TinyBrowser/TinyBrowserHtml.ml', say: 'bytes' },
       ],
@@ -845,7 +845,7 @@ local prog(name, file, core) = chain(name, [
     {
       name: 'tiny-office: the shell over its parts',
       bones: [
-        { at: 'TinyKernel/user/office.ml', role: 'the program: a canvas of TinyLibGUI' },
+        { at: 'user/office.ml', role: 'the program: a canvas of TinyLibGUI' },
         { at: 'TinyOffice.ml:def:create', role: 'the office: its file read' },
         { at: 'TinyOffice.ml:def:key', role: 'to the box edited, or a command' },
         { at: 'TinyOffice.ml:def:mouse', role: 'the menus, or the page' },
@@ -855,21 +855,21 @@ local prog(name, file, core) = chain(name, [
         { at: 'TinyOffice/', role: 'the parts: text, sheet, drawing, paint, chart' },
       ],
       joints: [
-        { from: 'TinyKernel/user/office.ml', to: 'TinyOffice.ml:def:create', say: 'the file' },
-        { from: 'TinyKernel/user/office.ml', to: 'TinyOffice.ml:def:key', say: 'a key' },
-        { from: 'TinyKernel/user/office.ml', to: 'TinyOffice.ml:def:mouse', say: 'the mouse' },
+        { from: 'user/office.ml', to: 'TinyOffice.ml:def:create', say: 'the file' },
+        { from: 'user/office.ml', to: 'TinyOffice.ml:def:key', say: 'a key' },
+        { from: 'user/office.ml', to: 'TinyOffice.ml:def:mouse', say: 'the mouse' },
         { from: 'TinyOffice.ml:def:key', to: 'TinyOffice.ml:def:command', say: 'C-x s, C-o' },
         { from: 'TinyOffice.ml:def:mouse', to: 'TinyOffice.ml:def:command', say: 'an item' },
         { from: 'TinyOffice.ml:def:command', to: 'TinyOffice.ml:def:commit', say: 'an edit done' },
         { from: 'TinyOffice.ml:def:key', to: 'TinyOffice/', say: "a part's keys" },
         { from: 'TinyOffice.ml:def:view', to: 'TinyOffice/', say: "a part's view" },
-        { from: 'TinyKernel/user/office.ml', to: 'TinyOffice.ml:def:view', say: 'after each event' },
+        { from: 'user/office.ml', to: 'TinyOffice.ml:def:view', say: 'after each event' },
       ],
     },
     {
       name: 'tiny-emacs: a key, an editor, its picture',
       bones: [
-        { at: 'TinyKernel/user/emacs.ml', role: 'the program: keys read, the file written' },
+        { at: 'user/emacs.ml', role: 'the program: keys read, the file written' },
         { at: 'TinyEditorScreen.ml:def:create', role: 'the editor: a text, a language' },
         { at: 'TinyEditorScreen.ml:def:key', role: 'a key: the next editor, a request' },
         { at: 'TinyEditorScreen.ml:def:insert', role: 'the line at the cursor remade' },
@@ -878,18 +878,18 @@ local prog(name, file, core) = chain(name, [
         { at: 'TinyEditorScreen.ml:def:faces', role: "OCaml's and C's colours" },
       ],
       joints: [
-        { from: 'TinyKernel/user/emacs.ml', to: 'TinyEditorScreen.ml:def:create', say: 'the file' },
-        { from: 'TinyKernel/user/emacs.ml', to: 'TinyEditorScreen.ml:def:key', say: 'a byte' },
+        { from: 'user/emacs.ml', to: 'TinyEditorScreen.ml:def:create', say: 'the file' },
+        { from: 'user/emacs.ml', to: 'TinyEditorScreen.ml:def:key', say: 'a byte' },
         { from: 'TinyEditorScreen.ml:def:key', to: 'TinyEditorScreen.ml:def:insert', say: 'a character' },
         { from: 'TinyEditorScreen.ml:def:key', to: 'TinyEditorScreen.ml:def:reading', say: 'a prompt open' },
-        { from: 'TinyKernel/user/emacs.ml', to: 'TinyEditorScreen.ml:def:shapes', say: 'after each key' },
+        { from: 'user/emacs.ml', to: 'TinyEditorScreen.ml:def:shapes', say: 'after each key' },
         { from: 'TinyEditorScreen.ml:def:shapes', to: 'TinyEditorScreen.ml:def:faces', say: 'the lines' },
       ],
     },
     {
       name: 'tiny-tetris: a game value',
       bones: [
-        { at: 'TinyKernel/user/tetris.ml', role: 'the program: run game' },
+        { at: 'user/tetris.ml', role: 'the program: run game' },
         { at: 'TinyAppTetris.ml:def:game', role: 'the model and five functions' },
         { at: 'TinyAppTetris.ml:def:key', role: 'a move, a turn, a drop' },
         { at: 'TinyAppTetris.ml:def:frame', role: 'a fall, every delay frames' },
@@ -899,7 +899,7 @@ local prog(name, file, core) = chain(name, [
         { at: 'TinyAppTetris.ml:def:sound', role: 'what changed, heard' },
       ],
       joints: [
-        { from: 'TinyKernel/user/tetris.ml', to: 'TinyAppTetris.ml:def:game', say: 'TinyLibPlayground.run' },
+        { from: 'user/tetris.ml', to: 'TinyAppTetris.ml:def:game', say: 'TinyLibPlayground.run' },
         { from: 'TinyAppTetris.ml:def:game', to: 'TinyAppTetris.ml:def:key', say: 'a key' },
         { from: 'TinyAppTetris.ml:def:game', to: 'TinyAppTetris.ml:def:frame', say: 'a thirtieth of a second' },
         { from: 'TinyAppTetris.ml:def:key', to: 'TinyAppTetris.ml:def:fits', say: 'the piece moved' },

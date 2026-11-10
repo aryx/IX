@@ -1,8 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* emacs, a program of TinyKernel.ml's: ../../TinyEditorScreen.ml, the
- * editor, run by ../../TinyLibGUI.ml's run_canvas.
+(* emacs, a program of TinyKernel.ml's: ../TinyEditorScreen.ml, the
+ * editor, run by ../TinyLibGUI.ml's run_canvas.
  *
  *     emacs file
  *
@@ -13,7 +13,7 @@
  * those it gives itself (a macro's, M-x's), a save done when it asks.
  * The file is the kernel's: on its disk when it has one, else in its
  * memory (put keeps a copy). OCaml compiles it too, for the host
- * (tiny-emacs, ../../sdl/): its calls TinyCalls's, a window's (the
+ * (tiny-emacs, sdl/): its calls TinyCalls's, a window's (the
  * editor opened last, its key and view over the GUI's). *)
 open TinyCalls
 open TinyLibPlayground

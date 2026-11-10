@@ -2,22 +2,12 @@
 // tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there). The programs of
 // tiny-kernel in C (sh, get, put, ping, httpd: linked with ../libc/ and
-// ../../TinyCRuntime/), and the last file of those in ML, a few lines
-// running a tiny program of ../../ (linked with ../../system/tinykernel/ and
-// ../../TinyLibCore/). mltests.c is a test, off the map. cat, ls, wc
-// and the other utilities are ../../TinyUtilities.ml's (bin/utils).
-local skeletons = import '../../../skeletons.libsonnet';
-local wrapper(file, prog, role) = {
-  name: file + ': ' + role,
-  bones: [
-    { at: file, role: 'the last file: argv, then the program' },
-    { at: prog, role: role },
-  ],
-  joints: [{ from: file, to: prog, say: 'runs' }],
-};
+// ../../TinyCRuntime/). The last file of those in ML is ../../user/'s.
+// mltests.c is a test, off the map. cat, ls, wc and the other
+// utilities are ../../TinyUtilities.ml's (bin/utils).
 {
   generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
-  summary: "tiny-kernel's own programs: a shell of fork and exec, the network's in C, and each ML program's last file.",
+  summary: "tiny-kernel's programs in C: a shell of fork and exec, and the network's.",
   files: {
     'sh.c': { digest: '82955040d236',
       summary: "The shell, Unix's way: a command a fork, its descriptors moved in the copy (close then dup), then exec; the unused pipe end closed.",
@@ -68,20 +58,6 @@ local wrapper(file, prog, role) = {
         { at: 'def:main', say: 'listen in a loop: one connection at a time', weight: 2 },
       ],
     },
-    // the ML programs' last files: a program of ../../ run
-    'calc.ml': { digest: '64b245cf7b9a', summary: "calc: TinyAppCalculator's calculator, run by TinyLibGUI." },
-    'temp.ml': { digest: '01487432c261', summary: "temp: TinyAppTemperature's two fields, run by TinyLibGUI." },
-    'tetris.ml': { digest: '2447979bfa33', summary: "tetris: TinyAppTetris's game, run by TinyLibPlayground." },
-    'emacs.ml': { digest: '8a623d99b19e',
-      summary: "emacs: TinyEditorScreen's editor on a canvas, its file read and saved; a key's answer continue, save or quit." },
-    'office.ml': { digest: '8b97aaff5d69',
-      summary: "office: TinyOffice's document on a canvas, its keys and mouse, saved as its Markdown." },
-    'play.ml': { digest: '529dedd5fe49', summary: "play: TinyPlay's WAV player, writing to /dev/audio." },
-    'troff.ml': { digest: 'd1bf65eb6571', summary: "troff: TinyTroff's document as text, HTML (-h) or PDF (-p) on standard output." },
-    'www.ml': { digest: 'ac6ef4165c18', summary: "www: TinyBrowser's browse, its arguments the address or the words searched." },
-    'debug.ml': { digest: '270c45791528', summary: "debug: TinyDebugger's main." },
-    'trace.ml': { digest: 'bf05b9fb5946', summary: "trace: TinyTracer's main." },
-    'bigmem.ml': { digest: 'e2af6988b20d', summary: "bigmem: a test of a partition bigger than 1 MB, 3 MB of strings kept." },
   },
   skeletons: [
     {
@@ -157,28 +133,18 @@ local wrapper(file, prog, role) = {
       ],
     },
     {
-      name: "The programs, in C and in ML, and what they link",
+      name: "The programs in C and what they link",
       bones: [
-        { at: 'sh.c', role: 'the shell, in C' },
-        { at: 'get.c', role: 'the network, in C' },
-        { at: 'httpd.c', role: 'a server, in C' },
-        { at: 'emacs.ml', role: "an ML program's last file" },
-        { at: 'www.ml', role: "an ML program's last file" },
-        { at: '../libc/', role: 'the C programs: calls, draw, net' },
-        { at: '../../system/tinykernel/', role: "the ML programs': calls, the runtime" },
+        { at: 'sh.c', role: 'the shell' },
+        { at: 'get.c', role: 'the network' },
+        { at: 'httpd.c', role: 'a server' },
+        { at: '../libc/', role: 'calls, draw, net' },
       ],
       joints: [
         { from: 'sh.c', to: '../libc/', say: 'linked with' },
         { from: 'get.c', to: '../libc/', say: 'linked with' },
         { from: 'httpd.c', to: '../libc/', say: 'linked with' },
-        { from: 'emacs.ml', to: '../../system/tinykernel/', say: 'linked with' },
-        { from: 'www.ml', to: '../../system/tinykernel/', say: 'linked with' },
       ],
     },
-    wrapper('emacs.ml', '../../TinyEditorScreen.ml', 'the editor'),
-    wrapper('office.ml', '../../TinyOffice.ml', 'the office'),
-    wrapper('www.ml', '../../TinyBrowser.ml', 'the browser'),
-    wrapper('troff.ml', '../../TinyTroff.ml', 'the typesetter'),
-    wrapper('play.ml', '../../TinyPlay.ml', 'the WAV player'),
   ],
 }

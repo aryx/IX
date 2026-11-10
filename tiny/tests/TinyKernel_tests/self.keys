@@ -4,7 +4,7 @@ build -f /src/TinyKernel/Buildfile
 ls boot.img; cp boot.img first.img
 echo '(* a comment *)' >> /src/TinyLibRegex.ml
 build -f /src/TinyKernel/Buildfile
-echo 'let () = print_string ""' >> /src/TinyKernel/user/calc.ml
+echo 'let () = print_string ""' >> /src/user/calc.ml
 build -f /src/TinyKernel/Buildfile
 build -f /src/TinyKernel/Buildfile
 exit

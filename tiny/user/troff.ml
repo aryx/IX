@@ -1,9 +1,9 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* troff, a program of TinyKernel.ml's: ../../TinyTroff.ml, a page of
+(* troff, a program of TinyKernel.ml's: ../TinyTroff.ml, a page of
  * the office's (or a Markdown file) printed as text or as a web page
- * (../../TinyOffice/TinyOfficeFile.ml reads the page).
+ * (../TinyOffice/TinyOfficeFile.ml reads the page).
  *
  *     troff file        its text, 72 columns
  *     troff -h file     its web page
@@ -15,7 +15,7 @@
  *     troff -h page > page.html; put page.html
  *
  * put keeping it at the wire's other end. OCaml compiles it too, for
- * the host (tiny-troff, ../../sdl/): its calls TinyCalls's, the host's
+ * the host (tiny-troff, sdl/): its calls TinyCalls's, the host's
  * files and standard output (no window: troff draws nothing). *)
 open TinyCalls
 open TinyLibGUI

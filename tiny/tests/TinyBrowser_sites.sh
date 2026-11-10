@@ -19,7 +19,7 @@ set -u
 D=$(realpath -m $1); shift
 cd "$(dirname "$0")/../.."
 B=_build/default/tiny
-dune build $B/tests/TinyBrowser_tests/Host.exe $B/TinyMachine/TinyMachineFetch.exe $B/sdl/www.exe || exit 1
+dune build $B/tests/TinyBrowser_tests/Host.exe $B/TinyMachine/TinyMachineFetch.exe $B/user/sdl/www.exe || exit 1
 SITES=${*:-"https://en.wikipedia.org/wiki/OCaml https://en.wikipedia.org/wiki/Plan_9_from_Bell_Labs
   https://news.ycombinator.com https://ocaml.org https://lwn.net https://old.reddit.com
   https://docs.python.org/3/tutorial/index.html https://www.craigslist.org/about/sites ?ocaml"}
@@ -33,7 +33,7 @@ for u in $SITES; do
     $B/tests/TinyBrowser_tests/Host.exe 80 $D/$n.html > $D/$n.txt
     echo "$n: $(wc -c < $D/$n.html) bytes, $(grep -c . $D/$n.txt) lines"
     SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy TINY_SCREEN=$D/$n.ppm \
-      timeout 40 $B/sdl/www.exe "$u" < /dev/null > /dev/null 2>&1
+      timeout 40 $B/user/sdl/www.exe "$u" < /dev/null > /dev/null 2>&1
     convert $D/$n.ppm $D/$n.png && rm -f $D/$n.ppm $D/$n.html ) &
 done
 wait

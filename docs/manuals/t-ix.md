@@ -918,7 +918,7 @@ ground under all), the model after a key (`typed`) and after the mouse
 size (an ENQ to the console, which tiny-windows answers in the mouse's
 box), the raw console (`rawcons`: ^C a key), and the picture drawn
 where it changed, each shape's leaves compared with the old ones at
-their place. A program's own file in `TinyKernel/user/` is then a few
+their place. A program's own file in `tiny/user/` is then a few
 lines (`office.ml`, `emacs.ml`).
 
 `TinyLibGUI.ml` has pull-down menus for such a program: a bar of
@@ -935,7 +935,7 @@ colour's letter, a square of 4 by 4.
 
 ### 7.8 tiny-office: `office`
 
-`tiny/TinyOffice.ml` (`TinyKernel/user/office.ml` around it) is an
+`tiny/TinyOffice.ml` (`tiny/user/office.ml` around it) is an
 office suite of one program: a document of pages, each page boxes
 (the "parts"), each box a kind of document whose data is text.
 
@@ -993,7 +993,7 @@ is one of a page, with a drawing and a paint):
 
 ### 7.9 tiny-troff: `troff`
 
-`tiny/TinyTroff.ml` (`TinyKernel/user/troff.ml` around it) prints a
+`tiny/TinyTroff.ml` (`tiny/user/troff.ml` around it) prints a
 document of the office's, or a Markdown file, reading it with the
 office's own functions:
 
@@ -1007,7 +1007,7 @@ office's own functions:
 `troff -p page > page.pdf; put page.pdf` publishes a document: `put`
 keeps it at the wire's other end (§5.5).
 
-### 7.10 On the host: `tiny/sdl/`
+### 7.10 On the host: `tiny/user/sdl/`
 
 A program on these libraries asks the kernel nothing but through
 `TinyCalls` (`u_write`, `u_read`, `u_ready`, `u_open`, `u_close`,
@@ -1025,7 +1025,7 @@ is answered as tiny-machine answers it, a web page fetched by
 kernel's own `TinyKernelAudio.ml` and played by SDL (one after the
 other, not mixed; a write waits while a quarter of a second is queued,
 and the program's end until all is heard). The programs' own few lines in
-`TinyKernel/user/` are compiled there as they are:
+`tiny/user/` are compiled there as they are:
 
     tiny-office file      tiny-emacs file      tiny-calc      tiny-tetris
     tiny-www OCaml        tiny-troff [-h | -p] file          tiny-play file.wav
@@ -1036,7 +1036,7 @@ program ends, and `SDL_VIDEODRIVER=dummy` runs one with no window;
 at the start: `TINY_FONT=tiny/TinyKernel/fonts/grey.font tiny-emacs f`,
 Ubuntu Mono with grey edges;
 `TINY_WWW=dir` gives `tiny-www` pages kept in `dir` when it cannot
-fetch them. `make loc` does not count `tiny/sdl/`.
+fetch them. `make loc` does not count `tiny/user/sdl/`.
 
 ## 8. Tests
 

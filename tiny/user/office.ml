@@ -1,8 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* office, a program of TinyKernel.ml's: ../../TinyOffice.ml, the page,
- * run by ../../TinyLibGUI.ml's run_canvas.
+(* office, a program of TinyKernel.ml's: ../TinyOffice.ml, the page,
+ * run by ../TinyLibGUI.ml's run_canvas.
  *
  *     office file
  *
@@ -11,7 +11,7 @@
  * here: the page of the file at the window's size, a key and the mouse
  * given to it, a save done when either asks. The file is the kernel's: on
  * its disk when it has one, else in its memory (put keeps a copy). OCaml
- * compiles it too, for the host (tiny-office, ../../sdl/): its calls
+ * compiles it too, for the host (tiny-office, sdl/): its calls
  * TinyCalls's, a window's (the office opened last, its key and mouse
  * over the GUI's). *)
 open TinyCalls

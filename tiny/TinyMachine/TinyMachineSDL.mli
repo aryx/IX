@@ -45,7 +45,7 @@ type t = {
 
 val create : title:string -> t
 
-(* The keyboard, what tiny-machine-window and tiny/sdl/ type from the
+(* The keyboard, what tiny-machine-window and tiny/user/sdl/ type from the
  * window's events. A key's byte is by its USB usage (a US keyboard's,
  * SDL's scancode), with shift and control; the arrows 128 to 131 (up,
  * down, left, right), tiny-machine's choice; a key that is no byte

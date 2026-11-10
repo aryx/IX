@@ -45,7 +45,7 @@ COLUMNS = [
         ("The program", "tiny-ml's ML", [
             "tiny/TinyAppCalculator.ml (or",
             "TinyWindows.ml...), and a last file that",
-            "runs it, TinyKernel/user/calc.ml"]),
+            "runs it, tiny/user/calc.ml"]),
         ("The libraries it asks for", "ML", [
             "tiny/TinyLibGUI.ml (widgets),",
             "TinyLibPlayground.ml (shapes, a loop),",

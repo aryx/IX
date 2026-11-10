@@ -103,7 +103,7 @@
  * {b Only what changed is drawn.} [view] is the page as shapes
  * (TinyLibPlayground's): the ground, a group for each object, one for the
  * status line. TinyLibGUI's run_canvas, which runs the office on
- * tiny-kernel (TinyKernel/user/office.ml, a few lines), compares each
+ * tiny-kernel (user/office.ml, a few lines), compares each
  * group with the one it drew before and draws what changed: tiny-kernel
  * draws a character in some 13,000 instructions, and a page redrawn at
  * each key would be seconds of tiny-machine.

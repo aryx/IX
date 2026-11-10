@@ -1,7 +1,7 @@
 ; The tiny programs built by OCaml on the host: tiny-c, tiny-ml and
 ; the machine's tools; the host's tools on TinyLibSystem; and, as
 ; libraries, the TinyLib*.ml libraries and tiny-kernel's applications,
-; for their tests and for the host's windows (sdl/). tiny-ml compiles
+; for their tests and for the host's windows (user/sdl/). tiny-ml compiles
 ; most of these files again for tiny-machine (TinyKernel/'s Makefile).
 
 ; the labels of OCaml's functions left out, String.starts_with "//" s:
@@ -156,7 +156,7 @@
 ;*****************************************************************************
 
 ; Built here as libraries, for their tests on the host and for the host's
-; windows (sdl/); on the machine, tiny-ml compiles them.
+; windows (user/sdl/); on the machine, tiny-ml compiles them.
 
 ; TinyAppTetris.ml, tetris, a game on TinyLibPlayground
 (library
@@ -166,7 +166,7 @@
  (libraries tiny_lib_playground))
 
 ; TinyPlay.ml, a WAV file played on tiny-kernel's speaker (play there,
-; tiny-play on the host: sdl/); its test decodes a file
+; tiny-play on the host: user/sdl/); its test decodes a file
 (library
  (name tiny_play)
  (wrapped false)
@@ -212,7 +212,7 @@
  (libraries tiny_office_parts))
 
 ; TinyBrowser.ml, www, tiny-kernel's browser, on its parts (TinyBrowser/):
-; built here as a library for tiny-www (sdl/)
+; built here as a library for tiny-www (user/sdl/)
 (library
  (name tiny_browser)
  (wrapped false)

@@ -1,6 +1,6 @@
 (* TinyKernel.ml's calls: what TinyLibDraw.ml, TinyLibPlayground.ml,
  * TinyLibGUI.ml and the few lines of a program on them
- * (TinyKernel/user/office.ml...) ask of tiny-kernel. One interface, and
+ * (user/office.ml...) ask of tiny-kernel. One interface, and
  * three implementations, a program choosing one when it is linked:
  *
  *     tinykernel/TinyCalls.ml  on tiny-machine, by tiny-ml: externals,
@@ -9,7 +9,7 @@
  *                           drawn drawn by TinyKernelGraphics.ml and
  *                           shown, the mouse and the keys the window's,
  *                           the host's files and clock (tiny-office,
- *                           tiny-emacs... on the host: ../sdl/)
+ *                           tiny-emacs... on the host: ../user/sdl/)
  *     stub/TinyCalls.ml     on the host, the tests': no kernel; what is
  *                           drawn kept in [drawn], for
  *                           TinyKernelGraphics.ml; no key, no clock, no

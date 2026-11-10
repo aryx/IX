@@ -37,7 +37,7 @@ Who builds what:
 - dune builds the host's sides: `dune` here makes both interfaces
   virtual libraries, `tiny_lib_system` (its default implementation
   `unix/`) and `tiny_calls` (its default `stub/`; the programs of
-  `../sdl/` link `sdl/`'s).
+  `../user/sdl/` link `sdl/`'s).
 - tiny-ml builds `tinykernel/` for each ML program of tiny-kernel
   (`../TinyKernel/Makefile`: `SYS`, the units' files, `mlsys.c`);
   `tinykernel/` has no dune file.

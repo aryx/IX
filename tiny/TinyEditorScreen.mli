@@ -27,7 +27,7 @@
  * only the lines that changed. The editor uses no system calls: the
  * surrounding program reads the keys, displays the lines and writes
  * the file. That program is tiny-kernel's emacs
- * (TinyKernel/user/emacs.ml). There are no terminal escape sequences:
+ * (user/emacs.ml). There are no terminal escape sequences:
  * the screen is tiny-machine's, where a program draws characters
  * wherever it wants.
  *

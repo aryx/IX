@@ -67724,3 +67724,19 @@ Claude proposed tidying the `system/` files, the ones just put in view, as item 
 Claude said the build and the cleanup could proceed in parallel without blocking each other.
 Claude asked Yoann to confirm before going ahead with either step.
 Claude noted that item 4 shrinks, since TinyOffice, TinyBrowser and the kernel parts already had their types pass.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 10:44
+
+**Yoann:**
+
+> ok, let's do 1 and 2
+
+**Claude (summary):**
+
+Claude found that `make self` fails because the tiny-kernel assembler overflows its fixed 64 KB machine stack on `kernel.tm`.
+Claude recommended fixing it at the runtime level: check the machine stack like the value stack, and size it proportionally.
+Claude also listed two alternatives: making `TinyLibCore`'s list functions tail-recursive, or streaming the assembler line by line.
+Claude completed the `system/` tidy across the TinyCalls, TinyLibSystem, stub, tinykernel and unix files, and verified it.
+Claude then asked whether to commit that tidy as its own commit before starting the stack fix.

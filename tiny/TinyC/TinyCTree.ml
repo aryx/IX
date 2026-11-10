@@ -67,18 +67,23 @@ let rv (e : expr) =
   | Ty.Func _, Deref a -> { a with t = Ty.Ptr e.t }
   | _ -> e
 
+(* a constant's value as an integer type keeps it: truncated to its
+ * bits, then extended by its sign *)
+let fit v t =
+  match t with
+  | Ty.Int (n, sg) ->
+      let bits = 8 * n in
+      if bits = 64 then v
+      else if sg then
+        Int64.shift_right (Int64.shift_left v (64 - bits)) (64 - bits)
+      else Int64.logand v (Int64.pred (Int64.shift_left Int64.one bits))
+  | _ -> v
+
+(* a constant converted now *)
 let conv (e : expr) t =
   match e.t, t, e.d with
   | a, b, _ when Ty.same a b -> e
-  | Ty.Int _, Ty.Int (n, sg), Const v ->
-      (* a constant converted now: truncated, extended *)
-      let bits = 8 * n in
-      let v =
-        if bits = 64 then v
-        else if sg then
-          Int64.shift_right (Int64.shift_left v (64 - bits)) (64 - bits)
-        else Int64.logand v (Int64.pred (Int64.shift_left Int64.one bits)) in
-      num v t
+  | Ty.Int _, Ty.Int _, Const v -> num (fit v t) t
   | (Ty.Ptr _ | Ty.Arr _), Ty.Ptr _, _
   | Ty.Ptr _, Ty.Int (8, _), _
   | Ty.Int (8, _), Ty.Ptr _, _ ->
@@ -98,20 +103,56 @@ let common a b =
   | Ty.Int (n, s), Ty.Int (m, u) -> Ty.Int (max n m, s && u)
   | t, _ -> t
 
+(* Constants folded as the tree is built: an operator on constants is
+ * their value, of the operator's type, so that a constant expression
+ * is a Const wherever it is written (a global's initializer, a case, an
+ * array's size, p + 1's scaled 1). (old: folded by the parser's
+ * const_expr alone, for the places that need a number, and only unary
+ * minus elsewhere: int x = 2*3; refused, p + 1 a li, a li and a mul) *)
+let compute o a b : int64 option =
+  match o with
+  | Add -> Some (Int64.add a b)
+  | Sub -> Some (Int64.sub a b)
+  | Mul -> Some (Int64.mul a b)
+  (* left to the program, which divides at run time: a division by
+   * zero is an error only where a constant is needed (const_expr) *)
+  | Div | Mod when b = Int64.zero -> None
+  | Div -> Some (Int64.div a b)
+  | Mod -> Some (Int64.rem a b)
+  | And -> Some (Int64.logand a b)
+  | Or -> Some (Int64.logor a b)
+  | Xor -> Some (Int64.logxor a b)
+  | Shl -> Some (Int64.shift_left a (Int64.to_int b))
+  | Shr -> Some (Int64.shift_right a (Int64.to_int b))
+
+let bin op (a : expr) (b : expr) t =
+  match op, a.d, b.d with
+  | A o, Const x, Const y ->
+      (match compute o x y with
+       | Some v -> num (fit v t) t
+       | None -> mk (Bin (op, a, b)) t)
+  | _ -> mk (Bin (op, a, b)) t
+
+let un o (a : expr) t =
+  match o, a.d with
+  | Neg, Const v -> num (fit (Int64.neg v) t) t
+  | Com, Const v -> num (fit (Int64.lognot v) t) t
+  | _ -> mk (Un (o, a)) t
+
 let scale (i : expr) t =
   let w = Ty.vlong_t in
   if Ty.size t = 1 then conv i w
-  else mk (Bin (A Mul, conv i w, num (Int64.of_int (Ty.size t)) w)) w
+  else bin (A Mul) (conv i w) (num (Int64.of_int (Ty.size t)) w) w
 
 let rec binary op (a : expr) (b : expr) =
   let a = rv a and b = rv b in
   match op, a.t, b.t with
-  | A (Add | Sub), Ty.Ptr t, Ty.Int _ -> mk (Bin (op, a, scale b t)) a.t
+  | A (Add | Sub), Ty.Ptr t, Ty.Int _ -> bin op a (scale b t) a.t
   | A Add, Ty.Int _, Ty.Ptr _ -> binary op b a
   | A Sub, Ty.Ptr t, Ty.Ptr _ ->
       let w = Ty.vlong_t in
-      mk (Bin (A Div, mk (Bin (op, conv a w, conv b w)) w,
-               num (Int64.of_int (Ty.size t)) w)) w
+      bin (A Div) (bin op (conv a w) (conv b w) w)
+        (num (Int64.of_int (Ty.size t)) w) w
   | R _, Ty.Ptr _, _ | R _, _, Ty.Ptr _ ->
       let t = if Ty.is_ptr a.t then a.t else b.t in
       mk (Bin (op, conv a t, conv b t)) Ty.int_t
@@ -119,7 +160,7 @@ let rec binary op (a : expr) (b : expr) =
       let t = common a.t b.t in mk (Bin (op, conv a t, conv b t)) Ty.int_t
   | A o, Ty.Int _, Ty.Int _ ->
       let t = if o = Shl || o = Shr then promote a.t else common a.t b.t in
-      mk (Bin (op, conv a t, conv b t)) t
+      bin op (conv a t) (conv b t) t
   | _ -> Ty.error ("bad operands for " ^ binop_name op)
 
 let addr (e : expr) =

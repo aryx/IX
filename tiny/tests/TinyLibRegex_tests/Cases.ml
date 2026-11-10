@@ -153,4 +153,15 @@ let () =
   check "(a*)*b on 3,000 a's" (string_of_bool m) "false";
   check "(a*)*b on 3,000 a's, under a second"
     (string_of_bool (Sys.time () -. t < 1.)) "true";
+  (* the same by search, the editor's, then a match after 3,000 starts
+   * that failed (old: a memo per start, 1.25 s for the first, bytecode;
+   * the memo shared, the later start's match still found) *)
+  let t = Sys.time () in
+  check "search (a*)*b on 3,000 a's"
+    (spans (TinyLibRegex.search (re "(a*)*b") line 0 3000)) "none";
+  check "search (a*)*b on 3,000 a's, under a second"
+    (string_of_bool (Sys.time () -. t < 1.)) "true";
+  check "search (a*)*b on 3,000 a's then a b"
+    (spans (TinyLibRegex.search (re "(a*)*b") (line ^ "b") 0 3001))
+    "0-3001(0-3000)";
   exit (if !failures = 0 then 0 else 1)

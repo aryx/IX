@@ -294,9 +294,7 @@ and unary () =
       ignore (next ());
       let e = Tree.rv (unary ()) in
       let t = Tree.promote e.t in
-      (match e.d with
-       | Tree.Const v -> Tree.num (Int64.neg v) t
-       | _ -> Tree.mk (Tree.Un (Tree.Neg, Tree.conv e t)) t)
+      Tree.un Tree.Neg (Tree.conv e t) t
   | Lexer.P "+" ->
       ignore (next ());
       let e = Tree.rv (unary ()) in
@@ -305,7 +303,7 @@ and unary () =
       ignore (next ());
       let e = Tree.rv (unary ()) in
       let t = Tree.promote e.t in
-      Tree.mk (Tree.Un (Tree.Com, Tree.conv e t)) t
+      Tree.un Tree.Com (Tree.conv e t) t
   | Lexer.P "!" -> ignore (next ()); Tree.lnot (unary ())
   | Lexer.P "*" -> ignore (next ()); Tree.deref (unary ())
   | Lexer.P "&" -> ignore (next ()); Tree.addr (unary ())
@@ -413,31 +411,16 @@ and primary () =
   | Lexer.Id x -> let v = lookup x in Tree.var v.where v.vty
   | _ -> Ty.error "expected an expression"
 
-(* a constant expression, folded: an array's size, a case, an enum's
- * value (NDIRECT + 1, sizeof a / sizeof a[0]); 64-bit arithmetic, as the
- * values are *)
+(* a constant expression: an array's size, a case, an enum's value
+ * (NDIRECT + 1, sizeof a / sizeof a[0]), folded by the tree as it was
+ * built (old: folded here, in 64 bits, an operator at a time) *)
 and const_expr () =
-  let rec fold (e : Tree.expr) =
-    match e.d with
-    | Tree.Const v -> v
-    | Tree.Conv a -> fold a
-    | Tree.Un (Tree.Neg, a) -> Int64.neg (fold a)
-    | Tree.Un (Tree.Com, a) -> Int64.lognot (fold a)
-    | Tree.Bin (Tree.A o, a, b) ->
-        let a = fold a and b = fold b in
-        (match o with
-         | Tree.Add -> Int64.add a b | Tree.Sub -> Int64.sub a b
-         | Tree.Mul -> Int64.mul a b
-         | Tree.Div | Tree.Mod when b = Int64.zero ->
-             Ty.error "division by zero"
-         | Tree.Div -> Int64.div a b
-         | Tree.Mod -> Int64.rem a b
-         | Tree.And -> Int64.logand a b | Tree.Or -> Int64.logor a b
-         | Tree.Xor -> Int64.logxor a b
-         | Tree.Shl -> Int64.shift_left a (Int64.to_int b)
-         | Tree.Shr -> Int64.shift_right a (Int64.to_int b))
-    | _ -> Ty.error "not a constant" in
-  fold (cond_expr ())
+  let e = cond_expr () in
+  match e.d with
+  | Tree.Const v -> v
+  | Tree.Bin (Tree.A (Tree.Div | Tree.Mod), _, b) when b.d = Tree.Const Int64.zero ->
+      Ty.error "division by zero"
+  | _ -> Ty.error "not a constant"
 
 (* statements *)
 let cond () = expect "("; let c = Tree.rv (expr ()) in expect ")"; c

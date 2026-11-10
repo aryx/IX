@@ -202,46 +202,49 @@ let ends_in seen base root (text : string) (s : int) (lim : int)
   in
   m root s (fun j -> caps.(0) <- s; caps.(1) <- j; k j caps)
 
-(* the same, with a memo of its own *)
+(* the same, with a memo of its own: search_back's, whose starts are
+ * all tried, a match from one not making a later one fail *)
 let ends (rx : regex) text s lim k =
   ends_in (memo rx.rx_nodes s lim) s rx.rx_root text s lim k
-
-(* One memo for all the starts. A node is always followed by the same
- * rest of the pattern, so a (node, position) pair that led to no match
- * from one start leads to none from another: each pair is tried once
- * for the whole line. *)
-let matches (rx : regex) line =
-  let n = String.length line in
-  let seen = memo rx.rx_nodes 0 n in
-  try
-    for s = 0 to n do
-      ends_in seen 0 rx.rx_root line s n (fun _ _ -> raise Exit)
-    done;
-    false
-  with Exit -> true
 
 (*****************************************************************************)
 (* Searching *)
 (*****************************************************************************)
 
-(* the longest match starting at s; caps copied, the matcher changing
- * them as it goes on (old: a copy of our own, when tiny-ml had no
- * Array.copy) *)
-let longest rx text s lim =
+(* the longest match starting at s, with seen, the memo of the search
+ * (positions from base); caps copied, the matcher changing them as it
+ * goes on (old: a copy of our own, when tiny-ml had no Array.copy) *)
+let longest seen base rx text s lim =
   let best = ref None in
-  ends rx text s lim (fun j caps ->
+  ends_in seen base rx.rx_root text s lim (fun j caps ->
       match !best with
       | Some (e, _) when e >= j -> ()
       | _ -> best := Some (j, Array.copy caps));
   match !best with Some (_, c) -> Some c | None -> None
 
-(* the leftmost-longest match starting in [p, lim] *)
-let rec search rx text p lim =
-  if p > lim then None
-  else
-    match longest rx text p lim with
-    | Some c -> Some c
-    | None -> search rx text (p + 1) lim
+(* The leftmost-longest match starting in [p, lim], with one memo for
+ * all the starts. A node is always followed by the same rest of the
+ * pattern, so a (node, position) pair that led to no match from one
+ * start leads to none from another; and every start before the one
+ * that matches failed whole. So each pair is tried once for the whole
+ * search, and a search that fails reads the text about once. (old: a
+ * memo per start, a failing search quadratic: 1.25 s, bytecode, for
+ * the test's starred group on 3,000 letters a, where matches took no
+ * time) *)
+let search rx text p lim =
+  let seen = memo rx.rx_nodes p lim in
+  let rec from s =
+    if s > lim then None
+    else
+      match longest seen p rx text s lim with
+      | Some c -> Some c
+      | None -> from (s + 1) in
+  from p
+
+(* (old: a loop of its own over the starts, with the memo search has
+ * now) *)
+let matches (rx : regex) line =
+  search rx line 0 (String.length line) <> None
 
 (* backwards from p: the match ending nearest before p, then the
  * longest of those *)

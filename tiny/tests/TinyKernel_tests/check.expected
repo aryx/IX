@@ -390,12 +390,12 @@ hello
 [14] exit(0)
 [14] exited 0
 % exec
-_start:	jal	lr, 0xfec <main>
+_start:	jal	lr, 0xfa4 <main>
 break
 write:	ldw	r1, 0(sp)
 0	write
-1	print+0xb4
-2	main+0xac
+1	print+0xac
+2	main+0xa4
 3	_start
 write:	ldw	r1, 0(sp)
 write+0x4:	ldw	r2, 4(sp)
@@ -405,7 +405,7 @@ write+0x8:	ldw	r3, 8(sp)
 ping: no network, or not an address: 10.0.0.1
 exited 1
 % exec
-_start:	jal	lr, 0x7298 <main>
+_start:	jal	lr, 0x7030 <main>
 break
 u_write:	addi	sp, sp, -40
 0	u_write
@@ -416,7 +416,7 @@ u_write:	addi	sp, sp, -40
 5	Trace.init+0x58	_ 0x299fc 0x29bf8 0x296d0
 6	ml_init+0x310	0
 7	ml_run+0x164
-8	main+0x218
+8	main+0x208
 9	_start
 % % fork() = 25
 wait(0xffde0) = 25

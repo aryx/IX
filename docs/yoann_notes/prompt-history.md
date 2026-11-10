@@ -68747,3 +68747,99 @@ Claude recommended closing that multicore plan with a note that the measurement 
 Claude also proposed closing the tiny web plan, since its web-only items fall under Yoann's rule against web-only optimizations.
 Claude suggested keeping the fetch-translation cache as a possible future item for the machine itself.
 Yoann confirmed, so Claude is moving both plans into done/ with those notes.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 21:44
+
+**Yoann:**
+
+> yes, let's move to done/
+
+**Claude (summary):**
+
+Claude moved `plan_tiny_multicore.md` and `plan_tiny_web.md` into `docs/plans/done/` and committed the move as `d780db1b`.
+Each moved plan got a closing note: multicore records the unrecorded "four domains with spawn" measurement, and web drops page-only speed work.
+Under web's closing note, the fetch-translation cache stays as an idea for tiny-machine, and the page's own features and leftovers are dropped.
+Claude fixed three broken Markdown links in `plan_ml_multicore.md`, `plan_web.md`, and multicore's link to `plan_multicore.md`.
+Only `plan_tiny_twists.md` remains open among the tiny plans.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 21:48
+
+**Yoann:**
+
+> I really like the twists in the buildsystem (sha1), database (writeonly), vcs (jj operation obj), utilities (so much code factorized); I wish we had that level for the other programs
+
+**Claude (summary):**
+
+Claude recommended piloting troff printing from the office's shapes, the most twist-like candidate, first.
+Claude ranked five candidates from plan_tiny_twists.md by how close they come to the four twists Yoann likes.
+Top candidate: HTML and PDF produced from the shapes the office already draws, deleting about 250 lines.
+Other candidates were a shared stack machine for tiny-c and tiny-ml, edge profiling, emacs on sam's model, and tetris well bits.
+Claude noted the shell, debugger, tracer, play, windows, calc and temp have no candidate yet, and offered a second analysis pass.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 21:51
+
+**Yoann:**
+
+> let's try to find candidates for the programs without one yet
+
+**Claude (summary):**
+
+Claude recommended finding twists for programs without one by running three parallel read-only analyses.
+The analyses cover the shell, sam, emacs and the tracer; play, temp, tiny-cpu, tiny-machine and the assembler; and tiny-c, tiny-ml and the libraries.
+Each candidate would get the functions that would go, a line estimate, the user-facing effect, cost, precedent and confidence.
+"None at the bar" is explicitly allowed, so the analyses should not pad the list.
+Claude planned to verify the strongest claims against the code itself before giving a short list.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 21:53
+
+**Yoann:**
+
+> in the mean time, I wonder if we could rename the TinyLibXxx.ml to simply TXxx.ml, which would then remove the need sometimes for those module aliases as we could use directly the TXxx name, For TinyLibSystem.mli we could use TSys.mli. What do you think?
+
+**Claude (summary):**
+
+Claude recommended renaming only TinyLibSystem to TSys, including its file, directory and dune library.
+Claude counted 29 alias lines a full rename would remove, but judged the churn and re-recording costs too high.
+Claude argued TSys is already the name used in 18 files, and fits the system interface every program starts from.
+Claude warned that renaming the other libraries would collide with TinyMachine and make TGUI, TDraw and TRegex read as abbreviations.
+Claude also asked whether TinyLibCore should become TCore/ for symmetry, a question still open.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 21:55
+
+**Yoann:**
+
+> ok let's keep it like this for now
+
+**Claude (summary):**
+
+Claude found that TinyLibRegex's failing search is quadratic, since each start position gets a new memo.
+Claude's fix shares one memo across start positions, making failing search linear and cutting about 12 lines.
+Claude found that tiny-c never folds constants, so `int x = 2*3` gets refused.
+Claude's fix folds in the tree's constructors, fixing both bugs and removing about 20 lines.
+Claude also suggested recording the four candidates and rejections in plan_tiny_twists.md.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 21:59
+
+**Yoann:**
+
+> ok let's do 1 and 2
+
+**Claude (summary):**
+
+Claude finished both fixes and the plan, left everything uncommitted, and asked how to split the commits.
+Claude proposed two commits: first the regex and tiny-c constant-folding fixes, then the plan.
+The first commit would bundle the linear regex search, its tests, the tree-level constant folding, and the new `consts.c` test.
+The second would contain only `plan_tiny_twists.md`, with candidates 6 to 9 and the updated Status line.
+Claude had checked the tiny-c tests, dune, `tiny_check.sh`, mini-mk, and the kernel check before committing.

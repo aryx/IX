@@ -42,8 +42,11 @@ val conv : expr -> TinyCTypes.ty -> expr
 (* ANSI's integer promotion, and the usual arithmetic conversions *)
 val promote : TinyCTypes.ty -> TinyCTypes.ty
 val common : TinyCTypes.ty -> TinyCTypes.ty -> TinyCTypes.ty
-(* the expressions of C's operators, their operands converted *)
+(* the expressions of C's operators, their operands converted; on
+ * constants, a constant (folded), the operator's type's bits kept *)
 val binary : binop -> expr -> expr -> expr
+(* -e and ~e, folded the same way *)
+val un : unop -> expr -> TinyCTypes.ty -> expr
 val addr : expr -> expr
 val deref : expr -> expr
 val assign : asg -> expr -> expr -> expr

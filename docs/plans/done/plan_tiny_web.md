@@ -146,3 +146,16 @@ translation, then 2 by the author's choice; 3 and 4 as wanted.
 machine in a page, the three kernels, the website, the first round of
 speed (61 to 92% in Chrome here; full speed on the author's MacBook
 Pro).
+
+2026-11-10: closed, moved to done/ (the author: "yes, let's move to
+done/"), nothing of it built since the plan:
+- 1, the speed: the page's own measures (the margin shown, Firefox's
+  profile, a lower pace) dropped, the author wanting no work for the
+  page alone (as for its sound). The fetch's translation kept as an
+  idea for tiny-machine itself, which the host's runs would gain too:
+  the window, or v6's page, remembered until a control register or a
+  page table changes.
+- 2, more programs: done another way; the image has calc, temp,
+  emacs, office, troff, www, the toolchain, db, vcs, build, debug and
+  trace since.
+- 3 and 4, the page's features and the leftovers: not wanted now.

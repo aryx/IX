@@ -68715,3 +68715,35 @@ Claude reported that the libmach plan's last check is closed, since tiny-c and t
 Claude found that `make self` passes, with tiny-kernel rebuilding itself byte for byte identical to the host's `boot.img`.
 Claude noted the self-build dropped from about 1h30 to 1h06, and the earlier hang did not recur in either run.
 Claude confirmed the working tree is clean and removed all scratch build directories.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 21:39
+
+**Yoann:**
+
+> let's move the plan to done/ then if nothing is left. What's next?
+
+**Claude (summary):**
+
+Claude reported that the plan was moved to `docs/plans/done/` and committed, with its links updated.
+Claude listed three open tiny plans and proposed checking `plan_tiny_multicore.md` and `plan_tiny_web.md` first.
+Claude said `plan_tiny_multicore.md` had stages 1–4 built on 2026-10-23 and needed its Status end read.
+Claude said `plan_tiny_web.md` was mostly web page speed, likely out under Yoann's no-web-only-optimization rule.
+Claude suggested closing the finished plans, then starting `plan_tiny_twists.md` with a pilot.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 21:42
+
+**Yoann:**
+
+> let's do a quickcheck of 2 and 3 then
+
+**Claude (summary):**
+
+Claude checked both plans and found the tiny multicore plan finished in substance, though its final measurement was never recorded.
+Claude recommended closing that multicore plan with a note that the measurement was superseded by the object pipeline.
+Claude also proposed closing the tiny web plan, since its web-only items fall under Yoann's rule against web-only optimizations.
+Claude suggested keeping the fetch-translation cache as a possible future item for the machine itself.
+Yoann confirmed, so Claude is moving both plans into done/ with those notes.

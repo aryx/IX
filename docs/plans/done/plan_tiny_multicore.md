@@ -12,7 +12,7 @@ didactic to also have a tiny machine with multiple cores, and not wait
 for m-ix to see and leverage those multiple cores"; then "maybe we
 could have a plan_tiny_multicore.md".
 
-m-IX's side is [plan_multicore.md](plan_multicore.md) (mini-9pi on the
+m-IX's side is [plan_multicore.md](../plan_multicore.md) (mini-9pi on the
 Pi 2's four cores, mini-qemu's cores on the host's domains). This plan
 takes its two rules for the emulator (turns by default, domains under
 OCaml 5 behind a switch) and makes the other choice for the kernel:
@@ -306,3 +306,12 @@ where said.
   summed 10,250, 8,300 and 4,660 s: each recipe took 2 to 4 times
   longer, waiting for core 0, which handles every process's traps.
 - **Measuring, running**: four domains with spawn.
+
+2026-11-10: closed, moved to done/ (the author: "yes, let's move to
+done/"). Its four stages built and measured above. The last line's
+measure, four domains with spawn, was never recorded; the self-build
+has changed since (the compilers write objects, no `as` for a compiled
+file: done/plan_tiny_libmach.md), so a measure now would be another
+one's, to take when wanted (`make self-cores`). The open questions
+above stay as ideas for later: a timer per core, the slaves' loop in
+ML, first fit under the build's mix.

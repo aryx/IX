@@ -11,7 +11,7 @@ mini-dotnet compiled by mini-ml)".
 [plan_multicore.md](plan_multicore.md) is the kernel's and the
 emulator's side (mini-9pi under one lock on the Pi 2's four cores,
 mini-qemu's guest cores on OCaml 5's domains);
-[plan_tiny_multicore.md](plan_tiny_multicore.md) is t-IX's. Neither
+[plan_tiny_multicore.md](done/plan_tiny_multicore.md) is t-IX's. Neither
 touches what a program compiled by mini-ml may do with several cores:
 today nothing. This plan is that.
 

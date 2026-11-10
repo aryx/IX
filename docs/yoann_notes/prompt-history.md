@@ -67819,3 +67819,50 @@ Claude planned to review the background `make self` output first, since its fina
 Claude would then re-record `self.expected`, which predates `TinyMachineAsm`, and rerun for a clean pass.
 The uncommitted set covers the List.ml loops, the stack-overflow checks in core.c and mlsys.c, and re-recorded test expectations.
 Claude had already verified the check, test-tix, and tiny_check.sh runs, with host assembler output byte-identical.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 11:41
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the fix as a6470f07 along with `prompt-history.md`, leaving the working tree clean.
+Claude noted that `make self` was still running in the background at the time of the commit.
+Claude planned to check whether tiny-kernel rebuilt completely once `make self` finished.
+Claude would then review its output against `self.expected`, which predates `TinyMachineAsm`, and re-record it.
+Claude would rerun `make self` afterward to confirm a clean pass.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 12:07
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude proposed finishing the background `make self` run, then compiling the 13 kernel units separately instead of as one `kernel.tm`.
+Claude suggested that per-unit compilation would speed up incremental rebuilds, since `TinyKernelProcs.ml` changes would no longer recompile the whole kernel.
+Claude also proposed using the `fd_*` descriptor names in TinyLibGUI, TinyLibPlayground, TinyBrowser, TinyDebugger and the mains instead of raw numbers.
+Claude listed a style pass on TinyOffice, TinyBrowser, the kernel parts and `TinyMachine/` as a fourth, lower-priority item.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 12:08
+
+**Yoann:**
+
+> yes let's do 1, 2, 3. Did you do a tidy pass on the TinyLibXxx ?
+
+**Claude (summary):**
+
+Claude finished the TinyLib tidy pass in four committed batches, 0ad101fd through 7e585bda, leaving only TinyLibCore.
+Claude renamed the numbered descriptors in the callers to names like fd_mouse and fd_draw, and updated check.expected for the moved address.
+Claude split TinyKernel into 14 per-unit objects, with a new main/kernel.tm rule and a Buildfile change, so no single .tm file is huge.
+Claude verified both changes in the separate _make2 directory: the kernel check passed unchanged, and self-quick linked an identical image.
+Claude held the self.expected re-record until the running make self finished, then planned to commit items 3 and 2.

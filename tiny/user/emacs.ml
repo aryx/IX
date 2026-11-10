@@ -21,7 +21,7 @@ open TinyLibGUI
 open TinyEditorScreen
 
 let () =
-  if u_argc () <> 2 then (ignore (u_write 2 "usage: emacs file\n"); exit 1);
+  if u_argc () <> 2 then (ignore (u_write fd_stderr "usage: emacs file\n"); exit 1);
   let file = u_arg 1 in
   let path = Fpath.v file in
   let answer e r =

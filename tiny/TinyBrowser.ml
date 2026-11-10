@@ -403,7 +403,7 @@ let browse typed =
       | Wire_off -> None in
     if wire <> None || keys then begin
       let n = ref 0 in
-      if keys then begin fds.(0) <- 0; fds.(1) <- 4; n := 2 end;
+      if keys then begin fds.(0) <- fd_stdin; fds.(1) <- fd_mouse; n := 2 end;
       (match wire with
        | Some fd -> fds.(!n) <- fd; n := !n + 1
        | None -> ());
@@ -450,13 +450,13 @@ let browse typed =
         send sc;
         loop keys
       | _ when keys && ready = 4 ->
-        (match mouse_event (u_read 4 12) with
+        (match mouse_event (u_read fd_mouse 12) with
          | Some e when e.mo_buttons >= 0
                        && not (on_mouse sc e.mo_x e.mo_y e.mo_buttons) ->
              quit sc
          | _ -> send sc; loop keys)
       | _ when keys && ready = 0 ->
-        let typed = u_read 0 16 in
+        let typed = u_read fd_stdin 16 in
         if typed = "" then loop false
         else begin
           let rec each i =

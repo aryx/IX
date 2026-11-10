@@ -136,7 +136,7 @@ T = ../tests/TinyKernel_tests
 # compiled again at each run, and each program's main 420 KB of them)
 CORE = Stdlib Char Seq List String Bytes Array Option Int64 Filename Buffer Printf Marshal Hashtbl Common Sha1 Fpath Fpath_ Exit In_channel Out_channel Chan Logs
 LIB = $(CORE:%=$(O)/lib/%.o)
-KERNEL = $(O)/entry.o $(O)/udivmod.o $(O)/runtime.o $(O)/draw.o $(O)/memory.o $(O)/font.o $(O)/kernel.o $(LIB) $(O)/end.o
+KERNEL = $(O)/entry.o $(O)/udivmod.o $(O)/runtime.o $(O)/draw.o $(O)/memory.o $(O)/font.o $(O)/main/kernel.o $(KUNITS:%=$(O)/ml/%.o) $(LIB) $(O)/end.o
 FONT = fonts/plan9.font
 PROGS = sh rc emacs office troff play mltests paint windows square tetris calc temp ping get put httpd utils ed bigmem www prof db vcs build as ld cc ml trace debug
 # other names (hard links), a name:program each
@@ -179,15 +179,35 @@ $(O)/lib/Stdlib.tm: $(CORE:%=../TinyLibCore/%.ml) $(CORE:%=../TinyLibCore/%.mli)
 	b=; for m in $(CORE); do $(TML) -c -nostdlib -o $(@D)/$$m.tm $$b ../TinyLibCore/$$m.ml || exit 1; b="$$b $(@D)/$$m.tmi"; done
 $(CORE:%=$(O)/lib/%.tmi) $(filter-out %/Stdlib.tm,$(CORE:%=$(O)/lib/%.tm)): $(O)/lib/Stdlib.tm ;
 TML_L = $(TML) -L $(O)/lib
-# the kernel's files, in their order: its machine's memory, what draws, the
+# the kernel's units, in their order: its machine's memory, what draws, the
 # network, the sounds, the disk, a process's memory, then the kernel's own
-# parts (TinyKernel.ml's sections) and TinyKernel.ml, the boot
-KML = TinyMemory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml TinyKernelAudio.ml TinyKernelFS.ml TinyKernelMemory.ml \
-  TinyKernelMachine.ml TinyKernelFiles.ml TinyKernelProcs.ml TinyKernelDevices.ml TinyKernelIO.ml TinyKernelCalls.ml TinyKernelScheduler.ml \
-  ../TinyKernel.ml
-$(O)/kernel.tm: $(KML) $(O)/lib/Stdlib.tm $(TMLBIN)
-	@mkdir -p $(@D)
-	$(TML_L) -o $@ $(filter %.ml,$^)
+# parts (TinyKernel.ml's sections) and TinyKernel.ml, the boot. Each is
+# compiled alone, as a program's units are (below: UNITS), after the
+# interfaces of those before it, and the kernel's main is made of their
+# interfaces (old: one tiny-ml over all their files, kernel.tm, 70,000
+# lines, which tiny-kernel's as took 4 minutes to assemble, and all of
+# it again for a change in one)
+KUNITS = TinyMemory TinyKernelGraphics TinyKernelNetwork TinyKernelAudio TinyKernelFS TinyKernelMemory \
+  TinyKernelMachine TinyKernelFiles TinyKernelProcs TinyKernelDevices TinyKernelIO TinyKernelCalls TinyKernelScheduler \
+  TinyKernel
+UNITS_kernel = $(KUNITS)
+# each unit's file, here (TinyKernel.ml's is ../, the default: F_ below)
+$(foreach u,$(filter-out TinyKernel,$(KUNITS)),$(eval F_$(u) = $(u).ml))
+# each unit after the interfaces of all those before it, as when they
+# were compiled together
+I_TinyKernelGraphics = TinyMemory
+I_TinyKernelNetwork = $(I_TinyKernelGraphics) TinyKernelGraphics
+I_TinyKernelAudio = $(I_TinyKernelNetwork) TinyKernelNetwork
+I_TinyKernelFS = $(I_TinyKernelAudio) TinyKernelAudio
+I_TinyKernelMemory = $(I_TinyKernelFS) TinyKernelFS
+I_TinyKernelMachine = $(I_TinyKernelMemory) TinyKernelMemory
+I_TinyKernelFiles = $(I_TinyKernelMachine) TinyKernelMachine
+I_TinyKernelProcs = $(I_TinyKernelFiles) TinyKernelFiles
+I_TinyKernelDevices = $(I_TinyKernelProcs) TinyKernelProcs
+I_TinyKernelIO = $(I_TinyKernelDevices) TinyKernelDevices
+I_TinyKernelCalls = $(I_TinyKernelIO) TinyKernelIO
+I_TinyKernelScheduler = $(I_TinyKernelCalls) TinyKernelCalls
+I_TinyKernel = $(I_TinyKernelScheduler) TinyKernelScheduler
 
 # the font's bytes, k_font(), where they are, and k_font_size(), how
 # many (ML integers)
@@ -357,7 +377,7 @@ F_TinyCParser = ../TinyC/TinyCParser.ml
 F_TinyCMachine = ../TinyC/TinyCMachine.ml
 # (a static pattern's targets: make uses an implicit rule once in a
 # chain, and a unit's interface is another unit's prerequisite)
-UNITS = TinyCalls TinyLibSystem TinyLibSymbols TinyLibRegex TinyLibDraw TinyLibPlayground TinyLibGUI TinyProfiler TinyDatabase TinyVCS TinyBuildSystem TinyMachineISA TinyMachineAsm TinyAssembler TinyLinker $(CC_PARTS) TinyC $(MLC) TinyML \
+UNITS = $(KUNITS) TinyCalls TinyLibSystem TinyLibSymbols TinyLibRegex TinyLibDraw TinyLibPlayground TinyLibGUI TinyProfiler TinyDatabase TinyVCS TinyBuildSystem TinyMachineISA TinyMachineAsm TinyAssembler TinyLinker $(CC_PARTS) TinyC $(MLC) TinyML \
   TinyWindows TinyAppTetris TinyAppCalculator TinyAppTemperature TinyEditorScreen $(OFFICE) TinyOffice TinyTroff TinyPlay $(BROWSER) TinyBrowserScreen TinyBrowser TinyTracer TinyDebugger \
   TinyShell TinyUtilities TinyEditorLine Square Machine Tetris Calc Temp Emacs Office Troff Play Www Bigmem Trace Debug
 .SECONDEXPANSION:
@@ -466,7 +486,7 @@ EXAMPLES = steps/t6/user/wc.c user/sh.c ../user/emacs.ml ../TinyEditorScreen.ml 
 # step 8; old: step 7's /src had ping's C and a unit; not /sys/src,
 # Plan 9's, as /sys is principia's devsys)
 C_PROGS = sh mltests ping get put httpd
-SRC_FILES = entry.tm draw.tm memory.tm end.tm runtime.c $(KML) \
+SRC_FILES = entry.tm draw.tm memory.tm end.tm runtime.c \
 	$(foreach u,$(UNITS),$(or $(F_$(u)),../$(u).ml)) $(CORE:%=../TinyLibCore/%.ml) libc/user.h libc/sys.tm libc/draw.c libc/draw.h libc/net.c $(SYS)/mlsys.c \
 	../TinyMLRuntime/core.c ../TinyCRuntime/start.tm ../TinyCRuntime/udivmod.tm ../TinyCRuntime/libc.c ../TinyCRuntime/libc.h examples/paint.c $(C_PROGS:%=user/%.c)
 # (a path of this directory's, as tiny/'s)
@@ -533,9 +553,8 @@ lib/%.tmi: lib/Stdlib.tm
 libc/sys.o: $(K)/libc/sys.tm
 	mkdir -p libc; as -o $$target $(K)/libc/sys.tm
 
-# the kernel
-kernel.tm: $$LIB $(call insrc,$(KML))
-	ml -nostdlib -o $$target $$prereq
+# the kernel: its units are ml/'s, as the programs' (below); its main
+main/kernel.tm: $$LIB $(addprefix ml/,$(addsuffix .tmi,$(KUNITS)))
 kernel.img: $(KERNEL:$(O)/%=%)
 	ld -map -o $$target $$prereq
 
@@ -749,13 +768,14 @@ self: $(O)/boot.img
 # Then the kernel linked by ld, from the host's objects, the biggest
 # link, where ld's memory runs out first (bugs/ix.md: make self's first
 # night); 3 minutes. On an image of its own: boot.img and the objects
-# are over its 10 MB, and the objects in one directory keep ld's line
-# under the console's 256 characters
+# are over its 10 MB, and its objects are gathered in an rc list a line
+# each, so that no line passes the console's 256 characters (old: one
+# ld line, when the kernel was one object, not its 14 units')
 self-quick: $(O)/boot.img $(O)/self-ld.img
 	rm -f $(O)/self-quick.img; truncate -s 64M $(O)/self-quick.img
 	timeout 1800 $(MACHINE) -d $(O)/self-quick.img $(O)/boot.img < $(T)/self-quick.keys > $(O)/self-quick.out
 	diff $(T)/self-quick.expected $(O)/self-quick.out
-	printf 'rc\ncd /k\nld -map -o k.img $(notdir $(KERNEL))\ncmp k.img kernel.img && echo kernel.img: the host\nexit\n' | timeout 600 $(MACHINE) $(O)/self-ld.img > $(O)/self-ld.out
+	printf 'rc\ncd /k\no=()\n$(foreach f,$(notdir $(KERNEL)),o=($$o $(f))\n)ld -map -o k.img $$o\ncmp k.img kernel.img && echo kernel.img: the host\nexit\n' | timeout 600 $(MACHINE) $(O)/self-ld.img > $(O)/self-ld.out
 	grep -q 'kernel.img: the host' $(O)/self-ld.out || { cat $(O)/self-ld.out; exit 1; }
 	rm $(O)/self-quick.img $(O)/self-quick.out $(O)/self-ld.out && echo "tiny-kernel: self-quick ok, ping, the library and the kernel's link the host's"
 $(O)/self-ld.img: $(O)/kernel.img $(O)/bin/sh $(O)/bin/rc $(O)/bin/ld $(O)/bin/utils

@@ -13,7 +13,7 @@ let sink = ref None
 let say s =
   match !sink with
   | Some b -> Buffer.add_string b s
-  | None -> ignore (u_write 1 s)
+  | None -> ignore (u_write fd_stdout s)
 
 (* what f says, as a string *)
 let text f =
@@ -387,7 +387,7 @@ let rec read_line () =
       pending := String.sub !pending (i + 1) (String.length !pending - i - 1);
       Some l
   | None ->
-      let s = u_read 0 4096 in
+      let s = u_read fd_stdin 4096 in
       if s = "" then None else (pending := !pending ^ s; read_line ())
 let rec loop () =
   match read_line () with
@@ -555,7 +555,7 @@ let main () =
   (* (a program not found: its child said so, in the window's case on
    * the pipe, read into what is said) *)
   if !t < 0 || (!started && not (wait ())) then begin
-    ignore (u_write 1 (Buffer.contents out));
+    ignore (u_write fd_stdout (Buffer.contents out));
     exit 1
   end;
   (* the process killed if debug started it and it still runs *)

@@ -28,7 +28,8 @@ and by tiny-ml (`TinyKernel/Makefile`'s units, in their order). The
 kernel is the same: `TinyKernel.ml` the boot, its parts in
 `TinyKernel/` beside those it had already (the machine, the files,
 the processes, the devices, the reads and writes, the system calls,
-the scheduler), one program for tiny-ml (`KML`), never OCaml's.
+the scheduler), units compiled by tiny-ml one by one, in their order
+(`TinyKernel/Makefile`'s `KUNITS`), never by OCaml.
 
 A program's `.mli` is where to start: its header comment (the idea,
 a diagram, the history, the references: `docs/tags.md`), then `main`

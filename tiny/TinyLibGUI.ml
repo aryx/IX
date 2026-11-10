@@ -269,11 +269,11 @@ let key (g : ('m, 'msg) gui) (boxes : 'msg boxes) model m (k : P.key) =
 (* The loop *)
 (*****************************************************************************)
 
-(* what a loop waits on (u_ready's descriptors): the keys, 0, and the
- * mouse, 4 *)
+(* what a loop waits on (u_ready's descriptors): the keys, fd_stdin, and
+ * the mouse, fd_mouse *)
 let keys_and_mouse () =
-  let fds = Array.make 2 0 in
-  fds.(1) <- 4;
+  let fds = Array.make 2 fd_stdin in
+  fds.(1) <- fd_mouse;
   fds
 
 (* The program, until an Escape, a q that no field takes, or the keys'
@@ -288,8 +288,8 @@ let run (g : ('m, 'msg) gui) =
     let (now, boxes) = view in
     let is = over boxes m in
     if now != shown || is <> was then redraw shown was now is;
-    if u_ready fds 2 0 = 0 then begin
-      let s = u_read 0 16 in
+    if u_ready fds 2 0 = fd_stdin then begin
+      let s = u_read fd_stdin 16 in
       if s = "" then exit 0;
       let rec typed i model view =
         if i >= String.length s then loop model m view now is
@@ -305,7 +305,7 @@ let run (g : ('m, 'msg) gui) =
       typed 0 model view
     end
     else
-      match D.mouse_event (u_read 4 12) with
+      match D.mouse_event (u_read fd_mouse 12) with
       | None -> exit 0
       | Some e ->
           let (model', m') = mouse g boxes model m e.mo_x e.mo_y e.mo_buttons in
@@ -450,12 +450,12 @@ type 'm canvas = {
  * (width, height) with the buttons -1; on the console no one answers in
  * half a second, and the window is the screen *)
 let window_size () =
-  ignore (u_write 1 "\005");
-  let fds = Array.make 1 4 and until = u_ticks () + 200 in
+  ignore (u_write fd_stdout "\005");
+  let fds = Array.make 1 fd_mouse and until = u_ticks () + 200 in
   let rec answer () =
-    if u_ready fds 1 until <> 4 then D.screen_w, D.screen_h
+    if u_ready fds 1 until <> fd_mouse then D.screen_w, D.screen_h
     else
-      match D.mouse_event (u_read 4 12) with
+      match D.mouse_event (u_read fd_mouse 12) with
       | Some e when e.mo_buttons = -1 -> e.mo_x, e.mo_y
       | _ -> answer () in
   answer ()
@@ -654,8 +654,8 @@ let run_canvas (c : 'm canvas) =
   let rec loop model shown =
     let now = with_leaves shown (c.picture model) in
     repaint shown now;
-    if u_ready fds 2 0 = 0 then begin
-      let s = u_read 0 16 in
+    if u_ready fds 2 0 = fd_stdin then begin
+      let s = u_read fd_stdin 16 in
       let rec typed i model =
         if i >= String.length s then loop model now
         else
@@ -666,7 +666,7 @@ let run_canvas (c : 'm canvas) =
     end
     else begin
       (* (an ENQ's answer, the buttons -1, is not the program's) *)
-      match D.mouse_event (u_read 4 12) with
+      match D.mouse_event (u_read fd_mouse 12) with
       | Some e when e.mo_buttons >= 0 ->
           (match c.moved e.mo_x e.mo_y e.mo_buttons model with
            | Some m -> loop m now

@@ -106,7 +106,7 @@ let random s =
 
 (* messages gathered, written past a kilobyte and at a picture's end *)
 let gathered = ref ""
-let flush () = if !gathered <> "" then (ignore (u_write 3 !gathered); gathered := "")
+let flush () = if !gathered <> "" then (ignore (u_write fd_draw !gathered); gathered := "")
 let put m =
   gathered := !gathered ^ m;
   if String.length !gathered > 1024 then flush ()
@@ -255,7 +255,7 @@ let period = 13
  * they cost; from now when a frame is more than one late: a game does
  * not run to catch up). *)
 let run g =
-  let keys = Array.make 1 0 in
+  let keys = Array.make 1 fd_stdin in
   let speaker =
     let fd = u_open "/dev/audio" 1 in
     if fd < 0 then None else Some fd in
@@ -265,7 +265,7 @@ let run g =
     let shapes = if model != seen then g.view model else shown in
     if not (same shown shapes) then show g shown shapes;
     if u_ready keys 1 next = 0 then begin
-      let s = u_read 0 16 in
+      let s = u_read fd_stdin 16 in
       if s = "" then exit 0;
       let rec typed i m =
         if i >= String.length s then m

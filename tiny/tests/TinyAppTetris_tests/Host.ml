@@ -91,7 +91,7 @@ let () =
     ^ TinyLibDraw.d_image TinyLibPlayground.ground
         (0, 0, game.width, game.height) 0
   in
-  ignore (TinyCalls.u_write 3 both);
+  ignore (TinyCalls.u_write TinyCalls.fd_draw both);
   TinyLibPlayground.show game [] (game.view m);
   TinyKernelGraphics.arena 0xf4b000 0xb4000;
   let screen = { TinyKernelGraphics.r = TinyKernelGraphics.rect 0 0 640 480;

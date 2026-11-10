@@ -5,7 +5,7 @@
 
 open TinyCalls
 
-let say s = ignore (u_write 2 s)
+let say s = ignore (u_write fd_stderr s)
 
 (* the calls, by their numbers (TinyKernel.ml's syscall, user.h's
  * order), and the kind of each argument: a number, a path, bytes

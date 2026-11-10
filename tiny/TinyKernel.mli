@@ -102,9 +102,9 @@
  *     core 0's interrupt; waits               P or another given to k
  *                               <── k's interrupt (frame, window, slice)
  *
- * The kernel is several files, one program for tiny-ml, in this order
- * (TinyKernel/Makefile's KML). First what it stands on: TinyMemory (the
- * machine's bytes), TinyKernelGraphics, TinyKernelNetwork,
+ * The kernel is several files, units compiled by tiny-ml one by one in
+ * this order (TinyKernel/Makefile's KUNITS). First what it stands on:
+ * TinyMemory (the machine's bytes), TinyKernelGraphics, TinyKernelNetwork,
  * TinyKernelAudio, TinyKernelFS, TinyKernelMemory. Then its own parts,
  * once this file's sections: TinyKernelMachine (the externals, the
  * devices' addresses), TinyKernelFiles (the tree of files, what a

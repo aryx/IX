@@ -25,11 +25,11 @@ let () =
   let n = u_argc () in
   let flag = if n = 3 then u_arg 1 else "" in
   if n <> 2 && flag <> "-h" && flag <> "-p" then
-    (ignore (u_write 2 "usage: troff [-h | -p] file\n"); exit 1);
+    (ignore (u_write fd_stderr "usage: troff [-h | -p] file\n"); exit 1);
   let file = u_arg (n - 1) in
   let doc = read_file (Fpath.v file) in
   ignore
-    (u_write 1
+    (u_write fd_stdout
        (if flag = "-h" then to_html file doc
         else if flag = "-p" then to_pdf doc
         else to_text 72 doc));

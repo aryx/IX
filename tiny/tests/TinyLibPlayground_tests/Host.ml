@@ -21,10 +21,10 @@ let () =
     |> frames 45
     |> after (List.init 20 (fun _ -> TinyLibPlayground.Up)) in
   Printf.printf "the square at %d, %d after %d frames\n" m.x m.y m.frames;
-  TinyCalls.u_write 3
+  TinyCalls.u_write TinyCalls.fd_draw
     (TinyLibDraw.d_image TinyLibPlayground.picture (0, 0, g.width, g.height) 0)
   |> ignore;
-  TinyCalls.u_write 3
+  TinyCalls.u_write TinyCalls.fd_draw
     (TinyLibDraw.d_image TinyLibPlayground.ground (0, 0, g.width, g.height) 0)
   |> ignore;
   TinyLibPlayground.show g [] (g.view m);

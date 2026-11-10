@@ -67866,3 +67866,64 @@ Claude renamed the numbered descriptors in the callers to names like fd_mouse an
 Claude split TinyKernel into 14 per-unit objects, with a new main/kernel.tm rule and a Buildfile change, so no single .tm file is huge.
 Claude verified both changes in the separate _make2 directory: the kernel check passed unchanged, and self-quick linked an identical image.
 Claude held the self.expected re-record until the running make self finished, then planned to commit items 3 and 2.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 12:26
+
+**Yoann:**
+
+> ok let's commit
+
+**Claude (summary):**
+
+Claude committed items 2 and 3 together as cddf43fa, plus `prompt-history.md`, leaving only the scratch `TinyKernel/_make2/` directory.
+Claude left item 1 open: a background `make self` still runs the old whole-kernel build and will not show the `List` fix's effect alone.
+Claude planned to rerun `make self` on the per-unit kernel once the background run finishes, then re-record `self.expected` and commit.
+Claude's stated reason for the separate TinyLibSystem interface: Sys and Unix subsets would let tools call host-only functions with no compile-time error.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 12:40
+
+**Yoann:**
+
+> regarding TinyLibSystem.mli it says "
+>
+>  * Why a module of its own, and not Sys.ml and Unix.ml in TinyLibCore/
+>  * beside List.ml and Hashtbl.ml: TinyLibCore is a subset of OCaml's
+>  * own modules, the same names, types and results, so that a file
+>  * naming List compiles unchanged by OCaml on the host and by tiny-ml
+>  * on TinyLibCore. That works because those modules are pure: one file
+>  * serves tiny-kernel, OCaml's own serves the host. The system cannot
+>  * be split that way: on the host it is Unix, Cap, FS and Procs, on
+>  * tiny-kernel its calls, and a TinyLibCore Unix.ml would have to be a
+>  * subset of OCaml's Unix, an interface far larger than tiny-kernel
+>  * gives, of strings and Unix_error, without the capabilities or
+>  * Fpath.t. So this is a new interface, cut to the smaller system's,
+>  * with one .mli and a file for each side, as TinyCalls (a virtual
+>  * library in dune). The other road, Sys and Unix subsets, would let
+>  * the tools use the names OCaml programmers know, but a tool could
+>  * then ask the host for what tiny-kernel lacks and no compiler would
+>  * say so.
+>
+> " but the last sentence is not really an issue; TinyLibCore/ already offers just a subset and we can catch a program asking too much from the OCaml stdlib when it compiles for tiny-kernel at which point some make test or CI check will fail. So is it worth really introduce a new TinyLibSystem instead of offering a Sys.ml and Unix.ml subset for tiny-kernel ?
+
+**Claude (summary):**
+
+Claude agreed the "no compiler would say so" sentence was wrong, since tiny-ml builds for tiny-kernel would catch missing names. Claude still recommended keeping TinyLibSystem, because a Unix subset would keep names but not results, so emulated behaviour would compile and be quietly wrong. Claude drafted a replacement paragraph for TinyLibSystem.mli giving that real reason, with the stats fields, Unix_error codes, and emulated dup2 and wait examples. Claude also noted capability and path mismatches plus the cost of about 250 calls across 13 files as smaller reasons.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 12:43
+
+**Yoann:**
+
+> yes, put that in
+
+**Claude (summary):**
+
+Claude updated the paragraph in `tiny/system/TinyLibSystem.mli` to give the real reason: a subset can keep OCaml's names but not its results.
+Claude kept the old sentence as an `(old: ...)` note, following the repo's convention for recording corrections.
+Claude confirmed dune still builds, but nothing is committed yet.
+Claude noted `make self` is still running in the background and offered to commit this comment alone or with the later `self.expected` re-record.

@@ -1,5 +1,5 @@
 (* What a tool asks of the system it runs on, for a tool that runs on
- * two, the host and tiny-machine: the shell, the utilities, the
+ * two (the host and tiny-machine): the shell, the utilities, the
  * compilers, the assembler and the linker, the build system, the
  * version control, the database, the line editor, the profiler. Such a
  * tool's files name only this and the pure functions of the standard
@@ -54,13 +54,20 @@
  * Fpath.t. So this is a new interface, cut to the smaller system's,
  * with one .mli and a file for each side, as TinyCalls (a virtual
  * library in dune). The other road, Sys and Unix subsets, would let
- * the tools use the names OCaml programmers know, but a tool could
- * then ask the host for what tiny-kernel lacks and no compiler would
- * say so.
+ * the tools use the names OCaml programmers know, and a tool asking
+ * for a name tiny-kernel lacks would fail to compile there; but not a
+ * tool relying on what tiny-kernel can only fake: a stats' 12 fields
+ * of which it has 4, Unix_error's codes where it gives no reason, a
+ * dup2 or a wait for one child emulated. Here a type promises only
+ * what both systems give. And a clean slate lets the interface be the
+ * tools' own: a path is an Fpath.t, not a string; a function that
+ * reaches the system takes the capability that allows it; and the
+ * system is one module, not OCaml's split of it between Sys and Unix.
  *)
 
-(* The names of what the calls give, each an int or a string still:
- * what it is said by its type, not by a comment only. *)
+(*****************************************************************************)
+(* System types *)
+(*****************************************************************************)
 
 (* a process's number, the system's; a file's descriptor, a number too
  * (0, 1, 2 the standard input, output, error): where a program does
@@ -81,6 +88,10 @@ type stat = { st_dir : bool; st_size : int }
 (* the date, seconds since 2000-01-01 UTC; a time taken *)
 type seconds = int
 type milliseconds = int
+
+(*****************************************************************************)
+(* main() and other initialization helpers *)
+(*****************************************************************************)
 
 (* [main name f]: the program: f with every capability and its
  * arguments (its name first), its result how it ends: Err's words, or

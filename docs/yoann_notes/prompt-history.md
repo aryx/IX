@@ -67518,3 +67518,11 @@ Claude proposed a four-part cleanup of the ix libraries, with part A (types) as 
 **Yoann:**
 
 > we could also use sectioning comments in this dune file to better understand its structure
+
+------------------------------------------------------------------------
+
+## 2026-11-10 08:35
+
+**Yoann:**
+
+> also tiny/README.md could maybe get an update; not sure it's still up to date with all the recent development in tiny/

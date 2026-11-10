@@ -1,10 +1,11 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* TinyLibSystem on tiny-machine: what a tool asks of the system
- * (tiny-shell; ../host/TinyLibSystem.mli says each function), over
- * tiny-kernel's calls (mlsys.c's, beside this file; TinyCalls.ml names
- * them).
+(* TinyLibSystem on tiny-machine: what a tool asks of the system (the
+ * shell, the utilities, the compilers, the assembler and the linker,
+ * the build system, the editor...; ../host/TinyLibSystem.mli says each
+ * function), over tiny-kernel's calls (mlsys.c's, beside this file;
+ * TinyCalls.ml names them).
  *
  * Not in tiny/ with the other TinyLibXxx.ml: the host's file has the
  * same name, as it must (TinyShell.ml names one module), and mini-ml
@@ -39,7 +40,6 @@
  * - a file's modes: no file is a program to run (x)
  *)
 
-open Common
 open TinyCalls
 
 type Cap.all_caps = < >
@@ -115,22 +115,23 @@ let keep fd = private_fds := fd :: !private_fds; fd
  * the integers' division in this file) *)
 let str = Fpath.to_string
 
-(* user.h's O_RDONLY, O_WRONLY | O_CREATE | O_TRUNC, and O_WRONLY |
- * O_CREATE then a seek to the end *)
+(* to read, to write anew, and to write then a seek to the end
+ * (TinyCalls' flags) *)
 let open_in caps file =
-  let fd = u_open (str file) 0 in
+  let fd = u_open (str file) o_read in
   if fd < 0 then failwith "cannot open" else fd
 let open_out caps file =
-  let fd = u_open (str file) 0x601 in
+  let fd = u_open (str file) o_anew in
   if fd < 0 then failwith "cannot create" else fd
 let open_append caps file =
-  let fd = u_open (str file) 0x201 in
+  let fd = u_open (str file) o_write in
   if fd < 0 then failwith "cannot create"
   else if u_seek fd 0 2 < 0 then (ignore (u_close fd); failwith "cannot seek")
   else fd
-(* user.h's O_RDWR | O_CREATE; seek's whence 0 the start, 2 the end *)
+(* to read and write, made when it is not there; seek's whence 0 the
+ * start, 2 the end *)
 let open_rw caps file =
-  let fd = u_open (str file) 0x202 in
+  let fd = u_open (str file) o_read_write in
   if fd < 0 then failwith "cannot open" else fd
 let seek fd off = if u_seek fd off 0 < 0 then failwith "cannot seek"
 let seek_end fd =
@@ -168,25 +169,38 @@ let with_open_in caps f file =
   r
 
 external out_channel_of_descr : int -> out_channel = "%identity"
-let with_open_out caps f file =
-  let fd = named file (fun () -> open_out caps file) in
+(* f on a file opened by opener to write, closed after (old: written
+ * twice, the opener the only difference) *)
+let with_out opener caps f file =
+  let fd = named file (fun () -> opener caps file) in
   let chan : Chan.o = { oc = out_channel_of_descr fd; dest = OutFile file } in
   let r = try f chan with e -> close fd; raise e in
   close fd;
   r
-let with_open_append caps f file =
-  let fd = named file (fun () -> open_append caps file) in
-  let chan : Chan.o = { oc = out_channel_of_descr fd; dest = OutFile file } in
-  let r = try f chan with e -> close fd; raise e in
-  close fd;
-  r
+let with_open_out caps f file = with_out open_out caps f file
+let with_open_append caps f file = with_out open_append caps f file
 let stdin _caps : Chan.i = { ic = in_channel_of_descr 0; origin = Stdin }
 
-(* a directory is read as a file of entries of 80 bytes (user.h's
- * dirent): a name of 64 bytes ended by a 0 when shorter, its type (1
- * for a directory), its links, its size and its date *)
-let entries dir =
-  let fd = u_open dir 0 in
+(* A directory entry, 80 bytes (user.h's dirent): a name of 64 bytes
+ * ended by a 0 when shorter, its type (1 for a directory), its links,
+ * its size and its date, a word each, the low bytes first. A directory
+ * is read as a file of them; the kernel's stat gives one. *)
+type dirent = { e_dir : bool; e_links : int; e_size : int; e_mtime : int }
+
+(* the word at i of s *)
+let word s i =
+  String.get_uint16_le s i + (String.get_uint16_le s (i + 2) lsl 16)
+
+(* the entry at i of s, but its name (old: a 4-tuple, taken apart with
+ * _ by its readers) *)
+let dirent s i =
+  { e_dir = Char.code s.[i + 64] = 1; e_links = word s (i + 68);
+    e_size = word s (i + 72); e_mtime = word s (i + 76) }
+
+(* the names in a directory (old: its entries decoded whole, then all
+ * but their names dropped) *)
+let names dir =
+  let fd = u_open dir o_read in
   if fd < 0 then []
   else begin
     let s = read_all fd in
@@ -199,15 +213,10 @@ let entries dir =
           | _ -> e)
          - i)
     in
-    let word i =
-      String.get_uint16_le s i + (String.get_uint16_le s (i + 2) lsl 16) in
-    List.init (String.length s / 80) (fun k ->
-      name (k * 80),
-      (Char.code s.[k * 80 + 64] = 1, word (k * 80 + 72), word (k * 80 + 68),
-       word (k * 80 + 76)))
+    List.init (String.length s / 80) (fun k -> name (k * 80))
   end
 
-let readdir _caps dir = List.map fst (entries (str dir))
+let readdir _caps dir = names (str dir)
 
 (* a path's names from the root, as the kernel finds them *)
 let path_names file =
@@ -219,20 +228,16 @@ let path_names file =
   in
   List.rev (List.fold_left clean [] (String.split_on_char '/' (start ^ "/" ^ file)))
 
-(* the file's entry, the kernel's stat: whether it is a directory, its
- * size, its links, its date (old: its directory read whole for it) *)
-let entry file =
+(* the file's entry, the kernel's stat (old: its directory read whole
+ * for it) *)
+let entry file : dirent =
   let s = u_stat (str file) in
-  if s = "" then failwith "not there"
-  else
-    let word i =
-      String.get_uint16_le s i + (String.get_uint16_le s (i + 2) lsl 16) in
-    Char.code s.[64] = 1, word 72, word 68, word 76
+  if s = "" then failwith "not there" else dirent s 0
 
 let stat _caps file =
-  let is_dir, size, _, _ = entry file in { st_dir = is_dir; st_size = size }
-let links _caps file = let _, _, n, _ = entry file in n
-let mtime _caps file = let _, _, _, d = entry file in d
+  let e = entry file in { st_dir = e.e_dir; st_size = e.e_size }
+let links _caps file = (entry file).e_links
+let mtime _caps file = (entry file).e_mtime
 
 let is_directory caps file = try (stat caps file).st_dir with Failure _ -> false
 
@@ -273,8 +278,8 @@ let getcwd caps = Fpath.v (u_getcwd ())
 
 let time _caps = u_time ()
 
-(* a tick is 2.5 ms; ready on no descriptor until a tick is a sleep *)
-(* (the ticks, 400 a second) *)
+(* the milliseconds, from the ticks, 400 a second (a tick is 2.5 ms);
+ * a sleep is a ready on no descriptor, until a tick *)
 let millis _caps = u_ticks () * 5 / 2
 let sleep _caps ms =
   if ms > 0 then

@@ -1,10 +1,11 @@
 (* What a tool asks of the system it runs on, for a tool that runs on
- * two: tiny-shell and tiny-utils, on the host and on tiny-machine.
- * The tool's one file, TinyShell.ml or TinyUtilities.ml, names only
- * this and the pure functions of the standard library; there are two
- * files of this:
+ * two, the host and tiny-machine: the shell, the utilities, the
+ * compilers, the assembler and the linker, the build system, the
+ * version control, the database, the line editor, the profiler. Such a
+ * tool's files name only this and the pure functions of the standard
+ * library; there are two files of this:
  *
- *               TinyShell.ml, TinyUtilities.ml
+ *               TinyShell.ml, TinyUtilities.ml, ...
  *            ___________/        \___________
  *   on the host                        on tiny-machine
  *   TinyKernel/host/TinyLibSystem.ml   TinyKernel/libml/TinyLibSystem.ml
@@ -144,9 +145,6 @@ val seek_end : fd -> int
 val read_file : < Cap.open_in; .. > -> Fpath.t -> string
 val write_file : < Cap.open_out; .. > -> Fpath.t -> string -> unit
 
-(* all that a descriptor gives, to its end *)
-val read_all : fd -> string
-
 (* [with_open_in caps f file]: f on the file opened, a channel that
  * knows its name (In_channel.input_all reads it), closed when f
  * returns or raises; an open's Failure says the file and the reason,
@@ -173,16 +171,8 @@ val stdin : < Cap.stdin; .. > -> Chan.i
 val readdir : < Cap.readdir; .. > -> Fpath.t -> string list
 val is_directory : < Cap.readdir; .. > -> Fpath.t -> bool
 
-(* Failure with the reason *)
+(* the current directory changed to dir; Failure with the reason *)
 val chdir : < Cap.chdir; .. > -> Fpath.t -> unit
-
-(* [read fd max]: what fd gives next, up to max bytes, without waiting
- * for more; "" at the end. For a program that must work on its input
- * as it comes (cat at the console) *)
-val read : fd -> int -> string
-
-(* all of the string, written to the descriptor *)
-val write : fd -> string -> unit
 
 (* whether a file is a directory, and its size; Failure with the
  * reason when it is not there *)
@@ -239,6 +229,17 @@ val millis : < Cap.clock; .. > -> milliseconds
 (* Descriptors *)
 (*****************************************************************************)
 
+(* [read fd max]: what fd gives next, up to max bytes, without waiting
+ * for more; "" at the end. For a program that must work on its input
+ * as it comes (cat at the console) *)
+val read : fd -> int -> string
+
+(* all that a descriptor gives, to its end *)
+val read_all : fd -> string
+
+(* all of the string, written to the descriptor *)
+val write : fd -> string -> unit
+
 (* [save n]: a copy of descriptor n, away from the low numbers and not
  * given to a program run; None when n is not open *)
 val save : fd -> fd option
@@ -263,11 +264,13 @@ val fork : < Cap.fork; .. > -> pid option
 val kill : < Cap.kill; .. > -> pid -> bool
 
 (* [exec caps file argv env]: this process becomes the program in file,
- * env its variables as name=value; when it cannot, the reason *)
+ * env its variables as name=value; when it cannot, the reason (the
+ * host's the system's message; tiny-kernel's always "not found") *)
 val exec :
   < Cap.exec; .. > -> Fpath.t -> string list -> string list -> string
 
-(* a child's end *)
+(* a child's end; for no such child, the host's raises Unix's error,
+ * tiny-kernel's says "", a success *)
 val wait : < Cap.wait; .. > -> pid -> status
 
 (* the next child to end, and how; None when there is no child *)

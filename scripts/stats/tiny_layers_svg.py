@@ -55,12 +55,12 @@ COLUMNS = [
             "tiny/TinyLibCore/: OCaml's modules as",
             "tiny programs name them (Stdlib, List,",
             "String, Buffer, Hashtbl...), the first",
-            "units of every program; system/tinykernel/",
+            "units of every program; TinyLibSystem/tinykernel/",
             "TinyCalls.ml: the kernel's calls"]),
         ("TinyML's runtime", "C, by tiny-c", [
             "tiny/TinyMLRuntime/core.c: the allocator,",
             "Cheney's collector, strings, compare;",
-            "included by system/tinykernel/mlsys.c",
+            "included by TinyLibSystem/tinykernel/mlsys.c",
             "(the heap in the program's megabyte,",
             "the calls as C functions)"]),
         ("The C runtime", "C, assembly", [

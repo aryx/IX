@@ -76,8 +76,8 @@
 ; The host's tools on TinyLibSystem
 ;*****************************************************************************
 
-; (TinyLibSystem is system/unix/'s here, over OCaml's Unix; tiny-kernel has
-; its own, system/tinykernel/)
+; (TinyLibSystem is TinyLibSystem/unix/'s here, over OCaml's Unix; tiny-kernel has
+; its own, TinyLibSystem/tinykernel/)
 
 (executable
  (name TinyBuildSystem)
@@ -114,6 +114,17 @@
 ;*****************************************************************************
 ; The libraries
 ;*****************************************************************************
+
+; TinyLibSystem.mli, what a tool asks of its system: a virtual library
+; here, beside its .mli, its implementations TinyLibSystem/'s (unix/,
+; the default; tinykernel/ is tiny-ml's, TinyKernel/Makefile)
+(library
+ (name tiny_lib_system)
+ (wrapped false)
+ (modules TinyLibSystem)
+ (virtual_modules TinyLibSystem)
+ (default_implementation tiny_lib_system_unix)
+ (libraries ix_core fpath caps))
 
 ; TinyLibRegex.ml, the regular expressions of grep and of tiny-editor
 ; (tiny-ml compiles it too, before TinyUtilities.ml and TinyEditorLine.ml)

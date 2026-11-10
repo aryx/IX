@@ -1,4 +1,4 @@
-// tiny/system/stub/: what the code map says of it (the code
+// tiny/TinyLibSystem/teststub/: what the code map says of it (the code
 // map: tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there). dune's default
 // implementation of ../TinyCalls.mli.

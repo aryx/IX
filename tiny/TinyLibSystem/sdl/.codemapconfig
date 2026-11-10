@@ -1,4 +1,4 @@
-// tiny/system/sdl/: what the code map says of it (the code map: tinybox
+// tiny/TinyLibSystem/sdl/: what the code map says of it (the code map: tinybox
 // codemap, ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there). TinyCalls in an
 // SDL window, what the programs of ../../user/sdl/ are built on (their last
@@ -27,7 +27,7 @@
         { at: 'def:answer', say: "a dial to port 70: the peer's own answers", weight: 1 },
         { at: 'def:u_argc', say: "Sys.argv: the host's command line", weight: 1 },
       ],
-      related: ['../TinyCalls.mli', '../stub/TinyCalls.ml', '../../TinyMachine/TinyMachineSDL.ml', '../../user/'],
+      related: ['../TinyCalls.mli', '../teststub/TinyCalls.ml', '../../TinyMachine/TinyMachineSDL.ml', '../../user/'],
     },
   },
   skeletons: [

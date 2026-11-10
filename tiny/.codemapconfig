@@ -395,6 +395,22 @@ local prog(name, file, core) = chain(name, [
         { at: 'def:run_canvas', say: 'a program that draws its whole window' },
       ],
     },
+    'TinyLibSystem.mli': { digest: 'd94c6eb48a3e',
+      summary: "What a tool asks of its system, cut to tiny-kernel's: one interface, a file for each system (TinyLibSystem/).",
+      capitals: [
+        { at: 'def:exec', say: 'a program run: the one interface on two systems' },
+      ],
+      important: [
+        { at: 'comment:"So the interface is what both systems can give"', weight: 3 },
+        { at: 'def:main', weight: 2 },
+        { at: 'def:fork', weight: 2 },
+        { at: 'def:exec', weight: 2 },
+        { at: 'def:wait', say: "a status already rc's string", weight: 1 },
+        { at: 'def:dup2', weight: 1 },
+        { at: 'def:shell', say: 'a recipe run by the system shell', weight: 1 },
+      ],
+      related: ['TinyLibSystem/unix/TinyLibSystem.ml', 'TinyLibSystem/tinykernel/TinyLibSystem.ml', 'TinyShell.ml', 'TinyUtilities.ml'],
+    },
     'TinyLibRegex.ml': { digest: '9691b882d381',
       summary: "Plan 9's regular expressions for grep and the editor: a backtracker with a memo, leftmost-longest as sam's.",
       important: [

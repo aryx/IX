@@ -3,8 +3,8 @@
 ;
 ; A program here is the same few lines as on tiny-kernel, its last file
 ; in ../, copied and compiled by OCaml. Under them,
-; ../system/sdl/TinyCalls.ml makes the kernel's calls
-; (../system/TinyCalls.mli) with the window: its screen, its keys and
+; ../TinyLibSystem/sdl/TinyCalls.ml makes the kernel's calls
+; (../TinyLibSystem/TinyCalls.mli) with the window: its screen, its keys and
 ; mouse, and its sound.
 ;
 ; make loc does not count this directory, as it does not count

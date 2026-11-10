@@ -3,8 +3,8 @@
 // docs/claude_notes/codemapconfig_guidelines.md there). The last file
 // of each ML program, a few lines running a tiny program of ../, the
 // same file on both systems: on tiny-kernel linked with
-// ../system/tinykernel/ and ../TinyLibCore/ (../TinyKernel/Makefile),
-// on the host built by sdl/'s dune in a window (../system/sdl/).
+// ../TinyLibSystem/tinykernel/ and ../TinyLibCore/ (../TinyKernel/Makefile),
+// on the host built by sdl/'s dune in a window (../TinyLibSystem/sdl/).
 local wrapper(file, prog, role) = {
   name: file + ': ' + role,
   bones: [
@@ -40,15 +40,15 @@ local wrapper(file, prog, role) = {
       bones: [
         { at: 'emacs.ml', role: "an ML program's last file" },
         { at: 'www.ml', role: "an ML program's last file" },
-        { at: '../system/tinykernel/', role: 'on tiny-kernel: the calls, the runtime' },
+        { at: '../TinyLibSystem/tinykernel/', role: 'on tiny-kernel: the calls, the runtime' },
         { at: 'sdl/', role: 'on the host: a window' },
-        { at: '../system/sdl/', role: "the window's calls" },
+        { at: '../TinyLibSystem/sdl/', role: "the window's calls" },
       ],
       joints: [
-        { from: 'emacs.ml', to: '../system/tinykernel/', say: 'linked with' },
-        { from: 'www.ml', to: '../system/tinykernel/', say: 'linked with' },
+        { from: 'emacs.ml', to: '../TinyLibSystem/tinykernel/', say: 'linked with' },
+        { from: 'www.ml', to: '../TinyLibSystem/tinykernel/', say: 'linked with' },
         { from: 'sdl/', to: 'emacs.ml', say: 'copies, builds' },
-        { from: 'sdl/', to: '../system/sdl/', say: 'linked with' },
+        { from: 'sdl/', to: '../TinyLibSystem/sdl/', say: 'linked with' },
       ],
     },
     wrapper('emacs.ml', '../TinyEditorScreen.ml', 'the editor'),

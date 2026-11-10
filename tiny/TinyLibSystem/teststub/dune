@@ -1,4 +1,4 @@
 ; the tests' TinyCalls: no kernel, what is drawn kept (../TinyCalls.mli)
 (library
- (name tiny_calls_stub)
+ (name tiny_calls_teststub)
  (implements tiny_calls))

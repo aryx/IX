@@ -236,11 +236,11 @@ step 8 has t-IX built there.
 A program is in what both OCaml and tiny-ml compile, and asks the
 system through one interface with a file for each side:
 `TinyLibSystem` for the tools
-([`tiny/system/`](tiny/system/README.md): [`unix/`](tiny/system/unix/TinyLibSystem.ml)'s over
-Unix, [`tinykernel/`](tiny/system/tinykernel/TinyLibSystem.ml)'s
+([`tiny/TinyLibSystem/`](tiny/TinyLibSystem/README.md): [`unix/`](tiny/TinyLibSystem/unix/TinyLibSystem.ml)'s over
+Unix, [`tinykernel/`](tiny/TinyLibSystem/tinykernel/TinyLibSystem.ml)'s
 over the kernel's calls), `TinyCalls` for the graphical programs
 (a virtual library of dune's, whose host side is a window of SDL's:
-[`tiny/system/sdl/`](tiny/system/sdl/)). Its three builds:
+[`tiny/TinyLibSystem/sdl/`](tiny/TinyLibSystem/sdl/)). Its three builds:
 
 | | compiled by | its standard library |
 |---|---|---|

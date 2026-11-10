@@ -90,7 +90,7 @@ of the system:
     its assembly and C, its programs in C (`user/`; the last file of
     the ones in ML is `tiny/user/`'s) and what they are linked with
     to call it, `libc/` for C (`user.h`, `sys.tm`, `draw.c`, `net.c`);
-    for ML, `system/tinykernel/` (below);
+    for ML, `TinyLibSystem/tinykernel/` (below);
   - `TinyMachine.ml` (and `TinyCPU.ml`) and `TinyMachine/`: the CPU
     (`TinyMachineCPU`), its instructions' words and its assembly
     (`TinyMachineISA`, `TinyMachineAsm`), the devices (`TinyMachineDevices`), the other
@@ -109,12 +109,12 @@ tiny-kernel's (`cc`, `ml`, `as`, `ld`) making the same files there
 step 7).
 
 A program can run on both systems because it never names either: it
-names one of two interfaces, in [`system/`](system/README.md), each
+names one of two interfaces, in [`TinyLibSystem/`](TinyLibSystem/README.md), each
 with an implementation for each system. A tool asks through
-`system/TinyLibSystem.mli` (`system/unix/TinyLibSystem.ml` over
-OCaml's Unix, on Linux and macOS; `system/tinykernel/TinyLibSystem.ml`
+`TinyLibSystem.mli` (`TinyLibSystem/unix/TinyLibSystem.ml` over
+OCaml's Unix, on Linux and macOS; `TinyLibSystem/tinykernel/TinyLibSystem.ml`
 over the kernel's calls), so a recipe of `build` is in its system's
-shell; a graphical program asks through `system/TinyCalls.mli`, the
+shell; a graphical program asks through `TinyLibSystem/TinyCalls.mli`, the
 kernel's calls themselves (below).
 
 [docs/projects.md](../docs/projects.md#what-a-tiny-program-stands-on)
@@ -162,11 +162,11 @@ messages), and what the machine gives: `TinyMemory.ml` (its bytes,
 for the kernel's drawing: an array on the host,
 `TinyKernel/host/TinyMemory.ml`; externals on tiny-machine,
 `TinyKernel/TinyMemory.ml`) and `TinyCalls` (the kernel's calls,
-`system/TinyCalls.mli`; externals on tiny-machine,
-`system/tinykernel/TinyCalls.ml`). On the host `TinyCalls` is a
+`TinyLibSystem/TinyCalls.mli`; externals on tiny-machine,
+`TinyLibSystem/tinykernel/TinyCalls.ml`). On the host `TinyCalls` is a
 virtual library of dune's with two implementations: the tests' stub
-(`system/stub/`: what is drawn kept, no keys) and a window's
-([`system/sdl/`](system/sdl/TinyCalls.ml): what is drawn drawn by
+(`TinyLibSystem/teststub/`: what is drawn kept, no keys) and a window's
+([`TinyLibSystem/sdl/`](TinyLibSystem/sdl/TinyCalls.ml): what is drawn drawn by
 `TinyKernelGraphics.ml` and shown by SDL, the window's mouse and keys,
 the host's files, clock and web), on which
 the programs' own few lines in [`user/`](user/) are built for the

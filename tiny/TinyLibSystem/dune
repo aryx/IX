@@ -1,0 +1,20 @@
+; TinyLibSystem's parts (../TinyLibSystem.mli, the interface, and its
+; library in ../dune, beside it, as dune wants a virtual module's .mli):
+; an implementation for each system it runs on, in the directories here
+; (README.md):
+;
+; - unix/, over OCaml's Unix (Linux, macOS), the default;
+; - tinykernel/, over tiny-kernel's calls, compiled by tiny-ml (no dune
+;   file: TinyKernel/Makefile);
+; - sdl/ and teststub/: TinyCalls.mli's, the kernel's calls themselves,
+;   what a graphical program draws and reads its keys with, in a window
+;   on the host or in the tests (tinykernel/'s are the kernel's own).
+;
+; (TinyCalls joins TinyLibSystem: docs/plans/plan_tiny_one_system.md)
+
+(library
+ (name tiny_calls)
+ (wrapped false)
+ (modules TinyCalls)
+ (virtual_modules TinyCalls)
+ (default_implementation tiny_calls_teststub))

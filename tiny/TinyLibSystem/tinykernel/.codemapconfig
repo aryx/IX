@@ -1,4 +1,4 @@
-// tiny/system/tinykernel/: what the code map says of it (the code map:
+// tiny/TinyLibSystem/tinykernel/: what the code map says of it (the code map:
 // tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there). What an ML
 // program of tiny-kernel is linked with to call it: mlsys.c (tiny-c,
@@ -26,7 +26,7 @@
       related: ['../../TinyMLRuntime/core.c', '../../TinyKernel/libc/user.h', '../../TinyKernel/runtime.c'],
     },
     'TinyCalls.ml': { digest: 'fbb2f0ed8fdd',
-      summary: "The kernel's calls for a program in ML: mlsys.c's functions named as externals; the host's are ../sdl/'s and ../stub/'s.",
+      summary: "The kernel's calls for a program in ML: mlsys.c's functions named as externals; the host's are ../sdl/'s and ../teststub/'s.",
       important: [
         { at: 'def:u_write', weight: 2 },
         { at: 'def:u_fork', weight: 1 },
@@ -45,7 +45,7 @@
         { at: 'def:exec', weight: 1 },
         { at: 'def:shell', say: 'a script in a file that removes itself', weight: 1 },
       ],
-      related: ['../TinyLibSystem.mli', '../unix/TinyLibSystem.ml', '../../TinyShell.ml'],
+      related: ['../../TinyLibSystem.mli', '../unix/TinyLibSystem.ml', '../../TinyShell.ml'],
     },
   },
   skeletons: [

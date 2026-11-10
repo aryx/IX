@@ -82,7 +82,7 @@ run.
 
 | program | Linux | macOS | only on tiny-machine? |
 |---|---|---|---|
-| the tools: tiny-shell, tiny-editor, tiny-utils, tiny-build, tiny-db, tiny-vcs, tiny-prof | yes, dune: `TinyLibSystem`'s host side, over Unix (`tiny/system/unix/`) | yes | no |
+| the tools: tiny-shell, tiny-editor, tiny-utils, tiny-build, tiny-db, tiny-vcs, tiny-prof | yes, dune: `TinyLibSystem`'s host side, over Unix (`tiny/TinyLibSystem/unix/`) | yes | no |
 | the toolchain: tiny-c, tiny-ml, tiny-assembler, tiny-linker | yes | yes | no |
 | tiny-cpu, tiny-machine | yes: they are the host's programs | yes | they are the machine; tiny-machine also runs in a browser (the website's t-ix.html) |
 | tiny-office, tiny-www, tiny-troff, tiny-tetris, tiny-calculator | in an SDL window, without the machine (`tiny/user/sdl/`) | the same (*inferred*) | no |

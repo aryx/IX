@@ -3,7 +3,7 @@
 
 (* The kernel's calls for a program in ML: mlsys.c's functions, as
  * externals, their values ML's; -1 when the kernel refuses. On the
- * host these names are ../sdl/ or ../stub/TinyCalls.ml's
+ * host these names are ../sdl/ or ../teststub/TinyCalls.ml's
  * (../TinyCalls.mli), but for those this file has beyond the
  * interface: TinyLibSystem's (fork, exec, pipe...), and TinyDebugger's
  * and TinyTracer's (trace). An external a program does not call costs

@@ -29,7 +29,7 @@ shared="$(dirs lib_core) $(dirs lib_code) $(dirs lib_mime) $(dirs lib_compressio
 # use Testo and Alcotest), nor the stdlib itself, nor what needs SDL (Tsdl: mini-qemu's
 # window, and its Main, which opens it; "it would require too many things"; tiny-machine's
 # window the same, the one tiny program over Sdl_display, which tiny/mkfile does not build,
-# its SDL module (TinyMachineSDL), tiny/user/sdl/, the tiny programs in a window of it, and their TinyCalls, tiny/system/sdl/;
+# its SDL module (TinyMachineSDL), tiny/user/sdl/, the tiny programs in a window of it, and their TinyCalls, tiny/TinyLibSystem/sdl/;
 # mini-squeak's window, and lib_playground's platform with one, mini-drscheme's)
 # nor tiny-machine's page and mini-qemu's (raspberry/web), which are js_of_ocaml's (Js_of_ocaml: built by dune only)
 # nor OCaml 5's domains (mini-netscape's Worker_spawn by OCaml 5: dune's only; mini-ml's is spawn/large_threads.ml)
@@ -49,7 +49,7 @@ SINGML=$ROOT/_build/default/kernels/singularity/singml/Main.exe
 S=kernels/singularity
 mkdir -p $W/contracts
 for c in $S/contracts/*.contract; do $SINGML -o $W/contracts $c > /dev/null; done
-for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/|^raspberry/(video/Sdl_display|Main)\.ml$|^raspberry/web/|^tiny/TinyMachine/TinyMachine(Window|Web|SDL)\.ml$|^tiny/user/sdl/|^tiny/system/sdl/|^tiny/TinyLibCore/|^tiny/system/tinykernel/TinyLibSystem\.ml$|^tiny/user/emacs\.ml$|^languages/smalltalk/hosts/sdl/|^lib_playground/platforms/sdl/|^editors/turbopascal/hosts/sdl/|^lib_terminal/hosts/sdl/|^editors/emacs/sdl/|^browsers/netscape/spawn/domains\.ml$'); do
+for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/|^raspberry/(video/Sdl_display|Main)\.ml$|^raspberry/web/|^tiny/TinyMachine/TinyMachine(Window|Web|SDL)\.ml$|^tiny/user/sdl/|^tiny/TinyLibSystem/sdl/|^tiny/TinyLibCore/|^tiny/TinyLibSystem/tinykernel/TinyLibSystem\.ml$|^tiny/user/emacs\.ml$|^languages/smalltalk/hosts/sdl/|^lib_playground/platforms/sdl/|^editors/turbopascal/hosts/sdl/|^lib_terminal/hosts/sdl/|^editors/emacs/sdl/|^browsers/netscape/spawn/domains\.ml$'); do
   d=${f%%/*}; all[$d]=$((${all[$d]:-0} + 1))
   # the program's root: languages/c, languages/ml, or the top directory
   root=$d; [ $d = languages ] && root=$(echo $f | cut -d/ -f1-2)
@@ -87,12 +87,12 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
   editors/emacs/*) root=editors/emacs; incs[$root]="$(dirs editors/emacs) $(dirs lib_terminal) -I lib_playground/random $(dirs languages/ml/highlight) -I languages/ml -I _build/default/languages/ml $(dirs languages/c/highlight) $(dirs assembler/highlight) $(dirs languages/smalltalk/highlight) $(dirs languages/scheme/highlight) $(dirs languages/pascal/highlight) $(dirs languages/prolog/highlight)";;
   # (the tiny programs against lib_core, as tiny/mkfile; tiny-ml's prelude is a unit the
   # build makes, TinyMLPrelude.ml: dune's)
-  # (tiny/system/ and its unix/ first: tiny-shell's TinyLibSystem is the Unix one, system/tinykernel/'s is tiny-ml's)
+  # (tiny/ and TinyLibSystem/, the interfaces, then its unix/: tiny-shell's TinyLibSystem is the Unix one, TinyLibSystem/tinykernel/'s is tiny-ml's)
   # (not TinyLibCore/: tiny-ml's standard library, whose List would be lib_core's)
   # (the debugger and the tracer: tiny-kernel's alone, dune builds neither; their TinyCalls is
-  # system/tinykernel/'s, the kernel's every call: fork, exec, trace..., which the host's has not)
-  tiny/TinyDebugger.ml|tiny/TinyTracer.ml) root=tiny/system/tinykernel; incs[$root]="-I tiny/system/tinykernel -I tiny/system $(dirs tiny | sed -E 's|-I [^ ]*tiny/TinyLibCore ||g') -I _build/default/tiny";;
-  tiny/*) incs[$root]="-I tiny/system -I tiny/system/unix $(dirs tiny | sed -E 's|-I [^ ]*tiny/TinyLibCore ||g') -I _build/default/tiny";;
+  # TinyLibSystem/tinykernel/'s, the kernel's every call: fork, exec, trace..., which the host's has not)
+  tiny/TinyDebugger.ml|tiny/TinyTracer.ml) root=tiny/TinyLibSystem/tinykernel; incs[$root]="-I tiny/TinyLibSystem/tinykernel -I tiny/TinyLibSystem $(dirs tiny | sed -E 's|-I [^ ]*tiny/TinyLibCore ||g') -I _build/default/tiny";;
+  tiny/*) incs[$root]="-I tiny -I tiny/TinyLibSystem -I tiny/TinyLibSystem/unix $(dirs tiny | sed -E 's|-I [^ ]*tiny/TinyLibCore ||g') -I _build/default/tiny";;
   esac
   [ -z "${incs[$root]:-}" ] && incs[$root]=$(dirs $root)
   [ $root = kernels ] && [ -d $memdata ] && incs[$root]="${incs[$root]} -I $memdata"

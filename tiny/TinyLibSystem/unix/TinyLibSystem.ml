@@ -1,12 +1,12 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See ../TinyLibSystem.mli; this is the host's, over OCaml's Unix *)
+(* See ../../TinyLibSystem.mli; this is the host's, over OCaml's Unix *)
 
 (* a path as Unix takes it (old: open Fpath_.Operators) *)
 let ( !! ) = Fpath_.Operators.( !! )
 
-(* See ../TinyLibSystem.mli for the types' names *)
+(* See ../../TinyLibSystem.mli for the types' names *)
 type pid = int
 type fd = int
 type status = string

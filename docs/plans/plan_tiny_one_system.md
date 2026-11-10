@@ -1,6 +1,6 @@
 # Plan: one system interface for the tiny programs, TinyLibSystem, and TinyCalls private to tiny-kernel's side
 
-Status: **proposed (2026-11-10), not started.**
+Status: **stage 0 done (2026-11-10): the layout, TinyLibSystem.mli and TinyLibSystem/; stages 1-5 to do.**
 Written 2026-11-10, after the author's question: "now since we have
 TinyLibSystem.mli, do we need TinyCalls.mli? seems they offer similar
 services", and then: "It seems confusing to have both those
@@ -204,4 +204,9 @@ gone) and two rules of a few lines.
 
 ## Status
 
-Proposed; nothing done.
+Stage 0, 2026-11-10: `tiny/system/` moved, `TinyLibSystem.mli` to
+`tiny/`, its parts to `tiny/TinyLibSystem/` (`unix/`, `tinykernel/`,
+`sdl/`, `teststub/`, and TinyCalls.mli); `tiny_lib_system`'s stanza in
+`tiny/dune`, `tiny_calls_stub` renamed `tiny_calls_teststub`; mini-mk's
+and compile_ix.sh's `-I` with `tiny/` before `unix/`, so that the
+interface is found first. Checked as the stages are, `make self` but.

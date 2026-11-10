@@ -93,7 +93,7 @@ but not all stand alone. From `tiny/dune` (and
 | program | outside `tiny/` |
 |---|---|
 | tiny-cpu, tiny-mkfs | `lib_core/`, `fpath`, `caps` |
-| tiny-machine, tiny-shell, tiny-utils, tiny-editor, tiny-prof, tiny-db, tiny-c, tiny-ml, tiny-assembler, tiny-linker | `lib_core/`, `fpath`, `caps`, `unix` (the tools through the host's `TinyLibSystem`, `system/unix/`) |
+| tiny-machine, tiny-shell, tiny-utils, tiny-editor, tiny-prof, tiny-db, tiny-c, tiny-ml, tiny-assembler, tiny-linker | `lib_core/`, `fpath`, `caps`, `unix` (the tools through the host's `TinyLibSystem`, `TinyLibSystem/unix/`) |
 | tiny-vcs, tiny-build | the same, and `lib_crypto/` (SHA-1; TinyLibCore's `Sha1` under tiny-ml) |
 | tiny-machine-window | SDL by `tsdl` (`TinyMachine/TinyMachineSDL.ml`; mini-qemu has its own, `raspberry/video/Sdl_display.ml`) |
 | tiny-machine-fetch | `lib_networking/` (DNS, TLS 1.3, HTTP), `lib_graphics/images/` (PNG, JPEG, GIF), `lib_compression/`, `lib_crypto/` |
@@ -589,7 +589,7 @@ n MB: its three words are a magic number (`0x7a0ce5`), the image's size
 and the memory wanted. What follows the image is not loaded: the
 programs of `/bin` have their labels there (`tiny-linker -s`), for
 `debug`. A child of `fork` gets its parent's size. An ML
-program's heap grows up to what its partition leaves (`system/tinykernel/mlsys.c`);
+program's heap grows up to what its partition leaves (`TinyLibSystem/tinykernel/mlsys.c`);
 `bigmem`, a test, keeps 3 MB alive in 8 MB.
 
 ### 7.2 TinyKernel.ml's system calls
@@ -689,7 +689,7 @@ answer's bytes; `ready` waits for one with a limit, as `ping` does
 A call that fails answers -1. Its C programs are in
 `tiny/TinyKernel/user/`; what they are linked with, `user.h` and
 `sys.tm`, is in `tiny/TinyKernel/libc/`, and an ML program's side of
-the kernel in `tiny/system/tinykernel/` (beside the interfaces, `tiny/system/`).
+the kernel in `tiny/TinyLibSystem/tinykernel/` (beside the interfaces, `tiny/TinyLibSystem/`).
 
 `ready` answers the first of `n` descriptors that a read would not
 wait on, or -1 when the clock reaches `until` (0: no limit; with no
@@ -806,7 +806,7 @@ page that waits for the mouse, the keys and the clock at once. For ML,
 ### 7.4 tiny-windows
 
 `tiny/TinyWindows.ml`, a program of TinyKernel.ml's in ML (compiled by
-tiny-ml after `TinyLibDraw.ml`; `system/tinykernel/mlsys.c` is an ML program's
+tiny-ml after `TinyLibDraw.ml`; `TinyLibSystem/tinykernel/mlsys.c` is an ML program's
 runtime and system calls), is the window system:
 
     ./tiny-machine -window tiny-kernel
@@ -857,7 +857,7 @@ loop (another tune, a faster pace, goes on from the same notes;
 
 `random s` is the next state of a generator of the model's. A game is
 several files given to tiny-ml as one program (TinyKernel's
-Makefile: `system/tinykernel/TinyCalls.ml`, `TinyLibDraw.ml`, `TinyLibPlayground.ml`, the
+Makefile: `TinyLibSystem/tinykernel/TinyCalls.ml`, `TinyLibDraw.ml`, `TinyLibPlayground.ml`, the
 game, and a last file that says `let () = run game`); the same files
 are OCaml's, where a game's model and picture are tested with no
 machine. `square` is one of a page
@@ -889,7 +889,7 @@ only the widgets that are others than those shown are drawn.
 | `Col widgets` | one under the other, the column's width each |
 
 It is given to tiny-ml after the playground, whose shapes it draws by
-(TinyKernel's Makefile: `system/tinykernel/TinyCalls.ml`, `TinyLibDraw.ml`,
+(TinyKernel's Makefile: `TinyLibSystem/tinykernel/TinyCalls.ml`, `TinyLibDraw.ml`,
 `TinyLibPlayground.ml`, `TinyLibGUI.ml`, the program, and a last file that
 says `let () = run calculator`). `calc` is `tiny/TinyAppCalculator.ml`:
 the mouse on its buttons, or the keys (the digits, `+ - * /`, `=` or
@@ -1012,11 +1012,11 @@ keeps it at the wire's other end (§5.5).
 A program on these libraries asks the kernel nothing but through
 `TinyCalls` (`u_write`, `u_read`, `u_ready`, `u_open`, `u_close`,
 `u_ticks`, `u_rawcons`, `u_dial`, `u_argc`, `u_arg`). On tiny-machine
-they are the system calls (`system/tinykernel/TinyCalls.ml`); built by
+they are the system calls (`TinyLibSystem/tinykernel/TinyCalls.ml`); built by
 OCaml, `TinyCalls` is a virtual library of dune's
-(`system/TinyCalls.mli`) with two implementations: the
-tests' stub (`system/stub/`), and a window's
-(`tiny/system/sdl/TinyCalls.ml`). In the window's, what a program draws is
+(`TinyLibSystem/TinyCalls.mli`) with two implementations: the
+tests' stub (`TinyLibSystem/teststub/`), and a window's
+(`tiny/TinyLibSystem/sdl/TinyCalls.ml`). In the window's, what a program draws is
 done by the kernel's own `TinyKernelGraphics.ml` in a screen of host
 memory and shown by SDL; the mouse and the keys are the window's; files
 and the clock are the host's; a dial to the wire's other end (port 70)

@@ -3,7 +3,7 @@
 
 (* TinyLibSystem on tiny-machine: what a tool asks of the system (the
  * shell, the utilities, the compilers, the assembler and the linker,
- * the build system, the editor...; ../TinyLibSystem.mli says each
+ * the build system, the editor...; ../../TinyLibSystem.mli says each
  * function), over tiny-kernel's calls (mlsys.c's, beside this file;
  * TinyCalls.ml names them).
  *

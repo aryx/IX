@@ -33,7 +33,7 @@ case $flag in
 esac
 expected=analyzers/datalog/tests/$expected
 if [ "$out" = -check ]; then check=1; out=$(mktemp); fi
-T=tiny; S=$T/system/unix/TinyLibSystem.ml; R=$T/TinyLibRegex.ml
+T=tiny; S=$T/TinyLibSystem/unix/TinyLibSystem.ml; R=$T/TinyLibRegex.ml
 M=$T/TinyMachine
 CPU="$M/TinyMachineISA.ml $M/TinyMachineCPU.ml"
 BROWSER=$(for m in Text Tokens Lines Html Address Http; do

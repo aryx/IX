@@ -25,7 +25,7 @@
  * m-ix has the same seam one level lower: its tools (mini-rc,
  * mini-cat...) stand on lib_core (Cap, FS, Procs) over OCaml's Unix,
  * and lib_core/system/ has that Unix twice, by Linux's system calls
- * and by Plan 9's (system/plan9/), so one tool runs on Linux and on
+ * and by Plan 9's (TinyLibSystem/plan9/), so one tool runs on Linux and on
  * mini-9pi. Here the seam is the tools' own interface, cut to what
  * tiny-kernel gives, so that a tool cannot ask the host for what the
  * other system lacks.

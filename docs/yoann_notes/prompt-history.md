@@ -68156,3 +68156,43 @@ Claude proposed one file, tiny/TinyLibMachine.ml, holding the ISA, typed lines, 
 Claude planned moving parse into TinyAssembler.ml, so tiny-c and tiny-ml write .o files directly.
 Claude laid out four stages, each checked byte-for-byte against kernel.img and bin/* builds.
 Claude asked four open questions on constructor naming, TinyLibSymbols, output selection, and the version string.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 14:37
+
+**Yoann:**
+
+> let's commit the plan
+
+**Claude (summary):**
+
+Claude committed the plan as 039d80a4 with prompt-history.md, leaving the working tree clean.
+Claude said it would re-record self.expected after reviewing its diff once make self finishes.
+Claude planned to compare the tiny-kernel image with the host's, then do one-system stage 0.
+Claude planned to re-record self.expected again after moving code into TinyLibSystem.mli and TinyLibSystem/.
+Claude offered to start libmach stage 1 or one-system stage 1, leaving the choice to Yoann.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 15:15
+
+**Yoann:**
+
+> what's next?
+
+------------------------------------------------------------------------
+
+## 2026-11-10 15:15
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude finished stage 0, moving `tiny/system/` to `tiny/TinyLibSystem.mli` and `tiny/TinyLibSystem/` and leaving it uncommitted.
+Claude moved the `tiny_lib_system` dune stanza to `tiny/dune` and renamed `tiny_calls_stub` to `tiny_calls_teststub`.
+Claude updated about 100 references across 35 files, including the code-map configs, and marked stage 0 done in the plan.
+Claude reported all checks passing, but noted that `make self` needs one more run to record `self.expected`.
+Claude asked whether to commit stage 0 before doing anything further.

@@ -91,9 +91,9 @@
 #
 # user/ has the programs in C, a file each (an ML one's last file, which
 # runs it, is ../user/'s); libc/ what a C program is linked with to
-# call this kernel (user.h, sys.tm, draw.c, net.c); ../system/tinykernel/
+# call this kernel (user.h, sys.tm, draw.c, net.c); ../TinyLibSystem/tinykernel/
 # the same for an ML one (mlsys.c, TinyCalls.ml, TinyLibSystem.ml), beside
-# the other systems' TinyCalls and TinyLibSystem (../system/README.md).
+# the other systems' TinyCalls and TinyLibSystem (../TinyLibSystem/README.md).
 #
 # What is built goes to _make/ and nowhere else, so that this
 # directory shows the sources: _make/*.tm the kernel's assembly, *.o
@@ -146,7 +146,7 @@ UTILS = [ basename cat cmp cp date du echo grep kill ln ls mkdir mv ps pwd rm se
 L = ../TinyCRuntime
 # an ML program's system on tiny-kernel: mlsys.c, TinyCalls.ml and
 # TinyLibSystem.ml
-SYS = ../system/tinykernel
+SYS = ../TinyLibSystem/tinykernel
 ULIB = $(O)/start.o $(O)/udivmod.o $(O)/libc.o $(O)/libc/sys.o
 
 all: $(O)/boot.img
@@ -390,7 +390,7 @@ $(UNITS:%=$(U)/%.tmi): $(U)/%.tmi: $(U)/%.tm ;
 
 # each program's units, in their order (windows: tiny-windows, after
 # ../TinyLibDraw.ml; rc: tiny-shell, on $(SYS)/TinyLibSystem.ml, the system's
-# calls it asks for (the host's is ../system/unix/TinyLibSystem.ml); utils and ed
+# calls it asks for (the host's is ../TinyLibSystem/unix/TinyLibSystem.ml); utils and ed
 # with ../TinyLibRegex.ml for grep; emacs, office, troff, play, www:
 # run by ../TinyLibGUI.ml's run_canvas; square: the playground's
 # test's); its memory when it asks for more than 1 MB, linked as an

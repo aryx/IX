@@ -1,7 +1,7 @@
-// tiny/system/unix/: what the code map says of it (the code map: tinybox
+// tiny/TinyLibSystem/unix/: what the code map says of it (the code map: tinybox
 // codemap, ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there). TinyLibSystem
-// (../TinyLibSystem.mli) over OCaml's Unix, for the tools on Linux and
+// (../../TinyLibSystem.mli) over OCaml's Unix, for the tools on Linux and
 // macOS; tiny-kernel's is ../tinykernel/TinyLibSystem.ml.
 {
   generated: { by: 'claude-opus-5-5', on: '2026-11-10' },
@@ -17,7 +17,7 @@
         { at: 'def:status', say: "a Unix status as rc's string", weight: 1 },
         { at: 'def:shell', weight: 1 },
       ],
-      related: ['../TinyLibSystem.mli', '../tinykernel/TinyLibSystem.ml'],
+      related: ['../../TinyLibSystem.mli', '../tinykernel/TinyLibSystem.ml'],
     },
   },
   skeletons: [

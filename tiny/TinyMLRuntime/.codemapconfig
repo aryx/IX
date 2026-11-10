@@ -3,7 +3,7 @@
 // docs/claude_notes/codemapconfig_guidelines.md there). TinyML.ml's
 // runtime, in C for tiny-c, included (#include) by its includers, who
 // give it the memory and write and exit: TinyKernel/runtime.c (the
-// kernel), system/tinykernel/mlsys.c (tiny-kernel's ML programs), and the
+// kernel), TinyLibSystem/tinykernel/mlsys.c (tiny-kernel's ML programs), and the
 // tests' own mains (tests/TinyML_test.sh). The skeletons of tiny-ml that
 // go through it are ../.codemapconfig's.
 {
@@ -30,7 +30,7 @@
         { at: 'comment:"Writing goes twice over the value"', say: 'counted, then written: nothing allocated, nothing moves', weight: 2 },
         { at: 'def:sha_block', say: 'SHA-1 in C, on the machine words', weight: 1 },
       ],
-      related: ['../TinyKernel/runtime.c', '../system/tinykernel/mlsys.c', '../TinyML.ml', '../TinyML/TinyMLCompile.ml'],
+      related: ['../TinyKernel/runtime.c', '../TinyLibSystem/tinykernel/mlsys.c', '../TinyML.ml', '../TinyML/TinyMLCompile.ml'],
     },
   },
   skeletons: [

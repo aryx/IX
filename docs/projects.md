@@ -41,7 +41,7 @@ needing the next:
 ![What a program of ix stands on: the program, the standard library, mini-ml's runtime, the C library and the system, for a program of m-ix, a kernel built by ix, the same kernel by the reference build, and a program of t-ix](pics/layers.svg)
 
 - **The standard library** (`lib_core/`'s OCaml: `core/`, `base/`,
-  `collections/`, `printing/`, `parsing/`, `system/`, `commons/`):
+  `collections/`, `printing/`, `parsing/`, `TinyLibSystem/`, `commons/`):
   what OCaml cannot do there is an `external`, a C function of the
   runtime.
 - **mini-ml's runtime** (`languages/ml/runtime/`): `runtime.c`, the one
@@ -94,7 +94,7 @@ things: a tool runs on the host, the others on tiny-machine.
   tiny-linker keeps what the program calls. Before them all come `tiny/TinyLibCore/`'s
   modules, tiny-ml's standard library. Under the ML: `TinyMLRuntime/core.c` (the
   allocator, the collector), given the program's memory by
-  `system/tinykernel/mlsys.c`, and `TinyCRuntime/` for the start and the
+  `TinyLibSystem/tinykernel/mlsys.c`, and `TinyCRuntime/` for the start and the
   division.
 - **A program in C on tiny-machine** (`sh`, `mltests`, the network's
   `ping`, `get`, `put`, `httpd`) is one file of `TinyKernel/user/`,

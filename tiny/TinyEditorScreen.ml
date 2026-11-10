@@ -728,4 +728,4 @@ let shapes (e : editor) (n : int) : shape list =
  * both places it runs. In tiny-kernel it is the user program emacs, built
  * by TinyKernel/Makefile, its calls the kernel's. On the host it is
  * tiny-emacs, built by tiny/user/sdl/dune, its calls those of
- * tiny/system/sdl/TinyCalls.ml (an SDL window). *)
+ * tiny/TinyLibSystem/sdl/TinyCalls.ml (an SDL window). *)

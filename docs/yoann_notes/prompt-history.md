@@ -68085,3 +68085,74 @@ Claude explained that the in-process tests link TinyOffice and the other program
 Claude proposed a main in each TinyXxx.ml, so each user/ file shrinks to a one-line stub.
 Claude proposed generating that line in the build: dune on the host, the TinyKernel Makefile for tiny-kernel.
 Claude left question 6, hand-written or generated, open for Yoann, and updated the stage 5 size estimate.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 13:56
+
+**Yoann:**
+
+> let's commit the plan.
+
+**Claude (summary):**
+
+Claude committed the plan as d71a344f together with prompt-history.md, leaving the working tree clean.
+Claude found the three TinyLibSystem.mli comment changes were already committed in 2babee56 and 2d4449d0, so nothing more was needed there.
+Claude noted that make self was still running in the background.
+Claude planned to re-record self.expected after reviewing its diff and check that tiny-kernel's image matches the host's.
+Claude then intended to start stage 0 by moving TinyLibSystem.mli and TinyLibSystem/ into tiny/.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 13:57
+
+**Yoann:**
+
+> independently, I think TinyAssembler and TinyLinker are relying on modules under TinyMachine/ and this seems to be inconsistent with the other TinyXxx/ which are used just by the TinyXxx.ml. Should we move those files out of TinyMachine/ in a TinyLibMachine.ml or something? Are files beyond the assembler and linker rely on modules from TinyMachine/ ? maybe the debugger? profiler? actually plan 9 has a libmach/ I think for that purpose
+
+**Claude (summary):**
+
+Claude confirmed that `TinyMachineISA` and `TinyMachineAsm` are shared by the whole toolchain, not just tiny-machine, and recommended moving them out of `TinyMachine/`.
+Claude compared this to Plan 9's libmach and proposed either one `TinyLibMachine.ml` (rejected, since ISA and Asm both define `Label`, `Align`, `Space` and similar names) or a `TinyLibMachine/` directory.
+Claude recommended the directory option, with `TinyLibSymbols.ml` included, and renaming the two modules to `TinyLibMachineISA` and `TinyLibMachineAsm`.
+Claude suggested doing the move in the same batch as stage 0 (`TinyLibSystem/`), after `make self`, and recording `self.expected` once.
+Claude asked whether to proceed with the directory option and renames.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 14:21
+
+**Yoann:**
+
+> I wonder if it would make sense to have a single TinyLibMachine.ml. Also do tiny-ml and tiny-c really need to depend on TinyMachineAsm? do they need to parse assembly? I feel like some of this code should go to TinyAssembler instead. Maybe Tiny-ml and tiny-c could directly generate the object? (like mini-cc does)
+
+**Claude (summary):**
+
+Claude proposed a single TinyLibMachine.ml holding the instructions, typed lines, printer, object encoding and object I/O, about 550 lines.
+Claude said tiny-c and tiny-ml only use TinyMachineAsm for the line type and Asm.print, not parsing, and that mini-cc already emits objects directly.
+Claude recommended writing the object directly, moving parse into TinyAssembler.ml, and resolving duplicate constructors by using a single type with a Chunk line.
+Claude recommended a separate plan_tiny_libmach.md, to be run after the one-system plan's stage 0.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 14:26
+
+**Yoann:**
+
+> yes, write the plan
+
+------------------------------------------------------------------------
+
+## 2026-11-10 14:32
+
+**Yoann:**
+
+> resume
+
+**Claude (summary):**
+
+Claude wrote the plan to docs/plans/plan_tiny_libmach.md, uncommitted, to merge the shared machine modules.
+Claude proposed one file, tiny/TinyLibMachine.ml, holding the ISA, typed lines, object encoding, and object I/O.
+Claude planned moving parse into TinyAssembler.ml, so tiny-c and tiny-ml write .o files directly.
+Claude laid out four stages, each checked byte-for-byte against kernel.img and bin/* builds.
+Claude asked four open questions on constructor naming, TinyLibSymbols, output selection, and the version string.

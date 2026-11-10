@@ -164,7 +164,7 @@ local prog(name, file, core) = chain(name, [
     'TinyEditorScreen.mli': { digest: '001839d4df96',
       summary: 'The screen editor as a state and the keys that change it, with no system under it.',
     },
-    'TinyVCS.ml': { digest: '6da606b24c33',
+    'TinyVCS.ml': { digest: '14fc3450bc04',
       summary: "tiny-vcs: git's objects and DAG, and the roads after git: an operation log, undo, no index, conflicts committed.",
       capitals: [
         { at: 'def:save', say: 'objects appended, then head renamed: every command atomic' },
@@ -636,6 +636,43 @@ local prog(name, file, core) = chain(name, [
       joints+: [
         { from: 'TinyML.ml:def:main', to: 'TinyML.ml:def:write_interface', say: '-c: the unit typed' },
         { from: 'TinyML/TinyMLCompile.ml:def:value', to: 'TinyMLRuntime/core.c:def:ml_alloc', say: 'blocks, at run time' },
+      ],
+    },
+    // tiny-c's and tiny-ml's own files: what their main does with the
+    // parts' passes (the two skeletons above are the passes)
+    {
+      name: 'TinyC.ml: a declaration at a time, then one object',
+      bones: [
+        { at: 'TinyC.ml:def:main', role: 'the flags, then the declarations read till the end' },
+        { at: 'TinyC.ml:def:compile', role: "a function's code or a global's data, as lines" },
+        { at: 'TinyC.ml:def:show_ir', role: "-ir: a function's stack machine code, as text" },
+        { at: 'TinyC.ml:comment:"a file that cannot be read or made"', role: 'said apart from an error in the C' },
+        { at: 'TinyLibMachine.ml:def:assemble', role: 'the lines encoded: the object' },
+        { at: 'TinyLibMachine.ml:def:print_line', role: "-S: the lines' text" },
+      ],
+      joints: [
+        { from: 'TinyC.ml:def:main', to: 'TinyC.ml:def:compile', say: 'each declaration' },
+        { from: 'TinyC.ml:def:main', to: 'TinyC.ml:def:show_ir', say: '-ir' },
+        { from: 'TinyC.ml:def:compile', to: 'TinyLibMachine.ml:def:assemble', say: 'the code, then the data' },
+        { from: 'TinyC.ml:def:compile', to: 'TinyLibMachine.ml:def:print_line', say: '-S' },
+      ],
+    },
+    {
+      name: 'TinyML.ml: units, their interfaces, and the main',
+      bones: [
+        { at: 'TinyML.ml:def:main', role: 'the flags: a unit (-c) or a whole program' },
+        { at: 'TinyML.ml:def:read_interface', role: "a .tmi: the library's, the units' before" },
+        { at: 'TinyML.ml:def:compile_unit', role: "a unit's toplevel, its init and its globals" },
+        { at: 'TinyML.ml:def:snapshot', role: 'the tables before the unit' },
+        { at: 'TinyML.ml:def:write_interface', role: 'M.tmi: what the unit added' },
+        { at: 'TinyML.ml:def:compile_main', role: "ml_init: each unit's init in order, ml_globals" },
+      ],
+      joints: [
+        { from: 'TinyML.ml:def:main', to: 'TinyML.ml:def:read_interface', say: 'each .tmi given' },
+        { from: 'TinyML.ml:def:main', to: 'TinyML.ml:def:compile_unit', say: 'each .ml, parsed and typed' },
+        { from: 'TinyML.ml:def:main', to: 'TinyML.ml:def:snapshot', say: '-c: before the unit' },
+        { from: 'TinyML.ml:def:snapshot', to: 'TinyML.ml:def:write_interface', say: 'the difference' },
+        { from: 'TinyML.ml:def:main', to: 'TinyML.ml:def:compile_main', say: 'a whole program, or the .tmi alone' },
       ],
     },
     prog('tiny-assembler: a line, a word, an object', 'TinyAssembler.ml', [

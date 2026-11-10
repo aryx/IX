@@ -68588,3 +68588,51 @@ Claude found that `tiny/TinyVCS.ml` had one blank line it did not add, probably 
 Claude kept that stray blank line uncommitted so it would not end up in the commit.
 Claude started `make self` on the new pipeline in `_make3`, beside the old run in `_make2`.
 Claude said it would record `self.expected` from the new run and delete both scratch directories when it finishes.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 20:23
+
+**Yoann:**
+
+> in TinyVCS.ml can you add a comment before the fresh field to explain its use
+
+**Claude (summary):**
+
+Claude added the fresh comment in tiny/TinyVCS.ml, and dune and mini-mk still build.
+Claude reported that the old-pipeline make self passed in 1h30, failing only on the stale self.expected comparison.
+Claude said the new-pipeline run in _make3 is early in its first build and still going.
+Claude planned to record self.expected from _make3 after reading it, then remove that directory.
+Claude noted that the TinyVCS.ml edits and the fresh comment remain uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 20:35
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended finishing `make self`, which is about 77 of 330 lines in, then recording `self.expected` and removing `_make3/`.
+Claude proposed measuring stage 3's savings by comparing the new self-hosting run against the old 1h30 run, noting it in the plan's Status.
+Claude committed the TinyVCS.ml changes, including the `fresh` comment, as `8cfba3ce misc`, leaving the tree clean.
+Claude proposed code-map skeletons for TinyC.ml, TinyML.ml, TinyMLLexer and TinyMLTree, the last of which are missing from tiny/.
+Claude also flagged 36 warnings and 7 errors in code-map configs outside tiny/, and asked whether to start item 3 now.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 20:37
+
+**Yoann:**
+
+> let's do 3
+
+**Claude (summary):**
+
+Claude added four codemap skeletons: tiny-c and tiny-ml in tiny/.codemapconfig, lexer and tree in TinyML/.codemapconfig.
+Claude reported that tinybox codemap -check now shows no errors, stale digests, or missing entries in tiny/.
+Claude left the config changes and prompt-history.md uncommitted, as the only pending changes in the working tree.
+Claude refreshed the TinyVCS.ml digest after the misc commit, since its summary still held.
+Claude noted that make self was still running in _make3, and remaining repo problems all sit outside tiny/.

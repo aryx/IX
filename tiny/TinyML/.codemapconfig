@@ -138,6 +138,39 @@ local skeletons = import '../../skeletons.libsonnet';
         { from: 'TinyMLCompile.ml:def:value', to: 'TinyMLMachine.ml:def:machine', say: 'IR' },
       ],
     },
+    skeletons.module('TinyMLLexer.ml', 'TinyMLLexer: characters to tokens by two tables', [
+      ['lex', "a file's characters to tokens, each with its line", ''],
+      ['keyword', 'a word: a keyword (KW) or a name', 'a lower-case word'],
+      ['table', 'a list made a hash table', 'the keywords'],
+    ]) + {
+      bones+: [
+        { at: 'TinyMLLexer.ml:def:symbol', role: 'the symbols, longest first: 3 characters, 2, 1' },
+        { at: 'TinyMLLexer.ml:type:token', role: 'a keyword and a symbol both KW' },
+      ],
+      joints+: [
+        { from: 'TinyMLLexer.ml:def:lex', to: 'TinyMLLexer.ml:def:symbol', say: 'punctuation' },
+        { from: 'TinyMLLexer.ml:def:lex', to: 'TinyMLLexer.ml:type:token', say: 'made' },
+      ],
+    },
+    {
+      name: "TinyMLTree: the tree, the types, the program's one name space",
+      bones: [
+        { at: 'TinyMLTree.ml:type:item', role: "a unit's toplevel: let, external, exception, open" },
+        { at: 'TinyMLTree.ml:type:expr', role: 'an expression; a name with its type, a cell' },
+        { at: 'TinyMLTree.ml:type:ty', role: 'a type: a constructor, or a variable that is a cell' },
+        { at: 'TinyMLTree.ml:def:newvar', role: 'a variable unbound at the current level' },
+        { at: 'TinyMLTree.ml:def:cons', role: 'the constructors: C and M.C' },
+        { at: 'TinyMLTree.ml:def:find_con', role: 'M.C first (an alias followed), then C' },
+        { at: 'TinyMLTree.ml:def:of_texpr', role: 'a declared type to a type' },
+      ],
+      joints: [
+        { from: 'TinyMLTree.ml:type:item', to: 'TinyMLTree.ml:type:expr', say: 'its bodies' },
+        { from: 'TinyMLTree.ml:type:expr', to: 'TinyMLTree.ml:type:ty', say: "a name's type, filled by the checker" },
+        { from: 'TinyMLTree.ml:def:newvar', to: 'TinyMLTree.ml:type:ty', say: 'TVar' },
+        { from: 'TinyMLTree.ml:def:find_con', to: 'TinyMLTree.ml:def:cons', say: 'looked up' },
+        { from: 'TinyMLTree.ml:def:of_texpr', to: 'TinyMLTree.ml:type:ty', say: 'its variables generic' },
+      ],
+    },
     skeletons.module('TinyMLParser.ml', 'TinyMLParser: items, expressions, patterns', [
       ['items', 'the toplevel: let, type, open', ''],
       ['bindings', 'let ... and ...', 'let'],

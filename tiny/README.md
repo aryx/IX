@@ -32,12 +32,17 @@ the scheduler), one program for tiny-ml (`KML`), never OCaml's.
 
 A program's `.mli` is where to start: its header comment (the idea,
 a diagram, the history, the references: `docs/tags.md`), then `main`
-and one function at the program's heart, with their types. The `.ml`
-is the code alone. Every file has one, those tiny-ml compiles too
-(TinyKernelGraphics, TinyLibDraw, TinyKernelNetwork, TinyKernelAudio, TinyKernelFS, TinyWindows, TinyLibPlayground,
-TinyAppTetris, TinyLibGUI, TinyAppCalculator, TinyAppTemperature): tiny-ml reads its vals for the
-interface it writes (tiny-ml -c), OCaml, which builds the same files for their tests, checks it. `TinyKernel.mli` is
-the header alone: only tiny-ml compiles `TinyKernel.ml`.
+and the functions at the program's heart, with their types. Where a
+program is a pipeline, its `.mli` tells it, a stage a function: for
+example `TinyAssembler.mli`, from an `Fpath.t` to a `Chan.i`, to
+`TinyMachineAsm`'s lines, to `TinyMachineISA`'s items, to a `Chan.o`;
+`TinyLinker.mli`, from objects to an image; `TinyC.mli` and
+`TinyML.mli`, from a file to assembly lines, through their parts. The
+`.ml` is the code alone. Every file has an `.mli`, those tiny-ml
+compiles too: tiny-ml reads its vals for the interface it writes
+(tiny-ml -c), and OCaml, which builds the same files for their tests,
+checks it. `TinyKernel.mli` is the header alone: only tiny-ml compiles
+`TinyKernel.ml`.
 
 A file's name, or its place, says what it is when it is not a program
 of the system:
@@ -69,7 +74,10 @@ of the system:
   after the compilers: a `.tm` file to an object (its words, its
   labels, the places a label's address goes), objects to an image or
   an a.out, and its map for tiny-prof. tiny-cpu and tiny-machine only
-  run images. The words they make are `TinyMachine/TinyMachineISA.ml`'s
+  run images. A `.tm` file is read as `TinyMachine/TinyMachineAsm.ml`'s
+  typed lines of assembly (labels, instructions, data), the lines
+  tiny-c and tiny-ml make too and print; the objects are
+  `TinyMachineISA`'s items, marshalled. The words they make are `TinyMachine/TinyMachineISA.ml`'s
   (encode, decode), apart from the CPU, which keeps OCaml's 32-bit
   loads for the machine's speed: tiny-ml compiles the one, not the
   other.
@@ -83,7 +91,8 @@ of the system:
     to call it, `libc/` for C (`user.h`, `sys.tm`, `draw.c`, `net.c`)
     and `libml/` for ML (`mlsys.c`, `TinyCalls.ml`, `TinyLibSystem.ml`);
   - `TinyMachine.ml` (and `TinyCPU.ml`) and `TinyMachine/`: the CPU
-    (`TinyMachineCPU`), the devices (`TinyMachineDevices`), the other
+    (`TinyMachineCPU`), its instructions' words and its assembly
+    (`TinyMachineISA`, `TinyMachineAsm`), the devices (`TinyMachineDevices`), the other
     end of the wire (`TinyMachinePeer`, which runs the kernel's own
     `TinyKernelNetwork` on the host), and the three programs beside
     it, its window, its socket and its page.
@@ -154,7 +163,7 @@ is drawn drawn by `TinyKernelGraphics.ml` and shown by SDL, the
 window's mouse and keys, the host's files, clock and web), on which
 the programs' own few lines in `TinyKernel/user/` are built for the
 host as they are: tiny-office, tiny-emacs, tiny-calc, tiny-tetris,
-tiny-www, tiny-troff.
+tiny-www, tiny-troff, tiny-play.
 [`docs/plans/done/plan_tiny_windows.md`](../docs/plans/done/plan_tiny_windows.md)
 is their plan and what was found.
 
@@ -162,6 +171,10 @@ A file is built three ways: by tiny-ml for tiny-kernel, on
 `TinyLibCore/` and `TinyMLRuntime/`; by dune for the host's tests, on
 OCaml's standard library and `lib_core/commons/`; and by ix
 (`mini-mk` here) on `lib_core/` whole, as a test of m-ix's compiler.
+This directory's `dune` has a section for each group: the compilers,
+the machine's tools, the host's tools on `TinyLibSystem`, the
+`TinyLib*` libraries, and tiny-kernel's applications (libraries here,
+for their tests and for `sdl/`).
 
 `TinyKernel/steps/` has what ran on tiny-cpu and tiny-machine before
 a kernel in ML did, kept as `kernels/steps/` keeps m-ix's kernel's:

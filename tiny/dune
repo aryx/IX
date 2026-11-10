@@ -1,6 +1,82 @@
+; The tiny programs built by OCaml on the host: tiny-c, tiny-ml and
+; the machine's tools; the host's tools on TinyLibSystem; and, as
+; libraries, the TinyLib*.ml libraries and tiny-kernel's applications,
+; for their tests and for the host's windows (sdl/). tiny-ml compiles
+; most of these files again for tiny-machine (TinyKernel/'s Makefile).
+
 ; the labels of OCaml's functions left out, String.starts_with "//" s:
 ; tiny-ml has none (warning 6, an error in dune's default profile)
 (env (_ (flags (:standard -w -6))))
+
+;*****************************************************************************
+; The compilers
+;*****************************************************************************
+
+; tiny-c on its parts (TinyC/)
+(executable
+ (name TinyC)
+ (public_name tiny-c)
+ (package ix)
+ (modules TinyC)
+ (libraries ix_core fpath caps tiny_lib_system tiny_c_parts))
+
+; tiny-ml on its parts (TinyML/)
+(executable
+ (name TinyML)
+ (public_name tiny-ml)
+ (package ix)
+ (modules TinyML)
+ (libraries ix_core fpath caps tiny_lib_system tiny_ml_parts))
+
+;*****************************************************************************
+; The machine's tools
+;*****************************************************************************
+
+; tiny-machine's assembler and linker: a .tm file to an object, objects to
+; an image (TinyMachineISA's instructions, in tiny_machine_cpu)
+(executables
+ (names TinyAssembler TinyLinker)
+ (public_names tiny-assembler tiny-linker)
+ (package ix)
+ (modules TinyAssembler TinyLinker)
+ (libraries ix_core fpath caps tiny_machine_cpu tiny_lib_system
+  tiny_lib_symbols))
+
+; tiny-cpu, the processor alone: an image run as a program, with three
+; system calls, the host's
+(executable
+ (name TinyCPU)
+ (public_name tiny-cpu)
+ (package ix)
+ (modules TinyCPU)
+ (libraries ix_core fpath caps tiny_machine_cpu tiny_lib_system))
+
+; tiny-machine, the processor with a kernel's machine: two modes, traps, a
+; timer, pages, a console, a disk, and (-window, -net) a screen, keys, a
+; speaker and a wire
+(executable
+ (name TinyMachine)
+ (public_name tiny-machine)
+ (package ix)
+ (modules TinyMachine)
+ (libraries ix_core fpath unix caps tiny_machine_cpu tiny_machine_devices tiny_kernel_network tiny_machine_peer ix_parallel
+  tiny_lib_system))
+
+; tiny-prof: where the instructions went, by function, from a profile of
+; tiny-cpu -prof or tiny-machine -prof and tiny-linker's maps of what ran
+; (on TinyLibSystem: a tool of tiny-kernel's too, /bin/prof)
+(executable
+ (name TinyProfiler)
+ (public_name tiny-prof)
+ (package ix)
+ (modules TinyProfiler)
+ (libraries ix_core fpath unix caps tiny_lib_system tiny_lib_symbols))
+
+;*****************************************************************************
+; The host's tools on TinyLibSystem
+;*****************************************************************************
+
+; (TinyLibSystem is TinyKernel/host/'s here; tiny-kernel has its own)
 
 (executable
  (name TinyBuildSystem)
@@ -9,8 +85,7 @@
  (modules TinyBuildSystem)
  (libraries ix_core fpath unix caps ix_crypto tiny_lib_system))
 
-; the host's tools on TinyLibSystem (TinyKernel/host/'s; tiny-kernel has its
-; own): the shell, the line editor and the utilities (with grep's and the
+; the shell, the line editor and the utilities (with grep's and the
 ; editor's regular expressions)
 (executables
  (names TinyShell TinyEditorLine TinyUtilities)
@@ -20,13 +95,6 @@
  ; (the shell's tree, said by -debug)
  (preprocess (per_module ((pps ppx_deriving.show) TinyShell)))
  (libraries ix_core fpath unix caps tiny_lib_system tiny_lib_regex))
-
-(executable
- (name TinyC)
- (public_name tiny-c)
- (package ix)
- (modules TinyC)
- (libraries ix_core fpath caps tiny_lib_system tiny_c_parts))
 
 (executable
  (name TinyDatabase)
@@ -42,15 +110,16 @@
  (modules TinyVCS)
  (libraries ix_core unix caps ix_crypto tiny_lib_system))
 
-; tiny-machine's assembler and linker: a .tm file to an object, objects to
-; an image (TinyMachineISA's instructions, in tiny_machine_cpu)
-(executables
- (names TinyAssembler TinyLinker)
- (public_names tiny-assembler tiny-linker)
- (package ix)
- (modules TinyAssembler TinyLinker)
- (libraries ix_core fpath caps tiny_machine_cpu tiny_lib_system
-  tiny_lib_symbols))
+;*****************************************************************************
+; The libraries
+;*****************************************************************************
+
+; TinyLibRegex.ml, the regular expressions of grep and of tiny-editor
+; (tiny-ml compiles it too, before TinyUtilities.ml and TinyEditorLine.ml)
+(library
+ (name tiny_lib_regex)
+ (wrapped false)
+ (modules TinyLibRegex))
 
 ; a program's labels, as tiny-linker writes them: tiny-prof's names, and
 ; debug's on tiny-kernel
@@ -59,35 +128,8 @@
  (wrapped false)
  (modules TinyLibSymbols))
 
-; tiny-cpu, and tiny-prof: where the instructions went, by function, from
-; a profile of tiny-cpu -prof or tiny-machine -prof and tiny-linker's maps of what ran
-(executable
- (name TinyCPU)
- (public_name tiny-cpu)
- (package ix)
- (modules TinyCPU)
- (libraries ix_core fpath caps tiny_machine_cpu tiny_lib_system))
-
-; (tiny-prof on TinyLibSystem: a tool of tiny-kernel's too, /bin/prof)
-(executable
- (name TinyProfiler)
- (public_name tiny-prof)
- (package ix)
- (modules TinyProfiler)
- (libraries ix_core fpath unix caps tiny_lib_system tiny_lib_symbols))
-
-(executable
- (name TinyMachine)
- (public_name tiny-machine)
- (package ix)
- (modules TinyMachine)
- (libraries ix_core fpath unix caps tiny_machine_cpu tiny_machine_devices tiny_kernel_network tiny_machine_peer ix_parallel
-  tiny_lib_system))
-
-; TinyLibDraw.ml, a program's side of it, and TinyWindows.ml, tiny-kernel's
-; window system: tiny-ml compiles them for the machine (TinyKernel/'s
-; Makefile); OCaml too, which only checks the second (its externals are
-; the machine's: no program is linked)
+; TinyLibDraw.ml, a program's side of tiny-kernel's drawing: its messages
+; and their bytes
 (library
  (name tiny_lib_draw)
  (wrapped false)
@@ -101,11 +143,33 @@
  (modules TinyLibPlayground)
  (libraries tiny_lib_draw tiny_host_calls))
 
-; TinyAppTetris.ml, a game on it (tiny-kernel's tetris)
+; TinyLibGUI.ml, what a program with buttons is written on
+(library
+ (name tiny_lib_gui)
+ (wrapped false)
+ (modules TinyLibGUI)
+ (libraries fpath tiny_lib_playground))
+
+;*****************************************************************************
+; tiny-kernel's applications
+;*****************************************************************************
+
+; Built here as libraries, for their tests on the host and for the host's
+; windows (sdl/); on the machine, tiny-ml compiles them.
+
+; TinyAppTetris.ml, tetris, a game on TinyLibPlayground
 (library
  (name tiny_app_tetris)
  (wrapped false)
  (modules TinyAppTetris)
+ (libraries tiny_lib_playground))
+
+; TinyPlay.ml, a WAV file played on tiny-kernel's speaker (play there,
+; tiny-play on the host: sdl/); its test decodes a file
+(library
+ (name tiny_play)
+ (wrapped false)
+ (modules TinyPlay)
  (libraries tiny_lib_playground))
 
 ; TinyEditorScreen.ml, the screen editor: the editor itself, with no system
@@ -115,6 +179,20 @@
  (wrapped false)
  (modules TinyEditorScreen)
  (libraries fpath tiny_lib_playground))
+
+; TinyAppCalculator.ml and TinyAppTemperature.ml, calc and temp, on
+; TinyLibGUI
+(library
+ (name tiny_app_calculator)
+ (wrapped false)
+ (modules TinyAppCalculator)
+ (libraries tiny_lib_gui))
+
+(library
+ (name tiny_app_temperature)
+ (wrapped false)
+ (modules TinyAppTemperature)
+ (libraries tiny_lib_gui))
 
 ; TinyOffice.ml, tiny-office's page and its parts, with no system under it
 ; (tests/TinyOffice_tests/'s test types keys and moves the mouse at it)
@@ -132,59 +210,18 @@
  (modules TinyTroff)
  (libraries tiny_office_parts))
 
-; TinyPlay.ml, a WAV file played on tiny-kernel's speaker (play there,
-; tiny-play on the host: sdl/); its test decodes a file
-(library
- (name tiny_play)
- (wrapped false)
- (modules TinyPlay)
- (libraries tiny_lib_playground))
-
-; TinyLibGUI.ml, what a program with buttons is written on, and
-; TinyAppCalculator.ml and TinyAppTemperature.ml, tiny-kernel's calc and temp,
-; on it
-(library
- (name tiny_lib_gui)
- (wrapped false)
- (modules TinyLibGUI)
- (libraries fpath tiny_lib_playground))
-
-(library
- (name tiny_app_calculator)
- (wrapped false)
- (modules TinyAppCalculator)
- (libraries tiny_lib_gui))
-
-(library
- (name tiny_app_temperature)
- (wrapped false)
- (modules TinyAppTemperature)
- (libraries tiny_lib_gui))
-
-(library
- (name tiny_windows)
- (wrapped false)
- (modules TinyWindows)
- (libraries tiny_lib_draw))
-
 ; TinyBrowser.ml, www, tiny-kernel's browser, on its parts (TinyBrowser/):
-; built here as a library for tiny-www (sdl/); on the machine by tiny-ml
+; built here as a library for tiny-www (sdl/)
 (library
  (name tiny_browser)
  (wrapped false)
  (modules TinyBrowser)
  (libraries tiny_lib_gui tiny_browser_parts tiny_browser_screen))
 
-(executable
- (name TinyML)
- (public_name tiny-ml)
- (package ix)
- (modules TinyML)
- (libraries ix_core fpath caps tiny_lib_system tiny_ml_parts))
-
-; TinyLibRegex.ml, the regular expressions of grep and of tiny-editor
-; (tiny-ml compiles it too, before TinyUtilities.ml and TinyEditorLine.ml)
+; TinyWindows.ml, tiny-kernel's window system. OCaml only checks it: its
+; externals are the machine's, so no program here links it.
 (library
- (name tiny_lib_regex)
+ (name tiny_windows)
  (wrapped false)
- (modules TinyLibRegex))
+ (modules TinyWindows)
+ (libraries tiny_lib_draw))

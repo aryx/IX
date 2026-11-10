@@ -1,8 +1,13 @@
-; tiny programs on the host, in a window of SDL's: TinyCalls.ml, the
-; kernel's calls (../TinyKernel/host/TinyCalls.mli) a window's, and the
-; few lines of each program, tiny-kernel's own (../TinyKernel/user/),
-; compiled by OCaml here. Not counted by make loc (an sdl/ directory: a
-; program's host), as tiny-machine-window is not.
+; tiny-kernel's graphical programs (tiny-emacs, tiny-office, tiny-www,
+; tiny-calc, tiny-tetris...) run on the host, each in a window of SDL's.
+;
+; A program here is the same few lines as on tiny-kernel
+; (../TinyKernel/user/), copied and compiled by OCaml. Under them,
+; TinyCalls.ml makes the kernel's calls (../TinyKernel/host/TinyCalls.mli)
+; with the window: its screen, its keys and mouse, and its sound.
+;
+; make loc does not count this directory, as it does not count
+; tiny-machine-window: both are a host for the programs, not part of t-ix.
 
 (library
  (name tiny_host_calls_sdl)
@@ -36,13 +41,6 @@
 (copy_files# ../TinyKernel/user/play.ml)
 
 (executable
- (name office)
- (public_name tiny-office)
- (package ix)
- (modules office)
- (libraries tiny_office tiny_lib_gui tiny_host_calls_sdl))
-
-(executable
  (name emacs)
  (public_name tiny-emacs)
  (package ix)
@@ -50,11 +48,11 @@
  (libraries tiny_editor_screen tiny_lib_gui tiny_host_calls_sdl))
 
 (executable
- (name calc)
- (public_name tiny-calc)
+ (name office)
+ (public_name tiny-office)
  (package ix)
- (modules calc)
- (libraries tiny_app_calculator tiny_lib_gui tiny_host_calls_sdl))
+ (modules office)
+ (libraries tiny_office tiny_lib_gui tiny_host_calls_sdl))
 
 (executable
  (name www)
@@ -76,6 +74,13 @@
  (package ix)
  (modules play)
  (libraries tiny_play tiny_lib_gui tiny_host_calls_sdl))
+
+(executable
+ (name calc)
+ (public_name tiny-calc)
+ (package ix)
+ (modules calc)
+ (libraries tiny_app_calculator tiny_lib_gui tiny_host_calls_sdl))
 
 (executable
  (name tetris)

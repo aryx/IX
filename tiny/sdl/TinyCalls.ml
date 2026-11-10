@@ -29,6 +29,10 @@
  * copy kept in dir when the fetch fails (as tiny-machine -net dir); the
  * answer's messages read one at a time, as a link's are. *)
 
+(*****************************************************************************)
+(* The screen *)
+(*****************************************************************************)
+
 let width = 1024
 let height = 768
 let screen_at = 0xf00000
@@ -59,6 +63,49 @@ let conn = lazy (
 
 let display =
   lazy (TinyMachineSDL.create ~title:(Filename.basename Sys.argv.(0)))
+
+(* TINY_SCREEN=file: the screen written there as a PPM when the program
+ * ends, a TERM signal ending it (for a look without a window:
+ * SDL_VIDEODRIVER=dummy), as tiny-machine -screen *)
+let () =
+  match Sys.getenv_opt "TINY_SCREEN" with
+  | Some file ->
+      Sys.set_signal Sys.sigterm (Sys.Signal_handle (fun _ -> exit 0));
+      at_exit (fun () ->
+        Out_channel.with_open_bin file (fun oc ->
+          output_string oc (TinyMemory.ppm width height)))
+  | None -> ()
+
+(* whether the screen was drawn on since it was last shown *)
+let dirty = ref false
+(* TinyCalls.mli's, the stub's: here empty, what is drawn being drawn at
+ * once *)
+let drawn = Buffer.create 0
+
+(* the screen shown, if it was drawn on since *)
+let show () =
+  if !dirty then begin
+    dirty := false;
+    let rgb = Bytes.create (3 * width * height) in
+    for i = 0 to (width * height) - 1 do
+      Bytes.blit_string TinyMachineDevices.colours
+        (3 * Char.code (Bytes.get TinyMemory.mem (screen_at + i)))
+        rgb (3 * i) 3
+    done;
+    (Lazy.force display).present width height (Bytes.unsafe_to_string rgb)
+  end
+
+(* the drawing's messages; one refused is said, and the write is -1, as
+ * tiny-kernel's write of /dev/draw does (old: the program ended) *)
+let draw s =
+  match TinyKernelGraphics.messages (Lazy.force conn) s with
+  | () -> dirty := true; 0
+  | exception TinyKernelGraphics.Graphics why ->
+      prerr_string ("draw: " ^ why ^ "\n"); dirty := true; -1
+
+(*****************************************************************************)
+(* The speaker *)
+(*****************************************************************************)
 
 (* The speaker, as tiny-kernel's (TinyKernel.ml's voices) and
  * tiny-machine's (its ring played, then silenced): a ring of 8,192
@@ -109,32 +156,9 @@ let speak (ahead : int ref) s =
       end
   | exception TinyKernelAudio.Bad_sound -> ()
 
-(* TINY_SCREEN=file: the screen written there as a PPM when the program
- * ends, a TERM signal ending it (for a look without a window:
- * SDL_VIDEODRIVER=dummy), as tiny-machine -screen *)
-let () =
-  match Sys.getenv_opt "TINY_SCREEN" with
-  | Some file ->
-      Sys.set_signal Sys.sigterm (Sys.Signal_handle (fun _ -> exit 0));
-      at_exit (fun () ->
-        Out_channel.with_open_bin file (fun oc ->
-          output_string oc (TinyMemory.ppm width height)))
-  | None -> ()
-let dirty = ref false
-let drawn = Buffer.create 0
-
-(* the screen shown, if it was drawn on since *)
-let show () =
-  if !dirty then begin
-    dirty := false;
-    let rgb = Bytes.create (3 * width * height) in
-    for i = 0 to (width * height) - 1 do
-      Bytes.blit_string TinyMachineDevices.colours
-        (3 * Char.code (Bytes.get TinyMemory.mem (screen_at + i)))
-        rgb (3 * i) 3
-    done;
-    (Lazy.force display).present width height (Bytes.unsafe_to_string rgb)
-  end
+(*****************************************************************************)
+(* The clock *)
+(*****************************************************************************)
 
 (* the clock, 400 ticks a second *)
 let start = Unix.gettimeofday ()
@@ -142,20 +166,10 @@ let u_ticks () = int_of_float ((Unix.gettimeofday () -. start) *. 400.)
 (* (946684800: 2000-01-01 in Unix's seconds) *)
 let u_time () = int_of_float (Unix.time ()) - 946684800
 let u_seed () = u_ticks ()
-(* the host's file as tiny-kernel's entry (user.h's dirent) *)
-let u_stat (path : string) : string =
-  match Unix.stat path with
-  | st ->
-      let word n =
-        String.init 4 (fun k -> Char.chr ((n lsr (8 * k)) land 255)) in
-      let name = Filename.basename path in
-      let name =
-        if String.length name > 64 then String.sub name 0 64 else name in
-      name ^ String.make (64 - String.length name) '\000'
-      ^ word (if st.st_kind = Unix.S_DIR then 1 else 2)
-      ^ word st.st_nlink ^ word st.st_size
-      ^ word (int_of_float st.st_mtime - 946684800)
-  | exception Unix.Unix_error _ -> ""
+
+(*****************************************************************************)
+(* The keys and the mouse *)
+(*****************************************************************************)
 
 (* the keys typed and not read; the mouse, and whether it moved since it
  * was read; an ENQ to answer *)
@@ -185,6 +199,13 @@ let pump () =
     Option.iter key (TinyMachineSDL.repeated keys now)
   end
 
+(* a word of the mouse's box: 4 bytes, the low first *)
+let word v = String.init 4 (fun k -> Char.chr ((v asr (8 * k)) land 255))
+
+(*****************************************************************************)
+(* The files *)
+(*****************************************************************************)
+
 (* the files open: their descriptor, what is left to read of one, what
  * is written to one *)
 type file =
@@ -201,6 +222,10 @@ let ready fd =
   || (match Hashtbl.find_opt files fd with
       | Some (Asking _) | None -> false
       | Some _ -> true)
+
+(*****************************************************************************)
+(* The wire's port 70 *)
+(*****************************************************************************)
 
 (* tiny-machine-fetch's output for its arguments, or why not; beside
  * this program, as tiny-machine finds it *)
@@ -251,6 +276,10 @@ let answer line =
            | None -> TinyMachinePeer.picture "" 0 0 ""))
   | _ -> []
 
+(*****************************************************************************)
+(* The calls: descriptors *)
+(*****************************************************************************)
+
 let rec u_ready (fds : int array) (n : int) (until : int) : int =
   show ();
   pump ();
@@ -261,9 +290,6 @@ let rec u_ready (fds : int array) (n : int) (until : int) : int =
   | -1 when until > 0 && u_ticks () >= until -> -1
   | -1 -> Unix.sleepf 0.005; u_ready fds n until
   | fd -> fd
-
-(* a word of the mouse's box: 4 bytes, the low first *)
-let word v = String.init 4 (fun k -> Char.chr ((v asr (8 * k)) land 255))
 
 let u_read (fd : int) (n : int) : string =
   if fd = 0 then begin
@@ -290,14 +316,6 @@ let u_read (fd : int) (n : int) : string =
           left := String.sub m n (String.length m - n) :: rest;
           String.sub m 0 n)
     | _ -> ""
-
-(* the drawing's messages; one refused is said, and the write is -1, as
- * tiny-kernel's write of /dev/draw does (old: the program ended) *)
-let draw s =
-  match TinyKernelGraphics.messages (Lazy.force conn) s with
-  | () -> dirty := true; 0
-  | exception TinyKernelGraphics.Graphics why ->
-      prerr_string ("draw: " ^ why ^ "\n"); dirty := true; -1
 
 let u_write (fd : int) (s : string) : int =
   if fd = 3 then draw s
@@ -349,6 +367,12 @@ let u_open (name : string) (flags : int) : int =
     fd)
   else -1
 
+(* u_open's flags (TinyCalls.mli) *)
+let o_read = 0
+let o_anew = 0x601
+let o_write = 0x201
+let o_read_write = 0x202
+
 let u_close (fd : int) : int =
   (match Hashtbl.find_opt files fd with
    | Some (Writing (name, b)) ->
@@ -358,6 +382,7 @@ let u_close (fd : int) : int =
   0
 
 let u_rawcons (_ : int) = 0
+
 let u_dial (address : string) (port : int) =
   if address = "10.0.0.1" && port = 70 then (
     let fd = !next in
@@ -365,6 +390,26 @@ let u_dial (address : string) (port : int) =
     incr next;
     fd)
   else -1
+
+(*****************************************************************************)
+(* The calls: files' entries, programs, arguments *)
+(*****************************************************************************)
+
+(* the host's file as tiny-kernel's entry (user.h's dirent) *)
+let u_stat (path : string) : string =
+  match Unix.stat path with
+  | st ->
+      let word n =
+        String.init 4 (fun k -> Char.chr ((n lsr (8 * k)) land 255)) in
+      let name = Filename.basename path in
+      let name =
+        if String.length name > 64 then String.sub name 0 64 else name in
+      name ^ String.make (64 - String.length name) '\000'
+      ^ word (if st.st_kind = Unix.S_DIR then 1 else 2)
+      ^ word st.st_nlink ^ word st.st_size
+      ^ word (int_of_float st.st_mtime - 946684800)
+  | exception Unix.Unix_error _ -> ""
+
 (* /bin/play is tiny-play, else m-ix's mini-play (/bin/page: mini-page,
  * there is no tiny-page): in the bin/ this program was run from, beside
  * its executable (dune's _build, where tiny-play is play.exe), or on the
@@ -392,11 +437,6 @@ let u_spawn (path : string) (args : string list) : int =
         Unix.create_process prog (Array.of_list (prog :: args))
           Unix.stdin Unix.stdout Unix.stderr
       with Unix.Unix_error _ -> -1)
+
 let u_argc () = Array.length Sys.argv
 let u_arg (i : int) = Sys.argv.(i)
-
-(* u_open's flags (TinyCalls.mli) *)
-let o_read = 0
-let o_anew = 0x601
-let o_write = 0x201
-let o_read_write = 0x202

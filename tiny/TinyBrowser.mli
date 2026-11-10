@@ -120,3 +120,9 @@
 val browse :
   < Cap.clock; Cap.network; Cap.open_out; Cap.fork; Cap.exec; .. > ->
   string -> unit
+
+(* [main caps argv]: the program, www address or words: the page, or
+ * the words searched *)
+val main :
+  < Cap.clock; Cap.network; Cap.open_out; Cap.fork; Cap.exec; Cap.stderr; .. > ->
+  string array -> Exit.t

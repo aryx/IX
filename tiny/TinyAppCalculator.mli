@@ -80,3 +80,7 @@ type msg = Digit of int | Op of char | Equals | Clear
 
 (* The calculator, for TinyLibGUI's run *)
 val calculator : (model, msg) TinyLibGUI.gui
+
+(* [main caps argv]: the program, calc: the calculator run; it asks the
+ * system nothing of its own *)
+val main : < .. > -> string array -> Exit.t

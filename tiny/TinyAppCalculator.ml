@@ -110,5 +110,8 @@ let key (k : key) : msg list =
 (* Entry point *)
 (*****************************************************************************)
 
-(* see user/calc.ml for main() *)
+(* the calculator, run by main below (user/calc.ml its one line) *)
 let calculator = { init = start; view; update; key }
+
+(* the program, calc: the calculator run (no system call of its own) *)
+let main (_ : < .. >) (_ : string array) = run calculator

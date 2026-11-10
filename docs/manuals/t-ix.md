@@ -859,8 +859,8 @@ loop (another tune, a faster pace, goes on from the same notes;
 several files given to tiny-ml as one program (TinyKernel's
 Makefile: `TinyLibSystem/tinykernel/`'s `TinyCalls.ml` and
 `TinyLibSystem.ml`, `TinyLibDraw.ml`, `TinyLibPlayground.ml`, the game,
-and a last file that says `let () = TinyLibSystem.main "tetris" (fun
-caps _ -> run caps game)`); the same files
+and a last file that says `let () = TinyLibSystem.main "tetris"
+TinyAppTetris.main`); the same files
 are OCaml's, where a game's model and picture are tested with no
 machine. `square` is one of a page
 (`tiny/tests/TinyLibPlayground_tests/Square.ml`): type it at the screen's
@@ -893,7 +893,8 @@ only the widgets that are others than those shown are drawn.
 It is given to tiny-ml after the playground, whose shapes it draws by
 (TinyKernel's Makefile: `TinyLibSystem/tinykernel/`'s `TinyCalls.ml` and
 `TinyLibSystem.ml`, `TinyLibDraw.ml`, `TinyLibPlayground.ml`, `TinyLibGUI.ml`, the program, and a last file that
-says `let () = run calculator`). `calc` is `tiny/TinyAppCalculator.ml`:
+says `let () = TinyLibSystem.main "calc" TinyAppCalculator.main`). `calc` is
+`tiny/TinyAppCalculator.ml`:
 the mouse on its buttons, or the keys (the digits, `+ - * /`, `=` or
 the Enter, `c` clears); `q` quits. Whole numbers of nine digits, an
 operation done when the next one is asked (`2+3*4=` is 20). `temp` is
@@ -1026,7 +1027,7 @@ is answered as tiny-machine answers it, a web page fetched by
 `tiny-machine-fetch`; a sound written to `/dev/audio` is made by the
 kernel's own `TinyKernelAudio.ml` and played by SDL (one after the
 other, not mixed; a write waits while a quarter of a second is queued,
-and the program's end until all is heard). The programs' own few lines in
+and the program's end until all is heard). The programs' one-line files in
 `tiny/user/` are compiled there as they are:
 
     tiny-office file      tiny-emacs file      tiny-calc      tiny-tetris

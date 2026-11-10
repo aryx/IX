@@ -467,3 +467,20 @@ let browse caps typed =
       | _ -> loop keys
     end in
   loop true
+
+(*****************************************************************************)
+(* Entry point *)
+(*****************************************************************************)
+
+(* The program, www address, or the words searched (user/www.ml its one
+ * line; old: there whole) *)
+let main caps argv =
+  if Array.length argv < 2 then begin
+    TinyLibSystem.eprint caps "usage: www address\n";
+    Exit.Code 1
+  end
+  else begin
+    browse caps
+      (String.concat " " (Array.to_list (Array.sub argv 1 (Array.length argv - 1))));
+    Exit.OK
+  end

@@ -62,3 +62,7 @@ type msg = Celsius of string | Fahrenheit of string
 
 (* The converter, for TinyLibGUI's run *)
 val temperature : (model, msg) TinyLibGUI.gui
+
+(* [main caps argv]: the program, temp: the converter run; it asks the
+ * system nothing of its own *)
+val main : < .. > -> string array -> Exit.t

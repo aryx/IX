@@ -562,3 +562,28 @@ let to_pdf (doc : string) : string =
       (places (String.length head) objects))
   ^ "trailer << /Size " ^ num count ^ " /Root 1 0 R >>\nstartxref\n"
   ^ num (String.length head + String.length body) ^ "\n%%EOF\n"
+
+(*****************************************************************************)
+(* Entry point *)
+(*****************************************************************************)
+
+(* The program, troff [-h | -p] file: the page as text, HTML or PDF on
+ * the standard output; a file not there read as "" (user/troff.ml its
+ * one line; old: there whole) *)
+module TSys = TinyLibSystem
+
+let main caps argv =
+  let flag = if Array.length argv = 3 then argv.(1) else "" in
+  if Array.length argv <> 2 && flag <> "-h" && flag <> "-p" then begin
+    TSys.eprint caps "usage: troff [-h | -p] file\n";
+    Exit.Code 1
+  end
+  else begin
+    let file = argv.(Array.length argv - 1) in
+    let doc = try TSys.read_file caps (Fpath.v file) with Failure _ -> "" in
+    TSys.print caps
+      (if flag = "-h" then to_html file doc
+       else if flag = "-p" then to_pdf doc
+       else to_text 72 doc);
+    Exit.OK
+  end

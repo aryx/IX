@@ -723,9 +723,45 @@ let shapes (e : editor) (n : int) : shape list =
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
-(* There is no main here: the editor makes no system calls (see the .mli).
- * The program around it is user/emacs.ml, a single file for
- * both places it runs. In tiny-kernel it is the user program emacs, built
- * by TinyKernel/Makefile, its calls the kernel's. On the host it is
- * tiny-emacs, built by tiny/user/sdl/dune, its calls those of
- * tiny/TinyLibSystem/sdl/ (an SDL window). *)
+(* The program, emacs: the editor of a file on a canvas of the window's
+ * size, its picture (a white ground, its lines), and a key given to it
+ * with those it gives itself (a macro's, M-x's), a save done when it
+ * asks. The editor above makes no system call; this function, the
+ * program around it, makes them all, through TinyLibSystem, the same
+ * on tiny-kernel and on the host (user/emacs.ml its one line; old:
+ * there whole) *)
+module TSys = TinyLibSystem
+
+let main caps argv =
+  if Array.length argv <> 2 then begin
+    TSys.eprint caps "usage: emacs file\n";
+    Exit.Code 1
+  end
+  else
+    let file = argv.(1) in
+    let path = Fpath.v file in
+    (* (a new file's text "", and a save that cannot be done said in
+     * the editor: TSys's Failures caught) *)
+    let text0 = try TSys.read_file caps path with Failure _ -> "" in
+    let answer e r =
+      match r with
+      | Continue -> true
+      | Save ->
+        (try TSys.write_file caps path (text e); saved e
+         with Failure _ -> say e ("Cannot write " ^ file));
+        true
+      | Quit -> false in
+    let rec given e r =
+      answer e r
+      && (match pending e with Some k -> given e (key e k) | None -> true)
+    in
+    let (c : (editor * int * int) TinyLibGUI.canvas) = {
+      first = (fun w h -> (create (w / 8) (h / 16) path text0, w, h));
+      picture = (fun (e, w, h) -> Rect (255, w, h) :: shapes e (h / 16));
+      typed =
+        (fun k m ->
+          let (e, _, _) = m in
+          if given e (key e k) then Some m else None);
+      moved = (fun _ _ _ m -> Some m) } in
+    TinyLibGUI.run_canvas caps c;
+    Exit.OK

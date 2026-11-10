@@ -1,6 +1,6 @@
 # Plan: one system interface for the tiny programs, TinyLibSystem, and TinyCalls private to tiny-kernel's side
 
-Status: **stages 0 to 4 done (2026-11-10): one interface, TinyLibSystem; stage 5 (no user/) to do.**
+Status: **done (2026-11-10): one interface, TinyLibSystem; stage 5 as the author chose it (each program's main in its module, user/ one line each).**
 Written 2026-11-10, after the author's question: "now since we have
 TinyLibSystem.mli, do we need TinyCalls.mli? seems they offer similar
 services", and then: "It seems confusing to have both those
@@ -252,3 +252,15 @@ TinyLibSystem's, and the debugger's and the tracer's for `trace`.
 expectation changed) and self-quick in `_make2`; tiny-calc,
 tiny-tetris and tiny-office run in a window (SDL's dummy driver),
 their screens looked at.
+
+Stage 5, 2026-11-10, as the author chose it (question 6 asked again:
+the line made by three builds, dune's, the Makefile's and the self
+build's Buildfile, more rules than the eleven files): each program's
+`main caps argv` in its module, in its `.mli` as the tools' (emacs's
+in TinyEditorScreen, office's in TinyOffice, www's in TinyBrowser,
+troff's, play's, tetris's, calc's, temp's, debug's), and each file of
+`user/` one line, `let () = TinyLibSystem.main "office" TinyOffice.main`
+(trace's `TinyTracer.main ()` already one; bigmem, a test, its own).
+Checked: dune; `make test-tix` (TinyEditorScreen_test.sh's tiny-cpu
+program with TinyLibGUI.ml now); `tiny_check.sh`; mini-mk; the
+kernel's check and self-quick in `_make2`.

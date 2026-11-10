@@ -5,9 +5,9 @@
 // A tiny program is one file, or a file and its parts in a directory
 // of its name (TinyC/, TinyML/, TinyOffice/, TinyBrowser/, each with
 // its own config): its skeleton is its own pipeline, from its main
-// down to the idea it keeps. Most start at TinyLibSystem.main (the
+// down to the idea it keeps. All start at TinyLibSystem.main (the
 // host's Unix, or tiny-kernel's calls: [prog] below); the graphical
-// ones are a value run by user/'s few lines.
+// ones' main in their module, user/'s one line running it.
 local skeletons = import '../skeletons.libsonnet';
 local chain = skeletons.chain;
 // a tool on TinyLibSystem: its main given the capabilities by
@@ -591,7 +591,7 @@ local prog(name, file, core) = chain(name, [
       ['TinyOffice.ml', 'a page of parts'],
       ['TinyBrowser.ml', 'www'],
       ['TinyDebugger.ml', 'debug, its window on the GUI'],
-      ['user/', "each program's few lines of main"],
+      ['user/', "each program's one line, its module's main run"],
     ], [
       ['TinyLibPlayground.ml', 'TinyLibDraw.ml', 'shapes as messages'],
       ['TinyLibGUI.ml', 'TinyLibPlayground.ml', 'draws with'],

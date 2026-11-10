@@ -165,7 +165,7 @@
  (name tiny_lib_gui)
  (wrapped false)
  (modules TinyLibGUI)
- (libraries fpath tiny_lib_playground))
+ (libraries fpath caps tiny_lib_playground tiny_lib_system))
 
 ;*****************************************************************************
 ; tiny-kernel's applications
@@ -195,7 +195,7 @@
  (name tiny_editor_screen)
  (wrapped false)
  (modules TinyEditorScreen)
- (libraries fpath tiny_lib_playground))
+ (libraries fpath caps tiny_lib_playground tiny_lib_gui tiny_lib_system))
 
 ; TinyAppCalculator.ml and TinyAppTemperature.ml, calc and temp, on
 ; TinyLibGUI
@@ -225,7 +225,7 @@
  (name tiny_troff)
  (wrapped false)
  (modules TinyTroff)
- (libraries tiny_office_parts))
+ (libraries caps tiny_office_parts tiny_lib_system))
 
 ; TinyBrowser.ml, www, tiny-kernel's browser, on its parts (TinyBrowser/):
 ; built here as a library for tiny-www (user/sdl/)

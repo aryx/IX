@@ -92,3 +92,23 @@ let play out data =
       from (k + block)
     end in
   from 0
+
+(*****************************************************************************)
+(* Entry point *)
+(*****************************************************************************)
+
+(* The program, play file.wav, its messages a file's trouble after its
+ * name, which main says after play's (user/play.ml its one line; old:
+ * there whole) *)
+let main caps argv =
+  if Array.length argv <> 2 then begin
+    TSys.eprint caps "usage: play file.wav\n";
+    Exit.Code 1
+  end
+  else
+    let file = argv.(1) in
+    let out = TSys.open_out caps (Fpath.v "/dev/audio") in
+    let data = try TSys.read_file caps (Fpath.v file) with Failure _ -> "" in
+    (try play out (if data = "" then failwith "no such file, or empty" else data)
+     with Failure why -> failwith (file ^ ": " ^ why));
+    Exit.OK

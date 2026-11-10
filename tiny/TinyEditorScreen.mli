@@ -26,8 +26,9 @@
  * for a state; it is recomputed after each key, and the screen redraws
  * only the lines that changed. The editor uses no system calls: the
  * surrounding program reads the keys, displays the lines and writes
- * the file. That program is tiny-kernel's emacs
- * (user/emacs.ml). There are no terminal escape sequences:
+ * the file. That program is [main], at the end, alone in making system
+ * calls (tiny-kernel's emacs and the host's tiny-emacs, user/emacs.ml
+ * its one line). There are no terminal escape sequences:
  * the screen is tiny-machine's, where a program draws characters
  * wherever it wants.
  *
@@ -145,3 +146,9 @@ val saved : editor -> unit
 
 (* a message, on the screen's last line until the next key *)
 val say : editor -> string -> unit
+
+(* [main caps argv]: the program, emacs file: the editor of the file in
+ * the window, its saves written; the usage when argv is not a file *)
+val main :
+  < Cap.open_in; Cap.open_out; Cap.stderr; Cap.clock; Cap.keyboard; .. > ->
+  string array -> Exit.t

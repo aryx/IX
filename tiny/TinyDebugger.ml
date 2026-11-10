@@ -509,7 +509,7 @@ let window caps =
   run_canvas caps
     { first = first; picture = picture; typed = typed; moved = moved }
 
-let main caps =
+let main caps (_ : string array) =
   let n = u_argc () in
   let windowed = n > 1 && u_arg 1 = "-window" in
   let first = if windowed then 2 else 1 in

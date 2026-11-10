@@ -1,8 +1,9 @@
 ; tiny-kernel's graphical programs (tiny-emacs, tiny-office, tiny-www,
 ; tiny-calc, tiny-tetris...) run on the host, each in a window of SDL's.
 ;
-; A program here is the same few lines as on tiny-kernel, its last file
-; in ../, copied and compiled by OCaml. Under them,
+; A program here is the same one line as on tiny-kernel, its file in
+; ../ (TinyLibSystem.main of its module's main), copied and compiled by
+; OCaml. Under them,
 ; ../TinyLibSystem/sdl/ makes TinyLibSystem (../TinyLibSystem.mli) with
 ; the window: its screen, its keys and mouse, and its sound.
 ;

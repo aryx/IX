@@ -89,8 +89,9 @@
 # cat, echo, ls, wc, mkdir and rm in C are not in the image any more,
 # but t6's (TinyKernel/steps/t6/user/ has links to them).
 #
-# user/ has the programs in C, a file each (an ML one's last file, which
-# runs it, is ../user/'s); libc/ what a C program is linked with to
+# user/ has the programs in C, a file each (an ML one's file, one line,
+# its module's main run by TinyLibSystem.main, is ../user/'s); libc/ what
+# a C program is linked with to
 # call this kernel (user.h, sys.tm, draw.c, net.c); ../TinyLibSystem/tinykernel/
 # the same for an ML one (mlsys.c, TinyCalls.ml, TinyLibSystem.ml), beside
 # the other systems' TinyLibSystem (../TinyLibSystem/README.md).

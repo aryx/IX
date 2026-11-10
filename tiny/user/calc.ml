@@ -1,9 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* calc, a program of TinyKernel.ml's: ../TinyAppCalculator.ml, the
- * calculator, run by ../TinyLibGUI.ml. *)
-open TinyLibGUI
-open TinyAppCalculator
-
-let () = run calculator
+(* calc, a program of TinyKernel.ml's (and on the host, in a window,
+ * tiny-calc: sdl/): ../TinyAppCalculator.ml's main, its program *)
+let () = TinyLibSystem.main "calc" TinyAppCalculator.main

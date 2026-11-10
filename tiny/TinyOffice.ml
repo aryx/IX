@@ -501,3 +501,36 @@ let view (o : office) : shape list =
              | Box_chart -> chart_view o.page b in
        [ Group (frame b (o.sel = Some !i) @ content) ]) o.page)
   @ [ Group (status o) ] @ menu_view width (office_menus o) o.menu
+
+(*****************************************************************************)
+(* Entry point *)
+(*****************************************************************************)
+
+(* The program, office: the document of a file on a canvas, its keys
+ * and mouse, saved when it asks (user/office.ml its one line; old:
+ * there whole) *)
+module TSys = TinyLibSystem
+
+let main caps argv =
+  if Array.length argv <> 2 then begin
+    TSys.eprint caps "usage: office file\n";
+    Exit.Code 1
+  end
+  else
+    let file = argv.(1) in
+    let path = Fpath.v file in
+    let text0 = try TSys.read_file caps path with Failure _ -> "" in
+    let answer o r =
+      match r with
+      | Continue -> Some o
+      | Save ->
+        (try TSys.write_file caps path (text o); saved o
+         with Failure _ -> say o ("Cannot write " ^ file));
+        Some o
+      | Quit -> None in
+    run_canvas caps {
+      first = (fun w h -> create w h path text0);
+      picture = view;
+      typed = (fun k o -> answer o (key o k));
+      moved = (fun x y b o -> answer o (mouse o x y b)) };
+    Exit.OK

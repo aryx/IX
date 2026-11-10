@@ -127,3 +127,7 @@ val music : model -> TinyLibPlayground.tune option
 
 (* a piece's four cells in the well: a column and a row each *)
 val cells : piece -> (int * int) list
+
+(* [main caps argv]: the program, tetris: the game run until a q or the
+ * keys' end *)
+val main : < Cap.open_out; Cap.random; Cap.clock; .. > -> string array -> Exit.t

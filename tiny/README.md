@@ -89,8 +89,8 @@ of the system:
   - `TinyKernel.ml` and `TinyKernel/`: the kernel's parts in ML that
     are files of their own (`TinyKernelGraphics`, `TinyKernelNetwork`,
     `TinyKernelAudio`),
-    its assembly and C, its programs in C (`user/`; the last file of
-    the ones in ML is `tiny/user/`'s) and what they are linked with
+    its assembly and C, its programs in C (`user/`; the one-line file
+    of the ones in ML is `tiny/user/`'s) and what they are linked with
     to call it, `libc/` for C (`user.h`, `sys.tm`, `draw.c`, `net.c`);
     for ML, `TinyLibSystem/tinykernel/` (below);
   - `TinyMachine.ml` (and `TinyCPU.ml`) and `TinyMachine/`: the CPU
@@ -170,7 +170,7 @@ stub (`TinyLibSystem/teststub/`: what is drawn kept, no keys) and a
 window's ([`TinyLibSystem/sdl/`](TinyLibSystem/sdl/TinyLibSystem.ml):
 what is drawn drawn by `TinyKernelGraphics.ml` and shown by SDL, the
 window's mouse and keys, the host's files, clock and web), on which
-the programs' own few lines in [`user/`](user/) are built for the
+each program's `main` (in its module; its one line in [`user/`](user/)) is built for the
 host as they are, by `user/sdl/`: tiny-office, tiny-emacs, tiny-calc,
 tiny-tetris, tiny-www, tiny-troff, tiny-play.
 [`docs/plans/done/plan_tiny_windows.md`](../docs/plans/done/plan_tiny_windows.md)

@@ -54,3 +54,11 @@ let view { c; f } : msg widget =
 
 let temperature : (model, msg) gui =
   { init; view; update; key = (fun _ -> []) }
+
+(*****************************************************************************)
+(* Entry point *)
+(*****************************************************************************)
+
+(* the program, temp: the converter run (no system call of its own;
+ * user/temp.ml its one line) *)
+let main (_ : < .. >) (_ : string array) = run temperature

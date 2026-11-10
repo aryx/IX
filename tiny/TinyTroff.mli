@@ -81,3 +81,7 @@ val to_html : string -> string -> string
  * lines, a paint's and a chart's rectangles. The standard fonts, no
  * compression: about 120 lines. *)
 val to_pdf : string -> string
+
+(* [main caps argv]: the program, troff [-h | -p] file: the page on the
+ * standard output, as text (72 columns), HTML or PDF *)
+val main : < Cap.open_in; Cap.stdout; Cap.stderr; .. > -> string array -> Exit.t

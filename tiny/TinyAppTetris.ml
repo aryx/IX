@@ -274,10 +274,14 @@ let music m =
 (* Entry point *)
 (*****************************************************************************)
 
-(* see user/tetris.ml for main() *)
+(* the game, run by main below (user/tetris.ml its one line) *)
 let game = { 
     width = 288; height = 336;
     init = (fun seed -> start seed false);
     view; key; frame;
     sound; music 
 }
+
+(* the program, tetris: the game run, its speaker, seed and clock the
+ * system's *)
+let main caps (_ : string array) = TinyLibPlayground.run caps game

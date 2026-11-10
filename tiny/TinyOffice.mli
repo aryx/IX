@@ -186,3 +186,10 @@ val view : TinyOfficeModel.office -> TinyLibPlayground.shape list
 val text : TinyOfficeModel.office -> string
 val saved : TinyOfficeModel.office -> unit
 val say : TinyOfficeModel.office -> string -> unit
+
+(* [main caps argv]: the program, office file: the document of the file
+ * in the window, saved when it asks; the usage when argv is not a
+ * file *)
+val main :
+  < Cap.open_in; Cap.open_out; Cap.stderr; Cap.clock; Cap.keyboard; .. > ->
+  string array -> Exit.t

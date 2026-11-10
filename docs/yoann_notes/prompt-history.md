@@ -68315,3 +68315,43 @@ Claude finished stages 2 to 4: the SDL window and teststub implement TinyLibSyst
 Graphical libraries, mains and debugger now go through TinyLibSystem with capabilities, and the old TinyCalls notes are cleaned up.
 Claude verified dune, make test-tix, tiny_check.sh, mini-mk, the kernel check and self-quick, plus three programs in a real window session.
 Stage 5 and the hang in make self remain open, and nothing has been committed yet.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 16:48
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the 66-file batch as 3baa9f2d, leaving libmach stages 2–3 and the make self hang pending.
+Claude identified stage 5 of the one-system plan as removing the whole `user/` directory.
+Claude proposed moving each program's `main` into its own module, so the code lives there.
+Claude said the one-line entry files would be generated rather than maintained by hand.
+Claude then asked which item to take next, with stage 5 as the first option.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 16:50
+
+**Yoann:**
+
+> let's continue on the one-systen plan with stage 6
+
+------------------------------------------------------------------------
+
+## 2026-11-10 16:50
+
+**Yoann:**
+
+> soirry 5
+
+**Claude (summary):**
+
+Claude recommended folding each program's `main` into its module, leaving one-line `user/` files like `TinyLibSystem.main "office" TinyOffice.main`.
+Claude found that this change needs three build systems: dune, the TinyKernel Makefile, and the tiny-kernel Buildfile.
+Claude wrote the `main` functions for the editor, office, browser, troff, play, the tetris, calculator, and temperature apps, and the debugger.
+Claude updated the dune stanzas, the tiny-cpu editor test, and the docs and code-map configs, marking the plan's stage 5 "done".
+Claude verified it with dune, `make test-tix`, `tiny_check.sh`, mini-mk, the kernel check, and self-quick, but nothing is committed yet.

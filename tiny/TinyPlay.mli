@@ -65,12 +65,10 @@ val block : int
  * plays *)
 val play : TinyLibSystem.fd -> string -> unit
 
-(* No main here, unlike TinyShell's or TinyAssembler's: those are
- * written on TinyLibSystem.main and its capabilities, the same on the
- * host and on tiny-kernel. play's main is too (user/play.ml); on the
- * host it runs in a window's TinyLibSystem, whose /dev/audio is not
- * Unix's but the one TinyLibSystem/sdl/ makes, as it makes the
- * window. Its command
- * line (the file read, /dev/audio opened, why not said) is
- * user/play.ml's, a few lines, as troff's is
- * user/troff.ml's; the host's tiny-play compiles that same file. *)
+(* [main caps argv]: the program, play file.wav: the file read,
+ * /dev/audio opened, the sound written; why not said. As TinyShell's
+ * or TinyAssembler's main, the same on the host and on tiny-kernel
+ * (user/play.ml its one line); on the host it runs in a window's
+ * TinyLibSystem, whose /dev/audio is not Unix's but the one
+ * TinyLibSystem/sdl/ makes, as it makes the window *)
+val main : < Cap.open_in; Cap.open_out; Cap.stderr; .. > -> string array -> Exit.t

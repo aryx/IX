@@ -149,4 +149,4 @@
 
 (* the program: its command line, its commands, its exit; caps, a
  * window's (-window: TinyLibGUI's run_canvas) *)
-val main : < Cap.clock; Cap.keyboard; .. > -> unit
+val main : < Cap.clock; Cap.keyboard; .. > -> string array -> Exit.t

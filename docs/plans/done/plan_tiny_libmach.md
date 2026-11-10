@@ -13,7 +13,7 @@ some of this code should go to TinyAssembler instead. Maybe Tiny-ml and
 tiny-c could directly generate the object? (like mini-cc does)"; and:
 "yes, write the plan".
 
-Companions: [`done/plan_tiny_one_system.md`](done/plan_tiny_one_system.md), whose
+Companions: [`plan_tiny_one_system.md`](plan_tiny_one_system.md), whose
 stage 0 (the move to `tiny/TinyLibSystem.mli` and `TinyLibSystem/`)
 comes first, so that `self.expected` is recorded once for both moves;
 `languages/c/Emit.mli`, mini-cc's object, which this plan follows.

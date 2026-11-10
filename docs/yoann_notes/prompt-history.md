@@ -68699,3 +68699,19 @@ Claude had recorded self.expected from the make self run, cutting it from 311 li
 The shorter list drops the as step for compiled files and the ml/TinyCalls.o entry, since no object-file step remains.
 Claude added the rough 1h06 versus 1h30 build-time comparison, from one run of each, to the plan's status.
 Earlier, Claude committed d97b7c9a, removed the _make3 and _make4 scratch directories, and reported make self passing.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 21:38
+
+**Yoann:**
+
+> great, let's commit
+
+**Claude (summary):**
+
+Claude committed the new `self.expected` and the plan's timing note as `857f8ef4`, amending in the missed `prompt-history.md`.
+Claude reported that the libmach plan's last check is closed, since tiny-c and tiny-ml now write objects directly.
+Claude found that `make self` passes, with tiny-kernel rebuilding itself byte for byte identical to the host's `boot.img`.
+Claude noted the self-build dropped from about 1h30 to 1h06, and the earlier hang did not recur in either run.
+Claude confirmed the working tree is clean and removed all scratch build directories.

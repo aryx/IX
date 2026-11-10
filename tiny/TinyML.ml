@@ -369,7 +369,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     with Failure m -> raise (File_error m) in
   (* the lines as an object (TinyLibMachine's assemble), or as their
    * text (-S); old: the text always, which tiny-assembler parsed back
-   * into the same lines (plan_tiny_libmach.md) *)
+   * into the same lines (docs/plans/done/plan_tiny_libmach.md) *)
   let made (ls : TinyLibMachine.line list) =
     if !text then String.concat "" (List.map TinyLibMachine.print_line ls)
     else TinyLibMachine.to_object (TinyLibMachine.assemble ls) in

@@ -23,7 +23,7 @@
  *
  * old: TinyMachine/TinyMachineISA.ml (the instructions, the objects),
  * TinyMachine/TinyMachineAsm.ml (the lines, their parse and print) and
- * TinyLibSymbols.ml, in one file (docs/plans/plan_tiny_libmach.md):
+ * TinyLibSymbols.ml, in one file (docs/plans/done/plan_tiny_libmach.md):
  * the toolchain's, not tiny-machine's parts; the objects the lines'
  * type, not an item type of their own with the same constructors;
  * parse tiny-assembler's, the only program that reads assembly.

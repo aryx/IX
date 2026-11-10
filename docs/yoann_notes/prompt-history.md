@@ -68465,3 +68465,35 @@ Claude also flagged the lost raw `-1` returns, the debugger and tracer inheritin
 **Yoann:**
 
 > ok add that comment and let's commit
+
+------------------------------------------------------------------------
+
+## 2026-11-10 18:54
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended doing the `make self` hang fix first, then the libmach plan stages 2–4, with stage 3 the big one.
+Claude said `make self` hangs after the first full build, so `self.expected` is stale and still lists `ml/TinyCalls.o`.
+Claude noted `self-quick` passes, so the full self-hosting check isn't really running, and it's worth fixing before stage 3.
+Claude explained stage 3 has tiny-c and tiny-ml write objects directly like mini-cc, removing the `.tm` text step from every build.
+Claude also listed small cleanups: stale `.codemapconfig` digests in `tinykernel/` and the scratch dir `tiny/TinyKernel/_make2/`.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 18:57
+
+**Yoann:**
+
+> let's do 2 and 3. I'll be back in 30min
+
+**Claude (summary):**
+
+Claude fixed the tiny/ code-map errors, going from 31 to 0, and refreshed all 157 stale digests in tiny/.
+Claude's script misplaced 8 digests into the wrong cards, which it caught and corrected before finishing.
+Claude added the missing TinyLibCore system-module cards and a teststub skeleton, leaving TinyML skeletons unwritten.
+Claude verified `tinybox codemap -check .` is clean for tiny/, with 36 warnings and 7 errors remaining outside it.
+Item 3 is done but uncommitted, while `make self` was still running its first full build.

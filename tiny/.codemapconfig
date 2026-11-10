@@ -13,7 +13,7 @@ local chain = skeletons.chain;
 // a tool on TinyLibSystem: its main given the capabilities by
 // TinyLibSystem.main, then [core] ([anchor, role, say] each)
 local prog(name, file, core) = chain(name, [
-  [file + ':code:"TinyLibSystem.main"', 'the program: TinyLibSystem.main, the host or tiny-kernel', ''],
+  [file + ':code:".main"', 'the program: TinyLibSystem.main, the host or tiny-kernel', ''],
   [file + ':def:main', 'the command line: -h, flags, files', 'the capabilities'],
 ] + core);
 {
@@ -26,7 +26,7 @@ local prog(name, file, core) = chain(name, [
     // ---------------------------------------------------------------
     // the toolchain: compilers, assembler, linker
     // ---------------------------------------------------------------
-    'TinyC.ml': { digest: 'cd9f53f98001',
+    'TinyC.ml': { digest: '711531c40fef',
       summary: "tiny-c: 5c/7c's job with only correctness asked: C typed as parsed, lowered to its own stack machine, TinyCPU's code.",
       capitals: [{ at: 'def:compile', say: 'a definition lowered, then assembly' }],
       important: [
@@ -35,11 +35,11 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['TinyC/', 'TinyCRuntime/', 'tests/TinyC_test.sh', 'tests/TinyC_fuzz.py', 'tests/TinyC_tests/', '../languages/c/'],
     },
-    'TinyC.mli': { digest: '94503cb16de3',
+    'TinyC.mli': { digest: '27003639856a',
       summary: "tiny-c's idea, with one function traced through the stack machine to TinyCPU's code, and its passes.",
       important: [{ at: 'comment:"A file goes through these steps"', say: 'the pipeline, a type per step', weight: 3 }],
     },
-    'TinyML.ml': { digest: '4939ceb90c40',
+    'TinyML.ml': { digest: '4d1219a9b5cb',
       summary: "tiny-ml: an ML, Hindley-Milner typed, through TinyC's stack machine to tiny-machine; separate units by .tmi files.",
       capitals: [{ at: 'def:compile_unit', say: 'a unit: its items typed, then compiled' }],
       important: [
@@ -51,7 +51,7 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['TinyML/', 'TinyMLRuntime/core.c', 'TinyLibCore/', 'tests/TinyML_test.sh', 'tests/TinyML_fuzz.py', '../languages/ml/'],
     },
-    'TinyML.mli': { digest: '19ceb4f806fb',
+    'TinyML.mli': { digest: 'c6bd1a5ef75f',
       summary: "tiny-ml's design: the passes, a value's layout, the value stack as the roots, Cheney's collector.",
       important: [{ at: 'comment:"How a file is compiled"', say: 'the passes, each its own type', weight: 3 }],
     },
@@ -66,11 +66,11 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['TinyLinker.ml', 'TinyLibMachine.ml', 'tests/TinyAssembler_test.sh', 'tests/TinyCPU_test.sh', '../assembler/'],
     },
-    'TinyAssembler.mli': { digest: '1cd2fe27bae3',
+    'TinyAssembler.mli': { digest: '57e2a22285ad',
       summary: "The pipeline, a step a function: path, channel, lines (parse), the object's lines, written; why sizes never wait.",
       important: [{ at: 'comment:"The pipeline, a step a function"', say: 'read, encode, write', weight: 3 }],
     },
-    'TinyLinker.ml': { digest: '4a4eedf0ad82',
+    'TinyLinker.ml': { digest: 'f5df19754319',
       summary: "tiny-linker: objects to an image or an a.out from 0; dead pieces swept, a place filled by decode then encode.",
       important: [
         { at: 'def:read', say: "an object's lines as items", weight: 1 },
@@ -83,13 +83,13 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['TinyAssembler.ml', 'TinyLibMachine.ml', 'TinyProfiler.ml', 'TinyKernel/Makefile', '../linker/'],
     },
-    'TinyLinker.mli': { digest: '244c75b41b2e',
+    'TinyLinker.mli': { digest: '00a4a93f7c09',
       summary: "tiny-linker's passes over the objects' items (read, sweep, layout, fill) and the a.out's header.",
     },
     // ---------------------------------------------------------------
     // the tools of making and of looking
     // ---------------------------------------------------------------
-    'TinyBuildSystem.ml': { digest: '126c059d3f9b',
+    'TinyBuildSystem.ml': { digest: '1f55a33b8e7b',
       summary: "tiny-build: make's idea (rules, %) without its language; up to date by digests, not times, one pass with -j.",
       capitals: [{ at: 'def:build', say: 'one pass: a node decided when its prerequisites are done' }],
       important: [
@@ -107,11 +107,11 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['tests/TinyBuildSystem_test.sh', '../builder/'],
     },
-    'TinyBuildSystem.mli': { digest: '8862996dd929',
+    'TinyBuildSystem.mli': { digest: '55ddbb50ec26',
       summary: 'Why a stamp is a digest of the recipe and its inputs: how far a change propagates, by example.',
       important: [{ at: 'comment:"Up to date by content, not by time."', say: 'the idea kept, with its picture', weight: 3 }],
     },
-    'TinyShell.ml': { digest: 'afcd034152a5',
+    'TinyShell.ml': { digest: 'de842719db85',
       summary: "tiny-shell: rc cut down: lists the only value, words joined by adjacency, redirections around a command.",
       capitals: [{ at: 'def:join', say: 'adjacency distributes over lists: $x.o' }],
       important: [
@@ -126,10 +126,10 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['tests/TinyShell_test.sh', '../shell/'],
     },
-    'TinyShell.mli': { digest: '5830c8bf12f2',
+    'TinyShell.mli': { digest: 'f1f5f4f1483f',
       summary: "tiny-shell's language by example, and how a line becomes a tree, then processes.",
     },
-    'TinyEditorLine.ml': { digest: '225637525f3d',
+    'TinyEditorLine.ml': { digest: 'fd97f012b01e',
       summary: "tiny-editor: ed's commands replaced by sam's language: dot a range, loops over matches, changes in parallel.",
       capitals: [{ at: 'def:commit', say: "a command's changes applied together; their inverse is undo" }],
       important: [
@@ -144,10 +144,10 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['TinyLibRegex.ml', 'tests/TinyEditorLine_test.sh', '../editors/ed/'],
     },
-    'TinyEditorLine.mli': { digest: '6e4160c90b70',
+    'TinyEditorLine.mli': { digest: '4eaa5aa9c4a2',
       summary: "sam's three ideas over ed, worked on one line of text: dot a range, loops, parallel changes.",
     },
-    'TinyEditorScreen.ml': { digest: '370ab16697e0',
+    'TinyEditorScreen.ml': { digest: 'f728fd7d37a8',
       summary: "tiny-emacs: Emacs's keys on one text in one window, the text its lines split at the cursor; OCaml and C coloured.",
       capitals: [{ at: 'def:key', say: 'a key: the next editor, and what it asks the program' }],
       important: [
@@ -162,10 +162,10 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['user/emacs.ml', 'tests/TinyEditorScreen_test.sh', '../editors/emacs/'],
     },
-    'TinyEditorScreen.mli': { digest: '55504e0f6a31',
+    'TinyEditorScreen.mli': { digest: '001839d4df96',
       summary: 'The screen editor as a state and the keys that change it, with no system under it.',
     },
-    'TinyVCS.ml': { digest: '075950e46168',
+    'TinyVCS.ml': { digest: '6da606b24c33',
       summary: "tiny-vcs: git's objects and DAG, and the roads after git: an operation log, undo, no index, conflicts committed.",
       capitals: [
         { at: 'def:save', say: 'objects appended, then head renamed: every command atomic' },
@@ -184,10 +184,10 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['tests/TinyVCS_test.sh', '../version_control/'],
     },
-    'TinyVCS.mli': { digest: '5154a7d3a77b',
+    'TinyVCS.mli': { digest: '8fc85ffe2dd2',
       summary: "What tiny-vcs keeps of git and what it takes from jj and Mercurial: one hash, undo, no staging.",
     },
-    'TinyDatabase.ml': { digest: '84e91903fe52',
+    'TinyDatabase.ml': { digest: '6397acfdfeb7',
       summary: "tiny-db: chidb's ideas, other roads: the relational algebra as a pipeline, over copy-on-write B-trees.",
       capitals: [
         { at: 'def:stage', say: 'a stage: where, select, join, group, sort, take' },
@@ -205,10 +205,10 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['tests/TinyDatabase_test.sh', '../database/'],
     },
-    'TinyDatabase.mli': { digest: '0e91e6343ac1',
+    'TinyDatabase.mli': { digest: '2ed607f198cf',
       summary: "tiny-db's four roads away from chidb: a pipeline, copy-on-write, iterators, keys as values.",
     },
-    'TinyUtilities.ml': { digest: '20d89bc66695',
+    'TinyUtilities.ml': { digest: '58fd64fb96be',
       summary: "tiny-utils: cat, ls, wc and thirty more in one executable, BusyBox's way; filters and walkers written once.",
       capitals: [
         { at: 'def:each_input', say: 'every filter: its files opened, read in pieces, reported' },
@@ -226,10 +226,10 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['TinyLibRegex.ml', 'tests/TinyUtilities_test.sh', '../utilities/'],
     },
-    'TinyUtilities.mli': { digest: '541580f7b4fb',
+    'TinyUtilities.mli': { digest: 'a61a67c806b9',
       summary: "One executable, many names: filters over pieces and walkers as one fold, each written once.",
     },
-    'TinyTroff.ml': { digest: '1f396cee2af9',
+    'TinyTroff.ml': { digest: '1732baf59379',
       summary: "tiny-troff: an office page or Markdown as text, HTML or PDF, read by the office's own functions.",
       important: [
         { at: 'def:in_order', say: 'the parts in reading order: top, then left', weight: 2 },
@@ -242,13 +242,13 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['TinyOffice/TinyOfficeFile.ml', 'user/troff.ml', 'tests/TinyTroff_test.sh', '../typesetting/troff/'],
     },
-    'TinyTroff.mli': { digest: '4f95efa967f1',
+    'TinyTroff.mli': { digest: '5d218aa21150',
       summary: 'A page published three ways, each kind of part printed as text, HTML or PDF asks.',
     },
     // ---------------------------------------------------------------
     // the machine, its CPU run alone, and what looks at it
     // ---------------------------------------------------------------
-    'TinyCPU.ml': { digest: '3d786f8353db',
+    'TinyCPU.ml': { digest: 'cc26a70c0f52',
       summary: "tiny-cpu: TinyMachineCPU's CPU run as a user program: three system calls the host's, argv where C's main finds it.",
       capitals: [{ at: 'def:interpret', say: 'argc and argv laid out as start.tm expects, then step' }],
       important: [
@@ -258,10 +258,10 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['TinyMachine/TinyMachineCPU.ml', 'TinyCRuntime/', 'tests/TinyCPU_test.sh', 'tests/TinyCPU_tests/', '../machine/'],
     },
-    'TinyCPU.mli': { digest: '02bfe21816f8',
+    'TinyCPU.mli': { digest: '3bed0c87c1a7',
       summary: 'Why an image needs no header: three constants answer where to load, where to start, what to zero.',
     },
-    'TinyMachine.ml': { digest: '683c66af6f3a',
+    'TinyMachine.ml': { digest: '3b00dd5c903c',
       summary: "tiny-machine: the host around TinyMachineDevices' machine: console, window, disk file, net peer, cores.",
       capitals: [{ at: 'def:run', say: "the host's side: devices given, the machine ticked" }],
       important: [
@@ -275,11 +275,11 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['TinyMachine/', 'TinyKernel/', 'TinyKernel/steps/', 'tests/TinyMachine_test.sh', '../raspberry/'],
     },
-    'TinyMachine.mli': { digest: '50c68d073dfa',
+    'TinyMachine.mli': { digest: '6b51c505baf2',
       summary: 'What the machine adds to the CPU for a kernel: two modes, one trap, a timer, a window, pages, devices.',
       important: [{ at: 'comment:"One way in, one way out."', say: 'the trap: epc, cause, tval, tvec', weight: 3 }],
     },
-    'TinyProfiler.ml': { digest: 'c7bbc91ba5d6',
+    'TinyProfiler.ml': { digest: '30fb3bb15e45',
       summary: "tiny-prof: every instruction counted by address, summed by function by the link's maps; kernel and programs apart.",
       important: [
         { at: 'def:read_profile', say: 'counts, not samples: two runs, one profile', weight: 2 },
@@ -288,10 +288,10 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['TinyLibMachine.ml', 'TinyLinker.ml', 'tests/TinyProfiler_test.sh', '../profilers/'],
     },
-    'TinyProfiler.mli': { digest: '341fb160edbb',
+    'TinyProfiler.mli': { digest: 'bc58db2d1f9d',
       summary: "Where a program's instructions went, by function, and why counting beats sampling here.",
     },
-    'TinyDebugger.ml': { digest: 'f0cd8fc83403',
+    'TinyDebugger.ml': { digest: 'c2caa171a4f3',
       summary: "debug: a program stopped and resumed by text lines on trace(pid), the kernel keeping breakpoints; gdb's letters.",
       capitals: [{ at: 'def:command', say: "a command: a line to the kernel's trace, a line back" }],
       important: [
@@ -305,11 +305,11 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['user/debug.ml', 'TinyLibMachine.ml', 'TinyTracer.ml', '../debuggers/acid/'],
     },
-    'TinyDebugger.mli': { digest: 'fda01e0cec4c',
+    'TinyDebugger.mli': { digest: 'ff2ce05cb67a',
       summary: "debug's commands, and its conversation with the kernel through trace(pid), drawn.",
       important: [{ at: 'comment:"How it works: debug and its program are two processes"', say: 'the kernel between them', weight: 3 }],
     },
-    'TinyTracer.ml': { digest: '6c11eb34d752',
+    'TinyTracer.ml': { digest: '4eb2d4c8bc69',
       summary: "trace: a stop before each system call and one after, so the kernel decodes nothing; strace's lines.",
       capitals: [{ at: 'def:handle', say: 'a stop: a call printed before, its result after' }],
       important: [
@@ -320,10 +320,10 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['user/trace.ml', 'TinyDebugger.ml'],
     },
-    'TinyTracer.mli': { digest: 'a069dced035b',
+    'TinyTracer.mli': { digest: '325063ec4836',
       summary: "trace's output, and the kernel's two stops per call that let it read what it needs.",
     },
-    'TinyKernel.ml': { digest: 'c05e96f4f940',
+    'TinyKernel.ml': { digest: '62c6ced57f8c',
       summary: "tiny-kernel's boot: devices, /dev, the memory's kind, the disk a union with /dump, then /bin/sh and schedule.",
       capitals: [{ at: 'code:"schedule ()"', say: 'the boot ends: the kernel is its loop' }],
       important: [
@@ -333,14 +333,14 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['TinyKernel/', 'TinyMLRuntime/core.c', '../docs/notes/notes_tiny_kernel.md', '../kernels/9pi/'],
     },
-    'TinyKernel.mli': { digest: 'fc8565407ce2',
+    'TinyKernel.mli': { digest: 'ff10f0b87f96',
       summary: "tiny-kernel's design: each OS concept done by the road ML makes short; the header of all its parts.",
       important: [{ at: 'comment:"Why it is not a twin of an existing kernel."', say: 'the concepts kept, the roads changed', weight: 3 }],
     },
     // ---------------------------------------------------------------
     // the libraries tiny-kernel's programs are compiled with
     // ---------------------------------------------------------------
-    'TinyLibDraw.ml': { digest: 'efb12c72e41a',
+    'TinyLibDraw.ml': { digest: 'be957b1b6bba',
       summary: "A program's side of the drawing messages: each a string, a letter and 16-bit numbers; parsed again for windows.",
       important: [
         { at: 'def:msg', say: 'a letter and its numbers, low byte first', weight: 3 },
@@ -348,14 +348,14 @@ local prog(name, file, core) = chain(name, [
         { at: 'def:d_shape', say: "a message's length and images: TinyWindows renumbers", weight: 2 },
       ],
     },
-    'TinyLibDraw.mli': { digest: '9e8e1152f3ba',
+    'TinyLibDraw.mli': { digest: 'c9aeee1c51f7',
       summary: "libdraw's place in t-IX: a rectangle's path from a program to the screen, on two machines.",
       capitals: [
         { at: 'def:d_draw', say: 'the one drawing operation, as a message' },
         { at: 'def:msg', say: 'a message: a letter, then 16-bit numbers' },
       ],
     },
-    'TinyLibPlayground.ml': { digest: 'cc90f3326c9c',
+    'TinyLibPlayground.ml': { digest: 'a37b7c4e72f3',
       summary: "The tiny playground: a game's model and functions run, its shapes drawn by messages, its sounds and tune played.",
       important: [
         { at: 'type:shape', weight: 2 },
@@ -365,7 +365,7 @@ local prog(name, file, core) = chain(name, [
         { at: 'def:run', say: 'the loop: a key or the next frame, 13 ticks apart', weight: 3 },
       ],
     },
-    'TinyLibPlayground.mli': { digest: '53b3ee369a98',
+    'TinyLibPlayground.mli': { digest: '2157b91ca385',
       summary: "Elm's architecture made small: a game is a value and three functions, sound and music two more.",
       capitals: [
         { at: 'type:game', say: 'a model and its functions: no loop, no drawing' },
@@ -373,7 +373,7 @@ local prog(name, file, core) = chain(name, [
         { at: 'def:run', say: 'the loop every game is given' },
       ],
     },
-    'TinyLibGUI.ml': { digest: '1cebd562b534',
+    'TinyLibGUI.ml': { digest: 'b064e47ec317',
       summary: "The tiny GUI: widgets made again from each model, laid out in two passes; menus; run_canvas for whole windows.",
       important: [
         { at: 'type:widget', weight: 2 },
@@ -386,7 +386,7 @@ local prog(name, file, core) = chain(name, [
         { at: 'def:run_canvas', weight: 3 },
       ],
     },
-    'TinyLibGUI.mli': { digest: '4e0a6c608fd1',
+    'TinyLibGUI.mli': { digest: 'd6427471a13f',
       summary: 'An interface is a value computed from the model, with the messages it sends back: no widget has a name.',
       capitals: [
         { at: 'type:gui', say: 'init, view, update, key: a program with buttons' },
@@ -394,7 +394,7 @@ local prog(name, file, core) = chain(name, [
         { at: 'def:run_canvas', say: 'a program that draws its whole window' },
       ],
     },
-    'TinyLibSystem.mli': { digest: 'd94c6eb48a3e',
+    'TinyLibSystem.mli': { digest: '37cf915791f7',
       summary: "What a tool asks of its system, cut to tiny-kernel's: one interface, a file for each system (TinyLibSystem/).",
       capitals: [
         { at: 'def:exec', say: 'a program run: the one interface on two systems' },
@@ -410,7 +410,7 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['TinyLibSystem/unix/TinyLibSystem.ml', 'TinyLibSystem/tinykernel/TinyLibSystem.ml', 'TinyShell.ml', 'TinyUtilities.ml'],
     },
-    'TinyLibRegex.ml': { digest: '9691b882d381',
+    'TinyLibRegex.ml': { digest: 'c2a4ffe57bfa',
       summary: "Plan 9's regular expressions for grep and the editor: a backtracker with a memo, leftmost-longest as sam's.",
       important: [
         { at: 'type:re', weight: 2 },
@@ -421,7 +421,7 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['TinyEditorLine.ml', 'TinyUtilities.ml', 'tests/TinyLibRegex_test.sh'],
     },
-    'TinyLibRegex.mli': { digest: 'c2ca63e57a40',
+    'TinyLibRegex.mli': { digest: '12c93a062462',
       summary: "The notation, the matcher and its cost; how it differs from libregexp, m-IX's twin.",
       capitals: [{ at: 'def:search', say: "where a match is, and its groups: the editor's" }],
     },
@@ -456,7 +456,7 @@ local prog(name, file, core) = chain(name, [
     // ---------------------------------------------------------------
     // tiny-kernel's graphical programs and applications
     // ---------------------------------------------------------------
-    'TinyWindows.ml': { digest: '7bca6d54968e',
+    'TinyWindows.ml': { digest: 'e0c701bfb0c0',
       summary: "tiny-windows: rio's idea, a window looks like the machine; windows composed back to front, images renumbered.",
       capitals: [{ at: 'def:forward', say: "a window's drawing passed on, its images renumbered" }],
       important: [
@@ -470,11 +470,11 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['TinyLibDraw.ml', 'TinyKernel/TinyKernelGraphics.ml', '../windows/rio/'],
     },
-    'TinyWindows.mli': { digest: '29989133d08f',
+    'TinyWindows.mli': { digest: 'fa35e3ae3329',
       summary: "Why tiny-windows runs in one of its own windows: five descriptors, the kernel's or a window's.",
       important: [{ at: 'comment:"a window looks like the machine"', say: 'the idea kept of rio', weight: 3 }],
     },
-    'TinyBrowser.ml': { digest: '5df5c5e1dd94',
+    'TinyBrowser.ml': { digest: 'b40318a99e1a',
       summary: "www: a page asked of the wire's other end, drawn as its lines come, its pictures a row a message.",
       capitals: [{ at: 'def:browse', say: 'one loop: the keys, the mouse, the wire' }],
       important: [
@@ -487,11 +487,11 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['TinyBrowser/', 'user/www.ml', 'TinyLibGUI.ml', 'tests/TinyBrowser_test.sh', '../browsers/'],
     },
-    'TinyBrowser.mli': { digest: 'f46e7efb0150',
+    'TinyBrowser.mli': { digest: '970e9e873109',
       summary: "www's idea: a page read once, as it arrives, straight to lines; no tree, a tag a row in a table.",
-      important: [{ at: 'comment:"a page is read only once, as it arrives"', say: 'the pipeline of the reading', weight: 3 }],
+      important: [{ at: 'comment:"read only once, as it arrives"', say: 'the pipeline of the reading', weight: 3 }],
     },
-    'TinyOffice.ml': { digest: 'a4accb5cddb5',
+    'TinyOffice.ml': { digest: '55b26688a262',
       summary: "tiny-office's shell: a page of boxes, each a part of TinyOffice/; selecting, moving, menus, undo, the view.",
       capitals: [{ at: 'def:command', say: "a menu's item or its keys: one place" }],
       important: [
@@ -503,10 +503,10 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['TinyOffice/', 'user/office.ml', 'TinyLibGUI.ml', 'TinyTroff.ml', 'tests/TinyOffice_test.sh', '../apps/office/'],
     },
-    'TinyOffice.mli': { digest: '1ec4509d5dfc',
+    'TinyOffice.mli': { digest: '2357d2359850',
       summary: "The compound document cut down: a shell, parts, and data that is always text; the file mini-troff's.",
     },
-    'TinyPlay.ml': { digest: '33f9f5df347f',
+    'TinyPlay.ml': { digest: '24cc0bcec2f8',
       summary: "tiny-play: a WAV file to the speaker a block at a time, each sample taken by Bresenham's stepping.",
       important: [
         { at: 'def:wav', say: "RIFF's chunks: fmt and data", weight: 2 },
@@ -515,10 +515,10 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['user/play.ml', 'TinyKernel/TinyKernelAudio.ml', 'tests/TinyPlay_test.sh', '../apps/media/play/'],
     },
-    'TinyPlay.mli': { digest: '0af14546ee2b',
+    'TinyPlay.mli': { digest: '4597ef7e72db',
       summary: "How a WAV's samples become the speaker's, with no division and no filter; aliasing said.",
     },
-    'TinyAppTetris.ml': { digest: 'ca80553ca1c0',
+    'TinyAppTetris.ml': { digest: '7a752ee89e46',
       summary: 'tiny-tetris: the game in integers on TinyLibPlayground; rotations as 16-bit digits, sounds and Korobeiniki.',
       capitals: [{ at: 'def:fits', say: 'sixteen bit tests against the well' }],
       important: [
@@ -533,10 +533,10 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['user/tetris.ml', 'tests/TinyAppTetris_test.sh', '../lib_playground/'],
     },
-    'TinyAppTetris.mli': { digest: '114c4e494b0f',
+    'TinyAppTetris.mli': { digest: '18b32bbfc5f3',
       summary: "Tetris's rules, what is ours against elm-flatris's port, and the bit tricks drawn.",
     },
-    'TinyAppCalculator.ml': { digest: '6d6cbd08e293',
+    'TinyAppCalculator.ml': { digest: '8ed6e89eeb75',
       summary: "tiny-calc: a pocket calculator's state, a number shown, one kept, one operation waiting.",
       important: [
         { at: 'type:model', weight: 2 },
@@ -546,10 +546,10 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['user/calc.ml', 'TinyLibGUI.ml'],
     },
-    'TinyAppCalculator.mli': { digest: 'af4b0edec7b6',
+    'TinyAppCalculator.mli': { digest: '13ef95b97dc8',
       summary: "The calculator as TinyLibGUI's gui, and its model traced through 12 * 3 = + 6.",
     },
-    'TinyAppTemperature.ml': { digest: '68abd566479a',
+    'TinyAppTemperature.ml': { digest: 'dba95ff05434',
       summary: "tiny-temp: 7GUIs' second task; the model is the two texts, the message says which field changed.",
       important: [
         { at: 'type:model', say: 'texts, not a temperature: "10x" must show', weight: 3 },
@@ -558,7 +558,7 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['user/temp.ml', 'TinyLibGUI.ml'],
     },
-    'TinyAppTemperature.mli': { digest: '770163ff1d06',
+    'TinyAppTemperature.mli': { digest: '85520338f542',
       summary: 'Why a change propagates both ways with no echo: the field typed in is in the message.',
     },
   },
@@ -638,13 +638,22 @@ local prog(name, file, core) = chain(name, [
       ],
     },
     prog('tiny-assembler: a line, a word, an object', 'TinyAssembler.ml', [
-      ['TinyAssembler.ml:def:assemble', 'the file, its lines to items to text', 'a .tm file'],
-      ['TinyAssembler.ml:def:parse_line', 'a label, a directive, an instruction', 'a line'],
+      ['TinyAssembler.ml:def:read', 'the file, its lines numbered', 'a .tm file'],
+      ['TinyAssembler.ml:def:parse', 'a label, a directive, an instruction', 'a line'],
       ['TinyAssembler.ml:def:instruction', 'a mnemonic and its pseudo-forms', 'a mnemonic'],
-      ['TinyLibMachine.ml:def:encode', 'the one format', 'an instr'],
     ]) + {
-      bones+: [{ at: 'TinyAssembler.ml:type:kind', role: 'a reloc: where an address goes' }],
-      joints+: [{ from: 'TinyAssembler.ml:def:instruction', to: 'TinyAssembler.ml:type:kind', say: 'a label left 0' }],
+      bones+: [
+        { at: 'TinyAssembler.ml:def:encode', role: "the object's items, an error at its line" },
+        { at: 'TinyAssembler.ml:def:item', role: "an instruction's words, 0 where a label's address goes" },
+        { at: 'TinyLibMachine.ml:def:encode', role: 'the one format' },
+        { at: 'TinyLibMachine.ml:def:to_object', role: 'the object, marshalled' },
+      ],
+      joints+: [
+        { from: 'TinyAssembler.ml:def:main', to: 'TinyAssembler.ml:def:encode', say: 'the lines' },
+        { from: 'TinyAssembler.ml:def:encode', to: 'TinyAssembler.ml:def:item', say: 'a line' },
+        { from: 'TinyAssembler.ml:def:item', to: 'TinyLibMachine.ml:def:encode', say: 'an instr' },
+        { from: 'TinyAssembler.ml:def:main', to: 'TinyLibMachine.ml:def:to_object', say: 'written' },
+      ],
     },
     prog('tiny-linker: read, sweep, lay out, fill', 'TinyLinker.ml', [
       ['TinyLinker.ml:def:link', 'the passes, in order', 'the objects'],
@@ -705,7 +714,7 @@ local prog(name, file, core) = chain(name, [
     {
       name: 'tiny-vcs: snapshot, store, commit the state',
       bones: [
-        { at: 'TinyVCS.ml:code:"TinyLibSystem.main"', role: 'the program: TinyLibSystem.main' },
+        { at: 'TinyVCS.ml:code:".main"', role: 'the program: TinyLibSystem.main' },
         { at: 'TinyVCS.ml:def:run', role: 'the commands' },
         { at: 'TinyVCS.ml:def:snapshot', role: 'the work tree as a tree' },
         { at: 'TinyVCS.ml:def:put', role: 'an object named by its hash' },
@@ -715,7 +724,7 @@ local prog(name, file, core) = chain(name, [
         { at: 'TinyVCS.ml:def:save', role: 'objects appended, head renamed' },
       ],
       joints: [
-        { from: 'TinyVCS.ml:code:"TinyLibSystem.main"', to: 'TinyVCS.ml:def:run', say: 'the arguments' },
+        { from: 'TinyVCS.ml:code:".main"', to: 'TinyVCS.ml:def:run', say: 'the arguments' },
         { from: 'TinyVCS.ml:def:run', to: 'TinyVCS.ml:def:snapshot', say: 'every command' },
         { from: 'TinyVCS.ml:def:snapshot', to: 'TinyVCS.ml:def:put', say: 'blobs, trees' },
         { from: 'TinyVCS.ml:def:run', to: 'TinyVCS.ml:def:merge_trees', say: 'merge, pull' },
@@ -777,7 +786,7 @@ local prog(name, file, core) = chain(name, [
     },
     // the machine
     chain('tiny-cpu: the CPU alone', [
-      ['TinyCPU.ml:code:"Cap.main"', 'the program: Cap.main', ''],
+      ['TinyCPU.ml:code:".main"', 'the program: TinyLibSystem.main', ''],
       ['TinyCPU.ml:def:main', 'the image, then the arguments', 'the capabilities'],
       ['TinyMachine/TinyMachineCPU.ml:def:image', "tiny-linker's, the memory's first bytes", 'the file'],
       ['TinyCPU.ml:def:interpret', 'argc and argv laid out, then the loop', 'the image'],
@@ -785,7 +794,7 @@ local prog(name, file, core) = chain(name, [
       ['TinyCPU.ml:def:syscall', "the host's exit, write, read", 'sys'],
     ]),
     chain('tiny-machine: the host around the machine', [
-      ['TinyMachine.ml:code:"Cap.main"', 'the program: Cap.main', ''],
+      ['TinyMachine.ml:code:".main"', 'the program: TinyLibSystem.main', ''],
       ['TinyMachine.ml:def:main', 'the options; the files linked to an image', 'the capabilities'],
       ['TinyMachine.ml:def:run', "the host's devices: console, window, disk, peer", 'options, image'],
       ['TinyMachine/TinyMachineDevices.ml:def:create', 'the machine: cores, memory, devices', 'the callbacks'],

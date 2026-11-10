@@ -10,7 +10,7 @@
   generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "What an ML program of tiny-kernel stands on: the runtime given its partition, the calls as externals, a tool's system.",
   files: {
-    'mlsys.c': { digest: 'c1ab4e4e8ef3',
+    'mlsys.c': { digest: '22e7d80c0d5f',
       summary: "An ML program's main (tiny-c): its partition cut into value stack and two heaps, the system calls as ML externals.",
       capitals: [
         { at: 'def:main', say: "the partition found from argv's place, then ml_run" },
@@ -25,7 +25,7 @@
       ],
       related: ['../../TinyMLRuntime/core.c', '../../TinyKernel/libc/user.h', '../../TinyKernel/runtime.c'],
     },
-    'TinyLibSystem.ml': { digest: '3cf7c9e39dc6',
+    'TinyLibSystem.ml': { digest: '7f294a1ded25',
       summary: "TinyLibSystem on tiny-machine: a tool's system over tiny-kernel's calls, what the kernel lacks made up here.",
       important: [
         { at: 'comment:"What tiny-kernel has not, and what is done about it here"', weight: 3 },

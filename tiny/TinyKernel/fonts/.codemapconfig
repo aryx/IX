@@ -9,7 +9,7 @@ local skeletons = import '../../../skeletons.libsonnet';
   generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "tiny-kernel's fonts, 8 by 16 and 16 by 32, and the tool that makes them from TrueType or a Plan 9 subfont.",
   files: {
-    'Mkfont.ml': { digest: '2c232a421182',
+    'Mkfont.ml': { digest: '62fd2174a9ad',
       summary: "Mkfont: tiny.font from a TrueType regular and bold by ix's own reader and filler; FreeType's autohinting, by hand.",
       capitals: [
         { at: 'def:shift', say: 'the face moved an eighth of a pixel: stems on pixels' },
@@ -28,7 +28,7 @@ local skeletons = import '../../../skeletons.libsonnet';
     },
   },
   skeletons: [
-    skeletons.onefile('Mkfont: a TrueType face to bits', 'Mkfont.ml', [
+    skeletons.prog('Mkfont: a TrueType face to bits', 'Mkfont.ml', [
       ['Mkfont.ml:def:face', 'a face at a cell size: its heights', 'the font, w, h'],
       ['Mkfont.ml:def:bits', 'the 128 characters, a pixel a bit or two', 'a face'],
       ['Mkfont.ml:def:placed', "a character's coverage, its own shift", 'each character'],

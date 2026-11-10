@@ -12,7 +12,7 @@ local skeletons = import '../../skeletons.libsonnet';
   summary: "tiny-machine's parts: a CPU designed to teach, the devices a kernel needs, the wire's other end, its host programs.",
   files: {
     // the CPU
-    'TinyMachineCPU.mli': { digest: 'e4f33b5399b4',
+    'TinyMachineCPU.mli': { digest: '2ae04e6f6cba',
       summary: "A CPU of our own, designed to teach (Knuth's road): 16 registers, r0 zero, no flags, one format; the design argued.",
       capitals: [
         { at: 'def:step', say: 'the definition of the machine: fetch, decode, run' },
@@ -27,7 +27,7 @@ local skeletons = import '../../skeletons.libsonnet';
       ],
       related: ['../TinyCPU.ml', '../TinyMachine.ml', '../../machine/'],
     },
-    'TinyMachineCPU.ml': { digest: 'e09d1622d9df',
+    'TinyMachineCPU.ml': { digest: '19f1b94e0d2f',
       summary: "The interpreter: a word fetched, decoded (a cache of decoded words), run; memory OCaml's bytes, every case defined.",
       capitals: [
         { at: 'def:step', say: 'one instruction: the whole definition' },
@@ -44,7 +44,7 @@ local skeletons = import '../../skeletons.libsonnet';
       ],
     },
     // the machine
-    'TinyMachineDevices.mli': { digest: '1db39057da37',
+    'TinyMachineDevices.mli': { digest: '5e0121f0204f',
       summary: "tiny-machine without a host: control registers, traps, window and pages, devices as words; a host gives put and on_open.",
       capitals: [
         { at: 'type:machine', say: 'the CPU and what a kernel needs around it' },
@@ -60,7 +60,7 @@ local skeletons = import '../../skeletons.libsonnet';
       ],
       related: ['../../raspberry/'],
     },
-    'TinyMachineDevices.ml': { digest: '8b6a9b14cf87',
+    'TinyMachineDevices.ml': { digest: 'b6327538fd71',
       summary: "The machine: two modes, one trap, base and bound, Sv32 pages, disk, mouse, net, speaker; ticks batched when calm.",
       capitals: [
         { at: 'def:trap', say: 'the one trap: epc, cause, tval, then tvec' },
@@ -80,7 +80,7 @@ local skeletons = import '../../skeletons.libsonnet';
       ],
     },
     // the wire's other end
-    'TinyMachinePeer.mli': { digest: '8c5e6b49e9ae',
+    'TinyMachinePeer.mli': { digest: '03eb6fb87685',
       summary: "The other end of the wire: the kernel's own network stack run by the host at 10.0.0.1, Gopher's shape on port 70.",
       capitals: [
         { at: 'def:send', say: "a packet from the machine: TinyKernelNetwork's answer" },
@@ -94,7 +94,7 @@ local skeletons = import '../../skeletons.libsonnet';
       ],
       related: ['../TinyKernel/TinyKernelNetwork.mli', '../../raspberry/'],
     },
-    'TinyMachinePeer.ml': { digest: '3c9d6311fb1a',
+    'TinyMachinePeer.ml': { digest: '4aee3634a62d',
       summary: "The peer: TinyKernelNetwork's net_input on the host, a document a connection's messages, relays to the world.",
       important: [
         { at: 'def:send', say: 'an empty packet is its own clock', weight: 3 },
@@ -107,7 +107,7 @@ local skeletons = import '../../skeletons.libsonnet';
       ],
     },
     // the programs beside tiny-machine
-    'TinyMachineSDL.mli': { digest: 'b146d7885d77',
+    'TinyMachineSDL.mli': { digest: '615b52a256cb',
       summary: "The SDL window (tsdl), t-ix's one module linking C: frames of RGB, events, the mouse's look, the speaker's queue.",
       important: [
         { at: 'type:event', weight: 2 },
@@ -117,7 +117,7 @@ local skeletons = import '../../skeletons.libsonnet';
       ],
       related: ['../../raspberry/video/Sdl_display.ml'],
     },
-    'TinyMachineSDL.ml': { digest: '10f5e28f09f7',
+    'TinyMachineSDL.ml': { digest: 'a25db0e52a44',
       summary: "SDL's window: opened at the first frame, scaled to fit, the keys to bytes with Alt as Escape and repeats.",
       important: [
         { at: 'def:create', say: 'window, renderer, texture: made at the first frame', weight: 3 },
@@ -146,7 +146,7 @@ local skeletons = import '../../skeletons.libsonnet';
         { at: 'comment:"The machine speaks IL and the world TCP"', say: "a home router's address translation", weight: 3 },
       ],
     },
-    'TinyMachineSocket.ml': { digest: '3980b7825747',
+    'TinyMachineSocket.ml': { digest: 'bfba2ccf50ab',
       summary: "The socket's three commands: dial, listen (a child and two named pipes a connection), name.",
       important: [
         { at: 'def:dial', say: 'within five seconds: +, or -', weight: 2 },
@@ -155,7 +155,7 @@ local skeletons = import '../../skeletons.libsonnet';
         { at: 'def:main', weight: 2 },
       ],
     },
-    'TinyMachineFetch.mli': { digest: 'd81475e47efa',
+    'TinyMachineFetch.mli': { digest: '0a6520c9a51f',
       summary: "tiny-machine-fetch: a web page or a picture for the wire's other end, by ix's own TLS: the web's encrypted half.",
       important: [
         { at: 'comment:"This is the part of the web that the tiny machine does not do itself"', weight: 3 },
@@ -163,14 +163,14 @@ local skeletons = import '../../skeletons.libsonnet';
       ],
       related: ['../TinyBrowser/TinyBrowserHttp.ml', '../../networking/'],
     },
-    'TinyMachineFetch.ml': { digest: '890aad348d5b',
+    'TinyMachineFetch.ml': { digest: '88deb8eb3fde',
       summary: "The fetch: Http_client's GET, the body's framing undone; a picture decoded and reduced to the 256 colours.",
       important: [
         { at: 'def:reduce', say: 'each pixel the mean of its sources, on white', weight: 2 },
         { at: 'def:main', weight: 2 },
       ],
     },
-    'TinyMachineWeb.mli': { digest: '32144de1dd62',
+    'TinyMachineWeb.mli': { digest: '050bdcf55bc7',
       summary: "tiny-machine in a web page by js_of_ocaml: the canvas its screen, the browser's frames its loop, a budget each.",
       important: [
         { at: 'comment:"The loop is the browser"', say: 'a budget a frame: slower, never frozen', weight: 3 },
@@ -178,7 +178,7 @@ local skeletons = import '../../skeletons.libsonnet';
       ],
       related: ['TinyMachineWeb.html'],
     },
-    'TinyMachineWeb.ml': { digest: '9d534290ae68',
+    'TinyMachineWeb.ml': { digest: 'a152f1b2976a',
       summary: "The page: the image fetched, the machine and its peer made, a frame's worth of ticks, the wire drawn.",
       capitals: [
         { at: 'def:run', say: 'the machine in the page: requestAnimationFrame its loop' },
@@ -239,7 +239,7 @@ local skeletons = import '../../skeletons.libsonnet';
     skeletons.module('../TinyLibMachine.ml', 'The words: one type, both directions', [
       ['encode', 'an instruction to its word, checked', ''],
       ['decode', 'a word to an instruction, or None', 'a word'],
-      ['print', 'the listing, which reassembles', 'an instruction'],
+      ['print_line', 'the listing, which reassembles', 'an instruction'],
     ]) + {
       bones+: [{ at: '../TinyLibMachine.ml:type:instr', role: 'nine forms' }],
       joints+: [{ from: '../TinyLibMachine.ml:type:instr', to: '../TinyLibMachine.ml:def:encode', say: 'an instruction' }],
@@ -317,7 +317,7 @@ local skeletons = import '../../skeletons.libsonnet';
         { from: 'TinyMachineWindow.ml:code:"let () ="', to: 'TinyMachineSDL.ml:def:typed', say: 'the events' },
       ],
     },
-    skeletons.onefile('tiny-machine-socket: dial, listen, name', 'TinyMachineSocket.ml', [
+    skeletons.prog('tiny-machine-socket: dial, listen, name', 'TinyMachineSocket.ml', [
       ['TinyMachineSocket.ml:def:dial', 'a TCP connection, five seconds at most', 'host, port'],
       ['TinyMachineSocket.ml:def:relay', 'stdin to the socket, the socket to stdout', 'the socket'],
     ]) + {
@@ -331,7 +331,7 @@ local skeletons = import '../../skeletons.libsonnet';
         { from: 'TinyMachineSocket.ml:def:main', to: 'TinyMachineSocket.ml:def:address', say: 'name host' },
       ],
     },
-    skeletons.onefile('tiny-machine-fetch: a page or a picture', 'TinyMachineFetch.ml', [
+    skeletons.prog('tiny-machine-fetch: a page or a picture', 'TinyMachineFetch.ml', [
       ['TinyMachineFetch.ml:def:reduce', 'a picture to w by h bytes of the palette', '-picture w h'],
     ]),
     {

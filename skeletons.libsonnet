@@ -69,7 +69,7 @@
   // local in tiny/'s config by the 2026-11-04 pass, lifted here)
   prog(name, file, core)::
     self.chain(name, [
-      [file + ':code:"TinyLibSystem.main"', 'the program: TinyLibSystem.main, the host or tiny-kernel', ''],
+      [file + ':code:".main"', 'the program: TinyLibSystem.main, the host or tiny-kernel', ''],
       [file + ':def:main', 'the command line: -h, flags, files', 'the capabilities'],
     ] + core),
 

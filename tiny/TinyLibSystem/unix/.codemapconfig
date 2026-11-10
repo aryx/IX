@@ -7,7 +7,7 @@
   generated: { by: 'claude-opus-5-5', on: '2026-11-10' },
   summary: "TinyLibSystem on Linux and macOS: lib_core's Cap, FS and Procs over Unix.",
   files: {
-    'TinyLibSystem.ml': { digest: 'd5bd277679fc',
+    'TinyLibSystem.ml': { digest: '67d5b213c57b',
       summary: "TinyLibSystem on the host: lib_core's Cap, FS and Procs over Unix, a descriptor an int by Obj.magic.",
       important: [
         { at: 'def:fd', say: "Unix's descriptor is an int: Obj.magic", weight: 2 },

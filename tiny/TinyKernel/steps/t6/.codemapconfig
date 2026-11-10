@@ -71,7 +71,7 @@ local skeletons = import '../../../../skeletons.libsonnet';
       ],
       related: ['TinyMkfs.ml'],
     },
-    'TinyMkfs.ml': { digest: 'd07c2834b463',
+    'TinyMkfs.ml': { digest: '562ca523ae72',
       summary: "tiny-mkfs: t6's disk made on the host, as xv6's mkfs.c: a superblock, a FAT, the root's entries, the files' chains.",
       important: [
         { at: 'def:make', say: 'each file a chain of fresh blocks, its entry in root', weight: 3 },
@@ -80,7 +80,7 @@ local skeletons = import '../../../../skeletons.libsonnet';
       ],
       related: ['file.c', '../../TinyKernelFS.ml'],
     },
-    'TinyMkfs.mli': { digest: '692793c06802',
+    'TinyMkfs.mli': { digest: '229d18726111',
       summary: "tiny-mkfs's idea and history: MS-DOS's FAT against Unix's inodes, and why the host makes the disk.",
       important: [
         { at: 'comment:"MS-DOS\'s idea, a FAT; the disk, in blocks of 1 KB"', weight: 3 },
@@ -166,7 +166,7 @@ local skeletons = import '../../../../skeletons.libsonnet';
         { from: 'file.c:def:sys_read', to: 'file.c:def:fileread', say: "the fd's file" },
       ],
     },
-    skeletons.onefile('tiny-mkfs: files to a FAT image', 'TinyMkfs.ml', [
+    skeletons.prog('tiny-mkfs: files to a FAT image', 'TinyMkfs.ml', [
       ['TinyMkfs.ml:def:make', 'superblock, FAT, root, chains', 'the files, by name'],
     ]) + {
       bones+: [{ at: 'TinyMkfs.ml:def:list', role: 'an image listed back (-l)' }],

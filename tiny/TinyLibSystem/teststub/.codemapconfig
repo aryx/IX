@@ -19,4 +19,22 @@
       summary: "What a test looks at beside the stub: the drawing messages written, for TinyKernelGraphics.",
     },
   },
+  skeletons: [
+    {
+      name: "A test's program on the stub: what it drew, drawn by the kernel's code",
+      bones: [
+        { at: '../../tests/TinyLibPlayground_tests/Host.ml', role: 'a test: the program run on the stub' },
+        { at: 'TinyLibSystem.ml:def:ready', role: 'the keys at once, then their end' },
+        { at: 'TinyLibSystem.ml:def:write', role: "fd_draw's bytes kept" },
+        { at: 'TinySystemTest.ml:def:drawn', role: 'the bytes, for the test' },
+        { at: '../../TinyKernel/TinyKernelGraphics.ml:def:messages', role: "tiny-kernel's drawing, a screen to compare" },
+      ],
+      joints: [
+        { from: '../../tests/TinyLibPlayground_tests/Host.ml', to: 'TinyLibSystem.ml:def:ready', say: 'a key' },
+        { from: '../../tests/TinyLibPlayground_tests/Host.ml', to: 'TinyLibSystem.ml:def:write', say: 'messages' },
+        { from: 'TinyLibSystem.ml:def:write', to: 'TinySystemTest.ml:def:drawn', say: 'kept' },
+        { from: 'TinySystemTest.ml:def:drawn', to: '../../TinyKernel/TinyKernelGraphics.ml:def:messages', say: 'given by the test' },
+      ],
+    },
+  ],
 }

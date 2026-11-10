@@ -10,7 +10,7 @@
   generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "TinyML's runtime, in C for tiny-c: the part every ML program has, included by its memory's giver.",
   files: {
-    'core.c': { digest: '5a6c32b7ceaa',
+    'core.c': { digest: 'cf4771601b4d',
       summary: "TinyML's runtime: the allocator, Cheney's copying collector, the primitives, stdout's buffer, Marshal and SHA-1 in C.",
       capitals: [
         { at: 'def:collect', say: 'Cheney: the value stack and the globals, all the roots' },

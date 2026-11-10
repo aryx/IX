@@ -47,7 +47,7 @@ local kernel_color = '#c03030';
       related: ['host/TinyMemory.ml', 'draw.tm'],
     },
     // the kernel's parts, in their order
-    'TinyKernelGraphics.ml': { digest: 'c1cd92452153',
+    'TinyKernelGraphics.ml': { digest: '8460edf293fa',
       summary: "Plan 9's draw in essence: one operation on images a byte a pixel, a colour an image that repeats, messages by number.",
       capitals: [
         { at: 'def:draw', say: "draw dst r src mask p: everything drawn is it" },
@@ -64,7 +64,7 @@ local kernel_color = '#c03030';
       ],
       related: ['../TinyLibDraw.ml', '../../lib_graphics/', '../TinyLibSystem/sdl/TinyLibSystem.ml'],
     },
-    'TinyKernelGraphics.mli': { digest: 'fcdb2df39723',
+    'TinyKernelGraphics.mli': { digest: 'b20aac1c9aae',
       summary: "Tiny graphics' interface and idea: libdraw and libmemdraw cut to one operation, the kernel holding the pixels.",
       capitals: [
         { at: 'def:draw', say: 'the one operation' },
@@ -78,7 +78,7 @@ local kernel_color = '#c03030';
         { at: 'type:conn', say: "a program's images, by its own numbers", weight: 1 },
       ],
     },
-    'TinyKernelAudio.ml': { digest: 'af1dabff8d9a',
+    'TinyKernelAudio.ml': { digest: '1086731cbdfd',
       summary: "The samples made in the kernel: a sound sfxr's recipe of five numbers, mixed into the speaker's ring.",
       important: [
         { at: 'def:mix', say: 'a sample made where it is played: no allocation', weight: 3 },
@@ -88,7 +88,7 @@ local kernel_color = '#c03030';
       ],
       related: ['../TinyPlay.ml', '../TinyLibPlayground.ml', '../../lib_audio/'],
     },
-    'TinyKernelAudio.mli': { digest: '1832b59e8491',
+    'TinyKernelAudio.mli': { digest: 'e77f8a11e49e',
       summary: "Tiny sound's interface and why: a recipe, not samples, crosses the pipe; each open of /dev/audio a voice.",
       important: [
         { at: 'comment:"The kernel has the samples, a program says what"', weight: 3 },
@@ -96,7 +96,7 @@ local kernel_color = '#c03030';
         { at: 'type:sound', weight: 2 },
       ],
     },
-    'TinyKernelNetwork.ml': { digest: 'dc3f9d675c06',
+    'TinyKernelNetwork.ml': { digest: '71b2986f42b5',
       summary: "The network stack as functions of strings: IP, ICMP's echo, Plan 9's IL; the kernel's and the wire's other end.",
       capitals: [
         { at: 'def:net_input', say: 'a packet in: the packets back, what a program hears' },
@@ -112,20 +112,20 @@ local kernel_color = '#c03030';
       ],
       related: ['../TinyMachine/TinyMachinePeer.ml', '../../kernels/9pi/', '../../lib_networking/'],
     },
-    'TinyKernelNetwork.mli': { digest: '4ba7b2c2df7b',
+    'TinyKernelNetwork.mli': { digest: '0a3447cc76cf',
       summary: "Tiny network's interface and idea: a stack of pure functions, so one file is kernel, test and wire's other end.",
       capitals: [
         { at: 'def:net_input', say: 'the stack: a packet in, packets out' },
       ],
       important: [
-        { at: 'comment:"the stack is functions of strings"', weight: 3 },
+        { at: 'comment:"stack is functions of strings"', weight: 3 },
         { at: 'type:il', weight: 2 },
         { at: 'type:net_stack', weight: 2 },
         { at: 'def:net_dial', weight: 1 },
         { at: 'def:net_tick', weight: 1 },
       ],
     },
-    'TinyKernelFS.ml': { digest: '14efcd54bc14',
+    'TinyKernelFS.ml': { digest: 'c4caec41b0c0',
       summary: "Files on the disk, copy-on-write: no block of the last commit written over; inodes in a file, snapshots for free.",
       capitals: [
         { at: 'def:fs_commit', say: 'one block written: the disk goes from tree to tree' },
@@ -141,7 +141,7 @@ local kernel_color = '#c03030';
       ],
       related: ['../TinyDatabase.ml'],
     },
-    'TinyKernelFS.mli': { digest: 'ab7514fb3a75',
+    'TinyKernelFS.mli': { digest: '9fb9ebb32322',
       summary: "Tiny file system's interface and idea: Unix's inodes, nothing ever written over, the commit one block.",
       important: [
         { at: 'comment:"The classic layout."', weight: 2 },
@@ -151,7 +151,7 @@ local kernel_color = '#c03030';
         { at: 'def:fs_snapshots', weight: 1 },
       ],
     },
-    'TinyKernelMachine.ml': { digest: 'ea761abd7231',
+    'TinyKernelMachine.ml': { digest: 'e36e583b08f8',
       summary: "The kernel's machine: entry.tm's, memory.tm's and runtime.c's externals, the devices' addresses at the top of memory.",
       important: [
         { at: 'def:k_run', say: "entry.tm's: a process run, the trap's cause back", weight: 3 },
@@ -162,7 +162,7 @@ local kernel_color = '#c03030';
       ],
       related: ['entry.tm', 'memory.tm', 'runtime.c'],
     },
-    'TinyKernelMachine.mli': { digest: 'abc53fd43499',
+    'TinyKernelMachine.mli': { digest: '56f9f8fbd55a',
       summary: "What the kernel in ML reaches tiny-machine by: a process run until its trap, words read and written, devices' addresses.",
       capitals: [
         { at: 'def:k_run', say: 'the kernel calls a process; its trap returns' },
@@ -175,7 +175,7 @@ local kernel_color = '#c03030';
         { at: 'comment:"The first 32 MB are the kernel"', weight: 1 },
       ],
     },
-    'TinyKernelMemory.ml': { digest: 'fd25a633b808',
+    'TinyKernelMemory.ml': { digest: '58e25f74f5c6',
       summary: "A process's memory three ways: a partition by first fit, segments with a shared text, or Sv32 pages with copy-on-write.",
       capitals: [
         { at: 'def:mem_address', say: "a process's address checked and translated" },
@@ -190,7 +190,7 @@ local kernel_color = '#c03030';
         { at: 'def:mem_address', weight: 3 },
       ],
     },
-    'TinyKernelMemory.mli': { digest: '03cfc3913675',
+    'TinyKernelMemory.mli': { digest: '73013b06c074',
       summary: "Tiny memory's interface and history: OS/360's partitions, the PDP-11's segments, Atlas's pages, as three choices.",
       important: [
         { at: 'comment:"one block of the machine"', weight: 2 },
@@ -204,7 +204,7 @@ local kernel_color = '#c03030';
       ],
       related: ['../../docs/plans/done/plan_tiny_memory.md'],
     },
-    'TinyKernelFiles.ml': { digest: 'aaed774f9d4e',
+    'TinyKernelFiles.ml': { digest: '6a3bf86c7565',
       summary: "The files: a tree of ML values, the image's, /dev's, the disk's, unions of them; what a descriptor's file can be.",
       capitals: [
         { at: 'def:walk', say: 'a path in a union: a directory found twice is their union' },
@@ -218,7 +218,7 @@ local kernel_color = '#c03030';
         { at: 'def:contents', weight: 1 },
       ],
     },
-    'TinyKernelFiles.mli': { digest: 'aa2e0a626c64',
+    'TinyKernelFiles.mli': { digest: '7a216c8b1cae',
       summary: "TinyKernel's files' interface: a node, an open file, a pipe, a link, a trace; the devices are files, as Plan 9's.",
       important: [
         { at: 'type:node', weight: 3 },
@@ -228,7 +228,7 @@ local kernel_color = '#c03030';
         { at: 'def:walk', weight: 2 },
       ],
     },
-    'TinyKernelProcs.ml': { digest: 'e0bb33d89e1c',
+    'TinyKernelProcs.ml': { digest: '66538029684a',
       summary: "Processes: a slot, a memory, descriptors; a waiting one's state the rest of its call; the user's memory reached, checked.",
       important: [
         { at: 'type:state', say: 'Waiting holds the rest of the call', weight: 3 },
@@ -240,7 +240,7 @@ local kernel_color = '#c03030';
         { at: 'def:drop', say: "a pipe's ends counted: a reader must learn the end", weight: 1 },
       ],
     },
-    'TinyKernelProcs.mli': { digest: 'c40ee77736d0',
+    'TinyKernelProcs.mli': { digest: 'bfec65bf9643',
       summary: "Processes' interface and idea: no zombie (a status is a record), no kernel stack (a waiting call is a closure).",
       capitals: [
         { at: 'type:state', say: 'Waiting of a closure: Mach-style continuations' },
@@ -270,7 +270,7 @@ local kernel_color = '#c03030';
         { at: 'def:speak', weight: 2 },
       ],
     },
-    'TinyKernelIO.ml': { digest: '7b3942a28a39',
+    'TinyKernelIO.ml': { digest: '9f31f2079e74',
       summary: "Reads and writes, by kind of file: a node, a pipe, the console, the screen, a link, a call, a voice, a trace.",
       capitals: [
         { at: 'def:read', say: 'Some n, or None: the call waits and is tried again' },
@@ -291,7 +291,7 @@ local kernel_color = '#c03030';
         { at: 'def:stop', weight: 1 },
       ],
     },
-    'TinyKernelCalls.ml': { digest: 'c2d8089c8255',
+    'TinyKernelCalls.ml': { digest: '04981dad972e',
       summary: 'The system calls, a match on the number; a call that must wait left a closure the scheduler retries.',
       capitals: [
         { at: 'def:block', say: 'waiting as a closure the scheduler retries: no sleep, no wakeup' },
@@ -307,7 +307,7 @@ local kernel_color = '#c03030';
         { at: 'def:call', say: 'a traced call: stopped before and after', weight: 1 },
       ],
     },
-    'TinyKernelCalls.mli': { digest: 'e00623047736',
+    'TinyKernelCalls.mli': { digest: '545936b239b6',
       summary: "The system calls' interface: 29 calls by number; dial and trace are files where Unix has sockets and ptrace.",
       important: [
         { at: 'comment:"0 exit    1 write   2 read"', say: "the numbers: tiny-cpu's first three", weight: 3 },
@@ -315,7 +315,7 @@ local kernel_color = '#c03030';
         { at: 'def:load_prog', weight: 1 },
       ],
     },
-    'TinyKernelScheduler.ml': { digest: '9ac1f3dcfadb',
+    'TinyKernelScheduler.ml': { digest: 'd1d702b4eab5',
       summary: "The scheduler: round robin, preemptive, on one core or several; the interrupts taken between two runs.",
       capitals: [
         { at: 'def:run', say: 'the kernel calls a process: k_run returns at its trap' },

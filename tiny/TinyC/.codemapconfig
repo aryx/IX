@@ -4,14 +4,14 @@
 // is ../TinyC.ml; these are its passes, in their order. The .mli files
 // are the bare interfaces (no header: TinyC.mli has the design).
 local skeletons = import '../../skeletons.libsonnet';
-local frame_lines = 'comment:"the code, each line a function of the"';
+local frame_lines = 'comment:"Its lines, each a function of the"';
 local convention = 'comment:"TinyCPU (TinyMachineCPU.ml) has 32-bit registers"';
 local unsigned_div = 'comment:"TinyCPU divides signed only"';
 {
   generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "tiny-c's passes: C's types, the tokens, the tree typed as it is built, the stack machine, the parser, TinyCPU's code.",
   files: {
-    'TinyCTypes.ml': { digest: '87b5064659c4',
+    'TinyCTypes.ml': { digest: 'c2caa0c8ff53',
       summary: "C's types on a 32-bit machine: sizes, alignments, a structure itself (same), no long long.",
       important: [
         { at: 'type:ty', weight: 3 },
@@ -19,14 +19,14 @@ local unsigned_div = 'comment:"TinyCPU divides signed only"';
         { at: 'def:no_vlong', say: 'long long refused: the words are 4 bytes', weight: 1 },
       ],
     },
-    'TinyCTypes.mli': { digest: 'b4f06658e7a7',
+    'TinyCTypes.mli': { digest: 'e119285c057a',
       summary: "C's types and their sizes, which every pass of tiny-c names.",
       capitals: [
         { at: 'type:ty', say: "C's types: every pass's vocabulary" },
         { at: 'def:size', say: 'a type in bytes, on a 32-bit machine' },
       ],
     },
-    'TinyCLexer.ml': { digest: '07e0ace90821',
+    'TinyCLexer.ml': { digest: 'c97fbe841b20',
       summary: "The tokens of a file, the preprocessor's job done as they are made: #include, #define of a name.",
       important: [
         { at: 'def:tokens', say: 'the preprocessor: #include and #define of a name', weight: 3 },
@@ -34,10 +34,10 @@ local unsigned_div = 'comment:"TinyCPU divides signed only"';
         { at: 'comment:"the escapes: n t r, octal"', say: "a string's and a character's escapes", weight: 1 },
       ],
     },
-    'TinyCLexer.mli': { digest: '0e5d96f077db',
+    'TinyCLexer.mli': { digest: '56c72a18e4e8',
       summary: 'The tokens, where each is (its file and line), and the one function making them.',
     },
-    'TinyCTree.ml': { digest: 'a2e97cf586cb',
+    'TinyCTree.ml': { digest: '2dab70e0bd67',
       summary: "The tree, typed as it is built: each expression with its type, C's conversions made nodes; the statements.",
       capitals: [
         { at: 'type:expr', say: 'built typed, its conversions explicit (Conv)' },
@@ -51,10 +51,10 @@ local unsigned_div = 'comment:"TinyCPU divides signed only"';
         { at: 'type:stmt', weight: 1 },
       ],
     },
-    'TinyCTree.mli': { digest: '470d84239352',
+    'TinyCTree.mli': { digest: 'bb7f85041092',
       summary: "The typed tree's types and the constructors that make each node with its type.",
     },
-    'TinyCLower.ml': { digest: 'a16e123a66ff',
+    'TinyCLower.ml': { digest: '2d9e59553d88',
       summary: 'The stack machine, and the tree lowered to it: labels and jumps, the front end knowing no register.',
       capitals: [
         { at: 'type:ir', say: 'the stack machine: the front end knows no register, the back end no C' },
@@ -68,10 +68,10 @@ local unsigned_div = 'comment:"TinyCPU divides signed only"';
         { at: 'def:lower', weight: 3 },
       ],
     },
-    'TinyCLower.mli': { digest: '2f5b98b77c8f',
+    'TinyCLower.mli': { digest: '914e9aa13759',
       summary: "The stack machine's instructions (what -ir prints) and lower, a statement to them.",
     },
-    'TinyCParser.ml': { digest: '5f6abb9d3f63',
+    'TinyCParser.ml': { digest: '23ae058e0fe0',
       summary: 'Declarations, expressions and statements by recursive descent, the scopes and the data of the globals.',
       important: [
         { at: 'def:base_type', say: 'int, char, struct, enum, a typedef', weight: 1 },
@@ -82,10 +82,10 @@ local unsigned_div = 'comment:"TinyCPU divides signed only"';
         { at: 'def:block', say: "a function's body: the tree of statements", weight: 3 },
       ],
     },
-    'TinyCParser.mli': { digest: '40fa1bec86c7',
+    'TinyCParser.mli': { digest: 'a2330b8e9232',
       summary: "The parser's state (tokens, scopes, globals) and its entries, as TinyC.ml drives them.",
     },
-    'TinyCMachine.ml': { digest: 'b0df47f726e4',
+    'TinyCMachine.ml': { digest: 'db0f393f0634',
       summary: "The stack machine to TinyCPU's assembly: the stack in r1..r12, a frame's sizes known at its end.",
       important: [
         { at: convention, say: 'the calling convention: every argument in memory', weight: 3 },
@@ -94,8 +94,8 @@ local unsigned_div = 'comment:"TinyCPU divides signed only"';
         { at: unsigned_div, say: '__udivmod for the unsigned', weight: 1 },
       ],
     },
-    'TinyCMachine.mli': { digest: '700341991b2e',
-      summary: "The back end's one function, a function's IR to assembly, and the buffer it writes.",
+    'TinyCMachine.mli': { digest: '7ad2404b159a',
+      summary: "The back end: a function's IR to TinyLibMachine's lines, and a global's data.",
     },
   },
   skeletons: [
@@ -147,13 +147,13 @@ local unsigned_div = 'comment:"TinyCPU divides signed only"';
       ],
     },
     skeletons.module('TinyCLower.ml', 'TinyCLower: statements, then values, to the stack machine', [
-      ['lower', 'a statement: labels and jumps', ''],
+      ['lower_function', "a function's body, its ir list", ''],
+      ['lower', 'a statement: labels and jumps', 'its statements, emit'],
       ['for_effect', 'an expression as a statement', 'Expr'],
       ['value', 'its value on the stack', 'an expression'],
-      ['emit', 'an instruction appended', 'ir'],
     ]) + {
       bones+: [{ at: 'TinyCLower.ml:type:ir', role: 'the stack machine' }],
-      joints+: [{ from: 'TinyCLower.ml:def:emit', to: 'TinyCLower.ml:type:ir', say: 'code' }],
+      joints+: [{ from: 'TinyCLower.ml:def:value', to: 'TinyCLower.ml:type:ir', say: 'emit, an instruction' }],
     },
     skeletons.module('TinyCParser.ml', 'TinyCParser: recursive descent, typed as it goes', [
       ['block', "a function's body", ''],
@@ -180,13 +180,12 @@ local unsigned_div = 'comment:"TinyCPU divides signed only"';
         { at: 'TinyCMachine.ml:def:machine', role: 'a function: each ir to instructions' },
         { at: 'TinyCMachine.ml:' + frame_lines, role: "lines waiting for the frame's size" },
         { at: 'TinyCMachine.ml:' + unsigned_div, role: 'unsigned division by a call' },
-        { at: 'TinyCMachine.ml:def:out', role: 'the assembly written' },
       ],
       joints: [
         { from: 'TinyCMachine.ml:' + convention, to: 'TinyCMachine.ml:def:machine', say: 'the frame' },
         { from: 'TinyCMachine.ml:def:machine', to: 'TinyCMachine.ml:' + frame_lines, say: 'each instruction' },
         { from: 'TinyCMachine.ml:def:machine', to: 'TinyCMachine.ml:' + unsigned_div, say: 'unsigned / and %' },
-        { from: 'TinyCMachine.ml:' + frame_lines, to: 'TinyCMachine.ml:def:out', say: 'at the end' },
+        { from: 'TinyCMachine.ml:' + frame_lines, to: 'TinyCMachine.ml:def:machine', say: "at the end, given the frame's size" },
       ],
     },
   ],

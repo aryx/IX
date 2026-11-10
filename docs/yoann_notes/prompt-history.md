@@ -67740,3 +67740,82 @@ Claude recommended fixing it at the runtime level: check the machine stack like 
 Claude also listed two alternatives: making `TinyLibCore`'s list functions tail-recursive, or streaming the assembler line by line.
 Claude completed the `system/` tidy across the TinyCalls, TinyLibSystem, stub, tinykernel and unix files, and verified it.
 Claude then asked whether to commit that tidy as its own commit before starting the stack fix.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 11:08
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude recommended option d, giving `as` the `-a 64` memory flag that `ld` already uses.
+That doubles both stacks to 4 MB, which probably covers the roughly 70,000-deep recursion.
+Claude called it a stopgap, since the recursion still grows with the size of the input file.
+Claude traced the depth to TinyLibCore's List map, mapi, init, filteri, and concat, each recursing once per element.
+Claude noted that OCaml's host List.map has been tail-recursive since 5.1, so only tiny hits the limit.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 11:16
+
+**Yoann:**
+
+> I favor simplicity of the code for tiny/, so I would go for d if it works. Also why we have this problem now? What changed?
+
+------------------------------------------------------------------------
+
+## 2026-11-10 11:17
+
+**Yoann:**
+
+> going from 4MB to 64MB seems a big jump no?
+
+**Claude (summary):**
+
+Claude recommended fixing the assembler's three list passes (`read`, `encode`, `items`) with accumulators and `List.rev`, instead of changing tiny-ml's `List`.
+Claude proposed verifying `kernel.tm` on the small image, rerunning `make self`, and re-recording `self.expected` after review.
+Claude explained the 4MB-to-64MB jump came from the `TinyMachineAsm` batch turning per-line work into whole-file list passes.
+Claude also noted the machine stack was a fixed, unchecked 64 KB, so overflow corrupted the heap silently.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 11:23
+
+**Yoann:**
+
+> let's do c, adding appropriate comments. But why do we have a kernel.tm with 70000 lines in the first place? I though we were now producing separate .tm and then separate .o for the linker to link, so why a 70000 .tm ?
+
+------------------------------------------------------------------------
+
+## 2026-11-10 11:29
+
+**Yoann:**
+
+> hmm I don't like this new code; it complicates things
+
+------------------------------------------------------------------------
+
+## 2026-11-10 11:29
+
+**Yoann:**
+
+> maybe we should optimize the List.mapi and List.concat_map instead
+
+------------------------------------------------------------------------
+
+## 2026-11-10 11:29
+
+**Yoann:**
+
+> so the code stays simple
+
+**Claude (summary):**
+
+Claude recommended committing all the uncommitted changes together once `make self` finishes cleanly.
+Claude planned to review the background `make self` output first, since its final comparison still fails.
+Claude would then re-record `self.expected`, which predates `TinyMachineAsm`, and rerun for a clean pass.
+The uncommitted set covers the List.ml loops, the stack-overflow checks in core.c and mlsys.c, and re-recorded test expectations.
+Claude had already verified the check, test-tix, and tiny_check.sh runs, with host assembler output byte-identical.

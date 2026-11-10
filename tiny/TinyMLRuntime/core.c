@@ -37,6 +37,12 @@ void *ml_handler;
  * stack ran into the heap's first blocks: tiny-c's List.map over a
  * file's tokens, wrong values, then a loop or an exception) */
 value *ml_vlimit;
+/* the machine stack's end, the same way: a call's link and C's
+ * arguments are there, and a recursion over 70,000 lines ran it into
+ * the heap's second half, which it wrote silently (tiny-kernel's as on
+ * its kernel.tm: Match_failure, a wrong index, or a trap, by the
+ * file's size; old: no check) */
+long ml_slimit;
 
 /*****************************************************************************/
 /* The heap, the collector */
@@ -147,11 +153,15 @@ value
 ml_alloc(value n, value tag)
 {
 	value *p;
+	long here;
 
 	if(hp + n + 1 > limit)
 		gc(n + 1);
 	if(ml_vlimit && ml_vsp > ml_vlimit)
-		fatal("Fatal error: stack overflow\n");
+		fatal("Fatal error: stack overflow (the value stack)\n");
+	/* (a local's address: where the machine stack is) */
+	if(ml_slimit && (long)&here < ml_slimit)
+		fatal("Fatal error: stack overflow (the machine stack)\n");
 	p = hp + 1;
 	p[-1] = (n << 10) | tag;
 	hp = p + n;

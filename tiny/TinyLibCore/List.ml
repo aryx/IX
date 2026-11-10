@@ -16,11 +16,14 @@ let rec nth_opt l n =
   | [] -> None
   | x :: l -> if n = 0 then Some x else nth_opt l (n - 1)
 let rec map f = function [] -> [] | x :: l -> let y = f x in y :: map f l
+(* (in reverse, then turned around: a loop, where a recursion per
+ * element took tiny-kernel's as past its stack's end on kernel.tm's
+ * 70,000 lines; OCaml's own does not recurse either) *)
 let mapi f l =
-  let rec go i = function
-    | [] -> []
-    | x :: l -> let y = f i x in y :: go (i + 1) l in
-  go 0 l
+  let rec go i acc = function
+    | [] -> rev acc
+    | x :: l -> go (i + 1) (f i x :: acc) l in
+  go 0 [] l
 let rec map2 f l1 l2 =
   match l1, l2 with
   | [], [] -> []
@@ -99,7 +102,12 @@ let filteri p l =
     | x :: l -> if p i x then x :: go (i + 1) l else go (i + 1) l in
   go 0 l
 let rec concat = function [] -> [] | l :: r -> l @ concat r
-let concat_map f l = concat (map f l)
+(* (a loop, as mapi; old: concat (map f l), two recursions per element) *)
+let concat_map f l =
+  let rec go acc = function
+    | [] -> rev acc
+    | x :: l -> go (rev_append (f x) acc) l in
+  go [] l
 let init n f =
   let rec go i = if i >= n then [] else let x = f i in x :: go (i + 1) in
   go 0

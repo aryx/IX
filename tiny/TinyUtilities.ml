@@ -69,7 +69,7 @@ let quote name =
 (* [options letters args]: the letters of the options in front of args,
  * each of which must be one of letters, and the arguments after them.
  * "--" ends the options, and "-" alone is an argument *)
-let options letters args =
+let options (letters : string) (args : string list) : char list * string list =
   let rec go acc args =
     match args with
     | "--" :: rest -> acc, rest
@@ -127,10 +127,10 @@ let each_input caps tool (files : Fpath.t list) (f : Chan.i -> unit)
   if files = [] then
     one 0 (fun () -> named "stdin" (fun () -> f (TSys.stdin caps)))
   else
-    List.fold_left (fun status file ->
+    files |> List.fold_left (fun status file ->
       one status (fun () ->
         TSys.with_open_in caps
-          (fun c -> named !!file (fun () -> f c)) file)) 0 files
+          (fun c -> named !!file (fun () -> f c)) file)) 0
 
 (* the file a channel reads, None for the standard input *)
 let name_of (c : Chan.i) : Fpath.t option =

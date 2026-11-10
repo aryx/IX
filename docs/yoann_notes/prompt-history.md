@@ -67676,3 +67676,51 @@ Claude moved the 11 ML mains into tiny/user/ and renamed tiny/sdl/ to tiny/user/
 Claude kept the C programs in TinyKernel/user/ and repointed the TinyKernel Makefile and examples at ../user/.
 Claude updated the dune files, compile_ix, tiny_check, docs and comments, and split the code-map config between the two directories.
 Claude ran the dune build, test-tix and self-hosting checks, all passing, and left the commit pending your approval.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 10:23
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Yoann's reply "yes" most likely answers a question about the reorganization, so I'll focus there.
+Claude committed the move as 6ccdff26, covering 44 files recorded as renames, plus `prompt-history.md`.
+The top of `tiny/` now holds the libraries, `system/` interfaces, `user/` entry points (with `user/sdl/` building seven programs in a window), and `TinyKernel/`.
+Claude left `tiny/Makefile` uncommitted because it is Yoann's pending edit.
+Claude flagged that `self.expected` is stale after both moves and needs a full `make self` run to re-record.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 10:24
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended four next steps: re-record `self.expected` with a full `make self`, tidy the `system/` implementations, move `TinyKernel/host/` into an `ocaml/` directory, and continue the program-by-program pass.
+Yoann pointed out that the pass has already covered TinyShell, TinyUtilities, TinyBuildSystem, TinyVCS and TinyDatabase.
+Claude's item 4 was therefore partly wrong, since those tools already got the records-over-tuples, aliases-over-open treatment.
+The remaining work is TinyOffice, TinyBrowser and their parts, plus the kernel's parts in `TinyKernel/`.
+Claude had suggested starting item 1 in the background and doing item 2 meanwhile, and asked for approval to proceed.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 10:36
+
+**Yoann:**
+
+> for 4 I think we actually did a pass on TinyShell, Utilities, BuildSustem, VCS and Db.
+
+**Claude (summary):**
+
+Claude recommended starting the full `make self` build in the background as item 1.
+Claude proposed tidying the `system/` files, the ones just put in view, as item 2 while that build runs.
+Claude said the build and the cleanup could proceed in parallel without blocking each other.
+Claude asked Yoann to confirm before going ahead with either step.
+Claude noted that item 4 shrinks, since TinyOffice, TinyBrowser and the kernel parts already had their types pass.

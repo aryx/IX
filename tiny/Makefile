@@ -2,11 +2,11 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # Build and test t-IX from tiny/ itself, as ../Makefile's tix and test-tix
-# (their names work here too):
+# targets (their names work here too):
 #
 #   make         the tiny programs by dune (from here dune builds tiny/
-#                alone: a no-op is 0.6 s, the whole tree's 4)
-#   make test    the shared jobs and t-IX's of make test-lite, a minute
+#                alone: a no-op is 0.6 s, the whole tree's 4 s)
+#   make test    the shared jobs and t-IX's of make test-lite (a minute)
 #   make loc     t-IX's lines alone (../scripts/stats/loc.py -t: the
 #                files git knows, those apart said at the end)
 #

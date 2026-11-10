@@ -74,4 +74,14 @@ tiny/TinyBrowser/TinyBrowserTokens.ml:75: dead: TinyBrowserTokens.tag_end, in in
 tiny/TinyBrowser/TinyBrowserTokens.ml:89: dead: TinyBrowserTokens.scan, in init but no call goes through the pointer
 tiny/TinyKernel/TinyKernelNetwork.ml:298: dead: TinyKernelNetwork.il_readable, nothing names it
 tiny/TinyLibMachine.ml:397: dead: TinyLibMachine.address, nothing names it
+tiny/TinyLibSystem/unix/TinyLibSystem.ml: dead global: TinyLibSystem.fd_draw, nothing live names it
+tiny/TinyLibSystem/unix/TinyLibSystem.ml: dead global: TinyLibSystem.fd_mouse, nothing live names it
+tiny/TinyLibSystem/unix/TinyLibSystem.ml: dead global: TinyLibSystem.fd_stderr, nothing live names it
+tiny/TinyLibSystem/unix/TinyLibSystem.ml: dead global: TinyLibSystem.fd_stdin, nothing live names it
+tiny/TinyLibSystem/unix/TinyLibSystem.ml: dead global: TinyLibSystem.fd_stdout, nothing live names it
+tiny/TinyLibSystem/unix/TinyLibSystem.ml:183: dead: TinyLibSystem.seed, nothing names it
+tiny/TinyLibSystem/unix/TinyLibSystem.ml:198: dead: TinyLibSystem.ready, nothing names it
+tiny/TinyLibSystem/unix/TinyLibSystem.ml:269: dead: TinyLibSystem.spawn, nothing names it
+tiny/TinyLibSystem/unix/TinyLibSystem.ml:288: dead: TinyLibSystem.dial, nothing names it
+tiny/TinyLibSystem/unix/TinyLibSystem.ml:73: dead: TinyLibSystem.raw_console, nothing names it
 tiny/TinyMachine.ml:645: dead: TinyMachine:fun at line 645, nothing names it

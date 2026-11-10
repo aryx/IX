@@ -1,6 +1,6 @@
 # Plan: one system interface for the tiny programs, TinyLibSystem, and TinyCalls private to tiny-kernel's side
 
-Status: **stage 0 done (2026-11-10): the layout, TinyLibSystem.mli and TinyLibSystem/; stages 1-5 to do.**
+Status: **stages 0 and 1 done (2026-11-10): the layout; TinyLibSystem.mli grown. Stages 2-5 to do.**
 Written 2026-11-10, after the author's question: "now since we have
 TinyLibSystem.mli, do we need TinyCalls.mli? seems they offer similar
 services", and then: "It seems confusing to have both those
@@ -150,6 +150,14 @@ messages and calls nothing.
 
 ## Questions to decide
 
+Decided by the author, 2026-11-10: 1, the stub a whole TinyLibSystem,
+its files and processes failing; 2, `drawn` in a test-only module of
+the stub's library; 3, the debugger and the tracer on
+`tinykernel/TinyCalls.ml`'s externals; 4, a write to `fd_draw` with no
+window a Failure. 5 and 6 as proposed (`raw_console` takes
+`Cap.keyboard`, `seed` `Cap.random`, `dial` `Cap.network`, `spawn`
+`Cap.fork` and `Cap.exec`; the one line made by the builds).
+
 1. **The stub on tiny-cpu.** Three tests (`TinyEditorScreen_test.sh`,
    `TinyOffice_test.sh`, `TinyTroff_test.sh`) compile
    `stub/TinyCalls.ml` with tiny-ml with the GUI and run it on
@@ -210,3 +218,15 @@ Stage 0, 2026-11-10: `tiny/system/` moved, `TinyLibSystem.mli` to
 `tiny/dune`, `tiny_calls_stub` renamed `tiny_calls_teststub`; mini-mk's
 and compile_ix.sh's `-I` with `tiny/` before `unix/`, so that the
 interface is found first. Checked as the stages are, `make self` but.
+
+Stage 1, 2026-11-10: TinyLibSystem.mli has `fd_stdin` ... `fd_mouse`,
+`ready` (a deadline in `millis`'s milliseconds, None then), `seed`,
+`raw_console`, `spawn` and `dial`; `unix/`'s by Unix (`select`,
+`tcsetattr`, `create_process`; `dial` a Failure: no wire on the host
+but a window's), `tinykernel/`'s by its calls (`ready`'s deadline in
+ticks, rounded up, as `sleep`'s; a dial's descriptor not given to a
+program run). No caller yet: `dead_tiny.txt` has them, until stage 3.
+`debug.cksum`: the debugged program's registers (TinyLibSystem's five
+globals), the screen looked at. Checked: dune; `make test-tix`;
+`tiny_check.sh`; mini-mk; the kernel's check and self-quick in
+`_make2`.

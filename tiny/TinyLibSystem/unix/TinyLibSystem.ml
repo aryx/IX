@@ -68,6 +68,15 @@ let isatty n = Unix.isatty (fd n)
 let ignore_interrupt (_ : < Cap.signal; .. >) =
   Sys.set_signal Sys.sigint (Sys.Signal_handle (fun _ -> ()))
 
+(* (the terminal's lines, echo and signals off together; nothing when
+ * the input is not a terminal) *)
+let raw_console (_ : < Cap.keyboard; .. >) raw =
+  if Unix.isatty Unix.stdin then begin
+    let (t : Unix.terminal_io) = Unix.tcgetattr Unix.stdin in
+    Unix.tcsetattr Unix.stdin Unix.TCSANOW
+      { t with c_icanon = not raw; c_echo = not raw; c_isig = not raw }
+  end
+
 (*****************************************************************************)
 (* Files *)
 (*****************************************************************************)
@@ -170,9 +179,31 @@ let sleep (caps : < Cap.clock; .. >) ms =
 let millis (caps : < Cap.clock; .. >) =
   int_of_float (CapUnix.gettimeofday caps () *. 1000.0)
 
+(* (the host has no seed of its own: the clock's milliseconds) *)
+let seed (_ : < Cap.random; .. >) =
+  int_of_float (Unix.gettimeofday () *. 1000.0) land 0x3fffffff
+
 (*****************************************************************************)
 (* Descriptors *)
 (*****************************************************************************)
+
+let fd_stdin = 0
+let fd_stdout = 1
+let fd_stderr = 2
+let fd_draw = 3
+let fd_mouse = 4
+
+(* (Unix.select, its timeout the seconds left until until, -1. none; an
+ * interrupt, a signal's, as the deadline) *)
+let ready (fds : fd list) (until : milliseconds option) : fd option =
+  let timeout =
+    match until with
+    | None -> -1.0
+    | Some t -> max 0.0 (float_of_int t /. 1000.0 -. Unix.gettimeofday ())
+  in
+  match Unix.select (List.map fd fds) [] [] timeout with
+  | r, _, _ -> List.find_opt (fun n -> List.mem (fd n) r) fds
+  | exception Unix.Unix_error (Unix.EINTR, _, _) -> None
 
 let save n =
   try Some (number (Unix.dup ~cloexec:true (fd n)))
@@ -234,9 +265,26 @@ let shell (caps : < Cap.fork; Cap.exec; Cap.env; Cap.stdout; Cap.stderr; .. >) v
   | pid -> Some pid
   | exception Unix.Unix_error _ -> None
 
+(* (what was printed flushed first, as shell does) *)
+let spawn (_ : < Cap.fork; Cap.exec; .. >) (file : Fpath.t) argv =
+  flush_all ();
+  try
+    Some
+      (Unix.create_process !!file (Array.of_list argv) Unix.stdin Unix.stdout
+         Unix.stderr)
+  with Unix.Unix_error _ -> None
+
 let exit (caps : < Cap.exit; Cap.stderr; .. >) (e : Exit.t) =
   Unix._exit
     (match e with
      | Exit.OK -> 0
      | Exit.Err m -> Console.eprint caps (m ^ "\n"); 1
      | Exit.Code n -> n)
+
+(*****************************************************************************)
+(* The network *)
+(*****************************************************************************)
+
+let dial (_ : < Cap.network; .. >) (_ : string) (_ : int) : fd =
+  failwith "no wire on the host: dial is tiny-kernel's, or a window's \
+            (TinyLibSystem/sdl/)"

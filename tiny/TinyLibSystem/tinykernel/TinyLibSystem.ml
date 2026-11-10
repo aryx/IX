@@ -105,6 +105,7 @@ let rec read_line caps =
 
 let isatty n = true
 let ignore_interrupt _caps = ()
+let raw_console _caps raw = ignore (u_rawcons (if raw then 1 else 0))
 
 (*****************************************************************************)
 (* Files *)
@@ -293,18 +294,34 @@ let getcwd caps = Fpath.v (u_getcwd ())
 
 let time _caps = u_time ()
 
-(* the milliseconds, from the ticks, 400 a second (a tick is 2.5 ms);
- * a sleep is a ready on no descriptor, until a tick *)
+(* the milliseconds, from the ticks, 400 a second (a tick is 2.5 ms),
+ * and back, rounded up; a sleep is a ready on no descriptor, until a
+ * tick *)
 let millis _caps = u_ticks () * 5 / 2
+let ticks ms = ((ms * 2) + 4) / 5
 let sleep _caps ms =
-  if ms > 0 then
-    ignore (u_ready (Array.make 0 0) 0 (u_ticks () + ((ms * 2) + 4) / 5))
+  if ms > 0 then ignore (u_ready (Array.make 0 0) 0 (u_ticks () + ticks ms))
+
+let seed _caps = u_seed ()
 
 let chdir caps dir = if u_chdir (str dir) < 0 then failwith "cannot"
 
 (*****************************************************************************)
 (* Descriptors *)
 (*****************************************************************************)
+
+let fd_stdin = TinyCalls.fd_stdin
+let fd_stdout = TinyCalls.fd_stdout
+let fd_stderr = TinyCalls.fd_stderr
+let fd_draw = TinyCalls.fd_draw
+let fd_mouse = TinyCalls.fd_mouse
+
+(* (u_ready's until in ticks, 0 none: a deadline already passed is the
+ * first tick, not none) *)
+let ready fds until =
+  let t = match until with None -> 0 | Some ms -> max 1 (ticks ms) in
+  let r = u_ready (Array.of_list fds) (List.length fds) t in
+  if r < 0 then None else Some r
 
 let save n = let d = u_dup n in if d < 0 then None else Some (keep d)
 
@@ -400,9 +417,22 @@ let shell caps vars script =
   let pid = u_spawn "/bin/rc" [ "rc"; "-e"; file ] in
   if pid < 0 then (ignore (u_unlink file); None) else Some pid
 
+let spawn _caps file argv =
+  let p = u_spawn (str file) argv in
+  if p < 0 then None else Some p
+
 let exit _caps e =
   exit
     (match e with
      | Exit.OK -> 0
      | Exit.Err m -> ignore (u_write fd_stderr (m ^ "\n")); 1
      | Exit.Code n -> n)
+
+(*****************************************************************************)
+(* The network *)
+(*****************************************************************************)
+
+(* (the connection not given to a program run, as a pipe's ends) *)
+let dial _caps address port =
+  let fd = u_dial address port in
+  if fd < 0 then failwith "cannot dial" else keep fd

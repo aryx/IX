@@ -141,6 +141,12 @@ val isatty : fd -> bool
  * not for this one *)
 val ignore_interrupt : < Cap.signal; .. > -> unit
 
+(* [raw_console caps raw]: the terminal raw (each key as it is typed,
+ * ^C a key, not an interrupt) or not: what an editor or a game wants of
+ * its keys (TinyCalls' u_rawcons, for the window's programs:
+ * plan_tiny_one_system.md) *)
+val raw_console : < Cap.keyboard; .. > -> bool -> unit
+
 (*****************************************************************************)
 (* Files *)
 (*****************************************************************************)
@@ -246,9 +252,33 @@ val sleep : < Cap.clock; .. > -> milliseconds -> unit
  * time, its ticks): for a time taken, the difference of two *)
 val millis : < Cap.clock; .. > -> milliseconds
 
+(* a seed for a program's first random number: the machine's, or the
+ * clock when it has none (a game's first piece) *)
+val seed : < Cap.random; .. > -> int
+
 (*****************************************************************************)
 (* Descriptors *)
 (*****************************************************************************)
+
+(* A program's first descriptors: its input (a window's keys), its
+ * output (the console), its errors, where it draws (the drawing
+ * messages, TinyKernelGraphics.mli's), and its mouse (a box: x, y, the
+ * buttons, a word each, the low bytes first). The last two are a
+ * window's: tiny-kernel's, or the host's window (TinyLibSystem/sdl/);
+ * on the host with no window they are not open, and a write there
+ * fails (old: TinyCalls.mli's alone) *)
+val fd_stdin : fd
+val fd_stdout : fd
+val fd_stderr : fd
+val fd_draw : fd
+val fd_mouse : fd
+
+(* [ready fds until]: the first of fds that can be read without
+ * waiting, waiting for one until the clock (millis's) is until, None
+ * then; with no until, until one is ready. A window's loop: a key, the
+ * mouse, the wire, or the next frame (old: TinyCalls' u_ready, ticks
+ * and -1) *)
+val ready : fd list -> milliseconds option -> fd option
 
 (* [read fd max]: what fd gives next, up to max bytes, without waiting
  * for more; "" at the end. For a program that must work on its input
@@ -309,6 +339,23 @@ val shell :
   < Cap.fork; Cap.exec; Cap.env; Cap.open_out; Cap.stdout; Cap.stderr; .. > ->
   (string * string list) list -> string -> pid option
 
+(* [spawn caps file argv]: a child running the program in file, argv
+ * its arguments (its name first), not waited for: nothing of this
+ * process copied, where fork and exec copy it whole; its pid, None when
+ * it cannot (the browser's player and pager; old: TinyCalls' u_spawn) *)
+val spawn : < Cap.fork; Cap.exec; .. > -> Fpath.t -> string list -> pid option
+
 (* the end of this process, at once: nothing flushed; Err's words said
  * first, on the standard error *)
 val exit : < Cap.exit; Cap.stderr; .. > -> Exit.t -> 'a
+
+(*****************************************************************************)
+(* The network *)
+(*****************************************************************************)
+
+(* [dial caps address port]: a connection to a machine's port, its
+ * descriptor; Failure when there is none. tiny-kernel's wire, and the
+ * host's window, which answers the wire's other end (port 70 of
+ * 10.0.0.1, a web page, a picture) as tiny-machine does; the host
+ * without a window has no wire (old: TinyCalls' u_dial, -1) *)
+val dial : < Cap.network; .. > -> string -> int -> fd

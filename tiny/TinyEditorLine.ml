@@ -7,7 +7,7 @@
  *)
 open Common
 (* the regular expressions: compile, search, search_back *)
-open TinyLibRegex
+module Regex = TinyLibRegex
 
 (* -h: the commands by example, each one as it runs *)
 let help = "usage: tiny-editor [file]: sam's command language, without the screen,
@@ -394,7 +394,7 @@ let shift p =
     if p1 <= p then q + String.length s - (p1 - p0) else q) p !changes
 
 (* the library's errors, as this file's *)
-let compile p = try compile p with Failure m -> raise (Error m)
+let compile p = try Regex.compile p with Failure m -> raise (Error m)
 
 (*****************************************************************************)
 (* Addresses *)
@@ -448,9 +448,9 @@ let next_match pat ((q0, q1) : range) forward : range =
   let t = !text in
   if forward then begin
     let find p =
-      match search re t p (len ()) with
+      match Regex.search re t p (len ()) with
       | Some c -> Some c
-      | None -> search re t 0 (len ()) in
+      | None -> Regex.search re t 0 (len ()) in
     match find q1 with
     | None -> raise (Error "search")
     | Some c when c.(0) = c.(1) && c.(0) = q1 ->
@@ -461,9 +461,9 @@ let next_match pat ((q0, q1) : range) forward : range =
   end
   else begin
     let find p =
-      match search_back re t p with
+      match Regex.search_back re t p with
       | Some c -> Some c
-      | None -> search_back re t (len ()) in
+      | None -> Regex.search_back re t (len ()) in
     match find q0 with
     | None -> raise (Error "search")
     | Some c when c.(0) = c.(1) && c.(1) = q0 ->
@@ -578,7 +578,7 @@ let substitute ((q0, q1) : range) n pat rep g =
   and delta = ref 0 in
   (try
      while !p <= q1 do
-       match search re !text !p q1 with
+       match Regex.search re !text !p q1 with
        | None -> raise Exit
        | Some m ->
            let s, e = m.(0), m.(1) in
@@ -702,7 +702,7 @@ let rec exec
 and loop caps ((q0, q1) as a : range) (k : loop) (sub : cmd) =
   match k with
   | If (g, pat) ->
-      let found = search (compile pat) !text q0 q1 <> None in
+      let found = Regex.search (compile pat) !text q0 q1 <> None in
       if found = g then (dot := a; exec caps sub)
   | Lines ->
       let p = ref q0 in
@@ -725,7 +725,7 @@ and loop caps ((q0, q1) as a : range) (k : loop) (sub : cmd) =
       let p = ref q0 and op = ref (if x then -1 else q0) in
       (try
          while !p <= q1 do
-           match search re !text !p q1 with
+           match Regex.search re !text !p q1 with
            | None ->
                if x || !op > q1 then raise Exit;
                dot := (!op, q1);

@@ -68636,3 +68636,50 @@ Claude reported that tinybox codemap -check now shows no errors, stale digests, 
 Claude left the config changes and prompt-history.md uncommitted, as the only pending changes in the working tree.
 Claude refreshed the TinyVCS.ml digest after the misc commit, since its summary still held.
 Claude noted that make self was still running in _make3, and remaining repo problems all sit outside tiny/.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 20:56
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the four skeletons and the TinyVCS digest as commit `001a31bb`, leaving the working tree clean.
+Claude reported that `make self` on the new pipeline was still running in `_make3`.
+Claude planned to record `self.expected` from that run once it finished.
+Claude also planned to remove the `_make3/` directory after recording the output.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 20:58
+
+**Yoann:**
+
+> ok let's tidy TinyLibRegex.ml and its mli then
+
+**Claude (summary):**
+
+Claude tidied `TinyLibRegex.ml` and its `.mli`, fixing a bug where a tenth group overran the 20-slot captures array.
+Claude added a nine-group limit with a "too many subexpressions" error, plus two test cases, bringing the regex suite to 291 passing.
+Claude renamed the node type to `node`, split out a `set` parser, added sections and comments, and replaced the bare 20 with named limits.
+Claude re-recorded `bugs_tiny.txt` and `debug.cksum` after line shifts and a debug session through TinyLibRegex, and all checks passed; nothing committed.
+Claude offered to switch the two callers, TinyUtilities and TinyEditorLine, to `module Regex = TinyLibRegex` with qualified access.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 21:14
+
+**Yoann:**
+
+> let's do the module Regex = TinyLibRegex and qualify
+
+**Claude (summary):**
+
+Claude reported that dune, `make test-tix`, `tiny_check.sh`, mini-mk and the kernel check all pass.
+Claude listed the uncommitted set: the regex tidy, the tenth-group fix with its tests, and the two caller files.
+That set also includes `debug.cksum`, re-recorded because the alias shifted tiny-utils' layout, plus `bugs_tiny.txt` and `prompt-history.md`.
+In TinyUtilities.ml and TinyEditorLine.ml, Claude replaced `open` with `module Regex = TinyLibRegex` and qualified all calls.
+Claude then asked whether to commit those changes, and nothing was committed yet.

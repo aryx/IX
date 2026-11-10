@@ -3,7 +3,14 @@
 
 (* See TinyLibRegex.mli *)
 
-type re = { id : int; kind : kind }
+(*****************************************************************************)
+(* The pattern *)
+(*****************************************************************************)
+
+(* A node of a pattern's tree. Its id numbers it among the pattern's
+ * nodes, from 0, for the matcher's memo. (old: re, the type's name,
+ * beside regex, the compiled pattern's) *)
+type node = { id : int; kind : kind }
 
 and kind =
   | Chr of char
@@ -13,24 +20,39 @@ and kind =
                                         * negated, and the ranges) *)
   | Bol
   | Eol
-  | Cat of re * re
-  | Alt of re * re
-  | Star of re
-  | Group of int * re
+  | Cat of node * node
+  | Alt of node * node
+  | Star of node
+  | Group of int * node                (* (e), \1 to \9 *)
   | Empty
+
+(* a pattern compiled: its tree, and its number of nodes (a match's
+ * memo has a bit per node and position). (old: a pair) *)
+type regex = { rx_root : node; rx_nodes : int }
+
+(* the groups a pattern may have, \1 to \9, as sam's NSUBEXP, 10 with
+ * the whole match. A match's captures are two positions for each, the
+ * whole match's first *)
+let max_groups = 9
+let ncaptures = 2 * (max_groups + 1)
+
+(*****************************************************************************)
+(* Parsing *)
+(*****************************************************************************)
 
 (* a pattern's character, as typed or after a backslash *)
 type pchar = Plain of char | Quoted of char
 
 let byte_of pc = match pc with Plain c -> c | Quoted c -> c
 
-(* a pattern compiled: its tree, and its number of nodes (a match's
- * memo has a bit per node and position). (old: a pair) *)
-type regex = { rx_root : re; rx_nodes : int }
-
-(* Plan 9's notation, as ed and sam have it; \n is a newline *)
-let parse_re (p : string) : regex =
-  let pos = ref 0 and ids = ref 0 and groups = ref 0 and after = ref ' ' in
+(* Plan 9's notation, as ed and sam have it; \n is a newline. By
+ * recursive descent, the loosest first: alternatives, then sequences,
+ * then repeats, then an atom. (old: parse_re, which compile called) *)
+let compile (p : string) : regex =
+  let pos = ref 0 and ids = ref 0 and groups = ref 0 in
+  (* the operator read last, which an error names when an operand is
+   * missing after it, as sam's messages do *)
+  let after = ref ' ' in
   let mk kind = incr ids; { id = !ids - 1; kind } in
   let peek () = if !pos < String.length p then Some p.[!pos] else None in
   let next () =
@@ -51,6 +73,8 @@ let parse_re (p : string) : regex =
   and cat () =
     let a = rep () in
     match peek () with None | Some ('|' | ')') -> a | _ -> mk (Cat (a, cat ()))
+  (* e+ is e then e*, the second a copy: a node has one place in the
+   * tree, which the memo relies on (below); e? is e or nothing *)
   and rep () =
     let rec go a =
       match peek () with
@@ -60,7 +84,6 @@ let parse_re (p : string) : regex =
       | _ -> a
     in
     go (atom ())
-  (* sam's messages: the operator an operand is missing for *)
   and atom () =
     let missing c = failwith ("no operand for `" ^ String.make 1 c ^ "'") in
     if !pos >= String.length p then missing !after;
@@ -70,6 +93,9 @@ let parse_re (p : string) : regex =
     | Plain '^' -> mk Bol
     | Plain '$' -> mk Eol
     | Plain '(' ->
+        (* (old: no limit, and a tenth group's captures past the end
+         * of their array) *)
+        if !groups = max_groups then failwith "too many subexpressions";
         incr groups;
         after := '(';
         let g = !groups in
@@ -77,35 +103,37 @@ let parse_re (p : string) : regex =
         if peek () <> Some ')' then failwith "unmatched `('";
         incr pos;
         mk (Group (g, e))
-    | Plain '[' ->
-        let neg = peek () = Some '^' in
-        if neg then incr pos;
-        (* sam's rules: a ] at once closes an empty class, and a - must
-         * have a byte on each side *)
-        (* old: the editor took that ] as a byte, and a - at either end
-         * as a -, where sam and grep say "malformed" *)
-        let malformed () = failwith "malformed `[]'" in
-        let rec ranges acc =
-          if !pos >= String.length p then malformed ();
-          match next () with
-          | Plain ']' -> List.rev acc
-          | Plain '-' -> malformed ()
-          | pc ->
-              let c = byte_of pc in
-              if peek () = Some '-' then begin
-                incr pos;
-                if !pos >= String.length p then malformed ();
-                match next () with
-                | Plain ']' -> malformed ()
-                | pc -> ranges ((c, byte_of pc) :: acc)
-              end
-              else ranges ((c, c) :: acc)
-        in
-        let rs = ranges [] in
-        mk (if neg then Not_in_set rs else In_set rs)
+    | Plain '[' -> mk (set ())
     | Plain (('*' | '+' | '?') as c) -> missing c
     | Plain ('|' | ')') -> missing !after
     | Plain c -> mk (Chr c)
+  (* a class, after its [: sam's rules, a ] at once closes an empty
+   * class, and a - must have a byte on each side (old: the editor took
+   * that ] as a byte, and a - at either end as a -, where sam and grep
+   * say "malformed") *)
+  and set () =
+    let neg = peek () = Some '^' in
+    if neg then incr pos;
+    let malformed () = failwith "malformed `[]'" in
+    let rec ranges acc =
+      if !pos >= String.length p then malformed ();
+      match next () with
+      | Plain ']' -> List.rev acc
+      | Plain '-' -> malformed ()
+      | pc ->
+          let c = byte_of pc in
+          if peek () = Some '-' then begin
+            incr pos;
+            if !pos >= String.length p then malformed ();
+            match next () with
+            | Plain ']' -> malformed ()
+            | pc -> ranges ((c, byte_of pc) :: acc)
+          end
+          else ranges ((c, c) :: acc)
+    in
+    let rs = ranges [] in
+    if neg then Not_in_set rs else In_set rs
+  (* a subtree again, its nodes new *)
   and copy n =
     mk (match n.kind with
       | Cat (a, b) -> Cat (copy a, copy b)
@@ -120,20 +148,27 @@ let parse_re (p : string) : regex =
   if !pos < String.length p then failwith "unmatched `)'";
   { rx_root = r; rx_nodes = !ids }
 
+(*****************************************************************************)
+(* Matching *)
+(*****************************************************************************)
+
 (* a character in one of a set's ranges *)
 let in_ranges (rs : (char * char) list) c =
   List.exists (fun (a, b) -> a <= c && c <= b) rs
 
-(* [memo size base lim]: a bit per pair of a node and a position from
- * base to lim, 30 in an int: tiny-ml has no Bytes, and a word per pair
- * would be four times the memory *)
-let memo size base lim = Array.make (((size * (lim - base + 1)) / 30) + 1) 0
+(* [memo nodes base lim]: a bit per pair of a node and a position from
+ * base to lim, 30 bits in an int (a byte per pair, by Bytes, would be
+ * eight times the memory; old: tiny-ml had no Bytes) *)
+let memo nodes base lim = Array.make (((nodes * (lim - base + 1)) / 30) + 1) 0
 
-(* [ends_in seen base]: ends, with the pairs already tried marked in
- * seen, positions counted from base *)
-let ends_in seen base re (text : string) (s : int) (lim : int)
+(* [ends_in seen base root text s lim k]: k j caps for each way root
+ * matches text from s, ending at j by lim, in the order the pattern
+ * prefers them, with caps the captures; a (node, position) pair is
+ * tried once, and marked in seen, positions counted from base (a
+ * second try could only find the same ends again) *)
+let ends_in seen base root (text : string) (s : int) (lim : int)
     (k : int -> int array -> unit) =
-  let caps = Array.make 20 (-1) in
+  let caps = Array.make ncaptures (-1) in
   let rec m n i k =
     let key = (n.id * (lim - base + 1)) + (i - base) in
     if (seen.(key / 30) lsr (key mod 30)) land 1 = 0 then begin
@@ -152,6 +187,8 @@ let ends_in seen base re (text : string) (s : int) (lim : int)
       | Cat (a, b) -> m a i (fun j -> m b j k)
       | Alt (a, b) -> m a i k; m b i k
       | Star a -> m a i (fun j -> m n j k); k i
+      (* the group's start and end set while the rest is tried, then
+       * put back, for the other ways *)
       | Group (g, a) ->
           let o = caps.(2 * g) in
           caps.(2 * g) <- i;
@@ -163,52 +200,11 @@ let ends_in seen base re (text : string) (s : int) (lim : int)
           caps.(2 * g) <- o
     end
   in
-  m re s (fun j -> caps.(0) <- s; caps.(1) <- j; k j caps)
+  m root s (fun j -> caps.(0) <- s; caps.(1) <- j; k j caps)
 
-(* [ends rx text s lim k]: k end captures, for each way rx matches
- * text from s, ending by lim, in priority order; a (node, position)
- * pair is tried once (a second visit could only find the same ends) *)
+(* the same, with a memo of its own *)
 let ends (rx : regex) text s lim k =
   ends_in (memo rx.rx_nodes s lim) s rx.rx_root text s lim k
-
-(* a copy of the captures (tiny-ml has no Array.copy) *)
-let copy a =
-  let b = Array.make (Array.length a) 0 in
-  for i = 0 to Array.length a - 1 do
-    b.(i) <- a.(i)
-  done;
-  b
-
-(* the longest match starting at s *)
-let longest re text s lim =
-  let best = ref None in
-  ends re text s lim (fun j caps ->
-      match !best with
-      | Some (e, _) when e >= j -> ()
-      | _ -> best := Some (j, copy caps));
-  match !best with Some (_, c) -> Some c | None -> None
-
-(* the leftmost-longest match starting in [p, lim] *)
-let rec search re text p lim =
-  if p > lim then None
-  else
-    match longest re text p lim with
-    | Some c -> Some c
-    | None -> search re text (p + 1) lim
-
-(* backwards from p: the match ending nearest before p, then the
- * longest of those *)
-let search_back re text p =
-  let best = ref None in
-  for s = 0 to p do
-    ends re text s p (fun j caps ->
-      match !best with
-      | Some b when b.(1) > j || (b.(1) = j && b.(0) <= s) -> ()
-      | _ -> best := Some (copy caps))
-  done;
-  !best
-
-let compile p = parse_re p
 
 (* One memo for all the starts. A node is always followed by the same
  * rest of the pattern, so a (node, position) pair that led to no match
@@ -223,3 +219,38 @@ let matches (rx : regex) line =
     done;
     false
   with Exit -> true
+
+(*****************************************************************************)
+(* Searching *)
+(*****************************************************************************)
+
+(* the longest match starting at s; caps copied, the matcher changing
+ * them as it goes on (old: a copy of our own, when tiny-ml had no
+ * Array.copy) *)
+let longest rx text s lim =
+  let best = ref None in
+  ends rx text s lim (fun j caps ->
+      match !best with
+      | Some (e, _) when e >= j -> ()
+      | _ -> best := Some (j, Array.copy caps));
+  match !best with Some (_, c) -> Some c | None -> None
+
+(* the leftmost-longest match starting in [p, lim] *)
+let rec search rx text p lim =
+  if p > lim then None
+  else
+    match longest rx text p lim with
+    | Some c -> Some c
+    | None -> search rx text (p + 1) lim
+
+(* backwards from p: the match ending nearest before p, then the
+ * longest of those *)
+let search_back rx text p =
+  let best = ref None in
+  for s = 0 to p do
+    ends rx text s p (fun j caps ->
+      match !best with
+      | Some b when b.(1) > j || (b.(1) = j && b.(0) <= s) -> ()
+      | _ -> best := Some (Array.copy caps))
+  done;
+  !best

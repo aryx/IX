@@ -23,7 +23,8 @@
  * and the editor's one alone could say where a match is.
  *
  * Errors are sam's: "no operand for `*'", "unmatched `('", "malformed
- * `[]'". Bytes, not UTF-8's characters: . takes one byte.
+ * `[]'", "too many subexpressions" (nine groups at most, \1 to \9).
+ * Bytes, not UTF-8's characters: . takes one byte.
  *
  * twin:
  * m-ix's Regex (lib_core), mini-ed's and mini-grep's, follows libregexp
@@ -47,9 +48,9 @@ val compile : string -> regex
 val matches : regex -> string -> bool
 
 (* [search re text p lim]: the leftmost-longest match starting in
- * [p, lim] and ending by lim. The array holds the start and end of the
- * whole match (0 and 1), then of each group (2 and 3 for \1...), -1 for
- * a group that did not match. *)
+ * [p, lim] and ending by lim. The array, of 20, holds the start and end
+ * of the whole match (0 and 1), then of each group (2 and 3 for \1...),
+ * -1 for a group that did not match or that the pattern has not. *)
 val search : regex -> string -> int -> int -> int array option
 
 (* [search_back re text p]: the match ending nearest before p, the

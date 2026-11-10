@@ -23,14 +23,14 @@ tiny/TinyKernel/steps/t6/TinyMkfs.ml:30: int31: in TinyMkfs's toplevel, 0x7f5f00
 tiny/TinyKernel/steps/t6/TinyMkfs.ml:48: int31: in chain, 0xffffffff: not on the Pi 1's 31 bits
 tiny/TinyKernel/steps/t6/TinyMkfs.ml:69: int31: in TinyMkfs.make, 0xffffffff: not on the Pi 1's 31 bits
 tiny/TinyKernel/steps/t6/TinyMkfs.ml:80: int31: in get32, 0xffffffff: not on the Pi 1's 31 bits
-tiny/TinyML/TinyMLCompile.ml:430: stack: TinyMLCompile.match_cases calls itself, not a tail call, over a list
-tiny/TinyML/TinyMLCompile.ml:468: stack: TinyMLCompile.app calls itself, not a tail call, over a list
-tiny/TinyML/TinyMLCompile.ml:471: stack: TinyMLCompile.app calls itself, not a tail call, over a list
+tiny/TinyML/TinyMLCompile.ml:434: stack: TinyMLCompile.match_cases calls itself, not a tail call, over a list
 tiny/TinyML/TinyMLCompile.ml:472: stack: TinyMLCompile.app calls itself, not a tail call, over a list
-tiny/TinyML/TinyMLCompile.ml:514: stack: TinyMLCompile.closure calls itself, not a tail call, over a list
-tiny/TinyML/TinyMLCompile.ml:535: stack: TinyMLCompile.alloc_closure calls itself, not a tail call, over a list
-tiny/TinyML/TinyMLCompile.ml:536: stack: TinyMLCompile.alloc_closure calls itself, not a tail call, over a list
-tiny/TinyML/TinyMLCompile.ml:89: stack: cases calls itself, not a tail call, over a list
+tiny/TinyML/TinyMLCompile.ml:475: stack: TinyMLCompile.app calls itself, not a tail call, over a list
+tiny/TinyML/TinyMLCompile.ml:476: stack: TinyMLCompile.app calls itself, not a tail call, over a list
+tiny/TinyML/TinyMLCompile.ml:518: stack: TinyMLCompile.closure calls itself, not a tail call, over a list
+tiny/TinyML/TinyMLCompile.ml:539: stack: TinyMLCompile.alloc_closure calls itself, not a tail call, over a list
+tiny/TinyML/TinyMLCompile.ml:540: stack: TinyMLCompile.alloc_closure calls itself, not a tail call, over a list
+tiny/TinyML/TinyMLCompile.ml:93: stack: cases calls itself, not a tail call, over a list
 tiny/TinyML/TinyMLPrintf.ml:113: stack: adds calls itself, not a tail call, over a list
 tiny/TinyML/TinyMLPrintf.ml:119: stack: adds calls itself, not a tail call, over a list
 tiny/TinyML/TinyMLPrintf.ml:89: stack: build calls itself, not a tail call, over a list
@@ -57,6 +57,6 @@ tiny/TinyMachine/TinyMachineDevices.ml:831: int31: in until, 0x40000000: not on 
 tiny/TinyMachine/TinyMachineDevices.ml:836: int31: in TinyMachineDevices.calm, 0x40000000: not on the Pi 1's 31 bits
 tiny/TinyMachine/TinyMachineSocket.ml:59: swallowed: in TinyMachineSocket.relay, Unix.Unix_error silenced, a constant answered
 tiny/TinyShell.ml:277: evalorder: operands at 277:8 and 277:19, both with an effect: their order the compiler's
-tiny/TinyVCS.ml:486: stack: groups calls itself, not a tail call, over a list
-tiny/TinyVCS.ml:569: order: in TinyVCS.lca, a table's order reaches the output at tiny/TinyVCS.ml:729, tiny/TinyVCS.ml:792
-tiny/TinyVCS.ml:740: evalorder: operands at 740:12 and 740:38, both with an effect: their order the compiler's
+tiny/TinyVCS.ml:496: stack: groups calls itself, not a tail call, over a list
+tiny/TinyVCS.ml:579: order: in TinyVCS.lca, a table's order reaches the output at tiny/TinyVCS.ml:739, tiny/TinyVCS.ml:802
+tiny/TinyVCS.ml:750: evalorder: operands at 750:12 and 750:38, both with an effect: their order the compiler's

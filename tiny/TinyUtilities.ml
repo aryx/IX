@@ -8,7 +8,7 @@
  * costs nothing.
  *)
 module TSys = TinyLibSystem
-open TinyLibRegex (* (grep's patterns: compile, matches) *)
+module Regex = TinyLibRegex (* (grep's patterns: compile, matches) *)
 open Common (* (|||: an option's value, or a default) *)
 (* a path's text (Fpath_.Operators' !!, not opened: its / would hide the
  * division) *)
@@ -311,7 +311,7 @@ let grep (caps : < filter; .. >) args =
   | [] -> raise Usage
   | pattern :: files ->
       let fold s = if List.mem 'i' flags then String.lowercase_ascii s else s in
-      let re = compile (fold pattern) in
+      let re = Regex.compile (fold pattern) in
       let named name = if List.length files > 1 then name ^ ":" else "" in
       let found = ref false in
       let status =
@@ -320,7 +320,7 @@ let grep (caps : < filter; .. >) args =
           let count = ref 0 and number = ref 0 in
           lines c (fun line ended ->
             incr number;
-            if matches re (fold line) <> List.mem 'v' flags then begin
+            if Regex.matches re (fold line) <> List.mem 'v' flags then begin
               incr count;
               found := true;
               if not (List.mem 'c' flags || List.mem 'l' flags) then

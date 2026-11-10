@@ -102,6 +102,10 @@ let () =
   error "(ab" "unmatched `('";
   error "ab)" "unmatched `)'";
   error "[ab" "malformed `[]'";
+  (* nine groups, \1 to \9, as sam's; a tenth refused (old: its
+   * captures past the end of their array) *)
+  error "(a)(b)(c)(d)(e)(f)(g)(h)(i)" "compiled";
+  error "(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)" "too many subexpressions";
   error "a(b|c)*d" "compiled"
 
 (* The same patterns, and more, against m-ix's Regex (libregexp's

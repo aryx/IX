@@ -68572,3 +68572,19 @@ Claude reported the old `make self` run getting past the earlier hang, with the 
 Claude asked for approval to commit stages 2–3, covering the 38 checked files.
 Claude said the commit would go first, ahead of the rest of the `make self` work.
 Claude held the commit for Yoann's go-ahead rather than committing unprompted.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 20:17
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed stages 2–3 as `7ea94bae` and left `tiny/TinyVCS.ml` out of the commit.
+Claude found that `tiny/TinyVCS.ml` had one blank line it did not add, probably from another session.
+Claude kept that stray blank line uncommitted so it would not end up in the commit.
+Claude started `make self` on the new pipeline in `_make3`, beside the old run in `_make2`.
+Claude said it would record `self.expected` from the new run and delete both scratch directories when it finishes.

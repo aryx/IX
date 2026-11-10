@@ -191,6 +191,7 @@ let decode s =
  * text, each object once; read whole at open, the index in memory
  * (old: deflated, by lib_compression's Zlib: 300 lines more for
  * tiny-ml to compile and tiny-kernel to load) *)
+
 (* the capabilities a command needs: a repository is opened with them
  * and keeps them, for its files; output is printed with them *)
 type caps =
@@ -200,6 +201,13 @@ type repo = {
   caps : caps;
   root : Fpath.t;
   index : (hash, string) Hashtbl.t;
+  (* The objects that a command has made (put) or copied from another
+   * repository (copy, for push and pull) and that are not yet in
+   * .tvcs/objects, the last one first. They are already in index, so
+   * the command can read them back. save appends them to the file in
+   * the order they were made and then empties the list, so the file
+   * only ever grows and each object is written once. An object that is
+   * already in index is never added here. *)
   mutable fresh : (hash * string) list;
 }
 
@@ -229,12 +237,12 @@ let load (caps : caps) (root : Fpath.t) : repo =
 
 let hash_of s = Sha1.string s
 
-let get r h =
+let get (r : repo) (h : hash) : obj =
   match Hashtbl.find_opt r.index h with
   | Some s -> decode s
   | None -> error ("missing object " ^ hex h)
 
-let put r o =
+let put (r : repo) (o : obj) : hash =
   let s = encode o in
   let h = hash_of s in
   if not (Hashtbl.mem r.index h) then begin
@@ -255,18 +263,19 @@ let commit r h =
 let save r (o : op) : unit =
   let h = put r (Op o) in
   (* (closed, so written, before head is) *)
-  TSys.with_open_append r.caps (fun (c : Chan.o) ->
+  (path r "objects") |> TSys.with_open_append r.caps (fun (c : Chan.o) ->
       Out_channel.output_string c.oc
-        (String.concat "" (List.map (fun (h, z) ->
+        (r.fresh |> List.rev |> List.map (fun (h, z) ->
            hex h ^ " " ^ string_of_int (String.length z) ^ "\n" ^ z)
-           (List.rev r.fresh))))
-    (path r "objects");
+           |> String.concat ""))
+    ;
   r.fresh <- [];
   let tmp = path r "head.tmp" in
   write_file r.caps tmp (hex h ^ "\n");
   TSys.rename r.caps tmp (path r "head")
 
-let head r = Sha1.of_hex (String.trim (read_file r.caps (path r "head")))
+let head (r : repo) : hash =
+  Sha1.of_hex (String.trim (read_file r.caps (path r "head")))
 
 let state (r : repo) : op =
   match get r (head r) with Op o -> o | _ -> error "head is not an operation"
@@ -288,13 +297,14 @@ let record_at r current what branches =
 
 let record r what branches = record_at r (state r).current what branches
 
-let tip r = let s = state r in List.assoc_opt s.current s.branches
+let tip (r : repo) : hash option =
+  let s = state r in List.assoc_opt s.current s.branches
 
 (*****************************************************************************)
 (* The work tree *)
 (*****************************************************************************)
 
-let ignored caps root =
+let ignored caps (root : Fpath.t) : (string -> bool) =
   let pats =
     try
       List.filter (( <> ) "")
@@ -633,7 +643,7 @@ let rec merge_trees r base ours theirs prefix =
 (*****************************************************************************)
 
 (* the objects a commit reaches that [dst] lacks, copied *)
-let rec copy src dst h =
+let rec copy (src : repo) (dst : repo) (h : hash) : unit =
   if not (Hashtbl.mem dst.index h) then begin
     let z = Hashtbl.find src.index h in
     Hashtbl.replace dst.index h z;
@@ -673,8 +683,8 @@ let author caps =
 
 
 
-
-let init (caps : caps) (dir : Fpath.t) =
+(* tiny-vcs init *)
+let init (caps : caps) (dir : Fpath.t) : unit =
   if exists caps (dir / ".tvcs") then error (!!dir ^ "/.tvcs exists");
   TSys.mkdir caps (dir / ".tvcs");
   let r = load caps dir in
@@ -709,8 +719,8 @@ let op_at r h = match get r h with Op o -> o | _ -> error "bad op"
 
 let say r s = TSys.print r.caps s
 
-(* the files changed since the tip, then the conflicts committed and not
- * yet resolved *)
+(* tiny-vcs status: the files changed since the tip, then the conflicts
+ * committed and not yet resolved *)
 let status r =
   let snap = snapshot r in
   List.iter (fun (p, a, b) ->
@@ -766,8 +776,8 @@ let new_commit r (s : op) msg =
   record r ("commit " ^ short c) (moved s c);
   say r (s.current ^ ": " ^ hex c ^ "\n")
 
-(* newest first, each commit once; the same dates (commits within a
- * second, or TINYVCS_DATE's) in the order reached, breadth first (old:
+(* tiny-vcs log: newest first, each commit once; the same dates (commits
+ * within a second, or TINYVCS_DATE's) in the order reached, breadth first (old:
  * a commit's parents before the commits waiting, so a branch's first
  * commit came before its second) *)
 let log r =
@@ -843,7 +853,7 @@ let ops r =
     Option.iter go o.prev in
   go (head r)
 
-(* back to the state before; the work tree follows when clean *)
+(* twist: back to the state before; the work tree follows when clean *)
 let undo r (s : op) =
   let prev = match s.prev with Some p -> p | None -> error "nothing to undo" in
   let before = op_at r prev in
@@ -900,7 +910,7 @@ let push r (s : op) dst =
       branches = (s.current, ours) :: List.remove_assoc s.current ds.branches };
   say r (s.current ^ ": " ^ short ours ^ "\n")
 
-(* a file of the tip *)
+(* tiny-vcs show: a file of the tip *)
 let show r path =
   let rec find es = function
     | [ n ] ->
@@ -916,7 +926,8 @@ let show r path =
     | [] -> error "no file" in
   say r (find (tree_of_commit r (tip r)) (String.split_on_char '/' path))
 
-(* a repository copied: its branches' objects, its state, its tip's files *)
+(* tiny-vcs clone
+ * a repository copied: its branches' objects, its state, its tip's files *)
 let clone (caps : caps) src dst =
   let s = load caps (Fpath.v src) in
   let st = state s in

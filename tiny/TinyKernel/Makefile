@@ -290,12 +290,12 @@ I_TinyBrowser = $(GUI) $(BROWSER) TinyBrowserScreen
 I_TinyShell = $(I_TinyLibRegex)
 I_TinyUtilities = $(I_TinyLibRegex) TinyLibRegex
 I_TinyEditorLine = $(I_TinyUtilities)
-I_TinyProfiler = TinyCalls TinyLibSystem TinyLibSymbols
+I_TinyProfiler = TinyCalls TinyLibSystem TinyLibMachine
 I_TinyDatabase = TinyCalls TinyLibSystem
 I_TinyVCS = TinyCalls TinyLibSystem
 I_TinyBuildSystem = TinyCalls TinyLibSystem
-I_TinyAssembler = TinyCalls TinyLibSystem TinyMachineISA TinyMachineAsm
-I_TinyLinker = TinyCalls TinyLibSystem TinyMachineISA TinyLibSymbols
+I_TinyAssembler = TinyCalls TinyLibSystem TinyLibMachine
+I_TinyLinker = TinyCalls TinyLibSystem TinyLibMachine
 # (TinyC.ml on its parts, TinyC/, the compiler's passes; each part after
 # the ones before it)
 CC_PARTS = TinyCTypes TinyCLexer TinyCTree TinyCLower TinyCParser TinyCMachine
@@ -303,9 +303,8 @@ I_TinyCLexer = TinyCTypes
 I_TinyCTree = $(I_TinyCLexer) TinyCLexer
 I_TinyCLower = $(I_TinyCTree) TinyCTree
 I_TinyCParser = $(I_TinyCLower) TinyCLower
-I_TinyMachineAsm = TinyMachineISA
-I_TinyCMachine = TinyMachineISA TinyMachineAsm $(I_TinyCParser) TinyCParser
-I_TinyC = TinyCalls TinyLibSystem TinyMachineISA TinyMachineAsm $(CC_PARTS)
+I_TinyCMachine = TinyLibMachine $(I_TinyCParser) TinyCParser
+I_TinyC = TinyCalls TinyLibSystem TinyLibMachine $(CC_PARTS)
 # (TinyML.ml on its parts, TinyML/, the compiler's passes; each part
 # after the ones before it)
 MLC = TinyMLLexer TinyMLTree TinyMLPrintf TinyMLParser TinyMLTypes TinyMLMachine TinyMLCompile
@@ -313,9 +312,9 @@ I_TinyMLTree = TinyMLLexer
 I_TinyMLPrintf = $(I_TinyMLTree) TinyMLTree
 I_TinyMLParser = $(I_TinyMLPrintf) TinyMLPrintf
 I_TinyMLTypes = $(I_TinyMLParser) TinyMLParser
-I_TinyMLMachine = TinyMachineISA TinyMachineAsm $(I_TinyMLTypes) TinyMLTypes
+I_TinyMLMachine = TinyLibMachine $(I_TinyMLTypes) TinyMLTypes
 I_TinyMLCompile = $(I_TinyMLMachine) TinyMLMachine
-I_TinyML = TinyCalls TinyLibSystem TinyMachineISA TinyMachineAsm $(MLC)
+I_TinyML = TinyCalls TinyLibSystem TinyLibMachine $(MLC)
 I_Square = $(I_TinyLibGUI)
 I_Machine = $(I_TinyLibGUI) Square
 I_Tetris = $(I_TinyAppTetris) TinyAppTetris
@@ -327,7 +326,7 @@ I_Troff = $(I_TinyTroff) TinyTroff
 I_Play = $(GUI) TinyPlay
 I_Www = $(I_TinyBrowser) TinyBrowser
 I_TinyTracer = TinyCalls
-I_TinyDebugger = $(GUI) TinyMachineISA TinyLibSymbols
+I_TinyDebugger = $(GUI) TinyLibMachine
 I_Trace = TinyCalls TinyTracer
 I_Debug = $(I_TinyDebugger) TinyDebugger
 # each unit's file
@@ -346,8 +345,6 @@ F_Www = ../user/www.ml
 F_Bigmem = ../user/bigmem.ml
 F_Trace = ../user/trace.ml
 F_Debug = ../user/debug.ml
-F_TinyMachineISA = ../TinyMachine/TinyMachineISA.ml
-F_TinyMachineAsm = ../TinyMachine/TinyMachineAsm.ml
 F_TinyBrowserText = ../TinyBrowser/TinyBrowserText.ml
 F_TinyBrowserTokens = ../TinyBrowser/TinyBrowserTokens.ml
 F_TinyBrowserLines = ../TinyBrowser/TinyBrowserLines.ml
@@ -377,7 +374,7 @@ F_TinyCParser = ../TinyC/TinyCParser.ml
 F_TinyCMachine = ../TinyC/TinyCMachine.ml
 # (a static pattern's targets: make uses an implicit rule once in a
 # chain, and a unit's interface is another unit's prerequisite)
-UNITS = $(KUNITS) TinyCalls TinyLibSystem TinyLibSymbols TinyLibRegex TinyLibDraw TinyLibPlayground TinyLibGUI TinyProfiler TinyDatabase TinyVCS TinyBuildSystem TinyMachineISA TinyMachineAsm TinyAssembler TinyLinker $(CC_PARTS) TinyC $(MLC) TinyML \
+UNITS = $(KUNITS) TinyCalls TinyLibSystem TinyLibMachine TinyLibRegex TinyLibDraw TinyLibPlayground TinyLibGUI TinyProfiler TinyDatabase TinyVCS TinyBuildSystem TinyAssembler TinyLinker $(CC_PARTS) TinyC $(MLC) TinyML \
   TinyWindows TinyAppTetris TinyAppCalculator TinyAppTemperature TinyEditorScreen $(OFFICE) TinyOffice TinyTroff TinyPlay $(BROWSER) TinyBrowserScreen TinyBrowser TinyTracer TinyDebugger \
   TinyShell TinyUtilities TinyEditorLine Square Machine Tetris Calc Temp Emacs Office Troff Play Www Bigmem Trace Debug
 .SECONDEXPANSION:
@@ -476,7 +473,7 @@ BINS = $(addprefix $(O)/bin/,$(PROGS))
 # the host's tiny-ml and tiny-assembler made them, which ml's and as's on
 # tiny-kernel are compared with (make check)
 EXAMPLES = steps/t6/user/wc.c user/sh.c ../user/emacs.ml ../TinyEditorScreen.ml examples/report.ixd examples/korobeiniki.wav $(O)/spin.prof $(O)/spin.map \
-	$(U)/TinyMachineISA.tm $(U)/TinyMachineISA.tmi $(U)/TinyMachineISA.o
+	$(U)/TinyLibMachine.tm $(U)/TinyLibMachine.tmi $(U)/TinyLibMachine.o
 
 # the sources, in /src as they are in tiny/, what tiny-kernel builds
 # itself from (make self): the kernel's, each unit's file, the

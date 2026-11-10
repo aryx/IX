@@ -12,30 +12,6 @@ local skeletons = import '../../skeletons.libsonnet';
   summary: "tiny-machine's parts: a CPU designed to teach, the devices a kernel needs, the wire's other end, its host programs.",
   files: {
     // the CPU
-    'TinyMachineISA.mli': { digest: '54d4c85cc43d',
-      summary: "tiny-machine's instructions and their words: one type both ways, so the listing's law tests this file.",
-      capitals: [
-        { at: 'type:instr', say: 'the whole instruction set: nine forms, one format' },
-        { at: 'def:encode', say: "what tiny-assembler makes, tiny-linker fills" },
-      ],
-      important: [
-        { at: 'type:instr', weight: 3 },
-        { at: 'type:alu', weight: 1 },
-        { at: 'def:encode', weight: 2 },
-        { at: 'def:decode', weight: 2 },
-        { at: 'comment:"Here one type serves both directions"', say: "m-ix's two programs, two types: here one", weight: 2 },
-      ],
-      related: ['../TinyAssembler.ml', '../TinyLinker.ml', '../../machine/'],
-    },
-    'TinyMachineISA.ml': { digest: '33c965a8dc2c',
-      summary: "The words: an opcode, d, a, and a 16-bit immediate whose low 4 bits are b; encode checks what does not fit.",
-      important: [
-        { at: 'def:encode', say: 'an immediate that does not fit: an error, never cut', weight: 3 },
-        { at: 'def:decode', say: 'None: an illegal word, the machine traps', weight: 3 },
-        { at: 'def:print', say: 'the listing: reassembles to the same word', weight: 2 },
-        { at: 'def:csr_names', weight: 1 },
-      ],
-    },
     'TinyMachineCPU.mli': { digest: 'e4f33b5399b4',
       summary: "A CPU of our own, designed to teach (Knuth's road): 16 registers, r0 zero, no flags, one format; the design argued.",
       capitals: [
@@ -222,7 +198,7 @@ local skeletons = import '../../skeletons.libsonnet';
     {
       name: "tiny-machine's layers: CPU, machine, host",
       bones: [
-        { at: 'TinyMachineISA.ml', role: 'the words: encode, decode' },
+        { at: '../TinyLibMachine.ml', role: 'the words: encode, decode' },
         { at: 'TinyMachineCPU.ml', role: 'the CPU: registers, memory, a step' },
         { at: 'TinyMachineDevices.ml', role: 'the machine: traps, window, pages, devices' },
         { at: 'TinyMachinePeer.ml', role: "the wire's other end" },
@@ -233,7 +209,7 @@ local skeletons = import '../../skeletons.libsonnet';
         { at: 'TinyMachineFetch.ml', role: 'a web page, by TLS' },
       ],
       joints: [
-        { from: 'TinyMachineCPU.ml', to: 'TinyMachineISA.ml', say: 'decodes' },
+        { from: 'TinyMachineCPU.ml', to: '../TinyLibMachine.ml', say: 'decodes' },
         { from: 'TinyMachineDevices.ml', to: 'TinyMachineCPU.ml', say: 'an env: the hooks' },
         { from: '../TinyMachine.ml', to: 'TinyMachineDevices.ml', say: 'put, on_open; ticks' },
         { from: 'TinyMachineWeb.ml', to: 'TinyMachineDevices.ml', say: 'the same machine' },
@@ -252,21 +228,21 @@ local skeletons = import '../../skeletons.libsonnet';
       bones+: [
         { at: 'TinyMachineCPU.ml:type:env', role: "fetch, load, store, sys, illegal: the machine's" },
         { at: 'TinyMachineCPU.ml:def:boot', role: 'the image at 0, sp at the top' },
-        { at: 'TinyMachineISA.ml:def:decode', role: "a word's instruction" },
+        { at: '../TinyLibMachine.ml:def:decode', role: "a word's instruction" },
       ],
       joints+: [
         { from: 'TinyMachineCPU.ml:def:boot', to: 'TinyMachineCPU.ml:def:step', say: 'a machine' },
         { from: 'TinyMachineCPU.ml:def:step', to: 'TinyMachineCPU.ml:type:env', say: 'loads, stores, sys' },
-        { from: 'TinyMachineCPU.ml:def:decode_kept', to: 'TinyMachineISA.ml:def:decode', say: 'a miss' },
+        { from: 'TinyMachineCPU.ml:def:decode_kept', to: '../TinyLibMachine.ml:def:decode', say: 'a miss' },
       ],
     },
-    skeletons.module('TinyMachineISA.ml', 'The words: one type, both directions', [
+    skeletons.module('../TinyLibMachine.ml', 'The words: one type, both directions', [
       ['encode', 'an instruction to its word, checked', ''],
       ['decode', 'a word to an instruction, or None', 'a word'],
       ['print', 'the listing, which reassembles', 'an instruction'],
     ]) + {
-      bones+: [{ at: 'TinyMachineISA.ml:type:instr', role: 'nine forms' }],
-      joints+: [{ from: 'TinyMachineISA.ml:type:instr', to: 'TinyMachineISA.ml:def:encode', say: 'an instruction' }],
+      bones+: [{ at: '../TinyLibMachine.ml:type:instr', role: 'nine forms' }],
+      joints+: [{ from: '../TinyLibMachine.ml:type:instr', to: '../TinyLibMachine.ml:def:encode', say: 'an instruction' }],
     },
     {
       name: 'The machine: a tick, a trap, an address checked',
@@ -380,7 +356,7 @@ local skeletons = import '../../skeletons.libsonnet';
     },
   ],
   views: [
-    { name: 'The CPU: tiny-cpu, its words, its toolchain', files: ['TinyMachineCPU.ml', 'TinyMachineISA.ml', '../TinyCPU.ml', '../TinyAssembler.ml', '../TinyLinker.ml'] },
+    { name: 'The CPU: tiny-cpu, its words, its toolchain', files: ['TinyMachineCPU.ml', '../TinyLibMachine.ml', '../TinyCPU.ml', '../TinyAssembler.ml', '../TinyLinker.ml'] },
     { name: 'The machine: tiny-machine and mini-qemu', files: ['TinyMachineDevices.ml', '../TinyMachine.ml', '../../raspberry/'] },
     { name: 'The wire: the peer and the kernel it mirrors', files: ['TinyMachinePeer.ml', '../TinyKernel/TinyKernelNetwork.ml', 'TinyMachineSocket.ml', 'TinyMachineFetch.ml'] },
   ],

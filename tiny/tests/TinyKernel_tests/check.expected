@@ -254,9 +254,9 @@ b
 % tiny-build: don't know how to make nosuch
 % $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ % % % % % % % % % ping: /bin/ping
-% % isa.tm: the host
-% isa.tmi: the host
-% isa.o: the host
+% % mach.tm: the host
+% mach.tmi: the host
+% mach.o: the host
 % -   1 * /bin/as
 -   1 * /bin/cc
 -   1 * /bin/ld

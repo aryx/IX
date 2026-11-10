@@ -1,18 +1,22 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyMachineISA.mli *)
+(* See TinyLibMachine.mli *)
 
 (*****************************************************************************)
 (* The instructions *)
 (*****************************************************************************)
 
 type reg = int
+[@@deriving show]
 
 type alu =
   | Add | Sub | Mul | Div | Rem | And | Or | Xor | Shl | Shr | Sar | Slt | Sltu
+[@@deriving show]
 type cmp = Eq | Ne | Lt | Ge | Ltu | Geu
+[@@deriving show]
 type size = W | B
+[@@deriving show]
 
 type instr =
   | Alu of alu * reg * reg * reg          (* d, a, b *)
@@ -21,10 +25,12 @@ type instr =
   | Lui of reg * int
   | Load of size * reg * reg * int        (* d, a, offset *)
   | Store of size * reg * reg * int       (* the value's register, a, offset *)
-  | Branch of cmp * reg * reg * int       (* d, a, offset in words, from pc + 4 *)
+  | Branch of cmp * reg * reg * int
+      (* d, a, offset in words, from pc + 4 *)
   | Jal of reg * int
   | Jalr of reg * reg * int
   | Sys of int
+[@@deriving show]
 
 (* (old: [| ... |], which tiny-ml does not read) *)
 let alus =
@@ -68,6 +74,7 @@ type machine_instr =
   | Wfi
   | Csrrw of reg * int * reg          (* d, csr, a: both at once *)
   | Amoswap of reg * reg * reg        (* d, a, (b) *)
+[@@deriving show]
 
 (* (old: the assembler's, by hand) *)
 let encode_machine (m : machine_instr) : int =
@@ -114,7 +121,9 @@ let encode i =
   | Branch (c, d, a, off) ->
       if not (fits16 off) then error "branch too far";
       w (0x30 + index cmps c) d a off
-  | Jal (d, off) -> if not (fits16 off) then error "jump too far"; w 0x38 d 0 off
+  | Jal (d, off) ->
+      if not (fits16 off) then error "jump too far";
+      w 0x38 d 0 off
   | Jalr (d, a, off) -> w 0x39 d a off
   | Sys n -> w 0x3f 0 0 n
 
@@ -146,8 +155,8 @@ let reg_name (r : reg) =
 
 (* An instruction's text, its registers by their names; its immediate,
  * or its offset, the given text when there is one (a label's name, an
- * address). The one printer of the instructions: a listing's (print,
- * below) and the assembly's (TinyMachineAsm's). (old: two, the
+ * address). The one printer of the instructions: a listing's (listing,
+ * below) and the assembly's (print_line). (old: two, the
  * listing's registers r0, r14, r15) *)
 let text (i : instr) (imm_text : string option) : string =
   let r = reg_name in
@@ -173,7 +182,7 @@ let text (i : instr) (imm_text : string option) : string =
 
 (* an instruction as a listing shows it, [pc] its address: a branch's
  * or a jal's target as an address *)
-let print pc i =
+let listing pc i =
   let target off = Some (hex (pc + 4 + (4 * off))) in
   match i with
   | Branch (_, _, _, off) -> text i (target off)
@@ -193,32 +202,202 @@ let machine_text (m : machine_instr) =
       "amoswap\t" ^ r d ^ ", " ^ r a ^ ", (" ^ r b ^ ")"
 
 (*****************************************************************************)
-(* The objects *)
+(* The lines of assembly *)
 (*****************************************************************************)
 
 (* (tiny-ml's; ppx_deriving and mini-ml derive the real one, after it) *)
-let show_item _ = "NO DERIVING"
+let show_line _ = "NO DERIVING"
 [@@warning "-32"]
 
-type place = Word | Abs | Hi | Lo | Pc
+type sym = string
+[@@deriving show]
+
+(* where a label's address goes in an instruction or a word, and what
+ * goes there (TinyLibMachine.mli has them by example). Full, all 32
+ * bits of a word (old: Word, the name .word's line has) *)
+type place = Full | Abs | Hi | Lo | Pc
 [@@deriving show]
 type target = Name of string | Address of int
 [@@deriving show]
-type item =
-  | Label of string | Align of int | Space of int
-  | Chunk of string * (int * place * target) list | Piece
-  | SectionCode | SectionData
+
+(* an offset in a chunk's bytes, its kind, what goes there *)
+type reloc = int * place * target
 [@@deriving show]
+
+(* (TinyLibMachine.mli says each; the object's lines are the last ones,
+ * Chunk and those it shares with the assembly) *)
+type line =
+  | Instr of instr
+  | Instr_at of instr * place * target
+  | Machine of machine_instr
+  | Li of reg * int64
+  | La of reg * sym
+  | Mov of reg * reg
+  | Call of sym
+  | Jump of sym
+  | Branch_to of cmp * reg * reg * sym
+  | Ret
+  | Label of sym
+  | Align of int
+  | Space of int
+  | Bytes of int list
+  | Ascii of string
+  | Word of int64
+  | Word_sym of sym
+  | Piece
+  | SectionCode
+  | SectionData
+  | Chunk of string * reloc list
+[@@deriving show]
+
+(*****************************************************************************)
+(* Printing *)
+(*****************************************************************************)
+(*****************************************************************************)
+
+(* (a register by its name) *)
+let reg = reg_name
+
+(* a number's low 32 bits, signed, in decimal (old: Printf's %ld of
+ * Int64.to_int32, in each compiler) *)
+let word v = Int64.to_string (Int64.shift_right (Int64.shift_left v 32) 32)
+
+let target_text (t : target) =
+  match t with Name s -> s | Address n -> string_of_int n
+
+(* a string as .ascii writes it: a quote, a backslash, a newline, a tab
+ * and a 0 escaped *)
+let quoted s =
+  let b = Buffer.create (String.length s + 2) in
+  Buffer.add_char b '"';
+  String.iter (fun c ->
+    match c with
+    | '"' -> Buffer.add_string b "\\\""
+    | '\\' -> Buffer.add_string b "\\\\"
+    | '\n' -> Buffer.add_string b "\\n"
+    | '\t' -> Buffer.add_string b "\\t"
+    | '\000' -> Buffer.add_string b "\\0"
+    | c -> Buffer.add_char b c) s;
+  Buffer.add_char b '"';
+  Buffer.contents b
+
+let print_line (l : line) =
+  let ins s = "\t" ^ s ^ "\n" in
+  match l with
+  | Instr i -> ins (text i None)
+  | Instr_at (i, _, t) -> ins (text i (Some (target_text t)))
+  | Machine m -> ins (machine_text m)
+  | Li (d, v) -> ins ("li\t" ^ reg d ^ ", " ^ word v)
+  | La (d, s) -> ins ("la\t" ^ reg d ^ ", " ^ s)
+  | Mov (d, a) -> ins ("mov\t" ^ reg d ^ ", " ^ reg a)
+  | Call s -> ins ("call\t" ^ s)
+  | Jump s -> ins ("j\t" ^ s)
+  | Branch_to (c, d, a, s) ->
+      ins (cmp_names.(index cmps c) ^ "\t" ^ reg d ^ ", " ^ reg a
+           ^ ", " ^ s)
+  | Ret -> ins "ret"
+  | Label s -> s ^ ":\n"
+  | Align k -> ins (".align\t" ^ string_of_int k)
+  | Space k -> ins (".space\t" ^ string_of_int k)
+  | Bytes l -> ins (".byte\t" ^ String.concat ", " (List.map string_of_int l))
+  | Ascii s -> ins (".ascii\t" ^ quoted s)
+  | Word v -> ins (".word\t" ^ word v)
+  | Word_sym s -> ins (".word\t" ^ s)
+  | Piece -> ins ".piece"
+  | SectionCode -> ins ".text"
+  | SectionData -> ins ".data"
+
+  (* an object's bytes are not assembly again: their size and their
+   * places, for a reader (tiny-linker -debug shows them whole) *)
+  | Chunk (b, places) ->
+      ins (";\t" ^ string_of_int (String.length b) ^ " bytes, "
+           ^ string_of_int (List.length places) ^ " places")
+
+(*****************************************************************************)
+(* The objects *)
+(*****************************************************************************)
 
 (* (Marshal's bytes after it: tiny-ml's Marshal stops the program on
  * bytes it cannot read, so another file is said not an object first.
- * 2: the sections two constructors, old Section of bool, true the
- * data's: an object of 1 is refused, not misread) *)
-let magic = "tiny-object 2\n"
-let to_object (items : item list) =
-  magic ^ Marshal.to_string items [ Marshal.No_sharing ]
-let of_object (s : string) : item list =
+ * 3: an object is lines, the assembly's type (old: 2, an item type of
+ * its own, the same constructors; 1, the sections a bool): an older
+ * object is refused, not misread) *)
+let magic = "tiny-object 3\n"
+let to_object (lines : line list) =
+  magic ^ Marshal.to_string lines [ Marshal.No_sharing ]
+let of_object (s : string) : line list =
   let n = String.length magic in
   if String.length s < n || String.sub s 0 n <> magic then
-    error "not an object of tiny-assembler's";
+    error "not an object of this tiny-assembler's (tiny-object 3): rebuild it";
   Marshal.from_string s n
+
+(*****************************************************************************)
+(* The symbols *)
+(*****************************************************************************)
+
+(* (TinyLibSymbols.ml's, old) *)
+
+type label = string
+type address = int
+type symbols = (label * address) array
+
+(* a dot, an L, digits *)
+let local name =
+  match String.rindex_opt name '.' with
+  | Some i when i + 2 < String.length name && name.[i + 1] = 'L' ->
+      String.for_all (fun c -> c >= '0' && c <= '9')
+        (String.sub name (i + 2) (String.length name - i - 2))
+  | _ -> false
+
+(* <unit>.f<number>_<name> (old: f<number>_<name><>, a program's
+ * functions in one file) *)
+let clean name =
+  let n = String.length name in
+  let digit c = c >= '0' && c <= '9' in
+  let rec find i =
+    if i + 2 >= n then None
+    else if name.[i] = '.' && name.[i + 1] = 'f' && digit name.[i + 2] then
+      Some i
+    else find (i + 1) in
+  match find 0 with
+  | Some i ->
+      let rec skip j = if j < n && digit name.[j] then skip (j + 1) else j in
+      let j = skip (i + 2) in
+      if j < n && name.[j] = '_' then
+        (let short = String.sub name (j + 1) (n - j - 1) in
+         if short = "fun" then name else short)
+      else name
+  | None -> name
+
+let labels text =
+  let l =
+    text
+    |> String.split_on_char '\n'
+    |> List.filter_map (fun line ->
+      match String.split_on_char ' ' line with
+      | [ a; l ] when not (local l) ->
+          (match int_of_string_opt ("0x" ^ a) with
+           | Some a -> Some (l, a)
+           | None -> None)
+      | _ -> None) in
+  l |> List.sort (fun (_, a) (_, b) -> compare a b) |> Array.of_list
+
+(* by halves *)
+let find funcs pc =
+  let rec go lo hi =
+    if hi - lo <= 1 then lo
+    else
+      let mid = (lo + hi) / 2 in
+      if snd funcs.(mid) <= pc then go mid hi else go lo mid in
+  if Array.length funcs = 0 || pc < snd funcs.(0) then None
+  else
+    let name, a = funcs.(go 0 (Array.length funcs)) in
+    Some (clean name, a)
+
+let address funcs name =
+  let rec go i =
+    if i >= Array.length funcs then None
+    else
+      let l, a = funcs.(i) in
+      if l = name || clean l = name then Some a else go (i + 1) in
+  go 0

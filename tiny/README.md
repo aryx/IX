@@ -36,7 +36,7 @@ a diagram, the history, the references: `docs/tags.md`), then `main`
 and the functions at the program's heart, with their types. Where a
 program is a pipeline, its `.mli` tells it, a stage a function: for
 example `TinyAssembler.mli`, from an `Fpath.t` to a `Chan.i`, to
-`TinyMachineAsm`'s lines, to `TinyMachineISA`'s items, to a `Chan.o`;
+`TinyLibMachine`'s lines, to the object's lines, to a `Chan.o`;
 `TinyLinker.mli`, from objects to an image; `TinyC.mli` and
 `TinyML.mli`, from a file to assembly lines, through their parts. The
 `.ml` is the code alone. Every file has an `.mli`, those tiny-ml
@@ -60,7 +60,9 @@ of the system:
   for grep (whether a line matches) and for the line editor (where
   the match is, and its groups): a backtracker with a memo, so a
   line costs its length times the pattern's at most. And
-  `TinyLibSymbols.ml`, a program's labels as tiny-linker writes them
+  `TinyLibMachine.ml`, tiny-machine's libmach (Plan 9's): the
+  instructions and their words, the lines of assembly the compilers
+  make, the objects, and a program's labels as tiny-linker writes them
   (its map, or after the image), for tiny-prof's names and for
   tiny-kernel's `debug` (`TinyDebugger.ml`, beside `trace`).
   The host's programs, when ix builds them, are on m-IX's
@@ -75,13 +77,13 @@ of the system:
   after the compilers: a `.tm` file to an object (its words, its
   labels, the places a label's address goes), objects to an image or
   an a.out, and its map for tiny-prof. tiny-cpu and tiny-machine only
-  run images. A `.tm` file is read as `TinyMachine/TinyMachineAsm.ml`'s
-  typed lines of assembly (labels, instructions, data), the lines
-  tiny-c and tiny-ml make too and print; the objects are
-  `TinyMachineISA`'s items, marshalled. The words they make are `TinyMachine/TinyMachineISA.ml`'s
-  (encode, decode), apart from the CPU, which keeps OCaml's 32-bit
-  loads for the machine's speed: tiny-ml compiles the one, not the
-  other.
+  run images. A `.tm` file is read (the assembler's parse, the only
+  reader of assembly) as `TinyLibMachine.ml`'s typed lines of
+  assembly (labels, instructions, data), the lines tiny-c and tiny-ml
+  make too and print; the objects are those lines encoded,
+  marshalled. The words they make are `TinyLibMachine.ml`'s (encode,
+  decode), apart from the CPU, which keeps OCaml's 32-bit loads for
+  the machine's speed: tiny-ml compiles the one, not the other.
 - Two things are more than a file, and have a directory of their name
   beside their program:
   - `TinyKernel.ml` and `TinyKernel/`: the kernel's parts in ML that
@@ -92,8 +94,8 @@ of the system:
     to call it, `libc/` for C (`user.h`, `sys.tm`, `draw.c`, `net.c`);
     for ML, `TinyLibSystem/tinykernel/` (below);
   - `TinyMachine.ml` (and `TinyCPU.ml`) and `TinyMachine/`: the CPU
-    (`TinyMachineCPU`), its instructions' words and its assembly
-    (`TinyMachineISA`, `TinyMachineAsm`), the devices (`TinyMachineDevices`), the other
+    (`TinyMachineCPU`, on `TinyLibMachine`'s instructions), the devices
+    (`TinyMachineDevices`), the other
     end of the wire (`TinyMachinePeer`, which runs the kernel's own
     `TinyKernelNetwork` on the host), and the three programs beside
     it, its window, its socket and its page.

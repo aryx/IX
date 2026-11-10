@@ -1,6 +1,6 @@
 # Plan: TinyLibMachine.ml, tiny-machine's libmach, and tiny-c and tiny-ml writing their objects
 
-Status: **proposed (2026-11-10), not started.**
+Status: **stage 1 done (2026-11-10): TinyLibMachine.ml, parse in TinyAssembler.ml; stages 2-4 to do.**
 Written 2026-11-10, after the author's questions: "I think TinyAssembler
 and TinyLinker are relying on modules under TinyMachine/ and this seems
 to be inconsistent with the other TinyXxx/ which are used just by the
@@ -66,7 +66,7 @@ What the others do:
   text: the hand-written `.tm` files (entry.tm, draw.tm, memory.tm,
   end.tm, the C runtime's start.tm and udivmod.tm, the steps).
 - **tiny-c and tiny-ml write objects**: their lines encoded by
-  TinyLibMachine and marshalled, no text between; `-S` (or `-o x.tm`)
+  TinyLibMachine and marshalled, no text between; `-S`
   still prints the assembly, for reading and for the tests that compare
   it.
 - **`TinyMachine/`** the machine's alone: CPU, devices, peer, and the
@@ -93,7 +93,7 @@ Each builds and passes the checks alone, and is a commit.
    TinyLibMachine as `assemble : line list -> obj`; TinyAssembler is
    then read, parse, assemble, write.
 3. **The compilers write objects.** tiny-c and tiny-ml: `-o x.o`
-   writes the object (`assemble`, then marshalled), `-o x.tm` or `-S`
+   writes the object (`assemble`, then marshalled), `-S`
    the text (question 3); TinyKernel/Makefile's and the Buildfile's
    units go from source to object in one step (`ml -c -o ml/X.o`, its
    `.tmi` beside), the `as` step left for the hand-written files; the
@@ -104,6 +104,10 @@ Each builds and passes the checks alone, and is a commit.
    compilers' `-h` (their examples assemble each `.tm`).
 
 ## Questions to decide
+
+Decided by the author, 2026-11-10: 1, one type; 2, TinyLibSymbols in
+TinyLibMachine.ml; 3, by `-S` alone, as mini-cc and 5c (objects by
+default, `-o` only naming the file); 4, "tiny-object 3".
 
 1. **The constructors' clash.** tiny-ml has one constructor name space
    per program, and the two types share `Label`, `Align`, `Space`,
@@ -154,4 +158,24 @@ the same lines, one module and one text round trip fewer.
 
 ## Status
 
-Proposed; nothing done.
+Stage 1, 2026-11-10: `tiny/TinyLibMachine.ml` and `.mli` (old:
+`TinyMachine/TinyMachineISA`, `TinyMachineAsm` but its parse, and
+`TinyLibSymbols`), one type for the lines and the objects (`Chunk`
+added), "tiny-object 3"; constructors and values renamed where the
+merge made two of a name in one module: the line `Branch` is
+`Branch_to`, the place `Word` is `Full`, the listing `print` is
+`listing`, the line's `print` is `print_line`, `show_item` is
+`show_line`. `parse` in TinyAssembler.ml, with `-S`, the lines read
+printed again; `TinyMachineAsm_test.sh` and its `Law.ml` become
+`TinyAssembler_test.sh`, the law end to end: a file's `-S` text
+assembles to the same object, and prints the same again. For that
+law, a `.word a, b` line's words are a chunk each (old: one chunk:
+the object then depended on the text's layout; the images are the
+same bytes). One alias, `module M = TinyLibMachine`, where the callers
+had `ISA` and `Asm`. Checked: the kernel and the programs that do not
+link TinyLibMachine the same bytes as before (`as`, `ld`, `cc`, `ml`,
+`prof` and `debug` link it: other code, the same checks pass); dune;
+`make test-tix`; `tiny_check.sh` (`dead_tiny.txt`: `address`, now
+TinyLibMachine's, recorded); mini-mk; the kernel's check (its
+toolchain session compiles `TinyLibMachine.ml` on tiny-kernel, the
+host's bytes) and self-quick, in `_make2`.

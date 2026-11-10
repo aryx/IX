@@ -22,7 +22,7 @@
  *
  * At each stop it shows why, and the instruction at the pc, by the
  * function it is in: main+0x14. The names are the labels tiny-linker
- * wrote after the image (-s, TinyLibSymbols), read from the program's
+ * wrote after the image (-s, TinyLibMachine), read from the program's
  * file: the one started, or the one named after an attached pid (the
  * kernel knows a process's image, not its file).
  *

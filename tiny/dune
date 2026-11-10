@@ -33,14 +33,13 @@
 ;*****************************************************************************
 
 ; tiny-machine's assembler and linker: a .tm file to an object, objects to
-; an image (TinyMachineISA's instructions, in tiny_machine_cpu)
+; an image (TinyLibMachine's instructions and lines)
 (executables
  (names TinyAssembler TinyLinker)
  (public_names tiny-assembler tiny-linker)
  (package ix)
  (modules TinyAssembler TinyLinker)
- (libraries ix_core fpath caps tiny_machine_cpu tiny_lib_system
-  tiny_lib_symbols))
+ (libraries ix_core fpath caps tiny_lib_machine tiny_lib_system))
 
 ; tiny-cpu, the processor alone: an image run as a program, with three
 ; system calls, the host's
@@ -70,7 +69,7 @@
  (public_name tiny-prof)
  (package ix)
  (modules TinyProfiler)
- (libraries ix_core fpath unix caps tiny_lib_system tiny_lib_symbols))
+ (libraries ix_core fpath unix caps tiny_lib_system tiny_lib_machine))
 
 ;*****************************************************************************
 ; The host's tools on TinyLibSystem
@@ -133,12 +132,17 @@
  (wrapped false)
  (modules TinyLibRegex))
 
-; a program's labels, as tiny-linker writes them: tiny-prof's names, and
-; debug's on tiny-kernel
+; TinyLibMachine.ml, tiny-machine's libmach: the instructions and their
+; words, the lines of assembly the compilers make, the objects, a
+; program's labels; the toolchain's (the compilers, the assembler, the
+; linker, tiny-prof, debug) and tiny-machine's (its CPU decodes the
+; words). (old: TinyMachine/'s ISA and Asm, and TinyLibSymbols.ml)
 (library
- (name tiny_lib_symbols)
+ (name tiny_lib_machine)
  (wrapped false)
- (modules TinyLibSymbols))
+ (modules TinyLibMachine)
+ ; (the objects' show_line, tiny-linker -debug's)
+ (preprocess (pps ppx_deriving.show)))
 
 ; TinyLibDraw.ml, a program's side of tiny-kernel's drawing: its messages
 ; and their bytes

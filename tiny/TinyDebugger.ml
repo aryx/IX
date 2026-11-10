@@ -6,7 +6,7 @@
 open TinyCalls
 open TinyLibPlayground
 open TinyLibGUI
-open TinyMachineISA
+open TinyLibMachine
 
 (* what debug says: on its output, or kept for the window *)
 let sink = ref None
@@ -51,7 +51,7 @@ let symbols file =
       let rec rest acc =
         let s = u_read fd 4096 in
         if s = "" then String.concat "" (List.rev acc) else rest (s :: acc) in
-      funcs := TinyLibSymbols.labels (rest [])
+      funcs := TinyLibMachine.labels (rest [])
     end;
     ignore (u_close fd)
   end
@@ -99,7 +99,7 @@ let instr s i =
 (* an address by its function, main+0x14 (in hexadecimal when there is
  * none) *)
 let name a =
-  match TinyLibSymbols.find !funcs a with
+  match TinyLibMachine.find !funcs a with
   | Some (f, b) when a = b -> f
   | Some (f, b) -> f ^ "+" ^ hex (a - b)
   | None -> Printf.sprintf "%x" a
@@ -118,8 +118,8 @@ let listing a =
             | Jal (_, off) -> a + 4 + (4 * off)
             | Branch (_, _, _, off) -> a + 4 + (4 * off)
             | _ -> -1 in
-          print a i
-          ^ (match TinyLibSymbols.find !funcs target with
+          TinyLibMachine.listing a i
+          ^ (match TinyLibMachine.find !funcs target with
              | Some (f, b) when b = target -> " <" ^ f ^ ">"
              | _ -> "")
       | None -> ".word\t0x" ^ digits s 0 in
@@ -148,7 +148,7 @@ let address s =
     else
       match int_of_string_opt base with
       | Some a -> Some a
-      | None -> TinyLibSymbols.address !funcs base in
+      | None -> TinyLibMachine.address !funcs base in
   match String.index_opt s '+' with
   | Some i ->
       (match at (String.sub s 0 i),
@@ -268,7 +268,7 @@ let backtrace () =
          | _ -> 0)
     | None -> 0 in
   let start pc =
-    match TinyLibSymbols.find !funcs pc with Some (_, b) -> b | None -> -1 in
+    match TinyLibMachine.find !funcs pc with Some (_, b) -> b | None -> -1 in
   let rec go k pc sp vsp =
     let b = start pc in
     let v = if b >= 0 then ml b else 0 in
@@ -277,7 +277,7 @@ let backtrace () =
          ^ (if shown then "\t" ^ slots (vsp - v) v else "") ^ "\n");
     let vsp = if shown then vsp - v else vsp in
     let frame =
-      match TinyLibSymbols.find !funcs pc with
+      match TinyLibMachine.find !funcs pc with
       | None -> None
       | Some (_, b) ->
           match word b, word (b + 4) with
@@ -304,7 +304,7 @@ let backtrace () =
     let vsp =
       if b >= 0 && ml b > 0 then reg "r12"
       else
-        match TinyLibSymbols.address !funcs "ml_vsp" with
+        match TinyLibMachine.address !funcs "ml_vsp" with
         | Some a -> (match word a with Some v -> v | None -> 0)
         | None -> 0 in
     go 0 at (reg "r14") vsp

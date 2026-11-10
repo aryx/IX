@@ -75,7 +75,7 @@ let record_labels : (string, linfo) Hashtbl.t = Hashtbl.create 64
 
 (* A constructor is in cons twice: C, the latest declared, and M.C, its
  * unit's, so that two units' Add are told apart where they are
- * qualified (TinyCTree.Add, TinyMachineISA.Add, in tiny-c). (old: M.C
+ * qualified (TinyCTree.Add, TinyLibMachine.Add, in tiny-c). (old: M.C
  * was C, the lexer's, and the second unit's Add was both.) *)
 
 (* module A = M in the current unit: A.C is M.C *)

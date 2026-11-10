@@ -41,7 +41,7 @@
  *     TinyMLParser.mli   parse: a file's text to its [item]s
  *     TinyMLTypes.mli    type_unit: the items typed (Hindley-Milner)
  *     TinyMLMachine.mli  the stack machine ([ir]) and its assembly,
- *                        TinyMachine/TinyMachineAsm.mli's [line]s
+ *                        TinyLibMachine.mli's [line]s
  *     TinyMLCompile.mli  bind: the typed tree to the stack machine
  *
  * This file is the program around them: compile_unit, a unit's items
@@ -106,7 +106,7 @@
  * apart. A unit's module N = struct ... end has values only, N.x for
  * the units after (open M.N, as open Fpath_.Operators); in it a name
  * is not found by its short name. module A = M names a unit again
- * (module ISA = TinyMachineISA: ISA.x is M.x). An attribute,
+ * (module ISA = TinyLibMachine: M.x is M.x). An attribute,
  * [@@deriving show] or another, is read and dropped (OCaml derives
  * show on the host), and Logs.debug (fun m -> m "fmt" args)'s format is
  * read as Printf's (TinyMLPrintf). An operator is OCaml's, any run of

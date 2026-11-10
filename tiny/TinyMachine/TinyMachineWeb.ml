@@ -590,7 +590,7 @@ let run image disk www =
            (Printf.sprintf
               "the machine halted (%d); reload the page to boot it again"
               code)
-     | TinyMachineISA.Error e ->
+     | TinyLibMachine.Error e ->
          running := false; status ("tiny-machine: " ^ e));
     screen_show screen mc.cpu; show_text (); wire_show ();
     if mc.mouse.cursor <> !cursor then begin

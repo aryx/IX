@@ -5,9 +5,9 @@
  * tests/TinyCPU_test.sh checks the laws: the first on the programs of
  * tests/TinyCPU_tests/, the second on random ones of every instruction *)
 
-(* The instructions, their words: TinyMachineISA's, in what tiny-ml
+(* The instructions, their words: TinyLibMachine's, in what tiny-ml
  * compiles too, for tiny-assembler and tiny-linker on tiny-kernel *)
-open TinyMachineISA
+open TinyLibMachine
 let error fmt = Printf.ksprintf (fun s -> raise (Error s)) fmt
 
 let m32 v = v land 0xffffffff
@@ -166,7 +166,7 @@ let listing ~show ~origin image =
     let w = Int32.to_int (String.get_int32_le image (4 * k)) land 0xffffffff in
     Printf.sprintf "%x:\t%08x\t%s\n" (origin + (4 * k)) w
       (match decode w, show w with
-       | Some i, _ -> print (origin + (4 * k)) i
+       | Some i, _ -> listing (origin + (4 * k)) i
        | None, Some s -> s
        | None, None -> Printf.sprintf ".word\t0x%x" w))
   |> String.concat ""

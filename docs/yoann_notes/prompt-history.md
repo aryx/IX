@@ -68196,3 +68196,35 @@ Claude moved the `tiny_lib_system` dune stanza to `tiny/dune` and renamed `tiny_
 Claude updated about 100 references across 35 files, including the code-map configs, and marked stage 0 done in the plan.
 Claude reported all checks passing, but noted that `make self` needs one more run to record `self.expected`.
 Claude asked whether to commit stage 0 before doing anything further.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 15:25
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed stage 0 as 70827d1c, along with `prompt-history.md`, leaving the working tree clean.
+Claude said the background `make self` run uses the old paths, so it doesn't yet validate the new per-unit layout.
+Claude planned one more `make self` on the new layout, then record its output as `self.expected` after reviewing the diff.
+Claude proposed checking tiny-kernel's image against the host's once that expected output is recorded.
+Claude noted that libmach stages 1 to 3, or stage 1 of the one-system plan, come next and need Yoann's answers to open questions.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 15:27
+
+**Yoann:**
+
+> ok what's next?
+
+**Claude (summary):**
+
+Claude finished stage 1 of the libmach plan and verified it, with nothing committed yet.
+Claude then asked whether to commit stage 1 before starting stage 2 of the plan.
+Claude noted one gap: self.expected still lists the old file lists and needs a make self run.
+Claude reported dune, make test-tix, tiny_check.sh and tiny-kernel's kernel check all passing.
+Claude had merged ISA, Asm printing and TinyLibSymbols into TinyLibMachine.ml and .mli.

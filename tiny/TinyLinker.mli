@@ -4,7 +4,7 @@
  *
  * Passes over the objects' items, in the order of the command line:
  *
- *     a.o b.o ...      (TinyMachineISA's items, marshalled)
+ *     a.o b.o ...      (TinyLibMachine's items, marshalled)
  *        | read        each object's items: labels, alignments,
  *        |             code with its relocs, zeros (-debug: said)
  *        | sweep       the pieces nothing reaches left out: what an
@@ -24,7 +24,7 @@
  *                      and the text's size) then the image
  *     (-s: symbols)    an a.out (of 1 MB unless -a), its labels after
  *                      the image, the compilers' local ones left out
- *                      (TinyLibSymbols): debug's, Plan 9's a.out symbol
+ *                      (TinyLibMachine): debug's, Plan 9's a.out symbol
  *                      table; the loader reads the header's size only
  *     (-map: out.map)  "address label" a line, by address: tiny-prof's
  *
@@ -56,7 +56,7 @@
  *   a member linked when it defines what another needs) is not needed
  *   yet.
  * - {b A place is filled by encoding again}: the word is decoded
- *   (TinyMachineISA.decode), its immediate replaced, and encoded, so
+ *   (TinyLibMachine.decode), its immediate replaced, and encoded, so
  *   [encode]'s checks say what does not fit (an addi of an address
  *   above 32 KB, a branch too far), as they did when the assembler
  *   linked; there is no table of where each kind of instruction keeps
@@ -99,7 +99,7 @@ type address = int
  * first (Text_first, -n; None in the objects' order) *)
 type linked = {
   image : string;
-  addresses : (TinyLibSymbols.label * address) list;
+  addresses : (TinyLibMachine.label * address) list;
   data_start : address option;
 }
 
@@ -107,17 +107,17 @@ type linked = {
  *
  *     x.o ...        Fpath.t, each
  *       | opened     Chan.i
- *       | read       TinyMachineISA.item list, an object
+ *       | read       TinyLibMachine.line list, an object
  *       | link       linked: the image, the labels' addresses
  *       | contents   string: the image, or an a.out (output)
  *     x              (and x.map, map's lines, with -map)
  *
- * An object file's items (TinyMachineISA's of_object), each said with
+ * An object file's items (TinyLibMachine's of_object), each said with
  * -debug; an error said with the file (Chan.origin) *)
-val read : Chan.i -> TinyMachineISA.item list
+val read : Chan.i -> TinyLibMachine.line list
 
 (* [link order objects]: the objects, each its items, linked *)
-val link : sections -> TinyMachineISA.item list list -> linked
+val link : sections -> TinyLibMachine.line list list -> linked
 
 (* what the output file is: the image alone, for tiny-cpu and
  * tiny-machine; or an a.out for tiny-kernel, asking for that much

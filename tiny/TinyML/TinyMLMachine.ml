@@ -4,8 +4,7 @@
 (* See TinyMLMachine.mli *)
 module Lexer = TinyMLLexer
 module Tree = TinyMLTree
-module ISA = TinyMachineISA
-module Asm = TinyMachineAsm
+module M = TinyLibMachine
 
 (*****************************************************************************)
 (* The stack machine *)
@@ -85,14 +84,14 @@ let start_asm () : asm =
   a
 
 (* lines added to the current assembly's code, or to its data *)
-let add_text (ls : Asm.line list) =
-  List.iter (fun l -> Buffer.add_string !current.text (Asm.print l)) ls
-let add_data (ls : Asm.line list) =
-  List.iter (fun l -> Buffer.add_string !current.data (Asm.print l)) ls
+let add_text (ls : M.line list) =
+  List.iter (fun l -> Buffer.add_string !current.text (M.print_line l)) ls
+let add_data (ls : M.line list) =
+  List.iter (fun l -> Buffer.add_string !current.data (M.print_line l)) ls
 
 (* its text, for tiny-assembler: the code, then the data (.data) *)
 let asm_text (a : asm) : string =
-  Buffer.contents a.text ^ Asm.print Asm.SectionData ^ Buffer.contents a.data
+  Buffer.contents a.text ^ M.print_line M.SectionData ^ Buffer.contents a.data
 
 (*****************************************************************************)
 (* The machine: tiny-machine, the stack in r1..r11, the value stack at r12 *)
@@ -120,12 +119,12 @@ let asm_text (a : asm) : string =
 (* the registers by their roles: the value stack's top, the scratch and
  * the result, a tail call's target; lr is also a scratch one *)
 let vsp = 12 and r13 = 13 and r11 = 11
-let lr = ISA.lr and sp = ISA.sp
+let lr = M.lr and sp = M.sp
 
 (* a line as it is made: known, or made of the frame's sizes (f, m, c),
  * known at the end (old: the text, in a buffer, between two lines of
  * the frame, each a function) *)
-type made = Known of Asm.line | Framed of (int -> int -> int -> Asm.line)
+type made = Known of M.line | Framed of (int -> int -> int -> M.line)
 
 (* A function's code as it is made. Its lines, the last first; the
  * stack machine's depth (its top register) and the deepest; the
@@ -146,15 +145,15 @@ type state = {
   mcatch_at : (int, int) Hashtbl.t;
 }
 
-let emit (st : state) (l : Asm.line) = st.mlines <- Known l :: st.mlines
-let ins st (i : ISA.instr) = emit st (Asm.Instr i)
+let emit (st : state) (l : M.line) = st.mlines <- Known l :: st.mlines
+let ins st (i : M.instr) = emit st (M.Instr i)
 let framed (st : state) f = st.mlines <- Framed f :: st.mlines
 
 (* a slot to a register, and back, at r12, the frame's top *)
 let get st (i : slot) r =
-  framed st (fun f _ _ -> Asm.Instr (ISA.Load (ISA.W, r, vsp, 4 * (i - f))))
+  framed st (fun f _ _ -> M.Instr (M.Load (M.W, r, vsp, 4 * (i - f))))
 let put st r (i : slot) =
-  framed st (fun f _ _ -> Asm.Instr (ISA.Store (ISA.W, r, vsp, 4 * (i - f))))
+  framed st (fun f _ _ -> M.Instr (M.Store (M.W, r, vsp, 4 * (i - f))))
 (* where a register is spilled *)
 let spill_slot (st : state) r : slot = st.mslots + r - 1
 let push (st : state) =
@@ -171,84 +170,84 @@ let spill (st : state) =
 let reload (st : state) =
   for r = 1 to st.msp do get st (spill_slot st r) r done
 (* r13, a call's result, pushed *)
-let result st = emit st (Asm.Mov (push st, r13))
+let result st = emit st (M.Mov (push st, r13))
 let lab (l : label) = !Tree.unit_name ^ ".L" ^ string_of_int l
 let jump (st : state) l = Hashtbl.replace st.mdepth_at l st.msp
 let epilogue st =
-  framed st (fun f _ _ -> Asm.Instr (ISA.Alui (ISA.Add, vsp, vsp, -4 * f)));
-  framed st (fun _ _ c -> Asm.Instr (ISA.Load (ISA.W, lr, sp, c)));
-  framed st (fun _ m _ -> Asm.Instr (ISA.Alui (ISA.Add, sp, sp, m)))
+  framed st (fun f _ _ -> M.Instr (M.Alui (M.Add, vsp, vsp, -4 * f)));
+  framed st (fun _ _ c -> M.Instr (M.Load (M.W, lr, sp, c)));
+  framed st (fun _ m _ -> M.Instr (M.Alui (M.Add, sp, sp, m)))
 (* the k-th handler's record on the machine stack, above the link *)
 let record c k = c + 4 + (16 * k)
 (* an instruction at the offset d of the k-th handler's record *)
-let at st k d (f : int -> ISA.instr) =
-  framed st (fun _ _ c -> Asm.Instr (f (record c k + d)))
+let at st k d (f : int -> M.instr) =
+  framed st (fun _ _ c -> M.Instr (f (record c k + d)))
 let c_call st f =
-  emit st (Asm.La (lr, "ml_vsp")); ins st (ISA.Store (ISA.W, vsp, lr, 0));
-  emit st (Asm.La (lr, f)); ins st (ISA.Jalr (lr, lr, 0));
-  emit st (Asm.La (lr, "ml_vsp")); ins st (ISA.Load (ISA.W, vsp, lr, 0))
+  emit st (M.La (lr, "ml_vsp")); ins st (M.Store (M.W, vsp, lr, 0));
+  emit st (M.La (lr, f)); ins st (M.Jalr (lr, lr, 0));
+  emit st (M.La (lr, "ml_vsp")); ins st (M.Load (M.W, vsp, lr, 0))
 (* a binary operation's registers, the result in the second *)
 let bin (st : state) f = let a = st.msp in pop st; f a st.msp
 (* the integer in register d tagged *)
 let tag_int st d =
-  ins st (ISA.Alui (ISA.Shl, d, d, 1));
-  ins st (ISA.Alui (ISA.Or, d, d, 1))
+  ins st (M.Alui (M.Shl, d, d, 1));
+  ins st (M.Alui (M.Or, d, d, 1))
 
 (* an operation on tagged integers: 2n+1 *)
 let op (st : state) o =
   let ins = ins st and bin = bin st and tagged = tag_int st in
-  let alu op d a b = ins (ISA.Alu (op, d, a, b))
-  and alui op d a k = ins (ISA.Alui (op, d, a, k)) in
+  let alu op d a b = ins (M.Alu (op, d, a, b))
+  and alui op d a k = ins (M.Alui (op, d, a, k)) in
   let a = st.msp in
   match o with
-  | Add -> bin (fun a b -> alu ISA.Add b a b; alui ISA.Add b b (-1))
-  | Sub -> bin (fun a b -> alu ISA.Sub b a b; alui ISA.Add b b 1)
+  | Add -> bin (fun a b -> alu M.Add b a b; alui M.Add b b (-1))
+  | Sub -> bin (fun a b -> alu M.Sub b a b; alui M.Add b b 1)
   | Mul ->
       bin (fun a b ->
-        alui ISA.Add a a (-1); alui ISA.Sar b b 1; alu ISA.Mul b a b;
-        alui ISA.Add b b 1)
+        alui M.Add a a (-1); alui M.Sar b b 1; alu M.Mul b a b;
+        alui M.Add b b 1)
   | Div | Mod ->
       bin (fun a b ->
-        alui ISA.Sar a a 1; alui ISA.Sar b b 1;
-        alu (if o = Div then ISA.Div else ISA.Rem) b a b;
+        alui M.Sar a a 1; alui M.Sar b b 1;
+        alu (if o = Div then M.Div else M.Rem) b a b;
         tagged b)
-  | And -> bin (fun a b -> alu ISA.And b a b)
-  | Or -> bin (fun a b -> alu ISA.Or b a b)
-  | Xor -> bin (fun a b -> alu ISA.Xor b a b; alui ISA.Or b b 1)
+  | And -> bin (fun a b -> alu M.And b a b)
+  | Or -> bin (fun a b -> alu M.Or b a b)
+  | Xor -> bin (fun a b -> alu M.Xor b a b; alui M.Or b b 1)
   | Lsl ->
       bin (fun a b ->
-        alui ISA.Add a a (-1); alui ISA.Sar b b 1; alu ISA.Shl b a b;
-        alui ISA.Or b b 1)
+        alui M.Add a a (-1); alui M.Sar b b 1; alu M.Shl b a b;
+        alui M.Or b b 1)
   | Lsr | Asr ->
       bin (fun a b ->
-        alui ISA.Sar b b 1;
-        alu (if o = Lsr then ISA.Shr else ISA.Sar) b a b;
-        alui ISA.Or b b 1)
+        alui M.Sar b b 1;
+        alu (if o = Lsr then M.Shr else M.Sar) b a b;
+        alui M.Or b b 1)
   | Cmp r ->
       (* a r b, 1 or 0, then tagged *)
       bin (fun a b ->
         (match r with
-         | Lt -> alu ISA.Slt b a b
-         | Gt -> alu ISA.Slt b b a
-         | Le -> alu ISA.Slt b b a; alui ISA.Xor b b 1
-         | Ge -> alu ISA.Slt b a b; alui ISA.Xor b b 1
-         | Eq -> alu ISA.Sub b a b; alui ISA.Sltu b b 1
-         | Ne -> alu ISA.Sub b a b; alu ISA.Sltu b 0 b);
+         | Lt -> alu M.Slt b a b
+         | Gt -> alu M.Slt b b a
+         | Le -> alu M.Slt b b a; alui M.Xor b b 1
+         | Ge -> alu M.Slt b a b; alui M.Xor b b 1
+         | Eq -> alu M.Sub b a b; alui M.Sltu b b 1
+         | Ne -> alu M.Sub b a b; alu M.Sltu b 0 b);
         tagged b)
-  | Neg -> alu ISA.Sub a 0 a; alui ISA.Add a a 2
-  | Lnot -> alui ISA.Add r13 0 (-1); alu ISA.Xor a a r13; alui ISA.Or a a 1
-  | Not -> alui ISA.Xor a a 2
-  | IsInt -> alui ISA.And a a 1; tagged a
-  | Tag -> ins (ISA.Load (ISA.B, a, a, -4)); tagged a
+  | Neg -> alu M.Sub a 0 a; alui M.Add a a 2
+  | Lnot -> alui M.Add r13 0 (-1); alu M.Xor a a r13; alui M.Or a a 1
+  | Not -> alui M.Xor a a 2
+  | IsInt -> alui M.And a a 1; tagged a
+  | Tag -> ins (M.Load (M.B, a, a, -4)); tagged a
 
 (* a block of n fields from the runtime, in r13 *)
 let alloc (st : state) tag n =
   spill st;
   st.mcargs <- max st.mcargs 2;
-  emit st (Asm.Li (r13, Int64.of_int n));
-  ins st (ISA.Store (ISA.W, r13, sp, 0));
-  emit st (Asm.Li (r13, Int64.of_int tag));
-  ins st (ISA.Store (ISA.W, r13, sp, 4));
+  emit st (M.Li (r13, Int64.of_int n));
+  ins st (M.Store (M.W, r13, sp, 0));
+  emit st (M.Li (r13, Int64.of_int tag));
+  ins st (M.Store (M.W, r13, sp, 4));
   c_call st "ml_alloc"
 
 (* a call of ML: the closure in r13, the arguments in r1..rn *)
@@ -264,9 +263,9 @@ let call (st : state) t n tail =
   (* the code's address in r, then a jump to it, with the link in d *)
   let go r d =
     (match t with
-     | Direct f -> emit st (Asm.La (r, f))
-     | Indirect k -> ins st (ISA.Load (ISA.W, r, r13, 4 * k)));
-    ins st (ISA.Jalr (d, r, 0)) in
+     | Direct f -> emit st (M.La (r, f))
+     | Indirect k -> ins st (M.Load (M.W, r, r13, 4 * k)));
+    ins st (M.Jalr (d, r, 0)) in
   if tail then begin
     epilogue st;
     go r11 0;
@@ -284,7 +283,7 @@ let call_c (st : state) f n =
   st.mcargs <- max st.mcargs n;
   for k = 0 to n - 1 do
     get st (spill_slot st (st.msp - k)) r13;
-    ins st (ISA.Store (ISA.W, r13, sp, 4 * k))
+    ins st (M.Store (M.W, r13, sp, 4 * k))
   done;
   st.msp <- st.msp - n;
   c_call st f;
@@ -300,17 +299,17 @@ let call_c (st : state) f n =
 
 (* the length of the string in register s, untagged, into r13; lr used *)
 let length_of st s =
-  ins st (ISA.Load (ISA.W, r13, s, -4));
-  ins st (ISA.Alui (ISA.Shr, r13, r13, 10));
-  ins st (ISA.Alui (ISA.Shl, r13, r13, 2));
-  ins st (ISA.Alu (ISA.Add, lr, s, r13));
-  ins st (ISA.Load (ISA.B, lr, lr, -1));
-  ins st (ISA.Alu (ISA.Sub, r13, r13, lr));
-  ins st (ISA.Alui (ISA.Add, r13, r13, -1))
+  ins st (M.Load (M.W, r13, s, -4));
+  ins st (M.Alui (M.Shr, r13, r13, 10));
+  ins st (M.Alui (M.Shl, r13, r13, 2));
+  ins st (M.Alu (M.Add, lr, s, r13));
+  ins st (M.Load (M.B, lr, lr, -1));
+  ins st (M.Alu (M.Sub, r13, r13, lr));
+  ins st (M.Alui (M.Add, r13, r13, -1))
 
 let string_length (st : state) =
   length_of st st.msp;
-  emit st (Asm.Mov (st.msp, r13));
+  emit st (M.Mov (st.msp, r13));
   tag_int st st.msp
 
 (* s.[i]: s is on top of the stack, i below it, and the byte takes i's
@@ -320,21 +319,21 @@ let string_get (st : state) =
   let s = st.msp and i = st.msp - 1 in
   let slow = label () and done_ = label () in
   length_of st s;
-  ins st (ISA.Alui (ISA.Sar, lr, i, 1));
-  emit st (Asm.Branch (ISA.Geu, lr, r13, lab slow));
-  ins st (ISA.Alu (ISA.Add, lr, s, lr));
-  ins st (ISA.Load (ISA.B, i, lr, 0));
+  ins st (M.Alui (M.Sar, lr, i, 1));
+  emit st (M.Branch_to (M.Geu, lr, r13, lab slow));
+  ins st (M.Alu (M.Add, lr, s, lr));
+  ins st (M.Load (M.B, i, lr, 0));
   tag_int st i;
-  emit st (Asm.Jump (lab done_));
-  emit st (Asm.Label (lab slow));
+  emit st (M.Jump (lab done_));
+  emit st (M.Label (lab slow));
   call_c st "ml_string_get" 2;
-  emit st (Asm.Label (lab done_))
+  emit st (M.Label (lab done_))
 
 (* a jump if the top is false, the tagged 0 (Eq), or true (Ne) *)
 let branch (st : state) c l =
   let r = st.msp in
-  pop st; jump st l; emit st (Asm.Li (r13, Int64.one));
-  emit st (Asm.Branch (c, r, r13, lab l))
+  pop st; jump st l; emit st (M.Li (r13, Int64.one));
+  emit st (M.Branch_to (c, r, r13, lab l))
 
 (* the handler's record: sp, r12, the handler's address (call's link:
  * the j after it), the previous record *)
@@ -343,22 +342,22 @@ let try_enter (st : state) k handler =
   Hashtbl.replace st.mcatch_at k st.msp;
   st.mtries <- max st.mtries (k + 1);
   let set = label () in
-  emit st (Asm.Call (lab set));
-  emit st (Asm.Jump (lab handler));
-  emit st (Asm.Label (lab set));
-  at st k 0 (fun o -> ISA.Store (ISA.W, sp, sp, o));
-  at st k 4 (fun o -> ISA.Store (ISA.W, vsp, sp, o));
-  at st k 8 (fun o -> ISA.Store (ISA.W, lr, sp, o));
-  emit st (Asm.La (lr, "ml_handler"));
-  ins st (ISA.Load (ISA.W, r13, lr, 0));
-  at st k 12 (fun o -> ISA.Store (ISA.W, r13, sp, o));
-  at st k 0 (fun o -> ISA.Alui (ISA.Add, r13, sp, o));
-  ins st (ISA.Store (ISA.W, r13, lr, 0))
+  emit st (M.Call (lab set));
+  emit st (M.Jump (lab handler));
+  emit st (M.Label (lab set));
+  at st k 0 (fun o -> M.Store (M.W, sp, sp, o));
+  at st k 4 (fun o -> M.Store (M.W, vsp, sp, o));
+  at st k 8 (fun o -> M.Store (M.W, lr, sp, o));
+  emit st (M.La (lr, "ml_handler"));
+  ins st (M.Load (M.W, r13, lr, 0));
+  at st k 12 (fun o -> M.Store (M.W, r13, sp, o));
+  at st k 0 (fun o -> M.Alui (M.Add, r13, sp, o));
+  ins st (M.Store (M.W, r13, lr, 0))
 
 let try_exit st k =
-  at st k 12 (fun o -> ISA.Load (ISA.W, r13, sp, o));
-  emit st (Asm.La (lr, "ml_handler"));
-  ins st (ISA.Store (ISA.W, r13, lr, 0))
+  at st k 12 (fun o -> M.Load (M.W, r13, sp, o));
+  emit st (M.La (lr, "ml_handler"));
+  ins st (M.Store (M.W, r13, lr, 0))
 
 let instruction (st : state) (i : ir) =
   match i with
@@ -367,7 +366,7 @@ let instruction (st : state) (i : ir) =
        | Some d when st.mdead -> st.msp <- d
        | _ -> ());
       st.mdead <- false;
-      emit st (Asm.Label (lab l))
+      emit st (M.Label (lab l))
   | Catch k ->
       st.mdead <- false;
       st.msp <- Hashtbl.find st.mcatch_at k;
@@ -380,36 +379,36 @@ let instruction (st : state) (i : ir) =
       if low32 v <> v then
         Lexer.error
           "an integer beyond 31 bits: not on TinyCPU (a 32-bit machine)";
-      emit st (Asm.Li (push st, v))
-  | Addr s -> emit st (Asm.La (push st, s))
+      emit st (M.Li (push st, v))
+  | Addr s -> emit st (M.La (push st, s))
   | Get i -> get st i (push st)
   | Set i -> put st st.msp i; pop st
   | GetG (t, g) ->
       let r = push st in
-      emit st (Asm.La (r, t));
-      ins st (ISA.Load (ISA.W, r, r, 4 * g))
+      emit st (M.La (r, t));
+      ins st (M.Load (M.W, r, r, 4 * g))
   | SetG (t, g) ->
-      emit st (Asm.La (r13, t));
-      ins st (ISA.Store (ISA.W, st.msp, r13, 4 * g));
+      emit st (M.La (r13, t));
+      ins st (M.Store (M.W, st.msp, r13, 4 * g));
       pop st
-  | Field k -> ins st (ISA.Load (ISA.W, st.msp, st.msp, 4 * k))
+  | Field k -> ins st (M.Load (M.W, st.msp, st.msp, 4 * k))
   | SetField k ->
-      ins st (ISA.Store (ISA.W, st.msp - 1, st.msp, 4 * k));
+      ins st (M.Store (M.W, st.msp - 1, st.msp, 4 * k));
       st.msp <- st.msp - 2
   | Alloc (tag, n) ->
       alloc st tag n;
       for k = 0 to n - 1 do
         get st (spill_slot st (st.msp - k)) lr;
-        ins st (ISA.Store (ISA.W, lr, r13, 4 * k))
+        ins st (M.Store (M.W, lr, r13, 4 * k))
       done;
       st.msp <- st.msp - n;
       reload st;
       result st
   | Blank (tag, n) ->
       alloc st tag n;
-      emit st (Asm.Li (lr, Int64.one));
+      emit st (M.Li (lr, Int64.one));
       for k = 0 to n - 1 do
-        ins st (ISA.Store (ISA.W, lr, r13, 4 * k))
+        ins st (M.Store (M.W, lr, r13, 4 * k))
       done;
       reload st;
       result st
@@ -418,23 +417,23 @@ let instruction (st : state) (i : ir) =
   | CallC ("ml_string_length", 1) -> string_length st
   | CallC ("ml_string_get", 2) -> string_get st
   | CallC (f, n) -> call_c st f n
-  | Jmp l -> jump st l; emit st (Asm.Jump (lab l)); st.mdead <- true
-  | Jz l -> branch st ISA.Eq l
-  | Jnz l -> branch st ISA.Ne l
+  | Jmp l -> jump st l; emit st (M.Jump (lab l)); st.mdead <- true
+  | Jz l -> branch st M.Eq l
+  | Jnz l -> branch st M.Ne l
   | Drop -> pop st
   | Ret ->
-      emit st (Asm.Mov (r13, st.msp));
-      pop st; epilogue st; emit st Asm.Ret; st.mdead <- true
+      emit st (M.Mov (r13, st.msp));
+      pop st; epilogue st; emit st M.Ret; st.mdead <- true
   | Raise ->
-      emit st (Asm.Mov (r13, st.msp));
-      emit st (Asm.La (lr, "ml_raise"));
-      ins st (ISA.Jalr (0, lr, 0));
+      emit st (M.Mov (r13, st.msp));
+      emit st (M.La (lr, "ml_raise"));
+      ins st (M.Jalr (0, lr, 0));
       st.mdead <- true
   | TryEnter (k, handler) -> try_enter st k handler
   | TryExit k -> try_exit st k
 
 (* [machine f nparams nslots code]: f's assembly *)
-let machine (name : sym) nparams nslots (code : ir list) : Asm.line list =
+let machine (name : sym) nparams nslots (code : ir list) : M.line list =
   let st =
     { mname = name; mslots = nslots; mlines = [];
       msp = 0; mmaxsp = 0; mtries = 0; mcargs = 0; mdead = false;
@@ -446,13 +445,13 @@ let machine (name : sym) nparams nslots (code : ir list) : Asm.line list =
        ^ " parameters (tiny-machine passes 10 at most)");
   let f = nslots + st.mmaxsp and c = 4 * st.mcargs in
   let m = (record c st.mtries + 7) land lnot 7 in
-  let store r i = Asm.Instr (ISA.Store (ISA.W, r, vsp, 4 * (i - f))) in
+  let store r i = M.Instr (M.Store (M.W, r, vsp, 4 * (i - f))) in
   (* a piece: tiny-linker leaves it out when nothing names its labels;
    * the frames made, the closure and the parameters in their slots *)
-  [ Asm.Piece; Asm.Label name;
-    Asm.Instr (ISA.Alui (ISA.Add, sp, sp, - m));
-    Asm.Instr (ISA.Store (ISA.W, lr, sp, c));
-    Asm.Instr (ISA.Alui (ISA.Add, vsp, vsp, 4 * f));
+  [ M.Piece; M.Label name;
+    M.Instr (M.Alui (M.Add, sp, sp, - m));
+    M.Instr (M.Store (M.W, lr, sp, c));
+    M.Instr (M.Alui (M.Add, vsp, vsp, 4 * f));
     store r13 0 ]
   @ List.init nparams (fun i -> store (i + 1) (i + 1))
   (* the other slots zeroed: the collector scans them *)
@@ -464,15 +463,15 @@ let machine (name : sym) nparams nslots (code : ir list) : Asm.line list =
  * closure slot 1, a unit (not what r13 held, which the collector would
  * scan); ml_raise: to the latest handler, the exception in r13 *)
 let start =
-  let ldw d a off = Asm.Instr (ISA.Load (ISA.W, d, a, off)) in
+  let ldw d a off = M.Instr (M.Load (M.W, d, a, off)) in
   String.concat ""
-    (List.map Asm.print
-       [ Asm.Label "ml_start"; ldw vsp sp 0; Asm.Li (r13, Int64.one);
-         Asm.La (r11, "ml_init"); Asm.Instr (ISA.Jalr (0, r11, 0));
-         Asm.Label "ml_raise"; Asm.La (1, "ml_handler"); ldw 1 1 0;
-         ldw sp 1 0; ldw vsp 1 4; ldw 2 1 12; Asm.La (3, "ml_handler");
-         Asm.Instr (ISA.Store (ISA.W, 2, 3, 0)); ldw 2 1 8;
-         Asm.Instr (ISA.Jalr (0, 2, 0)) ])
+    (List.map M.print_line
+       [ M.Label "ml_start"; ldw vsp sp 0; M.Li (r13, Int64.one);
+         M.La (r11, "ml_init"); M.Instr (M.Jalr (0, r11, 0));
+         M.Label "ml_raise"; M.La (1, "ml_handler"); ldw 1 1 0;
+         ldw sp 1 0; ldw vsp 1 4; ldw 2 1 12; M.La (3, "ml_handler");
+         M.Instr (M.Store (M.W, 2, 3, 0)); ldw 2 1 8;
+         M.Instr (M.Jalr (0, 2, 0)) ])
 
 (*****************************************************************************)
 (* Data: static blocks *)
@@ -483,19 +482,19 @@ let start =
 type dword = DNum of int64 | DCode of sym | DVal of sym
 
 let fields sym ws =
-  Asm.Label sym
+  M.Label sym
   :: List.map (fun w ->
        match w with
-       | DNum x -> Asm.Word x
-       | DCode x -> Asm.Word_sym x
-       | DVal x -> Asm.Word_sym x) ws
+       | DNum x -> M.Word x
+       | DCode x -> M.Word_sym x
+       | DVal x -> M.Word_sym x) ws
 (* each a piece of its own, as a function is *)
-let words sym ws = add_data (Asm.Piece :: fields sym ws)
+let words sym ws = add_data (M.Piece :: fields sym ws)
 
 (* a static block, its header then its fields. Its symbol is the first
  * field's, the value itself (the assembler's expressions have no
  * sym+n) *)
-let block sym hdr ws = add_data (Asm.Piece :: Asm.Word hdr :: fields sym ws)
+let block sym hdr ws = add_data (M.Piece :: M.Word hdr :: fields sym ws)
 
 let header n tag = Int64.of_int ((n lsl 10) lor tag)
 let closure_tag = 247 and string_tag = 252

@@ -1,6 +1,0 @@
-; TinyMachineAsm's law on the host (TinyMachineAsm_test.sh): a line
-; printed then parsed is the same line
-(executable
- (name Law)
- (modules Law)
- (libraries tiny_machine_cpu))

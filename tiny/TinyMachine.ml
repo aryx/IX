@@ -786,7 +786,7 @@ let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.open_in;
                   parallel = false } args
   with
   | Exit -> Console.eprint caps (usage ^ "   (-h: how)\n"); Exit.Code 2
-  | TinyMachineISA.Error e | Sys_error e -> Exit.Err e
+  | TinyLibMachine.Error e | Sys_error e -> Exit.Err e
 
 (* (TinyLibSystem.main sets the logs up, by the program's name) *)
 let () = TinyLibSystem.main "tiny-machine" main

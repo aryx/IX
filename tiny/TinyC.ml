@@ -9,7 +9,7 @@ module Tree = TinyCTree
 module Parser = TinyCParser
 module Lower = TinyCLower
 module Machine = TinyCMachine
-module Asm = TinyMachineAsm
+module M = TinyLibMachine
 module TSys = TinyLibSystem
 
 let usage = "usage: tiny-c [-ir] [-o out.tm] file.c"
@@ -48,7 +48,7 @@ An error names the file and the line: fact.c: line 3: expected ;
 
 (* [compile d]: d's assembly, the code of a function or the data of a
  * global *)
-let compile (d : Tree.def) : Asm.line list * Asm.line list =
+let compile (d : Tree.def) : M.line list * M.line list =
   match d with
   | Tree.Function (f, locals, body) ->
       Machine.machine f locals (Lower.lower_function body), []
@@ -108,15 +108,15 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
             if !ir_only then Buffer.add_string code (show_ir d)
             else begin
               let c, dt = compile d in
-              List.iter (fun l -> Buffer.add_string code (Asm.print l)) c;
-              List.iter (fun l -> Buffer.add_string data (Asm.print l)) dt
+              List.iter (fun l -> Buffer.add_string code (M.print_line l)) c;
+              List.iter (fun l -> Buffer.add_string data (M.print_line l)) dt
             end)
             (Parser.declaration ())
         done;
         let text =
           Buffer.contents code
           ^ (if !ir_only then ""
-             else Asm.print Asm.SectionData ^ Buffer.contents data)
+             else M.print_line M.SectionData ^ Buffer.contents data)
         in
         (match !output with
          | None -> TSys.print caps text

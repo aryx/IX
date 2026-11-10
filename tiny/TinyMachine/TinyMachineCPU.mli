@@ -181,7 +181,7 @@
 val m32 : int -> int
 val ult : int -> int -> bool
 
-(* The instructions and their words are TinyMachineISA's (a load's
+(* The instructions and their words are TinyLibMachine's (a load's
  * size, sp and lr, the exception Error); its error, by a format *)
 val error : ('a, unit, string, 'b) format4 -> 'a
 
@@ -199,15 +199,15 @@ type machine = { r : int array; mutable pc : int; mem : Bytes.t }
  * what a sys does, and a word the CPU does not know *)
 type env = {
   fetch : machine -> int -> int;
-  load : machine -> TinyMachineISA.size -> int -> int;
-  store : machine -> TinyMachineISA.size -> int -> int -> unit;
+  load : machine -> TinyLibMachine.size -> int -> int;
+  store : machine -> TinyLibMachine.size -> int -> int -> unit;
   sys : machine -> int -> unit;
   illegal : machine -> int -> unit;
 }
 
 (* plain memory's load and store, and the env of a program alone *)
-val load : machine -> TinyMachineISA.size -> int -> int
-val store : machine -> TinyMachineISA.size -> int -> int -> unit
+val load : machine -> TinyLibMachine.size -> int -> int
+val store : machine -> TinyLibMachine.size -> int -> int -> unit
 val plain : sys:(machine -> int -> unit) -> env
 
 (* The interpreter: one instruction; and a machine with an image at 0 *)

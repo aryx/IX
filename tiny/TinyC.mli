@@ -24,7 +24,7 @@
  *     TinyCLower.mli     the stack machine: [ir], lower_function
  *     TinyCParser.mli    declaration: tokens to a declaration's [def]s
  *     TinyCMachine.mli   machine and global: [ir] and data to assembly,
- *                        TinyMachine/TinyMachineAsm.mli's [line]s
+ *                        TinyLibMachine.mli's [line]s
  *
  * This file is the program around them: compile, a definition through
  * lower and machine, and main, the loop over the declarations.
@@ -211,7 +211,7 @@
  * code and data: a function's tree lowered to the stack machine's code
  * then to TinyCPU's, a global's data *)
 val compile :
-  TinyCTree.def -> TinyMachineAsm.line list * TinyMachineAsm.line list
+  TinyCTree.def -> TinyLibMachine.line list * TinyLibMachine.line list
 
 (* -ir: a function's stack machine's code, as text *)
 val show_ir : TinyCTree.def -> string

@@ -59,12 +59,12 @@ let interpret caps prof image args =
     top, top :: addrs) (!TinyMachineCPU.memsize, []) args in
   let n = List.length args in
   let sp = (top - (4 * (n + 3))) land lnot 7 in
-  let put a v = TinyMachineCPU.store m TinyMachineISA.W a v in
+  let put a v = TinyMachineCPU.store m TinyLibMachine.W a v in
   put sp n;
   put (sp + 4) (sp + 8);
   List.iteri (fun k s -> put (sp + 8 + (4 * k)) s) (List.rev addrs);
   put (sp + 8 + (4 * n)) 0;
-  m.r.(TinyMachineISA.sp) <- sp;
+  m.r.(TinyLibMachine.sp) <- sp;
   try while true do TinyMachineCPU.step env m done; 0 with Exit n -> n
 
 let main (caps : < caps; Cap.open_in; Cap.open_out; .. >)
@@ -90,6 +90,6 @@ let main (caps : < caps; Cap.open_in; Cap.open_out; .. >)
     | _ -> raise Usage
   with
   | Usage -> Console.eprint caps (usage ^ "   (-h: how)\n"); Exit.Code 2
-  | TinyMachineISA.Error e | Sys_error e -> Exit.Err e
+  | TinyLibMachine.Error e | Sys_error e -> Exit.Err e
 
 let () = TinyLibSystem.main "tiny-cpu" main

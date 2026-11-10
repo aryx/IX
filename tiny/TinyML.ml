@@ -9,7 +9,7 @@
 
 module Tree = TinyMLTree
 module Parser = TinyMLParser
-module Asm = TinyMachineAsm
+module M = TinyLibMachine
 module Types = TinyMLTypes
 module Machine = TinyMLMachine
 module Compile = TinyMLCompile
@@ -133,10 +133,10 @@ let compile_main (units : (string * int) list) needed =
   let total = List.fold_left (fun t (_, n) -> t + n) 0 units in
   Machine.words "ml_nglobals" [ Machine.DNum (Int64.of_int total) ];
   Machine.add_data
-    ([ Asm.Piece; Asm.Label "ml_globals" ]
+    ([ M.Piece; M.Label "ml_globals" ]
      @ List.concat_map (fun (u, n) ->
-         [ Asm.Label (u ^ ".globals"); Asm.Space (4 * n) ]) units
-     @ (if total = 0 then [ Asm.Space 4 ] else []))
+         [ M.Label (u ^ ".globals"); M.Space (4 * n) ]) units
+     @ (if total = 0 then [ M.Space 4 ] else []))
 
 (*****************************************************************************)
 (* Interfaces *)

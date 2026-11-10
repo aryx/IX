@@ -2,7 +2,7 @@
  * instructions on a stack of values, as tiny-machine's assembly (the
  * stack's values in registers r1 to r11, the frames on the value stack
  * at r12); and the static blocks, in the data: strings, closures,
- * exceptions; each made as TinyMachine/TinyMachineAsm.mli's lines, then
+ * exceptions; each made as TinyLibMachine.mli's lines, then
  * printed. Read TinyMachine/TinyMachineCPU.mli for the instructions,
  * and TinyMLRuntime/core.c for the blocks. *)
 
@@ -64,7 +64,7 @@ val label : unit -> label
 
 (* [machine f nparams nslots code]: f's assembly; its frame nslots
  * slots, its parameters the first after its closure *)
-val machine : sym -> int -> int -> ir list -> TinyMachineAsm.line list
+val machine : sym -> int -> int -> ir list -> TinyLibMachine.line list
 
 (* the program's ml_start, called by C, and ml_raise *)
 val start : string
@@ -75,8 +75,8 @@ type asm = { text : Buffer.t; data : Buffer.t }
 (* a new assembly, from then on the current one: what add_text, and the
  * static blocks below, add to *)
 val start_asm : unit -> asm
-val add_text : TinyMachineAsm.line list -> unit
-val add_data : TinyMachineAsm.line list -> unit
+val add_text : TinyLibMachine.line list -> unit
+val add_data : TinyLibMachine.line list -> unit
 (* its text, for tiny-assembler: the code, then the data (.data) *)
 val asm_text : asm -> string
 

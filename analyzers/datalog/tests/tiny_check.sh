@@ -35,12 +35,13 @@ expected=analyzers/datalog/tests/$expected
 if [ "$out" = -check ]; then check=1; out=$(mktemp); fi
 T=tiny; S=$T/TinyLibSystem/unix/TinyLibSystem.ml; R=$T/TinyLibRegex.ml
 M=$T/TinyMachine
-CPU="$M/TinyMachineISA.ml $M/TinyMachineCPU.ml"
+L=$T/TinyLibMachine.ml
+CPU="$L $M/TinyMachineCPU.ml"
 BROWSER=$(for m in Text Tokens Lines Html Address Http; do
   printf "%s " $T/TinyBrowser/TinyBrowser$m.ml; done)
-TML="$M/TinyMachineISA.ml $M/TinyMachineAsm.ml "$(for m in Lexer Tree Printf Parser Types Machine Compile; do
+TML="$L "$(for m in Lexer Tree Printf Parser Types Machine Compile; do
   printf "%s " $T/TinyML/TinyML$m.ml; done)
-TC="$M/TinyMachineISA.ml $M/TinyMachineAsm.ml "$(for m in Types Lexer Tree Lower Parser Machine; do
+TC="$L "$(for m in Types Lexer Tree Lower Parser Machine; do
   printf "%s " $T/TinyC/TinyC$m.ml; done)
 NET="-I lib_networking/tcp -I lib_networking/tls -I lib_networking/http"
 NET="$NET -I lib_crypto -I lib_compression"
@@ -54,10 +55,10 @@ tiny-utils|-|$S $R $T/TinyUtilities.ml
 tiny-c|-|$S $TC $T/TinyC.ml
 tiny-db|-|$S $T/TinyDatabase.ml
 tiny-vcs|-I lib_crypto|$S $T/TinyVCS.ml
-tiny-assembler|-|$CPU $M/TinyMachineAsm.ml $S $T/TinyLibSymbols.ml $T/TinyAssembler.ml
-tiny-linker|-|$CPU $S $T/TinyLibSymbols.ml $T/TinyLinker.ml
+tiny-assembler|-|$L $S $T/TinyAssembler.ml
+tiny-linker|-|$L $S $T/TinyLinker.ml
 tiny-cpu|-|$CPU $S $T/TinyCPU.ml
-tiny-prof|-|$S $T/TinyLibSymbols.ml $T/TinyProfiler.ml
+tiny-prof|-|$S $L $T/TinyProfiler.ml
 tiny-ml|-|$S $TML $T/TinyML.ml
 tiny-machine|-I lib_core/parallel|$CPU $S $M/TinyMachineDevices.ml $T/TinyKernel/TinyKernelNetwork.ml $BROWSER $M/TinyMachinePeer.ml $T/TinyMachine.ml
 tiny-machine-socket|-|$S $M/TinyMachineSocket.ml

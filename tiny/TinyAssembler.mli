@@ -6,10 +6,10 @@
  * instructions (addi, lui, ori, beq, jal...), the pseudo-instructions
  * this file adds (li and la, a value or a label's address put in a
  * register; mov, call, ret, j, nop), and a listing worked out by hand.
- * TinyMachine/TinyMachineISA.mli has the instructions' words, which
- * this file makes; TinyMachine/TinyMachineAsm.mli the lines a text is
- * read as (its parse), what the compilers make too: this file is their
- * encoding, a line an item of the object.
+ * TinyLibMachine.mli has the instructions' words, which this file
+ * makes, and the lines a text is read as (parse, here: the one program
+ * that reads assembly), what the compilers make too: this file is their
+ * encoding, a line the object's lines.
  *
  * tiny-machine's instructions were designed to keep this assembler
  * simple: one format, every instruction 4 bytes, every immediate the
@@ -25,11 +25,12 @@
  *     beq   r1, zero, done        words 30100000, (0, Pc, Name "done")
  *     la    r2, table             words 20200000 17220000,
  *                                 (0, Hi, Name "table"), (4, Lo, ...)
- *     .word main                  a word 0, (0, Word, Name "main")
+ *     .word main                  a word 0, (0, Full, Name "main")
  *
- * The object is TinyMachineISA's items, in the file's order, marshalled
- * (that file has what each is; tiny-linker -debug says them). Every label
- * is the program's: the link is one name space, as the compilers write
+ * The object is TinyLibMachine's lines, encoded, in the file's order,
+ * marshalled (that file has what each is; tiny-linker -debug says
+ * them). Every label is the program's: the link is one name space, as
+ * the compilers write
  * it (tiny-c's statics carry their file's name, tiny-ml's labels their
  * unit's).
  *
@@ -78,7 +79,7 @@
  *
  * design:
  * The object is marshalled, as mini-asm's and mini-ld's are. What the text
- * showed, tiny-linker -debug says, by the items' show that mini-ml
+ * showed, tiny-linker -debug says, by the lines' show that mini-ml
  * derives. A magic line comes first, since tiny-ml's Marshal stops the
  * program on bytes it cannot read.
  *
@@ -106,27 +107,36 @@ type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
  *
  *     x.tm          Fpath.t
  *       | opened    Chan.i
- *       | read      (int * TinyMachineAsm.line list) list, each line of
- *       |           text's lines, with its number
- *       | encode    TinyMachineISA.item list, the object
+ *       | read      (int * TinyLibMachine.line list) list, each line of
+ *       |           text's lines, with its number (parse's)
+ *       | encode    TinyLibMachine.line list, the object
  *       | write     Chan.o, marshalled
  *     x.o
  *
- * A file's text read as lines of assembly (TinyMachineAsm's parse):
- * each line of text, its number from 1, and its lines (none for a blank
- * one, a comment); an error said with the file (Chan.origin) and the
- * line *)
-val read : Chan.i -> (int * TinyMachineAsm.line list) list
+ * (-S: read, then the lines printed, TinyLibMachine.print_line's: the
+ * text the compilers' -S writes; the test's law, TinyAssembler_test.sh,
+ * that text assembled the same object as the file's)
+ *
+ * [parse text]: a line of text's lines: its labels, then its
+ * instruction or its directive (.word a, b: a Word each); ; starts a
+ * comment. Raises TinyLibMachine.Error, what is wrong in it (old:
+ * TinyMachineAsm.parse, in TinyMachine/) *)
+val parse : string -> TinyLibMachine.line list
 
-(* [encode file lines]: the lines' object, its items, in their order
- * (TinyMachineISA.to_object marshals them); file, their file's name, for
- * an error *)
+(* A file's text read as lines of assembly: each line of text, its
+ * number from 1, and its lines (none for a blank one, a comment); an
+ * error said with the file (Chan.origin) and the line *)
+val read : Chan.i -> (int * TinyLibMachine.line list) list
+
+(* [encode file lines]: the lines' object, the lines encoded, in their
+ * order (TinyLibMachine.to_object marshals them); file, their file's
+ * name, for an error *)
 val encode :
-  string -> (int * TinyMachineAsm.line list) list -> TinyMachineISA.item list
+  string -> (int * TinyLibMachine.line list) list -> TinyLibMachine.line list
 
-(* the object written, marshalled (TinyMachineISA.to_object): what
+(* the object written, marshalled (TinyLibMachine.to_object): what
  * tiny-linker reads (of_object) *)
-val write : Chan.o -> TinyMachineISA.item list -> unit
+val write : Chan.o -> TinyLibMachine.line list -> unit
 
 (* the program: its arguments (its name first; -h: how) to how it ends *)
 val main : < caps; .. > -> string array -> Exit.t

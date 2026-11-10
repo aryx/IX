@@ -73,5 +73,5 @@ tiny/TinyBrowser/TinyBrowserTokens.ml:23: dead: TinyBrowserTokens.tag, in init b
 tiny/TinyBrowser/TinyBrowserTokens.ml:75: dead: TinyBrowserTokens.tag_end, in init but no call goes through the pointer
 tiny/TinyBrowser/TinyBrowserTokens.ml:89: dead: TinyBrowserTokens.scan, in init but no call goes through the pointer
 tiny/TinyKernel/TinyKernelNetwork.ml:298: dead: TinyKernelNetwork.il_readable, nothing names it
-tiny/TinyLibSymbols.ml:62: dead: TinyLibSymbols.address, nothing names it
+tiny/TinyLibMachine.ml:397: dead: TinyLibMachine.address, nothing names it
 tiny/TinyMachine.ml:645: dead: TinyMachine:fun at line 645, nothing names it

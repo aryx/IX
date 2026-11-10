@@ -26,12 +26,12 @@ let read_profile caps (file : Fpath.t) =
   counts
 
 (* the functions of tiny-linker's maps (-map: "address label" lines),
- * by address (TinyLibSymbols's, as the function an address is in) *)
+ * by address (TinyLibMachine's, as the function an address is in) *)
 let functions caps (files : Fpath.t list) =
-  TinyLibSymbols.labels
+  TinyLibMachine.labels
     (String.concat "\n" (List.map (TinyLibSystem.read_file caps) files))
 let find funcs pc =
-  match TinyLibSymbols.find funcs pc with Some (f, _) -> f | None -> "?"
+  match TinyLibMachine.find funcs pc with Some (f, _) -> f | None -> "?"
 
 (* 1234567 as 1,234,567 *)
 let commas n =

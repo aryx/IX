@@ -22,7 +22,7 @@ and rate_csr = 14
 and cores_csr = 15
 (* the text's window, with split (below) *)
 and tbase_csr = 16 and tbound_csr = 17
-let csr_names = TinyMachineISA.csr_names
+let csr_names = TinyLibMachine.csr_names
 let read_only k =
   k = time || k = core_csr || k = ip || k = rate_csr || k = cores_csr
 
@@ -476,7 +476,7 @@ let user_only = 0x40000000
 let tables (m : TinyMachineCPU.machine) sat va =
   let entry at =
     if not (TinyMachineCPU.ult at memsize) then raise (Trap (c_fault, va));
-    TinyMachineCPU.load m TinyMachineISA.W at in
+    TinyMachineCPU.load m TinyLibMachine.W at in
   let e1 = entry (((sat land 0x3fffff) lsl 12) + (4 * (va lsr 22))) in
   if e1 land 1 = 0 || e1 land 14 <> 0 then raise (Trap (c_fault, va));
   entry (((e1 lsr 10) lsl 12) + (4 * ((va lsr 12) land 0x3ff)))
@@ -626,8 +626,8 @@ let extra mc (m : TinyMachineCPU.machine) w =
   end
   else if op = 0x3d then begin
     let at = m.r.(k land 15) in
-    let old = load mc m TinyMachineISA.W at in
-    store mc m TinyMachineISA.W at m.r.(a);
+    let old = load mc m TinyLibMachine.W at in
+    store mc m TinyLibMachine.W at m.r.(a);
     if d <> 0 then m.r.(d) <- old;
     next ()
   end
@@ -660,7 +660,7 @@ let extra mc (m : TinyMachineCPU.machine) w =
 
 let env mc : TinyMachineCPU.env = {
   fetch =
-    (fun m pc -> TinyMachineCPU.load m TinyMachineISA.W (translate mc m Exec pc));
+    (fun m pc -> TinyMachineCPU.load m TinyLibMachine.W (translate mc m Exec pc));
   load = load mc;
   store = store mc;
   sys = (fun _ n -> raise (Trap (c_sys, n)));
@@ -696,7 +696,7 @@ let show w =
 let create ~put ~on_open ~send ~hear ~disk ~events image =
   TinyMachineCPU.memsize := memsize;
   let m : TinyMachineCPU.machine = TinyMachineCPU.boot image in
-  m.r.(TinyMachineISA.sp) <- devices;
+  m.r.(TinyLibMachine.sp) <- devices;
   let c = Array.make (Array.length csr_names) 0 in
   c.(status) <- supervisor_bit;
   c.(timecmp) <- 0xffffffff;
@@ -727,7 +727,7 @@ let core mc k =
   c.(ie_csr) <- i_timer;
   c.(core_csr) <- k;
   let r = Array.make 16 0 in
-  r.(TinyMachineISA.sp) <- devices;
+  r.(TinyLibMachine.sp) <- devices;
   { mc with cpu = { r; pc = 0; mem = mc.cpu.mem }; csr = c; events = [];
             touched = false; waiting = false; spent = [| 0; 0; 0 |];
             tlb_tag = Array.make tlb_size (-1); tlb_pte = Array.make tlb_size 0 }

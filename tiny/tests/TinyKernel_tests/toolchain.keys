@@ -8,9 +8,9 @@ as -o sys.o src/TinyKernel/libc/sys.tm
 as libc.tm; as ping.tm
 ld -s -n -o ping start.o udivmod.o libc.o sys.o ping.o
 cmp ping /bin/ping && echo ping: /bin/ping
-cd /src/TinyMachine; ml -c -o /isa.tm TinyMachineISA.ml; cd /
-cmp isa.tm /examples/TinyMachineISA.tm && echo isa.tm: the host
-cmp isa.tmi /examples/TinyMachineISA.tmi && echo isa.tmi: the host
-as isa.tm; cmp isa.o /examples/TinyMachineISA.o && echo isa.o: the host
+cd /src; ml -c -o /mach.tm TinyLibMachine.ml; cd /
+cmp mach.tm /examples/TinyLibMachine.tm && echo mach.tm: the host
+cmp mach.tmi /examples/TinyLibMachine.tmi && echo mach.tmi: the host
+as mach.tm; cmp mach.o /examples/TinyLibMachine.o && echo mach.o: the host
 ls -l /bin/as /bin/ld /bin/cc /bin/ml
 exit

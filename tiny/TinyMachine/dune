@@ -2,12 +2,13 @@
 ; programs): the CPU, the devices, the wire's other end, and the
 ; programs beside it, its window, its socket and its page
 
+; the CPU, on ../TinyLibMachine.ml's instructions (old: with them here,
+; TinyMachineISA, and TinyMachineAsm, the toolchain's)
 (library
  (name tiny_machine_cpu)
  (wrapped false)
- (modules TinyMachineISA TinyMachineAsm TinyMachineCPU)
- ; (the objects' show_item, tiny-linker -debug's)
- (preprocess (pps ppx_deriving.show)))
+ (modules TinyMachineCPU)
+ (libraries tiny_lib_machine))
 
 ; tiny-machine's machine without a host: TinyMachine's and TinyMachineWeb's
 (library

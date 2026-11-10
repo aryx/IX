@@ -22,7 +22,7 @@
 // its top, so the partition ends at the first megabyte boundary above
 // argv (partitions are whole megabytes).
 #include "../../TinyMLRuntime/core.c"
-#include "../libc/user.h"
+#include "../../TinyKernel/libc/user.h"
 
 #define VSTACK 0x60000
 

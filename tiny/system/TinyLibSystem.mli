@@ -3,16 +3,16 @@
  * compilers, the assembler and the linker, the build system, the
  * version control, the database, the line editor, the profiler. Such a
  * tool's files name only this and the pure functions of the standard
- * library; there are two files of this:
+ * library; there are two files of this, beside it:
  *
  *               TinyShell.ml, TinyUtilities.ml, ...
  *            ___________/        \___________
  *   on the host                        on tiny-machine
- *   TinyKernel/host/TinyLibSystem.ml   TinyKernel/libml/TinyLibSystem.ml
- *   (this one's), OCaml, built by      built by tiny-ml,
- *   dune or mini-mk                    on TinyLibCore/
+ *   unix/TinyLibSystem.ml, OCaml,      tinykernel/TinyLibSystem.ml,
+ *   built by dune or mini-mk           built by tiny-ml,
+ *                                      on TinyLibCore/
  *   over Unix, Cap, FS, Procs          over tiny-kernel's calls
- *   Linux                              tiny-kernel
+ *   Linux, macOS                       tiny-kernel
  *
  * So the interface is what both systems can give, which is the
  * smaller one's, tiny-kernel's: a descriptor is a number, a call that

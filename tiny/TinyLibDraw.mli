@@ -16,8 +16,8 @@
  *
  *     a program            TinyAppTetris on TinyLibPlayground, TinyWindows
  *        | d_fill ...      this file: makes a string of 19 bytes
- *        | written on 3    on tiny-machine: a system call (TinyKernel/
- *        |                 libml's TinyCalls.ml); on the host: TinyCalls,
+ *        | written on 3    on tiny-machine: a system call (system/
+ *        |                 tinykernel/TinyCalls.ml); on the host: TinyCalls,
  *        |                 which keeps it for the test to check
  *        | (through a pipe, renumbered by TinyWindows, when in a window)
  *        | [messages]      TinyKernelGraphics: inside TinyKernel; on the

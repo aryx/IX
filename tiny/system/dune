@@ -1,0 +1,28 @@
+; What a tiny program asks of its system, as two interfaces, each with an
+; implementation for each system it runs on (README.md):
+;
+; - TinyLibSystem.mli, a tool's system: files, directories, processes,
+;   the clock. unix/ is it over OCaml's Unix (Linux, macOS);
+;   tinykernel/ over tiny-kernel's calls, compiled by tiny-ml.
+; - TinyCalls.mli, tiny-kernel's calls themselves, what a graphical
+;   program draws and reads its keys with. tinykernel/ is the kernel's
+;   (externals, mlsys.c); sdl/ a window's, on the host; stub/ the tests'.
+;
+; dune builds the host's sides: both are virtual libraries here, their
+; implementations in the directories below (tinykernel/ has no dune file:
+; only tiny-ml compiles it, TinyKernel/Makefile).
+
+(library
+ (name tiny_lib_system)
+ (wrapped false)
+ (modules TinyLibSystem)
+ (virtual_modules TinyLibSystem)
+ (default_implementation tiny_lib_system_unix)
+ (libraries ix_core fpath caps))
+
+(library
+ (name tiny_calls)
+ (wrapped false)
+ (modules TinyCalls)
+ (virtual_modules TinyCalls)
+ (default_implementation tiny_calls_stub))

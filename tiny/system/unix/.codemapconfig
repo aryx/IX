@@ -1,0 +1,43 @@
+// tiny/system/unix/: what the code map says of it (the code map: tinybox
+// codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). TinyLibSystem
+// (../TinyLibSystem.mli) over OCaml's Unix, for the tools on Linux and
+// macOS; tiny-kernel's is ../tinykernel/TinyLibSystem.ml.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-10' },
+  summary: "TinyLibSystem on Linux and macOS: lib_core's Cap, FS and Procs over Unix.",
+  files: {
+    'TinyLibSystem.ml': { digest: 'd5bd277679fc',
+      summary: "TinyLibSystem on the host: lib_core's Cap, FS and Procs over Unix, a descriptor an int by Obj.magic.",
+      important: [
+        { at: 'def:fd', say: "Unix's descriptor is an int: Obj.magic", weight: 2 },
+        { at: 'def:reason', say: "the system's message in Failure", weight: 1 },
+        { at: 'def:main', say: 'Cap.main, the tool called with all caps', weight: 2 },
+        { at: 'def:exec', weight: 2 },
+        { at: 'def:status', say: "a Unix status as rc's string", weight: 1 },
+        { at: 'def:shell', weight: 1 },
+      ],
+      related: ['../TinyLibSystem.mli', '../tinykernel/TinyLibSystem.ml'],
+    },
+  },
+  skeletons: [
+    {
+      name: "TinyLibSystem on the host: a tool's calls to Unix",
+      bones: [
+        { at: 'TinyLibSystem.ml:def:main', role: 'Cap.main, the tool given its caps' },
+        { at: 'TinyLibSystem.ml:def:fd', role: 'a number to a descriptor' },
+        { at: 'TinyLibSystem.ml:def:fork', role: "CapUnix's fork" },
+        { at: 'TinyLibSystem.ml:def:exec', role: 'the program, its argv, its environment' },
+        { at: 'TinyLibSystem.ml:def:wait', role: "Procs.waitpid, rc's status" },
+        { at: 'TinyLibSystem.ml:def:status', role: "a status as rc's string" },
+      ],
+      joints: [
+        { from: 'TinyLibSystem.ml:def:main', to: 'TinyLibSystem.ml:def:fork', say: "the tool's" },
+        { from: 'TinyLibSystem.ml:def:fork', to: 'TinyLibSystem.ml:def:exec', say: 'in the child' },
+        { from: 'TinyLibSystem.ml:def:main', to: 'TinyLibSystem.ml:def:wait', say: 'in the parent' },
+        { from: 'TinyLibSystem.ml:def:wait', to: 'TinyLibSystem.ml:def:status', say: "Unix's" },
+        { from: 'TinyLibSystem.ml:def:exec', to: 'TinyLibSystem.ml:def:fd', say: 'descriptors' },
+      ],
+    },
+  ],
+}

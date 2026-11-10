@@ -1,9 +1,10 @@
-// tiny/TinyKernel/libml/: what the code map says of it (the code map:
+// tiny/system/tinykernel/: what the code map says of it (the code map:
 // tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there). What an ML
 // program of tiny-kernel is linked with to call it: mlsys.c (tiny-c,
 // TinyML's runtime included) and two files tiny-ml compiles, whose
-// twins for the host are ../host/'s. The calls cross from ML to C by
+// twins for the host are ../unix/'s and ../sdl/'s. The calls cross
+// from ML to C by
 // externals: the map's uses do not see that border.
 {
   generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
@@ -22,16 +23,16 @@
         { at: 'def:u_waits', say: 'pid and status in one ML integer', weight: 1 },
         { at: 'def:u_spawn_window', say: "a window's program: its five descriptors", weight: 1 },
       ],
-      related: ['../../TinyMLRuntime/core.c', '../libc/user.h', '../runtime.c'],
+      related: ['../../TinyMLRuntime/core.c', '../../TinyKernel/libc/user.h', '../../TinyKernel/runtime.c'],
     },
     'TinyCalls.ml': { digest: 'fbb2f0ed8fdd',
-      summary: "The kernel's calls for a program in ML: mlsys.c's functions named as externals; the host's are ../host/'s.",
+      summary: "The kernel's calls for a program in ML: mlsys.c's functions named as externals; the host's are ../sdl/'s and ../stub/'s.",
       important: [
         { at: 'def:u_write', weight: 2 },
         { at: 'def:u_fork', weight: 1 },
         { at: 'def:u_trace', say: 'the debugger and the tracer ask through it', weight: 1 },
       ],
-      related: ['mlsys.c', '../host/TinyCalls.mli'],
+      related: ['mlsys.c', '../TinyCalls.mli'],
     },
     'TinyLibSystem.ml': { digest: '3cf7c9e39dc6',
       summary: "TinyLibSystem on tiny-machine: a tool's system over tiny-kernel's calls, what the kernel lacks made up here.",
@@ -44,7 +45,7 @@
         { at: 'def:exec', weight: 1 },
         { at: 'def:shell', say: 'a script in a file that removes itself', weight: 1 },
       ],
-      related: ['../host/TinyLibSystem.mli', '../host/TinyLibSystem.ml', '../../TinyShell.ml'],
+      related: ['../TinyLibSystem.mli', '../unix/TinyLibSystem.ml', '../../TinyShell.ml'],
     },
   },
   skeletons: [
@@ -56,14 +57,14 @@
         { at: 'TinyLibSystem.ml:def:main', role: "a tool's main, its Failures said" },
         { at: 'TinyCalls.ml:def:u_fork', role: 'an external' },
         { at: 'mlsys.c:def:u_fork', role: "its C: the kernel's fork, ML's value back" },
-        { at: '../libc/user.h:def:fork', role: "sys.tm's stub" },
+        { at: '../../TinyKernel/libc/user.h:def:fork', role: "sys.tm's stub" },
       ],
       joints: [
         { from: 'mlsys.c:def:main', to: '../../TinyMLRuntime/core.c:def:ml_run', say: 'stack, two halves' },
         { from: '../../TinyMLRuntime/core.c:def:ml_run', to: 'TinyLibSystem.ml:def:main', say: "the program's toplevel" },
         { from: 'TinyLibSystem.ml:def:main', to: 'TinyCalls.ml:def:u_fork', say: "the tool's calls" },
         { from: 'TinyCalls.ml:def:u_fork', to: 'mlsys.c:def:u_fork', say: 'external: no map edge' },
-        { from: 'mlsys.c:def:u_fork', to: '../libc/user.h:def:fork', say: 'sys 3' },
+        { from: 'mlsys.c:def:u_fork', to: '../../TinyKernel/libc/user.h:def:fork', say: 'sys 3' },
       ],
     },
     {

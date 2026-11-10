@@ -3,7 +3,7 @@
 // docs/claude_notes/codemapconfig_guidelines.md there). The programs of
 // tiny-kernel in C (sh, get, put, ping, httpd: linked with ../libc/ and
 // ../../TinyCRuntime/), and the last file of those in ML, a few lines
-// running a tiny program of ../../ (linked with ../libml/ and
+// running a tiny program of ../../ (linked with ../../system/tinykernel/ and
 // ../../TinyLibCore/). mltests.c is a test, off the map. cat, ls, wc
 // and the other utilities are ../../TinyUtilities.ml's (bin/utils).
 local skeletons = import '../../../skeletons.libsonnet';
@@ -165,14 +165,14 @@ local wrapper(file, prog, role) = {
         { at: 'emacs.ml', role: "an ML program's last file" },
         { at: 'www.ml', role: "an ML program's last file" },
         { at: '../libc/', role: 'the C programs: calls, draw, net' },
-        { at: '../libml/', role: "the ML programs': calls, the runtime" },
+        { at: '../../system/tinykernel/', role: "the ML programs': calls, the runtime" },
       ],
       joints: [
         { from: 'sh.c', to: '../libc/', say: 'linked with' },
         { from: 'get.c', to: '../libc/', say: 'linked with' },
         { from: 'httpd.c', to: '../libc/', say: 'linked with' },
-        { from: 'emacs.ml', to: '../libml/', say: 'linked with' },
-        { from: 'www.ml', to: '../libml/', say: 'linked with' },
+        { from: 'emacs.ml', to: '../../system/tinykernel/', say: 'linked with' },
+        { from: 'www.ml', to: '../../system/tinykernel/', say: 'linked with' },
       ],
     },
     wrapper('emacs.ml', '../../TinyEditorScreen.ml', 'the editor'),

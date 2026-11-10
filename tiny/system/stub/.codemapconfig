@@ -1,4 +1,4 @@
-// tiny/TinyKernel/host/stub/: what the code map says of it (the code
+// tiny/system/stub/: what the code map says of it (the code
 // map: tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there). dune's default
 // implementation of ../TinyCalls.mli.
@@ -13,7 +13,7 @@
         { at: 'def:u_write', weight: 2 },
         { at: 'def:u_argc', say: "tiny-ml compiles it too: no Sys.argv", weight: 1 },
       ],
-      related: ['../TinyCalls.mli', '../../TinyKernelGraphics.ml'],
+      related: ['../TinyCalls.mli', '../../TinyKernel/TinyKernelGraphics.ml'],
     },
   },
 }

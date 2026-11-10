@@ -275,7 +275,7 @@ Linux and under the tiny-machine. Anything we can improve?"
 
 **One path for both.** On tiny-machine, tiny-kernel draws a program's
 text with `TinyKernelGraphics`; on the host, the tiny programs in an
-SDL window (`tiny/sdl/TinyCalls.ml`) call the same module on an array.
+SDL window (`tiny/system/sdl/TinyCalls.ml`) call the same module on an array.
 So a font changed there changes both. A face is made a mask, a byte a
 pixel, the characters side by side, and a character is a draw of the
 ink through it (draw.tm's `glyphs` for a whole text of the regular

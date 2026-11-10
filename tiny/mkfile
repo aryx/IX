@@ -13,8 +13,8 @@ TOP=..
 D=$B/tiny
 LIBDIRS=lib_crypto
 <$TOP/mkfiles/mklibs
-# (the host's TinyLibSystem first: TinyKernel/libml/'s is tiny-ml's)
-INCLUDES=-I TinyKernel/host -I . -I $D -I TinyMachine -I TinyKernel -I TinyBrowser -I TinyML -I TinyC -I ../lib_crypto $STDI
+# (the interfaces, system/, and the Unix TinyLibSystem first: system/tinykernel/'s is tiny-ml's)
+INCLUDES=-I system -I system/unix -I . -I $D -I TinyMachine -I TinyKernel -I TinyBrowser -I TinyML -I TinyC -I ../lib_crypto $STDI
 START=$ML -start $STD $COMMONS
 LINK=$LD -H7 -nofollow
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
@@ -85,13 +85,13 @@ $D/TinyBuildSystem.$O: $D/TinyLibSystem.$O TinyBuildSystem.ml
 $D/tiny-build: $LIBA $D/TinyLibSystem.$O $D/TinyBuildSystem.$O $LIBS
 	$START Sha1 TinyLibSystem TinyBuildSystem Std_exit -o $D/TinyBuildSystem.start.$O
 	$LINK -o $target $D/TinyBuildSystem.start.$O $STDOBJS $LIBA $D/TinyLibSystem.$O $D/TinyBuildSystem.$O $STDEND
-# (the shell's system, the host's: TinyKernel/host/TinyLibSystem.ml;
-# TinyKernel/libml/TinyLibSystem.ml is tiny-machine's, tiny-ml's to
+# (the shell's system, the host's: system/unix/TinyLibSystem.ml;
+# system/tinykernel/TinyLibSystem.ml is tiny-machine's, tiny-ml's to
 # compile. Not beside TinyShell.ml: mini-ml looks for a module in the
 # directory of the file it compiles before any -I)
-$D/TinyLibSystem.$O: TinyKernel/host/TinyLibSystem.ml
+$D/TinyLibSystem.$O: system/unix/TinyLibSystem.ml
 	mkdir -p $D
-	$ML $INCLUDES -o $target TinyKernel/host/TinyLibSystem.ml
+	$ML $INCLUDES -o $target system/unix/TinyLibSystem.ml
 $D/TinyShell.$O: $D/TinyLibSystem.$O TinyShell.ml
 $D/tiny-shell: $D/TinyLibSystem.$O $D/TinyShell.$O $LIBS
 	$START TinyLibSystem TinyShell Std_exit -o $D/TinyShell.start.$O
@@ -161,8 +161,8 @@ clean:V:
 # beside TinyBrowserText, inlining its functions or not by which ended
 # first: test-ix-fixpoint's builds differed, one in two or three)
 DEPOBJ=D
-DEPDIRS=. TinyMachine TinyBrowser TinyML TinyC TinyKernel TinyKernel/host TinyKernel/steps/t6 $D
+DEPDIRS=. TinyMachine TinyBrowser TinyML TinyC TinyKernel TinyKernel/host system system/unix TinyKernel/steps/t6 $D
 DEPBROWSER=TinyBrowser/TinyBrowserText.ml TinyBrowser/TinyBrowserAddress.ml \
   TinyBrowser/TinyBrowserHttp.ml
-DEPUNITS=`{ls *.ml TinyMachine/*.ml $DEPBROWSER TinyML/*.ml TinyC/*.ml TinyKernel/TinyKernelNetwork.ml TinyKernel/host/*.ml TinyKernel/steps/t6/TinyMkfs.ml | sed 's,.*/,,; s,\.ml$,,'}
+DEPUNITS=`{ls *.ml TinyMachine/*.ml $DEPBROWSER TinyML/*.ml TinyC/*.ml TinyKernel/TinyKernelNetwork.ml TinyKernel/host/*.ml system/unix/*.ml TinyKernel/steps/t6/TinyMkfs.ml | sed 's,.*/,,; s,\.ml$,,'}
 <$TOP/mkfiles/mkdepend

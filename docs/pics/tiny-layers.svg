@@ -61,7 +61,7 @@
 <text x="352" y="433" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyLibCore/: OCaml&#x27;s modules as</text>
 <text x="352" y="450" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny programs name them (Stdlib, List,</text>
 <text x="352" y="467" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">String, Buffer, Hashtbl...), the first</text>
-<text x="352" y="484" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">units of every program; TinyKernel/libml/</text>
+<text x="352" y="484" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">units of every program; system/tinykernel/</text>
 <text x="352" y="501" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyCalls.ml: the kernel&#x27;s calls</text>
 <line x1="486" y1="514" x2="486" y2="532" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <rect x="338" y="534" width="296" height="125" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
@@ -69,7 +69,7 @@
 <text x="622" y="557" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">C, by tiny-c</text>
 <text x="352" y="578" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyMLRuntime/core.c: the allocator,</text>
 <text x="352" y="595" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">Cheney&#x27;s collector, strings, compare;</text>
-<text x="352" y="612" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">included by TinyKernel/libml/mlsys.c</text>
+<text x="352" y="612" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">included by system/tinykernel/mlsys.c</text>
 <text x="352" y="629" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">(the heap in the program&#x27;s megabyte,</text>
 <text x="352" y="646" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">the calls as C functions)</text>
 <line x1="486" y1="659" x2="486" y2="677" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>

@@ -1,0 +1,67 @@
+// tiny/system/: what the code map says of it (the code map: tinybox
+// codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). What a tiny
+// program asks of its system, as two interfaces here, each with a
+// directory below for each system: unix/ (the host's TinyLibSystem),
+// tinykernel/ (tiny-ml's, over the kernel's calls), sdl/ and stub/ (the
+// host's TinyCalls, a window's and the tests').
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-10' },
+  summary: "The tiny programs' two seams: a tool's system and the kernel's calls, an implementation for each system.",
+  files: {
+    'TinyCalls.mli': { digest: '8e72cc9db943',
+      summary: "tiny-kernel's calls: one interface, three implementations (the kernel's externals, an SDL window, the tests' stub).",
+      capitals: [
+        { at: 'def:u_write', say: 'descriptor 3: the drawing messages' },
+      ],
+      important: [
+        { at: 'comment:"three implementations"', say: 'one interface, a program choosing at link time', weight: 3 },
+        { at: 'def:u_write', weight: 2 },
+        { at: 'def:u_read', weight: 1 },
+        { at: 'def:u_ready', say: 'the event loop: a key, the mouse, or the clock', weight: 2 },
+        { at: 'def:drawn', say: "the stub's: what was drawn, for a test", weight: 1 },
+      ],
+      related: ['stub/TinyCalls.ml', 'sdl/TinyCalls.ml', 'tinykernel/TinyCalls.ml'],
+    },
+    'TinyLibSystem.mli': { digest: '65ba1ff12b63',
+      summary: "What a tool asks of its system, cut to tiny-kernel's: one interface, two files, so tiny-shell runs on both.",
+      capitals: [
+        { at: 'def:exec', say: 'a program run: the one interface on two systems' },
+      ],
+      important: [
+        { at: 'comment:"So the interface is what both systems can give"', weight: 3 },
+        { at: 'def:main', weight: 2 },
+        { at: 'def:fork', weight: 2 },
+        { at: 'def:exec', weight: 2 },
+        { at: 'def:wait', say: "a status already rc's string", weight: 1 },
+        { at: 'def:dup2', weight: 1 },
+        { at: 'def:shell', say: 'a recipe run by the system shell', weight: 1 },
+      ],
+      related: ['unix/TinyLibSystem.ml', 'tinykernel/TinyLibSystem.ml', '../TinyShell.ml', '../TinyUtilities.ml'],
+    },
+  },
+  skeletons: [
+    {
+      name: 'The two seams and their sides',
+      bones: [
+        { at: 'TinyLibSystem.mli', role: "a tool's system, cut to tiny-kernel's" },
+        { at: 'unix/', role: 'on Linux and macOS: over Unix and lib_core' },
+        { at: 'tinykernel/', role: "on tiny-kernel: over its calls, by tiny-ml" },
+        { at: 'TinyCalls.mli', role: "the kernel's calls" },
+        { at: 'sdl/', role: "a window's implementation" },
+        { at: 'stub/', role: "the tests' implementation" },
+      ],
+      joints: [
+        { from: 'unix/', to: 'TinyLibSystem.mli', say: 'implements' },
+        { from: 'tinykernel/', to: 'TinyLibSystem.mli', say: 'implements, by tiny-ml' },
+        { from: 'tinykernel/', to: 'TinyCalls.mli', say: 'implements: externals' },
+        { from: 'sdl/', to: 'TinyCalls.mli', say: 'implements' },
+        { from: 'stub/', to: 'TinyCalls.mli', say: 'implements' },
+      ],
+    },
+  ],
+  views: [
+    { name: 'TinyLibSystem, on Unix and on tiny-kernel', files: ['TinyLibSystem.mli', 'unix/TinyLibSystem.ml', 'tinykernel/TinyLibSystem.ml'] },
+    { name: 'TinyCalls: the interface and its three implementations', files: ['TinyCalls.mli', 'stub/TinyCalls.ml', 'sdl/TinyCalls.ml', 'tinykernel/TinyCalls.ml'] },
+  ],
+}

@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* TinyKernel.ml's calls on the host, in a window of SDL's (see
- * ../TinyKernel/host/TinyCalls.mli): what tiny-office, tiny-emacs,
+ * ../TinyCalls.mli): what tiny-office, tiny-emacs,
  * tiny-calc and tiny-tetris run on, as their kernel's calls on
  * tiny-machine.
  *

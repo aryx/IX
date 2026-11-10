@@ -64,7 +64,7 @@
  *
  * context:
  * The same file on two systems: as TinyShell.ml, it names only
- * TinyLibSystem (TinyKernel/host/TinyLibSystem.mli) and the pure
+ * TinyLibSystem (system/TinyLibSystem.mli) and the pure
  * functions of the standard library, so it is tiny-kernel's utils and
  * the host's tiny-utils.
  *

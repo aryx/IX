@@ -3,11 +3,11 @@
 
 (* TinyLibSystem on tiny-machine: what a tool asks of the system (the
  * shell, the utilities, the compilers, the assembler and the linker,
- * the build system, the editor...; ../host/TinyLibSystem.mli says each
+ * the build system, the editor...; ../TinyLibSystem.mli says each
  * function), over tiny-kernel's calls (mlsys.c's, beside this file;
  * TinyCalls.ml names them).
  *
- * Not in tiny/ with the other TinyLibXxx.ml: the host's file has the
+ * Not in tiny/ with the other TinyLibXxx.ml: the host's file (../unix/) has the
  * same name, as it must (TinyShell.ml names one module), and mini-ml
  * looks for a module beside the file it compiles before anywhere else.
  *

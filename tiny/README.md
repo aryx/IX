@@ -88,8 +88,8 @@ of the system:
     `TinyKernelAudio`),
     its assembly and C, its programs (`user/`: the ones in C, and
     the last file of the ones in ML) and what they are linked with
-    to call it, `libc/` for C (`user.h`, `sys.tm`, `draw.c`, `net.c`)
-    and `libml/` for ML (`mlsys.c`, `TinyCalls.ml`, `TinyLibSystem.ml`);
+    to call it, `libc/` for C (`user.h`, `sys.tm`, `draw.c`, `net.c`);
+    for ML, `system/tinykernel/` (below);
   - `TinyMachine.ml` (and `TinyCPU.ml`) and `TinyMachine/`: the CPU
     (`TinyMachineCPU`), its instructions' words and its assembly
     (`TinyMachineISA`, `TinyMachineAsm`), the devices (`TinyMachineDevices`), the other
@@ -105,11 +105,16 @@ built by dune with OCaml, for its tests. The machine alone
 the host's; the toolchain is both, the host's building tiny-kernel,
 tiny-kernel's (`cc`, `ml`, `as`, `ld`) making the same files there
 ([`plan_tiny_self_hosting.md`](../docs/plans/done/plan_tiny_self_hosting.md),
-step 7). A tool asks the system through `TinyLibSystem`, a file for
-each side (`TinyKernel/host/TinyLibSystem.ml` over Unix,
-`TinyKernel/libml/TinyLibSystem.ml` over the kernel's calls), so a
-recipe of `build` is in its system's shell; a graphical program asks
-through `TinyCalls` (below).
+step 7).
+
+A program can run on both systems because it never names either: it
+names one of two interfaces, in [`system/`](system/README.md), each
+with an implementation for each system. A tool asks through
+`system/TinyLibSystem.mli` (`system/unix/TinyLibSystem.ml` over
+OCaml's Unix, on Linux and macOS; `system/tinykernel/TinyLibSystem.ml`
+over the kernel's calls), so a recipe of `build` is in its system's
+shell; a graphical program asks through `system/TinyCalls.mli`, the
+kernel's calls themselves (below).
 
 [docs/projects.md](../docs/projects.md#what-a-tiny-program-stands-on)
 has the picture: for a tool on the host, for a program in ML or in C
@@ -152,15 +157,17 @@ The graphical programs (`./tiny-machine -window tiny-kernel`, then
 `windows`, and `tetris` in a window) are built by dune too, as
 libraries, and tested on the host first. Three small files stand
 between them and their machine: `TinyLibDraw.ml` (a program's side of the drawing
-messages), and what the machine gives, by OCaml on the host,
-`TinyMemory.ml` (its bytes: an array) and `TinyCalls` (the kernel's
-calls), both in `TinyKernel/host/`; on tiny-machine these two are
-externals (`TinyKernel/TinyMemory.ml`, `TinyKernel/libml/TinyCalls.ml`).
-`TinyCalls` is a virtual library of dune's (`TinyCalls.mli`) with two
-implementations: the tests' stub (`TinyKernel/host/stub/`: what is
-drawn kept, no keys) and a window's ([`sdl/`](sdl/TinyCalls.ml): what
-is drawn drawn by `TinyKernelGraphics.ml` and shown by SDL, the
-window's mouse and keys, the host's files, clock and web), on which
+messages), and what the machine gives: `TinyMemory.ml` (its bytes,
+for the kernel's drawing: an array on the host,
+`TinyKernel/host/TinyMemory.ml`; externals on tiny-machine,
+`TinyKernel/TinyMemory.ml`) and `TinyCalls` (the kernel's calls,
+`system/TinyCalls.mli`; externals on tiny-machine,
+`system/tinykernel/TinyCalls.ml`). On the host `TinyCalls` is a
+virtual library of dune's with two implementations: the tests' stub
+(`system/stub/`: what is drawn kept, no keys) and a window's
+([`system/sdl/`](system/sdl/TinyCalls.ml): what is drawn drawn by
+`TinyKernelGraphics.ml` and shown by SDL, the window's mouse and keys,
+the host's files, clock and web), on which
 the programs' own few lines in `TinyKernel/user/` are built for the
 host as they are: tiny-office, tiny-emacs, tiny-calc, tiny-tetris,
 tiny-www, tiny-troff, tiny-play.

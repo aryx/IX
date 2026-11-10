@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyLibSystem.mli; this is the host's *)
+(* See ../TinyLibSystem.mli; this is the host's, over OCaml's Unix *)
 
 open Fpath_.Operators
 

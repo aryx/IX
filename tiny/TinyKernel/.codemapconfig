@@ -62,7 +62,7 @@ local kernel_color = '#c03030';
         { at: 'def:message', say: "a program's letter: a, f, c, d, l, s, t, p", weight: 3 },
         { at: 'def:messages', say: 'a bad message skipped, the rest still done', weight: 2 },
       ],
-      related: ['../TinyLibDraw.ml', '../../lib_graphics/', '../sdl/TinyCalls.ml'],
+      related: ['../TinyLibDraw.ml', '../../lib_graphics/', '../system/sdl/TinyCalls.ml'],
     },
     'TinyKernelGraphics.mli': { digest: 'fcdb2df39723',
       summary: "Tiny graphics' interface and idea: libdraw and libmemdraw cut to one operation, the kernel holding the pixels.",

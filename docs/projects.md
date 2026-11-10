@@ -94,7 +94,7 @@ things: a tool runs on the host, the others on tiny-machine.
   tiny-linker keeps what the program calls. Before them all come `tiny/TinyLibCore/`'s
   modules, tiny-ml's standard library. Under the ML: `TinyMLRuntime/core.c` (the
   allocator, the collector), given the program's memory by
-  `TinyKernel/libml/mlsys.c`, and `TinyCRuntime/` for the start and the
+  `system/tinykernel/mlsys.c`, and `TinyCRuntime/` for the start and the
   division.
 - **A program in C on tiny-machine** (`sh`, `mltests`, the network's
   `ping`, `get`, `put`, `httpd`) is one file of `TinyKernel/user/`,

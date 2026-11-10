@@ -67550,3 +67550,58 @@ Claude regrouped tiny/dune into five sections and split combined comments so eac
 Claude rewrote the opening paragraph of tiny/sdl/dune as three short paragraphs, keeping your executable reordering.
 Claude updated tiny/README.md's stale claims about the parts directories, the toolchain, and the sdl/ programs.
 Claude confirmed that dune build and mini-mk pass, then asked whether to commit the four files together.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 08:49
+
+**Yoann:**
+
+> yes let's commit
+
+**Claude (summary):**
+
+Claude committed sdl/TinyCalls.ml in commit 5fd35252, along with tiny/dune, sdl/dune, and README.md.
+Claude kept your reordering of the executables in sdl/dune, so the commit includes it unchanged.
+Claude ran only dune build and mini-mk in tiny/ before committing, skipping make test-tix and the TinyKernel check.
+Claude left tiny/Makefile uncommitted and noted that docs/yoann_notes/prompt-history.md appeared staged after the commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 08:54
+
+**Yoann:**
+
+> TinyLibSystem.ml and TinyCalls.ml are pretty important and allow to support both running on Linux/macOS/(and Windows) and also under tiny-kernel/tiny-machine on the other hand. But those files are deep in the hierarchy under TinyKernel/hosts/ and sdl/ so maybe we should reorganize things to make those more visible. The .mli are also important and are kind of the common interface, so I wonder if we want a tiny/interface/ or something and tiny/host/ or something, but I'm also not a fan of the word "host" which is not clear what it means really, but we cant use either linux because the tiny programs also work on macOS so unclear how we should reorganize things.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 08:54
+
+**Yoann:**
+
+> analyze and report
+
+**Claude (summary):**
+
+Claude recommended moving the tiny interfaces and implementations into a new `tiny/system/` directory layout.
+Claude proposed splitting the implementations into `unix/`, `tinykernel/`, `sdl/`, and `stub/` subdirectories, with `TinyLibSystem.mli` and `TinyCalls.mli` at the top.
+Claude suggested naming the tiny-kernel side `tinykernel/` and the Linux/macOS side `unix/`, avoiding the vague "host" name.
+Claude estimated about 135 references across roughly 40 files need updating, plus a README describing the two layers.
+Claude proposed leaving `sdl/` programs and `TinyKernel/libc/` in place, and keeping done plans under `docs/plans/done/` unchanged.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 09:05
+
+**Yoann:**
+
+> let's do it, I like your proposal
+
+**Claude (summary):**
+
+Claude moved the system interfaces and their implementations into `tiny/system/`, split into `unix/`, `tinykernel/`, `sdl/`, and `stub/`.
+Claude made `TinyLibSystem` a virtual dune library like `TinyCalls`, so its interface and Unix implementation can sit in different directories.
+Claude renamed the dune libraries to `tiny_calls`, `tiny_calls_stub`, and `tiny_calls_sdl`, and updated paths in the mkfile, scripts, and docs.
+Claude kept `TinyMemory.ml` in `TinyKernel/host/` and left the build output in `_make/libml/`, and it checked dune, tests, and self-quick, but not full `make self`.
+Claude proposed committing only the move, leaving out `tiny/Makefile` and `prompt-history.md`, which another session's commit 0d60ab2b already touched.

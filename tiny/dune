@@ -76,7 +76,8 @@
 ; The host's tools on TinyLibSystem
 ;*****************************************************************************
 
-; (TinyLibSystem is TinyKernel/host/'s here; tiny-kernel has its own)
+; (TinyLibSystem is system/unix/'s here, over OCaml's Unix; tiny-kernel has
+; its own, system/tinykernel/)
 
 (executable
  (name TinyBuildSystem)
@@ -141,7 +142,7 @@
  (name tiny_lib_playground)
  (wrapped false)
  (modules TinyLibPlayground)
- (libraries tiny_lib_draw tiny_host_calls))
+ (libraries tiny_lib_draw tiny_calls))
 
 ; TinyLibGUI.ml, what a program with buttons is written on
 (library

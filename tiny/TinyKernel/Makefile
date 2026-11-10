@@ -91,8 +91,9 @@
 #
 # user/ has the programs, a file each (the ones in C; an ML one's
 # last file, which runs it); libc/ what a C program is linked with to
-# call this kernel (user.h, sys.tm, draw.c, net.c); libml/ the same
-# for an ML one (mlsys.c, TinyCalls.ml, TinyLibSystem.ml).
+# call this kernel (user.h, sys.tm, draw.c, net.c); ../system/tinykernel/
+# the same for an ML one (mlsys.c, TinyCalls.ml, TinyLibSystem.ml), beside
+# the other systems' TinyCalls and TinyLibSystem (../system/README.md).
 #
 # What is built goes to _make/ and nowhere else, so that this
 # directory shows the sources: _make/*.tm the kernel's assembly, *.o
@@ -143,6 +144,9 @@ LINKS = editor:emacs sam:ed
 # utils's names (TinyUtilities.ml's table)
 UTILS = [ basename cat cmp cp date du echo grep kill ln ls mkdir mv ps pwd rm seq sleep sort tail tee test touch walk wc xd
 L = ../TinyCRuntime
+# an ML program's system on tiny-kernel: mlsys.c, TinyCalls.ml and
+# TinyLibSystem.ml
+SYS = ../system/tinykernel
 ULIB = $(O)/start.o $(O)/udivmod.o $(O)/libc.o $(O)/libc/sys.o
 
 all: $(O)/boot.img
@@ -206,8 +210,11 @@ $(O)/libc.tm: $(L)/libc.c $(L)/libc.h $(TCBIN)
 
 # a file in C: the kernel's runtime.c, a program of user/, or what a
 # program is linked with besides: libc/ for one in C (draw.c, net.c),
-# libml/ for one in ML (mlsys.c)
+# $(SYS)/mlsys.c for one in ML (its object in libml/)
 $(O)/%.tm: %.c libc/user.h $(TCBIN)
+	@mkdir -p $(@D)
+	$(TC) -o $@ $<
+$(O)/libml/mlsys.tm: $(SYS)/mlsys.c libc/user.h ../TinyMLRuntime/core.c $(TCBIN)
 	@mkdir -p $(@D)
 	$(TC) -o $@ $<
 
@@ -304,8 +311,8 @@ I_TinyDebugger = $(GUI) TinyMachineISA TinyLibSymbols
 I_Trace = TinyCalls TinyTracer
 I_Debug = $(I_TinyDebugger) TinyDebugger
 # each unit's file
-F_TinyCalls = libml/TinyCalls.ml
-F_TinyLibSystem = libml/TinyLibSystem.ml
+F_TinyCalls = $(SYS)/TinyCalls.ml
+F_TinyLibSystem = $(SYS)/TinyLibSystem.ml
 F_Square = ../tests/TinyLibPlayground_tests/Square.ml
 F_Machine = ../tests/TinyLibPlayground_tests/machine.ml
 F_Tetris = user/tetris.ml
@@ -362,8 +369,8 @@ $(UNITS:%=$(U)/%.tm): $(U)/%.tm: $$(addprefix $(U)/,$$(addsuffix .tmi,$$(I_$$*))
 $(UNITS:%=$(U)/%.tmi): $(U)/%.tmi: $(U)/%.tm ;
 
 # each program's units, in their order (windows: tiny-windows, after
-# ../TinyLibDraw.ml; rc: tiny-shell, on libml/TinyLibSystem.ml, the system's
-# calls it asks for (the host's is host/TinyLibSystem.ml); utils and ed
+# ../TinyLibDraw.ml; rc: tiny-shell, on $(SYS)/TinyLibSystem.ml, the system's
+# calls it asks for (the host's is ../system/unix/TinyLibSystem.ml); utils and ed
 # with ../TinyLibRegex.ml for grep; emacs, office, troff, play, www:
 # run by ../TinyLibGUI.ml's run_canvas; square: the playground's
 # test's); its memory when it asks for more than 1 MB, linked as an
@@ -411,7 +418,6 @@ MEM_ld = -a 64
 MEM_cc = -a 16
 MEM_ml = -a 32
 MEM_build = -a 16
-$(O)/libml/mlsys.tm: ../TinyMLRuntime/core.c
 $(O)/main/%.tm: $$(addprefix $(U)/,$$(addsuffix .tmi,$$(UNITS_$$*))) $(O)/lib/Stdlib.tm $(TMLBIN)
 	@mkdir -p $(@D)
 	$(TML_L) -o $@ $(filter %.tmi,$^)
@@ -461,7 +467,7 @@ EXAMPLES = steps/t6/user/wc.c user/sh.c user/emacs.ml ../TinyEditorScreen.ml exa
 # Plan 9's, as /sys is principia's devsys)
 C_PROGS = sh mltests ping get put httpd
 SRC_FILES = entry.tm draw.tm memory.tm end.tm runtime.c $(KML) \
-	$(foreach u,$(UNITS),$(or $(F_$(u)),../$(u).ml)) $(CORE:%=../TinyLibCore/%.ml) libc/user.h libc/sys.tm libc/draw.c libc/draw.h libc/net.c libml/mlsys.c \
+	$(foreach u,$(UNITS),$(or $(F_$(u)),../$(u).ml)) $(CORE:%=../TinyLibCore/%.ml) libc/user.h libc/sys.tm libc/draw.c libc/draw.h libc/net.c $(SYS)/mlsys.c \
 	../TinyMLRuntime/core.c ../TinyCRuntime/start.tm ../TinyCRuntime/udivmod.tm ../TinyCRuntime/libc.c ../TinyCRuntime/libc.h examples/paint.c $(C_PROGS:%=user/%.c)
 # (a path of this directory's, as tiny/'s)
 tiny = $(patsubst TinyKernel/../%,%,$(addprefix TinyKernel/,$(1)))
@@ -538,8 +544,8 @@ kernel.img: $(KERNEL:$(O)/%=%)
 	cc -o $$target /src/TinyCRuntime/$$stem.c
 runtime.tm: $(K)/runtime.c /src/TinyMLRuntime/core.c
 	cc -o $$target $(K)/runtime.c
-libml/mlsys.tm: $(K)/libml/mlsys.c /src/TinyMLRuntime/core.c $(K)/libc/user.h
-	mkdir -p libml; cc -o $$target $(K)/libml/mlsys.c
+libml/mlsys.tm: $(call insrc,$(SYS)/mlsys.c) /src/TinyMLRuntime/core.c $(K)/libc/user.h
+	mkdir -p libml; cc -o $$target $(call insrc,$(SYS)/mlsys.c)
 libc/%.tm: $(K)/libc/%.c $(K)/libc/user.h $(K)/libc/draw.h
 	mkdir -p libc; cc -o $$target $(K)/libc/$$stem.c
 user/%.tm: $(K)/user/%.c $(K)/libc/user.h

@@ -70,7 +70,7 @@ val play : int -> string -> unit
  * host and on tiny-kernel. play is written on TinyCalls, as the
  * programs with a screen are, for the same reason: on the host its
  * device, /dev/audio, is not Unix's (the host's TinyLibSystem) but the
- * one ../sdl/TinyCalls.ml makes, as it makes their window. Its command
+ * one system/sdl/TinyCalls.ml makes, as it makes their window. Its command
  * line (the file read, /dev/audio opened, why not said) is
  * TinyKernel/user/play.ml's, a few lines, as troff's is
  * user/troff.ml's; the host's tiny-play compiles that same file. *)

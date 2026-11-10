@@ -1,0 +1,7 @@
+; TinyLibSystem over OCaml's Unix (../TinyLibSystem.mli), for the tools
+; on Linux and macOS (tiny-shell, tiny-utils, tiny-editor...).
+; tiny-kernel's is ../tinykernel/TinyLibSystem.ml.
+(library
+ (name tiny_lib_system_unix)
+ (implements tiny_lib_system)
+ (libraries ix_core fpath unix caps))

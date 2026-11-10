@@ -1,20 +1,21 @@
-(* TinyKernel.ml's calls, for a program built by OCaml, so that it runs
- * on the host: what TinyLibDraw.ml, TinyLibPlayground.ml, TinyLibGUI.ml
- * and the few lines of a program on them (TinyKernel/user/office.ml...)
- * ask of tiny-kernel. On tiny-machine these names are externals
- * (TinyKernel/libml/TinyCalls.ml, which names mlsys.c's functions).
+(* TinyKernel.ml's calls: what TinyLibDraw.ml, TinyLibPlayground.ml,
+ * TinyLibGUI.ml and the few lines of a program on them
+ * (TinyKernel/user/office.ml...) ask of tiny-kernel. One interface, and
+ * three implementations, a program choosing one when it is linked:
  *
- * A virtual library of dune's: this interface, and two
- * implementations, a program choosing one when it is linked:
+ *     tinykernel/TinyCalls.ml  on tiny-machine, by tiny-ml: externals,
+ *                           mlsys.c's functions, the kernel's calls
+ *     sdl/TinyCalls.ml      on the host, a window of SDL's: what is
+ *                           drawn drawn by TinyKernelGraphics.ml and
+ *                           shown, the mouse and the keys the window's,
+ *                           the host's files and clock (tiny-office,
+ *                           tiny-emacs... on the host: ../sdl/)
+ *     stub/TinyCalls.ml     on the host, the tests': no kernel; what is
+ *                           drawn kept in [drawn], for
+ *                           TinyKernelGraphics.ml; no key, no clock, no
+ *                           network (dune's default)
  *
- *     stub/TinyCalls.ml     the tests': no kernel; what is drawn kept in
- *                           [drawn], for TinyKernelGraphics.ml; no key,
- *                           no clock, no network (the default)
- *     ../../sdl/TinyCalls.ml  a window of SDL's: what is drawn drawn by
- *                           TinyKernelGraphics.ml and shown, the mouse
- *                           and the keys the window's, the host's files
- *                           and clock (tiny-office, tiny-emacs... on the
- *                           host)
+ * On the host, a virtual library of dune's (dune, beside this file).
  *
  * The descriptors are tiny-kernel's: 0 the keys, 1 the console, 3 where
  * a program draws, 4 its mouse (a box: x, y, the buttons, a word each). *)

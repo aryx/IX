@@ -68683,3 +68683,19 @@ Claude listed the uncommitted set: the regex tidy, the tenth-group fix with its 
 That set also includes `debug.cksum`, re-recorded because the alias shifted tiny-utils' layout, plus `bugs_tiny.txt` and `prompt-history.md`.
 In TinyUtilities.ml and TinyEditorLine.ml, Claude replaced `open` with `module Regex = TinyLibRegex` and qualified all calls.
 Claude then asked whether to commit those changes, and nothing was committed yet.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 21:23
+
+**Yoann:**
+
+> yes, let's commit
+
+**Claude (summary):**
+
+Claude asked whether to commit the uncommitted self.expected file and the plan's timing note.
+Claude had recorded self.expected from the make self run, cutting it from 311 lines to 198.
+The shorter list drops the as step for compiled files and the ml/TinyCalls.o entry, since no object-file step remains.
+Claude added the rough 1h06 versus 1h30 build-time comparison, from one run of each, to the plan's status.
+Earlier, Claude committed d97b7c9a, removed the _make3 and _make4 scratch directories, and reported make self passing.

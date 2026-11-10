@@ -208,3 +208,8 @@ same object by both roads; dune; `make test-tix`; `tiny_check.sh`
 (`check.expected`'s toolchain lines, `debug.cksum`: two registers of
 the debugged program, its layout moved by List.map) and self-quick
 (its expected lines: no `as` for a compiled file), in `_make3`.
+`make self` after, recorded (`self.expected`, 198 lines, old 311:
+no `as` for a compiled file): the first build's image the host's,
+byte for byte; 1 h 06 for its four builds, against 1 h 30 for the
+same run before stage 3 (one run each, on the same host, side by
+side for part of the time: a rough measure).

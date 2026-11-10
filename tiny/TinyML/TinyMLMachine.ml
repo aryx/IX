@@ -86,9 +86,9 @@ let start_asm () : asm =
 
 (* lines added to the current assembly's code, or to its data *)
 let add_text (ls : Asm.line list) =
-  List.iter (fun l -> Buffer.add_string (!current).text (Asm.print l)) ls
+  List.iter (fun l -> Buffer.add_string !current.text (Asm.print l)) ls
 let add_data (ls : Asm.line list) =
-  List.iter (fun l -> Buffer.add_string (!current).data (Asm.print l)) ls
+  List.iter (fun l -> Buffer.add_string !current.data (Asm.print l)) ls
 
 (* its text, for tiny-assembler: the code, then the data (.data) *)
 let asm_text (a : asm) : string =

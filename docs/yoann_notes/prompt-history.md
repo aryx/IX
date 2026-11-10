@@ -67418,3 +67418,47 @@ Claude's plan for items 1 and 2 was a test that `parse (print l) = l` across the
 That test would check the assembly syntax in both directions, since printing and parsing now live in one module.
 Item 2 would merge `TinyMachineISA.print` with TinyMachineAsm's printer, which differ only in register names and branch targets.
 Claude noted that the linker in `tiny/TinyLinker.ml` has uncommitted edits, so it would not touch that file.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 20:28
+
+**Yoann:**
+
+> yes let's do 1 and 2, and then 3
+
+**Claude (summary):**
+
+Claude committed steps 1 and 2 (c2e8a866, f5f81b0d) and TinyML's parts (a) and (b) (60c18efc, ab7e557f). It rewrapped the TinyML files and verified tiny-ml output stayed byte-identical. For TinyML's globals, Claude advised against threading `cur`, `text` and `data` through every function. It proposed instead that `machine` return `Asm.line list`, that TinyMLMachine hold code and data in one `asm` record, and that `cur` stay as module state.
+
+------------------------------------------------------------------------
+
+## 2026-11-09 21:12
+
+**Yoann:**
+
+> let's do that
+
+**Claude (summary):**
+
+Claude finished TinyML item 3 in three commits: 60c18efc, ab7e557f and 4a002547.
+Claude said the main item left from the earlier list is the other programs.
+Those open programs are the GUI layer, the debug tools, the browser and the apps.
+Claude's answer named no concrete next step for any of them, only the programs.
+Claude's answer did not say which of those programs would come first.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 07:44
+
+**Yoann:**
+
+> ok what's next?
+
+**Claude (summary):**
+
+Claude proposed fixing two tiny-ml parser quirks: `!r.f` parsing as `!(r.f)`, and qualified operators like `Common.( ||| )` being unread.
+Claude recommended doing the tiny-ml parser fixes first, with byte-identical outputs and a test for each.
+Claude also proposed switching the debugger's register panel to `ISA.reg_name`, so it shows `sp` and `lr` instead of `r14` and `r15`.
+Claude suggested doing both as one short step, then moving on to the GUI layer.
+The GUI tidy (TinyLibGUI, TinyLibPlayground, TinyLibDraw, TinyWindows) and the later tools came after that.

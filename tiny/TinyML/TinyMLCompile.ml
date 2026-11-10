@@ -2,9 +2,8 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See TinyMLCompile.mli *)
-(* (for its operator |||, an option's value or a default: tiny-ml does not
- * read Common.( ||| )) *)
-open Common
+(* Common's |||: an option's value, or a default *)
+let ( ||| ) = Common.( ||| )
 module Lexer = TinyMLLexer
 module Tree = TinyMLTree
 module Types = TinyMLTypes

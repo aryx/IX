@@ -122,6 +122,15 @@ if $TML -L $W/lib -c -o $W/units/A.tm $W/units/A.ml && $TML -L $W/lib -c -o $W/u
    && link_tm $W/units/clash $L/start.tm $L/udivmod.tm $W/exit.tm $W/units/cmain.tm $W/units/A.tm $W/units/Isa.tm $W/units/C.tm $W/main4096.tm $LIB_O \
    && [ "$(timeout 60 $CPU $W/units/clash 2>&1)" = "add MUL sub ADD" ]
 then echo "ok units: two units' constructors of one name, qualified"; else echo "FAIL units: two units' constructors of one name"; failures=$((failures + 1)); fi
+# a unit's operator named M.( op ), and through an alias (old: M taken
+# for a constructor)
+printf 'let ( +++ ) a b = (a * 10) + b\n' > $W/units/Ops.ml
+printf 'module O = Ops\nlet () = print_int (Ops.( +++ ) 1 2); print_int (O.( +++ ) 3 4)\n' > $W/units/D.ml
+if $TML -L $W/lib -c -o $W/units/Ops.tm $W/units/Ops.ml && $TML -L $W/lib -c -o $W/units/D.tm $W/units/Ops.tmi $W/units/D.ml \
+   && $TML -L $W/lib -o $W/units/dmain.tm $W/units/Ops.tmi $W/units/D.tmi \
+   && link_tm $W/units/ops $L/start.tm $L/udivmod.tm $W/exit.tm $W/units/dmain.tm $W/units/Ops.tm $W/units/D.tm $W/main4096.tm $LIB_O \
+   && [ "$(timeout 60 $CPU $W/units/ops 2>&1)" = "1234" ]
+then echo "ok units: a unit's operator, M.( op )"; else echo "FAIL units: a unit's operator, M.( op )"; failures=$((failures + 1)); fi
 TL="$TL -map" link_tm $W/units/prog $L/start.tm $L/udivmod.tm $W/exit.tm $W/units/prog_main.tm $W/units/Shapes.tm $W/units/Main.tm $W/main4096.tm $LIB_O
 if grep -q "Shapes.f[0-9]*_area$" $W/units/prog.map && ! grep -q "_unused" $W/units/prog.map; then echo "ok units: what nothing uses left out"
 else echo "FAIL units: the sweep"; failures=$((failures + 1)); fi

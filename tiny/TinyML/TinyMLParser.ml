@@ -247,73 +247,83 @@ and app () =
           Tree.App (f, [ Tree.Fun ([ m ], Tree.App (Tree.var m, [ msg ])) ])
       | _, l -> Tree.App (f, l))
 
-and atom () =
-  let e =
-    match peek () with
-    | Lexer.INT n -> advance (); Tree.Const (Tree.CInt n)
-    | Lexer.CHAR c -> advance (); Tree.Const (Tree.CChar c)
-    | Lexer.STR s -> advance (); Tree.Const (Tree.CStr s)
-    | Lexer.LID x -> advance (); Tree.var x
-    | Lexer.UID c -> advance (); Tree.Con (c, con_args c [] (fun _ _ -> None))
-    | Lexer.KW o when is_prefix o -> advance ();
-    Tree.App (Tree.var o, [ atom () ])
-    | Lexer.KW "(" -> (
-        advance ();
-        if accept (Lexer.KW ")") then Tree.Con ("()", [])
-        else
-          match peek (), peek_at 1 with
-          | Lexer.KW op, Lexer.KW ")" when is_op op -> advance (); advance ();
-          Tree.var op
-          | _ ->
-              let e = expr () in
-              if accept (Lexer.KW ":") || accept (Lexer.KW ":>") then
-                ignore (ty ());
-              expect (Lexer.KW ")");
-              e)
-    | Lexer.KW "begin" ->
-        advance ();
-        if accept (Lexer.KW "end") then Tree.Con ("()", [])
-        else (let e = expr () in expect (Lexer.KW "end"); e)
-    | Lexer.KW "[" ->
-        advance ();
-        let rec elems () =
-          if accept (Lexer.KW "]") then Tree.Con ("[]", [])
-          else (
-            let e = stmt () in
-            ignore (accept (Lexer.KW ";"));
-            Tree.Con ("::", [ e; elems () ]))
-        in
-        elems ()
-    | Lexer.KW "{" ->
-        advance ();
-        let rec fields () =
-          if accept (Lexer.KW "}") then []
-          else match peek () with
-            (* { text; pos = 0 }: a field alone is the variable of its name *)
-            | Lexer.LID l ->
-                advance ();
-                let e = if accept (Lexer.KW "=") then stmt () else Tree.var l in
-                ignore (accept (Lexer.KW ";"));
-                (l, e) :: fields ()
-            | _ -> fail () in
-        (* a label followed by =, ; or } begins the fields; anything else
-         * is the record that { e with ... } copies *)
-        (match peek (), peek_at 1 with
-         | Lexer.LID _,
-           Lexer.KW ("=" | ";" | "}") -> Tree.Record (fields (), ref [])
-         | _ ->
-             let e = atom () in
-             expect (Lexer.KW "with");
-             (match fields () with
-              | [] -> fail ()
-              | fs -> Tree.With (e, fs, ref [], ref 0)))
-    | Lexer.KW
-      ("let" | "match" | "try" | "fun" | "function" | "if" | "while" | "for")
-      ->
-        stmt ()
-    | _ -> fail ()
-  in
-  postfix e
+and atom () = postfix (simple ())
+
+(* an atom without its postfix (.l, .(i), .[i]): a prefix operator's
+ * operand, as OCaml's, whose !r.l is (!r).l (old: !(r.l)) *)
+and simple () =
+  match peek () with
+  | Lexer.INT n -> advance (); Tree.Const (Tree.CInt n)
+  | Lexer.CHAR c -> advance (); Tree.Const (Tree.CChar c)
+  | Lexer.STR s -> advance (); Tree.Const (Tree.CStr s)
+  | Lexer.LID x -> advance (); Tree.var x
+  (* M.( op ): M's operator, a value named M.op (old: M a constructor) *)
+  | Lexer.UID m
+    when peek_at 1 = Lexer.KW "." && peek_at 2 = Lexer.KW "("
+         && peek_at 4 = Lexer.KW ")"
+         && (match peek_at 3 with Lexer.KW o -> is_op o | _ -> false) ->
+      let o = match peek_at 3 with Lexer.KW o -> o | _ -> fail () in
+      advance (); advance (); advance (); advance (); advance ();
+      Tree.var (m ^ "." ^ o)
+  | Lexer.UID c -> advance (); Tree.Con (c, con_args c [] (fun _ _ -> None))
+  | Lexer.KW o when is_prefix o ->
+      advance ();
+      Tree.App (Tree.var o, [ simple () ])
+  | Lexer.KW "(" -> (
+      advance ();
+      if accept (Lexer.KW ")") then Tree.Con ("()", [])
+      else
+        match peek (), peek_at 1 with
+        | Lexer.KW op, Lexer.KW ")" when is_op op -> advance (); advance ();
+        Tree.var op
+        | _ ->
+            let e = expr () in
+            if accept (Lexer.KW ":") || accept (Lexer.KW ":>") then
+              ignore (ty ());
+            expect (Lexer.KW ")");
+            e)
+  | Lexer.KW "begin" ->
+      advance ();
+      if accept (Lexer.KW "end") then Tree.Con ("()", [])
+      else (let e = expr () in expect (Lexer.KW "end"); e)
+  | Lexer.KW "[" ->
+      advance ();
+      let rec elems () =
+        if accept (Lexer.KW "]") then Tree.Con ("[]", [])
+        else (
+          let e = stmt () in
+          ignore (accept (Lexer.KW ";"));
+          Tree.Con ("::", [ e; elems () ]))
+      in
+      elems ()
+  | Lexer.KW "{" ->
+      advance ();
+      let rec fields () =
+        if accept (Lexer.KW "}") then []
+        else match peek () with
+          (* { text; pos = 0 }: a field alone is the variable of its name *)
+          | Lexer.LID l ->
+              advance ();
+              let e = if accept (Lexer.KW "=") then stmt () else Tree.var l in
+              ignore (accept (Lexer.KW ";"));
+              (l, e) :: fields ()
+          | _ -> fail () in
+      (* a label followed by =, ; or } begins the fields; anything else
+       * is the record that { e with ... } copies *)
+      (match peek (), peek_at 1 with
+       | Lexer.LID _,
+         Lexer.KW ("=" | ";" | "}") -> Tree.Record (fields (), ref [])
+       | _ ->
+           let e = atom () in
+           expect (Lexer.KW "with");
+           (match fields () with
+            | [] -> fail ()
+            | fs -> Tree.With (e, fs, ref [], ref 0)))
+  | Lexer.KW
+    ("let" | "match" | "try" | "fun" | "function" | "if" | "while" | "for")
+    ->
+      stmt ()
+  | _ -> fail ()
 
 and postfix e =
   if accept (Lexer.KW ".[") then (

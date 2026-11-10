@@ -79,9 +79,9 @@ EOF
 # On tiny-cpu. The runtime and main are linked first, then the program,
 # then the heap's arrays. In the other order, main would be too far
 # for the start's call to reach it (a jump reaches 32K words).
-if ml_lib $W/lib && $TML -L $W/lib -o $W/b.tm $B/TinyBrowserText.ml $B/TinyBrowserTokens.ml $B/TinyBrowserLines.ml $B/TinyBrowserHtml.ml $T/Testutil_browser.ml $T/Tm.ml \
-   && $TC -o $W/tm.tm $T/tm.c && $TC -o $W/heap.tm $T/heap.c && $TC -o $W/libc.tm $L/libc.c \
-   && link_tm $W/b.img $L/start.tm $L/udivmod.tm $T/read.tm $W/libc.tm $W/tm.tm $W/b.tm $W/heap.tm $LIB_O; then
+if ml_lib $W/lib && $TML -L $W/lib -o $W/b.o $B/TinyBrowserText.ml $B/TinyBrowserTokens.ml $B/TinyBrowserLines.ml $B/TinyBrowserHtml.ml $T/Testutil_browser.ml $T/Tm.ml \
+   && $TC -o $W/tm.o $T/tm.c && $TC -o $W/heap.o $T/heap.c && $TC -o $W/libc.o $L/libc.c \
+   && link_tm $W/b.img $L/start.tm $L/udivmod.tm $T/read.tm $W/libc.o $W/tm.o $W/b.o $W/heap.o $LIB_O; then
   for p in $PAGES; do
     IFS=: read -r page width name <<< "$p"
     timeout ${SLOW:-120} $CPU $W/b.img $width < $page > $W/$name.tm.out 2>&1

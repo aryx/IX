@@ -5,8 +5,8 @@
 ; (the machine starts at 0), then udivmod.tm, then libc (libc.c,
 ; compiled by tiny-c), then the program (the Makefile):
 ;
-;     tiny-c -o prog.tm prog.c
-;     for f in start udivmod libc prog; do tiny-assembler $f.tm; done
+;     tiny-c prog.c; tiny-c libc.c
+;     for f in start udivmod; do tiny-assembler $f.tm; done
 ;     tiny-linker -o prog start.o udivmod.o libc.o prog.o && tiny-cpu ./prog one two
 ;
 ; The convention is tiny-c's: the arguments at 0(sp), 4(sp)...,

@@ -8,8 +8,11 @@
  * register; mov, call, ret, j, nop), and a listing worked out by hand.
  * TinyLibMachine.mli has the instructions' words, which this file
  * makes, and the lines a text is read as (parse, here: the one program
- * that reads assembly), what the compilers make too: this file is their
- * encoding, a line the object's lines.
+ * that reads assembly), what the compilers make too, and their
+ * encoding, TinyLibMachine's assemble, which the compilers call
+ * themselves (old: here; they wrote text, which this file parsed back).
+ * So this file is for assembly written by hand: the kernel's entry.tm,
+ * the runtime's start.tm, the steps, the tests.
  *
  * tiny-machine's instructions were designed to keep this assembler
  * simple: one format, every instruction 4 bytes, every immediate the
@@ -66,8 +69,9 @@
  *   illegal words, as on a real machine in user mode.
  *
  * context:
- * tiny-c and tiny-ml write the .tm files, tiny-linker reads the
- * objects, tiny-cpu and tiny-machine run the image.
+ * People write the .tm files (tiny-c -S and tiny-ml -S print theirs, to
+ * read), tiny-linker reads the objects, these and the compilers',
+ * tiny-cpu and tiny-machine run the image.
  *
  * cs-history:
  * The first assemblers assembled and loaded in one step: the EDSAC's

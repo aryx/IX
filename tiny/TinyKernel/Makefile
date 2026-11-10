@@ -97,8 +97,8 @@
 # the other systems' TinyLibSystem (../TinyLibSystem/README.md).
 #
 # What is built goes to _make/ and nowhere else, so that this
-# directory shows the sources: _make/*.tm the kernel's assembly, *.o
-# its objects, kernel.img, user/*.tm the programs' assembly, bin/ the
+# directory shows the sources: _make/*.o the kernel's objects (of the
+# compilers, or of tiny-assembler for a .tm), kernel.img, bin/ the
 # programs as they are in the image (each image with its .map, its
 # labels' addresses, for tiny-prof), boot.img the image; make clean
 # removes it.
@@ -132,7 +132,7 @@ MEMSIZE = $(if $(filter segments,$(MEMORY)),9,6)
 # make check's check.expected, sessions (.events) and screens' sums (.cksum)
 T = ../tests/TinyKernel_tests
 # tiny-ml's standard library, TinyLibCore/'s modules in their order, each
-# compiled once (_make/lib/: X.tm, X.tmi, X.o), the first units of every
+# compiled once (_make/lib/: X.o, X.tmi), the first units of every
 # program in ML, which tiny-ml reads with -L (old: their text in tiny-ml,
 # compiled again at each run, and each program's main 420 KB of them)
 CORE = Stdlib Char Seq List String Bytes Array Option Int64 Filename Buffer Printf Marshal Hashtbl Common Sha1 Fpath Fpath_ Exit In_channel Out_channel Chan Logs
@@ -152,11 +152,12 @@ ULIB = $(O)/start.o $(O)/udivmod.o $(O)/libc.o $(O)/libc/sys.o
 
 all: $(O)/boot.img
 
-# an object: of a .tm made in _make/, or of one here, or of the C
-# runtime's; the .tm made are kept (make deletes what it made on the
-# way to another target). (An object depends on tiny-assembler too, its
-# path, as TMLBIN below: an object's format changes with it, tiny-object
-# 2, and one of the old would be refused by the linker)
+# an object of assembly written by hand: a .tm made in _make/ (font.tm),
+# or one here, or the C runtime's (the compilers write their objects
+# themselves, below; old: their .tm, assembled here). (An object
+# depends on tiny-assembler too, its path, as TMLBIN below: an object's
+# format changes with it, tiny-object 3, and one of the old would be
+# refused by the linker)
 ASBIN = $(wildcard $(AS))
 $(O)/%.o: $(O)/%.tm $(ASBIN)
 	$(AS) -o $@ $<
@@ -175,10 +176,10 @@ $(O)/%.o: $(L)/%.tm $(ASBIN)
 TMLBIN = $(wildcard $(TML))
 # (the library at once, each module after the ones before it; its
 # interfaces made with Stdlib's object)
-$(O)/lib/Stdlib.tm: $(CORE:%=../TinyLibCore/%.ml) $(CORE:%=../TinyLibCore/%.mli) $(TMLBIN)
+$(O)/lib/Stdlib.o: $(CORE:%=../TinyLibCore/%.ml) $(CORE:%=../TinyLibCore/%.mli) $(TMLBIN)
 	@mkdir -p $(@D)
-	b=; for m in $(CORE); do $(TML) -c -nostdlib -o $(@D)/$$m.tm $$b ../TinyLibCore/$$m.ml || exit 1; b="$$b $(@D)/$$m.tmi"; done
-$(CORE:%=$(O)/lib/%.tmi) $(filter-out %/Stdlib.tm,$(CORE:%=$(O)/lib/%.tm)): $(O)/lib/Stdlib.tm ;
+	b=; for m in $(CORE); do $(TML) -c -nostdlib -o $(@D)/$$m.o $$b ../TinyLibCore/$$m.ml || exit 1; b="$$b $(@D)/$$m.tmi"; done
+$(CORE:%=$(O)/lib/%.tmi) $(filter-out %/Stdlib.o,$(CORE:%=$(O)/lib/%.o)): $(O)/lib/Stdlib.o ;
 TML_L = $(TML) -L $(O)/lib
 # the kernel's units, in their order: its machine's memory, what draws, the
 # network, the sounds, the disk, a process's memory, then the kernel's own
@@ -187,7 +188,8 @@ TML_L = $(TML) -L $(O)/lib
 # interfaces of those before it, and the kernel's main is made of their
 # interfaces (old: one tiny-ml over all their files, kernel.tm, 70,000
 # lines, which tiny-kernel's as took 4 minutes to assemble, and all of
-# it again for a change in one)
+# it again for a change in one; now no unit is assembled, tiny-ml
+# writes its object)
 KUNITS = TinyMemory TinyKernelGraphics TinyKernelNetwork TinyKernelAudio TinyKernelFS TinyKernelMemory \
   TinyKernelMachine TinyKernelFiles TinyKernelProcs TinyKernelDevices TinyKernelIO TinyKernelCalls TinyKernelScheduler \
   TinyKernel
@@ -220,22 +222,22 @@ $(O)/font.tm: $(FONT)
 	od -An -v -tu1 $(FONT) | awk 'NF { printf "\t.byte\t%s", $$1; for (i = 2; i <= NF; i++) printf ", %s", $$i; print "" }' >> $@
 	printf 'font_end:\n\t.align\t4\n' >> $@
 
-$(O)/runtime.tm: ../TinyMLRuntime/core.c
+$(O)/runtime.o: ../TinyMLRuntime/core.c
 
 $(O)/kernel.img: $(KERNEL) $(LDBIN)
 	$(LD) -map -o $@ $(KERNEL)
 
-$(O)/libc.tm: $(L)/libc.c $(L)/libc.h $(TCBIN)
+$(O)/libc.o: $(L)/libc.c $(L)/libc.h $(TCBIN)
 	@mkdir -p $(@D)
 	$(TC) -o $@ $<
 
 # a file in C: the kernel's runtime.c, a program of user/, or what a
 # program is linked with besides: libc/ for one in C (draw.c, net.c),
 # $(SYS)/mlsys.c for one in ML (its object in libml/)
-$(O)/%.tm: %.c libc/user.h $(TCBIN)
+$(O)/%.o: %.c libc/user.h $(TCBIN)
 	@mkdir -p $(@D)
 	$(TC) -o $@ $<
-$(O)/libml/mlsys.tm: $(SYS)/mlsys.c libc/user.h ../TinyMLRuntime/core.c $(TCBIN)
+$(O)/libml/mlsys.o: $(SYS)/mlsys.c libc/user.h ../TinyMLRuntime/core.c $(TCBIN)
 	@mkdir -p $(@D)
 	$(TC) -o $@ $<
 
@@ -244,7 +246,7 @@ $(O)/bin/%: $(ULIB) $(O)/user/%.o $(LDBIN)
 	$(LD) -map -s -n -o $@ $(ULIB) $(O)/user/$*.o
 
 # a program in ML: its units, each compiled once by tiny-ml -c into
-# _make/ml/ (an object, U.tm, and its interface, U.tmi), after the
+# _make/ml/ (its object, U.o, and its interface, U.tmi), after the
 # interfaces of the units it names (I_U, in the order of the programs it
 # is in: their names are one name space, so a unit sees only what comes
 # before it there); linked after mlsys.c (TinyML's runtime and the
@@ -379,10 +381,10 @@ UNITS = $(KUNITS) TinyLibSystem TinyLibMachine TinyLibRegex TinyLibDraw TinyLibP
 .SECONDEXPANSION:
 # (the .mli too, when there is one: its vals' types are the .tmi's;
 # old: the .ml only, so a .tmi kept an old .mli's types)
-$(UNITS:%=$(U)/%.tm): $(U)/%.tm: $$(addprefix $(U)/,$$(addsuffix .tmi,$$(I_$$*))) $$(or $$(F_$$*),../$$*.ml) $$(wildcard $$(basename $$(or $$(F_$$*),../$$*.ml)).mli) $(O)/lib/Stdlib.tm $(TMLBIN)
+$(UNITS:%=$(U)/%.o): $(U)/%.o: $$(addprefix $(U)/,$$(addsuffix .tmi,$$(I_$$*))) $$(or $$(F_$$*),../$$*.ml) $$(wildcard $$(basename $$(or $$(F_$$*),../$$*.ml)).mli) $(O)/lib/Stdlib.o $(TMLBIN)
 	@mkdir -p $(@D)
 	$(TML_L) -c -o $@ $(filter %.tmi,$^) $(filter %.ml,$^)
-$(UNITS:%=$(U)/%.tmi): $(U)/%.tmi: $(U)/%.tm ;
+$(UNITS:%=$(U)/%.tmi): $(U)/%.tmi: $(U)/%.o ;
 
 # each program's units, in their order (windows: tiny-windows, after
 # ../TinyLibDraw.ml; rc: tiny-shell, on $(SYS)/TinyLibSystem.ml, the system's
@@ -434,7 +436,7 @@ MEM_ld = -a 64
 MEM_cc = -a 16
 MEM_ml = -a 32
 MEM_build = -a 16
-$(O)/main/%.tm: $$(addprefix $(U)/,$$(addsuffix .tmi,$$(UNITS_$$*))) $(O)/lib/Stdlib.tm $(TMLBIN)
+$(O)/main/%.o: $$(addprefix $(U)/,$$(addsuffix .tmi,$$(UNITS_$$*))) $(O)/lib/Stdlib.o $(TMLBIN)
 	@mkdir -p $(@D)
 	$(TML_L) -o $@ $(filter %.tmi,$^)
 # (the main right after mlsys.c, which calls its ml_start by a jal: 128 KB)
@@ -446,7 +448,7 @@ $(ML:%=$(O)/bin/%): $(O)/bin/%: $(ULIB) $(O)/libml/mlsys.o $(O)/main/%.o $$(addp
 
 # a program that draws: with draw.c, the messages (draw.h); a demo, in
 # examples/ (not counted by make loc)
-$(O)/user/paint.tm: examples/paint.c libc/user.h libc/draw.h $(TCBIN)
+$(O)/user/paint.o: examples/paint.c libc/user.h libc/draw.h $(TCBIN)
 	@mkdir -p $(@D)
 	$(TC) -o $@ $<
 $(O)/bin/paint: $(ULIB) $(O)/libc/draw.o $(O)/user/paint.o $(LDBIN)
@@ -472,7 +474,7 @@ BINS = $(addprefix $(O)/bin/,$(PROGS))
 # the host's tiny-ml and tiny-assembler made them, which ml's and as's on
 # tiny-kernel are compared with (make check)
 EXAMPLES = steps/t6/user/wc.c user/sh.c ../user/emacs.ml ../TinyEditorScreen.ml examples/report.ixd examples/korobeiniki.wav $(O)/spin.prof $(O)/spin.map \
-	$(U)/TinyLibMachine.tm $(U)/TinyLibMachine.tmi $(U)/TinyLibMachine.o
+	$(U)/TinyLibMachine.tmi $(U)/TinyLibMachine.o
 
 # the sources, in /src as they are in tiny/, what tiny-kernel builds
 # itself from (make self): the kernel's, each unit's file, the
@@ -534,14 +536,12 @@ boot.img: kernel.img $(PROGS:%=bin/%) $(addprefix /examples/,$(notdir $(EXAMPLES
 	echo >> $$target
 
 # the library at once, each module after the ones before it
-lib/Stdlib.tm: $(CORE:%=/src/TinyLibCore/%.ml) $(CORE:%=/src/TinyLibCore/%.mli)
-	mkdir -p lib; b=(); for(m in $$CORE) { ml -c -nostdlib -o lib/$$m.tm $$b /src/TinyLibCore/$$m.ml; b=($$b lib/$$m.tmi) }
-lib/%.tm: lib/Stdlib.tm
-lib/%.tmi: lib/Stdlib.tm
+lib/Stdlib.o: $(CORE:%=/src/TinyLibCore/%.ml) $(CORE:%=/src/TinyLibCore/%.mli)
+	mkdir -p lib; b=(); for(m in $$CORE) { ml -c -nostdlib -o lib/$$m.o $$b /src/TinyLibCore/$$m.ml; b=($$b lib/$$m.tmi) }
+lib/%.o: lib/Stdlib.o
+lib/%.tmi: lib/Stdlib.o
 
-# objects
-%.o: %.tm
-	as -o $$target $$stem.tm
+# the objects of assembly written by hand (the compilers write theirs)
 %.o: $(K)/%.tm
 	as -o $$target $(K)/$$stem.tm
 %.o: /src/TinyCRuntime/%.tm
@@ -550,34 +550,34 @@ libc/sys.o: $(K)/libc/sys.tm
 	mkdir -p libc; as -o $$target $(K)/libc/sys.tm
 
 # the kernel: its units are ml/'s, as the programs' (below); its main
-main/kernel.tm: $$LIB $(addprefix ml/,$(addsuffix .tmi,$(KUNITS)))
+main/kernel.o: $$LIB $(addprefix ml/,$(addsuffix .tmi,$(KUNITS)))
 kernel.img: $(KERNEL:$(O)/%=%)
 	ld -map -o $$target $$prereq
 
 # C
-%.tm: /src/TinyCRuntime/%.c /src/TinyCRuntime/libc.h
+%.o: /src/TinyCRuntime/%.c /src/TinyCRuntime/libc.h
 	cc -o $$target /src/TinyCRuntime/$$stem.c
-runtime.tm: $(K)/runtime.c /src/TinyMLRuntime/core.c
+runtime.o: $(K)/runtime.c /src/TinyMLRuntime/core.c
 	cc -o $$target $(K)/runtime.c
-libml/mlsys.tm: $(call insrc,$(SYS)/mlsys.c) /src/TinyMLRuntime/core.c $(K)/libc/user.h
+libml/mlsys.o: $(call insrc,$(SYS)/mlsys.c) /src/TinyMLRuntime/core.c $(K)/libc/user.h
 	mkdir -p libml; cc -o $$target $(call insrc,$(SYS)/mlsys.c)
-libc/%.tm: $(K)/libc/%.c $(K)/libc/user.h $(K)/libc/draw.h
+libc/%.o: $(K)/libc/%.c $(K)/libc/user.h $(K)/libc/draw.h
 	mkdir -p libc; cc -o $$target $(K)/libc/$$stem.c
-user/%.tm: $(K)/user/%.c $(K)/libc/user.h
+user/%.o: $(K)/user/%.c $(K)/libc/user.h
 	mkdir -p user; cc -o $$target $(K)/user/$$stem.c
-user/paint.tm: $(K)/examples/paint.c $(K)/libc/user.h $(K)/libc/draw.h
+user/paint.o: $(K)/examples/paint.c $(K)/libc/user.h $(K)/libc/draw.h
 	mkdir -p user; cc -o $$target $(K)/examples/paint.c
 $(foreach p,$(filter-out paint get put,$(C_PROGS)),bin/$(p): $$ULIB user/$(p).o$(nl)	mkdir -p bin; ld -map -s -n -o $$target $$prereq$(nl))bin/paint: $$ULIB libc/draw.o user/paint.o
 	mkdir -p bin; ld -map -s -n -o $$target $$prereq
 $(foreach p,get put,bin/$(p): $$ULIB libc/net.o user/$(p).o$(nl)	mkdir -p bin; ld -map -s -n -o $$target $$prereq$(nl))
 # ML: each unit after the interfaces it reads, each program's main, and
 # the program
-ml/%.tm:
+ml/%.o:
 	mkdir -p ml; a=(); for(p in $$prereq) ~ $$p *.mli || a=($$a $$p); ml -c -nostdlib -o $$target $$a
-ml/%.tmi: ml/%.tm
-$(foreach u,$(UNITS),ml/$(u).tm: $$LIB $(addprefix ml/,$(addsuffix .tmi,$(I_$(u)))) $(call insrc,$(or $(F_$(u)),../$(u).ml) $(wildcard $(patsubst %.ml,%.mli,$(or $(F_$(u)),../$(u).ml))))$(nl))main/%.tm:
+ml/%.tmi: ml/%.o
+$(foreach u,$(UNITS),ml/$(u).o: $$LIB $(addprefix ml/,$(addsuffix .tmi,$(I_$(u)))) $(call insrc,$(or $(F_$(u)),../$(u).ml) $(wildcard $(patsubst %.ml,%.mli,$(or $(F_$(u)),../$(u).ml))))$(nl))main/%.o:
 	mkdir -p main; ml -nostdlib -o $$target $$prereq
-$(foreach p,$(ML),main/$(p).tm: $$LIB $(addprefix ml/,$(addsuffix .tmi,$(UNITS_$(p))))$(nl))$(foreach p,$(ML),bin/$(p): $$ULIB libml/mlsys.o main/$(p).o $(addprefix ml/,$(addsuffix .o,$(UNITS_$(p)))) $$LIBO end.o$(nl)	mkdir -p bin; ld -map -s -n $(MEM_$(p)) -o $$target $$prereq$(nl))
+$(foreach p,$(ML),main/$(p).o: $$LIB $(addprefix ml/,$(addsuffix .tmi,$(UNITS_$(p))))$(nl))$(foreach p,$(ML),bin/$(p): $$ULIB libml/mlsys.o main/$(p).o $(addprefix ml/,$(addsuffix .o,$(UNITS_$(p)))) $$LIBO end.o$(nl)	mkdir -p bin; ld -map -s -n $(MEM_$(p)) -o $$target $$prereq$(nl))
 endef
 # (written by the shell from the environment, not by $(file >...),
 # which macOS's make, GNU make 3.81, does not have and takes for nothing)

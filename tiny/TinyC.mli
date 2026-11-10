@@ -12,8 +12,9 @@
  *        |            code, an [ir] list (what -ir prints)
  *        | machine    turns that list into assembly, keeping the
  *        |            stack depth d in register rd; a global's data
- *     file.tm, for tiny-assembler (then tiny-linker, and tiny-cpu runs
- *     the program)
+ *     file.o, the lines encoded (TinyLibMachine's assemble), for
+ *     tiny-linker, and tiny-cpu runs the program; -S: file.tm, their
+ *     text
  *
  * Each step is a part in TinyC/, whose .mli has its types and its
  * functions, in the order they are compiled and best read:
@@ -126,7 +127,8 @@
  * library has Plan 9's names (print, exits) and its rules are ANSI's:
  * the tests compare it with the host's cc (TinyC_tests/host.h).
  *
- * tiny-assembler reads what tiny-c writes. tiny-c compiles TinyML's
+ * tiny-linker reads what tiny-c writes (old: tiny-assembler, which
+ * parsed back the text tiny-c printed). tiny-c compiles TinyML's
  * runtime (whose collector and primitives are in C), TinyKernel's
  * programs, and t6, a kernel in C, together with its own programs.
  * TinyML's code generator has the same design, a stack machine kept in

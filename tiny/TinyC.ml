@@ -12,20 +12,21 @@ module Machine = TinyCMachine
 module M = TinyLibMachine
 module TSys = TinyLibSystem
 
-let usage = "usage: tiny-c [-ir] [-o out.tm] file.c"
+let usage = "usage: tiny-c [-S | -ir] [-o out.o] file.c"
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
 
-A tiny C compiler: a C file to TinyCPU's assembly, for tiny-cpu, with its own
-libc; -ir prints its stack machine's code instead. A fact.c that includes
+A tiny C compiler: a C file to an object of TinyCPU's code, for tiny-linker
+and tiny-cpu, with its own libc; -S its assembly instead, -ir its stack
+machine's code, on stdout without -o. A fact.c that includes
 tiny/TinyCRuntime/libc.h and prints fact(10):
-  L=tiny/TinyCRuntime; (cd $L && tiny-c -o libc.tm libc.c)
-  tiny-c -o fact.tm fact.c
-  for f in $L/start $L/udivmod $L/libc fact
-  do tiny-assembler -o $f.o $f.tm; done
-  tiny-linker -o fact $L/start.o $L/udivmod.o $L/libc.o fact.o
+  L=tiny/TinyCRuntime
+  tiny-c $L/libc.c; tiny-c fact.c           libc.o, fact.o
+  for f in $L/start $L/udivmod; do tiny-assembler $f.tm; done
+  tiny-linker -o fact start.o udivmod.o libc.o fact.o
   tiny-cpu fact                            fact 10 = 3628800
+  tiny-c -S fact.c                         fact: addi sp, sp, -8 ...
   tiny-c -ir fact.c                        fact: param 0, load 4, imm 0, ...
 An error names the file and the line: fact.c: line 3: expected ;
 |}
@@ -73,9 +74,11 @@ exception File_error of string
 
 let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     (argv : string array) : Exit.t =
-  let output = ref None and file = ref None and ir_only = ref false in
+  let output = ref None and file = ref None and ir_only = ref false
+  and text = ref false in
   let rec args l = match l with
     | "-ir" :: r -> ir_only := true; args r
+    | "-S" :: r -> text := true; args r
     | "-o" :: o :: r -> output := Some (Fpath.v o); args r
     | f :: r -> file := Some (Fpath.v f); args r
     | [] -> ()
@@ -102,28 +105,37 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
       try
         Parser.start
           (with_file (Lexer.tokens (Hashtbl.create 16) with_file) file);
-        let code = Buffer.create 65536 and data = Buffer.create 4096 in
+        (* the functions' lines and the globals', the last first; or
+         * the stack machine's code, -ir's *)
+        let code = ref [] and data = ref [] and ir = Buffer.create 4096 in
         while not (Parser.at_end ()) do
           List.iter (fun d ->
-            if !ir_only then Buffer.add_string code (show_ir d)
+            if !ir_only then Buffer.add_string ir (show_ir d)
             else begin
               let c, dt = compile d in
-              List.iter (fun l -> Buffer.add_string code (M.print_line l)) c;
-              List.iter (fun l -> Buffer.add_string data (M.print_line l)) dt
+              code := List.rev_append c !code;
+              data := List.rev_append dt !data
             end)
             (Parser.declaration ())
         done;
-        let text =
-          Buffer.contents code
-          ^ (if !ir_only then ""
-             else M.print_line M.SectionData ^ Buffer.contents data)
-        in
+        let lines = List.rev_append !code (M.SectionData :: List.rev !data) in
+        (* an object (TinyLibMachine's assemble), or a text: -S's lines
+         * (old: the text always, for tiny-assembler, which parsed it
+         * back into the same lines), -ir's code *)
+        let made =
+          if !ir_only then Buffer.contents ir
+          else if !text then String.concat "" (List.map M.print_line lines)
+          else M.to_object (M.assemble lines) in
         (match !output with
-         | None -> TSys.print caps text
-         | Some o ->
+         | None when !text || !ir_only -> TSys.print caps made
+         | o ->
+             let o =
+               match o with
+               | Some o -> o
+               | None -> Fpath.set_ext ".o" (Fpath.base file) in
              (try
                 TSys.with_open_out caps
-                  (fun (ch : Chan.o) -> Out_channel.output_string ch.oc text) o
+                  (fun (ch : Chan.o) -> Out_channel.output_string ch.oc made) o
               with Failure m -> raise (File_error m)));
         Exit.OK
       with
@@ -137,6 +149,11 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
                  (f ^ ": line " ^ string_of_int l ^ ": " ^ m ^ "\n"));
           (* (said here, after the file, not the program's name) *)
           Exit.Code 1
+      (* a line the compiler made that cannot be encoded (a number too
+       * big for its field): the compiler's error, said with the file,
+       * as tiny-assembler said it of the text (old) *)
+      | M.Error e ->
+          TSys.eprint caps (Fpath.to_string file ^ ": " ^ e ^ "\n"); Exit.Code 1
       | File_error m -> Exit.Err m
   end
 

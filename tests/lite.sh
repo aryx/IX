@@ -153,8 +153,8 @@ has5() { command -v opam > /dev/null &&
 by5() {
   local w=$W/by5
   opam exec --switch=$ocaml5 -- dune build @check ./tiny/TinyML.exe --build-dir _build5 &&
-    make -s -C tiny/TinyKernel O=$w/4 $w/4/lib/Stdlib.tm &&
-    make -s -C tiny/TinyKernel O=$w/5 TML=$ROOT/_build5/default/tiny/TinyML.exe $w/5/lib/Stdlib.tm &&
+    make -s -C tiny/TinyKernel O=$w/4 $w/4/lib/Stdlib.o &&
+    make -s -C tiny/TinyKernel O=$w/5 TML=$ROOT/_build5/default/tiny/TinyML.exe $w/5/lib/Stdlib.o &&
     diff -r $w/4/lib $w/5/lib
 }
 case $(ocamlfind ocamlopt -version) in
@@ -220,8 +220,8 @@ job "tiny-kernel: booted, mltests, a shell's files" tiny_kernel
 family "t-ix builds part of itself" system
 # t-ix building in itself, a small part (plan_tests.md; make self-quick
 # 167 s, make self hours): in tiny-kernel, on a disk of its own, ping.c
-# by cc and as, its object the host's (read from the disk by
-# TinyKernelFS_tests' Cat); Stdlib.ml by ml -c and as, the host's; and
+# by cc, its object the host's (read from the disk by
+# TinyKernelFS_tests' Cat); Stdlib.ml by ml -c, the host's; and
 # a program without libc linked by ld and run. 22 s
 tiny_self() {
   local o=$W/tiny-self m="tiny-machine -date 820540800 -seed 1"
@@ -231,13 +231,11 @@ tiny_self() {
   timeout 120 $m -d $o/self.img $o/boot.img > $o/self.out <<'END'
 rc
 mkdir q; cd q
-cc -o ping.tm /src/TinyKernel/user/ping.c
-as -o ping.o ping.tm
-ml -c -nostdlib -o Stdlib.tm /src/TinyLibCore/Stdlib.ml
-as -o Stdlib.o Stdlib.tm
+cc -o ping.o /src/TinyKernel/user/ping.c
+ml -c -nostdlib -o Stdlib.o /src/TinyLibCore/Stdlib.ml
 cmp Stdlib.tmi /lib/ml/Stdlib.tmi && cmp Stdlib.o /lib/ml/Stdlib.o && echo Stdlib: the host
 echo 'int main(void) { return 6 * 7; }' > m.c
-cc -o m.tm m.c; as -o m.o m.tm
+cc -o m.o m.c
 as -o start.o /src/TinyCRuntime/start.tm
 as -o udivmod.o /src/TinyCRuntime/udivmod.tm
 as -o sys.o /src/TinyKernel/libc/sys.tm

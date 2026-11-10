@@ -39,9 +39,9 @@ The script builds the tools with dune and calls them. By hand:
 
 | tool | what it does |
 |---|---|
-| `tiny-c -o f.tm f.c` | C to the machine's assembly |
-| `tiny-ml -o f.tm f.ml` | ML to the machine's assembly |
-| `tiny-assembler f.tm` | the assembly to an object, `f.o` (`tiny/TinyAssembler.ml`; its `.mli` has the object's format) |
+| `tiny-c f.c` | C to an object, `f.o` (`-S`: its assembly instead) |
+| `tiny-ml f.ml` | ML to an object, `f.o` (`-S`: its assembly instead) |
+| `tiny-assembler f.tm` | assembly written by hand to an object, `f.o` (`tiny/TinyAssembler.ml`; `tiny/TinyLibMachine.mli` has the object's format) |
 | `tiny-linker [-a n] [-map] -o out f.o...` | objects to an image, the first at 0 (`-a n`: an a.out for tiny-kernel that asks for n MB; `-map`: `out.map`, each label's address) |
 | `tiny-cpu image` | runs a program alone, the host answering its three system calls |
 | `tiny-machine image` | the same with the machine around the CPU: the image is a kernel's |
@@ -67,7 +67,7 @@ section is that half in words.
 A tiny program is either the host's or the tiny machine's.
 
     the host (OCaml, built by dune or by ix's own tools)
-      tiny-c, tiny-ml          compilers: C and ML to .tm assembly
+      tiny-c, tiny-ml          compilers: C and ML to objects (-S: assembly)
       tiny-cpu, tiny-machine   the assembler, the linker and the machine
       tiny-mkfs                disk images
       tiny-machine-window      the screen in a window (SDL)
@@ -139,10 +139,11 @@ Each writes what it builds in a `_make/` of its own directory, and
 nowhere else (as dune's `_build/` and mini-mk's `_mk/`): the
 directories show the sources, `make clean` removes `_make/`.
 
-The steps are always the same three:
+The steps are always the same two, the assembly written by hand
+(entry.tm, the runtime's start.tm...) assembled first:
 
-    tiny-c -o x.tm x.c          # or tiny-ml, for ML
-    tiny-assembler -o x.o x.tm  # each .tm, the runtime's too
+    tiny-c x.c                  # x.o; or tiny-ml, for ML
+    tiny-assembler start.tm     # start.o: assembly written by hand
     tiny-linker -o kernel.img entry.o ... x.o              # a kernel: linked at 0
     tiny-linker -o prog start.o udivmod.o libc.o prog.o    # a program
 
@@ -517,8 +518,8 @@ result is in `r13`; the callee may change any register but `sp`.
 
 A program is linked after its runtime (`tiny/TinyCRuntime/`):
 
-    tiny-c -o prog.tm prog.c
-    for f in start udivmod libc prog; do tiny-assembler $f.tm; done
+    tiny-c prog.c; tiny-c libc.c
+    for f in start udivmod; do tiny-assembler $f.tm; done
     tiny-linker -o prog start.o udivmod.o libc.o prog.o
     tiny-cpu ./prog one two
 
@@ -540,10 +541,11 @@ module after the ones before it); tiny-ml reads its interfaces from
 `/lib/ml` (`-L` another directory), and a program is linked with its
 objects.
 
-    tiny-ml -c a.ml             # a.tm, and a.tmi, its interface
-    tiny-ml -c a.tmi b.ml       # b.tm and b.tmi, after a
-    tiny-ml -o main.tm a.tmi b.tmi   # each unit's init, the library's first, ml_start
-    tiny-ml -o prog.tm a.ml b.ml     # or all at once: the units and their main
+    tiny-ml -c a.ml             # a.o, and a.tmi, its interface
+    tiny-ml -c a.tmi b.ml       # b.o and b.tmi, after a
+    tiny-ml -o main.o a.tmi b.tmi    # each unit's init, the library's first, ml_start
+    tiny-ml -o prog.o a.ml b.ml      # or all at once: the units and their main
+    tiny-ml -S -c a.ml          # a.tm: the assembly, to read
 
 tiny-kernel's programs are made the first way (`tiny/TinyKernel/Makefile`:
 the library in `_make/lib/`, each unit once in `_make/ml/`, the main of

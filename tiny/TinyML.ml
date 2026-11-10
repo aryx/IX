@@ -14,24 +14,23 @@ module Types = TinyMLTypes
 module Machine = TinyMLMachine
 module Compile = TinyMLCompile
 
-let usage = {|usage: tiny-ml [-L dir | -nostdlib] [-o out.tm] file.ml...
-       | tiny-ml -c [-o out.tm] file.tmi... file.ml
-       | tiny-ml -o main.tm file.tmi...|}
+let usage = {|usage: tiny-ml [-L dir | -nostdlib] [-S] [-o out.o] file.ml...
+       | tiny-ml -c [-S] [-o out.o] file.tmi... file.ml
+       | tiny-ml [-S] -o main.o file.tmi...|}
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
 A tiny ML compiler: an ML file (its own small dialect: a file a module, no
-functors nor labels) to tiny-machine's assembly, for tiny-cpu, on stdout
-without -o. A fact.ml, for example:
+functors nor labels) to an object of tiny-machine's code, for tiny-linker;
+-S: its assembly instead, on stdout without -o. A fact.ml, for example:
   let rec fact n = if n = 0 then 1 else n * fact (n - 1)
   let () = print_string "fact 10 = "; print_int (fact 10); print_newline ()
-  tiny-ml -o fact.tm fact.ml               ml_start: ldw r12, 0(sp) ...
-  tiny-c -o main.tm main.c
+  tiny-ml fact.ml                          fact.o
+  tiny-ml -S fact.ml                       ml_start: ldw r12, 0(sp) ...
+  tiny-c main.c                            main.o
   L=tiny/TinyCRuntime
-  for f in $L/Machine.start $L/udivmod exit fact main
-  do tiny-assembler -o $f.o $f.tm; done
-  tiny-linker -o fact $L/start.o $L/udivmod.o exit.o fact.o main.o \
-    /lib/ml/*.o
+  for f in $L/start $L/udivmod exit; do tiny-assembler $f.tm; done
+  tiny-linker -o fact start.o udivmod.o exit.o fact.o main.o /lib/ml/*.o
   tiny-cpu fact                            fact 10 = 3628800
 main.c includes tiny/TinyMLRuntime/core.c and gives it memory (ml_run),
 exit.tm is exit (sys 0), as tiny/tests/TinyML_test.sh makes them. The
@@ -40,9 +39,9 @@ directory), its interfaces Stdlib.tmi ... Sha1.tmi, and linked from there,
 each module compiled once by tiny-ml -c -nostdlib after the ones before it.
 Several files are a module each, one after the other, then their main: a's
 x is A.x in b, or x after open A. Machine.Or a module at a time, then the main:
-  tiny-ml -c a.ml                          a.tm, its code; a.tmi, its interface
-  tiny-ml -c a.tmi b.ml                    b.tm and b.tmi, after a
-  tiny-ml -o main.tm a.tmi b.tmi           the library's, a's and b's init,
+  tiny-ml -c a.ml                          a.o, its code; a.tmi, its interface
+  tiny-ml -c a.tmi b.ml                    b.o and b.tmi, after a
+  tiny-ml -o main.o a.tmi b.tmi            the library's, a's and b's init,
                                            ml_start
   (linked: ... main.o a.o b.o and the library's; what nothing uses left out by
   tiny-linker)
@@ -333,9 +332,11 @@ exception File_error of string
 let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     (argv : string array) : Exit.t =
   let output = ref None and file = ref "" and files = ref []
-  and separate = ref false and lib = ref (Some "/lib/ml") in
+  and separate = ref false and lib = ref (Some "/lib/ml")
+  and text = ref false in
   let rec args l = match l with
     | "-o" :: o :: r -> output := Some (Fpath.v o); args r
+    | "-S" :: r -> text := true; args r
     | "-c" :: r -> separate := true; args r
     | "-L" :: d :: r -> lib := Some d; args r
     | "-nostdlib" :: r -> lib := None; args r
@@ -361,11 +362,20 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
           || (!separate && List.length mls <> 1) then
     (TinyLibSystem.eprint caps (usage ^ "   (-h: how)\n"); Exit.Code 2)
   else
-  let write f text =
+  let write f s =
     try
       TinyLibSystem.with_open_out caps
-        (fun (ch : Chan.o) -> Out_channel.output_string ch.oc text) f
+        (fun (ch : Chan.o) -> Out_channel.output_string ch.oc s) f
     with Failure m -> raise (File_error m) in
+  (* the lines as an object (TinyLibMachine's assemble), or as their
+   * text (-S); old: the text always, which tiny-assembler parsed back
+   * into the same lines (plan_tiny_libmach.md) *)
+  let made (ls : TinyLibMachine.line list) =
+    if !text then String.concat "" (List.map TinyLibMachine.print_line ls)
+    else TinyLibMachine.to_object (TinyLibMachine.assemble ls) in
+  (* x.ml's x.o here (x.tm by -S); a whole program's after its first
+   * .ml, main.o when it has none (old: its text on stdout) *)
+  let named f = Fpath.set_ext (if !text then ".tm" else ".o") (Fpath.base f) in
   try
     (* the interfaces read, in their order: the library's, then the
      * units before this one *)
@@ -402,12 +412,9 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
         (try with_file (fun ch -> Parser.mli_types (text_of ch)) mli
          with File_error _ -> [])
         @ tdefs in
-      let out =
-        match !output with
-        | Some o -> o
-        | None -> Fpath.set_ext ".tm" (Fpath.base f) in
+      let out = match !output with Some o -> o | None -> named f in
       (* (.data: tiny-linker -n's, the statics after the text) *)
-      write out (Machine.asm_text asm);
+      write out (made (Machine.lines asm));
       write (Fpath.set_ext ".tmi" out)
         (write_interface old exports types n)
     end else begin
@@ -423,16 +430,25 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
           units @ [ (!Tree.unit_name, n) ], needed @ !Machine.arities)
           (units, needed) mls in
       compile_main units needed;
-      let text = Machine.start ^ Machine.asm_text asm in
+      let program = made (Machine.start @ Machine.lines asm) in
       (match !output with
-       | None -> TinyLibSystem.print caps text
-       | Some o -> write o text)
+       | Some o -> write o program
+       | None when !text -> TinyLibSystem.print caps program
+       | None ->
+           write
+             (match mls with f :: _ -> named f | [] -> Fpath.v "main.o")
+             program)
     end;
     Exit.OK
   with
   (* (said after the file, not the program's name) *)
   | Failure m ->
       TinyLibSystem.eprint caps (!file ^ ": " ^ m ^ "\n"); Exit.Code 1
+  (* a line made that cannot be encoded (a number too big for its
+   * field): the compiler's error, said with the file, as tiny-assembler
+   * said it of the text (old) *)
+  | TinyLibMachine.Error e ->
+      TinyLibSystem.eprint caps (!file ^ ": " ^ e ^ "\n"); Exit.Code 1
   | File_error m -> Exit.Err m
 
 let () = TinyLibSystem.main "tiny-ml" main

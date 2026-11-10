@@ -49,13 +49,13 @@ void main(void) { ml_run(vstack, space0, space1, 65536, 64); flush(); exit(0); }
 END
 printf 'exit:\n\tldw\tr1, 0(sp)\n\tsys\t0\n' > $W/exit.tm
 printf '\t.align\t4\nvstack:\n\t.space\t131072\nspace0:\n\t.space\t262144\nspace1:\n\t.space\t262144\n' > $W/mem.tm
-$TC -o $W/main.tm $W/main.c || { echo "FAIL the runtime: tiny-c"; exit 1; }
+$TC -o $W/main.o $W/main.c || { echo "FAIL the runtime: tiny-c"; exit 1; }
 ml_lib $W/lib || { echo "FAIL the library: tiny-ml"; exit 1; }
 for p in std digests; do
   # (a unit and its main, the main first after the runtime's: jal reaches
   # 128 KB, and std is more; old: tiny-ml -o p.tm p.ml, its ml_start at the end)
-  if $TML -L $W/lib -c -o $W/$p.tm $T/$p.ml && $TML -L $W/lib -o $W/${p}_main.tm $W/$p.tmi \
-     && link_tm $W/$p.img $L/start.tm $L/udivmod.tm $W/exit.tm $W/main.tm $W/${p}_main.tm $W/$p.tm $W/mem.tm $LIB_O; then
+  if $TML -L $W/lib -c -o $W/$p.o $T/$p.ml && $TML -L $W/lib -o $W/${p}_main.o $W/$p.tmi \
+     && link_tm $W/$p.img $L/start.tm $L/udivmod.tm $W/exit.tm $W/main.o $W/${p}_main.o $W/$p.o $W/mem.tm $LIB_O; then
     # (SLOW: more for tiny-cpu built by mini-ml, as TinyML_test.sh's)
     timeout ${SLOW:-60} $CPU $W/$p.img > $W/$p.out 2>&1
   else echo "FAIL $p: tiny-ml or the link"; failures=$((failures + 1)); fi

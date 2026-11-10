@@ -81,7 +81,7 @@ local skeletons = import '../../skeletons.libsonnet';
     'TinyMLTypes.mli': { digest: '1afc227dc56e',
       summary: "A unit typed, and the names of the units before it: TinyML.ml's entry to the checker.",
     },
-    'TinyMLMachine.ml': { digest: '3798eb569036',
+    'TinyMLMachine.ml': { digest: '191f5e1242e4',
       summary: 'The stack machine, its code to assembly on the value stack at r12, and the static data: strings, closures, exceptions.',
       important: [
         { at: 'type:ir', say: "TinyC's stack machine, with blocks and handlers", weight: 3 },
@@ -92,7 +92,7 @@ local skeletons = import '../../skeletons.libsonnet';
         { at: 'def:curry', say: 'ml_curry: a partial application', weight: 1 },
       ],
     },
-    'TinyMLMachine.mli': { digest: '5e0e5cce413c',
+    'TinyMLMachine.mli': { digest: 'd3e48dc06376',
       summary: "The stack machine's instructions, the back end and the static data's helpers.",
     },
     'TinyMLCompile.ml': { digest: 'c37d7fa8c894',

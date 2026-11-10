@@ -42,7 +42,7 @@ local mli(summary, digest, capital, say) = {
       ],
     },
     'List.mli': mli("List, OCaml's subset; sort a merge sort, stable.", '98858414d272', 'def:map', 'f called in order: let y = f x first'),
-    'List.ml': { digest: 'b0a9b235a0ab',
+    'List.ml': { digest: 'ef7d9e7859a6',
       summary: "List in tiny-ml's ML: map evaluates in order, sort a stable merge sort.",
       important: [
         { at: 'def:map', say: 'y before the rest: the order OCaml leaves open', weight: 2 },

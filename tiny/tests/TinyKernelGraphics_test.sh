@@ -33,12 +33,12 @@ failures=0
 fail() { echo "FAIL $1"; failures=$((failures + 1)); }
 
 # the machine's program, but for the font: the runtime, the program
-$TC -o $W/runtime.tm $T/TinyKernel/runtime.c || fail "machine: tiny-c runtime.c"
+$TC -o $W/runtime.o $T/TinyKernel/runtime.c || fail "machine: tiny-c runtime.c"
 # (-window: without the exit, the program ends in start.tm's loop)
 sed -e 's/; exit 0$//' $T/tests/TinyKernelGraphics_tests/machine.ml > $W/machine.ml
 [ "${1:-}" = -window ] || cp $T/tests/TinyKernelGraphics_tests/machine.ml $W/machine.ml
 ml_lib $W/lib || fail "the library: tiny-ml"
-$TML -L $W/lib -o $W/picture.tm $T/TinyKernel/TinyMemory.ml $T/TinyKernel/TinyKernelGraphics.ml $T/TinyLibDraw.ml $T/tests/TinyKernelGraphics_tests/Picture.ml $W/machine.ml || fail "machine: tiny-ml"
+$TML -L $W/lib -o $W/picture.o $T/TinyKernel/TinyMemory.ml $T/TinyKernel/TinyKernelGraphics.ml $T/TinyLibDraw.ml $T/tests/TinyKernelGraphics_tests/Picture.ml $W/machine.ml || fail "machine: tiny-ml"
 
 # [picture name font]: the picture with that font, on the host and on
 # the machine, against name.expected and name.cksum
@@ -60,7 +60,7 @@ picture() {
   # the machine's: start.tm first (the machine starts at 0), the font's
   # bytes at its label, the runtime, the rows, the program
   (cat $T/tests/TinyKernelGraphics_tests/start.tm; echo 'font:'; od -An -v -tu1 $FONT | awk 'NF { printf "\t.byte\t%s", $1; for (i = 2; i <= NF; i++) printf ", %s", $i; print "" }'; printf 'font_end:\n\t.align\t4\n') > $R-start.tm
-  link_tm $R.img $R-start.tm $T/TinyCRuntime/udivmod.tm $W/runtime.tm $T/TinyKernel/draw.tm $W/picture.tm $LIB_O || fail "machine: the link"
+  link_tm $R.img $R-start.tm $T/TinyCRuntime/udivmod.tm $W/runtime.o $T/TinyKernel/draw.tm $W/picture.o $LIB_O || fail "machine: the link"
   [ "${WINDOW:-}" = 1 ] && { $MACHINE -window $R.img; exit; }
   timeout ${SLOW:-60} $MACHINE -screen $R-machine.ppm $R.img > $R-machine.out 2>&1 || fail "machine: the run"
   check machine

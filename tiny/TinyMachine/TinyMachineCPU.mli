@@ -97,8 +97,8 @@
  * its code runs the new one.
  *
  * context:
- *     .tm files: by hand (v0), by tiny-c, by tiny-ml
- *                  |  tiny-assembler, tiny-linker: an image
+ *     objects: of .tm files by hand (v0, tiny-assembler), of tiny-c's
+ *              and tiny-ml's   |  tiny-linker: an image
  *     this file:   the CPU ([step], given an [env]), the encoding
  *                  they use, the listing
  *                 /                          \

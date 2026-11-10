@@ -28,77 +28,6 @@ An error names the file and the line: hello.tm:3: not a register: r16
 
 
 (*****************************************************************************)
-(* The lines encoded *)
-(*****************************************************************************)
-
-(* a word's bytes, the low first: the memory's order (an int64: a word
- * of data has 32 bits, tiny-ml's ints 31) *)
-let word_bytes (w : int64) =
-  String.init 4 (fun i ->
-    Char.chr
-      (Int64.to_int
-         (Int64.logand (Int64.shift_right w (8 * i)) (Int64.of_int 0xff))))
-
-(* instructions' words, and the places in them the link fills *)
-let code (is : M.instr list) relocs : M.line =
-  M.Chunk
-    (String.concat ""
-       (List.map (fun i -> word_bytes (Int64.of_int (M.encode i))) is),
-     relocs)
-
-(* a number of 16 bits, li's in one instruction; else its two halves *)
-let small (v : int64) =
-  Int64.compare v (Int64.of_int (-32768)) >= 0
-  && Int64.compare v (Int64.of_int 32767) <= 0
-let half (v : int64) shift =
-  Int64.to_int (Int64.logand (Int64.shift_right v shift) (Int64.of_int 0xffff))
-
-(* A line encoded, the object's: an instruction's words, with 0 where a label's
- * address goes and the place for the link (a branch's, a call's: the
- * words from the next instruction, Pc; la's: its halves, Hi and Lo);
- * data's bytes; or a line the object keeps (a label, an alignment, which
- * the link does: an address's, not the file's) *)
-let item (l : M.line) : M.line =
-  let to_ s k = [ (0, k, M.Name s) ] in
-  match l with
-  | M.Instr i -> code [ i ] []
-  | M.Instr_at (i, k, t) -> code [ i ] [ (0, k, t) ]
-  | M.Machine m ->
-      M.Chunk (word_bytes (Int64.of_int (M.encode_machine m)), [])
-  | M.Li (d, v) when small v ->
-      code [ M.Alui (M.Add, d, 0, Int64.to_int v) ] []
-  | M.Li (d, v) ->
-      code [ M.Lui (d, half v 16); M.Alui (M.Or, d, d, half v 0) ] []
-  | M.La (d, s) ->
-      code [ M.Lui (d, 0); M.Alui (M.Or, d, d, 0) ]
-        [ (0, M.Hi, M.Name s); (4, M.Lo, M.Name s) ]
-  | M.Mov (d, a) -> code [ M.Alui (M.Add, d, a, 0) ] []
-  | M.Call s -> code [ M.Jal (M.lr, 0) ] (to_ s M.Pc)
-  | M.Jump s -> code [ M.Jal (0, 0) ] (to_ s M.Pc)
-  | M.Branch_to (c, d, a, s) -> code [ M.Branch (c, d, a, 0) ] (to_ s M.Pc)
-  | M.Ret -> code [ M.Jalr (0, M.lr, 0) ] []
-  | M.Label s -> M.Label s
-  | M.Align k -> M.Align k
-  | M.Space k -> M.Space k
-  | M.Bytes bs ->
-      M.Chunk
-        (String.concat "" (List.map (fun b -> String.make 1 (Char.chr b)) bs),
-         [])
-  | M.Ascii s -> M.Chunk (s, [])
-  | M.Word v -> M.Chunk (word_bytes v, [])
-  | M.Word_sym s -> M.Chunk (word_bytes Int64.zero, to_ s M.Full)
-  | M.Piece -> M.Piece
-  | M.SectionCode -> M.SectionCode
-  | M.SectionData -> M.SectionData
-  | M.Chunk (b, places) -> M.Chunk (b, places)
-
-(* a text line's lines encoded, a line's each, a word of .word a chunk
- * of its own (old: the words of one .word line one chunk: the object
- * then depended on how the text was laid out, not on its lines alone;
- * the image is the same bytes) *)
-let items (ls : M.line list) : M.line list = List.map item ls
-
-(*****************************************************************************)
 (* Parsing *)
 (*****************************************************************************)
 (* (old: TinyMachineAsm.parse, in TinyMachine/: tiny-assembler is the
@@ -357,15 +286,15 @@ let read (chan : Chan.i) : (int * M.line list) list =
     try i + 1, parse text
     with M.Error e -> at (Chan.origin chan) (i + 1) e)
 
-(* The lines' object: its items, in their order, for tiny-linker, each
- * text line's items; an error said with its file and line *)
+(* The lines' object (TinyLibMachine's assemble), each text line's
+ * lines encoded first, so that an error is said with its file and
+ * line (old: the encoding here, TinyLibMachine's since the compilers
+ * write objects too) *)
 let encode (file : string) (lines : (int * M.line list) list)
     : M.line list =
-  (* each file on a word's boundary: one may end with bytes, the next
-   * begin with code *)
-  M.Align 4
-  :: List.concat_map (fun (n, ls) ->
-       try items ls with M.Error e -> at file n e) lines
+  M.assemble
+    (List.concat_map (fun (n, ls) ->
+       try List.map M.encode_line ls with M.Error e -> at file n e) lines)
 
 (* the object written, marshalled (TinyLibMachine's to_object) *)
 let write (chan : Chan.o) (items : M.line list) : unit =

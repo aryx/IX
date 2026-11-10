@@ -1,6 +1,6 @@
 # Plan: TinyLibMachine.ml, tiny-machine's libmach, and tiny-c and tiny-ml writing their objects
 
-Status: **stage 1 done (2026-11-10): TinyLibMachine.ml, parse in TinyAssembler.ml; stages 2-4 to do.**
+Status: **done (2026-11-10): stage 1, TinyLibMachine.ml, parse in TinyAssembler.ml; stages 2 to 4, the compilers write objects (their text by -S), the docs with them.**
 Written 2026-11-10, after the author's questions: "I think TinyAssembler
 and TinyLinker are relying on modules under TinyMachine/ and this seems
 to be inconsistent with the other TinyXxx/ which are used just by the
@@ -179,3 +179,32 @@ link TinyLibMachine the same bytes as before (`as`, `ld`, `cc`, `ml`,
 TinyLibMachine's, recorded); mini-mk; the kernel's check (its
 toolchain session compiles `TinyLibMachine.ml` on tiny-kernel, the
 host's bytes) and self-quick, in `_make2`.
+
+Stages 2 to 4, 2026-11-10, the author's choice after a look at what
+the text step gave (the pipeline seen, gcc's way) and what it cost:
+`encode_line` and `assemble` in TinyLibMachine (old: TinyAssembler's
+`item` and its loop); tiny-assembler for assembly written by hand
+(entry.tm, start.tm, the steps, the tests). tiny-c and tiny-ml write
+objects, `-S` their text (tiny-ml's `TinyMLMachine` keeps lines, not
+two buffers of text; its `start` lines); without `-o`, `x.o` beside
+(a whole program of tiny-ml's after its first `.ml`, `main.o` when
+it has none; `-S` on stdout). A line the compilers make that cannot be
+encoded is said with the file (mini-analyze -exn found it escaping).
+li's number read signed before choosing one instruction or two, as
+its text was (old: tiny-c's `0xfffffff0` was `-16` in the text, one
+`addi`; the direct line saw a big number, `lui` and `ori`). List.map
+a loop, as mapi (the compilers map over a unit's lines on tiny-kernel).
+TinyKernel/Makefile and its Buildfile: a unit, a main, the library, a
+C file go to their `.o` in one step, `as` for the `.tm` written by
+hand; the tests' scripts (`link.sh`'s `ml_lib`, each test's objects;
+TinyAssembler_test.sh's law on the compilers' `-S` text); lite.sh's
+"t-ix built in tiny-kernel". The toolchain session of the kernel's
+check: `ml -c` the host's object and interface, `ml -S` then `as`
+the same object. Checked: the images the same bytes as before (with
+List.map as it was: `kernel.img` and every program but the six
+linking TinyLibMachine), each C file and every library module the
+same object by both roads; dune; `make test-tix`; `tiny_check.sh`
+(-exn's two found, handled); mini-mk; the kernel's check
+(`check.expected`'s toolchain lines, `debug.cksum`: two registers of
+the debugged program, its layout moved by List.map) and self-quick
+(its expected lines: no `as` for a compiled file), in `_make3`.

@@ -26,7 +26,7 @@ progs=("$@")
 T=$ROOT/tiny/tests/TinyC_tests
 [ ${#progs[@]} = 0 ] && progs=($T/*.c)
 RT=$ROOT/tiny/TinyCRuntime
-(cd $RT && $TC -o $W/libc.tm libc.c) || { echo "FAIL the runtime: tiny-c libc.c"; exit 1; }
+(cd $RT && $TC -o $W/libc.o libc.c) || { echo "FAIL the runtime: tiny-c libc.c"; exit 1; }
 refused=()
 mkdir -p $W/host $W/tm
 for c in "${progs[@]}"; do
@@ -38,11 +38,11 @@ for c in "${progs[@]}"; do
     (cd $W/host && $CC -w -fsigned-char -fwrapv -o $b $b.c) || { echo "FAIL $b: $CC"; failures=$((failures + 1)); continue; }
     (cd $W/host && timeout 10 ./$b one two 2>&1; echo "exit $?") > $out
   fi
-  if ! (cd $(dirname $c) && $TC -o $W/$b.tm $b.c 2> $W/$b.err); then
+  if ! (cd $(dirname $c) && $TC -o $W/$b.o $b.c 2> $W/$b.err); then
     if grep -q "long long" $W/$b.err; then refused+=($b); else echo "FAIL $b: $(cat $W/$b.err)"; failures=$((failures + 1)); fi
     continue
   fi
-  link_tm $W/tm/$b $RT/start.tm $RT/udivmod.tm $W/libc.tm $W/$b.tm || { echo "FAIL $b: linking"; failures=$((failures + 1)); continue; }
+  link_tm $W/tm/$b $RT/start.tm $RT/udivmod.tm $W/libc.o $W/$b.o || { echo "FAIL $b: linking"; failures=$((failures + 1)); continue; }
   want=$(cat $out)
   got=$(cd $W/tm && timeout 10 $TCPU ./$b one two 2>&1; echo "exit $?")
   if [ "$want" = "$got" ]; then echo "ok $b"; else echo "FAIL $b"; /usr/bin/diff <(echo "$want") <(echo "$got") | /usr/bin/head -10; failures=$((failures + 1)); fi

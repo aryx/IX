@@ -15,10 +15,15 @@ let rec nth_opt l n =
   match l with
   | [] -> None
   | x :: l -> if n = 0 then Some x else nth_opt l (n - 1)
-let rec map f = function [] -> [] | x :: l -> let y = f x in y :: map f l
-(* (in reverse, then turned around: a loop, where a recursion per
- * element took tiny-kernel's as past its stack's end on kernel.tm's
- * 70,000 lines; OCaml's own does not recurse either) *)
+(* map and mapi in reverse, then turned around: a loop, where a
+ * recursion per element took tiny-kernel's as past its stack's end on
+ * kernel.tm's 70,000 lines (old: map a recursion; the compilers now
+ * encode a unit's lines with it); the elements still in order *)
+let map f l =
+  let rec go acc = function
+    | [] -> rev acc
+    | x :: l -> go (f x :: acc) l in
+  go [] l
 let mapi f l =
   let rec go i acc = function
     | [] -> rev acc

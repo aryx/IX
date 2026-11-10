@@ -26,7 +26,7 @@ local prog(name, file, core) = chain(name, [
     // ---------------------------------------------------------------
     // the toolchain: compilers, assembler, linker
     // ---------------------------------------------------------------
-    'TinyC.ml': { digest: '711531c40fef',
+    'TinyC.ml': { digest: '21c4725c7ee7',
       summary: "tiny-c: 5c/7c's job with only correctness asked: C typed as parsed, lowered to its own stack machine, TinyCPU's code.",
       capitals: [{ at: 'def:compile', say: 'a definition lowered, then assembly' }],
       important: [
@@ -35,11 +35,11 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['TinyC/', 'TinyCRuntime/', 'tests/TinyC_test.sh', 'tests/TinyC_fuzz.py', 'tests/TinyC_tests/', '../languages/c/'],
     },
-    'TinyC.mli': { digest: '27003639856a',
+    'TinyC.mli': { digest: 'fb7bfc9153c6',
       summary: "tiny-c's idea, with one function traced through the stack machine to TinyCPU's code, and its passes.",
       important: [{ at: 'comment:"A file goes through these steps"', say: 'the pipeline, a type per step', weight: 3 }],
     },
-    'TinyML.ml': { digest: '4d1219a9b5cb',
+    'TinyML.ml': { digest: '7719b0e67c36',
       summary: "tiny-ml: an ML, Hindley-Milner typed, through TinyC's stack machine to tiny-machine; separate units by .tmi files.",
       capitals: [{ at: 'def:compile_unit', say: 'a unit: its items typed, then compiled' }],
       important: [
@@ -51,14 +51,13 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['TinyML/', 'TinyMLRuntime/core.c', 'TinyLibCore/', 'tests/TinyML_test.sh', 'tests/TinyML_fuzz.py', '../languages/ml/'],
     },
-    'TinyML.mli': { digest: 'c6bd1a5ef75f',
+    'TinyML.mli': { digest: 'd1ebc729cffb',
       summary: "tiny-ml's design: the passes, a value's layout, the value stack as the roots, Cheney's collector.",
       important: [{ at: 'comment:"How a file is compiled"', say: 'the passes, each its own type', weight: 3 }],
     },
-    'TinyAssembler.ml': { digest: 'af67dd803f8d',
-      summary: "tiny-assembler: a .tm file parsed into TinyLibMachine's lines, encoded at once, a label's place 0 with a reloc.",
+    'TinyAssembler.ml': { digest: '86d091988762',
+      summary: "tiny-assembler: assembly written by hand, a .tm file, parsed into TinyLibMachine's lines and encoded by its assemble.",
       important: [
-        { at: 'def:item', say: "a line encoded: its words, and where a label's address goes", weight: 3 },
         { at: 'def:instruction', say: 'an instruction parsed, its operands a number or a label', weight: 2 },
         { at: 'def:machine_instr', say: "the machine's own: csrr, csrw, eret, amoswap", weight: 1 },
         { at: 'def:parse', say: 'the only reader of assembly (the compilers make lines)', weight: 2 },
@@ -66,7 +65,7 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['TinyLinker.ml', 'TinyLibMachine.ml', 'tests/TinyAssembler_test.sh', 'tests/TinyCPU_test.sh', '../assembler/'],
     },
-    'TinyAssembler.mli': { digest: '57e2a22285ad',
+    'TinyAssembler.mli': { digest: 'ccc55c79173c',
       summary: "The pipeline, a step a function: path, channel, lines (parse), the object's lines, written; why sizes never wait.",
       important: [{ at: 'comment:"The pipeline, a step a function"', say: 'read, encode, write', weight: 3 }],
     },
@@ -425,7 +424,7 @@ local prog(name, file, core) = chain(name, [
       summary: "The notation, the matcher and its cost; how it differs from libregexp, m-IX's twin.",
       capitals: [{ at: 'def:search', say: "where a match is, and its groups: the editor's" }],
     },
-    'TinyLibMachine.mli': { digest: '919258129e3b',
+    'TinyLibMachine.mli': { digest: 'a9c1a394ce98',
       summary: "tiny-machine's libmach: the instructions both ways, the lines of assembly, the objects (lines encoded), the labels.",
       capitals: [
         { at: 'type:instr', say: 'the whole instruction set: nine forms, one format' },
@@ -441,13 +440,14 @@ local prog(name, file, core) = chain(name, [
       ],
       related: ['TinyAssembler.ml', 'TinyLinker.ml', 'TinyMachine/TinyMachineCPU.ml', '../debuggers/', '../machine/'],
     },
-    'TinyLibMachine.ml': { digest: '02b5d89fcb0b',
-      summary: "The words (an opcode, d, a, a 16-bit immediate); the lines printed; objects marshalled; labels found by halves.",
+    'TinyLibMachine.ml': { digest: '899895c3ee17',
+      summary: "The words (an opcode, d, a, a 16-bit immediate); the lines printed, and encoded into objects (assemble), marshalled; labels found by halves.",
       important: [
         { at: 'def:encode', say: 'an immediate that does not fit: an error, never cut', weight: 3 },
         { at: 'def:decode', say: 'None: an illegal word, the machine traps', weight: 3 },
         { at: 'def:listing', say: 'the listing: reassembles to the same word', weight: 2 },
-        { at: 'def:print_line', say: "a line's text, which tiny-assembler parses back", weight: 2 },
+        { at: 'def:print_line', say: "a line's text: -S's, which tiny-assembler parses back", weight: 2 },
+        { at: 'def:assemble', say: "the compilers' and the assembler's object: each line encoded", weight: 3 },
         { at: 'def:of_object', say: 'tiny-object 3: an older object refused', weight: 1 },
         { at: 'def:local', say: 'tiny-ml L12, tiny-c tm.L51: not functions', weight: 1 },
         { at: 'def:find', say: 'the last label at or before the address', weight: 2 },
@@ -627,6 +627,7 @@ local prog(name, file, core) = chain(name, [
       ['TinyML.ml:def:compile_unit', 'the toplevel, its globals the roots', 'the typed tree'],
       ['TinyML/TinyMLCompile.ml:def:value', 'an expression to the stack machine', 'expressions'],
       ['TinyML/TinyMLMachine.ml:def:machine', 'the stack machine to tiny-machine', 'IR'],
+      ['TinyLibMachine.ml:def:assemble', 'the lines encoded: the object (-S: their text)', 'lines'],
     ]) + {
       bones+: [
         { at: 'TinyML.ml:def:write_interface', role: 'M.tmi, for the units after' },
@@ -643,15 +644,15 @@ local prog(name, file, core) = chain(name, [
       ['TinyAssembler.ml:def:instruction', 'a mnemonic and its pseudo-forms', 'a mnemonic'],
     ]) + {
       bones+: [
-        { at: 'TinyAssembler.ml:def:encode', role: "the object's items, an error at its line" },
-        { at: 'TinyAssembler.ml:def:item', role: "an instruction's words, 0 where a label's address goes" },
+        { at: 'TinyAssembler.ml:def:encode', role: "the object's lines, an error at its line" },
+        { at: 'TinyLibMachine.ml:def:encode_line', role: "an instruction's words, 0 where a label's address goes" },
         { at: 'TinyLibMachine.ml:def:encode', role: 'the one format' },
         { at: 'TinyLibMachine.ml:def:to_object', role: 'the object, marshalled' },
       ],
       joints+: [
         { from: 'TinyAssembler.ml:def:main', to: 'TinyAssembler.ml:def:encode', say: 'the lines' },
-        { from: 'TinyAssembler.ml:def:encode', to: 'TinyAssembler.ml:def:item', say: 'a line' },
-        { from: 'TinyAssembler.ml:def:item', to: 'TinyLibMachine.ml:def:encode', say: 'an instr' },
+        { from: 'TinyAssembler.ml:def:encode', to: 'TinyLibMachine.ml:def:encode_line', say: 'a line' },
+        { from: 'TinyLibMachine.ml:def:encode_line', to: 'TinyLibMachine.ml:def:encode', say: 'an instr' },
         { from: 'TinyAssembler.ml:def:main', to: 'TinyLibMachine.ml:def:to_object', say: 'written' },
       ],
     },

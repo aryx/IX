@@ -45,9 +45,9 @@ void main(void) { ml_run(vstack, space0, space1, 65536, 64); flush(); exit(0); }
 END
 printf 'typedef int value;\nvalue vstack[32768];\nvalue space0[65536];\nvalue space1[65536];\n' > $W/data.c
 printf 'exit:\n\tldw\tr1, 0(sp)\n\tsys\t0\n' > $W/exit.tm
-if ml_lib $W/lib && $TC -o $W/main.tm $W/main.c && $TC -o $W/data.tm $W/data.c \
-   && $TML -L $W/lib -o $W/print.tm $ROOT/tiny/TinyLibSystem/teststub/TinySystemTest.ml $ROOT/tiny/TinyLibSystem/teststub/TinyLibSystem.ml $ROOT/tiny/TinyLibDraw.ml $ROOT/tiny/TinyLibPlayground.ml $ROOT/tiny/TinyLibGUI.ml $OFFICE $ROOT/tiny/TinyTroff.ml $T/Print.ml \
-   && link_tm $W/print.img $L/start.tm $L/udivmod.tm $W/exit.tm $W/main.tm $W/print.tm $W/data.tm $LIB_O \
+if ml_lib $W/lib && $TC -o $W/main.o $W/main.c && $TC -o $W/data.o $W/data.c \
+   && $TML -L $W/lib -o $W/print.o $ROOT/tiny/TinyLibSystem/teststub/TinySystemTest.ml $ROOT/tiny/TinyLibSystem/teststub/TinyLibSystem.ml $ROOT/tiny/TinyLibDraw.ml $ROOT/tiny/TinyLibPlayground.ml $ROOT/tiny/TinyLibGUI.ml $OFFICE $ROOT/tiny/TinyTroff.ml $T/Print.ml \
+   && link_tm $W/print.img $L/start.tm $L/udivmod.tm $W/exit.tm $W/main.o $W/print.o $W/data.o $LIB_O \
    && timeout 120 $CPU $W/print.img > $W/tm.out 2>&1 && diff $T/print.expected $W/tm.out > $W/tm.diff
 then echo "ok print: by tiny-ml, on tiny-cpu"; else echo "FAIL print: by tiny-ml, on tiny-cpu"; head -10 $W/tm.diff $W/tm.out 2>/dev/null | head -20; failures=$((failures + 1)); fi
 

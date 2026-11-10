@@ -67,18 +67,23 @@ val label : unit -> label
 val machine : sym -> int -> int -> ir list -> TinyLibMachine.line list
 
 (* the program's ml_start, called by C, and ml_raise *)
-val start : string
+val start : TinyLibMachine.line list
 
 (* A unit's assembly, or the whole program's, as it is made: its
- * functions' code (text), its static blocks (data), printed *)
-type asm = { text : Buffer.t; data : Buffer.t }
+ * functions' code (text), its static blocks (data), the last line
+ * first *)
+type asm = {
+  mutable text : TinyLibMachine.line list;
+  mutable data : TinyLibMachine.line list;
+}
 (* a new assembly, from then on the current one: what add_text, and the
  * static blocks below, add to *)
 val start_asm : unit -> asm
 val add_text : TinyLibMachine.line list -> unit
 val add_data : TinyLibMachine.line list -> unit
-(* its text, for tiny-assembler: the code, then the data (.data) *)
-val asm_text : asm -> string
+(* its lines: the code, then the data (.data); TinyML.ml writes them
+ * as an object, or as their text (-S) *)
+val lines : asm -> TinyLibMachine.line list
 
 (* a static word: a number's text, a code's label, a block's *)
 type dword = DNum of int64 | DCode of sym | DVal of sym

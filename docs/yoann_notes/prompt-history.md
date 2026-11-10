@@ -68497,3 +68497,78 @@ Claude's script misplaced 8 digests into the wrong cards, which it caught and co
 Claude added the missing TinyLibCore system-module cards and a teststub skeleton, leaving TinyML skeletons unwritten.
 Claude verified `tinybox codemap -check .` is clean for tiny/, with 36 warnings and 7 errors remaining outside it.
 Item 3 is done but uncommitted, while `make self` was still running its first full build.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 19:24
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the code-map fixes as 98d6cc7d, covering 17 configs, skeletons.libsonnet, and prompt-history.md.
+Claude reported that `make self` was still in its first full build, about 75 minutes in.
+Claude noted the last printed output was a link step for lib/Logs.o and end.o, with more still being written.
+Claude planned to locate the hang once the run ends, then re-record self.expected if it passed.
+Claude planned to delete _make2/ after that, once the self-test result was settled.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 19:27
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude said `make self` was still running, about 30 minutes of CPU, mid-way through building tiny-utils.
+Claude recommended finishing item 2 first, then starting libmach stage 2 in a separate `O=_make3` directory in parallel.
+Stage 2 would move assembling into `TinyLibMachine`, leaving tiny-assembler as a thin main over it.
+Claude's plan had tiny-c and tiny-ml writing objects directly in stage 3, dropping the `.tm` text step.
+Claude also listed the three TinyML skeletons and the out-of-tiny/ code-map issues as smaller leftovers.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 19:32
+
+**Yoann:**
+
+> I hesitate for 2. It's true it's nice to have tiny-c imitate a bit what gcc does with this intermediate assembly produced, and some separation of concern
+
+**Claude (summary):**
+
+Claude laid out the tradeoff of dropping the text step: visible pipeline and process boundary lost, but the separation already lives in data as `TinyLibMachine.line list`. Claude argued that gcc-style text output isn't the Plan 9 precedent, which writes objects directly. Claude said the real case for stage 3 was cost, but the `as` share of `make self` is unmeasured. Claude suggested timing `as` against `cc`/`ml` on the kernel and tiny-ml before deciding.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 19:35
+
+**Yoann:**
+
+> ok let's do this stage 2-3 and produce directly object from tiny-c and tiny-ml then
+
+**Claude (summary):**
+
+Claude finished stages 2 and 3 with every check passing, and nothing committed yet.
+Claude asked whether to commit stages 2–3 now as one commit, since that was the next step.
+Claude said `self.expected` must be recorded from a fresh `make self` run in `_make3` after the commit.
+Claude reported that the old `make self` in `_make2` had passed its first build and was running the second.
+Claude said it would report when that old run finished, to see whether it hangs again.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 20:16
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude reported the old `make self` run getting past the earlier hang, with the remaining cleanup queued.
+Claude asked for approval to commit stages 2–3, covering the 38 checked files.
+Claude said the commit would go first, ahead of the rest of the `make self` work.
+Claude held the commit for Yoann's go-ahead rather than committing unprompted.

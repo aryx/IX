@@ -67,31 +67,31 @@ type ir =
 let labels = ref 0
 let label () : label = incr labels; !labels
 (* A unit's assembly, or the whole program's, as it is made: its
- * functions' code, its static blocks' data, their lines printed (old:
- * two buffers, text and data, which TinyML.ml cleared and read) *)
-type asm = { text : Buffer.t; data : Buffer.t }
+ * functions' code, its static blocks' data, their lines, the last
+ * first (old: their lines printed into two buffers, text for
+ * tiny-assembler; now an object, or the text by -S) *)
+type asm = { mutable text : M.line list; mutable data : M.line list }
 
 (* the assembly being made: what the code (machine's, add_text) and the
  * static blocks (words, block) go to; one at a time, as the units are
  * compiled one after the other *)
-let current =
-  ref { text = Buffer.create 0; data = Buffer.create 0 }
+let current = ref { text = []; data = [] }
 
 (* a new assembly, from then on the current one *)
 let start_asm () : asm =
-  let a = { text = Buffer.create 65536; data = Buffer.create 16384 } in
+  let a = { text = []; data = [] } in
   current := a;
   a
 
 (* lines added to the current assembly's code, or to its data *)
 let add_text (ls : M.line list) =
-  List.iter (fun l -> Buffer.add_string !current.text (M.print_line l)) ls
+  !current.text <- List.rev_append ls !current.text
 let add_data (ls : M.line list) =
-  List.iter (fun l -> Buffer.add_string !current.data (M.print_line l)) ls
+  !current.data <- List.rev_append ls !current.data
 
-(* its text, for tiny-assembler: the code, then the data (.data) *)
-let asm_text (a : asm) : string =
-  Buffer.contents a.text ^ M.print_line M.SectionData ^ Buffer.contents a.data
+(* its lines: the code, then the data (.data) *)
+let lines (a : asm) : M.line list =
+  List.rev_append a.text (M.SectionData :: List.rev a.data)
 
 (*****************************************************************************)
 (* The machine: tiny-machine, the stack in r1..r11, the value stack at r12 *)
@@ -464,14 +464,12 @@ let machine (name : sym) nparams nslots (code : ir list) : M.line list =
  * scan); ml_raise: to the latest handler, the exception in r13 *)
 let start =
   let ldw d a off = M.Instr (M.Load (M.W, d, a, off)) in
-  String.concat ""
-    (List.map M.print_line
-       [ M.Label "ml_start"; ldw vsp sp 0; M.Li (r13, Int64.one);
-         M.La (r11, "ml_init"); M.Instr (M.Jalr (0, r11, 0));
-         M.Label "ml_raise"; M.La (1, "ml_handler"); ldw 1 1 0;
-         ldw sp 1 0; ldw vsp 1 4; ldw 2 1 12; M.La (3, "ml_handler");
-         M.Instr (M.Store (M.W, 2, 3, 0)); ldw 2 1 8;
-         M.Instr (M.Jalr (0, 2, 0)) ])
+  [ M.Label "ml_start"; ldw vsp sp 0; M.Li (r13, Int64.one);
+    M.La (r11, "ml_init"); M.Instr (M.Jalr (0, r11, 0));
+    M.Label "ml_raise"; M.La (1, "ml_handler"); ldw 1 1 0;
+    ldw sp 1 0; ldw vsp 1 4; ldw 2 1 12; M.La (3, "ml_handler");
+    M.Instr (M.Store (M.W, 2, 3, 0)); ldw 2 1 8;
+    M.Instr (M.Jalr (0, 2, 0)) ]
 
 (*****************************************************************************)
 (* Data: static blocks *)

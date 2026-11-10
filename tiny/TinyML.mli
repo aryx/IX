@@ -29,7 +29,8 @@
  *        |                   stack machine's code
  *        | machine           turns the list into assembly, and
  *        |                   static blocks into .word
- *     file.tm, for tiny-assembler (with M.tmi when alone, -c)
+ *     file.o, the lines encoded (TinyLibMachine's assemble), for
+ *     tiny-linker (with M.tmi when alone, -c); -S: file.tm, their text
  *
  * Each pass is a part in TinyML/, whose .mli has its types and its
  * functions, in the order they are compiled and best read:

@@ -12,7 +12,7 @@ local skeletons = import '../../skeletons.libsonnet';
   summary: "tiny-machine's parts: a CPU designed to teach, the devices a kernel needs, the wire's other end, its host programs.",
   files: {
     // the CPU
-    'TinyMachineCPU.mli': { digest: '2ae04e6f6cba',
+    'TinyMachineCPU.mli': { digest: 'b6b9c3662719',
       summary: "A CPU of our own, designed to teach (Knuth's road): 16 registers, r0 zero, no flags, one format; the design argued.",
       capitals: [
         { at: 'def:step', say: 'the definition of the machine: fetch, decode, run' },

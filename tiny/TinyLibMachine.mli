@@ -7,10 +7,11 @@
  *                          text and listing (tiny-cpu -l, debug)
  *     the lines            line: the assembly the compilers make
  *                          (tiny-c's TinyCMachine, tiny-ml's
- *                          TinyMLMachine) and print_line its text, which
- *                          tiny-assembler parses back (its parse)
- *     the objects          the lines once encoded: what tiny-assembler
- *                          writes (to_object) and tiny-linker reads
+ *                          TinyMLMachine) and tiny-assembler reads (its
+ *                          parse); print_line its text (-S)
+ *     the objects          the lines once encoded (assemble): what the
+ *                          compilers and tiny-assembler write
+ *                          (to_object) and tiny-linker reads
  *                          (of_object)
  *     the symbols          a program's labels as tiny-linker writes them,
  *                          for tiny-prof and debug
@@ -220,6 +221,19 @@ val print_line : line -> string
 (*****************************************************************************)
 (* The objects *)
 (*****************************************************************************)
+
+(* A line encoded, the object's: an instruction's words, with 0 where a
+ * label's address goes and the place for the link (a branch's, a
+ * call's: the words from the next instruction, Pc; la's: its halves, Hi
+ * and Lo); data's bytes; or the line itself, one the object keeps (a
+ * label, an alignment, which the link does: an address's, not the
+ * file's). Error when an operand does not fit its field. *)
+val encode_line : line -> line
+
+(* [assemble lines]: their object, each line encoded, after an Align 4:
+ * a file starts on a word, whatever the one before ended with (the
+ * assembler's, and the compilers', which make lines, not text) *)
+val assemble : line list -> line list
 
 (* the object's bytes, an object's lines marshalled after a magic line,
  * and back (Error when it is not one, or an older one) *)

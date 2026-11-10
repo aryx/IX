@@ -253,7 +253,6 @@ type line =
 (*****************************************************************************)
 (* Printing *)
 (*****************************************************************************)
-(*****************************************************************************)
 
 (* (a register by its name) *)
 let reg = reg_name
@@ -316,6 +315,67 @@ let print_line (l : line) =
 (*****************************************************************************)
 (* The objects *)
 (*****************************************************************************)
+
+(* a word's bytes, the low first: the memory's order (an int64: a word
+ * of data has 32 bits, tiny-ml's ints 31) *)
+let word_bytes (w : int64) =
+  String.init 4 (fun i ->
+    Char.chr
+      (Int64.to_int
+         (Int64.logand (Int64.shift_right w (8 * i)) (Int64.of_int 0xff))))
+
+(* instructions' words, and the places in them the link fills *)
+let code (is : instr list) relocs : line =
+  Chunk
+    (String.concat ""
+       (List.map (fun i -> word_bytes (Int64.of_int (encode i))) is),
+     relocs)
+
+(* a number of 16 bits, li's in one instruction; else its two halves.
+ * Its low 32 bits read signed, as its text says them (word, above): a
+ * compiler's 0xfffffff0 is -16, one instruction, as when its text was
+ * assembled *)
+let signed (v : int64) = Int64.shift_right (Int64.shift_left v 32) 32
+let small (v : int64) =
+  let v = signed v in
+  Int64.compare v (Int64.of_int (-32768)) >= 0
+  && Int64.compare v (Int64.of_int 32767) <= 0
+let half (v : int64) shift =
+  Int64.to_int (Int64.logand (Int64.shift_right v shift) (Int64.of_int 0xffff))
+
+(* (old: TinyAssembler's item: the compilers encode their lines too) *)
+let encode_line (l : line) : line =
+  let to_ s k = [ (0, k, Name s) ] in
+  match l with
+  | Instr i -> code [ i ] []
+  | Instr_at (i, k, t) -> code [ i ] [ (0, k, t) ]
+  | Machine m -> Chunk (word_bytes (Int64.of_int (encode_machine m)), [])
+  | Li (d, v) when small v ->
+      code [ Alui (Add, d, 0, Int64.to_int (signed v)) ] []
+  | Li (d, v) -> code [ Lui (d, half v 16); Alui (Or, d, d, half v 0) ] []
+  | La (d, s) ->
+      code [ Lui (d, 0); Alui (Or, d, d, 0) ]
+        [ (0, Hi, Name s); (4, Lo, Name s) ]
+  | Mov (d, a) -> code [ Alui (Add, d, a, 0) ] []
+  | Call s -> code [ Jal (lr, 0) ] (to_ s Pc)
+  | Jump s -> code [ Jal (0, 0) ] (to_ s Pc)
+  | Branch_to (c, d, a, s) -> code [ Branch (c, d, a, 0) ] (to_ s Pc)
+  | Ret -> code [ Jalr (0, lr, 0) ] []
+  | Bytes bs ->
+      Chunk
+        (String.concat "" (List.map (fun b -> String.make 1 (Char.chr b)) bs),
+         [])
+  | Ascii s -> Chunk (s, [])
+  | Word v -> Chunk (word_bytes v, [])
+  | Word_sym s -> Chunk (word_bytes Int64.zero, to_ s Full)
+  (* the lines the link places by, and a chunk, already encoded *)
+  | Label _ | Align _ | Space _ | Piece | SectionCode | SectionData
+  | Chunk _ -> l
+
+(* each file on a word's boundary: one may end with bytes, the next
+ * begin with code *)
+let assemble (lines : line list) : line list =
+  Align 4 :: List.map encode_line lines
 
 (* (Marshal's bytes after it: tiny-ml's Marshal stops the program on
  * bytes it cannot read, so another file is said not an object first.

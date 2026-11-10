@@ -74,14 +74,16 @@ of the system:
 - `TinyAppXxx.ml` is an application, a program a person uses on
   tiny-kernel (`calc`, `temp`, `tetris`).
 - `TinyAssembler.ml` and `TinyLinker.ml` are tiny-machine's toolchain
-  after the compilers: a `.tm` file to an object (its words, its
-  labels, the places a label's address goes), objects to an image or
-  an a.out, and its map for tiny-prof. tiny-cpu and tiny-machine only
-  run images. A `.tm` file is read (the assembler's parse, the only
-  reader of assembly) as `TinyLibMachine.ml`'s typed lines of
-  assembly (labels, instructions, data), the lines tiny-c and tiny-ml
-  make too and print; the objects are those lines encoded,
-  marshalled. The words they make are `TinyLibMachine.ml`'s (encode,
+  beside the compilers: assembly written by hand, a `.tm` file, to an
+  object (its words, its labels, the places a label's address goes),
+  objects to an image or an a.out, and its map for tiny-prof.
+  tiny-cpu and tiny-machine only run images. A `.tm` file is read
+  (the assembler's parse, the only reader of assembly) as
+  `TinyLibMachine.ml`'s typed lines of assembly (labels,
+  instructions, data), the lines tiny-c and tiny-ml make too; the
+  objects are those lines encoded (TinyLibMachine's `assemble`, which
+  the compilers call themselves: they write objects, their text only
+  by `-S`), marshalled. The words they make are `TinyLibMachine.ml`'s (encode,
   decode), apart from the CPU, which keeps OCaml's 32-bit loads for
   the machine's speed: tiny-ml compiles the one, not the other.
 - Two things are more than a file, and have a directory of their name

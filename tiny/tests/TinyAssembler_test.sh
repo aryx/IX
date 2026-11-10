@@ -24,11 +24,11 @@ W=${W:-$(mktemp -d)}
 # what the compilers write
 mkdir -p $W/c
 for c in $ROOT/tiny/tests/TinyC_tests/*.c; do
-  (cd $(dirname $c) && $TC -o $W/c/$(basename $c .c).tm $(basename $c)) || { echo "FAIL tiny-c $c"; exit 1; }
+  (cd $(dirname $c) && $TC -S -o $W/c/$(basename $c .c).tm $(basename $c)) || { echo "FAIL tiny-c $c"; exit 1; }
 done
 b=
 for m in Stdlib Char Seq List String; do
-  $TML -c -nostdlib -o $W/c/$m.tm $b $ROOT/tiny/TinyLibCore/$m.ml || { echo "FAIL tiny-ml $m"; exit 1; }
+  $TML -c -nostdlib -S -o $W/c/$m.tm $b $ROOT/tiny/TinyLibCore/$m.ml || { echo "FAIL tiny-ml $m"; exit 1; }
   b="$b $W/c/$m.tmi"
 done
 

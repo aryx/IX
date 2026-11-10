@@ -67927,3 +67927,66 @@ Claude updated the paragraph in `tiny/system/TinyLibSystem.mli` to give the real
 Claude kept the old sentence as an `(old: ...)` note, following the repo's convention for recording corrections.
 Claude confirmed dune still builds, but nothing is committed yet.
 Claude noted `make self` is still running in the background and offered to commit this comment alone or with the later `self.expected` re-record.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 12:47
+
+**Yoann:**
+
+> I like the argument for designing a clean-slate interface, where can put the use of Fpath.t directly, and capabilities, and no Sys.ml/Unix.ml split but a single file
+
+**Claude (summary):**
+
+Claude proposed a clean-slate interface and added Yoann's three points to the paragraph in `TinyLibSystem.mli`.
+The added text says a path is an Fpath.t, not a string, so the interface uses Fpath directly.
+It also says functions reaching the system take the capability that allows them, and that the system is one module, not Sys/Unix.
+The edit builds, but Claude has not committed it yet; it will go in with the `self.expected` re-record unless Yoann wants it sooner.
+Claude left `make self` running in the background.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 12:54
+
+**Yoann:**
+
+> maybe we should explain before the fd type why we introducing it? Unix actually spent some time hiding it behind in_channel, out_channel, or Unix.file_descr, so why exposing back the raw int file descriptor to ocaml tiny programs?
+
+**Claude (summary):**
+
+Claude added a comment on the `fd` type in `TinyLibSystem.mli`, separate from `pid`'s comment.
+Claude explained that OCaml hides descriptors behind `Unix.file_descr` and buffered channels, mainly because of Windows handles.
+Claude argued the raw `int` is justified here, since tiny-kernel and Unix both use descriptor numbers.
+Claude listed the tools that need the number: tiny-shell's rc-style `>[2=1]` plumbing, child stdin at 0, and tiny-db's offsets.
+Claude noted the alias's cost, that the type checker won't catch an fd passed as a count, and that the build passes with changes uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 12:59
+
+**Yoann:**
+
+> now since we have TinyLibSystem.mli, do we need TinyCalls.mli? seems they offer similar services
+
+**Claude (summary):**
+
+Claude recommended keeping both TinyLibSystem and TinyCalls, since they sit on different layers of tiny-kernel.
+Claude identified the real overlap as file operations: TinyCalls reimplements open, read, write, close and stat over host files that unix/ already covers.
+Claude judged a merge into TinyLibSystem too large, since every graphical program would need capabilities threaded through it.
+Claude proposed instead clarifying both .mli headers to state which layer each one is, with the TinyLibGUI file functions noted as the known overlap.
+Claude asked whether Yoann wanted that sentence added to the two headers before making any change.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 13:07
+
+**Yoann:**
+
+> what do you think? It seems confusing to have both those TinyLibSystem.mli rethought system interface, free of unix and sys, and yet another TinyCalls.mli with similar content like fd_stdin which could go also in TinyLibSystem.mli u_read seems very similar to reading function in TinyLibSystem
+
+**Claude (summary):**
+
+Claude recommended merging TinyCalls into TinyLibSystem, since the split between them was historical rather than designed.
+Claude proposed a four-stage plan: grow TinyLibSystem.mli with fd_stdin through fd_mouse, ready, ticks, rawcons, dial, and spawn.
+Claude suggested moving the graphical libraries and programs from TinyCalls to TinyLibSystem, and making TinyCalls private to tinykernel/.
+Claude then offered to write docs/plans/plan_tiny_one_system.md covering the stages, the .mli changes, and open questions for Yoann's review.

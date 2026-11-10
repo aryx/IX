@@ -6,7 +6,7 @@
  *     tinykernel/TinyCalls.ml  on tiny-machine, by tiny-ml: externals,
  *                           mlsys.c's functions, the kernel's calls
  *     sdl/TinyCalls.ml      on the host, a window of SDL's: what is
- *                           drawn drawn by TinyKernelGraphics.ml and
+ *                           drawn by TinyKernelGraphics.ml and
  *                           shown, the mouse and the keys the window's,
  *                           the host's files and clock (tiny-office,
  *                           tiny-emacs... on the host: ../user/sdl/)

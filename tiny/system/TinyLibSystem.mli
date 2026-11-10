@@ -69,12 +69,22 @@
 (* System types *)
 (*****************************************************************************)
 
-(* a process's number, the system's; a file's descriptor, a number too
- * (0, 1, 2 the standard input, output, error): where a program does
- * have one, the shell's plumbing (dup2, pipe), a file read and
- * written at offsets (tiny-db's); a file read or written whole, or a
- * piece at a time, is a channel (with_open_in, with_open_out) *)
+(* a process's number, the system's *)
 type pid = int
+
+(* A file's descriptor, a number too (0, 1, 2 the standard input,
+ * output, error), where OCaml hides it: Unix.file_descr is abstract
+ * (on Windows a descriptor is a handle, not a number), and most
+ * programs use the buffered channels over it. Here both systems number
+ * them: tiny-kernel's calls take the number, and on the host it is
+ * Unix's own (unix/'s fd, by Obj.magic). And the tools that need a
+ * descriptor need its number: the shell's plumbing (dup2, pipe), where
+ * rc's >[2=1] names 2 and 1, and a child finds its input at 0 because
+ * it is 0; a file read and written at offsets (tiny-db's). A file read
+ * or written whole, or a piece at a time, is a channel instead
+ * (with_open_in, with_open_out), as in OCaml. What the alias costs: an
+ * fd is an int to the type checker, which does not catch one passed
+ * where a count was meant. *)
 type fd = int
 
 (* how a child ended, as rc says it: "" when all went well, its code,

@@ -68370,3 +68370,19 @@ Claude committed stage 5 as 458e3332, along with the prompt-history.md file.
 Claude declared the one-system plan complete, so no stages in it remain open.
 Claude's answer treated the finished plan as ready to archive, a candidate for moving into done/.
 Claude left the libmach stages 2 and 3 and the make self hang open, plus the scratch directory.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 17:45
+
+**Yoann:**
+
+> let's move the plan to done/ if it's done
+
+**Claude (summary):**
+
+Claude moved the plan to `docs/plans/done/plan_tiny_one_system.md` and committed it as 6bff9f74, along with `prompt-history.md`.
+Claude fixed the moved plan's companion link, now pointing to `tiny/TinyLibSystem/README.md` since `tiny/system/README.md` no longer exists.
+Claude updated its link to `plan_tiny_windows.md` to a sibling link, since both plans now live in `done/`.
+Claude also repointed the link in `plan_tiny_libmach.md` to the moved plan through `done/`.
+The libmach plan stays in `docs/plans/` with stages 2 to 4 still outstanding.

@@ -34,9 +34,6 @@
  *                        restores 1, then 0, waits for the child, and
  *                        sets $status to the statuses joined by a bar
  *
- * Usage: rc -h (the [help] string of the .ml) shows the language by
- * example.
- *
  * twin:
  * mini-rc (shell/) is a faithful copy of rc; this shell is what remains
  * when compatibility is dropped.

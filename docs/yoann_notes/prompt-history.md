@@ -67990,3 +67990,98 @@ Claude recommended merging TinyCalls into TinyLibSystem, since the split between
 Claude proposed a four-stage plan: grow TinyLibSystem.mli with fd_stdin through fd_mouse, ready, ticks, rawcons, dial, and spawn.
 Claude suggested moving the graphical libraries and programs from TinyCalls to TinyLibSystem, and making TinyCalls private to tinykernel/.
 Claude then offered to write docs/plans/plan_tiny_one_system.md covering the stages, the .mli changes, and open questions for Yoann's review.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 13:13
+
+**Yoann:**
+
+> yes, write the plan
+
+**Claude (summary):**
+
+Claude wrote the plan to `docs/plans/plan_tiny_one_system.md`, with a goal of one `TinyLibSystem.mli` interface and `TinyCalls` made private inside `system/tinykernel/`.
+Claude laid out four commits, each passing checks: grow the interface, split the host's Unix code into a shared library, move the graphical libraries over, then make `TinyCalls` private.
+Claude listed five open questions, including the stub on tiny-cpu, the test hook `drawn`, the debugger and tracer, and window programs on plain Unix.
+Claude also reported that a third `make self` run is underway, and it removed the scratch directory `TinyKernel/_make2/`.
+Claude asked whether to commit the plan and the three comment changes now or adjust the plan first.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 13:23
+
+**Yoann:**
+
+> at this point maybe we could have a tiny/lib_core and tiny/lib_system/ following more what we do for m-ix ?
+
+**Claude (summary):**
+
+Claude recommended option a: two sibling directories, `tiny/lib_core/` and `tiny/lib_system/`, rather than nesting `system/` under `lib_core/`.
+Claude argued `lib_system/` matches `TinyLibSystem` and keeps the system interface separate, since tools and window programs link it directly.
+Claude proposed leaving the `TinyLib*.ml` single-file libraries at the top of `tiny/`, documenting the `lib_*/` convention in `tiny/README.md`.
+Claude suggested recording `self.expected` only after the renames, and waiting for the running `make self` to finish first.
+Claude estimated the rename at about 60 `TinyLibCore` mentions across 27 files, and asked whether to proceed once the run finishes.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 13:26
+
+**Yoann:**
+
+> We could also have a TinyLibSystem/ instead of system/ ? fitting more the TinyXxx/ convention we started. But we can revisit that too, not sure it was a good idea to start from, those Tiny prefix can be annoying too
+
+**Claude (summary):**
+
+Claude agreed the Tiny prefix should stay on files, since module names must be unique when linked together.
+Claude recommended `lib_core/` instead of `TinyLibCore/`, since that directory holds a group of modules rather than one module's parts.
+Claude suggested `lib_system/` for the current two-interface system directory, with `TinyLibSystem/` deferred until the one-system plan.
+Claude proposed writing the parts-versus-group naming rule into `tiny/README.md`, and waiting for the running `make self`.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 13:49
+
+**Yoann:**
+
+> Actually I think we can keep TinyLibCore/ and have a TinyLibSystem/ and have even the tiny/TinyLibSystem.mli interface file, which would encapsulate all system stuff soon, and then TinyLibSystem/ could get subdirs for each virtual modules instantiations (unix/ tinykernel/ sdl/ teststub/ etc.)
+
+**Claude (summary):**
+
+Claude proposed moving the system interface to `tiny/TinyLibSystem.mli` with implementations under `tiny/TinyLibSystem/` (unix, tinykernel, sdl, stub), keeping `TinyLibCore/` unchanged.
+Claude explained dune needs the virtual library's `.mli` in its own directory, so the `tiny_lib_system` stanza moves to `tiny/dune`.
+Claude noted mini-mk and `compile_ix.sh` simplify, since `TinyShell.ml` finds the interface beside it and `-I system` flags go.
+Claude suggested renaming `teststub/` to `stub/` or keeping it, and flagged about 120 `system/` references across 53 files.
+Claude would start after the running `make self` finishes, then re-record `self.expected` once for both changes.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 13:50
+
+**Yoann:**
+
+> and maybe we can get rid of user/ at some point if TinyCalls.ml disappear and get merged in TinyLibSystem, maybe the TinyXxx.ml do not need a user/xxx.ml
+
+**Claude (summary):**
+
+Claude recommended that `user/` can mostly go, since the tools already have no `user/` file.
+Claude explained that window programs keep `user/*.ml` files only so in-process tests can link the library without starting it.
+Claude proposed generating each one-line `user/` entry point with a dune rule or `TinyKernel/Makefile`, leaving `user/` empty.
+Claude suggested moving each program's argument and file logic into a `main` in its `.mli`, written on `TinyLibSystem`.
+Claude proposed adding this as stage 5 to `plan_tiny_one_system.md`, after `TinyCalls` becomes private.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 13:53
+
+**Yoann:**
+
+> yes, add it to the plan
+
+**Claude (summary):**
+
+Claude added stage 5 to docs/plans/plan_tiny_one_system.md, dropping the tools' user/ directory.
+Claude explained that the in-process tests link TinyOffice and the other programs as libraries directly.
+Claude proposed a main in each TinyXxx.ml, so each user/ file shrinks to a one-line stub.
+Claude proposed generating that line in the build: dune on the host, the TinyKernel Makefile for tiny-kernel.
+Claude left question 6, hand-written or generated, open for Yoann, and updated the stage 5 size estimate.

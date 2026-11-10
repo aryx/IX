@@ -314,7 +314,14 @@ let registers () =
   let rec go l k =
     match l with
     | name :: v :: rest when name <> "pc" ->
-        let r = name ^ " " ^ hex (int_of_string v) in
+        (* r14 sp, r15 lr, as the listing names them (reg_name); the
+         * kernel's names otherwise *)
+        let shown =
+          match int_of_string_opt (String.sub name 1 (String.length name - 1))
+          with
+          | Some k when name.[0] = 'r' -> reg_name k
+          | _ -> name in
+        let r = shown ^ " " ^ hex (int_of_string v) in
         say (if k mod 4 = 3 then r ^ "\n"
              else r ^ String.make (max 1 (16 - String.length r)) ' ');
         go rest (k + 1)

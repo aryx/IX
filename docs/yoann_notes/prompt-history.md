@@ -67526,3 +67526,27 @@ Claude proposed a four-part cleanup of the ix libraries, with part A (types) as 
 **Yoann:**
 
 > also tiny/README.md could maybe get an update; not sure it's still up to date with all the recent development in tiny/
+
+------------------------------------------------------------------------
+
+## 2026-11-10 08:36
+
+**Yoann:**
+
+> in tiny/sdl/dune the first parahraph "
+>
+> ; tiny graphical programs on the host, in a window of SDL's: TinyCalls.ml, the
+> ; kernel's calls (../TinyKernel/host/TinyCalls.mli) a window's, and the
+> ; few lines of each program, tiny-kernel's own (../TinyKernel/user/),
+> ; compiled by OCaml here. Not counted by make loc (an sdl/ directory: a
+> ; program's host), as tiny-machine-window is not.
+>
+> " is hard to parse for a human
+
+**Claude (summary):**
+
+Claude sectioned TinyCalls.ml into seven labeled groups, moving code only, and checked it with a sorted-line comparison.
+Claude regrouped tiny/dune into five sections and split combined comments so each describes its own stanza.
+Claude rewrote the opening paragraph of tiny/sdl/dune as three short paragraphs, keeping your executable reordering.
+Claude updated tiny/README.md's stale claims about the parts directories, the toolchain, and the sdl/ programs.
+Claude confirmed that dune build and mini-mk pass, then asked whether to commit the four files together.

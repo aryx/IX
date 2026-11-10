@@ -1,8 +1,8 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# t-IX from tiny/, as ../Makefile's tix and test-tix (their names work
-# here too):
+# Build and test t-IX from tiny/ itself, as ../Makefile's tix and test-tix
+# (their names work here too):
 #
 #   make         the tiny programs by dune (from here dune builds tiny/
 #                alone: a no-op is 0.6 s, the whole tree's 4)

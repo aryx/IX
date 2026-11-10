@@ -68355,3 +68355,18 @@ Claude found that this change needs three build systems: dune, the TinyKernel Ma
 Claude wrote the `main` functions for the editor, office, browser, troff, play, the tetris, calculator, and temperature apps, and the debugger.
 Claude updated the dune stanzas, the tiny-cpu editor test, and the docs and code-map configs, marking the plan's stage 5 "done".
 Claude verified it with dune, `make test-tix`, `tiny_check.sh`, mini-mk, the kernel check, and self-quick, but nothing is committed yet.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 17:42
+
+**Yoann:**
+
+> yes let's commit
+
+**Claude (summary):**
+
+Claude committed stage 5 as 458e3332, along with the prompt-history.md file.
+Claude declared the one-system plan complete, so no stages in it remain open.
+Claude's answer treated the finished plan as ready to archive, a candidate for moving into done/.
+Claude left the libmach stages 2 and 3 and the make self hang open, plus the scratch directory.

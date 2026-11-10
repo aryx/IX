@@ -28,7 +28,7 @@ They were found by reading each program's header and code against its
 twin's (three analyses, 2026-11-09); their sizes are estimates until a
 pilot measures them.
 
-**Status: not started** (2026-11-09).
+**Status: not started** (2026-11-09); a second search, 2026-11-10, for the programs without a twist: four candidates below the bar (6 to 9), the rest set aside with its reasons.
 
 ## The gate
 
@@ -153,6 +153,109 @@ command language on one buffer.
   office's text. How much it deletes is the least sure of this list:
   the two fillers were not compared line by line.
 
+## The second search (2026-11-10)
+
+For the programs with no `twist:` yet (the author: "let's try to find
+candidates for the programs without one yet"), three readings against
+the twins: the shell, sam, emacs and trace; play, temp, tiny-cpu,
+tiny-machine and the assembler; tiny-c, tiny-ml and the libraries
+(Draw, Regex, System, Machine). None reached tiny-build's bar; four
+candidates are below it, each to prove its deletion in a pilot.
+
+### 6. sam: a line is a match
+
+**Idea.** sam runs `x` with no pattern as `x/.*\n/` (its linex): every
+line address (`3`, `+`, `-`, the newline command) becomes the n-th match
+of that line pattern, which a command changes.
+
+**Deletes.** `lineaddr` (about 38 lines) and the `Lines` case of the
+loop (11), for an n-th match over `Regex.search` and `search_back`
+(about 15): about 30 lines.
+
+**Gains.** A "line" a paragraph, a record, a function: `3p`, `.+1`, a
+bare `x` in those units; awk's RS in sam's language.
+
+**Costs.** sam's corner cases (line 0, a range ending mid-line, a last
+line without its newline), which the tests diff against `sam -d`; the
+matcher slower than a loop over characters for `5000p`.
+
+**Precedent.** sam's linex; awk's RS; Pike, "Structural Regular
+Expressions" (1987).
+
+### 7. trace: the kernel writes each call's line
+
+**Idea.** The table of the arguments' kinds goes into the kernel, which
+copies a path or the bytes given at the call and the bytes filled at
+the return into the trace's line: the process is not stopped.
+
+**Deletes.** In trace, `bytes`, `path`'s 64-byte loop, `fills`,
+`pending`, the matching of a call with its return (about 40 of 213
+lines); in the kernel, the call and return stops (about 25), less a
+formatter (about 25).
+
+**Gains.** Tracing at about full speed (today two stops and a read per
+byte at each call), and the traced program scheduled as when it is
+not: strace's Heisenbug, a race that tracing hides, gone.
+
+**Costs.** Against trace's own design ("the kernel keeps nothing of
+the call and decodes nothing"); a slow reader means a buffer without
+end, or the process stopped when it is full.
+
+**Precedent.** Plan 9's kernel formats ratrace's lines
+(port/syscallfmt.c); DTrace's syscall provider.
+
+### 8. tiny-machine: one agenda for what happens at a time
+
+**Idea.** Time is instructions, so what is not one happens at a known
+count: a session's event, a packet's landing, the timer, the peer's
+waking, the host's polls. One list ordered by time, an entry a time and
+a closure (`at mc after f`), in place of four mechanisms (`events`,
+`flying`, `timecmp`'s checks, the loop's polls) and of the peer's empty
+packet that means "wake me".
+
+**Deletes.** About 30 to 40 lines (tick's events and landing, `landed`,
+`net_give`'s place, most of `calm`, the empty packet's cases), not
+measured.
+
+**Gains.** A device that answers N instructions later in a line: the
+header's slow disk exercise, a slow console, a packet's latency.
+
+**Costs.** `calm` stays for the registers' writes; closures make the
+machine's state harder to save; the power is mostly exercises made
+cheap.
+
+**Precedent.** SIMULA 67's event list; gem5's EventQueue; QEMU's timers
+with icount.
+
+### 9. emacs: the text a snapshot
+
+**Idea.** Before a key that changes the text, a shallow copy of its
+record: it shares every line, the editor never changing a string.
+Undo puts the last back; "modified" is the lines compared with those
+saved (`==`, then `=`), not a flag.
+
+**Deletes.** The `modified` field and its 9 updates (about 10 lines),
+about as many back for undo: gate 1 in doubt.
+
+**Gains.** Undo (in `dropped:` today); a text typed then erased, or
+undone to its save, is unmodified again.
+
+**Costs.** A record per key (a run of letters could share one); a
+comparison of the lines at each key, for the mode line.
+
+**Precedent.** The office's and mini-office's undo, earlier texts;
+Yi's and Xi's persistent buffers.
+
+### Found on the way, fixed (not twists)
+
+- TinyLibRegex's `search` made a memo per start: a search that failed
+  was quadratic (1.25 s for `(a*)*b` on 3,000 letters, bytecode, where
+  `matches` took none). One memo for all the starts, as `matches` had;
+  `matches` a search.
+- tiny-c folded constants only where a number was needed (const_expr)
+  and in unary minus: `int x = 2*3;` was refused, `p + 1` a li, a li
+  and a mul. The tree folds them as it is built.
+
 ## Considered and set aside
 
 - **Restartable system calls (ITS's PCLSRing) instead of the waiting
@@ -169,3 +272,28 @@ command language on one buffer.
   readable text is what the header teaches (content addressing by
   hand), and a change of Marshal's format would rename every object.
   Postponed, not a twist.
+- **tiny-shell, again (2026-11-10).** `$status` as a list (per stage)
+  changes what it prints, which the tests compare with 9base rc's;
+  blocks as values (es) keep rc's syntax for the same tests, the cases
+  moved, not gone; glob flags for the `\000` escapes only re-encode.
+- **play, temp, tiny-cpu.** Too small to delete much: a sound as a
+  function of time is what `piece` is; a table of scales for temp
+  folds two cases of 64 lines; tiny-cpu is a command line.
+- **The assembler: one table of instruction shapes** (the NJ
+  Machine-Code Toolkit, TableGen), encode, decode, print and parse
+  derived from it. The code is half tables already (`alus`, `cmps`,
+  `named`); 30 to 50 lines over TinyLibMachine and TinyMachineDevices,
+  and its power, print and parse agreeing, a law the tests check.
+- **tiny-c.** Constants folded in the tree: 5c folds them too (a fix,
+  above, not a twist); a call's types checked at the link: 5c's -T;
+  more than 12 deep spilled: a feature.
+- **tiny-ml.** Eval/apply with the arity in the closure: ocamlopt's
+  caml_applyN; the value stack as the stack machine's: every push a
+  store, against making the core fast, and against twist 2; the
+  interface inside the object (Go's export data): nothing deleted.
+- **The libraries.** Regex's memoized backtracker is its design, and
+  libregexp is linear too; Draw's messages as a variant decoded once:
+  a refactoring, the power (a drawing saved and replayed) already
+  there, its messages being bytes; System's spawn with descriptor
+  changes: the shell needs fork for a block in a pipeline; Machine's
+  objects of lines not encoded, encoded at the link: 5c and 5l's way.

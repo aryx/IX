@@ -3,7 +3,8 @@
 
 (* tetris, a program of TinyKernel.ml's: ../TinyAppTetris.ml, the game,
  * run by ../TinyLibPlayground.ml. *)
+module TSys = TinyLibSystem
 open TinyLibPlayground
 open TinyAppTetris
 
-let () = run game
+let () = TSys.main "tetris" (fun caps _ -> run caps game)

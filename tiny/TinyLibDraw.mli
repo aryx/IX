@@ -16,8 +16,8 @@
  *
  *     a program            TinyAppTetris on TinyLibPlayground, TinyWindows
  *        | d_fill ...      this file: makes a string of 19 bytes
- *        | written on 3    on tiny-machine: a system call (TinyLibSystem/
- *        |                 tinykernel/TinyCalls.ml); on the host: TinyCalls,
+ *        | written on 3    TinyLibSystem.write fd_draw: on tiny-machine a
+ *        |                 system call; on the host the tests' stub,
  *        |                 which keeps it for the test to check
  *        | (through a pipe, renumbered by TinyWindows, when in a window)
  *        | [messages]      TinyKernelGraphics: inside TinyKernel; on the
@@ -27,7 +27,7 @@
  *     the screen's bytes   at 0xf00000 on both
  *
  * So the three files between a program and its machine (this one,
- * TinyCalls and TinyMemory) are where the host takes the machine's
+ * TinyLibSystem and TinyMemory) are where the host takes the machine's
  * place, and everything above them is tested by dune before
  * tiny-machine ever runs it.
  *

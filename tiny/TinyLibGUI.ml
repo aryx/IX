@@ -4,7 +4,7 @@
 (* See TinyLibGUI.mli *)
 
 module D = TinyLibDraw
-open TinyCalls
+module TSys = TinyLibSystem
 module P = TinyLibPlayground
 
 (* a text; a text in a box, at its right; a field typed in, and the
@@ -269,12 +269,9 @@ let key (g : ('m, 'msg) gui) (boxes : 'msg boxes) model m (k : P.key) =
 (* The loop *)
 (*****************************************************************************)
 
-(* what a loop waits on (u_ready's descriptors): the keys, fd_stdin, and
- * the mouse, fd_mouse *)
-let keys_and_mouse () =
-  let fds = Array.make 2 fd_stdin in
-  fds.(1) <- fd_mouse;
-  fds
+(* what a loop waits on (TSys.ready's descriptors): the keys and the
+ * mouse *)
+let keys_and_mouse = [ TSys.fd_stdin; TSys.fd_mouse ]
 
 (* The program, until an Escape, a q that no field takes, or the keys'
  * end: what changed drawn (the widgets when the model's are other
@@ -283,13 +280,13 @@ let keys_and_mouse () =
  * placed when the model is another one, and after each key that makes
  * it so: the next key is the new field's. *)
 let run (g : ('m, 'msg) gui) =
-  let fds = keys_and_mouse () in
+  let fds = keys_and_mouse in
   let rec loop model m view shown was =
     let (now, boxes) = view in
     let is = over boxes m in
     if now != shown || is <> was then redraw shown was now is;
-    if u_ready fds 2 0 = fd_stdin then begin
-      let s = u_read fd_stdin 16 in
+    if TSys.ready fds None = Some TSys.fd_stdin then begin
+      let s = TSys.read TSys.fd_stdin 16 in
       if s = "" then exit 0;
       let rec typed i model view =
         if i >= String.length s then loop model m view now is
@@ -305,7 +302,7 @@ let run (g : ('m, 'msg) gui) =
       typed 0 model view
     end
     else
-      match D.mouse_event (u_read fd_mouse 12) with
+      match D.mouse_event (TSys.read TSys.fd_mouse 12) with
       | None -> exit 0
       | Some e ->
           let (model', m') = mouse g boxes model m e.mo_x e.mo_y e.mo_buttons in
@@ -449,13 +446,14 @@ type 'm canvas = {
  * which tiny-windows answers in the window's mouse box as a mouse at
  * (width, height) with the buttons -1; on the console no one answers in
  * half a second, and the window is the screen *)
-let window_size () =
-  ignore (u_write fd_stdout "\005");
-  let fds = Array.make 1 fd_mouse and until = u_ticks () + 200 in
+let window_size caps =
+  TSys.write TSys.fd_stdout "\005";
+  let until = TSys.millis caps + 500 in
   let rec answer () =
-    if u_ready fds 1 until <> fd_mouse then D.screen_w, D.screen_h
+    if TSys.ready [ TSys.fd_mouse ] (Some until) = None then
+      D.screen_w, D.screen_h
     else
-      match D.mouse_event (u_read fd_mouse 12) with
+      match D.mouse_event (TSys.read TSys.fd_mouse 12) with
       | Some e when e.mo_buttons = -1 -> e.mo_x, e.mo_y
       | _ -> answer () in
   answer ()
@@ -631,10 +629,10 @@ let repaint shown now =
  * drawn where it changed, then the keys or the mouse waited for. The
  * console is raw meanwhile (rawcons): its ^C is a key, not the kill of
  * every process (emacs's C-x C-c). At the end the window is white. *)
-let run_canvas (c : 'm canvas) =
-  let w, h = window_size () in
-  ignore (u_rawcons 1);
-  let fds = keys_and_mouse () in
+let run_canvas caps (c : 'm canvas) =
+  let w, h = window_size caps in
+  TSys.raw_console caps true;
+  let fds = keys_and_mouse in
   (* a shape with its leaves and their box: the old ones when it is the
    * very same *)
   let fresh n =
@@ -654,8 +652,8 @@ let run_canvas (c : 'm canvas) =
   let rec loop model shown =
     let now = with_leaves shown (c.picture model) in
     repaint shown now;
-    if u_ready fds 2 0 = fd_stdin then begin
-      let s = u_read fd_stdin 16 in
+    if TSys.ready fds None = Some TSys.fd_stdin then begin
+      let s = TSys.read TSys.fd_stdin 16 in
       let rec typed i model =
         if i >= String.length s then loop model now
         else
@@ -666,7 +664,7 @@ let run_canvas (c : 'm canvas) =
     end
     else begin
       (* (an ENQ's answer, the buttons -1, is not the program's) *)
-      match D.mouse_event (u_read fd_mouse 12) with
+      match D.mouse_event (TSys.read TSys.fd_mouse 12) with
       | Some e when e.mo_buttons >= 0 ->
           (match c.moved e.mo_x e.mo_y e.mo_buttons model with
            | Some m -> loop m now
@@ -677,30 +675,4 @@ let run_canvas (c : 'm canvas) =
   loop (c.first w h) [];
   P.draw 0 0 0 (P.Rect (255, w, h));
   P.flush ();
-  ignore (u_rawcons 0)
-
-(* the file such a program edits: its text, "" when it is not there;
- * the text written, and whether all of it was (u_write is 0 when all
- * was written). TinyCalls' own, not TinyLibSystem's: a program on this
- * library links no TinyLibSystem (no capabilities), and an editor wants
- * "" for a new file, not a Failure *)
-let read_file (file : Fpath.t) =
-  let fd = u_open (Fpath.to_string file) o_read in
-  if fd < 0 then ""
-  else begin
-    (* the pieces read, the last first, then joined once by String.concat
-     * (old: each copied by hand into bytes of their size, when concat
-     * joined by pairs; older: each added to the text so far, a copy of
-     * all of it a piece: a WAV of 141 KB was 85 million instructions,
-     * 600 a byte) *)
-    let rec go acc =
-      let s = u_read fd 4096 in
-      if s = "" then acc else go (s :: acc) in
-    let pieces = go [] in
-    ignore (u_close fd);
-    String.concat "" (List.rev pieces)
-  end
-
-let write_file (file : Fpath.t) text =
-  let fd = u_open (Fpath.to_string file) o_anew in
-  fd >= 0 && (let r = u_write fd text in ignore (u_close fd); r = 0)
+  TSys.raw_console caps false

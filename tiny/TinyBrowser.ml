@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See TinyBrowser.mli *)
-open TinyCalls
+module TSys = TinyLibSystem
 open TinyLibDraw
 open TinyLibPlayground
 open TinyLibGUI
@@ -40,14 +40,14 @@ let escaped s =
  * for a helper *)
 let body sc (media : string) s =
   match sc.sc_doc.dc_file with
-  | Some fd -> ignore (u_write fd s)
+  | Some fd -> (try TSys.write fd s with Failure _ -> ())
   | None ->
     if is_html media then feed sc.sc_page s
     else if String.starts_with "text/" media then feed sc.sc_page (escaped s)
 
 (* The head's end: the status, and the body's media type, returned (HTML
  * when the head does not say, as when there is no head) *)
-let body_start sc : string =
+let body_start caps sc : string =
   let d = sc.sc_doc in
   let media =
     match media_type d.dc_head with "" -> "text/html" | t -> t in
@@ -55,8 +55,8 @@ let body_start sc : string =
   d.dc_type <- Some media;
   (match List.assoc_opt media helpers with
    | Some (_, file) ->
-     let fd = u_open file o_anew in
-     d.dc_file <- (if fd < 0 then None else Some fd)
+     d.dc_file <-
+       (try Some (TSys.open_out caps (Fpath.v file)) with Failure _ -> None)
    | None ->
      if is_html media then ()
      else if String.starts_with "text/" media then feed sc.sc_page "<pre>"
@@ -64,7 +64,7 @@ let body_start sc : string =
   media
 
 (* A message of the page: the head kept until it ends, then the body *)
-let take sc s =
+let take caps sc s =
   let d = sc.sc_doc in
   match d.dc_type with
   | Some media -> body sc media s
@@ -78,10 +78,10 @@ let take sc s =
     | Some e ->
       let rest = String.sub d.dc_head e (String.length d.dc_head - e) in
       d.dc_head <- String.sub d.dc_head 0 e;
-      body sc (body_start sc) rest
+      body sc (body_start caps sc) rest
 
 (* The page's end: a helper's file closed and its program started *)
-let body_end sc =
+let body_end caps sc =
   let d = sc.sc_doc in
   let media =
     match d.dc_type with
@@ -89,7 +89,7 @@ let body_end sc =
     | None ->
       let rest = d.dc_head in
       d.dc_head <- "";
-      let media = body_start sc in
+      let media = body_start caps sc in
       body sc media rest;
       media in
   match List.assoc_opt media helpers with
@@ -98,25 +98,31 @@ let body_end sc =
       match d.dc_file with
       | None -> "could not be kept in " ^ file
       | Some fd ->
-        ignore (u_close fd);
+        TSys.close fd;
         d.dc_file <- None;
-        if u_spawn ("/bin/" ^ prog) [ prog; file ] < 0 then
+        if TSys.spawn caps (Fpath.v ("/bin/" ^ prog)) [ prog; file ] = None then
           "kept in " ^ file ^ ", but there is no " ^ prog ^ " to show it"
         else "kept in " ^ file ^ ", given to " ^ prog in
     feed sc.sc_page ("<p>" ^ media ^ ": " ^ what ^ ".</p>")
   | None -> ()
 
+(* a connection to the wire's other end, its port 70, or None (old:
+ * u_dial's -1); a question written on it, a refusal not a reason to end *)
+let dialed caps =
+  try Some (TSys.dial caps "10.0.0.1" 70) with Failure _ -> None
+let wire_write fd s = try TSys.write fd s with Failure _ -> ()
+
 (* the connection to the wire's other end closed, if there is one *)
 let hang_up sc =
   (match sc.sc_nav.nv_wire with
-   | Wire_page fd -> ignore (u_close fd)
-   | Wire_picture (fd, _) -> ignore (u_close fd)
+   | Wire_page fd -> TSys.close fd
+   | Wire_picture (fd, _) -> TSys.close fd
    | Wire_off -> ());
   sc.sc_nav.nv_wire <- Wire_off
 
 (* Asks for the page at [url] (a full address), which replaces the one
  * shown; its #fragment, if any, is shown when it comes. *)
-let load sc url =
+let load caps sc url =
   hang_up sc;
   for i = 0 to pictures sc.sc_page - 1 do
     match (picture_of sc.sc_page i).pc_got with
@@ -130,7 +136,7 @@ let load sc url =
   sc.sc_nav.nv_goal_id <- id;
   sc.sc_y <- 0;
   (match sc.sc_doc.dc_file with
-   | Some fd -> ignore (u_close fd)
+   | Some fd -> TSys.close fd
    | None -> ());
   sc.sc_doc.dc_got <- 0;
   sc.sc_doc.dc_head <- "";
@@ -143,23 +149,21 @@ let load sc url =
   draw_tools sc;
   redraw sc;
   (* the page asked of the wire's other end, on its port 70 *)
-  let fd = u_dial "10.0.0.1" 70 in
-  if fd < 0 then begin
-    sc.sc_state <-
-      Page_none "www: no network (tiny-machine -net dir gives one)";
-    finish sc.sc_page
-  end
-  else begin
-    sc.sc_nav.nv_wire <- Wire_page fd;
-    ignore (u_write fd (request url))
-  end;
+  (match dialed caps with
+   | None ->
+       sc.sc_state <-
+         Page_none "www: no network (tiny-machine -net dir gives one)";
+       finish sc.sc_page
+   | Some fd ->
+       sc.sc_nav.nv_wire <- Wire_page fd;
+       wire_write fd (request url));
   draw_status sc
 
 (* The pictures, once the page is all there: the next one asked of the
  * wire's other end, as "img w h address", the ones on the screen first,
  * then in the page's order. Its answer is a line "0 w h", then a row of
  * pixels a message, which go into the picture's image as they come. *)
-let rec next_picture sc =
+let rec next_picture caps sc =
   let p = sc.sc_page in
   let pending id = (picture_of p id).pc_got = Pic_unasked in
   let rec on_screen = function
@@ -188,15 +192,14 @@ let rec next_picture sc =
    | None -> ()
    | Some id ->
     let pc = picture_of p id in
-    let fd = u_dial "10.0.0.1" 70 in
-    if fd < 0 then begin pc.pc_got <- Pic_failed; next_picture sc end
-    else begin
-      pc.pc_got <- Pic_asked;
-      let url = resolve sc.sc_nav.nv_address (base p) pc.pc_src in
-      ignore (u_write fd ("img " ^ string_of_int pc.pc_w ^ " "
-                          ^ string_of_int pc.pc_h ^ " " ^ url ^ "\r\n"));
-      sc.sc_nav.nv_wire <- Wire_picture (fd, id)
-    end);
+    (match dialed caps with
+     | None -> pc.pc_got <- Pic_failed; next_picture caps sc
+     | Some fd ->
+         pc.pc_got <- Pic_asked;
+         let url = resolve sc.sc_nav.nv_address (base p) pc.pc_src in
+         wire_write fd ("img " ^ string_of_int pc.pc_w ^ " "
+                        ^ string_of_int pc.pc_h ^ " " ^ url ^ "\r\n");
+         sc.sc_nav.nv_wire <- Wire_picture (fd, id)));
   draw_status sc
 
 (* A message of the picture being fetched: its first line, then its
@@ -229,7 +232,7 @@ let picture_message sc (id : int) s =
 
 (* Goes to an address, remembering where we were. A link to a place of
  * the page shown (#cite_note-2) only moves to it. *)
-let go sc url =
+let go caps sc url =
   let address, id = fragment url in
   sc.sc_nav.nv_history <-
     (sc.sc_nav.nv_address, sc.sc_y) :: sc.sc_nav.nv_history;
@@ -241,11 +244,11 @@ let go sc url =
       sc.sc_tools.tb_field <- url;
       draw_tools sc;
       draw_status sc
-  | _ -> load sc url
+  | _ -> load caps sc url
 
 (* Back to the page before, scrolled where it was: moved to if it is the
  * same page, asked for again if not. *)
-let back sc =
+let back caps sc =
   match sc.sc_nav.nv_history with
   | [] -> ()
   | (address, y) :: rest ->
@@ -256,7 +259,7 @@ let back sc =
         sc.sc_tools.tb_field <- address;
         draw_tools sc
       end
-      else begin load sc address; sc.sc_nav.nv_goal <- Some y end
+      else begin load caps sc address; sc.sc_nav.nv_goal <- Some y end
 
 (* the link under the mouse, if any *)
 let link_at sc x y =
@@ -277,46 +280,46 @@ let link_at sc x y =
     | _ -> None
 
 (* What a menu's item or a button does; false for Quit *)
-let act sc a =
+let act caps sc a =
   (match a with
-   | Back -> back sc
+   | Back -> back caps sc
    | Top -> show_from sc 0
-   | Reload -> load sc sc.sc_nav.nv_address
+   | Reload -> load caps sc sc.sc_nav.nv_address
    | Quit -> ()
    | Address -> sc.sc_tools.tb_field <- ""; focus sc true; draw_tools sc
    | Search -> sc.sc_tools.tb_field <- "?"; focus sc true; draw_tools sc
-   | Go_to t -> go sc (absolute t)
+   | Go_to t -> go caps sc (absolute t)
    | Go_typed ->
      if sc.sc_tools.tb_field = "" then
        sc.sc_tools.tb_field <- sc.sc_nav.nv_address
-     else go sc (absolute sc.sc_tools.tb_field)
+     else go caps sc (absolute sc.sc_tools.tb_field)
    | Typed t -> sc.sc_tools.tb_field <- t);
   a <> Quit
 
 (* the toolbar as a TinyLibGUI program: its model the field's text, its
  * messages our actions (only its mouse and its keys are TinyLibGUI's) *)
-let toolbar sc =
+let toolbar caps sc =
   { init = ""; view = (fun _ -> Label "");
-    update = (fun a _ -> ignore (act sc a); sc.sc_tools.tb_field);
+    update = (fun a _ -> ignore (act caps sc a); sc.sc_tools.tb_field);
     key = (fun _ -> []) }
 
 (* The mouse: the menus' first, then the toolbar's; over a link it is a
  * hand; the left button pressed on a link follows it; the wheel (the
  * buttons 8 and 16, Plan 9's) scrolls. A menu that closes uncovers
  * the toolbar and the page, drawn again. False for Quit. *)
-let on_mouse sc x y buttons =
+let on_mouse caps sc x y buttons =
   let st = sc.sc_tools.tb_menu in
   let was = st.opened and item = st.item in
   let answer = menu_mouse (menus sc) st x y buttons in
   if was <> None && st.opened <> was then begin draw_tools sc; redraw sc end;
   if st.opened <> was || st.item <> item then draw_bar sc;
   match answer with
-  | Picked a -> act sc a
+  | Picked a -> act caps sc a
   | Taken -> true
   | Ignored ->
       let (_, boxes) = laid_tools sc in
       let (field, m) =
-        mouse (toolbar sc) boxes sc.sc_tools.tb_field sc.sc_tools.tb_mouse
+        mouse (toolbar caps sc) boxes sc.sc_tools.tb_field sc.sc_tools.tb_mouse
           x y buttons in
       let changed =
         field <> sc.sc_tools.tb_field
@@ -328,7 +331,7 @@ let on_mouse sc x y buttons =
       if buttons land 1 <> 0 && not sc.sc_nav.nv_pressed then
         (match link_at sc x y with
          | Some href ->
-           go sc (resolve sc.sc_nav.nv_address (base sc.sc_page) href)
+           go caps sc (resolve sc.sc_nav.nv_address (base sc.sc_page) href)
          | None -> ());
       sc.sc_nav.nv_pressed <- buttons land 1 <> 0;
       if buttons land 8 <> 0 then scroll_by sc (-48);
@@ -341,15 +344,15 @@ let on_mouse sc x y buttons =
  * a line (the wheel and the trackpad come as these: tiny-machine's
  * window and page send a step of the wheel as an arrow), left and right
  * a screenful, as - and space do. *)
-let on_key sc (k : key) : bool =
+let on_key caps sc (k : key) : bool =
   if focused sc then begin
     (match k with
-     | Enter -> focus sc false; ignore (act sc Go_typed)
+     | Enter -> focus sc false; ignore (act caps sc Go_typed)
      | Escape ->
          focus sc false; sc.sc_tools.tb_field <- sc.sc_nav.nv_address
      | _ ->
          sc.sc_tools.tb_field <-
-           key (toolbar sc) (snd (laid_tools sc)) sc.sc_tools.tb_field
+           key (toolbar caps sc) (snd (laid_tools sc)) sc.sc_tools.tb_field
              sc.sc_tools.tb_mouse k);
     draw_tools sc;
     true
@@ -361,9 +364,9 @@ let on_key sc (k : key) : bool =
      | Char '-' | Left -> glide sc (- page)
      | Down -> scroll_by sc 16
      | Up -> scroll_by sc (-16)
-     | Char 'b' | Backspace -> back sc
-     | Char 'g' -> ignore (act sc Address)
-     | Char 's' -> ignore (act sc Search)
+     | Char 'b' | Backspace -> back caps sc
+     | Char 'g' -> ignore (act caps sc Address)
+     | Char 's' -> ignore (act caps sc Search)
      | _ -> ());
     k <> Char 'q'
   end
@@ -375,8 +378,8 @@ let quit sc =
   for row = 0 to sc.sc_rows - 1 do fill_row sc row c_white done;
   send sc
 
-let browse typed =
-  let w, h = window_size () in
+let browse caps typed =
+  let w, h = window_size caps in
   let nav =
     { nv_address = ""; nv_wire = Wire_off; nv_history = []; nv_goal = None;
       nv_goal_id = None; nv_pressed = false; nv_hover = false } in
@@ -389,43 +392,40 @@ let browse typed =
       sc_state = Page_reading; sc_msgs = [] } in
   put sc colours;
   put sc (d_image c_strip (0, 0, sc.sc_cols * 8, 16) 255);
-  load sc (absolute typed);
+  load caps sc (absolute typed);
   send sc;
-  let fds = Array.make 3 0 in
   (* [keys]: whether keys may still come. When they have ended and the
    * page is all there, the program ends and leaves the page on the
    * screen. *)
   let rec loop keys =
     let wire =
       match sc.sc_nav.nv_wire with
-      | Wire_page fd -> Some fd
-      | Wire_picture (fd, _) -> Some fd
-      | Wire_off -> None in
-    if wire <> None || keys then begin
-      let n = ref 0 in
-      if keys then begin fds.(0) <- fd_stdin; fds.(1) <- fd_mouse; n := 2 end;
-      (match wire with
-       | Some fd -> fds.(!n) <- fd; n := !n + 1
-       | None -> ());
-      let ready = u_ready fds !n 0 in
+      | Wire_page fd -> [ fd ]
+      | Wire_picture (fd, _) -> [ fd ]
+      | Wire_off -> [] in
+    if wire <> [] || keys then begin
+      let fds = (if keys then [ TSys.fd_stdin; TSys.fd_mouse ] else []) @ wire in
+      (* (the first ready; -1 none, which TSys.ready without a deadline
+       * does not answer) *)
+      let ready = match TSys.ready fds None with Some n -> n | None -> -1 in
       match sc.sc_nav.nv_wire with
       | Wire_picture (fd, id) when ready = fd ->
-        let s = u_read fd 1024 in
+        let s = TSys.read fd 1024 in
         if s = "" then begin
           hang_up sc;
           let pc = picture_of sc.sc_page id in
           (match pc.pc_got with
            | Pic_rows _ -> ()
            | _ -> pc.pc_got <- Pic_failed);
-          next_picture sc
+          next_picture caps sc
         end
         else picture_message sc id s;
         send sc;
         loop keys
       | Wire_page fd when ready = fd ->
-        let s = u_read fd 1024 in
+        let s = TSys.read fd 1024 in
         if s = "" then begin
-          body_end sc;
+          body_end caps sc;
           finish sc.sc_page;
           hang_up sc;
           sc.sc_state <- Page_done;
@@ -434,34 +434,34 @@ let browse typed =
             resolve sc.sc_nav.nv_address (base sc.sc_page)
               (refresh sc.sc_page) in
           if refresh sc.sc_page <> "" && on <> sc.sc_nav.nv_address then
-            load sc on
+            load caps sc on
           else begin
             show_new sc; draw_bar sc; draw_status sc;
-            next_picture sc
+            next_picture caps sc
           end
         end
         else begin
           let before = sc.sc_doc.dc_got / 16384 in
           sc.sc_doc.dc_got <- sc.sc_doc.dc_got + String.length s;
-          take sc s;
+          take caps sc s;
           show_new sc;
           if sc.sc_doc.dc_got / 16384 <> before then draw_status sc
         end;
         send sc;
         loop keys
-      | _ when keys && ready = 4 ->
-        (match mouse_event (u_read fd_mouse 12) with
+      | _ when keys && ready = TSys.fd_mouse ->
+        (match mouse_event (TSys.read TSys.fd_mouse 12) with
          | Some e when e.mo_buttons >= 0
-                       && not (on_mouse sc e.mo_x e.mo_y e.mo_buttons) ->
+                       && not (on_mouse caps sc e.mo_x e.mo_y e.mo_buttons) ->
              quit sc
          | _ -> send sc; loop keys)
-      | _ when keys && ready = 0 ->
-        let typed = u_read fd_stdin 16 in
+      | _ when keys && ready = TSys.fd_stdin ->
+        let typed = TSys.read TSys.fd_stdin 16 in
         if typed = "" then loop false
         else begin
           let rec each i =
             i >= String.length typed
-            || (on_key sc (key_of_byte typed.[i]) && each (i + 1)) in
+            || (on_key caps sc (key_of_byte typed.[i]) && each (i + 1)) in
           if each 0 then begin send sc; loop keys end else quit sc
         end
       | _ -> loop keys

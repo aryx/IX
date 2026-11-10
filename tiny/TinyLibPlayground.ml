@@ -4,7 +4,7 @@
 (* See TinyLibPlayground.mli *)
 
 module D = TinyLibDraw
-open TinyCalls
+module TSys = TinyLibSystem
 
 type key =
   | Char of char | Ctrl of char | Enter | Backspace | Escape
@@ -106,7 +106,10 @@ let random s =
 
 (* messages gathered, written past a kilobyte and at a picture's end *)
 let gathered = ref ""
-let flush () = if !gathered <> "" then (ignore (u_write fd_draw !gathered); gathered := "")
+(* (a message refused said by the system, not a reason to end: TSys.write's
+ * Failure caught, as u_write's -1 was ignored) *)
+let send fd m = try TSys.write fd m with Failure _ -> ()
+let flush () = if !gathered <> "" then (send TSys.fd_draw !gathered; gathered := "")
 let put m =
   gathered := !gathered ^ m;
   if String.length !gathered > 1024 then flush ()
@@ -178,11 +181,11 @@ let samples_message s = D.msg 'p' [ String.length s ] ^ s
 
 (* [play speaker sounds]: played on tiny-kernel's speaker, if there is
  * one (old: the speaker a global, set by run) *)
-let play (speaker : int option) sounds =
+let play (speaker : TSys.fd option) sounds =
   match speaker with
   | Some fd when sounds <> [] ->
-      ignore (u_write fd
-        (List.fold_left (fun acc snd -> acc ^ sound_message snd) "" sounds))
+      send fd
+        (List.fold_left (fun acc snd -> acc ^ sound_message snd) "" sounds)
   | _ -> ()
 
 (* The music: a voice of /dev/audio a part (the kernel mixes them, and
@@ -196,7 +199,12 @@ let play (speaker : int option) sounds =
  * change_loop; none closes the voices, and the next tune starts at its
  * beginning. The voices are the loop's, given to play_music and given
  * back (old: a global). *)
-type voice = { vfd : int; mutable vnext : int; mutable vuntil : int }
+type voice = { vfd : TSys.fd option; mutable vnext : int; mutable vuntil : int }
+
+(* a voice of /dev/audio, None when there is no speaker (the tests'
+ * stub, its open a Failure; old: -1) *)
+let speaker caps =
+  try Some (TSys.open_out caps (Fpath.v "/dev/audio")) with Failure _ -> None
 let ahead = 500
 
 let feed pace p v now =
@@ -213,22 +221,22 @@ let feed pace p v now =
                                     volume = if hz = 0 then 0 else p.level })
     end in
   let m = gather "" in
-  if m <> "" && v.vfd >= 0 then ignore (u_write v.vfd m)
+  match v.vfd with Some fd when m <> "" -> send fd m | _ -> ()
 
-(* [play_music voices tune]: the voices after the tune is fed to them *)
-let play_music (voices : voice list) tune : voice list =
+(* [play_music caps voices tune]: the voices after the tune is fed to them *)
+let play_music caps (voices : voice list) tune : voice list =
   match tune, voices with
   | None, [] -> []
   | None, vs ->
-      List.iter (fun v -> if v.vfd >= 0 then ignore (u_close v.vfd)) vs;
+      List.iter (fun v -> Option.iter TSys.close v.vfd) vs;
       []
   | Some t, vs ->
-      let now = u_ticks () * 5 / 2 in
+      let now = TSys.millis caps in
       let vs =
         match vs with
         | [] ->
             List.map (fun _ ->
-              { vfd = u_open "/dev/audio" 1; vnext = 0; vuntil = now }) t.parts
+              { vfd = speaker caps; vnext = 0; vuntil = now }) t.parts
         | vs -> vs in
       let rec each parts vs =
         match parts, vs with
@@ -241,10 +249,10 @@ let play_music (voices : voice list) tune : voice list =
 (* The loop *)
 (*****************************************************************************)
 
-(* A frame, in the kernel's ticks: a tick is 2.5 ms of the machine's
- * time whatever its speed, so 13 ticks are about a thirtieth of a
- * second. *)
-let period = 13
+(* A frame, in milliseconds of the machine's time whatever its speed:
+ * about a thirtieth of a second (old: 13 of the kernel's ticks of 2.5
+ * ms, its clock's, 32.5 ms; millis's now, both systems') *)
+let period = 33
 
 (* The game, until a q or the keys' end: the model's shapes when it is
  * another model than the last looked at, shown when they are other
@@ -254,18 +262,15 @@ let period = 13
  * period after the last one's, so that thirty are a second whatever
  * they cost; from now when a frame is more than one late: a game does
  * not run to catch up). *)
-let run g =
-  let keys = Array.make 1 fd_stdin in
-  let speaker =
-    let fd = u_open "/dev/audio" 1 in
-    if fd < 0 then None else Some fd in
+let run caps g =
+  let sounds = speaker caps in
   let rec loop model seen shown next voices =
-    if model != seen then play speaker (g.sound seen model);
-    let voices = play_music voices (g.music model) in
+    if model != seen then play sounds (g.sound seen model);
+    let voices = play_music caps voices (g.music model) in
     let shapes = if model != seen then g.view model else shown in
     if not (same shown shapes) then show g shown shapes;
-    if u_ready keys 1 next = 0 then begin
-      let s = u_read fd_stdin 16 in
+    if TSys.ready [ TSys.fd_stdin ] (Some next) <> None then begin
+      let s = TSys.read TSys.fd_stdin 16 in
       if s = "" then exit 0;
       let rec typed i m =
         if i >= String.length s then m
@@ -274,14 +279,14 @@ let run g =
       loop (typed 0 model) model shapes next voices
     end
     else
+      let now = TSys.millis caps in
       loop (g.frame model) model shapes
-        (if u_ticks () > next + period then u_ticks () + period
-         else next + period)
+        (if now > next + period then now + period else next + period)
         voices
   in
   put (D.d_image picture (0, 0, g.width, g.height) 0
        ^ D.d_image ground (0, 0, g.width, g.height) 0);
-  let first = g.init (u_seed ()) in
+  let first = g.init (TSys.seed caps) in
   let shapes = g.view first in
   show g [] shapes;
-  loop first first shapes (u_ticks () + period) []
+  loop first first shapes (TSys.millis caps + period) []

@@ -152,12 +152,13 @@
  (modules TinyLibDraw))
 
 ; TinyLibPlayground.ml, what a game of tiny-kernel's is written on, here
-; for a game's test on the host: TinyCalls is the kernel's calls, kept
+; for a game's test on the host: TinyLibSystem is the system, the tests'
+; stub or a window
 (library
  (name tiny_lib_playground)
  (wrapped false)
  (modules TinyLibPlayground)
- (libraries tiny_lib_draw tiny_calls))
+ (libraries fpath caps tiny_lib_draw tiny_lib_system))
 
 ; TinyLibGUI.ml, what a program with buttons is written on
 (library

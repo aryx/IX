@@ -275,7 +275,7 @@ Linux and under the tiny-machine. Anything we can improve?"
 
 **One path for both.** On tiny-machine, tiny-kernel draws a program's
 text with `TinyKernelGraphics`; on the host, the tiny programs in an
-SDL window (`tiny/TinyLibSystem/sdl/TinyCalls.ml`) call the same module on an array.
+SDL window (`tiny/TinyLibSystem/sdl/`) call the same module on an array.
 So a font changed there changes both. A face is made a mask, a byte a
 pixel, the characters side by side, and a character is a draw of the
 ink through it (draw.tm's `glyphs` for a whole text of the regular
@@ -437,7 +437,7 @@ third smaller, 128 columns by 48 rows of text where there were 80 by
 30. It still fits (3)'s megabyte: 768 KB at 0xf00000, up to 0xfc0000,
 the images after it 252 KB to the last page (old: 720 KB). The places
 that knew 640 by 480: TinyMachineDevices (the machine), TinyKernelDevices
-(the kernel), tiny/TinyLibSystem/sdl's TinyCalls (the host's stand-in), TinyLibDraw's
+(the kernel), tiny/TinyLibSystem/sdl's TinyLibSystem (the host's stand-in), TinyLibDraw's
 screen_w and screen_h (tiny-windows' whole screen, TinyLibGUI's window
 when no tiny-windows answers), paint.c, and the tests' pictures. The
 windows are swept by the mouse, so the recorded sessions click the

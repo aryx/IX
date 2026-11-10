@@ -115,5 +115,8 @@
  * Space and - show the next and the previous screenful, the arrows a
  * line; q quits and clears. When
  * the keys end (a recorded session's) and the page is all there, the
- * program ends and leaves the page on the screen. *)
-val browse : string -> unit
+ * program ends and leaves the page on the screen. caps: the window's
+ * size waited for, the wire dialed, a download kept, a helper run *)
+val browse :
+  < Cap.clock; Cap.network; Cap.open_out; Cap.fork; Cap.exec; .. > ->
+  string -> unit

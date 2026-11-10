@@ -15,22 +15,25 @@
  *     troff -h page > page.html; put page.html
  *
  * put keeping it at the wire's other end. OCaml compiles it too, for
- * the host (tiny-troff, sdl/): its calls TinyCalls's, the host's
+ * the host (tiny-troff, sdl/): its system TinyLibSystem's, the host's
  * files and standard output (no window: troff draws nothing). *)
-open TinyCalls
-open TinyLibGUI
+module TSys = TinyLibSystem
 open TinyTroff
 
 let () =
-  let n = u_argc () in
-  let flag = if n = 3 then u_arg 1 else "" in
-  if n <> 2 && flag <> "-h" && flag <> "-p" then
-    (ignore (u_write fd_stderr "usage: troff [-h | -p] file\n"); exit 1);
-  let file = u_arg (n - 1) in
-  let doc = read_file (Fpath.v file) in
-  ignore
-    (u_write fd_stdout
-       (if flag = "-h" then to_html file doc
-        else if flag = "-p" then to_pdf doc
-        else to_text 72 doc));
-  exit 0
+  TSys.main "troff" (fun caps argv ->
+    let flag = if Array.length argv = 3 then argv.(1) else "" in
+    if Array.length argv <> 2 && flag <> "-h" && flag <> "-p" then begin
+      TSys.eprint caps "usage: troff [-h | -p] file\n";
+      Exit.Code 1
+    end
+    else begin
+      let file = argv.(Array.length argv - 1) in
+      (* (a file not there read as "", as before: TSys's Failure caught) *)
+      let doc = try TSys.read_file caps (Fpath.v file) with Failure _ -> "" in
+      TSys.print caps
+        (if flag = "-h" then to_html file doc
+         else if flag = "-p" then to_pdf doc
+         else to_text 72 doc);
+      Exit.OK
+    end)

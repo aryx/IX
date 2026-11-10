@@ -2,11 +2,10 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* The kernel's calls for a program in ML: mlsys.c's functions, as
- * externals, their values ML's; -1 when the kernel refuses. On the
- * host these names are ../sdl/ or ../teststub/TinyCalls.ml's
- * (../TinyCalls.mli), but for those this file has beyond the
- * interface: TinyLibSystem's (fork, exec, pipe...), and TinyDebugger's
- * and TinyTracer's (trace). An external a program does not call costs
+ * externals, their values ML's; -1 when the kernel refuses. What
+ * TinyLibSystem.ml, beside it, is written over, and what tiny-kernel's
+ * own tools call for what only it has: TinyDebugger and TinyTracer
+ * (trace). An external a program does not call costs
  * it nothing. (TinyWindows.ml says its own: OCaml checks that file
  * alone.) *)
 
@@ -14,7 +13,7 @@
 (* Descriptors *)
 (*****************************************************************************)
 
-(* a program's first descriptors (../TinyCalls.mli) *)
+(* a program's first descriptors (../../TinyLibSystem.mli says them) *)
 let fd_stdin = 0
 let fd_stdout = 1
 let fd_stderr = 2
@@ -35,7 +34,10 @@ external u_pipe : unit -> int = "u_pipe"
 
 external u_open : string -> int -> int = "u_open"
 
-(* u_open's flags (../TinyCalls.mli) *)
+(* u_open's flags: to read (O_RDONLY, 0); to write anew (O_WRONLY |
+ * O_CREATE | O_TRUNC); to write, made when it is not there (O_WRONLY |
+ * O_CREATE: an append seeks its end); to read and write, made when it is
+ * not there (O_RDWR | O_CREATE) *)
 let o_read = 0
 let o_anew = 0x601
 let o_write = 0x201

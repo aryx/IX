@@ -234,13 +234,12 @@ step 8 has t-IX built there.
 | **tiny-browser** | a web browser, `www`: a page read as it arrives, its links followed, its pictures painted as their packets come, Wikipedia's articles fetched by the host | 1,040 | mini-netscape | [`TinyBrowser.ml`](tiny/TinyBrowser.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyBrowser.ml)) |
 
 A program is in what both OCaml and tiny-ml compile, and asks the
-system through one interface with a file for each side:
-`TinyLibSystem` for the tools
-([`tiny/TinyLibSystem/`](tiny/TinyLibSystem/README.md): [`unix/`](tiny/TinyLibSystem/unix/TinyLibSystem.ml)'s over
-Unix, [`tinykernel/`](tiny/TinyLibSystem/tinykernel/TinyLibSystem.ml)'s
-over the kernel's calls), `TinyCalls` for the graphical programs
-(a virtual library of dune's, whose host side is a window of SDL's:
-[`tiny/TinyLibSystem/sdl/`](tiny/TinyLibSystem/sdl/)). Its three builds:
+system through one interface, `TinyLibSystem`, with a file for each
+system ([`tiny/TinyLibSystem/`](tiny/TinyLibSystem/README.md)):
+[`unix/`](tiny/TinyLibSystem/unix/TinyLibSystem.ml)'s over Unix for
+the tools, [`tinykernel/`](tiny/TinyLibSystem/tinykernel/TinyLibSystem.ml)'s
+over the kernel's calls, and for the graphical programs on the host a
+window of SDL's, [`sdl/`](tiny/TinyLibSystem/sdl/). Its three builds:
 
 | | compiled by | its standard library |
 |---|---|---|

@@ -1,19 +1,22 @@
 // tiny/TinyLibSystem/teststub/: what the code map says of it (the code
 // map: tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
-// docs/claude_notes/codemapconfig_guidelines.md there). dune's default
-// implementation of ../TinyCalls.mli.
+// docs/claude_notes/codemapconfig_guidelines.md there). The tests'
+// implementation of ../../TinyLibSystem.mli, which tiny-ml compiles too.
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
-  summary: "The tests' TinyCalls: no kernel, what is drawn kept, no key, a clock that never moves.",
+  generated: { by: 'claude-opus-5-5', on: '2026-11-10' },
+  summary: "The tests' TinyLibSystem: what is drawn kept, no key, a clock that never moves, every file a Failure.",
   files: {
-    'TinyCalls.ml': { digest: '43a277e67dda',
-      summary: "TinyCalls with no kernel: descriptor 3's bytes kept in drawn for TinyKernelGraphics, every other call a no.",
+    'TinyLibSystem.ml': { digest: 'ad651ca7d6c0',
+      summary: "TinyLibSystem with no kernel and no host: fd_draw's bytes kept, every file and process asked a Failure.",
       important: [
-        { at: 'def:drawn', say: "what a test hands to the kernel's drawing", weight: 3 },
-        { at: 'def:u_write', weight: 2 },
-        { at: 'def:u_argc', say: "tiny-ml compiles it too: no Sys.argv", weight: 1 },
+        { at: 'def:write', say: "fd_draw's bytes kept for the test", weight: 3 },
+        { at: 'def:ready', say: 'the keys at once, their end', weight: 1 },
+        { at: 'def:none', say: 'what a test asks and the stub has not', weight: 1 },
       ],
-      related: ['../TinyCalls.mli', '../../TinyKernel/TinyKernelGraphics.ml'],
+      related: ['../../TinyLibSystem.mli', 'TinySystemTest.ml', '../../TinyKernel/TinyKernelGraphics.ml'],
+    },
+    'TinySystemTest.ml': { digest: '8be6c23c9a43',
+      summary: "What a test looks at beside the stub: the drawing messages written, for TinyKernelGraphics.",
     },
   },
 }

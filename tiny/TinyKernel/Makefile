@@ -93,7 +93,7 @@
 # runs it, is ../user/'s); libc/ what a C program is linked with to
 # call this kernel (user.h, sys.tm, draw.c, net.c); ../TinyLibSystem/tinykernel/
 # the same for an ML one (mlsys.c, TinyCalls.ml, TinyLibSystem.ml), beside
-# the other systems' TinyCalls and TinyLibSystem (../TinyLibSystem/README.md).
+# the other systems' TinyLibSystem (../TinyLibSystem/README.md).
 #
 # What is built goes to _make/ and nowhere else, so that this
 # directory shows the sources: _make/*.tm the kernel's assembly, *.o
@@ -258,13 +258,13 @@ $(O)/bin/%: $(ULIB) $(O)/user/%.o $(LDBIN)
 U = $(O)/ml
 I_TinyLibSystem = TinyCalls
 I_TinyLibRegex = TinyCalls TinyLibSystem
-I_TinyLibPlayground = TinyCalls TinyLibDraw
-I_TinyLibGUI = TinyCalls TinyLibDraw TinyLibPlayground
+I_TinyLibPlayground = TinyCalls TinyLibSystem TinyLibDraw
+I_TinyLibGUI = TinyCalls TinyLibSystem TinyLibDraw TinyLibPlayground
 I_TinyWindows = TinyLibDraw
 I_TinyAppTetris = $(I_TinyLibGUI)
 I_TinyAppCalculator = $(I_TinyLibGUI) TinyLibGUI
 I_TinyAppTemperature = $(I_TinyAppCalculator)
-GUI = TinyCalls TinyLibDraw TinyLibPlayground TinyLibGUI
+GUI = TinyCalls TinyLibSystem TinyLibDraw TinyLibPlayground TinyLibGUI
 I_TinyEditorScreen = $(GUI)
 # (TinyOffice.ml on its parts, TinyOffice/, which TinyTroff.ml reads a
 # page with)

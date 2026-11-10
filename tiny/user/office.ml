@@ -11,28 +11,34 @@
  * here: the page of the file at the window's size, a key and the mouse
  * given to it, a save done when either asks. The file is the kernel's: on
  * its disk when it has one, else in its memory (put keeps a copy). OCaml
- * compiles it too, for the host (tiny-office, sdl/): its calls
- * TinyCalls's, a window's (the office opened last, its key and mouse
+ * compiles it too, for the host (tiny-office, sdl/): its system
+ * TinyLibSystem's, a window's (the office opened last, its key and mouse
  * over the GUI's). *)
-open TinyCalls
+module TSys = TinyLibSystem
 open TinyLibGUI
 open TinyOffice
 
 let () =
-  if u_argc () <> 2 then (ignore (u_write fd_stderr "usage: office file\n"); exit 1);
-  let file = u_arg 1 in
-  let path = Fpath.v file in
-  let answer o r =
-    match r with
-    | Continue -> Some o
-    | Save ->
-      (if write_file path (text o) then saved o
-       else say o ("Cannot write " ^ file));
-      Some o
-    | Quit -> None in
-  run_canvas {
-    first = (fun w h -> create w h path (read_file path));
-    picture = view;
-    typed = (fun k o -> answer o (key o k));
-    moved = (fun x y b o -> answer o (mouse o x y b)) };
-  exit 0
+  TSys.main "office" (fun caps argv ->
+    if Array.length argv <> 2 then begin
+      TSys.eprint caps "usage: office file\n";
+      Exit.Code 1
+    end
+    else
+      let file = argv.(1) in
+        let path = Fpath.v file in
+        let text0 = try TSys.read_file caps path with Failure _ -> "" in
+        let answer o r =
+          match r with
+          | Continue -> Some o
+          | Save ->
+            (try TSys.write_file caps path (text o); saved o
+             with Failure _ -> say o ("Cannot write " ^ file));
+            Some o
+          | Quit -> None in
+        run_canvas caps {
+          first = (fun w h -> create w h path text0);
+          picture = view;
+          typed = (fun k o -> answer o (key o k));
+          moved = (fun x y b o -> answer o (mouse o x y b)) };
+        Exit.OK)

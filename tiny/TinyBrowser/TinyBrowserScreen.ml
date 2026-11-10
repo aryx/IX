@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See TinyBrowserScreen.mli *)
-open TinyCalls
+module TSys = TinyLibSystem
 open TinyLibDraw
 open TinyLibPlayground
 open TinyLibGUI
@@ -131,7 +131,8 @@ let menus sc =
  * it is drawn again, over what the messages drew. *)
 let send sc =
   if sc.sc_msgs <> [] then begin
-    ignore (u_write 3 (String.concat "" (List.rev sc.sc_msgs)));
+    (try TSys.write TSys.fd_draw (String.concat "" (List.rev sc.sc_msgs))
+     with Failure _ -> ());
     sc.sc_msgs <- [];
     if sc.sc_tools.tb_menu.opened <> None then begin
       List.iter (draw 0 0 0)

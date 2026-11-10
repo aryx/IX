@@ -3,4 +3,4 @@
 
 (* debug, a program of TinyKernel.ml's: ../TinyDebugger.ml. *)
 
-let () = TinyDebugger.main ()
+let () = TinyLibSystem.main "debug" (fun caps _ -> TinyDebugger.main caps; Exit.OK)

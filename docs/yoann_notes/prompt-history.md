@@ -68260,3 +68260,58 @@ Stage 2 would share the Unix code, making sdl/ and teststub/ implementations of 
 Claude asked for your go-ahead before committing, since nothing from stage 1 was committed yet.
 Stage 1 added window descriptors, ready, raw_console, seed, spawn, and dial to TinyLibSystem.mli.
 Claude left the hung make self unexplained, since self.expected cannot be recorded until it is fixed.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 16:14
+
+**Yoann:**
+
+> yes
+
+------------------------------------------------------------------------
+
+## 2026-11-10 16:14
+
+**Yoann:**
+
+> was this use of Unix.select present before in how the code was split before?
+
+**Claude (summary):**
+
+Claude explained that the `Unix.select` in `unix/` added during stage 1 is new and has no caller on plain Unix.
+Claude recommended replacing `unix/`'s `ready` with a failure message, as `dial` does, and dropping the `select`.
+Claude noted this also removes one of the dead-code entries recorded at stage 1.
+Yoann approved, so the change goes into the stages 2–4 batch.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 16:17
+
+**Yoann:**
+
+> yes let's get rid of it and fail if unused
+
+------------------------------------------------------------------------
+
+## 2026-11-10 16:29
+
+**Yoann:**
+
+> you can remove those old: TinyCalls comment; it's not like TinyCalls was a standard thing that was meant to last
+
+------------------------------------------------------------------------
+
+## 2026-11-10 16:31
+
+**Yoann:**
+
+> what do you think? Isn't it cleaner that way?
+
+**Claude (summary):**
+
+Claude recommended a single system interface, TinyLibSystem, for both tiny tools and window programs, and asked before committing.
+Claude finished stages 2 to 4: the SDL window and teststub implement TinyLibSystem, with TinyCalls's mli and dune library removed.
+Graphical libraries, mains and debugger now go through TinyLibSystem with capabilities, and the old TinyCalls notes are cleaned up.
+Claude verified dune, make test-tix, tiny_check.sh, mini-mk, the kernel check and self-quick, plus three programs in a real window session.
+Stage 5 and the hang in make self remain open, and nothing has been committed yet.

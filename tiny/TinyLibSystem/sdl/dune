@@ -1,13 +1,19 @@
-; TinyCalls in a window of SDL's (../TinyCalls.mli): what the graphical
-; programs of ../../user/sdl/ run on, on the host. Their drawing and sound
-; are made by tiny-kernel's own code, TinyKernelGraphics.ml and
-; TinyKernelAudio.ml, in TinyMemory's array.
+; TinyLibSystem in a window of SDL's (../../TinyLibSystem.mli): what the
+; graphical programs of ../../user/sdl/ run on, on the host. Their
+; drawing and sound are made by tiny-kernel's own code,
+; TinyKernelGraphics.ml and TinyKernelAudio.ml, in TinyMemory's array;
+; their files and processes are the host's, ../unix/'s code copied here
+; as TinyLibSystemUnix (one source, two modules: an implementation can
+; not include another of its virtual module)
 (library
- (name tiny_calls_sdl)
- (implements tiny_calls)
- (modules TinyCalls TinyFont)
- (libraries tiny_kernel_graphics tiny_kernel_audio tiny_host_memory tiny_machine_sdl tiny_machine_devices tiny_machine_peer unix))
+ (name tiny_lib_system_sdl)
+ (implements tiny_lib_system)
+ (modules TinyLibSystem TinyLibSystemUnix TinyFont)
+ (libraries ix_core fpath unix caps tiny_kernel_graphics tiny_kernel_audio
+  tiny_host_memory tiny_machine_sdl tiny_machine_devices tiny_machine_peer))
 
+(rule
+ (copy ../unix/TinyLibSystem.ml TinyLibSystemUnix.ml))
 ; the machine's font, tiny-kernel's (../../TinyKernel/fonts/README.md), in
 ; the program, a byte a \xNN (old: its bytes as they are in a {font|
 ; ... |font}: OCaml 5 took a | then bytes beyond ASCII then } in

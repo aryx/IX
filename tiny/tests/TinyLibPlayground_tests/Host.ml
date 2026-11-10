@@ -3,7 +3,7 @@
 
 (* Square.ml on the host, by OCaml, with no machine and no loop: a model
  * after some keys and frames (the game's own functions), its shapes
- * shown by TinyLibPlayground.ml, whose messages TinyCalls kept; then
+ * shown by TinyLibPlayground.ml, whose messages the stub kept (TinySystemTest); then
  * TinyKernelGraphics.ml draws them on TinyMemory's screen, written as
  * tiny-machine -screen writes it. The model's place is printed.
  * usage: Host.exe font1.bin out.ppm *)
@@ -21,10 +21,10 @@ let () =
     |> frames 45
     |> after (List.init 20 (fun _ -> TinyLibPlayground.Up)) in
   Printf.printf "the square at %d, %d after %d frames\n" m.x m.y m.frames;
-  TinyCalls.u_write TinyCalls.fd_draw
+  TinyLibSystem.write TinyLibSystem.fd_draw
     (TinyLibDraw.d_image TinyLibPlayground.picture (0, 0, g.width, g.height) 0)
   |> ignore;
-  TinyCalls.u_write TinyCalls.fd_draw
+  TinyLibSystem.write TinyLibSystem.fd_draw
     (TinyLibDraw.d_image TinyLibPlayground.ground (0, 0, g.width, g.height) 0)
   |> ignore;
   TinyLibPlayground.show g [] (g.view m);
@@ -41,6 +41,6 @@ let () =
     TinyKernelGraphics.connect screen
       (TinyKernelGraphics.font_mask 0x1000 (String.length font)
          (TinyKernelGraphics.alloc 16384)) in
-  TinyKernelGraphics.messages c (Buffer.contents TinyCalls.drawn);
+  TinyKernelGraphics.messages c (Buffer.contents TinySystemTest.drawn);
   Out_channel.with_open_bin Sys.argv.(2) (fun oc ->
     output_string oc (TinyMemory.ppm 640 480))

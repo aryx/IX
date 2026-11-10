@@ -857,8 +857,10 @@ loop (another tune, a faster pace, goes on from the same notes;
 
 `random s` is the next state of a generator of the model's. A game is
 several files given to tiny-ml as one program (TinyKernel's
-Makefile: `TinyLibSystem/tinykernel/TinyCalls.ml`, `TinyLibDraw.ml`, `TinyLibPlayground.ml`, the
-game, and a last file that says `let () = run game`); the same files
+Makefile: `TinyLibSystem/tinykernel/`'s `TinyCalls.ml` and
+`TinyLibSystem.ml`, `TinyLibDraw.ml`, `TinyLibPlayground.ml`, the game,
+and a last file that says `let () = TinyLibSystem.main "tetris" (fun
+caps _ -> run caps game)`); the same files
 are OCaml's, where a game's model and picture are tested with no
 machine. `square` is one of a page
 (`tiny/tests/TinyLibPlayground_tests/Square.ml`): type it at the screen's
@@ -889,8 +891,8 @@ only the widgets that are others than those shown are drawn.
 | `Col widgets` | one under the other, the column's width each |
 
 It is given to tiny-ml after the playground, whose shapes it draws by
-(TinyKernel's Makefile: `TinyLibSystem/tinykernel/TinyCalls.ml`, `TinyLibDraw.ml`,
-`TinyLibPlayground.ml`, `TinyLibGUI.ml`, the program, and a last file that
+(TinyKernel's Makefile: `TinyLibSystem/tinykernel/`'s `TinyCalls.ml` and
+`TinyLibSystem.ml`, `TinyLibDraw.ml`, `TinyLibPlayground.ml`, `TinyLibGUI.ml`, the program, and a last file that
 says `let () = run calculator`). `calc` is `tiny/TinyAppCalculator.ml`:
 the mouse on its buttons, or the keys (the digits, `+ - * /`, `=` or
 the Enter, `c` clears); `q` quits. Whole numbers of nine digits, an
@@ -1009,14 +1011,14 @@ keeps it at the wire's other end (§5.5).
 
 ### 7.10 On the host: `tiny/user/sdl/`
 
-A program on these libraries asks the kernel nothing but through
-`TinyCalls` (`u_write`, `u_read`, `u_ready`, `u_open`, `u_close`,
-`u_ticks`, `u_rawcons`, `u_dial`, `u_argc`, `u_arg`). On tiny-machine
-they are the system calls (`TinyLibSystem/tinykernel/TinyCalls.ml`); built by
-OCaml, `TinyCalls` is a virtual library of dune's
-(`TinyLibSystem/TinyCalls.mli`) with two implementations: the
-tests' stub (`TinyLibSystem/teststub/`), and a window's
-(`tiny/TinyLibSystem/sdl/TinyCalls.ml`). In the window's, what a program draws is
+A program on these libraries asks its system through
+`TinyLibSystem` (`write`, `read`, `ready`, `open_out`, `close`,
+`millis`, `raw_console`, `dial`, `spawn`, `main`), as the tools do. On
+tiny-machine it is over the system calls
+(`tiny/TinyLibSystem/tinykernel/`); built by OCaml, `TinyLibSystem` is
+a virtual library of dune's, whose implementations for these programs
+are the tests' stub (`tiny/TinyLibSystem/teststub/`) and a window's
+(`tiny/TinyLibSystem/sdl/`). In the window's, what a program draws is
 done by the kernel's own `TinyKernelGraphics.ml` in a screen of host
 memory and shown by SDL; the mouse and the keys are the window's; files
 and the clock are the host's; a dial to the wire's other end (port 70)

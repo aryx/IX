@@ -1,25 +1,25 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* TinyKernel.ml's calls on the host, in a window of SDL's (see
- * ../TinyCalls.mli): what tiny-office, tiny-emacs,
- * tiny-calc and tiny-tetris run on, as their kernel's calls on
- * tiny-machine.
+(* TinyLibSystem in a window of SDL's (../../TinyLibSystem.mli): what
+ * tiny-office, tiny-emacs, tiny-www, tiny-calc, tiny-tetris and
+ * tiny-play run on (../../user/sdl/). Its files and processes are the
+ * host's, ../unix/'s code (TinyLibSystemUnix, a copy of
+ * ../unix/TinyLibSystem.ml that dune makes: one source, two modules);
+ * what is tiny-kernel's is made here, as tiny-machine makes it:
  *
- * What a program writes where it draws (its descriptor 3) is done by
- * tiny-kernel's own drawing, TinyKernelGraphics.ml, in a screen of
- * TinyMemory's, and shown (TinyMachineSDL, the palette tiny-machine's)
- * when the program next waits. The window's mouse is the box of the
- * program's descriptor 4, its keys the bytes of its 0 (as tiny-machine's
- * window makes them: Alt or a Mac's Command a key's Escape, a key held
- * typed again, the
- * wheel the arrows). An ENQ written to the console is answered in the
- * box, as tiny-windows answers it: the window's size. A file is the
- * host's, read whole when opened, written when closed; /dev/audio is the
- * window's sound, as tiny-kernel and tiny-machine make it: each open a
- * voice whose sounds TinyKernelAudio.ml makes into a ring, mixed, and
- * the ring played by the clock (to SDL's queue, TinyMachineSDL's
- * play) as tiny-machine's speaker plays its ring.
+ * What a program writes where it draws (fd_draw) is done by tiny-kernel's
+ * own drawing, TinyKernelGraphics.ml, in a screen of TinyMemory's, and
+ * shown (TinyMachineSDL, the palette tiny-machine's) when the program
+ * next waits. The window's mouse is the box of fd_mouse, its keys the
+ * bytes of fd_stdin (as tiny-machine's window makes them: Alt or a
+ * Mac's Command a key's Escape, a key held typed again, the wheel the
+ * arrows). An ENQ written to the console is answered in the box, as
+ * tiny-windows answers it: the window's size. /dev/audio is the window's
+ * sound, as tiny-kernel and tiny-machine make it: each open a voice
+ * whose sounds TinyKernelAudio.ml makes into a ring, mixed, and the ring
+ * played by the clock (to SDL's queue, TinyMachineSDL's play) as
+ * tiny-machine's speaker plays its ring.
  *
  * A dial to the wire's other end, its port 70 (10.0.0.1, tiny-machine's
  * peer, TinyMachinePeer.ml), is answered here as tiny-machine answers
@@ -28,6 +28,8 @@
  * tiny-machine-fetch (ix's own HTTP and TLS), or, with TINY_WWW=dir, a
  * copy kept in dir when the fetch fails (as tiny-machine -net dir); the
  * answer's messages read one at a time, as a link's are. *)
+
+include TinyLibSystemUnix
 
 module G = TinyKernelGraphics
 module Audio = TinyKernelAudio
@@ -38,19 +40,20 @@ module SDL = TinyMachineSDL
 (* Descriptors *)
 (*****************************************************************************)
 
-(* a program's first descriptors (../TinyCalls.mli) *)
-let fd_stdin = 0
-let fd_stdout = 1
-let fd_stderr = 2
-let fd_draw = 3
-let fd_mouse = 4
-
 (* what a program writes to its console to ask for its window's size,
  * answered in its mouse's box, as tiny-windows answers it *)
 let enq = "\005"
 
-(* the files open from 5 on, after the descriptors above *)
-let first_file = 5
+(* A descriptor the window makes (the speaker's, a dial's) is a real
+ * one of the host's, /dev/null's, so that a file opened after it never
+ * has its number; and 3 and 4, the drawing's and the mouse's, are taken
+ * so at the start *)
+let reserve () : fd = number (Unix.openfile "/dev/null" [ Unix.O_RDWR ] 0)
+let () =
+  let rec take () =
+    let n = reserve () in
+    if n <= fd_mouse then take () else Unix.close (fd n) in
+  take ()
 
 (*****************************************************************************)
 (* The screen *)
@@ -92,7 +95,7 @@ let display =
 let () =
   match Sys.getenv_opt "TINY_SCREEN" with
   | Some file ->
-      Sys.set_signal Sys.sigterm (Sys.Signal_handle (fun _ -> exit 0));
+      Sys.set_signal Sys.sigterm (Sys.Signal_handle (fun _ -> Stdlib.exit 0));
       at_exit (fun () ->
         Out_channel.with_open_bin file (fun oc ->
           output_string oc (TinyMemory.ppm width height)))
@@ -100,9 +103,6 @@ let () =
 
 (* whether the screen was drawn on since it was last shown *)
 let dirty = ref false
-(* TinyCalls.mli's, the stub's: here empty, what is drawn being drawn at
- * once *)
-let drawn = Buffer.create 0
 
 (* the screen shown, if it was drawn on since *)
 let show () =
@@ -117,13 +117,13 @@ let show () =
     (Lazy.force display).present width height (Bytes.unsafe_to_string rgb)
   end
 
-(* the drawing's messages; one refused is said, and the write is -1, as
- * tiny-kernel's write of /dev/draw does (old: the program ended) *)
+(* the drawing's messages; one refused is said, and the program goes on, as
+ * after tiny-kernel's write of /dev/draw (-1 there) (old: the program ended) *)
 let draw s =
   match G.messages (Lazy.force conn) s with
-  | () -> dirty := true; 0
+  | () -> dirty := true
   | exception TinyKernelGraphics.Graphics why ->
-      prerr_string ("draw: " ^ why ^ "\n"); dirty := true; -1
+      prerr_string ("draw: " ^ why ^ "\n"); dirty := true
 
 (*****************************************************************************)
 (* The speaker *)
@@ -184,13 +184,14 @@ let speak (ahead : int ref) s =
 (* The clock *)
 (*****************************************************************************)
 
-(* the clock, 400 ticks a second *)
+(* the machine's seed, as tiny-kernel's when it has none: the clock's
+ * ticks, 400 a second, since the program started *)
 let start = Unix.gettimeofday ()
-let u_ticks () = int_of_float ((Unix.gettimeofday () -. start) *. 400.)
-(* 2000-01-01 in Unix's seconds, tiny-kernel's dates' start *)
-let y2000 = 946684800
-let u_time () = int_of_float (Unix.time ()) - y2000
-let u_seed () = u_ticks ()
+let seed (_ : < Cap.random; .. >) =
+  int_of_float ((Unix.gettimeofday () -. start) *. 400.)
+
+(* now, as millis says it *)
+let now () = int_of_float (Unix.gettimeofday () *. 1000.0)
 
 (*****************************************************************************)
 (* The keys and the mouse *)
@@ -214,7 +215,7 @@ let pump () =
     let key byte = typed := !typed ^ String.make 1 (Char.chr byte) in
     let now = Unix.gettimeofday () in
     List.iter (function
-      | SDL.Quit -> exit 0
+      | SDL.Quit -> Stdlib.exit 0
       | SDL.At (x, y) ->
           mouse := { !mouse with p_x = x; p_y = y };
           fresh := true
@@ -234,34 +235,32 @@ let pump () =
 let word v = String.init 4 (fun k -> Char.chr ((v asr (8 * k)) land 255))
 
 (*****************************************************************************)
-(* The files *)
+(* The window's descriptors *)
 (*****************************************************************************)
 
-(* the files open: their descriptor, what is left to read of one, what
- * is written to one *)
-type file =
-  | Reading of string ref
-  | Writing of string * Buffer.t
+(* the descriptors the window makes: a dial's question, its answer, a
+ * voice of the speaker *)
+type made =
   | Asking of Buffer.t
   | Answer of string list ref
   | Speaker of int ref
-let files = Hashtbl.create 8
-let next = ref first_file
+let made : (fd, made) Hashtbl.t = Hashtbl.create 8
 
-(* a file open, its descriptor the next (old: the same three lines in
- * u_open, three times, and in u_dial) *)
-let opened (f : file) : int =
-  let fd = !next in
-  Hashtbl.replace files fd f;
-  incr next;
-  fd
+(* a descriptor made, its number a reserved one *)
+let opened (m : made) : fd =
+  let n = reserve () in
+  Hashtbl.replace made n m;
+  n
 
-let ready fd =
-  (fd = fd_stdin && !typed <> "")
-  || (fd = fd_mouse && (!fresh || !size_asked))
-  || (match Hashtbl.find_opt files fd with
-      | Some (Asking _) | None -> false
-      | Some _ -> true)
+(* what can be read without waiting: a key, the mouse, an answer; a
+ * file's descriptor always *)
+let can_read n =
+  (n = fd_stdin && !typed <> "")
+  || (n = fd_mouse && (!fresh || !size_asked))
+  || (match Hashtbl.find_opt made n with
+      | Some (Asking _) -> false
+      | Some _ -> true
+      | None -> n > fd_mouse)
 
 (*****************************************************************************)
 (* The wire's port 70 *)
@@ -319,29 +318,30 @@ let answer line =
   | _ -> []
 
 (*****************************************************************************)
-(* The calls: descriptors *)
+(* The calls *)
 (*****************************************************************************)
 
-let rec u_ready (fds : int array) (n : int) (until : int) : int =
+(* the window shown, its events read, its sound fed, at each wait *)
+let rec ready (fds : fd list) (until : milliseconds option) : fd option =
   show ();
   pump ();
   feed ();
-  let rec first i =
-    if i >= n then -1 else if ready fds.(i) then fds.(i) else first (i + 1) in
-  match first 0 with
-  | -1 when until > 0 && u_ticks () >= until -> -1
-  | -1 -> Unix.sleepf 0.005; u_ready fds n until
-  | fd -> fd
+  match List.find_opt can_read fds with
+  | Some n -> Some n
+  | None ->
+      (match until with
+       | Some t when now () >= t -> None
+       | _ -> Unix.sleepf 0.005; ready fds until)
 
-let u_read (fd : int) (n : int) : string =
-  if fd = fd_stdin then begin
-    ignore (u_ready [| fd_stdin |] 1 0);
-    let k = min n (String.length !typed) in
+let read (n : fd) (max : int) : string =
+  if n = fd_stdin then begin
+    ignore (ready [ fd_stdin ] None);
+    let k = min max (String.length !typed) in
     let s = String.sub !typed 0 k in
     typed := String.sub !typed k (String.length !typed - k);
     s
   end
-  else if fd = fd_mouse then begin
+  else if n = fd_mouse then begin
     if !size_asked then (
       size_asked := false;
       word width ^ word height ^ word (-1))
@@ -351,110 +351,64 @@ let u_read (fd : int) (n : int) : string =
       word m.p_x ^ word m.p_y ^ word m.p_buttons)
   end
   else
-    match Hashtbl.find_opt files fd with
-    | Some (Reading left) ->
-        let k = min n (String.length !left) in
-        let s = String.sub !left 0 k in
-        left := String.sub !left k (String.length !left - k);
-        s
+    match Hashtbl.find_opt made n with
     | Some (Answer ({ contents = m :: rest } as left)) ->
-        if String.length m <= n then (left := rest; m)
+        if String.length m <= max then (left := rest; m)
         else (
-          left := String.sub m n (String.length m - n) :: rest;
-          String.sub m 0 n)
-    | _ -> ""
+          left := String.sub m max (String.length m - max) :: rest;
+          String.sub m 0 max)
+    | Some _ -> ""
+    | None -> TinyLibSystemUnix.read n max
 
-let u_write (fd : int) (s : string) : int =
-  if fd = fd_draw then draw s
+let write (n : fd) (s : string) : unit =
+  if n = fd_draw then draw s
+  else if n = fd_stdout && s = enq then size_asked := true
+  else
+    match Hashtbl.find_opt made n with
+    | Some (Speaker ahead) -> speak ahead s
+    | Some (Asking b) ->
+        Buffer.add_string b s;
+        let asked = Buffer.contents b in
+        (match String.index_opt asked '\n' with
+         | Some i ->
+             Hashtbl.replace made n (Answer (ref (answer (String.sub asked 0 i))))
+         | None -> ())
+    | Some (Answer _) -> ()
+    | None -> TinyLibSystemUnix.write n s
+
+let close (n : fd) : unit =
+  if Hashtbl.mem made n then (Hashtbl.remove made n; Unix.close (fd n))
+  else TinyLibSystemUnix.close n
+
+(* /dev/audio, a voice; the speaker started at the first open, and what
+ * was written heard to its end, as tiny-kernel's speaker plays on after
+ * a program ends *)
+let open_out (caps : < Cap.open_out; .. >) (file : Fpath.t) : fd =
+  if Fpath.to_string file <> "/dev/audio" then TinyLibSystemUnix.open_out caps file
   else begin
-    if fd = fd_stdout && s = enq then size_asked := true
-    else if fd = fd_stdout then (print_string s; flush stdout)
-    else if fd = fd_stderr then (prerr_string s; flush stderr)
-    else (match Hashtbl.find_opt files fd with
-          | Some (Writing (_, b)) -> Buffer.add_string b s
-          | Some (Speaker ahead) -> speak ahead s
-          | Some (Asking b) ->
-              Buffer.add_string b s;
-              let asked = Buffer.contents b in
-              (match String.index_opt asked '\n' with
-               | Some i ->
-                   Hashtbl.replace files fd
-                     (Answer (ref (answer (String.sub asked 0 i))))
-               | None -> ())
-          | _ -> ());
-    0
-  end
-
-(* whether flags open a file to write: o_write's and o_anew's low bit,
- * O_WRONLY's (o_read_write's file is read, as o_read's) *)
-let writing flags = flags land 1 <> 0
-
-let u_open (name : string) (flags : int) : int =
-  if name = "/dev/audio" then begin
-    (* the speaker started at the first open; what was written is heard
-     * to its end, as tiny-kernel's speaker plays on after a program
-     * ends *)
     if !started = None then begin
       started := Some (Unix.gettimeofday ());
       at_exit (fun () ->
         let last =
           Hashtbl.fold
-            (fun _ f m -> match f with Speaker a -> max m !a | _ -> m)
-            files 0 in
+            (fun _ m k -> match m with Speaker a -> max k !a | _ -> k)
+            made 0 in
         while !fed < last + 1600 do feed (); Unix.sleepf 0.02 done;
         while (Lazy.force display).queued () > 0 do Unix.sleepf 0.02 done)
     end;
     opened (Speaker (ref 0))
   end
-  else if writing flags then opened (Writing (name, Buffer.create 4096))
-  else if Sys.file_exists name && not (Sys.is_directory name) then
-    opened (Reading (ref (In_channel.with_open_bin name In_channel.input_all)))
-  else -1
 
-(* u_open's flags (../TinyCalls.mli) *)
-let o_read = 0
-let o_anew = 0x601
-let o_write = 0x201
-let o_read_write = 0x202
-
-let u_close (fd : int) : int =
-  (match Hashtbl.find_opt files fd with
-   | Some (Writing (name, b)) ->
-       Out_channel.with_open_bin name (fun oc -> Buffer.output_buffer oc b)
-   | _ -> ());
-  Hashtbl.remove files fd;
-  0
-
-let u_rawcons (_ : int) = 0
-
-let u_dial (address : string) (port : int) =
-  if address = "10.0.0.1" && port = 70 then opened (Asking (Buffer.create 64))
-  else -1
-
-(*****************************************************************************)
-(* The calls: files' entries, programs, arguments *)
-(*****************************************************************************)
-
-(* the host's file as tiny-kernel's entry (user.h's dirent) *)
-let u_stat (path : string) : string =
-  match Unix.stat path with
-  | st ->
-      let name = Filename.basename path in
-      let name =
-        if String.length name > 64 then String.sub name 0 64 else name in
-      (* (word, the one above; old: a second word here, by lsr) *)
-      name ^ String.make (64 - String.length name) '\000'
-      ^ word (if st.st_kind = Unix.S_DIR then 1 else 2)
-      ^ word st.st_nlink ^ word st.st_size
-      ^ word (int_of_float st.st_mtime - y2000)
-  | exception Unix.Unix_error _ -> ""
+(* the window's keys are raw already: ^C a key *)
+let raw_console (_ : < Cap.keyboard; .. >) (_ : bool) = ()
 
 (* /bin/play is tiny-play, else m-ix's mini-play (/bin/page: mini-page,
  * there is no tiny-page): in the bin/ this program was run from, beside
  * its executable (dune's _build, where tiny-play is play.exe), or on the
  * PATH *)
-let u_spawn (path : string) (args : string list) : int =
-  let name = Filename.basename path
+let spawn (_ : < Cap.fork; Cap.exec; .. >) (file : Fpath.t)
+    (argv : string list) : pid option =
+  let name = Filename.basename (Fpath.to_string file)
   and exe = Sys.executable_name and argv0 = Sys.argv.(0) in
   let dirs =
     (if String.contains argv0 '/' then [ Filename.dirname argv0 ] else [])
@@ -469,13 +423,17 @@ let u_spawn (path : string) (args : string list) : int =
             (fun d -> List.map (Filename.concat d) names)
             (List.filter (( <> ) "") dirs)) in
   match found with
-  | None -> -1
+  | None -> None
   | Some prog -> (
-      let args = match args with _ :: rest -> rest | [] -> [] in
+      let args = match argv with _ :: rest -> rest | [] -> [] in
+      flush_all ();
       try
-        Unix.create_process prog (Array.of_list (prog :: args))
-          Unix.stdin Unix.stdout Unix.stderr
-      with Unix.Unix_error _ -> -1)
+        Some
+          (Unix.create_process prog (Array.of_list (prog :: args)) Unix.stdin
+             Unix.stdout Unix.stderr)
+      with Unix.Unix_error _ -> None)
 
-let u_argc () = Array.length Sys.argv
-let u_arg (i : int) = Sys.argv.(i)
+let dial (_ : < Cap.network; .. >) (address : string) (port : int) : fd =
+  if address = "10.0.0.1" && port = 70 then opened (Asking (Buffer.create 64))
+  else failwith ("no wire on the host to " ^ address ^ ": the window answers \
+                  port 70 of 10.0.0.1 alone")

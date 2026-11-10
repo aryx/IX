@@ -39,7 +39,7 @@ let click (m, ms) msg =
   let m, ms = TinyLibGUI.mouse g (boxes g m) m ms x y 1 in
   TinyLibGUI.mouse g (boxes g m) m ms x y 0
 
-let written () = Buffer.length TinyCalls.drawn
+let written () = Buffer.length TinySystemTest.drawn
 
 (* the converter: a click in a field (0: Celsius, 2: Fahrenheit), keys
  * (< a backspace), the two texts after *)
@@ -120,6 +120,6 @@ let () =
     TinyKernelGraphics.connect screen
       (TinyKernelGraphics.font_mask 0x1000 (String.length font)
          (TinyKernelGraphics.alloc 16384)) in
-  TinyKernelGraphics.messages c (Buffer.contents TinyCalls.drawn);
+  TinyKernelGraphics.messages c (Buffer.contents TinySystemTest.drawn);
   Out_channel.with_open_bin Sys.argv.(2) (fun oc ->
     output_string oc (TinyMemory.ppm 640 480))

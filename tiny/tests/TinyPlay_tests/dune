@@ -2,4 +2,4 @@
 (executable
  (name Host)
  (modules Host)
- (libraries tiny_play))
+ (libraries tiny_play tiny_lib_system_teststub))

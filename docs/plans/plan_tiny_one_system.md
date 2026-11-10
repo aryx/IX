@@ -1,6 +1,6 @@
 # Plan: one system interface for the tiny programs, TinyLibSystem, and TinyCalls private to tiny-kernel's side
 
-Status: **stages 0 and 1 done (2026-11-10): the layout; TinyLibSystem.mli grown. Stages 2-5 to do.**
+Status: **stages 0 to 4 done (2026-11-10): one interface, TinyLibSystem; stage 5 (no user/) to do.**
 Written 2026-11-10, after the author's question: "now since we have
 TinyLibSystem.mli, do we need TinyCalls.mli? seems they offer similar
 services", and then: "It seems confusing to have both those
@@ -230,3 +230,25 @@ program run). No caller yet: `dead_tiny.txt` has them, until stage 3.
 globals), the screen looked at. Checked: dune; `make test-tix`;
 `tiny_check.sh`; mini-mk; the kernel's check and self-quick in
 `_make2`.
+
+Stages 2 to 4, 2026-11-10, as one (the author's choice: no scaffolding
+for the window to serve two interfaces at once). `sdl/TinyLibSystem.ml`,
+the window's implementation: `unix/`'s code (a copy dune makes,
+`TinyLibSystemUnix`) and the window for the rest, its descriptors
+real ones of /dev/null's so that a file opened never takes their
+number. `teststub/`: a whole TinyLibSystem, files and processes a
+Failure, `TinySystemTest.drawn` beside it. The graphical side on
+TinyLibSystem, with capabilities: TinyLibPlayground's `run`,
+TinyLibGUI's `run_canvas` and `window_size`, TinyBrowser's `browse`
+(its functions passing `caps`), TinyPlay; TinyLibGUI's own `read_file`
+and `write_file` gone; the mains on `TinyLibSystem.main`, their
+messages as before (the kernel's check records them); a frame 33 ms
+(the kernel's 13 ticks before). `TinyCalls.mli` and `tiny_calls`
+gone; `tinykernel/TinyCalls.ml`, the externals, stays: its
+TinyLibSystem's, and the debugger's and the tracer's for `trace`.
+`unix/`'s `ready`, `raw_console`, `seed`, `spawn` and `dial` a Failure
+(the author: "get rid of it and fail if unused"). Checked: dune;
+`make test-tix`; `tiny_check.sh`; mini-mk; the kernel's check (no
+expectation changed) and self-quick in `_make2`; tiny-calc,
+tiny-tetris and tiny-office run in a window (SDL's dummy driver),
+their screens looked at.

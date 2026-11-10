@@ -1,4 +1,7 @@
-; the tests' TinyCalls: no kernel, what is drawn kept (../TinyCalls.mli)
+; TinyLibSystem for the tests of a window's program (../../TinyLibSystem.mli):
+; no kernel, no host, what is drawn kept (TinySystemTest.drawn, which only
+; a test linking this stub names)
 (library
- (name tiny_calls_teststub)
- (implements tiny_calls))
+ (name tiny_lib_system_teststub)
+ (implements tiny_lib_system)
+ (modules TinyLibSystem TinySystemTest))

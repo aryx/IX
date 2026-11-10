@@ -2,4 +2,4 @@
 (executable
  (name Host)
  (modules Host)
- (libraries tiny_kernel_graphics tiny_lib_draw tiny_lib_playground tiny_app_tetris))
+ (libraries tiny_kernel_graphics tiny_lib_draw tiny_lib_playground tiny_app_tetris tiny_lib_system_teststub))

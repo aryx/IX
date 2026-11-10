@@ -3,9 +3,8 @@
 ;
 ; A program here is the same few lines as on tiny-kernel, its last file
 ; in ../, copied and compiled by OCaml. Under them,
-; ../TinyLibSystem/sdl/TinyCalls.ml makes the kernel's calls
-; (../TinyLibSystem/TinyCalls.mli) with the window: its screen, its keys and
-; mouse, and its sound.
+; ../TinyLibSystem/sdl/ makes TinyLibSystem (../TinyLibSystem.mli) with
+; the window: its screen, its keys and mouse, and its sound.
 ;
 ; make loc does not count this directory, as it does not count
 ; tiny-machine-window: both are a host for the programs, not part of t-ix.
@@ -23,46 +22,46 @@
  (public_name tiny-emacs)
  (package ix)
  (modules emacs)
- (libraries tiny_editor_screen tiny_lib_gui tiny_calls_sdl))
+ (libraries tiny_editor_screen tiny_lib_gui tiny_lib_system_sdl))
 
 (executable
  (name office)
  (public_name tiny-office)
  (package ix)
  (modules office)
- (libraries tiny_office tiny_lib_gui tiny_calls_sdl))
+ (libraries tiny_office tiny_lib_gui tiny_lib_system_sdl))
 
 (executable
  (name www)
  (public_name tiny-www)
  (package ix)
  (modules www)
- (libraries tiny_browser tiny_calls_sdl))
+ (libraries tiny_browser tiny_lib_system_sdl))
 
 (executable
  (name troff)
  (public_name tiny-troff)
  (package ix)
  (modules troff)
- (libraries tiny_troff tiny_lib_gui tiny_calls_sdl))
+ (libraries tiny_troff tiny_lib_gui tiny_lib_system_sdl))
 
 (executable
  (name play)
  (public_name tiny-play)
  (package ix)
  (modules play)
- (libraries tiny_play tiny_lib_gui tiny_calls_sdl))
+ (libraries tiny_play tiny_lib_gui tiny_lib_system_sdl))
 
 (executable
  (name calc)
  (public_name tiny-calc)
  (package ix)
  (modules calc)
- (libraries tiny_app_calculator tiny_lib_gui tiny_calls_sdl))
+ (libraries tiny_app_calculator tiny_lib_gui tiny_lib_system_sdl))
 
 (executable
  (name tetris)
  (public_name tiny-tetris)
  (package ix)
  (modules tetris)
- (libraries tiny_app_tetris tiny_lib_playground tiny_calls_sdl))
+ (libraries tiny_app_tetris tiny_lib_playground tiny_lib_system_sdl))

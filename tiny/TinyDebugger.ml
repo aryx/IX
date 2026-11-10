@@ -495,7 +495,7 @@ let moved x y b m =
   | (_, Send c) :: _ -> Some (run_command c { m with held = b })
   | _ -> Some { m with held = b }
 
-let window () =
+let window caps =
   let first w h =
     let bar, boxes =
       place 0 0 w 28
@@ -506,10 +506,10 @@ let window () =
     in
     shown { log = []; cmd = ""; panes = []; held = 0; w = w; h = h; bar = bar;
             boxes = boxes } in
-  run_canvas
+  run_canvas caps
     { first = first; picture = picture; typed = typed; moved = moved }
 
-let main () =
+let main caps =
   let n = u_argc () in
   let windowed = n > 1 && u_arg 1 = "-window" in
   let first = if windowed then 2 else 1 in
@@ -559,7 +559,7 @@ let main () =
     exit 1
   end;
   (* the process killed if debug started it and it still runs *)
-  let quit = if windowed then (window (); true) else not (loop ()) in
+  let quit = if windowed then (window caps; true) else not (loop ()) in
   if quit && !started then ignore (u_kill !pid);
   if !started then ignore (u_waits ());
   exit 0

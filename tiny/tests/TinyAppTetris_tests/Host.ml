@@ -91,7 +91,7 @@ let () =
     ^ TinyLibDraw.d_image TinyLibPlayground.ground
         (0, 0, game.width, game.height) 0
   in
-  ignore (TinyCalls.u_write TinyCalls.fd_draw both);
+  TinyLibSystem.write TinyLibSystem.fd_draw both;
   TinyLibPlayground.show game [] (game.view m);
   TinyKernelGraphics.arena 0xf4b000 0xb4000;
   let screen = { TinyKernelGraphics.r = TinyKernelGraphics.rect 0 0 640 480;
@@ -100,6 +100,6 @@ let () =
     TinyKernelGraphics.connect screen
       (TinyKernelGraphics.font_mask 0x1000 (String.length font)
          (TinyKernelGraphics.alloc 16384)) in
-  TinyKernelGraphics.messages c (Buffer.contents TinyCalls.drawn);
+  TinyKernelGraphics.messages c (Buffer.contents TinySystemTest.drawn);
   Out_channel.with_open_bin Sys.argv.(2) (fun oc ->
     output_string oc (TinyMemory.ppm 640 480))

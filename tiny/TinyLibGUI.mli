@@ -99,11 +99,11 @@
  * context:
  * Below it are TinyLibPlayground (its shapes and
  * their drawing, but not its loop, because a game has frames and no
- * mouse), TinyLibDraw and TinyCalls; above it are TinyAppCalculator,
+ * mouse), TinyLibDraw and TinyLibSystem; above it are TinyAppCalculator,
  * TinyAppTemperature, and the programs that draw their own window
  * (emacs, the office, the debugger, the browser). It
- * draws on its descriptor 3 and reads its
- * 0 and its 4, so a program runs on the screen or in a window of
+ * draws on fd_draw and reads
+ * fd_stdin and fd_mouse, so a program runs on the screen or in a window of
  * TinyWindows without knowing which. Its mouse is the kernel's box,
  * which keeps only the last position, so a click that starts and ends
  * while the program is drawing is missed. On tiny-machine a press
@@ -297,15 +297,10 @@ type 'm canvas = {
  * places) compared with the old shape's at their place; what changed
  * erased by the ground and what is on it there, the new drawn; words
  * at the same place drawn from their first other character. The
- * console is raw meanwhile, its ^C a key. *)
-val run_canvas : 'm canvas -> unit
+ * console is raw meanwhile, its ^C a key. caps: the clock, for the
+ * window's size's answer, and the keyboard, raw *)
+val run_canvas : < Cap.clock; Cap.keyboard; .. > -> 'm canvas -> unit
 
 (* the window's size in pixels: tiny-windows' answer to an ENQ, or
- * the console's whole screen *)
-val window_size : unit -> int * int
-
-(* the file such a program edits: its text ("" when it is not there);
- * the text written, and whether all of it was. TinyCalls' own, not
- * TinyLibSystem's, which such a program does not link *)
-val read_file : Fpath.t -> string
-val write_file : Fpath.t -> string -> bool
+ * the console's whole screen, after half a second (old: 200 ticks of 2.5 ms) *)
+val window_size : < Cap.clock; .. > -> int * int

@@ -111,13 +111,13 @@ tiny-kernel's (`cc`, `ml`, `as`, `ld`) making the same files there
 step 7).
 
 A program can run on both systems because it never names either: it
-names one of two interfaces, in [`TinyLibSystem/`](TinyLibSystem/README.md), each
-with an implementation for each system. A tool asks through
-`TinyLibSystem.mli` (`TinyLibSystem/unix/TinyLibSystem.ml` over
-OCaml's Unix, on Linux and macOS; `TinyLibSystem/tinykernel/TinyLibSystem.ml`
-over the kernel's calls), so a recipe of `build` is in its system's
-shell; a graphical program asks through `TinyLibSystem/TinyCalls.mli`, the
-kernel's calls themselves (below).
+names one interface, `TinyLibSystem.mli`, with an implementation for
+each system in [`TinyLibSystem/`](TinyLibSystem/README.md):
+`unix/` over OCaml's Unix, on Linux and macOS, for the tools;
+`tinykernel/` over the kernel's calls; `sdl/`, a window on the host,
+for the graphical programs; `teststub/`, the tests'. So a recipe of
+`build` is in its system's shell, and a graphical program draws on
+`fd_draw` whether it runs on tiny-kernel or in a window (below).
 
 [docs/projects.md](../docs/projects.md#what-a-tiny-program-stands-on)
 has the picture: for a tool on the host, for a program in ML or in C
@@ -163,14 +163,13 @@ between them and their machine: `TinyLibDraw.ml` (a program's side of the drawin
 messages), and what the machine gives: `TinyMemory.ml` (its bytes,
 for the kernel's drawing: an array on the host,
 `TinyKernel/host/TinyMemory.ml`; externals on tiny-machine,
-`TinyKernel/TinyMemory.ml`) and `TinyCalls` (the kernel's calls,
-`TinyLibSystem/TinyCalls.mli`; externals on tiny-machine,
-`TinyLibSystem/tinykernel/TinyCalls.ml`). On the host `TinyCalls` is a
-virtual library of dune's with two implementations: the tests' stub
-(`TinyLibSystem/teststub/`: what is drawn kept, no keys) and a window's
-([`TinyLibSystem/sdl/`](TinyLibSystem/sdl/TinyCalls.ml): what is drawn drawn by
-`TinyKernelGraphics.ml` and shown by SDL, the window's mouse and keys,
-the host's files, clock and web), on which
+`TinyKernel/TinyMemory.ml`) and `TinyLibSystem.mli` (the system, its
+window's descriptors among the rest). On the host the window's programs
+run on `TinyLibSystem`'s two host implementations for them: the tests'
+stub (`TinyLibSystem/teststub/`: what is drawn kept, no keys) and a
+window's ([`TinyLibSystem/sdl/`](TinyLibSystem/sdl/TinyLibSystem.ml):
+what is drawn drawn by `TinyKernelGraphics.ml` and shown by SDL, the
+window's mouse and keys, the host's files, clock and web), on which
 the programs' own few lines in [`user/`](user/) are built for the
 host as they are, by `user/sdl/`: tiny-office, tiny-emacs, tiny-calc,
 tiny-tetris, tiny-www, tiny-troff, tiny-play.

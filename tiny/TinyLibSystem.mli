@@ -52,8 +52,8 @@
  * subset of OCaml's Unix, an interface far larger than tiny-kernel
  * gives, of strings and Unix_error, without the capabilities or
  * Fpath.t. So this is a new interface, cut to the smaller system's,
- * with one .mli and a file for each side, as TinyCalls (a virtual
- * library in dune). The other road, Sys and Unix subsets, would let
+ * with one .mli and a file for each system (a virtual library in
+ * dune: TinyLibSystem/). The other road, Sys and Unix subsets, would let
  * the tools use the names OCaml programmers know, and a tool asking
  * for a name tiny-kernel lacks would fail to compile there; but not a
  * tool relying on what tiny-kernel can only fake: a stats' 12 fields
@@ -143,8 +143,7 @@ val ignore_interrupt : < Cap.signal; .. > -> unit
 
 (* [raw_console caps raw]: the terminal raw (each key as it is typed,
  * ^C a key, not an interrupt) or not: what an editor or a game wants of
- * its keys (TinyCalls' u_rawcons, for the window's programs:
- * plan_tiny_one_system.md) *)
+ * its keys *)
 val raw_console : < Cap.keyboard; .. > -> bool -> unit
 
 (*****************************************************************************)
@@ -266,7 +265,7 @@ val seed : < Cap.random; .. > -> int
  * buttons, a word each, the low bytes first). The last two are a
  * window's: tiny-kernel's, or the host's window (TinyLibSystem/sdl/);
  * on the host with no window they are not open, and a write there
- * fails (old: TinyCalls.mli's alone) *)
+ * fails *)
 val fd_stdin : fd
 val fd_stdout : fd
 val fd_stderr : fd
@@ -276,8 +275,7 @@ val fd_mouse : fd
 (* [ready fds until]: the first of fds that can be read without
  * waiting, waiting for one until the clock (millis's) is until, None
  * then; with no until, until one is ready. A window's loop: a key, the
- * mouse, the wire, or the next frame (old: TinyCalls' u_ready, ticks
- * and -1) *)
+ * mouse, the wire, or the next frame *)
 val ready : fd list -> milliseconds option -> fd option
 
 (* [read fd max]: what fd gives next, up to max bytes, without waiting
@@ -342,7 +340,7 @@ val shell :
 (* [spawn caps file argv]: a child running the program in file, argv
  * its arguments (its name first), not waited for: nothing of this
  * process copied, where fork and exec copy it whole; its pid, None when
- * it cannot (the browser's player and pager; old: TinyCalls' u_spawn) *)
+ * it cannot (the browser's player and pager) *)
 val spawn : < Cap.fork; Cap.exec; .. > -> Fpath.t -> string list -> pid option
 
 (* the end of this process, at once: nothing flushed; Err's words said
@@ -357,5 +355,5 @@ val exit : < Cap.exit; Cap.stderr; .. > -> Exit.t -> 'a
  * descriptor; Failure when there is none. tiny-kernel's wire, and the
  * host's window, which answers the wire's other end (port 70 of
  * 10.0.0.1, a web page, a picture) as tiny-machine does; the host
- * without a window has no wire (old: TinyCalls' u_dial, -1) *)
+ * without a window has no wire *)
 val dial : < Cap.network; .. > -> string -> int -> fd

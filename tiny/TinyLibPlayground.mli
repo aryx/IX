@@ -90,10 +90,10 @@
  * makes its samples, mixed with the other programs'.
  *
  * context:
- * Below it are TinyCalls (four kernel calls: write,
- * read, ready, ticks) and TinyLibDraw (the drawing messages); above it
- * is TinyAppTetris. It draws on its file descriptor 3 and reads keys on
- * its descriptor 0, so a game runs either on the whole screen or in a
+ * Below it are TinyLibSystem (write, read, ready, millis, the
+ * speaker's open) and TinyLibDraw (the drawing messages); above it is
+ * TinyAppTetris. It draws on fd_draw and reads keys on fd_stdin, so a
+ * game runs either on the whole screen or in a
  * window of TinyWindows without knowing which. Playground in
  * lib_playground is the full version, with floats, transformations,
  * the mouse and several platforms.
@@ -203,8 +203,9 @@ type 'm game = {
 
 (* The program of a game: its loop, a key or the next frame's time
  * waited for, the picture drawn when the shapes are others; it ends at
- * a q or at the keys' end, so a game is never given a q *)
-val run : 'm game -> 'a
+ * a q or at the keys' end, so a game is never given a q. caps: the
+ * speaker opened, the first random number's seed, the clock *)
+val run : < Cap.open_out; Cap.random; Cap.clock; .. > -> 'm game -> 'a
 
 (* the number after a seed, 1 to 2^30 - 36 (Lehmer's generator) *)
 val random : int -> int

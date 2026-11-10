@@ -63,14 +63,14 @@ val block : int
  * [wav]), written to the file descriptor out (/dev/audio, opened by
  * the caller), a block at a time; Failure why when it is no WAV this
  * plays *)
-val play : int -> string -> unit
+val play : TinyLibSystem.fd -> string -> unit
 
 (* No main here, unlike TinyShell's or TinyAssembler's: those are
  * written on TinyLibSystem.main and its capabilities, the same on the
- * host and on tiny-kernel. play is written on TinyCalls, as the
- * programs with a screen are, for the same reason: on the host its
- * device, /dev/audio, is not Unix's (the host's TinyLibSystem) but the
- * one TinyLibSystem/sdl/TinyCalls.ml makes, as it makes their window. Its command
+ * host and on tiny-kernel. play's main is too (user/play.ml); on the
+ * host it runs in a window's TinyLibSystem, whose /dev/audio is not
+ * Unix's but the one TinyLibSystem/sdl/ makes, as it makes the
+ * window. Its command
  * line (the file read, /dev/audio opened, why not said) is
  * user/play.ml's, a few lines, as troff's is
  * user/troff.ml's; the host's tiny-play compiles that same file. *)

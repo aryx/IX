@@ -6,4 +6,4 @@
 open TinyLibPlayground
 open Square
 
-let () = run game
+let () = TinyLibSystem.main "square" (fun caps _ -> run caps game)

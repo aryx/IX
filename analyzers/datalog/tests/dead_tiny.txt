@@ -79,9 +79,10 @@ tiny/TinyLibSystem/unix/TinyLibSystem.ml: dead global: TinyLibSystem.fd_mouse, n
 tiny/TinyLibSystem/unix/TinyLibSystem.ml: dead global: TinyLibSystem.fd_stderr, nothing live names it
 tiny/TinyLibSystem/unix/TinyLibSystem.ml: dead global: TinyLibSystem.fd_stdin, nothing live names it
 tiny/TinyLibSystem/unix/TinyLibSystem.ml: dead global: TinyLibSystem.fd_stdout, nothing live names it
-tiny/TinyLibSystem/unix/TinyLibSystem.ml:183: dead: TinyLibSystem.seed, nothing names it
-tiny/TinyLibSystem/unix/TinyLibSystem.ml:198: dead: TinyLibSystem.ready, nothing names it
-tiny/TinyLibSystem/unix/TinyLibSystem.ml:269: dead: TinyLibSystem.spawn, nothing names it
-tiny/TinyLibSystem/unix/TinyLibSystem.ml:288: dead: TinyLibSystem.dial, nothing names it
-tiny/TinyLibSystem/unix/TinyLibSystem.ml:73: dead: TinyLibSystem.raw_console, nothing names it
+tiny/TinyLibSystem/unix/TinyLibSystem.ml:182: dead: TinyLibSystem.seed, nothing names it
+tiny/TinyLibSystem/unix/TinyLibSystem.ml:194: dead: TinyLibSystem.ready, nothing names it
+tiny/TinyLibSystem/unix/TinyLibSystem.ml:257: dead: TinyLibSystem.spawn, nothing names it
+tiny/TinyLibSystem/unix/TinyLibSystem.ml:272: dead: TinyLibSystem.dial, nothing names it
+tiny/TinyLibSystem/unix/TinyLibSystem.ml:74: dead: TinyLibSystem.not_here, in init but no call goes through the pointer
+tiny/TinyLibSystem/unix/TinyLibSystem.ml:78: dead: TinyLibSystem.raw_console, nothing names it
 tiny/TinyMachine.ml:645: dead: TinyMachine:fun at line 645, nothing names it

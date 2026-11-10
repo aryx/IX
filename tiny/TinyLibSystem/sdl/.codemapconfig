@@ -1,56 +1,54 @@
-// tiny/TinyLibSystem/sdl/: what the code map says of it (the code map: tinybox
-// codemap, ~/github/ocaml-elm-playground; its guidelines:
-// docs/claude_notes/codemapconfig_guidelines.md there). TinyCalls in an
-// SDL window, what the programs of ../../user/sdl/ are built on (their last
-// files copied from ../../user/: office.ml, emacs.ml...);
-// TinyFont.ml is generated from ../../TinyKernel/fonts/plan9.font. Not
-// counted by make loc.
+// tiny/TinyLibSystem/sdl/: what the code map says of it (the code map:
+// tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). TinyLibSystem
+// in an SDL window, what the programs of ../../user/sdl/ are built on:
+// ../unix/'s code, copied by dune as TinyLibSystemUnix, for files and
+// processes, and the window for the rest. TinyFont.ml is generated
+// from ../../TinyKernel/fonts/plan9.font. Not counted by make loc.
 {
-  generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
-  summary: "The tiny programs on the host, in an SDL window: tiny-kernel's calls made by the kernel's own drawing and sound.",
+  generated: { by: 'claude-opus-5-5', on: '2026-11-10' },
+  summary: "The tiny programs on the host, in an SDL window: the host's files, and tiny-kernel's drawing, sound and wire.",
   files: {
-    'TinyCalls.ml': { digest: '9a49a9457e4f',
-      summary: "TinyCalls in an SDL window: draws by TinyKernelGraphics, mixes by TinyKernelAudio, the host's files, the peer's web.",
+    'TinyLibSystem.ml': { digest: '73c68715e7e3',
+      summary: "TinyLibSystem in an SDL window: draws by TinyKernelGraphics, mixes by TinyKernelAudio, the peer's web, Unix's files.",
       capitals: [
-        { at: 'def:u_ready', say: 'the loop: show, pump the events, feed the sound' },
+        { at: 'def:ready', say: 'the loop: show, pump the events, feed the sound' },
       ],
       important: [
+        { at: 'def:reserve', say: "the window's descriptors real ones, /dev/null's", weight: 2 },
         { at: 'def:conn', say: "the kernel's drawing, in TinyMemory's array", weight: 3 },
-        { at: 'def:draw', say: 'a bad message: -1, as /dev/draw', weight: 2 },
+        { at: 'def:draw', say: 'a bad message said, the program goes on', weight: 1 },
         { at: 'def:show', say: 'the screen shown only when drawn on', weight: 2 },
         { at: 'def:feed', say: 'the ring played by the clock, a fifth ahead', weight: 2 },
-        { at: 'def:speak', weight: 1 },
         { at: 'def:pump', say: "the window's events to keys and the mouse's box", weight: 2 },
-        { at: 'def:u_ready', weight: 3 },
-        { at: 'def:u_read', weight: 1 },
-        { at: 'def:u_write', say: 'fd 3 the drawing, ENQ the window size', weight: 2 },
+        { at: 'def:ready', weight: 3 },
+        { at: 'def:write', say: 'fd_draw the drawing, ENQ the window size', weight: 2 },
         { at: 'def:answer', say: "a dial to port 70: the peer's own answers", weight: 1 },
-        { at: 'def:u_argc', say: "Sys.argv: the host's command line", weight: 1 },
       ],
-      related: ['../TinyCalls.mli', '../teststub/TinyCalls.ml', '../../TinyMachine/TinyMachineSDL.ml', '../../user/'],
+      related: ['../../TinyLibSystem.mli', '../unix/TinyLibSystem.ml', '../teststub/TinyLibSystem.ml', '../../TinyMachine/TinyMachineSDL.ml', '../../user/'],
     },
   },
   skeletons: [
     {
-      name: 'A tiny program on the host: its calls in a window',
+      name: 'A tiny program on the host: its system in a window',
       bones: [
         { at: '../../user/office.ml', role: "a program's last file, copied here" },
-        { at: 'TinyCalls.ml:def:u_write', role: 'fd 3: the drawing; a file; the speaker' },
-        { at: 'TinyCalls.ml:def:draw', role: 'the messages, by the kernel' },
+        { at: 'TinyLibSystem.ml:def:write', role: 'fd_draw: the drawing; the speaker; a file' },
+        { at: 'TinyLibSystem.ml:def:draw', role: 'the messages, by the kernel' },
         { at: '../../TinyKernel/TinyKernelGraphics.ml:def:messages', role: "tiny-kernel's drawing, by OCaml" },
-        { at: 'TinyCalls.ml:def:u_ready', role: 'what the program waits on' },
-        { at: 'TinyCalls.ml:def:show', role: 'the screen to the window' },
-        { at: 'TinyCalls.ml:def:pump', role: "the window's events" },
+        { at: 'TinyLibSystem.ml:def:ready', role: 'what the program waits on' },
+        { at: 'TinyLibSystem.ml:def:show', role: 'the screen to the window' },
+        { at: 'TinyLibSystem.ml:def:pump', role: "the window's events" },
         { at: '../../TinyMachine/TinyMachineSDL.ml:def:create', role: 'the SDL window' },
       ],
       joints: [
-        { from: '../../user/office.ml', to: 'TinyCalls.ml:def:u_write', say: 'messages' },
-        { from: 'TinyCalls.ml:def:u_write', to: 'TinyCalls.ml:def:draw', say: 'fd 3' },
-        { from: 'TinyCalls.ml:def:draw', to: '../../TinyKernel/TinyKernelGraphics.ml:def:messages', say: 'the bytes' },
-        { from: '../../user/office.ml', to: 'TinyCalls.ml:def:u_ready', say: 'a key, the mouse' },
-        { from: 'TinyCalls.ml:def:u_ready', to: 'TinyCalls.ml:def:show', say: 'if drawn' },
-        { from: 'TinyCalls.ml:def:u_ready', to: 'TinyCalls.ml:def:pump', say: 'then' },
-        { from: 'TinyCalls.ml:def:show', to: '../../TinyMachine/TinyMachineSDL.ml:def:create', say: 'present' },
+        { from: '../../user/office.ml', to: 'TinyLibSystem.ml:def:write', say: 'messages' },
+        { from: 'TinyLibSystem.ml:def:write', to: 'TinyLibSystem.ml:def:draw', say: 'fd_draw' },
+        { from: 'TinyLibSystem.ml:def:draw', to: '../../TinyKernel/TinyKernelGraphics.ml:def:messages', say: 'the bytes' },
+        { from: '../../user/office.ml', to: 'TinyLibSystem.ml:def:ready', say: 'a key, the mouse' },
+        { from: 'TinyLibSystem.ml:def:ready', to: 'TinyLibSystem.ml:def:show', say: 'if drawn' },
+        { from: 'TinyLibSystem.ml:def:ready', to: 'TinyLibSystem.ml:def:pump', say: 'then' },
+        { from: 'TinyLibSystem.ml:def:show', to: '../../TinyMachine/TinyMachineSDL.ml:def:create', say: 'present' },
       ],
     },
   ],

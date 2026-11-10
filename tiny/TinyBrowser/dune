@@ -10,7 +10,7 @@
 
 ; TinyBrowser.ml's screen: what it shows, drawn by TinyLibGUI's and the
 ; kernel's drawing messages (apart from the parts above, which the wire's
-; other end links too, with no TinyCalls)
+; other end links too, with no TinyLibSystem)
 (library
  (name tiny_browser_screen)
  (wrapped false)

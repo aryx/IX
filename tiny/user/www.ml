@@ -5,19 +5,21 @@
  * address given (its words joined, so that www Plan 9 from Bell Labs
  * needs no quotes). It is linked as an a.out that asks for 10 MB
  * (tiny-linker -a 10): a page's lines live in the heap. OCaml
- * compiles it too, for the host (tiny-www, sdl/): its calls
- * TinyCalls's, a window's and the host's network.
+ * compiles it too, for the host (tiny-www, sdl/): its system
+ * TinyLibSystem's, a window's and the host's network.
  *
  *     www OCaml *)
-open TinyCalls
+module TSys = TinyLibSystem
 open TinyBrowser
 
 let () =
-  let n = u_argc () in
-  if n < 2 then (ignore (u_write fd_stderr "usage: www address\n"); exit 1);
-  let rec words i acc =
-    if i >= n then acc
-    else words (i + 1) (if acc = "" then u_arg i else acc ^ " " ^ u_arg i)
-  in
-  browse (words 1 "");
-  exit 0
+  TSys.main "www" (fun caps argv ->
+    if Array.length argv < 2 then begin
+      TSys.eprint caps "usage: www address\n";
+      Exit.Code 1
+    end
+    else begin
+      browse caps
+        (String.concat " " (Array.to_list (Array.sub argv 1 (Array.length argv - 1))));
+      Exit.OK
+    end)

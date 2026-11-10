@@ -268,7 +268,7 @@ let forward w s =
   let rec next i drew =
     if i >= n then i, drew
     else begin
-      let len, images = d_shape p i in
+      let { ds_length = len; ds_images = images } = d_shape p i in
       if len < 0 then n, drew
       else if i + len > n then i, drew
       else begin

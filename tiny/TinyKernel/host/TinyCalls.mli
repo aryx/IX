@@ -44,9 +44,19 @@ val u_seed : unit -> int
  * size and date, a word each), or "" when it is not there *)
 val u_stat : string -> string
 
-(* a file opened (flags as user.h's: 0 to read, 0x601 to write it anew),
- * its descriptor, or -1; closed *)
+(* a file opened, flags as user.h's (below), its descriptor, or -1;
+ * closed *)
 val u_open : string -> int -> int
+
+(* u_open's flags: to read (O_RDONLY, 0); to write it anew (O_WRONLY |
+ * O_CREATE | O_TRUNC, 0x601); to write, made when it is not there
+ * (O_WRONLY | O_CREATE, 0x201: an append seeks its end); to read and
+ * write, made when it is not there (O_RDWR | O_CREATE, 0x202). (old:
+ * the numbers where a file was opened) *)
+val o_read : int
+val o_anew : int
+val o_write : int
+val o_read_write : int
 val u_close : int -> int
 
 (* the console raw (1) or not (0): its ^C a key *)

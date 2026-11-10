@@ -67462,3 +67462,27 @@ Claude recommended doing the tiny-ml parser fixes first, with byte-identical out
 Claude also proposed switching the debugger's register panel to `ISA.reg_name`, so it shows `sp` and `lr` instead of `r14` and `r15`.
 Claude suggested doing both as one short step, then moving on to the GUI layer.
 The GUI tidy (TinyLibGUI, TinyLibPlayground, TinyLibDraw, TinyWindows) and the later tools came after that.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 07:45
+
+**Yoann:**
+
+> ok let's do 1, and 2
+
+**Claude (summary):**
+
+Claude's answer covered item 1 and item 2, and Yoann's "ok let's do 1, and 2" pointed at the work it had just finished. Claude fixed `!r.l` to parse as `(!r).l` and made `M.( op )` resolve as a module operator, then committed that as d19af10e with tests and tiny-ml's own sources updated. Claude also added `sp` and `lr` names to the debugger's register panel in 39fc5f87 and re-recorded its screen checksum. Claude left the uncommitted reflow in `TinyML.mli` alone and flagged that its language paragraph could mention `M.( op )` once committed.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 08:08
+
+**Yoann:**
+
+> ok let's do the TinyLibXxx
+
+**Claude (summary):**
+
+Claude proposed a four-part cleanup of the ix libraries, with part A (types) as the core. It covered replacing TinyLibGUI's mouse tuple and redraw mark with real variant types, and TinyLibRegex's negated-set bool with In_set/Not_in_set. It also proposed records for tiny-kernel's entry tuple, plus several smaller type fixes. Claude asked whether to use `P.` qualifiers for the shape constructors in TinyLibGUI, and whether to start with A.

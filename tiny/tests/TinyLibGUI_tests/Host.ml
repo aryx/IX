@@ -109,7 +109,8 @@ let () =
   let shapes, tb = TinyLibGUI.laid t tm in
   let down = List.map (fun s -> TinyLibPlayground.Move (0, 200, s)) in
   let (fx, fy, _, _), _ = List.nth tb 1 in
-  let over = TinyLibGUI.over tb { TinyLibGUI.up with fx; fy } in
+  let over =
+    TinyLibGUI.over tb { TinyLibGUI.up with m_focus = Some (fx, fy) } in
   TinyLibGUI.redraw [] [] (down shapes)
     (List.map (fun (box, s) -> box, TinyLibPlayground.Move (0, 200, s)) over);
   TinyKernelGraphics.arena 0xf4b000 0xb4000;

@@ -55,7 +55,7 @@ let body_start sc : string =
   d.dc_type <- Some media;
   (match List.assoc_opt media helpers with
    | Some (_, file) ->
-     let fd = u_open file 0x601 in
+     let fd = u_open file o_anew in
      d.dc_file <- (if fd < 0 then None else Some fd)
    | None ->
      if is_html media then ()
@@ -450,10 +450,11 @@ let browse typed =
         send sc;
         loop keys
       | _ when keys && ready = 4 ->
-        let s = u_read 4 12 in
-        if String.length s = 12 && int16 s 8 >= 0
-           && not (on_mouse sc (int16 s 0) (int16 s 4) (int16 s 8)) then quit sc
-        else begin send sc; loop keys end
+        (match mouse_event (u_read 4 12) with
+         | Some e when e.mo_buttons >= 0
+                       && not (on_mouse sc e.mo_x e.mo_y e.mo_buttons) ->
+             quit sc
+         | _ -> send sc; loop keys)
       | _ when keys && ready = 0 ->
         let typed = u_read 0 16 in
         if typed = "" then loop false

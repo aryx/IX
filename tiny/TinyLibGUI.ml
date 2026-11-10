@@ -3,9 +3,9 @@
 
 (* See TinyLibGUI.mli *)
 
-open TinyLibDraw
+module D = TinyLibDraw
 open TinyCalls
-open TinyLibPlayground
+module P = TinyLibPlayground
 
 (* a text; a text in a box, at its right; a field typed in, and the
  * message of another text; a button and the message it sends; widgets
@@ -24,7 +24,7 @@ type ('m, 'msg) gui = {
   init : 'm;
   view : 'm -> 'msg widget;
   update : 'msg -> 'm -> 'm;
-  key : key -> 'msg list;
+  key : P.key -> 'msg list;
 }
 
 (* a box: x, y, width, height, in pixels *)
@@ -37,12 +37,16 @@ type 'msg action = Send of 'msg | Edit of string * (string -> 'msg)
 (* the boxes that answer the mouse or the keys, each with its action *)
 type 'msg boxes = (box * 'msg action) list
 
-(* what is kept under the model: where the mouse's button went down
- * (px -1: it is up), where the mouse is, where its button last went
- * down (the field there has the keys) *)
-type mouse = { px : int; py : int; x : int; y : int; fx : int; fy : int }
+(* a point in the window, in pixels *)
+type point = int * int
 
-let up = { px = -1; py = -1; x = -1; y = -1; fx = -1; fy = -1 }
+(* what is kept under the model: where the mouse's button went down
+ * (None: it is up), where the mouse is, where its button last went
+ * down (the field there has the keys; None: no field has them). (old:
+ * six ints, px -1 for a button up) *)
+type mouse = { m_down : point option; m_at : point; m_focus : point option }
+
+let up = { m_down = None; m_at = (-1, -1); m_focus = None }
 
 (*****************************************************************************)
 (* The layout *)
@@ -77,14 +81,22 @@ and widest l =
     let (cw, ch) = size c in
     max w cw, max h ch) (0, 0) l
 
-let inside x y ((x0, y0, w, h) : box) = x >= x0 && y >= y0 && x < x0 + w && y < y0 + h
+let inside x y ((x0, y0, w, h) : box) =
+  x >= x0 && y >= y0 && x < x0 + w && y < y0 + h
+
+(* a point, when there is one, in a box *)
+let inside_at (p : point option) box =
+  match p with Some (x, y) -> inside x y box | None -> false
+
+(* whether the field in this box has the keys *)
+let focused (m : mouse) box = inside_at m.m_focus box
 
 (* a text in a white box, tx from its left *)
 let boxed x y w h tx s =
-  Move (x, y, Group [
-    Rect (dark, w, h);
-    Move (1, 1, Rect (light, w - 2, h - 2));
-    Move (tx, 4, Words (black, s)) ])
+  P.Move (x, y, P.Group [
+    P.Rect (dark, w, h);
+    P.Move (1, 1, P.Rect (light, w - 2, h - 2));
+    P.Move (tx, 4, P.Words (black, s)) ])
 
 (* The place a widget is given, from the root down: a shape for each
  * text, field and button there (its first rectangle is all its box),
@@ -98,18 +110,20 @@ let boxed x y w h tx s =
 let rec place x y w h widget =
   match widget with
   | Label s ->
-      [ Move (x, y, Group [ Rect (face, w, h); Move (4, 4, Words (black, s)) ])
+      [ P.Move (x, y,
+        P.Group [ P.Rect (face, w, h); P.Move (4, 4, P.Words (black, s)) ])
       ], []
   | Field s -> [ boxed x y w h (w - 4 - (8 * String.length s)) s ], []
   | Input (s, f) -> [ boxed x y w h 4 s ], [ (x, y, w, h), Edit (s, f) ]
   | Button (s, msg) ->
       let words =
-        Move ((w - (8 * String.length s)) / 2, (h - 16) / 2, Words (black, s))
+        P.Move ((w - (8 * String.length s)) / 2, (h - 16) / 2,
+          P.Words (black, s))
       in
-      [ Move (x, y, Group [
-          Rect (dark, w, h);
-          Rect (light, w - 2, h - 2);
-          Move (2, 2, Rect (face, w - 4, h - 4));
+      [ P.Move (x, y, P.Group [
+          P.Rect (dark, w, h);
+          P.Rect (light, w - 2, h - 2);
+          P.Move (2, 2, P.Rect (face, w - 4, h - 4));
           words ]) ],
       [ (x, y, w, h), Send msg ]
   | Row l ->
@@ -144,17 +158,18 @@ let over (boxes : 'msg boxes) m =
     let box = x, y, w, h in
     match action with
     | Send _ ->
-        if inside m.px m.py box && inside m.x m.y box then
-          [ box, Move (x, y, Group [
-              Rect (dark, w - 2, 2);
-              Rect (dark, 2, h - 2);
-              Move (0, h - 2, Rect (light, w, 2));
-              Move (w - 2, 0, Rect (light, 2, h)) ]) ]
+        if inside_at m.m_down box && inside_at (Some m.m_at) box then
+          [ box, P.Move (x, y, P.Group [
+              P.Rect (dark, w - 2, 2);
+              P.Rect (dark, 2, h - 2);
+              P.Move (0, h - 2, P.Rect (light, w, 2));
+              P.Move (w - 2, 0, P.Rect (light, 2, h)) ]) ]
         else []
     | Edit (s, _) ->
-        if inside m.fx m.fy box then
+        if focused m box then
           [ box,
-            Move (x + 4 + (8 * String.length s), y + 4, Rect (black, 2, 16)) ]
+            P.Move (x + 4 + (8 * String.length s), y + 4,
+              P.Rect (black, 2, 16)) ]
         else []) boxes)
 
 (*****************************************************************************)
@@ -181,24 +196,26 @@ let rec differ shown now =
 let redraw shown was now is =
   let at (x, y, w, h) s =
     match s with
-    | Move (sx, sy, Group (Rect (_, sw, sh) :: _)) ->
+    | P.Move (sx, sy, P.Group (P.Rect (_, sw, sh) :: _)) ->
         sx = x && sy = y && sw = w && sh = h
     | _ -> false
   in
   let shown =
     List.map (fun s ->
-      if List.exists (fun (box, _) -> at box s) was then Group [] else s) shown
+      if List.exists (fun (box, _) -> at box s) was then P.Group [] else s)
+        shown
   in
   let blank s =
     match s with
-    | Move (x, y, Group (Rect (_, w, h) :: _)) -> Move (x, y, Rect (face, w, h))
+    | P.Move (x, y, P.Group (P.Rect (_, w, h) :: _)) ->
+      P.Move (x, y, P.Rect (face, w, h))
     | s -> s
   in
   let (olds, news) = differ shown now in
-  List.iter (fun s -> draw 0 0 0 (blank s)) olds;
-  List.iter (draw 0 0 0) news;
-  List.iter (fun (_, s) -> draw 0 0 0 s) is;
-  flush ()
+  List.iter (fun s -> P.draw 0 0 0 (blank s)) olds;
+  List.iter (P.draw 0 0 0) news;
+  List.iter (fun (_, s) -> P.draw 0 0 0 s) is;
+  P.flush ()
 
 (*****************************************************************************)
 (* The mouse, the keys *)
@@ -210,37 +227,40 @@ let redraw shown was now is =
  * sends its message (so a press is taken back by leaving the button).
  * A mouse that moves with its button up is the same mouse, the same
  * value. *)
-let mouse (g : ('m, 'msg) gui) (boxes : 'msg boxes) model m x y b =
+let mouse (g : ('m, 'msg) gui) (boxes : 'msg boxes) model (m : mouse) x y b =
   if b land 1 = 1 then
     model,
-    (if m.px < 0 then { px = x; py = y; x = x; y = y; fx = x; fy = y }
-     else { px = m.px; py = m.py; x = x; y = y; fx = m.fx; fy = m.fy })
-  else if m.px < 0 then model, m
+    (match m.m_down with
+     | None -> { m_down = Some (x, y); m_at = (x, y); m_focus = Some (x, y) }
+     | Some _ -> { m with m_at = (x, y) })
   else
-    List.fold_left (fun model (box, action) ->
-      match action with
-      | Send msg when inside m.px m.py box && inside x y box ->
-          g.update msg model
-      | _ -> model) model boxes,
-    { px = -1; py = -1; x = x; y = y; fx = m.fx; fy = m.fy }
+    match m.m_down with
+    | None -> model, m
+    | Some _ ->
+        List.fold_left (fun model (box, action) ->
+          match action with
+          | Send msg when inside_at m.m_down box && inside x y box ->
+              g.update msg model
+          | _ -> model) model boxes,
+        { m with m_down = None; m_at = (x, y) }
 
 (* the fields that have the keys (one, or none): where the mouse's
  * button last went down *)
 let editing boxes m =
   List.filter (fun (box, action) ->
     match action with
-    | Edit _ -> inside m.fx m.fy box
+    | Edit _ -> focused m box
     | Send _ -> false) boxes
 
 (* A key: the field that has the keys sends its text with the
  * character more, or one less at a backspace; with no such field, the
  * program's messages for the key, one after the other *)
-let key (g : ('m, 'msg) gui) (boxes : 'msg boxes) model m (k : key) =
+let key (g : ('m, 'msg) gui) (boxes : 'msg boxes) model m (k : P.key) =
   match editing boxes m, k with
-  | (_, Edit (s, f)) :: _, Backspace ->
+  | (_, Edit (s, f)) :: _, P.Backspace ->
       if s = "" then model
       else g.update (f (String.sub s 0 (String.length s - 1))) model
-  | (_, Edit (s, f)) :: _, Char c when c >= ' ' && c < '\127' ->
+  | (_, Edit (s, f)) :: _, P.Char c when c >= ' ' && c < '\127' ->
       g.update (f (s ^ String.make 1 c)) model
   | (_, Edit _) :: _, _ -> model
   | _ -> List.fold_left (fun model msg -> g.update msg model) model (g.key k)
@@ -249,6 +269,13 @@ let key (g : ('m, 'msg) gui) (boxes : 'msg boxes) model m (k : key) =
 (* The loop *)
 (*****************************************************************************)
 
+(* what a loop waits on (u_ready's descriptors): the keys, 0, and the
+ * mouse, 4 *)
+let keys_and_mouse () =
+  let fds = Array.make 2 0 in
+  fds.(1) <- 4;
+  fds
+
 (* The program, until an Escape, a q that no field takes, or the keys'
  * end: what changed drawn (the widgets when the model's are other
  * ones, what is over them when the mouse changed it), then the keys or
@@ -256,8 +283,7 @@ let key (g : ('m, 'msg) gui) (boxes : 'msg boxes) model m (k : key) =
  * placed when the model is another one, and after each key that makes
  * it so: the next key is the new field's. *)
 let run (g : ('m, 'msg) gui) =
-  let fds = Array.make 2 0 in
-  fds.(1) <- 4;
+  let fds = keys_and_mouse () in
   let rec loop model m view shown was =
     let (now, boxes) = view in
     let is = over boxes m in
@@ -272,21 +298,21 @@ let run (g : ('m, 'msg) gui) =
            | [] -> if s.[i] = 'q' then exit 0
            | _ -> ());
           if s.[i] = '\027' then exit 0;
-          let model' = key g (snd view) model m (key_of_byte s.[i]) in
+          let model' = key g (snd view) model m (P.key_of_byte s.[i]) in
           typed (i + 1) model' (if model' != model then laid g model' else view)
         end
       in
       typed 0 model view
     end
-    else begin
-      let s = u_read 4 12 in
-      if String.length s < 12 then exit 0;
-      let (model', m') =
-        mouse g boxes model m (int16 s 0) (int16 s 4) (int16 s 8) in
-      loop model' m' (if model' != model then laid g model' else view) now is
-    end
+    else
+      match D.mouse_event (u_read 4 12) with
+      | None -> exit 0
+      | Some e ->
+          let (model', m') = mouse g boxes model m e.mo_x e.mo_y e.mo_buttons in
+          let view' = if model' != model then laid g model' else view in
+          loop model' m' view' now is
   in
-  draw 0 0 0 (Rect (face, screen_w, screen_h));
+  P.draw 0 0 0 (P.Rect (face, D.screen_w, D.screen_h));
   loop g.init up (laid g g.init) [] []
 
 (*****************************************************************************)
@@ -303,6 +329,7 @@ type menu_state = {
   mutable held : int;
 }
 type 'msg menu_answer = Ignored | Taken | Picked of 'msg
+type 'msg menus = (string * (string * 'msg) list) list
 
 let menu_closed () = { opened = None; item = None; held = 0 }
 let bar_height = 18
@@ -361,7 +388,8 @@ let menu_mouse menus st x y b =
       let (_, items) = List.nth menus opened in
       st.opened <- None; st.item <- None;
       Picked (snd (List.nth items i))
-  | Some _, _, _ when (released && y >= bar_height) || (pressed && item = None) ->
+  | Some _, _, _
+    when (released && y >= bar_height) || (pressed && item = None) ->
       st.opened <- None; st.item <- None; Taken
   | Some _, _, _ -> st.item <- item; Taken
 
@@ -373,18 +401,18 @@ let menu_view width menus st =
     match l with
     | (t, _) :: rest ->
         (if st.opened = Some i then
-           [ Move (x, 0, Rect (selected, title_width t, bar_height - 1));
-             Move (x + 8, 1, Words (light, t)) ]
-         else [ Move (x + 8, 1, Words (black, t)) ])
+           [ P.Move (x, 0, P.Rect (selected, title_width t, bar_height - 1));
+             P.Move (x + 8, 1, P.Words (light, t)) ]
+         else [ P.Move (x + 8, 1, P.Words (black, t)) ])
         @ titles rest (i + 1) (x + title_width t)
     | [] -> [] in
   let rec rows l k w =
     match l with
     | (s, _) :: rest ->
         (if st.item = Some k then
-           [ Move (1, 2 + (16 * k), Rect (selected, w - 2, 16));
-             Move (8, 2 + (16 * k), Words (light, s)) ]
-         else [ Move (8, 2 + (16 * k), Words (black, s)) ])
+           [ P.Move (1, 2 + (16 * k), P.Rect (selected, w - 2, 16));
+             P.Move (8, 2 + (16 * k), P.Words (light, s)) ]
+         else [ P.Move (8, 2 + (16 * k), P.Words (black, s)) ])
         @ rows rest (k + 1) w
     | [] -> [] in
   let opened =
@@ -393,14 +421,14 @@ let menu_view width menus st =
     | Some opened ->
         let (_, items) = List.nth menus opened in
         let w = list_width items and h = (16 * List.length items) + 4 in
-        [ Move (title_x menus opened, bar_height,
-            Group (Rect (black, w, h)
-                   :: Move (1, 1, Rect (light, w - 2, h - 2))
+        [ P.Move (title_x menus opened, bar_height,
+            P.Group (P.Rect (black, w, h)
+                   :: P.Move (1, 1, P.Rect (light, w - 2, h - 2))
                    :: rows items 0 w)) ] in
-  [ Group (Rect (face, width, bar_height - 1)
-           :: Move (0, bar_height - 1, Rect (dark, width, 1))
+  [ P.Group (P.Rect (face, width, bar_height - 1)
+           :: P.Move (0, bar_height - 1, P.Rect (dark, width, 1))
            :: titles menus 0 0);
-    Group opened ]
+    P.Group opened ]
 
 (*****************************************************************************)
 (* A program that draws its whole window *)
@@ -412,8 +440,8 @@ let menu_view width menus st =
  * (x, y) with its buttons, and the next model, or None *)
 type 'm canvas = {
   first : int -> int -> 'm;
-  picture : 'm -> shape list;
-  typed : key -> 'm -> 'm option;
+  picture : 'm -> P.shape list;
+  typed : P.key -> 'm -> 'm option;
   moved : int -> int -> int -> 'm -> 'm option;
 }
 
@@ -425,30 +453,41 @@ let window_size () =
   ignore (u_write 1 "\005");
   let fds = Array.make 1 4 and until = u_ticks () + 200 in
   let rec answer () =
-    if u_ready fds 1 until <> 4 then screen_w, screen_h
+    if u_ready fds 1 until <> 4 then D.screen_w, D.screen_h
     else
-      (let s = u_read 4 12 in
-       if String.length s = 12 && int16 s 8 = -1 then int16 s 0, int16 s 4
-       else answer ()) in
+      match D.mouse_event (u_read 4 12) with
+      | Some e when e.mo_buttons = -1 -> e.mo_x, e.mo_y
+      | _ -> answer () in
   answer ()
 
 (* a shape's leaves, each a rectangle or words at its place in the
  * window, in their order, on acc *)
 let rec leaves x y s acc =
   match s with
-  | Move (dx, dy, s) -> leaves (x + dx) (y + dy) s acc
-  | Group l -> List.fold_right (fun s acc -> leaves x y s acc) l acc
+  | P.Move (dx, dy, s) -> leaves (x + dx) (y + dy) s acc
+  | P.Group l -> List.fold_right (fun s acc -> leaves x y s acc) l acc
   | leaf -> (x, y, leaf) :: acc
 
-let box (x, y, leaf) =
+(* a rectangle by its corners, x0, y0 in it, x1, y1 just out: what is
+ * erased and what it meets (a box, above, is x, y, width, height) *)
+type area = int * int * int * int
+
+(* the area a leaf covers *)
+let area_of (x, y, leaf) : area =
   match leaf with
-  | Rect (_, w, h) -> x, y, x + w, y + h
-  | Words (c, s) ->
-      x, y, x + (char_width c * String.length s) + overhang c, y + char_height c
+  | P.Rect (_, w, h) -> x, y, x + w, y + h
+  | P.Words (c, s) ->
+      x, y, x + (P.char_width c * String.length s) + P.overhang c,
+        y + P.char_height c
   | _ -> x, y, x, y
 
-let meets (x0, y0, x1, y1) (a0, b0, a1, b1) =
+let meets ((x0, y0, x1, y1) : area) ((a0, b0, a1, b1) : area) =
   x0 < a1 && a0 < x1 && y0 < b1 && b0 < y1
+
+(* what of a new leaf is to be drawn: all of it; nothing (unless an
+ * erasing uncovers it); its words from the p-th character up to the
+ * q-th. (old: (-1, 0), (0, 0) and (p, q)) *)
+type drawn = Whole | Untouched | Chars of int * int
 
 (* the characters two texts begin with *)
 let rec common a b i =
@@ -464,11 +503,9 @@ let once r erased = if List.mem r erased then erased else r :: erased
 let rec common_end a b i =
   if i > 0 && a.[i - 1] = b.[i - 1] then common_end a b (i - 1) else i
 
-(* Two shapes' leaves compared at each place: the rectangles where an
- * old leaf is to be erased, on erased; each new leaf with what of it
- * is to be drawn, on marked: (-1, 0) all of it, (0, 0) nothing (unless
- * an erasing uncovers it), (p, q) its words from the p-th character up
- * to the q-th. Of words of the same colour at the same place, only the
+(* Two shapes' leaves compared at each place: the areas where an old
+ * leaf is to be erased, on erased; each new leaf with what of it is to
+ * be drawn, on marked. Of words of the same colour at the same place, only the
  * characters between what they begin with and, of the same length,
  * what they end with: typing at a line's end draws a character, and a
  * mode line's column number one or two (emacs.ml's comparison, before) *)
@@ -476,10 +513,10 @@ let rec compare_leaves olds news erased marked =
   match olds, news with
   | o :: os, n :: ns ->
       let erased, mark =
-        if o = n then erased, (0, 0)
+        if o = n then erased, Untouched
         else
           match o, n with
-          | (x, y, Words (c, s)), (x', y', Words (c', s'))
+          | (x, y, P.Words (c, s)), (x', y', P.Words (c', s'))
             when x = x' && y = y' && c = c' && c < 256 ->
               let p = common s s' 0
               and m = String.length s
@@ -488,11 +525,11 @@ let rec compare_leaves olds news erased marked =
               (if min q m > p then
                  once (x + (8 * p), y, x + (8 * min q m), y + 16) erased
                else erased),
-              (if min q m' > p then (p, min q m') else (0, 0))
-          | _ -> once (box o) erased, (-1, 0) in
+              (if min q m' > p then Chars (p, min q m') else Untouched)
+          | _ -> once (area_of o) erased, Whole in
       compare_leaves os ns erased ((n, mark) :: marked)
-  | o :: os, [] -> compare_leaves os [] (once (box o) erased) marked
-  | [], n :: ns -> compare_leaves [] ns erased ((n, (-1, 0)) :: marked)
+  | o :: os, [] -> compare_leaves os [] (once (area_of o) erased) marked
+  | [], n :: ns -> compare_leaves [] ns erased ((n, Whole) :: marked)
   | [], [] -> erased, marked
 
 (* spans of characters, (from, up to), as few: those that meet made one *)
@@ -508,27 +545,28 @@ let spans (l : (int * int) list) : (int * int) list =
  * the q-th; and where an erasing uncovered it, there only: a rectangle
  * (the ground meets every erasing, and drawn whole it would wipe what
  * is on it), the characters in the columns it met *)
-let paint erased (l, mark) =
-  let (x, y, leaf) = l and (p, q) = mark in
-  if p = -1 then draw 0 x y leaf
+let paint (erased : area list) (l, (mark : drawn)) =
+  let (x, y, leaf) = l in
+  if mark = Whole then P.draw 0 x y leaf
   else
     match leaf with
-    | Rect (c, _, _) ->
-        let (x0, y0, x1, y1) = box l in
+    | P.Rect (c, _, _) ->
+        let (x0, y0, x1, y1) = area_of l in
         List.iter (fun r ->
           let (a0, b0, a1, b1) = r in
           if meets (x0, y0, x1, y1) r then
-            draw 0 (max x0 a0) (max y0 b0)
-              (Rect (c, min x1 a1 - max x0 a0, min y1 b1 - max y0 b0))) erased
-    | Words (c, _) when c >= 256 ->
+            P.draw 0 (max x0 a0) (max y0 b0)
+              (P.Rect (c, min x1 a1 - max x0 a0, min y1 b1 - max y0 b0))) erased
+    | P.Words (c, _) when c >= 256 ->
         (* a styled text (a character of another size, a slant over the
          * next): all of it, where it changed or was uncovered *)
-        if q > p || List.exists (meets (box l)) erased then draw 0 x y leaf
-    | Words (c, s) ->
+        if mark <> Untouched || List.exists (meets (area_of l)) erased then
+          P.draw 0 x y leaf
+    | P.Words (c, s) ->
         (* its characters that changed, and those an erasing uncovered
          * (the columns it met: a cursor that moved, one character),
          * each span drawn once *)
-        let (x0, y0, x1, y1) = box l in
+        let (x0, y0, x1, y1) = area_of l in
         let uncovered = List.concat (List.map (fun r ->
           let (a0, _, a1, _) = r in
           if meets (x0, y0, x1, y1) r then
@@ -536,8 +574,9 @@ let paint erased (l, mark) =
               min (String.length s) ((min x1 a1 - x + 7) / 8) ]
           else []) erased) in
         List.iter (fun (i, j) ->
-          draw 0 (x + (8 * i)) y (Words (c, String.sub s i (j - i))))
-          (spans ((if q > p then [ p, q ] else []) @ uncovered))
+          P.draw 0 (x + (8 * i)) y (P.Words (c, String.sub s i (j - i))))
+          (spans
+             ((match mark with Chars (p, q) -> [ p, q ] | _ -> []) @ uncovered))
     | _ -> ()
 
 (* What changed between two pictures, drawn: each shape's leaves
@@ -552,8 +591,8 @@ let paint erased (l, mark) =
  * what of it is to be drawn; the same, its leaves and their box (looked
  * into only when an erasing meets the box) *)
 type part =
-  | Changed of ((int * int * shape) * (int * int)) list
-  | Same of (int * int * shape) list * box
+  | Changed of ((int * int * P.shape) * drawn) list
+  | Same of (int * int * P.shape) list * area
 
 let repaint shown now =
   let rec pairs olds news erased parts =
@@ -571,7 +610,7 @@ let repaint shown now =
         pairs [] ns e (Changed (List.rev m) :: parts)
     | [], [] -> erased, parts in
   let erased, parts = pairs shown now [] [] in
-  let drawn (_, (p, q)) = p = -1 || q > p in
+  let drawn (_, mark) = mark <> Untouched in
   if erased <> []
      || List.exists (fun part ->
           match part with
@@ -583,9 +622,9 @@ let repaint shown now =
       | Changed m -> List.iter (paint erased) m
       | Same (l, b) ->
           if List.exists (meets b) erased then
-            List.iter (fun leaf -> paint erased (leaf, (0, 0))) l)
+            List.iter (fun leaf -> paint erased (leaf, Untouched)) l)
       (List.rev parts);
-    flush ()
+    P.flush ()
   end
 
 (* The program, until its typed says None or the keys end: its picture
@@ -595,15 +634,14 @@ let repaint shown now =
 let run_canvas (c : 'm canvas) =
   let w, h = window_size () in
   ignore (u_rawcons 1);
-  let fds = Array.make 2 0 in
-  fds.(1) <- 4;
+  let fds = keys_and_mouse () in
   (* a shape with its leaves and their box: the old ones when it is the
    * very same *)
   let fresh n =
     let l = leaves 0 0 n [] in
     let b =
       List.fold_left (fun (x0, y0, x1, y1) leaf ->
-        let (a0, b0, a1, b1) = box leaf in
+        let (a0, b0, a1, b1) = area_of leaf in
         min x0 a0, min y0 b0, max x1 a1, max y1 b1)
         (max_int, max_int, min_int, min_int) l in
     (n, l, b) in
@@ -621,29 +659,33 @@ let run_canvas (c : 'm canvas) =
       let rec typed i model =
         if i >= String.length s then loop model now
         else
-          match c.typed (key_of_byte s.[i]) model with
+          match c.typed (P.key_of_byte s.[i]) model with
           | Some m -> typed (i + 1) m
           | None -> () in
       if s <> "" then typed 0 model
     end
     else begin
-      let s = u_read 4 12 in
-      if String.length s = 12 && int16 s 8 >= 0 then
-        (match c.moved (int16 s 0) (int16 s 4) (int16 s 8) model with
-         | Some m -> loop m now
-         | None -> ())
-      else if String.length s = 12 then loop model now
+      (* (an ENQ's answer, the buttons -1, is not the program's) *)
+      match D.mouse_event (u_read 4 12) with
+      | Some e when e.mo_buttons >= 0 ->
+          (match c.moved e.mo_x e.mo_y e.mo_buttons model with
+           | Some m -> loop m now
+           | None -> ())
+      | Some _ -> loop model now
+      | None -> ()
     end in
   loop (c.first w h) [];
-  draw 0 0 0 (Rect (255, w, h));
-  flush ();
+  P.draw 0 0 0 (P.Rect (255, w, h));
+  P.flush ();
   ignore (u_rawcons 0)
 
 (* the file such a program edits: its text, "" when it is not there;
- * the text written, and whether all of it was (user.h's O_WRONLY |
- * O_CREATE | O_TRUNC; u_write is 0 when all was written) *)
+ * the text written, and whether all of it was (u_write is 0 when all
+ * was written). TinyCalls' own, not TinyLibSystem's: a program on this
+ * library links no TinyLibSystem (no capabilities), and an editor wants
+ * "" for a new file, not a Failure *)
 let read_file (file : Fpath.t) =
-  let fd = u_open (Fpath.to_string file) 0 in
+  let fd = u_open (Fpath.to_string file) o_read in
   if fd < 0 then ""
   else begin
     (* the pieces read, the last first, then joined once by String.concat
@@ -660,5 +702,5 @@ let read_file (file : Fpath.t) =
   end
 
 let write_file (file : Fpath.t) text =
-  let fd = u_open (Fpath.to_string file) 0x601 in
+  let fd = u_open (Fpath.to_string file) o_anew in
   fd >= 0 && (let r = u_write fd text in ignore (u_close fd); r = 0)

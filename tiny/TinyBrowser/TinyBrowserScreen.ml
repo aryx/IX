@@ -283,13 +283,11 @@ let draw_tools sc =
   flush ()
 
 (* the field has the keys: the mouse's button went down in it last *)
-let focused sc =
-  inside sc.sc_tools.tb_mouse.fx sc.sc_tools.tb_mouse.fy (input_box sc)
+let focused sc = TinyLibGUI.focused sc.sc_tools.tb_mouse (input_box sc)
 let focus sc on =
   sc.sc_tools.tb_mouse <-
     { sc.sc_tools.tb_mouse with
-      fx = (if on then 80 else -1);
-      fy = (if on then bar_height + 8 else -1) }
+      m_focus = (if on then Some (80, bar_height + 8) else None) }
 
 let draw_status sc =
   let row = sc.sc_rows - 1 in

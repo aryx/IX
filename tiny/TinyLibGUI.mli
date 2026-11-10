@@ -82,11 +82,27 @@
  * keys is the one whose box contains the third. So no widget needs a
  * name, and the focus is just a position.
  *
+ * archi:
+ * The library is three ways to make a program, each a part of this
+ * file, from the most given to the least:
+ * - {b the widgets} ([run]), above: the program is a model, a view and
+ *   an update; the library lays out, draws and answers the mouse
+ *   (TinyAppCalculator, TinyAppTemperature);
+ * - {b the menus} ([menu_mouse], [menu_view]): a bar of pull-down menus
+ *   for a program that draws its own window (the office, the browser),
+ *   their state kept in its model, as the widgets' mouse is kept here;
+ * - {b the canvas} ([run_canvas]): the program draws its whole window
+ *   as shapes (emacs, the office, the debugger), and the library draws
+ *   only what changed, comparing the shapes' leaves (rectangles and
+ *   words at their places), as [redraw] compares the widgets' shapes.
+ *
  * context:
  * Below it are TinyLibPlayground (its shapes and
  * their drawing, but not its loop, because a game has frames and no
- * mouse), TinyLibDraw and TinyCalls; above it are TinyAppCalculator
- * and TinyAppTemperature. It draws on its descriptor 3 and reads its
+ * mouse), TinyLibDraw and TinyCalls; above it are TinyAppCalculator,
+ * TinyAppTemperature, and the programs that draw their own window
+ * (emacs, the office, the debugger, the browser). It
+ * draws on its descriptor 3 and reads its
  * 0 and its 4, so a program runs on the screen or in a window of
  * TinyWindows without knowing which. Its mouse is the kernel's box,
  * which keeps only the last position, so a click that starts and ends
@@ -161,10 +177,13 @@ type ('m, 'msg) gui = {
  * drawn) *)
 val run : ('m, 'msg) gui -> 'a
 
-(* what is under the model: where the mouse's button went down (px -1:
- * it is up), where the mouse is, where its button last went down;
- * [up] at first *)
-type mouse = { px : int; py : int; x : int; y : int; fx : int; fy : int }
+(* a point in the window, in pixels *)
+type point = int * int
+
+(* what is under the model: where the mouse's button went down (None:
+ * it is up), where the mouse is, where its button last went down (the
+ * field there has the keys; None: no field has them); [up] at first *)
+type mouse = { m_down : point option; m_at : point; m_focus : point option }
 val up : mouse
 
 (* a box: x, y, width, height, in pixels *)
@@ -215,7 +234,11 @@ val redraw :
  * message); ...]); ...]). As the widgets' mouse, what
  * the menus keep is below the model: which menu is open, the item
  * under the mouse, the buttons as last seen (a value to keep in the
- * model, changed by [menu_mouse]; [menu_closed ()] at first).
+ * model, changed in place by [menu_mouse]; [menu_closed ()] at first).
+ * Mutable, unlike the widgets' mouse: a model that keeps it is the
+ * same value after the menus change, so a program does not see that
+ * change by [!=]; the browser compares the open menu and the item
+ * before and after, the office's canvas compares its picture's shapes.
  *
  * A press on a title opens its menu; the button held, the mouse goes
  * along the titles and down the items; let go on an item, it is
@@ -238,19 +261,22 @@ val bar_height : int
  * was theirs, an item chosen and its message *)
 type 'msg menu_answer = Ignored | Taken | Picked of 'msg
 
-(* [menu_mouse menus state x y buttons] *)
+(* a bar of menus: each a title and its items, each item a text and the
+ * message it sends *)
+type 'msg menus = (string * (string * 'msg) list) list
+
+(* [menu_mouse menus state x y buttons]: what the menus did with the
+ * mouse at (x, y), its buttons (1 the left one) *)
 val menu_mouse :
-  (string * (string * 'msg) list) list -> menu_state -> int -> int -> int ->
-  'msg menu_answer
+  'msg menus -> menu_state -> int -> int -> int -> 'msg menu_answer
 
 (* [menu_view width menus state]: the bar, the open menu: two shapes,
  * drawn last, over the program's *)
-val menu_view :
-  int -> (string * (string * 'msg) list) list -> menu_state ->
-  TinyLibPlayground.shape list
+val menu_view : int -> 'msg menus -> menu_state -> TinyLibPlayground.shape list
 
-(* a point in a box *)
+(* a point in a box; whether the field in a box has the keys *)
 val inside : int -> int -> box -> bool
+val focused : mouse -> box -> bool
 
 (* A program that draws its whole window, below the widgets (emacs,
  * the office): its first model, given its window's size in pixels; its
@@ -279,6 +305,7 @@ val run_canvas : 'm canvas -> unit
 val window_size : unit -> int * int
 
 (* the file such a program edits: its text ("" when it is not there);
- * the text written, and whether all of it was *)
+ * the text written, and whether all of it was. TinyCalls' own, not
+ * TinyLibSystem's, which such a program does not link *)
 val read_file : Fpath.t -> string
 val write_file : Fpath.t -> string -> bool

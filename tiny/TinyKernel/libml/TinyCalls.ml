@@ -35,3 +35,9 @@ external u_argc : unit -> int = "u_argc"
 external u_arg : int -> string = "u_arg"
 external u_flush : unit -> unit = "u_flush"
 external u_dial : string -> int -> int = "u_dial"
+
+(* u_open's flags (TinyCalls.mli) *)
+let o_read = 0
+let o_anew = 0x601
+let o_write = 0x201
+let o_read_write = 0x202

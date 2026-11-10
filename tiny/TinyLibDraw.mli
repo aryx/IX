@@ -60,16 +60,6 @@
  * terminal needs no protocol of its own.
  *)
 
-(* a number's two bytes, the low one first, and the number at i of a
- * string; a message, its letter then its numbers *)
-(* tiny-machine's screen, 1024 by 768 pixels *)
-val screen_w : int
-val screen_h : int
-
-val i16 : int -> string
-val int16 : string -> int -> int
-val msg : char -> int list -> string
-
 (* What the messages are about, each an int or ints still: an image's
  * number (a colour is an image too, one pixel that repeats); a colour's
  * value, a pixel's byte; a rectangle by its corners, x0 y0 in it, x1
@@ -82,7 +72,12 @@ type point = int * int
 type style = int
 type cursor = Cursor_arrow | Cursor_hand
 
-(* an image [d_image id r colour], a colour, an image freed *)
+(* tiny-machine's screen, 1024 by 768 pixels *)
+val screen_w : int
+val screen_h : int
+
+(* [d_image id r colour]: an image of the rectangle r, filled with a
+ * colour; [d_colour id colour]: a colour; [d_free id]: an image freed *)
 val d_image : image -> rect -> pixel -> string
 val d_colour : image -> pixel -> string
 val d_free : image -> string
@@ -109,7 +104,22 @@ val d_pixels : image -> point -> string -> string
  * shows the front window's while the mouse is in it. *)
 val d_cursor : cursor -> string
 
-(* the message at i of a string: its length (beyond the string's end
- * when it is not all there, -1 when it is no message) and how many of
- * its first numbers are images: what a window system renumbers *)
-val d_shape : string -> int -> int * int
+(* [d_shape s i]: the message at i of s, its length (beyond the
+ * string's end when it is not all there, -1 when it is no message) and
+ * how many of its first numbers are images: what a window system
+ * renumbers *)
+type message_shape = { ds_length : int; ds_images : int }
+val d_shape : string -> int -> message_shape
+
+(* The mouse as the kernel's descriptor 4 says it, a message of 12
+ * bytes: where it is, and its buttons (1 left, 2 middle, 4 right; -1:
+ * tiny-windows' answer to an ENQ, the window's size in mo_x and mo_y);
+ * None when the 12 bytes are not all there *)
+type mouse_event = { mo_x : int; mo_y : int; mo_buttons : int }
+val mouse_event : string -> mouse_event option
+
+(* The bytes: a number's two bytes, the low one first; the number at i
+ * of a string; a message, its letter then its numbers *)
+val i16 : int -> string
+val int16 : string -> int -> int
+val msg : char -> int list -> string

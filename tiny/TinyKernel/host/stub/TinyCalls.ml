@@ -28,3 +28,9 @@ let u_open (_ : string) (_ : int) = -1
  * tests on tiny-cpu, and has no Sys.argv) *)
 let u_argc () = 1
 let u_arg (_ : int) = "test"
+
+(* u_open's flags (TinyCalls.mli) *)
+let o_read = 0
+let o_anew = 0x601
+let o_write = 0x201
+let o_read_write = 0x202

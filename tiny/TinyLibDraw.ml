@@ -71,10 +71,22 @@ let d_pixels (dst : image) ((x, y) : point) s =
 (* the mouse's look, 0 or 1 on the wire *)
 let d_cursor c = msg 'c' [ (match c with Cursor_arrow -> 0 | Cursor_hand -> 1) ]
 
+(* The mouse as the kernel's descriptor 4 says it, 12 bytes: where it
+ * is and its buttons, three numbers of two bytes, each followed by two
+ * bytes of nothing; None when it is not all there (old: the bytes read
+ * by hand where the mouse was read, four times) *)
+type mouse_event = { mo_x : int; mo_y : int; mo_buttons : int }
+let mouse_event (s : string) : mouse_event option =
+  if String.length s <> 12 then None
+  else Some { mo_x = int16 s 0; mo_y = int16 s 4; mo_buttons = int16 s 8 }
+
 (* The message at i of s: its length, and how many of its first numbers
  * are images. The length is beyond s's end when the message is not all
- * there yet (a pipe gives what it has), and -1 when this is no message. *)
-let d_shape s i =
+ * there yet (a pipe gives what it has), and -1 when this is no message.
+ * (old: a pair) *)
+type message_shape = { ds_length : int; ds_images : int }
+
+let shape s i =
   match s.[i] with
   | 'a' -> 15, 1
   | 'f' -> 3, 1
@@ -94,3 +106,7 @@ let d_shape s i =
       else 9 + int16 s (i + 7), 1
   | 'c' -> 3, 0
   | _ -> -1, 0
+
+let d_shape s i : message_shape =
+  let (length, images) = shape s i in
+  { ds_length = length; ds_images = images }

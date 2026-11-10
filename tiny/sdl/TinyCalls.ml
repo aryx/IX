@@ -394,3 +394,9 @@ let u_spawn (path : string) (args : string list) : int =
       with Unix.Unix_error _ -> -1)
 let u_argc () = Array.length Sys.argv
 let u_arg (i : int) = Sys.argv.(i)
+
+(* u_open's flags (TinyCalls.mli) *)
+let o_read = 0
+let o_anew = 0x601
+let o_write = 0x201
+let o_read_write = 0x202

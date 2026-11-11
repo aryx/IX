@@ -69579,3 +69579,11 @@ Claude proposed Item 4: typing the linker's `set_word` as `M.word` and splitting
 Claude reported the assembler law, TinyC and TinyML tests, kernel check, and `self-quick` all pass, with byte-identical images.
 Claude traced the integer-overflow warnings to js_of_ocaml re-linking the web page, not to this change, and left the commit pending.
 Claude then sketched a `tiny/Buildfile` for item 6, with a plan doc, per-program targets, and output-location choices.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 11:12
+
+**Yoann:**
+
+> let's commit. For 6, I agree with your plan, let's do it. for the outputs, they could be in the same directory, like we do in tiny/examples/ no ? and build build would produce a /src/build binary one could run

@@ -161,7 +161,10 @@ all: $(O)/boot.img
 # format changes with it, tiny-object 3, and one of the old would be
 # refused by the linker)
 ASBIN = $(wildcard $(AS))
-$(O)/%.o: $(O)/%.tm $(ASBIN)
+# (the one assembly made here, font.tm; old: $(O)/%.o from $(O)/%.tm,
+# which a build directory's .tm from before the compilers wrote objects,
+# main/kernel.tm, matched before main/'s rule: make run then failed)
+$(O)/font.o: $(O)/font.tm $(ASBIN)
 	$(AS) -o $@ $<
 $(O)/%.o: %.tm $(ASBIN)
 	@mkdir -p $(@D)

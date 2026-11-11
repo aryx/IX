@@ -69108,3 +69108,67 @@ Claude only dry-ran the new targets, leaving out `make check` and noting the 45-
 >     $(MAKE) -C TinyKernel $@
 >
 >  we could factorize even more no?
+
+------------------------------------------------------------------------
+
+## 2026-11-11 08:33
+
+**Yoann:**
+
+> also I don't think we need those -tix targets in tiny/Makefile
+
+**Claude (summary):**
+
+Claude removed the two `-tix` targets it had added, plus the older `tix` and `test-tix` aliases in `tiny/Makefile`.
+Claude first checked that nothing in `tiny/` called `make tix` or `make test-tix`, and found no callers.
+Claude also removed the header line in `tiny/Makefile` that announced those `-tix` aliases.
+Claude committed the removal as `81739600` and left the root Makefile's own `tix`, `test-tix` and `self-tix` alone.
+Earlier commits `974fc5fd` (Int32 and word type changes) and `a0c2a4d2` (`make self` rule) were also made.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 08:44
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed Yoann's `TinyDebugger.mli` edits as `7b6ef4d8`, covering the "machine instructions (not source)" wording and usage examples.
+Claude moved the references and wrote `main`'s caps with `Cap.forkew` in that same commit.
+Claude reported that `dune build` passes with the commit, though it had not checked whether dune builds the debugger by default.
+Claude's check that dune builds the debugger by default showed no error, which it found surprising.
+Claude left `prompt-history.md` staged by someone else and the `_make5` self run unfinished.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 08:46
+
+**Yoann:**
+
+> make run is failing
+
+------------------------------------------------------------------------
+
+## 2026-11-11 08:46
+
+**Yoann:**
+
+> (from tiny/)
+
+------------------------------------------------------------------------
+
+## 2026-11-11 08:47
+
+**Yoann:**
+
+> (we added this new run target recently in another session
+
+**Claude (summary):**
+
+Claude recommended fixing the `tiny/` build by making `$(O)/font.o` depend only on `font.tm`, not every `.tm` file.
+The stale `_make/main/kernel.tm` files from before commit `7ea94bae` had been matched first by the `$(O)/%.o: $(O)/%.tm` rule, breaking `make run`.
+Claude ran `make run` with the change, and tiny-kernel booted and printed its shell output.
+The full kernel check was not run, since `make self` still uses `_make5`, and Claude offered to run it in another scratch directory.
+Claude asked whether to commit the `TinyKernel/Makefile` change or run another check first.

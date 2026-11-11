@@ -51,7 +51,15 @@ export PLAYGROUND=/nonexistent
 # day's text recorded under the author's en_US and CET is caught here
 # (caps_types.sh's expected.out, read differently by CI for days)
 export LC_ALL=C TZ=UTC
-W=$(mktemp -d)
+# claude: a named directory, removed on any exit (an early one, ^C, a
+# kill) except when the logs are kept for a failure at the end; and the
+# logs kept by earlier runs, older than a day, removed here (they filled
+# the disk: ~1500 directories in four days, up to 660M each)
+T=${TMPDIR:-/tmp}; T=${T%/}
+find "$T" -maxdepth 1 -name 'ix-lite.*' -type d -mtime +0 -exec rm -rf {} + 2> /dev/null
+W=$(mktemp -d "$T/ix-lite.XXXXXX")
+keep_logs=
+trap '[ -n "$keep_logs" ] || rm -rf "$W"' EXIT
 # milliseconds: GNU's date has %N, BSD's (macOS) prints it as is, so perl there
 if [ "$(date +%3N)" = 3N ]; then now() { perl -MTime::HiRes=time -e 'printf "%d\n", time * 1000'; }
 else now() { date +%s%3N; }; fi
@@ -806,7 +814,7 @@ case $self in
   " mix tix") echo "test-lite: the toolchain or a kernel changed: run make self-quick (6 min)";;
   " "*) echo "test-lite: the toolchain or a kernel changed: run make self-quick-${self# } (6 min)";;
 esac
-if [ $failures = 0 ]; then rm -rf $W; else echo "the logs: $W"; fi
+if [ $failures != 0 ]; then keep_logs=1; echo "the logs: $W"; fi
 [ $failures = 0 ]
 exit
 }

@@ -84,8 +84,46 @@ move to one place, the Buildfile, and the Makefile reads or generates
 them from it. tiny/Makefile, the top one (make, make test, make run,
 make self...), stays as it is.
 
+## The tools it needs
+
+ocaml-light's stdlib (~/ocaml-light/stdlib/Makefile) lists its units
+in an order (OBJS, for the archive) and leaves the rest to two tools:
+the compiler finds a module's .cmi by itself, in its search path, and
+ocamldep writes the dependencies make needs (.depend). tiny-ml has
+neither: each .tmi a unit reads is an argument, in order, and the
+dependencies are written by hand (TinyKernel/Makefile's I_x lists). So
+the author (2026-11-11): "a search path and small ocamldep do make
+sense". Both before the programs' rules, since they change what each
+rule says:
+
+- **A search path, `ml -I dir`**: a module the source names (M.x, M.t)
+  whose interface is not loaded is read from dir/M.tmi, after the ones
+  it needs itself; the current directory searched first, as OCaml's.
+  A unit's rule then gives no interfaces as arguments: `ml -c -I
+  TinyLibCore -o TinyShell.o TinyShell.ml`.
+- **Its dependencies, `ml -M file.ml...`** (ocamldep's job, in tiny-ml:
+  the same scan of the names a source uses): the lines `TinyShell.o:
+  TinyLibSystem.tmi TinyShell.mli` a Buildfile includes (`<.depend`),
+  made again by a rule of their own, as ocaml-light's `make depend`.
+- To decide while doing it: whether the interfaces read in another
+  order (by need, not CORE's) give other bytes. They did for the type
+  variables' numbers in a .tmi (2026-11-11: List.tmi with Stdlib and
+  Seq alone, its objects the same bytes, its .tmi not); then the
+  Makefile reads them the same way, and its .tmi change once.
+
+**ar** (the author: "I wonder if it would make sense to have an ar
+command to make libraries under t-ix"): an archive is objects
+marshalled as one, which tiny-linker would read in its members' order:
+/lib/ml/libml.a and /lib/c/libc.a for the lists and the glob a link
+names today (/lib/ml/[A-Z]*.o). The linker already leaves out what
+nothing reaches, so this is about packaging and order, not size.
+Later, after the library is built by the Buildfile.
+
 ## Steps
 
+0. **tiny-ml -I and -M** (above), each with its tests: a unit compiled
+   by -I the same as by its interfaces given; -M's lines checked
+   against the Makefile's I_x lists.
 1. **The library and one program**: CORE's units, then `build build`
    (TinyLibSystem, TinyBuildSystem, its main), the runtimes it links;
    tried on tiny-kernel (`cd /src; build build; ./build -h`) and on the
@@ -98,7 +136,8 @@ make self...), stays as it is.
    /src/TinyKernel/Buildfile elsewhere) and compares as today.
 4. **The check of the coupling**: the Buildfile's objects against the
    Makefile's on the host.
-5. **Later**: the Makefile's lists from the Buildfile (generated, or
+5. **ar**, and /lib's links by it.
+6. **Later**: the Makefile's lists from the Buildfile (generated, or
    read), the generated /src/TinyKernel/Buildfile gone.
 
 ## Open questions

@@ -5,6 +5,8 @@
 # tiny-machine (docs/notes/notes_tiny_kernel.md):
 #
 #   make run          the kernel on tiny-machine: sh on the console
+#   make run-window   the same in a window of the host's: the screen, the mouse,
+#                     the speaker (tiny-windows, paint, tetris... from sh)
 #   make check        mltests, a script through sh, the utilities through
 #                     rc (utils: walk, du, cp, mv, xd, test, ln, grep, sort, ls -l...; pipes of six stages; ed and sam; emacs's
 #                     ^C, M-x and a macro; office's page, a text and a sheet, saved,
@@ -608,6 +610,8 @@ $(O)/boot.img: $(O)/kernel.img $(BINS) $(EXAMPLES) $(SRC:%=../%) $(GEN:%=$(O)/%)
 
 run: $(O)/boot.img
 	$(MACHINE) $(O)/boot.img
+run-window: $(O)/boot.img
+	$(MACHINE) -window $(O)/boot.img
 
 # the recorded sessions, each against its screen's sum; the browser's
 # read ../tests/www's pages
@@ -799,5 +803,5 @@ self-cores: $(O)/boot.img
 clean:
 	rm -rf $(O)
 
-.PHONY: all run check check-parts self self-quick self-cores clean
+.PHONY: all run run-window check check-parts self self-quick self-cores clean
 .SECONDARY:

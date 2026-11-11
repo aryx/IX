@@ -68973,3 +68973,50 @@ Claude asked whether to commit just the two comments, or to include or leave out
 The two comments are the debugger's `stop` and the tracer's `event`, both rewritten to drop their constructor lists.
 Claude checked each claim in them against the kernel sources and confirmed `dune build` passes.
 Claude also saved a memory that comments should say what the code can't show, not repeat its constructors.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 08:00
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the two rewritten comments in the debugger's `stop` and tracer's `event` as `5a0060d8`, including `prompt-history.md`.
+Claude left out Yoann's edit to `TinyDebugger.mli` from the commit, since that edit is Yoann's own work.
+Claude pointed out that the `mli` edit was the only uncommitted change left in the working tree.
+Claude suggested troff as the next tidy target: a 589-line file whose interface still passes plain strings.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 08:03
+
+**Yoann:**
+
+> There are lots of places in tiny/ where we use an int for what really is an Int32.t and is a machine word. Maybe we should have a clear TinyLibMachine.word type so we know from the signature that somethings return a code instruction instead of abusing 'int' (which is not even correct, because at least it should be Int32.t). Maybe we can have "subtypes" of word that indicate the word is actually some encoded instr; not sure what the type alias could be for that, but then in TinyDebugger.ml for instance we would hae Illegal of M.word instead of Illegal of int
+
+------------------------------------------------------------------------
+
+## 2026-11-11 08:04
+
+**Yoann:**
+
+> the TinyLibMachine.encode and decode signature could be clearer then instead of having this int (we try to avoid abusing int, string, and bool, which are great types but also vague)
+
+**Claude (summary):**
+
+Claude recommended replacing the vague `int` in `encode`/`decode` with a named `instr_word = int` alias in `TinyLibMachine`.
+Claude argued against `Int32.t` because tiny-ml has no `Int32`, only `Int64`, and encoded instructions fit its 31-bit ints.
+Claude proposed a separate `word = int64` alias for any 32-bit datum, which also makes `Illegal` exact instead of truncating top bits.
+Claude listed the files to touch: `TinyLibMachine.ml/.mli`, the linker's `get_word`, the CPU's `illegal` callback, and the debugger.
+Claude asked whether to go ahead with `instr_word` and `word` names, since `encoded` was the alternative.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 08:09
+
+**Yoann:**
+
+> ok I like your design, but let's add Int32.t to tiny-ml, so we use it instead of abusing int64 for something that is really an Int32

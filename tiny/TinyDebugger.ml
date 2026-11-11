@@ -54,10 +54,12 @@ type process = {
   mutable output : TSys.fd option;
 }
 
-(* why the process stopped, the kernel's words: a step done; a
- * breakpoint; a fault, at an address; an illegal instruction, its word;
- * its exec (where a program debug started stops first) (old: the words
- * themselves, a string list) *)
+(* The reason in the kernel's "stopped pc why" line (TinyKernelScheduler
+ * and TinyKernelCalls' stop). A breakpoint and an illegal instruction
+ * are the same trap: the kernel says break when the word was its own 0,
+ * written at b, and illegal with the word otherwise. A program debug
+ * started stops at its exec first, before its first instruction. Other
+ * keeps a reason this debugger does not know, shown as it came. *)
 type stop =
   | Stepped
   | Breakpoint

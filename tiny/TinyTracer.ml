@@ -136,10 +136,11 @@ let line p n args (r : int option) =
 (* The stops *)
 (*****************************************************************************)
 
-(* a line of the trace: a call about to run, its number and its three
- * arguments; its return, its number and its result; a stop for another
- * reason, at a pc, and why (an exec's); the process's end; the trace's
- * end (old: the line's words, matched where handled) *)
+(* A line of the trace, once main's y asked the kernel to stop at each
+ * call: TinyKernelCalls' "call n a1 a2 a3" before it, always three
+ * arguments whatever the call takes, and "ret n r" after. An exec that
+ * works never returns, so a stop at exec comes in place of its ret.
+ * Ended is the empty read of a trace the kernel closed. *)
 type event =
   | Entering of int * int list
   | Returning of int * int

@@ -68921,3 +68921,55 @@ Claude rewrote the tracer and profiler in `TinyTracer.ml` and `TinyProfiler.ml` 
 Claude fixed the kernel check by restoring `check.expected` and patching five lines with `sed` after Edit broke the CRLF endings.
 Claude kept Yoann's uncommitted `TinyDebugger.mli` edit out of the commit, and all checks pass.
 Claude asked whether to commit the changes as one commit or two.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 07:55
+
+**Yoann:**
+
+> as you wish
+
+**Claude (summary):**
+
+Claude committed the tracer, profiler, re-recorded `check.expected` lines, and `prompt-history.md` as `7c7bef53`.
+Claude said the debug tools are finished, leaving the browser, apps, `TinyMachine/`, and `TinyKernel/` untidied.
+Claude recommended tidying troff next, since its 589-line interface still passes plain strings like `to_text` and `to_html`.
+Claude also noted the office app comes after troff because it opens nine modules and uses raw ints for the mouse.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 07:58
+
+**Yoann:**
+
+> in "
+>
+> (* why the process stopped, the kernel's words: a step done; a
+>  * breakpoint; a fault, at an address; an illegal instruction, its word;
+>  * its exec (where a program debug started stops first) *)
+> type stop =
+>   | Stepped
+>   | Breakpoint
+>   | Fault of M.address
+>   | Illegal of int
+>   | Exec
+>   | Other of string
+>
+> " the comment mostly repeat the code and don't bring much value
+
+------------------------------------------------------------------------
+
+## 2026-11-11 07:59
+
+**Yoann:**
+
+> great
+
+**Claude (summary):**
+
+Claude left everything uncommitted, with the two rewritten comments and Yoann's `TinyDebugger.mli` edit still in the working tree.
+Claude asked whether to commit just the two comments, or to include or leave out the `.mli` edit.
+The two comments are the debugger's `stop` and the tracer's `event`, both rewritten to drop their constructor lists.
+Claude checked each claim in them against the kernel sources and confirmed `dune build` passes.
+Claude also saved a memory that comments should say what the code can't show, not repeat its constructors.

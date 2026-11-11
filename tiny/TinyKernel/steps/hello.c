@@ -2,7 +2,7 @@
 //
 // A C program for tiny-cpu, compiled by tiny-c: its arguments, a
 // sum, a string built by sprint, the heap.
-#include "../../TinyCRuntime/libc.h"
+#include "../../runtime/libc.h"
 
 int
 fib(int n)

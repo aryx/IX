@@ -66,8 +66,8 @@ needing the next:
   compared with, and `make loc` counts them apart.
 - **tiny-ml** has none of this: its standard library is
   `tiny/TinyLibCore/`, OCaml's modules as tiny programs name them, its runtime
-  `tiny/TinyMLRuntime/core.c`, and the C library under it is
-  tiny-c's own, `tiny/TinyCRuntime/`, not `lib_core/libc/`. The next
+  `tiny/runtime/ml.c`, and the C library under it is
+  tiny-c's own, `tiny/runtime/`, not `lib_core/libc/`. The next
   picture is t-ix's side.
 
 ## What a tiny program stands on
@@ -75,7 +75,7 @@ needing the next:
 t-ix has four kinds of program, and they do not stand on the same
 things: a tool runs on the host, the others on tiny-machine.
 
-![What a tiny program stands on: a tool on the host (the program, lib_core, mini-ml's runtime and lib_core's C library, Linux), a program in ML on tiny-machine (the program, TinyLibGUI, TinyLibPlayground and TinyLibDraw, TinyLibCore, TinyMLRuntime, TinyCRuntime, tiny-kernel), a program in C on tiny-machine (the program, TinyCRuntime, tiny-kernel), and the kernel (TinyKernel.ml, its parts, TinyLibCore, TinyMLRuntime, its assembly, tiny-machine)](pics/tiny-layers.svg)
+![What a tiny program stands on: a tool on the host (the program, lib_core, mini-ml's runtime and lib_core's C library, Linux), a program in ML on tiny-machine (the program, TinyLibGUI, TinyLibPlayground and TinyLibDraw, TinyLibCore, runtime/ml.c, runtime/, tiny-kernel), a program in C on tiny-machine (the program, runtime/, tiny-kernel), and the kernel (TinyKernel.ml, its parts, TinyLibCore, runtime/ml.c, its assembly, tiny-machine)](pics/tiny-layers.svg)
 
 - **A tool** (tiny-shell, tiny-c, tiny-vcs...) is OCaml in one file.
   Built by ix (`mini-mk` in `tiny/`), it is on `lib_core/` whole, as
@@ -92,13 +92,13 @@ things: a tool runs on the host, the others on tiny-machine.
   (`TinyLibGUI`, `TinyLibPlayground`, `TinyLibDraw`, `TinyLibRegex`...),
   its own file and its parts, and a last one that runs it, of which
   tiny-linker keeps what the program calls. Before them all come `tiny/TinyLibCore/`'s
-  modules, tiny-ml's standard library. Under the ML: `TinyMLRuntime/core.c` (the
+  modules, tiny-ml's standard library. Under the ML: `runtime/ml.c` (the
   allocator, the collector), given the program's memory by
-  `TinyLibSystem/tinykernel/mlsys.c`, and `TinyCRuntime/` for the start and the
+  `TinyLibSystem/tinykernel/mlsys.c`, and `runtime/` for the start and the
   division.
 - **A program in C on tiny-machine** (`sh`, `mltests`, the network's
   `ping`, `get`, `put`, `httpd`) is one file of `TinyKernel/user/`,
-  with `TinyCRuntime/` (its library, its start, the division) and
+  with `runtime/` (its library, its start, the division) and
   `TinyKernel/libc/` (`sys.tm`, the system calls; `draw.c`, `net.c`;
   `user.h`).
 - **The kernel** is `tiny/TinyKernel.ml` and its parts in
@@ -216,7 +216,7 @@ Each machine, with what makes its guest code and what runs on it:
 |--------------|---------------------------------------------------|-----------------|
 | mini-5i      | mini-cc, mini-asm, mini-ld (goken's 5c/5l, 7c/7l the reference) | Linux and Plan 9 user programs, arm and arm64 |
 | mini-qemu    | ix's own (mini-ml, mini-cc, mini-ld by mini-mk), or ocaml-light and gcc (the reference builds), or the kernels' own builds outside ix | `kernels/`'s (mini-9pi, mini-xv6, mini-oberon...); xv6 (`~/xv6`), 9pi (`~/principia`), as QEMU runs them |
-| tiny-cpu     | `tiny-c`, `tiny-ml`, tiny-assembler, tiny-linker  | images: `.tm` programs; C programs with `TinyCRuntime/`, ML ones with `TinyMLRuntime/` |
+| tiny-cpu     | `tiny-c`, `tiny-ml`, tiny-assembler, tiny-linker  | images: `.tm` programs; C programs with `runtime/`, ML ones with `runtime/` |
 | tiny-machine | the same, plus csrr, csrw, eret                   | tiny-kernel, its steps (v0, t6) and their programs |
 
 The tiny side has no real architecture: tiny-c and tiny-ml had an

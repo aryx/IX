@@ -2,7 +2,7 @@
 // tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there). The programs of
 // tiny-kernel in C (sh, get, put, ping, httpd, paint: linked with ../libc/ and
-// ../../TinyCRuntime/). The last file of those in ML is ../../user/'s.
+// ../../runtime/). The last file of those in ML is ../../user/'s.
 // mltests.c is a test, off the map. cat, ls, wc and the other
 // utilities are ../../TinyUtilities.ml's (bin/utils).
 {

@@ -1,7 +1,7 @@
 (* Marshal, OCaml's subset (see Stdlib.mli): a value as bytes and back,
  * in OCaml's format, so that what the host's OCaml writes tiny-ml's
  * programs read, and the same bytes on both sides (the runtime's
- * TinyMLRuntime/core.c). No float, no closure. What is shared stays
+ * runtime/ml.c). No float, no closure. What is shared stays
  * shared, but with No_sharing (each copy written anew; Closures is
  * taken and left). *)
 type extern_flags = No_sharing | Closures

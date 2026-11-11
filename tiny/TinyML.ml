@@ -28,11 +28,11 @@ functors nor labels) to an object of tiny-machine's code, for tiny-linker;
   tiny-ml fact.ml                          fact.o
   tiny-ml -S fact.ml                       ml_start: ldw r12, 0(sp) ...
   tiny-c main.c                            main.o
-  L=tiny/TinyCRuntime
+  L=tiny/runtime
   for f in $L/start $L/udivmod exit; do tiny-assembler $f.tm; done
   tiny-linker -o fact start.o udivmod.o exit.o fact.o main.o /lib/ml/*.o
   tiny-cpu fact                            fact 10 = 3628800
-main.c includes tiny/TinyMLRuntime/core.c and gives it memory (ml_run),
+main.c includes tiny/runtime/ml.c and gives it memory (ml_run),
 exit.tm is exit (sys 0), as tiny/tests/TinyML_test.sh makes them. The
 standard library, TinyLibCore/'s modules, is read from /lib/ml (-L: another
 directory), its interfaces Stdlib.tmi ... Sha1.tmi, and linked from there,
@@ -108,7 +108,7 @@ let compile_unit (items : (Tree.item * int) list) =
 (* The program's main: ml_init, each unit's init in their order, in a
  * handler that prints an uncaught exception; the curry functions the
  * units need; the globals' tables one after the other, ml_globals, and
- * their count, ml_nglobals (what TinyMLRuntime/core.c scans) *)
+ * their count, ml_nglobals (what runtime/ml.c scans) *)
 let compile_main (units : (string * int) list) needed =
   Tree.unit_name := "ml";
   Compile.start_fun 1 1;

@@ -75,10 +75,10 @@ A tiny program is either the host's or the tiny machine's.
             |  .tm files, linked to an image
             v
     the tiny machine (assembly, C and ML, built by the programs above)
-      TinyCRuntime/              the C runtime
+      runtime/              the C runtime
       TinyKernel.ml            a kernel in ML, and its programs
       TinyKernel/steps/v0, t6  the steps before it, in assembly and C
-      TinyMLRuntime/core.c            the ML runtime, in C
+      runtime/ml.c            the ML runtime, in C
 
 `TinyKernel.ml` is in `tiny/` beside the host's programs but is not
 one of them: OCaml never compiles it, tiny-ml does.
@@ -131,7 +131,7 @@ from ix's `bin/`:
 
 | Makefile | what it builds |
 |---|---|
-| `tiny/TinyKernel/steps/Makefile` | `libc.tm` (from `tiny/TinyCRuntime/`), `hello`, then each step |
+| `tiny/TinyKernel/steps/Makefile` | `libc.tm` (from `tiny/runtime/`), `hello`, then each step |
 | `tiny/TinyKernel/steps/t6/` | `kernel.img`, the user programs, `fs.img` (tiny-mkfs) |
 | `tiny/TinyKernel/Makefile` | `kernel.img`, the user programs, `boot.img` |
 
@@ -516,7 +516,7 @@ first bytes, with no header.
 The arguments are on the stack, at `0(sp)`, `4(sp)` and so on; the
 result is in `r13`; the callee may change any register but `sp`.
 
-A program is linked after its runtime (`tiny/TinyCRuntime/`):
+A program is linked after its runtime (`tiny/runtime/`):
 
     tiny-c prog.c; tiny-c libc.c
     for f in start udivmod; do tiny-assembler $f.tm; done
@@ -533,7 +533,7 @@ A file is a module, compiled alone or with the others: its names are
 `M.x` in the modules after it, or `x` after `open M`; its types and
 constructors are the program's, one name space. Integers are 31 bits (a value is `2n+1` or a
 pointer), so a constant beyond them is refused. The runtime is
-`TinyMLRuntime/core.c`, compiled by `tiny-c`, with a `main` that gives
+`runtime/ml.c`, compiled by `tiny-c`, with a `main` that gives
 it its memory. A C or assembly function is called as an `external`,
 with C's convention and ML's values. The standard library,
 `TinyLibCore/`'s modules, is compiled once (`tiny-ml -c -nostdlib`, each

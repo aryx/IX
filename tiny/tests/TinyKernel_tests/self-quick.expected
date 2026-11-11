@@ -1,8 +1,8 @@
 tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 tiny-kernel: / on a disk of 65536 KB, 65532 KB free; 0 snapshots in /dump
-$ % % as -o start.o /src/TinyCRuntime/start.tm
-as -o udivmod.o /src/TinyCRuntime/udivmod.tm
-cc -o libc.o /src/TinyCRuntime/libc.c
+$ % % as -o start.o /src/runtime/start.tm
+as -o udivmod.o /src/runtime/udivmod.tm
+cc -o libc.o /src/runtime/libc.c
 mkdir -p libc; as -o libc/sys.o /src/TinyKernel/libc/sys.tm
 mkdir -p user; cc -o user/ping.o /src/TinyKernel/user/ping.c
 mkdir -p bin; ld -map -s -n -o bin/ping start.o udivmod.o libc.o libc/sys.o user/ping.o

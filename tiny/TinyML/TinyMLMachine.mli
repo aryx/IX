@@ -4,7 +4,7 @@
  * at r12); and the static blocks, in the data: strings, closures,
  * exceptions; each made as TinyLibMachine.mli's lines, then
  * printed. Read TinyMachine/TinyMachineCPU.mli for the instructions,
- * and TinyMLRuntime/core.c for the blocks. *)
+ * and runtime/ml.c for the blocks. *)
 
 type rel = Eq | Ne | Lt | Le | Gt | Ge
 type op =

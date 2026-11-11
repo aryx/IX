@@ -17,11 +17,11 @@ hello.o: hello.c /src/TinyKernel/libc/user.h
 square.o: square.tm
 	as -o $target square.tm
 
-start.o: /src/TinyCRuntime/start.tm
-	as -o $target /src/TinyCRuntime/start.tm
-udivmod.o: /src/TinyCRuntime/udivmod.tm
-	as -o $target /src/TinyCRuntime/udivmod.tm
-libc.o: /src/TinyCRuntime/libc.c /src/TinyCRuntime/libc.h
-	cc -o $target /src/TinyCRuntime/libc.c
+start.o: /src/runtime/start.tm
+	as -o $target /src/runtime/start.tm
+udivmod.o: /src/runtime/udivmod.tm
+	as -o $target /src/runtime/udivmod.tm
+libc.o: /src/runtime/libc.c /src/runtime/libc.h
+	cc -o $target /src/runtime/libc.c
 sys.o: /src/TinyKernel/libc/sys.tm
 	as -o $target /src/TinyKernel/libc/sys.tm

@@ -26,20 +26,19 @@ MACHINE = tiny-machine
 MKFS = tiny-mkfs
 
 O = _make
-L = ../../../TinyCRuntime
+L = ../../../runtime
 KERNEL = $(O)/entry.o $(O)/udivmod.o $(O)/main.o $(O)/proc.o $(O)/file.o
 UPROGS = init sh cat echo ls mkdir rm wc t6tests
 ULIB = $(O)/start.o $(O)/udivmod.o $(O)/libc.o $(O)/libc/sys.o
 
 all: $(O)/kernel.img $(O)/fs.img
 
-$(O)/%.tm: %.c t6.h
+$(O)/%.o: %.c t6.h
 	@mkdir -p $(@D)
 	$(TC) -o $@ $<
 
-# an object: of a .tm made in _make/, of one here, or of the C runtime's
-$(O)/%.o: $(O)/%.tm
-	$(AS) -o $@ $<
+# an object of assembly: of a .tm here, or of the C runtime's (tiny-c
+# writes the C's objects; old: their .tm, assembled by a rule here)
 $(O)/%.o: %.tm
 	@mkdir -p $(@D)
 	$(AS) -o $@ $<
@@ -51,11 +50,11 @@ $(O)/%.o: $(L)/%.tm
 $(O)/kernel.img: $(KERNEL)
 	$(LD) -o $@ $(KERNEL)
 
-$(O)/libc.tm: ../../../TinyCRuntime/libc.c ../../../TinyCRuntime/libc.h
+$(O)/libc.o: $(L)/libc.c $(L)/libc.h
 	@mkdir -p $(@D)
 	$(TC) -o $@ $<
 
-$(O)/user/%.tm: user/%.c libc/user.h
+$(O)/user/%.o: user/%.c libc/user.h
 	@mkdir -p $(@D)
 	$(TC) -o $@ $<
 

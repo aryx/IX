@@ -20,8 +20,8 @@ let help = usage ^ {|
 A tiny C compiler: a C file to an object of TinyCPU's code, for tiny-linker
 and tiny-cpu, with its own libc; -S its assembly instead, -ir its stack
 machine's code, on stdout without -o. A fact.c that includes
-tiny/TinyCRuntime/libc.h and prints fact(10):
-  L=tiny/TinyCRuntime
+tiny/runtime/libc.h and prints fact(10):
+  L=tiny/runtime
   tiny-c $L/libc.c; tiny-c fact.c           libc.o, fact.o
   for f in $L/start $L/udivmod; do tiny-assembler $f.tm; done
   tiny-linker -o fact start.o udivmod.o libc.o fact.o
@@ -94,7 +94,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     | Some file ->
       Ty.unit_name := Fpath.to_string (Fpath.rem_ext (Fpath.base file));
       (* intptr, Plan 9's uintptr's signed twin: an integer as wide as a
-       * pointer (TinyMLRuntime/'s values, a word each) *)
+       * pointer (runtime/'s values, a word each) *)
       Hashtbl.replace Parser.typedefs "intptr" Ty.int_t;
       (* (a file that cannot be opened apart from its errors, which are
        * Failures too) *)

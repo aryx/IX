@@ -134,14 +134,14 @@
 <rect x="954" y="388" width="296" height="140" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
 <text x="968" y="411" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyML&#x27;s runtime</text>
 <text x="1238" y="411" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">C, by tiny-c</text>
-<text x="968" y="432" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyMLRuntime/core.c: the allocator, Cheney&#x27;s</text>
+<text x="968" y="432" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/runtime/ml.c: the allocator, Cheney&#x27;s</text>
 <text x="968" y="449" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">collector, the primitives; included by</text>
 <text x="968" y="466" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyKernel/runtime.c (the kernel in ML) or</text>
 <text x="968" y="483" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">a program&#x27;s main (its memory)</text>
 <text x="968" y="500" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve"></text>
 <rect x="954" y="676" width="296" height="184" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
 <text x="968" y="699" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">A C library</text>
-<text x="968" y="720" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyCRuntime/ (libc.c, start.tm,</text>
+<text x="968" y="720" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/runtime/ (libc.c, start.tm,</text>
 <text x="968" y="737" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">udivmod.tm). Not lib_core/libc/</text>
 <text x="968" y="754" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve"></text>
 <text x="968" y="771" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve"></text>

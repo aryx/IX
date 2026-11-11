@@ -294,7 +294,7 @@ let call_c (st : state) f n =
  * call of the runtime: a call for each byte was a quarter of the time
  * a browser took to read a page (plan_tiny_browser.md, section 12).
  * The length comes from the block's header and its last byte, as in
- * TinyMLRuntime/core.c's length. Only r13 and lr are free here (lr
+ * runtime/ml.c's length. Only r13 and lr are free here (lr
  * is saved by the prologue). *)
 
 (* the length of the string in register s, untagged, into r13; lr used *)

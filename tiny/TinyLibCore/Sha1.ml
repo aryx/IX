@@ -5,7 +5,7 @@
 
 type t = string
 
-(* in C, the runtime's (TinyMLRuntime/core.c), on words of 32 bits
+(* in C, the runtime's (runtime/ml.c), on words of 32 bits
  * (old: here, a word as its two halves of 16, an integer having 31:
  * 2.6 KB a second on tiny-kernel, where tiny-build digests every file
  * of tiny-kernel's build of itself) *)

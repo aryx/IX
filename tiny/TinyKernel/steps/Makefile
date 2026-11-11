@@ -10,7 +10,7 @@
 #   t6/       a kernel in C: spawn, a partition a process, a FAT on a
 #             disk, one kernel stack (TinyKernel.ml has no disk). Six of
 #             its programs are tiny-kernel's own (links to ../user/).
-# They share the C runtime, ../../TinyCRuntime/ (tiny-c's: start.tm,
+# They share the C runtime, ../../runtime/ (tiny-c's: start.tm,
 # udivmod.tm, libc.c, libc.h), whose system calls are tiny-cpu's and
 # the kernels'. Not counted in t-ix's lines (make loc).
 # (old: tiny/TinyKernel/steps/, with v6/, xv6's structure and names in C, 3,400
@@ -22,9 +22,10 @@
 #   make run-hello    hello.c, compiled by tiny-c, on tiny-cpu
 #
 # The tools from the PATH (after `dune install`), or from ix's bin/. A
-# C program is compiled to .tm by tiny-c, assembled by tiny-assembler,
-# then linked by tiny-linker after the runtime: start.tm first (the
-# machine starts at 0), udivmod.tm, libc.
+# C program is compiled to its object by tiny-c, then linked by
+# tiny-linker after the runtime: start.tm first (the machine starts at
+# 0), udivmod.tm, libc. (old: tiny-c wrote a .tm, assembled here; since
+# 7ea94bae it writes the object, and these rules failed)
 
 export PATH := $(abspath ../../../bin):$(PATH)
 
@@ -33,7 +34,7 @@ AS = tiny-assembler
 LD = tiny-linker
 CPU = tiny-cpu
 VERSIONS = v0 t6
-L = ../../TinyCRuntime
+L = ../../runtime
 
 O = _make
 
@@ -41,16 +42,14 @@ all: $(O)/hello
 	for v in $(VERSIONS); do $(MAKE) -C $$v all || exit 1; done
 
 # (what is built goes to _make/, here and in each version's directory)
-$(O)/libc.tm: $(L)/libc.c $(L)/libc.h
+$(O)/libc.o: $(L)/libc.c $(L)/libc.h
 	@mkdir -p $(@D)
 	$(TC) -o $@ $<
 
-$(O)/hello.tm: hello.c $(L)/libc.h
+$(O)/hello.o: hello.c $(L)/libc.h
 	@mkdir -p $(@D)
 	$(TC) -o $@ hello.c
 
-$(O)/%.o: $(O)/%.tm
-	$(AS) -o $@ $<
 $(O)/%.o: $(L)/%.tm
 	@mkdir -p $(@D)
 	$(AS) -o $@ $<

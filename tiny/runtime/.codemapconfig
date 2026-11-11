@@ -1,0 +1,109 @@
+// tiny/runtime/: what the code map says of it (the code map: tinybox
+// codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). What a program
+// links besides its own code, on any system: C's (start.tm, the start,
+// write and exits, and udivmod.tm, the unsigned division: tiny-machine's
+// assembly, not sources to the map, named in the roles; libc.c and
+// libc.h), linked first into every C program of tiny-c's (tiny-kernel's,
+// ../TinyKernel/Makefile's ULIB; the steps'); and ML's, ml.c, #included
+// by what gives it the memory and write and exit:
+// ../TinyKernel/runtime.c (the kernel), ../TinyLibSystem/tinykernel/mlsys.c
+// (tiny-kernel's ML programs), the tests' own mains
+// (../tests/TinyML_test.sh). The skeletons of tiny-ml that go through
+// ml.c are ../.codemapconfig's. A system's own calls are not here:
+// ../TinyKernel/libc/ (C's on tiny-kernel), mlsys.c (ML's). (old:
+// TinyCRuntime/ and TinyMLRuntime/, ml.c core.c)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-11' },
+  summary: "What a program links besides its own code: C's start, division and libc, and tiny-ml's allocator, collector and primitives.",
+  files: {
+    'libc.h': { digest: 'e037c8c3fe70',
+      summary: "What a tiny-c program is given: start.tm's write and exits, libc.c's print and strings; a long is 4 bytes.",
+      capitals: [
+        { at: 'def:print', say: "Plan 9's print, on every tiny kernel" },
+      ],
+      important: [
+        { at: 'def:write', say: "start.tm's: the system call all output goes through", weight: 2 },
+        { at: 'def:exits', say: "Plan 9's exits: a message, not a number", weight: 1 },
+        { at: 'def:print', weight: 2 },
+        { at: 'def:malloc', weight: 1 },
+      ],
+      related: ['libc.c'],
+    },
+    'libc.c': { digest: '899b308cb02a',
+      summary: "Plan 9's libc, what libc.h declares, in the C tiny-c takes: print's verbs as goken's, the strings, a heap that is a bump.",
+      important: [
+        { at: 'def:format', say: 'the verbs; a variadic call walks its arguments in memory', weight: 3 },
+        { at: 'def:print', say: "a short write (a pipe's) written again", weight: 2 },
+        { at: 'def:malloc', say: 'a bump of an array, never given back', weight: 2 },
+        { at: 'def:free', say: 'nothing: the bump never gives back', weight: 1 },
+        { at: 'def:strcmp', weight: 1 },
+      ],
+    },
+    'ml.c': { digest: '2ba84f1af893',
+      summary: "tiny-ml's runtime: the allocator, Cheney's copying collector, the primitives, stdout's buffer, Marshal and SHA-1 in C.",
+      capitals: [
+        { at: 'def:collect', say: 'Cheney: the value stack and the globals, all the roots' },
+        { at: 'def:ml_alloc', say: 'every ML block: a bump, else a collection' },
+      ],
+      important: [
+        { at: 'comment:"A value is a word: an integer n as 2n+1"', say: 'the representation all of tiny-ml agrees on', weight: 3 },
+        { at: 'def:collect', weight: 3 },
+        { at: 'def:copy', say: 'a block moved once, a forward left behind', weight: 2 },
+        { at: 'def:gc', say: 'the heap grows when less than half is free', weight: 2 },
+        { at: 'def:ml_alloc', weight: 2 },
+        { at: 'def:ml_run', say: 'the includer gives the memory, then the program runs', weight: 2 },
+        { at: 'def:compare', say: "OCaml's compare: integers first, then tags", weight: 1 },
+        { at: 'def:ml_uncaught', say: "printed as ocaml-light's printexc does", weight: 1 },
+        { at: 'comment:"Writing goes twice over the value"', say: 'counted, then written: nothing allocated, nothing moves', weight: 2 },
+        { at: 'def:sha_block', say: 'SHA-1 in C, on the machine words', weight: 1 },
+      ],
+      related: ['../TinyKernel/runtime.c', '../TinyLibSystem/tinykernel/mlsys.c', '../TinyML.ml', '../TinyML/TinyMLCompile.ml'],
+    },
+  },
+  skeletons: [
+    { name: 'The C runtime: libc.h declared, libc.c made, start.tm below',
+      bones: [
+        { at: '../TinyKernel/user/', role: "tiny-kernel's C programs, linked with it" },
+        { at: 'libc.h', role: 'what a program includes' },
+        { at: 'libc.c', role: 'print, the strings, the bump heap' },
+        { at: 'libc.h:def:write', role: "start.tm's system call (assembly)" },
+      ],
+      joints: [
+        { from: '../TinyKernel/user/', to: 'libc.h', say: 'print, strlen...: libc.tm linked in' },
+        { from: 'libc.h', to: 'libc.c', say: 'defined by' },
+        { from: 'libc.c', to: 'libc.h:def:write', say: 'bytes to fd 1' },
+      ],
+    },
+    { name: 'libc.c: print, its verbs, a write',
+      bones: [
+        { at: 'libc.c:def:print', role: 'the formatted text, written again if short' },
+        { at: 'libc.c:def:sprint', role: 'the same, into a buffer' },
+        { at: 'libc.c:def:format', role: 'the verbs, the arguments walked in memory' },
+        { at: 'libc.c:def:malloc', role: 'the heap: a bump of an array' },
+        { at: 'libc.h:def:write', role: "start.tm's sys 1" },
+      ],
+      joints: [
+        { from: 'libc.c:def:print', to: 'libc.c:def:format', say: 'fmt and &fmt + 1' },
+        { from: 'libc.c:def:sprint', to: 'libc.c:def:format', say: 'fmt and &fmt + 1' },
+        { from: 'libc.c:def:print', to: 'libc.h:def:write', say: 'the text, to fd 1' },
+      ],
+    },
+    {
+      name: 'An allocation, a collection',
+      bones: [
+        { at: 'ml.c:def:ml_run', role: "the includer's memory: value stack, two halves" },
+        { at: 'ml.c:def:ml_alloc', role: 'a block bumped from the current half' },
+        { at: 'ml.c:def:gc', role: 'no room: collect, then grow the half used' },
+        { at: 'ml.c:def:collect', role: "Cheney's: roots, then a breadth-first scan" },
+        { at: 'ml.c:def:copy', role: 'a block moved, its forward left' },
+      ],
+      joints: [
+        { from: 'ml.c:def:ml_run', to: 'ml.c:def:ml_alloc', say: "the program's blocks" },
+        { from: 'ml.c:def:ml_alloc', to: 'ml.c:def:gc', say: 'no room' },
+        { from: 'ml.c:def:gc', to: 'ml.c:def:collect', say: 'the half full' },
+        { from: 'ml.c:def:collect', to: 'ml.c:def:copy', say: 'each root, each field' },
+      ],
+    },
+  ],
+}

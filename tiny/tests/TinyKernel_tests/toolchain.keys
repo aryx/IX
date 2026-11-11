@@ -1,9 +1,9 @@
 rc
-cd /src/TinyCRuntime; cc -o /libc.o libc.c
+cd /src/runtime; cc -o /libc.o libc.c
 cd /src/TinyKernel/user; cc -o /ping.o ping.c
 cd /
-as -o start.o src/TinyCRuntime/start.tm
-as -o udivmod.o src/TinyCRuntime/udivmod.tm
+as -o start.o src/runtime/start.tm
+as -o udivmod.o src/runtime/udivmod.tm
 as -o sys.o src/TinyKernel/libc/sys.tm
 ld -s -n -o ping start.o udivmod.o libc.o sys.o ping.o
 cmp ping /bin/ping && echo ping: /bin/ping

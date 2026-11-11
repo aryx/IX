@@ -12,14 +12,14 @@
     v0: { summary: "A page of kernel in tiny-machine's assembly and four programs linked with it: two killed, for a csrw and a store into the kernel." },
   },
   files: {
-    'hello.c': { digest: 'ce820f803684',
+    'hello.c': { digest: '40bb857bcdd2',
       summary: "A C program for tiny-cpu (tiny-c): its arguments, fib, sprint, the heap; what the C runtime is checked with.",
       important: [
         { at: 'def:main', weight: 2 },
         { at: 'def:fib', say: 'recursion on the stack tiny-c keeps', weight: 1 },
         { at: 'code:"48879, -1"', say: "%u of -1: goken's verb, the host's printf", weight: 1 },
       ],
-      related: ['Makefile', '../../TinyCRuntime/libc.c', '../../TinyCPU.ml'],
+      related: ['Makefile', '../../runtime/libc.c', '../../TinyCPU.ml'],
     },
   },
   skeletons: [
@@ -27,7 +27,7 @@
       name: 'The steps before a kernel in ML, on the tiny tools',
       bones: [
         { at: '../../TinyC.ml', role: 'the C compiler, -tm' },
-        { at: '../../TinyCRuntime/', role: "the C runtime every program links (with start.tm's calls)" },
+        { at: '../../runtime/', role: "the C runtime every program links (with start.tm's calls)" },
         { at: '../../TinyCPU.ml', role: 'the bare CPU: hello' },
         { at: '../../TinyMachine.ml', role: 'the machine v0 and t6 run on' },
         { at: 'hello.c', role: 'a C program, no kernel' },
@@ -35,9 +35,9 @@
         { at: 't6/', role: 'a kernel in C: spawn, one stack, a FAT, a lottery' },
       ],
       joints: [
-        { from: '../../TinyC.ml', to: '../../TinyCRuntime/', say: 'compiles' },
-        { from: 'hello.c', to: '../../TinyCRuntime/', say: 'links' },
-        { from: 't6/', to: '../../TinyCRuntime/', say: 'its programs link' },
+        { from: '../../TinyC.ml', to: '../../runtime/', say: 'compiles' },
+        { from: 'hello.c', to: '../../runtime/', say: 'links' },
+        { from: 't6/', to: '../../runtime/', say: 'its programs link' },
         { from: '../../TinyCPU.ml', to: 'hello.c', say: 'runs' },
         { from: '../../TinyMachine.ml', to: 'v0/', say: 'boots' },
         { from: '../../TinyMachine.ml', to: 't6/', say: 'boots' },
@@ -48,13 +48,13 @@
       bones: [
         { at: 'hello.c:def:main', role: 'its arguments, a sum, the heap' },
         { at: 'hello.c:def:fib', role: 'recursion, on the stack tiny-c keeps' },
-        { at: '../../TinyCRuntime/libc.c:def:print', role: "libc's print: %d %u %x %s %c" },
-        { at: '../../TinyCRuntime/libc.c:def:malloc', role: 'a bump of an array' },
+        { at: '../../runtime/libc.c:def:print', role: "libc's print: %d %u %x %s %c" },
+        { at: '../../runtime/libc.c:def:malloc', role: 'a bump of an array' },
       ],
       joints: [
         { from: 'hello.c:def:main', to: 'hello.c:def:fib', say: '20' },
-        { from: 'hello.c:def:main', to: '../../TinyCRuntime/libc.c:def:print', say: 'the output' },
-        { from: 'hello.c:def:main', to: '../../TinyCRuntime/libc.c:def:malloc', say: 'a copy' },
+        { from: 'hello.c:def:main', to: '../../runtime/libc.c:def:print', say: 'the output' },
+        { from: 'hello.c:def:main', to: '../../runtime/libc.c:def:malloc', say: 'a copy' },
       ],
     },
   ],

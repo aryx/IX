@@ -85,7 +85,7 @@
 # programs are tiny-linker's images (linked at 0: the kernel runs each
 # at the start of its partition), a.outs with their labels after the
 # image (-s: debug's names), start.tm first, with libc
-# (../TinyCRuntime/) and sys.tm. Each .tm is an object of
+# (../runtime/) and sys.tm. Each .tm is an object of
 # tiny-assembler's first (_make/x.o, from x.tm here or in _make/). A hard link is a name and a line
 # "link utils" (what link() does, at the boot): utils (../TinyUtilities.ml, tiny-utils) is in the image once,
 # under the name of each of its utilities (cat, ls, wc...). user/'s
@@ -147,7 +147,7 @@ PROGS = sh rc emacs office troff play mltests paint windows square tetris calc t
 LINKS = editor:emacs sam:ed
 # utils's names (TinyUtilities.ml's table)
 UTILS = [ basename cat cmp cp date du echo grep kill ln ls mkdir mv ps pwd rm seq sleep sort tail tee test touch walk wc xd
-L = ../TinyCRuntime
+L = ../runtime
 # an ML program's system on tiny-kernel: mlsys.c and
 # TinyLibSystem.ml
 SYS = ../TinyLibSystem/tinykernel
@@ -228,7 +228,7 @@ $(O)/font.tm: $(FONT)
 	od -An -v -tu1 $(FONT) | awk 'NF { printf "\t.byte\t%s", $$1; for (i = 2; i <= NF; i++) printf ", %s", $$i; print "" }' >> $@
 	printf 'font_end:\n\t.align\t4\n' >> $@
 
-$(O)/runtime.o: ../TinyMLRuntime/core.c
+$(O)/runtime.o: ../runtime/ml.c
 
 $(O)/kernel.img: $(KERNEL) $(LDBIN)
 	$(LD) -map -o $@ $(KERNEL)
@@ -243,7 +243,7 @@ $(O)/libc.o: $(L)/libc.c $(L)/libc.h $(TCBIN)
 $(O)/%.o: %.c libc/user.h $(TCBIN)
 	@mkdir -p $(@D)
 	$(TC) -o $@ $<
-$(O)/libml/mlsys.o: $(SYS)/mlsys.c libc/user.h ../TinyMLRuntime/core.c $(TCBIN)
+$(O)/libml/mlsys.o: $(SYS)/mlsys.c libc/user.h ../runtime/ml.c $(TCBIN)
 	@mkdir -p $(@D)
 	$(TC) -o $@ $<
 
@@ -496,7 +496,7 @@ EXAMPLES = steps/t6/user/wc.c user/sh.c ../user/emacs.ml ../TinyEditorScreen.ml 
 C_PROGS = sh mltests ping get put httpd
 SRC_FILES = entry.tm draw.tm memory.tm end.tm runtime.c \
 	$(foreach u,$(UNITS),$(or $(F_$(u)),../$(u).ml)) $(CORE:%=../TinyLibCore/%.ml) libc/user.h libc/sys.tm libc/draw.c libc/draw.h libc/net.c $(SYS)/mlsys.c \
-	../TinyMLRuntime/core.c ../TinyCRuntime/start.tm ../TinyCRuntime/udivmod.tm ../TinyCRuntime/libc.c ../TinyCRuntime/libc.h user/paint.c $(C_PROGS:%=user/%.c)
+	../runtime/ml.c ../runtime/start.tm ../runtime/udivmod.tm ../runtime/libc.c ../runtime/libc.h user/paint.c $(C_PROGS:%=user/%.c)
 # (a path of this directory's, as tiny/'s)
 tiny = $(patsubst TinyKernel/../%,%,$(addprefix TinyKernel/,$(1)))
 SRC = $(call tiny,$(SRC_FILES) $(wildcard $(patsubst %.ml,%.mli,$(filter %.ml,$(SRC_FILES)))))
@@ -554,8 +554,8 @@ lib/%.tmi: lib/Stdlib.o
 # the objects of assembly written by hand (the compilers write theirs)
 %.o: $(K)/%.tm
 	as -o $$target $(K)/$$stem.tm
-%.o: /src/TinyCRuntime/%.tm
-	as -o $$target /src/TinyCRuntime/$$stem.tm
+%.o: /src/runtime/%.tm
+	as -o $$target /src/runtime/$$stem.tm
 libc/sys.o: $(K)/libc/sys.tm
 	mkdir -p libc; as -o $$target $(K)/libc/sys.tm
 
@@ -565,11 +565,11 @@ kernel.img: $(KERNEL:$(O)/%=%)
 	ld -map -o $$target $$prereq
 
 # C
-%.o: /src/TinyCRuntime/%.c /src/TinyCRuntime/libc.h
-	cc -o $$target /src/TinyCRuntime/$$stem.c
-runtime.o: $(K)/runtime.c /src/TinyMLRuntime/core.c
+%.o: /src/runtime/%.c /src/runtime/libc.h
+	cc -o $$target /src/runtime/$$stem.c
+runtime.o: $(K)/runtime.c /src/runtime/ml.c
 	cc -o $$target $(K)/runtime.c
-libml/mlsys.o: $(call insrc,$(SYS)/mlsys.c) /src/TinyMLRuntime/core.c $(K)/libc/user.h
+libml/mlsys.o: $(call insrc,$(SYS)/mlsys.c) /src/runtime/ml.c $(K)/libc/user.h
 	mkdir -p libml; cc -o $$target $(call insrc,$(SYS)/mlsys.c)
 libc/%.o: $(K)/libc/%.c $(K)/libc/user.h $(K)/libc/draw.h
 	mkdir -p libc; cc -o $$target $(K)/libc/$$stem.c

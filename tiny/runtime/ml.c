@@ -1,12 +1,15 @@
 /* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
  *
- * TinyML's runtime, its part common to every program (the host's,
- * runtime.c; TinyKernel.ml's, TinyKernel/runtime.c): the allocator
- * and Cheney's copying collector, the primitives the prelude names,
- * stdout's buffer, the uncaught exception. Its includer gives the
- * memory (ml_run) and write and exit. A word is intptr's: 8 bytes on
- * arm64, 4 on tiny-machine (tiny-ml).
+ * tiny-ml's runtime, the part common to every ML program: the allocator
+ * and Cheney's copying collector, the primitives TinyLibCore names,
+ * stdout's buffer, the uncaught exception. In C, compiled by tiny-c,
+ * #included by what gives it the memory (ml_run) and write and exit:
+ * the kernel's ../TinyKernel/runtime.c, an ML program's of tiny-kernel
+ * ../TinyLibSystem/tinykernel/mlsys.c, a test's own main
+ * (tests/TinyML_test.sh). A word is intptr's: 4 bytes on tiny-machine.
+ * (old: TinyMLRuntime/core.c; C's runtime beside it, start.tm,
+ * udivmod.tm and libc.c, was TinyCRuntime/)
  *
  * A value is a word: an integer n as 2n+1, or the address of a block's
  * first field, the block's header the word before it (its size in

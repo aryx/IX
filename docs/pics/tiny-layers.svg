@@ -68,7 +68,7 @@
 <rect x="338" y="551" width="296" height="125" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
 <text x="352" y="574" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyML&#x27;s runtime</text>
 <text x="622" y="574" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">C, by tiny-c</text>
-<text x="352" y="595" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyMLRuntime/core.c: the allocator,</text>
+<text x="352" y="595" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/runtime/ml.c: the allocator,</text>
 <text x="352" y="612" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">Cheney&#x27;s collector, strings, compare;</text>
 <text x="352" y="629" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">included by TinyLibSystem/tinykernel/mlsys.c</text>
 <text x="352" y="646" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">(the heap in the program&#x27;s megabyte,</text>
@@ -77,7 +77,7 @@
 <rect x="338" y="696" width="296" height="91" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
 <text x="352" y="719" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The C runtime</text>
 <text x="622" y="719" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">C, assembly</text>
-<text x="352" y="740" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyCRuntime/: start.tm (the start),</text>
+<text x="352" y="740" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/runtime/: start.tm (the start),</text>
 <text x="352" y="757" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">udivmod.tm (the division), libc.c;</text>
 <text x="352" y="774" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyKernel/libc/sys.tm: the system calls</text>
 <line x1="486" y1="787" x2="486" y2="805" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
@@ -104,7 +104,7 @@
 <rect x="646" y="372" width="296" height="108" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
 <text x="660" y="395" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The C runtime</text>
 <text x="930" y="395" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">C, assembly</text>
-<text x="660" y="416" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyCRuntime/: libc.c and libc.h</text>
+<text x="660" y="416" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/runtime/: libc.c and libc.h</text>
 <text x="660" y="433" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">(print, the strings, malloc), start.tm,</text>
 <text x="660" y="450" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">udivmod.tm;</text>
 <text x="660" y="467" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyKernel/libc/sys.tm: the system calls</text>
@@ -137,7 +137,7 @@
 <rect x="954" y="449" width="296" height="91" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
 <text x="968" y="472" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyML&#x27;s runtime</text>
 <text x="1238" y="472" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">C, by tiny-c</text>
-<text x="968" y="493" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyMLRuntime/core.c, the same;</text>
+<text x="968" y="493" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/runtime/ml.c, the same;</text>
 <text x="968" y="510" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">included by TinyKernel/runtime.c (the</text>
 <text x="968" y="527" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">kernel&#x27;s memory, the console)</text>
 <line x1="1102" y1="540" x2="1102" y2="558" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
@@ -146,7 +146,7 @@
 <text x="1238" y="583" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">tiny-cpu&#x27;s</text>
 <text x="968" y="604" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyKernel/entry.tm (the start, the</text>
 <text x="968" y="621" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">traps), draw.tm (a row of pixels), the</text>
-<text x="968" y="638" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">font; TinyCRuntime/udivmod.tm</text>
+<text x="968" y="638" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">font; runtime/udivmod.tm</text>
 <line x1="1102" y1="651" x2="1102" y2="805" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <rect x="954" y="807" width="296" height="74" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.5"/>
 <text x="968" y="830" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The machine</text>

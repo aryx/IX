@@ -27,7 +27,7 @@
         { at: 'def:dial', weight: 2 },
         { at: 'code:"#define DRAW 3"', say: 'drawing and mouse: descriptors 3 and 4', weight: 2 },
       ],
-      related: ['sys.tm', '../TinyKernelCalls.ml', '../../TinyCRuntime/libc.h', '../steps/t6/libc/user.h'],
+      related: ['sys.tm', '../TinyKernelCalls.ml', '../../runtime/libc.h', '../steps/t6/libc/user.h'],
     },
     'draw.h': { digest: '6b780a281bbe',
       summary: "What a C program that draws has: TinyKernelGraphics's messages as calls, a colour an image of one pixel.",

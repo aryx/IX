@@ -243,7 +243,7 @@ window of SDL's, [`sdl/`](tiny/TinyLibSystem/sdl/). Its three builds:
 
 | | compiled by | its standard library |
 |---|---|---|
-| on tiny-machine | tiny-ml | [`tiny/TinyLibCore/`](tiny/TinyLibCore/Stdlib.mli) (Stdlib, List, String, Buffer, Hashtbl...: OCaml's subset, which OCaml checks), on [`tiny/TinyMLRuntime/`](tiny/TinyMLRuntime/) |
+| on tiny-machine | tiny-ml | [`tiny/TinyLibCore/`](tiny/TinyLibCore/Stdlib.mli) (Stdlib, List, String, Buffer, Hashtbl...: OCaml's subset, which OCaml checks), on [`tiny/runtime/`](tiny/runtime/) |
 | on the host, for the tests | OCaml and dune | OCaml's own, and [`lib_core/commons/`](lib_core/commons/) |
 | on the host, by IX (a test of m-IX's compiler) | mini-ml, by `mini-mk` | IX's own, in `lib_core/` |
 

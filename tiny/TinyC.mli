@@ -121,7 +121,7 @@
  * Its usage, with examples, is in [help] below, which is what tiny-c -h
  * prints. It reads one C file and writes its assembly for TinyCPU
  * (TinyMachineCPU.ml), whose words are 4 bytes, pointers too. Its
- * runtime is in TinyCRuntime/ (built by TinyKernel/steps/Makefile):
+ * runtime is in runtime/ (built by TinyKernel/steps/Makefile):
  * start.tm holds the program start and the system calls, udivmod.tm the
  * unsigned division, and the rest of libc is C compiled by tiny-c. Its
  * library has Plan 9's names (print, exits) and its rules are ANSI's:

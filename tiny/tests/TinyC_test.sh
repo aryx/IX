@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # The tests of TinyC.ml: each program of TinyC_tests/ compiled by
-# tiny-c, linked with the runtime (TinyCRuntime/: start.tm, udivmod.tm,
+# tiny-c, linked with the runtime (runtime/: start.tm, udivmod.tm,
 # and libc.c compiled by tiny-c) by tiny-cpu, run by tiny-cpu, its
 # output and exit status compared with the recorded ones (prog.out).
 # They are the host's cc's: RECORD=1 records them again, each program
@@ -25,7 +25,7 @@ progs=("$@")
 
 T=$ROOT/tiny/tests/TinyC_tests
 [ ${#progs[@]} = 0 ] && progs=($T/*.c)
-RT=$ROOT/tiny/TinyCRuntime
+RT=$ROOT/tiny/runtime
 (cd $RT && $TC -o $W/libc.o libc.c) || { echo "FAIL the runtime: tiny-c libc.c"; exit 1; }
 refused=()
 mkdir -p $W/host $W/tm

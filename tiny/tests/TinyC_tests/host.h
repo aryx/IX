@@ -6,7 +6,7 @@
 // with -fsigned-char -fwrapv (tiny-c's char is signed, its arithmetic
 // wraps). Plan 9's C on a 32-bit machine, on a 64-bit host: a long is
 // an int, print's verbs are printf's (an l dropped; %u is a verb, as
-// in TinyCRuntime/libc.c and goken's libc, so %ud is the number, then
+// in runtime/libc.c and goken's libc, so %ud is the number, then
 // a d), and exits ends with 0 for nil or "", 1 otherwise, as
 // start.tm's. What still differs is a pointer's size: the tests print
 // none.

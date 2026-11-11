@@ -67,7 +67,7 @@ of the system:
   tiny-kernel's `debug` (`TinyDebugger.ml`, beside `trace`).
   The host's programs, when ix builds them, are on m-IX's
   `lib_core/`.
-- `TinyCRuntime/` and `TinyMLRuntime/` are not parts of the two
+- `runtime/` and `runtime/` are not parts of the two
   compilers: they are what a program compiled by tiny-c or by tiny-ml
   is linked with (C's start, its division and its library; ML's
   allocator, collector and strings).
@@ -136,8 +136,8 @@ on.
 | `TinyOffice.ml`, `TinyOffice/` | `office` (tiny-office) | `apps/office/` (mini-office) | a document of pages of boxes, each a kind of document whose data is text: a text edited as it is shown (WYSIWYG, its styles the kernel's fonts), a sheet, a drawing, a paint, a chart of a named sheet; pull-down menus (TinyLibGUI's); its file Markdown and a few LaTeX commands (`\box`, `\newpage`); its view shapes, run by TinyLibGUI's run_canvas, which draws what changed ([`plan_tiny_office.md`](../docs/plans/done/plan_tiny_office.md)) |
 | `TinyPlay.ml` | `play` (tiny-play) | `apps/media/play/` (mini-play), `lib_audio/formats/wav/` | a WAV file to the speaker, a block at a time, the kernel pacing it: RIFF's chunks read, the file's frame at each of the speaker's samples (8,000 a second) taken exactly by Bresenham's stepping, its channels' mean, its top byte; WAV only, no filter |
 | `TinyTroff.ml` | `troff` (tiny-troff) | `typesetting/` (mini-troff) | the office's documents, or Markdown, as text, HTML or PDF, read by the office's own functions; PDF in Courier, a standard font, 8 points a character at 13.33 points |
-| `TinyC.ml`, `TinyC/` | `cc` (tiny-c) | `languages/c/` (mini-cc; 5c, 7c) | a C subset through a stack machine of its own, the stack in registers, for TinyCPU, with its runtime (`TinyCRuntime/`: `start.tm`, and a libc in C); Plan 9's names, ANSI's rules, the host's cc its tests' reference |
-| `TinyML.ml`, `TinyML/` | `ml` (tiny-ml) | `languages/ml/` (mini-ml; ocaml-light's ocamlopt) | an ML (variants, lists, closures, exceptions, Hindley-Milner) through TinyC's stack machine to tiny-machine; the roots on a stack of values of its own (r12), so its collector, Cheney's, in C (`TinyMLRuntime/core.c`, by tiny-c), needs no frame table and no assembly; its library, TinyLibCore/, in ML, compiled once; the output OCaml's (ocaml-light's for the recorded tests, uncaught exceptions and stdout's buffer included) |
+| `TinyC.ml`, `TinyC/` | `cc` (tiny-c) | `languages/c/` (mini-cc; 5c, 7c) | a C subset through a stack machine of its own, the stack in registers, for TinyCPU, with its runtime (`runtime/`: `start.tm`, and a libc in C); Plan 9's names, ANSI's rules, the host's cc its tests' reference |
+| `TinyML.ml`, `TinyML/` | `ml` (tiny-ml) | `languages/ml/` (mini-ml; ocaml-light's ocamlopt) | an ML (variants, lists, closures, exceptions, Hindley-Milner) through TinyC's stack machine to tiny-machine; the roots on a stack of values of its own (r12), so its collector, Cheney's, in C (`runtime/ml.c`, by tiny-c), needs no frame table and no assembly; its library, TinyLibCore/, in ML, compiled once; the output OCaml's (ocaml-light's for the recorded tests, uncaught exceptions and stdout's buffer included) |
 | `TinyDatabase.ml` | `db` (tiny-db) | `database/` (mini-chidb; chidb) | the relational algebra as the query language, a pipeline (`t \| where ... \| group ... \| sort ...`); a copy-on-write B-tree, so every statement is atomic by one header write |
 | `TinyCPU.ml`, `TinyMachineCPU.ml` | (tiny-cpu) | `machine/` (mini-5i; 5i), with Knuth's MIX and MMIX | a machine of our own design, for teaching: 16 registers, r0 zero, no flags, one instruction format, every case defined; an interpreter (the definition); the listing reassembles to the same words; the CPU a library, TinyMachine.ml's |
 | `TinyAssembler.ml`, `TinyLinker.ml` | `as`, `ld` (tiny-assembler, tiny-linker) | `assembler/`, `linker/` (mini-asm, mini-ld; 5a/5l) | a new machine's toolchain, since nothing else writes its words: a file to an object, text (its words made at once, a label's place left 0 with a `reloc` line), objects to an image or an a.out; a place filled by decoding the word, setting its immediate and encoding again, so `encode`'s checks hold; sizes never wait for addresses (one format) |
@@ -179,7 +179,7 @@ tiny-tetris, tiny-www, tiny-troff, tiny-play.
 is their plan and what was found.
 
 A file is built three ways: by tiny-ml for tiny-kernel, on
-`TinyLibCore/` and `TinyMLRuntime/`; by dune for the host's tests, on
+`TinyLibCore/` and `runtime/`; by dune for the host's tests, on
 OCaml's standard library and `lib_core/commons/`; and by ix
 (`mini-mk` here) on `lib_core/` whole, as a test of m-ix's compiler.
 This directory's `dune` has a section for each group: the compilers,
@@ -193,7 +193,7 @@ a kernel in ML did, kept as `kernels/steps/` keeps m-ix's kernel's:
 assembly and four programs linked with it; `t6/`, a kernel in C with
 `spawn` and no `fork`, a FAT on a disk, one kernel stack. They are
 built by the tiny tools as a program is built by its toolchain, on
-`TinyCRuntime/`; t6's disk is made on the host by tiny-mkfs
+`runtime/`; t6's disk is made on the host by tiny-mkfs
 (`TinyKernel/steps/t6/TinyMkfs.ml`, the one OCaml file there). Their
 Makefiles take the tools from the PATH (after `dune install`) or from
 ix's `bin/`: `make -C tiny/TinyKernel/steps run`, `make -C

@@ -11,7 +11,7 @@
  * its assembly for tiny-machine (the CPU of TinyMachineCPU.ml): words
  * of 4 bytes, integers of 31 bits. The runtime (the allocator, Cheney's
  * collector, the primitives, and the printing of an uncaught
- * exception) is in C, TinyMLRuntime/core.c, compiled by tiny-c; the
+ * exception) is in C, runtime/ml.c, compiled by tiny-c; the
  * program's own main gives it memory. TinyKernel.ml is the
  * program it was made for: a kernel in ML, which reaches the machine
  * through externals (functions in C or assembly), so the compiler
@@ -49,7 +49,7 @@
  * through them; compile_main, the program's main; and the interfaces
  * (M.tmi) a unit leaves for the next ones.
  *
- * What a value looks like at run time (TinyMLRuntime/core.c has the
+ * What a value looks like at run time (runtime/ml.c has the
  * same picture, from the other side):
  *
  *     a word:   2n+1        the integer n: 10 is 21, false is 1, true

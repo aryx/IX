@@ -19,7 +19,7 @@ TML=${TML:-$ROOT/_build/default/tiny/TinyML.exe}
 TC=${TC:-$ROOT/_build/default/tiny/TinyC.exe}
 CPU=${CPU:-$ROOT/_build/default/tiny/TinyCPU.exe}
 . $ROOT/tiny/tests/link.sh
-L=$ROOT/tiny/TinyCRuntime
+L=$ROOT/tiny/runtime
 T=$ROOT/tiny/tests/TinyEditorScreen_tests
 W=${W:-$(mktemp -d)}
 [ -n "${KEEP:-}" ] || trap 'rm -rf $W' EXIT
@@ -33,7 +33,7 @@ if diff $T/keys.expected $W/host.out > $W/host.diff; then echo "ok keys: by OCam
 # call reaches 128 KB, and the code on either side of it would be too
 # far apart, _start from main or main from the ML code)
 cat > $W/main.c <<END
-#include "$ROOT/tiny/TinyMLRuntime/core.c"
+#include "$ROOT/tiny/runtime/ml.c"
 extern value vstack[];
 extern value space0[];
 extern value space1[];

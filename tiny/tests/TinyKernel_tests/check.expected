@@ -456,9 +456,9 @@ Wed Mar  1 00:00:00 GMT 2000
 Mon Jan  9 13:37:03 GMT 2034
 7
 % $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
-$ % as -o start.o /src/TinyCRuntime/start.tm
-as -o udivmod.o /src/TinyCRuntime/udivmod.tm
-cc -o libc.o /src/TinyCRuntime/libc.c
+$ % as -o start.o /src/runtime/start.tm
+as -o udivmod.o /src/runtime/udivmod.tm
+cc -o libc.o /src/runtime/libc.c
 as -o sys.o /src/TinyKernel/libc/sys.tm
 cc -o hello.o hello.c
 as -o square.o square.tm

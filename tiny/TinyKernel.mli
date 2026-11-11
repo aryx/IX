@@ -207,7 +207,7 @@
  * mini-xv6 (kernels/lib_machine/: ocaml-light's C runtime, gcc, boot
  * code, C glue) cannot be:
  * - tiny-ml: the second back end of the stack machine (TinyML.ml);
- * - the runtime: TinyMLRuntime/core.c, shared with every tiny-ml
+ * - the runtime: runtime/ml.c, shared with every tiny-ml
  *   program, and runtime.c, which holds the kernel's memory layout and
  *   ten functions on bytes (peek, poke, copying a string from memory
  *   and to it);

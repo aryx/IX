@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # The tests of TinyML.ml: each program of languages/ml/tests/tiny/
-# compiled by tiny-ml, linked by tiny-cpu with the runtime (core.c and
+# compiled by tiny-ml, linked by tiny-cpu with the runtime (ml.c and
 # a main giving it tiny-cpu's memory, by tiny-c), run by tiny-cpu, and
 # its output and exit status compared with the recorded ones (prog.out,
 # or prog.tiny-ml.out where tiny-ml's own behavior is another: an index
@@ -28,12 +28,12 @@ W=${W:-$(mktemp -d)}; mkdir -p $W
 [ -n "${KEEP:-}" ] || trap 'rm -rf $W' EXIT
 progs=("$@")
 
-# the runtime: core.c, its memory a main's (the heap from 4096 words,
+# the runtime: ml.c, its memory a main's (the heap from 4096 words,
 # or from 64), exit tiny-cpu's call
-L=$ROOT/tiny/TinyCRuntime
+L=$ROOT/tiny/runtime
 for h in 4096 64; do
   cat > $W/main$h.c <<EOC
-#include "$ROOT/tiny/TinyMLRuntime/core.c"
+#include "$ROOT/tiny/runtime/ml.c"
 static value vstack[32768];
 static value space0[65536];
 static value space1[65536];

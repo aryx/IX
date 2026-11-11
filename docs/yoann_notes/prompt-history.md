@@ -69306,3 +69306,51 @@ Claude found that deleting `kernels/9pi/.gitignore` un-ignored the kernel images
 Claude decided to restore both deleted `.gitignore` files rather than keep the deletion.
 Claude planned to remove only the `build/` line from each restored file, leaving the other ignore entries in place.
 Claude had not yet answered the `rm -rf _make` and `make clean` question in the visible reply.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 09:26
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the move of the 9pi build directory to `_make/9pi`, covering 28 files including `prompt-history.md`.
+Claude left another session's tiny/ files out of the commit so they stayed separate.
+The commit message records that `make test` ran 159 jobs with 2 failures, in mini-turbopascal and mini-emacs recorded screens.
+Claude noted that neither failing test touches 9pi or `_make`, and that `make check` in `kernels/9pi` already failed before the move.
+Claude did not run `make card` or `make self`, since `_mk/5-plan9` is not built in this checkout.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 09:20
+
+**Yoann:**
+
+> ok let's create tiny/runtime/ and maybe rename the core.c to more clearly indicate this is a part of the tiny-ml runtime. Also I think other parts of the runtime are spread around and it would be good there too to reorganize things more clearly
+
+**Claude (summary):**
+
+Claude renamed tiny-ml's `core.c` to `tiny/runtime/ml.c` and updated the 59 files that referenced the old layout.
+Claude found that the steps' `hello` and t6 Makefiles hadn't built since `7ea94bae` and changed them to compile C straight to objects.
+Claude asked whether to commit everything as one commit or to split the steps' Makefile fix into its own commit.
+Claude had not committed anything yet, and was waiting on a background `make self` run to re-record `self.expected`.
+Claude planned to check that run's diff before committing, so the commit would include the re-recorded output.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 09:52
+
+**Yoann:**
+
+> let's commit
+
+------------------------------------------------------------------------
+
+## 2026-11-11 09:52
+
+**Yoann:**
+
+> also should it be tiny/runtimes/ plural?

@@ -12,11 +12,12 @@
  * The matcher is a small backtracker that returns the leftmost-longest
  * match, as sam does. It keeps a memo of the (node, position) pairs it
  * has tried, so a pair is tried at most once and a match costs at most
- * the pattern's size times the text's length. matches shares one memo
+ * the pattern's size times the text's length. search shares one memo
  * across all the places where a match may start: a node is always
  * followed by the same rest of the pattern, so a pair that failed from
- * one start fails from every other. A yes or no therefore reads the
- * line about once, as Thompson's automaton (1968) does.
+ * one start fails from every other. A search that fails, and a yes or no
+ * (matches, a search), therefore read the line about once, as
+ * Thompson's automaton (1968) does.
  *
  * old: grep had its own matcher, Thompson's automaton, and the editor
  * had this one. The two parsed patterns in slightly different ways,

@@ -64,7 +64,7 @@ What it buys:
   expected outputs nobody had to write, the random programs' too
   (`tiny/tests/TinyML_fuzz.py`).
 - **A libc that exists.** goken's libc, by 7c, is under both compilers;
-  the free path needed its own (`TinyCRuntime/`).
+  the free path needed its own (`runtime/`).
 
 What it costs:
 
@@ -79,7 +79,7 @@ What it costs:
 - **goken at test time.** `make test-vs-goken`, not `make test`.
 
 The free path exists beside it and is whole: `tiny-c` and `tiny-ml
--tm`, `TinyCRuntime/`, tiny-cpu, tiny-machine, tiny-kernel. So the
+-tm`, `runtime/`, tiny-cpu, tiny-machine, tiny-kernel. So the
 question is not whether t-ix can do without arm64 (it can: t-IX in a
 web page does), but whether the second path earns its lines. The
 author's answer is that it does.

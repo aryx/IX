@@ -69532,3 +69532,50 @@ Claude checked tiny-kernel and mini-mk, re-recorded one kernel screen, and left 
 **Claude (summary):**
 
 Claude proposed adding `exists` to `TinyLibSystem.mli` beside `stat`, with the unix, tiny-kernel and test-stub implementations. Claude replaced the local copies in `TinyBuildSystem` and `TinyVCS` and the four other callers with `TSys.exists`. Tests passed for the touched programs, and `bugs_tiny.txt` and two kernel screen sums were re-recorded. Claude split the work into two planned commits, one for `rm -f`/`clean` and one for `TSys.exists`, and asked whether to commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 10:47
+
+**Yoann:**
+
+> let's commit, and you can remove those old: comment you added
+
+**Claude (summary):**
+
+Claude removed the one `old:` note from the `exists` comment in `TinyLibSystem.mli` before committing.
+Claude listed the remaining `old:` notes from earlier today across runtime, TinyKernel, the Makefiles, and the debugger tooling.
+Claude pointed out that many older `old:` notes in tiny/ predate this session.
+Claude asked whether to remove only today's notes or stop adding new ones.
+Claude committed the rest as eeed82c4, 17 files, while `make self` was still running.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 10:49
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude listed six open items, from `self.expected` in `_make8` to a `tiny/Buildfile` that rebuilds t-IX from `/src`.
+Claude recommended doing the `set_word` and `word_of` typing follow-up (item 4) while `make self` runs.
+Yoann chose item 4 now, and deferred the stale codemap digests (item 3) to batch with later changes.
+For item 6, Yoann wants a fresh `tiny/Buildfile` that runs under t-IX and builds each program individually.
+The Buildfile would be written from scratch, coupled to the Makefile for now, and later generated from it.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 11:01
+
+**Yoann:**
+
+> let's do 4. We can postpone 3 as we will do more changes and so better to batch this. for 6 I think we want a tiny/Buildfile that works when running under t-ix itself, that can also build each program individually. We can write it from scratch and state the coupling: with an Makefile and later on factorize and generate the Makefile from this Buildfile (note that we still want the toplevel tiny/Makefile; that's another thing)
+
+**Claude (summary):**
+
+Claude proposed Item 4: typing the linker's `set_word` as `M.word` and splitting the debugger's `word` into `instr_at` and `address_at`.
+Claude reported the assembler law, TinyC and TinyML tests, kernel check, and `self-quick` all pass, with byte-identical images.
+Claude traced the integer-overflow warnings to js_of_ocaml re-linking the web page, not to this change, and left the commit pending.
+Claude then sketched a `tiny/Buildfile` for item 6, with a plan doc, per-program targets, and output-location choices.

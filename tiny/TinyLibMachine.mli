@@ -247,6 +247,10 @@ val encode_line : line -> line
  * assembler's, and the compilers', which make lines, not text) *)
 val assemble : line list -> line list
 
+(* a word's four bytes, the low first: the memory's order, an object's
+ * chunks' and the linker's image's *)
+val word_bytes : word -> string
+
 (* the object's bytes, an object's lines marshalled after a magic line,
  * and back (Error when it is not one, or an older one) *)
 val to_object : line list -> string

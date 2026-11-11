@@ -81,11 +81,9 @@ let layout (items : M.line list) : layout =
 let get_word s off : M.instr_word =
   List.fold_right (fun i w -> (w lsl 8) lor Char.code (Bytes.get s (off + i)))
     [ 0; 1; 2; 3 ] 0
-(* a value's 32 bits, from an int that has 31 (tiny-ml's) or 63:
- * an address, or a word made by encode (old: Bytes.set_int32_le) *)
-let set_word s off v =
-  List.iter (fun i ->
-    Bytes.set s (off + i) (Char.chr ((v asr (8 * i)) land 0xff))) [ 0; 1; 2; 3 ]
+(* a word put at off, its bytes libmach's: an address, an instruction's
+ * word, a header's number, each 32 bits *)
+let set_word s off (w : M.word) = Bytes.blit_string (M.word_bytes w) 0 s off 4
 
 (* a word with an address, or what an address makes, in its place: the
  * whole word, or the instruction made again with it as its immediate,
@@ -104,9 +102,9 @@ let fill s off (kind : M.place) (pc : address) (v : address) =
     | Pc ->
         if v land 3 <> 0 then M.error ("unaligned target " ^ M.hex v);
         (v - (pc + 4)) / 4 in
-  if kind = M.Full then set_word s off v
+  if kind = M.Full then set_word s off (Int32.of_int v)
   else match M.decode (get_word s off) with
-    | Some i -> set_word s off (M.encode (imm v i))
+    | Some i -> set_word s off (Int32.of_int (M.encode (imm v i)))
     | None -> M.error ("not an instruction at " ^ M.hex pc)
 
 (* What nothing reaches, left out. A piece is what follows a piece line
@@ -249,7 +247,7 @@ let aout (memory : int) (l : linked) : string =
     | Some d -> [ aout_split; String.length l.image; memory; d ]
     | None -> [ aout_magic; String.length l.image; memory ] in
   let h = Bytes.make (4 * List.length words) '\000' in
-  List.iteri (fun i v -> set_word h (4 * i) v) words;
+  List.iteri (fun i v -> set_word h (4 * i) (Int32.of_int v)) words;
   Bytes.to_string h ^ l.image
 
 (*****************************************************************************)

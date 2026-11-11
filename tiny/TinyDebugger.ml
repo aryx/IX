@@ -164,14 +164,18 @@ let digits s i =
   String.init 8 (fun k ->
     let b = Char.code s.[i + 3 - (k / 2)] in
     d.[if k mod 2 = 0 then b / 16 else b mod 16])
-let instr s i =
+let instr s i : M.instr option =
   if Char.code s.[i + 3] >= 0x40 then None else M.decode (word_of s i)
 
-(* a word of the process, an address or an instruction: under 2^30 *)
-let word p a =
+(* the process's word at a, read as an address (one past 2^30 is
+ * none: no address of tiny-kernel's is), and as an instruction *)
+let address_at p a : M.address option =
   let s = bytes p a 4 in
   if String.length s < 4 || Char.code s.[3] >= 0x40 then None
   else Some (word_of s 0)
+let instr_at p a : M.instr option =
+  let s = bytes p a 4 in
+  if String.length s < 4 then None else instr s 0
 
 (* the start of the function an address is in *)
 let func_start p a =
@@ -329,24 +333,18 @@ let vsp = 12
 (* the prologue of the function at b, tiny-c's and tiny-ml's: addi sp,
  * sp, -f and stw lr, k(sp), its frame's f bytes and k *)
 let prologue p b =
-  match word p b, word p (b + 4) with
-  | Some w1, Some w2 ->
-      (match M.decode w1, M.decode w2 with
-       | Some (M.Alui (M.Add, d, a, f)), Some (M.Store (M.W, r, a', k))
-         when d = M.sp && a = M.sp && f < 0 && r = M.lr && a' = M.sp ->
-           Some (-f, k)
-       | _ -> None)
+  match instr_at p b, instr_at p (b + 4) with
+  | Some (M.Alui (M.Add, d, a, f)), Some (M.Store (M.W, r, a', k))
+    when d = M.sp && a = M.sp && f < 0 && r = M.lr && a' = M.sp ->
+      Some (-f, k)
   | _ -> None
 
 (* the v bytes of the ML function at b on the value stack, its third
  * instruction addi vsp, vsp, v; 0 for another function *)
 let ml_frame p b =
-  match word p (b + 8) with
-  | Some w ->
-      (match M.decode w with
-       | Some (M.Alui (M.Add, d, a, v)) when d = vsp && a = vsp && v > 0 -> v
-       | _ -> 0)
-  | None -> 0
+  match instr_at p (b + 8) with
+  | Some (M.Alui (M.Add, d, a, v)) when d = vsp && a = vsp && v > 0 -> v
+  | _ -> 0
 
 (* bt: the frames, from the pc's, by the code itself. tiny-c's and
  * tiny-ml's functions all start with their prologue: a frame is f
@@ -384,7 +382,7 @@ let backtrace p =
                   else if pc = b + 4 then
                     (if k = 0 then Some (lr, sp + f) else None)
                   else
-                    (match word p (sp + off) with
+                    (match address_at p (sp + off) with
                      | Some ret -> Some (ret, sp + f)
                      | None -> None)
               | None -> if k = 0 then Some (lr, sp) else None in
@@ -397,7 +395,7 @@ let backtrace p =
         if in_ml then regs.values.(vsp)
         else
           match M.address p.funcs "ml_vsp" with
-          | Some a -> (match word p a with Some v -> v | None -> 0)
+          | Some a -> (match address_at p a with Some v -> v | None -> 0)
           | None -> 0 in
       go 0 at regs.values.(M.sp) vs
   | _ -> say "?\n"

@@ -1,0 +1,38 @@
+# Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyBuildSystem.ml)
+#
+# /lib/c: what a C program of tiny-kernel links before its own objects,
+# built from /src. It is already built on the image; to see how, or to
+# make it again after changing a source:
+#
+#     cd /lib/c; build -n      the recipes, not run
+#     build clean; build       the four objects made again (a minute)
+#
+# A program links them first, in this order (start.o at 0, where the
+# machine starts it):
+#
+#     ld -s -n -o prog /lib/c/start.o /lib/c/udivmod.o /lib/c/libc.o \
+#         /lib/c/sys.o prog.o
+#
+# (on the host: tiny/TinyKernel/lib/c/Buildfile; the image's objects
+# are TinyKernel/Makefile's, the same bytes)
+
+all: start.o udivmod.o libc.o sys.o
+
+# the language's, tiny/runtime/'s, on any system: _start, which calls
+# main, then exits; the unsigned division tiny-c calls for / and %;
+# print and the strings
+start.o: /src/runtime/start.tm
+	as -o $target /src/runtime/start.tm
+udivmod.o: /src/runtime/udivmod.tm
+	as -o $target /src/runtime/udivmod.tm
+libc.o: /src/runtime/libc.c /src/runtime/libc.h
+	cc -o $target /src/runtime/libc.c
+
+# tiny-kernel's system calls, for C: each a sys instruction
+sys.o: /src/TinyKernel/libc/sys.tm
+	as -o $target /src/TinyKernel/libc/sys.tm
+
+# build clean: the objects removed (each if it is there: rm has no -f)
+clean:
+	for(f in start.o udivmod.o libc.o sys.o) if(test -f $f) rm $f
+	status=''

@@ -2,43 +2,38 @@
 #
 # hello, from hello.c and square.tm, and helloml, from helloml.ml, built
 # on tiny-kernel by build in /examples (see hello.c and helloml.ml): both
-# by default, or one by its name (build helloml). Their runtime is /src's,
-# compiled the first time, as the kernel's Buildfile links its programs:
-# C's (start.tm, _start then main; the division; libc) and tiny-kernel's
-# calls for C (sys.tm); for ML also mlsys.c, which includes
-# /src/runtime/ml.c, the allocator and the collector, then /lib/ml's
-# library and end.tm, the image's end. -s puts the labels after the
-# image, the names debug shows; -map writes them beside it too.
+# by default, or one by its name (build helloml). What they link besides
+# their own objects is already built in /lib: /lib/c, C's runtime and
+# tiny-kernel's calls, start.o first (the machine starts there); /lib/ml,
+# ML's runtime (mlsys.o), the library (its units, [A-Z]*.o: mlsys.o and
+# end.o are lowercase), and end.o, the image's end, last.
+# Each has its Buildfile, which says how it is made from /src. -s puts
+# the labels after the image, the names debug shows; -map writes them
+# beside it too.
 
-ULIB = start.o udivmod.o libc.o sys.o
+CRT = /lib/c/start.o /lib/c/udivmod.o /lib/c/libc.o /lib/c/sys.o
 
 all: hello helloml
 
-hello: $ULIB hello.o square.o
-	ld -map -s -n -o $target $prereq
+hello: hello.o square.o
+	ld -map -s -n -o $target $CRT $prereq
 
 hello.o: hello.c /src/TinyKernel/libc/user.h
 	cc -o $target hello.c
 square.o: square.tm
 	as -o $target square.tm
 
-# (the library's objects after the program's, end.o the last)
-helloml: $ULIB mlsys.o helloml.o end.o
-	ld -map -s -n -o $target $ULIB mlsys.o helloml.o /lib/ml/*.o end.o
+helloml: helloml.o
+	ld -map -s -n -o $target $CRT /lib/ml/mlsys.o $prereq /lib/ml/[A-Z]*.o /lib/ml/end.o
 
 # (one unit: its code and its main in one object)
 helloml.o: helloml.ml
 	ml -o $target helloml.ml
 
-start.o: /src/runtime/start.tm
-	as -o $target /src/runtime/start.tm
-udivmod.o: /src/runtime/udivmod.tm
-	as -o $target /src/runtime/udivmod.tm
-libc.o: /src/runtime/libc.c /src/runtime/libc.h
-	cc -o $target /src/runtime/libc.c
-sys.o: /src/TinyKernel/libc/sys.tm
-	as -o $target /src/TinyKernel/libc/sys.tm
-mlsys.o: /src/TinyLibSystem/tinykernel/mlsys.c /src/runtime/ml.c /src/TinyKernel/libc/user.h
-	cc -o $target /src/TinyLibSystem/tinykernel/mlsys.c
-end.o: /src/TinyKernel/end.tm
-	as -o $target /src/TinyKernel/end.tm
+# build clean: what build made here removed, each if it is there (rm
+# has no -f, and a recipe stops at a command that fails; status, the
+# last test's when nothing is left, made a success); a target that
+# makes no file is never up to date, so it always runs
+clean:
+	for(f in hello hello.map hello.o square.o helloml helloml.map helloml.o) if(test -f $f) rm $f
+	status=''

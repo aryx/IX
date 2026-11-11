@@ -676,13 +676,20 @@ To try the toolchain and these two after `make run` (in `tiny/`),
 `/examples` has two programs to build: `hello.c`, whose `square` is
 `square.tm`'s, by hand, and `helloml.ml`, a tree, a closure, an
 exception and enough lists that tiny-ml's collector runs; and the
-`Buildfile` that builds them with `/src`'s runtimes (`tiny/examples/` on
+`Buildfile` that builds them with `/lib`'s runtimes (`tiny/examples/` on
 the host, to read and edit there):
 
     cd /examples; build; ./hello; ./helloml   # as, cc, ml, ld, then each one's output
     trace ./hello                             # its write and its exit
     debug ./hello                             # b square, c, bt, r, x/i pc 3, s, q
     debug ./helloml                           # b insert, c, bt: an ML frame's slots
+
+What a program links besides its own objects is already built on the
+image: `/lib/c` (C's runtime, `start.o` first, and tiny-kernel's calls,
+`sys.o`) and `/lib/ml` (tiny-ml's library, `.tmi` and `.o`, its runtime
+`mlsys.o` and `end.o`). Each has the `Buildfile` that makes it from
+`/src` (`tiny/TinyKernel/lib/c/` and `lib/ml/` on the host): `cd
+/lib/c; build -n` shows how, `rm *.o; build` does it again.
 
 `dial` gives a descriptor on a connection to another machine, by its
 address as text (`"10.0.0.1"`: the wire's other end) and a port; -1

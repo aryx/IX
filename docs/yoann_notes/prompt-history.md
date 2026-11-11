@@ -69418,3 +69418,65 @@ Claude proposed committing helloml first, with its Buildfile rules, session 28 c
 Claude suggested committing self.expected on its own once the single make self run in _make7 finishes.
 Claude had stopped the earlier make self run, since adding helloml changes the image, so it restarted once.
 Claude asked whether to commit helloml now and self.expected after the run, since nothing is committed yet.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 10:09
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed `helloml.ml` as `346c7c53`, together with the Buildfile, session 28, the manual, and the code map.
+The tree was left clean except for `tiny/TinyKernel/_make7`, which a running `make self` was still producing.
+Claude planned to check that output's diff once `make self` finished, commit `self.expected` separately, and delete `_make7`.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 10:13
+
+**Yoann:**
+
+> should end.tm be moved under runtime/ too? closer to start.tm? mlsys.c too? what do you think? Right now tiny/examples/Buildfile builds files from all over the place
+
+**Claude (summary):**
+
+Claude recommended leaving end.tm and mlsys.c where they are, since the real problem is the Buildfile.
+Claude proposed shipping prebuilt objects on the image: /lib/c/ gets start.o, udivmod.o, libc.o, and sys.o.
+Claude proposed adding mlsys.o and end.o to /lib/ml/ so the tiny-kernel Buildfile stops compiling runtime sources from four places.
+Claude estimated the change fits the image's roughly 436 KB free space, saves most of the 30-second first build, and keeps host and self-build output identical.
+Claude asked for confirmation before making the change.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 10:17
+
+**Yoann:**
+
+> ok let's do it, but it would be good also that one inspect the /lib/c/ and have a Buildfile there so one can run the command to regenerate the files that are in there; same for /lib/ml/ which would be good for teaching purpose
+
+------------------------------------------------------------------------
+
+## 2026-11-11 10:17
+
+**Yoann:**
+
+> I wonder if want this lib/{c,ml}/Buildfile to live under tiny/ somewhere too ...
+
+------------------------------------------------------------------------
+
+## 2026-11-11 10:18
+
+**Yoann:**
+
+> Ideally we could also have a tiny/Buildfile ... after all we copy tiny/ under /src/ so we could then go to /src/ and build t-ix from under t-ix
+
+**Claude (summary):**
+
+Claude added Buildfiles to tiny/TinyKernel/lib/c and lib/ml, so each directory can rebuild its own runtime objects.
+Claude made tiny/examples/Buildfile name only its own files and use /lib/ml/[A-Z]*.o for the library units.
+Claude kept lib/ml/Buildfile's unit order matching the Makefile's CORE list, and the image rule fails if they drift.
+Claude left the changes uncommitted while the make self run in _make8 finishes, as the real byte-for-byte test.
+Claude asked whether to commit now or after make self passes, and proposed a tiny/Buildfile at the top of /src as a later step.

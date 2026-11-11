@@ -456,17 +456,11 @@ Wed Mar  1 00:00:00 GMT 2000
 Mon Jan  9 13:37:03 GMT 2034
 7
 % $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
-$ % as -o start.o /src/runtime/start.tm
-as -o udivmod.o /src/runtime/udivmod.tm
-cc -o libc.o /src/runtime/libc.c
-as -o sys.o /src/TinyKernel/libc/sys.tm
-cc -o hello.o hello.c
+$ % cc -o hello.o hello.c
 as -o square.o square.tm
-ld -map -s -n -o hello start.o udivmod.o libc.o sys.o hello.o square.o
-cc -o mlsys.o /src/TinyLibSystem/tinykernel/mlsys.c
+ld -map -s -n -o hello /lib/c/start.o /lib/c/udivmod.o /lib/c/libc.o /lib/c/sys.o hello.o square.o
 ml -o helloml.o helloml.ml
-as -o end.o /src/TinyKernel/end.tm
-ld -map -s -n -o helloml start.o udivmod.o libc.o sys.o mlsys.o helloml.o /lib/ml/*.o end.o
+ld -map -s -n -o helloml /lib/c/start.o /lib/c/udivmod.o /lib/c/libc.o /lib/c/sys.o /lib/ml/mlsys.o helloml.o /lib/ml/[A-Z]*.o /lib/ml/end.o
 hello: the squares of 1 to 10 add up to 385
 sorted: 1 2 3 4 5 7 8 9
 the first over 5: 7

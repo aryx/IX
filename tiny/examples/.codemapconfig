@@ -10,7 +10,7 @@
   generated: { by: 'claude-opus-5-5', on: '2026-11-11' },
   summary: "Files to try tiny-kernel's programs on: a program in C and assembly, one in ML, their Buildfile, a document, a tune.",
   files: {
-    'hello.c': { digest: 'a08618e84a6b',
+    'hello.c': { digest: 'c1822eacc82d',
       summary: "hello: the squares of 1 to 10 added, square by square.tm's assembly; built and debugged on tiny-kernel itself.",
       capitals: [
         { at: 'def:main', say: "a loop calling square.tm's function: a breakpoint there" },

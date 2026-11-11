@@ -496,12 +496,20 @@ EXAMPLES = steps/t6/user/wc.c user/sh.c ../user/emacs.ml ../TinyEditorScreen.ml 
 C_PROGS = sh mltests ping get put httpd
 SRC_FILES = entry.tm draw.tm memory.tm end.tm runtime.c \
 	$(foreach u,$(UNITS),$(or $(F_$(u)),../$(u).ml)) $(CORE:%=../TinyLibCore/%.ml) libc/user.h libc/sys.tm libc/draw.c libc/draw.h libc/net.c $(SYS)/mlsys.c \
-	../runtime/ml.c ../runtime/start.tm ../runtime/udivmod.tm ../runtime/libc.c ../runtime/libc.h user/paint.c $(C_PROGS:%=user/%.c)
+	../runtime/ml.c ../runtime/start.tm ../runtime/udivmod.tm ../runtime/libc.c ../runtime/libc.h user/paint.c $(C_PROGS:%=user/%.c) \
+	lib/c/Buildfile lib/ml/Buildfile
 # (a path of this directory's, as tiny/'s)
 tiny = $(patsubst TinyKernel/../%,%,$(addprefix TinyKernel/,$(1)))
 SRC = $(call tiny,$(SRC_FILES) $(wildcard $(patsubst %.ml,%.mli,$(filter %.ml,$(SRC_FILES)))))
 GEN = font.tm Buildfile
 LIBFILES = $(foreach m,$(CORE),$(m).tmi $(m).o)
+# what a program links around its own objects, already built in /lib:
+# C's runtime and tiny-kernel's calls in /lib/c, ML's in /lib/ml beside
+# the library; each directory with the Buildfile that makes it again
+# from /src (lib/c/ and lib/ml/ here, read on the host as they are on
+# the image; old: none, a program built on tiny-kernel compiled them)
+LIBC = $(O)/start.o $(O)/udivmod.o $(O)/libc.o $(O)/libc/sys.o lib/c/Buildfile
+LIBML = $(O)/libml/mlsys.o $(O)/end.o lib/ml/Buildfile
 
 # The Buildfile: this Makefile's build of the image as tiny-build's
 # rules, made of the lists above, for tiny-kernel to build itself from
@@ -531,15 +539,19 @@ EXAMPLES = $(notdir $(EXAMPLES))
 SRC = $(SRC)
 GEN = $(GEN)
 LIBFILES = $(LIBFILES)
+LIBC = start.o udivmod.o libc.o libc/sys.o $(K)/lib/c/Buildfile
+LIBML = libml/mlsys.o end.o $(K)/lib/ml/Buildfile
 UTILS = $(UTILS)
 
-boot.img: kernel.img $(PROGS:%=bin/%) $(addprefix /examples/,$(notdir $(EXAMPLES))) $(SRC:%=/src/%) $(GEN:%=$(K)/%) $(LIBFILES:%=lib/%)
+boot.img: kernel.img $(PROGS:%=bin/%) $(addprefix /examples/,$(notdir $(EXAMPLES))) $(SRC:%=/src/%) $(GEN:%=$(K)/%) $(LIBFILES:%=lib/%) $$LIBC $$LIBML
 	cat kernel.img > $$target
 	for(f in $$PROGS) { n=`{wc -c < bin/$$f}; echo bin/$$f; echo $$n; cat bin/$$f } >> $$target
 	for(f in $$EXAMPLES) { n=`{wc -c < /examples/$$f}; echo examples/$$f; echo $$n; cat /examples/$$f } >> $$target
 	for(f in $$SRC) { n=`{wc -c < /src/$$f}; echo src/$$f; echo $$n; cat /src/$$f } >> $$target
 	for(f in $$GEN) { n=`{wc -c < /src/TinyKernel/$$f}; echo src/TinyKernel/$$f; echo $$n; cat /src/TinyKernel/$$f } >> $$target
 	for(f in $$LIBFILES) { n=`{wc -c < lib/$$f}; echo lib/ml/$$f; echo $$n; cat lib/$$f } >> $$target
+	for(f in $$LIBC) { n=`{wc -c < $$f}; echo lib/c/^`{basename $$f}; echo $$n; cat $$f } >> $$target
+	for(f in $$LIBML) { n=`{wc -c < $$f}; echo lib/ml/^`{basename $$f}; echo $$n; cat $$f } >> $$target
 	for(u in $$UTILS) { echo bin/$$u; echo link bin/utils } >> $$target
 	{ $(foreach l,$(LINKS),echo bin/$(firstword $(subst :, ,$(l))); echo link bin/$(lastword $(subst :, ,$(l)));) } >> $$target
 	$(if $(filter segments pages,$(MEMORY)),{ echo lib/memory; echo $(MEMSIZE); echo $(MEMORY) } >> $$target)
@@ -603,13 +615,16 @@ $(O)/spin.prof: ../tests/TinyProfiler_tests/spin.tm
 	$(CPU) -prof $@ $(O)/spin > /dev/null
 $(O)/spin.map: $(O)/spin.prof
 
-$(O)/boot.img: $(O)/kernel.img $(BINS) $(EXAMPLES) $(SRC:%=../%) $(GEN:%=$(O)/%) $(LIBFILES:%=$(O)/lib/%)
+$(O)/boot.img: $(O)/kernel.img $(BINS) $(EXAMPLES) $(SRC:%=../%) $(GEN:%=$(O)/%) $(LIBFILES:%=$(O)/lib/%) $(LIBC) $(LIBML)
+	@grep -qx 'CORE = $(CORE)' lib/ml/Buildfile && grep -qx 'Stdlib.o: $(CORE:%=/src/TinyLibCore/%.ml) $(CORE:%=/src/TinyLibCore/%.mli)' lib/ml/Buildfile || { echo "lib/ml/Buildfile: its CORE, or Stdlib.o's prerequisites, not this Makefile's CORE"; exit 1; }
 	cp $(O)/kernel.img $@
 	for f in $(BINS); do printf 'bin/%s\n%d\n' $$(basename $$f) $$(wc -c < $$f) >> $@; cat $$f >> $@; done
 	for f in $(EXAMPLES); do printf 'examples/%s\n%d\n' $$(basename $$f) $$(wc -c < $$f) >> $@; cat $$f >> $@; done
 	for f in $(SRC); do printf 'src/%s\n%d\n' $$f $$(wc -c < ../$$f) >> $@; cat ../$$f >> $@; done
 	for f in $(GEN); do printf 'src/TinyKernel/%s\n%d\n' $$f $$(wc -c < $(O)/$$f) >> $@; cat $(O)/$$f >> $@; done
 	for f in $(LIBFILES); do printf 'lib/ml/%s\n%d\n' $$f $$(wc -c < $(O)/lib/$$f) >> $@; cat $(O)/lib/$$f >> $@; done
+	for f in $(LIBC); do printf 'lib/c/%s\n%d\n' $$(basename $$f) $$(wc -c < $$f) >> $@; cat $$f >> $@; done
+	for f in $(LIBML); do printf 'lib/ml/%s\n%d\n' $$(basename $$f) $$(wc -c < $$f) >> $@; cat $$f >> $@; done
 	for u in $(UTILS); do printf 'bin/%s\nlink bin/utils\n' "$$u" >> $@; done
 	for l in $(LINKS); do printf 'bin/%s\nlink bin/%s\n' $${l%%:*} $${l#*:} >> $@; done
 	$(if $(filter segments pages,$(MEMORY)),printf 'lib/memory\n$(MEMSIZE)\n$(MEMORY)\n' >> $@)

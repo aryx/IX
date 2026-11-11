@@ -3,8 +3,26 @@
 
 (* See TinyProfiler.mli *)
 
+module TSys = TinyLibSystem
+module M = TinyLibMachine
+
 let usage = {|usage: tiny-prof [-n count] [-diff base] [-base hex] profile
          [-k file.map...] [-u file.map...]|}
+
+(*****************************************************************************)
+(* The profile *)
+(*****************************************************************************)
+
+(* where an instruction ran: the kernel or a program, the base of the
+ * window the machine ran in (a program's partition), the instruction's
+ * address; the counts of a profile, by where (old: a triple, the
+ * kernel's a bool) *)
+type space = Kernel | User
+type spot = { space : space; base : M.address; pc : M.address }
+type counts = (spot, int) Hashtbl.t
+
+(* the letter of a space, as the profile and the report write it *)
+let letter space = match space with Kernel -> "k" | User -> "u"
 
 (* [add tbl k n]: n added to k's count, 0 when k has none (by hand:
  * OCaml's Option.value takes ~default, ix's does not) *)
@@ -12,26 +30,37 @@ let add tbl k n =
   Hashtbl.replace tbl k
     (n + (match Hashtbl.find_opt tbl k with Some m -> m | None -> 0))
 
-(* A profile's lines "k|u base pc count" (TinyMachineCPU.profile_lines):
- * the counts by (the kernel's?, base, pc). *)
-let read_profile caps (file : Fpath.t) =
+(* A profile's lines "k|u base pc count" (TinyMachineCPU.profile_lines) *)
+let read_profile caps (file : Fpath.t) : counts =
   let int_of_hex h = int_of_string ("0x" ^ h) in
   let counts = Hashtbl.create 4096 in
   List.iter (fun line ->
     match String.split_on_char ' ' line with
     | [ m; b; pc; n ] ->
-        let k = m = "k", int_of_hex b, int_of_hex pc in
-        add counts k (int_of_string n)
-    | _ -> ()) (String.split_on_char '\n' (TinyLibSystem.read_file caps file));
+        let space = if m = "k" then Kernel else User in
+        add counts { space; base = int_of_hex b; pc = int_of_hex pc }
+          (int_of_string n)
+    | _ -> ()) (String.split_on_char '\n' (TSys.read_file caps file));
   counts
+
+(* -diff: a shorter run's counts taken off, none below 0 *)
+let subtract (counts : counts) (base : counts) =
+  Hashtbl.iter (fun k n ->
+      match Hashtbl.find_opt counts k with
+      | Some m -> Hashtbl.replace counts k (max 0 (m - n))
+      | None -> ())
+    base
 
 (* the functions of tiny-linker's maps (-map: "address label" lines),
  * by address (TinyLibMachine's, as the function an address is in) *)
-let functions caps (files : Fpath.t list) =
-  TinyLibMachine.labels
-    (String.concat "\n" (List.map (TinyLibSystem.read_file caps) files))
+let functions caps (files : Fpath.t list) : M.symbols =
+  M.labels (String.concat "\n" (List.map (TSys.read_file caps) files))
 let find funcs pc =
-  match TinyLibMachine.find funcs pc with Some (f, _) -> f | None -> "?"
+  match M.find funcs pc with Some (f, _) -> f | None -> "?"
+
+(*****************************************************************************)
+(* The report *)
+(*****************************************************************************)
 
 (* 1234567 as 1,234,567 *)
 let commas n =
@@ -50,81 +79,92 @@ let percent n total =
     let t = ((n / g * 2000 / (total / g)) + 1) / 2 in
     string_of_int (t / 10) ^ "." ^ string_of_int (t mod 10)
 
+(* the most first; the same counts in their keys' order (a table's
+ * order is its library's: OCaml's and tiny-ml's are others) *)
+let most (a, n) (b, m) = if n <> m then compare m n else compare a b
+let sorted tbl = List.sort most (Hashtbl.fold (fun k n acc -> (k, n) :: acc) tbl [])
+
+(*****************************************************************************)
+(* The main *)
+(*****************************************************************************)
+
+(* the command line: the rows shown, the profile taken off (-diff), the
+ * program's base (-base), the profile, the kernel's maps (-k) and the
+ * program's (-u) (old: a tuple of five) *)
+type options = {
+  top : int; diff : Fpath.t option; named : M.address option;
+  profile : Fpath.t; kmaps : Fpath.t list; umaps : Fpath.t list;
+}
+
+let rec options (o : options) args : options option =
+  match args with
+  | "-n" :: n :: rest -> options { o with top = int_of_string n } rest
+  | "-diff" :: f :: rest -> options { o with diff = Some (Fpath.v f) } rest
+  | "-base" :: b :: rest ->
+      options { o with named = Some (int_of_string ("0x" ^ b)) } rest
+  | file :: rest when file.[0] <> '-' ->
+      (* the files after -k are the kernel's, after -u the program's *)
+      let rec files k u kernel l =
+        match l with
+        | "-k" :: rest -> files k u true rest
+        | "-u" :: rest -> files k u false rest
+        | f :: rest ->
+            if kernel then files (f :: k) u kernel rest
+            else files k (f :: u) kernel rest
+        | [] -> Fpath_.of_strings (List.rev k), Fpath_.of_strings (List.rev u) in
+      let kmaps, umaps = files [] [] false rest in
+      Some { o with profile = Fpath.v file; kmaps = kmaps; umaps = umaps }
+  | _ -> None
 
 let main (caps : < Cap.stdout; Cap.stderr; Cap.open_in; .. >)
     (argv : string array) : Exit.t =
-  let print = TinyLibSystem.print caps in
-  let rec options top diff base = function
-    | "-n" :: n :: rest -> options (int_of_string n) diff base rest
-    | "-diff" :: f :: rest -> options top (Some (Fpath.v f)) base rest
-    | "-base" :: b :: rest ->
-        options top diff (Some (int_of_string ("0x" ^ b))) rest
-    | file :: rest when file.[0] <> '-' ->
-        (* the files after -k are the kernel's, after -u the program's *)
-        let rec files k u kernel = function
-          | "-k" :: rest -> files k u true rest
-          | "-u" :: rest -> files k u false rest
-          | f :: rest ->
-              if kernel then files (f :: k) u kernel rest
-              else files k (f :: u) kernel rest
-          | [] ->
-              Fpath_.of_strings (List.rev k), Fpath_.of_strings (List.rev u) in
-        Some (top, diff, base, Fpath.v file, files [] [] false rest)
-    | _ -> None in
-  match options 20 None None (List.tl (Array.to_list argv)) with
-  | None -> TinyLibSystem.eprint caps (usage ^ "\n"); Exit.Code 2
-  | Some (top, diff, base, file, (kfiles, ufiles)) ->
-      let counts = read_profile caps file in
-      Option.iter (fun f ->
-        Hashtbl.iter (fun k n ->
-            match Hashtbl.find_opt counts k with
-            | Some m -> Hashtbl.replace counts k (max 0 (m - n))
-            | None -> ())
-          (read_profile caps f)) diff;
+  let print = TSys.print caps in
+  let defaults = { top = 20; diff = None; named = None; profile = Fpath.v ".";
+               kmaps = []; umaps = [] } in
+  match options defaults (List.tl (Array.to_list argv)) with
+  | None -> TSys.eprint caps (usage ^ "\n"); Exit.Code 2
+  | Some o ->
+      let counts = read_profile caps o.profile in
+      Option.iter (fun f -> subtract counts (read_profile caps f)) o.diff;
       (* the totals: the kernel's, and each program's by its window's base *)
       let kernel = ref 0 and programs = Hashtbl.create 8 in
-      Hashtbl.iter (fun (k, b, _) n ->
-        if k then kernel := !kernel + n else add programs b n) counts;
+      Hashtbl.iter (fun (k : spot) n ->
+        match k.space with
+        | Kernel -> kernel := !kernel + n
+        | User -> add programs k.base n) counts;
       let user = Hashtbl.fold (fun _ n acc -> acc + n) programs 0 in
       let total = !kernel + user in
-      let named = match base with
+      (* the program -u names: -base's, else the one that ran most *)
+      let named = match o.named with
         | Some b -> b
         | None ->
             fst (Hashtbl.fold (fun b n (bb, bn) ->
                 if n > bn || (n = bn && b < bb) then (b, n) else (bb, bn))
               programs (0, -1)) in
-      let kfuncs = functions caps kfiles and ufuncs = functions caps ufiles in
+      let kfuncs = functions caps o.kmaps and ufuncs = functions caps o.umaps in
       (* each count to its function *)
       let by = Hashtbl.create 256 in
-      Hashtbl.iter (fun (k, b, pc) n ->
-        let where =
-          if k then
-            "k", (if kfiles = [] then "(the kernel)" else find kfuncs pc)
-          else if b <> named then "u", "(another program)"
-          else "u", (if ufiles = [] then "(the program)" else find ufuncs pc) in
-        add by where n) counts;
-      (* the most first; the same counts in their names' order (a table's
-       * order is its library's: OCaml's and tiny-ml's are others) *)
-      let most (a, n) (b, m) = if n <> m then compare m n else compare a b in
-      let rows =
-        List.sort most (Hashtbl.fold (fun w n acc -> (w, n) :: acc) by []) in
+      Hashtbl.iter (fun (k : spot) n ->
+        let name =
+          match k.space with
+          | Kernel -> if o.kmaps = [] then "(the kernel)" else find kfuncs k.pc
+          | User when k.base <> named -> "(another program)"
+          | User -> if o.umaps = [] then "(the program)" else find ufuncs k.pc in
+        add by (k.space, name) n) counts;
       print (Printf.sprintf "%s instructions: the kernel %s%%, programs %s%%\n"
         (commas total) (percent !kernel total) (percent user total));
-      if Hashtbl.fold (fun _ n k -> if n > 0 then k + 1 else k) programs 0 > 1
-      then
+      let ran = List.filter (fun (_, n) -> n > 0) (sorted programs) in
+      if List.length ran > 1 then
         print (Printf.sprintf
           "programs, by their window's base: %s (-u is the one at %x)\n"
           (String.concat ", "
-             (List.map (fun (b, n) -> Printf.sprintf "%x %s" b (commas n))
-                (List.sort most
-                   (Hashtbl.fold (fun b n acc ->
-                      if n > 0 then (b, n) :: acc else acc) programs []))))
+             (List.map (fun (b, n) -> Printf.sprintf "%x %s" b (commas n)) ran))
           named);
       print (Printf.sprintf "%12s %6s     function\n" "count" "%");
-      List.iteri (fun i ((mode, name), n) ->
-        if i < top && n > 0 then
+      List.iteri (fun i ((space, name), n) ->
+        if i < o.top && n > 0 then
           print (Printf.sprintf "%12s %6s  %s  %s\n" (commas n)
-            (percent n total) mode name)) rows;
+            (percent n total) (letter space) name)) (sorted by);
       Exit.OK
 
-let () = TinyLibSystem.main "tiny-prof" main
+let () = TSys.main "tiny-prof" main

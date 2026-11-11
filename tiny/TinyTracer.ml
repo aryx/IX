@@ -26,6 +26,7 @@ let say s = put TSys.fd_stderr s
  * TinyKernel/libc/sys.tm, its sys n each call's index here; a call
  * added to the kernel is added in the three places *)
 type arg = Num | Path | Given | Filled | Addr
+
 let calls =
   Array.of_list [
     "exit", [ Num ]; "write", [ Num; Given; Num ]; "read", [ Num; Filled; Num ];
@@ -224,7 +225,7 @@ let rec follow caps children (procs : traced list) =
 (* The main *)
 (*****************************************************************************)
 
-let main caps argv =
+let main (caps : < Cap.forkew; Cap.kill; ..>) (argv : string array) : Exit.t =
   let n = Array.length argv in
   let children = n > 1 && argv.(1) = "-f" in
   let first = if children then 2 else 1 in

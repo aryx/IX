@@ -1,0 +1,40 @@
+# what tiny/Buildfile makes beside the sources (build clean removes
+# them): objects, interfaces, maps, its stamps, the programs at the
+# top by their names, the kernel and the image
+*.o
+*.tmi
+*.map
+.tiny-build
+/kernel.img
+/boot.img
+/sh
+/rc
+/emacs
+/office
+/troff
+/play
+/mltests
+/paint
+/windows
+/square
+/tetris
+/calc
+/temp
+/ping
+/get
+/put
+/httpd
+/utils
+/ed
+/bigmem
+/www
+/prof
+/db
+/vcs
+/build
+/as
+/ld
+/cc
+/ml
+/trace
+/debug

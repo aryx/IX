@@ -187,4 +187,11 @@ no check builds, broken unseen (the steps, since 7ea94bae, until
 
 ## Status
 
-Proposed (2026-11-11). Nothing built yet.
+Proposed (2026-11-11). Written first with today's tools and all their
+problems, then made simpler by each tool added (the author: "let's write
+this Buildfile first, with all its problems, and later one we can
+iterate and add features so this buildfile gets simpler"):
+tiny/Buildfile (2026-11-11), its sections the layers from the bottom
+up, tried on the host by tiny-build with links named ml, cc, as and ld:
+its 31 programs and kernel.img the Makefile's bytes. Not yet on the
+image, nor tried on tiny-kernel (boot.img's recipe is rc's): step 3.

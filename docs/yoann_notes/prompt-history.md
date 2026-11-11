@@ -69784,3 +69784,19 @@ Claude listed the gaps t-IX showed while writing Buildfiles under t-IX, grouped 
 Claude proposed a "gaps found on the way" section in the plan, with each gap becoming a step or being set aside with a reason.
 Claude ranked the image's roughly 300 KB headroom limit and `build`'s missing list substitution as the two to treat first.
 Claude also noted that `ml` and `ocamldep` lack dependency discovery, libraries, `true`, and order-dependent `.tmi` numbering.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 11:51
+
+**Yoann:**
+
+> things that makes the buildfile simpler to write and to understand, which are good for the student to add
+
+**Claude (summary):**
+
+Claude recommended closing four gaps that simplify Buildfiles: list substitution in `build`, `ml -I`, `ml -M`, and `ml -a`.
+Claude committed the new "gaps found on the way" plan section as `4e7cae22`, listing those four in order.
+Claude proposed adding mk-style `${VAR:from=to}` substitution to `build`, with tests checked against mini-mk, and asked whether to proceed.
+The `${CORE:%=TinyLibCore/%.ml}` form would replace the 48 spelled-out paths in `lib/ml/Buildfile`.
+Yoann's follow-up is to write the Buildfile now, with its problems, and iterate on features afterward.

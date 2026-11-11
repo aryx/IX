@@ -134,6 +134,10 @@ O = $(if $(filter segments pages,$(MEMORY)),_make-$(MEMORY),_make)
 MEMSIZE = $(if $(filter segments,$(MEMORY)),9,6)
 # make check's check.expected, sessions (.events) and screens' sums (.cksum)
 T = ../tests/TinyKernel_tests
+# coupling: ../Buildfile, t-IX's build by tiny-build under t-IX, says
+# what these lists say (CORE, UNITS_x, I_x, MEM_x, KUNITS, SRC): a
+# change to one is a change to the other, until this Makefile is made
+# from it (docs/plans/plan_tiny_buildfile.md)
 # tiny-ml's standard library, TinyLibCore/'s modules in their order, each
 # compiled once (_make/lib/: X.o, X.tmi), the first units of every
 # program in ML, which tiny-ml reads with -L (old: their text in tiny-ml,

@@ -111,12 +111,15 @@ ifneq ($(filter pi1,$(BOARD)),)
 IMAGE ?= kernel-$(BOARD)-light.img
 endif
 endif
-# each its own build (the OCaml's build/pi1-ocaml...), the image
-# relinked when PIXEL changes (the same file: mini-pi's, the checks')
+# What the Makefile makes goes in BUILD, outside the sources as dune's
+# _build and mk's _mk (old: build/ here, which dune had to be told
+# to skip). Each board and variant has its own directory (pi1-ocaml...),
+# the image relinked when PIXEL changes (the same file: mini-pi's, the checks')
 # (and the compiler's, kernel.mk's COMPILER=ocaml: OCaml 4.14's objects
 # are not ocaml-light's)
 PIX = $(if $(filter ocaml,$(PIXEL)),-ocaml)$(if $(filter ocaml,$(COMPILER)),-ocaml4)
-B ?= build/$(BOARD)$(PIX)
+BUILD ?= ../../_make/9pi
+B ?= $(BUILD)/$(BOARD)$(PIX)
 PIXEL_ML = $(if $(filter ocaml,$(PIXEL)),$(OCAML_PIXEL),lib_graphics/c/Kdraw)
 OCAML_PIXEL = lib_graphics/Memdata $(addprefix lib_graphics/lib_memdraw/,Memchan Memimage Memgeneral Memdraw Memfont) \
   $(addprefix lib_graphics/lib_memlayer/,Memlayer Memshape) lib_graphics/ocaml/Kdraw
@@ -143,9 +146,9 @@ EXTRA_OBJS = $(if $(filter ocaml,$(PIXEL)),,$(DRAWOBJS) $(B)/drawglue.o)
 
 include ../lib_machine/kernel.mk
 
-$(IMAGE): build/pixel-$(BOARD)
-build/pixel-$(BOARD): FORCE
-	mkdir -p build; echo $(PIXEL) | cmp -s - $@ || echo $(PIXEL) > $@
+$(IMAGE): $(BUILD)/pixel-$(BOARD)
+$(BUILD)/pixel-$(BOARD): FORCE
+	mkdir -p $(BUILD); echo $(PIXEL) | cmp -s - $@ || echo $(PIXEL) > $@
 
 # the Pi4's processes AArch32's (lib_machine/pi4/board.h)
 ifeq ($(BOARD),pi4)
@@ -319,7 +322,7 @@ check: $(IMAGE) $(IMAGE_B)
 # (the rule in the outer make only: the inner one builds it as IMAGE)
 ifneq ($(findstring -b.,$(IMAGE)),-b.)
 $(IMAGE_B): FORCE
-	$(MAKE) B=build/$(BOARD)$(PIX)-b IMAGE=$@ BOOTRC=tests/boot-b.rc $@
+	$(MAKE) B=$(BUILD)/$(BOARD)$(PIX)-b IMAGE=$@ BOOTRC=tests/boot-b.rc $@
 endif
 
 BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(BOOT))
@@ -365,7 +368,7 @@ ix: | $(B)
 	cd $(IX) && PATH=$(IX)/bin:$$PATH mini-mk O=5 OS=plan9 libs > /dev/null
 	for d in $(IXDIRS); do (cd $(IX)/$$d && PATH=$(IX)/bin:$$PATH mini-mk O=5 OS=plan9 > /dev/null) || exit 1; done
 	cd $(IX)/games && PATH=$(IX)/bin:$$PATH mini-mk O=5 OS=plan9 PLATFORM=software > /dev/null
-	$(MAKE) B=build/$(BOARD)$(PIX)-ix IMAGE=$(IMAGE_IX) BOOTDIR="$(BOOTDIR_IX)" KERNDATE=$(KERNDATE_IX) $(IMAGE_IX)
+	$(MAKE) B=$(BUILD)/$(BOARD)$(PIX)-ix IMAGE=$(IMAGE_IX) BOOTDIR="$(BOOTDIR_IX)" KERNDATE=$(KERNDATE_IX) $(IMAGE_IX)
 # with a USB keyboard and mouse: the same image and mini-usbd in its
 # bootdir (the driver is a program in Plan 9: buses/user/usbd, ix's
 # own), for the checks that move a mouse (check-menu)
@@ -373,7 +376,7 @@ IMAGE_IXU = $(basename $(IMAGE))-ixu$(suffix $(IMAGE))
 BOOT_IXU = $(subst $(IMAGE),$(IMAGE_IXU),$(BOOT))
 QEMU_BOOT_IXU = $(subst $(IMAGE),$(IMAGE_IXU),$(QEMU_BOOT))
 ix-usb: ix
-	$(MAKE) B=build/$(BOARD)$(PIX)-ixu IMAGE=$(IMAGE_IXU) BOOTDIR="$(BOOTDIR_IX) usbd=$(IX9)/kernels/9pi/buses/user/usbd/mini-usbd" KERNDATE=$(KERNDATE_IX) $(IMAGE_IXU)
+	$(MAKE) B=$(BUILD)/$(BOARD)$(PIX)-ixu IMAGE=$(IMAGE_IXU) BOOTDIR="$(BOOTDIR_IX) usbd=$(IX9)/kernels/9pi/buses/user/usbd/mini-usbd" KERNDATE=$(KERNDATE_IX) $(IMAGE_IXU)
 # with the network's programs (plan_browser.md, stage 10): ix-usb's
 # image and mini-curl in its bootdir. check-ix-net: the interface
 # configured by echo into /net/ipifc's files (no ipconfig), then
@@ -387,7 +390,7 @@ QEMU_BOOT_IXN = $(subst $(IMAGE),$(IMAGE_IXN),$(QEMU_BOOT))
 ix-net: ix
 	cd $(IX)/networking && PATH=$(IX)/bin:$$PATH mini-mk O=5 OS=plan9 > /dev/null
 	cd $(IX)/browsers/lynx && PATH=$(IX)/bin:$$PATH mini-mk O=5 OS=plan9 > /dev/null
-	$(MAKE) B=build/$(BOARD)$(PIX)-ixn IMAGE=$(IMAGE_IXN) BOOTDIR="$(BOOTDIR_IX) usbd=$(IX9)/kernels/9pi/buses/user/usbd/mini-usbd curl=$(IX9)/networking/mini-curl wc=$(IX9)/utilities/misc/mini-wc timesync=$(IX9)/networking/mini-timesync lynx=$(IX9)/browsers/lynx/mini-lynx ca.pem=$(CA_PEM)" KERNDATE=$(KERNDATE_IX) $(IMAGE_IXN)
+	$(MAKE) B=$(BUILD)/$(BOARD)$(PIX)-ixn IMAGE=$(IMAGE_IXN) BOOTDIR="$(BOOTDIR_IX) usbd=$(IX9)/kernels/9pi/buses/user/usbd/mini-usbd curl=$(IX9)/networking/mini-curl wc=$(IX9)/utilities/misc/mini-wc timesync=$(IX9)/networking/mini-timesync lynx=$(IX9)/browsers/lynx/mini-lynx ca.pem=$(CA_PEM)" KERNDATE=$(KERNDATE_IX) $(IMAGE_IXN)
 run-qemu-ix-net:
 	mkdir -p $(B); $(call www); \
 	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 120 --out $(B)/qemu-ix-net.txt --lines tests/session-ix-net.cmds -- $(QEMU) $(QEMU_BOOT_IXN) $(USB) $(NET); \
@@ -432,7 +435,7 @@ ix-tron: ix
 	cd $(IX)/games/arcade && PATH=$(IX)/bin:$$PATH mini-mk O=5 OS=plan9 > /dev/null
 	cd $(IX) && PATH=$(IX)/bin:$$PATH mini-mk O=7 libs > /dev/null
 	cd $(IX)/games/arcade && PATH=$(IX)/bin:$$PATH mini-mk O=7 > /dev/null
-	$(MAKE) B=build/$(BOARD)$(PIX)-ixt IMAGE=$(IMAGE_IXT) BOOTDIR="$(BOOTDIR_IX) usbd=$(IX9)/kernels/9pi/buses/user/usbd/mini-usbd tronscroll=$(IX9)/games/arcade/tinytronscroll" KERNDATE=$(KERNDATE_IX) $(IMAGE_IXT)
+	$(MAKE) B=$(BUILD)/$(BOARD)$(PIX)-ixt IMAGE=$(IMAGE_IXT) BOOTDIR="$(BOOTDIR_IX) usbd=$(IX9)/kernels/9pi/buses/user/usbd/mini-usbd tronscroll=$(IX9)/games/arcade/tinytronscroll" KERNDATE=$(KERNDATE_IX) $(IMAGE_IXT)
 check-tron: ix-tron
 	mkdir -p $(B)
 	tests/tron.sh $(B) $(TRON) join -- $(QEMU) $(QEMU_BOOT_IXT) $(USB) -device usb-net,netdev=n0 -netdev user,id=n0
@@ -451,7 +454,7 @@ check-tron: ix-tron
 IMAGE_IXA = $(basename $(IMAGE))-ixa$(suffix $(IMAGE))
 BOOT_IXA = $(subst $(IMAGE),$(IMAGE_IXA),$(BOOT))
 ix-audio: ix
-	$(MAKE) B=build/$(BOARD)$(PIX)-ixa IMAGE=$(IMAGE_IXA) BOOTDIR="$(BOOTDIR_IX) tone=$(IX9)/kernels/9pi/tests/tone/tone" KERNDATE=$(KERNDATE_IX) $(IMAGE_IXA)
+	$(MAKE) B=$(BUILD)/$(BOARD)$(PIX)-ixa IMAGE=$(IMAGE_IXA) BOOTDIR="$(BOOTDIR_IX) tone=$(IX9)/kernels/9pi/tests/tone/tone" KERNDATE=$(KERNDATE_IX) $(IMAGE_IXA)
 check-audio: ix-audio
 	rm -f $(B)/mini-audio.wav
 	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 300 --out $(B)/mini-audio.txt --lines tests/session-audio.cmds -- $(MINIQEMU) $(BOOT_IXA) -ips 700 -audiodev wav,path=$(B)/mini-audio.wav
@@ -502,7 +505,7 @@ WEB_GC = s=2M,o=400
 # (ocaml-light's: mkkernel has no WEB)
 IMAGE_WEB = $(basename $(IMAGE))-web$(suffix $(IMAGE))
 ix-web: ix
-	$(MAKE) COMPILER=light WEB=1 CAMLRUNPARAM=$(WEB_GC) B=build/$(BOARD)$(PIX)-web IMAGE=$(IMAGE_WEB) BOOTDIR="$(BOOTDIR_IX) usbd=$(IX9)/kernels/9pi/buses/user/usbd/mini-usbd" KERNDATE=$(KERNDATE_IX) $(IMAGE_WEB)
+	$(MAKE) COMPILER=light WEB=1 CAMLRUNPARAM=$(WEB_GC) B=$(BUILD)/$(BOARD)$(PIX)-web IMAGE=$(IMAGE_WEB) BOOTDIR="$(BOOTDIR_IX) usbd=$(IX9)/kernels/9pi/buses/user/usbd/mini-usbd" KERNDATE=$(KERNDATE_IX) $(IMAGE_WEB)
 # with neither usbd nor dossrv in its bootdir: the keyboard, the mouse
 # and the card's FAT by the kernel itself (Kusb, Kdos: boot.rc falls
 # back to them), for check-card's last session
@@ -510,7 +513,7 @@ IMAGE_IXK = $(basename $(IMAGE))-ixk$(suffix $(IMAGE))
 BOOT_IXK = $(subst $(IMAGE),$(IMAGE_IXK),$(BOOT))
 QEMU_BOOT_IXK = $(subst $(IMAGE),$(IMAGE_IXK),$(QEMU_BOOT))
 ix-kernel: ix
-	$(MAKE) B=build/$(BOARD)$(PIX)-ixk IMAGE=$(IMAGE_IXK) BOOTDIR="$(filter-out dossrv=%,$(BOOTDIR_IX))" KERNDATE=$(KERNDATE_IX) $(IMAGE_IXK)
+	$(MAKE) B=$(BUILD)/$(BOARD)$(PIX)-ixk IMAGE=$(IMAGE_IXK) BOOTDIR="$(filter-out dossrv=%,$(BOOTDIR_IX))" KERNDATE=$(KERNDATE_IX) $(IMAGE_IXK)
 run-ix: ix
 	$(MINIQEMU) $(BOOT_IX)
 # (the sessions of a check all at once, each its own emulator, then
@@ -538,13 +541,13 @@ check-hog: ix
 # not compared. (runtime.o says which kernel it is: made again before
 # and after, the image kept aside.)
 check-cores:
-	rm -f build/pi2$(PIX)-ix/c/runtime.o
+	rm -f $(BUILD)/pi2$(PIX)-ix/c/runtime.o
 	$(MAKE) ix BOARD=pi2 SMP=1 > /dev/null
-	cp kernel-pi2-ix.img build/kernel-pi2-smp.img
-	rm -f build/pi2$(PIX)-ix/c/runtime.o
+	cp kernel-pi2-ix.img $(BUILD)/kernel-pi2-smp.img
+	rm -f $(BUILD)/pi2$(PIX)-ix/c/runtime.o
 	$(MAKE) ix BOARD=pi2 > /dev/null
-	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 300 --out build/qemu-cores.txt --lines tests/session-cores.cmds -- $(QEMU) $(subst kernel-$(BOARD)-ix.img,build/kernel-pi2-smp.img,$(QEMU_BOOT_IX)) || true
-	@o=build/qemu-cores.txt; ! grep -a 'panic\|kernel fault' $$o && grep -a -q '(4 cores)' $$o \
+	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 300 --out $(BUILD)/qemu-cores.txt --lines tests/session-cores.cmds -- $(QEMU) $(subst kernel-$(BOARD)-ix.img,$(BUILD)/kernel-pi2-smp.img,$(QEMU_BOOT_IX)) || true
+	@o=$(BUILD)/qemu-cores.txt; ! grep -a 'panic\|kernel fault' $$o && grep -a -q '(4 cores)' $$o \
 	  && [ $$(grep -a -c '^worked [abcd]' $$o) = 4 ] && [ $$(grep -a -c '^churned [abcd]' $$o) = 4 ] \
 	  && grep -a -q '^done churn' $$o && grep -a -q '^200 threads ended' $$o && grep -a -q '^hello from OCaml' $$o \
 	  && echo "ok 9pi: four cores: processes that compute and that start others at once, under QEMU" \
@@ -804,12 +807,12 @@ check-windows-kernel: ix card ; $(MAKE) --no-print-directory KUSB=1 GJOBS=$(GJOB
 gcheck-all: ; $(call gcheck,$(GSESSIONS))
 .PHONY: check-drscheme check-office check-turbopascal check-quick check-windows expected-windows cmp-draw run-draw-mini run-draw-qemu
 
-# The SD card (plan_rio.md, stage 3): make card, build/card.img, by
+# The SD card (plan_rio.md, stage 3): make card, $(BUILD)/card.img, by
 # mini-mkcard (../tools): an MBR, a FAT16 with the Pi 1's and the Pi 2's
 # firmware (../firmware), conf/config.txt and the images of make ix for
 # the two boards (the firmware loads its board's), and a second
 # partition, empty (the kernel's own file system's place: stage 6).
-# Written to a real card: dd if=build/card.img of=/dev/sdX bs=1M.
+# Written to a real card: dd if=$(BUILD)/card.img of=/dev/sdX bs=1M.
 #   make check-card  the card read by the host's tools (its partitions,
 #                    the FAT checked, the kernel read back), then by
 #                    principia's (fdisk, dossrv: tests/boot-card.rc as
@@ -820,7 +823,7 @@ gcheck-all: ; $(call gcheck,$(GSESSIONS))
 #                    card (mini-fdisk, mini-dossrv: tests/session-card-ix.cmds,
 #                    tests/session-card-ix), then the same files by the
 #                    kernel itself (Kdos: bind '#Fdos' /mnt)
-CARD = build/card.img
+CARD = $(BUILD)/card.img
 # (the kernel's image on the card changes size with every program in
 # it: its size is not compared, nor the listing's columns, which it widens)
 cardsize = sed -E -e 's/ +/ /g' -e 's/ [0-9]+ (Sep 26 (2026|00:MM) [a-z\/]*\/(MINI9PI1\.IMG|mini9pi1\.img))/ SIZE \1/'
@@ -838,11 +841,11 @@ card: ix
 # everyday card stays 128 MB, flashed 8 times faster
 card-self: ix
 	$(MAKE) BOARD=pi2 ix
-	rm -f build/card-self-fs.img
-	$(MAKE) SELF=1 build/card-self.img
+	rm -f $(BUILD)/card-self-fs.img
+	$(MAKE) SELF=1 $(BUILD)/card-self.img
 # ix built by ix on that card, the Pi 2 under QEMU (one core: boot.rc's
 # NPROC), and each file it makes against Linux's from the same sources
-# (tests/self.sh, tests/self.rc; build/self/); self-quick: a part of
+# (tests/self.sh, tests/self.rc; $(BUILD)/self/); self-quick: a part of
 # lib_core (its C library, the runtime, three units) and two programs
 # linked with them, in C and OCaml, run (tests/self/), 4 minutes where
 # self is 3 hours
@@ -851,7 +854,7 @@ self self-quick: card-self
 	$(MAKE) --no-print-directory BOARD=pi2 SELFQ=$(if $(filter self-quick,$@),-q) self-run
 .PHONY: self self-quick self-run
 self-run:
-	tests/self.sh $(SELFQ) build/card-self.img build/self -- $(QEMU) $(QEMU_BOOT_IX)
+	tests/self.sh $(SELFQ) $(BUILD)/card-self.img $(BUILD)/self -- $(QEMU) $(QEMU_BOOT_IX)
 # what make card says last (not when card is another target's
 # prerequisite): where the image is and how it gets on a card. The
 # device is the reader's to find: a wrong one is a disk erased
@@ -1000,7 +1003,7 @@ MKFS = ../../_build/default/kernels/tools/Mkfs.exe
 # road (2026-11-02, its runtime 2.3 MB): 256, written in twice the time.
 CARD_MB = 256
 CARD_FS_MB = 223
-CARD_FS = build/card-fs.img
+CARD_FS = $(BUILD)/card-fs.img
 # its files and directories, at most: xv6's 200 were full at the
 # manual's 93 pages (2026-10-14)
 CARD_FS_INODES = 1024
@@ -1038,8 +1041,8 @@ CARD_LIB = lib/desktop/apps=../../windows/desktop/apps.table lib/desktop/desk=..
 CARD_SRC = src/hello.ml=tests/hello/Hello.ml src/hellodraw.ml=../../lib_graphics/tests/Hellodraw.ml src/hellorio.ml=../../windows/rio/tests/Hellorio.ml \
   src/hello.c=../steps/step0/hello.c src/hello.s=../../linker/tests/golden/hello_plan9_arm.s
 ifdef SELF
-CARD = build/card-self.img
-CARD_FS = build/card-self-fs.img
+CARD = $(BUILD)/card-self.img
+CARD_FS = $(BUILD)/card-self-fs.img
 CARD_MB = 1024
 CARD_FS_MB = 991
 CARD_FS_INODES = 16384
@@ -1058,23 +1061,23 @@ endif
 # the binds that make /bin of them, one for each directory: the card's
 # /lib/namespace, lines of rc that boot.rc reads (Plan 9's file of that
 # name is its own format, read by newns)
-CARD_NS = build/card-namespace
+CARD_NS = $(BUILD)/card-namespace
 # troff's own page as a PDF file, by the host's mini-troff: for page
 # (page /lib/pdf/troff.pdf), and what the card's troff must write too,
 # byte for byte (tests/session-card-typeset.cmds: cmp)
-TROFF_PDF = build/troff.pdf
+TROFF_PDF = $(BUILD)/troff.pdf
 $(TROFF_PDF): ../../docs/man/1/troff.md ../../_build/default/typesetting/troff/Main.exe
-	@mkdir -p build
+	@mkdir -p $(BUILD)
 	../../_build/default/typesetting/troff/Main.exe -T pdf ../../docs/man/1/troff.md > $@
 # mini-analyze's .NET road, its C report (analyzers/dotnet/tests/run.sh
 # -build): what make card runs it from, mini-dotnet on the board
 #   dotnet /lib/analyze/report.dll -fingerprint /lib/analyze/bugs.c
-ANALYZE_DLLS = build/analyze/analyze_rt.dll build/analyze/fingerprint.dll build/analyze/report.dll
+ANALYZE_DLLS = $(BUILD)/analyze/analyze_rt.dll $(BUILD)/analyze/fingerprint.dll $(BUILD)/analyze/report.dll
 $(ANALYZE_DLLS) &: ../../_build/default/languages/ml/Main.exe ../../_build/default/languages/datalog/Main.exe \
   ../../_build/default/languages/c/Main.exe $(wildcard ../../analyzers/*/*.ml ../../analyzers/dotnet/*.c ../../analyzers/datalog/*.dl ../../analyzers/datalog/points_to/*.dl)
-	cd ../.. && WORK=kernels/9pi/build/analyze analyzers/dotnet/tests/run.sh -build
+	cd ../.. && WORK=$(abspath $(BUILD))/analyze analyzers/dotnet/tests/run.sh -build
 $(CARD_NS): Makefile
-	@mkdir -p build
+	@mkdir -p $(BUILD)
 	for d in $(CARD_PROGS); do echo "bind -a /root/progs/$$d /bin"; done > $@
 $(CARD_FS): Makefile $(MKFS) $(CARD_NS) tests/card-motd.txt ../../utilities/process/kill.rc $(foreach p,$(CARD_LIB) $(CARD_SRC),$(lastword $(subst =, ,$(p)))) $(foreach p,$(CARD_BIN),$(lastword $(subst =, ,$(p))))
 	$(MKFS) -m $(CARD_FS_MB) -i $(CARD_FS_INODES) $@ $(card_progs) lib/namespace=$(CARD_NS) rc/bin/kill=../../utilities/process/kill.rc usr/pad/readme=tests/card-motd.txt $(CARD_LIB) $(CARD_SRC) $(CARD_IX) mnt/fat/ mnt/wsys/ tmp/
@@ -1083,7 +1086,7 @@ $(CARD_FS): Makefile $(MKFS) $(CARD_NS) tests/card-motd.txt ../../utilities/proc
 # version (changes.txt's first), the commit (a + when the tree differs
 # from it) and the minute this rule ran, which is when the kernel, a
 # program, the firmware or config.txt last changed
-CARD_VERSION = build/card-version.txt
+CARD_VERSION = $(BUILD)/card-version.txt
 $(CARD): $(MKCARD) $(CARD_FS) conf/config.txt kernel-pi1-ix.img kernel-pi2-ix.img $(wildcard $(FIRMWARE)/*)
 	echo "mini-9pi $$(sed -n 's/^\* \([0-9.]*\) .*/\1/p' ../../changes.txt | head -1) ($$(git rev-parse --short=8 HEAD 2>/dev/null || echo no git)$$(git diff --quiet HEAD 2>/dev/null; [ $$? = 1 ] && echo +)), card of $$(date '+%Y-%m-%d %H:%M')" > $(CARD_VERSION)
 	$(MKCARD) -m $(CARD_MB) -date $(KERNDATE_IX) -fs $(CARD_FS) $@ bootcode.bin=$(FIRMWARE)/bootcode.bin start_cd.elf=$(FIRMWARE)/start_cd.elf \
@@ -1091,7 +1094,7 @@ $(CARD): $(MKCARD) $(CARD_FS) conf/config.txt kernel-pi1-ix.img kernel-pi2-ix.im
 IMAGE_CARD = $(basename $(IMAGE))-card$(suffix $(IMAGE))
 ifneq ($(findstring -card.,$(IMAGE)),-card.)
 $(IMAGE_CARD): FORCE
-	$(MAKE) B=build/$(BOARD)$(PIX)-card IMAGE=$@ BOOTRC=tests/boot-card.rc BOOTMORE=cat $@
+	$(MAKE) B=$(BUILD)/$(BOARD)$(PIX)-card IMAGE=$@ BOOTRC=tests/boot-card.rc BOOTMORE=cat $@
 endif
 BOOT_CARD = $(subst $(IMAGE),$(IMAGE_CARD),$(BOOT))
 QEMU_BOOT_CARD = $(subst $(IMAGE),$(IMAGE_CARD),$(QEMU_BOOT))
@@ -1179,6 +1182,6 @@ expected-langs: card
 FORCE:
 
 clean:
-	rm -rf build kernel-pi2*.img kernel-pi1.img kernel-pi1-b.img kernel-pi1-ix.img kernel-pi1-ixu.img kernel-pi1-ixa.img kernel-pi1-web.img kernel-pi1-card.img kernel-pi1-light*.img kernel-pi4.elf kernel-pi4-b.elf kernel-pi4-ix.elf kernel-pi4-card.elf kernel-pi4-ocaml4*.elf
+	rm -rf $(BUILD) kernel-pi2*.img kernel-pi1.img kernel-pi1-b.img kernel-pi1-ix.img kernel-pi1-ixu.img kernel-pi1-ixa.img kernel-pi1-web.img kernel-pi1-card.img kernel-pi1-light*.img kernel-pi4.elf kernel-pi4-b.elf kernel-pi4-ix.elf kernel-pi4-card.elf kernel-pi4-ocaml4*.elf
 
 .PHONY: all run qemu check ix ix-usb run-ix check-ix ix-audio check-audio check-audio-game check-audio-play check-draw expected-draw check-menu check-rio check-colors card check-card check-scheme check-pascal check-prolog check-dotnet check-analyze expected-langs clean FORCE

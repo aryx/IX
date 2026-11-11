@@ -15,7 +15,7 @@
 #   cd kernels/9pi && tests/perf/sweep.py /tmp/sweep ../../_build/default/raspberry/Main.exe \
 #     -M raspi2b -device loader,file=kernel-pi2-ixu.img,addr=0x8000,cpu-num=0,force-raw=on \
 #     -device loader,addr=0x8000,cpu-num=1 -device loader,addr=0x8000,cpu-num=2 -device loader,addr=0x8000,cpu-num=3 \
-#     -drive file=build/card.img,if=sd,format=raw,snapshot=on -display none -serial mon:stdio -device usb-kbd -device usb-mouse
+#     -drive file=../../_make/9pi/card.img,if=sd,format=raw,snapshot=on -display none -serial mon:stdio -device usb-kbd -device usb-mouse
 import hashlib, os, subprocess, sys, tempfile, time
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../../lib_machine"))
 from session import Qmp

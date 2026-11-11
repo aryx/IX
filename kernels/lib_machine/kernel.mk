@@ -47,7 +47,7 @@ $(error COMPILER=ocaml is for BOARD=pi4)
 endif
 # (a kernel's Makefile that names its build directories itself gives
 # them the compiler too: kernels/9pi's PIX)
-B ?= build/$(BOARD)-ocaml4
+B ?= $(BUILD)/$(BOARD)-ocaml4
 IMAGE ?= kernel-$(BOARD)-ocaml4.elf
 endif
 # (the Pi 2 is the Pi 1's directory, with PI2 said to its C and its
@@ -56,7 +56,9 @@ ARM32 = $(filter pi1 pi2,$(BOARD))
 BD = $(LIB)/$(if $(ARM32),pi1,$(BOARD))
 # the build directory, the image: a kernel may build another (kernels/9pi's
 # check: a test boot script in its bootdir) with its own B and IMAGE
-B ?= build/$(BOARD)
+# (BUILD: outside the sources, as dune's _build and mk's _mk)
+BUILD ?= ../../_make/$(notdir $(CURDIR))
+B ?= $(BUILD)/$(BOARD)
 MINIQEMU = ../../_build/default/raspberry/Main.exe
 
 # the collector's parameters (ocaml-light's CAMLRUNPARAM, libc.c's

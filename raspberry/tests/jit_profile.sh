@@ -6,7 +6,7 @@
 # where the emulator's own time goes with the translator, the blocks
 # together as "(block)" or f.
 #   usage: jit_profile.sh D Boot_bench's arguments...
-#   e.g.   jit_profile.sh /tmp/p -ips 12 kernel-pi1-web.img build/card.img -do "k rio_; s 40" --
+#   e.g.   jit_profile.sh /tmp/p -ips 12 kernel-pi1-web.img ../../_make/9pi/card.img -do "k rio_; s 40" --
 # (run from kernels/9pi as Boot_bench; the boot is in the profile too)
 # Needs: node; dune build ./raspberry/tests/Boot_jit.bc.js.
 R=$(cd "$(dirname "$0")/../.." && pwd); S=${1:?a directory}; shift

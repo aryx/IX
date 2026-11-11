@@ -18,7 +18,7 @@ b=$dir/default/raspberry/tests
 tmp=$(mktemp -d); trap 'rm -rf $tmp' EXIT
 js_of_ocaml --opt 3 --pretty --debug-info $b/unix_stubs.js $b/Boot_bench.bc-for-jsoo -o $tmp/bb.js 2> /dev/null
 cd "$root/kernels/9pi"
-node --max-old-space-size=4096 --cpu-prof --cpu-prof-dir=$tmp/prof $tmp/bb.js kernel-pi1-ix.img build/card.img > /dev/null
+node --max-old-space-size=4096 --cpu-prof --cpu-prof-dir=$tmp/prof $tmp/bb.js kernel-pi1-ix.img ../../_make/9pi/card.img > /dev/null
 python3 - $tmp/prof/*.cpuprofile $tmp/bb.js $n <<'PY'
 import json, sys, collections
 p = json.load(open(sys.argv[1])); src = open(sys.argv[2]).read().split("\n"); n = int(sys.argv[3])

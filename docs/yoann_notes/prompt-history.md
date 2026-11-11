@@ -69275,3 +69275,34 @@ Claude offered to perform the rename, and Yoann agreed to proceed.
 **Yoann:**
 
 > yes
+
+------------------------------------------------------------------------
+
+## 2026-11-11 09:07
+
+**Yoann:**
+
+> why those symlinks?
+
+**Claude (summary):**
+
+Claude recommended a single tiny/runtime/ directory for the five runtime files, about 1,500 lines.
+Claude noted the runtime is referenced from 46 files and image /src paths, so it needs its own step.
+Claude suggested keeping TinyKernel/libc/ with the kernel, since those are that system's own calls.
+Claude also moved the examples to tiny/examples/, added kernel session 28, and committed as 90b72690.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 09:12
+
+**Yoann:**
+
+> also I can rm -rf this _make right? or make clean will do that for me and it's safe?
+
+**Claude (summary):**
+
+Claude moved build output to `build/`, updated `kernel.mk`, and got `dune build` and both kernel builds passing.
+Claude found that deleting `kernels/9pi/.gitignore` un-ignored the kernel images, since that file held more than a `build/` entry.
+Claude decided to restore both deleted `.gitignore` files rather than keep the deletion.
+Claude planned to remove only the `build/` line from each restored file, leaving the other ignore entries in place.
+Claude had not yet answered the `rm -rf _make` and `make clean` question in the visible reply.

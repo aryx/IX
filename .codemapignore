@@ -3,7 +3,7 @@
 
 _make/
 _mk/
-# build output, copies of the tree (kernels/9pi/build/self/src/), never tracked
+# build output, copies of the tree (_make/9pi/self/src/), never tracked
 build/
 _build*/
 _cross/

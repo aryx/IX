@@ -560,7 +560,7 @@ pi1_by_ix() {
 tp="mini-9pi for the Pi 1 built by ix, booted to rc; its segments run a JIT's code; mini-acid debugs in it; its panic's trace named"
 if [ -f $P/qemu-sd.img ] && [ -x $P/ROOT/arch/arm/bin/rc ]; then job "$tp" pi1_by_ix
 else skip "$tp" "no principia's card in $P"; fi
-[ -d kernels/9pi/build/pi1-ocaml ] || skip "mini-ml compiles mini-9pi's Memchan and Memfont" "no generated Memdata: principia's fonts, mini-9pi's Makefile"
+[ -d _make/9pi/pi1-ocaml ] || skip "mini-ml compiles mini-9pi's Memchan and Memfont" "no generated Memdata: principia's fonts, mini-9pi's Makefile"
 xv6=
 if [ -f $HOME/xv6/forks/arm64-pi4/fs.img ]; then xv6=kernels/xv6
 else skip "mini-xv6 built by ix and booted" "no xv6 disk image: ~/xv6/forks/arm64-pi4/fs.img"; fi

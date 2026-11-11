@@ -9,7 +9,7 @@
 # as shares of all the samples. PCs below the kernel's first symbol
 # are user programs'.
 #
-#   pcprof.py samples.txt build/pi1-ocaml/kernel.elf [N]
+#   pcprof.py samples.txt ../../_make/9pi/pi1-ocaml/kernel.elf [N]
 #   pcprof.py samples.txt listing.txt [N]      (mini-ld -v ... > listing.txt)
 
 import bisect, collections, subprocess, sys

@@ -19,5 +19,5 @@ steps = [('type', \"netscape 'stats=on' 'fps=off' 'profile=off'\"), ('move', -20
 print(repr(steps))" > $d/hover.steps
 timeout 900 tests/graphics.py --step 3 --pause 0.3,0.4 --steps $d/hover.steps $d/session -- \
   qemu-system-arm -M raspi1ap -device loader,file=kernel-pi1-ixu.img,addr=0x8000,cpu-num=0,force-raw=on \
-  -serial mon:stdio -display none -device usb-kbd -device usb-mouse -drive file=build/card.img,if=sd,format=raw,snapshot=on > /dev/null 2>&1
+  -serial mon:stdio -display none -device usb-kbd -device usb-mouse -drive file=../../_make/9pi/card.img,if=sd,format=raw,snapshot=on > /dev/null 2>&1
 grep -a "the showing\|(white\|frames in" $d/session/console.txt | tail -6

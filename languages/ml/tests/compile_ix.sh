@@ -35,7 +35,7 @@ shared="$(dirs lib_core) $(dirs lib_code) $(dirs lib_mime) $(dirs lib_compressio
 # nor OCaml 5's domains (mini-netscape's Worker_spawn by OCaml 5: dune's only; mini-ml's is spawn/large_threads.ml)
 # the kernel's Memdata is generated from principia's fonts (its Makefile's, mini-mkpixdata):
 # where it was not built, the two units that name it are left out
-memdata=kernels/9pi/build/pi1-ocaml
+memdata=_make/9pi/pi1-ocaml
 nomem='^$'; [ -d $memdata ] || nomem='^kernels/9pi/lib_graphics/lib_memdraw/(Memchan|Memfont)\.ml$'
 # mini-singularity's Programs is generated too (its mkfile's PROGRAMS, their names in an array,
 # what each is granted): one of no name here, which has its types

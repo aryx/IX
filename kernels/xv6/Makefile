@@ -141,6 +141,6 @@ usertests-mini: $(IMAGE)
 	  $(MINIQEMU) $(BOOT) && echo "ok xv6 $(BOARD): usertests under mini-qemu"
 
 clean:
-	rm -rf build kernel-pi1.img kernel-pi4.elf kernel-pi4-ocaml4.elf
+	rm -rf $(BUILD) kernel-pi1.img kernel-pi4.elf kernel-pi4-ocaml4.elf
 
 .PHONY: all run qemu check usertests-mini expected clean

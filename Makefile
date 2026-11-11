@@ -118,7 +118,7 @@ website-mini: website-mini-js
 	$(MAKE) -C kernels/9pi BOARD=pi1 ix-web card > /dev/null
 	mkdir -p $(ASSETS)/ix/mini-9pi
 	gzip -9 -n -c kernels/9pi/kernel-pi1-web.img > $(ASSETS)/ix/mini-9pi/kernel.img.gz
-	gzip -9 -n -c kernels/9pi/build/card.img > $(ASSETS)/ix/mini-9pi/card.img.gz
+	gzip -9 -n -c _make/9pi/card.img > $(ASSETS)/ix/mini-9pi/card.img.gz
 
 ###############################################################################
 # Tests against the references

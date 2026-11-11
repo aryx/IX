@@ -27,5 +27,5 @@ cd kernels/9pi
 for how in native node; do
   echo "$how:"
   if [ $how = native ]; then run=$b/Boot_bench.exe; else run="node --max-old-space-size=4096 $b/Boot_bench.bc.js"; fi
-  $run kernel-pi1-ix.img build/card.img -- "ls /bin | wc" "cat /usr/pad/readme | wc" > /dev/null
+  $run kernel-pi1-ix.img ../../_make/9pi/card.img -- "ls /bin | wc" "cat /usr/pad/readme | wc" > /dev/null
 done

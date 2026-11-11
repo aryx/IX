@@ -16,7 +16,7 @@
 # ./raspberry/tests/Boot_bench.bc.js; the web kernel and the card
 # (make -C kernels/9pi ix-web card). Minutes; not in make test.
 R=$(cd "$(dirname "$0")/../.." && pwd); S=${1:?a directory}
-K=${2:-$R/kernels/9pi/kernel-pi1-web.img}; C=${3:-$R/kernels/9pi/build/card.img}
+K=${2:-$R/kernels/9pi/kernel-pi1-web.img}; C=${3:-$R/_make/9pi/card.img}
 B=$R/_build/default/raspberry/tests; N="node --max-old-space-size=4096"
 mkdir -p $S; cd $R/kernels/9pi
 lines=("ls /bin | wc" "seq 5 | sort -r")

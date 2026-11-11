@@ -153,8 +153,8 @@ mini-xv6: in the kernel, data abort, lr 800447d0, far 00000000
 prints the abort's lr; kernel.elf keeps its symbols:
 
 ```
-arm-linux-gnueabihf-addr2line -f -e build/pi1/kernel.elf 0x800447d0
-arm-linux-gnueabihf-nm -n build/pi1/kernel.elf | awk '$1 <= "800447d0"' | tail -3
+arm-linux-gnueabihf-addr2line -f -e _make/9pi/pi1/kernel.elf 0x800447d0
+arm-linux-gnueabihf-nm -n _make/9pi/pi1/kernel.elf | awk '$1 <= "800447d0"' | tail -3
 ```
 
 `oldify_local_roots`: the OCaml collector, walking a stack's frames.
@@ -187,7 +187,7 @@ right move was to stop reasoning and look.
 
 ```
 qemu-system-arm ... -gdb tcp::12399 -S &
-gdb-multiarch -batch -ex "set architecture arm" -ex "file build/pi1/kernel.elf" \
+gdb-multiarch -batch -ex "set architecture arm" -ex "file _make/9pi/pi1/kernel.elf" \
   -ex "target remote localhost:12399" \
   -ex "break *0x800449f0 if \$r4 == 0" -ex "continue" \
   -ex "info registers" -ex "x/24wx \$r5 - 16" -ex "bt 8"
@@ -255,7 +255,7 @@ the cross compiler before using it:
 ```
 
 ## 10. Build and process hygiene: know which inputs a build used, kill by PID
-- A test image (kernel-pi1-b.img, its own B=build/pi1-b) silently
+- A test image (kernel-pi1-b.img, its own B=_make/9pi/pi1-b) silently
   overwrote the main image's bootdir: the Makefile named FS from BOARD,
   not from B. Symptom: the main boot printed the test script's output.
   When output belongs to "the other configuration", list each build
@@ -853,7 +853,7 @@ A wrapper script started the emulator in the background and wrote its
 pid. The session's kill took the wrapper and left the emulator
 running, then `kill -TERM` made it write the profile. The kernel's
 samples (addresses above 0x80000000) are read with the kernel's ELF
-(`nm -n build/pi1-ocaml-ixu/kernel.elf`); the program's with its map
+(`nm -n _make/9pi/pi1-ocaml-ixu/kernel.elf`); the program's with its map
 (`kernels/9pi/tests/perf/pcprof.py` takes either).
 
 **The order, for next time:**

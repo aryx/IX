@@ -27,7 +27,7 @@ os.makedirs(d, exist_ok=True)
 K = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..")
 sock = os.path.join(tempfile.mkdtemp(), "qmp.sock")
 cmd = ["qemu-system-arm","-M","raspi1ap","-device","loader,file=%s/%s,addr=0x8000,cpu-num=0,force-raw=on"%(K,os.environ.get("KIMG","kernel-pi1-ixu.img")),
- "-serial","mon:stdio","-display","none","-device","usb-kbd","-device","usb-mouse","-drive","file=%s/build/card.img,if=sd,format=raw,snapshot=on"%K,
+ "-serial","mon:stdio","-display","none","-device","usb-kbd","-device","usb-mouse","-drive","file=%s/../../_make/9pi/card.img,if=sd,format=raw,snapshot=on"%K,
  "-qmp","unix:%s,server,nowait"%sock]
 serial = open(d+"/console.txt","wb")
 p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=serial, stderr=open(d+"/qemu.err","wb"))

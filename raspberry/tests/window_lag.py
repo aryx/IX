@@ -14,7 +14,7 @@
 # said last), to compare two kernels' or two emulators'.
 #
 #   window_lag.py EMULATOR KERNEL CARD [HZ [ARGS...]]
-#   window_lag.py _build/default/raspberry/Main.exe kernels/9pi/kernel-pi1-ixu.img kernels/9pi/build/card.img 30
+#   window_lag.py _build/default/raspberry/Main.exe kernels/9pi/kernel-pi1-ixu.img _make/9pi/card.img 30
 #   (the emulator built by: dune build --profile release ./raspberry/Main.exe)
 import os, subprocess, sys, tempfile, time
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../kernels/lib_machine"))

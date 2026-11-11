@@ -248,7 +248,7 @@ def main():
             shutil.copy(built, os.path.join(web, "MiniQemuWeb.js"))
             shutil.copy(os.path.join(ROOT, "raspberry/web/MiniQemuWeb.html"), os.path.join(web, "index.html"))
             shutil.copy(kernel or os.path.join(k, "kernel-pi1-web.img"), os.path.join(web, "kernel.img"))
-            with open(os.path.join(k, "build/card.img"), "rb") as f, gzip.open(os.path.join(web, "card.img.gz"), "wb", compresslevel=1) as g:
+            with open(os.path.join(k, "../../_make/9pi/card.img"), "rb") as f, gzip.open(os.path.join(web, "card.img.gz"), "wb", compresslevel=1) as g:
                 shutil.copyfileobj(f, g)
         class Quiet(http.server.SimpleHTTPRequestHandler):
             def log_message(self, *a): pass

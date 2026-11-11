@@ -6,7 +6,9 @@
  * A Buildfile has five kinds of lines, shown by example in the
  * [help] string of the .ml (which build -h prints along with the
  * usage), and that is the whole syntax. Variables in rule lines are expanded
- * as the lines are read. A recipe receives the variables, plus $target,
+ * as the lines are read, ${X:from=to} too (mk's substitution: each word
+ * of X matching from, its % any part, made to; LIB =
+ * ${CORE:%=lib/%.tmi}). A recipe receives the variables, plus $target,
  * $prereq and $stem, in its environment (on tiny-kernel, which has
  * none, as the shell's assignments before the recipe), so the shell
  * does the expansion and there is no second expansion language.

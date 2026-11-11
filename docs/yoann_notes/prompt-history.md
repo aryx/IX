@@ -69800,3 +69800,51 @@ Claude committed the new "gaps found on the way" plan section as `4e7cae22`, lis
 Claude proposed adding mk-style `${VAR:from=to}` substitution to `build`, with tests checked against mini-mk, and asked whether to proceed.
 The `${CORE:%=TinyLibCore/%.ml}` form would replace the 48 spelled-out paths in `lib/ml/Buildfile`.
 Yoann's follow-up is to write the Buildfile now, with its problems, and iterate on features afterward.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 11:54
+
+**Yoann:**
+
+> ok let's write this Buildfile first, with all its problems, and later one we can iterate and add features so this buildfile gets simpler
+
+**Claude (summary):**
+
+Claude noted that the 890-line tiny/Buildfile spells out LIB and LIBO by hand, about 50 lines.
+Claude pointed out that every unit rule repeats all 24 library interfaces, and every link lists all 24 library objects.
+Claude said substitution in build would turn LIB and LIBO into two short definitions.
+Claude said substitution, ml -I and -M, and libraries would each remove a different part of that repetition.
+Claude committed the Buildfile as 49f2e698, with output byte-identical to the Makefile's build on the host.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 12:10
+
+**Yoann:**
+
+> let's add the substitution to build
+
+------------------------------------------------------------------------
+
+## 2026-11-11 12:10
+
+**Yoann:**
+
+> do not commit before I review
+
+------------------------------------------------------------------------
+
+## 2026-11-11 12:10
+
+**Yoann:**
+
+> so I can better see and appreciate the code that helps simplifies the Buildfile
+
+**Claude (summary):**
+
+Claude added mk-style `${X:from=to}` substitution to tiny-build, in TinyBuildSystem.ml, its .mli, and its tests.
+Claude shortened the LIB and LIBO lines in tiny/Buildfile and the Stdlib.o line in lib/ml/Buildfile using it.
+Claude proposed two separate commits in that order: the substitution first, then self.expected.
+Claude re-recorded self.expected from a passing make self run, with only the expected changes.
+Claude left other sessions' uncommitted changes alone and deleted the finished _make8 build directory.

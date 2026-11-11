@@ -21,6 +21,8 @@ the recipes' sum and how many ran at once on average.
 A Buildfile's five kinds of lines, and that is all the syntax:
   # a comment
   OBJS = hello.o world.o          a variable: a list of words
+  SRCS = ${OBJS:%.o=%.c}          its words changed by a pattern, in a
+                                  variable's or a rule's line (mk's)
   hello: $OBJS                    a rule: targets, then prerequisites
       cc -o $target $prereq       its recipe: the lines that start with a
                                   blank, run by sh -e
@@ -85,9 +87,29 @@ let words (s : string) : string list =
   String.split_on_char ' ' (String.map (fun c -> if c = '\t' then ' ' else c) s)
   |> List.filter (( <> ) "")
 
-(* $X and ${X}, by the value of X; an unknown X is an error, or, when
- * printing a recipe (keep), left for the shell (old: ~keep and the
- * other labels: tiny-ml reads none) *)
+(* [subst_word from to w]: mk's ${X:from=to} on a word: from's % matches any
+ * part of w, the stem, which to's % gives back (TinyLibCore/%.tmi
+ * from Stdlib); a word that does not match stays as it is *)
+let subst_word (from : string) (to_ : string) (w : string) : string =
+  match String.index_opt from '%' with
+  | None -> error ("${...:" ^ from ^ "=...}: no % in the pattern")
+  | Some k ->
+      let pre = String.sub from 0 k
+      and post = String.sub from (k + 1) (String.length from - k - 1) in
+      let n = String.length w and lp = String.length pre
+      and ls = String.length post in
+      if n >= lp + ls && String.sub w 0 lp = pre
+         && String.sub w (n - ls) ls = post
+      then
+        let stem = String.sub w lp (n - lp - ls) in
+        String.concat stem (String.split_on_char '%' to_)
+      else w
+
+(* $X and ${X}, by the value of X, and ${X:from=to}, X's words each
+ * changed by the pattern (subst_word), in a variable's line or a rule's;
+ * an unknown X is an error, or, when printing a recipe (keep), left for
+ * the shell, as a substitution is (old: ~keep and the other labels:
+ * tiny-ml reads none) *)
 let expand keep (vars : vars) (s : string) : string =
   let is_name c =
     c = '_' || ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
@@ -102,15 +124,33 @@ let expand keep (vars : vars) (s : string) : string =
         while !j < n && is_name s.[!j] do incr j done;
         let start = if braced then i + 2 else i + 1 in
         let name = String.sub s start (!j - start) in
+        (* ${X:from=to}: the pattern, up to the closing brace *)
+        let pattern, close =
+          if braced && !j < n && s.[!j] = ':' then
+            match String.index_from_opt s !j '}' with
+            | Some c ->
+                let p = String.sub s (!j + 1) (c - !j - 1) in
+                (match String.index_opt p '=' with
+                 | Some e ->
+                     Some (String.sub p 0 e,
+                           String.sub p (e + 1) (String.length p - e - 1)), c
+                 | None -> error ("${" ^ name ^ ":" ^ p ^ "}: no ="))
+            | None -> error ("${" ^ name ^ ": no closing brace")
+          else None, !j in
         let value =
-          match Hashtbl.find_opt vars name with
-          | Some v -> String.concat " " v
-          | None when keep ->
-              String.sub s i ((if braced then !j + 1 else !j) - i)
-          | None -> error ("undefined variable $" ^ name)
+          match Hashtbl.find_opt vars name, pattern with
+          | Some v, None -> String.concat " " v
+          (* (in a recipe, printed as the shell will run it: as in mk, a
+           * substitution is a rule's or a variable's, not a recipe's) *)
+          | Some _, Some _ when keep -> String.sub s i (close + 1 - i)
+          | Some v, Some (from, to_) ->
+              String.concat " " (List.map (subst_word from to_) v)
+          | None, _ when keep ->
+              String.sub s i ((if braced then close + 1 else !j) - i)
+          | None, _ -> error ("undefined variable $" ^ name)
         in
         Buffer.add_string b value;
-        go (if braced then !j + 1 else !j)
+        go (if braced then close + 1 else !j)
       end
       else (Buffer.add_char b s.[i]; go (i + 1))
   in
@@ -151,8 +191,17 @@ let parse (read : string -> string option) (text : string) :
           words (expand false vars
             (String.sub l (i + 1) (String.length l - i - 1)))
         in
-        (* whichever of = and : comes first *)
-        match String.index_opt l '=', String.index_opt l ':' with
+        (* whichever of = and : comes first, outside a ${...}, whose
+         * ${X:from=to} has both *)
+        let outside c =
+          let depth = ref 0 and found = ref None in
+          String.iteri (fun i ch ->
+            if !found = None then
+              if ch = '{' && i > 0 && l.[i - 1] = '$' then incr depth
+              else if ch = '}' && !depth > 0 then decr depth
+              else if ch = c && !depth = 0 then found := Some i) l;
+          !found in
+        match outside '=', outside ':' with
         | Some i, j when (match j with Some j -> i < j | None -> true) ->
             Hashtbl.replace vars (String.trim (String.sub l 0 i)) (after i);
             go rest

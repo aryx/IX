@@ -19,16 +19,16 @@
 #
 # (the library's units are capitalized, the two around them are not)
 #
-# (on the host: tiny/TinyKernel/lib/ml/Buildfile; its CORE and Stdlib.o's
-# prerequisites are TinyKernel/Makefile's CORE, which checks them; the
-# image's files are the Makefile's, the same bytes)
+# (on the host: tiny/TinyKernel/lib/ml/Buildfile; its CORE is
+# TinyKernel/Makefile's, which checks it; the image's files are the
+# Makefile's, the same bytes)
 
 CORE = Stdlib Char Seq List String Bytes Array Option Int32 Int64 Filename Buffer Printf Marshal Hashtbl Common Sha1 Fpath Fpath_ Exit In_channel Out_channel Chan Logs
 
 all: Stdlib.o mlsys.o end.o
 
 # the units at once, in CORE's order, each given the interfaces before it
-Stdlib.o: /src/TinyLibCore/Stdlib.ml /src/TinyLibCore/Char.ml /src/TinyLibCore/Seq.ml /src/TinyLibCore/List.ml /src/TinyLibCore/String.ml /src/TinyLibCore/Bytes.ml /src/TinyLibCore/Array.ml /src/TinyLibCore/Option.ml /src/TinyLibCore/Int32.ml /src/TinyLibCore/Int64.ml /src/TinyLibCore/Filename.ml /src/TinyLibCore/Buffer.ml /src/TinyLibCore/Printf.ml /src/TinyLibCore/Marshal.ml /src/TinyLibCore/Hashtbl.ml /src/TinyLibCore/Common.ml /src/TinyLibCore/Sha1.ml /src/TinyLibCore/Fpath.ml /src/TinyLibCore/Fpath_.ml /src/TinyLibCore/Exit.ml /src/TinyLibCore/In_channel.ml /src/TinyLibCore/Out_channel.ml /src/TinyLibCore/Chan.ml /src/TinyLibCore/Logs.ml /src/TinyLibCore/Stdlib.mli /src/TinyLibCore/Char.mli /src/TinyLibCore/Seq.mli /src/TinyLibCore/List.mli /src/TinyLibCore/String.mli /src/TinyLibCore/Bytes.mli /src/TinyLibCore/Array.mli /src/TinyLibCore/Option.mli /src/TinyLibCore/Int32.mli /src/TinyLibCore/Int64.mli /src/TinyLibCore/Filename.mli /src/TinyLibCore/Buffer.mli /src/TinyLibCore/Printf.mli /src/TinyLibCore/Marshal.mli /src/TinyLibCore/Hashtbl.mli /src/TinyLibCore/Common.mli /src/TinyLibCore/Sha1.mli /src/TinyLibCore/Fpath.mli /src/TinyLibCore/Fpath_.mli /src/TinyLibCore/Exit.mli /src/TinyLibCore/In_channel.mli /src/TinyLibCore/Out_channel.mli /src/TinyLibCore/Chan.mli /src/TinyLibCore/Logs.mli
+Stdlib.o: ${CORE:%=/src/TinyLibCore/%.ml} ${CORE:%=/src/TinyLibCore/%.mli}
 	b=(); for(m in $CORE) { ml -c -nostdlib -o $m.o $b /src/TinyLibCore/$m.ml; b=($b $m.tmi) }
 
 mlsys.o: /src/TinyLibSystem/tinykernel/mlsys.c /src/runtime/ml.c /src/TinyKernel/libc/user.h

@@ -620,7 +620,7 @@ $(O)/spin.prof: ../tests/TinyProfiler_tests/spin.tm
 $(O)/spin.map: $(O)/spin.prof
 
 $(O)/boot.img: $(O)/kernel.img $(BINS) $(EXAMPLES) $(SRC:%=../%) $(GEN:%=$(O)/%) $(LIBFILES:%=$(O)/lib/%) $(LIBC) $(LIBML)
-	@grep -qx 'CORE = $(CORE)' lib/ml/Buildfile && grep -qx 'Stdlib.o: $(CORE:%=/src/TinyLibCore/%.ml) $(CORE:%=/src/TinyLibCore/%.mli)' lib/ml/Buildfile || { echo "lib/ml/Buildfile: its CORE, or Stdlib.o's prerequisites, not this Makefile's CORE"; exit 1; }
+	@grep -qx 'CORE = $(CORE)' lib/ml/Buildfile || { echo "lib/ml/Buildfile: its CORE not this Makefile's"; exit 1; }
 	cp $(O)/kernel.img $@
 	for f in $(BINS); do printf 'bin/%s\n%d\n' $$(basename $$f) $$(wc -c < $$f) >> $@; cat $$f >> $@; done
 	for f in $(EXAMPLES); do printf 'examples/%s\n%d\n' $$(basename $$f) $$(wc -c < $$f) >> $@; cat $$f >> $@; done

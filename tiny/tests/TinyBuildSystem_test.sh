@@ -152,6 +152,20 @@ printf '%%: %%.gz\n\tgunzip -k $stem.gz\n' > Buildfile; touch foo.gz.gz
 check "a pattern once per path: no foo.gz.gz.gz..." "tiny-build: don't know how to make foo
 [exit 1]" "$TB" foo
 
+# mk's substitution, ${X:from=to}: each word of X, the pattern's % its
+# stem; a word that does not match unchanged (mini-mk prints the same);
+# in a rule's line, its : and = inside the braces not the line's
+fresh
+printf 'CORE = Stdlib List Logs\nLIB = ${CORE:%%=lib/%%.tmi}\nODD = ${CORE:%%t=%%T} ${CORE:L%%=l%%.ml}\nshow:\n\techo $LIB; echo $ODD\nx: ${CORE:%%=%%.c}\n\techo x\n' > Buildfile
+check "substitution" "echo lib/Stdlib.tmi lib/List.tmi lib/Logs.tmi; echo Stdlib LisT Logs Stdlib list.ml logs.ml
+lib/Stdlib.tmi lib/List.tmi lib/Logs.tmi
+Stdlib LisT Logs Stdlib list.ml logs.ml" "$TB" show
+check "substitution in a rule" "tiny-build: don't know how to make Stdlib.c
+[exit 1]" "$TB" x
+printf 'X = a b\nY = ${X:a=b}\n' > Buildfile
+check "a substitution with no %" "tiny-build: \${...:a=...}: no % in the pattern
+[exit 1]" "$TB"
+
 # a failing recipe: what depends on it does not run
 fresh
 printf 'all: bad good\n\techo all\nbad:\n\tfalse\ngood:\n\techo good\n' > Buildfile

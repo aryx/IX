@@ -34,8 +34,6 @@
 # from this file (the plan's last step).
 #
 # Its problems, today's tools', each a step of the plan:
-# - no substitution in build: the library's lists are spelled out
-#   (LIB, LIBO), where mk would say ${CORE:%=TinyLibCore/%.tmi};
 # - ml finds no interface by itself: each unit's rule names the .tmi it
 #   reads, in the order the Makefile gives them (the .tmi's bytes
 #   depend on it); and a unit's .mli is not a prerequisite (ml takes
@@ -100,22 +98,8 @@ TinyLibSystem/tinykernel/mlsys.o: TinyLibSystem/tinykernel/mlsys.c runtime/ml.c 
 # every ML program links them (LIBO). On the image they are /lib/ml.
 CORE = Stdlib Char Seq List String Bytes Array Option Int32 Int64 Filename Buffer Printf Marshal Hashtbl Common Sha1 Fpath Fpath_ Exit In_channel Out_channel Chan Logs
 
-LIB = TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi TinyLibCore/Seq.tmi \
-    TinyLibCore/List.tmi TinyLibCore/String.tmi TinyLibCore/Bytes.tmi \
-    TinyLibCore/Array.tmi TinyLibCore/Option.tmi TinyLibCore/Int32.tmi \
-    TinyLibCore/Int64.tmi TinyLibCore/Filename.tmi TinyLibCore/Buffer.tmi \
-    TinyLibCore/Printf.tmi TinyLibCore/Marshal.tmi TinyLibCore/Hashtbl.tmi \
-    TinyLibCore/Common.tmi TinyLibCore/Sha1.tmi TinyLibCore/Fpath.tmi \
-    TinyLibCore/Fpath_.tmi TinyLibCore/Exit.tmi TinyLibCore/In_channel.tmi \
-    TinyLibCore/Out_channel.tmi TinyLibCore/Chan.tmi TinyLibCore/Logs.tmi
-LIBO = TinyLibCore/Stdlib.o TinyLibCore/Char.o TinyLibCore/Seq.o \
-    TinyLibCore/List.o TinyLibCore/String.o TinyLibCore/Bytes.o \
-    TinyLibCore/Array.o TinyLibCore/Option.o TinyLibCore/Int32.o \
-    TinyLibCore/Int64.o TinyLibCore/Filename.o TinyLibCore/Buffer.o \
-    TinyLibCore/Printf.o TinyLibCore/Marshal.o TinyLibCore/Hashtbl.o \
-    TinyLibCore/Common.o TinyLibCore/Sha1.o TinyLibCore/Fpath.o \
-    TinyLibCore/Fpath_.o TinyLibCore/Exit.o TinyLibCore/In_channel.o \
-    TinyLibCore/Out_channel.o TinyLibCore/Chan.o TinyLibCore/Logs.o
+LIB = ${CORE:%=TinyLibCore/%.tmi}
+LIBO = ${CORE:%=TinyLibCore/%.o}
 
 TinyLibCore/Char.o: TinyLibCore/Stdlib.tmi
 TinyLibCore/Seq.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi

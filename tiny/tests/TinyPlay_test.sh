@@ -19,7 +19,7 @@ W=${W:-$(mktemp -d)}
 [ -n "${KEEP:-}" ] || trap 'rm -rf $W' EXIT
 failures=0
 
-$HOST $ROOT/tiny/TinyKernel/examples/korobeiniki.wav > $W/play.out 2>&1 || { echo "FAIL play: the run"; failures=$((failures + 1)); }
+$HOST $ROOT/tiny/examples/korobeiniki.wav > $W/play.out 2>&1 || { echo "FAIL play: the run"; failures=$((failures + 1)); }
 [ -n "${RECORD:-}" ] && cp $W/play.out $E
 if diff $E $W/play.out > $W/play.diff; then echo "ok play"; else echo "FAIL play"; head -10 $W/play.diff; failures=$((failures + 1)); fi
 

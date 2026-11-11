@@ -15,7 +15,8 @@
 #                     pipeline (-f), debug's of ping (stopped in write,
 #                     bt, a step) and of trace (an ML backtrace, the
 #                     value stack's slots), both attached to a loop of
-#                     rc's in the background, then the network (ping,
+#                     rc's in the background, /examples' hello built,
+#                     run, traced and debugged, then the network (ping,
 #                     get, and put kept across two boots, against
 #                     tiny-machine's end of the wire, a
 #                     packet lost and the file whole anyway), against
@@ -451,9 +452,9 @@ $(ML:%=$(O)/bin/%): $(O)/bin/%: $(ULIB) $(O)/libml/mlsys.o $(O)/main/%.o $$(addp
 	@mkdir -p $(@D)
 	$(LD) -map -s -n $(MEM_$*) -o $@ $(filter %.o,$^)
 
-# a program that draws: with draw.c, the messages (draw.h); a demo, in
-# examples/ (not counted by make loc)
-$(O)/user/paint.o: examples/paint.c libc/user.h libc/draw.h $(TCBIN)
+# a program that draws: with draw.c, the messages (draw.h) (old: in
+# examples/, not counted by make loc; that directory gone, 2026-11-11)
+$(O)/user/paint.o: user/paint.c libc/user.h libc/draw.h $(TCBIN)
 	@mkdir -p $(@D)
 	$(TC) -o $@ $<
 $(O)/bin/paint: $(ULIB) $(O)/libc/draw.o $(O)/user/paint.o $(LDBIN)
@@ -477,9 +478,13 @@ BINS = $(addprefix $(O)/bin/,$(PROGS))
 # /examples/spin.map: ../tests/TinyProfiler_tests/spin.tm, linked with
 # -map and run by tiny-cpu -prof); a unit's object and interface as
 # the host's tiny-ml and tiny-assembler made them, which ml's and as's on
-# tiny-kernel are compared with (make check)
-EXAMPLES = steps/t6/user/wc.c user/sh.c ../user/emacs.ml ../TinyEditorScreen.ml examples/report.ixd examples/korobeiniki.wav $(O)/spin.prof $(O)/spin.map \
-	$(U)/TinyLibMachine.tmi $(U)/TinyLibMachine.o
+# tiny-kernel are compared with (make check); and a program to try the
+# toolchain and the tools on, tiny/examples/'s: hello.c and square.tm,
+# built by the Buildfile beside them (cd /examples; build; ./hello; trace
+# ./hello; debug ./hello)
+EXAMPLES = steps/t6/user/wc.c user/sh.c ../user/emacs.ml ../TinyEditorScreen.ml ../examples/report.ixd ../examples/korobeiniki.wav $(O)/spin.prof $(O)/spin.map \
+	$(U)/TinyLibMachine.tmi $(U)/TinyLibMachine.o \
+	../examples/hello.c ../examples/square.tm ../examples/Buildfile
 
 # the sources, in /src as they are in tiny/, what tiny-kernel builds
 # itself from (make self): the kernel's, each unit's file, the
@@ -491,7 +496,7 @@ EXAMPLES = steps/t6/user/wc.c user/sh.c ../user/emacs.ml ../TinyEditorScreen.ml 
 C_PROGS = sh mltests ping get put httpd
 SRC_FILES = entry.tm draw.tm memory.tm end.tm runtime.c \
 	$(foreach u,$(UNITS),$(or $(F_$(u)),../$(u).ml)) $(CORE:%=../TinyLibCore/%.ml) libc/user.h libc/sys.tm libc/draw.c libc/draw.h libc/net.c $(SYS)/mlsys.c \
-	../TinyMLRuntime/core.c ../TinyCRuntime/start.tm ../TinyCRuntime/udivmod.tm ../TinyCRuntime/libc.c ../TinyCRuntime/libc.h examples/paint.c $(C_PROGS:%=user/%.c)
+	../TinyMLRuntime/core.c ../TinyCRuntime/start.tm ../TinyCRuntime/udivmod.tm ../TinyCRuntime/libc.c ../TinyCRuntime/libc.h user/paint.c $(C_PROGS:%=user/%.c)
 # (a path of this directory's, as tiny/'s)
 tiny = $(patsubst TinyKernel/../%,%,$(addprefix TinyKernel/,$(1)))
 SRC = $(call tiny,$(SRC_FILES) $(wildcard $(patsubst %.ml,%.mli,$(filter %.ml,$(SRC_FILES)))))
@@ -570,8 +575,8 @@ libc/%.o: $(K)/libc/%.c $(K)/libc/user.h $(K)/libc/draw.h
 	mkdir -p libc; cc -o $$target $(K)/libc/$$stem.c
 user/%.o: $(K)/user/%.c $(K)/libc/user.h
 	mkdir -p user; cc -o $$target $(K)/user/$$stem.c
-user/paint.o: $(K)/examples/paint.c $(K)/libc/user.h $(K)/libc/draw.h
-	mkdir -p user; cc -o $$target $(K)/examples/paint.c
+user/paint.o: $(K)/user/paint.c $(K)/libc/user.h $(K)/libc/draw.h
+	mkdir -p user; cc -o $$target $(K)/user/paint.c
 $(foreach p,$(filter-out paint get put,$(C_PROGS)),bin/$(p): $$ULIB user/$(p).o$(nl)	mkdir -p bin; ld -map -s -n -o $$target $$prereq$(nl))bin/paint: $$ULIB libc/draw.o user/paint.o
 	mkdir -p bin; ld -map -s -n -o $$target $$prereq
 $(foreach p,get put,bin/$(p): $$ULIB libc/net.o user/$(p).o$(nl)	mkdir -p bin; ld -map -s -n -o $$target $$prereq$(nl))
@@ -642,7 +647,7 @@ check check-parts self self-quick self-cores: override MACHINE := $(MACHINE) -da
 # in one rule, one after the other (old: every session one after the
 # other, some 15 minutes)
 J = 32
-NCHECK = 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27
+NCHECK = 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28
 check: $(O)/boot.img
 	rm -rf $(O)/check; mkdir -p $(O)/check
 	$(MAKE) $(if $(findstring jobserver,$(MAKEFLAGS)),,-j$(J)) check-parts
@@ -723,6 +728,12 @@ $(O)/check/26.out: $(O)/boot.img
 # date of seconds given (now's differs at each run)
 $(O)/check/27.out: $(O)/boot.img
 	printf 'rc\nsleep 100 &\nps\ncat /dev/ps | wc -l\nkill $$apid; echo $$status; ps -a\nkill 99; echo $$status\ndate 0; date 5184000; date 1073741823; date -n 7\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
+# /examples' hello, as the manual has it tried after make run: built by
+# its Buildfile (the C runtime from /src, then hello.c and square.tm),
+# run, built again (up to date), traced, and debugged (stopped in
+# square, the assembly's: bt, x/i, a step)
+$(O)/check/28.out: $(O)/boot.img
+	printf 'rc\ncd /examples; build; ./hello\nbuild\ntrace ./hello\ndebug ./hello\nb square\nc\nbt\nx/i pc 3\ns\nq\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
 $(O)/check/%.sum: $(T)/%.events $(O)/boot.img
 	timeout 300 $(MACHINE) -net ../tests/www -events $< -screen $(O)/check/$*.ppm $(O)/boot.img > /dev/null
 	cksum < $(O)/check/$*.ppm > $@; diff $(T)/$*.cksum $@ || { echo "tiny-kernel: $*.events: another screen ($(O)/check/$*.ppm)"; exit 1; }

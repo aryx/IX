@@ -47,7 +47,7 @@
         { at: 'def:d_put', say: 'a number: its low byte first', weight: 1 },
         { at: 'def:d_draw', weight: 2 },
       ],
-      related: ['../TinyKernelGraphics.ml', '../examples/paint.c'],
+      related: ['../TinyKernelGraphics.ml', '../user/paint.c'],
     },
     'net.c': { digest: '7fdd94108963',
       summary: "reach: dial by an address or by a name, the name asked of the wire's other end on port 53: all of DNS here.",

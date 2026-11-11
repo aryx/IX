@@ -1,0 +1,35 @@
+// tiny/examples/: what the code map says of it (the code map: tinybox
+// codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). The files put in
+// tiny-kernel's /examples to try the programs on: hello.c and square.tm,
+// built there by the Buildfile beside them (cd /examples; build;
+// ./hello; trace ./hello; debug ./hello); report.ixd, an office document
+// troff prints; korobeiniki.wav, which play plays.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-11-11' },
+  summary: "Files to try tiny-kernel's programs on: a program in C and assembly with its Buildfile, a document, a tune.",
+  files: {
+    'hello.c': { digest: 'a08618e84a6b',
+      summary: "hello: the squares of 1 to 10 added, square by square.tm's assembly; built and debugged on tiny-kernel itself.",
+      capitals: [
+        { at: 'def:main', say: "a loop calling square.tm's function: a breakpoint there" },
+      ],
+      important: [
+        { at: 'def:main', weight: 3 },
+      ],
+      related: ['square.tm', 'Buildfile', '../TinyKernel/libc/user.h'],
+    },
+  },
+  skeletons: [
+    {
+      name: 'hello: C calling assembly',
+      bones: [
+        { at: 'hello.c:def:main', role: 'the loop, the sum printed' },
+        { at: 'square.tm', role: 'square by hand: 0(sp) in, r13 out' },
+      ],
+      joints: [
+        { from: 'hello.c:def:main', to: 'square.tm', say: 'each of 1 to 10' },
+      ],
+    },
+  ],
+}

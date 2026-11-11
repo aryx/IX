@@ -69172,3 +69172,106 @@ The stale `_make/main/kernel.tm` files from before commit `7ea94bae` had been ma
 Claude ran `make run` with the change, and tiny-kernel booted and printed its shell output.
 The full kernel check was not run, since `make self` still uses `_make5`, and Claude offered to run it in another scratch directory.
 Claude asked whether to commit the `TinyKernel/Makefile` change or run another check first.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 08:51
+
+**Yoann:**
+
+> yes let's commit
+
+**Claude (summary):**
+
+Claude committed the `make run` fix as `f450f04d` along with `prompt-history.md`.
+Claude said `tiny/TinyKernel/_make5` remains untracked because `make self` is still running there.
+Once `make self` finishes, Claude planned to check the `self.expected` diff and commit it separately.
+Claude also planned to delete `_make5` after that check.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 08:55
+
+**Yoann:**
+
+> ok would be great to have on the tiny image a directory where one can test the commands, so with a Buildfile, an assembly file, a .c file, so one can build and then run the debugger on it or tracer or profiler, so it's easy to test after a 'make run'
+
+------------------------------------------------------------------------
+
+## 2026-11-11 08:56
+
+**Yoann:**
+
+> maybe we could extend indeed examples/ with an hello.tm hello.c or something
+
+------------------------------------------------------------------------
+
+## 2026-11-11 08:57
+
+**Yoann:**
+
+> maybe we could have those in tiny/examples/ and easily viewable and editable from the host too
+
+------------------------------------------------------------------------
+
+## 2026-11-11 08:57
+
+**Yoann:**
+
+> (I see a tiny/TinyKernel/examples/ that maybe we could merge? or have examples/ and demos/ and tests/  ?)
+
+**Claude (summary):**
+
+Claude recommended one `tiny/examples/` directory with no separate `demos/`, keeping `tests/` for tests.
+Claude proposed moving `report.ixd` and `korobeiniki.wav` from `TinyKernel/examples/` into `tiny/examples/`, with only the Makefile paths changing.
+Claude proposed moving `paint.c` into `TinyKernel/user/` beside `sh.c` and `ping.c`, since it compiles into `/bin/paint`.
+Claude also suggested a kernel check session so `hello`, `build`, `trace` and `debug` keep working, and noted `prof` can only read `spin.prof`.
+Nothing was committed yet; Claude asked whether to perform the moves, add the check session, and commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 09:03
+
+**Yoann:**
+
+> ok let's do it. (we should remove tiny/TinyKernel/examples/ then?)
+
+------------------------------------------------------------------------
+
+## 2026-11-11 09:07
+
+**Yoann:**
+
+> should we have a single runtime/ instead of TinyCRuntime and TinyMLRuntime?
+
+------------------------------------------------------------------------
+
+## 2026-11-11 09:09
+
+**Yoann:**
+
+> why we have kernels/9pi/build when for the other build we usually use _build or _make or something
+
+------------------------------------------------------------------------
+
+## 2026-11-11 09:09
+
+**Yoann:**
+
+> or _mk
+
+**Claude (summary):**
+
+Claude explained that `build/` in `kernels/9pi/.gitignore` dates from the first kernel commit, before the repo settled on `_mk` and `_make` conventions.
+Claude noted that `build/` holds per-variant directories, card images and QEMU logs, so it isn't simply mk's `_mk` object tree.
+Claude proposed moving it to `_make/9pi/` with `B` still overridable, but listed about 40 hardcoded Makefile uses and many other referencing files.
+Claude flagged that existing `build/` directories would go stale and need manual deletion after the move.
+Claude offered to perform the rename, and Yoann agreed to proceed.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 09:11
+
+**Yoann:**
+
+> yes

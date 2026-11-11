@@ -455,4 +455,29 @@ PID PARENT STATE     KB CMD
 Wed Mar  1 00:00:00 GMT 2000
 Mon Jan  9 13:37:03 GMT 2034
 7
+% $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
+$ % as -o start.o /src/TinyCRuntime/start.tm
+as -o udivmod.o /src/TinyCRuntime/udivmod.tm
+cc -o libc.o /src/TinyCRuntime/libc.c
+as -o sys.o /src/TinyKernel/libc/sys.tm
+cc -o hello.o hello.c
+as -o square.o square.tm
+ld -map -s -n -o hello start.o udivmod.o libc.o sys.o hello.o square.o
+hello: the squares of 1 to 10 add up to 385
+% tiny-build: hello is up to date
+% hello: the squares of 1 to 10 add up to 385
+write(1, "hello: the squares of 1 to 10 ad"..., 44) = 44
+exit(0)
+exited 0
+% exec
+_start:	jal	lr, 0xfa4 <main>
+break
+square:	ldw	r1, 0(sp)
+0	square
+1	main+0x60
+2	_start
+square:	ldw	r1, 0(sp)
+square+0x4:	mul	r13, r1, r1
+square+0x8:	jalr	zero, 0(lr)
+square+0x4:	mul	r13, r1, r1
 % $ 

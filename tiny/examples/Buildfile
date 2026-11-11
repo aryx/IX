@@ -1,0 +1,27 @@
+# Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyBuildSystem.ml)
+#
+# hello, from hello.c and square.tm, built on tiny-kernel by build in
+# /examples (see hello.c). Its C runtime is /src's, compiled the first
+# time: start.tm (_start, then main), the division, libc and the system
+# calls, as the kernel's Buildfile links its C programs. -s puts the
+# labels after the image, the names debug shows; -map writes them
+# beside it too (hello.map).
+
+ULIB = start.o udivmod.o libc.o sys.o
+
+hello: $ULIB hello.o square.o
+	ld -map -s -n -o $target $prereq
+
+hello.o: hello.c /src/TinyKernel/libc/user.h
+	cc -o $target hello.c
+square.o: square.tm
+	as -o $target square.tm
+
+start.o: /src/TinyCRuntime/start.tm
+	as -o $target /src/TinyCRuntime/start.tm
+udivmod.o: /src/TinyCRuntime/udivmod.tm
+	as -o $target /src/TinyCRuntime/udivmod.tm
+libc.o: /src/TinyCRuntime/libc.c /src/TinyCRuntime/libc.h
+	cc -o $target /src/TinyCRuntime/libc.c
+sys.o: /src/TinyKernel/libc/sys.tm
+	as -o $target /src/TinyKernel/libc/sys.tm

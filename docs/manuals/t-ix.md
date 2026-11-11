@@ -672,6 +672,15 @@ instructions around the pc and the backtrace after each command, what
 was said and what the program wrote below them, buttons for `s`, `n`
 and `c`, which an empty command line also takes as keys.
 
+To try the toolchain and these two after `make run` (in `tiny/`),
+`/examples` has a program to build: `hello.c`, whose `square` is
+`square.tm`'s, by hand, and the `Buildfile` that builds it with `/src`'s
+C runtime (`tiny/examples/` on the host, to read and edit there):
+
+    cd /examples; build; ./hello      # as, cc, ld, then hello's sum
+    trace ./hello                     # its write and its exit
+    debug ./hello                     # b square, c, bt, r, x/i pc 3, s, q
+
 `dial` gives a descriptor on a connection to another machine, by its
 address as text (`"10.0.0.1"`: the wire's other end) and a port; -1
 without a network, or when nothing listens there or nothing answers
@@ -798,7 +807,7 @@ is heard after a block.
     play /examples/korobeiniki.wav      # tetris's tune, four bars, made by m-ix's mini-play
 
 For C, `libc/draw.h` and `draw.c` gather the messages
-(`d_fill`, `d_text`, `d_flush`...); `examples/paint.c` is a program of a
+(`d_fill`, `d_text`, `d_flush`...); `user/paint.c` is a program of a
 page that waits for the mouse, the keys and the clock at once. For ML,
 `tiny/TinyLibDraw.ml` makes them.
 

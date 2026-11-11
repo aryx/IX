@@ -228,8 +228,11 @@ let main caps argv =
   let n = Array.length argv in
   let children = n > 1 && argv.(1) = "-f" in
   let first = if children then 2 else 1 in
-  if n <= first then (say "usage: trace [-f] prog [args] | trace [-f] pid\n";
-                      exit 1);
+  if n <= first then begin
+    say "usage: trace [-f] prog [args] | trace [-f] pid\n";
+    Exit.Code 1
+  end
+  else
   let pid, started =
     match int_of_string_opt argv.(first) with
     | Some pid -> pid, false
@@ -242,20 +245,23 @@ let main caps argv =
              ignore (TSys.exec caps (Fpath.v file)
                        (List.init (n - first) (fun i -> argv.(i + first))) []);
              say ("trace: " ^ prog ^ ": not found\n");
-             exit 127
+             (* the child's end, out of the parent's code: the status
+              * TinyLibSystem.main gives the system *)
+             raise (Exit.ExitCode 127)
          | Some pid -> pid, true) in
   let trace = u_trace pid in
-  if trace < 0 then begin
-    if not started then
-      say ("trace: " ^ argv.(first) ^ ": no such process\n");
-    exit 1
-  end;
+  if trace < 0 then
+    (if started then Exit.Code 1
+     else Exit.Err (argv.(first) ^ ": no such process"))
+  else
   let p = { pid; trace; call = None } in
   (* (a program not found: its child said so) *)
-  if started && next p <> "stopped 0 exec" then exit 1;
-  ignore (ask p "y");
-  if children then ignore (ask p "f");
-  if started then put trace "c";
-  follow caps children [ p ];
-  if started then ignore (TSys.wait_any caps);
-  exit 0
+  if started && next p <> "stopped 0 exec" then Exit.Code 1
+  else begin
+    ignore (ask p "y");
+    if children then ignore (ask p "f");
+    if started then put trace "c";
+    follow caps children [ p ];
+    if started then ignore (TSys.wait_any caps);
+    Exit.OK
+  end

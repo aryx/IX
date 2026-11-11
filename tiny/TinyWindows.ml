@@ -390,6 +390,8 @@ type doing =
   | Chosen of item
   | Sweep of int * int * int * int
   | Drag of window * int * int * int * int
+  (* the menu's Exit chosen, the windows deleted: the loop's end *)
+  | Ended
 
 let doing = ref Idle
 let buttons = ref 0
@@ -422,7 +424,7 @@ let rec over x y l =
   | w :: rest -> if inside (outer w) x y then Some w else over x y rest
 let word v = i16 v ^ i16 (v asr 16)
 
-let finish () = List.iter delete !windows; flush (); exit 0
+let finish () = List.iter delete !windows; flush (); doing := Ended
 
 (* the mouse at (x, y), its buttons b (1 left, 4 right) *)
 let mouse x y b =
@@ -485,6 +487,7 @@ let mouse x y b =
          outline (x - gx, y - gy, x - gx + fst size, y - gy + snd size))
       else
         (doing := Idle; w.x <- snap (x - gx); w.y <- y - gy; refresh everything)
+  | Ended -> ()
 
 (*****************************************************************************)
 (* The loop *)
@@ -495,8 +498,9 @@ let mouse x y b =
  * kernel gives the first ready of those asked about: what a program
  * drew before it ended is drawn before the shell's prompt after it,
  * which would be drawn over and the window left a picture). The end
- * of the keys is ours; the end of a window's pipes (its shell and its
- * programs gone) is the window's *)
+ * of the keys is ours, as the mouse's and the menu's Exit; the end of a
+ * window's pipes (its shell and its programs gone) is the window's. Our
+ * end is the loop's return, the program's toplevel then done *)
 let rec loop () =
   flush ();
   let fds = Array.make 32 0 and n = ref 2 in
@@ -506,27 +510,36 @@ let rec loop () =
       (fds.(!n) <- w.ends.draws; fds.(!n + 1) <- w.ends.prints; n := !n + 2))
     !windows;
   let fd = u_ready fds !n 0 in
-  if fd = 4 then begin
-    let s = u_read 4 12 in
-    if String.length s < 12 then exit 0;
-    mouse (int16 s 0) (int16 s 4) (int16 s 8)
-  end
-  else if fd = 0 then begin
-    let s = u_read 0 256 in
-    if s = "" then exit 0;
-    for i = 0 to String.length s - 1 do
-      match !windows with w :: _ -> key w s.[i] | [] -> ()
-    done
-  end
-  else
-    List.iter (fun w ->
-      if fd = w.ends.prints || fd = w.ends.draws then begin
-        let s = u_read fd 512 in
-        if s = "" then delete w
-        else if fd = w.ends.prints then print w s
-        else forward w s
-      end) !windows;
-  loop ()
+  let more =
+    if fd = 4 then begin
+      let s = u_read 4 12 in
+      if String.length s < 12 then false
+      else begin
+        mouse (int16 s 0) (int16 s 4) (int16 s 8);
+        match !doing with Ended -> false | _ -> true
+      end
+    end
+    else if fd = 0 then begin
+      let s = u_read 0 256 in
+      if s = "" then false
+      else begin
+        for i = 0 to String.length s - 1 do
+          match !windows with w :: _ -> key w s.[i] | [] -> ()
+        done;
+        true
+      end
+    end
+    else begin
+      List.iter (fun w ->
+        if fd = w.ends.prints || fd = w.ends.draws then begin
+          let s = u_read fd 512 in
+          if s = "" then delete w
+          else if fd = w.ends.prints then print w s
+          else forward w s
+        end) !windows;
+      true
+    end in
+  if more then loop ()
 
 let () =
   send

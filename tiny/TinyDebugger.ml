@@ -600,9 +600,11 @@ let main caps argv =
   let n = Array.length argv in
   let windowed = n > 1 && argv.(1) = "-window" in
   let first = if windowed then 2 else 1 in
-  if n <= first then
-    (say "usage: debug [-window] prog [args] | debug [-window] pid [prog]\n";
-     exit 1);
+  if n <= first then begin
+    say "usage: debug [-window] prog [args] | debug [-window] pid [prog]\n";
+    Exit.Code 1
+  end
+  else
   let file prog = Fpath.v (if String.contains prog '/' then prog else "/bin/" ^ prog) in
   (* in a window, the program's output and errors on a pipe: where to
    * read, where to write *)
@@ -629,7 +631,9 @@ let main caps argv =
              ignore (TSys.exec caps (file prog)
                        (List.init (n - first) (fun i -> argv.(i + first))) []);
              say ("debug: " ^ prog ^ ": not found\n");
-             exit 127
+             (* the child's end, out of the parent's code: the status
+              * TinyLibSystem.main gives the system *)
+             raise (Exit.ExitCode 127)
          | Some pid -> pid, true, funcs) in
   let output =
     match pipe with
@@ -640,16 +644,19 @@ let main caps argv =
   if windowed then sink := Some out;
   (* (a program not found: its child said so, in the window's case on
    * the pipe, read into what is said) *)
-  let fail () = put TSys.fd_stdout (Buffer.contents out); exit 1 in
+  let fail () = put TSys.fd_stdout (Buffer.contents out); Exit.Code 1 in
   let trace = u_trace pid in
   if trace < 0 then begin
     if not started then say ("debug: " ^ argv.(first) ^ ": no such process\n");
     fail ()
-  end;
+  end
+  else
   let p = { trace; funcs; pc = None; stops = []; output } in
-  if started && not (wait p) then fail ();
-  (* the process killed if debug started it and it still runs *)
-  let quit = if windowed then (window caps p; true) else not (loop p) in
-  if quit && started then ignore (TSys.kill caps pid);
-  if started then ignore (TSys.wait_any caps);
-  exit 0
+  if started && not (wait p) then fail ()
+  else begin
+    (* the process killed if debug started it and it still runs *)
+    let quit = if windowed then (window caps p; true) else not (loop p) in
+    if quit && started then ignore (TSys.kill caps pid);
+    if started then ignore (TSys.wait_any caps);
+    Exit.OK
+  end

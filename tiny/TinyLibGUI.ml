@@ -287,23 +287,22 @@ let run (g : ('m, 'msg) gui) =
     if now != shown || is <> was then redraw shown was now is;
     if TSys.ready fds None = Some TSys.fd_stdin then begin
       let s = TSys.read TSys.fd_stdin 16 in
-      if s = "" then exit 0;
       let rec typed i model view =
         if i >= String.length s then loop model m view now is
-        else begin
-          (match editing (snd view) m with
-           | [] -> if s.[i] = 'q' then exit 0
-           | _ -> ());
-          if s.[i] = '\027' then exit 0;
-          let model' = key g (snd view) model m (P.key_of_byte s.[i]) in
-          typed (i + 1) model' (if model' != model then laid g model' else view)
-        end
+        else
+          let no_field =
+            match editing (snd view) m with [] -> true | _ -> false in
+          if s.[i] = '\027' || (s.[i] = 'q' && no_field) then Exit.OK
+          else
+            let model' = key g (snd view) model m (P.key_of_byte s.[i]) in
+            typed (i + 1) model'
+              (if model' != model then laid g model' else view)
       in
-      typed 0 model view
+      if s = "" then Exit.OK else typed 0 model view
     end
     else
       match D.mouse_event (TSys.read TSys.fd_mouse 12) with
-      | None -> exit 0
+      | None -> Exit.OK
       | Some e ->
           let (model', m') = mouse g boxes model m e.mo_x e.mo_y e.mo_buttons in
           let view' = if model' != model then laid g model' else view in

@@ -271,12 +271,14 @@ let run caps g =
     if not (same shown shapes) then show g shown shapes;
     if TSys.ready [ TSys.fd_stdin ] (Some next) <> None then begin
       let s = TSys.read TSys.fd_stdin 16 in
-      if s = "" then exit 0;
+      (* the model after the keys, None at a q *)
       let rec typed i m =
-        if i >= String.length s then m
-        else if s.[i] = 'q' then exit 0
+        if i >= String.length s then Some m
+        else if s.[i] = 'q' then None
         else typed (i + 1) (g.key (key_of_byte s.[i]) m) in
-      loop (typed 0 model) model shapes next voices
+      match if s = "" then None else typed 0 model with
+      | None -> Exit.OK
+      | Some m -> loop m model shapes next voices
     end
     else
       let now = TSys.millis caps in

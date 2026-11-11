@@ -203,9 +203,9 @@ type 'm game = {
 
 (* The program of a game: its loop, a key or the next frame's time
  * waited for, the picture drawn when the shapes are others; it ends at
- * a q or at the keys' end, so a game is never given a q. caps: the
- * speaker opened, the first random number's seed, the clock *)
-val run : < Cap.open_out; Cap.random; Cap.clock; .. > -> 'm game -> 'a
+ * a q or at the keys' end, Exit.OK, so a game is never given a q.
+ * caps: the speaker opened, the first random number's seed, the clock *)
+val run : < Cap.open_out; Cap.random; Cap.clock; .. > -> 'm game -> Exit.t
 
 (* the number after a seed, 1 to 2^30 - 36 (Lehmer's generator) *)
 val random : int -> int

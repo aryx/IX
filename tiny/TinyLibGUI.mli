@@ -174,8 +174,8 @@ type ('m, 'msg) gui = {
 
 (* The program's loop, with no end but an Escape, a q that no field
  * takes, or the keys' end (the mouse or a key waited for, what changed
- * drawn) *)
-val run : ('m, 'msg) gui -> 'a
+ * drawn): then Exit.OK, its main's value *)
+val run : ('m, 'msg) gui -> Exit.t
 
 (* a point in the window, in pixels *)
 type point = int * int

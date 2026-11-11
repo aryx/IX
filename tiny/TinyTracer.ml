@@ -17,10 +17,14 @@ let say s = put TSys.fd_stderr s
 (* The calls *)
 (*****************************************************************************)
 
-(* the calls, by their numbers (TinyKernel.ml's syscall, user.h's
+(* the calls, by their numbers (TinyKernel.ml's syscall, sys.tm's
  * order), and the kind of each argument: a number, a path, bytes
  * given (their length the next argument), bytes filled (as many as
- * the result says), an address *)
+ * the result says), an address.
+ * coupling: TinyKernel/libc/user.h, its prototypes the arguments'
+ * kinds (a char* a path or bytes, an int* or char** an address), and
+ * TinyKernel/libc/sys.tm, its sys n each call's index here; a call
+ * added to the kernel is added in the three places *)
 type arg = Num | Path | Given | Filled | Addr
 let calls =
   Array.of_list [

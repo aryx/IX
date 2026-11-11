@@ -68843,3 +68843,50 @@ Claude proposed two commits: first the regex and tiny-c constant-folding fixes, 
 The first commit would bundle the linear regex search, its tests, the tree-level constant folding, and the new `consts.c` test.
 The second would contain only `plan_tiny_twists.md`, with candidates 6 to 9 and the updated Status line.
 Claude had checked the tiny-c tests, dune, `tiny_check.sh`, mini-mk, and the kernel check before committing.
+
+------------------------------------------------------------------------
+
+## 2026-11-10 22:15
+
+**Yoann:**
+
+> two
+
+**Claude (summary):**
+
+Claude committed `plan_tiny_twists.md` as `de0099e0`, which now lists nine twist candidates for the tiny series.
+Claude added candidates 6 to 9, the two fixes, and a record of what was set aside and why.
+Claude recommended "troff prints what the office draws" (candidate 1) as the strongest twist, and the first one to pilot.
+Claude's regex fix and tiny-c constant folding went in a separate commit, `49554bcc`, with tests and re-recorded outputs.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 05:50
+
+**Yoann:**
+
+> ok let's not do the twist for now. Let's go back to our tidy process (use Fpath.t, better types, remove abuse of string adn int, introduce type aliases for readability, etc.). What's next?
+
+**Claude (summary):**
+
+Claude proposed tidying TinyDebugger.ml next, since it has no tidy pass yet and the weakest types left.
+Claude's plan replaces the descriptor sentinels (`-1` for "no fd", "no pipe", "no function") with `TSys.fd` and option types.
+It also types addresses as `M.address`, turns kernel stop lines into a `stop` variant, and uses `M.sp`/`M.lr` instead of raw register numbers.
+Paths would be built once as `Fpath.t`, with banners and a comment or alias for `model.held`.
+Claude then asked whether to start on the debugger, noting it would check `debug.cksum` and `check.expected` after the change.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 05:52
+
+**Yoann:**
+
+> ok let's tidy TinyDebugger.ml and its mli
+
+**Claude (summary):**
+
+Claude recommended tidying `TinyDebugger.ml` into one `process` record, a variant for stop reasons, and register lookups by number.
+Claude fixed a bug where `debug -window <pid>` swallowed its "no such process" message, and it now prints it.
+The kernel check passed with `check.expected` and `debug.cksum` unchanged, and the other checks passed as recorded.
+The file grew from 574 to 645 lines, and Claude left `TinyDebugger.mli` alone and removed the `_make5` scratch directory.
+Claude asked whether to commit `TinyDebugger.ml` with `prompt-history.md`, and the tracer and profiler were suggested next.

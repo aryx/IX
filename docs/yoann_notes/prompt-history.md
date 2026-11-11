@@ -70597,3 +70597,46 @@ Claude's planned commit would name the 13 files of this change plus prompt-histo
 Claude excluded compare.sh, exn_ix.txt, exn_tiny.txt, and ix_files.sh, which another session had edited.
 Claude's change archives the stdlib objects into stdlib.a via tiny-ar, linked by the kernel, self-build, and tiny examples.
 Claude reported make check, self-quick, lite.sh's quick session, the analyzer, tiny-ml's test, and dune all passing.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 21:29
+
+**Yoann:**
+
+> excellent, let's commit
+
+**Claude (summary):**
+
+Claude committed item 2 as `0db1cfd7`, so tiny-kernel now links against `stdlib.a`.
+The commit puts the 24 interfaces and `stdlib.a` in `/lib/ml`, with `ar` installed in `/bin`.
+Claude confirmed `make check` and `self-quick` passed, then committed 13 files plus `prompt-history.md`.
+Claude left out the four modified files from another session, since they were not part of this change.
+Claude also listed today's earlier commits and the still-unrun `make self` and web-page test.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 21:48
+
+**Yoann:**
+
+> in the last 2 weeks we did lots of reorg and changes to tiny/. What do you think of those changes? They simplify the code and the build infra? worse? still the tiny spirit? what else can we do?
+
+**Claude (summary):**
+
+Claude laid out what the two-week reorg of `tiny/` got right and wrong, with six ranked next steps. The biggest problem it flagged was three descriptions of one build (Buildfile, Makefile, and the generated self-build Buildfile). Claude recommended folding them into one by having the Makefile run `tiny/Buildfile` with the host tools, which removes roughly 300 lines. Claude also proposed letting tiny-ml read CORE's order from `stdlib.a` so `-L` needs no list. It asked which of items 1 and 2 to start with, since both need tool changes.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 21:59
+
+**Yoann:**
+
+> what's next beyond the list above
+
+**Claude (summary):**
+
+Claude recommended starting with the one-build-description item, since it underpins self-hosting and the planned book.
+Claude then suggested qualified type names in tiny-ml, to remove the `Int32`/`Int64` workarounds and the `-I` ordering hack.
+Claude proposed a fast `make self` via tiny-prof profiling, to replace the hand-patched `self.expected` with a real check.
+Claude also listed the web page disk persistence, a guided first session, a teaching book, and small pending items as later work.

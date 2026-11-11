@@ -26,6 +26,10 @@ $IX/languages/c/Main.exe -m 5 -I$L/include -I$L/include/utf -I$L -I$L/include/ar
   -o $W/seg.5 $ROOT/machine/tests/plan9/seg.c && $IX/linker/Main.exe -m 5 -H2 -o $W/seg $W/seg.5 $M/lib_core/libc.a ||
   { echo "seg.c not built"; exit 1; }
 printf '#!/boot/rc -m /boot/rcmain\n/boot/echo segments:\n/boot/seg\n/boot/echo segments done\n' > $W/boot.rc
+# (dated in the past: OCaml 4.14 stats whole seconds on macOS, and
+# mini-mk took the bootdir below, of the same second, as out of date,
+# made again without this boot's files: /boot/seg did not exist)
+touch -t 200001010000 $W/boot.rc
 mini-mkbootdir $b/kernels/9pi/bootdir $P boot=$W/boot.rc rcmain=$P/ROOT/rc/lib/rcmain rc=$BIN/rc echo=$BIN/echo seg=$W/seg &&
   (cd $ROOT/kernels/9pi && MKSHELL=mini-rc NPROC=32 mini-mk O=5 B=$b PRINCIPIA=$P BOOTRC=$W/boot.rc) > $W/mk.log 2>&1 ||
   { echo "the kernel not relinked:"; tail -3 $W/mk.log | cut -c1-200; exit 1; }

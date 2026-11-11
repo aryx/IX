@@ -18,6 +18,9 @@ O=7; RUN=; RECORD=
 [ "${1:-}" = -record ] && { RECORD=1; shift; }
 NATIVE=$ROOT/_build/default/editors/emacs/tty/Main.exe
 MINI=$(cd ${1:-.} && pwd)/_mk/$O/editors/emacs/tty/mini-emacs-tty
+# (built, and run here: _mk/7's is Linux's, which macOS cannot execute,
+# exit 126. old: -x alone, a FAIL there once it was built)
+runs=; [ -x $MINI ] && { $RUN $MINI -keys '' < /dev/null > /dev/null 2>&1; [ $? != 126 ]; } && runs=1
 EXPECTED=$ROOT/editors/emacs/tests/keys.expected
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 failures=0
@@ -199,7 +202,7 @@ if cmp -s $W/nocache $EXPECTED; then echo "ok mini-emacs's screens with -nocache
 else echo "FAIL mini-emacs's screens with -nocache"; diff $EXPECTED $W/nocache | head -20; failures=$((failures + 1)); fi
 if cmp -s $W/native $EXPECTED; then echo "ok mini-emacs's screens by dune: $(grep -c '^== ' $EXPECTED) sessions, $(wc -l < $EXPECTED) lines"
 else echo "FAIL mini-emacs's screens by dune"; diff $EXPECTED $W/native | head -20; failures=$((failures + 1)); fi
-if [ -x $MINI ]; then
+if [ -n "$runs" ]; then
   all $RUN $MINI > $W/mini
   # mini-5i has no statx (docs/plans/bugs/ix.md): a directory is not
   # listed there, nor known to be one; without those ten sessions
@@ -210,7 +213,7 @@ if [ -x $MINI ]; then
   fi
   if cmp -s $W/native $W/mini; then echo "ok mini-emacs's screens by mini-ml ($O) as by dune"
   else echo "FAIL mini-emacs's screens by mini-ml ($O)"; diff $W/native $W/mini | head -20; failures=$((failures + 1)); fi
-else echo "not run: $MINI is not built"; fi
+else echo "not run: $MINI is not built, or does not run here"; fi
 fi
 # the screen as the windows paint it (lib_terminal/hosts: Cells and
 # Picture; the author's colors, Plan 9's font): a session's picture's sum
@@ -224,7 +227,7 @@ frames $NATIVE > $W/frames
 if [ -n "$RECORDFRAMES" ]; then cp $W/frames $FRAMES; echo "recorded: $(wc -l < $FRAMES) pictures"; exit 0; fi
 if cmp -s $W/frames $FRAMES; then echo "ok mini-emacs's pictures by dune: $(wc -l < $FRAMES)"
 else echo "FAIL mini-emacs's pictures by dune"; diff $FRAMES $W/frames | head; failures=$((failures + 1)); fi
-if [ -x $MINI ] && [ $O = 7 ]; then
+if [ -n "$runs" ] && [ $O = 7 ]; then
   frames $MINI > $W/frames.mini
   if cmp -s $W/frames $W/frames.mini; then echo "ok mini-emacs's pictures by mini-ml as by dune"
   else echo "FAIL mini-emacs's pictures by mini-ml"; diff $W/frames $W/frames.mini | head; failures=$((failures + 1)); fi

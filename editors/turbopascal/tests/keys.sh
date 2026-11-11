@@ -20,6 +20,9 @@ O=7; RUN=; RECORD=
 [ "${1:-}" = -record ] && { RECORD=1; shift; }
 NATIVE=_build/default/editors/turbopascal/tty/Main.exe
 MINI=${1:-.}/_mk/$O/editors/turbopascal/tty/mini-turbopascal-tty
+# (built, and run here: _mk/7's is Linux's, which macOS cannot execute,
+# exit 126. old: -x alone, a FAIL there once it was built)
+runs=; [ -x $MINI ] && { $RUN $MINI -keys '' < /dev/null > /dev/null 2>&1; [ $? != 126 ]; } && runs=1
 EXPECTED=editors/turbopascal/tests/keys.expected
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 failures=0
@@ -57,11 +60,11 @@ for v in "-views" "-views -nocache"; do
 done
 if cmp -s $W/native $EXPECTED; then echo "ok mini-turbopascal's screens by dune: $(grep -c '^== ' $EXPECTED) sessions, $(wc -l < $EXPECTED) lines"
 else echo "FAIL mini-turbopascal's screens by dune"; diff $EXPECTED $W/native | head -20; failures=$((failures + 1)); fi
-if [ -x $MINI ]; then
+if [ -n "$runs" ]; then
   all $RUN $MINI > $W/mini
   if cmp -s $W/native $W/mini; then echo "ok mini-turbopascal's screens by mini-ml ($O) as by dune"
   else echo "FAIL mini-turbopascal's screens by mini-ml ($O)"; diff $W/native $W/mini | head -20; failures=$((failures + 1)); fi
-else echo "not run: $MINI is not built"; fi
+else echo "not run: $MINI is not built, or does not run here"; fi
 fi
 # the screen as the windows paint it (hosts/Cells and Picture: Plan 9's
 # font, the PC's colours and box characters): a session's picture's sum
@@ -83,7 +86,7 @@ frames $NATIVE > $W/native
 [ -n "$RECORDFRAMES" ] && { cp $W/native $FRAMES; echo "recorded: $(wc -l < $FRAMES) frames"; exit 0; }
 if cmp -s $W/native $FRAMES; then echo "ok mini-turbopascal's frames by dune: $(wc -l < $FRAMES) pictures"
 else echo "FAIL mini-turbopascal's frames by dune"; diff $FRAMES $W/native | cut -c1-60 | head; failures=$((failures + 1)); fi
-if [ -x $MINI ]; then
+if [ -n "$runs" ]; then
   FEW=$RUN; frames $NATIVE > $W/native; frames $RUN $MINI > $W/mini
   if cmp -s $W/native $W/mini; then echo "ok mini-turbopascal's frames by mini-ml ($O) as by dune"
   else echo "FAIL mini-turbopascal's frames by mini-ml ($O)"; diff $W/native $W/mini | cut -c1-60 | head; failures=$((failures + 1)); fi

@@ -63,10 +63,15 @@ let serve h ~pid answer =
 
 let forget (h : Host_calls.t) pid = List.iter (fun ext -> ignore (h.unlink (pipe pid ext))) [ "req"; "rep" ]
 
-(* a process of mini-5i: the host's same executable *)
+(* a process of mini-5i: the host's same executable, by Linux's /proc;
+ * where there is none (macOS), a process still alive (kill's signal 0).
+ * (old: /proc alone, so on macOS no process was ours: every request
+ * "process exited", stop.c's child never stopped nor killed, spinning
+ * for ever, make test waiting on it) *)
 let ours (h : Host_calls.t) pid =
   match h.stat (Printf.sprintf "/proc/%d/exe" pid), h.stat "/proc/self/exe" with
   | Ok a, Ok b -> a.dev = b.dev && a.ino = b.ino
+  | _, Error _ -> h.kill pid 0 = Ok ()
   | _ -> false
 
 (* the debugger's side, which must not wait on a target that died (a

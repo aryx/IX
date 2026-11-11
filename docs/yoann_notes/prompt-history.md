@@ -69091,3 +69091,20 @@ Claude only dry-ran the new targets, leaving out `make check` and noting the 45-
 **Yoann:**
 
 > ok let's commit
+
+------------------------------------------------------------------------
+
+## 2026-11-11 08:32
+
+**Yoann:**
+
+> in tiny/Makefile 
+>
+> run: all
+>     $(MAKE) -C TinyKernel run
+> run-window: all
+>     $(MAKE) -C TinyKernel run-window
+> self self-quick: all
+>     $(MAKE) -C TinyKernel $@
+>
+>  we could factorize even more no?

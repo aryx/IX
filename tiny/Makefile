@@ -1,8 +1,8 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# Build and test t-IX from tiny/ itself, as ../Makefile's tix and test-tix
-# targets (their names work here too):
+# Build and test t-IX from tiny/ itself, as ../Makefile's tix, test-tix
+# and self-tix targets do from the top:
 #
 #   make         the tiny programs by dune (from here dune builds tiny/
 #                alone: a no-op is 0.6 s, the whole tree's 4 s)
@@ -29,12 +29,9 @@ all:
 	dune build
 test:
 	../tests/lite.sh tix
-$(KERNEL_TARGETS) self-tix self-quick-tix: all
-	$(MAKE) -C TinyKernel $(@:-tix=)
+$(KERNEL_TARGETS): all
+	$(MAKE) -C TinyKernel $@
 loc:
 	cd .. && scripts/stats/loc.py -t
 
-tix: all
-test-tix: test
-
-.PHONY: all test $(KERNEL_TARGETS) loc tix test-tix self-tix self-quick-tix
+.PHONY: all test $(KERNEL_TARGETS) loc

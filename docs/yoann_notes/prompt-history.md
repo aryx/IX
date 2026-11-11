@@ -70341,3 +70341,35 @@ Claude agreed that an exact rule beats a metarule, then explained the case here 
 **Yoann:**
 
 > what do they contain?
+
+------------------------------------------------------------------------
+
+## 2026-11-11 19:45
+
+**Yoann:**
+
+> do we also need .cmo ? and .cmx ?
+
+**Claude (summary):**
+
+Claude said a `.tmi` is effectively OCaml's `.cmi`, so the rename should come later as its own commit.
+Claude offered to bring the worktree's changes into the main checkout for Yoann's review, committing nothing.
+Claude proposed staging only the new tiny-ar files, `TinyLibCore/Buildfile` with its `.depend`, and the reworked `tiny/Buildfile`.
+Claude also proposed staging the tiny-build, tiny-linker and tiny-ml changes, plus the `Int64.ml` fix.
+Claude noted the top Buildfile still listed CORE, so that part remained unfinished.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 19:51
+
+**Yoann:**
+
+> yes bring it in the main tree so I can review
+
+**Claude (summary):**
+
+Claude remade the library's `.depend` and added `TinyArchiver.ml` and `.mli` with the `tiny-ar` tool, plus `TinyLibMachine` archive functions.
+Claude changed `TinyLinker`, `TinyML`, and `TinyBuildSystem` to read archives, `Stdlib` ordering, and the `along` rule.
+Claude left the library change uncommitted in the main tree after the merge with `abaa1231`, with tests passing.
+Claude listed the changed files and noted `_make9/` as a leftover build directory excluded from the change.
+Claude offered to commit by naming the files explicitly, including `prompt-history.md`, once Yoann approves.

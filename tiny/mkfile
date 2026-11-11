@@ -19,7 +19,7 @@ INCLUDES=-I . -I TinyLibSystem/unix -I $D -I TinyMachine -I TinyKernel -I TinyBr
 START=$ML -start $STD $COMMONS
 LINK=$LD -H7 -nofollow
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
-PROGS=tiny-build tiny-shell tiny-utils tiny-editor tiny-c tiny-ml tiny-assembler tiny-linker tiny-db tiny-vcs tiny-cpu tiny-machine tiny-prof tiny-mkfs
+PROGS=tiny-build tiny-shell tiny-utils tiny-editor tiny-c tiny-ml tiny-assembler tiny-linker tiny-ar tiny-db tiny-vcs tiny-cpu tiny-machine tiny-prof tiny-mkfs
 
 all:V: ${PROGS:%=$D/%}
 
@@ -29,9 +29,9 @@ $D/%.$O: %.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
 
-$D/TinyMachineCPU.$O $D/TinyAssembler.$O $D/TinyLinker.$O $D/TinyCPU.$O $D/TinyMachineDevices.$O $D/TinyMachine.$O: TinyLibMachine.ml
+$D/TinyMachineCPU.$O $D/TinyAssembler.$O $D/TinyLinker.$O $D/TinyArchiver.$O $D/TinyCPU.$O $D/TinyMachineDevices.$O $D/TinyMachine.$O: TinyLibMachine.ml
 $D/TinyCPU.$O $D/TinyMachineDevices.$O $D/TinyMachine.$O: TinyMachine/TinyMachineCPU.ml
-$D/TinyAssembler.$O $D/TinyLinker.$O $D/TinyC.$O $D/TinyML.$O $D/TinyCPU.$O $D/TinyMachine.$O $D/TinyMkfs.$O: $D/TinyLibSystem.$O
+$D/TinyAssembler.$O $D/TinyLinker.$O $D/TinyArchiver.$O $D/TinyC.$O $D/TinyML.$O $D/TinyCPU.$O $D/TinyMachine.$O $D/TinyMkfs.$O: $D/TinyLibSystem.$O
 # (tiny-ml's passes, TinyML/, each after the ones before it, after TinyLibMachine, the lines they make)
 MLC=TinyLibMachine TinyMLLexer TinyMLTree TinyMLPrintf TinyMLParser TinyMLTypes TinyMLMachine TinyMLCompile
 MLCO=${MLC:%=$D/%.$O}
@@ -120,6 +120,9 @@ $D/tiny-assembler: $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyAssembler.$O 
 $D/tiny-linker: $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyLinker.$O $LIBS
 	$START TinyLibSystem TinyLibMachine TinyLinker Std_exit -o $D/TinyLinker.start.$O
 	$LINK -o $target $D/TinyLinker.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyLinker.$O $STDEND
+$D/tiny-ar: $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyArchiver.$O $LIBS
+	$START TinyLibSystem TinyLibMachine TinyArchiver Std_exit -o $D/TinyArchiver.start.$O
+	$LINK -o $target $D/TinyArchiver.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyArchiver.$O $STDEND
 $D/TinyDatabase.$O: $D/TinyLibSystem.$O TinyDatabase.ml
 $D/tiny-db: $D/TinyLibSystem.$O $D/TinyDatabase.$O $LIBS
 	$START TinyLibSystem TinyDatabase Std_exit -o $D/TinyDatabase.start.$O
@@ -142,7 +145,7 @@ $D/Parallel.$O: ../lib_core/parallel/host/single.ml.in ../lib_core/parallel/Para
 	cp ../lib_core/parallel/Parallel.mli $D/Parallel.mli
 	cp ../lib_core/parallel/host/single.ml.in $D/Parallel.ml
 	$ML $INCLUDES -o $target $D/Parallel.ml
-$D/TinyProfiler.$O $D/TinyLinker.$O: $D/TinyLibMachine.$O
+$D/TinyProfiler.$O $D/TinyLinker.$O $D/TinyArchiver.$O: $D/TinyLibMachine.$O
 $D/TinyProfiler.$O: $D/TinyLibSystem.$O TinyProfiler.ml
 $D/tiny-prof: $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyProfiler.$O $LIBS
 	$START TinyLibSystem TinyLibMachine TinyProfiler Std_exit -o $D/TinyProfiler.start.$O

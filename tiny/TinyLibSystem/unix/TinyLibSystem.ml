@@ -241,9 +241,16 @@ let wait_any (caps : < Cap.wait; .. >) =
 
 let shell (caps : < Cap.fork; Cap.exec; Cap.env; Cap.stdout; Cap.stderr; .. >) vars
     script =
+  (* the environment's but those vars sets: a name twice, sh took the
+   * environment's (a recipe running build, its $stem the parent's) *)
+  let mine s =
+    match String.index_opt s '=' with
+    | Some i -> List.mem_assoc (String.sub s 0 i) vars
+    | None -> false in
   let env =
     List.map (fun (k, v) -> k ^ "=" ^ String.concat " " v) vars
-    @ Array.to_list (CapUnix.environment caps ())
+    @ List.filter (fun s -> not (mine s))
+        (Array.to_list (CapUnix.environment caps ()))
   in
   flush_all ();
   match CapUnix.fork caps () with

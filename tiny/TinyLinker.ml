@@ -15,7 +15,7 @@ type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 type address = int
 
 let usage =
-  "usage: tiny-linker [-a megabytes] [-n] [-s] [-map] [-debug] -o out file.o..."
+  "usage: tiny-linker [-a megabytes] [-n] [-s] [-map] [-debug] -o out file.o|lib.a..."
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
 
@@ -29,6 +29,7 @@ share the text between the runs of a program. With -s, an executable too (of 1 M
 labels after the image, but the compilers' local ones (what debug reads). With
 -map, out.map too: each label's address, by address (what tiny-prof reads).
 With -debug, each object's items said (-v, -quiet: TSys.logging's).
+A library, tiny-ar's archive (lib.a), is its objects, all linked, in its order.
 A label's line is its address in hexadecimal and its name. In
 tiny/tests/TinyCPU_tests/, for example:
   tiny-assembler hello.tm && tiny-linker -o hello hello.o
@@ -280,15 +281,22 @@ let contents (out : output) (l : linked) : string =
           (List.filter (fun (x, _) -> not (M.local x)) l.addresses)
 
 (* an object file's items (TinyLibMachine's of_object), each said with
- * -debug *)
-let read (chan : Chan.i) : M.line list =
+ * -debug; an archive's objects, all of them, in its order, as if each
+ * were given (a library: no member left out, the sweep below does it) *)
+let read (chan : Chan.i) : M.line list list =
   let f = Chan.origin chan in
-  let items =
-    try M.of_object (In_channel.input_all chan.ic)
-    with M.Error e -> M.error (f ^ ": " ^ e) in
-  List.iter (fun it ->
-    Logs.debug (fun m -> m "%s: %s" f (M.show_line it))) items;
-  items
+  let items name s =
+    let items =
+      try M.of_object s with M.Error e -> M.error (name ^ ": " ^ e) in
+    List.iter (fun it ->
+      Logs.debug (fun m -> m "%s: %s" name (M.show_line it))) items;
+    items in
+  let s = In_channel.input_all chan.ic in
+  if M.is_archive s then
+    let members =
+      try M.of_archive s with M.Error e -> M.error (f ^ ": " ^ e) in
+    List.map (fun (name, o) -> items (f ^ "(" ^ name ^ ")") o) members
+  else [ items f s ]
 
 type options = {
   megabytes : int option;
@@ -331,7 +339,7 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
           try
             (* the pipeline: the objects' paths, their channels, their
              * items, linked, the output's bytes *)
-            let objects = List.map (TSys.with_open_in caps read) files in
+            let objects = List.concat_map (TSys.with_open_in caps read) files in
             let linked = link o.sections objects in
             write out (contents (output o) linked);
             if o.map then

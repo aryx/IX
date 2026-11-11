@@ -18,7 +18,7 @@ module Compile = TinyMLCompile
 
 let usage = {|usage: tiny-ml [-L dir | -nostdlib] [-S] [-o out.o] file.ml...
        | tiny-ml -c [-S] [-I dir]... [-o out.o] file.tmi... file.ml
-       | tiny-ml [-S] -o main.o file.tmi...
+       | tiny-ml [-S] -o main.o [dir/stdlib.a] file.tmi...
        | tiny-ml -depend [-I dir]... file.ml...|}
 
 (* -h: how, by examples, each one as it runs *)
@@ -46,6 +46,8 @@ x is A.x in b, or x after open A. Machine.Or a module at a time, then the main:
   tiny-ml -c a.tmi b.ml                    b.o and b.tmi, after a
   tiny-ml -o main.o a.tmi b.tmi            the library's, a's and b's init,
                                            ml_start
+  tiny-ml -o main.o L/stdlib.a a.tmi b.tmi  the same, the library L's (-L L):
+                                           a library is named as linked
   (linked: ... main.o a.o b.o and the library's; what nothing uses left out by
   tiny-linker)
 An error names the file and the line: fact.ml: line 2: this has type int ...
@@ -195,8 +197,10 @@ type interface = {
   ivals : (string * Compile.binding * Tree.texpr) list;
   ideps : string list;
     (* the units whose interfaces were read before this one was
-     * compiled, but the library's, in their order: what -I reads before
-     * it, as OCaml's .cmi names its imports *)
+     * compiled, in their order: what -I reads before it, as OCaml's
+     * .cmi names its imports. A program's unit leaves out the library's
+     * (-L reads them all); a library's unit keeps them, read by -I
+     * (Int64's types name Int32's int32) *)
 }
 
 (* the units whose interfaces were read, in their order *)
@@ -276,7 +280,10 @@ let write_interface (old : before) (exports : (string * Compile.binding) list)
         List.filter (fun t -> not (old.old_forgotten t)) !Parser.forgotten;
       ivals = ivals;
       ideps =
-        List.filter (fun u -> not (List.mem u library)) (List.rev !read_units) }
+        (if List.mem !Tree.unit_name library then List.rev !read_units
+         else
+           List.filter (fun u -> not (List.mem u library))
+             (List.rev !read_units)) }
     (* (No_sharing: which of two equal names is the same string depends
      * on a table's order, OCaml's or TinyLibCore's; shared, the host's
      * and tiny-kernel's interfaces differed in 3 of the system's 40) *)
@@ -390,6 +397,10 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
     | "-I" :: d :: r -> incl := !incl @ [ Fpath.v d ]; args r
     | "-depend" :: r -> depend := true; args r
     | "-nostdlib" :: r -> lib := None; args r
+    (* a library, as ocamlc takes stdlib.cma: its interfaces beside it
+     * (-L its directory), its objects tiny-linker's *)
+    | f :: r when Filename.check_suffix f ".a" ->
+        lib := Some (Filename.dirname f); args r
     | f :: r -> files := Fpath.v f :: !files; args r
     | [] -> ()
   in
@@ -428,9 +439,9 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
     (TinyLibSystem.print caps help; Exit.OK)
   (* -depend: each unit's line for a Buildfile, as ocamldep's and m-ix's
    * mini-ml -depend: its object, then the interfaces of the units it
-   * names whose source is in an -I directory (before any is built), and
-   * its .mli; what -c -I will read, so that a build makes them first,
-   * and the unit again when one of them changes *)
+   * names (Stdlib named or not) whose source is in an -I directory
+   * (before any is built), and its .mli; what -c -I will read, so that a
+   * build makes them first, and the unit again when one of them changes *)
   else if !depend then begin
     let source m = in_dirs m ".ml" in
     (* a path as a Buildfile names it: ./x is x *)
@@ -458,7 +469,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
           List.filter_map (fun m ->
             if m = own then None
             else Option.map (fun s -> here (Fpath.set_ext ".tmi" s)) (source m))
-            (List.sort_uniq compare (in_ml @ in_mli)) in
+            (List.sort_uniq compare ("Stdlib" :: in_ml @ in_mli)) in
         let deps = deps @ (if has_mli then [ Fpath.to_string mli ] else []) in
         TinyLibSystem.print caps
           (Fpath.to_string (Fpath.set_ext ".o" f) ^ ":"
@@ -539,7 +550,10 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
           if TinyLibSystem.exists caps mli
           then with_file (fun ch -> named_units (text_of ch)) mli
           else [] in
-        let names = in_ml @ in_mli in
+        (* Stdlib first, named or not, as OCaml opens it: a library's
+         * unit compiled -nostdlib -I TinyLibCore; read by -L already
+         * otherwise *)
+        let names = "Stdlib" :: in_ml @ in_mli in
         let names = List.filter (fun m -> m <> own) names in
         (* those that stand on fewer first, the source's order between
          * equals: a unit read after what it stands on, as the

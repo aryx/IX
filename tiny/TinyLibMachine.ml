@@ -380,6 +380,10 @@ let encode_line (l : line) : line =
 let assemble (lines : line list) : line list =
   Align 4 :: List.map encode_line lines
 
+(* does s start with m *)
+let starts s m = String.length s >= String.length m
+                 && String.sub s 0 (String.length m) = m
+
 (* (Marshal's bytes after it: tiny-ml's Marshal stops the program on
  * bytes it cannot read, so another file is said not an object first.
  * 3: an object is lines, the assembly's type (old: 2, an item type of
@@ -389,10 +393,43 @@ let magic = "tiny-object 3\n"
 let to_object (lines : line list) =
   magic ^ Marshal.to_string lines [ Marshal.No_sharing ]
 let of_object (s : string) : line list =
-  let n = String.length magic in
-  if String.length s < n || String.sub s 0 n <> magic then
+  if not (starts s magic) then
     error "not an object of this tiny-assembler's (tiny-object 3): rebuild it";
-  Marshal.from_string s n
+  Marshal.from_string s (String.length magic)
+
+(* an archive: its magic line, then each member's name and size on a
+ * line, then its bytes, as Unix's ar's header before each member (its
+ * 60 bytes, a name, a date, an owner, a mode and a size, the name and
+ * the size here) *)
+let archive_magic = "tiny-archive 1\n"
+let is_archive (s : string) = starts s archive_magic
+let to_archive (members : (string * string) list) : string =
+  archive_magic
+  ^ String.concat ""
+      (List.map (fun (name, o) ->
+         if not (starts o magic) then error (name ^ ": not an object");
+         if String.contains name ' ' || String.contains name '\n' then
+           error (name ^ ": a member's name has no blank");
+         name ^ " " ^ string_of_int (String.length o) ^ "\n" ^ o)
+         members)
+let of_archive (s : string) : (string * string) list =
+  if not (is_archive s) then error "not an archive";
+  let rec from i =
+    if i >= String.length s then []
+    else
+      let nl =
+        match String.index_from_opt s i '\n' with
+        | Some nl -> nl
+        | None -> error "a damaged archive" in
+      match String.split_on_char ' ' (String.sub s i (nl - i)) with
+      | [ name; size ] ->
+          let n =
+            match int_of_string_opt size with
+            | Some n when n >= 0 && nl + 1 + n <= String.length s -> n
+            | _ -> error "a damaged archive" in
+          (name, String.sub s (nl + 1) n) :: from (nl + 1 + n)
+      | _ -> error "a damaged archive" in
+  from (String.length archive_magic)
 
 (*****************************************************************************)
 (* The symbols *)

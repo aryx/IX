@@ -1,6 +1,7 @@
 TinyAppCalculator.o: TinyLibGUI.tmi TinyLibPlayground.tmi TinyAppCalculator.mli
 TinyAppTemperature.o: TinyLibGUI.tmi TinyAppTemperature.mli
 TinyAppTetris.o: TinyLibPlayground.tmi TinyAppTetris.mli
+TinyArchiver.o: TinyLibMachine.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyArchiver.mli
 TinyAssembler.o: TinyLibMachine.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyAssembler.mli
 TinyBrowser.o: TinyBrowser/TinyBrowserAddress.tmi TinyBrowser/TinyBrowserHtml.tmi TinyBrowser/TinyBrowserHttp.tmi TinyBrowser/TinyBrowserLines.tmi TinyBrowser/TinyBrowserScreen.tmi TinyBrowser/TinyBrowserText.tmi TinyLibDraw.tmi TinyLibGUI.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyBrowser.mli
 TinyBuildSystem.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyBuildSystem.mli

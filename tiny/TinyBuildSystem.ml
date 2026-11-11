@@ -250,6 +250,12 @@ let graph (rules : rule list) (exists : Fpath.t -> bool) (target : string) :
     List.partition
       (fun r -> match r.target with Exact _ -> true | Pattern _ -> false) rules
   in
+  (* the patterns used on the way to a pattern's prerequisite: only one
+   * with % carries them (a %: %.gz would make x.gz.gz...); a name given
+   * as it is, by an exact rule (a .depend's line) or by a pattern
+   * ($LIB's), starts afresh, as GNU make's: x.o by %.o, then y.tmi of
+   * its .depend line by %.tmi, then y.o by %.o again *)
+  let along r used p = if String.contains p '%' then r :: used else [] in
   let rec node path used name =
     match Hashtbl.find_opt memo name with
     | Some n -> n
@@ -258,9 +264,9 @@ let graph (rules : rule list) (exists : Fpath.t -> bool) (target : string) :
           error ("cycle: " ^ String.concat " -> " (List.rev (name :: path)));
         let mine = List.filter (fun r -> r.target = Exact name) exact in
         let prereqs = List.concat_map (fun r -> r.prereqs) mine in
-        let make, extra, used =
+        let make, extra =
           match List.filter_map (fun (r : rule) -> r.recipe) mine with
-          | [ text ] -> Recipe { text; stem = "" }, [], used
+          | [ text ] -> Recipe { text; stem = "" }, []
           | _ :: _ :: _ -> error ("two recipes for " ^ name)
           | [] ->
               let candidates =
@@ -268,25 +274,30 @@ let graph (rules : rule list) (exists : Fpath.t -> bool) (target : string) :
                   if List.memq r used then None
                   else match matches r.target name with
                     | Some stem
-                      when List.for_all (makeable path (r :: used))
-                             (List.map (subst stem) r.prereqs)
+                      when List.for_all
+                             (fun p ->
+                               makeable path (along r used p) (subst stem p))
+                             r.prereqs
                       -> Some (r, stem)
                     | _ -> None)
               in
               (match candidates with
-               | [] -> Source, [], used
+               | [] -> Source, []
                | [ (r, stem) ] ->
                    let make =
                      match r.recipe with
                      | Some text -> Recipe { text; stem }
                      | None -> Source
                    in
-                   make, List.map (subst stem) r.prereqs, r :: used
+                   make,
+                   List.map (fun p -> subst stem p, along r used p) r.prereqs
                | _ -> error ("ambiguous: several patterns make " ^ name))
         in
         let n =
           { name; make;
-            deps = List.map (node (name :: path) used) (prereqs @ extra) }
+            deps =
+              List.map (node (name :: path) []) prereqs
+              @ List.map (fun (p, used) -> node (name :: path) used p) extra }
         in
         if make = Source && n.deps = [] && not (exists (Fpath.v name)) then
           error ("don't know how to make " ^ name);
@@ -299,8 +310,10 @@ let graph (rules : rule list) (exists : Fpath.t -> bool) (target : string) :
          not (List.memq r used) && not (List.mem name path)
          && match matches r.target name with
             | Some stem ->
-                List.for_all (makeable (name :: path) (r :: used))
-                  (List.map (subst stem) r.prereqs)
+                List.for_all
+                  (fun p ->
+                    makeable (name :: path) (along r used p) (subst stem p))
+                  r.prereqs
             | None -> false) patterns
   in
   node [] [] target

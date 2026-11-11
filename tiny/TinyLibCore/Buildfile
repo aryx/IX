@@ -1,0 +1,36 @@
+# Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyBuildSystem.ml)
+#
+# The standard library, OCaml's subset: every ML program's first units,
+# kept in one library, stdlib.a, which a program links (ld ...
+# stdlib.a), and their interfaces, each unit's .tmi, which tiny-ml reads
+# (ml -L TinyLibCore). The library's own Buildfile, as ocaml-light's
+# stdlib has its Makefile and each of m-ix's libraries its mkfile: the
+# top one (../Buildfile) asks it, by `cd TinyLibCore && build`.
+#
+#     build            stdlib.a, and the units' .o and .tmi
+#     build depend     .depend again, after a unit names another one
+
+# its units, in the order they start in: the archive's, which every
+# program links in it (Stdlib first: what the others call)
+CORE = Stdlib Char Seq List String Bytes Array Option Int32 Int64 \
+    Filename Buffer Printf Marshal Hashtbl Common Sha1 Fpath Fpath_ Exit \
+    In_channel Out_channel Chan Logs
+
+stdlib.a: ${CORE:%=%.o}
+	ar -o $target $prereq
+
+# a unit, with the interfaces of the units it names, found here (-I .),
+# Stdlib's first, as OCaml opens it; -nostdlib: no library yet, it is
+# being made. Which interfaces: its line in .depend
+%.o: %.ml
+	ml -c -nostdlib -I . -o $target $stem.ml
+%.tmi: %.o
+
+# the units' lines, written by ml -depend as ocamldep writes OCaml's
+depend:
+	ml -depend -I . *.ml > .depend
+
+<.depend
+
+clean:
+	rm -f *.o *.tmi stdlib.a

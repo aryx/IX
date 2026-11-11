@@ -49,12 +49,12 @@
  * Added, against the twin:
  * - {b The sweep}, which neither 5l nor mini-ld has (a library's
  *   member is taken whole there): what nothing reaches is left out.
- * - {b No archive}, which the sweep makes unneeded: every object given
- *   is linked, but for its pieces that nothing reaches. TinyLibCore/'s
- *   objects are given to every program in ML (/lib/ml/*.o), the sweep
- *   keeping what it calls, so an archive (objects one after the other,
- *   a member linked when it defines what another needs) is not needed
- *   yet.
+ * - {b An archive's members all linked}, in its order, as if each
+ *   object were given (tiny-ar's, TinyLibMachine's format): the sweep
+ *   leaves out what nothing reaches, so a member is not chosen by what
+ *   another needs, as 5l's and Unix's ld's are. An archive packages a
+ *   library (TinyLibCore/stdlib.a, every ML program's), its order the
+ *   one its units start in.
  * - {b A place is filled by encoding again}: the word is decoded
  *   (TinyLibMachine.decode), its immediate replaced, and encoded, so
  *   [encode]'s checks say what does not fit (an addi of an address
@@ -105,16 +105,18 @@ type linked = {
 
 (* The pipeline, a step a function (main opens and writes the files):
  *
- *     x.o ...        Fpath.t, each
+ *     x.o lib.a ...  Fpath.t, each
  *       | opened     Chan.i
- *       | read       TinyLibMachine.line list, an object
+ *       | read       TinyLibMachine.line list list: an object, or an
+ *                    archive's
  *       | link       linked: the image, the labels' addresses
  *       | contents   string: the image, or an a.out (output)
  *     x              (and x.map, map's lines, with -map)
  *
  * An object file's items (TinyLibMachine's of_object), each said with
- * -debug; an error said with the file (Chan.origin) *)
-val read : Chan.i -> TinyLibMachine.line list
+ * -debug; an archive's objects, in its order; an error said with the
+ * file (Chan.origin) *)
+val read : Chan.i -> TinyLibMachine.line list list
 
 (* [link order objects]: the objects, each its items, linked *)
 val link : sections -> TinyLibMachine.line list list -> linked

@@ -256,6 +256,14 @@ val word_bytes : word -> string
 val to_object : line list -> string
 val of_object : string -> line list
 
+(* an archive's bytes, objects kept by name in an order (tiny-ar
+ * writes them, tiny-linker links them all in that order: a library),
+ * and back; Error when a member is not an object, its name has a
+ * blank, or the bytes are not an archive *)
+val is_archive : string -> bool
+val to_archive : (string * string) list -> string
+val of_archive : string -> (string * string) list
+
 (* a line as OCaml writes it, for tiny-linker -debug *)
 val show_line : line -> string
 

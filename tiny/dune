@@ -32,13 +32,14 @@
 ; The machine's tools
 ;*****************************************************************************
 
-; tiny-machine's assembler and linker: a .tm file to an object, objects to
-; an image (TinyLibMachine's instructions and lines)
+; tiny-machine's assembler, linker and archiver: a .tm file to an object,
+; objects to an image, objects to a library (TinyLibMachine's instructions
+; and lines)
 (executables
- (names TinyAssembler TinyLinker)
- (public_names tiny-assembler tiny-linker)
+ (names TinyAssembler TinyLinker TinyArchiver)
+ (public_names tiny-assembler tiny-linker tiny-ar)
  (package ix)
- (modules TinyAssembler TinyLinker)
+ (modules TinyAssembler TinyLinker TinyArchiver)
  (libraries ix_core fpath caps tiny_lib_machine tiny_lib_system))
 
 ; tiny-cpu, the processor alone: an image run as a program, with three

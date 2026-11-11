@@ -121,7 +121,12 @@ OCaml's .cma (the author: "we're planning to add ar, so maybe we can also
 make ocaml libs"): an archive of ML objects as well as C's, the
 interfaces staying .tmi files that ml -I finds; the shared units
 (TinyLibSystem, TinyLibGUI...) a library of their own, which programs
-link by its name.
+link by its name. Made by ml itself, as ocamlc -a and ocamlmklib (the
+author: "like ocamlmklib does (but maybe here ml can play all roles,
+with a single tool)"): ml -I, ml -M and ml -a -o lib.a units.o, the
+archive's format TinyLibMachine's beside the objects', read by
+tiny-linker in its members' order. To decide: C's libraries
+(/lib/c/libc.a) by ml -a too (the same objects), or by a small ar.
 Later, after the library is built by the Buildfile.
 
 ## Steps
@@ -141,7 +146,7 @@ Later, after the library is built by the Buildfile.
    /src/TinyKernel/Buildfile elsewhere) and compares as today.
 4. **The check of the coupling**: the Buildfile's objects against the
    Makefile's on the host.
-5. **ar**, and /lib's links by it.
+5. **ml -a, the libraries** (ar's job), and /lib's links by them.
 6. **Later**: the Makefile's lists from the Buildfile (generated, or
    read), the generated /src/TinyKernel/Buildfile gone.
 

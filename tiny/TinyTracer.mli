@@ -11,8 +11,8 @@
  *     close(5) = 0
  *     exit(0)
  *
- *     trace -f rc -c 'cat f | wc'      the children too, [pid] a line
- *     trace 12                          a process already running
+ *     % trace -f rc -c 'cat f | wc'      the children too, [pid] a line
+ *     % trace 12                          a process already running
  *
  * How it works: it starts its program stopped at its first instruction
  * (a child that calls trace(0), then exec), or attaches to a process
@@ -63,11 +63,11 @@
  * ctl, not a system call. Here the same is the trace descriptor's y.
  *
  * references:
- *  - plan_tiny_debugger.md
- *  - Plan 9's ratrace(1) and proc(3) manual pages
  *  - strace(1)
+ *  - Plan 9's ratrace(1) and proc(3) manual pages
+ *  - plan_tiny_debugger.md
  *)
 
 (* the program: its command line, the stops of its processes, its exit *)
 val main :
-  < Cap.fork; Cap.exec; Cap.kill; Cap.wait; .. > -> string array -> Exit.t
+  < Cap.forkew; Cap.kill; .. > -> string array -> Exit.t

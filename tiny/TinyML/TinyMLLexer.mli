@@ -1,6 +1,7 @@
 (* tiny-ml's lexer: a file's text, its tokens, each with its line. *)
 
-(* an error, its message; TinyML.ml says the file and the line *)
+(* an error in the program compiled, its message, Common.Error (a bug a
+ * Failure); TinyML.ml says the file and the line *)
 val error : string -> 'a
 
 type token =

@@ -5,10 +5,10 @@ tiny/TinyC/TinyCLower.ml:124: stack: TinyCLower.lower calls itself, not a tail c
 tiny/TinyC/TinyCLower.ml:129: stack: TinyCLower.lower calls itself, not a tail call, over a list
 tiny/TinyC/TinyCLower.ml:136: stack: TinyCLower.lower calls itself, not a tail call, over a list
 tiny/TinyC/TinyCLower.ml:146: stack: TinyCLower.lower calls itself, not a tail call, over a list
-tiny/TinyC/TinyCParser.ml:174: stack: TinyCParser.declarator calls itself, not a tail call, over a list
-tiny/TinyC/TinyCParser.ml:177: stack: TinyCParser.declarator3 calls itself, not a tail call, over a list
-tiny/TinyC/TinyCParser.ml:340: stack: TinyCParser.call_args calls itself, not a tail call, over a list
-tiny/TinyC/TinyCTypes.ml:51: stack: TinyCTypes.size calls itself, not a tail call, over a list
+tiny/TinyC/TinyCParser.ml:175: stack: TinyCParser.declarator calls itself, not a tail call, over a list
+tiny/TinyC/TinyCParser.ml:178: stack: TinyCParser.declarator3 calls itself, not a tail call, over a list
+tiny/TinyC/TinyCParser.ml:341: stack: TinyCParser.call_args calls itself, not a tail call, over a list
+tiny/TinyC/TinyCTypes.ml:52: stack: TinyCTypes.size calls itself, not a tail call, over a list
 tiny/TinyDatabase.ml:171: evalorder: operands at 171:13 and 172:13, both with an effect: their order the compiler's
 tiny/TinyDatabase.ml:175: stack: TinyDatabase.ins calls itself, not a tail call, over a list
 tiny/TinyDatabase.ml:188: evalorder: operands at 188:17 and 190:17, both with an effect: their order the compiler's
@@ -50,7 +50,7 @@ tiny/TinyML/TinyMLPrintf.ml:113: stack: adds calls itself, not a tail call, over
 tiny/TinyML/TinyMLPrintf.ml:119: stack: adds calls itself, not a tail call, over a list
 tiny/TinyML/TinyMLPrintf.ml:89: stack: build calls itself, not a tail call, over a list
 tiny/TinyML/TinyMLPrintf.ml:91: stack: build calls itself, not a tail call, over a list
-tiny/TinyML/TinyMLTypes.ml:51: evalorder: operands at 51:12 and 51:21, both with an effect: their order the compiler's
+tiny/TinyML/TinyMLTypes.ml:52: evalorder: operands at 52:12 and 52:21, both with an effect: their order the compiler's
 tiny/TinyMachine.ml:376: int31: in TinyMachine's toplevel, 0xa1b2c3d4: not on the Pi 1's 31 bits
 tiny/TinyMachine/TinyMachineCPU.ml:13: int31: in TinyMachineCPU.m32, 0xffffffff: not on the Pi 1's 31 bits
 tiny/TinyMachine/TinyMachineCPU.ml:14: int31: in TinyMachineCPU.signed, 0x80000000; 0xffffffff: not on the Pi 1's 31 bits

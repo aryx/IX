@@ -2,7 +2,8 @@
  * names of the assembly: what every other part of the compiler uses
  * (TinyC.mli is the whole). *)
 
-(* an error, its message; TinyC.ml says where *)
+(* an error in the program compiled, its message, Common.Error (a bug a
+ * Failure); TinyC.ml says where *)
 val error : string -> 'a
 
 (* the file's name, its statics' prefix *)

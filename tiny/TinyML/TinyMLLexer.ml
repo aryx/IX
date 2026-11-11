@@ -6,8 +6,9 @@
 let ( ||| ) = Common.( ||| )
 
 (* (old: a format, Printf.ksprintf's: tiny-ml reads a format only where
- * it is written, Printf.sprintf at the call) *)
-let error s = failwith s
+ * it is written, Printf.sprintf at the call; then failwith, the same
+ * Failure as a bug's) *)
+let error s = Common.error s
 
 (*****************************************************************************)
 (* Tokens *)

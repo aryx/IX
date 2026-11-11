@@ -70181,3 +70181,95 @@ Claude kept system calls, their results, function names, frame order, and short 
 Claude switched `debug.events` back to debugging `ping` (C) instead of `ls` (ML), so its registers and backtrace change only with `ping` or libc.
 Claude tested both changes in a clean worktree from HEAD, leaving the uncommitted library fix and the other session's files untouched.
 Claude found the `play` screen still depends on the blink and seconds counter, proposed removing them from `Square.ml`, and is waiting for approval.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 14:42
+
+**Yoann:**
+
+> alet's commit
+
+**Claude (summary):**
+
+Claude committed the library fix as `e4d28007`, covering bounded-stack `@` and `List.concat` with their test.
+Claude committed the sturdier checks as `54fee864`, masking addresses and backtrace offsets and re-debugging `ping` in the window session.
+Claude left the `make self` run going in a worktree, to confirm `ld` links `ml` on tiny-kernel and to show `self.expected`.
+Claude asked whether to remove the blink and seconds counter from the test game `Square.ml` (option b), or end the session with `q` (option a).
+Claude left the other session's mid-edit files alone, since `TinyShell.ml` currently fails to compile under tiny-ml.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 14:48
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude listed five open items for the ix work, ordered by priority, with later items parked separately.
+Claude recommended doing item 2 first, the quick `square` test-game cleanup, before items 3 and 4.
+Claude asked Yoann to choose between option (a), ending the session with `q`, and option (b), moving the blink and seconds counter out of `Square.ml`.
+Claude also proposed moving `Square.ml` and `machine.ml` from `tests/TinyLibPlayground_tests/` to `user/`, dropping `-I tests/…` from the Buildfile's `INCLUDES`.
+Yoann replied "let's do 2", so Claude proceeds with the `square` test-game changes.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 14:50
+
+**Yoann:**
+
+> let's do 2.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 14:51
+
+**Yoann:**
+
+> why still those "
+>
+> TinyLibCore/Fpath_.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
+>     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
+>     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
+>     TinyLibCore/Int32.tmi TinyLibCore/Int64.tmi TinyLibCore/Filename.tmi \
+>     TinyLibCore/Buffer.tmi TinyLibCore/Printf.tmi TinyLibCore/Marshal.tmi \
+>     TinyLibCore/Hashtbl.tmi TinyLibCore/Common.tmi TinyLibCore/Sha1.tmi \
+>     TinyLibCore/Fpath.tmi TinyLibCore/Fpath_.ml
+>     ml -c -nostdlib -o $target $prereq
+> TinyLibCore/Fpath_.tmi: TinyLibCore/Fpath_.o
+> TinyLibCore/Exit.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
+>     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
+>     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
+>     TinyLibCore/Int32.tmi TinyLibCore/Int64.tmi TinyLibCore/Filename.tmi \
+>     TinyLibCore/Buffer.tmi TinyLibCore/Printf.tmi TinyLibCore/Marshal.tmi \
+>     TinyLibCore/Hashtbl.tmi TinyLibCore/Common.tmi TinyLibCore/Sha1.tmi \
+>     TinyLibCore/Fpath.tmi TinyLibCore/Fpath_.tmi TinyLibCore/Exit.ml
+>     ml -c -nostdlib -o $target $prereq
+>
+> " in the Buildfile;
+
+------------------------------------------------------------------------
+
+## 2026-11-11 14:51
+
+**Yoann:**
+
+> it should be automatically extracted and in the .depend
+
+**Claude (summary):**
+
+Claude explained why the tiny-ml library rules are still hand-written: Stdlib is implicit, and library `.tmi` ideps omit library units.
+Claude identified that tiny-build's once-per-chain pattern rule refuses the `List.o` → `Seq.tmi` → `Seq.o` chain, which is the reason for the workaround.
+Claude proposed making tiny-ml read Stdlib first and keep library-unit ideps, about 5 lines of change.
+Claude proposed relaxing tiny-build's chain rule for exact rules and literal prerequisites, about 3 lines, and collapsing the library section into one `TinyLibCore/%.o` rule.
+Claude asked whether to proceed with the tiny-ml and tiny-build changes, since the `make self` run was still going.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 14:56
+
+**Yoann:**
+
+> yes, let's do it

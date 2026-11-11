@@ -2,6 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See TinyMLTypes.mli *)
+open Common
 module Lexer = TinyMLLexer
 module Tree = TinyMLTree
 module Parser = TinyMLParser
@@ -318,7 +319,7 @@ let type_item env (it, l) =
     | Tree.ILet (Tree.Recursive, bs) -> rec_types env bs
     | Tree.IExt (x, t, _) -> (x, Tree.of_texpr (ref []) t) :: env
     | Tree.IExn _ | Tree.IOpen _ | Tree.IAlias _ -> env
-  with Failure m -> Lexer.error (Printf.sprintf "line %d: %s" l m)
+  with Error m -> Lexer.error (Printf.sprintf "line %d: %s" l m)
 
 (* Scopes. A unit's names are M.x for the units after it; open M gives
  * a unit M's names as x, for itself alone. Stdlib is open in every

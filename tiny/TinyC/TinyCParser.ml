@@ -2,6 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See TinyCParser.mli *)
+open Common
 module Ty = TinyCTypes
 module Lexer = TinyCLexer
 module Tree = TinyCTree
@@ -395,12 +396,12 @@ and primary () =
   | Lexer.Str s -> string_lit s
   | Lexer.P "(" -> let e = expr () in expect ")"; e
   | Lexer.Id f when peek () = Lexer.P "("
-              && (match (try Some (lookup f) with Failure _ -> None) with
+              && (match (try Some (lookup f) with Error _ -> None) with
                   | Some { vty = Ty.Func _; _ } | None -> true
                   | _ -> false) ->
       ignore (next ());
       let rt, ps, sym =
-        match (try Some (lookup f) with Failure _ -> None) with
+        match (try Some (lookup f) with Error _ -> None) with
         | Some { vty = Ty.Func (r, p, _); where = Tree.Global s } -> r, p, s
         | _ -> Ty.int_t, [], f in
       Tree.mk (Tree.Apply (sym, call_args ps)) rt

@@ -3,6 +3,7 @@
  *
  * See TinyC.mli
  *)
+open Common
 module Ty = TinyCTypes
 module Lexer = TinyCLexer
 module Tree = TinyCTree
@@ -96,12 +97,22 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
       (* intptr, Plan 9's uintptr's signed twin: an integer as wide as a
        * pointer (runtime/'s values, a word each) *)
       Hashtbl.replace Parser.typedefs "intptr" Ty.int_t;
-      (* (a file that cannot be opened apart from its errors, which are
-       * Failures too) *)
+      (* (a file that cannot be opened apart from a Failure of g's: the
+       * library's on the text, or a bug) *)
       let with_file g f =
         let opened = ref false in
         try TSys.with_open_in caps (fun ch -> opened := true; g ch) f
         with Failure m when not !opened -> raise (File_error m) in
+      (* an error said where: the last token read, in its file (an
+       * #include's); the lexer's errors have none. (Said here, after the
+       * file, not the program's name) *)
+      let failed m =
+        (match Parser.last_loc () with
+         | None -> TSys.eprint caps (Fpath.to_string file ^ ": " ^ m ^ "\n")
+         | Some (f, l) ->
+             TSys.eprint caps
+               (f ^ ": line " ^ string_of_int l ^ ": " ^ m ^ "\n"));
+        Exit.Code 1 in
       try
         Parser.start
           (with_file (Lexer.tokens (Hashtbl.create 16) with_file) file);
@@ -139,16 +150,10 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
               with Failure m -> raise (File_error m)));
         Exit.OK
       with
-      | Failure m ->
-          (* where: the last token read, in its file (an #include's); the
-           * lexer's errors have none *)
-          (match Parser.last_loc () with
-           | None -> TSys.eprint caps (Fpath.to_string file ^ ": " ^ m ^ "\n")
-           | Some (f, l) ->
-               TSys.eprint caps
-                 (f ^ ": line " ^ string_of_int l ^ ": " ^ m ^ "\n"));
-          (* (said here, after the file, not the program's name) *)
-          Exit.Code 1
+      (* a Failure: the library's on the text as well as a bug's, not
+       * yet told apart (two arms: tiny-ml has no or-pattern binding m) *)
+      | Error m -> failed m
+      | Failure m -> failed m
       (* a line the compiler made that cannot be encoded (a number too
        * big for its field): the compiler's error, said with the file,
        * as tiny-assembler said it of the text (old) *)

@@ -7,6 +7,7 @@
  * back end this compiler also had until plan_tiny_self_hosting.md).
  *)
 
+open Common
 module Tree = TinyMLTree
 module Lexer = TinyMLLexer
 module Parser = TinyMLParser
@@ -98,7 +99,7 @@ let compile_unit (items : (Tree.item * int) list) =
           List.iter (fun (x, b) -> Types.add_name Compile.globals x b)
             (List.rev added);
           added @ defs
-    with Failure m -> TinyMLLexer.error (Printf.sprintf "line %d: %s" l m))
+    with Error m -> TinyMLLexer.error (Printf.sprintf "line %d: %s" l m))
     [] items in
   Compile.emit (Machine.Imm (Machine.tagged 0));
   Compile.emit Machine.Ret;
@@ -396,7 +397,8 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
   args argl;
   let files = List.rev !files in
   (* g on the file opened, its name the errors' (file); one that cannot be
-   * opened apart from g's errors, which are Failures too *)
+   * opened apart from a Failure of g's (the library's on the text, as
+   * int_of_string's, or a bug) *)
   let with_file g f =
     let opened = ref false in
     try
@@ -462,7 +464,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
         TinyLibSystem.print caps
           (Fpath.to_string (Fpath.set_ext ".o" f) ^ ":"
            ^ String.concat "" (List.map (fun d -> " " ^ d) deps) ^ "\n")
-       with Failure m -> unread f m)
+       with Error m -> unread f m | Failure m -> unread f m)
         mls;
       Exit.OK
     with File_error m -> Exit.Err m
@@ -603,7 +605,12 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
     end;
     Exit.OK
   with
-  (* (said after the file, not the program's name) *)
+  (* (said after the file, not the program's name). An error in the
+   * program; or a Failure, the library's on its text (int_of_string's
+   * on a number too big) as well as a bug's, not yet told apart (two
+   * arms: tiny-ml has no or-pattern binding m) *)
+  | Error m ->
+      TinyLibSystem.eprint caps (!file ^ ": " ^ m ^ "\n"); Exit.Code 1
   | Failure m ->
       TinyLibSystem.eprint caps (!file ^ ": " ^ m ^ "\n"); Exit.Code 1
   (* a line made that cannot be encoded (a number too big for its

@@ -53,15 +53,26 @@ all: $PROGS kernel.img
 # How each kind of file is made
 #############################################################################
 
+# the standard library's units, in their order (below, The standard
+# library): their interfaces (LIB), their objects (LIBO)
+CORE = Stdlib Char Seq List String Bytes Array Option Int32 Int64 \
+    Filename Buffer Printf Marshal Hashtbl Common Sha1 Fpath Fpath_ Exit \
+    In_channel Out_channel Chan Logs
+LIB = ${CORE:%=TinyLibCore/%.tmi}
+LIBO = ${CORE:%=TinyLibCore/%.o}
+
 # an ML unit: its source alone; tiny-ml reads the library from
 # TinyLibCore/ (-L) and finds the interfaces of the modules the source
 # names in INCLUDES' directories (-I), each after those it stands on.
-# A unit's rule says what must be made before it, and what makes it
-# again, for tiny-build alone: as mini-ml in m-ix, the compiler's
-# arguments are not its prerequisites. Its .tmi made with its .o
+# Its prerequisites are tiny-build's alone, what must be made before it
+# and what makes it again: the library (LIB, every unit's, as Plan 9's
+# mkfiles make every object depend on all the headers), and the
+# interfaces it reads, its line in .depend (at the end); as mini-ml in
+# m-ix, the compiler's arguments are not its prerequisites. Its .tmi
+# made with its .o
 INCLUDES = -I . -I TinyLibSystem/tinykernel -I TinyC -I TinyML -I TinyOffice \
     -I TinyBrowser -I TinyKernel -I user -I tests/TinyLibPlayground_tests
-%.o: %.ml
+%.o: %.ml $LIB
 	ml -c -L TinyLibCore $INCLUDES -o $target $stem.ml
 %.tmi: %.o
 
@@ -97,74 +108,88 @@ TinyLibSystem/tinykernel/mlsys.o: TinyLibSystem/tinykernel/mlsys.c runtime/ml.c 
 #############################################################################
 
 # Its units in their order, each compiled with the interfaces of the
-# ones before it, given (-nostdlib: no library yet; as ocaml-light's
+# ones before it, given, each .tmi named made with its .o (an exact
+# rule: tiny-build uses a pattern once on a path, and a unit's .tmi is
+# already %.tmi's when it asks for the library's; -nostdlib: no
+# library yet; as ocaml-light's
 # stdlib is compiled in an order, its OBJS); every other ML unit reads
 # all of them (-L TinyLibCore), and is made after them (LIB, a
 # prerequisite), and every ML program links them (LIBO). On the image
 # they are /lib/ml.
-CORE = Stdlib Char Seq List String Bytes Array Option Int32 Int64 Filename Buffer Printf Marshal Hashtbl Common Sha1 Fpath Fpath_ Exit In_channel Out_channel Chan Logs
 
-LIB = ${CORE:%=TinyLibCore/%.tmi}
-LIBO = ${CORE:%=TinyLibCore/%.o}
 
 TinyLibCore/Stdlib.o: TinyLibCore/Stdlib.ml
 	ml -c -nostdlib -o $target $prereq
+TinyLibCore/Stdlib.tmi: TinyLibCore/Stdlib.o
 TinyLibCore/Char.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.ml
 	ml -c -nostdlib -o $target $prereq
+TinyLibCore/Char.tmi: TinyLibCore/Char.o
 TinyLibCore/Seq.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.ml
 	ml -c -nostdlib -o $target $prereq
+TinyLibCore/Seq.tmi: TinyLibCore/Seq.o
 TinyLibCore/List.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.ml
 	ml -c -nostdlib -o $target $prereq
+TinyLibCore/List.tmi: TinyLibCore/List.o
 TinyLibCore/String.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.ml
 	ml -c -nostdlib -o $target $prereq
+TinyLibCore/String.tmi: TinyLibCore/String.o
 TinyLibCore/Bytes.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.ml
 	ml -c -nostdlib -o $target $prereq
+TinyLibCore/Bytes.tmi: TinyLibCore/Bytes.o
 TinyLibCore/Array.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.ml
 	ml -c -nostdlib -o $target $prereq
+TinyLibCore/Array.tmi: TinyLibCore/Array.o
 TinyLibCore/Option.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.ml
 	ml -c -nostdlib -o $target $prereq
+TinyLibCore/Option.tmi: TinyLibCore/Option.o
 TinyLibCore/Int32.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
     TinyLibCore/Int32.ml
 	ml -c -nostdlib -o $target $prereq
+TinyLibCore/Int32.tmi: TinyLibCore/Int32.o
 TinyLibCore/Int64.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
     TinyLibCore/Int32.tmi TinyLibCore/Int64.ml
 	ml -c -nostdlib -o $target $prereq
+TinyLibCore/Int64.tmi: TinyLibCore/Int64.o
 TinyLibCore/Filename.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
     TinyLibCore/Int32.tmi TinyLibCore/Int64.tmi TinyLibCore/Filename.ml
 	ml -c -nostdlib -o $target $prereq
+TinyLibCore/Filename.tmi: TinyLibCore/Filename.o
 TinyLibCore/Buffer.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
     TinyLibCore/Int32.tmi TinyLibCore/Int64.tmi TinyLibCore/Filename.tmi \
     TinyLibCore/Buffer.ml
 	ml -c -nostdlib -o $target $prereq
+TinyLibCore/Buffer.tmi: TinyLibCore/Buffer.o
 TinyLibCore/Printf.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
     TinyLibCore/Int32.tmi TinyLibCore/Int64.tmi TinyLibCore/Filename.tmi \
     TinyLibCore/Buffer.tmi TinyLibCore/Printf.ml
 	ml -c -nostdlib -o $target $prereq
+TinyLibCore/Printf.tmi: TinyLibCore/Printf.o
 TinyLibCore/Marshal.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
     TinyLibCore/Int32.tmi TinyLibCore/Int64.tmi TinyLibCore/Filename.tmi \
     TinyLibCore/Buffer.tmi TinyLibCore/Printf.tmi TinyLibCore/Marshal.ml
 	ml -c -nostdlib -o $target $prereq
+TinyLibCore/Marshal.tmi: TinyLibCore/Marshal.o
 TinyLibCore/Hashtbl.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
@@ -172,6 +197,7 @@ TinyLibCore/Hashtbl.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Buffer.tmi TinyLibCore/Printf.tmi TinyLibCore/Marshal.tmi \
     TinyLibCore/Hashtbl.ml
 	ml -c -nostdlib -o $target $prereq
+TinyLibCore/Hashtbl.tmi: TinyLibCore/Hashtbl.o
 TinyLibCore/Common.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
@@ -179,6 +205,7 @@ TinyLibCore/Common.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Buffer.tmi TinyLibCore/Printf.tmi TinyLibCore/Marshal.tmi \
     TinyLibCore/Hashtbl.tmi TinyLibCore/Common.ml
 	ml -c -nostdlib -o $target $prereq
+TinyLibCore/Common.tmi: TinyLibCore/Common.o
 TinyLibCore/Sha1.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
@@ -186,6 +213,7 @@ TinyLibCore/Sha1.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Buffer.tmi TinyLibCore/Printf.tmi TinyLibCore/Marshal.tmi \
     TinyLibCore/Hashtbl.tmi TinyLibCore/Common.tmi TinyLibCore/Sha1.ml
 	ml -c -nostdlib -o $target $prereq
+TinyLibCore/Sha1.tmi: TinyLibCore/Sha1.o
 TinyLibCore/Fpath.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
@@ -194,6 +222,7 @@ TinyLibCore/Fpath.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Hashtbl.tmi TinyLibCore/Common.tmi TinyLibCore/Sha1.tmi \
     TinyLibCore/Fpath.ml
 	ml -c -nostdlib -o $target $prereq
+TinyLibCore/Fpath.tmi: TinyLibCore/Fpath.o
 TinyLibCore/Fpath_.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
@@ -202,6 +231,7 @@ TinyLibCore/Fpath_.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Hashtbl.tmi TinyLibCore/Common.tmi TinyLibCore/Sha1.tmi \
     TinyLibCore/Fpath.tmi TinyLibCore/Fpath_.ml
 	ml -c -nostdlib -o $target $prereq
+TinyLibCore/Fpath_.tmi: TinyLibCore/Fpath_.o
 TinyLibCore/Exit.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
@@ -210,6 +240,7 @@ TinyLibCore/Exit.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Hashtbl.tmi TinyLibCore/Common.tmi TinyLibCore/Sha1.tmi \
     TinyLibCore/Fpath.tmi TinyLibCore/Fpath_.tmi TinyLibCore/Exit.ml
 	ml -c -nostdlib -o $target $prereq
+TinyLibCore/Exit.tmi: TinyLibCore/Exit.o
 TinyLibCore/In_channel.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
@@ -219,6 +250,7 @@ TinyLibCore/In_channel.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Fpath.tmi TinyLibCore/Fpath_.tmi TinyLibCore/Exit.tmi \
     TinyLibCore/In_channel.ml
 	ml -c -nostdlib -o $target $prereq
+TinyLibCore/In_channel.tmi: TinyLibCore/In_channel.o
 TinyLibCore/Out_channel.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
@@ -228,6 +260,7 @@ TinyLibCore/Out_channel.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Fpath.tmi TinyLibCore/Fpath_.tmi TinyLibCore/Exit.tmi \
     TinyLibCore/In_channel.tmi TinyLibCore/Out_channel.ml
 	ml -c -nostdlib -o $target $prereq
+TinyLibCore/Out_channel.tmi: TinyLibCore/Out_channel.o
 TinyLibCore/Chan.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
@@ -238,6 +271,7 @@ TinyLibCore/Chan.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/In_channel.tmi TinyLibCore/Out_channel.tmi \
     TinyLibCore/Chan.ml
 	ml -c -nostdlib -o $target $prereq
+TinyLibCore/Chan.tmi: TinyLibCore/Chan.o
 TinyLibCore/Logs.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
@@ -248,6 +282,7 @@ TinyLibCore/Logs.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/In_channel.tmi TinyLibCore/Out_channel.tmi \
     TinyLibCore/Chan.tmi TinyLibCore/Logs.ml
 	ml -c -nostdlib -o $target $prereq
+TinyLibCore/Logs.tmi: TinyLibCore/Logs.o
 
 #############################################################################
 # The libraries: what several programs share
@@ -259,14 +294,6 @@ TinyLibCore/Logs.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
 # the window's: the picture's messages, the playground (a game's loop),
 # the widgets
 
-TinyLibSystem/tinykernel/TinyLibSystem.o: $LIB
-TinyLibMachine.o: $LIB
-TinyLibRegex.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi
-TinyLibDraw.o: $LIB
-TinyLibPlayground.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi \
-    TinyLibDraw.tmi
-TinyLibGUI.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi \
-    TinyLibDraw.tmi TinyLibPlayground.tmi
 
 #############################################################################
 # The shell, the utilities, the editors, the stores
@@ -275,12 +302,11 @@ TinyLibGUI.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi \
 # rc the shell; utils, cat ls grep... in one program (/bin/cat a link
 # to it); ed and sam, the line editor; db and vcs, a database and a
 # version control; build, this file's reader.
-# Each: its units (the interfaces each reads), its main (the units'
-# initializations in their order), and the program, linked: the C
-# runtime, ML's, its main, its units, the library, the end.
+# Each: its main (its units' initializations, in their order), and the
+# program, linked: the C runtime, ML's, its main, its units, the
+# library, the end. Its units' rules are .depend's (at the end).
 
 # rc
-TinyShell.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi
 rc.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyShell.tmi
 	ml -nostdlib -o $target $prereq
 rc: $CRT $MLRT rc.o TinyLibSystem/tinykernel/TinyLibSystem.o TinyShell.o \
@@ -288,8 +314,6 @@ rc: $CRT $MLRT rc.o TinyLibSystem/tinykernel/TinyLibSystem.o TinyShell.o \
 	ld -map -s -n -o $target $prereq
 
 # utils
-TinyUtilities.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi \
-    TinyLibRegex.tmi
 utils.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibRegex.tmi \
     TinyUtilities.tmi
 	ml -nostdlib -o $target $prereq
@@ -298,8 +322,6 @@ utils: $CRT $MLRT utils.o TinyLibSystem/tinykernel/TinyLibSystem.o \
 	ld -map -s -n -o $target $prereq
 
 # ed
-TinyEditorLine.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi \
-    TinyLibRegex.tmi
 ed.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibRegex.tmi \
     TinyEditorLine.tmi
 	ml -nostdlib -o $target $prereq
@@ -308,7 +330,6 @@ ed: $CRT $MLRT ed.o TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibRegex.o \
 	ld -map -s -n -o $target $prereq
 
 # db
-TinyDatabase.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi
 db.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyDatabase.tmi
 	ml -nostdlib -o $target $prereq
 db: $CRT $MLRT db.o TinyLibSystem/tinykernel/TinyLibSystem.o TinyDatabase.o \
@@ -316,7 +337,6 @@ db: $CRT $MLRT db.o TinyLibSystem/tinykernel/TinyLibSystem.o TinyDatabase.o \
 	ld -map -s -n -o $target $prereq
 
 # vcs
-TinyVCS.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi
 vcs.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyVCS.tmi
 	ml -nostdlib -o $target $prereq
 vcs: $CRT $MLRT vcs.o TinyLibSystem/tinykernel/TinyLibSystem.o TinyVCS.o \
@@ -324,7 +344,6 @@ vcs: $CRT $MLRT vcs.o TinyLibSystem/tinykernel/TinyLibSystem.o TinyVCS.o \
 	ld -map -s -n -o $target $prereq
 
 # build
-TinyBuildSystem.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi
 build.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyBuildSystem.tmi
 	ml -nostdlib -o $target $prereq
 build: $CRT $MLRT build.o TinyLibSystem/tinykernel/TinyLibSystem.o \
@@ -337,13 +356,11 @@ build: $CRT $MLRT build.o TinyLibSystem/tinykernel/TinyLibSystem.o \
 
 # as, ld, cc and ml, which built all of this; prof, where a profile's
 # instructions went; trace, a program's calls; debug, a debugger.
-# Each: its units (the interfaces each reads), its main (the units'
-# initializations in their order), and the program, linked: the C
-# runtime, ML's, its main, its units, the library, the end.
+# Each: its main (its units' initializations, in their order), and the
+# program, linked: the C runtime, ML's, its main, its units, the
+# library, the end. Its units' rules are .depend's (at the end).
 
 # as
-TinyAssembler.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi \
-    TinyLibMachine.tmi
 as.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibMachine.tmi \
     TinyAssembler.tmi
 	ml -nostdlib -o $target $prereq
@@ -352,8 +369,6 @@ as: $CRT $MLRT as.o TinyLibSystem/tinykernel/TinyLibSystem.o \
 	ld -map -s -n -a 32 -o $target $prereq
 
 # ld
-TinyLinker.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi \
-    TinyLibMachine.tmi
 ld.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibMachine.tmi \
     TinyLinker.tmi
 	ml -nostdlib -o $target $prereq
@@ -362,19 +377,6 @@ ld: $CRT $MLRT ld.o TinyLibSystem/tinykernel/TinyLibSystem.o \
 	ld -map -s -n -a 64 -o $target $prereq
 
 # cc
-TinyC/TinyCTypes.o: $LIB
-TinyC/TinyCLexer.o: $LIB TinyC/TinyCTypes.tmi
-TinyC/TinyCTree.o: $LIB TinyC/TinyCTypes.tmi TinyC/TinyCLexer.tmi
-TinyC/TinyCLower.o: $LIB TinyC/TinyCTypes.tmi TinyC/TinyCLexer.tmi \
-    TinyC/TinyCTree.tmi
-TinyC/TinyCParser.o: $LIB TinyC/TinyCTypes.tmi TinyC/TinyCLexer.tmi \
-    TinyC/TinyCTree.tmi TinyC/TinyCLower.tmi
-TinyC/TinyCMachine.o: $LIB TinyLibMachine.tmi TinyC/TinyCTypes.tmi \
-    TinyC/TinyCLexer.tmi TinyC/TinyCTree.tmi TinyC/TinyCLower.tmi \
-    TinyC/TinyCParser.tmi
-TinyC.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibMachine.tmi \
-    TinyC/TinyCTypes.tmi TinyC/TinyCLexer.tmi TinyC/TinyCTree.tmi \
-    TinyC/TinyCLower.tmi TinyC/TinyCParser.tmi TinyC/TinyCMachine.tmi
 cc.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibMachine.tmi \
     TinyC/TinyCTypes.tmi TinyC/TinyCLexer.tmi TinyC/TinyCTree.tmi \
     TinyC/TinyCLower.tmi TinyC/TinyCParser.tmi TinyC/TinyCMachine.tmi \
@@ -387,23 +389,6 @@ cc: $CRT $MLRT cc.o TinyLibSystem/tinykernel/TinyLibSystem.o \
 	ld -map -s -n -a 16 -o $target $prereq
 
 # ml
-TinyML/TinyMLLexer.o: $LIB
-TinyML/TinyMLTree.o: $LIB TinyML/TinyMLLexer.tmi
-TinyML/TinyMLPrintf.o: $LIB TinyML/TinyMLLexer.tmi TinyML/TinyMLTree.tmi
-TinyML/TinyMLParser.o: $LIB TinyML/TinyMLLexer.tmi TinyML/TinyMLTree.tmi \
-    TinyML/TinyMLPrintf.tmi
-TinyML/TinyMLTypes.o: $LIB TinyML/TinyMLLexer.tmi TinyML/TinyMLTree.tmi \
-    TinyML/TinyMLPrintf.tmi TinyML/TinyMLParser.tmi
-TinyML/TinyMLMachine.o: $LIB TinyLibMachine.tmi TinyML/TinyMLLexer.tmi \
-    TinyML/TinyMLTree.tmi TinyML/TinyMLPrintf.tmi TinyML/TinyMLParser.tmi \
-    TinyML/TinyMLTypes.tmi
-TinyML/TinyMLCompile.o: $LIB TinyLibMachine.tmi TinyML/TinyMLLexer.tmi \
-    TinyML/TinyMLTree.tmi TinyML/TinyMLPrintf.tmi TinyML/TinyMLParser.tmi \
-    TinyML/TinyMLTypes.tmi TinyML/TinyMLMachine.tmi
-TinyML.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibMachine.tmi \
-    TinyML/TinyMLLexer.tmi TinyML/TinyMLTree.tmi TinyML/TinyMLPrintf.tmi \
-    TinyML/TinyMLParser.tmi TinyML/TinyMLTypes.tmi TinyML/TinyMLMachine.tmi \
-    TinyML/TinyMLCompile.tmi
 ml.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibMachine.tmi \
     TinyML/TinyMLLexer.tmi TinyML/TinyMLTree.tmi TinyML/TinyMLPrintf.tmi \
     TinyML/TinyMLParser.tmi TinyML/TinyMLTypes.tmi TinyML/TinyMLMachine.tmi \
@@ -416,8 +401,6 @@ ml: $CRT $MLRT ml.o TinyLibSystem/tinykernel/TinyLibSystem.o \
 	ld -map -s -n -a 32 -o $target $prereq
 
 # prof
-TinyProfiler.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi \
-    TinyLibMachine.tmi
 prof.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibMachine.tmi \
     TinyProfiler.tmi
 	ml -nostdlib -o $target $prereq
@@ -426,8 +409,6 @@ prof: $CRT $MLRT prof.o TinyLibSystem/tinykernel/TinyLibSystem.o \
 	ld -map -s -n -o $target $prereq
 
 # trace
-TinyTracer.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi
-user/trace.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyTracer.tmi
 trace.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyTracer.tmi \
     user/trace.tmi
 	ml -nostdlib -o $target $prereq
@@ -436,11 +417,6 @@ trace: $CRT $MLRT trace.o TinyLibSystem/tinykernel/TinyLibSystem.o \
 	ld -map -s -n -o $target $prereq
 
 # debug
-TinyDebugger.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi \
-    TinyLibDraw.tmi TinyLibPlayground.tmi TinyLibGUI.tmi TinyLibMachine.tmi
-user/debug.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi \
-    TinyLibDraw.tmi TinyLibPlayground.tmi TinyLibGUI.tmi TinyLibMachine.tmi \
-    TinyDebugger.tmi
 debug.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibDraw.tmi \
     TinyLibPlayground.tmi TinyLibGUI.tmi TinyLibMachine.tmi TinyDebugger.tmi \
     user/debug.tmi
@@ -457,15 +433,11 @@ debug: $CRT $MLRT debug.o TinyLibSystem/tinykernel/TinyLibSystem.o \
 # windows, the window system; emacs; office and troff, which prints its
 # documents; www, the browser; play, tetris, square, calc and temp, on
 # the playground; bigmem, a test of a big memory.
-# Each: its units (the interfaces each reads), its main (the units'
-# initializations in their order), and the program, linked: the C
-# runtime, ML's, its main, its units, the library, the end.
+# Each: its main (its units' initializations, in their order), and the
+# program, linked: the C runtime, ML's, its main, its units, the
+# library, the end. Its units' rules are .depend's (at the end).
 
 # windows
-TinyWindows.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi \
-    TinyLibDraw.tmi
-user/windows.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi \
-    TinyLibDraw.tmi TinyWindows.tmi
 windows.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibDraw.tmi \
     TinyWindows.tmi user/windows.tmi
 	ml -nostdlib -o $target $prereq
@@ -474,11 +446,6 @@ windows: $CRT $MLRT windows.o TinyLibSystem/tinykernel/TinyLibSystem.o \
 	ld -map -s -n -o $target $prereq
 
 # emacs
-TinyEditorScreen.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi \
-    TinyLibDraw.tmi TinyLibPlayground.tmi TinyLibGUI.tmi
-user/emacs.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi \
-    TinyLibDraw.tmi TinyLibPlayground.tmi TinyLibGUI.tmi \
-    TinyEditorScreen.tmi
 emacs.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibDraw.tmi \
     TinyLibPlayground.tmi TinyLibGUI.tmi TinyEditorScreen.tmi user/emacs.tmi
 	ml -nostdlib -o $target $prereq
@@ -488,41 +455,6 @@ emacs: $CRT $MLRT emacs.o TinyLibSystem/tinykernel/TinyLibSystem.o \
 	ld -map -s -n -o $target $prereq
 
 # office
-TinyOffice/TinyOfficeModel.o: $LIB \
-    TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibDraw.tmi \
-    TinyLibPlayground.tmi TinyLibGUI.tmi
-TinyOffice/TinyOfficeText.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi \
-    TinyLibDraw.tmi TinyLibPlayground.tmi TinyLibGUI.tmi \
-    TinyOffice/TinyOfficeModel.tmi
-TinyOffice/TinyOfficeSheet.o: $LIB \
-    TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibDraw.tmi \
-    TinyLibPlayground.tmi TinyLibGUI.tmi TinyOffice/TinyOfficeModel.tmi
-TinyOffice/TinyOfficeDrawing.o: $LIB \
-    TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibDraw.tmi \
-    TinyLibPlayground.tmi TinyLibGUI.tmi TinyOffice/TinyOfficeModel.tmi
-TinyOffice/TinyOfficePaint.o: $LIB \
-    TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibDraw.tmi \
-    TinyLibPlayground.tmi TinyLibGUI.tmi TinyOffice/TinyOfficeModel.tmi
-TinyOffice/TinyOfficeChart.o: $LIB \
-    TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibDraw.tmi \
-    TinyLibPlayground.tmi TinyLibGUI.tmi TinyOffice/TinyOfficeModel.tmi \
-    TinyOffice/TinyOfficeSheet.tmi
-TinyOffice/TinyOfficeFile.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi \
-    TinyLibDraw.tmi TinyLibPlayground.tmi TinyLibGUI.tmi \
-    TinyOffice/TinyOfficeModel.tmi TinyOffice/TinyOfficeText.tmi \
-    TinyOffice/TinyOfficeSheet.tmi
-TinyOffice.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi \
-    TinyLibDraw.tmi TinyLibPlayground.tmi TinyLibGUI.tmi \
-    TinyOffice/TinyOfficeModel.tmi TinyOffice/TinyOfficeText.tmi \
-    TinyOffice/TinyOfficeSheet.tmi TinyOffice/TinyOfficeDrawing.tmi \
-    TinyOffice/TinyOfficePaint.tmi TinyOffice/TinyOfficeChart.tmi \
-    TinyOffice/TinyOfficeFile.tmi
-user/office.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi \
-    TinyLibDraw.tmi TinyLibPlayground.tmi TinyLibGUI.tmi \
-    TinyOffice/TinyOfficeModel.tmi TinyOffice/TinyOfficeText.tmi \
-    TinyOffice/TinyOfficeSheet.tmi TinyOffice/TinyOfficeDrawing.tmi \
-    TinyOffice/TinyOfficePaint.tmi TinyOffice/TinyOfficeChart.tmi \
-    TinyOffice/TinyOfficeFile.tmi TinyOffice.tmi
 office.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibDraw.tmi \
     TinyLibPlayground.tmi TinyLibGUI.tmi TinyOffice/TinyOfficeModel.tmi \
     TinyOffice/TinyOfficeText.tmi TinyOffice/TinyOfficeSheet.tmi \
@@ -539,17 +471,6 @@ office: $CRT $MLRT office.o TinyLibSystem/tinykernel/TinyLibSystem.o \
 	ld -map -s -n -o $target $prereq
 
 # troff
-TinyTroff.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibDraw.tmi \
-    TinyLibPlayground.tmi TinyLibGUI.tmi TinyOffice/TinyOfficeModel.tmi \
-    TinyOffice/TinyOfficeText.tmi TinyOffice/TinyOfficeSheet.tmi \
-    TinyOffice/TinyOfficeDrawing.tmi TinyOffice/TinyOfficePaint.tmi \
-    TinyOffice/TinyOfficeChart.tmi TinyOffice/TinyOfficeFile.tmi
-user/troff.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi \
-    TinyLibDraw.tmi TinyLibPlayground.tmi TinyLibGUI.tmi \
-    TinyOffice/TinyOfficeModel.tmi TinyOffice/TinyOfficeText.tmi \
-    TinyOffice/TinyOfficeSheet.tmi TinyOffice/TinyOfficeDrawing.tmi \
-    TinyOffice/TinyOfficePaint.tmi TinyOffice/TinyOfficeChart.tmi \
-    TinyOffice/TinyOfficeFile.tmi TinyTroff.tmi
 troff.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibDraw.tmi \
     TinyLibPlayground.tmi TinyLibGUI.tmi TinyOffice/TinyOfficeModel.tmi \
     TinyOffice/TinyOfficeText.tmi TinyOffice/TinyOfficeSheet.tmi \
@@ -566,31 +487,6 @@ troff: $CRT $MLRT troff.o TinyLibSystem/tinykernel/TinyLibSystem.o \
 	ld -map -s -n -o $target $prereq
 
 # www
-TinyBrowser/TinyBrowserText.o: $LIB
-TinyBrowser/TinyBrowserTokens.o: $LIB TinyBrowser/TinyBrowserText.tmi
-TinyBrowser/TinyBrowserLines.o: $LIB
-TinyBrowser/TinyBrowserHtml.o: $LIB TinyBrowser/TinyBrowserText.tmi \
-    TinyBrowser/TinyBrowserTokens.tmi TinyBrowser/TinyBrowserLines.tmi
-TinyBrowser/TinyBrowserAddress.o: $LIB TinyBrowser/TinyBrowserText.tmi
-TinyBrowser/TinyBrowserHttp.o: $LIB TinyBrowser/TinyBrowserText.tmi
-TinyBrowser/TinyBrowserScreen.o: $LIB \
-    TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibDraw.tmi \
-    TinyLibPlayground.tmi TinyLibGUI.tmi TinyBrowser/TinyBrowserText.tmi \
-    TinyBrowser/TinyBrowserTokens.tmi TinyBrowser/TinyBrowserLines.tmi \
-    TinyBrowser/TinyBrowserHtml.tmi TinyBrowser/TinyBrowserAddress.tmi \
-    TinyBrowser/TinyBrowserHttp.tmi
-TinyBrowser.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi \
-    TinyLibDraw.tmi TinyLibPlayground.tmi TinyLibGUI.tmi \
-    TinyBrowser/TinyBrowserText.tmi TinyBrowser/TinyBrowserTokens.tmi \
-    TinyBrowser/TinyBrowserLines.tmi TinyBrowser/TinyBrowserHtml.tmi \
-    TinyBrowser/TinyBrowserAddress.tmi TinyBrowser/TinyBrowserHttp.tmi \
-    TinyBrowser/TinyBrowserScreen.tmi
-user/www.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibDraw.tmi \
-    TinyLibPlayground.tmi TinyLibGUI.tmi TinyBrowser/TinyBrowserText.tmi \
-    TinyBrowser/TinyBrowserTokens.tmi TinyBrowser/TinyBrowserLines.tmi \
-    TinyBrowser/TinyBrowserHtml.tmi TinyBrowser/TinyBrowserAddress.tmi \
-    TinyBrowser/TinyBrowserHttp.tmi TinyBrowser/TinyBrowserScreen.tmi \
-    TinyBrowser.tmi
 www.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibDraw.tmi \
     TinyLibPlayground.tmi TinyLibGUI.tmi TinyBrowser/TinyBrowserText.tmi \
     TinyBrowser/TinyBrowserTokens.tmi TinyBrowser/TinyBrowserLines.tmi \
@@ -607,10 +503,6 @@ www: $CRT $MLRT www.o TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibDraw.o \
 	ld -map -s -n -a 10 -o $target $prereq
 
 # play
-TinyPlay.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibDraw.tmi \
-    TinyLibPlayground.tmi TinyLibGUI.tmi
-user/play.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibDraw.tmi \
-    TinyLibPlayground.tmi TinyLibGUI.tmi TinyPlay.tmi
 play.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibDraw.tmi \
     TinyLibPlayground.tmi TinyLibGUI.tmi TinyPlay.tmi user/play.tmi
 	ml -nostdlib -o $target $prereq
@@ -620,10 +512,6 @@ play: $CRT $MLRT play.o TinyLibSystem/tinykernel/TinyLibSystem.o \
 	ld -map -s -n -a 4 -o $target $prereq
 
 # tetris
-TinyAppTetris.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi \
-    TinyLibDraw.tmi TinyLibPlayground.tmi
-user/tetris.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi \
-    TinyLibDraw.tmi TinyLibPlayground.tmi TinyAppTetris.tmi
 tetris.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibDraw.tmi \
     TinyLibPlayground.tmi TinyAppTetris.tmi user/tetris.tmi
 	ml -nostdlib -o $target $prereq
@@ -633,12 +521,6 @@ tetris: $CRT $MLRT tetris.o TinyLibSystem/tinykernel/TinyLibSystem.o \
 	ld -map -s -n -o $target $prereq
 
 # square
-tests/TinyLibPlayground_tests/Square.o: $LIB \
-    TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibDraw.tmi \
-    TinyLibPlayground.tmi
-tests/TinyLibPlayground_tests/machine.o: $LIB \
-    TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibDraw.tmi \
-    TinyLibPlayground.tmi tests/TinyLibPlayground_tests/Square.tmi
 square.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibDraw.tmi \
     TinyLibPlayground.tmi tests/TinyLibPlayground_tests/Square.tmi \
     tests/TinyLibPlayground_tests/machine.tmi
@@ -649,10 +531,6 @@ square: $CRT $MLRT square.o TinyLibSystem/tinykernel/TinyLibSystem.o \
 	ld -map -s -n -o $target $prereq
 
 # calc
-TinyAppCalculator.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi \
-    TinyLibDraw.tmi TinyLibPlayground.tmi TinyLibGUI.tmi
-user/calc.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibDraw.tmi \
-    TinyLibPlayground.tmi TinyLibGUI.tmi TinyAppCalculator.tmi
 calc.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibDraw.tmi \
     TinyLibPlayground.tmi TinyLibGUI.tmi TinyAppCalculator.tmi user/calc.tmi
 	ml -nostdlib -o $target $prereq
@@ -662,10 +540,6 @@ calc: $CRT $MLRT calc.o TinyLibSystem/tinykernel/TinyLibSystem.o \
 	ld -map -s -n -o $target $prereq
 
 # temp
-TinyAppTemperature.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi \
-    TinyLibDraw.tmi TinyLibPlayground.tmi TinyLibGUI.tmi
-user/temp.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibDraw.tmi \
-    TinyLibPlayground.tmi TinyLibGUI.tmi TinyAppTemperature.tmi
 temp.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibDraw.tmi \
     TinyLibPlayground.tmi TinyLibGUI.tmi TinyAppTemperature.tmi \
     user/temp.tmi
@@ -676,7 +550,6 @@ temp: $CRT $MLRT temp.o TinyLibSystem/tinykernel/TinyLibSystem.o \
 	ld -map -s -n -o $target $prereq
 
 # bigmem
-user/bigmem.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi
 bigmem.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi user/bigmem.tmi
 	ml -nostdlib -o $target $prereq
 bigmem: $CRT $MLRT bigmem.o TinyLibSystem/tinykernel/TinyLibSystem.o \
@@ -723,62 +596,6 @@ paint: $CRT TinyKernel/libc/draw.o TinyKernel/user/paint.o
 # host by fonts/Mkfont.ml, on the image as it is); end.tm, the image's
 # end, where the files it carries start. kernel.img: entry.o first, at 0
 TinyKernel/runtime.o: TinyKernel/runtime.c runtime/ml.c
-TinyKernel/TinyMemory.o: $LIB
-TinyKernel/TinyKernelGraphics.o: $LIB TinyKernel/TinyMemory.tmi
-TinyKernel/TinyKernelNetwork.o: $LIB TinyKernel/TinyMemory.tmi \
-    TinyKernel/TinyKernelGraphics.tmi
-TinyKernel/TinyKernelAudio.o: $LIB TinyKernel/TinyMemory.tmi \
-    TinyKernel/TinyKernelGraphics.tmi TinyKernel/TinyKernelNetwork.tmi
-TinyKernel/TinyKernelFS.o: $LIB TinyKernel/TinyMemory.tmi \
-    TinyKernel/TinyKernelGraphics.tmi TinyKernel/TinyKernelNetwork.tmi \
-    TinyKernel/TinyKernelAudio.tmi
-TinyKernel/TinyKernelMemory.o: $LIB TinyKernel/TinyMemory.tmi \
-    TinyKernel/TinyKernelGraphics.tmi TinyKernel/TinyKernelNetwork.tmi \
-    TinyKernel/TinyKernelAudio.tmi TinyKernel/TinyKernelFS.tmi
-TinyKernel/TinyKernelMachine.o: $LIB TinyKernel/TinyMemory.tmi \
-    TinyKernel/TinyKernelGraphics.tmi TinyKernel/TinyKernelNetwork.tmi \
-    TinyKernel/TinyKernelAudio.tmi TinyKernel/TinyKernelFS.tmi \
-    TinyKernel/TinyKernelMemory.tmi
-TinyKernel/TinyKernelFiles.o: $LIB TinyKernel/TinyMemory.tmi \
-    TinyKernel/TinyKernelGraphics.tmi TinyKernel/TinyKernelNetwork.tmi \
-    TinyKernel/TinyKernelAudio.tmi TinyKernel/TinyKernelFS.tmi \
-    TinyKernel/TinyKernelMemory.tmi TinyKernel/TinyKernelMachine.tmi
-TinyKernel/TinyKernelProcs.o: $LIB TinyKernel/TinyMemory.tmi \
-    TinyKernel/TinyKernelGraphics.tmi TinyKernel/TinyKernelNetwork.tmi \
-    TinyKernel/TinyKernelAudio.tmi TinyKernel/TinyKernelFS.tmi \
-    TinyKernel/TinyKernelMemory.tmi TinyKernel/TinyKernelMachine.tmi \
-    TinyKernel/TinyKernelFiles.tmi
-TinyKernel/TinyKernelDevices.o: $LIB TinyKernel/TinyMemory.tmi \
-    TinyKernel/TinyKernelGraphics.tmi TinyKernel/TinyKernelNetwork.tmi \
-    TinyKernel/TinyKernelAudio.tmi TinyKernel/TinyKernelFS.tmi \
-    TinyKernel/TinyKernelMemory.tmi TinyKernel/TinyKernelMachine.tmi \
-    TinyKernel/TinyKernelFiles.tmi TinyKernel/TinyKernelProcs.tmi
-TinyKernel/TinyKernelIO.o: $LIB TinyKernel/TinyMemory.tmi \
-    TinyKernel/TinyKernelGraphics.tmi TinyKernel/TinyKernelNetwork.tmi \
-    TinyKernel/TinyKernelAudio.tmi TinyKernel/TinyKernelFS.tmi \
-    TinyKernel/TinyKernelMemory.tmi TinyKernel/TinyKernelMachine.tmi \
-    TinyKernel/TinyKernelFiles.tmi TinyKernel/TinyKernelProcs.tmi \
-    TinyKernel/TinyKernelDevices.tmi
-TinyKernel/TinyKernelCalls.o: $LIB TinyKernel/TinyMemory.tmi \
-    TinyKernel/TinyKernelGraphics.tmi TinyKernel/TinyKernelNetwork.tmi \
-    TinyKernel/TinyKernelAudio.tmi TinyKernel/TinyKernelFS.tmi \
-    TinyKernel/TinyKernelMemory.tmi TinyKernel/TinyKernelMachine.tmi \
-    TinyKernel/TinyKernelFiles.tmi TinyKernel/TinyKernelProcs.tmi \
-    TinyKernel/TinyKernelDevices.tmi TinyKernel/TinyKernelIO.tmi
-TinyKernel/TinyKernelScheduler.o: $LIB TinyKernel/TinyMemory.tmi \
-    TinyKernel/TinyKernelGraphics.tmi TinyKernel/TinyKernelNetwork.tmi \
-    TinyKernel/TinyKernelAudio.tmi TinyKernel/TinyKernelFS.tmi \
-    TinyKernel/TinyKernelMemory.tmi TinyKernel/TinyKernelMachine.tmi \
-    TinyKernel/TinyKernelFiles.tmi TinyKernel/TinyKernelProcs.tmi \
-    TinyKernel/TinyKernelDevices.tmi TinyKernel/TinyKernelIO.tmi \
-    TinyKernel/TinyKernelCalls.tmi
-TinyKernel.o: $LIB TinyKernel/TinyMemory.tmi \
-    TinyKernel/TinyKernelGraphics.tmi TinyKernel/TinyKernelNetwork.tmi \
-    TinyKernel/TinyKernelAudio.tmi TinyKernel/TinyKernelFS.tmi \
-    TinyKernel/TinyKernelMemory.tmi TinyKernel/TinyKernelMachine.tmi \
-    TinyKernel/TinyKernelFiles.tmi TinyKernel/TinyKernelProcs.tmi \
-    TinyKernel/TinyKernelDevices.tmi TinyKernel/TinyKernelIO.tmi \
-    TinyKernel/TinyKernelCalls.tmi TinyKernel/TinyKernelScheduler.tmi
 TinyKernel/kernel.o: $LIB TinyKernel/TinyMemory.tmi \
     TinyKernel/TinyKernelGraphics.tmi TinyKernel/TinyKernelNetwork.tmi \
     TinyKernel/TinyKernelAudio.tmi TinyKernel/TinyKernelFS.tmi \
@@ -905,6 +722,25 @@ boot.img: kernel.img $PROGS $LIB $LIBO $LIBC $LIBML
 	for(u in $UTILS) { echo bin/$u; echo link bin/utils } >> $target
 	{ echo bin/editor; echo link bin/emacs; echo bin/sam; echo link bin/ed } >> $target
 	echo >> $target
+
+#############################################################################
+# The units' dependencies
+#############################################################################
+
+# The ML units' rules, in .depend: a unit's object, then the interfaces
+# of the units it names and its .mli, written by ml -depend as ocamldep
+# writes OCaml's (and m-ix's mini-ml -depend). Its sources are every
+# .ml of INCLUDES' directories (a unit added is found; the host's
+# programs among them, TinyCPU.ml and TinyMachine.ml, are lines no
+# target asks for, or left out, said, when tiny-ml cannot read them).
+# The globs are written here, not in a variable: rc does not glob a *
+# that comes from one. .depend is kept beside this file, as
+# ocaml-light's stdlib keeps its own: `build depend` makes it again
+# after a unit names another one, or a unit is added.
+depend:
+	ml -depend $INCLUDES *.ml TinyLibSystem/tinykernel/*.ml TinyC/*.ml TinyML/*.ml TinyOffice/*.ml TinyBrowser/*.ml TinyKernel/*.ml user/*.ml tests/TinyLibPlayground_tests/*.ml > .depend
+
+<.depend
 
 #############################################################################
 # clean: what this file made removed (the objects and interfaces beside

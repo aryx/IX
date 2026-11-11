@@ -1,0 +1,85 @@
+TinyAppCalculator.o: TinyLibGUI.tmi TinyLibPlayground.tmi TinyAppCalculator.mli
+TinyAppTemperature.o: TinyLibGUI.tmi TinyAppTemperature.mli
+TinyAppTetris.o: TinyLibPlayground.tmi TinyAppTetris.mli
+TinyAssembler.o: TinyLibMachine.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyAssembler.mli
+TinyBrowser.o: TinyBrowser/TinyBrowserAddress.tmi TinyBrowser/TinyBrowserHtml.tmi TinyBrowser/TinyBrowserHttp.tmi TinyBrowser/TinyBrowserLines.tmi TinyBrowser/TinyBrowserScreen.tmi TinyBrowser/TinyBrowserText.tmi TinyLibDraw.tmi TinyLibGUI.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyBrowser.mli
+TinyBuildSystem.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyBuildSystem.mli
+TinyC.o: TinyC/TinyCLexer.tmi TinyC/TinyCLower.tmi TinyC/TinyCMachine.tmi TinyC/TinyCParser.tmi TinyC/TinyCTree.tmi TinyC/TinyCTypes.tmi TinyLibMachine.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyC.mli
+TinyCPU.o: TinyLibMachine.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyCPU.mli
+TinyDatabase.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyDatabase.mli
+TinyDebugger.o: TinyLibGUI.tmi TinyLibMachine.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyDebugger.mli
+TinyEditorLine.o: TinyLibRegex.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyEditorLine.mli
+TinyEditorScreen.o: TinyLibGUI.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyEditorScreen.mli
+TinyKernel.o: TinyKernel/TinyKernelCalls.tmi TinyKernel/TinyKernelDevices.tmi TinyKernel/TinyKernelFS.tmi TinyKernel/TinyKernelFiles.tmi TinyKernel/TinyKernelGraphics.tmi TinyKernel/TinyKernelMachine.tmi TinyKernel/TinyKernelMemory.tmi TinyKernel/TinyKernelProcs.tmi TinyKernel/TinyKernelScheduler.tmi TinyKernel.mli
+TinyLibDraw.o: TinyLibDraw.mli
+TinyLibGUI.o: TinyLibDraw.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibGUI.mli
+TinyLibMachine.o: TinyLibMachine.mli
+TinyLibPlayground.o: TinyLibDraw.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibPlayground.mli
+TinyLibRegex.o: TinyLibRegex.mli
+TinyLinker.o: TinyLibMachine.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLinker.mli
+TinyML.o: TinyLibMachine.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyML/TinyMLCompile.tmi TinyML/TinyMLLexer.tmi TinyML/TinyMLMachine.tmi TinyML/TinyMLParser.tmi TinyML/TinyMLTree.tmi TinyML/TinyMLTypes.tmi TinyML.mli
+TinyOffice.o: TinyLibGUI.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyOffice/TinyOfficeChart.tmi TinyOffice/TinyOfficeDrawing.tmi TinyOffice/TinyOfficeFile.tmi TinyOffice/TinyOfficeModel.tmi TinyOffice/TinyOfficePaint.tmi TinyOffice/TinyOfficeSheet.tmi TinyOffice/TinyOfficeText.tmi TinyOffice.mli
+TinyPlay.o: TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyPlay.mli
+TinyProfiler.o: TinyLibMachine.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyProfiler.mli
+TinyShell.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyShell.mli
+TinyTracer.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyTracer.mli
+TinyTroff.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyOffice/TinyOfficeChart.tmi TinyOffice/TinyOfficeDrawing.tmi TinyOffice/TinyOfficeFile.tmi TinyOffice/TinyOfficeModel.tmi TinyOffice/TinyOfficeSheet.tmi TinyOffice/TinyOfficeText.tmi TinyTroff.mli
+TinyUtilities.o: TinyLibRegex.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyUtilities.mli
+TinyVCS.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyVCS.mli
+TinyWindows.o: TinyLibDraw.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyWindows.mli
+TinyLibSystem/tinykernel/TinyLibSystem.o:
+TinyC/TinyCLexer.o: TinyC/TinyCLexer.mli
+TinyC/TinyCLower.o: TinyC/TinyCTree.tmi TinyC/TinyCTypes.tmi TinyC/TinyCLower.mli
+TinyC/TinyCMachine.o: TinyC/TinyCLower.tmi TinyC/TinyCTree.tmi TinyC/TinyCTypes.tmi TinyLibMachine.tmi TinyC/TinyCMachine.mli
+TinyC/TinyCParser.o: TinyC/TinyCLexer.tmi TinyC/TinyCTree.tmi TinyC/TinyCTypes.tmi TinyC/TinyCParser.mli
+TinyC/TinyCTree.o: TinyC/TinyCTypes.tmi TinyC/TinyCTree.mli
+TinyC/TinyCTypes.o: TinyC/TinyCTypes.mli
+TinyML/TinyMLCompile.o: TinyML/TinyMLLexer.tmi TinyML/TinyMLMachine.tmi TinyML/TinyMLTree.tmi TinyML/TinyMLTypes.tmi TinyML/TinyMLCompile.mli
+TinyML/TinyMLLexer.o: TinyML/TinyMLLexer.mli
+TinyML/TinyMLMachine.o: TinyLibMachine.tmi TinyML/TinyMLLexer.tmi TinyML/TinyMLTree.tmi TinyML/TinyMLMachine.mli
+TinyML/TinyMLParser.o: TinyML/TinyMLLexer.tmi TinyML/TinyMLPrintf.tmi TinyML/TinyMLTree.tmi TinyML/TinyMLParser.mli
+TinyML/TinyMLPrintf.o: TinyML/TinyMLLexer.tmi TinyML/TinyMLTree.tmi TinyML/TinyMLPrintf.mli
+TinyML/TinyMLTree.o: TinyML/TinyMLLexer.tmi TinyML/TinyMLTree.mli
+TinyML/TinyMLTypes.o: TinyML/TinyMLLexer.tmi TinyML/TinyMLParser.tmi TinyML/TinyMLTree.tmi TinyML/TinyMLTypes.mli
+TinyOffice/TinyOfficeChart.o: TinyLibPlayground.tmi TinyOffice/TinyOfficeModel.tmi TinyOffice/TinyOfficeSheet.tmi TinyOffice/TinyOfficeChart.mli
+TinyOffice/TinyOfficeDrawing.o: TinyLibPlayground.tmi TinyOffice/TinyOfficeModel.tmi TinyOffice/TinyOfficeDrawing.mli
+TinyOffice/TinyOfficeFile.o: TinyOffice/TinyOfficeModel.tmi TinyOffice/TinyOfficeSheet.tmi TinyOffice/TinyOfficeText.tmi TinyOffice/TinyOfficeFile.mli
+TinyOffice/TinyOfficeModel.o: TinyLibGUI.tmi TinyOffice/TinyOfficeModel.mli
+TinyOffice/TinyOfficePaint.o: TinyLibPlayground.tmi TinyOffice/TinyOfficeModel.tmi TinyOffice/TinyOfficePaint.mli
+TinyOffice/TinyOfficeSheet.o: TinyLibPlayground.tmi TinyOffice/TinyOfficeModel.tmi TinyOffice/TinyOfficeSheet.mli
+TinyOffice/TinyOfficeText.o: TinyLibPlayground.tmi TinyOffice/TinyOfficeModel.tmi TinyOffice/TinyOfficeText.mli
+TinyBrowser/TinyBrowserAddress.o: TinyBrowser/TinyBrowserText.tmi TinyBrowser/TinyBrowserAddress.mli
+TinyBrowser/TinyBrowserHtml.o: TinyBrowser/TinyBrowserLines.tmi TinyBrowser/TinyBrowserText.tmi TinyBrowser/TinyBrowserTokens.tmi TinyBrowser/TinyBrowserHtml.mli
+TinyBrowser/TinyBrowserHttp.o: TinyBrowser/TinyBrowserAddress.tmi TinyBrowser/TinyBrowserText.tmi TinyBrowser/TinyBrowserHttp.mli
+TinyBrowser/TinyBrowserLines.o: TinyBrowser/TinyBrowserLines.mli
+TinyBrowser/TinyBrowserScreen.o: TinyBrowser/TinyBrowserHtml.tmi TinyBrowser/TinyBrowserLines.tmi TinyLibDraw.tmi TinyLibGUI.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyBrowser/TinyBrowserScreen.mli
+TinyBrowser/TinyBrowserText.o: TinyBrowser/TinyBrowserText.mli
+TinyBrowser/TinyBrowserTokens.o: TinyBrowser/TinyBrowserText.tmi TinyBrowser/TinyBrowserTokens.mli
+TinyKernel/TinyKernelAudio.o: TinyKernel/TinyMemory.tmi TinyKernel/TinyKernelAudio.mli
+TinyKernel/TinyKernelCalls.o: TinyKernel/TinyKernelDevices.tmi TinyKernel/TinyKernelFS.tmi TinyKernel/TinyKernelFiles.tmi TinyKernel/TinyKernelGraphics.tmi TinyKernel/TinyKernelIO.tmi TinyKernel/TinyKernelMachine.tmi TinyKernel/TinyKernelMemory.tmi TinyKernel/TinyKernelNetwork.tmi TinyKernel/TinyKernelProcs.tmi TinyKernel/TinyMemory.tmi TinyKernel/TinyKernelCalls.mli
+TinyKernel/TinyKernelDevices.o: TinyKernel/TinyKernelAudio.tmi TinyKernel/TinyKernelFiles.tmi TinyKernel/TinyKernelGraphics.tmi TinyKernel/TinyKernelMachine.tmi TinyKernel/TinyKernelDevices.mli
+TinyKernel/TinyKernelFiles.o: TinyKernel/TinyKernelFS.tmi TinyKernel/TinyKernelGraphics.tmi TinyKernel/TinyKernelMachine.tmi TinyKernel/TinyKernelNetwork.tmi TinyKernel/TinyMemory.tmi TinyKernel/TinyKernelFiles.mli
+TinyKernel/TinyKernelFS.o: TinyKernel/TinyMemory.tmi TinyKernel/TinyKernelFS.mli
+TinyKernel/TinyKernelGraphics.o: TinyKernel/TinyMemory.tmi TinyKernel/TinyKernelGraphics.mli
+TinyKernel/TinyKernelIO.o: TinyKernel/TinyKernelAudio.tmi TinyKernel/TinyKernelDevices.tmi TinyKernel/TinyKernelFS.tmi TinyKernel/TinyKernelFiles.tmi TinyKernel/TinyKernelGraphics.tmi TinyKernel/TinyKernelMachine.tmi TinyKernel/TinyKernelMemory.tmi TinyKernel/TinyKernelNetwork.tmi TinyKernel/TinyKernelProcs.tmi TinyKernel/TinyMemory.tmi TinyKernel/TinyKernelIO.mli
+TinyKernel/TinyKernelMachine.o: TinyKernel/TinyKernelFS.tmi TinyKernel/TinyMemory.tmi TinyKernel/TinyKernelMachine.mli
+TinyKernel/TinyKernelMemory.o: TinyKernel/TinyMemory.tmi TinyKernel/TinyKernelMemory.mli
+TinyKernel/TinyKernelNetwork.o: TinyKernel/TinyKernelNetwork.mli
+TinyKernel/TinyKernelProcs.o: TinyKernel/TinyKernelFiles.tmi TinyKernel/TinyKernelGraphics.tmi TinyKernel/TinyKernelMachine.tmi TinyKernel/TinyKernelMemory.tmi TinyKernel/TinyKernelNetwork.tmi TinyKernel/TinyMemory.tmi TinyKernel/TinyKernelProcs.mli
+TinyKernel/TinyKernelScheduler.o: TinyKernel/TinyKernelCalls.tmi TinyKernel/TinyKernelDevices.tmi TinyKernel/TinyKernelFiles.tmi TinyKernel/TinyKernelIO.tmi TinyKernel/TinyKernelMachine.tmi TinyKernel/TinyKernelMemory.tmi TinyKernel/TinyKernelNetwork.tmi TinyKernel/TinyKernelProcs.tmi TinyKernel/TinyKernelScheduler.mli
+TinyKernel/TinyMemory.o:
+user/bigmem.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi
+user/calc.o: TinyAppCalculator.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi
+user/debug.o: TinyDebugger.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi
+user/emacs.o: TinyEditorScreen.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi
+user/office.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyOffice.tmi
+user/play.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyPlay.tmi
+user/temp.o: TinyAppTemperature.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi
+user/tetris.o: TinyAppTetris.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi
+user/trace.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyTracer.tmi
+user/troff.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyTroff.tmi
+user/windows.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyWindows.tmi
+user/www.o: TinyBrowser.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi
+tests/TinyLibPlayground_tests/Host.o: tests/TinyLibPlayground_tests/Square.tmi TinyKernel/TinyKernelGraphics.tmi TinyLibDraw.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyKernel/TinyMemory.tmi
+tests/TinyLibPlayground_tests/machine.o: tests/TinyLibPlayground_tests/Square.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi
+tests/TinyLibPlayground_tests/Square.o: TinyLibPlayground.tmi

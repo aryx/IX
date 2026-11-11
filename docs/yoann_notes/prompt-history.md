@@ -69959,3 +69959,50 @@ Claude changed the `tiny/Buildfile`, the `TinyKernel/Makefile` and the self-buil
 Claude reported the new case passes and that both build files now produce byte-identical outputs across all 31 programs and `kernel.img`.
 Claude left the work uncommitted, planning three commits: the `-I` test, the Buildfile and Makefile switch, then `self.expected`.
 Claude's `make self` run was still going, about an hour, and would change `self.expected`.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 13:40
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the `-I` test in `TinyML_test.sh` as `1bc39771`, and the Buildfile and Makefile change as `4397757b`.
+Claude noted that another session had committed its own work in `342ad7c5`, leaving the tree clean apart from scratch directories.
+Claude said `self.expected` would be committed after `make self` finishes and its image diff is reviewed.
+Claude proposed a follow-up: `ml -M` would emit per-unit dependency lines, including `.mli`, which the Buildfile would pull in via `<.depend`.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 13:42
+
+**Yoann:**
+
+> let's do it
+
+------------------------------------------------------------------------
+
+## 2026-11-11 13:42
+
+**Yoann:**
+
+> why -M? cryptic?
+
+------------------------------------------------------------------------
+
+## 2026-11-11 13:47
+
+**Yoann:**
+
+> Do we need the listed UNITS? Seems fragile as adding a moduke now require to also update this UNIT var in Buildfile. maybe we could use globs and run ml -depend *.ml and a dirs with *.ml too ?
+
+**Claude (summary):**
+
+Claude replaced the hand-written UNITS list in tiny/Buildfile with globs over the INCLUDES directories.
+Claude added `ml -depend`, which writes each unit's object and interface dependencies into a generated tiny/.depend file.
+Claude fixed alias handling for `module Machine = TinyMLMachine` and made file matching case-exact, so macOS no longer misreads `machine.ml`.
+Claude checked all 31 programs and kernel.img against the Makefile's bytes, plus the new -depend test and the other suites.
+Claude reported an uncaught Invalid_argument crash in tiny-ml's lexer on unterminated strings as a separate bug, left unfixed.

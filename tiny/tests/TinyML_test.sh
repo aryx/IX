@@ -111,6 +111,15 @@ if $TML -L $W/lib -c -I $W/units -o $W/units/MainI.o $UT/Main.ml && cmp -s $W/un
    && $TML -L $W/lib -c -o $W/units/O1.o $W/units/Shapes.tmi $W/units/O.ml && $TML -L $W/lib -c -I $W/units -o $W/units/O2.o $W/units/O.ml \
    && cmp -s $W/units/O1.o $W/units/O2.o
 then echo "ok units: -I, Main, an alias's and an open's the objects of their interfaces given"; else echo "FAIL units: -I"; failures=$((failures + 1)); fi
+# -depend: a unit's line, the interfaces of the units it names (their
+# sources in -I's directories) and its .mli; a file's own alias not a
+# unit (module Shapes2 = Shapes names Shapes alone); a file tiny-ml
+# cannot read said and left out
+mkdir -p $W/dep; cp $UT/Shapes.ml $UT/Main.ml $W/dep/; printf 'module Shapes2 = Shapes\nlet () = print_int (Shapes2.area Dot)\n' > $W/dep/B.ml
+printf 'let x = 1e6\n' > $W/dep/F.ml
+if [ "$(cd $W/dep && $TML -depend -I . Main.ml B.ml F.ml 2> $W/dep/err)" = "Main.o: Shapes.tmi
+B.o: Shapes.tmi" ] && [ "$(cat $W/dep/err)" = "tiny-ml -depend: F.ml: int_of_string, left out" ]
+then echo "ok units: -depend, the units named, an alias not one, a file not read left out"; else echo "FAIL units: -depend"; failures=$((failures + 1)); fi
 # a name defined twice, the later is the one the units after see
 printf 'let f x = x + 1\nlet f x = x * 10\n' > $W/units/Twice.ml; printf 'let () = print_int (Twice.f 3)\n' > $W/units/R.ml
 if $TML -L $W/lib -c -o $W/units/Twice.o $W/units/Twice.ml && $TML -L $W/lib -c -o $W/units/R.o $W/units/Twice.tmi $W/units/R.ml \

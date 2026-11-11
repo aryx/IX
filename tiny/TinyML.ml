@@ -17,7 +17,8 @@ module Compile = TinyMLCompile
 
 let usage = {|usage: tiny-ml [-L dir | -nostdlib] [-S] [-o out.o] file.ml...
        | tiny-ml -c [-S] [-I dir]... [-o out.o] file.tmi... file.ml
-       | tiny-ml [-S] -o main.o file.tmi...|}
+       | tiny-ml [-S] -o main.o file.tmi...
+       | tiny-ml -depend [-I dir]... file.ml...|}
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
@@ -338,10 +339,12 @@ let text_of (chan : Chan.i) = In_channel.input_all chan.ic
 
 (* the modules a source names, in their order: M of M.x, M.C, M.t and
  * M.( op ), of open M and include M, and of module A = M (as ocamldep
- * finds them); what -I reads the interfaces of *)
+ * finds them); what -I reads the interfaces of. A's of module A = M
+ * left out: the file's own name for M, not a unit (TinyML.ml's Machine,
+ * TinyMLMachine, not the playground's test unit Machine) *)
 let named_units (text : string) : string list =
   let toks = Array.map fst (Lexer.lex text) in
-  let n = Array.length toks and found = ref [] in
+  let n = Array.length toks and found = ref [] and aliases = ref [] in
   let add m = if not (List.mem m !found) then found := m :: !found in
   let prefix s =
     match String.index_opt s '.' with
@@ -355,10 +358,12 @@ let named_units (text : string) : string list =
         if k + 1 < n && toks.(k + 1) = Lexer.KW "." then add s;
         if after k "open" || after k "include"
            || (after k "=" && k >= 3 && toks.(k - 3) = Lexer.KW "module")
-        then add s
+        then add s;
+        if after k "module" && k + 1 < n && toks.(k + 1) = Lexer.KW "="
+        then aliases := s :: !aliases
     | _ -> ()
   done;
-  List.rev !found
+  List.filter (fun m -> not (List.mem m !aliases)) (List.rev !found)
 
 (* a file's unit: its name without the directory and the extension,
  * capitalized, as OCaml's module *)
@@ -369,17 +374,19 @@ let unit_of (f : Fpath.t) =
 (* a file that cannot be read or made, said apart from an error in one *)
 exception File_error of string
 
-let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
+let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
+                   Cap.stderr; .. >)
     (argv : string array) : Exit.t =
   let output = ref None and file = ref "" and files = ref []
   and separate = ref false and lib = ref (Some "/lib/ml")
-  and text = ref false and incl = ref [] in
+  and text = ref false and incl = ref [] and depend = ref false in
   let rec args l = match l with
     | "-o" :: o :: r -> output := Some (Fpath.v o); args r
     | "-S" :: r -> text := true; args r
     | "-c" :: r -> separate := true; args r
     | "-L" :: d :: r -> lib := Some d; args r
     | "-I" :: d :: r -> incl := !incl @ [ Fpath.v d ]; args r
+    | "-depend" :: r -> depend := true; args r
     | "-nostdlib" :: r -> lib := None; args r
     | f :: r -> files := Fpath.v f :: !files; args r
     | [] -> ()
@@ -397,8 +404,68 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     with Failure m when not !opened -> raise (File_error m) in
   let tmis = List.filter (Fpath.has_ext ".tmi") files
   and mls = List.filter (Fpath.has_ext ".ml") files in
+  (* [in_dirs m ext]: the file of module m in the -I directories, its
+   * name M.ext or m.ext (user/tetris.ml is Tetris), compared by the
+   * directory's names, not by exists: a host's file system may take
+   * Machine.ml for machine.ml *)
+  let listed = Hashtbl.create 17 in
+  let names d =
+    match Hashtbl.find_opt listed d with
+    | Some l -> l
+    | None ->
+        let l = try TinyLibSystem.readdir caps d with Failure _ -> [] in
+        Hashtbl.replace listed d l; l in
+  let in_dirs m ext =
+    List.find_map (fun d ->
+      List.find_map (fun base ->
+        if List.mem (base ^ ext) (names d)
+        then Some (Fpath.add_seg d (base ^ ext)) else None)
+        [ m; String.lowercase_ascii (String.sub m 0 1)
+             ^ String.sub m 1 (String.length m - 1) ]) !incl in
   if List.mem "-h" argl || List.mem "--help" argl then
     (TinyLibSystem.print caps help; Exit.OK)
+  (* -depend: each unit's line for a Buildfile, as ocamldep's and m-ix's
+   * mini-ml -depend: its object, then the interfaces of the units it
+   * names whose source is in an -I directory (before any is built), and
+   * its .mli; what -c -I will read, so that a build makes them first,
+   * and the unit again when one of them changes *)
+  else if !depend then begin
+    let source m = in_dirs m ".ml" in
+    (* a path as a Buildfile names it: ./x is x *)
+    let here p =
+      let s = Fpath.to_string p in
+      if String.length s > 2 && String.sub s 0 2 = "./"
+      then String.sub s 2 (String.length s - 2) else s in
+    (* a file tiny-ml cannot read (a host's program among the units,
+     * TinyMachine.ml and its floats: a Buildfile's *.ml takes it too)
+     * said and left out *)
+    let unread f m =
+      TinyLibSystem.eprint caps
+        ("tiny-ml -depend: " ^ Fpath.to_string f ^ ": " ^ m ^ ", left out\n") in
+    try
+      List.iter (fun f ->
+       try
+        let mli = Fpath.set_ext ".mli" f in
+        let in_ml = with_file (fun ch -> named_units (text_of ch)) f in
+        let has_mli = TinyLibSystem.exists caps mli in
+        let in_mli =
+          if has_mli then with_file (fun ch -> named_units (text_of ch)) mli
+          else [] in
+        let own = unit_of f in
+        let deps =
+          List.filter_map (fun m ->
+            if m = own then None
+            else Option.map (fun s -> here (Fpath.set_ext ".tmi" s)) (source m))
+            (List.sort_uniq compare (in_ml @ in_mli)) in
+        let deps = deps @ (if has_mli then [ Fpath.to_string mli ] else []) in
+        TinyLibSystem.print caps
+          (Fpath.to_string (Fpath.set_ext ".o" f) ^ ":"
+           ^ String.concat "" (List.map (fun d -> " " ^ d) deps) ^ "\n")
+       with Failure m -> unread f m)
+        mls;
+      Exit.OK
+    with File_error m -> Exit.Err m
+  end
   else if List.length mls + List.length tmis <> List.length files || files = []
           || (!separate && List.length mls <> 1) then
     (TinyLibSystem.eprint caps (usage ^ "   (-h: how)\n"); Exit.Code 2)
@@ -436,13 +503,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
      * once; a name with none (an alias, the library's, the unit) skipped
      * (old: each interface an argument, in order) *)
     if !incl <> [] then begin
-      let find m =
-        List.find_map (fun d ->
-          List.find_map (fun base ->
-            let f = Fpath.add_seg d (base ^ ".tmi") in
-            if TinyLibSystem.exists caps f then Some f else None)
-            [ m; String.lowercase_ascii (String.sub m 0 1)
-                 ^ String.sub m 1 (String.length m - 1) ]) !incl in
+      let find m = in_dirs m ".tmi" in
       let decoded = Hashtbl.create 17 in
       let interface m =
         match Hashtbl.find_opt decoded m with

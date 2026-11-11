@@ -316,5 +316,5 @@ val compile_unit :
 (* the program: its arguments (its name first), files of ML to a file
  * of assembly (-h: how), to how it ends *)
 val main :
-  < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. > ->
+  < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout; Cap.stderr; .. > ->
   string array -> Exit.t

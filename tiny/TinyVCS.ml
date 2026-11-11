@@ -217,9 +217,6 @@ let path r f = dir r / f
 let read_file = TSys.read_file
 let write_file = TSys.write_file
 
-let exists caps (p : Fpath.t) =
-  try ignore (TSys.stat caps p); true with Failure _ -> false
-
 let load (caps : caps) (root : Fpath.t) : repo =
   let r = { caps; root; index = Hashtbl.create 1024; fresh = [] } in
   let s = try read_file caps (path r "objects") with Failure _ -> "" in
@@ -365,7 +362,7 @@ let checkout r (old : hash option) (nw : hash) : unit =
   (* (old: File h | Exec h | Conflict { text = h; _ }, an or-pattern
    * with variables, which tiny-ml does not read) *)
   let write p h x =
-    if exists r.caps p && TSys.is_directory r.caps p then rm_rf p;
+    if TSys.exists r.caps p && TSys.is_directory r.caps p then rm_rf p;
     write_file r.caps p (blob r h);
     TSys.set_executable r.caps p x in
   let rec go dir (old : tree) (nw : tree) =
@@ -382,9 +379,9 @@ let checkout r (old : hash option) (nw : hash) : unit =
               | Some (Dir o) -> tree r o
               | _ -> []
             in
-            if exists r.caps p && not (TSys.is_directory r.caps p) then
+            if TSys.exists r.caps p && not (TSys.is_directory r.caps p) then
               TSys.remove r.caps p;
-            if not (exists r.caps p) then TSys.mkdir r.caps p;
+            if not (TSys.exists r.caps p) then TSys.mkdir r.caps p;
             go p sub (tree r h)
         | File h -> write p h false
         | Exec h -> write p h true
@@ -672,7 +669,7 @@ let first_line s =
  * push records) *)
 let find_root (caps : < Cap.open_in; Cap.env; .. >) : Fpath.t =
   let rec up d =
-    if exists caps (Fpath.v d / ".tvcs" / "head") then Fpath.v d
+    if TSys.exists caps (Fpath.v d / ".tvcs" / "head") then Fpath.v d
     else if Filename.dirname d = d then error "not a tiny-vcs repository"
     else up (Filename.dirname d)
   in
@@ -685,7 +682,7 @@ let author caps =
 
 (* tiny-vcs init *)
 let init (caps : caps) (dir : Fpath.t) : unit =
-  if exists caps (dir / ".tvcs") then error (!!dir ^ "/.tvcs exists");
+  if TSys.exists caps (dir / ".tvcs") then error (!!dir ^ "/.tvcs exists");
   TSys.mkdir caps (dir / ".tvcs");
   let r = load caps dir in
   save r { prev = None; odate = now caps; what = "init"; current = "master";

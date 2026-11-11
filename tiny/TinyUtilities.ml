@@ -489,12 +489,17 @@ let du (caps : < Cap.stdout; Cap.stderr; Cap.open_in; Cap.readdir; .. >) args =
 (* rm, mkdir, cp, mv, ln, touch *)
 (*****************************************************************************)
 
-(* -r: a directory with what it has, its entries first *)
+(* -r: a directory with what it has, its entries first; -f: a path that
+ * is not there skipped, not said, not a failure (a clean target's rm -f
+ * *.o, the glob left as it is when nothing matches) *)
 let rm
     (caps : < Cap.stderr; Cap.open_in; Cap.readdir; Cap.open_out; .. >) args =
-  let flags, paths = options "r" args in
+  let flags, paths = options "rf" args in
   if paths = [] then raise Usage;
-  each_path caps "rm" (paths_of paths) (fun root ->
+  let paths = paths_of paths in
+  let paths =
+    if List.mem 'f' flags then List.filter (TSys.exists caps) paths else paths in
+  each_path caps "rm" paths (fun root ->
     if List.mem 'r' flags then
       fold caps root (fun p _ _ entries ->
         ignore (entries ()); TSys.remove caps p)
@@ -919,7 +924,7 @@ let utilities =
     utility "mv" "from to | from ... dir" "files renamed" mv;
     utility "ps" "[-a] [file]" "the processes, from /dev/ps" ps;
     utility "pwd" "" "the directory the process is in" pwd;
-    utility "rm" "[-r] path ..." "files removed" rm;
+    utility "rm" "[-rf] path ..." "files removed" rm;
     utility "seq" "[first [step]] last" "the numbers from first to last" seq;
     utility "sleep" "seconds[.thousandths]" "nothing, for that long" sleep;
     utility "sort" "[-nru] [+field] [file ...]" "the lines in order" sort;

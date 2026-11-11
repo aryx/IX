@@ -689,7 +689,7 @@ image: `/lib/c` (C's runtime, `start.o` first, and tiny-kernel's calls,
 `sys.o`) and `/lib/ml` (tiny-ml's library, `.tmi` and `.o`, its runtime
 `mlsys.o` and `end.o`). Each has the `Buildfile` that makes it from
 `/src` (`tiny/TinyKernel/lib/c/` and `lib/ml/` on the host): `cd
-/lib/c; build -n` shows how, `rm *.o; build` does it again.
+/lib/c; build -n` shows how, `build clean; build` does it again.
 
 `dial` gives a descriptor on a connection to another machine, by its
 address as text (`"10.0.0.1"`: the wire's other end) and a port; -1

@@ -144,6 +144,7 @@ let stat (_ : < Cap.open_in; .. >) (file : Fpath.t) : stat =
     (* (Unix's labels: ours have the same prefix) *)
     let (st : Unix.stats) = Unix.stat !!file in
     { st_dir = st.st_kind = Unix.S_DIR; st_size = st.st_size })
+let exists (_ : < Cap.open_in; .. >) (file : Fpath.t) = Sys.file_exists !!file
 let links (_ : < Cap.open_in; .. >) (file : Fpath.t) =
   reason (fun () -> (Unix.stat !!file).st_nlink)
 (* 2000-01-01 in Unix's seconds, tiny-kernel's dates' start *)

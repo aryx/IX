@@ -204,6 +204,9 @@ val chdir : < Cap.chdir; .. > -> Fpath.t -> unit
  * reason when it is not there *)
 val stat : < Cap.open_in; .. > -> Fpath.t -> stat
 
+(* whether a file or a directory is there *)
+val exists : < Cap.open_in; .. > -> Fpath.t -> bool
+
 (* how many names a file has (its hard links); Failure with the reason
  * when it is not there *)
 val links : < Cap.open_in; .. > -> Fpath.t -> int

@@ -69480,3 +69480,55 @@ Claude made tiny/examples/Buildfile name only its own files and use /lib/ml/[A-Z
 Claude kept lib/ml/Buildfile's unit order matching the Makefile's CORE list, and the image rule fails if they drift.
 Claude left the changes uncommitted while the make self run in _make8 finishes, as the real byte-for-byte test.
 Claude asked whether to commit now or after make self passes, and proposed a tiny/Buildfile at the top of /src as a later step.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 10:27
+
+**Yoann:**
+
+> let's commit; also let's add clean targets to those Buildfile (especially examples/Buildfile)
+
+**Claude (summary):**
+
+Claude committed the `clean` target changes as `8ee295ef` across the ix Buildfiles, leaving `self.expected` uncommitted until `make self` finishes.
+Claude's `clean` recipes test each file before removing it, because tiny-kernel's `rm` has no `-f` and `rc -e` stops on failure.
+Claude added `status=''` at the end of each recipe so `clean` succeeds on an already empty directory.
+Claude verified `build clean` in `/examples`, `/lib/ml`, and `/lib/c`, plus a repeated `clean`, and the kernel check passes.
+Claude also noted the still-running `make self` in `_make8` and that `tiny/Buildfile` in `/src` remains as a separate step.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 10:33
+
+**Yoann:**
+
+> let's add -f to tiny-rm so we don't need this complex clean target; also I would have expected a rm -f *.o hello helloml or something simple like that
+
+------------------------------------------------------------------------
+
+## 2026-11-11 10:34
+
+**Yoann:**
+
+> also need to remove the map files probably
+
+**Claude (summary):**
+
+Claude added `-f` support to `tiny-rm` and three `TinyUtilities_test.sh` cases comparing it with host `rm`.
+Claude reduced each `clean` target to one `rm -f` line and removed the `.map` files as well.
+In `/examples` Claude named the files explicitly, because a glob would delete `TinyLibMachine.o` and `spin.map`.
+Claude updated the manual to say `build clean; build`, and all 183 test cases pass.
+Claude checked tiny-kernel and mini-mk, re-recorded one kernel screen, and left everything uncommitted while `make self` runs.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 10:40
+
+**Yoann:**
+
+> I've seen a few code in tiny/ looking whether a file exists using try Tysys.stat ... maybe we should factorize this in a function in TinyLibSystem.mli no?
+
+**Claude (summary):**
+
+Claude proposed adding `exists` to `TinyLibSystem.mli` beside `stat`, with the unix, tiny-kernel and test-stub implementations. Claude replaced the local copies in `TinyBuildSystem` and `TinyVCS` and the four other callers with `TSys.exists`. Tests passed for the touched programs, and `bugs_tiny.txt` and two kernel screen sums were re-recorded. Claude split the work into two planned commits, one for `rm -f`/`clean` and one for `TSys.exists`, and asked whether to commit.

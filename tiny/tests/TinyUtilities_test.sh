@@ -106,6 +106,9 @@ same "" - rm f
 same "" - rm d
 same "" - rm nosuch
 same "" - rm -r d
+same "" - rm -f nosuch
+same "" - rm -f f nosuch
+same "" - rm -rf d nosuch
 same "" - mkdir x y
 same "" - mkdir d
 same "" - mkdir -p d/e/f/g

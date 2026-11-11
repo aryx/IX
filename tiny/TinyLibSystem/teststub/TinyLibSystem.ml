@@ -52,6 +52,7 @@ let readdir _ _ = []
 let is_directory _ _ = false
 let chdir _ _ = none "chdir"
 let stat _ _ = none "stat"
+let exists _ _ = false
 let links _ _ = none "links"
 let mtime _ _ = none "mtime"
 let mkdir _ _ = none "mkdir"

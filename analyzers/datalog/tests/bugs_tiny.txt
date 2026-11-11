@@ -5,7 +5,7 @@ tiny/TinyC/TinyCLower.ml:136: stack: TinyCLower.lower calls itself, not a tail c
 tiny/TinyC/TinyCLower.ml:146: stack: TinyCLower.lower calls itself, not a tail call, over a list
 tiny/TinyC/TinyCParser.ml:174: stack: TinyCParser.declarator calls itself, not a tail call, over a list
 tiny/TinyC/TinyCParser.ml:177: stack: TinyCParser.declarator3 calls itself, not a tail call, over a list
-tiny/TinyC/TinyCParser.ml:342: stack: TinyCParser.call_args calls itself, not a tail call, over a list
+tiny/TinyC/TinyCParser.ml:340: stack: TinyCParser.call_args calls itself, not a tail call, over a list
 tiny/TinyC/TinyCTypes.ml:51: stack: TinyCTypes.size calls itself, not a tail call, over a list
 tiny/TinyDatabase.ml:173: evalorder: operands at 173:13 and 174:13, both with an effect: their order the compiler's
 tiny/TinyDatabase.ml:177: stack: TinyDatabase.ins calls itself, not a tail call, over a list
@@ -57,6 +57,6 @@ tiny/TinyMachine/TinyMachineDevices.ml:831: int31: in until, 0x40000000: not on 
 tiny/TinyMachine/TinyMachineDevices.ml:836: int31: in TinyMachineDevices.calm, 0x40000000: not on the Pi 1's 31 bits
 tiny/TinyMachine/TinyMachineSocket.ml:59: swallowed: in TinyMachineSocket.relay, Unix.Unix_error silenced, a constant answered
 tiny/TinyShell.ml:277: evalorder: operands at 277:8 and 277:19, both with an effect: their order the compiler's
-tiny/TinyVCS.ml:496: stack: groups calls itself, not a tail call, over a list
-tiny/TinyVCS.ml:579: order: in TinyVCS.lca, a table's order reaches the output at tiny/TinyVCS.ml:739, tiny/TinyVCS.ml:802
-tiny/TinyVCS.ml:750: evalorder: operands at 750:12 and 750:38, both with an effect: their order the compiler's
+tiny/TinyVCS.ml:493: stack: groups calls itself, not a tail call, over a list
+tiny/TinyVCS.ml:576: order: in TinyVCS.lca, a table's order reaches the output at tiny/TinyVCS.ml:736, tiny/TinyVCS.ml:799
+tiny/TinyVCS.ml:747: evalorder: operands at 747:12 and 747:38, both with an effect: their order the compiler's

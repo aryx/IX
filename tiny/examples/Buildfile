@@ -30,10 +30,8 @@ helloml: helloml.o
 helloml.o: helloml.ml
 	ml -o $target helloml.ml
 
-# build clean: what build made here removed, each if it is there (rm
-# has no -f, and a recipe stops at a command that fails; status, the
-# last test's when nothing is left, made a success); a target that
-# makes no file is never up to date, so it always runs
+# build clean: what build made here removed, by name: /examples has
+# other files that *.o and *.map would take (TinyLibMachine.o, spin.map).
+# A target that makes no file is never up to date, so it always runs
 clean:
-	for(f in hello hello.map hello.o square.o helloml helloml.map helloml.o) if(test -f $f) rm $f
-	status=''
+	rm -f hello helloml hello.o square.o helloml.o hello.map helloml.map

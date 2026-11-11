@@ -32,7 +32,6 @@ libc.o: /src/runtime/libc.c /src/runtime/libc.h
 sys.o: /src/TinyKernel/libc/sys.tm
 	as -o $target /src/TinyKernel/libc/sys.tm
 
-# build clean: the objects removed (each if it is there: rm has no -f)
+# build clean: the objects removed
 clean:
-	for(f in start.o udivmod.o libc.o sys.o) if(test -f $f) rm $f
-	status=''
+	rm -f *.o

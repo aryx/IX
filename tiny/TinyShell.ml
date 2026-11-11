@@ -397,11 +397,7 @@ let path (w : string) : Fpath.t =
  * examples/g on tiny-kernel, where 9base's rc says d/g) *)
 let glob (caps : < Cap.open_in; Cap.readdir; .. >) (w : string) : string list =
   let rec expand dir = function
-    | [] ->
-        if (try ignore (TSys.stat caps (path dir)); true
-            with Failure _ -> false)
-        then [ dir ]
-        else []
+    | [] -> if TSys.exists caps (path dir) then [ dir ] else []
     | comp :: rest when not (has_meta comp 0) ->
         expand (dir ^ unescape comp ^ if rest = [] then "" else "/") rest
     | comp :: rest ->

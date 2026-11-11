@@ -276,12 +276,9 @@ let order (root : node) : node list =
 
 (* (a target's name is text, matched by the rules and the digests'
  * key: a path at this section's door) *)
-let exists caps (path : Fpath.t) =
-  try ignore (TSys.stat caps path); true with Failure _ -> false
-
 let read_file caps file =
   let path = Fpath.v file in
-  if exists caps path then Some (TSys.read_file caps path) else None
+  if TSys.exists caps path then Some (TSys.read_file caps path) else None
 
 (* A file's digest, the SHA-1 of its bytes, read once in a run
  * (file_digests), and not at all when its size and date are the ones
@@ -311,7 +308,7 @@ let digest_file (caps : < Cap.open_in; Cap.readdir; .. >) (file : string) :
   | None ->
       let path = Fpath.v file in
       let d =
-        if exists caps path && not (TSys.is_directory caps path)
+        if TSys.exists caps path && not (TSys.is_directory caps path)
         then begin
           let (st : TSys.stat) = TSys.stat caps path
           and date = TSys.mtime caps path in
@@ -579,7 +576,7 @@ let run (caps : < caps; .. >) (argv : string array) : Exit.t =
     let stamps = load caps in
     let ok =
       targets |> List.for_all (fun t ->
-        let root = graph rules (exists caps) t in
+        let root = graph rules (TSys.exists caps) t in
         if !dot then begin
           TSys.print caps "digraph G {\n";
           order root |> List.iter (fun n ->

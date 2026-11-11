@@ -318,6 +318,7 @@ let links _caps file = (entry file).e_links
 let mtime _caps file = (entry file).e_mtime
 
 let is_directory caps file = try (stat caps file).st_dir with Failure _ -> false
+let exists caps file = try ignore (stat caps file); true with Failure _ -> false
 
 let read fd max = u_read fd max
 let write fd s = if u_write fd s < 0 then failwith "cannot write"
@@ -349,7 +350,7 @@ let is_executable _caps file = false
 let set_executable caps file x = ()
 
 let touch caps file =
-  if not (try ignore (stat caps file); true with Failure _ -> false) then
+  if not (exists caps file) then
     close (open_out caps file)
 
 let getcwd caps = Fpath.v (u_getcwd ())

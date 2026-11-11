@@ -36,9 +36,6 @@ mlsys.o: /src/TinyLibSystem/tinykernel/mlsys.c /src/runtime/ml.c /src/TinyKernel
 end.o: /src/TinyKernel/end.tm
 	as -o $target /src/TinyKernel/end.tm
 
-# build clean: the objects and interfaces removed (each if it is there:
-# rm has no -f)
+# build clean: the objects and interfaces removed
 clean:
-	for(f in mlsys.o end.o) if(test -f $f) rm $f
-	for(m in $CORE) for(f in $m.o $m.tmi) if(test -f $f) rm $f
-	status=''
+	rm -f *.o *.tmi

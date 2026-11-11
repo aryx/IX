@@ -5,19 +5,11 @@
 
 open TinyLibDraw
 
-(* TinyLibSystem/tinykernel/mlsys.c's: the kernel's calls. A read's string is ""
- * at the end; a pipe's or a box's two ends are one number (the reading
- * one, and 256 times the writing one) *)
-external u_read : int -> int -> string = "u_read"
-external u_write : int -> string -> int = "u_write"
-external u_pipe : unit -> int = "u_pipe"
-external u_box : unit -> int = "u_box"
-external u_close : int -> int = "u_close"
-external u_ready : int array -> int -> int -> int = "u_ready"
-external u_spawn_window : int -> int -> int -> int -> string -> int
-  = "u_spawn_window"
-external u_kill : int -> int = "u_kill"
-external u_wait : unit -> int = "u_wait"
+module TSys = TinyLibSystem
+
+(* what we write to a window's shell, or draw, when it may be gone: its
+ * end's error ignored, the window deleted when its pipes end *)
+let put fd s = try TSys.write fd s with Failure _ -> ()
 
 (*****************************************************************************)
 (* Drawing: messages gathered, written at each turn of the loop *)
@@ -36,7 +28,7 @@ let red = 6
 (* (written past a kilobyte too: a message joined to n bytes copies them) *)
 let gathered = ref ""
 let flush () =
-  if !gathered <> "" then (ignore (u_write 3 !gathered); gathered := "")
+  if !gathered <> "" then (put TSys.fd_draw !gathered; gathered := "")
 let send m =
   gathered := !gathered ^ m; if String.length !gathered > 1024 then flush ()
 
@@ -189,9 +181,8 @@ let print w s =
         (if w.page.col > 0 then (w.page.col <- w.page.col - 1; cells 1);
          from (i + 1))
       else if s.[i] = '\005' then
-        (ignore
-           (u_write w.ends.mouse
-              (i16 w.w ^ i16 0 ^ i16 w.h ^ i16 0 ^ i16 (-1) ^ i16 (-1)));
+        (put w.ends.mouse
+           (i16 w.w ^ i16 0 ^ i16 w.h ^ i16 0 ^ i16 (-1) ^ i16 (-1));
          from (i + 1))
       else begin
         if (w.page.col + 1) * 8 > w.w then newline w;
@@ -221,7 +212,7 @@ let print w s =
  * typed; a text's line is edited here and given whole (Control-D with
  * nothing typed is its input's end) *)
 let key w c =
-  let give s = if w.ends.keys_open then ignore (u_write w.ends.keys s) in
+  let give s = if w.ends.keys_open then put w.ends.keys s in
   if w.page.picture then give (String.make 1 c)
   else if c = '\n' || c = '\r' then
     (print w "\n"; give (w.page.line ^ "\n"); w.page.line <- "")
@@ -233,7 +224,7 @@ let key w c =
   else if c = '\004' then begin
     if w.page.line = "" then
       (if w.ends.keys_open then
-         (w.ends.keys_open <- false; ignore (u_close w.ends.keys)))
+         (w.ends.keys_open <- false; TSys.close w.ends.keys))
     else (give w.page.line; w.page.line <- "")
   end
   else if c >= ' ' then
@@ -325,44 +316,55 @@ let snap x = x - ((x + border) land 3)
 
 (* a window of that rectangle of the screen, a shell in it: three pipes
  * and a box, the shell given an end of each as its 0, its 1 and 2, its
- * 3 and its 4. Its inside is whole characters, 8 by 16 *)
-let create (x0, y0, x1, y1) =
-  let k = u_pipe () and p = u_pipe () and d = u_pipe () and m = u_box () in
-  let pid =
-    if k < 0 || p < 0 || d < 0 || m < 0 then -1
-    else
-      u_spawn_window (k land 255) (p / 256) (d / 256) (m land 255) "/bin/sh"
-  in
-  (* the shell's ends are not ours; ours neither when there is no shell *)
-  List.iter (fun fd -> if fd >= 0 then ignore (u_close fd))
-    [ k land 255; p / 256; d / 256; m land 255 ];
-  if pid < 0 then
-    List.iter (fun fd -> if fd >= 0 then ignore (u_close fd))
-      [ k / 256; p land 255; d land 255; m / 256 ]
-  else begin
-    let ends =
-      { keys = k / 256; keys_open = true; prints = p land 255;
-        draws = d land 255; mouse = m / 256 } in
-    let page =
-      { pending = ""; ids = []; picture = false; col = 0; row = 0; line = "";
-        cursor = 0 } in
-    let wide = (x1 - x0 - (2 * border)) / 8 * 8
-    and high = (y1 - y0 - (2 * border)) / 16 * 16 in
-    let w =
-      { image = fresh (); w = wide; h = high; x = snap x0; y = y0; pid = pid;
-        ends = ends; page = page } in
-    send (d_image w.image (0, 0, w.w, w.h) 255);
-    windows := w :: !windows;
-    refresh everything
-  end
+ * 3 and its 4. Its inside is whole characters, 8 by 16. No window
+ * when the kernel has no pipe or no process left *)
+let create (caps : < Cap.pipe; Cap.fork; Cap.exec; .. >) (x0, y0, x1, y1) =
+  let made make = try Some (make caps) with Failure _ -> None in
+  let k = made TSys.pipe and p = made TSys.pipe and d = made TSys.pipe
+  and m = made TSys.box in
+  let closed e = match e with Some (r, w) -> TSys.close r; TSys.close w
+    | None -> () in
+  match k, p, d, m with
+  | Some (kr, kw), Some (pr, pw), Some (dr, dw), Some (mr, mw) -> (
+      match (try Some (TSys.fork caps) with Failure _ -> None) with
+      | None -> List.iter closed [ k; p; d; m ]
+      | Some None ->
+          (* the shell: the window's ends its 0 to 4, the others (ours,
+           * the other windows') TinyLibSystem's, closed by exec *)
+          TSys.dup2 kr TSys.fd_stdin;
+          TSys.dup2 pw TSys.fd_stdout;
+          TSys.dup2 pw TSys.fd_stderr;
+          TSys.dup2 dw TSys.fd_draw;
+          TSys.dup2 mr TSys.fd_mouse;
+          ignore (TSys.exec caps (Fpath.v "/bin/sh") [ "/bin/sh" ] []);
+          (* the child's end, out of our code: its status by
+           * TinyLibSystem.main *)
+          raise (Exit.ExitCode 1)
+      | Some (Some pid) ->
+          (* the shell's ends are not ours *)
+          List.iter TSys.close [ kr; pw; dw; mr ];
+          let ends =
+            { keys = kw; keys_open = true; prints = pr; draws = dr;
+              mouse = mw } in
+          let page =
+            { pending = ""; ids = []; picture = false; col = 0; row = 0;
+              line = ""; cursor = 0 } in
+          let wide = (x1 - x0 - (2 * border)) / 8 * 8
+          and high = (y1 - y0 - (2 * border)) / 16 * 16 in
+          let w =
+            { image = fresh (); w = wide; h = high; x = snap x0; y = y0;
+              pid = pid; ends = ends; page = page } in
+          send (d_image w.image (0, 0, w.w, w.h) 255);
+          windows := w :: !windows;
+          refresh everything)
+  | _ -> List.iter closed [ k; p; d; m ]
 
 (* its ends closed, its shell ended, its images freed *)
-let delete w =
-  List.iter (fun fd -> ignore (u_close fd))
-    [ w.ends.prints; w.ends.draws; w.ends.mouse ];
-  if w.ends.keys_open then ignore (u_close w.ends.keys);
-  ignore (u_kill w.pid);
-  ignore (u_wait ());
+let delete (caps : < Cap.kill; Cap.wait; .. >) w =
+  List.iter TSys.close [ w.ends.prints; w.ends.draws; w.ends.mouse ];
+  if w.ends.keys_open then TSys.close w.ends.keys;
+  ignore (TSys.kill caps w.pid);
+  ignore (TSys.wait caps w.pid);
   List.iter (fun (_, mine) -> send (d_free mine); release mine) w.page.ids;
   send (d_free w.image);
   release w.image;
@@ -424,10 +426,10 @@ let rec over x y l =
   | w :: rest -> if inside (outer w) x y then Some w else over x y rest
 let word v = i16 v ^ i16 (v asr 16)
 
-let finish () = List.iter delete !windows; flush (); doing := Ended
+let finish caps = List.iter (delete caps) !windows; flush (); doing := Ended
 
 (* the mouse at (x, y), its buttons b (1 left, 4 right) *)
-let mouse x y b =
+let mouse caps x y b =
   (match !doing, over x y !windows with
    | Idle, Some w when current w && inside (inner w) x y ->
        show_cursor w.page.cursor
@@ -439,9 +441,8 @@ let mouse x y b =
   | Idle -> (
       match over x y !windows with
       | Some w when current w && w.page.picture && inside (inner w) x y ->
-          ignore
-            (u_write w.ends.mouse
-               (word (x - w.x - border) ^ word (y - w.y - border) ^ word b))
+          put w.ends.mouse
+            (word (x - w.x - border) ^ word (y - w.y - border) ^ word b)
       | _ when right -> doing := Menu (x, y, None); menu x y None
       | Some w when left && not (current w) ->
           windows := w :: List.filter (fun v -> v != w) !windows;
@@ -457,7 +458,7 @@ let mouse x y b =
       else begin
         refresh (menu_box mx my);
         match item with
-        | Some Item_exit -> finish ()
+        | Some Item_exit -> finish caps
         | Some item -> doing := Chosen item
         | None -> doing := Idle
       end
@@ -467,7 +468,7 @@ let mouse x y b =
         match item, over x y !windows with
         | Item_new, _ -> doing := Sweep (x, y, x, y)
         | Item_move, Some w -> doing := Drag (w, x - w.x, y - w.y, w.x, w.y)
-        | Item_delete, Some w -> doing := Idle; delete w
+        | Item_delete, Some w -> doing := Idle; delete caps w
         | _ -> doing := Idle
       end
   | Sweep (sx, sy, lx, ly) ->
@@ -477,7 +478,7 @@ let mouse x y b =
       else begin
         doing := Idle;
         let x0, y0, x1, y1 = corners sx sy x y in
-        if x1 - x0 >= 64 && y1 - y0 >= 48 then create (x0, y0, x1, y1)
+        if x1 - x0 >= 64 && y1 - y0 >= 48 then create caps (x0, y0, x1, y1)
       end
   | Drag (w, gx, gy, lx, ly) ->
       let size = w.w + (2 * border), w.h + (2 * border) in
@@ -500,27 +501,28 @@ let mouse x y b =
  * which would be drawn over and the window left a picture). The end
  * of the keys is ours, as the mouse's and the menu's Exit; the end of a
  * window's pipes (its shell and its programs gone) is the window's. Our
- * end is the loop's return, the program's toplevel then done *)
-let rec loop () =
+ * end is the loop's return. The kernel asked about 31 descriptors at
+ * most: the windows past the 14th not read until one in front of them
+ * ends *)
+let rec loop caps =
   flush ();
-  let fds = Array.make 32 0 and n = ref 2 in
-  fds.(0) <- 4;
-  List.iter (fun w ->
-    if !n < 31 then
-      (fds.(!n) <- w.ends.draws; fds.(!n + 1) <- w.ends.prints; n := !n + 2))
-    !windows;
-  let fd = u_ready fds !n 0 in
+  let rec theirs n ws =
+    match ws with
+    | w :: rest when n < 31 -> w.ends.draws :: w.ends.prints :: theirs (n + 2) rest
+    | _ -> [] in
+  let fds = TSys.fd_mouse :: TSys.fd_stdin :: theirs 2 !windows in
   let more =
-    if fd = 4 then begin
-      let s = u_read 4 12 in
+    match TSys.ready fds None with
+    | None -> true
+    | Some fd when fd = TSys.fd_mouse ->
+      let s = TSys.read fd 12 in
       if String.length s < 12 then false
       else begin
-        mouse (int16 s 0) (int16 s 4) (int16 s 8);
+        mouse caps (int16 s 0) (int16 s 4) (int16 s 8);
         match !doing with Ended -> false | _ -> true
       end
-    end
-    else if fd = 0 then begin
-      let s = u_read 0 256 in
+    | Some fd when fd = TSys.fd_stdin ->
+      let s = TSys.read fd 256 in
       if s = "" then false
       else begin
         for i = 0 to String.length s - 1 do
@@ -528,22 +530,25 @@ let rec loop () =
         done;
         true
       end
-    end
-    else begin
+    | Some fd ->
       List.iter (fun w ->
         if fd = w.ends.prints || fd = w.ends.draws then begin
-          let s = u_read fd 512 in
-          if s = "" then delete w
+          let s = TSys.read fd 512 in
+          if s = "" then delete caps w
           else if fd = w.ends.prints then print w s
           else forward w s
         end) !windows;
-      true
-    end in
-  if more then loop ()
+      true in
+  if more then loop caps
 
-let () =
+(*****************************************************************************)
+(* The main *)
+(*****************************************************************************)
+
+let main (caps : < Cap.pipe; Cap.forkew; Cap.kill; .. >) (_ : string array) =
   send
     (d_colour grey 0xaa ^ d_colour white 255 ^ d_colour black 0
      ^ d_colour blue 0x36 ^ d_colour pale 0x99 ^ d_colour red 0xf0);
   refresh everything;
-  loop ()
+  loop caps;
+  Exit.OK

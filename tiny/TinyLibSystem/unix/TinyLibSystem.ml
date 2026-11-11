@@ -201,6 +201,7 @@ let save n =
 let dup2 a b = Unix.dup2 (fd a) (fd b)
 let pipe (caps : < Cap.pipe; .. >) =
   let r, w = CapUnix.pipe caps ~cloexec:true () in number r, number w
+let box (_ : < Cap.pipe; .. >) : int * int = not_here "box"
 
 (*****************************************************************************)
 (* Processes *)

@@ -423,10 +423,15 @@ debug: $CRT $MLRT debug.o TinyLibSystem/tinykernel/TinyLibSystem.o \
 # runtime, ML's, its main, its units, the library, the end.
 
 # windows
-TinyWindows.o: $LIB TinyLibDraw.tmi
-windows.o: $LIB TinyLibDraw.tmi TinyWindows.tmi
+TinyWindows.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi \
+    TinyLibDraw.tmi
+user/windows.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi \
+    TinyLibDraw.tmi TinyWindows.tmi
+windows.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibDraw.tmi \
+    TinyWindows.tmi user/windows.tmi
 	ml -nostdlib -o $target $prereq
-windows: $CRT $MLRT windows.o TinyLibDraw.o TinyWindows.o $LIBO $MLEND
+windows: $CRT $MLRT windows.o TinyLibSystem/tinykernel/TinyLibSystem.o \
+    TinyLibDraw.o TinyWindows.o user/windows.o $LIBO $MLEND
 	ld -map -s -n -o $target $prereq
 
 # emacs
@@ -632,10 +637,11 @@ temp: $CRT $MLRT temp.o TinyLibSystem/tinykernel/TinyLibSystem.o \
 	ld -map -s -n -o $target $prereq
 
 # bigmem
-user/bigmem.o: $LIB
-bigmem.o: $LIB user/bigmem.tmi
+user/bigmem.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi
+bigmem.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi user/bigmem.tmi
 	ml -nostdlib -o $target $prereq
-bigmem: $CRT $MLRT bigmem.o user/bigmem.o $LIBO $MLEND
+bigmem: $CRT $MLRT bigmem.o TinyLibSystem/tinykernel/TinyLibSystem.o \
+    user/bigmem.o $LIBO $MLEND
 	ld -map -s -n -a 8 -o $target $prereq
 
 #############################################################################
@@ -796,7 +802,7 @@ SRC = TinyKernel/entry.tm TinyKernel/draw.tm TinyKernel/memory.tm \
     tests/TinyLibPlayground_tests/Square.ml \
     tests/TinyLibPlayground_tests/machine.ml user/tetris.ml user/calc.ml \
     user/temp.ml user/emacs.ml user/office.ml user/troff.ml user/play.ml \
-    user/www.ml user/bigmem.ml user/trace.ml user/debug.ml \
+    user/www.ml user/windows.ml user/bigmem.ml user/trace.ml user/debug.ml \
     TinyLibCore/Stdlib.ml TinyLibCore/Char.ml TinyLibCore/Seq.ml \
     TinyLibCore/List.ml TinyLibCore/String.ml TinyLibCore/Bytes.ml \
     TinyLibCore/Array.ml TinyLibCore/Option.ml TinyLibCore/Int32.ml \

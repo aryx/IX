@@ -7,9 +7,11 @@
 # those tiny-kernel runs alone (windows, www, trace, debug, ...: OCaml only
 # checks their units, no program on the host), each with the units
 # TinyKernel/Makefile's UNITS_x gives it, on the host's TinyLibSystem.ml,
-# the same .mli as tiny-kernel's (whose type Cap.all_caps = < >, tiny-ml's,
-# mini-analyze does not parse), since TinyLibSystem is the one library of
-# both systems' programs (old: left out, TinyCalls.ml their calls). Each with
+# the same .mli as tiny-kernel's (whose functions only tiny-kernel's
+# builds of rc, ed, ml... would keep from being said dead, and whose
+# externals' capabilities mini-analyze does not know), since TinyLibSystem
+# is the one library of both systems' programs (old: left out,
+# TinyCalls.ml their calls). Each with
 # the modules of its tiny libraries, lib_core's found by itself, the
 # other ix libraries by -I. Not here: the SDL programs (tsdl, which
 # mini-analyze does not read: tiny-machine-window, tiny/user/sdl/'s apps)
@@ -77,7 +79,7 @@ tiny-machine-socket|-|$S $M/TinyMachineSocket.ml
 tiny-machine-fetch|$NET -I lib_graphics/core -I lib_graphics/images|$CPU $S $M/TinyMachineDevices.ml $BROWSER $M/TinyMachineFetch.ml
 tiny-mkfs|-|$S $T/TinyKernel/steps/t6/TinyMkfs.ml
 mkfont|-I lib_graphics/core -I lib_graphics/geometry -I lib_graphics/fonts -I lib_graphics/software|$S $T/TinyKernel/fonts/Mkfont.ml
-windows|-|$T/TinyLibDraw.ml $T/TinyWindows.ml
+windows|-|$S $T/TinyLibDraw.ml $T/TinyWindows.ml $T/user/windows.ml
 bigmem|-|$S $T/user/bigmem.ml
 square|-|$GUI $T/tests/TinyLibPlayground_tests/Square.ml $T/tests/TinyLibPlayground_tests/machine.ml
 tetris|-|$GUI $T/TinyAppTetris.ml $T/user/tetris.ml

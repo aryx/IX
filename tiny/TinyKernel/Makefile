@@ -272,7 +272,7 @@ U = $(O)/ml
 I_TinyLibRegex = TinyLibSystem
 I_TinyLibPlayground = TinyLibSystem TinyLibDraw
 I_TinyLibGUI = TinyLibSystem TinyLibDraw TinyLibPlayground
-I_TinyWindows = TinyLibDraw
+I_TinyWindows = TinyLibSystem TinyLibDraw
 I_TinyAppTetris = $(I_TinyLibGUI)
 I_TinyAppCalculator = $(I_TinyLibGUI) TinyLibGUI
 I_TinyAppTemperature = $(I_TinyAppCalculator)
@@ -340,6 +340,8 @@ I_Www = $(I_TinyBrowser) TinyBrowser
 I_TinyTracer = TinyLibSystem
 I_TinyDebugger = $(GUI) TinyLibMachine
 I_Trace = TinyLibSystem TinyTracer
+I_Windows = $(I_TinyWindows) TinyWindows
+I_Bigmem = TinyLibSystem
 I_Debug = $(I_TinyDebugger) TinyDebugger
 # each unit's file
 F_TinyLibSystem = $(SYS)/TinyLibSystem.ml
@@ -353,6 +355,7 @@ F_Office = ../user/office.ml
 F_Troff = ../user/troff.ml
 F_Play = ../user/play.ml
 F_Www = ../user/www.ml
+F_Windows = ../user/windows.ml
 F_Bigmem = ../user/bigmem.ml
 F_Trace = ../user/trace.ml
 F_Debug = ../user/debug.ml
@@ -387,7 +390,7 @@ F_TinyCMachine = ../TinyC/TinyCMachine.ml
 # chain, and a unit's interface is another unit's prerequisite)
 UNITS = $(KUNITS) TinyLibSystem TinyLibMachine TinyLibRegex TinyLibDraw TinyLibPlayground TinyLibGUI TinyProfiler TinyDatabase TinyVCS TinyBuildSystem TinyAssembler TinyLinker $(CC_PARTS) TinyC $(MLC) TinyML \
   TinyWindows TinyAppTetris TinyAppCalculator TinyAppTemperature TinyEditorScreen $(OFFICE) TinyOffice TinyTroff TinyPlay $(BROWSER) TinyBrowserScreen TinyBrowser TinyTracer TinyDebugger \
-  TinyShell TinyUtilities TinyEditorLine Square Machine Tetris Calc Temp Emacs Office Troff Play Www Bigmem Trace Debug
+  TinyShell TinyUtilities TinyEditorLine Square Machine Tetris Calc Temp Emacs Office Troff Play Www Windows Bigmem Trace Debug
 .SECONDEXPANSION:
 # (the .mli too, when there is one: its vals' types are the .tmi's;
 # old: the .ml only, so a .tmi kept an old .mli's types)
@@ -397,7 +400,7 @@ $(UNITS:%=$(U)/%.o): $(U)/%.o: $$(addprefix $(U)/,$$(addsuffix .tmi,$$(I_$$*))) 
 $(UNITS:%=$(U)/%.tmi): $(U)/%.tmi: $(U)/%.o ;
 
 # each program's units, in their order (windows: tiny-windows, after
-# ../TinyLibDraw.ml; rc: tiny-shell, on $(SYS)/TinyLibSystem.ml, the system's
+# TinyLibSystem and ../TinyLibDraw.ml; rc: tiny-shell, on $(SYS)/TinyLibSystem.ml, the system's
 # calls it asks for (the host's is ../TinyLibSystem/unix/TinyLibSystem.ml); utils and ed
 # with ../TinyLibRegex.ml for grep; emacs, office, troff, play, www:
 # run by ../TinyLibGUI.ml's run_canvas; square: the playground's
@@ -414,7 +417,7 @@ $(UNITS:%=$(U)/%.tmi): $(U)/%.tmi: $(U)/%.o ;
 # illegal instruction, bugs/ix.md); build: the files it digests,
 # each read whole, the system's objects among them).
 ML = windows bigmem www play square tetris calc temp rc utils ed emacs office troff prof db vcs build as ld cc ml trace debug
-UNITS_windows = TinyLibDraw TinyWindows
+UNITS_windows = $(I_Windows) Windows
 UNITS_square = $(I_Machine) Machine
 UNITS_tetris = $(I_Tetris) Tetris
 UNITS_calc = $(I_Calc) Calc
@@ -427,7 +430,7 @@ UNITS_www = $(I_Www) Www
 UNITS_rc = $(I_TinyShell) TinyShell
 UNITS_utils = $(I_TinyUtilities) TinyUtilities
 UNITS_ed = $(I_TinyEditorLine) TinyEditorLine
-UNITS_bigmem = Bigmem
+UNITS_bigmem = $(I_Bigmem) Bigmem
 UNITS_trace = $(I_Trace) Trace
 UNITS_debug = $(I_Debug) Debug
 UNITS_prof = $(I_TinyProfiler) TinyProfiler

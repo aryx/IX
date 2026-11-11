@@ -21,7 +21,6 @@
         { at: 'def:u_read', weight: 1 },
         { at: 'def:u_exec', say: 'an ML list of strings walked as C words', weight: 2 },
         { at: 'def:u_waits', say: 'pid and status in one ML integer', weight: 1 },
-        { at: 'def:u_spawn_window', say: "a window's program: its five descriptors", weight: 1 },
       ],
       related: ['../../runtime/ml.c', '../../TinyKernel/libc/user.h', '../../TinyKernel/runtime.c'],
     },
@@ -66,13 +65,11 @@
         { at: 'mlsys.c:def:u_read', role: 'bytes as an ML string' },
         { at: 'mlsys.c:def:u_exec', role: 'an ML list to argv' },
         { at: 'mlsys.c:def:u_waits', role: 'a wait, two numbers in one' },
-        { at: 'mlsys.c:def:u_spawn_window', role: "a window's child" },
       ],
       joints: [
         { from: 'mlsys.c:def:main', to: 'mlsys.c:def:u_read', say: 'called from ML' },
         { from: 'mlsys.c:def:main', to: 'mlsys.c:def:u_exec', say: 'called from ML' },
         { from: 'mlsys.c:def:main', to: 'mlsys.c:def:u_waits', say: 'called from ML' },
-        { from: 'mlsys.c:def:main', to: 'mlsys.c:def:u_spawn_window', say: 'called from ML' },
       ],
     },
     {

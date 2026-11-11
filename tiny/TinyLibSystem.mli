@@ -306,6 +306,12 @@ val dup2 : fd -> fd -> unit
 (* a pipe: where to read, where to write; not given to a program run *)
 val pipe : < Cap.pipe; .. > -> fd * fd
 
+(* a box, tiny-kernel's alone: a pipe that keeps only what was last
+ * written, read once, as the mouse's 4 (a window's mouse, given by
+ * tiny-windows); where to read, where to write; not given to a program
+ * run *)
+val box : < Cap.pipe; .. > -> fd * fd
+
 (*****************************************************************************)
 (* Processes *)
 (*****************************************************************************)

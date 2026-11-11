@@ -6,12 +6,15 @@
  * heap from the partition. It keeps 3 MB of strings alive at once, which
  * the heap of a 1 MB partition (two halves of 256 KB) cannot hold, then
  * prints how many bytes it kept. *)
-let () =
+let main (caps : < Cap.stdout; .. >) (_ : string array) =
   let rec make n acc =
     if n = 0 then acc else make (n - 1) (String.make 1000 'x' :: acc)
   in
   let kept = make 3000 [] in
-  print_string
+  TinyLibSystem.print caps
     ("bigmem: "
      ^ string_of_int (List.fold_left (fun s x -> s + String.length x) 0 kept)
-     ^ " bytes kept\n")
+     ^ " bytes kept\n");
+  Exit.OK
+
+let () = TinyLibSystem.main "bigmem" main

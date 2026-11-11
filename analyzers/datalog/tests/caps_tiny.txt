@@ -1,8 +1,9 @@
+# TinyLibSystem.seed, spawn, dial, raw_console, box: the host's stubs (not_here), tiny-kernel's calls alone; tiny-kernel's programs, read on the host's TinyLibSystem.ml, call them
 # TinyLibSystem.seed, spawn, dial, raw_console: the host's stubs (not_here), tiny-kernel's calls alone; tiny-kernel's programs, read on the host's TinyLibSystem.ml, call them
 lib_networking/http/Keep_alive.ml:84: Keep_alive.exchange: has < Cap.network; Cap.open_in >, needs Cap.clock (Keep_alive.take)
 tiny/TinyBuildSystem.ml:387: TinyBuildSystem.start: has < Cap.env; Cap.exec; Cap.fork; Cap.open_out >, may not need Cap.open_out
 tiny/TinyLibSystem/unix/TinyLibSystem.ml:183: TinyLibSystem.seed: has < Cap.random >, may not need Cap.random
-tiny/TinyLibSystem/unix/TinyLibSystem.ml:258: TinyLibSystem.spawn: has < Cap.exec; Cap.fork >, may not need Cap.exec, Cap.fork
-tiny/TinyLibSystem/unix/TinyLibSystem.ml:273: TinyLibSystem.dial: has < Cap.network >, may not need Cap.network
+tiny/TinyLibSystem/unix/TinyLibSystem.ml:204: TinyLibSystem.box: has < Cap.pipe >, may not need Cap.pipe
+tiny/TinyLibSystem/unix/TinyLibSystem.ml:259: TinyLibSystem.spawn: has < Cap.exec; Cap.fork >, may not need Cap.exec, Cap.fork
+tiny/TinyLibSystem/unix/TinyLibSystem.ml:274: TinyLibSystem.dial: has < Cap.network >, may not need Cap.network
 tiny/TinyLibSystem/unix/TinyLibSystem.ml:78: TinyLibSystem.raw_console: has < Cap.keyboard >, may not need Cap.keyboard
-tiny/user/bigmem.ml: init: no capability, needs Cap.stdout (Pervasives.print_string)

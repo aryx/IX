@@ -236,15 +236,16 @@
  (libraries tiny_lib_gui tiny_browser_parts tiny_browser_screen))
 
 ; TinyWindows.ml, tiny-kernel's window system. OCaml only checks it: its
-; externals are the machine's, so no program here links it.
+; pipes and box, the windows' shells, are tiny-kernel's
+; (TinyLibSystem.box), so no program here links it.
 (library
  (name tiny_windows)
  (wrapped false)
  (modules TinyWindows)
- (libraries tiny_lib_draw))
+ (libraries caps fpath tiny_lib_system tiny_lib_draw))
 
 ; TinyDebugger.ml and TinyTracer.ml, tiny-kernel's debugger and tracer.
-; OCaml only checks them, as TinyWindows: their u_trace is the machine's
+; OCaml only checks them, as TinyWindows: their u_trace is tiny-kernel's
 ; call, so no program here links them.
 (library
  (name tiny_debugger)

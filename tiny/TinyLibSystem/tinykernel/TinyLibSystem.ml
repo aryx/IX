@@ -67,6 +67,7 @@ external u_rawcons : int -> int = "u_rawcons"
 external u_flush : unit -> unit = "u_flush"
 external u_dup : int -> int = "u_dup"
 external u_pipe : unit -> int = "u_pipe"
+external u_box : unit -> int = "u_box"
 
 external u_open : string -> int -> int = "u_open"
 
@@ -103,8 +104,6 @@ external u_argc : unit -> int = "u_argc"
 external u_arg : int -> string = "u_arg"
 
 external u_dial : string -> int -> int = "u_dial"
-
-type Cap.all_caps = < >
 
 (* the host's .mli's names (TinyLibSystem.mli) *)
 type pid = int
@@ -398,6 +397,11 @@ let dup2 a b =
 let pipe _caps =
   let p = u_pipe () in
   if p < 0 then failwith "no pipe" else keep (p mod 256), keep (p / 256)
+
+(* u_box's, as u_pipe's *)
+let box _caps =
+  let b = u_box () in
+  if b < 0 then failwith "no box" else keep (b mod 256), keep (b / 256)
 
 (*****************************************************************************)
 (* Processes *)

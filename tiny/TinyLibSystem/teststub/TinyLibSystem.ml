@@ -84,6 +84,7 @@ let write n s = if n = fd_draw then Buffer.add_string TinySystemTest.drawn s
 let save _ = None
 let dup2 _ _ = ()
 let pipe _ = none "pipe"
+let box _ = none "box"
 
 (* processes: none *)
 let fork _ = none "fork"

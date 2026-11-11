@@ -170,34 +170,6 @@ u_stat(value path)
 	return s;
 }
 
-// a program run with the five descriptors a window's has: in its 0,
-// out its 1 and 2, draw its 3, mouse its 4, and none of the caller's
-// others; its pid, or -1. (The lowest free descriptor is the one just
-// closed: Unix's way, as sh's.)
-value
-u_spawn_window(value in, value out, value draw, value mouse, value path)
-{
-	char *argv[2];
-	int pid, i;
-
-	if((pid = fork()) != 0)
-		return pid * 2 + 1;
-	for(i = 0; i < 5; i++)
-		close(i);
-	dup(in >> 1);
-	dup(out >> 1);
-	dup(out >> 1);
-	dup(draw >> 1);
-	dup(mouse >> 1);
-	for(i = 5; i < 32; i++)
-		close(i);
-	argv[0] = (char*)path;
-	argv[1] = 0;
-	exec((char*)path, argv);
-	exit(1);
-	return 1;
-}
-
 value
 u_kill(value pid)
 {
@@ -210,13 +182,6 @@ value
 u_trace(value pid)
 {
 	return trace(pid >> 1) * 2 + 1;
-}
-
-// a child's end waited for; its pid, or -1 without children
-value
-u_wait(value unit)
-{
-	return wait(0) * 2 + 1;
 }
 
 // what a tool asks for (TinyLibSystem.ml, tiny-shell's): the

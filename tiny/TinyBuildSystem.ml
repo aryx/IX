@@ -16,7 +16,7 @@ The targets out of date remade, by the rules of the Buildfile (-f: another),
 N recipes at once (-j); up to date by content, not time (the stamps kept in
 .tiny-build). -n: the recipes printed, not run; -g: the graph, for dot;
 -t: each recipe's time as it ends, then the times by kind of target (bin/*,
-ml/*.tm), and what was not a recipe's (the digests, the graph); with -j,
+ml/*.s), and what was not a recipe's (the digests, the graph); with -j,
 the recipes' sum and how many ran at once on average.
 
 A Buildfile's five kinds of lines, and that is all the syntax:
@@ -553,7 +553,7 @@ let build
 (*****************************************************************************)
 
 (* -t, at the end: the times by kind of target: its
- * directory and its extension (bin/*, ml/*.tm, *.o), and the rest of the
+ * directory and its extension (bin/*, ml/*.s, *.o), and the rest of the
  * run's, which was no recipe's *)
 let report caps total =
   let kind name =

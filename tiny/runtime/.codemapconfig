@@ -1,8 +1,8 @@
 // tiny/runtime/: what the code map says of it (the code map: tinybox
 // codemap, ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there). What a program
-// links besides its own code, on any system: C's (start.tm, the start,
-// write and exits, and udivmod.tm, the unsigned division: tiny-machine's
+// links besides its own code, on any system: C's (start.s, the start,
+// write and exits, and udivmod.s, the unsigned division: tiny-machine's
 // assembly, not sources to the map, named in the roles; libc.c and
 // libc.h), linked first into every C program of tiny-c's (tiny-kernel's,
 // ../TinyKernel/Makefile's ULIB; the steps'); and ML's, ml.c, #included
@@ -18,12 +18,12 @@
   summary: "What a program links besides its own code: C's start, division and libc, and tiny-ml's allocator, collector and primitives.",
   files: {
     'libc.h': { digest: 'e037c8c3fe70',
-      summary: "What a tiny-c program is given: start.tm's write and exits, libc.c's print and strings; a long is 4 bytes.",
+      summary: "What a tiny-c program is given: start.s's write and exits, libc.c's print and strings; a long is 4 bytes.",
       capitals: [
         { at: 'def:print', say: "Plan 9's print, on every tiny kernel" },
       ],
       important: [
-        { at: 'def:write', say: "start.tm's: the system call all output goes through", weight: 2 },
+        { at: 'def:write', say: "start.s's: the system call all output goes through", weight: 2 },
         { at: 'def:exits', say: "Plan 9's exits: a message, not a number", weight: 1 },
         { at: 'def:print', weight: 2 },
         { at: 'def:malloc', weight: 1 },
@@ -62,15 +62,15 @@
     },
   },
   skeletons: [
-    { name: 'The C runtime: libc.h declared, libc.c made, start.tm below',
+    { name: 'The C runtime: libc.h declared, libc.c made, start.s below',
       bones: [
         { at: '../TinyKernel/user/', role: "tiny-kernel's C programs, linked with it" },
         { at: 'libc.h', role: 'what a program includes' },
         { at: 'libc.c', role: 'print, the strings, the bump heap' },
-        { at: 'libc.h:def:write', role: "start.tm's system call (assembly)" },
+        { at: 'libc.h:def:write', role: "start.s's system call (assembly)" },
       ],
       joints: [
-        { from: '../TinyKernel/user/', to: 'libc.h', say: 'print, strlen...: libc.tm linked in' },
+        { from: '../TinyKernel/user/', to: 'libc.h', say: 'print, strlen...: libc.s linked in' },
         { from: 'libc.h', to: 'libc.c', say: 'defined by' },
         { from: 'libc.c', to: 'libc.h:def:write', say: 'bytes to fd 1' },
       ],
@@ -81,7 +81,7 @@
         { at: 'libc.c:def:sprint', role: 'the same, into a buffer' },
         { at: 'libc.c:def:format', role: 'the verbs, the arguments walked in memory' },
         { at: 'libc.c:def:malloc', role: 'the heap: a bump of an array' },
-        { at: 'libc.h:def:write', role: "start.tm's sys 1" },
+        { at: 'libc.h:def:write', role: "start.s's sys 1" },
       ],
       joints: [
         { from: 'libc.c:def:print', to: 'libc.c:def:format', say: 'fmt and &fmt + 1' },

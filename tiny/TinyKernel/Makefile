@@ -68,10 +68,10 @@
 #   MEMORY=pages      or in pages, given when touched, a fork's shared
 #                     until written, under _make-pages
 #
-# The kernel: entry.tm first (the machine starts at 0), the runtime
-# (TinyML's, by tiny-c), the rows TinyKernelGraphics.ml draws by (draw.tm),
-# the loops that copy and zero a partition (memory.tm),
-# the machine's font (font.tm, made of fonts/plan9.font: Plan 9's
+# The kernel: entry.s first (the machine starts at 0), the runtime
+# (TinyML's, by tiny-c), the rows TinyKernelGraphics.ml draws by (draw.s),
+# the loops that copy and zero a partition (memory.s),
+# the machine's font (font.s, made of fonts/plan9.font: Plan 9's
 # default font, mini-9pi's console's, 128 characters of 8 by 16 pixels,
 # then the bold and the large Mkfont made of them; FONT=fonts/grey.font, Ubuntu
 # Mono, two bits a pixel, its own bold and 16 by 32;
@@ -79,14 +79,14 @@
 # FONT=../../kernels/lib_machine/font1.bin, xv6's: fonts/README.md), the kernel
 # (tiny-ml: TinyMemory.ml, TinyKernelGraphics.ml, TinyKernelNetwork.ml,
 # TinyKernelAudio.ml, TinyKernelFS.ml, TinyKernelMemory.ml and ../TinyKernel.ml, one
-# program), end.tm last. Its
+# program), end.s last. Its
 # files come after it in boot.img: for each program a name, a line, its
 # size, a line, its bytes; an empty line at the end (no disk). The
 # programs are tiny-linker's images (linked at 0: the kernel runs each
 # at the start of its partition), a.outs with their labels after the
-# image (-s: debug's names), start.tm first, with libc
-# (../runtime/) and sys.tm. Each .tm is an object of
-# tiny-assembler's first (_make/x.o, from x.tm here or in _make/). A hard link is a name and a line
+# image (-s: debug's names), start.s first, with libc
+# (../runtime/) and sys.s. Each .s is an object of
+# tiny-assembler's first (_make/x.o, from x.s here or in _make/). A hard link is a name and a line
 # "link utils" (what link() does, at the boot): utils (../TinyUtilities.ml, tiny-utils) is in the image once,
 # under the name of each of its utilities (cat, ls, wc...). user/'s
 # cat, echo, ls, wc, mkdir and rm in C are not in the image any more,
@@ -95,13 +95,13 @@
 # user/ has the programs in C, a file each (an ML one's file, one line,
 # its module's main run by TinyLibSystem.main, is ../user/'s); libc/ what
 # a C program is linked with to
-# call this kernel (user.h, sys.tm, draw.c, net.c); ../TinyLibSystem/tinykernel/
+# call this kernel (user.h, sys.s, draw.c, net.c); ../TinyLibSystem/tinykernel/
 # the same for an ML one (mlsys.c, TinyLibSystem.ml), beside
 # the other systems' TinyLibSystem (../TinyLibSystem/README.md).
 #
 # What is built goes to _make/ and nowhere else, so that this
 # directory shows the sources: _make/*.o the kernel's objects (of the
-# compilers, or of tiny-assembler for a .tm), kernel.img, bin/ the
+# compilers, or of tiny-assembler for a .s), kernel.img, bin/ the
 # programs as they are in the image (each image with its .map, its
 # labels' addresses, for tiny-prof), boot.img the image; make clean
 # removes it.
@@ -159,22 +159,22 @@ ULIB = $(O)/start.o $(O)/udivmod.o $(O)/libc.o $(O)/libc/sys.o
 
 all: $(O)/boot.img
 
-# an object of assembly written by hand: a .tm made in _make/ (font.tm),
+# an object of assembly written by hand: a .s made in _make/ (font.s),
 # or one here, or the C runtime's (the compilers write their objects
-# themselves, below; old: their .tm, assembled here). (An object
+# themselves, below; old: their .s, assembled here). (An object
 # depends on tiny-assembler too, its path, as TMLBIN below: an object's
 # format changes with it, tiny-object 3, and one of the old would be
 # refused by the linker)
 ASBIN = $(wildcard $(AS))
-# (the one assembly made here, font.tm; old: $(O)/%.o from $(O)/%.tm,
-# which a build directory's .tm from before the compilers wrote objects,
-# main/kernel.tm, matched before main/'s rule: make run then failed)
-$(O)/font.o: $(O)/font.tm $(ASBIN)
+# (the one assembly made here, font.s; old: $(O)/%.o from $(O)/%.s,
+# which a build directory's .s from before the compilers wrote objects,
+# main/kernel.s, matched before main/'s rule: make run then failed)
+$(O)/font.o: $(O)/font.s $(ASBIN)
 	$(AS) -o $@ $<
-$(O)/%.o: %.tm $(ASBIN)
+$(O)/%.o: %.s $(ASBIN)
 	@mkdir -p $(@D)
 	$(AS) -o $@ $<
-$(O)/%.o: $(L)/%.tm $(ASBIN)
+$(O)/%.o: $(L)/%.s $(ASBIN)
 	@mkdir -p $(@D)
 	$(AS) -o $@ $<
 .SECONDARY:
@@ -196,7 +196,7 @@ TML_L = $(TML) -L $(O)/lib
 # parts (TinyKernel.ml's sections) and TinyKernel.ml, the boot. Each is
 # compiled alone, as a program's units are (below: UNITS), after the
 # interfaces of those before it, and the kernel's main is made of their
-# interfaces (old: one tiny-ml over all their files, kernel.tm, 70,000
+# interfaces (old: one tiny-ml over all their files, kernel.s, 70,000
 # lines, which tiny-kernel's as took 4 minutes to assemble, and all of
 # it again for a change in one; now no unit is assembled, tiny-ml
 # writes its object)
@@ -224,7 +224,7 @@ I_TinyKernel = $(I_TinyKernelScheduler) TinyKernelScheduler
 
 # the font's bytes, k_font(), where they are, and k_font_size(), how
 # many (ML integers)
-$(O)/font.tm: $(FONT)
+$(O)/font.s: $(FONT)
 	@mkdir -p $(@D)
 	printf 'k_font:\n\tla\tr13, font\n\tshli\tr13, r13, 1\n\tori\tr13, r13, 1\n\tret\n' > $@
 	printf 'k_font_size:\n\tla\tr13, font_end\n\tla\tr12, font\n' >> $@
@@ -412,7 +412,7 @@ $(UNITS:%=$(U)/%.tmi): $(U)/%.tmi: $(U)/%.o ;
 # partition of that size and mlsys.c a heap of it (bigmem: the test;
 # www: a page's lines live in its heap; play: the WAV file is read
 # whole into it; as, ld, cc, ml: the toolchain, a file whole in memory
-# and the compilers' recursions over it (as and ld 32: TinyML.tm's
+# and the compilers' recursions over it (as and ld 32: TinyML.s's
 # assembly and office's link need more than half of 16, their
 # collector's; old: 16, out of memory there in the first builds on
 # tiny-kernel; ld 48: bin/ml's link, past 32 since 2026-10-23, when
@@ -485,33 +485,33 @@ BINS = $(addprefix $(O)/bin/,$(PROGS))
 # /examples/korobeiniki.wav: tetris's tune, its first four bars, made by
 # m-ix's mini-play, at 11,025 samples a second in 16 bits); a profile and
 # its map, which prof reads (prof /examples/spin.prof -u
-# /examples/spin.map: ../tests/TinyProfiler_tests/spin.tm, linked with
+# /examples/spin.map: ../tests/TinyProfiler_tests/spin.s, linked with
 # -map and run by tiny-cpu -prof); a unit's object and interface as
 # the host's tiny-ml and tiny-assembler made them, which ml's and as's on
 # tiny-kernel are compared with (make check); and a program to try the
-# toolchain and the tools on, tiny/examples/'s: hello.c and square.tm,
+# toolchain and the tools on, tiny/examples/'s: hello.c and square.s,
 # and helloml.ml, built by the Buildfile beside them (cd /examples;
 # build; ./hello; ./helloml; trace ./hello; debug ./helloml)
 EXAMPLES = steps/t6/user/wc.c user/sh.c ../user/emacs.ml ../TinyEditorScreen.ml ../examples/report.ixd ../examples/korobeiniki.wav $(O)/spin.prof $(O)/spin.map \
 	$(U)/TinyLibMachine.tmi $(U)/TinyLibMachine.o \
-	../examples/hello.c ../examples/square.tm ../examples/helloml.ml ../examples/Buildfile
+	../examples/hello.c ../examples/square.s ../examples/helloml.ml ../examples/Buildfile
 
 # the sources, in /src as they are in tiny/, what tiny-kernel builds
 # itself from (make self): the kernel's, each unit's file, the
-# library's, the C, and the .mli beside an .ml; with font.tm and the
+# library's, the C, and the .mli beside an .ml; with font.s and the
 # Buildfile, made here, in /src/TinyKernel; the library's interfaces and
 # objects in /lib/ml, where tiny-ml reads them (plan_tiny_self_hosting.md,
 # step 8; old: step 7's /src had ping's C and a unit; not /sys/src,
 # Plan 9's, as /sys is principia's devsys)
 C_PROGS = sh mltests ping get put httpd
-SRC_FILES = entry.tm draw.tm memory.tm end.tm runtime.c \
-	$(foreach u,$(UNITS),$(or $(F_$(u)),../$(u).ml)) $(CORE:%=../TinyLibCore/%.ml) libc/user.h libc/sys.tm libc/draw.c libc/draw.h libc/net.c $(SYS)/mlsys.c \
-	../runtime/ml.c ../runtime/start.tm ../runtime/udivmod.tm ../runtime/libc.c ../runtime/libc.h user/paint.c $(C_PROGS:%=user/%.c) \
+SRC_FILES = entry.s draw.s memory.s end.s runtime.c \
+	$(foreach u,$(UNITS),$(or $(F_$(u)),../$(u).ml)) $(CORE:%=../TinyLibCore/%.ml) libc/user.h libc/sys.s libc/draw.c libc/draw.h libc/net.c $(SYS)/mlsys.c \
+	../runtime/ml.c ../runtime/start.s ../runtime/udivmod.s ../runtime/libc.c ../runtime/libc.h user/paint.c $(C_PROGS:%=user/%.c) \
 	lib/c/Buildfile lib/ml/Buildfile
 # (a path of this directory's, as tiny/'s)
 tiny = $(patsubst TinyKernel/../%,%,$(addprefix TinyKernel/,$(1)))
 SRC = $(call tiny,$(SRC_FILES) $(wildcard $(patsubst %.ml,%.mli,$(filter %.ml,$(SRC_FILES)))))
-GEN = font.tm Buildfile
+GEN = font.s Buildfile
 LIBFILES = $(foreach m,$(CORE),$(m).tmi $(m).o)
 # what a program links around its own objects, already built in /lib:
 # C's runtime and tiny-kernel's calls in /lib/c, ML's in /lib/ml beside
@@ -574,12 +574,12 @@ lib/%.o: lib/Stdlib.o
 lib/%.tmi: lib/Stdlib.o
 
 # the objects of assembly written by hand (the compilers write theirs)
-%.o: $(K)/%.tm
-	as -o $$target $(K)/$$stem.tm
-%.o: /src/runtime/%.tm
-	as -o $$target /src/runtime/$$stem.tm
-libc/sys.o: $(K)/libc/sys.tm
-	mkdir -p libc; as -o $$target $(K)/libc/sys.tm
+%.o: $(K)/%.s
+	as -o $$target $(K)/$$stem.s
+%.o: /src/runtime/%.s
+	as -o $$target /src/runtime/$$stem.s
+libc/sys.o: $(K)/libc/sys.s
+	mkdir -p libc; as -o $$target $(K)/libc/sys.s
 
 # the kernel: its units are ml/'s, as the programs' (below); its main
 main/kernel.o: $$LIB $(addprefix ml/,$(addsuffix .tmi,$(KUNITS)))
@@ -618,7 +618,7 @@ $(O)/Buildfile: Makefile
 	@mkdir -p $(@D)
 	@printf '%s\n' "$$BUILDFILE_TEXT" > $@
 
-$(O)/spin.prof: ../tests/TinyProfiler_tests/spin.tm
+$(O)/spin.prof: ../tests/TinyProfiler_tests/spin.s
 	@mkdir -p $(@D)
 	$(AS) -o $(O)/spin.o $<
 	$(LD) -map -o $(O)/spin $(O)/spin.o
@@ -760,7 +760,7 @@ $(O)/check/27.out: $(O)/boot.img
 	printf 'rc\nsleep 100 &\nps\ncat /dev/ps | wc -l\nkill $$apid; echo $$status; ps -a\nkill 99; echo $$status\ndate 0; date 5184000; date 1073741823; date -n 7\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
 # /examples' hello and helloml, as the manual has them tried after
 # make run: built by their Buildfile (the runtimes from /src, then
-# hello.c, square.tm, helloml.ml), run, built again (up to date),
+# hello.c, square.s, helloml.ml), run, built again (up to date),
 # traced, and debugged (hello stopped in square, the assembly's: bt, x/i,
 # a step; helloml in insert, an ML frame and its slots)
 $(O)/check/28.out: $(O)/boot.img

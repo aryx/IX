@@ -166,7 +166,7 @@ approach pays off in IX.
   `TinyMLTypes.ml` is already short.
 - **A layout or constraint DSL for the GUI apps.** The Elm-style
   playground already carries most of that weight.
-- **Generated stubs for the system-call glue** (`sys.tm`, `mlsys.c`).
+- **Generated stubs for the system-call glue** (`sys.s`, `mlsys.c`).
   Readable repetition was already chosen over that mechanism.
 - **One DSL engine shared by m-ix and t-ix.** t-ix stays
   self-contained, so it gets its own copy if it needs one.

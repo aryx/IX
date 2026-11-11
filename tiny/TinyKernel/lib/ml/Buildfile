@@ -33,8 +33,8 @@ Stdlib.o: ${CORE:%=/src/TinyLibCore/%.ml} ${CORE:%=/src/TinyLibCore/%.mli}
 
 mlsys.o: /src/TinyLibSystem/tinykernel/mlsys.c /src/runtime/ml.c /src/TinyKernel/libc/user.h
 	cc -o $target /src/TinyLibSystem/tinykernel/mlsys.c
-end.o: /src/TinyKernel/end.tm
-	as -o $target /src/TinyKernel/end.tm
+end.o: /src/TinyKernel/end.s
+	as -o $target /src/TinyKernel/end.s
 
 # build clean: the objects and interfaces removed
 clean:

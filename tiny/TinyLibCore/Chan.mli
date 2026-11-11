@@ -2,7 +2,7 @@
  * where it comes from, or goes (xix's Chan), what
  * TinyLibSystem.with_open_in and with_open_out give. The channel alone
  * cannot say its file, and an error is said by one: a program given a
- * Chan.i writes "foo.tm:3: unknown instruction", or "<stdin>:3", with
+ * Chan.i writes "foo.s:3: unknown instruction", or "<stdin>:3", with
  * nothing more passed along *)
 
 type origin =

@@ -77,9 +77,9 @@
 <rect x="338" y="696" width="296" height="91" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
 <text x="352" y="719" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The C runtime</text>
 <text x="622" y="719" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">C, assembly</text>
-<text x="352" y="740" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/runtime/: start.tm (the start),</text>
-<text x="352" y="757" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">udivmod.tm (the division), libc.c;</text>
-<text x="352" y="774" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyKernel/libc/sys.tm: the system calls</text>
+<text x="352" y="740" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/runtime/: start.s (the start),</text>
+<text x="352" y="757" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">udivmod.s (the division), libc.c;</text>
+<text x="352" y="774" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyKernel/libc/sys.s: the system calls</text>
 <line x1="486" y1="787" x2="486" y2="805" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <rect x="338" y="807" width="296" height="74" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.5"/>
 <text x="352" y="830" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The system</text>
@@ -105,9 +105,9 @@
 <text x="660" y="395" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The C runtime</text>
 <text x="930" y="395" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">C, assembly</text>
 <text x="660" y="416" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/runtime/: libc.c and libc.h</text>
-<text x="660" y="433" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">(print, the strings, malloc), start.tm,</text>
-<text x="660" y="450" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">udivmod.tm;</text>
-<text x="660" y="467" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyKernel/libc/sys.tm: the system calls</text>
+<text x="660" y="433" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">(print, the strings, malloc), start.s,</text>
+<text x="660" y="450" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">udivmod.s;</text>
+<text x="660" y="467" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyKernel/libc/sys.s: the system calls</text>
 <line x1="794" y1="480" x2="794" y2="805" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <rect x="646" y="807" width="296" height="74" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.5"/>
 <text x="660" y="830" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The system</text>
@@ -144,9 +144,9 @@
 <rect x="954" y="560" width="296" height="91" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
 <text x="968" y="583" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">Its assembly</text>
 <text x="1238" y="583" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">tiny-cpu&#x27;s</text>
-<text x="968" y="604" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyKernel/entry.tm (the start, the</text>
-<text x="968" y="621" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">traps), draw.tm (a row of pixels), the</text>
-<text x="968" y="638" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">font; runtime/udivmod.tm</text>
+<text x="968" y="604" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyKernel/entry.s (the start, the</text>
+<text x="968" y="621" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">traps), draw.s (a row of pixels), the</text>
+<text x="968" y="638" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">font; runtime/udivmod.s</text>
 <line x1="1102" y1="651" x2="1102" y2="805" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <rect x="954" y="807" width="296" height="74" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.5"/>
 <text x="968" y="830" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The machine</text>

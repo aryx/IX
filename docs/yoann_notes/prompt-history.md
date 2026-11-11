@@ -70373,3 +70373,122 @@ Claude changed `TinyLinker`, `TinyML`, and `TinyBuildSystem` to read archives, `
 Claude left the library change uncommitted in the main tree after the merge with `abaa1231`, with tests passing.
 Claude listed the changed files and noted `_make9/` as a leftover build directory excluded from the change.
 Claude offered to commit by naming the files explicitly, including `prompt-history.md`, once Yoann approves.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 20:00
+
+**Yoann:**
+
+> ok let's commit. Did we do wrong to add an ar tool in tiny? tiny/ is supposed to be the free spirit variant of ix and looks like we are going back to very traditional toolset. Is it good?
+
+**Claude (summary):**
+
+Claude committed the work as 1902d821 and judged tiny-ar only partly a mistake.
+Claude proposed replacing tiny-ar with plain concatenation, so a library is just cat-ed object files.
+Under that scheme, one .o file would hold several objects in a row, read by of_object.
+Claude listed costs: losing ar -t's member list and ar's refusal of non-object files.
+Claude then closed by asking whether to replace tiny-ar with concatenated objects.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 20:04
+
+**Yoann:**
+
+> nah, I don't like that a .o can be a single or a set of objects; it's counter intuitive and not what people would expect; the .a has the advantage of being quite standard difference
+
+**Claude (summary):**
+
+Claude recommended keeping `.a` archives and `tiny-ar`, with `.o` meaning one object and `.a` a library.
+Claude proposed simplifying only inside the tool (no index, no member selection, no dates, linker takes every member), not the file meanings.
+Claude saved that as a rule: simplify inside tools, but don't overload familiar file kinds.
+Claude listed the next steps: rename `.tmi` to `.cmi` in its own commit, then switch tiny-kernel to `stdlib.a`.
+Claude asked which step to do first.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 20:05
+
+**Yoann:**
+
+> let's do 1 and 2
+
+------------------------------------------------------------------------
+
+## 2026-11-11 20:06
+
+**Yoann:**
+
+> I think it simplifies the tiny/Buildfile and in the end it's convenient to name a concept "a library is a set of objects"
+
+------------------------------------------------------------------------
+
+## 2026-11-11 20:06
+
+**Yoann:**
+
+> maybe .cmi is not good extension, as it does not contain what ocamlc produced
+
+------------------------------------------------------------------------
+
+## 2026-11-11 20:07
+
+**Yoann:**
+
+> it's tiny ml
+
+------------------------------------------------------------------------
+
+## 2026-11-11 20:07
+
+**Yoann:**
+
+> but .tmi is confusing, it sounds like the assembly
+
+------------------------------------------------------------------------
+
+## 2026-11-11 20:07
+
+**Yoann:**
+
+> maybe .tm in the first place was not a good extension for the tiny machine assembly? Maybe we should have used .s ?
+
+------------------------------------------------------------------------
+
+## 2026-11-11 20:08
+
+**Yoann:**
+
+> .cmxi ?
+
+------------------------------------------------------------------------
+
+## 2026-11-11 20:08
+
+**Yoann:**
+
+> what cm stands for though?
+
+**Claude (summary):**
+
+Claude explained that "cm" in OCaml's `.cmi`/`.cmo`/`.cmx`/`.cma` most likely means "compiled module," though it couldn't cite an official expansion.
+Claude traced the family to Caml Light's `.zi`/`.zo` extensions, where z came from ZINC, and noted OCaml replaced them with `cm` in 1995.
+Claude argued tiny-ml's interface file is conceptually a compiled module interface, so `.tmi` reads naturally as "tiny-ml interface."
+Claude recommended renaming `.tm` to `.s` for assembly, keeping `.tmi` as the interface extension, and asked for confirmation before proceeding.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 20:10
+
+**Yoann:**
+
+> ok let's rename .tm to .s and keep .tmi
+
+**Claude (summary):**
+
+Claude renamed the 34 `.tm` assembly files to `.s` with `git mv` and updated about 410 mentions across 102 files.
+Claude left the bug records, finished plans, prompt history, four `Unix.tm` C struct lines, and the tiny-machine `tm` names untouched.
+Claude restricted `TinyAssembler_test.sh` to `tiny/*.s`, since it had been assembling m-ix's ARM files and was hiding FAIL output behind exit code 0.
+Claude confirmed the main tree builds with dune, all 26 tiny test scripts show no FAIL, and tiny-kernel check passes.
+Nothing is committed yet, and Claude is waiting for review before committing and then starting item 2.

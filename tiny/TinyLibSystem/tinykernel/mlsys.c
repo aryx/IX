@@ -6,7 +6,7 @@
 // ML's: an integer n is 2n+1, a string its bytes and its length).
 //
 // The partition: the program from 0; the value stack at 0x60000, or
-// after the program when it is larger (end.tm's _end, linked last:
+// after the program when it is larger (end.s's _end, linked last:
 // tiny-ml's 541 KB; old: the Makefile refused a program past 384 KB),
 // 64 KB, or a sixteenth of a partition larger than 1 MB; the heap's
 // two halves after it, as large
@@ -16,7 +16,7 @@
 // halves are 256 KB each. A program linked as an a.out that asks for
 // more memory (tiny-linker -a) gets bigger halves, and deeper stacks
 // (cc's recursions over a file's tokens: 1 MB of its 16; as's over
-// kernel.tm's 70,000 lines). The heap uses the whole half from
+// kernel.s's 70,000 lines). The heap uses the whole half from
 // the start: starting small and growing made it collect often while it
 // grew, a quarter of the browser's time (plan_tiny_browser.md).
 //
@@ -28,7 +28,7 @@
 
 #define VSTACK 0x60000
 
-// the program's end (end.tm)
+// the program's end (end.s)
 extern char _end[];
 
 // the program's arguments, for u_argc and u_arg

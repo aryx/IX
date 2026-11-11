@@ -1,12 +1,12 @@
 ; Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyC.ml)
 ;
 ; The runtime of tiny-c's programs, what C cannot say: the start and
-; the system calls (the unsigned division is udivmod.tm). Linked first
-; (the machine starts at 0), then udivmod.tm, then libc (libc.c,
+; the system calls (the unsigned division is udivmod.s). Linked first
+; (the machine starts at 0), then udivmod.s, then libc (libc.c,
 ; compiled by tiny-c), then the program (the Makefile):
 ;
 ;     tiny-c prog.c; tiny-c libc.c
-;     for f in start udivmod; do tiny-assembler $f.tm; done
+;     for f in start udivmod; do tiny-assembler $f.s; done
 ;     tiny-linker -o prog start.o udivmod.o libc.o prog.o && tiny-cpu ./prog one two
 ;
 ; The convention is tiny-c's: the arguments at 0(sp), 4(sp)...,

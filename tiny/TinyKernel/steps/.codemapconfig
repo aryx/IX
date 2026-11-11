@@ -1,7 +1,7 @@
 // tiny/TinyKernel/steps/: what the code map says of it (the code map: tinybox
 // codemap, ~/github/ocaml-elm-playground; its guidelines:
-// docs/claude_notes/codemapconfig_guidelines.md there). Its .tm files
-// (tiny-machine's assembly: v0/, t6's entry.tm) are not sources to the
+// docs/claude_notes/codemapconfig_guidelines.md there). Its .s files
+// (tiny-machine's assembly: v0/, t6's entry.s) are not sources to the
 // map: they are named in the roles below. Until 2026-10-13 this was
 // tiny/tiny-os/, with v6/ too (xv6's structure in C, gone: git's
 // history has it). Not counted in t-ix's lines.
@@ -27,7 +27,7 @@
       name: 'The steps before a kernel in ML, on the tiny tools',
       bones: [
         { at: '../../TinyC.ml', role: 'the C compiler, -tm' },
-        { at: '../../runtime/', role: "the C runtime every program links (with start.tm's calls)" },
+        { at: '../../runtime/', role: "the C runtime every program links (with start.s's calls)" },
         { at: '../../TinyCPU.ml', role: 'the bare CPU: hello' },
         { at: '../../TinyMachine.ml', role: 'the machine v0 and t6 run on' },
         { at: 'hello.c', role: 'a C program, no kernel' },

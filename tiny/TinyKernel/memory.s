@@ -1,10 +1,10 @@
 ; Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyMachine.ml)
 ;
-; TinyKernel.ml's loops over memory, in assembly, with entry.tm's
+; TinyKernel.ml's loops over memory, in assembly, with entry.s's
 ; convention (the arguments at 0(sp), 4(sp)..., ML's integers: n is
 ; 2n+1): a partition copied at fork; a frame and the speaker's ring
 ; zeroed (no more a partition at exec: TinyKernel.ml's load_prog).
-; (old: in entry.tm, which keeps what needs the machine's own
+; (old: in entry.s, which keeps what needs the machine's own
 ; instructions: the traps, k_run, the registers of control)
 
 ; k_copy(dst, src, n): n bytes, a multiple of 4, a word at a time (a

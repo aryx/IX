@@ -1,7 +1,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# For the tests, sourced (ROOT set): link_tm out file..., each .tm (the
+# For the tests, sourced (ROOT set): link_tm out file..., each .s (the
 # assembly written by hand) assembled by tiny-assembler to an object
 # beside out (out.1.o...), an object (.o, the compilers') taken as it
 # is, then all linked by tiny-linker into the

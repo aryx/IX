@@ -12,7 +12,7 @@ calls the host's (r1-r3 the arguments, r1 the answer): sys 0, exit r1; sys 1,
 write r3 bytes at r2 to r1 (1, 2); sys 2, read up to r3 bytes to r2. The image
 is tiny-linker's (the memory's first bytes: the CPU starts at 0). In
 tiny/tests/TinyCPU_tests/, for example:
-  tiny-assembler hello.tm && tiny-linker -o hello hello.o
+  tiny-assembler hello.s && tiny-linker -o hello hello.o
   tiny-cpu hello                the image run: Hello, world
   echo hello | tiny-cpu upper                      HELLO
   tiny-cpu -l hello             the listing: 0:  11100001  addi r1, r0, 1 ...

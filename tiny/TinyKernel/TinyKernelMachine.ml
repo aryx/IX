@@ -6,7 +6,7 @@ open TinyMemory
 open TinyKernelFS
 
 (*****************************************************************************)
-(* The machine: entry.tm's, memory.tm's and runtime.c's functions *)
+(* The machine: entry.s's, memory.s's and runtime.c's functions *)
 (*****************************************************************************)
 
 external k_init : unit -> unit = "k_init"
@@ -63,7 +63,7 @@ let date_dev = -56
  * 0: none) *)
 let seed_dev = -60
 (* The cores (plan_tiny_multicore.md): the kernel is core 0's, the
- * others run processes only (entry.tm's slave). Core k's mailbox: the
+ * others run processes only (entry.s's slave). Core k's mailbox: the
  * frame to run (0: none), the window (base, size), the slice; then
  * the trap's cause and value, posted. The interrupt between cores:
  * core k's raised by storing k at -64(r0); read, the cores that raised

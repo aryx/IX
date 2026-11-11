@@ -5,7 +5,7 @@
 
 open TinyMemory
 
-(* memory.tm's loops and runtime.c's words (TinyKernel.ml names them
+(* memory.s's loops and runtime.c's words (TinyKernel.ml names them
  * too) *)
 external k_copy : int -> int -> int -> unit = "k_copy"
 external k_window : int -> int -> int -> int -> int -> unit = "k_window"
@@ -448,7 +448,7 @@ let mem_blit sp va a n =
 (* What the machine gets so that a process runs in sp: its window, the
  * data's start and size, the text's (0 and 0 without one: the window
  * alone, as partitions have it), and satp (0 but with pages); on core 0
- * (entry.tm's k_window), and in another core's mailbox, at m, m + 4,
+ * (entry.s's k_window), and in another core's mailbox, at m, m + 4,
  * m + 20, m + 24, m + 28 *)
 let text_base sp = match sp.text with Some t -> t.tblock.sbase | None -> 0
 let mem_window sp =

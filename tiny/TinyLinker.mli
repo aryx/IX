@@ -41,7 +41,7 @@
  * kept:
  * {b The layout is the one the assembler made when it linked} (a file
  * on a word, an .align on its address): an object without pieces, all
- * of tiny-c's and the hand-written .tm, is placed as it was, and the
+ * of tiny-c's and the hand-written .s, is placed as it was, and the
  * split checked byte for byte on make check's images
  * (plan_tiny_self_hosting.md, step 3).
  *

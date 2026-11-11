@@ -42,7 +42,7 @@
  * is forgotten ([mem_forget]): its next exec loads it again. A word
  * the kernel writes in a text (a tracer's breakpoint) makes the text
  * the process's own, a copy. A process without a text (partitions)
- * runs with the window alone: entry.tm sets the machine's split only
+ * runs with the window alone: entry.s sets the machine's split only
  * when tbound is not 0, the split's arithmetic costing 2% of the host's
  * instructions (tiny-kernel's toolchain session; 7% when every process
  * paid it).
@@ -87,7 +87,7 @@
  * TinyKernel.ml calls it for every process's memory
  * (its [user] for a word or a byte of a system call's, [mem_address];
  * its [user_iter] for a buffer, [mem_pieces]; [mem_writable] before it
- * writes one); entry.tm
+ * writes one); entry.s
  * sets core 0's window ([mem_window]), and a core given a process gets
  * its window in its mailbox ([mem_post]: plan_tiny_multicore.md). The
  * other kernels on the same machine: t6 (steps/), fixed partitions of

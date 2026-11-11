@@ -1,7 +1,7 @@
 # tiny-kernel's fonts
 
 The fonts t-IX draws its text with, on tiny-machine (tiny-kernel's
-`font.tm`, made by the Makefile) and on the host (tiny-office,
+`font.s`, made by the Makefile) and on the host (tiny-office,
 tiny-emacs, tiny-www... in an SDL window: `../../user/sdl/`, its
 `TinyFont.ml`). `TinyKernelGraphics.ml` makes a mask of each face, and
 a character is a draw through it.
@@ -60,7 +60,7 @@ as large, 40,960 bytes in all, which is how the kernel knows it:
     24576    large bold, 16 by 32  32 rows of four bytes
 
 The kernel mixes a level with the colour under it by a table made for
-each ink (TinyKernelGraphics' `mix`, draw.tm's `mix_table`): a pixel
+each ink (TinyKernelGraphics' `mix`, draw.s's `mix_table`): a pixel
 is a colour of Plan 9's table, so a mix is the nearest of its 256.
 
 ## plan9.font: Plan 9's default font

@@ -13,7 +13,7 @@
  * The image is tiny-linker's: the objects one after the other, their
  * labels one namespace, the first at address 0, where the CPU starts.
  * The arguments are put where the main of a C program expects them
- * (the convention of tiny-c, in runtime/start.tm): the strings go
+ * (the convention of tiny-c, in runtime/start.s): the strings go
  * at the top of memory, and sp points to argc, followed by argv.
  * argv[0] is the name of the image.
  *
@@ -41,11 +41,11 @@
  * own: tiny-cpu writes the counts (-prof) for tiny-prof, and the
  * debugger is tiny-kernel's debug (TinyDebugger), not the emulator's.
  * mini-5i answers a whole system's calls, Linux's or Plan 9's; tiny-cpu
- * three, what start.tm needs.
+ * three, what start.s needs.
  *
  * Status: this is the first step for running a program on this
  * machine. Programs compiled by tiny-c run here with its libc (the
- * three calls made by start.tm are the three calls provided here).
+ * three calls made by start.s are the three calls provided here).
  * The same assembly, linked after a kernel, runs on TinyMachine, where
  * sys traps to that kernel instead of to OCaml. *)
 

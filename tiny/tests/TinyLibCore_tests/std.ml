@@ -291,7 +291,7 @@ let () =
   strs (List.map Filename.basename [ ""; "/"; "a"; "a/b"; "/a/b/"; "a//"; "//" ]);
   List.iter (fun f -> bool (Filename.is_relative f)) [ ""; "a"; "/a"; "./a" ];
   print_newline ();
-  strs [ Filename.chop_suffix "a.c" ".c"; Filename.chop_suffix "x/b.tm" ".tm" ];
+  strs [ Filename.chop_suffix "a.c" ".c"; Filename.chop_suffix "x/b.s" ".s" ];
   strs (List.map Filename.remove_extension
           [ "a.c"; "a/b.c"; ".profile"; "a.b/c"; "x..y"; "a.tar.gz"; "/a/.b.c";
             "noext"; "" ]);

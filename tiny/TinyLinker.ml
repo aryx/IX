@@ -32,7 +32,7 @@ With -debug, each object's items said (-v, -quiet: TSys.logging's).
 A library, tiny-ar's archive (lib.a), is its objects, all linked, in its order.
 A label's line is its address in hexadecimal and its name. In
 tiny/tests/TinyCPU_tests/, for example:
-  tiny-assembler hello.tm && tiny-linker -o hello hello.o
+  tiny-assembler hello.s && tiny-linker -o hello hello.o
   tiny-cpu hello                           Hello, world
   tiny-linker -a 10 -o prog start.o prog.o  an a.out of 10 MB, for tiny-kernel
 An error names the label: undefined label main

@@ -50,7 +50,7 @@ exit(int status)
 	*(int*)HALT = status;
 }
 
-// entry.tm's _entry: the whole of the heap at once (it does not grow),
+// entry.s's _entry: the whole of the heap at once (it does not grow),
 // then the kernel, TinyKernel.ml's toplevel, which never returns
 void
 kmain(void)

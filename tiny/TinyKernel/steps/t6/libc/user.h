@@ -1,6 +1,6 @@
 // Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyC.ml)
 //
-// What a program of t6 has: its system calls (sys.tm, and start.tm's
+// What a program of t6 has: its system calls (sys.s, and start.s's
 // write and exits) and libc (tiny/runtime/). cat, echo, ls, wc,
 // mkdir and rm are links to ../../../user/, tiny-kernel's too.
 

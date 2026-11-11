@@ -47,7 +47,7 @@ struct dirent { char name[20]; int type; uint first; uint size; };
 
 enum { FREE, READY, WAITING, ZOMBIE };
 
-// r first, then pc: entry.tm saves the user's registers there (r[k] is
+// r first, then pc: entry.s saves the user's registers there (r[k] is
 // rk) and the pc at 64
 struct proc {
 	uint r[16];
@@ -82,7 +82,7 @@ struct file {
 	struct pipe *pipe;
 };
 
-// entry.tm
+// entry.s
 void trapvec(void);
 void resume(struct proc *p);
 uint r_cause(void);

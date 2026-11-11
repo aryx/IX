@@ -23,7 +23,7 @@ so that the second "e" costs less than the first.
 
 The headers of `Font.mli` and `Hershey.mli` tell each in full. The
 small systems have their own: the kernels' consoles a bitmap
-(`font1.bin`), tiny-kernel's a bitmap of its own (`font.tm`, made
+(`font1.bin`), tiny-kernel's a bitmap of its own (`font.s`, made
 of `tiny.font`: section 7).
 
 A real system has the third kind for everything, and keeps the first
@@ -278,7 +278,7 @@ text with `TinyKernelGraphics`; on the host, the tiny programs in an
 SDL window (`tiny/TinyLibSystem/sdl/`) call the same module on an array.
 So a font changed there changes both. A face is made a mask, a byte a
 pixel, the characters side by side, and a character is a draw of the
-ink through it (draw.tm's `glyphs` for a whole text of the regular
+ink through it (draw.s's `glyphs` for a whole text of the regular
 face).
 
 **Why it looked pixelized.** Three things, the first two the font's:
@@ -302,7 +302,7 @@ face).
 2. Grey edges: a mask of levels, 0 to 255, TinyKernelGraphics.mli's
    exercise. But a pixel is an index into Plan 9's table of 256
    colours, so each mix of ink and background is a colour looked up,
-   and draw.tm's `glyphs`, a word of 4 pixels at a time, would mix a
+   and draw.s's `glyphs`, a word of 4 pixels at a time, would mix a
    pixel at a time: smoother, slower on tiny-machine, with fonts made
    from outlines at the build.
 3. A larger screen (1280 by 960, 16 by 32 the regular face): the one
@@ -383,7 +383,7 @@ against it (else the m moved its stem out); and a bar a pixel thick on
 two rows kept on its upper one (the A's crossbar). tiny-emacs in bold,
 as the author's Emacs, was tried and taken back ("it does not read as
 good"); bold and underlined text kept the fast path, the plain text's
-(draw.tm's glyphs: 8 by 16 cells either way), where it was a draw a
+(draw.s's glyphs: 8 by 16 cells either way), where it was a draw a
 character.
 
 **Then grey edges (2).** The author: "What's next to get a font that
@@ -397,12 +397,12 @@ same four faces. The kernel knows it by its size: a mask byte 0, 85,
 170 or 255. A colour through such a mask is mixed by a table made for
 the colour when first drawn with (1 KB: for each level and each
 colour under it, the colour of Plan 9's table nearest to the mix),
-draw.tm's mix_table: the nearest among the 16 a mix can be near, one
+draw.s's mix_table: the nearest among the 16 a mix can be near, one
 for each (den, v) of the table's formula, the same as a search of the
 256 but for ties. In tiny-ml's ML it was 3.5 million instructions a
 colour, half a second of the machine's: tiny-windows' first menu drew
 so late that the recorded click on it was taken for its item exit;
-in assembly some 230,000. Texts by draw.tm's glyphs_mixed (a byte at a
+in assembly some 230,000. Texts by draw.s's glyphs_mixed (a byte at a
 time where a row is not blank), the others by row_mix. A whole session
 costs 0.3% (www) to 5% (emacs) more instructions than with tiny.font.
 

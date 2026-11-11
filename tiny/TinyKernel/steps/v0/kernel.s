@@ -2,7 +2,7 @@
 ;
 ; v0, the first step before TinyKernel.ml (../Makefile): a page of
 ; kernel for tiny-machine, in its assembly. There is
-; no loader: its four user programs (a.tm to d.tm) are linked with it,
+; no loader: its four user programs (a.s to d.s) are linked with it,
 ; one image, and its table names their windows by their labels:
 ;
 ;     make run        (each assembled, then tiny-linker -o kernel.img kernel.o a.o b.o c.o d.o)

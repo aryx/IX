@@ -10,8 +10,8 @@
 #   t6/       a kernel in C: spawn, a partition a process, a FAT on a
 #             disk, one kernel stack (TinyKernel.ml has no disk). Six of
 #             its programs are tiny-kernel's own (links to ../user/).
-# They share the C runtime, ../../runtime/ (tiny-c's: start.tm,
-# udivmod.tm, libc.c, libc.h), whose system calls are tiny-cpu's and
+# They share the C runtime, ../../runtime/ (tiny-c's: start.s,
+# udivmod.s, libc.c, libc.h), whose system calls are tiny-cpu's and
 # the kernels'. Not counted in t-ix's lines (make loc).
 # (old: tiny/TinyKernel/steps/, with v6/, xv6's structure and names in C, 3,400
 # lines: a faithful twin, which mini-xv6 is in m-ix, kernels/xv6/;
@@ -23,8 +23,8 @@
 #
 # The tools from the PATH (after `dune install`), or from ix's bin/. A
 # C program is compiled to its object by tiny-c, then linked by
-# tiny-linker after the runtime: start.tm first (the machine starts at
-# 0), udivmod.tm, libc. (old: tiny-c wrote a .tm, assembled here; since
+# tiny-linker after the runtime: start.s first (the machine starts at
+# 0), udivmod.s, libc. (old: tiny-c wrote a .s, assembled here; since
 # 7ea94bae it writes the object, and these rules failed)
 
 export PATH := $(abspath ../../../bin):$(PATH)
@@ -50,7 +50,7 @@ $(O)/hello.o: hello.c $(L)/libc.h
 	@mkdir -p $(@D)
 	$(TC) -o $@ hello.c
 
-$(O)/%.o: $(L)/%.tm
+$(O)/%.o: $(L)/%.s
 	@mkdir -p $(@D)
 	$(AS) -o $@ $<
 .SECONDARY:

@@ -1,6 +1,6 @@
 (* TinyKernel's machine: what the kernel in ML reaches tiny-machine by,
- * the externals of entry.tm (a process run until its trap, the timer,
- * the interrupts), memory.tm (bytes copied, zeroed) and runtime.c (a
+ * the externals of entry.s (a process run until its trap, the timer,
+ * the interrupts), memory.s (bytes copied, zeroed) and runtime.c (a
  * word read and written, strings to and from memory), and the devices'
  * addresses at the top of memory.
  *
@@ -21,7 +21,7 @@
  * devices are words at addresses.
  *)
 
-(* entry.tm's: the machine set up; a process's frame run until its trap
+(* entry.s's: the machine set up; a process's frame run until its trap
  * (the cause back), one instruction of it; the trap's value; the timer
  * armed; the machine's clock *)
 external k_init : unit -> unit = "k_init"
@@ -31,7 +31,7 @@ external k_tval : unit -> int = "k_tval"
 external k_timer : int -> unit = "k_timer"
 external k_clock : unit -> int = "k_clock"
 
-(* memory.tm's and runtime.c's: n bytes copied, zeroed; where the image
+(* memory.s's and runtime.c's: n bytes copied, zeroed; where the image
  * ends; a word read, written; bytes as a string, a string into memory;
  * a character on the console; the font's address, its size *)
 external k_copy : int -> int -> int -> unit = "k_copy"
@@ -45,7 +45,7 @@ external k_console : int -> int -> unit = "k_console"
 external k_font : unit -> int = "k_font"
 external k_font_size : unit -> int = "k_font_size"
 
-(* how many processes at most, and a slot's frame, where entry.tm saves
+(* how many processes at most, and a slot's frame, where entry.s saves
  * its registers *)
 val nslots : int
 val frame : int -> int

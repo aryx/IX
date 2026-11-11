@@ -15,7 +15,7 @@
 #   request for one, and a few answers as www reads their heads
 #   (Host.exe -http).
 # - On tiny-cpu, built by tiny-ml (TinyBrowser_tests/Tm.ml, with
-#   tm.c, heap.c and read.tm): the lines must be the same as OCaml's.
+#   tm.c, heap.c and read.s): the lines must be the same as OCaml's.
 #   This runs in tiny-cpu's 1 MB of memory, with heap halves of 352 KB,
 #   which the OCaml article fits in.
 # RECORD=1 records the expected lines again (check them first).
@@ -81,11 +81,11 @@ EOF
 # for the start's call to reach it (a jump reaches 32K words).
 if ml_lib $W/lib && $TML -L $W/lib -o $W/b.o $B/TinyBrowserText.ml $B/TinyBrowserTokens.ml $B/TinyBrowserLines.ml $B/TinyBrowserHtml.ml $T/Testutil_browser.ml $T/Tm.ml \
    && $TC -o $W/tm.o $T/tm.c && $TC -o $W/heap.o $T/heap.c && $TC -o $W/libc.o $L/libc.c \
-   && link_tm $W/b.img $L/start.tm $L/udivmod.tm $T/read.tm $W/libc.o $W/tm.o $W/b.o $W/heap.o $LIB_O; then
+   && link_tm $W/b.img $L/start.s $L/udivmod.s $T/read.s $W/libc.o $W/tm.o $W/b.o $W/heap.o $LIB_O; then
   for p in $PAGES; do
     IFS=: read -r page width name <<< "$p"
-    timeout ${SLOW:-120} $CPU $W/b.img $width < $page > $W/$name.tm.out 2>&1
-    if cmp -s $W/$name.out $W/$name.tm.out; then echo "ok $name: on tiny-cpu"; else fail "$name: on tiny-cpu"; diff $W/$name.out $W/$name.tm.out | head -6; fi
+    timeout ${SLOW:-120} $CPU $W/b.img $width < $page > $W/$name.s.out 2>&1
+    if cmp -s $W/$name.out $W/$name.s.out; then echo "ok $name: on tiny-cpu"; else fail "$name: on tiny-cpu"; diff $W/$name.out $W/$name.s.out | head -6; fi
   done
 else
   fail "tiny-ml: the build"

@@ -13,7 +13,7 @@
  *        | machine    turns that list into assembly, keeping the
  *        |            stack depth d in register rd; a global's data
  *     file.o, the lines encoded (TinyLibMachine's assemble), for
- *     tiny-linker, and tiny-cpu runs the program; -S: file.tm, their
+ *     tiny-linker, and tiny-cpu runs the program; -S: file.s, their
  *     text
  *
  * Each step is a part in TinyC/, whose .mli has its types and its
@@ -122,7 +122,7 @@
  * prints. It reads one C file and writes its assembly for TinyCPU
  * (TinyMachineCPU.ml), whose words are 4 bytes, pointers too. Its
  * runtime is in runtime/ (built by TinyKernel/steps/Makefile):
- * start.tm holds the program start and the system calls, udivmod.tm the
+ * start.s holds the program start and the system calls, udivmod.s the
  * unsigned division, and the rest of libc is C compiled by tiny-c. Its
  * library has Plan 9's names (print, exits) and its rules are ANSI's:
  * the tests compare it with the host's cc (TinyC_tests/host.h).

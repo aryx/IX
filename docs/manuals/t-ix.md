@@ -29,7 +29,7 @@ step 7; tiny-cpu stays the host's).
     ./tiny-machine -window tiny-kernel    # and its screen in a window: paint draws there
     ./tiny-machine t6             # t6, a step before it: a kernel in C, with its disk
     ./tiny-machine v0             # v0, the first step: a page of assembly and four programs
-    ./tiny-machine kernel.tm a.tm # a kernel of yours, and its programs
+    ./tiny-machine kernel.s a.s # a kernel of yours, and its programs
 
 `-l` prints the kernel's listing instead of running it, `-n` skips the
 build, `-w` keeps t6's writes to its disk. Ctrl-D ends the
@@ -41,7 +41,7 @@ The script builds the tools with dune and calls them. By hand:
 |---|---|
 | `tiny-c f.c` | C to an object, `f.o` (`-S`: its assembly instead) |
 | `tiny-ml f.ml` | ML to an object, `f.o` (`-S`: its assembly instead) |
-| `tiny-assembler f.tm` | assembly written by hand to an object, `f.o` (`tiny/TinyAssembler.ml`; `tiny/TinyLibMachine.mli` has the object's format) |
+| `tiny-assembler f.s` | assembly written by hand to an object, `f.o` (`tiny/TinyAssembler.ml`; `tiny/TinyLibMachine.mli` has the object's format) |
 | `tiny-linker [-a n] [-map] -o out f.o...` | objects to an image, the first at 0 (`-a n`: an a.out for tiny-kernel that asks for n MB; `-map`: `out.map`, each label's address) |
 | `tiny-cpu image` | runs a program alone, the host answering its three system calls |
 | `tiny-machine image` | the same with the machine around the CPU: the image is a kernel's |
@@ -72,7 +72,7 @@ A tiny program is either the host's or the tiny machine's.
       tiny-mkfs                disk images
       tiny-machine-window      the screen in a window (SDL)
             |
-            |  .tm files, linked to an image
+            |  .s files, linked to an image
             v
     the tiny machine (assembly, C and ML, built by the programs above)
       runtime/              the C runtime
@@ -131,7 +131,7 @@ from ix's `bin/`:
 
 | Makefile | what it builds |
 |---|---|
-| `tiny/TinyKernel/steps/Makefile` | `libc.tm` (from `tiny/runtime/`), `hello`, then each step |
+| `tiny/TinyKernel/steps/Makefile` | `libc.s` (from `tiny/runtime/`), `hello`, then each step |
 | `tiny/TinyKernel/steps/t6/` | `kernel.img`, the user programs, `fs.img` (tiny-mkfs) |
 | `tiny/TinyKernel/Makefile` | `kernel.img`, the user programs, `boot.img` |
 
@@ -140,10 +140,10 @@ nowhere else (as dune's `_build/` and mini-mk's `_mk/`): the
 directories show the sources, `make clean` removes `_make/`.
 
 The steps are always the same two, the assembly written by hand
-(entry.tm, the runtime's start.tm...) assembled first:
+(entry.s, the runtime's start.s...) assembled first:
 
     tiny-c x.c                  # x.o; or tiny-ml, for ML
-    tiny-assembler start.tm     # start.o: assembly written by hand
+    tiny-assembler start.s      # start.o: assembly written by hand
     tiny-linker -o kernel.img entry.o ... x.o              # a kernel: linked at 0
     tiny-linker -o prog start.o udivmod.o libc.o prog.o    # a program
 
@@ -284,7 +284,7 @@ In user mode, with pages off, an address must be inside the window.
   must be below `bound`, and `base` is added to it. Every program is
   assembled at 0.
 
-With `satp`'s top bit set (no kernel of ix does since v6 was removed; `tiny/tests/TinyMachine_tests/paging.tm` does), addresses go through two-level page
+With `satp`'s top bit set (no kernel of ix does since v6 was removed; `tiny/tests/TinyMachine_tests/paging.s` does), addresses go through two-level page
 tables instead, RISC-V's Sv32: 10 bits of index in the root table, 10
 in the next, 12 in a 4 KB page. An entry's flag bits are 1 valid, 2
 read, 4 write, 8 execute, 16 user. Supervisor mode reaches every
@@ -355,7 +355,7 @@ In a `k` line, `\n` is a new line and `\` with three digits a byte
 (`\003`). The input ends after the last event. As the time is the
 instructions counted, the screen at the halt is the same on every
 run: this is how a program with a mouse is tested
-(`tiny/tests/TinyMachine_tests/screen.tm`).
+(`tiny/tests/TinyMachine_tests/screen.s`).
 
 ### 5.4 The window is another program
 
@@ -469,7 +469,7 @@ with a packet lost):
 
 A packet arrives at a time counted in instructions, so a run with
 the network is the same every time
-(`tiny/tests/TinyMachine_tests/net.tm`). Without a wire `-36(r0)`
+(`tiny/tests/TinyMachine_tests/net.s`). Without a wire `-36(r0)`
 reads 0, a send is lost and nothing arrives.
 
 ### 5.6 The speaker
@@ -504,7 +504,7 @@ has no sound yet.
 
 ### 6.1 The link, and an image
 
-Each `.tm` file is assembled alone, to an object: its words, its
+Each `.s` file is assembled alone, to an object: its words, its
 labels, and the places where a label's address goes (`reloc` lines,
 `tiny/TinyAssembler.mli`). tiny-linker puts the objects one after the
 other, their labels in one namespace, the first at address 0, where
@@ -519,11 +519,11 @@ result is in `r13`; the callee may change any register but `sp`.
 A program is linked after its runtime (`tiny/runtime/`):
 
     tiny-c prog.c; tiny-c libc.c
-    for f in start udivmod; do tiny-assembler $f.tm; done
+    for f in start udivmod; do tiny-assembler $f.s; done
     tiny-linker -o prog start.o udivmod.o libc.o prog.o
     tiny-cpu ./prog one two
 
-`start.tm` calls `main` and exits with its result. `libc.h` declares
+`start.s` calls `main` and exits with its result. `libc.h` declares
 `write`, `exits`, `print`, `sprint`, `malloc`, `free`, `strlen`,
 `strcpy`, `strcmp`, `memset` and `atoi`.
 
@@ -545,7 +545,7 @@ objects.
     tiny-ml -c a.tmi b.ml       # b.o and b.tmi, after a
     tiny-ml -o main.o a.tmi b.tmi    # each unit's init, the library's first, ml_start
     tiny-ml -o prog.o a.ml b.ml      # or all at once: the units and their main
-    tiny-ml -S -c a.ml          # a.tm: the assembly, to read
+    tiny-ml -S -c a.ml          # a.s: the assembly, to read
 
 tiny-kernel's programs are made the first way (`tiny/TinyKernel/Makefile`:
 the library in `_make/lib/`, each unit once in `_make/ml/`, the main of
@@ -674,7 +674,7 @@ and `c`, which an empty command line also takes as keys.
 
 To try the toolchain and these two after `make run` (in `tiny/`),
 `/examples` has two programs to build: `hello.c`, whose `square` is
-`square.tm`'s, by hand, and `helloml.ml`, a tree, a closure, an
+`square.s`'s, by hand, and `helloml.ml`, a tree, a closure, an
 exception and enough lists that tiny-ml's collector runs; and the
 `Buildfile` that builds them with `/lib`'s runtimes (`tiny/examples/` on
 the host, to read and edit there):
@@ -709,7 +709,7 @@ answer's bytes; `ready` waits for one with a limit, as `ping` does
 
 A call that fails answers -1. Its C programs are in
 `tiny/TinyKernel/user/`; what they are linked with, `user.h` and
-`sys.tm`, is in `tiny/TinyKernel/libc/`, and an ML program's side of
+`sys.s`, is in `tiny/TinyKernel/libc/`, and an ML program's side of
 the kernel in `tiny/TinyLibSystem/tinykernel/` (beside the interfaces, `tiny/TinyLibSystem/`).
 
 `ready` answers the first of `n` descriptors that a read would not
@@ -780,7 +780,7 @@ bold, 8 by 16 and 16 by 32; italic is the upright one slanted).
 | font | what |
 |---|---|
 | `fonts/plan9.font` (the default) | Plan 9's default font (mini-9pi's console's: Bigelow & Holmes' Lucida, `lucm/latin1.9`), its bold and large made of it as the kernel would |
-| `fonts/grey.font` | Ubuntu Mono with grey edges: a pixel one of 4 levels, mixed with the colour under it by a table made for each ink (`draw.tm`'s `mix_table`) |
+| `fonts/grey.font` | Ubuntu Mono with grey edges: a pixel one of 4 levels, mixed with the colour under it by a table made for each ink (`draw.s`'s `mix_table`) |
 | `fonts/tiny.font` | the same letters, a pixel set or not |
 | `fonts/terminus.font` | Terminus Font, a bitmap font |
 | `kernels/lib_machine/font1.bin` | xv6's 8 by 16, one face: the kernel makes the bold and the large of it |

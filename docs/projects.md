@@ -99,7 +99,7 @@ things: a tool runs on the host, the others on tiny-machine.
 - **A program in C on tiny-machine** (`sh`, `mltests`, the network's
   `ping`, `get`, `put`, `httpd`) is one file of `TinyKernel/user/`,
   with `runtime/` (its library, its start, the division) and
-  `TinyKernel/libc/` (`sys.tm`, the system calls; `draw.c`, `net.c`;
+  `TinyKernel/libc/` (`sys.s`, the system calls; `draw.c`, `net.c`;
   `user.h`).
 - **The kernel** is `tiny/TinyKernel.ml` and its parts in
   `TinyKernel/` (`TinyKernelProcs`, `Scheduler`, `Calls`, `Files`,
@@ -174,7 +174,7 @@ globals) is not told apart by piece.
 - **Guest code.** What an emulated machine runs: ARM executables for
   mini-5i and mini-qemu, from ix's own toolchain (mini-ml, mini-cc,
   mini-ld: m-ix's programs, and `kernels/`'s, which are OCaml), from
-  goken's compilers, or kernels of others like xv6 and 9pi; `.tm`
+  goken's compilers, or kernels of others like xv6 and 9pi; `.s`
   assembly, and C and ML compiled by `tiny-c` and `tiny-ml`, for
   tiny-cpu and tiny-machine (`tiny/TinyKernel.ml` and its programs,
   `tiny/TinyKernel/steps/`, the tests).
@@ -216,7 +216,7 @@ Each machine, with what makes its guest code and what runs on it:
 |--------------|---------------------------------------------------|-----------------|
 | mini-5i      | mini-cc, mini-asm, mini-ld (goken's 5c/5l, 7c/7l the reference) | Linux and Plan 9 user programs, arm and arm64 |
 | mini-qemu    | ix's own (mini-ml, mini-cc, mini-ld by mini-mk), or ocaml-light and gcc (the reference builds), or the kernels' own builds outside ix | `kernels/`'s (mini-9pi, mini-xv6, mini-oberon...); xv6 (`~/xv6`), 9pi (`~/principia`), as QEMU runs them |
-| tiny-cpu     | `tiny-c`, `tiny-ml`, tiny-assembler, tiny-linker  | images: `.tm` programs; C programs with `runtime/`, ML ones with `runtime/` |
+| tiny-cpu     | `tiny-c`, `tiny-ml`, tiny-assembler, tiny-linker  | images: `.s` programs; C programs with `runtime/`, ML ones with `runtime/` |
 | tiny-machine | the same, plus csrr, csrw, eret                   | tiny-kernel, its steps (v0, t6) and their programs |
 
 The tiny side has no real architecture: tiny-c and tiny-ml had an
@@ -234,8 +234,8 @@ before tiny-kernel, kept; how they relate to the others:
 | kernel | what | in | runs on |
 |---|---|---|---|
 | v0 (`tiny/TinyKernel/steps/v0/`) | a page of kernel: traps, a timer, round robin, protection by a window; its four programs linked with it | TinyCPU assembly | tiny-machine |
-| t6 (`tiny/TinyKernel/steps/t6/`) | a free kernel in C: spawn and no fork (descriptors given, none inherited), one kernel stack and calls that rerun, a partition a process, a FAT, a lottery | C, by `tiny-c`, and a page of `.tm` | tiny-machine, its window relocating |
-| TinyKernel.ml (tiny-kernel, `tiny/TinyKernel.ml` and `TinyKernel/`) | the Kernel row's free variant (README's series): fork and exec, round robin on several cores, a partition a process, a waiting call a closure the scheduler retries, no zombies; a disk with snapshots in a union with the boot image's files; a screen its programs draw on by messages, a window system (`tiny/TinyWindows.ml`, in ML), sound, a network (IL, HTTP); its programs, the toolchain among them, building the kernel again ([plans/done/plan_tiny_windows.md](plans/done/plan_tiny_windows.md)); [notes_tiny_kernel.md](notes/notes_tiny_kernel.md) | ML, by `tiny-ml`, a page of `.tm`, 80 lines of C | tiny-machine, its window relocating |
+| t6 (`tiny/TinyKernel/steps/t6/`) | a free kernel in C: spawn and no fork (descriptors given, none inherited), one kernel stack and calls that rerun, a partition a process, a FAT, a lottery | C, by `tiny-c`, and a page of `.s` | tiny-machine, its window relocating |
+| TinyKernel.ml (tiny-kernel, `tiny/TinyKernel.ml` and `TinyKernel/`) | the Kernel row's free variant (README's series): fork and exec, round robin on several cores, a partition a process, a waiting call a closure the scheduler retries, no zombies; a disk with snapshots in a union with the boot image's files; a screen its programs draw on by messages, a window system (`tiny/TinyWindows.ml`, in ML), sound, a network (IL, HTTP); its programs, the toolchain among them, building the kernel again ([plans/done/plan_tiny_windows.md](plans/done/plan_tiny_windows.md)); [notes_tiny_kernel.md](notes/notes_tiny_kernel.md) | ML, by `tiny-ml`, a page of `.s`, 80 lines of C | tiny-machine, its window relocating |
 | mini-9pi (`kernels/9pi/`) | 9pi's twin, the Kernel row's mini program (README): m-ix's programs run under it, and m-ix builds itself on its card | OCaml, with a thin C/asm shim | the Pi1, Pi2, Pi4 (mini-qemu, real boards) |
 | mini-xv6 (`kernels/xv6/`) | xv6 in OCaml, one kernel on two boards, each port's own user programs and `fs.img` | OCaml | the Pi1, the Pi4 |
 | mini-oberon (`kernels/oberon/`) | the Oberon system (*Project Oberon*, 2013) as one sees and uses it | OCaml | the Pi1, the Pi4 |

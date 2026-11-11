@@ -1,7 +1,7 @@
 // Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyC.ml)
 //
 // hello: a program to try the tools on, in /examples on tiny-kernel. Its
-// square is assembly's (square.tm), the rest C; the Buildfile beside it
+// square is assembly's (square.s), the rest C; the Buildfile beside it
 // builds it, with /lib/c's runtime:
 //
 //	cd /examples; build; ./hello

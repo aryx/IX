@@ -8,8 +8,8 @@
  * the kernel's ../TinyKernel/runtime.c, an ML program's of tiny-kernel
  * ../TinyLibSystem/tinykernel/mlsys.c, a test's own main
  * (tests/TinyML_test.sh). A word is intptr's: 4 bytes on tiny-machine.
- * (old: TinyMLRuntime/core.c; C's runtime beside it, start.tm,
- * udivmod.tm and libc.c, was TinyCRuntime/)
+ * (old: TinyMLRuntime/core.c; C's runtime beside it, start.s,
+ * udivmod.s and libc.c, was TinyCRuntime/)
  *
  * A value is a word: an integer n as 2n+1, or the address of a block's
  * first field, the block's header the word before it (its size in
@@ -43,7 +43,7 @@ value *ml_vlimit;
 /* the machine stack's end, the same way: a call's link and C's
  * arguments are there, and a recursion over 70,000 lines ran it into
  * the heap's second half, which it wrote silently (tiny-kernel's as on
- * its kernel.tm: Match_failure, a wrong index, or a trap, by the
+ * its kernel.s: Match_failure, a wrong index, or a trap, by the
  * file's size; old: no check) */
 long ml_slimit;
 

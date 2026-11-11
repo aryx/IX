@@ -38,13 +38,13 @@ host.
 | T3 | Decoded words kept, by the word | TinyMachineCPU `keep_decoded`, 90f1fc38 | node 6.8 to 8.1; natively 21.3 to 22.0 | (same) | `keep_decoded` |
 | T4 | The scheduler idle: interrupts counted, nothing retried but by a key, the mouse or the alarm | TinyKernelScheduler `idle`, 56354ee0 | "a quarter of the instructions of a machine where nothing happened" | (part of the windows' step) | none (old: comment) |
 | T5 | tiny-ml: `String.length` and `s.[i]` inline; an ML program's heap at its full size | TinyML's -tm back end, mlsys.c; cbc0b9cc | the browser reading OCaml's Wikipedia page 447M to 356M to 233M instructions (collector 26% to 2%) | +79 -18 | none |
-| T6 | Text drawn in one call (glyphs), lines as rectangles, rows copied four words a turn | TinyKernelGraphics, draw.tm, TinyLibDraw, www; 539519f2 | a page down 3.56 s to 0.93 s of the host; ~5.4M instructions | +240 -47 | the old path kept for the rest |
+| T6 | Text drawn in one call (glyphs), lines as rectangles, rows copied four words a turn | TinyKernelGraphics, draw.s, TinyLibDraw, www; 539519f2 | a page down 3.56 s to 0.93 s of the host; ~5.4M instructions | +240 -47 | the old path kept for the rest |
 | T7 | tiny-ml's names in hash tables, keywords by table | TinyML, fe58f4b3 | TinyML.ml compiled on tiny-kernel 11 min to 171 s (202 with Printf) | +390 -230 | none (old: comments) |
 | T8 | SHA-1 in C | TinyMLRuntime/core.c, a2da2e93 | a digest of 141 KB 770M to 77M instructions; 3.8 of the self-build's 5.5 hours | (part of +193 -79) | none |
 | T9 | Marshal in C, interfaces marshalled; a function's text into one buffer | core.c, TinyML; 8885624d | Troff's unit 16.7M to 7.7M instructions (host); a unit of one line 3.2 s to 2.2 s on tiny-kernel | +550 -135 | none |
 | T10 | `read_file`: pieces read, then copied once | TinyLibGUI, 3e5c8a7f | a WAV of 141 KB was 85M instructions (600 a byte) | small | none (old: comment) |
-| T11 | The machine's speed a setting, 20 M with a window | TinyMachine, entry.tm; 29662089 | not a saving: the machine 2.5 times faster for a person watching, the programs' pace by ticks kept | +157 -54 | `-rate n` |
-| T12 | `wfi`: the kernel idle asleep, the time added at once | TinyMachineDevices `extra`, `tick`, `ticks`; entry.tm's k_idle1 (2026-10-27; first as a guess from a jump to itself, `idle_skipped`, 51096869) | play's run (boot, the 6.4 s WAV, sleep 2: 9.6 s of machine time) at -rate 20: 11.0 s of the host to 8.7 | +45 | `batched` (false: each tick, asleep or not) |
+| T11 | The machine's speed a setting, 20 M with a window | TinyMachine, entry.s; 29662089 | not a saving: the machine 2.5 times faster for a person watching, the programs' pace by ticks kept | +157 -54 | `-rate n` |
+| T12 | `wfi`: the kernel idle asleep, the time added at once | TinyMachineDevices `extra`, `tick`, `ticks`; entry.s's k_idle1 (2026-10-27; first as a guess from a jump to itself, `idle_skipped`, 51096869) | play's run (boot, the 6.4 s WAV, sleep 2: 9.6 s of machine time) at -rate 20: 11.0 s of the host to 8.7 | +45 | `batched` (false: each tick, asleep or not) |
 | T13 | A sound's write that waits woken when the ring has room, not every 10 ms | TinyKernelIO `Voice`, TinyKernelDevices `speak` (2026-10-27) | the same run: 135M busy instructions to 88M; with T12 6.1 s of the host | +18 -10 | none (old: comment) |
 
 ## Worth it?
@@ -75,7 +75,7 @@ machine has `wfi` (0x37, the supervisor's), ARM's and RISC-V's
 instruction, x86's `hlt`: the core sleeps until an interrupt enabled
 in `ie` is pending, and a calm stretch asleep is only time, added at
 once. k_idle1 and the other cores' wait are `wfi` then a jump back.
-`spent`'s idle is now the time asleep (TinyMachine_tests/cores.tm's
+`spent`'s idle is now the time asleep (TinyMachine_tests/cores.s's
 wait0 a `wfi` too). The machine after a sleep is the one the loop of
 jumps left: korobeiniki.wav's sound and every recorded session the
 same bytes. Measured: 11.0 s to 8.7 s of the host, then 6.45 s with

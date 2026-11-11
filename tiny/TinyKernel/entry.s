@@ -267,7 +267,7 @@ k_window:
 	li	r13, 1
 	ret
 
-; the image's end, where the files it carries start (end.tm, last)
+; the image's end, where the files it carries start (end.s, last)
 k_end:
 	la	r13, _end
 	shli	r13, r13, 1

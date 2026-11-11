@@ -80,13 +80,13 @@
  * creates the first process (/bin/sh, with the console as its 0, 1 and 2),
  * and enters [schedule], a loop that never returns: run a process
  * until it traps, handle the trap, and choose again. A process has a
- * slot (a partition, and a frame of 17 words where entry.tm saves its
+ * slot (a partition, and a frame of 17 words where entry.s saves its
  * registers), a pid, a state, a parent, its descriptors and its
  * current directory.
  *
  * Several cores (tiny-machine -cores n, plan_tiny_multicore.md). The
  * kernel stays core 0's, whole: one heap, one collector, written for
- * one thread. The others run processes only, in entry.tm's slave loop,
+ * one thread. The others run processes only, in entry.s's slave loop,
  * which runs no ML: core 0 writes a process's frame, window and slice
  * in core k's mailbox and raises k's interrupt; k runs the process
  * until its trap, writes the cause back and raises core 0's, which
@@ -117,7 +117,7 @@
  * the numbers; a process sees only its own partition, starting at 0,
  * thanks to the machine's relocating window):
  *
- *     0x000000   the image: entry.tm, the runtime, the kernel; then the
+ *     0x000000   the image: entry.s, the runtime, the kernel; then the
  *                files it carries, each a name, a size, the bytes
  *                (10 MB at most: /src, the sources, are among them)
  *     0xa00000   the file system's buffers and its map of the
@@ -211,10 +211,10 @@
  *   program, and runtime.c, which holds the kernel's memory layout and
  *   ten functions on bytes (peek, poke, copying a string from memory
  *   and to it);
- * - entry.tm, one page of assembly: k_run (which runs the process until
+ * - entry.s, one page of assembly: k_run (which runs the process until
  *   its next trap, so the kernel calls a process like a function, the
  *   way a hypervisor's KVM_RUN runs a guest), the trap entry, the
- *   timer, and the window; memory.tm, the loops that copy a partition
+ *   timer, and the window; memory.s, the loops that copy a partition
  *   at fork and zero memory.
  * The compiler needs no new primitive: the machine is reached through
  * externals, which are functions written in C or in assembly.
@@ -224,7 +224,7 @@
  * README), as mini-9pi is the mini one. It is not a new version of the
  * kernels that came before it on the same machine (v0 and t6 in
  * steps/, written in assembly and C). TinyKernel/ holds the rest:
- * entry.tm, runtime.c, the user programs, and the Makefile.
+ * entry.s, runtime.c, the user programs, and the Makefile.
  *
  * exercises:
  * Each cheap in this design:
@@ -314,5 +314,5 @@
  *)
 
 (* A program, and tiny-ml's alone: OCaml does not compile TinyKernel.ml
- * (its externals are entry.tm's and runtime.c's), so nothing checks
+ * (its externals are entry.s's and runtime.c's), so nothing checks
  * this file against it. It gives nothing to another file. *)

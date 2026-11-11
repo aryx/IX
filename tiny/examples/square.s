@@ -2,7 +2,7 @@
 ;
 ; square(n), hello.c's, by hand: tiny-c passes the arguments on the
 ; stack, the first at 0(sp), and takes the answer from r13 (as
-; libc/sys.tm's calls do). No frame: a leaf, its return address kept
+; libc/sys.s's calls do). No frame: a leaf, its return address kept
 ; in lr, which debug's bt reads as the first frame's.
 square:
 	ldw	r1, 0(sp)

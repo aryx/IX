@@ -1,4 +1,4 @@
-(* TinyKernel's processes: each a slot (its frame, where entry.tm saves
+(* TinyKernel's processes: each a slot (its frame, where entry.s saves
  * its registers at a trap), a memory (TinyKernelMemory's space), its
  * descriptors and its directory; and what reaches a process's memory
  * from the kernel, an address checked against its space.

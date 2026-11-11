@@ -79,8 +79,8 @@ INCLUDES = -I . -I TinyLibSystem/tinykernel -I TinyC -I TinyML -I TinyOffice \
 # compilers write their objects themselves)
 %.o: %.c
 	cc -o $target $stem.c
-%.o: %.tm
-	as -o $target $stem.tm
+%.o: %.s
+	as -o $target $stem.s
 
 
 #############################################################################
@@ -90,12 +90,12 @@ INCLUDES = -I . -I TinyLibSystem/tinykernel -I TinyC -I TinyML -I TinyOffice \
 # C's, on any system (runtime/): _start, which calls main, then exits,
 # linked first since the machine starts at 0; the unsigned division
 # tiny-c calls; libc, print and the strings. Then tiny-kernel's calls
-# for C (TinyKernel/libc/: sys.tm, a sys instruction each; draw.c and
+# for C (TinyKernel/libc/: sys.s, a sys instruction each; draw.c and
 # net.c for the programs that draw or dial)
 CRT = runtime/start.o runtime/udivmod.o runtime/libc.o TinyKernel/libc/sys.o
 
 # ML's: runtime/ml.c, the allocator and Cheney's collector, #included by
-# mlsys.c, which gives it tiny-kernel's memory and calls; end.tm, the
+# mlsys.c, which gives it tiny-kernel's memory and calls; end.s, the
 # image's end, where an ML program's value stack can start, linked last
 MLRT = TinyLibSystem/tinykernel/mlsys.o
 MLEND = TinyKernel/end.o
@@ -423,10 +423,10 @@ paint: $CRT TinyKernel/libc/draw.o TinyKernel/user/paint.o
 #############################################################################
 
 # TinyKernel.ml and its parts, in ML, each unit after the ones before it;
-# the assembly ML cannot say (entry.tm: the traps, the switch; draw.tm and
-# memory.tm, the pixels' and the memory's loops); runtime.c, ML's runtime
-# given the machine's memory; font.tm, the font's pixels (made on the
-# host by fonts/Mkfont.ml, on the image as it is); end.tm, the image's
+# the assembly ML cannot say (entry.s: the traps, the switch; draw.s and
+# memory.s, the pixels' and the memory's loops); runtime.c, ML's runtime
+# given the machine's memory; font.s, the font's pixels (made on the
+# host by fonts/Mkfont.ml, on the image as it is); end.s, the image's
 # end, where the files it carries start. kernel.img: entry.o first, at 0
 TinyKernel/runtime.o: TinyKernel/runtime.c runtime/ml.c
 TinyKernel/kernel.o: $STDLIB TinyKernel/TinyMemory.tmi \
@@ -461,8 +461,8 @@ kernel.img: TinyKernel/entry.o runtime/udivmod.o TinyKernel/runtime.o \
 # image byte for byte: the plan's step 3)
 UTILS = [ basename cat cmp cp date du echo grep kill ln ls mkdir mv ps pwd \
     rm seq sleep sort tail tee test touch walk wc xd
-SRC = TinyKernel/entry.tm TinyKernel/draw.tm TinyKernel/memory.tm \
-    TinyKernel/end.tm TinyKernel/runtime.c TinyKernel/TinyMemory.ml \
+SRC = TinyKernel/entry.s TinyKernel/draw.s TinyKernel/memory.s \
+    TinyKernel/end.s TinyKernel/runtime.c TinyKernel/TinyMemory.ml \
     TinyKernel/TinyKernelGraphics.ml TinyKernel/TinyKernelNetwork.ml \
     TinyKernel/TinyKernelAudio.ml TinyKernel/TinyKernelFS.ml \
     TinyKernel/TinyKernelMemory.ml TinyKernel/TinyKernelMachine.ml \
@@ -500,10 +500,10 @@ SRC = TinyKernel/entry.tm TinyKernel/draw.tm TinyKernel/memory.tm \
     TinyLibCore/Common.ml TinyLibCore/Sha1.ml TinyLibCore/Fpath.ml \
     TinyLibCore/Fpath_.ml TinyLibCore/Exit.ml TinyLibCore/In_channel.ml \
     TinyLibCore/Out_channel.ml TinyLibCore/Chan.ml TinyLibCore/Logs.ml \
-    TinyKernel/libc/user.h TinyKernel/libc/sys.tm TinyKernel/libc/draw.c \
+    TinyKernel/libc/user.h TinyKernel/libc/sys.s TinyKernel/libc/draw.c \
     TinyKernel/libc/draw.h TinyKernel/libc/net.c \
-    TinyLibSystem/tinykernel/mlsys.c runtime/ml.c runtime/start.tm \
-    runtime/udivmod.tm runtime/libc.c runtime/libc.h TinyKernel/user/paint.c \
+    TinyLibSystem/tinykernel/mlsys.c runtime/ml.c runtime/start.s \
+    runtime/udivmod.s runtime/libc.c runtime/libc.h TinyKernel/user/paint.c \
     TinyKernel/user/sh.c TinyKernel/user/mltests.c TinyKernel/user/ping.c \
     TinyKernel/user/get.c TinyKernel/user/put.c TinyKernel/user/httpd.c \
     TinyKernel/lib/c/Buildfile TinyKernel/lib/ml/Buildfile \
@@ -540,7 +540,7 @@ SRC = TinyKernel/entry.tm TinyKernel/draw.tm TinyKernel/memory.tm \
     TinyLibCore/Common.mli TinyLibCore/Sha1.mli TinyLibCore/Fpath.mli \
     TinyLibCore/Fpath_.mli TinyLibCore/Exit.mli TinyLibCore/In_channel.mli \
     TinyLibCore/Out_channel.mli TinyLibCore/Chan.mli TinyLibCore/Logs.mli
-EXAMPLES = wc.c sh.c emacs.ml TinyEditorScreen.ml report.ixd korobeiniki.wav spin.prof spin.map TinyLibMachine.tmi TinyLibMachine.o hello.c square.tm helloml.ml Buildfile
+EXAMPLES = wc.c sh.c emacs.ml TinyEditorScreen.ml report.ixd korobeiniki.wav spin.prof spin.map TinyLibMachine.tmi TinyLibMachine.o hello.c square.s helloml.ml Buildfile
 LIBC = runtime/start.o runtime/udivmod.o runtime/libc.o TinyKernel/libc/sys.o TinyKernel/lib/c/Buildfile
 LIBML = TinyLibSystem/tinykernel/mlsys.o TinyKernel/end.o TinyKernel/lib/ml/Buildfile
 

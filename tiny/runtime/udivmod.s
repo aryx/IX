@@ -2,7 +2,7 @@
 ;
 ; The unsigned division TinyCPU lacks, which tiny-c calls for / and %
 ; on unsigned values: linked with any program of tiny-c's, the
-; kernel's (v6) and the users' (after start.tm).
+; kernel's (v6) and the users' (after start.s).
 
 ; the unsigned division, called in the middle of an expression: the
 ; dividend at -4(sp), the divisor at -8(sp); the quotient in r13, the

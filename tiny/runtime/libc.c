@@ -7,7 +7,7 @@
 // as in goken's libc (built without PLAN9PORT, its fmt.c) and the
 // host's printf, the tests' reference: %ud is the number, then a d. A
 // variadic function walks its arguments from its last named one: they
-// are in memory, 4 bytes each (start.tm).
+// are in memory, 4 bytes each (start.s).
 
 typedef unsigned long ulong;
 

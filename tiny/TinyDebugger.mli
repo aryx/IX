@@ -55,7 +55,7 @@
  *   instruction is addi r12, r12, v, its frame on the value stack. So
  *   the name gives the function's start, its first words the frame,
  *   the frame the return address, and that the caller. Assembly without
- *   that prologue (start.tm's write, _start) ends the walk.
+ *   that prologue (start.s's write, _start) ends the walk.
  * - {b The window} (-window) is the same commands, run by
  *   TinyLibGUI's run_canvas: the registers, the instructions around the
  *   pc and the backtrace shown after each one, then what the commands
@@ -92,7 +92,7 @@
  * acid's road), the kernel itself.
  *
  * twist:
- * {b A step is the timer's interrupt}: entry.tm's k_step sets the timer
+ * {b A step is the timer's interrupt}: entry.s's k_step sets the timer
  * to ring after one instruction of the process, then runs it as any
  * other. No instruction is decoded to find where the next one is, where
  * db's runstep asks libmach for the addresses the instruction can go to

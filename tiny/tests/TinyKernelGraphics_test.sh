@@ -10,7 +10,7 @@
 # same lines (picture.expected) and the same screen (picture.cksum, a
 # PPM's sum):
 # - on the host, built by OCaml: TinyMemory.ml's array the memory;
-# - on tiny-machine, built by tiny-ml: the rows TinyKernel/draw.tm's
+# - on tiny-machine, built by tiny-ml: the rows TinyKernel/draw.s's
 #   loops, the runtime TinyKernel's, the screen what -screen writes.
 # RECORD=1 records the lines and the sum, from the host's (look at the
 # picture first: KEEP=1 W=dir leaves picture-host.ppm and
@@ -34,7 +34,7 @@ fail() { echo "FAIL $1"; failures=$((failures + 1)); }
 
 # the machine's program, but for the font: the runtime, the program
 $TC -o $W/runtime.o $T/TinyKernel/runtime.c || fail "machine: tiny-c runtime.c"
-# (-window: without the exit, the program ends in start.tm's loop)
+# (-window: without the exit, the program ends in start.s's loop)
 sed -e 's/; exit 0$//' $T/tests/TinyKernelGraphics_tests/machine.ml > $W/machine.ml
 [ "${1:-}" = -window ] || cp $T/tests/TinyKernelGraphics_tests/machine.ml $W/machine.ml
 ml_lib $W/lib || fail "the library: tiny-ml"
@@ -57,10 +57,10 @@ picture() {
   check host
   }
 
-  # the machine's: start.tm first (the machine starts at 0), the font's
+  # the machine's: start.s first (the machine starts at 0), the font's
   # bytes at its label, the runtime, the rows, the program
-  (cat $T/tests/TinyKernelGraphics_tests/start.tm; echo 'font:'; od -An -v -tu1 $FONT | awk 'NF { printf "\t.byte\t%s", $1; for (i = 2; i <= NF; i++) printf ", %s", $i; print "" }'; printf 'font_end:\n\t.align\t4\n') > $R-start.tm
-  link_tm $R.img $R-start.tm $T/runtime/udivmod.tm $W/runtime.o $T/TinyKernel/draw.tm $W/picture.o $LIB_O || fail "machine: the link"
+  (cat $T/tests/TinyKernelGraphics_tests/start.s; echo 'font:'; od -An -v -tu1 $FONT | awk 'NF { printf "\t.byte\t%s", $1; for (i = 2; i <= NF; i++) printf ", %s", $i; print "" }'; printf 'font_end:\n\t.align\t4\n') > $R-start.s
+  link_tm $R.img $R-start.s $T/runtime/udivmod.s $W/runtime.o $T/TinyKernel/draw.s $W/picture.o $LIB_O || fail "machine: the link"
   [ "${WINDOW:-}" = 1 ] && { $MACHINE -window $R.img; exit; }
   timeout ${SLOW:-60} $MACHINE -screen $R-machine.ppm $R.img > $R-machine.out 2>&1 || fail "machine: the run"
   check machine

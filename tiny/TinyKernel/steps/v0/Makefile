@@ -22,7 +22,7 @@ all: $(O)/kernel.img
 
 # the kernel first, at 0, then its programs, found by their labels
 # (what is built goes to _make/)
-$(O)/%.o: %.tm
+$(O)/%.o: %.s
 	@mkdir -p $(@D)
 	$(AS) -o $@ $<
 

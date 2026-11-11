@@ -456,7 +456,7 @@ Mon Jan  9 13:37:03 GMT 2034
 7
 % $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ % cc -o hello.o hello.c
-as -o square.o square.tm
+as -o square.o square.s
 ld -map -s -n -o hello /lib/c/start.o /lib/c/udivmod.o /lib/c/libc.o /lib/c/sys.o hello.o square.o
 ml -o helloml.o helloml.ml
 ld -map -s -n -o helloml /lib/c/start.o /lib/c/udivmod.o /lib/c/libc.o /lib/c/sys.o /lib/ml/mlsys.o helloml.o /lib/ml/[A-Z]*.o /lib/ml/end.o

@@ -15,7 +15,7 @@
 //     $ t6tests
 //
 // - {b One kernel stack; a call that must wait runs again.} A trap saves
-//   the registers in the process's struct (entry.tm), the kernel runs on
+//   the registers in the process's struct (entry.s), the kernel runs on
 //   its one stack, and leaves by resume, loading a process's registers:
 //   no kernel stack per process, no swtch, no sleep in the kernel. A
 //   call that must wait records what for and returns BLOCKED: the pc

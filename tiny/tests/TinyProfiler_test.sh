@@ -4,7 +4,7 @@
 #
 # Tests tiny-prof (TinyProfiler.ml) on profiles whose counts are known,
 # the functions' names from tiny-linker's maps (-map):
-# - spin.tm on tiny-cpu (tiny-cpu -prof): a loop that calls a function
+# - spin.s on tiny-cpu (tiny-cpu -prof): a loop that calls a function
 #   100 times, its counts worked out by hand in its comment, a label of a
 #   compiler's kind (ml.L1) counted as the function's;
 # - tiny-machine's first step, v0 (tiny-machine -prof): the kernel's
@@ -30,11 +30,11 @@ check() { # name
   if cmp -s $W/$1.out $T/$1.expected; then echo "ok $1"; else fail "$1"; diff $T/$1.expected $W/$1.out | head -10; fi
 }
 
-link_tm $W/spin $T/spin.tm && $CPU -prof $W/spin.prof $W/spin || fail "spin: the run"
+link_tm $W/spin $T/spin.s && $CPU -prof $W/spin.prof $W/spin || fail "spin: the run"
 $PROF $W/spin.prof -u $W/spin.map > $W/spin.out
 check spin
 
-link_tm $W/v0 $V/kernel.tm $V/a.tm $V/b.tm $V/c.tm $V/d.tm && $MACHINE -prof $W/v0.prof $W/v0 > /dev/null
+link_tm $W/v0 $V/kernel.s $V/a.s $V/b.s $V/c.s $V/d.s && $MACHINE -prof $W/v0.prof $W/v0 > /dev/null
 $PROF $W/v0.prof -k $W/v0.map > $W/v0.out
 check v0
 

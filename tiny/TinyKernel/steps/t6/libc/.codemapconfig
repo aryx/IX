@@ -1,6 +1,6 @@
 // tiny/TinyKernel/steps/t6/libc/: what the code map says of it (the code
 // map: tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
-// docs/claude_notes/codemapconfig_guidelines.md there). sys.tm (the
+// docs/claude_notes/codemapconfig_guidelines.md there). sys.s (the
 // system calls' stubs: arguments to r1-r3, sys n) is assembly, not a
 // source to the map. libc itself is ../../../../runtime/'s.
 {
@@ -8,7 +8,7 @@
   summary: "What a t6 program is linked with to call its kernel: the calls declared, their stubs in assembly.",
   files: {
     'user.h': { digest: '5e398cce60bd',
-      summary: "What a t6 program has: its 14 system calls (sys.tm's stubs), spawn and tickets among them, and libc.",
+      summary: "What a t6 program has: its 14 system calls (sys.s's stubs), spawn and tickets among them, and libc.",
       capitals: [
         { at: 'def:spawn', say: 'a process running a program, its 0, 1, 2 named in map' },
       ],
@@ -20,7 +20,7 @@
         { at: 'def:tickets', say: "the lottery's share", weight: 1 },
         { at: 'type:dirent', say: 'a 20-byte name, a type, a first block, a size', weight: 1 },
       ],
-      related: ['sys.tm', '../proc.c', '../../../libc/user.h', '../../../../runtime/libc.h'],
+      related: ['sys.s', '../proc.c', '../../../libc/user.h', '../../../../runtime/libc.h'],
     },
   },
 }

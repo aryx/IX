@@ -1,6 +1,6 @@
 // tiny/TinyKernel/libc/: what the code map says of it (the code map:
 // tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
-// docs/claude_notes/codemapconfig_guidelines.md there). sys.tm (the
+// docs/claude_notes/codemapconfig_guidelines.md there). sys.s (the
 // system calls' stubs: the arguments to r1-r3, sys n, r1 back) is
 // tiny-machine's assembly, not a source to the map: named in the roles.
 {
@@ -8,7 +8,7 @@
   summary: "What a C program of tiny-kernel is linked with to call it: its system calls, the drawing messages, a name reached.",
   files: {
     'user.h': { digest: 'fcdd8bcb3824',
-      summary: "What a C program of tiny-kernel has: its 29 system calls (sys.tm's stubs), descriptors 3 and 4, and libc.",
+      summary: "What a C program of tiny-kernel has: its 29 system calls (sys.s's stubs), descriptors 3 and 4, and libc.",
       capitals: [
         { at: 'def:fork', say: "Unix's pair again, as a kernel in ML serves it" },
         { at: 'def:dial', say: 'the network as a descriptor: a write a message' },
@@ -27,7 +27,7 @@
         { at: 'def:dial', weight: 2 },
         { at: 'code:"#define DRAW 3"', say: 'drawing and mouse: descriptors 3 and 4', weight: 2 },
       ],
-      related: ['sys.tm', '../TinyKernelCalls.ml', '../../runtime/libc.h', '../steps/t6/libc/user.h'],
+      related: ['sys.s', '../TinyKernelCalls.ml', '../../runtime/libc.h', '../steps/t6/libc/user.h'],
     },
     'draw.h': { digest: '6b780a281bbe',
       summary: "What a C program that draws has: TinyKernelGraphics's messages as calls, a colour an image of one pixel.",
@@ -64,7 +64,7 @@
         { at: 'user.h', role: 'the system calls, declared' },
         { at: 'draw.c', role: 'draw.h made: messages to descriptor 3' },
         { at: 'net.c', role: 'reach: dial by a name' },
-        { at: '../TinyKernelCalls.ml:def:syscall', role: "the kernel's side (via sys.tm)" },
+        { at: '../TinyKernelCalls.ml:def:syscall', role: "the kernel's side (via sys.s)" },
         { at: '../TinyKernelGraphics.ml:def:messages', role: 'the messages decoded' },
       ],
       joints: [

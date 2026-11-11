@@ -1,6 +1,6 @@
 # Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyBuildSystem.ml)
 #
-# hello, from hello.c and square.tm, and helloml, from helloml.ml, built
+# hello, from hello.c and square.s, and helloml, from helloml.ml, built
 # on tiny-kernel by build in /examples (see hello.c and helloml.ml): both
 # by default, or one by its name (build helloml). What they link besides
 # their own objects is already built in /lib: /lib/c, C's runtime and
@@ -20,8 +20,8 @@ hello: hello.o square.o
 
 hello.o: hello.c /src/TinyKernel/libc/user.h
 	cc -o $target hello.c
-square.o: square.tm
-	as -o $target square.tm
+square.o: square.s
+	as -o $target square.s
 
 helloml: helloml.o
 	ld -map -s -n -o $target $CRT /lib/ml/mlsys.o $prereq /lib/ml/[A-Z]*.o /lib/ml/end.o

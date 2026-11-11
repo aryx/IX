@@ -32,11 +32,11 @@ functors nor labels) to an object of tiny-machine's code, for tiny-linker;
   tiny-ml -S fact.ml                       ml_start: ldw r12, 0(sp) ...
   tiny-c main.c                            main.o
   L=tiny/runtime
-  for f in $L/start $L/udivmod exit; do tiny-assembler $f.tm; done
+  for f in $L/start $L/udivmod exit; do tiny-assembler $f.s; done
   tiny-linker -o fact start.o udivmod.o exit.o fact.o main.o /lib/ml/*.o
   tiny-cpu fact                            fact 10 = 3628800
 main.c includes tiny/runtime/ml.c and gives it memory (ml_run),
-exit.tm is exit (sys 0), as tiny/tests/TinyML_test.sh makes them. The
+exit.s is exit (sys 0), as tiny/tests/TinyML_test.sh makes them. The
 standard library, TinyLibCore/'s modules, is read from /lib/ml (-L: another
 directory), its interfaces Stdlib.tmi ... Sha1.tmi, and linked from there,
 each module compiled once by tiny-ml -c -nostdlib after the ones before it.
@@ -494,9 +494,9 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
   let made (ls : TinyLibMachine.line list) =
     if !text then String.concat "" (List.map TinyLibMachine.print_line ls)
     else TinyLibMachine.to_object (TinyLibMachine.assemble ls) in
-  (* x.ml's x.o here (x.tm by -S); a whole program's after its first
+  (* x.ml's x.o here (x.s by -S); a whole program's after its first
    * .ml, main.o when it has none (old: its text on stdout) *)
-  let named f = Fpath.set_ext (if !text then ".tm" else ".o") (Fpath.base f) in
+  let named f = Fpath.set_ext (if !text then ".s" else ".o") (Fpath.base f) in
   try
     (* the interfaces read, in their order: the library's, then the
      * units before this one *)

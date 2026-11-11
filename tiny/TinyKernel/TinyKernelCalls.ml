@@ -173,7 +173,7 @@ let disk_key r i = "disk " ^ string_of_int r ^ " " ^ string_of_int i
 (* Loads a file's program into p, in a partition of the size it asks for
  * (rounded up to whole megabytes), from address 0. Its arguments are put
  * as tiny-cpu leaves them (the strings at the top, then argc, argv and
- * argv's pointers: start.tm's); every register is 0 but sp. Bad if it is
+ * argv's pointers: start.s's); every register is 0 but sp. Bad if it is
  * no program, or one that leaves no room for a stack, or if there is no
  * room for its partition; in that case p is left as it was. *)
 let load_prog p node argv =

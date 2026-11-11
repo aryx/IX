@@ -7,14 +7,14 @@
 #   make run          the kernel on tiny-machine, the disk fs.img: sh
 #   make check        t6tests, and a script through sh, on a fresh disk
 #
-# The kernel: entry.tm first (the machine starts at 0), then the C. The
+# The kernel: entry.s first (the machine starts at 0), then the C. The
 # programs are tiny-linker's images (linked at 0: t6 runs each at the
-# start of its partition), start.tm first, with libc and
-# sys.tm; the disk is a FAT (tiny-mkfs -fat). The tools from the PATH
+# start of its partition), start.s first, with libc and
+# sys.s; the disk is a FAT (tiny-mkfs -fat). The tools from the PATH
 # (after `dune install`), or from ix's bin/.
 #
 # What is built goes to _make/ and nowhere else (as dune's _build and
-# mini-mk's _mk): the kernel's assembly, its objects and kernel.img, user/*.tm, bin/
+# mini-mk's _mk): the kernel's assembly, its objects and kernel.img, user/*.s, bin/
 # the programs, fs.img the disk; make clean removes it.
 
 export PATH := $(abspath ../../../../bin):$(PATH)
@@ -37,12 +37,12 @@ $(O)/%.o: %.c t6.h
 	@mkdir -p $(@D)
 	$(TC) -o $@ $<
 
-# an object of assembly: of a .tm here, or of the C runtime's (tiny-c
-# writes the C's objects; old: their .tm, assembled by a rule here)
-$(O)/%.o: %.tm
+# an object of assembly: of a .s here, or of the C runtime's (tiny-c
+# writes the C's objects; old: their .s, assembled by a rule here)
+$(O)/%.o: %.s
 	@mkdir -p $(@D)
 	$(AS) -o $@ $<
-$(O)/%.o: $(L)/%.tm
+$(O)/%.o: $(L)/%.s
 	@mkdir -p $(@D)
 	$(AS) -o $@ $<
 .SECONDARY:

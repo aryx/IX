@@ -41,7 +41,7 @@ void main(void) { ml_run(vstack, space0, space1, 65536, $h); flush(); exit(0); }
 EOC
   $TC -o $W/main$h.o $W/main$h.c || { echo "FAIL the runtime: tiny-c"; exit 1; }
 done
-printf 'exit:\n\tldw\tr1, 0(sp)\n\tsys\t0\n' > $W/exit.tm
+printf 'exit:\n\tldw\tr1, 0(sp)\n\tsys\t0\n' > $W/exit.s
 ml_lib $W/lib || { echo "FAIL the library: tiny-ml"; exit 1; }
 
 # (SLOW: tiny-cpu's seconds for a program, 60; more for tiny-cpu built
@@ -67,7 +67,7 @@ one() {
   want=$(cat $out)
   for h in 4096 64; do
     # the program before main.o, whose arrays a jal would not jump over
-    link_tm $W/$b.$h $L/start.tm $L/udivmod.tm $W/exit.tm $W/$b.o $W/main$h.o $LIB_O || { echo "FAIL $b: linking"; return; }
+    link_tm $W/$b.$h $L/start.s $L/udivmod.s $W/exit.s $W/$b.o $W/main$h.o $LIB_O || { echo "FAIL $b: linking"; return; }
     got=$(timeout ${SLOW:-60} $CPU $W/$b.$h 2>&1; echo "exit $?")
     local tag=; [ $h = 64 ] && tag=" heap 64"
     if [ "$want" = "$got" ]; then echo "ok $b$tag"; else echo "FAIL $b$tag"; /usr/bin/diff <(echo "$want") <(echo "$got") | /usr/bin/head -10; fi
@@ -93,9 +93,9 @@ then echo "ok forgotten: the code of plain.ml"; else echo "FAIL forgotten"; fail
 UT=$F/units; mkdir -p $W/units
 if $TML -L $W/lib -c -o $W/units/Shapes.o $UT/Shapes.ml && $TML -L $W/lib -c -o $W/units/Main.o $W/units/Shapes.tmi $UT/Main.ml \
    && $TML -L $W/lib -o $W/units/prog_main.o $W/units/Shapes.tmi $W/units/Main.tmi \
-   && link_tm $W/units/prog $L/start.tm $L/udivmod.tm $W/exit.tm $W/units/prog_main.o $W/units/Shapes.o $W/units/Main.o $W/main4096.o $LIB_O \
+   && link_tm $W/units/prog $L/start.s $L/udivmod.s $W/exit.s $W/units/prog_main.o $W/units/Shapes.o $W/units/Main.o $W/main4096.o $LIB_O \
    && [ "$(timeout 60 $CPU $W/units/prog 2>&1; echo "exit $?")" = "$(cat $UT/Main.out)" ] \
-   && $TML -L $W/lib -o $W/units/whole.o $UT/Shapes.ml $UT/Main.ml && link_tm $W/units/whole $L/start.tm $L/udivmod.tm $W/exit.tm $W/units/whole.o $W/main4096.o $LIB_O \
+   && $TML -L $W/lib -o $W/units/whole.o $UT/Shapes.ml $UT/Main.ml && link_tm $W/units/whole $L/start.s $L/udivmod.s $W/exit.s $W/units/whole.o $W/main4096.o $LIB_O \
    && [ "$(timeout 60 $CPU $W/units/whole 2>&1; echo "exit $?")" = "$(cat $UT/Main.out)" ]
 then echo "ok units: Shapes and Main compiled apart, and whole, Main.out's output"; else echo "FAIL units"; failures=$((failures + 1)); fi
 # a unit's names are M.x in the units after it, x after open M only
@@ -132,7 +132,7 @@ printf 'exception Error of string\nlet f () = raise (Error "a")\n' > $W/units/Ex
 printf 'exception Error of string\nlet g () = raise (Error "b")\n' > $W/units/ExB.ml
 printf 'let () = print_endline (try ExA.f () with ExB.Error _ -> "B" | ExA.Error m -> m)\n' > $W/units/ExM.ml
 if $TML -L $W/lib -o $W/units/ex.o $W/units/ExA.ml $W/units/ExB.ml $W/units/ExM.ml \
-   && link_tm $W/units/ex $L/start.tm $L/udivmod.tm $W/exit.tm $W/units/ex.o $W/main4096.o $LIB_O \
+   && link_tm $W/units/ex $L/start.s $L/udivmod.s $W/exit.s $W/units/ex.o $W/main4096.o $LIB_O \
    && [ "$(timeout 60 $CPU $W/units/ex 2>&1; echo "exit $?")" = "a
 exit 0" ]
 then echo "ok units: two units' Error, two exceptions"; else echo "FAIL units: two units' Error"; failures=$((failures + 1)); fi
@@ -159,7 +159,7 @@ then echo "ok lexer: a number and escapes too big"; else echo "FAIL lexer: a num
 printf 'let f x = x + 1\nlet f x = x * 10\n' > $W/units/Twice.ml; printf 'let () = print_int (Twice.f 3)\n' > $W/units/R.ml
 if $TML -L $W/lib -c -o $W/units/Twice.o $W/units/Twice.ml && $TML -L $W/lib -c -o $W/units/R.o $W/units/Twice.tmi $W/units/R.ml \
    && $TML -L $W/lib -o $W/units/rmain.o $W/units/Twice.tmi $W/units/R.tmi \
-   && link_tm $W/units/twice $L/start.tm $L/udivmod.tm $W/exit.tm $W/units/rmain.o $W/units/Twice.o $W/units/R.o $W/main4096.o $LIB_O \
+   && link_tm $W/units/twice $L/start.s $L/udivmod.s $W/exit.s $W/units/rmain.o $W/units/Twice.o $W/units/R.o $W/main4096.o $LIB_O \
    && [ "$(timeout 60 $CPU $W/units/twice 2>&1)" = 30 ]
 then echo "ok units: a name defined twice, the later"; else echo "FAIL units: a name defined twice"; failures=$((failures + 1)); fi
 # two units' constructors of one name, told apart where qualified, an
@@ -172,7 +172,7 @@ printf 'module I = Isa\nlet () = print_string (A.show A.Add ^ " " ^ I.show I.Mul
 if $TML -L $W/lib -c -o $W/units/A.o $W/units/A.ml && $TML -L $W/lib -c -o $W/units/Isa.o $W/units/A.tmi $W/units/Isa.ml \
    && $TML -L $W/lib -c -o $W/units/C.o $W/units/A.tmi $W/units/Isa.tmi $W/units/C.ml \
    && $TML -L $W/lib -o $W/units/cmain.o $W/units/A.tmi $W/units/Isa.tmi $W/units/C.tmi \
-   && link_tm $W/units/clash $L/start.tm $L/udivmod.tm $W/exit.tm $W/units/cmain.o $W/units/A.o $W/units/Isa.o $W/units/C.o $W/main4096.o $LIB_O \
+   && link_tm $W/units/clash $L/start.s $L/udivmod.s $W/exit.s $W/units/cmain.o $W/units/A.o $W/units/Isa.o $W/units/C.o $W/main4096.o $LIB_O \
    && [ "$(timeout 60 $CPU $W/units/clash 2>&1)" = "add MUL sub ADD" ]
 then echo "ok units: two units' constructors of one name, qualified"; else echo "FAIL units: two units' constructors of one name"; failures=$((failures + 1)); fi
 # a unit's operator named M.( op ), and through an alias (old: M taken
@@ -181,10 +181,10 @@ printf 'let ( +++ ) a b = (a * 10) + b\n' > $W/units/Ops.ml
 printf 'module O = Ops\nlet () = print_int (Ops.( +++ ) 1 2); print_int (O.( +++ ) 3 4)\n' > $W/units/D.ml
 if $TML -L $W/lib -c -o $W/units/Ops.o $W/units/Ops.ml && $TML -L $W/lib -c -o $W/units/D.o $W/units/Ops.tmi $W/units/D.ml \
    && $TML -L $W/lib -o $W/units/dmain.o $W/units/Ops.tmi $W/units/D.tmi \
-   && link_tm $W/units/ops $L/start.tm $L/udivmod.tm $W/exit.tm $W/units/dmain.o $W/units/Ops.o $W/units/D.o $W/main4096.o $LIB_O \
+   && link_tm $W/units/ops $L/start.s $L/udivmod.s $W/exit.s $W/units/dmain.o $W/units/Ops.o $W/units/D.o $W/main4096.o $LIB_O \
    && [ "$(timeout 60 $CPU $W/units/ops 2>&1)" = "1234" ]
 then echo "ok units: a unit's operator, M.( op )"; else echo "FAIL units: a unit's operator, M.( op )"; failures=$((failures + 1)); fi
-TL="$TL -map" link_tm $W/units/prog $L/start.tm $L/udivmod.tm $W/exit.tm $W/units/prog_main.o $W/units/Shapes.o $W/units/Main.o $W/main4096.o $LIB_O
+TL="$TL -map" link_tm $W/units/prog $L/start.s $L/udivmod.s $W/exit.s $W/units/prog_main.o $W/units/Shapes.o $W/units/Main.o $W/main4096.o $LIB_O
 if grep -q "Shapes.f[0-9]*_area$" $W/units/prog.map && ! grep -q "_unused" $W/units/prog.map; then echo "ok units: what nothing uses left out"
 else echo "FAIL units: the sweep"; failures=$((failures + 1)); fi
 [ ${#refused[@]} = 0 ] || echo "refused (an integer beyond 31 bits): ${refused[*]}"

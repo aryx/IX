@@ -29,7 +29,7 @@
 val exit_proc : TinyKernelProcs.proc -> int -> unit
 
 (* [load_prog p node argv]: the program of node in p's memory, its
- * arguments as start.tm finds them (Bad if it is no program, or if
+ * arguments as start.s finds them (Bad if it is no program, or if
  * there is no room: p left as it was) *)
 val load_prog :
   TinyKernelProcs.proc -> TinyKernelFiles.node option -> string list -> unit

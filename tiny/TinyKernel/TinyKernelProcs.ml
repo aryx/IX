@@ -62,7 +62,7 @@ let () =
       ^ " " ^ state ^ " "
       ^ string_of_int (p.memory / 1024) ^ " " ^ p.cmd ^ "\n") !procs))
 
-(* a register of its frame (r1..r15, the pc as 16), as entry.tm saved it *)
+(* a register of its frame (r1..r15, the pc as 16), as entry.s saved it *)
 let reg p k = peek (frame p.slot + (4 * k))
 let set_reg p k v = poke (frame p.slot + (4 * k)) v
 

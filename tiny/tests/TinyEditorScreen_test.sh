@@ -40,9 +40,9 @@ extern value space1[];
 void main(void) { ml_run(vstack, space0, space1, 65536, 64); flush(); exit(0); }
 END
 printf 'typedef int value;\nvalue vstack[32768];\nvalue space0[65536];\nvalue space1[65536];\n' > $W/data.c
-printf 'exit:\n\tldw\tr1, 0(sp)\n\tsys\t0\n' > $W/exit.tm
+printf 'exit:\n\tldw\tr1, 0(sp)\n\tsys\t0\n' > $W/exit.s
 if ml_lib $W/lib && $TC -o $W/main.o $W/main.c && $TC -o $W/data.o $W/data.c && $TML -L $W/lib -o $W/keys.o $ROOT/tiny/TinyLibSystem/teststub/TinySystemTest.ml $ROOT/tiny/TinyLibSystem/teststub/TinyLibSystem.ml $ROOT/tiny/TinyLibDraw.ml $ROOT/tiny/TinyLibPlayground.ml $ROOT/tiny/TinyLibGUI.ml $ROOT/tiny/TinyEditorScreen.ml $T/Keys.ml \
-   && link_tm $W/keys.img $L/start.tm $L/udivmod.tm $W/exit.tm $W/main.o $W/keys.o $W/data.o $LIB_O \
+   && link_tm $W/keys.img $L/start.s $L/udivmod.s $W/exit.s $W/main.o $W/keys.o $W/data.o $LIB_O \
    && timeout 120 $CPU $W/keys.img > $W/tm.out 2>&1 && diff $T/keys.expected $W/tm.out > $W/tm.diff
 then echo "ok keys: by tiny-ml, on tiny-cpu"; else echo "FAIL keys: by tiny-ml, on tiny-cpu"; head -10 $W/tm.diff $W/tm.out 2>/dev/null | head -20; failures=$((failures + 1)); fi
 

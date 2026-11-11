@@ -236,9 +236,9 @@ ml -c -nostdlib -o Stdlib.o /src/TinyLibCore/Stdlib.ml
 cmp Stdlib.tmi /lib/ml/Stdlib.tmi && cmp Stdlib.o /lib/ml/Stdlib.o && echo Stdlib: the host
 echo 'int main(void) { return 6 * 7; }' > m.c
 cc -o m.o m.c
-as -o start.o /src/runtime/start.tm
-as -o udivmod.o /src/runtime/udivmod.tm
-as -o sys.o /src/TinyKernel/libc/sys.tm
+as -o start.o /src/runtime/start.s
+as -o udivmod.o /src/runtime/udivmod.s
+as -o sys.o /src/TinyKernel/libc/sys.s
 ld -n -o m start.o udivmod.o sys.o m.o
 ./m; echo m: status $status
 exit

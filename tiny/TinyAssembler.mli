@@ -11,8 +11,8 @@
  * that reads assembly), what the compilers make too, and their
  * encoding, TinyLibMachine's assemble, which the compilers call
  * themselves (old: here; they wrote text, which this file parsed back).
- * So this file is for assembly written by hand: the kernel's entry.tm,
- * the runtime's start.tm, the steps, the tests.
+ * So this file is for assembly written by hand: the kernel's entry.s,
+ * the runtime's start.s, the steps, the tests.
  *
  * tiny-machine's instructions were designed to keep this assembler
  * simple: one format, every instruction 4 bytes, every immediate the
@@ -69,7 +69,7 @@
  *   illegal words, as on a real machine in user mode.
  *
  * context:
- * People write the .tm files (tiny-c -S and tiny-ml -S print theirs, to
+ * People write the .s files (tiny-c -S and tiny-ml -S print theirs, to
  * read), tiny-linker reads the objects, these and the compilers',
  * tiny-cpu and tiny-machine run the image.
  *
@@ -109,7 +109,7 @@ type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 
 (* The pipeline, a step a function (main opens and closes the files):
  *
- *     x.tm          Fpath.t
+ *     x.s           Fpath.t
  *       | opened    Chan.i
  *       | read      (int * TinyLibMachine.line list) list, each line of
  *       |           text's lines, with its number (parse's)

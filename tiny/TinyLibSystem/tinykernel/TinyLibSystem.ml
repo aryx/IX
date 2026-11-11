@@ -50,7 +50,7 @@
  * tiny-kernel's alone.
  *
  * This section is ML's list of the calls, as a C program's is
- * ../../TinyKernel/libc/user.h, with sys.tm's stubs beside it: the
+ * ../../TinyKernel/libc/user.h, with sys.s's stubs beside it: the
  * two lists side by side, a call in both. *)
 
 (* a program's first descriptors (../../TinyLibSystem.mli says them) *)

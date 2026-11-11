@@ -32,7 +32,7 @@
 ; The machine's tools
 ;*****************************************************************************
 
-; tiny-machine's assembler, linker and archiver: a .tm file to an object,
+; tiny-machine's assembler, linker and archiver: a .s file to an object,
 ; objects to an image, objects to a library (TinyLibMachine's instructions
 ; and lines)
 (executables

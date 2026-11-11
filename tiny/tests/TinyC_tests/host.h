@@ -8,7 +8,7 @@
 // an int, print's verbs are printf's (an l dropped; %u is a verb, as
 // in runtime/libc.c and goken's libc, so %ud is the number, then
 // a d), and exits ends with 0 for nil or "", 1 otherwise, as
-// start.tm's. What still differs is a pointer's size: the tests print
+// start.s's. What still differs is a pointer's size: the tests print
 // none.
 #include <stdio.h>
 #include <stdlib.h>

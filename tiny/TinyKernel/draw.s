@@ -1,7 +1,7 @@
 ; Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyMachine.ml)
 ;
 ; TinyKernelGraphics.ml's rows: the loops of bytes its draw is made of,
-; in assembly (a screen is 307,200 of them), with entry.tm's convention
+; in assembly (a screen is 307,200 of them), with entry.s's convention
 ; (the arguments at 0(sp), 4(sp)..., ML's integers: n is 2n+1).
 
 ; row_copy(dst, src, n): n bytes, from the first. A word at a time

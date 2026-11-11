@@ -6,7 +6,7 @@
  * they run on the host too, where they are tested first
  * (plan_tiny_windows.md). On tiny-machine these names are externals,
  * functions of C (TinyKernel/runtime.c's peekb and pokeb) and of
- * assembly (TinyKernel/draw.tm's rows); tiny-ml reads `open TinyMemory`
+ * assembly (TinyKernel/draw.s's rows); tiny-ml reads `open TinyMemory`
  * and leaves it. Here they are an array's, of the machine's 16 MB, an
  * address the same number in both: the screen's 1024 by 768 bytes are at
  * 0xf00000, and [ppm] writes them as tiny-machine -screen does. *)
@@ -15,7 +15,7 @@ let mem = Bytes.make 0x1000000 '\000'
 let peekb a = Char.code (Bytes.get mem a)
 let pokeb a v = Bytes.set mem a (Char.chr (v land 255))
 
-(* a row's n bytes: copied from the first (as draw.tm's loop: not
+(* a row's n bytes: copied from the first (as draw.s's loop: not
  * Bytes.blit, which looks which way to go), filled with a colour, and
  * given a colour where the mask's byte is not 0 *)
 let row_copy dst src n = for i = 0 to n - 1 do pokeb (dst + i) (peekb (src + i)) done
@@ -36,7 +36,7 @@ let row_mix dst table mask n =
   done
 
 (* a text's n characters from dst, in an image [width] wide, through the
- * font's mask (1024 wide, character c at column 8c), as draw.tm's: in a
+ * font's mask (1024 wide, character c at column 8c), as draw.s's: in a
  * colour, or mixed by a table (glyphs_mixed) *)
 let each_glyph row dst width font s n =
   for i = 0 to n - 1 do

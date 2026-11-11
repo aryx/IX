@@ -95,7 +95,7 @@ spawn(struct proc *parent, char *path, char **argv, int *map)
 	memset(mem + size, 0, top - size);
 	memzero(mem + top, PART - top);
 	// the arguments as tiny-cpu leaves them: the strings at the top,
-	// the pointers below, argc at sp and argv above it (start.tm's)
+	// the pointers below, argc at sp and argv above it (start.s's)
 	top = PART;
 	for(argc = 0; argv[argc] && argc < 16; argc++){
 		len = strlen(argv[argc]);
@@ -223,7 +223,7 @@ devintr(uint sources)
 	return 0;
 }
 
-// in the idle loop (entry.tm)
+// in the idle loop (entry.s)
 void
 interrupt(void)
 {
@@ -335,7 +335,7 @@ int (*calls[])(void) = {
 	sys_open, sys_close, sys_pipe, sys_mkdir, sys_unlink, sys_chdir, sys_tickets,
 };
 
-// every trap from user mode (entry.tm): a system call, an interrupt, a
+// every trap from user mode (entry.s): a system call, an interrupt, a
 // fault; then the same process again, or the lottery's
 void
 trap(void)

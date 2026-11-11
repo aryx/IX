@@ -56,7 +56,7 @@ local prog(name, file, core) = chain(name, [
       important: [{ at: 'comment:"How a file is compiled"', say: 'the passes, each its own type', weight: 3 }],
     },
     'TinyAssembler.ml': { digest: '86d091988762',
-      summary: "tiny-assembler: assembly written by hand, a .tm file, parsed into TinyLibMachine's lines and encoded by its assemble.",
+      summary: "tiny-assembler: assembly written by hand, a .s file, parsed into TinyLibMachine's lines and encoded by its assemble.",
       important: [
         { at: 'def:instruction', say: 'an instruction parsed, its operands a number or a label', weight: 2 },
         { at: 'def:machine_instr', say: "the machine's own: csrr, csrw, eret, amoswap", weight: 1 },
@@ -249,7 +249,7 @@ local prog(name, file, core) = chain(name, [
     // ---------------------------------------------------------------
     'TinyCPU.ml': { digest: 'cc26a70c0f52',
       summary: "tiny-cpu: TinyMachineCPU's CPU run as a user program: three system calls the host's, argv where C's main finds it.",
-      capitals: [{ at: 'def:interpret', say: 'argc and argv laid out as start.tm expects, then step' }],
+      capitals: [{ at: 'def:interpret', say: 'argc and argv laid out as start.s expects, then step' }],
       important: [
         { at: 'def:syscall', say: 'exit, write, read: answered by the host', weight: 2 },
         { at: 'def:interpret', weight: 3 },
@@ -575,8 +575,8 @@ local prog(name, file, core) = chain(name, [
       ['TinyKernel.ml', 'its kernel in ML'],
       ['TinyKernel/steps/', 'before it: v0 in assembly, t6 in C'],
     ], [
-      ['TinyC.ml', 'TinyAssembler.ml', '.tm assembly'],
-      ['TinyML.ml', 'TinyAssembler.ml', '.tm assembly'],
+      ['TinyC.ml', 'TinyAssembler.ml', '.s assembly'],
+      ['TinyML.ml', 'TinyAssembler.ml', '.s assembly'],
       ['TinyAssembler.ml', 'TinyLinker.ml', 'objects'],
       ['TinyLinker.ml', 'TinyMachine.ml', 'an image'],
       ['TinyMachine.ml', 'TinyMachine/', 'runs'],
@@ -677,7 +677,7 @@ local prog(name, file, core) = chain(name, [
       ],
     },
     prog('tiny-assembler: a line, a word, an object', 'TinyAssembler.ml', [
-      ['TinyAssembler.ml:def:read', 'the file, its lines numbered', 'a .tm file'],
+      ['TinyAssembler.ml:def:read', 'the file, its lines numbered', 'a .s file'],
       ['TinyAssembler.ml:def:parse', 'a label, a directive, an instruction', 'a line'],
       ['TinyAssembler.ml:def:instruction', 'a mnemonic and its pseudo-forms', 'a mnemonic'],
     ]) + {

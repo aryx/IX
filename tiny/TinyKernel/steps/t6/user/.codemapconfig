@@ -1,7 +1,7 @@
 // tiny/TinyKernel/steps/t6/user/: what the code map says of it (the code map:
 // tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there). Their user.h
-// and sys.tm (the system calls' stubs, assembly) are ../libc/'s;
+// and sys.s (the system calls' stubs, assembly) are ../libc/'s;
 // t6tests.c is a test, off the map. cat, echo, ls, mkdir, rm and wc
 // were tiny-kernel's too once; tiny-kernel's are TinyUtilities.ml's now.
 //

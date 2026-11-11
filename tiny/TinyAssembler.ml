@@ -9,7 +9,7 @@ module TSys = TinyLibSystem
 (* what tiny-assembler asks for: its file read, its object written *)
 type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 
-let usage = "usage: tiny-assembler [-o file.o | -S] file.tm"
+let usage = "usage: tiny-assembler [-o file.o | -S] file.s"
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
 
@@ -17,11 +17,11 @@ tiny-machine's assembly (TinyLibMachine's instructions, li, la, call, ret...,
 the machine's csrr, csrw, eret, csrrw, amoswap, wfi, and .word .byte .ascii
 .asciz .space .align .text .data) to an object, file.o by default, for
 tiny-linker. In tiny/tests/TinyCPU_tests/, for example:
-  tiny-assembler hello.tm                  hello.o: its words, its labels, the
+  tiny-assembler hello.s                   hello.o: its words, its labels, the
                                            places a label's address goes
   tiny-linker -o hello hello.o && tiny-cpu hello        Hello, world
-An error names the file and the line: hello.tm:3: not a register: r16
-  tiny-assembler -S hello.tm               the lines as parsed, printed again
+An error names the file and the line: hello.s:3: not a register: r16
+  tiny-assembler -S hello.s                the lines as parsed, printed again
                                            (the compilers' -S text): they assemble
                                            to the same object
 |}
@@ -318,15 +318,15 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
     |> List.iter (fun (_, ls) ->
       List.iter (fun l -> TSys.print caps (M.print_line l)) ls);
     Exit.OK in
-  (* x.tm's object: x.o, here *)
+  (* x.s's object: x.o, here *)
   let default f = Fpath.set_ext ".o" (Fpath.base f) in
-  let tm f = Filename.check_suffix f ".tm" in
+  let assembly f = Filename.check_suffix f ".s" in
   try
     match List.tl (Array.to_list argv) with
     | ("-h" | "--help") :: _ -> TSys.print caps help; Exit.OK
-    | [ "-o"; out; f ] when tm f -> assemble_to (Fpath.v f) (Fpath.v out)
-    | [ f ] when tm f -> assemble_to (Fpath.v f) (default (Fpath.v f))
-    | [ "-S"; f ] when tm f -> listing (Fpath.v f)
+    | [ "-o"; out; f ] when assembly f -> assemble_to (Fpath.v f) (Fpath.v out)
+    | [ f ] when assembly f -> assemble_to (Fpath.v f) (default (Fpath.v f))
+    | [ "-S"; f ] when assembly f -> listing (Fpath.v f)
     | _ -> TSys.eprint caps (usage ^ "   (-h: how)\n"); Exit.Code 2
   (* (said after the program's name by TSys.main) *)
   with M.Error e -> Exit.Err e

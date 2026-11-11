@@ -43,12 +43,12 @@
     {
       name: 'An ML program on tiny-kernel: its main to its calls',
       bones: [
-        { at: 'mlsys.c:def:main', role: "start.tm's main: the partition laid out" },
+        { at: 'mlsys.c:def:main', role: "start.s's main: the partition laid out" },
         { at: '../../runtime/ml.c:def:ml_run', role: 'the runtime: the program run' },
         { at: 'TinyLibSystem.ml:def:main', role: "a tool's main, its Failures said" },
         { at: 'TinyLibSystem.ml:def:u_fork', role: 'an external' },
         { at: 'mlsys.c:def:u_fork', role: "its C: the kernel's fork, ML's value back" },
-        { at: '../../TinyKernel/libc/user.h:def:fork', role: "sys.tm's stub" },
+        { at: '../../TinyKernel/libc/user.h:def:fork', role: "sys.s's stub" },
       ],
       joints: [
         { from: 'mlsys.c:def:main', to: '../../runtime/ml.c:def:ml_run', say: 'stack, two halves' },

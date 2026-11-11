@@ -54,7 +54,7 @@
  *     tiny-prof -diff base.prof pages.prof -k $M/kernel.img.map \
  *       -u $M/bin/www.map
  *
- * (old: the .tm files given, in their link's order, and assembled
+ * (old: the .s files given, in their link's order, and assembled
  * again by tiny-prof, before tiny-linker)
  *
  * The first line said how the eight page downs divided between the
@@ -66,7 +66,7 @@
  *   whole draw (a rectangle clipped against three images, then 16 rows
  *   of row_mask): draw, row_mask and the ML around them were most of
  *   the kernel's share, some 13,000 instructions a character. Now one
- *   call of draw.tm's glyphs draws a whole text, a word at a time, and
+ *   call of draw.s's glyphs draws a whole text, a word at a time, and
  *   glyphs3 is 2% of the eight page downs.
  * - row_copy2, the loop copying the screen onto itself, then came first
  *   (38% of the kernel's): the glide of a page down copies the page's

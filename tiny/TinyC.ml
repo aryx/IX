@@ -24,7 +24,7 @@ machine's code, on stdout without -o. A fact.c that includes
 tiny/runtime/libc.h and prints fact(10):
   L=tiny/runtime
   tiny-c $L/libc.c; tiny-c fact.c           libc.o, fact.o
-  for f in $L/start $L/udivmod; do tiny-assembler $f.tm; done
+  for f in $L/start $L/udivmod; do tiny-assembler $f.s; done
   tiny-linker -o fact start.o udivmod.o libc.o fact.o
   tiny-cpu fact                            fact 10 = 3628800
   tiny-c -S fact.c                         fact: addi sp, sp, -8 ...

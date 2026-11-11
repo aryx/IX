@@ -19,7 +19,7 @@
 #                              kernel stack)
 #   ./tiny-machine v0          the first step (tiny/TinyKernel/steps/v0/): a
 #                              page of assembly and its four programs
-#   ./tiny-machine kernel.tm prog.tm...
+#   ./tiny-machine kernel.s prog.s...
 #                              a kernel of yours (first) and its programs
 #
 # Options:
@@ -143,16 +143,16 @@ case $1 in
     exec $machine $window $rate -d $disk -net $ROOT/tiny/tests/www -net-out -net-forward 8080:80 $image
     ;;
   v0)
-    set -- $ROOT/tiny/TinyKernel/steps/v0/kernel.tm $ROOT/tiny/TinyKernel/steps/v0/[abcd].tm
+    set -- $ROOT/tiny/TinyKernel/steps/v0/kernel.s $ROOT/tiny/TinyKernel/steps/v0/[abcd].s
     ;;
   -*|"") usage;;
 esac
 
-# .tm files: the kernel first, at 0, then its programs
+# .s files: the kernel first, at 0, then its programs
 for f in "$@"; do [ -f "$f" ] || { echo "tiny-machine: no $f (a kernel's name: tiny-kernel, t6, v0)" >&2; exit 1; }; done
 image=$B/kernel.img
 say "assemble and link: $(short $1)(the kernel, at 0)$( [ $# -gt 1 ] && echo ", then $(short "${@:2}")")"
-objs=(); for f in "$@"; do o=$B/$(basename ${f%.tm}).o; $B/TinyAssembler.exe -o $o $f || exit 1; objs+=($o); done
+objs=(); for f in "$@"; do o=$B/$(basename ${f%.s}).o; $B/TinyAssembler.exe -o $o $f || exit 1; objs+=($o); done
 $B/TinyLinker.exe -o $image "${objs[@]}"
 say "image: $(short $image)($(size $image) bytes)"
 if [ $listing = 1 ]; then exec $machine -l $image; fi

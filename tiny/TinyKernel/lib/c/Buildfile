@@ -21,16 +21,16 @@ all: start.o udivmod.o libc.o sys.o
 # the language's, tiny/runtime/'s, on any system: _start, which calls
 # main, then exits; the unsigned division tiny-c calls for / and %;
 # print and the strings
-start.o: /src/runtime/start.tm
-	as -o $target /src/runtime/start.tm
-udivmod.o: /src/runtime/udivmod.tm
-	as -o $target /src/runtime/udivmod.tm
+start.o: /src/runtime/start.s
+	as -o $target /src/runtime/start.s
+udivmod.o: /src/runtime/udivmod.s
+	as -o $target /src/runtime/udivmod.s
 libc.o: /src/runtime/libc.c /src/runtime/libc.h
 	cc -o $target /src/runtime/libc.c
 
 # tiny-kernel's system calls, for C: each a sys instruction
-sys.o: /src/TinyKernel/libc/sys.tm
-	as -o $target /src/TinyKernel/libc/sys.tm
+sys.o: /src/TinyKernel/libc/sys.s
+	as -o $target /src/TinyKernel/libc/sys.s
 
 # build clean: the objects removed
 clean:

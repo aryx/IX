@@ -1,6 +1,6 @@
 // tiny/TinyKernel/steps/t6/: what the code map says of it (the code map: tinybox
 // codemap, ~/github/ocaml-elm-playground; its guidelines:
-// docs/claude_notes/codemapconfig_guidelines.md there). entry.tm (the
+// docs/claude_notes/codemapconfig_guidelines.md there). entry.s (the
 // trap's entry, resume) is assembly, not a source to the map. In file.c
 // and proc.c a forward prototype comes before some bodies (pipewrite,
 // piperead, exit1): def: would find the prototype, so those are
@@ -37,7 +37,7 @@ local skeletons = import '../../../../skeletons.libsonnet';
         { at: 'code:"tiny-os"', say: "stale name, kept: check.expected records it", weight: 1 },
         { at: 'def:printf', weight: 1 },
       ],
-      related: ['entry.tm', 'Makefile', 'check.expected', '../../../../kernels/xv6/'],
+      related: ['entry.s', 'Makefile', 'check.expected', '../../../../kernels/xv6/'],
     },
     'proc.c': { digest: '52f060a07fa9',
       summary: "Processes, the lottery, the trap and the calls on processes: no kernel stack of their own, a call that must wait returns BLOCKED and runs again.",
@@ -110,7 +110,7 @@ local skeletons = import '../../../../skeletons.libsonnet';
     {
       name: 't6: boot, trap, rerun',
       bones: [
-        { at: 'main.c:def:main', role: "the boot, from entry.tm's start" },
+        { at: 'main.c:def:main', role: "the boot, from entry.s's start" },
         { at: 'proc.c:def:spawn1', role: '/init, the first process' },
         { at: 'proc.c:def:schedule', role: 'the lottery' },
         { at: 'proc.c:def:run', role: 'the window, then resume' },
@@ -123,7 +123,7 @@ local skeletons = import '../../../../skeletons.libsonnet';
         { from: 'main.c:def:main', to: 'proc.c:def:spawn1', say: '/init' },
         { from: 'main.c:def:main', to: 'proc.c:def:schedule', say: 'never back' },
         { from: 'proc.c:def:schedule', to: 'proc.c:def:run', say: 'the winner' },
-        { from: 'proc.c:def:run', to: 'proc.c:def:trap', say: "entry.tm's trap" },
+        { from: 'proc.c:def:run', to: 'proc.c:def:trap', say: "entry.s's trap" },
         { from: 'proc.c:def:trap', to: 'proc.c:def:calls', say: 'sys n' },
         { from: 'proc.c:def:calls', to: 'proc.c:def:block', say: 'must wait' },
         { from: 'proc.c:def:wakeup', to: 'proc.c:def:schedule', say: 'a ticket back in the draw' },

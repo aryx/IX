@@ -17,7 +17,7 @@ let rec nth_opt l n =
   | x :: l -> if n = 0 then Some x else nth_opt l (n - 1)
 (* map and mapi in reverse, then turned around: a loop, where a
  * recursion per element took tiny-kernel's as past its stack's end on
- * kernel.tm's 70,000 lines (old: map a recursion; the compilers now
+ * kernel.s's 70,000 lines (old: map a recursion; the compilers now
  * encode a unit's lines with it); the elements still in order *)
 let map f l =
   let rec go acc = function

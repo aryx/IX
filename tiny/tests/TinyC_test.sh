@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # The tests of TinyC.ml: each program of TinyC_tests/ compiled by
-# tiny-c, linked with the runtime (runtime/: start.tm, udivmod.tm,
+# tiny-c, linked with the runtime (runtime/: start.s, udivmod.s,
 # and libc.c compiled by tiny-c) by tiny-cpu, run by tiny-cpu, its
 # output and exit status compared with the recorded ones (prog.out).
 # They are the host's cc's: RECORD=1 records them again, each program
@@ -42,7 +42,7 @@ for c in "${progs[@]}"; do
     if grep -q "long long" $W/$b.err; then refused+=($b); else echo "FAIL $b: $(cat $W/$b.err)"; failures=$((failures + 1)); fi
     continue
   fi
-  link_tm $W/tm/$b $RT/start.tm $RT/udivmod.tm $W/libc.o $W/$b.o || { echo "FAIL $b: linking"; failures=$((failures + 1)); continue; }
+  link_tm $W/tm/$b $RT/start.s $RT/udivmod.s $W/libc.o $W/$b.o || { echo "FAIL $b: linking"; failures=$((failures + 1)); continue; }
   want=$(cat $out)
   got=$(cd $W/tm && timeout 10 $TCPU ./$b one two 2>&1; echo "exit $?")
   if [ "$want" = "$got" ]; then echo "ok $b"; else echo "FAIL $b"; /usr/bin/diff <(echo "$want") <(echo "$got") | /usr/bin/head -10; failures=$((failures + 1)); fi

@@ -13,10 +13,10 @@
       summary: "tiny-machine's memory as a 16 MB array, an address the same number as on the machine, for the drawing's tests.",
       important: [
         { at: 'def:mem', say: 'the same addresses: the screen at 0xf00000', weight: 2 },
-        { at: 'def:row_copy', say: "byte by byte as draw.tm's loop, not Bytes.blit", weight: 2 },
+        { at: 'def:row_copy', say: "byte by byte as draw.s's loop, not Bytes.blit", weight: 2 },
         { at: 'def:peekb', weight: 1 },
       ],
-      related: ['../TinyMemory.ml', '../draw.tm'],
+      related: ['../TinyMemory.ml', '../draw.s'],
     },
   },
 }

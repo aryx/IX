@@ -6,9 +6,9 @@
 // TinyKernelAudio, TinyKernelNetwork, TinyKernelFS, TinyKernelMachine,
 // TinyKernelMemory, TinyKernelFiles, TinyKernelProcs, TinyKernelDevices,
 // TinyKernelIO, TinyKernelCalls, TinyKernelScheduler); each .ml says
-// "See X.mli", its header there. entry.tm (_entry, k_run, the trap,
-// the timer, the window, the other cores), memory.tm, draw.tm (the
-// rows TinyMemory names) and end.tm are tiny-machine's assembly, not
+// "See X.mli", its header there. entry.s (_entry, k_run, the trap,
+// the timer, the window, the other cores), memory.s, draw.s (the
+// rows TinyMemory names) and end.s are tiny-machine's assembly, not
 // sources to the map: named in the roles. _make/ is the build's
 // output, off the map.
 local kernel_color = '#c03030';
@@ -29,14 +29,14 @@ local kernel_color = '#c03030';
         { at: 'def:k_blit', weight: 1 },
         { at: 'def:write', say: 'the console: a byte a store to the device', weight: 1 },
       ],
-      related: ['../TinyKernel.ml', '../runtime/ml.c', 'entry.tm', 'Makefile'],
+      related: ['../TinyKernel.ml', '../runtime/ml.c', 'entry.s', 'Makefile'],
     },
     // the machine's bytes, below the drawing
     'TinyMemory.ml': { digest: '798c55a87ab3',
-      summary: "TinyMemory on tiny-machine: bytes and rows as externals (runtime.c's, draw.tm's); host/TinyMemory.ml is the host's.",
+      summary: "TinyMemory on tiny-machine: bytes and rows as externals (runtime.c's, draw.s's); host/TinyMemory.ml is the host's.",
       capitals: [
         { at: 'def:peekb', say: 'a byte of the machine: what the drawing stands on' },
-        { at: 'def:row_copy', say: "a row's loop in assembly (draw.tm), fast" },
+        { at: 'def:row_copy', say: "a row's loop in assembly (draw.s), fast" },
       ],
       important: [
         { at: 'def:peekb', weight: 2 },
@@ -44,7 +44,7 @@ local kernel_color = '#c03030';
         { at: 'def:row_mask', say: 'a colour where the mask is set: a character', weight: 1 },
         { at: 'def:row_bytes', say: "runtime.c's k_blit under another name", weight: 1 },
       ],
-      related: ['host/TinyMemory.ml', 'draw.tm'],
+      related: ['host/TinyMemory.ml', 'draw.s'],
     },
     // the kernel's parts, in their order
     'TinyKernelGraphics.ml': { digest: '8460edf293fa',
@@ -152,15 +152,15 @@ local kernel_color = '#c03030';
       ],
     },
     'TinyKernelMachine.ml': { digest: 'e36e583b08f8',
-      summary: "The kernel's machine: entry.tm's, memory.tm's and runtime.c's externals, the devices' addresses at the top of memory.",
+      summary: "The kernel's machine: entry.s's, memory.s's and runtime.c's externals, the devices' addresses at the top of memory.",
       important: [
-        { at: 'def:k_run', say: "entry.tm's: a process run, the trap's cause back", weight: 3 },
-        { at: 'def:frame', say: "a slot's 68 bytes: where entry.tm saves registers", weight: 2 },
+        { at: 'def:k_run', say: "entry.s's: a process run, the trap's cause back", weight: 3 },
+        { at: 'def:frame', say: "a slot's 68 bytes: where entry.s saves registers", weight: 2 },
         { at: 'def:cons_out', say: 'negative: the machine takes it modulo its size', weight: 2 },
         { at: 'def:mailbox', say: "another core's: a process, its window, a slice", weight: 1 },
         { at: 'def:halt', say: 'the disk committed before the machine stops', weight: 1 },
       ],
-      related: ['entry.tm', 'memory.tm', 'runtime.c'],
+      related: ['entry.s', 'memory.s', 'runtime.c'],
     },
     'TinyKernelMachine.mli': { digest: '56f9f8fbd55a',
       summary: "What the kernel in ML reaches tiny-machine by: a process run until its trap, words read and written, devices' addresses.",
@@ -233,7 +233,7 @@ local kernel_color = '#c03030';
       important: [
         { at: 'type:state', say: 'Waiting holds the rest of the call', weight: 3 },
         { at: 'type:proc', weight: 2 },
-        { at: 'def:reg', say: "a register: the slot's frame, as entry.tm saved it", weight: 2 },
+        { at: 'def:reg', say: "a register: the slot's frame, as entry.s saved it", weight: 2 },
         { at: 'def:user', say: "every user address checked here: Bad, or the kernel's", weight: 2 },
         { at: 'def:user_iter', weight: 1 },
         { at: 'def:ustr', weight: 1 },
@@ -302,7 +302,7 @@ local kernel_color = '#c03030';
         { at: 'def:sys_rw', say: "the user's buffer as is, else the bounce", weight: 2 },
         { at: 'def:with_room', say: 'no room: wait for an end, not fail', weight: 2 },
         { at: 'def:sys_fork', say: 'fork: a partition copied', weight: 1 },
-        { at: 'def:load_prog', say: 'an a.out in its memory, argv as start.tm finds it', weight: 2 },
+        { at: 'def:load_prog', say: 'an a.out in its memory, argv as start.s finds it', weight: 2 },
         { at: 'def:exit_proc', weight: 1 },
         { at: 'def:call', say: 'a traced call: stopped before and after', weight: 1 },
       ],
@@ -343,13 +343,13 @@ local kernel_color = '#c03030';
   },
   skeletons: [
     {
-      name: 'tiny-kernel: from entry.tm to the scheduler',
+      name: 'tiny-kernel: from entry.s to the scheduler',
       bones: [
-        { at: 'runtime.c:def:kmain', role: "called by entry.tm's _entry" },
+        { at: 'runtime.c:def:kmain', role: "called by entry.s's _entry" },
         { at: '../runtime/ml.c:def:ml_run', role: "TinyML's runtime: the memory set, the program run" },
         { at: '../TinyKernel.ml:section:The boot', role: "the kernel's toplevel: files, /bin/sh" },
         { at: 'TinyKernelScheduler.ml:def:schedule', role: 'the loop' },
-        { at: 'TinyKernelScheduler.ml:def:run', role: "a process run until its trap (entry.tm's k_run)" },
+        { at: 'TinyKernelScheduler.ml:def:run', role: "a process run until its trap (entry.s's k_run)" },
         { at: 'TinyKernelCalls.ml:def:syscall', role: 'a system call by number' },
       ],
       joints: [
@@ -539,7 +539,7 @@ local kernel_color = '#c03030';
         { at: 'TinyKernelGraphics.ml:def:alloc', role: "an image's pixels" },
         { at: 'TinyKernelGraphics.ml:def:draw_mixed', role: 'the one operation, clipped' },
         { at: 'TinyKernelGraphics.ml:def:text', role: 'characters: the font a mask' },
-        { at: 'TinyMemory.ml:def:row_copy', role: "a row, draw.tm's loop" },
+        { at: 'TinyMemory.ml:def:row_copy', role: "a row, draw.s's loop" },
       ],
       joints: [
         { from: 'TinyKernelGraphics.ml:def:messages', to: 'TinyKernelGraphics.ml:def:message', say: 'each, its size known' },

@@ -186,7 +186,7 @@ local mli(summary, digest, capital, say) = {
     'Fpath.ml': { digest: 'abf125539b07', summary: "Fpath: lib_core's code, a path a string checked not empty." },
     'Fpath_.mli': { digest: '68042d2eab85', summary: "Fpath_, lib_core/commons/'s subset: Fpath's shorter names, / and !!, in Operators, a module inside." },
     'Fpath_.ml': { digest: 'd399a4115131', summary: "Fpath_: lists of paths, and Operators' two lines." },
-    'Chan.mli': { digest: '5bc26c039bc3', summary: "Chan, lib_core/commons/'s subset: a channel with its origin, so that an error says \"foo.tm:3\" with nothing more passed along." },
+    'Chan.mli': { digest: '5bc26c039bc3', summary: "Chan, lib_core/commons/'s subset: a channel with its origin, so that an error says \"foo.s:3\" with nothing more passed along." },
     'Chan.ml': { digest: '7e62638e0c9d', summary: "Chan: lib_core's code, a channel's origin or destination named." },
     'In_channel.mli': { digest: '097eeffbfbca', summary: "In_channel, OCaml's subset: a channel is tiny-kernel's descriptor, read by u_read, left out by a program that reads none." },
     'In_channel.ml': { digest: '2053ccb8fc2a', summary: 'In_channel: input and input_all over u_read.' },

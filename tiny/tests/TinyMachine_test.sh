@@ -2,8 +2,8 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# The tests of TinyMachine.ml, its laws, on TinyKernel/steps/v0/kernel.tm linked
-# with its four user programs (v0/a.tm to d.tm: a and b print 20
+# The tests of TinyMachine.ml, its laws, on TinyKernel/steps/v0/kernel.s linked
+# with its four user programs (v0/a.s to d.s: a and b print 20
 # letters each, c executes csrw, d stores into the kernel):
 #
 # 1. with a period longer than any program, no interrupt: the programs
@@ -14,18 +14,18 @@
 #    halted with status 0; and a and b interleaved, a b before a's
 #    last a;
 # 3. the same period, the same output: the time is the program's;
-# 4. the programs linked in another order (tiny-linker; every .tm here
+# 4. the programs linked in another order (tiny-linker; every .s here
 #    is assembled and linked by link.sh's link_tm), the same output;
 # 5. each program of TinyMachine_tests/ (the machine's features for
 #    v6, a kernel that was (xv6's kind, removed on 2026-10-13): amoswap, core, ip, the pages, the console's input,
 #    the disk) prints its .expected, given its .input if there is one;
-#    disk.tm a fresh image (block 1 "hello, disk"), whose block 2 it
-#    has written WRITTEN after the halt; screen.tm its events
+#    disk.s a fresh image (block 1 "hello, disk"), whose block 2 it
+#    has written WRITTEN after the halt; screen.s its events
 #    (screen.events: the mouse, then keys), whose screen at the halt
-#    has screen.cksum's sum; net.tm a wire that comes back (-net-loop
+#    has screen.cksum's sum; net.s a wire that comes back (-net-loop
 #    100), and, run again without one, a machine that says it has none;
-#    rate.tm the speed that -rate 16 gives the machine, read from its
-#    rate register; cores.tm three cores (-cores 3): their count, the
+#    rate.s the speed that -rate 16 gives the machine, read from its
+#    rate register; cores.s three cores (-cores 3): their count, the
 #    interrupt between them and who raised it, a device of core 0's
 #    reached by another, a fault; each core's instructions at the halt.
 #
@@ -34,16 +34,16 @@
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 T=${T:-$ROOT/_build/default/tiny/TinyMachine.exe}
 . $ROOT/tiny/tests/link.sh
-K=$ROOT/tiny/TinyKernel/steps/v0/kernel.tm
-P=$(ls $ROOT/tiny/TinyKernel/steps/v0/[abcd].tm)
+K=$ROOT/tiny/TinyKernel/steps/v0/kernel.s
+P=$(ls $ROOT/tiny/TinyKernel/steps/v0/[abcd].s)
 W=$(mktemp -d)
 trap 'rm -rf $W' EXIT
 failures=0
 fail() { echo "FAIL $*"; failures=$((failures + 1)); }
 
 with_period() { # period -> the output, then the status on its own line
-  sed "s/^period:\t.word\t[0-9]*/period:\t.word\t$1/" $K > $W/k.tm
-  link_tm $W/k.img $W/k.tm $P && timeout 10 $T $W/k.img; echo; echo $?
+  sed "s/^period:\t.word\t[0-9]*/period:\t.word\t$1/" $K > $W/k.s
+  link_tm $W/k.img $W/k.s $P && timeout 10 $T $W/k.img; echo; echo $?
 }
 
 out=$(with_period 1000000)
@@ -74,9 +74,9 @@ if [ "$($T $W/other.img; echo $?)" = "$($T $W/kernel.img; echo $?)" ]; then
   echo "ok link: the programs in another order, the same run"
 else fail "link: the order of the programs matters"; fi
 
-for t in $ROOT/tiny/tests/TinyMachine_tests/*.tm; do
-  b=$(basename $t .tm); in=/dev/null; opts=
-  [ -f ${t%.tm}.input ] && in=${t%.tm}.input
+for t in $ROOT/tiny/tests/TinyMachine_tests/*.s; do
+  b=$(basename $t .s); in=/dev/null; opts=
+  [ -f ${t%.s}.input ] && in=${t%.s}.input
   if [ $b = disk ]; then
     { head -c 1024 /dev/zero; printf 'hello, disk\n'; head -c 1012 /dev/zero; head -c 1024 /dev/zero; } > $W/disk.img
     opts="-d $W/disk.img"
@@ -84,16 +84,16 @@ for t in $ROOT/tiny/tests/TinyMachine_tests/*.tm; do
   [ $b = net ] && opts="-net-loop 100"
   [ $b = rate ] && opts="-rate 16"
   [ $b = cores ] && opts="-cores 3"
-  [ -f ${t%.tm}.events ] && opts="-events ${t%.tm}.events -screen $W/$b.ppm"
+  [ -f ${t%.s}.events ] && opts="-events ${t%.s}.events -screen $W/$b.ppm"
   link_tm $W/$b.image $t && timeout 10 $T $opts $W/$b.image < $in > $W/$b.out 2>&1
-  if cmp -s $W/$b.out ${t%.tm}.expected; then echo "ok $b: its expected output"
-  else fail "$b: $(diff ${t%.tm}.expected $W/$b.out | head -3)"; fi
+  if cmp -s $W/$b.out ${t%.s}.expected; then echo "ok $b: its expected output"
+  else fail "$b: $(diff ${t%.s}.expected $W/$b.out | head -3)"; fi
   if [ $b = disk ]; then
     if [ "$(dd if=$W/disk.img bs=1024 skip=2 count=1 2>/dev/null | head -c 7)" = WRITTEN ]; then echo "ok disk: block 2 written back"
     else fail "disk: block 2 not written back"; fi
   fi
-  if [ -f ${t%.tm}.cksum ]; then
-    if [ "$(cksum < $W/$b.ppm)" = "$(cat ${t%.tm}.cksum)" ]; then echo "ok $b: its screen at the halt"
+  if [ -f ${t%.s}.cksum ]; then
+    if [ "$(cksum < $W/$b.ppm)" = "$(cat ${t%.s}.cksum)" ]; then echo "ok $b: its screen at the halt"
     else fail "$b: its screen: $(cksum < $W/$b.ppm)"; fi
   fi
 done

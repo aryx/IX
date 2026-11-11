@@ -30,7 +30,7 @@ let height (i : image) = i.r.y1 - i.r.y0
 
 (* where the pixel at (x, y) is: a repeating image's is first taken
  * back into its rectangle (tiny-machine divides by a loop, in
- * udivmod.tm: not when the pixel is there already) *)
+ * udivmod.s: not when the pixel is there already) *)
 let back repl v n = if v >= 0 && v < n || not repl then v else ((v mod n) + n) mod n
 let pixel (i : image) x y =
   i.at + (back i.repl (y - i.r.y0) (height i) * width i)
@@ -223,7 +223,7 @@ let mix ink =
  * level: 0 none, 3 the ink, 1 and 2 a third and two of it, the
  * letters' edges (a row then w / 4 bytes, each face twice as large).
  * A face is made a mask: a byte a pixel (255 where it is set, so that
- * a character's row is two words of mask for draw.tm's glyphs; 85 and
+ * a character's row is two words of mask for draw.s's glyphs; 85 and
  * 170 the two greys), the characters side by side in an image of 128
  * characters' width, so that a character is a draw. *)
 let mask bits depth w h at =
@@ -265,7 +265,7 @@ let text (dst : image) x y (src : image) (font : image) s =
   let n = String.length s in
   let mix = mixing src in
   (* A text all inside dst, in a colour, at a whole word (what a program
-   * draws nearly always): all its characters by one call of draw.tm's
+   * draws nearly always): all its characters by one call of draw.s's
    * glyphs, which works a word at a time; with levels its glyphs_mixed,
    * a byte at a time where a row is not blank. *)
   if n > 0 && not dst.repl && src.repl && width src = 1 && height src = 1

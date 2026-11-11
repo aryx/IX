@@ -65,9 +65,9 @@ COLUMNS = [
             "(the heap in the program's megabyte,",
             "the calls as C functions)"]),
         ("The C runtime", "C, assembly", [
-            "tiny/runtime/: start.tm (the start),",
-            "udivmod.tm (the division), libc.c;",
-            "TinyKernel/libc/sys.tm: the system calls"]),
+            "tiny/runtime/: start.s (the start),",
+            "udivmod.s (the division), libc.c;",
+            "TinyKernel/libc/sys.s: the system calls"]),
         ("The system", "", [
             "tiny-kernel, on tiny-machine"]),
     ]),
@@ -82,9 +82,9 @@ COLUMNS = [
             "(get)"]),
         ("The C runtime", "C, assembly", [
             "tiny/runtime/: libc.c and libc.h",
-            "(print, the strings, malloc), start.tm,",
-            "udivmod.tm;",
-            "TinyKernel/libc/sys.tm: the system calls"]),
+            "(print, the strings, malloc), start.s,",
+            "udivmod.s;",
+            "TinyKernel/libc/sys.s: the system calls"]),
         ("The system", "", [
             "tiny-kernel, on tiny-machine"]),
     ]),
@@ -104,9 +104,9 @@ COLUMNS = [
             "included by TinyKernel/runtime.c (the",
             "kernel's memory, the console)"]),
         ("Its assembly", "tiny-cpu's", [
-            "TinyKernel/entry.tm (the start, the",
-            "traps), draw.tm (a row of pixels), the",
-            "font; runtime/udivmod.tm"]),
+            "TinyKernel/entry.s (the start, the",
+            "traps), draw.s (a row of pixels), the",
+            "font; runtime/udivmod.s"]),
         ("The machine", "", [
             "tiny-machine (tiny/TinyMachine.ml,",
             "TinyMachine/): the CPU, the devices"]),

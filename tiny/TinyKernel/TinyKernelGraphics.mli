@@ -102,7 +102,7 @@
  * depths and alpha.
  *
  * exercises:
- * - a row copied a word at a time where it can (draw.tm's row_copy);
+ * - a row copied a word at a time where it can (draw.s's row_copy);
  * - ellipses and filled polygons, for the playground's shapes;
  * - a mask of any level, 0 to 255, and a source of more than a colour
  *   mixed through it (here four levels, a colour's, the font's);

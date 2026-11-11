@@ -26,15 +26,15 @@ INPUT="hello tiny machine"
 # a program's listing, reassembled and listed again: "same" or the diff
 relist() { # source
   link_tm $W/i1 "$1" && $T -l $W/i1 > $W/l1 || { echo "not assembled"; return; }
-  cut -f3- $W/l1 | sed 's/^/\t/' > $W/r.tm
-  { link_tm $W/i2 $W/r.tm && $T -l $W/i2; } > $W/l2 2>&1
+  cut -f3- $W/l1 | sed 's/^/\t/' > $W/r.s
+  { link_tm $W/i2 $W/r.s && $T -l $W/i2; } > $W/l2 2>&1
   if cmp -s $W/l1 $W/l2; then echo same; else diff $W/l1 $W/l2 | head -3; fi
 }
 
-for s in $ROOT/tiny/tests/TinyCPU_tests/*.tm; do
-  p=$(basename $s .tm)
+for s in $ROOT/tiny/tests/TinyCPU_tests/*.s; do
+  p=$(basename $s .s)
   link_tm $W/$p $s && echo "$INPUT" | $T $W/$p > $W/$p.out 2>&1
-  if cmp -s $W/$p.out ${s%.tm}.expected; then echo "ok $p: its expected output"; else fail "$p: $(diff $W/$p.out ${s%.tm}.expected | head -3)"; fi
+  if cmp -s $W/$p.out ${s%.s}.expected; then echo "ok $p: its expected output"; else fail "$p: $(diff $W/$p.out ${s%.s}.expected | head -3)"; fi
 done
 
 # random programs
@@ -70,14 +70,14 @@ for k in range(n):
             lines.append("\t%s\t%s, %s, %s" % (r.choice(alu), reg(), reg(), reg()))
             lines.append("l%d:" % label)
     lines += ["\tli\tr1, 0", "\tsys\t0"]
-    open("%s/f%d.tm" % (w, k), "w").write("\n".join(lines) + "\n")
+    open("%s/f%d.s" % (w, k), "w").write("\n".join(lines) + "\n")
 EOF
 bad=0
 for k in $(seq 0 $((N - 1))); do
-  r=$(relist $W/f$k.tm)
-  if [ "$r" != same ]; then bad=$((bad + 1)); [ $bad -le 3 ] && echo "  random program $k: $r"; cp $W/f$k.tm /tmp/tiny-cpu_fail_$k.tm 2>/dev/null; fi
+  r=$(relist $W/f$k.s)
+  if [ "$r" != same ]; then bad=$((bad + 1)); [ $bad -le 3 ] && echo "  random program $k: $r"; cp $W/f$k.s /tmp/tiny-cpu_fail_$k.s 2>/dev/null; fi
 done
-if [ $bad = 0 ]; then echo "ok random: $N programs, their listings reassembled to the same words"; else fail "random: $bad of $N differ (kept as /tmp/tiny-cpu_fail_*.tm)"; fi
+if [ $bad = 0 ]; then echo "ok random: $N programs, their listings reassembled to the same words"; else fail "random: $bad of $N differ (kept as /tmp/tiny-cpu_fail_*.s)"; fi
 
 echo "TinyCPU_test: $failures failures"
 exit $((failures > 0))

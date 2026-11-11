@@ -1,7 +1,7 @@
 // tiny/examples/: what the code map says of it (the code map: tinybox
 // codemap, ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there). The files put in
-// tiny-kernel's /examples to try the programs on: hello.c and square.tm,
+// tiny-kernel's /examples to try the programs on: hello.c and square.s,
 // and helloml.ml, built there by the Buildfile beside them (cd
 // /examples; build; ./hello; ./helloml; trace ./hello; debug ./helloml);
 // report.ixd, an office document troff prints; korobeiniki.wav, which
@@ -11,14 +11,14 @@
   summary: "Files to try tiny-kernel's programs on: a program in C and assembly, one in ML, their Buildfile, a document, a tune.",
   files: {
     'hello.c': { digest: 'c1822eacc82d',
-      summary: "hello: the squares of 1 to 10 added, square by square.tm's assembly; built and debugged on tiny-kernel itself.",
+      summary: "hello: the squares of 1 to 10 added, square by square.s's assembly; built and debugged on tiny-kernel itself.",
       capitals: [
-        { at: 'def:main', say: "a loop calling square.tm's function: a breakpoint there" },
+        { at: 'def:main', say: "a loop calling square.s's function: a breakpoint there" },
       ],
       important: [
         { at: 'def:main', weight: 3 },
       ],
-      related: ['square.tm', 'Buildfile', '../TinyKernel/libc/user.h'],
+      related: ['square.s', 'Buildfile', '../TinyKernel/libc/user.h'],
     },
     'helloml.ml': { digest: '27209abba42b',
       summary: "helloml: a tree, a closure, an exception, and 200,000 cells made and dropped, so tiny-ml's collector runs; built on tiny-kernel.",
@@ -39,10 +39,10 @@
       name: 'hello: C calling assembly',
       bones: [
         { at: 'hello.c:def:main', role: 'the loop, the sum printed' },
-        { at: 'square.tm', role: 'square by hand: 0(sp) in, r13 out' },
+        { at: 'square.s', role: 'square by hand: 0(sp) in, r13 out' },
       ],
       joints: [
-        { from: 'hello.c:def:main', to: 'square.tm', say: 'each of 1 to 10' },
+        { from: 'hello.c:def:main', to: 'square.s', say: 'each of 1 to 10' },
       ],
     },
   ],

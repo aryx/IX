@@ -165,7 +165,7 @@ let core0 = Some 0
 let anywhere p = p.core = None
 let elsewhere p = p.core = None && not (traced p)
 
-(* The other cores (entry.tm's slave). A process given to core k: its
+(* The other cores (entry.s's slave). A process given to core k: its
  * frame, its window and a slice in k's mailbox, then k's interrupt *)
 let give k p =
   p.core <- Some k;

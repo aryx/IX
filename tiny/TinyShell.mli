@@ -48,7 +48,10 @@
  *   a.o b.o c.o, and two lists of the same length are joined pair by
  *   pair. rc does this with a "free caret" that its lexer inserts.
  *   Here a word is simply its pieces with nothing between them, and ^
- *   is only a way to write two pieces with nothing between them.
+ *   is only a way to write two pieces with nothing between them; a
+ *   `{cmd} is joined only by an explicit ^ (lib/^`{basename $f}),
+ *   which says the join where a reader could take a word and a command
+ *   for two words.
  * - {b Only literal text is globbed}: a * coming from a variable or a
  *   quote stays a *. The trick is that such characters are escaped (a
  *   \000 is put before them) while the word is built, so the matcher

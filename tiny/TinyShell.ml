@@ -94,6 +94,7 @@ type caps =
 
 type token =
   | WORD of word | BACKQ | SEMI | AMP | NL | EOF | PIPE | ANDAND | OROR
+  | CARET                       (* ^ between a word and a `{...} *)
   | LPAREN | RPAREN | LBRACE | RBRACE | REDIR of redir
 
 type lexer = { text : string; mutable pos : int }
@@ -119,6 +120,7 @@ let rec token (lx : lexer) : token =
     when lx.pos + 1 < String.length lx.text && lx.text.[lx.pos + 1] = '\n' ->
       lx.pos <- lx.pos + 2; token lx   (* a line continued *)
   | Some '\n' -> op NL | Some ';' -> op SEMI | Some '`' -> op BACKQ
+  | Some '^' -> op CARET
   | Some '(' -> op LPAREN | Some ')' -> op RPAREN
   | Some '{' -> op LBRACE | Some '}' -> op RBRACE
   | Some '&' -> two '&' AMP ANDAND
@@ -177,6 +179,10 @@ and word lx : word =
       if peekc lx = Some '*' then skip lx else while_ lx idchr;
       let var = if count then Count (from start) else Var (from start) in
       var :: more lx
+  (* (a ^ before a `{...}: the word ends, and the parser joins them) *)
+  | Some '^'
+    when lx.pos + 1 < String.length lx.text && lx.text.[lx.pos + 1] = '`' ->
+      []
   | Some '^' -> skip lx; more lx
   | _ ->
       let start = lx.pos in
@@ -301,7 +307,7 @@ and unit p : cmd =
             ignore (next p); let ws = words p in expect p RPAREN; ws
         | [], BACKQ -> [ one_word p ]
         | [], _ -> []
-        | v, _ -> [ v ]
+        | v, _ -> [ rest p v ]
       in
       (match peek p with
        | WORD _ | BACKQ | REDIR _ | LBRACE -> Assign (x, value, Some (unit p))
@@ -325,9 +331,18 @@ and redirs p =
 (* a word; a `{cmd} is one *)
 and one_word p =
   match next p with
-  | WORD w -> w
-  | BACKQ -> [ Back (block p) ]
+  | WORD w -> rest p w
+  | BACKQ -> rest p [ Back (block p) ]
   | _ -> raise (Error "syntax error")
+
+(* w joined to a `{cmd} by an explicit ^, as Plan 9's rc does
+ * (lib/^`{basename $f}, `{cat f}^.o): the ^ says the join, where a
+ * reader could take a word and a command for two words. The lexer
+ * joins the other pieces, with or without ^ ($x.o) *)
+and rest p w =
+  match peek p with
+  | CARET -> ignore (next p); w @ one_word p
+  | _ -> w
 
 and words p =
   match peek p with

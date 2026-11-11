@@ -37,6 +37,7 @@ same "lists" 'x=(a b c); echo $x $#x; y=(); echo $#y; z=one; echo $#z'
 same "arguments" 'echo $#* $1; echo $2; echo $*; shift; echo $*; shift 5; echo $#*'
 same "concatenation" 'x=(a b c); echo $x.o pre$x a^b pre^$x^.c
 y=(1 2 3); echo $x$y; echo $x^-^$y'
+same "concatenation with a backquote" 'f=/a/b/c.o; echo lib/^`{basename $f}; x=(1 2); echo $x^`{echo y}; y=d/^`{echo z}; echo $y; echo `{echo x}^.o'
 same "concatenation errors" 'x=(a b); y=(1 2 3); echo $x$y'
 same "an empty list joined" 'echo x$nothing'
 same "globs" "touch a.c b.c c.h .hidden; mkdir d; touch d/e.c

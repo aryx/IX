@@ -69587,3 +69587,130 @@ Claude then sketched a `tiny/Buildfile` for item 6, with a plan doc, per-program
 **Yoann:**
 
 > let's commit. For 6, I agree with your plan, let's do it. for the outputs, they could be in the same directory, like we do in tiny/examples/ no ? and build build would produce a /src/build binary one could run
+
+------------------------------------------------------------------------
+
+## 2026-11-11 11:13
+
+**Yoann:**
+
+> This tiny/Buildfile should be well organized and readable and hopefully it can also be a useful teaching resource for students to understand how things fit together (the progs, the libs, the runtimes, the kernel, etc.)
+
+------------------------------------------------------------------------
+
+## 2026-11-11 11:15
+
+**Yoann:**
+
+> I wonder if it would make sense to have an ar command to make libraries under t-ix
+
+------------------------------------------------------------------------
+
+## 2026-11-11 11:15
+
+**Yoann:**
+
+> should be simple given we use marshal now to store .o
+
+**Claude (summary):**
+
+Claude explained that `Option.o` is byte-identical but `Option.tmi` differs by 10 bytes, from type variable numbering.
+Claude recommended option (a): give each unit only the interfaces it uses, so the Buildfile shows the real dependency graph.
+Claude warned that `Int64` names `int32` bare, so the derivation must also check type names, not just module prefixes.
+Claude also suggested adding `ar` as its own plan step after the Buildfile builds the library.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 11:20
+
+**Yoann:**
+
+> we can extend the tools (like we did with rm -f)
+
+------------------------------------------------------------------------
+
+## 2026-11-11 11:20
+
+**Yoann:**
+
+> if it helps simplifying code
+
+------------------------------------------------------------------------
+
+## 2026-11-11 11:22
+
+**Yoann:**
+
+> ask me though each time we possibly need to extend a tiny-tool to simplify things
+
+**Claude (summary):**
+
+Claude recommended asking before extending any tiny tool, and saved that as a standing rule.
+Claude found that `make self` exposed a real bug: tiny-rc split a `` lib/c/^`{basename $f} `` into two words, producing an entry named `lib/c/ start.o`.
+Claude fixed tiny-rc to join a word with a `` `{…} `` by `^` in both orders, matching mini-rc on four test cases including `$x^`{echo y}`.
+Claude confirmed mini-mk, test-tix, and the kernel check pass, and restarted `make self` in `_make8`, expecting about an hour.
+Claude also asked Yoann to pick option (a) or (b) for the library's per-unit interfaces, and whether to add `ar` as a new step.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 11:26
+
+**Yoann:**
+
+> why do we need this caret? I thought tiny-shell actually mentioned it didn't need this caret because of some other design decision
+
+**Claude (summary):**
+
+Claude explained that the header says adjacency joins pieces, so `^` shouldn't be needed for backquotes.
+Claude found that a backquote ends a word in the lexer, so neither the bare nor the `^` form joined.
+Claude proposed replacing its added `CARET` operator with adjacency handling, so backquotes join like any other piece.
+Claude noted that `^` would then be optional, and that the Makefile's `^` could be dropped too.
+Claude asked Yoann whether to make that change or keep the current `CARET` version, since it treats `^` as an operator.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 11:29
+
+**Yoann:**
+
+> maybe using ^ explicitely has some advantages ... maybe the script is clearer that way?
+
+**Claude (summary):**
+
+Claude recommended keeping the explicit `^` for backquote joins, since a backquote is a whole command and needs a visible join.
+Claude argued the shell stays simpler, because implicit backquote adjacency would need lexer and parser state about whitespace.
+Claude noted that Plan 9's rc accepts the explicit `^` form, so the scripts stay compatible with it.
+Claude proposed rewriting the header so it states that a backquote joins only with an explicit `^`, not by adjacency.
+Claude asked whether to make that header change and commit the rc fix once `make self` passes.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 11:29
+
+**Yoann:**
+
+> for sure we also want the implicit caret, but maybe explicit is also good?
+
+------------------------------------------------------------------------
+
+## 2026-11-11 11:31
+
+**Yoann:**
+
+> no I mean we want implicit for $x.o but it's fine to impose it for `{}
+
+------------------------------------------------------------------------
+
+## 2026-11-11 11:31
+
+**Yoann:**
+
+> whatever makes the code simpler and things easier to understand
+
+**Claude (summary):**
+
+Claude said the Buildfile's library units still needed a choice between options (a) and (b).
+Claude recommended option (a) for those library units over option (b).
+Claude did not spell out what options (a) and (b) would involve for the units.
+Claude left open whether the Buildfile plan should also add `ar`.
+Claude required an explicit `^` for word and `` `{…} `` joins in tiny-rc, and the checks passed.

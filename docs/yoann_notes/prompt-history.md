@@ -70006,3 +70006,107 @@ Claude added `ml -depend`, which writes each unit's object and interface depende
 Claude fixed alias handling for `module Machine = TinyMLMachine` and made file matching case-exact, so macOS no longer misreads `machine.ml`.
 Claude checked all 31 programs and kernel.img against the Makefile's bytes, plus the new -depend test and the other suites.
 Claude reported an uncaught Invalid_argument crash in tiny-ml's lexer on unterminated strings as a separate bug, left unfixed.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 13:57
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude reported committing `ml -depend` and the Buildfile's `.depend` as `50ff9638`, leaving the tree clean.
+Claude said a `make self` run for the `-I` commit's `self.expected` was still going in the worktree.
+Claude planned to check the images match and show the `self.expected` diff for review before committing it.
+Claude listed open items: tiny-ml crashes with an uncaught `Invalid_argument` on an unterminated string, needing a small fix.
+Claude also listed the Buildfile plan's steps 3 and 5 as still pending.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 13:58
+
+**Yoann:**
+
+> let's fix tiny-ml and move forward
+
+------------------------------------------------------------------------
+
+## 2026-11-11 14:00
+
+**Yoann:**
+
+> this "-I tests/TinyLibPlayground_tests" seems wrong in the INCLUDES of tiny/Buildfile
+
+------------------------------------------------------------------------
+
+## 2026-11-11 14:00
+
+**Yoann:**
+
+> why do we need that?
+
+------------------------------------------------------------------------
+
+## 2026-11-11 14:02
+
+**Yoann:**
+
+> in the tiny/Buildfile, why those long 
+>
+> TinyLibCore/Stdlib.o: TinyLibCore/Stdlib.ml
+>     ml -c -nostdlib -o $target $prereq
+> TinyLibCore/Stdlib.tmi: TinyLibCore/Stdlib.o
+> TinyLibCore/Char.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.ml
+>     ml -c -nostdlib -o $target $prereq
+> TinyLibCore/Char.tmi: TinyLibCore/Char.o
+> TinyLibCore/Seq.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
+>     TinyLibCore/Seq.ml
+>     ml -c -nostdlib -o $target $prereq
+> TinyLibCore/Seq.tmi: TinyLibCore/Seq.o
+> TinyLibCore/List.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
+>     TinyLibCore/Seq.tmi TinyLibCore/List.ml
+>     ml -c -nostdlib -o $target $prereq
+> TinyLibCore/List.tmi: TinyLibCore/List.o
+> TinyLibCore/String.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
+>     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.ml
+>     ml -c -nostdlib -o $target $prereq
+> TinyLibCore/String.tmi: TinyLibCore/String.o
+> TinyLibCore/Bytes.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
+>     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
+>     TinyLibCore/Bytes.ml
+>     ml -c -nostdlib -o $target $prereq
+> TinyLibCore/Bytes.tmi: TinyLibCore/Bytes.o
+> TinyLibCore/Array.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
+>     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
+>     TinyLibCore/Bytes.tmi TinyLibCore/Array.ml
+>     ml -c -nostdlib -o $target $prereq
+>
+>  deps? ml -depend should do most of this work too no?
+
+------------------------------------------------------------------------
+
+## 2026-11-11 14:03
+
+**Yoann:**
+
+> those "
+>
+> # ed
+> ed.o: $LIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibRegex.tmi \
+>     TinyEditorLine.tmi
+>     ml -nostdlib -o $target $prereq
+> ed: $CRT $MLRT ed.o TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibRegex.o \
+>     TinyEditorLine.o $LIBO $MLEND
+>     ld -map -s -n -o $target $prereq
+>
+> " seems very repetitive too; we should find a way to factorize and reduce the boilerplate
+
+**Claude (summary):**
+
+Claude proposed fixing repetition in the ix build files with two changes: per-program variables and library units found through `-I`.
+Claude suggested tiny-ml read `Stdlib.tmi` first and rename `Int64.ml`'s type to `Int32.int32` to enable that.
+Claude also proposed a per-program variable such as `ED = ...` with `${ED:%=%.tmi}` substitution, avoiding repeated lists in each program's rules.
+Claude noted a shared tiny-build pattern rule would need a new feature or naming convention, so it was deferred.
+Claude said it had the lexer fix passing all checks, uncommitted, and asked permission to commit it and the other steps.

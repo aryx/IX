@@ -51,10 +51,14 @@ let lex (s : string) : (token * int) array =
   and digit c = c >= '0' && c <= '9' in
   let is_id c = lower c || upper c || digit c || c = '_' || c = '\'' in
   let rec span j = if j < n && is_id s.[j] then span (j + 1) else j in
+  (* (the file's end after a backslash an error, not a read past it) *)
   let escape i =
+    if i >= n then error "unterminated string";
     match s.[i] with
     | 'n' -> 10, i + 1 | 't' -> 9, i + 1 | 'r' -> 13, i + 1 | 'b' -> 8, i + 1
-    | c when digit c -> int_of_string (String.sub s i 3), i + 3
+    | c when digit c ->
+        if i + 3 > n then error "unterminated string";
+        int_of_string (String.sub s i 3), i + 3
     | c -> Char.code c, i + 1
   in
   let rec comment i depth =
@@ -137,7 +141,10 @@ let lex (s : string) : (token * int) array =
           go (close (i + 2))
       | '"' ->
           let b = Buffer.create 16 in
+          (* (the file's end inside a string an error, not a read past
+           * it) *)
           let rec str j =
+            if j >= n then error "unterminated string";
             match s.[j] with
             | '"' -> j + 1
             | '\\' ->

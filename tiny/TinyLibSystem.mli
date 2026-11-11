@@ -238,6 +238,10 @@ val touch : < Cap.open_in; Cap.open_out; .. > -> Fpath.t -> unit
 (* the directory the process is in *)
 val getcwd : < Cap.env; .. > -> Fpath.t
 
+(*****************************************************************************)
+(* Time *)
+(*****************************************************************************)
+
 (* the date, the same on both sides: a 31-bit integer of tiny-ml's
  * holds 2000's seconds until 2034, where 1970's would not fit (old:
  * Unix's seconds on the host, 0 on tiny-kernel, which had no clock of

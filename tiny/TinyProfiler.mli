@@ -109,12 +109,50 @@
  * (profil(2)); gprof (Graham, Kessler and McKusick, 1982) added who
  * called whom. A machine that is a program can do better than sample:
  * it counts every instruction, and disturbs nothing, not even the
- * kernel with its interrupts off.
+ * kernel with its interrupts off. Later profilers went both ways:
+ * counting, by rewriting the program to count its basic blocks (MIPS's
+ * pixie, ATOM) or by running it on a simulated machine as here (Shade,
+ * Valgrind's Cachegrind and Callgrind); or sampling a whole machine at
+ * once, kernel and programs, at little cost (DCPI, Linux's perf,
+ * Google-Wide Profiling), drawn since as flame graphs.
  *
  * references:
  *  - plan_tiny_browser.md: the profile that found where www's time
  *    went, before this program existed
  *  - raspberry/observe/Prof.mli
+ *  - D. E. Knuth, "An Empirical Study of FORTRAN Programs" (Software:
+ *    Practice and Experience, 1971): statements counted as they run,
+ *    and most of the time in a few of them
+ *  - Unix Programmer's Manual, prof(1) and profil(2): the clock's
+ *    histogram of addresses
+ *  - S. L. Graham, P. B. Kessler and M. K. McKusick, "gprof: a Call
+ *    Graph Execution Profiler" (SIGPLAN Compiler Construction, 1982)
+ *  - Plan 9's prof(1), with tprof and kprof: a program's and the
+ *    kernel's profiles, the counterparts of vi's and 5i's
+ *  - R. F. Cmelik and D. Keppel, "Shade: A Fast Instruction-Set
+ *    Simulator for Execution Profiling" (SIGMETRICS, 1994): profiling
+ *    by simulating the machine, as tiny-machine does
+ *  - A. Srivastava and A. Eustace, "ATOM: A System for Building
+ *    Customized Program Analysis Tools" (PLDI, 1994): counts by
+ *    rewriting the binary
+ *  - T. Ball and J. R. Larus, "Optimally Profiling and Tracing
+ *    Programs" (TOPLAS, 1994) and "Efficient Path Profiling" (MICRO,
+ *    1996): counting a few edges and deriving the rest
+ *  - J. M. Anderson et al., "Continuous Profiling: Where Have All the
+ *    Cycles Gone?" (SOSP, 1997): DCPI, sampling a whole machine, the
+ *    kernel too
+ *  - N. Nethercote and J. Seward, "Valgrind: A Framework for Heavyweight
+ *    Dynamic Binary Instrumentation" (PLDI, 2007): Cachegrind's counts
+ *    of every instruction, the closest to this program
+ *  - G. Ren et al., "Google-Wide Profiling: A Continuous Profiling
+ *    Infrastructure for Data Centers" (IEEE Micro, 2010)
+ *  - T. Mytkowicz, A. Diwan, M. Hauswirth and P. F. Sweeney,
+ *    "Evaluating the Accuracy of Java Profilers" (PLDI, 2010): samplers
+ *    that disagree, where a count cannot
+ *  - C. Curtsinger and E. D. Berger, "Coz: Finding Code that Counts
+ *    with Causal Profiling" (SOSP, 2015): what a speedup would gain,
+ *    the worked example's "the place to look, not the answer"
+ *  - B. Gregg, "The Flame Graph" (CACM, 2016)
  *)
 
 (* the program: its arguments (its name first) to how it ends *)

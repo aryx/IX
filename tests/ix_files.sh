@@ -6,7 +6,10 @@
 # symbolic link: a kernel shares a unit with another that way) under
 # the paths, relative to ix's root, sorted; not the directories a
 # build makes (dune's _build and _build5, mini-mk's _mk, a kernel's
-# build), nor Claude Code's worktrees (.claude: other checkouts of ix).
+# build, make's _make and tiny-kernel's _make9 and the like: there
+# make self-quick's copy of the whole tree, _make/9pi/self/src), nor
+# _cross (configure's musl and ocaml-light.sh's OCaml, their own
+# sources), nor Claude Code's worktrees (.claude: other checkouts of ix).
 # A test takes its kind of file of them (grep '\.ml$').
 # The file system is asked, not git (git ls-files): a checkout without
 # its .git (Docker's) has the same files, and a new file is tested
@@ -16,5 +19,5 @@
 
 cd "$(dirname "$0")/.." || exit 1
 [ $# = 0 ] && set -- .
-find "$@" \( -name _build -o -name _build5 -o -name _mk -o -name .git -o -name .claude -o -name build -o -name __pycache__ \) -prune \
+find "$@" \( -name _build -o -name _build5 -o -name _mk -o -name .git -o -name .claude -o -name build -o -name '_make*' -o -name _cross -o -name __pycache__ \) -prune \
   -o \( -type f -o -type l \) -print | sed 's|^\./||' | LC_ALL=C sort

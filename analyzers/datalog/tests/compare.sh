@@ -8,11 +8,37 @@
 # its notes. Printed: ok, or the new reports whole (where they are now)
 # and those gone (as recorded).
 
-# -exn's lines: a toplevel's exception, not where it is raised (that list
-# moves with every edit), nor what most programs may raise (lib_core's)
+# -exn's lines: a toplevel's exception, without where it is raised (that
+# list moves with every edit). An exception of lib_core's, which most
+# programs may raise (Not_found, Failure, End_of_file...), is kept when
+# the program raises it itself, by the functions that do (outside
+# lib_core's files: a Hashtbl.find or a List.hd of the program's own),
+# and left out when lib_core alone does; once a program, its units'
+# toplevels each saying the same. The sites name files by their base
+# name: lib_core's are its files' names. Invalid_argument always left
+# out: every string's and array's index is one of its sites. (old: such
+# an exception always left out, the program's own raises with it)
 exn_lines() {
-  grep 'the toplevel may let ' | sed 's/, raised at .*//' |
-    grep -vE ' let (Invalid_argument|Failure|Not_found|Unix\.Unix_error|End_of_file|Sys_error|Queue\.Empty) escape'
+  grep 'the toplevel may let ' | awk -v libs="$(find lib_core -name '*.ml' \
+      -not -path '*/tests/*' -exec basename {} \; | sort -u | tr '\n' ' ')" '
+    BEGIN { n = split(libs, l, " "); for (i = 1; i <= n; i++) lib[l[i]] = 1 }
+    { i = index($0, ", raised at ")
+      head = i ? substr($0, 1, i - 1) : $0
+      if (head ~ / let Invalid_argument escape$/) next
+      if (head !~ / let (Failure|Not_found|Unix\.Unix_error|End_of_file|Sys_error|Queue\.Empty) escape$/) {
+        print head; next }
+      sites = i ? substr($0, i + 12) : ""; out = ""; split("", seen)
+      while (match(sites, /[^ ,]+\.ml:[0-9]+ \([^)]*\)/)) {
+        s = substr(sites, RSTART, RLENGTH); sites = substr(sites, RSTART + RLENGTH)
+        f = s; sub(/:.*/, "", f)
+        if (f in lib) continue
+        fn = s; sub(/^[^(]*\(/, "", fn); sub(/\)$/, "", fn)
+        if (!(fn in seen)) { seen[fn] = 1; out = out (out == "" ? "" : ", ") fn }
+      }
+      # (its units each the same: the first said)
+      key = head; sub(/^[^:]*: /, "", key); key = key out
+      if (out != "" && !(key in said)) { said[key] = 1; print head ", raised in " out }
+    }'
 }
 
 # a recording's # lines (notes, a triage), read before it is written

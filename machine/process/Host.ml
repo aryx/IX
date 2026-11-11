@@ -21,7 +21,10 @@ let errno : Unix.error -> int = function
   | ELOOP -> 40 | EUNKNOWNERR n -> n
   | _ -> 5
 
-let wrap f = try Ok (f ()) with Unix.Unix_error (e, _, _) -> Error (errno e) | Sys_error _ -> Error 2
+(* (Result.Error: Common's exception Error, opened, is the bare one for
+   mini-ml, which takes the latest Error, not the one of the type) *)
+let wrap f =
+  try Ok (f ()) with Unix.Unix_error (e, _, _) -> Result.Error (errno e) | Sys_error _ -> Result.Error 2
 
 (* Linux's signal numbers, OCaml's *)
 let signals = [

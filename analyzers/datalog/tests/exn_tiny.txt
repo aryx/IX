@@ -1,3 +1,20 @@
+# mini-analyze -exn on tiny/'s programs (tiny_check.sh -exn): the
+# exceptions their toplevels may let escape. Since 2026-11-11 lib_core's
+# too (Failure, Not_found, Unix_error...) where the program raises them
+# itself, with its functions that do (compare.sh's exn_lines). Not tried
+# yet: the 11 "raised in" lines; tiny-c's Division_by_zero false when
+# tried (1 / 0 and 7 % 0 said or folded, not raised).
+tiny-build: TinyBuildSystem.ml: the toplevel may let Not_found escape, raised in TinyBuildSystem:fun at line 464
 tiny-c: TinyC.ml: the toplevel may let Division_by_zero escape
+tiny-c: TinyC.ml: the toplevel may let Not_found escape, raised in emit, go, TinyCParser.assign_expr, loop, TinyCParser.primary, TinyCTree.binop_name
+tiny-c: TinyCTypes.ml: the toplevel may let Failure escape, raised in TinyC.main, TinyCParser.block, go, TinyCParser:fun at line 561, init
 tiny-db: TinyDatabase.ml: the toplevel may let Common.Error escape
+tiny-db: TinyDatabase.ml: the toplevel may let Not_found escape, raised in loop, comparison, TinyDatabase.show_access, TinyDatabase.rows, TinyDatabase:fun at line 638
+tiny-linker: TinyLinker.ml: the toplevel may let Failure escape, raised in args, TinyLinker.main
+tiny-machine-fetch: TinyMachineFetch.ml: the toplevel may let Unix.Unix_error escape, raised in try_
 tiny-machine-fetch: TinyMachineFetch.ml: the toplevel may let Zlib.Corrupt escape
+tiny-ml: TinyML.ml: the toplevel may let Not_found escape, raised in TinyML:fun at line 247, TinyMLCompile.prim, TinyMLMachine.instruction, TinyMLTypes:fun at line 254
+tiny-shell: TinyShell.ml: the toplevel may let Failure escape, raised in TinyShell.protect, TinyShell.code, TinyShell.exec, TinyShell.run, TinyShell.start
+tiny-shell: TinyShell.ml: the toplevel may let Not_found escape, raised in TinyShell.protect, TinyShell.run, TinyShell:fun at line 690
+tiny-shell: TinyShell.ml: the toplevel may let Unix.Unix_error escape, raised in TinyShell.protect, TinyShell.with_fds, TinyShell.run
+tiny-vcs: TinyVCS.ml: the toplevel may let Not_found escape, raised in TinyVCS.copy

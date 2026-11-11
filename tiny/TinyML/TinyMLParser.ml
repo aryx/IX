@@ -689,7 +689,8 @@ let rec items () : (Tree.item * int) list =
   | Lexer.KW "open" ->
       advance ();
       (match peek () with
-       | Lexer.UID m -> advance (); (Tree.IOpen m, l) :: items ()
+       | Lexer.UID m ->
+           advance (); Tree.open_cons m; (Tree.IOpen m, l) :: items ()
        | _ -> fail ())
   | Lexer.KW "exception" ->
       advance ();
@@ -700,7 +701,8 @@ let rec items () : (Tree.item * int) list =
         else []
       in
       Tree.add_con c
-        { kind = Tree.KExn; arity = List.length args; nconst = 0; nblock = 0;
+        { kind = Tree.KExn !Tree.unit_name; arity = List.length args;
+          nconst = 0; nblock = 0;
           scheme = Tree.TCon ("%c", Tree.tcon "exn" :: args) };
       (Tree.IExn c, l) :: items ()
   | Lexer.KW "external" ->

@@ -9,3 +9,8 @@ val ( ||| ) : 'a option -> 'a -> 'a
 
 (* options in sequence: Option.bind, as a binding operator *)
 val ( let* ) : 'a option -> ('a -> 'b option) -> 'b option
+
+(* what a tool finds wrong in its input (a command, a file, a query), which
+ * its command loop or main says to the person; a bug is a Failure instead *)
+exception Error of string
+val error : string -> 'a

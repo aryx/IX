@@ -29,7 +29,6 @@ the commands on standard input, one a line, each on dot, a range of the text:
 (* Regular expressions *)
 (*****************************************************************************)
 
-exception Error of string
 
 (* what the editor asks for: main is given more (Cap.main's all), its
  * type a row (..) *)
@@ -110,7 +109,7 @@ let skipbl () =
   while peekc () = ' ' || peekc () = '\t' do incr ip done; peekc ()
 let atnl () =
   if skipbl () <> '\n' && peekc () <> '\000' then
-    raise (Error "newline expected")
+    error "newline expected"
   else incr ip
 let num () =
   let s = !ip in
@@ -133,7 +132,7 @@ let regexp delim =
   in
   go ();
   if Buffer.length b > 0 then lastpat := Buffer.contents b;
-  if !lastpat = "" then raise (Error "no pattern");
+  if !lastpat = "" then error "no pattern";
   !lastpat
 
 (* a replacement or a text: \n is a newline, \ then the delimiter the
@@ -169,7 +168,7 @@ let simple () : simple option =
 let chain () : chain option =
   (* . and $ only first *)
   let later s =
-    match s with Some (Dot | Dollar) -> raise (Error "address") | _ -> s in
+    match s with Some (Dot | Dollar) -> error "address" | _ -> s in
   let first = simple () in
   let rec steps () =
     match skipbl () with
@@ -202,11 +201,11 @@ let rec parse () : cmd option =
     let c = getc () in
     let delim () =
       match skipbl () with
-      | '\n' | '\000' -> raise (Error "no pattern")
+      | '\n' | '\000' -> error "no pattern"
       | c
         when (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
              || (c >= '0' && c <= '9') ->
-          raise (Error ("bad delimiter `" ^ String.make 1 c ^ "'"))
+          error ("bad delimiter `" ^ String.make 1 c ^ "'")
       | _ -> getc ()
     in
     let text () =
@@ -270,7 +269,7 @@ let rec parse () : cmd option =
       | 'm' | 't' ->
           (match chain () with
            | Some a -> atnl (); Move (c = 'm', a)
-           | None -> raise (Error "address"))
+           | None -> error "address")
       | 'x' when (let n = peekc () in n = ' ' || n = '\t' || n = '\n') ->
           Loop (Lines, sub ())
       | 'x' | 'y' | 'g' | 'v' ->
@@ -288,7 +287,7 @@ let rec parse () : cmd option =
             else
               match parse () with
               | Some c -> cmds (c :: acc)
-              | None -> raise (Error "missing }")
+              | None -> error "missing }"
           in
           Block (cmds [])
       | 'r' -> File (Read, word ())
@@ -303,7 +302,7 @@ let rec parse () : cmd option =
           atnl ();
           Undo (if redo then -n else n)
       | '\n' -> Newline
-      | c -> raise (Error ("unknown command `" ^ String.make 1 c ^ "'"))
+      | c -> error ("unknown command `" ^ String.make 1 c ^ "'")
     in
     Some { addr; op }
 
@@ -325,7 +324,7 @@ let changes : change list ref = ref []   (* reversed *)
 let hi = ref 0      (* the changes so far end here: the next must not start before *)
 
 let change p0 p1 s =
-  if p0 < !hi then raise (Error "changes not in sequence");
+  if p0 < !hi then error "changes not in sequence";
   if p0 < p1 || s <> "" then changes := (p0, p1, s) :: !changes;
   hi := p1
 
@@ -375,7 +374,7 @@ let apply () =
 (* u n: n records committed from one list, their inverses pushed on
  * the other, so that a redo is an undo undone *)
 let undo n =
-  if !changes <> [] then raise (Error "u after a change");
+  if !changes <> [] then error "u after a change";
   let from, onto = if n > 0 then undos, redos else redos, undos in
   for _i = 1 to abs n do
     match !from with
@@ -394,7 +393,7 @@ let shift p =
     if p1 <= p then q + String.length s - (p1 - p0) else q) p !changes
 
 (* the library's errors, as this file's *)
-let compile p = try Regex.compile p with Failure m -> raise (Error m)
+let compile p = try Regex.compile p with Failure m -> error m
 
 (*****************************************************************************)
 (* Addresses *)
@@ -415,7 +414,7 @@ let lineaddr n ((q0, q1) : range) sign : range =
         if not (sign = 0 || q1 = 0) then
           (p := q1 - 1; k := (if t.[!p] = '\n' then 1 else 0); incr p);
         while !k < n do
-          if !p >= nc then raise (Error "address range");
+          if !p >= nc then error "address range";
           if t.[!p] = '\n' then incr k;
           incr p
         done;
@@ -431,7 +430,7 @@ let lineaddr n ((q0, q1) : range) sign : range =
     if n > 0 then begin
       let k = ref 0 in
       while !k < n do
-        if !p = 0 then (incr k; if !k <> n then raise (Error "address range"))
+        if !p = 0 then (incr k; if !k <> n then error "address range")
         else if t.[!p - 1] <> '\n' || (incr k; !k <> n) then decr p
       done;
       e := !p;
@@ -452,11 +451,11 @@ let next_match pat ((q0, q1) : range) forward : range =
       | Some c -> Some c
       | None -> Regex.search re t 0 (len ()) in
     match find q1 with
-    | None -> raise (Error "search")
+    | None -> error "search"
     | Some c when c.(0) = c.(1) && c.(0) = q1 ->
         (match find (if q1 + 1 > len () then 0 else q1 + 1) with
          | Some c -> (c.(0), c.(1))
-         | None -> raise (Error "search"))
+         | None -> error "search")
     | Some c -> (c.(0), c.(1))
   end
   else begin
@@ -465,11 +464,11 @@ let next_match pat ((q0, q1) : range) forward : range =
       | Some c -> Some c
       | None -> Regex.search_back re t (len ()) in
     match find q0 with
-    | None -> raise (Error "search")
+    | None -> error "search"
     | Some c when c.(0) = c.(1) && c.(1) = q0 ->
         (match find (if q0 - 1 < 0 then len () else q0 - 1) with
          | Some c -> (c.(0), c.(1))
-         | None -> raise (Error "search"))
+         | None -> error "search")
     | Some c -> (c.(0), c.(1))
   end
 
@@ -483,7 +482,7 @@ let simple_address (s : simple) (a : range) (sign : int) : range =
         if sign = 0 then (n, n)
         else if sign < 0 then (q0 - n, q0 - n)
         else (q1 + n, q1 + n) in
-      if fst r < 0 || snd r > len () then raise (Error "address range");
+      if fst r < 0 || snd r > len () then error "address range";
       r
   | Line n -> lineaddr n a sign
   | Search (d, pat) ->
@@ -509,7 +508,7 @@ let rec address (ad : addr) (a : range) : range =
         match r with
         | Some r -> address r (if sep = Semi then a1 else a)
         | None -> (len (), len ()) in
-      if snd a2 < fst a1 then raise (Error "address order");
+      if snd a2 < fst a1 then error "address order";
       (fst a1, snd a2)
 
 (*****************************************************************************)
@@ -597,7 +596,7 @@ let substitute ((q0, q1) : range) n pat rep g =
            end
      done
    with Exit -> ());
-  if not !did then raise (Error "substitution");
+  if not !did then error "substitution";
   dot := (q0, q1 + !delta)
 
 (* r w e f: the range read from a file, written to one; another file
@@ -612,10 +611,10 @@ let file_command
           change q0 q1 s;
           dot := (q0, q0 + String.length s);
           Buffer.add_string out ("#" ^ string_of_int (String.length s) ^ "\n")
-      | None -> raise (Error ("can't open " ^ name)))
+      | None -> error ("can't open " ^ name))
   | Write ->
       let name = if name = "" then !file else name in
-      if name = "" then raise (Error "no file name");
+      if name = "" then error "no file name";
       TinyLibSystem.write_file caps (Fpath.v name)
         (String.sub !text q0 (q1 - q0));
       if name = !file && q0 = 0 && q1 = len () then begin
@@ -635,7 +634,7 @@ let file_command
        | Some s ->
            change 0 (len ()) s; apply (); file := name; dot := (0, 0);
            modified := false
-       | None -> raise (Error ("can't open " ^ name)));
+       | None -> error ("can't open " ^ name));
       Buffer.add_string out (menu name)
   | Name ->
       if name <> "" then file := name; Buffer.add_string out (menu !file)
@@ -669,7 +668,7 @@ let rec exec
          * included: 2m1 is allowed) *)
         if q1 <= p then (change q0 q1 ""; change p p s)
         else if q0 >= p then (change p p s; change q0 q1 "")
-        else raise (Error "addresses overlap");
+        else error "addresses overlap";
         dot :=
           (shift p - (if p >= q1 then q1 - q0 else 0),
            shift p - (if p >= q1 then q1 - q0 else 0) + String.length s)
@@ -680,7 +679,7 @@ let rec exec
   | File (kind, name) -> file_command caps a kind name
   | Quit ->
       if !modified && not !warned then
-        (warned := true; raise (Error "changed files"));
+        (warned := true; error "changed files");
       flush caps;
       TinyLibSystem.exit caps Exit.OK
   | Undo n -> undo n
@@ -720,7 +719,7 @@ and loop caps ((q0, q1) as a : range) (k : loop) (sub : cmd) =
         match k with
         | Matches p -> true, p
         | Between p -> false, p
-        | _ -> raise (Error "loop") in
+        | _ -> error "loop" in
       let re = compile pat in
       let p = ref q0 and op = ref (if x then -1 else q0) in
       (try

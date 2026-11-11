@@ -77,7 +77,6 @@ and mode = Read | Write | Append
  * output; never split again *)
 type value = string list
 
-exception Error of string
 (* (not Exit: that is the standard library's, and tiny-ml has one space of
  * names) *)
 exception Exits of string
@@ -138,12 +137,12 @@ and redir lx fd mode : token =
     let start = lx.pos in
     while_ lx (fun c -> '0' <= c && c <= '9');
     match int_of_string_opt (String.sub lx.text start (lx.pos - start)) with
-    | Some n -> n | None -> raise (Error "bad redirection")
+    | Some n -> n | None -> error "bad redirection"
   in
   let file fd =
     match token lx with
     | WORD w -> Open (fd, mode, w)
-    | _ -> raise (Error "redirection without a file") in
+    | _ -> error "redirection without a file" in
   if peekc lx <> Some '[' then REDIR (file fd)
   else begin
     skip lx;
@@ -161,7 +160,7 @@ and word lx : word =
       let b = Buffer.create 16 in
       let rec quoted () =
         match peekc lx with
-        | None -> raise (Error "eof in quotes")
+        | None -> error "eof in quotes"
         | Some '\'' ->
             skip lx;
             if peekc lx = Some '\'' then
@@ -207,7 +206,7 @@ let peek (p : parser) : token =
   | Some t -> t
   | None -> let t = token p.lx in p.ahead <- Some t; t
 let next p = let t = peek p in p.ahead <- None; t
-let expect p t = if next p <> t then raise (Error "syntax error")
+let expect p t = if next p <> t then error "syntax error"
 let rec skipnl p = if peek p = NL then (ignore (next p); skipnl p)
 
 (* old: the keyword's string, matched as Some "if": a misspelling was
@@ -224,7 +223,7 @@ let keyword p : keyword option =
 let name p what =
   match next p with
   | WORD [ Lit (x, _) ] -> x
-  | _ -> raise (Error (what ^ ": a name"))
+  | _ -> error (what ^ ": a name")
 
 (* x= at the start of a word: x, and what follows the = *)
 let assignment (w : word) =
@@ -246,7 +245,7 @@ let rec body p stop : cmd =
       match next p with
       | AMP -> Async c
       | SEMI | NL -> c
-      | _ -> raise (Error "syntax error") in
+      | _ -> error "syntax error" in
     if stop (peek p) then c else Seq (c, body p stop)
 
 and and_or p =
@@ -268,7 +267,7 @@ and pipe p =
 (* what follows a | && or ||, on its line or the next ones; the text's
  * end there is an error, rc's, and at a terminal a line to continue *)
 and operand p command =
-  skipnl p; if peek p = EOF then raise (Error "syntax error"); command p
+  skipnl p; if peek p = EOF then error "syntax error"; command p
 
 and cond p =
   expect p LPAREN; let c = body p (( = ) RPAREN) in expect p RPAREN; skipnl p; c
@@ -333,7 +332,7 @@ and one_word p =
   match next p with
   | WORD w -> rest p w
   | BACKQ -> rest p [ Back (block p) ]
-  | _ -> raise (Error "syntax error")
+  | _ -> error "syntax error"
 
 (* w joined to a `{cmd} by an explicit ^, as Plan 9's rc does
  * (lib/^`{basename $f}, `{cat f}^.o): the ^ says the join, where a
@@ -497,7 +496,7 @@ let die (caps : < Cap.stderr; .. >) m : TSys.status =
 let fork (caps : < Cap.fork; Cap.stderr; .. >) (f : unit -> unit)
     : TSys.pid =
   TSys.flush caps;
-  match (try TSys.fork caps with Failure m -> raise (Error m)) with
+  match (try TSys.fork caps with Failure m -> error m) with
   | None ->
       let st =
         try f (); status () with Exits s -> s | Error m -> die caps m in
@@ -553,7 +552,7 @@ let with_fds (caps : < Cap.open_in; Cap.open_out; .. >)
              | Read -> TSys.open_in caps file
              | Write -> TSys.open_out caps file
              | Append -> TSys.open_append caps file)
-          with Failure m -> raise (Error (Fpath.to_string file ^ ": " ^ m)) in
+          with Failure m -> error (Fpath.to_string file ^ ": " ^ m) in
         TSys.dup2 f n;
         TSys.close f
   in
@@ -575,11 +574,11 @@ let eflag = ref false
 (* a list joined to another: distributing, or pairwise *)
 let join (a : value) (b : value) : value =
   match a, b with
-  | [], _ | _, [] -> raise (Error "null list in concatenation")
+  | [], _ | _, [] -> error "null list in concatenation"
   | [ x ], l -> List.map (fun y -> x ^ y) l
   | l, [ y ] -> List.map (fun x -> x ^ y) l
   | l1, l2 when List.length l1 = List.length l2 -> List.map2 ( ^ ) l1 l2
-  | _ -> raise (Error "mismatched list lengths in concatenation")
+  | _ -> error "mismatched list lengths in concatenation"
 
 (* [run caps e c]: c run; e, whether -e applies here: not in a
  * condition (old: a global count of the conditions being run, still
@@ -714,9 +713,9 @@ and redirs caps rs =
     | Dup (a, b) -> a, To_fd b
     | Open (n, mode, w) -> (
         match words caps [ w ] with
-        | [ "" ] -> raise (Error ": no file name")
+        | [ "" ] -> error ": no file name"
         | [ file ] -> n, To_file (Fpath.v file, mode)
-        | _ -> raise (Error "a redirection needs one file")))
+        | _ -> error "a redirection needs one file"))
 
 (* a word's values, escaped where not to glob *)
 and word caps (w : word) : value =

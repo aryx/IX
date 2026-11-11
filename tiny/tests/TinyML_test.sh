@@ -120,6 +120,22 @@ printf 'let x = 1e6\n' > $W/dep/F.ml
 if [ "$(cd $W/dep && $TML -depend -I . Main.ml B.ml F.ml 2> $W/dep/err)" = "Main.o: Shapes.tmi
 B.o: Shapes.tmi" ] && [ "$(cat $W/dep/err)" = "tiny-ml -depend: F.ml: int_of_string, left out" ]
 then echo "ok units: -depend, the units named, an alias not one, a file not read left out"; else echo "FAIL units: -depend"; failures=$((failures + 1)); fi
+# open M: M's constructors shadow the library's before them (Common's
+# exception Error over Logs's level Error, a constant), as M.C does
+printf 'open Common\nlet f () = try error "x" with Error m -> m\n' > $W/units/E1.ml
+printf 'let f () = try Common.error "x" with Common.Error m -> m\n' > $W/units/E2.ml
+if $TML -L $W/lib -c -o $W/units/E1.o $W/units/E1.ml && $TML -L $W/lib -c -o $W/units/E2.o $W/units/E2.ml
+then echo "ok units: open Common, its Error the one a bare Error names"; else echo "FAIL units: open's constructors"; failures=$((failures + 1)); fi
+# two units' exceptions of one name, beside Common's: three exceptions,
+# linked together, B's handler not catching A's
+printf 'exception Error of string\nlet f () = raise (Error "a")\n' > $W/units/ExA.ml
+printf 'exception Error of string\nlet g () = raise (Error "b")\n' > $W/units/ExB.ml
+printf 'let () = print_endline (try ExA.f () with ExB.Error _ -> "B" | ExA.Error m -> m)\n' > $W/units/ExM.ml
+if $TML -L $W/lib -o $W/units/ex.o $W/units/ExA.ml $W/units/ExB.ml $W/units/ExM.ml \
+   && link_tm $W/units/ex $L/start.tm $L/udivmod.tm $W/exit.tm $W/units/ex.o $W/main4096.o $LIB_O \
+   && [ "$(timeout 60 $CPU $W/units/ex 2>&1; echo "exit $?")" = "a
+exit 0" ]
+then echo "ok units: two units' Error, two exceptions"; else echo "FAIL units: two units' Error"; failures=$((failures + 1)); fi
 # a string the file ends inside, after a backslash or not: an error
 # that names the file, not a read past its end
 printf 'let x = "abc\n' > $W/dep/S1.ml; printf 'let y = "ab\\' > $W/dep/S2.ml

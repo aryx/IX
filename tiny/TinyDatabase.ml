@@ -14,8 +14,6 @@ module TSys = TinyLibSystem
 type caps =
   < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr >
 
-exception Error of string
-let error s = raise (Error s)
 
 (*****************************************************************************)
 (* Values *)

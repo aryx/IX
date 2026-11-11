@@ -65,9 +65,10 @@ type item =
   | IAlias of string * string
 
 (* a constructor: its number among its type's constant ones or among
- * the others (a block's tag), or an exception; its type as
+ * the others (a block's tag), or an exception, of the unit that
+ * declares it (its identity: two units' Error are two); its type as
  * %c(result, arguments...), generic in the type's parameters *)
-type kind = KConst of int | KBlock of int | KExn
+type kind = KConst of int | KBlock of int | KExn of string
 type cinfo = {
   kind : kind;
   arity : int;
@@ -113,6 +114,8 @@ val unit_name : string ref
 val known_units : string list ref
 (* a constructor declared in the current unit: as C and as M.C *)
 val add_con : string -> cinfo -> unit
+(* open M: M's constructors M.C made C, shadowing those before *)
+val open_cons : string -> unit
 (* a type expression as a type, its variables' names in vars *)
 val of_texpr : (string * ty) list ref -> texpr -> ty
 (* a name, its type not known yet *)

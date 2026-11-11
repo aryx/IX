@@ -3,9 +3,9 @@
 
 (* See Arm.mli *)
 
+open Common
 open Program
 open Link
-open Common
 module A = Asm
 
 (*****************************************************************************)

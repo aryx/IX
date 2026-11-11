@@ -4,3 +4,7 @@
 (* See Common.mli *)
 
 let ( ||| ) o default = match o with Some x -> x | None -> default
+
+exception Error of string
+
+let error s = raise (Error s)

@@ -108,8 +108,9 @@ val entry : int -> sym -> sym
 val closure_sym : sym -> sym
 (* [static_closure f n]: f's closure, a static block *)
 val static_closure : sym -> int -> sym
-(* an exception's identity, and the value of a constant one *)
-val exn_id : string -> sym
-val exn_const : string -> sym
+(* an exception's identity, and the value of a constant one: [exn_id
+ * unit c], of the unit that declares c *)
+val exn_id : string -> string -> sym
+val exn_const : string -> string -> sym
 (* an integer as the machine holds it, tagged *)
 val tagged : int -> int64

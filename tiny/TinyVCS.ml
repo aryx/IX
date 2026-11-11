@@ -30,9 +30,6 @@ and .tvcsignore's), every command undoable, a merge's conflicts committed.
   tiny-vcs clone ../repo copy; tiny-vcs pull ../repo; tiny-vcs push ../repo
 |}
 
-exception Error of string
-
-let error s = raise (Error s)
 
 (*****************************************************************************)
 (* Object types *)

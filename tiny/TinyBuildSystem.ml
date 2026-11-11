@@ -3,6 +3,7 @@
  *
  * See TinyBuildSystem.mli
  *)
+open Common
 module TSys = TinyLibSystem
 
 let usage =
@@ -72,8 +73,6 @@ let target_of (s : string) : target =
 
 let show_target = function Exact s -> s | Pattern (pre, suf) -> pre ^ "%" ^ suf
 
-exception Error of string
-let error s = raise (Error s)
 
 type caps =
   < Cap.forkew; Cap.env; Cap.open_in; Cap.open_out;

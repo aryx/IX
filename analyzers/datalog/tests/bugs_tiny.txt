@@ -9,15 +9,15 @@ tiny/TinyC/TinyCParser.ml:174: stack: TinyCParser.declarator calls itself, not a
 tiny/TinyC/TinyCParser.ml:177: stack: TinyCParser.declarator3 calls itself, not a tail call, over a list
 tiny/TinyC/TinyCParser.ml:340: stack: TinyCParser.call_args calls itself, not a tail call, over a list
 tiny/TinyC/TinyCTypes.ml:51: stack: TinyCTypes.size calls itself, not a tail call, over a list
-tiny/TinyDatabase.ml:173: evalorder: operands at 173:13 and 174:13, both with an effect: their order the compiler's
-tiny/TinyDatabase.ml:177: stack: TinyDatabase.ins calls itself, not a tail call, over a list
-tiny/TinyDatabase.ml:190: evalorder: operands at 190:17 and 192:17, both with an effect: their order the compiler's
-tiny/TinyDatabase.ml:210: stack: TinyDatabase.delete calls itself, not a tail call, over a list
+tiny/TinyDatabase.ml:171: evalorder: operands at 171:13 and 172:13, both with an effect: their order the compiler's
+tiny/TinyDatabase.ml:175: stack: TinyDatabase.ins calls itself, not a tail call, over a list
+tiny/TinyDatabase.ml:188: evalorder: operands at 188:17 and 190:17, both with an effect: their order the compiler's
+tiny/TinyDatabase.ml:208: stack: TinyDatabase.delete calls itself, not a tail call, over a list
+tiny/TinyDatabase.ml:507: stack: TinyDatabase.compile calls itself, not a tail call, over a list
 tiny/TinyDatabase.ml:509: stack: TinyDatabase.compile calls itself, not a tail call, over a list
-tiny/TinyDatabase.ml:511: stack: TinyDatabase.compile calls itself, not a tail call, over a list
-tiny/TinyDatabase.ml:515: stack: TinyDatabase.compile calls itself, not a tail call, over a list
-tiny/TinyDatabase.ml:588: evalorder: operands at 588:6 and 590:9, both with an effect: their order the compiler's
-tiny/TinyDatabase.ml:745: evalorder: operands at 747:6 and 747:27, both with an effect: their order the compiler's
+tiny/TinyDatabase.ml:513: stack: TinyDatabase.compile calls itself, not a tail call, over a list
+tiny/TinyDatabase.ml:586: evalorder: operands at 586:6 and 588:9, both with an effect: their order the compiler's
+tiny/TinyDatabase.ml:743: evalorder: operands at 745:6 and 745:27, both with an effect: their order the compiler's
 tiny/TinyDebugger.ml:336: evalorder: operands at 336:8 and 336:22, both with an effect: their order the compiler's
 tiny/TinyEditorScreen.ml:568: stack: TinyEditorScreen.take calls itself, not a tail call, over a list
 tiny/TinyEditorScreen.ml:648: stack: go calls itself, not a tail call, over a list
@@ -38,13 +38,13 @@ tiny/TinyLibGUI.ml:412: stack: rows calls itself, not a tail call, over a list
 tiny/TinyLibGUI.ml:648: stack: with_leaves calls itself, not a tail call, over a list
 tiny/TinyLibGUI.ml:649: stack: with_leaves calls itself, not a tail call, over a list
 tiny/TinyLibPlayground.ml:66: stack: pairs calls itself, not a tail call, over a list
-tiny/TinyML/TinyMLCompile.ml:434: stack: TinyMLCompile.match_cases calls itself, not a tail call, over a list
-tiny/TinyML/TinyMLCompile.ml:472: stack: TinyMLCompile.app calls itself, not a tail call, over a list
-tiny/TinyML/TinyMLCompile.ml:475: stack: TinyMLCompile.app calls itself, not a tail call, over a list
+tiny/TinyML/TinyMLCompile.ml:435: stack: TinyMLCompile.match_cases calls itself, not a tail call, over a list
+tiny/TinyML/TinyMLCompile.ml:473: stack: TinyMLCompile.app calls itself, not a tail call, over a list
 tiny/TinyML/TinyMLCompile.ml:476: stack: TinyMLCompile.app calls itself, not a tail call, over a list
-tiny/TinyML/TinyMLCompile.ml:518: stack: TinyMLCompile.closure calls itself, not a tail call, over a list
-tiny/TinyML/TinyMLCompile.ml:539: stack: TinyMLCompile.alloc_closure calls itself, not a tail call, over a list
+tiny/TinyML/TinyMLCompile.ml:477: stack: TinyMLCompile.app calls itself, not a tail call, over a list
+tiny/TinyML/TinyMLCompile.ml:519: stack: TinyMLCompile.closure calls itself, not a tail call, over a list
 tiny/TinyML/TinyMLCompile.ml:540: stack: TinyMLCompile.alloc_closure calls itself, not a tail call, over a list
+tiny/TinyML/TinyMLCompile.ml:541: stack: TinyMLCompile.alloc_closure calls itself, not a tail call, over a list
 tiny/TinyML/TinyMLCompile.ml:93: stack: cases calls itself, not a tail call, over a list
 tiny/TinyML/TinyMLPrintf.ml:113: stack: adds calls itself, not a tail call, over a list
 tiny/TinyML/TinyMLPrintf.ml:119: stack: adds calls itself, not a tail call, over a list
@@ -75,16 +75,16 @@ tiny/TinyOffice/TinyOfficeDrawing.ml:42: stack: take calls itself, not a tail ca
 tiny/TinyOffice/TinyOfficeFile.ml:80: stack: any calls itself, not a tail call, over a list
 tiny/TinyOffice/TinyOfficeModel.ml:107: stack: TinyOfficeModel.replace calls itself, not a tail call, over a list
 tiny/TinyOffice/TinyOfficePaint.ml:108: stack: rows calls itself, not a tail call, over a list
-tiny/TinyShell.ml:283: evalorder: operands at 283:8 and 283:19, both with an effect: their order the compiler's
-tiny/TinyShell.ml:344: stack: TinyShell.rest calls itself, not a tail call, over a list
-tiny/TinyTracer.ml:126: stack: go calls itself, not a tail call, over a list
-tiny/TinyTracer.ml:131: stack: go calls itself, not a tail call, over a list
+tiny/TinyShell.ml:282: evalorder: operands at 282:8 and 282:19, both with an effect: their order the compiler's
+tiny/TinyShell.ml:343: stack: TinyShell.rest calls itself, not a tail call, over a list
+tiny/TinyTracer.ml:127: stack: go calls itself, not a tail call, over a list
 tiny/TinyTracer.ml:132: stack: go calls itself, not a tail call, over a list
 tiny/TinyTracer.ml:133: stack: go calls itself, not a tail call, over a list
 tiny/TinyTracer.ml:134: stack: go calls itself, not a tail call, over a list
+tiny/TinyTracer.ml:135: stack: go calls itself, not a tail call, over a list
 tiny/TinyTroff.ml:557: stack: places calls itself, not a tail call, over a list
-tiny/TinyVCS.ml:493: stack: groups calls itself, not a tail call, over a list
-tiny/TinyVCS.ml:576: order: in TinyVCS.lca, a table's order reaches the output at tiny/TinyVCS.ml:736, tiny/TinyVCS.ml:799
-tiny/TinyVCS.ml:747: evalorder: operands at 747:12 and 747:38, both with an effect: their order the compiler's
+tiny/TinyVCS.ml:490: stack: groups calls itself, not a tail call, over a list
+tiny/TinyVCS.ml:573: order: in TinyVCS.lca, a table's order reaches the output at tiny/TinyVCS.ml:733, tiny/TinyVCS.ml:796
+tiny/TinyVCS.ml:744: evalorder: operands at 744:12 and 744:38, both with an effect: their order the compiler's
 tiny/TinyWindows.ml:135: stack: upto calls itself, not a tail call, over a list
 tiny/TinyWindows.ml:511: stack: theirs calls itself, not a tail call, over a list

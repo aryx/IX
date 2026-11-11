@@ -60,9 +60,10 @@ type item =
   | IAlias of string * string          (* module A = M *)
 
 (* a constructor: its number among its type's constant ones or among
- * the others (a block's tag), or an exception; its type as
+ * the others (a block's tag), or an exception, of the unit that
+ * declares it (its identity: two units' Error are two); its type as
  * %c(result, arguments...), generic in the type's parameters *)
-type kind = KConst of int | KBlock of int | KExn
+type kind = KConst of int | KBlock of int | KExn of string
 type cinfo = { kind : kind; arity : int; nconst : int; nblock : int; scheme : ty }
 
 let cons : (string, cinfo) Hashtbl.t = Hashtbl.create 64
@@ -137,6 +138,23 @@ let known_units : string list ref = ref []
 let add_con c (ci : cinfo) =
   Hashtbl.replace cons c ci;
   Hashtbl.replace cons (!unit_name ^ "." ^ c) ci
+
+(* open M: M's constructors are C, as if declared there, so that they
+ * shadow the library's before them (Common's Error over Logs's level
+ * Error), and a declaration after the open shadows them in turn. Of M
+ * itself, not of its modules: M.N.C stays M.N.C *)
+let open_cons m =
+  let m = match List.assoc_opt m !con_aliases with Some u -> u | None -> m in
+  let p = m ^ "." in
+  let n = String.length p in
+  let opened =
+    Hashtbl.fold (fun c ci acc ->
+        let k = String.length c in
+        if k > n && String.sub c 0 n = p
+           && not (String.contains (String.sub c n (k - n)) '.')
+        then (String.sub c n (k - n), ci) :: acc
+        else acc) cons [] in
+  List.iter (fun (c, ci) -> Hashtbl.replace cons c ci) opened
 
 let rec of_texpr vars = function
   | TEVar v ->

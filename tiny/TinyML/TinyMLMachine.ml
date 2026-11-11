@@ -537,9 +537,14 @@ let static_closure lab n =
   sym
 
 (* an exception: a block with its name, compared by address; its value
- * a block [the exception; its arguments], a static one without them *)
-let exn_id c = "ml_exn_" ^ Tree.con_base c
-let exn_const c = "ml_exv_" ^ Tree.con_base c
+ * a block [the exception; its arguments], a static one without them.
+ * Its symbol names its unit, so that two units' Error are two, Stdlib's
+ * alone bare (ml_exn_Failure; as mini-ml's caml_exn_). (old: the name
+ * alone, two units' Error one symbol, a duplicate when both linked) *)
+let exn_sym pre u c =
+  pre ^ (if u = "Stdlib" then "" else u ^ "_") ^ Tree.con_base c
+let exn_id u c = exn_sym "ml_exn_" u c
+let exn_const u c = exn_sym "ml_exv_" u c
 
 (* (old: 2L, 1L, literals tiny-ml does not read) *)
 let tagged n = Int64.add (Int64.mul (Int64.of_int 2) (Int64.of_int n)) Int64.one

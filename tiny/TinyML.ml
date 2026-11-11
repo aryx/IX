@@ -78,11 +78,12 @@ let compile_unit (items : (Tree.item * int) list) =
           Types.add_name Compile.globals x b;
           (x, b) :: defs
       | Tree.IExn c ->
-          Machine.block (Machine.exn_id c) (Machine.header 1 0)
+          let u = !Tree.unit_name in
+          Machine.block (Machine.exn_id u c) (Machine.header 1 0)
             [ Machine.DVal (Machine.static_string c) ];
           if (Tree.find_con c).arity = 0 then
-            Machine.block (Machine.exn_const c) (Machine.header 1 0)
-              [ Machine.DVal (Machine.exn_id c) ];
+            Machine.block (Machine.exn_const u c) (Machine.header 1 0)
+              [ Machine.DVal (Machine.exn_id u c) ];
           defs
       | Tree.ILet (r, bs) ->
           (* (the names it adds, in the table: old, the env's first

@@ -148,7 +148,8 @@ let rec refutable = function
   | Tree.PRecord (fs, _, _) -> List.exists (fun (_, p) -> refutable p) fs
   | Tree.PCon (c, ps) ->
       let ci = Tree.find_con c in
-      ci.nconst + ci.nblock > 1 || ci.kind = Tree.KExn
+      ci.nconst + ci.nblock > 1
+      || (match ci.kind with Tree.KExn _ -> true | _ -> false)
       || List.exists refutable ps
   | Tree.PConst _ | Tree.POr _ -> true
 
@@ -200,10 +201,10 @@ let rec test acc s p fail =
            if ci.nblock > 1 then
              check [ Machine.Op Machine.Tag; Machine.Imm (Machine.tagged t);
                Machine.Op (Machine.Cmp Machine.Eq) ]
-       | Tree.KExn ->
-         check [ Machine.Field 0; Machine.Addr (Machine.exn_id c);
+       | Tree.KExn u ->
+         check [ Machine.Field 0; Machine.Addr (Machine.exn_id u c);
            Machine.Op (Machine.Cmp Machine.Eq) ]);
-      fields (if ci.kind = Tree.KExn then 1 else 0) ps acc
+      fields (match ci.kind with Tree.KExn _ -> 1 | _ -> 0) ps acc
   | Tree.POr (a, b) ->
       let other = Machine.label () and ok = Machine.label () in
       ignore (test acc s a other);
@@ -213,7 +214,7 @@ let rec test acc s p fail =
       emit (Machine.Label ok);
       acc
 
-let match_failure () = emit (Machine.Addr (Machine.exn_const "Match_failure"));
+let match_failure () = emit (Machine.Addr (Machine.exn_const "Stdlib" "Match_failure"));
 emit Machine.Raise
 
 (* a primitive: an instruction, or a call of the runtime; a comparison
@@ -287,10 +288,10 @@ let rec value env e =
       | Tree.KBlock t ->
           List.iter (value env) (List.rev args);
           emit (Machine.Alloc (t, List.length args))
-      | Tree.KExn when args = [] -> emit (Machine.Addr (Machine.exn_const c))
-      | Tree.KExn ->
+      | Tree.KExn u when args = [] -> emit (Machine.Addr (Machine.exn_const u c))
+      | Tree.KExn u ->
           List.iter (value env) (List.rev args);
-          emit (Machine.Addr (Machine.exn_id c));
+          emit (Machine.Addr (Machine.exn_id u c));
           emit (Machine.Alloc (0, 1 + List.length args)))
   | Tree.Tuple es -> fields_block (List.map (fun e () -> value env e) es)
   (* a record is a tuple of its fields in their declaration's order,

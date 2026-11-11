@@ -82,8 +82,9 @@ check-mix:
 # js_of_ocaml and the kernels' images, put in the assets' repository,
 # which its own GitHub Pages serve (the playground's programs are there
 # too): the page loads js/ix/TinyMachineWeb.bc.js and fetches
-# ix/tiny-kernel/boot.img (and, as the other end of the machine's wire,
-# ix/tiny-kernel/www/'s documents), or ix/t6/'s kernel.img and fs.img.
+# ix/tiny-kernel/boot.img and disk.img, /src (and, as the other end of
+# the machine's wire, ix/tiny-kernel/www/'s documents), or ix/t6/'s
+# kernel.img and fs.img.
 # Then, by hand: the number after ?v= in docs/t-ix.html changed (a
 # browser keeps the program it has otherwise), the assets committed and
 # pushed first, the page after, so that no page points at a file not
@@ -94,7 +95,7 @@ website:
 	for k in tiny-kernel t6; do ./tiny-machine -web $$d/$$k $$k; mkdir -p $(ASSETS)/ix/$$k; done; \
 	mkdir -p $(ASSETS)/js/ix; \
 	install -m 644 $$d/tiny-kernel/TinyMachineWeb.js $(ASSETS)/js/ix/TinyMachineWeb.bc.js; \
-	install -m 644 $$d/tiny-kernel/boot.img $(ASSETS)/ix/tiny-kernel/; \
+	install -m 644 $$d/tiny-kernel/boot.img $$d/tiny-kernel/disk.img $(ASSETS)/ix/tiny-kernel/; \
 	mkdir -p $(ASSETS)/ix/tiny-kernel/www; install -m 644 $$d/tiny-kernel/www/* $(ASSETS)/ix/tiny-kernel/www/; \
 	install -m 644 $$d/t6/kernel.img $$d/t6/fs.img $(ASSETS)/ix/t6/
 	$(MAKE) website-mini

@@ -45,7 +45,8 @@ The script builds the tools with dune and calls them. By hand:
 | `tiny-linker [-a n] [-map] -o out f.o...` | objects to an image, the first at 0 (`-a n`: an a.out for tiny-kernel that asks for n MB; `-map`: `out.map`, each label's address) |
 | `tiny-cpu image` | runs a program alone, the host answering its three system calls |
 | `tiny-machine image` | the same with the machine around the CPU: the image is a kernel's |
-| `tiny-mkfs` | t6's disk image (`tiny/TinyKernel/steps/t6/TinyMkfs.ml`) |
+| `tiny-mkfs [-m n] disk.img name=file...` | a disk of tiny-kernel's file system, made on the host by the kernel's own `TinyKernelFS.ml` (`tiny/TinyKernel/host/TinyMkfs.ml`; `-l disk.img` lists it) |
+| `tiny-mkfat` | t6's disk image (`tiny/TinyKernel/steps/t6/TinyMkfat.ml`) |
 | `tiny-prof p -k k.map -u p.map` | where the instructions went, by function, from a profile written by `tiny-cpu -prof p` or `tiny-machine -prof p` and the maps of the links (`tiny/TinyProfiler.ml`; its `.mli` shows how it found what made `www`'s scrolling slow) |
 
 `tiny-cpu -h` and `tiny-machine -h` show each option on an example.
@@ -69,7 +70,7 @@ A tiny program is either the host's or the tiny machine's.
     the host (OCaml, built by dune or by ix's own tools)
       tiny-c, tiny-ml          compilers: C and ML to objects (-S: assembly)
       tiny-cpu, tiny-machine   the assembler, the linker and the machine
-      tiny-mkfs                disk images
+      tiny-mkfat               disk images
       tiny-machine-window      the screen in a window (SDL)
             |
             |  .s files, linked to an image
@@ -88,11 +89,11 @@ one of them: OCaml never compiles it, tiny-ml does.
 Each is one file, or a file and its parts in a folder of its name
 (`TinyC/`, `TinyML/`, `TinyMachine/`, `TinyBrowser/`, `TinyOffice/`),
 but not all stand alone. From `tiny/dune` (and
-`tiny/TinyKernel/steps/t6/dune`, tiny-mkfs's):
+`tiny/TinyKernel/steps/t6/dune`, tiny-mkfat's):
 
 | program | outside `tiny/` |
 |---|---|
-| tiny-cpu, tiny-mkfs | `lib_core/`, `fpath`, `caps` |
+| tiny-cpu, tiny-mkfat | `lib_core/`, `fpath`, `caps` |
 | tiny-machine, tiny-shell, tiny-utils, tiny-editor, tiny-prof, tiny-db, tiny-c, tiny-ml, tiny-assembler, tiny-linker | `lib_core/`, `fpath`, `caps`, `unix` (the tools through the host's `TinyLibSystem`, `TinyLibSystem/unix/`) |
 | tiny-vcs, tiny-build | the same, and `lib_crypto/` (SHA-1; TinyLibCore's `Sha1` under tiny-ml) |
 | tiny-machine-window | SDL by `tsdl` (`TinyMachine/TinyMachineSDL.ml`; mini-qemu has its own, `raspberry/video/Sdl_display.ml`) |
@@ -132,7 +133,7 @@ from ix's `bin/`:
 | Makefile | what it builds |
 |---|---|
 | `tiny/TinyKernel/steps/Makefile` | `libc.s` (from `tiny/runtime/`), `hello`, then each step |
-| `tiny/TinyKernel/steps/t6/` | `kernel.img`, the user programs, `fs.img` (tiny-mkfs) |
+| `tiny/TinyKernel/steps/t6/` | `kernel.img`, the user programs, `fs.img` (tiny-mkfat) |
 | `tiny/TinyKernel/Makefile` | `kernel.img`, the user programs, `boot.img` |
 
 Each writes what it builds in a `_make/` of its own directory, and
@@ -147,9 +148,10 @@ The steps are always the same two, the assembly written by hand
     tiny-linker -o kernel.img entry.o ... x.o              # a kernel: linked at 0
     tiny-linker -o prog start.o udivmod.o libc.o prog.o    # a program
 
-TinyKernel.ml has no disk: `boot.img` is `kernel.img` followed by
-its files, each a name, a size and its bytes, which the kernel reads
-at its start. A line `link utils` in place of the size makes a hard
+`boot.img` is `kernel.img` followed by its files (`/bin`, `/lib`,
+`/examples`), each a name, a size and its bytes, which the kernel reads
+at its start; the sources, `/src`, are on the disk, `disk.img` (by
+`tiny-mkfs`), as m-ix's machine has its `boot.img` and its `card.img`. A line `link utils` in place of the size makes a hard
 link instead, as the `link` call does: the name is given the same file
 as `utils`, with no bytes of its own. That is how one program, `utils`
 (`tiny/TinyUtilities.ml`, by tiny-ml), is `cat`, `ls`, `wc` and the 24
@@ -572,7 +574,7 @@ What the numbers mean is up to who answers:
 
 | addresses | what |
 |---|---|
-| from 0 | the kernel's image, then the files it carries (10 MB at most) |
+| from 0 | the kernel's image, then the files it carries (10 MB at most; /src is on the disk) |
 | `0xa00000` | the file system's buffers and its map of the disk's blocks |
 | `0xb00000` | the ML runtime's stack of values |
 | `0xb40000` | the processes' frames: 17 words each, their registers and pc |

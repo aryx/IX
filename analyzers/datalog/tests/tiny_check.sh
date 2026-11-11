@@ -71,13 +71,14 @@ tiny-db|-|$S $T/TinyDatabase.ml
 tiny-vcs|-I lib_crypto|$S $T/TinyVCS.ml
 tiny-assembler|-|$L $S $T/TinyAssembler.ml
 tiny-linker|-|$L $S $T/TinyLinker.ml
+tiny-ar|-|$L $S $T/TinyArchiver.ml
 tiny-cpu|-|$CPU $S $T/TinyCPU.ml
 tiny-prof|-|$S $L $T/TinyProfiler.ml
 tiny-ml|-|$S $TML $T/TinyML.ml
 tiny-machine|-I lib_core/parallel|$CPU $S $M/TinyMachineDevices.ml $T/TinyKernel/TinyKernelNetwork.ml $BROWSER $M/TinyMachinePeer.ml $T/TinyMachine.ml
 tiny-machine-socket|-|$S $M/TinyMachineSocket.ml
 tiny-machine-fetch|$NET -I lib_graphics/core -I lib_graphics/images|$CPU $S $M/TinyMachineDevices.ml $BROWSER $M/TinyMachineFetch.ml
-tiny-mkfs|-|$S $T/TinyKernel/steps/t6/TinyMkfs.ml
+tiny-mkfat|-|$S $T/TinyKernel/steps/t6/TinyMkfat.ml
 mkfont|-I lib_graphics/core -I lib_graphics/geometry -I lib_graphics/fonts -I lib_graphics/software|$S $T/TinyKernel/fonts/Mkfont.ml
 windows|-|$S $T/TinyLibDraw.ml $T/TinyWindows.ml $T/user/windows.ml
 bigmem|-|$S $T/user/bigmem.ml

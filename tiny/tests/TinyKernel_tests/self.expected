@@ -1,5 +1,5 @@
 tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
-tiny-kernel: / on a disk of 65536 KB, 65532 KB free; 0 snapshots in /dump
+tiny-kernel: / on a disk of 65536 KB, 63725 KB free; 1 snapshots in /dump
 $ % % as -o entry.o /src/TinyKernel/entry.s
 as -o udivmod.o /src/runtime/udivmod.s
 cc -o runtime.o /src/TinyKernel/runtime.c

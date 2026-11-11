@@ -107,7 +107,7 @@ type milliseconds = int
  * arguments (its name first), its result how it ends: Err's words, or
  * a Failure's that f lets out, said after name, the status 1; Code n
  * (or ExitCode n raised), n. name is for the host's logs too. The
- * host-only programs (tiny-cpu, tiny-machine and its helpers, tiny-mkfs,
+ * host-only programs (tiny-cpu, tiny-machine and its helpers, tiny-mkfat,
  * Mkfont) end by it too, for the same words said the same way *)
 val main : string -> (Cap.all_caps -> string array -> Exit.t) -> unit
 

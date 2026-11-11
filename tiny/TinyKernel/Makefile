@@ -122,10 +122,12 @@ TML = $(call tool,tiny-ml)
 TC = $(call tool,tiny-c)
 AS = $(call tool,tiny-assembler)
 LD = $(call tool,tiny-linker)
+MKFS = $(call tool,tiny-mkfs)
 CPU = $(call tool,tiny-cpu)
 MACHINE = $(call tool,tiny-machine)
 TCBIN = $(wildcard $(TC))
 LDBIN = $(wildcard $(LD))
+MKFSBIN = $(wildcard $(MKFS))
 
 # how the kernel gives the processes memory (TinyKernelMemory.mli)
 MEMORY = partitions
@@ -135,7 +137,7 @@ MEMSIZE = $(if $(filter segments,$(MEMORY)),9,6)
 # make check's check.expected, sessions (.events) and screens' sums (.cksum)
 T = ../tests/TinyKernel_tests
 # coupling: ../Buildfile, t-IX's build by tiny-build under t-IX, says
-# what these lists say (CORE, UNITS_x, I_x, MEM_x, KUNITS, SRC): a
+# what these lists say (CORE, UNITS_x, I_x, MEM_x, KUNITS): a
 # change to one is a change to the other, until this Makefile is made
 # from it (docs/plans/plan_tiny_buildfile.md)
 # tiny-ml's standard library, TinyLibCore/'s modules in their order, each
@@ -157,7 +159,7 @@ L = ../runtime
 SYS = ../TinyLibSystem/tinykernel
 ULIB = $(O)/start.o $(O)/udivmod.o $(O)/libc.o $(O)/libc/sys.o
 
-all: $(O)/boot.img
+all: $(O)/boot.img $(O)/disk.img
 
 # an object of assembly written by hand: a .s made in _make/ (font.s),
 # or one here, or the C runtime's (the compilers write their objects
@@ -496,13 +498,14 @@ EXAMPLES = steps/t6/user/wc.c user/sh.c ../user/emacs.ml ../TinyEditorScreen.ml 
 	$(U)/TinyLibMachine.tmi $(U)/TinyLibMachine.o \
 	../examples/hello.c ../examples/square.s ../examples/helloml.ml ../examples/Buildfile
 
-# the sources, in /src as they are in tiny/, what tiny-kernel builds
-# itself from (make self): the kernel's, each unit's file, the
-# library's, the C, and the .mli beside an .ml; with font.s and the
-# Buildfile, made here, in /src/TinyKernel; the library's interfaces and
-# objects in /lib/ml, where tiny-ml reads them (plan_tiny_self_hosting.md,
-# step 8; old: step 7's /src had ping's C and a unit; not /sys/src,
-# Plan 9's, as /sys is principia's devsys)
+# the sources, in /src as they are in tiny/, on the disk (disk.img,
+# below), what tiny-kernel builds itself from (make self): the
+# kernel's, each unit's file, the library's, the C, and the .mli beside
+# an .ml; with font.s and the Buildfile, made here, in /src/TinyKernel;
+# the library's interfaces and objects in /lib/ml, in the image, where
+# tiny-ml reads them (plan_tiny_self_hosting.md, step 8; old: step 7's
+# /src had ping's C and a unit; not /sys/src, Plan 9's, as /sys is
+# principia's devsys)
 C_PROGS = sh mltests ping get put httpd
 SRC_FILES = entry.s draw.s memory.s end.s runtime.c \
 	$(foreach u,$(UNITS),$(or $(F_$(u)),../$(u).ml)) $(CORE:%=../TinyLibCore/%.ml) libc/user.h libc/sys.s libc/draw.c libc/draw.h libc/net.c $(SYS)/mlsys.c \
@@ -539,26 +542,23 @@ define BUILDFILE
 # the same as TinyKernel/Makefile's on the host, byte for byte (it made
 # this file of its lists): in a directory of the disk,
 #   build -f /src/TinyKernel/Buildfile
-# (plan_tiny_self_hosting.md, step 8)
+# (plan_tiny_self_hosting.md, step 8); the image alone: /src, on the
+# disk, is the host's (disk.img, by tiny-mkfs)
 CORE = $(CORE)
 LIB = $(CORE:%=lib/%.tmi)
 LIBO = $(CORE:%=lib/%.o)
 ULIB = start.o udivmod.o libc.o libc/sys.o
 PROGS = $(PROGS)
 EXAMPLES = $(notdir $(EXAMPLES))
-SRC = $(SRC)
-GEN = $(GEN)
 LIBFILES = $(LIBFILES)
 LIBC = start.o udivmod.o libc.o libc/sys.o $(K)/lib/c/Buildfile
 LIBML = libml/mlsys.o end.o $(K)/lib/ml/Buildfile
 UTILS = $(UTILS)
 
-boot.img: kernel.img $(PROGS:%=bin/%) $(addprefix /examples/,$(notdir $(EXAMPLES))) $(SRC:%=/src/%) $(GEN:%=$(K)/%) $(LIBFILES:%=lib/%) $$LIBC $$LIBML
+boot.img: kernel.img $(PROGS:%=bin/%) $(addprefix /examples/,$(notdir $(EXAMPLES))) $(LIBFILES:%=lib/%) $$LIBC $$LIBML
 	cat kernel.img > $$target
 	for(f in $$PROGS) { n=`{wc -c < bin/$$f}; echo bin/$$f; echo $$n; cat bin/$$f } >> $$target
 	for(f in $$EXAMPLES) { n=`{wc -c < /examples/$$f}; echo examples/$$f; echo $$n; cat /examples/$$f } >> $$target
-	for(f in $$SRC) { n=`{wc -c < /src/$$f}; echo src/$$f; echo $$n; cat /src/$$f } >> $$target
-	for(f in $$GEN) { n=`{wc -c < /src/TinyKernel/$$f}; echo src/TinyKernel/$$f; echo $$n; cat /src/TinyKernel/$$f } >> $$target
 	for(f in $$LIBFILES) { n=`{wc -c < lib/$$f}; echo lib/ml/$$f; echo $$n; cat lib/$$f } >> $$target
 	for(f in $$LIBC) { n=`{wc -c < $$f}; echo lib/c/^`{basename $$f}; echo $$n; cat $$f } >> $$target
 	for(f in $$LIBML) { n=`{wc -c < $$f}; echo lib/ml/^`{basename $$f}; echo $$n; cat $$f } >> $$target
@@ -625,13 +625,11 @@ $(O)/spin.prof: ../tests/TinyProfiler_tests/spin.s
 	$(CPU) -prof $@ $(O)/spin > /dev/null
 $(O)/spin.map: $(O)/spin.prof
 
-$(O)/boot.img: $(O)/kernel.img $(BINS) $(EXAMPLES) $(SRC:%=../%) $(GEN:%=$(O)/%) $(LIBFILES:%=$(O)/lib/%) $(LIBC) $(LIBML)
+$(O)/boot.img: $(O)/kernel.img $(BINS) $(EXAMPLES) $(LIBFILES:%=$(O)/lib/%) $(LIBC) $(LIBML)
 	@grep -qx 'CORE = $(CORE)' lib/ml/Buildfile || { echo "lib/ml/Buildfile: its CORE not this Makefile's"; exit 1; }
 	cp $(O)/kernel.img $@
 	for f in $(BINS); do printf 'bin/%s\n%d\n' $$(basename $$f) $$(wc -c < $$f) >> $@; cat $$f >> $@; done
 	for f in $(EXAMPLES); do printf 'examples/%s\n%d\n' $$(basename $$f) $$(wc -c < $$f) >> $@; cat $$f >> $@; done
-	for f in $(SRC); do printf 'src/%s\n%d\n' $$f $$(wc -c < ../$$f) >> $@; cat ../$$f >> $@; done
-	for f in $(GEN); do printf 'src/TinyKernel/%s\n%d\n' $$f $$(wc -c < $(O)/$$f) >> $@; cat $(O)/$$f >> $@; done
 	for f in $(LIBFILES); do printf 'lib/ml/%s\n%d\n' $$f $$(wc -c < $(O)/lib/$$f) >> $@; cat $(O)/lib/$$f >> $@; done
 	for f in $(LIBC); do printf 'lib/c/%s\n%d\n' $$(basename $$f) $$(wc -c < $$f) >> $@; cat $$f >> $@; done
 	for f in $(LIBML); do printf 'lib/ml/%s\n%d\n' $$(basename $$f) $$(wc -c < $$f) >> $@; cat $$f >> $@; done
@@ -641,10 +639,27 @@ $(O)/boot.img: $(O)/kernel.img $(BINS) $(EXAMPLES) $(SRC:%=../%) $(GEN:%=$(O)/%)
 	printf '\n' >> $@
 	@test $$(wc -c < $@) -lt 10485760 || { echo "$@: over 10 MB, where TinyKernelFS.ml has its buffers"; rm $@; exit 1; }
 
-run: $(O)/boot.img
-	$(MACHINE) $(O)/boot.img
-run-window: $(O)/boot.img
-	$(MACHINE) -window $(O)/boot.img
+# disk.img: the sources, /src, on a disk of tiny-kernel's file system,
+# made by tiny-mkfs (TinyKernel/host/TinyMkfs.ml), as m-ix's machine has
+# its boot.img and its card.img; given to the machine by -d, where the
+# kernel shows it at /, with the image's files (old: /src in the image,
+# its files in memory, 10 MB at most, which the sources filled). 4 MB,
+# what a web page fetches; a copy grown to 64 by truncate -s for a run or
+# a build on tiny-kernel (TinyKernelFS.mli's fs_mount: used whole)
+DISKFILES = $(foreach f,$(SRC),src/$(f)=../$(f)) $(foreach f,$(GEN),src/TinyKernel/$(f)=$(O)/$(f))
+$(O)/disk.img: $(SRC:%=../%) $(GEN:%=$(O)/%) $(MKFSBIN)
+	$(MKFS) -m 4 $@ $(DISKFILES)
+
+# a disk of 64 MB, disk.img grown: a run's (run.img: what is written
+# there is kept from a run to the next, until disk.img is made again),
+# a build's on tiny-kernel (self.img...), a check session's
+grown = cp $(O)/disk.img $(1); truncate -s 64M $(1)
+$(O)/run.img: $(O)/disk.img
+	$(call grown,$@)
+run: $(O)/boot.img $(O)/run.img
+	$(MACHINE) -d $(O)/run.img $(O)/boot.img
+run-window: $(O)/boot.img $(O)/run.img
+	$(MACHINE) -window -d $(O)/run.img $(O)/boot.img
 
 # the recorded sessions, each against its screen's sum; the browser's
 # read ../tests/www's pages
@@ -723,8 +738,9 @@ $(O)/check/18.out: $(O)/boot.img
 	timeout 300 $(MACHINE) $(O)/boot.img < $(T)/vcs.keys > $@
 $(O)/check/19.out: $(O)/boot.img
 	timeout 300 $(MACHINE) $(O)/boot.img < $(T)/build.keys > $@
-$(O)/check/20.out: $(O)/boot.img
-	timeout 600 $(MACHINE) $(O)/boot.img < $(T)/toolchain.keys > $@
+$(O)/check/20.out: $(O)/boot.img $(O)/disk.img
+	$(call grown,$(O)/check/src.img)
+	timeout 600 $(MACHINE) -d $(O)/check/src.img $(O)/boot.img < $(T)/toolchain.keys > $@
 $(O)/check/21.out: $(O)/boot.img
 	rm -rf $(O)/check/kept; mkdir $(O)/check/kept
 	printf 'rc\necho hello world > notes; put notes\nseq 2000 > big; put big numbers\nput nosuch\nput notes ../x\nget \047\047\nexit\n' | timeout 300 $(MACHINE) -net $(O)/check/kept $(O)/boot.img >> $@
@@ -763,8 +779,9 @@ $(O)/check/27.out: $(O)/boot.img
 # hello.c, square.s, helloml.ml), run, built again (up to date),
 # traced, and debugged (hello stopped in square, the assembly's: bt, x/i,
 # a step; helloml in insert, an ML frame and its slots)
-$(O)/check/28.out: $(O)/boot.img
-	printf 'rc\ncd /examples; build; ./hello; ./helloml\nbuild\ntrace ./hello\ndebug ./hello\nb square\nc\nbt\nx/i pc 3\ns\nq\ndebug ./helloml\nb insert\nc\nbt\nq\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
+$(O)/check/28.out: $(O)/boot.img $(O)/disk.img
+	$(call grown,$(O)/check/examples.img)
+	printf 'rc\ncd /examples; build; ./hello; ./helloml\nbuild\ntrace ./hello\ndebug ./hello\nb square\nc\nbt\nx/i pc 3\ns\nq\ndebug ./helloml\nb insert\nc\nbt\nq\nexit\n' | timeout 300 $(MACHINE) -d $(O)/check/examples.img $(O)/boot.img > $@
 $(O)/check/%.sum: $(T)/%.events $(O)/boot.img
 	timeout 300 $(MACHINE) -net ../tests/www -events $< -screen $(O)/check/$*.ppm $(O)/boot.img > /dev/null
 	cksum < $(O)/check/$*.ppm > $@; diff $(T)/$*.cksum $@ || { echo "tiny-kernel: $*.events: another screen ($(O)/check/$*.ppm)"; exit 1; }
@@ -790,7 +807,7 @@ $(O)/check/wwwplay.sum: $(T)/wwwplay.events $(O)/boot.img
 	cksum < $(O)/check/wwwplay.wav > $@.wav; diff $(T)/korobeiniki.wav.cksum $@.wav || { echo "tiny-kernel: wwwplay.events: other sounds ($(O)/check/wwwplay.wav)"; exit 1; }
 
 # tiny-kernel building itself (plan_tiny_self_hosting.md, step 8): booted
-# on a blank disk of 64 MB, the first shell runs tiny-build on
+# on disk.img grown to 64 MB (/src), the first shell runs tiny-build on
 # /src/TinyKernel/Buildfile in /usr/glenda/self (self.keys); then a
 # comment added to a module (it is compiled again, its object the
 # same: nothing more), a line to a program (compiled again, the program
@@ -799,8 +816,8 @@ $(O)/check/wwwplay.sum: $(T)/wwwplay.events $(O)/boot.img
 # Cat, is _make/boot.img, byte for byte; what the shell printed is
 # self.expected. Hours: not in check
 FSCAT = $(abspath ../../_build/default/tiny/tests/TinyKernelFS_tests/Cat.exe)
-self: $(O)/boot.img
-	rm -f $(O)/self.img; truncate -s 64M $(O)/self.img
+self: $(O)/boot.img $(O)/disk.img
+	$(call grown,$(O)/self.img)
 	timeout 36000 $(MACHINE) -d $(O)/self.img $(O)/boot.img < $(T)/self.keys > $(O)/self.out
 	diff $(T)/self.expected $(O)/self.out
 	$(FSCAT) $(O)/self.img usr/glenda/self/first.img > $(O)/self.boot.img
@@ -816,8 +833,8 @@ self: $(O)/boot.img
 # are over its 10 MB, and its objects are gathered in an rc list a line
 # each, so that no line passes the console's 256 characters (old: one
 # ld line, when the kernel was one object, not its 14 units')
-self-quick: $(O)/boot.img $(O)/self-ld.img
-	rm -f $(O)/self-quick.img; truncate -s 64M $(O)/self-quick.img
+self-quick: $(O)/boot.img $(O)/disk.img $(O)/self-ld.img
+	$(call grown,$(O)/self-quick.img)
 	timeout 1800 $(MACHINE) -d $(O)/self-quick.img $(O)/boot.img < $(T)/self-quick.keys > $(O)/self-quick.out
 	diff $(T)/self-quick.expected $(O)/self-quick.out
 	printf 'rc\ncd /k\no=()\n$(foreach f,$(notdir $(KERNEL)),o=($$o $(f))\n)ld -map -o k.img $$o\ncmp k.img kernel.img && echo kernel.img: the host\nexit\n' | timeout 600 $(MACHINE) $(O)/self-ld.img > $(O)/self-ld.out
@@ -838,8 +855,8 @@ $(O)/self-ld.img: $(O)/kernel.img $(O)/bin/sh $(O)/bin/rc $(O)/bin/ld $(O)/bin/u
 #   make self-cores CORES='-cores 4 -cores-parallel' \
 #     MACHINE=../../_build5/default/tiny/TinyMachine.exe
 CORES = -cores 4
-self-cores: $(O)/boot.img
-	rm -f $(O)/self-cores.img; truncate -s 64M $(O)/self-cores.img
+self-cores: $(O)/boot.img $(O)/disk.img
+	$(call grown,$(O)/self-cores.img)
 	sed 's|^build |build -j 4 |' $(T)/self.keys | timeout 36000 $(MACHINE) $(CORES) -d $(O)/self-cores.img $(O)/boot.img > $(O)/self-cores.out
 	$(FSCAT) $(O)/self-cores.img usr/glenda/self/first.img > $(O)/self-cores.boot.img
 	cmp $(O)/boot.img $(O)/self-cores.boot.img

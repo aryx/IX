@@ -502,7 +502,7 @@ APART = [
     # this C: "and let's not count tiny-os/ really", "as we now have a
     # better TinyKernel with graphics, and windowing system, and so on",
     # "just like we didn't count kernels/xv6/ and other kernels")
-    ("tiny/TinyKernel/steps/", "the steps before tiny-kernel on tiny-machine: v0 in assembly, t6 in C, with tiny-mkfs, its disk's (tiny-os, until v6 was removed)",
+    ("tiny/TinyKernel/steps/", "the steps before tiny-kernel on tiny-machine: v0 in assembly, t6 in C, with tiny-mkfat, its disk's (tiny-os, until v6 was removed)",
      lambda dirs, path: path.startswith("tiny/TinyKernel/steps/")),
     # (tiny/TinyKernel/examples/ was here, 2026-10-17 to 10-22, the author
     # then: "is also small (70 lines) so we can probably not count it; not

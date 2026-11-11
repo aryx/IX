@@ -29,7 +29,7 @@
 # the image's, which is rc's).
 #
 # coupling: TinyKernel/Makefile says the same, its lists (CORE, UNITS_x
-# a program's units, I_x a unit's interfaces, MEM_x, KUNITS, SRC): a
+# a program's units, I_x a unit's interfaces, MEM_x, KUNITS): a
 # change to one is a change to the other, until the Makefile is made
 # from this file (the plan's last step).
 #
@@ -455,91 +455,13 @@ kernel.img: TinyKernel/entry.o runtime/udivmod.o TinyKernel/runtime.o \
 #############################################################################
 
 # boot.img: the kernel, then each file it carries, its name, its size
-# and its bytes: the programs in /bin, the examples, the sources in
-# /src, the library in /lib/ml and the runtimes in /lib/c and /lib/ml.
+# and its bytes: the programs in /bin, the examples, the library in
+# /lib/ml and the runtimes in /lib/c and /lib/ml (the sources, /src,
+# are on the disk, TinyKernel/Makefile's disk.img, made on the host).
 # (rc's recipe: the image is made on tiny-kernel. Not yet the Makefile's
 # image byte for byte: the plan's step 3)
 UTILS = [ basename cat cmp cp date du echo grep kill ln ls mkdir mv ps pwd \
     rm seq sleep sort tail tee test touch walk wc xd
-SRC = TinyKernel/entry.s TinyKernel/draw.s TinyKernel/memory.s \
-    TinyKernel/end.s TinyKernel/runtime.c TinyKernel/TinyMemory.ml \
-    TinyKernel/TinyKernelGraphics.ml TinyKernel/TinyKernelNetwork.ml \
-    TinyKernel/TinyKernelAudio.ml TinyKernel/TinyKernelFS.ml \
-    TinyKernel/TinyKernelMemory.ml TinyKernel/TinyKernelMachine.ml \
-    TinyKernel/TinyKernelFiles.ml TinyKernel/TinyKernelProcs.ml \
-    TinyKernel/TinyKernelDevices.ml TinyKernel/TinyKernelIO.ml \
-    TinyKernel/TinyKernelCalls.ml TinyKernel/TinyKernelScheduler.ml \
-    TinyKernel.ml TinyLibSystem/tinykernel/TinyLibSystem.ml \
-    TinyLibMachine.ml TinyLibRegex.ml TinyLibDraw.ml TinyLibPlayground.ml \
-    TinyLibGUI.ml TinyProfiler.ml TinyDatabase.ml TinyVCS.ml \
-    TinyBuildSystem.ml TinyAssembler.ml TinyLinker.ml TinyC/TinyCTypes.ml \
-    TinyC/TinyCLexer.ml TinyC/TinyCTree.ml TinyC/TinyCLower.ml \
-    TinyC/TinyCParser.ml TinyC/TinyCMachine.ml TinyC.ml \
-    TinyML/TinyMLLexer.ml TinyML/TinyMLTree.ml TinyML/TinyMLPrintf.ml \
-    TinyML/TinyMLParser.ml TinyML/TinyMLTypes.ml TinyML/TinyMLMachine.ml \
-    TinyML/TinyMLCompile.ml TinyML.ml TinyWindows.ml TinyAppTetris.ml \
-    TinyAppCalculator.ml TinyAppTemperature.ml TinyEditorScreen.ml \
-    TinyOffice/TinyOfficeModel.ml TinyOffice/TinyOfficeText.ml \
-    TinyOffice/TinyOfficeSheet.ml TinyOffice/TinyOfficeDrawing.ml \
-    TinyOffice/TinyOfficePaint.ml TinyOffice/TinyOfficeChart.ml \
-    TinyOffice/TinyOfficeFile.ml TinyOffice.ml TinyTroff.ml TinyPlay.ml \
-    TinyBrowser/TinyBrowserText.ml TinyBrowser/TinyBrowserTokens.ml \
-    TinyBrowser/TinyBrowserLines.ml TinyBrowser/TinyBrowserHtml.ml \
-    TinyBrowser/TinyBrowserAddress.ml TinyBrowser/TinyBrowserHttp.ml \
-    TinyBrowser/TinyBrowserScreen.ml TinyBrowser.ml TinyTracer.ml \
-    TinyDebugger.ml TinyShell.ml TinyUtilities.ml TinyEditorLine.ml \
-    tests/TinyLibPlayground_tests/Square.ml \
-    tests/TinyLibPlayground_tests/machine.ml user/tetris.ml user/calc.ml \
-    user/temp.ml user/emacs.ml user/office.ml user/troff.ml user/play.ml \
-    user/www.ml user/windows.ml user/bigmem.ml user/trace.ml user/debug.ml \
-    TinyLibCore/Stdlib.ml TinyLibCore/Char.ml TinyLibCore/Seq.ml \
-    TinyLibCore/List.ml TinyLibCore/String.ml TinyLibCore/Bytes.ml \
-    TinyLibCore/Array.ml TinyLibCore/Option.ml TinyLibCore/Int32.ml \
-    TinyLibCore/Int64.ml TinyLibCore/Filename.ml TinyLibCore/Buffer.ml \
-    TinyLibCore/Printf.ml TinyLibCore/Marshal.ml TinyLibCore/Hashtbl.ml \
-    TinyLibCore/Common.ml TinyLibCore/Sha1.ml TinyLibCore/Fpath.ml \
-    TinyLibCore/Fpath_.ml TinyLibCore/Exit.ml TinyLibCore/In_channel.ml \
-    TinyLibCore/Out_channel.ml TinyLibCore/Chan.ml TinyLibCore/Logs.ml \
-    TinyKernel/libc/user.h TinyKernel/libc/sys.s TinyKernel/libc/draw.c \
-    TinyKernel/libc/draw.h TinyKernel/libc/net.c \
-    TinyLibSystem/tinykernel/mlsys.c runtime/ml.c runtime/start.s \
-    runtime/udivmod.s runtime/libc.c runtime/libc.h TinyKernel/user/paint.c \
-    TinyKernel/user/sh.c TinyKernel/user/mltests.c TinyKernel/user/ping.c \
-    TinyKernel/user/get.c TinyKernel/user/put.c TinyKernel/user/httpd.c \
-    TinyKernel/lib/c/Buildfile TinyKernel/lib/ml/Buildfile \
-    TinyKernel/TinyKernelGraphics.mli TinyKernel/TinyKernelNetwork.mli \
-    TinyKernel/TinyKernelAudio.mli TinyKernel/TinyKernelFS.mli \
-    TinyKernel/TinyKernelMemory.mli TinyKernel/TinyKernelMachine.mli \
-    TinyKernel/TinyKernelFiles.mli TinyKernel/TinyKernelProcs.mli \
-    TinyKernel/TinyKernelDevices.mli TinyKernel/TinyKernelIO.mli \
-    TinyKernel/TinyKernelCalls.mli TinyKernel/TinyKernelScheduler.mli \
-    TinyKernel.mli TinyLibMachine.mli TinyLibRegex.mli TinyLibDraw.mli \
-    TinyLibPlayground.mli TinyLibGUI.mli TinyProfiler.mli TinyDatabase.mli \
-    TinyVCS.mli TinyBuildSystem.mli TinyAssembler.mli TinyLinker.mli \
-    TinyC/TinyCTypes.mli TinyC/TinyCLexer.mli TinyC/TinyCTree.mli \
-    TinyC/TinyCLower.mli TinyC/TinyCParser.mli TinyC/TinyCMachine.mli \
-    TinyC.mli TinyML/TinyMLLexer.mli TinyML/TinyMLTree.mli \
-    TinyML/TinyMLPrintf.mli TinyML/TinyMLParser.mli TinyML/TinyMLTypes.mli \
-    TinyML/TinyMLMachine.mli TinyML/TinyMLCompile.mli TinyML.mli \
-    TinyWindows.mli TinyAppTetris.mli TinyAppCalculator.mli \
-    TinyAppTemperature.mli TinyEditorScreen.mli \
-    TinyOffice/TinyOfficeModel.mli TinyOffice/TinyOfficeText.mli \
-    TinyOffice/TinyOfficeSheet.mli TinyOffice/TinyOfficeDrawing.mli \
-    TinyOffice/TinyOfficePaint.mli TinyOffice/TinyOfficeChart.mli \
-    TinyOffice/TinyOfficeFile.mli TinyOffice.mli TinyTroff.mli TinyPlay.mli \
-    TinyBrowser/TinyBrowserText.mli TinyBrowser/TinyBrowserTokens.mli \
-    TinyBrowser/TinyBrowserLines.mli TinyBrowser/TinyBrowserHtml.mli \
-    TinyBrowser/TinyBrowserAddress.mli TinyBrowser/TinyBrowserHttp.mli \
-    TinyBrowser/TinyBrowserScreen.mli TinyBrowser.mli TinyTracer.mli \
-    TinyDebugger.mli TinyShell.mli TinyUtilities.mli TinyEditorLine.mli \
-    TinyLibCore/Stdlib.mli TinyLibCore/Char.mli TinyLibCore/Seq.mli \
-    TinyLibCore/List.mli TinyLibCore/String.mli TinyLibCore/Bytes.mli \
-    TinyLibCore/Array.mli TinyLibCore/Option.mli TinyLibCore/Int32.mli \
-    TinyLibCore/Int64.mli TinyLibCore/Filename.mli TinyLibCore/Buffer.mli \
-    TinyLibCore/Printf.mli TinyLibCore/Marshal.mli TinyLibCore/Hashtbl.mli \
-    TinyLibCore/Common.mli TinyLibCore/Sha1.mli TinyLibCore/Fpath.mli \
-    TinyLibCore/Fpath_.mli TinyLibCore/Exit.mli TinyLibCore/In_channel.mli \
-    TinyLibCore/Out_channel.mli TinyLibCore/Chan.mli TinyLibCore/Logs.mli
 EXAMPLES = wc.c sh.c emacs.ml TinyEditorScreen.ml report.ixd korobeiniki.wav spin.prof spin.map TinyLibMachine.tmi TinyLibMachine.o hello.c square.s helloml.ml Buildfile
 LIBC = runtime/start.o runtime/udivmod.o runtime/libc.o TinyKernel/libc/sys.o TinyKernel/lib/c/Buildfile
 LIBML = TinyLibSystem/tinykernel/mlsys.o TinyKernel/end.o TinyKernel/lib/ml/Buildfile
@@ -551,7 +473,6 @@ boot.img: kernel.img $PROGS $STDLIB $LIBC $LIBML
 	cat kernel.img > $target
 	for(f in $PROGS) { n=`{wc -c < $f}; echo bin/$f; echo $n; cat $f } >> $target
 	for(f in $EXAMPLES) { n=`{wc -c < /examples/$f}; echo examples/$f; echo $n; cat /examples/$f } >> $target
-	for(f in $SRC) { n=`{wc -c < $f}; echo src/$f; echo $n; cat $f } >> $target
 	for(f in $LIBUNITS) { n=`{wc -c < $f}; echo lib/ml/^`{basename $f}; echo $n; cat $f } >> $target
 	for(f in $LIBC) { n=`{wc -c < $f}; echo lib/c/^`{basename $f}; echo $n; cat $f } >> $target
 	for(f in $LIBML) { n=`{wc -c < $f}; echo lib/ml/^`{basename $f}; echo $n; cat $f } >> $target

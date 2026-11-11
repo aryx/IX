@@ -133,8 +133,8 @@ screen of 640 by 480 bytes and a mouse. It is three files of OCaml:
 <p>
 <a href="https://ocsigen.org/js_of_ocaml/">js_of_ocaml</a> compiles
 them to about 90 KB of JavaScript. The page fetches that and the
-kernel's image, 1.9 MB for tiny-kernel with its programs: no server
-runs anything. On the machine,
+kernel's image, 8.7 MB for tiny-kernel with its programs, and its
+disk, 4 MB, the sources: no server runs anything. On the machine,
 <a href="codemap.html?focus=tiny/TinyKernel.ml"><code>TinyKernel.ml</code></a>,
 <a href="codemap.html?focus=tiny/TinyWindows.ml"><code>TinyWindows.ml</code></a> and
 <a href="codemap.html?focus=tiny/TinyAppTetris.ml"><code>TinyAppTetris.ml</code></a>
@@ -172,7 +172,7 @@ shows them all.
   var kernel = new URLSearchParams(location.search).get("kernel");
   var tiny_machine = kernel == "t6"
     ? { image: assets + "ix/" + kernel + "/kernel.img", disk: assets + "ix/" + kernel + "/fs.img" }
-    : { image: assets + "ix/tiny-kernel/boot.img" };
+    : { image: assets + "ix/tiny-kernel/boot.img", disk: assets + "ix/tiny-kernel/disk.img" };
 </script>
 <!-- ?v=: a number to change when the program does (make website), so
      that a browser does not keep the one it has -->

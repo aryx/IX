@@ -25,10 +25,10 @@ tiny/TinyEditorScreen.ml:712: stack: go calls itself, not a tail call, over a li
 tiny/TinyKernel/fonts/Mkfont.ml:373: evalorder: operands at 373:15 and 373:40, both with an effect: their order the compiler's
 tiny/TinyKernel/fonts/Mkfont.ml:373: evalorder: operands at 373:40 and 374:15, both with an effect: their order the compiler's
 tiny/TinyKernel/fonts/Mkfont.ml:374: evalorder: operands at 374:15 and 375:15, both with an effect: their order the compiler's
-tiny/TinyKernel/steps/t6/TinyMkfs.ml:30: int31: in TinyMkfs's toplevel, 0x7f5f0006: not on the Pi 1's 31 bits
-tiny/TinyKernel/steps/t6/TinyMkfs.ml:48: int31: in chain, 0xffffffff: not on the Pi 1's 31 bits
-tiny/TinyKernel/steps/t6/TinyMkfs.ml:69: int31: in TinyMkfs.make, 0xffffffff: not on the Pi 1's 31 bits
-tiny/TinyKernel/steps/t6/TinyMkfs.ml:80: int31: in get32, 0xffffffff: not on the Pi 1's 31 bits
+tiny/TinyKernel/steps/t6/TinyMkfat.ml:30: int31: in TinyMkfat's toplevel, 0x7f5f0006: not on the Pi 1's 31 bits
+tiny/TinyKernel/steps/t6/TinyMkfat.ml:48: int31: in chain, 0xffffffff: not on the Pi 1's 31 bits
+tiny/TinyKernel/steps/t6/TinyMkfat.ml:69: int31: in TinyMkfat.make, 0xffffffff: not on the Pi 1's 31 bits
+tiny/TinyKernel/steps/t6/TinyMkfat.ml:80: int31: in get32, 0xffffffff: not on the Pi 1's 31 bits
 tiny/TinyLibGUI.ml:141: stack: TinyLibGUI.each calls itself, not a tail call, over a list
 tiny/TinyLibGUI.ml:143: stack: TinyLibGUI.each calls itself, not a tail call, over a list
 tiny/TinyLibGUI.ml:185: stack: TinyLibGUI.differ calls itself, not a tail call, over a list

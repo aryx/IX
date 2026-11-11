@@ -8,3 +8,12 @@
  (wrapped false)
  (modules TinyMemory)
  (libraries tiny_machine_devices))
+
+; tiny-mkfs: a disk of tiny-kernel's file system, made on the host by
+; TinyKernelFS.ml itself (TinyMkfs.mli)
+(executable
+ (name TinyMkfs)
+ (public_name tiny-mkfs)
+ (package ix)
+ (modules TinyMkfs)
+ (libraries ix_core fpath caps tiny_lib_system tiny_kernel_fs tiny_host_memory))

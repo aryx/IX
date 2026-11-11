@@ -1,6 +1,6 @@
-(* tiny-mkfs: the disk image of t6's file system (t6: a kernel in C, a
+(* tiny-mkfat: the disk image of t6's file system (t6: a kernel in C, a
  * step before TinyKernel.ml), made on the host, as xv6's mkfs.c makes
- * xv6's. The usage and examples: [help], what tiny-mkfs -h prints.
+ * xv6's. The usage and examples: [help], what tiny-mkfat -h prints.
  * MS-DOS's idea, a FAT; the disk, in blocks of 1 KB:
  *
  *     0             the superblock: a magic, the size in blocks, where

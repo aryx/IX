@@ -70535,3 +70535,33 @@ Claude offered a quicker alternative: move the file system buffers from 10 MB up
 **Claude (summary):**
 
 Claude explained that the disk-work edits were lost when a scratchpad directory under /private/tmp vanished mid-session. It recommended redoing the work in a sibling directory, `~/github/ix-wt`, or a gitignored `_wt/` inside the checkout. It asked Yoann to pick a location before rebuilding `tiny-mkfs`, the `disk.img` split, and then item 2. Claude's reply to "work directly on this repo" is what Yoann reacted to, so the focus is there.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 20:53
+
+**Yoann:**
+
+> please you can work directly on this repo
+
+**Claude (summary):**
+
+Claude renamed t6's FAT maker to `tiny-mkfat` and added a host tool, `tiny-mkfs`, that writes `disk.img` via `TinyKernelFS.ml`.
+Claude split the image so `boot.img` drops `/src` (8.7 MB, down from 10.26) and `/src` lives on a separate disk.
+Claude updated the Makefiles, the self-build Buildfile, the website, and the docs to boot the kernel with the grown disk.
+Claude re-recorded `check.expected` and the windows and nested cksum files after inspecting each screen, then ran `make check`, `self-quick`, and the analyzer.
+Claude left the web test and `make self` unrun, committed nothing, and kept `/examples` in the image as a noted decision.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 21:11
+
+**Yoann:**
+
+> let
+
+**Claude (summary):**
+
+Claude asked whether Yoann meant "let's commit" after his message arrived as just "let".
+Claude noted that nothing had been committed yet, so there was nothing to undo or review.
+Claude did not guess at the intent, and left the working tree untouched while waiting for clarification.

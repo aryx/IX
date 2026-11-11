@@ -1,17 +1,17 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyMkfs.mli *)
+(* See TinyMkfat.mli *)
 
-let usage = "usage: tiny-mkfs fs.img file... | tiny-mkfs -l fs.img"
+let usage = "usage: tiny-mkfat fs.img file... | tiny-mkfat -l fs.img"
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
 The disk image of t6's file system (tiny/TinyKernel/steps/t6/), made on
 the host: MS-DOS's FAT, 2 MB. For example:
-  tiny-mkfs fs.img hello.txt bye.txt    a root directory with the files (by
+  tiny-mkfat fs.img hello.txt bye.txt   a root directory with the files (by
                                         their base names) and the console
-  tiny-mkfs -l fs.img                   the image read back:
+  tiny-mkfat -l fs.img                  the image read back:
     hello.txt            2    9 6       each name, its type (1 a directory,
     console              3    0 0       2 a file, 3 a device), first block, size
 ./tiny-machine t6 makes one with the programs, and boots on it.
@@ -109,4 +109,4 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
   (* (a Failure too would be said so, by TinyLibSystem.main) *)
   with Sys_error e -> Exit.Err e
 
-let () = TinyLibSystem.main "tiny-mkfs" main
+let () = TinyLibSystem.main "tiny-mkfat" main

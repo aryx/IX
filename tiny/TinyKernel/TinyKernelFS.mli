@@ -138,7 +138,9 @@ val fs_io : (int -> int -> disk_io -> unit) ref
 exception Disk_full
 
 (* [fs_mount n]: the file system of a disk of n blocks, made when the
- * disk is blank; the last boot's tree becomes a snapshot *)
+ * disk is blank; the last boot's tree becomes a snapshot. A disk made
+ * bigger than its file system (tiny-mkfs's disk.img, 4 MB, grown to 64
+ * by truncate -s) is used whole *)
 val fs_mount : int -> unit
 
 (* the changes since the last commit, written to the disk as a whole

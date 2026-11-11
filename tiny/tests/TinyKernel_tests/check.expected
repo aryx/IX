@@ -19,7 +19,6 @@ dev
 examples
 f
 lib
-src
       1       1       3
 cat: f: cannot open
 x
@@ -253,6 +252,7 @@ b
       2
 % tiny-build: don't know how to make nosuch
 % $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
+tiny-kernel: / on a disk of 65536 KB, 63725 KB free; 1 snapshots in /dump
 $ % % % % % % % % ping: /bin/ping
 % % mach.o: the host
 % mach.tmi: the host
@@ -309,7 +309,6 @@ d   1       68 ./d
 /dump
 /examples
 /lib
-/src
 /usr
 usage: get name [host [port]]
 new
@@ -455,6 +454,7 @@ Wed Mar  1 00:00:00 GMT 2000
 Mon Jan  9 13:37:03 GMT 2034
 7
 % $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
+tiny-kernel: / on a disk of 65536 KB, 63725 KB free; 1 snapshots in /dump
 $ % cc -o hello.o hello.c
 as -o square.o square.s
 ld -map -s -n -o hello /lib/c/start.o /lib/c/udivmod.o /lib/c/libc.o /lib/c/sys.o hello.o square.o

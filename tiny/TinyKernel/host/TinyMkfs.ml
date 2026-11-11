@@ -1,0 +1,121 @@
+(* Claude Code
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
+(* See TinyMkfs.mli *)
+
+let usage =
+  "usage: tiny-mkfs [-m megabytes] disk.img name=file|directory/... \
+   | tiny-mkfs -l disk.img"
+
+(* -h: how, by examples, each one as it runs *)
+let help = usage ^ {|
+A disk of tiny-kernel's file system (TinyKernel/TinyKernelFS.ml), made on
+the host by the kernel's own code: the files named, each under its name on
+the disk; a name with / makes the directories on its way, and a name that
+ends with / is a directory, empty. tiny-machine -d gives the disk to the
+machine, where the kernel shows it at /, with the image's files.
+  tiny-mkfs disk.img src/hello.c=hello.c tmp/
+                                  8 MB: /src/hello.c, and /tmp, empty
+  tiny-mkfs -m 64 disk.img ...    64 MB, the most (64 K blocks of 1 KB)
+  tiny-mkfs -l disk.img           each file read back: its path and size
+|}
+
+(* where a file's bytes are put in the machine's memory for the file
+ * system to write them, a piece at a time (the file system's own
+ * buffers are at 10 MB) *)
+let scratch = 0x100000
+let piece = 0x10000
+
+(* the disk's bytes, the file system's transfers on them; mounted as
+ * the kernel mounts it (made when blank), the dates 0, so that the same
+ * files make the same disk *)
+let mount (disk : Bytes.t) =
+  TinyKernelFS.fs_io := (fun b a io ->
+    match io with
+    | TinyKernelFS.Disk_read -> Bytes.blit disk (b * 1024) TinyMemory.mem a 1024
+    | Disk_write -> Bytes.blit TinyMemory.mem a disk (b * 1024) 1024);
+  TinyKernelFS.fs_clock := (fun () -> 0);
+  TinyKernelFS.fs_mount (Bytes.length disk / 1024)
+
+(* the directory at the end of names from d, made where it is missing *)
+let rec directory (d : TinyKernelFS.inode) (names : string list) =
+  match names with
+  | [] -> d
+  | n :: rest ->
+      let sub =
+        match TinyKernelFS.fs_lookup 0 d n with
+        | Some i when TinyKernelFS.fs_is_dir 0 i -> i
+        | Some _ -> failwith (n ^ ": a file, not a directory")
+        | None -> TinyKernelFS.fs_create d n TinyKernelFS.Fs_dir in
+      directory sub rest
+
+(* a file's bytes written under its path, then committed (a commit a
+ * file: the blocks written since the last one are a list the file system
+ * searches) *)
+let add (path : string) (contents : string option) =
+  let names = List.filter (fun n -> n <> "") (String.split_on_char '/' path) in
+  (match contents, List.rev names with
+   | None, _ -> ignore (directory 1 names)
+   | Some _, [] -> failwith (path ^ ": no name")
+   | Some s, name :: rdirs ->
+       let d = directory 1 (List.rev rdirs) in
+       if TinyKernelFS.fs_lookup 0 d name <> None then
+         failwith (path ^ ": named twice");
+       let n = TinyKernelFS.fs_create d name TinyKernelFS.Fs_file in
+       let rec write off =
+         if off < String.length s then begin
+           let k = min piece (String.length s - off) in
+           Bytes.blit_string s off TinyMemory.mem scratch k;
+           TinyKernelFS.fs_write_at n off scratch k;
+           write (off + k)
+         end in
+       write 0);
+  TinyKernelFS.fs_commit ()
+
+(* each file's path and size, each directory's path and a /, the live
+ * tree's from the root *)
+let rec list (path : string) (d : TinyKernelFS.inode) : string list =
+  List.concat_map (fun (name, i) ->
+      let p = path ^ "/" ^ name in
+      match TinyKernelFS.fs_kind 0 i with
+      | TinyKernelFS.Fs_dir, _, _ -> (p ^ "/\n") :: list p i
+      | Fs_file, size, _ -> [ p ^ " " ^ string_of_int size ^ "\n" ])
+    (TinyKernelFS.fs_entries 0 d)
+
+let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
+    (argv : string array) : Exit.t =
+  let read f = FS.read caps (Fpath.v f) in
+  let make mb img specs =
+    let disk = Bytes.make (mb * 0x100000) '\000' in
+    mount disk;
+    List.iter (fun spec ->
+        match String.index_opt spec '=' with
+        | Some i ->
+            add (String.sub spec 0 i)
+              (Some (read (String.sub spec (i + 1) (String.length spec - i - 1))))
+        | None when spec <> "" && spec.[String.length spec - 1] = '/' ->
+            add spec None
+        | None -> failwith (spec ^ ": not name=file nor directory/"))
+      specs;
+    FS.write caps (Fpath.v img) (Bytes.to_string disk);
+    Exit.OK in
+  let megabytes s =
+    match int_of_string_opt s with
+    | Some n when n >= 1 && n <= 64 -> Some n
+    | _ -> None in
+  try
+    match List.tl (Array.to_list argv) with
+    | ("-h" | "--help") :: _ -> Console.print caps help; Exit.OK
+    | [ "-l"; img ] ->
+        mount (Bytes.of_string (read img));
+        Console.print caps (String.concat "" (list "" 1));
+        Exit.OK
+    | "-m" :: m :: img :: specs when megabytes m <> None ->
+        make (Option.get (megabytes m)) img specs
+    | img :: specs when img <> "" && img.[0] <> '-' -> make 8 img specs
+    | _ -> Console.eprint caps (usage ^ "   (-h: how)\n"); Exit.Code 2
+  with
+  | Sys_error e | Failure e -> Exit.Err e
+  | TinyKernelFS.Disk_full -> Exit.Err "the disk is full: -m more megabytes"
+
+let () = TinyLibSystem.main "tiny-mkfs" main

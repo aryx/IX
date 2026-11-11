@@ -429,7 +429,10 @@ let fs_mount n =
   fs_read 0 fs_sb;
   if fs_get fs_sb <> fs_magic then (fs_blocks := n; fs_nfree := n - 1; fs_format n)
   else begin
-    fs_blocks := min n (fs_get (fs_sb + 4));
+    (* the disk's size now, its blocks past the recorded size free: a
+     * disk made bigger (truncate -s) is used whole, as resize2fs does *)
+    fs_blocks := n;
+    fs_set (fs_sb + 4) n;
     fs_gc ();
     let k = fs_nsnaps () in
     if k = 0 || not (fs_same 0 1) then begin

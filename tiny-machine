@@ -81,7 +81,7 @@ size() { echo $(( $(wc -c < "$1") )); }
 short() { local f; for f in "$@"; do f=$(readlink -f "$f"); echo -n "${f#$ROOT/} "; done; }
 
 if [ $build = 1 ]; then
-  (cd $ROOT && dune build ./tiny/TinyMachine.exe ./tiny/TinyC.exe ./tiny/TinyAssembler.exe ./tiny/TinyLinker.exe ./tiny/TinyCPU.exe ./tiny/TinyKernel/steps/t6/TinyMkfs.exe ./tiny/TinyML.exe 2>&1) || exit 1
+  (cd $ROOT && dune build ./tiny/TinyMachine.exe ./tiny/TinyC.exe ./tiny/TinyAssembler.exe ./tiny/TinyLinker.exe ./tiny/TinyCPU.exe ./tiny/TinyKernel/steps/t6/TinyMkfat.exe ./tiny/TinyKernel/host/TinyMkfs.exe ./tiny/TinyML.exe 2>&1) || exit 1
   # (the window is a program apart: the one that links SDL)
   [ -z "$window" ] || (cd $ROOT && dune build ./tiny/TinyMachine/TinyMachineWindow.exe 2>&1) || exit 1
 fi
@@ -105,7 +105,7 @@ case $1 in
   t6)
     dir=$ROOT/tiny/TinyKernel/steps/$1
     if [ $build = 1 ]; then
-      make -s -C $dir TC=$B/TinyC.exe AS=$B/TinyAssembler.exe LD=$B/TinyLinker.exe MACHINE=$machine MKFS=$B/TinyKernel/steps/t6/TinyMkfs.exe _make/kernel.img _make/fs.img >&2 || exit 1
+      make -s -C $dir TC=$B/TinyC.exe AS=$B/TinyAssembler.exe LD=$B/TinyLinker.exe MACHINE=$machine MKFS=$B/TinyKernel/steps/t6/TinyMkfat.exe _make/kernel.img _make/fs.img >&2 || exit 1
     fi
     image=$dir/_make/kernel.img
     disk=$dir/_make/fs.img
@@ -120,16 +120,17 @@ case $1 in
     ;;
   tiny-kernel)
     # the programs come in the image, after the kernel (/boot); the disk
-    # is the root, made blank at the first run (make clean removes it)
+    # is the root: disk.img, /src, grown to 64 MB (run.img, made again
+    # when disk.img is; make clean removes it)
     dir=$ROOT/tiny/TinyKernel
     if [ $build = 1 ]; then
-      make -s -C $dir TML=$B/TinyML.exe TC=$B/TinyC.exe AS=$B/TinyAssembler.exe LD=$B/TinyLinker.exe CPU=$B/TinyCPU.exe MACHINE=$machine _make/boot.img >&2 || exit 1
+      make -s -C $dir TML=$B/TinyML.exe TC=$B/TinyC.exe AS=$B/TinyAssembler.exe LD=$B/TinyLinker.exe CPU=$B/TinyCPU.exe MKFS=$B/TinyKernel/host/TinyMkfs.exe MACHINE=$machine _make/boot.img _make/disk.img _make/run.img >&2 || exit 1
     fi
     image=$dir/_make/boot.img
     say "kernel:  $(short $dir/_make/kernel.img)($(size $dir/_make/kernel.img) bytes; built from $(short $dir)), its programs after it"
-    [ -z "$web" ] || page "" $image
-    disk=$dir/_make/disk.img
-    say "disk:    ${disk#$ROOT/}, the root: what is written there is kept ($([ -f $disk ] && echo "$(( $(size $disk) / 1024 )) KB" || echo "made blank now, 8 MB"); the boots before in /dump)"
+    [ -z "$web" ] || page "?image=boot.img&disk=disk.img" $image $dir/_make/disk.img
+    disk=$dir/_make/run.img
+    say "disk:    ${disk#$ROOT/}, the root, /src on it: what is written there is kept until /src changes ($(( $(size $disk) / 1024 )) KB; the boots before in /dump)"
     say "console: this terminal; Ctrl-D ends the shell, and the machine"
     [ -z "$window" ] || say "screen:  a window (its end is the machine's); try: windows, the right button in the window (New, a rectangle swept), then tetris typed in it"
     if [ $listing = 1 ]; then exec $machine -l $dir/_make/kernel.img; fi

@@ -234,8 +234,8 @@ family "t-ix builds part of itself" system
 tiny_self() {
   local o=$W/tiny-self m="tiny-machine -date 820540800 -seed 1"
   local cat=_build/default/tiny/tests/TinyKernelFS_tests/Cat.exe
-  make -s -C tiny/TinyKernel O=$o $o/boot.img || return 1
-  rm -f $o/self.img; truncate -s 64M $o/self.img
+  make -s -C tiny/TinyKernel O=$o $o/boot.img $o/disk.img || return 1
+  cp $o/disk.img $o/self.img; truncate -s 64M $o/self.img
   timeout 120 $m -d $o/self.img $o/boot.img > $o/self.out <<'END'
 rc
 mkdir q; cd q

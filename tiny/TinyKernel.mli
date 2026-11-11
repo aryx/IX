@@ -66,7 +66,8 @@
  *                          clock's ticks              queues
  *
  * The files. The programs come in the boot image, after the kernel,
- * and are read from memory. With a disk (-d), the disk is the root,
+ * and are read from memory; the sources, /src, on the disk (disk.img,
+ * by tiny-mkfs). With a disk (-d), the disk is the root,
  * Plan 9's way: / is a union of the disk's root, of /boot (the image's
  * files alone) and /dump (the snapshots of the boots before), and of
  * the image's files, so /bin is the disk's /bin and /boot/bin together.
@@ -119,7 +120,8 @@
  *
  *     0x000000   the image: entry.s, the runtime, the kernel; then the
  *                files it carries, each a name, a size, the bytes
- *                (10 MB at most: /src, the sources, are among them)
+ *                (10 MB at most; the sources, /src, are on the disk,
+ *                disk.img, which the Makefile makes by tiny-mkfs)
  *     0xa00000   the file system's buffers and its map of the
  *                disk's blocks (TinyKernelFS.ml)
  *     0xb00000   the value stack: the kernel's own roots (TinyML's)

@@ -16,7 +16,7 @@
  * The kernel is TinyKernel.ml, and TinyKernel/steps/ holds the two
  * steps that came before it, each with a Makefile that builds and runs
  * it: v0/ is a page of assembly with its programs, and t6/ is a kernel
- * in C whose disk is made by tiny-mkfs. At the top of ix,
+ * in C whose disk is made by tiny-mkfat. At the top of ix,
  * ./tiny-machine tiny-kernel (or t6, or v0) builds and boots one.
  *
  * Here is what the machine adds to the CPU so that it can run a kernel:

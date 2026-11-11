@@ -10,7 +10,7 @@
 # The kernel: entry.s first (the machine starts at 0), then the C. The
 # programs are tiny-linker's images (linked at 0: t6 runs each at the
 # start of its partition), start.s first, with libc and
-# sys.s; the disk is a FAT (tiny-mkfs -fat). The tools from the PATH
+# sys.s; the disk is a FAT (tiny-mkfat -fat). The tools from the PATH
 # (after `dune install`), or from ix's bin/.
 #
 # What is built goes to _make/ and nowhere else (as dune's _build and
@@ -23,7 +23,7 @@ TC = tiny-c
 AS = tiny-assembler
 LD = tiny-linker
 MACHINE = tiny-machine
-MKFS = tiny-mkfs
+MKFS = tiny-mkfat
 
 O = _make
 L = ../../../runtime

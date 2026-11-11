@@ -193,8 +193,8 @@ a kernel in ML did, kept as `kernels/steps/` keeps m-ix's kernel's:
 assembly and four programs linked with it; `t6/`, a kernel in C with
 `spawn` and no `fork`, a FAT on a disk, one kernel stack. They are
 built by the tiny tools as a program is built by its toolchain, on
-`runtime/`; t6's disk is made on the host by tiny-mkfs
-(`TinyKernel/steps/t6/TinyMkfs.ml`, the one OCaml file there). Their
+`runtime/`; t6's disk is made on the host by tiny-mkfat
+(`TinyKernel/steps/t6/TinyMkfat.ml`, the one OCaml file there). Their
 Makefiles take the tools from the PATH (after `dune install`) or from
 ix's `bin/`: `make -C tiny/TinyKernel/steps run`, `make -C
 tiny/TinyKernel/steps run-hello`. None of it is counted in t-ix's

@@ -1,7 +1,7 @@
 ; t6's one OCaml file: its disk, made on the host
 (executable
- (name TinyMkfs)
- (public_name tiny-mkfs)
+ (name TinyMkfat)
+ (public_name tiny-mkfat)
  (package ix)
- (modules TinyMkfs)
+ (modules TinyMkfat)
  (libraries ix_core fpath caps tiny_lib_system))

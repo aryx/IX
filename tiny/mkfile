@@ -19,7 +19,7 @@ INCLUDES=-I . -I TinyLibSystem/unix -I $D -I TinyMachine -I TinyKernel -I TinyBr
 START=$ML -start $STD $COMMONS
 LINK=$LD -H7 -nofollow
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
-PROGS=tiny-build tiny-shell tiny-utils tiny-editor tiny-c tiny-ml tiny-assembler tiny-linker tiny-ar tiny-db tiny-vcs tiny-cpu tiny-machine tiny-prof tiny-mkfs
+PROGS=tiny-build tiny-shell tiny-utils tiny-editor tiny-c tiny-ml tiny-assembler tiny-linker tiny-ar tiny-db tiny-vcs tiny-cpu tiny-machine tiny-prof tiny-mkfat
 
 all:V: ${PROGS:%=$D/%}
 
@@ -31,7 +31,7 @@ $D/%.$O: %.ml
 
 $D/TinyMachineCPU.$O $D/TinyAssembler.$O $D/TinyLinker.$O $D/TinyArchiver.$O $D/TinyCPU.$O $D/TinyMachineDevices.$O $D/TinyMachine.$O: TinyLibMachine.ml
 $D/TinyCPU.$O $D/TinyMachineDevices.$O $D/TinyMachine.$O: TinyMachine/TinyMachineCPU.ml
-$D/TinyAssembler.$O $D/TinyLinker.$O $D/TinyArchiver.$O $D/TinyC.$O $D/TinyML.$O $D/TinyCPU.$O $D/TinyMachine.$O $D/TinyMkfs.$O: $D/TinyLibSystem.$O
+$D/TinyAssembler.$O $D/TinyLinker.$O $D/TinyArchiver.$O $D/TinyC.$O $D/TinyML.$O $D/TinyCPU.$O $D/TinyMachine.$O $D/TinyMkfat.$O: $D/TinyLibSystem.$O
 # (tiny-ml's passes, TinyML/, each after the ones before it, after TinyLibMachine, the lines they make)
 MLC=TinyLibMachine TinyMLLexer TinyMLTree TinyMLPrintf TinyMLParser TinyMLTypes TinyMLMachine TinyMLCompile
 MLCO=${MLC:%=$D/%.$O}
@@ -76,10 +76,10 @@ $D/TinyKernelNetwork.$O: TinyKernel/TinyKernelNetwork.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target TinyKernel/TinyKernelNetwork.ml
 
-# (tiny-mkfs is t6's, a step before tiny-kernel: its file is there)
-$D/TinyMkfs.$O: TinyKernel/steps/t6/TinyMkfs.ml
+# (tiny-mkfat is t6's, a step before tiny-kernel: its file is there)
+$D/TinyMkfat.$O: TinyKernel/steps/t6/TinyMkfat.ml
 	mkdir -p $D
-	$ML $INCLUDES -o $target TinyKernel/steps/t6/TinyMkfs.ml
+	$ML $INCLUDES -o $target TinyKernel/steps/t6/TinyMkfat.ml
 
 $D/TinyBuildSystem.$O: $D/TinyLibSystem.$O TinyBuildSystem.ml
 $D/tiny-build: $LIBA $D/TinyLibSystem.$O $D/TinyBuildSystem.$O $LIBS
@@ -150,9 +150,9 @@ $D/TinyProfiler.$O: $D/TinyLibSystem.$O TinyProfiler.ml
 $D/tiny-prof: $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyProfiler.$O $LIBS
 	$START TinyLibSystem TinyLibMachine TinyProfiler Std_exit -o $D/TinyProfiler.start.$O
 	$LINK -o $target $D/TinyProfiler.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyProfiler.$O $STDEND
-$D/tiny-mkfs: $D/TinyLibSystem.$O $D/TinyMkfs.$O $LIBS
-	$START TinyLibSystem TinyMkfs Std_exit -o $D/TinyMkfs.start.$O
-	$LINK -o $target $D/TinyMkfs.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyMkfs.$O $STDEND
+$D/tiny-mkfat: $D/TinyLibSystem.$O $D/TinyMkfat.$O $LIBS
+	$START TinyLibSystem TinyMkfat Std_exit -o $D/TinyMkfat.start.$O
+	$LINK -o $target $D/TinyMkfat.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyMkfat.$O $STDEND
 
 clean:V:
 	rm -rf $D
@@ -167,5 +167,5 @@ DEPOBJ=D
 DEPDIRS=. TinyMachine TinyBrowser TinyML TinyC TinyKernel TinyKernel/host TinyLibSystem/unix TinyKernel/steps/t6 $D
 DEPBROWSER=TinyBrowser/TinyBrowserText.ml TinyBrowser/TinyBrowserAddress.ml \
   TinyBrowser/TinyBrowserHttp.ml
-DEPUNITS=`{ls *.ml TinyMachine/*.ml $DEPBROWSER TinyML/*.ml TinyC/*.ml TinyKernel/TinyKernelNetwork.ml TinyKernel/host/*.ml TinyLibSystem/unix/*.ml TinyKernel/steps/t6/TinyMkfs.ml | sed 's,.*/,,; s,\.ml$,,'}
+DEPUNITS=`{ls *.ml TinyMachine/*.ml $DEPBROWSER TinyML/*.ml TinyC/*.ml TinyKernel/TinyKernelNetwork.ml TinyKernel/host/*.ml TinyLibSystem/unix/*.ml TinyKernel/steps/t6/TinyMkfat.ml | sed 's,.*/,,; s,\.ml$,,'}
 <$TOP/mkfiles/mkdepend

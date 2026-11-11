@@ -69,10 +69,10 @@ local skeletons = import '../../../../skeletons.libsonnet';
         // pipewrite's body: def: finds its prototype
         { at: 'code:"return block(&pi->w)"', say: 'a full pipe: BLOCKED, the write rerun', weight: 2 },
       ],
-      related: ['TinyMkfs.ml'],
+      related: ['TinyMkfat.ml'],
     },
-    'TinyMkfs.ml': { digest: '562ca523ae72',
-      summary: "tiny-mkfs: t6's disk made on the host, as xv6's mkfs.c: a superblock, a FAT, the root's entries, the files' chains.",
+    'TinyMkfat.ml': { digest: '562ca523ae72',
+      summary: "tiny-mkfat: t6's disk made on the host, as xv6's mkfs.c: a superblock, a FAT, the root's entries, the files' chains.",
       important: [
         { at: 'def:make', say: 'each file a chain of fresh blocks, its entry in root', weight: 3 },
         { at: 'def:list', say: 'an image read back', weight: 1 },
@@ -80,8 +80,8 @@ local skeletons = import '../../../../skeletons.libsonnet';
       ],
       related: ['file.c', '../../TinyKernelFS.ml'],
     },
-    'TinyMkfs.mli': { digest: '229d18726111',
-      summary: "tiny-mkfs's idea and history: MS-DOS's FAT against Unix's inodes, and why the host makes the disk.",
+    'TinyMkfat.mli': { digest: '229d18726111',
+      summary: "tiny-mkfat's idea and history: MS-DOS's FAT against Unix's inodes, and why the host makes the disk.",
       important: [
         { at: 'comment:"MS-DOS\'s idea, a FAT; the disk, in blocks of 1 KB"', weight: 3 },
         { at: 'comment:"The two formats are the two answers to one question"', weight: 2 },
@@ -98,13 +98,13 @@ local skeletons = import '../../../../skeletons.libsonnet';
         { at: 'proc.c', role: 'the trap, the lottery, spawn' },
         { at: 'file.c', role: 'the FAT, pipes, the console' },
         { at: 'user/', role: 'the programs, given what they hold' },
-        { at: 'TinyMkfs.ml', role: 'the disk, made on the host' },
+        { at: 'TinyMkfat.ml', role: 'the disk, made on the host' },
       ],
       joints: [
         { from: 'main.c', to: 'proc.c', say: '/init, the scheduler' },
         { from: 'user/', to: 'proc.c', say: 'system calls' },
         { from: 'proc.c', to: 'file.c', say: 'calls on files' },
-        { from: 'TinyMkfs.ml', to: 'file.c', say: 'fs.img: a FAT' },
+        { from: 'TinyMkfat.ml', to: 'file.c', say: 'fs.img: a FAT' },
       ],
     },
     {
@@ -166,14 +166,14 @@ local skeletons = import '../../../../skeletons.libsonnet';
         { from: 'file.c:def:sys_read', to: 'file.c:def:fileread', say: "the fd's file" },
       ],
     },
-    skeletons.prog('tiny-mkfs: files to a FAT image', 'TinyMkfs.ml', [
-      ['TinyMkfs.ml:def:make', 'superblock, FAT, root, chains', 'the files, by name'],
+    skeletons.prog('tiny-mkfat: files to a FAT image', 'TinyMkfat.ml', [
+      ['TinyMkfat.ml:def:make', 'superblock, FAT, root, chains', 'the files, by name'],
     ]) + {
-      bones+: [{ at: 'TinyMkfs.ml:def:list', role: 'an image listed back (-l)' }],
-      joints+: [{ from: 'TinyMkfs.ml:def:main', to: 'TinyMkfs.ml:def:list', say: '-l img' }],
+      bones+: [{ at: 'TinyMkfat.ml:def:list', role: 'an image listed back (-l)' }],
+      joints+: [{ from: 'TinyMkfat.ml:def:main', to: 'TinyMkfat.ml:def:list', say: '-l img' }],
     },
   ],
   views: [
-    { name: "t6's FAT: made on the host, read by the kernel", files: ['TinyMkfs.ml', 'file.c', 't6.h'] },
+    { name: "t6's FAT: made on the host, read by the kernel", files: ['TinyMkfat.ml', 'file.c', 't6.h'] },
   ],
 }

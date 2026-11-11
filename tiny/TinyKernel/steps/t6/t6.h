@@ -30,7 +30,7 @@ typedef unsigned int uint;
 // back to its sys, which runs again when the caller is woken
 #define BLOCKED 0x7ffffff0
 
-// the disk (TinyMkfs.ml's -fat)
+// the disk (TinyMkfat.ml's -fat)
 #define BSIZE 1024
 #define NBLOCKS 2048
 #define FATMAGIC 0x7f5f0006

@@ -1,5 +1,5 @@
 (* debug: a debugger for tiny-kernel's programs, at the level of their
- * instructions (plan_tiny_debugger.md). It starts its program stopped
+ * machine instructions (not source). It starts its program stopped
  * at its first instruction (a child that calls trace(0), then exec),
  * or attaches to a process by its pid, and controls it through the
  * kernel's trace descriptor: commands written, lines read. Its own
@@ -15,10 +15,10 @@
  *                   function's slots on the value stack
  *     x addr [n]    n words               x/i addr [n]  instructions
  *     q             quit (the program killed, or left to run if attached)
- *
- *     debug cat f
- *     debug -window cat f
- *     debug 12 /bin/cat
+ * usage examples:
+ *     $ debug cat f
+ *     $ debug -window cat f
+ *     $ debug 12 /bin/cat
  *
  * At each stop it shows why, and the instruction at the pc, by the
  * function it is in: main+0x14. The names are the labels tiny-linker
@@ -136,20 +136,19 @@
  * that idea in a single file.
  *
  * references:
- *  - plan_tiny_debugger.md: the design and its steps
- *  - principia's debuggers/ (db, acid, libmach, tracers/ratrace.c):
- *    read for the comparisons above, not copied
+ *  - S. R. Bourne, "A. Debugging with adb" (Seventh Edition's manual,
+ *    1979; from memory)
  *  - T. J. Killian, "Processes as Files" (USENIX, 1984)
  *  - P. Winterbottom, "Acid: A Debugger Built From A Language" (USENIX,
  *    1994)
  *  - Plan 9's proc(3), db(1) and ratrace(1) manual pages
- *  - S. R. Bourne, "A. Debugging with adb" (Seventh Edition's manual,
- *    1979; from memory)
+ *  - principia's debuggers/ (db, acid, libmach, tracers/ratrace.c):
+ *    read for the comparisons above, not copied
+ *  - plan_tiny_debugger.md: the design and its steps
  *)
 
 (* the program: its command line, its commands, its exit; caps, a
  * window's (-window: TinyLibGUI's run_canvas) *)
 val main :
-  < Cap.clock; Cap.keyboard; Cap.open_in; Cap.pipe; Cap.fork; Cap.exec;
-    Cap.kill; Cap.wait; .. > ->
+  < Cap.clock; Cap.keyboard; Cap.open_in; Cap.pipe; Cap.forkew; Cap.kill; .. > ->
   string array -> Exit.t

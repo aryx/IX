@@ -102,6 +102,15 @@ then echo "ok units: Shapes and Main compiled apart, and whole, Main.out's outpu
 printf 'let () = print_int (Shapes.area Dot)\n' > $W/units/Q.ml; printf 'let () = print_int (area Dot)\n' > $W/units/U.ml
 if $TML -L $W/lib -c -o $W/units/Q.o $W/units/Shapes.tmi $W/units/Q.ml && [ "$($TML -L $W/lib -c -o $W/units/U.o $W/units/Shapes.tmi $W/units/U.ml 2>&1)" = "$W/units/U.ml: line 1: unbound area" ]
 then echo "ok units: Shapes.area, and area unbound without open Shapes"; else echo "FAIL units: the scopes"; failures=$((failures + 1)); fi
+# -I: the interfaces found by the modules a unit names (Shapes.x, module
+# S = Shapes, open Shapes), the same object as with them given
+printf 'module S = Shapes\nlet () = print_int (S.area Dot)\n' > $W/units/A.ml; printf 'open Shapes\nlet () = print_int (area Dot)\n' > $W/units/O.ml
+if $TML -L $W/lib -c -I $W/units -o $W/units/MainI.o $UT/Main.ml && cmp -s $W/units/MainI.o $W/units/Main.o \
+   && $TML -L $W/lib -c -o $W/units/A1.o $W/units/Shapes.tmi $W/units/A.ml && $TML -L $W/lib -c -I $W/units -o $W/units/A2.o $W/units/A.ml \
+   && cmp -s $W/units/A1.o $W/units/A2.o \
+   && $TML -L $W/lib -c -o $W/units/O1.o $W/units/Shapes.tmi $W/units/O.ml && $TML -L $W/lib -c -I $W/units -o $W/units/O2.o $W/units/O.ml \
+   && cmp -s $W/units/O1.o $W/units/O2.o
+then echo "ok units: -I, Main, an alias's and an open's the objects of their interfaces given"; else echo "FAIL units: -I"; failures=$((failures + 1)); fi
 # a name defined twice, the later is the one the units after see
 printf 'let f x = x + 1\nlet f x = x * 10\n' > $W/units/Twice.ml; printf 'let () = print_int (Twice.f 3)\n' > $W/units/R.ml
 if $TML -L $W/lib -c -o $W/units/Twice.o $W/units/Twice.ml && $TML -L $W/lib -c -o $W/units/R.o $W/units/Twice.tmi $W/units/R.ml \

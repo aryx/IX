@@ -355,7 +355,7 @@ hello
 %       1       1       6
 % [12] getpid() = 12
 [12] dup(0) = 5
-[12] pipe(0xffec0) = 0
+[12] pipe(0xffec8) = 0
 [12] fork() = 13
 [12] close(7) = 0
 [12] close(0) = 0

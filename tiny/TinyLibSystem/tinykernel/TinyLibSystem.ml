@@ -138,15 +138,15 @@ let logging args =
     | "-quiet" -> Logs.set_level None; false
     | _ -> true) args
 
-let environment caps = [ "PATH", "/bin" ]
+let environment _caps = [ "PATH", "/bin" ]
 let getpid _caps = u_getpid ()
 
 (*****************************************************************************)
 (* The terminal *)
 (*****************************************************************************)
 
-let print caps s = print_string s
-let eprint caps s = ignore (u_write fd_stderr s)
+let print _caps s = print_string s
+let eprint _caps s = ignore (u_write fd_stderr s)
 let flush _caps = u_flush ()
 
 (* what was read of the input and is not yet a line given *)
@@ -164,7 +164,7 @@ let rec read_line caps =
       else if !pending = "" then None
       else (let line = !pending in pending := ""; Some line)
 
-let isatty n = true
+let isatty _n = true
 let ignore_interrupt _caps = ()
 let raw_console _caps raw = ignore (u_rawcons (if raw then 1 else 0))
 
@@ -187,13 +187,13 @@ let from_end = 2
 
 (* to read, to write anew, and to write then a seek to the end
  * (u_open's flags, above) *)
-let open_in caps file =
+let open_in _caps file =
   let fd = u_open (str file) o_read in
   if fd < 0 then failwith "cannot open" else fd
-let open_out caps file =
+let open_out _caps file =
   let fd = u_open (str file) o_anew in
   if fd < 0 then failwith "cannot create" else fd
-let open_append caps file =
+let open_append _caps file =
   let fd = u_open (str file) o_write in
   if fd < 0 then failwith "cannot create"
   else if u_seek fd 0 from_end < 0 then (
@@ -201,7 +201,7 @@ let open_append caps file =
     failwith "cannot seek")
   else fd
 (* to read and write, made when it is not there *)
-let open_rw caps file =
+let open_rw _caps file =
   let fd = u_open (str file) o_read_write in
   if fd < 0 then failwith "cannot open" else fd
 let seek fd off = if u_seek fd off from_start < 0 then failwith "cannot seek"
@@ -325,9 +325,9 @@ let write_file caps file s =
   let fd = open_out caps file in
   write fd s;
   close fd
-let mkdir caps dir = if u_mkdir (str dir) < 0 then failwith "cannot"
-let remove caps file = if u_unlink (str file) < 0 then failwith "cannot"
-let link caps a b = if u_link (str a) (str b) < 0 then failwith "cannot"
+let mkdir _caps dir = if u_mkdir (str dir) < 0 then failwith "cannot"
+let remove _caps file = if u_unlink (str file) < 0 then failwith "cannot"
+let link _caps a b = if u_link (str a) (str b) < 0 then failwith "cannot"
 
 let rename caps a b =
   if path_names (str a) <> path_names (str b) then begin
@@ -345,14 +345,14 @@ let rename caps a b =
     remove caps a
   end
 
-let is_executable _caps file = false
-let set_executable caps file x = ()
+let is_executable _caps _file = false
+let set_executable _caps _file _x = ()
 
 let touch caps file =
   if not (exists caps file) then
     close (open_out caps file)
 
-let getcwd caps = Fpath.v (u_getcwd ())
+let getcwd _caps = Fpath.v (u_getcwd ())
 
 let time _caps = u_time ()
 
@@ -366,7 +366,7 @@ let sleep _caps ms =
 
 let seed _caps = u_seed ()
 
-let chdir caps dir = if u_chdir (str dir) < 0 then failwith "cannot"
+let chdir _caps dir = if u_chdir (str dir) < 0 then failwith "cannot"
 
 (*****************************************************************************)
 (* Descriptors *)
@@ -393,15 +393,17 @@ let dup2 a b =
     go []
   end
 
-(* u_pipe's two ends in a number: where to read, and 256 times where to write *)
-let pipe _caps =
-  let p = u_pipe () in
-  if p < 0 then failwith "no pipe" else keep (p mod 256), keep (p / 256)
-
-(* u_box's, as u_pipe's *)
-let box _caps =
-  let b = u_box () in
-  if b < 0 then failwith "no box" else keep (b mod 256), keep (b / 256)
+(* u_pipe's and u_box's two ends in a number: where to read, and 256
+ * times where to write; each kept in its turn (a tuple's two would be
+ * in the compiler's order) *)
+let ends what n =
+  if n < 0 then failwith ("no " ^ what)
+  else
+    let r = keep (n mod 256) in
+    let w = keep (n / 256) in
+    r, w
+let pipe _caps = ends "pipe" (u_pipe ())
+let box _caps = ends "box" (u_box ())
 
 (*****************************************************************************)
 (* Processes *)
@@ -409,15 +411,15 @@ let box _caps =
 
 (* (u_fork's -1: the kernel's processes all taken, which rc says "try
  * again") *)
-let fork caps =
+let fork _caps =
   match u_fork () with
   | -1 -> failwith "try again"
   | 0 -> None
   | p -> Some p
 
-let kill caps pid = u_kill pid >= 0
+let kill _caps pid = u_kill pid >= 0
 
-let exec caps file argv env =
+let exec _caps file argv _env =
   List.iter (fun d -> ignore (u_close d)) !private_fds;
   private_fds := [];
   if List.length argv > 63 then "more than 63 arguments"
@@ -447,7 +449,7 @@ let rec wait caps pid =
        | None -> ""
        | Some ended_one -> ended := ended_one :: !ended; wait caps pid)
 
-let wait_any caps =
+let wait_any _caps =
   match !ended with
   | (p, st) :: rest -> ended := rest; Some (p, status st)
   | [] -> Option.map (fun (p, st) -> (p, status st)) (waits ())

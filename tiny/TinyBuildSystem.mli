@@ -110,9 +110,9 @@
  * context:
  * ix itself is built by mini-mk (with Builder's mkfiles, and dune
  * alongside), whose recipes are run by mini-rc or tiny-shell; this one
- * hands each recipe to the system's shell (TinyLibSystem.shell: sh -e
- * on the host, tiny-shell's rc -e on tiny-kernel, so a recipe is in
- * that shell's language). The digest comes from Sha1, which also names
+ * hands each recipe to rc -e (TinyLibSystem.shell: tiny-shell on the
+ * host, /bin/rc on tiny-kernel), so a recipe is rc's on both, as
+ * mini-mk's with mini-rc. The digest comes from Sha1, which also names
  * the objects of TinyVCS: using the content of a file as its name is
  * the same idea in both, and in the nodes of TinyDatabase, which never
  * change either. The child processes are waited for by

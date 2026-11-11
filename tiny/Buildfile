@@ -24,10 +24,9 @@
 # The tools are tiny-kernel's: ml (tiny-ml), cc (tiny-c), as
 # (tiny-assembler), ld (tiny-linker), ar (tiny-ar), build (tiny-build).
 # On the host they are tiny-ml and so on: a directory of links named
-# ml, cc, as, ld, ar and build first in the PATH
-# runs this file there too (tiny-build runs a recipe with sh on the
-# host, rc on tiny-kernel: a recipe here is a command both read, but
-# the image's, which is rc's).
+# ml, cc, as, ld, ar and build first in the PATH runs this file there
+# too. A recipe is rc's, on both: tiny-build runs it with tiny-shell on
+# the host, /bin/rc on tiny-kernel.
 #
 # coupling: TinyKernel/Makefile says the same, its lists (CORE, UNITS_x
 # a program's units, I_x a unit's interfaces, MEM_x, KUNITS): a

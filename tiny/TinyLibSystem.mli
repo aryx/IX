@@ -338,14 +338,14 @@ val wait : < Cap.wait; .. > -> pid -> status
 (* the next child to end, and how; None when there is no child *)
 val wait_any : < Cap.wait; .. > -> (pid * status) option
 
-(* [shell caps vars script]: a child that runs script by the system's
- * shell, vars among its variables (each a list of words), what was
- * printed flushed first; its pid, None when no child could be made
- * (old: -1). The
- * script is in that shell's language: the host's sh -e, tiny-kernel's
- * rc -e (there in a file, an argument having 64 bytes at most, which
- * rc reads whole and removes first; no environment: vars are rc's
- * assignments before it) *)
+(* [shell caps vars script]: a child that runs script by rc -e, vars
+ * among its variables (each a list of words), what was printed flushed
+ * first; its pid, None when no child could be made (old: -1). On the
+ * host rc is tiny-shell, from the PATH, vars in its environment as rc's
+ * lists; on tiny-kernel /bin/rc, the script in a file (an argument has
+ * 64 bytes at most), which rc reads whole and removes first, vars rc's
+ * assignments before it. (old: the host's sh -e, so a script was a
+ * command both shells read) *)
 val shell :
   < Cap.fork; Cap.exec; Cap.env; Cap.open_out; Cap.stdout; Cap.stderr; .. > ->
   (string * string list) list -> string -> pid option

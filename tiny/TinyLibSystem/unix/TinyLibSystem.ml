@@ -241,23 +241,28 @@ let wait_any (caps : < Cap.wait; .. >) =
 
 let shell (caps : < Cap.fork; Cap.exec; Cap.env; Cap.stdout; Cap.stderr; .. >) vars
     script =
-  (* the environment's but those vars sets: a name twice, sh took the
-   * environment's (a recipe running build, its $stem the parent's) *)
+  (* the environment's but those vars sets: a name twice, the shell took
+   * the environment's (a recipe running build, its $stem the parent's) *)
   let mine s =
     match String.index_opt s '=' with
     | Some i -> List.mem_assoc (String.sub s 0 i) vars
     | None -> false in
+  (* a var's words joined by \001, as rc keeps a list in the environment
+   * (TinyShell's start splits them back): $prereq a list, not a string *)
   let env =
-    List.map (fun (k, v) -> k ^ "=" ^ String.concat " " v) vars
+    List.map (fun (k, v) -> k ^ "=" ^ String.concat "\001" v) vars
     @ List.filter (fun s -> not (mine s))
         (Array.to_list (CapUnix.environment caps ()))
   in
   flush_all ();
   match CapUnix.fork caps () with
   | 0 ->
+    (* rc, tiny-shell, found in the PATH by env, as tiny-kernel's
+     * /bin/rc: a script is rc's on both systems (old: /bin/sh -e -c,
+     * a Buildfile's recipe a command both shells read) *)
     (try
-       CapUnix.execve caps "/bin/sh" [| "sh"; "-e"; "-c"; script |]
-         (Array.of_list env)
+       CapUnix.execve caps "/usr/bin/env"
+         [| "env"; "tiny-shell"; "-e"; "-c"; script |] (Array.of_list env)
      with _ -> ());
     Unix._exit 127
   | pid -> Some pid

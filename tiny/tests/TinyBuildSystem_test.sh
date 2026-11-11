@@ -7,6 +7,9 @@
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 TB=${TB:-$ROOT/_build/default/tiny/TinyBuildSystem.exe}
+# (a recipe is rc's, run by tiny-shell from the PATH: the one beside the
+# tiny-build tested, m-ix's tools', or bin/'s, dune's)
+export PATH=$(dirname $TB):$ROOT/bin:$PATH
 failures=0
 
 # check NAME EXPECTED CMD...: run CMD, compare its output (stdout and

@@ -26,7 +26,7 @@ A Buildfile's five kinds of lines, and that is all the syntax:
                                   variable's or a rule's line (mk's)
   hello: $OBJS                    a rule: targets, then prerequisites
       cc -o $target $prereq       its recipe: the lines that start with a
-                                  blank, run by sh -e
+                                  blank, run by rc -e
   %.o: %.c                        a pattern: % is the stem
       cc -c $stem.c
   <.depend                        an include, if the file exists
@@ -393,9 +393,9 @@ let digest_file (caps : < Cap.open_in; Cap.readdir; .. >) (file : string) :
       Hashtbl.replace file_digests file d;
       d
 
-(* a recipe run by the system's shell: sh -e on the host, rc -e on
- * tiny-kernel (TSys.shell); its pid, None when no process
- * could run it (old: CapUnix.fork and execve of /bin/sh -e -c here) *)
+(* a recipe run by rc -e, the host's tiny-shell or tiny-kernel's /bin/rc
+ * (TSys.shell); its pid, None when no process could run it (old:
+ * CapUnix.fork and execve of /bin/sh -e -c here) *)
 let start (caps : < Cap.fork; Cap.exec; Cap.env; Cap.open_out; .. >)
     (vars : (string * string list) list) (recipe : string)
     : TSys.pid option =

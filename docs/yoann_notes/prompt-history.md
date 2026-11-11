@@ -70640,3 +70640,19 @@ Claude recommended starting with the one-build-description item, since it underp
 Claude then suggested qualified type names in tiny-ml, to remove the `Int32`/`Int64` workarounds and the `-I` ordering hack.
 Claude proposed a fast `make self` via tiny-prof profiling, to replace the hand-patched `self.expected` with a real check.
 Claude also listed the web page disk persistence, a guided first session, a teaching book, and small pending items as later work.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 22:01
+
+**Yoann:**
+
+> let's finish self-hosting and this tiny/Buildfile simplifiication
+
+**Claude (summary):**
+
+Claude changed tiny-build to run recipes in rc on both the host and tiny-kernel.
+Claude made `TinyLibSystem`'s `shell` run `tiny-shell` through `/usr/bin/env`, found via PATH, with list variables passed as rc lists.
+Claude updated `TinyLibSystem.mli`, tiny-build's help, and the Buildfile header to say recipes are rc on both systems.
+Claude updated `TinyBuildSystem_test.sh` to set the PATH, and confirmed all tiny-build tests pass with and without `bin/` on it.
+Claude also outlined step 2 and asked whether the separate 25 MB disk for `self-quick` was the right shape.

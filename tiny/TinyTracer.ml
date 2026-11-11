@@ -9,9 +9,9 @@ module TSys = TinyLibSystem
  * alone, no other system's, so not TinyLibSystem's (mlsys.c's u_trace) *)
 external u_trace : TSys.pid -> TSys.fd = "u_trace"
 
-(* written, a refusal not a reason to end *)
+(* a command written to a trace, a refusal not a reason to end (the
+ * process may have just ended) *)
 let put fd s = try TSys.write fd s with Failure _ -> ()
-let say s = put TSys.fd_stderr s
 
 (*****************************************************************************)
 (* The calls *)
@@ -173,7 +173,9 @@ let event s =
  * still traced, and the children it made *)
 let handle caps children p : bool * traced list =
   let said s =
-    say ((if children then "[" ^ string_of_int p.pid ^ "] " else "") ^ s ^ "\n") in
+    TSys.eprint caps
+      ((if children then "[" ^ string_of_int p.pid ^ "] " else "") ^ s ^ "\n")
+  in
   let go call = p.call <- call; put p.trace "c" in
   let s = next p in
   match event s, p.call with
@@ -225,12 +227,13 @@ let rec follow caps children (procs : traced list) =
 (* The main *)
 (*****************************************************************************)
 
-let main (caps : < Cap.forkew; Cap.kill; ..>) (argv : string array) : Exit.t =
+let main (caps : < Cap.forkew; Cap.kill; Cap.stderr; .. >)
+    (argv : string array) : Exit.t =
   let n = Array.length argv in
   let children = n > 1 && argv.(1) = "-f" in
   let first = if children then 2 else 1 in
   if n <= first then begin
-    say "usage: trace [-f] prog [args] | trace [-f] pid\n";
+    TSys.eprint caps "usage: trace [-f] prog [args] | trace [-f] pid\n";
     Exit.Code 1
   end
   else
@@ -245,7 +248,7 @@ let main (caps : < Cap.forkew; Cap.kill; ..>) (argv : string array) : Exit.t =
              ignore (u_trace 0);
              ignore (TSys.exec caps (Fpath.v file)
                        (List.init (n - first) (fun i -> argv.(i + first))) []);
-             say ("trace: " ^ prog ^ ": not found\n");
+             TSys.eprint caps ("trace: " ^ prog ^ ": not found\n");
              (* the child's end, out of the parent's code: the status
               * TinyLibSystem.main gives the system *)
              raise (Exit.ExitCode 127)

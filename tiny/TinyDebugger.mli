@@ -148,7 +148,9 @@
  *)
 
 (* the program: its command line, its commands, its exit; caps, a
- * window's (-window: TinyLibGUI's run_canvas) *)
+ * window's (-window: TinyLibGUI's run_canvas), and its output for what
+ * it says, written at once *)
 val main :
-  < Cap.clock; Cap.keyboard; Cap.open_in; Cap.pipe; Cap.forkew; Cap.kill; .. > ->
+  < Cap.clock; Cap.keyboard; Cap.open_in; Cap.pipe; Cap.forkew; Cap.kill;
+    Cap.stdout; Cap.stderr; .. > ->
   string array -> Exit.t

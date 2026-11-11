@@ -16,23 +16,23 @@ external u_trace : TSys.pid -> TSys.fd = "u_trace"
 (* What debug says *)
 (*****************************************************************************)
 
-(* written, a refusal not a reason to end *)
+(* a command written to a trace, a refusal not a reason to end (the
+ * process may have just ended) *)
 let put fd s = try TSys.write fd s with Failure _ -> ()
 
-(* what debug says: on its output, or kept for the window *)
-let sink = ref None
-let say s =
-  match !sink with
-  | Some b -> Buffer.add_string b s
-  | None -> put TSys.fd_stdout s
+(* where what debug says goes: its output, written at once (the
+ * debugged program's own output comes between), or the window's text;
+ * main sets it, with its capability *)
+let saying = ref (fun (_ : string) -> ())
+let say s = !saying s
 
 (* what f says, as a string *)
 let text f =
-  let was = !sink in
+  let was = !saying in
   let b = Buffer.create 256 in
-  sink := Some b;
+  saying := Buffer.add_string b;
   f ();
-  sink := was;
+  saying := was;
   Buffer.contents b
 
 (* a number in hexadecimal, a negative one in decimal *)
@@ -597,6 +597,7 @@ let window caps p =
 (*****************************************************************************)
 
 let main caps argv =
+  saying := (fun s -> TSys.print caps s; TSys.flush caps);
   let n = Array.length argv in
   let windowed = n > 1 && argv.(1) = "-window" in
   let first = if windowed then 2 else 1 in
@@ -641,10 +642,11 @@ let main caps argv =
         TSys.close w;
         if started then Some r else (TSys.close r; None)
     | None -> None in
-  if windowed then sink := Some out;
+  if windowed then saying := Buffer.add_string out;
   (* (a program not found: its child said so, in the window's case on
    * the pipe, read into what is said) *)
-  let fail () = put TSys.fd_stdout (Buffer.contents out); Exit.Code 1 in
+  let fail () =
+    TSys.print caps (Buffer.contents out); TSys.flush caps; Exit.Code 1 in
   let trace = u_trace pid in
   if trace < 0 then begin
     if not started then say ("debug: " ^ argv.(first) ^ ": no such process\n");

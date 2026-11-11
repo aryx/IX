@@ -70,4 +70,4 @@
 
 (* the program: its command line, the stops of its processes, its exit *)
 val main :
-  < Cap.forkew; Cap.kill; .. > -> string array -> Exit.t
+  < Cap.forkew; Cap.kill; Cap.stderr; .. > -> string array -> Exit.t

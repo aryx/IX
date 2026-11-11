@@ -69753,3 +69753,34 @@ Claude also committed the rc change as `82a39850` and asked whether to start the
 **Yoann:**
 
 > also we're planning to add ar, so maybe we can also make ocaml libs
+
+------------------------------------------------------------------------
+
+## 2026-11-11 11:50
+
+**Yoann:**
+
+> like ocamlmklib does (but maybe here ml can play all roles, with a single tool)
+
+**Claude (summary):**
+
+Claude proposed letting `ml` build ML libraries as well as compile, like `ocamlc -a` and `ocamlmklib`, and committed this as `248e911b`.
+Claude described three steps: `ml -I dir` for finding `.tmi` interfaces, `ml -M` for Buildfile dependency lines, and `ml -a -o lib.a` for bundling objects.
+Claude raised whether C's `libc.a` should use `ml -a` or a small `ar`, leaning toward `ml -a` to keep one tool fewer.
+Claude also warned that reading interfaces by need changes type variable numbering in each `.tmi`, which would require the Makefile to switch and its image to change once.
+Claude asked whether to start step 0 with `ml -I` while `make self` keeps running in `_make8`.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 11:50
+
+**Yoann:**
+
+> maybe now that we're exposing more the Buildfile and how to build t-ix under t-ix, we more clearly see gaps in the current t-ix
+
+**Claude (summary):**
+
+Claude listed the gaps t-IX showed while writing Buildfiles under t-IX, grouped as fixed, planned, and unaddressed.
+Claude proposed a "gaps found on the way" section in the plan, with each gap becoming a step or being set aside with a reason.
+Claude ranked the image's roughly 300 KB headroom limit and `build`'s missing list substitution as the two to treat first.
+Claude also noted that `ml` and `ocamldep` lack dependency discovery, libraries, `true`, and order-dependent `.tmi` numbering.

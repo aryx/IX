@@ -129,6 +129,29 @@ tiny-linker in its members' order. To decide: C's libraries
 (/lib/c/libc.a) by ml -a too (the same objects), or by a small ar.
 Later, after the library is built by the Buildfile.
 
+## Gaps found on the way
+
+Writing t-IX's build as a t-IX user would showed what its tools lack
+(the author: "maybe now that we're exposing more the Buildfile and how
+to build t-ix under t-ix, we more clearly see gaps in the current
+t-ix"). Fixed already (2026-11-11): rm -f (a clean target was a loop of
+test -f), rc's ^ joining a word and a `{...} (the self-build's own
+recipe needed it; make self found it). First, what makes a Buildfile
+simpler to write and to read, "which are good for the student to add"
+(the author), in this order, each asked before it is done:
+
+1. **build's substitution**, mk's ${CORE:%=TinyLibCore/%.ml}: a list
+   made from another (lib/ml/Buildfile spells out 48 paths today, and
+   the image rule checks them against the Makefile's CORE);
+2. **ml -I**, 3. **ml -M**, 4. **ml -a** (above).
+
+Later, not the Buildfile's: no true (a recipe ends with status=''); the
+image near its 10 MB (TinyKernelFS.ml's buffers: about 300 KB left, and
+outputs beside the sources will want more); a .tmi's bytes depending on
+the order its interfaces were read (the type variables' numbers); parts
+no check builds, broken unseen (the steps, since 7ea94bae, until
+2026-11-11).
+
 ## Steps
 
 0. **tiny-ml -I and -M** (above), each with its tests: a unit compiled

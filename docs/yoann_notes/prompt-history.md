@@ -70273,3 +70273,71 @@ Claude asked whether to proceed with the tiny-ml and tiny-build changes, since t
 **Yoann:**
 
 > yes, let's do it
+
+------------------------------------------------------------------------
+
+## 2026-11-11 14:56
+
+**Yoann:**
+
+> also how those issues are solved in m-ix or ocaml-light?
+
+------------------------------------------------------------------------
+
+## 2026-11-11 19:31
+
+**Yoann:**
+
+> what does mini-mk and mk do?
+
+**Claude (summary):**
+
+Claude stopped with nothing committed, and the work sits in a worktree under the scratchpad directory.
+Claude recommended "shortest stem wins" for the ambiguous `TinyLibCore/Stdlib.o` match, as GNU make does, estimated at about 5 lines in tiny-build.
+Claude listed two other options: dropping a generic rule whose prerequisites loop back to its target, or giving the library its own Buildfile.
+Claude also fixed tiny-ml, tiny-build's exact-rule handling, the library rule in the Buildfile, and `Int64`'s use of `Int32.int32`.
+Separately, `make self` finished with `IMAGE SAME`, returning 1 only because `self.expected` needs re-recording after the Makefile edits.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 19:31
+
+**Yoann:**
+
+> I think a specialized rule has priority over a meta rule
+
+**Claude (summary):**
+
+Claude agreed that an exact rule beats a metarule, then explained the case here is still two metarules. It described how mk, mini-mk and tiny-build treat that as an ambiguity error, and how GNU make prefers the more specific pattern by shortest stem. Claude laid out two options: exact rules per library unit, or moving the library into its own Buildfile as m-ix does. It also estimated about 5 lines in tiny-build's `graph` plus a `.mli` note for GNU-make-style priority, and asked whether to add it.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 19:33
+
+**Yoann:**
+
+> I think it's time to make libraries, so we can depend just on a stdlib.a instead of all those .o
+
+------------------------------------------------------------------------
+
+## 2026-11-11 19:45
+
+**Yoann:**
+
+> those .tmi are a bit ambiguous; they remind me of .cmi and of .tm (tiny machine assembly)
+
+------------------------------------------------------------------------
+
+## 2026-11-11 19:45
+
+**Yoann:**
+
+> should we find a better extension name?
+
+------------------------------------------------------------------------
+
+## 2026-11-11 19:45
+
+**Yoann:**
+
+> what do they contain?

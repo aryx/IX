@@ -33,3 +33,4 @@ val equal : int64 -> int64 -> bool
 val compare : int64 -> int64 -> int
 val to_string : int64 -> string
 val of_string : string -> int64
+val of_string_opt : string -> int64 option

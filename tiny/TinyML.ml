@@ -397,8 +397,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
   args argl;
   let files = List.rev !files in
   (* g on the file opened, its name the errors' (file); one that cannot be
-   * opened apart from a Failure of g's (the library's on the text, as
-   * int_of_string's, or a bug) *)
+   * opened apart from a Failure of g's, a bug *)
   let with_file g f =
     let opened = ref false in
     try
@@ -464,7 +463,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
         TinyLibSystem.print caps
           (Fpath.to_string (Fpath.set_ext ".o" f) ^ ":"
            ^ String.concat "" (List.map (fun d -> " " ^ d) deps) ^ "\n")
-       with Error m -> unread f m | Failure m -> unread f m)
+       with Error m -> unread f m)
         mls;
       Exit.OK
     with File_error m -> Exit.Err m
@@ -606,12 +605,9 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
     Exit.OK
   with
   (* (said after the file, not the program's name). An error in the
-   * program; or a Failure, the library's on its text (int_of_string's
-   * on a number too big) as well as a bug's, not yet told apart (two
-   * arms: tiny-ml has no or-pattern binding m) *)
+   * program; a Failure is a bug, left uncaught (old: caught as well, the
+   * library's on the text, int_of_string's, not told from a bug's) *)
   | Error m ->
-      TinyLibSystem.eprint caps (!file ^ ": " ^ m ^ "\n"); Exit.Code 1
-  | Failure m ->
       TinyLibSystem.eprint caps (!file ^ ": " ^ m ^ "\n"); Exit.Code 1
   (* a line made that cannot be encoded (a number too big for its
    * field): the compiler's error, said with the file, as tiny-assembler

@@ -249,6 +249,14 @@ let () =
         "12345678901"; "-987654321987"; "9223372036854775807";
         "-9223372036854775808"; "0x8000000000000000"; "0o17"; "0b101"; "1_000" ] in
   List.iter i64 vs; print_newline ();
+  (* of_string_opt at the edges: a decimal past the signed range, the
+   * other bases past 64 bits, digits not of the base *)
+  List.iter (fun s ->
+      match Int64.of_string_opt s with Some x -> i64 x | None -> str "none")
+    [ "9223372036854775808"; "-9223372036854775809"; "99999999999999999999999";
+      "0xffffffffffffffff"; "0x10000000000000000"; "0o1777777777777777777777";
+      "0o2000000000000000000000"; "0b2"; "12a"; ""; "-" ];
+  print_newline ();
   List.iter (fun a -> List.iter (fun b ->
     i64 (Int64.add a b); i64 (Int64.sub a b); i64 (Int64.mul a b);
     (if b <> Int64.zero then (i64 (Int64.div a b); i64 (Int64.rem a b)));

@@ -59,7 +59,10 @@ let lex (s : string) : (token * int) array =
     | 'n' -> 10, i + 1 | 't' -> 9, i + 1 | 'r' -> 13, i + 1 | 'b' -> 8, i + 1
     | c when digit c ->
         if i + 3 > n then error "unterminated string";
-        int_of_string (String.sub s i 3), i + 3
+        let ddd = String.sub s i 3 in
+        (match int_of_string_opt ddd with
+         | Some c when c <= 255 && digit ddd.[1] && digit ddd.[2] -> c, i + 3
+         | _ -> error (Printf.sprintf "line %d: bad escape \\%s" !line ddd))
     | c -> Char.code c, i + 1
   in
   let rec comment i depth =
@@ -89,7 +92,10 @@ let lex (s : string) : (token * int) array =
       | '(' when i + 1 < n && s.[i + 1] = '*' -> go (comment (i + 2) 1)
       | c when digit c ->
           let j = span i in
-          add (INT (int_of_string (String.sub s i (j - i))));
+          let w = String.sub s i (j - i) in
+          (match int_of_string_opt w with
+           | Some k -> add (INT k)
+           | None -> error (Printf.sprintf "line %d: bad integer %s" !line w));
           go j
       | c when lower c || c = '_' ->
           let j = span i in

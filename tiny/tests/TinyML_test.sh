@@ -118,7 +118,7 @@ then echo "ok units: -I, Main, an alias's and an open's the objects of their int
 mkdir -p $W/dep; cp $UT/Shapes.ml $UT/Main.ml $W/dep/; printf 'module Shapes2 = Shapes\nlet () = print_int (Shapes2.area Dot)\n' > $W/dep/B.ml
 printf 'let x = 1e6\n' > $W/dep/F.ml
 if [ "$(cd $W/dep && $TML -depend -I . Main.ml B.ml F.ml 2> $W/dep/err)" = "Main.o: Shapes.tmi
-B.o: Shapes.tmi" ] && [ "$(cat $W/dep/err)" = "tiny-ml -depend: F.ml: int_of_string, left out" ]
+B.o: Shapes.tmi" ] && [ "$(cat $W/dep/err)" = "tiny-ml -depend: F.ml: line 1: bad integer 1e6, left out" ]
 then echo "ok units: -depend, the units named, an alias not one, a file not read left out"; else echo "FAIL units: -depend"; failures=$((failures + 1)); fi
 # open M: M's constructors shadow the library's before them (Common's
 # exception Error over Logs's level Error, a constant), as M.C does
@@ -143,6 +143,18 @@ if [ "$($TML -c -nostdlib -o $W/dep/S1.o $W/dep/S1.ml 2>&1; echo "exit $?")" = "
 exit 1" ] && [ "$($TML -c -nostdlib -o $W/dep/S2.o $W/dep/S2.ml 2>&1; echo "exit $?")" = "$W/dep/S2.ml: unterminated string
 exit 1" ]
 then echo "ok lexer: an unterminated string"; else echo "FAIL lexer: an unterminated string"; failures=$((failures + 1)); fi
+# a number or an escape tiny-ml cannot read: an error with its line (old:
+# int_of_string's Failure said as the error; \999 an uncaught
+# Invalid_argument, and '\999' a char of code 999)
+printf 'let x = 1\nlet y = 99999999999999999999999\n' > $W/dep/N1.ml; printf 'let s = "\\9zz"\n' > $W/dep/N2.ml
+printf 'let s = "\\999"\n' > $W/dep/N3.ml; printf "let c = '\\\\999'\n" > $W/dep/N4.ml
+lexed() { $TML -c -nostdlib -o $W/dep/N.o $W/dep/$1 2>&1; echo "exit $?"; }
+if [ "$(lexed N1.ml)" = "$W/dep/N1.ml: line 2: bad integer 99999999999999999999999
+exit 1" ] && [ "$(lexed N2.ml)" = "$W/dep/N2.ml: line 1: bad escape \\9zz
+exit 1" ] && [ "$(lexed N3.ml)" = "$W/dep/N3.ml: line 1: bad escape \\999
+exit 1" ] && [ "$(lexed N4.ml)" = "$W/dep/N4.ml: line 1: bad escape \\999
+exit 1" ]
+then echo "ok lexer: a number and escapes too big"; else echo "FAIL lexer: a number and escapes too big"; failures=$((failures + 1)); fi
 # a name defined twice, the later is the one the units after see
 printf 'let f x = x + 1\nlet f x = x * 10\n' > $W/units/Twice.ml; printf 'let () = print_int (Twice.f 3)\n' > $W/units/R.ml
 if $TML -L $W/lib -c -o $W/units/Twice.o $W/units/Twice.ml && $TML -L $W/lib -c -o $W/units/R.o $W/units/Twice.tmi $W/units/R.ml \

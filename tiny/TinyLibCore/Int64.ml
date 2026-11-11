@@ -134,7 +134,10 @@ let to_string x =
   if x = zero then "0"
   else if compare x zero < 0 then "-" ^ digits (neg x) ""
   else digits x ""
-let of_string s =
+(* OCaml's rules: a decimal fits the signed range (-2^63 too), the other
+ * bases 64 bits (0xffffffffffffffff is -1); past them None. (old: the
+ * digits multiplied on and on, a number too big wrapped round) *)
+let of_string_opt s =
   let n = String.length s in
   let neg_ = n > 0 && s.[0] = '-' in
   let i = if n > 0 && (s.[0] = '-' || s.[0] = '+') then 1 else 0 in
@@ -152,13 +155,28 @@ let of_string s =
     else if c >= 'a' && c <= 'f' then k - 87
     else if c >= 'A' && c <= 'F' then k - 55
     else 99 in
-  if i >= n then failwith "Int64.of_string";
+  (* x times base, plus a digit, does not overflow: a decimal's x at most
+   * max_int / 10 (its last step may still pass max_int: checked at the
+   * end), another base's x with its top digit's bits clear *)
+  let decimal_max = div max_int (of_int 10) in
+  let bits = if base = 16 then 4 else if base = 8 then 3 else 1 in
+  let fits x =
+    if base = 10 then compare x zero >= 0 && compare x decimal_max <= 0
+    else equal (shift_right_logical x (64 - bits)) zero in
   let rec go j x =
-    if j = n then x
+    if j = n then Some x
     else if s.[j] = '_' then go (j + 1) x
     else
       let d = digit s.[j] in
-      if d >= base then failwith "Int64.of_string"
+      if d >= base || not (fits x) then None
       else go (j + 1) (add (mul x (of_int base)) (of_int d)) in
-  let x = go i zero in
-  if neg_ then neg x else x
+  if i >= n then None
+  else
+    match go i zero with
+    | None -> None
+    | Some x ->
+        if base = 10 && compare x zero < 0 && not (neg_ && equal x min_int)
+        then None
+        else Some (if neg_ then neg x else x)
+let of_string s =
+  match of_string_opt s with Some x -> x | None -> failwith "Int64.of_string"

@@ -61,10 +61,15 @@ printf 'int f( {\n' > $W/err/params.c
 printf 'int g(int a' > $W/err/end.c
 # (any word taken for the while: until compiled as one, 2026-11-09)
 printf 'int main(void) {\n  int i;\n  do i++; until (i);\n  return i;\n}\n' > $W/err/do.c
+# (a number past 64 bits: Int64.of_string's Failure said as the error
+# before, its name the message, 2026-11-11)
+printf 'int main(void) {\n  return 99999999999999999999999;\n}\n' > $W/err/big.c
+printf 'int x = 0x10000000000000000;\n' > $W/err/hex.c
 for want in "expr.c: line 3: expected an expression" "semi.c: line 3: expected ;" \
             "bad.h: line 3: expected an expression" "macro.c: line 4: expected an expression" \
             "params.c: line 1: expected )" "end.c: line 1: expected )" \
-            "do.c: line 3: expected while"; do
+            "do.c: line 3: expected while" "big.c: line 2: bad integer 99999999999999999999999" \
+            "hex.c: line 1: bad integer 0x10000000000000000"; do
   c=${want%%.*}.c; [ $c = bad.c ] && c=include.c
   got=$(cd $W/err && $TC -o /dev/null $c 2>&1)
   if [ "$got" = "$want" ]; then echo "ok error in $c"; else echo "FAIL error in $c: $got"; failures=$((failures + 1)); fi

@@ -2,6 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See TinyCLexer.mli *)
+open Common
 
 (*****************************************************************************)
 (* Tokens and the preprocessor *)
@@ -127,8 +128,15 @@ and text macros open_ (where : string) (dir : Fpath.t) (s : string) =
            * changes nothing, a long being an int here *)
           let ls = ref 0 in
           String.iter (fun c -> if c = 'l' then incr ls) suffix;
-          emit i (Num (Int64.of_string lit, String.contains suffix 'u',
-                       !ls >= 2));
+          (* (its line in the message: TinyC.ml knows none for the
+           * lexer's errors) *)
+          let v =
+            match Int64.of_string_opt lit with
+            | Some v -> v
+            | None ->
+                error (Printf.sprintf "line %d: bad integer %s" (snd (loc i))
+                         (String.sub s i (k - i))) in
+          emit i (Num (v, String.contains suffix 'u', !ls >= 2));
           go j false
       | '\'' ->
           let v, j =

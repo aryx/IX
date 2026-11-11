@@ -69745,3 +69745,11 @@ Claude also committed the rc change as `82a39850` and asked whether to start the
 **Yoann:**
 
 > not sure why it was not part already of tiny-ml
+
+------------------------------------------------------------------------
+
+## 2026-11-11 11:49
+
+**Yoann:**
+
+> also we're planning to add ar, so maybe we can also make ocaml libs

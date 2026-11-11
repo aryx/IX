@@ -116,7 +116,12 @@ command to make libraries under t-ix"): an archive is objects
 marshalled as one, which tiny-linker would read in its members' order:
 /lib/ml/libml.a and /lib/c/libc.a for the lists and the glob a link
 names today (/lib/ml/[A-Z]*.o). The linker already leaves out what
-nothing reaches, so this is about packaging and order, not size.
+nothing reaches, so this is about packaging and order, not size. As
+OCaml's .cma (the author: "we're planning to add ar, so maybe we can also
+make ocaml libs"): an archive of ML objects as well as C's, the
+interfaces staying .tmi files that ml -I finds; the shared units
+(TinyLibSystem, TinyLibGUI...) a library of their own, which programs
+link by its name.
 Later, after the library is built by the Buildfile.
 
 ## Steps

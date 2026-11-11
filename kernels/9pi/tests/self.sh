@@ -51,8 +51,13 @@ start=$(date +%s)
   "$@" -drive file="$build/card.img",if=sd,format=raw > /dev/null 2>&1
 echo "self: $(( ($(date +%s) - start) / 60 )) minutes on the card"
 
-# 2. the card's file system, its second partition, read on Linux
-part=$(/usr/sbin/sfdisk -d "$build/card.img" | sed -n 's/.*img2 : start= *\([0-9]*\),.*/\1/p')
+# 2. the card's file system, its second partition, read on the host:
+# its first sector from the MBR, the second entry's (at 446 + 16) start,
+# a little-endian word at its byte 8 (old: sfdisk -d, util-linux's,
+# which macOS has not: an empty skip, and every check below passed on
+# nothing)
+part=$(od -An -t u4 -j 470 -N 4 "$build/card.img" | tr -d ' ')
+[ -n "$part" ] && [ "$part" -gt 0 ] || { echo "FAIL self: no second partition in $build/card.img"; exit 1; }
 dd if="$build/card.img" of="$build/fs.img" bs=512 skip="$part" status=none
 "$xv6" "$build/fs.img" cat /tmp/self.log > "$build/card.log"
 # (copy DIR TO SKIP: the card's DIR into TO, but its entry SKIP)

@@ -70492,3 +70492,11 @@ Claude left the bug records, finished plans, prompt history, four `Unix.tm` C st
 Claude restricted `TinyAssembler_test.sh` to `tiny/*.s`, since it had been assembling m-ix's ARM files and was hiding FAIL output behind exit code 0.
 Claude confirmed the main tree builds with dune, all 26 tiny test scripts show no FAIL, and tiny-kernel check passes.
 Nothing is committed yet, and Claude is waiting for review before committing and then starting item 2.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 20:20
+
+**Yoann:**
+
+> let's commit and do item 2

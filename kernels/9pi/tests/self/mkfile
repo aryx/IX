@@ -14,9 +14,11 @@ CINC=-I$LC/include -I$LC/include/utf -I$LC -I$LC/include/arch/arm -Darm -D$OS
 
 all:V: $D/hello-c $D/hello-ml
 
-$D/hello.$O: hello.c
+# (the C object hello-c.5, not hello.5: Hello.ml's Hello.5 is the same
+# file where case does not count, macOS's, and took its place)
+$D/hello-c.$O: hello.c
 	$CC $CINC -o $target hello.c
-$D/hello-c: $D/hello.$O $L/libc.a
+$D/hello-c: $D/hello-c.$O $L/libc.a
 	$LD $LDH -nofollow -o $target $prereq
 
 $D/Hello.$O: Hello.ml

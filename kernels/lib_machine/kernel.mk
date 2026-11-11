@@ -95,7 +95,13 @@ ifeq ($(BOARD),pi2)
 # its vectors in: they then jumped to the vectors' addresses, MMU off,
 # for ever, and the boot crawled. A board's firmware keeps them itself.)
 CPU += -DPI2
+# (GNU as's option; clang, PI1_AS on macOS, takes it through -Wa. old:
+# --defsym alone, which clang refuses: the Pi 2 never built on macOS)
+ifneq ($(PI1_AS),)
+ASFLAGS += -Wa,--defsym,PI2=1
+else
 ASFLAGS += --defsym PI2=1
+endif
 IMAGE ?= kernel-pi2.img
 BOOT = -M raspi2b -device loader,file=$(IMAGE),addr=0x8000,cpu-num=0,force-raw=on \
   -device loader,addr=0x8000,cpu-num=1 -device loader,addr=0x8000,cpu-num=2 -device loader,addr=0x8000,cpu-num=3 -nographic

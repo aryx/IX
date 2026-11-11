@@ -349,7 +349,7 @@ QEMU_BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(QEMU_BOOT))
 IX = $(abspath ../..)
 IX9 = $(IX)/_mk/5-plan9
 IXDIRS = shell editors/ed utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/archive utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/tests/hello kernels/9pi/tests/hog kernels/9pi/tests/tone kernels/9pi/tests/threads lib_core/commons/tests kernels/9pi/filesystems/user/dossrv \
-  kernels/9pi/devices/storage/user/fdisk kernels/9pi/buses/user/usbd lib_graphics/tests windows/rio windows/rio/tests windows/desktop apps/misc profilers/misc apps/media/play apps/music/rebirth games \
+  kernels/9pi/devices/storage/user/fdisk kernels/9pi/buses/user/usbd lib_graphics/tests windows/rio windows/rio/tests windows/desktop apps/misc apps/files profilers/misc apps/media/play apps/music/rebirth games \
   languages/smalltalk languages/smalltalk/hosts/draw languages/scheme languages/pascal languages/prolog languages/tiger editors/drscheme apps/office apps/page editors/turbopascal/hosts/draw editors/emacs/draw \
   typesetting/man networking browsers/lynx browsers/netscape apps/maps assembler linker linker/tools languages/dotnet languages/ml languages/c builder generators/lex generators/yacc
 BOOTDIR_IX = boot=conf/boot.rc rc=$(IX9)/shell/mini-rc ed=$(IX9)/editors/ed/mini-ed hello=$(IX9)/kernels/9pi/tests/hello/hello hog=$(IX9)/kernels/9pi/tests/hog/hog threads=$(IX9)/kernels/9pi/tests/threads/threads sources=$(IX9)/lib_core/commons/tests/sources \
@@ -383,8 +383,9 @@ ix-usb: ix
 # mini-curl, an ix program over the kernel's TCP (lib_networking's
 # plan9/Tcp: /net/tcp's files), asks the host's web server (tests/www,
 # 10.0.2.2:8123) for the two files of check's session-net; under QEMU
-# (the roots a certificate is checked against: this machine's)
-CA_PEM = /etc/ssl/certs/ca-certificates.crt
+# (the roots a certificate is checked against: this machine's, Debian's
+# file or macOS's. old: Debian's alone, no card made on macOS)
+CA_PEM = $(firstword $(wildcard /etc/ssl/certs/ca-certificates.crt /etc/ssl/cert.pem))
 IMAGE_IXN = $(basename $(IMAGE))-ixn$(suffix $(IMAGE))
 QEMU_BOOT_IXN = $(subst $(IMAGE),$(IMAGE_IXN),$(QEMU_BOOT))
 ix-net: ix

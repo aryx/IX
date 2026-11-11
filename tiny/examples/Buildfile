@@ -5,8 +5,8 @@
 # by default, or one by its name (build helloml). What they link besides
 # their own objects is already built in /lib: /lib/c, C's runtime and
 # tiny-kernel's calls, start.o first (the machine starts there); /lib/ml,
-# ML's runtime (mlsys.o), the library (its units, [A-Z]*.o: mlsys.o and
-# end.o are lowercase), and end.o, the image's end, last.
+# ML's runtime (mlsys.o), the library (stdlib.a, its units), and end.o,
+# the image's end, last.
 # Each has its Buildfile, which says how it is made from /src. -s puts
 # the labels after the image, the names debug shows; -map writes them
 # beside it too.
@@ -24,7 +24,7 @@ square.o: square.s
 	as -o $target square.s
 
 helloml: helloml.o
-	ld -map -s -n -o $target $CRT /lib/ml/mlsys.o $prereq /lib/ml/[A-Z]*.o /lib/ml/end.o
+	ld -map -s -n -o $target $CRT /lib/ml/mlsys.o $prereq /lib/ml/stdlib.a /lib/ml/end.o
 
 # (one unit: its code and its main in one object)
 helloml.o: helloml.ml

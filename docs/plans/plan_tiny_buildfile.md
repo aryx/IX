@@ -128,6 +128,12 @@ archive's format TinyLibMachine's beside the objects', read by
 tiny-linker in its members' order. To decide: C's libraries
 (/lib/c/libc.a) by ml -a too (the same objects), or by a small ar.
 Later, after the library is built by the Buildfile.
+Done (2026-11-11): tiny-ar, a small ar (the author chose it over ml -a,
+and over libraries as objects concatenated: "the .a has the advantage of
+being quite standard"), its format TinyLibMachine's, every member
+linked in order; TinyLibCore/stdlib.a made by TinyLibCore/Buildfile,
+which the top one asks; /lib/ml holds the interfaces and stdlib.a, and
+every program on the image, and the self-build, links it.
 
 ## Gaps found on the way
 

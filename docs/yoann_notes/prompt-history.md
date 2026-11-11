@@ -70565,3 +70565,35 @@ Claude left the web test and `make self` unrun, committed nothing, and kept `/ex
 Claude asked whether Yoann meant "let's commit" after his message arrived as just "let".
 Claude noted that nothing had been committed yet, so there was nothing to undo or review.
 Claude did not guess at the intent, and left the working tree untouched while waiting for clarification.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 21:11
+
+**Yoann:**
+
+> commit
+
+**Claude (summary):**
+
+Claude committed the disk change as `abef67a6` with 38 files, recording t6's two files as renames to `TinyMkfat`.
+Claude named every path explicitly, including `prompt-history.md`, and left out two files modified by another session.
+Still unchecked: the web page test, which needs Python's `websockets`, and `make self`, which takes about an hour.
+Claude proposed redoing `stdlib.a` on tiny-kernel from scratch, since the saved patch was lost.
+That plan links `stdlib.a` in the Makefile, self-build, and `/lib/ml`, puts `ar` in `/bin`, and verifies with `self-quick` and `lite.sh`.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 21:12
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude reported item 2 finished in the main checkout, ready for review, with nothing committed yet.
+Claude's planned commit would name the 13 files of this change plus prompt-history.md.
+Claude excluded compare.sh, exn_ix.txt, exn_tiny.txt, and ix_files.sh, which another session had edited.
+Claude's change archives the stdlib objects into stdlib.a via tiny-ar, linked by the kernel, self-build, and tiny examples.
+Claude reported make check, self-quick, lite.sh's quick session, the analyzer, tiny-ml's test, and dune all passing.

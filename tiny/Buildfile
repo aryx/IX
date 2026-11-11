@@ -22,8 +22,9 @@
 # clean` removes them.
 #
 # The tools are tiny-kernel's: ml (tiny-ml), cc (tiny-c), as
-# (tiny-assembler), ld (tiny-linker). On the host they are tiny-ml and
-# so on: a directory of links named ml, cc, as and ld first in the PATH
+# (tiny-assembler), ld (tiny-linker), ar (tiny-ar), build (tiny-build).
+# On the host they are tiny-ml and so on: a directory of links named
+# ml, cc, as, ld, ar and build first in the PATH
 # runs this file there too (tiny-build runs a recipe with sh on the
 # host, rc on tiny-kernel: a recipe here is a command both read, but
 # the image's, which is rc's).
@@ -43,7 +44,7 @@
 # the programs, by their names in /bin; then the kernel
 PROGS = sh rc emacs office troff play mltests paint windows square tetris \
     calc temp ping get put httpd utils ed bigmem www prof db vcs build as ld \
-    cc ml trace debug
+    ar cc ml trace debug
 
 all: $PROGS kernel.img
 
@@ -187,7 +188,7 @@ build: $CRT $MLRT build.o TinyLibSystem/tinykernel/TinyLibSystem.o \
 # The toolchain, and the tools of the machine's code
 #############################################################################
 
-# as, ld, cc and ml, which built all of this; prof, where a profile's
+# as, ld, ar, cc and ml, which built all of this; prof, where a profile's
 # instructions went; trace, a program's calls; debug, a debugger.
 # Each: its main (its units' initializations, in their order), and the
 # program, linked: the C runtime, ML's, its main, its units, the
@@ -208,6 +209,14 @@ ld.o: $STDLIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibMachine.tmi \
 ld: $CRT $MLRT ld.o TinyLibSystem/tinykernel/TinyLibSystem.o \
     TinyLibMachine.o TinyLinker.o $STDLIB $MLEND
 	ld -map -s -n -a 64 -o $target $prereq
+
+# ar
+ar.o: $STDLIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibMachine.tmi \
+    TinyArchiver.tmi
+	ml -o $target $prereq
+ar: $CRT $MLRT ar.o TinyLibSystem/tinykernel/TinyLibSystem.o \
+    TinyLibMachine.o TinyArchiver.o $STDLIB $MLEND
+	ld -map -s -n -a 4 -o $target $prereq
 
 # cc
 cc.o: $STDLIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibMachine.tmi \
@@ -466,8 +475,9 @@ EXAMPLES = wc.c sh.c emacs.ml TinyEditorScreen.ml report.ixd korobeiniki.wav spi
 LIBC = runtime/start.o runtime/udivmod.o runtime/libc.o TinyKernel/libc/sys.o TinyKernel/lib/c/Buildfile
 LIBML = TinyLibSystem/tinykernel/mlsys.o TinyKernel/end.o TinyKernel/lib/ml/Buildfile
 
-# (the library's units one by one in /lib/ml, the Makefile's image's)
-LIBUNITS = ${CORE:%=TinyLibCore/%.tmi} ${CORE:%=TinyLibCore/%.o}
+# (in /lib/ml, the library's interfaces and stdlib.a, as the Makefile's
+# image)
+LIBUNITS = ${CORE:%=TinyLibCore/%.tmi} $STDLIB
 
 boot.img: kernel.img $PROGS $STDLIB $LIBC $LIBML
 	cat kernel.img > $target

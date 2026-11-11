@@ -33,13 +33,14 @@ functors nor labels) to an object of tiny-machine's code, for tiny-linker;
   tiny-c main.c                            main.o
   L=tiny/runtime
   for f in $L/start $L/udivmod exit; do tiny-assembler $f.s; done
-  tiny-linker -o fact start.o udivmod.o exit.o fact.o main.o /lib/ml/*.o
+  tiny-linker -o fact start.o udivmod.o exit.o fact.o main.o /lib/ml/stdlib.a
   tiny-cpu fact                            fact 10 = 3628800
 main.c includes tiny/runtime/ml.c and gives it memory (ml_run),
 exit.s is exit (sys 0), as tiny/tests/TinyML_test.sh makes them. The
 standard library, TinyLibCore/'s modules, is read from /lib/ml (-L: another
-directory), its interfaces Stdlib.tmi ... Sha1.tmi, and linked from there,
-each module compiled once by tiny-ml -c -nostdlib after the ones before it.
+directory), its interfaces Stdlib.tmi ... Sha1.tmi, and linked from there
+(stdlib.a, its objects), each module compiled once by tiny-ml -c -nostdlib
+after the ones before it.
 Several files are a module each, one after the other, then their main: a's
 x is A.x in b, or x after open A. Machine.Or a module at a time, then the main:
   tiny-ml -c a.ml                          a.o, its code; a.tmi, its interface
@@ -168,7 +169,7 @@ let compile_main (units : (string * int) list) needed =
  * first units of every program: each compiled once, by tiny-ml -c
  * -nostdlib after the ones before it, and read as interfaces from a
  * directory, /lib/ml on tiny-kernel (-L another), its objects
- * linked as any unit's.
+ * linked as any unit's, from a library (stdlib.a).
  * (old: their text the compiler's, TinyMLPrelude.ml made of them by the
  * build, compiled again at each run: a unit of one line took 47 s on
  * tiny-kernel, and every program's main the library's code, 420 KB of

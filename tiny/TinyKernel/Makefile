@@ -122,11 +122,13 @@ TML = $(call tool,tiny-ml)
 TC = $(call tool,tiny-c)
 AS = $(call tool,tiny-assembler)
 LD = $(call tool,tiny-linker)
+AR = $(call tool,tiny-ar)
 MKFS = $(call tool,tiny-mkfs)
 CPU = $(call tool,tiny-cpu)
 MACHINE = $(call tool,tiny-machine)
 TCBIN = $(wildcard $(TC))
 LDBIN = $(wildcard $(LD))
+ARBIN = $(wildcard $(AR))
 MKFSBIN = $(wildcard $(MKFS))
 
 # how the kernel gives the processes memory (TinyKernelMemory.mli)
@@ -142,13 +144,15 @@ T = ../tests/TinyKernel_tests
 # from it (docs/plans/plan_tiny_buildfile.md)
 # tiny-ml's standard library, TinyLibCore/'s modules in their order, each
 # compiled once (_make/lib/: X.o, X.tmi), the first units of every
-# program in ML, which tiny-ml reads with -L (old: their text in tiny-ml,
-# compiled again at each run, and each program's main 420 KB of them)
+# program in ML, which tiny-ml reads with -L, kept in one library,
+# stdlib.a, which every program links (old: their text in tiny-ml,
+# compiled again at each run, and each program's main 420 KB of them;
+# then each program linked the 24 objects)
 CORE = Stdlib Char Seq List String Bytes Array Option Int32 Int64 Filename Buffer Printf Marshal Hashtbl Common Sha1 Fpath Fpath_ Exit In_channel Out_channel Chan Logs
-LIB = $(CORE:%=$(O)/lib/%.o)
-KERNEL = $(O)/entry.o $(O)/udivmod.o $(O)/runtime.o $(O)/draw.o $(O)/memory.o $(O)/font.o $(O)/main/kernel.o $(KUNITS:%=$(O)/ml/%.o) $(LIB) $(O)/end.o
+STDLIB = $(O)/lib/stdlib.a
+KERNEL = $(O)/entry.o $(O)/udivmod.o $(O)/runtime.o $(O)/draw.o $(O)/memory.o $(O)/font.o $(O)/main/kernel.o $(KUNITS:%=$(O)/ml/%.o) $(STDLIB) $(O)/end.o
 FONT = fonts/plan9.font
-PROGS = sh rc emacs office troff play mltests paint windows square tetris calc temp ping get put httpd utils ed bigmem www prof db vcs build as ld cc ml trace debug
+PROGS = sh rc emacs office troff play mltests paint windows square tetris calc temp ping get put httpd utils ed bigmem www prof db vcs build as ld ar cc ml trace debug
 # other names (hard links), a name:program each
 LINKS = editor:emacs sam:ed
 # utils's names (TinyUtilities.ml's table)
@@ -192,6 +196,8 @@ $(O)/lib/Stdlib.o: $(CORE:%=../TinyLibCore/%.ml) $(CORE:%=../TinyLibCore/%.mli) 
 	@mkdir -p $(@D)
 	b=; for m in $(CORE); do $(TML) -c -nostdlib -o $(@D)/$$m.o $$b ../TinyLibCore/$$m.ml || exit 1; b="$$b $(@D)/$$m.tmi"; done
 $(CORE:%=$(O)/lib/%.tmi) $(filter-out %/Stdlib.o,$(CORE:%=$(O)/lib/%.o)): $(O)/lib/Stdlib.o ;
+$(STDLIB): $(O)/lib/Stdlib.o $(ARBIN)
+	$(AR) -o $@ $(CORE:%=$(O)/lib/%.o)
 TML_L = $(TML) -L $(O)/lib
 # the kernel's units, in their order: its machine's memory, what draws, the
 # network, the sounds, the disk, a process's memory, then the kernel's own
@@ -310,6 +316,7 @@ I_TinyVCS = TinyLibSystem
 I_TinyBuildSystem = TinyLibSystem
 I_TinyAssembler = TinyLibSystem TinyLibMachine
 I_TinyLinker = TinyLibSystem TinyLibMachine
+I_TinyArchiver = TinyLibSystem TinyLibMachine
 # (TinyC.ml on its parts, TinyC/, the compiler's passes; each part after
 # the ones before it)
 CC_PARTS = TinyCTypes TinyCLexer TinyCTree TinyCLower TinyCParser TinyCMachine
@@ -390,7 +397,7 @@ F_TinyCParser = ../TinyC/TinyCParser.ml
 F_TinyCMachine = ../TinyC/TinyCMachine.ml
 # (a static pattern's targets: make uses an implicit rule once in a
 # chain, and a unit's interface is another unit's prerequisite)
-UNITS = $(KUNITS) TinyLibSystem TinyLibMachine TinyLibRegex TinyLibDraw TinyLibPlayground TinyLibGUI TinyProfiler TinyDatabase TinyVCS TinyBuildSystem TinyAssembler TinyLinker $(CC_PARTS) TinyC $(MLC) TinyML \
+UNITS = $(KUNITS) TinyLibSystem TinyLibMachine TinyLibRegex TinyLibDraw TinyLibPlayground TinyLibGUI TinyProfiler TinyDatabase TinyVCS TinyBuildSystem TinyAssembler TinyLinker TinyArchiver $(CC_PARTS) TinyC $(MLC) TinyML \
   TinyWindows TinyAppTetris TinyAppCalculator TinyAppTemperature TinyEditorScreen $(OFFICE) TinyOffice TinyTroff TinyPlay $(BROWSER) TinyBrowserScreen TinyBrowser TinyTracer TinyDebugger \
   TinyShell TinyUtilities TinyEditorLine Square Machine Tetris Calc Temp Emacs Office Troff Play Www Windows Bigmem Trace Debug
 .SECONDEXPANSION:
@@ -413,7 +420,8 @@ $(UNITS:%=$(U)/%.tmi): $(U)/%.tmi: $(U)/%.o ;
 # a.out whose header says so (tiny-linker -a): tiny-kernel gives it a
 # partition of that size and mlsys.c a heap of it (bigmem: the test;
 # www: a page's lines live in its heap; play: the WAV file is read
-# whole into it; as, ld, cc, ml: the toolchain, a file whole in memory
+# whole into it; ar: a library's objects and the archive, all in memory
+# (stdlib.a: 432 KB); as, ld, cc, ml: the toolchain, a file whole in memory
 # and the compilers' recursions over it (as and ld 32: TinyML.s's
 # assembly and office's link need more than half of 16, their
 # collector's; old: 16, out of memory there in the first builds on
@@ -421,7 +429,7 @@ $(UNITS:%=$(U)/%.tmi): $(U)/%.tmi: $(U)/%.o ;
 # TinyML.ml grew by its records of more than 11 fields, died on an
 # illegal instruction, bugs/ix.md); build: the files it digests,
 # each read whole, the system's objects among them).
-ML = windows bigmem www play square tetris calc temp rc utils ed emacs office troff prof db vcs build as ld cc ml trace debug
+ML = windows bigmem www play square tetris calc temp rc utils ed emacs office troff prof db vcs build as ld ar cc ml trace debug
 UNITS_windows = $(I_Windows) Windows
 UNITS_square = $(I_Machine) Machine
 UNITS_tetris = $(I_Tetris) Tetris
@@ -444,6 +452,7 @@ UNITS_vcs = $(I_TinyVCS) TinyVCS
 UNITS_build = $(I_TinyBuildSystem) TinyBuildSystem
 UNITS_as = $(I_TinyAssembler) TinyAssembler
 UNITS_ld = $(I_TinyLinker) TinyLinker
+UNITS_ar = $(I_TinyArchiver) TinyArchiver
 UNITS_cc = $(I_TinyC) TinyC
 UNITS_ml = $(I_TinyML) TinyML
 MEM_bigmem = -a 8
@@ -451,6 +460,7 @@ MEM_www = -a 10
 MEM_play = -a 4
 MEM_as = -a 32
 MEM_ld = -a 64
+MEM_ar = -a 4
 MEM_cc = -a 16
 MEM_ml = -a 32
 MEM_build = -a 16
@@ -460,9 +470,9 @@ $(O)/main/%.o: $$(addprefix $(U)/,$$(addsuffix .tmi,$$(UNITS_$$*))) $(O)/lib/Std
 # (the main right after mlsys.c, which calls its ml_start by a jal: 128 KB)
 # (end.o last: _end, where mlsys.c puts its stack of values when the
 # program is past 384 KB; old: a program past it refused here)
-$(ML:%=$(O)/bin/%): $(O)/bin/%: $(ULIB) $(O)/libml/mlsys.o $(O)/main/%.o $$(addprefix $(U)/,$$(addsuffix .o,$$(UNITS_$$*))) $(LIB) $(O)/end.o $(LDBIN)
+$(ML:%=$(O)/bin/%): $(O)/bin/%: $(ULIB) $(O)/libml/mlsys.o $(O)/main/%.o $$(addprefix $(U)/,$$(addsuffix .o,$$(UNITS_$$*))) $(STDLIB) $(O)/end.o $(LDBIN)
 	@mkdir -p $(@D)
-	$(LD) -map -s -n $(MEM_$*) -o $@ $(filter %.o,$^)
+	$(LD) -map -s -n $(MEM_$*) -o $@ $(filter %.o %.a,$^)
 
 # a program that draws: with draw.c, the messages (draw.h) (old: in
 # examples/, not counted by make loc; that directory gone, 2026-11-11)
@@ -502,10 +512,11 @@ EXAMPLES = steps/t6/user/wc.c user/sh.c ../user/emacs.ml ../TinyEditorScreen.ml 
 # below), what tiny-kernel builds itself from (make self): the
 # kernel's, each unit's file, the library's, the C, and the .mli beside
 # an .ml; with font.s and the Buildfile, made here, in /src/TinyKernel;
-# the library's interfaces and objects in /lib/ml, in the image, where
-# tiny-ml reads them (plan_tiny_self_hosting.md, step 8; old: step 7's
-# /src had ping's C and a unit; not /sys/src, Plan 9's, as /sys is
-# principia's devsys)
+# the library's interfaces in /lib/ml, in the image, where tiny-ml
+# reads them, and its objects, stdlib.a (plan_tiny_self_hosting.md,
+# step 8; old: step 7's /src had ping's C and a unit; not /sys/src,
+# Plan 9's, as /sys is principia's devsys; then the library's 24
+# objects one by one)
 C_PROGS = sh mltests ping get put httpd
 SRC_FILES = entry.s draw.s memory.s end.s runtime.c \
 	$(foreach u,$(UNITS),$(or $(F_$(u)),../$(u).ml)) $(CORE:%=../TinyLibCore/%.ml) libc/user.h libc/sys.s libc/draw.c libc/draw.h libc/net.c $(SYS)/mlsys.c \
@@ -515,7 +526,7 @@ SRC_FILES = entry.s draw.s memory.s end.s runtime.c \
 tiny = $(patsubst TinyKernel/../%,%,$(addprefix TinyKernel/,$(1)))
 SRC = $(call tiny,$(SRC_FILES) $(wildcard $(patsubst %.ml,%.mli,$(filter %.ml,$(SRC_FILES)))))
 GEN = font.s Buildfile
-LIBFILES = $(foreach m,$(CORE),$(m).tmi $(m).o)
+LIBFILES = $(CORE:%=%.tmi) stdlib.a
 # what a program links around its own objects, already built in /lib:
 # C's runtime and tiny-kernel's calls in /lib/c, ML's in /lib/ml beside
 # the library; each directory with the Buildfile that makes it again
@@ -526,9 +537,9 @@ LIBML = $(O)/libml/mlsys.o $(O)/end.o lib/ml/Buildfile
 
 # The Buildfile: this Makefile's build of the image as tiny-build's
 # rules, made of the lists above, for tiny-kernel to build itself from
-# /src; its recipes rc's, its tools /bin's (ml, as, ld, cc), the
-# library given to ml as interfaces (-nostdlib: an .mli read by ml is
-# a prerequisite, not an argument)
+# /src; its recipes rc's, its tools /bin's (ml, as, ld, ar, cc), the
+# library one prerequisite, lib/stdlib.a, made with its interfaces: a
+# main given it, as ocamlc stdlib.cma, reads them beside it
 K = /src/TinyKernel
 # (a path of this directory's, in /src; a newline: what foreach
 # puts between two of its lines, a blank, taken out)
@@ -545,8 +556,8 @@ define BUILDFILE
 # (plan_tiny_self_hosting.md, step 8); the image alone: /src, on the
 # disk, is the host's (disk.img, by tiny-mkfs)
 CORE = $(CORE)
-LIB = $(CORE:%=lib/%.tmi)
 LIBO = $(CORE:%=lib/%.o)
+STDLIB = lib/stdlib.a
 ULIB = start.o udivmod.o libc.o libc/sys.o
 PROGS = $(PROGS)
 EXAMPLES = $(notdir $(EXAMPLES))
@@ -572,6 +583,8 @@ lib/Stdlib.o: $(CORE:%=/src/TinyLibCore/%.ml) $(CORE:%=/src/TinyLibCore/%.mli)
 	mkdir -p lib; b=(); for(m in $$CORE) { ml -c -nostdlib -o lib/$$m.o $$b /src/TinyLibCore/$$m.ml; b=($$b lib/$$m.tmi) }
 lib/%.o: lib/Stdlib.o
 lib/%.tmi: lib/Stdlib.o
+lib/stdlib.a: lib/Stdlib.o
+	ar -o $$target $$LIBO
 
 # the objects of assembly written by hand (the compilers write theirs)
 %.o: $(K)/%.s
@@ -582,7 +595,7 @@ libc/sys.o: $(K)/libc/sys.s
 	mkdir -p libc; as -o $$target $(K)/libc/sys.s
 
 # the kernel: its units are ml/'s, as the programs' (below); its main
-main/kernel.o: $$LIB $(addprefix ml/,$(addsuffix .tmi,$(KUNITS)))
+main/kernel.o: $$STDLIB $(addprefix ml/,$(addsuffix .tmi,$(KUNITS)))
 kernel.img: $(KERNEL:$(O)/%=%)
 	ld -map -o $$target $$prereq
 
@@ -607,9 +620,9 @@ $(foreach p,get put,bin/$(p): $$ULIB libc/net.o user/$(p).o$(nl)	mkdir -p bin; l
 ml/%.o:
 	mkdir -p ml; for(p in $$prereq) ~ $$p *.ml && f=$$p; ml -c -L lib -I ml -o $$target $$f
 ml/%.tmi: ml/%.o
-$(foreach u,$(UNITS),ml/$(u).o: $$LIB $(addprefix ml/,$(addsuffix .tmi,$(I_$(u)))) $(call insrc,$(or $(F_$(u)),../$(u).ml) $(wildcard $(patsubst %.ml,%.mli,$(or $(F_$(u)),../$(u).ml))))$(nl))main/%.o:
-	mkdir -p main; ml -nostdlib -o $$target $$prereq
-$(foreach p,$(ML),main/$(p).o: $$LIB $(addprefix ml/,$(addsuffix .tmi,$(UNITS_$(p))))$(nl))$(foreach p,$(ML),bin/$(p): $$ULIB libml/mlsys.o main/$(p).o $(addprefix ml/,$(addsuffix .o,$(UNITS_$(p)))) $$LIBO end.o$(nl)	mkdir -p bin; ld -map -s -n $(MEM_$(p)) -o $$target $$prereq$(nl))
+$(foreach u,$(UNITS),ml/$(u).o: $$STDLIB $(addprefix ml/,$(addsuffix .tmi,$(I_$(u)))) $(call insrc,$(or $(F_$(u)),../$(u).ml) $(wildcard $(patsubst %.ml,%.mli,$(or $(F_$(u)),../$(u).ml))))$(nl))main/%.o:
+	mkdir -p main; ml -o $$target $$prereq
+$(foreach p,$(ML),main/$(p).o: $$STDLIB $(addprefix ml/,$(addsuffix .tmi,$(UNITS_$(p))))$(nl))$(foreach p,$(ML),bin/$(p): $$ULIB libml/mlsys.o main/$(p).o $(addprefix ml/,$(addsuffix .o,$(UNITS_$(p)))) $$STDLIB end.o$(nl)	mkdir -p bin; ld -map -s -n $(MEM_$(p)) -o $$target $$prereq$(nl))
 endef
 # (written by the shell from the environment, not by $(file >...),
 # which macOS's make, GNU make 3.81, does not have and takes for nothing)
@@ -825,7 +838,7 @@ self: $(O)/boot.img $(O)/disk.img
 	rm $(O)/self.img $(O)/self.out $(O)/self.boot.img && echo "tiny-kernel: self ok, its image the host's"
 
 # self in minutes: a few of the Buildfile's targets, ping (cc, as, ld)
-# and the library (ml, as), each compared with the host's in the image
+# and the library (ml, ar), each compared with the host's in the image
 # (self-quick.keys: cmp); what the shell printed is self-quick.expected.
 # Then the kernel linked by ld, from the host's objects, the biggest
 # link, where ld's memory runs out first (bugs/ix.md: make self's first

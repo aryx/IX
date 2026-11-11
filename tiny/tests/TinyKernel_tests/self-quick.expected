@@ -1,5 +1,5 @@
 tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
-tiny-kernel: / on a disk of 65536 KB, 63725 KB free; 1 snapshots in /dump
+tiny-kernel: / on a disk of 65536 KB, 63721 KB free; 1 snapshots in /dump
 $ % % as -o start.o /src/runtime/start.s
 as -o udivmod.o /src/runtime/udivmod.s
 cc -o libc.o /src/runtime/libc.c
@@ -7,10 +7,10 @@ mkdir -p libc; as -o libc/sys.o /src/TinyKernel/libc/sys.s
 mkdir -p user; cc -o user/ping.o /src/TinyKernel/user/ping.c
 mkdir -p bin; ld -map -s -n -o bin/ping start.o udivmod.o libc.o libc/sys.o user/ping.o
 mkdir -p lib; b=(); for(m in Stdlib Char Seq List String Bytes Array Option Int32 Int64 Filename Buffer Printf Marshal Hashtbl Common Sha1 Fpath Fpath_ Exit In_channel Out_channel Chan Logs) { ml -c -nostdlib -o lib/$m.o $b /src/TinyLibCore/$m.ml; b=($b lib/$m.tmi) }
-tiny-build: lib/List.o is up to date
-tiny-build: lib/Printf.o is up to date
+ar -o lib/stdlib.a lib/Stdlib.o lib/Char.o lib/Seq.o lib/List.o lib/String.o lib/Bytes.o lib/Array.o lib/Option.o lib/Int32.o lib/Int64.o lib/Filename.o lib/Buffer.o lib/Printf.o lib/Marshal.o lib/Hashtbl.o lib/Common.o lib/Sha1.o lib/Fpath.o lib/Fpath_.o lib/Exit.o lib/In_channel.o lib/Out_channel.o lib/Chan.o lib/Logs.o
 % bin/ping: the host
-% lib/Stdlib: the host
-lib/List: the host
-lib/Printf: the host
+% lib/stdlib.a: the host
+% lib/Stdlib.tmi: the host
+lib/List.tmi: the host
+lib/Printf.tmi: the host
 % $ 

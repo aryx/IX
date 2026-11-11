@@ -94,9 +94,9 @@ ls: /cat: not there
 -   2 * /bin/emacs
 -   1 * /bin/ping
 -  28 * /bin/utils
-%      60     240    1484 f
-     60     240    1484
-     60     240    1484
+%      61     244    1507 f
+     61     244    1507
+     61     244    1507
 % $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ %       3
 % 1|1
@@ -252,7 +252,7 @@ b
       2
 % tiny-build: don't know how to make nosuch
 % $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
-tiny-kernel: / on a disk of 65536 KB, 63725 KB free; 1 snapshots in /dump
+tiny-kernel: / on a disk of 65536 KB, 63721 KB free; 1 snapshots in /dump
 $ % % % % % % % % ping: /bin/ping
 % % mach.o: the host
 % mach.tmi: the host
@@ -454,12 +454,12 @@ Wed Mar  1 00:00:00 GMT 2000
 Mon Jan  9 13:37:03 GMT 2034
 7
 % $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
-tiny-kernel: / on a disk of 65536 KB, 63725 KB free; 1 snapshots in /dump
+tiny-kernel: / on a disk of 65536 KB, 63721 KB free; 1 snapshots in /dump
 $ % cc -o hello.o hello.c
 as -o square.o square.s
 ld -map -s -n -o hello /lib/c/start.o /lib/c/udivmod.o /lib/c/libc.o /lib/c/sys.o hello.o square.o
 ml -o helloml.o helloml.ml
-ld -map -s -n -o helloml /lib/c/start.o /lib/c/udivmod.o /lib/c/libc.o /lib/c/sys.o /lib/ml/mlsys.o helloml.o /lib/ml/[A-Z]*.o /lib/ml/end.o
+ld -map -s -n -o helloml /lib/c/start.o /lib/c/udivmod.o /lib/c/libc.o /lib/c/sys.o /lib/ml/mlsys.o helloml.o /lib/ml/stdlib.a /lib/ml/end.o
 hello: the squares of 1 to 10 add up to 385
 sorted: 1 2 3 4 5 7 8 9
 the first over 5: 7

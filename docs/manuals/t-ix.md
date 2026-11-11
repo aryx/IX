@@ -43,6 +43,7 @@ The script builds the tools with dune and calls them. By hand:
 | `tiny-ml f.ml` | ML to an object, `f.o` (`-S`: its assembly instead) |
 | `tiny-assembler f.s` | assembly written by hand to an object, `f.o` (`tiny/TinyAssembler.ml`; `tiny/TinyLibMachine.mli` has the object's format) |
 | `tiny-linker [-a n] [-map] -o out f.o...` | objects to an image, the first at 0 (`-a n`: an a.out for tiny-kernel that asks for n MB; `-map`: `out.map`, each label's address) |
+| `tiny-ar -o lib.a f.o...` | objects kept in one file, a library, in their order (`tiny/TinyArchiver.ml`); tiny-linker links all its members, as if each were given; `-t lib.a` lists them |
 | `tiny-cpu image` | runs a program alone, the host answering its three system calls |
 | `tiny-machine image` | the same with the machine around the CPU: the image is a kernel's |
 | `tiny-mkfs [-m n] disk.img name=file...` | a disk of tiny-kernel's file system, made on the host by the kernel's own `TinyKernelFS.ml` (`tiny/TinyKernel/host/TinyMkfs.ml`; `-l disk.img` lists it) |
@@ -541,7 +542,7 @@ with C's convention and ML's values. The standard library,
 `TinyLibCore/`'s modules, is compiled once (`tiny-ml -c -nostdlib`, each
 module after the ones before it); tiny-ml reads its interfaces from
 `/lib/ml` (`-L` another directory), and a program is linked with its
-objects.
+objects, kept in one library, `stdlib.a` (tiny-ar).
 
     tiny-ml -c a.ml             # a.o, and a.tmi, its interface
     tiny-ml -c a.tmi b.ml       # b.o and b.tmi, after a
@@ -688,8 +689,8 @@ the host, to read and edit there):
 
 What a program links besides its own objects is already built on the
 image: `/lib/c` (C's runtime, `start.o` first, and tiny-kernel's calls,
-`sys.o`) and `/lib/ml` (tiny-ml's library, `.tmi` and `.o`, its runtime
-`mlsys.o` and `end.o`). Each has the `Buildfile` that makes it from
+`sys.o`) and `/lib/ml` (tiny-ml's library, its `.tmi` and `stdlib.a`,
+its runtime `mlsys.o` and `end.o`). Each has the `Buildfile` that makes it from
 `/src` (`tiny/TinyKernel/lib/c/` and `lib/ml/` on the host): `cd
 /lib/c; build -n` shows how, `build clean; build` does it again.
 

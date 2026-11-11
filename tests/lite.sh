@@ -229,7 +229,8 @@ family "t-ix builds part of itself" system
 # t-ix building in itself, a small part (plan_tests.md; make self-quick
 # 167 s, make self hours): in tiny-kernel, on a disk of its own, ping.c
 # by cc, its object the host's (read from the disk by
-# TinyKernelFS_tests' Cat); Stdlib.ml by ml -c, the host's; and
+# TinyKernelFS_tests' Cat); Stdlib.ml by ml -c, its interface the host's
+# (its object is in /lib/ml/stdlib.a: make self-quick compares that); and
 # a program without libc linked by ld and run. 22 s
 tiny_self() {
   local o=$W/tiny-self m="tiny-machine -date 820540800 -seed 1"
@@ -241,7 +242,7 @@ rc
 mkdir q; cd q
 cc -o ping.o /src/TinyKernel/user/ping.c
 ml -c -nostdlib -o Stdlib.o /src/TinyLibCore/Stdlib.ml
-cmp Stdlib.tmi /lib/ml/Stdlib.tmi && cmp Stdlib.o /lib/ml/Stdlib.o && echo Stdlib: the host
+cmp Stdlib.tmi /lib/ml/Stdlib.tmi && echo Stdlib.tmi: the host
 echo 'int main(void) { return 6 * 7; }' > m.c
 cc -o m.o m.c
 as -o start.o /src/runtime/start.s
@@ -251,7 +252,7 @@ ld -n -o m start.o udivmod.o sys.o m.o
 ./m; echo m: status $status
 exit
 END
-  grep -q 'Stdlib: the host' $o/self.out &&
+  grep -q 'Stdlib.tmi: the host' $o/self.out &&
     grep -q 'm: status 42' $o/self.out ||
     { echo "tiny-kernel: not the host's Stdlib, or m not run:"; cat $o/self.out; return 1; }
   $cat $o/self.img usr/glenda/q/ping.o | cmp - $o/user/ping.o ||

@@ -17,7 +17,7 @@
 #   make run        under mini-qemu (Ctrl-A x quits)
 #   make qemu       under QEMU's raspi1ap
 
-OCL ?= /tmp/ix-ocaml-light-arm
+OCL ?= $(abspath ../../../_cross/ocaml-light-arm)
 OCAMLOPT = $(OCL)/bin/ocamlopt
 SRC = $(OCL)/src
 CROSS = arm-linux-gnueabihf-

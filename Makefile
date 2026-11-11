@@ -159,7 +159,7 @@ test-vs-goken: all
 
 # mini-ml against ocaml-light's ocamlopt for arm64 and arm
 # (kernels/ocaml-light.sh arm64 and arm build them in
-# /tmp/ix-ocaml-light-*), and goken: its front end and type checker
+# _cross/ocaml-light-*), and goken: its front end and type checker
 # over the corpus (languages/ml/tests/), its programs (tests/tiny/,
 # ocaml-light's test/, random ones of tiny/tests/TinyML_fuzz.py), on
 # arm64 and, under qemu-arm, on arm, run and compared with ocamlopt's.

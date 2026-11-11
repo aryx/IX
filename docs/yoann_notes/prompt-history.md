@@ -70500,3 +70500,38 @@ Nothing is committed yet, and Claude is waiting for review before committing and
 **Yoann:**
 
 > let's commit and do item 2
+
+------------------------------------------------------------------------
+
+## 2026-11-11 20:31
+
+**Yoann:**
+
+> why we have this 10MB limit in the first place? in m-ix the card.img is far bigger and the disk driver in the kernel can handle big disks
+
+**Claude (summary):**
+
+Claude explained that the 10 MB limit comes from the image's memory layout, not the disk driver.
+Claude recommended moving `/src` and `/examples` onto a disk image, built by a new tiny-fs `mkfs` host tool.
+Claude noted tiny-kernel already has a disk and union-mounts `/boot` under the disk's root, so no size cap applies there.
+Claude offered a quicker alternative: move the file system buffers from 10 MB up to just under 11 MB.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 20:38
+
+**Yoann:**
+
+> let's do the disk
+
+------------------------------------------------------------------------
+
+## 2026-11-11 20:40
+
+**Yoann:**
+
+> we would have a boot.img and disk.img? like in m-ix boot.img and card.img?
+
+**Claude (summary):**
+
+Claude explained that the disk-work edits were lost when a scratchpad directory under /private/tmp vanished mid-session. It recommended redoing the work in a sibling directory, `~/github/ix-wt`, or a gitignored `_wt/` inside the checkout. It asked Yoann to pick a location before rebuilding `tiny-mkfs`, the `disk.img` split, and then item 2. Claude's reply to "work directly on this repo" is what Yoann reacted to, so the focus is there.

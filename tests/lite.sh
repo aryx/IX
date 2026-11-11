@@ -509,7 +509,7 @@ by_ix_play() { ! lib_audio/tests/play.sh $K/apps/media/play/mini-play | grep -v 
 # compiler for arm (kernels/ocaml-light.sh arm) and gcc's for arm
 t9="m-ix built in mini-9pi: ml, cc, ld, a part"
 if ! command -v qemu-system-arm > /dev/null; then skip "$t9" "no qemu-system-arm"
-elif [ ! -x /tmp/ix-ocaml-light-arm/bin/ocamlopt ]; then
+elif [ ! -x $ROOT/_cross/ocaml-light-arm/bin/ocamlopt ]; then
   skip "$t9" "no ocaml-light for arm: kernels/ocaml-light.sh arm"
 elif ! command -v arm-linux-gnueabihf-gcc > /dev/null; then
   skip "$t9" "no arm-linux-gnueabihf-gcc"

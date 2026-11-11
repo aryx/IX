@@ -5,10 +5,12 @@
 # ocaml-light cross-compiled for the Pis (plan_kernel.md): a clone of
 # ~/ocaml-light (what is committed) configured with -target-arch arm
 # (the Pi1's) or arm64 (the Pi4's), built (make world, make opt) and installed in
-# $OCL (default /tmp/ix-ocaml-light-ARCH): its ocamlopt emits that
-# architecture's code, its stdlib is compiled for it, and the runtime's
-# sources are in $OCL/src for the kernel's Makefile to compile
-# freestanding. About 5 minutes; kept until /tmp is cleared.
+# $OCL (default _cross/ocaml-light-ARCH, beside musl's headers): its
+# ocamlopt emits that architecture's code, its stdlib is compiled for
+# it, and the runtime's sources are in $OCL/src for the kernel's
+# Makefile to compile freestanding. About 5 minutes, once per checkout.
+# (old: /tmp/ix-ocaml-light-ARCH, which macOS clears of what has not
+# been read for days: half of it gone, the kernels' builds failing)
 #
 # The fixes the kernels found (docs/plans/bugs/ocaml_light.md) are
 # committed in ~/ocaml-light; a build of another commit is rebuilt.
@@ -16,7 +18,8 @@
 # Usage: ocaml-light.sh [arm|arm64]
 
 ARCH=${1:-arm}
-OCL=${OCL:-/tmp/ix-ocaml-light-$ARCH}
+TOP=$(cd "$(dirname "$0")/.." && pwd)
+OCL=${OCL:-$TOP/_cross/ocaml-light-$ARCH}
 SRC=${OCAML_LIGHT:-$HOME/ocaml-light}
 STAMP=$(git -C $SRC rev-parse HEAD)
 [ -x $OCL/bin/ocamlopt ] && [ "$(cat $OCL/commit 2>/dev/null)" = "$STAMP" ] && { echo "ocaml-light for $ARCH: $OCL (already built)"; exit 0; }

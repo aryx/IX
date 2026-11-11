@@ -41,7 +41,7 @@ if [ -n "$GAS" ]; then
   [ $O = 5 ] || { echo "GAS=1: arm only"; exit 2; }
   RUN="qemu-arm -L /usr/arm-linux-gnueabihf"; E=s; FLAGS=-gas
 else E=$O; FLAGS=${ML_FLAGS:-}; fi
-OCL=${OCL:-/tmp/ix-ocaml-light-$ARCH}
+OCL=${OCL:-$ROOT/_cross/ocaml-light-$ARCH}
 # the stdlib: ix's, lib_core's directories of it; units.txt has its units, in their order
 L=$ROOT/lib_core
 units=$(grep -v '^#' $L/units.txt)

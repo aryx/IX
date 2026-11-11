@@ -7,13 +7,15 @@
 # its stdlib are the switch's own, but its runtime (libasmrun.a) is
 # compiled for Linux, with a stack protector; the kernel's Makefile
 # compiles the runtime's C again, freestanding, from the sources opam
-# fetches here, in $OCAML_SRC (default /tmp/ix-ocaml-VERSION). The
-# headers are the installed ones.
+# fetches here, in $OCAML_SRC (default _cross/ocaml-VERSION; old:
+# /tmp/ix-ocaml-VERSION, which macOS clears). The headers are the
+# installed ones.
 #
 # Usage: ocaml.sh
 
 V=$(ocamlopt -version)
-OCAML_SRC=${OCAML_SRC:-/tmp/ix-ocaml-$V}
+TOP=$(cd "$(dirname "$0")/.." && pwd)
+OCAML_SRC=${OCAML_SRC:-$TOP/_cross/ocaml-$V}
 [ -f $OCAML_SRC/runtime/startup_nat.c ] && { echo "OCaml $V's sources: $OCAML_SRC (already there)"; exit 0; }
 set -e
 rm -rf $OCAML_SRC

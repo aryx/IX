@@ -30,6 +30,11 @@ BOARD ?= pi1
 LIB = ../lib_machine
 # claude: what ix's configure found (optional: without it, GNU's names)
 -include $(LIB)/../../Makefile.config
+# the compilers built or fetched for the kernels (ocaml-light.sh,
+# ocaml.sh), in the checkout's _cross/ beside musl's headers, by an
+# absolute path (ocaml-light's own paths are). old: /tmp, which macOS
+# clears of what has not been read for days
+CROSS_DIR = $(abspath $(LIB)/../../_cross)
 
 # the OCaml compiler: ocaml-light (light, the default; kernels/9pi's
 # Pi 1 says ix), or the switch's
@@ -73,7 +78,7 @@ SESSION_PY = $(LIB)/session.py
 
 ifneq ($(ARM32),)
 # the Pi1: ARMv6 and its VFP, cross-compiled
-OCL ?= /tmp/ix-ocaml-light-arm
+OCL ?= $(CROSS_DIR)/ocaml-light-arm
 CROSS = arm-linux-gnueabihf-
 # claude: the C compiler, the assembler, the linker, objcopy: GNU's
 # cross tools, or what ix's configure wrote in Makefile.config (where
@@ -115,7 +120,7 @@ else
 # the Pi4: ARMv8, this machine's own (aarch64): no cross compiler;
 # no vectorizing (mini-qemu's arm64 has the scalar floating point, not
 # Advanced SIMD)
-OCL ?= /tmp/ix-ocaml-light-arm64
+OCL ?= $(CROSS_DIR)/ocaml-light-arm64
 CROSS =
 KCC = gcc
 KAS = as
@@ -135,7 +140,7 @@ ifeq ($(COMPILER),ocaml)
 # OCaml 4.14: its headers the installed ones (m.h and s.h are
 # configure's), its runtime one directory
 OCAMLOPT = ocamlopt -alert -deprecated
-OCAML_SRC ?= /tmp/ix-ocaml-$(shell ocamlopt -version)
+OCAML_SRC ?= $(CROSS_DIR)/ocaml-$(shell ocamlopt -version)
 OCAML_LIB := $(shell ocamlopt -where)
 RTDIRS = $(OCAML_SRC)/runtime
 RTFLAGS = -I$(OCAML_LIB) -I$(OCAML_LIB)/caml -DOCAML4 -DCAMLDLLIMPORT= -DMODEL_default -DSYS_linux

@@ -12,7 +12,7 @@
 
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 ML=${ML:-$ROOT/_build/default/languages/ml/Main.exe}
-OCL=${OCL:-/tmp/ix-ocaml-light-arm64}
+OCL=${OCL:-$ROOT/_cross/ocaml-light-arm64}
 # mini-ml's stdlib: ix's, lib_core's directories of it
 S=$(for u in $(grep -v '^#' $ROOT/lib_core/units.txt); do echo "-I $ROOT/lib_core/$(dirname $u)"; done | sort -u | tr '\n' ' ')
 W=$(mktemp -d); trap 'rm -rf $W' EXIT

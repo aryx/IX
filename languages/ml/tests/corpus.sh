@@ -14,7 +14,7 @@
 
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 ML=${ML:-$ROOT/_build/default/languages/ml/Main.exe}
-OCL=${OCL:-/tmp/ix-ocaml-light-arm64}
+OCL=${OCL:-$ROOT/_cross/ocaml-light-arm64}
 OCAML_LIGHT=${OCAML_LIGHT:-$HOME/ocaml-light}
 files=("$@")
 if [ ${#files[@]} = 0 ]; then

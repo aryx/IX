@@ -673,13 +673,16 @@ was said and what the program wrote below them, buttons for `s`, `n`
 and `c`, which an empty command line also takes as keys.
 
 To try the toolchain and these two after `make run` (in `tiny/`),
-`/examples` has a program to build: `hello.c`, whose `square` is
-`square.tm`'s, by hand, and the `Buildfile` that builds it with `/src`'s
-C runtime (`tiny/examples/` on the host, to read and edit there):
+`/examples` has two programs to build: `hello.c`, whose `square` is
+`square.tm`'s, by hand, and `helloml.ml`, a tree, a closure, an
+exception and enough lists that tiny-ml's collector runs; and the
+`Buildfile` that builds them with `/src`'s runtimes (`tiny/examples/` on
+the host, to read and edit there):
 
-    cd /examples; build; ./hello      # as, cc, ld, then hello's sum
-    trace ./hello                     # its write and its exit
-    debug ./hello                     # b square, c, bt, r, x/i pc 3, s, q
+    cd /examples; build; ./hello; ./helloml   # as, cc, ml, ld, then each one's output
+    trace ./hello                             # its write and its exit
+    debug ./hello                             # b square, c, bt, r, x/i pc 3, s, q
+    debug ./helloml                           # b insert, c, bt: an ML frame's slots
 
 `dial` gives a descriptor on a connection to another machine, by its
 address as text (`"10.0.0.1"`: the wire's other end) and a port; -1

@@ -1,13 +1,18 @@
 # Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyBuildSystem.ml)
 #
-# hello, from hello.c and square.tm, built on tiny-kernel by build in
-# /examples (see hello.c). Its C runtime is /src's, compiled the first
-# time: start.tm (_start, then main), the division, libc and the system
-# calls, as the kernel's Buildfile links its C programs. -s puts the
-# labels after the image, the names debug shows; -map writes them
-# beside it too (hello.map).
+# hello, from hello.c and square.tm, and helloml, from helloml.ml, built
+# on tiny-kernel by build in /examples (see hello.c and helloml.ml): both
+# by default, or one by its name (build helloml). Their runtime is /src's,
+# compiled the first time, as the kernel's Buildfile links its programs:
+# C's (start.tm, _start then main; the division; libc) and tiny-kernel's
+# calls for C (sys.tm); for ML also mlsys.c, which includes
+# /src/runtime/ml.c, the allocator and the collector, then /lib/ml's
+# library and end.tm, the image's end. -s puts the labels after the
+# image, the names debug shows; -map writes them beside it too.
 
 ULIB = start.o udivmod.o libc.o sys.o
+
+all: hello helloml
 
 hello: $ULIB hello.o square.o
 	ld -map -s -n -o $target $prereq
@@ -17,6 +22,14 @@ hello.o: hello.c /src/TinyKernel/libc/user.h
 square.o: square.tm
 	as -o $target square.tm
 
+# (the library's objects after the program's, end.o the last)
+helloml: $ULIB mlsys.o helloml.o end.o
+	ld -map -s -n -o $target $ULIB mlsys.o helloml.o /lib/ml/*.o end.o
+
+# (one unit: its code and its main in one object)
+helloml.o: helloml.ml
+	ml -o $target helloml.ml
+
 start.o: /src/runtime/start.tm
 	as -o $target /src/runtime/start.tm
 udivmod.o: /src/runtime/udivmod.tm
@@ -25,3 +38,7 @@ libc.o: /src/runtime/libc.c /src/runtime/libc.h
 	cc -o $target /src/runtime/libc.c
 sys.o: /src/TinyKernel/libc/sys.tm
 	as -o $target /src/TinyKernel/libc/sys.tm
+mlsys.o: /src/TinyLibSystem/tinykernel/mlsys.c /src/runtime/ml.c /src/TinyKernel/libc/user.h
+	cc -o $target /src/TinyLibSystem/tinykernel/mlsys.c
+end.o: /src/TinyKernel/end.tm
+	as -o $target /src/TinyKernel/end.tm

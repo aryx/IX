@@ -480,11 +480,11 @@ BINS = $(addprefix $(O)/bin/,$(PROGS))
 # the host's tiny-ml and tiny-assembler made them, which ml's and as's on
 # tiny-kernel are compared with (make check); and a program to try the
 # toolchain and the tools on, tiny/examples/'s: hello.c and square.tm,
-# built by the Buildfile beside them (cd /examples; build; ./hello; trace
-# ./hello; debug ./hello)
+# and helloml.ml, built by the Buildfile beside them (cd /examples;
+# build; ./hello; ./helloml; trace ./hello; debug ./helloml)
 EXAMPLES = steps/t6/user/wc.c user/sh.c ../user/emacs.ml ../TinyEditorScreen.ml ../examples/report.ixd ../examples/korobeiniki.wav $(O)/spin.prof $(O)/spin.map \
 	$(U)/TinyLibMachine.tmi $(U)/TinyLibMachine.o \
-	../examples/hello.c ../examples/square.tm ../examples/Buildfile
+	../examples/hello.c ../examples/square.tm ../examples/helloml.ml ../examples/Buildfile
 
 # the sources, in /src as they are in tiny/, what tiny-kernel builds
 # itself from (make self): the kernel's, each unit's file, the
@@ -728,12 +728,13 @@ $(O)/check/26.out: $(O)/boot.img
 # date of seconds given (now's differs at each run)
 $(O)/check/27.out: $(O)/boot.img
 	printf 'rc\nsleep 100 &\nps\ncat /dev/ps | wc -l\nkill $$apid; echo $$status; ps -a\nkill 99; echo $$status\ndate 0; date 5184000; date 1073741823; date -n 7\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
-# /examples' hello, as the manual has it tried after make run: built by
-# its Buildfile (the C runtime from /src, then hello.c and square.tm),
-# run, built again (up to date), traced, and debugged (stopped in
-# square, the assembly's: bt, x/i, a step)
+# /examples' hello and helloml, as the manual has them tried after
+# make run: built by their Buildfile (the runtimes from /src, then
+# hello.c, square.tm, helloml.ml), run, built again (up to date),
+# traced, and debugged (hello stopped in square, the assembly's: bt, x/i,
+# a step; helloml in insert, an ML frame and its slots)
 $(O)/check/28.out: $(O)/boot.img
-	printf 'rc\ncd /examples; build; ./hello\nbuild\ntrace ./hello\ndebug ./hello\nb square\nc\nbt\nx/i pc 3\ns\nq\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
+	printf 'rc\ncd /examples; build; ./hello; ./helloml\nbuild\ntrace ./hello\ndebug ./hello\nb square\nc\nbt\nx/i pc 3\ns\nq\ndebug ./helloml\nb insert\nc\nbt\nq\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
 $(O)/check/%.sum: $(T)/%.events $(O)/boot.img
 	timeout 300 $(MACHINE) -net ../tests/www -events $< -screen $(O)/check/$*.ppm $(O)/boot.img > /dev/null
 	cksum < $(O)/check/$*.ppm > $@; diff $(T)/$*.cksum $@ || { echo "tiny-kernel: $*.events: another screen ($(O)/check/$*.ppm)"; exit 1; }

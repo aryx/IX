@@ -69354,3 +69354,67 @@ Claude planned to check that run's diff before committing, so the commit would i
 **Yoann:**
 
 > also should it be tiny/runtimes/ plural?
+
+------------------------------------------------------------------------
+
+## 2026-11-11 09:53
+
+**Yoann:**
+
+> (would match the tests/ examples/ )
+
+**Claude (summary):**
+
+Claude recommended keeping the singular runtime name for the directory that holds both parts.
+Claude argued each test or example stands alone, while runtime is one thing a program links.
+Claude pointed out that user/ and libc/ are singular, and mini-ml already uses languages/ml/runtime/.
+Claude conceded that two runtimes make runtimes/ defensible, and offered to rename it if preferred.
+Claude committed the reorganization as e035bf92 across 66 files, leaving only the _make6 scratch directory.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 09:54
+
+**Yoann:**
+
+> what do you think is best? independently of the renaming cost
+
+**Claude (summary):**
+
+Claude recommended keeping the directory named `runtime/` rather than `runtimes/`, even without renaming costs.
+Claude reasoned that `runtime/` names the single set of link-time parts each program needs, like `start.tm` and `libc`.
+Claude contrasted `tests/` and `examples/`, which collect independent items, with `runtime/`, a fixed set of fitting parts.
+Claude pointed out that `languages/ml/runtime/` is singular, matching common phrasing like "the C runtime".
+Claude said `runtimes/` would only fit separate per-target runtimes, which the plan lacks, so it left things as they are.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 09:55
+
+**Yoann:**
+
+> ok make sense, let's leave it like that then
+
+**Claude (summary):**
+
+Claude agreed to leave `tiny/runtime/` unchanged, as Yoann had decided.
+Claude said `make self` was still running in `tiny/TinyKernel/_make6`.
+Claude planned to check the `self.expected` diff once the build finished, then commit it separately.
+Claude expected the diff to show the new `/src/runtime/` and `/examples` paths, `paint.c` under `user/`, and `Int32` in the library list.
+Claude planned to delete `_make6` after that commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 09:57
+
+**Yoann:**
+
+> ok let's add then in tiny/examples/ an helloml.ml or something that exercise the ml compiler and runtime
+
+**Claude (summary):**
+
+Claude added tiny/examples/helloml.ml, which exercises the ML compiler, runtime, and collector, and updated the Buildfile.
+Claude proposed committing helloml first, with its Buildfile rules, session 28 check lines, and manual §7.2 entry.
+Claude suggested committing self.expected on its own once the single make self run in _make7 finishes.
+Claude had stopped the earlier make self run, since adding helloml changes the image, so it restarted once.
+Claude asked whether to commit helloml now and self.expected after the run, since nothing is committed yet.

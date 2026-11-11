@@ -2,12 +2,13 @@
 // codemap, ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there). The files put in
 // tiny-kernel's /examples to try the programs on: hello.c and square.tm,
-// built there by the Buildfile beside them (cd /examples; build;
-// ./hello; trace ./hello; debug ./hello); report.ixd, an office document
-// troff prints; korobeiniki.wav, which play plays.
+// and helloml.ml, built there by the Buildfile beside them (cd
+// /examples; build; ./hello; ./helloml; trace ./hello; debug ./helloml);
+// report.ixd, an office document troff prints; korobeiniki.wav, which
+// play plays.
 {
   generated: { by: 'claude-opus-5-5', on: '2026-11-11' },
-  summary: "Files to try tiny-kernel's programs on: a program in C and assembly with its Buildfile, a document, a tune.",
+  summary: "Files to try tiny-kernel's programs on: a program in C and assembly, one in ML, their Buildfile, a document, a tune.",
   files: {
     'hello.c': { digest: 'a08618e84a6b',
       summary: "hello: the squares of 1 to 10 added, square by square.tm's assembly; built and debugged on tiny-kernel itself.",
@@ -18,6 +19,19 @@
         { at: 'def:main', weight: 3 },
       ],
       related: ['square.tm', 'Buildfile', '../TinyKernel/libc/user.h'],
+    },
+    'helloml.ml': { digest: '27209abba42b',
+      summary: "helloml: a tree, a closure, an exception, and 200,000 cells made and dropped, so tiny-ml's collector runs; built on tiny-kernel.",
+      capitals: [
+        { at: 'def:insert', say: "a recursive ML function: debug's b insert, its frames' slots" },
+      ],
+      important: [
+        { at: 'type:tree', weight: 2 },
+        { at: 'def:insert', weight: 2 },
+        { at: 'def:first_over', say: 'an exception out of a List.iter', weight: 1 },
+        { at: 'comment:"2,000 lists of 100, each dropped"', say: "more than the heap's half: a collection", weight: 2 },
+      ],
+      related: ['Buildfile', '../runtime/ml.c', '../TinyLibSystem/tinykernel/mlsys.c'],
     },
   },
   skeletons: [

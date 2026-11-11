@@ -463,8 +463,15 @@ as -o sys.o /src/TinyKernel/libc/sys.tm
 cc -o hello.o hello.c
 as -o square.o square.tm
 ld -map -s -n -o hello start.o udivmod.o libc.o sys.o hello.o square.o
+cc -o mlsys.o /src/TinyLibSystem/tinykernel/mlsys.c
+ml -o helloml.o helloml.ml
+as -o end.o /src/TinyKernel/end.tm
+ld -map -s -n -o helloml start.o udivmod.o libc.o sys.o mlsys.o helloml.o /lib/ml/*.o end.o
 hello: the squares of 1 to 10 add up to 385
-% tiny-build: hello is up to date
+sorted: 1 2 3 4 5 7 8 9
+the first over 5: 7
+200000 cells made, the last list from 2001 to 2100
+% tiny-build: all is up to date
 % hello: the squares of 1 to 10 add up to 385
 write(1, "hello: the squares of 1 to 10 ad"..., 44) = 44
 exit(0)
@@ -480,4 +487,15 @@ square:	ldw	r1, 0(sp)
 square+0x4:	mul	r13, r1, r1
 square+0x8:	jalr	zero, 0(lr)
 square+0x4:	mul	r13, r1, r1
+% exec
+_start:	jal	lr, 0x7030 <main>
+break
+insert:	addi	sp, sp, -16
+0	insert
+1	fold_left+0xfc	0x1f640 0 0x70110 0x70110 5 0x70104 ...
+2	Helloml.init+0x328	_ _ _ _ _ _ ...
+3	ml_init+0x2f4	0
+4	ml_run+0x164
+5	main+0x208
+6	_start
 % $ 

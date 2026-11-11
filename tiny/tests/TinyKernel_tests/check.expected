@@ -355,15 +355,15 @@ hello
 %       1       1       6
 % [12] getpid() = 12
 [12] dup(0) = 5
-[12] pipe(0xffec8) = 0
+[12] pipe(0x*) = 0
 [12] fork() = 13
 [12] close(7) = 0
 [12] close(0) = 0
 [12] dup(6) = 0
 [12] close(6) = 0
 [12] fork() = 14
-[12] wait(0xffe58) = 13
-[12] wait(0xffe58) = 14
+[12] wait(0x*) = 13
+[12] wait(0x*) = 14
 [12] close(0) = 0
 [12] dup(5) = 0
 [12] close(5) = 0
@@ -374,7 +374,7 @@ hello
 [13] close(7) = 0
 [13] close(6) = 0
 [13] close(5) = 0
-[13] exec("/bin/cat", 0xffd68) = 0
+[13] exec("/bin/cat", 0x*) = 0
 [13] open("f", 0) = 5
 [13] read(5, "hello\n", 4096) = 6
 [13] write(1, "hello\n", 6) = 6
@@ -383,19 +383,19 @@ hello
 [13] exit(0)
 [13] exited 0
 [14] close(5) = 0
-[14] exec("/bin/wc", 0xffd38) = 0
+[14] exec("/bin/wc", 0x*) = 0
 [14] read(0, "hello\n", 4096) = 6
 [14] read(0, "", 4096) = 0
 [14] write(1, "      1       1       6\n", 24) = 24
 [14] exit(0)
 [14] exited 0
 % exec
-_start:	jal	lr, 0xfa4 <main>
+_start:	jal	lr, 0x* <main>
 break
 write:	ldw	r1, 0(sp)
 0	write
-1	print+0xac
-2	main+0xa4
+1	print+*
+2	main+*
 3	_start
 write:	ldw	r1, 0(sp)
 write+0x4:	ldw	r2, 4(sp)
@@ -405,24 +405,24 @@ write+0x8:	ldw	r3, 8(sp)
 ping: no network, or not an address: 10.0.0.1
 exited 1
 % exec
-_start:	jal	lr, 0x7030 <main>
+_start:	jal	lr, 0x* <main>
 break
 u_write:	addi	sp, sp, -40
 0	u_write
-1	eprint+0x5c	0 0x2ab20 0x2ab20 2
-2	main+0x1e8	0 0x70800 0 0x70800 1 0 ...
-3	main+0x230	0x2abe8 0x2aa00 0x707d4 _ _ _ ...
-4	Trace.init+0x58	_ 0x2aa00 0x2abe8 0x2a6d4
-5	ml_init+0x32c	0
-6	ml_run+0x164
-7	main+0x208
+1	eprint+*	0 0x* 0x* 2
+2	main+*	0 0x* 0 0x* 1 0 ...
+3	main+*	0x* 0x* 0x* _ _ _ ...
+4	Trace.init+*	_ 0x* 0x* 0x*
+5	ml_init+*	0
+6	ml_run+*
+7	main+*
 8	_start
 % % fork() = 25
-wait(0xffde0) = 25
+wait(0x*) = 25
 fork() = 26
-wait(0xffdc0) = 26
+wait(0x*) = 26
 fork() = 27
-wait(0xffde0) = 27
+wait(0x*) = 27
 close(1) = 0
 dup(5) = 1
 close(5) = 0
@@ -470,25 +470,25 @@ write(1, "hello: the squares of 1 to 10 ad"..., 44) = 44
 exit(0)
 exited 0
 % exec
-_start:	jal	lr, 0xfa4 <main>
+_start:	jal	lr, 0x* <main>
 break
 square:	ldw	r1, 0(sp)
 0	square
-1	main+0x60
+1	main+*
 2	_start
 square:	ldw	r1, 0(sp)
 square+0x4:	mul	r13, r1, r1
 square+0x8:	jalr	zero, 0(lr)
 square+0x4:	mul	r13, r1, r1
 % exec
-_start:	jal	lr, 0x7030 <main>
+_start:	jal	lr, 0x* <main>
 break
 insert:	addi	sp, sp, -16
 0	insert
-1	fold_left+0xfc	0x1e640 0 0x70110 0x70110 5 0x70104 ...
-2	Helloml.init+0x328	_ _ _ _ _ _ ...
-3	ml_init+0x2f4	0
-4	ml_run+0x164
-5	main+0x208
+1	fold_left+*	0x* 0 0x* 0x* 5 0x* ...
+2	Helloml.init+*	_ _ _ _ _ _ ...
+3	ml_init+*	0
+4	ml_run+*
+5	main+*
 6	_start
 % $ 

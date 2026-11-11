@@ -654,13 +654,18 @@ SCREENS = paint windows nested play tetris calc temp debug emacs emacsmx emacsco
 # check.out before it is compared: a program's size in /bin (ls -l is
 # checked for its names and links), where a program died (the trap's
 # address), a ping's time, tiny-vcs's hashes (its commits have the date
-# of their second, the boot's and the ticks since). (old: recorded, and
+# of their second, the boot's and the ticks since); an address, 0x and
+# three digits or more (trace's pointers, a jump's target, a value
+# stack's slot), and a backtrace's place in each function (main+0x1c4):
+# the code's size, not what trace and debug show of it, the calls and
+# their results, the frames' names and their integers. (old: recorded, and
 # recorded again at each
 # change of a program; the lossy wire's trace whole, in one of three
 # variants, where now that a packet was lost; the get's whole file
 # before it says it was sent again)
 MASK = -e 's|^(%? ?[-d] +[0-9]+) +[0-9]+ ((/boot)?/bin/)|\1 * \2|' -e 's|: trap ([0-9]+) at [0-9]+,|: trap \1 at *,|' -e 's|in [0-9.]+ ms$$|in * ms|' \
-	-e 's|[0-9a-f]{40}|*|g' -e 's|^(%? ?)[0-9a-f]{10} |\1* |'
+	-e 's|[0-9a-f]{40}|*|g' -e 's|^(%? ?)[0-9a-f]{10} |\1* |' \
+	-e 's|^([0-9]+[[:blank:]]+[^+[:blank:]]+)\+0x[0-9a-f]+|\1+*|' -e 's|0x[0-9a-f]{3,}|0x*|g'
 
 # (the machine's date fixed, 2026-01-01 in seconds since 2000, so that a
 # run is the same each time: tiny-vcs's commits, the files' dates;

@@ -70110,3 +70110,74 @@ Claude suggested tiny-ml read `Stdlib.tmi` first and rename `Int64.ml`'s type to
 Claude also proposed a per-program variable such as `ED = ...` with `${ED:%=%.tmi}` substitution, avoiding repeated lists in each program's rules.
 Claude noted a shared tiny-build pattern rule would need a new feature or naming convention, so it was deferred.
 Claude said it had the lexer fix passing all checks, uncommitted, and asked permission to commit it and the other steps.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 14:07
+
+**Yoann:**
+
+> why the Buildfile is still so complicated? How is it solved by ocaml-light or mini-ml in m-ix? and yes let's commit the lexer fix at least
+
+**Claude (summary):**
+
+Claude committed the lexer fix as 9da0e42b and compared the Buildfile's link steps with ocaml-light's and m-ix's.
+Claude traced the recurring ld out-of-memory failure to List.concat and @ in TinyLinker, which recurse once per element and overflow the stack.
+Claude proposed option (c): make TinyLibCore's @ and concat tail-recursive with rev_append, so every program benefits and TinyLinker stays simple.
+Claude warned that (c) changes Stdlib.o, so every program's bytes change and all screens and expected files need one re-recording.
+Claude had recommended doing (b), a local rev_append fix in TinyLinker, first so make self passes, with (c) as a separate step.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 14:13
+
+**Yoann:**
+
+> let's do c, so the TinyLinker code can remain simple
+
+------------------------------------------------------------------------
+
+## 2026-11-11 14:16
+
+**Yoann:**
+
+> if some of the tests are failing each time we do some small modifications, maybe they are not very useful tests
+
+**Claude (summary):**
+
+Claude reported that the library fix for `Stdlib.( @ )` and `List.concat` is done but uncommitted pending Yoann's review.
+Claude's `@` change does one frame per element for the first 1,000 elements, then reverses the rest, keeping the stack bounded.
+Claude made `List.concat` a loop, left `TinyLinker` unchanged, and added a `std.ml` test checked against OCaml past the 1,000 switch.
+Claude reported the library tests, `self-quick`, and the kernel check passing after one re-recorded `debug.cksum` screen.
+Claude proposed making the `debug`, `play`, and `debug trace` checks less brittle, pending confirmation after this commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 14:23
+
+**Yoann:**
+
+> let's put the old simpler code in comment in an old: .... for @ and concat
+
+**Claude (summary):**
+
+Claude added the old one-line definitions of `@` and `concat` as `old:` comments, so the replaced versions stay visible.
+Claude noted each comment also records why the definition was replaced, to explain the change to a reader.
+Claude reported that TinyLibCore's test passes and tiny-ml compiles the library with the new comments.
+Claude said `make self` was still running in the worktree and would be checked when it finishes.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 14:23
+
+**Yoann:**
+
+> and yes let's make the test less brittle to small changes and not depend too much on timing or address if possible
+
+**Claude (summary):**
+
+Claude masked addresses and frame offsets in the text check's `MASK`, re-recording 27 lines of `check.expected` as `0x*` and `name+*`.
+Claude kept system calls, their results, function names, frame order, and short offsets like `write+0x4`, so a wrong `step` still fails.
+Claude switched `debug.events` back to debugging `ping` (C) instead of `ls` (ML), so its registers and backtrace change only with `ping` or libc.
+Claude tested both changes in a clean worktree from HEAD, leaving the uncommitted library fix and the other session's files untouched.
+Claude found the `play` screen still depends on the blink and seconds counter, proposed removing them from `Square.ml`, and is waiting for approval.

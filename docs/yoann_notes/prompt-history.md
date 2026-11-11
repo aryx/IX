@@ -69848,3 +69848,82 @@ Claude shortened the LIB and LIBO lines in tiny/Buildfile and the Stdlib.o line 
 Claude proposed two separate commits in that order: the substitution first, then self.expected.
 Claude re-recorded self.expected from a passing make self run, with only the expected changes.
 Claude left other sessions' uncommitted changes alone and deleted the finished _make8 build directory.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 12:59
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude reported making two commits: `95276bb3` for mk's substitution in tiny-build, its tests, and the shortened Buildfiles.
+Claude also made commit `5a253cc0`, re-recording `self.expected` from the `make self` run whose self-built image matched the host byte for byte.
+Claude left the other sessions' changes (TinyLibGUI, TinyLibPlayground, TinyDebugger, TinyTracer, TinyWindows, caps_tiny.txt) untouched in the tree.
+Claude said the next Buildfile step is `ml -I`, which removes the 24 library interfaces from every unit's rule.
+Claude proposed describing that tiny-ml change before writing it, since it modifies a different project.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 13:01
+
+**Yoann:**
+
+> let's do it
+
+**Claude (summary):**
+
+Claude recommended using `-L TinyLibCore` now, which shortens the Buildfile by dropping `$LIB` from every rule.
+Claude noted the cost: library changes would no longer trigger rebuilds of dependent units, so `build clean` would be needed.
+Claude explained that a proper `-I` needs `.tmi` files to record their dependencies and an index for `ml -M`.
+Claude proposed doing `-L` now and the dependency-recording `-I` work later as a separate plan step.
+Claude asked which option Yoann preferred, with (c) both steps as its recommendation.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 13:05
+
+**Yoann:**
+
+> let's do a first
+
+**Claude (summary):**
+
+Claude found that tiny-build cannot keep the library as a prerequisite and also pass it with `-L`, since the interfaces get read twice.
+Claude proposed two fixes: (a1) make tiny-ml skip interface arguments already found under the `-L` directory, or (a2) leave the tools unchanged.
+Claude recommended (a1) as one small tiny-ml rule plus a test, and asked Yoann whether to proceed.
+Yoann's follow-up asks what the issue is and how m-ix, xix, or principia solve similar problems, so the reply should explain the cause and compare approaches.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 13:09
+
+**Yoann:**
+
+> What is the issue? How similar issues are solved in m-ix (or xix, or principia)
+
+**Claude (summary):**
+
+Claude explained that one Buildfile list serves as both tiny-ml's prerequisites and its command-line inputs.
+Claude recommended dropping option (a1), since m-ix and principia keep prerequisites and compiler inputs in separate lists.
+Claude proposed giving tiny-ml an `-I` search path so the recipe passes only `$stem.ml`, with the library as a plain prerequisite.
+Claude planned generating precise dependency lines with `-M`, as `mini-ml -depend` does in `mkfiles/depend.rc`.
+Claude noted tiny-ml needs a defined load order, which a `.tmi` recording its compiled-against units could provide.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 13:12
+
+**Yoann:**
+
+> yes, let's do -I properly the m-ix way
+
+**Claude (summary):**
+
+Claude implemented `ml -c -I dir` in tiny-ml, reading each named module's `.tmi` interface on demand.
+Claude added `named_units` to scan `M.x`, `M.C`, `open M`, `include M`, and `module A = M`, as `ocamldep` does.
+Claude made each `.tmi` record `ideps`, so `-I` follows dependencies through the interfaces it reads.
+Claude ordered interface reads by unit depth, so `TinyLibMachine.label` loads before the `TinyCLower.label` clash.
+Claude verified all 82 units compile through `-I` to byte-identical objects, with the changes still uncommitted.

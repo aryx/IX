@@ -69927,3 +69927,35 @@ Claude added `named_units` to scan `M.x`, `M.C`, `open M`, `include M`, and `mod
 Claude made each `.tmi` record `ideps`, so `-I` follows dependencies through the interfaces it reads.
 Claude ordered interface reads by unit depth, so `TinyLibMachine.label` loads before the `TinyCLower.label` clash.
 Claude verified all 82 units compile through `-I` to byte-identical objects, with the changes still uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 13:20
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude ran the analyzers, test-tix, the kernel check, and `self-quick` before committing the new `ideps` field.
+Claude fixed two order-of-evaluation reports in the new code by giving each file read and cache fill its own `let`.
+Claude committed `ml -I` as `b4492b5b` after all checks passed, with no `.tmi` files re-recorded.
+Claude planned a `-I` test in `TinyML_test.sh` and a Buildfile and Makefile switch to `-I`.
+Claude asked to proceed, and Yoann answered yes.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 13:28
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude proposed switching the ix build to `-I` for interfaces, with `ml` given only the `.ml` file and directories.
+Claude changed the `tiny/Buildfile`, the `TinyKernel/Makefile` and the self-build rule, and added a `-I` test to `TinyML_test.sh`.
+Claude reported the new case passes and that both build files now produce byte-identical outputs across all 31 programs and `kernel.img`.
+Claude left the work uncommitted, planning three commits: the `-I` test, the Buildfile and Makefile switch, then `self.expected`.
+Claude's `make self` run was still going, about an hour, and would change `self.expected`.

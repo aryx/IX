@@ -393,10 +393,13 @@ UNITS = $(KUNITS) TinyLibSystem TinyLibMachine TinyLibRegex TinyLibDraw TinyLibP
   TinyShell TinyUtilities TinyEditorLine Square Machine Tetris Calc Temp Emacs Office Troff Play Www Windows Bigmem Trace Debug
 .SECONDEXPANSION:
 # (the .mli too, when there is one: its vals' types are the .tmi's;
-# old: the .ml only, so a .tmi kept an old .mli's types)
+# old: the .ml only, so a .tmi kept an old .mli's types). The
+# prerequisites are make's, the order and what to make again; tiny-ml
+# is given the source alone and finds the interfaces by -I, as mini-ml
+# in m-ix
 $(UNITS:%=$(U)/%.o): $(U)/%.o: $$(addprefix $(U)/,$$(addsuffix .tmi,$$(I_$$*))) $$(or $$(F_$$*),../$$*.ml) $$(wildcard $$(basename $$(or $$(F_$$*),../$$*.ml)).mli) $(O)/lib/Stdlib.o $(TMLBIN)
 	@mkdir -p $(@D)
-	$(TML_L) -c -o $@ $(filter %.tmi,$^) $(filter %.ml,$^)
+	$(TML_L) -c -I $(U) -o $@ $(filter %.ml,$^)
 $(UNITS:%=$(U)/%.tmi): $(U)/%.tmi: $(U)/%.o ;
 
 # each program's units, in their order (windows: tiny-windows, after
@@ -602,7 +605,7 @@ $(foreach p,get put,bin/$(p): $$ULIB libc/net.o user/$(p).o$(nl)	mkdir -p bin; l
 # ML: each unit after the interfaces it reads, each program's main, and
 # the program
 ml/%.o:
-	mkdir -p ml; a=(); for(p in $$prereq) ~ $$p *.mli || a=($$a $$p); ml -c -nostdlib -o $$target $$a
+	mkdir -p ml; for(p in $$prereq) ~ $$p *.ml && f=$$p; ml -c -L lib -I ml -o $$target $$f
 ml/%.tmi: ml/%.o
 $(foreach u,$(UNITS),ml/$(u).o: $$LIB $(addprefix ml/,$(addsuffix .tmi,$(I_$(u)))) $(call insrc,$(or $(F_$(u)),../$(u).ml) $(wildcard $(patsubst %.ml,%.mli,$(or $(F_$(u)),../$(u).ml))))$(nl))main/%.o:
 	mkdir -p main; ml -nostdlib -o $$target $$prereq

@@ -34,11 +34,10 @@
 # from this file (the plan's last step).
 #
 # Its problems, today's tools', each a step of the plan:
-# - ml finds no interface by itself: each unit's rule names the .tmi it
-#   reads, in the order the Makefile gives them (the .tmi's bytes
-#   depend on it); and a unit's .mli is not a prerequisite (ml takes
-#   no .mli argument), so a changed interface does not remake the
-#   units that read it: ml -I and ml -M, later;
+# - the units' rules written by hand, the interfaces each stands on
+#   (tiny-ml finds them itself, -I; the rules are tiny-build's order),
+#   and a unit's .mli not among them, so a changed .mli does not remake
+#   what reads it: ml -M will write them, as ocamldep;
 # - no libraries: a link names every object of the library (LIBO).
 
 
@@ -54,11 +53,16 @@ all: $PROGS kernel.img
 # How each kind of file is made
 #############################################################################
 
-# an ML unit: its interfaces (the prerequisites a unit's rule gives),
-# then its source, -nostdlib (the library's interfaces are among them,
-# LIB, not read from /lib/ml); its .tmi made with its .o
+# an ML unit: its source alone; tiny-ml reads the library from
+# TinyLibCore/ (-L) and finds the interfaces of the modules the source
+# names in INCLUDES' directories (-I), each after those it stands on.
+# A unit's rule says what must be made before it, and what makes it
+# again, for tiny-build alone: as mini-ml in m-ix, the compiler's
+# arguments are not its prerequisites. Its .tmi made with its .o
+INCLUDES = -I . -I TinyLibSystem/tinykernel -I TinyC -I TinyML -I TinyOffice \
+    -I TinyBrowser -I TinyKernel -I user -I tests/TinyLibPlayground_tests
 %.o: %.ml
-	ml -c -nostdlib -o $target $prereq
+	ml -c -L TinyLibCore $INCLUDES -o $target $stem.ml
 %.tmi: %.o
 
 # C, by tiny-c; assembly written by hand, by tiny-assembler (the
@@ -93,97 +97,128 @@ TinyLibSystem/tinykernel/mlsys.o: TinyLibSystem/tinykernel/mlsys.c runtime/ml.c 
 #############################################################################
 
 # Its units in their order, each compiled with the interfaces of the
-# ones before it (as ocaml-light's stdlib is compiled in an order, its
-# OBJS); every ML unit and main is compiled with all of them (LIB) and
-# every ML program links them (LIBO). On the image they are /lib/ml.
+# ones before it, given (-nostdlib: no library yet; as ocaml-light's
+# stdlib is compiled in an order, its OBJS); every other ML unit reads
+# all of them (-L TinyLibCore), and is made after them (LIB, a
+# prerequisite), and every ML program links them (LIBO). On the image
+# they are /lib/ml.
 CORE = Stdlib Char Seq List String Bytes Array Option Int32 Int64 Filename Buffer Printf Marshal Hashtbl Common Sha1 Fpath Fpath_ Exit In_channel Out_channel Chan Logs
 
 LIB = ${CORE:%=TinyLibCore/%.tmi}
 LIBO = ${CORE:%=TinyLibCore/%.o}
 
-TinyLibCore/Char.o: TinyLibCore/Stdlib.tmi
-TinyLibCore/Seq.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi
+TinyLibCore/Stdlib.o: TinyLibCore/Stdlib.ml
+	ml -c -nostdlib -o $target $prereq
+TinyLibCore/Char.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.ml
+	ml -c -nostdlib -o $target $prereq
+TinyLibCore/Seq.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
+    TinyLibCore/Seq.ml
+	ml -c -nostdlib -o $target $prereq
 TinyLibCore/List.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
-    TinyLibCore/Seq.tmi
+    TinyLibCore/Seq.tmi TinyLibCore/List.ml
+	ml -c -nostdlib -o $target $prereq
 TinyLibCore/String.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
-    TinyLibCore/Seq.tmi TinyLibCore/List.tmi
+    TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.ml
+	ml -c -nostdlib -o $target $prereq
 TinyLibCore/Bytes.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
-    TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi
+    TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
+    TinyLibCore/Bytes.ml
+	ml -c -nostdlib -o $target $prereq
 TinyLibCore/Array.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
-    TinyLibCore/Bytes.tmi
+    TinyLibCore/Bytes.tmi TinyLibCore/Array.ml
+	ml -c -nostdlib -o $target $prereq
 TinyLibCore/Option.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
-    TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi
+    TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.ml
+	ml -c -nostdlib -o $target $prereq
 TinyLibCore/Int32.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
-    TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi
+    TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
+    TinyLibCore/Int32.ml
+	ml -c -nostdlib -o $target $prereq
 TinyLibCore/Int64.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
-    TinyLibCore/Int32.tmi
+    TinyLibCore/Int32.tmi TinyLibCore/Int64.ml
+	ml -c -nostdlib -o $target $prereq
 TinyLibCore/Filename.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
-    TinyLibCore/Int32.tmi TinyLibCore/Int64.tmi
+    TinyLibCore/Int32.tmi TinyLibCore/Int64.tmi TinyLibCore/Filename.ml
+	ml -c -nostdlib -o $target $prereq
 TinyLibCore/Buffer.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
-    TinyLibCore/Int32.tmi TinyLibCore/Int64.tmi TinyLibCore/Filename.tmi
+    TinyLibCore/Int32.tmi TinyLibCore/Int64.tmi TinyLibCore/Filename.tmi \
+    TinyLibCore/Buffer.ml
+	ml -c -nostdlib -o $target $prereq
 TinyLibCore/Printf.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
     TinyLibCore/Int32.tmi TinyLibCore/Int64.tmi TinyLibCore/Filename.tmi \
-    TinyLibCore/Buffer.tmi
+    TinyLibCore/Buffer.tmi TinyLibCore/Printf.ml
+	ml -c -nostdlib -o $target $prereq
 TinyLibCore/Marshal.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
     TinyLibCore/Int32.tmi TinyLibCore/Int64.tmi TinyLibCore/Filename.tmi \
-    TinyLibCore/Buffer.tmi TinyLibCore/Printf.tmi
+    TinyLibCore/Buffer.tmi TinyLibCore/Printf.tmi TinyLibCore/Marshal.ml
+	ml -c -nostdlib -o $target $prereq
 TinyLibCore/Hashtbl.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
     TinyLibCore/Int32.tmi TinyLibCore/Int64.tmi TinyLibCore/Filename.tmi \
-    TinyLibCore/Buffer.tmi TinyLibCore/Printf.tmi TinyLibCore/Marshal.tmi
+    TinyLibCore/Buffer.tmi TinyLibCore/Printf.tmi TinyLibCore/Marshal.tmi \
+    TinyLibCore/Hashtbl.ml
+	ml -c -nostdlib -o $target $prereq
 TinyLibCore/Common.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
     TinyLibCore/Int32.tmi TinyLibCore/Int64.tmi TinyLibCore/Filename.tmi \
     TinyLibCore/Buffer.tmi TinyLibCore/Printf.tmi TinyLibCore/Marshal.tmi \
-    TinyLibCore/Hashtbl.tmi
+    TinyLibCore/Hashtbl.tmi TinyLibCore/Common.ml
+	ml -c -nostdlib -o $target $prereq
 TinyLibCore/Sha1.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
     TinyLibCore/Int32.tmi TinyLibCore/Int64.tmi TinyLibCore/Filename.tmi \
     TinyLibCore/Buffer.tmi TinyLibCore/Printf.tmi TinyLibCore/Marshal.tmi \
-    TinyLibCore/Hashtbl.tmi TinyLibCore/Common.tmi
+    TinyLibCore/Hashtbl.tmi TinyLibCore/Common.tmi TinyLibCore/Sha1.ml
+	ml -c -nostdlib -o $target $prereq
 TinyLibCore/Fpath.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
     TinyLibCore/Int32.tmi TinyLibCore/Int64.tmi TinyLibCore/Filename.tmi \
     TinyLibCore/Buffer.tmi TinyLibCore/Printf.tmi TinyLibCore/Marshal.tmi \
-    TinyLibCore/Hashtbl.tmi TinyLibCore/Common.tmi TinyLibCore/Sha1.tmi
+    TinyLibCore/Hashtbl.tmi TinyLibCore/Common.tmi TinyLibCore/Sha1.tmi \
+    TinyLibCore/Fpath.ml
+	ml -c -nostdlib -o $target $prereq
 TinyLibCore/Fpath_.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
     TinyLibCore/Int32.tmi TinyLibCore/Int64.tmi TinyLibCore/Filename.tmi \
     TinyLibCore/Buffer.tmi TinyLibCore/Printf.tmi TinyLibCore/Marshal.tmi \
     TinyLibCore/Hashtbl.tmi TinyLibCore/Common.tmi TinyLibCore/Sha1.tmi \
-    TinyLibCore/Fpath.tmi
+    TinyLibCore/Fpath.tmi TinyLibCore/Fpath_.ml
+	ml -c -nostdlib -o $target $prereq
 TinyLibCore/Exit.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
     TinyLibCore/Int32.tmi TinyLibCore/Int64.tmi TinyLibCore/Filename.tmi \
     TinyLibCore/Buffer.tmi TinyLibCore/Printf.tmi TinyLibCore/Marshal.tmi \
     TinyLibCore/Hashtbl.tmi TinyLibCore/Common.tmi TinyLibCore/Sha1.tmi \
-    TinyLibCore/Fpath.tmi TinyLibCore/Fpath_.tmi
+    TinyLibCore/Fpath.tmi TinyLibCore/Fpath_.tmi TinyLibCore/Exit.ml
+	ml -c -nostdlib -o $target $prereq
 TinyLibCore/In_channel.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
     TinyLibCore/Int32.tmi TinyLibCore/Int64.tmi TinyLibCore/Filename.tmi \
     TinyLibCore/Buffer.tmi TinyLibCore/Printf.tmi TinyLibCore/Marshal.tmi \
     TinyLibCore/Hashtbl.tmi TinyLibCore/Common.tmi TinyLibCore/Sha1.tmi \
-    TinyLibCore/Fpath.tmi TinyLibCore/Fpath_.tmi TinyLibCore/Exit.tmi
+    TinyLibCore/Fpath.tmi TinyLibCore/Fpath_.tmi TinyLibCore/Exit.tmi \
+    TinyLibCore/In_channel.ml
+	ml -c -nostdlib -o $target $prereq
 TinyLibCore/Out_channel.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
@@ -191,7 +226,8 @@ TinyLibCore/Out_channel.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Buffer.tmi TinyLibCore/Printf.tmi TinyLibCore/Marshal.tmi \
     TinyLibCore/Hashtbl.tmi TinyLibCore/Common.tmi TinyLibCore/Sha1.tmi \
     TinyLibCore/Fpath.tmi TinyLibCore/Fpath_.tmi TinyLibCore/Exit.tmi \
-    TinyLibCore/In_channel.tmi
+    TinyLibCore/In_channel.tmi TinyLibCore/Out_channel.ml
+	ml -c -nostdlib -o $target $prereq
 TinyLibCore/Chan.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
@@ -199,7 +235,9 @@ TinyLibCore/Chan.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Buffer.tmi TinyLibCore/Printf.tmi TinyLibCore/Marshal.tmi \
     TinyLibCore/Hashtbl.tmi TinyLibCore/Common.tmi TinyLibCore/Sha1.tmi \
     TinyLibCore/Fpath.tmi TinyLibCore/Fpath_.tmi TinyLibCore/Exit.tmi \
-    TinyLibCore/In_channel.tmi TinyLibCore/Out_channel.tmi
+    TinyLibCore/In_channel.tmi TinyLibCore/Out_channel.tmi \
+    TinyLibCore/Chan.ml
+	ml -c -nostdlib -o $target $prereq
 TinyLibCore/Logs.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Seq.tmi TinyLibCore/List.tmi TinyLibCore/String.tmi \
     TinyLibCore/Bytes.tmi TinyLibCore/Array.tmi TinyLibCore/Option.tmi \
@@ -208,7 +246,8 @@ TinyLibCore/Logs.o: TinyLibCore/Stdlib.tmi TinyLibCore/Char.tmi \
     TinyLibCore/Hashtbl.tmi TinyLibCore/Common.tmi TinyLibCore/Sha1.tmi \
     TinyLibCore/Fpath.tmi TinyLibCore/Fpath_.tmi TinyLibCore/Exit.tmi \
     TinyLibCore/In_channel.tmi TinyLibCore/Out_channel.tmi \
-    TinyLibCore/Chan.tmi
+    TinyLibCore/Chan.tmi TinyLibCore/Logs.ml
+	ml -c -nostdlib -o $target $prereq
 
 #############################################################################
 # The libraries: what several programs share

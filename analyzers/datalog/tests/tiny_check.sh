@@ -2,13 +2,20 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# mini-analyze FLAG on tiny/'s host programs, those OCaml builds and
-# checks (tiny/dune's executables: Cap.main or TinyLibSystem.main), each
-# with the modules of its tiny libraries, lib_core's found by itself, the
+# mini-analyze FLAG on tiny/'s programs: the host's, those OCaml builds and
+# checks (tiny/dune's executables: Cap.main or TinyLibSystem.main), and
+# those tiny-kernel runs alone (windows, www, trace, debug, ...: OCaml only
+# checks their units, no program on the host), each with the units
+# TinyKernel/Makefile's UNITS_x gives it, on the host's TinyLibSystem.ml,
+# the same .mli as tiny-kernel's (whose type Cap.all_caps = < >, tiny-ml's,
+# mini-analyze does not parse), since TinyLibSystem is the one library of
+# both systems' programs (old: left out, TinyCalls.ml their calls). Each with
+# the modules of its tiny libraries, lib_core's found by itself, the
 # other ix libraries by -I. Not here: the SDL programs (tsdl, which
-# mini-analyze does not read: tiny-machine-window, tiny/user/sdl/'s apps) and
-# what runs on tiny-kernel alone (TinyWindows, TinyDebugger, TinyTracer:
-# libraries that OCaml only checks, no program here).
+# mini-analyze does not read: tiny-machine-window, tiny/user/sdl/'s apps)
+# and the kernel (its calls are the machine's, not a library's).
+# coupling: TinyKernel/Makefile's UNITS_x (I_x, F_x) for tiny-kernel's
+# programs below.
 # Each report once, sorted, recorded: -caps caps_tiny.txt (its one line
 # TinyBuildSystem.start's, analyzers/datalog/README.md), -bugs
 # bugs_tiny.txt, -dead dead_tiny.txt (what every program that has the
@@ -46,6 +53,10 @@ TC="$L "$(for m in Types Lexer Tree Lower Parser Machine; do
   printf "%s " $T/TinyC/TinyC$m.ml; done)
 NET="-I lib_networking/tcp -I lib_networking/tls -I lib_networking/http"
 NET="$NET -I lib_crypto -I lib_compression"
+# tiny-kernel's programs: the Makefile's GUI and OFFICE
+GUI="$S $T/TinyLibDraw.ml $T/TinyLibPlayground.ml $T/TinyLibGUI.ml"
+OFFICE=$(for m in Model Text Sheet Drawing Paint Chart File; do
+  printf "%s " $T/TinyOffice/TinyOffice$m.ml; done)
 # a program a line: its name, its -I's (- for none), its files
 programs() {
   cat <<EOF
@@ -66,6 +77,19 @@ tiny-machine-socket|-|$S $M/TinyMachineSocket.ml
 tiny-machine-fetch|$NET -I lib_graphics/core -I lib_graphics/images|$CPU $S $M/TinyMachineDevices.ml $BROWSER $M/TinyMachineFetch.ml
 tiny-mkfs|-|$S $T/TinyKernel/steps/t6/TinyMkfs.ml
 mkfont|-I lib_graphics/core -I lib_graphics/geometry -I lib_graphics/fonts -I lib_graphics/software|$S $T/TinyKernel/fonts/Mkfont.ml
+windows|-|$T/TinyLibDraw.ml $T/TinyWindows.ml
+bigmem|-|$S $T/user/bigmem.ml
+square|-|$GUI $T/tests/TinyLibPlayground_tests/Square.ml $T/tests/TinyLibPlayground_tests/machine.ml
+tetris|-|$GUI $T/TinyAppTetris.ml $T/user/tetris.ml
+calc|-|$GUI $T/TinyAppCalculator.ml $T/user/calc.ml
+temp|-|$GUI $T/TinyAppTemperature.ml $T/user/temp.ml
+emacs|-|$GUI $T/TinyEditorScreen.ml $T/user/emacs.ml
+office|-|$GUI $OFFICE $T/TinyOffice.ml $T/user/office.ml
+troff|-|$GUI $OFFICE $T/TinyTroff.ml $T/user/troff.ml
+play|-|$GUI $T/TinyPlay.ml $T/user/play.ml
+www|-|$GUI $BROWSER $T/TinyBrowser/TinyBrowserScreen.ml $T/TinyBrowser.ml $T/user/www.ml
+trace|-|$S $T/TinyTracer.ml $T/user/trace.ml
+debug|-|$GUI $L $T/TinyDebugger.ml $T/user/debug.ml
 EOF
 }
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
@@ -79,8 +103,8 @@ done; wait; }
 programs | while IFS='|' read -r name flags files; do
   n=$(grep -cE "$said" $W/$name.out)
   # (a unit not read: its program's 0 would say nothing)
-  unread=$(grep -cE 'unbound (module|value)|not read' $W/$name.out)
-  [ -z "$check" ] && printf '%-20s %3d%s\n' $name $n "$([ $unread -gt 0 ] && echo "  NOT READ: $(grep -m1 -E 'unbound (module|value)|not read' $W/$name.out)")"
+  unread=$(grep -cE 'unbound (module|value)|not read|syntax error' $W/$name.out)
+  [ -z "$check" ] && printf '%-20s %3d%s\n' $name $n "$([ $unread -gt 0 ] && echo "  NOT READ: $(grep -m1 -E 'unbound (module|value)|not read|syntax error' $W/$name.out)")"
   [ $unread -gt 0 ] && echo "$name NOT READ" >> $W/unread
   if [ $flag = -exn ]; then
     # (a program's name first: its exceptions, not a file's)
@@ -105,6 +129,6 @@ if [ -z "$check" ]; then
   keep_notes "$notes" $out; echo "$(grep -vc '^#' $out) reports: $out"; exit 0
 fi
 # (a program not read: a failure, all tiny/'s programs readable here)
-[ -s $W/unread ] && { echo "FAIL mini-analyze $flag on tiny/'s host programs: not all read"; rm -f $out; exit 1; }
-compare "mini-analyze $flag on tiny/'s host programs" $out $expected /dev/null
+[ -s $W/unread ] && { echo "FAIL mini-analyze $flag on tiny/'s programs: not all read"; rm -f $out; exit 1; }
+compare "mini-analyze $flag on tiny/'s programs" $out $expected /dev/null
 st=$?; rm -f $out; exit $st

@@ -106,7 +106,11 @@ let filteri p l =
     | [] -> []
     | x :: l -> if p i x then x :: go (i + 1) l else go (i + 1) l in
   go 0 l
-let rec concat = function [] -> [] | l :: r -> l @ concat r
+(* the lists one after the other, by a loop: any number of them, in a
+ * bounded stack. old:
+ *     let rec concat = function [] -> [] | l :: r -> l @ concat r
+ * a frame a list *)
+let concat ls = rev (fold_left (fun acc l -> rev_append l acc) [] ls)
 (* (a loop, as mapi; old: concat (map f l), two recursions per element) *)
 let concat_map f l =
   let rec go acc = function

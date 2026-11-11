@@ -79,7 +79,22 @@ let ( |> ) x f = f x
  * added to this file's text) *)
 let max_int = 1073741823
 let min_int = - max_int - 1
-let rec ( @ ) l1 l2 = match l1 with [] -> l2 | x :: l -> x :: (l @ l2)
+(* l1's elements, then l2's: a frame an element for l1's first 1,000,
+ * then the rest reversed, then reversed onto l2, so that a list of any
+ * length is joined in a bounded stack (as OCaml 5's @: tiny-kernel's ld
+ * joins a program's lines, bugs/ix.md), where most are short and cost
+ * no more than a frame each. old:
+ *     let rec ( @ ) l1 l2 = match l1 with [] -> l2 | x :: l -> x :: (l @ l2)
+ * a frame an element of l1 *)
+let ( @ ) l1 l2 =
+  let rec rev_onto acc l = match l with [] -> acc | x :: r -> rev_onto (x :: acc) r in
+  let rec go depth l =
+    match l with
+    | [] -> l2
+    | x :: r ->
+        if depth = 1000 then rev_onto l2 (rev_onto [] l)
+        else x :: go (depth + 1) r in
+  go 0 l1
 
 (* a number, with its sign: decimal, or hexadecimal after 0x
  * (OCaml's reads 0o, 0b and 1_000 too) *)

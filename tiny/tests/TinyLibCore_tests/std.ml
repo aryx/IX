@@ -203,6 +203,17 @@ let () =
   int (Hashtbl.find h "k"); int (Hashtbl.length h); int (Hashtbl.find h2 "k");
   int (Hashtbl.length h2); print_newline ()
 
+(* long lists joined, @ and List.concat: past @'s 1,000 frames, where
+ * the rest is reversed onto the second list (the test's heap too small
+ * for the lists that overflowed ld's stack: make self links them) *)
+let () =
+  let rec upto n acc = if n = 0 then acc else upto (n - 1) (n :: acc) in
+  let l = upto 4000 [] in
+  int (List.length (l @ l)); int (List.nth (l @ [ 0 ]) 999);
+  int (List.nth (l @ [ 0 ]) 1000); int (List.nth (l @ [ 0 ]) 3999);
+  int (List.nth (l @ [ 0 ]) 4000); int (List.length (List.concat [ l; [ 7 ]; l ]));
+  int (List.nth (List.concat [ l; [ 7 ]; l ]) 4000); print_newline ()
+
 (* for the machine's words: Int32 (tiny-ml's of two pieces), its edges,
  * its shifts across the pieces, and Int64's conversions both ways *)
 let () =

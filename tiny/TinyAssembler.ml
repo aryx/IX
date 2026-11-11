@@ -72,10 +72,10 @@ let int_of ((h, l) : halves) : int =
   if h < 0x4000 || h >= 0xc000 then (M.sext16 h * 0x10000) + l
   else M.error "number out of range"
 
-(* as an int64, its 32 bits signed (in Int64: h * 0x10000 needs 32) *)
-let int64_of ((h, l) : halves) : int64 =
-  Int64.add (Int64.mul (Int64.of_int (M.sext16 h)) (Int64.of_int 0x10000))
-    (Int64.of_int l)
+(* as a word, its two halves put together (old: an int64, h * 0x10000
+ * added to l) *)
+let word_of ((h, l) : halves) : M.word =
+  Int32.logor (Int32.shift_left (Int32.of_int h) 16) (Int32.of_int l)
 
 (* an operand: a number (a character too, 'c'), or a label *)
 type arg = Arg_num of halves | Arg_sym of M.sym
@@ -183,7 +183,7 @@ let instruction (name : string) (args : string list) : M.line =
       (* the pseudo-instructions (la of a number is li's) *)
       | ("li" | "la"), [ d; v ] ->
           (match arg v with
-           | Arg_num n -> M.Li (r d, int64_of n)
+           | Arg_num n -> M.Li (r d, word_of n)
            | Arg_sym s -> M.La (r d, s))
       | "mov", [ d; a ] -> M.Mov (r d, r a)
       | "call", [ t ] ->
@@ -216,7 +216,7 @@ let directive (d : string) (args : string) : M.line list =
   | ".word" ->
       List.map (fun a ->
         match arg a with
-        | Arg_num n -> M.Word (int64_of n)
+        | Arg_num n -> M.Word (word_of n)
         | Arg_sym s -> M.Word_sym s)
         (String.split_on_char ',' args)
   | ".byte" ->

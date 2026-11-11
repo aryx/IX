@@ -85,15 +85,15 @@ val add_data : TinyLibMachine.line list -> unit
  * as an object, or as their text (-S) *)
 val lines : asm -> TinyLibMachine.line list
 
-(* a static word: a number's text, a code's label, a block's *)
-type dword = DNum of int64 | DCode of sym | DVal of sym
+(* a static word: a number, a code's label, a block's *)
+type dword = DNum of TinyLibMachine.word | DCode of sym | DVal of sym
 
 (* [words g ws]: g's words in the data *)
 val words : sym -> dword list -> unit
 (* [block g header ws]: a static block, g its value *)
-val block : sym -> int64 -> dword list -> unit
+val block : sym -> TinyLibMachine.word -> dword list -> unit
 (* [header n tag]: a block's header *)
-val header : int -> int -> int64
+val header : int -> int -> TinyLibMachine.word
 val closure_tag : int
 (* a string's static block, made once *)
 val static_string : string -> sym

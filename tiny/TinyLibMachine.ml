@@ -53,6 +53,12 @@ let has_imm op = match op with Mul | Div | Rem | Sub -> false | _ -> true
 
 let sext16 v = ((v land 0xffff) lxor 0x8000) - 0x8000
 
+(* an instruction's word, an int, and any 32 bits, an Int32 (the .mli
+ * says why) *)
+type instr_word = int
+type word = int32
+[@@deriving show]
+
 let sp = 14 and lr = 15
 
 (* the machine's registers of control, by number (TinyMachineDevices's) *)
@@ -77,7 +83,7 @@ type machine_instr =
 [@@deriving show]
 
 (* (old: the assembler's, by hand) *)
-let encode_machine (m : machine_instr) : int =
+let encode_machine (m : machine_instr) : instr_word =
   let w op d a k = (op lsl 24) lor (d lsl 20) lor (a lsl 16) lor k in
   match m with
   | Csrr (d, c) -> w 0x3a d 0 c
@@ -96,9 +102,8 @@ let hex n = Printf.sprintf "0x%x" n
 
 (* opcodes: 0x01-0x0d the ALU, 0x11-0x1d its immediate forms, then the
  * rest; 0 is no instruction, so that zeroed memory stops a program.
- * An instruction's word is under 2^30 (its opcode under 0x40), so it
- * is an int for tiny-ml too, whose ints have 31 bits *)
-let encode i =
+ * The opcodes stop at 0x3f, which keeps instr_word an int *)
+let encode i : instr_word =
   let w op d a imm =
     (op lsl 24) lor (d lsl 20) lor (a lsl 16) lor (imm land 0xffff) in
   let fits16 v = v >= -0x8000 && v < 0x8000 in
@@ -127,7 +132,7 @@ let encode i =
   | Jalr (d, a, off) -> w 0x39 d a off
   | Sys n -> w 0x3f 0 0 n
 
-let decode w =
+let decode (w : instr_word) =
   let op = (w lsr 24) land 0xff and d = (w lsr 20) land 15
   and a = (w lsr 16) land 15 and imm = w land 0xffff in
   match op with
@@ -230,7 +235,7 @@ type line =
   | Instr of instr
   | Instr_at of instr * place * target
   | Machine of machine_instr
-  | Li of reg * int64
+  | Li of reg * word
   | La of reg * sym
   | Mov of reg * reg
   | Call of sym
@@ -242,7 +247,7 @@ type line =
   | Space of int
   | Bytes of int list
   | Ascii of string
-  | Word of int64
+  | Word of word
   | Word_sym of sym
   | Piece
   | SectionCode
@@ -257,9 +262,9 @@ type line =
 (* (a register by its name) *)
 let reg = reg_name
 
-(* a number's low 32 bits, signed, in decimal (old: Printf's %ld of
- * Int64.to_int32, in each compiler) *)
-let word v = Int64.to_string (Int64.shift_right (Int64.shift_left v 32) 32)
+(* a word, signed, in decimal (old: an int64's low 32 bits, sign-extended
+ * first; older: Printf's %ld of Int64.to_int32, in each compiler) *)
+let word (v : word) = Int32.to_string v
 
 let target_text (t : target) =
   match t with Name s -> s | Address n -> string_of_int n
@@ -316,32 +321,30 @@ let print_line (l : line) =
 (* The objects *)
 (*****************************************************************************)
 
-(* a word's bytes, the low first: the memory's order (an int64: a word
- * of data has 32 bits, tiny-ml's ints 31) *)
-let word_bytes (w : int64) =
+(* a word's bytes, the low first: the memory's order *)
+let word_bytes (w : word) =
   String.init 4 (fun i ->
     Char.chr
-      (Int64.to_int
-         (Int64.logand (Int64.shift_right w (8 * i)) (Int64.of_int 0xff))))
+      (Int32.to_int
+         (Int32.logand (Int32.shift_right_logical w (8 * i))
+            (Int32.of_int 0xff))))
 
 (* instructions' words, and the places in them the link fills *)
 let code (is : instr list) relocs : line =
   Chunk
     (String.concat ""
-       (List.map (fun i -> word_bytes (Int64.of_int (encode i))) is),
+       (List.map (fun i -> word_bytes (Int32.of_int (encode i))) is),
      relocs)
 
-(* a number of 16 bits, li's in one instruction; else its two halves.
- * Its low 32 bits read signed, as its text says them (word, above): a
- * compiler's 0xfffffff0 is -16, one instruction, as when its text was
- * assembled *)
-let signed (v : int64) = Int64.shift_right (Int64.shift_left v 32) 32
-let small (v : int64) =
-  let v = signed v in
-  Int64.compare v (Int64.of_int (-32768)) >= 0
-  && Int64.compare v (Int64.of_int 32767) <= 0
-let half (v : int64) shift =
-  Int64.to_int (Int64.logand (Int64.shift_right v shift) (Int64.of_int 0xffff))
+(* a number of 16 bits, li's in one instruction, else its two halves; a
+ * word is signed, so a compiler's 0xfffffff0 is -16, one instruction
+ * (old: an int64, its low 32 bits read signed first) *)
+let small (v : word) =
+  Int32.compare v (Int32.of_int (-32768)) >= 0
+  && Int32.compare v (Int32.of_int 32767) <= 0
+let half (v : word) shift =
+  Int32.to_int
+    (Int32.logand (Int32.shift_right_logical v shift) (Int32.of_int 0xffff))
 
 (* (old: TinyAssembler's item: the compilers encode their lines too) *)
 let encode_line (l : line) : line =
@@ -349,9 +352,9 @@ let encode_line (l : line) : line =
   match l with
   | Instr i -> code [ i ] []
   | Instr_at (i, k, t) -> code [ i ] [ (0, k, t) ]
-  | Machine m -> Chunk (word_bytes (Int64.of_int (encode_machine m)), [])
+  | Machine m -> Chunk (word_bytes (Int32.of_int (encode_machine m)), [])
   | Li (d, v) when small v ->
-      code [ Alui (Add, d, 0, Int64.to_int (signed v)) ] []
+      code [ Alui (Add, d, 0, Int32.to_int v) ] []
   | Li (d, v) -> code [ Lui (d, half v 16); Alui (Or, d, d, half v 0) ] []
   | La (d, s) ->
       code [ Lui (d, 0); Alui (Or, d, d, 0) ]
@@ -367,7 +370,7 @@ let encode_line (l : line) : line =
          [])
   | Ascii s -> Chunk (s, [])
   | Word v -> Chunk (word_bytes v, [])
-  | Word_sym s -> Chunk (word_bytes Int64.zero, to_ s Full)
+  | Word_sym s -> Chunk (word_bytes Int32.zero, to_ s Full)
   (* the lines the link places by, and a chunk, already encoded *)
   | Label _ | Align _ | Space _ | Piece | SectionCode | SectionData
   | Chunk _ -> l

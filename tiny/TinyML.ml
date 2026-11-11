@@ -130,7 +130,7 @@ let compile_main (units : (string * int) list) needed =
   List.iter (fun n -> for k = 0 to n - 1 do Compile.curry_fun n k done)
     (List.sort_uniq compare needed);
   let total = List.fold_left (fun t (_, n) -> t + n) 0 units in
-  Machine.words "ml_nglobals" [ Machine.DNum (Int64.of_int total) ];
+  Machine.words "ml_nglobals" [ Machine.DNum (Int32.of_int total) ];
   Machine.add_data
     ([ M.Piece; M.Label "ml_globals" ]
      @ List.concat_map (fun (u, n) ->
@@ -322,8 +322,8 @@ let unit_of (f : Fpath.t) =
  * with a dot) *)
 let library =
   [ "Stdlib"; "Char"; "Seq"; "List"; "String"; "Bytes"; "Array"; "Option";
-    "Int64"; "Filename"; "Buffer"; "Printf"; "Marshal"; "Hashtbl"; "Common";
-    "Sha1"; "Fpath"; "Fpath_"; "Exit"; "In_channel"; "Out_channel";
+    "Int32"; "Int64"; "Filename"; "Buffer"; "Printf"; "Marshal"; "Hashtbl";
+    "Common"; "Sha1"; "Fpath"; "Fpath_"; "Exit"; "In_channel"; "Out_channel";
     "Chan"; "Logs" ]
 
 (* a file that cannot be read or made, said apart from an error in one *)

@@ -164,7 +164,7 @@ let instruction (st : state) (i : Lower.ir) =
       st.mdead <- false;
       emit st (M.Label (lab l))
   | _ when st.mdead -> ()
-  | Lower.Imm v -> let a = push st in emit st (M.Li (a, v))
+  | Lower.Imm v -> let a = push st in emit st (M.Li (a, Int64.to_int32 v))
   | Lower.Place (Tree.Global s) -> let a = push st in emit st (M.La (a, s))
   | Lower.Place (Tree.Local o) ->
       let a = push st in
@@ -237,8 +237,8 @@ let global (name : Ty.sym) size (ds : (int * Tree.datum) list)
                             (Int64.to_int v lsr 8) land 0xff ]);
           off + 2
       | Tree.Value (k, v) ->
-          line (M.Word v);
-          if k = 8 then line (M.Word (Int64.shift_right v 32));
+          line (M.Word (Int64.to_int32 v));
+          if k = 8 then line (M.Word (Int64.to_int32 (Int64.shift_right v 32)));
           off + k
       | Tree.Address s -> line (M.Word_sym s); off + 4
       ) 0 in

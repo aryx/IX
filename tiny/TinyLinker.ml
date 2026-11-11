@@ -78,7 +78,7 @@ let layout (items : M.line list) : layout =
 
 (* a word in the code's bytes, the low first; an instruction's, which
  * fits in an int on both sides (its opcode under 0x40) *)
-let get_word s off =
+let get_word s off : M.instr_word =
   List.fold_right (fun i w -> (w lsl 8) lor Char.code (Bytes.get s (off + i)))
     [ 0; 1; 2; 3 ] 0
 (* a value's 32 bits, from an int that has 31 (tiny-ml's) or 63:

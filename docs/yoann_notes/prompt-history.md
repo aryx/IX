@@ -69020,3 +69020,74 @@ Claude asked whether to go ahead with `instr_word` and `word` names, since `enco
 **Yoann:**
 
 > ok I like your design, but let's add Int32.t to tiny-ml, so we use it instead of abusing int64 for something that is really an Int32
+
+------------------------------------------------------------------------
+
+## 2026-11-11 08:09
+
+**Yoann:**
+
+> and let's keep this instr_word = int for speed reason as your good comment before it explain it (ideally in TinyLibMachine.mli
+
+**Claude (summary):**
+
+Claude kept `type instr_word = int` in TinyLibMachine, with the `.mli` comment giving the speed reason.
+The comment says opcodes stop at 0x3f, so the word stays under 2^30 and the CPU decodes it unboxed at each step.
+Claude added `type word = int32` for other 32-bit values as `Li` and `Word`, and dropped the `signed` helper.
+The CPU's `illegal` callback stays `int`, since it runs only on the host inside the hot loop.
+Claude also added `Int32` to tiny-ml and moved `word_hex` into the debugger; the checks pass and nothing is committed yet.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 08:27
+
+**Yoann:**
+
+> what do you think? I think it's cleaner that way.
+
+**Claude (summary):**
+
+Claude said the `Int32` change makes signatures clearer and removes the `signed` helper, at the cost of one more library unit.
+Claude flagged that `instr_word` is still just an alias for `int`, so it documents the type without enforcing it.
+Claude listed three remaining plain-int words to annotate: the CPU fetch word, the linker's `set_word`, and the debugger's `word_of`.
+Claude proposed annotating those with `M.address` or `M.instr_word` in a separate follow-up commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 08:27
+
+**Yoann:**
+
+> we should run make self-tix, not make self no? since we only modify tiny/ ?
+
+**Claude (summary):**
+
+Claude confirmed the root self-tix target runs make all, then make -C tiny/TinyKernel self.
+Claude said it was running the tiny/TinyKernel self step, not the top-level make self build.
+Claude built into a scratch directory with O=_make5, since another _make there belongs to other sessions.
+Claude noted the run had started about ten minutes earlier and should take roughly fifty minutes.
+Claude planned to diff self.expected once the run finished and record the result.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 08:29
+
+**Yoann:**
+
+> maybe we could add a target to tiny/Makefile for self test too?
+
+**Claude (summary):**
+
+Claude added `self` and `self-quick` targets to `tiny/Makefile`, each running `dune build` before TinyKernel's own target.
+Claude also added `self-tix` and `self-quick-tix` targets in `tiny/`, following the root Makefile's tix naming convention.
+Claude made `O=dir` pass through to TinyKernel's make, so builds can go into a scratch directory.
+Claude documented the two new targets in the header comment, with run times of about 3 minutes and an hour.
+Claude only dry-ran the new targets, leaving out `make check` and noting the 45-minute `make self` still running.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 08:31
+
+**Yoann:**
+
+> ok let's commit

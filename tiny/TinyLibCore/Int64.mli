@@ -11,6 +11,8 @@ val max_int : int64
 val min_int : int64
 val of_int : int -> int64
 val to_int : int64 -> int
+val of_int32 : int32 -> int64
+val to_int32 : int64 -> int32
 val add : int64 -> int64 -> int64
 val sub : int64 -> int64 -> int64
 val mul : int64 -> int64 -> int64

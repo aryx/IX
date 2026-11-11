@@ -22,6 +22,12 @@ let of_int n =
 (* the low bits that fit, as OCaml's *)
 let to_int (_, b, c, d) = (((b lsl 16) lor c) lsl 16) lor d
 
+(* an Int32's two pieces are the low two here: sign-extended up, and
+ * the low 32 bits taken down, as OCaml's *)
+let of_int32 ((h, l) : int32) =
+  if h < 0 then (-1, 0xffff, h land 0xffff, l) else (0, 0, h, l)
+let to_int32 (_, _, c, d) : int32 = (sext16 c, d)
+
 (* each piece's carry into the next *)
 let add (a3, a2, a1, a0) (b3, b2, b1, b0) =
   let s0 = a0 + b0 in

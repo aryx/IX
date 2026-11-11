@@ -81,8 +81,20 @@ val unsigned_imm : alu -> bool
 val has_imm : alu -> bool
 val sext16 : int -> int
 
-val encode : instr -> int
-val decode : int -> instr option
+(* The machine's words, of two kinds. An instruction's word, as encode
+ * makes it and decode reads it, is an int on purpose: its opcode is
+ * under 0x40, so the word is under 2^30 and fits tiny-ml's 31-bit ints
+ * as well as OCaml's. tiny-machine's CPU decodes a word at each step,
+ * and an int costs nothing there, where an Int32 is boxed on OCaml and
+ * two pieces of 16 bits on tiny-ml. Any other 32 bits (a number of
+ * li, a .word, an illegal instruction's word, which may have any
+ * opcode) is a word, an Int32: on tiny-ml it may not fit an int.
+ * (old: an int for both, and an int64 for the lines' numbers) *)
+type instr_word = int
+type word = int32
+
+val encode : instr -> instr_word
+val decode : instr_word -> instr option
 
 (* a register's name: zero, sp, lr, or r1 to r13 *)
 val reg_name : reg -> string
@@ -118,7 +130,7 @@ type machine_instr =
   | Csrrw of reg * int * reg          (* d, csr, a: both at once *)
   | Amoswap of reg * reg * reg        (* d, a, (b) *)
 
-val encode_machine : machine_instr -> int
+val encode_machine : machine_instr -> instr_word
 (* its text, a register of control by its name *)
 val machine_text : machine_instr -> string
 
@@ -188,7 +200,7 @@ type line =
        * address's offset from it (a branch to a number), goes: the
        * link fills it *)
   | Machine of machine_instr
-  | Li of reg * int64                 (* a number, its low 32 bits *)
+  | Li of reg * word
   | La of reg * sym                   (* a label's address *)
   | Mov of reg * reg                  (* d, a *)
   | Call of sym
@@ -202,7 +214,7 @@ type line =
   | Space of int                      (* zeros *)
   | Bytes of int list
   | Ascii of string                   (* .ascii, .asciz with its 0 *)
-  | Word of int64                     (* .word a number *)
+  | Word of word                      (* .word a number *)
   | Word_sym of sym                   (* .word a label's address *)
   | Piece
       (* .piece: what follows, up to the next piece, is left out by the

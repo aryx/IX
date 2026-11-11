@@ -203,6 +203,30 @@ let () =
   int (Hashtbl.find h "k"); int (Hashtbl.length h); int (Hashtbl.find h2 "k");
   int (Hashtbl.length h2); print_newline ()
 
+(* for the machine's words: Int32 (tiny-ml's of two pieces), its edges,
+ * its shifts across the pieces, and Int64's conversions both ways *)
+let () =
+  let i32 x = str (Int32.to_string x) in
+  let vs = List.map (fun s -> Int64.to_int32 (Int64.of_string s))
+      [ "0"; "1"; "-1"; "7"; "-7"; "0xffff"; "0x10000"; "0x7fffffff";
+        "0xffffffff"; "-2147483648"; "0x12345678"; "-305419896";
+        "0x80000000"; "0x1ffffffff" ] in
+  List.iter i32 vs; print_newline ();
+  List.iter (fun a -> List.iter (fun b ->
+    i32 (Int32.add a b); i32 (Int32.sub a b);
+    i32 (Int32.logand a b); i32 (Int32.logor a b); i32 (Int32.logxor a b);
+    int (Int32.compare a b); bool (Int32.equal a b)) vs;
+    List.iter (fun n ->
+      i32 (Int32.shift_left a n); i32 (Int32.shift_right a n);
+      i32 (Int32.shift_right_logical a n)) [ 0; 1; 8; 15; 16; 17; 24; 31 ];
+    i32 (Int32.neg a); i32 (Int32.lognot a);
+    int (Int32.to_int a land 0xffff); str (Int64.to_string (Int64.of_int32 a));
+    print_newline ()) vs;
+  List.iter (fun n -> i32 (Int32.of_int n))
+    [ 0; 5; -5; 0xffff; 0x10000; 0x3fffffff; - 0x40000000 ];
+  i32 Int32.max_int; i32 Int32.min_int; i32 Int32.minus_one; i32 Int32.one;
+  i32 Int32.zero; print_newline ()
+
 (* for tiny-c and the toolchain: Int64 (tiny-ml's of four pieces), its
  * edges, and what tiny-c folds; List's find, find_map, rev_append,
  * combine, for_all2; String.index; Filename's basename, is_relative,

@@ -244,9 +244,9 @@ let op (st : state) o =
 let alloc (st : state) tag n =
   spill st;
   st.mcargs <- max st.mcargs 2;
-  emit st (M.Li (r13, Int64.of_int n));
+  emit st (M.Li (r13, Int32.of_int n));
   ins st (M.Store (M.W, r13, sp, 0));
-  emit st (M.Li (r13, Int64.of_int tag));
+  emit st (M.Li (r13, Int32.of_int tag));
   ins st (M.Store (M.W, r13, sp, 4));
   c_call st "ml_alloc"
 
@@ -332,7 +332,7 @@ let string_get (st : state) =
 (* a jump if the top is false, the tagged 0 (Eq), or true (Ne) *)
 let branch (st : state) c l =
   let r = st.msp in
-  pop st; jump st l; emit st (M.Li (r13, Int64.one));
+  pop st; jump st l; emit st (M.Li (r13, Int32.one));
   emit st (M.Branch_to (c, r, r13, lab l))
 
 (* the handler's record: sp, r12, the handler's address (call's link:
@@ -379,7 +379,7 @@ let instruction (st : state) (i : ir) =
       if low32 v <> v then
         Lexer.error
           "an integer beyond 31 bits: not on TinyCPU (a 32-bit machine)";
-      emit st (M.Li (push st, v))
+      emit st (M.Li (push st, Int64.to_int32 v))
   | Addr s -> emit st (M.La (push st, s))
   | Get i -> get st i (push st)
   | Set i -> put st st.msp i; pop st
@@ -406,7 +406,7 @@ let instruction (st : state) (i : ir) =
       result st
   | Blank (tag, n) ->
       alloc st tag n;
-      emit st (M.Li (lr, Int64.one));
+      emit st (M.Li (lr, Int32.one));
       for k = 0 to n - 1 do
         ins st (M.Store (M.W, lr, r13, 4 * k))
       done;
@@ -464,7 +464,7 @@ let machine (name : sym) nparams nslots (code : ir list) : M.line list =
  * scan); ml_raise: to the latest handler, the exception in r13 *)
 let start =
   let ldw d a off = M.Instr (M.Load (M.W, d, a, off)) in
-  [ M.Label "ml_start"; ldw vsp sp 0; M.Li (r13, Int64.one);
+  [ M.Label "ml_start"; ldw vsp sp 0; M.Li (r13, Int32.one);
     M.La (r11, "ml_init"); M.Instr (M.Jalr (0, r11, 0));
     M.Label "ml_raise"; M.La (1, "ml_handler"); ldw 1 1 0;
     ldw sp 1 0; ldw vsp 1 4; ldw 2 1 12; M.La (3, "ml_handler");
@@ -477,7 +477,7 @@ let start =
 
 (* a word of data: a number, a function's code, or a static block's
  * value (its first field's address) *)
-type dword = DNum of int64 | DCode of sym | DVal of sym
+type dword = DNum of M.word | DCode of sym | DVal of sym
 
 let fields sym ws =
   M.Label sym
@@ -494,7 +494,7 @@ let words sym ws = add_data (M.Piece :: fields sym ws)
  * sym+n) *)
 let block sym hdr ws = add_data (M.Piece :: M.Word hdr :: fields sym ws)
 
-let header n tag = Int64.of_int ((n lsl 10) lor tag)
+let header n tag = Int32.of_int ((n lsl 10) lor tag)
 let closure_tag = 247 and string_tag = 252
 
 (* a string: its words, the last byte the number of the others that are
@@ -513,12 +513,11 @@ let static_string s =
       block sym (header n string_tag)
         (List.init n (fun i ->
            let byte k = Char.code (Bytes.get b ((4 * i) + k)) in
-           (* (old: Int32.to_string of Bytes.get_int32_le) *)
+           (* (old: an int64's low 32 bits; older: Int32.to_string of
+            * Bytes.get_int32_le) *)
            DNum
-             (low32
-                (Int64.logor (Int64.shift_left (Int64.of_int (byte 3)) 24)
-                   (Int64.of_int
-                      (byte 0 lor (byte 1 lsl 8) lor (byte 2 lsl 16)))))));
+             (Int32.logor (Int32.shift_left (Int32.of_int (byte 3)) 24)
+                (Int32.of_int (byte 0 lor (byte 1 lsl 8) lor (byte 2 lsl 16))))));
       Hashtbl.replace strings s sym;
       sym
 

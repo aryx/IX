@@ -93,8 +93,21 @@ local mli(summary, digest, capital, say) = {
         { at: 'def:add', weight: 1 },
       ],
     },
-    'Int64.mli': mli("Int64, OCaml's subset: 64-bit integers as four 16-bit pieces, for tiny-c's constants.", '7a58bbd0acb4', 'def:add', 'four pieces, carries between'),
-    'Int64.ml': { digest: '9702e5e5a56d',
+    'Int32.mli': mli("Int32, OCaml's subset: 32-bit integers as two 16-bit pieces, for the machine's words.", 'a7d5d8907ec7', 'def:add', 'two pieces, a carry between'),
+    'Int32.ml': { digest: '1b7179419ca4',
+      summary: "Int32 on 31-bit ints: two pieces of 16 bits, the high one signed, so compare's order is the numbers'.",
+      capitals: [
+        { at: 'type:int32', say: 'two pieces of 16: equal numbers, equal pairs' },
+      ],
+      important: [
+        { at: 'type:int32', weight: 3 },
+        { at: 'def:add', say: "the low piece's carry into the high one", weight: 2 },
+        { at: 'def:shift_left', say: 'a whole piece, or bits across the two', weight: 2 },
+        { at: 'def:to_string', say: 'the magnitude divided by 10, piece by piece', weight: 1 },
+      ],
+    },
+    'Int64.mli': mli("Int64, OCaml's subset: 64-bit integers as four 16-bit pieces, for tiny-c's constants.", '6008d5c2347b', 'def:add', 'four pieces, carries between'),
+    'Int64.ml': { digest: '88bc65096624',
       summary: "Int64 on 31-bit ints: four pieces of 16 bits, the high one signed, so compare's order is the numbers'.",
       capitals: [
         { at: 'type:int64', say: 'four pieces of 16: equal numbers, equal tuples' },

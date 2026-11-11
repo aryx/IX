@@ -38,6 +38,12 @@ let text f =
 (* a number in hexadecimal, a negative one in decimal *)
 let hex a = if a < 0 then string_of_int a else M.hex a
 
+(* a word, unsigned, by its halves: the whole may not fit tiny-ml's int *)
+let word_hex (w : M.word) =
+  let h = Int32.to_int (Int32.shift_right_logical w 16)
+  and l = Int32.to_int (Int32.logand w (Int32.of_int 0xffff)) in
+  if h = 0 then M.hex l else Printf.sprintf "0x%x%04x" h l
+
 (*****************************************************************************)
 (* The process *)
 (*****************************************************************************)
@@ -64,7 +70,7 @@ type stop =
   | Stepped
   | Breakpoint
   | Fault of M.address
-  | Illegal of int
+  | Illegal of M.word
   | Exec
   | Other of string
 
@@ -129,7 +135,11 @@ let stopped p =
             | [ "step" ] -> Stepped
             | [ "break" ] -> Breakpoint
             | [ "fault"; a ] -> number a (fun a -> Fault a)
-            | [ "illegal"; w ] -> number w (fun w -> Illegal w)
+            | [ "illegal"; w ] ->
+                (* (the word read whole: it may have its top bits set,
+                 * past tiny-ml's int) *)
+                (try Illegal (Int64.to_int32 (Int64.of_string w))
+                 with Failure _ -> Other w)
             | [ "exec" ] -> Exec
             | _ -> Other (String.concat " " why))
   | "exited" :: rest -> say ("exited " ^ String.concat " " rest ^ "\n"); None
@@ -201,7 +211,7 @@ let show p why =
    | Stepped -> ()
    | Breakpoint -> say "break\n"
    | Fault a -> say ("fault at " ^ hex a ^ "\n")
-   | Illegal w -> say ("illegal " ^ hex w ^ "\n")
+   | Illegal w -> say ("illegal " ^ word_hex w ^ "\n")
    | Exec -> say "exec\n"
    | Other s -> say (s ^ "\n"));
   match p.pc with Some at -> say (listing p at) | None -> ()

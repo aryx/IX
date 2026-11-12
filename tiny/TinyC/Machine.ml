@@ -1,10 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyCMachine.mli *)
-module Ty = TinyCTypes
-module Tree = TinyCTree
-module Lower = TinyCLower
+(* See Machine.mli *)
 module M = TinyLibMachine
 
 (*****************************************************************************)
@@ -30,7 +27,7 @@ let r13 = 13
  * each label jumped to. (old: refs local to machine; the lines strings,
  * Printf's) *)
 type state = {
-  mname : Ty.sym;
+  mname : Types.sym;
   mlocals : int;
   mutable mlines : (int -> M.line) list;
   mutable msp : int;
@@ -45,11 +42,11 @@ let emit st (l : M.line) = at st (fun _ -> l)
 let ins st (i : M.instr) = emit st (M.Instr i)
 let push (st : state) =
   st.msp <- st.msp + 1;
-  if st.msp > 12 then Ty.error (st.mname ^ ": an expression too deep");
+  if st.msp > 12 then Types.error (st.mname ^ ": an expression too deep");
   st.msp
 let pop (st : state) = st.msp <- st.msp - 1
 let jump (st : state) l = Hashtbl.replace st.mdepth_at l st.msp
-let lab (l : Lower.label) = !Ty.unit_name ^ ".L" ^ string_of_int l
+let lab (l : Lower.label) = !Types.unit_name ^ ".L" ^ string_of_int l
 (* slot k, the k-th save, below the locals *)
 let slot (st : state) k = st.mlocals + (4 * k)
 (* lr, above the outgoing arguments *)
@@ -60,20 +57,20 @@ let epilogue (st : state) =
 
 (* a value extended from its type: the registers are 32 bits, so only
  * a char's and a short's need it *)
-let extend st (t : Ty.ty) a =
+let extend st (t : Types.ty) a =
   match t with
-  | Ty.Int (k, s) when k < 4 ->
+  | Types.Int (k, s) when k < 4 ->
       if s then
         (ins st (M.Alui (M.Shl, a, a, 32 - (8 * k)));
          ins st (M.Alui (M.Sar, a, a, 32 - (8 * k))))
       else ins st (M.Alui (M.And, a, a, (1 lsl (8 * k)) - 1))
   | _ -> ()
 
-let load st (t : Ty.ty) =
+let load st (t : Types.ty) =
   let a = st.msp in
   (match t with
-   | Ty.Int (1, _) -> ins st (M.Load (M.B, a, a, 0))
-   | Ty.Int (2, _) ->
+   | Types.Int (1, _) -> ins st (M.Load (M.B, a, a, 0))
+   | Types.Int (2, _) ->
        ins st (M.Load (M.B, r13, a, 0));
        ins st (M.Load (M.B, a, a, 1));
        ins st (M.Alui (M.Shl, a, a, 8));
@@ -81,11 +78,11 @@ let load st (t : Ty.ty) =
    | _ -> ins st (M.Load (M.W, a, a, 0)));
   extend st t a
 
-let store st (t : Ty.ty) =
+let store st (t : Types.ty) =
   let v = st.msp in
   pop st;
   let a = st.msp in
-  (match Ty.size t with
+  (match Types.size t with
    | 1 -> ins st (M.Store (M.B, v, a, 0))
    | 2 ->
        ins st (M.Store (M.B, v, a, 0));
@@ -96,10 +93,10 @@ let store st (t : Ty.ty) =
 
 (* C's operation, TinyCPU's: / and % on unsigned values by the runtime;
  * a relation of slt and its friends, 1 or 0 *)
-let op st (o : Tree.binop) (t : Ty.ty) =
+let op st (o : Tree.binop) (t : Types.ty) =
   let b = st.msp in
   pop st;
-  let a = st.msp and u = Ty.unsigned t in
+  let a = st.msp and u = Types.unsigned t in
   let slt = if u then M.Sltu else M.Slt in
   let alu op d x y = ins st (M.Alu (op, d, x, y))
   and not_ () = ins st (M.Alui (M.Xor, a, a, 1)) in
@@ -131,7 +128,7 @@ let op st (o : Tree.binop) (t : Ty.ty) =
 
 (* a call of f, or of the address on top of the arguments: the registers
  * below them saved in their slots, the arguments in memory *)
-let call st (f : Ty.sym option) k res =
+let call st (f : Types.sym option) k res =
   let base = st.msp - k - (if f = None then 1 else 0) in
   st.msaves <- max st.msaves base;
   for j = 1 to base do
@@ -197,13 +194,13 @@ let instruction (st : state) (i : Lower.ir) =
       epilogue st;
       st.mdead <- true
 
-let machine (name : Ty.sym) locals (body : Lower.ir list) : M.line list =
+let machine (name : Types.sym) locals (body : Lower.ir list) : M.line list =
   let st =
     { mname = name; mlocals = locals; mlines = []; msp = 0; msaves = 0;
       moutgoing = 0; mdead = false; mdepth_at = Hashtbl.create 16 } in
   List.iter (instruction st) body;
   if not st.mdead then epilogue st;
-  let frame = Ty.round (st.moutgoing + 4 + (4 * st.msaves) + locals) 8 in
+  let frame = Types.round (st.moutgoing + 4 + (4 * st.msaves) + locals) 8 in
   [ M.Label name;
     M.Instr (M.Alui (M.Add, M.sp, M.sp, - frame));
     M.Instr (M.Store (M.W, M.lr, M.sp, st.moutgoing)) ]
@@ -215,7 +212,7 @@ let machine (name : Ty.sym) locals (body : Lower.ir list) : M.line list =
 
 (* [global g n ds]: a global of n bytes, its label and its data at their
  * offsets, the gaps zeros *)
-let global (name : Ty.sym) size (ds : (int * Tree.datum) list)
+let global (name : Types.sym) size (ds : (int * Tree.datum) list)
     : M.line list =
   let out = ref [ M.Label name; M.Align 4 ] in
   let line l = out := l :: !out in

@@ -162,7 +162,7 @@
  *   disambiguation, done cheaply (ocaml-light just takes the last
  *   declared label).
  * - {b A stack machine in between}, the same design as TinyC's
- *   (TinyC/TinyCLower.mli), written again (Machine):
+ *   (TinyC/Lower.mli), written again (Machine):
  *   each expression pushes its value, the stack is kept in r1..r11, and
  *   a pattern becomes a sequence of tests, each jumping to the next
  *   clause on failure.

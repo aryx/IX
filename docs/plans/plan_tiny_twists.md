@@ -78,7 +78,7 @@ registers; each compiler lowers to it, and what only ML needs
 (allocation, tags, handlers, the value stack's slots) is a small
 extension.
 
-**Deletes.** One of the two emitters (TinyC/TinyCMachine.ml, 174
+**Deletes.** One of the two emitters (TinyC/Machine.ml, 174
 lines; much of TinyML/Machine.ml, 482, is the same push, pop,
 operator and jump), and the duplicated tables of operators.
 

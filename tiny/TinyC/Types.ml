@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyCTypes.mli *)
+(* See Types.mli *)
 
 (* (old: a format, Printf.ksprintf's: tiny-ml reads a format only where
  * it is written, Printf.sprintf at the call; then failwith, the same

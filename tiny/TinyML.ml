@@ -300,8 +300,8 @@ let text_of (chan : Chan.i) = In_channel.input_all chan.ic
 (* the modules a source names, in their order: M of M.x, M.C, M.t and
  * M.( op ), of open M and include M, and of module A = M (as ocamldep
  * finds them); what -I reads the interfaces of. A's of module A = M
- * left out: the file's own name for M, not a unit (TinyC.ml's Lexer,
- * TinyCLexer, not TinyML/'s unit Lexer) *)
+ * left out: the file's own name for M, not a unit (TinyC.ml's M,
+ * TinyLibMachine) *)
 let named_units (text : string) : string list =
   let toks = Array.map fst (Lexer.lex text) in
   let n = Array.length toks and found = ref [] and aliases = ref [] in
@@ -537,7 +537,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
          * equals: a unit read after what it stands on, as the
          * Makefile's lists have them. The constructors and the type
          * names are the program's (one name space), the last read
-         * winning: TinyCLower's label after TinyLibMachine's *)
+         * winning: TinyC/Lower.ml's label after TinyLibMachine's *)
         let depth m = List.length (closure m) in
         let order =
           List.stable_sort

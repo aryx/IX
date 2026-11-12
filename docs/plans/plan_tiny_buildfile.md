@@ -55,7 +55,7 @@ one place where all of t-IX's pieces are named together.
 
 - **The outputs beside the sources**, as tiny/examples/'s: a unit's
   object and interface next to its .ml (/src/TinyShell.o and .tmi
-  beside /src/TinyShell.ml; /src/TinyC/TinyCParser.o in TinyC/), a C
+  beside /src/TinyShell.ml; /src/TinyC/Parser.o in TinyC/), a C
   file's object next to its .c, a program at the top of /src by its
   name in /bin (rc, utils, build, ml...). On the host the same: .o,
   .tmi and the programs in tiny/ (the .gitignore then says so). No

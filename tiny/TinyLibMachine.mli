@@ -6,8 +6,8 @@
  *     the instructions     instr, and their words: encode, decode,
  *                          text and listing (tiny-cpu -l, debug)
  *     the lines            line: the assembly the compilers make
- *                          (tiny-cc's TinyCMachine, tiny-ml's
- *                          Machine) and tiny-as reads (its
+ *                          (TinyC/Machine.ml, TinyML/Machine.ml)
+ *                          and tiny-as reads (its
  *                          parse); print_line its text (-S)
  *     the objects          the lines once encoded (assemble): what the
  *                          compilers and tiny-as write

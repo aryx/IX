@@ -52,7 +52,7 @@ BROWSER=$(for m in Strings Charset Tokens Lines Html Url Http; do
 TML="$L "$(for m in Lexer Tree Formats Parser Types Machine Compile; do
   printf "%s " $T/TinyML/$m.ml; done)
 TC="$L "$(for m in Types Lexer Tree Lower Parser Machine; do
-  printf "%s " $T/TinyC/TinyC$m.ml; done)
+  printf "%s " $T/TinyC/$m.ml; done)
 NET="-I lib_networking/tcp -I lib_networking/tls -I lib_networking/http"
 NET="$NET -I lib_crypto -I lib_compression"
 # tiny-kernel's programs: the Makefile's GUI and OFFICE

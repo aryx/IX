@@ -32,6 +32,7 @@ $D/%.$O: %.ml
 $D/TinyMachineCPU.$O $D/TinyAssembler.$O $D/TinyLinker.$O $D/TinyArchiver.$O $D/TinyCPU.$O $D/TinyMachineDevices.$O $D/TinyMachine.$O: TinyLibMachine.ml
 $D/TinyCPU.$O $D/TinyMachineDevices.$O $D/TinyMachine.$O: TinyMachine/TinyMachineCPU.ml
 $D/TinyAssembler.$O $D/TinyLinker.$O $D/TinyArchiver.$O $D/TinyC.$O $D/TinyML.$O $D/TinyCPU.$O $D/TinyMachine.$O $D/TinyMkfat.$O: $D/TinyLibSystem.$O
+
 # (tiny-ml's passes, TinyML/, each after the ones before it, after TinyLibMachine, the lines they make)
 MLC=TinyLibMachine Lexer Tree Formats Parser Types Machine Compile Link
 MLCO=${MLC:%=$D/%.$O}
@@ -44,16 +45,17 @@ $D/Compile.$O: $D/Machine.$O
 $D/Link.$O: $D/Compile.$O
 $D/TinyML.$O: $D/Link.$O
 
-# (tiny-cc's passes, TinyC/, the same way, after TinyLibMachine, the lines they make)
-CCP=TinyLibMachine TinyCTypes TinyCLexer TinyCTree TinyCLower TinyCParser TinyCMachine
-CCPO=${CCP:%=$D/%.$O}
-$D/TinyCLexer.$O: $D/TinyCTypes.$O
-$D/TinyCTree.$O: $D/TinyCLexer.$O
-$D/TinyCLower.$O: $D/TinyCTree.$O
-$D/TinyCParser.$O: $D/TinyCLower.$O
-$D/TinyCMachine.$O: $D/TinyCParser.$O $D/TinyLibMachine.$O
+# (tiny-cc's passes, TinyC/, the same way, after TinyLibMachine, the lines they make;
+# their objects in $D/cc/, since tiny-ml's of the same names, Lexer..., are in $D)
+CCP=Types Lexer Tree Lower Parser Machine
+CCPO=$D/TinyLibMachine.$O ${CCP:%=$D/cc/%.$O}
+$D/cc/Lexer.$O: $D/cc/Types.$O
+$D/cc/Tree.$O: $D/cc/Lexer.$O
+$D/cc/Lower.$O: $D/cc/Tree.$O
+$D/cc/Parser.$O: $D/cc/Lower.$O
+$D/cc/Machine.$O: $D/cc/Parser.$O $D/TinyLibMachine.$O
 $D/TinyAssembler.$O: $D/TinyLibMachine.$O
-$D/TinyC.$O: $D/TinyCMachine.$O
+$D/TinyC.$O: $D/cc/Machine.$O
 $D/TinyMachine.$O: TinyMachine/TinyMachineDevices.ml TinyKernel/TinyKernelNetwork.ml TinyMachine/TinyMachinePeer.ml $D/Parallel.$O
 
 # (a blank line above: a # line right under a rule's head is its recipe,
@@ -86,12 +88,15 @@ $D/%.$O: TinyML/%.ml
 $D/TinyML.$O: TinyML.ml
 	mkdir -p $D
 	$ML $INCLUDES -I TinyML -o $target TinyML.ml
-$D/TinyC%.$O: TinyC/TinyC%.ml
-	mkdir -p $D
-	$ML $INCLUDES -o $target TinyC/TinyC$stem.ml
+
+# (tiny-cc's: its directories before INCLUDES' $D, where tiny-ml's Lexer.$O is)
+CC_INCLUDES=-I TinyC -I $D/cc
+$D/cc/%.$O: TinyC/%.ml
+	mkdir -p $D/cc
+	$ML $CC_INCLUDES $INCLUDES -o $target TinyC/$stem.ml
 $D/TinyC.$O: TinyC.ml
 	mkdir -p $D
-	$ML $INCLUDES -I TinyC -o $target TinyC.ml
+	$ML $CC_INCLUDES $INCLUDES -o $target TinyC.ml
 
 # (tiny-mkfat is t6's, a step before tiny-kernel: its file is there)
 $D/TinyMkfat.$O: TinyKernel/steps/t6/TinyMkfat.ml
@@ -126,7 +131,7 @@ $D/tiny-editor: $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyEditorLine.$O $LIB
 	$START TinyLibSystem TinyLibRegex TinyEditorLine Std_exit -o $D/TinyEditorLine.start.$O
 	$LINK -o $target $D/TinyEditorLine.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyEditorLine.$O $STDEND
 $D/tiny-cc: $D/TinyLibSystem.$O $CCPO $D/TinyC.$O $LIBS
-	$START TinyLibSystem $CCP TinyC Std_exit -o $D/TinyC.start.$O
+	$START TinyLibSystem TinyLibMachine $CCP TinyC Std_exit -o $D/TinyC.start.$O
 	$LINK -o $target $D/TinyC.start.$O $STDOBJS $D/TinyLibSystem.$O $CCPO $D/TinyC.$O $STDEND
 $D/tiny-ml: $D/TinyLibSystem.$O $MLCO $D/TinyML.$O $LIBS
 	$START TinyLibSystem $MLC TinyML Std_exit -o $D/TinyML.start.$O
@@ -179,9 +184,12 @@ clean:V:
 # TinyKernel are tiny-ml's: no lines; of TinyBrowser, tiny-machine's
 # three. old: none of TinyBrowser's, and TinyBrowserHttp compiled
 # beside TinyBrowserText, inlining its functions or not by which ended
-# first: test-ix-fixpoint's builds differed, one in two or three)
+# first: test-ix-fixpoint's builds differed, one in two or three).
+# Not tiny-cc's, TinyC.ml and TinyC/: a unit is found by its name in
+# the first directory that has it, and TinyC/'s Lexer... are tiny-ml's
+# names too; their order is the lines above
 DEPOBJ=D
-DEPDIRS=. TinyMachine TinyBrowser TinyML TinyC TinyKernel TinyKernel/host TinyLibSystem/unix TinyKernel/steps/t6 $D
+DEPDIRS=. TinyMachine TinyBrowser TinyML TinyKernel TinyKernel/host TinyLibSystem/unix TinyKernel/steps/t6 $D
 DEPBROWSER=TinyBrowser/Strings.ml TinyBrowser/Url.ml TinyBrowser/Http.ml
-DEPUNITS=`{ls *.ml TinyMachine/*.ml $DEPBROWSER TinyML/*.ml TinyC/*.ml TinyKernel/TinyKernelNetwork.ml TinyKernel/host/*.ml TinyLibSystem/unix/*.ml TinyKernel/steps/t6/TinyMkfat.ml | sed 's,.*/,,; s,\.ml$,,'}
+DEPUNITS=`{ls *.ml TinyMachine/*.ml $DEPBROWSER TinyML/*.ml TinyKernel/TinyKernelNetwork.ml TinyKernel/host/*.ml TinyLibSystem/unix/*.ml TinyKernel/steps/t6/TinyMkfat.ml | grep -v '^TinyC\.ml$' | sed 's,.*/,,; s,\.ml$,,'}
 <$TOP/mkfiles/mkdepend

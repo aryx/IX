@@ -17,7 +17,7 @@
 # kernel and all the rest, as files.
 #
 # What a recipe makes is beside its source: TinyShell.o and its
-# interface TinyShell.tmi beside TinyShell.ml, TinyC/TinyCParser.o in
+# interface TinyShell.tmi beside TinyShell.ml, TinyC/Parser.o in
 # TinyC/; a program at the top, by its name (rc, build, ml). `build
 # clean` removes them.
 #
@@ -241,9 +241,8 @@ ar: $CRT $MLRT ar.start.o $STDLIB $AR_UNITS $MLEND
 	$LD -map -s -n -a 4 -o $target $prereq
 
 CC_INCLUDES = -I TinyC
-CC_UNITS = $SYS $MACH TinyC/TinyCTypes.o TinyC/TinyCLexer.o \
-    TinyC/TinyCTree.o TinyC/TinyCLower.o TinyC/TinyCParser.o \
-    TinyC/TinyCMachine.o TinyC.o
+CC_UNITS = $SYS $MACH TinyC/Types.o TinyC/Lexer.o TinyC/Tree.o \
+    TinyC/Lower.o TinyC/Parser.o TinyC/Machine.o TinyC.o
 TinyC/&.o: TinyC/&.ml $STDLIB
 	$MLC $CC_INCLUDES -o $target TinyC/$stem.ml
 TinyC.o: TinyC.ml $STDLIB

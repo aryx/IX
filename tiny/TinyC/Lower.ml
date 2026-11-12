@@ -1,9 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyCLower.mli *)
-module Ty = TinyCTypes
-module Tree = TinyCTree
+(* See Lower.mli *)
 
 (*****************************************************************************)
 (* The stack machine *)
@@ -15,21 +13,22 @@ type label = int
 type ir =
   | Imm of int64
   | Place of Tree.place               (* a variable's address *)
-  | Load of Ty.ty                     (* the address on top by its value *)
-  | Store of Ty.ty                    (* value and address by the value *)
-  | Op of Tree.binop * Ty.ty
+  | Load of Types.ty                     (* the address on top by its value *)
+  | Store of Types.ty                    (* value and address by the value *)
+  | Op of Tree.binop * Types.ty
       (* a b by a op b, of the operands' type; a relation 1 or 0 *)
-  | Unop of Tree.unop * Ty.ty
-  | Ext of Ty.ty                      (* the value on top to a type *)
+  | Unop of Tree.unop * Types.ty
+  | Ext of Types.ty                      (* the value on top to a type *)
   | Dup | Drop
-  | Call of Ty.sym option * int * bool
+  | Call of Types.sym option * int * bool
       (* the name, or the address on top of the arguments; their number;
        * a result *)
   | Label of label | Jmp of label | Jz of label | Jnz of label
   | Ret of bool
 
 let show i =
-  let w t = string_of_int (Ty.size t) ^ (if Ty.unsigned t then "u" else "") in
+  let w t =
+    string_of_int (Types.size t) ^ (if Types.unsigned t then "u" else "") in
   let l k = Printf.sprintf "L%d" k in
   match i with
   | Imm v -> "imm " ^ Int64.to_string v
@@ -48,7 +47,7 @@ let show i =
   | Jnz k -> "jnz " ^ l k | Ret v -> if v then "ret value" else "ret"
 
 (* the file's labels, each a new number: a label's name is the file's
- * (TinyCMachine's lab), not its function's *)
+ * (Machine's lab), not its function's *)
 let labels = ref 0
 let label () : label = incr labels; !labels
 
@@ -61,7 +60,7 @@ let rec value (emit : ir -> unit) (e : Tree.expr) : unit =
   | Tree.Deref a ->
       value a;
       (match e.t with
-       | Ty.Arr _ | Ty.Struct _ | Ty.Func _ -> ()
+       | Types.Arr _ | Types.Struct _ | Types.Func _ -> ()
        | t -> emit (Load t))
   | Tree.Cur -> emit (Load e.t)
   | Tree.Un (o, a) -> value a; emit (Unop (o, e.t))
@@ -83,21 +82,21 @@ let rec value (emit : ir -> unit) (e : Tree.expr) : unit =
       emit (Store l.t)
   | Tree.Apply (f, args) ->
       List.iter value args;
-      emit (Call (Some f, List.length args, e.t <> Ty.Void))
+      emit (Call (Some f, List.length args, e.t <> Types.Void))
   | Tree.ApplyPtr (f, args) ->
       List.iter value args; value f;
-      emit (Call (None, List.length args, e.t <> Ty.Void))
+      emit (Call (None, List.length args, e.t <> Types.Void))
   | Tree.Conv a ->
       value a;
       (match a.t, e.t with
-       | (Ty.Arr _ | Ty.Ptr _ | Ty.Void), _ | _, Ty.Void -> ()
+       | (Types.Arr _ | Types.Ptr _ | Types.Void), _ | _, Types.Void -> ()
        | _ -> emit (Ext e.t))
   | Tree.Comma (a, b) ->
-      value a; if a.t <> Ty.Void then emit Drop; value b
+      value a; if a.t <> Types.Void then emit Drop; value b
 
 (* an expression as a statement *)
 let for_effect emit (e : Tree.expr) =
-  value emit e; if e.t <> Ty.Void then emit Drop
+  value emit e; if e.t <> Types.Void then emit Drop
 
 (* where break and continue go; the labels of a switch's cases *)
 type targets = {
@@ -109,7 +108,7 @@ let rec lower (emit : ir -> unit) (k : targets) (s : Tree.stmt) =
   and lower = lower emit in
   let jump = function
     | Some l -> emit (Jmp l)
-    | None -> Ty.error "break or continue outside a loop" in
+    | None -> Types.error "break or continue outside a loop" in
   match s with
   | Tree.Expr e -> for_effect e
   | Tree.Block l -> List.iter (lower k) l
@@ -150,7 +149,7 @@ let rec lower (emit : ir -> unit) (k : targets) (s : Tree.stmt) =
       List.iter (fun (c, l) ->
         match c with
         | Some v ->
-            value (Tree.binary (Tree.R Tree.Eq) tmp (Tree.num v Ty.vlong_t));
+            value (Tree.binary (Tree.R Tree.Eq) tmp (Tree.num v Types.vlong_t));
             emit (Jnz l)
         | None -> ()) mine;
       emit (Jmp (match List.assoc_opt None mine with

@@ -591,20 +591,20 @@ local prog(name, file, core) = chain(name, [
     ]),
     // the toolchain
     prog('tiny-cc: parse, lower, emit', 'TinyC.ml', [
-      ['TinyC/TinyCLexer.ml:def:tokens', 'the tokens, #include and #define done', 'the file'],
-      ['TinyC/TinyCParser.ml:def:declaration', "a declaration's definitions, typed as parsed", 'tokens'],
-      ['TinyC/TinyCParser.ml:def:block', "a function's body: the tree of statements", 'a body'],
-      ['TinyC/TinyCLower.ml:def:lower', 'the tree to the stack machine', 'statements'],
-      ['TinyC/TinyCMachine.ml:def:machine', 'the stack machine to TinyCPU', 'IR'],
+      ['TinyC/Lexer.ml:def:tokens', 'the tokens, #include and #define done', 'the file'],
+      ['TinyC/Parser.ml:def:declaration', "a declaration's definitions, typed as parsed", 'tokens'],
+      ['TinyC/Parser.ml:def:block', "a function's body: the tree of statements", 'a body'],
+      ['TinyC/Lower.ml:def:lower', 'the tree to the stack machine', 'statements'],
+      ['TinyC/Machine.ml:def:machine', 'the stack machine to TinyCPU', 'IR'],
     ]),
-    skeletons.module_calls('TinyC/TinyCParser.ml', 'tiny-cc: a declaration at a time', 'declaration', "a global's or a function's definitions", [
+    skeletons.module_calls('TinyC/Parser.ml', 'tiny-cc: a declaration at a time', 'declaration', "a global's or a function's definitions", [
       ['init_data', "a global's initializer, data at offsets", 'a global'],
       ['sym_of', "a static's label: the file's name and its own", 'a name'],
       ['block', "a function's body: the tree of statements", 'a function'],
     ]) + {
       bones+: [{ at: 'TinyC.ml:def:main', role: 'the file read, its tokens, declarations till EOF' },
                { at: 'TinyC.ml:def:compile', role: 'each definition lowered, then assembly' }],
-      joints+: [{ from: 'TinyC.ml:def:main', to: 'TinyC/TinyCParser.ml:def:declaration', say: 'each declaration' },
+      joints+: [{ from: 'TinyC.ml:def:main', to: 'TinyC/Parser.ml:def:declaration', say: 'each declaration' },
                 { from: 'TinyC.ml:def:main', to: 'TinyC.ml:def:compile', say: 'its definitions' }],
     },
     prog('tiny-ml: parse, infer, compile', 'TinyML.ml', [

@@ -42,13 +42,13 @@ user/trace.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyTracer.tmi
 user/troff.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyTroff.tmi
 user/windows.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyWindows.tmi
 user/www.o: TinyBrowser.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi
-TinyC.o: TinyC/TinyCLexer.tmi TinyC/TinyCLower.tmi TinyC/TinyCMachine.tmi TinyC/TinyCParser.tmi TinyC/TinyCTree.tmi TinyC/TinyCTypes.tmi TinyLibMachine.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyC.mli
-TinyC/TinyCLexer.o: TinyC/TinyCLexer.mli
-TinyC/TinyCLower.o: TinyC/TinyCTree.tmi TinyC/TinyCTypes.tmi TinyC/TinyCLower.mli
-TinyC/TinyCMachine.o: TinyC/TinyCLower.tmi TinyC/TinyCTree.tmi TinyC/TinyCTypes.tmi TinyLibMachine.tmi TinyC/TinyCMachine.mli
-TinyC/TinyCParser.o: TinyC/TinyCLexer.tmi TinyC/TinyCTree.tmi TinyC/TinyCTypes.tmi TinyC/TinyCParser.mli
-TinyC/TinyCTree.o: TinyC/TinyCTypes.tmi TinyC/TinyCTree.mli
-TinyC/TinyCTypes.o: TinyC/TinyCTypes.mli
+TinyC.o: TinyC/Lexer.tmi TinyC/Lower.tmi TinyC/Machine.tmi TinyC/Parser.tmi TinyLibMachine.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyC/Tree.tmi TinyC/Types.tmi TinyC.mli
+TinyC/Lexer.o: TinyC/Lexer.mli
+TinyC/Lower.o: TinyC/Tree.tmi TinyC/Types.tmi TinyC/Lower.mli
+TinyC/Machine.o: TinyC/Lower.tmi TinyLibMachine.tmi TinyC/Tree.tmi TinyC/Types.tmi TinyC/Machine.mli
+TinyC/Parser.o: TinyC/Lexer.tmi TinyC/Tree.tmi TinyC/Types.tmi TinyC/Parser.mli
+TinyC/Tree.o: TinyC/Types.tmi TinyC/Tree.mli
+TinyC/Types.o: TinyC/Types.mli
 TinyML.o: TinyML/Compile.tmi TinyML/Lexer.tmi TinyML/Link.tmi TinyML/Machine.tmi TinyML/Parser.tmi TinyLibMachine.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyML/Tree.tmi TinyML/Types.tmi TinyML.mli
 TinyML/Compile.o: TinyML/Lexer.tmi TinyML/Machine.tmi TinyML/Tree.tmi TinyML/Types.tmi TinyML/Compile.mli
 TinyML/Formats.o: TinyML/Lexer.tmi TinyML/Tree.tmi TinyML/Formats.mli

@@ -3,6 +3,5 @@
 (library
  (name tiny_c_parts)
  (wrapped false)
- (modules TinyCTypes TinyCLexer TinyCTree TinyCLower TinyCParser
-  TinyCMachine)
+ (modules Types Lexer Tree Lower Parser Machine)
  (libraries ix_core fpath tiny_lib_machine))

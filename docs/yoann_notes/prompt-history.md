@@ -72383,3 +72383,98 @@ Claude left the naming change uncommitted, because the tree also held another se
 Claude proposed committing only TinyML's Tree.ml, Types.ml, the parser, TinyML.ml, TinyML.mli, and its test file.
 Claude's clean-worktree run, HEAD plus only those changes, passed make test: 35 jobs, 0 failures.
 Claude's rule makes bare constructors and labels resolve to the unit's own, opened, then Stdlib names.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 18:06
+
+**Yoann:**
+
+> let's commit
+
+------------------------------------------------------------------------
+
+## 2026-11-12 18:07
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude proposed a remaining-work list, starting with running `make self` in a worktree at HEAD for a byte-for-byte check.
+Claude flagged the image at 9.15 MB of the 10 MB limit, set by TinyKernelFS buffers, and offered to raise the limit or drop files.
+Claude listed smaller items: duplicated CORE in two Buildfiles, README cells, tiny-cc label naming, and bookkeeping like pinning `self.yml` to SHAs.
+Yoann wants `/examples` moved off the boot image onto disk, since booting doesn't need them.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 18:08
+
+**Yoann:**
+
+> for 2 I think the /examples can be on the disk instead of the boot; they are not needed to boot
+
+------------------------------------------------------------------------
+
+## 2026-11-12 18:08
+
+**Yoann:**
+
+> and yes let's do the README table thing
+
+------------------------------------------------------------------------
+
+## 2026-11-12 18:08
+
+**Yoann:**
+
+> and delte the make-claude dir
+
+------------------------------------------------------------------------
+
+## 2026-11-12 18:09
+
+**Yoann:**
+
+> in theory we need just a few bin for the boot; the rest can be on the disk
+
+**Claude (summary):**
+
+Claude finished the README table, cutting its longest cell from 940 to 325 characters, left uncommitted.
+Claude proposed Yoann's boot/disk split: keep kernel, sh, rc, utilities and /lib in boot.img.
+Claude estimated boot.img would drop from 9.15 MB to about 1.5 MB, with the rest on disk.
+Claude flagged three decisions: disk size rising to about 16 MB, which programs the boot keeps, and test sessions.
+Claude then offered to commit the README table and write the split up as a plan.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 18:16
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed the README table as 9c2d09ed and wrote the uncommitted plan docs/plans/plan_tiny_boot_disk.md.
+Claude proposed moving /bin, /lib and /examples to the disk, shrinking the image to about 1.5 MB.
+Claude recommended keeping sh, rc and utils in the image so a diskless machine still has a shell.
+Claude left the leaner option open: sh alone, perhaps with ed and build, for Yoann to decide.
+Claude also named the disk size and the check-session re-recording as decisions for Yoann.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 18:17
+
+**Yoann:**
+
+> but really usuaully a boot is mostly a kernel and very basic programs that are needed to then load the disk and other sysadmin thing (in plan9 it is like that with the bind and mount and boot.rc)
+
+------------------------------------------------------------------------
+
+## 2026-11-12 18:17
+
+**Yoann:**
+
+> so even /lib is not needed I think in the boot image

@@ -4,12 +4,6 @@
  * See TinyC.mli
  *)
 open Common
-module Ty = TinyCTypes
-module Lexer = TinyCLexer
-module Tree = TinyCTree
-module Parser = TinyCParser
-module Lower = TinyCLower
-module Machine = TinyCMachine
 module M = TinyLibMachine
 module TSys = TinyLibSystem
 
@@ -39,9 +33,9 @@ An error names the file and the line: fact.c: line 3: expected ;
 (* The compiler's passes, a declaration at a time (so that an error in
  * a function's lowering is said at its line):
  *
- *     the file's text      TinyCLexer.tokens (#includes, #defines)
+ *     the file's text      Lexer.tokens (#includes, #defines)
  *        | tokens
- *     Parser.declaration    typed as it is read (TinyCTree)
+ *     Parser.declaration    typed as it is read (Tree)
  *        | defs: a function's tree, a global's data
  *     Lower.lower_function  the tree to the stack machine
  *        | ir list
@@ -94,10 +88,10 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     | None ->
         TSys.eprint caps (usage ^ "   (-h: how)\n"); Exit.Code 2
     | Some file ->
-      Ty.unit_name := Fpath.to_string (Fpath.rem_ext (Fpath.base file));
+      Types.unit_name := Fpath.to_string (Fpath.rem_ext (Fpath.base file));
       (* intptr, Plan 9's uintptr's signed twin: an integer as wide as a
        * pointer (runtime/'s values, a word each) *)
-      Hashtbl.replace Parser.typedefs "intptr" Ty.int_t;
+      Hashtbl.replace Parser.typedefs "intptr" Types.int_t;
       (* (a file that cannot be opened apart from a Failure of g's, a
        * bug) *)
       let with_file g f =

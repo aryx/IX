@@ -19,12 +19,12 @@
  * Each step is a part in TinyC/, whose .mli has its types and its
  * functions, in the order they are compiled and best read:
  *
- *     TinyCTypes.mli     C's types ([ty]), their sizes on TinyCPU, [sym]
- *     TinyCLexer.mli     the tokens ([token]), the preprocessor
- *     TinyCTree.mli      the typed tree: [expr], [stmt], [def]
- *     TinyCLower.mli     the stack machine: [ir], lower_function
- *     TinyCParser.mli    declaration: tokens to a declaration's [def]s
- *     TinyCMachine.mli   machine and global: [ir] and data to assembly,
+ *     Types.mli     C's types ([ty]), their sizes on TinyCPU, [sym]
+ *     Lexer.mli     the tokens ([token]), the preprocessor
+ *     Tree.mli      the typed tree: [expr], [stmt], [def]
+ *     Lower.mli     the stack machine: [ir], lower_function
+ *     Parser.mli    declaration: tokens to a declaration's [def]s
+ *     Machine.mli   machine and global: [ir] and data to assembly,
  *                        TinyLibMachine.mli's [line]s
  *
  * This file is the program around them: compile, a definition through
@@ -66,13 +66,13 @@
  * kept:
  * What makes it small while still being a C compiler:
  *
- * - {b A stack machine in between} (TinyCLower): expressions become
+ * - {b A stack machine in between} (Lower): expressions become
  *   pushes and operations on a stack, and statements become labels
  *   and jumps; [-ir] prints it. The compiler plan left open the
  *   question of what an intermediate language buys compared to
  *   emitting machine instructions directly. Here is the answer: the
  *   front end knows nothing about registers or instructions, the back
- *   end knows nothing about C (TinyCMachine is the whole machine),
+ *   end knows nothing about C (Machine is the whole machine),
  *   each can be read and tested on its own, and another machine is
  *   just another back end (there was arm64's, 7c's convention, until
  *   plan_tiny_self_hosting.md). The price is code quality: no
@@ -213,10 +213,10 @@
  * code and data: a function's tree lowered to the stack machine's code
  * then to TinyCPU's, a global's data *)
 val compile :
-  TinyCTree.def -> TinyLibMachine.line list * TinyLibMachine.line list
+  Tree.def -> TinyLibMachine.line list * TinyLibMachine.line list
 
 (* -ir: a function's stack machine's code, as text *)
-val show_ir : TinyCTree.def -> string
+val show_ir : Tree.def -> string
 
 (* the program: its arguments (its name first), a file of C to a file
  * of assembly (-h: how), to how it ends *)

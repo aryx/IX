@@ -1,14 +1,14 @@
 # TinyWindows.ml's theirs: 15 windows at most (the kernel asked about 31 descriptors)
 tiny/TinyBrowser/Screen.ml:121: stack: first calls itself, not a tail call, over a list
-tiny/TinyC/TinyCLower.ml:120: stack: TinyCLower.lower calls itself, not a tail call, over a list
-tiny/TinyC/TinyCLower.ml:124: stack: TinyCLower.lower calls itself, not a tail call, over a list
-tiny/TinyC/TinyCLower.ml:129: stack: TinyCLower.lower calls itself, not a tail call, over a list
-tiny/TinyC/TinyCLower.ml:136: stack: TinyCLower.lower calls itself, not a tail call, over a list
-tiny/TinyC/TinyCLower.ml:146: stack: TinyCLower.lower calls itself, not a tail call, over a list
-tiny/TinyC/TinyCParser.ml:175: stack: TinyCParser.declarator calls itself, not a tail call, over a list
-tiny/TinyC/TinyCParser.ml:178: stack: TinyCParser.declarator3 calls itself, not a tail call, over a list
-tiny/TinyC/TinyCParser.ml:341: stack: TinyCParser.call_args calls itself, not a tail call, over a list
-tiny/TinyC/TinyCTypes.ml:52: stack: TinyCTypes.size calls itself, not a tail call, over a list
+tiny/TinyC/Lower.ml:119: stack: Lower.lower calls itself, not a tail call, over a list
+tiny/TinyC/Lower.ml:123: stack: Lower.lower calls itself, not a tail call, over a list
+tiny/TinyC/Lower.ml:128: stack: Lower.lower calls itself, not a tail call, over a list
+tiny/TinyC/Lower.ml:135: stack: Lower.lower calls itself, not a tail call, over a list
+tiny/TinyC/Lower.ml:145: stack: Lower.lower calls itself, not a tail call, over a list
+tiny/TinyC/Parser.ml:173: stack: Parser.declarator calls itself, not a tail call, over a list
+tiny/TinyC/Parser.ml:176: stack: Parser.declarator3 calls itself, not a tail call, over a list
+tiny/TinyC/Parser.ml:340: stack: Parser.call_args calls itself, not a tail call, over a list
+tiny/TinyC/Types.ml:52: stack: Types.size calls itself, not a tail call, over a list
 tiny/TinyDatabase.ml:171: evalorder: operands at 171:13 and 172:13, both with an effect: their order the compiler's
 tiny/TinyDatabase.ml:175: stack: TinyDatabase.ins calls itself, not a tail call, over a list
 tiny/TinyDatabase.ml:188: evalorder: operands at 188:17 and 190:17, both with an effect: their order the compiler's

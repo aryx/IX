@@ -71817,3 +71817,120 @@ Claude added six new example programs under `tiny/examples/`, each a C and ML pa
 Claude also added four ML libraries to `/lib/ml`, fixed the `draw.h` screen size, and moved session 28 to `build hello helloml`.
 Claude noted `boot.img` is now 9.15 MB, close to the Makefile's 10 MB limit, so future additions need that limit revisited.
 Claude proposed adding a glob to tiny-build to replace the `EXAMPLES` list, asking whether to add it or commit first.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 15:12
+
+**Yoann:**
+
+> let's commit and use the globs for EXAMPLES (if we actually still need an EXAMPLES var in the first place). Any missing example programs? should we add more? or have we covered most of what we need to cover?
+
+------------------------------------------------------------------------
+
+## 2026-11-12 15:29
+
+**Yoann:**
+
+> hmm no let's not add wildcard to build
+
+------------------------------------------------------------------------
+
+## 2026-11-12 15:29
+
+**Yoann:**
+
+> NO
+
+------------------------------------------------------------------------
+
+## 2026-11-12 15:29
+
+**Yoann:**
+
+> this is anti tiny spirit I think
+
+------------------------------------------------------------------------
+
+## 2026-11-12 15:29
+
+**Yoann:**
+
+> and you should ask me first when adding new features for those kinds of things
+
+------------------------------------------------------------------------
+
+## 2026-11-12 15:29
+
+**Yoann:**
+
+> my fault partially because I asked for globs for EXAMPLES
+
+**Claude (summary):**
+
+Claude said the mistake was its own: a request implying a new tiny-build feature should have prompted a question, not been taken as approval.
+Claude proposed to check with Yoann before extending tools, starting with whether to add `procs.c` and possibly `procsml.ml`.
+Claude asked whether `procs.c` should be added, and `procsml.ml` only if TinyLibSystem provides the needed calls.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 15:30
+
+**Yoann:**
+
+> but it's more that I was questioning whether we need EXAMPLES in the first place
+
+**Claude (summary):**
+
+Claude recommended keeping the `EXAMPLES` list because `boot.img`'s prerequisites drive tiny-build's image remake.
+Claude explained that rc's recipe glob would avoid a tool change but leave the image silently stale after edits.
+Claude also noted a bare `examples/*` glob would pick up host-build leftovers like `game`, `*.o`, and `*.map`.
+Claude concluded the list costs one line per example and adding an example already touches its Buildfile.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 15:30
+
+**Yoann:**
+
+> it's fine to not depend on game.ml to rebuild the image I think
+
+------------------------------------------------------------------------
+
+## 2026-11-12 15:32
+
+**Yoann:**
+
+> interesting to note in TinyBuildSystem.ml that one diff with mini-mk is that it can't do XXX=`{cmd} which complicates the code, but allows features like this EXAMPLES
+
+------------------------------------------------------------------------
+
+## 2026-11-12 15:32
+
+**Yoann:**
+
+> so it's dropped, but at least we concsiously know what we lose, with a useful example that can't be currently expressed by tiny-build
+
+------------------------------------------------------------------------
+
+## 2026-11-12 15:33
+
+**Yoann:**
+
+> (which makes us appreciate more the XX=`{} feature of mini-mk (or XX=``, I don't remember the syntax)
+
+------------------------------------------------------------------------
+
+## 2026-11-12 15:33
+
+**Yoann:**
+
+> which is good in teaching context
+
+**Claude (summary):**
+
+Claude added a paragraph to the `dropped:` section of TinyBuildSystem.mli on mk's backquote substitution.
+The paragraph cites mini-mk's `LOCAL=`{ls *.ml *.mli}` syntax, which needs a shell run while the Buildfile is read.
+It uses `/examples` as the concrete case: the image would not follow an example changed alone.
+Claude also rewrote the boot.img recipe to copy examples by kind with rc's glob, dropping `EXAMPLES`.
+Claude reports `make check`, self-quick and `dune build` passing, but nothing has been committed yet.

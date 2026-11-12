@@ -429,12 +429,6 @@ TinyKernel/kernel.img: kernel
 # MEMSIZE.
 UTILS = [ basename cat cmp cp date du echo grep kill ln ls mkdir mv ps pwd \
     rm seq sleep sort tail tee test touch walk wc xd
-# /examples: examples/, its files (sources, not what build makes there)
-EXAMPLES = examples/Buildfile examples/hello.c examples/square.s \
-    examples/helloml.ml examples/shapes.c examples/shapesml.ml \
-    examples/fetch.c examples/fetchml.ml examples/game.ml examples/gui.ml \
-    examples/spin.s examples/spin.prof examples/report.ixd \
-    examples/korobeiniki.wav
 
 # /lib: what a program built on tiny-kernel links, already built here.
 # /lib/c, C's: the runtime, the system's calls, drawing and dialing,
@@ -467,10 +461,14 @@ install: $LIBC $LIBML $STDLIB
 	for(f in $LIBML $LIBUNITS) cp $f $LIB/ml/^`{basename $f}
 
 # (/lib in the image, its files the same lists')
-boot.img: TinyKernel/kernel.img $PROGS $EXAMPLES $STDLIB $LIBC $LIBML
+# /examples: examples/'s files, by their kinds, rc's globs (its sources,
+# not what a build of them there makes: the programs, *.o, *.tmi,
+# *.map); not prerequisites, so an example changed alone does not make
+# the image again
+boot.img: TinyKernel/kernel.img $PROGS $STDLIB $LIBC $LIBML
 	cat TinyKernel/kernel.img > $target
 	for(f in $PROGS) { n=`{wc -c < $f}; echo bin/$f; echo $n; cat $f } >> $target
-	for(f in $EXAMPLES) { n=`{wc -c < $f}; echo examples/^`{basename $f}; echo $n; cat $f } >> $target
+	for(f in examples/Buildfile examples/*.c examples/*.ml examples/*.s examples/*.prof examples/*.ixd examples/*.wav) { n=`{wc -c < $f}; echo examples/^`{basename $f}; echo $n; cat $f } >> $target
 	for(f in $LIBUNITS) { n=`{wc -c < $f}; echo lib/ml/^`{basename $f}; echo $n; cat $f } >> $target
 	for(f in $LIBC) { n=`{wc -c < $f}; echo lib/c/^`{basename $f}; echo $n; cat $f } >> $target
 	for(f in $LIBML) { n=`{wc -c < $f}; echo lib/ml/^`{basename $f}; echo $n; cat $f } >> $target

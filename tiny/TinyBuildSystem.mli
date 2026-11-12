@@ -38,9 +38,17 @@
  * creates no file, clean or all, is simply never up to date, and a file
  * that has its name, a file called "clean", makes it look like a real
  * one), its regular-expression rules, quoting (names cannot contain
- * blanks), ${X:%.c=%.o} substitutions, a single recipe making several
- * targets at once (a b: c runs the recipe once per target), archives,
- * and mk's -t, -w, -k and -e options.
+ * blanks), a single recipe making several targets at once (a b: c runs
+ * the recipe once per target), archives, and mk's -t, -w, -k and -e
+ * options.
+ *
+ * It also leaves out mk's backquotes, a command's output as a variable's
+ * words (mini-mk's builder/mkfile: LOCAL=`{ls *.ml *.mli}), which needs a
+ * shell run while the file is read. What that costs, by an example:
+ * tiny/Buildfile cannot say "the image's /examples is every source in
+ * examples/" (EXAMPLES=`{ls examples/*.c examples/*.ml ...}); its
+ * recipe globs them with rc instead, and so they are not prerequisites:
+ * an example changed alone does not make the image again.
  *
  * twist:
  * {b Up to date by content, not by time.} The stamp of each target is a

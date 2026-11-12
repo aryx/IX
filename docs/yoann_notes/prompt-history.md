@@ -71120,3 +71120,69 @@ Claude traced the breakage to its own `_mkf` side build directory, which the tes
 Claude deleted `_mkf` and said future side builds will use `_make-` names, which the tests skip.
 Claude also found a stale `ping.o` path in `tests/lite.sh` and left the one-line fix uncommitted for review.
 Claude asked whether to commit the `lite.sh` fix and start the hour-long `make self` run in `_make-self`.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 09:37
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed `07dba263` with `tests/lite.sh` and `prompt-history.md`, leaving out the Buildfile edit.
+Claude flagged `self.expected` as still pending, since it needs one full `make self` run.
+Claude estimated that run at about an hour, to be done in a `_make-self` build directory so the tests skip it.
+Claude asked whether to start the run now and offered to kick it off immediately.
+The offer was turned down, so the run stays unstarted and `self.expected` remains pending.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 09:38
+
+**Yoann:**
+
+> no, it takes too long.
+
+**Claude (summary):**
+
+Claude proposed making `make self` tolerant of small changes by having the keys print labelled fact lines, such as `comment: compiled 1, linked 0`, which the Makefile checks with `grep`. Claude explained that this would remove `self.expected` and its recording step, while the image would still be compared byte for byte. Claude noted the new keys could not be verified until someone next ran `make self`, and that HEAD's `make self` currently fails at the `self.expected` diff. Claude asked whether to make this change or leave `make self` as is and record its output on the next run.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 09:39
+
+**Yoann:**
+
+> maybe we can run it in CI by pushing those commits and check whether it fails; note that hopefully we started this process of MASK and having expected tests that are more tolerant to small changes
+
+**Claude (summary):**
+
+Claude explained that CI runs `make self-tix` via `.github/workflows/self.yml`, and that HEAD would fail the `self.expected` diff.
+Claude recommended removing the `self.expected` file so `self` checks labelled output lines with `grep` instead of a recorded transcript.
+The image comparison is byte-for-byte, so any code change that alters the image would fail that check, which Claude did not address.
+Claude proposed pushing main and running `gh workflow run self.yml`, and asked for approval before pushing or starting CI.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 09:40
+
+**Yoann:**
+
+> but what is this image checked byte for byte? If we change slightly some code, does it mean this image will change and check will fail?
+
+**Claude (summary):**
+
+Claude explained the byte-for-byte check compares two images built in one run, not a recorded one.
+Claude said it fails only when the host-built and tiny-kernel-built images disagree, catching real regressions.
+Claude recommended making the rest of make self check facts rather than recorded transcripts.
+Claude argued this design is tolerant by construction, so nothing ever needs re-recording when sources change.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 09:41
+
+**Yoann:**
+
+> ok, make the change, push and run the workflow

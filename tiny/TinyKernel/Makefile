@@ -366,17 +366,21 @@ $(O)/check/wwwplay.sum: $(T)/wwwplay.events $(O)/boot.img
 # compiled again, its object the same: nothing more, no link), a line
 # to a program (compiled again, the program linked again, the image
 # made again), and nothing (up to date). Each build's transcript is kept
-# there (first.log...), what the shell prints the counts of what each
-# made again (grep -c): not its lines, which a unit, a program or a
-# flag added would change. The image of the first build, read from the
-# disk by TinyKernelFS_tests' Cat, is _make/boot.img, byte for byte;
-# what the shell printed is self.expected, MASK's masked. Hours: not
-# in check
+# there (first.log...); the shell prints a line of facts for each
+# rebuild, how many units it compiled, whether it linked, which are
+# checked here: not its lines, which a unit, a program or a flag added
+# would change, nor a recording (old: self.expected, recorded again at
+# each change). The image of the first build, read from the disk by
+# TinyKernelFS_tests' Cat, is _make/boot.img, byte for byte: the same
+# sources built by the host's tools and by tiny-kernel's, so a change
+# of the code changes both, and a difference is a tool of tiny-kernel's
+# (tiny-ml's code, the runtime, the kernel) wrong. Hours: not in check
 FSCAT = $(abspath ../../_build/default/tiny/tests/TinyKernelFS_tests/Cat.exe)
 self: $(O)/boot.img $(O)/disk.img
 	$(call grown,$(O)/self.img)
 	timeout 36000 $(MACHINE) -d $(O)/self.img $(O)/boot.img < $(T)/self.keys > $(O)/self.out
-	sed -E $(MASK) $(O)/self.out | diff $(T)/self.expected -
+	for f in 'comment: compiled 1 linked 0' 'calc: compiled 1 linked 1 image 1' 'last: compiled 0 linked 0'; do \
+	  grep -q "$$f" $(O)/self.out || { echo "tiny-kernel: self: not \"$$f\":"; cat $(O)/self.out; exit 1; }; done
 	$(FSCAT) $(O)/self.img usr/glenda/self/first.img > $(O)/self.boot.img
 	cmp $(O)/boot.img $(O)/self.boot.img
 	rm $(O)/self.img $(O)/self.out $(O)/self.boot.img && echo "tiny-kernel: self ok, its image the host's"

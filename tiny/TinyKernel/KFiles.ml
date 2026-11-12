@@ -2,11 +2,6 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See KFiles.mli *)
-open KRaw
-open KGraphics
-open KNetwork
-open KFS
-open KMachine
 
 (*****************************************************************************)
 (* The files: a tree of ML values *)
@@ -39,7 +34,7 @@ type node =
   | Pointer
   | Speaker
   | Ps
-  | Disk of fs * tree * inode
+  | Disk of KFS.fs * KFS.tree * KFS.inode
   | Union of node list
 and data = { mutable dbytes : bytes; mutable dsize : int; mutable dtime : int }
 
@@ -76,7 +71,7 @@ type file =
  * and the reads after take theirs from it) *)
 and opened = { node : node; mutable off : int; writes : bool;
                mutable listing : string option }
-and drawing = { conn : conn; mutable refs : int }
+and drawing = { conn : KGraphics.conn; mutable refs : int }
 
 (* a box: a pipe that keeps only what was last written, and whether it
  * was read since (the mouse is a place, not its history: a reader that
@@ -101,7 +96,7 @@ and link = {
  * a write is a message, which arrives once and in order or is sent
  * again; a read gives one whole, 0 when the other end is done; and its
  * descriptors, the last one's close saying the end *)
-and call = { il : il; mutable callers : int }
+and call = { il : KNetwork.il; mutable callers : int }
 
 (* a voice of the speaker (an open of /dev/audio): where in the samples its
  * next one goes *)
@@ -152,7 +147,7 @@ let names cwd path =
 let is_dir node =
   match node with
   | Dir _ | Union _ -> true
-  | Disk (fs, r, i) -> fs_is_dir fs r i
+  | Disk (fs, r, i) -> KFS.fs_is_dir fs r i
   | _ -> false
 
 (* In a union, the name is looked up in each directory. The first one
@@ -163,8 +158,8 @@ let rec walk node ns =
   | [], _ -> Some node
   | n :: rest, Dir d ->
       (match List.assoc_opt n !d with Some c -> walk c rest | None -> None)
-  | n :: rest, Disk (fs, r, i) when fs_is_dir fs r i ->
-      (match fs_lookup fs r i n with
+  | n :: rest, Disk (fs, r, i) when KFS.fs_is_dir fs r i ->
+      (match KFS.fs_lookup fs r i n with
        | None -> None
        | Some j -> walk (Disk (fs, r, j)) rest)
   | n :: rest, Union l ->
@@ -183,7 +178,7 @@ let rec children node =
   match node with
   | Dir d -> !d
   | Disk (fs, r, i) ->
-      List.map (fun (name, j) -> name, Disk (fs, r, j)) (fs_entries fs r i)
+      List.map (fun (name, j) -> name, Disk (fs, r, j)) (KFS.fs_entries fs r i)
   | Union l ->
       List.fold_left (fun acc m ->
         acc @ List.filter (fun (name, _) ->
@@ -230,12 +225,15 @@ let entry name n =
     | Data d -> 2, d.dsize, links n
     | Rom (_, k) -> 2, k, links n
     | Disk (fs, r, i) ->
-        let k, size, l = fs_kind fs r i in
+        let k, size, l = KFS.fs_kind fs r i in
         (match k with Fs_dir -> 1 | Fs_file -> 2), size, l
     | Union _ -> 1, 0, 1
     | _ -> 3, 0, links n in
   let date =
-    match n with Data d -> d.dtime | Disk (fs, r, i) -> fs_date fs r i | _ -> 0 in
+    match n with
+    | Data d -> d.dtime
+    | Disk (fs, r, i) -> KFS.fs_date fs r i
+    | _ -> 0 in
   name ^ String.make (64 - String.length name) '\000'
   ^ word t ^ word l ^ word size ^ word date
 
@@ -245,10 +243,10 @@ let ps_hook = ref (fun () -> "")
 let contents node =
   match node with
   | Data d -> text d
-  | Rom (at, n) -> k_string at n
+  | Rom (at, n) -> KMachine.k_string at n
   | Tty | Screen | Pointer | Speaker -> ""
   | Ps -> !ps_hook ()
-  | Disk (fs, r, i) when not (fs_is_dir fs r i) -> fs_contents fs r i
+  | Disk (fs, r, i) when not (KFS.fs_is_dir fs r i) -> KFS.fs_contents fs r i
   (* (made once: old, acc ^ entry, the listing copied again at each name,
    * quadratic: ls -l of /bin, 55 names each listing it twice, took 7
    * minutes when the entries went from 40 bytes to 80) *)
@@ -278,7 +276,7 @@ let rec place d name node =
  * bin/cat, bin/ls...) *)
 let rec load a =
   let rec line a acc =
-    let c = peekb a in
+    let c = KRaw.peekb a in
     if c = 10 then acc, a + 1
     else line (a + 1) (acc ^ String.make 1 (Char.chr c)) in
   let name, a = line a "" in

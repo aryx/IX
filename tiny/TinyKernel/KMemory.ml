@@ -3,7 +3,6 @@
 
 (* See KMemory.mli *)
 
-open KRaw
 
 (* kcopy.s's loops and kruntime.c's words (TinyKernel.ml names them
  * too) *)
@@ -204,8 +203,8 @@ let free_frames = ref 0
 let untouched = ref mem_low
 let nfree = ref ((mem_high - mem_low) / page)
 let refs_at = 0xb51000
-let refs f = peekb (refs_at + ((f - mem_low) / page))
-let set_refs f n = pokeb (refs_at + ((f - mem_low) / page)) n
+let refs f = KRaw.peekb (refs_at + ((f - mem_low) / page))
+let set_refs f n = KRaw.pokeb (refs_at + ((f - mem_low) / page)) n
 
 (* a frame, zeroed, one user; No_room *)
 let frame () =
@@ -435,15 +434,16 @@ let own sp va =
   if !pages then frame_of (peek (unshare sp va)) + (va land (page - 1))
   else (if va < text_size sp then own_text sp; at sp va)
 let mem_store sp va word = poke (own sp va) word
-let mem_store_byte sp va b = pokeb (own sp va) b
+let mem_store_byte sp va b = KRaw.pokeb (own sp va) b
 let pieces sp va n =
   match mem_pieces sp va n with Some l -> l | None -> []
 let mem_write sp va s =
-  ignore (List.fold_left (fun off (a, k) -> row_bytes s off a k; off + k) 0
+  ignore (List.fold_left (fun off (a, k) -> KRaw.row_bytes s off a k; off + k) 0
             (pieces sp va (String.length s)))
 let mem_blit sp va a n =
-  ignore (List.fold_left (fun off (d, k) -> row_copy d (a + off) k; off + k) 0
-            (pieces sp va n))
+  ignore
+    (List.fold_left (fun off (d, k) -> KRaw.row_copy d (a + off) k; off + k) 0
+       (pieces sp va n))
 
 (* What the machine gets so that a process runs in sp: its window, the
  * data's start and size, the text's (0 and 0 without one: the window

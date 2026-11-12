@@ -2,16 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See KIO.mli *)
-open KRaw
-open KGraphics
-open KNetwork
-open KAudio
-open KFS
-open KMemory
-open KMachine
-open KFiles
 open KProcs
-open KDevices
 
 (*****************************************************************************)
 (* Reads and writes: Some n done, None must wait *)
@@ -29,19 +20,20 @@ let raw_on () =
 
 let read f a n =
   match f with
-  | Link l ->
+  | KFiles.Link l ->
       (match l.heard with
        | [] -> None
        | m :: rest ->
            let k = min n (String.length m) in
-           k_blit m 0 a k;
+           KMachine.k_blit m 0 a k;
            l.heard <- rest;
            Some k)
   (* a message, whole (what is over n bytes is lost); the end *)
   | Call c ->
-      (match il_hear c.il with
-       | Some m -> let k = min n (String.length m) in k_blit m 0 a k; Some k
-       | None -> if il_over c.il then Some 0 else None)
+      (match KNetwork.il_hear c.il with
+       | Some m ->
+           let k = min n (String.length m) in KMachine.k_blit m 0 a k; Some k
+       | None -> if KNetwork.il_over c.il then Some 0 else None)
   | Console ->
       let t = !typed in
       let eot = not (raw_on ()) in
@@ -58,7 +50,7 @@ let read f a n =
           else if eot && t.[i] = '\004' then i
           else upto (i + 1) in
         let k = upto 0 in
-        k_blit t 0 a k;
+        KMachine.k_blit t 0 a k;
         typed := String.sub t k (String.length t - k);
         Some k
       end
@@ -66,7 +58,7 @@ let read f a n =
       if pi.buf = "" then (if pi.writers = 0 then Some 0 else None)
       else begin
         let k = min n (String.length pi.buf) in
-        k_blit pi.buf 0 a k;
+        KMachine.k_blit pi.buf 0 a k;
         pi.buf <- String.sub pi.buf k (String.length pi.buf - k);
         Some k
       end
@@ -76,7 +68,7 @@ let read f a n =
       (match t.said with
        | m :: rest ->
            let k = min n (String.length m) in
-           k_blit m 0 a k;
+           KMachine.k_blit m 0 a k;
            t.said <- rest;
            Some k
        | [] -> (match traced_proc t with Some _ -> None | None -> Some 0))
@@ -85,7 +77,7 @@ let read f a n =
       if b.fresh then
         (let k = min n (String.length b.last) in
          b.fresh <- false;
-         k_blit b.last 0 a k;
+         KMachine.k_blit b.last 0 a k;
          Some k)
       else if b.posters = 0 then Some 0
       else None
@@ -93,17 +85,17 @@ let read f a n =
       match o.node with
       | Rom (at, size) ->
           let k = max 0 (min n (size - o.off)) in
-          row_copy a (at + o.off) k;
+          KRaw.row_copy a (at + o.off) k;
           o.off <- o.off + k;
           Some k
       (* a disk's file, from its blocks to the program's memory *)
-      | Disk (fs, r, i) when not (fs_is_dir fs r i) ->
-          let k = fs_read_at fs r i o.off a n in
+      | Disk (fs, r, i) when not (KFS.fs_is_dir fs r i) ->
+          let k = KFS.fs_read_at fs r i o.off a n in
           o.off <- o.off + k;
           Some k
       | Data d ->
           let k = max 0 (min n (d.dsize - o.off)) in
-          k_blit (Bytes.sub_string d.dbytes o.off k) 0 a k;
+          KMachine.k_blit (Bytes.sub_string d.dbytes o.off k) 0 a k;
           o.off <- o.off + k;
           Some k
       (* (a directory's listing made once, not at each entry's read:
@@ -113,20 +105,22 @@ let read f a n =
           let s =
             match o.listing with
             | Some s when o.off > 0 -> s
-            | _ -> let s = contents o.node in o.listing <- Some s; s in
+            | _ -> let s = KFiles.contents o.node in o.listing <- Some s; s in
           let k = max 0 (min n (String.length s - o.off)) in
-          k_blit s o.off a k;
+          KMachine.k_blit s o.off a k;
           o.off <- o.off + k;
           Some k)
 
 (* the network device's command (1 send, 2 take) on n bytes at the buffer *)
 let net_command n cmd =
-  poke net_dev net_buf; poke (net_dev + 4) n; poke (net_dev + 8) cmd
+  KMachine.poke KMachine.net_dev KMachine.net_buf;
+  KMachine.poke (KMachine.net_dev + 4) n;
+  KMachine.poke (KMachine.net_dev + 8) cmd
 
 (* a packet to the wire: at the buffer, then the device's send *)
 let net_send packet =
   let n = String.length packet in
-  k_blit packet 0 net_buf n;
+  KMachine.k_blit packet 0 KMachine.net_buf n;
   net_command n 1
 
 (* A traced process stopped, and the line that says why to its tracer
@@ -159,7 +153,7 @@ let hex_bytes l =
  * run its word, then write the 0 again (run); from a call, they let
  * the call in. Bad if the command is none of these, or its address
  * not the process's. *)
-let command t q words =
+let command (t : KFiles.trace) q words =
   let addr s =
     match int_of_string_opt s with
     | Some a when a land 3 = 0 -> ignore (user q a 4); a
@@ -167,14 +161,15 @@ let command t q words =
   let say m = t.said <- t.said @ [ m ^ "\n" ] in
   let unset a =
     (match List.assoc_opt a t.stops with
-     | Some w -> mem_store q.mem a w
+     | Some w -> KMemory.mem_store q.mem a w
      | None -> ());
     t.stops <- List.filter (fun (b, _) -> b <> a) t.stops in
   match words, q.state with
   | [ "b"; s ], _ ->
       let a = addr s in
       if not (List.exists (fun (b, _) -> b = a) t.stops) then
-        (t.stops <- t.stops @ [ a, mem_fetch q.mem a ]; mem_store q.mem a 0);
+        (t.stops <- t.stops @ [ a, KMemory.mem_fetch q.mem a ];
+         KMemory.mem_store q.mem a 0);
       say "ok"
   | [ "d"; s ], _ -> unset (addr s); say "ok"
   | [ "r" ], _ ->
@@ -187,14 +182,14 @@ let command t q words =
            say (hex_bytes (List.init n (fun i ->
              match List.assoc_opt ((a + i) land lnot 3) t.stops with
              | Some w -> (w lsr (8 * ((a + i) land 3))) land 255
-             | None -> peekb (user q (a + i) 1))))
+             | None -> KRaw.peekb (user q (a + i) 1))))
        | _ -> raise Bad)
   | [ "w"; s; v ], _ ->
       let a = addr s in
       (match int_of_string_opt v with
        | Some v when List.exists (fun (b, _) -> b = a) t.stops ->
            t.stops <- List.map (fun (b, w) -> b, if b = a then v else w) t.stops
-       | Some v -> mem_store q.mem a v
+       | Some v -> KMemory.mem_store q.mem a v
        | None -> raise Bad);
       say "ok"
   | [ "y" ], _ -> t.calls <- true; say "ok"
@@ -203,7 +198,8 @@ let command t q words =
   | [ ("c" | "s") as c ], Stopped ->
       let pc = reg q 16 in
       (match List.assoc_opt pc t.stops with
-       | Some w when t.call = None -> mem_store q.mem pc w; t.over <- Some pc
+       | Some w when t.call = None ->
+           KMemory.mem_store q.mem pc w; t.over <- Some pc
        | _ -> ());
       t.step <- c = "s";
       q.state <- Ready
@@ -211,29 +207,33 @@ let command t q words =
 
 let write f a n =
   match f with
-  | Link l ->
+  | KFiles.Link l ->
       if n > 1024 then Some (-1)
       else begin
         l.asked <- l.asked + 1;
-        net_send (ip_packet ip_icmp net_machine l.peer
-          (icmp_message Echo_ask l.lid l.asked (k_string a n)));
+        let echo =
+          KNetwork.icmp_message Echo_ask l.lid l.asked (KMachine.k_string a n) in
+        net_send
+          (KNetwork.ip_packet KNetwork.ip_icmp KNetwork.net_machine l.peer echo);
         Some n
       end
   (* a message: now, or when the other end has acknowledged enough of
    * those before *)
   | Call c ->
-      if n > il_max || il_over c.il then Some (-1)
+      if n > KNetwork.il_max || KNetwork.il_over c.il then Some (-1)
       else if n = 0 then Some 0
-      else if il_room c.il then
-        (net_send (il_write c.il (k_string a n) !ticks); Some n)
+      else if KNetwork.il_room c.il then
+        (net_send
+           (KNetwork.il_write c.il (KMachine.k_string a n) !KDevices.ticks);
+         Some n)
       else None
-  | Console -> k_console a n; Some n
+  | Console -> KMachine.k_console a n; Some n
   | Writer pi ->
       if pi.readers = 0 then Some (-1)
       else if String.length pi.buf = 512 then None
       else
         (let k = min n (512 - String.length pi.buf) in
-         pi.buf <- pi.buf ^ k_string a k;
+         pi.buf <- pi.buf ^ KMachine.k_string a k;
          Some k)
   | Open o -> (
       match o.node with
@@ -244,35 +244,40 @@ let write f a n =
             Bytes.blit d.dbytes 0 b 0 d.dsize;
             d.dbytes <- b
           end;
-          Bytes.blit_string (k_string a n) 0 d.dbytes at n;
+          Bytes.blit_string (KMachine.k_string a n) 0 d.dbytes at n;
           d.dsize <- max d.dsize (at + n);
-          d.dtime <- date ();
+          d.dtime <- KDevices.date ();
           o.off <- at + n;
           Some n
       | Disk (fs, 0, i) when o.writes ->
-          (try fs_write_at fs i o.off a n; o.off <- o.off + n; Some n
-           with Disk_full -> Some (-1))
+          (try KFS.fs_write_at fs i o.off a n; o.off <- o.off + n; Some n
+           with KFS.Disk_full -> Some (-1))
       | _ -> Some (-1))
   (* messages, whole; a bad one is said on the console, the write -1 *)
   | Draw d ->
-      (try messages d.conn (k_string a n); Some n
-       with Graphics why -> puts ("draw: " ^ why ^ "\n"); Some (-1))
-  | Post b -> b.last <- k_string a n; b.fresh <- true; Some n
+      (try KGraphics.messages d.conn (KMachine.k_string a n); Some n
+       with KGraphics.Graphics why ->
+         KMachine.puts ("draw: " ^ why ^ "\n"); Some (-1))
+  | Post b -> b.last <- KMachine.k_string a n; b.fresh <- true; Some n
   (* sounds, whole, when they fit in the ring, else a look again when
    * the speaker played what is missing, 20 samples a tick (old: in 10
    * ms, each look a copy of the write: play's blocks of 2,048 samples
    * copied 25 times, half the machine's instructions); a bad one, or
    * more than a ring, -1 *)
   | Voice v ->
-      (match (try Some (sounds (k_string a n)) with Bad_sound -> None) with
-       | Some l
-         when List.fold_left (fun acc snd -> acc + sound_length snd) 0 l <= ring
-         ->
-           let missing = speak v l in
+      let sounds =
+        try Some (KAudio.sounds (KMachine.k_string a n))
+        with KAudio.Bad_sound -> None in
+      let length l =
+        List.fold_left (fun acc snd -> acc + KAudio.sound_length snd) 0 l in
+      (match sounds with
+       | Some l when length l <= KDevices.ring ->
+           let missing = KDevices.speak v l in
            if missing = 0 then Some n
            else begin
-             let at = !ticks + 1 + (missing / 20) in
-             if !alarm = 0 || at < !alarm then alarm := at;
+             let at = !KDevices.ticks + 1 + (missing / 20) in
+             if !KDevices.alarm = 0 || at < !KDevices.alarm then
+               KDevices.alarm := at;
              None
            end
        | _ -> Some (-1))
@@ -282,23 +287,24 @@ let write f a n =
       (match traced_proc t with
        | Some q ->
            (try
-              command t q (String.split_on_char ' ' (String.trim (k_string a n)));
+              let line = String.trim (KMachine.k_string a n) in
+              command t q (String.split_on_char ' ' line);
               Some n
             with
             | Bad -> Some (-1)
             (* (a breakpoint in a shared text, and no room for its copy) *)
-            | No_room -> Some (-1))
+            | KMemory.No_room -> Some (-1))
        | None -> Some (-1))
   | Reader _ | Peek _ -> Some (-1)
 
 (* whether a read would not wait *)
 let readable f =
   match f with
-  | Console -> !typed <> "" || !typed_end
+  | KFiles.Console -> !typed <> "" || !typed_end
   | Reader pi -> pi.buf <> "" || pi.writers = 0
   | Peek b -> b.fresh || b.posters = 0
   | Link l -> (match l.heard with [] -> false | _ -> true)
-  | Call c -> il_readable c.il
+  | Call c -> KNetwork.il_readable c.il
   | Trace t ->
       t.said <> []
       || (match traced_proc t with Some _ -> false | None -> true)

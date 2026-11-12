@@ -2,8 +2,6 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See KMachine.mli *)
-open KRaw
-open KFS
 
 (*****************************************************************************)
 (* The machine: kentry.s's, kcopy.s's and kruntime.c's functions *)
@@ -102,6 +100,6 @@ let cause_code c =
 let tick = let r = k_rate () in if r < 400 then 20000 else r / 400
 
 let puts s =
-  for i = 0 to String.length s - 1 do pokeb cons_out (Char.code s.[i]) done
+  for i = 0 to String.length s - 1 do KRaw.pokeb cons_out (Char.code s.[i]) done
 (* (what the disk has not been told yet is told first) *)
-let halt status = fs_sync (); poke halt_dev status
+let halt status = KFS.fs_sync (); poke halt_dev status

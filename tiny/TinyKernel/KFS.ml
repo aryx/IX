@@ -6,7 +6,6 @@
  * disk of bytes in memory (tests/KFS_tests/Host.ml)
  *)
 
-open KRaw
 
 (*****************************************************************************)
 (* The disk, and the kernel's memory the file system works in *)
@@ -44,13 +43,13 @@ let fs_max = 65536
 
 (* the words are 4 bytes, the low byte first, as the machine's *)
 let fs_get a =
-  peekb a lor (peekb (a + 1) lsl 8) lor (peekb (a + 2) lsl 16)
-  lor (peekb (a + 3) lsl 24)
+  KRaw.peekb a lor (KRaw.peekb (a + 1) lsl 8) lor (KRaw.peekb (a + 2) lsl 16)
+  lor (KRaw.peekb (a + 3) lsl 24)
 let fs_set a v =
-  pokeb a (v land 255);
-  pokeb (a + 1) ((v lsr 8) land 255);
-  pokeb (a + 2) ((v lsr 16) land 255);
-  pokeb (a + 3) ((v lsr 24) land 255)
+  KRaw.pokeb a (v land 255);
+  KRaw.pokeb (a + 1) ((v lsr 8) land 255);
+  KRaw.pokeb (a + 2) ((v lsr 16) land 255);
+  KRaw.pokeb (a + 3) ((v lsr 24) land 255)
 
 (* The superblock's words: the magic number, the disk's size in blocks,
  * the boots counted, the snapshots kept. Then the roots, an inode each:
@@ -125,8 +124,8 @@ let fs_block fs ino i =
  * blocks hold inodes, whose trees are marked in turn. Each depth has its
  * own buffer, so a block is still there when the marking comes back. *)
 let rec fs_mark fs ptr level d leaf =
-  if ptr > 0 && ptr < fs.blocks && peekb (fs.map + ptr) <> 1 then begin
-    if peekb (fs.map + ptr) = 0 then pokeb (fs.map + ptr) 1;
+  if ptr > 0 && ptr < fs.blocks && KRaw.peekb (fs.map + ptr) <> 1 then begin
+    if KRaw.peekb (fs.map + ptr) = 0 then KRaw.pokeb (fs.map + ptr) 1;
     if level > 0 || leaf then begin
       let a = fs_buf (8 + d) in
       fs_read fs ptr a;
@@ -150,26 +149,28 @@ and fs_mark_inode fs ino d leaf =
  * when no tree has it yet: a write may be halfway through linking it. *)
 let fs_gc fs =
   for b = 1 to fs.blocks - 1 do
-    if peekb (fs.map + b) = 1 then pokeb (fs.map + b) 0
+    if KRaw.peekb (fs.map + b) = 1 then KRaw.pokeb (fs.map + b) 0
   done;
   fs_read fs 0 (fs_buf 7);
   fs_mark_inode fs (fs_buf 7 + 16) 0 true;
   for r = 0 to fs_nsnaps fs do fs_mark_inode fs (fs_root fs r) 0 true done;
   fs.nfree <- 0;
-  for b = 1 to fs.blocks - 1 do if peekb (fs.map + b) = 0 then fs.nfree <- fs.nfree + 1 done
+  for b = 1 to fs.blocks - 1 do
+    if KRaw.peekb (fs.map + b) = 0 then fs.nfree <- fs.nfree + 1
+  done
 
 (* a free block, now fresh; the collection runs when there is none left *)
 let rec fs_alloc fs again =
   let n = fs.blocks in
   let rec look b left =
     if left = 0 then 0
-    else if peekb (fs.map + b) = 0 then b
+    else if KRaw.peekb (fs.map + b) = 0 then b
     else look (if b + 1 >= n then 1 else b + 1) (left - 1)
   in
   let b = look fs.next (n - 1) in
   if b = 0 then (if again then (fs_gc fs; fs_alloc fs false) else raise Disk_full)
   else (
-    pokeb (fs.map + b) 2;
+    KRaw.pokeb (fs.map + b) 2;
     fs.fresh <- b :: fs.fresh;
     fs.next <- b;
     fs.nfree <- fs.nfree - 1;
@@ -189,8 +190,11 @@ let fs_room fs n =
  * itself when it is fresh, a new one when a commit has it (copy on
  * write). A hole (0) is a block of zeros. *)
 let fs_own fs ptr a =
-  if ptr = 0 then (row_fill a 0 fs_bsize; fs_alloc fs true)
-  else (fs_read fs ptr a; if peekb (fs.map + ptr) = 2 then ptr else fs_alloc fs true)
+  if ptr = 0 then (KRaw.row_fill a 0 fs_bsize; fs_alloc fs true)
+  else begin
+    fs_read fs ptr a;
+    if KRaw.peekb (fs.map + ptr) = 2 then ptr else fs_alloc fs true
+  end
 
 (* [fs_store ptr level i f]: block i under ptr changed by f, which is
  * given its address in memory. Each block on the way down is owned
@@ -220,13 +224,13 @@ let fs_put fs ino i f =
  * it, and goes up to the root in the superblock. *)
 let fs_load fs r n =
   let b = fs_block fs (fs_root fs r) (n / 16) in
-  if b = 0 then row_fill fs_ino 0 64
+  if b = 0 then KRaw.row_fill fs_ino 0 64
   else (
     fs_read fs b (fs_buf 4);
-    row_copy fs_ino (fs_buf 4 + (64 * (n mod 16))) 64)
+    KRaw.row_copy fs_ino (fs_buf 4 + (64 * (n mod 16))) 64)
 let fs_save fs n =
   fs_put fs (fs_root fs 0) (n / 16) (fun a ->
-      row_copy (a + (64 * (n mod 16))) fs_ino 64)
+      KRaw.row_copy (a + (64 * (n mod 16))) fs_ino 64)
 
 let fs_word k = fs_get (fs_ino + (4 * k))
 let fs_setw k v = fs_set (fs_ino + (4 * k)) v
@@ -242,7 +246,7 @@ let fs_new fs typ =
   in
   let n = free 2 in
   if n >= count then fs_set (fs_root fs 0 + 4) (n + 1);
-  row_fill fs_ino 0 64;
+  KRaw.row_fill fs_ino 0 64;
   fs_setw 0 typ;
   fs_setw 3 (!fs_clock ());
   fs_save fs n;
@@ -269,8 +273,8 @@ let fs_read_at fs r n off a len =
       let o = (off + d) mod fs_bsize in
       let k = min (len - d) (fs_bsize - o) in
       let b = fs_block fs fs_ino ((off + d) / fs_bsize) in
-      if b = 0 then row_fill (a + d) 0 k
-      else (fs_read fs b (fs_buf 3); row_copy (a + d) (fs_buf 3 + o) k);
+      if b = 0 then KRaw.row_fill (a + d) 0 k
+      else (fs_read fs b (fs_buf 3); KRaw.row_copy (a + d) (fs_buf 3 + o) k);
       go (d + k)
     end in
   go 0;
@@ -284,7 +288,8 @@ let fs_write_in fs n off a len =
     if d < len then begin
       let o = (off + d) mod fs_bsize in
       let k = min (len - d) (fs_bsize - o) in
-      fs_put fs fs_ino ((off + d) / fs_bsize) (fun b -> row_copy (b + o) (a + d) k);
+      fs_put fs fs_ino ((off + d) / fs_bsize)
+        (fun b -> KRaw.row_copy (b + o) (a + d) k);
       go (d + k)
     end in
   go 0;
@@ -300,7 +305,7 @@ let fs_write_string fs n off s =
   let rec go d =
     if d < String.length s then begin
       let k = min fs_bsize (String.length s - d) in
-      row_bytes s d (fs_buf 6) k;
+      KRaw.row_bytes s d (fs_buf 6) k;
       fs_write_in fs n (off + d) (fs_buf 6) k;
       go (d + k)
     end in
@@ -321,7 +326,7 @@ let fs_contents fs r n =
     if at >= size then String.concat "" (List.rev acc)
     else (
       let k = fs_read_at fs r n at (fs_buf 6) fs_bsize in
-      go (at + k) (row_string (fs_buf 6) k :: acc)) in
+      go (at + k) (KRaw.row_string (fs_buf 6) k :: acc)) in
   go 0 []
 
 (*****************************************************************************)
@@ -382,7 +387,7 @@ let fs_unlink fs d name =
   | Some n ->
       fs_load fs 0 n;
       fs_setw 2 (fs_word 2 - 1);
-      if fs_word 2 <= 0 then row_fill fs_ino 0 64;
+      if fs_word 2 <= 0 then KRaw.row_fill fs_ino 0 64;
       fs_save fs n
   | None -> ()
 
@@ -396,7 +401,7 @@ let fs_unlink fs d name =
 let fs_commit fs =
   if fs.changed then begin
     fs_write fs 0 fs.sb;
-    List.iter (fun b -> pokeb (fs.map + b) 1) fs.fresh;
+    List.iter (fun b -> KRaw.pokeb (fs.map + b) 1) fs.fresh;
     fs.fresh <- [];
     fs.changed <- false
   end
@@ -404,12 +409,12 @@ let fs_commit fs =
 (* a new file system: the inode file, with inode 0 unused and inode 1
  * the root directory *)
 let fs_format fs n =
-  row_fill fs.sb 0 fs_bsize;
+  KRaw.row_fill fs.sb 0 fs_bsize;
   fs_set fs.sb fs_magic;
   fs_set (fs.sb + 4) n;
   fs_set (fs_root fs 0) 2;
   fs_set (fs_root fs 0 + 4) 2;
-  row_fill fs_ino 0 64;
+  KRaw.row_fill fs_ino 0 64;
   fs_setw 0 1;
   fs_setw 2 1;
   fs_save fs 1
@@ -439,8 +444,8 @@ let fs_mount io k n =
   let fs = { disk = k; io = io; sb = sb; map = sb + fs_bsize; blocks = 0; nfree = 0;
              fresh = []; changed = false; next = 1 } in
   fs_mounted := (k, fs) :: List.remove_assoc k !fs_mounted;
-  row_fill fs.map 0 n;
-  pokeb fs.map 1;
+  KRaw.row_fill fs.map 0 n;
+  KRaw.pokeb fs.map 1;
   fs_read fs 0 fs.sb;
   if fs_get fs.sb <> fs_magic then (fs.blocks <- n; fs.nfree <- n - 1; fs_format fs n)
   else begin
@@ -452,8 +457,10 @@ let fs_mount io k n =
     let k = fs_nsnaps fs in
     if k = 0 || not (fs_same fs 0 1) then begin
       let k = min k 13 in
-      for r = k downto 1 do row_copy (fs_root fs (r + 1)) (fs_root fs r) 64 done;
-      row_copy (fs_root fs 1) (fs_root fs 0) 64;
+      for r = k downto 1 do
+        KRaw.row_copy (fs_root fs (r + 1)) (fs_root fs r) 64
+      done;
+      KRaw.row_copy (fs_root fs 1) (fs_root fs 0) 64;
       fs_set (fs.sb + 12) (k + 1)
     end
   end;

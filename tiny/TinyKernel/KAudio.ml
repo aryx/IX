@@ -6,7 +6,6 @@
  * without a machine (tests/KAudio_tests/Host.ml)
  *)
 
-open KRaw
 
 let per_ms = 8
 
@@ -46,9 +45,10 @@ let mix ring size at (t : tone) =
       | Sawtooth -> ((q * 2 * v) lsr 16) - v
       | Noise -> ((((!noise lsr 16) land 255) * 2 * v) lsr 8) - v in
     let r = ring + ((at + i) land (size - 1)) in
-    let b = peekb r in
+    let b = KRaw.peekb r in
     let y = (if b > 127 then b - 256 else b) + x in
-    pokeb r ((if y > 127 then 127 else if y < -128 then -128 else y) land 255);
+    KRaw.pokeb r
+      ((if y > 127 then 127 else if y < -128 then -128 else y) land 255);
     let next = (!phase + (!step lsr 8)) land 0xffffff in
     if next lsr 16 <> !phase lsr 16 then
       noise := ((!noise * 69069) + 1) land 0xffffff;
@@ -67,9 +67,10 @@ let sound_length snd =
 let add_samples ring size at s =
   for i = 0 to String.length s - 1 do
     let r = ring + ((at + i) land (size - 1)) in
-    let b = peekb r and x = Char.code s.[i] in
+    let b = KRaw.peekb r and x = Char.code s.[i] in
     let y = (if b > 127 then b - 256 else b) + (if x > 127 then x - 256 else x) in
-    pokeb r ((if y > 127 then 127 else if y < -128 then -128 else y) land 255)
+    KRaw.pokeb r
+      ((if y > 127 then 127 else if y < -128 then -128 else y) land 255)
   done
 
 let mix_sound ring size at snd =

@@ -2,16 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See KCalls.mli *)
-open KRaw
-open KGraphics
-open KNetwork
-open KFS
-open KMemory
-open KMachine
-open KFiles
 open KProcs
-open KDevices
-open KIO
 
 (*****************************************************************************)
 (* The system calls *)
@@ -41,19 +32,19 @@ let bounce_size = 0xa0000
 
 let sys_rw p rw reading =
   let f = fd p (reg p 1) and va = reg p 2 and n = reg p 3 in
-  if reading && not (mem_writable p.mem va n) then raise Bad;
+  if reading && not (KMemory.mem_writable p.mem va n) then raise Bad;
   let finish = function Some k -> result p k; true | None -> false in
-  let a = mem_address p.mem va n in
+  let a = KMemory.mem_address p.mem va n in
   if a >= 0 then block p (fun () -> finish (rw f a n))
   else begin
     let n = min n bounce_size in
     block p (fun () ->
       if not reading then
-        user_iter p va n (fun a off k -> row_copy (bounce + off) a k);
+        user_iter p va n (fun a off k -> KRaw.row_copy (bounce + off) a k);
       let r = rw f bounce n in
       (match r with
        | Some k when reading && k > 0 ->
-           user_iter p va k (fun a off k -> row_copy a (bounce + off) k)
+           user_iter p va k (fun a off k -> KRaw.row_copy a (bounce + off) k)
        | _ -> ());
       finish r)
   end
@@ -76,7 +67,7 @@ let rec exit_proc p status =
    | None -> ());
   List.iter (fun q -> if q.parent = Some p.pid then q.parent <- None) !procs;
   ended := List.filter (fun e -> e.end_parent <> p.pid) !ended;
-  if p.pid = 1 then halt status;
+  if p.pid = 1 then KMachine.halt status;
   (match p.parent with
    | Some pp ->
      ended :=
@@ -85,7 +76,7 @@ let rec exit_proc p status =
   release p
 
 and release q =
-  mem_release q.mem;
+  KMemory.mem_release q.mem;
   procs := List.filter (fun r -> r.pid <> q.pid) !procs
 
 (* fork: a new slot and a partition of the parent's size, the partition
@@ -103,10 +94,10 @@ and release q =
  * waiting, a round was longer than a tick, every process entered with
  * its time already up, and none ran an instruction) *)
 let with_room p f =
-  try f () with No_room ->
+  try f () with KMemory.No_room ->
     block p (fun () ->
       try f (); true with
-      | No_room ->
+      | KMemory.No_room ->
           if List.exists (fun q ->
                q.pid <> p.pid && (match q.state with Ready -> true | _ -> false))
                !procs
@@ -118,7 +109,7 @@ let with_room p f =
 (* a child of p's, in slot s: its descriptors and directory p's; traced
  * when p's children are; its pid the next *)
 let child p s = {
-  slot = s; mem = mem_empty (); pid = !next_pid; state = Ready;
+  slot = s; mem = KMemory.mem_empty (); pid = !next_pid; state = Ready;
   parent = Some p.pid; fds = p.fds; cwd = p.cwd; since = None; traced = None;
   core = None; doomed = false; cmd = p.cmd; memory = p.memory;
 }
@@ -140,10 +131,10 @@ let adopt p q =
 
 let sys_fork p = with_room p (fun () ->
   let q = child p (free_slot ()) in
-  mem_copy q.mem p.mem;
-  k_copy (frame q.slot) (frame p.slot) 68;
+  KMemory.mem_copy q.mem p.mem;
+  KMachine.k_copy (KMachine.frame q.slot) (KMachine.frame p.slot) 68;
   (match p.traced with
-   | Some t -> List.iter (fun (a, w) -> mem_store q.mem a w) t.stops
+   | Some t -> List.iter (fun (a, w) -> KMemory.mem_store q.mem a w) t.stops
    | None -> ());
   set_reg q 1 0;
   adopt p q)
@@ -169,7 +160,7 @@ let header bytes =
 (* a file of the disk as a program's, to share its text (KMemory's
  * key; its stamp is its date and size) *)
 let disk_key fs r i =
-  "disk " ^ string_of_int (fs_disk fs) ^ " " ^ string_of_int r ^ " "
+  "disk " ^ string_of_int (KFS.fs_disk fs) ^ " " ^ string_of_int r ^ " "
   ^ string_of_int i
 
 (* Loads a file's program into p, in a partition of the size it asks for
@@ -178,16 +169,18 @@ let disk_key fs r i =
  * argv's pointers: start.s's); every register is 0 but sp. Bad if it is
  * no program, or one that leaves no room for a stack, or if there is no
  * room for its partition; in that case p is left as it was. *)
-let load_prog p node argv =
+let load_prog p (node : KFiles.node option) argv =
   (* (an image's file never changes; a file of memory is not shared) *)
   let key, date =
     match node with
     | Some (Rom (at, _)) -> "rom " ^ string_of_int at, ""
-    | Some (Disk (fs, r, i)) -> disk_key fs r i, string_of_int (fs_date fs r i)
+    | Some (Disk (fs, r, i)) ->
+        disk_key fs r i, string_of_int (KFS.fs_date fs r i)
     | _ -> "", "" in
   let node =
     match node with
-    | Some (Disk (fs, r, i)) -> Some (Data (data (fs_contents fs r i)))
+    | Some (Disk (fs, r, i)) ->
+        Some (KFiles.Data (KFiles.data (KFS.fs_contents fs r i)))
     | _ -> node in
   let n =
     match node with
@@ -197,18 +190,19 @@ let load_prog p node argv =
   let first =
     match node with
     | Some (Data d) -> Bytes.sub_string d.dbytes 0 (min n 16)
-    | Some (Rom (at, _)) -> k_string at (min n 16)
+    | Some (Rom (at, _)) -> KMachine.k_string at (min n 16)
     | _ -> "" in
   let skip, size, memory, tsize = match header first with
     | Some (h, size, memory, tsize)
       when size <= n - h && tsize <= size && tsize land 4095 = 0 ->
-        h, size, (memory + part - 1) / part * part, tsize
-    | _ -> 0, n, part, 0 in
-  if size > memory - 0x10000 || memory > mem_high - mem_low then raise Bad;
+        h, size, (memory + KMemory.part - 1) / KMemory.part * KMemory.part, tsize
+    | _ -> 0, n, KMemory.part, 0 in
+  if size > memory - 0x10000 || memory > KMemory.mem_high - KMemory.mem_low
+  then raise Bad;
   (* the text written only when it is not shared already *)
   let stamp = if date = "" then "" else date ^ " " ^ string_of_int n in
   let from =
-    match mem_load p.mem key stamp tsize size memory with
+    match KMemory.mem_load p.mem key stamp tsize size memory with
     | Text_new -> 0
     | Text_shared -> tsize in
   (* Only the image is written, its statics in it (tiny-ld writes a
@@ -224,23 +218,25 @@ let load_prog p node argv =
    * compile) *)
   (match node with
    | Some (Data d) ->
-       mem_write p.mem from
+       KMemory.mem_write p.mem from
          (Bytes.sub_string d.dbytes (skip + from) (size - from))
-   | Some (Rom (at, _)) -> mem_blit p.mem from (at + skip + from) (size - from)
+   | Some (Rom (at, _)) ->
+       KMemory.mem_blit p.mem from (at + skip + from) (size - from)
    | _ -> ());
   let top = ref memory and ptrs = ref [] in
   List.iter (fun s ->
     top := (!top - String.length s - 1) land lnot 3;
-    mem_write p.mem !top s;
+    KMemory.mem_write p.mem !top s;
     (* (its end, a 0: old, the zeros of the partition, zeroed whole) *)
-    mem_store_byte p.mem (!top + String.length s) 0;
+    KMemory.mem_store_byte p.mem (!top + String.length s) 0;
     ptrs := !ptrs @ [ !top ]) argv;
   let sp = (!top - ((List.length argv + 3) * 4)) land lnot 7 in
-  mem_store p.mem sp (List.length argv);
-  mem_store p.mem (sp + 4) (sp + 8);
-  ignore (List.fold_left (fun at a -> mem_store p.mem at a; at + 4) (sp + 8)
-            !ptrs);
-  k_zero (frame p.slot) 68;
+  KMemory.mem_store p.mem sp (List.length argv);
+  KMemory.mem_store p.mem (sp + 4) (sp + 8);
+  ignore
+    (List.fold_left (fun at a -> KMemory.mem_store p.mem at a; at + 4) (sp + 8)
+       !ptrs);
+  KMachine.k_zero (KMachine.frame p.slot) 68;
   set_reg p 14 sp;
   p.cmd <- String.concat " " argv;
   p.memory <- memory
@@ -248,11 +244,11 @@ let load_prog p node argv =
 (* exec's and spawn's (path, argv): the program's file, its arguments
  * (64 at most: a linker's line names its objects; old: 16) *)
 let program p =
-  let node = walk !top (names p.cwd (ustr p (reg p 1))) in
+  let node = KFiles.walk !KFiles.top (KFiles.names p.cwd (ustr p (reg p 1))) in
   let rec args i acc =
     if i >= 64 then raise Bad
     else
-      let a = peek (user p (reg p 2 + (4 * i)) 4) in
+      let a = KMachine.peek (user p (reg p 2 + (4 * i)) 4) in
       if a = 0 then List.rev acc else args (i + 1) (ustr p a :: acc) in
   node, args 0 []
 
@@ -264,7 +260,7 @@ let sys_exec p =
   let node, argv = program p in
   with_room p (fun () ->
     load_prog p node argv;
-    match p.traced with Some t -> t.stops <- []; stop p "exec" | None -> ())
+    match p.traced with Some t -> t.stops <- []; KIO.stop p "exec" | None -> ())
 
 (* spawn(path, argv): a fork and an exec in one, a child that starts
  * in the program; its pid, or -1. Nothing of the parent is copied: a
@@ -287,7 +283,7 @@ let sys_wait p =
   block p (fun () ->
     match List.filter (fun e -> e.end_parent = p.pid) !ended with
     | e :: _ ->
-        if a <> 0 then poke (user_out p a 4) e.end_status;
+        if a <> 0 then KMachine.poke (user_out p a 4) e.end_status;
         ended := List.filter (fun e' -> e'.end_pid <> e.end_pid) !ended;
         result p e.end_pid;
         true
@@ -302,53 +298,57 @@ let o_create = 0x200
 let o_trunc = 0x400
 
 let sys_open p =
-  let ns = names p.cwd (ustr p (reg p 1)) and mode = reg p 2 in
+  let ns = KFiles.names p.cwd (ustr p (reg p 1)) and mode = reg p 2 in
   let writes = mode land 3 <> 0 in
   let node =
-    match walk !top ns, dir_of ns with
+    match KFiles.walk !KFiles.top ns, KFiles.dir_of ns with
     | Some n, _ -> n
     | None, Some (Dir d, last)
       when mode land o_create <> 0 && String.length last <= 64 ->
-        let n = Data { (data "") with dtime = date () } in
+        let n = KFiles.Data { (KFiles.data "") with dtime = KDevices.date () } in
         d := !d @ [ last, n ];
         n
     | None, Some (Disk (fs, 0, i), last)
       when mode land o_create <> 0 && String.length last <= 64 ->
-        Disk (fs, 0, fs_create fs i last Fs_file)
+        Disk (fs, 0, KFS.fs_create fs i last Fs_file)
     | _ -> raise Bad in
   (* (a file of the image opened to be written is in memory from now on;
    * or a file of the disk, when its directory is there too: /bin's) *)
-  let node =
-    match node, dir_of ns with
+  let node : KFiles.node =
+    match node, KFiles.dir_of ns with
     | Rom (at, n), Some (Disk (fs, 0, i), last) when writes ->
-        let j = fs_create fs i last Fs_file in
-        if mode land o_trunc = 0 then fs_write_at fs j 0 at n;
+        let j = KFS.fs_create fs i last Fs_file in
+        if mode land o_trunc = 0 then KFS.fs_write_at fs j 0 at n;
         Disk (fs, 0, j)
     | Rom (at, n), Some (Dir d, last) when writes ->
+        let kept =
+          if mode land o_trunc <> 0 then "" else KMachine.k_string at n in
         let made =
-          Data { (data (if mode land o_trunc <> 0 then "" else k_string at n))
-                 with dtime = date () } in
+          KFiles.Data { (KFiles.data kept) with dtime = KDevices.date () } in
         d := List.map (fun (name, old) ->
           if name = last then name, made else name, old) !d;
         made
     | _ -> node in
   (* (a file of the disk written: no exec shares the text it had) *)
   (match node with
-   | Disk (fs, r, i) when writes -> mem_forget (disk_key fs r i)
+   | Disk (fs, r, i) when writes -> KMemory.mem_forget (disk_key fs r i)
    | _ -> ());
   (* (a snapshot is read only) *)
   (match node with
    | Dir _ when writes -> raise Bad
-   | Disk (fs, r, i) when writes && (r <> 0 || fs_is_dir fs r i) -> raise Bad
+   | Disk (fs, r, i) when writes && (r <> 0 || KFS.fs_is_dir fs r i) -> raise Bad
    | Data d when mode land o_trunc <> 0 ->
-       d.dbytes <- Bytes.make 0 ' '; d.dsize <- 0; d.dtime <- date ()
-   | Disk (fs, _, i) when writes && mode land o_trunc <> 0 -> fs_truncate fs i
+       d.dbytes <- Bytes.make 0 ' '; d.dsize <- 0; d.dtime <- KDevices.date ()
+   | Disk (fs, _, i) when writes && mode land o_trunc <> 0 ->
+       KFS.fs_truncate fs i
    | _ -> ());
   result p (fdalloc p (match node with
     | Tty -> Console
-    | Screen -> Draw { conn = connect screen font; refs = 1 }
-    | Pointer -> Peek mouse
-    | Speaker -> Voice { ahead = (played () + lead) land 0x3fffffff }
+    | Screen ->
+        Draw { conn = KGraphics.connect KDevices.screen KDevices.font; refs = 1 }
+    | Pointer -> Peek KDevices.mouse
+    | Speaker ->
+        Voice { ahead = (KDevices.played () + KDevices.lead) land 0x3fffffff }
     | _ -> Open { node = node; off = 0; writes = writes; listing = None }))
 
 let sys_close p =
@@ -358,21 +358,21 @@ let sys_close p =
   result p 0
 
 (* pipe(fds) and box(fds): the two ends, a descriptor each, put in fds *)
-let ends p r w =
+let ends p (r : KFiles.file) (w : KFiles.file) =
   let a = user_out p (reg p 1) 4 and b = user_out p (reg p 1 + 4) 4 in
   let r = fdalloc p r in
   let w = fdalloc p w in
-  poke a r;
-  poke b w;
+  KMachine.poke a r;
+  KMachine.poke b w;
   result p 0
 
 let sys_pipe p =
-  let pi = { buf = ""; readers = 1; writers = 1 } in
+  let pi : KFiles.pipe = { buf = ""; readers = 1; writers = 1 } in
   ends p (Reader pi) (Writer pi)
 
 (* a box, its reading end and its writing end *)
 let sys_box p =
-  let b = { last = ""; fresh = false; posters = 1 } in
+  let b : KFiles.box = { last = ""; fresh = false; posters = 1 } in
   ends p (Peek b) (Post b)
 
 (* dial(address, port): a descriptor on a connection to the program
@@ -380,23 +380,25 @@ let sys_box p =
  * ("10.0.0.1"), when it has agreed; -1 when nothing does or nothing
  * answers. Port 0 is the echo: a link, made at once *)
 let sys_dial p =
-  let to_ = net_address (ustr p (reg p 1)) and port = reg p 2 in
-  if to_ = "" || port < 0 || port > 0xffff || peek (net_dev + 12) = 0 then
+  let to_ = KNetwork.net_address (ustr p (reg p 1)) and port = reg p 2 in
+  if to_ = "" || port < 0 || port > 0xffff
+     || KMachine.peek (KMachine.net_dev + 12) = 0 then
     raise Bad;
   if port = 0 then begin
-    let l = { peer = to_; lid = !next_link; asked = 0; heard = []; holders = 1 } in
+    let l : KFiles.link =
+      { peer = to_; lid = !next_link; asked = 0; heard = []; holders = 1 } in
     incr next_link;
     links := l :: !links;
     result p (fdalloc p (Link l))
   end
   else begin
-    let c, sync = net_dial net to_ port !ticks in
-    net_send sync;
+    let c, sync = KNetwork.net_dial net to_ port !KDevices.ticks in
+    KIO.net_send sync;
     block p (fun () ->
       match c.il_at with
       | Il_established ->
           (try result p (fdalloc p (Call { il = c; callers = 1 }))
-           with Bad -> il_done c; result p (-1));
+           with Bad -> KNetwork.il_done c; result p (-1));
           true
       | Il_closed -> result p (-1); true
       | _ -> false)
@@ -407,35 +409,37 @@ let sys_dial p =
  * call (and stays so: a server is this call in a loop) *)
 let sys_listen p =
   let port = reg p 1 in
-  if port <= 0 || port > 0xffff || peek (net_dev + 12) = 0 then raise Bad;
+  if port <= 0 || port > 0xffff || KMachine.peek (KMachine.net_dev + 12) = 0
+  then raise Bad;
   if not (List.mem port net.ns_ports) then
     net.ns_ports <- port :: net.ns_ports;
   block p (fun () ->
-    match List.filter (fun c -> c.il_lport = port) net.ns_fresh with
+    let asking (c : KNetwork.il) = c.il_lport = port in
+    match List.filter asking net.ns_fresh with
     | c :: _ ->
         net.ns_fresh <-
-          List.filter (fun d ->
+          List.filter (fun (d : KNetwork.il) ->
             d.il_lport <> port || d.il_rport <> c.il_rport
             || d.il_peer <> c.il_peer) net.ns_fresh;
         (try result p (fdalloc p (Call { il = c; callers = 1 }))
-         with Bad -> il_done c; result p (-1));
+         with Bad -> KNetwork.il_done c; result p (-1));
         true
     | [] -> false)
 
 let sys_dup p = let f = fd p (reg p 1) in share f; result p (fdalloc p f)
 
 let sys_mkdir p =
-  let ns = names p.cwd (ustr p (reg p 1)) in
-  match walk !top ns, dir_of ns with
+  let ns = KFiles.names p.cwd (ustr p (reg p 1)) in
+  match KFiles.walk !KFiles.top ns, KFiles.dir_of ns with
   | None, Some (Dir d, last) when String.length last <= 64 ->
-      d := !d @ [ last, Dir (ref []) ]; result p 0
+      d := !d @ [ last, KFiles.Dir (ref []) ]; result p 0
   | None, Some (Disk (fs, 0, i), last) when String.length last <= 64 ->
-      ignore (fs_create fs i last Fs_dir); result p 0
+      ignore (KFS.fs_create fs i last Fs_dir); result p 0
   | _ -> raise Bad
 
 (* a name removed; a directory only if empty *)
 let sys_unlink p =
-  match dir_of (names p.cwd (ustr p (reg p 1))) with
+  match KFiles.dir_of (KFiles.names p.cwd (ustr p (reg p 1))) with
   | Some (Dir d, last) ->
       (match List.assoc_opt last !d with
        | Some (Dir e) when !e <> [] -> raise Bad
@@ -443,10 +447,11 @@ let sys_unlink p =
        | Some _ -> d := List.filter (fun (n, _) -> n <> last) !d; result p 0
        | None -> raise Bad)
   | Some (Disk (fs, 0, i), last) ->
-      (match fs_lookup fs 0 i last with
+      (match KFS.fs_lookup fs 0 i last with
        | None -> raise Bad
-       | Some j when fs_is_dir fs 0 j && fs_entries fs 0 j <> [] -> raise Bad
-       | _ -> fs_unlink fs i last; result p 0)
+       | Some j when KFS.fs_is_dir fs 0 j && KFS.fs_entries fs 0 j <> [] ->
+           raise Bad
+       | _ -> KFS.fs_unlink fs i last; result p 0)
   | _ -> raise Bad
 
 (* link(old, new): a second name for a file, in the directory new is in:
@@ -455,13 +460,13 @@ let sys_unlink p =
  * it is written by: then the names part). Not for a directory, as on
  * Unix: a directory with two parents would make the tree a graph *)
 let sys_link p =
-  let old = walk !top (names p.cwd (ustr p (reg p 1)))
-  and ns = names p.cwd (ustr p (reg p 2)) in
-  match old, walk !top ns, dir_of ns with
-  | Some n, _, _ when is_dir n -> raise Bad
+  let old = KFiles.walk !KFiles.top (KFiles.names p.cwd (ustr p (reg p 1)))
+  and ns = KFiles.names p.cwd (ustr p (reg p 2)) in
+  match old, KFiles.walk !KFiles.top ns, KFiles.dir_of ns with
+  | Some n, _, _ when KFiles.is_dir n -> raise Bad
   | Some (Disk (fs, 0, j)), None, Some (Disk (dfs, 0, i), last)
-    when fs_disk fs = fs_disk dfs && String.length last <= 64 ->
-      fs_link fs i last j; result p 0
+    when KFS.fs_disk fs = KFS.fs_disk dfs && String.length last <= 64 ->
+      KFS.fs_link fs i last j; result p 0
   | Some (Disk _), _, _ -> raise Bad
   | Some node, None, Some (Dir d, last) when String.length last <= 64 ->
       d := !d @ [ last, node ]; result p 0
@@ -482,14 +487,14 @@ let sys_getcwd p =
  * 1), or not (on 0). An editor's C-x C-c: ^C a key like the others.
  * Plan 9's rawon, written to /dev/consctl (which also stops the echo
  * and the line editing: tiny-kernel's console has neither) *)
-let sys_rawcons p = raw := (if reg p 1 <> 0 then p.pid else 0); result p 0
+let sys_rawcons p = KIO.raw := (if reg p 1 <> 0 then p.pid else 0); result p 0
 
 (* kill(pid): its process ended as a fault ends one, its status -1; on
  * another core, at its next trap, which the cores' interrupt makes
  * now (its partition is not another's before) *)
 let kill q =
   match q.core with
-  | Some k when k > 0 -> q.doomed <- true; poke ipi_dev k
+  | Some k when k > 0 -> q.doomed <- true; KMachine.poke KMachine.ipi_dev k
   | _ -> exit_proc q (-1)
 let sys_kill p =
   match List.filter (fun q -> q.pid = reg p 1) !procs with
@@ -505,7 +510,7 @@ let sys_kill p =
  * another one traces *)
 let sys_trace p =
   let make q tracer =
-    let t =
+    let t : KFiles.trace =
       { tpid = q.pid; tracer = tracer; stops = []; said = []; watchers = 0;
         calls = false; call = None; ret = None; step = false; over = None;
         follow = false } in
@@ -538,7 +543,7 @@ let sys_trace p =
          * registers *)
         match q.core with
         | Some k when k > 0 ->
-          poke ipi_dev k;
+          KMachine.poke KMachine.ipi_dev k;
           block p (fun () ->
             match q.core with
             | Some k when k > 0 -> false
@@ -555,8 +560,8 @@ let sys_seek p =
         match o.node with
         | Rom (_, n) -> n
         | Data d -> d.dsize
-        | Disk (fs, r, i) -> let _, n, _ = fs_kind fs r i in n
-        | n -> String.length (contents n) in
+        | Disk (fs, r, i) -> let _, n, _ = KFS.fs_kind fs r i in n
+        | n -> String.length (KFiles.contents n) in
       let off =
         reg p 2
         + (match reg p 3 with
@@ -574,18 +579,19 @@ let sys_seek p =
  * program read the whole directory for one name: ls -l of /bin, three
  * times a name, 1.7 billion instructions) *)
 let sys_stat p =
-  let ns = names p.cwd (ustr p (reg p 1)) in
-  match walk !top ns with
+  let ns = KFiles.names p.cwd (ustr p (reg p 1)) in
+  match KFiles.walk !KFiles.top ns with
   | Some node ->
-      let e = entry (match List.rev ns with n :: _ -> n | [] -> "/") node in
+      let name = match List.rev ns with n :: _ -> n | [] -> "/" in
+      let e = KFiles.entry name node in
       user_write p (reg p 2) e;
       result p 0
   | None -> raise Bad
 
 let sys_chdir p =
-  let ns = names p.cwd (ustr p (reg p 1)) in
-  match walk !top ns with
-  | Some n when is_dir n -> p.cwd <- ns; result p 0
+  let ns = KFiles.names p.cwd (ustr p (reg p 1)) in
+  match KFiles.walk !KFiles.top ns with
+  | Some n when KFiles.is_dir n -> p.cwd <- ns; result p 0
   | _ -> raise Bad
 
 (* ready(fds, n, until): the first of n descriptors (32 at most) that a
@@ -598,16 +604,17 @@ let sys_ready p =
   let rec list i =
     if i >= n then []
     else
-      (let k = peek (user p (reg p 1 + (4 * i)) 4) in k, fd p k)
+      (let k = KMachine.peek (user p (reg p 1 + (4 * i)) 4) in k, fd p k)
       :: list (i + 1) in
   let l = list 0 in
   block p (fun () ->
-    match List.filter (fun (_, f) -> readable f) l with
+    match List.filter (fun (_, f) -> KIO.readable f) l with
     | (k, _) :: _ -> result p k; true
     | [] ->
-        if until > 0 && !ticks >= until then (result p (-1); true)
+        if until > 0 && !KDevices.ticks >= until then (result p (-1); true)
         else
-          (if until > 0 && (!alarm = 0 || until < !alarm) then alarm := until;
+          (if until > 0 && (!KDevices.alarm = 0 || until < !KDevices.alarm)
+           then KDevices.alarm := until;
            false))
 
 (* by their numbers, the machine's sys n: exit, write and read first,
@@ -618,8 +625,8 @@ let syscall p n =
   (try
     match n with
     | 0 -> exit_proc p (reg p 1)
-    | 1 -> sys_rw p write false
-    | 2 -> sys_rw p read true
+    | 1 -> sys_rw p KIO.write false
+    | 2 -> sys_rw p KIO.read true
     | 3 -> sys_fork p
     | 4 -> sys_exec p
     | 5 -> sys_wait p
@@ -633,7 +640,7 @@ let syscall p n =
     | 13 -> sys_chdir p
     | 14 -> sys_kill p
     | 15 -> sys_ready p
-    | 16 -> result p !ticks
+    | 16 -> result p !KDevices.ticks
     | 17 -> sys_box p
     | 18 -> sys_dial p
     | 19 -> sys_listen p
@@ -642,15 +649,17 @@ let syscall p n =
     | 22 -> sys_rawcons p
     | 23 -> sys_trace p
     | 24 -> sys_seek p
-    | 25 -> result p (date ())
+    | 25 -> result p (KDevices.date ())
     | 26 -> sys_stat p
     (* the seed: the machine's, or the clock when it has none, so that a
      * game is another each time *)
-    | 27 -> result p (match peek seed_dev with 0 -> !ticks | s -> s)
+    | 27 ->
+        let seed = KMachine.peek KMachine.seed_dev in
+        result p (if seed = 0 then !KDevices.ticks else seed)
     | 28 -> sys_spawn p
     | _ -> result p (-1)
-  with Bad | No_room -> result p (-1) | Disk_full -> result p (-1));
-  if n <> 1 then fs_sync ()
+  with Bad | KMemory.No_room -> result p (-1) | KFS.Disk_full -> result p (-1));
+  if n <> 1 then KFS.fs_sync ()
 
 (* A traced process that stops at its calls (trace) stops before each,
  * its tracer told the call's number and its first three registers,
@@ -658,13 +667,13 @@ let syscall p n =
  * (runnable). An exit has no after (its end is said), and an exec's is
  * its stop at its new program's first instruction. *)
 let returned p n =
-  pause p ("ret " ^ string_of_int n ^ " " ^ string_of_int (reg p 1))
+  KIO.pause p ("ret " ^ string_of_int n ^ " " ^ string_of_int (reg p 1))
 let called p n =
   syscall p n;
   match p.traced, p.state with
   | _ when not (List.exists (fun q -> q.pid = p.pid) !procs) -> ()
   | Some t, Ready when t.calls -> returned p n
-  | Some t, Ready when t.step -> stop p "step"
+  | Some t, Ready when t.step -> KIO.stop p "step"
   | Some t, Waiting _ when t.calls -> t.ret <- Some n
   | _ -> ()
 let call p n =
@@ -672,7 +681,7 @@ let call p n =
   | Some t when t.call <> None -> t.call <- None; called p n
   | Some t when t.calls ->
       t.call <- Some n;
-      pause p ("call " ^ String.concat " " (List.map string_of_int
+      KIO.pause p ("call " ^ String.concat " " (List.map string_of_int
                                              [ n; reg p 1; reg p 2; reg p 3 ]))
   | _ -> syscall p n
 
@@ -681,5 +690,5 @@ let call p n =
 let waited p =
   match p.traced with
   | Some ({ ret = Some n; _ } as t) -> t.ret <- None; returned p n; true
-  | Some t when t.step -> stop p "step"; true
+  | Some t when t.step -> KIO.stop p "step"; true
   | _ -> false

@@ -6,7 +6,6 @@
  * a machine (tests/KGraphics_tests/Host.ml)
  *)
 
-open KRaw
 
 (* a bad message, or no memory: a program's mistake, said to it *)
 exception Graphics of string
@@ -66,7 +65,7 @@ let draw_mixed mix (dst : image) (r : rect) (src : image) (mask : image option)
   let n = r.x1 - r.x0 in
   let backwards = src.at = dst.at && (dy < 0 || (dy = 0 && dx < 0)) in
   let colour = src.repl && width src = 1 && height src = 1 in
-  let ink = if colour then peekb src.at else 0 in
+  let ink = if colour then KRaw.peekb src.at else 0 in
   if n > 0 && r.y1 > r.y0 then begin
     let d0 = pixel dst r.x0 r.y0 and dw = width dst in
     let s0 = if src.repl then 0 else pixel src (r.x0 + dx) (r.y0 + dy)
@@ -75,20 +74,22 @@ let draw_mixed mix (dst : image) (r : rect) (src : image) (mask : image option)
       let k = if backwards then r.y1 - r.y0 - 1 - k else k in
       let y = r.y0 + k and d = d0 + (k * dw) in
       match mask with
-      | None when colour -> row_fill d ink n
+      | None when colour -> KRaw.row_fill d ink n
       | None when not src.repl && not (backwards && dy = 0) ->
-          row_copy d (s0 + (k * sw)) n
+          KRaw.row_copy d (s0 + (k * sw)) n
       | Some m when colour && not m.repl && mix <> 0 ->
-          row_mix d mix (pixel m (r.x0 + dx) (y + dy)) n
+          KRaw.row_mix d mix (pixel m (r.x0 + dx) (y + dy)) n
       | Some m when colour && not m.repl ->
-          row_mask d ink (pixel m (r.x0 + dx) (y + dy)) n
+          KRaw.row_mask d ink (pixel m (r.x0 + dx) (y + dy)) n
       | _ ->
           for j = 0 to n - 1 do
             let x = if backwards then r.x1 - 1 - j else r.x0 + j in
             if (match mask with
-                | Some m -> peekb (pixel m (x + dx) (y + dy)) <> 0
+                | Some m -> KRaw.peekb (pixel m (x + dx) (y + dy)) <> 0
                 | None -> true)
-            then pokeb (d + x - r.x0) (peekb (pixel src (x + dx) (y + dy)))
+            then
+              KRaw.pokeb (d + x - r.x0)
+                (KRaw.peekb (pixel src (x + dx) (y + dy)))
           done
     done
   end
@@ -197,14 +198,14 @@ let mix ink =
     palette := alloc 768;
     for i = 0 to 255 do
       let r, g, b = rgb i in
-      pokeb (!palette + (3 * i)) r;
-      pokeb (!palette + (3 * i) + 1) g;
-      pokeb (!palette + (3 * i) + 2) b
+      KRaw.pokeb (!palette + (3 * i)) r;
+      KRaw.pokeb (!palette + (3 * i) + 1) g;
+      KRaw.pokeb (!palette + (3 * i) + 2) b
     done
   end;
   if mixes.(ink) = 0 then begin
     let at = alloc 1024 in
-    mix_table at ink !palette;
+    KRaw.mix_table at ink !palette;
     mixes.(ink) <- at
   end;
   mixes.(ink)
@@ -232,9 +233,10 @@ let mask bits depth w h at =
     for row = 0 to h - 1 do
       for col = 0 to w - 1 do
         let b = col * depth in
-        pokeb (at + (row * 128 * w) + (c * w) + col)
-          (255 / top * ((peekb (bits + (((c * h) + row) * bytes) + (b lsr 3))
-                         lsr (b land 7)) land top))
+        KRaw.pokeb (at + (row * 128 * w) + (c * w) + col)
+          (255 / top
+           * ((KRaw.peekb (bits + (((c * h) + row) * bytes) + (b lsr 3))
+               lsr (b land 7)) land top))
       done
     done
   done;
@@ -257,7 +259,7 @@ let font_mask bits size at =
  * text is drawn with (0: none, its mask set or not) *)
 let mixing (src : image) =
   if !depth = 2 && src.repl && width src = 1 && height src = 1
-  then mix (peekb src.at) else 0
+  then mix (KRaw.peekb src.at) else 0
 
 (* a text, its top left corner at (x, y): each character the ink src
  * through the font's mask (a byte beyond the font's 128 is a ?) *)
@@ -273,8 +275,9 @@ let text (dst : image) x y (src : image) (font : image) s =
      && x + (8 * n) <= dst.r.x1 && y + 16 <= dst.r.y1
      && (pixel dst x y) land 3 = 0 && (width dst) land 3 = 0
   then
-    if mix <> 0 then glyphs_mixed (pixel dst x y) (width dst) mix font.at s n
-    else glyphs (pixel dst x y) (width dst) (peekb src.at) font.at s n
+    if mix <> 0 then
+      KRaw.glyphs_mixed (pixel dst x y) (width dst) mix font.at s n
+    else KRaw.glyphs (pixel dst x y) (width dst) (KRaw.peekb src.at) font.at s n
   else
     for i = 0 to n - 1 do
       let c = Char.code s.[i] in
@@ -293,7 +296,8 @@ let pixels (dst : image) x y s off n =
      *   pokeb (row + k) (Char.code s.[off + k]) done:
      * two calls of C a pixel, 300 instructions; a picture's row of 320
      * was 12 ms of the machine's time *)
-    if last > first then row_bytes s (off + first) (row + first) (last - first)
+    if last > first then
+      KRaw.row_bytes s (off + first) (row + first) (last - first)
   end
 
 (*****************************************************************************)
@@ -318,18 +322,20 @@ let make (src : image) scale bold slant =
   let cw = (sw * scale) + slant and ch = height src * scale in
   let w = 128 * cw in
   let at = alloc (w * ch) in
-  row_fill at 0 (w * ch);
+  KRaw.row_fill at 0 (w * ch);
   for c = 0 to 127 do
     for row = 0 to ch - 1 do
       let shift = slant * (ch - 1 - row) / ch
       and line = src.at + (row / scale * width src) + (c * sw) in
-      let level col = if col >= 0 && col < sw then peekb (line + col) else 0 in
+      let level col =
+        if col >= 0 && col < sw then KRaw.peekb (line + col) else 0 in
       let set col = level col <> 0 in
       for col = 0 to (sw * scale) - 1 do
         let k = col / scale in
-        if set k then pokeb (at + (row * w) + (c * cw) + col + shift) (level k)
+        if set k then
+          KRaw.pokeb (at + (row * w) + (c * cw) + col + shift) (level k)
         else if bold && set (k - 1) && not (set (k + 1)) then
-          pokeb (at + (row * w) + (c * cw) + col + shift) (level (k - 1))
+          KRaw.pokeb (at + (row * w) + (c * cw) + col + shift) (level (k - 1))
       done
     done
   done;
@@ -365,7 +371,7 @@ let fat (dst : image) x y s =
     let x0 = max dst.r.x0 (x + (4 * !i)) and x1 = min dst.r.x1 (x + (4 * !j)) in
     if x1 > x0 then
       for row = max dst.r.y0 y to min dst.r.y1 (y + 4) - 1 do
-        row_fill (pixel dst x0 row) (Char.code s.[!i]) (x1 - x0)
+        KRaw.row_fill (pixel dst x0 row) (Char.code s.[!i]) (x1 - x0)
       done;
     i := !j
   done
@@ -441,7 +447,7 @@ let message (c : conn) s i arg =
         { r = rect (arg 1) (arg 2) (arg 3) (arg 4);
           at = alloc (w * h); repl = arg 5 <> 0 }
       in
-      row_fill made.at (arg 6 land 255) (w * h);
+      KRaw.row_fill made.at (arg 6 land 255) (w * h);
       c.images <- (arg 0, made) :: c.images
   | 'f' -> release c (arg 0)
   | 'c' -> !cursor_hook (arg 0)

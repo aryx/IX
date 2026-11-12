@@ -38,7 +38,7 @@ beside its parts.
   (`calc`, `temp`, `tetris`, `square`); `user/` has the one-line main of
   each ML program of tiny-kernel.
 - `runtime/` is what every compiled program is linked with, each
-  language's in its directory, as the image's `/lib/c` and `/lib/ml`:
+  language's in its directory, as the disk's `/lib/c` and `/lib/ml`:
   `c/`, C's start, its division, its library, the system's calls
   (`user.h`, `sys.s`), drawing and dialing (`draw.c`, `net.c`); `ml/`,
   ML's allocator and collector (`ml.c`), its glue to the system

@@ -82,7 +82,7 @@ check-mix:
 # js_of_ocaml and the kernels' images, put in the assets' repository,
 # which its own GitHub Pages serve (the playground's programs are there
 # too): the page loads js/ix/TinyMachineWeb.bc.js and fetches
-# ix/tiny-kernel/boot.img and disk.img, /src (and, as the other end of
+# ix/tiny-kernel/boot.img and disk.img, the system (and, as the other end of
 # the machine's wire, ix/tiny-kernel/www/'s documents), or ix/t6/'s
 # kernel.img and fs.img.
 # Then, by hand: the number after ?v= in docs/t-ix.html changed (a

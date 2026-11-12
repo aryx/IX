@@ -16,12 +16,13 @@
 # - in: httpd typed in tiny-kernel, tiny-machine -net-forward: this
 #   script asks http://127.0.0.1:port/ as a browser would: the page
 #   that lists the files, a file written by echo, a program's bytes
-#   (cat, 70 KB: many messages), a file that is not there;
+#   (ed of /boot, the image's, 245 KB: many messages), a file that is
+#   not there;
 # - the capture (-net-pcap), read back: its packets counted.
-# usage: linux.py tiny-machine boot.img www
+# usage: linux.py tiny-machine boot.img disk.img www
 import functools, http.server, os, pty, select, socket, struct, sys, tempfile, threading, time, urllib.error, urllib.request
 
-machine, image, www = sys.argv[1:4]
+machine, image, disk, www = sys.argv[1:5]
 failures = 0
 
 def check(what, ok, said=""):
@@ -42,7 +43,7 @@ capture = tempfile.mktemp(suffix=".pcap")
 
 pid, tty = pty.fork()
 if pid == 0:
-    os.execv(machine, [machine, "-net", www, "-net-out", "-net-forward", f"{forward}:80", "-net-pcap", capture, image])
+    os.execv(machine, [machine, "-net", www, "-net-out", "-net-forward", f"{forward}:80", "-net-pcap", capture, "-d", disk, image])
 seen = b""
 
 def wait(what, seconds=60):
@@ -82,7 +83,7 @@ try:
     check("out: a name nobody has: said", "nothing answers at no-such-name.invalid" in said, said)
     ok, said = typed("get hello.txt", "$ ")
     check("the wire's own end still answers", "from the other end of the wire." in said, said)
-    typed("echo hello from tiny-kernel > hi.txt", "$ ")
+    typed("echo hello from tiny-kernel > /hi.txt", "$ ")
     ok, said = typed("httpd", "listening on port 80")
     check("in: httpd listens in tiny-kernel", ok, said)
     status, kind, body = page("/")
@@ -91,7 +92,7 @@ try:
     check("in: /bin/ lists the programs", status == 200 and b'<a href="/bin/tetris">' in body, (status, kind, body[:200]))
     status, kind, body = page("/hi.txt")
     check("in: a file written by echo", status == 200 and kind == "text/plain" and body == b"hello from tiny-kernel\n", (status, kind, body))
-    status, kind, body = page("/bin/ping")
+    status, kind, body = page("/boot/bin/ed")
     check(f"in: a program's bytes, {len(body)} of them, the image's", status == 200 and len(body) > 60000 and body in open(image, "rb").read(), (status, kind, len(body)))
     status, kind, body = page("/nothing")
     check("in: a file that is not there: 404", status == 404, (status, body))

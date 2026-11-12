@@ -133,15 +133,15 @@ dirs(void)
 		{ fail(".."); return; }
 	write(fd, "x", 1);
 	close(fd);
-	chdir("/");
-	if((fd = open("/d/g", O_RDONLY)) < 0 || read(fd, buf, 10) != 1)
+	chdir("../..");
+	if((fd = open("d/g", O_RDONLY)) < 0 || read(fd, buf, 10) != 1)
 		{ fail("a file by .."); return; }
 	close(fd);
-	if(unlink("/d") == 0)
+	if(unlink("d") == 0)
 		{ fail("unlink of a directory not empty"); return; }
-	unlink("/d/g");
-	unlink("/d/e");
-	if(unlink("/d") != 0)
+	unlink("d/g");
+	unlink("d/e");
+	if(unlink("d") != 0)
 		{ fail("unlink of an empty directory"); return; }
 	print("dirs ok\n");
 }

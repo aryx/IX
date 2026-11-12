@@ -92,7 +92,7 @@ tiny-kernel).
    is left is the kit to look at a disk and mend it: `sh`, the first
    process when there is no disk; `rc`; `utils`, under its names (`ls`,
    `cat`, `cp`, `mv`, `rm`, `mkdir`...); `ed`. The first process is
-   `/bin/sh` on the disk, `/boot/sh` when there is none.
+   `/bin/sh` on the disk, the image's when there is none.
 
 The tests do not weigh on what the image keeps (the author: "what we
 need for testing is another thing, and should not influence too much
@@ -125,7 +125,7 @@ copy of the disk, as 20 and 28 do already (step 3).
 
 ## Status
 
-Decided: two disks (1), the repair kit (2).
+Decided: two disks (1), the repair kit (2). Done: steps 0 to 3.
 
 Step 0, done (2026-11-12): tiny-machine's second disk at -80(r0), by a
 second -d (e5d39f65); KFS's state an `fs`, given to its functions as
@@ -135,3 +135,43 @@ KFS test on two disks at once (in fd343ddf, another session's commit,
 whose message tells only its own change). Checked: make test, make -C
 tiny/TinyKernel check, self-quick; a boot on two disks, `/src`'s file
 read.
+
+Steps 1 to 3, done (2026-11-12):
+- the Buildfile: `boot.img` the kernel and `BOOT` (sh, rc, utils, ed),
+  under `bin/` (seen as `/boot/bin` with a disk, `/bin` without), the
+  utilities' links and `memory`, read by the kernel as `/boot/memory`;
+  `build install` puts the system in `BIN`, `LIB` and `EXAMPLES`
+  (`/bin`, `/lib`, `/examples`), the utilities' names by `ln`. The image
+  is 1.3 MB, from 9.15.
+- tiny-mkfs links the host's hard links (the same device and inode):
+  `/bin/cat` is `/bin/utils` on the disk too (the author chose it over
+  a link syntax and over copies, 8 MB of them).
+- TinyKernel/Makefile: `disk.img` the system's disk (12 MB), from
+  `_make/system`, what build install put there; `src.img` the sources'
+  (8 MB); both made at each make, kept when their bytes are the same
+  (a program of the disk changes, the image not).
+- The kernel, for the system on the disk: an exec reads the program
+  from the disk straight into the process's memory (`fs_read_at` a
+  piece at a time; old: the file read whole into a string first, 65
+  million instructions for an `ls`); the collection counts the free
+  blocks as it marks, one pass over the map (old: two), and the boot's
+  banner says no free blocks (old: a second collection, at each boot).
+  A boot on the system's disk, 18 million instructions (6 with no disk,
+  the image's files alone); ten `ls`, 50
+  million (24 with every program in the image).
+- The tests: each session on a copy of the system's disk (`$(D)`), the
+  toolchain's and self's with the sources' too; session 25 on a blank
+  disk, the repair kit alone (rc copied and run, ed written over);
+  session 28 builds `/examples` with `/lib` alone. Scripts that assumed
+  the first shell at `/` (mltests' `..`, vcs, session 5) go by `..`;
+  emacscolors' screen taken later (emacs, 420 KB, read from the disk).
+  Re-recorded: check.expected (the banner, the cwd, session 25), the
+  `ls` of windows and nested (the empty `/usr/glenda`), self-quick's
+  banner. self.keys builds `all boot.img` (calc is the disk's: a line
+  added to it remakes no image). lite.sh and the network test give the
+  disk; linux.py reads `/boot/bin/ed`, the image's.
+  Checked: make test, make -C tiny/TinyKernel check, self-quick,
+  MEMORY=segments booted.
+
+Next: step 4, the web page with `src.img` as its second disk (it boots
+on `disk.img`, now the system's, already); step 5, make self.

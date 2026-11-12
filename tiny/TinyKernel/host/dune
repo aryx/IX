@@ -16,4 +16,4 @@
  (public_name tiny-mkfs)
  (package ix)
  (modules TinyMkfs)
- (libraries ix_core fpath caps tiny_lib_system tiny_kernel_fs tiny_host_memory))
+ (libraries ix_core fpath caps unix tiny_lib_system tiny_kernel_fs tiny_host_memory))

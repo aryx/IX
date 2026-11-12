@@ -118,14 +118,18 @@ let fs_block fs ino i =
   let k, level, j = fs_slot i in
   fs_find fs (fs_get (ino + (4 * k))) level j
 
-(* Marking: the blocks a tree uses, from an inode at ino. A block already
+(* Marking: the blocks a tree uses, from an inode at ino, each one no
+ * longer free. A block already
  * marked is skipped with what is under it (the trees share most of
  * theirs). When [leaf], the inode's file is an inode file: its data
  * blocks hold inodes, whose trees are marked in turn. Each depth has its
  * own buffer, so a block is still there when the marking comes back. *)
 let rec fs_mark fs ptr level d leaf =
   if ptr > 0 && ptr < fs.blocks && KRaw.peekb (fs.map + ptr) <> 1 then begin
-    if KRaw.peekb (fs.map + ptr) = 0 then KRaw.pokeb (fs.map + ptr) 1;
+    if KRaw.peekb (fs.map + ptr) = 0 then begin
+      KRaw.pokeb (fs.map + ptr) 1;
+      fs.nfree <- fs.nfree - 1
+    end;
     if level > 0 || leaf then begin
       let a = fs_buf (8 + d) in
       fs_read fs ptr a;
@@ -148,16 +152,16 @@ and fs_mark_inode fs ino d leaf =
  * disk (a crash would come back to it). A fresh block stays used even
  * when no tree has it yet: a write may be halfway through linking it. *)
 let fs_gc fs =
+  fs.nfree <- 0;
   for b = 1 to fs.blocks - 1 do
-    if KRaw.peekb (fs.map + b) = 1 then KRaw.pokeb (fs.map + b) 0
+    if KRaw.peekb (fs.map + b) <> 2 then begin
+      KRaw.pokeb (fs.map + b) 0;
+      fs.nfree <- fs.nfree + 1
+    end
   done;
   fs_read fs 0 (fs_buf 7);
   fs_mark_inode fs (fs_buf 7 + 16) 0 true;
-  for r = 0 to fs_nsnaps fs do fs_mark_inode fs (fs_root fs r) 0 true done;
-  fs.nfree <- 0;
-  for b = 1 to fs.blocks - 1 do
-    if KRaw.peekb (fs.map + b) = 0 then fs.nfree <- fs.nfree + 1
-  done
+  for r = 0 to fs_nsnaps fs do fs_mark_inode fs (fs_root fs r) 0 true done
 
 (* a free block, now fresh; the collection runs when there is none left *)
 let rec fs_alloc fs again =
@@ -320,6 +324,9 @@ let fs_truncate fs n =
   fs_save fs n
 
 (* the whole of inode n of tree r, as a string *)
+let fs_read_string fs r n off len =
+  KRaw.row_string (fs_buf 6) (fs_read_at fs r n off (fs_buf 6) (min len fs_bsize))
+
 let fs_contents fs r n =
   let size = (fs_load fs r n; fs_word 1) in
   let rec go at acc =

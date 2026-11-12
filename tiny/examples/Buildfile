@@ -21,9 +21,9 @@
 # its build install. -s puts the labels after the image, the names debug
 # shows; -map writes them beside it too.
 #
-# On the host, the same, the tools tiny-cc..., /lib tiny/lib (made by
-# tiny-build TINY=tiny- LIB=lib install in tiny/):
-#     tiny-build TINY=tiny- LIB=../lib
+# On the host, the same, the tools tiny-cc..., /lib the disk's as
+# TinyKernel/Makefile installs it, in _make/system:
+#     tiny-build TINY=tiny- LIB=../TinyKernel/_make/system/lib
 
 TINY =
 CC = ${TINY}cc

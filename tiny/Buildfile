@@ -1,20 +1,21 @@
 # Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyBuildSystem.ml)
 #
 # t-IX built by tiny-build, under t-IX: this file is to be /src/Buildfile
-# on tiny-kernel's image, where /src is tiny/; for now it is tried on the
+# on tiny-kernel's disk, where /src is tiny/; for now it is tried on the
 # host (docs/plans/plan_tiny_buildfile.md, its steps).
 #
 #     cd /src
 #     build build          tiny-build itself, as /src/build, to run
 #     build rc             the shell; any program by its name in /bin
 #     build                every program, the kernel, the image
+#     build install        the programs in /bin, /lib, /examples
 #
 # It is also meant to be read: how t-IX's pieces fit together, from the
 # bottom up. A program stands on its own units, on the libraries
 # several programs share, on the standard library (TinyLibCore/), and
 # on the runtimes, what a program links besides its own code; the
 # kernel stands on the same library and runtime; the image is the
-# kernel and all the rest, as files.
+# kernel and the few programs that mend a disk, the disk all the rest.
 #
 # What a recipe makes is beside its source: TinyShell.o and its
 # interface TinyShell.tmi beside TinyShell.ml, TinyC/Parser.o in
@@ -39,10 +40,11 @@
 # dropped:
 # - no source is made: no lex, no yacc, every lexer and parser written
 #   by hand, so no rule here makes a .ml or a .c;
-# - no configure, no install prefix: build install copies into /lib;
+# - no configure, no install prefix: build install copies into /bin,
+#   /lib and /examples;
 # - no glob: tiny-build has none, nor mk's backquotes in a variable
-#   (its .mli), so CORE, the library's units, is said here (the image's
-#   /lib/ml) and in TinyLibCore/Buildfile, and the image's /examples is
+#   (its .mli), so CORE, the library's units, is said here (the disk's
+#   /lib/ml) and in TinyLibCore/Buildfile, and the disk's /examples is
 #   rc's glob in its recipe, not prerequisites.
 
 
@@ -70,7 +72,7 @@ BUILD = ${TINY}build
 # the standard library (below): stdlib.a, which every ML program links,
 # made with its units' interfaces, which every ML unit reads (-L
 # TinyLibCore); CORE, its units, for what makes it again and for the
-# image's /lib/ml
+# disk's /lib/ml
 CORE = Stdlib Char Seq List String Bytes Array Option Int32 Int64 \
     Filename Buffer Printf Marshal Hashtbl Common Sha1 Fpath Fpath_ Exit \
     In_channel Out_channel Chan Logs
@@ -123,7 +125,7 @@ TinyLibSystem/tinykernel/&.o: TinyLibSystem/tinykernel/&.ml $STDLIB
 #############################################################################
 
 # Each language's in its directory, runtime/c/ and runtime/ml/, as the
-# image's /lib/c and /lib/ml (the TinyLibXxx.ml are libraries a
+# disk's /lib/c and /lib/ml (the TinyLibXxx.ml are libraries a
 # program chooses; these, every program links).
 #
 # C's: _start, which calls main, then exits, linked first since the
@@ -150,7 +152,7 @@ runtime/ml/mlsys.o: runtime/ml/mlsys.c runtime/ml/ml.c runtime/c/user.h
 # they start in. stdlib is not a file, so it is never up to date: the
 # library's build runs each time, and it knows which units to make
 # again (by its digests, in TinyLibCore/.tiny-build); stdlib.a is made
-# with it, as a .tmi with its .o. On the image they are /lib/ml.
+# with it, as a .tmi with its .o. On the disk they are /lib/ml.
 stdlib:
 	cd TinyLibCore && $BUILD ML=^$ML AR=^$AR
 $STDLIB: stdlib
@@ -408,19 +410,16 @@ kernel: $STDLIB
 TinyKernel/kernel.img: kernel
 
 #############################################################################
-# The image
+# The system and the image
 #############################################################################
 
-# boot.img: the kernel, then each file it carries, its name, its size
-# and its bytes: the programs in /bin, the examples, the library in
-# /lib/ml and the runtimes in /lib/c and /lib/ml (the sources, /src,
-# are on the disk, TinyKernel/Makefile's disk.img, made on the host).
-# The same recipe on the host and on tiny-kernel, in a copy of tiny/
-# (TinyKernel/Makefile's _make/src, the disk's /src). One file is made
-# on the host alone, before: TinyKernel/kfont.s, the font's bytes.
-# MEMORY, from the environment (TinyKernel/Makefile's MEMORY=segments or
-# pages), the kernel's way of giving memory, in /lib/memory, with
-# MEMSIZE.
+# The system, by build install, in /bin, /lib and /examples: on
+# tiny-kernel the disk's (make self), on the host a directory, which
+# TinyKernel/Makefile makes a disk of, disk.img (by tiny-mkfs, on the
+# host; the sources, /src, are the second disk, src.img).
+#
+# /bin: the programs; utils under each of its names, a hard link (cat is
+# utils, ls, wc...), emacs as editor too, ed as sam
 UTILS = [ basename cat cmp cp date du echo grep kill ln ls mkdir mv ps pwd \
     rm seq sleep sort tail tee test touch walk wc xd
 
@@ -442,32 +441,46 @@ LIBML = runtime/ml/mlsys.o runtime/ml/end.o \
 # prerequisites: this file's %.tmi would make them again)
 LIBUNITS = ${CORE:%=TinyLibCore/%.tmi} $STDLIB
 
-# build install: /lib made again, the files above copied there, from
-# where they are built (Plan 9's mk install). On the host, into lib/
-# here, for a program built there as on tiny-kernel (examples/):
-#     tiny-build TINY=tiny- LIB=lib install
-# Not a file: it runs each time it is asked
-LIB = /lib
-install: $LIBC $LIBML $STDLIB
-	mkdir -p $LIB/c $LIB/ml
-	for(f in $LIBC) cp $f $LIB/c/^`{basename $f}
-	for(f in $LIBML $LIBUNITS) cp $f $LIB/ml/^`{basename $f}
-
-# (/lib in the image, its files the same lists')
 # /examples: examples/'s files, by their kinds, rc's globs (its sources,
 # not what a build of them there makes: the programs, *.o, *.tmi,
 # *.map); not prerequisites, so an example changed alone does not make
-# the image again
-boot.img: TinyKernel/kernel.img $PROGS $STDLIB $LIBC $LIBML
+# the disk again
+#
+# build install: the files above copied where they go, from where they
+# are built (Plan 9's mk install). On the host, into a directory, the
+# three by their names (TinyKernel/Makefile's _make/system):
+#     tiny-build TINY=tiny- BIN=d/bin LIB=d/lib EXAMPLES=d/examples install
+# Not a file: it runs each time it is asked
+BIN = /bin
+LIB = /lib
+EXAMPLES = /examples
+install: $PROGS $LIBC $LIBML $STDLIB
+	mkdir -p $BIN $LIB/c $LIB/ml $EXAMPLES
+	for(f in $PROGS) cp $f $BIN/$f
+	for(u in $UTILS) { rm -f $BIN/$u; ln $BIN/utils $BIN/$u }
+	rm -f $BIN/editor $BIN/sam; ln $BIN/emacs $BIN/editor; ln $BIN/ed $BIN/sam
+	for(f in $LIBC) cp $f $LIB/c/^`{basename $f}
+	for(f in $LIBML $LIBUNITS) cp $f $LIB/ml/^`{basename $f}
+	cp examples/Buildfile examples/*.c examples/*.ml examples/*.s examples/*.prof examples/*.ixd examples/*.wav $EXAMPLES
+
+# boot.img: the kernel, then /boot's files, each its name, its size and
+# its bytes (a hard link a name and a line "link utils"); an empty line
+# at the end. /boot is what a person needs when the disk does not come
+# up, the repair kit: sh, rc, the utilities, ed, in bin/ (the first
+# process is /bin/sh, the disk's, else the image's); and the boot's
+# configuration, memory: MEMORY, from the environment
+# (TinyKernel/Makefile's MEMORY=segments or pages), the kernel's way of
+# giving memory, with MEMSIZE. The same recipe on the host and on
+# tiny-kernel, in a copy of tiny/ (TinyKernel/Makefile's _make/src, the
+# second disk's /src). One file is made on the host alone, before:
+# TinyKernel/kfont.s, the font's bytes.
+BOOT = sh rc utils ed
+boot.img: TinyKernel/kernel.img $BOOT
 	cat TinyKernel/kernel.img > $target
-	for(f in $PROGS) { n=`{wc -c < $f}; echo bin/$f; echo $n; cat $f } >> $target
-	for(f in examples/Buildfile examples/*.c examples/*.ml examples/*.s examples/*.prof examples/*.ixd examples/*.wav) { n=`{wc -c < $f}; echo examples/^`{basename $f}; echo $n; cat $f } >> $target
-	for(f in $LIBUNITS) { n=`{wc -c < $f}; echo lib/ml/^`{basename $f}; echo $n; cat $f } >> $target
-	for(f in $LIBC) { n=`{wc -c < $f}; echo lib/c/^`{basename $f}; echo $n; cat $f } >> $target
-	for(f in $LIBML) { n=`{wc -c < $f}; echo lib/ml/^`{basename $f}; echo $n; cat $f } >> $target
+	for(f in $BOOT) { n=`{wc -c < $f}; echo bin/$f; echo $n; cat $f } >> $target
 	for(u in $UTILS) { echo bin/$u; echo link bin/utils } >> $target
-	{ echo bin/editor; echo link bin/emacs; echo bin/sam; echo link bin/ed } >> $target
-	if(~ $MEMORY segments pages) { echo lib/memory; echo $MEMSIZE; echo $MEMORY } >> $target
+	{ echo bin/sam; echo link bin/ed } >> $target
+	if(~ $MEMORY segments pages) { echo memory; echo $MEMSIZE; echo $MEMORY } >> $target
 	echo >> $target
 #`
 
@@ -508,7 +521,6 @@ depend:
 clean:
 	@{ cd TinyLibCore && $BUILD clean }
 	@{ cd TinyKernel && $BUILD clean }
-	rm -f lib/c/* lib/ml/*
 	rm -f *.o *.tmi TinyBrowser/*.o TinyBrowser/*.tmi TinyC/*.o TinyC/*.tmi \
 	    TinyLibSystem/tinykernel/*.o TinyLibSystem/tinykernel/*.tmi \
 	    TinyML/*.o TinyML/*.tmi TinyOffice/*.o TinyOffice/*.tmi \

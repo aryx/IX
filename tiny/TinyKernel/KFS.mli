@@ -186,6 +186,10 @@ val fs_entries : fs -> tree -> inode -> (string * inode) list
  * memory at a; how many there were *)
 val fs_read_at : fs -> tree -> inode -> int -> int -> int -> int
 
+(* [fs_read_string r n off len]: the same, a block at most, as a
+ * string *)
+val fs_read_string : fs -> tree -> inode -> int -> int -> string
+
 (* the whole file, as a string *)
 val fs_contents : fs -> tree -> inode -> string
 

@@ -210,7 +210,7 @@ local kernel_color = '#c03030';
         { at: 'comment:"one block of the machine"', weight: 2 },
         // claude: contradicts the Pages paragraph below (pages are stage 4, off by default)
         { at: 'comment:"which no kernel uses"', say: 'stale: pages are here, MEMORY=pages', weight: 1 },
-        { at: 'comment:"Pages (/lib/memory says pages; MEMORY=pages)"', weight: 2 },
+        { at: 'comment:"Pages (/boot/memory says pages; MEMORY=pages)"', weight: 2 },
         { at: 'type:space', say: "a process's memory, abstract", weight: 2 },
         { at: 'def:mem_load', weight: 2 },
         { at: 'def:mem_copy', weight: 1 },

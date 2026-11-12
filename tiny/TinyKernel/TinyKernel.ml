@@ -28,9 +28,10 @@ let () =
    | _ -> ());
   KMachine.k_zero KMachine.ring_at KDevices.ring;
   KMachine.poke KMachine.speaker_dev KMachine.ring_at;
-  (* how the processes get memory: /lib/memory, which the Makefile's
-   * MEMORY=segments puts in the image; partitions otherwise *)
-  (match KFiles.walk KFiles.root (KFiles.names [] "/lib/memory") with
+  (* how the processes get memory: the image's memory (/boot/memory
+   * with a disk), which the Makefile's MEMORY=segments puts there;
+   * partitions otherwise *)
+  (match KFiles.walk KFiles.root [ "memory" ] with
    | Some node ->
        let s = KFiles.contents node in
        let says w =
@@ -83,8 +84,7 @@ let () =
       Union [ Disk (fs, 0, 1); Dir (ref more); KFiles.root ] in
     KFiles.top := top;
     KMachine.puts ("tiny-kernel: / on a disk of " ^ string_of_int blocks
-          ^ " KB, " ^ string_of_int (KFS.fs_free fs) ^ " KB free; "
-          ^ string_of_int (List.length dumps) ^ " snapshots in /dump"
+          ^ " KB, " ^ string_of_int (List.length dumps) ^ " snapshots in /dump"
           ^ (if blocks2 = 0 then ""
              else "; /src on a disk of " ^ string_of_int blocks2 ^ " KB")
           ^ "\n")

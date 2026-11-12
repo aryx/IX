@@ -24,7 +24,7 @@
  * ([mem_release]), when it ends (its parent's wait reads only a record
  * of its status: KProcs.ended).
  *
- * Segments (the boot's choice: /lib/memory says segments; the
+ * Segments (the boot's choice: /boot/memory says segments; the
  * Makefile's MEMORY=segments) split a process in two, its text and
  * its data, at the address tiny-ld -n put the data at (a page past
  * the text). The machine's second window maps the text (tbase,
@@ -47,7 +47,7 @@
  * instructions (tiny-kernel's toolchain session; 7% when every process
  * paid it).
  *
- * Pages (/lib/memory says pages; MEMORY=pages) are plan_tiny_memory.md's
+ * Pages (/boot/memory says pages; MEMORY=pages) are plan_tiny_memory.md's
  * stage 4, off by default: a process's memory is pages of 4 KB, each
  * in any frame of the machine's memory, by its tables (Sv32: a root, a
  * table for each 4 MB, an entry for each page):

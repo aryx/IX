@@ -119,15 +119,16 @@ case $1 in
     exec $machine $rate -d $disk $image
     ;;
   tiny-kernel)
-    # the programs come in the image, after the kernel (/boot); the disk
-    # is the root: disk.img, /src, grown to 64 MB (run.img, made again
-    # when disk.img is; make clean removes it)
+    # the repair kit comes in the image, after the kernel (/boot); the
+    # disk is the root: disk.img, the system (/bin, /lib, /examples),
+    # grown to 64 MB (run.img, made again when disk.img is; make clean
+    # removes it)
     dir=$ROOT/tiny/TinyKernel
     if [ $build = 1 ]; then
       make -s -C $dir TML=$B/TinyML.exe TC=$B/TinyC.exe AS=$B/TinyAssembler.exe LD=$B/TinyLinker.exe CPU=$B/TinyCPU.exe MKFS=$B/TinyKernel/host/TinyMkfs.exe AR=$B/TinyArchiver.exe BUILD=$B/TinyBuildSystem.exe RC=$B/TinyShell.exe MACHINE=$machine _make/boot.img _make/disk.img _make/run.img >&2 || exit 1
     fi
     image=$dir/_make/boot.img
-    say "kernel:  $(short $dir/_make/kernel.img)($(size $dir/_make/kernel.img) bytes; built from $(short $dir)), its programs after it"
+    say "kernel:  $(short $dir/_make/kernel.img)($(size $dir/_make/kernel.img) bytes; built from $(short $dir)), the repair kit after it"
     [ -z "$web" ] || page "?image=boot.img&disk=disk.img" $image $dir/_make/disk.img
     disk=$dir/_make/run.img
     say "disk:    ${disk#$ROOT/}, the root, /src on it: what is written there is kept until /src changes ($(( $(size $disk) / 1024 )) KB; the boots before in /dump)"

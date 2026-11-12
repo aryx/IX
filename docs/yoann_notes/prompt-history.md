@@ -72637,3 +72637,34 @@ Claude asked whether to proceed with the empty commit.
 **Yoann:**
 
 > it is fine
+
+------------------------------------------------------------------------
+
+## 2026-11-12 20:00
+
+**Yoann:**
+
+> what is next
+
+**Claude (summary):**
+
+Claude laid out the next plan steps: steps 1 to 3 (Buildfile, Makefile, tests) together, then the web page and `make self`.
+Claude flagged that steps 1 and 2 edit `tiny/Buildfile` and `TinyKernel/Makefile`, which the other session had uncommitted changes in.
+Claude recommended waiting for that session to commit those files before starting, or for Yoann to confirm it was finished.
+Yoann confirmed the other session is done, so steps 1 to 3 can now go ahead.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 21:03
+
+**Yoann:**
+
+> the other session is done; let's do steps 1 to 3
+
+**Claude (summary):**
+
+Claude recommended host hard links for tiny-mkfs, and tidied `add` so directory and name are found once.
+Claude moved the system onto disk.img (12 MB) and src.img (8 MB), and shrank boot.img from 9.15 MB to 1.3 MB.
+Claude made the kernel read `memory` from the disk and cut exec-from-disk cost, with `ls` at 50M instead of 680M instructions.
+Claude re-recorded the expected screens, fixed scripts assuming the shell starts at /, and verified tests in the worktree.
+Claude did not commit, planning to copy the worktree's files into the shared tree and commit with explicit paths.

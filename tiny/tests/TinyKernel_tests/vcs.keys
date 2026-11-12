@@ -10,5 +10,5 @@ vcs switch master; echo three > b.txt; vcs commit -m third
 vcs merge feature; cat a.txt b.txt; vcs status
 vcs log
 vcs undo; cat a.txt b.txt
-cd /; vcs clone r c; cat c/a.txt; vcs
+cd ..; vcs clone r c; cat c/a.txt; vcs
 exit

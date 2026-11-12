@@ -135,7 +135,7 @@ from ix's `bin/`:
 |---|---|
 | `tiny/TinyKernel/steps/Makefile` | `libc.s` (from `tiny/runtime/`), `hello`, then each step |
 | `tiny/TinyKernel/steps/t6/` | `kernel.img`, the user programs, `fs.img` (tiny-mkfat) |
-| `tiny/TinyKernel/Makefile` | `kernel.img`, the user programs, `boot.img` |
+| `tiny/TinyKernel/Makefile` | `kernel.img`, the user programs, `boot.img`, the disks |
 
 Each writes what it builds in a `_make/` of its own directory, and
 nowhere else (as dune's `_build/` and mini-mk's `_mk/`): the
@@ -149,14 +149,20 @@ The steps are always the same two, the assembly written by hand
     tiny-ld -o kernel.img kentry.o ... x.o                  # a kernel: linked at 0
     tiny-ld -o prog start.o udivmod.o libc.o prog.o        # a program
 
-`boot.img` is `kernel.img` followed by its files (`/bin`, `/lib`,
-`/examples`), each a name, a size and its bytes, which the kernel reads
-at its start; the sources, `/src`, are on the disk, `disk.img` (by
-`tiny-mkfs`), as m-ix's machine has its `boot.img` and its `card.img`. A line `link utils` in place of the size makes a hard
-link instead, as the `link` call does: the name is given the same file
-as `utils`, with no bytes of its own. That is how one program, `utils`
+`boot.img` is `kernel.img` followed by its files, each a name, a size
+and its bytes, which the kernel reads at its start: the few programs
+that mend a disk (`sh`, `rc`, the utilities, `ed`), seen as `/boot`
+when there is a disk, and `memory`, the kernel's way of giving memory
+(`MEMORY=segments`). The system is on the first disk, `disk.img`
+(`/bin`, `/lib`, `/examples`, what `build install` put there), the
+sources on the second, `src.img` (`/src`), each made by `tiny-mkfs`, as
+m-ix's machine has its `boot.img` and its `card.img`. In the image, a
+line `link utils` in place of the size makes a hard link instead, as
+the `link` call does: the name is given the same file as `utils`, with
+no bytes of its own. That is how one program, `utils`
 (`tiny/TinyUtilities.ml`, by tiny-ml), is `cat`, `ls`, `wc` and the 24
-other utilities. At the prompt, `ln` makes one the same way.
+other utilities; on the disk, `ln` made them, and at the prompt `ln`
+makes one the same way.
 
 ### 2.5 What runs what
 
@@ -727,16 +733,25 @@ a box, a pipe that keeps only what was last written: `fds[0]` reads it
 (a read waits for a write since the last read), `fds[1]` writes it and
 never waits. A process has 32 descriptors.
 
-The files are a tree of ML values in the kernel's heap, made at the
-boot from what the image carries after the kernel:
+The files are the disks' (`tiny/TinyKernel/KFS.ml`) and a tree of ML
+values in the kernel's heap, made at the boot from what the image
+carries after the kernel. With a disk, `/` is the first disk's root,
+with `/boot`, `/dump` and the devices beside it (Plan 9's `bind -a`):
 
     /bin        the programs (sh, rc, the utilities by their names, emacs, office, play, prof, db, vcs, build, trace, debug...)
-    /dev        the devices: console, draw, mouse, audio (7.3)
+    /lib        what a program links: c/ and ml/, the runtimes, the library, their headers and interfaces
     /examples   tiny/examples/: programs to build, in C and ML (hello, shapes, fetch, procs; game, gui; spin and its profile), a page of the office's, a WAV
+    /usr/glenda where the first shell starts
+    /boot       the image's: bin/ (sh, rc, the utilities, ed), the repair kit, and memory
+    /dump       the snapshots, one for each boot before, read only
+    /src        the second disk: tiny/, the sources the system is built from
+    /dev        the devices: console, draw, mouse, audio (7.3)
 
 A command without a `/` is a program of `/bin`, for `sh` and for `rc`
-(its `PATH`); the shell starts at `/`, where what is made goes until a
-`cd`. Nothing is kept across a stop but what `put` sent away (5.5).
+(its `PATH`): the disk's, else the image's. What is written goes to the
+disk, and is kept. With no disk, the image's files are all there is,
+at `/`, where the shell starts, and nothing is kept across a stop but
+what `put` sent away (5.5).
 
 ### 7.3 TinyKernel.ml's screen, mouse and speaker
 

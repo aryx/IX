@@ -1,5 +1,5 @@
 tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
-tiny-kernel: / on a disk of 65536 KB, * KB free; 1 snapshots in /dump
+tiny-kernel: / on a disk of 65536 KB, 1 snapshots in /dump; /src on a disk of 65536 KB
 $ % % % ping: the host
 % stdlib.a: the host
 % Stdlib.tmi: the host

@@ -89,7 +89,7 @@ let release sp =
 (* Segments *)
 (*****************************************************************************)
 
-(* Chosen at the boot (TinyKernel.ml: /lib/memory says segments). Off,
+(* Chosen at the boot (TinyKernel.ml: /boot/memory says segments). Off,
  * no space has a text, and every function below is the partition's *)
 let segments = ref false
 
@@ -185,7 +185,7 @@ let seg_copy dst src =
 (* Pages *)
 (*****************************************************************************)
 
-(* Chosen at the boot (/lib/memory says pages). A process's memory is
+(* Chosen at the boot (/boot/memory says pages). A process's memory is
  * pages of 4 KB anywhere, by its tables (the machine's Sv32: a root of
  * 1024 entries, each a table of 1024, each a page), given when touched
  * (zeroed), shared by a fork until one side writes (copy-on-write).

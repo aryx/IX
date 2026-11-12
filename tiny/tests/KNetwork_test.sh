@@ -49,11 +49,14 @@ else echo "-- tcpdump: not here, not checked"; fi
 #    -net-out, and its httpd read through -net-forward; when
 #    tiny-kernel's image is built (make -C tiny/TinyKernel) and Python
 #    is there. No Internet, no root.
-# (IMAGE: another, as make test's own: the sessions rebuild this one)
+# (IMAGE and DISK: others, as make test's own: the sessions rebuild
+# these; the disk, the system's, used on a copy)
 IMAGE=${IMAGE:-$ROOT/tiny/TinyKernel/_make/boot.img}
+DISK=${DISK:-$ROOT/tiny/TinyKernel/_make/disk.img}
 MACHINE=${MACHINE:-$ROOT/_build/default/tiny/TinyMachine.exe}
-if [ -f $IMAGE ] && [ -x $MACHINE ] && command -v python3 > /dev/null; then
-  if timeout 200 python3 $ROOT/tiny/tests/KNetwork_tests/linux.py $MACHINE $IMAGE $ROOT/tiny/tests/www > $W/linux.out 2>&1; then
+if [ -f $IMAGE ] && [ -f $DISK ] && [ -x $MACHINE ] && command -v python3 > /dev/null; then
+  cp $DISK $W/disk.img; truncate -s 64M $W/disk.img
+  if timeout 200 python3 $ROOT/tiny/tests/KNetwork_tests/linux.py $MACHINE $IMAGE $W/disk.img $ROOT/tiny/tests/www > $W/linux.out 2>&1; then
     echo "ok linux: $(grep -c '^ok' $W/linux.out) checks (out, in, the capture)"
   else fail "linux"; grep -v '^ok' $W/linux.out | head -10; fi
 else echo "-- linux: no image of tiny-kernel's (make -C tiny/TinyKernel), or no python3: not run"; fi

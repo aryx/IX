@@ -177,20 +177,19 @@ let load_prog p (node : KFiles.node option) argv =
     | Some (Disk (fs, r, i)) ->
         disk_key fs r i, string_of_int (KFS.fs_date fs r i)
     | _ -> "", "" in
-  let node =
-    match node with
-    | Some (Disk (fs, r, i)) ->
-        Some (KFiles.Data (KFiles.data (KFS.fs_contents fs r i)))
-    | _ -> node in
   let n =
     match node with
     | Some (Data d) -> d.dsize
     | Some (Rom (_, n)) -> n
+    | Some (Disk (fs, r, i)) when not (KFS.fs_is_dir fs r i) ->
+        let _, size, _ = KFS.fs_kind fs r i in
+        size
     | _ -> raise Bad in
   let first =
     match node with
     | Some (Data d) -> Bytes.sub_string d.dbytes 0 (min n 16)
     | Some (Rom (at, _)) -> KMachine.k_string at (min n 16)
+    | Some (Disk (fs, r, i)) -> KFS.fs_read_string fs r i 0 (min n 16)
     | _ -> "" in
   let skip, size, memory, tsize = match header first with
     | Some (h, size, memory, tsize)
@@ -222,6 +221,17 @@ let load_prog p (node : KFiles.node option) argv =
          (Bytes.sub_string d.dbytes (skip + from) (size - from))
    | Some (Rom (at, _)) ->
        KMemory.mem_blit p.mem from (at + skip + from) (size - from)
+   (* a disk's file read where it goes, a piece of the process's memory
+    * at a time (old: read whole into a string first, 60 million
+    * instructions for utils, 300 KB, at each exec) *)
+   | Some (Disk (fs, r, i)) ->
+       let pieces =
+         match KMemory.mem_pieces p.mem from (size - from) with
+         | Some l -> l
+         | None -> [] in
+       ignore (List.fold_left (fun off (a, k) ->
+           ignore (KFS.fs_read_at fs r i (skip + from + off) a k);
+           off + k) 0 pieces)
    | _ -> ());
   let top = ref memory and ptrs = ref [] in
   List.iter (fun s ->

@@ -199,8 +199,8 @@ family "tiny-kernel on tiny-machine" system
 # under a run)
 tiny_network() {
   local o=$W/tiny-network
-  make -s -C tiny/TinyKernel O=$o $o/boot.img &&
-    IMAGE=$o/boot.img tiny/tests/KNetwork_test.sh
+  make -s -C tiny/TinyKernel O=$o $o/boot.img $o/disk.img &&
+    IMAGE=$o/boot.img DISK=$o/disk.img tiny/tests/KNetwork_test.sh
 }
 job "tiny-kernel: its network" tiny_network
 job "tiny-kernel: its sound" tiny/tests/KAudio_test.sh
@@ -210,12 +210,13 @@ job "tiny-kernel: its file system" tiny/tests/KFS_test.sh
 # check (81 s, 12 minutes of cores) is make test-long's
 tiny_kernel() {
   local o=$W/tiny-kernel m="tiny-machine -date 820540800 -seed 1"
-  make -s -C tiny/TinyKernel O=$o $o/boot.img || return 1
-  echo mltests | timeout 60 $m $o/boot.img > $o/mltests.out
+  make -s -C tiny/TinyKernel O=$o $o/boot.img $o/disk.img || return 1
+  cp $o/disk.img $o/run.img; truncate -s 64M $o/run.img
+  echo mltests | timeout 60 $m -d $o/run.img $o/boot.img > $o/mltests.out
   grep -q 'mltests: ALL OK' $o/mltests.out ||
     { tail -5 $o/mltests.out; return 1; }
   printf 'echo hi | cat > f; cat f; wc < f; rm f; cat f\n' |
-    timeout 60 $m $o/boot.img > $o/sh.out
+    timeout 60 $m -d $o/run.img $o/boot.img > $o/sh.out
   # (its lines, not its banner, which says the memory's size)
   local l
   for l in '$ hi' '      1       1       3' 'cat: f: cannot open'; do
@@ -234,9 +235,10 @@ family "t-ix builds part of itself" system
 tiny_self() {
   local o=$W/tiny-self m="tiny-machine -date 820540800 -seed 1"
   local cat=_build/default/tiny/tests/KFS_tests/Cat.exe
-  make -s -C tiny/TinyKernel O=$o $o/boot.img $o/disk.img || return 1
+  make -s -C tiny/TinyKernel O=$o $o/boot.img $o/disk.img $o/src.img || return 1
   cp $o/disk.img $o/self.img; truncate -s 64M $o/self.img
-  timeout 120 $m -d $o/self.img $o/boot.img > $o/self.out <<'END'
+  cp $o/src.img $o/selfsrc.img; truncate -s 64M $o/selfsrc.img
+  timeout 120 $m -d $o/self.img -d $o/selfsrc.img $o/boot.img > $o/self.out <<'END'
 rc
 mkdir q; cd q
 cc -I /src/runtime/c -o ping.o /src/user/ping.c

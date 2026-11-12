@@ -154,20 +154,19 @@ ocaml5=5.5.1
 t5="ix by OCaml $ocaml5, its types"
 has5() { command -v opam > /dev/null &&
   opam switch list -s 2> /dev/null | grep -qx $ocaml5; }
-# Then tiny-ml by each OCaml: TinyLibCore compiled by both, the same
-# bytes (t-ix in tiny-kernel compares its library with the host's, by
-# either: OCaml 5's Marshal once made another .tmi, found on GitHub
-# only, bugs/ix.md)
+# Only that it builds: the rest of make test runs on 4.14's build. The
+# tools built by OCaml 5 write other bytes: its Marshal sets the color
+# bits of a block's header when it writes the header whole (a tag of 16
+# or more, 8 fields or more), and tiny-as's objects have such blocks, so
+# tiny-kernel's objects are not the host's (old: TinyLibCore compiled by
+# both tiny-mls and compared, by a rule of tiny/TinyKernel/Makefile gone
+# with 12b1da04).
 by5() {
-  local w=$W/by5
-  opam exec --switch=$ocaml5 -- dune build @check ./tiny/TinyML.exe --build-dir _build5 &&
-    make -s -C tiny/TinyKernel O=$w/4 $w/4/lib/Stdlib.o &&
-    make -s -C tiny/TinyKernel O=$w/5 TML=$ROOT/_build5/default/tiny/TinyML.exe $w/5/lib/Stdlib.o &&
-    diff -r $w/4/lib $w/5/lib
+  opam exec --switch=$ocaml5 -- dune build @check ./tiny/TinyML.exe --build-dir _build5
 }
 case $(ocamlfind ocamlopt -version) in
   5.*) skip "$t5" "dune's build is OCaml 5's already";;
-  *) if has5; then job "$t5, tiny-ml's bytes" by5
+  *) if has5; then job "$t5" by5
      else skip "$t5" "no opam switch $ocaml5"; fi;;
 esac
 family "git can diff every source"

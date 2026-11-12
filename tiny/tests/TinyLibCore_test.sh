@@ -54,7 +54,7 @@ ml_lib $W/lib || { echo "FAIL the library: tiny-ml"; exit 1; }
 for p in std digests; do
   # (a unit and its main, the main first after the runtime's: jal reaches
   # 128 KB, and std is more; old: tiny-ml -o p.s p.ml, its ml_start at the end)
-  if $TML -L $W/lib -c -o $W/$p.o $T/$p.ml && $TML -L $W/lib -o $W/${p}_main.o $W/$p.tmi \
+  if $TML -L $W/lib -c -o $W/$p.o $T/$p.ml && $TML -o $W/${p}_main.o $LIB_O $W/$p.o \
      && link_tm $W/$p.img $L/start.s $L/udivmod.s $W/exit.s $W/main.o $W/${p}_main.o $W/$p.o $W/mem.s $LIB_O; then
     # (SLOW: more for tiny-cpu built by mini-ml, as TinyML_test.sh's)
     timeout ${SLOW:-60} $CPU $W/$p.img > $W/$p.out 2>&1

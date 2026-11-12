@@ -8,8 +8,8 @@
 # image out, the first at 0. TA and TL: the two programs (dune's by
 # default; mkfiles/check.sh gives ix's).
 # ml_lib dir: tiny-ml's standard library, TinyLibCore/'s modules in
-# their order, compiled by $TML into dir (each -nostdlib after the ones
-# before it: X.o, X.tmi), for tiny-ml -L dir; LIB_O its objects,
+# their order, compiled by $TML into dir (each -nostdlib -I dir, after
+# the ones it names: X.o, X.tmi), for tiny-ml -L dir; LIB_O its objects,
 # to link after a program's.
 TA=${TA:-$ROOT/_build/default/tiny/TinyAssembler.exe}
 TL=${TL:-$ROOT/_build/default/tiny/TinyLinker.exe}
@@ -26,11 +26,11 @@ link_tm() {
 }
 CORE="Stdlib Char Seq List String Bytes Array Option Int32 Int64 Filename Buffer Printf Marshal Hashtbl Common Sha1 Fpath Fpath_ Exit In_channel Out_channel Chan Logs"
 ml_lib() {
-  local dir=$1 m before=
+  local dir=$1 m
   mkdir -p $dir
   LIB_O=
   for m in $CORE; do
-    $TML -c -nostdlib -o $dir/$m.o $before $ROOT/tiny/TinyLibCore/$m.ml || return 1
-    before="$before $dir/$m.tmi"; LIB_O="$LIB_O $dir/$m.o"
+    $TML -c -nostdlib -I $dir -o $dir/$m.o $ROOT/tiny/TinyLibCore/$m.ml || return 1
+    LIB_O="$LIB_O $dir/$m.o"
   done
 }

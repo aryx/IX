@@ -71966,3 +71966,126 @@ Claude left the work uncommitted, waiting for Yoann's go-ahead before making any
 Claude made emacscolors self-contained, writing its own small C sample with rc's `echo` so it no longer depends on tiny sources.
 Claude added `procs.c` and `procsml.ml`, pipe-and-fork demos that print the child's pid and a message on tiny-kernel.
 Claude shortened the tiny Buildfile from 510 to 485 lines by stating the ML program shape once.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 15:43
+
+**Yoann:**
+
+> ok let's commit
+
+**Claude (summary):**
+
+Claude committed `aaf6fc79` with the `procs.c` and `procsml.ml` examples, emacscolors as its own C file, and `tiny/Buildfile` (485 lines).
+Claude said the tree was clean except for its build directory, `tiny/TinyKernel/_make-claude/`.
+Claude offered to delete that build directory now or keep it to speed up the next builds.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 15:44
+
+**Yoann:**
+
+> I can see some .o and .tmi/ under tiny/ (and TinyKernel/ too)
+
+**Claude (summary):**
+
+Claude explained that the stray `.o` and `.tmi/` files under `tiny/` came from its own `tiny-build TINY=tiny- LIB=lib install` run in the source tree.
+Claude removed the 68 build outputs it had left in `tiny/`, after listing them first, since `.gitignore` had hidden them.
+Claude confirmed `git status --ignored` shows nothing left under `tiny/` except its own `_make-claude/` build directory, which it kept.
+Claude committed to running host tests in a scratch copy of `tiny/` from now on, as it had done earlier.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 15:45
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended bundling the four /lib/ml TinyLib objects into one tinylib.a archive, built with ar.
+Claude noted that every program's X_UNITS lists those objects today, and the examples' Buildfile repeats them.
+Claude said tiny-ml already handles archives, libraries first, so the archive needs no tool change.
+Claude expected this to be the biggest remaining simplification of tiny/Buildfile.
+Claude also listed the kernel self-rebuild check, image size, and bookkeeping as smaller items for later.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 15:51
+
+**Yoann:**
+
+> no, we can do that later. let's do 2, if it helps simplify some Buildfile
+
+------------------------------------------------------------------------
+
+## 2026-11-12 15:51
+
+**Yoann:**
+
+> it's also nice to see which programs do not need certain TinyLibXxx.o
+
+------------------------------------------------------------------------
+
+## 2026-11-12 15:52
+
+**Yoann:**
+
+> and those TinyLibXxx.ml plays a role similar to a whole library under m-ix, in a single file, so some of those .o are really some .a in spirit
+
+------------------------------------------------------------------------
+
+## 2026-11-12 15:56
+
+**Yoann:**
+
+> regarding TinyLibCore/Buildfile; the -nostdlib is actually required only for Stdlib.ml itself no? the rest can be compiled without this flag no?
+
+**Claude (summary):**
+
+Claude explained that `-nostdlib` is needed for every TinyLibCore unit, not just `Stdlib.ml`, because tiny-ml reads all 24 library interfaces from `-L` before compiling.
+Claude noted that during the build the `.tmi` files don't all exist yet, so `-L .` would fail or silently read stale interfaces.
+Claude said `-nostdlib -I .` reads only the units named, so making `-L` read only named units would let the library drop the flag.
+Claude also reported the earlier rename in `tiny/Buildfile`, from 485 to 475 lines, with checks passing and nothing committed.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 15:57
+
+**Yoann:**
+
+> also the usage of TinyML.ml do not need to list the file.tmi... before file.ml no?
+
+**Claude (summary):**
+
+Claude found that `.tmi` files were still accepted by tiny-ml in two forms: `-c file.tmi... file.ml` and `-o main.o [stdlib.a] file.tmi...`.
+Claude noted that the tests (`TinyML_test.sh`, `TinyLibCore_test.sh`) and the `-h` tutorial still use these forms, though the Buildfiles do not.
+Claude proposed dropping the `.tmi` forms entirely, which means changes to `TinyML.ml`, the tests, and the help text, not just the usage line.
+Claude asked whether to remove them or only reorder the usage, and flagged the pending library-rename commit separately.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 16:00
+
+**Yoann:**
+
+> let'x remove the .tmi form; we should not pass .tmi to tiny-ml;
+
+------------------------------------------------------------------------
+
+## 2026-11-12 16:00
+
+**Yoann:**
+
+> also I don't understand your Char example and Seq.tmi issue; we have a .depend in TinyLibCore/ so we would find the needed .tmi before it's needed
+
+**Claude (summary):**
+
+Claude removed the `.tmi` arguments from TinyML.ml, so `-c` now finds interfaces only through `-I`.
+Claude made starts come only from `.o` files and archives, cutting the usage text to four lines and rejecting `.tmi` arguments.
+Claude moved TinyML_test.sh and link.sh to `-I` and object-based starts, merging the two start cases and adding a usage check.
+Claude reordered the constructors case so `A` is named before `Isa`, and named Shapes in the scopes case so `area` stays unbound.
+Claude reported the tiny-ml and library tests passing, with `make test`, the analyzer, and check still running before the commit.

@@ -86,40 +86,33 @@ mkdir -p $W/f $W/p; cp $F/forgotten.ml $W/f/x.ml; cp $F/plain.ml $W/p/x.ml
 if $TML -L $W/lib -o $W/forgotten.out $W/f/x.ml && $TML -L $W/lib -o $W/plain.out $W/p/x.ml && cmp -s $W/forgotten.out $W/plain.out
 then echo "ok forgotten: the code of plain.ml"; else echo "FAIL forgotten"; failures=$((failures + 1)); fi
 # a program of units compiled apart (TinyML_tests/units/: Shapes, with
-# its .mli, then Main), each by tiny-ml -c, its main by tiny-ml of the
-# interfaces, linked: Main.out's output, as when compiled whole; and
-# Shapes's unused function left out by tiny-ld (the main prog_main.o,
+# its .mli, then Main, which finds Shapes.tmi by -I), each by tiny-ml
+# -c; its start made of the files it links (TinyML/TinyMLLink.mli: each
+# unit's interface beside its object), the library's first (OCaml's
+# rule); linked: Main.out's output, as when compiled whole; and
+# Shapes's unused function left out by tiny-ld (the start prog_main.o,
 # not main.o, which is Main.o on macOS's file system, blind to case)
 UT=$F/units; mkdir -p $W/units
-if $TML -L $W/lib -c -o $W/units/Shapes.o $UT/Shapes.ml && $TML -L $W/lib -c -o $W/units/Main.o $W/units/Shapes.tmi $UT/Main.ml \
-   && $TML -L $W/lib -o $W/units/prog_main.o $W/units/Shapes.tmi $W/units/Main.tmi \
+if $TML -L $W/lib -c -o $W/units/Shapes.o $UT/Shapes.ml && $TML -L $W/lib -c -I $W/units -o $W/units/Main.o $UT/Main.ml \
+   && $TML -o $W/units/prog_main.o $LIB_O $W/units/Shapes.o $W/units/Main.o \
    && link_tm $W/units/prog $L/start.s $L/udivmod.s $W/exit.s $W/units/prog_main.o $W/units/Shapes.o $W/units/Main.o $W/main4096.o $LIB_O \
    && [ "$(timeout 60 $CPU $W/units/prog 2>&1; echo "exit $?")" = "$(cat $UT/Main.out)" ] \
    && $TML -L $W/lib -o $W/units/whole.o $UT/Shapes.ml $UT/Main.ml && link_tm $W/units/whole $L/start.s $L/udivmod.s $W/exit.s $W/units/whole.o $W/main4096.o $LIB_O \
    && [ "$(timeout 60 $CPU $W/units/whole 2>&1; echo "exit $?")" = "$(cat $UT/Main.out)" ]
 then echo "ok units: Shapes and Main compiled apart, and whole, Main.out's output"; else echo "FAIL units"; failures=$((failures + 1)); fi
-# the start made of the files the program links (TinyML/TinyMLLink.mli:
-# each unit's interface beside its object), the library's first, as
-# linked (OCaml's rule), then the program linked by tiny-ld:
-# Main.out's output, as with the start made of the interfaces
-if $TML -o $W/units/prog.start.o $LIB_O $W/units/Shapes.o $W/units/Main.o \
-   && link_tm $W/units/progs $L/start.s $L/udivmod.s $W/exit.s $W/units/prog.start.o $LIB_O \
-        $W/units/Shapes.o $W/units/Main.o $W/main4096.o \
-   && [ "$(timeout 60 $CPU $W/units/progs 2>&1; echo "exit $?")" = "$(cat $UT/Main.out)" ]
-then echo "ok units: the start made of the objects linked, Main.out's output"; else echo "FAIL units: the start of the objects"; failures=$((failures + 1)); fi
+# a .tmi given is not taken: interfaces are -I's
+if [ "$($TML -L $W/lib -c -o $W/units/X.o $W/units/Shapes.tmi $UT/Main.ml 2>&1 | head -1)" = "usage: tiny-ml [-L dir | -nostdlib] [-S] [-o out.o] file.ml..." ]
+then echo "ok units: a .tmi given, the usage"; else echo "FAIL units: a .tmi given"; failures=$((failures + 1)); fi
 # a unit's names are M.x in the units after it, x after open M only
-printf 'let () = print_int (Shapes.area Dot)\n' > $W/units/Q.ml; printf 'let () = print_int (area Dot)\n' > $W/units/U.ml
-if $TML -L $W/lib -c -o $W/units/Q.o $W/units/Shapes.tmi $W/units/Q.ml && [ "$($TML -L $W/lib -c -o $W/units/U.o $W/units/Shapes.tmi $W/units/U.ml 2>&1)" = "$W/units/U.ml: line 1: unbound area" ]
+printf 'let () = print_int (Shapes.area Dot)\n' > $W/units/Q.ml; printf 'let d = Shapes.Dot\nlet () = print_int (area d)\n' > $W/units/U.ml
+if $TML -L $W/lib -c -I $W/units -o $W/units/Q.o $W/units/Q.ml && [ "$($TML -L $W/lib -c -I $W/units -o $W/units/U.o $W/units/U.ml 2>&1)" = "$W/units/U.ml: line 2: unbound area" ]
 then echo "ok units: Shapes.area, and area unbound without open Shapes"; else echo "FAIL units: the scopes"; failures=$((failures + 1)); fi
-# -I: the interfaces found by the modules a unit names (Shapes.x, module
-# S = Shapes, open Shapes), the same object as with them given
+# -I: the interfaces found by the modules a unit names, through an
+# alias (module S = Shapes) and an open (open Shapes) too: both
+# compiled, Shapes's area bound in each
 printf 'module S = Shapes\nlet () = print_int (S.area Dot)\n' > $W/units/A.ml; printf 'open Shapes\nlet () = print_int (area Dot)\n' > $W/units/O.ml
-if $TML -L $W/lib -c -I $W/units -o $W/units/MainI.o $UT/Main.ml && cmp -s $W/units/MainI.o $W/units/Main.o \
-   && $TML -L $W/lib -c -o $W/units/A1.o $W/units/Shapes.tmi $W/units/A.ml && $TML -L $W/lib -c -I $W/units -o $W/units/A2.o $W/units/A.ml \
-   && cmp -s $W/units/A1.o $W/units/A2.o \
-   && $TML -L $W/lib -c -o $W/units/O1.o $W/units/Shapes.tmi $W/units/O.ml && $TML -L $W/lib -c -I $W/units -o $W/units/O2.o $W/units/O.ml \
-   && cmp -s $W/units/O1.o $W/units/O2.o
-then echo "ok units: -I, Main, an alias's and an open's the objects of their interfaces given"; else echo "FAIL units: -I"; failures=$((failures + 1)); fi
+if $TML -L $W/lib -c -I $W/units -o $W/units/A2.o $W/units/A.ml && $TML -L $W/lib -c -I $W/units -o $W/units/O2.o $W/units/O.ml
+then echo "ok units: -I, an alias's and an open's interfaces found"; else echo "FAIL units: -I"; failures=$((failures + 1)); fi
 # -depend: a unit's line, the interfaces of the units it names (their
 # sources in -I's directories) and its .mli; a file's own alias not a
 # unit (module Shapes2 = Shapes names Shapes alone); a file tiny-ml
@@ -166,21 +159,22 @@ exit 1" ]
 then echo "ok lexer: a number and escapes too big"; else echo "FAIL lexer: a number and escapes too big"; failures=$((failures + 1)); fi
 # a name defined twice, the later is the one the units after see
 printf 'let f x = x + 1\nlet f x = x * 10\n' > $W/units/Twice.ml; printf 'let () = print_int (Twice.f 3)\n' > $W/units/R.ml
-if $TML -L $W/lib -c -o $W/units/Twice.o $W/units/Twice.ml && $TML -L $W/lib -c -o $W/units/R.o $W/units/Twice.tmi $W/units/R.ml \
-   && $TML -L $W/lib -o $W/units/rmain.o $W/units/Twice.tmi $W/units/R.tmi \
+if $TML -L $W/lib -c -o $W/units/Twice.o $W/units/Twice.ml && $TML -L $W/lib -c -I $W/units -o $W/units/R.o $W/units/R.ml \
+   && $TML -o $W/units/rmain.o $LIB_O $W/units/Twice.o $W/units/R.o \
    && link_tm $W/units/twice $L/start.s $L/udivmod.s $W/exit.s $W/units/rmain.o $W/units/Twice.o $W/units/R.o $W/main4096.o $LIB_O \
    && [ "$(timeout 60 $CPU $W/units/twice 2>&1)" = 30 ]
 then echo "ok units: a name defined twice, the later"; else echo "FAIL units: a name defined twice"; failures=$((failures + 1)); fi
 # two units' constructors of one name, told apart where qualified, an
-# alias's too (A.Add, I.Mul), an unqualified one the latest; and a
+# alias's too (A.Add, I.Mul), an unqualified one the latest read (-I
+# reads them in the order the unit names them: A, then Isa); and a
 # constructor's tag its own type's (old: the second unit's Add was both,
 # a type error, so tiny-cc could not use TinyMachineISA's types)
 printf 'type arith = Add | Sub\nlet show = function Add -> "add" | Sub -> "sub"\n' > $W/units/A.ml
 printf 'type alu = Sub | Add | Mul\nlet show = function Add -> "ADD" | Sub -> "SUB" | Mul -> "MUL"\n' > $W/units/Isa.ml
-printf 'module I = Isa\nlet () = print_string (A.show A.Add ^ " " ^ I.show I.Mul ^ " " ^ A.show A.Sub ^ " " ^ Isa.show Add)\n' > $W/units/C.ml
-if $TML -L $W/lib -c -o $W/units/A.o $W/units/A.ml && $TML -L $W/lib -c -o $W/units/Isa.o $W/units/A.tmi $W/units/Isa.ml \
-   && $TML -L $W/lib -c -o $W/units/C.o $W/units/A.tmi $W/units/Isa.tmi $W/units/C.ml \
-   && $TML -L $W/lib -o $W/units/cmain.o $W/units/A.tmi $W/units/Isa.tmi $W/units/C.tmi \
+printf 'let a = A.Add\nmodule I = Isa\nlet () = print_string (A.show a ^ " " ^ I.show I.Mul ^ " " ^ A.show A.Sub ^ " " ^ Isa.show Add)\n' > $W/units/C.ml
+if $TML -L $W/lib -c -o $W/units/A.o $W/units/A.ml && $TML -L $W/lib -c -o $W/units/Isa.o $W/units/Isa.ml \
+   && $TML -L $W/lib -c -I $W/units -o $W/units/C.o $W/units/C.ml \
+   && $TML -o $W/units/cmain.o $LIB_O $W/units/A.o $W/units/Isa.o $W/units/C.o \
    && link_tm $W/units/clash $L/start.s $L/udivmod.s $W/exit.s $W/units/cmain.o $W/units/A.o $W/units/Isa.o $W/units/C.o $W/main4096.o $LIB_O \
    && [ "$(timeout 60 $CPU $W/units/clash 2>&1)" = "add MUL sub ADD" ]
 then echo "ok units: two units' constructors of one name, qualified"; else echo "FAIL units: two units' constructors of one name"; failures=$((failures + 1)); fi
@@ -188,8 +182,8 @@ then echo "ok units: two units' constructors of one name, qualified"; else echo 
 # for a constructor)
 printf 'let ( +++ ) a b = (a * 10) + b\n' > $W/units/Ops.ml
 printf 'module O = Ops\nlet () = print_int (Ops.( +++ ) 1 2); print_int (O.( +++ ) 3 4)\n' > $W/units/D.ml
-if $TML -L $W/lib -c -o $W/units/Ops.o $W/units/Ops.ml && $TML -L $W/lib -c -o $W/units/D.o $W/units/Ops.tmi $W/units/D.ml \
-   && $TML -L $W/lib -o $W/units/dmain.o $W/units/Ops.tmi $W/units/D.tmi \
+if $TML -L $W/lib -c -o $W/units/Ops.o $W/units/Ops.ml && $TML -L $W/lib -c -I $W/units -o $W/units/D.o $W/units/D.ml \
+   && $TML -o $W/units/dmain.o $LIB_O $W/units/Ops.o $W/units/D.o \
    && link_tm $W/units/ops $L/start.s $L/udivmod.s $W/exit.s $W/units/dmain.o $W/units/Ops.o $W/units/D.o $W/main4096.o $LIB_O \
    && [ "$(timeout 60 $CPU $W/units/ops 2>&1)" = "1234" ]
 then echo "ok units: a unit's operator, M.( op )"; else echo "FAIL units: a unit's operator, M.( op )"; failures=$((failures + 1)); fi

@@ -18,8 +18,7 @@ module Compile = TinyMLCompile
 module Link = TinyMLLink
 
 let usage = {|usage: tiny-ml [-L dir | -nostdlib] [-S] [-o out.o] file.ml...
-       | tiny-ml -c [-S] [-I dir]... [-o out.o] file.tmi... file.ml
-       | tiny-ml [-S] -o main.o [dir/stdlib.a] file.tmi...
+       | tiny-ml -c [-S] [-I dir]... [-o out.o] file.ml
        | tiny-ml -o prog.start.o lib.a... file.o...
        | tiny-ml -depend [-I dir]... file.ml...|}
 
@@ -44,14 +43,12 @@ directory), its interfaces Stdlib.tmi ... Sha1.tmi, and linked from there
 (stdlib.a, its objects), each module compiled once by tiny-ml -c -nostdlib
 after the ones before it.
 Several files are a module each, one after the other, then their main: a's
-x is A.x in b, or x after open A. Machine.Or a module at a time, then the main:
+x is A.x in b, or x after open A. Or a module at a time, then the start:
   tiny-ml -c a.ml                          a.o, its code; a.tmi, its interface
-  tiny-ml -c a.tmi b.ml                    b.o and b.tmi, after a
-  tiny-ml -o main.o a.tmi b.tmi            the library's, a's and b's init,
-                                           ml_start
-  tiny-ml -o main.o L/stdlib.a a.tmi b.tmi  the same, the library L's (-L L):
-                                           a library is named as linked
-  (linked: ... main.o a.o b.o and the library's; what nothing uses left out by
+  tiny-ml -c -I . b.ml                     b.o and b.tmi, a.tmi found (-I)
+  tiny-ml -o start.o L/stdlib.a a.o b.o    the library's, a's and b's init,
+                                           ml_start (each .tmi beside its file)
+  (linked: ... start.o L/stdlib.a a.o b.o; what nothing uses left out by
   tiny-ld)
 An error names the file and the line: fact.ml: line 2: this has type int ...
 |}
@@ -414,9 +411,10 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
                              (Filename.remove_extension name ^ ".tmi"))))
         members
     else beside (Fpath.set_ext ".tmi" f) in
-  let tmis =
-    if of_link then List.concat_map units_of files
-    else List.filter (Fpath.has_ext ".tmi") files in
+  (* a start's interfaces, its files'; a unit's are -I's (old: also
+   * .tmi files given, in their order, before the .ml: two ways for one
+   * thing) *)
+  let tmis = if of_link then List.concat_map units_of files else [] in
   (* [in_dirs m ext]: the file of module m in the -I directories, its
    * name M.ext or m.ext (user/tetris.ml is Tetris), compared by the
    * directory's names, not by exists: a host's file system may take
@@ -480,8 +478,8 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
     with File_error m -> Exit.Err m
   end
   else if not of_link
-          && (List.length mls + List.length tmis + List.length archives
-              <> List.length files || files = []
+          && (List.length mls + List.length archives
+              <> List.length files || mls = []
               || (!separate && List.length mls <> 1)) then
     (TinyLibSystem.eprint caps (usage ^ "   (-h: how)\n"); Exit.Code 2)
   else

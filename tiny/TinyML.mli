@@ -19,7 +19,7 @@
  *
  * How a file is compiled:
  *
- *     file.ml ...         a unit each (and M.tmi, the units' before it)
+ *     file.ml ...         a unit each (with -c, the M.tmi it names, by -I)
  *        | lexer, parser     tokens to a tree, by recursive descent
  *        | type checker      checks types; records each label's index
  *        |                   and which comparisons are on integers

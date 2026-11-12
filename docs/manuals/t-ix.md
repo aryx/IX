@@ -545,15 +545,15 @@ module after the ones before it); tiny-ml reads its interfaces from
 objects, kept in one library, `stdlib.a` (tiny-ar).
 
     tiny-ml -c a.ml             # a.o, and a.tmi, its interface
-    tiny-ml -c a.tmi b.ml       # b.o and b.tmi, after a
-    tiny-ml -o main.o a.tmi b.tmi    # each unit's init, the library's first, ml_start
-    tiny-ml -o prog.o a.ml b.ml      # or all at once: the units and their main
+    tiny-ml -c -I . b.ml        # b.o and b.tmi, a.tmi found by -I
+    tiny-ml -o start.o /lib/ml/stdlib.a a.o b.o   # the start: each unit's init, the library's first
+    tiny-ml -o prog.o a.ml b.ml      # or all at once: the units and their start
     tiny-ml -S -c a.ml          # a.s: the assembly, to read
 
-tiny-kernel's programs are made the first way (`tiny/TinyKernel/Makefile`:
-the library in `_make/lib/`, each unit once in `_make/ml/`, the main of
-each program in `_make/main/`), and linked with what was not tiny-ml's;
-tiny-ld leaves out the functions nothing calls.
+tiny-kernel's programs are made the first way (`tiny/Buildfile`: each
+unit once, beside its source, the start of each program, `X.start.o`),
+and linked by tiny-ld with what was not tiny-ml's; tiny-ld leaves out
+the functions nothing calls.
 
 ### 6.4 A system call
 

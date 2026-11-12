@@ -108,8 +108,8 @@ let interrupts sources =
   end;
   (* the ticks since the last one counted, by the machine's time: the
    * timer's interrupt waits while the kernel works, and a long call
-   * is several ticks (old: one counted at each interrupt, the timer
-   * set a tick from then; a game's second was two under a window) *)
+   * is several ticks (a tick counted at each interrupt made a game's
+   * second two under a window) *)
   if sources land 1 <> 0 then begin
     count_ticks ();
     if !KDevices.ticks >= !net_open || not (net_behind ()) then
@@ -136,9 +136,7 @@ let interrupts sources =
  * waiting and its call now finished. A traced one whose call ended may
  * stop instead (waited), which its tracer reads: the processes looked at
  * again from the first, since the tracer may be before it, already
- * passed over (old: runnable rest, and the tracer waited for the next
- * key or alarm: trace of a process in the background stopped at a
- * wait's end) *)
+ * passed over *)
 let rec runnable ok l =
   match l with
   | [] -> None
@@ -198,9 +196,9 @@ let rec schedule () =
 (* Every process waits. What they wait for changes only by a key, the
  * mouse, or a time one of them asked for (the alarm, which the calls
  * still waiting set again when retried): the clock's other ticks are
- * counted and nothing is retried. (old: schedule () after each
- * interrupt, every closure at each tick: a quarter of the instructions
- * of a machine where nothing happened) *)
+ * counted and nothing is retried: retrying every closure at each tick
+ * took a quarter of the instructions of a machine where nothing
+ * happened. *)
 and idle () =
   ignore (KMachine.k_run 0);
   let sources = KMachine.k_tval () in

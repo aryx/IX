@@ -1,29 +1,34 @@
-(* tiny-ml's part of a link: a program's start, ml -o prog.start.o
- * lib.a... file.o..., which tiny-ld then links with the program's
- * files. Read Compile.mli first.
+(* tiny-ml's part of a link: it makes a program's start with ml -o
+ * prog.start.o lib.a... file.o..., and tiny-ld then links that start
+ * with the program's files. Read Compile.mli first.
  *
- * Why an ML program needs a start, and a C program does not: code that
- * only the whole program can make.
+ * An ML program needs a start and a C program does not, because some
+ * code can only be made once the whole program is known:
  *
- *     ml_init      each unit's initialization (its toplevel's lets are
- *                  code to run), called in the link's order, in a
- *                  handler that says an exception nothing caught
- *     ml_globals   every unit's globals in one table, the collector's
- *                  roots (runtime/ml/ml.c), and their count, ml_nglobals
+ *     ml_init      calls the initialization of each unit (a unit's
+ *                  toplevel lets are code to run), in link order,
+ *                  inside a handler that reports an uncaught exception
+ *     ml_globals   the globals of every unit in one table, which are
+ *                  the collector's roots (runtime/ml/ml.c), and their
+ *                  count, ml_nglobals
  *     curry        the functions that apply a closure to some of its
- *                  arguments, for the arities the units use, once
+ *                  arguments, once for each arity the units use
  *
- * TinyML.ml makes it from the units' interfaces, given the files the
- * program is linked from: an object with its interface beside it (M.tmi
- * beside M.o), and a library's members, each's interface beside the
- * library (List.tmi beside stdlib.a), in the library's order (tiny-ar's,
- * ar -t's), so that a library of several files, a graphics.a, is linked
- * as stdlib.a is, its list in itself; the other files (the runtimes',
- * C's) have no interface, and no part in it. The units' order is the
- * initializations', OCaml's rule: the libraries first, each after those
- * it uses, then the program's units. tiny-ld links the start with
- * the program's files, right after mlsys.o, which calls it. In the
- * Buildfile, each program is its rule and its start's, which names the
+ * TinyML.ml makes the start from the units' interfaces. It is given
+ * the files the program is linked from:
+ * - an object file, whose interface is next to it (M.tmi next to M.o);
+ * - a library, whose members' interfaces are next to the library
+ *   (List.tmi next to stdlib.a), taken in the library's order (the one
+ *   tiny-ar or ar -t lists). So a library of several files, such as
+ *   graphics.a, is linked just as stdlib.a is, its list being inside
+ *   it;
+ * - other files (the runtimes, C code), which have no interface and
+ *   play no part.
+ * The order of the units is the order of initialization, which is
+ * OCaml's rule: the libraries first, each after those it uses, then
+ * the program's units. tiny-ld links the start with the program's
+ * files, right after mlsys.o, which calls it. In the Buildfile each
+ * program has its own rule and one for its start, which names the
  * same files, and never an interface:
  *
  *     square.start.o: $STDLIB $SQUARE
@@ -33,19 +38,16 @@
  *         ml -o $target $prereq
  *
  * others:
- * OCaml makes the same start at the link, caml_program, caml_globals
- * and caml_curryN, by ocamlopt -o prog, which then calls the system's
- * linker itself; here the Buildfile runs the two, a tool for each step
- * (old, 2026-11-12, a day: ml ran tiny-ld, as ocamlopt). C++ took
- * another road for its static constructors: each object's in an
- * .init_array section, which the linker puts together and the runtime
- * walks before main, no start made; a tiny-ld that knew sections by
- * name would let tiny-ml do the same. (old: the start made from every
- * unit's .tmi, given in their order, a list for each program in the
- * Buildfile) *)
+ * OCaml makes the same start at link time (caml_program, caml_globals
+ * and caml_curryN): ocamlopt -o prog makes it, then calls the system's
+ * linker itself. Here the Buildfile runs the two, one tool per step.
+ * C++ took another road for its static constructors: each object file
+ * has an .init_array section, which the linker concatenates and the
+ * runtime walks before main, so no start is made. A tiny-ld that knew
+ * sections by name would let tiny-ml do the same. *)
 
-(* [compile_start units needed]: the program's start, in the assembly
- * being made (Machine's): the units, each its name and how many
- * globals, in their order; the arities of the curry functions they
- * need *)
+(* [compile_start units needed] adds the program's start to the
+ * assembly being made (Machine's). [units] gives each unit's name and
+ * number of globals, in order; [needed] gives the arities of the curry
+ * functions they need. *)
 val compile_start : (string * int) list -> int list -> unit

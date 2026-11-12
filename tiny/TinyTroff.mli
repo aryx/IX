@@ -1,87 +1,91 @@
-(* tiny-troff: a document of mini-troff's format (plan_typesetting.md),
- * a page of tiny-office's or a Markdown file, printed as text or as
- * HTML. The office edits a page as it is shown; emacs edits it as it
- * is written (Markdown's lines, \box[x y w h]{...} around each part);
- * tiny-troff publishes it (step 6 of plan_tiny_office.md).
+(* tiny-troff prints a document in mini-troff's format
+ * (plan_typesetting.md), either a tiny-office page or a Markdown file,
+ * as text, HTML or PDF. The office edits a page as it is shown; emacs
+ * edits it as it is written (Markdown lines, with \box[x y w h]{...}
+ * around each part); tiny-troff publishes it (step 6 of
+ * plan_tiny_office.md).
  *
  *     page.ixd ──▶ File.parse ──▶ the parts, in reading order
  *                                              (top, then left)
  *                                                  │
  *                              text ◀──────────────┴──────────────▶ HTML
  *
- * It reads a page with the office's own functions (TinyOffice/'s
- * parts: File, Text, Sheet...), so the
- * format is written down once. A part is printed as
- * its kind asks:
+ * It reads a page with the office's own functions (the parts in
+ * TinyOffice/: File, Text, Sheet...), so the format is defined in only
+ * one place. Each part is printed according to its kind:
  *
  *     part      as text                          as HTML
- *     text      each line filled to the width,   a line a <p>, a large
- *               a large line underlined by =     one an <h1>; <b> <i>
- *                                                <u>, large words big
- *     sheet     its values in columns, a number  a <table> of its
- *               at its column's right            values
- *     drawing   characters, one for 8 by 8       SVG: rectangles, lines
- *               pixels: + - | for a box, its     and their heads, texts
- *               label in it, > < v ^ an arrow's
+ *     text      each line filled to the width;   a <p> per line, an
+ *               a large line underlined by =     <h1> for a large one;
+ *                                                <b> <i> <u>, and big
+ *                                                for large words
+ *     sheet     its values in columns, numbers   a <table> of its
+ *               aligned right                    values
+ *     drawing   one character per 8x8 pixels:    SVG: rectangles, lines
+ *               + - | for a box with its label   with their heads, texts
+ *               inside, > < v ^ for an arrow's
  *               head
- *     paint     its rows, white a space          SVG: a rectangle a run
- *                                                of a colour, 4 by 4 a
- *                                                pixel
- *     chart     a line a bar: its label, #s for  SVG: the bars as the
- *               its share of the largest, its    office draws them
- *               value
+ *     paint     its rows, a space for white      SVG: one rectangle per
+ *                                                run of a colour, 4x4
+ *                                                per pixel
+ *     chart     one line per bar: its label, #s  SVG: the bars as the
+ *               scaled to the largest value,     office draws them
+ *               and its value
  *
- * As text, the parts come one after the other, an empty line between
- * two, a form feed between two pages (nroff's). As HTML, each is at
- * its place on its page (a box positioned in a block of the page's
- * parts' size), the pages one under the other, as the office shows
- * them. As PDF, a page each, all the size of the largest.
+ * As text, the parts come one after the other, separated by an empty
+ * line, with a form feed between two pages (as nroff does). As HTML,
+ * each part is at its place on its page (a positioned box inside a
+ * block as large as the page's parts), and the pages come one under
+ * the other, as the office shows them. As PDF, each page is a PDF
+ * page, all of them the size of the largest.
  *
  * twin:
- * mini-troff (typesetting/) reads what was written for troff (a manual
- * page's and a paper's macros, tbl, pic), LaTeX, and the same
- * Markdown's lines, into one document (Doc) laid out for a terminal or
- * a PDF in Times. Beside it, a part is kept at its place on its page,
- * where mini-troff fills a flow of paragraphs; HTML, which mini-troff
- * does not write; PDF in Courier, one width for every character, so no
- * font's metrics are needed. Plan 9's troff (principia's
- * typesetting/troff/) is the original of both; Plan 9 makes HTML with
- * other programs, troff2html from troff's output and htmlroff from -ms
- * input (principia's typesetting/).
+ * mini-troff (typesetting/) reads input written for troff (the macros
+ * of manual pages and papers, tbl, pic), LaTeX, and the same Markdown
+ * lines, into one document type (Doc), laid out for a terminal or as a
+ * PDF in Times. Compared with it, tiny-troff differs in three ways:
+ * - a part stays at its place on its page, where mini-troff fills a
+ *   flow of paragraphs;
+ * - it writes HTML, which mini-troff does not;
+ * - its PDF is in Courier, where every character has the same width,
+ *   so no font metrics are needed.
+ * Plan 9's troff (principia's typesetting/troff/) is the original of
+ * both. Plan 9 makes HTML with separate programs: troff2html from
+ * troff's output, and htmlroff from -ms input (principia's
+ * typesetting/).
  *
  * dropped:
- * A text that flows onto the next page, the paint as a picture (a BMP:
- * SVG's rectangles instead), and the office's own colours and fonts in
- * the HTML (the browser's monospace).
+ * A text that flows onto the next page, a paint as a real image (a BMP;
+ * we use SVG rectangles instead), and the office's colours and fonts in
+ * the HTML (it uses the browser's monospace font).
  *
  * twist:
- * One format only, the office's, read by the office's own functions,
- * where mini-troff reads troff's macros, LaTeX and Markdown into a
- * document type of its own: here there is none, no roff and no LaTeX,
- * and the format is written down once, for the office, emacs and troff.
+ * There is only one format, the office's, read by the office's own
+ * functions. mini-troff reads troff's macros, LaTeX and Markdown into a
+ * document type of its own; here there is no such type, no roff and no
+ * LaTeX, and the format is defined once, for the office, emacs and
+ * troff alike.
  *
  * cs-history:
- * troff (Joe Ossanna, 1973) made the documents of Unix from a text
- * with requests, for the screen (nroff) and for the phototypesetter;
- * its preprocessors (tbl, eqn, pic) turned tables, equations and
- * drawings into more requests. Here the parts are the tables and the
- * drawings, and the page they are on is both what the office shows and
- * the text troff reads: Bravo's and troff's ways to one document. *)
+ * troff (Joe Ossanna, 1973) produced the documents of Unix from text
+ * with requests in it, for the terminal (nroff) and for the
+ * phototypesetter. Its preprocessors (tbl, eqn, pic) turned tables,
+ * equations and drawings into more requests. Here the parts play the
+ * role of the tables and drawings, and the page they are on is both
+ * what the office shows and the text that troff reads: Bravo's way and
+ * troff's way lead to the same document. *)
 
-(* [to_text width doc]: the document as text, its lines filled to width *)
+(* [to_text width doc] fills the lines to width. *)
 val to_text : int -> string -> string
 
-(* [to_html title doc]: the document as a web page *)
 val to_html : string -> string -> string
 
-(* [to_pdf doc]: the document as a page of PDF, the size of its parts,
- * a pixel a point: text in Courier (13.33 points, 8 a character, as the
- * office's 8 by 16; bold, oblique, twice the size for large), laid out
- * as the office lays it out; a sheet's values in a grid, a drawing's
- * lines, a paint's and a chart's rectangles. The standard fonts, no
- * compression: about 120 lines. *)
+(* One PDF page per page, all the size of the largest, one point per
+ * pixel. Text is in Courier at 13.33 points, so that a character is 8
+ * points wide as in the office's 8x16 font, and is laid out as the
+ * office does. Sheets are grids, drawings lines, paints and charts
+ * rectangles. With standard fonts and no compression: about 120 lines. *)
 val to_pdf : string -> string
 
-(* [main caps argv]: the program, troff [-h | -p] file: the page on the
- * standard output, as text (72 columns), HTML or PDF *)
+(* troff [-h | -p] file prints text (72 columns), HTML or PDF. *)
 val main : < Cap.open_in; Cap.stdout; Cap.stderr; .. > -> string array -> Exit.t

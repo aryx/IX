@@ -30,14 +30,10 @@ An error names the file and the line: hello.s:3: not a register: r16
 (*****************************************************************************)
 (* Parsing *)
 (*****************************************************************************)
-(* (old: TinyMachineAsm.parse, in TinyMachine/: tiny-as is the
- * only program that reads assembly; the compilers make lines) *)
-
 (* A number is a 32-bit word, kept as its two halves of 16 bits: tiny-ml's
  * ints have 31, and a word of tiny-ml's code (a tagged max_int,
- * 2147483647) or of its strings' bytes needs the 32nd. (old: an int,
- * and m32 n.) Read as int_of_string does, in decimal or after 0x, its
- * bits past 32 dropped. *)
+ * 2147483647) or of its strings' bytes needs the 32nd. Read as
+ * int_of_string does, in decimal or after 0x, its bits past 32 dropped. *)
 type halves = int * int   (* the high half, the low *)
 
 let halves s : halves option =
@@ -72,8 +68,6 @@ let int_of ((h, l) : halves) : int =
   if h < 0x4000 || h >= 0xc000 then (M.sext16 h * 0x10000) + l
   else M.error "number out of range"
 
-(* as a word, its two halves put together (old: an int64, h * 0x10000
- * added to l) *)
 let word_of ((h, l) : halves) : M.word =
   Int32.logor (Int32.shift_left (Int32.of_int h) 16) (Int32.of_int l)
 
@@ -140,8 +134,7 @@ let machine_instr (name : string) (args : string list) : M.line =
   | _ -> M.error ("bad instruction: " ^ name ^ " " ^ String.concat ", " args)
 
 (* the instructions named by a table: the ALU's, their immediate forms,
- * the branches (old: each name looked for in the three arrays at each
- * line, and imm_name's string made for each operation) *)
+ * the branches *)
 type named = Op of M.alu | Imm of M.alu | Test of M.cmp
 let named = Hashtbl.create 64
 let () =
@@ -288,8 +281,7 @@ let read (chan : Chan.i) : (int * M.line list) list =
 
 (* The lines' object (TinyLibMachine's assemble), each text line's
  * lines encoded first, so that an error is said with its file and
- * line (old: the encoding here, TinyLibMachine's since the compilers
- * write objects too) *)
+ * line *)
 let encode (file : string) (lines : (int * M.line list) list)
     : M.line list =
   M.assemble

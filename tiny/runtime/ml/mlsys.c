@@ -7,16 +7,14 @@
 //
 // The partition: the program from 0; the value stack at 0x60000, or
 // after the program when it is larger (end.s's _end, linked last:
-// tiny-ml's 541 KB; old: the Makefile refused a program past 384 KB),
-// 64 KB, or a sixteenth of a partition larger than 1 MB; the heap's
-// two halves after it, as large
-// as the partition allows; the last part, as large as the value stack,
-// for the machine stack (C's frames, and an ML call's link) and the
-// arguments (old: 64 KB in any partition). In the usual 1 MB, the
-// halves are 256 KB each. A program linked as an a.out that asks for
-// more memory (tiny-ld -a) gets bigger halves, and deeper stacks
-// (cc's recursions over a file's tokens: 1 MB of its 16; as's over
-// kernel.s's 70,000 lines). The heap uses the whole half from
+// tiny-ml's 541 KB), 64 KB, or a sixteenth of a partition larger than
+// 1 MB; the heap's two halves after it, as large as the partition
+// allows; the last part, as large as the value stack, for the machine
+// stack (C's frames, and an ML call's link) and the arguments. In the
+// usual 1 MB, the halves are 256 KB each. A program linked as an a.out
+// that asks for more memory (tiny-ld -a) gets bigger halves, and deeper
+// stacks (cc's recursions over a file's tokens: 1 MB of its 16; as's
+// over kernel.s's 70,000 lines). The heap uses the whole half from
 // the start: starting small and growing made it collect often while it
 // grew, a quarter of the browser's time (plan_tiny_browser.md).
 //
@@ -52,8 +50,7 @@ main(int argc, char **argv)
 	// (what a few frames push between two allocations)
 	ml_vlimit = (value*)(vstack + vsize - 0x1000);
 	// the machine stack, from the arguments down: as deep as the value
-	// stack, a call's link there for its frame here (old: 64 KB in any
-	// partition, unchecked)
+	// stack, a call's link there for its frame here
 	ml_slimit = top - vsize + 0x1000;
 	heap0 = vstack + vsize;
 	half = (top - heap0 - vsize) / 2 / 4;		// in words
@@ -302,8 +299,7 @@ u_fork(value unit)
 // the program at path, its arguments an ML list of strings (a cell is
 // a block of two words, the end is not a block; a string ends by a 0;
 // 63 at most, the kernel's limit); it returns only when it failed: -1,
-// as for more (old: 15, the ones after them left out unsaid; ld's
-// lines for a program in ML have 30)
+// as for more
 value
 u_exec(value path, value args)
 {

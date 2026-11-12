@@ -42,8 +42,7 @@ type point = int * int
 
 (* what is kept under the model: where the mouse's button went down
  * (None: it is up), where the mouse is, where its button last went
- * down (the field there has the keys; None: no field has them). (old:
- * six ints, px -1 for a button up) *)
+ * down (the field there has the keys; None: no field has them). *)
 type mouse = { m_down : point option; m_at : point; m_focus : point option }
 
 let up = { m_down = None; m_at = (-1, -1); m_focus = None }
@@ -103,10 +102,7 @@ let boxed x y w h tx s =
  * and the boxes that answer the mouse or the keys, each with what it
  * does. A row shares its width, a column gives all of it and each
  * widget the height it asked for. A button has two edges lit and two
- * in the shade. The mouse is not asked: [over] has what it changes.
- * (old: the mouse given, a button held another shape: every widget
- * made, placed and compared at a press, 340,000 instructions of
- * tiny-machine's where 160,000 now) *)
+ * in the shade. The mouse is not asked: [over] has what it changes. *)
 let rec place x y w h widget =
   match widget with
   | Label s ->
@@ -190,9 +186,9 @@ let rec differ shown now =
  * over them: a shape that had something over it counts as gone; the
  * boxes of those that are no longer are given back to the ground,
  * then the new ones drawn, then what is over them now. A button
- * pressed is its four edges, whatever the widgets. (old: every shape
- * at each picture, through the playground's show: some eighty
- * messages a click, and a click shorter than them was lost) *)
+ * pressed is its four edges, whatever the widgets. Every shape drawn
+ * at each picture would be some eighty messages a click, and a click
+ * shorter than them would be lost. *)
 let redraw shown was now is =
   let at (x, y, w, h) s =
     match s with
@@ -483,7 +479,7 @@ let meets ((x0, y0, x1, y1) : area) ((a0, b0, a1, b1) : area) =
 
 (* what of a new leaf is to be drawn: all of it; nothing (unless an
  * erasing uncovers it); its words from the p-th character up to the
- * q-th. (old: (-1, 0), (0, 0) and (p, q)) *)
+ * q-th. *)
 type drawn = Whole | Untouched | Chars of int * int
 
 (* the characters two texts begin with *)

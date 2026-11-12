@@ -126,9 +126,8 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
             (Parser.declaration ())
         done;
         let lines = List.rev_append !code (M.SectionData :: List.rev !data) in
-        (* an object (TinyLibMachine's assemble), or a text: -S's lines
-         * (old: the text always, for tiny-as, which parsed it
-         * back into the same lines), -ir's code *)
+        (* an object (TinyLibMachine's assemble), or a text: -S's lines,
+         * -ir's code *)
         let made =
           if !ir_only then Buffer.contents ir
           else if !text then String.concat "" (List.map M.print_line lines)
@@ -146,8 +145,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
               with Failure m -> raise (File_error m)));
         Exit.OK
       with
-      (* (a Failure is a bug, left uncaught. old: caught as well, the
-       * library's on the text, Int64.of_string's, not told from a bug's) *)
+      (* (a Failure is a bug, left uncaught) *)
       | Error m ->
           (* where: the last token read, in its file (an #include's); the
            * lexer's errors have none, their line in their message *)
@@ -159,8 +157,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
           (* (said here, after the file, not the program's name) *)
           Exit.Code 1
       (* a line the compiler made that cannot be encoded (a number too
-       * big for its field): the compiler's error, said with the file,
-       * as tiny-as said it of the text (old) *)
+       * big for its field): the compiler's error, said with the file *)
       | M.Error e ->
           TSys.eprint caps (Fpath.to_string file ^ ": " ^ e ^ "\n"); Exit.Code 1
       | File_error m -> Exit.Err m

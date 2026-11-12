@@ -13,16 +13,9 @@
 // images, and the screen's megabyte (its 1024 by 768 bytes, then images
 // again); the heap's two halves of 8 MB from 16 MB to 32 MB, where a
 // file written lives (a compiler's output: TinyML.ml's object is 1.3
-// MB). (old: the image's limit was 2.5 MB, with the stack, the frames
-// and the heap 2 MB lower, and the processes' partitions from 5 MB: the
-// browser filled the image; then 4.5 MB, the rest 3 MB lower, until
-// tiny-db, tiny-vcs and tiny-build came; the heap's halves were 1 MB,
-// at 8 MB, until the toolchain came, plan_tiny_self_hosting.md's step
-// 7; the image's limit 7.5 MB, the value stack, the frames and the
-// packet below 8 MB, until its sources came, step 8.) The processes'
-// partitions are above 32 MB (TinyKernel.ml). The devices are in the
-// last 48 bytes, reached by negative addresses, which the machine takes
-// modulo its memory size.
+// MB). The processes' partitions are above 32 MB (TinyKernel.ml). The
+// devices are in the last 48 bytes, reached by negative addresses,
+// which the machine takes modulo its memory size.
 #include "../runtime/ml/ml.c"
 
 #define VSTACK 0xb00000

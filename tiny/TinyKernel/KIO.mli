@@ -1,48 +1,49 @@
-(* TinyKernel's reads and writes: what a descriptor's file does with n
- * bytes at a kernel's address, for each kind of file (a node, a pipe's
- * end, the console, a connection to the screen, a box, a link, a call,
- * a voice, a trace). Each answers at once, Some n done, or None: it
- * must wait, and KCalls makes the call a Waiting process,
- * tried again by the scheduler.
+(* TinyKernel's reads and writes: what each kind of file behind a
+ * descriptor does with n bytes at an address in the kernel's memory.
+ * The kinds are a node, a pipe's end, the console, a connection to the
+ * screen, a box, a network link, a call, an audio voice, and a trace.
+ * Each read or write answers at once. Some n means n bytes were done;
+ * None means the call must wait: KCalls then makes the process Waiting,
+ * and the scheduler tries the call again later.
  *
- *     read f a n   Some 0      the end (a pipe with no writer left)
- *                  Some k      k bytes put at a
+ *     read f a n   Some 0      end of file (a pipe with no writer left)
+ *                  Some k      k bytes were put at a
  *                  Some (-1)   an error
  *                  None        nothing yet: try again later
  *
- * A trace is a file too (plan_tiny_debugger.md): its tracer writes
- * commands to it (a breakpoint, the registers, a step) and reads why
- * the process stopped.
+ * A trace is a file too (plan_tiny_debugger.md). The tracer writes
+ * commands to it (set a breakpoint, show the registers, step) and reads
+ * from it why the process stopped.
  *
  * plan9-is-cleaner:
- * one read and one write for every kind of file, the devices and the
- * debugger's process included, as Plan 9's /proc/n/ctl is written to
- * and read from where Unix has ptrace's calls.
+ * There is one read and one write for every kind of file, including
+ * the devices and the debugger's view of a process. Plan 9 likewise
+ * controls a process by writing to and reading from /proc/n/ctl, where
+ * Unix has ptrace with calls of its own.
  *)
 
-(* the console's input, typed and not yet read, and its end; the process
- * that has the console raw (rawcons), or 0, and whether it is alive *)
+(* [typed] is console input not read yet. [raw] is the pid that put the
+ * console in raw mode (rawcons), or 0; [raw_on] says it is alive. *)
 val typed : string ref
 val typed_end : bool ref
 val raw : int ref
 val raw_on : unit -> bool
 
-(* [read f a n]: up to n bytes of the file at the kernel's address a *)
+(* [read f a n] reads up to n bytes to the kernel's address a. *)
 val read : KFiles.file -> int -> int -> int option
 
-(* the network device's command (1 send, 2 take) on n bytes at its
- * buffer; a packet sent to the wire *)
+(* [net_command n cmd]: cmd 1 sends, 2 takes, n bytes in the buffer. *)
 val net_command : int -> int -> unit
 val net_send : string -> unit
 
-(* whether a process is traced; [pause p line]: it stopped, the line
- * said to its tracer; [stop p why]: the same, at its pc *)
+(* [pause p line] stops p and sends line to its tracer; [stop p why]
+ * also gives p's pc. *)
 val traced : KProcs.proc -> bool
 val pause : KProcs.proc -> string -> unit
 val stop : KProcs.proc -> string -> unit
 
-(* [write f a n]: n bytes at the kernel's address a written to the file *)
+(* [write f a n] writes the n bytes at the kernel's address a. *)
 val write : KFiles.file -> int -> int -> int option
 
-(* whether a read would not wait *)
+(* Whether a read of the file would not wait. *)
 val readable : KFiles.file -> bool

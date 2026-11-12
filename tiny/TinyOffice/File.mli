@@ -1,8 +1,9 @@
 (* TinyOffice's file: a document's pages as text in mini-troff's format
- * (plan_typesetting.md), Markdown's lines, and \name[options]{text} for
- * what Markdown has not. Each object is a \box at its place (x, y,
- * width, height), its content the lines up to one that is a } alone; a
- * line \newpage between two pages (LaTeX's):
+ * (plan_typesetting.md), which is Markdown lines plus
+ * \name[options]{text} for what Markdown lacks. Each object is a \box
+ * at its place (x, y, width, height); its content is the lines up to
+ * one that holds a } alone. A line \newpage separates two pages (as in
+ * LaTeX):
  *
  *     \box[20 40 200 84]{
  *     # Tiny office
@@ -17,32 +18,35 @@
  *     | Total | =b1+b2 |
  *     }
  *
- * The kind is in the content: a table is a sheet (its header the
- * columns' letters, then a row a line, what was typed in each cell;
- * its name after its box's numbers), a fence ```drawing, ```paint or
- * ```chart is that (its lines as they are), the rest text. A text's
- * styles are Markdown's, **bold**, *italic*, a line "# " large, and
- * \u{} underlined, \large{} large in a line. So emacs edits a page as
- * any text (no count of bytes to keep right), tiny-troff prints it,
- * and a Markdown file, with no \box, is opened as one text box.
+ * The content tells the object's kind:
+ * - a table is a sheet: its header is the columns' letters, then each
+ *   line is a row, holding what was typed in each cell; the sheet's
+ *   name comes after the box's numbers;
+ * - a fence ```drawing, ```paint or ```chart is that kind of object,
+ *   with its lines kept as they are;
+ * - anything else is text.
+ * A text's styles are Markdown's: **bold**, *italic*, a line starting
+ * with "# " for large, plus \u{} for underlined and \large{} for large
+ * inside a line. So emacs can edit a page like any text (there is no
+ * byte count to keep right), tiny-troff can print it, and a Markdown
+ * file, which has no \box, opens as a single text box.
  *
  * design:
- * a document's file is a text that other programs read, not the
- * program's values marshalled (mini-office's Saved): the format
+ * A document's file is a text that other programs can read, not the
+ * program's values marshalled (as in mini-office's Saved): the format
  * outlives the program.
  *)
 
-(* [parse width height text]: the objects of a file's text (a page of
- * that width and height, for a Markdown file's one box) *)
+(* [parse width height text]. The page size is used for the single box
+ * of a Markdown file. *)
 val parse : int -> int -> string -> Model.obj list
 
-(* the file of a document: each page's boxes, a line \newpage between
- * two pages, an empty line between two boxes *)
+(* The boxes of each page, with a line \newpage between two pages and an
+ * empty line between two boxes. *)
 val text : Model.office -> string
 
-(* how many pages a document's file has: one, and one more a \newpage *)
+(* how many pages a document's file has: one, plus one per \newpage *)
 val pages_in : string -> int
 
-(* the pages counted again, after a change: as many as its objects are
- * on, at least *)
+(* recounts the pages after a change, at least as many as objects need *)
 val fit_pages : Model.office -> unit

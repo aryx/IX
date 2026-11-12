@@ -185,9 +185,9 @@ let decode s =
 (*****************************************************************************)
 
 (* .tvcs/objects: "HASH LENGTH\n" and that many bytes, the object's
- * text, each object once; read whole at open, the index in memory
- * (old: deflated, by lib_compression's Zlib: 300 lines more for
- * tiny-ml to compile and tiny-kernel to load) *)
+ * text, each object once; read whole at open, the index in memory. It
+ * is not compressed: Zlib would be 300 lines more for tiny-ml to
+ * compile and tiny-kernel to load. *)
 
 (* the capabilities a command needs: a repository is opened with them
  * and keeps them, for its files; output is printed with them *)
@@ -356,8 +356,8 @@ let checkout r (old : hash option) (nw : hash) : unit =
       List.iter (fun f -> rm_rf (p / f)) (TSys.readdir r.caps p);
     TSys.remove r.caps p
   in
-  (* (old: File h | Exec h | Conflict { text = h; _ }, an or-pattern
-   * with variables, which tiny-ml does not read) *)
+  (* a function, not an or-pattern with variables, which tiny-ml does
+   * not read *)
   let write p h x =
     if TSys.exists r.caps p && TSys.is_directory r.caps p then rm_rf p;
     write_file r.caps p (blob r h);
@@ -509,7 +509,6 @@ let unified name_a name_b a b =
 (* diff3: the base's lines both sides kept split the three files into
  * stable and unstable chunks; an unstable chunk only one side changed
  * is taken, one both changed alike too, else it is a conflict *)
-(* (old: ~base ~ours ~theirs, labels, which tiny-ml does not read) *)
 let merge3 base ours theirs =
   let o = lines base and a = lines ours and b = lines theirs in
   let ma = Hashtbl.create 64 and mb = Hashtbl.create 64 in
@@ -771,9 +770,8 @@ let new_commit r (s : op) msg =
   say r (s.current ^ ": " ^ hex c ^ "\n")
 
 (* tiny-vcs log: newest first, each commit once; the same dates (commits
- * within a second, or TINYVCS_DATE's) in the order reached, breadth first (old:
- * a commit's parents before the commits waiting, so a branch's first
- * commit came before its second) *)
+ * within a second, or TINYVCS_DATE's) in the order reached, breadth
+ * first *)
 let log r =
   let seen = Hashtbl.create 64 in
   let rec go = function

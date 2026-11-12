@@ -46,9 +46,7 @@ let complain caps tool s = TSys.eprint caps (tool ^ ": " ^ s ^ "\n")
 
 (* the operands as files' paths, made as a utility reads its
  * arguments, printed as Fpath.to_string says them (a//b as a/b): the
- * empty word a Failure, the utility's (old: kept as typed, a string
- * to the system's door, to say each as typed and '' as one file's
- * error among the others; compatibility, which tiny/ does not keep) *)
+ * empty word a Failure, the utility's *)
 let path (w : string) : Fpath.t =
   if w = "" then failwith "no file name" else Fpath.v w
 let paths_of ws = List.map path ws
@@ -87,8 +85,7 @@ let options (letters : string) (args : string list) : char list * string list =
 
 (* [piece c n]: what the channel gives next, up to n bytes, without
  * waiting for more ("" at the end); [pieces c f]: f on each piece, as
- * soon as it is read, until the end (old: a descriptor's, the files
- * opened and closed by hand) *)
+ * soon as it is read, until the end *)
 let piece (c : Chan.i) n =
   let b = Bytes.make n ' ' in
   Bytes.sub_string b 0 (In_channel.input c.ic b 0 n)
@@ -842,9 +839,8 @@ let basename (caps : < Cap.stdout; .. >) args =
   0
 
 (* the first byte where two files differ, or the one that ends first;
- * -s: only the status. Read a piece at a time, side by side (old: each
- * file whole: a compiler's output was more than a program's 1 MB on
- * tiny-kernel) *)
+ * -s: only the status. Read a piece at a time, side by side: a
+ * compiler's output can be more than a program's 1 MB on tiny-kernel. *)
 type compared = Same_bytes | Differ_at of int | Ends_first of string * int
 
 let cmp (caps : < Cap.stdout; Cap.stderr; Cap.open_in; .. >) args =

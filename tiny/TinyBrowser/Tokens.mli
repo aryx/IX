@@ -1,5 +1,5 @@
-(* The HTML tokenizer of TinyBrowser: a page's messages, as they come,
- * to its tags and its texts, which Html turns into lines.
+(* The HTML tokenizer of TinyBrowser. It turns a page's messages, as
+ * they come, into tags and texts, which Html then turns into lines.
  *
  * A message can end anywhere, even in the middle of a tag, of an
  * entity like &amp;, or of a multi-byte UTF-8 character. The reader
@@ -9,16 +9,17 @@
  *     "<p>Hello <b>wo"   ──►  Open p, Text "Hello "     tail "<b>wo"
  *     "rld</b></p>"      ──►  Open b, Text "world", Close b, Close p
  *
- * Comments, <!DOCTYPE> and <?xml?> are skipped; the content of <style>
- * and <script>, which is not HTML, is skipped to its end tag; of the
- * attributes only those the browser uses are kept (Parsoid's data-mw
- * can be kilobytes), their values made ASCII by Charset.
+ * Comments, <!DOCTYPE> and <?xml?> are skipped. The content of <style>
+ * and <script>, which is not HTML, is skipped up to its end tag. Only
+ * the attributes the browser uses are kept, because some can be huge
+ * (Parsoid's data-mw can be kilobytes), and their values are made ASCII
+ * by Charset.
  *
  * others:
- * the "tokenization" chapter of the HTML standard, a state machine,
+ * The "tokenization" chapter of the HTML standard, a state machine,
  * says everything a tokenizer must accept; this one handles the part
  * that well-formed pages use. The full-size one in ix is mini-chrome's
- * Html_lexer (its entities in Entities).
+ * Html_lexer (with its entities in Entities).
  *)
 
 (* A tag's name and its attributes are in lower case. *)
@@ -27,14 +28,10 @@ type token =
   | Open of string * (string * string) list
   | Close of string
 
-(* What the last message left unfinished (tail), and, while we skip the
- * content of a <style> or <script>, the name of that element (raw);
- * both "" to begin. *)
+(* [tail] is what the last message left unfinished; [raw] the <style> or
+ * <script> being skipped; both "" to begin. *)
 type reader = { mutable tail : string; mutable raw : string }
 
-(* [tokens reader message]: the tokens of a message, what it ends with
- * unfinished kept in the reader for the next one; [tokens_end reader]:
- * at the end, what was kept (old: a bool, whether the message was the
- * last) *)
+(* [tokens_end] gives the tokens of the tail kept at the end *)
 val tokens : reader -> string -> token list
 val tokens_end : reader -> token list

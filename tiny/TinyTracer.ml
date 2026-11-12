@@ -54,9 +54,7 @@ let fills n =
 (*****************************************************************************)
 
 (* A process traced: its pid, the kernel's trace of it, and the call it
- * is in, its arguments and its line made before it ran (old: a triple,
- * the call's number too; the process whose stop was handled and its
- * descriptor globals, -1 for none) *)
+ * is in, its arguments and its line made before it ran *)
 type call = { args : int list; text : string }
 type traced = { pid : TSys.pid; trace : TSys.fd; mutable call : call option }
 

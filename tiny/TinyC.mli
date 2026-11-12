@@ -1,34 +1,36 @@
-(* A tiny C compiler for tiny-machine with an
- * intermediate language of its own.
+(* A tiny C compiler for tiny-machine, with an intermediate language of
+ * its own.
  *
  * A file goes through these steps, each with its own type:
  *
  *     file.c
  *        | tokens     with #includes inlined and #defines expanded
  *        | the parser recursive descent producing typed trees, [expr]
- *        |            and [stmt], with conversions made explicit; a
- *        |            declaration's [def]s, a function or a global
+ *        |            and [stmt], with conversions made explicit; each
+ *        |            declaration gives [def]s, functions or globals
  *        | lower      turns a function's tree into stack machine
  *        |            code, an [ir] list (what -ir prints)
  *        | machine    turns that list into assembly, keeping the
- *        |            stack depth d in register rd; a global's data
- *     file.o, the lines encoded (TinyLibMachine's assemble), for
- *     tiny-ld, and tiny-cpu runs the program; -S: file.s, their
- *     text
+ *        |            stack depth d in register rd; also makes the
+ *        |            data of globals
+ *     file.o: the assembly lines encoded by TinyLibMachine's assemble,
+ *     for tiny-ld, and then tiny-cpu runs the program; with -S,
+ *     file.s, the text
  *
- * Each step is a part in TinyC/, whose .mli has its types and its
- * functions, in the order they are compiled and best read:
+ * Each step is a module in TinyC/. Its .mli has its types and its
+ * functions. In the order they are compiled, which is also the best
+ * order to read them:
  *
- *     Types.mli     C's types ([ty]), their sizes on TinyCPU, [sym]
- *     Lexer.mli     the tokens ([token]), the preprocessor
+ *     Types.mli     C's types ([ty]), their sizes on TinyCPU, and [sym]
+ *     Lexer.mli     the tokens ([token]) and the preprocessor
  *     Tree.mli      the typed tree: [expr], [stmt], [def]
- *     Lower.mli     the stack machine: [ir], lower_function
- *     Parser.mli    declaration: tokens to a declaration's [def]s
- *     Machine.mli   machine and global: [ir] and data to assembly,
+ *     Lower.mli     the stack machine: [ir], and lower_function
+ *     Parser.mli    declaration: from tokens to a declaration's [def]s
+ *     Machine.mli   machine and global: from [ir] and data to assembly,
  *                        TinyLibMachine.mli's [line]s
  *
- * This file is the program around them: compile, a definition through
- * lower and machine, and main, the loop over the declarations.
+ * This file is the program around them: compile runs a definition
+ * through lower and machine, and main loops over the declarations.
  *
  * Here is one function, int f(int a, int b) { return a + b * 2; }, as
  * printed by -ir and by the back end:
@@ -92,50 +94,54 @@
  *   its own type. The operators are variants, split so that every
  *   match is exhaustive; [&&], [||] and [!] are expressed with [?:],
  *   and [while] with [for].
- * - {b Its own calling convention}, simpler than 7c's: every argument
- *   in memory, 4 bytes each, from 0(sp) of the caller (so a variadic
- *   function, print, walks them from its last named one's address),
- *   the result in r13, every register but sp the callee's.
+ * - {b Its own calling convention}, simpler than 7c's. Every argument
+ *   is in memory, 4 bytes each, starting at 0(sp) of the caller, so a
+ *   variadic function such as print walks them from the address of its
+ *   last named argument. The result is in r13. The callee may use every
+ *   register except sp.
  *
- * The language supported: char, short, int, long (4 bytes, as in Plan
- * 9), signed and unsigned; pointers, arrays, structs (members, . and
- * ->, but not passed by value); enums; void; globals with initializers
- * (numbers, strings, addresses, and arrays of them); static, extern,
- * typedef; functions and prototypes, and calls to variadic functions;
- * function pointers (C's inside-out declarators, and calls through any
- * expression, as needed by t6's system call table); every operator,
- * including op=, ++, --, ?:, casts, sizeof and the comma, with constant
- * expressions folded (for an array size or a case); if, while, do, for,
- * switch, break, continue, return and blocks; #include "file" and
- * #define of a name.
+ * The language supported:
+ * - char, short, int, long (4 bytes, as in Plan 9), signed and
+ *   unsigned; pointers, arrays, structs (members, . and ->, but not
+ *   passed by value); enums; void;
+ * - globals with initializers (numbers, strings, addresses, and arrays
+ *   of them); static, extern, typedef;
+ * - functions and prototypes, and calls to variadic functions;
+ * - function pointers (C's inside-out declarators, and calls through
+ *   any expression, as needed by t6's system call table);
+ * - every operator, including op=, ++, --, ?:, casts, sizeof and the
+ *   comma, with constant expressions folded (for an array size or a
+ *   case);
+ * - if, while, do, for, switch, break, continue, return and blocks;
+ * - #include "file" and #define of a name.
  *
  * dropped:
- * Because of what each would cost here: floats, unions, bitfields,
- * structs by value, goto, macros with arguments, and #if. And long
- * long: a declared one is refused, TinyCPU's registers being 32 bits (a
- * value of 64 would take two registers in the stack machine, and the
- * runtime's calls for its multiplication and division); a constant too
- * wide for an int, or with ll, is computed in 32 bits.
+ * Each of these would cost too much here: floats, unions, bitfields,
+ * structs by value, goto, macros with arguments, and #if. long long is
+ * dropped too, because TinyCPU's registers are 32 bits: a 64-bit value
+ * would take two registers in the stack machine, and calls to the
+ * runtime for its multiplication and division. A variable declared
+ * long long is refused; a constant too wide for an int, or with the
+ * suffix ll, is computed in 32 bits.
  *
  * context:
- * Its usage, with examples, is in [help] below, which is what tiny-cc -h
- * prints. It reads one C file and writes its assembly for TinyCPU
- * (TinyMachineCPU.ml), whose words are 4 bytes, pointers too. Its
- * runtime is in runtime/ (built by TinyKernel/steps/Makefile):
+ * Its usage, with examples, is in [help] in TinyC.ml, which is what
+ * tiny-cc -h prints. It reads one C file and writes its assembly for
+ * TinyCPU (TinyMachineCPU.ml), whose words and pointers are 4 bytes.
+ * Its runtime is in runtime/ (built by TinyKernel/steps/Makefile):
  * start.s holds the program start and the system calls, udivmod.s the
- * unsigned division, and the rest of libc is C compiled by tiny-cc. Its
- * library has Plan 9's names (print, exits) and its rules are ANSI's:
- * the tests compare it with the host's cc (TinyC_tests/host.h).
+ * unsigned division, and the rest of libc is C compiled by tiny-cc.
+ * The library uses Plan 9's names (print, exits) and ANSI's rules: the
+ * tests compare tiny-cc with the host's cc (TinyC_tests/host.h).
  *
- * tiny-ld reads what tiny-cc writes (old: tiny-as, which
- * parsed back the text tiny-cc printed). tiny-cc compiles TinyML's
+ * tiny-ld reads what tiny-cc writes. tiny-cc compiles TinyML's
  * runtime (whose collector and primitives are in C), TinyKernel's
  * programs, and t6, a kernel in C, together with its own programs.
  * TinyML's code generator has the same design, a stack machine kept in
  * registers, for another language.
  *
  * exercises:
- * Each cheap because the stack machine sits between the front end and
+ * Each is cheap because the stack machine sits between the front end and
  * the machine:
  * - a second back end: arm32 (with 5c's calling convention, for mini-5i
  *   and the Pi1), or x86-64; TinyCPU's took 100 lines;
@@ -181,8 +187,8 @@
  * text to machine code in memory, with no intermediate language at
  * all. Rui Ueyama's chibicc (2019) builds a tree and then emits code
  * that pushes and pops the real stack, and it is written as a history
- * of small commits. chibicc is the closest to this compiler: its stack is
- * the machine's, while ours is in registers.
+ * of small commits. chibicc is the closest to this compiler: its stack is the
+ * machine's, while ours is in registers.
  *
  * comeback:
  * Pascal's P-code (Zurich, 1970s; interpreted by the UCSD system) was
@@ -209,17 +215,15 @@
  *    back ends
  *)
 
-(* [compile d]: a declaration's definition compiled, its assembly's
- * code and data: a function's tree lowered to the stack machine's code
- * then to TinyCPU's, a global's data *)
+(* The code and the data. A function goes through the stack machine's
+ * code to TinyCPU's; a global becomes data. *)
 val compile :
   Tree.def -> TinyLibMachine.line list * TinyLibMachine.line list
 
-(* -ir: a function's stack machine's code, as text *)
+(* For -ir: a function's stack machine code, as text. *)
 val show_ir : Tree.def -> string
 
-(* the program: its arguments (its name first), a file of C to a file
- * of assembly (-h: how), to how it ends *)
+(* A C file compiled to a file of assembly; -h tells how. *)
 val main :
   < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. > ->
   string array -> Exit.t

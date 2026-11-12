@@ -72684,3 +72684,49 @@ Claude reran `make test` (35 jobs, 0 failures) and the kernel `check` on that HE
 Claude built step 4 in the shared tree, uncommitted: the web page now fetches `disk` and `disk2` for the machine's two disks.
 Claude verified it: `./tiny-machine tiny-kernel` boots on both disks, and the headless Chrome test showed `/src` from the second disk.
 Claude held back `docs/t-ix.html` and the commit for step 4, since the live page needs `src.img` in the assets repo first.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 21:57
+
+**Yoann:**
+
+> yes let's do it
+
+------------------------------------------------------------------------
+
+## 2026-11-12 21:57
+
+**Yoann:**
+
+> also I'm gonna go to sleep soon so you can run this make self soon
+
+------------------------------------------------------------------------
+
+## 2026-11-12 21:57
+
+**Yoann:**
+
+> and fix it as you go during the night
+
+**Claude (summary):**
+
+Claude started `make self` in a fresh worktree at be2f0aa8, at `/Users/pad/github/ix-self`.
+Claude said it would fix any failure during the night, rerun the build, and record each change made.
+Claude committed nothing and said it would wait for Yoann's go-ahead before committing.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 22:00
+
+**Yoann:**
+
+> anything else?
+
+**Claude (summary):**
+
+Claude reported nothing else needed attention tonight, and that `make self` was running in `/Users/pad/github/ix-self`.
+Claude planned to check that the tiny-kernel image built byte for byte matches the host's, and to fix and rerun if it didn't.
+Claude noted that `docs/t-ix.html`'s `disk2` change is uncommitted and waits on Yoann running `make website` and pushing assets.
+Claude said the `?v=` number in that page still needs bumping before the change can land.
+Claude listed the next steps for tomorrow: tiny-kernel's `build install` onto its own disk, then `boot.rc`, then CORE's duplication.

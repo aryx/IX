@@ -5,8 +5,8 @@
  * tests/TinyCPU_test.sh checks the laws: the first on the programs of
  * tests/TinyCPU_tests/, the second on random ones of every instruction *)
 
-(* The instructions, their words: TinyLibMachine's, in what tiny-ml
- * compiles too, for tiny-as and tiny-ld on tiny-kernel *)
+(* The instructions and their encoding are TinyLibMachine's, written in
+ * what tiny-ml compiles too, for tiny-as and tiny-ld on tiny-kernel. *)
 open TinyLibMachine
 let error fmt = Printf.ksprintf (fun s -> raise (Error s)) fmt
 
@@ -28,7 +28,6 @@ let memsize = ref (1 lsl 20)
 
 type machine = { r : int array; mutable pc : int; mem : Bytes.t }
 
-(* what the program that runs the CPU decides *)
 type env = {
   fetch : machine -> int -> int;           (* the instruction's word at pc *)
   load : machine -> size -> int -> int;
@@ -39,12 +38,9 @@ type env = {
 
 let addr a = a land (!memsize - 1)
 let word a = addr a land lnot 3
-(* old: let load m = function W -> fun a -> ... | B -> fun a -> ...
- * A function given m and the size returned a function of the address:
- * a closure made at every load, and at every fetch, which is a load
- * (js_of_ocaml: 11% of the time in it, and the collector after it;
- * 4.5 million instructions a second became 5.2, natively 11.5 became
- * 13.5: tests/TinyMachine_bench.sh). *)
+(* load takes the address with m and the size: returning a function of
+ * the address made a closure at every load and fetch (under js_of_ocaml
+ * 11% of the time, and the collector after it). *)
 let load m s a = match s with
   | W -> Int32.to_int (Bytes.get_int32_le m.mem (word a)) land 0xffffffff
   | B -> Char.code (Bytes.get m.mem (addr a))
@@ -114,13 +110,10 @@ let decode_kept w =
 (* The step *)
 (*****************************************************************************)
 
-(* old: a function inside step, let set d v = if d <> 0 then r.(d) <-
- * m32 v, which closes over r: js_of_ocaml makes that closure at every
- * step (OCaml's native compiler inlines it). *)
+(* Not a function inside step closing over r: js_of_ocaml would make
+ * that closure at every step. *)
 let set (r : int array) d v = if d <> 0 then r.(d) <- m32 v
 
-(* one step: the word at pc fetched (from memory, or through the
- * machine's pages), decoded and run *)
 let step env m =
   let pc = m.pc in
   let w = env.fetch m pc in
@@ -142,7 +135,6 @@ let step env m =
            let t = word (r.(a) + off) in set r d (pc + 4); m.pc <- t
        | Sys n -> env.sys m n)
 
-(* the machine at its start: the image at 0, sp at the top of memory *)
 let boot image =
   let m = { r = Array.make 16 0; pc = 0; mem = Bytes.make !memsize '\000' } in
   Bytes.blit_string image 0 m.mem 0 (String.length image);
@@ -160,7 +152,6 @@ let image name text =
     error "%s: larger than the memory" name;
   text
 
-(* the listing: address, word, instruction, as assembly again *)
 let listing ~show ~origin image =
   List.init (String.length image / 4) (fun k ->
     let w = Int32.to_int (String.get_int32_le image (4 * k)) land 0xffffffff in
@@ -184,8 +175,6 @@ type profile = (int, int ref) Hashtbl.t
 
 let profile () : profile = Hashtbl.create 4096
 
-(* an env that counts each instruction it fetches; [where m] is its mode
- * (1 the kernel's, 0 a program's) and the window's base *)
 let profiled (env : env) (p : profile) (where : machine -> int * int) =
   { env with fetch = (fun m pc ->
       let mode, base = where m in
@@ -195,8 +184,6 @@ let profiled (env : env) (p : profile) (where : machine -> int * int) =
        | None -> Hashtbl.add p k (ref 1));
       env.fetch m pc) }
 
-(* the profile as lines "k|u base pc count", the addresses in hexadecimal,
- * the most counted first *)
 let profile_lines (p : profile) =
   let l = Hashtbl.fold (fun k n acc -> (k, !n) :: acc) p [] in
   let l = List.sort (fun (_, a) (_, b) -> b - a) l in

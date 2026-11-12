@@ -5,9 +5,7 @@
 // white), a ball goes across the top by the clock, c clears, q quits.
 // The ball's place is the clock's: 4 pixels a period since the boot,
 // back and forth, so the screen at a time does not depend on when
-// paint started (old: 4 pixels a move since paint started, the ball a
-// few pixels further when the boot was longer, its test's screen
-// recorded again after changes elsewhere).
+// paint started.
 // One loop waiting for the three at once: ready on the mouse and the
 // keys, until the ball's next move. Its pixels are the kernel's: it
 // writes messages to its descriptor 3 (draw.h) and reads its mouse, 4:

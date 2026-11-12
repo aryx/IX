@@ -8,8 +8,6 @@
  * the kernel's ../../TinyKernel/kruntime.c, an ML program's of tiny-kernel
  * mlsys.c beside it, a test's own main
  * (tests/TinyML_test.sh). A word is intptr's: 4 bytes on tiny-machine.
- * (old: TinyMLRuntime/core.c; C's runtime beside it, start.s,
- * udivmod.s and libc.c, was TinyCRuntime/)
  *
  * A value is a word: an integer n as 2n+1, or the address of a block's
  * first field, the block's header the word before it (its size in
@@ -36,15 +34,14 @@ extern value ml_nglobals;
 value *ml_vsp;
 void *ml_handler;
 /* the value stack's end, when the includer says it (mlsys.c): past it,
- * a recursion too deep is said at the next allocation (old: none, the
- * stack ran into the heap's first blocks: tiny-cc's List.map over a
- * file's tokens, wrong values, then a loop or an exception) */
+ * a recursion too deep is said at the next allocation, before the stack
+ * runs into the heap's first blocks */
 value *ml_vlimit;
 /* the machine stack's end, the same way: a call's link and C's
  * arguments are there, and a recursion over 70,000 lines ran it into
  * the heap's second half, which it wrote silently (tiny-kernel's as on
  * its kernel.s: Match_failure, a wrong index, or a trap, by the
- * file's size; old: no check) */
+ * file's size) */
 long ml_slimit;
 
 /*****************************************************************************/
@@ -319,10 +316,9 @@ ml_concat(value a, value b)
 }
 
 /* String.concat: the strings of a list (a cell a block of two fields,
- * [] an integer, as ML makes them) joined by sep, the result made once
- * (old: in ML, TinyLibCore's String.concat, three calls of the runtime
- * a piece: Printf's strings, many pieces of a few bytes, cost more than
- * the ^ they replaced) */
+ * [] an integer, as ML makes them) joined by sep, the result made once.
+ * In C: in ML, three calls of the runtime a piece made Printf's strings,
+ * many pieces of a few bytes, cost more than the ^ they replaced. */
 value
 ml_string_concat(value sep, value l)
 {
@@ -456,8 +452,6 @@ compare(value a, value b)
 }
 
 // two integers compared here, before compare's frame of eight locals
-// (old: 100 instructions for min 3 4, the prelude's min being
-// polymorphic; a sound's sample clamped by min and max was 175 of them)
 value
 ml_compare(value a, value b)
 {
@@ -588,7 +582,7 @@ static long olen;
 
 /* all of the buffer, in as many writes as it takes: a pipe of
  * tiny-kernel's takes 512 bytes at a time, and a write says how many
- * it took (old: one write, and in a pipe what was over 512 lost) */
+ * it took */
 static void
 writeall(void)
 {
@@ -1097,9 +1091,8 @@ ml_marshal_from_string(value s, value ofs)
 /*****************************************************************************/
 
 /* SHA-1: the digest of a string, 20 bytes, in C on the machine's words
- * of 32 bits (old: TinyLibCore's Sha1 in ML, a word as two halves of
- * 16, as tiny-ml's integers have 31: 2.6 KB a second on tiny-kernel,
- * hours of tiny-build's digests in tiny-kernel's build of itself) */
+ * of 32 bits. In C because in ML, a word as two halves of 16 (tiny-ml's
+ * integers have 31), it digested 2.6 KB a second on tiny-kernel. */
 static value sha_h[5];
 static value sha_w[80];
 static uchar sha_last[128];

@@ -42,10 +42,8 @@ let for_all p s =
 let iter f s = for i = 0 to length s - 1 do f (get s i) done
 let iteri f s = for i = 0 to length s - 1 do f i (get s i) done
 
-(* the result made once, by the runtime (old: in ML, the length of
- * each counted, then each copied in, three calls of the runtime a
- * piece, which Printf's many small pieces paid; older: joined by ^ two
- * by two, then their pairs..., each byte copied log n times) *)
+(* the result made once, by the runtime: in ML, three calls of the
+ * runtime a piece were too many for Printf's many small pieces *)
 external concat : string -> string list -> string = "ml_string_concat"
 let init n f =
   let r = make n '\000' in

@@ -14,17 +14,14 @@
  * in /bin, examples to look at in /examples). A file of the image is
  * read where the image has it (its address, its size) until it is
  * written: the programs, a megabyte of them, are then not the
- * collector's to copy at each collection (old: each a string, Data; a
- * collection was 3 million instructions).
+ * collector's to copy at each collection.
  * A file or a directory on a disk (KFS.ml) is its disk's file system,
  * a tree and an inode's number: tree 0 is the live one, the others are
  * the snapshots.
  * A union is several directories seen as one, as Plan 9's bind -a makes:
  * a name is looked up in each in turn, and what is made goes in the
  * first. A file written in memory is its bytes and its size, the bytes
- * doubled when a write goes past them (old: a string, made again at
- * each write: a database that grows by appends took a second for each
- * statement, tiny-db's) *)
+ * doubled when a write goes past them *)
 type node =
   | Dir of (string * node) list ref
   | Data of data
@@ -201,9 +198,7 @@ let dir_of ns =
 (* a directory read as a file: an entry of 80 bytes per name, t6's (its
  * name, its type, a first block, its size), which ls reads, but for
  * the name's 64 bytes, the disk's, and the date of the last write after
- * the size (old: t6's 20 bytes of name: the sources'
- * TinyAppTemperature.mli could not be listed, its .tmi not made; then
- * 28, and no date). The first block, which this kernel has no use for,
+ * the size. The first block, which this kernel has no use for,
  * says the file's links instead: how many names it has. *)
 let word n = String.init 4 (fun k -> Char.chr ((n lsr (8 * k)) land 255))
 

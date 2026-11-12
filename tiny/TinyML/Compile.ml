@@ -40,8 +40,8 @@ let finish_fun (lab : Machine.sym) nparams =
   Machine.add_text
     (Machine.machine lab nparams (!cur).nslots (List.rev (!cur).code))
 (* the functions to compile, in their order: a queue as two lists, the
- * next ones and the ones added since, last first (old: OCaml's Queue,
- * which TinyLibCore does not have) *)
+ * next ones and the ones added since, last first (TinyLibCore has no
+ * Queue) *)
 let queue : (unit -> unit) list ref = ref []
 and queued : (unit -> unit) list ref = ref []
 let enqueue f = queued := f :: !queued
@@ -78,8 +78,8 @@ let rec pat_vars = function
   | Tree.POr (p, _) -> pat_vars p
 
 (* the names free in e, each once, in their order *)
-(* (old: or-patterns with names, Match (e, cs) | Try (e, cs): written
- * apart, as tiny-ml compiles this file too) *)
+(* (Match and Try written apart: tiny-ml, which compiles this file too,
+ * has no or-patterns with names) *)
 let rec free bound e acc =
   let fr = free bound in
   let cases e cs =
@@ -126,8 +126,7 @@ let captured env names =
     names
 
 (* a function's names: its closure's fields, then the others it names,
- * found now (the toplevel's table changes before its code is made;
- * old: the env's names that are not local, all of them) *)
+ * found now (the toplevel's table changes before its code is made) *)
 let body_env env names fvs =
   List.mapi (fun j x ->
       x, match lookup env x with Loc (_, k) -> Loc (Env j, k) | b -> b)
@@ -518,8 +517,7 @@ and closure env name xs b =
 
 (* (more than eight names: the block made blank, then each field set
  * through a slot of the frame, so that the names are not all in
- * registers at once; old: always on the stack, and a closure of ten
- * names too deep, tiny-db's parse) *)
+ * registers at once) *)
 and alloc_closure env lab n fvs =
   if List.length fvs <= 8 then begin
     List.iter (var env) (List.rev fvs);

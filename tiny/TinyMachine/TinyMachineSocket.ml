@@ -6,8 +6,8 @@
 let usage =
   "usage: tiny-machine-socket dial host port | listen port | name host"
 
-(* a name's first address of the Internet's first kind (IPv4: the
- * machine's addresses are four bytes) *)
+(* The first IPv4 address of a name: the machine's addresses are four
+ * bytes. *)
 let address (caps : < Cap.network; .. >) host =
   match
     List.filter
@@ -17,7 +17,6 @@ let address (caps : < Cap.network; .. >) host =
   | { ai_addr = Unix.ADDR_INET (a, _); _ } :: _ -> Some a
   | _ -> None
 
-(* a connection there, if it is made in five seconds *)
 let dial (caps : < Cap.network; .. >) host port =
   match address caps host with
   | None -> None
@@ -40,8 +39,6 @@ let dial (caps : < Cap.network; .. >) host port =
         | Unix.Unix_error _ -> false in
       if made then (Unix.clear_nonblock fd; Some fd) else (Unix.close fd; None)
 
-(* the bytes both ways, until one side ends: what is read on inp to
- * the connection, what comes from it to out *)
 let relay inp out fd =
   let b = Bytes.create 4096 in
   let rec all to_ n at =
@@ -61,15 +58,13 @@ let relay inp out fd =
 let say (caps : < Cap.stdout; .. >) s =
   ignore (Unix.write_substring (Console.stdout_fd caps) s 0 (String.length s))
 
-(* SIGALRM's, which ends this, in s seconds (0.: none) *)
+(* Arms SIGALRM, which ends this program, in s seconds; 0. disarms it. *)
 let timer (caps : < Cap.signal; .. >) s =
   ignore
     (CapUnix.setitimer caps Unix.ITIMER_REAL
        { it_interval = 0.; it_value = s })
 
-(* a named pipe of its own, in /tmp by the pid and a count: the next
- * when one is there (old: Filename.temp_file's name, the file it made
- * removed, which reached the system with no capability) *)
+(* Not Filename.temp_file, which reaches the system with no capability. *)
 let fifos = ref 0
 let fifo (caps : < Cap.open_out; Cap.env; .. >) =
   let rec made () =
@@ -82,13 +77,11 @@ let fifo (caps : < Cap.open_out; Cap.env; .. >) =
     | exception Unix.Unix_error (Unix.EEXIST, _, _) -> made () in
   made ()
 
-(* this machine's port (127.0.0.1's), listened on until the standard
- * input's end (who ran this is gone); each connection relayed by a
- * child on two named pipes, opened by the one who ran this (the child
- * waits ten seconds for it), their names said. old: the first
- * connection alone, its socket then closed, the next one's helper
- * started when this one's was seen: a connection between the two was
- * refused (make test on GitHub's runner, linux.py's GET /bin/ping) *)
+(* Listens until the standard input ends (whoever ran this is gone).
+ * Each connection is relayed by a child on two named pipes, which the
+ * one who ran this must open within ten seconds. The socket stays open
+ * for the next connection: closing it after the first refused one that
+ * came before the next listen (linux.py's GET /bin/ping on GitHub). *)
 let listen
     (caps : < Cap.network; Cap.stdin; Cap.stdout; Cap.fork; Cap.signal;
              Cap.open_in; Cap.open_out; Cap.env; Cap.exit; .. >) port =

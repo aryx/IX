@@ -1,17 +1,16 @@
-(* tiny-cc's parser: C's declarations, statements and expressions read
- * from the tokens, recursive descent, the tree built typed as it reads
- * (Tree's functions): a declaration at a time, its definitions,
- * a function's tree or a global's data. Read Tree.mli first. *)
+(* tiny-cc's parser: reads C declarations, statements and expressions
+ * from the tokens, by recursive descent. The tree is typed as it is
+ * built (with Tree's functions). It reads one declaration at a time and
+ * returns its definitions: a function's tree, or a global's data. Read
+ * Tree.mli first. *)
 
-(* the file's tokens to read; read all of them *)
+(* The file's tokens to read; at_end once all are read. *)
 val start : Lexer.located list -> unit
 val at_end : unit -> bool
-(* where the last token read is, for an error (None: no token yet) *)
-val last_loc : unit -> Lexer.loc option
+val last_loc : unit -> Lexer.loc option   (* None before any token *)
 
-(* the typedefs (TinyC.ml adds intptr) *)
-val typedefs : (string, Types.ty) Hashtbl.t
+val typedefs : (string, Types.ty) Hashtbl.t  (* TinyC.ml adds intptr *)
 
-(* a declaration of the file's: what it defines, in their order (a
- * string literal's data before the function or the global it is in) *)
+(* A string literal's data comes before the function or global it is
+ * in. *)
 val declaration : unit -> Tree.def list

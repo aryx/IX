@@ -160,8 +160,7 @@ let sectioned (items : M.line list) : M.line list =
   let section in_data : M.line =
     if in_data then SectionData else SectionCode in
   (* (tail-recursive: an image's items are many, the kernel's tens of
-   * thousands, and tiny-kernel's stack is small: old, it :: go l,
-   * a frame an item, ld's stack overflowed on it) *)
+   * thousands, and tiny-kernel's stack is small) *)
   let rec go in_data (l : M.line list) (acc : M.line list) =
     match l with
     | [] -> List.rev acc
@@ -197,7 +196,6 @@ type linked = {
   data_start : address option;
 }
 
-(* (old: a triple, the data's start 0 when not split) *)
 let link (sections : sections) (objects : M.line list list) : linked =
   let items = sweep (List.map sectioned objects) in
   let lay =
@@ -224,8 +222,8 @@ let link (sections : sections) (objects : M.line list list) : linked =
             M.error (e ^ " (" ^ said t ^ ")")) relocs;
         Buffer.add_string b (Bytes.to_string s)
     | _ -> ());
-  (* (old: the table's labels sorted by address, those at one address in
-   * the table's order, which is OCaml's or TinyLibCore's) *)
+  (* the labels in the layout's order, not the table's, whose order
+   * differs between OCaml's Hashtbl and TinyLibCore's *)
   { image = Buffer.contents b; addresses = lay.order;
     data_start =
       (match sections with Text_first -> Some lay.data_at | In_order -> None) }
@@ -235,8 +233,7 @@ let link (sections : sections) (objects : M.line list list) : linked =
  * and how much memory the program asks for, in bytes; tiny-kernel gives
  * it a partition of that size. This plays the role of Unix's a.out
  * header, whose bss size said how much memory a program needed beyond
- * its file. (old: the header of tiny-os v6's executables, whose third
- * word was the address where the image was linked, 0x800000.) *)
+ * its file. *)
 let aout_magic = 0x7a0ce5
 (* -n's: a fourth word, the text's size (the data's start). As Unix's
  * 0407 and 0410, the magic number says the layout *)

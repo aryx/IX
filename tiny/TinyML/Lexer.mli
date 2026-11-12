@@ -1,7 +1,8 @@
-(* tiny-ml's lexer: a file's text, its tokens, each with its line. *)
+(* tiny-ml's lexer: turns the text of a file into tokens, each with
+ * its line number. *)
 
-(* an error in the program compiled, its message, Common.Error (a bug a
- * Failure); TinyML.ml says the file and the line *)
+(* Raises Common.Error, an error in the program compiled (a bug in
+ * tiny-ml raises Failure); TinyML.ml prints the file and the line. *)
 val error : string -> 'a
 
 type token =
@@ -9,10 +10,9 @@ type token =
   | CHAR of int
   | STR of string
   | LID of string                     (* a name: x, a field *)
-  | UID of string                     (* a constructor, a module: M.x is
-                                       * one LID *)
-  | KW of string                      (* a keyword, a punctuation *)
+  | UID of string                     (* a constructor, a module; M.x a LID *)
+  | KW of string                      (* a keyword or a punctuation *)
   | EOF
 
-(* [@...] attributes and comments dropped *)
+(* Attributes ([@...]) and comments are dropped. *)
 val lex : string -> (token * int) array

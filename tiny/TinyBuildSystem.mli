@@ -5,18 +5,21 @@
  *
  * A Buildfile has five kinds of lines, shown by example in the
  * [help] string of the .ml (which build -h prints along with the
- * usage), and that is the whole syntax. Variables in rule lines are expanded
- * as the lines are read, ${X:from=to} too (mk's substitution: each word
- * of X matching from, its % any part, made to; LIB =
- * ${CORE:%=lib/%.tmi}). A recipe receives the variables, plus $target,
- * $prereq and $stem, in its environment (on tiny-kernel, which has
- * none, as the shell's assignments before the recipe), so the shell
- * does the expansion and there is no second expansion language.
+ * usage), and that is the whole syntax. Variables in rule lines are
+ * expanded as the lines are read. This includes ${X:from=to}, mk's
+ * substitution: each word of X that matches from, where % matches any
+ * part, is turned into to, as in LIB = ${CORE:%=lib/%.tmi}. A recipe
+ * receives the variables, plus $target, $prereq and $stem, in its
+ * environment. tiny-kernel has no environment, so there they are
+ * passed as shell assignments placed before the recipe. Either way the
+ * shell does the expansion, and there is no second expansion
+ * language.
  *
  * twin:
- * mini-mk (builder/), ix's full-size version, is a faithful copy of mk;
- * this one is what remains when compatibility is dropped: that core,
- * and a target out of date by its content, not by its time.
+ * mini-mk (builder/), ix's full-size version, is a faithful copy of mk.
+ * This one is what remains when compatibility is dropped: mk's core,
+ * plus a target that is out of date because of its content, not its
+ * time.
  *
  * kept:
  * {b What it checks} before running anything: cycles (reported with
@@ -51,21 +54,24 @@
  * out identical, so nothing is relinked.
  *
  * dropped:
- * To stay tiny, it leaves out mk's attributes (a target whose recipe
- * creates no file, clean or all, is simply never up to date, and a file
- * that has its name, a file called "clean", makes it look like a real
- * one), its regular-expression rules, quoting (names cannot contain
- * blanks), a single recipe making several targets at once (a b: c runs
- * the recipe once per target), archives, and mk's -t, -w, -k and -e
- * options.
+ * To stay tiny, it leaves out:
+ * - mk's attributes. A target whose recipe creates no file, such as
+ *   clean or all, is simply never up to date; but a file with its name,
+ *   a file called "clean", makes it look like a real target.
+ * - regular-expression rules;
+ * - quoting (names cannot contain blanks);
+ * - a single recipe making several targets at once (a b: c runs the
+ *   recipe once per target);
+ * - archives, and mk's -t, -w, -k and -e options.
  *
- * It also leaves out mk's backquotes, a command's output as a variable's
- * words (mini-mk's builder/mkfile: LOCAL=`{ls *.ml *.mli}), which needs a
- * shell run while the file is read. What that costs, by an example:
- * tiny/Buildfile cannot say "the image's /examples is every source in
- * examples/" (EXAMPLES=`{ls examples/*.c examples/*.ml ...}); its
- * recipe globs them with rc instead, and so they are not prerequisites:
- * an example changed alone does not make the image again.
+ * It also leaves out mk's backquotes, which turn a command's output into
+ * the words of a variable (as in mini-mk's builder/mkfile: LOCAL=`{ls
+ * *.ml *.mli}), because they need a shell to run while the file is
+ * read. What that costs, on an example: tiny/Buildfile cannot say "the
+ * image's /examples is every source in examples/" (EXAMPLES=`{ls
+ * examples/*.c examples/*.ml ...}). Its recipe globs them with rc
+ * instead, so they are not prerequisites: changing only an example
+ * does not rebuild the image.
  *
  * twist:
  * {b Up to date by content, not by time.} The stamp of each target is a
@@ -98,17 +104,20 @@
  * trigger any rebuild, a recipe that regenerates an identical file
  * stops the rebuild there (early cutoff), without mk's cmp -s trick,
  * and a recipe edited, or a variable of it changed (CFLAGS), remakes
- * what it makes, since the recipe is in the stamp with its variables'
- * values. make and mk see neither; a Makefile fakes it by making every
- * target depend on the Makefile, which remakes everything, or by
- * boilerplate that saves each command line to compare it (Linux's
- * kbuild, its .cmd files and if_changed). A file is read for its digest
- * once a run, and not at all when its size and date are the ones
- * .tiny-build recorded with its digest, as git's index does: the date
- * says only "unchanged", never "newer", and a digest is recorded only
- * for a file dated before the second it was read in (one written again
- * within it, at the same size, would keep its date: git's "racy"
- * files).
+ * what it makes, since the recipe is in the stamp with the values of its
+ * variables. make and mk see neither change. A Makefile fakes it by
+ * making every target depend on the Makefile, which remakes
+ * everything, or with boilerplate that saves each command line to
+ * compare it later (Linux's kbuild, with its .cmd files and
+ * if_changed).
+ *
+ * A file is read for its digest at most once per run, and not at all
+ * when its size and date are the ones .tiny-build recorded along with
+ * its digest, as git's index does. The date only ever means
+ * "unchanged", never "newer". A digest is recorded only for a file
+ * dated before the second in which it was read: a file written again
+ * within that same second, with the same size, would keep the same
+ * date (these are git's "racy" files).
  *
  * {b One pass, no re-walk.} mk walks its whole graph again after every
  * job, because the only way to know what a recipe did is to look at the
@@ -134,22 +143,23 @@
  *
  * context:
  * ix itself is built by mini-mk (with Builder's mkfiles, and dune
- * alongside), whose recipes are run by mini-rc or tiny-shell; this one
+ * alongside), whose recipes are run by mini-rc or tiny-shell. This one
  * hands each recipe to rc -e (TinyLibSystem.shell: tiny-shell on the
- * host, /bin/rc on tiny-kernel), so a recipe is rc's on both, as
- * mini-mk's with mini-rc. The digest comes from Sha1, which also names
- * the objects of TinyVCS: using the content of a file as its name is
- * the same idea in both, and in the nodes of TinyDatabase, which never
- * change either. The child processes are waited for by
- * TinyLibSystem.wait_any (Procs's on the host), the same loop around
- * wait that mini-mk and the shells use.
+ * host, /bin/rc on tiny-kernel), so a recipe is rc code on both, as
+ * mini-mk's recipes are with mini-rc. The digest comes from Sha1,
+ * which also names the objects of TinyVCS: naming something by its
+ * content is the same idea in both, and in the nodes of TinyDatabase,
+ * which never change either. The child processes are waited for by
+ * TinyLibSystem.wait_any (on the host, the one of Procs), the same loop
+ * around wait that mini-mk and the shells use.
  *
  * exercises:
- * Add ${X:%.c=%.o}; replace the scan with a count of pending
- * prerequisites per node, and measure the difference; let a recipe
- * declare the dependencies it discovered while running (like redo's
- * redo-ifchange), which the one-pass scheduler can support if a node is
- * decided again once its new prerequisites are done.
+ * - add ${X:%.c=%.o};
+ * - replace the scan with a count of pending prerequisites per node,
+ *   and measure the difference;
+ * - let a recipe declare the dependencies it discovered while running
+ *   (like redo's redo-ifchange). The one-pass scheduler can support it
+ *   if a node is decided again once its new prerequisites are done.
  *
  * cs-history:
  * Stuart Feldman wrote make at Bell Labs in 1976 after a colleague
@@ -181,7 +191,7 @@
  * but a Buildfile would then mean something else under mk and mini-mk,
  * which have no such rule, and a rule added anywhere could silently
  * take targets from a more general one, where here two candidates are
- * an error (kept:, what it checks).
+ * an error (see What it checks, under kept:).
  *
  * wib:
  * make compares two times, the time of the target and the time of a
@@ -190,10 +200,10 @@
  * is restored with an old date, or when two files are written in the
  * same second, and it rebuilds everything above a file that was touched
  * but not changed. It won for thirty years on the strength of that one
- * stat. A digest has to read a file once (then its size and date
- * stand for it, which only says it did not change), and needs a file of
- * its own (.tiny-build) that can be lost or become stale; but it is
- * right in those four cases.
+ * stat. A digest has to read a file once (after that, its size and
+ * date stand for it, and they only tell that it did not change), and
+ * it needs a file of its own (.tiny-build) that can be lost or become
+ * stale; but it is right in those four cases.
  *
  * references:
  *  - Stuart Feldman, "Make -- A Program for Maintaining Computer
@@ -213,20 +223,19 @@
  *    waitup, the re-walk this file does without
  *)
 
-(* a rule of the file; a target with what it is made from and how *)
+(* A node is a target with what it is made from and how. *)
 type rule
 type node
 
-(* [graph rules exists target]: from a target to its node, and its
- * prerequisites' under it: the rules naming it, or the one pattern rule
- * whose prerequisites can be made; exists says whether a file is at a
- * path (a node's name is a string, since all is no file) *)
+(* [graph rules exists target]: the target's node, from the rules naming
+ * it or else the one pattern rule whose prerequisites can be made.
+ * exists says whether a file is at a path. A node's name is a string,
+ * since a target like all is no file. *)
 val graph : rule list -> (Fpath.t -> bool) -> string -> node
 
-(* what the program asks for *)
 type caps =
   < Cap.forkew; Cap.env; Cap.open_in; Cap.open_out;
     Cap.readdir; Cap.clock; Cap.stdout; Cap.stderr >
 
-(* the program: its arguments (its name first; -h: how) to how it ends *)
+(* The arguments start with the program's name; -h tells how. *)
 val main : < caps; .. > -> string array -> Exit.t

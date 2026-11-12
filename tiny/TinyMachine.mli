@@ -6,13 +6,13 @@
  * assembly. The usage and examples are in [help], which is what
  * tiny-machine -h prints.
  *
- * The image is tiny-ld's: the objects one after the other, their
- * labels one namespace, so a kernel's table can name its programs. The
- * kernel comes first, at address 0. An image
- * is simply the first bytes of memory as they are at the start. It has
- * no header, since the machine always starts at 0 in supervisor mode
- * (the Pi's kernel.img, loaded at 0x8000 by its firmware, follows the
- * same idea).
+ * The image is made by tiny-ld: the objects are placed one after the
+ * other, and their labels share one namespace, so a kernel's table can
+ * name its programs. The kernel comes first, at address 0. An image is
+ * simply the first bytes of memory as they are at the start. It has no
+ * header, since the machine always starts at 0 in supervisor mode (the
+ * Pi's kernel.img, loaded at 0x8000 by its firmware, follows the same
+ * idea).
  * The kernel is TinyKernel.ml, and TinyKernel/steps/ holds the two
  * steps that came before it, each with a Makefile that builds and runs
  * it: v0/ is a page of assembly with its programs, and t6/ is a kernel
@@ -38,15 +38,15 @@
  *   bound. time counts executed instructions (so time belongs to the
  *   program alone, and every run is the same). The timer interrupts when
  *   time reaches timecmp and interrupts are on. [wfi] sleeps until an
- *   interrupt comes: an idle kernel's loop, which the host then does
- *   not run a jump at a time. csrr, csrw, eret and wfi are illegal in
- *   user mode.
+ *   interrupt comes. It is what an idle kernel loops on, and the host
+ *   then does not have to run that loop one jump at a time. csrr,
+ *   csrw, eret and wfi are illegal in user mode.
  * - {b Protection by a window.} In user mode every address, including
  *   instruction fetches, must be in [base, bound), otherwise it is a
  *   fault. There is no relocation at run time: a user program is
- *   linked at the address where it runs. What the window gives is that a program can
- *   only harm itself (like RISC-V's PMP or the 360's storage keys,
- *   without pages).
+ *   linked at the address where it runs. What the window gives is that
+ *   a program can only harm itself (like RISC-V's PMP or the 360's
+ *   storage keys, without pages).
  * - {b Two devices at the top of memory}, reachable from anywhere with
  *   a negative offset from r0. A store to -16(r0) writes a byte to the
  *   console, and a store to -12(r0) halts the machine, with the stored
@@ -58,39 +58,43 @@
  * since). Each addition is kept separate so that v0 still runs as it
  * did (plan_tiny_os.md, phase 2):
  *
- * - {b 256 MB} of memory (16 MB until 2026-10-15, 128 MB until the cores),
- *   with the devices still at the top (-16(r0) is the console).
+ * - {b 256 MB} of memory, with the devices still at the top (-16(r0)
+ *   is the console).
  * - {b Pages}, using Sv32 (RISC-V's 32-bit scheme with two levels; xv6
  *   on 64 bits uses Sv39's three). The top bit of satp turns paging on
  *   and the window off; a page fault puts the address in tval. With
- *   bit 30 too (tiny-kernel's pages, plan_tiny_memory.md), only user
- *   mode's addresses are translated, the kernel's physical (the
- *   PDP-11's two sets of mapping registers, the kernel's and the
- *   user's); user mode's translations are kept in a cache of 64 pages,
- *   emptied when satp is written, which a kernel does after it changed
- *   a process's tables (RISC-V's sfence.vma).
+ *   bit 30 set too (tiny-kernel's pages, plan_tiny_memory.md), only
+ *   user mode's addresses are translated, and the kernel's stay
+ *   physical (like the PDP-11's two sets of mapping registers, one for
+ *   the kernel and one for the user). User mode's translations are kept
+ *   in a cache of 64 pages, which is emptied when satp is written; a
+ *   kernel writes satp after it changes a process's tables (RISC-V's
+ *   sfence.vma).
  * - {b amoswap d, a, (b)}, the atomic swap that spinlocks are built
- *   from, usable in either mode; {b core}, the core's number (0 but with
- *   -cores, below); {b scratch} and {b csrrw}, to free a
- *   first register at the start of a trap.
+ *   from, usable in either mode. {b core}, the core's number (always 0
+ *   without -cores, below). {b scratch} and {b csrrw}, to free a first
+ *   register at the start of a trap.
  * - {b Interrupts by source}: ip (pending) and ie (enabled), with one
  *   bit per source. The timer is the first source, enabled at the start
  *   as v0 expects. An interrupt's cause is 4, and tval says which
  *   sources are pending.
- * - {b Console input} at -8(r0), with its interrupt; {b a disk}
- *   (-d image, made blank, 8 MB, when there is no such file), which
- *   moves 1 KB blocks at once, with its interrupt; a block written is
- *   written to the image file then, so a machine killed leaves the
- *   disk as a crash would.
+ * - {b Console input} at -8(r0), with its interrupt.
+ * - {b A disk} (-d image; a blank 8 MB one is made when there is no
+ *   such file), which moves 1 KB blocks instantly, with its interrupt.
+ *   A block is written to the image file as soon as it is written, so
+ *   a machine that is killed leaves the disk as a crash would.
  *
  * t6 (a kernel of our own in C, in TinyKernel/steps/t6/) added one
- * more thing: bit 16 of status makes the window relocate (a user address
- * is added to base, and must stay below bound).
- * tiny-kernel's segments (plan_tiny_memory.md) split it: with 32 of
- * status too, an address below {b tbound} is the text's, added to
- * {b tbase}, and a store there faults; one above, less tbound, is the
- * data's, added to base and below bound. One copy of a program's text
- * then serves all its runs, as the PDP-11/45's text segment did.
+ * more thing: bit 16 of status makes the window relocate (a user
+ * address is added to base, and must stay below bound). tiny-kernel's
+ * segments (plan_tiny_memory.md) split this window in two when 32 is
+ * also set in status:
+ * - an address below {b tbound} is in the text; it is added to
+ *   {b tbase}, and a store there faults;
+ * - an address above it is in the data; tbound is subtracted from it,
+ *   then it is added to base and must stay below bound.
+ * One copy of a program's text then serves all its runs, as the
+ * PDP-11/45's text segment did.
  *
  * For a window system (plan_tiny_windows.md) there are more additions,
  * each behind an option, so that a kernel without one runs as before:
@@ -136,35 +140,37 @@
  * For sound (plan_tiny_audio.md):
  *
  * - {b A speaker} that is memory, as the screen is: a ring of 8,192
- *   samples (a byte each, signed) where the kernel says, by writing its
- *   address at -52(r0); the speaker plays it, 8,000 samples a second of
- *   the machine's time, and makes each sample it played 0, so a ring
- *   nobody writes is silence. Read, the word is the samples played,
- *   where the kernel writes ahead of. The samples due are played when
- *   somebody looks (the kernel, the host), so it costs no instruction
- *   of its own. -window plays them, -audio f writes them as a WAV.
+ *   samples (one signed byte each), placed where the kernel says by
+ *   writing its address at -52(r0). The speaker plays the ring at 8,000
+ *   samples a second of the machine's time, and sets each sample it
+ *   played to 0, so a ring nobody writes is silence. Reading the word
+ *   gives the number of samples played, which the kernel keeps ahead
+ *   of when it writes. The samples due are played only when somebody
+ *   looks (the kernel or the host), so the speaker costs no instruction
+ *   of its own. -window plays the samples, and -audio f writes them as
+ *   a WAV file.
  *
  * For several cores (plan_tiny_multicore.md), behind -cores n:
  *
- * - {b Cores}: n CPUs, each with its registers, its pc and its
- *   registers of control (core its number, cores their count),
- *   sharing the memory. All start at 0 in supervisor mode, as RISC-V's
- *   cores start at the reset's address; a kernel parks the others by
- *   their core. The devices are wired to core 0: another core that
- *   reaches one faults.
- * - {b The interrupt between cores}, the sixth source (32): a store of
- *   k at -64(r0) raises core k's, from anyone; a load gives the cores
- *   that raised this one's, a bit each, and clears them. A mailbox in
- *   memory and this interrupt are all tiny-kernel's cores need.
+ * - {b Cores}: n CPUs sharing the memory, each with its own registers,
+ *   pc and control registers (core holds its number, cores the count).
+ *   All start at 0 in supervisor mode, as RISC-V's cores start at the
+ *   reset address; a kernel looks at core to park the others. The
+ *   devices are wired to core 0: another core that reaches one faults.
+ * - {b The interrupt between cores}, the sixth source (32). Any core
+ *   can store k at -64(r0) to raise core k's interrupt. A load there
+ *   gives the cores that raised this core's interrupt, one bit each,
+ *   and clears them. A mailbox in memory plus this interrupt are all
+ *   that tiny-kernel's cores need.
  * - {b In turns or at once.} By default the cores take turns in one
- *   thread, a slice of up to 1,024 instructions each: a run is the same
- *   every time, and one core is the machine as it was. With
- *   -cores-parallel, where OCaml has domains (tiny-machine built by
- *   OCaml 5), each core is a domain on one of the host's cores, counting
- *   its own time; the memory is shared without a lock (a race between
- *   cores is the program's, as on hardware), the interrupt by an
- *   Atomic; amoswap is then no longer atomic, which tiny-kernel does
- *   not need.
+ *   thread, each running a slice of up to 1,024 instructions. A run is
+ *   then the same every time, and one core behaves exactly as the
+ *   single-core machine. With -cores-parallel, where OCaml has domains
+ *   (tiny-machine built by OCaml 5), each core is a domain on one of
+ *   the host's cores, counting its own time. The memory is shared
+ *   without a lock (a race between cores is the program's problem, as
+ *   on hardware), and the interrupt goes through an Atomic. amoswap is
+ *   then no longer atomic, which tiny-kernel does not need.
  *
  * Here is all of it as a kernel sees it. Memory is 256 MB, with the
  * devices at its top. An address is taken modulo the size, so r0 minus
@@ -322,20 +328,18 @@
  *    devices as memory
  *)
 
-(* the command line's: a disk's file, a window, a screen's file, a
- * sound's, events, a network's wire *)
+(* what the command line chose (disks, window, files, wire...) *)
 type options
 
-(* an image, run to the machine's halt: the hosts' turns (the console,
- * the window), then the machine's instruction; to the exit status *)
+(* [run caps options image] runs until the halt; each round gives the
+ * host its turn (the console, the window), then runs the machine. *)
 val run :
   < Cap.stdin; Cap.stdout; Cap.stderr; Cap.open_in; Cap.open_out; Cap.readdir;
     Cap.forkew; Cap.pipe; Cap.signal; Cap.clock; Cap.exit;
     .. > ->
   options -> string -> int
 
-(* the program: its arguments (its name first; -h: how) to how it
- * ends, the kernel's halt code *)
+(* -h prints the usage; it exits with the kernel's halt code *)
 val main :
   < Cap.stdin; Cap.stdout; Cap.stderr; Cap.open_in; Cap.open_out; Cap.readdir;
     Cap.forkew; Cap.pipe; Cap.signal; Cap.clock; Cap.exit;

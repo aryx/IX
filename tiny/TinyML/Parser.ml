@@ -45,8 +45,7 @@ let abbreviation c ts =
 (* the operators, OCaml's rules: a prefix one starts with !, ~ or ?; an
  * infix one's precedence and right associativity are its first
  * character's, but for the words and those listed ("," is 1). So a
- * program defines its own, let ( // ) = ..., with no table to extend
- * (old: a table of the standard library's, |> and ||| added to it) *)
+ * program defines its own, let ( // ) = ..., with no table to extend *)
 let is_prefix o =
   o <> "" && o <> "!="
   && (o.[0] = '!' || (String.length o > 1 && (o.[0] = '~' || o.[0] = '?')))
@@ -242,14 +241,14 @@ and app () =
 and atom () = postfix (simple ())
 
 (* an atom without its postfix (.l, .(i), .[i]): a prefix operator's
- * operand, as OCaml's, whose !r.l is (!r).l (old: !(r.l)) *)
+ * operand, as OCaml's, whose !r.l is (!r).l *)
 and simple () =
   match peek () with
   | Lexer.INT n -> advance (); Tree.Const (Tree.CInt n)
   | Lexer.CHAR c -> advance (); Tree.Const (Tree.CChar c)
   | Lexer.STR s -> advance (); Tree.Const (Tree.CStr s)
   | Lexer.LID x -> advance (); Tree.var x
-  (* M.( op ): M's operator, a value named M.op (old: M a constructor) *)
+  (* M.( op ): M's operator, a value named M.op *)
   | Lexer.UID m
     when peek_at 1 = Lexer.KW "." && peek_at 2 = Lexer.KW "("
          && peek_at 4 = Lexer.KW ")"
@@ -445,10 +444,8 @@ and fun_of ps body =
           x :: names, Tree.Let (Tree.Nonrecursive, [ p, Tree.var x ], body))
       ps ([], body)
   in
-  (* fun x -> function ...: one function of both, as OCaml makes it
-   * (old: a closure made at each call of the first, List.length's
-   * len n = function ..., an allocation an element: half of tiny-ml's
-   * time on tiny-kernel) *)
+  (* fun x -> function ...: one function of both, as OCaml makes it,
+   * not a closure allocated at each call of the first *)
   match body with
   | Tree.Fun (more, body)
     when List.length names + List.length more <= 10

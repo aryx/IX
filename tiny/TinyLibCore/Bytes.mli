@@ -1,6 +1,4 @@
-(* Bytes, OCaml's subset (see Stdlib.mli): a string that can be changed
- * (old: none, and a string of samples a list, a cons a byte: 2,750
- * instructions a byte, plan_tiny_audio.md) *)
+(* Bytes, OCaml's subset (see Stdlib.mli): a string that can be changed *)
 val make : int -> char -> bytes
 val length : bytes -> int
 val get : bytes -> int -> char

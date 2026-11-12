@@ -31,8 +31,6 @@ let escaped s =
        | '&' -> "&amp;"
        | c -> String.make 1 c))
 
-(* bytes of the body, of a media type: read as HTML, as a text, or kept
- * for a helper *)
 let body (sc : Screen.screen) (media : string) s =
   match sc.sc_doc.dc_file with
   | Some fd -> (try TSys.write fd s with Failure _ -> ())
@@ -40,8 +38,8 @@ let body (sc : Screen.screen) (media : string) s =
     if is_html media then Html.feed sc.sc_page s
     else if String.starts_with "text/" media then Html.feed sc.sc_page (escaped s)
 
-(* The head's end: the status, and the body's media type, returned (HTML
- * when the head does not say, as when there is no head) *)
+(* Returns the body's media type: HTML when the head does not say, as
+ * when there is no head. *)
 let body_start caps (sc : Screen.screen) : string =
   let d = sc.sc_doc in
   let media =
@@ -58,7 +56,8 @@ let body_start caps (sc : Screen.screen) : string =
      else Html.feed sc.sc_page ("<p>" ^ media ^ ": www does not show it.</p>"));
   media
 
-(* A message of the page: the head kept until it ends, then the body *)
+(* An answer that does not start with HTTP/ has no head: all of it is
+ * body. *)
 let take caps (sc : Screen.screen) s =
   let d = sc.sc_doc in
   match d.dc_type with
@@ -101,13 +100,11 @@ let body_end caps (sc : Screen.screen) =
     Html.feed sc.sc_page ("<p>" ^ media ^ ": " ^ what ^ ".</p>")
   | None -> ()
 
-(* a connection to the wire's other end, its port 70, or None (old:
- * u_dial's -1); a question written on it, a refusal not a reason to end *)
+(* A refused connection or write is no reason for www to end. *)
 let dialed caps =
   try Some (TSys.dial caps "10.0.0.1" 70) with Failure _ -> None
 let wire_write fd s = try TSys.write fd s with Failure _ -> ()
 
-(* the connection to the wire's other end closed, if there is one *)
 let hang_up (sc : Screen.screen) =
   (match sc.sc_nav.nv_wire with
    | Wire_page fd -> TSys.close fd
@@ -143,7 +140,6 @@ let load caps (sc : Screen.screen) url =
   Screen.draw_bar sc;
   Screen.draw_tools sc;
   Screen.redraw sc;
-  (* the page asked of the wire's other end, on its port 70 *)
   (match dialed caps with
    | None ->
        sc.sc_state <-
@@ -257,7 +253,6 @@ let back caps (sc : Screen.screen) =
       end
       else begin load caps sc address; sc.sc_nav.nv_goal <- Some y end
 
-(* the link under the mouse, if any *)
 let link_at (sc : Screen.screen) x y =
   let col = x / 8 and line = (sc.sc_y + y - Screen.area_top) / 16 in
   if y < Screen.area_top || y >= Screen.area_top + Screen.area sc then None
@@ -371,7 +366,6 @@ let on_key caps (sc : Screen.screen) (k : P.key) : bool =
     k <> P.Char 'q'
   end
 
-(* the end: the page's connection closed, the screen white *)
 let quit (sc : Screen.screen) =
   hang_up sc;
   Screen.hover sc false;
@@ -472,8 +466,7 @@ let browse caps typed =
 (* Entry point *)
 (*****************************************************************************)
 
-(* The program, www address, or the words searched (user/www.ml its one
- * line; old: there whole) *)
+(* www address, or www words to search; user/www.ml calls it. *)
 let main caps argv =
   if Array.length argv < 2 then begin
     TinyLibSystem.eprint caps "usage: www address\n";

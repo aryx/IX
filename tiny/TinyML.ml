@@ -55,10 +55,7 @@ An error names the file and the line: fact.ml: line 2: this has type int ...
  * <unit>.globals, the collector's roots. What nothing uses is left out
  * by tiny-ld, piece by piece (a function, a static block): a
  * function of the toplevel has no free variable, so its closure is
- * static and the init names it not (old: prune, the program's
- * toplevel lets that nothing used dropped before the code was made,
- * when a program was compiled whole: a library cost a program only
- * what it called, which the link's pieces now do) *)
+ * static and the init names it not *)
 let compile_unit (items : (Tree.item * int) list) =
   Compile.start_fun 1 0;
   Machine.arities := [];
@@ -82,8 +79,7 @@ let compile_unit (items : (Tree.item * int) list) =
               [ Machine.DVal (Machine.exn_id u c) ];
           defs
       | Tree.ILet (r, bs) ->
-          (* (the names it adds, in the table: old, the env's first
-           * names, counted) *)
+          (* (the names it adds, in the table) *)
           let added = List.map (function
             | x, Compile.Loc (Compile.Slot s, k) ->
                 Compile.emit (Machine.Get s);
@@ -115,14 +111,11 @@ let compile_unit (items : (Tree.item * int) list) =
  * global, a primitive) and its type, M.mli's when there is one. A
  * record, Marshal's bytes (OCaml's on the host, the runtime's on
  * tiny-kernel: the same), a type in it as a type expression, its
- * variables 'v<number>, read as a type anew (of_texpr), as the text
- * was.
- * (old: a line each, printed and parsed again: half of a small unit's
- * compile was reading the interfaces) *)
+ * variables 'v<number>, read as a type anew (of_texpr). *)
 (* (at most 7 fields, as each block in it: OCaml 5's Marshal writes a
  * block of 8 or more with two bits of its header set, 4.14's and
  * TinyLibCore's do not, and the host's interface was not tiny-kernel's
- * (bugs/ix.md). old: iname, iglobals, icurry, three fields of eight) *)
+ * (bugs/ix.md)) *)
 (* (tuples, as cinfo's and linfo's fields but the type, which Marshal
  * writes as records: the same blocks) *)
 (* the standard library, TinyLibCore/'s modules, the first units of
@@ -130,14 +123,7 @@ let compile_unit (items : (Tree.item * int) list) =
  * are (TinyLibCore/Buildfile's -L .), and read as interfaces from a
  * directory, /lib/ml on tiny-kernel (-L another), as any unit's from
  * -I's, only those a unit names; its objects linked as any unit's,
- * from a library (stdlib.a).
- * (old: all of its interfaces read by every unit, in a list of them
- * here, and -nostdlib for its own units, which did not exist yet;
- * older: their text the compiler's, TinyMLPrelude.ml made of them by
- * the build, compiled again at each run: a unit of one line took 47 s
- * on tiny-kernel, and every program's main the library's code, 420 KB
- * of assembly; older: the prelude, TinyLibCore.ml, one unit, its
- * List.map a name with a dot) *)
+ * from a library (stdlib.a). *)
 
 (* a constructor: its name, kind, arity, its type's constant and other
  * constructors' counts, its type *)
@@ -173,9 +159,7 @@ let rec texpr_of_ty t =
   | Tree.TVar _ -> Tree.TE ("?", [])
 
 (* what the program's tables held before a unit: its interface has only
- * what the unit added, as OCaml's .cmi (old: the whole program's so far,
- * each unit's .tmi repeating every one before it, all read again by
- * each unit after: 310 KB of interfaces for tiny-kernel's programs) *)
+ * what the unit added, as OCaml's .cmi *)
 type before = {
   old_con : string -> Tree.cinfo -> bool;
   old_label : string -> Tree.linfo -> bool;
@@ -195,10 +179,9 @@ let snapshot () : before =
 let write_interface (old : before) (exports : (string * Compile.binding) list)
   types
     nglobals =
-  (* the tables by their names, a label's records the latest first, as
-   * the table has them (old: Hashtbl.iter's order, which is OCaml's
-   * or TinyLibCore's: an interface was not the same from the two
-   * builds of tiny-ml) *)
+  (* the tables by their names, so that tiny-ml's two builds (OCaml's
+   * Hashtbl, TinyLibCore's) write the same interface; a label's
+   * records the latest first, as the table has them *)
   let names tbl =
     List.sort_uniq compare (Hashtbl.fold (fun k _ acc -> k :: acc) tbl []) in
   let icons = List.filter_map (fun c ->
@@ -213,8 +196,7 @@ let write_interface (old : before) (exports : (string * Compile.binding) list)
       Some (l, li.lrec, li.idx, li.mut, li.lnames, texpr_of_ty li.lscheme))
     (Hashtbl.find_all Tree.record_labels l)) (names Tree.record_labels) in
   (* a name defined twice: the later, first in exports, as OCaml's
-   * shadowing (old: both, the earlier read last, so the one the units
-   * after saw, with the later's type: www's trap, bugs/ix.md) *)
+   * shadowing *)
   let seen = Hashtbl.create 64 in
   let ivals = List.filter_map (fun (x, bd) ->
     if Hashtbl.mem seen x then None
@@ -378,8 +360,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
   (* a link's units, in its order, which is the initializations' order
    * (OCaml's rule: the libraries first): an object with its interface
    * beside it; a library's members, each its interface beside the
-   * library, in the library's order (ar's). (old: the library's units
-   * from -L, by the list library, whatever the link said) *)
+   * library, in the library's order (ar's). *)
   let units_of f =
     let beside t = if TinyLibSystem.exists caps t then [ t ] else [] in
     if Fpath.has_ext ".a" f then
@@ -393,9 +374,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
                              (Filename.remove_extension name ^ ".tmi"))))
         members
     else beside (Fpath.set_ext ".tmi" f) in
-  (* a start's interfaces, its files'; a unit's are -I's and -L's (old: also
-   * .tmi files given, in their order, before the .ml: two ways for one
-   * thing) *)
+  (* a start's interfaces, its files'; a unit's are -I's and -L's *)
   let tmis = if of_link then List.concat_map units_of files else [] in
   (* [in_dirs dirs m ext]: the file of module m in the directories, its
    * name M.ext or m.ext (user/tetris.ml is Tetris), compared by the
@@ -472,13 +451,12 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
         (fun (ch : Chan.o) -> Out_channel.output_string ch.oc s) f
     with Failure m -> raise (File_error m) in
   (* the lines as an object (TinyLibMachine's assemble), or as their
-   * text (-S); old: the text always, which tiny-as parsed back
-   * into the same lines (docs/plans/done/plan_tiny_libmach.md) *)
+   * text (-S) *)
   let made (ls : TinyLibMachine.line list) =
     if !text then String.concat "" (List.map TinyLibMachine.print_line ls)
     else TinyLibMachine.to_object (TinyLibMachine.assemble ls) in
   (* x.ml's x.o here (x.s by -S); a whole program's after its first
-   * .ml, main.o when it has none (old: its text on stdout) *)
+   * .ml, main.o when it has none *)
   let named f = Fpath.set_ext (if !text then ".s" else ".o") (Fpath.base f) in
   try
     (* a start's interfaces, its files', in the link's order *)
@@ -491,8 +469,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
      * directories, then in -L's (the library's), each after those it
      * was compiled with (its ideps), once; a name with none (an alias,
      * the unit) skipped. Their units, in the order read, are a whole
-     * program's first (old: every library unit's interface read, the
-     * library's list, whatever the unit named) *)
+     * program's first *)
     let read = ref [] in
     if not of_link then begin
       let find m = in_dirs (!incl @ [ Fpath.v !lib ]) m ".tmi" in
@@ -563,7 +540,6 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
       let old = snapshot () in
       let tdefs, exports, n = compile_file f in
       let mli = Fpath.set_ext ".mli" f in
-      (* (old: Sys.file_exists mli, then read) *)
       let types =
         (try with_file (fun ch -> Parser.mli_types (text_of ch)) mli
          with File_error _ -> [])
@@ -598,13 +574,11 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
     Exit.OK
   with
   (* (said after the file, not the program's name). An error in the
-   * program; a Failure is a bug, left uncaught (old: caught as well, the
-   * library's on the text, int_of_string's, not told from a bug's) *)
+   * program; a Failure is a bug, left uncaught *)
   | Error m ->
       TinyLibSystem.eprint caps (!file ^ ": " ^ m ^ "\n"); Exit.Code 1
   (* a line made that cannot be encoded (a number too big for its
-   * field): the compiler's error, said with the file, as tiny-as
-   * said it of the text (old) *)
+   * field): the compiler's error, said with the file *)
   | TinyLibMachine.Error e ->
       TinyLibSystem.eprint caps (!file ^ ": " ^ e ^ "\n"); Exit.Code 1
   | File_error m -> Exit.Err m

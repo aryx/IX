@@ -14,10 +14,9 @@
  * (TinyMachinePeer.www_address).
  *)
 
-(* an address, a URL's text (old: a string that said nothing of it) *)
 type url = string
 
-(* an address and its #fragment, apart *)
+(* an address split from its #fragment *)
 val fragment : url -> url * string option
 
 (* What was typed, as a full address: a title is an English Wikipedia
@@ -25,13 +24,11 @@ val fragment : url -> url * string option
  * DuckDuckGo's page for text browsers (lite.duckduckgo.com). *)
 val absolute : string -> url
 
-(* the search's address, its words after it *)
+(* the query's words are appended to it *)
 val search_engine : url
 
-(* "https://host" of an address *)
+(* the "https://host" part of an address *)
 val site : url -> url
 
-(* [resolve url base href]: where a link goes, from the page at [url]
- * whose <base> is [base] ("" when it has none), [href] as the page
- * writes it *)
+(* [resolve url base href], [base] being the page's <base> or "" *)
 val resolve : url -> url -> string -> url

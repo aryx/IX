@@ -118,7 +118,7 @@ let show () =
   end
 
 (* the drawing's messages; one refused is said, and the program goes on, as
- * after tiny-kernel's write of /dev/draw (-1 there) (old: the program ended) *)
+ * after tiny-kernel's write of /dev/draw (-1 there) *)
 let draw s =
   match G.messages (Lazy.force conn) s with
   | () -> dirty := true
@@ -139,8 +139,7 @@ let draw s =
 let ring_at = 0xc00000
 let ring = 8192
 let fed = ref 0
-(* when the speaker started, at the first open of /dev/audio (old: 0.
- * until then) *)
+(* when the speaker started, at the first open of /dev/audio *)
 let started : float option ref = ref None
 
 let feed () =
@@ -198,7 +197,7 @@ let now () = int_of_float (Unix.gettimeofday () *. 1000.0)
 (*****************************************************************************)
 
 (* the mouse, as its box says it: where it is, its buttons held (a bit
- * each) (old: a triple) *)
+ * each) *)
 type pointer = { p_x : int; p_y : int; p_buttons : int }
 
 (* the keys typed and not read; the mouse, and whether it moved since it
@@ -268,8 +267,7 @@ let can_read n =
 
 (* tiny-machine-fetch's output for its arguments, or why not; beside
  * this program, as tiny-machine finds it, or in dune's _build, from
- * tiny/user/sdl/ (old: ../TinyMachine/, from tiny/sdl/, where the
- * programs were built before 6ccdff26) *)
+ * tiny/user/sdl/ *)
 let fetch args =
   let dir = Filename.dirname Sys.executable_name in
   let helper =

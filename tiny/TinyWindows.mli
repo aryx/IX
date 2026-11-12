@@ -164,10 +164,8 @@
  *    and xix's rio in OCaml, which mini-rio follows, module by module
  *)
 
-(* the program: the screen drawn grey, then the loop, until the keys or
- * the mouse end, or the menu's Exit (its windows deleted, their
- * shells killed). caps: the windows' pipes and box, their shells
- * forked, run and waited for, killed at a Delete. OCaml only checks it
- * (a box is tiny-kernel's: no program is linked on the host) *)
+(* The program. It loops until the keys or the mouse end, or until Exit
+ * in the menu kills the shells. On the host OCaml only type-checks it:
+ * boxes exist only on tiny-kernel. *)
 val main :
   < Cap.pipe; Cap.forkew; Cap.kill; .. > -> string array -> Exit.t

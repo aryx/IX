@@ -1,24 +1,27 @@
-(* tiny-mkfs: a disk of tiny-kernel's file system, made on the host with
- * files of the host's, for tiny-machine -d. Its usage and examples:
- * [help], what tiny-mkfs -h prints.
+(* tiny-mkfs: makes a disk of tiny-kernel's file system on the host,
+ * filled with files of the host, for tiny-machine -d. Its usage and
+ * examples are in [help], which is what tiny-mkfs -h prints.
  *
- * The disk is written by the kernel's own file system,
- * TinyKernel/KFS.ml, compiled by OCaml for the host (as its test
- * and tests/KFS_tests/Cat.ml, which reads a disk back): mounted
- * blank, so made as the kernel makes it at its first boot, then each file
- * created and written as a program's write would. So a disk is right by
- * construction: no second writer of the format to keep in step with the
- * kernel's.
+ * The disk is written by the kernel's own file system code,
+ * TinyKernel/KFS.ml, compiled by OCaml for the host (as are its test
+ * and tests/KFS_tests/Cat.ml, which reads a disk back). The disk is
+ * first mounted blank, so it is formatted exactly as the kernel
+ * formats it at its first boot. Then each file is created and written
+ * as a program's write would do it. A disk is therefore right by
+ * construction: there is no second writer of the format to keep in
+ * step with the kernel.
  *
- * TinyKernel/Makefile makes disk.img so: the sources (/src), which the
- * image carried in memory before (boot.img: its files are at most 10 MB,
- * where the file system's buffers start), as m-ix's machine has its
- * boot.img and its card.img.
+ * TinyKernel/Makefile uses it to make two disks: disk.img holds the
+ * system (/bin, /lib, /examples) and src.img holds the sources (/src).
+ * This keeps them out of boot.img, whose files must fit in 10 MB, below
+ * where the file system's buffers start. m-ix's machine has the same
+ * split between its boot.img and its card.img.
  *
  * twin:
- * mini-mkfs (m-ix's, xv6's mkfs.c), whose command line this is: -m,
- * name=file, a directory/. Dropped: -b and -i, a block being 1 KB and
- * the inodes a file of their own here (KFS.mli). *)
+ * mini-mkfs (m-ix's, after xv6's mkfs.c), whose command line this one
+ * follows: -m, name=file, and directory/. We dropped -b and -i: here a
+ * block is always 1 KB, and the inodes are a file of their own
+ * (see KFS.mli). *)
 
 (* [main caps argv]: tiny-mkfs's command line *)
 val main :

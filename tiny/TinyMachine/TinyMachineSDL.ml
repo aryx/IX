@@ -102,8 +102,6 @@ let create ~title =
            window := Some (win, ok (Sdl.create_renderer win))
        | Some (win, _) -> Sdl.set_window_size win ~w ~h);
       let _, r = Option.get !window in
-      (* the frame drawn as large as fits, its proportions kept; and the
-       * mouse's place given in the frame's pixels *)
       ok (Sdl.render_set_logical_size r w h);
       texture :=
         Some (ok (Sdl.create_texture r Sdl.Pixel.format_rgb24
@@ -122,7 +120,6 @@ let create ~title =
       draw ()
     end in
   let e = Sdl.Event.create () in
-  (* SDL's buttons as Plan 9's: left 1, middle 2, right 4 *)
   let button b =
     if b = Sdl.Button.left then 1
     else if b = Sdl.Button.middle then 2
@@ -155,8 +152,7 @@ let create ~title =
         add (Wheel (- Sdl.Event.(get e mouse_wheel_y)))
     done;
     List.rev !evs in
-  (* the arrow, or a hand over what can be clicked, as the system draws
-   * them; each made once, when first asked for *)
+  (* The system's arrow and hand, each made when first asked for. *)
   let cursors = Hashtbl.create 2 in
   let cursor n =
     match Hashtbl.find_opt cursors n with

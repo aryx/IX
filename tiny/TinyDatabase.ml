@@ -92,9 +92,7 @@ let load (f : file) (off : offset) : string =
   read_at f (off + 8) (int_at (read_at f off 8) 0)
 
 (* A node and the catalog as bytes: Marshal's. An int beyond 31 bits
- * written by OCaml on the host stops tiny-ml's reader (old: by hand, an
- * int 8 bytes, a string, a list and an array their length then what is
- * in them, a constructor its number first: 50 lines) *)
+ * written by OCaml on the host stops tiny-ml's reader *)
 let node_bytes (n : node) : string = Marshal.to_string n [ Marshal.No_sharing ]
 let node_of_bytes (s : string) : node = Marshal.from_string s 0
 
@@ -300,7 +298,7 @@ let remove f (t : table) (r : row) =
 
 type token = Name of string | Num of int | Str of string | Sym of string
 
-(* (old: 'a' .. 'z' in the patterns, which tiny-ml does not read) *)
+(* comparisons, not 'a' .. 'z' patterns, which tiny-ml does not read *)
 let is_digit c = c >= '0' && c <= '9'
 let is_letter c = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c = '_'
 
@@ -361,8 +359,8 @@ type stmt =
   | Update of string * stage list * (string * expr) list
   | Help
 
-(* the operators, by precedence (old: written where they are used, an
- * expression too deep for tiny-machine's registers) *)
+(* the operators, by precedence, in tables: written where they are used,
+ * they made an expression too deep for tiny-machine's registers *)
 let additive = [ [ Sym "+", Add; Sym "-", Sub ]; [ Sym "*", Mul; Sym "/", Div ] ]
 let comparisons = [ "=", Eq; "!=", Ne; "<", Lt; "<=", Le; ">", Gt; ">=", Ge ]
 
@@ -679,9 +677,8 @@ Also:
   help                    this, and the tables
 |}
 
-(* delete, or set its items (old: a case of exec, Delete (name, stages)
- * | Update (name, stages, _), an or-pattern with variables, which
- * tiny-ml does not read) *)
+(* delete, or set its items: a function of its own, as exec's or-pattern
+ * with variables would be one that tiny-ml does not read *)
 let change db name stages (items : (string * expr) list option) =
   let f = db.file in
   let t = table db name in

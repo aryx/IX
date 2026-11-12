@@ -1,7 +1,8 @@
-(* TinyKernel's system calls: a process's trap with Trap_sys, its number
- * the sys instruction's (the trap's value), its arguments in r1..r3,
- * its result put back in r1; and what they need, a process ended, a
- * program loaded in a process's memory.
+(* TinyKernel's system calls, plus what they need: ending a process and
+ * loading a program into a process's memory. A system call is a trap
+ * of kind Trap_sys. The call's number is the operand of the sys
+ * instruction (the trap's value), its arguments are in r1..r3, and its
+ * result is put back in r1.
  *
  *     0 exit    1 write   2 read     3 fork    4 exec     5 wait
  *     6 getpid  7 open    8 close    9 pipe    10 dup     11 mkdir
@@ -9,38 +10,40 @@
  *     18 dial   19 listen 20 getcwd  21 link   22 rawcons 23 trace
  *     24 seek   25 date   26 stat    27 seed   28 spawn
  *
- * A call that may wait (a read, a wait, a fork with no slot free) is
- * tried at once and, when it cannot finish, left as the process's
- * Waiting state, tried again by the scheduler (KProcs.mli).
- * A buffer is the user's memory as it is when it is in one piece (a
- * partition's), else copied through the kernel's bounce (TinyKernel.mli's
- * layout), as Linux's copy_from_user and xv6's copyin copy every call's.
+ * A call that may have to wait (a read, a wait, a fork when no process
+ * slot is free) is tried at once. If it cannot finish, it becomes the
+ * process's Waiting state, and the scheduler tries it again later (see
+ * KProcs.mli).
+ *
+ * A buffer passed to a call is used in place in the user's memory when
+ * it is in one piece (inside one partition). Otherwise it is copied
+ * through the kernel's bounce buffer (see the layout in TinyKernel.mli),
+ * as Linux's copy_from_user and xv6's copyin copy every call's buffer.
  *
  * plan9-is-cleaner:
- * a link to another machine and a trace are files of a descriptor
- * (dial, trace), read and written as any other, where Unix has sockets
- * and ptrace, each with calls of its own. spawn is fork and exec at
- * once, as POSIX's posix_spawn.
+ * A link to another machine and a trace are both files behind a
+ * descriptor (from dial and trace), read and written like any other
+ * file. Unix instead has sockets and ptrace, each with calls of its
+ * own. spawn is fork and exec in one call, like POSIX's posix_spawn.
  *)
 
-(* [exit_proc p status]: its descriptors closed, its children orphans,
- * its status for its parent, or its slot free; the first process's end
- * is the machine's *)
+(* [exit_proc p status] closes p's descriptors, orphans its children,
+ * keeps status for its parent (or frees its slot). The end of the first
+ * process is the end of the machine. *)
 val exit_proc : KProcs.proc -> int -> unit
 
-(* [load_prog p node argv]: the program of node in p's memory, its
- * arguments as start.s finds them (Bad if it is no program, or if
- * there is no room: p left as it was) *)
+(* [load_prog p node argv] places argv where start.s expects it. It fails
+ * with Bad, p unchanged, if node is not a program or there is no room. *)
 val load_prog :
   KProcs.proc -> KFiles.node option -> string list -> unit
 
-(* kill(pid)'s: the process ended as a fault ends one, its status -1 *)
+(* What kill(pid) does: the process ends as on a fault, with status -1. *)
 val kill : KProcs.proc -> unit
 
-(* [call p n]: system call n of p, its tracer told before and after
- * when it stops at its calls *)
+(* [call p n] runs system call n. A tracer that asked to stop at calls is
+ * told before and after. *)
 val call : KProcs.proc -> int -> unit
 
-(* a traced process whose wait ended, stopped if its tracer asked for
- * the call's end or a step *)
+(* For a traced process whose waiting call just ended: stops it and
+ * returns true if its tracer asked to stop at a call's end or to step. *)
 val waited : KProcs.proc -> bool

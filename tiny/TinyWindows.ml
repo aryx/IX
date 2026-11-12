@@ -121,9 +121,9 @@ let show r w =
 let refresh r = fill screen grey r; List.iter (show r) (List.rev !windows)
 
 (* a rectangle of a window's image changed: that part of the screen
- * again, from the window to the front (old: all of the window at each
- * change: a ball of 16 pixels moved was 80,000 copied, more than the
- * machine has between two moves) *)
+ * again, from the window to the front. All of the window at each
+ * change would copy 80,000 pixels for a ball of 16 moved, more than
+ * the machine has time for between two moves. *)
 let update w (x0, y0, x1, y1) =
   let r =
     clip (inner w)
@@ -165,9 +165,9 @@ let newline w =
      fill w.image white (0, last, w.w, w.h))
 
 (* what a program printed: the characters that fit the line are one
- * text, on cells made white (old: a message a character, three seconds
- * for an ls). An ENQ (5) is a question: the window's size, posted in
- * its mouse box as a mouse at (width, height) with the buttons -1 *)
+ * text, on cells made white. An ENQ (5) is a question: the window's
+ * size, posted in its mouse box as a mouse at (width, height) with the
+ * buttons -1 *)
 let print w s =
   let n = String.length s in
   let cells k =

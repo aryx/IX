@@ -8,25 +8,20 @@ open Lines
 (* The tags *)
 (*****************************************************************************)
 
-(* Is w one of the space-separated words of a class attribute? *)
 let has_class classes w =
   w <> "" && List.mem w (String.split_on_char ' ' classes)
 
 type got = Pic_unasked | Pic_asked | Pic_failed | Pic_rows of int
 
-(* A picture of the page: where it is, the size it is shown at in
- * pixels, its alternative text, and how far it has come *)
+(* pc_w and pc_h are the size it is shown at, in pixels. *)
 type picture = {
   pc_src : string; pc_w : int; pc_h : int; pc_alt : string;
   mutable pc_got : got }
 
-(* An open element. Besides its tag, it records how its text should be
- * shown, combining what it says with what its parents say, so the top
- * of the stack alone tells how to show the next text. *)
 type elem = {
   tag : string;
   face : int;                 (* the look of its text: bold, emph, code *)
-  href : string option;       (* where its text links to *)
+  href : string option;
   hide : bool;
   pre : bool;
   margin : int;               (* the column where its lines start *)
@@ -42,10 +37,9 @@ type page = {
   mutable space : bool;         (* whether a space was read since the last word *)
   mutable page_title : string;
   mutable page_base : string;
-  mutable page_refresh : string;          (* where a <meta> refresh sends us *)
-  mutable anchors : (string * int) list;  (* an element's id, and the line it
-                                           * starts at *)
-  mutable pictures : picture list;        (* the page's pictures, the last first *)
+  mutable page_refresh : string;
+  mutable anchors : (string * int) list;  (* an id and its line *)
+  mutable pictures : picture list;        (* the last first *)
   mutable npictures : int;
   mutable heading : (string * int * string option * bool) list;
     (* a large heading's words, the last first *)
@@ -135,7 +129,7 @@ let hides k attrs =
       Strings.find st "display:none" 0 <> None
       || Strings.find st "display: none" 0 <> None)
 
-(* the line's end a table's cell waits for, put in before what comes *)
+(* Puts into the cell the line's end that t.broken has put off. *)
 let unbreak (t : table) c =
   if t.broken > 0 then begin c.items <- Break :: c.items; t.broken <- 0 end
 
@@ -159,7 +153,6 @@ let emit p text =
     p.space <- false
   end
 
-(* Ends the current line. *)
 let break p =
   (match p.tables with
    | t :: _ ->
@@ -278,9 +271,6 @@ let picture p attrs =
     end
   end
 
-(* Some elements close implicitly when another one opens: a paragraph
- * when any block starts, a list item when the next one starts, a cell
- * when the next one starts. *)
 let implied p tag k =
   let close_to names stop =
     let rec find = function
@@ -327,9 +317,9 @@ let meta_refresh attrs =
       else u
   | _ -> ""
 
-(* A cell of a table inside a cell: the outer table lays out its cells,
- * the inner one's are a space and its rows lines. An empty block in
- * such a cell (Hacker News' vote arrow) is no line's end. *)
+(* Only the outer table lays out its cells: an inner table's cell becomes
+ * a space, and its row a line's end. An empty block in such a cell
+ * (Hacker News' vote arrow) ends no line. *)
 let inner_cell p tag =
   (tag = "td" || tag = "th")
   && (match p.tables with t :: _ -> t.depth > 0 | [] -> false)
@@ -354,8 +344,6 @@ let open_tag p tag k attrs =
       (id, p.page_flow.nlines
            + (if p.page_flow.made <> [] || p.page_flow.blank then 1 else 0))
       :: p.anchors;
-  (* Inside a table, a <tr> starts a new row and a <td> or <th> a new
-   * cell, whose words are kept until the end of the table. *)
   if is k block then
     (match p.tables, tag with
      | [], "table" when not hide ->
@@ -497,11 +485,10 @@ let pictures p = p.npictures
 let picture_of p id = List.nth p.pictures (p.npictures - 1 - id)
 let count p = p.page_flow.nlines
 
-(* The lines from the a-th to before the b-th, from the top. The lines
- * are kept last first, as they are made; an array of them from the top
- * is made again when lines have come since it was made, so that the
- * lines a scroll asks for are found at once (walking the list from its
- * end each time was a tenth of a page down). *)
+(* The lines are kept last first, as they are made. An array of them
+ * from the top is rebuilt when lines have come since, so that a scroll
+ * finds its lines at once (walking the list each time took a tenth of
+ * a page down). *)
 let lines_between p a b =
   let f = p.page_flow in
   let n = f.nlines in

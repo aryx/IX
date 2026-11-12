@@ -34,7 +34,7 @@ let rec occurs r lv t =
 let rec unify a b =
   match repr a, repr b with
   | Tree.TVar r, Tree.TVar r' when r == r' -> ()
-  (* (old: one case, an or-pattern with names) *)
+  (* (two cases: tiny-ml has no or-patterns with names) *)
   | Tree.TVar ({ contents = Tree.Unbound (_, l) } as r), t -> occurs r l t;
   r := Tree.Link t
   | t, Tree.TVar ({ contents = Tree.Unbound (_, l) } as r) -> occurs r l t;
@@ -97,8 +97,7 @@ let records l f =
 (* l's label: of the record t already is when known (an annotation's,
  * a parameter's), type-directed, so that two records may share one;
  * else the one in scope (Tree's names: the unit's own, what it opens,
- * Stdlib's, the latest first); else the only record that has it
- * (old: the latest record read, whichever unit's) *)
+ * Stdlib's, the latest first); else the only record that has it *)
 let label_for l t : Tree.linfo =
   match repr t with
   | Tree.TCon (n, _) ->
@@ -181,9 +180,7 @@ let rec pat_type known p : Tree.ty * (string * Tree.ty) list =
  * what it opens, each added as it comes (a name added again hides the
  * one before, as OCaml's Hashtbl keeps them) and taken out at its end
  * ([unit_done]). The locals are a list, looked in first. Two of them,
- * the types' and the values' (below).
- * (old: all of them one list, Stdlib's at its end: each +, = or ^ found
- * after the whole program's names, most of a compilation's time) *)
+ * the types' and the values' (below). *)
 let tglobals : (string, Tree.ty) Hashtbl.t = Hashtbl.create 1024
 let find_name env tbl x =
   match List.assoc_opt x env with
@@ -341,9 +338,7 @@ let type_item env (it, l) =
 (* Scopes. A unit's names are M.x for the units after it; open M gives
  * a unit M's names as x, for itself alone. Stdlib is open in every
  * unit. A name's env and a type's env are scoped alike, as the types,
- * the constructors and the labels are (Tree.ml's Names)
- * (old: every name the program's, open M read and left, List.map a
- * name with a dot) *)
+ * the constructors and the labels are (Tree.ml's Names) *)
 let implicit u = u = "Stdlib"
 let qualify u x = u ^ "." ^ x
 (* M.x as a ^ x too, for this unit *)
@@ -369,8 +364,7 @@ let export tbl u defs =
     (List.rev defs)
 
 (* a unit's items typed: the names it defined, each in the table as it
- * comes (old: an env too, always empty, from when the names were one
- * list) *)
+ * comes *)
 let type_unit items =
   List.fold_left (fun defs (it, l) ->
     match it with

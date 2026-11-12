@@ -40,8 +40,8 @@
  * function, stats.c's iprofile). Here the two are programs of their
  * own: tiny-cpu writes the counts (-prof) for tiny-prof, and the
  * debugger is tiny-kernel's debug (TinyDebugger), not the emulator's.
- * mini-5i answers a whole system's calls, Linux's or Plan 9's; tiny-cpu
- * three, what start.s needs.
+ * mini-5i handles all the calls of a whole system, Linux's or Plan
+ * 9's; tiny-cpu handles three, the ones start.s needs.
  *
  * Status: this is the first step for running a program on this
  * machine. Programs compiled by tiny-cc run here with its libc (the
@@ -49,15 +49,15 @@
  * The same assembly, linked after a kernel, runs on TinyMachine, where
  * sys traps to that kernel instead of to OCaml. *)
 
-(* an image's bytes, loaded and run with its arguments, its system
- * calls done here: to its exit status. With a profile, each instruction
- * run is counted into it (-prof). *)
+(* Loads the bytes of an image and runs it with its arguments, doing
+ * its system calls here, and returns its exit status. With a profile,
+ * each instruction run is counted into it (-prof). *)
 val interpret :
   < Cap.stdin; Cap.stdout; Cap.stderr; .. > ->
   TinyMachineCPU.profile option -> string -> string list -> int
 
-(* the program: its arguments (its name first; -h: how) to how it
- * ends, the image's exit status *)
+(* The program: its arguments (its name first; -h tells how), and how
+ * it exits, which is the image's exit status. *)
 val main :
   < Cap.stdin; Cap.stdout; Cap.stderr; Cap.open_in; Cap.open_out; .. > ->
   string array -> Exit.t

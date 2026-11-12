@@ -5,9 +5,8 @@
 (* Common's |||: an option's value, or a default *)
 let ( ||| ) = Common.( ||| )
 
-(* (old: a format, Printf.ksprintf's: tiny-ml reads a format only where
- * it is written, Printf.sprintf at the call; then failwith, the same
- * Failure as a bug's) *)
+(* a string, not a format: tiny-ml reads a format only where it is
+ * written, at a call of Printf.sprintf *)
 let error s = Common.error s
 
 (*****************************************************************************)
@@ -30,10 +29,7 @@ let symbols =
   [ "|||"; ";;"; "->"; "::"; ":="; ":>"; "<-"; "<="; ">="; "<>"; "==";
     "!="; "&&"; "||"; "|>"; ".["; "~-" ]
 
-(* both as tables, which the lexer looks a word up in (old: List.mem
- * over the keywords at each name, List.find_opt over the symbols at
- * each other character, a String.sub for each: most of the time of a
- * compilation's lexing, a million comparisons for TinyML.ml) *)
+(* both as tables, which the lexer looks a word up in *)
 let table l =
   let t = Hashtbl.create 64 in
   List.iter (fun k -> Hashtbl.replace t k ()) l;
@@ -46,8 +42,7 @@ let symbol = table symbols
 let lex (s : string) : (token * int) array =
   let n = String.length s and out = ref [] and line = ref 1 in
   let add t = out := (t, !line) :: !out in
-  (* (old: 'a' .. 'z' and the others as patterns: tiny-ml has no
-   * character ranges) *)
+  (* comparisons, not patterns: tiny-ml has no character ranges *)
   let lower c = c >= 'a' && c <= 'z' and upper c = c >= 'A' && c <= 'Z'
   and digit c = c >= '0' && c <= '9' in
   let is_id c = lower c || upper c || digit c || c = '_' || c = '\'' in
@@ -115,7 +110,7 @@ let lex (s : string) : (token * int) array =
           in
           let w = String.sub s i (j - i) in
           (* (M.C is kept whole, M's constructor C: find_con; and open
-           * M.N opens M's module N, its whole path. old: M.C was C) *)
+           * M.N opens M's module N, its whole path) *)
           add
             (match String.rindex_opt w '.' with
              | Some k when w.[k + 1] >= 'a' -> LID w

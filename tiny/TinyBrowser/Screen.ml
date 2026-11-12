@@ -32,57 +32,32 @@ let colours =
 (* What the screen shows *)
 (*****************************************************************************)
 
-(* What the screen shows. At the top, TinyLibGUI's bar of menus, with the
- * page's title, and a toolbar: Back, the address, Go. The last row
- * says how the reading goes, and the rows between show the page's
- * lines, scrolled by pixels (sc_y). A line that arrives is drawn if it
- * falls in the page's area.
- * A page is read from [nv_wire], the connection to the wire's other end
- * and what it brings; [nv_history] holds the pages seen before, each
- * with the first line that was shown. Where the browsing is (the nav)
- * is a record of its own, as tiny-ml builds a record's fields on its 11
- * registers. *)
-
-(* the connection to the wire's other end: none (the page and its
- * pictures are all there), the page's, or picture i's *)
 type wire = Wire_off | Wire_page of int | Wire_picture of int * int
 
 type nav = {
-  mutable nv_address : string;       (* the page's full address, without its
-                                      * #fragment *)
+  mutable nv_address : string;
   mutable nv_wire : wire;
   mutable nv_history : (string * int) list;
-  mutable nv_goal : int option;      (* a line to show first once it has come
-                                      * (back) *)
+  mutable nv_goal : int option;
   mutable nv_goal_id : string option;
-                                     (* an anchor to show once it has come
-                                      * (#fragment) *)
-  mutable nv_pressed : bool;         (* the mouse's button is down *)
-  mutable nv_hover : bool;           (* the mouse is over a link: its look is
-                                      * a hand *)
+  mutable nv_pressed : bool;
+  mutable nv_hover : bool;
 }
 
-(* the menus and the toolbar's, below the model as TinyLibGUI has them *)
 type tools = {
-  mutable tb_field : string;          (* the address, as shown or being typed *)
-  mutable tb_mouse : G.mouse;           (* TinyLibGUI's: the field has the keys
-                                       * when pressed in last *)
+  mutable tb_field : string;
+  mutable tb_mouse : G.mouse;
   tb_menu : G.menu_state;
 }
 
-(* The document being read: HTTP's answer, its head first, then its
- * body, which goes by the head's Content-Type ([dc_type], None until
- * the head has come): read as HTML, shown as a text, or kept in a file
- * ([dc_file]) for a program that shows it. *)
 type doc = {
-  mutable dc_got : int;              (* the bytes read so far *)
-  mutable dc_head : string;          (* the head so far, until it ends *)
+  mutable dc_got : int;
+  mutable dc_head : string;
   mutable dc_type : string option;
-  mutable dc_status : int option;    (* 200, if a head said *)
-  mutable dc_file : int option;      (* the file a helper's bytes go to *)
+  mutable dc_status : int option;
+  mutable dc_file : int option;
 }
 
-(* where the page is: being read, read, or none, and why *)
 type state =
   | Page_reading
   | Page_done
@@ -94,26 +69,22 @@ type screen = {
   sc_tools : tools;
   sc_cols : int;
   sc_rows : int;
-  mutable sc_y : int;               (* the page's pixel at the top of its area *)
-  mutable sc_drawn : int;           (* the lines before this one that are in
-                                     * the area are drawn *)
+  mutable sc_y : int;
+  mutable sc_drawn : int;
   sc_doc : doc;
   mutable sc_state : state;
-  mutable sc_msgs : string list;    (* drawing messages not yet written, last
-                                     * first *)
+  mutable sc_msgs : string list;
 }
 
 let put sc m = sc.sc_msgs <- m :: sc.sc_msgs
 
-(* What a menu's item or a button of the toolbar does ([act] below):
- * Typed is the toolbar's field, its text after a key *)
 type act =
   | Back | Top | Reload | Quit | Address | Search | Go_to of string
   | Go_typed
   | Typed of string
 
-(* The menus (TinyLibGUI's): the page, a few articles to go to, and the
- * pages seen before (the last ten, the latest first) *)
+(* The menus are the page's, a few articles to go to, and the last ten
+ * pages seen, the latest first. *)
 let bookmarks = [ "OCaml"; "Plan 9 from Bell Labs"; "Unix"; "Niklaus Wirth" ]
 let menus sc =
   let rec first n l =
@@ -126,8 +97,8 @@ let menus sc =
     "History",
     List.map (fun (a, _) -> short a, Go_to a) (first 10 sc.sc_nav.nv_history) ]
 
-(* The drawing messages written. A menu that is open is over the page:
- * it is drawn again, over what the messages drew. *)
+(* Writes the messages kept. A menu that is open is over the page, so it
+ * is drawn again over what the messages drew. *)
 let send sc =
   if sc.sc_msgs <> [] then begin
     (try TSys.write TSys.fd_draw (String.concat "" (List.rev sc.sc_msgs))
@@ -145,7 +116,6 @@ let clip sc s =
     String.sub s 0 (max 0 (sc.sc_cols - 2))
   else s
 
-(* a row, filled with a colour *)
 let fill_row sc row colour =
   put sc (D.d_fill 0 colour (0, row * 16, sc.sc_cols * 8, (row * 16) + 16))
 
@@ -192,14 +162,11 @@ let draw_slice sc dst y (r : run) id s =
     end
   end
 
-(* The page's line i, put on the screen (by the strip when it is cut by
- * the area's edge, or is half of a large heading's line). The text is a
- * dark grey, bold black in the kernel's bold font (its strokes wider,
- * an m's gaps kept: drawn twice, a pixel apart, an m was a block);
- * emphasis is italic; a link is blue and underlined; code is on light
- * grey; a large heading's characters are 16 by 32, the kernel's large
- * font, its top half on one line, its bottom half (Run_lower) on the
- * next. *)
+(* Line i goes through the strip when the area's edge cuts it or when it
+ * is half of a large heading's line. Bold is black in the kernel's bold
+ * font, which keeps an m's gaps (drawing twice, a pixel apart, made an
+ * m a block). A large heading uses the kernel's 16 by 32 font, its top
+ * half on one line and its bottom half (Run_lower) on the next. *)
 let draw_line sc i (l : line) =
   let w = sc.sc_cols * 8 and at = area_top + (i * 16) - sc.sc_y in
   let tall = List.exists (fun (r : run) -> r.look land big <> 0) l.runs in
@@ -237,8 +204,8 @@ let draw_line sc i (l : line) =
     if y0 < y1 then put sc (D.d_draw 0 c_strip (-1) (0, y0, w, y1) (0, y0 - at))
   end
 
-(* The bar of menus, the page's title at the right of their titles, and
- * the menu open, by TinyLibPlayground's shapes (after our messages) *)
+(* The page's title goes at the right of the menus' titles. Our messages
+ * are sent first, as the playground's shapes go over them. *)
 let draw_bar sc =
   send sc;
   let w = sc.sc_cols * 8 and ms = menus sc in
@@ -257,9 +224,8 @@ let draw_bar sc =
    | [] -> ());
   P.flush ()
 
-(* The toolbar: Back, the address in a field (its end, when it is longer
- * than the field: what is typed goes after the part not shown), Go; by
- * TinyLibGUI's widgets, at their places *)
+(* When the address is longer than the field, the field shows its end,
+ * and what is typed goes after the part not shown. *)
 let input_box sc = 72, G.bar_height + 4, (sc.sc_cols * 8) - 144, 24
 let laid_tools sc =
   let (x, y, w, h) = input_box sc in
@@ -273,8 +239,8 @@ let laid_tools sc =
   let (s3, b3) = G.place (x + w + 8) y 56 h (G.Button ("Go", Go_typed)) in
   s1 @ s2 @ s3, b1 @ b2 @ b3
 
-(* the toolbar on its ground (TinyLibGUI's grey), and what the mouse
- * puts over it: a button held, the field's caret *)
+(* G.over adds what the mouse puts over the toolbar: a button held, the
+ * field's caret. *)
 let draw_tools sc =
   let (shapes, boxes) = laid_tools sc in
   send sc;
@@ -324,7 +290,6 @@ let draw_between sc a b =
   if y0 < y1 then put sc (D.d_fill 0 c_white (0, y0, sc.sc_cols * 8, y1));
   first + List.length ls
 
-(* the whole area drawn again *)
 let redraw sc = sc.sc_drawn <- draw_between sc sc.sc_y (sc.sc_y + area sc)
 
 let max_y sc = max 0 ((Html.count sc.sc_page * 16) - area sc)
@@ -370,7 +335,6 @@ let glide sc d =
     end in
   go d
 
-(* the page from line [line] on, as far as the page allows *)
 let show_from sc line =
   let y = max 0 (min (line * 16) (max_y sc)) in
   if y <> sc.sc_y then begin sc.sc_y <- y; redraw sc end

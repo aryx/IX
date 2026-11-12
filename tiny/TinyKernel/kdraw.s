@@ -7,8 +7,7 @@
 ; row_copy(dst, src, n): n bytes, from the first. A word at a time
 ; where both are at the same place in a word (the machine's words are
 ; at multiples of 4): the bytes up to a word's start, the words, the
-; bytes left. (old: a byte at a time, the loop at row_copy3 alone: a
-; window composed on the screen was 5 instructions a pixel)
+; bytes left.
 row_copy:
 	ldw	r1, 0(sp)
 	sari	r1, r1, 1
@@ -306,8 +305,8 @@ glyphs_mixed7:
 ; and the rest of colour k, the palette 3 bytes a colour (red, green,
 ; blue). The mix and the best so far below sp: -4 the best colour, -8
 ; its distance, -12 -16 -20 the mix's red, green, blue. 512 mixes of 16
-; colours looked at, some 400,000 instructions (old: in tiny-ml's ML,
-; 3.5 million)
+; colours looked at, some 400,000 instructions (3.5 million in
+; tiny-ml's ML)
 mix_table:
 	ldw	r1, 0(sp)
 	sari	r1, r1, 1		; at

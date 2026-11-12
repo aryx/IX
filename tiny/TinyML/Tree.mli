@@ -1,22 +1,21 @@
-(* tiny-ml's tree: the types, the expressions and patterns the parser
- * builds, a unit's items; and the program's tables of constructors and
- * of record labels, filled by the parser as it reads a type, by
- * TinyML.ml from an interface, which the type checker and the compiler
- * read. *)
+(* tiny-ml's tree: the types, expressions and patterns that the parser
+ * builds, and the items of a unit. This module also has the program's
+ * tables of constructors and of record labels. The parser fills them as
+ * it reads a type declaration, and TinyML.ml fills them from an
+ * interface; the type checker and the compiler read them. *)
 
-(* a type variable is a cell: unbound (its number and level), or linked
- * to what it became *)
+(* Unbound has a number and a level; Link is the type it became. *)
 type ty = TVar of tvar ref | TCon of string * ty list
 and tvar = Unbound of int * int | Link of ty
 
 type const = CInt of int | CChar of int | CStr of string
 
-(* a type as it is written: a name and its arguments, a variable 'a *)
+(* A type as written in the source. *)
 type texpr = TE of string * texpr list | TEVar of string
 
-(* (p : t): an annotation, which makes a record's type known where its
- * labels are used. A record pattern names some of the fields; once
- * typed, it also knows their indexes and how many fields the record has *)
+(* PAnnot (p : t) makes a record's type known where its labels are used.
+ * PRecord names some fields; typing fills their indexes and the number
+ * of fields of the record. *)
 type pat =
   | PAny
   | PVar of string
@@ -32,31 +31,28 @@ type rec_flag = Nonrecursive | Recursive
 
 type expr =
   | Const of const
-  | Var of string * ty ref            (* its type where it is used, which a
+  | Var of string * ty ref            (* its type at this use, which a
                                        * comparison reads *)
   | Con of string * expr list
   | Tuple of expr list
   | App of expr * expr list
-  | Fun of string list * expr         (* a parameter's pattern is a let in
-                                       * the body *)
+  | Fun of string list * expr         (* a parameter's pattern becomes a
+                                       * let in the body *)
   | Let of rec_flag * (pat * expr) list * expr
   | Match of expr * case list
   | Try of expr * case list
   | If of expr * expr * expr
   | Seq of expr * expr
   | While of expr * expr
-  | For of string * expr * expr * bool * expr   (* up: to, not downto *)
-  | Record of (string * expr) list * int list ref
-      (* the fields' indexes, known once typed *)
+  | For of string * expr * expr * bool * expr   (* true for to *)
+  | Record of (string * expr) list * int list ref  (* indexes, once typed *)
   | With of expr * (string * expr) list * int list ref * int ref
-      (* { e with l = e'; ... }: the fields' indexes and how many the
-       * record has, known once typed *)
+      (* { e with l = e' }: the indexes and the number of fields *)
   | Dot of expr * string * int ref    (* e.l *)
   | SetDot of expr * string * int ref * expr
-and case = pat * expr option * expr   (* a pattern, its guard, its body *)
+and case = pat * expr option * expr   (* a pattern, a guard, a body *)
 
-(* a unit's toplevel: a let, an external (its name, type, primitive),
- * an exception, open M, module A = M *)
+(* IExt: a name, a type, a primitive. IAlias: module A = M. *)
 type item =
   | ILet of rec_flag * (pat * expr) list
   | IExt of string * texpr * string
@@ -64,10 +60,9 @@ type item =
   | IOpen of string
   | IAlias of string * string
 
-(* a constructor: its number among its type's constant ones or among
- * the others (a block's tag), or an exception, of the unit that
- * declares it (its identity: two units' Error are two); its type as
- * %c(result, arguments...), generic in the type's parameters *)
+(* KConst numbers the constant constructors of a type, KBlock the others
+ * (the block's tag). KExn names the unit that declares the exception,
+ * so two units' Error differ. scheme is %c(result, arguments...). *)
 type kind = KConst of int | KBlock of int | KExn of string
 type cinfo = {
   kind : kind;
@@ -76,12 +71,10 @@ type cinfo = {
   nblock : int;
   scheme : ty;
 }
-(* the constructors, each by its unit's name, M.C (a builtin's bare:
- * (), [], ::, true, false) *)
+(* By M.C; the builtins bare: (), [], ::, true, false. *)
 val cons : (string, cinfo) Hashtbl.t
 
-(* a record's label: its field's index, and its type as %l(record,
- * field), as a constructor's; several records may have it *)
+(* lscheme is %l(record, field). Several records may share a label. *)
 type linfo = {
   lrec : string;
   idx : int;
@@ -91,8 +84,7 @@ type linfo = {
 }
 val record_labels : (string, linfo) Hashtbl.t
 
-(* a type variable's level, generic for one of a scheme; a new one *)
-val generic : int
+val generic : int                     (* the level of a scheme's variable *)
 val level : int ref
 val newvar : unit -> ty
 val genvar : unit -> ty
@@ -103,44 +95,38 @@ val bool_t : ty
 val unit_t : ty
 val string_t : ty
 
-(* Names: a type, a constructor, a record's label is the program's by
- * its unit's name, M.t, M.C; a bare name in a unit is the one in scope:
- * the unit's own, what it opens, Stdlib's (Tree.ml's header) *)
+(* Names. A type, a constructor or a label is known to the program as
+ * M.t or M.C. A bare name means the one in scope: the unit's own, then
+ * those of the units it opens, then Stdlib's (Tree.ml's header). *)
 
-(* the unit being compiled; its module A = M *)
 val unit_name : string ref
-val aliases : (string * string) list ref
-(* C of M.C; M.x as M's, an alias's unit's; the unit's own x, U.x *)
+val aliases : (string * string) list ref  (* module A = M *)
+(* con_base: C of M.C. qualified: M.x for A.x. own: U.x for x. *)
 val con_base : string -> string
 val qualified : string -> string
 val own : string -> string
-(* type 'a t = ...: a second name for a type, by its qualified name,
- * its parameters' names *)
+(* type 'a t = ...: by the qualified name, with the parameters. *)
 val abbreviations : (string * (string list * texpr)) list ref
-(* the types declared, by their qualified names *)
 val declared : (string, unit) Hashtbl.t
-(* the bare names in scope (a label to its record's); in_scope adds one
- * for the unit's time, scope_done ends it *)
+(* Bare names to qualified ones; scope_done ends the unit's scope. *)
 val con_scope : (string, string) Hashtbl.t
 val type_scope : (string, string) Hashtbl.t
 val label_scope : (string, linfo) Hashtbl.t
 val scope_done : unit -> unit
-(* [bring add add_label m]: M's names in scope, by add (for good,
- * Hashtbl.add: Stdlib's); open M, for the unit's time *)
+(* With Hashtbl.add, M's names stay in scope for good (Stdlib's);
+ * open_unit brings them for the current unit only. *)
 val bring :
   ((string, string) Hashtbl.t -> string -> string -> unit) ->
   ((string, linfo) Hashtbl.t -> string -> linfo -> unit) -> string -> unit
 val open_unit : string -> unit
-(* a type, a constructor, a label the unit declares, in scope *)
+(* The unit's own, brought into scope. *)
 val declare_type : string -> unit
 val add_con : string -> cinfo -> unit
 val add_label : string -> linfo -> unit
-(* a type's, a constructor's name as the source says it, qualified;
- * a constructor's information, by its source's name or its own *)
+(* find_con takes the source name or the qualified one. *)
 val resolve_type : string -> string
 val resolve_con : string -> string
 val find_con : string -> cinfo
-(* a type expression as a type, its variables' names in vars *)
+(* vars maps the names of type variables to their types. *)
 val of_texpr : (string * ty) list ref -> texpr -> ty
-(* a name, its type not known yet *)
-val var : string -> expr
+val var : string -> expr              (* its type not known yet *)

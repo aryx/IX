@@ -1,10 +1,11 @@
-(* Tiny file system: TinyKernel.ml's part that keeps files on the disk,
- * as KGraphics.ml is its part that draws. The disk is the
- * root, in a union with the boot image's files (TinyKernel.mli's "The
- * files").
+(* Tiny file system: the part of the kernel that keeps files on a
+ * disk, as KGraphics is the part that draws. The first disk is the
+ * root, in a union with the boot image's files (see "The files" in
+ * TinyKernel.mli).
  *
- * It needs two things from the machine: KRaw's bytes, and a way
- * to move a block between the disk and memory ([fs_io]).
+ * It needs two things from the machine: KRaw's bytes, and a way to
+ * move a block between the disk and memory (the io function given to
+ * [fs_mount]).
  *
  * {b The classic layout.} The disk is made of blocks of 1 KB. A file is
  * an inode: its type, its size, its number of links, the date of its
@@ -16,22 +17,26 @@
  * of Unix since 1971, and of xv6.
  *
  * twin:
- * mini-9pi's disk, '#x' (kernels/9pi/'s Kfs), on
- * lib_xv6fs's Xv6fs: xv6's file system (xv6's fs.c, which ix's
- * mini-xv6 has too, kernels/xv6's Fs), in the kernel, with a bitmap
- * of free blocks and, as here, no log and no cache. Kept from it: the
- * inode, its direct then indirect blocks, the directory as a file of
- * (name, number), names longer than xv6's 14 (ix's extension there).
- * Plan 9 itself has no disk file system in its kernel
- * (principia's kernel/filesystems/ is devfs.c, and dossrv and ramfs as
- * programs): a disk is served by a program, as Kdos says; here, as in
- * mini-9pi's Kfs and in Unix, the kernel calls it as functions.
+ * mini-9pi's disk device, '#x' (kernels/9pi/'s Kfs), built on
+ * lib_xv6fs's Xv6fs. That is xv6's file system (xv6's fs.c, also in
+ * ix's mini-xv6 as kernels/xv6's Fs) running in the kernel, with a
+ * bitmap of free blocks and, as here, no log and no cache. We kept
+ * from it the inode with its direct then indirect blocks, the
+ * directory as a file of (name, number) pairs, and names longer than
+ * xv6's 14 bytes (an ix extension there).
+ * Plan 9 itself has no disk file system in its kernel (principia's
+ * kernel/filesystems/ has devfs.c, with dossrv and ramfs as programs):
+ * a disk is served by a user program, as Kdos explains. Here, as in
+ * mini-9pi's Kfs and in Unix, the kernel calls the file system as
+ * functions.
  *
  * twist:
- * Against the twin: nothing written in place, so the commit is one
- * block where xv6's log.c writes each change twice; free blocks found by
- * a collector, not a bitmap kept right; the snapshots, which xv6 has no
- * way to keep.
+ * Unlike the twin:
+ * - nothing is written in place, so a commit is one block, where
+ *   xv6's log.c writes each change twice;
+ * - free blocks are found by a collector, instead of a bitmap that
+ *   must be kept right;
+ * - there are snapshots, which xv6 has no way to keep.
  *
  * {b What is different: nothing is ever written over.} A classic file
  * system changes a block where it is. If the machine stops in the middle
@@ -109,7 +114,7 @@
  *
  * wib:
  * - The collector reads every inode and indirect block of every tree.
- *   That is quick on tiny-machine's disk of 8 MB, where a transfer is
+ *   That is quick on tiny-machine's small disks, where a transfer is
  *   instant, but a real file system keeps reference counts or a space
  *   map instead (ZFS's).
  * - There is no cache: every access reads its blocks again from the
@@ -120,93 +125,74 @@
  *   (Unix keeps it until the last close), and its inode may be reused.
  *)
 
-(* a file's number: a tree's, an inode's in it (see below) *)
+(* A file is named by a tree number and an inode number in that tree
+ * (see below). *)
 type tree = int
 type inode = int
 
-(* an inode's type (1 and 2 on the disk, as in the entries the kernel
- * gives ls) *)
+(* 1 and 2 on the disk, as in the directory entries ls gets. *)
 type file_kind = Fs_dir | Fs_file
 
-(* the transfer of block b to memory at a (Disk_read), or from memory to
- * the block: the kernel's disk device (its commands 1 and 2), or the
- * test's bytes *)
+(* Between block b and memory at a: the disk device's commands 1 and 2
+ * in the kernel, a copy of bytes in the tests. *)
 type disk_io = Disk_read | Disk_write
 
-(* a file system, a disk mounted, given to each function below, as
- * Linux's super_block (old: one disk's state, in this module) *)
+(* A mounted disk, like Linux's super_block. *)
 type fs
 
-(* the number a disk was mounted with (0 the first, 1 the second) *)
+(* 0 for the first disk mounted, 1 for the second. *)
 val fs_disk : fs -> int
 
-(* raised by a write when no block is free, even after a collection *)
+(* Raised by a write when no block is free, even after a collection. *)
 exception Disk_full
 
-(* [fs_mount io k n]: the file system of disk k (0 the first, 1 the
- * second) of n blocks, its transfers io, made when the disk is blank;
- * the last boot's tree becomes a snapshot. A disk made bigger than its
- * file system (tiny-mkfs's disk.img, grown to 64 MB by truncate -s) is
- * used whole *)
+(* [fs_mount io k n] mounts disk k, of n blocks, transferring with io. A
+ * blank disk is formatted, and the last boot's tree becomes a snapshot.
+ * A disk grown past its file system (disk.img by truncate -s) is used
+ * whole. *)
 val fs_mount : (int -> int -> disk_io -> unit) -> int -> int -> fs
 
-(* the changes since the last commit, written to the disk as a whole
- * (nothing to do when there are none); every disk mounted's (Unix's
- * sync) *)
+(* [fs_commit] writes the changes since the last commit as a whole, if
+ * any. [fs_sync] commits every disk, like Unix's sync. *)
 val fs_commit : fs -> unit
 val fs_sync : unit -> unit
 
-(* the snapshots: each one's tree number and the boot it was left by *)
+(* Each snapshot's tree number and the boot that left it. *)
 val fs_snapshots : fs -> (tree * int) list
 
-(* the free blocks, counted after a collection *)
+(* Free blocks, as counted by the last collection. *)
 val fs_free : fs -> int
 
 (* A file is an inode's number in a tree: tree 0 is the live one, which
  * can be changed, trees 1 to 14 the snapshots. Inode 1 is the root
  * directory. *)
 
-(* [fs_kind r n]: inode n's type, size and links; [fs_date r n]: its
- * last write's date, seconds since 2000 *)
+(* [fs_kind] gives the type, size and number of links. [fs_date] is the
+ * last write, in seconds since 2000, from [fs_clock], the kernel's. *)
 val fs_kind : fs -> tree -> inode -> file_kind * int * int
 val fs_date : fs -> tree -> inode -> int
-
-(* what a write or a new file gets as its date: the kernel's clock *)
 val fs_clock : (unit -> int) ref
 val fs_is_dir : fs -> tree -> inode -> bool
 
-(* [fs_lookup r d name]: the inode under name in directory d (old: 0 for
- * none) *)
 val fs_lookup : fs -> tree -> inode -> string -> inode option
 
-(* the names and inodes of a directory, in the order they were made *)
+(* In the order the names were made. *)
 val fs_entries : fs -> tree -> inode -> (string * inode) list
 
-(* [fs_read_at r n off a len]: up to len bytes of the file from off, to
- * memory at a; how many there were *)
+(* [fs_read_at r n off a len] reads up to len bytes from offset off to
+ * memory at a, and returns the count. [fs_read_string] reads into a
+ * string, one block at most. *)
 val fs_read_at : fs -> tree -> inode -> int -> int -> int -> int
-
-(* [fs_read_string r n off len]: the same, a block at most, as a
- * string *)
 val fs_read_string : fs -> tree -> inode -> int -> int -> string
-
-(* the whole file, as a string *)
 val fs_contents : fs -> tree -> inode -> string
 
-(* [fs_write_at n off a len]: len bytes from memory at a, to the live
- * file n at off (Disk_full when there is no room) *)
+(* [fs_write_at n off a len] writes len bytes from memory at a to the
+ * live file n at offset off, or raises Disk_full. *)
 val fs_write_at : fs -> inode -> int -> int -> int -> unit
-
-(* the file emptied *)
 val fs_truncate : fs -> inode -> unit
-
-(* [fs_create d name kind]: a new file or directory under name in d;
- * its inode *)
 val fs_create : fs -> inode -> string -> file_kind -> inode
 
-(* [fs_link d name n]: a second name for file n, in d *)
+(* [fs_link d name n] gives n another name in d. [fs_unlink] frees the
+ * inode with its last name. *)
 val fs_link : fs -> inode -> string -> inode -> unit
-
-(* [fs_unlink d name]: the name removed from d, and the inode with its
- * last name *)
 val fs_unlink : fs -> inode -> string -> unit

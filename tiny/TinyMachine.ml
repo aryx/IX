@@ -91,10 +91,9 @@ is the kernel's (tiny-kernel: the program running killed); ^\ quits.
 
 let tty (caps : < Cap.stdin; .. >) = Unix.isatty (Console.stdin_fd caps)
 
-(* a ^C of the terminal's, not yet given to the machine. (old: the
- * signal's handler typed it itself; when it came while console_poll
- * was reading, the bytes read replaced the queue it had just been
- * added to, and the ^C was lost: a key typed right after it did that) *)
+(* A ^C of the terminal's, not yet given to the machine. The handler
+ * does not type it itself: coming while console_poll reads, it would be
+ * lost when the bytes read replace the queue. *)
 let interrupted = ref false
 
 let console_open (caps : < Cap.stdin; Cap.signal; .. >)
@@ -109,7 +108,6 @@ let console_open (caps : < Cap.stdin; Cap.signal; .. >)
         (Sys.Signal_handle (fun _ -> interrupted := true))
   end
 
-(* a terminal's bytes, when some are there *)
 let console_poll (caps : < Cap.stdin; .. >) (k : TinyMachineDevices.console) =
   if !interrupted then (
     interrupted := false;
@@ -221,7 +219,6 @@ let window_poll w (m : TinyMachineCPU.machine)
     if pixels <> w.shown then (
       w.shown <- pixels;
       Procs.write_all w.to_w (ppm m));
-    (* the mouse's look, when a program changed it *)
     if ms.cursor <> w.cursor then begin
       w.cursor <- ms.cursor;
       Procs.write_all w.to_w (Printf.sprintf "C %d\n" ms.cursor)
@@ -329,11 +326,10 @@ let helper_said pipes wait =
         (String.sub bytes 1 (String.length bytes - 1))))
   | Some _ -> (helper_relay pipes "").shut (); Some None
 
-(* -net-out, for "GET address HTTP/1.0": a web page fetched by
- * tiny-machine-fetch, a program beside this one (it links ix's TLS and
- * HTTP), whose output is the answer, HTTP's response. The machine waits
- * meanwhile, which changes nothing of its time. None when the helper could not fetch it (no network, no
- * such host): then its output is a line that says why. *)
+(* -net-out, for "GET address HTTP/1.0": tiny-machine-fetch, which
+ * links ix's TLS and HTTP, writes the answer, HTTP's response. The
+ * machine waits meanwhile, which changes nothing of its time. When it
+ * cannot fetch (no network, no such host), Error has a line saying why. *)
 let fetch (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.pipe; .. >) args =
   let in_r, in_w = CapUnix.pipe caps ~cloexec:true ()
   and from, out_w = CapUnix.pipe caps ~cloexec:true () in
@@ -352,9 +348,8 @@ let fetch (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.pipe; .. >) args =
   | _, Unix.WEXITED 0 -> Ok out
   | _ -> Error out
 
-(* -net-out: a connection to an address and a port, if there is one in
- * the five seconds the helper tries for (the machine waits meanwhile);
- * a name's address, as text *)
+(* -net-out: a connection is tried for five seconds by the helper, while
+ * the machine waits. *)
 let outside caps : TinyMachinePeer.outside =
   { connect = (fun address port ->
       let pipes = helper caps [ "dial"; address; string_of_int port ] in
@@ -447,11 +442,8 @@ let run
              (float_of_int mc.csr.(TinyMachineDevices.time) *. 1000.
               /. float_of_int !TinyMachineDevices.rate)
              dir (TinyMachinePeer.net_describe packet))) !machine in
-  (* -net dir: the peer (TinyMachinePeer: KNetwork.ml as the kernel
-   * has it, at the other address), its documents the directory's files by
-   * their names, no path; -net-lose: which of its packets are lost *)
-  (* a file of the directory, by its name: no / in it (the names
-   * checked, a directory's, a picture's the address's last part) *)
+  (* -net dir: the peer's documents are the directory's files, by names
+   * with no / in them (a picture's is its address's last part). *)
   let in_dir (dir : Fpath.t) name = Fpath.add_seg dir name in
   let document (dir : Fpath.t) line messages =
     let file name =
@@ -550,11 +542,9 @@ let run
     | None, Some peer -> Some (TinyMachinePeer.send peer)
     | None, None -> None in
   (* -net-forward 8080:80: a helper listens on the host's port 8080
-   * for the whole run; for each connection it says two named pipes, a
-   * line, and the peer dials the machine's port 80 with them as the
-   * other side. One that cannot listen is said and dropped. old: a
-   * helper a connection, another started when its was seen: one made
-   * in between refused *)
+   * for the whole run. For each connection it writes a line naming two
+   * named pipes, and the peer dials the machine's port 80 with them as
+   * the other side. A helper that cannot listen is reported and dropped. *)
   let waiting =
     ref (List.map (fun (host, port) ->
              host, port, helper caps [ "listen"; string_of_int host ], ref "")
@@ -591,11 +581,9 @@ let run
   let listening = window <> None || o.audio_file <> None in
   let hear samples =
     Option.iter (fun w -> Buffer.add_string w.heard samples) window;
-    (* -audio's from the first sound (and to the last, at the halt): the
-     * silence before it is the boot's length, the one after it the
-     * time to the halt, both moving with the kernel's code (old: from
-     * the speaker's start to the halt, make check's korobeiniki.wav
-     * another file at each change of the kernel) *)
+    (* -audio keeps from the first sound to the last (cut at the halt):
+     * the silences before and after move with the kernel's code, and
+     * would change make check's korobeiniki.wav at each change of it. *)
     if o.audio_file <> None then begin
       let rec silent i =
         if i < String.length samples && samples.[i] = '\000' then
@@ -614,9 +602,7 @@ let run
               TinyMachineDevices.bsize))) (List.combine disk_fds disks);
   let m = mc.cpu and c = mc.csr in
   let env = TinyMachineDevices.env mc in
-  (* -prof f: each instruction counted by where it was (the kernel's or
-   * a program's, and which program: its window's base), into f at the
-   * end, for tiny-prof *)
+  (* -prof f: the profile is written into f at the end, for tiny-prof. *)
   let profile = TinyMachineCPU.profile () in
   let env = match o.prof with
     | None -> env
@@ -651,8 +637,6 @@ let run
           done
         with e -> ignore (Atomic.compare_and_set failed None (Some e))))
       others;
-  (* each core's instructions, with several: how many of them were a
-   * program's, the kernel's, idle (on the standard error) *)
   let spent () =
     List.iteri (fun k (h : TinyMachineDevices.machine) ->
       let u = h.spent.(0) and s = h.spent.(1) and i = h.spent.(2) in
@@ -694,9 +678,6 @@ let run
         Option.iter (fun w -> window_poll w m mc.mouse mc.cons) window;
       if t land (polled - 1) = 0 && !waiting <> [] then
         Option.iter forwards peer;
-      (* old: TinyMachineDevices.tick mc env, an instruction a turn of
-       * this loop; now the instructions to the next turn that does
-       * something *)
       TinyMachineDevices.ticks mc env (1024 - (t land 1023));
       if parallel then
         (match Atomic.get failed with Some e -> raise e | None -> ())

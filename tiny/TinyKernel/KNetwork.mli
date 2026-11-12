@@ -1,64 +1,69 @@
 (* Tiny network: what a kernel needs to talk over tiny-machine's wire,
- * the essential of a network stack (ix's twins are mini-9pi's
- * kernels/9pi/network/ip/, the twin of Plan 9's, and the programs'
- * lib_networking/). Not a program: TinyKernel.ml's part that speaks to
- * the network (plan_tiny_network.md), and the other end of the wire in
- * TinyMachine.ml:
+ * the essence of a network stack (ix's twins are mini-9pi's
+ * kernels/9pi/network/ip/, itself the twin of Plan 9's, and the
+ * programs' lib_networking/). This is not a program. It is the part of
+ * the kernel that speaks to the network (plan_tiny_network.md), and
+ * also the other end of the wire, in TinyMachine.ml:
  *
  *     ./tiny-machine -net tiny/tests/www -net-trace tiny-kernel
  *         then: ping, get il.txt
  *
- * Two things are here. The first, a ping's way there and back:
+ * There are two things here. The first is IP and ICMP, shown by a
+ * ping going there and back:
  *
  *     tiny-kernel, 10.0.0.2                      the host, 10.0.0.1
  *
  *     ping: write "ping"
- *        | icmp_message: an echo's question
+ *        | icmp_message: an echo request
  *        | ip_packet: the envelope
  *     the device: send  ======= the wire =======>  net_input:
  *                                                    ip_read (for me?)
- *                                                    icmp_read (a question)
- *     net_input:        <====== the wire ========  the answer, in its
- *       ip_read, icmp_read: an answer                envelope
+ *                                                    icmp_read (a request)
+ *     net_input:        <====== the wire ========  the reply, in its
+ *       ip_read, icmp_read: a reply                  envelope
  *        | (who, the numbers, the bytes)
  *     ping: read "ping"
  *
- * A packet, byte by byte (a ping of four bytes: 32 in all):
+ * A packet, byte by byte (a ping of four bytes, 32 bytes in all):
  *
  *     IP's header, 20 bytes
  *     45 00 | 00 20 | 00 00 00 00 | 40 | 01 | sum | 10.0.0.2 | 10.0.0.1
- *     version  the    no fragment  hops what  the   from       to
- *     4, five  whole               left it is header's
- *     words    length                   ICMP  check
+ *     version total   no fragment  hops 1 is  header from      to
+ *     4, five length               left ICMP  checksum
+ *     words
  *
- *     what it carries: ICMP, 8 and the bytes
+ *     what it carries: ICMP, 8 bytes, then the data
  *     08 00 | sum | id | seq | p i n g
- *     echo?   its   whose  which
- *             own   ping   one
- *             check
+ *     echo    its   whose  which
+ *     request own   ping   one
+ *             checksum
  *
- * An address is its four bytes in a string: nothing is computed on
- * one, and tiny-ml's int has 31 bits.
+ * An address is kept as its four bytes in a string: nothing is ever
+ * computed on one, and tiny-ml's int has only 31 bits.
  *
- * The second: {b IL}, Plan 9's protocol, which makes the wire
- * reliable. A program writes messages and reads messages; each arrives
- * once, in the order written, or the connection ends. All of it:
+ * The second thing is {b IL}, Plan 9's protocol that makes the wire
+ * reliable. A program writes messages and reads messages; each message
+ * arrives once and in the order written, or else the connection ends.
+ * Here is all of it:
  *
- * - a connection is opened by a sync each way, each end saying the
- *   number its messages start from;
- * - a message has a number (its id), one more than the one before;
- *   what comes twice is known by it and dropped, what comes early is
- *   kept until the one before arrives;
- * - every packet says the last number its sender's program took (its
- *   ack): what the other end has is forgotten here, and who writes is
- *   never more than 20 messages ahead of who reads;
- * - nothing is sent again blindly: who has heard no ack for a while
- *   asks (query), the other end says what it received (state), and
- *   the oldest message missing there is sent again, as a question too
- *   (data?); a program that only reads slowly has nothing sent again;
- * - close ends it, said when all that was written has arrived.
+ * - A connection is opened by a sync in each direction, in which each
+ *   end gives the number its messages start from.
+ * - Each message has a number (its id), one more than the one before.
+ *   A message that comes twice is recognized by its id and dropped; a
+ *   message that comes early is kept until the one before it arrives.
+ * - Every packet carries the last number that its sender's program
+ *   has read (its ack). The other end can then forget those messages,
+ *   and a writer is never more than 20 messages ahead of its reader.
+ * - Nothing is sent again blindly. An end that has heard no ack for a
+ *   while asks (query); the other end answers with what it received
+ *   (state); and the oldest message missing there is sent again, itself
+ *   as a question (data?). So a program that merely reads slowly
+ *   causes no resending.
+ * - close ends the connection, and is sent only when everything
+ *   written has arrived.
  *
- * A message lost (tiny-machine -net-lose, as -net-trace says it):
+ * A lost message, as tiny-machine -net-lose makes it happen and
+ * -net-trace prints it:
  *
  *     > sync   id 1000 ack 0              "may I talk to your port 70?"
  *     < sync   id 5000 ack 1000           "yes"
@@ -79,96 +84,107 @@
  *     > close  id 1002 ack 5006           "so am I"
  *     < close  id 5006 ack 1002           "heard"
  *
- * Its packet, after IP's 20 bytes (IP's number for it is 40):
+ * An IL packet, after IP's 20 bytes (IP's protocol number for IL is
+ * 40):
  *
  *     sum | length | kind | 00 | from port | to port | id, 4 bytes |
- *     of all, with the      one of seven: sync 0, data 1, data? 2,
- *     message               ack 3, query 4, state 5, close 6
+ *     of all, message      one of seven: sync 0, data 1, data? 2,
+ *     included             ack 3, query 4, state 5, close 6
  *     ack, 4 bytes | the message
  *
- * One end of a connection is in one of five places:
+ * One end of a connection is in one of five states:
  *
  *     Il_syncer  --- the other's sync --->  Il_established
  *     (dialed)                                ^      |
- *     Il_syncee  --- an ack, or data ---------+      | close said
- *     (was dialed)                                   | or heard
+ *     Il_syncee  --- an ack, or data ---------+      | close sent
+ *     (was dialed)                                   | or received
  *                                                    v
  *                                               Il_closing --> Il_closed
- *                                                              (said by both)
- *                                 any of them, patience over: Il_closed
+ *                                                         (both sent close)
+ *                       from any state, after giving up: Il_closed
  *
- * The same two functions run it at both ends ([net_input]: a packet
- * came; [net_tick]: time passed), and time is a number their caller
- * gives: the kernel's ticks, a test's loop. So two of these and a
- * list between them that loses by a seed is the test
- * (KNetwork_tests/Host.ml): every message once and in order.
+ * The same two functions run the protocol at both ends: [net_input]
+ * when a packet comes, and [net_tick] when time passes. Time is just a
+ * number that the caller gives: the kernel's ticks, or a test's loop
+ * counter. So the test (KNetwork_tests/Host.ml) is simply two stacks
+ * and a list between them that loses packets, chosen by a seed; it
+ * checks that every message arrives once and in order.
  *
  * Kept from Plan 9's il.c (principia's kernel/network/ip/il.c, 1,551
- * lines): the header and its numbers, the seven kinds, the window of
- * 20 messages, the query before sending again, only what was sent
- * before the query sent again. Changed: an ack says what the program
- * took, where il.c's says what was received and drops what its reader
- * has no room for (a state and a close still say what was received);
- * the wait is fixed (0.1 s, twice that each time, over after six with
- * nothing heard) where il.c measures the round trip; the end is said
- * only when what was written has arrived (il.c drops it); the last
- * close of four is not sent. Left out: the query every ten seconds of
- * a connection where nothing is owed, so an end that waits to read does
- * not notice the other gone silent (it does when the other says the
- * end, which giving up does).
+ * lines): the header and its numbers, the seven kinds of packet, the
+ * window of 20 messages, the query before resending, and resending
+ * only what was sent before the query.
+ * Changed:
+ * - An ack gives what the program has read. il.c's ack gives what was
+ *   received, and il.c drops what its reader has no room for. (A state
+ *   and a close here still give what was received.)
+ * - The wait is fixed: 0.1 s, doubled each time, giving up after six
+ *   tries with nothing heard. il.c measures the round trip instead.
+ * - The close is sent only when what was written has arrived (il.c
+ *   drops what has not).
+ * - The last of the four closes is not sent.
+ * Left out: the query that il.c sends every ten seconds on a
+ * connection where nothing is owed. So an end that is waiting to read
+ * does not notice that the other end went silent; it does notice when
+ * the other end closes, which giving up does.
  *
- * A number of IL's has 32 bits and tiny-ml's int 31: both ends here
- * start small and stay under 2^30; a packet with more is not read.
+ * IL's numbers have 32 bits and tiny-ml's int has 31. Both ends here
+ * start small and stay under 2^30; a packet with a larger number is
+ * not read.
  *
  * twin:
  * mini-9pi's stack (kernels/9pi/network/: Ip, Icmp, Udp, Tcp, and
- * Devip's files) speaks to the Internet: there,
- * Ethernet and ARP, routes, UDP for names and the time, TCP (the
- * twin of principia's tcp.c, a stream of bytes; no IL), and a program
- * reaches it by Plan 9's files, /net/tcp/clone, its ctl and its data,
- * which libc's dial writes. Here, IL alone, since a request, a block
- * or a drawing message is a message already, and a program reaches it
- * by two system calls of TinyKernel's, dial(address, port) and
- * listen(port), each giving a descriptor of messages; port 0 is the
- * echo (ping). The world, which speaks TCP, is reached through the
- * wire's other end (TinyMachinePeer, a translator).
+ * Devip's files) speaks to the Internet. It has Ethernet and ARP,
+ * routes, UDP for name lookups and the time, and TCP (the twin of
+ * principia's tcp.c, a stream of bytes; it has no IL). A program
+ * reaches it through Plan 9's files, /net/tcp/clone with its ctl and
+ * data files, which libc's dial writes. Here there is only IL, since a
+ * request, a disk block or a drawing message is already a message. A
+ * program reaches it by two of TinyKernel's system calls,
+ * dial(address, port) and listen(port), each giving a descriptor of
+ * messages; port 0 is the echo (ping). The world, which speaks TCP, is
+ * reached through the wire's other end (TinyMachinePeer, which
+ * translates).
  *
  * dropped:
  * Each of these is left out because the wire has two ends and one
  * program at each: Ethernet and its addresses, ARP (who has this
- * address?), routes, fragments (a packet cut to pass a narrow road),
- * options, the hops counted down. A packet that is not well made or
- * not for us is dropped without a word.
+ * address?), routes, fragments (a packet cut in pieces to pass a link
+ * with smaller packets), IP options, and counting the hops down. A
+ * packet that is malformed or not for us is dropped silently.
  *
  * twist:
- * {b The stack is functions of strings}, where mini-9pi's is tied to
- * its devices. A packet is a string; a packet that came gives the
- * packets to send back and what a program is to hear. Nothing here
- * reads a device, keeps a clock or knows who calls. So the same file is
- * three things: the kernel's stack (TinyKernel.ml takes the packets
- * from the machine's device and gives them here), the host's test of it
- * (no machine), and the wire's other end (TinyMachine.ml's -net: the
- * host answering with this very code, where mini-qemu needed a second
- * stack, raspberry/Usernet).
+ * {b The stack is functions on strings}, whereas mini-9pi's is tied to
+ * its devices. A packet is a string; given a packet that came, the
+ * stack returns the packets to send back and what a program is to
+ * receive. Nothing here reads a device, keeps a clock or knows who
+ * calls. So the same file serves three purposes:
+ * - the kernel's stack (the kernel takes the packets from the
+ *   machine's device and gives them here);
+ * - the host's test of it, with no machine;
+ * - the wire's other end (TinyMachine.ml's -net): the host answers
+ *   with this very code, where mini-qemu needed a second stack
+ *   (raspberry/Usernet).
  *
  * cs-history:
- * IP is Cerf and Kahn's (1974), split from TCP in 1978 so that what
- * needs no reliability (a voice, a question and its answer) need not
- * pay for it: an envelope with two addresses, each network free to
- * carry it its own way, nothing promised. The echo is ICMP's (RFC
- * 792, 1981), and ping is Mike Muuss's program of 1983, named after
- * sonar. IL is Presotto and Winterbottom's, of Plan 9's first years,
- * for 9P between its machines: TCP's guarantees for messages, in less
- * than half its code (il.c against tcp.c). Nothing else spoke it, and
- * Plan 9's fourth edition (2002) went back to TCP (from memory: IL
- * did badly on long roads and through address translation).
+ * IP is Cerf and Kahn's (1974). It was split from TCP in 1978 so that
+ * traffic that needs no reliability (a voice, a question and its
+ * answer) need not pay for it. IP is just an envelope with two
+ * addresses: each network is free to carry it its own way, and
+ * nothing is promised. The echo is ICMP's (RFC 792, 1981), and ping is
+ * Mike Muuss's program of 1983, named after sonar. IL is by Presotto
+ * and Winterbottom, from Plan 9's first years, for 9P between Plan 9
+ * machines: TCP's guarantees for messages, in less than half the code
+ * (il.c against tcp.c). Nothing else spoke it, and Plan 9's fourth
+ * edition (2002) went back to TCP (from memory: IL did badly over long
+ * distances and through address translation).
  *
  * design:
- * The checksum is the one the Internet has had since then (RFC 1071):
- * 16-bit numbers added, the carries added back. It is weak (two words
- * swapped are not seen) and kept because it is cheap, on any machine,
- * in any order of bytes; a wire that damages more than that has its
- * own check below.
+ * The checksum is the one the Internet has used since then (RFC 1071):
+ * add the 16-bit numbers, then add the carries back. It is weak (it
+ * does not see two swapped words), and it is kept because it is cheap
+ * on any machine and in any byte order; a link that damages more than
+ * that has its own check below IP.
  *
  * references:
  *  - RFC 791: IP
@@ -178,37 +194,34 @@
  *    volume 2)
  *)
 
-(* an address, its four bytes in a string (old: a string that said
- * nothing of it); [net_address text]: the text's, "" when it is not
- * one *)
+(* Four bytes in a string. [net_address text] is "" for a bad text. *)
 type ip_addr = string
 val net_address : string -> ip_addr
 
-(* the machine's address and its host's, at the wire's two ends *)
+(* The machine's address and its host's, at the wire's two ends. *)
 val net_machine : ip_addr
 val net_peer : ip_addr
 
-(* 16 bits, the high byte first; the Internet's checksum of some bytes *)
+(* 16-bit numbers are high byte first. *)
 val net16 : int -> string
 val net_get16 : string -> int -> int
 val net_sum : string -> int
 
-(* IP: a packet (what it carries, from, to, the bytes), and one that
- * came read for an address: what it carries, who sent it, the bytes *)
+(* IP. [ip_read me p] is None unless p is for address me; else it gives
+ * the protocol, the sender and the bytes. *)
 val ip_icmp : int
 val ip_packet : int -> ip_addr -> ip_addr -> string -> string
 val ip_read : ip_addr -> string -> (int * ip_addr * string) option
 
-(* ICMP's echo: a message (its kind, whose, which one, the bytes), read;
- * its kinds, echo's question (8) and answer (0), or another *)
+(* ICMP's echo request (8) and reply (0). A message has a kind, an id
+ * (which ping), a sequence number and bytes. *)
 type icmp_kind = Echo_ask | Echo_answer | Icmp_other of int
 val icmp_message : icmp_kind -> int -> int -> string -> string
 val icmp_read : string -> (icmp_kind * int * int * string) option
 
-(* IL (IP's number 40). A packet: its header (its kind, one of seven,
- * the sender's port, the other's, its number, the last number its
- * sender received in order), a message; read back, None when cut,
- * damaged, or its numbers over 2^30 *)
+(* IL, IP's protocol 40. ih_ack is the last number received in order.
+ * [il_read] is None for a packet cut short, damaged, or numbered over
+ * 2^30. *)
 val ip_il : int
 type il_kind =
   | Il_sync | Il_data | Il_dataquery | Il_ack | Il_query | Il_state | Il_close
@@ -218,8 +231,7 @@ type il_header =
 val il_message : il_header -> string -> string
 val il_read : string -> (il_header * string) option
 
-(* One end of a connection: where it is, what it sends, what it
- * receives (KNetwork.ml says each field) *)
+(* One end of a connection (KNetwork.ml explains each field). *)
 type il_at = Il_syncer | Il_syncee | Il_established | Il_closing | Il_closed
 
 type il_sending = {
@@ -240,18 +252,16 @@ type il = {
   il_r : il_receiving;
 }
 
-(* a message's bytes at most; the messages one end holds at most, sent
- * and not acknowledged or received and not read *)
+(* The largest message in bytes, and the most messages one end holds
+ * unacknowledged, or received and unread. *)
 val il_max : int
 val il_window : int
 
-(* A program's part of a connection. Whether a message may be written
- * now (the two ends talk, fewer than [il_window] wait to be
- * acknowledged), and one written at a time: its packet. The next
- * message that arrived, taken: each once, in the order written there;
- * whether a read would not wait (a message, or the end); whether
- * nothing more will come. The program done: the end is said, by
- * [net_tick], when all it wrote has arrived. *)
+(* [il_room]: established, and fewer than [il_window] messages wait for
+ * an ack. [il_write c msg time] returns the packet. [il_hear] gives each
+ * message once, in order. [il_readable]: a message, or the end, is
+ * there. After [il_done], [net_tick] sends the close once all written
+ * has arrived. *)
 val il_room : il -> bool
 val il_write : il -> string -> int -> string
 val il_hear : il -> string option
@@ -259,16 +269,13 @@ val il_readable : il -> bool
 val il_over : il -> bool
 val il_done : il -> unit
 
-(* What one address has: its connections, the ports it listens on
- * ([ns_ports], set by who listens), the connections others made there
- * that nobody took yet ([ns_fresh], taken off by who accepts). Made
- * for an address and the number its first connection's messages start
- * from (each connection's are 1,000 further). A gateway ([ns_gate]:
- * the wire's end that is the way to other machines) also reads what
- * is for other addresses, and answers a sync for one of [ns_others]
- * (an address, a port; once each) as that address would: the
- * connection's [il_me] is then that address, and what is at the
- * gateway's other side is its caller's. *)
+(* The network state of one address. [ns_ports] is set by listeners;
+ * [ns_fresh] holds connections not accepted yet. In [net_stack addr
+ * start], the first connection's messages are numbered from start, the
+ * next ones 1,000 further each. A gateway ([ns_gate]) leads to other
+ * machines: it reads packets for other addresses, and answers a sync
+ * for one of [ns_others] (address and port, once each) as that address
+ * would, which becomes the connection's [il_me]. *)
 type net_stack = {
   ns_me : ip_addr; mutable ns_conns : il list; mutable ns_ports : int list;
   mutable ns_fresh : il list; mutable ns_start : int;
@@ -278,17 +285,16 @@ type net_stack = {
 
 val net_stack : ip_addr -> int -> net_stack
 
-(* a connection asked for, to an address and a port, at a time: it and
- * the packet to send. It is Il_established when the other end agreed,
- * Il_closed when it refused or never answered. *)
+(* [net_dial ns addr port time] also returns the packet to send. The
+ * connection becomes Il_established when the other end agrees, and
+ * Il_closed when it refuses or never answers. *)
 val net_dial : net_stack -> ip_addr -> int -> int -> il * string
 
-(* {b The stack's heart}: two functions, which read no device and no
- * clock. A packet that came, at a time: the packets to send back, and
- * an echo's answer for who asked (who answers, the two numbers, the
- * bytes). Time passed (called at each tick of whoever counts: IL's
- * waits are 40 of them, then twice that): the packets to send. Both
- * change the connections: messages heard, a state, [ns_fresh]. *)
+(* {b The heart of the stack}: two functions that read no device and no
+ * clock, and return packets to send. [net_input ns time packet] also
+ * returns an echo reply (who, the two numbers, the bytes) for whoever
+ * pinged. [net_tick ns time] runs at each tick of the caller's clock
+ * (IL waits 40 ticks, then twice that, and so on). *)
 val net_input :
   net_stack -> int -> string ->
   string list * (ip_addr * int * int * string) option

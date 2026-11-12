@@ -140,8 +140,8 @@ let rec draw dst x y shape =
  * piece moves over it). It has an image of its own, drawn again only
  * when it is another ground; the picture is that image, a copy the
  * kernel makes, and the other shapes on it; then the picture goes on
- * the window. (old: every shape at each picture: a Tetris's hundred
- * cells, a hundred messages through two pipes, for a piece's move) *)
+ * the window. Every shape drawn at each picture would be, for a
+ * Tetris piece's move, a hundred messages through two pipes. *)
 let show g shown shapes =
   (match shapes with
    | first :: rest ->
@@ -180,7 +180,7 @@ let sound_message snd =
 let samples_message s = D.msg 'p' [ String.length s ] ^ s
 
 (* [play speaker sounds]: played on tiny-kernel's speaker, if there is
- * one (old: the speaker a global, set by run) *)
+ * one *)
 let play (speaker : TSys.fd option) sounds =
   match speaker with
   | Some fd when sounds <> [] ->
@@ -198,7 +198,7 @@ let play (speaker : TSys.fd option) sounds =
  * level's faster pace) goes on from the same notes, as m-ix's
  * change_loop; none closes the voices, and the next tune starts at its
  * beginning. The voices are the loop's, given to play_music and given
- * back (old: a global). *)
+ * back. *)
 type voice = { vfd : TSys.fd option; mutable vnext : int; mutable vuntil : int }
 
 (* a voice of /dev/audio, None when there is no speaker (the tests'
@@ -250,8 +250,7 @@ let play_music caps (voices : voice list) tune : voice list =
 (*****************************************************************************)
 
 (* A frame, in milliseconds of the machine's time whatever its speed:
- * about a thirtieth of a second (old: 13 of the kernel's ticks of 2.5
- * ms, its clock's, 32.5 ms; millis's now, both systems') *)
+ * about a thirtieth of a second *)
 let period = 33
 
 (* The game, until a q or the keys' end: the model's shapes when it is

@@ -9,9 +9,7 @@
  * type checker sees no format (OCaml's has a type of its own, which
  * HM would need to be told). %d %s %c %x %S and %%, a width, - and 0;
  * TinyLibCore's Printf has what %x, %S and a width call. A format
- * given fewer values than it has holes is a function of the others.
- * (old: no Printf, plan_tiny_self_hosting.md's step 7: its 176 calls
- * written as ^, a string made for each piece) *)
+ * given fewer values than it has holes is a function of the others. *)
 type piece =
   | Text of string
   | Hole of char * bool * bool * int   (* the letter, -, 0, the width *)

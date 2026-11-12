@@ -90,8 +90,7 @@ let row_bytes s off dst n = Bytes.blit_string s off mem dst n
 let row_string a n = Bytes.sub_string mem a n
 
 (* the screen, w by h, as a PPM: the bytes tiny-machine -screen writes,
- * a byte's colour the machine's (old: Plan 9's table computed here, a
- * copy of TinyMachineDevices's formula) *)
+ * a byte's colour the machine's *)
 let ppm w h =
   let b = Buffer.create 1000000 in
   Buffer.add_string b (Printf.sprintf "P6\n%d %d\n255\n" w h);

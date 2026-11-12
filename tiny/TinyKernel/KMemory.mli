@@ -1,98 +1,110 @@
-(* Tiny memory: how tiny-kernel gives a process its memory, a
- * partition: one block of the machine's memory, its size the program's
- * (its a.out says it: tiny-ld -a), found first-fit when the program
- * starts, never grown. TinyKernel.ml's part that is about memory, as
- * KFS.ml is its part about the disk (plan_tiny_memory.md).
+(* Tiny memory: how tiny-kernel gives a process its memory. By default
+ * the memory is a partition: one block of the machine's memory, whose
+ * size the program chose (its a.out says it; see tiny-ld -a). The
+ * block is found first-fit when the program starts, and it never grows.
+ * This is the part of the kernel that is about memory, as KFS is the
+ * part about the disk (plan_tiny_memory.md).
  *
- * The machine does the rest with two numbers, its window: in user mode
- * every address is added to the block's start (base) and must stay
- * below its size (bound), or the process faults. So a program is
- * linked at 0 and runs anywhere, and reaches nothing but its block:
+ * The machine does the rest with two numbers, its window. In user
+ * mode, every address is added to the block's start (base) and must
+ * stay below its size (bound), or the process faults. So a program is
+ * linked at 0, runs anywhere, and reaches nothing but its own block:
  *
  *     0x2000000                                              0xfff0000
  *     | sh, 1 MB | rc, 1 MB | ml, 32 MB    |  free  | ld, 48 MB | free |
  *                ^ base                                (first fit: the
  *     rc's address 0x100 is 0x2100000 + 0x100          first gap big
- *     in the machine; 0x100000 and above fault          enough, from the
- *                                                       bottom)
+ *     in the machine; 0x100000 and above fault          enough, starting
+ *                                                       from the bottom)
  *
- * fork asks a block of the parent's size and copies the parent's into
- * it, whole ([mem_copy]); exec asks one of the new program's size (the
- * same block when the size is the same) and writes the program's
- * image at its 0 and the arguments at its top; spawn does exec's in a
- * new process. A block is let go when the kernel lets the process go
- * ([mem_release]), when it ends (its parent's wait reads only a record
- * of its status: KProcs.ended).
+ * fork asks for a block of the parent's size and copies the parent's
+ * whole block into it ([mem_copy]). exec asks for a block of the new
+ * program's size (keeping the same block when the size is the same),
+ * writes the program's image at its address 0, and the arguments at
+ * its top. spawn does what exec does, in a new process. A block is
+ * released ([mem_release]) as soon as its process ends; the parent's
+ * wait needs only a small record of the status (KProcs.ended).
  *
- * Segments (the boot's choice: /boot/memory says segments; the
- * Makefile's MEMORY=segments) split a process in two, its text and
- * its data, at the address tiny-ld -n put the data at (a page past
- * the text). The machine's second window maps the text (tbase,
- * tbound) and faults a store there; the data is a block as above:
+ * Segments are chosen at boot, when /boot/memory says segments (the
+ * Makefile's MEMORY=segments). They split a process in two, its text
+ * and its data, at the address where tiny-ld -n put the data (a page
+ * after the text). The machine's second window (tbase, tbound) maps
+ * the text and faults on a store there; the data is a block as above:
  *
  *     a process's addresses         the machine's memory
- *     0       text  (read only) --> ml's text, one block for all the
- *     tsize                         ml's that run (texts, users)
- *             data, heap, stack --> this ml's block, memory - tsize
- *     memory
+ *     0       text  (read only) --> ml's text: one block shared by
+ *     tsize                         all running ml's (see texts, users)
+ *             data, heap, stack --> this ml's own block, of size
+ *     memory                        memory - tsize
  *
- * exec shares a text that runs already from the same file, unchanged
- * (its key and stamp: TinyKernel.ml names them), and writes only the
- * data then; fork shares the text and copies the data. A file written
- * is forgotten ([mem_forget]): its next exec loads it again. A word
- * the kernel writes in a text (a tracer's breakpoint) makes the text
- * the process's own, a copy. A process without a text (partitions)
- * runs with the window alone: kentry.s sets the machine's split only
- * when tbound is not 0, the split's arithmetic costing 2% of the host's
- * instructions (tiny-kernel's toolchain session; 7% when every process
- * paid it).
+ * When a text from the same unchanged file is already running (the
+ * file is identified by a key and a stamp, which the kernel computes),
+ * exec shares it and writes only the data. fork shares the text and
+ * copies the data. When a file is written, its texts are forgotten
+ * ([mem_forget]), so the next exec loads it again. If the kernel writes
+ * a word in a text (a tracer's breakpoint), the process gets its own
+ * copy of the text. A process without a text (with partitions) runs
+ * with the first window alone: kentry.s sets up the machine's split
+ * only when tbound is not 0. The split's arithmetic costs 2% of the
+ * host's instructions in tiny-kernel's toolchain session, and cost 7%
+ * when every process paid for it.
  *
- * Pages (/boot/memory says pages; MEMORY=pages) are plan_tiny_memory.md's
- * stage 4, off by default: a process's memory is pages of 4 KB, each
- * in any frame of the machine's memory, by its tables (Sv32: a root, a
- * table for each 4 MB, an entry for each page):
+ * Pages (when /boot/memory says pages; MEMORY=pages) are stage 4 of
+ * plan_tiny_memory.md, off by default. A process's memory is made of
+ * 4 KB pages, each in any frame of the machine's memory, found through
+ * the process's page tables (Sv32: a root, then a table for each 4 MB,
+ * with an entry for each page):
  *
  *     a process's addresses     its tables          the frames
- *     0      text (R X)  -----> root -> table ---> anywhere above 32 MB,
- *            data (R W X)                          a free list through
- *            ... untouched: no entry, no frame     the free ones (xv6's
- *            stack, arguments                      kalloc), a byte of
- *     memory                                       users for each
+ *     0      text (R X)  -----> root -> table ---> anywhere above 32 MB;
+ *            data (R W X)                          the free ones are
+ *            ... untouched: no entry, no frame     linked in a list (as
+ *            stack, arguments                      xv6's kalloc), and each
+ *     memory                                       has a byte of users
  *
- * exec gives a root and the pages the image and the arguments write;
- * any other page is given at its first touch, zeroed ([mem_fault]: the
- * fault answered, the instruction run again). fork shares every page,
- * the writable ones made read only and copy-on-write in both: the first
- * to write gets a copy, or the page back writable when it is the last
- * user. The kernel writes a process's page only after it made the page
- * the process's own ([mem_writable], a breakpoint's [mem_store]); it
- * reaches a buffer a page at a time ([mem_pieces], KCalls's
- * bounce for read and write). The machine translates user mode's
- * addresses only (satp's user-only bit), the kernel's staying
- * physical, and keeps them in a cache emptied at each run (k_window
- * writes satp): one core changes a process's tables, while it is not
- * running, so no other core holds them (no shootdown). Not done: a
- * text shared between execs (segments' texts; pages would need a cache
- * of a file's pages), a guard page under the stack (where a program's
- * stack ends is its runtime's: mlsys.c's), swapping.
+ * exec gives the process a root table and the pages that the image
+ * and the arguments are written to. Any other page is given, zeroed,
+ * at its first touch: [mem_fault] answers the fault and the
+ * instruction runs again. fork shares every page, and the writable
+ * ones become read-only and copy-on-write in both processes: the first
+ * one to write gets a copy, or gets the page back writable if it is
+ * the last user. The kernel writes a process's page only after making
+ * the page the process's own ([mem_writable], and [mem_store] for a
+ * breakpoint). It reaches a buffer one page at a time ([mem_pieces],
+ * and KCalls's bounce buffer for read and write).
+ *
+ * The machine translates only user-mode addresses (satp's user-only
+ * bit); the kernel's addresses stay physical. Translations are cached,
+ * and the cache is emptied at each run (k_window writes satp). A
+ * process's tables are changed by one core while the process is not
+ * running, so no other core has them cached, and no TLB shootdown is
+ * needed.
+ *
+ * Not done with pages:
+ * - texts shared between execs (segments have them; pages would need a
+ *   cache of a file's pages);
+ * - a guard page under the stack (where a program's stack ends is up
+ *   to its runtime, mlsys.c);
+ * - swapping.
  *
  * kept:
- * A partition's block size is a guess made when the program is
- * linked (ld's 32 MB was too small for bin/ml's link: 48 now); the
- * block is not zeroed (exec writes the image only: zeroing ml's 32 MB
- * cost 35 million instructions an exec); there is no swapping, so a
- * fork or an exec with no room waits (KCalls's with_room).
+ * The limits of partitions:
+ * - A partition's size is a guess made when the program is linked
+ *   (ld's 32 MB was too small to link bin/ml, so it is 48 MB now).
+ * - The block is not zeroed: exec writes only the image, because
+ *   zeroing ml's 32 MB cost 35 million instructions per exec.
+ * - There is no swapping, so a fork or an exec with no room waits
+ *   (KCalls's with_room).
  *
  * context:
- * TinyKernel.ml calls it for every process's memory
- * (its [user] for a word or a byte of a system call's, [mem_address];
- * its [user_iter] for a buffer, [mem_pieces]; [mem_writable] before it
- * writes one); kentry.s
- * sets core 0's window ([mem_window]), and a core given a process gets
- * its window in its mailbox ([mem_post]: plan_tiny_multicore.md). The
- * other kernels on the same machine: t6 (steps/), fixed partitions of
- * 1 MB; v6, removed, pages (tiny-machine's Sv32, which no kernel uses
- * now).
+ * The kernel calls this module for every access to a process's
+ * memory: KProcs's [user] uses [mem_address] for a word or a byte of a
+ * system call, its [user_iter] uses [mem_pieces] for a buffer, and
+ * [mem_writable] is checked before a write. kentry.s sets core 0's window,
+ * through [mem_window]; a core given a process
+ * receives the window in its mailbox ([mem_post],
+ * plan_tiny_multicore.md). The other kernel on the same machine, t6
+ * (steps/), uses fixed partitions of 1 MB.
  *
  * cs-history:
  * Partitions are how IBM's OS/360 (1966) shared a machine between
@@ -161,91 +173,78 @@
  *    on Electronic Computers, 1962): Atlas's pages
  *)
 
-(* the processes' memory, from mem_low to mem_high; a partition's size
- * is a multiple of [part] (a megabyte) *)
+(* The processes' memory goes from mem_low to mem_high. A partition's
+ * size is a multiple of [part] (a megabyte). *)
 val part : int
 val mem_low : int
 val mem_high : int
 
-(* a process's memory: none at first ([mem_empty]), then a block, and
- * with segments a text *)
+(* None at first ([mem_empty]), then a block, plus a text with
+ * segments. *)
 type space
 
-(* an address: the process's (its va), the kernel's (where the machine's
- * memory has it); [mem_address]'s -1 for none, not an option: it is
- * asked at each read and write, and allocates nothing *)
+(* [mem_address] returns -1 for none rather than an option: it is
+ * called at each read and write, and so allocates nothing. *)
 type vaddr = int
 type kaddr = int
 
-(* no block of the size asked for is free now *)
+(* No block of the size asked for is free now. *)
 exception No_room
 
 val mem_empty : unit -> space
 val mem_release : space -> unit
 
-(* segments, or pages, not partitions: set once, at the boot *)
+(* Segments or pages instead of partitions; set once, at boot. *)
 val segments : bool ref
 val pages : bool ref
 
-(* a program's text when it is loaded: new, its image's to write; or
- * shared, a copy that runs has it (segments) *)
+(* Text_shared: with segments, a running copy has the text already. *)
 type text_state = Text_new | Text_shared
 
-(* [mem_load sp key stamp tsize isize size]: sp given the memory of a
- * program of size bytes (its a.out's), its image isize, its old memory
- * let go; tsize of them the text (0: none; ignored with partitions),
- * shared with segments when one from the same key and stamp runs: then
- * only the image's data is written (from tsize; old: a bool). No_room,
- * sp as it was *)
+(* [mem_load sp key stamp tsize isize size] replaces sp's memory with
+ * size bytes for a program whose image is isize bytes, the first tsize
+ * the text (0: none; ignored with partitions). With segments, a running
+ * text of the same key and stamp is shared, and only the data from
+ * tsize on is written. On No_room, sp is unchanged. *)
 val mem_load : space -> string -> string -> int -> int -> int -> text_state
 
-(* [mem_forget key]: the texts of that file not shared by a next exec
- * (the file is being written) *)
+(* [mem_forget key]: the file is being written, so the next exec of it
+ * must not share its running texts. *)
 val mem_forget : string -> unit
 
-(* [mem_copy dst src]: dst a block of src's data's size, src's bytes,
- * and src's text, shared (fork); with pages, every page shared,
- * copy-on-write *)
+(* [mem_copy dst src], for fork, copies src's data and shares its text.
+ * With pages, every page is shared, copy-on-write. *)
 val mem_copy : space -> space -> unit
 
-(* [mem_fault sp va]: a fault of the process at va that pages answer:
- * a page not touched yet, given (zeroed), or a page a fork shares,
- * copied; true when the process goes on, false when it is to die (and
- * always without pages) *)
+(* [mem_fault sp va] gives a zeroed page if untouched, copies one shared
+ * by a fork, and returns true; false when the process must die (always
+ * without pages). *)
 val mem_fault : space -> vaddr -> bool
 
-(* [mem_address sp va n]: the kernel's address of the n bytes at the
- * process's va, -1 if they are not all the process's, or (with pages)
- * not in one piece; a word or a byte is (an aligned word is in one
- * page) *)
+(* The kernel's address of the n bytes at va: -1 if they are not all
+ * the process's, or (with pages) not in one piece. A byte or an aligned
+ * word is always in one piece. *)
 val mem_address : space -> vaddr -> int -> kaddr
 
-(* [mem_pieces sp va n]: the n bytes at va as the pieces of the
- * machine's memory that hold them, in order, (the kernel's address, the
- * length) each; None if they are not all the process's. One piece for
- * a partition; two with segments when they cross from the text to the
- * data; with pages, a piece a page (the frames are anywhere):
- * for a buffer, the kernel goes by them (KProcs's user_iter) *)
+(* [mem_pieces sp va n] gives the pieces (address, length) that hold the
+ * n bytes at va, in order, or None if they are not all the process's:
+ * one with partitions, two with segments when they cross from text to
+ * data, one per page with pages. KProcs's user_iter goes by them. *)
 val mem_pieces : space -> vaddr -> int -> (kaddr * int) list option
 
-(* [mem_writable sp va n]: whether the kernel may write those bytes for
- * the process: not in its text *)
+(* Whether the bytes are outside the text. *)
 val mem_writable : space -> vaddr -> int -> bool
 
-(* a word read at va; a word, a byte, a string written at va; [mem_blit
- * sp va a n] the kernel's n bytes at a written at va. va is checked by
- * the caller ([mem_address]). A word or a byte written in the text
- * makes it sp's own (a copy: No_room); a string and n bytes are the
- * loader's, written where it says, in the text too *)
+(* The caller has checked va with [mem_address]. A word or a byte
+ * stored in the text gives sp its own copy of it (may raise No_room).
+ * mem_write and mem_blit are the loader's, and write in the text too. *)
 val mem_fetch : space -> vaddr -> int
 val mem_store : space -> vaddr -> int -> unit
 val mem_store_byte : space -> vaddr -> int -> unit
 val mem_write : space -> vaddr -> string -> unit
 val mem_blit : space -> vaddr -> kaddr -> int -> unit
 
-(* the machine set to run a process in sp: core 0's windows
- * ([mem_window]: the data's, the text's), or another core's, the
- * mailbox's words at m, m + 4 (the data), m + 20, m + 24 (the text)
- * ([mem_post sp m]) *)
+(* Set the windows (data, text) to run sp: core 0's, or another core's
+ * through its mailbox at m (m and m + 4 data, m + 20 and m + 24 text). *)
 val mem_window : space -> unit
 val mem_post : space -> kaddr -> unit

@@ -51,18 +51,11 @@ and i_net = 16 and i_ipi = 32
  * -12(r0); v6's in the 32 bytes below the top, the network's in the
  * 16 below those, the speaker's word below them, the date's, the
  * seed's, the cores' interrupt's, and the second disk's 16 bytes *)
-(* old: 1 lsl 27, 128 MB, before the cores: four compilers of tiny-ml
- * at once, 32 MB each, did not fit *)
+(* 256 MB: 128 MB did not fit four tiny-ml compilers at once, on four
+ * cores, 32 MB each. *)
 let memsize = 1 lsl 28
-(* old: devices = memsize - 32, before the network's four words *)
-(* old: devices = memsize - 48, before the speaker's word *)
-(* old: devices = memsize - 64, before the second disk *)
 let console = memsize - 16 and halt = memsize - 12 and devices = memsize - 80
 let console_in = memsize - 8
-(* a disk's registers: the first's from -32(r0), the second's from
- * -80(r0), each its block, its address, its command and its status
- * (old: the first's alone, disk_block, disk_addr, disk_cmd,
- * disk_status) *)
 let ndisks = 2
 let disk_base n = if n = 0 then memsize - 32 else memsize - 80
 (* the disk whose register w is, and which of its four *)
@@ -81,35 +74,29 @@ let speaker_dev = memsize - 52
  * (an ML integer of 31 bits holds them until 2034, where 1970's would
  * not fit), the host's clock or -date's, so a run is the same each time
  * when asked; the kernel counts on from it by its ticks. The web page
- * leaves it at 0. (old: none: tiny-kernel had no clock of the day) *)
+ * leaves it at 0. *)
 let date_dev = memsize - 56
 let date = ref 0
 (* a seed, read at -60(r0), for the programs' first random numbers
  * (tetris's pieces): tiny-machine's -seed, so that a run is the same
  * however long the boot took; 0, the default, says none, and the
- * kernel gives its clock instead. (old: none, a game seeded by the
- * clock alone: make check's tetris another game at each change of the
- * kernel's code) *)
+ * kernel gives its clock instead. *)
 let seed_dev = memsize - 60
 let seed = ref 0
-(* The cores (plan_tiny_multicore.md): [cores] of them, set by a host
- * before [create] (tiny-machine's -cores), 1 by default, today's
- * machine. Each its registers, its pc and its registers of control
- * (the register core its number), the memory and the devices shared;
- * core 0 starts at 0 as before, and so do the others: a kernel parks
- * them by their number, as RISC-V's cores all start at the reset's
- * address. The devices are wired to core 0: another core reaching one
- * faults, but for -64(r0), the interrupt between cores. Stored, the
- * value k raises core k's (i_ipi), saying who sent it; read, the
- * senders since the last read, a bit each (1 lsl the sender's number),
- * cleared. So a core knows whose mailbox to look at, and what it reads
- * there was written before the interrupt (an Atomic's, which orders the
- * memory between domains). *)
+(* The cores (plan_tiny_multicore.md). All start at 0, and a kernel
+ * parks them by their number (the register core), as RISC-V's cores all
+ * start at the reset's address. Another core than 0 reaching a device
+ * faults, but for -64(r0), the interrupt between cores. Storing k there
+ * raises core k's (i_ipi); reading it returns the senders since the
+ * last read, a bit each (1 lsl the sender's number), and clears them.
+ * So a core knows whose mailbox to look at, and what it reads there was
+ * written before the interrupt (an Atomic orders the memory between
+ * domains). *)
 let cores = ref 1
 let ipi_dev = memsize - 64
-(* the screen, below the devices: a megabyte no kernel's image reaches
- * (old: 640 by 480, Plan 9's 1024 by 768 since its text at three
- * times in the host's window was coarse beside mini-9pi's at two) *)
+(* The screen, below the devices, in a megabyte no kernel's image
+ * reaches. 1024 by 768, Plan 9's: 640 by 480 at three times in the
+ * host's window was coarse beside mini-9pi's text at two. *)
 let screen = 0xf00000 and width = 1024 and height = 768
 
 exception Trap of int * int                (* cause, tval *)
@@ -258,11 +245,8 @@ let colours =
     let r, g, b = colour (k / 3) in
     Char.chr (match k mod 3 with 0 -> r | 1 -> g | _ -> b))
 
-(* The colour nearest to (r, g, b), by the squares of their differences,
- * for the colour of 15 bits it falls in (5 of red, of green, of blue),
- * found once each: a picture's pixels, by tiny-machine-fetch and the
- * page (old: each its own, the page's by the first pixel that fell in
- * the 15 bits) *)
+(* By the squares of the differences, computed once for each colour of
+ * 15 bits (5 each of red, green and blue). *)
 let nearest =
   let known = Array.make 32768 (-1) in
   fun r g b ->
@@ -281,16 +265,8 @@ let nearest =
     end;
     known.(key)
 
-(* the mouse: its word, and whether it changed since it was read *)
 type mouse = { mutable at : int; mutable moved : bool; mutable cursor : int }
 
-(* The machine's speed, in instructions per second. A host sets it before
- * [create]; the machine gives it to the kernel in its rate register.
- * When a person watches (a window, the web page), the host holds the
- * machine to this speed (TinyMachine.ml's window says why). Without a
- * window nothing waits, and the rate only says how long a second is in
- * instructions. The default, 8 million, is the speed the web page can
- * keep up with, and the one the recorded sessions were made at. *)
 let default_rate = 8_000_000
 let rate = ref default_rate
 
@@ -329,7 +305,6 @@ let event (ms : mouse) k line =
       console_type k (Buffer.contents b)
   | _ -> bad ()
 
-(* a file's: each event's time, and the event *)
 let timed_events text =
   text
   |> String.split_on_char '\n'
@@ -395,15 +370,10 @@ type machine = {
   hear : string -> unit;
   (* a device or a register of control was touched: see [ticks] *)
   mutable touched : bool;
-  (* asleep since a wfi, until an interrupt of ie's is pending *)
   mutable waiting : bool;
   (* the senders of each core's interrupt, a bit each *)
   ipis : int Atomic.t array;
-  (* this core's instructions so far: in user mode, in the kernel, and
-   * the kernel's idle (see [ticks]) *)
   spent : int array;
-  (* the pages' translations last used in user mode, by page number:
-   * the number (-1: none) and its entry (see [translate]) *)
   tlb_tag : int array; tlb_pte : int array;
 }
 
@@ -464,8 +434,6 @@ let check mc access a =
   then raise (Trap (c_fault, a))
   else a
 
-(* the translations' cache: 64 pages, a page in the slot of its
- * number's low bits; emptied when satp is written *)
 let tlb_size = 64
 let tlb_flush mc = Array.fill mc.tlb_tag 0 tlb_size (-1)
 (* satp's bit 30 (tiny-kernel's pages, plan_tiny_memory.md): the pages
@@ -488,8 +456,7 @@ let user_only = 0x40000000
  * cache, a walk of two loads saved at each access but the first: a
  * kernel that changes the tables writes satp before it runs the
  * process again (RISC-V's sfence.vma). *)
-(* va's page's entry by the tables, from the root at satp (a fault
- * without one) *)
+(* The entry of va's page, walking the tables from the root at satp. *)
 let tables (m : TinyMachineCPU.machine) sat va =
   let entry at =
     if not (TinyMachineCPU.ult at memsize) then raise (Trap (c_fault, va));
@@ -522,11 +489,9 @@ let walk mc m access va =
     pa
   end
 
-(* (one test, and the pages' walk a function of its own, which looks at
- * user_only: in the host's instructions of tiny-kernel's toolchain
- * session, with partitions, translate with the walk and the cache in
- * it and user_only tested here 301.2 thousand million, this 292.9, the
- * walk in it without a cache, before the pages, 296.7) *)
+(* One test here, the walk being a function of its own: in the host's
+ * instructions for tiny-kernel's toolchain session with partitions,
+ * 292.9 thousand million, against 301.2 with the walk inlined here. *)
 let translate mc m access va =
   if mc.csr.(satp) land 0x80000000 = 0 then check mc access va
   else walk mc m access va
@@ -617,14 +582,9 @@ let store mc m s a v =
  * the wfi, taking the interrupt when status's ie is on (RISC-V's
  * rule: a source enabled in ie wakes it even when ie is off in
  * status). The machine after the sleep is the one a loop of jumps
- * leaves: the registers, the memory and the time the same.
- *
- * (old: a calm stretch that started on a jump to itself, in the
- * kernel, was not stepped either, the time added: the same speed, but
- * the machine guessed the kernel idle from a pattern of its code, a
- * guess another shape of idle loop would silently lose. wfi says it.
- * On play's WAV at -rate 20, 9.6 s of the machine: 11.0 s of the host
- * when every jump was stepped, 8.7 without.) *)
+ * leaves: the registers, the memory and the time the same. Guessing
+ * the idle kernel from a jump to itself instead would silently miss
+ * another shape of idle loop: wfi says it. *)
 
 (* the words the CPU does not know: 0x3a-0x3c, csrr, csrw and eret,
  * the supervisor's, and 0x3e, csrrw d, csr, a (both at once: d the
@@ -690,7 +650,6 @@ let env mc : TinyMachineCPU.env = {
   illegal = extra mc;
 }
 
-(* the listing's new instructions (tiny-as makes them) *)
 let show w =
   let op = (w lsr 24) land 0xff and d = (w lsr 20) land 15
   and a = (w lsr 16) land 15 and k = w land 0xffff in
@@ -710,12 +669,6 @@ let show w =
 (* The machine at its start, and one instruction of its time *)
 (*****************************************************************************)
 
-(* [put] writes a byte of the console's output, [on_open] is called
- * when a kernel first asks for the console's input; [disks] are the
- * disks' images, none, one or two, [events] a session's (then its keys are the console's
- * only input, and its last event the input's end); [send], when there
- * is a wire, is given each packet the machine sends; [hear] the
- * speaker's samples *)
 let create ~put ~on_open ~send ~hear ~disks ~events image =
   TinyMachineCPU.memsize := memsize;
   let m : TinyMachineCPU.machine = TinyMachineCPU.boot image in
@@ -742,9 +695,6 @@ let create ~put ~on_open ~send ~hear ~disks ~events image =
     ipis = Array.init !cores (fun _ -> Atomic.make 0); spent = [| 0; 0; 0 |];
     tlb_tag = Array.make tlb_size (-1); tlb_pte = Array.make tlb_size 0 }
 
-(* core k, k > 0: its registers, its pc at 0 and its registers of
- * control, as core 0's at the start; the memory, the devices and the
- * host's functions core 0's *)
 let core mc k =
   let c = Array.copy mc.csr in
   c.(status) <- supervisor_bit;
@@ -757,7 +707,6 @@ let core mc k =
             touched = false; waiting = false; spent = [| 0; 0; 0 |];
             tlb_tag = Array.make tlb_size (-1); tlb_pte = Array.make tlb_size 0 }
 
-(* the speaker's samples due, to [hear]: the host's, between two ticks *)
 let speaker_hear mc = speaker_play mc.speaker mc.cpu mc.csr.(time) mc.hear
 
 (* a time's distance from now, in instructions: 0 when it is now or
@@ -767,8 +716,7 @@ let from_now mc t =
   let d = TinyMachineCPU.m32 (t - mc.csr.(time)) in
   if d <= 0 || d > 0x40000000 then 0 else d
 
-(* a packet for the machine, to land [after] instructions from now
- * (at the next when 0): the host's, between two ticks or in [send] *)
+(* After 0 lands the packet at the next tick. *)
 let net_give mc ~after packet =
   let t = TinyMachineCPU.m32 (mc.csr.(time) + max after 1) in
   let rec place = function
@@ -872,8 +820,7 @@ let calm mc =
  * follow one look are all of one kind: a change of mode is a trap or
  * an eret, and a wfi or a wake ends the stretch ([touched], the next
  * tick). So one look a batch counts every instruction's time, and the
- * count costs nothing that shows. (old: idle was the kernel on a jump
- * to itself, its pc's word read at each look.) *)
+ * count costs nothing that shows. *)
 let what mc =
   if not (supervisor mc) then 0 else if mc.waiting then 2 else 1
 

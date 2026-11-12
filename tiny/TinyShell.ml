@@ -406,9 +406,7 @@ let path (w : string) : Fpath.t =
 
 (* the files a pattern names, sorted, a component at a time; the
  * pattern itself when there are none. A component without a wildcard
- * after one, the g of */g, names a file only where it is there.
- * (old: every directory's g kept, there or not: */g was d/g and
- * examples/g on tiny-kernel, where 9base's rc says d/g) *)
+ * after one, the g of */g, names a file only where it is there. *)
 let glob (caps : < Cap.open_in; Cap.readdir; .. >) (w : string) : string list =
   let rec expand dir = function
     | [] -> if TSys.exists caps (path dir) then [ dir ] else []
@@ -581,8 +579,7 @@ let join (a : value) (b : value) : value =
   | _ -> error "mismatched list lengths in concatenation"
 
 (* [run caps e c]: c run; e, whether -e applies here: not in a
- * condition (old: a global count of the conditions being run, still
- * raised in a function called from one: its failures were ignored) *)
+ * condition *)
 let rec run (caps : < caps; .. >) (e : bool) (c : cmd) : unit =
   let run = run caps e and cond = run caps false and words = words caps in
   match c with

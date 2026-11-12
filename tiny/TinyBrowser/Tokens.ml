@@ -18,7 +18,7 @@ let wanted =
   [ "href"; "class"; "style"; "src"; "alt"; "width"; "height"; "colspan";
     "start"; "id"; "http-equiv"; "content" ]
 
-(* Parses the inside of a tag, the text between its < and its >. *)
+(* s is the text between a tag's < and its >. *)
 let tag s =
   let n = String.length s in
   let rec word i =
@@ -64,9 +64,6 @@ let tag s =
     Open (name, attrs e [])
   end
 
-(* The reader keeps what the last message left unfinished (tail), and,
- * while we skip the content of a <style> or <script>, which is not
- * HTML, the name of that element (raw). *)
 type reader = { mutable tail : string; mutable raw : string }
 
 (* Finds the > that ends a tag, starting just after its <. A > inside
@@ -83,8 +80,7 @@ let tag_end s i : int option =
       else go (j + 1) ' ' in
   go i ' '
 
-(* Returns the tokens of a message. [last] is true when no message
- * follows, so nothing is kept for later: tokens' and tokens_end's *)
+(* [last] is true when no message follows, so nothing is kept. *)
 let scan (r : reader) chunk last =
   let s = if r.tail = "" then chunk else r.tail ^ chunk in
   let n = String.length s in

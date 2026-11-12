@@ -40,13 +40,12 @@
  *                          a closure, the rest of     process, no swtch, no
  *                          its call, retried by the   sleep, no locks
  *                          scheduler
- *   files and directories  the disk's                 no log, no fsck, no map
- *                          (KFS.ml):         of free blocks: a commit
- *                          inodes, copied on write,   is one block written; a
- *                          the root; the boot         collector finds the free
- *                          image's, a tree of ML      ones
- *                          values, in a union with
- *                          it
+ *   files and directories  on the disk (KFS.ml):      no log, no fsck, no map
+ *                          inodes, copied on write,   of free blocks: a commit
+ *                          as the root; the boot      is one block written; a
+ *                          image's files, a tree of   collector finds the free
+ *                          ML values, in a union      ones
+ *                          with it
  *   console, pipes         other kinds of open files  pipes make a shell a
  *                                                     shell
  *   a screen, a mouse      descriptors 3 and 4 of a   KGraphics.ml
@@ -65,19 +64,20 @@
  *   things, or for a time  more closure, using the    is scanned, no select
  *                          clock's ticks              queues
  *
- * The files. The boot image carries, after the kernel, the few
- * programs that mend a disk (sh, rc, the utilities, ed), read from
- * memory; the system, /bin, /lib and /examples, is on the first disk
- * (disk.img, by tiny-mkfs), the sources, /src, on the second (src.img).
- * With a disk (-d), the disk is the root,
- * Plan 9's way: / is a union of the disk's root, of /boot (the image's
- * files alone) and /dump (the snapshots of the boots before), and of
- * the image's files, so /bin is the disk's /bin and /boot/bin together.
- * What is written goes to the disk, and is kept; a file of the image
- * written by its /bin name is copied to the disk first. The first shell
- * starts in /usr/glenda: glenda is the user of a Plan 9 installed from
- * its CD (and the name of its bunny). With no disk, the tree is the
- * image's alone and lives in memory until the halt.
+ * The files. After the kernel, the boot image carries the few programs
+ * needed to repair a disk (sh, rc, the utilities, ed), which are read
+ * from memory. The rest of the system (/bin, /lib and /examples) is on
+ * the first disk (disk.img, made by tiny-mkfs), and the sources (/src)
+ * are on the second (src.img).
+ * With a disk (-d), the disk is the root, as in Plan 9. / is a union
+ * of the disk's root, of /boot (the image's files alone) and /dump
+ * (the snapshots of earlier boots), and of the image's files; so /bin
+ * shows the disk's /bin and /boot/bin together. What is written goes
+ * to the disk and is kept. A file of the image that is written through
+ * its /bin name is copied to the disk first. The first shell starts in
+ * /usr/glenda: glenda is the user of a Plan 9 installed from its CD
+ * (and the name of its bunny). With no disk, the tree is the image's
+ * files alone, and it lives in memory until the halt.
  *
  * How it runs. The toplevel reads the files carried by the image,
  * creates the first process (/bin/sh, with the console as its 0, 1 and 2),
@@ -88,42 +88,42 @@
  * current directory.
  *
  * Several cores (tiny-machine -cores n, plan_tiny_multicore.md). The
- * kernel stays core 0's, whole: one heap, one collector, written for
- * one thread. The others run processes only, in kentry.s's slave loop,
- * which runs no ML: core 0 writes a process's frame, window and slice
- * in core k's mailbox and raises k's interrupt; k runs the process
- * until its trap, writes the cause back and raises core 0's, which
- * handles the trap as one of its own ([back]). So the kernel needs no
- * lock and its structures did not change; what does not scale is the
- * system calls, one core's, which a compiler makes few of. The first
- * multiprocessor Unix kernels worked the same way, master and slaves
- * (Purdue's dual VAX, Goble and Marsh, 1982):
+ * whole kernel runs on core 0 only: one heap and one collector,
+ * written for one thread. The other cores only run processes, in
+ * kentry.s's slave loop, which runs no ML. Core 0 writes a process's
+ * frame, window and time slice in core k's mailbox and raises k's
+ * interrupt. Core k runs the process until it traps, writes the cause
+ * back, and raises core 0's interrupt; core 0 then handles the trap as
+ * one of its own ([back]). So the kernel needs no locks, and its data
+ * structures did not change. What does not scale is the system calls,
+ * which all run on one core, but a compiler makes few of them. The
+ * first multiprocessor Unix kernels worked the same way, with a master
+ * and slaves (Purdue's dual VAX, Goble and Marsh, 1982):
  *
  *     core k                                  core 0
- *     runs P (k's mailbox) ── a trap ──>      [interrupts]: P's trap,
- *     cause, value in the mailbox,            handled as its own ([back]);
- *     core 0's interrupt; waits               P or another given to k
+ *     runs P (from k's mailbox) ── a trap ──> [interrupts]: handles P's
+ *     puts the cause and value in the         trap as its own ([back]);
+ *     mailbox, interrupts core 0, waits       gives P or another to k
  *                               <── k's interrupt (frame, window, slice)
  *
- * The kernel is several files, units compiled by tiny-ml one by one in
- * this order (TinyKernel/Makefile's KUNITS). First what it stands on:
- * KRaw (the machine's bytes), KGraphics, KNetwork,
- * KAudio, KFS, KMemory. Then its own parts,
- * once this file's sections: KMachine (the externals, the
- * devices' addresses), KFiles (the tree of files, what a
- * descriptor is), KProcs, KDevices (the screen, the
- * mouse, the clock, the speaker), KIO (reads and writes),
- * KCalls (the system calls), KScheduler. This file is
- * the boot.
+ * The kernel is several files, units that tiny-ml compiles one by one
+ * in this order (TinyKernel/Makefile's KUNITS). First come the modules
+ * it stands on: KRaw (the machine's bytes), KGraphics, KNetwork,
+ * KAudio, KFS and KMemory. Then come its own parts, which were once
+ * sections of this file: KMachine (the externals and the devices'
+ * addresses), KFiles (the tree of files, and what a descriptor is),
+ * KProcs, KDevices (the screen, the mouse, the clock and the speaker),
+ * KIO (reads and writes), KCalls (the system calls) and KScheduler.
+ * This file is the boot.
  *
  * Here is how the kernel divides the machine's 256 MB (kruntime.c has
  * the numbers; a process sees only its own partition, starting at 0,
  * thanks to the machine's relocating window):
  *
  *     0x000000   the image: kentry.s, the runtime, the kernel; then the
- *                files it carries, each a name, a size, the bytes
+ *                files it carries, each a name, a size and the bytes
  *                (10 MB at most; the system and the sources are on
- *                the disks, which the Makefile makes by tiny-mkfs)
+ *                the disks, which the Makefile makes with tiny-mkfs)
  *     0xa00000   the file system's buffers and its map of the
  *                disk's blocks (KFS.ml)
  *     0xb00000   the value stack: the kernel's own roots (TinyML's)
@@ -132,9 +132,10 @@
  *     0xb41000   the cores' mailboxes, 64 bytes each
  *     0xb50000   a packet's place, sent or received
  *     0xb51000   with pages, a byte for each page of the processes'
- *                memory, its users (KMemory.ml)
- *     0xb60000   the bounce: a buffer in several pieces, read or
- *                written through it (sys_rw; none with partitions)
+ *                memory, counting its users (KMemory.ml)
+ *     0xb60000   the bounce buffer, through which a buffer in several
+ *                pieces is read or written (sys_rw; unused with
+ *                partitions)
  *     0xc00000   the speaker's ring
  *     0xd00000   pixels of images: the font, the hidden windows
  *     0xf00000   the screen, 1024 by 768 bytes; more images after it
@@ -145,26 +146,29 @@
  *                first-fit when a program starts
  *    0xfffffc0   the devices, reached as -64 to -4
  *
- * A process's memory is KMemory's (TinyKernel/): a partition
- * by default, the simplest way, with its history and what came after;
- * segments with MEMORY=segments (the program's text shared by its
- * runs, read only); pages of 4 KB with MEMORY=pages (tiny-machine's
- * Sv32: a page given at its first touch, fork's copy made page by
- * page, at the first write: plan_tiny_memory.md). With partitions, fork
- * copies the parent's partition whole; spawn, fork and exec in one,
- * copies nothing (tiny-build starts each recipe's rc with it: its own
- * partition is 16 MB).
+ * A process's memory is managed by KMemory, which also tells the
+ * history of each scheme (plan_tiny_memory.md):
+ * - a partition, by default, the simplest way;
+ * - segments, with MEMORY=segments: the program's text is read-only
+ *   and shared by all its runs;
+ * - pages of 4 KB, with MEMORY=pages (tiny-machine's Sv32): a page is
+ *   given at its first touch, and fork copies a page only at the first
+ *   write to it.
+ * With partitions, fork copies the parent's whole partition. spawn,
+ * which is fork and exec in one, copies nothing; tiny-build starts each
+ * recipe's rc with it, since its own partition is 16 MB.
  *
  * dropped:
- * Swapping (pages on the disk), the kernel itself on several cores at
- * once (only processes run on the others, above), users and
- * permissions, and signals
- * except the simplest: kill(pid) ends a process as a fault does (with
- * status -1), and ^C at the console kills every process except the
- * shell. The system calls are specific to this kernel (its programs
- * are in ../user/), but t6's cat, echo, ls, wc,
- * mkdir and rm run unchanged, because they use only calls the two kernels have in
- * common.
+ * - swapping (pages on the disk);
+ * - the kernel itself running on several cores at once (only
+ *   processes run on the other cores, as above);
+ * - users and permissions;
+ * - signals, except the simplest: kill(pid) ends a process as a fault
+ *   does (with status -1), and ^C at the console kills every process
+ *   except the shell.
+ * The system calls are specific to this kernel (its programs are in
+ * ../user/), but t6's cat, echo, ls, wc, mkdir and rm run unchanged,
+ * because they use only calls the two kernels have in common.
  *
  * twist:
  * A system call that must wait (a read on an empty pipe, or a wait)
@@ -224,16 +228,17 @@
  * externals, which are functions written in C or in assembly.
  *
  * context:
- * It is the tiny program in ix's Kernel row (see the
- * README), as mini-9pi is the mini one. It is not a new version of the
+ * It is the tiny program in ix's Kernel row (see the README), as
+ * mini-9pi is the mini one. It is not a new version of the
  * kernels that came before it on the same machine (v0 and t6 in
  * steps/, written in assembly and C). TinyKernel/ holds the rest:
  * kentry.s, kruntime.c, the user programs, and the Makefile.
  *
  * exercises:
- * Each cheap in this design:
- * - a cache of the disk's blocks, and the count of the instructions it
- *   saves (each access reads its blocks again: the disk is instant);
+ * Each is cheap in this design:
+ * - a cache of the disk's blocks, and a count of the instructions it
+ *   saves (today each access reads its blocks again, since the disk
+ *   is instant);
  * - keep each waiting process's closure together with what it waits
  *   for, and retry it only when that changes (a wakeup again, but a
  *   typed one);
@@ -317,6 +322,6 @@
  *    against fork
  *)
 
-(* A program, and tiny-ml's alone: OCaml does not compile TinyKernel.ml
- * (its externals are kentry.s's and kruntime.c's), so nothing checks
- * this file against it. It gives nothing to another file. *)
+(* This is a program, compiled by tiny-ml only. OCaml does not compile
+ * TinyKernel.ml (its externals are in kentry.s and kruntime.c), so
+ * nothing checks this file against it. It exports nothing. *)

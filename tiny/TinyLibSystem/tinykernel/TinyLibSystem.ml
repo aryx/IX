@@ -12,8 +12,7 @@
  * looks for a module beside the file it compiles before anywhere else.
  *
  * A module, as the host's: the tool writes TinyLibSystem.fork for
- * both (old: a name with a dot, one name, when tiny-ml had no
- * modules). The capabilities are read and forgotten: a function's caps is a
+ * both. The capabilities are read and forgotten: a function's caps is a
  * value like another, that nothing looks at. Not OCaml's to compile.
  *
  * What tiny-kernel has not, and what is done about it here:
@@ -26,10 +25,8 @@
  * - a wait for one child: the kernel says the next that ended, so the
  *   others' ends are kept until asked for
  * - more than 63 arguments for a program, its name one of them: said
- *   (old: 15; a linker's line names 30 objects)
  * - a signal, a terminal to ask about, a reason for a call that
- *   failed: nothing, yes, "cannot" (old: a file written at its end,
- *   >>, refused, before the kernel's seek)
+ *   failed: nothing, yes, "cannot"
  * - a stat: a file's kind and size are read from its entry in the
  *   directory it is in, found by its path cleaned as the kernel cleans
  *   it (the current directory first, "." and ".." taken away)
@@ -240,8 +237,7 @@ let with_open_in caps f file =
   r
 
 external out_channel_of_descr : int -> out_channel = "%identity"
-(* f on a file opened by opener to write, closed after (old: written
- * twice, the opener the only difference) *)
+(* f on a file opened by opener to write, closed after *)
 let with_out opener caps f file =
   let fd = named file (fun () -> opener caps file) in
   let chan : Chan.o = { oc = out_channel_of_descr fd; dest = OutFile file } in
@@ -258,8 +254,7 @@ let stdin _caps : Chan.i = { ic = in_channel_of_descr fd_stdin; origin = Stdin }
  * is read as a file of them; the kernel's stat gives one. *)
 type dirent = { e_dir : bool; e_links : int; e_size : int; e_mtime : int }
 
-(* an entry's size, and its name's, the words after it (old: 80 and 64
- * where an entry was read) *)
+(* an entry's size, and its name's, the words after it *)
 let entry_size = 80
 let name_size = 64
 
@@ -267,15 +262,12 @@ let name_size = 64
 let word s i =
   String.get_uint16_le s i + (String.get_uint16_le s (i + 2) lsl 16)
 
-(* the entry at i of s, but its name (old: a 4-tuple, taken apart with
- * _ by its readers) *)
+(* the entry at i of s, but its name *)
 let dirent s i =
   let w = i + name_size in
   { e_dir = Char.code s.[w] = 1; e_links = word s (w + 4);
     e_size = word s (w + 8); e_mtime = word s (w + 12) }
 
-(* the names in a directory (old: its entries decoded whole, then all
- * but their names dropped) *)
 let names dir =
   let fd = u_open dir o_read in
   if fd < 0 then []
@@ -305,8 +297,7 @@ let path_names file =
   in
   List.rev (List.fold_left clean [] (String.split_on_char '/' (start ^ "/" ^ file)))
 
-(* the file's entry, the kernel's stat (old: its directory read whole
- * for it) *)
+(* the file's entry, the kernel's stat *)
 let entry file : dirent =
   let s = u_stat (str file) in
   if s = "" then failwith "not there" else dirent s 0
@@ -463,8 +454,7 @@ let scripts = ref 0
 (* The script in a file that removes itself, run by rc in a child made
  * by spawn: nothing of this process copied, where a fork copied it
  * whole (tiny-build's 16 MB at each recipe) for rc's exec to drop it.
- * Its pid, or None (old: -1; older: u_fork, and the child wrote the
- * file, named by its pid, and exec'ed rc) *)
+ * Its pid, or None *)
 let shell caps vars script =
   u_flush ();
   incr scripts;

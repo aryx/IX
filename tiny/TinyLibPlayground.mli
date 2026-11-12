@@ -52,16 +52,17 @@
  *   single message: nothing flickers, and a window system only has to
  *   show one rectangle. The first shape, the background, is kept
  *   already drawn in an image of its own.
- * - {b The music}: the tune a model wants playing, as the picture is
- *   the one it wants shown ([music]: Tetris's theme, faster at each
- *   level; none when the game is over). The library gives each of its
- *   parts, a voice of /dev/audio each, its next notes up to half a
- *   second ahead at each turn of its loop; another tune goes on from
- *   the same notes (a faster pace: m-ix's change_loop), and None, no
- *   tune, closes the voices. A note is a sound, so a tune is a few
- *   messages a second and the kernel makes the samples (m-ix's
- *   playground renders them,
- *   which cost a Pi 1 seconds: notes_audio.md's 8 and 14).
+ * - {b The music}: [music] gives the tune a model wants playing, just
+ *   as [view] gives the picture it wants shown. For Tetris it is the
+ *   theme, faster at each level, and nothing once the game is over.
+ *   Each part of the tune gets a voice of /dev/audio, and at each turn
+ *   of its loop the library sends each voice its next notes, up to half
+ *   a second ahead. When the tune changes, the new one goes on from the
+ *   same place in the notes (for a faster pace: m-ix's change_loop);
+ *   None closes the voices. A note is sent as a sound, so a tune is a
+ *   few messages a second and the kernel makes the samples. m-ix's
+ *   playground renders the samples itself, which costs a Pi 1 whole
+ *   seconds (8 and 14 in notes_audio.md).
  * - {b The colours}: a shape's colour is a byte, an index in Plan 9's
  *   colour table; the image the kernel needs for that colour is
  *   created the first time it is used.
@@ -80,21 +81,22 @@
  * on).
  *
  * twist:
- * {b A sound is what changed}, as the picture is what is, where the
- * twin's playground renders audio by its sources and has no sound of
- * a model: [sound] is given the model before and the model after, and
- * says what is heard (Tetris: rows that went, a piece that landed). So
- * a game keeps nothing of what it played, and its sounds are tested as
- * its rules are, with two models and no speaker. A sound is written to
- * tiny-kernel's /dev/audio as a message of 11 bytes, and the kernel
- * makes its samples, mixed with the other programs'.
+ * {b A sound comes from what changed}, just as the picture comes from
+ * what is. The full playground renders audio from its sources and has
+ * no notion of the sound of a model. Here [sound] is given the model
+ * before and the model after, and says what is heard (in Tetris: rows
+ * cleared, a piece that landed). So a game keeps no record of what it
+ * played, and its sounds are tested like its rules, with two models
+ * and no speaker. A sound is written to tiny-kernel's /dev/audio as an
+ * 11-byte message, and the kernel makes the samples and mixes them
+ * with those of the other programs.
  *
  * context:
- * Below it are TinyLibSystem (write, read, ready, millis, the
- * speaker's open) and TinyLibDraw (the drawing messages); above it is
- * TinyAppTetris. It draws on fd_draw and reads keys on fd_stdin, so a
- * game runs either on the whole screen or in a
- * window of TinyWindows without knowing which. Playground in
+ * Below this library are TinyLibSystem (write, read, ready, millis,
+ * and opening the speaker) and TinyLibDraw (the drawing messages);
+ * above it is TinyAppTetris. It draws on fd_draw and reads keys on
+ * fd_stdin, so a game runs either on the whole screen or in a window
+ * of TinyWindows without knowing which. Playground in
  * lib_playground is the full version, with floats, transformations,
  * the mouse and several platforms.
  *
@@ -137,25 +139,22 @@
  *    update
  *)
 
-(* a key typed: a character (Tab included); a control key, C-a as
- * Ctrl 'a' (C-_ Ctrl '_'); Enter, Backspace, Escape; an arrow. The
- * console gives bytes: a control key 1 to 31, Enter '\r' or '\n',
- * Backspace '\b' or '\127', Escape '\027', tiny-machine's arrows 128 to
- * 131 (up, down, left, right); Plan 9's console gives runes, its arrows
- * among them *)
+(* C-a is Ctrl 'a', and C-_ is Ctrl '_'. [Char] includes Tab. The
+ * console gives bytes: a control key is 1 to 31, Enter '\r' or '\n',
+ * Backspace '\b' or '\127', Escape '\027', and the arrows of
+ * tiny-machine 128 to 131 (up, down, left, right). Plan 9's console
+ * gives runes instead, its arrows among them. *)
 type key =
   | Char of char | Ctrl of char | Enter | Backspace | Escape
   | Up | Down | Left | Right
 
-(* the key a byte of the console is *)
 val key_of_byte : char -> key
 
-(* what a view is made of: a rectangle (its width, its height, its
- * colour), a text in a colour, shapes together, a shape moved. A text's
- * colour is a byte, and above it the text's style, for the office's
- * words: its colour plus bold, italic, underlined, large (a character
- * 16 by 32), as many as it has; or fat_pixels, a paint's row: each
- * character a colour's letter (pixel_letters), a square of 4 by 4 *)
+(* A text's colour is a byte; the bits above it give the style of the
+ * office's words: [bold], [italic], [underlined], [large] (16x32
+ * characters). [fat_pixels] is for a row of a paint picture instead:
+ * each character is a colour letter (see [pixel_letters]) drawn as a
+ * 4x4 square. *)
 type colour = int
 type shape =
   | Rect of colour * int * int
@@ -168,61 +167,54 @@ val underlined : int
 val large : int
 val fat_pixels : int
 
-(* the fat pixels' colours, by letter: . white, k black, r red, g green,
- * b blue, y yellow, o orange, p purple, n brown, a grey *)
+(* . white, k black, r red, g green, b blue, y yellow, o orange,
+ * p purple, n brown, a grey *)
 val pixel_letters : string
 
-(* a text's character in its colour and style: its width, its height;
- * what of it is right of its cells (an italic's slant) *)
+(* The size of a character in a colour and style. [overhang] is how far
+ * it reaches right of its cell, as an italic's slant does. *)
 val char_width : int -> int
 val char_height : int -> int
 val overhang : int -> int
 
-(* A sound: sfxr's recipe (lib_audio's Sfx.mli) cut to five numbers, a
- * wave, a pitch going from hz to to_hz (at most 4,000), a length in
- * milliseconds (at most 1,000), a volume (0 to 127), down to nothing at
- * its end *)
+(* sfxr's recipe (lib_audio's Sfx.mli) cut down to five numbers. The
+ * pitch slides from [hz] to [to_hz] (at most 4,000), [ms] is at most
+ * 1,000, and [volume] (0 to 127) fades to nothing by the end. *)
 type wave = Square | Triangle | Sawtooth | Noise
 type sound = { wave : wave; hz : int; to_hz : int; ms : int; volume : int }
 
-(* A tune: its pace, the milliseconds of its unit (an eighth, say), and
- * its parts, played together, each a wave, a volume and notes: a pitch
- * in Hz (0 a rest) and a length in units (a note at most 1,000 ms) *)
+(* [pace] is the unit in milliseconds (an eighth note, say). The parts
+ * play together. A note is a pitch in Hz (0 for a rest) and a length in
+ * units, at most 1,000 ms. *)
 type part = { timbre : wave; level : int; notes : (int * int) list }
 type tune = { pace : int; parts : part list }
 
-(* a game: its window's size, its first model from a seed, the model as
- * shapes, the model after a key and after a frame; the sounds of a
- * change, from the model before to the model after (played one after
- * the other); and the tune the model wants playing, None for silence *)
+(* [init] gets a random seed. The sounds of [sound was now] play one
+ * after the other; [music] gives None for silence. *)
 type 'm game = {
   width : int; height : int; init : int -> 'm; view : 'm -> shape list;
   key : key -> 'm -> 'm; frame : 'm -> 'm;
   sound : 'm -> 'm -> sound list; music : 'm -> tune option;
 }
 
-(* The program of a game: its loop, a key or the next frame's time
- * waited for, the picture drawn when the shapes are others; it ends at
- * a q or at the keys' end, Exit.OK, so a game is never given a q.
- * caps: the speaker opened, the first random number's seed, the clock *)
+(* The loop of a game. It draws only when the shapes differ, and ends on
+ * q or at the end of the keys with Exit.OK, so a game never sees a q. *)
 val run : < Cap.open_out; Cap.random; Cap.clock; .. > -> 'm game -> Exit.t
 
 (* the number after a seed, 1 to 2^30 - 36 (Lehmer's generator) *)
 val random : int -> int
 
-(* samples as /dev/audio takes them (a byte each, signed, 8,000 a second;
- * no more than 8,192): a message too (p, how many, then them) *)
+(* The message for /dev/audio: p, the count, then the samples, signed
+ * bytes at 8,000 a second, at most 8,192 of them. *)
 val samples_message : string -> string
 
-(* a shape drawn in an image, its corner at (x, y): messages gathered,
- * which [flush] writes (TinyLibGUI's, which draws a widget and not a
- * picture) *)
+(* [draw image x y shape] gathers the drawing messages, and [flush]
+ * writes them. TinyLibGUI uses them for widgets, not whole pictures. *)
 val draw : TinyLibDraw.image -> int -> int -> shape -> unit
 val flush : unit -> unit
 
-(* a picture: the shapes before (its first, the ground, drawn again
- * only when another), the shapes now; and the two images it is made
- * in, by their numbers (a test's) *)
+(* [show g shown now] draws the ground, the first shape, only when it
+ * changed. The tests use the image numbers [picture] and [ground]. *)
 val show : 'm game -> shape list -> shape list -> unit
 val picture : int
 val ground : int

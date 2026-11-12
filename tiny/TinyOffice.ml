@@ -428,8 +428,7 @@ let frame (b : obj) (selected : bool) : P.shape list =
 
 (* the status line: the page's message (what was just done, or why
  * not: it goes at the next key or click), or what the box being edited
- * says, or the file's name (old: a sheet's, a paint's or a drawing's
- * words over the message, and Quit's refusal not seen) *)
+ * says, or the file's name *)
 let status (o : office) : P.shape list =
   let file = o.where.file
   and width = o.where.width

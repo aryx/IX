@@ -1,37 +1,31 @@
-(* tiny-ml's compiler from the typed tree to the stack machine: a
- * function's code, its closures (static when they capture nothing),
- * its patterns' tests, its handlers. Read Tree.mli and
- * Machine.mli first. *)
+(* tiny-ml's compiler from the typed tree to the stack machine: the
+ * code of each function, its closures (static when they capture
+ * nothing), the tests of its patterns, and its exception handlers.
+ * Read Tree.mli and Machine.mli first. *)
 
-(* where a name's value is: a slot of the frame, a field of the
- * closure, a global of a unit (its table, its index), a static block *)
+(* Glob is a unit's table and an index in it. *)
 type loc =
   | Slot of Machine.slot
   | Env of int
   | Glob of Machine.sym * int
   | Static of Machine.sym
-(* a function whose code is known: that code, and its arity *)
-type known = Machine.sym * int
-(* a name's value, or a primitive (its name, its arity) *)
+type known = Machine.sym * int        (* a function's code, its arity *)
+(* Ext is a primitive, its name and arity. *)
 type binding = Loc of loc * known option | Ext of string * int
 
-(* the values of the program's toplevel names (Types's tglobals
- * has their types) *)
+(* The values of the toplevel names; their types are in Types. *)
 val globals : (string, binding) Hashtbl.t
 
-(* [start_fun nslots ntries]: a function's code begun, its frame of
- * that many slots and handlers so far; [finish_fun f nparams]: made *)
+(* [start_fun nslots ntries]: the frame slots and handlers seen so far;
+ * [finish_fun f nparams]. *)
 val start_fun : int -> int -> unit
 val finish_fun : Machine.sym -> int -> unit
-(* an instruction of the current function *)
 val emit : Machine.ir -> unit
-(* the next function to compile, queued by a closure *)
+(* The next function to compile, queued when a closure was made. *)
 val dequeue : unit -> (unit -> unit) option
 
-(* [bind env r bindings]: a let's bindings compiled, their names'
- * places *)
+(* Where the values of the let's names are. *)
 val bind :
   (string * binding) list -> Tree.rec_flag ->
   (Tree.pat * Tree.expr) list -> (string * binding) list
-(* [curry_fun n k]: ml_curry<n>_<k> *)
-val curry_fun : int -> int -> unit
+val curry_fun : int -> int -> unit    (* ml_curry<n>_<k> *)

@@ -5,72 +5,73 @@
  *
  *     A \{b}bold\{} word, and \{il}large italic\{}.
  *
- * the style's letters between \{ and } (b bold, i italic, u underlined,
- * l large), \{} plain, \\ a backslash. Being edited it is decoded into
- * two strings of the same length, the characters and their styles (a
- * byte each: bold 1, italic 2, underlined 4, large 8), the doc of
- * Model, and encoded back when the editing ends:
+ * A style is written as its letters between \{ and } (b bold, i
+ * italic, u underlined, l large); \{} goes back to plain, and \\ is a
+ * backslash. While the box is edited, its data is decoded into two
+ * strings of the same length, the characters and their styles (a byte
+ * per character: bold 1, italic 2, underlined 4, large 8). These are
+ * the doc of Model, and they are encoded back when the editing ends:
  *
  *     txt   A bold word
- *     sty   00111100000         (one byte a character; 1: bold)
+ *     sty   00111100000         (one byte per character; 1 is bold)
  *
- * The layout fills the box's width a word at a time, each character in
- * its style's width (the kernel's fonts), a line as tall as its largest
- * character; a click is a place in the text (index_at), the inverse.
- * The file's Markdown (File) is made from the same two
- * strings.
+ * The layout fills the box's width a word at a time. Each character
+ * takes its style's width in the kernel's fonts, and a line is as tall
+ * as its largest character. [index_at] is the inverse: it turns a click
+ * into a place in the text. The file's Markdown (File) is made from the
+ * same two strings.
  *
  * modern:
- * a word processor keeps its text in a piece table (the Alto's Bravo
- * had one, and mini-office's text is lib_gui's Text_edit, another), so
- * that an edit costs a few pieces whatever the text's length; here each
- * edit makes the two strings again, a box's text being small.
+ * A word processor keeps its text in a piece table (the Alto's Bravo
+ * had one, and so does lib_gui's Text_edit, which mini-office's text
+ * uses), so that an edit costs a few pieces whatever the text's length.
+ * Here each edit rebuilds the two strings, since a box's text is
+ * small.
  *)
 
-(* a text box's data, as its characters and their styles, and back *)
+(* [decode] turns a text box's data into its characters and their
+ * styles; [encode] turns them back into data. *)
 val decode : string -> string * string
 val encode : string -> string -> string
 
-(* A text laid out as the office shows it, in a width in pixels, from its
- * characters and their styles: each character's place (and the end's),
- * its x and its line; each line's top and height *)
+(* [px] and [ln] give the x and line of each character, plus one entry
+ * for the end; [top] and [tall] give the top and height of each line. *)
 type laid = { px : int array; ln : int array; top : int array; tall : int array }
 val lay_out : int -> string -> string -> laid
 
-(* [index_at laid txt sty x y]: the place in the text nearest (x, y) *)
+(* the index of the character nearest (x, y) *)
 val index_at : laid -> string -> string -> int -> int -> int
 
-(* the selection, from its first character to after its last *)
+(* from the first character to just after the last *)
 val selection : Model.doc -> int * int
 
-(* the cursor put at i, no selection, what is typed next in the style
- * of the character before *)
+(* Nothing is selected after it; what is typed next takes the style of
+ * the character before. *)
 val go_to : Model.doc -> int -> unit
 
-(* the selection replaced by a text and its styles *)
+(* replaces the selection *)
 val put_text : Model.doc -> string -> string -> unit
 
-(* a style of the selection set, or taken off when all of it has it;
- * nothing selected, of what is typed next; 0 plain *)
+(* [restyle d style] sets a style on the selection, or removes it when
+ * the whole selection already has it. With nothing selected, it applies
+ * to what is typed next. The style 0 is plain. *)
 val restyle : Model.doc -> int -> unit
 
-(* what was cut or copied, its characters and their styles; the
- * selection copied there *)
+(* [clipboard] holds what was cut or copied, as characters and their
+ * styles; [copy] copies the selection there. *)
 val clipboard : (string * string) ref
 val copy : Model.doc -> unit
 
-(* [edit office i x y selecting]: box i's text edited, its cursor where
- * (x, y) is, the left button selecting from there if it is down *)
+(* [edit office i x y selecting] starts editing box i at (x, y). *)
 val edit : Model.office -> int -> int -> int -> bool -> unit
 
-(* a key in the text being edited (TinyOffice.mli's table); the box
- * grows to show it all *)
+(* The keys are in TinyOffice.mli's table. The box grows to show the
+ * whole text. *)
 val write_key :
   Model.office -> Model.doc -> TinyLibPlayground.key -> unit
 
-(* [text_view box txt sty editing]: a word for each run of characters
- * of a style on a line, the lines that fit; being edited, its selection
- * and its cursor *)
+(* [text_view box txt sty editing] draws the lines that fit, a word per
+ * run of one style, and the selection and cursor while editing. *)
 val text_view :
   Model.obj -> string -> string -> Model.doc option ->
   TinyLibPlayground.shape list

@@ -1,50 +1,41 @@
 (* tiny-machine's libmach: what every program that reads or writes the
- * machine's code shares, as Plan 9's libmach is what its debuggers and
- * nm share (principia's debuggers/libmach: the instructions decoded, the
- * executables' format, the symbol tables). Here:
+ * machine's code shares. It plays the role of Plan 9's libmach, which
+ * the debuggers and nm share (principia's debuggers/libmach: decoding
+ * instructions, the format of executables, the symbol tables). This
+ * module has four parts:
  *
- *     the instructions     instr, and their words: encode, decode,
- *                          text and listing (tiny-cpu -l, debug)
- *     the lines            line: the assembly the compilers make
- *                          (TinyC/Machine.ml, TinyML/Machine.ml)
- *                          and tiny-as reads (its
- *                          parse); print_line its text (-S)
+ *     the instructions     instr, and their words: encode, decode, and
+ *                          their text and listing (tiny-cpu -l, debug)
+ *     the lines            line: the assembly that the compilers make
+ *                          (TinyC/Machine.ml, TinyML/Machine.ml) and
+ *                          that tiny-as parses; print_line gives its
+ *                          text (-S)
  *     the objects          the lines once encoded (assemble): what the
- *                          compilers and tiny-as write
- *                          (to_object) and tiny-ld reads
- *                          (of_object)
+ *                          compilers and tiny-as write (to_object) and
+ *                          tiny-ld reads (of_object)
  *     the symbols          a program's labels as tiny-ld writes them,
  *                          for tiny-prof and debug
  *
  * Read TinyMachine/TinyMachineCPU.mli first: the machine, the format of
- * its words, and the design. Its interpreter keeps OCaml's 32-bit
- * loads, which the machine's speed is made of, and is not here: what
- * is here tiny-ml compiles, so that the toolchain runs on tiny-kernel.
+ * its words, and the design. The interpreter of the CPU is not here:
+ * it relies on OCaml's 32-bit loads, which make the machine fast.
+ * Everything here is compiled by tiny-ml too, so that the toolchain
+ * runs on tiny-kernel.
  *
- * old: TinyMachine/TinyMachineISA.ml (the instructions, the objects),
- * TinyMachine/TinyMachineAsm.ml (the lines, their parse and print) and
- * TinyLibSymbols.ml, in one file (docs/plans/done/plan_tiny_libmach.md):
- * the toolchain's, not tiny-machine's parts; the objects the lines'
- * type, not an item type of their own with the same constructors;
- * parse tiny-as's, the only program that reads assembly.
- *
- * In m-ix a word's two directions are two programs' and two types:
- * mini-ld's Arm encodes its opcodes (5.out.h's), mini-5i's Arm32_isa
- * decodes a word into a variant of its own, checked against objdump.
- * Here one type serves both directions, so the listing's law
- * (TinyMachineCPU's: a listing reassembled gives the same words) is a
- * test of this file.
+ * In m-ix, encoding and decoding a word are done by two programs with
+ * two different types: mini-ld's Arm encodes the opcodes (those of
+ * 5.out.h), and mini-5i's Arm32_isa decodes a word into a variant of
+ * its own, checked against objdump. Here one type serves both
+ * directions, so the law of the listing (stated in TinyMachineCPU: a
+ * listing reassembled gives the same words) is a test of this file.
  *)
 
 (*****************************************************************************)
 (* The instructions *)
 (*****************************************************************************)
 
-(* The instructions, and their words (an immediate is a word's low 16
- * bits, encode says what does not fit); the ALU's operations and the
- * branches' tests in their opcodes' order, with their names; an
- * immediate form's name 
- *)
+(* An immediate is the low 16 bits of a word; encode reports what does
+ * not fit. alus and cmps are in the order of their opcodes. *)
 
 type reg = int
 
@@ -81,47 +72,36 @@ val unsigned_imm : alu -> bool
 val has_imm : alu -> bool
 val sext16 : int -> int
 
-(* The machine's words, of two kinds. An instruction's word, as encode
- * makes it and decode reads it, is an int on purpose: its opcode is
- * under 0x40, so the word is under 2^30 and fits tiny-ml's 31-bit ints
- * as well as OCaml's. tiny-machine's CPU decodes a word at each step,
- * and an int costs nothing there, where an Int32 is boxed on OCaml and
- * two pieces of 16 bits on tiny-ml. Any other 32 bits (a number of
- * li, a .word, an illegal instruction's word, which may have any
- * opcode) is a word, an Int32: on tiny-ml it may not fit an int.
- * (old: an int for both, and an int64 for the lines' numbers) *)
+(* The word of an instruction is an int on purpose: its opcode is under
+ * 0x40, so it fits tiny-ml's 31-bit ints. The CPU decodes a word at
+ * each step, and an Int32 is boxed in OCaml and two 16-bit pieces in
+ * tiny-ml. Any other 32 bits (an li's number, a .word, an illegal
+ * instruction with any opcode) are an Int32, as they may not fit. *)
 type instr_word = int
 type word = int32
 
 val encode : instr -> instr_word
 val decode : instr_word -> instr option
 
-(* a register's name: zero, sp, lr, or r1 to r13 *)
+(* zero, sp, lr, or r1 to r13 *)
 val reg_name : reg -> string
 
-(* [text i imm]: an instruction's text, its registers by their names;
- * its immediate, or its offset, imm when there is one (a label's name,
- * an address): the one printer of the instructions, the listings' and
- * the assembly's (print_line) *)
+(* [text i imm]: imm, when given (a label, an address), replaces the
+ * immediate or offset. The one printer, for listings and print_line. *)
 val text : instr -> string option -> string
 
-(* [listing pc i]: an instruction as a listing shows it, at the address
- * pc: a branch's or a jal's target as an address *)
+(* A branch's or jal's target is shown as an address. *)
 val listing : int -> instr -> string
 
-(* the stack pointer's register and the link's; the machine's
- * registers of control, by number (csrr's, csrw's) *)
 val sp : reg
 val lr : reg
-val csr_names : string array
+val csr_names : string array          (* by number, for csrr and csrw *)
 
-(* what is wrong in a program's text, said to the person *)
+(* An error in a program's text, reported to the user. *)
 exception Error of string
 val error : string -> 'a
 
-(* the machine's own instructions, which TinyMachineDevices runs, not
- * the CPU (whose decode does not know them): a register of control by
- * its number in csr_names *)
+(* Run by TinyMachineDevices; the CPU's decode does not know them. *)
 type machine_instr =
   | Csrr of reg * int                 (* d, csr *)
   | Csrw of int * reg                 (* csr, a *)
@@ -131,22 +111,19 @@ type machine_instr =
   | Amoswap of reg * reg * reg        (* d, a, (b) *)
 
 val encode_machine : machine_instr -> instr_word
-(* its text, a register of control by its name *)
 val machine_text : machine_instr -> string
 
-(* a number in hexadecimal: 0x1f *)
-val hex : int -> string
+val hex : int -> string               (* 0x1f *)
 
 
 (*****************************************************************************)
 (* The lines of assembly *)
 (*****************************************************************************)
 
-(* An object's places, by example: where a label's address goes, the
- * linker filling the 0 the assembler left (msg a label the link puts
- * at 0x12345678):
+(* Where the linker fills the 0 the assembler left, with msg a label
+ * that the link puts at 0x12345678:
  *
- *     the assembly     the words, the 0s        the place, and its 0 becomes
+ *     the assembly     the words, with 0s       the place, and its 0
  *     la r1, msg       lui r1, 0                Hi    0x1234, the high half
  *                      ori r1, r1, 0            Lo    0x5678, the low half
  *     call f           jal lr, 0                Pc    the words from the
@@ -155,18 +132,15 @@ val hex : int -> string
  *                                                     the immediate
  *     .word msg        0                        Full  0x12345678, all 32
  *                                                     bits of the word
- *
- * (old: Word for Full, the name .word's line has now) *)
+ *)
 type place = Full | Abs | Hi | Lo | Pc
 
-(* what goes there: a label's address, or a number (a branch to an
- * address, its offset from where the link puts the branch) *)
+(* For a branch to an Address, the link writes the offset to it. *)
 type target = Name of string | Address of int
 
-(* a label *)
-type sym = string
+type sym = string                     (* a label *)
 
-(* an offset in a chunk's bytes, its kind, what goes there *)
+(* An offset in a chunk's bytes, its kind of place, what goes there. *)
 type reloc = int * place * target
 
 (* A line of assembly, as a compiler makes it or the assembler reads it,
@@ -184,21 +158,15 @@ type reloc = int * place * target
  *     Machine (Csrr (1, 0))                  csrr r1, status
  *     Word_sym "f.s1"                        .word f.s1
  *
- * An instruction whose operands are known is Instr; one with a label in
- * it, whose address the link chooses, says where (Instr_at, or the
- * pseudo-instructions la, call, j and a branch to a label); li is a
- * number of 32 bits; then the directives.
+ * An instruction that refers to a label, whose address the link
+ * chooses, says where it goes: Instr_at, la, call, j or Branch_to.
  *
- * An object is lines too, once encoded: Chunk, the bytes made (an
- * instruction's words, data's bytes), with a reloc where an operand is
- * a label, and the lines the link places by: Label, Align, Space,
- * Piece and the sections. *)
+ * An object is lines too, once encoded: Chunks of bytes with a reloc
+ * where an operand is a label, and the lines the link places things
+ * by: Label, Align, Space, Piece and the sections. *)
 type line =
   | Instr of instr
-  | Instr_at of instr * place * target
-      (* the instruction with 0 where a label's address, or an
-       * address's offset from it (a branch to a number), goes: the
-       * link fills it *)
+  | Instr_at of instr * place * target  (* with 0 where the link writes *)
   | Machine of machine_instr
   | Li of reg * word
   | La of reg * sym                   (* a label's address *)
@@ -206,113 +174,94 @@ type line =
   | Call of sym
   | Jump of sym                       (* j *)
   | Branch_to of cmp * reg * reg * sym
-      (* a branch to a label (old: Branch, the instruction's name) *)
   | Ret
   | Label of sym                      (* an address the link chooses *)
-  | Align of int                      (* stays a line in the object: what
-                                       * it pads depends on the address *)
+  | Align of int                      (* kept in an object: the padding
+                                       * depends on the final address *)
   | Space of int                      (* zeros *)
   | Bytes of int list
-  | Ascii of string                   (* .ascii, .asciz with its 0 *)
-  | Word of word                      (* .word a number *)
-  | Word_sym of sym                   (* .word a label's address *)
+  | Ascii of string                   (* .ascii, or .asciz with its 0 *)
+  | Word of word                      (* .word of a number *)
+  | Word_sym of sym                   (* .word of a label's address *)
   | Piece
-      (* .piece: what follows, up to the next piece, is left out by the
-       * link when nothing reaches it (tiny-ml's functions and static
-       * blocks) *)
-  | SectionCode                       (* .text: what follows is code *)
-  | SectionData                       (* .data: what follows is data *)
-  | Chunk of string * reloc list
-      (* in an object: the bytes, in the memory's order, and the places
-       * to fill *)
+      (* .piece: the link leaves out what follows, up to the next piece,
+       * when nothing reaches it (tiny-ml's functions, static blocks) *)
+  | SectionCode                       (* .text *)
+  | SectionData                       (* .data *)
+  | Chunk of string * reloc list      (* bytes in memory order *)
 
-(* a line's text, with its newline (an instruction or a directive after
- * a tab) *)
+(* With its newline; an instruction or a directive after a tab. *)
 val print_line : line -> string
 
 (*****************************************************************************)
 (* The objects *)
 (*****************************************************************************)
 
-(* A line encoded, the object's: an instruction's words, with 0 where a
- * label's address goes and the place for the link (a branch's, a
- * call's: the words from the next instruction, Pc; la's: its halves, Hi
- * and Lo); data's bytes; or the line itself, one the object keeps (a
- * label, an alignment, which the link does: an address's, not the
- * file's). Error when an operand does not fit its field. *)
+(* A line becomes a Chunk with a reloc where a label's address goes; a
+ * label or an alignment stays, as the link does them (an alignment
+ * depends on the address, not the place in the file). Raises Error
+ * when an operand does not fit its field. *)
 val encode_line : line -> line
 
-(* [assemble lines]: their object, each line encoded, after an Align 4:
- * a file starts on a word, whatever the one before ended with (the
- * assembler's, and the compilers', which make lines, not text) *)
+(* Each line encoded, after an Align 4, so that a file starts on a word
+ * whatever the previous one ended with. *)
 val assemble : line list -> line list
 
-(* a word's four bytes, the low first: the memory's order, an object's
- * chunks' and the linker's image's *)
+(* The low byte first, the memory's order. *)
 val word_bytes : word -> string
 
-(* the object's bytes, an object's lines marshalled after a magic line,
- * and back (Error when it is not one, or an older one) *)
+(* The lines marshalled after a magic line; of_object raises Error on
+ * bytes that are not an object, or an object of an older format. *)
 val to_object : line list -> string
 val of_object : string -> line list
 
-(* an archive's bytes, objects kept by name in an order (tiny-ar
- * writes them, tiny-ld links them all in that order: a library),
- * and back; Error when a member is not an object, its name has a
- * blank, or the bytes are not an archive *)
+(* Named objects in order, which tiny-ld links all: a library. Error
+ * when a member is not an object, a name has a blank, or the bytes are
+ * not an archive. *)
 val is_archive : string -> bool
 val to_archive : (string * string) list -> string
 val of_archive : string -> (string * string) list
 
-(* a line as OCaml writes it, for tiny-ld -debug *)
-val show_line : line -> string
+val show_line : line -> string        (* as OCaml writes it, for -debug *)
 
 (*****************************************************************************)
 (* The symbols *)
 (*****************************************************************************)
 
 (* A program's labels, as tiny-ld writes them: "address label" lines,
- * the address in hexadecimal, in a map beside the image (-map: what
- * tiny-prof reads) or after it in an a.out (-s: what debug reads, Plan
- * 9's a.out symbol table). tiny-prof names the function an instruction
- * was counted in, debug the one a stop is in and the one a breakpoint
- * is set at (b main); both by these functions, which were tiny-prof's.
+ * the address in hexadecimal, in a map next to the image (-map, read by
+ * tiny-prof) or after the image in an a.out (-s, read by debug, as in
+ * Plan 9's a.out symbol table). tiny-prof names the function where an
+ * instruction was counted; debug names where a program stopped and
+ * finds where to set a breakpoint (b main).
  *
- * A label a compiler makes inside a function (tiny-ml's
- * TinyBrowser.L12, tiny-cc's tm.L51) is not a function, and is left
- * out: an address in it is in the function before it. An assembly
- * loop's labels (row_copy2) are kept, as they say which loop. tiny-ml's
- * functions are named TinyBrowser.f151_browse: shown as browse.
+ * A label that a compiler makes inside a function (tiny-ml's
+ * TinyBrowser.L12, tiny-cc's tm.L51) is left out: an address after it
+ * belongs to the function before it. The labels of a loop in assembly
+ * (row_copy2) are kept, as they tell which loop.
  *
- * m-ix has no twin of it: mini-ld writes no symbol table. Plan 9's 5l
- * writes one in binary after the image (principia's linkers/5l,
- * debugging.c: a symbol a value, a type letter, T text, D data, B bss,
- * and its name; then a table from pcs to source lines), which libmach
- * reads for db and acid. Here a label is a line, as in the map: no
- * kind, no source lines, nothing to decode. *)
+ * mini-ld in m-ix writes no symbol table. Plan 9's 5l writes a binary
+ * one (principia's linkers/5l, debugging.c): a value, a type letter (T,
+ * D, B) and a name per symbol, then a table from pcs to source lines,
+ * which libmach reads for db and acid. Here a label is a line of text,
+ * with no kind and no source lines. *)
 
-(* a label, the linker's; an address, from the image's start; the
- * labels of a program, each with its address, by address (old: string
- * * int, the pairs unnamed) *)
 type label = string
-type address = int
-type symbols = (label * address) array
+type address = int                    (* from the start of the image *)
+type symbols = (label * address) array  (* sorted by address *)
 
-(* [local name]: whether it is a label a compiler made inside a function *)
+(* Whether a compiler made the label inside a function. *)
 val local : label -> bool
 
-(* [clean name]: a function's name as shown (browse for
- * TinyBrowser.f151_browse, but an anonymous one's whole) *)
+(* browse for TinyBrowser.f151_browse; an anonymous function's whole. *)
 val clean : label -> string
 
-(* [labels text]: the labels of "address label" lines, but the local
- * ones, by address *)
+(* All but the local labels. *)
 val labels : string -> symbols
 
-(* [find funcs pc]: the function pc is in (the last label at or before
- * it), its name cleaned, and its address *)
+(* The function pc is in (the last label at or before it), its name
+ * cleaned, and its address. *)
 val find : symbols -> address -> (string * address) option
 
-(* [address funcs name]: the address of the function of that name, or
- * cleaned name (main, browse) *)
+(* By its name or its cleaned name (main, browse). *)
 val address : symbols -> string -> int option

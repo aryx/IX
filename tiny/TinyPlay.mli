@@ -1,4 +1,4 @@
-(* tiny-play: a WAV file played, on tiny-kernel's speaker
+(* tiny-play: plays a WAV file on tiny-kernel's speaker
  * (plan_tiny_audio.md, step 4).
  *
  *     play /examples/korobeiniki.wav        on tiny-kernel
@@ -9,26 +9,27 @@
  * MIDI, MP3, WAV and ABC to Plan 9's /dev/audio.
  *
  * kept:
- * A file's sound is its samples made into the speaker's, a block at a
- * time, each written when the last was taken, so the kernel, which
- * takes a voice's samples a second ahead of the speaker at most, paces
- * the program, and the first is heard after a block, not after the
- * whole file:
+ * The file's samples are converted into the speaker's one block at a
+ * time, and each block is written once the kernel has taken the last.
+ * The kernel accepts a voice's samples at most a second ahead of the
+ * speaker, so it paces the program, and the sound starts after one
+ * block instead of after the whole file:
  *
- *     the file's bytes --> [wav]: RIFF's chunks, "fmt " and "data"
+ *     the file's bytes --> [wav] reads RIFF's chunks, "fmt " and "data"
  *                             |  2,048 samples at a time ([block])
  *                             v
- *         the frame at each sample's time, its channels' mean, its top
- *         8 bits ([piece]) --> /dev/audio, a message `p n` and the n bytes
+ *         [piece]: at each sample's time, the frame's channels averaged,
+ *         the top 8 bits kept --> /dev/audio, a message `p n` and n bytes
  *
- * The speaker's samples are 8,000 a second, a byte each, signed: what a
- * WAV has (8 or 16 bits, one channel or two, 44,100 or 11,025 a
- * second) is made that by taking, at each of the speaker's samples, the
- * file's frame at that time (exactly, by Bresenham's stepping: no
- * division a sample), the
- * mean of its channels, and its top byte. No filter: a file of 44,100
- * a second loses what is above 4,000 Hz, and what is above folds down
- * (aliasing), which a filter before the taking would prevent.
+ * The speaker takes 8,000 samples a second, each a signed byte. A WAV
+ * can have 8 or 16 bits, one channel or two, and 44,100 or 11,025
+ * samples a second. To convert it, at each of the speaker's samples we
+ * take the file's frame at that time (exactly, using Bresenham's
+ * stepping, so there is no division per sample), average its channels,
+ * and keep the top byte. There is no filter: a file at 44,100 a second
+ * loses everything above 4,000 Hz, and what is above folds down
+ * (aliasing). A low-pass filter before the sampling would prevent
+ * that.
  *
  * dropped:
  * Every other format (MOD, MIDI, MP3: lib_audio has thousands of lines
@@ -36,39 +37,33 @@
  * ADPCM, A-law), and the -c and -s options.
  *
  * cs-history:
- * WAV is Microsoft's and IBM's RIFF (1991), itself Electronic Arts'
- * IFF (1985, the Amiga's) with its numbers little-endian: chunks, each
- * four letters and a length, so a reader skips what it does not know.
+ * WAV is a kind of RIFF, Microsoft's and IBM's format (1991), which is
+ * itself Electronic Arts' IFF (1985, on the Amiga) with little-endian
+ * numbers. A file is a list of chunks, each starting with four letters
+ * and a length, so a reader can skip what it does not know.
  *)
 
-(* a WAV's sound: its rate, its channels, its bits a sample, where its
- * samples start and how many bytes they are *)
+(* [at] and [bytes] locate the samples in the file. *)
 type wav = { rate : int; channels : int; bits : int; at : int; bytes : int }
 
-(* the WAV in a file's bytes (its contents, not its name), or Failure
- * why (not RIFF's, not PCM, not 8 or 16 bits) *)
+(* Reads the file's contents, not its name. It raises Failure when the
+ * file is not RIFF, not PCM, or not 8 or 16 bits. *)
 val wav : string -> wav
 
-(* how many of the speaker's samples (8,000 a second) its sound is *)
+(* the length of the sound in speaker samples (8,000 a second) *)
 val samples : wav -> int
 
-(* [piece w data k n]: the speaker's samples k to k + n - 1 of the
- * file's sound, a byte each, signed *)
+(* [piece w data k n]: speaker samples k to k + n - 1, signed bytes *)
 val piece : wav -> string -> int -> int -> string
 
-(* the samples a block *)
+(* the number of samples in a block *)
 val block : int
 
-(* [play out data]: the sound in data, a WAV file's bytes (as for
- * [wav]), written to the file descriptor out (/dev/audio, opened by
- * the caller), a block at a time; Failure why when it is no WAV this
- * plays *)
+(* [play out data] writes a block at a time to out, which the caller
+ * opened on /dev/audio. It raises Failure as [wav] does. *)
 val play : TinyLibSystem.fd -> string -> unit
 
-(* [main caps argv]: the program, play file.wav: the file read,
- * /dev/audio opened, the sound written; why not said. As TinyShell's
- * or TinyAssembler's main, the same on the host and on tiny-kernel
- * (user/play.ml its one line); on the host it runs in a window's
- * TinyLibSystem, whose /dev/audio is not Unix's but the one
- * TinyLibSystem/sdl/ makes, as it makes the window *)
+(* The program play file.wav, the same on the host and on tiny-kernel
+ * (user/play.ml is one line). On the host, /dev/audio is not Unix's but
+ * the one that TinyLibSystem/sdl/ provides, as it provides the window. *)
 val main : < Cap.open_in; Cap.open_out; Cap.stderr; .. > -> string array -> Exit.t

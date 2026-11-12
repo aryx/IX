@@ -3,10 +3,8 @@
 
 (* See Charset.mli *)
 
-(* The Latin-1 letters from 0xc0 on, each without its accent; and
- * Latin Extended-A's, from 0x100 to 0x17f (the names of Central Europe:
- * c with a caron, l with a stroke, o with a double acute), the same way
- * (made from Unicode's decompositions). *)
+(* The Latin-1 letters from 0xc0 on and Latin Extended-A's (0x100 to
+ * 0x17f), without their accents, made from Unicode's decompositions. *)
 let latin1 = "AAAAAAACEEEEIIIIDNOOOOOxOUUUUYPsaaaaaaaceeeeiiiidnooooo/ouuuuypy"
 let latin_a =
   "AaAaAaCcCcCcCcDdDdEeEeEeEeEeGgGgGgGgHhHhIiIiIiIiIiIiJjKkkLlLlLlLlLlNnNnNnnNnOoOoOoOoRrRrRrSsSsSsSsTtTtTtUuUuUuUuUuUuWwYyYZzZzZzs"
@@ -43,7 +41,6 @@ let of_code u =
   | 0x200a | 0x2061 -> "" 
   | _ -> "?"
 
-(* the named entities known, and their code points *)
 let entities =
   [ "amp", 38; "lt", 60; "gt", 62; "quot", 34; "apos", 39; "nbsp", 0xa0;
     "ndash", 0x2013; "mdash", 0x2014; "minus", 0x2212; "hellip", 0x2026;
@@ -55,9 +52,8 @@ let entities =
 
 let entity (name : string) : int option = List.assoc_opt name entities
 
-(* Returns the code point of an entity, given the text between its &
- * and its ; (like "amp", "#8211" or "#x2013"), if it is known: a
- * number's, as int_of_string reads 08211 and 0x2013 *)
+(* s is the text between & and ; (like "amp", "#8211" or "#x2013");
+ * a number is read by int_of_string as 08211 or 0x2013. *)
 let entity_code s : int option =
   let n = String.length s in
   if n > 1 && s.[0] = '#' then
@@ -124,10 +120,6 @@ let ascii s =
     String.concat "" (List.rev !pieces)
   end
 
-(* When a text runs to the end of a message, the next message may
- * continue it. This returns where it is safe to cut it: never in the
- * middle of an entity or of a UTF-8 character, and only after a space,
- * so that a word is never split in two. *)
 let safe_end s i n =
   let rec amp j =
     if j < i || j < n - 12 then n else if s.[j] = '&' then j

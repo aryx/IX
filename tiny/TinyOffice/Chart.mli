@@ -1,8 +1,9 @@
 (* TinyOffice's chart: a sheet's cells drawn as bars, and the sheet's
  * name, by which a chart finds it.
  *
- * A chart's data is a line: bars, the sheet it draws by its name, the
- * cells of its values, and of its labels if it has some:
+ * A chart's data is one line: the word bars, the name of the sheet it
+ * draws, the cells holding its values, and the cells holding its
+ * labels, if it has any:
  *
  *     bars budget b1:b3 a1:a3           500
  *                                       ###   120
@@ -11,37 +12,33 @@
  *                                      -----------------
  *                                       Rent  Food  Bus
  *
- * a range being cells of a column or of a row. The values are the
- * sheet's at each view (Sheet's values), so a chart follows
- * its sheet; a sheet renamed, its charts are too. A chart is made from
- * a sheet, of the chosen cell's column (make_chart).
+ * A range is cells of a column or of a row. The values are read from
+ * the sheet at each view (Sheet's values), so a chart follows its
+ * sheet; when a sheet is renamed, its charts are renamed too. A chart
+ * is made from a sheet, of the chosen cell's column ([make_chart]).
  *
  * others:
- * mini-office's chart (Part_chart) holds its numbers, and its document
- * makes it again from the sheet it is linked to (OLE's linking); here
- * the chart holds only the link, and its view reads the sheet. A
- * spreadsheet (Lotus 1-2-3, 1983, and those after it) has its charts
- * inside it; here they are boxes of the page.
+ * mini-office's chart (Part_chart) holds its own numbers, and the
+ * document rebuilds it from the sheet it is linked to (as in OLE's
+ * linking). Here the chart holds only the link, and its view reads the
+ * sheet. A spreadsheet (Lotus 1-2-3, 1983, and those after it) keeps
+ * its charts inside it; here they are boxes on the page.
  *)
 
-(* [chart_bars page box]: a chart's bars, each its label and its value
- * (a cell that is not a number, 0), from its sheet on the page; or,
- * none, why *)
+(* [chart_bars page box] reads the bars from the sheet on the page; a
+ * cell that is not a number gives 0. With no bars, the string says why. *)
 val chart_bars :
   Model.obj list -> Model.obj -> (string * int) list * string
 
-(* [chart_view page box]: a bar a value, as tall as its share of the
- * largest, its value above it, its label under it; the axis *)
+(* the bars scaled against the largest, values above, labels under *)
 val chart_view :
   Model.obj list -> Model.obj ->
   TinyLibPlayground.shape list
 
-(* [name_key office typed key]: a key while the selected sheet's name is
- * typed: a character, Backspace, Enter (the name given, to the charts
- * of the sheet too), C-g *)
+(* [name_key office typed key]: Enter gives the name to the selected
+ * sheet and to its charts. *)
 val name_key : Model.office -> string -> TinyLibPlayground.key -> unit
 
-(* [make_chart office c]: a chart of column c of the selected sheet,
- * beside it (under it, if the page is too narrow): its cells from the
- * first number to the last, the column at its left their labels *)
+(* [make_chart office c] charts column c of the selected sheet, from its
+ * first number to its last, labelled by the column to its left. *)
 val make_chart : Model.office -> int -> unit

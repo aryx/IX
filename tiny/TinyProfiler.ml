@@ -15,8 +15,7 @@ let usage = {|usage: tiny-prof [-n count] [-diff base] [-base hex] profile
 
 (* where an instruction ran: the kernel or a program, the base of the
  * window the machine ran in (a program's partition), the instruction's
- * address; the counts of a profile, by where (old: a triple, the
- * kernel's a bool) *)
+ * address; the counts of a profile, by where *)
 type space = Kernel | User
 type spot = { space : space; base : M.address; pc : M.address }
 type counts = (spot, int) Hashtbl.t
@@ -71,7 +70,7 @@ let commas n =
 
 (* n of total in percent, a tenth's digit, rounded: integers, which
  * tiny-ml has (its 31 bits: both scaled down first when total is
- * large, so that n * 2000 fits) (old: floats, %.1f) *)
+ * large, so that n * 2000 fits) *)
 let percent n total =
   if total = 0 then "0.0"
   else
@@ -90,7 +89,7 @@ let sorted tbl = List.sort most (Hashtbl.fold (fun k n acc -> (k, n) :: acc) tbl
 
 (* the command line: the rows shown, the profile taken off (-diff), the
  * program's base (-base), the profile, the kernel's maps (-k) and the
- * program's (-u) (old: a tuple of five) *)
+ * program's (-u) *)
 type options = {
   top : int; diff : Fpath.t option; named : M.address option;
   profile : Fpath.t; kmaps : Fpath.t list; umaps : Fpath.t list;

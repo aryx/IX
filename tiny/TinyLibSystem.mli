@@ -1,9 +1,9 @@
-(* What a tool asks of the system it runs on, for a tool that runs on
- * two (the host and tiny-machine): the shell, the utilities, the
- * compilers, the assembler and the linker, the build system, the
- * version control, the database, the line editor, the profiler. Such a
- * tool's files name only this and the pure functions of the standard
- * library; there are two files of this, beside it:
+(* The system interface for tools that run on two systems, the host and
+ * tiny-machine: the shell, the utilities, the compilers, the assembler
+ * and the linker, the build system, the version control, the database,
+ * the line editor and the profiler. Such a tool's files use only this
+ * module and the pure functions of the standard library. There are two
+ * implementations of this interface, next to it:
  *
  *               TinyShell.ml, TinyUtilities.ml, ...
  *            ___________/        \___________
@@ -14,88 +14,83 @@
  *   over Unix, Cap, FS, Procs          over tiny-kernel's calls
  *   Linux, macOS                       tiny-kernel
  *
- * So the interface is what both systems can give, which is the
- * smaller one's, tiny-kernel's: a descriptor is a number, a call that
- * fails raises Failure with the reason (the host's has the system's
- * message, tiny-kernel's has no reason to give), a child's status is
- * already rc's string. What tiny-kernel has not is answered there by
- * nothing: no environment but a PATH, no signal, no terminal to ask
- * about.
+ * So the interface is what both systems can give, which means what the
+ * smaller one, tiny-kernel, gives:
+ * - a descriptor is a number;
+ * - a call that fails raises Failure with the reason (on the host,
+ *   the system's message; tiny-kernel has no reason to give);
+ * - a child's status is already a string, as rc shows it.
+ * What tiny-kernel lacks is simply not offered: there is no
+ * environment except a PATH, no signal, and no terminal to query.
  *
- * m-ix has the same seam one level lower: its tools (mini-rc,
+ * m-ix has the same seam one level lower. Its tools (mini-rc,
  * mini-cat...) stand on lib_core (Cap, FS, Procs) over OCaml's Unix,
- * and lib_core/system/ has that Unix twice, by Linux's system calls
- * and by Plan 9's (TinyLibSystem/plan9/), so one tool runs on Linux and on
- * mini-9pi. Here the seam is the tools' own interface, cut to what
- * tiny-kernel gives, so that a tool cannot ask the host for what the
- * other system lacks.
+ * and lib_core/system/ implements that Unix twice, with Linux's system
+ * calls and with Plan 9's (TinyLibSystem/plan9/), so one tool runs on
+ * Linux and on mini-9pi. Here the seam is the tools' own interface, cut
+ * down to what tiny-kernel gives, so that a tool cannot ask the host
+ * for something the other system lacks.
  *
- * The capabilities are the host's: there, a function that reaches the
- * system takes the object that allows it, and OCaml checks it. tiny-ml
- * reads them and forgets them.
+ * The capabilities matter on the host: there, a function that reaches
+ * the system takes the object that allows it, and OCaml checks it.
+ * tiny-ml reads the capability types and ignores them.
  *
- * A file's name is an Fpath.t, not a string: a tool decides where a
- * word becomes a path, once, and the empty word is refused there
- * (Fpath.v "" raises), where it went before as a name to the system
- * (old: strings, each tool's "" handled, or not, at each call). The
- * names a directory has (readdir) are segments, strings.
+ * A file's name is an Fpath.t, not a string. A tool decides once where
+ * a word becomes a path, and the empty word is refused at that point
+ * (Fpath.v "" raises) instead of being given to the system as a name.
+ * The names in a directory (readdir) are segments, plain strings.
  *
  * design:
  * Why a module of its own, and not Sys.ml and Unix.ml in TinyLibCore/
- * beside List.ml and Hashtbl.ml: TinyLibCore is a subset of OCaml's
- * own modules, the same names, types and results, so that a file
- * naming List compiles unchanged by OCaml on the host and by tiny-ml
- * on TinyLibCore. That works because those modules are pure: one file
- * serves tiny-kernel, OCaml's own serves the host. The system cannot
- * be split that way: on the host it is Unix, Cap, FS and Procs, on
- * tiny-kernel its calls, and a TinyLibCore Unix.ml would have to be a
- * subset of OCaml's Unix, an interface far larger than tiny-kernel
- * gives, of strings and Unix_error, without the capabilities or
- * Fpath.t. So this is a new interface, cut to the smaller system's,
- * with one .mli and a file for each system (a virtual library in
- * dune: TinyLibSystem/). The other road, Sys and Unix subsets, would let
- * the tools use the names OCaml programmers know, and a tool asking
- * for a name tiny-kernel lacks would fail to compile there; but not a
- * tool relying on what tiny-kernel can only fake: a stats' 12 fields
- * of which it has 4, Unix_error's codes where it gives no reason, a
- * dup2 or a wait for one child emulated. Here a type promises only
- * what both systems give. And a clean slate lets the interface be the
- * tools' own: a path is an Fpath.t, not a string; a function that
+ * next to List.ml and Hashtbl.ml? TinyLibCore is a subset of OCaml's
+ * own modules, with the same names, types and results, so that a file
+ * using List compiles unchanged by OCaml on the host and by tiny-ml on
+ * TinyLibCore. That works because those modules are pure: one file
+ * serves tiny-kernel, and OCaml's own serves the host. The system
+ * cannot be split that way. On the host it is Unix, Cap, FS and Procs;
+ * on tiny-kernel it is the kernel's calls. A TinyLibCore Unix.ml would
+ * have to be a subset of OCaml's Unix, an interface far larger than
+ * what tiny-kernel gives, built on strings and Unix_error, without
+ * capabilities or Fpath.t. So this is a new interface, cut to the
+ * smaller system, with one .mli and one implementation per system (a
+ * virtual library in dune: TinyLibSystem/).
+ * The other road, subsets of Sys and Unix, would let the tools use the
+ * names OCaml programmers know, and a tool asking for a name that
+ * tiny-kernel lacks would fail to compile there. But a tool relying on
+ * what tiny-kernel can only fake would still compile: a stat's 12
+ * fields of which it has 4, Unix_error's codes where it gives no
+ * reason, an emulated dup2 or wait for one child. Here a type promises
+ * only what both systems give. And a clean slate lets the interface be
+ * the tools' own: a path is an Fpath.t, not a string; a function that
  * reaches the system takes the capability that allows it; and the
- * system is one module, not OCaml's split of it between Sys and Unix.
+ * system is one module, not split between Sys and Unix as in OCaml.
  *)
 
 (*****************************************************************************)
 (* System types *)
 (*****************************************************************************)
 
-(* a process's number, the system's *)
 type pid = int
 
-(* A file's descriptor, a number too (0, 1, 2 the standard input,
- * output, error), where OCaml hides it: Unix.file_descr is abstract
- * (on Windows a descriptor is a handle, not a number), and most
- * programs use the buffered channels over it. Here both systems number
- * them: tiny-kernel's calls take the number, and on the host it is
- * Unix's own (unix/'s fd, by Obj.magic). And the tools that need a
- * descriptor need its number: the shell's plumbing (dup2, pipe), where
- * rc's >[2=1] names 2 and 1, and a child finds its input at 0 because
- * it is 0; a file read and written at offsets (tiny-db's). A file read
- * or written whole, or a piece at a time, is a channel instead
- * (with_open_in, with_open_out), as in OCaml. What the alias costs: an
- * fd is an int to the type checker, which does not catch one passed
- * where a count was meant. *)
+(* A file descriptor is a number. OCaml hides it (Unix.file_descr is
+ * abstract: on Windows it is a handle), and most programs use channels.
+ * Here tiny-kernel's calls take the number, and on the host it is
+ * Unix's own (unix/'s fd, through Obj.magic). Tools need the number:
+ * the shell's plumbing (dup2, pipe), where rc's >[2=1] names 2 and 1
+ * and a child finds its input at 0, and a file read at offsets
+ * (tiny-db's). A file read whole or piece by piece uses a channel
+ * (with_open_in), as in OCaml. The cost: the type checker does not
+ * catch an fd passed where a count was meant. *)
 type fd = int
 
-(* how a child ended, as rc says it: "" when all went well, its code,
- * or "signal: " and the signal's name *)
+(* As rc shows it: "" for success, else the exit code, or "signal: "
+ * and the signal's name. *)
 type status = string
 
-(* a file's kind and size, in bytes (st_, Unix's prefix: the labels
- * are one name space in tiny-ml) *)
+(* The st_ prefix is Unix's: tiny-ml's labels share one name space. *)
 type stat = { st_dir : bool; st_size : int }
 
-(* the date, seconds since 2000-01-01 UTC; a time taken *)
+(* A date is in seconds since 2000-01-01 UTC. *)
 type seconds = int
 type milliseconds = int
 
@@ -103,22 +98,19 @@ type milliseconds = int
 (* main() and other initialization helpers *)
 (*****************************************************************************)
 
-(* [main name f]: the program: f with every capability and its
- * arguments (its name first), its result how it ends: Err's words, or
- * a Failure's that f lets out, said after name, the status 1; Code n
- * (or ExitCode n raised), n. name is for the host's logs too. The
- * host-only programs (tiny-cpu, tiny-machine and its helpers, tiny-mkfat,
- * Mkfont) end by it too, for the same words said the same way *)
+(* [main name f] calls f with every capability and the arguments (name
+ * first). For Err msg, or a Failure that escapes f, msg is printed after
+ * name and the status is 1; for Code n, or ExitCode n raised, it is n.
+ * name also prefixes the host's logs. Host-only programs (tiny-cpu,
+ * tiny-machine, tiny-mkfat, Mkfont) use it too, to print errors alike. *)
 val main : string -> (Cap.all_caps -> string array -> Exit.t) -> unit
 
-(* [logging args]: args without -v, -debug and -quiet, the level of
- * Logs' messages set by them (info, debug, none; warnings by default),
- * as m-ix's Logging.flags. A program that wants them calls it on its
- * arguments; it is not done for all of them, since grep has its own
- * -v. The messages go to stderr after the program's name (main's) *)
+(* [logging args] removes -v, -debug and -quiet from args and sets Logs'
+ * level from them (info, debug, none; warnings by default), as m-ix's
+ * Logging.flags does. It is not done for every program, since grep has
+ * its own -v. Messages go to stderr after the name given to [main]. *)
 val logging : string list -> string list
 
-(* the variables the program was started with, each with its value *)
 val environment : < Cap.env; .. > -> (string * string) list
 val getpid : < Cap.env; .. > -> pid
 
@@ -126,247 +118,194 @@ val getpid : < Cap.env; .. > -> pid
 (* The terminal *)
 (*****************************************************************************)
 
-(* on the standard output, kept until flush; on the error's, at once *)
+(* [print] is buffered until [flush]; [eprint] writes at once. *)
 val print : < Cap.stdout; .. > -> string -> unit
 val eprint : < Cap.stderr; .. > -> string -> unit
 val flush : < Cap.stdout; Cap.stderr; .. > -> unit
 
-(* a line of the standard input without its end; None at the input's end *)
+(* A line without its newline; None at the end of the input. *)
 val read_line : < Cap.stdin; .. > -> string option
 
-(* whether a descriptor is a terminal, where someone types *)
 val isatty : fd -> bool
 
-(* an interrupt typed at the terminal is for the program that runs,
- * not for this one *)
+(* From now on, an interrupt typed is for the program run, not this one. *)
 val ignore_interrupt : < Cap.signal; .. > -> unit
 
-(* [raw_console caps raw]: the terminal raw (each key as it is typed,
- * ^C a key, not an interrupt) or not: what an editor or a game wants of
- * its keys *)
+(* In raw mode each key comes as typed, and ^C is a key, not an
+ * interrupt: what an editor or a game wants. *)
 val raw_console : < Cap.keyboard; .. > -> bool -> unit
 
 (*****************************************************************************)
 (* Files *)
 (*****************************************************************************)
 
-(* a file's descriptor: to read it, to write it from nothing (made if
- * it is not there), to write at its end. Failure with the reason *)
+(* The functions on files raise Failure with the reason, unless said
+ * otherwise. open_out creates or empties the file. *)
 val open_in : < Cap.open_in; .. > -> Fpath.t -> fd
 val open_out : < Cap.open_out; .. > -> Fpath.t -> fd
 val open_append : < Cap.open_out; .. > -> Fpath.t -> fd
 val close : fd -> unit
 
-(* a file's descriptor to read and write it, at any place (a database's
- * file); made empty when it is not there. Failure with the reason *)
+(* To read and write anywhere (a database's file); creates it if needed. *)
 val open_rw : < Cap.open_in; Cap.open_out; .. > -> Fpath.t -> fd
 
-(* [seek fd off]: the next read or write at off from the file's start;
- * [seek_end fd]: at its end, which is the offset given *)
+(* [seek fd off] is from the file's start. [seek_end] returns the end's
+ * offset. *)
 val seek : fd -> int -> unit
 val seek_end : fd -> int
 
-(* a file's text; Failure with the reason. [write_file caps file s]: the
- * file made s, created or emptied first *)
 val read_file : < Cap.open_in; .. > -> Fpath.t -> string
 val write_file : < Cap.open_out; .. > -> Fpath.t -> string -> unit
 
-(* [with_open_in caps f file]: f on the file opened, a channel that
- * knows its name (In_channel.input_all reads it), closed when f
- * returns or raises; an open's Failure says the file and the reason,
- * on both systems ("f: No such file or directory", "f: cannot open"),
- * as FS.with_open_in's Sys_error on the host *)
+(* [with_open_in caps f file] closes the channel when f returns or
+ * raises. A failed open's Failure gives the file and the reason on both
+ * systems ("f: No such file or directory", "f: cannot open"), as
+ * FS.with_open_in's Sys_error does on the host. *)
 val with_open_in : < Cap.open_in; .. > -> (Chan.i -> 'a) -> Fpath.t -> 'a
 
-(* [with_open_out caps f file]: f on the file opened to write, from
- * nothing (made if it is not there), a channel that knows its name
- * (Out_channel.output_string writes it), closed when f returns or
- * raises; Failure with the reason *)
+(* with_open_out creates or empties the file; with_open_append adds. *)
 val with_open_out :
   < Cap.open_out; .. > -> (Chan.o -> 'a) -> Fpath.t -> 'a
-
-(* the same, to write at the file's end (made if it is not there) *)
 val with_open_append :
   < Cap.open_out; .. > -> (Chan.o -> 'a) -> Fpath.t -> 'a
 
-(* the standard input as a channel (In_channel.input reads what comes;
- * not with read_line, which keeps what it read past a line) *)
+(* Do not mix with read_line, which keeps what it read past a line. *)
 val stdin : < Cap.stdin; .. > -> Chan.i
 
-(* a directory's names, in no order; none when it cannot be read *)
+(* [readdir] is in no particular order, and [] when it cannot read. *)
 val readdir : < Cap.readdir; .. > -> Fpath.t -> string list
 val is_directory : < Cap.readdir; .. > -> Fpath.t -> bool
 
-(* the current directory changed to dir; Failure with the reason *)
 val chdir : < Cap.chdir; .. > -> Fpath.t -> unit
-
-(* whether a file is a directory, and its size; Failure with the
- * reason when it is not there *)
 val stat : < Cap.open_in; .. > -> Fpath.t -> stat
-
-(* whether a file or a directory is there *)
 val exists : < Cap.open_in; .. > -> Fpath.t -> bool
 
-(* how many names a file has (its hard links); Failure with the reason
- * when it is not there *)
+(* How many names (hard links) the file has. *)
 val links : < Cap.open_in; .. > -> Fpath.t -> int
 
-(* the date of a file's last write (the image's files on tiny-kernel:
- * 0); Failure with the reason when it is not there *)
+(* The last write; 0 for the boot image's files on tiny-kernel. *)
 val mtime : < Cap.open_in; .. > -> Fpath.t -> seconds
 
-(* a new directory; a file, or a directory that is empty, removed.
- * Failure with the reason *)
+(* [remove] removes a file or an empty directory. *)
 val mkdir : < Cap.open_out; .. > -> Fpath.t -> unit
 val remove : < Cap.open_out; .. > -> Fpath.t -> unit
 
-(* [link caps old new]: a second name for a file (not a directory).
- * Failure with the reason *)
+(* [link caps old new]: not for a directory. *)
 val link : < Cap.open_out; .. > -> Fpath.t -> Fpath.t -> unit
-
-(* [rename caps from to]: the file, or the directory, under another
- * name. Failure with the reason *)
 val rename : < Cap.open_out; .. > -> Fpath.t -> Fpath.t -> unit
 
-(* whether a file is a program to run, its x bit for its owner; [set_executable
- * caps file x]: its bit set, or cleared (tiny-kernel has no modes: no
- * file is one there, and the call does nothing) *)
+(* By the owner's x bit. tiny-kernel has no modes: there no file is
+ * executable, and set_executable does nothing. *)
 val is_executable : < Cap.open_in; .. > -> Fpath.t -> bool
 val set_executable : < Cap.open_out; .. > -> Fpath.t -> bool -> unit
 
-(* a file that is there written now, as far as its time says; one that
- * is not there made, empty. Failure with the reason *)
+(* Sets an existing file's time to now, or creates it empty. *)
 val touch : < Cap.open_in; Cap.open_out; .. > -> Fpath.t -> unit
 
-(* the directory the process is in *)
 val getcwd : < Cap.env; .. > -> Fpath.t
 
 (*****************************************************************************)
 (* Time *)
 (*****************************************************************************)
 
-(* the date, the same on both sides: a 31-bit integer of tiny-ml's
- * holds 2000's seconds until 2034, where 1970's would not fit (old:
- * Unix's seconds on the host, 0 on tiny-kernel, which had no clock of
- * the day) *)
+(* From 2000 on both systems: tiny-ml's 31-bit integers hold seconds
+ * since 2000 until 2034, but seconds since 1970 would not fit. *)
 val time : < Cap.clock; .. > -> seconds
 
-(* nothing done for so long *)
 val sleep : < Cap.clock; .. > -> milliseconds -> unit
 
-(* a clock, from some start (the boot on tiny-kernel, 2.5 ms at a
- * time, its ticks): for a time taken, the difference of two *)
+(* For durations, from some start (the boot on tiny-kernel, by ticks of
+ * 2.5 ms). *)
 val millis : < Cap.clock; .. > -> milliseconds
 
-(* a seed for a program's first random number: the machine's, or the
- * clock when it has none (a game's first piece) *)
+(* The machine's seed, or the clock when there is none. *)
 val seed : < Cap.random; .. > -> int
 
 (*****************************************************************************)
 (* Descriptors *)
 (*****************************************************************************)
 
-(* A program's first descriptors: its input (a window's keys), its
- * output (the console), its errors, where it draws (the drawing
- * messages, KGraphics.mli's), and its mouse (a box: x, y, the
- * buttons, a word each, the low bytes first). The last two are a
- * window's: tiny-kernel's, or the host's window (TinyLibSystem/sdl/);
- * on the host with no window they are not open, and a write there
- * fails *)
+(* fd_stdin is a window's keys. fd_draw takes drawing messages (see
+ * KGraphics.mli); fd_mouse is a box of x, y and the buttons, a word
+ * each, low byte first. Both come from a window, tiny-kernel's or the
+ * host's (TinyLibSystem/sdl/); without one they are not open. *)
 val fd_stdin : fd
 val fd_stdout : fd
 val fd_stderr : fd
 val fd_draw : fd
 val fd_mouse : fd
 
-(* [ready fds until]: the first of fds that can be read without
- * waiting, waiting for one until the clock (millis's) is until, None
- * then; with no until, until one is ready. A window's loop: a key, the
- * mouse, the wire, or the next frame *)
+(* [ready fds until] returns the first of fds readable without waiting,
+ * or None once [millis] reaches until (never without one). This is a
+ * window's loop: a key, the mouse, the wire, or the next frame. *)
 val ready : fd list -> milliseconds option -> fd option
 
-(* [read fd max]: what fd gives next, up to max bytes, without waiting
- * for more; "" at the end. For a program that must work on its input
- * as it comes (cat at the console) *)
+(* [read fd max] does not wait for more than what comes next, as cat at
+ * the console needs; "" at the end. *)
 val read : fd -> int -> string
 
-(* all that a descriptor gives, to its end *)
 val read_all : fd -> string
-
-(* all of the string, written to the descriptor *)
 val write : fd -> string -> unit
 
-(* [save n]: a copy of descriptor n, away from the low numbers and not
- * given to a program run; None when n is not open *)
+(* [save n] copies n away from the low numbers, not passed on to
+ * programs run; None when n is not open. *)
 val save : fd -> fd option
 
-(* [dup2 a b]: b is now what a is *)
 val dup2 : fd -> fd -> unit
 
-(* a pipe: where to read, where to write; not given to a program run *)
+(* The read end and the write end, not passed on to programs run. *)
 val pipe : < Cap.pipe; .. > -> fd * fd
 
-(* a box, tiny-kernel's alone: a pipe that keeps only what was last
- * written, read once, as the mouse's 4 (a window's mouse, given by
- * tiny-windows); where to read, where to write; not given to a program
- * run *)
+(* On tiny-kernel only: a pipe that keeps only what was last written,
+ * read once, like the mouse on 4 (tiny-windows gives each window one). *)
 val box : < Cap.pipe; .. > -> fd * fd
 
 (*****************************************************************************)
 (* Processes *)
 (*****************************************************************************)
 
-(* a copy of this process: None in the copy, Some of the copy's pid
- * here; Failure when there can be none ("try again" on tiny-kernel,
- * its processes all taken; old: -1 there, an int for three answers) *)
+(* None in the child. Raises Failure when it cannot ("try again" on
+ * tiny-kernel, all process slots taken). *)
 val fork : < Cap.fork; .. > -> pid option
 
-(* [kill caps pid]: that process ended at once (the host's SIGKILL);
- * false when there is none, or it is not ours to end *)
+(* SIGKILL on the host; false when there is no such process, or it is
+ * not ours to end. *)
 val kill : < Cap.kill; .. > -> pid -> bool
 
-(* [exec caps file argv env]: this process becomes the program in file,
- * env its variables as name=value; when it cannot, the reason (the
- * host's the system's message; tiny-kernel's always "not found") *)
+(* [exec caps file argv env], env as name=value, returns only when it
+ * fails, with the reason (always "not found" on tiny-kernel). *)
 val exec :
   < Cap.exec; .. > -> Fpath.t -> string list -> string list -> string
 
-(* a child's end; for no such child, the host's raises Unix's error,
- * tiny-kernel's says "", a success *)
+(* For no such child the host raises Unix's error; tiny-kernel returns
+ * "", a success. *)
 val wait : < Cap.wait; .. > -> pid -> status
 
-(* the next child to end, and how; None when there is no child *)
+(* None when there is no child. *)
 val wait_any : < Cap.wait; .. > -> (pid * status) option
 
-(* [shell caps vars script]: a child that runs script by rc -e, vars
- * among its variables (each a list of words), what was printed flushed
- * first; its pid, None when no child could be made (old: -1). On the
- * host rc is tiny-shell, from the PATH, vars in its environment as rc's
- * lists; on tiny-kernel /bin/rc, the script in a file (an argument has
- * 64 bytes at most), which rc reads whole and removes first, vars rc's
- * assignments before it. (old: the host's sh -e, so a script was a
- * command both shells read) *)
+(* [shell caps vars script] flushes, then starts rc -e on script with
+ * vars (lists of words) set. On the host rc is tiny-shell from the
+ * PATH, and vars go in its environment. On tiny-kernel, rc is /bin/rc,
+ * vars become assignments, and the script goes in a file (an argument
+ * has 64 bytes at most), which rc reads whole and removes first. *)
 val shell :
   < Cap.fork; Cap.exec; Cap.env; Cap.open_out; Cap.stdout; Cap.stderr; .. > ->
   (string * string list) list -> string -> pid option
 
-(* [spawn caps file argv]: a child running the program in file, argv
- * its arguments (its name first), not waited for: nothing of this
- * process copied, where fork and exec copy it whole; its pid, None when
- * it cannot (the browser's player and pager) *)
+(* [spawn caps file argv] (argv with the name first) copies nothing of
+ * this process, whereas fork copies it whole; it does not wait. The
+ * browser's player and pager use it. *)
 val spawn : < Cap.fork; Cap.exec; .. > -> Fpath.t -> string list -> pid option
 
-(* the end of this process, at once: nothing flushed; Err's words said
- * first, on the standard error *)
+(* Nothing is flushed. For Err msg, msg is printed on stderr first. *)
 val exit : < Cap.exit; Cap.stderr; .. > -> Exit.t -> 'a
 
 (*****************************************************************************)
 (* The network *)
 (*****************************************************************************)
 
-(* [dial caps address port]: a connection to a machine's port, its
- * descriptor; Failure when there is none. tiny-kernel's wire, and the
- * host's window, which answers the wire's other end (port 70 of
- * 10.0.0.1, a web page, a picture) as tiny-machine does; the host
- * without a window has no wire *)
+(* Raises Failure. On the host it works only in a window, which plays
+ * the wire's other end (port 70 of 10.0.0.1, a web page or a picture)
+ * as tiny-machine does. *)
 val dial : < Cap.network; .. > -> string -> int -> fd

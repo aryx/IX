@@ -7,10 +7,8 @@
 (* Addresses *)
 (*****************************************************************************)
 
-(* an address, a URL's text (Url.mli) *)
 type url = string
 
-(* an address and its #fragment, apart ("" when there is none) *)
 let fragment (url : url) : url * string option =
   match String.index_opt url '#' with
   | Some i ->
@@ -18,13 +16,13 @@ let fragment (url : url) : url * string option =
     Some (String.sub url (i + 1) (String.length url - i - 1))
   | None -> url, None
 
-(* DuckDuckGo's page for text browsers: its results are plain HTML, no
- * script (as Lynx is given), each a link through a page that a <meta>
- * refresh sends on *)
+(* DuckDuckGo's page for text browsers gives plain HTML without scripts,
+ * as Lynx gets; each result links through a page that a <meta> refresh
+ * sends on. *)
 let search_engine = "https://lite.duckduckgo.com/lite/?q="
 
-(* the words of a search as a query: a space +, other than letters and
- * digits %XX *)
+(* A space becomes +, and a character other than a letter, a digit or
+ * -._ becomes %XX. *)
 let query s =
   let hex = "0123456789ABCDEF" in
   let piece c =
@@ -37,9 +35,6 @@ let query s =
       "%" ^ String.make 1 hex.[n / 16] ^ String.make 1 hex.[n mod 16] in
   String.concat "" (List.init (String.length s) (fun i -> piece s.[i]))
 
-(* What was typed, as a full address (the wire's other end's too:
- * TinyMachinePeer.www_address): a title is an English Wikipedia
- * article, a name with a dot is https://, ?words a search. *)
 let absolute typed =
   let s = String.trim typed in
   if String.starts_with "http://" s || String.starts_with "https://" s then s
@@ -56,7 +51,6 @@ let absolute typed =
       ^ String.map (fun c -> if c = ' ' then '_' else c) s
   end
 
-(* "https://host" of an address *)
 let site url =
   match Strings.find url "://" 0 with
   | None -> ""
@@ -65,8 +59,7 @@ let site url =
      | Some j -> String.sub url 0 j
      | None -> url)
 
-(* Where a link goes, from the page at [url] whose <base> is [base]
- * (Wikipedia's is //en.wikipedia.org/wiki/, and its links ./OCaml). *)
+(* Wikipedia's <base> is //en.wikipedia.org/wiki/, and its links ./OCaml. *)
 let resolve url base href =
   if href = "" then url
   else if String.starts_with "http://" href

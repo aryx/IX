@@ -64,23 +64,19 @@
  * is the smallest program that is nothing but buttons.
  *)
 
-(* the number shown, the number kept with the operation that awaits,
- * whether the next digit begins a number, whether there is no number
- * to show *)
 type model = {
   shown : int;
-  kept : int;
-  op : char option;
-  fresh : bool;
-  wrong : bool
+  kept : int; (* the first operand of [op] *)
+  op : char option; (* the operation waiting for its second operand *)
+  fresh : bool; (* the next digit begins a new number *)
+  wrong : bool (* there is no number to show, only "error" *)
 }
 
-(* what a button or a key says *)
+(* what a button or a key sends *)
 type msg = Digit of int | Op of char | Equals | Clear
 
 (* The calculator, for TinyLibGUI's run *)
 val calculator : (model, msg) TinyLibGUI.gui
 
-(* [main caps argv]: the program, calc: the calculator run; it asks the
- * system nothing of its own *)
+(* The program calc. It needs no capability of its own. *)
 val main : < .. > -> string array -> Exit.t

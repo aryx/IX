@@ -1,6 +1,6 @@
 (* Buffer, OCaml's subset (see Stdlib.mli): bytes that double when
  * full, from 256 at most (a program's partition is 1 MB, create's
- * size a guess) (old: a string grown by ^, quadratic) *)
+ * size a guess) *)
 type t
 val create : int -> t
 val add_string : t -> string -> unit

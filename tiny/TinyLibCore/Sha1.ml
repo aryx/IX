@@ -5,10 +5,9 @@
 
 type t = string
 
-(* in C, the runtime's (runtime/ml/ml.c), on words of 32 bits
- * (old: here, a word as its two halves of 16, an integer having 31:
- * 2.6 KB a second on tiny-kernel, where tiny-build digests every file
- * of tiny-kernel's build of itself) *)
+(* in C, the runtime's (runtime/ml/ml.c), on words of 32 bits: in ML, a
+ * word as two halves of 16, it digested 2.6 KB a second on tiny-kernel,
+ * where tiny-build digests every file of tiny-kernel's build of itself *)
 external string : string -> t = "ml_sha1_string"
 
 (* the context, a string of the runtime's (ml_sha1_init) *)

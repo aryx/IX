@@ -1,7 +1,8 @@
-(* Tiny peer: the other end of tiny-machine's wire (plan_tiny_network.md),
- * what a host gives the machine to talk to. Not a second machine: the
- * host runs KNetwork.ml, the stack tiny-kernel has, at the other
- * address (10.0.0.1), with no CPU under it, and a few lines on top:
+(* Tiny peer: the other end of tiny-machine's wire
+ * (plan_tiny_network.md), what a host gives the machine to talk to. It
+ * is not a second machine. The host runs KNetwork.ml, the same network
+ * stack that tiny-kernel has, at the other address (10.0.0.1), with no
+ * CPU under it, and adds a few lines on top:
  *
  *     the machine                              the host
  *
@@ -12,113 +13,97 @@
  *     (TinyMachineDevices)      <= give, later ====  [give]      a line to its
  *                                                            messages
  *
- * - a ping is answered (KNetwork's own);
- * - on port 70, a connection's first message is a line, a document's
- *   name; the document is sent, a message at a time as the machine
- *   acknowledges, and the connection closed. One line out, a document
- *   back, the end: Gopher's shape (1991), and its port. The lines by
- *   the programs that write them: a name (get: a text), "GET address
- *   HTTP/1.0" (www: a web page, HTTP's request, answered by HTTP's
- *   response) and "img w h address" (www: a page's picture, its rows a
- *   message each, so that it is painted as it arrives);
- * - and the other way, "put name size" then the file's bytes (put):
- *   the host keeps the file, so that it outlives the machine, and the
- *   answer is a line, ok or why not.
+ * What the peer does:
+ * - it answers a ping (KNetwork does that by itself);
+ * - on port 70, the first message of a connection is a line naming a
+ *   document. The peer sends the document, one message at a time as
+ *   the machine acknowledges them, and closes the connection. One line
+ *   out, a document back, then the end: this is Gopher's shape (1991),
+ *   and Gopher's port. The programs on the machine send three kinds of
+ *   lines:
+ *   - a file name, from get, which wants a text;
+ *   - "GET address HTTP/1.0", from www, which wants a web page; it is
+ *     an HTTP request and is answered by an HTTP response;
+ *   - "img w h address", from www, which wants a picture of a page; each
+ *     row comes in its own message, so that the picture is painted as
+ *     it arrives;
+ * - in the other direction, put sends "put name size" then the file's
+ *   bytes. The host keeps the file, so that it outlives the machine,
+ *   and answers with a line, ok or the reason it failed.
  *
- * Where a document comes from is the host's, the one thing a terminal
- * and a page do differently: [document] is given the line and a
- * function to call with the messages, now (a file read) or later (a
- * page's fetch).
+ * Where a document comes from is up to the host; it is the one thing a
+ * terminal and a web page do differently. [document] is given the line
+ * and a function to call with the messages, either at once (a file
+ * read) or later (a page's fetch).
  *
- * Time is the machine's, in instructions: a packet of the peer's
- * lands [latency] after it was sent, and the peer's own clock (IL asks
- * again when nothing came) is an empty packet it gives itself, which
- * the machine returns to [send] a tick later and no kernel sees
- * (TinyMachineDevices's landed). So a run is the same each time. What is
- * lost is said, not drawn at random: [lose].
+ * Time is the machine's, counted in instructions. A packet from the
+ * peer lands [latency] instructions after it was sent. The peer's own
+ * clock (IL asks again when nothing came) is an empty packet that it
+ * gives itself: the machine returns it to [send] a tick later, and no
+ * kernel sees it (TinyMachineDevices's landed). So a run is the same
+ * each time. For the same reason, which packets are lost is chosen
+ * explicitly with [lose], not drawn at random.
  *
- * mini-qemu's wire has a second stack at its other end, written for
- * it (raspberry/Usernet); this one is the first again. *)
+ * mini-qemu's wire has a second network stack at its other end, written
+ * for it (raspberry/Usernet); here we reuse the machine's own stack. *)
 
 type t
 
-(* A way to a program that is not on the wire, which a host may have
- * (a terminal's: a socket; a page has none). A relay is one
- * connection's: the bytes that came from there ("" when none has,
- * None at its end), bytes sent there, its end. With an [outside] the
- * peer is a gateway: a connection the machine asks for to any other
- * address is asked of [connect] (an address as text, a port; None:
- * nothing answers), and its messages go there as bytes and come back
- * as messages, cut where the bytes happened to arrive: the machine
- * speaks IL, the outside TCP, and a program that reads lines must not
- * take a message for one. And port 53 of the peer answers a name by
- * its address as text, from [name] ("" when it has none), which is
- * all there is of DNS. *)
+(* A way out to programs not on the wire: a terminal has a socket, a web
+ * page has none. A relay is one connection. With an [outside], the peer
+ * is a gateway: a connection to any other address goes to [connect]
+ * (None: nothing answers), and the bytes coming back are cut into
+ * messages wherever they arrived, so a program must not take a message
+ * for a line. Port 53 of the peer answers a name with [name]'s address;
+ * that is all there is of DNS. *)
 type relay = {
-  take : unit -> string option;
+  take : unit -> string option; (* "" when nothing came, None at the end *)
   put : string -> unit;
   shut : unit -> unit;
 }
 type outside = {
-  name : string -> string;
+  name : string -> string; (* the address as text, "" when none *)
   connect : string -> int -> relay option;
 }
 
-(* The peer. [give after packet]: the machine's net_give, a packet to
- * land so many instructions from now. [said dir packet]: each packet
- * that crosses, for who watches (">" from the machine, "<" to it, "x"
- * to it and lost). [document line messages]: what the line names,
- * given to [messages] once, now or later. [store name bytes]: a file
- * the machine put (tiny-kernel's put: a first line "put name size",
- * then its bytes), to keep where [document] finds it again; "" when it
- * is kept, why not otherwise, which put says. The empty line, Gopher's
- * menu, is [document]'s too: what was put, a name a line. *)
+(* [give after packet] is the machine's net_give. [said dir packet] shows
+ * each packet that crosses (">" from the machine, "<" to it, "x" lost).
+ * [document line messages] calls [messages] once, now or later; the
+ * empty line, Gopher's menu, wants the names that were put. [store name
+ * bytes] keeps a file sent by put, where [document] finds it again; it
+ * returns "" or the reason it failed, which put prints. *)
 val create :
   give:(int -> string -> unit) ->
   said:(string -> string -> unit) ->
   document:(string -> (string list -> unit) -> unit) ->
   store:(string -> string -> string) -> outside:outside option -> t
 
-(* the machine's [send]: a packet of its kernel's ("": the peer's own
- * clock) *)
+(* the machine's [send]; the packet "" is the peer's own clock *)
 val send : t -> string -> unit
 
-(* What the host does between two packets: the relays have their turn
- * (called often enough, a relay's bytes do not wait for the machine to
- * send something). And a connection from the outside to a port of the
- * machine's, where a program of its listens: the relay is its other
- * side (a host's -net-forward). *)
+(* [poll], called between two packets, lets the relays send without
+ * waiting for the machine. [dial] connects a relay to a port where a
+ * program of the machine listens (a host's -net-forward). *)
 val poll : t -> unit
 val dial : t -> int -> relay -> unit
 
 (* the n-th packet the peer sends from now (1: the next) is lost *)
 val lose : t -> int -> unit
 
-(* a text as messages, of KNetwork.il_max bytes at most *)
+(* a text cut into messages of at most KNetwork.il_max bytes *)
 val messages : string -> string list
 
-(* A request "GET address HTTP/1.0" asks for a web page, for
- * tiny-kernel's browser (plan_tiny_browser.md; TinyBrowser/Http.ml, a
- * proxy's request: the whole address on its line). The peer answers
- * with an HTTP/1.0 response: its status line and headers, the site's
- * (Content-Type, which www goes by), then the page's bytes, a message at
- * a time, the site's chunks and gzip undone. Fetching is the host's (a
- * terminal's helper, or a page's fetch), but where to fetch is decided
- * here, the same for both: [www_request] gives the address a request
- * asks for, by [www_address], which turns what was typed into a URL. A
- * bare title (OCaml, Plan 9 from Bell Labs) is an English Wikipedia
- * article; a name with a dot and no scheme (example.com) is https://;
- * ?words a search (Url.absolute, www's own rules). A
- * Wikipedia article's address (/wiki/X) becomes its REST HTML
- * (/api/rest_v1/page/html/X): the article without the site's menus, and
- * the one a web page is allowed to fetch. A #fragment is dropped.
- * [www_kept] is the name of the file that holds a kept copy of a
- * Wikipedia article (X.html), of a search's results (search-words.html,
- * the words as the query has them), or of another address, its last
- * part (korobeiniki.wav), for the tests and for a machine with no way
- * out. [www_kept_response] is the answer such a copy makes, its
- * Content-Type by its name's extension ([www_type]); [www_failed] the
- * answer when there is no page, a 502 whose text says why. *)
+(* A proxy's request "GET address HTTP/1.0" (TinyBrowser/Http.ml) gets an
+ * HTTP/1.0 response: the site's status and headers (www goes by
+ * Content-Type), then the page, chunks and gzip undone. The host
+ * fetches, but where is decided here. [www_address] uses www's rules
+ * (Url.absolute): a bare title (OCaml) is an English Wikipedia article,
+ * a name with a dot gets https://, ?words is a search. An article
+ * /wiki/X becomes /api/rest_v1/page/html/X, without the site's menus and
+ * allowed to a web page; a #fragment is dropped. Kept copies serve the
+ * tests and a machine with no way out: [www_kept] names X.html,
+ * search-words.html, or the address's last part (korobeiniki.wav), and
+ * [www_type] goes by the extension. [www_failed] is a 502 saying why. *)
 val www_request : string -> Url.url option
 val www_address : string -> Url.url
 val www_kept : Url.url -> string option
@@ -126,34 +111,24 @@ val www_type : string -> string
 val www_kept_response : string -> string -> string
 val www_failed : string -> string
 
-(* The line "img w h address" asks for a picture of the page, w by h
- * pixels: the answer is [picture "" w h pixels] (below), with w and h 0
- * when there is none. The host decodes it and makes it that size, in
- * the machine's colours. [www_picture_request] gives what such a line
- * asks for, w, h and the address, w and h 0 for a size no answer can
- * carry (0, or w past a message's bytes). [www_picture_kept] is the
- * name of the file that holds a kept copy: the address's last part,
- * without its ?query (250px-OCaml_Logo.svg.png). *)
+(* "img w h address" asks for a picture, which the host decodes and
+ * scales to w by h in the machine's colours. [www_picture_request] gives
+ * w and h 0 for a size no answer can carry (0, or w over a message).
+ * [www_picture_kept] is the last part without its ?query. *)
 val www_picture_request :
   string -> (int * int * Url.url) option
 val www_picture_kept : Url.url -> string option
 
-(* What "img w h address" is answered: a first message "t w h", then t
- * messages of text, then h messages of w bytes, a row of the picture
- * each, a byte a pixel in the screen's 256 colours (w no more than a
- * message's bytes; 0 0 with no picture). [picture text w h pixels]
- * makes them. *)
+(* [picture text w h pixels] is the answer to "img": a message "t w h",
+ * t messages of text, then one message per row, a byte per pixel in the
+ * screen's 256 colours; w and h are 0 with no picture. *)
 val picture : string -> int -> int -> string -> string list
 
-(* How many instructions a packet takes to cross the wire (5 ms of the
- * machine's time), and how many pass between two of the peer's looks at
- * its clock (2.5 ms, a tick of tiny-kernel). Both depend on the
- * machine's speed, TinyMachineDevices.rate. *)
+(* In instructions, by TinyMachineDevices.rate: a packet crosses the wire
+ * in 5 ms, and the peer looks at its clock every 2.5 ms (a kernel tick). *)
 val latency : unit -> int
 val tick : unit -> int
 
-(* an address said ("10.0.0.2"); a packet in a few words, for who
- * watches the wire (-net-trace, the page's wire): the host's, which
- * the kernel has no use for *)
+(* for -net-trace and the page's wire view *)
 val net_dotted : KNetwork.ip_addr -> string
 val net_describe : string -> string

@@ -87,8 +87,7 @@ let user_write p va s =
   if not (KMemory.mem_writable p.mem va (String.length s)) then raise Bad;
   user_iter p va (String.length s) (fun a off k -> KMachine.k_blit s off a k)
 
-(* a string of the user's, a path: 1024 bytes at most (old: 64, a path
- * of a few names, when a name had 20) *)
+(* a string of the user's, a path: 1024 bytes at most *)
 let ustr p va =
   let b = Buffer.create 64 in
   let rec go i =

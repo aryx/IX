@@ -7,7 +7,6 @@
 (* Lines *)
 (*****************************************************************************)
 
-(* a run's look, these bits (Lines.mli) *)
 type look = int
 let bold = 1
 let emph = 2
@@ -28,20 +27,16 @@ type run = {
 }
 type line = { runs : run list; rule : bool }
 
-(* A flow wraps words into lines of a given width, starting at a left
- * margin. *)
 type flow = {
   width : int;
   mutable left : int;
-  mutable made : run list;  (* the line being built, last run first *)
-  mutable at : int;         (* the column where the next word goes *)
-  mutable out : line list;  (* the finished lines, last line first *)
-  mutable nlines : int;     (* how many lines are in out *)
-  mutable blank : bool;     (* whether the next line wants a blank line
-                             * before it *)
-  mutable glue : int;       (* the column where the word being made started *)
-  mutable cache : line array;  (* the lines from the top, when there were
-                                * [cached] *)
+  mutable made : run list;
+  mutable at : int;
+  mutable out : line list;
+  mutable nlines : int;
+  mutable blank : bool;
+  mutable glue : int;
+  mutable cache : line array;
   mutable cached : int;
 }
 
@@ -67,9 +62,6 @@ let end_line (f : flow) =
     push f { runs = List.rev f.made; rule = false }; f.made <- []
   end
 
-(* Adds a word to the flow, after a space if [space] is true. When the
- * word has the same look and link as the previous run, it extends that
- * run instead of starting a new one. *)
 (* Moves the word being made, from the column where it started, to a
  * new line, and ends the line before it. A word can be made of several
  * pieces with no space between them (a full stop and a reference's
@@ -130,9 +122,6 @@ let word (f : flow) text (look : look) link space =
          :: f.made);
   f.at <- col + len
 
-(* A picture of [rows] rows of the screen: a line for
- * each row, whose one run is the picture's slice there, at the left
- * margin. The text goes on under it. *)
 let picture_block (f : flow) id rows link =
   end_line f;
   for s = 0 to rows - 1 do
@@ -141,7 +130,6 @@ let picture_block (f : flow) id rows link =
              rule = false }
   done
 
-(* Adds a text exactly as it is, with no wrapping (for <pre>). *)
 let verbatim (f : flow) text look link =
   if f.made = [] then f.at <- f.left;
   if text <> "" then begin
@@ -155,8 +143,6 @@ let verbatim (f : flow) text look link =
 (* Tables *)
 (*****************************************************************************)
 
-(* The words of a cell are kept until the end of the table, when the
- * widths of its columns are known. *)
 type item =
   | Word of string * look * string option * bool
   | Break
@@ -164,14 +150,11 @@ type item =
 
 type cell = { mutable items : item list; span : int; head : bool }
 type table = {
-  mutable rows : cell list list;  (* the rows so far, last row first *)
+  mutable rows : cell list list;
   mutable row : cell list;
   mutable cell : cell option;
-  mutable depth : int;            (* how many tables are open inside it; their
-                                   * cells just become text of the current cell *)
-  mutable broken : int;           (* a line's end not yet in the cell, put
-                                   * there before the next word: 1 a block's,
-                                   * 2 an inner table's row's *)
+  mutable depth : int;
+  mutable broken : int;
 }
 
 let cell_words (c : cell) = List.rev c.items
@@ -221,8 +204,6 @@ let widths rows n room =
 
 let gap = 2
 
-(* Lays out a finished table into the flow: each cell is wrapped in its
- * column, and the cells of a row are put side by side. *)
 let lay_table (f : flow) (t : table) =
   let rows = List.rev (List.map List.rev t.rows) in
   let rows = List.filter (fun r -> r <> []) rows in

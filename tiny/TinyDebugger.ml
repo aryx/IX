@@ -51,7 +51,7 @@ let word_hex (w : M.word) =
 (* The process debugged: the kernel's trace of it; its program's labels;
  * where it is stopped (None: it runs, or ended); its breakpoints; in a
  * window, the pipe its output comes on when debug started it, until its
- * end (old: globals, the descriptors -1 for none) *)
+ * end *)
 type process = {
   trace : TSys.fd;
   funcs : M.symbols;
@@ -222,8 +222,7 @@ let show p why =
 let wait p = match stopped p with Some why -> show p why; true | None -> false
 
 (* the registers, as the kernel says them, "r1 v ... r15 v pc v": r1 to
- * r15 at their numbers in values (0 the zero register's), and the pc
- * (old: the kernel's pairs of words, a register by its name, "r14") *)
+ * r15 at their numbers in values (0 the zero register's), and the pc *)
 type registers = { values : int array; at : M.address }
 
 let registers p : registers option =

@@ -207,10 +207,7 @@ and declarator_rec () : string * (Types.ty -> Types.ty) * string list =
         let _, pt = base_type () in
         let pname, pt = declarator pt in
         let pt = match pt with Types.Arr (e, _) -> Types.Ptr e | t -> t in
-        (* a , or the ) next: else the list is not closed (old: the
-         * comma optional, and on { or at the file's end params called
-         * itself on no token taken, until the stack was gone: a
-         * segmentation fault) *)
+        (* a , or the ) next: else the list is not closed *)
         if not (accept ",") && peek () <> Lexer.P ")" then
           Types.error "expected )";
         let rest, variadic = params () in
@@ -412,8 +409,8 @@ and primary () =
   | _ -> Types.error "expected an expression"
 
 (* a constant expression: an array's size, a case, an enum's value
- * (NDIRECT + 1, sizeof a / sizeof a[0]), folded by the tree as it was
- * built (old: folded here, in 64 bits, an operator at a time) *)
+ * (NDIRECT + 1, sizeof a / sizeof a[0]), folded by the tree as it is
+ * built *)
 and const_expr () =
   let e = cond_expr () in
   match e.d with

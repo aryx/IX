@@ -7,11 +7,12 @@
  * the [help] string of the .ml, which is what ed -h prints.
  *
  * twin:
- * The original is principia's editors/sam/ (mini-ed's is editors/ed/):
- * its parallel changes are file.c's log, the changes a command makes
- * kept aside and applied together at its end, as undo applies its own.
- * [commit] is the same trick on a list of triples; sam pages its text
- * and its logs to a temporary file, where here the text is one string.
+ * The original is principia's editors/sam/ (mini-ed's is editors/ed/).
+ * In sam, the parallel changes are file.c's log: the changes a command
+ * makes are kept aside and applied together at its end, and undo
+ * applies its own the same way. [commit] is the same trick on a list of
+ * triples. sam pages its text and its logs to a temporary file; here
+ * the text is one string.
  *
  * kept:
  * Three ideas make it sam rather than ed, and they are the core
@@ -73,11 +74,12 @@
  * restored to what it was before the undone command.
  *
  * context:
- * It is tiny-kernel's ed (and sam, the same program by another name):
- * as TinyShell.ml, it asks the system only through TinyLibSystem.
+ * It is tiny-kernel's ed (and sam, the same program under another
+ * name). Like TinyShell.ml, it reaches the system only through
+ * TinyLibSystem.
  *
- * ix has three editors, mini-ed (lines, an editor for a teletype), this
- * one (ranges, but still no screen) and mini-emacs (with a screen).
+ * ix has three editors: mini-ed (lines, an editor for a teletype), this
+ * one (ranges, but still no screen), and mini-emacs (with a screen).
  * Recording changes and then applying them in one step is the same idea
  * as a statement in TinyDatabase and a command in TinyVCS: nothing is
  * ever half done, and undoing is cheap.
@@ -144,19 +146,19 @@
  *    Strings" (Software -- Practice and Experience, 1995)
  *)
 
-(* a command, parsed: its address, its letter, what follows *)
+(* a parsed command: its address, its letter, and what follows *)
 type cmd
 
-(* one command, done: its address found from dot, then the changes it
- * makes, all of them applied together at its end *)
+(* Runs one command: its address is evaluated from dot, then the
+ * changes it makes are all applied together at its end. *)
 val exec :
   < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; Cap.exit; .. > -> cmd -> unit
 
-(* what the editor asks for: main is given more (Cap.main's all), its
- * type a row (..) *)
+(* What the editor needs. main is actually given more (all of
+ * Cap.main's), which is why its type is an open row (..). *)
 type caps =
   < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr; Cap.exit >
 
-(* the program: its arguments (its name first), the files named, then
- * the commands of its input, to how it ends *)
+(* The program. Its arguments are its name followed by the files to
+ * read; then it runs the commands of its input. *)
 val main : < caps; .. > -> string array -> Exit.t

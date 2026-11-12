@@ -1,87 +1,89 @@
-(* Tiny sound: TinyKernel.ml's part that makes the samples
- * (plan_tiny_audio.md), as KGraphics.ml is its part that
- * makes the pixels. It asks two functions of its machine's bytes,
- * KRaw's peekb and pokeb.
+(* Tiny sound: the part of the kernel that makes audio samples
+ * (plan_tiny_audio.md), as KGraphics is the part that makes pixels. It
+ * needs only two functions to reach the machine's bytes, KRaw's peekb
+ * and pokeb.
  *
- * {b The kernel has the samples, a program says what}, as for the
- * screen: a program writes a message to /dev/audio, `s wave hz to_hz ms
- * volume` (a letter, then numbers of 16 bits, TinyLibDraw's), and the
- * kernel adds the sound to tiny-machine's ring, where the other
- * programs' sounds are already. A sound is sfxr's recipe (lib_audio's
- * Sfx.mli) cut to those five numbers: a wave, a pitch that slides, a
- * volume that falls to nothing at the end:
+ * {b The kernel makes the samples; a program only says what to play},
+ * as for the screen. A program writes a message to /dev/audio,
+ * `s wave hz to_hz ms volume` (a letter, then 16-bit numbers, encoded
+ * as TinyLibDraw encodes them). The kernel then adds the sound to
+ * tiny-machine's ring, where the other programs' sounds already are.
+ * A sound is sfxr's recipe (lib_audio's Sfx.mli) cut down to those five
+ * numbers: a wave, a pitch that slides, and a volume that falls to
+ * nothing at the end:
  *
  *       volume
- *         |\                   a square from 784 Hz, 60 ms:
- *         | \                  480 samples, each +v or -v, v
+ *         |\                   a square wave at 784 Hz for 60 ms:
+ *         | \                  480 samples, each +v or -v, with v
  *         |  \                 falling from the volume to 0
  *         |   \
  *         +----+---> time
  *         0    ms
  *
- * Why not samples written by the program, as Plan 9's /dev/audio and
- * m-ix's take them: a game's sound is a recipe, and made by tiny-ml's
- * code it was 2,750 instructions a sample (before tiny-ml had Bytes: a
- * string and a cons for each), the 0.7 s of Tetris's game over two
- * seconds of an 8 MHz machine. Here a sample is made where it is
- * played, with no allocation (about 230 instructions, a square's, 260 a
- * triangle's; 535 while its clamp was the prelude's min and max, each
- * a call of the runtime's compare), and a sound crosses a pipe as 11
- * bytes, not 5,600. A tune of two parts is 3.9 million instructions a
- * second: half of an 8 MHz machine, a fifth of a window's 20. Samples
- * are a message too (`p`), for what is no recipe: a WAV played
- * (TinyPlay.ml).
+ * Why not let the program write samples, as Plan 9's and m-ix's
+ * /dev/audio do? Because a game's sound is a recipe, and making the
+ * samples in tiny-ml code cost 2,750 instructions a sample (measured
+ * when tiny-ml had no Bytes, so each sample was a string and a cons).
+ * The 0.7 s of Tetris's game-over sound took two seconds of an 8 MHz
+ * machine. In the kernel, a sample is made where it is played, with no
+ * allocation: about 230 instructions for a square wave, 260 for a
+ * triangle. (The clamp is written out inline: with the prelude's min
+ * and max, each a call to the runtime's compare, it cost 535.) A sound
+ * also crosses a pipe as 11 bytes instead of 5,600. A tune in two
+ * parts costs 3.9 million instructions a second, half of an 8 MHz
+ * machine, or a fifth of the 20 MHz that tiny-machine runs at in a
+ * window. For what is not
+ * a recipe, such as playing a WAV file (TinyPlay.ml), there is also a
+ * message carrying raw samples (`p`).
  *
  * twin:
- * mini-9pi's /dev/audio (kernels/9pi/'s Devaudio, Plan
- * 9's audio(3)) and lib_audio: there the device takes samples only, 16
- * bits, two ears, 44,100 a second, and one program at a time (an open
- * while another has it fails, Einuse, as in principia's devaudio.c),
- * and a program mixes and makes its sounds itself, by lib_audio's Sfx
- * and Mixer.
+ * mini-9pi's /dev/audio (kernels/9pi/'s Devaudio, after Plan 9's
+ * audio(3)) and lib_audio. There the device takes only samples: 16
+ * bits, two channels, 44,100 a second, and one program at a time (an
+ * open while another program has the device fails with Einuse, as in
+ * principia's devaudio.c). A program makes and mixes its sounds itself,
+ * with lib_audio's Sfx and Mixer.
  *
  * twist:
- * Against the twin: the recipe and the mixing moved into the kernel,
- * so each open of /dev/audio is a voice and several programs are heard
- * at once; a byte a sample, one ear, 8,000 a second, which a game's
- * beeps and a melody need and no more.
+ * Unlike the twin, the recipe and the mixing moved into the kernel, so
+ * each open of /dev/audio is a voice and several programs are heard at
+ * once. A sample is one byte, there is one channel, and 8,000 samples
+ * a second: what a game's beeps and a melody need, and no more.
  *
  * cs-history:
- * This is a sound chip's bargain: the Atari 2600's TIA (1977), General
- * Instrument's AY-3-8910 (1978), the Commodore 64's SID (1982), the
- * NES's APU (1983) each had a few voices, a wave, a pitch, an envelope,
- * and a program set their registers instead of making samples, which
- * those CPUs could not afford. Samples came when CPUs could (the
- * Amiga's Paula, 1985, still with four voices mixed by the chip; the
- * PC's Sound Blaster, 1989), and a game's sound effects stayed sfxr's
- * few numbers. tiny-machine is one of those CPUs again.
+ * This is the bargain the sound chips made. The Atari 2600's TIA
+ * (1977), General Instrument's AY-3-8910 (1978), the Commodore 64's SID
+ * (1982) and the NES's APU (1983) each had a few voices with a wave, a
+ * pitch and an envelope. A program set their registers instead of
+ * computing samples, which those CPUs could not afford. Samples came
+ * once CPUs could afford them (the Amiga's Paula in 1985, which still
+ * mixed four voices in the chip; the PC's Sound Blaster in 1989), and
+ * a game's sound effects stayed sfxr's few numbers. tiny-machine is
+ * one of those slow CPUs again.
  *)
 
-(* the samples a millisecond (8,000 a second) *)
+(* Samples per millisecond (8,000 a second). *)
 val per_ms : int
 
-(* a tone: its wave (0 to 3 in a message), its pitch from hz to to_hz,
- * its samples, its volume, 0 to 127 *)
+(* In a message the wave is 0 to 3 and the volume 0 to 127. The pitch
+ * slides from t_hz to t_to_hz. *)
 type wave = Square | Triangle | Sawtooth | Noise
 type tone =
   { t_wave : wave; t_hz : int; t_to_hz : int; t_samples : int;
     t_volume : int }
 
-(* [mix ring size at tone]: a tone added to the ring of [size] samples
- * at [ring] (size a power of two), from the sample numbered [at] (the
- * ring's place: at modulo size), each sum kept from -128 to 127 *)
+(* [mix ring size at tone] adds tone to the ring at address [ring], of
+ * [size] samples (a power of two), from sample [at] (at modulo size).
+ * Each sum is clamped to -128..127. *)
 val mix : int -> int -> int -> tone -> unit
 
-(* A message's sound: a tone, or samples, a byte each, signed, 8,000 a
- * second (`p n` then the n bytes, as /dev/draw's row of pixels: what
- * is no recipe, a file's sound); its length in samples; added to a
- * ring as [mix] adds *)
+(* Samples are signed bytes, sent as `p n` then n bytes like a row of
+ * /dev/draw, for a sound that is no recipe, such as a file's. *)
 type sound = Tone of tone | Samples of string
 val sound_length : sound -> int
 val mix_sound : int -> int -> int -> sound -> unit
 
-(* The sounds of messages, each `s wave hz to_hz ms volume` or `p n`
- * and n samples; Bad_sound when one is not a whole message or says
- * something out of range *)
+(* [sounds s] decodes messages `s wave hz to_hz ms volume` or `p n`.
+ * Bad_sound: a message is incomplete or has a value out of range. *)
 exception Bad_sound
 val sounds : string -> sound list

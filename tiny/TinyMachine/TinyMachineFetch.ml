@@ -3,9 +3,6 @@
 
 (* See TinyMachineFetch.mli *)
 
-(* A picture as w by h bytes of the machine's colours: each pixel the
- * average of the source's pixels that fall in it, on white where they
- * are transparent. *)
 let reduce (img : Rgba_image.t) w h =
   let out = Bytes.create (w * h) in
   for y = 0 to h - 1 do
@@ -38,8 +35,8 @@ let main (caps : < Cap.network; Cap.open_in; Cap.readdir; Cap.stdout; .. >)
     match Http_client.get caps url with
     | Ok (r : Http.response) -> Ok r.body
     | Error why -> Error why in
-  (* (the failures said on the standard output, the answer the kernel
-   * reads, not after the program's name: Code 1, not Err) *)
+  (* Failures go to the standard output, which the kernel reads, without
+   * the program's name before them: hence Code 1, not Err. *)
   match Array.to_list argv with
   | [ _; "-picture"; w; h; source ] -> (
       let w = int_of_string w and h = int_of_string h in

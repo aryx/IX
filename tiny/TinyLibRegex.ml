@@ -8,16 +8,14 @@
 (*****************************************************************************)
 
 (* A node of a pattern's tree. Its id numbers it among the pattern's
- * nodes, from 0, for the matcher's memo. (old: re, the type's name,
- * beside regex, the compiled pattern's) *)
+ * nodes, from 0, for the matcher's memo. *)
 type node = { id : int; kind : kind }
 
 and kind =
   | Chr of char
   | Any
   | In_set of (char * char) list       (* [a-z...]: its ranges *)
-  | Not_in_set of (char * char) list   (* [^a-z...] (old: Set of a bool,
-                                        * negated, and the ranges) *)
+  | Not_in_set of (char * char) list   (* [^a-z...] *)
   | Bol
   | Eol
   | Cat of node * node
@@ -27,7 +25,7 @@ and kind =
   | Empty
 
 (* a pattern compiled: its tree, and its number of nodes (a match's
- * memo has a bit per node and position). (old: a pair) *)
+ * memo has a bit per node and position). *)
 type regex = { rx_root : node; rx_nodes : int }
 
 (* the groups a pattern may have, \1 to \9, as sam's NSUBEXP, 10 with
@@ -47,7 +45,7 @@ let byte_of pc = match pc with Plain c -> c | Quoted c -> c
 
 (* Plan 9's notation, as ed and sam have it; \n is a newline. By
  * recursive descent, the loosest first: alternatives, then sequences,
- * then repeats, then an atom. (old: parse_re, which compile called) *)
+ * then repeats, then an atom. *)
 let compile (p : string) : regex =
   let pos = ref 0 and ids = ref 0 and groups = ref 0 in
   (* the operator read last, which an error names when an operand is
@@ -93,8 +91,7 @@ let compile (p : string) : regex =
     | Plain '^' -> mk Bol
     | Plain '$' -> mk Eol
     | Plain '(' ->
-        (* (old: no limit, and a tenth group's captures past the end
-         * of their array) *)
+        (* a tenth group would put its captures past their array's end *)
         if !groups = max_groups then failwith "too many subexpressions";
         incr groups;
         after := '(';
@@ -108,9 +105,7 @@ let compile (p : string) : regex =
     | Plain ('|' | ')') -> missing !after
     | Plain c -> mk (Chr c)
   (* a class, after its [: sam's rules, a ] at once closes an empty
-   * class, and a - must have a byte on each side (old: the editor took
-   * that ] as a byte, and a - at either end as a -, where sam and grep
-   * say "malformed") *)
+   * class, and a - must have a byte on each side *)
   and set () =
     let neg = peek () = Some '^' in
     if neg then incr pos;
@@ -213,7 +208,7 @@ let ends (rx : regex) text s lim k =
 
 (* the longest match starting at s, with seen, the memo of the search
  * (positions from base); caps copied, the matcher changing them as it
- * goes on (old: a copy of our own, when tiny-ml had no Array.copy) *)
+ * goes on *)
 let longest seen base rx text s lim =
   let best = ref None in
   ends_in seen base rx.rx_root text s lim (fun j caps ->
@@ -227,10 +222,7 @@ let longest seen base rx text s lim =
  * pattern, so a (node, position) pair that led to no match from one
  * start leads to none from another; and every start before the one
  * that matches failed whole. So each pair is tried once for the whole
- * search, and a search that fails reads the text about once. (old: a
- * memo per start, a failing search quadratic: 1.25 s, bytecode, for
- * the test's starred group on 3,000 letters a, where matches took no
- * time) *)
+ * search, and a search that fails reads the text about once. *)
 let search rx text p lim =
   let seen = memo rx.rx_nodes p lim in
   let rec from s =
@@ -241,8 +233,6 @@ let search rx text p lim =
       | None -> from (s + 1) in
   from p
 
-(* (old: a loop of its own over the starts, with the memo search has
- * now) *)
 let matches (rx : regex) line =
   search rx line 0 (String.length line) <> None
 

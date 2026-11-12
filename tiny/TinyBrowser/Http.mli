@@ -1,5 +1,6 @@
-(* HTTP, the part of it www and the wire's other end speak: a request
- * for a page, and its answer, a head then the page's bytes.
+(* HTTP, or the part of it that www and the wire's other end speak: a
+ * request for a page, and its answer, a head followed by the page's
+ * bytes.
  *
  *     www                                    the wire's other end
  *      | GET https://en.wikipedia.org/wiki/OCaml HTTP/1.0
@@ -13,47 +14,45 @@
  *      | read as HTML, or kept in a file      the page's bytes, then the
  *      | for a helper (TinyBrowser)           connection closed
  *
- * The request is a proxy's: the whole address on its line, not only
- * its path, since the other end fetches it for us. The answer is
- * HTTP/1.0's: the page ends where the connection does, and its bytes
- * are the page's own, the site's chunks and gzip undone, so a head
- * says neither; the site's other headers are passed on. Its
- * Content-Type says what the bytes are: HTML is read, a text shown as
- * it is, and what www does not show itself is given to a program
- * that does (a WAV file to play), as Mosaic did.
+ * The request is the kind sent to a proxy: the whole address is on its
+ * line, not only the path, since the other end fetches the page for
+ * us. The answer is in HTTP/1.0's style: the page ends where the
+ * connection ends. Its bytes are the page itself, with the site's
+ * chunks and gzip already undone, so the head mentions neither; the
+ * site's other headers are passed on. Content-Type says what the bytes
+ * are. HTML is read, plain text is shown as it is, and what www cannot
+ * show itself is given to a program that can (a WAV file to play), as
+ * Mosaic did.
  *
  * dropped:
- * Every method but GET, a request's other headers (cookies, a range, a
- * cache's), keeping a connection for the next request, and a head's
- * continued lines.
+ * Every method but GET, the other request headers (cookies, ranges,
+ * caching), keeping a connection open for the next request, and
+ * continuation lines in a head.
  *
  * cs-history:
- * HTTP/0.9 (Tim Berners-Lee, 1991) was a line "GET /path" and the
- * page, no head: Gopher's shape, which this wire spoke before. HTTP/1.0
- * (RFC 1945, 1996, what NCSA's and CERN's servers did from 1993) added
- * the status line and the headers, MIME's from mail, Content-Type among
- * them; CERN's httpd was also the first proxy (1994), asked by a
- * request with the whole address on its line, as here.
+ * HTTP/0.9 (Tim Berners-Lee, 1991) was a line "GET /path" answered by
+ * the page, with no head: the same shape as Gopher, which this wire
+ * spoke before. HTTP/1.0 (RFC 1945, 1996, describing what NCSA's and
+ * CERN's servers had done since 1993) added the status line and the
+ * headers, taken from MIME in mail, Content-Type among them. CERN's
+ * httpd was also the first proxy (1994), and it was asked with the
+ * whole address on the request line, as here.
  *)
 
-(* [request url]: www's request for [url], to the wire's other end *)
 val request : Url.url -> string
 
 (* the address a request asks for, if it is a GET *)
 val asked : string -> Url.url option
 
-(* [response status headers body]: an answer, with its Content-Length *)
+(* [response status headers body] adds the Content-Length *)
 val response : int -> (string * string) list -> string -> string
 
-(* where the head of a response that begins [s] ends (the body's first
- * byte), if it has yet *)
+(* the body's first byte in a response's start, if the head has ended *)
 val head_end : string -> int option
 
-(* a head's status (200), if its first line is HTTP's *)
 val status : string -> int option
 
-(* [header head name]: the header's value, "" if it has none; a name
- * is the same in any case *)
+(* "" if the head has none; names are compared ignoring case *)
 val header : string -> string -> string
 
 (* a head's Content-Type, without its parameters, in lowercase

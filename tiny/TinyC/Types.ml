@@ -3,16 +3,14 @@
 
 (* See Types.mli *)
 
-(* (old: a format, Printf.ksprintf's: tiny-ml reads a format only where
- * it is written, Printf.sprintf at the call; then failwith, the same
- * Failure as a bug's) *)
+(* a string, not a format: tiny-ml reads a format only where it is
+ * written, at a call of Printf.sprintf *)
 let error s = Common.error s
 
 let unit_name = ref ""  (* the file's name, its local names' prefix *)
 
 (* a global's name in the assembly, a label, not a C name: a static's
- * is the file's name and its own, the link being one name space
- * (old: Plan 9's name<>, made a label when written) *)
+ * is the file's name and its own, the link being one name space *)
 type sym = string
 let static_sym (name : string) : sym = !unit_name ^ "." ^ name
 
@@ -41,8 +39,8 @@ let int_t = Int (4, true) and char_t = Int (1, true)
  * index, a switch's value; a long long in its type, of 32 bits on
  * TinyCPU (no_vlong refuses a declared one) *)
 let vlong_t = Int (8, true)
-(* an int's largest value (old: 0x7fffffffL, a literal tiny-ml does
- * not read) *)
+(* an int's largest value, from a string: tiny-ml does not read an
+ * int64 literal such as 0x7fffffffL *)
 let int_max = Int64.of_string "0x7fffffff"
 (* an unsigned int's *)
 let uint_max = Int64.of_string "0xffffffff"

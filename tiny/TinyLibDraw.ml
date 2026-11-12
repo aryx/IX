@@ -23,8 +23,7 @@ let int16 s i =
   let v = Char.code s.[i] + (256 * Char.code s.[i + 1]) in
   if v >= 32768 then v - 65536 else v
 
-(* tiny-machine's screen (TinyMachineDevices'), in pixels (old: 640 by
- * 480, text at 80 by 30; now 128 by 48, a pixel smaller in the window) *)
+(* tiny-machine's screen (TinyMachineDevices'), in pixels *)
 let screen_w = 1024
 let screen_h = 768
 
@@ -73,8 +72,7 @@ let d_cursor c = msg 'c' [ (match c with Cursor_arrow -> 0 | Cursor_hand -> 1) ]
 
 (* The mouse as the kernel's descriptor 4 says it, 12 bytes: where it
  * is and its buttons, three numbers of two bytes, each followed by two
- * bytes of nothing; None when it is not all there (old: the bytes read
- * by hand where the mouse was read, four times) *)
+ * bytes of nothing; None when it is not all there *)
 type mouse_event = { mo_x : int; mo_y : int; mo_buttons : int }
 let mouse_event (s : string) : mouse_event option =
   if String.length s <> 12 then None
@@ -82,8 +80,7 @@ let mouse_event (s : string) : mouse_event option =
 
 (* The message at i of s: its length, and how many of its first numbers
  * are images. The length is beyond s's end when the message is not all
- * there yet (a pipe gives what it has), and -1 when this is no message.
- * (old: a pair) *)
+ * there yet (a pipe gives what it has), and -1 when this is no message. *)
 type message_shape = { ds_length : int; ds_images : int }
 
 let shape s i =

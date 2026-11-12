@@ -55,8 +55,6 @@ let fs_set a v =
  * the boots counted, the snapshots kept. Then the roots, an inode each:
  * root 0 is the live tree, roots 1 to 14 the snapshots, the newest
  * first. A root is the inode of a tree's inode file. *)
-(* (old: 0x31534654, "TFS1": a date in no inode, names of 28 bytes; a
- * disk of it is made again at its first boot) *)
 let fs_magic = 0x32534654
 
 (* A file system, a disk mounted, which each function of it is given, as
@@ -65,7 +63,7 @@ let fs_magic = 0x32534654
  * its map are in memory; its size in blocks; how many blocks are free;
  * the blocks written since the last commit (fresh: they may be written
  * again in place); whether anything changed since; where to look for a
- * free block first. (old: one disk's, in references of this file) *)
+ * free block first. *)
 type fs = {
   disk : int;
   io : int -> int -> disk_io -> unit;
@@ -93,8 +91,7 @@ exception Disk_full
  * 2000), then 10 direct blocks, an indirect one and a double indirect
  * one; a block of pointers has 256. [fs_slot i] says where block i of
  * a file hangs: the inode's word, how many levels of pointers are under
- * that word, and the index under them. (old: no date, 11 direct
- * blocks) *)
+ * that word, and the index under them. *)
 let fs_slot i =
   if i < 10 then 4 + i, 0, i
   else if i < 266 then 14, 1, i - 10
@@ -342,8 +339,7 @@ let fs_contents fs r n =
 
 (* A directory is a file of entries of 68 bytes: a name (64 bytes, ended
  * by zeros when shorter) and an inode's number. There is no "." or
- * "..": the kernel resolves ".." by the path's text. (old: 32 bytes, a
- * name of 28) *)
+ * "..": the kernel resolves ".." by the path's text. *)
 let fs_bytes n =
   String.concat ""
     (List.map (fun k -> String.make 1 (Char.chr ((n lsr k) land 255)))

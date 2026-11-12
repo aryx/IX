@@ -3,7 +3,6 @@
 
 (* See TinyMachinePeer.mli *)
 
-(* an address said: "10.0.0.2" *)
 let net_dotted a =
   string_of_int (Char.code a.[0]) ^ "." ^ string_of_int (Char.code a.[1])
   ^ "." ^ string_of_int (Char.code a.[2]) ^ "."
@@ -13,9 +12,8 @@ let net_dotted a =
 (* A packet said (the host's: who watches the wire) *)
 (*****************************************************************************)
 
-(* a packet in a few words, for who watches the wire: "echo? 1, 4
- * bytes, from 10.0.0.2 to 10.0.0.1", "data id 1001 ack 5000, 9 bytes,
- * from ..." *)
+(* For example "echo? 1, 4 bytes, from 10.0.0.2 to 10.0.0.1", or
+ * "data id 1001 ack 5000, 9 bytes, from ...". *)
 let net_describe p =
   if String.length p < 20 || Char.code p.[0] <> 0x45
      || KNetwork.net_sum (String.sub p 0 20) <> 0 then
@@ -57,15 +55,13 @@ let net_describe p =
 (* The peer *)
 (*****************************************************************************)
 
-(* Both are in the machine's instructions, so they follow its speed:
- * 5 ms and 2.5 ms of its time. *)
 let latency () = !TinyMachineDevices.rate / 200
 
 let tick () = !TinyMachineDevices.rate / 400
 
-(* a connection to one of the peer's own ports: its line not read yet,
- * what answers it asked, or the messages left to send; after a line
- * "put name size", the file's name, its size, and its bytes so far *)
+(* A connection to one of the peer's own ports. After a line
+ * "put name size", [taking] holds the file's name, its size and its
+ * bytes so far. *)
 type serving = {
   conn : KNetwork.il;
   ask : string -> (string list -> unit) -> unit;
@@ -80,8 +76,7 @@ type relay = {
   shut : unit -> unit;
 }
 
-(* a connection that is a program's outside: the bytes that came from
- * it and are not yet messages, whether it has ended *)
+(* [coming] holds the bytes from the outside not yet sent as messages. *)
 type relaying = {
   rconn : KNetwork.il;
   relay : relay;
@@ -131,8 +126,6 @@ let rec messages text =
          (String.sub text KNetwork.il_max
             (n - KNetwork.il_max))
 
-(* a picture with its text: a first message "t w h" (how many messages
- * of text follow, then h rows of w pixels, a row a message) *)
 let picture text w h pixels =
   let texts = messages text in
   (string_of_int (List.length texts) ^ " " ^ string_of_int w
@@ -264,10 +257,9 @@ let gate p packet =
       | _ -> ())
   | _ -> ()
 
-(* a relay's turn: the machine's messages to the outside; the outside's
- * bytes, 4 KB ahead at most, cut in messages while the connection has
- * room; the outside's end said when all of it was sent; the
- * connection's end the outside's *)
+(* The outside's bytes are read 4 KB ahead at most, and cut in messages
+ * while the connection has room; its end is passed on once all of them
+ * are sent. *)
 let relay_turn p (r : relaying) =
   let rec hear () =
     match KNetwork.il_hear r.rconn with
@@ -286,11 +278,9 @@ let relay_turn p (r : relaying) =
   done;
   if r.ended && r.coming = "" then KNetwork.il_done r.rconn
 
-(* the connections just made taken: one for another address is its
- * relay's, one to port 53 asks an address of a name, one to port 70 a
- * document; a line that came answered; an answer's messages sent while
- * the connection has room, and after the last the end said; the
- * relays' turns *)
+(* A new connection to another address goes to its relay; one to port
+ * 53 asks a name's address, one to port 70 a document. An answer's
+ * messages are sent while the connection has room, then its end. *)
 let serve p =
   p.stack.ns_fresh |> List.iter (fun (conn : KNetwork.il) ->
     let key = conn.il_me, conn.il_lport, conn.il_rport in
@@ -356,7 +346,7 @@ let serve p =
       not (KNetwork.il_over s.conn || s.todo = Some []))
       p.serving
 
-(* what there is to do, and a clock only while there is a connection *)
+(* The peer's clock runs only while there is a connection. *)
 let poll p =
   serve p;
   if (not p.awake) && p.stack.ns_conns <> [] then

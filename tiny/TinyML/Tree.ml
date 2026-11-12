@@ -24,7 +24,7 @@ type pat = PAny | PVar of string | PConst of const | PCon of string * pat list
   | PAnnot of pat * texpr
   | PRecord of (string * pat) list * int list ref * int ref
 
-(* a let's: let rec, or not (OCaml's names; old: a bool) *)
+(* a let's: let rec, or not (OCaml's names) *)
 type rec_flag = Nonrecursive | Recursive
 
 type expr =
@@ -106,11 +106,7 @@ let () =
  * (int, bytes...) and a builtin constructor ((), [], ::, true, false)
  * are bare. M.x is M's, or an alias's unit's (module A = M). Caml
  * Light's names (a unit and a name, the opened units), and the values'
- * here (Types' tables). (old: one name space of bare names, the latest
- * declared or read winning, so that what a name meant depended on the
- * order the interfaces were read in: a constructor kept twice, C and
- * M.C, open M copying them, an abbreviation t and M.t, M.t stripped to
- * t in a type) *)
+ * here (Types' tables). *)
 
 (* the unit being compiled (a file: its name, the prefix of its
  * symbols and of its names) *)

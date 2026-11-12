@@ -39,7 +39,7 @@ let read f a n =
       let eot = not (raw_on ()) in
       if t = "" then (if !typed_end then Some 0 else None)
       (* ^D, but at a raw console: the read's end, nothing read, as
-       * Plan 9's (old: a byte, and only the input's end ended a read) *)
+       * Plan 9's *)
       else if eot && t.[0] = '\004' then
         (typed := String.sub t 1 (String.length t - 1); Some 0)
       else begin
@@ -260,10 +260,9 @@ let write f a n =
          KMachine.puts ("draw: " ^ why ^ "\n"); Some (-1))
   | Post b -> b.last <- KMachine.k_string a n; b.fresh <- true; Some n
   (* sounds, whole, when they fit in the ring, else a look again when
-   * the speaker played what is missing, 20 samples a tick (old: in 10
-   * ms, each look a copy of the write: play's blocks of 2,048 samples
-   * copied 25 times, half the machine's instructions); a bad one, or
-   * more than a ring, -1 *)
+   * the speaker played what is missing, 20 samples a tick (a look every
+   * 10 ms copied play's blocks 25 times, half the machine's
+   * instructions); a bad one, or more than a ring, -1 *)
   | Voice v ->
       let sounds =
         try Some (KAudio.sounds (KMachine.k_string a n))

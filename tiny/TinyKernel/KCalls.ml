@@ -88,11 +88,10 @@ and release q =
 (* A call that needs a slot or a partition: done now or, when there is none,
  * waited for while another process can run (and end, freeing one):
  * what a build of several recipes at once runs into (tiny-build -j 6:
- * six compilers of 32 MB). When none can, -1 (old: -1 at once, and
- * rc said "not found"). Tried again when a process has ended, as a
- * wait (old: at each round, a walk of the slots: with a build's forks
- * waiting, a round was longer than a tick, every process entered with
- * its time already up, and none ran an instruction) *)
+ * six compilers of 32 MB). When none can, -1. It is tried again when a
+ * process has ended, as a wait, not at each round: with a build's forks
+ * waiting, a walk of the slots made a round longer than a tick, and no
+ * process ran an instruction *)
 let with_room p f =
   try f () with KMemory.No_room ->
     block p (fun () ->
@@ -212,9 +211,8 @@ let load_prog p (node : KFiles.node option) argv =
    * array). It is the same at each run, but it shows the bytes of
    * another process to this one: to revisit for security, as Plan 9
    * and Linux give a page zeroed at its first touch (they have pages;
-   * tiny-machine a window). (old: k_zero of the whole partition, 32 MB
-   * for ml, 35 million instructions an exec: a fifth of a small unit's
-   * compile) *)
+   * tiny-machine a window). Zeroing the whole partition, 32 MB for ml,
+   * cost 35 million instructions an exec *)
   (match node with
    | Some (Data d) ->
        KMemory.mem_write p.mem from
@@ -222,8 +220,8 @@ let load_prog p (node : KFiles.node option) argv =
    | Some (Rom (at, _)) ->
        KMemory.mem_blit p.mem from (at + skip + from) (size - from)
    (* a disk's file read where it goes, a piece of the process's memory
-    * at a time (old: read whole into a string first, 60 million
-    * instructions for utils, 300 KB, at each exec) *)
+    * at a time: reading it whole into a string first cost 60 million
+    * instructions for utils, 300 KB, at each exec *)
    | Some (Disk (fs, r, i)) ->
        let pieces =
          match KMemory.mem_pieces p.mem from (size - from) with
@@ -585,9 +583,7 @@ let sys_seek p =
   | _ -> raise Bad
 
 (* stat(path, buf): the path's entry, as its directory has it (80 bytes,
- * user.h's dirent), at buf: 0, or -1 when it is not there (old: none, a
- * program read the whole directory for one name: ls -l of /bin, three
- * times a name, 1.7 billion instructions) *)
+ * user.h's dirent), at buf: 0, or -1 when it is not there *)
 let sys_stat p =
   let ns = KFiles.names p.cwd (ustr p (reg p 1)) in
   match KFiles.walk !KFiles.top ns with

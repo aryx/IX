@@ -33,8 +33,8 @@ external k_font_size : unit -> int = "k_font_size"
  * screen, its heap. The processes' memory is above, KMemory's:
  * a partition of the size a program asks for (1 MB if it does not say),
  * found when it starts. There are at most [nslots] processes; a slot is
- * a process's frame. (old: 8 slots and 128 MB, before the cores:
- * tiny-build -j 4 runs four rc and four compilers of 32 MB) *)
+ * a process's frame: tiny-build -j 4 alone runs four rc and four
+ * compilers of 32 MB *)
 let nslots = 16
 let frame slot = 0xb40000 + (slot * 68)
 (* The devices are at the top of memory. Their addresses are written as
@@ -75,8 +75,7 @@ let mailbox k = 0xb41000 + (64 * k)
 let k_ie sources = k_ie (if cores > 1 then sources lor 32 else sources)
 
 (* a trap's cause, the machine's number (TinyMachineDevices's 1 to 4)
- * read once, where k_run, k_step or a core's mailbox gives it (old:
- * c_sys... the numbers, compared at each use) *)
+ * read once, where k_run, k_step or a core's mailbox gives it *)
 type cause = Trap_sys | Trap_illegal | Trap_fault | Trap_intr
 let cause_of n =
   match n with

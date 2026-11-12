@@ -3,7 +3,7 @@
 
 (* See ../../TinyLibSystem.mli; this is the host's, over OCaml's Unix *)
 
-(* a path as Unix takes it (old: open Fpath_.Operators) *)
+(* a path as Unix takes it *)
 let ( !! ) = Fpath_.Operators.( !! )
 
 (* See ../../TinyLibSystem.mli for the types' names *)
@@ -258,8 +258,7 @@ let shell (caps : < Cap.fork; Cap.exec; Cap.env; Cap.stdout; Cap.stderr; .. >) v
   match CapUnix.fork caps () with
   | 0 ->
     (* rc, tiny-shell, found in the PATH by env, as tiny-kernel's
-     * /bin/rc: a script is rc's on both systems (old: /bin/sh -e -c,
-     * a Buildfile's recipe a command both shells read) *)
+     * /bin/rc: a script is rc's on both systems *)
     (try
        CapUnix.execve caps "/usr/bin/env"
          [| "env"; "tiny-shell"; "-e"; "-c"; script |] (Array.of_list env)

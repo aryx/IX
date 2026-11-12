@@ -93,8 +93,7 @@ let ip_read me p =
 (* "are you there?" and "yes": the question's kind is 8, the answer's
  * 0, and the answer returns the question's two numbers (whose
  * question, which one of them) and its bytes *)
-(* an ICMP message's kind: echo's question, its answer, another (old:
- * the numbers, 8 and 0) *)
+(* an ICMP message's kind: echo's question, its answer, another *)
 type icmp_kind = Echo_ask | Echo_answer | Icmp_other of int
 let icmp_code k =
   match k with Echo_ask -> 8 | Echo_answer -> 0 | Icmp_other n -> n
@@ -131,8 +130,7 @@ let net_get32 s i =
   if net_get16 s i >= 0x4000 then -1
   else (65536 * net_get16 s i) + net_get16 s (i + 2)
 
-(* a packet's seven kinds, Plan 9's numbers 0 to 6 on the wire (old:
- * the numbers, compared in if chains) *)
+(* a packet's seven kinds, Plan 9's numbers 0 to 6 on the wire *)
 type il_kind =
   | Il_sync | Il_data | Il_dataquery | Il_ack | Il_query | Il_state | Il_close
 (* (by their numbers; Array.of_list: tiny-ml reads no [| |]) *)
@@ -243,10 +241,7 @@ let il_new me peer lport rport start at now =
  * is what an acknowledgement says: a sender holds at most [il_window]
  * messages not acknowledged, so it is never more than that ahead of a
  * program that reads slowly, and nothing received has to be dropped
- * for want of room. (old: the last received, il.c's; a picture's rows
- * sent 20 at once were received faster than read, those over 20
- * dropped, and asked for again one at a time: 11 s for 240 rows, 5
- * now.) *)
+ * for want of room. *)
 let il_taken c = c.il_r.il_recvd - List.length c.il_r.il_heard
 
 (* a packet of a connection's: every one says it. But a state and a

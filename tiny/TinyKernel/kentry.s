@@ -30,11 +30,10 @@ spin:
 ; int k_step(int frame): k_run for one instruction (a debugger's step):
 ; the timer's interrupt comes after the process's first instruction.
 ; The machine looks at the timer before each instruction, when the
-; time has moved: from this csrr to eret are 34 instructions (old: 31,
-; before the split's three in k_enter), so the process's first is at
-; the time read plus 34 and runs, and the timer at plus 35 interrupts
-; before its second. (A trap of that first instruction comes first: a
-; call, a fault.)
+; time has moved: from this csrr to eret are 34 instructions, so the
+; process's first is at the time read plus 34 and runs, and the timer
+; at plus 35 interrupts before its second. (A trap of that first
+; instruction comes first: a call, a fault.)
 k_step:
 	csrr	r2, time
 	addi	r2, r2, 35

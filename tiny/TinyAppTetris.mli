@@ -1,7 +1,7 @@
-(* A tiny Tetris, a game for TinyKernel.ml built on
- * TinyLibPlayground.ml keeping the essentials of the game, using only
- * integers. The keys: the arrows left and right, up turns the piece,
- * down a row; the space drops it; m the music off and on; q quits.
+(* A tiny Tetris, a game for TinyKernel.ml built on TinyLibPlayground.ml.
+ * It keeps the essentials of the game and uses only integers. The keys:
+ * the left and right arrows move the piece, up turns it, down moves it
+ * down a row; space drops it; m turns the music off and on; q quits.
  *
  * The rules: the well is 10 by 20 cells. There are seven pieces of four
  * cells, each with its own colour; one piece is falling, and the next
@@ -14,14 +14,15 @@
  * file.
  *
  * twin:
- * m-ix's games/puzzle/Tetris.ml is its twin, on lib_playground: the
- * author's playground's port of elm-flatris, in Elm's way, where the
- * well is the list of its full cells, a piece four cells turned by
- * computing their places again, and the falling piece's height a float,
- * for the speed of its fall. What is ours is below: the rotations a
- * table of bits, the well an array, integers only (a level's speed is a
- * number of frames); a turn that does not fit is tried one cell to each
- * side, where the twin tries two. Plan 9 has its own, games/4s (not in
+ * m-ix's games/puzzle/Tetris.ml is its twin, built on lib_playground.
+ * It is the author's playground's port of elm-flatris, written in Elm's
+ * way: the well is the list of its full cells, a piece is four cells
+ * turned by computing their places again, and the falling piece's
+ * height is a float, for the speed of its fall. What differs here is
+ * explained below: the rotations are a table of bits, the well is an
+ * array, and we use integers only (a level's speed is a number of
+ * frames). A turn that does not fit is retried one cell to each side,
+ * where the twin tries two. Plan 9 has its own Tetris, games/4s (not in
  * principia; from memory).
  *
  * kept:
@@ -40,12 +41,13 @@
  * dropped:
  * The shadow showing where the piece would land, holding a piece aside,
  * wall kicks further than one cell to either side, dealing the seven
- * pieces as a bag, a pause, and high scores. Its sounds are m-ix's (a
- * piece landed, rows gone, four at once, a level, the game over;
- * [sound] says which from two models), and so is its music,
- * Korobeiniki, the melody on a square and an octave bass on a triangle,
- * a tenth faster each level ([music]: the tune a model wants, as [view]
- * is the picture it wants; none when the game is over).
+ * pieces as a bag, a pause, and high scores. The sounds are kept from
+ * m-ix: a piece landing, rows cleared, four rows at once, a new level,
+ * and the game over; [sound] picks them by comparing two models. The
+ * music is m-ix's too: Korobeiniki, with the melody on a square wave
+ * and an octave bass on a triangle, a tenth faster at each level.
+ * [music] gives the tune a model wants, as [view] gives the picture it
+ * wants, and gives none when the game is over.
  *
  * twist:
  * {b Each rotation of a piece is 16 bits}: a 4 by 4 square, one
@@ -98,36 +100,34 @@
  *  - https://en.wikipedia.org/wiki/Tetris
  *)
 
-(* a piece (which of the seven, turned how, where), the board (the
- * well's rows, the cells fallen as shapes, what comes next, the
- * score), and the game's model *)
+(* [kind] is which of the seven pieces, [turn] its rotation. *)
 type piece = { kind : int; turn : int; x : int; y : int }
 type board = { 
   well : int array;
-  ground : TinyLibPlayground.shape;
+  ground : TinyLibPlayground.shape; (* fallen cells, score, next piece *)
   next : int;
   seed : int;
   score : int;
-  rows : int 
+  rows : int (* the rows cleared *)
 }
+(* [wait] counts the frames before the piece goes down a row. *)
 type model = { board : board; piece : piece; wait : int; over : bool; quiet : bool }
 
 (* The game, for TinyLibPlayground's run *)
 val game : model TinyLibPlayground.game
 
-(* the sounds of a change, from a model to the next *)
+(* the sounds of a change, from one model to the next *)
 val sound : model -> model -> TinyLibPlayground.sound list
 
 (* Korobeiniki's two parts, the melody and the bass *)
 val theme : TinyLibPlayground.part list
 
-(* the tune a model wants playing: the theme at its level's pace, None
- * when the game is over or the music is off *)
+(* The theme at the pace of the level, or None when the game is over or
+ * the music is off. *)
 val music : model -> TinyLibPlayground.tune option
 
-(* a piece's four cells in the well: a column and a row each *)
+(* a piece's four cells in the well, as (column, row) *)
 val cells : piece -> (int * int) list
 
-(* [main caps argv]: the program, tetris: the game run until a q or the
- * keys' end *)
+(* The program tetris. It runs until a q or the end of the keys. *)
 val main : < Cap.open_out; Cap.random; Cap.clock; .. > -> string array -> Exit.t

@@ -1,29 +1,32 @@
-(* Tiny graphics: the essential of Plan 9's draw library (libdraw and
+(* Tiny graphics: the essence of Plan 9's draw library (libdraw and
  * libmemdraw; ix's twins are lib_graphics/ and mini-9pi's
- * lib_memdraw), for tiny-machine's screen: 1024 by 768 pixels, a byte
- * each, a colour of Plan 9's table. Not a program: TinyKernel.ml's part
- * that draws (plan_tiny_windows.md).
+ * lib_memdraw), for tiny-machine's screen of 1024 by 768 pixels. A
+ * pixel is one byte, an index in Plan 9's colour table. This is not a
+ * program but the part of the kernel that draws (plan_tiny_windows.md).
  *
- * It asks a few functions of bytes of its machine, KRaw's: peekb
- * and pokeb, and a row's loops (copied, filled, a colour where a mask
- * is set, a colour mixed by a mask's levels; a text's characters),
- * which are assembly on tiny-machine and an array's on the host.
+ * It needs a few functions on the machine's bytes, from KRaw: peekb
+ * and pokeb, plus loops over a row (copy, fill, set a colour where a
+ * mask is set, mix a colour by a mask's levels, draw a text's
+ * characters). They are written in assembly on tiny-machine and work
+ * on an array on the host.
  *
  * kept:
  * Of Plan 9's, this keeps:
  * - {b One operation}, [draw dst r src mask p]: the pixels of dst's
- *   rectangle r are src's from the point p on, where mask's are set
- *   (everywhere without one). A rectangle filled, a window copied to
- *   the screen, a text scrolled (an image drawn on itself), a
- *   character (the font is a mask, the ink the source) are all it.
- * - {b A colour is an image}, of one pixel, that repeats: so draw needs
+ *   rectangle r are copied from src, starting at point p, wherever
+ *   the mask's pixels are set (everywhere when there is no mask).
+ *   Filling a rectangle, copying a window to the screen, scrolling a
+ *   text (an image drawn on itself), and drawing a character (the font
+ *   is the mask, the ink the source) are all this one operation.
+ * - {b A colour is an image} of one pixel that repeats. So draw needs
  *   no colour argument, and a pattern costs nothing more.
- * - {b The kernel has the pixels, a program says what}: a program
- *   writes messages (a letter, then numbers of 16 bits) naming images
- *   by numbers of its own; [messages] decodes them for a connection.
- *   So a program draws without reaching the screen's memory, which
- *   TinyKernel.ml's partitions could not give it, and a window system
- *   forwards a program's messages after changing the numbers.
+ * - {b The kernel has the pixels; a program says what to draw}. A
+ *   program writes messages (a letter, then 16-bit numbers) that name
+ *   images by numbers of its own choosing, and [messages] decodes them
+ *   for the program's connection. So a program draws without reaching
+ *   the screen's memory, which the kernel's partitions could not give
+ *   it, and a window system can forward a program's messages after
+ *   renumbering the images.
  *
  * The one operation, drawn. The pixel of dst at (x, y), for each (x,
  * y) of r, becomes the pixel of src at (x, y) moved by p - r's corner,
@@ -37,83 +40,89 @@
  *     |     +-------+      |          |    +-------+     |
  *     +--------------------+          +------------------+
  *
- * r is first cut to what dst has, then to what src and the mask have
- * pixels for, so nothing is ever read or written outside an image;
- * an image that repeats has a pixel everywhere. What a program does
- * with it:
+ * r is first clipped to dst, then to where src and the mask have
+ * pixels, so nothing is ever read or written outside an image (an
+ * image that repeats has a pixel everywhere). Here is what a program
+ * does with it:
  *
- *     a rectangle filled     draw dst r colour, no mask, any p
- *                            (the colour: 1 by 1, repeating)
- *     a window shown         draw screen r window, no mask, p r's
+ *     fill a rectangle       draw dst r colour, no mask, any p
+ *                            (the colour is 1 by 1 and repeats)
+ *     show a window          draw screen r window, no mask, p is r's
  *                            corner in the window's coordinates
- *     a text scrolled up     draw w (all but the last line) w, no
- *                            mask, p 16 lower: drawn on itself
- *     a character            draw dst (its cell, 8 by 16) ink, the
- *                            font as the mask, p (8 * its code, 0):
+ *     scroll a text up       draw w (all but the last line) w, no
+ *                            mask, p 16 lower: w is drawn on itself
+ *     draw a character       draw dst (its 8 by 16 cell) ink, with
+ *                            the font as the mask, p = (8 * code, 0):
  *                            the font is one image, 1024 by 16
  *
- * and as bytes, a rectangle from (10, 20) to (30, 40) of image 0
- * filled with image 1 (TinyLibDraw's d_fill 0 1 10 20 30 40), 19 bytes:
+ * Here are the 19 bytes that fill the rectangle from (10, 20) to
+ * (30, 40) of image 0 with image 1 (TinyLibDraw's
+ * d_fill 0 1 10 20 30 40):
  *
  *     d   00 00   01 00   ff ff   0a 00 14 00 1e 00 28 00   00 00 00 00
  *         dst 0   src 1   no mask the rectangle             p
  *
- * The messages, each a letter then 16-bit numbers, the low byte first,
- * signed; an image 0 is the connection's own (its window, or the
- * screen):
+ * The messages are each a letter followed by signed 16-bit numbers,
+ * low byte first. Image 0 is the connection's own image (its window,
+ * or the screen):
  *
- *     a id x0 y0 x1 y1 repl colour    an image made, of that rectangle and colour
- *                                     (the one that had this number freed)
- *     f id                            freed
- *     d dst src mask x0 y0 x1 y1 px py      draw (mask -1: none)
- *     l dst src x0 y0 x1 y1           a line, both ends drawn
+ *     a id x0 y0 x1 y1 repl colour    make an image of that rectangle and
+ *                                     colour (freeing any image with that id)
+ *     f id                            free an image
+ *     d dst src mask x0 y0 x1 y1 px py      draw (mask -1 means none)
+ *     l dst src x0 y0 x1 y1           a line, both ends included
  *     s dst src x y n, n bytes        a text, its top left corner at (x, y)
  *     t dst src x y n style, n bytes  a text in a style: bold 1, italic 2,
  *                                     underlined 4, large 8 (16 by 32);
- *                                     or 16, fat pixels: a byte a colour,
- *                                     a square of 4 by 4
+ *                                     or 16 for fat pixels: each byte is a
+ *                                     colour, drawn as a 4 by 4 square
  *     p dst x y n, n bytes            a row of pixels, its left end at (x, y)
  *
  * They are a few of Plan 9's own draw messages (principia's
- * kernel/devices/screen/drawmesg.c has 27), f, d and s keeping their
- * letters; what is dropped of them is said below.
+ * kernel/devices/screen/drawmesg.c has 27); f, d and s keep their
+ * letters. What we dropped is listed below.
  *
  * dropped:
- * Pixels of other depths and channels (one byte, the table's
- * index), alpha and Porter and Duff's operators (a mask is set or not,
- * but for a colour through a font of levels, grey.font: mixed by a
- * table made for the colour),
- * a clipping rectangle apart from an image's own, a mask's own point
- * (it is the source's, as libdraw's draw), ellipses, arcs, polygons and
- * thick lines, fonts (one, the machine's 8 by 16, its bold and its
- * large 16 by 32, and italic made of them, slanted; or font1.bin alone,
- * the bold and the large made of it too) and their cache,
- * layers and windows (TinyWindows.ml composes whole images), the
- * screen's refresh.
+ * - Pixels of other depths and channels: a pixel is one byte, an index
+ *   in the colour table.
+ * - Alpha and Porter and Duff's operators. A mask is either set or
+ *   not, except for a colour drawn through a font with grey levels
+ *   (grey.font), which is mixed by a table made for that colour.
+ * - A clipping rectangle other than the image's own, and a separate
+ *   point for the mask (the mask uses the source's, as in libdraw's
+ *   draw).
+ * - Ellipses, arcs, polygons and thick lines.
+ * - Fonts and their cache. There is one font, the machine's 8 by 16,
+ *   with its bold and its large 16 by 32 faces, and italic made by
+ *   slanting them; or font1.bin alone, with bold and large made from
+ *   it too.
+ * - Layers and windows (TinyWindows.ml composes whole images), and
+ *   the screen's refresh.
  *
  * context:
- * Under it KRaw (bytes, and three loops over a
- * row); around it TinyKernel, which gives each program a connection
- * and calls [messages] with what the program writes on its
- * descriptor 3; on the other side of those bytes TinyLibDraw, which
- * makes them, and TinyWindows, which renumbers them. In m-ix the
- * same three are lib_graphics's Draw (the program's side), the
- * kernel's draw device, and lib_memdraw (the pixels), with channels,
- * depths and alpha.
+ * Below this module is KRaw (bytes, and three loops over a row).
+ * Around it is TinyKernel, which gives each program a connection and
+ * calls [messages] with what the program writes on its descriptor 3.
+ * On the other side of those bytes are TinyLibDraw, which makes them,
+ * and TinyWindows, which renumbers them. In m-ix the same three parts
+ * are lib_graphics's Draw (the program's side), the kernel's draw
+ * device, and lib_memdraw (the pixels), with channels, depths and
+ * alpha.
  *
  * exercises:
- * - a row copied a word at a time where it can (kdraw.s's row_copy);
+ * - copy a row a word at a time where possible (kdraw.s's row_copy);
  * - ellipses and filled polygons, for the playground's shapes;
- * - a mask of any level, 0 to 255, and a source of more than a colour
- *   mixed through it (here four levels, a colour's, the font's);
- * - a clipping rectangle per image, set by a message (a window's part
- *   that shows).
+ * - masks with any level from 0 to 255, and sources other than a
+ *   single colour mixed through them (here there are four levels, and
+ *   only for a colour through the font);
+ * - a clipping rectangle per image, set by a message (the visible part
+ *   of a window).
  *
  * cs-history:
  * One operation that copies a rectangle of bits, combined with what
  * is there, is BitBlt (Dan Ingalls, Xerox PARC, mid-1970s, for the
- * Alto and Smalltalk): with it windows, text, scrolling and menus
- * that pop up were one loop to make fast, and the bitmap display
+ * Alto and Smalltalk). With it, windows, text, scrolling and pop-up
+ * menus all depended on one loop to make fast, and the bitmap display
  * became usable. It had sixteen ways to combine source and
  * destination, and a fill pattern beside the source. Rob Pike's
  * Blit (1982) carried it to Unix; Plan 9's draw (its third edition,
@@ -141,51 +150,45 @@
  *  - R. Pike, "Graphics in Overlapping Bitmap Layers" (ACM TOG 1983):
  *    the Blit's bitblt
  *  - R. Pike et al., "Plan 9 from Bell Labs" (1995) and draw(2),
- *    draw(3): the one operation, an image a file's number
+ *    draw(3): the one operation, and images named by numbers
  *  - T. Porter and T. Duff, "Compositing Digital Images" (SIGGRAPH
  *    1984): what a mask of levels would bring
  *  - J. Bresenham, "Algorithm for computer control of a digital
  *    plotter" (IBM Systems Journal 1965): the line
  *)
 
-(* what a bad message or a drawing that cannot be is answered with *)
+(* Raised for a bad message or a drawing that cannot be done. *)
 exception Graphics of string
 
-(* a rectangle, its second corner outside it; an image: its rectangle,
- * where its bytes are in memory, whether it repeats *)
+(* A rectangle's second corner (x1, y1) is just outside it. An image's
+ * [at] is the address of its bytes in memory. *)
 type rect = { x0 : int; y0 : int; x1 : int; y1 : int }
 type image = { r : rect; at : int; repl : bool }
 val rect : int -> int -> int -> int -> rect
 
 (* The one operation, [draw dst r src mask px py]: dst's rectangle r
- * takes src's pixels from the point (px, py) on, where the mask's are
- * set (everywhere without one) *)
+ * takes src's pixels from point (px, py), where the mask is set (or all). *)
 val draw : image -> rect -> image -> image option -> int -> int -> unit
 
-(* the memory the images a program makes are in, outside the collected
- * heap: [arena at size] is all of it, [free at size] a block more,
- * [alloc size] a block taken, its address; [blocks] what is free (a
- * test's) *)
+(* The memory for the images programs make, outside the collected heap.
+ * [arena at size] sets the whole area; [blocks] is the free list. *)
 val arena : int -> int -> unit
 val free : int -> int -> unit
 val alloc : int -> int
 val blocks : (int * int) list ref
 
-(* [font_mask bits size at]: the font of size bytes at bits (font1.bin,
- * tiny.font or grey.font, whose pixels have levels: fonts/README.md),
- * its first face made a mask at at (16 KB); its other faces, when it
- * has them, kept for the styled texts *)
+(* [font_mask bits size at] makes a font's first face into a 16 KB mask
+ * at address at; its other faces stay for styled texts. The font is
+ * font1.bin, tiny.font or grey.font (grey levels; fonts/README.md). *)
 val font_mask : int -> int -> int -> image
 
-(* a program's connection: its images by its own numbers, 0 the one it
- * was given to draw on; [connect screen font]. [messages] does a
- * string of them (Graphics after them when one was bad, the bad ones
- * skipped; at once when one is cut short or unknown); [disconnect]
- * frees what the program left *)
+(* A program's images, by its own numbers; 0 is the one it draws on.
+ * [messages c s] skips a bad message and raises Graphics after the
+ * rest; a message cut short or unknown raises it at once. *)
 type conn
 val connect : image -> image -> conn
 val disconnect : conn -> unit
 val messages : conn -> string -> unit
-(* what the 'c' message (the mouse's look) does: set by the kernel,
- * which writes it to the machine's mouse word; nothing on the host *)
+(* The 'c' message (the cursor's look): the kernel sets it to write the
+ * machine's mouse word; on the host it does nothing. *)
 val cursor_hook : (int -> unit) ref

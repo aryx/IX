@@ -15,11 +15,10 @@
  *
  * - up, the heights every letter shares made whole rows: the
  *   baseline, the lower case's top (the x's) and the capitals' (the
- *   H's), the heights between stretched to fit (old: one shift down
- *   of the whole face, as across: the e's top, a third of a row and
- *   half of the next, was lost, the author's "the top of e is
- *   missing"); a round letter's overshoot past the three (the o's
- *   top, a fifth of a pixel) on them, not in the row beyond;
+ *   H's), the heights between stretched to fit (one shift down of the
+ *   whole face, as across, lost the e's top); a round letter's
+ *   overshoot past the three (the o's top, a fifth of a pixel) on
+ *   them, not in the row beyond;
  * - across, one shift of the whole face, an eighth of a pixel at a
  *   time, the one whose pixels are most nearly all in or all out (the
  *   least sum of c (1 - c), c a pixel's part covered): in a monospaced
@@ -140,9 +139,8 @@ let coverage (face : face) (c : int) (dx : float) (dy : float) : float array * f
   (cov, !spill)
 
 (* how far a coverage's pixels are from all in or all out, and what it
- * lost outside the cell, counted as all wrong (old: not counted: the
- * m moved left, its right stem half out of the cell, was the least
- * fuzz, and an rn) *)
+ * lost outside the cell, counted as all wrong: else the m moved left,
+ * its right stem half out of the cell, is the least fuzz *)
 let fuzz ((cov, spill) : float array * float) : float =
   Array.fold_left (fun sum v -> sum +. (v *. (1. -. min 1. v))) spill cov
 
@@ -215,12 +213,11 @@ let pixels (face : face) (cov : float array) : bool array =
   set
 
 (* the level of a pixel of grey.font, 0 (none) to 3 (the ink): 3 where
- * tiny.font's pixel is set, else the part covered, rounded to thirds
- * (old: tiny.font's alone, a pixel set or not): the same letters, with
+ * tiny.font's pixel is set, else the part covered, rounded to thirds:
+ * the same letters, with
  * grey around them where the outline passes. The part is raised to
  * 0.6 first, the edges darker, as a gamma: at 1024 by 768, shown twice
- * as large, a stroke of one pixel and a light third looked thin (old:
- * the part itself, v *. 3.) *)
+ * as large, a stroke of one pixel and a light third looked thin *)
 let darken = 0.6
 let level (set : bool) (v : float) : int =
   if set then 3
@@ -315,7 +312,7 @@ let plan9 (s : string) : string =
  * pixel wider but for a gap of one; large each pixel 2 by 2. Made here,
  * not by the kernel when first asked for: its time, in the middle of a
  * session, made the recorded office session's click at (300, 300)
- * missed (old: plan9.font of 2,048 bytes, the faces the kernel's) *)
+ * missed *)
 let four (face : string) : string =
   let bold =
     String.map (fun c ->

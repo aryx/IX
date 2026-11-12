@@ -1,24 +1,28 @@
-(* TinyKernel's scheduler: round robin, preemptive, on one core or
- * several. Core 0 is the kernel's: it runs a process until its trap
- * (a call, a fault, the timer's interrupt), handles the trap, and runs
- * the same process again unless its time is up or it cannot go on, then
- * the next one; the other cores run processes only, their traps posted
- * to core 0 (plan_tiny_multicore.md). With none to run, it waits for
- * an interrupt: a key, the mouse, the network, the timer.
+(* TinyKernel's scheduler: round robin and preemptive, on one core or
+ * several. Core 0 belongs to the kernel. It runs a process until the
+ * process traps (a system call, a fault, or the timer's interrupt),
+ * handles the trap, and then runs the same process again, unless its
+ * time slice is used up or it cannot go on; in that case it moves to
+ * the next process. The other cores only run processes, and they post
+ * their traps to core 0 (plan_tiny_multicore.md). When no process can
+ * run, the kernel waits for an interrupt: a key, the mouse, the
+ * network or the timer.
  *
- *     schedule ──► the next that can run (Ready, or Waiting and its
- *        ▲          call now finished) ──k_run──► its trap
- *        └────────── the trap handled: a call, a fault, a tick ◄──┘
+ *     schedule ──► next runnable process (Ready, or Waiting with its
+ *        ▲          call now able to finish) ──k_run──► its trap
+ *        └────────── trap handled: a call, a fault, a tick ◄──┘
  *
- * The interrupts are handled between two runs: the console's bytes
- * (^C kills the foreground), the mouse's word, the network's packets
- * given to KNetwork, the timer's ticks counted.
+ * Interrupts are handled between two runs. The console's bytes are
+ * read (^C kills the foreground process), the mouse's word is read,
+ * the network's packets are given to KNetwork, and the timer's ticks
+ * are counted.
  *
  * others:
- * xv6's scheduler is the same loop over a process table, each process
- * a kernel stack it switches to; here a process waiting in a call is a
- * closure (KProcs.mli), so there is one stack, the kernel's.
+ * xv6's scheduler is the same loop over a process table, but each
+ * process has its own kernel stack that the scheduler switches to.
+ * Here a process waiting in a call is a closure (see KProcs.mli), so
+ * there is only one stack, the kernel's.
  *)
 
-(* the loop, which never returns *)
+(* The loop. It never returns. *)
 val schedule : unit -> 'a

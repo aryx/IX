@@ -48,10 +48,10 @@
  *   a.o b.o c.o, and two lists of the same length are joined pair by
  *   pair. rc does this with a "free caret" that its lexer inserts.
  *   Here a word is simply its pieces with nothing between them, and ^
- *   is only a way to write two pieces with nothing between them; a
- *   `{cmd} is joined only by an explicit ^ (lib/^`{basename $f}),
- *   which says the join where a reader could take a word and a command
- *   for two words.
+ *   is only a way to write two pieces with nothing between them. A
+ *   `{cmd} is joined only by an explicit ^ (lib/^`{basename $f}): it
+ *   makes the join visible where a reader could otherwise take the
+ *   word and the command for two words.
  * - {b Only literal text is globbed}: a * coming from a variable or a
  *   quote stays a *. The trick is that such characters are escaped (a
  *   \000 is put before them) while the word is built, so the matcher
@@ -87,17 +87,18 @@
  * rcmain, signals other than an interrupt at the prompt, and $prompt.
  *
  * context:
- * The shell relies on five kernel calls, fork, exec, wait, pipe and dup
- * (TinyLibSystem's: on the host over Unix, the loops around them in
- * lib_core's Procs, shared with mini-mk; on tiny-kernel its calls).
+ * The shell relies on five kernel calls, fork, exec, wait, pipe and dup,
+ * all through TinyLibSystem. On the host they go to Unix, and the loops
+ * around them are in lib_core's Procs, shared with mini-mk; on
+ * tiny-kernel they are the kernel's own calls.
  * TinyKernel has the same five calls and a shell in C built on them
  * (its user/sh.c), and mini-9pi's calls are what mini-rc's Process
  * uses. Above this shell is mini-mk, which hands it each recipe. The
  * history of shells, from Pouzin's RUNCOM to rc, is told once, in
  * mini-rc's CLI.mli.
  *
- * On two systems, it is tiny-kernel's rc and the host's tiny-shell. It
- * uses only the pure functions of the standard library and, for
+ * The same file is tiny-kernel's rc and the host's tiny-shell. It uses
+ * only the pure functions of the standard library and, for
  * everything related to the system, TinyLibSystem, which has one
  * implementation file per side.
  *
@@ -111,11 +112,12 @@
  * the old file, not half a new one that looks whole. The price: the
  * output appears only at the end (no tail -f on a log), a hard link to
  * the file keeps the old one, and devices, >> and >[2] must be left as
- * they are. Two more, as Tcl and es went: a block as a value, its text,
- * with if, while, for and fn builtins over blocks, so a function is a
- * variable (fn#f) and eval, whatis, switch and functions in the
- * environment come almost free; and $status as a list, a|b|c's
- * (1 '' 3), not rc's string 1|3.
+ * they are. Two more, in the direction Tcl and es took. First, a block
+ * as a value (its text), with if, while, for and fn as builtins over
+ * blocks; then a function is just a variable (fn#f), and eval, whatis,
+ * switch and functions in the environment come almost for free.
+ * Second, $status as a list: a|b|c would give (1 '' 3) rather than
+ * rc's string 1|3.
  *
  * others:
  * xv6's sh.c is the other shell written to be read: about 500 lines of
@@ -150,17 +152,17 @@
  *    knows only through mini-rc
  *)
 
-(* what running a command asks for; the program asks more: a terminal
- * (stdin, an interrupt's signal) and the environment *)
+(* What running a command needs. The program also needs a terminal
+ * (stdin, the signal of an interrupt) and the environment. *)
 type caps =
   < Cap.forkew; Cap.chdir; Cap.open_in; Cap.open_out; Cap.pipe;
     Cap.readdir; Cap.stdout; Cap.stderr; Cap.exit >
 
-(* the commands of a text, each run once it is read: the lexer, the
- * parser and [run] at work, without the command line around them *)
+(* Runs each command of a text as soon as it is read, without the
+ * command line around. *)
 val source : < caps; .. > -> string -> unit
 
-(* the program: its arguments (its name first; -h: the language by
- * example; -debug: each command's tree said) to how it ends *)
+(* The program. -h prints the language by example, -debug the tree of
+ * each command. *)
 val main :
   < caps; Cap.stdin; Cap.signal; Cap.env; .. > -> string array -> Exit.t

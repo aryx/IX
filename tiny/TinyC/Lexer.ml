@@ -58,8 +58,7 @@ and text (env : env) (where : string) (dir : Fpath.t) (s : string) =
           List.rev_append
             (List.map (fun (t, _) -> t, l) (Hashtbl.find env.lx_macros x)) !out
     | t -> out := (t, l) :: !out in
-  (* (old: '0' .. '9' and the others as patterns: tiny-ml has no
-   * character ranges) *)
+  (* comparisons, not patterns: tiny-ml has no character ranges *)
   let digit c = c >= '0' && c <= '9' in
   let letter c = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c = '_' in
   let escape i =

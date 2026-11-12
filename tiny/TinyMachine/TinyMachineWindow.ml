@@ -3,10 +3,6 @@
 
 (* See TinyMachineWindow.mli *)
 
-(* what tiny-machine writes: a screen as a PPM, or a line "C n", the
- * mouse's look (0 the arrow, 1 a hand), which a program of the machine
- * chose by writing the mouse's word, or a line "A n" and n bytes, the
- * speaker's samples *)
 type input = Screen of int * int * string | Cursor of int | Samples of string
 
 let read_ppm ic =

@@ -615,10 +615,7 @@ let view (e : editor) : string list =
  * before it the same too, is not read again. A line changed is a new
  * string (a key makes one), and from it on the lines are read again.
  * The lines on the screen are kept too, with their faces (faced): a
- * line down scrolls the screen, and 21 of 22 lines are the same.
- * (old: all the lines above read at each key; goto-line 382 in
- * TinyEditorScreen.ml took more than 150 million instructions, 20
- * seconds of tiny-machine) *)
+ * line down scrolls the screen, and 21 of 22 lines are the same. *)
 let faces (e : editor) : string list =
   if e.x.language = Plain then []
   else begin

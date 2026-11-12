@@ -1,11 +1,10 @@
-(* HTML, as TinyBrowser reads it: a page being read, the reading as a
- * whole (named after the language, as a browser's HTML parser is: what
- * each tag means is here). The tokens of Tokens given, one
- * after the other, to a stack of open elements, and each word of a text
- * sent to Lines' flow (or to a table's cell, or to a large
- * heading). What the browser
- * keeps of a page is its lines, its title, its anchors and its
- * pictures; there is no tree.
+(* HTML, as TinyBrowser reads it: a page being read, and the reading as
+ * a whole. The module is named after the language, as a browser's HTML
+ * parser usually is, because what each tag means is decided here. The
+ * tokens from Tokens are given, one after the other, to a stack of open
+ * elements. Each word of a text is sent to Lines' flow (or to a table's
+ * cell, or to a large heading). What the browser keeps of a page is its
+ * lines, its title, its anchors and its pictures; there is no tree.
  *
  * The meaning of each tag is a row in a table (kinds) that says
  * whether it starts a block, wants a blank line around it, hides its
@@ -29,35 +28,30 @@
  * time and compare its lines.
  *)
 
-(* A page being read and turned into lines of [width] columns. *)
+(* [create width] reads a page into lines of width columns *)
 type page
 val create : int -> page
 
-(* [feed page bytes] gives the next message of the page; [finish page]
- * says that the page has ended. *)
+(* [feed] takes the page one message at a time *)
 val feed : page -> string -> unit
 val finish : page -> unit
 
-(* The page's <title>; the address in its <base>; where its <meta>
- * refresh sends us at once ("" when it does not). *)
+(* [refresh] is where a <meta> refresh sends us at once, "" if none *)
 val title : page -> string
 val base : page -> string
 val refresh : page -> string
 
-(* how many lines there are so far; the lines from the a-th to before
- * the b-th, from the top (what the screen shows) *)
+(* lines so far; [lines_between page a b] is lines a to b-1, the screen *)
 val count : page -> int
 val lines_between : page -> int -> int -> Lines.line list
 
-(* the line where the element with that id starts, if it came *)
+(* the line where the element with that id starts, if it has arrived *)
 val anchor : page -> string -> int option
 
-(* how far a picture has come: not asked for yet, asked, none to be
- * had, or the rows received so far (its image made, at the answer's
- * first line) *)
+(* Pic_rows counts the rows received; the image is made at the answer's
+ * first line. *)
 type got = Pic_unasked | Pic_asked | Pic_failed | Pic_rows of int
 
-(* The page's pictures: how many, and one by its number *)
 type picture = {
   pc_src : string; pc_w : int; pc_h : int; pc_alt : string;
   mutable pc_got : got

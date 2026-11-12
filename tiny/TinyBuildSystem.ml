@@ -117,8 +117,7 @@ let subst_word (from : string) (to_ : string) (w : string) : string =
 (* $X and ${X}, by the value of X, and ${X:from=to}, X's words each
  * changed by the pattern (subst_word), in a variable's line or a rule's;
  * an unknown X is an error, or, when printing a recipe (keep), left for
- * the shell, as a substitution is (old: ~keep and the other labels:
- * tiny-ml reads none) *)
+ * the shell, as a substitution is *)
 let expand keep (vars : vars) (s : string) : string =
   let is_name c =
     c = '_' || ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
@@ -375,11 +374,8 @@ let read_file caps file =
  * before the second it was read in: one written again within that
  * second, at the same size, would have the same date and another
  * digest (git's "racy" files). The file is digested as it is read, 4
- * KB at a time (old: read whole: boot.img, 8 MB, put tiny-kernel's
- * tiny-build, in 16, out of memory).
- * (old: every file read at each run, twice, its digest computed again:
- * minutes of tiny-kernel's for its own build; older: Digest's MD5,
- * where SHA-1 was in t-ix already, tiny-vcs's)
+ * KB at a time: read whole, boot.img (8 MB) would put tiny-kernel's
+ * tiny-build, in 16, out of memory.
  *
  * The tables are keyed by a node's name, a string and not an Fpath.t,
  * and digest_file takes one too: a name need *not* be a file (all, whose
@@ -421,8 +417,7 @@ let digest_file (caps : < Cap.open_in; Cap.readdir; .. >) (file : string) :
       d
 
 (* a recipe run by rc -e, the host's tiny-shell or tiny-kernel's /bin/rc
- * (TSys.shell); its pid, None when no process could run it (old:
- * CapUnix.fork and execve of /bin/sh -e -c here) *)
+ * (TSys.shell); its pid, None when no process could run it *)
 let start (caps : < Cap.fork; Cap.exec; Cap.env; Cap.open_out; .. >)
     (vars : (string * string list) list) (recipe : string)
     : TSys.pid option =
@@ -452,8 +447,7 @@ let load (caps : < Cap.open_in; .. >) : stamps =
 
 (* the stamps and the digests known, written to .tiny-build: after each
  * recipe that ends well, so that a build stopped (killed, the machine
- * halted) keeps what it made (old: at the end only: tiny-kernel's
- * build of itself, stopped after 5 hours, began again from nothing) *)
+ * halted) keeps what it made *)
 let save (caps : < Cap.open_out; .. >) (stamps : stamps) =
   TSys.write_file caps (Fpath.v stampfile)
     (magic ^ Marshal.to_string (stamps, known) [ Marshal.No_sharing ])
@@ -496,8 +490,7 @@ let build
       (match digest_file caps n.name with Some d -> d | None -> stamp n) in
   (* a node decided: done, or its recipe started; false when its
    * recipe could not be, the system's processes all taken, while others
-   * run: it is started again when one has ended (old: its pid -1 kept
-   * as running, waited for ever: -j 3 hung on tiny-kernel) *)
+   * run: it is started again when one has ended *)
   let said = Hashtbl.create 7 in
   let decide n =
     match n.make with

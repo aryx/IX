@@ -24,8 +24,7 @@ let r13 = 13
  * frame's size, known at the end; the stack machine's depth (its top
  * register); the most registers saved across a call, and the most bytes
  * of a call's arguments; dead after a jump, until a label; the depth at
- * each label jumped to. (old: refs local to machine; the lines strings,
- * Printf's) *)
+ * each label jumped to. *)
 type state = {
   mname : Types.sym;
   mlocals : int;

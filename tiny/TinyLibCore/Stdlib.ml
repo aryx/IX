@@ -75,8 +75,7 @@ let abs n = if n < 0 then - n else n
 let min a b = if a <= b then a else b
 let max a b = if a >= b then a else b
 let ( |> ) x f = f x
-(* an integer's range on tiny-machine: 31 bits (old: lines the compiler
- * added to this file's text) *)
+(* an integer's range on tiny-machine: 31 bits *)
 let max_int = 1073741823
 let min_int = - max_int - 1
 (* l1's elements, then l2's: a frame an element for l1's first 1,000,

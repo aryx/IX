@@ -12,12 +12,11 @@ type rel = Eq | Ne | Lt | Le | Gt | Ge
 type op =
   | Add | Sub | Mul | Div | Mod | And | Or | Xor | Lsl | Lsr | Asr | Cmp of rel
   | Neg | Lnot | Not | IsInt | Tag
-(* an assembly's label: a function's code, a static block, a string
- * (old: a string, which said nothing of it) *)
+(* an assembly's label: a function's code, a static block, a string *)
 type sym = string
 
-(* a function's n-ary code, or a closure's field (Indirect, old: Code,
- * which tiny-ml took for Exit.Code: one name space for the
+(* a function's n-ary code, or a closure's field (Indirect, not Code,
+ * which tiny-ml would take for Exit.Code: one name space for the
  * constructors) *)
 type target = Direct of sym | Indirect of int
 
@@ -66,8 +65,7 @@ let labels = ref 0
 let label () : label = incr labels; !labels
 (* A unit's assembly, or the whole program's, as it is made: its
  * functions' code, its static blocks' data, their lines, the last
- * first (old: their lines printed into two buffers, text for
- * tiny-as; now an object, or the text by -S) *)
+ * first *)
 type asm = { mutable text : M.line list; mutable data : M.line list }
 
 (* the assembly being made: what the code (machine's, add_text) and the
@@ -120,16 +118,14 @@ let vsp = 12 and r13 = 13 and r11 = 11
 let lr = M.lr and sp = M.sp
 
 (* a line as it is made: known, or made of the frame's sizes (f, m, c),
- * known at the end (old: the text, in a buffer, between two lines of
- * the frame, each a function) *)
+ * known at the end *)
 type made = Known of M.line | Framed of (int -> int -> int -> M.line)
 
 (* A function's code as it is made. Its lines, the last first; the
  * stack machine's depth (its top register) and the deepest; the
  * handlers and the words of C's arguments, the most of a call; dead
  * after a jump, until a label; the depth at each label jumped to, and
- * at each handler. (old: refs local to machine, its 320 lines a
- * closure each; the lines strings, Printf's) *)
+ * at each handler. *)
 type state = {
   mname : sym;
   mslots : int;
@@ -371,8 +367,6 @@ let instruction (st : state) (i : ir) =
       reload st;
       result st
   | _ when st.mdead -> ()
-  (* old: Int64.to_int32 v alone: 4611686018427387903 became -1, and
-   * the program printed something else than OCaml *)
   | Imm v ->
       if low32 v <> v then
         Lexer.error
@@ -511,8 +505,6 @@ let static_string s =
       block sym (header n string_tag)
         (List.init n (fun i ->
            let byte k = Char.code (Bytes.get b ((4 * i) + k)) in
-           (* (old: an int64's low 32 bits; older: Int32.to_string of
-            * Bytes.get_int32_le) *)
            DNum
              (Int32.logor (Int32.shift_left (Int32.of_int (byte 3)) 24)
                 (Int32.of_int (byte 0 lor (byte 1 lsl 8) lor (byte 2 lsl 16))))));
@@ -537,12 +529,11 @@ let static_closure lab n =
 (* an exception: a block with its name, compared by address; its value
  * a block [the exception; its arguments], a static one without them.
  * Its symbol names its unit, so that two units' Error are two, Stdlib's
- * alone bare (ml_exn_Failure; as mini-ml's caml_exn_). (old: the name
- * alone, two units' Error one symbol, a duplicate when both linked) *)
+ * alone bare (ml_exn_Failure; as mini-ml's caml_exn_). *)
 let exn_sym pre u c =
   pre ^ (if u = "Stdlib" then "" else u ^ "_") ^ Tree.con_base c
 let exn_id u c = exn_sym "ml_exn_" u c
 let exn_const u c = exn_sym "ml_exv_" u c
 
-(* (old: 2L, 1L, literals tiny-ml does not read) *)
+(* (Int64.of_int: tiny-ml does not read literals such as 2L) *)
 let tagged n = Int64.add (Int64.mul (Int64.of_int 2) (Int64.of_int n)) Int64.one

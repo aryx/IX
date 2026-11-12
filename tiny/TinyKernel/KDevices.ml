@@ -37,8 +37,7 @@ let font =
 let mouse : KFiles.box = { last = ""; fresh = false; posters = 1 }
 let ticks = ref 0
 
-(* the date: the boot's, and the seconds since, 400 ticks each (old:
- * none, the time of the day 0 for every program) *)
+(* the date: the boot's, and the seconds since, 400 ticks each *)
 let date () = KMachine.peek KMachine.date_dev + (!ticks / 400)
 
 (* the earliest time a waiting process asked to be told of (0: none) *)

@@ -163,8 +163,6 @@ let rec lower (emit : ir -> unit) (k : targets) (s : Tree.stmt) =
   | Tree.Return None -> emit (Ret false)
   | Tree.Return (Some e) -> value e; emit (Ret true)
 
-(* a function's body, its code (old: a global, the current function's
- * code, which lower_function reset) *)
 let lower_function (body : Tree.stmt) : ir list =
   let code = ref [] in
   let emit i = code := i :: !code in

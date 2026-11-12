@@ -162,20 +162,19 @@
  *    Encryption Function" (CRYPTO, 1987): the tree of hashes
  *  - B. Cohen, patience diff (2005)
  *  - git9 (Ori Bernstein, 2019), which mini-git follows: principia's
- *    version_control/git9/, its programs in C and its commands rc
- *    scripts (commit.rc, merge.rc...); its diff and merge3 are
- *    version_control/diff/'s, Hunt and McIlroy's diff (Stone's
- *    algorithm, diffreg.c) where this file has Myers'
+ *    version_control/git9/, with programs in C and commands written as
+ *    rc scripts (commit.rc, merge.rc...). Its diff and merge3 come from
+ *    version_control/diff/, Hunt and McIlroy's diff (Stone's algorithm,
+ *    diffreg.c), where this file uses Myers'
  *)
 
-(* the capabilities a command needs: a repository is opened with them
- * and keeps them, for its files; output is printed with them *)
+(* A repository keeps these to access its files. *)
 type caps =
   < Cap.open_in; Cap.open_out; Cap.stdout; Cap.env; Cap.readdir; Cap.clock >
 
-(* a command and its arguments, done in the repository found from the
- * current directory: init, commit, log, diff, switch, merge, undo... *)
+(* Runs a command (init, commit, log, diff...) in the repository found
+ * from the current directory. *)
 val run : caps -> string list -> unit
 
-(* the program: its arguments (its name first; -h: how) to how it ends *)
+(* The program. -h prints the help. *)
 val main : < caps; .. > -> string array -> Exit.t

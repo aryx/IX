@@ -48,8 +48,8 @@ let within (r : rect) (s : image) dx dy =
 (* dst's rectangle r: src's pixels from (px, py) on, where the mask's
  * (from the same point) are not 0; with a colour's table of mixes
  * (mix, below; 0: none), a colour mixed by the mask's level, a grey
- * font's edges (old: none, a mask set or not; a source of more than a
- * colour still is). Clipped to the three images. A row
+ * font's edges (a source of more than a colour takes the mask as set or
+ * not). Clipped to the three images. A row
  * is one of KRaw's three loops where it can be: a copy, a colour
  * (a source of one pixel that repeats, read once), a colour through a
  * mask (a character); a pixel at a time otherwise. A row's address is
@@ -184,12 +184,10 @@ let rgb i =
  * the colour of the table nearest to the mix. Made by KRaw's
  * mix_table when the colour is first drawn with, from [palette] (each
  * colour's red, green and blue, 768 bytes, made at the first), and kept
- * for good: an address in [mixes] (0: not made). (old: made here, by
- * the 16 colours a mix can be near: tiny-ml's array reads, some 35
- * instructions each, were 3.5 million instructions a colour, half a
- * second of the machine's; tiny-windows' first menu, its colours made,
- * drawn so late that the click on it was taken for its last item,
- * exit) *)
+ * for good: an address in [mixes] (0: not made). It is made in KRaw,
+ * not here: tiny-ml's array reads made it 3.5 million instructions a
+ * colour, half a second, and tiny-windows' first menu was drawn so late
+ * that the click on it was taken for its last item, exit *)
 let mixes = Array.make 256 0
 let palette = ref 0
 
@@ -391,8 +389,8 @@ let styled (dst : image) x y (src : image) (font : image) style s =
   let cw = 8 * scale and fw = width f / 128 and n = String.length s in
   let mix = mixing src in
   (* bold, underlined or neither: 8 by 16 cells, the plain text's, so
-   * text and its word at a time (old: a draw a character, some 13,000
-   * instructions: tiny-emacs in bold, a screen of 2,400, was 30 million) *)
+   * text and its word at a time: a draw a character, some 13,000
+   * instructions, made a screen of tiny-emacs in bold 30 million *)
   if kind land 3 = 0 then text dst x y src f s
   else
   for i = 0 to n - 1 do
@@ -468,9 +466,9 @@ let message (c : conn) s i arg =
 (* a write's bytes: whole messages (the header says which), each done
  * in turn; a bad one skipped, the ones after it done, then Graphics
  * raised with the first's why. A message cut short, or unknown, ends
- * them: where the next starts is not known. (old: a bad one raised at
- * once, the rest of the write not done: a page's picture with no room
- * left, its pixels' messages after it, and the texts after those) *)
+ * them: where the next starts is not known. A bad one does not stop the
+ * write, else a page's picture with no room left would lose the texts
+ * after it *)
 let messages (c : conn) s =
   let n = String.length s in
   let first = ref "" in

@@ -135,8 +135,7 @@ let to_string x =
   else if compare x zero < 0 then "-" ^ digits (neg x) ""
   else digits x ""
 (* OCaml's rules: a decimal fits the signed range (-2^63 too), the other
- * bases 64 bits (0xffffffffffffffff is -1); past them None. (old: the
- * digits multiplied on and on, a number too big wrapped round) *)
+ * bases 64 bits (0xffffffffffffffff is -1); past them None. *)
 let of_string_opt s =
   let n = String.length s in
   let neg_ = n > 0 && s.[0] = '-' in

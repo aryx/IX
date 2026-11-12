@@ -20,18 +20,11 @@
  * /lib/ml, where tiny-ml reads the interfaces (-L another
  * directory). They are the first units of every program; what a
  * program does not call, tiny-ld leaves out (its pieces).
- * (old: the compiler carried the files' text, TinyMLPrelude.ml made of
- * them by the build, and compiled them again at each run)
  *
  *     Stdlib  Char  Seq  List  String  Bytes  Array  Option  Int64
  *        Filename  Buffer  Printf  Marshal  Hashtbl  Common  Sha1
  *        Fpath  Fpath_  Exit  In_channel  Out_channel  Chan  Logs
  *     (each after those before it: String.map is List.init's)
- *
- * (old: TinyLibCore.ml, a prelude whose dotted names, List.map, were
- * single names, and TinyLibStd.ml, the rest, given to tiny-ml before a
- * tool's file; a Buffer a string grown by ^, a Hashtbl a list of pairs:
- * plan_tiny_self_hosting.md, step 5)
  *
  * design:
  * A directory, a module a file, and not one TinyLibCore.ml: the

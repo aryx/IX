@@ -32,7 +32,7 @@ type instr =
   | Sys of int
 [@@deriving show]
 
-(* (old: [| ... |], which tiny-ml does not read) *)
+(* Array.of_list: tiny-ml does not read [| ... |] *)
 let alus =
   Array.of_list [ Add; Sub; Mul; Div; Rem; And; Or; Xor; Shl; Shr; Sar; Slt;
                   Sltu ]
@@ -68,7 +68,6 @@ let csr_names =
                   "rate"; "cores"; "tbase"; "tbound" ]
 
 exception Error of string
-(* old: Printf.ksprintf's, a format and its values *)
 let error s = raise (Error s)
 
 (* the machine's own instructions, which TinyMachineDevices runs, not
@@ -82,7 +81,6 @@ type machine_instr =
   | Amoswap of reg * reg * reg        (* d, a, (b) *)
 [@@deriving show]
 
-(* (old: the assembler's, by hand) *)
 let encode_machine (m : machine_instr) : instr_word =
   let w op d a k = (op lsl 24) lor (d lsl 20) lor (a lsl 16) lor k in
   match m with
@@ -161,8 +159,7 @@ let reg_name (r : reg) =
 (* An instruction's text, its registers by their names; its immediate,
  * or its offset, the given text when there is one (a label's name, an
  * address). The one printer of the instructions: a listing's (listing,
- * below) and the assembly's (print_line). (old: two, the
- * listing's registers r0, r14, r15) *)
+ * below) and the assembly's (print_line). *)
 let text (i : instr) (imm_text : string option) : string =
   let r = reg_name in
   let imm k = match imm_text with Some s -> s | None -> string_of_int k in
@@ -219,7 +216,7 @@ type sym = string
 
 (* where a label's address goes in an instruction or a word, and what
  * goes there (TinyLibMachine.mli has them by example). Full, all 32
- * bits of a word (old: Word, the name .word's line has) *)
+ * bits of a word *)
 type place = Full | Abs | Hi | Lo | Pc
 [@@deriving show]
 type target = Name of string | Address of int
@@ -262,8 +259,7 @@ type line =
 (* (a register by its name) *)
 let reg = reg_name
 
-(* a word, signed, in decimal (old: an int64's low 32 bits, sign-extended
- * first; older: Printf's %ld of Int64.to_int32, in each compiler) *)
+(* a word, signed, in decimal *)
 let word (v : word) = Int32.to_string v
 
 let target_text (t : target) =
@@ -337,8 +333,7 @@ let code (is : instr list) relocs : line =
      relocs)
 
 (* a number of 16 bits, li's in one instruction, else its two halves; a
- * word is signed, so a compiler's 0xfffffff0 is -16, one instruction
- * (old: an int64, its low 32 bits read signed first) *)
+ * word is signed, so a compiler's 0xfffffff0 is -16, one instruction *)
 let small (v : word) =
   Int32.compare v (Int32.of_int (-32768)) >= 0
   && Int32.compare v (Int32.of_int 32767) <= 0
@@ -346,7 +341,6 @@ let half (v : word) shift =
   Int32.to_int
     (Int32.logand (Int32.shift_right_logical v shift) (Int32.of_int 0xffff))
 
-(* (old: TinyAssembler's item: the compilers encode their lines too) *)
 let encode_line (l : line) : line =
   let to_ s k = [ (0, k, Name s) ] in
   match l with
@@ -386,9 +380,8 @@ let starts s m = String.length s >= String.length m
 
 (* (Marshal's bytes after it: tiny-ml's Marshal stops the program on
  * bytes it cannot read, so another file is said not an object first.
- * 3: an object is lines, the assembly's type (old: 2, an item type of
- * its own, the same constructors; 1, the sections a bool): an older
- * object is refused, not misread) *)
+ * 3: an object is lines, the assembly's type; an older object is
+ * refused, not misread) *)
 let magic = "tiny-object 3\n"
 let to_object (lines : line list) =
   magic ^ Marshal.to_string lines [ Marshal.No_sharing ]
@@ -435,8 +428,6 @@ let of_archive (s : string) : (string * string) list =
 (* The symbols *)
 (*****************************************************************************)
 
-(* (TinyLibSymbols.ml's, old) *)
-
 type label = string
 type address = int
 type symbols = (label * address) array
@@ -449,8 +440,7 @@ let local name =
         (String.sub name (i + 2) (String.length name - i - 2))
   | _ -> false
 
-(* <unit>.f<number>_<name> (old: f<number>_<name><>, a program's
- * functions in one file) *)
+(* <unit>.f<number>_<name> *)
 let clean name =
   let n = String.length name in
   let digit c = c >= '0' && c <= '9' in

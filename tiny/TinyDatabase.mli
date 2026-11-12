@@ -87,17 +87,19 @@
  * table of n rows, an insert rewrites as many nodes as the tree is
  * high, each with up to 16 entries: that is how fast the file grows.
  *
- * It adds delete, update (set), group and the aggregate functions,
- * sort, take, computed columns, and atomic statements.
+ * Beyond chidb, it adds delete, update (set), group and the aggregate
+ * functions, sort, take, computed columns, and atomic statements.
  *
  * context:
  * A file that only grows, plus one small write to commit, is also how
  * TinyVCS stores things (its objects file and its head). Pulling the
  * rows of a statement through stages is what Seq does; it is the
  * shell's pipe, inside a single process. Underneath, the database uses
- * only four kernel calls: open, seek, read, and write (through
- * TinyLibSystem: Unix on the host, tiny-kernel's own calls there, its
- * seek for this). It never asks for the data to actually reach the disk
+ * only four kernel calls: open, seek, read, and write, through
+ * TinyLibSystem. On the host these are Unix's; on tiny-kernel they are
+ * its own calls, including the seek that this database relies on. It
+ * never asks
+ * for the data to actually reach the disk
  * (no fsync), so "atomic" here means safe if the program dies, not if
  * the machine does.
  *
@@ -167,18 +169,18 @@
  *    has Plan 9's ndb, and no chidb)
  *)
 
-(* what tiny-db asks for: its file, read and written; the statements
- * read, the answers printed, the errors said *)
+(* What tiny-db needs: to read and write its file, to read the
+ * statements, and to print the answers and the errors. *)
 type caps =
   < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr >
 
-(* the open file with its tables; a line, parsed *)
+(* [db] is the open file with its tables; [stmt] is a parsed line. *)
 type db
 type stmt
 
-(* one statement, done: a table made, rows added, a query planned,
- * run stage after stage and printed *)
+(* Runs one statement: it makes a table, adds rows, or plans a query,
+ * runs it stage after stage, and prints the result. *)
 val exec : < Cap.stdout; .. > -> db -> stmt -> unit
 
-(* the program: its arguments (its name first; -h: how) to how it ends *)
+(* The program. Its first argument is its name; -h prints the help. *)
 val main : < caps; .. > -> string array -> Exit.t

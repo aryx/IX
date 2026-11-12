@@ -1,11 +1,11 @@
-(* What TinyBrowser keeps of a page, its lines, and how words become
- * lines: a flow wraps them at the screen's width, and a table's cells,
- * kept until </table>, are laid out side by side. Html says
- * which words go where; TinyBrowser draws the lines.
+(* The lines, which are what TinyBrowser keeps of a page, and how words
+ * become lines. A flow wraps the words at the screen's width, and the
+ * cells of a table, kept until </table>, are laid out side by side.
+ * Html decides which words go where; TinyBrowser draws the lines.
  *
- * A line is a few runs, each a text at a column with a look and a
- * link; so a line costs what its text costs, and drawing one is a
- * string a run:
+ * A line is a few runs, and each run is a text at a column, with a
+ * look and maybe a link. So a line costs only what its text costs, and
+ * drawing it takes one string per run:
  *
  *     col 0                   col 22   col 24
  *     "OCaml is a dialect of" "ML"     ", with objects"
@@ -22,14 +22,13 @@
  * by side.
  *
  * others:
- * the autolayout that HTML 4's specification sketches in an appendix
- * works the same way, each column between its minimum and its maximum
- * width (from memory). Plan 9's mothra shows a table's rows as cells
- * one after the other, not in columns.
+ * The automatic layout that the HTML 4 specification sketches in an
+ * appendix works the same way, giving each column a width between its
+ * minimum and its maximum (from memory). Plan 9's mothra shows a
+ * table's rows as cells one after the other, not in columns.
  *)
 
-(* The look of a run is a combination of these bits (big: a large
- * heading's, drawn twice the size; under: underlined, <u> and <ins>). *)
+(* bits to combine; [big] is a heading drawn twice the size *)
 type look = int
 val bold : look
 val emph : look
@@ -37,17 +36,12 @@ val code : look
 val big : look
 val under : look
 
-(* A run is a piece of text at a column, with a look and the address it
- * links to, if any; its part says what it shows: its text, the bottom
- * half of a large heading's line (the top half is the line above, the
- * same runs as text), or a slice of a picture 16 pixels high (the
- * picture's number, which slice from the top). A line is a list of
- * runs, from left to right. A rule is a line drawn across the screen,
- * under a heading or for an <hr>. *)
+(* A big heading's top half is the line above, with the same runs. A
+ * rule is drawn across the screen, under a heading or for <hr>. *)
 type part =
   | Run_text
-  | Run_lower
-  | Run_slice of int * int
+  | Run_lower                 (* a big heading's bottom half *)
+  | Run_slice of int * int    (* a picture's number, its 16-pixel slice *)
 type run = {
   col : int;
   text : string;
@@ -57,8 +51,6 @@ type run = {
 }
 type line = { runs : run list; rule : bool }
 
-(* A flow wraps words into lines of a given width, starting at a left
- * margin. *)
 type flow = {
   width : int;
   mutable left : int;
@@ -74,50 +66,43 @@ type flow = {
   mutable cached : int;
 }
 
-(* an empty flow of that width *)
 val flow : int -> flow
 
-(* Adds a finished line (after a blank one when the flow wants it). *)
 val push : flow -> line -> unit
-
-(* Ends the line being built, if it has anything. *)
 val end_line : flow -> unit
 
-(* [word flow text look link space] adds a word, after a space if
- * [space]: on this line if it fits, else on the next one, with the
- * pieces of the same word before it (a link and the comma after it). *)
+(* [word flow text look link space]: a word that does not fit goes to
+ * the next line with the pieces of the same word before it (a link and
+ * the comma after it). *)
 val word : flow -> string -> look -> string option -> bool -> unit
 
-(* [picture_block flow id rows link]: [rows] lines, each a slice of the
- * picture [id], at the left margin. *)
+(* [picture_block flow id rows link] *)
 val picture_block : flow -> int -> int -> string option -> unit
 
-(* [verbatim flow text look link] adds a text as it is, with no
- * wrapping (<pre>'s). *)
+(* for <pre>, without wrapping *)
 val verbatim : flow -> string -> int -> string option -> unit
 
-(* A cell's words, kept until the end of its table: a word (its text,
- * look, link and whether a space was before it), a line's end, or a
- * picture (its number, columns, rows and link). *)
+(* A cell's words are kept until the end of its table. A Word's bool:
+ * a space before it; a Pic: a picture's number, columns, rows, link. *)
 type item =
   | Word of string * look * string option * bool
   | Break
   | Pic of int * int * int * string option
 
-(* A cell spans [span] columns (a caption: 1000, all of them); a head
- * (<th>, <caption>) is bold. *)
+(* A cell spans [span] columns (a caption spans 1000, which means all
+ * of them). A head cell (<th>, <caption>) is bold. *)
 type cell = { mutable items : item list; span : int; head : bool }
 type table = {
   mutable rows : cell list list;  (* the rows so far, last row first *)
   mutable row : cell list;
   mutable cell : cell option;
-  mutable depth : int;            (* how many tables are open inside it; their
-                                   * cells just become text of the current cell *)
-  mutable broken : int;           (* a line's end not yet in the cell, put
-                                   * there before the next word: 1 a block's,
-                                   * 2 an inner table's row's *)
+  mutable depth : int;            (* how many tables are open inside it;
+                                   * their cells just become text of the
+                                   * current cell *)
+  mutable broken : int;           (* a line end not yet put in the cell,
+                                   * added before the next word: 1 for a
+                                   * block's end, 2 for an inner table's
+                                   * row end *)
 }
 
-(* Lays out a finished table into the flow: each cell is wrapped in its
- * column, and the cells of a row are put side by side. *)
 val lay_table : flow -> table -> unit

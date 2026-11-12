@@ -10,8 +10,6 @@
 (* the operators: an arithmetic one's value is of its operands' type,
  * a relation's an int; >> is logical, / % and the relations unsigned,
  * for an unsigned type *)
-(* old: strings ("+", "<="): a misspelled operator was a runtime error,
- * and the machine's match over them needed a catch-all *)
 type arith = Add | Sub | Mul | Div | Mod | And | Or | Xor | Shl | Shr
 type rel = Lt | Gt | Le | Ge | Eq | Ne
 type binop = A of arith | R of rel
@@ -50,8 +48,8 @@ and desc =
   | Asg of expr * expr * asg
       (* an lvalue, its new value *)
   | Apply of Types.sym * expr list
-      (* a call (old: Call, the stack machine's name too: tiny-ml's
-       * constructors are one name space) *)
+      (* a call; not named Call, the stack machine's name: tiny-ml's
+       * constructors are one name space *)
   | ApplyPtr of expr * expr list      (* through a function's address *)
   | Conv of expr                      (* to t *)
   | Comma of expr * expr
@@ -90,10 +88,7 @@ let conv (e : expr) t =
   | _ -> mk (Conv e) t
 
 (* ANSI's promotion, which keeps the value: uchar and ushort become int,
- * as the host's cc, the tests' reference, does
- * (old: Int (4, s), Plan 9's, which keeps the sign: uint, as 7c, the
- * reference while tiny-cc had an arm64 back end; TinyC_fuzz.py's
- * x2 <= -128, x2 a uchar 0, was then 1) *)
+ * as the host's cc, the tests' reference, does *)
 let promote = function
   | Types.Int (n, _) when n < 4 -> Types.Int (4, true)
   | t -> t
@@ -107,9 +102,7 @@ let common a b =
 (* Constants folded as the tree is built: an operator on constants is
  * their value, of the operator's type, so that a constant expression
  * is a Const wherever it is written (a global's initializer, a case, an
- * array's size, p + 1's scaled 1). (old: folded by the parser's
- * const_expr alone, for the places that need a number, and only unary
- * minus elsewhere: int x = 2*3; refused, p + 1 a li, a li and a mul) *)
+ * array's size, p + 1's scaled 1). *)
 let compute o a b : int64 option =
   match o with
   | Add -> Some (Int64.add a b)
@@ -174,7 +167,6 @@ let deref (e : expr) =
   | Types.Ptr t -> mk (Deref e) t
   | _ -> Types.error "not a pointer"
 
-(* (old: ~cur, a label, which tiny-ml does not read) *)
 let assign (kind : asg) (l : expr) (r : expr) =
   match l.d with
   | Deref _ -> mk (Asg (l, conv (rv r) l.t, kind)) l.t
@@ -198,8 +190,6 @@ let either a b = mk (Cond (rv a, one (), truth b)) Types.int_t
 (* Statements *)
 (*****************************************************************************)
 
-(* old: none, the parser emitted the stack machine's code as it read,
- * with break's and continue's targets on global stacks *)
 type stmt =
   | Expr of expr
   | Block of stmt list

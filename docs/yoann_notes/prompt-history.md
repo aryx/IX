@@ -72668,3 +72668,19 @@ Claude moved the system onto disk.img (12 MB) and src.img (8 MB), and shrank boo
 Claude made the kernel read `memory` from the disk and cut exec-from-disk cost, with `ls` at 50M instead of 680M instructions.
 Claude re-recorded the expected screens, fixed scripts assuming the shell starts at /, and verified tests in the worktree.
 Claude did not commit, planning to copy the worktree's files into the shared tree and commit with explicit paths.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 21:45
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude committed steps 1–3 as 6f532031 after moving its worktree onto the other session's newest commit, 568e019c.
+Claude reran `make test` (35 jobs, 0 failures) and the kernel `check` on that HEAD, then removed the worktree.
+Claude built step 4 in the shared tree, uncommitted: the web page now fetches `disk` and `disk2` for the machine's two disks.
+Claude verified it: `./tiny-machine tiny-kernel` boots on both disks, and the headless Chrome test showed `/src` from the second disk.
+Claude held back `docs/t-ix.html` and the commit for step 4, since the live page needs `src.img` in the assets repo first.

@@ -125,7 +125,7 @@ copy of the disk, as 20 and 28 do already (step 3).
 
 ## Status
 
-Decided: two disks (1), the repair kit (2). Done: steps 0 to 3.
+Decided: two disks (1), the repair kit (2). Done: steps 0 to 4.
 
 Step 0, done (2026-11-12): tiny-machine's second disk at -80(r0), by a
 second -d (e5d39f65); KFS's state an `fs`, given to its functions as
@@ -173,5 +173,13 @@ Steps 1 to 3, done (2026-11-12):
   Checked: make test, make -C tiny/TinyKernel check, self-quick,
   MEMORY=segments booted.
 
-Next: step 4, the web page with `src.img` as its second disk (it boots
-on `disk.img`, now the system's, already); step 5, make self.
+Step 4, done (2026-11-12): the web page's disks, `disk` and `disk2`
+(TinyMachineWeb.ml fetches each the page names, in turn): docs/t-ix.html
+gives `src.img` as the second, make website puts it in the assets;
+./tiny-machine tiny-kernel runs on both (run.img, runsrc.img), and its
+-web page's address names both. The manual's lines on the image and
+the disks were step 1's. Checked: TinyMachineWeb_test.py in Chrome
+(`ls /` shows `src`, the second disk's), ./tiny-machine tiny-kernel.
+The assets themselves (make website) not yet published.
+
+Next: step 5, make self.

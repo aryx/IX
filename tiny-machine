@@ -120,18 +120,19 @@ case $1 in
     ;;
   tiny-kernel)
     # the repair kit comes in the image, after the kernel (/boot); the
-    # disk is the root: disk.img, the system (/bin, /lib, /examples),
-    # grown to 64 MB (run.img, made again when disk.img is; make clean
-    # removes it)
+    # first disk is the root: disk.img, the system (/bin, /lib,
+    # /examples); the second /src, src.img, the sources; each grown to
+    # 64 MB (run.img and runsrc.img, made again when theirs is; make
+    # clean removes them)
     dir=$ROOT/tiny/TinyKernel
     if [ $build = 1 ]; then
-      make -s -C $dir TML=$B/TinyML.exe TC=$B/TinyC.exe AS=$B/TinyAssembler.exe LD=$B/TinyLinker.exe CPU=$B/TinyCPU.exe MKFS=$B/TinyKernel/host/TinyMkfs.exe AR=$B/TinyArchiver.exe BUILD=$B/TinyBuildSystem.exe RC=$B/TinyShell.exe MACHINE=$machine _make/boot.img _make/disk.img _make/run.img >&2 || exit 1
+      make -s -C $dir TML=$B/TinyML.exe TC=$B/TinyC.exe AS=$B/TinyAssembler.exe LD=$B/TinyLinker.exe CPU=$B/TinyCPU.exe MKFS=$B/TinyKernel/host/TinyMkfs.exe AR=$B/TinyArchiver.exe BUILD=$B/TinyBuildSystem.exe RC=$B/TinyShell.exe MACHINE=$machine _make/boot.img _make/disk.img _make/src.img _make/run.img _make/runsrc.img >&2 || exit 1
     fi
     image=$dir/_make/boot.img
     say "kernel:  $(short $dir/_make/kernel.img)($(size $dir/_make/kernel.img) bytes; built from $(short $dir)), the repair kit after it"
-    [ -z "$web" ] || page "?image=boot.img&disk=disk.img" $image $dir/_make/disk.img
-    disk=$dir/_make/run.img
-    say "disk:    ${disk#$ROOT/}, the root, /src on it: what is written there is kept until /src changes ($(( $(size $disk) / 1024 )) KB; the boots before in /dump)"
+    [ -z "$web" ] || page "?image=boot.img&disk=disk.img&disk2=src.img" $image $dir/_make/disk.img $dir/_make/src.img
+    disk=$dir/_make/run.img src=$dir/_make/runsrc.img
+    say "disks:   ${disk#$ROOT/}, the root, the system, and ${src#$ROOT/}, /src: what is written there is kept until the system or /src changes ($(( $(size $disk) / 1024 )) KB each; the boots before in /dump)"
     say "console: this terminal; Ctrl-D ends the shell, and the machine"
     [ -z "$window" ] || say "screen:  a window (its end is the machine's); try: windows, the right button in the window (New, a rectangle swept), then tetris typed in it"
     if [ $listing = 1 ]; then exec $machine -l $dir/_make/kernel.img; fi
@@ -141,8 +142,8 @@ case $1 in
     say "         and in: httpd, then http://localhost:8080/ in a browser"
     speed=${rate#-rate }; [ -n "$speed" ] || speed=$([ -n "$window" ] && echo 20 || echo 8)
     say "speed:   $speed million instructions a second (-rate n to change it)"
-    say "command: $(short $machine)${window:+$window }${rate:+$rate }-d ${disk#$ROOT/} -net $(short $ROOT/tiny/tests/www)-net-out -net-forward 8080:80 $(short $image)"
-    exec $machine $window $rate -d $disk -net $ROOT/tiny/tests/www -net-out -net-forward 8080:80 $image
+    say "command: $(short $machine)${window:+$window }${rate:+$rate }-d ${disk#$ROOT/} -d ${src#$ROOT/} -net $(short $ROOT/tiny/tests/www)-net-out -net-forward 8080:80 $(short $image)"
+    exec $machine $window $rate -d $disk -d $src -net $ROOT/tiny/tests/www -net-out -net-forward 8080:80 $image
     ;;
   v0)
     set -- $ROOT/tiny/TinyKernel/steps/v0/kernel.s $ROOT/tiny/TinyKernel/steps/v0/[abcd].s

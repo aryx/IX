@@ -7,8 +7,8 @@
 # The page's directory is built (./tiny-machine -web), served, opened;
 # then keys are typed and the mouse moved as a person would:
 #
-# - ls typed (ls / on tiny-kernel): the root's names (bin, dev, src, the
-#   disk's);
+# - ls typed (ls / on tiny-kernel): the root's names (bin, dev, and src,
+#   the second disk's);
 # - ping and get hello.txt typed (the page is the other end of the
 #   machine's wire): the answers on the console;
 # - www OCaml typed (Wikipedia's article, asked by the page; www/'s
@@ -108,14 +108,14 @@ async def session(port, debug):
     else: raise Exception("the browser's debugging port does not answer")
     async with websockets.connect(tab["webSocketDebuggerUrl"], max_size=None) as ws:
         p = Page(ws)
-        await p.send("Page.navigate", url=url or f"http://127.0.0.1:{port}/" + ("?image=boot.img&disk=disk.img" if kernel == "tiny-kernel" else "?image=kernel.img&disk=fs.img"))
+        await p.send("Page.navigate", url=url or f"http://127.0.0.1:{port}/" + ("?image=boot.img&disk=disk.img&disk2=src.img" if kernel == "tiny-kernel" else "?image=kernel.img&disk=fs.img"))
         await p.wait("the shell's prompt", f"{CONSOLE}.includes('$ ')")
         print("ok the kernel boots: the shell's prompt on the console")
         # as a person does first: the mouse over the black screen, a click
         # in it; what is typed is the console's all the same
         await p.mouse(320, 240, 0); await p.mouse(320, 240, 1); await p.mouse(320, 240, 0)
         # (tiny-kernel's shell starts in /usr/glenda, on the disk: ls /,
-        # its src the disk's, examples the image's)
+        # its src the second disk's)
         ls = "ls /" if kernel == "tiny-kernel" else "ls"
         await p.type(ls)
         await asyncio.sleep(0.5)
@@ -125,7 +125,7 @@ async def session(port, debug):
         await p.type("\n")
         await p.wait("ls's answer", f"{CONSOLE}.includes('{'src' if kernel == 'tiny-kernel' else 'cat'}')")
         assert "$ " + ls + "\n" in await p.js(CONSOLE), "the line typed is not echoed on the console"
-        print("ok ls typed: the line echoed, the root's names (tiny-kernel: src, from the disk)")
+        print("ok ls typed: the line echoed, the root's names (tiny-kernel: src, the second disk)")
         if kernel != "tiny-kernel":
             print("   status:", await p.js(STATUS)); return
         assert await p.js(LIT) == 0, "the screen is not black before a program draws"

@@ -7,10 +7,12 @@
  *
  * The page gives three elements, by their ids: screen (a canvas, 1024
  * by 768), console (the text), status (a line). The kernel's image is
- * fetched: boot.img beside the page, or what the address says
- * (?image=kernel.img&disk=fs.img: t6, whose disk's writes last
- * as long as the page), or, before both, what the page says in a
- * variable of its own, tiny_machine = { image: ..., disk: ... }, each
+ * fetched: boot.img beside the page, or what the address says, with
+ * its disks, none, disk or disk and disk2 (?image=boot.img&disk=
+ * disk.img&disk2=src.img: tiny-kernel's system and sources;
+ * ?image=kernel.img&disk=fs.img: t6; a disk's writes last as long as
+ * the page), or, before both, what the page says in a variable of its
+ * own, tiny_machine = { image: ..., disk: ..., disk2: ... }, each
  * an address (docs/t-ix.html, the website's page: its files are in
  * another place, the assets').
  *

@@ -537,7 +537,7 @@ let wire_show () =
 (* the milliseconds of a frame the machine may take *)
 let budget = 12.
 
-let run image disk www =
+let run image disks www =
   let on_open (k : TinyMachineDevices.console) = k.opened <- true in
   (* the wire's other end, which gives packets to the machine it is
    * called by: by a reference *)
@@ -550,7 +550,7 @@ let run image disk www =
       ~document:(peer_document www) ~store ~outside:None in
   let mc : TinyMachineDevices.machine =
     TinyMachineDevices.create ~put ~on_open
-      ~send:(Some (TinyMachinePeer.send peer)) ~hear:ignore ~disks:[ disk ]
+      ~send:(Some (TinyMachinePeer.send peer)) ~hear:ignore ~disks
       ~events:None
       image in
   machine := Some mc;
@@ -651,9 +651,13 @@ let () =
                | Some i -> String.sub image 0 (i + 1)
                | None -> "")
               ^ "www/" in
-        match param "disk" with
-        | None -> run bytes Bytes.empty www
-        | Some d ->
-            fetch d (function
-              | None -> missing d
-              | Some disk -> run bytes (Bytes.of_string disk) www))
+        (* the disks the page names, each fetched in turn: disk, the
+         * first (tiny-kernel's system), and disk2 (its sources, /src) *)
+        let rec disks names got =
+          match names with
+          | [] -> run bytes (List.rev got) www
+          | d :: rest ->
+              fetch d (function
+                | None -> missing d
+                | Some disk -> disks rest (Bytes.of_string disk :: got)) in
+        disks (List.filter_map param [ "disk"; "disk2" ]) [])

@@ -466,11 +466,19 @@ kernel.img: TinyKernel/entry.o runtime/udivmod.o TinyKernel/runtime.o \
 # and its bytes: the programs in /bin, the examples, the library in
 # /lib/ml and the runtimes in /lib/c and /lib/ml (the sources, /src,
 # are on the disk, TinyKernel/Makefile's disk.img, made on the host).
-# (rc's recipe: the image is made on tiny-kernel. Not yet the Makefile's
-# image byte for byte: the plan's step 3)
+# The same recipe on the host and on tiny-kernel, in a copy of tiny/
+# (TinyKernel/Makefile's _make/src, the disk's /src). Two of the
+# examples are made on the host alone, before: a profile and its map
+# (examples/spin.prof and spin.map, tiny-cpu -prof's); and so is
+# TinyKernel/font.s, the font's bytes. MEMORY, from the environment
+# (TinyKernel/Makefile's MEMORY=segments or pages), the kernel's way of
+# giving memory, in /lib/memory, with MEMSIZE.
 UTILS = [ basename cat cmp cp date du echo grep kill ln ls mkdir mv ps pwd \
     rm seq sleep sort tail tee test touch walk wc xd
-EXAMPLES = wc.c sh.c emacs.ml TinyEditorScreen.ml report.ixd korobeiniki.wav spin.prof spin.map TinyLibMachine.tmi TinyLibMachine.o hello.c square.s helloml.ml Buildfile
+EXAMPLES = TinyKernel/steps/t6/user/wc.c TinyKernel/user/sh.c user/emacs.ml \
+    TinyEditorScreen.ml examples/report.ixd examples/korobeiniki.wav \
+    examples/spin.prof examples/spin.map TinyLibMachine.tmi TinyLibMachine.o \
+    examples/hello.c examples/square.s examples/helloml.ml examples/Buildfile
 LIBC = runtime/start.o runtime/udivmod.o runtime/libc.o TinyKernel/libc/sys.o TinyKernel/lib/c/Buildfile
 LIBML = TinyLibSystem/tinykernel/mlsys.o TinyKernel/end.o TinyKernel/lib/ml/Buildfile
 
@@ -478,16 +486,18 @@ LIBML = TinyLibSystem/tinykernel/mlsys.o TinyKernel/end.o TinyKernel/lib/ml/Buil
 # image)
 LIBUNITS = ${CORE:%=TinyLibCore/%.tmi} $STDLIB
 
-boot.img: kernel.img $PROGS $STDLIB $LIBC $LIBML
+boot.img: kernel.img $PROGS $EXAMPLES $STDLIB $LIBC $LIBML
 	cat kernel.img > $target
 	for(f in $PROGS) { n=`{wc -c < $f}; echo bin/$f; echo $n; cat $f } >> $target
-	for(f in $EXAMPLES) { n=`{wc -c < /examples/$f}; echo examples/$f; echo $n; cat /examples/$f } >> $target
+	for(f in $EXAMPLES) { n=`{wc -c < $f}; echo examples/^`{basename $f}; echo $n; cat $f } >> $target
 	for(f in $LIBUNITS) { n=`{wc -c < $f}; echo lib/ml/^`{basename $f}; echo $n; cat $f } >> $target
 	for(f in $LIBC) { n=`{wc -c < $f}; echo lib/c/^`{basename $f}; echo $n; cat $f } >> $target
 	for(f in $LIBML) { n=`{wc -c < $f}; echo lib/ml/^`{basename $f}; echo $n; cat $f } >> $target
 	for(u in $UTILS) { echo bin/$u; echo link bin/utils } >> $target
 	{ echo bin/editor; echo link bin/emacs; echo bin/sam; echo link bin/ed } >> $target
+	if(~ $MEMORY segments pages) { echo lib/memory; echo $MEMSIZE; echo $MEMORY } >> $target
 	echo >> $target
+#`
 
 #############################################################################
 # The units' dependencies

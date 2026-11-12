@@ -70656,3 +70656,67 @@ Claude made `TinyLibSystem`'s `shell` run `tiny-shell` through `/usr/bin/env`, f
 Claude updated `TinyLibSystem.mli`, tiny-build's help, and the Buildfile header to say recipes are rc on both systems.
 Claude updated `TinyBuildSystem_test.sh` to set the PATH, and confirmed all tiny-build tests pass with and without `bin/` on it.
 Claude also outlined step 2 and asked whether the separate 25 MB disk for `self-quick` was the right shape.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 22:10
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed step 1 as `90e09041`, moving tiny-build's recipes to rc run by tiny-shell.
+Claude flagged that the image's `.tmi` library files would change bytes, because the Buildfile now compiles with `-I`.
+Claude flagged that the disk's `/src` would become the host's build tree at `_make/src`, dropping the curated SRC list.
+Claude flagged that `self-quick` needs a second 25 MB test disk, separate from the 4 MB `disk.img`.
+Claude asked whether to proceed with step 2 on that shape, and waited for Yoann's approval.
+
+------------------------------------------------------------------------
+
+## 2026-11-11 22:23
+
+**Yoann:**
+
+> I don't fully understand the issues
+
+**Claude (summary):**
+
+Claude recommended that the Makefile copy `tiny/` into `_make/src` and build there.
+The disk image would hold that same tree minus build outputs, replacing the hand-picked `SRC` list.
+Files only the host can make, like `font.s` and the profiler's `spin.prof` and `spin.map`, get generated there first.
+Claude argued this keeps tiny-kernel's `/src` exactly what the Buildfile reads, so it can rebuild itself.
+Claude also noted a one-time library interface change and three options for the `self-quick` kernel check.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 06:54
+
+**Yoann:**
+
+> ok things are a bit cleaner; I think I agree with your choices for 1 and 2. For 2 we can maybe drop some checks that are more difficult to do under t-ix itself; the important is the ability to rebuild the programs, libs, and kernel from t-ix itself. that's the long term goal, so that doing so it dogfoods all the programs from t-ix too. so let's move forward one step at a time
+
+------------------------------------------------------------------------
+
+## 2026-11-12 06:54
+
+**Yoann:**
+
+> also we should probably get rid of the mkfile under tiny/ ?
+
+------------------------------------------------------------------------
+
+## 2026-11-12 06:54
+
+**Yoann:**
+
+> because that is a 4th way to build ...
+
+**Claude (summary):**
+
+Claude made tiny/Buildfile build the whole boot.img on the host, matching the Makefile's image except for 22 .tmi files.
+Claude changed EXAMPLES to name files by their paths in tiny/, not /examples, which exists only on tiny-kernel.
+Claude took MEMORY and MEMSIZE from the environment so /lib/memory is written as the Makefile writes it.
+Claude noted that examples/spin.prof, examples/spin.map and TinyKernel/font.s must be made on the host before building.
+Claude left the change uncommitted, offered step 2b, and kept the tiny/mkfile question open.

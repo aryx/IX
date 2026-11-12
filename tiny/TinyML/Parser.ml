@@ -216,7 +216,7 @@ and app () =
   | Lexer.UID c when starts_atom (peek_at 1) && (Tree.find_con c).arity > 0 ->
       advance ();
       let a = atom () in
-      Tree.Con (c,
+      Tree.Con (Tree.resolve_con c,
         con_args c [ a ] (fun _ -> function Tree.Tuple l -> Some l | _ -> None))
   | _ -> (
       let f = atom () in
@@ -257,7 +257,8 @@ and simple () =
       let o = match peek_at 3 with Lexer.KW o -> o | _ -> fail () in
       advance (); advance (); advance (); advance (); advance ();
       Tree.var (m ^ "." ^ o)
-  | Lexer.UID c -> advance (); Tree.Con (c, con_args c [] (fun _ _ -> None))
+  | Lexer.UID c ->
+      advance (); Tree.Con (Tree.resolve_con c, con_args c [] (fun _ _ -> None))
   | Lexer.KW o when is_prefix o ->
       advance ();
       Tree.App (Tree.var o, [ simple () ])
@@ -370,7 +371,7 @@ and papp () =
   | Lexer.UID c when starts_patom (peek_at 1) && (Tree.find_con c).arity > 0 ->
       advance ();
       let a = patom () in
-      Tree.PCon (c,
+      Tree.PCon (Tree.resolve_con c,
         con_args c [ a ] (fun n -> function
           | Tree.PTuple l -> Some l
           | Tree.PAny -> Some (List.init n (fun _ -> Tree.PAny))
@@ -388,7 +389,8 @@ and patom () =
       advance ();
       (match peek () with Lexer.INT n -> advance ();
         Tree.PConst (Tree.CInt (-n)) | _ -> fail ())
-  | Lexer.UID c -> advance (); Tree.PCon (c, con_args c [] (fun _ _ -> None))
+  | Lexer.UID c ->
+      advance (); Tree.PCon (Tree.resolve_con c, con_args c [] (fun _ _ -> None))
   | Lexer.KW "(" ->
       advance ();
       if accept (Lexer.KW ")") then Tree.PCon ("()", [])
@@ -522,13 +524,14 @@ and ty_app () =
         l
     | Lexer.KW "<" -> skip_object (); [ any () ]
     | Lexer.LID c when List.mem c !forgotten -> advance (); [ any () ]
-    | Lexer.LID c -> advance (); [ Tree.TE (c, []) ]
+    | Lexer.LID c -> advance (); [ Tree.TE (Tree.resolve_type c, []) ]
     | _ -> fail ()
   in
   (* (val: OCaml's keyword, not tiny-ml's: an .mli's next item) *)
   let rec post args =
     match peek () with
-    | Lexer.LID c when c <> "val" -> advance (); post [ Tree.TE (c, args) ]
+    | Lexer.LID c when c <> "val" ->
+        advance (); post [ Tree.TE (Tree.resolve_type c, args) ]
     | _ -> args
   in
   match post args with [ t ] -> t | _ -> fail ()
@@ -567,7 +570,10 @@ let rec type_decl () =
   expect (Lexer.KW "=");
   ignore (accept (Lexer.KW "|"));
   let vars = ref (List.map (fun v -> v, Tree.genvar ()) params) in
-  let res = Tree.TCon (name, List.map snd !vars) in
+  (* (its name in scope already, from the file's start: parse's) *)
+  Tree.declare_type name;
+  let q = Tree.own name in
+  let res = Tree.TCon (q, List.map snd !vars) in
   if peek () = Lexer.KW "<" then
     (skip_object (); forgotten := name :: !forgotten)
   else if accept (Lexer.KW "{") then begin
@@ -584,12 +590,12 @@ let rec type_decl () =
     let fs = fields () in
     let lnames = List.map (fun (l, _, _) -> l) fs in
     List.iteri (fun idx (l, mut, t) ->
-      Hashtbl.add Tree.record_labels l
-        { lrec = name; idx; mut; lnames;
+      Tree.add_label l
+        { lrec = q; idx; mut; lnames;
           lscheme = Tree.TCon ("%l", [ res; t ]) })
       fs
   end else if (match peek () with Lexer.UID _ -> false | _ -> true) then begin
-    abbreviations := (name, (params, ty ())) :: !abbreviations
+    abbreviations := (q, (params, ty ())) :: !abbreviations
   end else begin
     let rec ctors () =
       let c =
@@ -659,8 +665,7 @@ let rec items () : (Tree.item * int) list =
       (match peek () with
        | Lexer.UID u ->
            advance ();
-           Tree.known_units := m :: !Tree.known_units;
-           Tree.con_aliases := (m, u) :: !Tree.con_aliases;
+           Tree.aliases := (m, u) :: !Tree.aliases;
            (Tree.IAlias (m, u), l) :: items ()
        | Lexer.KW "struct" ->
            advance ();
@@ -682,7 +687,7 @@ let rec items () : (Tree.item * int) list =
       advance ();
       (match peek () with
        | Lexer.UID m ->
-           advance (); Tree.open_cons m; (Tree.IOpen m, l) :: items ()
+           advance (); Tree.open_unit m; (Tree.IOpen m, l) :: items ()
        | _ -> fail ())
   | Lexer.KW "exception" ->
       advance ();
@@ -708,11 +713,37 @@ let rec items () : (Tree.item * int) list =
   | _ -> let e = expr () in (Tree.ILet (Tree.Nonrecursive, [ Tree.PAny, e ]), l)
     :: items ()
 
+(* the types the file declares, their names in scope from its start, so
+ * that a type is named above its declaration (type a = A of b and b =
+ * ...): each name after type or a type's and, its parameters skipped *)
+let declare_types () =
+  let n = Array.length !toks in
+  let tok k = if k < n then fst (!toks).(k) else Lexer.EOF in
+  let rec name k =
+    match tok k with
+    | Lexer.KW "'" -> name (k + 2)
+    | Lexer.KW "(" ->
+        let rec close k = if k >= n || tok k = Lexer.KW ")" then k + 1
+          else close (k + 1) in
+        name (close k)
+    | Lexer.LID x -> Tree.declare_type x
+    | _ -> () in
+  let rec go k in_type =
+    if k < n then
+      match tok k with
+      | Lexer.KW "type" -> name (k + 1); go (k + 1) true
+      | Lexer.KW "and" when in_type -> name (k + 1); go (k + 1) true
+      | Lexer.KW ("let" | "exception" | "external" | "open" | "module") ->
+          go (k + 1) false
+      | _ -> go (k + 1) in_type in
+  go 0 false
+
 (* a file's text, its items, each with its line *)
 let parse (text : string) =
   toks := Lexer.lex text; pos := 0;
   (* (a unit's aliases its own) *)
-  Tree.con_aliases := [];
+  Tree.aliases := [];
+  declare_types ();
   let is = items () in
   if peek () <> Lexer.EOF then fail ();
   is

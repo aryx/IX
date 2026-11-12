@@ -73,38 +73,6 @@ type linfo =
   { lrec : string; idx : int; mut : bool; lnames : string list; lscheme : ty }
 let record_labels : (string, linfo) Hashtbl.t = Hashtbl.create 64
 
-(* A constructor is in cons twice: C, the latest declared, and M.C, its
- * unit's, so that two units' Add are told apart where they are
- * qualified (TinyCTree.Add, TinyLibMachine.Add, in tiny-cc). (old: M.C
- * was C, the lexer's, and the second unit's Add was both.) *)
-
-(* module A = M in the current unit: A.C is M.C *)
-let con_aliases : (string * string) list ref = ref []
-
-(* C, of M.C *)
-let con_base c =
-  match String.rindex_opt c '.' with
-  | Some k -> String.sub c (k + 1) (String.length c - k - 1)
-  | None -> c
-
-(* M.C, M's (an alias's unit's); else, or C, the latest declared *)
-let find_con c =
-  let qualified =
-    match String.rindex_opt c '.' with
-    | Some k ->
-        let m = String.sub c 0 k in
-        let m = match List.assoc_opt m !con_aliases with
-          | Some u -> u
-          | None -> m in
-        Hashtbl.find_opt cons (m ^ "." ^ con_base c)
-    | None -> None in
-  match qualified with
-  | Some ci -> ci
-  | None ->
-      (match Hashtbl.find_opt cons (con_base c) with
-       | Some ci -> ci
-       | None -> Lexer.error ("unknown constructor " ^ c))
-
 let generic = max_int
 let level = ref 1 and counter = ref 0
 let newvar () = incr counter; TVar (ref (Unbound (!counter, !level)))
@@ -126,59 +94,150 @@ let () =
   add "[]" (KConst 0) 0 1 1 (TCon ("list", [ a ])) [];
   add "::" (KBlock 0) 2 1 1 (TCon ("list", [ a ])) [ a; TCon ("list", [ a ]) ]
 
+(*****************************************************************************)
+(* Names *)
+(*****************************************************************************)
+
+(* A type, a constructor and a record's label are the program's by their
+ * unit's name, M.t, M.C, l of M.t, whatever was read before or after:
+ * cons, record_labels, abbreviations and declared hold them so. In a
+ * unit a bare name is found in scope: the unit's own, then what it
+ * opens, the latest first, then Stdlib's, open in all; a primitive type
+ * (int, bytes...) and a builtin constructor ((), [], ::, true, false)
+ * are bare. M.x is M's, or an alias's unit's (module A = M). Caml
+ * Light's names (a unit and a name, the opened units), and the values'
+ * here (Types' tables). (old: one name space of bare names, the latest
+ * declared or read winning, so that what a name meant depended on the
+ * order the interfaces were read in: a constructor kept twice, C and
+ * M.C, open M copying them, an abbreviation t and M.t, M.t stripped to
+ * t in a type) *)
+
 (* the unit being compiled (a file: its name, the prefix of its
- * symbols), and the units whose interfaces it read: M.t in a type is
- * t when M is one of them (a type's name is the program's, one name
- * space, as the constructors' and the values') *)
+ * symbols and of its names) *)
 let unit_name = ref "Stdlib"
-let known_units : string list ref = ref []
 
-(* a constructor declared in the current unit, C and M.C *)
-let add_con c (ci : cinfo) =
-  Hashtbl.replace cons c ci;
-  Hashtbl.replace cons (!unit_name ^ "." ^ c) ci
+(* module A = M in the current unit *)
+let aliases : (string * string) list ref = ref []
 
-(* open M: M's constructors are C, as if declared there, so that they
- * shadow the library's before them (Common's Error over Logs's level
- * Error), and a declaration after the open shadows them in turn. Of M
- * itself, not of its modules: M.N.C stays M.N.C *)
-let open_cons m =
-  let m = match List.assoc_opt m !con_aliases with Some u -> u | None -> m in
-  let p = m ^ "." in
-  let n = String.length p in
-  let opened =
-    Hashtbl.fold (fun c ci acc ->
-        let k = String.length c in
-        if k > n && String.sub c 0 n = p
-           && not (String.contains (String.sub c n (k - n)) '.')
-        then (String.sub c n (k - n), ci) :: acc
-        else acc) cons [] in
-  List.iter (fun (c, ci) -> Hashtbl.replace cons c ci) opened
+(* C of M.C, t of M.t *)
+let con_base c =
+  match String.rindex_opt c '.' with
+  | Some k -> String.sub c (k + 1) (String.length c - k - 1)
+  | None -> c
+
+(* M's unit: M, or the one M is an alias of *)
+let unit_of m = match List.assoc_opt m !aliases with Some u -> u | None -> m
+
+(* M.x as M's: an alias's unit's x *)
+let qualified x =
+  match String.rindex_opt x '.' with
+  | Some k -> unit_of (String.sub x 0 k) ^ "." ^ con_base x
+  | None -> x
+
+(* the unit's own name for x *)
+let own x = !unit_name ^ "." ^ x
 
 (* type word = piece list, type 'a t = unit -> 'a node: a second name
- * for a type, its parameters' names; unify puts the type in the name's
- * place when the two differ, so a name may be used above its
- * declaration. A name and its number of parameters say which: Sha1's
- * t and Seq's 'a t are two. A unit's, read from its interface, is t,
- * the latest, and M.t, its own, which the interfaces name: In_channel's
- * t, in_channel, is not Fpath's t, string, whichever was read last.
- * (old: t alone, the latest read, which the order the interfaces were
- * read in chose; no parameter, a name only) *)
+ * for a type, by its qualified name, its parameters' names; unify puts
+ * the type in the name's place when the two differ. A name and its
+ * number of parameters say which *)
 let abbreviations : (string * (string list * texpr)) list ref = ref []
+
+(* the types declared, a variant's, a record's, an abbreviation's: what
+ * open M brings in scope *)
+let declared : (string, unit) Hashtbl.t = Hashtbl.create 64
+
+(* the bare names in scope, each to its qualified one (a label to its
+ * record's); the unit's own and what it opens for its time
+ * (scope_done), Stdlib's for good *)
+let con_scope : (string, string) Hashtbl.t = Hashtbl.create 64
+let type_scope : (string, string) Hashtbl.t = Hashtbl.create 64
+let label_scope : (string, linfo) Hashtbl.t = Hashtbl.create 64
+let scoped : (unit -> unit) list ref = ref []
+let in_scope tbl x v =
+  Hashtbl.add tbl x v;
+  scoped := (fun () -> Hashtbl.remove tbl x) :: !scoped
+let scope_done () =
+  List.iter (fun f -> f ()) !scoped; scoped := []; aliases := []
+
+(* M's names bare, its constructors, its types, its records' labels (of
+ * M itself, not of its modules: M.N.C stays M.N.C), by add: for the
+ * unit's time (open M), or for good (Stdlib) *)
+let bring add_name add_label m =
+  let p = m ^ "." in
+  let n = String.length p in
+  let mine x =
+    String.length x > n && String.sub x 0 n = p
+    && not (String.contains (String.sub x n (String.length x - n)) '.') in
+  let keys tbl =
+    List.sort_uniq compare (Hashtbl.fold (fun k _ acc -> k :: acc) tbl []) in
+  List.iter (fun c -> if mine c then add_name con_scope (con_base c) c)
+    (keys cons);
+  List.iter (fun t -> if mine t then add_name type_scope (con_base t) t)
+    (keys declared);
+  (* (a label of two of M's records: the latest declared) *)
+  List.iter (fun l ->
+      List.iter (fun (li : linfo) -> if mine li.lrec then add_label label_scope l li)
+        (List.rev (Hashtbl.find_all record_labels l)))
+    (keys record_labels)
+let open_unit m = bring in_scope in_scope (unit_of m)
+
+(* a type, a constructor, a record's label the unit declares: its name
+ * in scope *)
+let declare_type t =
+  let q = own t in
+  if Hashtbl.find_opt type_scope t <> Some q then begin
+    Hashtbl.replace declared q (); in_scope type_scope t q end
+let add_con c (ci : cinfo) =
+  Hashtbl.replace cons (own c) ci; in_scope con_scope c (own c)
+let add_label l (li : linfo) =
+  Hashtbl.add record_labels l li; in_scope label_scope l li
+
+(* a type's name as the source says it: M.t, M's; t, the one in scope,
+ * else the one of a unit not open when it is the only one of that name
+ * (Int64.mli's int32, Int32's, which OCaml's own names as int32); else
+ * a primitive's, bare *)
+let resolve_type t =
+  if String.contains t '.' then qualified t
+  else match Hashtbl.find_opt type_scope t with
+    | Some q -> q
+    | None ->
+        (match Hashtbl.fold (fun q () acc ->
+             if con_base q = t && not (List.mem q acc) then q :: acc else acc)
+             declared [] with
+         | [ q ] -> q
+         | _ -> t)
+
+(* a constructor as the source names it: M.C, M's; C, the one in
+ * scope, a builtin, else the one of a unit not open when it is the
+ * only one of that name (OCaml finds it by its type) *)
+let resolve_con c =
+  if String.contains c '.' then qualified c
+  else match Hashtbl.find_opt con_scope c with
+    | Some q -> q
+    | None when Hashtbl.mem cons c -> c
+    | None ->
+        let qs = Hashtbl.fold (fun q _ acc ->
+            if String.contains q '.' && con_base q = c && not (List.mem q acc)
+            then q :: acc else acc) cons [] in
+        (match qs with
+         | [ q ] -> q
+         | [] -> Lexer.error ("unknown constructor " ^ c)
+         | _ ->
+             Lexer.error
+               ("constructor " ^ c ^ " of several units ("
+                ^ String.concat ", " (List.sort compare qs)
+                ^ "): say which, M." ^ c ^ ", or open M"))
+let find_con c =
+  match Hashtbl.find_opt cons (resolve_con c) with
+  | Some ci -> ci
+  | None -> Lexer.error ("unknown constructor " ^ c)
 
 let rec of_texpr vars = function
   | TEVar v ->
       (match List.assoc_opt v !vars with
        | Some t -> t
        | None -> let t = genvar () in vars := (v, t) :: !vars; t)
-  | TE (c, args) ->
-      let c =
-        match String.index_opt c '.' with
-        | Some i when List.mem (String.sub c 0 i) !known_units
-                      && not (List.mem_assoc c !abbreviations) ->
-            String.sub c (i + 1) (String.length c - i - 1)
-        | _ -> c
-      in
-      TCon (c, List.map (of_texpr vars) args)
+  | TE (c, args) -> TCon (c, List.map (of_texpr vars) args)
 (* a name, its type not known yet *)
 let var x = Var (x, ref (tcon "?"))

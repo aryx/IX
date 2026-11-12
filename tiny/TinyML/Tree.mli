@@ -76,15 +76,9 @@ type cinfo = {
   nblock : int;
   scheme : ty;
 }
-(* the constructors, each by C, the latest declared, and by M.C, its
- * unit's *)
+(* the constructors, each by its unit's name, M.C (a builtin's bare:
+ * (), [], ::, true, false) *)
 val cons : (string, cinfo) Hashtbl.t
-(* M.C, M's (module A = M: A.C is M.C), else C, the latest declared *)
-val find_con : string -> cinfo
-(* C, of M.C *)
-val con_base : string -> string
-(* the current unit's module A = M *)
-val con_aliases : (string * string) list ref
 
 (* a record's label: its field's index, and its type as %l(record,
  * field), as a constructor's; several records may have it *)
@@ -109,18 +103,44 @@ val bool_t : ty
 val unit_t : ty
 val string_t : ty
 
-(* the unit being compiled, and the units whose interfaces it read *)
+(* Names: a type, a constructor, a record's label is the program's by
+ * its unit's name, M.t, M.C; a bare name in a unit is the one in scope:
+ * the unit's own, what it opens, Stdlib's (Tree.ml's header) *)
+
+(* the unit being compiled; its module A = M *)
 val unit_name : string ref
-val known_units : string list ref
-(* a constructor declared in the current unit: as C and as M.C *)
-val add_con : string -> cinfo -> unit
-(* open M: M's constructors M.C made C, shadowing those before *)
-val open_cons : string -> unit
-(* type 'a t = ...: a second name for a type, its parameters' names; a
- * unit's read from its interface twice, t, the latest, and M.t *)
+val aliases : (string * string) list ref
+(* C of M.C; M.x as M's, an alias's unit's; the unit's own x, U.x *)
+val con_base : string -> string
+val qualified : string -> string
+val own : string -> string
+(* type 'a t = ...: a second name for a type, by its qualified name,
+ * its parameters' names *)
 val abbreviations : (string * (string list * texpr)) list ref
-(* a type expression as a type, its variables' names in vars; M.t is
- * t, but for an abbreviation M.t, its unit's *)
+(* the types declared, by their qualified names *)
+val declared : (string, unit) Hashtbl.t
+(* the bare names in scope (a label to its record's); in_scope adds one
+ * for the unit's time, scope_done ends it *)
+val con_scope : (string, string) Hashtbl.t
+val type_scope : (string, string) Hashtbl.t
+val label_scope : (string, linfo) Hashtbl.t
+val scope_done : unit -> unit
+(* [bring add add_label m]: M's names in scope, by add (for good,
+ * Hashtbl.add: Stdlib's); open M, for the unit's time *)
+val bring :
+  ((string, string) Hashtbl.t -> string -> string -> unit) ->
+  ((string, linfo) Hashtbl.t -> string -> linfo -> unit) -> string -> unit
+val open_unit : string -> unit
+(* a type, a constructor, a label the unit declares, in scope *)
+val declare_type : string -> unit
+val add_con : string -> cinfo -> unit
+val add_label : string -> linfo -> unit
+(* a type's, a constructor's name as the source says it, qualified;
+ * a constructor's information, by its source's name or its own *)
+val resolve_type : string -> string
+val resolve_con : string -> string
+val find_con : string -> cinfo
+(* a type expression as a type, its variables' names in vars *)
 val of_texpr : (string * ty) list ref -> texpr -> ty
 (* a name, its type not known yet *)
 val var : string -> expr

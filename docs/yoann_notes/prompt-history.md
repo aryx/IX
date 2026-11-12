@@ -72368,3 +72368,18 @@ Claude estimated about a day of careful work, with the full test set (TinyML_tes
 **Claude (summary):**
 
 Claude said yes, qualified names would remove the root cause of the naming bugs, since a bare name's meaning would no longer depend on reading order. Claude argued this was more consistent, because values already work this way and have had none of these bugs. Claude warned that code relying on "latest read wins", such as the `TinyML.ml` comment about TinyCLower's label, would need explicit `open`s or qualified names, and fuzz tests may catch more. Claude also noted record labels still need a rule when two records share a label, and `named_units` stays a separate heuristic.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 17:47
+
+**Yoann:**
+
+> ok let's do it
+
+**Claude (summary):**
+
+Claude left the naming change uncommitted, because the tree also held another session's TinyBrowser and TinyOffice rename.
+Claude proposed committing only TinyML's Tree.ml, Types.ml, the parser, TinyML.ml, TinyML.mli, and its test file.
+Claude's clean-worktree run, HEAD plus only those changes, passed make test: 35 jobs, 0 failures.
+Claude's rule makes bare constructors and labels resolve to the unit's own, opened, then Stdlib names.

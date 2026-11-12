@@ -102,10 +102,10 @@
  * type, and a coercion to one, (e :> t), is just e; OCaml checks them
  * when it builds the same file. A type can have a second name, as in
  * type word = piece list, or with parameters, type 'a t = unit -> 'a
- * node (Seq's). A module is a file, a unit (M.x, open M); its types
- * and labels are the program's, one name space; a constructor C is the
- * latest declared, and M.C is M's, so that two units' Add are told
- * apart. A unit's module N = struct ... end has values only, N.x for
+ * node (Seq's). A module is a file, a unit (M.x, open M); its types,
+ * constructors and labels are M.t, M.C, and found bare in the units
+ * that open M (design, below), so that two units' Add are told apart.
+ * A unit's module N = struct ... end has values only, N.x for
  * the units after (open M.N, as open Fpath_.Operators); in it a name
  * is not found by its short name. module A = M names a unit again
  * (module ISA = TinyLibMachine: M.x is M.x). An attribute,
@@ -198,11 +198,10 @@
  *   open M; Stdlib is open in all, and with it TinyLibCore/'s modules,
  *   the standard library, are the first units of every program, each
  *   compiled once (-L ., in TinyLibCore/), their interfaces read from a
- *   directory (/lib/ml, or -L's), those a unit names. The types and
- *   the labels are the program's, one name space: a record's label is
- *   the latest record's unless the type says which; a constructor too,
- *   unless its unit says which (M.C); an abbreviation too, but an
- *   interface names its own as M.t (design, below). Each function and static block is a piece (.piece), which
+ *   directory (/lib/ml, or -L's), those a unit names. A type, a
+ *   constructor and a label are their unit's, M.t, M.C, found bare in
+ *   the unit, in what it opens and in Stdlib (design, below). Each
+ *   function and static block is a piece (.piece), which
  *   tiny-ld leaves out when nothing reaches it: a function of the
  *   toplevel has no free variable, so
  *   its closure is static and the init does not name it, and a library
@@ -292,28 +291,28 @@
  * needed at once.
  *
  * design:
- * Names have no pass of their own. A type, a constructor, a label and
- * an abbreviation are strings in global tables (Tree's cons,
- * record_labels, abbreviations), filled as the parser reads the
- * declarations and as the interfaces are read; a name is looked up in
- * them when it is used, and the latest one in wins. That is little
- * code, and a declaration is usable at once, with no environment to
- * thread through the passes. The price is that what a name means can
- * depend on the order the interfaces were read in, and each case
- * where two units' names meet has had its own rule added: a
- * constructor kept twice, C and M.C, open M copying M's, a label the
- * latest record's unless the type says, an abbreviation kept as t and
- * M.t (In_channel's t and Fpath's t were one name: In_channel.input
- * took a string when Fpath's interface was read after In_channel's).
- * The other road is a pass that resolves every name before typing:
- * Caml Light's names are qualified from their declaration (a qualid,
- * a unit and a name), a bare one looked up in the unit, then in the
- * opened units in a fixed order; OCaml's are paths of stamped
- * identifiers in an environment, an abbreviation expanded by its path;
- * m-ix's mini-ml has Resolve, after which a type is its declaration
- * itself (Scope's tdecl, its full path) and no name is looked up
- * again. Each is more code, and no order of reading can change a
- * name's meaning.
+ * Names have no pass of their own, but one rule, Caml Light's: a type,
+ * a constructor, a record's label and a value are their unit's from
+ * their declaration, M.t, M.C, M.x, in global tables (Tree's cons,
+ * record_labels, abbreviations, declared; Types' and Compile's
+ * values), and a bare name in a unit is the one in scope, the unit's
+ * own, then what it opens (the latest first), then Stdlib's, open in
+ * all (Tree.ml's Names). The parser qualifies a name as it reads it,
+ * so a declaration is usable at once, with no environment threaded
+ * through the passes, and what a name means is the source's, not the
+ * order the interfaces were read in. Before this rule the types,
+ * constructors and labels were bare strings, the latest declared or
+ * read winning, and each place two units' names met grew a rule of its
+ * own (a constructor kept twice, C and M.C; open M copying M's; a label
+ * the latest record's; an abbreviation t and M.t), until In_channel's t
+ * and Fpath's t were one name and In_channel.input took a string when
+ * Fpath's interface was read last. Where tiny-ml cannot do as OCaml,
+ * which finds a constructor or a type by the type it is used at, a bare
+ * name of a unit not open is the only one of that name, and two are an
+ * error asking which (M.C). OCaml goes further, paths of stamped
+ * identifiers in an environment; m-ix's mini-ml has Resolve, after
+ * which a type is its declaration itself (Scope's tdecl, its full path)
+ * and no name is looked up again: more code, a pass of its own.
  *
  * references:
  * plan_ml.md's related work lists them too:

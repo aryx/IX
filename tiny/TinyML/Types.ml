@@ -87,23 +87,37 @@ let con_type c =
   | Tree.TCon (_, res :: args) -> res, args
   | _ -> invalid_arg "con_type"
 
-(* l's label, in the record t already is when known (an annotation's,
- * a parameter's): type-directed, so that two records may share one;
- * else the latest record's, as OCaml's (a unit's own are read after the
- * interfaces of those before it)
- * (old: an error, "a field of several records: annotate which", when
- * a program was its files compiled whole) *)
+(* the records that have a label among those f keeps, one each *)
+let records l f =
+  List.fold_left (fun acc (li : Tree.linfo) ->
+      if f li && not (List.exists (fun (o : Tree.linfo) -> o.lrec = li.lrec) acc)
+      then li :: acc else acc)
+    [] (Hashtbl.find_all Tree.record_labels l)
+
+(* l's label: of the record t already is when known (an annotation's,
+ * a parameter's), type-directed, so that two records may share one;
+ * else the one in scope (Tree's names: the unit's own, what it opens,
+ * Stdlib's, the latest first); else the only record that has it
+ * (old: the latest record read, whichever unit's) *)
 let label_for l t : Tree.linfo =
-  let known = match repr t with Tree.TCon (n, _) -> Some n | _ -> None in
-  match
-    List.filter (fun (li : Tree.linfo) -> known = None || known = Some li.lrec)
-      (Hashtbl.find_all Tree.record_labels l)
-  with
-  | li :: _ -> li
-  | [] ->
-      Lexer.error
-        (Printf.sprintf "no field %s%s" l
-           (match known with Some n -> " in " ^ n | None -> ""))
+  match repr t with
+  | Tree.TCon (n, _) ->
+      (match records l (fun li -> li.lrec = n) with
+       | li :: _ -> li
+       | [] -> Lexer.error (Printf.sprintf "no field %s in %s" l n))
+  | _ ->
+      (match Hashtbl.find_opt Tree.label_scope l with
+       | Some li -> li
+       | None ->
+           (match records l (fun _ -> true) with
+            | [ li ] -> li
+            | [] -> Lexer.error (Printf.sprintf "no field %s" l)
+            | lis ->
+                Lexer.error
+                  (Printf.sprintf "the field %s of several records (%s): say which"
+                     l (String.concat ", "
+                          (List.sort compare
+                             (List.map (fun (li : Tree.linfo) -> li.lrec) lis))))))
 let label_type (li : Tree.linfo) =
   match instantiate li.lscheme with
   | Tree.TCon (_, [ r; f ]) -> r, f
@@ -181,7 +195,9 @@ let unit_names = ref []
 let add_name tbl x b =
   Hashtbl.add tbl x b;
   unit_names := (fun () -> Hashtbl.remove tbl x) :: !unit_names
-let unit_done () = List.iter (fun f -> f ()) !unit_names; unit_names := []
+let unit_done () =
+  List.iter (fun f -> f ()) !unit_names; unit_names := [];
+  Tree.scope_done ()
 
 let rec infer env e : Tree.ty =
   match e with
@@ -237,15 +253,19 @@ let rec infer env e : Tree.ty =
   | Tree.Record (fs, order) ->
       (* the record whose labels are exactly these *)
       let names = List.sort compare (List.map fst fs) in
+      let fits (li : Tree.linfo) = List.sort compare li.lnames = names in
+      let l = fst (List.hd fs) in
       let li0 =
-        match
-          List.filter
-            (fun (li : Tree.linfo) -> List.sort compare li.lnames = names)
-            (Hashtbl.find_all Tree.record_labels (fst (List.hd fs)))
-        with
-        | li :: _ -> li
-        | [] -> Lexer.error
-          ("no record has the fields " ^ (String.concat ", " names))
+        match Hashtbl.find_opt Tree.label_scope l with
+        | Some li when fits li -> li
+        | _ ->
+            (match records l fits with
+             | [ li ] -> li
+             | [] -> Lexer.error
+                 ("no record has the fields " ^ String.concat ", " names)
+             | _ -> Lexer.error
+                 ("several records have the fields "
+                  ^ String.concat ", " names ^ ": say which"))
       in
       let r = Tree.newvar () in
       order := List.map (fun (l, e) ->
@@ -320,8 +340,8 @@ let type_item env (it, l) =
 
 (* Scopes. A unit's names are M.x for the units after it; open M gives
  * a unit M's names as x, for itself alone. Stdlib is open in every
- * unit. A name's env and a type's env are scoped alike; the types, the
- * constructors and the labels are the program's, one name space
+ * unit. A name's env and a type's env are scoped alike, as the types,
+ * the constructors and the labels are (Tree.ml's Names)
  * (old: every name the program's, open M read and left, List.map a
  * name with a dot) *)
 let implicit u = u = "Stdlib"

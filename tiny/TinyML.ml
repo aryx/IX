@@ -201,19 +201,6 @@ let write_interface (old : before) (exports : (string * Compile.binding) list)
    * builds of tiny-ml) *)
   let names tbl =
     List.sort_uniq compare (Hashtbl.fold (fun k _ acc -> k :: acc) tbl []) in
-  (* the unit's own abbreviations named M.t wherever its types name
-   * them: read elsewhere, t is whichever unit's was read last (Tree's
-   * abbreviations) *)
-  let own =
-    List.filter_map (fun ((t, _) as ab) ->
-        if old.old_abbrev ab then None else Some t) !Parser.abbreviations in
-  let rec qualified te =
-    match te with
-    | Tree.TE (c, args) ->
-        Tree.TE ((if List.mem c own then !Tree.unit_name ^ "." ^ c else c),
-                 List.map qualified args)
-    | Tree.TEVar _ -> te in
-  let texpr_of_ty t = qualified (texpr_of_ty t) in
   let icons = List.filter_map (fun c ->
     let ci = Hashtbl.find Tree.cons c in
     if old.old_con c ci then None
@@ -244,8 +231,7 @@ let write_interface (old : before) (exports : (string * Compile.binding) list)
     { iunit = !Tree.unit_name, nglobals, !Machine.arities; icons = icons;
       ilabels = ilabels;
       iabbrevs =
-        List.filter_map (fun ((t, (ps, te)) as a) ->
-            if old.old_abbrev a then None else Some (t, (ps, qualified te)))
+        List.filter (fun a -> not (old.old_abbrev a))
           (List.rev !Parser.abbreviations);
       iforgotten =
         List.filter (fun t -> not (old.old_forgotten t)) !Parser.forgotten;
@@ -270,33 +256,27 @@ and register (i : interface) =
   let iname, iglobals, icurry = i.iunit in
   read_units := !read_units @ [ iname ];
   let ty te = Tree.of_texpr (ref []) te in
-  Tree.known_units := iname :: !Tree.known_units;
-  (* its abbreviations first, which its other types name (M.t): each as
-   * t, the latest, and as M.t, its own *)
-  let add name ps te =
-    Parser.abbreviations :=
-      (name, (ps, te))
-      :: List.filter
-           (fun (t', (ps', _)) ->
-             t' <> name || List.length ps' <> List.length ps)
-           !Parser.abbreviations in
-  List.iter (fun (t, (ps, te)) -> add t ps te; add (iname ^ "." ^ t) ps te)
+  (* its names qualified already (M.t, M.C, l of M.t): in the tables as
+   * they are, its types declared; Stdlib's in scope for good, bare *)
+  List.iter (fun (t, (ps, te)) ->
+      Parser.abbreviations := (t, (ps, te)) :: !Parser.abbreviations;
+      Hashtbl.replace Tree.declared t ())
     i.iabbrevs;
   List.iter (fun (c, kind, arity, nconst, nblock, te) ->
       Hashtbl.replace Tree.cons c
         { kind = kind; arity = arity; nconst = nconst; nblock = nblock;
-          scheme = ty te })
+          scheme = ty te };
+      match te with
+      | Tree.TE ("%c", Tree.TE (r, _) :: _) when r <> "exn" ->
+          Hashtbl.replace Tree.declared r ()
+      | _ -> ())
     i.icons;
   List.iter (fun (l, r, idx, mut, lnames, te) ->
-    let others =
-      List.filter (fun (li : Tree.linfo) -> li.lrec <> r)
-        (Hashtbl.find_all Tree.record_labels l) in
-    while Hashtbl.mem Tree.record_labels l do Hashtbl.remove Tree.record_labels
-      l done;
-    List.iter (Hashtbl.add Tree.record_labels l) (List.rev others);
     Hashtbl.add Tree.record_labels l
-      { lrec = r; idx = idx; mut = mut; lnames = lnames; lscheme = ty te })
+      { lrec = r; idx = idx; mut = mut; lnames = lnames; lscheme = ty te };
+    Hashtbl.replace Tree.declared r ())
     i.ilabels;
+  if Types.implicit iname then Tree.bring Hashtbl.add Hashtbl.add iname;
   List.iter (fun t ->
       if not (List.mem t !Parser.forgotten) then Parser.forgotten := t
         :: !Parser.forgotten)
@@ -571,7 +551,6 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
      * values, its globals' count *)
     let compile_file f =
       Tree.unit_name := unit_of f;
-      Tree.known_units := !Tree.unit_name :: !Tree.known_units;
       let items = with_file (fun ch -> Parser.parse (text_of ch)) f in
       let tdefs = Types.type_unit items in
       let defs, n = compile_unit items in

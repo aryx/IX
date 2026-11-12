@@ -165,19 +165,24 @@ if $TML -L $W/lib -c -o $W/units/Twice.o $W/units/Twice.ml && $TML -L $W/lib -c 
    && [ "$(timeout 60 $CPU $W/units/twice 2>&1)" = 30 ]
 then echo "ok units: a name defined twice, the later"; else echo "FAIL units: a name defined twice"; failures=$((failures + 1)); fi
 # two units' constructors of one name, told apart where qualified, an
-# alias's too (A.Add, I.Mul), an unqualified one the latest read (-I
-# reads them in the order the unit names them: A, then Isa); and a
+# alias's too (A.Add, I.Mul), an unqualified one the opened unit's
+# (open Isa), and an error when neither unit is open (Tree's names; old:
+# the latest read, whichever the order of reading made it); and a
 # constructor's tag its own type's (old: the second unit's Add was both,
 # a type error, so tiny-cc could not use TinyMachineISA's types)
 printf 'type arith = Add | Sub\nlet show = function Add -> "add" | Sub -> "sub"\n' > $W/units/A.ml
 printf 'type alu = Sub | Add | Mul\nlet show = function Add -> "ADD" | Sub -> "SUB" | Mul -> "MUL"\n' > $W/units/Isa.ml
-printf 'let a = A.Add\nmodule I = Isa\nlet () = print_string (A.show a ^ " " ^ I.show I.Mul ^ " " ^ A.show A.Sub ^ " " ^ Isa.show Add)\n' > $W/units/C.ml
+printf 'module I = Isa\nlet () = print_string (A.show A.Add ^ " " ^ I.show I.Mul ^ " " ^ A.show A.Sub ^ " " ^ Isa.show Isa.Add)\n' > $W/units/C.ml
+printf 'open Isa\nlet () = print_string (A.show A.Add ^ show Add)\n' > $W/units/C2.ml
+printf 'let () = print_string (A.show A.Add ^ Isa.show Add)\n' > $W/units/C3.ml
 if $TML -L $W/lib -c -o $W/units/A.o $W/units/A.ml && $TML -L $W/lib -c -o $W/units/Isa.o $W/units/Isa.ml \
    && $TML -L $W/lib -c -I $W/units -o $W/units/C.o $W/units/C.ml \
    && $TML -o $W/units/cmain.o $LIB_O $W/units/A.o $W/units/Isa.o $W/units/C.o \
    && link_tm $W/units/clash $L/start.s $L/udivmod.s $W/exit.s $W/units/cmain.o $W/units/A.o $W/units/Isa.o $W/units/C.o $W/main4096.o $LIB_O \
-   && [ "$(timeout 60 $CPU $W/units/clash 2>&1)" = "add MUL sub ADD" ]
-then echo "ok units: two units' constructors of one name, qualified"; else echo "FAIL units: two units' constructors of one name"; failures=$((failures + 1)); fi
+   && [ "$(timeout 60 $CPU $W/units/clash 2>&1)" = "add MUL sub ADD" ] \
+   && $TML -L $W/lib -c -I $W/units -o $W/units/C2.o $W/units/C2.ml \
+   && [ "$($TML -L $W/lib -c -I $W/units -o $W/units/C3.o $W/units/C3.ml 2>&1)" = "$W/units/C3.ml: constructor Add of several units (A.Add, Isa.Add): say which, M.Add, or open M" ]
+then echo "ok units: two units' constructors of one name, qualified, opened, or said ambiguous"; else echo "FAIL units: two units' constructors of one name"; failures=$((failures + 1)); fi
 # a unit's operator named M.( op ), and through an alias (old: M taken
 # for a constructor)
 printf 'let ( +++ ) a b = (a * 10) + b\n' > $W/units/Ops.ml

@@ -71612,3 +71612,81 @@ Claude verified the move: the image is byte-identical, and `make check`, self-qu
 Claude planned to leave the modified `tiny/examples/Buildfile` out of the commit, since it was not Claude's edit.
 Claude also noted that `TinyKernel/Buildfile` and both `.depend` files were rewritten for the new directory layout.
 Claude moved the kernel files and updated the paths in the README, docs, code map configs, and layers SVG script.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 13:37
+
+**Yoann:**
+
+> let's commit
+
+------------------------------------------------------------------------
+
+## 2026-11-12 13:37
+
+**Yoann:**
+
+> Yes I modified Buildfile examples, to have a simpler clean target
+
+**Claude (summary):**
+
+Claude committed the move as `c3d28741` and left Yoann's `tiny/examples/Buildfile` change out of it.
+Claude warned that a simpler `clean` would delete `TinyLibMachine.o` and `spin.map` from the tiny-kernel `/examples` image directory.
+Those two files are listed in the top Buildfile's `EXAMPLES` list for the linker and prof examples, so a glob would remove them.
+Claude offered to move them into their own subdirectory, or to restore the explicit list with a comment explaining why.
+Claude asked whether to commit Yoann's change as is, move the files, or restore the list.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 13:40
+
+**Yoann:**
+
+> I think we should have /examples under tiny-kernel to be very similar to tiny/examples/, or even better identical, so it's less confusing and simplify some building targets. not sure what was the purpose of this TinyLibMachine.o and .map files but I'm sure we can reproduce them via a build command the user can run
+
+------------------------------------------------------------------------
+
+## 2026-11-12 13:41
+
+**Yoann:**
+
+> also I wonder if tiny/runtime/ should be moved somewhere else  ... whether it makes sense there, like we have examples/ and tests/
+
+**Claude (summary):**
+
+Claude recommended keeping `tiny/runtime/` where it is, since it is a library directory like `TinyLibCore/`.
+Claude noted that `examples/` and `tests/` are not part of the system, while `runtime/` is the C and ML runtime every program links.
+Claude proposed an optional move to `tiny/lib/c/` and `tiny/lib/ml/`, mirroring the `/lib/c` and `/lib/ml` layout on tiny-kernel's disk.
+Claude flagged the costs: `tiny/lib/` clashes with the host's `build libs` output, and many paths and docs would change.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 13:54
+
+**Yoann:**
+
+> I like the idea of lib/c/ lib/ml since it would imitate what we have on the disk under tiny-kernel ... but I'm hesitating ...
+
+**Claude (summary):**
+
+Claude recommended against a lib/c and lib/ml layout, since /lib holds build outputs while tiny/ holds sources.
+Claude proposed step one: copy user.h and draw.h into the image's /lib/c, so hello.c's cc -I points there.
+Claude noted this lets /examples build without the sources disk, and drops SRC from its Buildfile.
+Claude suggested step two, grouping the libc and mlsys pieces under one name, only if step one stays confusing.
+Claude offered to commit the tested /examples change first, then do step one.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 13:54
+
+**Yoann:**
+
+> and it would remove the need from this artificial build libs target. Not sure what is best and better for the "transparency" and readability of the tiny project
+
+**Claude (summary):**
+
+Claude proposed a `tiny/lib/c/` and `tiny/lib/ml/` layout where each library directory holds its sources, Buildfile, and built output.
+Claude argued this matches how `/examples` already works and removes the `libs` copy step, `runtime/`, and `TinyKernel/libc/`.
+Claude flagged that `/lib/ml` would still need a small copy step or a `-L` change for `stdlib.a` and the `.tmi` files from TinyLibCore.
+Claude proposed committing the `/examples` change first, then moving `lib/c/` and deciding on `lib/ml/` after seeing how `lib/c/` reads.

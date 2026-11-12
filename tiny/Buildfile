@@ -421,18 +421,17 @@ TinyKernel/kernel.img: kernel
 # /lib/ml and the runtimes in /lib/c and /lib/ml (the sources, /src,
 # are on the disk, TinyKernel/Makefile's disk.img, made on the host).
 # The same recipe on the host and on tiny-kernel, in a copy of tiny/
-# (TinyKernel/Makefile's _make/src, the disk's /src). Two of the
-# examples are made on the host alone, before: a profile and its map
-# (examples/spin.prof and spin.map, tiny-cpu -prof's); and so is
-# TinyKernel/font.s, the font's bytes. MEMORY, from the environment
-# (TinyKernel/Makefile's MEMORY=segments or pages), the kernel's way of
-# giving memory, in /lib/memory, with MEMSIZE.
+# (TinyKernel/Makefile's _make/src, the disk's /src). One file is made
+# on the host alone, before: TinyKernel/font.s, the font's bytes.
+# MEMORY, from the environment (TinyKernel/Makefile's MEMORY=segments or
+# pages), the kernel's way of giving memory, in /lib/memory, with
+# MEMSIZE.
 UTILS = [ basename cat cmp cp date du echo grep kill ln ls mkdir mv ps pwd \
     rm seq sleep sort tail tee test touch walk wc xd
-EXAMPLES = TinyKernel/steps/t6/user/wc.c TinyKernel/user/sh.c user/emacs.ml \
-    TinyEditorScreen.ml examples/report.ixd examples/korobeiniki.wav \
-    examples/spin.prof examples/spin.map TinyLibMachine.tmi TinyLibMachine.o \
-    examples/hello.c examples/square.s examples/helloml.ml examples/Buildfile
+# /examples: examples/, its files (sources, not what build makes there)
+EXAMPLES = examples/Buildfile examples/hello.c examples/square.s \
+    examples/helloml.ml examples/spin.s examples/spin.prof \
+    examples/report.ixd examples/korobeiniki.wav
 LIBC = runtime/start.o runtime/udivmod.o runtime/libc.o \
     TinyKernel/libc/sys.o TinyKernel/lib/c/Buildfile
 LIBML = TinyLibSystem/tinykernel/mlsys.o TinyLibSystem/tinykernel/end.o \

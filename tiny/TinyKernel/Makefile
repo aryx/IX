@@ -108,7 +108,6 @@ AS = $(call tool,tiny-as)
 LD = $(call tool,tiny-ld)
 AR = $(call tool,tiny-ar)
 MKFS = $(call tool,tiny-mkfs)
-CPU = $(call tool,tiny-cpu)
 MACHINE = $(call tool,tiny-machine)
 MKFSBIN = $(wildcard $(MKFS))
 
@@ -126,9 +125,8 @@ T = ../tests/TinyKernel_tests
 # host's tools by tiny-kernel's names in _make/tools (ml, cc, as, ld,
 # ar, build, and rc's tiny-shell). The copy is made again at each make:
 # what changed, tiny-build makes again (by its digests). Before the
-# build, the three files the host alone makes, put in the copy:
-# TinyKernel/font.s, the font's bytes, and examples/spin.prof and
-# spin.map, a profile of tiny-cpu's. (old: this Makefile's own rules,
+# build, the file the host alone makes, put in the copy:
+# TinyKernel/font.s, the font's bytes. (old: this Makefile's own rules,
 # its lists of each program's units and of each unit's interfaces, the
 # Buildfile's said again; and a third build, the Buildfile this
 # Makefile wrote for tiny-kernel, /src/TinyKernel/Buildfile)
@@ -155,24 +153,15 @@ $(O)/font.s: $(FONT)
 	od -An -v -tu1 $(FONT) | awk 'NF { printf "\t.byte\t%s", $$1; for (i = 2; i <= NF; i++) printf ", %s", $$i; print "" }' >> $@
 	printf 'font_end:\n\t.align\t4\n' >> $@
 
-# a profile and its map, for prof's example: spin run by tiny-cpu -prof
-$(O)/spin.prof: ../tests/TinyProfiler_tests/spin.s
-	@mkdir -p $(@D)
-	$(AS) -o $(O)/spin.o $<
-	$(LD) -map -o $(O)/spin $(O)/spin.o
-	$(CPU) -prof $@ $(O)/spin > /dev/null
-$(O)/spin.map: $(O)/spin.prof
-
 # boot.img and kernel.img: the Buildfile's, copied out of the copy when
 # they changed (so that what stands on them is not made again)
-$(O)/boot.img: $(O)/font.s $(O)/spin.prof $(O)/spin.map FORCE
+$(O)/boot.img: $(O)/font.s FORCE
 	mkdir -p $(O)/tools
 	for t in $(TML) $(TC) $(AS) $(LD) $(AR) $(BUILD) $(RC); do cksum < $$(command -v $$t); done > $(O)/tools.new
 	cmp -s $(O)/tools.new $(O)/tools.sum || rm -rf $(S); mv $(O)/tools.new $(O)/tools.sum
 	mkdir -p $(S)
 	tar -C .. $(COPY) -cf - . | tar -C $(S) -xf -
 	cp $(O)/font.s $(S)/TinyKernel/font.s
-	cp $(O)/spin.prof $(O)/spin.map $(S)/examples/
 	for t in ml:$(TML) cc:$(TC) as:$(AS) ld:$(LD) ar:$(AR) build:$(BUILD) tiny-shell:$(RC); do \
 	  ln -sf $$(command -v $${t#*:}) $(O)/tools/$${t%%:*}; done
 	cd $(S) && PATH=$(abspath $(O)/tools):$$PATH MEMORY=$(MEMORY) MEMSIZE=$(MEMSIZE) \
@@ -187,7 +176,7 @@ FORCE:
 # made by tiny-mkfs (TinyKernel/host/TinyMkfs.ml), as m-ix's machine has
 # its boot.img and its card.img; given to the machine by -d, where the
 # kernel shows it at /, with the image's files. /src is the copy's
-# sources, tiny/'s and the three the host made, as the build read them
+# sources, tiny/'s and the font the host made, as the build read them
 # here: what tiny-kernel builds itself from. 8 MB, what a web page
 # fetches; a copy grown to 64 by truncate -s for a run or a build on
 # tiny-kernel (TinyKernelFS.mli's fs_mount: used whole). The files in
@@ -197,7 +186,6 @@ $(O)/disk.img: $(O)/boot.img $(MKFSBIN)
 	rm -rf $(O)/disk; mkdir -p $(O)/disk/src
 	tar -C .. $(COPY) -cf - . | tar -C $(O)/disk/src -xf -
 	cp $(O)/font.s $(O)/disk/src/TinyKernel/font.s
-	cp $(O)/spin.prof $(O)/spin.map $(O)/disk/src/examples/
 	cd $(O)/disk && $(MKFS) -m 8 ../disk.new $$(find src -type f | LC_ALL=C sort | sed 's|.*|&=&|')
 	cmp -s $(O)/disk.new $@ && rm $(O)/disk.new || mv $(O)/disk.new $@
 	rm -rf $(O)/disk
@@ -285,7 +273,7 @@ $(O)/check/14.out: $(O)/boot.img
 $(O)/check/15.out: $(O)/boot.img
 	printf 'play /nosuch\nplay /examples/report.ixd\nplay\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
 $(O)/check/16.out: $(O)/boot.img
-	printf 'prof /examples/spin.prof -u /examples/spin.map\nprof -n 2 /examples/spin.prof\nprof\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
+	printf 'rc\ncd /examples; build spin\nprof spin.prof -u spin.map\nprof -n 2 spin.prof\nprof\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
 $(O)/check/17.out: $(O)/boot.img
 	timeout 300 $(MACHINE) $(O)/boot.img < $(T)/db.keys > $@
 $(O)/check/18.out: $(O)/boot.img

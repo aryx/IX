@@ -255,7 +255,7 @@ let contents node =
       String.concat "" (List.map (fun (name, n) -> entry name n) (children node))
 
 (* [place d name node]: node under name in d; a name with a slash,
- * examples/wc.c, in its directory, which is made the first time *)
+ * examples/hello.c, in its directory, which is made the first time *)
 let rec place d name node =
   match String.index_opt name '/' with
   | None -> d := !d @ [ name, node ]

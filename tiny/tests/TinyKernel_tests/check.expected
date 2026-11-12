@@ -171,18 +171,20 @@ $ play: /nosuch: no such file, or empty
 $ play: /examples/report.ixd: not a WAV file
 $ usage: play file.wav
 $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
-$ 2,504 instructions: the kernel 0.0%, programs 100.0%
+$ % as -o spin.o spin.s
+ld -map -o spin spin.o
+% 2,504 instructions: the kernel 0.0%, programs 100.0%
        count      %     function
        2,100   83.9  u  spin1
          302   12.1  u  loop
          100    4.0  u  spin
            2    0.1  u  main
-$ 2,504 instructions: the kernel 0.0%, programs 100.0%
+% 2,504 instructions: the kernel 0.0%, programs 100.0%
        count      %     function
        2,504  100.0  u  (the program)
-$ usage: tiny-prof [-n count] [-diff base] [-base hex] profile
+% usage: tiny-prof [-n count] [-diff base] [-base hex] profile
          [-k file.map...] [-u file.map...]
-$ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
+% $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ tiny-db: t.db; help for how, ^D to end
 tiny-db> tiny-db> tiny-db> tiny-db> tiny-db> tiny-db> range books.year >= 1985 (index) | where | sort
 tiny-db> SICP|41
@@ -252,9 +254,7 @@ b
 % $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 tiny-kernel: / on a disk of 65536 KB, * KB free; 1 snapshots in /dump
 $ % % % % % % % % ping: /bin/ping
-% % mach.o: the host
-% mach.tmi: the host
-% % ml -S, then as: the same object
+% % % ml -S, then as: the same object
 % -   1 * /bin/as
 -   1 * /bin/cc
 -   1 * /bin/ld
@@ -458,6 +458,8 @@ as -o square.o square.s
 ld -map -s -n -o hello /lib/c/start.o /lib/c/udivmod.o /lib/c/libc.o /lib/c/sys.o hello.o square.o
 ml -L /lib/ml -o helloml.o helloml.ml
 ld -map -s -n -o helloml /lib/c/start.o /lib/c/udivmod.o /lib/c/libc.o /lib/c/sys.o /lib/ml/mlsys.o helloml.o /lib/ml/stdlib.a /lib/ml/end.o
+as -o spin.o spin.s
+ld -map -o spin spin.o
 hello: the squares of 1 to 10 add up to 385
 sorted: 1 2 3 4 5 7 8 9
 the first over 5: 7

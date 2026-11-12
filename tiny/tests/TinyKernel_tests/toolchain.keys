@@ -8,8 +8,6 @@ as -o sys.o src/TinyKernel/libc/sys.s
 ld -s -n -o ping start.o udivmod.o libc.o sys.o ping.o
 cmp ping /bin/ping && echo ping: /bin/ping
 cd /src; ml -c -o /mach.o TinyLibMachine.ml; cd /
-cmp mach.o /examples/TinyLibMachine.o && echo mach.o: the host
-cmp mach.tmi /examples/TinyLibMachine.tmi && echo mach.tmi: the host
 cd /src; ml -c -S -o /mach.s TinyLibMachine.ml; cd /
 as -o mach2.o mach.s; cmp mach2.o mach.o && echo ml -S, then as: the same object
 ls -l /bin/as /bin/ld /bin/cc /bin/ml

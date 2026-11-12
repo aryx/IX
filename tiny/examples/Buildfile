@@ -1,12 +1,13 @@
 # Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyBuildSystem.ml)
 #
-# hello, from hello.c and square.s, and helloml, from helloml.ml, built
-# on tiny-kernel by build in /examples (see hello.c and helloml.ml): both
-# by default, or one by its name (build helloml). What they link besides
-# their own objects is already built in /lib: /lib/c, C's runtime and
-# tiny-kernel's calls, start.o first (the machine starts there); /lib/ml,
-# ML's runtime (mlsys.o), the library (stdlib.a, its units), and end.o,
-# the image's end, last.
+# hello, from hello.c and square.s, helloml, from helloml.ml, and spin,
+# from spin.s, built on tiny-kernel by build in /examples (see hello.c,
+# helloml.ml and spin.s): all by default, or one by its name (build
+# helloml). /examples is this directory, the same files. What they link
+# besides their own objects is already built in /lib: /lib/c, C's
+# runtime and tiny-kernel's calls, start.o first (the machine starts
+# there); /lib/ml, ML's runtime (mlsys.o), the library (stdlib.a, its
+# units), and end.o, the program's end, last.
 # Each has its Buildfile, which says how it is made from /src. -s puts
 # the labels after the image, the names debug shows; -map writes them
 # beside it too.
@@ -32,7 +33,7 @@ MLLIB = ${LIB}/ml
 # (user.h: the system's calls a C program makes, as libc/'s headers)
 INC = ${SRC}/TinyKernel/libc
 
-all: hello helloml
+all: hello helloml spin
 
 hello: hello.o square.o
 	$LD -map -s -n -o $target $CRT $prereq
@@ -49,8 +50,18 @@ helloml: helloml.o
 helloml.o: helloml.ml
 	$ML -L $MLLIB -o $target helloml.ml
 
-# build clean: what build made here removed, by name: /examples has
-# other files that *.o and *.map would take (TinyLibMachine.o, spin.map).
-# A target that makes no file is never up to date, so it always runs
+# spin alone, no runtime: prof's example, with spin.prof, where its
+# instructions went, which tiny-cpu -prof wrote on the host (tiny-kernel
+# has no tiny-cpu; so it is kept here, and never made by build there):
+#     prof spin.prof -u spin.map
+#     tiny-build TINY=tiny- spin.prof     on the host, made again
+spin: spin.o
+	$LD -map -o $target spin.o
+spin.map: spin
+spin.o: spin.s
+	$AS -o $target spin.s
+spin.prof: spin
+	tiny-cpu -prof $target spin > /dev/null
+
 clean:
-	rm -f hello helloml hello.o square.o helloml.o hello.map helloml.map
+	rm -f hello helloml spin *.o *.map

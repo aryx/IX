@@ -30,7 +30,7 @@ check() { # name
   if cmp -s $W/$1.out $T/$1.expected; then echo "ok $1"; else fail "$1"; diff $T/$1.expected $W/$1.out | head -10; fi
 }
 
-link_tm $W/spin $T/spin.s && $CPU -prof $W/spin.prof $W/spin || fail "spin: the run"
+link_tm $W/spin $ROOT/tiny/examples/spin.s && $CPU -prof $W/spin.prof $W/spin || fail "spin: the run"
 $PROF $W/spin.prof -u $W/spin.map > $W/spin.out
 check spin
 

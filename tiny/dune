@@ -1,4 +1,4 @@
-; The tiny programs built by OCaml on the host: tiny-c, tiny-ml and
+; The tiny programs built by OCaml on the host: tiny-cc, tiny-ml and
 ; the machine's tools; the host's tools on TinyLibSystem; and, as
 ; libraries, the TinyLib*.ml libraries and tiny-kernel's applications,
 ; for their tests and for the host's windows (user/sdl/). tiny-ml compiles
@@ -12,10 +12,10 @@
 ; The compilers
 ;*****************************************************************************
 
-; tiny-c on its parts (TinyC/)
+; tiny-cc on its parts (TinyC/)
 (executable
  (name TinyC)
- (public_name tiny-c)
+ (public_name tiny-cc)
  (package ix)
  (modules TinyC)
  (libraries ix_core fpath caps tiny_lib_system tiny_c_parts))
@@ -37,7 +37,7 @@
 ; and lines)
 (executables
  (names TinyAssembler TinyLinker TinyArchiver)
- (public_names tiny-assembler tiny-linker tiny-ar)
+ (public_names tiny-as tiny-ld tiny-ar)
  (package ix)
  (modules TinyAssembler TinyLinker TinyArchiver)
  (libraries ix_core fpath caps tiny_lib_machine tiny_lib_system))
@@ -63,7 +63,7 @@
   tiny_lib_system))
 
 ; tiny-prof: where the instructions went, by function, from a profile of
-; tiny-cpu -prof or tiny-machine -prof and tiny-linker's maps of what ran
+; tiny-cpu -prof or tiny-machine -prof and tiny-ld's maps of what ran
 ; (on TinyLibSystem: a tool of tiny-kernel's too, /bin/prof)
 (executable
  (name TinyProfiler)
@@ -142,7 +142,7 @@
  (name tiny_lib_machine)
  (wrapped false)
  (modules TinyLibMachine)
- ; (the objects' show_line, tiny-linker -debug's)
+ ; (the objects' show_line, tiny-ld -debug's)
  (preprocess (pps ppx_deriving.show)))
 
 ; TinyLibDraw.ml, a program's side of tiny-kernel's drawing: its messages

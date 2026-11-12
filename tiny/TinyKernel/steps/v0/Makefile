@@ -12,8 +12,8 @@
 
 export PATH := $(abspath ../../../../bin):$(PATH)
 
-AS = tiny-assembler
-LD = tiny-linker
+AS = tiny-as
+LD = tiny-ld
 MACHINE = tiny-machine
 
 O = _make

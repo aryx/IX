@@ -113,7 +113,7 @@ rule says:
 
 **ar** (the author: "I wonder if it would make sense to have an ar
 command to make libraries under t-ix"): an archive is objects
-marshalled as one, which tiny-linker would read in its members' order:
+marshalled as one, which tiny-ld would read in its members' order:
 /lib/ml/libml.a and /lib/c/libc.a for the lists and the glob a link
 names today (/lib/ml/[A-Z]*.o). The linker already leaves out what
 nothing reaches, so this is about packaging and order, not size. As
@@ -125,7 +125,7 @@ link by its name. Made by ml itself, as ocamlc -a and ocamlmklib (the
 author: "like ocamlmklib does (but maybe here ml can play all roles,
 with a single tool)"): ml -I, ml -M and ml -a -o lib.a units.o, the
 archive's format TinyLibMachine's beside the objects', read by
-tiny-linker in its members' order. To decide: C's libraries
+tiny-ld in its members' order. To decide: C's libraries
 (/lib/c/libc.a) by ml -a too (the same objects), or by a small ar.
 Later, after the library is built by the Buildfile.
 Done (2026-11-11): tiny-ar, a small ar (the author chose it over ml -a,
@@ -181,8 +181,8 @@ no check builds, broken unseen (the steps, since 7ea94bae, until
 
 ## Open questions
 
-- The host's tools are named tiny-ml, tiny-c, tiny-assembler and
-  tiny-linker, tiny-kernel's ml, cc, as and ld: the recipes say the
+- The host's tools are named tiny-ml, tiny-cc, tiny-as and
+  tiny-ld, tiny-kernel's ml, cc, as and ld: the recipes say the
   short names, and the host gives them by a directory of links (bin/
   has the long ones), or by variables (ML = ml) set on the host.
 - Outputs next to the sources in tiny/ on the host: dune ignores .o

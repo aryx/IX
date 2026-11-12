@@ -69,7 +69,7 @@ let label () : label = incr labels; !labels
 (* A unit's assembly, or the whole program's, as it is made: its
  * functions' code, its static blocks' data, their lines, the last
  * first (old: their lines printed into two buffers, text for
- * tiny-assembler; now an object, or the text by -S) *)
+ * tiny-as; now an object, or the text by -S) *)
 type asm = { mutable text : M.line list; mutable data : M.line list }
 
 (* the assembly being made: what the code (machine's, add_text) and the
@@ -107,7 +107,7 @@ let lines (a : asm) : M.line list =
  * slot 0 its closure, then its parameters, its variables, and a slot
  * per register of the stack machine, where a call or an allocation
  * spills it. On the machine stack, m bytes: C's outgoing arguments from
- * 0(sp) (tiny-c's convention: every argument in memory, the result in
+ * 0(sp) (tiny-cc's convention: every argument in memory, the result in
  * r13, every register but sp the callee's), the link at c, then 16
  * bytes per handler. A call of ML passes the closure in r13 and the
  * arguments in r1..rn (r0 is the zero), so at most 10 (r11 is a tail
@@ -446,7 +446,7 @@ let machine (name : sym) nparams nslots (code : ir list) : M.line list =
   let f = nslots + st.mmaxsp and c = 4 * st.mcargs in
   let m = (record c st.mtries + 7) land lnot 7 in
   let store r i = M.Instr (M.Store (M.W, r, vsp, 4 * (i - f))) in
-  (* a piece: tiny-linker leaves it out when nothing names its labels;
+  (* a piece: tiny-ld leaves it out when nothing names its labels;
    * the frames made, the closure and the parameters in their slots *)
   [ M.Piece; M.Label name;
     M.Instr (M.Alui (M.Add, sp, sp, - m));

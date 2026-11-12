@@ -66,11 +66,11 @@ tiny-build|-I lib_crypto|$S $T/TinyBuildSystem.ml
 tiny-shell|-|$S $R $T/TinyShell.ml
 tiny-editor|-|$S $R $T/TinyEditorLine.ml
 tiny-utils|-|$S $R $T/TinyUtilities.ml
-tiny-c|-|$S $TC $T/TinyC.ml
+tiny-cc|-|$S $TC $T/TinyC.ml
 tiny-db|-|$S $T/TinyDatabase.ml
 tiny-vcs|-I lib_crypto|$S $T/TinyVCS.ml
-tiny-assembler|-|$L $S $T/TinyAssembler.ml
-tiny-linker|-|$L $S $T/TinyLinker.ml
+tiny-as|-|$L $S $T/TinyAssembler.ml
+tiny-ld|-|$L $S $T/TinyLinker.ml
 tiny-ar|-|$L $S $T/TinyArchiver.ml
 tiny-cpu|-|$CPU $S $T/TinyCPU.ml
 tiny-prof|-|$S $L $T/TinyProfiler.ml

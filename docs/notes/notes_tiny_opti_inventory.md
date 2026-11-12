@@ -10,7 +10,7 @@ Scope: tiny/ from 2026-10-08 to 2026-10-27. Sources: the commit
 messages (each row gives its commit), the code's old: comments and
 switches. Every number is copied from the commit with the setting it
 gives, except T12 and T13's, measured for this note. Not yet gathered:
-the tiny-c and tiny-assembler sides, the tiny programs' own
+the tiny-cc and tiny-as sides, the tiny programs' own
 algorithms (TinyBrowser, TinyOffice), and the second pass every row
 deserves (each gain measured alone again, on today's tree).
 

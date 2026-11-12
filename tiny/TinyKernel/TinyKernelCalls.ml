@@ -150,8 +150,8 @@ let sys_fork p = with_room p (fun () ->
 
 (* A program's file is either a raw image, run in 1 MB, or an a.out: a
  * header of three words (a magic number, the image's size, the memory
- * the program asks for), then the image (tiny-linker -a), and maybe its
- * labels, for debug (-s), which are not loaded. With tiny-linker -n, a
+ * the program asks for), then the image (tiny-ld -a), and maybe its
+ * labels, for debug (-s), which are not loaded. With tiny-ld -n, a
  * fourth word, the text's size, and another magic number. This returns
  * where the image starts in the file, its size, the memory, and the
  * text's size (0: none). *)
@@ -209,7 +209,7 @@ let load_prog p node argv =
     match mem_load p.mem key stamp tsize size memory with
     | Text_new -> 0
     | Text_shared -> tsize in
-  (* Only the image is written, its statics in it (tiny-linker writes a
+  (* Only the image is written, its statics in it (tiny-ld writes a
    * .space as zeros); the rest of the
    * partition, the stack and the heap, is left as the last process to
    * have it left it, as no program reads a word it has not written

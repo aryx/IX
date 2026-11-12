@@ -4,7 +4,7 @@
 // links besides its own code, on any system: C's (start.s, the start,
 // write and exits, and udivmod.s, the unsigned division: tiny-machine's
 // assembly, not sources to the map, named in the roles; libc.c and
-// libc.h), linked first into every C program of tiny-c's (tiny-kernel's,
+// libc.h), linked first into every C program of tiny-cc's (tiny-kernel's,
 // ../TinyKernel/Makefile's ULIB; the steps'); and ML's, ml.c, #included
 // by what gives it the memory and write and exit:
 // ../TinyKernel/runtime.c (the kernel), ../TinyLibSystem/tinykernel/mlsys.c
@@ -18,7 +18,7 @@
   summary: "What a program links besides its own code: C's start, division and libc, and tiny-ml's allocator, collector and primitives.",
   files: {
     'libc.h': { digest: 'e037c8c3fe70',
-      summary: "What a tiny-c program is given: start.s's write and exits, libc.c's print and strings; a long is 4 bytes.",
+      summary: "What a tiny-cc program is given: start.s's write and exits, libc.c's print and strings; a long is 4 bytes.",
       capitals: [
         { at: 'def:print', say: "Plan 9's print, on every tiny kernel" },
       ],
@@ -31,7 +31,7 @@
       related: ['libc.c'],
     },
     'libc.c': { digest: '899b308cb02a',
-      summary: "Plan 9's libc, what libc.h declares, in the C tiny-c takes: print's verbs as goken's, the strings, a heap that is a bump.",
+      summary: "Plan 9's libc, what libc.h declares, in the C tiny-cc takes: print's verbs as goken's, the strings, a heap that is a bump.",
       important: [
         { at: 'def:format', say: 'the verbs; a variadic call walks its arguments in memory', weight: 3 },
         { at: 'def:print', say: "a short write (a pipe's) written again", weight: 2 },

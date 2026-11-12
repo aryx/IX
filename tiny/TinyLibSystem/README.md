@@ -11,7 +11,7 @@ the parts of that `.mli`, beside the programs that name it, as
 
 | implementation | what it is over | who runs on it |
 |---|---|---|
-| `unix/` | OCaml's `Unix` and lib_core (Linux, macOS) | the tools on the host: tiny-shell, tiny-utils, tiny-editor, tiny-c, tiny-ml, tiny-assembler, tiny-linker, tiny-build, tiny-db, tiny-vcs, tiny-prof |
+| `unix/` | OCaml's `Unix` and lib_core (Linux, macOS) | the tools on the host: tiny-shell, tiny-utils, tiny-editor, tiny-cc, tiny-ml, tiny-as, tiny-ld, tiny-build, tiny-db, tiny-vcs, tiny-prof |
 | `tinykernel/` | tiny-kernel's calls (externals, `mlsys.c`'s functions) | every ML program on tiny-kernel, tools and windows alike |
 | `sdl/` | `unix/`'s code for files and processes, and an SDL window for the rest: the drawing on `fd_draw` by tiny-kernel's own `TinyKernelGraphics.ml`, the keys and the mouse, the speaker, the wire's port 70 | the window's programs on the host (`../user/sdl/`: tiny-emacs, tiny-office, tiny-www, tiny-calc, tiny-tetris, tiny-play) |
 | `teststub/` | nothing: what is drawn kept (`TinySystemTest.drawn`), no key, a still clock, every file a `Failure`; compiled by tiny-ml too | the tests of the window's programs, on the host and on tiny-cpu |

@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # Tests tiny-prof (TinyProfiler.ml) on profiles whose counts are known,
-# the functions' names from tiny-linker's maps (-map):
+# the functions' names from tiny-ld's maps (-map):
 # - spin.s on tiny-cpu (tiny-cpu -prof): a loop that calls a function
 #   100 times, its counts worked out by hand in its comment, a label of a
 #   compiler's kind (ml.L1) counted as the function's;

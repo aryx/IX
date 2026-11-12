@@ -11,7 +11,7 @@
  * its assembly for tiny-machine (the CPU of TinyMachineCPU.ml): words
  * of 4 bytes, integers of 31 bits. The runtime (the allocator, Cheney's
  * collector, the primitives, and the printing of an uncaught
- * exception) is in C, runtime/ml.c, compiled by tiny-c; the
+ * exception) is in C, runtime/ml.c, compiled by tiny-cc; the
  * program's own main gives it memory. TinyKernel.ml is the
  * program it was made for: a kernel in ML, which reaches the machine
  * through externals (functions in C or assembly), so the compiler
@@ -30,7 +30,7 @@
  *        | machine           turns the list into assembly, and
  *        |                   static blocks into .word
  *     file.o, the lines encoded (TinyLibMachine's assemble), for
- *     tiny-linker (with M.tmi when alone, -c); -S: file.s, their text
+ *     tiny-ld (with M.tmi when alone, -c); -S: file.s, their text
  *
  * Each pass is a part in TinyML/, whose .mli has its types and its
  * functions, in the order they are compiled and best read:
@@ -202,7 +202,7 @@
  *   one name space: a record's label is the latest record's unless the
  *   type says which; a constructor too, unless its unit says which
  *   (M.C). Each function and static block is a piece (.piece), which
- *   tiny-linker leaves out when nothing reaches it: a function of the
+ *   tiny-ld leaves out when nothing reaches it: a function of the
  *   toplevel has no free variable, so
  *   its closure is static and the init does not name it, and a library
  *   costs a program only what it calls: tiny-kernel's calc is 153 KB,
@@ -245,7 +245,7 @@
  * - exhaustiveness warnings (Maranget, "Warnings for pattern
  *   matching", 2007);
  * - -debug saying the typed tree, by [@@deriving show] and Logs.debug,
- *   as tiny-linker and tiny-shell do.
+ *   as tiny-ld and tiny-shell do.
  *
  * cs-history:
  * ML is the Meta Language of Edinburgh's LCF, a proof assistant (Robin

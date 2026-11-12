@@ -238,8 +238,8 @@ let () =
   i32 Int32.max_int; i32 Int32.min_int; i32 Int32.minus_one; i32 Int32.one;
   i32 Int32.zero; print_newline ()
 
-(* for tiny-c and the toolchain: Int64 (tiny-ml's of four pieces), its
- * edges, and what tiny-c folds; List's find, find_map, rev_append,
+(* for tiny-cc and the toolchain: Int64 (tiny-ml's of four pieces), its
+ * edges, and what tiny-cc folds; List's find, find_map, rev_append,
  * combine, for_all2; String.index; Filename's basename, is_relative,
  * chop_suffix, remove_extension; Bytes.of_string a copy *)
 let () =

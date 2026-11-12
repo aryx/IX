@@ -51,7 +51,7 @@ let subtract (counts : counts) (base : counts) =
       | None -> ())
     base
 
-(* the functions of tiny-linker's maps (-map: "address label" lines),
+(* the functions of tiny-ld's maps (-map: "address label" lines),
  * by address (TinyLibMachine's, as the function an address is in) *)
 let functions caps (files : Fpath.t list) : M.symbols =
   M.labels (String.concat "\n" (List.map (TSys.read_file caps) files))

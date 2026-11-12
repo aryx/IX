@@ -106,7 +106,7 @@ local mli(summary, digest, capital, say) = {
         { at: 'def:to_string', say: 'the magnitude divided by 10, piece by piece', weight: 1 },
       ],
     },
-    'Int64.mli': mli("Int64, OCaml's subset: 64-bit integers as four 16-bit pieces, for tiny-c's constants.", '6008d5c2347b', 'def:add', 'four pieces, carries between'),
+    'Int64.mli': mli("Int64, OCaml's subset: 64-bit integers as four 16-bit pieces, for tiny-cc's constants.", '6008d5c2347b', 'def:add', 'four pieces, carries between'),
     'Int64.ml': { digest: '88bc65096624',
       summary: "Int64 on 31-bit ints: four pieces of 16 bits, the high one signed, so compare's order is the numbers'.",
       capitals: [

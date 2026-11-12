@@ -219,7 +219,7 @@ The fix was two words for the two sizes:
   mini-diff, mini-merge3, mini-5i (the emulator), mini-qemu (the
   Raspberry Pi, which takes QEMU's command line);
 - **tiny-xxx**, named after what it does: tiny-build, tiny-shell,
-  tiny-editor, tiny-assembler, tiny-c, tiny-db, tiny-vcs, tiny-arm,
+  tiny-editor, tiny-as, tiny-cc, tiny-db, tiny-vcs, tiny-arm,
   tiny-machine.
 
 Together the minis are **m-ix**, a nod to Knuth's MIX, and the tinies

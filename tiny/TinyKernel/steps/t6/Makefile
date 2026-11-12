@@ -8,7 +8,7 @@
 #   make check        t6tests, and a script through sh, on a fresh disk
 #
 # The kernel: entry.s first (the machine starts at 0), then the C. The
-# programs are tiny-linker's images (linked at 0: t6 runs each at the
+# programs are tiny-ld's images (linked at 0: t6 runs each at the
 # start of its partition), start.s first, with libc and
 # sys.s; the disk is a FAT (tiny-mkfat -fat). The tools from the PATH
 # (after `dune install`), or from ix's bin/.
@@ -19,9 +19,9 @@
 
 export PATH := $(abspath ../../../../bin):$(PATH)
 
-TC = tiny-c
-AS = tiny-assembler
-LD = tiny-linker
+TC = tiny-cc
+AS = tiny-as
+LD = tiny-ld
 MACHINE = tiny-machine
 MKFS = tiny-mkfat
 
@@ -37,7 +37,7 @@ $(O)/%.o: %.c t6.h
 	@mkdir -p $(@D)
 	$(TC) -o $@ $<
 
-# an object of assembly: of a .s here, or of the C runtime's (tiny-c
+# an object of assembly: of a .s here, or of the C runtime's (tiny-cc
 # writes the C's objects; old: their .s, assembled by a rule here)
 $(O)/%.o: %.s
 	@mkdir -p $(@D)

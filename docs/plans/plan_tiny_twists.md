@@ -69,7 +69,7 @@ renderers per part.
 **Precedent.** NeXTSTEP's Display PostScript: one imaging model for
 the screen and the printer.
 
-### 2. One stack machine for tiny-c and tiny-ml
+### 2. One stack machine for tiny-cc and tiny-ml
 
 **Idea.** TinyMLMachine's IR and TinyC's lowered code are the same
 stack machine kept in r1 to r11 (TinyML.mli says so: "the same as
@@ -158,7 +158,7 @@ command language on one buffer.
 For the programs with no `twist:` yet (the author: "let's try to find
 candidates for the programs without one yet"), three readings against
 the twins: the shell, sam, emacs and trace; play, temp, tiny-cpu,
-tiny-machine and the assembler; tiny-c, tiny-ml and the libraries
+tiny-machine and the assembler; tiny-cc, tiny-ml and the libraries
 (Draw, Regex, System, Machine). None reached tiny-build's bar; four
 candidates are below it, each to prove its deletion in a pilot.
 
@@ -252,7 +252,7 @@ Yi's and Xi's persistent buffers.
   was quadratic (1.25 s for `(a*)*b` on 3,000 letters, bytecode, where
   `matches` took none). One memo for all the starts, as `matches` had;
   `matches` a search.
-- tiny-c folded constants only where a number was needed (const_expr)
+- tiny-cc folded constants only where a number was needed (const_expr)
   and in unary minus: `int x = 2*3;` was refused, `p + 1` a li, a li
   and a mul. The tree folds them as it is built.
 
@@ -284,7 +284,7 @@ Yi's and Xi's persistent buffers.
   derived from it. The code is half tables already (`alus`, `cmps`,
   `named`); 30 to 50 lines over TinyLibMachine and TinyMachineDevices,
   and its power, print and parse agreeing, a law the tests check.
-- **tiny-c.** Constants folded in the tree: 5c folds them too (a fix,
+- **tiny-cc.** Constants folded in the tree: 5c folds them too (a fix,
   above, not a twist); a call's types checked at the link: 5c's -T;
   more than 12 deep spilled: a feature.
 - **tiny-ml.** Eval/apply with the arity in the closure: ocamlopt's

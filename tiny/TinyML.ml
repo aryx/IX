@@ -26,16 +26,16 @@ let usage = {|usage: tiny-ml [-L dir | -nostdlib] [-S] [-o out.o] file.ml...
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
 A tiny ML compiler: an ML file (its own small dialect: a file a module, no
-functors nor labels) to an object of tiny-machine's code, for tiny-linker;
+functors nor labels) to an object of tiny-machine's code, for tiny-ld;
 -S: its assembly instead, on stdout without -o. A fact.ml, for example:
   let rec fact n = if n = 0 then 1 else n * fact (n - 1)
   let () = print_string "fact 10 = "; print_int (fact 10); print_newline ()
   tiny-ml fact.ml                          fact.o
   tiny-ml -S fact.ml                       ml_start: ldw r12, 0(sp) ...
-  tiny-c main.c                            main.o
+  tiny-cc main.c                           main.o
   L=tiny/runtime
-  for f in $L/start $L/udivmod exit; do tiny-assembler $f.s; done
-  tiny-linker -o fact start.o udivmod.o exit.o fact.o main.o /lib/ml/stdlib.a
+  for f in $L/start $L/udivmod exit; do tiny-as $f.s; done
+  tiny-ld -o fact start.o udivmod.o exit.o fact.o main.o /lib/ml/stdlib.a
   tiny-cpu fact                            fact 10 = 3628800
 main.c includes tiny/runtime/ml.c and gives it memory (ml_run),
 exit.s is exit (sys 0), as tiny/tests/TinyML_test.sh makes them. The
@@ -52,7 +52,7 @@ x is A.x in b, or x after open A. Machine.Or a module at a time, then the main:
   tiny-ml -o main.o L/stdlib.a a.tmi b.tmi  the same, the library L's (-L L):
                                            a library is named as linked
   (linked: ... main.o a.o b.o and the library's; what nothing uses left out by
-  tiny-linker)
+  tiny-ld)
 An error names the file and the line: fact.ml: line 2: this has type int ...
 |}
 
@@ -63,7 +63,7 @@ An error names the file and the line: fact.ml: line 2: this has type int ...
 (* A unit: its toplevel in <unit>.init, its names that are not static
  * (a value computed, a closure allocated) in its globals' table,
  * <unit>.globals, the collector's roots. What nothing uses is left out
- * by tiny-linker, piece by piece (a function, a static block): a
+ * by tiny-ld, piece by piece (a function, a static block): a
  * function of the toplevel has no free variable, so its closure is
  * static and the init names it not (old: prune, the program's
  * toplevel lets that nothing used dropped before the code was made,
@@ -369,7 +369,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
     | "-depend" :: r -> depend := true; args r
     | "-nostdlib" :: r -> lib := None; args r
     (* a library, as ocamlc takes stdlib.cma: its interfaces beside it
-     * (-L its directory), its objects tiny-linker's (a link's, where it
+     * (-L its directory), its objects tiny-ld's (a link's, where it
      * is among the files) *)
     | f :: r when Filename.check_suffix f ".a" ->
         lib := Some (Filename.dirname f); files := Fpath.v f :: !files; args r
@@ -405,7 +405,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
     let beside t = if TinyLibSystem.exists caps t then [ t ] else [] in
     if Fpath.has_ext ".a" f then
       let dir = Filename.dirname (Fpath.to_string f) in
-      (* (not a library: tiny-linker says so) *)
+      (* (not a library: tiny-ld says so) *)
       let members =
         try TinyLibMachine.of_archive (TinyLibSystem.read_file caps f)
         with Failure _ | TinyLibMachine.Error _ -> [] in
@@ -492,7 +492,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
         (fun (ch : Chan.o) -> Out_channel.output_string ch.oc s) f
     with Failure m -> raise (File_error m) in
   (* the lines as an object (TinyLibMachine's assemble), or as their
-   * text (-S); old: the text always, which tiny-assembler parsed back
+   * text (-S); old: the text always, which tiny-as parsed back
    * into the same lines (docs/plans/done/plan_tiny_libmach.md) *)
   let made (ls : TinyLibMachine.line list) =
     if !text then String.concat "" (List.map TinyLibMachine.print_line ls)
@@ -594,7 +594,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
          with File_error _ -> [])
         @ tdefs in
       let out = match !output with Some o -> o | None -> named f in
-      (* (.data: tiny-linker -n's, the statics after the text) *)
+      (* (.data: tiny-ld -n's, the statics after the text) *)
       write out (made (Machine.lines asm));
       write (Fpath.set_ext ".tmi" out)
         (write_interface old exports types n)
@@ -628,7 +628,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
   | Error m ->
       TinyLibSystem.eprint caps (!file ^ ": " ^ m ^ "\n"); Exit.Code 1
   (* a line made that cannot be encoded (a number too big for its
-   * field): the compiler's error, said with the file, as tiny-assembler
+   * field): the compiler's error, said with the file, as tiny-as
    * said it of the text (old) *)
   | TinyLibMachine.Error e ->
       TinyLibSystem.eprint caps (!file ^ ": " ^ e ^ "\n"); Exit.Code 1

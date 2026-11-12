@@ -140,10 +140,10 @@ job tiny tiny-shell env TS=$T/tiny-shell tiny/tests/TinyShell_test.sh
 job tiny tiny-editor env TE=$T/tiny-editor tiny/tests/TinyEditorLine_test.sh
 job tiny tiny-db env TD=$T/tiny-db tiny/tests/TinyDatabase_test.sh
 job tiny tiny-vcs env V=$T/tiny-vcs tiny/tests/TinyVCS_test.sh
-# (tiny-assembler's and tiny-linker's: every test that runs a .s links it with them)
-L="TA=$T/tiny-assembler TL=$T/tiny-linker"
-job tiny tiny-c env $L TC=$T/tiny-c TCPU=$T/tiny-cpu tiny/tests/TinyC_test.sh
-job tiny tiny-ml env $L SLOW=300 TML=$T/tiny-ml TC=$T/tiny-c CPU=$T/tiny-cpu tiny/tests/TinyML_test.sh
+# (tiny-as's and tiny-ld's: every test that runs a .s links it with them)
+L="TA=$T/tiny-as TL=$T/tiny-ld"
+job tiny tiny-cc env $L TC=$T/tiny-cc TCPU=$T/tiny-cpu tiny/tests/TinyC_test.sh
+job tiny tiny-ml env $L SLOW=300 TML=$T/tiny-ml TC=$T/tiny-cc CPU=$T/tiny-cpu tiny/tests/TinyML_test.sh
 job tiny tiny-cpu env $L T=$T/tiny-cpu tiny/tests/TinyCPU_test.sh
 job tiny tiny-machine env $L T=$T/tiny-machine tiny/tests/TinyMachine_test.sh
 job tiny tiny-prof env $L CPU=$T/tiny-cpu MACHINE=$T/tiny-machine PROF=$T/tiny-prof tiny/tests/TinyProfiler_test.sh

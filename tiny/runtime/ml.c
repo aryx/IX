@@ -3,7 +3,7 @@
  *
  * tiny-ml's runtime, the part common to every ML program: the allocator
  * and Cheney's copying collector, the primitives TinyLibCore names,
- * stdout's buffer, the uncaught exception. In C, compiled by tiny-c,
+ * stdout's buffer, the uncaught exception. In C, compiled by tiny-cc,
  * #included by what gives it the memory (ml_run) and write and exit:
  * the kernel's ../TinyKernel/runtime.c, an ML program's of tiny-kernel
  * ../TinyLibSystem/tinykernel/mlsys.c, a test's own main
@@ -37,7 +37,7 @@ value *ml_vsp;
 void *ml_handler;
 /* the value stack's end, when the includer says it (mlsys.c): past it,
  * a recursion too deep is said at the next allocation (old: none, the
- * stack ran into the heap's first blocks: tiny-c's List.map over a
+ * stack ran into the heap's first blocks: tiny-cc's List.map over a
  * file's tokens, wrong values, then a loop or an exception) */
 value *ml_vlimit;
 /* the machine stack's end, the same way: a call's link and C's
@@ -1105,7 +1105,7 @@ static value sha_w[80];
 static uchar sha_last[128];
 
 /* a block of 64 bytes; a rotation left by n written out, x << n | x >>
- * (32 - n), the high bits that >> (arithmetic) brings masked off (tiny-c
+ * (32 - n), the high bits that >> (arithmetic) brings masked off (tiny-cc
  * has no macro with parameters, and a call each was a third of the
  * time) */
 static void

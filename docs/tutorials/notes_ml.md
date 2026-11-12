@@ -559,7 +559,7 @@ the kernel while gcc still builds the rest.
 `tiny/TinyML.ml` (plan_ml.md, "Outside the compiler"): the same design
 for a smaller ML, no modules, records or arrays, in one file, first
 for arm64 and TinyAssembler, now for tiny-machine only, with a runtime
-compiled by tiny-c. Built first, to test §10 and §11's design cheaply.
+compiled by tiny-cc. Built first, to test §10 and §11's design cheaply.
 
 ## 15. How it is tested
 

@@ -1,4 +1,4 @@
-(* tiny-c's code generator: the stack machine's code of a function as
+(* tiny-cc's code generator: the stack machine's code of a function as
  * TinyCPU's assembly, the stack's values in registers r1 to r12; and a
  * global's data. Read TinyCLower.mli first, and
  * TinyLibMachine.mli for the lines. *)

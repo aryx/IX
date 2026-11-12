@@ -91,7 +91,7 @@ let symbols caps (file : Fpath.t) : M.symbols =
         try
           let h = TSys.read fd 16 in
           let word i = word_of h i in
-          (* (tiny-linker -n's header has a fourth word, the text's size) *)
+          (* (tiny-ld -n's header has a fourth word, the text's size) *)
           let split = String.length h = 16 && word 0 = 0x7a0ce6 in
           if String.length h >= 12 && (word 0 = 0x7a0ce5 || split) then begin
             TSys.seek fd ((if split then 16 else 12) + word 4);
@@ -330,7 +330,7 @@ let slots p v f =
 (* tiny-ml's value stack's register, r12 (TinyMLMachine's vsp) *)
 let vsp = 12
 
-(* the prologue of the function at b, tiny-c's and tiny-ml's: addi sp,
+(* the prologue of the function at b, tiny-cc's and tiny-ml's: addi sp,
  * sp, -f and stw lr, k(sp), its frame's f bytes and k *)
 let prologue p b =
   match instr_at p b, instr_at p (b + 4) with
@@ -346,7 +346,7 @@ let ml_frame p b =
   | Some (M.Alui (M.Add, d, a, v)) when d = vsp && a = vsp && v > 0 -> v
   | _ -> 0
 
-(* bt: the frames, from the pc's, by the code itself. tiny-c's and
+(* bt: the frames, from the pc's, by the code itself. tiny-cc's and
  * tiny-ml's functions all start with their prologue: a frame is f
  * bytes, its return address at k(sp). Before those two instructions
  * have run, the return address is still in lr, the frame not yet made

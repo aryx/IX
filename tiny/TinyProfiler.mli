@@ -1,6 +1,6 @@
 (* tiny-prof: where a program's instructions went, by function. It reads
  * a profile written by tiny-cpu -prof or tiny-machine -prof (every
- * instruction run, counted by its address) and tiny-linker's maps of
+ * instruction run, counted by its address) and tiny-ld's maps of
  * what ran (-map: each label's address), and prints the functions that
  * ran most, with their share.
  *
@@ -13,11 +13,11 @@
  *       862,816   7.0  u  browse
  *       ...
  *
- * The addresses of the labels come from the link itself (tiny-linker
+ * The addresses of the labels come from the link itself (tiny-ld
  * writes the map as it writes the image), so the names cannot disagree
  * with what ran. A
  * count goes to the last label at or before its address. A label that
- * a compiler makes inside a function (tiny-ml's TinyBrowser.L12, tiny-c's
+ * a compiler makes inside a function (tiny-ml's TinyBrowser.L12, tiny-cc's
  * tm.L51) is not a function, so its counts go to the function before
  * it; an assembly loop's labels (row_copy2) are kept, as they say which
  * loop. tiny-ml's functions are named TinyBrowser.f151_browse: shown as browse.
@@ -55,7 +55,7 @@
  *       -u $M/bin/www.map
  *
  * (old: the .s files given, in their link's order, and assembled
- * again by tiny-prof, before tiny-linker)
+ * again by tiny-prof, before tiny-ld)
  *
  * The first line said how the eight page downs divided between the
  * kernel (drawing what www asks for) and www (making the messages). The

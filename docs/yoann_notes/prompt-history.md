@@ -71186,3 +71186,98 @@ Claude argued this design is tolerant by construction, so nothing ever needs re-
 **Yoann:**
 
 > ok, make the change, push and run the workflow
+
+------------------------------------------------------------------------
+
+## 2026-11-12 09:42
+
+**Yoann:**
+
+> also it would be great if we could locally run tiny-build from TinyLibCore/ and invoke the tiny- variant; maybe we should add a $(TINY) in front of those commands in the Buildfile so it's easy to run them locally on the macos host?
+
+------------------------------------------------------------------------
+
+## 2026-11-12 09:43
+
+**Yoann:**
+
+> (or via some AR CC LD ML var, like we do in goken sometimes
+
+**Claude (summary):**
+
+Claude laid out three ways for the host to override tiny-build's variables: command-line assignments, committed host links, or environment variables.
+Claude recommended option 2, a committed `tiny/host/bin/` of links, so the Buildfile keeps t-ix's own command names.
+Claude noted that tiny-build currently takes no `NAME=value` arguments, and a Buildfile assignment wins over the environment, unlike mk.
+Yoann proposed a different route: tiny-build reads a `TINY=tiny-` prefix, and the Buildfile sets `TINY=` empty by default.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 09:48
+
+**Yoann:**
+
+> maybe we can have tiny-build TINY=tiny- it's short, and have tiny-build handle those overriding variable and have TINY=      empty set in the Buildfile so that it works by default when run under the tiny-kernel
+
+**Claude (summary):**
+
+Claude pointed out that the host tool names don't all follow the `tiny-` prefix, so `TINY=tiny-` needs three more names.
+Claude laid out a table showing `tiny-cc`, `tiny-as` and `tiny-ld` are the three host tools that don't match `${TINY}x`.
+Claude recommended adding `tiny-cc`, `tiny-as` and `tiny-ld` as extra dune `install` names in `bin/`, keeping the long names, over renaming the tools.
+Claude also noted tiny-build needs `NAME=value` overrides and Buildfiles should default to `TINY =` (empty).
+Claude asked whether to go with the extra host names or rename the tools.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 09:49
+
+**Yoann:**
+
+> we can fix to use tiny-as and tiny-ld in the host too
+
+**Claude (summary):**
+
+Claude laid out the cost of renaming `tiny-assembler` to `tiny-as` and `tiny-linker` to `tiny-ld`: about 220 mentions in 110 files.
+Claude recommended a separate commit for those renames, apart from tiny-build's `NAME=value` change.
+Claude flagged that `${TINY}cc` needs the host compiler named `tiny-cc`, while `tiny-c` covers 184 mentions in 87 files.
+Claude offered two options for that: rename everything to one rule, or keep `tiny-c` and add `tiny-cc` as an alias.
+Yoann chose the full rename, so `tiny-c` becomes `tiny-cc` alongside the others.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 09:50
+
+**Yoann:**
+
+> rename tiny-c to tiny-cc too
+
+------------------------------------------------------------------------
+
+## 2026-11-12 09:50
+
+**Yoann:**
+
+> what do you think? I think it's clearer that way
+
+------------------------------------------------------------------------
+
+## 2026-11-12 09:50
+
+**Yoann:**
+
+> and gives flexibility and not too big distance between compiling locally or under tix itself
+
+------------------------------------------------------------------------
+
+## 2026-11-12 09:53
+
+**Yoann:**
+
+> yes I'm fixing that in another session
+
+**Claude (summary):**
+
+Claude reported the rename of `tiny-assembler`, `tiny-linker` and `tiny-c` to `tiny-as`, `tiny-ld` and `tiny-cc`, about 400 mentions across 117 files.
+Claude realigned 14 help-text and manual lines where the shorter names had shifted a column, and left the history files untouched.
+Claude verified the build and usage output under the new names, and the `tests/lite.sh tix` run showed 35 jobs with one failure.
+That failure is the OCaml 5 job, which Yoann is fixing in another session, so Claude treated it as unrelated to this change.
+Claude left everything uncommitted and asked whether to commit, then proceed to `tiny-build NAME=value` and `${TINY}` in the Buildfiles.

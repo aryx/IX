@@ -19,7 +19,7 @@
 all: start.o udivmod.o libc.o sys.o
 
 # the language's, tiny/runtime/'s, on any system: _start, which calls
-# main, then exits; the unsigned division tiny-c calls for / and %;
+# main, then exits; the unsigned division tiny-cc calls for / and %;
 # print and the strings
 start.o: /src/runtime/start.s
 	as -o $target /src/runtime/start.s

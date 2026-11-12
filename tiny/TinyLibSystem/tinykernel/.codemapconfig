@@ -1,7 +1,7 @@
 // tiny/TinyLibSystem/tinykernel/: what the code map says of it (the code map:
 // tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there). What an ML
-// program of tiny-kernel is linked with to call it: mlsys.c (tiny-c,
+// program of tiny-kernel is linked with to call it: mlsys.c (tiny-cc,
 // TinyML's runtime included) and two files tiny-ml compiles, whose
 // twins for the host are ../unix/'s and ../sdl/'s. The calls cross
 // from ML to C by
@@ -11,7 +11,7 @@
   summary: "What an ML program of tiny-kernel stands on: the runtime given its partition, the calls as externals, a tool's system.",
   files: {
     'mlsys.c': { digest: '22e7d80c0d5f',
-      summary: "An ML program's main (tiny-c): its partition cut into value stack and two heaps, the system calls as ML externals.",
+      summary: "An ML program's main (tiny-cc): its partition cut into value stack and two heaps, the system calls as ML externals.",
       capitals: [
         { at: 'def:main', say: "the partition found from argv's place, then ml_run" },
       ],

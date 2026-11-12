@@ -3,7 +3,7 @@
 //
 // libc.h for the host's cc, the reference of TinyC_test.sh (RECORD=1):
 // the program's #include "libc.h" made this file's, the program built
-// with -fsigned-char -fwrapv (tiny-c's char is signed, its arithmetic
+// with -fsigned-char -fwrapv (tiny-cc's char is signed, its arithmetic
 // wraps). Plan 9's C on a 32-bit machine, on a 64-bit host: a long is
 // an int, print's verbs are printf's (an l dropped; %u is a verb, as
 // in runtime/libc.c and goken's libc, so %ud is the number, then

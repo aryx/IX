@@ -1,8 +1,8 @@
-(* tiny-ar: objects kept in one file, a library, for tiny-linker. Its
+(* tiny-ar: objects kept in one file, a library, for tiny-ld. Its
  * usage, by examples, is in [help] (what tiny-ar -h prints).
  *
  * An archive is its objects, each after its name and size on a line
- * (TinyLibMachine's to_archive), and tiny-linker links them all, in
+ * (TinyLibMachine's to_archive), and tiny-ld links them all, in
  * their order: the library's units are a list a link names once
  * (TinyLibCore/stdlib.a, every ML program's), not its 24 objects.
  *
@@ -16,7 +16,7 @@
  * twice has the same bytes, what tiny-build's stamps compare); the
  * index (Plan 9's __.SYMDEF, mini-ar's names beside each object), which
  * a linker that picks members by what they define reads first:
- * tiny-linker takes them all, its sweep leaving out what nothing
+ * tiny-ld takes them all, its sweep leaving out what nothing
  * reaches. *)
 
 type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >

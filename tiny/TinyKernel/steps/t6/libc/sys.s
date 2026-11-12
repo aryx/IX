@@ -1,6 +1,6 @@
 ; Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyMachine.ml)
 ;
-; t6's system calls for C: the arguments from tiny-c's places to r1-r3,
+; t6's system calls for C: the arguments from tiny-cc's places to r1-r3,
 ; sys n, the answer from r1 (write is start.s's, sys 1, tiny-cpu's
 ; too; the numbers are proc.c's calls[]).
 

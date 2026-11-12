@@ -95,17 +95,17 @@ export PATH := $(abspath ../../bin):$(PATH)
 # Each tool by its path, ix's bin/'s when it is there: so that what a
 # tool makes is made again when it changes (the build below starts
 # afresh when a tool's sum changed: a new tiny-ml remakes the units, a
-# new tiny-assembler the objects), and so that make 3.81 (macOS's),
+# new tiny-as the objects), and so that make 3.81 (macOS's),
 # which runs a command without a shell from the PATH it started with,
 # not the one exported above, finds it. (old: tiny-ml, a name: the
-# objects of an older tiny-assembler were kept, the new tiny-linker
+# objects of an older tiny-as were kept, the new tiny-ld
 # refused them, and make self-quick-tix from a shell without bin/ in
 # its PATH did not find tiny-ml)
 tool = $(firstword $(wildcard $(abspath ../../bin)/$(1)) $(1))
 TML = $(call tool,tiny-ml)
-TC = $(call tool,tiny-c)
-AS = $(call tool,tiny-assembler)
-LD = $(call tool,tiny-linker)
+TC = $(call tool,tiny-cc)
+AS = $(call tool,tiny-as)
+LD = $(call tool,tiny-ld)
 AR = $(call tool,tiny-ar)
 MKFS = $(call tool,tiny-mkfs)
 CPU = $(call tool,tiny-cpu)

@@ -21,8 +21,8 @@
 # TinyC/; a program at the top, by its name (rc, build, ml). `build
 # clean` removes them.
 #
-# The tools are tiny-kernel's: ml (tiny-ml), cc (tiny-c), as
-# (tiny-assembler), ld (tiny-linker), ar (tiny-ar), build (tiny-build).
+# The tools are tiny-kernel's: ml (tiny-ml), cc (tiny-cc), as
+# (tiny-as), ld (tiny-ld), ar (tiny-ar), build (tiny-build).
 # On the host they are tiny-ml and so on: a directory of links named
 # ml, cc, as, ld, ar and build first in the PATH runs this file there
 # too. A recipe is rc's, on both: tiny-build runs it with tiny-shell on
@@ -84,7 +84,7 @@ INCLUDES = -I . -I TinyLibSystem/tinykernel -I TinyC -I TinyML -I TinyOffice \
 %.start.o:
 	ml -o $target $prereq
 
-# C, by tiny-c; assembly written by hand, by tiny-assembler (the
+# C, by tiny-cc; assembly written by hand, by tiny-as (the
 # compilers write their objects themselves)
 %.o: %.c
 	cc -o $target $stem.c
@@ -98,7 +98,7 @@ INCLUDES = -I . -I TinyLibSystem/tinykernel -I TinyC -I TinyML -I TinyOffice \
 
 # C's, on any system (runtime/): _start, which calls main, then exits,
 # linked first since the machine starts at 0; the unsigned division
-# tiny-c calls; libc, print and the strings. Then tiny-kernel's calls
+# tiny-cc calls; libc, print and the strings. Then tiny-kernel's calls
 # for C (TinyKernel/libc/: sys.s, a sys instruction each; draw.c and
 # net.c for the programs that draw or dial)
 CRT = runtime/start.o runtime/udivmod.o runtime/libc.o TinyKernel/libc/sys.o

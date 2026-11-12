@@ -1,5 +1,5 @@
 (* tiny-ml's part of a link: a program's start, ml -o prog.start.o
- * lib.a... file.o..., which tiny-linker then links with the program's
+ * lib.a... file.o..., which tiny-ld then links with the program's
  * files. Read TinyMLCompile.mli first.
  *
  * Why an ML program needs a start, and a C program does not: code that
@@ -21,7 +21,7 @@
  * as stdlib.a is, its list in itself; the other files (the runtimes',
  * C's) have no interface, and no part in it. The units' order is the
  * initializations', OCaml's rule: the libraries first, each after those
- * it uses, then the program's units. tiny-linker links the start with
+ * it uses, then the program's units. tiny-ld links the start with
  * the program's files, right after mlsys.o, which calls it. In the
  * Buildfile, each program is its rule and its start's, which names the
  * same files, and never an interface:
@@ -36,10 +36,10 @@
  * OCaml makes the same start at the link, caml_program, caml_globals
  * and caml_curryN, by ocamlopt -o prog, which then calls the system's
  * linker itself; here the Buildfile runs the two, a tool for each step
- * (old, 2026-11-12, a day: ml ran tiny-linker, as ocamlopt). C++ took
+ * (old, 2026-11-12, a day: ml ran tiny-ld, as ocamlopt). C++ took
  * another road for its static constructors: each object's in an
  * .init_array section, which the linker puts together and the runtime
- * walks before main, no start made; a tiny-linker that knew sections by
+ * walks before main, no start made; a tiny-ld that knew sections by
  * name would let tiny-ml do the same. (old: the start made from every
  * unit's .tmi, given in their order, a list for each program in the
  * Buildfile) *)

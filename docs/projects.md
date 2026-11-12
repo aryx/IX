@@ -20,7 +20,7 @@ Three toolchains build ix, and each has its scope:
   mini-asm, mini-ld...) then builds all of that again, itself
   included, to the same bytes; t-ix's tools too, which are OCaml
   programs.
-- **The t-ix toolchain** (tiny-c, tiny-ml, tiny-cpu, tiny-machine)
+- **The t-ix toolchain** (tiny-cc, tiny-ml, tiny-cpu, tiny-machine)
   builds what runs on the tiny machine: TinyKernel.ml, the steps
   before it (`tiny/TinyKernel/steps/`) and their programs (windows,
   tetris, office, www, emacs among them, in ML). It also builds itself:
@@ -67,7 +67,7 @@ needing the next:
 - **tiny-ml** has none of this: its standard library is
   `tiny/TinyLibCore/`, OCaml's modules as tiny programs name them, its runtime
   `tiny/runtime/ml.c`, and the C library under it is
-  tiny-c's own, `tiny/runtime/`, not `lib_core/libc/`. The next
+  tiny-cc's own, `tiny/runtime/`, not `lib_core/libc/`. The next
   picture is t-ix's side.
 
 ## What a tiny program stands on
@@ -77,7 +77,7 @@ things: a tool runs on the host, the others on tiny-machine.
 
 ![What a tiny program stands on: a tool on the host (the program, lib_core, mini-ml's runtime and lib_core's C library, Linux), a program in ML on tiny-machine (the program, TinyLibGUI, TinyLibPlayground and TinyLibDraw, TinyLibCore, runtime/ml.c, runtime/, tiny-kernel), a program in C on tiny-machine (the program, runtime/, tiny-kernel), and the kernel (TinyKernel.ml, its parts, TinyLibCore, runtime/ml.c, its assembly, tiny-machine)](pics/tiny-layers.svg)
 
-- **A tool** (tiny-shell, tiny-c, tiny-vcs...) is OCaml in one file.
+- **A tool** (tiny-shell, tiny-cc, tiny-vcs...) is OCaml in one file.
   Built by ix (`mini-mk` in `tiny/`), it is on `lib_core/` whole, as
   a program of m-ix: its standard library and `commons/`, mini-ml's
   runtime, `lib_core/libc/`. Built by dune, while developing, it is on
@@ -91,7 +91,7 @@ things: a tool runs on the host, the others on tiny-machine.
   the units after it), linked: the libraries it asks for
   (`TinyLibGUI`, `TinyLibPlayground`, `TinyLibDraw`, `TinyLibRegex`...),
   its own file and its parts, and a last one that runs it, of which
-  tiny-linker keeps what the program calls. Before them all come `tiny/TinyLibCore/`'s
+  tiny-ld keeps what the program calls. Before them all come `tiny/TinyLibCore/`'s
   modules, tiny-ml's standard library. Under the ML: `runtime/ml.c` (the
   allocator, the collector), given the program's memory by
   `TinyLibSystem/tinykernel/mlsys.c`, and `runtime/` for the start and the
@@ -175,7 +175,7 @@ globals) is not told apart by piece.
   mini-5i and mini-qemu, from ix's own toolchain (mini-ml, mini-cc,
   mini-ld: m-ix's programs, and `kernels/`'s, which are OCaml), from
   goken's compilers, or kernels of others like xv6 and 9pi; `.s`
-  assembly, and C and ML compiled by `tiny-c` and `tiny-ml`, for
+  assembly, and C and ML compiled by `tiny-cc` and `tiny-ml`, for
   tiny-cpu and tiny-machine (`tiny/TinyKernel.ml` and its programs,
   `tiny/TinyKernel/steps/`, the tests).
 
@@ -192,7 +192,7 @@ globals) is not told apart by piece.
 - **tiny-xxx** (t-ix): a free variant under `tiny/`, named after what
   it does, keeping the idea and redesigning the rest: a file
   `TinyXxx.ml`, and past ~700 lines its parts in a folder `TinyXxx/`
-  (tiny-c, tiny-ml, tiny-machine, tiny-www, tiny-office, tiny-kernel).
+  (tiny-cc, tiny-ml, tiny-machine, tiny-www, tiny-office, tiny-kernel).
   One of them keeps its core in a library for a second program
   (`TinyMachineCPU.ml`, tiny-cpu's, for tiny-machine).
 
@@ -216,11 +216,11 @@ Each machine, with what makes its guest code and what runs on it:
 |--------------|---------------------------------------------------|-----------------|
 | mini-5i      | mini-cc, mini-asm, mini-ld (goken's 5c/5l, 7c/7l the reference) | Linux and Plan 9 user programs, arm and arm64 |
 | mini-qemu    | ix's own (mini-ml, mini-cc, mini-ld by mini-mk), or ocaml-light and gcc (the reference builds), or the kernels' own builds outside ix | `kernels/`'s (mini-9pi, mini-xv6, mini-oberon...); xv6 (`~/xv6`), 9pi (`~/principia`), as QEMU runs them |
-| tiny-cpu     | `tiny-c`, `tiny-ml`, tiny-assembler, tiny-linker  | images: `.s` programs; C programs with `runtime/`, ML ones with `runtime/` |
+| tiny-cpu     | `tiny-cc`, `tiny-ml`, tiny-as, tiny-ld            | images: `.s` programs; C programs with `runtime/`, ML ones with `runtime/` |
 | tiny-machine | the same, plus csrr, csrw, eret                   | tiny-kernel, its steps (v0, t6) and their programs |
 
-The tiny side has no real architecture: tiny-c and tiny-ml had an
-arm64 back end, with tiny-assembler and tiny-arm
+The tiny side has no real architecture: tiny-cc and tiny-ml had an
+arm64 back end, with tiny-as and tiny-arm
 (plans/done/plan_tiny_arm64.md), until
 plans/done/plan_tiny_self_hosting.md left tiny-machine their one target.
 The mini side has arm32 and arm64.
@@ -234,7 +234,7 @@ before tiny-kernel, kept; how they relate to the others:
 | kernel | what | in | runs on |
 |---|---|---|---|
 | v0 (`tiny/TinyKernel/steps/v0/`) | a page of kernel: traps, a timer, round robin, protection by a window; its four programs linked with it | TinyCPU assembly | tiny-machine |
-| t6 (`tiny/TinyKernel/steps/t6/`) | a free kernel in C: spawn and no fork (descriptors given, none inherited), one kernel stack and calls that rerun, a partition a process, a FAT, a lottery | C, by `tiny-c`, and a page of `.s` | tiny-machine, its window relocating |
+| t6 (`tiny/TinyKernel/steps/t6/`) | a free kernel in C: spawn and no fork (descriptors given, none inherited), one kernel stack and calls that rerun, a partition a process, a FAT, a lottery | C, by `tiny-cc`, and a page of `.s` | tiny-machine, its window relocating |
 | TinyKernel.ml (tiny-kernel, `tiny/TinyKernel.ml` and `TinyKernel/`) | the Kernel row's free variant (README's series): fork and exec, round robin on several cores, a partition a process, a waiting call a closure the scheduler retries, no zombies; a disk with snapshots in a union with the boot image's files; a screen its programs draw on by messages, a window system (`tiny/TinyWindows.ml`, in ML), sound, a network (IL, HTTP); its programs, the toolchain among them, building the kernel again ([plans/done/plan_tiny_windows.md](plans/done/plan_tiny_windows.md)); [notes_tiny_kernel.md](notes/notes_tiny_kernel.md) | ML, by `tiny-ml`, a page of `.s`, 80 lines of C | tiny-machine, its window relocating |
 | mini-9pi (`kernels/9pi/`) | 9pi's twin, the Kernel row's mini program (README): m-ix's programs run under it, and m-ix builds itself on its card | OCaml, with a thin C/asm shim | the Pi1, Pi2, Pi4 (mini-qemu, real boards) |
 | mini-xv6 (`kernels/xv6/`) | xv6 in OCaml, one kernel on two boards, each port's own user programs and `fs.img` | OCaml | the Pi1, the Pi4 |

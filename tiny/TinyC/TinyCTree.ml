@@ -93,7 +93,7 @@ let conv (e : expr) t =
 (* ANSI's promotion, which keeps the value: uchar and ushort become int,
  * as the host's cc, the tests' reference, does
  * (old: Int (4, s), Plan 9's, which keeps the sign: uint, as 7c, the
- * reference while tiny-c had an arm64 back end; TinyC_fuzz.py's
+ * reference while tiny-cc had an arm64 back end; TinyC_fuzz.py's
  * x2 <= -128, x2 a uchar 0, was then 1) *)
 let promote = function Ty.Int (n, _) when n < 4 -> Ty.Int (4, true) | t -> t
 

@@ -55,7 +55,7 @@ programs for a real processor, run by a real kernel.
 
 What it buys:
 
-- **The programs run on the machine the author has.** A tiny-c or
+- **The programs run on the machine the author has.** A tiny-cc or
   tiny-ml executable runs on Linux on arm64, on a Pi, with no emulator
   of ix's in between.
 - **A check from outside.** A designed machine can only be compared
@@ -78,7 +78,7 @@ What it costs:
   would design.
 - **goken at test time.** `make test-vs-goken`, not `make test`.
 
-The free path exists beside it and is whole: `tiny-c` and `tiny-ml
+The free path exists beside it and is whole: `tiny-cc` and `tiny-ml
 -tm`, `runtime/`, tiny-cpu, tiny-machine, tiny-kernel. So the
 question is not whether t-ix can do without arm64 (it can: t-IX in a
 web page does), but whether the second path earns its lines. The

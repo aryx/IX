@@ -5,7 +5,7 @@
 <text x="30" y="64" font-size="13" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">t-ix&#x27;s four kinds of program, and where each one&#x27;s parts are. A box needs the one under it (the arrow).</text>
 <rect x="30" y="86" width="296" height="50" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
 <text x="44" y="108" font-size="16" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">A tool, on the host</text>
-<text x="44" y="126" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">tiny-shell, tiny-c, tiny-vcs...  (mini-mk)</text>
+<text x="44" y="126" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">tiny-shell, tiny-cc, tiny-vcs...  (mini-mk)</text>
 <rect x="30" y="150" width="296" height="74" rx="8" fill="#ffffff" stroke="#e16f24" stroke-width="1.5"/>
 <text x="44" y="173" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The program</text>
 <text x="314" y="173" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">OCaml, by mini-ml</text>
@@ -67,7 +67,7 @@
 <line x1="486" y1="531" x2="486" y2="549" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <rect x="338" y="551" width="296" height="125" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
 <text x="352" y="574" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyML&#x27;s runtime</text>
-<text x="622" y="574" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">C, by tiny-c</text>
+<text x="622" y="574" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">C, by tiny-cc</text>
 <text x="352" y="595" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/runtime/ml.c: the allocator,</text>
 <text x="352" y="612" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">Cheney&#x27;s collector, strings, compare;</text>
 <text x="352" y="629" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">included by TinyLibSystem/tinykernel/mlsys.c</text>
@@ -86,7 +86,7 @@
 <text x="352" y="851" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny-kernel, on tiny-machine</text>
 <rect x="646" y="86" width="296" height="50" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
 <text x="660" y="108" font-size="16" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">A program in C, on tiny-machine</text>
-<text x="660" y="126" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">sh, ls, cat, paint, ping, get...  (tiny-c)</text>
+<text x="660" y="126" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">sh, ls, cat, paint, ping, get...  (tiny-cc)</text>
 <rect x="646" y="150" width="296" height="74" rx="8" fill="#ffffff" stroke="#e16f24" stroke-width="1.5"/>
 <text x="660" y="173" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The program</text>
 <text x="930" y="173" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">C</text>
@@ -114,7 +114,7 @@
 <text x="660" y="851" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny-kernel, on tiny-machine</text>
 <rect x="954" y="86" width="296" height="50" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
 <text x="968" y="108" font-size="16" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The kernel</text>
-<text x="968" y="126" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">tiny-kernel  (tiny-ml, tiny-c)</text>
+<text x="968" y="126" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">tiny-kernel  (tiny-ml, tiny-cc)</text>
 <rect x="954" y="150" width="296" height="74" rx="8" fill="#ffffff" stroke="#e16f24" stroke-width="1.5"/>
 <text x="968" y="173" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The kernel</text>
 <text x="1238" y="173" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">tiny-ml&#x27;s ML</text>
@@ -136,7 +136,7 @@
 <line x1="1102" y1="429" x2="1102" y2="447" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <rect x="954" y="449" width="296" height="91" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
 <text x="968" y="472" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyML&#x27;s runtime</text>
-<text x="1238" y="472" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">C, by tiny-c</text>
+<text x="1238" y="472" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">C, by tiny-cc</text>
 <text x="968" y="493" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/runtime/ml.c, the same;</text>
 <text x="968" y="510" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">included by TinyKernel/runtime.c (the</text>
 <text x="968" y="527" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">kernel&#x27;s memory, the console)</text>
@@ -154,5 +154,5 @@
 <text x="968" y="868" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyMachine/): the CPU, the devices</text>
 <text x="30" y="911" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">Orange: t-ix&#x27;s own files. Grey: what is under them, m-ix&#x27;s or the system. A name in two columns is the same file. The tools are compiled by</text>
 <text x="30" y="929" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">m-ix&#x27;s mini-ml (mini-mk), on lib_core/ whole, as m-ix&#x27;s programs (docs/pics/layers.svg, its first column); what runs on tiny-machine by</text>
-<text x="30" y="947" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">tiny-ml and tiny-c. While developing, dune builds a tool on OCaml&#x27;s own standard library and lib_core/commons/.</text>
+<text x="30" y="947" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">tiny-ml and tiny-cc. While developing, dune builds a tool on OCaml&#x27;s own standard library and lib_core/commons/.</text>
 </svg>

@@ -179,8 +179,8 @@ job "tiny-shell: scripts against 9base's rc" tiny/tests/TinyShell_test.sh
 job "tiny-editor: sam's commands against 9base's sam" tiny/tests/TinyEditorLine_test.sh
 job "tiny-db: random sessions against SQLite" tiny/tests/TinyDatabase_test.sh 5
 job "tiny-vcs: its laws on random work" tiny/tests/TinyVCS_test.sh 3
-job "tiny-cpu, tiny-assembler: programs, random listings" tiny/tests/TinyCPU_test.sh 50
-job "the assembly printed (tiny-assembler -S): the same object" tiny/tests/TinyAssembler_test.sh
+job "tiny-cpu, tiny-as: programs, random listings" tiny/tests/TinyCPU_test.sh 50
+job "the assembly printed (tiny-as -S): the same object" tiny/tests/TinyAssembler_test.sh
 job "tiny-machine: unit tests" tiny/tests/TinyMachine_test.sh
 job "tiny-kernel: its graphics" tiny/tests/TinyKernelGraphics_test.sh
 job "TinyLibPlayground: unit tests" tiny/tests/TinyLibPlayground_test.sh
@@ -191,7 +191,7 @@ job "TinyLibRegex: grep's and ed's patterns, by hand and against Regex" tiny/tes
 job "tiny-emacs: recorded screens" tiny/tests/TinyEditorScreen_test.sh
 job "tiny-browser: pages" tiny/tests/TinyBrowser_test.sh
 job "tiny-profiler: profiles" tiny/tests/TinyProfiler_test.sh
-job "tiny-c: programs against cc" tiny/tests/TinyC_test.sh
+job "tiny-cc: programs against cc" tiny/tests/TinyC_test.sh
 job "tiny-ml: programs against OCaml" tiny/tests/TinyML_test.sh
 job "tiny-build: its Buildfiles" tiny/tests/TinyBuildSystem_test.sh
 job "tiny-play: unit tests" tiny/tests/TinyPlay_test.sh
@@ -453,7 +453,7 @@ tiny_tests() {
   local t=$K/tiny
   TS=$t/tiny-shell tiny/tests/TinyShell_test.sh && TE=$t/tiny-editor tiny/tests/TinyEditorLine_test.sh &&
   TD=$t/tiny-db tiny/tests/TinyDatabase_test.sh 5 && V=$t/tiny-vcs tiny/tests/TinyVCS_test.sh 3 &&
-  TB=$t/tiny-build tiny/tests/TinyBuildSystem_test.sh && TA=$t/tiny-assembler TL=$t/tiny-linker T=$t/tiny-cpu tiny/tests/TinyCPU_test.sh 50
+  TB=$t/tiny-build tiny/tests/TinyBuildSystem_test.sh && TA=$t/tiny-as TL=$t/tiny-ld T=$t/tiny-cpu tiny/tests/TinyCPU_test.sh 50
 }
 ix() {
   rm -rf $B

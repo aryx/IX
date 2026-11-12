@@ -21,7 +21,7 @@ WHITE = "#ffffff"
 # a column: its title, what is under the title, then its boxes, the last
 # one the system; a box: its name, what it is written in, its lines
 COLUMNS = [
-    ("A tool, on the host", "tiny-shell, tiny-c, tiny-vcs...  (mini-mk)", [
+    ("A tool, on the host", "tiny-shell, tiny-cc, tiny-vcs...  (mini-mk)", [
         ("The program", "OCaml, by mini-ml", [
             "tiny/TinyShell.ml: one file",
             "(its start object: mini-ml -start)"]),
@@ -58,7 +58,7 @@ COLUMNS = [
             "units of every program;",
             "TinyLibSystem/tinykernel/: the system,",
             "over the kernel's calls"]),
-        ("TinyML's runtime", "C, by tiny-c", [
+        ("TinyML's runtime", "C, by tiny-cc", [
             "tiny/runtime/ml.c: the allocator,",
             "Cheney's collector, strings, compare;",
             "included by TinyLibSystem/tinykernel/mlsys.c",
@@ -71,7 +71,7 @@ COLUMNS = [
         ("The system", "", [
             "tiny-kernel, on tiny-machine"]),
     ]),
-    ("A program in C, on tiny-machine", "sh, ls, cat, paint, ping, get...  (tiny-c)", [
+    ("A program in C, on tiny-machine", "sh, ls, cat, paint, ping, get...  (tiny-cc)", [
         ("The program", "C", [
             "tiny/TinyKernel/user/sh.c, ls.c,",
             "paint.c...: one file each"]),
@@ -88,7 +88,7 @@ COLUMNS = [
         ("The system", "", [
             "tiny-kernel, on tiny-machine"]),
     ]),
-    ("The kernel", "tiny-kernel  (tiny-ml, tiny-c)", [
+    ("The kernel", "tiny-kernel  (tiny-ml, tiny-cc)", [
         ("The kernel", "tiny-ml's ML", [
             "tiny/TinyKernel.ml: the processes, the",
             "files, the pipes, the system calls"]),
@@ -99,7 +99,7 @@ COLUMNS = [
             "as externals)"]),
         ("The standard library", "ML", [
             "tiny/TinyLibCore/: the same modules"]),
-        ("TinyML's runtime", "C, by tiny-c", [
+        ("TinyML's runtime", "C, by tiny-cc", [
             "tiny/runtime/ml.c, the same;",
             "included by TinyKernel/runtime.c (the",
             "kernel's memory, the console)"]),
@@ -116,7 +116,7 @@ COLUMNS = [
 NOTES = [
     "Orange: t-ix's own files. Grey: what is under them, m-ix's or the system. A name in two columns is the same file. The tools are compiled by",
     "m-ix's mini-ml (mini-mk), on lib_core/ whole, as m-ix's programs (docs/pics/layers.svg, its first column); what runs on tiny-machine by",
-    "tiny-ml and tiny-c. While developing, dune builds a tool on OCaml's own standard library and lib_core/commons/.",
+    "tiny-ml and tiny-cc. While developing, dune builds a tool on OCaml's own standard library and lib_core/commons/.",
 ]
 
 

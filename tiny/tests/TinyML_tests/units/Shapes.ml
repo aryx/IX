@@ -4,7 +4,7 @@
 (* A unit for TinyML_test.sh's separate compilation: a variant, a record,
  * an exception, a function of two arguments, a value computed at its
  * init, a type's second name with a parameter, a function nothing
- * uses (left out by tiny-linker), and operators of its own in a module
+ * uses (left out by tiny-ld), and operators of its own in a module
  * of one level (open Shapes.Ops) *)
 
 type shape = Square of int | Rect of int * int | Dot

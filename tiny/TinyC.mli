@@ -13,7 +13,7 @@
  *        | machine    turns that list into assembly, keeping the
  *        |            stack depth d in register rd; a global's data
  *     file.o, the lines encoded (TinyLibMachine's assemble), for
- *     tiny-linker, and tiny-cpu runs the program; -S: file.s, their
+ *     tiny-ld, and tiny-cpu runs the program; -S: file.s, their
  *     text
  *
  * Each step is a part in TinyC/, whose .mli has its types and its
@@ -118,17 +118,17 @@
  * wide for an int, or with ll, is computed in 32 bits.
  *
  * context:
- * Its usage, with examples, is in [help] below, which is what tiny-c -h
+ * Its usage, with examples, is in [help] below, which is what tiny-cc -h
  * prints. It reads one C file and writes its assembly for TinyCPU
  * (TinyMachineCPU.ml), whose words are 4 bytes, pointers too. Its
  * runtime is in runtime/ (built by TinyKernel/steps/Makefile):
  * start.s holds the program start and the system calls, udivmod.s the
- * unsigned division, and the rest of libc is C compiled by tiny-c. Its
+ * unsigned division, and the rest of libc is C compiled by tiny-cc. Its
  * library has Plan 9's names (print, exits) and its rules are ANSI's:
  * the tests compare it with the host's cc (TinyC_tests/host.h).
  *
- * tiny-linker reads what tiny-c writes (old: tiny-assembler, which
- * parsed back the text tiny-c printed). tiny-c compiles TinyML's
+ * tiny-ld reads what tiny-cc writes (old: tiny-as, which
+ * parsed back the text tiny-cc printed). tiny-cc compiles TinyML's
  * runtime (whose collector and primitives are in C), TinyKernel's
  * programs, and t6, a kernel in C, together with its own programs.
  * TinyML's code generator has the same design, a stack machine kept in

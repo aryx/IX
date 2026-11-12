@@ -14,7 +14,7 @@
 #    halted with status 0; and a and b interleaved, a b before a's
 #    last a;
 # 3. the same period, the same output: the time is the program's;
-# 4. the programs linked in another order (tiny-linker; every .s here
+# 4. the programs linked in another order (tiny-ld; every .s here
 #    is assembled and linked by link.sh's link_tm), the same output;
 # 5. each program of TinyMachine_tests/ (the machine's features for
 #    v6, a kernel that was (xv6's kind, removed on 2026-10-13): amoswap, core, ip, the pages, the console's input,

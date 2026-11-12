@@ -6,7 +6,7 @@
  * tests/TinyCPU_tests/, the second on random ones of every instruction *)
 
 (* The instructions, their words: TinyLibMachine's, in what tiny-ml
- * compiles too, for tiny-assembler and tiny-linker on tiny-kernel *)
+ * compiles too, for tiny-as and tiny-ld on tiny-kernel *)
 open TinyLibMachine
 let error fmt = Printf.ksprintf (fun s -> raise (Error s)) fmt
 
@@ -153,7 +153,7 @@ let boot image =
 (* An image *)
 (*****************************************************************************)
 
-(* the memory's first bytes, no header: the CPU starts at 0 (tiny-linker
+(* the memory's first bytes, no header: the CPU starts at 0 (tiny-ld
  * made it) *)
 let image name text =
   if String.length text > !memsize then

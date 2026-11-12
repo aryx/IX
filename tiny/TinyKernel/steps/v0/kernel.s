@@ -5,7 +5,7 @@
 ; no loader: its four user programs (a.s to d.s) are linked with it,
 ; one image, and its table names their windows by their labels:
 ;
-;     make run        (each assembled, then tiny-linker -o kernel.img kernel.o a.o b.o c.o d.o)
+;     make run        (each assembled, then tiny-ld -o kernel.img kernel.o a.o b.o c.o d.o)
 ;
 ; The kernel first, at 0, where the machine starts. It runs them in
 ; turn, a slice of `period` instructions each (the timer), each in its

@@ -39,11 +39,11 @@ The script builds the tools with dune and calls them. By hand:
 
 | tool | what it does |
 |---|---|
-| `tiny-c f.c` | C to an object, `f.o` (`-S`: its assembly instead) |
+| `tiny-cc f.c` | C to an object, `f.o` (`-S`: its assembly instead) |
 | `tiny-ml f.ml` | ML to an object, `f.o` (`-S`: its assembly instead) |
-| `tiny-assembler f.s` | assembly written by hand to an object, `f.o` (`tiny/TinyAssembler.ml`; `tiny/TinyLibMachine.mli` has the object's format) |
-| `tiny-linker [-a n] [-map] -o out f.o...` | objects to an image, the first at 0 (`-a n`: an a.out for tiny-kernel that asks for n MB; `-map`: `out.map`, each label's address) |
-| `tiny-ar -o lib.a f.o...` | objects kept in one file, a library, in their order (`tiny/TinyArchiver.ml`); tiny-linker links all its members, as if each were given; `-t lib.a` lists them |
+| `tiny-as f.s` | assembly written by hand to an object, `f.o` (`tiny/TinyAssembler.ml`; `tiny/TinyLibMachine.mli` has the object's format) |
+| `tiny-ld [-a n] [-map] -o out f.o...` | objects to an image, the first at 0 (`-a n`: an a.out for tiny-kernel that asks for n MB; `-map`: `out.map`, each label's address) |
+| `tiny-ar -o lib.a f.o...` | objects kept in one file, a library, in their order (`tiny/TinyArchiver.ml`); tiny-ld links all its members, as if each were given; `-t lib.a` lists them |
 | `tiny-cpu image` | runs a program alone, the host answering its three system calls |
 | `tiny-machine image` | the same with the machine around the CPU: the image is a kernel's |
 | `tiny-mkfs [-m n] disk.img name=file...` | a disk of tiny-kernel's file system, made on the host by the kernel's own `TinyKernelFS.ml` (`tiny/TinyKernel/host/TinyMkfs.ml`; `-l disk.img` lists it) |
@@ -69,7 +69,7 @@ section is that half in words.
 A tiny program is either the host's or the tiny machine's.
 
     the host (OCaml, built by dune or by ix's own tools)
-      tiny-c, tiny-ml          compilers: C and ML to objects (-S: assembly)
+      tiny-cc, tiny-ml         compilers: C and ML to objects (-S: assembly)
       tiny-cpu, tiny-machine   the assembler, the linker and the machine
       tiny-mkfat               disk images
       tiny-machine-window      the screen in a window (SDL)
@@ -95,7 +95,7 @@ but not all stand alone. From `tiny/dune` (and
 | program | outside `tiny/` |
 |---|---|
 | tiny-cpu, tiny-mkfat | `lib_core/`, `fpath`, `caps` |
-| tiny-machine, tiny-shell, tiny-utils, tiny-editor, tiny-prof, tiny-db, tiny-c, tiny-ml, tiny-assembler, tiny-linker | `lib_core/`, `fpath`, `caps`, `unix` (the tools through the host's `TinyLibSystem`, `TinyLibSystem/unix/`) |
+| tiny-machine, tiny-shell, tiny-utils, tiny-editor, tiny-prof, tiny-db, tiny-cc, tiny-ml, tiny-as, tiny-ld | `lib_core/`, `fpath`, `caps`, `unix` (the tools through the host's `TinyLibSystem`, `TinyLibSystem/unix/`) |
 | tiny-vcs, tiny-build | the same, and `lib_crypto/` (SHA-1; TinyLibCore's `Sha1` under tiny-ml) |
 | tiny-machine-window | SDL by `tsdl` (`TinyMachine/TinyMachineSDL.ml`; mini-qemu has its own, `raspberry/video/Sdl_display.ml`) |
 | tiny-machine-fetch | `lib_networking/` (DNS, TLS 1.3, HTTP), `lib_graphics/images/` (PNG, JPEG, GIF), `lib_compression/`, `lib_crypto/` |
@@ -144,10 +144,10 @@ directories show the sources, `make clean` removes `_make/`.
 The steps are always the same two, the assembly written by hand
 (entry.s, the runtime's start.s...) assembled first:
 
-    tiny-c x.c                  # x.o; or tiny-ml, for ML
-    tiny-assembler start.s      # start.o: assembly written by hand
-    tiny-linker -o kernel.img entry.o ... x.o              # a kernel: linked at 0
-    tiny-linker -o prog start.o udivmod.o libc.o prog.o    # a program
+    tiny-cc x.c                 # x.o; or tiny-ml, for ML
+    tiny-as start.s             # start.o: assembly written by hand
+    tiny-ld -o kernel.img entry.o ... x.o                  # a kernel: linked at 0
+    tiny-ld -o prog start.o udivmod.o libc.o prog.o        # a program
 
 `boot.img` is `kernel.img` followed by its files (`/bin`, `/lib`,
 `/examples`), each a name, a size and its bytes, which the kernel reads
@@ -162,7 +162,7 @@ other utilities. At the prompt, `ln` makes one the same way.
 
     ./tiny-machine tiny-kernel
       -> dune builds the host's tools
-      -> make -C tiny/TinyKernel                (tiny-ml, tiny-c, tiny-assembler, tiny-linker)
+      -> make -C tiny/TinyKernel                (tiny-ml, tiny-cc, tiny-as, tiny-ld)
       -> tiny-machine tiny/TinyKernel/_make/boot.img
            the kernel at 0, in supervisor mode
            -> /bin/sh in a partition, in user mode
@@ -509,21 +509,21 @@ has no sound yet.
 
 Each `.s` file is assembled alone, to an object: its words, its
 labels, and the places where a label's address goes (`reloc` lines,
-`tiny/TinyAssembler.mli`). tiny-linker puts the objects one after the
+`tiny/TinyAssembler.mli`). tiny-ld puts the objects one after the
 other, their labels in one namespace, the first at address 0, where
 the machine starts, and fills the places: the image is the memory's
 first bytes, with no header.
 
-### 6.2 C: `tiny-c`
+### 6.2 C: `tiny-cc`
 
 The arguments are on the stack, at `0(sp)`, `4(sp)` and so on; the
 result is in `r13`; the callee may change any register but `sp`.
 
 A program is linked after its runtime (`tiny/runtime/`):
 
-    tiny-c prog.c; tiny-c libc.c
-    for f in start udivmod; do tiny-assembler $f.s; done
-    tiny-linker -o prog start.o udivmod.o libc.o prog.o
+    tiny-cc prog.c; tiny-cc libc.c
+    for f in start udivmod; do tiny-as $f.s; done
+    tiny-ld -o prog start.o udivmod.o libc.o prog.o
     tiny-cpu ./prog one two
 
 `start.s` calls `main` and exits with its result. `libc.h` declares
@@ -536,7 +536,7 @@ A file is a module, compiled alone or with the others: its names are
 `M.x` in the modules after it, or `x` after `open M`; its types and
 constructors are the program's, one name space. Integers are 31 bits (a value is `2n+1` or a
 pointer), so a constant beyond them is refused. The runtime is
-`runtime/ml.c`, compiled by `tiny-c`, with a `main` that gives
+`runtime/ml.c`, compiled by `tiny-cc`, with a `main` that gives
 it its memory. A C or assembly function is called as an `external`,
 with C's convention and ML's values. The standard library,
 `TinyLibCore/`'s modules, is compiled once (`tiny-ml -c -nostdlib`, each
@@ -553,7 +553,7 @@ objects, kept in one library, `stdlib.a` (tiny-ar).
 tiny-kernel's programs are made the first way (`tiny/TinyKernel/Makefile`:
 the library in `_make/lib/`, each unit once in `_make/ml/`, the main of
 each program in `_make/main/`), and linked with what was not tiny-ml's;
-tiny-linker leaves out the functions nothing calls.
+tiny-ld leaves out the functions nothing calls.
 
 ### 6.4 A system call
 
@@ -589,10 +589,10 @@ What the numbers mean is up to who answers:
 
 A process sees its partition as addresses from 0 to its size: its
 program is loaded at 0, its stack starts at the top. The size is 1 MB,
-unless the program is an a.out (`tiny-linker -a n`) whose header asks for
+unless the program is an a.out (`tiny-ld -a n`) whose header asks for
 n MB: its three words are a magic number (`0x7a0ce5`), the image's size
 and the memory wanted. What follows the image is not loaded: the
-programs of `/bin` have their labels there (`tiny-linker -s`), for
+programs of `/bin` have their labels there (`tiny-ld -s`), for
 `debug`. A child of `fork` gets its parent's size. An ML
 program's heap grows up to what its partition leaves (`TinyLibSystem/tinykernel/mlsys.c`);
 `bigmem`, a test, keeps 3 MB alive in 8 MB.
@@ -668,7 +668,7 @@ the instructions, its commands ed's kind: `b addr`, `d addr`, `c`, `s`,
 (the calls the pc is in, and an ML function's slots on the value stack:
 integers in decimal, pointers in hexadecimal, `_` not yet set),
 `x addr n`, `x/i addr n`, `q`; an address is a number, `pc`, or a
-function's name (`main`, `main+0x14`), from the labels `tiny-linker -s`
+function's name (`main`, `main+0x14`), from the labels `tiny-ld -s`
 writes after the program's image, as every program of `/bin` has them.
 `debug -window prog args` is the same in a window: the registers, the
 instructions around the pc and the backtrace after each command, what

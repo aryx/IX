@@ -1,6 +1,6 @@
-(* tiny-assembler: tiny-machine's assembly to an object, one file at a
- * time, for tiny-linker. Its usage, by examples, is in [help] (what
- * tiny-assembler -h prints).
+(* tiny-as: tiny-machine's assembly to an object, one file at a
+ * time, for tiny-ld. Its usage, by examples, is in [help] (what
+ * tiny-as -h prints).
  *
  * Read TinyMachine/TinyMachineCPU.mli first: it has the machine, its
  * instructions (addi, lui, ori, beq, jal...), the pseudo-instructions
@@ -31,10 +31,10 @@
  *     .word main                  a word 0, (0, Full, Name "main")
  *
  * The object is TinyLibMachine's lines, encoded, in the file's order,
- * marshalled (that file has what each is; tiny-linker -debug says
+ * marshalled (that file has what each is; tiny-ld -debug says
  * them). Every label is the program's: the link is one name space, as
  * the compilers write
- * it (tiny-c's statics carry their file's name, tiny-ml's labels their
+ * it (tiny-cc's statics carry their file's name, tiny-ml's labels their
  * unit's).
  *
  * twin:
@@ -69,8 +69,8 @@
  *   illegal words, as on a real machine in user mode.
  *
  * context:
- * People write the .s files (tiny-c -S and tiny-ml -S print theirs, to
- * read), tiny-linker reads the objects, these and the compilers',
+ * People write the .s files (tiny-cc -S and tiny-ml -S print theirs, to
+ * read), tiny-ld reads the objects, these and the compilers',
  * tiny-cpu and tiny-machine run the image.
  *
  * cs-history:
@@ -83,7 +83,7 @@
  *
  * design:
  * The object is marshalled, as mini-asm's and mini-ld's are. What the text
- * showed, tiny-linker -debug says, by the lines' show that mini-ml
+ * showed, tiny-ld -debug says, by the lines' show that mini-ml
  * derives. A magic line comes first, since tiny-ml's Marshal stops the
  * program on bytes it cannot read.
  *
@@ -104,7 +104,7 @@
  *  - J. R. Levine, Linkers and Loaders (2000)
  *)
 
-(* what tiny-assembler asks for: its file read, its object written *)
+(* what tiny-as asks for: its file read, its object written *)
 type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 
 (* The pipeline, a step a function (main opens and closes the files):
@@ -139,7 +139,7 @@ val encode :
   string -> (int * TinyLibMachine.line list) list -> TinyLibMachine.line list
 
 (* the object written, marshalled (TinyLibMachine.to_object): what
- * tiny-linker reads (of_object) *)
+ * tiny-ld reads (of_object) *)
 val write : Chan.o -> TinyLibMachine.line list -> unit
 
 (* the program: its arguments (its name first; -h: how) to how it ends *)

@@ -13,10 +13,10 @@
   },
   files: {
     'hello.c': { digest: '40bb857bcdd2',
-      summary: "A C program for tiny-cpu (tiny-c): its arguments, fib, sprint, the heap; what the C runtime is checked with.",
+      summary: "A C program for tiny-cpu (tiny-cc): its arguments, fib, sprint, the heap; what the C runtime is checked with.",
       important: [
         { at: 'def:main', weight: 2 },
-        { at: 'def:fib', say: 'recursion on the stack tiny-c keeps', weight: 1 },
+        { at: 'def:fib', say: 'recursion on the stack tiny-cc keeps', weight: 1 },
         { at: 'code:"48879, -1"', say: "%u of -1: goken's verb, the host's printf", weight: 1 },
       ],
       related: ['Makefile', '../../runtime/libc.c', '../../TinyCPU.ml'],
@@ -47,7 +47,7 @@
       name: 'hello: a C program on tiny-cpu',
       bones: [
         { at: 'hello.c:def:main', role: 'its arguments, a sum, the heap' },
-        { at: 'hello.c:def:fib', role: 'recursion, on the stack tiny-c keeps' },
+        { at: 'hello.c:def:fib', role: 'recursion, on the stack tiny-cc keeps' },
         { at: '../../runtime/libc.c:def:print', role: "libc's print: %d %u %x %s %c" },
         { at: '../../runtime/libc.c:def:malloc', role: 'a bump of an array' },
       ],

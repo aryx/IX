@@ -23,7 +23,7 @@ small enough to read:
 - `TinyML.ml` compiles ML to arm64 through TinyC's stack machine.
 - `TinyMLRuntime/runtime.c` holds the allocator and Cheney's collector (500
   lines).
-- tiny-c already has a tiny-machine back end (`-tm`), 100 lines.
+- tiny-cc already has a tiny-machine back end (`-tm`), 100 lines.
 
 So the bridge shrinks to three pieces, all built by ix's own tools:
 1. a `-tm` back end for tiny-ml;

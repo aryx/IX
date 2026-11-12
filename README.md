@@ -71,7 +71,7 @@ Each program in IX comes in two versions:
   original's, byte for byte. The executables `mini-cc` and `mini-ld`
   make are the ones Plan 9's compiler and linker make. Together, the
   mini programs are **m-IX** (a nod to Knuth's MIX computer).
-- **tiny** (`tiny-build`, `tiny-shell`, `tiny-c`, ...): a free
+- **tiny** (`tiny-build`, `tiny-shell`, `tiny-cc`, ...): a free
   variant, in a single file under [`tiny/`](tiny/) (the largest
   with their parts in a directory beside it). It is named after
   what it does, not after the original. It keeps the idea of the
@@ -216,9 +216,9 @@ step 8 has t-IX built there.
 
 | program | what it is | lines | mini twin | file |
 |---|---|---:|---|---|
-| **tiny-c** | a C subset compiler, to tiny-cpu | 1,020 | mini-cc | [`TinyC.ml`](tiny/TinyC.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyC.ml)) |
+| **tiny-cc** | a C subset compiler, to tiny-cpu | 1,020 | mini-cc | [`TinyC.ml`](tiny/TinyC.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyC.ml)) |
 | **tiny-ml** | an ML compiler (Hindley-Milner types, closures, exceptions, a garbage collector) to tiny-cpu | 2,000 | mini-ml | [`TinyML.ml`](tiny/TinyML.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyML.ml)) |
-| **tiny-assembler**, **tiny-linker** | tiny-machine's assembler, a file to an object (its words, its labels, the places a label's address goes), and its linker, objects to an image, filling each place by encoding again | 460 | mini-asm, mini-ld | [`TinyAssembler.ml`](tiny/TinyAssembler.ml), [`TinyLinker.ml`](tiny/TinyLinker.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyAssembler.ml)) |
+| **tiny-as**, **tiny-ld** | tiny-machine's assembler, a file to an object (its words, its labels, the places a label's address goes), and its linker, objects to an image, filling each place by encoding again | 460 | mini-asm, mini-ld | [`TinyAssembler.ml`](tiny/TinyAssembler.ml), [`TinyLinker.ml`](tiny/TinyLinker.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyAssembler.ml)) |
 
 **The window system** and the programs in its windows.
 
@@ -248,12 +248,12 @@ window of SDL's, [`sdl/`](tiny/TinyLibSystem/sdl/). Its three builds:
 | on the host, by IX (a test of m-IX's compiler) | mini-ml, by `mini-mk` | IX's own, in `lib_core/` |
 
 The programs are about 29,500 lines of OCaml and ML, their `.mli`
-files included; with their C (tiny-c's and tiny-ml's runtimes,
+files included; with their C (tiny-cc's and tiny-ml's runtimes,
 tiny-kernel's programs in C) t-IX is **about 32,100 lines** in all
 (`make loc`, 2026-10-28, without the header comments), past its
 budget of 30,000. tiny-cpu and tiny-machine also
 run [`tiny/TinyKernel/steps/`](tiny/TinyKernel/steps/), the steps before tiny-kernel, written for
-them in their assembly and in C for `tiny-c`: a page-long kernel (v0)
+them in their assembly and in C for `tiny-cc`: a page-long kernel (v0)
 and a kernel in C with a disk and a shell (t6). Their 2,000 lines are not counted in t-IX: t-IX's kernel is
 tiny-kernel, which needs none of them.
 

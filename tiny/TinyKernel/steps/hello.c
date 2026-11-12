@@ -1,6 +1,6 @@
 // Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyC.ml)
 //
-// A C program for tiny-cpu, compiled by tiny-c: its arguments, a
+// A C program for tiny-cpu, compiled by tiny-cc: its arguments, a
 // sum, a string built by sprint, the heap.
 #include "../../runtime/libc.h"
 

@@ -6,7 +6,7 @@
  * assembly. The usage and examples are in [help], which is what
  * tiny-machine -h prints.
  *
- * The image is tiny-linker's: the objects one after the other, their
+ * The image is tiny-ld's: the objects one after the other, their
  * labels one namespace, so a kernel's table can name its programs. The
  * kernel comes first, at address 0. An image
  * is simply the first bytes of memory as they are at the start. It has
@@ -256,7 +256,7 @@
  * context:
  * Below it is TinyMachineCPU, the instructions; above it are its
  * kernels, TinyKernel (in ML, compiled by tiny-ml) and the steps before
- * it (v0 in assembly, t6 in C compiled by tiny-c).
+ * it (v0 in assembly, t6 in C compiled by tiny-cc).
  *
  * exercises:
  * Each one is cheap, because time is counted in instructions

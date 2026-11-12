@@ -35,7 +35,7 @@
  * exact.
  *
  * Where it stands: tiny-prof's twin (tiny/TinyProfiler: tiny-machine's
- * profiles, tiny-linker's maps), for m-ix's tools; it does what
+ * profiles, tiny-ld's maps), for m-ix's tools; it does what
  * machine/tests/profile.sh did from mini-5i -t's trace, a line of text
  * an instruction (a thousand million of them for mini-doom's start),
  * and kernels/9pi/tests/perf/pcprof.py did for mini-qemu's.

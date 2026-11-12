@@ -33,12 +33,12 @@ clean:
 	dune clean
 	rm -rf _mk
 
-# (tiny-c and tiny-ml on random programs, against the host's cc and
+# (tiny-cc and tiny-ml on random programs, against the host's cc and
 # OCaml, in $(TINY_W); see tiny/tests/TinyC_fuzz.py and TinyML_fuzz.py)
 TINY_W = /tmp/ix-tiny
 # make test is the gate, make test-lite (below). make test-long: the
 # long forms of what the gate runs short, one after the other,
-# test-all's suite long: the random tests' full counts, tiny-c's and
+# test-all's suite long: the random tests' full counts, tiny-cc's and
 # tiny-ml's fuzzers, tiny-kernel's steps and its whole check (26
 # sessions, its screens and sounds), the decoders' random words and
 # their system instructions (docs/plans/done/plan_tests.md), make check

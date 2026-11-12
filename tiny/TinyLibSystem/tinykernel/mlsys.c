@@ -14,7 +14,7 @@
 // for the machine stack (C's frames, and an ML call's link) and the
 // arguments (old: 64 KB in any partition). In the usual 1 MB, the
 // halves are 256 KB each. A program linked as an a.out that asks for
-// more memory (tiny-linker -a) gets bigger halves, and deeper stacks
+// more memory (tiny-ld -a) gets bigger halves, and deeper stacks
 // (cc's recursions over a file's tokens: 1 MB of its 16; as's over
 // kernel.s's 70,000 lines). The heap uses the whole half from
 // the start: starting small and growing made it collect often while it

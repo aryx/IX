@@ -4,8 +4,8 @@
 #
 # The tests of TinyCPU.ml, its laws:
 #
-# 1. each program of TinyCPU_tests/, assembled and linked (tiny-assembler,
-#    tiny-linker), interpreted, prints its .expected (computed
+# 1. each program of TinyCPU_tests/, assembled and linked (tiny-as,
+#    tiny-ld), interpreted, prints its .expected (computed
 #    otherwise: Python's factorials, primes, sort);
 # 2. random programs (N, default 200), each a straight line of every
 #    kind of instruction with branches and jal over one: the listing,

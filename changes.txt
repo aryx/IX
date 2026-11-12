@@ -351,7 +351,7 @@
 
 ** t-ix
 - tiny-build, tiny-shell, tiny-editor, tiny-db, tiny-vcs
-- tiny-assembler, tiny-c, tiny-ml, and tiny-arm to run what they make;
+- tiny-as, tiny-cc, tiny-ml, and tiny-arm to run what they make;
   tiny-pi, its CPU in a Pi 4
 - tiny-cpu and tiny-machine, a CPU of our own design for teaching;
   tiny-os (v0, v6, t6, in C) and tiny-kernel (in ML) for it

@@ -1,6 +1,6 @@
 (* Tiny memory: how tiny-kernel gives a process its memory, a
  * partition: one block of the machine's memory, its size the program's
- * (its a.out says it: tiny-linker -a), found first-fit when the program
+ * (its a.out says it: tiny-ld -a), found first-fit when the program
  * starts, never grown. TinyKernel.ml's part that is about memory, as
  * TinyKernelFS.ml is its part about the disk (plan_tiny_memory.md).
  *
@@ -26,7 +26,7 @@
  *
  * Segments (the boot's choice: /lib/memory says segments; the
  * Makefile's MEMORY=segments) split a process in two, its text and
- * its data, at the address tiny-linker -n put the data at (a page past
+ * its data, at the address tiny-ld -n put the data at (a page past
  * the text). The machine's second window maps the text (tbase,
  * tbound) and faults a store there; the data is a block as above:
  *

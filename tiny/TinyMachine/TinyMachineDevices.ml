@@ -667,7 +667,7 @@ let env mc : TinyMachineCPU.env = {
   illegal = extra mc;
 }
 
-(* the listing's new instructions (tiny-assembler makes them) *)
+(* the listing's new instructions (tiny-as makes them) *)
 let show w =
   let op = (w lsr 24) land 0xff and d = (w lsr 20) land 15
   and a = (w lsr 16) land 15 and k = w land 0xffff in

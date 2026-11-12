@@ -13,22 +13,22 @@ module Machine = TinyCMachine
 module M = TinyLibMachine
 module TSys = TinyLibSystem
 
-let usage = "usage: tiny-c [-S | -ir] [-o out.o] file.c"
+let usage = "usage: tiny-cc [-S | -ir] [-o out.o] file.c"
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
 
-A tiny C compiler: a C file to an object of TinyCPU's code, for tiny-linker
+A tiny C compiler: a C file to an object of TinyCPU's code, for tiny-ld
 and tiny-cpu, with its own libc; -S its assembly instead, -ir its stack
 machine's code, on stdout without -o. A fact.c that includes
 tiny/runtime/libc.h and prints fact(10):
   L=tiny/runtime
-  tiny-c $L/libc.c; tiny-c fact.c           libc.o, fact.o
-  for f in $L/start $L/udivmod; do tiny-assembler $f.s; done
-  tiny-linker -o fact start.o udivmod.o libc.o fact.o
+  tiny-cc $L/libc.c; tiny-cc fact.c         libc.o, fact.o
+  for f in $L/start $L/udivmod; do tiny-as $f.s; done
+  tiny-ld -o fact start.o udivmod.o libc.o fact.o
   tiny-cpu fact                            fact 10 = 3628800
-  tiny-c -S fact.c                         fact: addi sp, sp, -8 ...
-  tiny-c -ir fact.c                        fact: param 0, load 4, imm 0, ...
+  tiny-cc -S fact.c                        fact: addi sp, sp, -8 ...
+  tiny-cc -ir fact.c                       fact: param 0, load 4, imm 0, ...
 An error names the file and the line: fact.c: line 3: expected ;
 |}
 
@@ -121,7 +121,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
         done;
         let lines = List.rev_append !code (M.SectionData :: List.rev !data) in
         (* an object (TinyLibMachine's assemble), or a text: -S's lines
-         * (old: the text always, for tiny-assembler, which parsed it
+         * (old: the text always, for tiny-as, which parsed it
          * back into the same lines), -ir's code *)
         let made =
           if !ir_only then Buffer.contents ir
@@ -154,10 +154,10 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
           Exit.Code 1
       (* a line the compiler made that cannot be encoded (a number too
        * big for its field): the compiler's error, said with the file,
-       * as tiny-assembler said it of the text (old) *)
+       * as tiny-as said it of the text (old) *)
       | M.Error e ->
           TSys.eprint caps (Fpath.to_string file ^ ": " ^ e ^ "\n"); Exit.Code 1
       | File_error m -> Exit.Err m
   end
 
-let () = TSys.main "tiny-c" main
+let () = TSys.main "tiny-cc" main

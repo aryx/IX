@@ -9,7 +9,7 @@ local convention = 'comment:"TinyCPU (TinyMachineCPU.ml) has 32-bit registers"';
 local unsigned_div = 'comment:"TinyCPU divides signed only"';
 {
   generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
-  summary: "tiny-c's passes: C's types, the tokens, the tree typed as it is built, the stack machine, the parser, TinyCPU's code.",
+  summary: "tiny-cc's passes: C's types, the tokens, the tree typed as it is built, the stack machine, the parser, TinyCPU's code.",
   files: {
     'TinyCTypes.ml': { digest: 'c2caa0c8ff53',
       summary: "C's types on a 32-bit machine: sizes, alignments, a structure itself (same), no long long.",
@@ -20,7 +20,7 @@ local unsigned_div = 'comment:"TinyCPU divides signed only"';
       ],
     },
     'TinyCTypes.mli': { digest: 'e119285c057a',
-      summary: "C's types and their sizes, which every pass of tiny-c names.",
+      summary: "C's types and their sizes, which every pass of tiny-cc names.",
       capitals: [
         { at: 'type:ty', say: "C's types: every pass's vocabulary" },
         { at: 'def:size', say: 'a type in bytes, on a 32-bit machine' },
@@ -100,7 +100,7 @@ local unsigned_div = 'comment:"TinyCPU divides signed only"';
   },
   skeletons: [
     {
-      name: 'tiny-c: its passes',
+      name: 'tiny-cc: its passes',
       bones: [
         { at: 'TinyCLexer.ml:def:tokens', role: 'the tokens, #include and #define done' },
         { at: 'TinyCParser.ml:def:block', role: 'the tree of statements, typed as built' },

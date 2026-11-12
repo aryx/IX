@@ -1,4 +1,4 @@
-(* tiny-c's stack machine: a function's tree of statements lowered to
+(* tiny-cc's stack machine: a function's tree of statements lowered to
  * a list of instructions on a stack of values, the jumps to numbered
  * labels (-ir prints them). Read TinyCTree.mli first. *)
 

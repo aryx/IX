@@ -1,4 +1,4 @@
-(* tiny-c's C types, their sizes and alignments on TinyCPU, and the
+(* tiny-cc's C types, their sizes and alignments on TinyCPU, and the
  * names of the assembly: what every other part of the compiler uses
  * (TinyC.mli is the whole). *)
 

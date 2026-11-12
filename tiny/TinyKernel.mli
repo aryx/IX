@@ -139,7 +139,7 @@
  *    0x1000000   the heap, two halves of 8 MB: every file written,
  *                every pipe, descriptor table and closure
  *    0x2000000   the processes' partitions: 1 MB each, or what an
- *                a.out's header asks for (tiny-linker -a), found
+ *                a.out's header asks for (tiny-ld -a), found
  *                first-fit when a program starts
  *    0xfffffc0   the devices, reached as -64 to -4
  *

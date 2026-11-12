@@ -21,7 +21,7 @@
  *     $ debug 12 /bin/cat
  *
  * At each stop it shows why, and the instruction at the pc, by the
- * function it is in: main+0x14. The names are the labels tiny-linker
+ * function it is in: main+0x14. The names are the labels tiny-ld
  * wrote after the image (-s, TinyLibMachine), read from the program's
  * file: the one started, or the one named after an attached pid (the
  * kernel knows a process's image, not its file).
@@ -50,7 +50,7 @@
  *   a deeper call of the same one comes back there first; the sp tells
  *   them apart (lower: a deeper call's, run past), as gdb's next does.
  * - {b bt reads the code}: no frame pointer and no table of frame
- *   sizes, but every function of tiny-c's and tiny-ml's starts with
+ *   sizes, but every function of tiny-cc's and tiny-ml's starts with
  *   addi sp, sp, -f and stw lr, k(sp), and an ML function's third
  *   instruction is addi r12, r12, v, its frame on the value stack. So
  *   the name gives the function's start, its first words the frame,

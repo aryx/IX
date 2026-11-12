@@ -83,7 +83,7 @@ run.
 | program | Linux | macOS | only on tiny-machine? |
 |---|---|---|---|
 | the tools: tiny-shell, tiny-editor, tiny-utils, tiny-build, tiny-db, tiny-vcs, tiny-prof | yes, dune: `TinyLibSystem`'s host side, over Unix (`tiny/TinyLibSystem/unix/`) | yes | no |
-| the toolchain: tiny-c, tiny-ml, tiny-assembler, tiny-linker | yes | yes | no |
+| the toolchain: tiny-cc, tiny-ml, tiny-as, tiny-ld | yes | yes | no |
 | tiny-cpu, tiny-machine | yes: they are the host's programs | yes | they are the machine; tiny-machine also runs in a browser (the website's t-ix.html) |
 | tiny-office, tiny-www, tiny-troff, tiny-tetris, tiny-calculator | in an SDL window, without the machine (`tiny/user/sdl/`) | the same (*inferred*) | no |
 | tiny-windows, tiny-temperature, the network's get, httpd and ping | no | no | **yes**: tiny-windows is a program of tiny-kernel's (OCaml only checks its types: `tiny/dune`), and the others have no host side |

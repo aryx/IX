@@ -8,8 +8,8 @@
  * years of hindsight would draw.
  *
  * The machine is new, so nothing else writes its words: it comes with
- * its assembler, tiny-assembler (TinyAssembler.ml), and its linker,
- * tiny-linker (TinyLinker.ml), as MIX came with MIXAL, the notation
+ * its assembler, tiny-as (TinyAssembler.ml), and its linker,
+ * tiny-ld (TinyLinker.ml), as MIX came with MIXAL, the notation
  * the book's programs are written in; mini-5i borrows a real
  * toolchain's, mini-asm's and mini-ld's. Both are kept small by the
  * machine's design: one format, every instruction 4 bytes, every
@@ -97,8 +97,8 @@
  * its code runs the new one.
  *
  * context:
- *     objects: of .s files by hand (v0, tiny-assembler), of tiny-c's
- *              and tiny-ml's   |  tiny-linker: an image
+ *     objects: of .s files by hand (v0, tiny-as), of tiny-cc's
+ *              and tiny-ml's   |  tiny-ld: an image
  *     this file:   the CPU ([step], given an [env]), the encoding
  *                  they use, the listing
  *                 /                          \

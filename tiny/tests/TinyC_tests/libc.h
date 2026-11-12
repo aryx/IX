@@ -1,7 +1,7 @@
-// The part of Plan 9's libc the tests use, declared for tiny-c (its
+// The part of Plan 9's libc the tests use, declared for tiny-cc (its
 // runtime, runtime/, has them) and for mini-cc with goken's libc
 // (languages/c/tests/simple.sh): Plan 9's C, long is 4 bytes, vlong is
-// long long (TinyC_fuzz.py's programs without --32; tiny-c refuses a
+// long long (TinyC_fuzz.py's programs without --32; tiny-cc refuses a
 // variable of it). host.h is this file for the host's cc.
 typedef unsigned char uchar;
 typedef unsigned long ulong;

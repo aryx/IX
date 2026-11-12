@@ -1,4 +1,4 @@
-(* tiny-c's parser: C's declarations, statements and expressions read
+(* tiny-cc's parser: C's declarations, statements and expressions read
  * from the tokens, recursive descent, the tree built typed as it reads
  * (TinyCTree's functions): a declaration at a time, its definitions,
  * a function's tree or a global's data. Read TinyCTree.mli first. *)

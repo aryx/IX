@@ -1,6 +1,6 @@
 ; Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyMachine.ml)
 ;
-; TinyKernel.ml's system calls for C: the arguments from tiny-c's places
+; TinyKernel.ml's system calls for C: the arguments from tiny-cc's places
 ; to r1-r3, sys n, the answer from r1 (write is start.s's, sys 1; the
 ; numbers are TinyKernel.ml's syscall's).
 

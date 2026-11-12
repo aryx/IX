@@ -33,7 +33,7 @@ failures=0
 fail() { echo "FAIL $1"; failures=$((failures + 1)); }
 
 # the machine's program, but for the font: the runtime, the program
-$TC -o $W/runtime.o $T/TinyKernel/runtime.c || fail "machine: tiny-c runtime.c"
+$TC -o $W/runtime.o $T/TinyKernel/runtime.c || fail "machine: tiny-cc runtime.c"
 # (-window: without the exit, the program ends in start.s's loop)
 sed -e 's/; exit 0$//' $T/tests/TinyKernelGraphics_tests/machine.ml > $W/machine.ml
 [ "${1:-}" = -window ] || cp $T/tests/TinyKernelGraphics_tests/machine.ml $W/machine.ml

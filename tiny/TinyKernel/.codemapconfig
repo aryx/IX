@@ -17,7 +17,7 @@ local kernel_color = '#c03030';
   summary: "tiny-kernel's parts in ML (processes, memory, files, devices, calls, the scheduler), its runtime, its programs.",
   files: {
     'runtime.c': { digest: '21b67c25ad73',
-      summary: "The kernel's runtime (tiny-c): TinyML's core given the memory map, write and exit on the devices, the externals of bytes.",
+      summary: "The kernel's runtime (tiny-cc): TinyML's core given the memory map, write and exit on the devices, the externals of bytes.",
       capitals: [
         { at: 'def:kmain', say: 'the heap given, then the kernel in ML, never back' },
       ],

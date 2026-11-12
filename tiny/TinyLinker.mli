@@ -1,6 +1,6 @@
-(* tiny-linker: tiny-assembler's objects to an image for tiny-machine,
+(* tiny-ld: tiny-as's objects to an image for tiny-machine,
  * or to an a.out for tiny-kernel. Its usage, by examples, is in [help]
- * (what tiny-linker -h prints).
+ * (what tiny-ld -h prints).
  *
  * Passes over the objects' items, in the order of the command line:
  *
@@ -41,7 +41,7 @@
  * kept:
  * {b The layout is the one the assembler made when it linked} (a file
  * on a word, an .align on its address): an object without pieces, all
- * of tiny-c's and the hand-written .s, is placed as it was, and the
+ * of tiny-cc's and the hand-written .s, is placed as it was, and the
  * split checked byte for byte on make check's images
  * (plan_tiny_self_hosting.md, step 3).
  *
@@ -84,7 +84,7 @@
  * makes the two the same: the assembler encodes, and the linker's one
  * way to fill a place is the encoder. *)
 
-(* what tiny-linker asks for: the objects read, the image written *)
+(* what tiny-ld asks for: the objects read, the image written *)
 type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 
 (* the image's order: the objects', .text and .data ignored; or all the

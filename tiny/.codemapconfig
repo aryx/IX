@@ -27,7 +27,7 @@ local prog(name, file, core) = chain(name, [
     // the toolchain: compilers, assembler, linker
     // ---------------------------------------------------------------
     'TinyC.ml': { digest: '21c4725c7ee7',
-      summary: "tiny-c: 5c/7c's job with only correctness asked: C typed as parsed, lowered to its own stack machine, TinyCPU's code.",
+      summary: "tiny-cc: 5c/7c's job with only correctness asked: C typed as parsed, lowered to its own stack machine, TinyCPU's code.",
       capitals: [{ at: 'def:compile', say: 'a definition lowered, then assembly' }],
       important: [
         { at: 'def:compile', say: 'a function through lower and machine, or a global', weight: 3 },
@@ -36,7 +36,7 @@ local prog(name, file, core) = chain(name, [
       related: ['TinyC/', 'runtime/', 'tests/TinyC_test.sh', 'tests/TinyC_fuzz.py', 'tests/TinyC_tests/', '../languages/c/'],
     },
     'TinyC.mli': { digest: 'fb7bfc9153c6',
-      summary: "tiny-c's idea, with one function traced through the stack machine to TinyCPU's code, and its passes.",
+      summary: "tiny-cc's idea, with one function traced through the stack machine to TinyCPU's code, and its passes.",
       important: [{ at: 'comment:"A file goes through these steps"', say: 'the pipeline, a type per step', weight: 3 }],
     },
     'TinyML.ml': { digest: '7719b0e67c36',
@@ -56,7 +56,7 @@ local prog(name, file, core) = chain(name, [
       important: [{ at: 'comment:"How a file is compiled"', say: 'the passes, each its own type', weight: 3 }],
     },
     'TinyAssembler.ml': { digest: '86d091988762',
-      summary: "tiny-assembler: assembly written by hand, a .s file, parsed into TinyLibMachine's lines and encoded by its assemble.",
+      summary: "tiny-as: assembly written by hand, a .s file, parsed into TinyLibMachine's lines and encoded by its assemble.",
       important: [
         { at: 'def:instruction', say: 'an instruction parsed, its operands a number or a label', weight: 2 },
         { at: 'def:machine_instr', say: "the machine's own: csrr, csrw, eret, amoswap", weight: 1 },
@@ -70,7 +70,7 @@ local prog(name, file, core) = chain(name, [
       important: [{ at: 'comment:"The pipeline, a step a function"', say: 'read, encode, write', weight: 3 }],
     },
     'TinyLinker.ml': { digest: 'f5df19754319',
-      summary: "tiny-linker: objects to an image or an a.out from 0; dead pieces swept, a place filled by decode then encode.",
+      summary: "tiny-ld: objects to an image or an a.out from 0; dead pieces swept, a place filled by decode then encode.",
       important: [
         { at: 'def:read', say: "an object's lines as items", weight: 1 },
         { at: 'def:sweep', say: "pieces nothing reaches dropped: a library costs only what's called", weight: 3 },
@@ -83,7 +83,7 @@ local prog(name, file, core) = chain(name, [
       related: ['TinyAssembler.ml', 'TinyLibMachine.ml', 'TinyProfiler.ml', 'TinyKernel/Makefile', '../linker/'],
     },
     'TinyLinker.mli': { digest: '00a4a93f7c09',
-      summary: "tiny-linker's passes over the objects' items (read, sweep, layout, fill) and the a.out's header.",
+      summary: "tiny-ld's passes over the objects' items (read, sweep, layout, fill) and the a.out's header.",
     },
     // ---------------------------------------------------------------
     // the tools of making and of looking
@@ -282,7 +282,7 @@ local prog(name, file, core) = chain(name, [
       summary: "tiny-prof: every instruction counted by address, summed by function by the link's maps; kernel and programs apart.",
       important: [
         { at: 'def:read_profile', say: 'counts, not samples: two runs, one profile', weight: 2 },
-        { at: 'def:functions', say: "tiny-linker's maps: the names cannot disagree", weight: 2 },
+        { at: 'def:functions', say: "tiny-ld's maps: the names cannot disagree", weight: 2 },
         { at: 'def:main', say: '-k, -u, -base, -diff: a baseline taken off', weight: 3 },
       ],
       related: ['TinyLibMachine.ml', 'TinyLinker.ml', 'tests/TinyProfiler_test.sh', '../profilers/'],
@@ -299,7 +299,7 @@ local prog(name, file, core) = chain(name, [
         { at: 'def:step', say: "one instruction: the kernel's timer, not decoding", weight: 2 },
         { at: 'def:over', say: 'n: a breakpoint after a jal, then continue', weight: 1 },
         { at: 'def:backtrace', say: "the prologues read; an ML function's value-stack slots", weight: 3 },
-        { at: 'def:symbols', say: "the names after the a.out's image (tiny-linker -s)", weight: 1 },
+        { at: 'def:symbols', say: "the names after the a.out's image (tiny-ld -s)", weight: 1 },
         { at: 'def:window', say: '-window: the same commands on TinyLibGUI', weight: 1 },
       ],
       related: ['user/debug.ml', 'TinyLibMachine.ml', 'TinyTracer.ml', '../debuggers/acid/'],
@@ -434,7 +434,7 @@ local prog(name, file, core) = chain(name, [
       important: [
         { at: 'type:instr', weight: 3 },
         { at: 'type:line', weight: 3 },
-        { at: 'def:encode', say: "what tiny-assembler makes, tiny-linker fills", weight: 2 },
+        { at: 'def:encode', say: "what tiny-as makes, tiny-ld fills", weight: 2 },
         { at: 'def:decode', weight: 2 },
         { at: 'type:place', say: 'where a label goes, by example', weight: 2 },
         { at: 'comment:"Here one type serves both directions"', say: "m-ix's two programs, two types: here one", weight: 1 },
@@ -447,10 +447,10 @@ local prog(name, file, core) = chain(name, [
         { at: 'def:encode', say: 'an immediate that does not fit: an error, never cut', weight: 3 },
         { at: 'def:decode', say: 'None: an illegal word, the machine traps', weight: 3 },
         { at: 'def:listing', say: 'the listing: reassembles to the same word', weight: 2 },
-        { at: 'def:print_line', say: "a line's text: -S's, which tiny-assembler parses back", weight: 2 },
+        { at: 'def:print_line', say: "a line's text: -S's, which tiny-as parses back", weight: 2 },
         { at: 'def:assemble', say: "the compilers' and the assembler's object: each line encoded", weight: 3 },
         { at: 'def:of_object', say: 'tiny-object 3: an older object refused', weight: 1 },
-        { at: 'def:local', say: 'tiny-ml L12, tiny-c tm.L51: not functions', weight: 1 },
+        { at: 'def:local', say: 'tiny-ml L12, tiny-cc tm.L51: not functions', weight: 1 },
         { at: 'def:find', say: 'the last label at or before the address', weight: 2 },
       ],
     },
@@ -604,14 +604,14 @@ local prog(name, file, core) = chain(name, [
       ['user/', 'TinyOffice.ml', 'runs'],
     ]),
     // the toolchain
-    prog('tiny-c: parse, lower, emit', 'TinyC.ml', [
+    prog('tiny-cc: parse, lower, emit', 'TinyC.ml', [
       ['TinyC/TinyCLexer.ml:def:tokens', 'the tokens, #include and #define done', 'the file'],
       ['TinyC/TinyCParser.ml:def:declaration', "a declaration's definitions, typed as parsed", 'tokens'],
       ['TinyC/TinyCParser.ml:def:block', "a function's body: the tree of statements", 'a body'],
       ['TinyC/TinyCLower.ml:def:lower', 'the tree to the stack machine', 'statements'],
       ['TinyC/TinyCMachine.ml:def:machine', 'the stack machine to TinyCPU', 'IR'],
     ]),
-    skeletons.module_calls('TinyC/TinyCParser.ml', 'tiny-c: a declaration at a time', 'declaration', "a global's or a function's definitions", [
+    skeletons.module_calls('TinyC/TinyCParser.ml', 'tiny-cc: a declaration at a time', 'declaration', "a global's or a function's definitions", [
       ['init_data', "a global's initializer, data at offsets", 'a global'],
       ['sym_of', "a static's label: the file's name and its own", 'a name'],
       ['block', "a function's body: the tree of statements", 'a function'],
@@ -639,7 +639,7 @@ local prog(name, file, core) = chain(name, [
         { from: 'TinyML/TinyMLCompile.ml:def:value', to: 'runtime/ml.c:def:ml_alloc', say: 'blocks, at run time' },
       ],
     },
-    // tiny-c's and tiny-ml's own files: what their main does with the
+    // tiny-cc's and tiny-ml's own files: what their main does with the
     // parts' passes (the two skeletons above are the passes)
     {
       name: 'TinyC.ml: a declaration at a time, then one object',
@@ -676,7 +676,7 @@ local prog(name, file, core) = chain(name, [
         { from: 'TinyML.ml:def:main', to: 'TinyML.ml:def:compile_main', say: 'a whole program, or the .tmi alone' },
       ],
     },
-    prog('tiny-assembler: a line, a word, an object', 'TinyAssembler.ml', [
+    prog('tiny-as: a line, a word, an object', 'TinyAssembler.ml', [
       ['TinyAssembler.ml:def:read', 'the file, its lines numbered', 'a .s file'],
       ['TinyAssembler.ml:def:parse', 'a label, a directive, an instruction', 'a line'],
       ['TinyAssembler.ml:def:instruction', 'a mnemonic and its pseudo-forms', 'a mnemonic'],
@@ -694,7 +694,7 @@ local prog(name, file, core) = chain(name, [
         { from: 'TinyAssembler.ml:def:main', to: 'TinyLibMachine.ml:def:to_object', say: 'written' },
       ],
     },
-    prog('tiny-linker: read, sweep, lay out, fill', 'TinyLinker.ml', [
+    prog('tiny-ld: read, sweep, lay out, fill', 'TinyLinker.ml', [
       ['TinyLinker.ml:def:link', 'the passes, in order', 'the objects'],
       ['TinyLinker.ml:def:read', "an object's lines as items", 'the text'],
       ['TinyLinker.ml:def:sweep', 'the pieces nothing reaches dropped', 'items'],
@@ -827,7 +827,7 @@ local prog(name, file, core) = chain(name, [
     chain('tiny-cpu: the CPU alone', [
       ['TinyCPU.ml:code:".main"', 'the program: TinyLibSystem.main', ''],
       ['TinyCPU.ml:def:main', 'the image, then the arguments', 'the capabilities'],
-      ['TinyMachine/TinyMachineCPU.ml:def:image', "tiny-linker's, the memory's first bytes", 'the file'],
+      ['TinyMachine/TinyMachineCPU.ml:def:image', "tiny-ld's, the memory's first bytes", 'the file'],
       ['TinyCPU.ml:def:interpret', 'argc and argv laid out, then the loop', 'the image'],
       ['TinyMachine/TinyMachineCPU.ml:def:step', 'an instruction', 'the machine'],
       ['TinyCPU.ml:def:syscall', "the host's exit, write, read", 'sys'],
@@ -1047,9 +1047,9 @@ local prog(name, file, core) = chain(name, [
     },
   ],
   views: [
-    { name: 'tiny-c and its passes', files: ['TinyC.ml', 'TinyC/', 'runtime/'] },
+    { name: 'tiny-cc and its passes', files: ['TinyC.ml', 'TinyC/', 'runtime/'] },
     { name: 'tiny-ml and its runtime', files: ['TinyML.ml', 'TinyML/', 'runtime/ml.c', 'TinyLibCore/'] },
-    { name: 'tiny-assembler, tiny-linker and the ISA', files: ['TinyAssembler.ml', 'TinyLinker.ml', 'TinyLibMachine.ml'] },
+    { name: 'tiny-as, tiny-ld and the ISA', files: ['TinyAssembler.ml', 'TinyLinker.ml', 'TinyLibMachine.ml'] },
     { name: 'debug, trace, prof: looking at a program', files: ['TinyDebugger.ml', 'TinyTracer.ml', 'TinyProfiler.ml', 'TinyLibMachine.ml'] },
     { name: 'TinyLibGUI and its users', of: 'TinyLibGUI.ml', with: 'users' },
     { name: 'TinyLibPlayground and its users', of: 'TinyLibPlayground.ml', with: 'users' },

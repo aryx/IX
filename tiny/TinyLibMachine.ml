@@ -312,7 +312,7 @@ let print_line (l : line) =
   | SectionData -> ins ".data"
 
   (* an object's bytes are not assembly again: their size and their
-   * places, for a reader (tiny-linker -debug shows them whole) *)
+   * places, for a reader (tiny-ld -debug shows them whole) *)
   | Chunk (b, places) ->
       ins (";\t" ^ string_of_int (String.length b) ^ " bytes, "
            ^ string_of_int (List.length places) ^ " places")
@@ -394,7 +394,7 @@ let to_object (lines : line list) =
   magic ^ Marshal.to_string lines [ Marshal.No_sharing ]
 let of_object (s : string) : line list =
   if not (starts s magic) then
-    error "not an object of this tiny-assembler's (tiny-object 3): rebuild it";
+    error "not an object of this tiny-as's (tiny-object 3): rebuild it";
   Marshal.from_string s (String.length magic)
 
 (* an archive: its magic line, then each member's name and size on a

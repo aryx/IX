@@ -1,4 +1,4 @@
-(* tiny-c's tree: the expressions, typed as the parser builds them (C's
+(* tiny-cc's tree: the expressions, typed as the parser builds them (C's
  * conversions made then, explicit in the tree), and the statements.
  * Read TinyCTypes.mli first. *)
 

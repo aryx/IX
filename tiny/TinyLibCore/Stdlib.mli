@@ -19,7 +19,7 @@
  * before it, to its object and its interface: on tiny-kernel in
  * /lib/ml, where tiny-ml reads the interfaces (-L another
  * directory). They are the first units of every program; what a
- * program does not call, tiny-linker leaves out (its pieces).
+ * program does not call, tiny-ld leaves out (its pieces).
  * (old: the compiler carried the files' text, TinyMLPrelude.ml made of
  * them by the build, and compiled them again at each run)
  *
@@ -41,7 +41,7 @@
  * A module a file is compiled once, to its object and its interface;
  * its name is OCaml's, so the same source builds both ways;
  * TinyLibCore_test.sh checks each .mli against OCaml's module; and
- * tiny-linker leaves out what a program does not call (its pieces).
+ * tiny-ld leaves out what a program does not call (its pieces).
  * The price is the list of the modules, kept in several places
  * (TinyKernel/Makefile's CORE, TinyML.ml's library, tests/link.sh, the
  * list above). The system's side is not here: TinyLibSystem.mli says

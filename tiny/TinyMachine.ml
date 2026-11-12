@@ -15,8 +15,8 @@ let help = usage ^ {|
 TinyCPU's CPU with a kernel's machine: two modes, traps, a timer, pages, a
 console and a disk. ./tiny-machine tiny-kernel, t6 or v0 builds a kernel
 and runs it; the same by hand, in tiny/TinyKernel/steps/v0/, for example:
-  for f in kernel a b c d; do tiny-assembler $f.s; done
-  tiny-linker -o kernel.img kernel.o a.o b.o c.o d.o
+  for f in kernel a b c d; do tiny-as $f.s; done
+  tiny-ld -o kernel.img kernel.o a.o b.o c.o d.o
       an image (the kernel first, at 0)
   tiny-machine kernel.img
       the image run: aabbc<illegal>...

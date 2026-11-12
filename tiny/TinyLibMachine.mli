@@ -6,14 +6,14 @@
  *     the instructions     instr, and their words: encode, decode,
  *                          text and listing (tiny-cpu -l, debug)
  *     the lines            line: the assembly the compilers make
- *                          (tiny-c's TinyCMachine, tiny-ml's
- *                          TinyMLMachine) and tiny-assembler reads (its
+ *                          (tiny-cc's TinyCMachine, tiny-ml's
+ *                          TinyMLMachine) and tiny-as reads (its
  *                          parse); print_line its text (-S)
  *     the objects          the lines once encoded (assemble): what the
- *                          compilers and tiny-assembler write
- *                          (to_object) and tiny-linker reads
+ *                          compilers and tiny-as write
+ *                          (to_object) and tiny-ld reads
  *                          (of_object)
- *     the symbols          a program's labels as tiny-linker writes them,
+ *     the symbols          a program's labels as tiny-ld writes them,
  *                          for tiny-prof and debug
  *
  * Read TinyMachine/TinyMachineCPU.mli first: the machine, the format of
@@ -26,7 +26,7 @@
  * TinyLibSymbols.ml, in one file (docs/plans/done/plan_tiny_libmach.md):
  * the toolchain's, not tiny-machine's parts; the objects the lines'
  * type, not an item type of their own with the same constructors;
- * parse tiny-assembler's, the only program that reads assembly.
+ * parse tiny-as's, the only program that reads assembly.
  *
  * In m-ix a word's two directions are two programs' and two types:
  * mini-ld's Arm encodes its opcodes (5.out.h's), mini-5i's Arm32_isa
@@ -257,21 +257,21 @@ val to_object : line list -> string
 val of_object : string -> line list
 
 (* an archive's bytes, objects kept by name in an order (tiny-ar
- * writes them, tiny-linker links them all in that order: a library),
+ * writes them, tiny-ld links them all in that order: a library),
  * and back; Error when a member is not an object, its name has a
  * blank, or the bytes are not an archive *)
 val is_archive : string -> bool
 val to_archive : (string * string) list -> string
 val of_archive : string -> (string * string) list
 
-(* a line as OCaml writes it, for tiny-linker -debug *)
+(* a line as OCaml writes it, for tiny-ld -debug *)
 val show_line : line -> string
 
 (*****************************************************************************)
 (* The symbols *)
 (*****************************************************************************)
 
-(* A program's labels, as tiny-linker writes them: "address label" lines,
+(* A program's labels, as tiny-ld writes them: "address label" lines,
  * the address in hexadecimal, in a map beside the image (-map: what
  * tiny-prof reads) or after it in an a.out (-s: what debug reads, Plan
  * 9's a.out symbol table). tiny-prof names the function an instruction
@@ -279,7 +279,7 @@ val show_line : line -> string
  * is set at (b main); both by these functions, which were tiny-prof's.
  *
  * A label a compiler makes inside a function (tiny-ml's
- * TinyBrowser.L12, tiny-c's tm.L51) is not a function, and is left
+ * TinyBrowser.L12, tiny-cc's tm.L51) is not a function, and is left
  * out: an address in it is in the function before it. An assembly
  * loop's labels (row_copy2) are kept, as they say which loop. tiny-ml's
  * functions are named TinyBrowser.f151_browse: shown as browse.

@@ -4,7 +4,7 @@
 #
 # The tests of TinyML.ml: each program of languages/ml/tests/tiny/
 # compiled by tiny-ml, linked by tiny-cpu with the runtime (ml.c and
-# a main giving it tiny-cpu's memory, by tiny-c), run by tiny-cpu, and
+# a main giving it tiny-cpu's memory, by tiny-cc), run by tiny-cpu, and
 # its output and exit status compared with the recorded ones (prog.out,
 # or prog.tiny-ml.out where tiny-ml's own behavior is another: an index
 # out of bounds a fatal error, the order of a.(i) <- v's operands,
@@ -39,7 +39,7 @@ static value space0[65536];
 static value space1[65536];
 void main(void) { ml_run(vstack, space0, space1, 65536, $h); flush(); exit(0); }
 EOC
-  $TC -o $W/main$h.o $W/main$h.c || { echo "FAIL the runtime: tiny-c"; exit 1; }
+  $TC -o $W/main$h.o $W/main$h.c || { echo "FAIL the runtime: tiny-cc"; exit 1; }
 done
 printf 'exit:\n\tldw\tr1, 0(sp)\n\tsys\t0\n' > $W/exit.s
 ml_lib $W/lib || { echo "FAIL the library: tiny-ml"; exit 1; }
@@ -88,7 +88,7 @@ then echo "ok forgotten: the code of plain.ml"; else echo "FAIL forgotten"; fail
 # a program of units compiled apart (TinyML_tests/units/: Shapes, with
 # its .mli, then Main), each by tiny-ml -c, its main by tiny-ml of the
 # interfaces, linked: Main.out's output, as when compiled whole; and
-# Shapes's unused function left out by tiny-linker (the main prog_main.o,
+# Shapes's unused function left out by tiny-ld (the main prog_main.o,
 # not main.o, which is Main.o on macOS's file system, blind to case)
 UT=$F/units; mkdir -p $W/units
 if $TML -L $W/lib -c -o $W/units/Shapes.o $UT/Shapes.ml && $TML -L $W/lib -c -o $W/units/Main.o $W/units/Shapes.tmi $UT/Main.ml \
@@ -100,7 +100,7 @@ if $TML -L $W/lib -c -o $W/units/Shapes.o $UT/Shapes.ml && $TML -L $W/lib -c -o 
 then echo "ok units: Shapes and Main compiled apart, and whole, Main.out's output"; else echo "FAIL units"; failures=$((failures + 1)); fi
 # the start made of the files the program links (TinyML/TinyMLLink.mli:
 # each unit's interface beside its object), the library's first, as
-# linked (OCaml's rule), then the program linked by tiny-linker:
+# linked (OCaml's rule), then the program linked by tiny-ld:
 # Main.out's output, as with the start made of the interfaces
 if $TML -o $W/units/prog.start.o $LIB_O $W/units/Shapes.o $W/units/Main.o \
    && link_tm $W/units/progs $L/start.s $L/udivmod.s $W/exit.s $W/units/prog.start.o $LIB_O \
@@ -174,7 +174,7 @@ then echo "ok units: a name defined twice, the later"; else echo "FAIL units: a 
 # two units' constructors of one name, told apart where qualified, an
 # alias's too (A.Add, I.Mul), an unqualified one the latest; and a
 # constructor's tag its own type's (old: the second unit's Add was both,
-# a type error, so tiny-c could not use TinyMachineISA's types)
+# a type error, so tiny-cc could not use TinyMachineISA's types)
 printf 'type arith = Add | Sub\nlet show = function Add -> "add" | Sub -> "sub"\n' > $W/units/A.ml
 printf 'type alu = Sub | Add | Mul\nlet show = function Add -> "ADD" | Sub -> "SUB" | Mul -> "MUL"\n' > $W/units/Isa.ml
 printf 'module I = Isa\nlet () = print_string (A.show A.Add ^ " " ^ I.show I.Mul ^ " " ^ A.show A.Sub ^ " " ^ Isa.show Add)\n' > $W/units/C.ml

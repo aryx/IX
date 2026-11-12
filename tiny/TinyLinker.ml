@@ -8,18 +8,18 @@ open Common
 module M = TinyLibMachine
 module TSys = TinyLibSystem
 
-(* what tiny-linker asks for: the objects read, the image written *)
+(* what tiny-ld asks for: the objects read, the image written *)
 type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 
 (* an address in the image, from 0 *)
 type address = int
 
 let usage =
-  "usage: tiny-linker [-a megabytes] [-n] [-s] [-map] [-debug] -o out file.o|lib.a..."
+  "usage: tiny-ld [-a megabytes] [-n] [-s] [-map] [-debug] -o out file.o|lib.a..."
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
 
-tiny-assembler's objects to an image for tiny-cpu or tiny-machine: the files one
+tiny-as's objects to an image for tiny-cpu or tiny-machine: the files one
 after the other from address 0, their labels one name space, each place a
 label's address goes filled. With -a, an executable for tiny-kernel that asks
 for that much memory: a header (a magic number, the image's size, the memory),
@@ -32,9 +32,9 @@ With -debug, each object's items said (-v, -quiet: TSys.logging's).
 A library, tiny-ar's archive (lib.a), is its objects, all linked, in its order.
 A label's line is its address in hexadecimal and its name. In
 tiny/tests/TinyCPU_tests/, for example:
-  tiny-assembler hello.s && tiny-linker -o hello hello.o
+  tiny-as hello.s && tiny-ld -o hello hello.o
   tiny-cpu hello                           Hello, world
-  tiny-linker -a 10 -o prog start.o prog.o  an a.out of 10 MB, for tiny-kernel
+  tiny-ld -a 10 -o prog start.o prog.o      an a.out of 10 MB, for tiny-kernel
 An error names the label: undefined label main
 |}
 
@@ -72,7 +72,7 @@ let layout (items : M.line list) : layout =
     | SectionData -> data_at := !pc
     | Piece | SectionCode -> ()
     (* (one type for lines and objects: an instruction or a datum not
-     * encoded is not an object's, which tiny-assembler's are) *)
+     * encoded is not an object's, which tiny-as's are) *)
     | _ -> M.error ("not an object's line: " ^ String.trim (M.print_line it)));
   { labels; order = List.rev !order; placed = List.rev !placed;
     data_at = !data_at }
@@ -347,4 +347,4 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
             Exit.OK
           with M.Error e -> Exit.Err e
 
-let () = TSys.main "tiny-linker" main
+let () = TSys.main "tiny-ld" main

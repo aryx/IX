@@ -171,6 +171,6 @@ val timed_events : string -> (int * string) list
 val event : mouse -> console -> string -> unit
 
 (* the listing of the machine's own instructions, csrr, csrw, eret,
- * csrrw, amoswap, wfi (tiny-assembler makes them; the registers of control
+ * csrrw, amoswap, wfi (tiny-as makes them; the registers of control
  * by their names, TinyLibMachine.csr_names) *)
 val show : int -> string option

@@ -2,9 +2,9 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # For the tests, sourced (ROOT set): link_tm out file..., each .s (the
-# assembly written by hand) assembled by tiny-assembler to an object
+# assembly written by hand) assembled by tiny-as to an object
 # beside out (out.1.o...), an object (.o, the compilers') taken as it
-# is, then all linked by tiny-linker into the
+# is, then all linked by tiny-ld into the
 # image out, the first at 0. TA and TL: the two programs (dune's by
 # default; mkfiles/check.sh gives ix's).
 # ml_lib dir: tiny-ml's standard library, TinyLibCore/'s modules in

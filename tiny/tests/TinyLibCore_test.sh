@@ -49,7 +49,7 @@ void main(void) { ml_run(vstack, space0, space1, 65536, 64); flush(); exit(0); }
 END
 printf 'exit:\n\tldw\tr1, 0(sp)\n\tsys\t0\n' > $W/exit.s
 printf '\t.align\t4\nvstack:\n\t.space\t131072\nspace0:\n\t.space\t262144\nspace1:\n\t.space\t262144\n' > $W/mem.s
-$TC -o $W/main.o $W/main.c || { echo "FAIL the runtime: tiny-c"; exit 1; }
+$TC -o $W/main.o $W/main.c || { echo "FAIL the runtime: tiny-cc"; exit 1; }
 ml_lib $W/lib || { echo "FAIL the library: tiny-ml"; exit 1; }
 for p in std digests; do
   # (a unit and its main, the main first after the runtime's: jal reaches

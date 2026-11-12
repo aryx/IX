@@ -2,15 +2,15 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# The test of tiny-assembler's parse and TinyLibMachine's print_line,
-# their law: a file's lines, parsed then printed (tiny-assembler -S),
+# The test of tiny-as's parse and TinyLibMachine's print_line,
+# their law: a file's lines, parsed then printed (tiny-as -S),
 # assemble to the same object as the file, and printed again are the
 # same text. (old: TinyMachineAsm_test.sh, by Law.ml, each line parsed,
 # printed and parsed again the same line, when parse was
-# TinyMachineAsm's, a library's; it is tiny-assembler's now, the one
+# TinyMachineAsm's, a library's; it is tiny-as's now, the one
 # program that reads assembly.) On the assembly there is: the .s of
 # the repository, written by hand (the kernel's, the runtimes', the
-# tests'), and what the compilers write, tiny-c's of TinyC_tests/ and
+# tests'), and what the compilers write, tiny-cc's of TinyC_tests/ and
 # tiny-ml's of TinyLibCore's first units.
 # usage: TinyAssembler_test.sh
 
@@ -24,7 +24,7 @@ W=${W:-$(mktemp -d)}
 # what the compilers write
 mkdir -p $W/c
 for c in $ROOT/tiny/tests/TinyC_tests/*.c; do
-  (cd $(dirname $c) && $TC -S -o $W/c/$(basename $c .c).s $(basename $c)) || { echo "FAIL tiny-c $c"; exit 1; }
+  (cd $(dirname $c) && $TC -S -o $W/c/$(basename $c .c).s $(basename $c)) || { echo "FAIL tiny-cc $c"; exit 1; }
 done
 b=
 for m in Stdlib Char Seq List String; do

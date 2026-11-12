@@ -10,10 +10,10 @@
  * TinyMachine.ml runs the same CPU with devices and a kernel, where a
  * system call is a trap.
  *
- * The image is tiny-linker's: the objects one after the other, their
+ * The image is tiny-ld's: the objects one after the other, their
  * labels one namespace, the first at address 0, where the CPU starts.
  * The arguments are put where the main of a C program expects them
- * (the convention of tiny-c, in runtime/start.s): the strings go
+ * (the convention of tiny-cc, in runtime/start.s): the strings go
  * at the top of memory, and sp points to argc, followed by argv.
  * argv[0] is the name of the image.
  *
@@ -44,7 +44,7 @@
  * three, what start.s needs.
  *
  * Status: this is the first step for running a program on this
- * machine. Programs compiled by tiny-c run here with its libc (the
+ * machine. Programs compiled by tiny-cc run here with its libc (the
  * three calls made by start.s are the three calls provided here).
  * The same assembly, linked after a kernel, runs on TinyMachine, where
  * sys traps to that kernel instead of to OCaml. *)

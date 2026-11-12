@@ -1,4 +1,4 @@
-(* tiny-c's lexer and preprocessor: a C file's tokens, its #includes'
+(* tiny-cc's lexer and preprocessor: a C file's tokens, its #includes'
  * in their place and its #defines expanded. *)
 
 type token =

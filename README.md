@@ -81,14 +81,14 @@ Each program in IX comes in two versions:
 For example, `mini-mk` reads real Plan 9 mkfiles and builds all of
 xix from them, and all of Principia Softwarica's Plan 9, kernel
 included. `tiny-build` is a build system in one file of about
-370 lines. It keeps mk's rules and `%` patterns, and uses content
+670 lines. It keeps mk's rules and `%` patterns, and uses content
 digests instead of timestamps. Reading the two side by side shows
 what is essential to a build system and what is history.
 
 What boots on the Raspberry Pi is m-IX's kernel, mini-9pi: from an SD
-card, on a Pi 1 so far, with its shell, its window system and a USB
+card, on a Pi 1 and Pi 2 so far, with its shell, its window system and a USB
 keyboard and mouse. The same kernel and the same card boot under QEMU
-and under mini-qemu, IX's own Raspberry Pi emulator. t-IX boots on
+and under mini-qemu, IX's own Raspberry Pi emulator. t-IX boots instead on
 tiny-machine, a machine of IX's own design, which is a program: it has
 no board, and does not run under QEMU.
 

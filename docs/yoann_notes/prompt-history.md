@@ -72308,3 +72308,19 @@ Claude warned that the top-level README.md has the same staleness, since it repe
 Claude quoted line 75, which calls each tiny program a variant in a single file under tiny/.
 Claude also quoted line 173, which says each program is a single .ml file in tiny/.
 Claude noted both are wrong for TinyC, TinyML, TinyOffice, TinyBrowser, TinyMachine and the kernel, and offered to fix them and commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 17:27
+
+**Yoann:**
+
+> yes fix them and commit
+
+**Claude (summary):**
+
+Claude committed the tiny/README.md rewrite and two corrected top-README sentences as 9519e3f3.
+Claude reworded the top README so tiny programs are "in a file", not "in a single file".
+The parts list now covers the compilers, office, browser and machine, not only the kernel and machine.
+Committed from a separate index, so the top README's three other edits stay uncommitted in the working copy.
+Other sessions' work in Buildfile, TinyBuildSystem, mkfile, and two build directories was left alone.

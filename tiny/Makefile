@@ -16,6 +16,9 @@
 #   make self    t-IX building itself on tiny-kernel, the image the same
 #                as the host's (about an hour; both TinyKernel/'s, and
 #                O=dir builds in another directory than TinyKernel/_make)
+#   make check   t-IX's code by mini-analyze -caps, -dead, -bugs, -exn,
+#                each against its recording (../Makefile's check-tix,
+#                the analyzer built first; 20 s)
 #   make loc     t-IX's lines alone (../scripts/stats/loc.py -t: the
 #                files git knows, those apart said at the end)
 #
@@ -31,7 +34,10 @@ test:
 	../tests/lite.sh tix
 $(KERNEL_TARGETS): all
 	$(MAKE) -C TinyKernel $@
+check: all
+	dune build ../analyzers/Main.exe
+	$(MAKE) -C .. check-tix
 loc:
 	cd .. && scripts/stats/loc.py -t
 
-.PHONY: all test $(KERNEL_TARGETS) loc
+.PHONY: all test $(KERNEL_TARGETS) check loc

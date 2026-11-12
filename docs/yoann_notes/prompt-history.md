@@ -71281,3 +71281,80 @@ Claude realigned 14 help-text and manual lines where the shorter names had shift
 Claude verified the build and usage output under the new names, and the `tests/lite.sh tix` run showed 35 jobs with one failure.
 That failure is the OCaml 5 job, which Yoann is fixing in another session, so Claude treated it as unrelated to this change.
 Claude left everything uncommitted and asked whether to commit, then proceed to `tiny-build NAME=value` and `${TINY}` in the Buildfiles.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 09:56
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude staged the tiny-build changes, excluding `TinyLibCore/Buildfile` because it mixes Yoann's header edit with Claude's tool-line edits.
+Claude proposed committing the other 116 changed lines and asked Yoann whether to commit the mixed file with his edit included.
+Claude had already verified the library build on macOS, the image through the Makefile, and self-quick on tiny-kernel, all passing.
+Claude left `tests/lite.sh` out, since it holds another session's OCaml 5 fix that broke because of the removed `lib/Stdlib.o` rule.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 10:05
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the change as `68e39594`, placed after the other session's OCaml 5 fix `0d70fa18`.
+Claude said `tiny-build TINY=tiny-` in `tiny/TinyLibCore/` builds the library with `tiny-ml` and `tiny-ar`.
+Claude noted that `tiny/` needs the three host-only files, while `TinyKernel/Makefile` generates them first.
+Claude said tiny-kernel is unchanged: `TINY` is empty and the tools keep names like `ml` and `cc`.
+Claude left the staged `prompt-history.md` and the 150 MB `_make-claude` build directory untouched, offering to delete the latter.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 10:06
+
+**Yoann:**
+
+> ok so if I make; make install, I should have those tiny-xxx in my PATH and I should be able to run tiny-build from TinyLibCore and see the effect of it?
+
+**Claude (summary):**
+
+Claude explained that `make install` copies the tiny-* tools into the opam switch's `bin/` on Yoann's PATH.
+Claude noted those installed copies go stale, and recommended putting `~/github/ix/bin` on PATH instead, since it links to `_build`.
+Claude walked through building `TinyLibCore` with `tiny-build TINY=tiny-`, showing `.o` files compiled, then `stdlib.a` archived, then rebuild and clean steps.
+Claude said the `.o`, `.tmi` and `stdlib.a` outputs sit beside the sources, are gitignored, and are removed by `tiny-build clean`.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 10:11
+
+**Yoann:**
+
+> ok great. I'm still confused though about what is inside stdlib.a and Array.o for instance; the init code is in Array.tmi? when we produce a prog.start.o, it takes code from Array.tmi? the initializer code? or this initializer code is in Array.o and it just need a call instruction in prog.start.o ?
+
+**Claude (summary):**
+
+Claude explained that Array.o holds the initializer code, labeled Array.init, compiled from Array.ml's top-level lets.
+Claude showed that prog.start.o's ml_init makes one call per unit, in link order, such as to Array.init.
+Claude noted that ld fills in the Array.init address when it links Array.o from stdlib.a into the program.
+Claude described Array.tmi as holding only names, types, global counts and arities, with no machine code.
+Claude also covered stdlib.a's 24 objects, the ml_globals table, and square's 58 globals.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 10:14
+
+**Yoann:**
+
+> what if Array has also an init() function?
+
+**Claude (summary):**
+
+Claude explained that tiny-ml never names a function's code after the function, so `Array.init` cannot clash with the unit's initialization.
+Claude laid out the label scheme: a function's code is `Unit.f<number>_<name>`, and local labels are `Unit.L<number>`.
+Claude showed that `Array.init` in the object is the unit's initialization, while the function `init` becomes `Array.f3_init`.
+Claude noted that other units find `Array.init` through `Array.tmi`, which records its static closure or global slot.

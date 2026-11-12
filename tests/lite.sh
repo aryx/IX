@@ -239,7 +239,7 @@ tiny_self() {
   timeout 120 $m -d $o/self.img $o/boot.img > $o/self.out <<'END'
 rc
 mkdir q; cd q
-cc -o ping.o /src/TinyKernel/user/ping.c
+cc -I /src/runtime -o ping.o /src/TinyKernel/user/ping.c
 ml -c -nostdlib -o Stdlib.o /src/TinyLibCore/Stdlib.ml
 cmp Stdlib.tmi /lib/ml/Stdlib.tmi && echo Stdlib.tmi: the host
 echo 'int main(void) { return 6 * 7; }' > m.c

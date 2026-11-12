@@ -72089,3 +72089,35 @@ Claude made starts come only from `.o` files and archives, cutting the usage tex
 Claude moved TinyML_test.sh and link.sh to `-I` and object-based starts, merging the two start cases and adding a usage check.
 Claude reordered the constructors case so `A` is named before `Isa`, and named Shapes in the scopes case so `area` stays unbound.
 Claude reported the tiny-ml and library tests passing, with `make test`, the analyzer, and check still running before the commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 16:05
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the shared-library naming change as f4c99cca, touching tiny/Buildfile and the examples' PLAYGROUND.
+Claude verified that commit: the image bytes match, game and gui build on tiny-kernel, and check and self-quick pass.
+Claude committed 8aecb7b2, removing .tmi arguments from tiny-ml and updating its tests, -h output, and manual.
+That second commit is checked only by dune build, TinyML_test.sh, and TinyLibCore_test.sh so far.
+Claude left make test, the analyzer, and the rebuilt image's check and self-quick running, and said it would report their results.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 16:07
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude proposed a prioritized next-steps list after the `make test` fix, starting with `make self` in the background.
+Claude's list included an image size check (9.15 MB of a 10 MB limit) and a duplicate CORE entry in the Buildfiles.
+Claude suggested two optional tool changes: making tiny-ml's `-L` read only the units a source names, which would make `-nostdlib` unnecessary.
+Claude also proposed letting tiny-cc qualify local labels beyond the file name, which would allow two `draw.c` files in one program.
+Claude asked whether to commit the two test-script fixes and start `make self` in the background.

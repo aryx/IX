@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyOfficeModel.mli *)
+(* See Model.mli *)
 open TinyLibGUI
 
 (* the page's colours, bytes of the machine's palette: white, black, a
@@ -121,7 +121,7 @@ let hit (o : office) (x : int) (y : int) : int option =
 let selected (o : office) : int =
   match o.sel with
   | Some i -> i
-  | None -> invalid_arg "TinyOfficeModel.selected: no box selected"
+  | None -> invalid_arg "Model.selected: no box selected"
 
 let selected_box (o : office) : obj = List.nth o.page (selected o)
 

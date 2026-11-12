@@ -34,15 +34,15 @@
 
 (* [parse width height text]: the objects of a file's text (a page of
  * that width and height, for a Markdown file's one box) *)
-val parse : int -> int -> string -> TinyOfficeModel.obj list
+val parse : int -> int -> string -> Model.obj list
 
 (* the file of a document: each page's boxes, a line \newpage between
  * two pages, an empty line between two boxes *)
-val text : TinyOfficeModel.office -> string
+val text : Model.office -> string
 
 (* how many pages a document's file has: one, and one more a \newpage *)
 val pages_in : string -> int
 
 (* the pages counted again, after a change: as many as its objects are
  * on, at least *)
-val fit_pages : TinyOfficeModel.office -> unit
+val fit_pages : Model.office -> unit

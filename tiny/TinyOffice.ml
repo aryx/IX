@@ -8,13 +8,13 @@
 
 open TinyLibPlayground
 open TinyLibGUI
-open TinyOfficeModel
-open TinyOfficeText
-open TinyOfficeSheet
-open TinyOfficeDrawing
-open TinyOfficePaint
-open TinyOfficeChart
-open TinyOfficeFile
+open Model
+open Text
+open Sheet
+open Drawing
+open Paint
+open Chart
+open File
 
 (* what a key or the mouse asks of the program around: nothing, to save
  * the file, to quit *)
@@ -34,8 +34,8 @@ let saved (o : office) =
   o.clean <- o.page;
   o.message <- "Wrote " ^ o.where.file
 
-(* the document's file (TinyOfficeFile's), for the program around *)
-let text = TinyOfficeFile.text
+(* the document's file (File's), for the program around *)
+let text = File.text
 
 (*****************************************************************************)
 (* Editing a box *)

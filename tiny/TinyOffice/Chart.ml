@@ -1,10 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyOfficeChart.mli *)
+(* See Chart.mli *)
 open TinyLibPlayground
-open TinyOfficeModel
-open TinyOfficeSheet
+open Model
+open Sheet
 
 (*****************************************************************************)
 (* The chart *)

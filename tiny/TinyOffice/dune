@@ -4,6 +4,5 @@
 (library
  (name tiny_office_parts)
  (wrapped false)
- (modules TinyOfficeModel TinyOfficeText TinyOfficeSheet TinyOfficeDrawing
-  TinyOfficePaint TinyOfficeChart TinyOfficeFile)
+ (modules Model Text Sheet Drawing Paint Chart File)
  (libraries tiny_lib_gui))

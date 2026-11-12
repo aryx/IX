@@ -2,12 +2,12 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See TinyTroff.mli *)
-open TinyOfficeModel
-open TinyOfficeText
-open TinyOfficeSheet
-open TinyOfficeDrawing
-open TinyOfficeChart
-open TinyOfficeFile
+open Model
+open Text
+open Sheet
+open Drawing
+open Chart
+open File
 
 (* strings joined (TinyLibCore's String.concat, two by two) *)
 let glue (l : string list) : string = String.concat "" l

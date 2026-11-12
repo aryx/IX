@@ -9,7 +9,7 @@
  * l large), \{} plain, \\ a backslash. Being edited it is decoded into
  * two strings of the same length, the characters and their styles (a
  * byte each: bold 1, italic 2, underlined 4, large 8), the doc of
- * TinyOfficeModel, and encoded back when the editing ends:
+ * Model, and encoded back when the editing ends:
  *
  *     txt   A bold word
  *     sty   00111100000         (one byte a character; 1: bold)
@@ -17,7 +17,7 @@
  * The layout fills the box's width a word at a time, each character in
  * its style's width (the kernel's fonts), a line as tall as its largest
  * character; a click is a place in the text (index_at), the inverse.
- * The file's Markdown (TinyOfficeFile) is made from the same two
+ * The file's Markdown (File) is made from the same two
  * strings.
  *
  * modern:
@@ -41,36 +41,36 @@ val lay_out : int -> string -> string -> laid
 val index_at : laid -> string -> string -> int -> int -> int
 
 (* the selection, from its first character to after its last *)
-val selection : TinyOfficeModel.doc -> int * int
+val selection : Model.doc -> int * int
 
 (* the cursor put at i, no selection, what is typed next in the style
  * of the character before *)
-val go_to : TinyOfficeModel.doc -> int -> unit
+val go_to : Model.doc -> int -> unit
 
 (* the selection replaced by a text and its styles *)
-val put_text : TinyOfficeModel.doc -> string -> string -> unit
+val put_text : Model.doc -> string -> string -> unit
 
 (* a style of the selection set, or taken off when all of it has it;
  * nothing selected, of what is typed next; 0 plain *)
-val restyle : TinyOfficeModel.doc -> int -> unit
+val restyle : Model.doc -> int -> unit
 
 (* what was cut or copied, its characters and their styles; the
  * selection copied there *)
 val clipboard : (string * string) ref
-val copy : TinyOfficeModel.doc -> unit
+val copy : Model.doc -> unit
 
 (* [edit office i x y selecting]: box i's text edited, its cursor where
  * (x, y) is, the left button selecting from there if it is down *)
-val edit : TinyOfficeModel.office -> int -> int -> int -> bool -> unit
+val edit : Model.office -> int -> int -> int -> bool -> unit
 
 (* a key in the text being edited (TinyOffice.mli's table); the box
  * grows to show it all *)
 val write_key :
-  TinyOfficeModel.office -> TinyOfficeModel.doc -> TinyLibPlayground.key -> unit
+  Model.office -> Model.doc -> TinyLibPlayground.key -> unit
 
 (* [text_view box txt sty editing]: a word for each run of characters
  * of a style on a line, the lines that fit; being edited, its selection
  * and its cursor *)
 val text_view :
-  TinyOfficeModel.obj -> string -> string -> TinyOfficeModel.doc option ->
+  Model.obj -> string -> string -> Model.doc option ->
   TinyLibPlayground.shape list

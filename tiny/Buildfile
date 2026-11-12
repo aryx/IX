@@ -300,10 +300,9 @@ emacs: $CRT $MLRT emacs.start.o $STDLIB $EMACS_UNITS $MLEND
 
 # (office's and troff's)
 OFFICE_INCLUDES = -I TinyOffice
-OFFICE_PARTS = TinyOffice/TinyOfficeModel.o TinyOffice/TinyOfficeText.o \
-    TinyOffice/TinyOfficeSheet.o TinyOffice/TinyOfficeDrawing.o \
-    TinyOffice/TinyOfficePaint.o TinyOffice/TinyOfficeChart.o \
-    TinyOffice/TinyOfficeFile.o
+OFFICE_PARTS = TinyOffice/Model.o TinyOffice/Text.o TinyOffice/Sheet.o \
+    TinyOffice/Drawing.o TinyOffice/Paint.o TinyOffice/Chart.o \
+    TinyOffice/File.o
 TinyOffice/&.o: TinyOffice/&.ml $STDLIB
 	$MLC $OFFICE_INCLUDES -o $target TinyOffice/$stem.ml
 

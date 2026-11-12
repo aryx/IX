@@ -4,13 +4,13 @@
  * is written (Markdown's lines, \box[x y w h]{...} around each part);
  * tiny-troff publishes it (step 6 of plan_tiny_office.md).
  *
- *     page.ixd ──▶ TinyOfficeFile.parse ──▶ the parts, in reading order
+ *     page.ixd ──▶ File.parse ──▶ the parts, in reading order
  *                                              (top, then left)
  *                                                  │
  *                              text ◀──────────────┴──────────────▶ HTML
  *
  * It reads a page with the office's own functions (TinyOffice/'s
- * parts: TinyOfficeFile, TinyOfficeText, TinyOfficeSheet...), so the
+ * parts: File, Text, Sheet...), so the
  * format is written down once. A part is printed as
  * its kind asks:
  *

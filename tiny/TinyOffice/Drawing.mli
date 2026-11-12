@@ -33,15 +33,15 @@ val figures : string -> (string * int list * string) list
  * added to the selected drawing; a box or an arrow too small is a
  * click, not a shape *)
 val draw_stroke :
-  TinyOfficeModel.office -> int -> int * int * int * int -> unit
+  Model.office -> int -> int * int * int * int -> unit
 
 (* [sketch_key office tool key]: Tab another tool; a character the last
  * shape's label longer; Backspace shorter, and an empty label's shape
  * removed; C-g the drawing left *)
-val sketch_key : TinyOfficeModel.office -> int -> TinyLibPlayground.key -> unit
+val sketch_key : Model.office -> int -> TinyLibPlayground.key -> unit
 
 (* [drawing_view box tool stroke]: its shapes, and the stroke being
  * made, in blue *)
 val drawing_view :
-  TinyOfficeModel.obj -> int -> (int * int * int * int) option ->
+  Model.obj -> int -> (int * int * int * int) option ->
   TinyLibPlayground.shape list

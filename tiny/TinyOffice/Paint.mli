@@ -24,18 +24,18 @@
 val paint_names : string list
 
 (* [pixel_at box x y]: the pixel under (x, y), in the picture *)
-val pixel_at : TinyOfficeModel.obj -> int -> int -> int * int
+val pixel_at : Model.obj -> int -> int -> int * int
 
 (* [paint office ink brush c0 r0 c1 r1]: a stroke painted in the
  * selected paint (the page changed, its undo kept when the stroke
  * began) *)
 val paint :
-  TinyOfficeModel.office -> int -> int -> int -> int -> int -> int -> unit
+  Model.office -> int -> int -> int -> int -> int -> int -> unit
 
 (* [paint_key office brush key]: a digit a colour (0 white, 1
  * black...); C-g leaves it *)
-val paint_key : TinyOfficeModel.office -> int -> TinyLibPlayground.key -> unit
+val paint_key : Model.office -> int -> TinyLibPlayground.key -> unit
 
 (* each row a word of fat pixels, the rows that fit, as much of each as
  * fits *)
-val paint_view : TinyOfficeModel.obj -> TinyLibPlayground.shape list
+val paint_view : Model.obj -> TinyLibPlayground.shape list

@@ -147,7 +147,7 @@ command language on one buffer.
   cells' array and its copy on landing go (about 40 lines). Chess
   programs' bitboards.
 - **www writes its pages as the office's text.** Each block is emitted
-  as the office's styled text and filled by TinyOfficeText; TinyBrowser-
+  as the office's styled text and filled by TinyOffice/Text.ml; TinyBrowser-
   Lines keeps only the tables. "Save page" gives an `.ixd` that office,
   emacs and troff open. Links need spans that can be clicked in the
   office's text. How much it deletes is the least sure of this list:

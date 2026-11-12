@@ -72324,3 +72324,47 @@ Claude reworded the top README so tiny programs are "in a file", not "in a singl
 The parts list now covers the compilers, office, browser and machine, not only the kernel and machine.
 Committed from a separate index, so the top README's three other edits stay uncommitted in the working copy.
 Other sessions' work in Buildfile, TinyBuildSystem, mkfile, and two build directories was left alone.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 17:36
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude proposed a sequence of next steps: run `make self` in the background, move tiny-ml to Caml Light-style names, and address the image size.
+Claude said item 2 would replace the per-case naming rules with one rule: every type, constructor and label is `Unit.name`.
+Claude estimated that change at about a day of work with tests, the biggest remaining simplification in tiny-ml.
+Claude listed smaller cleanups, including the duplicate CORE entry, README cells, and tiny-cc label naming.
+Claude asked whether to start `make self` in the background and do the tiny-ml naming work meanwhile.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 17:42
+
+**Yoann:**
+
+> for 2, would that add lots of code to TinyML ?
+
+**Claude (summary):**
+
+Claude said the value-naming mechanism could be applied to constructors, labels, and type names, roughly net-neutral in line count.
+Claude's view is that the change would unify naming under `Unit.name`, removing `con_base`, `con_aliases`, `open_cons`, `known_units` stripping, and the `t`/`M.t` patch.
+It would also fix a latent bug: two units' variant types named `t` currently unify, but would become distinct `TCon` values.
+The real cost is risk, not size: every `.tmi` format changes and every name lookup in the parser and checker is touched.
+Claude estimated about a day of careful work, with the full test set (TinyML_test, fuzz, `make self`) needed to verify it.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 17:45
+
+**Yoann:**
+
+> and you think this design would be cleaner and the code more consistent and less error prone to the repeating bugs we had regarding naming?
+
+**Claude (summary):**
+
+Claude said yes, qualified names would remove the root cause of the naming bugs, since a bare name's meaning would no longer depend on reading order. Claude argued this was more consistent, because values already work this way and have had none of these bugs. Claude warned that code relying on "latest read wins", such as the `TinyML.ml` comment about TinyCLower's label, would need explicit `open`s or qualified names, and fuzz tests may catch more. Claude also noted record labels still need a rule when two records share a label, and `named_units` stays a separate heuristic.

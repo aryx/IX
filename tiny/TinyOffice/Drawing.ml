@@ -1,9 +1,9 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyOfficeDrawing.mli *)
+(* See Drawing.mli *)
 open TinyLibPlayground
-open TinyOfficeModel
+open Model
 
 (*****************************************************************************)
 (* The drawing *)

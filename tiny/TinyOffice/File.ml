@@ -1,10 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyOfficeFile.mli *)
-open TinyOfficeModel
-open TinyOfficeText
-open TinyOfficeSheet
+(* See File.mli *)
+open Model
+open Text
+open Sheet
 
 (*****************************************************************************)
 (* The file *)

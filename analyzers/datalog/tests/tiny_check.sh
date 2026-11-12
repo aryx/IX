@@ -58,7 +58,7 @@ NET="$NET -I lib_crypto -I lib_compression"
 # tiny-kernel's programs: the Makefile's GUI and OFFICE
 GUI="$S $T/TinyLibDraw.ml $T/TinyLibPlayground.ml $T/TinyLibGUI.ml"
 OFFICE=$(for m in Model Text Sheet Drawing Paint Chart File; do
-  printf "%s " $T/TinyOffice/TinyOffice$m.ml; done)
+  printf "%s " $T/TinyOffice/$m.ml; done)
 # a program a line: its name, its -I's (- for none), its files
 programs() {
   cat <<EOF

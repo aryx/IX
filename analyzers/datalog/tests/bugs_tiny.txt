@@ -71,10 +71,10 @@ tiny/TinyMachine/TinyMachineDevices.ml:751: stack: place calls itself, not a tai
 tiny/TinyMachine/TinyMachineDevices.ml:831: int31: in until, 0x40000000: not on the Pi 1's 31 bits
 tiny/TinyMachine/TinyMachineDevices.ml:836: int31: in TinyMachineDevices.calm, 0x40000000: not on the Pi 1's 31 bits
 tiny/TinyMachine/TinyMachineSocket.ml:59: swallowed: in TinyMachineSocket.relay, Unix.Unix_error silenced, a constant answered
-tiny/TinyOffice/TinyOfficeDrawing.ml:42: stack: take calls itself, not a tail call, over a list
-tiny/TinyOffice/TinyOfficeFile.ml:80: stack: any calls itself, not a tail call, over a list
-tiny/TinyOffice/TinyOfficeModel.ml:107: stack: TinyOfficeModel.replace calls itself, not a tail call, over a list
-tiny/TinyOffice/TinyOfficePaint.ml:108: stack: rows calls itself, not a tail call, over a list
+tiny/TinyOffice/Drawing.ml:42: stack: take calls itself, not a tail call, over a list
+tiny/TinyOffice/File.ml:80: stack: any calls itself, not a tail call, over a list
+tiny/TinyOffice/Model.ml:107: stack: Model.replace calls itself, not a tail call, over a list
+tiny/TinyOffice/Paint.ml:108: stack: rows calls itself, not a tail call, over a list
 tiny/TinyShell.ml:282: evalorder: operands at 282:8 and 282:19, both with an effect: their order the compiler's
 tiny/TinyShell.ml:343: stack: TinyShell.rest calls itself, not a tail call, over a list
 tiny/TinyTracer.ml:127: stack: go calls itself, not a tail call, over a list

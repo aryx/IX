@@ -21,8 +21,8 @@
  *     c1 =c1+1                #CYCLE
  *
  * The values are computed again at each view: a sheet is small, and it
- * has no other place for them. TinyOfficeChart draws a sheet's cells,
- * TinyOfficeFile writes it as a Markdown table.
+ * has no other place for them. Chart draws a sheet's cells,
+ * File writes it as a Markdown table.
  *
  * cs-history:
  * VisiCalc (Dan Bricklin and Bob Frankston, 1979, on the Apple II): a
@@ -54,21 +54,21 @@ val cell_w : int
 
 (* [put_cell office c r typed]: what is typed in cell (c, r) of the
  * selected sheet put in it *)
-val put_cell : TinyOfficeModel.office -> int -> int -> string -> unit
+val put_cell : Model.office -> int -> int -> string -> unit
 
 (* [choose office i x y]: the cell of box i under (x, y) chosen,
  * nothing typed in it yet *)
-val choose : TinyOfficeModel.office -> int -> int -> int -> unit
+val choose : Model.office -> int -> int -> int -> unit
 
 (* [cell_key office c r typed key]: a key at a cell, as in a
  * spreadsheet: a character starts what is typed there, Enter puts it in
  * the cell and goes down, an arrow puts it and goes that way, C-g
  * forgets it *)
 val cell_key :
-  TinyOfficeModel.office -> int -> int -> string option -> TinyLibPlayground.key
+  Model.office -> int -> int -> string option -> TinyLibPlayground.key
   -> unit
 
 (* [sheet_view box chosen]: the grid, each cell's value, the chosen cell
  * in a blue frame *)
 val sheet_view :
-  TinyOfficeModel.obj -> (int * int) option -> TinyLibPlayground.shape list
+  Model.obj -> (int * int) option -> TinyLibPlayground.shape list

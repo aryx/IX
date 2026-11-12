@@ -239,7 +239,7 @@ local prog(name, file, core) = chain(name, [
         { at: 'def:to_pdf', say: 'PDF by hand: objects, then the cross-reference table', weight: 3 },
         { at: 'def:text_pdf', say: 'Courier, a standard font: no font to embed', weight: 1 },
       ],
-      related: ['TinyOffice/TinyOfficeFile.ml', 'user/troff.ml', 'tests/TinyTroff_test.sh', '../typesetting/troff/'],
+      related: ['TinyOffice/File.ml', 'user/troff.ml', 'tests/TinyTroff_test.sh', '../typesetting/troff/'],
     },
     'TinyTroff.mli': { digest: '5d218aa21150',
       summary: 'A page published three ways, each kind of part printed as text, HTML or PDF asks.',
@@ -795,7 +795,7 @@ local prog(name, file, core) = chain(name, [
       name: 'tiny-troff: a page, three outputs',
       bones: [
         { at: 'user/troff.ml', role: 'the program: the file read, a format chosen' },
-        { at: 'TinyTroff.ml:def:pages_of', role: "the pages, by TinyOfficeFile's parse" },
+        { at: 'TinyTroff.ml:def:pages_of', role: "the pages, by TinyOffice/File.ml's parse" },
         { at: 'TinyTroff.ml:def:in_order', role: 'the parts in reading order' },
         { at: 'TinyTroff.ml:def:to_text', role: 'text: a part a block of lines' },
         { at: 'TinyTroff.ml:def:to_html', role: 'HTML, the drawings SVG' },

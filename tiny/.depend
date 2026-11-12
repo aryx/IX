@@ -58,15 +58,15 @@ TinyML/Machine.o: TinyML/Lexer.tmi TinyLibMachine.tmi TinyML/Tree.tmi TinyML/Mac
 TinyML/Parser.o: TinyML/Formats.tmi TinyML/Lexer.tmi TinyML/Tree.tmi TinyML/Parser.mli
 TinyML/Tree.o: TinyML/Lexer.tmi TinyML/Tree.mli
 TinyML/Types.o: TinyML/Lexer.tmi TinyML/Parser.tmi TinyML/Tree.tmi TinyML/Types.mli
-TinyOffice.o: TinyLibGUI.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyOffice/TinyOfficeChart.tmi TinyOffice/TinyOfficeDrawing.tmi TinyOffice/TinyOfficeFile.tmi TinyOffice/TinyOfficeModel.tmi TinyOffice/TinyOfficePaint.tmi TinyOffice/TinyOfficeSheet.tmi TinyOffice/TinyOfficeText.tmi TinyOffice.mli
-TinyTroff.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyOffice/TinyOfficeChart.tmi TinyOffice/TinyOfficeDrawing.tmi TinyOffice/TinyOfficeFile.tmi TinyOffice/TinyOfficeModel.tmi TinyOffice/TinyOfficeSheet.tmi TinyOffice/TinyOfficeText.tmi TinyTroff.mli
-TinyOffice/TinyOfficeChart.o: TinyLibPlayground.tmi TinyOffice/TinyOfficeModel.tmi TinyOffice/TinyOfficeSheet.tmi TinyOffice/TinyOfficeChart.mli
-TinyOffice/TinyOfficeDrawing.o: TinyLibPlayground.tmi TinyOffice/TinyOfficeModel.tmi TinyOffice/TinyOfficeDrawing.mli
-TinyOffice/TinyOfficeFile.o: TinyOffice/TinyOfficeModel.tmi TinyOffice/TinyOfficeSheet.tmi TinyOffice/TinyOfficeText.tmi TinyOffice/TinyOfficeFile.mli
-TinyOffice/TinyOfficeModel.o: TinyLibGUI.tmi TinyOffice/TinyOfficeModel.mli
-TinyOffice/TinyOfficePaint.o: TinyLibPlayground.tmi TinyOffice/TinyOfficeModel.tmi TinyOffice/TinyOfficePaint.mli
-TinyOffice/TinyOfficeSheet.o: TinyLibPlayground.tmi TinyOffice/TinyOfficeModel.tmi TinyOffice/TinyOfficeSheet.mli
-TinyOffice/TinyOfficeText.o: TinyLibPlayground.tmi TinyOffice/TinyOfficeModel.tmi TinyOffice/TinyOfficeText.mli
+TinyOffice.o: TinyOffice/Chart.tmi TinyOffice/Drawing.tmi TinyOffice/File.tmi TinyOffice/Model.tmi TinyOffice/Paint.tmi TinyOffice/Sheet.tmi TinyOffice/Text.tmi TinyLibGUI.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyOffice.mli
+TinyTroff.o: TinyOffice/Chart.tmi TinyOffice/Drawing.tmi TinyOffice/File.tmi TinyOffice/Model.tmi TinyOffice/Sheet.tmi TinyOffice/Text.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyTroff.mli
+TinyOffice/Chart.o: TinyOffice/Model.tmi TinyOffice/Sheet.tmi TinyLibPlayground.tmi TinyOffice/Chart.mli
+TinyOffice/Drawing.o: TinyOffice/Model.tmi TinyLibPlayground.tmi TinyOffice/Drawing.mli
+TinyOffice/File.o: TinyOffice/Model.tmi TinyOffice/Sheet.tmi TinyOffice/Text.tmi TinyOffice/File.mli
+TinyOffice/Model.o: TinyLibGUI.tmi TinyOffice/Model.mli
+TinyOffice/Paint.o: TinyOffice/Model.tmi TinyLibPlayground.tmi TinyOffice/Paint.mli
+TinyOffice/Sheet.o: TinyOffice/Model.tmi TinyLibPlayground.tmi TinyOffice/Sheet.mli
+TinyOffice/Text.o: TinyOffice/Model.tmi TinyLibPlayground.tmi TinyOffice/Text.mli
 TinyBrowser.o: TinyBrowser/TinyBrowserAddress.tmi TinyBrowser/TinyBrowserHtml.tmi TinyBrowser/TinyBrowserHttp.tmi TinyBrowser/TinyBrowserLines.tmi TinyBrowser/TinyBrowserScreen.tmi TinyBrowser/TinyBrowserText.tmi TinyLibDraw.tmi TinyLibGUI.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyBrowser.mli
 TinyBrowser/TinyBrowserAddress.o: TinyBrowser/TinyBrowserText.tmi TinyBrowser/TinyBrowserAddress.mli
 TinyBrowser/TinyBrowserHtml.o: TinyBrowser/TinyBrowserLines.tmi TinyBrowser/TinyBrowserText.tmi TinyBrowser/TinyBrowserTokens.tmi TinyBrowser/TinyBrowserHtml.mli

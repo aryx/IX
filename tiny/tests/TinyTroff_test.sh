@@ -23,8 +23,8 @@ L=$ROOT/tiny/runtime
 T=$ROOT/tiny/tests/TinyTroff_tests
 # TinyOffice.ml's parts, in their order
 O=$ROOT/tiny/TinyOffice
-OFFICE="$O/TinyOfficeModel.ml $O/TinyOfficeText.ml $O/TinyOfficeSheet.ml $O/TinyOfficeDrawing.ml
-  $O/TinyOfficePaint.ml $O/TinyOfficeChart.ml $O/TinyOfficeFile.ml"
+OFFICE="$O/Model.ml $O/Text.ml $O/Sheet.ml $O/Drawing.ml $O/Paint.ml
+  $O/Chart.ml $O/File.ml"
 W=${W:-$(mktemp -d)}
 [ -n "${KEEP:-}" ] || trap 'rm -rf $W' EXIT
 failures=0

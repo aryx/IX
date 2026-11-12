@@ -146,10 +146,9 @@
  *
  * archi:
  * The shell is this file; the parts are TinyOffice/'s modules, a kind
- * each: TinyOfficeText, TinyOfficeSheet, TinyOfficeDrawing,
- * TinyOfficePaint and TinyOfficeChart (its data read, its keys, its
- * view), on TinyOfficeModel (the page's objects, what is being edited,
- * the office's record); TinyOfficeFile reads and writes the file.
+ * each: Text, Sheet, Drawing, Paint and Chart (its data read, its
+ * keys, its view), on Model (the page's objects, what is being edited,
+ * the office's record); File reads and writes the file.
  *
  * context:
  * This file uses no system calls: the program around reads the keys and
@@ -164,28 +163,28 @@
  * in pixels, file the page's name, text the file's text ("" for a new
  * page; the file a path, so that the two cannot be given one for the
  * other) *)
-val create : int -> int -> Fpath.t -> string -> TinyOfficeModel.office
+val create : int -> int -> Fpath.t -> string -> Model.office
 
 (* what a key or the mouse asks of the program around: nothing, to save
  * the file, to quit *)
 type request = Continue | Save | Quit
 
 (* a key, and what it asks *)
-val key : TinyOfficeModel.office -> TinyLibPlayground.key -> request
+val key : Model.office -> TinyLibPlayground.key -> request
 
 (* the mouse: where it is, its buttons (1 left, 2 middle, 4 right); and
  * what it asks of the program around (the File menu's) *)
-val mouse : TinyOfficeModel.office -> int -> int -> int -> request
+val mouse : Model.office -> int -> int -> int -> request
 
 (* the page as shapes: the ground (white), each object's group (its
  * frame, its content), the status line's, the menus' bar and the open
  * menu *)
-val view : TinyOfficeModel.office -> TinyLibPlayground.shape list
+val view : Model.office -> TinyLibPlayground.shape list
 
 (* the page as its file's text; and the program around saying it wrote it *)
-val text : TinyOfficeModel.office -> string
-val saved : TinyOfficeModel.office -> unit
-val say : TinyOfficeModel.office -> string -> unit
+val text : Model.office -> string
+val saved : Model.office -> unit
+val say : Model.office -> string -> unit
 
 (* [main caps argv]: the program, office file: the document of the file
  * in the window, saved when it asks; the usage when argv is not a

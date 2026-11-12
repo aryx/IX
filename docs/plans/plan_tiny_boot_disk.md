@@ -125,4 +125,13 @@ copy of the disk, as 20 and 28 do already (step 3).
 
 ## Status
 
-Not started (2026-11-12). Decided: two disks (1), the repair kit (2).
+Decided: two disks (1), the repair kit (2).
+
+Step 0, done (2026-11-12): tiny-machine's second disk at -80(r0), by a
+second -d (e5d39f65); KFS's state an `fs`, given to its functions as
+Linux's super_block, `fs_mount io k n` and `fs_sync`; KFiles' `Disk of
+fs * tree * inode`; the boot mounting a second disk at `/src`; the
+KFS test on two disks at once (in fd343ddf, another session's commit,
+whose message tells only its own change). Checked: make test, make -C
+tiny/TinyKernel check, self-quick; a boot on two disks, `/src`'s file
+read.

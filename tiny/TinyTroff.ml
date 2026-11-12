@@ -3,11 +3,6 @@
 
 (* See TinyTroff.mli *)
 open Model
-open Text
-open Sheet
-open Drawing
-open Chart
-open File
 
 (* strings joined (TinyLibCore's String.concat, two by two) *)
 let glue (l : string list) : string = String.concat "" l
@@ -30,7 +25,7 @@ let pages_of (parts : obj list) : obj list list =
 
 (* a text's lines, each its characters and their styles *)
 let styled_lines (data : string) : (string * string) list =
-  let (t, st) = decode data in
+  let (t, st) = Text.decode data in
   let rec go i =
     match String.index_from_opt t i '\n' with
     | Some e -> (String.sub t i (e - i), String.sub st i (e - i)) :: go (e + 1)
@@ -51,16 +46,17 @@ let sheet_size (data : string) : int * int =
       match int_of_string_opt (String.sub n 1 (String.length n - 1)) with
       | Some r -> r
       | None -> 1 in
-    (max nc (Char.code n.[0] - 96), max nr r)) (0, 0) (cells data)
+    (max nc (Char.code n.[0] - 96), max nr r)) (0, 0) (Sheet.cells data)
 
-let shown (value : string -> value) (data : string) (c : int) (r : int)
+let shown (value : string -> Sheet.value) (data : string) (c : int) (r : int)
     : string * bool * bool =
-  let n = name c r in
-  if not (List.exists (fun (m, _) -> m = n) (cells data)) then ("", false, false)
+  let n = Sheet.name c r in
+  if not (List.exists (fun (m, _) -> m = n) (Sheet.cells data)) then
+    ("", false, false)
   else match value n with
-    | Num k -> (string_of_int k, true, false)
-    | Str s -> (s, false, false)
-    | Err e -> ("#" ^ e, false, true)
+    | Sheet.Num k -> (string_of_int k, true, false)
+    | Sheet.Str s -> (s, false, false)
+    | Sheet.Err e -> ("#" ^ e, false, true)
 
 (*****************************************************************************)
 (* Text *)
@@ -86,7 +82,7 @@ let text_lines (width : int) (data : string) : string list =
 
 (* a sheet: its values in columns, a number at its column's right *)
 let sheet_lines (data : string) : string list =
-  let value = values data and (nc, nr) = sheet_size data in
+  let value = Sheet.values data and (nc, nr) = sheet_size data in
   let cols = List.init nc (fun c -> c) in
   let wide = List.map (fun c ->
     List.fold_left (fun m r ->
@@ -122,7 +118,7 @@ let drawing_lines (b : obj) : string list =
   let free c r = inside c r && g.(r).(c) = " " in
   let put_free c r s = if free c r then g.(r).(c) <- s in
   let label c r s = List.iteri (fun k ch -> put (c + k) r ch) (chars s) in
-  let shapes = figures b.data in
+  let shapes = Drawing.figures b.data in
   shapes |> List.iter (fun (kind, nums, text) ->
     match kind, nums with
     | "box", [ x; y; w; h ] ->
@@ -162,7 +158,7 @@ let paint_lines (data : string) : string list =
 (* a chart: a line a bar, its label, #s for its share of the largest
  * (30 for it), its value; or why it has none *)
 let chart_lines (page : obj list) (b : obj) : string list =
-  match chart_bars page b with
+  match Chart.chart_bars page b with
   | [], why -> [ "[" ^ why ^ "]" ]
   | bars, _ ->
       let top = List.fold_left (fun m (_, v) -> max m v) 1 bars
@@ -173,7 +169,7 @@ let chart_lines (page : obj list) (b : obj) : string list =
         ^ String.make (max 0 (v * 30 / top)) '#' ^ " " ^ string_of_int v) bars
 
 let to_text (width : int) (doc : string) : string =
-  let parts = in_order (parse 640 480 doc) in
+  let parts = in_order (File.parse 640 480 doc) in
   let one (b : obj) =
     match b.kind with
     | Box_sheet -> sheet_lines b.data
@@ -238,7 +234,7 @@ let text_html (data : string) : string =
 
 (* a sheet: a table of its values *)
 let sheet_html (data : string) : string =
-  let value = values data and (nc, nr) = sheet_size data in
+  let value = Sheet.values data and (nc, nr) = sheet_size data in
   "<table>\n"
   ^ glue (List.init nr (fun r ->
       "<tr>" ^ glue (List.init nc (fun c ->
@@ -276,7 +272,7 @@ let drawing_html (b : obj) : string =
           ^ " " ^ p (x1 + (6 * dx) + (4 * dy)) (y1 + (6 * dy) + (4 * dx))
           ^ "\"/>\n"
       | "text", [ x; y ] -> svg_text x (y + 8) "start" text ^ "\n"
-      | _ -> "") (figures b.data))
+      | _ -> "") (Drawing.figures b.data))
   ^ "</svg>\n"
 
 (* a paint: SVG, each run of a colour on a row a rectangle (white left
@@ -318,7 +314,7 @@ let chart_html (page : obj list) (b : obj) : string =
   let txt x y s =
     "<text x=\"" ^ num x ^ "\" y=\"" ^ num y ^ "\">" ^ esc s ^ "</text>" in
   "<svg width=\"" ^ num b.w ^ "\" height=\"" ^ num b.h ^ "\">\n"
-  ^ (match chart_bars page b with
+  ^ (match Chart.chart_bars page b with
      | [], why -> txt 4 14 why ^ "\n"
      | bars, _ ->
          let n = List.length bars
@@ -342,7 +338,7 @@ let style =
   ^ "table{border-collapse:collapse}td{border:1px solid #ccc;padding:0 4px;height:15px;min-width:56px}td.n{text-align:right}td.e{color:#c00}"
 
 let to_html (title : string) (doc : string) : string =
-  let parts = in_order (parse 640 480 doc) in
+  let parts = in_order (File.parse 640 480 doc) in
   let num k = string_of_int k in
   (* a page: a block the size of its parts, each part at its place *)
   let page bs =
@@ -418,8 +414,8 @@ let text_pdf h style x y s =
 (* a text box, as the office lays it out: each run of a style on a line
  * at the line's bottom, the lines that fit *)
 let text_pdf_box h (b : obj) : string =
-  let (t, st) = decode b.data in
-  let lay = lay_out (b.w - 8) t st and n = String.length t in
+  let (t, st) = Text.decode b.data in
+  let lay = Text.lay_out (b.w - 8) t st and n = String.length t in
   let fits l = lay.top.(l) + lay.tall.(l) <= b.h - 4 in
   let rec runs i acc =
     if i >= n then acc
@@ -439,7 +435,7 @@ let text_pdf_box h (b : obj) : string =
 (* a sheet: its values in cells of 64 by 16, a number at the right, the
  * grid's lines grey *)
 let sheet_pdf h (b : obj) : string =
-  let value = values b.data and (nc, nr) = sheet_size b.data in
+  let value = Sheet.values b.data and (nc, nr) = sheet_size b.data in
   glue (List.concat (List.init nr (fun r -> List.init nc (fun c ->
     let (s, num, _) = shown value b.data c r in
     let x = b.x + (64 * c) and y = b.y + (16 * r) in
@@ -472,7 +468,7 @@ let drawing_pdf h (b : obj) : string =
         ^ " l " ^ p (x1 + (6 * dx) + (4 * dy)) (y1 + (6 * dy) + (4 * dx))
         ^ " l f\n"
     | "text", [ x; y ] -> text_pdf h 0 (b.x + x) (b.y + y) label
-    | _ -> "") (figures b.data))
+    | _ -> "") (Drawing.figures b.data))
 
 (* a paint: a rectangle a run of a colour on a row, 4 by 4 a pixel *)
 let paint_pdf h (b : obj) : string =
@@ -494,7 +490,7 @@ let paint_pdf h (b : obj) : string =
 
 (* a chart: its bars as the office draws them *)
 let chart_pdf h (page : obj list) (b : obj) : string =
-  match chart_bars page b with
+  match Chart.chart_bars page b with
   | [], why -> text_pdf h 0 (b.x + 4) (b.y + 2) why
   | bars, _ ->
       let n = List.length bars
@@ -513,7 +509,7 @@ let ten (k : int) =
   let s = string_of_int k in String.make (10 - String.length s) '0' ^ s
 
 let to_pdf (doc : string) : string =
-  let parts = in_order (parse 640 480 doc) in
+  let parts = in_order (File.parse 640 480 doc) in
   let pages = pages_of parts in
   let n = List.length pages in
   (* every page the size of the largest one's parts *)

@@ -9,12 +9,6 @@
 open TinyLibPlayground
 open TinyLibGUI
 open Model
-open Text
-open Sheet
-open Drawing
-open Paint
-open Chart
-open File
 
 (* what a key or the mouse asks of the program around: nothing, to save
  * the file, to quit *)
@@ -25,8 +19,8 @@ let say (o : office) (m : string) = o.message <- m
 let create (width : int) (height : int) (path : Fpath.t) (s : string)
     : office =
   let file = Fpath.to_string path in
-  let page = parse width height s in
-  let where = { file; width; height; shown = 0; pages = pages_in s } in
+  let page = File.parse width height s in
+  let where = { file; width; height; shown = 0; pages = File.pages_in s } in
   { page; undo = []; clean = page; sel = None; editing = Nothing; drag = None;
     at = (16, 40); menu = menu_closed (); message = ""; prefix = false; where }
 
@@ -46,8 +40,8 @@ let text = File.text
 let commit (o : office) =
   if o.sel <> None then
     match o.editing with
-    | Writing d -> change o (encode d.txt d.sty)
-    | Cell (c, r, Some t) -> put_cell o c r t
+    | Writing d -> change o (Text.encode d.txt d.sty)
+    | Cell (c, r, Some t) -> Sheet.put_cell o c r t
     | _ -> ()
 
 let finish (o : office) = commit o; o.editing <- Nothing
@@ -81,7 +75,7 @@ let add (o : office) (kind : kind) (w : int) (h : int) =
   let i = List.length o.page - 1 in
   o.sel <- Some i;
   match kind with
-  | Box_text -> edit o i x y false
+  | Box_text -> Text.edit o i x y false
   | Box_sheet -> o.editing <- Cell (0, 0, None)
   | Box_paint -> o.editing <- Painting (1, 0, None)
   | _ -> o.editing <- Sketch (0, None)
@@ -94,7 +88,8 @@ let command (o : office) (c : command) : request =
   | Do_undo ->
       finish o;
       (match o.undo with
-       | p :: rest -> o.page <- p; o.undo <- rest; o.sel <- None; fit_pages o
+       | p :: rest ->
+           o.page <- p; o.undo <- rest; o.sel <- None; File.fit_pages o
        | [] -> o.message <- "No more undo");
       Continue
   | Do_delete ->
@@ -106,7 +101,7 @@ let command (o : office) (c : command) : request =
   | Do_add kind ->
       finish o;
       (match kind with
-       | Box_sheet -> add o kind (26 + (4 * cell_w)) (18 + (6 * 16))
+       | Box_sheet -> add o kind (26 + (4 * Sheet.cell_w)) (18 + (6 * 16))
        | Box_drawing -> add o kind 300 160
        | Box_paint -> add o kind 200 124
        | _ -> add o Box_text 200 84);
@@ -130,16 +125,20 @@ let command (o : office) (c : command) : request =
       (match o.editing with Painting (_, _, _) -> change o "" | _ -> ());
       Continue
   | Do_cut ->
-      (match o.editing with Writing d -> copy d; put_text d "" "" | _ -> ());
+      (match o.editing with
+       | Writing d -> Text.copy d; Text.put_text d "" ""
+       | _ -> ());
       Continue
-  | Do_copy -> (match o.editing with Writing d -> copy d | _ -> ()); Continue
+  | Do_copy ->
+      (match o.editing with Writing d -> Text.copy d | _ -> ());
+      Continue
   | Do_paste ->
       (match o.editing with
-       | Writing d -> let (t, st) = !clipboard in put_text d t st
+       | Writing d -> let (t, st) = !Text.clipboard in Text.put_text d t st
        | _ -> ());
       Continue
   | Do_style bit ->
-      (match o.editing with Writing d -> restyle d bit | _ -> ());
+      (match o.editing with Writing d -> Text.restyle d bit | _ -> ());
       Continue
   | Do_name ->
       (match o.editing with
@@ -148,7 +147,7 @@ let command (o : office) (c : command) : request =
       Continue
   | Do_chart ->
       (match o.editing with
-       | Cell (c, _, _) -> commit o; make_chart o c
+       | Cell (c, _, _) -> commit o; Chart.make_chart o c
        | _ -> ());
       Continue
   | Do_page d ->
@@ -216,7 +215,7 @@ let office_menus (o : office) : (string * (string * command) list) list =
                        ("Chart of this column", Do_chart) ]) ]
      | Painting (ink, brush, _) ->
          let colour k =
-           ((if k = ink then "* " else "  ") ^ List.nth paint_names k
+           ((if k = ink then "* " else "  ") ^ List.nth Paint.paint_names k
             ^ "      " ^ string_of_int k, Do_ink k) in
          [ ("Paint",
             List.init 10 colour
@@ -239,15 +238,15 @@ let key (o : office) (k : key) : request =
   let own = k = Ctrl 'x' || k = Ctrl '_' in
   match o.editing with
   | Writing d when not o.prefix && not own ->
-      o.message <- ""; write_key o d k; Continue
+      o.message <- ""; Text.write_key o d k; Continue
   | Cell (c, r, typed) when not o.prefix && k <> Ctrl 'x' ->
-      o.message <- ""; cell_key o c r typed k; Continue
+      o.message <- ""; Sheet.cell_key o c r typed k; Continue
   | Sketch (tool, _) when not o.prefix && k <> Ctrl 'x' ->
-      o.message <- ""; sketch_key o tool k; Continue
+      o.message <- ""; Drawing.sketch_key o tool k; Continue
   | Painting (_, brush, _) when not o.prefix && not own ->
-      o.message <- ""; paint_key o brush k; Continue
+      o.message <- ""; Paint.paint_key o brush k; Continue
   | Naming typed when not o.prefix && k <> Ctrl 'x' ->
-      o.message <- ""; name_key o typed k; Continue
+      o.message <- ""; Chart.name_key o typed k; Continue
   | _ ->
       let was = o.message in
       o.message <- "";
@@ -325,30 +324,29 @@ let page_mouse (o : office) (was : int) (x : int) (y : int) (b : int) =
       grab o (selected o) x y resizing
   | Painting (ink, brush, _) when on_it ->
       (* in the paint being edited: a stroke begins, kept for undo *)
-      let (c, r) = pixel_at (selected_box o) x y in
+      let (c, r) = Paint.pixel_at (selected_box o) x y in
       keep o;
-      paint o ink brush c r c r;
+      Paint.paint o ink brush c r c r;
       o.editing <- Painting (ink, brush, Some (c, r))
   | Painting (ink, brush, Some (c0, r0)) ->
       (* the stroke goes on to where the mouse is, and ends where it is
        * let go *)
-      let (c, r) = pixel_at (selected_box o) x y in
-      paint o ink brush c0 r0 c r;
+      let (c, r) = Paint.pixel_at (selected_box o) x y in
+      Paint.paint o ink brush c0 r0 c r;
       o.editing <-
         Painting (ink, brush, if b land 1 <> 0 then Some (c, r) else None)
   | Writing d when on_it ->
       (* in the text being edited: the cursor there, a selection from it *)
       let ob = selected_box o in
-      go_to d
-        (index_at (lay_out (ob.w - 8) d.txt d.sty) d.txt d.sty (x - ob.x - 4)
-           (y - ob.y - 2));
+      let lay = Text.lay_out (ob.w - 8) d.txt d.sty in
+      Text.go_to d
+        (Text.index_at lay d.txt d.sty (x - ob.x - 4) (y - ob.y - 2));
       d.selecting <- true
   | Writing d when d.selecting ->
       (* the selection follows the mouse, to where it is let go *)
       let ob = selected_box o in
-      d.cur <-
-        index_at (lay_out (ob.w - 8) d.txt d.sty) d.txt d.sty (x - ob.x - 4)
-          (y - ob.y - 2);
+      let lay = Text.lay_out (ob.w - 8) d.txt d.sty in
+      d.cur <- Text.index_at lay d.txt d.sty (x - ob.x - 4) (y - ob.y - 2);
       if b land 1 = 0 then d.selecting <- false
   | Sketch (tool, _) when on_it ->
       (* in the drawing being edited: a stroke begins *)
@@ -360,7 +358,7 @@ let page_mouse (o : office) (was : int) (x : int) (y : int) (b : int) =
       if b land 1 <> 0 then o.editing <- Sketch (tool, Some (x0, y0, ex, ey))
       else
         (o.editing <- Sketch (tool, None);
-         draw_stroke o tool (x0, y0, ex, ey))
+         Drawing.draw_stroke o tool (x0, y0, ex, ey))
   | _ ->
   if pressed 1 then begin
     (* a click: the editing ends; in a text box, another begins *)
@@ -370,8 +368,8 @@ let page_mouse (o : office) (was : int) (x : int) (y : int) (b : int) =
     match i with
     | Some i ->
         (match (List.nth o.page i).kind with
-         | Box_text -> edit o i x y true
-         | Box_sheet -> choose o i x y
+         | Box_text -> Text.edit o i x y true
+         | Box_sheet -> Sheet.choose o i x y
          | Box_drawing -> o.editing <- Sketch (0, None)
          | Box_paint -> o.editing <- Painting (1, 0, None)
          | Box_chart -> ())
@@ -455,18 +453,18 @@ let status (o : office) : shape list =
     | Cell (c, r, typed) when o.sel <> None ->
         (* the formula bar: the cell, what is being typed in it, or what
          * was *)
-        name c r ^ ": "
+        Sheet.name c r ^ ": "
         ^ (match typed with
            | Some t -> t ^ "_"
-           | None -> typed_in (selected_box o).data (name c r))
+           | None -> Sheet.typed_in (selected_box o).data (Sheet.name c r))
     | Naming typed ->
         "the sheet's name: " ^ typed ^ "_ (Enter gives it, C-g not)"
     | Painting (ink, brush, _) ->
-        "paint: " ^ List.nth paint_names ink
+        "paint: " ^ List.nth Paint.paint_names ink
         ^ (if brush = 0 then ", thin" else ", thick")
         ^ "; the left button paints; the Paint menu, or a digit"
     | Sketch (tool, _) ->
-        "drawing: " ^ List.nth tools tool
+        "drawing: " ^ List.nth Drawing.tools tool
         ^ " (Tab: another); the left button draws; type a label"
     | _ -> "" in
   let m = if said <> "" then said
@@ -488,17 +486,20 @@ let view (o : office) : shape list =
        incr i;
        if b.page_no <> o.where.shown then [] else
        let content = match o.editing with
-         | Writing d when o.sel = Some !i -> text_view b d.txt d.sty (Some d)
-         | Cell (c, r, _) when o.sel = Some !i -> sheet_view b (Some (c, r))
+         | Writing d when o.sel = Some !i ->
+             Text.text_view b d.txt d.sty (Some d)
+         | Cell (c, r, _) when o.sel = Some !i ->
+             Sheet.sheet_view b (Some (c, r))
          | Sketch (tool, stroke) when o.sel = Some !i ->
-             drawing_view b tool stroke
+             Drawing.drawing_view b tool stroke
          | _ ->
              match b.kind with
-             | Box_text -> let (t, st) = decode b.data in text_view b t st None
-             | Box_sheet -> sheet_view b None
-             | Box_drawing -> drawing_view b 0 None
-             | Box_paint -> paint_view b
-             | Box_chart -> chart_view o.page b in
+             | Box_text ->
+                 let (t, st) = Text.decode b.data in Text.text_view b t st None
+             | Box_sheet -> Sheet.sheet_view b None
+             | Box_drawing -> Drawing.drawing_view b 0 None
+             | Box_paint -> Paint.paint_view b
+             | Box_chart -> Chart.chart_view o.page b in
        [ Group (frame b (o.sel = Some !i) @ content) ]) o.page)
   @ [ Group (status o) ] @ menu_view width (office_menus o) o.menu
 

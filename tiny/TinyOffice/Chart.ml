@@ -4,7 +4,6 @@
 (* See Chart.mli *)
 open TinyLibPlayground
 open Model
-open Sheet
 
 (*****************************************************************************)
 (* The chart *)
@@ -30,9 +29,9 @@ let range_cells (r : string) : string list =
   | [ a; b ] -> (
       match at a, at b with
       | Some (c0, r0), Some (c1, r1) when c0 = c1 && r1 >= r0 ->
-        List.init (r1 - r0 + 1) (fun k -> name c0 (r0 + k))
+        List.init (r1 - r0 + 1) (fun k -> Sheet.name c0 (r0 + k))
       | Some (c0, r0), Some (c1, r1) when r0 = r1 && c1 >= c0 ->
-        List.init (c1 - c0 + 1) (fun k -> name (c0 + k) r0)
+        List.init (c1 - c0 + 1) (fun k -> Sheet.name (c0 + k) r0)
       | _ -> [])
   | _ -> []
 
@@ -48,17 +47,17 @@ let chart_bars (page : obj list) (b : obj) : (string * int) list * string =
           page
       with
       | s :: _ ->
-          let value = values s.data in
+          let value = Sheet.values s.data in
           let labels = match rest with l :: _ -> range_cells l | [] -> [] in
           let label k = match labels with [] -> "" | _ -> (
             match (if k < List.length labels then value (List.nth labels k)
-                   else Str "") with
-            | Num v -> string_of_int v
-            | Str t -> t
-            | Err e -> "#" ^ e) in
+                   else Sheet.Str "") with
+            | Sheet.Num v -> string_of_int v
+            | Sheet.Str t -> t
+            | Sheet.Err e -> "#" ^ e) in
           let bars =
             List.mapi (fun k n ->
-              (label k, match value n with Num v -> v | _ -> 0))
+              (label k, match value n with Sheet.Num v -> v | _ -> 0))
               (range_cells range) in
           if bars = [] then ([], "no cells in " ^ range) else (bars, "")
       | [] -> ([], "no sheet " ^ sheet))
@@ -138,17 +137,17 @@ let name_key (o : office) (typed : string) (k : key) =
  * the column at its left their labels *)
 let make_chart (o : office) (c : int) =
   let s = selected_box o in
-  let value = values s.data in
+  let value = Sheet.values s.data in
   let rows =
     List.filter (fun r ->
-      match value (name c r) with Num _ -> true | _ -> false)
+      match value (Sheet.name c r) with Sheet.Num _ -> true | _ -> false)
       (List.init 99 (fun r -> r)) in
   match rows with
   | [] ->
     o.message <- "no numbers in column " ^ String.make 1 (Char.chr (97 + c))
   | r0 :: _ ->
       let r1 = List.fold_left max r0 rows in
-      let range c = name c r0 ^ ":" ^ name c r1 in
+      let range c = Sheet.name c r0 ^ ":" ^ Sheet.name c r1 in
       let data =
         "bars " ^ s.called ^ " " ^ range c
         ^ (if c > 0 then " " ^ range (c - 1) else "") ^ "\n" in

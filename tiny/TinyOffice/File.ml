@@ -3,8 +3,6 @@
 
 (* See File.mli *)
 open Model
-open Text
-open Sheet
 
 (*****************************************************************************)
 (* The file *)
@@ -103,7 +101,7 @@ let line_of_md (l : string) : string * string =
 
 (* a text box's data as Markdown's lines, and back *)
 let md_of_text (data : string) : string list =
-  let (t, st) = decode data in
+  let (t, st) = Text.decode data in
   let rec lines i =
     match String.index_from_opt t i '\n' with
     | Some e ->
@@ -116,7 +114,7 @@ let md_of_text (data : string) : string list =
 
 let text_of_md (ls : string list) : string =
   let read = List.map line_of_md ls in
-  encode
+  Text.encode
     (String.concat ""
        (List.mapi (fun k (t, _) -> if k = 0 then t else "\n" ^ t) read))
     (String.concat ""
@@ -125,7 +123,7 @@ let text_of_md (ls : string list) : string =
 (* A sheet as a table, its columns as wide as their widest cell, and
  * back (a | in a cell is \|) *)
 let md_of_sheet (data : string) : string list =
-  let cs = cells data in
+  let cs = Sheet.cells data in
   let col n = Char.code n.[0] - 97
   and row n =
     (match int_of_string_opt (String.sub n 1 (String.length n - 1)) with
@@ -137,7 +135,7 @@ let md_of_sheet (data : string) : string list =
     String.concat ""
       (List.map (fun c -> if c = '|' then "\\|" else String.make 1 c)
          (List.init (String.length s) (fun i -> s.[i]))) in
-  let cell c r = esc (typed_in data (name c r)) in
+  let cell c r = esc (Sheet.typed_in data (Sheet.name c r)) in
   let wide =
     List.init ncols (fun c ->
       List.fold_left (fun m r -> max m (String.length (cell c r))) 1
@@ -170,7 +168,7 @@ let sheet_of_md (ls : string list) : string =
            (List.mapi (fun r l ->
               List.concat
                 (List.mapi (fun c t ->
-                   if t = "" then [] else [ name c r ^ " " ^ t ^ "\n" ])
+                   if t = "" then [] else [ Sheet.name c r ^ " " ^ t ^ "\n" ])
                    (table_cells l))) rows))
   | _ -> ""
 

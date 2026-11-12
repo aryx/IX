@@ -17,7 +17,7 @@
  (modules TinyMachineDevices)
  (libraries tiny_machine_cpu))
 
-; the other end of tiny-machine's wire, TinyKernelNetwork with a few lines on
+; the other end of tiny-machine's wire, KNetwork with a few lines on
 ; top: TinyMachine's and TinyMachineWeb's
 (library
  (name tiny_machine_peer)

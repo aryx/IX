@@ -41,7 +41,7 @@
  *                          its call, retried by the   sleep, no locks
  *                          scheduler
  *   files and directories  the disk's                 no log, no fsck, no map
- *                          (TinyKernelFS.ml):         of free blocks: a commit
+ *                          (KFS.ml):         of free blocks: a commit
  *                          inodes, copied on write,   is one block written; a
  *                          the root; the boot         collector finds the free
  *                          image's, a tree of ML      ones
@@ -49,7 +49,7 @@
  *                          it
  *   console, pipes         other kinds of open files  pipes make a shell a
  *                                                     shell
- *   a screen, a mouse      descriptors 3 and 4 of a   TinyKernelGraphics.ml
+ *   a screen, a mouse      descriptors 3 and 4 of a   KGraphics.ml
  *                          program: it writes         draws; no memory is
  *                          drawing messages (the      shared, so nothing to map
  *                          kernel owns the pixels)
@@ -81,13 +81,13 @@
  * creates the first process (/bin/sh, with the console as its 0, 1 and 2),
  * and enters [schedule], a loop that never returns: run a process
  * until it traps, handle the trap, and choose again. A process has a
- * slot (a partition, and a frame of 17 words where entry.s saves its
+ * slot (a partition, and a frame of 17 words where kentry.s saves its
  * registers), a pid, a state, a parent, its descriptors and its
  * current directory.
  *
  * Several cores (tiny-machine -cores n, plan_tiny_multicore.md). The
  * kernel stays core 0's, whole: one heap, one collector, written for
- * one thread. The others run processes only, in entry.s's slave loop,
+ * one thread. The others run processes only, in kentry.s's slave loop,
  * which runs no ML: core 0 writes a process's frame, window and slice
  * in core k's mailbox and raises k's interrupt; k runs the process
  * until its trap, writes the cause back and raises core 0's, which
@@ -105,32 +105,32 @@
  *
  * The kernel is several files, units compiled by tiny-ml one by one in
  * this order (TinyKernel/Makefile's KUNITS). First what it stands on:
- * TinyMemory (the machine's bytes), TinyKernelGraphics, TinyKernelNetwork,
- * TinyKernelAudio, TinyKernelFS, TinyKernelMemory. Then its own parts,
- * once this file's sections: TinyKernelMachine (the externals, the
- * devices' addresses), TinyKernelFiles (the tree of files, what a
- * descriptor is), TinyKernelProcs, TinyKernelDevices (the screen, the
- * mouse, the clock, the speaker), TinyKernelIO (reads and writes),
- * TinyKernelCalls (the system calls), TinyKernelScheduler. This file is
+ * KRaw (the machine's bytes), KGraphics, KNetwork,
+ * KAudio, KFS, KMemory. Then its own parts,
+ * once this file's sections: KMachine (the externals, the
+ * devices' addresses), KFiles (the tree of files, what a
+ * descriptor is), KProcs, KDevices (the screen, the
+ * mouse, the clock, the speaker), KIO (reads and writes),
+ * KCalls (the system calls), KScheduler. This file is
  * the boot.
  *
  * Here is how the kernel divides the machine's 256 MB (runtime.c has
  * the numbers; a process sees only its own partition, starting at 0,
  * thanks to the machine's relocating window):
  *
- *     0x000000   the image: entry.s, the runtime, the kernel; then the
+ *     0x000000   the image: kentry.s, the runtime, the kernel; then the
  *                files it carries, each a name, a size, the bytes
  *                (10 MB at most; the sources, /src, are on the disk,
  *                disk.img, which the Makefile makes by tiny-mkfs)
  *     0xa00000   the file system's buffers and its map of the
- *                disk's blocks (TinyKernelFS.ml)
+ *                disk's blocks (KFS.ml)
  *     0xb00000   the value stack: the kernel's own roots (TinyML's)
  *     0xb40000   the frames, 68 bytes per slot: r1 to r15 and the pc
  *                of each process that is not running
  *     0xb41000   the cores' mailboxes, 64 bytes each
  *     0xb50000   a packet's place, sent or received
  *     0xb51000   with pages, a byte for each page of the processes'
- *                memory, its users (TinyKernelMemory.ml)
+ *                memory, its users (KMemory.ml)
  *     0xb60000   the bounce: a buffer in several pieces, read or
  *                written through it (sys_rw; none with partitions)
  *     0xc00000   the speaker's ring
@@ -143,7 +143,7 @@
  *                first-fit when a program starts
  *    0xfffffc0   the devices, reached as -64 to -4
  *
- * A process's memory is TinyKernelMemory's (TinyKernel/): a partition
+ * A process's memory is KMemory's (TinyKernel/): a partition
  * by default, the simplest way, with its history and what came after;
  * segments with MEMORY=segments (the program's text shared by its
  * runs, read only); pages of 4 KB with MEMORY=pages (tiny-machine's
@@ -213,10 +213,10 @@
  *   program, and runtime.c, which holds the kernel's memory layout and
  *   ten functions on bytes (peek, poke, copying a string from memory
  *   and to it);
- * - entry.s, one page of assembly: k_run (which runs the process until
+ * - kentry.s, one page of assembly: k_run (which runs the process until
  *   its next trap, so the kernel calls a process like a function, the
  *   way a hypervisor's KVM_RUN runs a guest), the trap entry, the
- *   timer, and the window; memory.s, the loops that copy a partition
+ *   timer, and the window; kcopy.s, the loops that copy a partition
  *   at fork and zero memory.
  * The compiler needs no new primitive: the machine is reached through
  * externals, which are functions written in C or in assembly.
@@ -226,7 +226,7 @@
  * README), as mini-9pi is the mini one. It is not a new version of the
  * kernels that came before it on the same machine (v0 and t6 in
  * steps/, written in assembly and C). TinyKernel/ holds the rest:
- * entry.s, runtime.c, the user programs, and the Makefile.
+ * kentry.s, runtime.c, the user programs, and the Makefile.
  *
  * exercises:
  * Each cheap in this design:
@@ -316,5 +316,5 @@
  *)
 
 (* A program, and tiny-ml's alone: OCaml does not compile TinyKernel.ml
- * (its externals are entry.s's and runtime.c's), so nothing checks
+ * (its externals are kentry.s's and runtime.c's), so nothing checks
  * this file against it. It gives nothing to another file. *)

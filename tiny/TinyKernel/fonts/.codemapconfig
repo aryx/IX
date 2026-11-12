@@ -24,7 +24,7 @@ local skeletons = import '../../../skeletons.libsonnet';
         { at: 'def:plan9', say: "Plan 9's subfont to the same face", weight: 1 },
         { at: 'def:main', weight: 1 },
       ],
-      related: ['README.md', 'mkfont.sh', '../TinyKernelGraphics.ml', '../../../lib_graphics/'],
+      related: ['README.md', 'mkfont.sh', '../KGraphics.ml', '../../../lib_graphics/'],
     },
   },
   skeletons: [

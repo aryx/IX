@@ -2,7 +2,7 @@ tiny/TinyAppTemperature.ml:53: dead: TinyAppTemperature:fun at line 53, nothing 
 tiny/TinyBrowser.ml:301: dead field: init stored in TinyBrowser.toolbar, nothing live reads it
 tiny/TinyBrowser.ml:301: dead field: view stored in TinyBrowser.toolbar, nothing live reads it
 tiny/TinyBrowser.ml:302: dead: TinyBrowser:fun at line 302, nothing names it
-tiny/TinyKernel/TinyKernelNetwork.ml:298: dead: TinyKernelNetwork.il_readable, nothing names it
+tiny/TinyKernel/KNetwork.ml:298: dead: KNetwork.il_readable, nothing names it
 tiny/TinyLibPlayground.ml: dead global: TinyLibPlayground.bold, nothing live names it
 tiny/TinyLibPlayground.ml: dead global: TinyLibPlayground.underlined, nothing live names it
 tiny/TinyMachine.ml:645: dead: TinyMachine:fun at line 645, nothing names it

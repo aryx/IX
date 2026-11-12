@@ -311,7 +311,7 @@ let plan9 (s : string) : string =
   Bytes.to_string out
 
 (* the four faces of tiny.font's format from font1.bin's one, as the
- * kernel makes them (TinyKernelGraphics' make): bold each stroke a
+ * kernel makes them (KGraphics' make): bold each stroke a
  * pixel wider but for a gap of one; large each pixel 2 by 2. Made here,
  * not by the kernel when first asked for: its time, in the middle of a
  * session, made the recorded office session's click at (300, 300)

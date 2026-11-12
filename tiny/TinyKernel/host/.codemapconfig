@@ -2,21 +2,21 @@
 // tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there). tiny-machine's
 // memory made by OCaml, so that tiny-kernel's parts in ML that use it
-// (TinyKernelGraphics, TinyKernelAudio, TinyKernelFS) are tested on the
-// host; the twin of ../TinyMemory.ml, which tiny-ml compiles. A
+// (KGraphics, KAudio, KFS) are tested on the
+// host; the twin of ../KRaw.ml, which tiny-ml compiles. A
 // program's system, TinyLibSystem, is ../../TinyLibSystem.mli and ../../TinyLibSystem/.
 {
   generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "tiny-machine's memory as an array, for tiny-kernel's parts tested on the host.",
   files: {
-    'TinyMemory.ml': { digest: '06f73423b018',
+    'KRaw.ml': { digest: '06f73423b018',
       summary: "tiny-machine's memory as a 16 MB array, an address the same number as on the machine, for the drawing's tests.",
       important: [
         { at: 'def:mem', say: 'the same addresses: the screen at 0xf00000', weight: 2 },
-        { at: 'def:row_copy', say: "byte by byte as draw.s's loop, not Bytes.blit", weight: 2 },
+        { at: 'def:row_copy', say: "byte by byte as kdraw.s's loop, not Bytes.blit", weight: 2 },
         { at: 'def:peekb', weight: 1 },
       ],
-      related: ['../TinyMemory.ml', '../draw.s'],
+      related: ['../KRaw.ml', '../kdraw.s'],
     },
   },
 }

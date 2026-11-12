@@ -5,7 +5,7 @@
  * by the game's own functions, from a seed and a script of keys and
  * frames, the well printed as text after each step (its rules), and
  * the sounds a step makes; then
- * the last model's picture, by TinyLibPlayground.ml and TinyKernelGraphics.ml,
+ * the last model's picture, by TinyLibPlayground.ml and KGraphics.ml,
  * written as tiny-machine -screen writes it.
  * usage: Host.exe font1.bin out.ppm *)
 open TinyAppTetris
@@ -84,7 +84,7 @@ let () =
    * first pieces), whose top half comes down *)
   let m = play 28 "l l l s r s r r r r p s p s 45 p" in
   let font = In_channel.with_open_bin Sys.argv.(1) In_channel.input_all in
-  Bytes.blit_string font 0 TinyMemory.mem 0x1000 (String.length font);
+  Bytes.blit_string font 0 KRaw.mem 0x1000 (String.length font);
   let both =
     TinyLibDraw.d_image TinyLibPlayground.picture
       (0, 0, game.width, game.height) 0
@@ -93,13 +93,13 @@ let () =
   in
   TinyLibSystem.write TinyLibSystem.fd_draw both;
   TinyLibPlayground.show game [] (game.view m);
-  TinyKernelGraphics.arena 0xf4b000 0xb4000;
-  let screen = { TinyKernelGraphics.r = TinyKernelGraphics.rect 0 0 640 480;
+  KGraphics.arena 0xf4b000 0xb4000;
+  let screen = { KGraphics.r = KGraphics.rect 0 0 640 480;
                  at = 0xf00000; repl = false } in
   let c =
-    TinyKernelGraphics.connect screen
-      (TinyKernelGraphics.font_mask 0x1000 (String.length font)
-         (TinyKernelGraphics.alloc 16384)) in
-  TinyKernelGraphics.messages c (Buffer.contents TinySystemTest.drawn);
+    KGraphics.connect screen
+      (KGraphics.font_mask 0x1000 (String.length font)
+         (KGraphics.alloc 16384)) in
+  KGraphics.messages c (Buffer.contents TinySystemTest.drawn);
   Out_channel.with_open_bin Sys.argv.(2) (fun oc ->
-    output_string oc (TinyMemory.ppm 640 480))
+    output_string oc (KRaw.ppm 640 480))

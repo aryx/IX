@@ -108,14 +108,14 @@ kernels have, so they run unchanged.
 | file | what | lines of code |
 |---|---|---|
 | `tiny/TinyKernel.ml` | the kernel, in tiny-ml's ML | 318 |
-| `tiny/TinyKernel/entry.s` | `k_run`, the trap's entry, the timer, the window, copy and zero | 142 |
+| `tiny/TinyKernel/kentry.s` | `k_run`, the trap's entry, the timer, the window, copy and zero | 142 |
 | `tiny/TinyKernel/runtime.c` | the memory's layout, write and exit, peek and poke, strings to and from memory | 79 |
 | `tiny/TinyKernel/user/`, `libc/` | `sh.c` (fork, exec, dup), `mltests.c`; `user.h`, `sys.s` | 435 |
 | the kernel, then | | **539** |
 
 Lines are counted without comments or blank lines. For comparison, t6's
 kernel is 1,171 lines (`main.c`, `proc.c`, `file.c`, `t6.h`,
-`entry.s`) and v6's 2,178.
+`kentry.s`) and v6's 2,178.
 
 **The toolchain's changes**, each kept apart so that the old paths
 work as they did:

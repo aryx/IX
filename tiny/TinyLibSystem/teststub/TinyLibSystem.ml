@@ -4,7 +4,7 @@
 (* TinyLibSystem for the tests of a window's program (../../TinyLibSystem.mli):
  * no kernel and no host. What the program writes where it draws
  * (fd_draw) is kept, in TinySystemTest.drawn, for a test to give
- * TinyKernelGraphics.ml; no key is ever typed (a read is "", the keys'
+ * KGraphics.ml; no key is ever typed (a read is "", the keys'
  * end), the clock does not move, and every file and process asked for
  * is a Failure (the speaker's open too: a game then plays in silence).
  * tiny-ml compiles this file too, for the tests on tiny-cpu, which has

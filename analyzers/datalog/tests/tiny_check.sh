@@ -75,7 +75,7 @@ tiny-ar|-|$L $S $T/TinyArchiver.ml
 tiny-cpu|-|$CPU $S $T/TinyCPU.ml
 tiny-prof|-|$S $L $T/TinyProfiler.ml
 tiny-ml|-|$S $TML $T/TinyML.ml
-tiny-machine|-I lib_core/parallel|$CPU $S $M/TinyMachineDevices.ml $T/TinyKernel/TinyKernelNetwork.ml $BROWSER $M/TinyMachinePeer.ml $T/TinyMachine.ml
+tiny-machine|-I lib_core/parallel|$CPU $S $M/TinyMachineDevices.ml $T/TinyKernel/KNetwork.ml $BROWSER $M/TinyMachinePeer.ml $T/TinyMachine.ml
 tiny-machine-socket|-|$S $M/TinyMachineSocket.ml
 tiny-machine-fetch|$NET -I lib_graphics/core -I lib_graphics/images|$CPU $S $M/TinyMachineDevices.ml $M/TinyMachineFetch.ml
 tiny-mkfat|-|$S $T/TinyKernel/steps/t6/TinyMkfat.ml

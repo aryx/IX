@@ -4,18 +4,18 @@
 (* See TinyKernel.mli *)
 
 (* what draws, what keeps files on the disk, and what gives a process
- * its memory (TinyKernelGraphics, TinyKernelFS, TinyKernelMemory); and
+ * its memory (KGraphics, KFS, KMemory); and
  * the kernel's own parts, in their order (TinyKernel.mli): the
  * Makefile gives tiny-ml their files before this one, as one program *)
-open TinyKernelGraphics
-open TinyKernelFS
-open TinyKernelMemory
-open TinyKernelMachine
-open TinyKernelFiles
-open TinyKernelProcs
-open TinyKernelDevices
-open TinyKernelCalls
-open TinyKernelScheduler
+open KGraphics
+open KFS
+open KMemory
+open KMachine
+open KFiles
+open KProcs
+open KDevices
+open KCalls
+open KScheduler
 
 (*****************************************************************************)
 (* The boot *)

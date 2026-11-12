@@ -68,7 +68,7 @@ let fat_bytes s =
   join (pieces 0)
 
 (* a sound: a wave, a pitch from hz to to_hz, so many milliseconds, a
- * volume falling to nothing (TinyKernelAudio.mli) *)
+ * volume falling to nothing (KAudio.mli) *)
 type wave = Square | Triangle | Sawtooth | Noise
 type sound = { wave : wave; hz : int; to_hz : int; ms : int; volume : int }
 
@@ -167,7 +167,7 @@ let same shown shapes =
 (*****************************************************************************)
 
 (* a sound as tiny-kernel's /dev/audio takes it, a message
- * (TinyKernelAudio.mli): s, the wave, the pitch from and to, the
+ * (KAudio.mli): s, the wave, the pitch from and to, the
  * milliseconds, the volume *)
 let sound_message snd =
   D.msg 's'

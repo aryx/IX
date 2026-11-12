@@ -13,7 +13,7 @@ the parts of that `.mli`, beside the programs that name it, as
 |---|---|---|
 | `unix/` | OCaml's `Unix` and lib_core (Linux, macOS) | the tools on the host: tiny-shell, tiny-utils, tiny-editor, tiny-cc, tiny-ml, tiny-as, tiny-ld, tiny-build, tiny-db, tiny-vcs, tiny-prof |
 | `tinykernel/` | tiny-kernel's calls (externals, `mlsys.c`'s functions) | every ML program on tiny-kernel, tools and windows alike |
-| `sdl/` | `unix/`'s code for files and processes, and an SDL window for the rest: the drawing on `fd_draw` by tiny-kernel's own `TinyKernelGraphics.ml`, the keys and the mouse, the speaker, the wire's port 70 | the window's programs on the host (`../user/sdl/`: tiny-emacs, tiny-office, tiny-www, tiny-calc, tiny-tetris, tiny-play) |
+| `sdl/` | `unix/`'s code for files and processes, and an SDL window for the rest: the drawing on `fd_draw` by tiny-kernel's own `KGraphics.ml`, the keys and the mouse, the speaker, the wire's port 70 | the window's programs on the host (`../user/sdl/`: tiny-emacs, tiny-office, tiny-www, tiny-calc, tiny-tetris, tiny-play) |
 | `teststub/` | nothing: what is drawn kept (`TinySystemTest.drawn`), no key, a still clock, every file a `Failure`; compiled by tiny-ml too | the tests of the window's programs, on the host and on tiny-cpu |
 
 On tiny-kernel, `tinykernel/TinyLibSystem.ml` starts with the kernel's
@@ -60,6 +60,6 @@ program is built on, which is one of the first.
 What is not here: a C program of tiny-kernel calls the kernel through
 `../TinyKernel/libc/` (`user.h`, `sys.s`), as C programs only run
 there. tiny-machine's memory for tiny-kernel's own parts tested on the
-host is `../TinyKernel/host/TinyMemory.ml`: no program uses it.
+host is `../TinyKernel/host/KRaw.ml`: no program uses it.
 TinyWindows.ml, tiny-kernel's window system, names the kernel's calls
 by externals of its own.

@@ -268,7 +268,7 @@ val seed : < Cap.random; .. > -> int
 
 (* A program's first descriptors: its input (a window's keys), its
  * output (the console), its errors, where it draws (the drawing
- * messages, TinyKernelGraphics.mli's), and its mouse (a box: x, y, the
+ * messages, KGraphics.mli's), and its mouse (a box: x, y, the
  * buttons, a word each, the low bytes first). The last two are a
  * window's: tiny-kernel's, or the host's window (TinyLibSystem/sdl/);
  * on the host with no window they are not open, and a write there

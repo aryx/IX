@@ -132,7 +132,7 @@ t-ix's radio stays the simple one below, if t-ix gets WiFi at all.
   that fails at message 2's MIC: a test.
 - **The kernel**: tiny-kernel's 802.11 in a file of its own
   (`TinyKernelWifi.ml`, `TinyLibCore`'s `Sha1`, an AES to write there
-  or in TinyLib), under `TinyKernelNetwork.ml` where the wire's frames
+  or in TinyLib), under `KNetwork.ml` where the wire's frames
   go now. A `tiny-wifi` command: `scan`, `join ssid password`.
   Times counted in instructions, so a session is the same each run
   and `make check` can keep one.

@@ -16,7 +16,7 @@
 # - TrueType fonts drawn by FreeType (Ubuntu Mono, the author's Emacs
 #   font, from the copies beside this script; this machine's Ubuntu
 #   Sans Mono, the terminal's, and DejaVu Sans Mono, fc-match's
-#   monospace), each twice: 1 bit a pixel (what TinyKernelGraphics
+#   monospace), each twice: 1 bit a pixel (what KGraphics
 #   draws with tiny.font) and with grey edges (grey.font's 4 levels are
 #   between the two). A font
 #   not installed is said and skipped.
@@ -45,7 +45,7 @@ def label(s):
 
 # [bitmap glyph s w h]: s in cells of w by h, glyph c (row, col) a
 # pixel's part of ink, 0 or 1 (a grey font's thirds between); bold
-# smeared and slanted as TinyKernelGraphics' make
+# smeared and slanted as KGraphics' make
 def bitmap(glyph, s, w, h, scale=1, bold=False, slant=0):
     im = blank(h * scale)
     ch = h * scale

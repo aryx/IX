@@ -10,7 +10,7 @@
  * and keeps no state of its own: the library takes care of all that.
  * So a game can be tested without a screen (give it a model and some
  * keys, and check the resulting model), and its picture can be tested
- * without the machine (TinyKernelGraphics.ml draws the shapes on the
+ * without the machine (KGraphics.ml draws the shapes on the
  * host).
  *
  *                 +------------ key -------------+
@@ -102,7 +102,7 @@
  * - the mouse: a fourth function, reading the program's descriptor 4;
  * - redraw only what changed, for every shape and not just the
  *   background, by comparing the shapes of two models;
- * - circles and polygons, using TinyKernelGraphics.ml's;
+ * - circles and polygons, using KGraphics.ml's;
  * - a second game: a Snake, or a Pong;
  * - record and replay: a game is pure and init takes a seed, so the
  *   seed and the keys by frame reproduce a whole game (demos, bug

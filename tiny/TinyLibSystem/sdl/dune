@@ -1,7 +1,7 @@
 ; TinyLibSystem in a window of SDL's (../../TinyLibSystem.mli): what the
 ; graphical programs of ../../user/sdl/ run on, on the host. Their
 ; drawing and sound are made by tiny-kernel's own code,
-; TinyKernelGraphics.ml and TinyKernelAudio.ml, in TinyMemory's array;
+; KGraphics.ml and KAudio.ml, in KRaw's array;
 ; their files and processes are the host's, ../unix/'s code copied here
 ; as TinyLibSystemUnix (one source, two modules: an implementation can
 ; not include another of its virtual module)

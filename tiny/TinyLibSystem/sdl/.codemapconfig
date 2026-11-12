@@ -10,13 +10,13 @@
   summary: "The tiny programs on the host, in an SDL window: the host's files, and tiny-kernel's drawing, sound and wire.",
   files: {
     'TinyLibSystem.ml': { digest: '73c68715e7e3',
-      summary: "TinyLibSystem in an SDL window: draws by TinyKernelGraphics, mixes by TinyKernelAudio, the peer's web, Unix's files.",
+      summary: "TinyLibSystem in an SDL window: draws by KGraphics, mixes by KAudio, the peer's web, Unix's files.",
       capitals: [
         { at: 'def:ready', say: 'the loop: show, pump the events, feed the sound' },
       ],
       important: [
         { at: 'def:reserve', say: "the window's descriptors real ones, /dev/null's", weight: 2 },
-        { at: 'def:conn', say: "the kernel's drawing, in TinyMemory's array", weight: 3 },
+        { at: 'def:conn', say: "the kernel's drawing, in KRaw's array", weight: 3 },
         { at: 'def:draw', say: 'a bad message said, the program goes on', weight: 1 },
         { at: 'def:show', say: 'the screen shown only when drawn on', weight: 2 },
         { at: 'def:feed', say: 'the ring played by the clock, a fifth ahead', weight: 2 },
@@ -35,7 +35,7 @@
         { at: '../../user/office.ml', role: "a program's last file, copied here" },
         { at: 'TinyLibSystem.ml:def:write', role: 'fd_draw: the drawing; the speaker; a file' },
         { at: 'TinyLibSystem.ml:def:draw', role: 'the messages, by the kernel' },
-        { at: '../../TinyKernel/TinyKernelGraphics.ml:def:messages', role: "tiny-kernel's drawing, by OCaml" },
+        { at: '../../TinyKernel/KGraphics.ml:def:messages', role: "tiny-kernel's drawing, by OCaml" },
         { at: 'TinyLibSystem.ml:def:ready', role: 'what the program waits on' },
         { at: 'TinyLibSystem.ml:def:show', role: 'the screen to the window' },
         { at: 'TinyLibSystem.ml:def:pump', role: "the window's events" },
@@ -44,7 +44,7 @@
       joints: [
         { from: '../../user/office.ml', to: 'TinyLibSystem.ml:def:write', say: 'messages' },
         { from: 'TinyLibSystem.ml:def:write', to: 'TinyLibSystem.ml:def:draw', say: 'fd_draw' },
-        { from: 'TinyLibSystem.ml:def:draw', to: '../../TinyKernel/TinyKernelGraphics.ml:def:messages', say: 'the bytes' },
+        { from: 'TinyLibSystem.ml:def:draw', to: '../../TinyKernel/KGraphics.ml:def:messages', say: 'the bytes' },
         { from: '../../user/office.ml', to: 'TinyLibSystem.ml:def:ready', say: 'a key, the mouse' },
         { from: 'TinyLibSystem.ml:def:ready', to: 'TinyLibSystem.ml:def:show', say: 'if drawn' },
         { from: 'TinyLibSystem.ml:def:ready', to: 'TinyLibSystem.ml:def:pump', say: 'then' },

@@ -1,18 +1,18 @@
 (* Tiny peer: the other end of tiny-machine's wire (plan_tiny_network.md),
  * what a host gives the machine to talk to. Not a second machine: the
- * host runs TinyKernelNetwork.ml, the stack tiny-kernel has, at the other
+ * host runs KNetwork.ml, the stack tiny-kernel has, at the other
  * address (10.0.0.1), with no CPU under it, and a few lines on top:
  *
  *     the machine                              the host
  *
  *     tiny-kernel, 10.0.0.2                    the peer, 10.0.0.1
- *       TinyKernelNetwork.ml (by tiny-ml)      TinyKernelNetwork.ml (by OCaml)
+ *       KNetwork.ml (by tiny-ml)      KNetwork.ml (by OCaml)
  *            |                                        |      |
  *     the network's device  == send ==========>  [send]      [document]:
  *     (TinyMachineDevices)      <= give, later ====  [give]      a line to its
  *                                                            messages
  *
- * - a ping is answered (TinyKernelNetwork's own);
+ * - a ping is answered (KNetwork's own);
  * - on port 70, a connection's first message is a line, a document's
  *   name; the document is sent, a message at a time as the machine
  *   acknowledges, and the connection closed. One line out, a document
@@ -94,7 +94,7 @@ val dial : t -> int -> relay -> unit
 (* the n-th packet the peer sends from now (1: the next) is lost *)
 val lose : t -> int -> unit
 
-(* a text as messages, of TinyKernelNetwork.il_max bytes at most *)
+(* a text as messages, of KNetwork.il_max bytes at most *)
 val messages : string -> string list
 
 (* A request "GET address HTTP/1.0" asks for a web page, for
@@ -155,5 +155,5 @@ val tick : unit -> int
 (* an address said ("10.0.0.2"); a packet in a few words, for who
  * watches the wire (-net-trace, the page's wire): the host's, which
  * the kernel has no use for *)
-val net_dotted : TinyKernelNetwork.ip_addr -> string
+val net_dotted : KNetwork.ip_addr -> string
 val net_describe : string -> string

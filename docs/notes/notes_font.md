@@ -274,11 +274,11 @@ tiny-office, and tiny-www is not great and very pixelized; on both
 Linux and under the tiny-machine. Anything we can improve?"
 
 **One path for both.** On tiny-machine, tiny-kernel draws a program's
-text with `TinyKernelGraphics`; on the host, the tiny programs in an
+text with `KGraphics`; on the host, the tiny programs in an
 SDL window (`tiny/TinyLibSystem/sdl/`) call the same module on an array.
 So a font changed there changes both. A face is made a mask, a byte a
 pixel, the characters side by side, and a character is a draw of the
-ink through it (draw.s's `glyphs` for a whole text of the regular
+ink through it (kdraw.s's `glyphs` for a whole text of the regular
 face).
 
 **Why it looked pixelized.** Three things, the first two the font's:
@@ -299,10 +299,10 @@ face).
    Terminus Font has exactly those sizes (and an 8 by 16 regular,
    thinner and more even than font1.bin), under the SIL OFL. The
    chosen one.
-2. Grey edges: a mask of levels, 0 to 255, TinyKernelGraphics.mli's
+2. Grey edges: a mask of levels, 0 to 255, KGraphics.mli's
    exercise. But a pixel is an index into Plan 9's table of 256
    colours, so each mix of ink and background is a colour looked up,
-   and draw.s's `glyphs`, a word of 4 pixels at a time, would mix a
+   and kdraw.s's `glyphs`, a word of 4 pixels at a time, would mix a
    pixel at a time: smoother, slower on tiny-machine, with fonts made
    from outlines at the build.
 3. A larger screen (1280 by 960, 16 by 32 the regular face): the one
@@ -328,7 +328,7 @@ tiny/TinyKernel, `TINY_FONT=kernels/lib_machine/font1.bin` on the
 host. Checked: tiny-kernel's 26 recorded sessions with font1.bin, the
 same screens as before (the derivation unchanged); with tiny.font,
 the same text, every screen another (recorded again); the host tests
-of TinyKernelGraphics, TinyLibGUI, TinyAppTetris and TinyLibPlayground
+of KGraphics, TinyLibGUI, TinyAppTetris and TinyLibPlayground
 still with font1.bin, unchanged.
 
 
@@ -383,7 +383,7 @@ against it (else the m moved its stem out); and a bar a pixel thick on
 two rows kept on its upper one (the A's crossbar). tiny-emacs in bold,
 as the author's Emacs, was tried and taken back ("it does not read as
 good"); bold and underlined text kept the fast path, the plain text's
-(draw.s's glyphs: 8 by 16 cells either way), where it was a draw a
+(kdraw.s's glyphs: 8 by 16 cells either way), where it was a draw a
 character.
 
 **Then grey edges (2).** The author: "What's next to get a font that
@@ -397,12 +397,12 @@ same four faces. The kernel knows it by its size: a mask byte 0, 85,
 170 or 255. A colour through such a mask is mixed by a table made for
 the colour when first drawn with (1 KB: for each level and each
 colour under it, the colour of Plan 9's table nearest to the mix),
-draw.s's mix_table: the nearest among the 16 a mix can be near, one
+kdraw.s's mix_table: the nearest among the 16 a mix can be near, one
 for each (den, v) of the table's formula, the same as a search of the
 256 but for ties. In tiny-ml's ML it was 3.5 million instructions a
 colour, half a second of the machine's: tiny-windows' first menu drew
 so late that the recorded click on it was taken for its item exit;
-in assembly some 230,000. Texts by draw.s's glyphs_mixed (a byte at a
+in assembly some 230,000. Texts by kdraw.s's glyphs_mixed (a byte at a
 time where a row is not blank), the others by row_mix. A whole session
 costs 0.3% (www) to 5% (emacs) more instructions than with tiny.font.
 
@@ -436,7 +436,7 @@ unchanged: the window two times on the same display, the letters a
 third smaller, 128 columns by 48 rows of text where there were 80 by
 30. It still fits (3)'s megabyte: 768 KB at 0xf00000, up to 0xfc0000,
 the images after it 252 KB to the last page (old: 720 KB). The places
-that knew 640 by 480: TinyMachineDevices (the machine), TinyKernelDevices
+that knew 640 by 480: TinyMachineDevices (the machine), KDevices
 (the kernel), tiny/TinyLibSystem/sdl's TinyLibSystem (the host's stand-in), TinyLibDraw's
 screen_w and screen_h (tiny-windows' whole screen, TinyLibGUI's window
 when no tiny-windows answers), paint.c, and the tests' pictures. The

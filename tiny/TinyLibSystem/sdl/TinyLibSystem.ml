@@ -9,7 +9,7 @@
  * what is tiny-kernel's is made here, as tiny-machine makes it:
  *
  * What a program writes where it draws (fd_draw) is done by tiny-kernel's
- * own drawing, TinyKernelGraphics.ml, in a screen of TinyMemory's, and
+ * own drawing, KGraphics.ml, in a screen of KRaw's, and
  * shown (TinyMachineSDL, the palette tiny-machine's) when the program
  * next waits. The window's mouse is the box of fd_mouse, its keys the
  * bytes of fd_stdin (as tiny-machine's window makes them: Alt or a
@@ -17,7 +17,7 @@
  * arrows). An ENQ written to the console is answered in the box, as
  * tiny-windows answers it: the window's size. /dev/audio is the window's
  * sound, as tiny-kernel and tiny-machine make it: each open a voice
- * whose sounds TinyKernelAudio.ml makes into a ring, mixed, and the ring
+ * whose sounds KAudio.ml makes into a ring, mixed, and the ring
  * played by the clock (to SDL's queue, TinyMachineSDL's play) as
  * tiny-machine's speaker plays its ring.
  *
@@ -31,8 +31,8 @@
 
 include TinyLibSystemUnix
 
-module G = TinyKernelGraphics
-module Audio = TinyKernelAudio
+module G = KGraphics
+module Audio = KAudio
 module Peer = TinyMachinePeer
 module SDL = TinyMachineSDL
 
@@ -64,7 +64,7 @@ let height = 768
 let screen_at = 0xf00000
 (* the connection to the drawing, as tiny-kernel makes it: the font at
  * 0x1000, the images' memory its 2 MB below the screen and what is
- * after it (TinyKernelDevices' font; a page of www's may have 1 MB of
+ * after it (KDevices' font; a page of www's may have 1 MB of
  * pictures: old: only after the screen, 720 KB then, and Mars' article
  * ended www). The font is tiny-kernel's (plan9.font, Plan 9's), or
  * the file TINY_FONT names (TINY_FONT=tiny/TinyKernel/fonts/grey.font:
@@ -77,7 +77,7 @@ let conn = lazy (
     | Some file -> In_channel.with_open_bin file In_channel.input_all
     | None -> TinyFont.bits
   in
-  Bytes.blit_string font 0 TinyMemory.mem 0x1000 (String.length font);
+  Bytes.blit_string font 0 KRaw.mem 0x1000 (String.length font);
   G.arena 0xd00000 0x200000;
   G.free 0xfc0000 0x3f000;
   let (screen : G.image) =
@@ -98,7 +98,7 @@ let () =
       Sys.set_signal Sys.sigterm (Sys.Signal_handle (fun _ -> Stdlib.exit 0));
       at_exit (fun () ->
         Out_channel.with_open_bin file (fun oc ->
-          output_string oc (TinyMemory.ppm width height)))
+          output_string oc (KRaw.ppm width height)))
   | None -> ()
 
 (* whether the screen was drawn on since it was last shown *)
@@ -111,7 +111,7 @@ let show () =
     let rgb = Bytes.create (3 * width * height) in
     for i = 0 to (width * height) - 1 do
       Bytes.blit_string TinyMachineDevices.colours
-        (3 * Char.code (Bytes.get TinyMemory.mem (screen_at + i)))
+        (3 * Char.code (Bytes.get KRaw.mem (screen_at + i)))
         rgb (3 * i) 3
     done;
     (Lazy.force display).present width height (Bytes.unsafe_to_string rgb)
@@ -122,7 +122,7 @@ let show () =
 let draw s =
   match G.messages (Lazy.force conn) s with
   | () -> dirty := true
-  | exception TinyKernelGraphics.Graphics why ->
+  | exception KGraphics.Graphics why ->
       prerr_string ("draw: " ^ why ^ "\n"); dirty := true
 
 (*****************************************************************************)
@@ -131,7 +131,7 @@ let draw s =
 
 (* The speaker, as tiny-kernel's (TinyKernel.ml's voices) and
  * tiny-machine's (its ring played, then silenced): a ring of 8,192
- * samples of TinyMemory's where the voices' sounds are added, each from
+ * samples of KRaw's where the voices' sounds are added, each from
  * where it stopped or, when the speaker passed it, from where the
  * speaker is; played by the host's clock, 8,000 a second, a fifth of a
  * second ahead of it ([fed]: the samples given to SDL so far). A write
@@ -153,8 +153,8 @@ let feed () =
         let b = Bytes.create n in
         for i = 0 to n - 1 do
           let a = ring_at + ((!fed + i) land (ring - 1)) in
-          Bytes.set b i (Bytes.get TinyMemory.mem a);
-          Bytes.set TinyMemory.mem a '\000'
+          Bytes.set b i (Bytes.get KRaw.mem a);
+          Bytes.set KRaw.mem a '\000'
         done;
         fed := due;
         (Lazy.force display).play (Bytes.unsafe_to_string b)

@@ -142,7 +142,7 @@ let line p n args (r : int option) =
 (*****************************************************************************)
 
 (* A line of the trace, once main's y asked the kernel to stop at each
- * call: TinyKernelCalls' "call n a1 a2 a3" before it, always three
+ * call: KCalls' "call n a1 a2 a3" before it, always three
  * arguments whatever the call takes, and "ret n r" after. An exec that
  * works never returns, so a stop at exec comes in place of its ret.
  * Ended is the empty read of a trace the kernel closed. *)

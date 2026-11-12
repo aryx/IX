@@ -1,14 +1,14 @@
-(* The program side of TinyKernelGraphics.ml. This file builds the
+(* The program side of KGraphics.ml. This file builds the
  * drawing messages (each one a string, to be concatenated and written
  * to the file descriptor the program draws on), and it also parses
  * them (a window system reads the messages of another program,
  * renumbers their images, and passes them on: see TinyWindows.ml).
  * The Plan 9 equivalent is libdraw, the library used by programs,
- * while TinyKernelGraphics.ml plays the role of the kernel's draw
+ * while KGraphics.ml plays the role of the kernel's draw
  * device and of libmemdraw. For C programs, the equivalent is
  * TinyKernel/libc/draw.h.
  *
- * The messages are described in the header of TinyKernelGraphics.mli:
+ * The messages are described in the header of KGraphics.mli:
  * a letter, followed by signed 16-bit numbers, low byte first.
  *
  * Here is the path of a rectangle from a program to the screen, on the
@@ -20,14 +20,14 @@
  *        |                 system call; on the host the tests' stub,
  *        |                 which keeps it for the test to check
  *        | (through a pipe, renumbered by TinyWindows, when in a window)
- *        | [messages]      TinyKernelGraphics: inside TinyKernel; on the
+ *        | [messages]      KGraphics: inside TinyKernel; on the
  *        |                 host, called directly by the test
  *        | pokeb, rows     on tiny-machine: C and assembly (TinyKernel's
- *        |                 TinyMemory.ml); on the host: TinyMemory, an array
+ *        |                 KRaw.ml); on the host: KRaw, an array
  *     the screen's bytes   at 0xf00000 on both
  *
  * So the three files between a program and its machine (this one,
- * TinyLibSystem and TinyMemory) are where the host takes the machine's
+ * TinyLibSystem and KRaw) are where the host takes the machine's
  * place, and everything above them is tested by dune before
  * tiny-machine ever runs it.
  *
@@ -43,7 +43,7 @@
  * - {b Numbers of two bytes}, where libdraw's are four: a screen of
  *   1024 by 768 needs no more.
  * - {b Eight letters} (a f d l s t p c), the operations
- *   TinyKernelGraphics keeps.
+ *   KGraphics keeps.
  * - {b The messages are parsed too} ([d_shape]), which libdraw has no
  *   need of: on Plan 9 a window's program writes to the kernel's draw
  *   device itself, finding its window's image by the name in
@@ -82,7 +82,7 @@ val d_image : image -> rect -> pixel -> string
 val d_colour : image -> pixel -> string
 val d_free : image -> string
 
-(* [d_draw dst src mask r p], TinyKernelGraphics's draw (-1: no mask),
+(* [d_draw dst src mask r p], KGraphics's draw (-1: no mask),
  * src's pixels from p on; a rectangle of a colour; a line between two
  * points; a text at a corner *)
 val d_draw : image -> image -> image -> rect -> point -> string

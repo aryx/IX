@@ -9,7 +9,7 @@ let usage =
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
-A disk of tiny-kernel's file system (TinyKernel/TinyKernelFS.ml), made on
+A disk of tiny-kernel's file system (TinyKernel/KFS.ml), made on
 the host by the kernel's own code: the files named, each under its name on
 the disk; a name with / makes the directories on its way, and a name that
 ends with / is a directory, empty. tiny-machine -d gives the disk to the
@@ -30,23 +30,23 @@ let piece = 0x10000
  * the kernel mounts it (made when blank), the dates 0, so that the same
  * files make the same disk *)
 let mount (disk : Bytes.t) =
-  TinyKernelFS.fs_io := (fun b a io ->
+  KFS.fs_io := (fun b a io ->
     match io with
-    | TinyKernelFS.Disk_read -> Bytes.blit disk (b * 1024) TinyMemory.mem a 1024
-    | Disk_write -> Bytes.blit TinyMemory.mem a disk (b * 1024) 1024);
-  TinyKernelFS.fs_clock := (fun () -> 0);
-  TinyKernelFS.fs_mount (Bytes.length disk / 1024)
+    | KFS.Disk_read -> Bytes.blit disk (b * 1024) KRaw.mem a 1024
+    | Disk_write -> Bytes.blit KRaw.mem a disk (b * 1024) 1024);
+  KFS.fs_clock := (fun () -> 0);
+  KFS.fs_mount (Bytes.length disk / 1024)
 
 (* the directory at the end of names from d, made where it is missing *)
-let rec directory (d : TinyKernelFS.inode) (names : string list) =
+let rec directory (d : KFS.inode) (names : string list) =
   match names with
   | [] -> d
   | n :: rest ->
       let sub =
-        match TinyKernelFS.fs_lookup 0 d n with
-        | Some i when TinyKernelFS.fs_is_dir 0 i -> i
+        match KFS.fs_lookup 0 d n with
+        | Some i when KFS.fs_is_dir 0 i -> i
         | Some _ -> failwith (n ^ ": a file, not a directory")
-        | None -> TinyKernelFS.fs_create d n TinyKernelFS.Fs_dir in
+        | None -> KFS.fs_create d n KFS.Fs_dir in
       directory sub rest
 
 (* a file's bytes written under its path, then committed (a commit a
@@ -59,28 +59,28 @@ let add (path : string) (contents : string option) =
    | Some _, [] -> failwith (path ^ ": no name")
    | Some s, name :: rdirs ->
        let d = directory 1 (List.rev rdirs) in
-       if TinyKernelFS.fs_lookup 0 d name <> None then
+       if KFS.fs_lookup 0 d name <> None then
          failwith (path ^ ": named twice");
-       let n = TinyKernelFS.fs_create d name TinyKernelFS.Fs_file in
+       let n = KFS.fs_create d name KFS.Fs_file in
        let rec write off =
          if off < String.length s then begin
            let k = min piece (String.length s - off) in
-           Bytes.blit_string s off TinyMemory.mem scratch k;
-           TinyKernelFS.fs_write_at n off scratch k;
+           Bytes.blit_string s off KRaw.mem scratch k;
+           KFS.fs_write_at n off scratch k;
            write (off + k)
          end in
        write 0);
-  TinyKernelFS.fs_commit ()
+  KFS.fs_commit ()
 
 (* each file's path and size, each directory's path and a /, the live
  * tree's from the root *)
-let rec list (path : string) (d : TinyKernelFS.inode) : string list =
+let rec list (path : string) (d : KFS.inode) : string list =
   List.concat_map (fun (name, i) ->
       let p = path ^ "/" ^ name in
-      match TinyKernelFS.fs_kind 0 i with
-      | TinyKernelFS.Fs_dir, _, _ -> (p ^ "/\n") :: list p i
+      match KFS.fs_kind 0 i with
+      | KFS.Fs_dir, _, _ -> (p ^ "/\n") :: list p i
       | Fs_file, size, _ -> [ p ^ " " ^ string_of_int size ^ "\n" ])
-    (TinyKernelFS.fs_entries 0 d)
+    (KFS.fs_entries 0 d)
 
 let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     (argv : string array) : Exit.t =
@@ -116,6 +116,6 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     | _ -> Console.eprint caps (usage ^ "   (-h: how)\n"); Exit.Code 2
   with
   | Sys_error e | Failure e -> Exit.Err e
-  | TinyKernelFS.Disk_full -> Exit.Err "the disk is full: -m more megabytes"
+  | KFS.Disk_full -> Exit.Err "the disk is full: -m more megabytes"
 
 let () = TinyLibSystem.main "tiny-mkfs" main

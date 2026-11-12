@@ -4,7 +4,7 @@
 (* What a test of a window's program looks at, beside the stub's
  * TinyLibSystem (TinyLibSystem.ml here): what the program wrote where it
  * draws, its drawing messages, for the test to give
- * TinyKernelGraphics.ml. Not in ../../TinyLibSystem.mli: only a test
+ * KGraphics.ml. Not in ../../TinyLibSystem.mli: only a test
  * names it, linking this stub *)
 
 let drawn = Buffer.create 4096

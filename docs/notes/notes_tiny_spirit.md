@@ -115,7 +115,7 @@ None of these was discussed with the author.
 
 `TinyBuildSystem.ml`, `TinyShell.ml`, `TinyEditorLine.ml`,
 `TinyDatabase.ml`, `TinyCPU.ml` with `TinyMachineCPU.ml`, `TinyMachine.ml`,
-`TinyKernel.ml`, `TinyKernelGraphics.ml`, `TinyWindows.ml`,
+`TinyKernel.ml`, `KGraphics.ml`, `TinyWindows.ml`,
 `TinyLibPlayground.ml`, `TinyKernel/steps/t6/` and `TinyKernel/steps/v0/`: each decides its
 own language, format or machine, and its tests are its own.
 `TinyAppTetris.ml` is a port of the playground's game and is small either

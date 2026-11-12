@@ -4,12 +4,12 @@
 (* ../../TinyAppSquare.ml on the host, by OCaml, with no machine and no loop: a model
  * after some keys and frames (the game's own functions), its shapes
  * shown by TinyLibPlayground.ml, whose messages the stub kept (TinySystemTest); then
- * TinyKernelGraphics.ml draws them on TinyMemory's screen, written as
+ * KGraphics.ml draws them on KRaw's screen, written as
  * tiny-machine -screen writes it. The model's place is printed.
  * usage: Host.exe font1.bin out.ppm *)
 let () =
   let font = In_channel.with_open_bin Sys.argv.(1) In_channel.input_all in
-  Bytes.blit_string font 0 TinyMemory.mem 0x1000 (String.length font);
+  Bytes.blit_string font 0 KRaw.mem 0x1000 (String.length font);
   let g = TinyAppSquare.game in
   let after keys m = List.fold_left (fun m k -> g.key k m) m keys in
   let rec frames n m = if n = 0 then m else frames (n - 1) (g.frame m) in
@@ -34,13 +34,13 @@ let () =
     else let s = TinyLibPlayground.random s in (s mod 7) :: numbers (n - 1) s in
   Printf.printf "random: %s\n"
     (String.concat " " (List.map string_of_int (numbers 12 1)));
-  TinyKernelGraphics.arena 0xf4b000 0xb4000;
-  let screen = { TinyKernelGraphics.r = TinyKernelGraphics.rect 0 0 640 480;
+  KGraphics.arena 0xf4b000 0xb4000;
+  let screen = { KGraphics.r = KGraphics.rect 0 0 640 480;
                  at = 0xf00000; repl = false } in
   let c =
-    TinyKernelGraphics.connect screen
-      (TinyKernelGraphics.font_mask 0x1000 (String.length font)
-         (TinyKernelGraphics.alloc 16384)) in
-  TinyKernelGraphics.messages c (Buffer.contents TinySystemTest.drawn);
+    KGraphics.connect screen
+      (KGraphics.font_mask 0x1000 (String.length font)
+         (KGraphics.alloc 16384)) in
+  KGraphics.messages c (Buffer.contents TinySystemTest.drawn);
   Out_channel.with_open_bin Sys.argv.(2) (fun oc ->
-    output_string oc (TinyMemory.ppm 640 480))
+    output_string oc (KRaw.ppm 640 480))

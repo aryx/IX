@@ -152,7 +152,7 @@ simpler to write and to read, "which are good for the student to add"
 2. **ml -I**, 3. **ml -M**, 4. **ml -a** (above).
 
 Later, not the Buildfile's: no true (a recipe ends with status=''); the
-image near its 10 MB (TinyKernelFS.ml's buffers: about 300 KB left, and
+image near its 10 MB (KFS.ml's buffers: about 300 KB left, and
 outputs beside the sources will want more); a .tmi's bytes depending on
 the order its interfaces were read (the type variables' numbers); parts
 no check builds, broken unseen (the steps, since 7ea94bae, until

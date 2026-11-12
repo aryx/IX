@@ -18,16 +18,16 @@ let net_dotted a =
  * from ..." *)
 let net_describe p =
   if String.length p < 20 || Char.code p.[0] <> 0x45
-     || TinyKernelNetwork.net_sum (String.sub p 0 20) <> 0 then
+     || KNetwork.net_sum (String.sub p 0 20) <> 0 then
     "not a packet, " ^ string_of_int (String.length p) ^ " bytes"
   else begin
     let body = String.sub p 20 (String.length p - 20) in
     let bytes data = string_of_int (String.length data) ^ " bytes" in
     let what =
-      if Char.code p.[9] = TinyKernelNetwork.ip_il then (
-        match TinyKernelNetwork.il_read body with
+      if Char.code p.[9] = KNetwork.ip_il then (
+        match KNetwork.il_read body with
         | None -> "il, damaged"
-        | Some ((h : TinyKernelNetwork.il_header), data) ->
+        | Some ((h : KNetwork.il_header), data) ->
             (match h.ih_kind with
              | Il_sync -> "sync"
              | Il_data -> "data"
@@ -38,14 +38,14 @@ let net_describe p =
              | Il_close -> "close")
             ^ " id " ^ string_of_int h.ih_id ^ " ack " ^ string_of_int h.ih_ack
             ^ (if data = "" then "" else ", " ^ bytes data))
-      else if Char.code p.[9] <> TinyKernelNetwork.ip_icmp then
+      else if Char.code p.[9] <> KNetwork.ip_icmp then
         "protocol " ^ string_of_int (Char.code p.[9]) ^ ", " ^ bytes body
       else (
-        match TinyKernelNetwork.icmp_read body with
+        match KNetwork.icmp_read body with
         | None -> "icmp, damaged"
         | Some (kind, _, seq, data) ->
             (match kind with
-             | TinyKernelNetwork.Echo_ask -> "echo? "
+             | KNetwork.Echo_ask -> "echo? "
              | Echo_answer -> "echo! "
              | Icmp_other n -> "icmp " ^ string_of_int n ^ " ")
             ^ string_of_int seq ^ ", " ^ bytes data) in
@@ -67,7 +67,7 @@ let tick () = !TinyMachineDevices.rate / 400
  * what answers it asked, or the messages left to send; after a line
  * "put name size", the file's name, its size, and its bytes so far *)
 type serving = {
-  conn : TinyKernelNetwork.il;
+  conn : KNetwork.il;
   ask : string -> (string list -> unit) -> unit;
   mutable todo : string list option;
   mutable asked : bool;
@@ -83,7 +83,7 @@ type relay = {
 (* a connection that is a program's outside: the bytes that came from
  * it and are not yet messages, whether it has ended *)
 type relaying = {
-  rconn : TinyKernelNetwork.il;
+  rconn : KNetwork.il;
   relay : relay;
   mutable coming : string;
   mutable ended : bool;
@@ -95,7 +95,7 @@ type outside = {
 }
 
 type t = {
-  stack : TinyKernelNetwork.net_stack;
+  stack : KNetwork.net_stack;
   give : int -> string -> unit;
   said : string -> string -> unit;
   document : string -> (string list -> unit) -> unit;
@@ -112,7 +112,7 @@ type t = {
 
 let create ~give ~said ~document ~store ~outside =
   let stack =
-    TinyKernelNetwork.net_stack TinyKernelNetwork.net_peer 5000 in
+    KNetwork.net_stack KNetwork.net_peer 5000 in
   stack.ns_ports <- [ 70; 53 ];
   stack.ns_gate <- outside <> None;
   { stack = stack; give = give; said = said; document = document;
@@ -124,12 +124,12 @@ let lose p n = p.lost <- (p.sent + n) :: p.lost
 
 let rec messages text =
   let n = String.length text in
-  if n = 0 then [] else if n <= TinyKernelNetwork.il_max then [ text ]
+  if n = 0 then [] else if n <= KNetwork.il_max then [ text ]
   else
-    String.sub text 0 TinyKernelNetwork.il_max
+    String.sub text 0 KNetwork.il_max
     :: messages
-         (String.sub text TinyKernelNetwork.il_max
-            (n - TinyKernelNetwork.il_max))
+         (String.sub text KNetwork.il_max
+            (n - KNetwork.il_max))
 
 (* a picture with its text: a first message "t w h" (how many messages
  * of text follow, then h rows of w pixels, a row a message) *)
@@ -181,7 +181,7 @@ let www_picture_request line =
   match String.split_on_char ' ' line with
   | "img" :: w :: h :: address ->
       Some (match int_of_string_opt w, int_of_string_opt h with
-        | Some w, Some h when w > 0 && h > 0 && w <= TinyKernelNetwork.il_max ->
+        | Some w, Some h when w > 0 && h > 0 && w <= KNetwork.il_max ->
             (w, h, String.concat " " address)
         | _ -> (0, 0, ""))
   | "img" :: _ -> Some (0, 0, "")
@@ -241,19 +241,19 @@ let out p packets =
 
 (* A connection the machine asks for to another address than the
  * peer's: the outside is asked first, and if it has a way there the
- * stack will answer that sync as that address (TinyKernelNetwork's
+ * stack will answer that sync as that address (KNetwork's
  * gateway). So a dial to a port nothing listens on fails in the machine
  * too. *)
 let gate p packet =
-  match p.outside, TinyKernelNetwork.ip_read "" packet with
+  match p.outside, KNetwork.ip_read "" packet with
   | Some outside, Some (proto, _, body)
-    when proto = TinyKernelNetwork.ip_il
-         && String.sub packet 16 4 <> TinyKernelNetwork.net_peer -> (
+    when proto = KNetwork.ip_il
+         && String.sub packet 16 4 <> KNetwork.net_peer -> (
       let to_ = String.sub packet 16 4 in
-      match TinyKernelNetwork.il_read body with
+      match KNetwork.il_read body with
       | Some ({ ih_kind = Il_sync; ih_sport = sport; ih_dport = dport;
                 ih_ack = 0; _ }, _)
-        when not (List.exists (fun (c : TinyKernelNetwork.il) ->
+        when not (List.exists (fun (c : KNetwork.il) ->
                   c.il_me = to_ && c.il_lport = dport && c.il_rport = sport)
                   p.stack.ns_conns) -> (
           match outside.connect (net_dotted to_) dport with
@@ -270,7 +270,7 @@ let gate p packet =
  * connection's end the outside's *)
 let relay_turn p (r : relaying) =
   let rec hear () =
-    match TinyKernelNetwork.il_hear r.rconn with
+    match KNetwork.il_hear r.rconn with
     | Some m -> r.relay.put m; hear ()
     | None -> () in
   hear ();
@@ -278,13 +278,13 @@ let relay_turn p (r : relaying) =
     match r.relay.take () with
     | Some b -> r.coming <- r.coming ^ b
     | None -> r.ended <- true);
-  while r.coming <> "" && TinyKernelNetwork.il_room r.rconn do
-    let n = min TinyKernelNetwork.il_max (String.length r.coming) in
-    out p [ TinyKernelNetwork.il_write r.rconn (String.sub r.coming 0 n)
+  while r.coming <> "" && KNetwork.il_room r.rconn do
+    let n = min KNetwork.il_max (String.length r.coming) in
+    out p [ KNetwork.il_write r.rconn (String.sub r.coming 0 n)
               p.now ];
     r.coming <- String.sub r.coming n (String.length r.coming - n)
   done;
-  if r.ended && r.coming = "" then TinyKernelNetwork.il_done r.rconn
+  if r.ended && r.coming = "" then KNetwork.il_done r.rconn
 
 (* the connections just made taken: one for another address is its
  * relay's, one to port 53 asks an address of a name, one to port 70 a
@@ -292,7 +292,7 @@ let relay_turn p (r : relaying) =
  * the connection has room, and after the last the end said; the
  * relays' turns *)
 let serve p =
-  p.stack.ns_fresh |> List.iter (fun (conn : TinyKernelNetwork.il) ->
+  p.stack.ns_fresh |> List.iter (fun (conn : KNetwork.il) ->
     let key = conn.il_me, conn.il_lport, conn.il_rport in
     match List.assoc_opt key p.agreed with
     | Some relay ->
@@ -313,11 +313,11 @@ let serve p =
   List.iter (relay_turn p) p.relays;
   p.relays <-
     List.filter (fun (r : relaying) ->
-      if TinyKernelNetwork.il_over r.rconn then (r.relay.shut (); false)
+      if KNetwork.il_over r.rconn then (r.relay.shut (); false)
       else true) p.relays;
   p.serving |> List.iter (fun (s : serving) ->
     if not s.asked then (
-      match TinyKernelNetwork.il_hear s.conn with
+      match KNetwork.il_hear s.conn with
       | Some line -> (
           s.asked <- true;
           match String.split_on_char ' ' (String.trim line) with
@@ -332,7 +332,7 @@ let serve p =
      | Some (name, size, b) ->
          let rec take () =
            if Buffer.length b < size then
-             match TinyKernelNetwork.il_hear s.conn with
+             match KNetwork.il_hear s.conn with
              | Some m -> Buffer.add_string b m; take ()
              | None -> () in
          take ();
@@ -344,16 +344,16 @@ let serve p =
      | None -> ());
     let rec push () =
       match s.todo with
-      | Some (m :: rest) when TinyKernelNetwork.il_room s.conn ->
+      | Some (m :: rest) when KNetwork.il_room s.conn ->
           s.todo <- Some rest;
-          out p [ TinyKernelNetwork.il_write s.conn m p.now ];
+          out p [ KNetwork.il_write s.conn m p.now ];
           push ()
-      | Some [] -> TinyKernelNetwork.il_done s.conn
+      | Some [] -> KNetwork.il_done s.conn
       | _ -> () in
     push ());
   p.serving <-
     List.filter (fun (s : serving) ->
-      not (TinyKernelNetwork.il_over s.conn || s.todo = Some []))
+      not (KNetwork.il_over s.conn || s.todo = Some []))
       p.serving
 
 (* what there is to do, and a clock only while there is a connection *)
@@ -366,17 +366,17 @@ let send p packet =
   if packet = "" then begin
     p.awake <- false;
     p.now <- p.now + 1;
-    out p (TinyKernelNetwork.net_tick p.stack p.now)
+    out p (KNetwork.net_tick p.stack p.now)
   end
   else (
     p.said ">" packet;
     gate p packet;
-    out p (fst (TinyKernelNetwork.net_input p.stack p.now packet)));
+    out p (fst (KNetwork.net_input p.stack p.now packet)));
   poll p
 
 let dial p port relay =
   let conn, sync =
-    TinyKernelNetwork.net_dial p.stack TinyKernelNetwork.net_machine port
+    KNetwork.net_dial p.stack KNetwork.net_machine port
       p.now in
   out p [ sync ];
   p.relays <-

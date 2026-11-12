@@ -3,8 +3,8 @@
  * [help], what tiny-mkfs -h prints.
  *
  * The disk is written by the kernel's own file system,
- * TinyKernel/TinyKernelFS.ml, compiled by OCaml for the host (as its test
- * and tests/TinyKernelFS_tests/Cat.ml, which reads a disk back): mounted
+ * TinyKernel/KFS.ml, compiled by OCaml for the host (as its test
+ * and tests/KFS_tests/Cat.ml, which reads a disk back): mounted
  * blank, so made as the kernel makes it at its first boot, then each file
  * created and written as a program's write would. So a disk is right by
  * construction: no second writer of the format to keep in step with the
@@ -18,7 +18,7 @@
  * twin:
  * mini-mkfs (m-ix's, xv6's mkfs.c), whose command line this is: -m,
  * name=file, a directory/. Dropped: -b and -i, a block being 1 KB and
- * the inodes a file of their own here (TinyKernelFS.mli). *)
+ * the inodes a file of their own here (KFS.mli). *)
 
 (* [main caps argv]: tiny-mkfs's command line *)
 val main :

@@ -7,7 +7,7 @@
  * the boxes TinyLibGUI's laid says; TinyAppTemperature.ml's two fields by
  * clicks and keys; what is drawn after a press (how many bytes of
  * messages: four edges'); then the picture, a button held and a field
- * with its caret, by TinyKernelGraphics.ml, written as tiny-machine -screen
+ * with its caret, by KGraphics.ml, written as tiny-machine -screen
  * writes it.
  * usage: Host.exe font1.bin out.ppm *)
 open TinyAppCalculator
@@ -93,7 +93,7 @@ let () =
       "F34"; "F0"; "C100F<<<-40"; "C1234567"; "Cq" ];
   (* the picture: 36 + 6 shown, then 7 held; what the press draws *)
   let font = In_channel.with_open_bin Sys.argv.(1) In_channel.input_all in
-  Bytes.blit_string font 0 TinyMemory.mem 0x1000 (String.length font);
+  Bytes.blit_string font 0 KRaw.mem 0x1000 (String.length font);
   let m = typed "12*3=+6" in
   let shown, b = TinyLibGUI.laid g m in
   TinyLibGUI.redraw [] [] shown [];
@@ -113,13 +113,13 @@ let () =
     TinyLibGUI.over tb { TinyLibGUI.up with m_focus = Some (fx, fy) } in
   TinyLibGUI.redraw [] [] (down shapes)
     (List.map (fun (box, s) -> box, TinyLibPlayground.Move (0, 200, s)) over);
-  TinyKernelGraphics.arena 0xf4b000 0xb4000;
-  let screen = { TinyKernelGraphics.r = TinyKernelGraphics.rect 0 0 640 480;
+  KGraphics.arena 0xf4b000 0xb4000;
+  let screen = { KGraphics.r = KGraphics.rect 0 0 640 480;
                  at = 0xf00000; repl = false } in
   let c =
-    TinyKernelGraphics.connect screen
-      (TinyKernelGraphics.font_mask 0x1000 (String.length font)
-         (TinyKernelGraphics.alloc 16384)) in
-  TinyKernelGraphics.messages c (Buffer.contents TinySystemTest.drawn);
+    KGraphics.connect screen
+      (KGraphics.font_mask 0x1000 (String.length font)
+         (KGraphics.alloc 16384)) in
+  KGraphics.messages c (Buffer.contents TinySystemTest.drawn);
   Out_channel.with_open_bin Sys.argv.(2) (fun oc ->
-    output_string oc (TinyMemory.ppm 640 480))
+    output_string oc (KRaw.ppm 640 480))

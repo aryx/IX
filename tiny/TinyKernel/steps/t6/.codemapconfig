@@ -78,7 +78,7 @@ local skeletons = import '../../../../skeletons.libsonnet';
         { at: 'def:list', say: 'an image read back', weight: 1 },
         { at: 'def:main', weight: 1 },
       ],
-      related: ['file.c', '../../TinyKernelFS.ml'],
+      related: ['file.c', '../../KFS.ml'],
     },
     'TinyMkfat.mli': { digest: '229d18726111',
       summary: "tiny-mkfat's idea and history: MS-DOS's FAT against Unix's inodes, and why the host makes the disk.",

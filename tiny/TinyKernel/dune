@@ -1,36 +1,36 @@
 ; tiny-kernel's three parts in ML that are files of their own, here for
 ; the host: their tests, and the other end of tiny-machine's wire
 
-; TinyKernelNetwork.ml, tiny-kernel's part that speaks to the network
+; KNetwork.ml, tiny-kernel's part that speaks to the network
 ; (tiny-ml compiles it there), here for the host: its test, and the
 ; other end of tiny-machine's wire
 (library
  (name tiny_kernel_network)
  (wrapped false)
- (modules TinyKernelNetwork))
+ (modules KNetwork))
 
-; TinyKernelGraphics.ml, tiny-kernel's part that draws (tiny-ml compiles it
-; there), here for the host: TinyMemory (host/) is the machine's
+; KGraphics.ml, tiny-kernel's part that draws (tiny-ml compiles it
+; there), here for the host: KRaw (host/) is the machine's
 ; memory, an array
 (library
  (name tiny_kernel_graphics)
  (wrapped false)
- (modules TinyKernelGraphics)
+ (modules KGraphics)
  (libraries tiny_host_memory))
 
-; TinyKernelAudio.ml, tiny-kernel's part that makes the sounds (tiny-ml
+; KAudio.ml, tiny-kernel's part that makes the sounds (tiny-ml
 ; compiles it there), here for the host: its test, and the window's
 ; tiny programs (../user/sdl/)
 (library
  (name tiny_kernel_audio)
  (wrapped false)
- (modules TinyKernelAudio)
+ (modules KAudio)
  (libraries tiny_host_memory))
 
-; TinyKernelFS.ml, tiny-kernel's file system on the disk (tiny-ml
+; KFS.ml, tiny-kernel's file system on the disk (tiny-ml
 ; compiles it there), here for the host: its test
 (library
  (name tiny_kernel_fs)
  (wrapped false)
- (modules TinyKernelFS)
+ (modules KFS)
  (libraries tiny_host_memory))

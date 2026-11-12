@@ -60,8 +60,8 @@ type process = {
   mutable output : TSys.fd option;
 }
 
-(* The reason in the kernel's "stopped pc why" line (TinyKernelScheduler
- * and TinyKernelCalls' stop). A breakpoint and an illegal instruction
+(* The reason in the kernel's "stopped pc why" line (KScheduler
+ * and KCalls' stop). A breakpoint and an illegal instruction
  * are the same trap: the kernel says break when the word was its own 0,
  * written at b, and illegal with the word otherwise. A program debug
  * started stops at its exec first, before its first instruction. Other

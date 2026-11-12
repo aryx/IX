@@ -9,7 +9,7 @@
 # buttons' boxes (a click, a press taken back), the converter clicks
 # and keys in its two fields, and says what a press draws; its lines
 # against calc.expected. Then their picture, a button held and a field
-# with its caret, by TinyKernelGraphics.ml: the screen against calc.cksum (a
+# with its caret, by KGraphics.ml: the screen against calc.cksum (a
 # PPM's sum, as tiny-machine -screen's). The programs on the machine,
 # in a window, are TinyKernel's check (calc.events, temp.events).
 # RECORD=1 records both (look at the picture first: KEEP=1 W=dir).

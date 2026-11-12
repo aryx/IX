@@ -12,7 +12,7 @@ boot.rc)".
 
 `boot.img` (tiny/Buildfile's boot.img) is the kernel followed by every
 file the system has but its sources: 9.15 MB, against a limit of 10 MB
-(TinyKernel/Makefile refuses more: past it are TinyKernelFS.ml's
+(TinyKernel/Makefile refuses more: past it are KFS.ml's
 buffers).
 
 | part | size |
@@ -103,13 +103,13 @@ copy of the disk, as 20 and 28 do already (step 3).
 
 0. Two disks: tiny-machine's second disk device (its registers after
    the first's, a second `-d`), the web page's; tiny-kernel mounting
-   the second at `/src`. TinyKernelFS keeps one disk's state in
+   the second at `/src`. KFS keeps one disk's state in
    global refs today (`fs_io`, `fs_blocks`, `fs_nfree`, `fs_fresh`,
    `fs_next`...): a record of them for each disk, passed to its
-   functions; its test (TinyKernelFS_test.sh) on two.
+   functions; its test (KFS_test.sh) on two.
 1. tiny/Buildfile: the image's list and the disk's; boot.img of the
    first; `/lib/memory` as `/boot/memory` (its reader, TinyKernel.ml's
-   boot, and TinyKernelMemory.ml's comments with it); the comments.
+   boot, and KMemory.ml's comments with it); the comments.
 2. TinyKernel/Makefile: the system's disk (`/bin`, `/lib`,
    `/examples`) and the sources' (`/src`), each by tiny-mkfs; the
    10 MB check kept, for the image.

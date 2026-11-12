@@ -120,7 +120,7 @@
  *   packet from memory or takes the packet that is waiting; the
  *   interrupt, the fifth source, is raised while a packet waits. The
  *   other end of the wire is on the host. With -net dir, it is this
- *   program itself, running TinyKernelNetwork.ml as tiny-kernel does,
+ *   program itself, running KNetwork.ml as tiny-kernel does,
  *   at the other address; it answers pings and serves dir's files over
  *   IL (see TinyMachinePeer). -net-trace prints each packet, -net-lose n
  *   drops the n-th one, and -net-pcap f saves them for tcpdump. With

@@ -83,7 +83,7 @@ local skeletons = import '../../skeletons.libsonnet';
     'TinyMachinePeer.mli': { digest: '03eb6fb87685',
       summary: "The other end of the wire: the kernel's own network stack run by the host at 10.0.0.1, Gopher's shape on port 70.",
       capitals: [
-        { at: 'def:send', say: "a packet from the machine: TinyKernelNetwork's answer" },
+        { at: 'def:send', say: "a packet from the machine: KNetwork's answer" },
       ],
       important: [
         { at: 'comment:"Not a second machine"', say: "the kernel's stack, compiled by OCaml", weight: 3 },
@@ -92,10 +92,10 @@ local skeletons = import '../../skeletons.libsonnet';
         { at: 'def:send', weight: 2 },
         { at: 'def:www_request', weight: 1 },
       ],
-      related: ['../TinyKernel/TinyKernelNetwork.mli', '../../raspberry/'],
+      related: ['../TinyKernel/KNetwork.mli', '../../raspberry/'],
     },
     'TinyMachinePeer.ml': { digest: '4aee3634a62d',
-      summary: "The peer: TinyKernelNetwork's net_input on the host, a document a connection's messages, relays to the world.",
+      summary: "The peer: KNetwork's net_input on the host, a document a connection's messages, relays to the world.",
       important: [
         { at: 'def:send', say: 'an empty packet is its own clock', weight: 3 },
         { at: 'def:serve', say: "a connection's first line: a name, GET, img, put", weight: 3 },
@@ -273,7 +273,7 @@ local skeletons = import '../../skeletons.libsonnet';
       bones: [
         { at: 'TinyMachinePeer.ml:def:send', role: "the machine's packet, or the peer's clock" },
         { at: 'TinyMachinePeer.ml:def:gate', role: 'another address: a relay to the world' },
-        { at: '../TinyKernel/TinyKernelNetwork.ml:def:net_input', role: "the kernel's stack, by OCaml" },
+        { at: '../TinyKernel/KNetwork.ml:def:net_input', role: "the kernel's stack, by OCaml" },
         { at: 'TinyMachinePeer.ml:def:out', role: 'packets given back, after the latency' },
         { at: 'TinyMachinePeer.ml:def:poll', role: 'what there is to do' },
         { at: 'TinyMachinePeer.ml:def:serve', role: "a connection's line: its document" },
@@ -281,8 +281,8 @@ local skeletons = import '../../skeletons.libsonnet';
       ],
       joints: [
         { from: 'TinyMachinePeer.ml:def:send', to: 'TinyMachinePeer.ml:def:gate', say: 'the packet' },
-        { from: 'TinyMachinePeer.ml:def:send', to: '../TinyKernel/TinyKernelNetwork.ml:def:net_input', say: 'the packet' },
-        { from: '../TinyKernel/TinyKernelNetwork.ml:def:net_input', to: 'TinyMachinePeer.ml:def:out', say: 'packets to send' },
+        { from: 'TinyMachinePeer.ml:def:send', to: '../TinyKernel/KNetwork.ml:def:net_input', say: 'the packet' },
+        { from: '../TinyKernel/KNetwork.ml:def:net_input', to: 'TinyMachinePeer.ml:def:out', say: 'packets to send' },
         { from: 'TinyMachinePeer.ml:def:send', to: 'TinyMachinePeer.ml:def:poll', say: 'then' },
         { from: 'TinyMachinePeer.ml:def:poll', to: 'TinyMachinePeer.ml:def:serve', say: 'the connections' },
         { from: 'TinyMachinePeer.ml:def:serve', to: 'TinyMachinePeer.ml:def:relay_turn', say: 'a relayed one' },
@@ -358,6 +358,6 @@ local skeletons = import '../../skeletons.libsonnet';
   views: [
     { name: 'The CPU: tiny-cpu, its words, its toolchain', files: ['TinyMachineCPU.ml', '../TinyLibMachine.ml', '../TinyCPU.ml', '../TinyAssembler.ml', '../TinyLinker.ml'] },
     { name: 'The machine: tiny-machine and mini-qemu', files: ['TinyMachineDevices.ml', '../TinyMachine.ml', '../../raspberry/'] },
-    { name: 'The wire: the peer and the kernel it mirrors', files: ['TinyMachinePeer.ml', '../TinyKernel/TinyKernelNetwork.ml', 'TinyMachineSocket.ml', 'TinyMachineFetch.ml'] },
+    { name: 'The wire: the peer and the kernel it mirrors', files: ['TinyMachinePeer.ml', '../TinyKernel/KNetwork.ml', 'TinyMachineSocket.ml', 'TinyMachineFetch.ml'] },
   ],
 }

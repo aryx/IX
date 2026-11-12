@@ -24,7 +24,7 @@ PROGS=tiny-build tiny-shell tiny-utils tiny-editor tiny-cc tiny-ml tiny-as tiny-
 all:V: ${PROGS:%=$D/%}
 
 # (each unit alone: none names another, but TinyCPU and TinyMachine their libraries,
-# and TinyMachine TinyKernelNetwork, the other end of its wire)
+# and TinyMachine KNetwork, the other end of its wire)
 $D/%.$O: %.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
@@ -56,7 +56,7 @@ $D/cc/Parser.$O: $D/cc/Lower.$O
 $D/cc/Machine.$O: $D/cc/Parser.$O $D/TinyLibMachine.$O
 $D/TinyAssembler.$O: $D/TinyLibMachine.$O
 $D/TinyC.$O: $D/cc/Machine.$O
-$D/TinyMachine.$O: TinyMachine/TinyMachineDevices.ml TinyKernel/TinyKernelNetwork.ml TinyMachine/TinyMachinePeer.ml $D/Parallel.$O
+$D/TinyMachine.$O: TinyMachine/TinyMachineDevices.ml TinyKernel/KNetwork.ml TinyMachine/TinyMachinePeer.ml $D/Parallel.$O
 
 # (a blank line above: a # line right under a rule's head is its recipe,
 # and TinyMachinePeer's object was never compiled)
@@ -79,9 +79,9 @@ $D/TinyMachine.$O: TinyMachine.ml
 $D/%.$O: TinyBrowser/%.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target TinyBrowser/$stem.ml
-$D/TinyKernelNetwork.$O: TinyKernel/TinyKernelNetwork.ml
+$D/KNetwork.$O: TinyKernel/KNetwork.ml
 	mkdir -p $D
-	$ML $INCLUDES -o $target TinyKernel/TinyKernelNetwork.ml
+	$ML $INCLUDES -o $target TinyKernel/KNetwork.ml
 $D/%.$O: TinyML/%.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target TinyML/$stem.ml
@@ -156,9 +156,9 @@ $D/tiny-vcs: $LIBA $D/TinyLibSystem.$O $D/TinyVCS.$O $LIBS
 $D/tiny-cpu: $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyMachineCPU.$O $D/TinyCPU.$O $LIBS
 	$START TinyLibSystem TinyLibMachine TinyMachineCPU TinyCPU Std_exit -o $D/TinyCPU.start.$O
 	$LINK -o $target $D/TinyCPU.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyMachineCPU.$O $D/TinyCPU.$O $STDEND
-$D/tiny-machine: $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyKernelNetwork.$O $D/Strings.$O $D/Url.$O $D/Http.$O $D/TinyMachinePeer.$O $D/Parallel.$O $D/TinyMachine.$O $LIBS
-	$START TinyLibSystem TinyLibMachine TinyMachineCPU TinyMachineDevices TinyKernelNetwork Strings Url Http TinyMachinePeer Parallel TinyMachine Std_exit -o $D/TinyMachine.start.$O
-	$LINK -o $target $D/TinyMachine.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyKernelNetwork.$O $D/Strings.$O $D/Url.$O $D/Http.$O $D/TinyMachinePeer.$O $D/Parallel.$O $D/TinyMachine.$O $STDEND
+$D/tiny-machine: $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/KNetwork.$O $D/Strings.$O $D/Url.$O $D/Http.$O $D/TinyMachinePeer.$O $D/Parallel.$O $D/TinyMachine.$O $LIBS
+	$START TinyLibSystem TinyLibMachine TinyMachineCPU TinyMachineDevices KNetwork Strings Url Http TinyMachinePeer Parallel TinyMachine Std_exit -o $D/TinyMachine.start.$O
+	$LINK -o $target $D/TinyMachine.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/KNetwork.$O $D/Strings.$O $D/Url.$O $D/Http.$O $D/TinyMachinePeer.$O $D/Parallel.$O $D/TinyMachine.$O $STDEND
 # (Parallel: the host's cores where OCaml has domains, -cores-parallel;
 # mini-ml has none: lib_core/parallel's file for OCaml 4.14, which dune
 # chooses by the compiler's version)
@@ -191,5 +191,5 @@ clean:V:
 DEPOBJ=D
 DEPDIRS=. TinyMachine TinyBrowser TinyML TinyKernel TinyKernel/host TinyLibSystem/unix TinyKernel/steps/t6 $D
 DEPBROWSER=TinyBrowser/Strings.ml TinyBrowser/Url.ml TinyBrowser/Http.ml
-DEPUNITS=`{ls *.ml TinyMachine/*.ml $DEPBROWSER TinyML/*.ml TinyKernel/TinyKernelNetwork.ml TinyKernel/host/*.ml TinyLibSystem/unix/*.ml TinyKernel/steps/t6/TinyMkfat.ml | grep -v '^TinyC\.ml$' | sed 's,.*/,,; s,\.ml$,,'}
+DEPUNITS=`{ls *.ml TinyMachine/*.ml $DEPBROWSER TinyML/*.ml TinyKernel/KNetwork.ml TinyKernel/host/*.ml TinyLibSystem/unix/*.ml TinyKernel/steps/t6/TinyMkfat.ml | grep -v '^TinyC\.ml$' | sed 's,.*/,,; s,\.ml$,,'}
 <$TOP/mkfiles/mkdepend

@@ -9,7 +9,7 @@
 # clock, moved to the sides and stopped by them, turned, dropped; a
 # well filled, the game over, another one; a row filled and removed):
 # its rules, against tetris.expected. Then the last model's picture, by
-# TinyLibPlayground.ml and TinyKernelGraphics.ml: the screen against
+# TinyLibPlayground.ml and KGraphics.ml: the screen against
 # tetris.cksum (a PPM's sum, as tiny-machine -screen's). The game on
 # the machine, in a window, is TinyKernel's check (tetris.events).
 # RECORD=1 records both (look at the picture first: KEEP=1 W=dir).

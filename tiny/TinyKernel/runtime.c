@@ -7,7 +7,7 @@
 //
 // The memory (128 MB). The kernel uses the first 32 MB: the image at 0
 // and the files it carries after it (10 MB at most: the Makefile
-// checks); the file system's buffers and map (TinyKernelFS.ml), 80 KB
+// checks); the file system's buffers and map (KFS.ml), 80 KB
 // at 10 MB; the value stack at 11 MB; the processes' frames, and a
 // packet's place; the rest unused but the speaker's ring; 2 MB of
 // images, and the screen's megabyte (its 1024 by 768 bytes, then images
@@ -50,7 +50,7 @@ exit(int status)
 	*(int*)HALT = status;
 }
 
-// entry.s's _entry: the whole of the heap at once (it does not grow),
+// kentry.s's _entry: the whole of the heap at once (it does not grow),
 // then the kernel, TinyKernel.ml's toplevel, which never returns
 void
 kmain(void)

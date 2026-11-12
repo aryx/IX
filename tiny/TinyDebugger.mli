@@ -92,7 +92,7 @@
  * acid's road), the kernel itself.
  *
  * twist:
- * {b A step is the timer's interrupt}: entry.s's k_step sets the timer
+ * {b A step is the timer's interrupt}: kentry.s's k_step sets the timer
  * to ring after one instruction of the process, then runs it as any
  * other. No instruction is decoded to find where the next one is, where
  * db's runstep asks libmach for the addresses the instruction can go to

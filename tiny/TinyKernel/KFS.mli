@@ -1,0 +1,199 @@
+(* Tiny file system: TinyKernel.ml's part that keeps files on the disk,
+ * as KGraphics.ml is its part that draws. The disk is the
+ * root, in a union with the boot image's files (TinyKernel.mli's "The
+ * files").
+ *
+ * It needs two things from the machine: KRaw's bytes, and a way
+ * to move a block between the disk and memory ([fs_io]).
+ *
+ * {b The classic layout.} The disk is made of blocks of 1 KB. A file is
+ * an inode: its type, its size, its number of links, the date of its
+ * last write, and the numbers of its blocks. The first 10 blocks are
+ * listed in the inode itself; after them comes an indirect block (256
+ * more numbers), then a double indirect one (256 blocks of 256
+ * numbers). A directory is a file whose contents are entries, each a
+ * name of up to 64 bytes and an inode's number. This is the file system
+ * of Unix since 1971, and of xv6.
+ *
+ * twin:
+ * mini-9pi's disk, '#x' (kernels/9pi/'s Kfs), on
+ * lib_xv6fs's Xv6fs: xv6's file system (xv6's fs.c, which ix's
+ * mini-xv6 has too, kernels/xv6's Fs), in the kernel, with a bitmap
+ * of free blocks and, as here, no log and no cache. Kept from it: the
+ * inode, its direct then indirect blocks, the directory as a file of
+ * (name, number), names longer than xv6's 14 (ix's extension there).
+ * Plan 9 itself has no disk file system in its kernel
+ * (principia's kernel/filesystems/ is devfs.c, and dossrv and ramfs as
+ * programs): a disk is served by a program, as Kdos says; here, as in
+ * mini-9pi's Kfs and in Unix, the kernel calls it as functions.
+ *
+ * twist:
+ * Against the twin: nothing written in place, so the commit is one
+ * block where xv6's log.c writes each change twice; free blocks found by
+ * a collector, not a bitmap kept right; the snapshots, which xv6 has no
+ * way to keep.
+ *
+ * {b What is different: nothing is ever written over.} A classic file
+ * system changes a block where it is. If the machine stops in the middle
+ * of a change that touches several blocks (a new file is an inode, a
+ * directory entry and a block of data), the disk is left inconsistent.
+ * Unix then needed fsck at the next boot, and later file systems added a
+ * log (xv6 has one). Here, a block that the last commit uses is never
+ * changed. A change writes a copy of the block, which changes the
+ * pointer to it, so the block holding that pointer is copied too, and so
+ * on up to the root:
+ *
+ *      before the write             after it, before the commit
+ *
+ *      superblock                   superblock (in memory)
+ *          |                             |
+ *       root inode                   root inode'
+ *          |                             |
+ *      inode block                  inode block'    (the file's inode,
+ *          |                             |           its new size)
+ *      data block                   data block'     (the new bytes)
+ *
+ *      the disk still has the whole tree on the left; the commit writes
+ *      the superblock, one block, and the disk has the tree on the right
+ *
+ * For this to work, inodes cannot sit at a fixed place on the disk, as
+ * in Unix: they live in a file, the inode file, and the root of
+ * everything is the inode of that file, in the superblock. Changing an
+ * inode is then just a write to that file. The commit is the write of
+ * block 0. Whenever the machine stops, the disk holds either the old
+ * tree or the new one, never half of each, and the boot needs no fsck.
+ *
+ * A block written since the last commit (a fresh one) may be written
+ * again in place: no commit refers to it. So a file written 1 KB at a
+ * time copies its path to the root once per commit, not once per write.
+ * The kernel commits after each system call that changed the disk,
+ * except write: a file's writes are committed by the next call that is
+ * not a write, its close at the latest.
+ *
+ * {b Free blocks are found by a collector.} Nothing tracks which blocks
+ * become free when they are replaced. Instead, when no block is free (and
+ * at the mount), the file system marks the blocks that the trees use and
+ * takes the others back: a mark-and-sweep collector for the disk, as
+ * TinyML's runtime is a collector for the heap. The trees are the live
+ * one, the snapshots, and the last commit's tree on the disk. This
+ * replaces Unix's map of free blocks, which a crash could also leave
+ * wrong.
+ *
+ * {b Snapshots come for free.} Since an old tree is never written over,
+ * keeping it costs only its root. At each boot, the tree that the last
+ * boot left is kept as a snapshot (14 at most, the oldest dropped). The
+ * kernel shows them as /dump/N, the files as they were at the end of
+ * boot N, read only. A file deleted by mistake can be copied back from
+ * there.
+ *
+ * cs-history:
+ * The inode, the direct and indirect blocks, and directories as files of
+ * (name, number) are from the first Unix file system (Thompson and
+ * Ritchie, 1971-1974), and xv6 keeps them. Writing nothing in place is
+ * the idea of shadow paging (Lorie, System R, 1977). NetApp's WAFL (Hitz,
+ * Lau and Malcolm, 1994) built a file system on it, with the inode file
+ * and snapshots as here; ZFS (2005) and btrfs (2007) followed. Plan 9's
+ * dump (Quinlan, 1991; then Venti and Fossil, 2002) kept every day's
+ * file system under /n/dump/2026/1018, which is where /dump comes from.
+ * The log-structured file system (Rosenblum and Ousterhout, 1991) also
+ * writes only new blocks, and also needs a cleaner, its collector.
+ *
+ * design:
+ * A classic file system with a log (xv6's) writes each change twice,
+ * once to the log and once in place, and needs code to replay the log at
+ * the boot. Copying on write writes each change once, at a new place,
+ * and the commit is a single block. What it costs instead is the copies
+ * up to the root (a few blocks per commit) and the collector. In ML both
+ * are short: the copy is one recursive function ([fs_store]), the
+ * collector another ([fs_mark]).
+ *
+ * wib:
+ * - The collector reads every inode and indirect block of every tree.
+ *   That is quick on tiny-machine's disk of 8 MB, where a transfer is
+ *   instant, but a real file system keeps reference counts or a space
+ *   map instead (ZFS's).
+ * - There is no cache: every access reads its blocks again from the
+ *   disk, as t6 does. That is fine only because the disk is instant.
+ * - Directories are searched in order, and a removal rewrites the
+ *   directory. That is fine for directories of a few dozen names.
+ * - A file removed while a program still has it open is freed at once
+ *   (Unix keeps it until the last close), and its inode may be reused.
+ *)
+
+(* a file's number: a tree's, an inode's in it (see below) *)
+type tree = int
+type inode = int
+
+(* an inode's type (1 and 2 on the disk, as in the entries the kernel
+ * gives ls) *)
+type file_kind = Fs_dir | Fs_file
+
+(* the transfer of block b to memory at a (Disk_read), or from memory to
+ * the block: the kernel's disk device (its commands 1 and 2), or the
+ * test's bytes *)
+type disk_io = Disk_read | Disk_write
+val fs_io : (int -> int -> disk_io -> unit) ref
+
+(* raised by a write when no block is free, even after a collection *)
+exception Disk_full
+
+(* [fs_mount n]: the file system of a disk of n blocks, made when the
+ * disk is blank; the last boot's tree becomes a snapshot. A disk made
+ * bigger than its file system (tiny-mkfs's disk.img, 4 MB, grown to 64
+ * by truncate -s) is used whole *)
+val fs_mount : int -> unit
+
+(* the changes since the last commit, written to the disk as a whole
+ * (nothing to do when there are none) *)
+val fs_commit : unit -> unit
+
+(* the snapshots: each one's tree number and the boot it was left by *)
+val fs_snapshots : unit -> (tree * int) list
+
+(* the free blocks, counted after a collection *)
+val fs_free : unit -> int
+
+(* A file is an inode's number in a tree: tree 0 is the live one, which
+ * can be changed, trees 1 to 14 the snapshots. Inode 1 is the root
+ * directory. *)
+
+(* [fs_kind r n]: inode n's type, size and links; [fs_date r n]: its
+ * last write's date, seconds since 2000 *)
+val fs_kind : tree -> inode -> file_kind * int * int
+val fs_date : tree -> inode -> int
+
+(* what a write or a new file gets as its date: the kernel's clock *)
+val fs_clock : (unit -> int) ref
+val fs_is_dir : tree -> inode -> bool
+
+(* [fs_lookup r d name]: the inode under name in directory d (old: 0 for
+ * none) *)
+val fs_lookup : tree -> inode -> string -> inode option
+
+(* the names and inodes of a directory, in the order they were made *)
+val fs_entries : tree -> inode -> (string * inode) list
+
+(* [fs_read_at r n off a len]: up to len bytes of the file from off, to
+ * memory at a; how many there were *)
+val fs_read_at : tree -> inode -> int -> int -> int -> int
+
+(* the whole file, as a string *)
+val fs_contents : tree -> inode -> string
+
+(* [fs_write_at n off a len]: len bytes from memory at a, to the live
+ * file n at off (Disk_full when there is no room) *)
+val fs_write_at : inode -> int -> int -> int -> unit
+
+(* the file emptied *)
+val fs_truncate : inode -> unit
+
+(* [fs_create d name kind]: a new file or directory under name in d;
+ * its inode *)
+val fs_create : inode -> string -> file_kind -> inode
+
+(* [fs_link d name n]: a second name for file n, in d *)
+val fs_link : inode -> string -> inode -> unit
+
+(* [fs_unlink d name]: the name removed from d, and the inode with its
+ * last name *)
+val fs_unlink : inode -> string -> unit

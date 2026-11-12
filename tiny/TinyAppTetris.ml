@@ -4,7 +4,7 @@
  * testing:
  * The rules are tested on the host by feeding keys and frames to these
  * functions and printing the well as text (tests/TinyAppTetris_test.sh);
- * the picture can be tested with TinyKernelGraphics.ml.
+ * the picture can be tested with KGraphics.ml.
  *)
 open TinyLibPlayground
 

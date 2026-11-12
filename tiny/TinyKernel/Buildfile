@@ -1,10 +1,10 @@
 # Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyBuildSystem.ml)
 #
 # tiny-kernel, kernel.img: TinyKernel.ml and its parts, in ML; the
-# assembly ML cannot say (entry.s: the traps, the switch; draw.s and
-# memory.s, the pixels' and the memory's loops); runtime.c, ML's runtime
+# assembly ML cannot say (kentry.s: the traps, the switch; kdraw.s and
+# kcopy.s, the pixels' and the memory's loops); runtime.c, ML's runtime
 # given the machine's memory; font.s, the font's pixels (made on the
-# host by fonts/Mkfont.ml, on the image as it is); end.s, the kernel's
+# host by fonts/Mkfont.ml, on the image as it is); kend.s, the kernel's
 # end, where the files it carries start. Run by ../Buildfile at each
 # build (cd TinyKernel && build), after the library, which it links
 # from ../TinyLibCore.
@@ -49,14 +49,14 @@ udivmod.o: ../runtime/udivmod.s
 runtime.o: runtime.c ../runtime/ml.c
 
 # the units, each after the ones it names; the kernel's start made by
-# ml, as a program's (../TinyML/Link.mli). entry.o first, at 0
-UNITS = TinyMemory.o TinyKernelGraphics.o TinyKernelNetwork.o \
-    TinyKernelAudio.o TinyKernelFS.o TinyKernelMemory.o TinyKernelMachine.o \
-    TinyKernelFiles.o TinyKernelProcs.o TinyKernelDevices.o TinyKernelIO.o \
-    TinyKernelCalls.o TinyKernelScheduler.o TinyKernel.o
+# ml, as a program's (../TinyML/Link.mli). kentry.o first, at 0
+UNITS = KRaw.o KGraphics.o KNetwork.o \
+    KAudio.o KFS.o KMemory.o KMachine.o \
+    KFiles.o KProcs.o KDevices.o KIO.o \
+    KCalls.o KScheduler.o TinyKernel.o
 kernel.start.o: $STDLIB $UNITS
-kernel.img: entry.o udivmod.o runtime.o draw.o memory.o font.o \
-    kernel.start.o $STDLIB $UNITS end.o
+kernel.img: kentry.o udivmod.o runtime.o kdraw.o kcopy.o font.o \
+    kernel.start.o $STDLIB $UNITS kend.o
 	$LD -map -o $target $prereq
 
 # the units' dependencies, written by ml -depend

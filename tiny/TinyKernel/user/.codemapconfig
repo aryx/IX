@@ -45,7 +45,7 @@
         { at: 'def:main', weight: 2 },
         { at: 'code:"ready(fds, 1, t + 400)"', say: 'a wait with a deadline: 400 ticks, a second', weight: 2 },
       ],
-      related: ['../TinyKernelNetwork.ml'],
+      related: ['../KNetwork.ml'],
     },
     'httpd.c': { digest: '39e00525b73c',
       summary: "httpd: tiny-kernel's files served to a real browser through -net-forward, a connection at a time, HTTP/1.0.",
@@ -69,7 +69,7 @@
         { at: 'def:main', weight: 3 },
         { at: 'def:clear', weight: 1 },
       ],
-      related: ['../libc/draw.h', '../libc/draw.c', '../TinyKernelGraphics.ml'],
+      related: ['../libc/draw.h', '../libc/draw.c', '../KGraphics.ml'],
     },
   },
   skeletons: [

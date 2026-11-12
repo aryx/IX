@@ -102,7 +102,7 @@ things: a tool runs on the host, the others on tiny-machine.
   `TinyKernel/libc/` (`sys.s`, the system calls; `draw.c`, `net.c`;
   `user.h`).
 - **The kernel** is `tiny/TinyKernel/TinyKernel.ml` and its parts in
-  `TinyKernel/` (`TinyKernelProcs`, `Scheduler`, `Calls`, `Files`,
+  `TinyKernel/` (`KProcs`, `Scheduler`, `Calls`, `Files`,
   `FS`, `Devices`, `Graphics`, `Audio`, `Network`...), on the same
   prelude and the same `core.c`, with its own assembly for the start,
   the traps and the pixels' rows.

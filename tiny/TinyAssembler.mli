@@ -11,7 +11,7 @@
  * that reads assembly), what the compilers make too, and their
  * encoding, TinyLibMachine's assemble, which the compilers call
  * themselves (old: here; they wrote text, which this file parsed back).
- * So this file is for assembly written by hand: the kernel's entry.s,
+ * So this file is for assembly written by hand: the kernel's kentry.s,
  * the runtime's start.s, the steps, the tests.
  *
  * tiny-machine's instructions were designed to keep this assembler

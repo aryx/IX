@@ -94,9 +94,9 @@ COLUMNS = [
             "processes, the files, the pipes, the",
             "system calls"]),
         ("Its parts that are files", "ML", [
-            "tiny/TinyKernel/TinyKernelGraphics.ml",
-            "(the pixels), TinyKernelNetwork.ml (IP,",
-            "IL), TinyMemory.ml (the machine's bytes,",
+            "tiny/TinyKernel/KGraphics.ml",
+            "(the pixels), KNetwork.ml (IP,",
+            "IL), KRaw.ml (the machine's bytes,",
             "as externals)"]),
         ("The standard library", "ML", [
             "tiny/TinyLibCore/: the same modules"]),
@@ -105,8 +105,8 @@ COLUMNS = [
             "included by TinyKernel/runtime.c (the",
             "kernel's memory, the console)"]),
         ("Its assembly", "tiny-cpu's", [
-            "TinyKernel/entry.s (the start, the",
-            "traps), draw.s (a row of pixels), the",
+            "TinyKernel/kentry.s (the start, the",
+            "traps), kdraw.s (a row of pixels), the",
             "font; runtime/udivmod.s"]),
         ("The machine", "", [
             "tiny-machine (tiny/TinyMachine.ml,",

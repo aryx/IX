@@ -181,7 +181,7 @@ job "tiny-vcs: its laws on random work" tiny/tests/TinyVCS_test.sh 3
 job "tiny-cpu, tiny-as: programs, random listings" tiny/tests/TinyCPU_test.sh 50
 job "the assembly printed (tiny-as -S): the same object" tiny/tests/TinyAssembler_test.sh
 job "tiny-machine: unit tests" tiny/tests/TinyMachine_test.sh
-job "tiny-kernel: its graphics" tiny/tests/TinyKernelGraphics_test.sh
+job "tiny-kernel: its graphics" tiny/tests/KGraphics_test.sh
 job "TinyLibPlayground: unit tests" tiny/tests/TinyLibPlayground_test.sh
 job "tiny-tetris: recorded frames" tiny/tests/TinyAppTetris_test.sh
 job "TinyLibGUI: unit tests" tiny/tests/TinyLibGUI_test.sh
@@ -200,11 +200,11 @@ family "tiny-kernel on tiny-machine" system
 tiny_network() {
   local o=$W/tiny-network
   make -s -C tiny/TinyKernel O=$o $o/boot.img &&
-    IMAGE=$o/boot.img tiny/tests/TinyKernelNetwork_test.sh
+    IMAGE=$o/boot.img tiny/tests/KNetwork_test.sh
 }
 job "tiny-kernel: its network" tiny_network
-job "tiny-kernel: its sound" tiny/tests/TinyKernelAudio_test.sh
-job "tiny-kernel: its file system" tiny/tests/TinyKernelFS_test.sh
+job "tiny-kernel: its sound" tiny/tests/KAudio_test.sh
+job "tiny-kernel: its file system" tiny/tests/KFS_test.sh
 # tiny-kernel booted (an image of its own: TinyKernel's _make is the
 # sessions'), its tests in ML and a shell's files and pipe; its whole
 # check (81 s, 12 minutes of cores) is make test-long's
@@ -228,12 +228,12 @@ family "t-ix builds part of itself" system
 # t-ix building in itself, a small part (plan_tests.md; make self-quick
 # 167 s, make self hours): in tiny-kernel, on a disk of its own, ping.c
 # by cc, its object the host's (read from the disk by
-# TinyKernelFS_tests' Cat); Stdlib.ml by ml -c, its interface the host's
+# KFS_tests' Cat); Stdlib.ml by ml -c, its interface the host's
 # (its object is in /lib/ml/stdlib.a: make self-quick compares that); and
 # a program without libc linked by ld and run. 22 s
 tiny_self() {
   local o=$W/tiny-self m="tiny-machine -date 820540800 -seed 1"
-  local cat=_build/default/tiny/tests/TinyKernelFS_tests/Cat.exe
+  local cat=_build/default/tiny/tests/KFS_tests/Cat.exe
   make -s -C tiny/TinyKernel O=$o $o/boot.img $o/disk.img || return 1
   cp $o/disk.img $o/self.img; truncate -s 64M $o/self.img
   timeout 120 $m -d $o/self.img $o/boot.img > $o/self.out <<'END'

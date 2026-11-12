@@ -1,14 +1,14 @@
-TinyKernel.o: TinyKernelCalls.tmi TinyKernelDevices.tmi TinyKernelFS.tmi TinyKernelFiles.tmi TinyKernelGraphics.tmi TinyKernelMachine.tmi TinyKernelMemory.tmi TinyKernelProcs.tmi TinyKernelScheduler.tmi TinyKernel.mli
-TinyKernelAudio.o: TinyMemory.tmi TinyKernelAudio.mli
-TinyKernelCalls.o: TinyKernelDevices.tmi TinyKernelFS.tmi TinyKernelFiles.tmi TinyKernelGraphics.tmi TinyKernelIO.tmi TinyKernelMachine.tmi TinyKernelMemory.tmi TinyKernelNetwork.tmi TinyKernelProcs.tmi TinyMemory.tmi TinyKernelCalls.mli
-TinyKernelDevices.o: TinyKernelAudio.tmi TinyKernelFiles.tmi TinyKernelGraphics.tmi TinyKernelMachine.tmi TinyKernelDevices.mli
-TinyKernelFiles.o: TinyKernelFS.tmi TinyKernelGraphics.tmi TinyKernelMachine.tmi TinyKernelNetwork.tmi TinyMemory.tmi TinyKernelFiles.mli
-TinyKernelFS.o: TinyMemory.tmi TinyKernelFS.mli
-TinyKernelGraphics.o: TinyMemory.tmi TinyKernelGraphics.mli
-TinyKernelIO.o: TinyKernelAudio.tmi TinyKernelDevices.tmi TinyKernelFS.tmi TinyKernelFiles.tmi TinyKernelGraphics.tmi TinyKernelMachine.tmi TinyKernelMemory.tmi TinyKernelNetwork.tmi TinyKernelProcs.tmi TinyMemory.tmi TinyKernelIO.mli
-TinyKernelMachine.o: TinyKernelFS.tmi TinyMemory.tmi TinyKernelMachine.mli
-TinyKernelMemory.o: TinyMemory.tmi TinyKernelMemory.mli
-TinyKernelNetwork.o: TinyKernelNetwork.mli
-TinyKernelProcs.o: TinyKernelFiles.tmi TinyKernelGraphics.tmi TinyKernelMachine.tmi TinyKernelMemory.tmi TinyKernelNetwork.tmi TinyMemory.tmi TinyKernelProcs.mli
-TinyKernelScheduler.o: TinyKernelCalls.tmi TinyKernelDevices.tmi TinyKernelFiles.tmi TinyKernelIO.tmi TinyKernelMachine.tmi TinyKernelMemory.tmi TinyKernelNetwork.tmi TinyKernelProcs.tmi TinyKernelScheduler.mli
-TinyMemory.o:
+KAudio.o: KRaw.tmi KAudio.mli
+KCalls.o: KDevices.tmi KFS.tmi KFiles.tmi KGraphics.tmi KIO.tmi KMachine.tmi KMemory.tmi KNetwork.tmi KProcs.tmi KRaw.tmi KCalls.mli
+KDevices.o: KAudio.tmi KFiles.tmi KGraphics.tmi KMachine.tmi KDevices.mli
+KFS.o: KRaw.tmi KFS.mli
+KFiles.o: KFS.tmi KGraphics.tmi KMachine.tmi KNetwork.tmi KRaw.tmi KFiles.mli
+KGraphics.o: KRaw.tmi KGraphics.mli
+KIO.o: KAudio.tmi KDevices.tmi KFS.tmi KFiles.tmi KGraphics.tmi KMachine.tmi KMemory.tmi KNetwork.tmi KProcs.tmi KRaw.tmi KIO.mli
+KMachine.o: KFS.tmi KRaw.tmi KMachine.mli
+KMemory.o: KRaw.tmi KMemory.mli
+KNetwork.o: KNetwork.mli
+KProcs.o: KFiles.tmi KGraphics.tmi KMachine.tmi KMemory.tmi KNetwork.tmi KRaw.tmi KProcs.mli
+KRaw.o:
+KScheduler.o: KCalls.tmi KDevices.tmi KFiles.tmi KIO.tmi KMachine.tmi KMemory.tmi KNetwork.tmi KProcs.tmi KScheduler.mli
+TinyKernel.o: KCalls.tmi KDevices.tmi KFS.tmi KFiles.tmi KGraphics.tmi KMachine.tmi KMemory.tmi KProcs.tmi KScheduler.tmi TinyKernel.mli

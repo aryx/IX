@@ -46,7 +46,7 @@ The script builds the tools with dune and calls them. By hand:
 | `tiny-ar -o lib.a f.o...` | objects kept in one file, a library, in their order (`tiny/TinyArchiver.ml`); tiny-ld links all its members, as if each were given; `-t lib.a` lists them |
 | `tiny-cpu image` | runs a program alone, the host answering its three system calls |
 | `tiny-machine image` | the same with the machine around the CPU: the image is a kernel's |
-| `tiny-mkfs [-m n] disk.img name=file...` | a disk of tiny-kernel's file system, made on the host by the kernel's own `TinyKernelFS.ml` (`tiny/TinyKernel/host/TinyMkfs.ml`; `-l disk.img` lists it) |
+| `tiny-mkfs [-m n] disk.img name=file...` | a disk of tiny-kernel's file system, made on the host by the kernel's own `KFS.ml` (`tiny/TinyKernel/host/TinyMkfs.ml`; `-l disk.img` lists it) |
 | `tiny-mkfat` | t6's disk image (`tiny/TinyKernel/steps/t6/TinyMkfat.ml`) |
 | `tiny-prof p -k k.map -u p.map` | where the instructions went, by function, from a profile written by `tiny-cpu -prof p` or `tiny-machine -prof p` and the maps of the links (`tiny/TinyProfiler.ml`; its `.mli` shows how it found what made `www`'s scrolling slow) |
 
@@ -142,11 +142,11 @@ nowhere else (as dune's `_build/` and mini-mk's `_mk/`): the
 directories show the sources, `make clean` removes `_make/`.
 
 The steps are always the same two, the assembly written by hand
-(entry.s, the runtime's start.s...) assembled first:
+(kentry.s, the runtime's start.s...) assembled first:
 
     tiny-cc x.c                 # x.o; or tiny-ml, for ML
     tiny-as start.s             # start.o: assembly written by hand
-    tiny-ld -o kernel.img entry.o ... x.o                  # a kernel: linked at 0
+    tiny-ld -o kernel.img kentry.o ... x.o                  # a kernel: linked at 0
     tiny-ld -o prog start.o udivmod.o libc.o prog.o        # a program
 
 `boot.img` is `kernel.img` followed by its files (`/bin`, `/lib`,
@@ -397,7 +397,7 @@ What is at the other end is the host's choice:
     tiny-machine -net dir -net-forward 8080:80 kernel.img   # and the host's port 8080 is the machine's port 80
     tiny-machine -net-loop 100 kernel.img    # the wire itself: each packet sent comes back 100 instructions later
 
-With `-net` the other end is `TinyKernelNetwork.ml`, the file tiny-kernel
+With `-net` the other end is `KNetwork.ml`, the file tiny-kernel
 has for its own stack, run by the host (`TinyMachinePeer.ml`). A packet
 of its lands 5 ms of the machine's time (40,000 instructions at 8
 million a second) after
@@ -465,7 +465,7 @@ packet, and a button loses the next one. `./tiny-machine tiny-kernel`
 in a terminal gives the machine its wire with `tiny/tests/www`.
 
 A trace's line has, of IL's, its kind, its number, the last number its sender
-received, its message's length (`TinyKernelNetwork.mli` has a conversation
+received, its message's length (`KNetwork.mli` has a conversation
 with a packet lost):
 
        1325.4 ms  < data id 5001 ack 1001, 1024 bytes, from 10.0.0.1 to 10.0.0.2
@@ -581,7 +581,7 @@ What the numbers mean is up to who answers:
 | `0xb40000` | the processes' frames: 17 words each, their registers and pc |
 | `0xb50000` | a packet's place, on its way to or from the network's device |
 | `0xc00000` | the speaker's ring |
-| `0xd00000` to `0xf00000` | the images a program made (`TinyKernelGraphics.ml`'s free blocks) |
+| `0xd00000` to `0xf00000` | the images a program made (`KGraphics.ml`'s free blocks) |
 | `0xf00000` | the screen, 1024 by 768 bytes; then images again |
 | `0x1000000` to `0x2000000` | the ML heap, two halves of 8 MB: the files written live there |
 | `0x2000000` to `0x7ff0000` | the processes' partitions, found first-fit when a program starts |
@@ -699,7 +699,7 @@ install` in `tiny/`, for `tiny/examples/`).
 `dial` gives a descriptor on a connection to another machine, by its
 address as text (`"10.0.0.1"`: the wire's other end) and a port; -1
 without a network, or when nothing listens there or nothing answers
-(six tries, 6.3 seconds). The connection is IL's (`TinyKernelNetwork.mli`):
+(six tries, 6.3 seconds). The connection is IL's (`KNetwork.mli`):
 a write is a message, 1,024 bytes at most, which arrives once and in
 order, the write waiting when 20 are not yet read at the other end; a read
 gives one message, whole (what is over the buffer is lost), and 0
@@ -740,7 +740,7 @@ A command without a `/` is a program of `/bin`, for `sh` and for `rc`
 
 ### 7.3 TinyKernel.ml's screen, mouse and speaker
 
-The kernel has the pixels (`tiny/TinyKernel/TinyKernelGraphics.ml`, compiled with it);
+The kernel has the pixels (`tiny/TinyKernel/KGraphics.ml`, compiled with it);
 a program says what to draw. **A program is given five descriptors**:
 0, 1 and 2 its text, 3 where it draws (messages, below), 4 its mouse (a
 box: a read gives x, y and the buttons, a word each, when they
@@ -785,7 +785,7 @@ bold, 8 by 16 and 16 by 32; italic is the upright one slanted).
 | font | what |
 |---|---|
 | `fonts/plan9.font` (the default) | Plan 9's default font (mini-9pi's console's: Bigelow & Holmes' Lucida, `lucm/latin1.9`), its bold and large made of it as the kernel would |
-| `fonts/grey.font` | Ubuntu Mono with grey edges: a pixel one of 4 levels, mixed with the colour under it by a table made for each ink (`draw.s`'s `mix_table`) |
+| `fonts/grey.font` | Ubuntu Mono with grey edges: a pixel one of 4 levels, mixed with the colour under it by a table made for each ink (`kdraw.s`'s `mix_table`) |
 | `fonts/tiny.font` | the same letters, a pixel set or not |
 | `fonts/terminus.font` | Terminus Font, a bitmap font |
 | `kernels/lib_machine/font1.bin` | xv6's 8 by 16, one face: the kernel makes the bold and the large of it |
@@ -802,7 +802,7 @@ subfont; `fonts/preview.py` draws them side by side.
 to `/dev/audio`: it writes sounds, each a message `s wave hz to_hz ms
 volume` (the letter, then five numbers of 16 bits), and the kernel
 makes them into the speaker's ring
-(`tiny/TinyKernel/TinyKernelAudio.ml`): a wave (0 a square, 1 a
+(`tiny/TinyKernel/KAudio.ml`): a wave (0 a square, 1 a
 triangle, 2 a sawtooth, 3 noise), a pitch sliding from `hz` to `to_hz`
 (4,000 at most), `ms` milliseconds (1,000 at most), a volume from 0 to
 127 that falls to nothing at the end. What is no recipe is samples:
@@ -1046,12 +1046,12 @@ tiny-machine it is over the system calls
 a virtual library of dune's, whose implementations for these programs
 are the tests' stub (`tiny/TinyLibSystem/teststub/`) and a window's
 (`tiny/TinyLibSystem/sdl/`). In the window's, what a program draws is
-done by the kernel's own `TinyKernelGraphics.ml` in a screen of host
+done by the kernel's own `KGraphics.ml` in a screen of host
 memory and shown by SDL; the mouse and the keys are the window's; files
 and the clock are the host's; a dial to the wire's other end (port 70)
 is answered as tiny-machine answers it, a web page fetched by
 `tiny-machine-fetch`; a sound written to `/dev/audio` is made by the
-kernel's own `TinyKernelAudio.ml` and played by SDL (one after the
+kernel's own `KAudio.ml` and played by SDL (one after the
 other, not mixed; a write waits while a quarter of a second is queued,
 and the program's end until all is heard). The programs' one-line files in
 `tiny/user/` are compiled there as they are:
@@ -1074,9 +1074,9 @@ fetch them. `make loc` does not count `tiny/user/sdl/`.
 | the CPU | `tiny/tests/TinyCPU_test.sh` |
 | the machine, v0, the devices, the screen | `tiny/tests/TinyMachine_test.sh` |
 | t6 | `make -C tiny/TinyKernel/steps/t6 check` |
-| TinyKernelGraphics.ml, on the host and on the machine | `tiny/tests/TinyKernelGraphics_test.sh` (`-window`: its picture shown) |
-| TinyKernelAudio.ml, sounds made into a ring (their crossings of zero, two at one place, the ring going round) and messages read, on the host | `tiny/tests/TinyKernelAudio_test.sh` |
-| TinyKernelFS.ml, files and directories on a disk of bytes, a file with a double indirect block, a crash before a commit, snapshots, a full disk emptied, on the host | `tiny/tests/TinyKernelFS_test.sh` |
+| KGraphics.ml, on the host and on the machine | `tiny/tests/KGraphics_test.sh` (`-window`: its picture shown) |
+| KAudio.ml, sounds made into a ring (their crossings of zero, two at one place, the ring going round) and messages read, on the host | `tiny/tests/KAudio_test.sh` |
+| KFS.ml, files and directories on a disk of bytes, a file with a double indirect block, a crash before a commit, snapshots, a full disk emptied, on the host | `tiny/tests/KFS_test.sh` |
 | TinyPlay.ml, WAV files made into the speaker's samples (the example, 8 bits in two channels, a chunk skipped, rates above and below, in blocks and at once), and files it does not play | `tiny/tests/TinyPlay_test.sh` |
 | TinyLibPlayground.ml, a game's model and picture on the host | `tiny/tests/TinyLibPlayground_test.sh` |
 | TinyAppTetris.ml, its rules and its sounds by scripts of keys, and its picture, on the host | `tiny/tests/TinyAppTetris_test.sh` |

@@ -1,0 +1,5 @@
+; KGraphics.ml's test on the host (KGraphics_test.sh)
+(executable
+ (name Host)
+ (modules Host Picture)
+ (libraries tiny_kernel_graphics tiny_lib_draw))

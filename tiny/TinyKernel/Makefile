@@ -57,7 +57,7 @@
 #                     scrolled, the History menu open, the page before
 #                     chosen in it, a search's results (s), a WAV file
 #                     given to play, its sound play's own); and the disk
-#                     (../TinyKernelFS.ml), the root, three boots on a blank one:
+#                     (../KFS.ml), the root, three boots on a blank one:
 #                     files and a directory made in /usr/glenda, a link, a program
 #                     copied to /bin and run from there, a file of /boot/bin
 #                     written over in /bin (copied to the disk) then removed
@@ -73,8 +73,8 @@
 #                     until written, under _make-pages
 #
 # What is built, and how, is ../Buildfile's (t-IX built by tiny-build):
-# the kernel (Buildfile, here: entry.s first, the runtime, the kernel's
-# units, the library, end.s last); then the image, boot.img, the
+# the kernel (Buildfile, here: kentry.s first, the runtime, the kernel's
+# units, the library, kend.s last); then the image, boot.img, the
 # kernel followed by its files, each a name, a line, its size, a line,
 # its bytes (a hard link a name and a line "link utils": utils is cat,
 # ls, wc...); an empty line at the end. This Makefile runs it, in a copy of tiny/ (the
@@ -115,7 +115,7 @@ MKFS = $(call tool,tiny-mkfs)
 MACHINE = $(call tool,tiny-machine)
 MKFSBIN = $(wildcard $(MKFS))
 
-# how the kernel gives the processes memory (TinyKernelMemory.mli)
+# how the kernel gives the processes memory (KMemory.mli)
 MEMORY = partitions
 O = $(if $(filter segments pages,$(MEMORY)),_make-$(MEMORY),_make)
 # /lib/memory, its size: the word and a newline
@@ -172,7 +172,7 @@ $(O)/boot.img: $(O)/font.s FORCE
 	  build -j $(J) boot.img
 	cmp -s $(S)/boot.img $(O)/boot.img || cp $(S)/boot.img $(O)/boot.img
 	cmp -s $(S)/TinyKernel/kernel.img $(O)/kernel.img || cp $(S)/TinyKernel/kernel.img $(O)/kernel.img
-	@test $$(wc -c < $@) -lt 10485760 || { echo "$@: over 10 MB, where TinyKernelFS.ml has its buffers"; rm $@; exit 1; }
+	@test $$(wc -c < $@) -lt 10485760 || { echo "$@: over 10 MB, where KFS.ml has its buffers"; rm $@; exit 1; }
 $(O)/kernel.img: $(O)/boot.img
 FORCE:
 
@@ -183,7 +183,7 @@ FORCE:
 # sources, tiny/'s and the font the host made, as the build read them
 # here: what tiny-kernel builds itself from. 8 MB, what a web page
 # fetches; a copy grown to 64 by truncate -s for a run or a build on
-# tiny-kernel (TinyKernelFS.mli's fs_mount: used whole). The files in
+# tiny-kernel (KFS.mli's fs_mount: used whole). The files in
 # their names' order, so that the same sources make the same disk
 # (old: a list of the sources by hand, SRC)
 $(O)/disk.img: $(O)/boot.img $(MKFSBIN)
@@ -365,11 +365,11 @@ $(O)/check/wwwplay.sum: $(T)/wwwplay.events $(O)/boot.img
 # checked here: not its lines, which a unit, a program or a flag added
 # would change, nor a recording (old: self.expected, recorded again at
 # each change). The image of the first build, read from the disk by
-# TinyKernelFS_tests' Cat, is _make/boot.img, byte for byte: the same
+# KFS_tests' Cat, is _make/boot.img, byte for byte: the same
 # sources built by the host's tools and by tiny-kernel's, so a change
 # of the code changes both, and a difference is a tool of tiny-kernel's
 # (tiny-ml's code, the runtime, the kernel) wrong. Hours: not in check
-FSCAT = $(abspath ../../_build/default/tiny/tests/TinyKernelFS_tests/Cat.exe)
+FSCAT = $(abspath ../../_build/default/tiny/tests/KFS_tests/Cat.exe)
 self: $(O)/boot.img $(O)/disk.img
 	$(call grown,$(O)/self.img)
 	timeout 36000 $(MACHINE) -d $(O)/self.img $(O)/boot.img < $(T)/self.keys > $(O)/self.out

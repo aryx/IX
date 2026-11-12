@@ -22,7 +22,7 @@
  * its disk (TinyMachineDevices's four words: a block's number, an
  * address, a command, a status), and its format is read by t6's
  * kernel in C. TinyKernel's disk has a format of its own
- * (TinyKernelFS.mli), which the kernel makes on a blank disk. In m-ix the real
+ * (KFS.mli), which the kernel makes on a blank disk. In m-ix the real
  * FAT, as MS-DOS left it, is mini-dossrv's (Plan 9's dossrv), and
  * mini-9pi boots from a card that has one.
  *

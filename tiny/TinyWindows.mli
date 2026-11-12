@@ -5,7 +5,7 @@
  * The main idea comes from rio: {b a window looks like the machine}.
  * Every program on TinyKernel.ml is given five file descriptors: 0, 1
  * and 2 for its text, 3 where it draws (with the messages of
- * TinyKernelGraphics.ml), and 4 for its mouse. The kernel connects the
+ * KGraphics.ml), and 4 for its mouse. The kernel connects the
  * first shell to the console, the screen and the mouse. tiny-windows
  * instead gives the shell of each window three pipes and a box. It is
  * itself just a program that reads its 0 and its 4 and draws on its 3.
@@ -102,7 +102,7 @@
  *
  * context:
  * TinyKernel provides the five descriptors, the pipes, the box and
- * ready; TinyKernelGraphics, inside the kernel, holds the images;
+ * ready; KGraphics, inside the kernel, holds the images;
  * TinyLibDraw builds and parses the messages. The programs that run in
  * a window (paint in C, TinyKernel/user/paint.c, and TinyAppTetris
  * on TinyLibPlayground) also run without it.

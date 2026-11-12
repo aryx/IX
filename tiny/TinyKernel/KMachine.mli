@@ -60,6 +60,7 @@ val net_buf : int
 val speaker_dev : int
 val ring_at : int
 val disk_dev : int
+val disk2_dev : int
 val date_dev : int
 val seed_dev : int
 

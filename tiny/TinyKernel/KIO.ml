@@ -97,8 +97,8 @@ let read f a n =
           o.off <- o.off + k;
           Some k
       (* a disk's file, from its blocks to the program's memory *)
-      | Disk (r, i) when not (fs_is_dir r i) ->
-          let k = fs_read_at r i o.off a n in
+      | Disk (fs, r, i) when not (fs_is_dir fs r i) ->
+          let k = fs_read_at fs r i o.off a n in
           o.off <- o.off + k;
           Some k
       | Data d ->
@@ -249,8 +249,8 @@ let write f a n =
           d.dtime <- date ();
           o.off <- at + n;
           Some n
-      | Disk (0, i) when o.writes ->
-          (try fs_write_at i o.off a n; o.off <- o.off + n; Some n
+      | Disk (fs, 0, i) when o.writes ->
+          (try fs_write_at fs i o.off a n; o.off <- o.off + n; Some n
            with Disk_full -> Some (-1))
       | _ -> Some (-1))
   (* messages, whole; a bad one is said on the console, the write -1 *)

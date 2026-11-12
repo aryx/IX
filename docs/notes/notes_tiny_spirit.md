@@ -103,7 +103,7 @@ tests.
   is its own, which no git reads. The hash is the idea; the
   compression is not, and it is why tiny-vcs links `Zlib`
   (`lib_compression/`; plan_tiny_self_hosting.md drops it).
-- **`TinyKernel/user/` has C programs** (`sh.c`, `cat.c`, `ls.c`...) on
+- **`user/` has C programs** (`sh.c`, `cat.c`, `ls.c`...) on
   a kernel whose point is ML. They show that the kernel's calls do not
   depend on the language; a shell in ML would show the other half.
 - **`TinyMachineWeb.ml`** is a second host for the same machine, by

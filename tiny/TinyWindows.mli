@@ -104,7 +104,7 @@
  * TinyKernel provides the five descriptors, the pipes, the box and
  * ready; KGraphics, inside the kernel, holds the images;
  * TinyLibDraw builds and parses the messages. The programs that run in
- * a window (paint in C, TinyKernel/user/paint.c, and TinyAppTetris
+ * a window (paint in C, user/paint.c, and TinyAppTetris
  * on TinyLibPlayground) also run without it.
  *
  * exercises:

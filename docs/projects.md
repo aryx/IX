@@ -97,7 +97,7 @@ things: a tool runs on the host, the others on tiny-machine.
   `runtime/ml/mlsys.c`, and `runtime/` for the start and the
   division.
 - **A program in C on tiny-machine** (`sh`, `mltests`, the network's
-  `ping`, `get`, `put`, `httpd`) is one file of `TinyKernel/user/`,
+  `ping`, `get`, `put`, `httpd`) is one file of `user/`,
   with `runtime/` (its library, its start, the division) and
   `runtime/c/` (`sys.s`, the system calls; `draw.c`, `net.c`;
   `user.h`).

@@ -73,7 +73,7 @@ COLUMNS = [
     ]),
     ("A program in C, on tiny-machine", "sh, ls, cat, paint, ping, get...  (tiny-cc)", [
         ("The program", "C", [
-            "tiny/TinyKernel/user/sh.c, ls.c,",
+            "tiny/user/sh.c, ls.c,",
             "paint.c...: one file each"]),
         ("What some of them add", "C", [
             "runtime/c/draw.c, draw.h: the",

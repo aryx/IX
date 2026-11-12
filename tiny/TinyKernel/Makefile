@@ -81,8 +81,8 @@
 # build, below), and makes the disk of the sources, disk.img; then runs
 # the machine on them, and its tests.
 #
-# user/ has the programs in C, a file each (an ML one's file, one line,
-# its module's main run by TinyLibSystem.main, is ../user/'s). What a C
+# ../user/ has the programs' main files: in C a program each, in ML one
+# line, its module's main run by TinyLibSystem.main. What a C
 # program is linked with to call this kernel (user.h, sys.s, draw.c,
 # net.c) is ../runtime/c/'s; an ML one's, ../runtime/ml/'s mlsys.c and
 # ../TinyLibSystem/tinykernel/TinyLibSystem.ml, beside the other

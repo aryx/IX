@@ -132,26 +132,35 @@ type file_kind = Fs_dir | Fs_file
  * the block: the kernel's disk device (its commands 1 and 2), or the
  * test's bytes *)
 type disk_io = Disk_read | Disk_write
-val fs_io : (int -> int -> disk_io -> unit) ref
+
+(* a file system, a disk mounted, given to each function below, as
+ * Linux's super_block (old: one disk's state, in this module) *)
+type fs
+
+(* the number a disk was mounted with (0 the first, 1 the second) *)
+val fs_disk : fs -> int
 
 (* raised by a write when no block is free, even after a collection *)
 exception Disk_full
 
-(* [fs_mount n]: the file system of a disk of n blocks, made when the
- * disk is blank; the last boot's tree becomes a snapshot. A disk made
- * bigger than its file system (tiny-mkfs's disk.img, 4 MB, grown to 64
- * by truncate -s) is used whole *)
-val fs_mount : int -> unit
+(* [fs_mount io k n]: the file system of disk k (0 the first, 1 the
+ * second) of n blocks, its transfers io, made when the disk is blank;
+ * the last boot's tree becomes a snapshot. A disk made bigger than its
+ * file system (tiny-mkfs's disk.img, grown to 64 MB by truncate -s) is
+ * used whole *)
+val fs_mount : (int -> int -> disk_io -> unit) -> int -> int -> fs
 
 (* the changes since the last commit, written to the disk as a whole
- * (nothing to do when there are none) *)
-val fs_commit : unit -> unit
+ * (nothing to do when there are none); every disk mounted's (Unix's
+ * sync) *)
+val fs_commit : fs -> unit
+val fs_sync : unit -> unit
 
 (* the snapshots: each one's tree number and the boot it was left by *)
-val fs_snapshots : unit -> (tree * int) list
+val fs_snapshots : fs -> (tree * int) list
 
 (* the free blocks, counted after a collection *)
-val fs_free : unit -> int
+val fs_free : fs -> int
 
 (* A file is an inode's number in a tree: tree 0 is the live one, which
  * can be changed, trees 1 to 14 the snapshots. Inode 1 is the root
@@ -159,41 +168,41 @@ val fs_free : unit -> int
 
 (* [fs_kind r n]: inode n's type, size and links; [fs_date r n]: its
  * last write's date, seconds since 2000 *)
-val fs_kind : tree -> inode -> file_kind * int * int
-val fs_date : tree -> inode -> int
+val fs_kind : fs -> tree -> inode -> file_kind * int * int
+val fs_date : fs -> tree -> inode -> int
 
 (* what a write or a new file gets as its date: the kernel's clock *)
 val fs_clock : (unit -> int) ref
-val fs_is_dir : tree -> inode -> bool
+val fs_is_dir : fs -> tree -> inode -> bool
 
 (* [fs_lookup r d name]: the inode under name in directory d (old: 0 for
  * none) *)
-val fs_lookup : tree -> inode -> string -> inode option
+val fs_lookup : fs -> tree -> inode -> string -> inode option
 
 (* the names and inodes of a directory, in the order they were made *)
-val fs_entries : tree -> inode -> (string * inode) list
+val fs_entries : fs -> tree -> inode -> (string * inode) list
 
 (* [fs_read_at r n off a len]: up to len bytes of the file from off, to
  * memory at a; how many there were *)
-val fs_read_at : tree -> inode -> int -> int -> int -> int
+val fs_read_at : fs -> tree -> inode -> int -> int -> int -> int
 
 (* the whole file, as a string *)
-val fs_contents : tree -> inode -> string
+val fs_contents : fs -> tree -> inode -> string
 
 (* [fs_write_at n off a len]: len bytes from memory at a, to the live
  * file n at off (Disk_full when there is no room) *)
-val fs_write_at : inode -> int -> int -> int -> unit
+val fs_write_at : fs -> inode -> int -> int -> int -> unit
 
 (* the file emptied *)
-val fs_truncate : inode -> unit
+val fs_truncate : fs -> inode -> unit
 
 (* [fs_create d name kind]: a new file or directory under name in d;
  * its inode *)
-val fs_create : inode -> string -> file_kind -> inode
+val fs_create : fs -> inode -> string -> file_kind -> inode
 
 (* [fs_link d name n]: a second name for file n, in d *)
-val fs_link : inode -> string -> inode -> unit
+val fs_link : fs -> inode -> string -> inode -> unit
 
 (* [fs_unlink d name]: the name removed from d, and the inode with its
  * last name *)
-val fs_unlink : inode -> string -> unit
+val fs_unlink : fs -> inode -> string -> unit

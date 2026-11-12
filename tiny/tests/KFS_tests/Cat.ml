@@ -14,18 +14,18 @@ let () =
       let disk =
         Bytes.of_string (In_channel.with_open_bin file In_channel.input_all)
       in
-      KFS.fs_io := (fun b a io ->
-        match io with
-        | KFS.Disk_read ->
-            Bytes.blit disk (b * 1024) KRaw.mem a 1024
-        | Disk_write -> Bytes.blit KRaw.mem a disk (b * 1024) 1024);
-      KFS.fs_mount (Bytes.length disk / 1024);
+      let fs =
+        KFS.fs_mount (fun b a io ->
+            match io with
+            | KFS.Disk_read -> Bytes.blit disk (b * 1024) KRaw.mem a 1024
+            | Disk_write -> Bytes.blit KRaw.mem a disk (b * 1024) 1024)
+          0 (Bytes.length disk / 1024) in
       let inode =
         List.fold_left (fun d name ->
             if d = 0 || name = "" then d
-            else Option.value ~default:0 (KFS.fs_lookup 0 d name))
+            else Option.value ~default:0 (KFS.fs_lookup fs 0 d name))
           1 (String.split_on_char '/' path) in
 
       if inode = 0 then (prerr_endline (path ^ ": not on the disk"); exit 1);
-      print_string (KFS.fs_contents 0 inode)
+      print_string (KFS.fs_contents fs 0 inode)
   | _ -> prerr_endline "usage: Cat.exe disk path"; exit 2

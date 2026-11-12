@@ -168,7 +168,9 @@ let header bytes =
 
 (* a file of the disk as a program's, to share its text (KMemory's
  * key; its stamp is its date and size) *)
-let disk_key r i = "disk " ^ string_of_int r ^ " " ^ string_of_int i
+let disk_key fs r i =
+  "disk " ^ string_of_int (fs_disk fs) ^ " " ^ string_of_int r ^ " "
+  ^ string_of_int i
 
 (* Loads a file's program into p, in a partition of the size it asks for
  * (rounded up to whole megabytes), from address 0. Its arguments are put
@@ -181,11 +183,11 @@ let load_prog p node argv =
   let key, date =
     match node with
     | Some (Rom (at, _)) -> "rom " ^ string_of_int at, ""
-    | Some (Disk (r, i)) -> disk_key r i, string_of_int (fs_date r i)
+    | Some (Disk (fs, r, i)) -> disk_key fs r i, string_of_int (fs_date fs r i)
     | _ -> "", "" in
   let node =
     match node with
-    | Some (Disk (r, i)) -> Some (Data (data (fs_contents r i)))
+    | Some (Disk (fs, r, i)) -> Some (Data (data (fs_contents fs r i)))
     | _ -> node in
   let n =
     match node with
@@ -310,18 +312,18 @@ let sys_open p =
         let n = Data { (data "") with dtime = date () } in
         d := !d @ [ last, n ];
         n
-    | None, Some (Disk (0, i), last)
+    | None, Some (Disk (fs, 0, i), last)
       when mode land o_create <> 0 && String.length last <= 64 ->
-        Disk (0, fs_create i last Fs_file)
+        Disk (fs, 0, fs_create fs i last Fs_file)
     | _ -> raise Bad in
   (* (a file of the image opened to be written is in memory from now on;
    * or a file of the disk, when its directory is there too: /bin's) *)
   let node =
     match node, dir_of ns with
-    | Rom (at, n), Some (Disk (0, i), last) when writes ->
-        let j = fs_create i last Fs_file in
-        if mode land o_trunc = 0 then fs_write_at j 0 at n;
-        Disk (0, j)
+    | Rom (at, n), Some (Disk (fs, 0, i), last) when writes ->
+        let j = fs_create fs i last Fs_file in
+        if mode land o_trunc = 0 then fs_write_at fs j 0 at n;
+        Disk (fs, 0, j)
     | Rom (at, n), Some (Dir d, last) when writes ->
         let made =
           Data { (data (if mode land o_trunc <> 0 then "" else k_string at n))
@@ -332,15 +334,15 @@ let sys_open p =
     | _ -> node in
   (* (a file of the disk written: no exec shares the text it had) *)
   (match node with
-   | Disk (r, i) when writes -> mem_forget (disk_key r i)
+   | Disk (fs, r, i) when writes -> mem_forget (disk_key fs r i)
    | _ -> ());
   (* (a snapshot is read only) *)
   (match node with
    | Dir _ when writes -> raise Bad
-   | Disk (r, i) when writes && (r <> 0 || fs_is_dir r i) -> raise Bad
+   | Disk (fs, r, i) when writes && (r <> 0 || fs_is_dir fs r i) -> raise Bad
    | Data d when mode land o_trunc <> 0 ->
        d.dbytes <- Bytes.make 0 ' '; d.dsize <- 0; d.dtime <- date ()
-   | Disk (_, i) when writes && mode land o_trunc <> 0 -> fs_truncate i
+   | Disk (fs, _, i) when writes && mode land o_trunc <> 0 -> fs_truncate fs i
    | _ -> ());
   result p (fdalloc p (match node with
     | Tty -> Console
@@ -427,8 +429,8 @@ let sys_mkdir p =
   match walk !top ns, dir_of ns with
   | None, Some (Dir d, last) when String.length last <= 64 ->
       d := !d @ [ last, Dir (ref []) ]; result p 0
-  | None, Some (Disk (0, i), last) when String.length last <= 64 ->
-      ignore (fs_create i last Fs_dir); result p 0
+  | None, Some (Disk (fs, 0, i), last) when String.length last <= 64 ->
+      ignore (fs_create fs i last Fs_dir); result p 0
   | _ -> raise Bad
 
 (* a name removed; a directory only if empty *)
@@ -440,11 +442,11 @@ let sys_unlink p =
        | Some (Disk _) -> raise Bad
        | Some _ -> d := List.filter (fun (n, _) -> n <> last) !d; result p 0
        | None -> raise Bad)
-  | Some (Disk (0, i), last) ->
-      (match fs_lookup 0 i last with
+  | Some (Disk (fs, 0, i), last) ->
+      (match fs_lookup fs 0 i last with
        | None -> raise Bad
-       | Some j when fs_is_dir 0 j && fs_entries 0 j <> [] -> raise Bad
-       | _ -> fs_unlink i last; result p 0)
+       | Some j when fs_is_dir fs 0 j && fs_entries fs 0 j <> [] -> raise Bad
+       | _ -> fs_unlink fs i last; result p 0)
   | _ -> raise Bad
 
 (* link(old, new): a second name for a file, in the directory new is in:
@@ -457,9 +459,9 @@ let sys_link p =
   and ns = names p.cwd (ustr p (reg p 2)) in
   match old, walk !top ns, dir_of ns with
   | Some n, _, _ when is_dir n -> raise Bad
-  | Some (Disk (0, j)), None, Some (Disk (0, i), last)
-    when String.length last <= 64 ->
-      fs_link i last j; result p 0
+  | Some (Disk (fs, 0, j)), None, Some (Disk (dfs, 0, i), last)
+    when fs_disk fs = fs_disk dfs && String.length last <= 64 ->
+      fs_link fs i last j; result p 0
   | Some (Disk _), _, _ -> raise Bad
   | Some node, None, Some (Dir d, last) when String.length last <= 64 ->
       d := !d @ [ last, node ]; result p 0
@@ -553,7 +555,7 @@ let sys_seek p =
         match o.node with
         | Rom (_, n) -> n
         | Data d -> d.dsize
-        | Disk (r, i) -> let _, n, _ = fs_kind r i in n
+        | Disk (fs, r, i) -> let _, n, _ = fs_kind fs r i in n
         | n -> String.length (contents n) in
       let off =
         reg p 2
@@ -648,7 +650,7 @@ let syscall p n =
     | 28 -> sys_spawn p
     | _ -> result p (-1)
   with Bad | No_room -> result p (-1) | Disk_full -> result p (-1));
-  if n <> 1 then fs_commit ()
+  if n <> 1 then fs_sync ()
 
 (* A traced process that stops at its calls (trace) stops before each,
  * its tracer told the call's number and its first three registers,

@@ -55,33 +55,41 @@ let () =
    * of the disk's root, of /boot and /dump, and of the image's files.
    * Its snapshots are in /dump, each under the number of the boot that
    * left it. Its /bin and /usr/glenda are made at its first boot, and the
-   * first shell starts in /usr/glenda. *)
+   * first shell starts in /usr/glenda. A second disk, the sources', is
+   * /src. A disk's transfers are its device's: the block, the address,
+   * the command (1 the block to memory, 2 back), its status cleared *)
+  let disk_io dev b a io =
+    poke dev b;
+    poke (dev + 4) a;
+    poke (dev + 8) (match io with Disk_read -> 1 | Disk_write -> 2);
+    poke (dev + 12) 0 in
+  fs_clock := date;
   let blocks = peek disk_dev in
   if blocks > 0 then begin
-    fs_io := (fun b a io ->
-      poke disk_dev b;
-      poke (disk_dev + 4) a;
-      (* (the device's commands: 1 the block to memory, 2 back) *)
-      poke (disk_dev + 8) (match io with Disk_read -> 1 | Disk_write -> 2);
-      poke (disk_dev + 12) 0);
-    fs_clock := date;
-    fs_mount blocks;
+    let fs = fs_mount (disk_io disk_dev) 0 blocks in
     let made d name =
-      match fs_lookup 0 d name with
-      | None -> fs_create d name Fs_dir
+      match fs_lookup fs 0 d name with
+      | None -> fs_create fs d name Fs_dir
       | Some j -> j in
     ignore (made 1 "bin");
     ignore (made (made 1 "usr") "glenda");
-    fs_commit ();
+    fs_commit fs;
     let dumps =
-      List.map (fun (r, boot) -> string_of_int boot, Disk (r, 1))
-        (fs_snapshots ()) in
-    top := Union [ Disk (0, 1);
-                   Dir (ref [ "boot", root; "dump", Dir (ref dumps) ]);
+      List.map (fun (r, boot) -> string_of_int boot, Disk (fs, r, 1))
+        (fs_snapshots fs) in
+    let blocks2 = peek disk2_dev in
+    let src =
+      if blocks2 = 0 then []
+      else [ "src", Disk (fs_mount (disk_io disk2_dev) 1 blocks2, 0, 1) ] in
+    top := Union [ Disk (fs, 0, 1);
+                   Dir (ref ([ "boot", root; "dump", Dir (ref dumps) ] @ src));
                    root ];
     puts ("tiny-kernel: / on a disk of " ^ string_of_int blocks ^ " KB, "
-          ^ string_of_int (fs_free ()) ^ " KB free; "
-          ^ string_of_int (List.length dumps) ^ " snapshots in /dump\n")
+          ^ string_of_int (fs_free fs) ^ " KB free; "
+          ^ string_of_int (List.length dumps) ^ " snapshots in /dump"
+          ^ (if blocks2 = 0 then ""
+             else "; /src on a disk of " ^ string_of_int blocks2 ^ " KB")
+          ^ "\n")
   end;
   (* the first process: /bin/sh, the console its 0, 1 and 2; and for the
    * programs it runs, which inherit them, the screen its 3 (a

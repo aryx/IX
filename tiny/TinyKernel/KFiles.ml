@@ -21,8 +21,9 @@ open KMachine
  * written: the programs, a megabyte of them, are then not the
  * collector's to copy at each collection (old: each a string, Data; a
  * collection was 3 million instructions).
- * A file or a directory on the disk (KFS.ml) is a tree and an
- * inode's number: tree 0 is the live one, the others are the snapshots.
+ * A file or a directory on a disk (KFS.ml) is its disk's file system,
+ * a tree and an inode's number: tree 0 is the live one, the others are
+ * the snapshots.
  * A union is several directories seen as one, as Plan 9's bind -a makes:
  * a name is looked up in each in turn, and what is made goes in the
  * first. A file written in memory is its bytes and its size, the bytes
@@ -38,7 +39,7 @@ type node =
   | Pointer
   | Speaker
   | Ps
-  | Disk of int * int
+  | Disk of fs * tree * inode
   | Union of node list
 and data = { mutable dbytes : bytes; mutable dsize : int; mutable dtime : int }
 
@@ -151,7 +152,7 @@ let names cwd path =
 let is_dir node =
   match node with
   | Dir _ | Union _ -> true
-  | Disk (r, i) -> fs_is_dir r i
+  | Disk (fs, r, i) -> fs_is_dir fs r i
   | _ -> false
 
 (* In a union, the name is looked up in each directory. The first one
@@ -162,10 +163,10 @@ let rec walk node ns =
   | [], _ -> Some node
   | n :: rest, Dir d ->
       (match List.assoc_opt n !d with Some c -> walk c rest | None -> None)
-  | n :: rest, Disk (r, i) when fs_is_dir r i ->
-      (match fs_lookup r i n with
+  | n :: rest, Disk (fs, r, i) when fs_is_dir fs r i ->
+      (match fs_lookup fs r i n with
        | None -> None
-       | Some j -> walk (Disk (r, j)) rest)
+       | Some j -> walk (Disk (fs, r, j)) rest)
   | n :: rest, Union l ->
       (match List.fold_left (fun acc m ->
          match walk m [ n ] with Some c -> acc @ [ c ] | None -> acc) [] l with
@@ -181,8 +182,8 @@ let rec walk node ns =
 let rec children node =
   match node with
   | Dir d -> !d
-  | Disk (r, i) ->
-      List.map (fun (name, j) -> name, Disk (r, j)) (fs_entries r i)
+  | Disk (fs, r, i) ->
+      List.map (fun (name, j) -> name, Disk (fs, r, j)) (fs_entries fs r i)
   | Union l ->
       List.fold_left (fun acc m ->
         acc @ List.filter (fun (name, _) ->
@@ -228,13 +229,13 @@ let entry name n =
     | Dir _ -> 1, 0, links n
     | Data d -> 2, d.dsize, links n
     | Rom (_, k) -> 2, k, links n
-    | Disk (r, i) ->
-        let k, size, l = fs_kind r i in
+    | Disk (fs, r, i) ->
+        let k, size, l = fs_kind fs r i in
         (match k with Fs_dir -> 1 | Fs_file -> 2), size, l
     | Union _ -> 1, 0, 1
     | _ -> 3, 0, links n in
   let date =
-    match n with Data d -> d.dtime | Disk (r, i) -> fs_date r i | _ -> 0 in
+    match n with Data d -> d.dtime | Disk (fs, r, i) -> fs_date fs r i | _ -> 0 in
   name ^ String.make (64 - String.length name) '\000'
   ^ word t ^ word l ^ word size ^ word date
 
@@ -247,7 +248,7 @@ let contents node =
   | Rom (at, n) -> k_string at n
   | Tty | Screen | Pointer | Speaker -> ""
   | Ps -> !ps_hook ()
-  | Disk (r, i) when not (fs_is_dir r i) -> fs_contents r i
+  | Disk (fs, r, i) when not (fs_is_dir fs r i) -> fs_contents fs r i
   (* (made once: old, acc ^ entry, the listing copied again at each name,
    * quadratic: ls -l of /bin, 55 names each listing it twice, took 7
    * minutes when the entries went from 40 bytes to 80) *)

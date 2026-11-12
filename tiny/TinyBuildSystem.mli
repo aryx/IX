@@ -28,7 +28,7 @@
  * mk's two wildcards, % and & (a stem with no / or .), for two kinds of
  * rules. A rule whose recipe is the same everywhere is written once
  * with %, and its stem crosses directories: tiny/Buildfile's %.o: %.c
- * makes runtime/c/libc.o and TinyKernel/user/get.o, and its %.tmi: %.o
+ * makes runtime/c/libc.o and user/get.o, and its %.tmi: %.o
  * makes TinyML/Lexer.tmi. A rule whose recipe depends on the directory
  * is written with &: tiny-ml's parts are compiled with -I TinyML and
  * the top's units without it, so TinyML/&.o and &.o each make their own

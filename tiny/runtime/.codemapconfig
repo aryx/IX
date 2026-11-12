@@ -64,13 +64,13 @@
   skeletons: [
     { name: 'The C runtime: libc.h declared, libc.c made, start.s below',
       bones: [
-        { at: '../TinyKernel/user/', role: "tiny-kernel's C programs, linked with it" },
+        { at: '../user/', role: "tiny-kernel's C programs, linked with it" },
         { at: 'c/libc.h', role: 'what a program includes' },
         { at: 'c/libc.c', role: 'print, the strings, the bump heap' },
         { at: 'c/libc.h:def:write', role: "start.s's system call (assembly)" },
       ],
       joints: [
-        { from: '../TinyKernel/user/', to: 'c/libc.h', say: 'print, strlen...: libc.s linked in' },
+        { from: '../user/', to: 'c/libc.h', say: 'print, strlen...: libc.s linked in' },
         { from: 'c/libc.h', to: 'c/libc.c', say: 'defined by' },
         { from: 'c/libc.c', to: 'c/libc.h:def:write', say: 'bytes to fd 1' },
       ],

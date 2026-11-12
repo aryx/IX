@@ -54,9 +54,11 @@ let net_buf = 0xb50000
  * read), and its ring, in the megabytes nothing else uses *)
 let speaker_dev = -52
 let ring_at = 0xc00000
-(* the disk's four words: a block, an address, a command, a status; the
- * first, read, is the disk's size in blocks (0: no disk) *)
+(* a disk's four words: a block, an address, a command, a status; the
+ * first, read, is the disk's size in blocks (0: no disk). The first
+ * disk's, the root's, and the second's, the sources' *)
 let disk_dev = -32
+let disk2_dev = -80
 (* the date at the boot, seconds since 2000-01-01 (the machine's) *)
 let date_dev = -56
 (* the seed, for the programs' first random numbers (the machine's;
@@ -102,4 +104,4 @@ let tick = let r = k_rate () in if r < 400 then 20000 else r / 400
 let puts s =
   for i = 0 to String.length s - 1 do pokeb cons_out (Char.code s.[i]) done
 (* (what the disk has not been told yet is told first) *)
-let halt status = fs_commit (); poke halt_dev status
+let halt status = fs_sync (); poke halt_dev status

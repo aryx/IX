@@ -160,7 +160,7 @@
  * except the simplest: kill(pid) ends a process as a fault does (with
  * status -1), and ^C at the console kills every process except the
  * shell. The system calls are specific to this kernel (its programs
- * are in user/ and TinyKernel/user/), but t6's cat, echo, ls, wc,
+ * are in ../user/), but t6's cat, echo, ls, wc,
  * mkdir and rm run unchanged, because they use only calls the two kernels have in
  * common.
  *

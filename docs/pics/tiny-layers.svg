@@ -90,7 +90,7 @@
 <rect x="646" y="150" width="296" height="74" rx="8" fill="#ffffff" stroke="#e16f24" stroke-width="1.5"/>
 <text x="660" y="173" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The program</text>
 <text x="930" y="173" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">C</text>
-<text x="660" y="194" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyKernel/user/sh.c, ls.c,</text>
+<text x="660" y="194" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/user/sh.c, ls.c,</text>
 <text x="660" y="211" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">paint.c...: one file each</text>
 <line x1="794" y1="224" x2="794" y2="242" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <rect x="646" y="244" width="296" height="108" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.5"/>

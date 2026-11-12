@@ -2,9 +2,10 @@
  * the disk's (KFS) and unions of them, looked up by a path's
  * names; and what a process's descriptor can be, an open file.
  *
- *     top ── Union ── Disk (0, 1)              the disk's root
- *               ├──── Dir: boot (root), dump   the image's, the snapshots
- *               └──── root: Dir                 bin, src, examples, lib,
+ *     top ── Union ── Disk (fs, 0, 1)          the first disk's root
+ *               ├──── Dir: boot (root), dump,  the image's, the snapshots,
+ *               │          src (Disk (fs2, 0, 1))  the second disk's root
+ *               └──── root: Dir                 bin, examples, lib,
  *                       └── dev: Tty Screen     dev
  *                                Pointer Speaker
  *
@@ -41,7 +42,7 @@ type node =
   | Pointer
   | Speaker
   | Ps
-  | Disk of int * int
+  | Disk of KFS.fs * KFS.tree * KFS.inode
   | Union of node list
 and data = { mutable dbytes : bytes; mutable dsize : int; mutable dtime : int }
 

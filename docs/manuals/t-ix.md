@@ -713,7 +713,7 @@ answer's bytes; `ready` waits for one with a limit, as `ping` does
 (three questions, each waited for a second).
 
 A call that fails answers -1. Its C programs are in
-`tiny/TinyKernel/user/`; what they are linked with, `user.h` and
+`tiny/user/`; what they are linked with, `user.h` and
 `sys.s`, is in `tiny/runtime/c/`, and an ML program's side of
 the kernel in `tiny/TinyLibSystem/tinykernel/` (beside the interfaces, `tiny/TinyLibSystem/`).
 

@@ -239,7 +239,7 @@ tiny_self() {
   timeout 120 $m -d $o/self.img $o/boot.img > $o/self.out <<'END'
 rc
 mkdir q; cd q
-cc -I /src/runtime/c -o ping.o /src/TinyKernel/user/ping.c
+cc -I /src/runtime/c -o ping.o /src/user/ping.c
 ml -c -o Stdlib.o /src/TinyLibCore/Stdlib.ml
 cmp Stdlib.tmi /lib/ml/Stdlib.tmi && echo Stdlib.tmi: the host
 echo 'int main(void) { return 6 * 7; }' > m.c
@@ -254,7 +254,7 @@ END
   grep -q 'Stdlib.tmi: the host' $o/self.out &&
     grep -q 'm: status 42' $o/self.out ||
     { echo "tiny-kernel: not the host's Stdlib, or m not run:"; cat $o/self.out; return 1; }
-  $cat $o/self.img usr/glenda/q/ping.o | cmp - $o/src/TinyKernel/user/ping.o ||
+  $cat $o/self.img usr/glenda/q/ping.o | cmp - $o/src/user/ping.o ||
     { echo "tiny-kernel: ping.o not the host's"; return 1; }
 }
 job "t-ix built in tiny-kernel: cc, as, ml, ld, a part" tiny_self

@@ -374,26 +374,26 @@ bigmem: $CRT $MLRT bigmem.start.o $STDLIB $BIGMEM_UNITS $MLEND
 # sh, the first shell (rc is the one used); mltests, a test of ML's
 # calls; ping, get, put and httpd, the network's (get and put with
 # net.c, which dials a name); paint, which draws (with draw.c)
-TinyKernel/user/sh.o: TinyKernel/user/sh.c runtime/c/user.h
-sh: $CRT TinyKernel/user/sh.o
+user/sh.o: user/sh.c runtime/c/user.h
+sh: $CRT user/sh.o
 	$LD -map -s -n -o $target $prereq
-TinyKernel/user/mltests.o: TinyKernel/user/mltests.c runtime/c/user.h
-mltests: $CRT TinyKernel/user/mltests.o
+user/mltests.o: user/mltests.c runtime/c/user.h
+mltests: $CRT user/mltests.o
 	$LD -map -s -n -o $target $prereq
-TinyKernel/user/ping.o: TinyKernel/user/ping.c runtime/c/user.h
-ping: $CRT TinyKernel/user/ping.o
+user/ping.o: user/ping.c runtime/c/user.h
+ping: $CRT user/ping.o
 	$LD -map -s -n -o $target $prereq
-TinyKernel/user/get.o: TinyKernel/user/get.c runtime/c/user.h
-get: $CRT runtime/c/net.o TinyKernel/user/get.o
+user/get.o: user/get.c runtime/c/user.h
+get: $CRT runtime/c/net.o user/get.o
 	$LD -map -s -n -o $target $prereq
-TinyKernel/user/put.o: TinyKernel/user/put.c runtime/c/user.h
-put: $CRT runtime/c/net.o TinyKernel/user/put.o
+user/put.o: user/put.c runtime/c/user.h
+put: $CRT runtime/c/net.o user/put.o
 	$LD -map -s -n -o $target $prereq
-TinyKernel/user/httpd.o: TinyKernel/user/httpd.c runtime/c/user.h
-httpd: $CRT TinyKernel/user/httpd.o
+user/httpd.o: user/httpd.c runtime/c/user.h
+httpd: $CRT user/httpd.o
 	$LD -map -s -n -o $target $prereq
-TinyKernel/user/paint.o: TinyKernel/user/paint.c runtime/c/user.h runtime/c/draw.h
-paint: $CRT runtime/c/draw.o TinyKernel/user/paint.o
+user/paint.o: user/paint.c runtime/c/user.h runtime/c/draw.h
+paint: $CRT runtime/c/draw.o user/paint.o
 	$LD -map -s -n -o $target $prereq
 
 #############################################################################
@@ -509,7 +509,6 @@ clean:
 	@{ cd TinyLibCore && $BUILD clean }
 	@{ cd TinyKernel && $BUILD clean }
 	rm -f *.o *.tmi TinyBrowser/*.o TinyBrowser/*.tmi TinyC/*.o TinyC/*.tmi \
-	    TinyKernel/user/*.o TinyKernel/user/*.tmi \
 	    TinyLibSystem/tinykernel/*.o TinyLibSystem/tinykernel/*.tmi \
 	    TinyML/*.o TinyML/*.tmi TinyOffice/*.o TinyOffice/*.tmi \
 	    runtime/c/*.o runtime/ml/*.o \

@@ -1,6 +1,6 @@
 rc
 cd /src/runtime/c; cc -o /libc.o libc.c
-cd /src/TinyKernel/user; cc -I /lib/c -o /ping.o ping.c
+cd /src/user; cc -I /lib/c -o /ping.o ping.c
 cd /
 as -o start.o src/runtime/c/start.s
 as -o udivmod.o src/runtime/c/udivmod.s

@@ -414,7 +414,7 @@ LINES = [("hosts", ["sdl/", "tty/", "web/"]),
 GROUP_OF = {"the reference kernels": "kernels/",
             "editors/drscheme/, turbopascal/": "languages/"}
 SHORT = {"the reference kernels": "the reference ones",
-         "tiny-kernel's sh.c, mltests.c": "TinyKernel/user/sh.c, mltests.c"}
+         "tiny-kernel's sh.c, mltests.c": "user/sh.c, mltests.c"}
 
 # What is not counted in m-ix, but said at the end, each with its
 # lines: alternatives and options, which ix builds and runs the same
@@ -514,7 +514,7 @@ APART = [
     # (the author, 2026-10-17: "for make loc we should not count sh.c and
     # mltests.c under TinyKernel/"; rc is t-ix's shell, TinyShell.ml)
     ("tiny-kernel's sh.c, mltests.c", "its first shell, in C, before rc (TinyShell.ml), still the console's; and the test of its ML programs' calls",
-     lambda dirs, path: path in ("tiny/TinyKernel/user/sh.c", "tiny/TinyKernel/user/mltests.c")),
+     lambda dirs, path: path in ("tiny/user/sh.c", "tiny/user/mltests.c")),
     # (the author, 2026-10-18: "skip TinyEditorLine.ml in make loc since
     # we really need just one editor, and TinyEditorScreen.ml is arguably
     # more what people expect from an editor")

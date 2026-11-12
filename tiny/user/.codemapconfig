@@ -1,10 +1,14 @@
 // tiny/user/: what the code map says of it (the code map: tinybox
 // codemap, ~/github/ocaml-elm-playground; its guidelines:
-// docs/claude_notes/codemapconfig_guidelines.md there). The file of
-// each ML program, one line, TinyLibSystem.main running its module's
-// main (../TinyOffice.ml...), the same file on both systems: on tiny-kernel linked with
-// ../TinyLibSystem/tinykernel/ and ../TinyLibCore/ (../TinyKernel/Makefile),
-// on the host built by sdl/'s dune in a window (../TinyLibSystem/sdl/).
+// docs/claude_notes/codemapconfig_guidelines.md there). Each user
+// program's main file. In ML, one line, TinyLibSystem.main running its
+// module's main (../TinyOffice.ml...), the same file on both systems: on
+// tiny-kernel linked with ../TinyLibSystem/tinykernel/, ../runtime/ml/
+// and ../TinyLibCore/ (../TinyKernel/Makefile), on the host built by
+// sdl/'s dune in a window (../TinyLibSystem/sdl/). In C, the whole
+// program (sh, get, put, ping, httpd, paint), linked with ../runtime/c/;
+// mltests.c is a test, off the map. cat, ls, wc and the other utilities
+// are ../TinyUtilities.ml's (bin/utils).
 local wrapper(file, prog, role) = {
   name: file + ': ' + role,
   bones: [
@@ -15,7 +19,7 @@ local wrapper(file, prog, role) = {
 };
 {
   generated: { by: 'claude-opus-5-5', on: '2026-11-10' },
-  summary: "Each ML program's file, one line running its module's main: built for tiny-kernel, and for the host in a window (sdl/).",
+  summary: "Each user program's main file: in ML one line running its module's main, built for tiny-kernel and for the host in a window (sdl/); in C the whole program: a shell of fork and exec, the network's, and paint.",
   files: {
     'calc.ml': { digest: '9645ef5e8b7a', summary: "calc: TinyAppCalculator's main, the calculator on TinyLibGUI." },
     'temp.ml': { digest: 'b0b89f237262', summary: "temp: TinyAppTemperature's main, its two fields on TinyLibGUI." },
@@ -28,6 +32,68 @@ local wrapper(file, prog, role) = {
     'debug.ml': { digest: 'c5231747dd1c', summary: "debug: TinyDebugger's main." },
     'trace.ml': { digest: 'ed2e6e1f72b3', summary: "trace: TinyTracer's main." },
     'bigmem.ml': { digest: 'e2af6988b20d', summary: "bigmem: a test of a partition bigger than 1 MB, 3 MB of strings kept." },
+    'sh.c': { digest: '82955040d236',
+      summary: "The shell, Unix's way: a command a fork, its descriptors moved in the copy (close then dup), then exec; the unused pipe end closed.",
+      capitals: [
+        { at: 'def:command', say: 'fork, move the descriptors, exec' },
+      ],
+      important: [
+        { at: 'comment:"Unix\'s way: a command is a fork"', say: "t6's sh, with spawn, has no end to forget", weight: 2 },
+        { at: 'def:move', say: 'close then dup: the lowest free descriptor is the one just closed', weight: 2 },
+        { at: 'def:command', weight: 3 },
+        { at: 'def:pipeline', weight: 2 },
+        { at: 'def:main', weight: 1 },
+      ],
+      related: ['../TinyKernel/steps/t6/user/sh.c', '../TinyShell.ml'],
+    },
+    'get.c': { digest: 'fa5d73a11f4d',
+      summary: "get: a document of another machine's, by Gopher over IL (port 70), or HTTP/1.0's first line on another port.",
+      important: [
+        { at: 'comment:"That is Gopher (1991), over IL where it had TCP"', weight: 2 },
+        { at: 'def:main', weight: 2 },
+      ],
+      related: ['../runtime/c/net.c', 'put.c'],
+    },
+    'put.c': { digest: 'acc3cdb96d19',
+      summary: "put: a file kept at the wire's other end, get's way back: its size first, so it is never all in memory.",
+      important: [
+        { at: 'comment:"The size comes first"', say: 'read twice: counted, then sent', weight: 2 },
+        { at: 'def:main', weight: 2 },
+      ],
+      related: ['get.c'],
+    },
+    'ping.c': { digest: 'aa1f71258d80',
+      summary: "ping: three echoes to an address, each waited a second by ready, timed by the kernel's ticks.",
+      important: [
+        { at: 'def:main', weight: 2 },
+        { at: 'code:"ready(fds, 1, t + 400)"', say: 'a wait with a deadline: 400 ticks, a second', weight: 2 },
+      ],
+      related: ['../TinyKernel/KNetwork.ml'],
+    },
+    'httpd.c': { digest: '39e00525b73c',
+      summary: "httpd: tiny-kernel's files served to a real browser through -net-forward, a connection at a time, HTTP/1.0.",
+      capitals: [
+        { at: 'def:serve', say: 'a request to its empty line, its path, the file' },
+      ],
+      important: [
+        { at: 'def:serve', weight: 3 },
+        { at: 'def:list', say: 'a directory as a page of links', weight: 1 },
+        { at: 'def:main', say: 'listen in a loop: one connection at a time', weight: 2 },
+      ],
+    },
+    'paint.c': { digest: '6cf91801c5ef',
+      summary: "paint: the mouse paints, a ball crosses by the clock; one loop on ready for the mouse, the keys and the time.",
+      capitals: [
+        { at: 'def:main', say: 'one ready for three: mouse, keys, the next tick' },
+      ],
+      important: [
+        { at: 'comment:"One loop waiting for the three at once"', weight: 3 },
+        { at: 'def:ball', say: "the clock's, not paint's: the same screen any time", weight: 2 },
+        { at: 'def:main', weight: 3 },
+        { at: 'def:clear', weight: 1 },
+      ],
+      related: ['../runtime/c/draw.h', '../runtime/c/draw.c', '../TinyKernel/KGraphics.ml'],
+    },
   },
   dirs: {
     sdl: { summary: "The host's build of seven of them, each in a window of SDL's (tiny-emacs, tiny-office...): dune alone, not counted by make loc." },
@@ -54,5 +120,107 @@ local wrapper(file, prog, role) = {
     wrapper('www.ml', '../TinyBrowser.ml', 'the browser'),
     wrapper('troff.ml', '../TinyTroff.ml', 'the typesetter'),
     wrapper('play.ml', '../TinyPlay.ml', 'the WAV player'),
+    {
+      name: 'paint: wait for the mouse, a key or the time',
+      bones: [
+        { at: 'paint.c:def:main', role: 'the loop' },
+        { at: '../runtime/c/user.h:def:ready', role: 'mouse, keys, until the next move' },
+        { at: 'paint.c:def:ball', role: "the ball's place, by the clock" },
+        { at: 'paint.c:def:clear', role: 'c: the canvas cleared' },
+        { at: '../runtime/c/draw.c:def:d_flush', role: 'the messages to descriptor 3' },
+      ],
+      joints: [
+        { from: 'paint.c:def:main', to: '../runtime/c/user.h:def:ready', say: 'fds 0 and 4' },
+        { from: 'paint.c:def:main', to: 'paint.c:def:ball', say: 'the period' },
+        { from: 'paint.c:def:main', to: 'paint.c:def:clear', say: 'c' },
+        { from: 'paint.c:def:main', to: '../runtime/c/draw.c:def:d_flush', say: 'what changed' },
+      ],
+    },
+    {
+      name: 'sh: a line, a pipeline, fork and exec',
+      bones: [
+        { at: 'sh.c:def:main', role: 'the prompt; cd its own' },
+        { at: 'sh.c:def:tokenize', role: 'operators spaced out, words split' },
+        { at: 'sh.c:def:pipeline', role: 'the pipes made, the parent waits' },
+        { at: 'sh.c:def:command', role: 'a child: redirections, then exec' },
+        { at: 'sh.c:def:move', role: 'a descriptor moved into place' },
+        { at: '../runtime/c/user.h:def:fork', role: 'the copy' },
+        { at: '../runtime/c/user.h:def:exec', role: 'its program replaced' },
+      ],
+      joints: [
+        { from: 'sh.c:def:main', to: 'sh.c:def:tokenize', say: 'a line' },
+        { from: 'sh.c:def:main', to: 'sh.c:def:pipeline', say: 'tokens' },
+        { from: 'sh.c:def:pipeline', to: 'sh.c:def:command', say: 'a stage' },
+        { from: 'sh.c:def:command', to: '../runtime/c/user.h:def:fork', say: 'a child' },
+        { from: 'sh.c:def:command', to: 'sh.c:def:move', say: 'in, out' },
+        { from: 'sh.c:def:command', to: '../runtime/c/user.h:def:exec', say: 'argv' },
+      ],
+    },
+    {
+      name: 'get: a name to a port, the answer to stdout',
+      bones: [
+        { at: 'get.c:def:main', role: 'name, host, port' },
+        { at: '../runtime/c/net.c:def:reach', role: 'an address, or a name asked of port 53' },
+        { at: '../runtime/c/user.h:def:dial', role: 'the connection: a descriptor' },
+      ],
+      joints: [
+        { from: 'get.c:def:main', to: '../runtime/c/net.c:def:reach', say: 'host, port' },
+        { from: '../runtime/c/net.c:def:reach', to: '../runtime/c/user.h:def:dial', say: 'an address' },
+      ],
+    },
+    {
+      name: "put: a file to the wire's other end",
+      bones: [
+        { at: 'put.c:def:main', role: 'the file counted, then sent' },
+        { at: 'put.c:def:fail', role: 'why not, said' },
+        { at: '../runtime/c/user.h:def:dial', role: 'port 70 of 10.0.0.1' },
+      ],
+      joints: [
+        { from: 'put.c:def:main', to: '../runtime/c/user.h:def:dial', say: "'put name size'" },
+        { from: 'put.c:def:main', to: 'put.c:def:fail', say: 'an error' },
+      ],
+    },
+    {
+      name: 'ping: an echo, a wait with a deadline',
+      bones: [
+        { at: 'ping.c:def:main', role: 'three questions' },
+        { at: '../runtime/c/user.h:def:dial', role: 'port 0: the echo' },
+        { at: '../runtime/c/user.h:def:ready', role: 'the answer, or a second gone' },
+      ],
+      joints: [
+        { from: 'ping.c:def:main', to: '../runtime/c/user.h:def:dial', say: 'the address' },
+        { from: 'ping.c:def:main', to: '../runtime/c/user.h:def:ready', say: 't + 400' },
+      ],
+    },
+    {
+      name: 'httpd: listen, serve, close',
+      bones: [
+        { at: 'httpd.c:def:main', role: 'a connection at a time' },
+        { at: '../runtime/c/user.h:def:listen', role: 'the next connection' },
+        { at: 'httpd.c:def:serve', role: 'the request, the file' },
+        { at: 'httpd.c:def:list', role: 'a directory as links' },
+        { at: 'httpd.c:def:put', role: "the answer's text, buffered" },
+      ],
+      joints: [
+        { from: 'httpd.c:def:main', to: '../runtime/c/user.h:def:listen', say: 'the port' },
+        { from: 'httpd.c:def:main', to: 'httpd.c:def:serve', say: 'its descriptor' },
+        { from: 'httpd.c:def:serve', to: 'httpd.c:def:list', say: 'a path ending in /' },
+        { from: 'httpd.c:def:serve', to: 'httpd.c:def:put', say: 'the headers' },
+      ],
+    },
+    {
+      name: "The programs in C and what they link",
+      bones: [
+        { at: 'sh.c', role: 'the shell' },
+        { at: 'get.c', role: 'the network' },
+        { at: 'httpd.c', role: 'a server' },
+        { at: '../runtime/c/', role: 'calls, draw, net' },
+      ],
+      joints: [
+        { from: 'sh.c', to: '../runtime/c/', say: 'linked with' },
+        { from: 'get.c', to: '../runtime/c/', say: 'linked with' },
+        { from: 'httpd.c', to: '../runtime/c/', say: 'linked with' },
+      ],
+    },
   ],
 }

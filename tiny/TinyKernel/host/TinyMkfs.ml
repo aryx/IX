@@ -29,72 +29,72 @@ let piece = 0x10000
 (* the disk's bytes, the file system's transfers on them; mounted as
  * the kernel mounts it (made when blank), the dates 0, so that the same
  * files make the same disk *)
-let mount (disk : Bytes.t) =
-  KFS.fs_io := (fun b a io ->
-    match io with
-    | KFS.Disk_read -> Bytes.blit disk (b * 1024) KRaw.mem a 1024
-    | Disk_write -> Bytes.blit KRaw.mem a disk (b * 1024) 1024);
+let mount (disk : Bytes.t) : KFS.fs =
   KFS.fs_clock := (fun () -> 0);
-  KFS.fs_mount (Bytes.length disk / 1024)
+  KFS.fs_mount (fun b a io ->
+      match io with
+      | KFS.Disk_read -> Bytes.blit disk (b * 1024) KRaw.mem a 1024
+      | Disk_write -> Bytes.blit KRaw.mem a disk (b * 1024) 1024)
+    0 (Bytes.length disk / 1024)
 
 (* the directory at the end of names from d, made where it is missing *)
-let rec directory (d : KFS.inode) (names : string list) =
+let rec directory fs (d : KFS.inode) (names : string list) =
   match names with
   | [] -> d
   | n :: rest ->
       let sub =
-        match KFS.fs_lookup 0 d n with
-        | Some i when KFS.fs_is_dir 0 i -> i
+        match KFS.fs_lookup fs 0 d n with
+        | Some i when KFS.fs_is_dir fs 0 i -> i
         | Some _ -> failwith (n ^ ": a file, not a directory")
-        | None -> KFS.fs_create d n KFS.Fs_dir in
-      directory sub rest
+        | None -> KFS.fs_create fs d n KFS.Fs_dir in
+      directory fs sub rest
 
 (* a file's bytes written under its path, then committed (a commit a
  * file: the blocks written since the last one are a list the file system
  * searches) *)
-let add (path : string) (contents : string option) =
+let add fs (path : string) (contents : string option) =
   let names = List.filter (fun n -> n <> "") (String.split_on_char '/' path) in
   (match contents, List.rev names with
-   | None, _ -> ignore (directory 1 names)
+   | None, _ -> ignore (directory fs 1 names)
    | Some _, [] -> failwith (path ^ ": no name")
    | Some s, name :: rdirs ->
-       let d = directory 1 (List.rev rdirs) in
-       if KFS.fs_lookup 0 d name <> None then
+       let d = directory fs 1 (List.rev rdirs) in
+       if KFS.fs_lookup fs 0 d name <> None then
          failwith (path ^ ": named twice");
-       let n = KFS.fs_create d name KFS.Fs_file in
+       let n = KFS.fs_create fs d name KFS.Fs_file in
        let rec write off =
          if off < String.length s then begin
            let k = min piece (String.length s - off) in
            Bytes.blit_string s off KRaw.mem scratch k;
-           KFS.fs_write_at n off scratch k;
+           KFS.fs_write_at fs n off scratch k;
            write (off + k)
          end in
        write 0);
-  KFS.fs_commit ()
+  KFS.fs_commit fs
 
 (* each file's path and size, each directory's path and a /, the live
  * tree's from the root *)
-let rec list (path : string) (d : KFS.inode) : string list =
+let rec list fs (path : string) (d : KFS.inode) : string list =
   List.concat_map (fun (name, i) ->
       let p = path ^ "/" ^ name in
-      match KFS.fs_kind 0 i with
-      | KFS.Fs_dir, _, _ -> (p ^ "/\n") :: list p i
+      match KFS.fs_kind fs 0 i with
+      | KFS.Fs_dir, _, _ -> (p ^ "/\n") :: list fs p i
       | Fs_file, size, _ -> [ p ^ " " ^ string_of_int size ^ "\n" ])
-    (KFS.fs_entries 0 d)
+    (KFS.fs_entries fs 0 d)
 
 let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     (argv : string array) : Exit.t =
   let read f = FS.read caps (Fpath.v f) in
   let make mb img specs =
     let disk = Bytes.make (mb * 0x100000) '\000' in
-    mount disk;
+    let fs = mount disk in
     List.iter (fun spec ->
         match String.index_opt spec '=' with
         | Some i ->
-            add (String.sub spec 0 i)
+            add fs (String.sub spec 0 i)
               (Some (read (String.sub spec (i + 1) (String.length spec - i - 1))))
         | None when spec <> "" && spec.[String.length spec - 1] = '/' ->
-            add spec None
+            add fs spec None
         | None -> failwith (spec ^ ": not name=file nor directory/"))
       specs;
     FS.write caps (Fpath.v img) (Bytes.to_string disk);
@@ -107,8 +107,8 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     match List.tl (Array.to_list argv) with
     | ("-h" | "--help") :: _ -> Console.print caps help; Exit.OK
     | [ "-l"; img ] ->
-        mount (Bytes.of_string (read img));
-        Console.print caps (String.concat "" (list "" 1));
+        let fs = mount (Bytes.of_string (read img)) in
+        Console.print caps (String.concat "" (list fs "" 1));
         Exit.OK
     | "-m" :: m :: img :: specs when megabytes m <> None ->
         make (Option.get (megabytes m)) img specs

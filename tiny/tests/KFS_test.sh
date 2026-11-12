@@ -6,8 +6,9 @@
 # KFS_tests/Host.ml makes files and directories on a disk of
 # bytes, writes one big enough for the double indirect block, mounts
 # again after changes that were not committed (a crash), boots a few
-# times for snapshots, and fills a small disk until the collector must
-# give blocks back; against files.expected. The kernel's own, on
+# times for snapshots, fills a small disk until the collector must
+# give blocks back, and mounts two disks at once, a file on each;
+# against files.expected. The kernel's own, on
 # tiny-machine, is TinyKernel's check (a file in /usr kept across two
 # boots, /dump). Then tiny-mkfs, a disk made on the host. RECORD=1
 # records.

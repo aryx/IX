@@ -72597,3 +72597,19 @@ Claude said the kernel side was waiting on the other session's rename of the ker
 Claude planned for `KFS` to take an `fs` value holding each disk's I/O, counts, and superblock and map locations.
 Claude planned for `KFiles`' disk nodes to carry their `fs`, so every function can reach the right disk.
 Claude also planned for the boot to mount the second disk at `/src`, which tiny-machine now accepts via a second `-d`.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 19:40
+
+**Yoann:**
+
+> ok done in other session is done (and committing). let's continue here
+
+**Claude (summary):**
+
+Claude proposed committing only the 14 step-0 files and leaving out the other session's moved files.
+Claude listed those files as KFS, KFiles, KCalls, KIO, KMachine, TinyKernel.ml, tiny-mkfs, and the KFS tests.
+Claude had KFS's fs record carry the disk number, with disk nodes as `Disk of fs * tree * inode` and `disk_key` including that number.
+Claude verified the change in a clean worktree: `make test` passed 35 jobs, and a two-disk boot showed the `/src` union.
+Claude had the second disk mount at `/src` alongside the first, a temporary merge until step 2 makes the first disk the system's.

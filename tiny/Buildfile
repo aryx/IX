@@ -508,6 +508,7 @@ depend:
 clean:
 	@{ cd TinyLibCore && $BUILD clean }
 	@{ cd TinyKernel && $BUILD clean }
+	rm -f lib/c/* lib/ml/*
 	rm -f *.o *.tmi TinyBrowser/*.o TinyBrowser/*.tmi TinyC/*.o TinyC/*.tmi \
 	    TinyLibSystem/tinykernel/*.o TinyLibSystem/tinykernel/*.tmi \
 	    TinyML/*.o TinyML/*.tmi TinyOffice/*.o TinyOffice/*.tmi \

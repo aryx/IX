@@ -5,6 +5,6 @@ _build/
 _build5/
 .claude/hooks/.history.lock
 _mk/
-_make/
+_make*/
 Makefile.config
 _cross/

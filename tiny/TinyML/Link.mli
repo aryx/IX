@@ -1,6 +1,6 @@
 (* tiny-ml's part of a link: a program's start, ml -o prog.start.o
  * lib.a... file.o..., which tiny-ld then links with the program's
- * files. Read TinyMLCompile.mli first.
+ * files. Read Compile.mli first.
  *
  * Why an ML program needs a start, and a C program does not: code that
  * only the whole program can make.
@@ -45,7 +45,7 @@
  * Buildfile) *)
 
 (* [compile_start units needed]: the program's start, in the assembly
- * being made (TinyMLMachine's): the units, each its name and how many
+ * being made (Machine's): the units, each its name and how many
  * globals, in their order; the arities of the curry functions they
  * need *)
 val compile_start : (string * int) list -> int list -> unit

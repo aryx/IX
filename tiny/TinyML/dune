@@ -3,6 +3,5 @@
 (library
  (name tiny_ml_parts)
  (wrapped false)
- (modules TinyMLLexer TinyMLTree TinyMLPrintf TinyMLParser TinyMLTypes
-  TinyMLMachine TinyMLCompile TinyMLLink)
+ (modules Lexer Tree Formats Parser Types Machine Compile Link)
  (libraries ix_core tiny_lib_machine))

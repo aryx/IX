@@ -899,7 +899,7 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
  * g a x (old: g a a closure that the external called, all of a program's
  * l |> List.iter f one walk in List.iter's code, every list the same; a
  * table's order from one reached another's writes: bugs/order.dl's
- * TinyMLTypes.opened to TinyMLMachine's output) *)
+ * tiny-ml's Types.opened to its Machine's output) *)
 and call (x : expr) (f : expr) (args : expr list) (dst : string) : unit =
   match f.e, args with
   | Evar (Prim (("%revapply" | "%apply") as p, _, _)), a :: b :: more ->

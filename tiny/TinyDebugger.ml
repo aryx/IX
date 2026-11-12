@@ -327,7 +327,7 @@ let slots p v f =
   String.concat " " (List.init (max 0 (n - 1)) (fun k -> value s (4 * (k + 1))))
   ^ (if f / 4 > 7 then " ..." else "")
 
-(* tiny-ml's value stack's register, r12 (TinyMLMachine's vsp) *)
+(* tiny-ml's value stack's register, r12 (TinyML/Machine.ml's vsp) *)
 let vsp = 12
 
 (* the prologue of the function at b, tiny-cc's and tiny-ml's: addi sp,

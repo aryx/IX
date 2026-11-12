@@ -87,7 +87,7 @@ if $TML -L $W/lib -o $W/forgotten.out $W/f/x.ml && $TML -L $W/lib -o $W/plain.ou
 then echo "ok forgotten: the code of plain.ml"; else echo "FAIL forgotten"; failures=$((failures + 1)); fi
 # a program of units compiled apart (TinyML_tests/units/: Shapes, with
 # its .mli, then Main, which finds Shapes.tmi by -I), each by tiny-ml
-# -c; its start made of the files it links (TinyML/TinyMLLink.mli: each
+# -c; its start made of the files it links (TinyML/Link.mli: each
 # unit's interface beside its object), the library's first (OCaml's
 # rule); linked: Main.out's output, as when compiled whole; and
 # Shapes's unused function left out by tiny-ld (the start prog_main.o,

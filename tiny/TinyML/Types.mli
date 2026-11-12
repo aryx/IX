@@ -1,14 +1,14 @@
 (* tiny-ml's type checker: Hindley-Milner's inference on the tree, a
  * unit's toplevel names in tables (a unit's names M.x for the units
- * after it), what TinyMLCompile then compiles. Read TinyMLTree.mli
+ * after it), what Compile then compiles. Read Tree.mli
  * first. *)
 
 (* a type, its variables' links followed *)
-val repr : TinyMLTree.ty -> TinyMLTree.ty
+val repr : Tree.ty -> Tree.ty
 
-(* the types of the program's toplevel names (TinyMLCompile's globals
+(* the types of the program's toplevel names (Compile's globals
  * has their values) *)
-val tglobals : (string, TinyMLTree.ty) Hashtbl.t
+val tglobals : (string, Tree.ty) Hashtbl.t
 (* [find_name env tbl x]: x in the local env, else in the table *)
 val find_name : ('a * 'b) list -> ('a, 'b) Hashtbl.t -> 'a -> 'b option
 (* a name of this unit's toplevel added to a table, until unit_done *)
@@ -27,4 +27,4 @@ val export : (string, 'a) Hashtbl.t -> string -> (string * 'a) list -> unit
 
 (* a unit's items typed: the names it defined and their types *)
 val type_unit :
-  (TinyMLTree.item * int) list -> (string * TinyMLTree.ty) list
+  (Tree.item * int) list -> (string * Tree.ty) list

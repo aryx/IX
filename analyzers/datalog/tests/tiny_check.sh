@@ -49,8 +49,8 @@ L=$T/TinyLibMachine.ml
 CPU="$L $M/TinyMachineCPU.ml"
 BROWSER=$(for m in Text Tokens Lines Html Address Http; do
   printf "%s " $T/TinyBrowser/TinyBrowser$m.ml; done)
-TML="$L "$(for m in Lexer Tree Printf Parser Types Machine Compile; do
-  printf "%s " $T/TinyML/TinyML$m.ml; done)
+TML="$L "$(for m in Lexer Tree Formats Parser Types Machine Compile; do
+  printf "%s " $T/TinyML/$m.ml; done)
 TC="$L "$(for m in Types Lexer Tree Lower Parser Machine; do
   printf "%s " $T/TinyC/TinyC$m.ml; done)
 NET="-I lib_networking/tcp -I lib_networking/tls -I lib_networking/http"

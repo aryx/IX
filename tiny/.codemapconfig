@@ -608,12 +608,12 @@ local prog(name, file, core) = chain(name, [
                 { from: 'TinyC.ml:def:main', to: 'TinyC.ml:def:compile', say: 'its definitions' }],
     },
     prog('tiny-ml: parse, infer, compile', 'TinyML.ml', [
-      ['TinyML/TinyMLParser.ml:def:parse', 'a file parsed', 'files'],
-      ['TinyML/TinyMLParser.ml:def:items', 'the toplevel items: the tree', 'tokens'],
-      ['TinyML/TinyMLTypes.ml:def:type_unit', 'a unit typed, Hindley-Milner with levels', 'the tree'],
+      ['TinyML/Parser.ml:def:parse', 'a file parsed', 'files'],
+      ['TinyML/Parser.ml:def:items', 'the toplevel items: the tree', 'tokens'],
+      ['TinyML/Types.ml:def:type_unit', 'a unit typed, Hindley-Milner with levels', 'the tree'],
       ['TinyML.ml:def:compile_unit', 'the toplevel, its globals the roots', 'the typed tree'],
-      ['TinyML/TinyMLCompile.ml:def:value', 'an expression to the stack machine', 'expressions'],
-      ['TinyML/TinyMLMachine.ml:def:machine', 'the stack machine to tiny-machine', 'IR'],
+      ['TinyML/Compile.ml:def:value', 'an expression to the stack machine', 'expressions'],
+      ['TinyML/Machine.ml:def:machine', 'the stack machine to tiny-machine', 'IR'],
       ['TinyLibMachine.ml:def:assemble', 'the lines encoded: the object (-S: their text)', 'lines'],
     ]) + {
       bones+: [
@@ -622,7 +622,7 @@ local prog(name, file, core) = chain(name, [
       ],
       joints+: [
         { from: 'TinyML.ml:def:main', to: 'TinyML.ml:def:write_interface', say: '-c: the unit typed' },
-        { from: 'TinyML/TinyMLCompile.ml:def:value', to: 'runtime/ml.c:def:ml_alloc', say: 'blocks, at run time' },
+        { from: 'TinyML/Compile.ml:def:value', to: 'runtime/ml.c:def:ml_alloc', say: 'blocks, at run time' },
       ],
     },
     // tiny-cc's and tiny-ml's own files: what their main does with the

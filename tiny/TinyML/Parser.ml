@@ -1,10 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyMLParser.mli *)
-module Lexer = TinyMLLexer
-module Tree = TinyMLTree
-module Fmt = TinyMLPrintf
+(* See Parser.mli *)
 
 (*****************************************************************************)
 (* The parser *)
@@ -32,7 +29,7 @@ let fresh = ref 0
 (* the names of types declared as an object's: read and forgotten (ty) *)
 let forgotten : string list ref = ref []
 
-(* the abbreviations, TinyMLTree's (of_texpr reads them too) *)
+(* the abbreviations, Tree's (of_texpr reads them too) *)
 let abbreviations = Tree.abbreviations
 
 (* the abbreviation that a name with these arguments is *)
@@ -230,7 +227,7 @@ and app () =
       | Tree.Var (p, _), l
         when p = "Printf.sprintf" || p = "Printf.ksprintf"
              || p = "Printf.bprintf" ->
-          Fmt.printf_call p l
+          Formats.printf_call p l
       (* Logs.debug (fun m -> m "%s" x): m given the message made, as
        * Printf.sprintf makes it (TinyLibCore's Logs.mli) *)
       | Tree.Var (p, _),
@@ -238,7 +235,7 @@ and app () =
           ([ m ], Tree.App
             (Tree.Var (m', _), (Tree.Const (Tree.CStr _) :: _ as l))) ]
         when String.length p > 5 && String.sub p 0 5 = "Logs." && m = m' ->
-          let msg = Fmt.printf_call "Printf.sprintf" l in
+          let msg = Formats.printf_call "Printf.sprintf" l in
           Tree.App (f, [ Tree.Fun ([ m ], Tree.App (Tree.var m, [ msg ])) ])
       | _, l -> Tree.App (f, l))
 

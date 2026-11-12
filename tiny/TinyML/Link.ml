@@ -1,11 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyMLLink.mli *)
+(* See Link.mli *)
 
-module Tree = TinyMLTree
-module Machine = TinyMLMachine
-module Compile = TinyMLCompile
 module M = TinyLibMachine
 
 (* ml_init, each unit's init in their order, in a handler that prints

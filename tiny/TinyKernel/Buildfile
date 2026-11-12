@@ -49,7 +49,7 @@ udivmod.o: ../runtime/udivmod.s
 runtime.o: runtime.c ../runtime/ml.c
 
 # the units, each after the ones it names; the kernel's start made by
-# ml, as a program's (../TinyML/TinyMLLink.mli). entry.o first, at 0
+# ml, as a program's (../TinyML/Link.mli). entry.o first, at 0
 UNITS = TinyMemory.o TinyKernelGraphics.o TinyKernelNetwork.o \
     TinyKernelAudio.o TinyKernelFS.o TinyKernelMemory.o TinyKernelMachine.o \
     TinyKernelFiles.o TinyKernelProcs.o TinyKernelDevices.o TinyKernelIO.o \

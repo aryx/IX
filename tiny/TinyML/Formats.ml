@@ -1,9 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyMLPrintf.mli *)
-module Lexer = TinyMLLexer
-module Tree = TinyMLTree
+(* See Formats.mli *)
 
 (* Printf's sprintf, ksprintf and bprintf, their format a string written
  * there, read as the concatenation they make: Printf.sprintf "r%d, %s"

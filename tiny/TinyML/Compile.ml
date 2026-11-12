@@ -1,13 +1,9 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyMLCompile.mli *)
+(* See Compile.mli *)
 (* Common's |||: an option's value, or a default *)
 let ( ||| ) = Common.( ||| )
-module Lexer = TinyMLLexer
-module Tree = TinyMLTree
-module Types = TinyMLTypes
-module Machine = TinyMLMachine
 
 (*****************************************************************************)
 (* From the tree to the stack machine *)
@@ -445,7 +441,7 @@ and var env x =
       (* a primitive as a value: the function that applies it *)
       let xs = List.init n (fun i -> Printf.sprintf "%%e%d" i) in
       value env
-        (Tree.Fun (xs, Tree.App (TinyMLTree.var x, List.map TinyMLTree.var xs)))
+        (Tree.Fun (xs, Tree.App (Tree.var x, List.map Tree.var xs)))
 
 (* f args: a primitive, a known function's code called with its
  * arguments, or the closure applied to one at a time; whether it ended

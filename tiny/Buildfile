@@ -93,7 +93,7 @@ INCLUDES = -I . -I TinyLibSystem/tinykernel -I TinyC -I TinyML -I TinyOffice \
 
 # an ML program's start, what only the whole program can make (its
 # units' initializations in their order, their globals' table, the
-# curry functions; TinyML/TinyMLLink.mli): made by ml of the files the
+# curry functions; TinyML/Link.mli): made by ml of the files the
 # program links, its prerequisites, the libraries first, each
 # program's line below (P.start.o: $STDLIB $P_UNITS), linked right
 # after the ML runtime, which calls it
@@ -165,7 +165,7 @@ PLAYGROUND = TinyLibPlayground.o
 GUI = TinyLibGUI.o
 #
 # An ML program, in the sections below: its units (X_UNITS), its start
-# made of them (X.start.o, by ml: TinyML/TinyMLLink.mli), and the
+# made of them (X.start.o, by ml: TinyML/Link.mli), and the
 # program linked by ld: the C runtime, ML's, the start, the library, its
 # units, the end (the libraries before the units that use them, OCaml's
 # rule). Its units' rules are .depend's (at the end).
@@ -238,10 +238,9 @@ cc.start.o: $STDLIB $CC_UNITS
 cc: $CRT $MLRT cc.start.o $STDLIB $CC_UNITS $MLEND
 	$LD -map -s -n -a 16 -o $target $prereq
 
-ML_UNITS = $SYS $MACH TinyML/TinyMLLexer.o TinyML/TinyMLTree.o \
-    TinyML/TinyMLPrintf.o TinyML/TinyMLParser.o TinyML/TinyMLTypes.o \
-    TinyML/TinyMLMachine.o TinyML/TinyMLCompile.o TinyML/TinyMLLink.o \
-    TinyML.o
+ML_UNITS = $SYS $MACH TinyML/Lexer.o TinyML/Tree.o TinyML/Formats.o \
+    TinyML/Parser.o TinyML/Types.o TinyML/Machine.o TinyML/Compile.o \
+    TinyML/Link.o TinyML.o
 ml.start.o: $STDLIB $ML_UNITS
 ml: $CRT $MLRT ml.start.o $STDLIB $ML_UNITS $MLEND
 	$LD -map -s -n -a 32 -o $target $prereq

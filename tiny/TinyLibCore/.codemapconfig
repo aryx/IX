@@ -142,7 +142,7 @@ local mli(summary, digest, capital, say) = {
         { at: 'line:12', say: 'a lone double quote: ocamlc -c refuses this file', weight: 2 },
         { at: 'line:18', weight: 2 },
       ],
-      related: ['../TinyML/TinyMLPrintf.ml'],
+      related: ['../TinyML/Formats.ml'],
     },
     'Printf.ml': { digest: '74effad500d1',
       summary: "Printf's helpers: %x, %S's escapes, a width padded with spaces or zeros.",

@@ -4,7 +4,7 @@
 # itself, with its functions that do (compare.sh's exn_lines). Not tried
 # yet: the 11 "raised in" lines; tiny-cc's Division_by_zero false when
 # tried (1 / 0 and 7 % 0 said or folded, not raised).
-tiny-build: TinyBuildSystem.ml: the toplevel may let Not_found escape, raised in TinyBuildSystem:fun at line 464
+tiny-build: TinyBuildSystem.ml: the toplevel may let Not_found escape, raised in TinyBuildSystem:fun at line 472
 tiny-cc: TinyC.ml: the toplevel may let Division_by_zero escape
 tiny-cc: TinyC.ml: the toplevel may let Not_found escape, raised in emit, go, TinyCParser.assign_expr, loop, TinyCParser.primary, TinyCTree.binop_name
 tiny-cc: TinyCTypes.ml: the toplevel may let Failure escape, raised in TinyC.main, TinyCParser.block, go, TinyCParser:fun at line 561, init
@@ -13,7 +13,7 @@ tiny-db: TinyDatabase.ml: the toplevel may let Not_found escape, raised in loop,
 tiny-ld: TinyLinker.ml: the toplevel may let Failure escape, raised in args, TinyLinker.main
 tiny-machine-fetch: TinyMachineFetch.ml: the toplevel may let Unix.Unix_error escape, raised in try_
 tiny-machine-fetch: TinyMachineFetch.ml: the toplevel may let Zlib.Corrupt escape
-tiny-ml: TinyML.ml: the toplevel may let Not_found escape, raised in TinyML:fun at line 247, TinyMLCompile.prim, TinyMLMachine.instruction, TinyMLTypes:fun at line 254
+tiny-ml: TinyML.ml: the toplevel may let Not_found escape, raised in Compile.prim, Machine.instruction, TinyML:fun at line 217, Types:fun at line 251
 tiny-shell: TinyShell.ml: the toplevel may let Failure escape, raised in TinyShell.protect, TinyShell.code, TinyShell.exec, TinyShell.run, TinyShell.start
 tiny-shell: TinyShell.ml: the toplevel may let Not_found escape, raised in TinyShell.protect, TinyShell.run, TinyShell:fun at line 690
 tiny-shell: TinyShell.ml: the toplevel may let Unix.Unix_error escape, raised in TinyShell.protect, TinyShell.with_fds, TinyShell.run

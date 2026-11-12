@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyMLLexer.mli *)
+(* See Lexer.mli *)
 (* Common's |||: an option's value, or a default *)
 let ( ||| ) = Common.( ||| )
 

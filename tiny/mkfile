@@ -33,16 +33,16 @@ $D/TinyMachineCPU.$O $D/TinyAssembler.$O $D/TinyLinker.$O $D/TinyArchiver.$O $D/
 $D/TinyCPU.$O $D/TinyMachineDevices.$O $D/TinyMachine.$O: TinyMachine/TinyMachineCPU.ml
 $D/TinyAssembler.$O $D/TinyLinker.$O $D/TinyArchiver.$O $D/TinyC.$O $D/TinyML.$O $D/TinyCPU.$O $D/TinyMachine.$O $D/TinyMkfat.$O: $D/TinyLibSystem.$O
 # (tiny-ml's passes, TinyML/, each after the ones before it, after TinyLibMachine, the lines they make)
-MLC=TinyLibMachine TinyMLLexer TinyMLTree TinyMLPrintf TinyMLParser TinyMLTypes TinyMLMachine TinyMLCompile TinyMLLink
+MLC=TinyLibMachine Lexer Tree Formats Parser Types Machine Compile Link
 MLCO=${MLC:%=$D/%.$O}
-$D/TinyMLTree.$O: $D/TinyMLLexer.$O
-$D/TinyMLPrintf.$O: $D/TinyMLTree.$O
-$D/TinyMLParser.$O: $D/TinyMLPrintf.$O
-$D/TinyMLTypes.$O: $D/TinyMLParser.$O
-$D/TinyMLMachine.$O: $D/TinyMLTypes.$O $D/TinyLibMachine.$O
-$D/TinyMLCompile.$O: $D/TinyMLMachine.$O
-$D/TinyMLLink.$O: $D/TinyMLCompile.$O
-$D/TinyML.$O: $D/TinyMLLink.$O
+$D/Tree.$O: $D/Lexer.$O
+$D/Formats.$O: $D/Tree.$O
+$D/Parser.$O: $D/Formats.$O
+$D/Types.$O: $D/Parser.$O
+$D/Machine.$O: $D/Types.$O $D/TinyLibMachine.$O
+$D/Compile.$O: $D/Machine.$O
+$D/Link.$O: $D/Compile.$O
+$D/TinyML.$O: $D/Link.$O
 
 # (tiny-cc's passes, TinyC/, the same way, after TinyLibMachine, the lines they make)
 CCP=TinyLibMachine TinyCTypes TinyCLexer TinyCTree TinyCLower TinyCParser TinyCMachine
@@ -67,9 +67,9 @@ $D/TinyMachine%.$O: TinyMachine/TinyMachine%.ml
 $D/TinyBrowser%.$O: TinyBrowser/TinyBrowser%.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target TinyBrowser/TinyBrowser$stem.ml
-$D/TinyML%.$O: TinyML/TinyML%.ml
+$D/%.$O: TinyML/%.ml
 	mkdir -p $D
-	$ML $INCLUDES -o $target TinyML/TinyML$stem.ml
+	$ML $INCLUDES -o $target TinyML/$stem.ml
 $D/TinyC%.$O: TinyC/TinyC%.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target TinyC/TinyC$stem.ml

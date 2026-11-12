@@ -42,7 +42,7 @@ A DSL earns its place in IX only if it passes three tests.
 | ARM64 encoding | `linker/Arm64.ml` packs; `machine/arm64/Arm64.ml` decodes | 869, 1007 | 2 |
 | TinyCPU encoding | `tiny/TinyMachine/TinyMachineISA.ml` already holds encode, decode and print together | 141 | 1 |
 | byte layouts | about 160 `.ml` files read or write bytes by hand: 9P (`lib_networking/9p/P9.ml`, `kernels/9pi/files/P9.ml`, `kernels/9pi/devices/sys/Devmnt.ml`), a.out and ELF, FAT, TCP/IP, USB descriptors, image headers, the doom WAD | spread out | 2 (read and write) |
-| parsers written by hand | `browsers/javascript/parsing/Js_parse.ml` 862, `tiny/TinyML/TinyMLParser.ml` 643, `tiny/TinyC/TinyCParser.ml` 530, `languages/dotnet/csc/Csc_parser.ml` 435, `assembler/Parser_asm.ml` 349, `languages/smalltalk/compiler/St_parse.ml` 326, `shell/Parser.ml` 251 | about 3,400 | 1, but the grammar is hidden in the code |
+| parsers written by hand | `browsers/javascript/parsing/Js_parse.ml` 862, `tiny/TinyML/Parser.ml` 643, `tiny/TinyC/TinyCParser.ml` 530, `languages/dotnet/csc/Csc_parser.ml` 435, `assembler/Parser_asm.ml` 349, `languages/smalltalk/compiler/St_parse.ml` 326, `shell/Parser.ml` 251 | about 3,400 | 1, but the grammar is hidden in the code |
 | device registers | `raspberry/boards/Board.ml` 1010, `Emmc`, `Usbdwc`, `Devaudio`, tiny-machine's devices | to measure | 2 (the driver and the emulated device) |
 
 IX already has `generators/lex` and `generators/yacc`, and m-ix already
@@ -126,7 +126,7 @@ assembler's grammars are small and stay written by hand.
    `St_parse.ml` only if the JS conversion is clearly shorter.
 2. In t-ix, make tiny-yacc and tiny-lex emit code in the subset that
    tiny-ml compiles, and that mini-ml builds too. Then convert
-   `TinyMLParser.ml` and `TinyCParser.ml`.
+   `TinyML/Parser.ml` and `TinyCParser.ml`.
 3. Error messages must be at least as good as today's. Hand-written
    parsers usually report errors better, and losing that would be a
    regression.
@@ -163,7 +163,7 @@ approach pays off in IX.
   save little over OCaml, and APL or K would fail the readability
   test.
 - **Prolog or miniKanren for type checking.** The unifier in
-  `TinyMLTypes.ml` is already short.
+  `TinyML/Types.ml` is already short.
 - **A layout or constraint DSL for the GUI apps.** The Elm-style
   playground already carries most of that weight.
 - **Generated stubs for the system-call glue** (`sys.s`, `mlsys.c`).

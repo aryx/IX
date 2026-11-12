@@ -4,7 +4,7 @@
  *
  *     Logs.debug (fun m -> m "%s: %s" file (show_item it))
  *
- * and tiny-ml reads m's format as Printf.sprintf's (TinyMLParser), so
+ * and tiny-ml reads m's format as Printf.sprintf's (TinyML/Parser.ml), so
  * that here m takes the message made: like Printf's, not a subset of
  * OCaml's. Where it goes is the reporter's, TinyLibSystem's on
  * tiny-kernel (stderr, after the program's name); its -v, -debug and

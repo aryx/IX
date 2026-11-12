@@ -58,7 +58,7 @@
         { at: 'comment:"Writing goes twice over the value"', say: 'counted, then written: nothing allocated, nothing moves', weight: 2 },
         { at: 'def:sha_block', say: 'SHA-1 in C, on the machine words', weight: 1 },
       ],
-      related: ['../TinyKernel/runtime.c', '../TinyLibSystem/tinykernel/mlsys.c', '../TinyML.ml', '../TinyML/TinyMLCompile.ml'],
+      related: ['../TinyKernel/runtime.c', '../TinyLibSystem/tinykernel/mlsys.c', '../TinyML.ml', '../TinyML/Compile.ml'],
     },
   },
   skeletons: [

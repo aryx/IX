@@ -71,7 +71,7 @@ the screen and the printer.
 
 ### 2. One stack machine for tiny-cc and tiny-ml
 
-**Idea.** TinyMLMachine's IR and TinyC's lowered code are the same
+**Idea.** tiny-ml's Machine IR and TinyC's lowered code are the same
 stack machine kept in r1 to r11 (TinyML.mli says so: "the same as
 TinyC's"). It is defined once, with one emitter that allocates the
 registers; each compiler lowers to it, and what only ML needs
@@ -79,7 +79,7 @@ registers; each compiler lowers to it, and what only ML needs
 extension.
 
 **Deletes.** One of the two emitters (TinyC/TinyCMachine.ml, 174
-lines; much of TinyML/TinyMLMachine.ml, 482, is the same push, pop,
+lines; much of TinyML/Machine.ml, 482, is the same push, pop,
 operator and jump), and the duplicated tables of operators.
 
 **Gains.** Every improvement of the back end (constants folded into

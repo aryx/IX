@@ -8,14 +8,7 @@
  *)
 
 open Common
-module Tree = TinyMLTree
-module Lexer = TinyMLLexer
-module Parser = TinyMLParser
 module M = TinyLibMachine
-module Types = TinyMLTypes
-module Machine = TinyMLMachine
-module Compile = TinyMLCompile
-module Link = TinyMLLink
 
 let usage = {|usage: tiny-ml [-L dir] [-S] [-o out.o] file.ml...
        | tiny-ml -c [-S] [-L dir] [-I dir]... [-o out.o] file.ml
@@ -101,7 +94,7 @@ let compile_unit (items : (Tree.item * int) list) =
           List.iter (fun (x, b) -> Types.add_name Compile.globals x b)
             (List.rev added);
           added @ defs
-    with Error m -> TinyMLLexer.error (Printf.sprintf "line %d: %s" l m))
+    with Error m -> Lexer.error (Printf.sprintf "line %d: %s" l m))
     [] items in
   Compile.emit (Machine.Imm (Machine.tagged 0));
   Compile.emit Machine.Ret;
@@ -266,7 +259,7 @@ let write_interface (old : before) (exports : (string * Compile.binding) list)
 (* an interface's text read *)
 let decode_interface (text : string) : interface =
   if String.length text < 4 || String.sub text 0 4 <> "\132\149\166\190" then
-    TinyMLLexer.error "not an interface of tiny-ml's";
+    Lexer.error "not an interface of tiny-ml's";
   Marshal.from_string text 0
 
 (* an interface read: its types the program's, its names in the tables
@@ -327,8 +320,8 @@ let text_of (chan : Chan.i) = In_channel.input_all chan.ic
 (* the modules a source names, in their order: M of M.x, M.C, M.t and
  * M.( op ), of open M and include M, and of module A = M (as ocamldep
  * finds them); what -I reads the interfaces of. A's of module A = M
- * left out: the file's own name for M, not a unit (TinyML.ml's Machine,
- * TinyMLMachine, not the playground's test unit Machine) *)
+ * left out: the file's own name for M, not a unit (TinyC.ml's Lexer,
+ * TinyCLexer, not TinyML/'s unit Lexer) *)
 let named_units (text : string) : string list =
   let toks = Array.map fst (Lexer.lex text) in
   let n = Array.length toks and found = ref [] and aliases = ref [] in
@@ -399,7 +392,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
   and archives = List.filter (Fpath.has_ext ".a") files
   and objects = List.filter (Fpath.has_ext ".o") files in
   (* a program's start, made of what links it: objects and libraries,
-   * no source (ml -o prog.start.o $prereq: TinyML/TinyMLLink.mli) *)
+   * no source (ml -o prog.start.o $prereq: TinyML/Link.mli) *)
   let of_link = !output <> None && objects <> [] && mls = [] && not !separate
                 && not !depend in
   (* a link's units, in its order, which is the initializations' order

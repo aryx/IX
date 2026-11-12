@@ -1,9 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyMLMachine.mli *)
-module Lexer = TinyMLLexer
-module Tree = TinyMLTree
+(* See Machine.mli *)
 module M = TinyLibMachine
 
 (*****************************************************************************)

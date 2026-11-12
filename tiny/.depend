@@ -18,7 +18,7 @@ TinyLibMachine.o: TinyLibMachine.mli
 TinyLibPlayground.o: TinyLibDraw.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibPlayground.mli
 TinyLibRegex.o: TinyLibRegex.mli
 TinyLinker.o: TinyLibMachine.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLinker.mli
-TinyML.o: TinyLibMachine.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyML/TinyMLCompile.tmi TinyML/TinyMLLexer.tmi TinyML/TinyMLLink.tmi TinyML/TinyMLMachine.tmi TinyML/TinyMLParser.tmi TinyML/TinyMLTree.tmi TinyML/TinyMLTypes.tmi TinyML.mli
+TinyML.o: TinyML/Compile.tmi TinyML/Lexer.tmi TinyML/Link.tmi TinyML/Machine.tmi TinyML/Parser.tmi TinyLibMachine.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyML/Tree.tmi TinyML/Types.tmi TinyML.mli
 TinyOffice.o: TinyLibGUI.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyOffice/TinyOfficeChart.tmi TinyOffice/TinyOfficeDrawing.tmi TinyOffice/TinyOfficeFile.tmi TinyOffice/TinyOfficeModel.tmi TinyOffice/TinyOfficePaint.tmi TinyOffice/TinyOfficeSheet.tmi TinyOffice/TinyOfficeText.tmi TinyOffice.mli
 TinyPlay.o: TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyPlay.mli
 TinyProfiler.o: TinyLibMachine.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyProfiler.mli
@@ -35,14 +35,14 @@ TinyC/TinyCMachine.o: TinyC/TinyCLower.tmi TinyC/TinyCTree.tmi TinyC/TinyCTypes.
 TinyC/TinyCParser.o: TinyC/TinyCLexer.tmi TinyC/TinyCTree.tmi TinyC/TinyCTypes.tmi TinyC/TinyCParser.mli
 TinyC/TinyCTree.o: TinyC/TinyCTypes.tmi TinyC/TinyCTree.mli
 TinyC/TinyCTypes.o: TinyC/TinyCTypes.mli
-TinyML/TinyMLCompile.o: TinyML/TinyMLLexer.tmi TinyML/TinyMLMachine.tmi TinyML/TinyMLTree.tmi TinyML/TinyMLTypes.tmi TinyML/TinyMLCompile.mli
-TinyML/TinyMLLexer.o: TinyML/TinyMLLexer.mli
-TinyML/TinyMLLink.o: TinyLibMachine.tmi TinyML/TinyMLCompile.tmi TinyML/TinyMLMachine.tmi TinyML/TinyMLTree.tmi TinyML/TinyMLLink.mli
-TinyML/TinyMLMachine.o: TinyLibMachine.tmi TinyML/TinyMLLexer.tmi TinyML/TinyMLTree.tmi TinyML/TinyMLMachine.mli
-TinyML/TinyMLParser.o: TinyML/TinyMLLexer.tmi TinyML/TinyMLPrintf.tmi TinyML/TinyMLTree.tmi TinyML/TinyMLParser.mli
-TinyML/TinyMLPrintf.o: TinyML/TinyMLLexer.tmi TinyML/TinyMLTree.tmi TinyML/TinyMLPrintf.mli
-TinyML/TinyMLTree.o: TinyML/TinyMLLexer.tmi TinyML/TinyMLTree.mli
-TinyML/TinyMLTypes.o: TinyML/TinyMLLexer.tmi TinyML/TinyMLParser.tmi TinyML/TinyMLTree.tmi TinyML/TinyMLTypes.mli
+TinyML/Compile.o: TinyML/Lexer.tmi TinyML/Machine.tmi TinyML/Tree.tmi TinyML/Types.tmi TinyML/Compile.mli
+TinyML/Formats.o: TinyML/Lexer.tmi TinyML/Tree.tmi TinyML/Formats.mli
+TinyML/Lexer.o: TinyML/Lexer.mli
+TinyML/Link.o: TinyML/Compile.tmi TinyML/Machine.tmi TinyLibMachine.tmi TinyML/Tree.tmi TinyML/Link.mli
+TinyML/Machine.o: TinyML/Lexer.tmi TinyLibMachine.tmi TinyML/Tree.tmi TinyML/Machine.mli
+TinyML/Parser.o: TinyML/Formats.tmi TinyML/Lexer.tmi TinyML/Tree.tmi TinyML/Parser.mli
+TinyML/Tree.o: TinyML/Lexer.tmi TinyML/Tree.mli
+TinyML/Types.o: TinyML/Lexer.tmi TinyML/Parser.tmi TinyML/Tree.tmi TinyML/Types.mli
 TinyOffice/TinyOfficeChart.o: TinyLibPlayground.tmi TinyOffice/TinyOfficeModel.tmi TinyOffice/TinyOfficeSheet.tmi TinyOffice/TinyOfficeChart.mli
 TinyOffice/TinyOfficeDrawing.o: TinyLibPlayground.tmi TinyOffice/TinyOfficeModel.tmi TinyOffice/TinyOfficeDrawing.mli
 TinyOffice/TinyOfficeFile.o: TinyOffice/TinyOfficeModel.tmi TinyOffice/TinyOfficeSheet.tmi TinyOffice/TinyOfficeText.tmi TinyOffice/TinyOfficeFile.mli

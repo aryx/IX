@@ -1,11 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyMLTypes.mli *)
+(* See Types.mli *)
 open Common
-module Lexer = TinyMLLexer
-module Tree = TinyMLTree
-module Parser = TinyMLParser
 
 (*****************************************************************************)
 (* Types *)

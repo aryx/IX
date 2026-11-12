@@ -35,19 +35,19 @@
  * Each pass is a part in TinyML/, whose .mli has its types and its
  * functions, in the order they are compiled and best read:
  *
- *     TinyMLLexer.mli    the tokens ([token]), lex
- *     TinyMLTree.mli     the tree: [ty], [expr], [pat], a unit's [item]s;
- *                        the constructors' and labels' tables
- *     TinyMLPrintf.mli   Printf's formats as the concatenations they make
- *     TinyMLParser.mli   parse: a file's text to its [item]s
- *     TinyMLTypes.mli    type_unit: the items typed (Hindley-Milner)
- *     TinyMLMachine.mli  the stack machine ([ir]) and its assembly,
- *                        TinyLibMachine.mli's [line]s
- *     TinyMLCompile.mli  bind: the typed tree to the stack machine
- *     TinyMLLink.mli     a program's start, made for its link
+ *     Lexer.mli    the tokens ([token]), lex
+ *     Tree.mli     the tree: [ty], [expr], [pat], a unit's [item]s;
+ *                    the constructors' and labels' tables
+ *     Formats.mli  Printf's formats as the concatenations they make
+ *     Parser.mli   parse: a file's text to its [item]s
+ *     Types.mli    type_unit: the items typed (Hindley-Milner)
+ *     Machine.mli  the stack machine ([ir]) and its assembly,
+ *                    TinyLibMachine.mli's [line]s
+ *     Compile.mli  bind: the typed tree to the stack machine
+ *     Link.mli     a program's start, made for its link
  *
  * This file is the program around them: compile_unit, a unit's items
- * through them; a program's start (TinyMLLink's); and the interfaces
+ * through them; a program's start (Link's); and the interfaces
  * (M.tmi) a unit leaves for the next ones.
  *
  * What a value looks like at run time (runtime/ml.c has the
@@ -111,7 +111,7 @@
  * (module ISA = TinyLibMachine: M.x is M.x). An attribute,
  * [@@deriving show] or another, is read and dropped (OCaml derives
  * show on the host), and Logs.debug (fun m -> m "fmt" args)'s format is
- * read as Printf's (TinyMLPrintf). An operator is OCaml's, any run of
+ * read as Printf's (Formats). An operator is OCaml's, any run of
  * its characters, defined by let ( // ) = ...: its precedence is its
  * first character's, a prefix one starts with !, ~ or ?. {|quoted
  * strings|}, OCaml's, are read (a help's text). Left out: modules
@@ -162,7 +162,7 @@
  *   disambiguation, done cheaply (ocaml-light just takes the last
  *   declared label).
  * - {b A stack machine in between}, the same design as TinyC's
- *   (TinyC/TinyCLower.mli), written again (TinyMLMachine):
+ *   (TinyC/TinyCLower.mli), written again (Machine):
  *   each expression pushes its value, the stack is kept in r1..r11, and
  *   a pattern becomes a sequence of tests, each jumping to the next
  *   clause on failure.
@@ -293,7 +293,7 @@
  *
  * design:
  * Names have no pass of their own. A type, a constructor, a label and
- * an abbreviation are strings in global tables (TinyMLTree's cons,
+ * an abbreviation are strings in global tables (Tree's cons,
  * record_labels, abbreviations), filled as the parser reads the
  * declarations and as the interfaces are read; a name is looked up in
  * them when it is used, and the latest one in wins. That is little
@@ -337,12 +337,12 @@
  * output: every function's code, and <unit>.init, its toplevel; the
  * names it defined, and its globals' count *)
 val compile_unit :
-  (TinyMLTree.item * int) list -> (string * TinyMLCompile.binding) list * int
+  (Tree.item * int) list -> (string * Compile.binding) list * int
 
 (* the program: its arguments (its name first), files of ML to a file
  * of assembly (-h: how), to how it ends. Given a program's files, ml -o
  * prog.start.o lib.a... file.o..., the program's start, which only the
- * whole program can make (TinyML/TinyMLLink.mli) *)
+ * whole program can make (TinyML/Link.mli) *)
 val main :
   < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout; Cap.stderr; .. > ->
   string array -> Exit.t

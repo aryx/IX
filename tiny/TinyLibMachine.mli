@@ -7,7 +7,7 @@
  *                          text and listing (tiny-cpu -l, debug)
  *     the lines            line: the assembly the compilers make
  *                          (tiny-cc's TinyCMachine, tiny-ml's
- *                          TinyMLMachine) and tiny-as reads (its
+ *                          Machine) and tiny-as reads (its
  *                          parse); print_line its text (-S)
  *     the objects          the lines once encoded (assemble): what the
  *                          compilers and tiny-as write

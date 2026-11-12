@@ -72192,3 +72192,42 @@ Claude planned to commit only after the full suite passed: `make test`, the anal
 Claude had the full run still going when it reported back, so nothing was committed yet.
 Claude said it would report the results, then commit the fix and the TinyML.mli naming note once green.
 Claude's pending commit also covers the reflowed units paragraph, which now names abbreviations `M.t`.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 16:27
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed 3f36dbe6 once `make test`, the analyzer, the image check, and self-quick all passed.
+Claude wrote TinyML.mli to explain why tiny-ml leaves out a naming pass.
+The note weighs that pass's pros and cons against the abbreviation bug that resolving names by load order allowed.
+It also compares how Caml Light, OCaml and mini-ml resolve names, so the trade-off is visible.
+Open items remain: qualified names, `make self`, image size, CORE's second copy, and bookkeeping.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 16:34
+
+**Yoann:**
+
+> note that maybe we can add some dropped: comment in tiny/Buildfile, like a global view dropped: for instance we do not build any tiny-lex and tiny-yacc, but instead chosen handwritten lexer/parser for the tiny spirit. Maybe there are more highlevel whole-system dropped: kept: twist: we could add to the Build file, used like a .mli but talking about the whole system instead of just one program
+
+------------------------------------------------------------------------
+
+## 2026-11-12 16:34
+
+**Yoann:**
+
+> or maybe it should be in the tiny/README.md
+
+**Claude (summary):**
+
+Claude wrote a twin, kept, dropped, twist summary into tiny/README.md, not yet committed.
+Claude had planned to stage only its own comment lines in tiny/Buildfile when asked to commit.
+Claude noted another session's TinyML rename had also changed the ML_UNITS line in that Buildfile.
+Claude would leave that half-done rename out, so it would not be committed under Claude's name.

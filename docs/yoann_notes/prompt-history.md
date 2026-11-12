@@ -72478,3 +72478,58 @@ Claude also named the disk size and the check-session re-recording as decisions 
 **Yoann:**
 
 > so even /lib is not needed I think in the boot image
+
+------------------------------------------------------------------------
+
+## 2026-11-12 18:18
+
+**Yoann:**
+
+> what we need for testing is another thing, and should not influence too much the boot vs disk thing
+
+**Claude (summary):**
+
+Claude updated the plan's model, moving /lib to /boot and keeping tests out of the choice.
+Claude proposed that /boot hold a repair kit: sh or rc, ls, cat, cp, rm, and maybe ed.
+Claude framed the kit as the smallest set of programs needed to repair a disk that will not boot.
+Claude noted the kit stays small while still letting you fix the system on disk when it fails.
+Claude left the choice between the kit and sh alone, and the disk layout, open for Yoann.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 18:56
+
+**Yoann:**
+
+> I like the repair kit idea
+
+------------------------------------------------------------------------
+
+## 2026-11-12 18:56
+
+**Yoann:**
+
+> and I like the 2 disk thing too
+
+**Claude (summary):**
+
+Claude proposed a two-disk design: the system on the first disk as root, sources at `/src` on the second, plus a `/boot` repair kit.
+Claude said a second disk needs a second `-d` in tiny-machine and the web page, and the kernel must mount it at `/src`.
+Claude noted TinyKernelFS keeps per-disk state in global refs, which would become a record per disk, with tests covering two disks.
+Claude wrote the plan to `docs/plans/plan_tiny_boot_disk.md` (uncommitted) and asked whether to commit it and start step 0.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 18:57
+
+**Yoann:**
+
+> having 2 disks allows us to strongly enforce that a /lib is enough to compile use programs for instance
+
+**Claude (summary):**
+
+Claude recommended a second disk so a machine with only the system's disk proves `/lib` is enough to build programs.
+Claude noted that session 28 can build and run `/examples` on the system's disk alone, giving a free test.
+Claude added this to the plan as a decision under decision 1 and a check in step 3.
+Claude's reasoning was that with `/src` on the same disk, a Buildfile could silently reach into the sources.
+The plan at `docs/plans/plan_tiny_boot_disk.md` is still uncommitted, and Claude asked whether to commit it and start step 0.

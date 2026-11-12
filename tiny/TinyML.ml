@@ -17,8 +17,8 @@ module Machine = TinyMLMachine
 module Compile = TinyMLCompile
 module Link = TinyMLLink
 
-let usage = {|usage: tiny-ml [-L dir | -nostdlib] [-S] [-o out.o] file.ml...
-       | tiny-ml -c [-S] [-I dir]... [-o out.o] file.ml
+let usage = {|usage: tiny-ml [-L dir] [-S] [-o out.o] file.ml...
+       | tiny-ml -c [-S] [-L dir] [-I dir]... [-o out.o] file.ml
        | tiny-ml -o prog.start.o lib.a... file.o...
        | tiny-ml -depend [-I dir]... file.ml...|}
 
@@ -39,9 +39,9 @@ functors nor labels) to an object of tiny-machine's code, for tiny-ld;
 main.c includes tiny/runtime/ml.c and gives it memory (ml_run),
 exit.s is exit (sys 0), as tiny/tests/TinyML_test.sh makes them. The
 standard library, TinyLibCore/'s modules, is read from /lib/ml (-L: another
-directory), its interfaces Stdlib.tmi ... Sha1.tmi, and linked from there
-(stdlib.a, its objects), each module compiled once by tiny-ml -c -nostdlib
-after the ones before it.
+directory), the interfaces of those a file names, Stdlib's always, and
+linked from there (stdlib.a, its objects); each module compiled once, by
+tiny-ml -c -L . in TinyLibCore/, after the ones it names.
 Several files are a module each, one after the other, then their main: a's
 x is A.x in b, or x after open A. Or a module at a time, then the start:
   tiny-ml -c a.ml                          a.o, its code; a.tmi, its interface
@@ -132,22 +132,19 @@ let compile_unit (items : (Tree.item * int) list) =
  * (bugs/ix.md). old: iname, iglobals, icurry, three fields of eight) *)
 (* (tuples, as cinfo's and linfo's fields but the type, which Marshal
  * writes as records: the same blocks) *)
-(* the standard library, TinyLibCore/'s modules in their order, the
- * first units of every program: each compiled once, by tiny-ml -c
- * -nostdlib after the ones before it, and read as interfaces from a
- * directory, /lib/ml on tiny-kernel (-L another), its objects
- * linked as any unit's, from a library (stdlib.a).
- * (old: their text the compiler's, TinyMLPrelude.ml made of them by the
- * build, compiled again at each run: a unit of one line took 47 s on
- * tiny-kernel, and every program's main the library's code, 420 KB of
- * assembly;
- * older: the prelude, TinyLibCore.ml, one unit, its List.map a name
- * with a dot) *)
-let library =
-  [ "Stdlib"; "Char"; "Seq"; "List"; "String"; "Bytes"; "Array"; "Option";
-    "Int32"; "Int64"; "Filename"; "Buffer"; "Printf"; "Marshal"; "Hashtbl";
-    "Common"; "Sha1"; "Fpath"; "Fpath_"; "Exit"; "In_channel"; "Out_channel";
-    "Chan"; "Logs" ]
+(* the standard library, TinyLibCore/'s modules, the first units of
+ * every program: each compiled once, with -L where the ones it names
+ * are (TinyLibCore/Buildfile's -L .), and read as interfaces from a
+ * directory, /lib/ml on tiny-kernel (-L another), as any unit's from
+ * -I's, only those a unit names; its objects linked as any unit's,
+ * from a library (stdlib.a).
+ * (old: all of its interfaces read by every unit, in a list of them
+ * here, and -nostdlib for its own units, which did not exist yet;
+ * older: their text the compiler's, TinyMLPrelude.ml made of them by
+ * the build, compiled again at each run: a unit of one line took 47 s
+ * on tiny-kernel, and every program's main the library's code, 420 KB
+ * of assembly; older: the prelude, TinyLibCore.ml, one unit, its
+ * List.map a name with a dot) *)
 
 (* a constructor: its name, kind, arity, its type's constant and other
  * constructors' counts, its type *)
@@ -165,10 +162,9 @@ type interface = {
   ivals : (string * Compile.binding * Tree.texpr) list;
   ideps : string list;
     (* the units whose interfaces were read before this one was
-     * compiled, in their order: what -I reads before it, as OCaml's
-     * .cmi names its imports. A program's unit leaves out the library's
-     * (-L reads them all); a library's unit keeps them, read by -I
-     * (Int64's types name Int32's int32) *)
+     * compiled, in their order: what -I and -L read before it, as
+     * OCaml's .cmi names its imports (Int64's types name Int32's
+     * int32) *)
 }
 
 (* the units whose interfaces were read, in their order *)
@@ -212,6 +208,19 @@ let write_interface (old : before) (exports : (string * Compile.binding) list)
    * builds of tiny-ml) *)
   let names tbl =
     List.sort_uniq compare (Hashtbl.fold (fun k _ acc -> k :: acc) tbl []) in
+  (* the unit's own abbreviations named M.t wherever its types name
+   * them: read elsewhere, t is whichever unit's was read last (Tree's
+   * abbreviations) *)
+  let own =
+    List.filter_map (fun ((t, _) as ab) ->
+        if old.old_abbrev ab then None else Some t) !Parser.abbreviations in
+  let rec qualified te =
+    match te with
+    | Tree.TE (c, args) ->
+        Tree.TE ((if List.mem c own then !Tree.unit_name ^ "." ^ c else c),
+                 List.map qualified args)
+    | Tree.TEVar _ -> te in
+  let texpr_of_ty t = qualified (texpr_of_ty t) in
   let icons = List.filter_map (fun c ->
     let ci = Hashtbl.find Tree.cons c in
     if old.old_con c ci then None
@@ -242,16 +251,13 @@ let write_interface (old : before) (exports : (string * Compile.binding) list)
     { iunit = !Tree.unit_name, nglobals, !Machine.arities; icons = icons;
       ilabels = ilabels;
       iabbrevs =
-        List.filter (fun a -> not (old.old_abbrev a))
+        List.filter_map (fun ((t, (ps, te)) as a) ->
+            if old.old_abbrev a then None else Some (t, (ps, qualified te)))
           (List.rev !Parser.abbreviations);
       iforgotten =
         List.filter (fun t -> not (old.old_forgotten t)) !Parser.forgotten;
       ivals = ivals;
-      ideps =
-        (if List.mem !Tree.unit_name library then List.rev !read_units
-         else
-           List.filter (fun u -> not (List.mem u library))
-             (List.rev !read_units)) }
+      ideps = List.rev !read_units }
     (* (No_sharing: which of two equal names is the same string depends
      * on a table's order, OCaml's or TinyLibCore's; shared, the host's
      * and tiny-kernel's interfaces differed in 3 of the system's 40) *)
@@ -272,6 +278,17 @@ and register (i : interface) =
   read_units := !read_units @ [ iname ];
   let ty te = Tree.of_texpr (ref []) te in
   Tree.known_units := iname :: !Tree.known_units;
+  (* its abbreviations first, which its other types name (M.t): each as
+   * t, the latest, and as M.t, its own *)
+  let add name ps te =
+    Parser.abbreviations :=
+      (name, (ps, te))
+      :: List.filter
+           (fun (t', (ps', _)) ->
+             t' <> name || List.length ps' <> List.length ps)
+           !Parser.abbreviations in
+  List.iter (fun (t, (ps, te)) -> add t ps te; add (iname ^ "." ^ t) ps te)
+    i.iabbrevs;
   List.iter (fun (c, kind, arity, nconst, nblock, te) ->
       Hashtbl.replace Tree.cons c
         { kind = kind; arity = arity; nconst = nconst; nblock = nblock;
@@ -287,13 +304,6 @@ and register (i : interface) =
     Hashtbl.add Tree.record_labels l
       { lrec = r; idx = idx; mut = mut; lnames = lnames; lscheme = ty te })
     i.ilabels;
-  List.iter (fun (t, (ps, te)) ->
-    Parser.abbreviations :=
-      (t, (ps, te))
-      :: List.filter
-           (fun (t', (ps', _)) -> t' <> t || List.length ps' <> List.length ps)
-           !Parser.abbreviations)
-    i.iabbrevs;
   List.iter (fun t ->
       if not (List.mem t !Parser.forgotten) then Parser.forgotten := t
         :: !Parser.forgotten)
@@ -355,21 +365,20 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
                    Cap.stderr; .. >)
     (argv : string array) : Exit.t =
   let output = ref None and file = ref "" and files = ref []
-  and separate = ref false and lib = ref (Some "/lib/ml")
+  and separate = ref false and lib = ref "/lib/ml"
   and text = ref false and incl = ref [] and depend = ref false in
   let rec args l = match l with
     | "-o" :: o :: r -> output := Some (Fpath.v o); args r
     | "-S" :: r -> text := true; args r
     | "-c" :: r -> separate := true; args r
-    | "-L" :: d :: r -> lib := Some d; args r
+    | "-L" :: d :: r -> lib := d; args r
     | "-I" :: d :: r -> incl := !incl @ [ Fpath.v d ]; args r
     | "-depend" :: r -> depend := true; args r
-    | "-nostdlib" :: r -> lib := None; args r
     (* a library, as ocamlc takes stdlib.cma: its interfaces beside it
      * (-L its directory), its objects tiny-ld's (a link's, where it
      * is among the files) *)
     | f :: r when Filename.check_suffix f ".a" ->
-        lib := Some (Filename.dirname f); files := Fpath.v f :: !files; args r
+        lib := Filename.dirname f; files := Fpath.v f :: !files; args r
     | f :: r -> files := Fpath.v f :: !files; args r
     | [] -> ()
   in
@@ -411,11 +420,11 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
                              (Filename.remove_extension name ^ ".tmi"))))
         members
     else beside (Fpath.set_ext ".tmi" f) in
-  (* a start's interfaces, its files'; a unit's are -I's (old: also
+  (* a start's interfaces, its files'; a unit's are -I's and -L's (old: also
    * .tmi files given, in their order, before the .ml: two ways for one
    * thing) *)
   let tmis = if of_link then List.concat_map units_of files else [] in
-  (* [in_dirs m ext]: the file of module m in the -I directories, its
+  (* [in_dirs dirs m ext]: the file of module m in the directories, its
    * name M.ext or m.ext (user/tetris.ml is Tetris), compared by the
    * directory's names, not by exists: a host's file system may take
    * Machine.ml for machine.ml *)
@@ -426,13 +435,13 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
     | None ->
         let l = try TinyLibSystem.readdir caps d with Failure _ -> [] in
         Hashtbl.replace listed d l; l in
-  let in_dirs m ext =
+  let in_dirs dirs m ext =
     List.find_map (fun d ->
       List.find_map (fun base ->
         if List.mem (base ^ ext) (names d)
         then Some (Fpath.add_seg d (base ^ ext)) else None)
         [ m; String.lowercase_ascii (String.sub m 0 1)
-             ^ String.sub m 1 (String.length m - 1) ]) !incl in
+             ^ String.sub m 1 (String.length m - 1) ]) dirs in
   if List.mem "-h" argl || List.mem "--help" argl then
     (TinyLibSystem.print caps help; Exit.OK)
   (* -depend: each unit's line for a Buildfile, as ocamldep's and m-ix's
@@ -441,7 +450,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
    * (before any is built), and its .mli; what -c -I will read, so that a
    * build makes them first, and the unit again when one of them changes *)
   else if !depend then begin
-    let source m = in_dirs m ".ml" in
+    let source m = in_dirs !incl m ".ml" in
     (* a path as a Buildfile names it: ./x is x *)
     let here p =
       let s = Fpath.to_string p in
@@ -499,26 +508,21 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
    * .ml, main.o when it has none (old: its text on stdout) *)
   let named f = Fpath.set_ext (if !text then ".s" else ".o") (Fpath.base f) in
   try
-    (* the interfaces read, in their order: the library's, then the
-     * units before this one *)
-    let lib =
-      match !lib with
-      (* (a link: the libraries it names, their members, are its units) *)
-      | Some d when not of_link ->
-          List.map (fun m -> Fpath.add_seg (Fpath.v d) (m ^ ".tmi")) library
-      | _ -> []
-    in
+    (* a start's interfaces, its files', in the link's order *)
     let units, needed =
       List.fold_left (fun (units, needed) f ->
           let u, n = with_file read_interface f in
           units @ [ u ], needed @ n)
-        ([], []) (lib @ tmis) in
-    (* -I: the interfaces of the modules the unit names, found in the
-     * directories, each after those it was compiled with (its ideps),
-     * once; a name with none (an alias, the library's, the unit) skipped
-     * (old: each interface an argument, in order) *)
-    if !incl <> [] then begin
-      let find m = in_dirs m ".tmi" in
+        ([], []) tmis in
+    (* the interfaces of the modules a unit names, found in -I's
+     * directories, then in -L's (the library's), each after those it
+     * was compiled with (its ideps), once; a name with none (an alias,
+     * the unit) skipped. Their units, in the order read, are a whole
+     * program's first (old: every library unit's interface read, the
+     * library's list, whatever the unit named) *)
+    let read = ref [] in
+    if not of_link then begin
+      let find m = in_dirs (!incl @ [ Fpath.v !lib ]) m ".tmi" in
       let decoded = Hashtbl.create 17 in
       let interface m =
         match Hashtbl.find_opt decoded m with
@@ -536,7 +540,8 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
           | None -> ()
           | Some i ->
               List.iter need i.ideps;
-              if not (List.mem m !read_units) then ignore (register i) in
+              if not (List.mem m !read_units) then
+                read := !read @ [ register i ] in
       (* how many units an interface stands on, its ideps' and theirs *)
       let rec closure m =
         match interface m with
@@ -552,9 +557,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
           if TinyLibSystem.exists caps mli
           then with_file (fun ch -> named_units (text_of ch)) mli
           else [] in
-        (* Stdlib first, named or not, as OCaml opens it: a library's
-         * unit compiled -nostdlib -I TinyLibCore; read by -L already
-         * otherwise *)
+        (* Stdlib first, named or not, as OCaml opens it *)
         let names = "Stdlib" :: in_ml @ in_mli in
         let names = List.filter (fun m -> m <> own) names in
         (* those that stand on fewer first, the source's order between
@@ -569,6 +572,8 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
             names in
         List.iter need order) mls
     end;
+    let units = units @ List.map fst !read
+    and needed = needed @ List.concat_map snd !read in
     (* a file's unit typed and compiled: its names' types, its names'
      * values, its globals' count *)
     let compile_file f =

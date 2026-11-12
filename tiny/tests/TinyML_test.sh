@@ -101,7 +101,7 @@ if $TML -L $W/lib -c -o $W/units/Shapes.o $UT/Shapes.ml && $TML -L $W/lib -c -I 
    && [ "$(timeout 60 $CPU $W/units/whole 2>&1; echo "exit $?")" = "$(cat $UT/Main.out)" ]
 then echo "ok units: Shapes and Main compiled apart, and whole, Main.out's output"; else echo "FAIL units"; failures=$((failures + 1)); fi
 # a .tmi given is not taken: interfaces are -I's
-if [ "$($TML -L $W/lib -c -o $W/units/X.o $W/units/Shapes.tmi $UT/Main.ml 2>&1 | head -1)" = "usage: tiny-ml [-L dir | -nostdlib] [-S] [-o out.o] file.ml..." ]
+if [ "$($TML -L $W/lib -c -o $W/units/X.o $W/units/Shapes.tmi $UT/Main.ml 2>&1 | head -1)" = "usage: tiny-ml [-L dir] [-S] [-o out.o] file.ml..." ]
 then echo "ok units: a .tmi given, the usage"; else echo "FAIL units: a .tmi given"; failures=$((failures + 1)); fi
 # a unit's names are M.x in the units after it, x after open M only
 printf 'let () = print_int (Shapes.area Dot)\n' > $W/units/Q.ml; printf 'let d = Shapes.Dot\nlet () = print_int (area d)\n' > $W/units/U.ml
@@ -141,8 +141,8 @@ then echo "ok units: two units' Error, two exceptions"; else echo "FAIL units: t
 # a string the file ends inside, after a backslash or not: an error
 # that names the file, not a read past its end
 printf 'let x = "abc\n' > $W/dep/S1.ml; printf 'let y = "ab\\' > $W/dep/S2.ml
-if [ "$($TML -c -nostdlib -o $W/dep/S1.o $W/dep/S1.ml 2>&1; echo "exit $?")" = "$W/dep/S1.ml: unterminated string
-exit 1" ] && [ "$($TML -c -nostdlib -o $W/dep/S2.o $W/dep/S2.ml 2>&1; echo "exit $?")" = "$W/dep/S2.ml: unterminated string
+if [ "$($TML -c -o $W/dep/S1.o $W/dep/S1.ml 2>&1; echo "exit $?")" = "$W/dep/S1.ml: unterminated string
+exit 1" ] && [ "$($TML -c -o $W/dep/S2.o $W/dep/S2.ml 2>&1; echo "exit $?")" = "$W/dep/S2.ml: unterminated string
 exit 1" ]
 then echo "ok lexer: an unterminated string"; else echo "FAIL lexer: an unterminated string"; failures=$((failures + 1)); fi
 # a number or an escape tiny-ml cannot read: an error with its line (old:
@@ -150,7 +150,7 @@ then echo "ok lexer: an unterminated string"; else echo "FAIL lexer: an untermin
 # Invalid_argument, and '\999' a char of code 999)
 printf 'let x = 1\nlet y = 99999999999999999999999\n' > $W/dep/N1.ml; printf 'let s = "\\9zz"\n' > $W/dep/N2.ml
 printf 'let s = "\\999"\n' > $W/dep/N3.ml; printf "let c = '\\\\999'\n" > $W/dep/N4.ml
-lexed() { $TML -c -nostdlib -o $W/dep/N.o $W/dep/$1 2>&1; echo "exit $?"; }
+lexed() { $TML -c -o $W/dep/N.o $W/dep/$1 2>&1; echo "exit $?"; }
 if [ "$(lexed N1.ml)" = "$W/dep/N1.ml: line 2: bad integer 99999999999999999999999
 exit 1" ] && [ "$(lexed N2.ml)" = "$W/dep/N2.ml: line 1: bad escape \\9zz
 exit 1" ] && [ "$(lexed N3.ml)" = "$W/dep/N3.ml: line 1: bad escape \\999

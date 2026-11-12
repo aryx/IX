@@ -15,8 +15,8 @@
  * module, and compares a program's lines on both. What is left out is
  * what no tiny program names.
  *
- * Each module is compiled once, by tiny-ml -c -nostdlib after the ones
- * before it, to its object and its interface: on tiny-kernel in
+ * Each module is compiled once, by tiny-ml -c -L . after the ones it
+ * names, to its object and its interface: on tiny-kernel in
  * /lib/ml, where tiny-ml reads the interfaces (-L another
  * directory). They are the first units of every program; what a
  * program does not call, tiny-ld leaves out (its pieces).

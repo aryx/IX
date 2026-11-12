@@ -197,11 +197,12 @@
  *   is a module: its names are M.x in the units after it, or x after
  *   open M; Stdlib is open in all, and with it TinyLibCore/'s modules,
  *   the standard library, are the first units of every program, each
- *   compiled once (-nostdlib), their interfaces read from a directory
- *   (/lib/ml, or -L's). The types and the labels are the program's,
- *   one name space: a record's label is the latest record's unless the
- *   type says which; a constructor too, unless its unit says which
- *   (M.C). Each function and static block is a piece (.piece), which
+ *   compiled once (-L ., in TinyLibCore/), their interfaces read from a
+ *   directory (/lib/ml, or -L's), those a unit names. The types and
+ *   the labels are the program's, one name space: a record's label is
+ *   the latest record's unless the type says which; a constructor too,
+ *   unless its unit says which (M.C); an abbreviation too, but an
+ *   interface names its own as M.t (design, below). Each function and static block is a piece (.piece), which
  *   tiny-ld leaves out when nothing reaches it: a function of the
  *   toplevel has no free variable, so
  *   its closure is static and the init does not name it, and a library
@@ -289,6 +290,30 @@
  * function again for each type it is used at (MLton, C++ templates,
  * Rust): no tags, no boxes, but more code, and the whole program is
  * needed at once.
+ *
+ * design:
+ * Names have no pass of their own. A type, a constructor, a label and
+ * an abbreviation are strings in global tables (TinyMLTree's cons,
+ * record_labels, abbreviations), filled as the parser reads the
+ * declarations and as the interfaces are read; a name is looked up in
+ * them when it is used, and the latest one in wins. That is little
+ * code, and a declaration is usable at once, with no environment to
+ * thread through the passes. The price is that what a name means can
+ * depend on the order the interfaces were read in, and each case
+ * where two units' names meet has had its own rule added: a
+ * constructor kept twice, C and M.C, open M copying M's, a label the
+ * latest record's unless the type says, an abbreviation kept as t and
+ * M.t (In_channel's t and Fpath's t were one name: In_channel.input
+ * took a string when Fpath's interface was read after In_channel's).
+ * The other road is a pass that resolves every name before typing:
+ * Caml Light's names are qualified from their declaration (a qualid,
+ * a unit and a name), a bare one looked up in the unit, then in the
+ * opened units in a fixed order; OCaml's are paths of stamped
+ * identifiers in an environment, an abbreviation expanded by its path;
+ * m-ix's mini-ml has Resolve, after which a type is its declaration
+ * itself (Scope's tdecl, its full path) and no name is looked up
+ * again. Each is more code, and no order of reading can change a
+ * name's meaning.
  *
  * references:
  * plan_ml.md's related work lists them too:

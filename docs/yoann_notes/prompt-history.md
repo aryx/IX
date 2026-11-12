@@ -72121,3 +72121,74 @@ Claude's list included an image size check (9.15 MB of a 10 MB limit) and a dupl
 Claude suggested two optional tool changes: making tiny-ml's `-L` read only the units a source names, which would make `-nostdlib` unnecessary.
 Claude also proposed letting tiny-cc qualify local labels beyond the file name, which would allow two `draw.c` files in one program.
 Claude asked whether to commit the two test-script fixes and start `make self` in the background.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 16:10
+
+**Yoann:**
+
+> let's commit; I like the idea of removing -nostdlib; very tiny spirit to remove stuff instead of adding stuff, especially if we can find a more elegant way to do things. So if -nostdlib it's not needed, let's remove it!
+
+**Claude (summary):**
+
+Claude recommended fixing the real bug by qualifying each type abbreviation with its unit name when it is read.
+Claude explained that type abbreviations share one program-wide name space, so the last-read `t` wins.
+Claude traced the image failure to Fpath's `t = string` shadowing In_channel's `t` in TinyUtilities.ml.
+That fix changes tiny-ml's parser abbreviations and interface reader, while keeping -nostdlib removed.
+Earlier, Claude removed -nostdlib, but the image build broke, so nothing was committed yet.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 16:19
+
+**Yoann:**
+
+> let's fix the real bug in TinyML. I don't fully understand it but it seems worth fixing
+
+------------------------------------------------------------------------
+
+## 2026-11-12 16:20
+
+**Yoann:**
+
+> we seem to hit often subtle bugs related to naming and qualified names ... how it's done in ocaml-light and ocaml? why we constantly hit those issues? what does mini-ml does?
+
+**Claude (summary):**
+
+Claude said tiny-ml has no name resolution, so bare type and constructor names share one global table.
+Claude recommended finishing the in-progress fix that qualifies abbreviations just as constructors already are.
+Claude said this fix, which keeps `t` and `In_channel.t` distinct, would also let the `-nostdlib` flag go.
+Claude argued the step is small and fixes this bug, so it should come before the larger rewrite.
+Claude left the Caml Light-style unit-qualified rewrite for later and asked whether to finish step 1.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 16:21
+
+**Yoann:**
+
+> also why ocaml-light needs an -nostdlib? there must have been a reason for introducing this feature in ocaml
+
+**Claude (summary):**
+
+Claude found ocaml-light avoids -nostdlib by reading .cmi files on demand, so tiny-ml's flag was unnecessary.
+Claude proposed finishing its half-written narrow fix: abbreviations named In_channel.t in the interfaces.
+Claude planned to test and commit the -nostdlib removal once that abbreviation fix was complete.
+Claude noted the bare-name problem stays until names are fully qualified Caml Light-style, which it deferred.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 16:23
+
+**Yoann:**
+
+> yes finish 1, and let's add in the .mli this lack of naming phase and the pro and cons of it
+
+**Claude (summary):**
+
+Claude fixed unit-abbreviation resolution so interfaces name `M.t`, and wrote a names design paragraph.
+Claude planned to commit only after the full suite passed: `make test`, the analyzer, and image checks.
+Claude had the full run still going when it reported back, so nothing was committed yet.
+Claude said it would report the results, then commit the fix and the TinyML.mli naming note once green.
+Claude's pending commit also covers the reflowed units paragraph, which now names abbreviations `M.t`.

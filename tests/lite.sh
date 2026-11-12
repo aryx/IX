@@ -240,7 +240,7 @@ tiny_self() {
 rc
 mkdir q; cd q
 cc -I /src/runtime -o ping.o /src/TinyKernel/user/ping.c
-ml -c -nostdlib -o Stdlib.o /src/TinyLibCore/Stdlib.ml
+ml -c -o Stdlib.o /src/TinyLibCore/Stdlib.ml
 cmp Stdlib.tmi /lib/ml/Stdlib.tmi && echo Stdlib.tmi: the host
 echo 'int main(void) { return 6 * 7; }' > m.c
 cc -o m.o m.c

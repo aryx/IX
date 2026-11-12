@@ -156,6 +156,17 @@ let open_cons m =
         else acc) cons [] in
   List.iter (fun (c, ci) -> Hashtbl.replace cons c ci) opened
 
+(* type word = piece list, type 'a t = unit -> 'a node: a second name
+ * for a type, its parameters' names; unify puts the type in the name's
+ * place when the two differ, so a name may be used above its
+ * declaration. A name and its number of parameters say which: Sha1's
+ * t and Seq's 'a t are two. A unit's, read from its interface, is t,
+ * the latest, and M.t, its own, which the interfaces name: In_channel's
+ * t, in_channel, is not Fpath's t, string, whichever was read last.
+ * (old: t alone, the latest read, which the order the interfaces were
+ * read in chose; no parameter, a name only) *)
+let abbreviations : (string * (string list * texpr)) list ref = ref []
+
 let rec of_texpr vars = function
   | TEVar v ->
       (match List.assoc_opt v !vars with
@@ -164,7 +175,8 @@ let rec of_texpr vars = function
   | TE (c, args) ->
       let c =
         match String.index_opt c '.' with
-        | Some i when List.mem (String.sub c 0 i) !known_units ->
+        | Some i when List.mem (String.sub c 0 i) !known_units
+                      && not (List.mem_assoc c !abbreviations) ->
             String.sub c (i + 1) (String.length c - i - 1)
         | _ -> c
       in

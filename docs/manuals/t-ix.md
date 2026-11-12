@@ -539,8 +539,8 @@ pointer), so a constant beyond them is refused. The runtime is
 `runtime/ml.c`, compiled by `tiny-cc`, with a `main` that gives
 it its memory. A C or assembly function is called as an `external`,
 with C's convention and ML's values. The standard library,
-`TinyLibCore/`'s modules, is compiled once (`tiny-ml -c -nostdlib`, each
-module after the ones before it); tiny-ml reads its interfaces from
+`TinyLibCore/`'s modules, is compiled once (`tiny-ml -c -L .`, each
+module after the ones it names); tiny-ml reads its interfaces from
 `/lib/ml` (`-L` another directory), and a program is linked with its
 objects, kept in one library, `stdlib.a` (tiny-ar).
 

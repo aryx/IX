@@ -116,7 +116,11 @@ val known_units : string list ref
 val add_con : string -> cinfo -> unit
 (* open M: M's constructors M.C made C, shadowing those before *)
 val open_cons : string -> unit
-(* a type expression as a type, its variables' names in vars *)
+(* type 'a t = ...: a second name for a type, its parameters' names; a
+ * unit's read from its interface twice, t, the latest, and M.t *)
+val abbreviations : (string * (string list * texpr)) list ref
+(* a type expression as a type, its variables' names in vars; M.t is
+ * t, but for an abbreviation M.t, its unit's *)
 val of_texpr : (string * ty) list ref -> texpr -> ty
 (* a name, its type not known yet *)
 val var : string -> expr

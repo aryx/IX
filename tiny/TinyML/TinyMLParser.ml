@@ -32,13 +32,8 @@ let fresh = ref 0
 (* the names of types declared as an object's: read and forgotten (ty) *)
 let forgotten : string list ref = ref []
 
-(* type word = piece list, type 'a t = unit -> 'a node: a second name
- * for a type, its parameters' names; unify puts the type in the name's
- * place when the two differ, so a name may be used above its
- * declaration. A name and its number of parameters say which: Sha1's
- * t and Seq's 'a t are two
- * (old: no parameter, a name only) *)
-let abbreviations : (string * (string list * Tree.texpr)) list ref = ref []
+(* the abbreviations, TinyMLTree's (of_texpr reads them too) *)
+let abbreviations = Tree.abbreviations
 
 (* the abbreviation that a name with these arguments is *)
 let abbreviation c ts =

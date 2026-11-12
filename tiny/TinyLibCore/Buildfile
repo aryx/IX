@@ -25,11 +25,11 @@ CORE = Stdlib Char Seq List String Bytes Array Option Int32 Int64 \
 stdlib.a: ${CORE:%=%.o}
 	$AR -o $target $prereq
 
-# a unit, with the interfaces of the units it names, found here (-I .),
-# Stdlib's first, as OCaml opens it; -nostdlib: no library yet, it is
-# being made. Which interfaces: its line in .depend
+# a unit, with the interfaces of the units it names, Stdlib's first, as
+# OCaml opens it: the library is here (-L .), being made, each unit
+# after those it names, its line in .depend
 %.o: %.ml
-	$ML -c -nostdlib -I . -o $target $stem.ml
+	$ML -c -L . -o $target $stem.ml
 %.tmi: %.o
 
 # the units' dependencies, written by ml -depend as ocamldep writes OCaml's

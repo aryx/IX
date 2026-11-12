@@ -27,7 +27,7 @@ for c in $ROOT/tiny/tests/TinyC_tests/*.c; do
   (cd $(dirname $c) && $TC -S -o $W/c/$(basename $c .c).s $(basename $c)) || { echo "FAIL tiny-cc $c"; exit 1; }
 done
 for m in Stdlib Char Seq List String; do
-  $TML -c -nostdlib -I $W/c -S -o $W/c/$m.s $ROOT/tiny/TinyLibCore/$m.ml || { echo "FAIL tiny-ml $m"; exit 1; }
+  $TML -c -L $W/c -S -o $W/c/$m.s $ROOT/tiny/TinyLibCore/$m.ml || { echo "FAIL tiny-ml $m"; exit 1; }
 done
 
 files=0 bad=0

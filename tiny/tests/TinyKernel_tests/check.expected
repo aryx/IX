@@ -252,7 +252,7 @@ b
       2
 % tiny-build: don't know how to make nosuch
 % $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
-tiny-kernel: / on a disk of 65536 KB, 63721 KB free; 1 snapshots in /dump
+tiny-kernel: / on a disk of 65536 KB, 62222 KB free; 1 snapshots in /dump
 $ % % % % % % % % ping: /bin/ping
 % % mach.o: the host
 % mach.tmi: the host
@@ -454,7 +454,7 @@ Wed Mar  1 00:00:00 GMT 2000
 Mon Jan  9 13:37:03 GMT 2034
 7
 % $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
-tiny-kernel: / on a disk of 65536 KB, 63721 KB free; 1 snapshots in /dump
+tiny-kernel: / on a disk of 65536 KB, 62222 KB free; 1 snapshots in /dump
 $ % cc -o hello.o hello.c
 as -o square.o square.s
 ld -map -s -n -o hello /lib/c/start.o /lib/c/udivmod.o /lib/c/libc.o /lib/c/sys.o hello.o square.o

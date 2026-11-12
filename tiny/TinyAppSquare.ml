@@ -5,7 +5,7 @@
  * pixels a key, on a field it does not leave; it blinks twice a
  * second, and the seconds are counted. TinyLibPlayground_test.sh draws a
  * model of it on the host; TinyKernel's check plays it in a window
- * (play.events), where it is the program square. *)
+ * (play.events), where it is the program square (user/square.ml). *)
 
 open TinyLibPlayground
 

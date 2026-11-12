@@ -182,6 +182,14 @@
  (modules TinyAppTetris)
  (libraries tiny_lib_playground))
 
+; TinyAppSquare.ml, square, the playground's first game, a page: its test
+; on the host (tests/TinyLibPlayground_tests)
+(library
+ (name tiny_app_square)
+ (wrapped false)
+ (modules TinyAppSquare)
+ (libraries tiny_lib_playground))
+
 ; TinyPlay.ml, a WAV file played on tiny-kernel's speaker (play there,
 ; tiny-play on the host: user/sdl/); its test decodes a file
 (library

@@ -81,7 +81,7 @@ size() { echo $(( $(wc -c < "$1") )); }
 short() { local f; for f in "$@"; do f=$(readlink -f "$f"); echo -n "${f#$ROOT/} "; done; }
 
 if [ $build = 1 ]; then
-  (cd $ROOT && dune build ./tiny/TinyMachine.exe ./tiny/TinyC.exe ./tiny/TinyAssembler.exe ./tiny/TinyLinker.exe ./tiny/TinyCPU.exe ./tiny/TinyKernel/steps/t6/TinyMkfat.exe ./tiny/TinyKernel/host/TinyMkfs.exe ./tiny/TinyML.exe 2>&1) || exit 1
+  (cd $ROOT && dune build ./tiny/TinyMachine.exe ./tiny/TinyC.exe ./tiny/TinyAssembler.exe ./tiny/TinyLinker.exe ./tiny/TinyCPU.exe ./tiny/TinyKernel/steps/t6/TinyMkfat.exe ./tiny/TinyKernel/host/TinyMkfs.exe ./tiny/TinyArchiver.exe ./tiny/TinyBuildSystem.exe ./tiny/TinyShell.exe ./tiny/TinyML.exe 2>&1) || exit 1
   # (the window is a program apart: the one that links SDL)
   [ -z "$window" ] || (cd $ROOT && dune build ./tiny/TinyMachine/TinyMachineWindow.exe 2>&1) || exit 1
 fi
@@ -124,7 +124,7 @@ case $1 in
     # when disk.img is; make clean removes it)
     dir=$ROOT/tiny/TinyKernel
     if [ $build = 1 ]; then
-      make -s -C $dir TML=$B/TinyML.exe TC=$B/TinyC.exe AS=$B/TinyAssembler.exe LD=$B/TinyLinker.exe CPU=$B/TinyCPU.exe MKFS=$B/TinyKernel/host/TinyMkfs.exe MACHINE=$machine _make/boot.img _make/disk.img _make/run.img >&2 || exit 1
+      make -s -C $dir TML=$B/TinyML.exe TC=$B/TinyC.exe AS=$B/TinyAssembler.exe LD=$B/TinyLinker.exe CPU=$B/TinyCPU.exe MKFS=$B/TinyKernel/host/TinyMkfs.exe AR=$B/TinyArchiver.exe BUILD=$B/TinyBuildSystem.exe RC=$B/TinyShell.exe MACHINE=$machine _make/boot.img _make/disk.img _make/run.img >&2 || exit 1
     fi
     image=$dir/_make/boot.img
     say "kernel:  $(short $dir/_make/kernel.img)($(size $dir/_make/kernel.img) bytes; built from $(short $dir)), its programs after it"

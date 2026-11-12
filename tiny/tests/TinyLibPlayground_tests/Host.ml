@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* Square.ml on the host, by OCaml, with no machine and no loop: a model
+(* ../../TinyAppSquare.ml on the host, by OCaml, with no machine and no loop: a model
  * after some keys and frames (the game's own functions), its shapes
  * shown by TinyLibPlayground.ml, whose messages the stub kept (TinySystemTest); then
  * TinyKernelGraphics.ml draws them on TinyMemory's screen, written as
@@ -10,7 +10,7 @@
 let () =
   let font = In_channel.with_open_bin Sys.argv.(1) In_channel.input_all in
   Bytes.blit_string font 0 TinyMemory.mem 0x1000 (String.length font);
-  let g = Square.game in
+  let g = TinyAppSquare.game in
   let after keys m = List.fold_left (fun m k -> g.key k m) m keys in
   let rec frames n m = if n = 0 then m else frames (n - 1) (g.frame m) in
   (* right three times, down twice, a second and a half; up against the

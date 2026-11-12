@@ -1,10 +1,10 @@
 rc
-mkdir self; cd self
-build -f /src/TinyKernel/Buildfile
-ls boot.img; cp boot.img first.img
-echo '(* a comment *)' >> /src/TinyLibRegex.ml
-build -f /src/TinyKernel/Buildfile
-echo 'let () = print_string ""' >> /src/user/calc.ml
-build -f /src/TinyKernel/Buildfile
-build -f /src/TinyKernel/Buildfile
+cd /src
+build boot.img
+mkdir /usr/glenda/self; cp boot.img /usr/glenda/self/first.img
+echo '(* a comment *)' >> TinyLibRegex.ml
+build boot.img
+echo 'let () = print_string ""' >> user/calc.ml
+build boot.img
+build boot.img
 exit

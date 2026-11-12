@@ -887,7 +887,7 @@ and a last file that says `let () = TinyLibSystem.main "tetris"
 TinyAppTetris.main`); the same files
 are OCaml's, where a game's model and picture are tested with no
 machine. `square` is one of a page
-(`tiny/tests/TinyLibPlayground_tests/Square.ml`): type it at the screen's
+(`tiny/TinyAppSquare.ml`): type it at the screen's
 shell or in a window; `q` quits. `tetris` is `tiny/TinyAppTetris.ml`:
 the arrows move the piece (up turns it, down is a row), the space
 drops it, `m` turns the music off and on, `q` quits; after a game

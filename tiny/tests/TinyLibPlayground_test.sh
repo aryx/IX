@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # The test of TinyLibPlayground.ml on the host, built by OCaml, with no
-# machine: TinyLibPlayground_tests/Square.ml, a game of a page, its model
+# machine: ../TinyAppSquare.ml, a game of a page, its model
 # after some keys and frames, shown; the messages TinyLibPlayground.ml
 # made are drawn by TinyKernelGraphics.ml. The lines it prints (where the
 # square is; random numbers from a seed) against square.expected, the

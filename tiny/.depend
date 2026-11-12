@@ -1,4 +1,5 @@
 TinyAppCalculator.o: TinyLibGUI.tmi TinyLibPlayground.tmi TinyAppCalculator.mli
+TinyAppSquare.o: TinyLibPlayground.tmi
 TinyAppTemperature.o: TinyLibGUI.tmi TinyAppTemperature.mli
 TinyAppTetris.o: TinyLibPlayground.tmi TinyAppTetris.mli
 TinyArchiver.o: TinyLibMachine.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyArchiver.mli
@@ -75,12 +76,10 @@ user/debug.o: TinyDebugger.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi
 user/emacs.o: TinyEditorScreen.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi
 user/office.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyOffice.tmi
 user/play.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyPlay.tmi
+user/square.o: TinyAppSquare.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi
 user/temp.o: TinyAppTemperature.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi
 user/tetris.o: TinyAppTetris.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi
 user/trace.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyTracer.tmi
 user/troff.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyTroff.tmi
 user/windows.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyWindows.tmi
 user/www.o: TinyBrowser.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi
-tests/TinyLibPlayground_tests/Host.o: tests/TinyLibPlayground_tests/Square.tmi TinyKernel/TinyKernelGraphics.tmi TinyLibDraw.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyKernel/TinyMemory.tmi
-tests/TinyLibPlayground_tests/machine.o: tests/TinyLibPlayground_tests/Square.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi
-tests/TinyLibPlayground_tests/Square.o: TinyLibPlayground.tmi

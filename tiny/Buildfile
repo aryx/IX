@@ -70,7 +70,7 @@ STDLIB = TinyLibCore/stdlib.a
 # end); as mini-ml in m-ix, the compiler's arguments are not its
 # prerequisites. Its .tmi made with its .o
 INCLUDES = -I . -I TinyLibSystem/tinykernel -I TinyC -I TinyML -I TinyOffice \
-    -I TinyBrowser -I TinyKernel -I user -I tests/TinyLibPlayground_tests
+    -I TinyBrowser -I TinyKernel -I user
 %.o: %.ml $STDLIB
 	ml -c -L TinyLibCore $INCLUDES -o $target $stem.ml
 %.tmi: %.o
@@ -363,12 +363,11 @@ tetris: $CRT $MLRT tetris.o TinyLibSystem/tinykernel/TinyLibSystem.o \
 
 # square
 square.o: $STDLIB TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibDraw.tmi \
-    TinyLibPlayground.tmi tests/TinyLibPlayground_tests/Square.tmi \
-    tests/TinyLibPlayground_tests/machine.tmi
+    TinyLibPlayground.tmi TinyAppSquare.tmi user/square.tmi
 	ml -o $target $prereq
 square: $CRT $MLRT square.o TinyLibSystem/tinykernel/TinyLibSystem.o \
-    TinyLibDraw.o TinyLibPlayground.o tests/TinyLibPlayground_tests/Square.o \
-    tests/TinyLibPlayground_tests/machine.o $STDLIB $MLEND
+    TinyLibDraw.o TinyLibPlayground.o TinyAppSquare.o user/square.o \
+    $STDLIB $MLEND
 	ld -map -s -n -o $target $prereq
 
 # calc
@@ -515,7 +514,7 @@ boot.img: kernel.img $PROGS $EXAMPLES $STDLIB $LIBC $LIBML
 # `build depend` makes it again after a unit names another one, or a
 # unit is added.
 depend:
-	ml -depend $INCLUDES *.ml TinyLibSystem/tinykernel/*.ml TinyC/*.ml TinyML/*.ml TinyOffice/*.ml TinyBrowser/*.ml TinyKernel/*.ml user/*.ml tests/TinyLibPlayground_tests/*.ml > .depend
+	ml -depend $INCLUDES *.ml TinyLibSystem/tinykernel/*.ml TinyC/*.ml TinyML/*.ml TinyOffice/*.ml TinyBrowser/*.ml TinyKernel/*.ml user/*.ml > .depend
 
 <.depend
 
@@ -533,5 +532,4 @@ clean:
 	    TinyLibSystem/tinykernel/*.o \
 	    TinyLibSystem/tinykernel/*.tmi TinyML/*.o TinyML/*.tmi TinyOffice/*.o \
 	    TinyOffice/*.tmi runtime/*.o runtime/*.tmi \
-	    tests/TinyLibPlayground_tests/*.o tests/TinyLibPlayground_tests/*.tmi \
 	    user/*.o user/*.tmi *.map $PROGS kernel.img boot.img

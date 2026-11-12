@@ -68,55 +68,39 @@
 #   MEMORY=pages      or in pages, given when touched, a fork's shared
 #                     until written, under _make-pages
 #
-# The kernel: entry.s first (the machine starts at 0), the runtime
-# (TinyML's, by tiny-c), the rows TinyKernelGraphics.ml draws by (draw.s),
-# the loops that copy and zero a partition (memory.s),
-# the machine's font (font.s, made of fonts/plan9.font: Plan 9's
-# default font, mini-9pi's console's, 128 characters of 8 by 16 pixels,
-# then the bold and the large Mkfont made of them; FONT=fonts/grey.font, Ubuntu
-# Mono, two bits a pixel, its own bold and 16 by 32;
-# FONT=fonts/tiny.font, the same a bit a pixel, no grey edges;
-# FONT=../../kernels/lib_machine/font1.bin, xv6's: fonts/README.md), the kernel
-# (tiny-ml: TinyMemory.ml, TinyKernelGraphics.ml, TinyKernelNetwork.ml,
-# TinyKernelAudio.ml, TinyKernelFS.ml, TinyKernelMemory.ml and ../TinyKernel.ml, one
-# program), end.s last. Its
-# files come after it in boot.img: for each program a name, a line, its
-# size, a line, its bytes; an empty line at the end (no disk). The
-# programs are tiny-linker's images (linked at 0: the kernel runs each
-# at the start of its partition), a.outs with their labels after the
-# image (-s: debug's names), start.s first, with libc
-# (../runtime/) and sys.s. Each .s is an object of
-# tiny-assembler's first (_make/x.o, from x.s here or in _make/). A hard link is a name and a line
-# "link utils" (what link() does, at the boot): utils (../TinyUtilities.ml, tiny-utils) is in the image once,
-# under the name of each of its utilities (cat, ls, wc...). user/'s
-# cat, echo, ls, wc, mkdir and rm in C are not in the image any more,
-# but t6's (TinyKernel/steps/t6/user/ has links to them).
+# What is built, and how, is ../Buildfile's (t-IX built by tiny-build):
+# the kernel, entry.s first, the runtime, the kernel's units, the
+# library, end.s last; then the image, boot.img, the kernel followed by
+# its files, each a name, a line, its size, a line, its bytes (a hard
+# link a name and a line "link utils": utils is cat, ls, wc...); an
+# empty line at the end. This Makefile runs it, in a copy of tiny/ (the
+# build, below), and makes the disk of the sources, disk.img; then runs
+# the machine on them, and its tests.
 #
 # user/ has the programs in C, a file each (an ML one's file, one line,
 # its module's main run by TinyLibSystem.main, is ../user/'s); libc/ what
-# a C program is linked with to
-# call this kernel (user.h, sys.s, draw.c, net.c); ../TinyLibSystem/tinykernel/
-# the same for an ML one (mlsys.c, TinyLibSystem.ml), beside
-# the other systems' TinyLibSystem (../TinyLibSystem/README.md).
+# a C program is linked with to call this kernel (user.h, sys.s, draw.c,
+# net.c); ../TinyLibSystem/tinykernel/ the same for an ML one (mlsys.c,
+# TinyLibSystem.ml), beside the other systems' TinyLibSystem
+# (../TinyLibSystem/README.md).
 #
-# What is built goes to _make/ and nowhere else, so that this
-# directory shows the sources: _make/*.o the kernel's objects (of the
-# compilers, or of tiny-assembler for a .s), kernel.img, bin/ the
-# programs as they are in the image (each image with its .map, its
-# labels' addresses, for tiny-prof), boot.img the image; make clean
-# removes it.
+# What is built goes to _make/ and nowhere else, so that this directory
+# shows the sources: _make/src, the copy built in, boot.img and
+# kernel.img copied out of it, disk.img, the disks the tests run on;
+# make clean removes it.
 # The tools from the PATH (after `dune install`), or from ix's bin/.
 
 export PATH := $(abspath ../../bin):$(PATH)
 
 # Each tool by its path, ix's bin/'s when it is there: so that what a
-# tool makes depends on it (TMLBIN, TCBIN, ASBIN, LDBIN below: a new
-# tiny-ml remakes the units, a new tiny-assembler the objects), and so
-# that make 3.81 (macOS's), which runs a command without a shell from
-# the PATH it started with, not the one exported above, finds it.
-# (old: tiny-ml, a name: the objects of an older tiny-assembler were
-# kept, the new tiny-linker refused them, and make self-quick-tix from
-# a shell without bin/ in its PATH did not find tiny-ml)
+# tool makes is made again when it changes (the build below starts
+# afresh when a tool's sum changed: a new tiny-ml remakes the units, a
+# new tiny-assembler the objects), and so that make 3.81 (macOS's),
+# which runs a command without a shell from the PATH it started with,
+# not the one exported above, finds it. (old: tiny-ml, a name: the
+# objects of an older tiny-assembler were kept, the new tiny-linker
+# refused them, and make self-quick-tix from a shell without bin/ in
+# its PATH did not find tiny-ml)
 tool = $(firstword $(wildcard $(abspath ../../bin)/$(1)) $(1))
 TML = $(call tool,tiny-ml)
 TC = $(call tool,tiny-c)
@@ -126,9 +110,6 @@ AR = $(call tool,tiny-ar)
 MKFS = $(call tool,tiny-mkfs)
 CPU = $(call tool,tiny-cpu)
 MACHINE = $(call tool,tiny-machine)
-TCBIN = $(wildcard $(TC))
-LDBIN = $(wildcard $(LD))
-ARBIN = $(wildcard $(AR))
 MKFSBIN = $(wildcard $(MKFS))
 
 # how the kernel gives the processes memory (TinyKernelMemory.mli)
@@ -138,100 +119,34 @@ O = $(if $(filter segments pages,$(MEMORY)),_make-$(MEMORY),_make)
 MEMSIZE = $(if $(filter segments,$(MEMORY)),9,6)
 # make check's check.expected, sessions (.events) and screens' sums (.cksum)
 T = ../tests/TinyKernel_tests
-# coupling: ../Buildfile, t-IX's build by tiny-build under t-IX, says
-# what these lists say (CORE, UNITS_x, I_x, MEM_x, KUNITS): a
-# change to one is a change to the other, until this Makefile is made
-# from it (docs/plans/plan_tiny_buildfile.md)
-# tiny-ml's standard library, TinyLibCore/'s modules in their order, each
-# compiled once (_make/lib/: X.o, X.tmi), the first units of every
-# program in ML, which tiny-ml reads with -L, kept in one library,
-# stdlib.a, which every program links (old: their text in tiny-ml,
-# compiled again at each run, and each program's main 420 KB of them;
-# then each program linked the 24 objects)
-CORE = Stdlib Char Seq List String Bytes Array Option Int32 Int64 Filename Buffer Printf Marshal Hashtbl Common Sha1 Fpath Fpath_ Exit In_channel Out_channel Chan Logs
-STDLIB = $(O)/lib/stdlib.a
-KERNEL = $(O)/entry.o $(O)/udivmod.o $(O)/runtime.o $(O)/draw.o $(O)/memory.o $(O)/font.o $(O)/main/kernel.o $(KUNITS:%=$(O)/ml/%.o) $(STDLIB) $(O)/end.o
-FONT = fonts/plan9.font
-PROGS = sh rc emacs office troff play mltests paint windows square tetris calc temp ping get put httpd utils ed bigmem www prof db vcs build as ld ar cc ml trace debug
-# other names (hard links), a name:program each
-LINKS = editor:emacs sam:ed
-# utils's names (TinyUtilities.ml's table)
-UTILS = [ basename cat cmp cp date du echo grep kill ln ls mkdir mv ps pwd rm seq sleep sort tail tee test touch walk wc xd
-L = ../runtime
-# an ML program's system on tiny-kernel: mlsys.c and
-# TinyLibSystem.ml
-SYS = ../TinyLibSystem/tinykernel
-ULIB = $(O)/start.o $(O)/udivmod.o $(O)/libc.o $(O)/libc/sys.o
+
+# The build: ../Buildfile, t-IX's build by tiny-build, the one
+# tiny-kernel runs in /src (make self), run here in a copy of tiny/,
+# _make/src (its outputs beside its sources, as /src's), with the
+# host's tools by tiny-kernel's names in _make/tools (ml, cc, as, ld,
+# ar, build, and rc's tiny-shell). The copy is made again at each make:
+# what changed, tiny-build makes again (by its digests). Before the
+# build, the three files the host alone makes, put in the copy:
+# TinyKernel/font.s, the font's bytes, and examples/spin.prof and
+# spin.map, a profile of tiny-cpu's. (old: this Makefile's own rules,
+# its lists of each program's units and of each unit's interfaces, the
+# Buildfile's said again; and a third build, the Buildfile this
+# Makefile wrote for tiny-kernel, /src/TinyKernel/Buildfile)
+BUILD = $(call tool,tiny-build)
+RC = $(call tool,tiny-shell)
+S = $(O)/src
+# tiny/ but what is built from it: tests/ (not the system's), the build
+# directories, the outputs
+COPY = --exclude ./tests --exclude '_make*' --exclude '_mk*' --exclude '*.o' \
+  --exclude '*.tmi' --exclude '*.a' --exclude .tiny-build --exclude '*.img' \
+  --exclude '*.map'
 
 all: $(O)/boot.img $(O)/disk.img
 
-# an object of assembly written by hand: a .s made in _make/ (font.s),
-# or one here, or the C runtime's (the compilers write their objects
-# themselves, below; old: their .s, assembled here). (An object
-# depends on tiny-assembler too, its path, as TMLBIN below: an object's
-# format changes with it, tiny-object 3, and one of the old would be
-# refused by the linker)
-ASBIN = $(wildcard $(AS))
-# (the one assembly made here, font.s; old: $(O)/%.o from $(O)/%.s,
-# which a build directory's .s from before the compilers wrote objects,
-# main/kernel.s, matched before main/'s rule: make run then failed)
-$(O)/font.o: $(O)/font.s $(ASBIN)
-	$(AS) -o $@ $<
-$(O)/%.o: %.s $(ASBIN)
-	@mkdir -p $(@D)
-	$(AS) -o $@ $<
-$(O)/%.o: $(L)/%.s $(ASBIN)
-	@mkdir -p $(@D)
-	$(AS) -o $@ $<
-.SECONDARY:
-
-# (what tiny-ml compiles depends on tiny-ml too, its path (above, or
-# ../../tiny-machine's): its binary carries TinyLibCore/, the
-# first units of every program; old: a change there left the objects
-# made before, some units of a program on the old library)
-TMLBIN = $(wildcard $(TML))
-# (the library at once, each module after the ones before it; its
-# interfaces made with Stdlib's object)
-$(O)/lib/Stdlib.o: $(CORE:%=../TinyLibCore/%.ml) $(CORE:%=../TinyLibCore/%.mli) $(TMLBIN)
-	@mkdir -p $(@D)
-	b=; for m in $(CORE); do $(TML) -c -nostdlib -o $(@D)/$$m.o $$b ../TinyLibCore/$$m.ml || exit 1; b="$$b $(@D)/$$m.tmi"; done
-$(CORE:%=$(O)/lib/%.tmi) $(filter-out %/Stdlib.o,$(CORE:%=$(O)/lib/%.o)): $(O)/lib/Stdlib.o ;
-$(STDLIB): $(O)/lib/Stdlib.o $(ARBIN)
-	$(AR) -o $@ $(CORE:%=$(O)/lib/%.o)
-TML_L = $(TML) -L $(O)/lib
-# the kernel's units, in their order: its machine's memory, what draws, the
-# network, the sounds, the disk, a process's memory, then the kernel's own
-# parts (TinyKernel.ml's sections) and TinyKernel.ml, the boot. Each is
-# compiled alone, as a program's units are (below: UNITS), after the
-# interfaces of those before it, and the kernel's main is made of their
-# interfaces (old: one tiny-ml over all their files, kernel.s, 70,000
-# lines, which tiny-kernel's as took 4 minutes to assemble, and all of
-# it again for a change in one; now no unit is assembled, tiny-ml
-# writes its object)
-KUNITS = TinyMemory TinyKernelGraphics TinyKernelNetwork TinyKernelAudio TinyKernelFS TinyKernelMemory \
-  TinyKernelMachine TinyKernelFiles TinyKernelProcs TinyKernelDevices TinyKernelIO TinyKernelCalls TinyKernelScheduler \
-  TinyKernel
-UNITS_kernel = $(KUNITS)
-# each unit's file, here (TinyKernel.ml's is ../, the default: F_ below)
-$(foreach u,$(filter-out TinyKernel,$(KUNITS)),$(eval F_$(u) = $(u).ml))
-# each unit after the interfaces of all those before it, as when they
-# were compiled together
-I_TinyKernelGraphics = TinyMemory
-I_TinyKernelNetwork = $(I_TinyKernelGraphics) TinyKernelGraphics
-I_TinyKernelAudio = $(I_TinyKernelNetwork) TinyKernelNetwork
-I_TinyKernelFS = $(I_TinyKernelAudio) TinyKernelAudio
-I_TinyKernelMemory = $(I_TinyKernelFS) TinyKernelFS
-I_TinyKernelMachine = $(I_TinyKernelMemory) TinyKernelMemory
-I_TinyKernelFiles = $(I_TinyKernelMachine) TinyKernelMachine
-I_TinyKernelProcs = $(I_TinyKernelFiles) TinyKernelFiles
-I_TinyKernelDevices = $(I_TinyKernelProcs) TinyKernelProcs
-I_TinyKernelIO = $(I_TinyKernelDevices) TinyKernelDevices
-I_TinyKernelCalls = $(I_TinyKernelIO) TinyKernelIO
-I_TinyKernelScheduler = $(I_TinyKernelCalls) TinyKernelCalls
-I_TinyKernel = $(I_TinyKernelScheduler) TinyKernelScheduler
-
 # the font's bytes, k_font(), where they are, and k_font_size(), how
-# many (ML integers)
+# many (ML integers): Plan 9's default font (FONT=fonts/grey.font,
+# Ubuntu Mono, two bits a pixel; fonts/README.md)
+FONT = fonts/plan9.font
 $(O)/font.s: $(FONT)
 	@mkdir -p $(@D)
 	printf 'k_font:\n\tla\tr13, font\n\tshli\tr13, r13, 1\n\tori\tr13, r13, 1\n\tret\n' > $@
@@ -240,397 +155,7 @@ $(O)/font.s: $(FONT)
 	od -An -v -tu1 $(FONT) | awk 'NF { printf "\t.byte\t%s", $$1; for (i = 2; i <= NF; i++) printf ", %s", $$i; print "" }' >> $@
 	printf 'font_end:\n\t.align\t4\n' >> $@
 
-$(O)/runtime.o: ../runtime/ml.c
-
-$(O)/kernel.img: $(KERNEL) $(LDBIN)
-	$(LD) -map -o $@ $(KERNEL)
-
-$(O)/libc.o: $(L)/libc.c $(L)/libc.h $(TCBIN)
-	@mkdir -p $(@D)
-	$(TC) -o $@ $<
-
-# a file in C: the kernel's runtime.c, a program of user/, or what a
-# program is linked with besides: libc/ for one in C (draw.c, net.c),
-# $(SYS)/mlsys.c for one in ML (its object in libml/)
-$(O)/%.o: %.c libc/user.h $(TCBIN)
-	@mkdir -p $(@D)
-	$(TC) -o $@ $<
-$(O)/libml/mlsys.o: $(SYS)/mlsys.c libc/user.h ../runtime/ml.c $(TCBIN)
-	@mkdir -p $(@D)
-	$(TC) -o $@ $<
-
-$(O)/bin/%: $(ULIB) $(O)/user/%.o $(LDBIN)
-	@mkdir -p $(@D)
-	$(LD) -map -s -n -o $@ $(ULIB) $(O)/user/$*.o
-
-# a program in ML: its units, each compiled once by tiny-ml -c into
-# _make/ml/ (its object, U.o, and its interface, U.tmi), after the
-# interfaces of the units it names (I_U, in the order of the programs it
-# is in: their names are one name space, so a unit sees only what comes
-# before it there); linked after mlsys.c (TinyML's runtime and the
-# system calls as ML's externals, its stack of values and its heap from
-# 384 KB, or from its end when it is larger) with the main
-# tiny-ml makes of the program's interfaces (_make/main/: each unit's
-# init in their order, the library's first) and the library's objects.
-# tiny-linker leaves out what a program does not use of its units.
-# (old: each program's files compiled whole by tiny-ml, as one
-# program, the library's unused toplevel left out by tiny-ml:
-# plan_tiny_self_hosting.md, step 4)
-U = $(O)/ml
-I_TinyLibRegex = TinyLibSystem
-I_TinyLibPlayground = TinyLibSystem TinyLibDraw
-I_TinyLibGUI = TinyLibSystem TinyLibDraw TinyLibPlayground
-I_TinyWindows = TinyLibSystem TinyLibDraw
-I_TinyAppTetris = $(I_TinyLibGUI)
-I_TinyAppCalculator = $(I_TinyLibGUI) TinyLibGUI
-I_TinyAppTemperature = $(I_TinyAppCalculator)
-GUI = TinyLibSystem TinyLibDraw TinyLibPlayground TinyLibGUI
-I_TinyEditorScreen = $(GUI)
-# (TinyOffice.ml on its parts, TinyOffice/, which TinyTroff.ml reads a
-# page with)
-OFFICE = TinyOfficeModel TinyOfficeText TinyOfficeSheet TinyOfficeDrawing TinyOfficePaint TinyOfficeChart TinyOfficeFile
-I_TinyOfficeModel = $(GUI)
-I_TinyOfficeText = $(GUI) TinyOfficeModel
-I_TinyOfficeSheet = $(GUI) TinyOfficeModel
-I_TinyOfficeDrawing = $(GUI) TinyOfficeModel
-I_TinyOfficePaint = $(GUI) TinyOfficeModel
-I_TinyOfficeChart = $(GUI) TinyOfficeModel TinyOfficeSheet
-I_TinyOfficeFile = $(GUI) TinyOfficeModel TinyOfficeText TinyOfficeSheet
-I_TinyOffice = $(GUI) $(OFFICE)
-I_TinyTroff = $(GUI) $(OFFICE)
-I_TinyPlay = $(GUI)
-# (TinyBrowser.ml on its parts, TinyBrowser/)
-BROWSER = TinyBrowserText TinyBrowserTokens TinyBrowserLines TinyBrowserHtml TinyBrowserAddress TinyBrowserHttp
-I_TinyBrowserTokens = TinyBrowserText
-I_TinyBrowserHtml = TinyBrowserText TinyBrowserTokens TinyBrowserLines
-I_TinyBrowserAddress = TinyBrowserText
-I_TinyBrowserHttp = TinyBrowserText
-I_TinyBrowserScreen = $(GUI) $(BROWSER)
-I_TinyBrowser = $(GUI) $(BROWSER) TinyBrowserScreen
-I_TinyShell = $(I_TinyLibRegex)
-I_TinyUtilities = $(I_TinyLibRegex) TinyLibRegex
-I_TinyEditorLine = $(I_TinyUtilities)
-I_TinyProfiler = TinyLibSystem TinyLibMachine
-I_TinyDatabase = TinyLibSystem
-I_TinyVCS = TinyLibSystem
-I_TinyBuildSystem = TinyLibSystem
-I_TinyAssembler = TinyLibSystem TinyLibMachine
-I_TinyLinker = TinyLibSystem TinyLibMachine
-I_TinyArchiver = TinyLibSystem TinyLibMachine
-# (TinyC.ml on its parts, TinyC/, the compiler's passes; each part after
-# the ones before it)
-CC_PARTS = TinyCTypes TinyCLexer TinyCTree TinyCLower TinyCParser TinyCMachine
-I_TinyCLexer = TinyCTypes
-I_TinyCTree = $(I_TinyCLexer) TinyCLexer
-I_TinyCLower = $(I_TinyCTree) TinyCTree
-I_TinyCParser = $(I_TinyCLower) TinyCLower
-I_TinyCMachine = TinyLibMachine $(I_TinyCParser) TinyCParser
-I_TinyC = TinyLibSystem TinyLibMachine $(CC_PARTS)
-# (TinyML.ml on its parts, TinyML/, the compiler's passes; each part
-# after the ones before it)
-MLC = TinyMLLexer TinyMLTree TinyMLPrintf TinyMLParser TinyMLTypes TinyMLMachine TinyMLCompile
-I_TinyMLTree = TinyMLLexer
-I_TinyMLPrintf = $(I_TinyMLTree) TinyMLTree
-I_TinyMLParser = $(I_TinyMLPrintf) TinyMLPrintf
-I_TinyMLTypes = $(I_TinyMLParser) TinyMLParser
-I_TinyMLMachine = TinyLibMachine $(I_TinyMLTypes) TinyMLTypes
-I_TinyMLCompile = $(I_TinyMLMachine) TinyMLMachine
-I_TinyML = TinyLibSystem TinyLibMachine $(MLC)
-I_Square = $(I_TinyLibGUI)
-I_Machine = $(I_TinyLibGUI) Square
-I_Tetris = $(I_TinyAppTetris) TinyAppTetris
-I_Calc = $(I_TinyAppCalculator) TinyAppCalculator
-I_Temp = $(I_TinyAppTemperature) TinyAppTemperature
-I_Emacs = $(GUI) TinyEditorScreen
-I_Office = $(I_TinyOffice) TinyOffice
-I_Troff = $(I_TinyTroff) TinyTroff
-I_Play = $(GUI) TinyPlay
-I_Www = $(I_TinyBrowser) TinyBrowser
-I_TinyTracer = TinyLibSystem
-I_TinyDebugger = $(GUI) TinyLibMachine
-I_Trace = TinyLibSystem TinyTracer
-I_Windows = $(I_TinyWindows) TinyWindows
-I_Bigmem = TinyLibSystem
-I_Debug = $(I_TinyDebugger) TinyDebugger
-# each unit's file
-F_TinyLibSystem = $(SYS)/TinyLibSystem.ml
-F_Square = ../tests/TinyLibPlayground_tests/Square.ml
-F_Machine = ../tests/TinyLibPlayground_tests/machine.ml
-F_Tetris = ../user/tetris.ml
-F_Calc = ../user/calc.ml
-F_Temp = ../user/temp.ml
-F_Emacs = ../user/emacs.ml
-F_Office = ../user/office.ml
-F_Troff = ../user/troff.ml
-F_Play = ../user/play.ml
-F_Www = ../user/www.ml
-F_Windows = ../user/windows.ml
-F_Bigmem = ../user/bigmem.ml
-F_Trace = ../user/trace.ml
-F_Debug = ../user/debug.ml
-F_TinyBrowserText = ../TinyBrowser/TinyBrowserText.ml
-F_TinyBrowserTokens = ../TinyBrowser/TinyBrowserTokens.ml
-F_TinyBrowserLines = ../TinyBrowser/TinyBrowserLines.ml
-F_TinyBrowserHtml = ../TinyBrowser/TinyBrowserHtml.ml
-F_TinyBrowserAddress = ../TinyBrowser/TinyBrowserAddress.ml
-F_TinyBrowserHttp = ../TinyBrowser/TinyBrowserHttp.ml
-F_TinyBrowserScreen = ../TinyBrowser/TinyBrowserScreen.ml
-F_TinyOfficeModel = ../TinyOffice/TinyOfficeModel.ml
-F_TinyOfficeText = ../TinyOffice/TinyOfficeText.ml
-F_TinyOfficeSheet = ../TinyOffice/TinyOfficeSheet.ml
-F_TinyOfficeDrawing = ../TinyOffice/TinyOfficeDrawing.ml
-F_TinyOfficePaint = ../TinyOffice/TinyOfficePaint.ml
-F_TinyOfficeChart = ../TinyOffice/TinyOfficeChart.ml
-F_TinyOfficeFile = ../TinyOffice/TinyOfficeFile.ml
-F_TinyMLLexer = ../TinyML/TinyMLLexer.ml
-F_TinyMLTree = ../TinyML/TinyMLTree.ml
-F_TinyMLPrintf = ../TinyML/TinyMLPrintf.ml
-F_TinyMLParser = ../TinyML/TinyMLParser.ml
-F_TinyMLTypes = ../TinyML/TinyMLTypes.ml
-F_TinyMLMachine = ../TinyML/TinyMLMachine.ml
-F_TinyMLCompile = ../TinyML/TinyMLCompile.ml
-F_TinyCTypes = ../TinyC/TinyCTypes.ml
-F_TinyCLexer = ../TinyC/TinyCLexer.ml
-F_TinyCTree = ../TinyC/TinyCTree.ml
-F_TinyCLower = ../TinyC/TinyCLower.ml
-F_TinyCParser = ../TinyC/TinyCParser.ml
-F_TinyCMachine = ../TinyC/TinyCMachine.ml
-# (a static pattern's targets: make uses an implicit rule once in a
-# chain, and a unit's interface is another unit's prerequisite)
-UNITS = $(KUNITS) TinyLibSystem TinyLibMachine TinyLibRegex TinyLibDraw TinyLibPlayground TinyLibGUI TinyProfiler TinyDatabase TinyVCS TinyBuildSystem TinyAssembler TinyLinker TinyArchiver $(CC_PARTS) TinyC $(MLC) TinyML \
-  TinyWindows TinyAppTetris TinyAppCalculator TinyAppTemperature TinyEditorScreen $(OFFICE) TinyOffice TinyTroff TinyPlay $(BROWSER) TinyBrowserScreen TinyBrowser TinyTracer TinyDebugger \
-  TinyShell TinyUtilities TinyEditorLine Square Machine Tetris Calc Temp Emacs Office Troff Play Www Windows Bigmem Trace Debug
-.SECONDEXPANSION:
-# (the .mli too, when there is one: its vals' types are the .tmi's;
-# old: the .ml only, so a .tmi kept an old .mli's types). The
-# prerequisites are make's, the order and what to make again; tiny-ml
-# is given the source alone and finds the interfaces by -I, as mini-ml
-# in m-ix
-$(UNITS:%=$(U)/%.o): $(U)/%.o: $$(addprefix $(U)/,$$(addsuffix .tmi,$$(I_$$*))) $$(or $$(F_$$*),../$$*.ml) $$(wildcard $$(basename $$(or $$(F_$$*),../$$*.ml)).mli) $(O)/lib/Stdlib.o $(TMLBIN)
-	@mkdir -p $(@D)
-	$(TML_L) -c -I $(U) -o $@ $(filter %.ml,$^)
-$(UNITS:%=$(U)/%.tmi): $(U)/%.tmi: $(U)/%.o ;
-
-# each program's units, in their order (windows: tiny-windows, after
-# TinyLibSystem and ../TinyLibDraw.ml; rc: tiny-shell, on $(SYS)/TinyLibSystem.ml, the system's
-# calls it asks for (the host's is ../TinyLibSystem/unix/TinyLibSystem.ml); utils and ed
-# with ../TinyLibRegex.ml for grep; emacs, office, troff, play, www:
-# run by ../TinyLibGUI.ml's run_canvas; square: the playground's
-# test's); its memory when it asks for more than 1 MB, linked as an
-# a.out whose header says so (tiny-linker -a): tiny-kernel gives it a
-# partition of that size and mlsys.c a heap of it (bigmem: the test;
-# www: a page's lines live in its heap; play: the WAV file is read
-# whole into it; ar: a library's objects and the archive, all in memory
-# (stdlib.a: 432 KB); as, ld, cc, ml: the toolchain, a file whole in memory
-# and the compilers' recursions over it (as and ld 32: TinyML.s's
-# assembly and office's link need more than half of 16, their
-# collector's; old: 16, out of memory there in the first builds on
-# tiny-kernel; ld 48: bin/ml's link, past 32 since 2026-10-23, when
-# TinyML.ml grew by its records of more than 11 fields, died on an
-# illegal instruction, bugs/ix.md); build: the files it digests,
-# each read whole, the system's objects among them).
-ML = windows bigmem www play square tetris calc temp rc utils ed emacs office troff prof db vcs build as ld ar cc ml trace debug
-UNITS_windows = $(I_Windows) Windows
-UNITS_square = $(I_Machine) Machine
-UNITS_tetris = $(I_Tetris) Tetris
-UNITS_calc = $(I_Calc) Calc
-UNITS_temp = $(I_Temp) Temp
-UNITS_emacs = $(I_Emacs) Emacs
-UNITS_office = $(I_Office) Office
-UNITS_troff = $(I_Troff) Troff
-UNITS_play = $(I_Play) Play
-UNITS_www = $(I_Www) Www
-UNITS_rc = $(I_TinyShell) TinyShell
-UNITS_utils = $(I_TinyUtilities) TinyUtilities
-UNITS_ed = $(I_TinyEditorLine) TinyEditorLine
-UNITS_bigmem = $(I_Bigmem) Bigmem
-UNITS_trace = $(I_Trace) Trace
-UNITS_debug = $(I_Debug) Debug
-UNITS_prof = $(I_TinyProfiler) TinyProfiler
-UNITS_db = $(I_TinyDatabase) TinyDatabase
-UNITS_vcs = $(I_TinyVCS) TinyVCS
-UNITS_build = $(I_TinyBuildSystem) TinyBuildSystem
-UNITS_as = $(I_TinyAssembler) TinyAssembler
-UNITS_ld = $(I_TinyLinker) TinyLinker
-UNITS_ar = $(I_TinyArchiver) TinyArchiver
-UNITS_cc = $(I_TinyC) TinyC
-UNITS_ml = $(I_TinyML) TinyML
-MEM_bigmem = -a 8
-MEM_www = -a 10
-MEM_play = -a 4
-MEM_as = -a 32
-MEM_ld = -a 64
-MEM_ar = -a 4
-MEM_cc = -a 16
-MEM_ml = -a 32
-MEM_build = -a 16
-$(O)/main/%.o: $$(addprefix $(U)/,$$(addsuffix .tmi,$$(UNITS_$$*))) $(O)/lib/Stdlib.o $(TMLBIN)
-	@mkdir -p $(@D)
-	$(TML_L) -o $@ $(filter %.tmi,$^)
-# (the main right after mlsys.c, which calls its ml_start by a jal: 128 KB)
-# (end.o last: _end, where mlsys.c puts its stack of values when the
-# program is past 384 KB; old: a program past it refused here)
-$(ML:%=$(O)/bin/%): $(O)/bin/%: $(ULIB) $(O)/libml/mlsys.o $(O)/main/%.o $$(addprefix $(U)/,$$(addsuffix .o,$$(UNITS_$$*))) $(STDLIB) $(O)/end.o $(LDBIN)
-	@mkdir -p $(@D)
-	$(LD) -map -s -n $(MEM_$*) -o $@ $(filter %.o %.a,$^)
-
-# a program that draws: with draw.c, the messages (draw.h) (old: in
-# examples/, not counted by make loc; that directory gone, 2026-11-11)
-$(O)/user/paint.o: user/paint.c libc/user.h libc/draw.h $(TCBIN)
-	@mkdir -p $(@D)
-	$(TC) -o $@ $<
-$(O)/bin/paint: $(ULIB) $(O)/libc/draw.o $(O)/user/paint.o $(LDBIN)
-	@mkdir -p $(@D)
-	$(LD) -map -s -n -o $@ $(ULIB) $(O)/libc/draw.o $(O)/user/paint.o
-# a program that reaches a machine by its name: with net.c
-$(O)/bin/get $(O)/bin/put: $(O)/bin/%: $(ULIB) $(O)/libc/net.o $(O)/user/%.o $(LDBIN)
-	@mkdir -p $(@D)
-	$(LD) -map -s -n -o $@ $(ULIB) $(O)/libc/net.o $(O)/user/$*.o
-
-BINS = $(addprefix $(O)/bin/,$(PROGS))
-
-# files to edit, in /examples: sources of programs, two in C (wc.c, the
-# t6 step kernel's: steps/t6/user/) and two in OCaml, which emacs shows in colors (emacs
-# /examples/emacs.ml: the editor around the editor); a page of the
-# office's, which troff prints (office /examples/report.ixd, troff -h
-# /examples/report.ixd); a sound, which play plays (play
-# /examples/korobeiniki.wav: tetris's tune, its first four bars, made by
-# m-ix's mini-play, at 11,025 samples a second in 16 bits); a profile and
-# its map, which prof reads (prof /examples/spin.prof -u
-# /examples/spin.map: ../tests/TinyProfiler_tests/spin.s, linked with
-# -map and run by tiny-cpu -prof); a unit's object and interface as
-# the host's tiny-ml and tiny-assembler made them, which ml's and as's on
-# tiny-kernel are compared with (make check); and a program to try the
-# toolchain and the tools on, tiny/examples/'s: hello.c and square.s,
-# and helloml.ml, built by the Buildfile beside them (cd /examples;
-# build; ./hello; ./helloml; trace ./hello; debug ./helloml)
-EXAMPLES = steps/t6/user/wc.c user/sh.c ../user/emacs.ml ../TinyEditorScreen.ml ../examples/report.ixd ../examples/korobeiniki.wav $(O)/spin.prof $(O)/spin.map \
-	$(U)/TinyLibMachine.tmi $(U)/TinyLibMachine.o \
-	../examples/hello.c ../examples/square.s ../examples/helloml.ml ../examples/Buildfile
-
-# the sources, in /src as they are in tiny/, on the disk (disk.img,
-# below), what tiny-kernel builds itself from (make self): the
-# kernel's, each unit's file, the library's, the C, and the .mli beside
-# an .ml; with font.s and the Buildfile, made here, in /src/TinyKernel;
-# the library's interfaces in /lib/ml, in the image, where tiny-ml
-# reads them, and its objects, stdlib.a (plan_tiny_self_hosting.md,
-# step 8; old: step 7's /src had ping's C and a unit; not /sys/src,
-# Plan 9's, as /sys is principia's devsys; then the library's 24
-# objects one by one)
-C_PROGS = sh mltests ping get put httpd
-SRC_FILES = entry.s draw.s memory.s end.s runtime.c \
-	$(foreach u,$(UNITS),$(or $(F_$(u)),../$(u).ml)) $(CORE:%=../TinyLibCore/%.ml) libc/user.h libc/sys.s libc/draw.c libc/draw.h libc/net.c $(SYS)/mlsys.c \
-	../runtime/ml.c ../runtime/start.s ../runtime/udivmod.s ../runtime/libc.c ../runtime/libc.h user/paint.c $(C_PROGS:%=user/%.c) \
-	lib/c/Buildfile lib/ml/Buildfile
-# (a path of this directory's, as tiny/'s)
-tiny = $(patsubst TinyKernel/../%,%,$(addprefix TinyKernel/,$(1)))
-SRC = $(call tiny,$(SRC_FILES) $(wildcard $(patsubst %.ml,%.mli,$(filter %.ml,$(SRC_FILES)))))
-GEN = font.s Buildfile
-LIBFILES = $(CORE:%=%.tmi) stdlib.a
-# what a program links around its own objects, already built in /lib:
-# C's runtime and tiny-kernel's calls in /lib/c, ML's in /lib/ml beside
-# the library; each directory with the Buildfile that makes it again
-# from /src (lib/c/ and lib/ml/ here, read on the host as they are on
-# the image; old: none, a program built on tiny-kernel compiled them)
-LIBC = $(O)/start.o $(O)/udivmod.o $(O)/libc.o $(O)/libc/sys.o lib/c/Buildfile
-LIBML = $(O)/libml/mlsys.o $(O)/end.o lib/ml/Buildfile
-
-# The Buildfile: this Makefile's build of the image as tiny-build's
-# rules, made of the lists above, for tiny-kernel to build itself from
-# /src; its recipes rc's, its tools /bin's (ml, as, ld, ar, cc), the
-# library one prerequisite, lib/stdlib.a, made with its interfaces: a
-# main given it, as ocamlc stdlib.cma, reads them beside it
-K = /src/TinyKernel
-# (a path of this directory's, in /src; a newline: what foreach
-# puts between two of its lines, a blank, taken out)
-insrc = $(patsubst $(K)/../%,/src/%,$(addprefix $(K)/,$(1)))
-define nl
-
-
-endef
-define BUILDFILE
-# tiny-kernel's image, built on tiny-kernel from /src by tiny-build,
-# the same as TinyKernel/Makefile's on the host, byte for byte (it made
-# this file of its lists): in a directory of the disk,
-#   build -f /src/TinyKernel/Buildfile
-# (plan_tiny_self_hosting.md, step 8); the image alone: /src, on the
-# disk, is the host's (disk.img, by tiny-mkfs)
-CORE = $(CORE)
-LIBO = $(CORE:%=lib/%.o)
-STDLIB = lib/stdlib.a
-ULIB = start.o udivmod.o libc.o libc/sys.o
-PROGS = $(PROGS)
-EXAMPLES = $(notdir $(EXAMPLES))
-LIBFILES = $(LIBFILES)
-LIBC = start.o udivmod.o libc.o libc/sys.o $(K)/lib/c/Buildfile
-LIBML = libml/mlsys.o end.o $(K)/lib/ml/Buildfile
-UTILS = $(UTILS)
-
-boot.img: kernel.img $(PROGS:%=bin/%) $(addprefix /examples/,$(notdir $(EXAMPLES))) $(LIBFILES:%=lib/%) $$LIBC $$LIBML
-	cat kernel.img > $$target
-	for(f in $$PROGS) { n=`{wc -c < bin/$$f}; echo bin/$$f; echo $$n; cat bin/$$f } >> $$target
-	for(f in $$EXAMPLES) { n=`{wc -c < /examples/$$f}; echo examples/$$f; echo $$n; cat /examples/$$f } >> $$target
-	for(f in $$LIBFILES) { n=`{wc -c < lib/$$f}; echo lib/ml/$$f; echo $$n; cat lib/$$f } >> $$target
-	for(f in $$LIBC) { n=`{wc -c < $$f}; echo lib/c/^`{basename $$f}; echo $$n; cat $$f } >> $$target
-	for(f in $$LIBML) { n=`{wc -c < $$f}; echo lib/ml/^`{basename $$f}; echo $$n; cat $$f } >> $$target
-	for(u in $$UTILS) { echo bin/$$u; echo link bin/utils } >> $$target
-	{ $(foreach l,$(LINKS),echo bin/$(firstword $(subst :, ,$(l))); echo link bin/$(lastword $(subst :, ,$(l)));) } >> $$target
-	$(if $(filter segments pages,$(MEMORY)),{ echo lib/memory; echo $(MEMSIZE); echo $(MEMORY) } >> $$target)
-	echo >> $$target
-
-# the library at once, each module after the ones before it
-lib/Stdlib.o: $(CORE:%=/src/TinyLibCore/%.ml) $(CORE:%=/src/TinyLibCore/%.mli)
-	mkdir -p lib; b=(); for(m in $$CORE) { ml -c -nostdlib -o lib/$$m.o $$b /src/TinyLibCore/$$m.ml; b=($$b lib/$$m.tmi) }
-lib/%.o: lib/Stdlib.o
-lib/%.tmi: lib/Stdlib.o
-lib/stdlib.a: lib/Stdlib.o
-	ar -o $$target $$LIBO
-
-# the objects of assembly written by hand (the compilers write theirs)
-%.o: $(K)/%.s
-	as -o $$target $(K)/$$stem.s
-%.o: /src/runtime/%.s
-	as -o $$target /src/runtime/$$stem.s
-libc/sys.o: $(K)/libc/sys.s
-	mkdir -p libc; as -o $$target $(K)/libc/sys.s
-
-# the kernel: its units are ml/'s, as the programs' (below); its main
-main/kernel.o: $$STDLIB $(addprefix ml/,$(addsuffix .tmi,$(KUNITS)))
-kernel.img: $(KERNEL:$(O)/%=%)
-	ld -map -o $$target $$prereq
-
-# C
-%.o: /src/runtime/%.c /src/runtime/libc.h
-	cc -o $$target /src/runtime/$$stem.c
-runtime.o: $(K)/runtime.c /src/runtime/ml.c
-	cc -o $$target $(K)/runtime.c
-libml/mlsys.o: $(call insrc,$(SYS)/mlsys.c) /src/runtime/ml.c $(K)/libc/user.h
-	mkdir -p libml; cc -o $$target $(call insrc,$(SYS)/mlsys.c)
-libc/%.o: $(K)/libc/%.c $(K)/libc/user.h $(K)/libc/draw.h
-	mkdir -p libc; cc -o $$target $(K)/libc/$$stem.c
-user/%.o: $(K)/user/%.c $(K)/libc/user.h
-	mkdir -p user; cc -o $$target $(K)/user/$$stem.c
-user/paint.o: $(K)/user/paint.c $(K)/libc/user.h $(K)/libc/draw.h
-	mkdir -p user; cc -o $$target $(K)/user/paint.c
-$(foreach p,$(filter-out paint get put,$(C_PROGS)),bin/$(p): $$ULIB user/$(p).o$(nl)	mkdir -p bin; ld -map -s -n -o $$target $$prereq$(nl))bin/paint: $$ULIB libc/draw.o user/paint.o
-	mkdir -p bin; ld -map -s -n -o $$target $$prereq
-$(foreach p,get put,bin/$(p): $$ULIB libc/net.o user/$(p).o$(nl)	mkdir -p bin; ld -map -s -n -o $$target $$prereq$(nl))
-# ML: each unit after the interfaces it reads, each program's main, and
-# the program
-ml/%.o:
-	mkdir -p ml; for(p in $$prereq) ~ $$p *.ml && f=$$p; ml -c -L lib -I ml -o $$target $$f
-ml/%.tmi: ml/%.o
-$(foreach u,$(UNITS),ml/$(u).o: $$STDLIB $(addprefix ml/,$(addsuffix .tmi,$(I_$(u)))) $(call insrc,$(or $(F_$(u)),../$(u).ml) $(wildcard $(patsubst %.ml,%.mli,$(or $(F_$(u)),../$(u).ml))))$(nl))main/%.o:
-	mkdir -p main; ml -o $$target $$prereq
-$(foreach p,$(ML),main/$(p).o: $$STDLIB $(addprefix ml/,$(addsuffix .tmi,$(UNITS_$(p))))$(nl))$(foreach p,$(ML),bin/$(p): $$ULIB libml/mlsys.o main/$(p).o $(addprefix ml/,$(addsuffix .o,$(UNITS_$(p)))) $$STDLIB end.o$(nl)	mkdir -p bin; ld -map -s -n $(MEM_$(p)) -o $$target $$prereq$(nl))
-endef
-# (written by the shell from the environment, not by $(file >...),
-# which macOS's make, GNU make 3.81, does not have and takes for nothing)
-$(O)/Buildfile: export BUILDFILE_TEXT = $(subst $(nl) ,$(nl),$(BUILDFILE))
-$(O)/Buildfile: Makefile
-	@mkdir -p $(@D)
-	@printf '%s\n' "$$BUILDFILE_TEXT" > $@
-
+# a profile and its map, for prof's example: spin run by tiny-cpu -prof
 $(O)/spin.prof: ../tests/TinyProfiler_tests/spin.s
 	@mkdir -p $(@D)
 	$(AS) -o $(O)/spin.o $<
@@ -638,30 +163,43 @@ $(O)/spin.prof: ../tests/TinyProfiler_tests/spin.s
 	$(CPU) -prof $@ $(O)/spin > /dev/null
 $(O)/spin.map: $(O)/spin.prof
 
-$(O)/boot.img: $(O)/kernel.img $(BINS) $(EXAMPLES) $(LIBFILES:%=$(O)/lib/%) $(LIBC) $(LIBML)
-	@grep -qx 'CORE = $(CORE)' lib/ml/Buildfile || { echo "lib/ml/Buildfile: its CORE not this Makefile's"; exit 1; }
-	cp $(O)/kernel.img $@
-	for f in $(BINS); do printf 'bin/%s\n%d\n' $$(basename $$f) $$(wc -c < $$f) >> $@; cat $$f >> $@; done
-	for f in $(EXAMPLES); do printf 'examples/%s\n%d\n' $$(basename $$f) $$(wc -c < $$f) >> $@; cat $$f >> $@; done
-	for f in $(LIBFILES); do printf 'lib/ml/%s\n%d\n' $$f $$(wc -c < $(O)/lib/$$f) >> $@; cat $(O)/lib/$$f >> $@; done
-	for f in $(LIBC); do printf 'lib/c/%s\n%d\n' $$(basename $$f) $$(wc -c < $$f) >> $@; cat $$f >> $@; done
-	for f in $(LIBML); do printf 'lib/ml/%s\n%d\n' $$(basename $$f) $$(wc -c < $$f) >> $@; cat $$f >> $@; done
-	for u in $(UTILS); do printf 'bin/%s\nlink bin/utils\n' "$$u" >> $@; done
-	for l in $(LINKS); do printf 'bin/%s\nlink bin/%s\n' $${l%%:*} $${l#*:} >> $@; done
-	$(if $(filter segments pages,$(MEMORY)),printf 'lib/memory\n$(MEMSIZE)\n$(MEMORY)\n' >> $@)
-	printf '\n' >> $@
+# boot.img and kernel.img: the Buildfile's, copied out of the copy when
+# they changed (so that what stands on them is not made again)
+$(O)/boot.img: $(O)/font.s $(O)/spin.prof $(O)/spin.map FORCE
+	mkdir -p $(O)/tools
+	for t in $(TML) $(TC) $(AS) $(LD) $(AR) $(BUILD) $(RC); do cksum < $$(command -v $$t); done > $(O)/tools.new
+	cmp -s $(O)/tools.new $(O)/tools.sum || rm -rf $(S); mv $(O)/tools.new $(O)/tools.sum
+	mkdir -p $(S)
+	tar -C .. $(COPY) -cf - . | tar -C $(S) -xf -
+	cp $(O)/font.s $(S)/TinyKernel/font.s
+	cp $(O)/spin.prof $(O)/spin.map $(S)/examples/
+	for t in ml:$(TML) cc:$(TC) as:$(AS) ld:$(LD) ar:$(AR) build:$(BUILD) tiny-shell:$(RC); do \
+	  ln -sf $$(command -v $${t#*:}) $(O)/tools/$${t%%:*}; done
+	cd $(S) && PATH=$(abspath $(O)/tools):$$PATH MEMORY=$(MEMORY) MEMSIZE=$(MEMSIZE) \
+	  build -j $(J) boot.img
+	for f in boot.img kernel.img; do cmp -s $(S)/$$f $(O)/$$f || cp $(S)/$$f $(O)/$$f; done
 	@test $$(wc -c < $@) -lt 10485760 || { echo "$@: over 10 MB, where TinyKernelFS.ml has its buffers"; rm $@; exit 1; }
+$(O)/kernel.img: $(O)/boot.img
+FORCE:
 
 # disk.img: the sources, /src, on a disk of tiny-kernel's file system,
 # made by tiny-mkfs (TinyKernel/host/TinyMkfs.ml), as m-ix's machine has
 # its boot.img and its card.img; given to the machine by -d, where the
-# kernel shows it at /, with the image's files (old: /src in the image,
-# its files in memory, 10 MB at most, which the sources filled). 4 MB,
-# what a web page fetches; a copy grown to 64 by truncate -s for a run or
-# a build on tiny-kernel (TinyKernelFS.mli's fs_mount: used whole)
-DISKFILES = $(foreach f,$(SRC),src/$(f)=../$(f)) $(foreach f,$(GEN),src/TinyKernel/$(f)=$(O)/$(f))
-$(O)/disk.img: $(SRC:%=../%) $(GEN:%=$(O)/%) $(MKFSBIN)
-	$(MKFS) -m 4 $@ $(DISKFILES)
+# kernel shows it at /, with the image's files. /src is the copy's
+# sources, tiny/'s and the three the host made, as the build read them
+# here: what tiny-kernel builds itself from. 8 MB, what a web page
+# fetches; a copy grown to 64 by truncate -s for a run or a build on
+# tiny-kernel (TinyKernelFS.mli's fs_mount: used whole). The files in
+# their names' order, so that the same sources make the same disk
+# (old: a list of the sources by hand, SRC)
+$(O)/disk.img: $(O)/boot.img $(MKFSBIN)
+	rm -rf $(O)/disk; mkdir -p $(O)/disk/src
+	tar -C .. $(COPY) -cf - . | tar -C $(O)/disk/src -xf -
+	cp $(O)/font.s $(O)/disk/src/TinyKernel/font.s
+	cp $(O)/spin.prof $(O)/spin.map $(O)/disk/src/examples/
+	cd $(O)/disk && $(MKFS) -m 8 ../disk.new $$(find src -type f | LC_ALL=C sort | sed 's|.*|&=&|')
+	cmp -s $(O)/disk.new $@ && rm $(O)/disk.new || mv $(O)/disk.new $@
+	rm -rf $(O)/disk
 
 # a disk of 64 MB, disk.img grown: a run's (run.img: what is written
 # there is kept from a run to the next, until disk.img is made again),
@@ -820,14 +358,14 @@ $(O)/check/wwwplay.sum: $(T)/wwwplay.events $(O)/boot.img
 	cksum < $(O)/check/wwwplay.wav > $@.wav; diff $(T)/korobeiniki.wav.cksum $@.wav || { echo "tiny-kernel: wwwplay.events: other sounds ($(O)/check/wwwplay.wav)"; exit 1; }
 
 # tiny-kernel building itself (plan_tiny_self_hosting.md, step 8): booted
-# on disk.img grown to 64 MB (/src), the first shell runs tiny-build on
-# /src/TinyKernel/Buildfile in /usr/glenda/self (self.keys); then a
-# comment added to a module (it is compiled again, its object the
-# same: nothing more), a line to a program (compiled again, the program
-# linked again, the image made again), and nothing (up to date). The
-# image of the first build, read from the disk by TinyKernelFS_tests'
-# Cat, is _make/boot.img, byte for byte; what the shell printed is
-# self.expected. Hours: not in check
+# on disk.img grown to 64 MB, the first shell runs build boot.img in
+# /src, the Buildfile the host's build ran (self.keys), and keeps the
+# image in /usr/glenda/self; then a comment added to a module (it is
+# compiled again, its object the same: nothing more), a line to a
+# program (compiled again, the program linked again, the image made
+# again), and nothing (up to date). The image of the first build, read
+# from the disk by TinyKernelFS_tests' Cat, is _make/boot.img, byte for
+# byte; what the shell printed is self.expected. Hours: not in check
 FSCAT = $(abspath ../../_build/default/tiny/tests/TinyKernelFS_tests/Cat.exe)
 self: $(O)/boot.img $(O)/disk.img
 	$(call grown,$(O)/self.img)
@@ -837,27 +375,17 @@ self: $(O)/boot.img $(O)/disk.img
 	cmp $(O)/boot.img $(O)/self.boot.img
 	rm $(O)/self.img $(O)/self.out $(O)/self.boot.img && echo "tiny-kernel: self ok, its image the host's"
 
-# self in minutes: a few of the Buildfile's targets, ping (cc, as, ld)
-# and the library (ml, ar), each compared with the host's in the image
-# (self-quick.keys: cmp); what the shell printed is self-quick.expected.
-# Then the kernel linked by ld, from the host's objects, the biggest
-# link, where ld's memory runs out first (bugs/ix.md: make self's first
-# night); 3 minutes. On an image of its own: boot.img and the objects
-# are over its 10 MB, and its objects are gathered in an rc list a line
-# each, so that no line passes the console's 256 characters (old: one
-# ld line, when the kernel was one object, not its 14 units')
-self-quick: $(O)/boot.img $(O)/disk.img $(O)/self-ld.img
+# self in minutes: a few of the Buildfile's targets in /src, ping (cc,
+# as, ld) and the library (ml, ar), each compared with the host's in
+# the image (self-quick.keys: cmp); what the shell printed is
+# self-quick.expected. (old: then the kernel linked by ld on tiny-kernel
+# from the host's objects, by this Makefile's list of them, gone with
+# its build; make self links it)
+self-quick: $(O)/boot.img $(O)/disk.img
 	$(call grown,$(O)/self-quick.img)
 	timeout 1800 $(MACHINE) -d $(O)/self-quick.img $(O)/boot.img < $(T)/self-quick.keys > $(O)/self-quick.out
 	diff $(T)/self-quick.expected $(O)/self-quick.out
-	printf 'rc\ncd /k\no=()\n$(foreach f,$(notdir $(KERNEL)),o=($$o $(f))\n)ld -map -o k.img $$o\ncmp k.img kernel.img && echo kernel.img: the host\nexit\n' | timeout 600 $(MACHINE) $(O)/self-ld.img > $(O)/self-ld.out
-	grep -q 'kernel.img: the host' $(O)/self-ld.out || { cat $(O)/self-ld.out; exit 1; }
-	rm $(O)/self-quick.img $(O)/self-quick.out $(O)/self-ld.out && echo "tiny-kernel: self-quick ok, ping, the library and the kernel's link the host's"
-$(O)/self-ld.img: $(O)/kernel.img $(O)/bin/sh $(O)/bin/rc $(O)/bin/ld $(O)/bin/utils
-	cp $(O)/kernel.img $@
-	for f in sh rc ld utils; do printf 'bin/%s\n%d\n' $$f $$(wc -c < $(O)/bin/$$f) >> $@; cat $(O)/bin/$$f >> $@; done
-	for f in $(KERNEL) $(O)/kernel.img; do printf 'k/%s\n%d\n' $$(basename $$f) $$(wc -c < $$f) >> $@; cat $$f >> $@; done
-	printf 'bin/cmp\nlink bin/utils\nbin/echo\nlink bin/utils\n\n' >> $@
+	rm $(O)/self-quick.img $(O)/self-quick.out && echo "tiny-kernel: self-quick ok, ping and the library the host's"
 
 # self on several cores (plan_tiny_multicore.md): tiny-machine -cores 4,
 # each build -j 4; the image of the first build compared with the host's,
@@ -878,5 +406,5 @@ self-cores: $(O)/boot.img $(O)/disk.img
 clean:
 	rm -rf $(O)
 
-.PHONY: all run run-window check check-parts self self-quick self-cores clean
+.PHONY: all run run-window check check-parts self self-quick self-cores clean FORCE
 .SECONDARY:

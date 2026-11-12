@@ -1,16 +1,40 @@
 tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
-tiny-kernel: / on a disk of 65536 KB, 63721 KB free; 1 snapshots in /dump
-$ % % as -o start.o /src/runtime/start.s
-as -o udivmod.o /src/runtime/udivmod.s
-cc -o libc.o /src/runtime/libc.c
-mkdir -p libc; as -o libc/sys.o /src/TinyKernel/libc/sys.s
-mkdir -p user; cc -o user/ping.o /src/TinyKernel/user/ping.c
-mkdir -p bin; ld -map -s -n -o bin/ping start.o udivmod.o libc.o libc/sys.o user/ping.o
-mkdir -p lib; b=(); for(m in Stdlib Char Seq List String Bytes Array Option Int32 Int64 Filename Buffer Printf Marshal Hashtbl Common Sha1 Fpath Fpath_ Exit In_channel Out_channel Chan Logs) { ml -c -nostdlib -o lib/$m.o $b /src/TinyLibCore/$m.ml; b=($b lib/$m.tmi) }
-ar -o lib/stdlib.a lib/Stdlib.o lib/Char.o lib/Seq.o lib/List.o lib/String.o lib/Bytes.o lib/Array.o lib/Option.o lib/Int32.o lib/Int64.o lib/Filename.o lib/Buffer.o lib/Printf.o lib/Marshal.o lib/Hashtbl.o lib/Common.o lib/Sha1.o lib/Fpath.o lib/Fpath_.o lib/Exit.o lib/In_channel.o lib/Out_channel.o lib/Chan.o lib/Logs.o
-% bin/ping: the host
-% lib/stdlib.a: the host
-% lib/Stdlib.tmi: the host
-lib/List.tmi: the host
-lib/Printf.tmi: the host
+tiny-kernel: / on a disk of 65536 KB, 62222 KB free; 1 snapshots in /dump
+$ % % as -o runtime/start.o runtime/start.s
+as -o runtime/udivmod.o runtime/udivmod.s
+cc -o runtime/libc.o runtime/libc.c
+as -o TinyKernel/libc/sys.o TinyKernel/libc/sys.s
+cc -o TinyKernel/user/ping.o TinyKernel/user/ping.c
+ld -map -s -n -o ping runtime/start.o runtime/udivmod.o runtime/libc.o TinyKernel/libc/sys.o TinyKernel/user/ping.o
+cd TinyLibCore && build
+ml -c -nostdlib -I . -o Stdlib.o Stdlib.ml
+ml -c -nostdlib -I . -o Char.o Char.ml
+ml -c -nostdlib -I . -o Seq.o Seq.ml
+ml -c -nostdlib -I . -o List.o List.ml
+ml -c -nostdlib -I . -o String.o String.ml
+ml -c -nostdlib -I . -o Bytes.o Bytes.ml
+ml -c -nostdlib -I . -o Array.o Array.ml
+ml -c -nostdlib -I . -o Option.o Option.ml
+ml -c -nostdlib -I . -o Int32.o Int32.ml
+ml -c -nostdlib -I . -o Int64.o Int64.ml
+ml -c -nostdlib -I . -o Filename.o Filename.ml
+ml -c -nostdlib -I . -o Buffer.o Buffer.ml
+ml -c -nostdlib -I . -o Printf.o Printf.ml
+ml -c -nostdlib -I . -o Marshal.o Marshal.ml
+ml -c -nostdlib -I . -o Hashtbl.o Hashtbl.ml
+ml -c -nostdlib -I . -o Common.o Common.ml
+ml -c -nostdlib -I . -o Sha1.o Sha1.ml
+ml -c -nostdlib -I . -o Fpath.o Fpath.ml
+ml -c -nostdlib -I . -o Fpath_.o Fpath_.ml
+ml -c -nostdlib -I . -o Exit.o Exit.ml
+ml -c -nostdlib -I . -o In_channel.o In_channel.ml
+ml -c -nostdlib -I . -o Out_channel.o Out_channel.ml
+ml -c -nostdlib -I . -o Chan.o Chan.ml
+ml -c -nostdlib -I . -o Logs.o Logs.ml
+ar -o stdlib.a Stdlib.o Char.o Seq.o List.o String.o Bytes.o Array.o Option.o Int32.o Int64.o Filename.o Buffer.o Printf.o Marshal.o Hashtbl.o Common.o Sha1.o Fpath.o Fpath_.o Exit.o In_channel.o Out_channel.o Chan.o Logs.o
+% ping: the host
+% stdlib.a: the host
+% Stdlib.tmi: the host
+List.tmi: the host
+Printf.tmi: the host
 % $ 

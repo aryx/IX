@@ -82,7 +82,7 @@ tiny-mkfat|-|$S $T/TinyKernel/steps/t6/TinyMkfat.ml
 mkfont|-I lib_graphics/core -I lib_graphics/geometry -I lib_graphics/fonts -I lib_graphics/software|$S $T/TinyKernel/fonts/Mkfont.ml
 windows|-|$S $T/TinyLibDraw.ml $T/TinyWindows.ml $T/user/windows.ml
 bigmem|-|$S $T/user/bigmem.ml
-square|-|$GUI $T/tests/TinyLibPlayground_tests/Square.ml $T/tests/TinyLibPlayground_tests/machine.ml
+square|-|$GUI $T/TinyAppSquare.ml $T/user/square.ml
 tetris|-|$GUI $T/TinyAppTetris.ml $T/user/tetris.ml
 calc|-|$GUI $T/TinyAppCalculator.ml $T/user/calc.ml
 temp|-|$GUI $T/TinyAppTemperature.ml $T/user/temp.ml

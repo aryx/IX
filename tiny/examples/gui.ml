@@ -10,16 +10,18 @@
  *
  *	cd /examples; build gui; ./gui
  *)
-open TinyLibGUI
+module G = TinyLibGUI
 
 type msg = Less | More
 
 let view n =
-  Col [ Label "gui: a counter";
-        Row [ Button ("-", Less); Label (string_of_int n); Button ("+", More) ] ]
+  G.Col [ G.Label "gui: a counter";
+          G.Row [ G.Button ("-", Less); G.Label (string_of_int n);
+                  G.Button ("+", More) ] ]
 
 let update msg n = match msg with Less -> n - 1 | More -> n + 1
 
-let counter = { init = 0; view = view; update = update; key = (fun _ -> []) }
+let counter : (int, msg) G.gui =
+  { init = 0; view = view; update = update; key = (fun _ -> []) }
 
-let () = TinyLibSystem.main "gui" (fun _ _ -> run counter)
+let () = TinyLibSystem.main "gui" (fun _ _ -> G.run counter)

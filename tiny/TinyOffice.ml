@@ -6,8 +6,8 @@
  * and moving the mouse at it (tests/TinyOffice_test.sh).
  *)
 
-open TinyLibPlayground
-open TinyLibGUI
+module P = TinyLibPlayground
+module G = TinyLibGUI
 open Model
 
 (* what a key or the mouse asks of the program around: nothing, to save
@@ -22,7 +22,7 @@ let create (width : int) (height : int) (path : Fpath.t) (s : string)
   let page = File.parse width height s in
   let where = { file; width; height; shown = 0; pages = File.pages_in s } in
   { page; undo = []; clean = page; sel = None; editing = Nothing; drag = None;
-    at = (16, 40); menu = menu_closed (); message = ""; prefix = false; where }
+    at = (16, 40); menu = G.menu_closed (); message = ""; prefix = false; where }
 
 let saved (o : office) =
   o.clean <- o.page;
@@ -233,19 +233,19 @@ let office_menus (o : office) : (string * (string * command) list) list =
                  ("New page", Do_new_page);
                  ("Delete page", Do_delete_page) ]) ]
 
-let key (o : office) (k : key) : request =
+let key (o : office) (k : P.key) : request =
   (* C-x and C-_ (undo) are the office's even while a box is edited *)
-  let own = k = Ctrl 'x' || k = Ctrl '_' in
+  let own = k = P.Ctrl 'x' || k = P.Ctrl '_' in
   match o.editing with
   | Writing d when not o.prefix && not own ->
       o.message <- ""; Text.write_key o d k; Continue
-  | Cell (c, r, typed) when not o.prefix && k <> Ctrl 'x' ->
+  | Cell (c, r, typed) when not o.prefix && k <> P.Ctrl 'x' ->
       o.message <- ""; Sheet.cell_key o c r typed k; Continue
-  | Sketch (tool, _) when not o.prefix && k <> Ctrl 'x' ->
+  | Sketch (tool, _) when not o.prefix && k <> P.Ctrl 'x' ->
       o.message <- ""; Drawing.sketch_key o tool k; Continue
   | Painting (_, brush, _) when not o.prefix && not own ->
       o.message <- ""; Paint.paint_key o brush k; Continue
-  | Naming typed when not o.prefix && k <> Ctrl 'x' ->
+  | Naming typed when not o.prefix && k <> P.Ctrl 'x' ->
       o.message <- ""; Chart.name_key o typed k; Continue
   | _ ->
       let was = o.message in
@@ -253,22 +253,22 @@ let key (o : office) (k : key) : request =
       if o.prefix then begin
         o.prefix <- false;
         match k with
-        | Ctrl 's' -> command o Do_save
-        | Ctrl ('c' | 'q') -> o.message <- was; command o Do_quit
-        | Char 't' -> command o (Do_add Box_sheet)
-        | Char 'd' -> command o (Do_add Box_drawing)
-        | Char 'p' -> command o (Do_add Box_paint)
-        | Char ']' -> command o (Do_page 1)
-        | Char '[' -> command o (Do_page (-1))
+        | P.Ctrl 's' -> command o Do_save
+        | P.Ctrl ('c' | 'q') -> o.message <- was; command o Do_quit
+        | P.Char 't' -> command o (Do_add Box_sheet)
+        | P.Char 'd' -> command o (Do_add Box_drawing)
+        | P.Char 'p' -> command o (Do_add Box_paint)
+        | P.Char ']' -> command o (Do_page 1)
+        | P.Char '[' -> command o (Do_page (-1))
         | _ -> o.message <- "C-x: not a command"; Continue
       end
       else begin
         (match k with
-         | Ctrl 'x' -> o.prefix <- true
-         | Ctrl 'o' -> ignore (command o (Do_add Box_text))
-         | Backspace when o.sel <> None -> ignore (command o Do_delete)
-         | Ctrl '_' -> ignore (command o Do_undo)
-         | Ctrl 'g' -> o.sel <- None; o.message <- "Quit"
+         | P.Ctrl 'x' -> o.prefix <- true
+         | P.Ctrl 'o' -> ignore (command o (Do_add Box_text))
+         | P.Backspace when o.sel <> None -> ignore (command o Do_delete)
+         | P.Ctrl '_' -> ignore (command o Do_undo)
+         | P.Ctrl 'g' -> o.sel <- None; o.message <- "Quit"
          | _ -> o.message <- help);
         Continue
       end
@@ -283,7 +283,7 @@ let corner (b : obj) = (b.x + b.w - 8, b.y + b.h - 8, 8, 8)
 
 let on_handle (o : office) (x : int) (y : int) : bool =
   o.sel <> None
-  && (let b = selected_box o in inside x y (tab b) || inside x y (corner b))
+  && (let b = selected_box o in G.inside x y (tab b) || G.inside x y (corner b))
 
 (* box i grabbed by the mouse at (x, y), to move or to resize *)
 let grab (o : office) (i : int) (x : int) (y : int) (resizing : bool) =
@@ -300,7 +300,7 @@ let dragged (o : office) (x : int) (y : int) =
           { was with w = max 32 (was.w + x - mx); h = max 24 (was.h + y - my) }
         else
           { was with x = max 0 (was.x + x - mx);
-                     y = max (bar_height + 16) (was.y + y - my) } in
+                     y = max (G.bar_height + 16) (was.y + y - my) } in
       o.page <- replace o.page i (Some moved)
   | _ -> ()
 
@@ -319,7 +319,7 @@ let page_mouse (o : office) (was : int) (x : int) (y : int) (b : int) =
   match o.editing with
   | _ when pressed 1 && on_handle o x y ->
       (* the selected box's tab or corner: it is moved or resized *)
-      let resizing = inside x y (corner (selected_box o)) in
+      let resizing = G.inside x y (corner (selected_box o)) in
       finish o;
       grab o (selected o) x y resizing
   | Painting (ink, brush, _) when on_it ->
@@ -399,12 +399,12 @@ let page_mouse (o : office) (was : int) (x : int) (y : int) (b : int) =
 (* the mouse: the menus' first, then the page's *)
 let mouse (o : office) (x : int) (y : int) (b : int) : request =
   let was = o.menu.held in
-  match menu_mouse (office_menus o) o.menu x y b with
+  match G.menu_mouse (office_menus o) o.menu x y b with
   (* (Quit's refusal kept, as C-x C-c keeps it: Quit again quits; old:
    * cleared, and a page not saved was never left by the menu) *)
-  | Picked c -> (if c <> Do_quit then o.message <- ""); command o c
-  | Taken -> Continue
-  | Ignored -> page_mouse o was x y b; Continue
+  | G.Picked c -> (if c <> Do_quit then o.message <- ""); command o c
+  | G.Taken -> Continue
+  | G.Ignored -> page_mouse o was x y b; Continue
 
 (*****************************************************************************)
 (* The view *)
@@ -413,24 +413,24 @@ let mouse (o : office) (x : int) (y : int) (b : int) : request =
 
 (* a box's frame: blue when it is selected, with its tab above it and a
  * small square at its corner, where the mouse moves it and resizes it *)
-let frame (b : obj) (selected : bool) : shape list =
+let frame (b : obj) (selected : bool) : P.shape list =
   let c = if selected then blue else grey
   and x1 = b.x + b.w - 1
   and y1 = b.y + b.h - 1 in
   let (tx, ty, tw, th) = tab b in
-  [ Move (b.x, b.y, Rect (c, b.w, 1)); Move (b.x, y1, Rect (c, b.w, 1));
-    Move (b.x, b.y, Rect (c, 1, b.h)); Move (x1, b.y, Rect (c, 1, b.h)) ]
+  [ P.Move (b.x, b.y, P.Rect (c, b.w, 1)); P.Move (b.x, y1, P.Rect (c, b.w, 1));
+    P.Move (b.x, b.y, P.Rect (c, 1, b.h)); P.Move (x1, b.y, P.Rect (c, 1, b.h)) ]
   @ (if selected then
-       [ Move (tx, ty, Rect (c, tw, th));
-         Move (tx + 4, ty, Words (white, tab_text b));
-         Move (x1 - 7, y1 - 7, Rect (c, 8, 8)) ]
+       [ P.Move (tx, ty, P.Rect (c, tw, th));
+         P.Move (tx + 4, ty, P.Words (white, tab_text b));
+         P.Move (x1 - 7, y1 - 7, P.Rect (c, 8, 8)) ]
      else [])
 
 (* the status line: the page's message (what was just done, or why
  * not: it goes at the next key or click), or what the box being edited
  * says, or the file's name (old: a sheet's, a paint's or a drawing's
  * words over the message, and Quit's refusal not seen) *)
-let status (o : office) : shape list =
+let status (o : office) : P.shape list =
   let file = o.where.file
   and width = o.where.width
   and height = o.where.height in
@@ -475,13 +475,13 @@ let status (o : office) : shape list =
   let m =
     if String.length m * 8 > width - 8 then String.sub m 0 ((width - 8) / 8)
     else m in
-  [ Move (0, height - 18, Rect (light_grey, width, 18));
-    Move (4, height - 17, Words (black, m)) ]
+  [ P.Move (0, height - 18, P.Rect (light_grey, width, 18));
+    P.Move (4, height - 17, P.Words (black, m)) ]
 
-let view (o : office) : shape list =
+let view (o : office) : P.shape list =
   let width = o.where.width and height = o.where.height in
   let i = ref (-1) in
-  Rect (white, width, height)
+  P.Rect (white, width, height)
   :: List.concat (List.map (fun (b : obj) ->
        incr i;
        if b.page_no <> o.where.shown then [] else
@@ -500,8 +500,8 @@ let view (o : office) : shape list =
              | Box_drawing -> Drawing.drawing_view b 0 None
              | Box_paint -> Paint.paint_view b
              | Box_chart -> Chart.chart_view o.page b in
-       [ Group (frame b (o.sel = Some !i) @ content) ]) o.page)
-  @ [ Group (status o) ] @ menu_view width (office_menus o) o.menu
+       [ P.Group (frame b (o.sel = Some !i) @ content) ]) o.page)
+  @ [ P.Group (status o) ] @ G.menu_view width (office_menus o) o.menu
 
 (*****************************************************************************)
 (* Entry point *)
@@ -529,7 +529,7 @@ let main caps argv =
          with Failure _ -> say o ("Cannot write " ^ file));
         Some o
       | Quit -> None in
-    run_canvas caps {
+    G.run_canvas caps {
       first = (fun w h -> create w h path text0);
       picture = view;
       typed = (fun k o -> answer o (key o k));

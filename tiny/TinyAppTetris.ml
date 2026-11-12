@@ -6,7 +6,7 @@
  * functions and printing the well as text (tests/TinyAppTetris_test.sh);
  * the picture can be tested with KGraphics.ml.
  *)
-open TinyLibPlayground
+module P = TinyLibPlayground
 
 (*****************************************************************************)
 (* Pieces *)
@@ -53,7 +53,7 @@ let cells { kind; turn; x; y } =
  * numbers' state; the score, the rows removed *)
 type board = { 
   well : int array;
-  ground : shape;
+  ground : P.shape;
   next : int;
   seed : int;
   score : int;
@@ -88,9 +88,9 @@ let delay rows = max 3 (30 - (3 * (rows / 10)))
 
 (* a cell is 16 pixels, the well's corner at (8, 8) *)
 let cell kind col row =
-  Move (8 + (16 * col), 8 + (16 * row), Rect (Char.code colours.[kind], 15, 15))
+  P.Move (8 + (16 * col), 8 + (16 * row), P.Rect (Char.code colours.[kind], 15, 15))
 let shown (p : piece) =
-  Group (List.map (fun (c, r) -> cell p.kind c r)
+  P.Group (List.map (fun (c, r) -> cell p.kind c r)
            (List.filter (fun (_, r) -> r >= 0) (cells p)))
 
 let white = 255
@@ -105,23 +105,23 @@ let ground_of (well : int array) next score rows =
         (if well.(i) = 0 then acc
          else cell (well.(i) - 1) (i mod 10) (i / 10) :: acc) in
   let line y name n =
-    Group [ Move (184, y, Words (grey, name));
-            Move (184, y + 16, Words (white, string_of_int n)) ] in
+    P.Group [ P.Move (184, y, P.Words (grey, name));
+            P.Move (184, y + 16, P.Words (white, string_of_int n)) ] in
   let panel =
-    Group [ Move (184, 8, Words (white, "TETRIS"));
+    P.Group [ P.Move (184, 8, P.Words (white, "TETRIS"));
             line 48 "score" score;
             line 96 "rows" rows;
             line 144 "level" (rows / 10) ] in
-  let coming = Group [ Move (184, 192, Words (grey, "next")); 
+  let coming = P.Group [ P.Move (184, 192, P.Words (grey, "next")); 
                        shown { kind = next; turn = 0; x = 11; y = 13 } ] in
-  Group (Rect (0, 288, 336) :: Move (8, 8, Rect (0x11, 160, 320))
+  P.Group (P.Rect (0, 288, 336) :: P.Move (8, 8, P.Rect (0x11, 160, 320))
          :: panel :: coming :: taken 0 [])
 
 let banner =
-  Move (16, 136, Group [ Rect (white, 144, 48); 
-                         Move (2, 2, Rect (0, 140, 44)); 
-                         Move (36, 6, Words (white, "GAME OVER"));
-                         Move (20, 24, Words (grey, "space: again")) ])
+  P.Move (16, 136, P.Group [ P.Rect (white, 144, 48); 
+                         P.Move (2, 2, P.Rect (0, 140, 44)); 
+                         P.Move (36, 6, P.Words (white, "GAME OVER"));
+                         P.Move (20, 24, P.Words (grey, "space: again")) ])
 
 let view m =
   if m.over then [ m.board.ground; shown m.piece; banner ]
@@ -135,13 +135,13 @@ let view m =
  * over if it has no room *)
 let enter (well : int array) next seed score rows quiet =
   let piece = { kind = next; turn = 0; x = 3; y = 0 } in
-  let seed = random seed in
+  let seed = P.random seed in
   let board = { well; ground = ground_of well (seed mod 7) score rows;
                 next = seed mod 7; seed; score; rows } in
   { board; piece; wait = delay rows; over = not (fits well piece); quiet }
 
 let start seed quiet =
-  let seed = random (1 + (seed land 0xffff)) in
+  let seed = P.random (1 + (seed land 0xffff)) in
   enter (Array.make 200 0) (seed mod 7) seed 0 0 quiet
 
 (* the piece lands: its cells are the well's, in another well; the full
@@ -190,17 +190,17 @@ let frame m =
 
 (* the arrows (up: a quarter turn, where it is, or a cell to the left,
  * or to the right), the space; m the music off or on *)
-let key (k : key) (m : model) : model =
+let key (k : P.key) (m : model) : model =
   let p = m.piece in
   match k with
-  | Char 'm' -> { m with quiet = not m.quiet }
-  | Char ' ' when m.over -> start m.board.seed m.quiet
+  | P.Char 'm' -> { m with quiet = not m.quiet }
+  | P.Char ' ' when m.over -> start m.board.seed m.quiet
   | _ when m.over -> m
-  | Left -> moved m { p with x = p.x - 1 }
-  | Right -> moved m { p with x = p.x + 1 }
-  | Down -> fall m
-  | Char ' ' -> drop m
-  | Up ->
+  | P.Left -> moved m { p with x = p.x - 1 }
+  | P.Right -> moved m { p with x = p.x + 1 }
+  | P.Down -> fall m
+  | P.Char ' ' -> drop m
+  | P.Up ->
       let turned dx = { p with turn = (p.turn + 1) mod 4; x = p.x + dx } in
       let a = moved m (turned 0) in
       if a != m then a
@@ -216,12 +216,15 @@ let key (k : key) (m : model) : model =
  * numbers: a piece landed, a thud; rows gone, a coin's two notes (G and
  * the C above); four at once, C E G C; a level, a slide up; the game
  * over, a slide down *)
-let note hz ms = { wave = Square; hz; to_hz = hz; ms; volume = 40 }
-let landed = [ { wave = Square; hz = 120; to_hz = 60; ms = 80; volume = 50 } ]
+let note hz ms : P.sound = { wave = P.Square; hz; to_hz = hz; ms; volume = 40 }
+let landed : P.sound list =
+  [ { wave = P.Square; hz = 120; to_hz = 60; ms = 80; volume = 50 } ]
 let cleared = [ note 784 60; note 1047 200 ]
 let four = [ note 523 50; note 659 50; note 784 50; note 1047 400 ]
-let level_up = [ { wave = Square; hz = 300; to_hz = 1200; ms = 300; volume = 40 } ]
-let game_over = [ { wave = Triangle; hz = 440; to_hz = 80; ms = 700; volume = 90 } ]
+let level_up : P.sound list =
+  [ { wave = P.Square; hz = 300; to_hz = 1200; ms = 300; volume = 40 } ]
+let game_over : P.sound list =
+  [ { wave = P.Triangle; hz = 440; to_hz = 80; ms = 700; volume = 90 } ]
 
 (* what changed: the board, when a piece landed (or a game began) *)
 let sound was m =
@@ -264,9 +267,9 @@ let bass = List.concat (List.map bar [ 82; 110; 82; 110; 73; 65; 82; 110 ])
 
 (* 200 ms an eighth, a tenth faster each level (m-ix's faster); none
  * when the game is over or the music is off *)
-let theme = [ { timbre = Square; level = 28; notes = melody };
-              { timbre = Triangle; level = 48; notes = bass } ]
-let music m =
+let theme : P.part list = [ { timbre = P.Square; level = 28; notes = melody };
+                             { timbre = P.Triangle; level = 48; notes = bass } ]
+let music m : P.tune option =
   if m.over || m.quiet then None
   else Some { pace = 2000 / (10 + (m.board.rows / 10)); parts = theme }
 
@@ -275,7 +278,7 @@ let music m =
 (*****************************************************************************)
 
 (* the game, run by main below (user/tetris.ml its one line) *)
-let game = { 
+let game : model P.game = {
     width = 288; height = 336;
     init = (fun seed -> start seed false);
     view; key; frame;
@@ -284,4 +287,4 @@ let game = {
 
 (* the program, tetris: the game run, its speaker, seed and clock the
  * system's *)
-let main caps (_ : string array) = TinyLibPlayground.run caps game
+let main caps (_ : string array) = P.run caps game

@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See Text.mli *)
-open TinyLibPlayground
+module P = TinyLibPlayground
 open Model
 
 (*****************************************************************************)
@@ -67,7 +67,7 @@ let encode (txt : string) (sty : string) : string =
 type laid = {
   px : int array; ln : int array; top : int array; tall : int array }
 
-let cw (sty : string) (i : int) = char_width (Char.code sty.[i] lsl 8)
+let cw (sty : string) (i : int) = P.char_width (Char.code sty.[i] lsl 8)
 
 let lay_out (width : int) (txt : string) (sty : string) : laid =
   let n = String.length txt in
@@ -96,7 +96,7 @@ let lay_out (width : int) (txt : string) (sty : string) : laid =
   for k = 0 to n - 1 do
     if txt.[k] <> '\n' then
       tall.(ln.(k)) <-
-        max tall.(ln.(k)) (char_height (Char.code sty.[k] lsl 8))
+        max tall.(ln.(k)) (P.char_height (Char.code sty.[k] lsl 8))
   done;
   for k = 1 to !l do top.(k) <- top.(k - 1) + tall.(k - 1) done;
   { px; ln; top; tall }
@@ -189,7 +189,7 @@ let edit (o : office) (i : int) (x : int) (y : int) (selecting : bool) =
  * arrows (C-f, C-p, C-n), C-a, C-e the cursor moved; C-b bold, Tab
  * italic, C-u underlined, C-l large; C-w cut, C-y pasted; C-g no
  * selection. The box grows to show it all. *)
-let write_key (o : office) (d : doc) (k : key) =
+let write_key (o : office) (d : doc) (k : P.key) =
   let b = selected_box o in
   let lay = lay_out (b.w - 8) d.txt d.sty and n = String.length d.txt in
   let (a, z) = selection d and line = lay.ln.(d.cur) in
@@ -204,25 +204,25 @@ let write_key (o : office) (d : doc) (k : key) =
     else i in
   let style = String.make 1 (Char.chr d.typing) in
   (match k with
-   | Enter -> put_text d "\n" style
-   | Char c when c >= ' ' && c < '\127' -> put_text d (String.make 1 c) style
-   | Backspace ->
+   | P.Enter -> put_text d "\n" style
+   | P.Char c when c >= ' ' && c < '\127' -> put_text d (String.make 1 c) style
+   | P.Backspace ->
        (if a = z && a > 0 then d.anchor <- a - 1); put_text d "" ""
-   | Ctrl 'd' ->
+   | P.Ctrl 'd' ->
        (if a = z && z < n then d.anchor <- z + 1); put_text d "" ""
-   | Left -> go_to d (if a < z then a else d.cur - 1)
-   | Right | Ctrl 'f' -> go_to d (if a < z then z else d.cur + 1)
-   | Up | Ctrl 'p' -> vertical (line - 1)
-   | Down | Ctrl 'n' -> vertical (line + 1)
-   | Ctrl 'a' -> go_to d (back d.cur)
-   | Ctrl 'e' -> go_to d (forth d.cur)
-   | Ctrl 'b' -> restyle d 1
-   | Char '\t' -> restyle d 2
-   | Ctrl 'u' -> restyle d 4
-   | Ctrl 'l' -> restyle d 8
-   | Ctrl 'w' -> copy d; put_text d "" ""
-   | Ctrl 'y' -> let (t, st) = !clipboard in put_text d t st
-   | Ctrl 'g' -> d.anchor <- d.cur
+   | P.Left -> go_to d (if a < z then a else d.cur - 1)
+   | P.Right | P.Ctrl 'f' -> go_to d (if a < z then z else d.cur + 1)
+   | P.Up | P.Ctrl 'p' -> vertical (line - 1)
+   | P.Down | P.Ctrl 'n' -> vertical (line + 1)
+   | P.Ctrl 'a' -> go_to d (back d.cur)
+   | P.Ctrl 'e' -> go_to d (forth d.cur)
+   | P.Ctrl 'b' -> restyle d 1
+   | P.Char '\t' -> restyle d 2
+   | P.Ctrl 'u' -> restyle d 4
+   | P.Ctrl 'l' -> restyle d 8
+   | P.Ctrl 'w' -> copy d; put_text d "" ""
+   | P.Ctrl 'y' -> let (t, st) = !clipboard in put_text d t st
+   | P.Ctrl 'g' -> d.anchor <- d.cur
    | _ ->
        o.message <-
          "a text: C-b bold, Tab italic, C-u underlined, C-l large; "
@@ -241,7 +241,7 @@ let write_key (o : office) (d : doc) (k : key) =
  * lines that fit. Being edited, the selection under the words in pale
  * blue, a rectangle a line, and the cursor. *)
 let text_view (b : obj) (txt : string) (sty : string) (editing : doc option)
-    : shape list =
+    : P.shape list =
   let lay = lay_out (b.w - 8) txt sty and n = String.length txt in
   let fits l = lay.top.(l) + lay.tall.(l) <= b.h - 4 in
   let x0 = b.x + 4 and y0 = b.y + 2 in
@@ -255,8 +255,8 @@ let text_view (b : obj) (txt : string) (sty : string) (editing : doc option)
         incr j
       done;
       runs !j
-        (Move (x0 + lay.px.(i), y0 + lay.top.(l) + lay.tall.(l) - char_height c,
-               Words (black lor c, String.sub txt i (!j - i))) :: acc)
+        (P.Move (x0 + lay.px.(i), y0 + lay.top.(l) + lay.tall.(l) - P.char_height c,
+               P.Words (black lor c, String.sub txt i (!j - i))) :: acc)
     end in
   let marks = match editing with
     | None -> []
@@ -276,11 +276,11 @@ let text_view (b : obj) (txt : string) (sty : string) (editing : doc option)
         List.concat
           (List.map (fun (l, p, q) ->
              if fits l then
-               [ Move (x0 + p, y0 + lay.top.(l),
-                       Rect (pale_blue, q - p, lay.tall.(l))) ]
+               [ P.Move (x0 + p, y0 + lay.top.(l),
+                       P.Rect (pale_blue, q - p, lay.tall.(l))) ]
              else []) (pieces a []))
         @ (if fits l then
-             [ Move (x0 + lay.px.(d.cur), y0 + lay.top.(l),
-                     Rect (black, 2, lay.tall.(l))) ]
+             [ P.Move (x0 + lay.px.(d.cur), y0 + lay.top.(l),
+                     P.Rect (black, 2, lay.tall.(l))) ]
            else []) in
   marks @ List.rev (runs 0 [])

@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See Paint.mli *)
-open TinyLibPlayground
+module P = TinyLibPlayground
 open Model
 
 (*****************************************************************************)
@@ -79,29 +79,29 @@ let paint (o : office) (ink : int) (brush : int) (c0 : int) (r0 : int)
   let b = selected_box o in
   o.page <-
     replace o.page (selected o)
-      (Some { b with data = painted b pixel_letters.[ink] brush c0 r0 c1 r1 })
+      (Some { b with data = painted b P.pixel_letters.[ink] brush c0 r0 c1 r1 })
 
 (* a key in a paint: a digit a colour (0 white, 1 black...); C-g leaves it *)
-let paint_key (o : office) (brush : int) (k : key) =
+let paint_key (o : office) (brush : int) (k : P.key) =
   match k with
-  | Char c when c >= '0' && c <= '9' ->
+  | P.Char c when c >= '0' && c <= '9' ->
       o.editing <- Painting (Char.code c - 48, brush, None)
-  | Ctrl 'g' -> o.editing <- Nothing
+  | P.Ctrl 'g' -> o.editing <- Nothing
   | _ ->
     o.message <-
       "a paint: the left button paints; the Paint menu, or a digit a colour; C-g"
 
 (* A paint: each row a word of fat pixels, the rows that fit, as much
  * of each as fits *)
-let paint_view (b : obj) : shape list =
+let paint_view (b : obj) : P.shape list =
   let ncols = paint_cols b and nrows = paint_rows b in
   let rec rows l r =
     match l with
     | row :: rest when r < nrows ->
         let n = min ncols (String.length row) in
         (if n > 0 then
-           [ Move (b.x + 2, b.y + 2 + (4 * r),
-                   Words (fat_pixels,
+           [ P.Move (b.x + 2, b.y + 2 + (4 * r),
+                   P.Words (P.fat_pixels,
                           if n = String.length row then row
                           else String.sub row 0 n)) ]
          else [])

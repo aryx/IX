@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See Sheet.mli *)
-open TinyLibPlayground
+module P = TinyLibPlayground
 open Model
 
 (*****************************************************************************)
@@ -197,35 +197,35 @@ let choose (o : office) (i : int) (x : int) (y : int) =
  * Enter on a cell where nothing is typed brings back what was typed
  * there, to change it; Backspace there empties the cell. *)
 let cell_key (o : office) (c : int) (r : int) (typed : string option)
-    (k : key) =
+    (k : P.key) =
   let b = selected_box o in
   let move dc dr =
     o.editing <-
       Cell (max 0 (min 25 (c + dc)), max 0 (min 98 (r + dr)), None) in
   let arrow () =
     match k with
-    | Up -> move 0 (-1)
-    | Down -> move 0 1
-    | Left -> move (-1) 0
+    | P.Up -> move 0 (-1)
+    | P.Down -> move 0 1
+    | P.Left -> move (-1) 0
     | _ -> move 1 0 in
   match typed, k with
-  | None, Char ch when ch >= ' ' && ch < '\127' ->
+  | None, P.Char ch when ch >= ' ' && ch < '\127' ->
       o.editing <- Cell (c, r, Some (String.make 1 ch))
-  | None, Enter ->
+  | None, P.Enter ->
       o.editing <- Cell (c, r, Some (typed_in b.data (name c r)))
-  | None, (Up | Down | Left | Right) -> arrow ()
-  | None, Backspace -> change o (set_cell b.data (name c r) "")
-  | None, Ctrl 'g' -> o.editing <- Nothing
+  | None, (P.Up | P.Down | P.Left | P.Right) -> arrow ()
+  | None, P.Backspace -> change o (set_cell b.data (name c r) "")
+  | None, P.Ctrl 'g' -> o.editing <- Nothing
   | None, _ -> o.message <- "a cell: type, Enter, the arrows; C-g"
-  | Some t, Char ch when ch >= ' ' && ch < '\127' ->
+  | Some t, P.Char ch when ch >= ' ' && ch < '\127' ->
       o.editing <- Cell (c, r, Some (t ^ String.make 1 ch))
-  | Some t, Backspace ->
+  | Some t, P.Backspace ->
       o.editing <-
         Cell (c, r, Some (if t = "" then ""
                           else String.sub t 0 (String.length t - 1)))
-  | Some t, Enter -> put_cell o c r t; move 0 1
-  | Some t, (Up | Down | Left | Right) -> put_cell o c r t; arrow ()
-  | Some _, Ctrl 'g' -> o.editing <- Cell (c, r, None)
+  | Some t, P.Enter -> put_cell o c r t; move 0 1
+  | Some t, (P.Up | P.Down | P.Left | P.Right) -> put_cell o c r t; arrow ()
+  | Some _, P.Ctrl 'g' -> o.editing <- Cell (c, r, None)
   | Some _, _ -> ()
 
 
@@ -238,24 +238,24 @@ let cell_key (o : office) (c : int) (r : int) (typed : string option)
  * at its left (cut at the cell's edge), an error as #WHY; the chosen
  * cell in a blue frame. The values are computed again at each view: a
  * sheet is small, and it has no other place for them. *)
-let sheet_view (b : obj) (chosen : (int * int) option) : shape list =
+let sheet_view (b : obj) (chosen : (int * int) option) : P.shape list =
   let value = values b.data
   and ncols = min 26 (sheet_cols b)
   and nrows = min 99 (sheet_rows b) in
   let x0 = sheet_left b and y0 = sheet_top b in
   let heads =
     List.init ncols (fun c ->
-      Move (x0 + (c * cell_w) + 28, b.y + 1,
-            Words (grey, String.make 1 (Char.chr (97 + c)))))
+      P.Move (x0 + (c * cell_w) + 28, b.y + 1,
+            P.Words (grey, String.make 1 (Char.chr (97 + c)))))
     @ List.init nrows (fun r ->
         let n = string_of_int (r + 1) in
-        Move (b.x + 2 + (8 * (2 - String.length n)), y0 + (16 * r),
-              Words (grey, n))) in
+        P.Move (b.x + 2 + (8 * (2 - String.length n)), y0 + (16 * r),
+              P.Words (grey, n))) in
   let lines =
     List.init (ncols + 1) (fun c ->
-      Move (x0 + (c * cell_w) - 1, b.y + 1, Rect (light_grey, 1, b.h - 2)))
+      P.Move (x0 + (c * cell_w) - 1, b.y + 1, P.Rect (light_grey, 1, b.h - 2)))
     @ List.init (nrows + 1) (fun r ->
-        Move (b.x + 1, y0 + (16 * r) - 1, Rect (light_grey, b.w - 2, 1))) in
+        P.Move (b.x + 1, y0 + (16 * r) - 1, P.Rect (light_grey, b.w - 2, 1))) in
   let shown c r =
     let n = name c r in
     match (if typed_in b.data n = "" then Str "" else value n) with
@@ -270,8 +270,8 @@ let sheet_view (b : obj) (chosen : (int * int) option) : shape list =
         let x =
           if right then x0 + (c * cell_w) + cell_w - 4 - (8 * String.length t)
           else x0 + (c * cell_w) + 2 in
-        [ Move (x, y0 + (16 * r),
-                Words ((match v with Err _ -> 160 | _ -> black), t)) ] in
+        [ P.Move (x, y0 + (16 * r),
+                P.Words ((match v with Err _ -> 160 | _ -> black), t)) ] in
   let cells_shown =
     List.concat_map (fun c ->
       List.concat_map (fun r -> shown c r) (List.init nrows (fun r -> r)))
@@ -279,9 +279,9 @@ let sheet_view (b : obj) (chosen : (int * int) option) : shape list =
   let frame = match chosen with
     | Some (c, r) when c < ncols && r < nrows ->
         let x = x0 + (c * cell_w) - 1 and y = y0 + (16 * r) - 1 in
-        [ Move (x, y, Rect (blue, cell_w + 1, 2));
-          Move (x, y + 15, Rect (blue, cell_w + 1, 2));
-          Move (x, y, Rect (blue, 2, 17));
-          Move (x + cell_w - 1, y, Rect (blue, 2, 17)) ]
+        [ P.Move (x, y, P.Rect (blue, cell_w + 1, 2));
+          P.Move (x, y + 15, P.Rect (blue, cell_w + 1, 2));
+          P.Move (x, y, P.Rect (blue, 2, 17));
+          P.Move (x + cell_w - 1, y, P.Rect (blue, 2, 17)) ]
     | _ -> [] in
   lines @ heads @ cells_shown @ frame

@@ -9,16 +9,16 @@
 open KGraphics
 
 (* the messages are TinyLibDraw's; here, an image at any rectangle *)
-open TinyLibDraw
+module D = TinyLibDraw
 
-let colour = d_colour
-let image id x0 y0 x1 y1 v = msg 'a' [ id; x0; y0; x1; y1; 0; v ]
+let colour = D.d_colour
+let image id x0 y0 x1 y1 v = D.msg 'a' [ id; x0; y0; x1; y1; 0; v ]
 (* (the messages' numbers flat, as the kernel reads them) *)
 let draw_ dst src mask x0 y0 x1 y1 px py =
-  d_draw dst src mask (x0, y0, x1, y1) (px, py)
-let fill dst src x0 y0 x1 y1 = d_fill dst src (x0, y0, x1, y1)
-let line_ dst src xa ya xb yb = d_line dst src (xa, ya) (xb, yb)
-let text_ dst src x y s = d_text dst src (x, y) s
+  D.d_draw dst src mask (x0, y0, x1, y1) (px, py)
+let fill dst src x0 y0 x1 y1 = D.d_fill dst src (x0, y0, x1, y1)
+let line_ dst src xa ya xb yb = D.d_line dst src (xa, ya) (xb, yb)
+let text_ dst src x y s = D.d_text dst src (x, y) s
 
 (* the font's size bytes are at [bits]; the screen at its address, the
  * images' memory after it, to the last page *)
@@ -63,7 +63,7 @@ let picture bits size =
         draw_ 0 11 (-1) 400 40 440 70 100 100);
   (* a pattern: two pixels by two, repeating; as a source, from two
    * points, and as a mask *)
-  send (msg 'a' [ 12; 0; 0; 2; 2; 1; 255 ] ^ fill 12 black 0 0 1 1 ^
+  send (D.msg 'a' [ 12; 0; 0; 2; 2; 1; 255 ] ^ fill 12 black 0 0 1 1 ^
         fill 12 black 1 1 2 2 ^ fill 0 12 40 300 140 380 ^
         draw_ 0 12 (-1) 150 300 250 380 1 0 ^
         draw_ 0 red 12 40 390 140 440 0 0);
@@ -84,13 +84,13 @@ let picture bits size =
     go 255 ""
   in
   for y = 0 to 15 do
-    send (msg 'p' [ 0; 40; 452 + y; 256 ] ^ ramp ^
-          msg 'p' [ 0; -200; 130 + y; 256 ] ^ ramp ^
-          msg 'p' [ 0; 984; 130 + y; 256 ] ^ ramp)
+    send (D.msg 'p' [ 0; 40; 452 + y; 256 ] ^ ramp ^
+          D.msg 'p' [ 0; -200; 130 + y; 256 ] ^ ramp ^
+          D.msg 'p' [ 0; 984; 130 + y; 256 ] ^ ramp)
   done;
-  send (msg 'p' [ 0; 0; 768; 256 ] ^ ramp ^ msg 'p' [ 0; 0; -1; 256 ] ^ ramp);
+  send (D.msg 'p' [ 0; 0; 768; 256 ] ^ ramp ^ D.msg 'p' [ 0; 0; -1; 256 ] ^ ramp);
   (* an image freed, its memory another's *)
-  send (msg 'f' [ 10 ] ^ image 14 0 0 60 120 0xf0 ^
+  send (D.msg 'f' [ 10 ] ^ image 14 0 0 60 120 0xf0 ^
         text_ 14 white 6 50 "again" ^ draw_ 0 14 (-1) 570 350 630 470 0 0);
   (* the bad messages, each said; the others in its write are done
    * (the lists are short and a write is messages joined: tiny-ml has
@@ -103,8 +103,8 @@ let picture bits size =
   bad (fill 0 white 0 470 10 480 ^ "d\001");
   bad (fill 0 9 0 0 10 10);
   bad (draw_ 0 white 9 0 0 10 10 0 0);
-  bad (msg 'f' [ 0 ]);
-  bad (msg 'f' [ 10 ]);
+  bad (D.msg 'f' [ 0 ]);
+  bad (D.msg 'f' [ 10 ]);
   bad (colour 14 0);
   bad (colour 0 0);
   bad (image 15 0 0 0 10 0);
@@ -114,9 +114,9 @@ let picture bits size =
   bad (image 15 0 0 1024 1024 0 ^ draw_ 0 15 (-1) 0 0 10 10 0 0 ^
        fill 0 green 20 470 30 480);
   bad (text_ 0 white 0 0 "cut" ^ "\005");
-  bad (msg 's' [ 0; white; 0; 0; 9 ] ^ "short");
-  bad (msg 'p' [ 0; 0; 0; 9 ] ^ "short");
-  bad (msg 'p' [ 9; 0; 0; 1 ] ^ "x");
+  bad (D.msg 's' [ 0; white; 0; 0; 9 ] ^ "short");
+  bad (D.msg 'p' [ 0; 0; 0; 9 ] ^ "short");
+  bad (D.msg 'p' [ 9; 0; 0; 1 ] ^ "x");
   bad (fill 0 green 10 470 20 480);
   (* the connection's end: the memory one block again, but the font *)
   disconnect c;

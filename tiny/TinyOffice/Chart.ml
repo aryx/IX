@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See Chart.mli *)
-open TinyLibPlayground
+module P = TinyLibPlayground
 open Model
 
 (*****************************************************************************)
@@ -70,9 +70,9 @@ let bar_colours = [ 54; 240; 42; 252; 231; 129 ]
 (* A chart: a bar a value, as tall as its share of the largest (none
  * below 0), its value above it, its label under it (cut to its width);
  * the axis a grey line *)
-let chart_view (page : obj list) (b : obj) : shape list =
+let chart_view (page : obj list) (b : obj) : P.shape list =
   match chart_bars page b with
-  | [], why -> [ Move (b.x + 4, b.y + 2, Words (160, why)) ]
+  | [], why -> [ P.Move (b.x + 4, b.y + 2, P.Words (160, why)) ]
   | bars, _ ->
       let n = List.length bars in
       let top = List.fold_left (fun m (_, v) -> max m v) 1 bars in
@@ -85,12 +85,12 @@ let chart_view (page : obj list) (b : obj) : shape list =
       List.concat (List.mapi (fun k (label, v) ->
         let x = b.x + 8 + (k * bw) and tall = max 0 (v * room / top) in
         (if tall > 0 then
-           [ Move (x + 2, base - tall,
-                   Rect (List.nth bar_colours (k mod 6), bw - 4, tall)) ]
+           [ P.Move (x + 2, base - tall,
+                   P.Rect (List.nth bar_colours (k mod 6), bw - 4, tall)) ]
          else [])
-        @ [ Move (x + 2, base - tall - 16, Words (black, cut (string_of_int v)));
-            Move (x + 2, base + 2, Words (black, cut label)) ]) bars)
-      @ [ Move (b.x + 4, base, Rect (grey, b.w - 8, 1)) ]
+        @ [ P.Move (x + 2, base - tall - 16, P.Words (black, cut (string_of_int v)));
+            P.Move (x + 2, base + 2, P.Words (black, cut label)) ]) bars)
+      @ [ P.Move (b.x + 4, base, P.Rect (grey, b.w - 8, 1)) ]
 
 (* a name a sheet can have: a letter, then letters, digits, _ *)
 let good_name (n : string) =
@@ -101,13 +101,13 @@ let good_name (n : string) =
 
 (* A key while the selected sheet's name is typed: a character, Backspace,
  * Enter (the name given, to the charts of the sheet too), C-g *)
-let name_key (o : office) (typed : string) (k : key) =
+let name_key (o : office) (typed : string) (k : P.key) =
   match k with
-  | Char c when c >= ' ' && c < '\127' ->
+  | P.Char c when c >= ' ' && c < '\127' ->
       o.editing <- Naming (typed ^ String.make 1 c)
-  | Backspace when typed <> "" ->
+  | P.Backspace when typed <> "" ->
       o.editing <- Naming (String.sub typed 0 (String.length typed - 1))
-  | Enter ->
+  | P.Enter ->
       let s = selected_box o in
       if not (good_name typed) then
         o.message <- "a name: a letter, then letters, digits, _"
@@ -129,7 +129,7 @@ let name_key (o : office) (typed : string) (k : key) =
           else b) o.page;
         o.editing <- Nothing
       end
-  | Ctrl 'g' -> o.editing <- Nothing
+  | P.Ctrl 'g' -> o.editing <- Nothing
   | _ -> ()
 
 (* a chart of the chosen cell's column, beside its sheet (under it, if

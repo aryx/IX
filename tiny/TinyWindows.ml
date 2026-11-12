@@ -3,7 +3,7 @@
 
 (* See TinyWindows.mli *)
 
-open TinyLibDraw
+module D = TinyLibDraw
 
 module TSys = TinyLibSystem
 
@@ -48,8 +48,8 @@ let empty (x0, y0, x1, y1) = x1 <= x0 || y1 <= y0
 let inside (x0, y0, x1, y1) x y = x >= x0 && x < x1 && y >= y0 && y < y1
 let fill dst colour r =
   if not (empty r) then
-    send (d_fill dst colour r)
-let everything = 0, 0, screen_w, screen_h
+    send (D.d_fill dst colour r)
+let everything = 0, 0, D.screen_w, D.screen_h
 
 (*****************************************************************************)
 (* Windows *)
@@ -92,7 +92,7 @@ let show_cursor kind =
   if kind <> !shown_cursor then begin
     (* (the number its program's message carried: 1 a hand) *)
     shown_cursor := kind;
-    send (d_cursor (if kind = 1 then Cursor_hand else Cursor_arrow))
+    send (D.d_cursor (if kind = 1 then D.Cursor_hand else D.Cursor_arrow))
   end
 
 let border = 3
@@ -113,7 +113,7 @@ let show r w =
   if not (empty c) then begin
     let x0, y0, _, _ = c in
     send
-      (d_draw screen w.image (-1) c (x0 - w.x - border, y0 - w.y - border))
+      (D.d_draw screen w.image (-1) c (x0 - w.x - border, y0 - w.y - border))
   end
 
 (* a rectangle of the screen again: the background, the windows back to
@@ -161,7 +161,7 @@ let newline w =
   if (w.page.row + 1) * 16 <= last then w.page.row <- w.page.row + 1
   else
     (incr scrolls;
-     send (d_draw w.image w.image (-1) (0, 0, w.w, last) (0, 16));
+     send (D.d_draw w.image w.image (-1) (0, 0, w.w, last) (0, 16));
      fill w.image white (0, last, w.w, w.h))
 
 (* what a program printed: the characters that fit the line are one
@@ -182,7 +182,7 @@ let print w s =
          from (i + 1))
       else if s.[i] = '\005' then
         (put w.ends.mouse
-           (i16 w.w ^ i16 0 ^ i16 w.h ^ i16 0 ^ i16 (-1) ^ i16 (-1));
+           (D.i16 w.w ^ D.i16 0 ^ D.i16 w.h ^ D.i16 0 ^ D.i16 (-1) ^ D.i16 (-1));
          from (i + 1))
       else begin
         if (w.page.col + 1) * 8 > w.w then newline w;
@@ -192,7 +192,7 @@ let print w s =
         let j = max (i + 1) (upto i) in
         cells (j - i);
         send
-          (d_text w.image black (w.page.col * 8, w.page.row * 16)
+          (D.d_text w.image black (w.page.col * 8, w.page.row * 16)
              (String.sub s i (j - i)));
         w.page.col <- w.page.col + j - i;
         from j
@@ -259,11 +259,12 @@ let forward w s =
   let rec next i drew =
     if i >= n then i, drew
     else begin
-      let { ds_length = len; ds_images = images } = d_shape p i in
+      let ({ ds_length = len; ds_images = images } : D.message_shape) =
+        D.d_shape p i in
       if len < 0 then n, drew
       else if i + len > n then i, drew
       else begin
-        let letter = p.[i] and first = int16 p (i + 1) in
+        let letter = p.[i] and first = D.int16 p (i + 1) in
         if letter = 'a' && first > 0 && ours w first = 32767 then
           w.page.ids <- (first, fresh ()) :: w.page.ids;
         if letter = 'c' then begin
@@ -272,7 +273,7 @@ let forward w s =
         else if first <> 0 || (letter <> 'a' && letter <> 'f') then begin
           send (String.make 1 letter);
           for k = 0 to images - 1 do
-            send (i16 (ours w (int16 p (i + 1 + (2 * k)))))
+            send (D.i16 (ours w (D.int16 p (i + 1 + (2 * k)))))
           done;
           send (String.sub p (i + 1 + (2 * images)) (len - 1 - (2 * images)))
         end;
@@ -282,7 +283,7 @@ let forward w s =
              List.filter (fun (theirs, _) -> theirs <> first) w.page.ids);
         (* what it changed of the window: a draw's rectangle, a line's two
          * ends, a text's cells, a row of pixels *)
-        let at k = int16 p (i + 1 + (2 * k)) in
+        let at k = D.int16 p (i + 1 + (2 * k)) in
         let changed =
           if first <> 0 then nothing
           else if letter = 'd' then at 3, at 4, at 5, at 6
@@ -354,7 +355,7 @@ let create (caps : < Cap.pipe; Cap.fork; Cap.exec; .. >) (x0, y0, x1, y1) =
           let w =
             { image = fresh (); w = wide; h = high; x = snap x0; y = y0;
               pid = pid; ends = ends; page = page } in
-          send (d_image w.image (0, 0, w.w, w.h) 255);
+          send (D.d_image w.image (0, 0, w.w, w.h) 255);
           windows := w :: !windows;
           refresh everything)
   | _ -> List.iter closed [ k; p; d; m ]
@@ -365,8 +366,8 @@ let delete (caps : < Cap.kill; Cap.wait; .. >) w =
   if w.ends.keys_open then TSys.close w.ends.keys;
   ignore (TSys.kill caps w.pid);
   ignore (TSys.wait caps w.pid);
-  List.iter (fun (_, mine) -> send (d_free mine); release mine) w.page.ids;
-  send (d_free w.image);
+  List.iter (fun (_, mine) -> send (D.d_free mine); release mine) w.page.ids;
+  send (D.d_free w.image);
   release w.image;
   windows := List.filter (fun v -> v != w) !windows;
   refresh everything
@@ -411,7 +412,7 @@ let menu mx my (chosen : item option) =
     fill screen (if lit then blue else white)
       (mx, my + (16 * i), mx + 64, my + (16 * i) + 16);
     send
-      (d_text screen (if lit then white else black)
+      (D.d_text screen (if lit then white else black)
          (mx + 4, my + (16 * i)) name)) items
 
 (* a rectangle's four sides, two pixels thick: drawn in red, or what is
@@ -424,7 +425,7 @@ let rec over x y l =
   match l with
   | [] -> None
   | w :: rest -> if inside (outer w) x y then Some w else over x y rest
-let word v = i16 v ^ i16 (v asr 16)
+let word v = D.i16 v ^ D.i16 (v asr 16)
 
 let finish caps = List.iter (delete caps) !windows; flush (); doing := Ended
 
@@ -518,7 +519,7 @@ let rec loop caps =
       let s = TSys.read fd 12 in
       if String.length s < 12 then false
       else begin
-        mouse caps (int16 s 0) (int16 s 4) (int16 s 8);
+        mouse caps (D.int16 s 0) (D.int16 s 4) (D.int16 s 8);
         match !doing with Ended -> false | _ -> true
       end
     | Some fd when fd = TSys.fd_stdin ->
@@ -547,8 +548,8 @@ let rec loop caps =
 
 let main (caps : < Cap.pipe; Cap.forkew; Cap.kill; .. >) (_ : string array) =
   send
-    (d_colour grey 0xaa ^ d_colour white 255 ^ d_colour black 0
-     ^ d_colour blue 0x36 ^ d_colour pale 0x99 ^ d_colour red 0xf0);
+    (D.d_colour grey 0xaa ^ D.d_colour white 255 ^ D.d_colour black 0
+     ^ D.d_colour blue 0x36 ^ D.d_colour pale 0x99 ^ D.d_colour red 0xf0);
   refresh everything;
   loop caps;
   Exit.OK

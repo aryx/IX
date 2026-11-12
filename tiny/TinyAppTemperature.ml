@@ -3,7 +3,7 @@
  *
  * See TinyAppTemperature.mli
  *)
-open TinyLibGUI
+module G = TinyLibGUI
 
 (* the two fields' texts, as typed *)
 type model = { c : string; f : string }
@@ -48,11 +48,11 @@ let update (msg : msg) (m : model) : model =
              | None -> m.c);
         f = s }
 
-let view { c; f } : msg widget = 
-  Row [ Input (c, (fun s -> Celsius s)); Label "Celsius ="; 
-        Input (f, (fun s -> Fahrenheit s)); Label "Fahrenheit" ]
+let view { c; f } : msg G.widget = 
+  G.Row [ G.Input (c, (fun s -> Celsius s)); G.Label "Celsius ="; 
+        G.Input (f, (fun s -> Fahrenheit s)); G.Label "Fahrenheit" ]
 
-let temperature : (model, msg) gui =
+let temperature : (model, msg) G.gui =
   { init; view; update; key = (fun _ -> []) }
 
 (*****************************************************************************)
@@ -61,4 +61,4 @@ let temperature : (model, msg) gui =
 
 (* the program, temp: the converter run (no system call of its own;
  * user/temp.ml its one line) *)
-let main (_ : < .. >) (_ : string array) = run temperature
+let main (_ : < .. >) (_ : string array) = G.run temperature

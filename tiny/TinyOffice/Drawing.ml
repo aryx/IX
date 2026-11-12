@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See Drawing.mli *)
-open TinyLibPlayground
+module P = TinyLibPlayground
 open Model
 
 (*****************************************************************************)
@@ -52,7 +52,7 @@ let figure_line ((kind, nums, label) : string * int list * string) : string =
 (* a shape drawn, the box's corner at (ox, oy); an arrow's head is
  * rectangles narrowing to its end, along its last stretch *)
 let figure_shapes (ox : int) (oy : int) (colour : int)
-    ((kind, nums, label) : string * int list * string) : shape list =
+    ((kind, nums, label) : string * int list * string) : P.shape list =
   match kind, nums with
   | "box", [ x; y; w; h ] ->
       let x = ox + x and y = oy + y in
@@ -60,23 +60,24 @@ let figure_shapes (ox : int) (oy : int) (colour : int)
         if 8 * String.length label > w - 4 then
           String.sub label 0 (max 0 ((w - 4) / 8))
         else label in
-      [ Move (x, y, Rect (colour, w, 1)); Move (x, y + h - 1, Rect (colour, w, 1));
-        Move (x, y, Rect (colour, 1, h));
-        Move (x + w - 1, y, Rect (colour, 1, h));
-        Move (x + ((w - (8 * String.length label)) / 2), y + ((h - 16) / 2),
-              Words (colour, label)) ]
+      [ P.Move (x, y, P.Rect (colour, w, 1));
+        P.Move (x, y + h - 1, P.Rect (colour, w, 1));
+        P.Move (x, y, P.Rect (colour, 1, h));
+        P.Move (x + w - 1, y, P.Rect (colour, 1, h));
+        P.Move (x + ((w - (8 * String.length label)) / 2), y + ((h - 16) / 2),
+              P.Words (colour, label)) ]
   | "arrow", [ x0; y0; x1; y1 ] ->
       let x0 = ox + x0 and y0 = oy + y0 and x1 = ox + x1 and y1 = oy + y1 in
       let head = List.init 4 (fun k ->
-        if y1 > y0 then Move (x1 - k, y1 - k, Rect (colour, (2 * k) + 1, 1))
+        if y1 > y0 then P.Move (x1 - k, y1 - k, P.Rect (colour, (2 * k) + 1, 1))
         else if y1 < y0 then
-          Move (x1 - k, y1 + k, Rect (colour, (2 * k) + 1, 1))
+          P.Move (x1 - k, y1 + k, P.Rect (colour, (2 * k) + 1, 1))
         else if x1 >= x0 then
-          Move (x1 - k, y0 - k, Rect (colour, 1, (2 * k) + 1))
-        else Move (x1 + k, y0 - k, Rect (colour, 1, (2 * k) + 1))) in
-      [ Move (min x0 x1, y0, Rect (colour, abs (x1 - x0) + 1, 1));
-        Move (x1, min y0 y1, Rect (colour, 1, abs (y1 - y0) + 1)) ] @ head
-  | "text", [ x; y ] -> [ Move (ox + x, oy + y, Words (colour, label)) ]
+          P.Move (x1 - k, y0 - k, P.Rect (colour, 1, (2 * k) + 1))
+        else P.Move (x1 + k, y0 - k, P.Rect (colour, 1, (2 * k) + 1))) in
+      [ P.Move (min x0 x1, y0, P.Rect (colour, abs (x1 - x0) + 1, 1));
+        P.Move (x1, min y0 y1, P.Rect (colour, 1, abs (y1 - y0) + 1)) ] @ head
+  | "text", [ x; y ] -> [ P.Move (ox + x, oy + y, P.Words (colour, label)) ]
   | _ -> []
 
 (* what a stroke of a tool makes, from (x0, y0) to (x1, y1) *)
@@ -99,7 +100,7 @@ let draw_stroke (o : office) (tool : int)
 (* A key in a drawing: Tab another tool; a character the last shape's
  * label longer; Backspace shorter, and an empty label's shape removed;
  * C-g the drawing left *)
-let sketch_key (o : office) (tool : int) (k : key) =
+let sketch_key (o : office) (tool : int) (k : P.key) =
   let b = selected_box o in
   let figs = figures b.data in
   let relabel f = match List.rev figs with
@@ -109,20 +110,20 @@ let sketch_key (o : office) (tool : int) (k : key) =
            (List.map figure_line (List.rev rest @ f kind nums label)))
     | [] -> () in
   match k with
-  | Char '\t' -> o.editing <- Sketch ((tool + 1) mod 3, None)
-  | Char c when c >= ' ' && c < '\127' ->
+  | P.Char '\t' -> o.editing <- Sketch ((tool + 1) mod 3, None)
+  | P.Char c when c >= ' ' && c < '\127' ->
       relabel (fun kind nums label -> [ kind, nums, label ^ String.make 1 c ])
-  | Backspace ->
+  | P.Backspace ->
       relabel (fun kind nums label ->
         if label = "" then []
         else [ kind, nums, String.sub label 0 (String.length label - 1) ])
-  | Ctrl 'g' -> o.editing <- Nothing
+  | P.Ctrl 'g' -> o.editing <- Nothing
   | _ -> o.message <- "a drawing: Tab, the mouse, a label typed; C-g"
 
 
 (* A drawing: its shapes, and the stroke being made, in blue *)
 let drawing_view (b : obj) (tool : int)
-    (stroke : (int * int * int * int) option) : shape list =
+    (stroke : (int * int * int * int) option) : P.shape list =
   List.concat_map (figure_shapes b.x b.y black) (figures b.data)
   @ (match stroke with
      | Some (x0, y0, x1, y1) ->

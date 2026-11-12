@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See Model.mli *)
-open TinyLibGUI
+module G = TinyLibGUI
 
 (* the page's colours, bytes of the machine's palette: white, black, a
  * frame's grey, the selected box's blue, the status line's light grey,
@@ -86,7 +86,7 @@ type office = {
                                  (* a box grabbed: the object, where the
                                   * mouse was, the object then, resizing *)
   mutable at : int * int;        (* the last click *)
-  menu : menu_state;             (* the menus', and the mouse's buttons as
+  menu : G.menu_state;             (* the menus', and the mouse's buttons as
                                   * last seen *)
   mutable message : string;      (* the status line's *)
   mutable prefix : bool;         (* C-x typed *)

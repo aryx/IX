@@ -6,8 +6,8 @@
  * and the buttons by sending mouse events to TinyLibGUI
  * (tests/TinyLibGUI_test.sh).
  *)
-open TinyLibPlayground
-open TinyLibGUI
+module P = TinyLibPlayground
+module G = TinyLibGUI
 
 (*****************************************************************************)
 (* The model *)
@@ -81,29 +81,29 @@ let update (msg : msg) (m : model) : model =
 (*****************************************************************************)
 
 (* what awaits over the number, then four rows of four buttons *)
-let view { shown; kept; op; wrong; _ } : msg widget =
-  let d n = Button (string_of_int n, Digit n) in
-  let o c = Button (String.make 1 c, Op c) in
+let view { shown; kept; op; wrong; _ } : msg G.widget =
+  let d n = G.Button (string_of_int n, Digit n) in
+  let o c = G.Button (String.make 1 c, Op c) in
   let pending =
     match op with
     | None -> ""
     | Some c -> string_of_int kept ^ " " ^ String.make 1 c
   in
-  Col [ Label pending;
-        Field (if wrong then "error" else string_of_int shown);
-        Row [ d 7; d 8; d 9; o '/' ];
-        Row [ d 4; d 5; d 6; o '*' ];
-        Row [ d 1; d 2; d 3; o '-' ];
-        Row [ d 0; Button ("C", Clear); Button ("=", Equals); o '+' ] ]
+  G.Col [ G.Label pending;
+        G.Field (if wrong then "error" else string_of_int shown);
+        G.Row [ d 7; d 8; d 9; o '/' ];
+        G.Row [ d 4; d 5; d 6; o '*' ];
+        G.Row [ d 1; d 2; d 3; o '-' ];
+        G.Row [ d 0; G.Button ("C", Clear); G.Button ("=", Equals); o '+' ] ]
 
 (* a key is its button: the digits, the four operations, = or the
  * Enter, c *)
-let key (k : key) : msg list =
+let key (k : P.key) : msg list =
   match k with
-  | Char c when c >= '0' && c <= '9' -> [ Digit (Char.code c - 48) ]
-  | Char ('+' | '-' | '*' | '/' as c) -> [ Op c ]
-  | Char '=' | Enter -> [ Equals ]
-  | Char 'c' -> [ Clear ]
+  | P.Char c when c >= '0' && c <= '9' -> [ Digit (Char.code c - 48) ]
+  | P.Char ('+' | '-' | '*' | '/' as c) -> [ Op c ]
+  | P.Char '=' | P.Enter -> [ Equals ]
+  | P.Char 'c' -> [ Clear ]
   | _ -> []
 
 (*****************************************************************************)
@@ -111,7 +111,7 @@ let key (k : key) : msg list =
 (*****************************************************************************)
 
 (* the calculator, run by main below (user/calc.ml its one line) *)
-let calculator = { init = start; view; update; key }
+let calculator : (model, msg) G.gui = { init = start; view; update; key }
 
 (* the program, calc: the calculator run (no system call of its own) *)
-let main (_ : < .. >) (_ : string array) = run calculator
+let main (_ : < .. >) (_ : string array) = G.run calculator

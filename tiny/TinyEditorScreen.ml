@@ -6,7 +6,8 @@
  * at it (tests/TinyEditorScreen_test.sh).
  *)
 
-open TinyLibPlayground
+module P = TinyLibPlayground
+module G = TinyLibGUI
 
 (*****************************************************************************)
 (* The editor *)
@@ -40,7 +41,7 @@ type faced = { fline : string; fdepth : int; ffaces : string; fafter : int }
 (* a line on the screen as a shape: its text, its faces, the cursor's
  * column in it if it is there, the shape drawn *)
 type pieced = {
-  pline : string; pfaces : string; pcursor : int option; pshape : shape;
+  pline : string; pfaces : string; pcursor : int option; pshape : P.shape;
 }
 
 (* the last line's other uses, and the keys the editor gives itself *)
@@ -49,10 +50,10 @@ type extra = {
   mutable search : string option;         (* C-s typed: the text looked for *)
   mutable reading : (answer * string) option;
     (* a prompt, and what is typed after it *)
-  mutable recording : key list option;
+  mutable recording : P.key list option;
     (* C-x ( typed: the keys since, the last first *)
-  mutable macro : key list;               (* the last macro, for C-x e *)
-  mutable queue : key list;
+  mutable macro : P.key list;               (* the last macro, for C-x e *)
+  mutable queue : P.key list;
     (* keys to give back: a macro's, a command's *)
   mutable lexed : (string * int) list;
     (* the lines above the screen, each with the comments open at its end *)
@@ -71,7 +72,7 @@ type editor = {
   file : Fpath.t;
   mutable quitting : bool;       (* a quit was refused: the next is done *)
   mutable message : string;      (* the last line of the screen *)
-  mutable prefix : key option;
+  mutable prefix : P.key option;
     (* C-x or Escape typed, waiting for its key *)
   x : extra;
   cols : int;
@@ -235,18 +236,18 @@ let look (e : editor) (sub : string) (from : int) =
 (* a key while searching: a character more to look for (from where what
  * is found starts), C-s the next one, Backspace a character less; any
  * other key ends the search, and Enter and C-g do nothing more *)
-let searching (e : editor) (sub : string) (k : key) : bool =
+let searching (e : editor) (sub : string) (k : P.key) : bool =
   let m = String.length sub in
   match k with
-  | Char c when c >= ' ' && c < '\127' ->
+  | P.Char c when c >= ' ' && c < '\127' ->
       let sub = sub ^ String.make 1 c in
       e.x.search <- Some sub; look e sub (e.t.col - m); true
-  | Ctrl 's' -> look e sub e.t.col; true
-  | Backspace ->
+  | P.Ctrl 's' -> look e sub e.t.col; true
+  | P.Backspace ->
       e.x.search <- Some (String.sub sub 0 (max 0 (m - 1))); true
   | _ ->
       e.x.search <- None;
-      k = Enter || k = Ctrl 'g'
+      k = P.Enter || k = P.Ctrl 'g'
 
 (*****************************************************************************)
 (* M-x *)
@@ -315,7 +316,7 @@ let rec answered (e : editor) (what : answer) (typed : string) =
       | _ when typed = "replace-string" -> e.x.reading <- Some (Replace_from, "")
       | Some keys, _ ->
           e.x.queue <-
-            List.init (String.length keys) (fun i -> key_of_byte keys.[i])
+            List.init (String.length keys) (fun i -> P.key_of_byte keys.[i])
             @ e.x.queue
       | None, [ name ] when typed <> "" -> answered e Command name
       | _ -> e.message <- "No command: " ^ typed)
@@ -338,16 +339,16 @@ let rec answered (e : editor) (what : answer) (typed : string) =
 
 (* a key after a prompt: a character more, Backspace one less, Tab a
  * command's name completed, Enter done, C-g never mind *)
-let reading (e : editor) (what : answer) (typed : string) (k : key) =
+let reading (e : editor) (what : answer) (typed : string) (k : P.key) =
   let m = String.length typed in
   match k with
-  | Char c when c >= ' ' && c < '\127' ->
+  | P.Char c when c >= ' ' && c < '\127' ->
       e.x.reading <- Some (what, typed ^ String.make 1 c)
-  | Backspace ->
+  | P.Backspace ->
       e.x.reading <- Some (what, String.sub typed 0 (max 0 (m - 1)))
-  | Char '\t' when what = Command -> e.x.reading <- Some (what, complete typed)
-  | Ctrl 'g' -> e.x.reading <- None; e.message <- "Quit"
-  | Enter -> e.x.reading <- None; answered e what typed
+  | P.Char '\t' when what = Command -> e.x.reading <- Some (what, complete typed)
+  | P.Ctrl 'g' -> e.x.reading <- None; e.message <- "Quit"
+  | P.Enter -> e.x.reading <- None; answered e what typed
   | _ -> ()
 
 (*****************************************************************************)
@@ -359,22 +360,22 @@ let reading (e : editor) (what : answer) (typed : string) (k : key) =
  * the queue, read before what is typed: a macro does what its keys
  * did, a save included. C-x e while recording ends the macro first, as
  * in Emacs *)
-let macro (e : editor) (k : key) =
+let macro (e : editor) (k : P.key) =
   match k, e.x.recording with
-  | Char '(', None ->
+  | P.Char '(', None ->
       e.x.recording <- Some []; e.message <- "Defining kbd macro..."
-  | Char '(', Some _ -> e.message <- "Already defining kbd macro"
-  | Char (')' | 'e'), Some (_ :: _ :: l) ->
+  | P.Char '(', Some _ -> e.message <- "Already defining kbd macro"
+  | P.Char (')' | 'e'), Some (_ :: _ :: l) ->
       e.x.macro <- List.rev l; e.x.recording <- None;
-      if k = Char ')' then e.message <- "Keyboard macro defined"
+      if k = P.Char ')' then e.message <- "Keyboard macro defined"
       else e.x.queue <- e.x.macro @ e.x.queue
-  | Char ')', _ -> e.message <- "Not defining kbd macro"
+  | P.Char ')', _ -> e.message <- "Not defining kbd macro"
   | _ ->
       if e.x.macro = [] then e.message <- "No kbd macro has been defined"
       else e.x.queue <- e.x.macro @ e.x.queue
 
 (* the next key the editor gives itself, before one typed *)
-let pending (e : editor) : key option =
+let pending (e : editor) : P.key option =
   match e.x.queue with k :: rest -> e.x.queue <- rest; Some k | [] -> None
 
 (*****************************************************************************)
@@ -383,7 +384,7 @@ let pending (e : editor) : key option =
 
 (* a key: a character, a control key, an arrow; after C-x or Escape,
  * the second key of a command *)
-let key (e : editor) (k : key) : request =
+let key (e : editor) (k : P.key) : request =
   let t = e.t and again = e.killing and quitting = e.quitting
   and h = e.rows - 2 in
   e.killing <- false;
@@ -402,38 +403,38 @@ let key (e : editor) (k : key) : request =
        e.prefix <- None;
        match prefix, k with
        (* C-x C-s; C-x C-q and C-x C-c; C-x ( ) e, the macros *)
-       | Some (Ctrl 'x'), Ctrl 's' -> request := Save
-       | Some (Ctrl 'x'), Char ('(' | ')' | 'e') -> macro e k
-       | Some (Ctrl 'x'), Ctrl ('q' | 'c') ->
+       | Some (P.Ctrl 'x'), P.Ctrl 's' -> request := Save
+       | Some (P.Ctrl 'x'), P.Char ('(' | ')' | 'e') -> macro e k
+       | Some (P.Ctrl 'x'), P.Ctrl ('q' | 'c') ->
            if t.modified && not quitting then
              (e.quitting <- true;
               e.message <- "Not saved: C-x C-s saves, C-x C-q again quits")
            else request := Quit
-       | Some (Ctrl 'x'), _ -> e.message <- "C-x: not a command"
+       | Some (P.Ctrl 'x'), _ -> e.message <- "C-x: not a command"
        (* Escape, then < > v x: Meta *)
-       | Some _, Char '<' -> lines (- t.row)
-       | Some _, Char 'x' -> e.x.reading <- Some (Command, "")
-       | Some _, Char '>' -> lines (List.length t.below)
-       | Some _, Char 'v' -> lines (1 - h); e.top <- max 0 (e.top - (h - 1))
+       | Some _, P.Char '<' -> lines (- t.row)
+       | Some _, P.Char 'x' -> e.x.reading <- Some (Command, "")
+       | Some _, P.Char '>' -> lines (List.length t.below)
+       | Some _, P.Char 'v' -> lines (1 - h); e.top <- max 0 (e.top - (h - 1))
        | Some _, _ -> e.message <- "Escape: not a command"
-       | None, Ctrl 'a' -> t.col <- 0
-       | None, Ctrl 'e' -> t.col <- String.length t.line
-       | None, (Ctrl 'f' | Right) -> forward t
-       | None, (Ctrl 'b' | Left) -> backward t
-       | None, (Ctrl 'n' | Down) -> lines 1
-       | None, (Ctrl 'p' | Up) -> lines (- 1)
-       | None, Ctrl 'v' ->
+       | None, P.Ctrl 'a' -> t.col <- 0
+       | None, P.Ctrl 'e' -> t.col <- String.length t.line
+       | None, (P.Ctrl 'f' | P.Right) -> forward t
+       | None, (P.Ctrl 'b' | P.Left) -> backward t
+       | None, (P.Ctrl 'n' | P.Down) -> lines 1
+       | None, (P.Ctrl 'p' | P.Up) -> lines (- 1)
+       | None, P.Ctrl 'v' ->
            lines (h - 1); e.top <- min (e.top + h - 1) t.row
-       | None, Ctrl 'd' -> delete t
-       | None, Backspace -> backspace t
-       | None, Enter -> newline t
-       | None, Ctrl 'k' -> kill e again
-       | None, Ctrl 'y' -> yank e
-       | None, Ctrl 'l' -> e.top <- max 0 (t.row - h / 2)
-       | None, Ctrl 's' -> e.x.search <- Some ""
-       | None, Ctrl 'g' -> e.message <- "Quit"
-       | None, (Ctrl 'x' | Escape) -> e.prefix <- Some k
-       | None, Char c when c = '\t' || (c >= ' ' && c < '\127') ->
+       | None, P.Ctrl 'd' -> delete t
+       | None, P.Backspace -> backspace t
+       | None, P.Enter -> newline t
+       | None, P.Ctrl 'k' -> kill e again
+       | None, P.Ctrl 'y' -> yank e
+       | None, P.Ctrl 'l' -> e.top <- max 0 (t.row - h / 2)
+       | None, P.Ctrl 's' -> e.x.search <- Some ""
+       | None, P.Ctrl 'g' -> e.message <- "Quit"
+       | None, (P.Ctrl 'x' | P.Escape) -> e.prefix <- Some k
+       | None, P.Char c when c = '\t' || (c >= ' ' && c < '\127') ->
            insert t (String.make 1 c)
        | None, _ -> e.message <- "Not a command");
   if not !vertical then t.goal <- t.col;
@@ -598,7 +599,7 @@ let view (e : editor) : string list =
         (if e.message = "" then "" else "Failing ") ^ "I-search: " ^ sub
     | None, None ->
         (match e.prefix with
-         | Some (Ctrl 'x') -> "C-x-"
+         | Some (P.Ctrl 'x') -> "C-x-"
          | Some _ -> "ESC-"
          | None -> e.message) in
   text @ [ mode; String.sub last 0 (min e.cols (String.length last)) ]
@@ -688,13 +689,13 @@ let rec pieces (i : int) (l : string) (f : string) (cut : int option)
       | _ -> if j < n && face_at f j = c then stop (j + 1) else j in
     let j = stop (k + 1) in
     pieces i l f cut j
-      (Move (8 * k, 16 * i, Words (colour_of c, String.sub l k (j - k))) :: acc)
+      (P.Move (8 * k, 16 * i, P.Words (colour_of c, String.sub l k (j - k))) :: acc)
   end
 
 (* (a line's shape is kept, and given again, the very same, while its
  * text, its faces and the cursor's column in it are the same: what
  * draws it does not look into it again, TinyLibGUI's repaint) *)
-let shapes (e : editor) (n : int) : shape list =
+let shapes (e : editor) (n : int) : P.shape list =
   let lines = view e in
   let fs = faces e and (cx, cy) = cursor e in
   let rec go i lines fs olds =
@@ -707,7 +708,7 @@ let shapes (e : editor) (n : int) : shape list =
         let g = match old with
           | Some (o : pieced)
             when o.pcursor = cut && o.pline = l && o.pfaces = f -> o.pshape
-          | _ -> Group (List.rev (pieces i l f cut 0 [])) in
+          | _ -> P.Group (List.rev (pieces i l f cut 0 [])) in
         { pline = l; pfaces = f; pcursor = cut; pshape = g }
         :: go (i + 1) rest fs olds
     | _ -> [] in
@@ -717,7 +718,7 @@ let shapes (e : editor) (n : int) : shape list =
   let c = if cx < String.length line then String.sub line cx 1 else " " in
   shown
   @ (if cy < n then
-       [ Move (8 * cx, 16 * cy, Group [ Rect (0, 8, 16); Words (255, c) ]) ]
+       [ P.Move (8 * cx, 16 * cy, P.Group [ P.Rect (0, 8, 16); P.Words (255, c) ]) ]
      else [])
 
 (*****************************************************************************)
@@ -755,13 +756,13 @@ let main caps argv =
       answer e r
       && (match pending e with Some k -> given e (key e k) | None -> true)
     in
-    let (c : (editor * int * int) TinyLibGUI.canvas) = {
+    let (c : (editor * int * int) G.canvas) = {
       first = (fun w h -> (create (w / 8) (h / 16) path text0, w, h));
-      picture = (fun (e, w, h) -> Rect (255, w, h) :: shapes e (h / 16));
+      picture = (fun (e, w, h) -> P.Rect (255, w, h) :: shapes e (h / 16));
       typed =
         (fun k m ->
           let (e, _, _) = m in
           if given e (key e k) then Some m else None);
       moved = (fun _ _ _ m -> Some m) } in
-    TinyLibGUI.run_canvas caps c;
+    G.run_canvas caps c;
     Exit.OK

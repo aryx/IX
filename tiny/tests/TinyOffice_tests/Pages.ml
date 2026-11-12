@@ -10,19 +10,19 @@
  * string, as in TinyEditorScreen's test. *)
 open TinyOffice
 
-open TinyLibPlayground
+module P = TinyLibPlayground
 
 (* a shape's leaves at their places: "rect colour x y w h", "words
  * colour x y |text|" *)
 let rec leaves x y s acc =
   match s with
-  | Move (dx, dy, s) -> leaves (x + dx) (y + dy) s acc
-  | Group l -> List.fold_right (fun s acc -> leaves x y s acc) l acc
-  | Rect (c, w, h) ->
+  | P.Move (dx, dy, s) -> leaves (x + dx) (y + dy) s acc
+  | P.Group l -> List.fold_right (fun s acc -> leaves x y s acc) l acc
+  | P.Rect (c, w, h) ->
     ("rect " ^ string_of_int c ^ " " ^ string_of_int x ^ " " ^ string_of_int y
      ^ " " ^ string_of_int w ^ " " ^ string_of_int h, w > 1 && h > 1)
     :: acc
-  | Words (c, t) ->
+  | P.Words (c, t) ->
     ("words " ^ string_of_int c ^ " " ^ string_of_int x ^ " "
      ^ string_of_int y ^ " |" ^ t ^ "|", true)
     :: acc
@@ -49,7 +49,7 @@ let asked r =
 
 let keys o s =
   let last = ref Continue in
-  String.iter (fun c -> last := key o (key_of_byte c)) s;
+  String.iter (fun c -> last := key o (P.key_of_byte c)) s;
   asked !last
 
 (* the mouse at (x, y), its buttons b; a click of a button at (x, y),

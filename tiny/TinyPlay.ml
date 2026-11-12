@@ -4,7 +4,7 @@
 (* See TinyPlay.mli *)
 
 module TSys = TinyLibSystem
-open TinyLibPlayground
+module P = TinyLibPlayground
 
 type wav = { rate : int; channels : int; bits : int; at : int; bytes : int }
 
@@ -87,7 +87,7 @@ let play out data =
   let n = samples w in
   let rec from k =
     if k < n then begin
-      (try TSys.write out (samples_message (piece w data k block))
+      (try TSys.write out (P.samples_message (piece w data k block))
        with Failure _ -> ());
       from (k + block)
     end in

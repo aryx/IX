@@ -11,7 +11,7 @@
  *
  *	cd /examples; build game; ./game
  *)
-open TinyLibPlayground
+module P = TinyLibPlayground
 
 (* where the ball is, and where it goes at each frame *)
 type model = { x : int; y : int; dx : int; dy : int }
@@ -21,17 +21,17 @@ let height = 240
 let size = 16
 
 let view m =
-  [ Rect (0xaa, width, height);
-    Move (8, 4, Words (0, "game: the arrows turn it, q quits"));
-    Move (m.x, m.y, Rect (0xf0, size, size)) ]
+  [ P.Rect (0xaa, width, height);
+    P.Move (8, 4, P.Words (0, "game: the arrows turn it, q quits"));
+    P.Move (m.x, m.y, P.Rect (0xf0, size, size)) ]
 
 (* an arrow turns the ball that way, at the same speed *)
 let key k m =
   match k with
-  | Left -> { x = m.x; y = m.y; dx = - (abs m.dx); dy = m.dy }
-  | Right -> { x = m.x; y = m.y; dx = abs m.dx; dy = m.dy }
-  | Up -> { x = m.x; y = m.y; dx = m.dx; dy = - (abs m.dy) }
-  | Down -> { x = m.x; y = m.y; dx = m.dx; dy = abs m.dy }
+  | P.Left -> { x = m.x; y = m.y; dx = - (abs m.dx); dy = m.dy }
+  | P.Right -> { x = m.x; y = m.y; dx = abs m.dx; dy = m.dy }
+  | P.Up -> { x = m.x; y = m.y; dx = m.dx; dy = - (abs m.dy) }
+  | P.Down -> { x = m.x; y = m.y; dx = m.dx; dy = abs m.dy }
   | _ -> m
 
 (* a step; a wall sends it back (the text's line is the top one) *)
@@ -40,11 +40,11 @@ let frame m =
   let dy = if m.y + m.dy < 24 || m.y + m.dy > height - size then - m.dy else m.dy in
   { x = m.x + dx; y = m.y + dy; dx = dx; dy = dy }
 
-let game = {
+let game : model P.game = {
   width = width; height = height;
   init = (fun _ -> { x = 40; y = 60; dx = 3; dy = 2 });
   view = view; key = key; frame = frame; sound = (fun _ _ -> []);
   music = (fun _ -> None);
 }
 
-let () = TinyLibSystem.main "game" (fun caps _ -> run caps game)
+let () = TinyLibSystem.main "game" (fun caps _ -> P.run caps game)

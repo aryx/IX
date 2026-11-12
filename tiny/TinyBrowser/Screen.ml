@@ -3,9 +3,9 @@
 
 (* See Screen.mli *)
 module TSys = TinyLibSystem
-open TinyLibDraw
-open TinyLibPlayground
-open TinyLibGUI
+module D = TinyLibDraw
+module P = TinyLibPlayground
+module G = TinyLibGUI
 open Lines
 
 (*****************************************************************************)
@@ -24,9 +24,9 @@ let c_code = 264
 let c_rule = 265
 let c_text = 268
 let colours =
-  d_colour c_white 255 ^ d_colour c_black 0 ^ d_colour c_link 23
-  ^ d_colour c_code 221
-  ^ d_colour c_rule 136 ^ d_colour c_text 68
+  D.d_colour c_white 255 ^ D.d_colour c_black 0 ^ D.d_colour c_link 23
+  ^ D.d_colour c_code 221
+  ^ D.d_colour c_rule 136 ^ D.d_colour c_text 68
 
 (*****************************************************************************)
 (* What the screen shows *)
@@ -65,9 +65,9 @@ type nav = {
 (* the menus and the toolbar's, below the model as TinyLibGUI has them *)
 type tools = {
   mutable tb_field : string;          (* the address, as shown or being typed *)
-  mutable tb_mouse : mouse;           (* TinyLibGUI's: the field has the keys
+  mutable tb_mouse : G.mouse;           (* TinyLibGUI's: the field has the keys
                                        * when pressed in last *)
-  tb_menu : menu_state;
+  tb_menu : G.menu_state;
 }
 
 (* The document being read: HTTP's answer, its head first, then its
@@ -134,9 +134,9 @@ let send sc =
      with Failure _ -> ());
     sc.sc_msgs <- [];
     if sc.sc_tools.tb_menu.opened <> None then begin
-      List.iter (draw 0 0 0)
-        (List.tl (menu_view (sc.sc_cols * 8) (menus sc) sc.sc_tools.tb_menu));
-      flush ()
+      List.iter (P.draw 0 0 0)
+        (List.tl (G.menu_view (sc.sc_cols * 8) (menus sc) sc.sc_tools.tb_menu));
+      P.flush ()
     end
   end
 
@@ -147,12 +147,12 @@ let clip sc s =
 
 (* a row, filled with a colour *)
 let fill_row sc row colour =
-  put sc (d_fill 0 colour (0, row * 16, sc.sc_cols * 8, (row * 16) + 16))
+  put sc (D.d_fill 0 colour (0, row * 16, sc.sc_cols * 8, (row * 16) + 16))
 
 (* The page's area on the screen: from under the toolbar to the status
  * row, [area sc] pixels high. The page scrolls by pixels: its line i is
  * at area_top + 16 i - sc_y. *)
-let area_top = bar_height + 32
+let area_top = G.bar_height + 32
 let area sc = ((sc.sc_rows - 1) * 16) - area_top
 let rows_of_page sc = area sc / 16
 
@@ -179,13 +179,13 @@ let draw_slice sc dst y (r : run) id s =
     let have = if rows > from then min high (rows - from) else 0 in
     if have > 0 then
       put sc
-        (d_draw dst (image_of id) (-1) (x, y, x + pc.pc_w, y + have) (0, from));
+        (D.d_draw dst (image_of id) (-1) (x, y, x + pc.pc_w, y + have) (0, from));
     if have < high then begin
-      put sc (d_fill dst c_code (x, y + have, x + pc.pc_w, y + high));
+      put sc (D.d_fill dst c_code (x, y + have, x + pc.pc_w, y + high));
       if s = 0 && rows = 0 && pc.pc_w >= 24 && high = 16 then begin
         let alt = if pc.pc_alt = "" then "picture" else pc.pc_alt in
         let fits = (pc.pc_w / 8) - 1 in
-        put sc (d_text dst c_text (x + 4, y)
+        put sc (D.d_text dst c_text (x + 4, y)
                   (if String.length alt > fits then String.sub alt 0 (max 0 fits)
                    else alt))
       end
@@ -205,8 +205,8 @@ let draw_line sc i (l : line) =
   let tall = List.exists (fun (r : run) -> r.look land big <> 0) l.runs in
   let whole = not tall && at >= area_top && at + 16 <= area_top + area sc in
   let dst = if whole then 0 else c_strip and y = if whole then at else 0 in
-  put sc (d_fill dst c_white (0, y, w, y + 16));
-  if l.rule then put sc (d_fill dst c_rule (0, y + 7, w, y + 9))
+  put sc (D.d_fill dst c_white (0, y, w, y + 16));
+  if l.rule then put sc (D.d_fill dst c_rule (0, y + 7, w, y + 9))
   else
     l.runs |> List.iter (fun (r : run) ->
       match r.part with
@@ -217,7 +217,7 @@ let draw_line sc i (l : line) =
         let t = String.sub r.text 0 n and x = r.col * 8
         and ry = if r.part = Run_lower then y - 16 else y in
         if r.look land code <> 0 then
-          put sc (d_fill dst c_code (x, y, x + (n * 8), y + 16));
+          put sc (D.d_fill dst c_code (x, y, x + (n * 8), y + 16));
         let ink =
           if r.link <> None then c_link
           else if r.look land bold <> 0 then c_black else c_text in
@@ -226,15 +226,15 @@ let draw_line sc i (l : line) =
           (r.look land (bold + emph))
           lor (if r.look land under <> 0 then 4 else 0)
           lor (if k = 2 then 8 else 0) in
-        put sc (if style = 0 then d_text dst ink (x, ry) t
-                else d_styled dst ink (x, ry) style t);
+        put sc (if style = 0 then D.d_text dst ink (x, ry) t
+                else D.d_styled dst ink (x, ry) style t);
         if r.link <> None then
-          put sc (d_line dst c_link (x, ry + (16 * k) - 1)
+          put sc (D.d_line dst c_link (x, ry + (16 * k) - 1)
                     (x + (n * 8 * k) - 1, ry + (16 * k) - 1))
       | _ -> ());
   if not whole then begin
     let y0 = max at area_top and y1 = min (at + 16) (area_top + area sc) in
-    if y0 < y1 then put sc (d_draw 0 c_strip (-1) (0, y0, w, y1) (0, y0 - at))
+    if y0 < y1 then put sc (D.d_draw 0 c_strip (-1) (0, y0, w, y1) (0, y0 - at))
   end
 
 (* The bar of menus, the page's title at the right of their titles, and
@@ -248,29 +248,29 @@ let draw_bar sc =
     let title = Html.title sc.sc_page in
     if title <> "" then title else sc.sc_nav.nv_address in
   let n = max 0 (((w - x) / 8) - 1) in
-  (match menu_view w ms sc.sc_tools.tb_menu with
+  (match G.menu_view w ms sc.sc_tools.tb_menu with
    | bar :: opened ->
-     draw 0 0 0 bar;
-     draw 0 x 1
-       (Words (0, if String.length t > n then String.sub t 0 n else t));
-     List.iter (draw 0 0 0) opened
+     P.draw 0 0 0 bar;
+     P.draw 0 x 1
+       (P.Words (0, if String.length t > n then String.sub t 0 n else t));
+     List.iter (P.draw 0 0 0) opened
    | [] -> ());
-  flush ()
+  P.flush ()
 
 (* The toolbar: Back, the address in a field (its end, when it is longer
  * than the field: what is typed goes after the part not shown), Go; by
  * TinyLibGUI's widgets, at their places *)
-let input_box sc = 72, bar_height + 4, (sc.sc_cols * 8) - 144, 24
+let input_box sc = 72, G.bar_height + 4, (sc.sc_cols * 8) - 144, 24
 let laid_tools sc =
   let (x, y, w, h) = input_box sc in
   let f = sc.sc_tools.tb_field in
   let cut = max 0 (String.length f - ((w - 16) / 8)) in
   let input =
-    Input (String.sub f cut (String.length f - cut),
+    G.Input (String.sub f cut (String.length f - cut),
            fun t -> Typed (String.sub f 0 cut ^ t)) in
-  let (s1, b1) = place 8 y 56 h (Button ("Back", Back)) in
-  let (s2, b2) = place x y w h input in
-  let (s3, b3) = place (x + w + 8) y 56 h (Button ("Go", Go_typed)) in
+  let (s1, b1) = G.place 8 y 56 h (G.Button ("Back", Back)) in
+  let (s2, b2) = G.place x y w h input in
+  let (s3, b3) = G.place (x + w + 8) y 56 h (G.Button ("Go", Go_typed)) in
   s1 @ s2 @ s3, b1 @ b2 @ b3
 
 (* the toolbar on its ground (TinyLibGUI's grey), and what the mouse
@@ -278,17 +278,17 @@ let laid_tools sc =
 let draw_tools sc =
   let (shapes, boxes) = laid_tools sc in
   send sc;
-  draw 0 0 bar_height (Rect (0xcc, sc.sc_cols * 8, area_top - bar_height));
-  List.iter (draw 0 0 0) shapes;
-  List.iter (fun (_, s) -> draw 0 0 0 s) (over boxes sc.sc_tools.tb_mouse);
-  flush ()
+  P.draw 0 0 G.bar_height (P.Rect (0xcc, sc.sc_cols * 8, area_top - G.bar_height));
+  List.iter (P.draw 0 0 0) shapes;
+  List.iter (fun (_, s) -> P.draw 0 0 0 s) (G.over boxes sc.sc_tools.tb_mouse);
+  P.flush ()
 
 (* the field has the keys: the mouse's button went down in it last *)
-let focused sc = TinyLibGUI.focused sc.sc_tools.tb_mouse (input_box sc)
+let focused sc = G.focused sc.sc_tools.tb_mouse (input_box sc)
 let focus sc on =
   sc.sc_tools.tb_mouse <-
     { sc.sc_tools.tb_mouse with
-      m_focus = (if on then Some (80, bar_height + 8) else None) }
+      m_focus = (if on then Some (80, G.bar_height + 8) else None) }
 
 let draw_status sc =
   let row = sc.sc_rows - 1 in
@@ -310,7 +310,7 @@ let draw_status sc =
           | _ -> "")
      | Page_none why -> why)
     ^ "   space -: page, b: back, g: address, q: quit" in
-  put sc (d_text 0 c_black (8, row * 16) (clip sc text))
+  put sc (D.d_text 0 c_black (8, row * 16) (clip sc text))
 
 (* The page's lines that fall in its area, from pixel [a] to pixel [b]
  * of the page, drawn; white where the page has ended. *)
@@ -321,7 +321,7 @@ let draw_between sc a b =
   let bottom = area_top + ((first + List.length ls) * 16) - sc.sc_y in
   let y0 = max bottom (area_top + a - sc.sc_y)
   and y1 = area_top + b - sc.sc_y in
-  if y0 < y1 then put sc (d_fill 0 c_white (0, y0, sc.sc_cols * 8, y1));
+  if y0 < y1 then put sc (D.d_fill 0 c_white (0, y0, sc.sc_cols * 8, y1));
   first + List.length ls
 
 (* the whole area drawn again *)
@@ -339,7 +339,7 @@ let scroll_by sc d =
   if delta <> 0 then begin
     if abs delta >= h then begin sc.sc_y <- y; redraw sc end
     else if delta > 0 then begin
-      put sc (d_draw 0 0 (-1) (0, area_top, w, area_top + h - delta)
+      put sc (D.d_draw 0 0 (-1) (0, area_top, w, area_top + h - delta)
                 (0, area_top + delta));
       sc.sc_y <- y;
       let first = (y + h - delta) / 16 in
@@ -348,7 +348,7 @@ let scroll_by sc d =
     end
     else begin
       put sc
-        (d_draw 0 0 (-1) (0, area_top - delta, w, area_top + h) (0, area_top));
+        (D.d_draw 0 0 (-1) (0, area_top - delta, w, area_top + h) (0, area_top));
       sc.sc_y <- y;
       ignore (draw_between sc y (y - delta));
       sc.sc_drawn <- min sc.sc_drawn ((y + h + 15) / 16)
@@ -407,5 +407,5 @@ let show_new sc =
 let hover sc over =
   if over <> sc.sc_nav.nv_hover then begin
     sc.sc_nav.nv_hover <- over;
-    put sc (d_cursor (if over then Cursor_hand else Cursor_arrow))
+    put sc (D.d_cursor (if over then D.Cursor_hand else D.Cursor_arrow))
   end

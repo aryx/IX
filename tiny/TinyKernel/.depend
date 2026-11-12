@@ -1,0 +1,14 @@
+TinyKernelAudio.o: TinyMemory.tmi TinyKernelAudio.mli
+TinyKernelCalls.o: TinyKernelDevices.tmi TinyKernelFS.tmi TinyKernelFiles.tmi TinyKernelGraphics.tmi TinyKernelIO.tmi TinyKernelMachine.tmi TinyKernelMemory.tmi TinyKernelNetwork.tmi TinyKernelProcs.tmi TinyMemory.tmi TinyKernelCalls.mli
+TinyKernelDevices.o: TinyKernelAudio.tmi TinyKernelFiles.tmi TinyKernelGraphics.tmi TinyKernelMachine.tmi TinyKernelDevices.mli
+TinyKernelFiles.o: TinyKernelFS.tmi TinyKernelGraphics.tmi TinyKernelMachine.tmi TinyKernelNetwork.tmi TinyMemory.tmi TinyKernelFiles.mli
+TinyKernelFS.o: TinyMemory.tmi TinyKernelFS.mli
+TinyKernelGraphics.o: TinyMemory.tmi TinyKernelGraphics.mli
+TinyKernelIO.o: TinyKernelAudio.tmi TinyKernelDevices.tmi TinyKernelFS.tmi TinyKernelFiles.tmi TinyKernelGraphics.tmi TinyKernelMachine.tmi TinyKernelMemory.tmi TinyKernelNetwork.tmi TinyKernelProcs.tmi TinyMemory.tmi TinyKernelIO.mli
+TinyKernelMachine.o: TinyKernelFS.tmi TinyMemory.tmi TinyKernelMachine.mli
+TinyKernelMemory.o: TinyMemory.tmi TinyKernelMemory.mli
+TinyKernelNetwork.o: TinyKernelNetwork.mli
+TinyKernelProcs.o: TinyKernelFiles.tmi TinyKernelGraphics.tmi TinyKernelMachine.tmi TinyKernelMemory.tmi TinyKernelNetwork.tmi TinyMemory.tmi TinyKernelProcs.mli
+TinyKernelScheduler.o: TinyKernelCalls.tmi TinyKernelDevices.tmi TinyKernelFiles.tmi TinyKernelIO.tmi TinyKernelMachine.tmi TinyKernelMemory.tmi TinyKernelNetwork.tmi TinyKernelProcs.tmi TinyKernelScheduler.mli
+TinyMemory.o:
+../TinyKernel.o: TinyKernelCalls.tmi TinyKernelDevices.tmi TinyKernelFS.tmi TinyKernelFiles.tmi TinyKernelGraphics.tmi TinyKernelMachine.tmi TinyKernelMemory.tmi TinyKernelProcs.tmi TinyKernelScheduler.tmi ../TinyKernel.mli

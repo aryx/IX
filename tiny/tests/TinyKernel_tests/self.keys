@@ -8,7 +8,7 @@ build boot.img > /usr/glenda/self/comment.log
 echo comment: compiled `{grep -c '^ml -c' /usr/glenda/self/comment.log} linked `{grep -c '^ld ' /usr/glenda/self/comment.log}
 echo 'let () = print_string ""' >> user/calc.ml
 build boot.img > /usr/glenda/self/calc.log
-echo calc: compiled `{grep -c '^ml -c' /usr/glenda/self/calc.log} linked `{grep -c '^ld .* -o calc ' /usr/glenda/self/calc.log} image `{grep -c '^cat kernel.img > boot.img' /usr/glenda/self/calc.log}
+echo calc: compiled `{grep -c '^ml -c' /usr/glenda/self/calc.log} linked `{grep -c '^ld .* -o calc ' /usr/glenda/self/calc.log} image `{grep -c '^cat TinyKernel/kernel.img > boot.img' /usr/glenda/self/calc.log}
 build boot.img > /usr/glenda/self/last.log
 echo last: compiled `{grep -c '^ml -c' /usr/glenda/self/last.log} linked `{grep -c '^ld ' /usr/glenda/self/last.log}
 exit

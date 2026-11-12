@@ -29,19 +29,23 @@
 # on both: tiny-build runs it with tiny-shell on the host, /bin/rc on
 # tiny-kernel.
 #
+# Two parts have their own Buildfile, run from here at each build:
+# the library, TinyLibCore/, and the kernel, TinyKernel/. Each makes
+# the files of its own directory, and knows which to make again.
+#
 # Its problems, today's tools':
-# - CORE, the library's units, said here and in TinyLibCore/Buildfile:
-#   tiny-build has no glob for the sources that make the library again;
+# - CORE, the library's units, said here (the image's /lib/ml) and in
+#   TinyLibCore/Buildfile: tiny-build has no glob;
 # - the libraries shared by several programs (TinyLibSystem, TinyLibGUI)
 #   still their objects, named in each link.
 
 
-# the programs, by their names in /bin; then the kernel
+# the programs, by their names in /bin; then the kernel (TinyKernel/)
 PROGS = sh rc emacs office troff play mltests paint windows square tetris \
     calc temp ping get put httpd utils ed bigmem www prof db vcs build as ld \
     ar cc ml trace debug
 
-all: $PROGS kernel.img
+all: $PROGS kernel
 
 # the tools, by their names on tiny-kernel; on the host tiny-ml... by
 # tiny-build TINY=tiny- (or each, as tiny-build ML=../ml.exe)
@@ -76,7 +80,7 @@ STDLIB = TinyLibCore/stdlib.a
 # end); as mini-ml in m-ix, the compiler's arguments are not its
 # prerequisites. Its .tmi made with its .o
 INCLUDES = -I . -I TinyLibSystem/tinykernel -I TinyC -I TinyML -I TinyOffice \
-    -I TinyBrowser -I TinyKernel -I user
+    -I TinyBrowser -I user
 %.o: %.ml $STDLIB
 	$ML -c -L TinyLibCore $INCLUDES -o $target $stem.ml
 %.tmi: %.o
@@ -111,9 +115,9 @@ CRT = runtime/start.o runtime/udivmod.o runtime/libc.o TinyKernel/libc/sys.o
 
 # ML's: runtime/ml.c, the allocator and Cheney's collector, #included by
 # mlsys.c, which gives it tiny-kernel's memory and calls; end.s, the
-# image's end, where an ML program's value stack can start, linked last
+# program's end, where its value stack can start, linked last
 MLRT = TinyLibSystem/tinykernel/mlsys.o
-MLEND = TinyKernel/end.o
+MLEND = TinyLibSystem/tinykernel/end.o
 TinyLibSystem/tinykernel/mlsys.o: TinyLibSystem/tinykernel/mlsys.c runtime/ml.c TinyKernel/libc/user.h
 
 
@@ -124,12 +128,13 @@ TinyLibSystem/tinykernel/mlsys.o: TinyLibSystem/tinykernel/mlsys.c runtime/ml.c 
 # Made by its own Buildfile, TinyLibCore/Buildfile, as ocaml-light's
 # stdlib by its Makefile and m-ix's libraries by their mkfiles: its
 # units compiled among themselves, then kept in stdlib.a in the order
-# they start in. Asked again when one of its sources changes; it knows
-# which units to make again. On the image they are /lib/ml.
-# coupling: CORE is TinyLibCore/Buildfile's.
-$STDLIB: ${CORE:%=TinyLibCore/%.ml} ${CORE:%=TinyLibCore/%.mli} \
-    TinyLibCore/Buildfile
+# they start in. stdlib is not a file, so it is never up to date: the
+# library's build runs each time, and it knows which units to make
+# again (by its digests, in TinyLibCore/.tiny-build); stdlib.a is made
+# with it, as a .tmi with its .o. On the image they are /lib/ml.
+stdlib:
 	cd TinyLibCore && $BUILD ML=^$ML AR=^$AR
+$STDLIB: stdlib
 
 
 #############################################################################
@@ -397,29 +402,15 @@ paint: $CRT TinyKernel/libc/draw.o TinyKernel/user/paint.o
 	$LD -map -s -n -o $target $prereq
 
 #############################################################################
-# The kernel
+# The kernel: TinyKernel/
 #############################################################################
 
-# TinyKernel.ml and its parts, in ML, each unit after the ones before it;
-# the assembly ML cannot say (entry.s: the traps, the switch; draw.s and
-# memory.s, the pixels' and the memory's loops); runtime.c, ML's runtime
-# given the machine's memory; font.s, the font's pixels (made on the
-# host by fonts/Mkfont.ml, on the image as it is); end.s, the image's
-# end, where the files it carries start. kernel.img: entry.o first, at 0,
-# its start made by ml, as a program's (kernel.start.o)
-TinyKernel/runtime.o: TinyKernel/runtime.c runtime/ml.c
-KERNEL_UNITS = TinyKernel/TinyMemory.o TinyKernel/TinyKernelGraphics.o \
-    TinyKernel/TinyKernelNetwork.o TinyKernel/TinyKernelAudio.o \
-    TinyKernel/TinyKernelFS.o TinyKernel/TinyKernelMemory.o \
-    TinyKernel/TinyKernelMachine.o TinyKernel/TinyKernelFiles.o \
-    TinyKernel/TinyKernelProcs.o TinyKernel/TinyKernelDevices.o \
-    TinyKernel/TinyKernelIO.o TinyKernel/TinyKernelCalls.o \
-    TinyKernel/TinyKernelScheduler.o TinyKernel.o
-kernel.start.o: $STDLIB $KERNEL_UNITS
-kernel.img: TinyKernel/entry.o runtime/udivmod.o TinyKernel/runtime.o \
-    TinyKernel/draw.o TinyKernel/memory.o TinyKernel/font.o kernel.start.o \
-    $STDLIB $KERNEL_UNITS $MLEND
-	$LD -map -o $target $prereq
+# Made by its own Buildfile, TinyKernel/Buildfile, from its units, its
+# assembly and the library; run each time, as the library's (kernel,
+# not a file), after it. TinyKernel/kernel.img made with it
+kernel: $STDLIB
+	cd TinyKernel && $BUILD ML=^$ML CC=^$CC AS=^$AS LD=^$LD
+TinyKernel/kernel.img: kernel
 
 #############################################################################
 # The image
@@ -444,23 +435,24 @@ EXAMPLES = TinyKernel/steps/t6/user/wc.c TinyKernel/user/sh.c user/emacs.ml \
     examples/hello.c examples/square.s examples/helloml.ml examples/Buildfile
 LIBC = runtime/start.o runtime/udivmod.o runtime/libc.o \
     TinyKernel/libc/sys.o TinyKernel/lib/c/Buildfile
-LIBML = TinyLibSystem/tinykernel/mlsys.o TinyKernel/end.o \
+LIBML = TinyLibSystem/tinykernel/mlsys.o TinyLibSystem/tinykernel/end.o \
     TinyKernel/lib/ml/Buildfile
 
 # (in /lib/ml, the library's interfaces and stdlib.a, as the Makefile's
-# image)
+# image; its .tmi made with it, by TinyLibCore/Buildfile, and not
+# prerequisites: this file's %.tmi would make them again)
 LIBUNITS = ${CORE:%=TinyLibCore/%.tmi} $STDLIB
 
 # /lib here, lib/: the same files, in lib/c and lib/ml, for a program
 # built on the host as on tiny-kernel (examples/: tiny-build TINY=tiny-
 # LIB=../lib SRC=..). Not a file: copied again each time it is asked
-libs: $LIBC $LIBUNITS $LIBML
+libs: $LIBC $STDLIB $LIBML
 	mkdir -p lib/c lib/ml
 	for(f in $LIBC) cp $f lib/c/^`{basename $f}
 	for(f in $LIBUNITS $LIBML) cp $f lib/ml/^`{basename $f}
 
-boot.img: kernel.img $PROGS $EXAMPLES $STDLIB $LIBC $LIBML
-	cat kernel.img > $target
+boot.img: TinyKernel/kernel.img $PROGS $EXAMPLES $STDLIB $LIBC $LIBML
+	cat TinyKernel/kernel.img > $target
 	for(f in $PROGS) { n=`{wc -c < $f}; echo bin/$f; echo $n; cat $f } >> $target
 	for(f in $EXAMPLES) { n=`{wc -c < $f}; echo examples/^`{basename $f}; echo $n; cat $f } >> $target
 	for(f in $LIBUNITS) { n=`{wc -c < $f}; echo lib/ml/^`{basename $f}; echo $n; cat $f } >> $target
@@ -480,31 +472,35 @@ boot.img: kernel.img $PROGS $EXAMPLES $STDLIB $LIBC $LIBML
 # of the units it names and its .mli, written by ml -depend as ocamldep
 # writes OCaml's (and m-ix's mini-ml -depend). Its sources are every
 # .ml of INCLUDES' directories (a unit added is found; the host's
-# programs among them, TinyCPU.ml and TinyMachine.ml, are lines no
-# target asks for, or left out, said, when tiny-ml cannot read them).
+# programs among them, TinyCPU.ml and TinyMachine.ml, and TinyKernel.ml,
+# the kernel's, are lines no target asks for, or left out, said, when
+# tiny-ml cannot read them).
 # The globs are written here, not in a variable: rc does not glob a *
 # that comes from one. .depend is kept beside this file, as
-# ocaml-light's stdlib keeps its own (TinyLibCore/ has its own too):
-# `build depend` makes it again after a unit names another one, or a
-# unit is added.
+# ocaml-light's stdlib keeps its own (TinyLibCore/ and TinyKernel/ have
+# theirs, made again too): `build depend` makes it again after a unit
+# names another one, or a unit is added.
 depend:
-	$ML -depend $INCLUDES *.ml TinyLibSystem/tinykernel/*.ml TinyC/*.ml TinyML/*.ml TinyOffice/*.ml TinyBrowser/*.ml TinyKernel/*.ml user/*.ml > .depend
+	$ML -depend $INCLUDES *.ml TinyLibSystem/tinykernel/*.ml TinyC/*.ml TinyML/*.ml TinyOffice/*.ml TinyBrowser/*.ml user/*.ml > .depend
+	@{ cd TinyLibCore && $BUILD ML=^$ML depend }
+	@{ cd TinyKernel && $BUILD ML=^$ML depend }
 
 <.depend
 
 #############################################################################
 # clean: what this file made removed (the objects and interfaces beside
-# their sources, each directory by name; the programs, the kernel, the
-# image, the maps)
+# their sources, each directory by name; the programs, the image, the
+# maps; the library's and the kernel's by their Buildfiles)
 #############################################################################
 
 clean:
-	cd TinyLibCore && $BUILD clean
+	@{ cd TinyLibCore && $BUILD clean }
+	@{ cd TinyKernel && $BUILD clean }
 	rm -f lib/c/* lib/ml/*
 	rm -f *.o *.tmi TinyBrowser/*.o TinyBrowser/*.tmi TinyC/*.o TinyC/*.tmi \
-	    TinyKernel/*.o TinyKernel/*.tmi TinyKernel/libc/*.o \
+	    TinyKernel/libc/*.o \
 	    TinyKernel/libc/*.tmi TinyKernel/user/*.o TinyKernel/user/*.tmi \
 	    TinyLibSystem/tinykernel/*.o \
 	    TinyLibSystem/tinykernel/*.tmi TinyML/*.o TinyML/*.tmi TinyOffice/*.o \
 	    TinyOffice/*.tmi runtime/*.o runtime/*.tmi \
-	    user/*.o user/*.tmi *.map $PROGS kernel.img boot.img
+	    user/*.o user/*.tmi *.map $PROGS boot.img

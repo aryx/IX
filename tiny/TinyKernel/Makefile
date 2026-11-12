@@ -69,11 +69,11 @@
 #                     until written, under _make-pages
 #
 # What is built, and how, is ../Buildfile's (t-IX built by tiny-build):
-# the kernel, entry.s first, the runtime, the kernel's units, the
-# library, end.s last; then the image, boot.img, the kernel followed by
-# its files, each a name, a line, its size, a line, its bytes (a hard
-# link a name and a line "link utils": utils is cat, ls, wc...); an
-# empty line at the end. This Makefile runs it, in a copy of tiny/ (the
+# the kernel (Buildfile, here: entry.s first, the runtime, the kernel's
+# units, the library, end.s last); then the image, boot.img, the
+# kernel followed by its files, each a name, a line, its size, a line,
+# its bytes (a hard link a name and a line "link utils": utils is cat,
+# ls, wc...); an empty line at the end. This Makefile runs it, in a copy of tiny/ (the
 # build, below), and makes the disk of the sources, disk.img; then runs
 # the machine on them, and its tests.
 #
@@ -177,7 +177,8 @@ $(O)/boot.img: $(O)/font.s $(O)/spin.prof $(O)/spin.map FORCE
 	  ln -sf $$(command -v $${t#*:}) $(O)/tools/$${t%%:*}; done
 	cd $(S) && PATH=$(abspath $(O)/tools):$$PATH MEMORY=$(MEMORY) MEMSIZE=$(MEMSIZE) \
 	  build -j $(J) boot.img
-	for f in boot.img kernel.img; do cmp -s $(S)/$$f $(O)/$$f || cp $(S)/$$f $(O)/$$f; done
+	cmp -s $(S)/boot.img $(O)/boot.img || cp $(S)/boot.img $(O)/boot.img
+	cmp -s $(S)/TinyKernel/kernel.img $(O)/kernel.img || cp $(S)/TinyKernel/kernel.img $(O)/kernel.img
 	@test $$(wc -c < $@) -lt 10485760 || { echo "$@: over 10 MB, where TinyKernelFS.ml has its buffers"; rm $@; exit 1; }
 $(O)/kernel.img: $(O)/boot.img
 FORCE:

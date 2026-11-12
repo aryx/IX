@@ -38,8 +38,8 @@ stdlib.a: Stdlib.o
 
 mlsys.o: /src/TinyLibSystem/tinykernel/mlsys.c /src/runtime/ml.c /src/TinyKernel/libc/user.h
 	cc -o $target /src/TinyLibSystem/tinykernel/mlsys.c
-end.o: /src/TinyKernel/end.s
-	as -o $target /src/TinyKernel/end.s
+end.o: /src/TinyLibSystem/tinykernel/end.s
+	as -o $target /src/TinyLibSystem/tinykernel/end.s
 
 # build clean: the objects, the interfaces and the library removed
 clean:

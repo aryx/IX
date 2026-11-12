@@ -71539,3 +71539,45 @@ lx_open : (Chan.i -> located list) -> Fp
 **Yoann:**
 
 > resume
+
+------------------------------------------------------------------------
+
+## 2026-11-12 13:05
+
+**Yoann:**
+
+> resume
+
+**Claude (summary):**
+
+Claude committed f9862305 on top of 4fc7c4b3, then left CI checking and bookkeeping for later.
+Claude ranked TinyKernel/Buildfile third, after the tolerant tests and the CORE unit list.
+Claude proposed moving the kernel's units and kernel.img out of the top Buildfile.
+Claude said the new file should mirror how TinyLibCore/ was split out of that Buildfile.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 13:08
+
+**Yoann:**
+
+> let's postpone 1 until the moment where we actually need it, that is we do what seems trivial change and suddently a test fail when really it should accomodate the trivial change. let's do 3 in the mean time, so that the tiny/Buildfile gets simpler too; it is currently 500 LOC which is a lot
+
+**Claude (summary):**
+
+Claude recommended option A: move the kernel's rules into an included `TinyKernel/Buildfile` with one line in the top file.
+Claude noted option A keeps `build kernel.img` in `tiny/`, while option B would need a source list and `../` paths.
+Claude also proposed moving the shell, toolchain, window, and C program groups into their own included Buildfiles.
+Claude asked whether to proceed with A for the kernel, then the program groups, to shrink the 500-line top file.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 13:11
+
+**Yoann:**
+
+> B. having independent build run usually force to decompose things in a better way and help understand things in isolation
+
+**Claude (summary):**
+
+Claude split the kernel out into `TinyKernel/Buildfile` (option B), with its own `end.s` and `udivmod.o`. The top Buildfile now runs it through a non-file `kernel` target, and `stdlib` runs `TinyLibCore` the same way. Each sub-Buildfile makes only files in its own directory, because tiny-build cannot mark a file as made elsewhere. `TinyKernel.ml` still builds to `../TinyKernel.o`, which Claude left for Yoann to decide. Claude fixed two existing bugs along the way: `build libs` recompiling TinyLibCore units, and `clean` running `rm` inside TinyLibCore.

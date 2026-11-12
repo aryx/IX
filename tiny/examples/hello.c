@@ -7,7 +7,10 @@
 //	cd /examples; build; ./hello
 //	trace ./hello                its system calls
 //	debug ./hello                b square, c, bt, r, s, x/i pc 3, q
-#include "/src/TinyKernel/libc/user.h"
+//
+// (user.h, the system's calls, found by cc -I /src/TinyKernel/libc, the
+// Buildfile's; on the host, tiny/TinyKernel/libc's)
+#include "user.h"
 
 int square(int n);
 

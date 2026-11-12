@@ -442,12 +442,22 @@ EXAMPLES = TinyKernel/steps/t6/user/wc.c TinyKernel/user/sh.c user/emacs.ml \
     TinyEditorScreen.ml examples/report.ixd examples/korobeiniki.wav \
     examples/spin.prof examples/spin.map TinyLibMachine.tmi TinyLibMachine.o \
     examples/hello.c examples/square.s examples/helloml.ml examples/Buildfile
-LIBC = runtime/start.o runtime/udivmod.o runtime/libc.o TinyKernel/libc/sys.o TinyKernel/lib/c/Buildfile
-LIBML = TinyLibSystem/tinykernel/mlsys.o TinyKernel/end.o TinyKernel/lib/ml/Buildfile
+LIBC = runtime/start.o runtime/udivmod.o runtime/libc.o \
+    TinyKernel/libc/sys.o TinyKernel/lib/c/Buildfile
+LIBML = TinyLibSystem/tinykernel/mlsys.o TinyKernel/end.o \
+    TinyKernel/lib/ml/Buildfile
 
 # (in /lib/ml, the library's interfaces and stdlib.a, as the Makefile's
 # image)
 LIBUNITS = ${CORE:%=TinyLibCore/%.tmi} $STDLIB
+
+# /lib here, lib/: the same files, in lib/c and lib/ml, for a program
+# built on the host as on tiny-kernel (examples/: tiny-build TINY=tiny-
+# LIB=../lib SRC=..). Not a file: copied again each time it is asked
+libs: $LIBC $LIBUNITS $LIBML
+	mkdir -p lib/c lib/ml
+	for(f in $LIBC) cp $f lib/c/^`{basename $f}
+	for(f in $LIBUNITS $LIBML) cp $f lib/ml/^`{basename $f}
 
 boot.img: kernel.img $PROGS $EXAMPLES $STDLIB $LIBC $LIBML
 	cat kernel.img > $target
@@ -490,6 +500,7 @@ depend:
 
 clean:
 	cd TinyLibCore && $BUILD clean
+	rm -f lib/c/* lib/ml/*
 	rm -f *.o *.tmi TinyBrowser/*.o TinyBrowser/*.tmi TinyC/*.o TinyC/*.tmi \
 	    TinyKernel/*.o TinyKernel/*.tmi TinyKernel/libc/*.o \
 	    TinyKernel/libc/*.tmi TinyKernel/user/*.o TinyKernel/user/*.tmi \

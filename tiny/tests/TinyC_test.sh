@@ -74,5 +74,12 @@ for want in "expr.c: line 3: expected an expression" "semi.c: line 3: expected ;
   got=$(cd $W/err && $TC -o /dev/null $c 2>&1)
   if [ "$got" = "$want" ]; then echo "ok error in $c"; else echo "FAIL error in $c: $got"; failures=$((failures + 1)); fi
 done
+# -I dir: an #include's file not beside the file looked for there, as
+# cc's; without it, not found, said
+mkdir -p $W/inc/h; printf '#define SIX 6\n' > $W/inc/h/six.h
+printf '#include "six.h"\nint main(void) { return SIX; }\n' > $W/inc/m.c
+if (cd $W/inc && $TC -I h -o m.o m.c) && [ -f $W/inc/m.o ] \
+   && ! (cd $W/inc && $TC -o m2.o m.c 2> /dev/null)
+then echo "ok -I: an #include's file found in the directory"; else echo "FAIL -I"; failures=$((failures + 1)); fi
 echo "$failures failure(s)"
 [ $failures = 0 ]

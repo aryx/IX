@@ -13,9 +13,19 @@ type token =
 type loc = string * int
 type located = token * loc
 
-(* [tokens macros open_ chan]: the file's tokens; open_ reads an
- * #include's file, and macros keeps the #defines' tokens *)
-val tokens :
-  (string, located list) Hashtbl.t ->
-  ((Chan.i -> located list) -> Fpath.t -> located list) ->
-  Chan.i -> located list
+(* what lexing a file needs besides it: the #defines' tokens so far; the
+ * directories an #include's file is looked for in after the file's own
+ * (-I's); the place chosen among its places (find here others: beside
+ * the file, then -I's); a file opened and read, an #include's (its
+ * errors said with its name). (lx_: a record's labels are one name
+ * space in tiny-ml, tiny-cc's program on tiny-kernel) *)
+type env = {
+  lx_macros : (string, located list) Hashtbl.t;
+  lx_incl : Fpath.t list;
+  lx_find : Fpath.t -> Fpath.t list -> Fpath.t;
+  lx_open : (Chan.i -> located list) -> Fpath.t -> located list;
+}
+
+(* [tokens env chan]: the file's tokens, each #include's in its place,
+ * the #defines expanded *)
+val tokens : env -> Chan.i -> located list

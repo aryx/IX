@@ -22,18 +22,24 @@ let puncts = [ "<<="; ">>="; "..."; "->"; "++"; "--"; "<<"; ">>"; "<="; ">=";
 type loc = string * int
 type located = token * loc
 
-(* a file's tokens, its #includes' in their place (each opened by
- * open_), #defines expanded (a macro's tokens where it is used) *)
-let rec tokens (macros : (string, located list) Hashtbl.t)
-    (open_ : (Chan.i -> located list) -> Fpath.t -> located list)
-    (chan : Chan.i) : located list =
+(* what lexing a file needs besides it: see the .mli *)
+type env = {
+  lx_macros : (string, located list) Hashtbl.t;
+  lx_incl : Fpath.t list;
+  lx_find : Fpath.t -> Fpath.t list -> Fpath.t;
+  lx_open : (Chan.i -> located list) -> Fpath.t -> located list;
+}
+
+(* a file's tokens, its #includes' in their place, #defines expanded (a
+ * macro's tokens where it is used) *)
+let rec tokens (env : env) (chan : Chan.i) : located list =
   (* (an #include's file beside this one) *)
   let dir =
     match chan.origin with Chan.File f -> Fpath.parent f | _ -> Fpath.v "./" in
-  text macros open_ (Chan.origin chan) dir (In_channel.input_all chan.ic)
+  text env (Chan.origin chan) dir (In_channel.input_all chan.ic)
 
 (* s's tokens, where in their locs (a #define's body: its file's) *)
-and text macros open_ (where : string) (dir : Fpath.t) (s : string) =
+and text (env : env) (where : string) (dir : Fpath.t) (s : string) =
   let n = String.length s in
   let out = ref [] in
   (* the line of position i, counted from the last one asked: tokens come
@@ -47,10 +53,10 @@ and text macros open_ (where : string) (dir : Fpath.t) (s : string) =
   let emit i t =
     let l = loc i in
     match t with
-    | Id x when Hashtbl.mem macros x ->
+    | Id x when Hashtbl.mem env.lx_macros x ->
         out :=
           List.rev_append
-            (List.map (fun (t, _) -> t, l) (Hashtbl.find macros x)) !out
+            (List.map (fun (t, _) -> t, l) (Hashtbl.find env.lx_macros x)) !out
     | t -> out := (t, l) :: !out in
   (* (old: '0' .. '9' and the others as patterns: tiny-ml has no
    * character ranges) *)
@@ -83,10 +89,14 @@ and text macros open_ (where : string) (dir : Fpath.t) (s : string) =
                       (String.map (function '\t' -> ' ' | c -> c) line)) with
            | "include" :: f :: _ when f.[0] = '"' ->
                let f = Fpath.v (String.sub f 1 (String.length f - 2)) in
-               (* (Fpath.append dir f is f when it is absolute) *)
-               let f =
+               (* beside this file (Fpath.append dir f is f when it is
+                * absolute), then in the -I directories, as cc's *)
+               let here =
                  if Fpath.to_string dir = "./" then f else Fpath.append dir f in
-               out := List.rev_append (open_ (tokens macros open_) f) !out
+               let f =
+                 env.lx_find here
+                   (List.map (fun d -> Fpath.append d f) env.lx_incl) in
+               out := List.rev_append (env.lx_open (tokens env) f) !out
            | "define" :: name :: _ ->
                (* the rest of the line, lexed *)
                let rest =
@@ -96,7 +106,7 @@ and text macros open_ (where : string) (dir : Fpath.t) (s : string) =
                let rest =
                  String.sub rest (String.length name)
                    (String.length rest - String.length name) in
-               Hashtbl.replace macros name (text macros open_ where dir rest)
+               Hashtbl.replace env.lx_macros name (text env where dir rest)
            | _ -> ());
           go e true
       | '/' when i + 1 < n && s.[i + 1] = '/' ->

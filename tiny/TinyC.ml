@@ -13,7 +13,7 @@ module Machine = TinyCMachine
 module M = TinyLibMachine
 module TSys = TinyLibSystem
 
-let usage = "usage: tiny-cc [-S | -ir] [-o out.o] file.c"
+let usage = "usage: tiny-cc [-S | -ir] [-I dir]... [-o out.o] file.c"
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
@@ -76,11 +76,12 @@ exception File_error of string
 let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     (argv : string array) : Exit.t =
   let output = ref None and file = ref None and ir_only = ref false
-  and text = ref false in
+  and text = ref false and incl = ref [] in
   let rec args l = match l with
     | "-ir" :: r -> ir_only := true; args r
     | "-S" :: r -> text := true; args r
     | "-o" :: o :: r -> output := Some (Fpath.v o); args r
+    | "-I" :: d :: r -> incl := !incl @ [ Fpath.v d ]; args r
     | f :: r -> file := Some (Fpath.v f); args r
     | [] -> ()
   in
@@ -103,9 +104,20 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
         let opened = ref false in
         try TSys.with_open_in caps (fun ch -> opened := true; g ch) f
         with Failure m when not !opened -> raise (File_error m) in
+      (* an #include's file: the first of its places that is there (beside
+       * the file, then -I's), or the first, its error then said by
+       * with_file *)
+      let find here others =
+        match List.find_opt (TSys.exists caps) (here :: others) with
+        | Some f -> f
+        | None -> here in
       try
         Parser.start
-          (with_file (Lexer.tokens (Hashtbl.create 16) with_file) file);
+          (with_file
+             (Lexer.tokens
+                { lx_macros = Hashtbl.create 16; lx_incl = !incl;
+                  lx_find = find; lx_open = with_file })
+             file);
         (* the functions' lines and the globals', the last first; or
          * the stack machine's code, -ir's *)
         let code = ref [] and data = ref [] and ir = Buffer.create 4096 in

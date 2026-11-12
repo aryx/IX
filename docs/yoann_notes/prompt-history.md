@@ -71358,3 +71358,184 @@ Claude explained that tiny-ml never names a function's code after the function, 
 Claude laid out the label scheme: a function's code is `Unit.f<number>_<name>`, and local labels are `Unit.L<number>`.
 Claude showed that `Array.init` in the object is the unit's initialization, while the function `init` becomes `Array.f3_init`.
 Claude noted that other units find `Array.init` through `Array.tmi`, which records its static closure or global slot.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 10:15
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude listed the remaining work on the tiny toolchain: CI verification, the tolerant tests, a single CORE list, a kernel Buildfile, and bookkeeping.
+Claude recommended doing the tolerant-test cleanup first, then consolidating the duplicated library unit list, then the kernel Buildfile.
+Claude also noted that `tiny-ml -L` could read `stdlib.a`'s members directly, removing the list in `TinyML.ml`.
+Yoann's follow-up asks whether `tiny-build` can run from `tiny/` the way it does from `TinyLibCore/`, with targets.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 10:18
+
+**Yoann:**
+
+> can I run tiny-build TINY=tiny-  from tiny/ like I did from TinyLibCore/? Can I build a few targets like this?
+
+**Claude (summary):**
+
+Claude tried `tiny-build TINY=tiny- rc ping` in a copy of `tiny/` and confirmed it built both programs on macOS.
+Claude explained that the `rc` build also made the TinyLibCore library and linked the executables with `tiny-ld`.
+Claude noted that any target works by name, outputs land beside the sources, and `tiny-build TINY=tiny- clean` removes them.
+Claude flagged that `kernel.img` and `boot.img` need `TinyKernel/font.s` and `examples/spin.prof`/`spin.map`, so use `make -C tiny/TinyKernel`.
+Claude added that the programs are tiny-kernel executables meant to run on tiny-machine, not directly on macOS.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 10:19
+
+**Yoann:**
+
+> you can run them locally though with tiny-cpu no ?
+
+**Claude (summary):**
+
+Claude explained that tiny-cpu runs only simple programs, using exit, write and read, and that `examples/hello` works on it.
+Claude noted that `hello.c` needed its `#include` pointed at a local `user.h`, since the original names tiny-kernel's path.
+Claude said programs like `rc`, `ping` and `ld`, and ML programs, need tiny-kernel's other calls or runtime, so `make run` on tiny-machine is needed for those.
+Claude offered to add a tiny-cpu target to the Buildfile, such as `hello.img` from the examples.
+Claude asked whether to add that target, or return to the list of tolerant tests.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 10:21
+
+**Yoann:**
+
+> would be good to add the TINY treatment to tiny/examples/ too, so we can also build from the host
+
+**Claude (summary):**
+
+Claude proposed making `LIB` and `SRC` variables in `examples/Buildfile` alongside `TINY`, so the host build can point at a local tree.
+Claude suggested adding a `-I dir` option to tiny-cc so `#include "user.h"` resolves from the `SRC` path.
+Claude proposed a `lib` target in `tiny/Buildfile` that copies the runtime objects and the stdlib and `.tmi` files into `lib/`.
+The image recipes would then take their `/lib` files from that same directory, so the Buildfile states once what `/lib` holds.
+Claude gave the host commands `tiny-build TINY=tiny- lib`, then `tiny-build TINY=tiny- LIB=../lib SRC=..` inside `examples`.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 10:23
+
+**Yoann:**
+
+> yes
+
+------------------------------------------------------------------------
+
+## 2026-11-12 10:24
+
+**Yoann:**
+
+> what do you think? You think it makes the build infra cleaner and easier for a student?
+
+------------------------------------------------------------------------
+
+## 2026-11-12 10:24
+
+**Yoann:**
+
+> I think it's nice to have simple buildfile that can work in both context
+
+**Claude (summary):**
+
+Claude recommended defining `/lib` once in the Buildfile, plus `-I` includes so students write `#include "user.h"`.
+Claude named the cost: examples/Buildfile would gain `TINY`, `LIB`, `SRC`, and tool variables.
+Claude planned to keep those defaults pointing at t-ix's own paths, so recipes still read `$LIB/c/start.o`.
+Claude planned one host-build comment line and nothing else in the examples file.
+Claude said the host-build part would move to the top Buildfile if the examples file got harder to read.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 10:24
+
+**Yoann:**
+
+> unless it complicate things more than simplify things
+
+------------------------------------------------------------------------
+
+## 2026-11-12 10:27
+
+**Yoann:**
+
+> I was thinking at some point to have a libc.a, but maybe it's clearer to see its component in CRT individually
+
+------------------------------------------------------------------------
+
+## 2026-11-12 10:28
+
+**Yoann:**
+
+> those crt0.o are often hidden to the programmer but theyare nice to see for a system student I think
+
+------------------------------------------------------------------------
+
+## 2026-11-12 12:47
+
+**Yoann:**
+
+> resume
+
+**Claude (summary):**
+
+Claude confirmed the tiny-cc `find` fix, and the four analyzer checks all passed with nothing committed.
+Claude added `-I dir` to tiny-cc, so `#include "f"` searches beside the file, then each `-I` directory.
+Claude added a `libs` target to `tiny/Buildfile` that copies the image's `/lib` files into `tiny/lib`.
+Claude added `examples/Buildfile` with `TINY`, `LIB` and `SRC` variables, and recorded `check.expected` and `bugs_tiny.txt`.
+Claude listed the macOS and tiny-kernel checks to run, but has not run them on those hosts yet.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 12:54
+
+**Yoann:**
+
+> the signature of TinyCLexer.tokens start to be complicated; maybe we should pass a record defined in this file too so it's clearer, an env to pass that contains data and callbacks
+
+**Claude (summary):**
+
+(summary generation failed - raw answer follows)
+Agreed. The lexer's state is now four parameters threaded through every call. A record `env` makes `tokens env chan`. tiny-ml's record labels share one name space across a program (hence `stat`'s `st_` fields), so I'll prefix them `lx_` to avoid clashing with other records in tiny-cc. Here is every place the four are used:
+Line 97 is too long; wrapping it, then the `.mli` and tiny-cc's call:
+The finding I'd just recorded has gone with the `env` record: the analyzer no longer follows the recursion through it. Recording again, which brings `bugs_tiny.txt` back to HEAD's:
+`TinyCLexer.tokens` now takes an `env` record. It's ready with the rest for review; nothing is committed.
+```ocaml
+type env = {
+lx_macros : (string, located list) Hashtbl.t;   (* the #defines' tokens so far *)
+lx_incl : Fpath.t list;                          (* -I's directories *)
+lx_find : Fpath.t -> Fpath.t list -> Fpath.t;   (* the place chosen: beside, then -I's *)
+lx_open : (Chan.i -> located list) -> Fp
+
+------------------------------------------------------------------------
+
+## 2026-11-12 12:59
+
+**Yoann:**
+
+> yes. What's next?
+
+------------------------------------------------------------------------
+
+## 2026-11-12 13:01
+
+**Yoann:**
+
+> resume
+
+------------------------------------------------------------------------
+
+## 2026-11-12 13:01
+
+**Yoann:**
+
+> resume

@@ -94,9 +94,7 @@ ls: /cat: not there
 -   2 * /bin/emacs
 -   1 * /bin/ping
 -  28 * /bin/utils
-%      61     244    1507 f
-     61     244    1507
-     61     244    1507
+% the same counts
 % $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ %       3
 % 1|1
@@ -252,7 +250,7 @@ b
       2
 % tiny-build: don't know how to make nosuch
 % $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
-tiny-kernel: / on a disk of 65536 KB, 62222 KB free; 1 snapshots in /dump
+tiny-kernel: / on a disk of 65536 KB, * KB free; 1 snapshots in /dump
 $ % % % % % % % % ping: /bin/ping
 % % mach.o: the host
 % mach.tmi: the host
@@ -295,7 +293,7 @@ Content-Length: 145
 www: https://en.wikipedia.org/api/rest_v1/page/html/Plan_9_from_Bell_Labs:
 no copy kept in ../tests/www (with -net-out, tiny-machine fetches it)
 % $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
-tiny-kernel: / on a disk of 8192 KB, 8188 KB free; 0 snapshots in /dump
+tiny-kernel: / on a disk of 8192 KB, * KB free; 0 snapshots in /dump
 $ % -   1     8893 ./big
 d   1       68 ./d
 -   2        6 ./g
@@ -314,7 +312,7 @@ usage: get name [host [port]]
 new
 ln: d/f: cannot
 % $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
-tiny-kernel: / on a disk of 8192 KB, 8099 KB free; 1 snapshots in /dump
+tiny-kernel: / on a disk of 8192 KB, * KB free; 1 snapshots in /dump
 $ % /usr/glenda
 hello
 hello
@@ -322,7 +320,7 @@ hello
 /dump/1
 hello
 % $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
-tiny-kernel: / on a disk of 8192 KB, 8096 KB free; 2 snapshots in /dump
+tiny-kernel: / on a disk of 8192 KB, * KB free; 2 snapshots in /dump
 $ % /dump/1
 /dump/2
 /dump/2/usr/glenda/d
@@ -454,7 +452,7 @@ Wed Mar  1 00:00:00 GMT 2000
 Mon Jan  9 13:37:03 GMT 2034
 7
 % $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
-tiny-kernel: / on a disk of 65536 KB, 62222 KB free; 1 snapshots in /dump
+tiny-kernel: / on a disk of 65536 KB, * KB free; 1 snapshots in /dump
 $ % cc -o hello.o hello.c
 as -o square.o square.s
 ld -map -s -n -o hello /lib/c/start.o /lib/c/udivmod.o /lib/c/libc.o /lib/c/sys.o hello.o square.o

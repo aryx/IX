@@ -1,6 +1,6 @@
 rc
 cd /src
-build ping TinyLibCore/stdlib.a
+build ping TinyLibCore/stdlib.a > /usr/glenda/quick.log
 cmp ping /bin/ping && echo ping: the host
 cmp TinyLibCore/stdlib.a /lib/ml/stdlib.a && echo stdlib.a: the host
 for(m in Stdlib List Printf) { cmp TinyLibCore/$m.tmi /lib/ml/$m.tmi && echo $m.tmi: the host }

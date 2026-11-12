@@ -98,6 +98,15 @@ if $TML -L $W/lib -c -o $W/units/Shapes.o $UT/Shapes.ml && $TML -L $W/lib -c -o 
    && $TML -L $W/lib -o $W/units/whole.o $UT/Shapes.ml $UT/Main.ml && link_tm $W/units/whole $L/start.s $L/udivmod.s $W/exit.s $W/units/whole.o $W/main4096.o $LIB_O \
    && [ "$(timeout 60 $CPU $W/units/whole 2>&1; echo "exit $?")" = "$(cat $UT/Main.out)" ]
 then echo "ok units: Shapes and Main compiled apart, and whole, Main.out's output"; else echo "FAIL units"; failures=$((failures + 1)); fi
+# the start made of the files the program links (TinyML/TinyMLLink.mli:
+# each unit's interface beside its object), the library's first, as
+# linked (OCaml's rule), then the program linked by tiny-linker:
+# Main.out's output, as with the start made of the interfaces
+if $TML -o $W/units/prog.start.o $LIB_O $W/units/Shapes.o $W/units/Main.o \
+   && link_tm $W/units/progs $L/start.s $L/udivmod.s $W/exit.s $W/units/prog.start.o $LIB_O \
+        $W/units/Shapes.o $W/units/Main.o $W/main4096.o \
+   && [ "$(timeout 60 $CPU $W/units/progs 2>&1; echo "exit $?")" = "$(cat $UT/Main.out)" ]
+then echo "ok units: the start made of the objects linked, Main.out's output"; else echo "FAIL units: the start of the objects"; failures=$((failures + 1)); fi
 # a unit's names are M.x in the units after it, x after open M only
 printf 'let () = print_int (Shapes.area Dot)\n' > $W/units/Q.ml; printf 'let () = print_int (area Dot)\n' > $W/units/U.ml
 if $TML -L $W/lib -c -o $W/units/Q.o $W/units/Shapes.tmi $W/units/Q.ml && [ "$($TML -L $W/lib -c -o $W/units/U.o $W/units/Shapes.tmi $W/units/U.ml 2>&1)" = "$W/units/U.ml: line 1: unbound area" ]

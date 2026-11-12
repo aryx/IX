@@ -15,10 +15,12 @@ module M = TinyLibMachine
 module Types = TinyMLTypes
 module Machine = TinyMLMachine
 module Compile = TinyMLCompile
+module Link = TinyMLLink
 
 let usage = {|usage: tiny-ml [-L dir | -nostdlib] [-S] [-o out.o] file.ml...
        | tiny-ml -c [-S] [-I dir]... [-o out.o] file.tmi... file.ml
        | tiny-ml [-S] -o main.o [dir/stdlib.a] file.tmi...
+       | tiny-ml -o prog.start.o lib.a... file.o...
        | tiny-ml -depend [-I dir]... file.ml...|}
 
 (* -h: how, by examples, each one as it runs *)
@@ -111,38 +113,6 @@ let compile_unit (items : (Tree.item * int) list) =
     match Compile.dequeue () with Some f -> f (); drain () | None -> () in
   drain ();
   defs, !nglobals
-
-(* The program's main: ml_init, each unit's init in their order, in a
- * handler that prints an uncaught exception; the curry functions the
- * units need; the globals' tables one after the other, ml_globals, and
- * their count, ml_nglobals (what runtime/ml.c scans) *)
-let compile_main (units : (string * int) list) needed =
-  Tree.unit_name := "ml";
-  Compile.start_fun 1 1;
-  let handler = Machine.label () in
-  Compile.emit (Machine.TryEnter (0, handler));
-  List.iter (fun (u, _) ->
-      Compile.emit (Machine.Imm (Machine.tagged 0));
-      Compile.emit (Machine.Call (Machine.Direct (u ^ ".init"), 0, false));
-      Compile.emit Machine.Drop)
-    units;
-  Compile.emit (Machine.TryExit 0);
-  Compile.emit (Machine.Imm (Machine.tagged 0));
-  Compile.emit Machine.Ret;
-  Compile.emit (Machine.Label handler);
-  Compile.emit (Machine.Catch 0);
-  Compile.emit (Machine.CallC ("ml_uncaught", 1));
-  Compile.emit Machine.Ret;
-  Compile.finish_fun "ml_init" 0;
-  List.iter (fun n -> for k = 0 to n - 1 do Compile.curry_fun n k done)
-    (List.sort_uniq compare needed);
-  let total = List.fold_left (fun t (_, n) -> t + n) 0 units in
-  Machine.words "ml_nglobals" [ Machine.DNum (Int32.of_int total) ];
-  Machine.add_data
-    ([ M.Piece; M.Label "ml_globals" ]
-     @ List.concat_map (fun (u, n) ->
-         [ M.Label (u ^ ".globals"); M.Space (4 * n) ]) units
-     @ (if total = 0 then [ M.Space 4 ] else []))
 
 (*****************************************************************************)
 (* Interfaces *)
@@ -399,25 +369,54 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
     | "-depend" :: r -> depend := true; args r
     | "-nostdlib" :: r -> lib := None; args r
     (* a library, as ocamlc takes stdlib.cma: its interfaces beside it
-     * (-L its directory), its objects tiny-linker's *)
+     * (-L its directory), its objects tiny-linker's (a link's, where it
+     * is among the files) *)
     | f :: r when Filename.check_suffix f ".a" ->
-        lib := Some (Filename.dirname f); args r
+        lib := Some (Filename.dirname f); files := Fpath.v f :: !files; args r
     | f :: r -> files := Fpath.v f :: !files; args r
     | [] -> ()
   in
-  let argl = List.tl (Array.to_list argv) in
+  (* (-v: each file read said, Logs.info's; -debug, -quiet: logging's) *)
+  let argl = TinyLibSystem.logging (List.tl (Array.to_list argv)) in
   args argl;
   let files = List.rev !files in
   (* g on the file opened, its name the errors' (file); one that cannot be
    * opened apart from a Failure of g's, a bug *)
   let with_file g f =
     let opened = ref false in
+    Logs.info (fun m -> m "reading %s" (Fpath.to_string f));
     try
       TinyLibSystem.with_open_in caps
         (fun ch -> opened := true; file := Chan.origin ch; g ch) f
     with Failure m when not !opened -> raise (File_error m) in
-  let tmis = List.filter (Fpath.has_ext ".tmi") files
-  and mls = List.filter (Fpath.has_ext ".ml") files in
+  let mls = List.filter (Fpath.has_ext ".ml") files
+  and archives = List.filter (Fpath.has_ext ".a") files
+  and objects = List.filter (Fpath.has_ext ".o") files in
+  (* a program's start, made of what links it: objects and libraries,
+   * no source (ml -o prog.start.o $prereq: TinyML/TinyMLLink.mli) *)
+  let of_link = !output <> None && objects <> [] && mls = [] && not !separate
+                && not !depend in
+  (* a link's units, in its order, which is the initializations' order
+   * (OCaml's rule: the libraries first): an object with its interface
+   * beside it; a library's members, each its interface beside the
+   * library, in the library's order (ar's). (old: the library's units
+   * from -L, by the list library, whatever the link said) *)
+  let units_of f =
+    let beside t = if TinyLibSystem.exists caps t then [ t ] else [] in
+    if Fpath.has_ext ".a" f then
+      let dir = Filename.dirname (Fpath.to_string f) in
+      (* (not a library: tiny-linker says so) *)
+      let members =
+        try TinyLibMachine.of_archive (TinyLibSystem.read_file caps f)
+        with Failure _ | TinyLibMachine.Error _ -> [] in
+      List.concat_map (fun (name, _) ->
+          beside (Fpath.v (Filename.concat dir
+                             (Filename.remove_extension name ^ ".tmi"))))
+        members
+    else beside (Fpath.set_ext ".tmi" f) in
+  let tmis =
+    if of_link then List.concat_map units_of files
+    else List.filter (Fpath.has_ext ".tmi") files in
   (* [in_dirs m ext]: the file of module m in the -I directories, its
    * name M.ext or m.ext (user/tetris.ml is Tetris), compared by the
    * directory's names, not by exists: a host's file system may take
@@ -480,11 +479,14 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
       Exit.OK
     with File_error m -> Exit.Err m
   end
-  else if List.length mls + List.length tmis <> List.length files || files = []
-          || (!separate && List.length mls <> 1) then
+  else if not of_link
+          && (List.length mls + List.length tmis + List.length archives
+              <> List.length files || files = []
+              || (!separate && List.length mls <> 1)) then
     (TinyLibSystem.eprint caps (usage ^ "   (-h: how)\n"); Exit.Code 2)
   else
   let write f s =
+    Logs.info (fun m -> m "writing %s" (Fpath.to_string f));
     try
       TinyLibSystem.with_open_out caps
         (fun (ch : Chan.o) -> Out_channel.output_string ch.oc s) f
@@ -503,9 +505,10 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
      * units before this one *)
     let lib =
       match !lib with
-      | Some d ->
+      (* (a link: the libraries it names, their members, are its units) *)
+      | Some d when not of_link ->
           List.map (fun m -> Fpath.add_seg (Fpath.v d) (m ^ ".tmi")) library
-      | None -> []
+      | _ -> []
     in
     let units, needed =
       List.fold_left (fun (units, needed) f ->
@@ -607,7 +610,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
           Types.export Types.tglobals !Tree.unit_name tdefs;
           units @ [ (!Tree.unit_name, n) ], needed @ !Machine.arities)
           (units, needed) mls in
-      compile_main units needed;
+      Link.compile_start units needed;
       let program = made (Machine.start @ Machine.lines asm) in
       (match !output with
        | Some o -> write o program

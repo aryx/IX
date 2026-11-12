@@ -19,7 +19,7 @@ TinyLibMachine.o: TinyLibMachine.mli
 TinyLibPlayground.o: TinyLibDraw.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibPlayground.mli
 TinyLibRegex.o: TinyLibRegex.mli
 TinyLinker.o: TinyLibMachine.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLinker.mli
-TinyML.o: TinyLibMachine.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyML/TinyMLCompile.tmi TinyML/TinyMLLexer.tmi TinyML/TinyMLMachine.tmi TinyML/TinyMLParser.tmi TinyML/TinyMLTree.tmi TinyML/TinyMLTypes.tmi TinyML.mli
+TinyML.o: TinyLibMachine.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyML/TinyMLCompile.tmi TinyML/TinyMLLexer.tmi TinyML/TinyMLLink.tmi TinyML/TinyMLMachine.tmi TinyML/TinyMLParser.tmi TinyML/TinyMLTree.tmi TinyML/TinyMLTypes.tmi TinyML.mli
 TinyOffice.o: TinyLibGUI.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyOffice/TinyOfficeChart.tmi TinyOffice/TinyOfficeDrawing.tmi TinyOffice/TinyOfficeFile.tmi TinyOffice/TinyOfficeModel.tmi TinyOffice/TinyOfficePaint.tmi TinyOffice/TinyOfficeSheet.tmi TinyOffice/TinyOfficeText.tmi TinyOffice.mli
 TinyPlay.o: TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyPlay.mli
 TinyProfiler.o: TinyLibMachine.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyProfiler.mli
@@ -38,6 +38,7 @@ TinyC/TinyCTree.o: TinyC/TinyCTypes.tmi TinyC/TinyCTree.mli
 TinyC/TinyCTypes.o: TinyC/TinyCTypes.mli
 TinyML/TinyMLCompile.o: TinyML/TinyMLLexer.tmi TinyML/TinyMLMachine.tmi TinyML/TinyMLTree.tmi TinyML/TinyMLTypes.tmi TinyML/TinyMLCompile.mli
 TinyML/TinyMLLexer.o: TinyML/TinyMLLexer.mli
+TinyML/TinyMLLink.o: TinyLibMachine.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyML/TinyMLCompile.tmi TinyML/TinyMLMachine.tmi TinyML/TinyMLTree.tmi TinyML/TinyMLLink.mli
 TinyML/TinyMLMachine.o: TinyLibMachine.tmi TinyML/TinyMLLexer.tmi TinyML/TinyMLTree.tmi TinyML/TinyMLMachine.mli
 TinyML/TinyMLParser.o: TinyML/TinyMLLexer.tmi TinyML/TinyMLPrintf.tmi TinyML/TinyMLTree.tmi TinyML/TinyMLParser.mli
 TinyML/TinyMLPrintf.o: TinyML/TinyMLLexer.tmi TinyML/TinyMLTree.tmi TinyML/TinyMLPrintf.mli

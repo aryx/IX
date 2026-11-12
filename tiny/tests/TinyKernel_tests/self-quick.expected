@@ -1,38 +1,6 @@
 tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
-tiny-kernel: / on a disk of 65536 KB, 62222 KB free; 1 snapshots in /dump
-$ % % as -o runtime/start.o runtime/start.s
-as -o runtime/udivmod.o runtime/udivmod.s
-cc -o runtime/libc.o runtime/libc.c
-as -o TinyKernel/libc/sys.o TinyKernel/libc/sys.s
-cc -o TinyKernel/user/ping.o TinyKernel/user/ping.c
-ld -map -s -n -o ping runtime/start.o runtime/udivmod.o runtime/libc.o TinyKernel/libc/sys.o TinyKernel/user/ping.o
-cd TinyLibCore && build
-ml -c -nostdlib -I . -o Stdlib.o Stdlib.ml
-ml -c -nostdlib -I . -o Char.o Char.ml
-ml -c -nostdlib -I . -o Seq.o Seq.ml
-ml -c -nostdlib -I . -o List.o List.ml
-ml -c -nostdlib -I . -o String.o String.ml
-ml -c -nostdlib -I . -o Bytes.o Bytes.ml
-ml -c -nostdlib -I . -o Array.o Array.ml
-ml -c -nostdlib -I . -o Option.o Option.ml
-ml -c -nostdlib -I . -o Int32.o Int32.ml
-ml -c -nostdlib -I . -o Int64.o Int64.ml
-ml -c -nostdlib -I . -o Filename.o Filename.ml
-ml -c -nostdlib -I . -o Buffer.o Buffer.ml
-ml -c -nostdlib -I . -o Printf.o Printf.ml
-ml -c -nostdlib -I . -o Marshal.o Marshal.ml
-ml -c -nostdlib -I . -o Hashtbl.o Hashtbl.ml
-ml -c -nostdlib -I . -o Common.o Common.ml
-ml -c -nostdlib -I . -o Sha1.o Sha1.ml
-ml -c -nostdlib -I . -o Fpath.o Fpath.ml
-ml -c -nostdlib -I . -o Fpath_.o Fpath_.ml
-ml -c -nostdlib -I . -o Exit.o Exit.ml
-ml -c -nostdlib -I . -o In_channel.o In_channel.ml
-ml -c -nostdlib -I . -o Out_channel.o Out_channel.ml
-ml -c -nostdlib -I . -o Chan.o Chan.ml
-ml -c -nostdlib -I . -o Logs.o Logs.ml
-ar -o stdlib.a Stdlib.o Char.o Seq.o List.o String.o Bytes.o Array.o Option.o Int32.o Int64.o Filename.o Buffer.o Printf.o Marshal.o Hashtbl.o Common.o Sha1.o Fpath.o Fpath_.o Exit.o In_channel.o Out_channel.o Chan.o Logs.o
-% ping: the host
+tiny-kernel: / on a disk of 65536 KB, * KB free; 1 snapshots in /dump
+$ % % % ping: the host
 % stdlib.a: the host
 % Stdlib.tmi: the host
 List.tmi: the host

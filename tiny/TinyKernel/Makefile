@@ -222,7 +222,8 @@ SCREENS = paint windows nested play tetris calc temp debug emacs emacsmx emacsco
 # address), a ping's time, tiny-vcs's hashes (its commits have the date
 # of their second, the boot's and the ticks since); an address, 0x and
 # three digits or more (trace's pointers, a jump's target, a value
-# stack's slot), and a backtrace's place in each function (main+0x1c4):
+# stack's slot), a backtrace's place in each function (main+0x1c4), the
+# disk's free blocks at the boot (/src's files on it):
 # the code's size, not what trace and debug show of it, the calls and
 # their results, the frames' names and their integers. (old: recorded, and
 # recorded again at each
@@ -231,7 +232,8 @@ SCREENS = paint windows nested play tetris calc temp debug emacs emacsmx emacsco
 # before it says it was sent again)
 MASK = -e 's|^(%? ?[-d] +[0-9]+) +[0-9]+ ((/boot)?/bin/)|\1 * \2|' -e 's|: trap ([0-9]+) at [0-9]+,|: trap \1 at *,|' -e 's|in [0-9.]+ ms$$|in * ms|' \
 	-e 's|[0-9a-f]{40}|*|g' -e 's|^(%? ?)[0-9a-f]{10} |\1* |' \
-	-e 's|^([0-9]+[[:blank:]]+[^+[:blank:]]+)\+0x[0-9a-f]+|\1+*|' -e 's|0x[0-9a-f]{3,}|0x*|g'
+	-e 's|^([0-9]+[[:blank:]]+[^+[:blank:]]+)\+0x[0-9a-f]+|\1+*|' -e 's|0x[0-9a-f]{3,}|0x*|g' \
+	-e 's|KB, [0-9]+ KB free|KB, * KB free|'
 
 # (the machine's date fixed, 2026-01-01 in seconds since 2000, so that a
 # run is the same each time: tiny-vcs's commits, the files' dates;
@@ -266,7 +268,7 @@ $(O)/check/06.out: $(O)/boot.img
 $(O)/check/07.out: $(O)/boot.img
 	printf 'rc\ncd /bin; ls | grep \047^t\047 | sort -r\nls | grep -c \047^(ls|wc|cat)$$\047\nseq 12 -3 1 | sort -n; seq 5 | sort -r | grep -v \047[2-4]\047\ngrep \047(\047 /bin/sh; echo $$status\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
 $(O)/check/08.out: $(O)/boot.img
-	printf 'rc\nls /dev; ls -l /cat /bin/cat /bin/utils /bin/emacs /bin/editor /bin/ping\nls -l /bin > f; wc f; ls -l /bin | wc; cat f | grep -v zzz | wc\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
+	printf 'rc\nls /dev; ls -l /cat /bin/cat /bin/utils /bin/emacs /bin/editor /bin/ping\nls -l /bin > f; ls -l /bin | wc > a; wc < f > b; cat f | grep -v zzz | wc > c; cmp a b && cmp b c && echo the same counts\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
 $(O)/check/09.out: $(O)/boot.img
 	printf 'rc\nseq 30 | grep 1 | sort -rn | tail -3 | cat | wc -l\ntest -f no | cat | test -f no; echo $$status\nseq 3 | cat | cat | cat | cat | cat | cat | cat | cat | cat | cat | cat | cat | cat | wc -l\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
 $(O)/check/10.out: $(O)/boot.img
@@ -361,16 +363,20 @@ $(O)/check/wwwplay.sum: $(T)/wwwplay.events $(O)/boot.img
 # on disk.img grown to 64 MB, the first shell runs build boot.img in
 # /src, the Buildfile the host's build ran (self.keys), and keeps the
 # image in /usr/glenda/self; then a comment added to a module (it is
-# compiled again, its object the same: nothing more), a line to a
-# program (compiled again, the program linked again, the image made
-# again), and nothing (up to date). The image of the first build, read
-# from the disk by TinyKernelFS_tests' Cat, is _make/boot.img, byte for
-# byte; what the shell printed is self.expected. Hours: not in check
+# compiled again, its object the same: nothing more, no link), a line
+# to a program (compiled again, the program linked again, the image
+# made again), and nothing (up to date). Each build's transcript is kept
+# there (first.log...), what the shell prints the counts of what each
+# made again (grep -c): not its lines, which a unit, a program or a
+# flag added would change. The image of the first build, read from the
+# disk by TinyKernelFS_tests' Cat, is _make/boot.img, byte for byte;
+# what the shell printed is self.expected, MASK's masked. Hours: not
+# in check
 FSCAT = $(abspath ../../_build/default/tiny/tests/TinyKernelFS_tests/Cat.exe)
 self: $(O)/boot.img $(O)/disk.img
 	$(call grown,$(O)/self.img)
 	timeout 36000 $(MACHINE) -d $(O)/self.img $(O)/boot.img < $(T)/self.keys > $(O)/self.out
-	diff $(T)/self.expected $(O)/self.out
+	sed -E $(MASK) $(O)/self.out | diff $(T)/self.expected -
 	$(FSCAT) $(O)/self.img usr/glenda/self/first.img > $(O)/self.boot.img
 	cmp $(O)/boot.img $(O)/self.boot.img
 	rm $(O)/self.img $(O)/self.out $(O)/self.boot.img && echo "tiny-kernel: self ok, its image the host's"
@@ -378,13 +384,14 @@ self: $(O)/boot.img $(O)/disk.img
 # self in minutes: a few of the Buildfile's targets in /src, ping (cc,
 # as, ld) and the library (ml, ar), each compared with the host's in
 # the image (self-quick.keys: cmp); what the shell printed is
-# self-quick.expected. (old: then the kernel linked by ld on tiny-kernel
-# from the host's objects, by this Makefile's list of them, gone with
-# its build; make self links it)
+# self-quick.expected (the build's transcript in /usr/glenda/quick.log;
+# the disk's free blocks masked, MASK). (old: then the kernel linked by
+# ld on tiny-kernel from the host's objects, by this Makefile's list of
+# them, gone with its build; make self links it)
 self-quick: $(O)/boot.img $(O)/disk.img
 	$(call grown,$(O)/self-quick.img)
 	timeout 1800 $(MACHINE) -d $(O)/self-quick.img $(O)/boot.img < $(T)/self-quick.keys > $(O)/self-quick.out
-	diff $(T)/self-quick.expected $(O)/self-quick.out
+	sed -E $(MASK) $(O)/self-quick.out | diff $(T)/self-quick.expected -
 	rm $(O)/self-quick.img $(O)/self-quick.out && echo "tiny-kernel: self-quick ok, ping and the library the host's"
 
 # self on several cores (plan_tiny_multicore.md): tiny-machine -cores 4,

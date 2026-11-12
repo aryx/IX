@@ -70822,3 +70822,246 @@ Claude plans to delete tiny/TinyKernel/_mkd after this step, since it is untrack
 Claude reported that `make self` was still running, about an hour, with the analyzer's four checks and mini-mk in `tiny/` passing.
 Claude noted that `self-quick`'s output would differ because its keys had changed, and planned to inspect it before recording.
 Claude said it would report the `make self` result once the check finished.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 07:39
+
+**Yoann:**
+
+> let's commit in the mean time
+
+**Claude (summary):**
+
+Claude committed step 2b as `12b1da04`, with 18 files changed, 287 lines added and 628 removed.
+Claude left `self.expected` out of the commit, since `make self` will re-record it.
+The kernel's Makefile now builds through `tiny/Buildfile` in a copy of `tiny/` at `_make/src`, shrinking from 882 to 410 lines.
+Its unit lists, per-program rules and generated tiny-kernel Buildfile were removed, and the square game moved out of `tests/`.
+`make self` is still running, so HEAD would fail that diff until `self.expected` is re-recorded.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 07:42
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude proposed two shapes for item 2, the `.tmi` lists in the Buildfile, and asked Yoann to pick one.
+The first shape is `ml -o main.o x.o...`, where ml finds each unit's `.tmi` beside its object so the main rule names the same objects as the link.
+The second is `ml -o prog ... x.o... stdlib.a`, where ml builds the main and runs `ld` itself, so each program becomes a single rule.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 07:45
+
+**Yoann:**
+
+> let's do 2; but I thought we already removed the need to pass the .tmi and that ml now was taking a -I to automatically find the .tmi it needs
+
+------------------------------------------------------------------------
+
+## 2026-11-12 07:47
+
+**Yoann:**
+
+> why you need the square.o rule above? square.o should just depend on square.ml and have a -I and that's it; it should use the generic %o : %.ml meta rule. the linking command already list the set of .o and .a needed to produce the program
+
+------------------------------------------------------------------------
+
+## 2026-11-12 07:48
+
+**Yoann:**
+
+> I don't think we need an ocaml linking command; we can call ld directly in the Buildfile because ml produce .o and .a that the linker recognize
+
+------------------------------------------------------------------------
+
+## 2026-11-12 07:48
+
+**Yoann:**
+
+> we should never need to mention some .tmi in the Buildfile
+
+------------------------------------------------------------------------
+
+## 2026-11-12 07:48
+
+**Yoann:**
+
+> those .tmi should be in the .depend
+
+**Claude (summary):**
+
+Claude explained that there are two objects named "square": `user/square.o` is a unit with `.tmi` deps already in `.depend`, while `square.o` is a generated program start.
+Claude noted that `ml -depend` can't place the hand-written `.tmi` lists in `.depend` because only the link line knows which units form a program.
+Claude proposed a small fix: have `ml` build the program start from unit objects, reading each `.tmi` beside its `.o`, so no `.tmi` lists are needed in the Buildfile.
+Claude offered a larger alternative: drop the start object entirely, with each unit registering its init and globals in sections that plain `ld` concatenates, like C.
+Claude asked Yoann which design he preferred, or what he meant by "in the `.depend`".
+
+------------------------------------------------------------------------
+
+## 2026-11-12 07:52
+
+**Yoann:**
+
+> oh I see, I didn't realize how ML was different from C with those init, curry, and globals that requires special code to be called first ...
+
+**Claude (summary):**
+
+Claude explained that OCaml's startup code (caml_program, caml_globals, curry helpers) is what tiny-ml's init and globals do, unlike plain C.
+Claude contrasted this with C++ static constructors in .init_array, which is the mechanism behind option 2.
+Claude recommended option 1: have `ml` generate the startup object and then call `ld`, which keeps bytes unchanged and removes every `.tmi` from the Buildfile.
+Yoann's reply confirms he now understands that `ml` calls the linker itself and adds the init, globals, and curry work, so Claude's option 1 explanation landed.
+Claude ended by asking whether to proceed with option 1, and no files were changed.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 07:54
+
+**Yoann:**
+
+> ok it makes sense that ml calls the linker itself before doing some extra internal work around those init, globals, curry, etc.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 07:55
+
+**Yoann:**
+
+> we should add your previous comments in comments in TinyML.mli probably or next to the linking code in TinyML.ml about why it's ml itself that takes care of the linkinng
+
+------------------------------------------------------------------------
+
+## 2026-11-12 07:56
+
+**Yoann:**
+
+> we can probably have a TinyML/TinyMLLink.ml (and .mli)
+
+------------------------------------------------------------------------
+
+## 2026-11-12 07:56
+
+**Yoann:**
+
+> so we can add those comments in TinyMLLink.mli
+
+**Claude (summary):**
+
+Claude's other checks passed: the link case, mini-mk building `tiny-ml`, and the four analyzer checks.
+Claude found the tiny-kernel check differed only on the boot line, with 2 KB less free space.
+Claude traced that shift to `TinyMLLink`'s new source in `/src` growing the boot disk image.
+Claude chose to record the new boot line and rerun the tiny-kernel check.
+Claude planned to run `self-quick`, then `make self` to re-record `self.expected` for Yoann's review.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 08:02
+
+**Yoann:**
+
+> hopefully tests are still passing even if we modify slightly some files or add some files; we should be tolerate to those small changes as we will often do that, but we don't wnat that each of this change trigger the invalidation of some tests that we need to rerecord again
+
+**Claude (summary):**
+
+Claude agreed that the tests break on insignificant changes and identified three causes: the disk's free-KB boot line, the `ls -l /bin` program count, and the `self` and `self-quick` expected files that record every build recipe line.
+Claude proposed masking the free-KB line and having the `ls -l /bin` session report whether its three counts agree rather than the counts themselves.
+Claude proposed having `self` and `self-quick` write the first build transcript to a disk file and print only the checked results, keeping the byte-for-byte `cmp` of the image.
+Claude had started running the check and `self-quick` to review the new outputs before re-recording the expected files.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 08:06
+
+**Yoann:**
+
+> we should think about what we want to check and what we don't really care, what kind of regression we want to catch, and design the tests for that; otherwise use MASK or rewrite the testing code so that small insignificant changes should not invalidate a test
+
+**Claude (summary):**
+
+Claude proposed finishing the in-progress changes, then fixing sessions 07 and 28 in the tiny-kernel test suite.
+Claude also proposed splitting the 470-line `check.expected` into one expected file per session, so failures name their session.
+Claude proposed taking the timing out of the `play` screen, since its blinking square and seconds counter make the screenshot flaky.
+Claude asked whether to do these after the current `make self` run, and whether they should come before or after the link-mode commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 08:14
+
+**Yoann:**
+
+> how does ml linker works when pass stdlib.a? to get the inits of the standard library? it parse the .a, get the .o filenames, and then open the corresponding .tmi of stdlib? BTW it would be great if ml -v  is run with Logs.info (verbose mode) and that we have some Logs.info each time we open a file, so we can see the use of those .tmi when linking a program and passing -v
+
+**Claude (summary):**
+
+Claude explained that `ml` doesn't parse `stdlib.a`; it passes the archive to `ld` and reads interfaces from its directory.
+Claude proposed dropping the hardcoded `library` list in `TinyML.ml` and reading member names from the archive via `ar -t`.
+Claude said `-v` will log each opened file, the 24 library interfaces, the start file, and the `ld` command.
+Claude built the change and ran `-v` on square's link, confirming the output is byte-identical to before.
+Claude deferred the Buildfile, tests, and `self.expected` update until the `make self` run finishes and Yoann approves.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 08:16
+
+**Yoann:**
+
+> yes but what if later we make another ocaml libs, let's say for graphics, that is not just one file like right now but a set of files, we would also pass a graphics.a but we can't hardcode anymore the list of objects
+
+**Claude (summary):**
+
+Claude recommended reading a library's units from its `.a` archive members instead of a hardcoded list in `TinyML.ml`.
+Claude proposed initializing units in OCaml's link order, with libraries first, changing the Buildfile order to `$CRT $MLRT $STDLIB units $MLEND`.
+Claude noted this changes every ML program's bytes once, and that `make self` would verify tiny-kernel still builds the same image as the host.
+Claude suggested the alternative of initializing all archives' units first, but preferred OCaml's single convention.
+Claude asked whether to proceed with the archive-member reading and libraries-first ordering.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 08:18
+
+**Yoann:**
+
+> yes, OCaml's rule, libraries first
+
+------------------------------------------------------------------------
+
+## 2026-11-12 08:19
+
+**Yoann:**
+
+> but how we managed to compile/link ocaml programs before without all the code we're adding right now and this new TinyMLLink.ml? It was working? Are we complicating stuff outside the tiny spirit?
+
+**Claude (summary):**
+
+Claude laid out the trade-off: the original tiny-ml Buildfile with 26 hand-listed rules versus the new TinyMLLink code added to the tools.
+Claude recommended a leaner shape: `ml` only builds the start object from the file list, and the Buildfile runs `ld` directly.
+This drops `TinyMLLink`'s process spawning, linker naming, and flag passing, leaving one Buildfile rule per program with no `.tmi` lists.
+The lean shape needs `mlsys.c` to call the start through a pointer, and `$MLEND` moved into the recipe so `end.o` stays last.
+Claude then asked whether to switch to the lean shape.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 08:21
+
+**Yoann:**
+
+> yes, let's do the lean shape
+
+------------------------------------------------------------------------
+
+## 2026-11-12 08:22
+
+**Yoann:**
+
+> but the .tmi contains then machine code for the inits part?
+
+**Claude (summary):**
+
+Claude rewrapped the Buildfile unit lists across the 25 programs and the kernel with a script, keeping `ml -map` intact.
+Claude confirmed tiny-ml's test passes, then built the image through the Makefile in a fresh `_mkf` directory.
+Claude stopped the old `make self` run and waited on a lean-build check, which logged `check=0` as a full pass.
+Claude then verified mini-mk and the analyzer, and planned to record `self.expected` and show the whole change for review.

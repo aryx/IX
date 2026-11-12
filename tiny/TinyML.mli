@@ -44,9 +44,10 @@
  *     TinyMLMachine.mli  the stack machine ([ir]) and its assembly,
  *                        TinyLibMachine.mli's [line]s
  *     TinyMLCompile.mli  bind: the typed tree to the stack machine
+ *     TinyMLLink.mli     a program's start, made for its link
  *
  * This file is the program around them: compile_unit, a unit's items
- * through them; compile_main, the program's main; and the interfaces
+ * through them; a program's start (TinyMLLink's); and the interfaces
  * (M.tmi) a unit leaves for the next ones.
  *
  * What a value looks like at run time (runtime/ml.c has the
@@ -314,7 +315,9 @@ val compile_unit :
   (TinyMLTree.item * int) list -> (string * TinyMLCompile.binding) list * int
 
 (* the program: its arguments (its name first), files of ML to a file
- * of assembly (-h: how), to how it ends *)
+ * of assembly (-h: how), to how it ends. Given a program's files, ml -o
+ * prog.start.o lib.a... file.o..., the program's start, which only the
+ * whole program can make (TinyML/TinyMLLink.mli) *)
 val main :
   < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout; Cap.stderr; .. > ->
   string array -> Exit.t

@@ -94,10 +94,11 @@ INCLUDES = -I . -I TinyLibSystem/tinykernel -I TinyC -I TinyML -I TinyOffice \
 %.start.o:
 	$ML -o $target $prereq
 
-# C, by tiny-cc; assembly written by hand, by tiny-as (the
-# compilers write their objects themselves)
+# C, by tiny-cc, its #includes found beside the file, then in runtime/
+# (libc.h, which user.h includes); assembly written by hand, by tiny-as
+# (the compilers write their objects themselves)
 %.o: %.c
-	$CC -o $target $stem.c
+	$CC -I runtime -o $target $stem.c
 %.o: %.s
 	$AS -o $target $stem.s
 
@@ -432,24 +433,32 @@ UTILS = [ basename cat cmp cp date du echo grep kill ln ls mkdir mv ps pwd \
 EXAMPLES = examples/Buildfile examples/hello.c examples/square.s \
     examples/helloml.ml examples/spin.s examples/spin.prof \
     examples/report.ixd examples/korobeiniki.wav
-LIBC = runtime/start.o runtime/udivmod.o runtime/libc.o \
-    TinyKernel/libc/sys.o TinyKernel/lib/c/Buildfile
-LIBML = TinyLibSystem/tinykernel/mlsys.o TinyLibSystem/tinykernel/end.o \
-    TinyKernel/lib/ml/Buildfile
 
-# (in /lib/ml, the library's interfaces and stdlib.a, as the Makefile's
-# image; its .tmi made with it, by TinyLibCore/Buildfile, and not
+# /lib: what a program built on tiny-kernel links, already built here.
+# /lib/c, C's: the runtime, the system's calls, drawing and dialing,
+# and their headers (cc -I /lib/c: user.h, which includes libc.h).
+# /lib/ml, ML's: its runtime, the program's end, and the library, its
+# archive and its units' interfaces (ml -L /lib/ml)
+LIBC = runtime/start.o runtime/udivmod.o runtime/libc.o \
+    TinyKernel/libc/sys.o TinyKernel/libc/draw.o TinyKernel/libc/net.o \
+    runtime/libc.h TinyKernel/libc/user.h TinyKernel/libc/draw.h
+LIBML = TinyLibSystem/tinykernel/mlsys.o TinyLibSystem/tinykernel/end.o
+# (the .tmi made with stdlib.a, by TinyLibCore/Buildfile; not
 # prerequisites: this file's %.tmi would make them again)
 LIBUNITS = ${CORE:%=TinyLibCore/%.tmi} $STDLIB
 
-# /lib here, lib/: the same files, in lib/c and lib/ml, for a program
-# built on the host as on tiny-kernel (examples/: tiny-build TINY=tiny-
-# LIB=../lib SRC=..). Not a file: copied again each time it is asked
-libs: $LIBC $STDLIB $LIBML
-	mkdir -p lib/c lib/ml
-	for(f in $LIBC) cp $f lib/c/^`{basename $f}
-	for(f in $LIBUNITS $LIBML) cp $f lib/ml/^`{basename $f}
+# build install: /lib made again, the files above copied there, from
+# where they are built (Plan 9's mk install). On the host, into lib/
+# here, for a program built there as on tiny-kernel (examples/):
+#     tiny-build TINY=tiny- LIB=lib install
+# Not a file: it runs each time it is asked
+LIB = /lib
+install: $LIBC $LIBML $STDLIB
+	mkdir -p $LIB/c $LIB/ml
+	for(f in $LIBC) cp $f $LIB/c/^`{basename $f}
+	for(f in $LIBML $LIBUNITS) cp $f $LIB/ml/^`{basename $f}
 
+# (/lib in the image, its files the same lists')
 boot.img: TinyKernel/kernel.img $PROGS $EXAMPLES $STDLIB $LIBC $LIBML
 	cat TinyKernel/kernel.img > $target
 	for(f in $PROGS) { n=`{wc -c < $f}; echo bin/$f; echo $n; cat $f } >> $target

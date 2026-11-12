@@ -688,11 +688,13 @@ the host, to read and edit there):
     debug ./helloml                           # b insert, c, bt: an ML frame's slots
 
 What a program links besides its own objects is already built on the
-image: `/lib/c` (C's runtime, `start.o` first, and tiny-kernel's calls,
-`sys.o`) and `/lib/ml` (tiny-ml's library, its `.tmi` and `stdlib.a`,
-its runtime `mlsys.o` and `end.o`). Each has the `Buildfile` that makes it from
-`/src` (`tiny/TinyKernel/lib/c/` and `lib/ml/` on the host): `cd
-/lib/c; build -n` shows how, `build clean; build` does it again.
+image: `/lib/c` (C's runtime, `start.o` first, tiny-kernel's calls,
+`sys.o`, `draw.o` and `net.o`, and their headers, `user.h` first) and
+`/lib/ml` (tiny-ml's library, its `.tmi` and `stdlib.a`, its runtime
+`mlsys.o` and `end.o`). They are built in `/src`, beside their
+sources, and copied there by `cd /src; build install`, which makes
+them again after a change (on the host, `tiny-build TINY=tiny- LIB=lib
+install` in `tiny/`, for `tiny/examples/`).
 
 `dial` gives a descriptor on a connection to another machine, by its
 address as text (`"10.0.0.1"`: the wire's other end) and a port; -1

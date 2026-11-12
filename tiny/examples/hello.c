@@ -8,8 +8,8 @@
 //	trace ./hello                its system calls
 //	debug ./hello                b square, c, bt, r, s, x/i pc 3, q
 //
-// (user.h, the system's calls, found by cc -I /src/TinyKernel/libc, the
-// Buildfile's; on the host, tiny/TinyKernel/libc's)
+// (user.h, the system's calls, found by cc -I /lib/c, the
+// Buildfile's; on the host, tiny/lib/c, build install's)
 #include "user.h"
 
 int square(int n);

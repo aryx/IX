@@ -7,14 +7,13 @@
 # besides their own objects is already built in /lib: /lib/c, C's
 # runtime and tiny-kernel's calls, start.o first (the machine starts
 # there); /lib/ml, ML's runtime (mlsys.o), the library (stdlib.a, its
-# units), and end.o, the program's end, last.
-# Each has its Buildfile, which says how it is made from /src. -s puts
-# the labels after the image, the names debug shows; -map writes them
-# beside it too.
+# units), and end.o, the program's end, last. They are built in /src
+# and copied there by its build install. -s puts the labels after the
+# image, the names debug shows; -map writes them beside it too.
 #
 # On the host, the same, the tools tiny-cc..., /lib tiny/lib (made by
-# tiny-build TINY=tiny- libs in tiny/), /src tiny/:
-#     tiny-build TINY=tiny- LIB=../lib SRC=..
+# tiny-build TINY=tiny- LIB=lib install in tiny/):
+#     tiny-build TINY=tiny- LIB=../lib
 
 TINY =
 CC = ${TINY}cc
@@ -22,7 +21,6 @@ AS = ${TINY}as
 LD = ${TINY}ld
 ML = ${TINY}ml
 LIB = /lib
-SRC = /src
 
 CRT = ${LIB}/c/start.o ${LIB}/c/udivmod.o ${LIB}/c/libc.o ${LIB}/c/sys.o
 MLRT = ${LIB}/ml/mlsys.o
@@ -30,8 +28,8 @@ STDLIB = ${LIB}/ml/stdlib.a
 MLEND = ${LIB}/ml/end.o
 # (where tiny-ml reads the library's interfaces)
 MLLIB = ${LIB}/ml
-# (user.h: the system's calls a C program makes, as libc/'s headers)
-INC = ${SRC}/TinyKernel/libc
+# (user.h: the system's calls a C program makes, and libc.h)
+INC = ${LIB}/c
 
 all: hello helloml spin
 

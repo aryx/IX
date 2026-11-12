@@ -71690,3 +71690,51 @@ Claude proposed a `tiny/lib/c/` and `tiny/lib/ml/` layout where each library dir
 Claude argued this matches how `/examples` already works and removes the `libs` copy step, `runtime/`, and `TinyKernel/libc/`.
 Claude flagged that `/lib/ml` would still need a small copy step or a `-L` change for `stdlib.a` and the `.tmi` files from TinyLibCore.
 Claude proposed committing the `/examples` change first, then moving `lib/c/` and deciding on `lib/ml/` after seeing how `lib/c/` reads.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 13:58
+
+**Yoann:**
+
+> ok let's do 1 indeed first. For 2 I still hesitate; it's true we had a clear /src contain source and /lib contains object and libs, which is similar to unix and plan9, so putting source now in /lib can be confusing. There must be a way that accomodate all the needs ...
+
+**Claude (summary):**
+
+Claude committed the `/examples` change as `fefe4756` and proposed a single `install` target in `tiny/Buildfile` with `LIB = /lib`.
+Claude said the current `/lib` has three conflicting descriptions: `tiny/Buildfile`, two image Buildfiles under `TinyKernel/lib/`, and the `libs` copy step.
+The proposal replaces `libs` with `install` and deletes the two image Buildfiles, so `/lib` is built from `/src` by the same rules everywhere.
+Claude also suggested optionally installing `user.h` and `draw.h` into `/lib/c`, so `/examples` no longer needs `/src` or `SRC`.
+Claude ended by asking whether to proceed with the change, including the headers.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 14:02
+
+**Yoann:**
+
+> note that we're getting closer to the unix/plan9 way to do, but we're also supposed to be the free spirit variant of a full system; is it the tiny-spirit choice to have this mk install? Maybe it is ... what counts is the final simplicitiy, readability, transparency of the process (and flexibility too, by being able to build both from host and from t-ix)
+
+**Claude (summary):**
+
+Claude recommended replacing the Sources-in-`lib/` split with a single `install` target in the top Buildfile.
+The `install` rule would `cp` named objects from `/src` into `/lib`, removing the two image Buildfiles and their duplicated CORE list.
+Claude argued it wins on simplicity, readability, transparency, and flexibility, since the same command works on tiny-kernel and on the host with `LIB=`.
+It proposed keeping the install minimal: no prefix, `DESTDIR`, permissions, `ranlib`, or per-directory install rules.
+Claude also mentioned a freer alternative with no `/lib`, rejected for now because it would tie `/examples` to the built source tree.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 14:07
+
+**Yoann:**
+
+> I like the freer alternative too, and why not imposing to have the src of the system to compile new programs for it ... but let's do the install path for now, and see how it looks
+
+**Claude (summary):**
+
+Claude moved the library headers to `/lib/c` and fixed `user.h`'s relative include of `../../runtime/libc.h`.
+Claude removed the image's two `/lib` Buildfiles and switched the top Buildfile's `libs` copy to the `cp f dir/name` form.
+Claude updated the examples Buildfile and `hello.c`'s comment, then re-recorded the emacscolors screen and toolchain session 28.
+Both `check` runs passed, with the toolchain session compiling `ping.c` by hand using `-I /lib/c`.
+Claude started a `build install` trial on a grown disk copy, and tiny-kernel's own run is still in progress.

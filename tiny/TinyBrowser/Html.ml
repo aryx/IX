@@ -2,8 +2,6 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See Html.mli *)
-open Strings
-open Tokens
 open Lines
 
 (*****************************************************************************)
@@ -36,7 +34,7 @@ type elem = {
 }
 
 type page = {
-  reader : reader;
+  reader : Tokens.reader;
   page_flow : flow;
   mutable stack : elem list;
   mutable tables : table list;  (* the open table, if any (at most one: see
@@ -60,7 +58,8 @@ let root =
 (* (the reader and the flow made first: tiny-ml computes a record's
  * fields in tiny-machine's 11 registers) *)
 let create width =
-  let reader = { tail = ""; raw = "" } and page_flow = flow width in
+  let reader : Tokens.reader = { tail = ""; raw = "" }
+  and page_flow = flow width in
   { reader = reader; page_flow = page_flow; stack = [ root ]; tables = [];
     space = false; page_title = ""; page_base = ""; page_refresh = "";
     anchors = [];
@@ -133,7 +132,8 @@ let hides k attrs =
   || (let cl = attr attrs "class" in
       cl <> "" && List.exists (has_class cl) hidden_classes)
   || (let st = attr attrs "style" in
-      find st "display:none" 0 <> None || find st "display: none" 0 <> None)
+      Strings.find st "display:none" 0 <> None
+      || Strings.find st "display: none" 0 <> None)
 
 (* the line's end a table's cell waits for, put in before what comes *)
 let unbreak (t : table) c =
@@ -191,10 +191,10 @@ let text p s =
     let n = String.length s in
     let i = ref 0 in
     while !i < n do
-      if is_space s.[!i] then begin p.space <- true; incr i end
+      if Strings.is_space s.[!i] then begin p.space <- true; incr i end
       else begin
         let j = ref !i in
-        while !j < n && not (is_space s.[!j]) do incr j done;
+        while !j < n && not (Strings.is_space s.[!j]) do incr j done;
         emit p (String.sub s !i (!j - !i));
         i := !j
       end
@@ -240,7 +240,8 @@ let picture_room = 1048576
 let picture p attrs =
   let alt = attr attrs "alt" and cl = attr attrs "class"
   and src = attr attrs "src" in
-  let w = number (attr attrs "width") and h = number (attr attrs "height") in
+  let w = Strings.number (attr attrs "width")
+  and h = Strings.number (attr attrs "height") in
   if has_class cl "mwe-math-fallback-image-inline"
      || has_class cl "mwe-math-fallback-image-display" then begin
     let pre = "{\\displaystyle " in
@@ -315,7 +316,7 @@ let meta_refresh attrs =
   match String.index_opt c ';' with
   | Some i
     when String.lowercase_ascii (attr attrs "http-equiv") = "refresh"
-         && number (String.trim (String.sub c 0 i)) = 0 ->
+         && Strings.number (String.trim (String.sub c 0 i)) = 0 ->
       let u = String.trim (String.sub c (i + 1) (String.length c - i - 1)) in
       let u =
         if String.length u > 4
@@ -368,7 +369,7 @@ let open_tag p tag k attrs =
      | t :: _, ("td" | "th" | "caption") when t.depth = 0 && not hide ->
          let span =
            if tag = "caption" then 1000
-           else max 1 (number (attr attrs "colspan")) in
+           else max 1 (Strings.number (attr attrs "colspan")) in
          let c =
            { items = []; span = span; head = tag = "th" || tag = "caption" } in
          if tag = "caption" then begin
@@ -410,7 +411,7 @@ let open_tag p tag k attrs =
     let pre = e.pre || (is k spaced && is k (code * 32)) in
     let el =
       { tag = tag; face = face; href = href; hide = hide; pre = pre;
-        margin = margin; count = max 1 (number (attr attrs "start")) } in
+        margin = margin; count = max 1 (Strings.number (attr attrs "start")) } in
     p.stack <- el :: p.stack;
     if not hide then begin
       p.page_flow.left <- margin;
@@ -470,15 +471,15 @@ let close_tag p tag k =
         else if is k block then break p
       end
 
-let token p = function
+let token p : Tokens.token -> unit = function
   | Text s -> text p s
   | Open (tag, attrs) -> open_tag p tag (kind tag) attrs
   | Close tag -> close_tag p tag (kind tag)
 
-let feed p chunk = List.iter (token p) (tokens p.reader chunk)
+let feed p chunk = List.iter (token p) (Tokens.tokens p.reader chunk)
 
 let finish p =
-  List.iter (token p) (tokens_end p.reader);
+  List.iter (token p) (Tokens.tokens_end p.reader);
   (match p.tables with
    | t :: _ ->
      (if t.row <> [] then t.rows <- t.row :: t.rows);

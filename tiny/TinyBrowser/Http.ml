@@ -2,7 +2,6 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See Http.mli *)
-open Strings
 
 (*****************************************************************************)
 (* Requests *)
@@ -42,7 +41,7 @@ let response status headers body =
 
 (* an empty line ends the head, its line ends \r\n or \n alone *)
 let head_end s : int option =
-  match find s "\r\n\r\n" 0, find s "\n\n" 0 with
+  match Strings.find s "\r\n\r\n" 0, Strings.find s "\n\n" 0 with
   | Some a, Some b when a + 2 > b -> Some (b + 2)
   | Some a, _ -> Some (a + 4)
   | None, Some b -> Some (b + 2)
@@ -53,7 +52,7 @@ let status head : int option =
   else
     match String.index_opt head ' ' with
     | Some i when String.length head >= i + 4 ->
-      Some (number (String.sub head (i + 1) 3))
+      Some (Strings.number (String.sub head (i + 1) 3))
     | _ -> None
 
 let header head name =

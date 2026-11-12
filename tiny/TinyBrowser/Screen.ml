@@ -7,7 +7,6 @@ open TinyLibDraw
 open TinyLibPlayground
 open TinyLibGUI
 open Lines
-open Html
 
 (*****************************************************************************)
 (* The screen *)
@@ -90,7 +89,7 @@ type state =
   | Page_none of string
 
 type screen = {
-  mutable sc_page : page;
+  mutable sc_page : Html.page;
   sc_nav : nav;
   sc_tools : tools;
   sc_cols : int;
@@ -172,7 +171,7 @@ let image_of id = 272 + id
  * have come, from the picture's image, and a grey box for the rest;
  * until its first rows come, its alternative text on the grey. *)
 let draw_slice sc dst y (r : run) id s =
-  let pc = picture_of sc.sc_page id in
+  let pc = Html.picture_of sc.sc_page id in
   let x = r.col * 8 and from = s * 16 in
   let high = min 16 (pc.pc_h - from) in
   let rows = match pc.pc_got with Pic_rows n -> n | _ -> 0 in
@@ -246,7 +245,8 @@ let draw_bar sc =
   let x =
     List.fold_left (fun x (t, _) -> x + (8 * String.length t) + 16) 16 ms in
   let t =
-    if title sc.sc_page <> "" then title sc.sc_page else sc.sc_nav.nv_address in
+    let title = Html.title sc.sc_page in
+    if title <> "" then title else sc.sc_nav.nv_address in
   let n = max 0 (((w - x) / 8) - 1) in
   (match menu_view w ms sc.sc_tools.tb_menu with
    | bar :: opened ->
@@ -302,11 +302,11 @@ let draw_status sc =
        (match d.dc_status with
         | Some n when n <> 200 -> string_of_int n ^ ", "
         | _ -> "")
-       ^ kb ^ ", " ^ string_of_int (count sc.sc_page) ^ " lines"
+       ^ kb ^ ", " ^ string_of_int (Html.count sc.sc_page) ^ " lines"
        ^ (match sc.sc_nav.nv_wire with
           | Wire_picture (_, id) ->
               ", picture " ^ string_of_int (id + 1) ^ " of "
-              ^ string_of_int (pictures sc.sc_page)
+              ^ string_of_int (Html.pictures sc.sc_page)
           | _ -> "")
      | Page_none why -> why)
     ^ "   space -: page, b: back, g: address, q: quit" in
@@ -316,7 +316,7 @@ let draw_status sc =
  * of the page, drawn; white where the page has ended. *)
 let draw_between sc a b =
   let first = a / 16 and last = (b + 15) / 16 in
-  let ls = lines_between sc.sc_page first last in
+  let ls = Html.lines_between sc.sc_page first last in
   List.iteri (fun k l -> draw_line sc (first + k) l) ls;
   let bottom = area_top + ((first + List.length ls) * 16) - sc.sc_y in
   let y0 = max bottom (area_top + a - sc.sc_y)
@@ -327,7 +327,7 @@ let draw_between sc a b =
 (* the whole area drawn again *)
 let redraw sc = sc.sc_drawn <- draw_between sc sc.sc_y (sc.sc_y + area sc)
 
-let max_y sc = max 0 ((count sc.sc_page * 16) - area sc)
+let max_y sc = max 0 ((Html.count sc.sc_page * 16) - area sc)
 
 (* Scrolls by [d] pixels (up when negative). What stays on the screen is
  * moved there by one copy of the screen onto itself, and only the strip
@@ -382,23 +382,23 @@ let show_new sc =
   let all_there = sc.sc_nav.nv_wire = Wire_off in
   (match sc.sc_nav.nv_goal_id with
    | Some id ->
-       (match anchor sc.sc_page id with
+       (match Html.anchor sc.sc_page id with
         | Some line
-          when line + rows_of_page sc <= count sc.sc_page || all_there ->
+          when line + rows_of_page sc <= Html.count sc.sc_page || all_there ->
             sc.sc_nav.nv_goal_id <- None; show_from sc line
         | _ -> ())
    | None -> ());
   (match sc.sc_nav.nv_goal with
    | Some goal
-     when (goal / 16) + rows_of_page sc <= count sc.sc_page || all_there ->
+     when (goal / 16) + rows_of_page sc <= Html.count sc.sc_page || all_there ->
        sc.sc_nav.nv_goal <- None;
        let y = max 0 (min goal (max_y sc)) in
        if y <> sc.sc_y then begin sc.sc_y <- y; redraw sc end
    | _ -> ());
-  let last = min (count sc.sc_page) ((sc.sc_y + area sc + 15) / 16) in
+  let last = min (Html.count sc.sc_page) ((sc.sc_y + area sc + 15) / 16) in
   if sc.sc_drawn < last then begin
     List.iteri (fun k l -> draw_line sc (sc.sc_drawn + k) l)
-      (lines_between sc.sc_page sc.sc_drawn last);
+      (Html.lines_between sc.sc_page sc.sc_drawn last);
     sc.sc_drawn <- last
   end
 

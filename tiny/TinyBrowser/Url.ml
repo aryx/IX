@@ -2,7 +2,6 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See Url.mli *)
-open Strings
 
 (*****************************************************************************)
 (* Addresses *)
@@ -59,7 +58,7 @@ let absolute typed =
 
 (* "https://host" of an address *)
 let site url =
-  match find url "://" 0 with
+  match Strings.find url "://" 0 with
   | None -> ""
   | Some i ->
     (match String.index_from_opt url (i + 3) '/' with

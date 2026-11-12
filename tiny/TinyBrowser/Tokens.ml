@@ -2,7 +2,6 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See Tokens.mli *)
-open Strings
 
 (*****************************************************************************)
 (* Tokens *)
@@ -23,11 +22,11 @@ let wanted =
 let tag s =
   let n = String.length s in
   let rec word i =
-    if i < n && not (is_space s.[i]) && s.[i] <> '/' && s.[i] <> '='
+    if i < n && not (Strings.is_space s.[i]) && s.[i] <> '/' && s.[i] <> '='
        && s.[i] <> '>' then word (i + 1)
     else i in
   let rec skip i =
-    if i < n && (is_space s.[i] || s.[i] = '/') then skip (i + 1) else i in
+    if i < n && (Strings.is_space s.[i] || s.[i] = '/') then skip (i + 1) else i in
   if n > 0 && s.[0] = '/' then
     let e = word 1 in Close (String.lowercase_ascii (String.sub s 1 (e - 1)))
   else begin
@@ -39,7 +38,7 @@ let tag s =
       else begin
         let e = word i in
         let a = String.lowercase_ascii (String.sub s i (e - i)) in
-        let rec sp j = if j < n && is_space s.[j] then sp (j + 1) else j in
+        let rec sp j = if j < n && Strings.is_space s.[j] then sp (j + 1) else j in
         let j = sp e in
         if j < n && s.[j] = '=' then begin
           let j = sp (j + 1) in
@@ -51,7 +50,7 @@ let tag s =
                | None -> j + 1, n, n)
             else
               let rec un k =
-                if k < n && not (is_space s.[k]) then un (k + 1) else k in
+                if k < n && not (Strings.is_space s.[k]) then un (k + 1) else k in
               let k = un j in
               j, k, k in
           if List.mem a wanted then
@@ -94,7 +93,7 @@ let scan (r : reader) chunk last =
   let rec go i acc =
     if i >= n then acc
     else if r.raw <> "" then begin
-      match find s ("</" ^ r.raw) i with
+      match Strings.find s ("</" ^ r.raw) i with
       | None -> keep (max i (n - 10)); acc
       | Some j ->
         (match String.index_from_opt s j '>' with
@@ -105,7 +104,7 @@ let scan (r : reader) chunk last =
     else if s.[i] = '<' then begin
       if i + 3 < n && s.[i + 1] = '!' && s.[i + 2] = '-' && s.[i + 3] = '-'
       then begin
-        match find s "-->" (i + 4) with
+        match Strings.find s "-->" (i + 4) with
         | None -> keep i; acc
         | Some j -> go (j + 3) acc
       end

@@ -71081,3 +71081,42 @@ The commit adds `-v` file tracing, drops `.tmi` from Buildfile rules, and puts l
 Claude left out the one-line header edit to `tiny/TinyLibCore/Buildfile`, since it wasn't made in this session.
 `make self` at HEAD fails against the stale `self.expected` transcript until the new short output is recorded.
 Claude noted that the commit message already says the expected-output update is still pending.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 09:25
+
+**Yoann:**
+
+> make test under tiny/ is currently failing
+
+**Claude (summary):**
+
+Claude diagnosed `make test` in `tiny/` as failing for two reasons: a leftover `tiny/TinyKernel/_mkf` build copy, and a stale `ping.o` path in `tests/lite.sh`.
+Claude proposed deleting `_mkf` and rerunning `tests/lite.sh tix`, then committing that with the `lite.sh` fix after `make self` finished.
+Claude also offered to stop `make self` immediately, delete `_mkf`, and rerun the tests.
+Claude noted that `tests/ix_files.sh` only skips `_make*` directories, so future builds should use that prefix.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 09:31
+
+**Yoann:**
+
+> stop make self and fix make test
+
+------------------------------------------------------------------------
+
+## 2026-11-12 09:32
+
+**Yoann:**
+
+> what is this _make9 ? can awe also remove it?
+
+**Claude (summary):**
+
+Claude reported that `make test` in `tiny/` passes again with 34 jobs and no failures, and that `_make9` is gone.
+Claude traced the breakage to its own `_mkf` side build directory, which the tests didn't skip, so mini-ml compiled every file twice.
+Claude deleted `_mkf` and said future side builds will use `_make-` names, which the tests skip.
+Claude also found a stale `ping.o` path in `tests/lite.sh` and left the one-line fix uncommitted for review.
+Claude asked whether to commit the `lite.sh` fix and start the hour-long `make self` run in `_make-self`.

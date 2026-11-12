@@ -71065,3 +71065,19 @@ Claude rewrapped the Buildfile unit lists across the 25 programs and the kernel 
 Claude confirmed tiny-ml's test passes, then built the image through the Makefile in a fresh `_mkf` directory.
 Claude stopped the old `make self` run and waited on a lean-build check, which logged `check=0` as a full pass.
 Claude then verified mini-mk and the analyzer, and planned to record `self.expected` and show the whole change for review.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 09:23
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the lean link as `b8ba8295`, with `TinyMLLink` building program starts via `ml -o prog.start.o`.
+The commit adds `-v` file tracing, drops `.tmi` from Buildfile rules, and puts libraries first in each link.
+Claude left out the one-line header edit to `tiny/TinyLibCore/Buildfile`, since it wasn't made in this session.
+`make self` at HEAD fails against the stale `self.expected` transcript until the new short output is recorded.
+Claude noted that the commit message already says the expected-output update is still pending.

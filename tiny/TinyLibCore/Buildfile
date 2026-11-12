@@ -1,4 +1,4 @@
-# Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyBuildSystem.ml)
+# Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL
 #
 # The standard library, OCaml's subset: every ML program's first units,
 # kept in one library, stdlib.a, which a program links (ld ...

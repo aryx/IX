@@ -16,8 +16,7 @@
 # What it makes is in this directory, from its sources, so that no file
 # has two Buildfiles making it (a pattern takes any name that ends as
 # it says: ../runtime/udivmod.o here would be made again by this file's
-# %.o). Its exception: TinyKernel.ml, beside the host's programs in
-# ../ (its object made there, which ../Buildfile does not ask for).
+# %.o).
 
 # the tools, tiny-kernel's names, the host's by TINY=tiny- (../Buildfile
 # gives its own, ML=... CC=...)
@@ -54,7 +53,7 @@ runtime.o: runtime.c ../runtime/ml.c
 UNITS = TinyMemory.o TinyKernelGraphics.o TinyKernelNetwork.o \
     TinyKernelAudio.o TinyKernelFS.o TinyKernelMemory.o TinyKernelMachine.o \
     TinyKernelFiles.o TinyKernelProcs.o TinyKernelDevices.o TinyKernelIO.o \
-    TinyKernelCalls.o TinyKernelScheduler.o ../TinyKernel.o
+    TinyKernelCalls.o TinyKernelScheduler.o TinyKernel.o
 kernel.start.o: $STDLIB $UNITS
 kernel.img: entry.o udivmod.o runtime.o draw.o memory.o font.o \
     kernel.start.o $STDLIB $UNITS end.o
@@ -62,9 +61,9 @@ kernel.img: entry.o udivmod.o runtime.o draw.o memory.o font.o \
 
 # the units' dependencies, written by ml -depend
 depend:
-	$ML -depend -I . *.ml ../TinyKernel.ml > .depend
+	$ML -depend -I . *.ml > .depend
 
 <.depend
 
 clean:
-	rm -f *.o *.tmi ../TinyKernel.o ../TinyKernel.tmi kernel.img kernel.map
+	rm -f *.o *.tmi kernel.img kernel.map

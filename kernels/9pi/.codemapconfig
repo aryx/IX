@@ -70,6 +70,6 @@
     },
   ],
   views: [
-    { name: 'the kernel: mini-9pi and tiny-kernel', files: ['./', '../../tiny/TinyKernel.ml'] },
+    { name: 'the kernel: mini-9pi and tiny-kernel', files: ['./', '../../tiny/TinyKernel/TinyKernel.ml'] },
   ],
 }

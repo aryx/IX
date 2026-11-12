@@ -322,20 +322,6 @@ local prog(name, file, core) = chain(name, [
     'TinyTracer.mli': { digest: '325063ec4836',
       summary: "trace's output, and the kernel's two stops per call that let it read what it needs.",
     },
-    'TinyKernel.ml': { digest: '62c6ced57f8c',
-      summary: "tiny-kernel's boot: devices, /dev, the memory's kind, the disk a union with /dump, then /bin/sh and schedule.",
-      capitals: [{ at: 'code:"schedule ()"', say: 'the boot ends: the kernel is its loop' }],
-      important: [
-        { at: 'comment:"The disk, when there is one, is the root"', say: 'a union: the disk, /boot and /dump, the image', weight: 2 },
-        { at: 'comment:"the first process: /bin/sh"', say: 'five descriptors, as a window gives', weight: 3 },
-        { at: 'code:"schedule ()"', weight: 3 },
-      ],
-      related: ['TinyKernel/', 'runtime/ml.c', '../docs/notes/notes_tiny_kernel.md', '../kernels/9pi/'],
-    },
-    'TinyKernel.mli': { digest: 'ff10f0b87f96',
-      summary: "tiny-kernel's design: each OS concept done by the road ML makes short; the header of all its parts.",
-      important: [{ at: 'comment:"Why it is not a twin of an existing kernel."', say: 'the concepts kept, the roads changed', weight: 3 }],
-    },
     // ---------------------------------------------------------------
     // the libraries tiny-kernel's programs are compiled with
     // ---------------------------------------------------------------
@@ -572,7 +558,7 @@ local prog(name, file, core) = chain(name, [
       ['TinyLinker.ml', 'objects to an image or an a.out'],
       ['TinyMachine/', 'the CPU, its devices, its window and wire'],
       ['TinyMachine.ml', 'the machine on the host: tiny-machine'],
-      ['TinyKernel.ml', 'its kernel in ML'],
+      ['TinyKernel/TinyKernel.ml', 'its kernel in ML'],
       ['TinyKernel/steps/', 'before it: v0 in assembly, t6 in C'],
     ], [
       ['TinyC.ml', 'TinyAssembler.ml', '.s assembly'],
@@ -580,7 +566,7 @@ local prog(name, file, core) = chain(name, [
       ['TinyAssembler.ml', 'TinyLinker.ml', 'objects'],
       ['TinyLinker.ml', 'TinyMachine.ml', 'an image'],
       ['TinyMachine.ml', 'TinyMachine/', 'runs'],
-      ['TinyMachine.ml', 'TinyKernel.ml', 'boots'],
+      ['TinyMachine.ml', 'TinyKernel/TinyKernel.ml', 'boots'],
       ['TinyMachine.ml', 'TinyKernel/steps/', 'boots'],
     ]),
     skeletons.parts("tiny-kernel's programs and what they stand on", [
@@ -844,9 +830,9 @@ local prog(name, file, core) = chain(name, [
       joints+: [{ from: 'TinyMachine.ml:def:run', to: 'TinyMachine.ml:def:window_poll', say: 'between slices' }],
     },
     chain('tiny-kernel: the boot', [
-      ['TinyKernel.ml:code:"k_init ()"', 'the machine set: traps, the timer', ''],
-      ['TinyKernel.ml:comment:"The disk, when there is one, is the root"', 'the files: the image, the disk, /dump', 'the devices'],
-      ['TinyKernel.ml:comment:"the first process: /bin/sh"', 'the first process and its five descriptors', 'the tree of files'],
+      ['TinyKernel/TinyKernel.ml:code:"k_init ()"', 'the machine set: traps, the timer', ''],
+      ['TinyKernel/TinyKernel.ml:comment:"The disk, when there is one, is the root"', 'the files: the image, the disk, /dump', 'the devices'],
+      ['TinyKernel/TinyKernel.ml:comment:"the first process: /bin/sh"', 'the first process and its five descriptors', 'the tree of files'],
       ['TinyKernel/TinyKernelCalls.ml:def:load_prog', '/bin/sh loaded in its partition', 'the process'],
       ['TinyKernel/TinyKernelScheduler.ml:def:schedule', 'the kernel from now on: run until a trap', 'Ready'],
     ]),

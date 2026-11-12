@@ -6,7 +6,7 @@
 # as mini-pi boots the Pi's kernels on mini-qemu; built first, with the
 # tools of ix's checkout.
 #
-#   ./tiny-machine tiny-kernel tiny/TinyKernel.ml: a kernel in ML (fork
+#   ./tiny-machine tiny-kernel tiny/TinyKernel/TinyKernel.ml: a kernel in ML (fork
 #                              and exec, round robin, blocking by
 #                              closures), its disk the root (a file
 #                              system of inodes, copied on write: what

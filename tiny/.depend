@@ -12,7 +12,6 @@ TinyDatabase.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyDatabase.mli
 TinyDebugger.o: TinyLibGUI.tmi TinyLibMachine.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyDebugger.mli
 TinyEditorLine.o: TinyLibRegex.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyEditorLine.mli
 TinyEditorScreen.o: TinyLibGUI.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyEditorScreen.mli
-TinyKernel.o: TinyKernel.mli
 TinyLibDraw.o: TinyLibDraw.mli
 TinyLibGUI.o: TinyLibDraw.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibGUI.mli
 TinyLibMachine.o: TinyLibMachine.mli

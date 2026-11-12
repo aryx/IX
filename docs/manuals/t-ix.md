@@ -78,12 +78,12 @@ A tiny program is either the host's or the tiny machine's.
             v
     the tiny machine (assembly, C and ML, built by the programs above)
       runtime/              the C runtime
-      TinyKernel.ml            a kernel in ML, and its programs
+      TinyKernel/              a kernel in ML (TinyKernel.ml), and its programs
       TinyKernel/steps/v0, t6  the steps before it, in assembly and C
       runtime/ml.c            the ML runtime, in C
 
-`TinyKernel.ml` is in `tiny/` beside the host's programs but is not
-one of them: OCaml never compiles it, tiny-ml does.
+`TinyKernel/` is in `tiny/` beside the host's programs but is not
+one of them: OCaml never compiles `TinyKernel.ml`, tiny-ml does.
 
 ### 2.2 What a host program needs outside `tiny/`
 
@@ -569,7 +569,7 @@ What the numbers mean is up to who answers:
 |---|---|---|---|
 | v0 (`tiny/TinyKernel/steps/v0/`) | assembly | a plain window | none |
 | t6 (`tiny/TinyKernel/steps/t6/`) | C | a relocating window | on a disk, a FAT |
-| TinyKernel.ml (`tiny/TinyKernel.ml`) | ML | a relocating window | ML values in memory |
+| TinyKernel.ml (`tiny/TinyKernel/TinyKernel.ml`) | ML | a relocating window | ML values in memory |
 
 ### 7.1 TinyKernel.ml's memory
 

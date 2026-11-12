@@ -1,7 +1,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# tiny-kernel: TinyKernel.ml (../TinyKernel.ml), a free kernel in ML for
+# tiny-kernel: TinyKernel.ml, a free kernel in ML for
 # tiny-machine (docs/notes/notes_tiny_kernel.md):
 #
 #   make run          the kernel on tiny-machine: sh on the console

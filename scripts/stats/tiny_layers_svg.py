@@ -90,8 +90,9 @@ COLUMNS = [
     ]),
     ("The kernel", "tiny-kernel  (tiny-ml, tiny-cc)", [
         ("The kernel", "tiny-ml's ML", [
-            "tiny/TinyKernel.ml: the processes, the",
-            "files, the pipes, the system calls"]),
+            "tiny/TinyKernel/TinyKernel.ml: the",
+            "processes, the files, the pipes, the",
+            "system calls"]),
         ("Its parts that are files", "ML", [
             "tiny/TinyKernel/TinyKernelGraphics.ml",
             "(the pixels), TinyKernelNetwork.ml (IP,",

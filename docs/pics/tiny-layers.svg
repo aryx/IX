@@ -115,39 +115,40 @@
 <rect x="954" y="86" width="296" height="50" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
 <text x="968" y="108" font-size="16" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The kernel</text>
 <text x="968" y="126" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">tiny-kernel  (tiny-ml, tiny-cc)</text>
-<rect x="954" y="150" width="296" height="74" rx="8" fill="#ffffff" stroke="#e16f24" stroke-width="1.5"/>
+<rect x="954" y="150" width="296" height="91" rx="8" fill="#ffffff" stroke="#e16f24" stroke-width="1.5"/>
 <text x="968" y="173" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The kernel</text>
 <text x="1238" y="173" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">tiny-ml&#x27;s ML</text>
-<text x="968" y="194" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyKernel.ml: the processes, the</text>
-<text x="968" y="211" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">files, the pipes, the system calls</text>
-<line x1="1102" y1="224" x2="1102" y2="242" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
-<rect x="954" y="244" width="296" height="108" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
-<text x="968" y="267" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">Its parts that are files</text>
-<text x="1238" y="267" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">ML</text>
-<text x="968" y="288" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyKernel/TinyKernelGraphics.ml</text>
-<text x="968" y="305" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">(the pixels), TinyKernelNetwork.ml (IP,</text>
-<text x="968" y="322" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">IL), TinyMemory.ml (the machine&#x27;s bytes,</text>
-<text x="968" y="339" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">as externals)</text>
-<line x1="1102" y1="352" x2="1102" y2="370" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
-<rect x="954" y="372" width="296" height="57" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
-<text x="968" y="395" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The standard library</text>
-<text x="1238" y="395" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">ML</text>
-<text x="968" y="416" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyLibCore/: the same modules</text>
-<line x1="1102" y1="429" x2="1102" y2="447" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
-<rect x="954" y="449" width="296" height="91" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
-<text x="968" y="472" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyML&#x27;s runtime</text>
-<text x="1238" y="472" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">C, by tiny-cc</text>
-<text x="968" y="493" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/runtime/ml.c, the same;</text>
-<text x="968" y="510" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">included by TinyKernel/runtime.c (the</text>
-<text x="968" y="527" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">kernel&#x27;s memory, the console)</text>
-<line x1="1102" y1="540" x2="1102" y2="558" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
-<rect x="954" y="560" width="296" height="91" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
-<text x="968" y="583" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">Its assembly</text>
-<text x="1238" y="583" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">tiny-cpu&#x27;s</text>
-<text x="968" y="604" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyKernel/entry.s (the start, the</text>
-<text x="968" y="621" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">traps), draw.s (a row of pixels), the</text>
-<text x="968" y="638" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">font; runtime/udivmod.s</text>
-<line x1="1102" y1="651" x2="1102" y2="805" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
+<text x="968" y="194" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyKernel/TinyKernel.ml: the</text>
+<text x="968" y="211" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">processes, the files, the pipes, the</text>
+<text x="968" y="228" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">system calls</text>
+<line x1="1102" y1="241" x2="1102" y2="259" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
+<rect x="954" y="261" width="296" height="108" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
+<text x="968" y="284" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">Its parts that are files</text>
+<text x="1238" y="284" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">ML</text>
+<text x="968" y="305" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyKernel/TinyKernelGraphics.ml</text>
+<text x="968" y="322" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">(the pixels), TinyKernelNetwork.ml (IP,</text>
+<text x="968" y="339" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">IL), TinyMemory.ml (the machine&#x27;s bytes,</text>
+<text x="968" y="356" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">as externals)</text>
+<line x1="1102" y1="369" x2="1102" y2="387" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
+<rect x="954" y="389" width="296" height="57" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
+<text x="968" y="412" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The standard library</text>
+<text x="1238" y="412" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">ML</text>
+<text x="968" y="433" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyLibCore/: the same modules</text>
+<line x1="1102" y1="446" x2="1102" y2="464" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
+<rect x="954" y="466" width="296" height="91" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
+<text x="968" y="489" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyML&#x27;s runtime</text>
+<text x="1238" y="489" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">C, by tiny-cc</text>
+<text x="968" y="510" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/runtime/ml.c, the same;</text>
+<text x="968" y="527" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">included by TinyKernel/runtime.c (the</text>
+<text x="968" y="544" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">kernel&#x27;s memory, the console)</text>
+<line x1="1102" y1="557" x2="1102" y2="575" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
+<rect x="954" y="577" width="296" height="91" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
+<text x="968" y="600" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">Its assembly</text>
+<text x="1238" y="600" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">tiny-cpu&#x27;s</text>
+<text x="968" y="621" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyKernel/entry.s (the start, the</text>
+<text x="968" y="638" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">traps), draw.s (a row of pixels), the</text>
+<text x="968" y="655" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">font; runtime/udivmod.s</text>
+<line x1="1102" y1="668" x2="1102" y2="805" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <rect x="954" y="807" width="296" height="74" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.5"/>
 <text x="968" y="830" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The machine</text>
 <text x="968" y="851" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny-machine (tiny/TinyMachine.ml,</text>

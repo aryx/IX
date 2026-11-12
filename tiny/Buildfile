@@ -472,9 +472,8 @@ boot.img: TinyKernel/kernel.img $PROGS $EXAMPLES $STDLIB $LIBC $LIBML
 # of the units it names and its .mli, written by ml -depend as ocamldep
 # writes OCaml's (and m-ix's mini-ml -depend). Its sources are every
 # .ml of INCLUDES' directories (a unit added is found; the host's
-# programs among them, TinyCPU.ml and TinyMachine.ml, and TinyKernel.ml,
-# the kernel's, are lines no target asks for, or left out, said, when
-# tiny-ml cannot read them).
+# programs among them, TinyCPU.ml and TinyMachine.ml, are lines no
+# target asks for, or left out, said, when tiny-ml cannot read them).
 # The globs are written here, not in a variable: rc does not glob a *
 # that comes from one. .depend is kept beside this file, as
 # ocaml-light's stdlib keeps its own (TinyLibCore/ and TinyKernel/ have

@@ -71581,3 +71581,34 @@ Claude asked whether to proceed with A for the kernel, then the program groups, 
 **Claude (summary):**
 
 Claude split the kernel out into `TinyKernel/Buildfile` (option B), with its own `end.s` and `udivmod.o`. The top Buildfile now runs it through a non-file `kernel` target, and `stdlib` runs `TinyLibCore` the same way. Each sub-Buildfile makes only files in its own directory, because tiny-build cannot mark a file as made elsewhere. `TinyKernel.ml` still builds to `../TinyKernel.o`, which Claude left for Yoann to decide. Claude fixed two existing bugs along the way: `build libs` recompiling TinyLibCore units, and `clean` running `rm` inside TinyLibCore.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 13:27
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the split as `5c0bc3c7`, covering 10 files including `prompt-history.md`.
+Claude flagged that `TinyKernel.ml` sits outside `TinyKernel/`, the only Buildfile that writes outside its own directory.
+Claude noted the docs link to `tiny/TinyKernel.ml`, so moving it means updating those links too.
+Claude also raised shrinking the 506-line `tiny/Buildfile`, and that your opam tools are stale and need `make install`.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 13:30
+
+**Yoann:**
+
+> ok we can move TinyKernel.ml* under TinyKernel/ we usually tried to be consistent with the other programs that have this TinyXxx.ml and TinyXxx/ but the kernel is special so why not be different there too.
+
+**Claude (summary):**
+
+Claude had not committed the kernel move yet, and the commit would cover only the `TinyKernel/` changes.
+Claude verified the move: the image is byte-identical, and `make check`, self-quick, the analyzer, and `dune build` all pass.
+Claude planned to leave the modified `tiny/examples/Buildfile` out of the commit, since it was not Claude's edit.
+Claude also noted that `TinyKernel/Buildfile` and both `.depend` files were rewritten for the new directory layout.
+Claude moved the kernel files and updated the paths in the README, docs, code map configs, and layers SVG script.

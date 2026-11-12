@@ -71934,3 +71934,35 @@ The paragraph cites mini-mk's `LOCAL=`{ls *.ml *.mli}` syntax, which needs a she
 It uses `/examples` as the concrete case: the image would not follow an example changed alone.
 Claude also rewrote the boot.img recipe to copy examples by kind with rc's glob, dropping `EXAMPLES`.
 Claude reports `make check`, self-quick and `dune build` passing, but nothing has been committed yet.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 15:35
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the `EXAMPLES` removal and the `.mli` note on dropping mk's backquotes as `3bdfe45f`.
+Claude reported that only its own `_make-claude/` build directory stayed uncommitted, with other sessions' work clean.
+Claude listed three open items: a `procs.c` example for `fork`, `pipe` and `wait`.
+Claude also flagged the fragile emacscolors screen test as still open.
+Claude noted shortening the repeated program-group paragraphs in `tiny/Buildfile` remained undone.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 15:35
+
+**Yoann:**
+
+> let's do all of that
+
+**Claude (summary):**
+
+Claude confirmed all three changes pass `make check`, self-quick, and the analyzer, with the new emacscolors screen included.
+Claude left the work uncommitted, waiting for Yoann's go-ahead before making any commit.
+Claude made emacscolors self-contained, writing its own small C sample with rc's `echo` so it no longer depends on tiny sources.
+Claude added `procs.c` and `procsml.ml`, pipe-and-fork demos that print the child's pid and a message on tiny-kernel.
+Claude shortened the tiny Buildfile from 510 to 485 lines by stating the ML program shape once.

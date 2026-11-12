@@ -7,6 +7,7 @@
 #     hello.c    helloml.ml   a print (hello with square.s, in assembly)
 #     shapes.c   shapesml.ml  a picture drawn, the drawing's messages
 #     fetch.c    fetchml.ml   a document of another machine, by Gopher
+#     procs.c    procsml.ml   a pipe, fork, exec and wait: a shell's pipeline
 #                game.ml      a ball, on the playground (TinyLibPlayground)
 #                gui.ml       a counter, on the widgets (TinyLibGUI)
 #     spin.s                  prof's example, with spin.prof
@@ -51,7 +52,7 @@ DRAWLIB = ${LIB}/ml/TinyLibDraw.o
 PLAY = ${LIB}/ml/TinyLibPlayground.o
 GUI = ${LIB}/ml/TinyLibGUI.o
 
-all: hello shapes fetch helloml shapesml fetchml game gui spin
+all: hello shapes fetch procs helloml shapesml fetchml procsml game gui spin
 
 hello: hello.o square.o
 	$LD -map -s -n -o $target $CRT $prereq
@@ -70,6 +71,11 @@ fetch: $NET fetch.o
 	$LD -map -s -n -o $target $CRT $prereq
 fetch.o: fetch.c ${INC}/user.h
 	$CC -I $INC -o $target fetch.c
+
+procs: procs.o
+	$LD -map -s -n -o $target $CRT $prereq
+procs.o: procs.c ${INC}/user.h
+	$CC -I $INC -o $target procs.c
 
 helloml: helloml.o
 	$LD -map -s -n -o $target $CRT $MLRT $prereq $STDLIB $MLEND
@@ -97,6 +103,11 @@ fetchml.start.o: $STDLIB $FETCHML_UNITS
 fetchml: $CRT $MLRT fetchml.start.o $STDLIB $FETCHML_UNITS $MLEND
 	$LD -map -s -n -o $target $prereq
 
+PROCSML_UNITS = $SYS procsml.o
+procsml.start.o: $STDLIB $PROCSML_UNITS
+procsml: $CRT $MLRT procsml.start.o $STDLIB $PROCSML_UNITS $MLEND
+	$LD -map -s -n -o $target $prereq
+
 GAME_UNITS = $SYS $DRAWLIB $PLAY game.o
 game.start.o: $STDLIB $GAME_UNITS
 game: $CRT $MLRT game.start.o $STDLIB $GAME_UNITS $MLEND
@@ -121,4 +132,4 @@ spin.prof: spin
 	tiny-cpu -prof $target spin > /dev/null
 
 clean:
-	rm -f hello shapes fetch helloml shapesml fetchml game gui spin *.o *.tmi *.map
+	rm -f hello shapes fetch procs helloml shapesml fetchml procsml game gui spin *.o *.tmi *.map

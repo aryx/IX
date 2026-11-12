@@ -8,5 +8,6 @@
 46400000 m 300 200 1
 48200000 m 600 400 1
 50000000 m 600 400 0
-62000000 k emacs /examples/hello.c\n
+62000000 k rc\necho '/* a comment */' > /colors.c\necho '#include "user.h"' >> /colors.c\necho 'int' >> /colors.c\necho 'main(void)' >> /colors.c\necho '{' >> /colors.c\necho '    char *s = "a string";' >> /colors.c\necho '    return 0;' >> /colors.c\necho '}' >> /colors.c\n
+100000000 k emacs /colors.c\n
 160000000 m 41 40 0

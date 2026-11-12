@@ -41,7 +41,11 @@
 #                     s, the next and continue buttons, to its end) and
 #                     emacs.events
 #                     (emacs f in a window: two lines typed, a word
-#                     killed and another typed, saved, quit, cat f);
+#                     killed and another typed, saved, quit, cat f),
+#                     emacscolors.events (a C file of its own text,
+#                     written by echo in the window's rc, then
+#                     opened: its colors; not a source of tiny/'s,
+#                     whose edits would change the screen);
 #                     the office's (office, officesheet, officedraw,
 #                     officepaint: a page, a sheet and its chart, a
 #                     drawing, a paint, in a window); and with the

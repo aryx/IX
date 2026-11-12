@@ -146,7 +146,13 @@ $STDLIB: stdlib
 # side is the host's, by dune); the machine's code (libmach: the
 # instructions, the objects, the labels); the regular expressions; and
 # the window's: the picture's messages, the playground (a game's loop),
-# the widgets
+# the widgets.
+#
+# An ML program, in the sections below: its units (X_UNITS), its start
+# made of them (X.start.o, by ml: TinyML/TinyMLLink.mli), and the
+# program linked by ld: the C runtime, ML's, the start, the library, its
+# units, the end (the libraries before the units that use them, OCaml's
+# rule). Its units' rules are .depend's (at the end).
 
 
 #############################################################################
@@ -156,45 +162,34 @@ $STDLIB: stdlib
 # rc the shell; utils, cat ls grep... in one program (/bin/cat a link
 # to it); ed and sam, the line editor; db and vcs, a database and a
 # version control; build, this file's reader.
-# Each: its units (X_UNITS), its start made of them (X.start.o, by
-# ml: TinyML/TinyMLLink.mli), and the program linked by ld: the C
-# runtime, ML's, the start, the library, its units, the end (the
-# libraries before the units that use them, OCaml's rule). Its units'
-# rules are .depend's (at the end).
 
-# rc
 RC_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyShell.o
 rc.start.o: $STDLIB $RC_UNITS
 rc: $CRT $MLRT rc.start.o $STDLIB $RC_UNITS $MLEND
 	$LD -map -s -n -o $target $prereq
 
-# utils
 UTILS_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibRegex.o \
     TinyUtilities.o
 utils.start.o: $STDLIB $UTILS_UNITS
 utils: $CRT $MLRT utils.start.o $STDLIB $UTILS_UNITS $MLEND
 	$LD -map -s -n -o $target $prereq
 
-# ed
 ED_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibRegex.o \
     TinyEditorLine.o
 ed.start.o: $STDLIB $ED_UNITS
 ed: $CRT $MLRT ed.start.o $STDLIB $ED_UNITS $MLEND
 	$LD -map -s -n -o $target $prereq
 
-# db
 DB_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyDatabase.o
 db.start.o: $STDLIB $DB_UNITS
 db: $CRT $MLRT db.start.o $STDLIB $DB_UNITS $MLEND
 	$LD -map -s -n -o $target $prereq
 
-# vcs
 VCS_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyVCS.o
 vcs.start.o: $STDLIB $VCS_UNITS
 vcs: $CRT $MLRT vcs.start.o $STDLIB $VCS_UNITS $MLEND
 	$LD -map -s -n -o $target $prereq
 
-# build
 BUILD_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyBuildSystem.o
 build.start.o: $STDLIB $BUILD_UNITS
 build: $CRT $MLRT build.start.o $STDLIB $BUILD_UNITS $MLEND
@@ -206,34 +201,25 @@ build: $CRT $MLRT build.start.o $STDLIB $BUILD_UNITS $MLEND
 
 # as, ld, ar, cc and ml, which built all of this; prof, where a profile's
 # instructions went; trace, a program's calls; debug, a debugger.
-# Each: its units (X_UNITS), its start made of them (X.start.o, by
-# ml: TinyML/TinyMLLink.mli), and the program linked by ld: the C
-# runtime, ML's, the start, the library, its units, the end (the
-# libraries before the units that use them, OCaml's rule). Its units'
-# rules are .depend's (at the end).
 
-# as
 AS_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibMachine.o \
     TinyAssembler.o
 as.start.o: $STDLIB $AS_UNITS
 as: $CRT $MLRT as.start.o $STDLIB $AS_UNITS $MLEND
 	$LD -map -s -n -a 32 -o $target $prereq
 
-# ld
 LD_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibMachine.o \
     TinyLinker.o
 ld.start.o: $STDLIB $LD_UNITS
 ld: $CRT $MLRT ld.start.o $STDLIB $LD_UNITS $MLEND
 	$LD -map -s -n -a 64 -o $target $prereq
 
-# ar
 AR_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibMachine.o \
     TinyArchiver.o
 ar.start.o: $STDLIB $AR_UNITS
 ar: $CRT $MLRT ar.start.o $STDLIB $AR_UNITS $MLEND
 	$LD -map -s -n -a 4 -o $target $prereq
 
-# cc
 CC_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibMachine.o \
     TinyC/TinyCTypes.o TinyC/TinyCLexer.o TinyC/TinyCTree.o \
     TinyC/TinyCLower.o TinyC/TinyCParser.o TinyC/TinyCMachine.o TinyC.o
@@ -241,7 +227,6 @@ cc.start.o: $STDLIB $CC_UNITS
 cc: $CRT $MLRT cc.start.o $STDLIB $CC_UNITS $MLEND
 	$LD -map -s -n -a 16 -o $target $prereq
 
-# ml
 ML_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibMachine.o \
     TinyML/TinyMLLexer.o TinyML/TinyMLTree.o TinyML/TinyMLPrintf.o \
     TinyML/TinyMLParser.o TinyML/TinyMLTypes.o TinyML/TinyMLMachine.o \
@@ -250,21 +235,18 @@ ml.start.o: $STDLIB $ML_UNITS
 ml: $CRT $MLRT ml.start.o $STDLIB $ML_UNITS $MLEND
 	$LD -map -s -n -a 32 -o $target $prereq
 
-# prof
 PROF_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibMachine.o \
     TinyProfiler.o
 prof.start.o: $STDLIB $PROF_UNITS
 prof: $CRT $MLRT prof.start.o $STDLIB $PROF_UNITS $MLEND
 	$LD -map -s -n -o $target $prereq
 
-# trace
 TRACE_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyTracer.o \
     user/trace.o
 trace.start.o: $STDLIB $TRACE_UNITS
 trace: $CRT $MLRT trace.start.o $STDLIB $TRACE_UNITS $MLEND
 	$LD -map -s -n -o $target $prereq
 
-# debug
 DEBUG_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibDraw.o \
     TinyLibPlayground.o TinyLibGUI.o TinyLibMachine.o TinyDebugger.o \
     user/debug.o
@@ -279,27 +261,19 @@ debug: $CRT $MLRT debug.start.o $STDLIB $DEBUG_UNITS $MLEND
 # windows, the window system; emacs; office and troff, which prints its
 # documents; www, the browser; play, tetris, square, calc and temp, on
 # the playground; bigmem, a test of a big memory.
-# Each: its units (X_UNITS), its start made of them (X.start.o, by
-# ml: TinyML/TinyMLLink.mli), and the program linked by ld: the C
-# runtime, ML's, the start, the library, its units, the end (the
-# libraries before the units that use them, OCaml's rule). Its units'
-# rules are .depend's (at the end).
 
-# windows
 WINDOWS_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibDraw.o \
     TinyWindows.o user/windows.o
 windows.start.o: $STDLIB $WINDOWS_UNITS
 windows: $CRT $MLRT windows.start.o $STDLIB $WINDOWS_UNITS $MLEND
 	$LD -map -s -n -o $target $prereq
 
-# emacs
 EMACS_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibDraw.o \
     TinyLibPlayground.o TinyLibGUI.o TinyEditorScreen.o user/emacs.o
 emacs.start.o: $STDLIB $EMACS_UNITS
 emacs: $CRT $MLRT emacs.start.o $STDLIB $EMACS_UNITS $MLEND
 	$LD -map -s -n -o $target $prereq
 
-# office
 OFFICE_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibDraw.o \
     TinyLibPlayground.o TinyLibGUI.o TinyOffice/TinyOfficeModel.o \
     TinyOffice/TinyOfficeText.o TinyOffice/TinyOfficeSheet.o \
@@ -310,7 +284,6 @@ office.start.o: $STDLIB $OFFICE_UNITS
 office: $CRT $MLRT office.start.o $STDLIB $OFFICE_UNITS $MLEND
 	$LD -map -s -n -o $target $prereq
 
-# troff
 TROFF_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibDraw.o \
     TinyLibPlayground.o TinyLibGUI.o TinyOffice/TinyOfficeModel.o \
     TinyOffice/TinyOfficeText.o TinyOffice/TinyOfficeSheet.o \
@@ -321,7 +294,6 @@ troff.start.o: $STDLIB $TROFF_UNITS
 troff: $CRT $MLRT troff.start.o $STDLIB $TROFF_UNITS $MLEND
 	$LD -map -s -n -o $target $prereq
 
-# www
 WWW_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibDraw.o \
     TinyLibPlayground.o TinyLibGUI.o TinyBrowser/TinyBrowserText.o \
     TinyBrowser/TinyBrowserTokens.o TinyBrowser/TinyBrowserLines.o \
@@ -332,42 +304,36 @@ www.start.o: $STDLIB $WWW_UNITS
 www: $CRT $MLRT www.start.o $STDLIB $WWW_UNITS $MLEND
 	$LD -map -s -n -a 10 -o $target $prereq
 
-# play
 PLAY_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibDraw.o \
     TinyLibPlayground.o TinyLibGUI.o TinyPlay.o user/play.o
 play.start.o: $STDLIB $PLAY_UNITS
 play: $CRT $MLRT play.start.o $STDLIB $PLAY_UNITS $MLEND
 	$LD -map -s -n -a 4 -o $target $prereq
 
-# tetris
 TETRIS_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibDraw.o \
     TinyLibPlayground.o TinyAppTetris.o user/tetris.o
 tetris.start.o: $STDLIB $TETRIS_UNITS
 tetris: $CRT $MLRT tetris.start.o $STDLIB $TETRIS_UNITS $MLEND
 	$LD -map -s -n -o $target $prereq
 
-# square
 SQUARE_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibDraw.o \
     TinyLibPlayground.o TinyAppSquare.o user/square.o
 square.start.o: $STDLIB $SQUARE_UNITS
 square: $CRT $MLRT square.start.o $STDLIB $SQUARE_UNITS $MLEND
 	$LD -map -s -n -o $target $prereq
 
-# calc
 CALC_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibDraw.o \
     TinyLibPlayground.o TinyLibGUI.o TinyAppCalculator.o user/calc.o
 calc.start.o: $STDLIB $CALC_UNITS
 calc: $CRT $MLRT calc.start.o $STDLIB $CALC_UNITS $MLEND
 	$LD -map -s -n -o $target $prereq
 
-# temp
 TEMP_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibDraw.o \
     TinyLibPlayground.o TinyLibGUI.o TinyAppTemperature.o user/temp.o
 temp.start.o: $STDLIB $TEMP_UNITS
 temp: $CRT $MLRT temp.start.o $STDLIB $TEMP_UNITS $MLEND
 	$LD -map -s -n -o $target $prereq
 
-# bigmem
 BIGMEM_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o user/bigmem.o
 bigmem.start.o: $STDLIB $BIGMEM_UNITS
 bigmem: $CRT $MLRT bigmem.start.o $STDLIB $BIGMEM_UNITS $MLEND

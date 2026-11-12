@@ -21,17 +21,13 @@
 # TinyC/; a program at the top, by its name (rc, build, ml). `build
 # clean` removes them.
 #
-# The tools are tiny-kernel's: ml (tiny-ml), cc (tiny-cc), as
-# (tiny-as), ld (tiny-ld), ar (tiny-ar), build (tiny-build).
-# On the host they are tiny-ml and so on: a directory of links named
-# ml, cc, as, ld, ar and build first in the PATH runs this file there
-# too. A recipe is rc's, on both: tiny-build runs it with tiny-shell on
-# the host, /bin/rc on tiny-kernel.
-#
-# coupling: TinyKernel/Makefile says the same, its lists (CORE, UNITS_x
-# a program's units, I_x a unit's interfaces, MEM_x, KUNITS): a
-# change to one is a change to the other, until the Makefile is made
-# from this file (the plan's last step).
+# The tools are tiny-kernel's: ml, cc, as, ld, ar, build (ML, CC...
+# below). On the host they are tiny-ml, tiny-cc and so on, the same
+# names after tiny-: tiny-build TINY=tiny- runs this file there (or a
+# directory of links named ml, cc... first in the PATH, as
+# TinyKernel/Makefile's build in its copy of tiny/). A recipe is rc's,
+# on both: tiny-build runs it with tiny-shell on the host, /bin/rc on
+# tiny-kernel.
 #
 # Its problems, today's tools':
 # - CORE, the library's units, said here and in TinyLibCore/Buildfile:
@@ -46,6 +42,16 @@ PROGS = sh rc emacs office troff play mltests paint windows square tetris \
     ar cc ml trace debug
 
 all: $PROGS kernel.img
+
+# the tools, by their names on tiny-kernel; on the host tiny-ml... by
+# tiny-build TINY=tiny- (or each, as tiny-build ML=../ml.exe)
+TINY =
+ML = ${TINY}ml
+CC = ${TINY}cc
+AS = ${TINY}as
+LD = ${TINY}ld
+AR = ${TINY}ar
+BUILD = ${TINY}build
 
 
 #############################################################################
@@ -72,7 +78,7 @@ STDLIB = TinyLibCore/stdlib.a
 INCLUDES = -I . -I TinyLibSystem/tinykernel -I TinyC -I TinyML -I TinyOffice \
     -I TinyBrowser -I TinyKernel -I user
 %.o: %.ml $STDLIB
-	ml -c -L TinyLibCore $INCLUDES -o $target $stem.ml
+	$ML -c -L TinyLibCore $INCLUDES -o $target $stem.ml
 %.tmi: %.o
 
 # an ML program's start, what only the whole program can make (its
@@ -82,14 +88,14 @@ INCLUDES = -I . -I TinyLibSystem/tinykernel -I TinyC -I TinyML -I TinyOffice \
 # program's line below (P.start.o: $STDLIB $P_UNITS), linked right
 # after the ML runtime, which calls it
 %.start.o:
-	ml -o $target $prereq
+	$ML -o $target $prereq
 
 # C, by tiny-cc; assembly written by hand, by tiny-as (the
 # compilers write their objects themselves)
 %.o: %.c
-	cc -o $target $stem.c
+	$CC -o $target $stem.c
 %.o: %.s
-	as -o $target $stem.s
+	$AS -o $target $stem.s
 
 
 #############################################################################
@@ -123,7 +129,7 @@ TinyLibSystem/tinykernel/mlsys.o: TinyLibSystem/tinykernel/mlsys.c runtime/ml.c 
 # coupling: CORE is TinyLibCore/Buildfile's.
 $STDLIB: ${CORE:%=TinyLibCore/%.ml} ${CORE:%=TinyLibCore/%.mli} \
     TinyLibCore/Buildfile
-	cd TinyLibCore && build
+	cd TinyLibCore && $BUILD ML=^$ML AR=^$AR
 
 
 #############################################################################
@@ -154,39 +160,39 @@ $STDLIB: ${CORE:%=TinyLibCore/%.ml} ${CORE:%=TinyLibCore/%.mli} \
 RC_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyShell.o
 rc.start.o: $STDLIB $RC_UNITS
 rc: $CRT $MLRT rc.start.o $STDLIB $RC_UNITS $MLEND
-	ld -map -s -n -o $target $prereq
+	$LD -map -s -n -o $target $prereq
 
 # utils
 UTILS_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibRegex.o \
     TinyUtilities.o
 utils.start.o: $STDLIB $UTILS_UNITS
 utils: $CRT $MLRT utils.start.o $STDLIB $UTILS_UNITS $MLEND
-	ld -map -s -n -o $target $prereq
+	$LD -map -s -n -o $target $prereq
 
 # ed
 ED_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibRegex.o \
     TinyEditorLine.o
 ed.start.o: $STDLIB $ED_UNITS
 ed: $CRT $MLRT ed.start.o $STDLIB $ED_UNITS $MLEND
-	ld -map -s -n -o $target $prereq
+	$LD -map -s -n -o $target $prereq
 
 # db
 DB_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyDatabase.o
 db.start.o: $STDLIB $DB_UNITS
 db: $CRT $MLRT db.start.o $STDLIB $DB_UNITS $MLEND
-	ld -map -s -n -o $target $prereq
+	$LD -map -s -n -o $target $prereq
 
 # vcs
 VCS_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyVCS.o
 vcs.start.o: $STDLIB $VCS_UNITS
 vcs: $CRT $MLRT vcs.start.o $STDLIB $VCS_UNITS $MLEND
-	ld -map -s -n -o $target $prereq
+	$LD -map -s -n -o $target $prereq
 
 # build
 BUILD_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyBuildSystem.o
 build.start.o: $STDLIB $BUILD_UNITS
 build: $CRT $MLRT build.start.o $STDLIB $BUILD_UNITS $MLEND
-	ld -map -s -n -a 16 -o $target $prereq
+	$LD -map -s -n -a 16 -o $target $prereq
 
 #############################################################################
 # The toolchain, and the tools of the machine's code
@@ -205,21 +211,21 @@ AS_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibMachine.o \
     TinyAssembler.o
 as.start.o: $STDLIB $AS_UNITS
 as: $CRT $MLRT as.start.o $STDLIB $AS_UNITS $MLEND
-	ld -map -s -n -a 32 -o $target $prereq
+	$LD -map -s -n -a 32 -o $target $prereq
 
 # ld
 LD_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibMachine.o \
     TinyLinker.o
 ld.start.o: $STDLIB $LD_UNITS
 ld: $CRT $MLRT ld.start.o $STDLIB $LD_UNITS $MLEND
-	ld -map -s -n -a 64 -o $target $prereq
+	$LD -map -s -n -a 64 -o $target $prereq
 
 # ar
 AR_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibMachine.o \
     TinyArchiver.o
 ar.start.o: $STDLIB $AR_UNITS
 ar: $CRT $MLRT ar.start.o $STDLIB $AR_UNITS $MLEND
-	ld -map -s -n -a 4 -o $target $prereq
+	$LD -map -s -n -a 4 -o $target $prereq
 
 # cc
 CC_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibMachine.o \
@@ -227,7 +233,7 @@ CC_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibMachine.o \
     TinyC/TinyCLower.o TinyC/TinyCParser.o TinyC/TinyCMachine.o TinyC.o
 cc.start.o: $STDLIB $CC_UNITS
 cc: $CRT $MLRT cc.start.o $STDLIB $CC_UNITS $MLEND
-	ld -map -s -n -a 16 -o $target $prereq
+	$LD -map -s -n -a 16 -o $target $prereq
 
 # ml
 ML_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibMachine.o \
@@ -236,21 +242,21 @@ ML_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibMachine.o \
     TinyML/TinyMLCompile.o TinyML/TinyMLLink.o TinyML.o
 ml.start.o: $STDLIB $ML_UNITS
 ml: $CRT $MLRT ml.start.o $STDLIB $ML_UNITS $MLEND
-	ld -map -s -n -a 32 -o $target $prereq
+	$LD -map -s -n -a 32 -o $target $prereq
 
 # prof
 PROF_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibMachine.o \
     TinyProfiler.o
 prof.start.o: $STDLIB $PROF_UNITS
 prof: $CRT $MLRT prof.start.o $STDLIB $PROF_UNITS $MLEND
-	ld -map -s -n -o $target $prereq
+	$LD -map -s -n -o $target $prereq
 
 # trace
 TRACE_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyTracer.o \
     user/trace.o
 trace.start.o: $STDLIB $TRACE_UNITS
 trace: $CRT $MLRT trace.start.o $STDLIB $TRACE_UNITS $MLEND
-	ld -map -s -n -o $target $prereq
+	$LD -map -s -n -o $target $prereq
 
 # debug
 DEBUG_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibDraw.o \
@@ -258,7 +264,7 @@ DEBUG_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibDraw.o \
     user/debug.o
 debug.start.o: $STDLIB $DEBUG_UNITS
 debug: $CRT $MLRT debug.start.o $STDLIB $DEBUG_UNITS $MLEND
-	ld -map -s -n -o $target $prereq
+	$LD -map -s -n -o $target $prereq
 
 #############################################################################
 # The window's programs
@@ -278,14 +284,14 @@ WINDOWS_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibDraw.o \
     TinyWindows.o user/windows.o
 windows.start.o: $STDLIB $WINDOWS_UNITS
 windows: $CRT $MLRT windows.start.o $STDLIB $WINDOWS_UNITS $MLEND
-	ld -map -s -n -o $target $prereq
+	$LD -map -s -n -o $target $prereq
 
 # emacs
 EMACS_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibDraw.o \
     TinyLibPlayground.o TinyLibGUI.o TinyEditorScreen.o user/emacs.o
 emacs.start.o: $STDLIB $EMACS_UNITS
 emacs: $CRT $MLRT emacs.start.o $STDLIB $EMACS_UNITS $MLEND
-	ld -map -s -n -o $target $prereq
+	$LD -map -s -n -o $target $prereq
 
 # office
 OFFICE_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibDraw.o \
@@ -296,7 +302,7 @@ OFFICE_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibDraw.o \
     user/office.o
 office.start.o: $STDLIB $OFFICE_UNITS
 office: $CRT $MLRT office.start.o $STDLIB $OFFICE_UNITS $MLEND
-	ld -map -s -n -o $target $prereq
+	$LD -map -s -n -o $target $prereq
 
 # troff
 TROFF_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibDraw.o \
@@ -307,7 +313,7 @@ TROFF_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibDraw.o \
     user/troff.o
 troff.start.o: $STDLIB $TROFF_UNITS
 troff: $CRT $MLRT troff.start.o $STDLIB $TROFF_UNITS $MLEND
-	ld -map -s -n -o $target $prereq
+	$LD -map -s -n -o $target $prereq
 
 # www
 WWW_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibDraw.o \
@@ -318,48 +324,48 @@ WWW_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibDraw.o \
     TinyBrowser.o user/www.o
 www.start.o: $STDLIB $WWW_UNITS
 www: $CRT $MLRT www.start.o $STDLIB $WWW_UNITS $MLEND
-	ld -map -s -n -a 10 -o $target $prereq
+	$LD -map -s -n -a 10 -o $target $prereq
 
 # play
 PLAY_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibDraw.o \
     TinyLibPlayground.o TinyLibGUI.o TinyPlay.o user/play.o
 play.start.o: $STDLIB $PLAY_UNITS
 play: $CRT $MLRT play.start.o $STDLIB $PLAY_UNITS $MLEND
-	ld -map -s -n -a 4 -o $target $prereq
+	$LD -map -s -n -a 4 -o $target $prereq
 
 # tetris
 TETRIS_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibDraw.o \
     TinyLibPlayground.o TinyAppTetris.o user/tetris.o
 tetris.start.o: $STDLIB $TETRIS_UNITS
 tetris: $CRT $MLRT tetris.start.o $STDLIB $TETRIS_UNITS $MLEND
-	ld -map -s -n -o $target $prereq
+	$LD -map -s -n -o $target $prereq
 
 # square
 SQUARE_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibDraw.o \
     TinyLibPlayground.o TinyAppSquare.o user/square.o
 square.start.o: $STDLIB $SQUARE_UNITS
 square: $CRT $MLRT square.start.o $STDLIB $SQUARE_UNITS $MLEND
-	ld -map -s -n -o $target $prereq
+	$LD -map -s -n -o $target $prereq
 
 # calc
 CALC_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibDraw.o \
     TinyLibPlayground.o TinyLibGUI.o TinyAppCalculator.o user/calc.o
 calc.start.o: $STDLIB $CALC_UNITS
 calc: $CRT $MLRT calc.start.o $STDLIB $CALC_UNITS $MLEND
-	ld -map -s -n -o $target $prereq
+	$LD -map -s -n -o $target $prereq
 
 # temp
 TEMP_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibDraw.o \
     TinyLibPlayground.o TinyLibGUI.o TinyAppTemperature.o user/temp.o
 temp.start.o: $STDLIB $TEMP_UNITS
 temp: $CRT $MLRT temp.start.o $STDLIB $TEMP_UNITS $MLEND
-	ld -map -s -n -o $target $prereq
+	$LD -map -s -n -o $target $prereq
 
 # bigmem
 BIGMEM_UNITS = TinyLibSystem/tinykernel/TinyLibSystem.o user/bigmem.o
 bigmem.start.o: $STDLIB $BIGMEM_UNITS
 bigmem: $CRT $MLRT bigmem.start.o $STDLIB $BIGMEM_UNITS $MLEND
-	ld -map -s -n -a 8 -o $target $prereq
+	$LD -map -s -n -a 8 -o $target $prereq
 
 #############################################################################
 # The programs in C
@@ -370,25 +376,25 @@ bigmem: $CRT $MLRT bigmem.start.o $STDLIB $BIGMEM_UNITS $MLEND
 # net.c, which dials a name); paint, which draws (with draw.c)
 TinyKernel/user/sh.o: TinyKernel/user/sh.c TinyKernel/libc/user.h
 sh: $CRT TinyKernel/user/sh.o
-	ld -map -s -n -o $target $prereq
+	$LD -map -s -n -o $target $prereq
 TinyKernel/user/mltests.o: TinyKernel/user/mltests.c TinyKernel/libc/user.h
 mltests: $CRT TinyKernel/user/mltests.o
-	ld -map -s -n -o $target $prereq
+	$LD -map -s -n -o $target $prereq
 TinyKernel/user/ping.o: TinyKernel/user/ping.c TinyKernel/libc/user.h
 ping: $CRT TinyKernel/user/ping.o
-	ld -map -s -n -o $target $prereq
+	$LD -map -s -n -o $target $prereq
 TinyKernel/user/get.o: TinyKernel/user/get.c TinyKernel/libc/user.h
 get: $CRT TinyKernel/libc/net.o TinyKernel/user/get.o
-	ld -map -s -n -o $target $prereq
+	$LD -map -s -n -o $target $prereq
 TinyKernel/user/put.o: TinyKernel/user/put.c TinyKernel/libc/user.h
 put: $CRT TinyKernel/libc/net.o TinyKernel/user/put.o
-	ld -map -s -n -o $target $prereq
+	$LD -map -s -n -o $target $prereq
 TinyKernel/user/httpd.o: TinyKernel/user/httpd.c TinyKernel/libc/user.h
 httpd: $CRT TinyKernel/user/httpd.o
-	ld -map -s -n -o $target $prereq
+	$LD -map -s -n -o $target $prereq
 TinyKernel/user/paint.o: TinyKernel/user/paint.c TinyKernel/libc/user.h TinyKernel/libc/draw.h
 paint: $CRT TinyKernel/libc/draw.o TinyKernel/user/paint.o
-	ld -map -s -n -o $target $prereq
+	$LD -map -s -n -o $target $prereq
 
 #############################################################################
 # The kernel
@@ -413,7 +419,7 @@ kernel.start.o: $STDLIB $KERNEL_UNITS
 kernel.img: TinyKernel/entry.o runtime/udivmod.o TinyKernel/runtime.o \
     TinyKernel/draw.o TinyKernel/memory.o TinyKernel/font.o kernel.start.o \
     $STDLIB $KERNEL_UNITS $MLEND
-	ld -map -o $target $prereq
+	$LD -map -o $target $prereq
 
 #############################################################################
 # The image
@@ -472,7 +478,7 @@ boot.img: kernel.img $PROGS $EXAMPLES $STDLIB $LIBC $LIBML
 # `build depend` makes it again after a unit names another one, or a
 # unit is added.
 depend:
-	ml -depend $INCLUDES *.ml TinyLibSystem/tinykernel/*.ml TinyC/*.ml TinyML/*.ml TinyOffice/*.ml TinyBrowser/*.ml TinyKernel/*.ml user/*.ml > .depend
+	$ML -depend $INCLUDES *.ml TinyLibSystem/tinykernel/*.ml TinyC/*.ml TinyML/*.ml TinyOffice/*.ml TinyBrowser/*.ml TinyKernel/*.ml user/*.ml > .depend
 
 <.depend
 
@@ -483,7 +489,7 @@ depend:
 #############################################################################
 
 clean:
-	cd TinyLibCore && build clean
+	cd TinyLibCore && $BUILD clean
 	rm -f *.o *.tmi TinyBrowser/*.o TinyBrowser/*.tmi TinyC/*.o TinyC/*.tmi \
 	    TinyKernel/*.o TinyKernel/*.tmi TinyKernel/libc/*.o \
 	    TinyKernel/libc/*.tmi TinyKernel/user/*.o TinyKernel/user/*.tmi \

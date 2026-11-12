@@ -169,6 +169,16 @@ printf 'X = a b\nY = ${X:a=b}\n' > Buildfile
 check "a substitution with no %" "tiny-build: \${...:a=...}: no % in the pattern
 [exit 1]" "$TB"
 
+# NAME=value on the command line, over the Buildfile's (mk's): a
+# variable of the file set before the lines are read, its own
+# assignment left, what is made of it too (TINY=tiny-, the host's tools)
+fresh
+printf 'TINY =\nML = ${TINY}ml\nshow:\n\techo $ML\n' > Buildfile
+check "a variable of the file" "echo ml
+ml" "$TB" show
+check "and given on the command line" "echo tiny-ml
+tiny-ml" "$TB" TINY=tiny- show
+
 # a failing recipe: what depends on it does not run
 fresh
 printf 'all: bad good\n\techo all\nbad:\n\tfalse\ngood:\n\techo good\n' > Buildfile

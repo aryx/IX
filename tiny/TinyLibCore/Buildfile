@@ -6,8 +6,15 @@
 # (ml -L TinyLibCore).
 # Called from ../Buildfile by `cd TinyLibCore && build`.
 #
-#     build            stdlib.a, and the units' .o and .tmi
-#     build depend     .depend again, after a unit names another one
+#     build                  stdlib.a, and the units' .o and .tmi
+#     build depend           .depend again, after a unit names another one
+#     tiny-build TINY=tiny-  the same on the host, by tiny-ml and tiny-ar
+
+# the tools, tiny-kernel's names, the host's by TINY=tiny- (the top
+# Buildfile gives its own, ML=... AR=...)
+TINY =
+ML = ${TINY}ml
+AR = ${TINY}ar
 
 # its units, in the order they start in: the archive's, which every
 # program links in it (Stdlib first: what the others call)
@@ -16,18 +23,18 @@ CORE = Stdlib Char Seq List String Bytes Array Option Int32 Int64 \
     In_channel Out_channel Chan Logs
 
 stdlib.a: ${CORE:%=%.o}
-	ar -o $target $prereq
+	$AR -o $target $prereq
 
 # a unit, with the interfaces of the units it names, found here (-I .),
 # Stdlib's first, as OCaml opens it; -nostdlib: no library yet, it is
 # being made. Which interfaces: its line in .depend
 %.o: %.ml
-	ml -c -nostdlib -I . -o $target $stem.ml
+	$ML -c -nostdlib -I . -o $target $stem.ml
 %.tmi: %.o
 
 # the units' dependencies, written by ml -depend as ocamldep writes OCaml's
 depend:
-	ml -depend -I . *.ml > .depend
+	$ML -depend -I . *.ml > .depend
 
 <.depend
 

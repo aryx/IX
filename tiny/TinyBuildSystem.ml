@@ -7,7 +7,7 @@ open Common
 module TSys = TinyLibSystem
 
 let usage =
-  "usage: tiny-build [-f Buildfile] [-j N] [-n] [-g] [-t] [target ...]"
+  "usage: tiny-build [-f Buildfile] [-j N] [-n] [-g] [-t] [NAME=value ...] [target ...]"
 
 (* -h: the usage, and a Buildfile's five kinds of lines, by example *)
 let help = usage ^ {|
@@ -18,6 +18,9 @@ N recipes at once (-j); up to date by content, not time (the stamps kept in
 -t: each recipe's time as it ends, then the times by kind of target (bin/*,
 ml/*.s), and what was not a recipe's (the digests, the graph); with -j,
 the recipes' sum and how many ran at once on average.
+A NAME=value is that variable's value, over the Buildfile's (mk's): tiny-build
+TINY=tiny- on the host, where the tools are tiny-ml, tiny-cc..., for a
+Buildfile that says ${TINY}ml.
 
 A Buildfile's five kinds of lines, and that is all the syntax:
   # a comment
@@ -158,9 +161,12 @@ let expand keep (vars : vars) (s : string) : string =
 
 (* the rules, in order, and the variables; [read] gives an included
  * file's text (None: it doesn't exist yet, e.g. a generated .depend) *)
-let parse (read : string -> string option) (text : string) :
-    rule list * vars =
+let parse (fixed : (string * string list) list) (read : string -> string option)
+    (text : string) : rule list * vars =
   let vars = Hashtbl.create 17 and rules = ref [] in
+  (* the command line's, NAME=value, before the file's and over them, as
+   * mk's: tiny-build TINY=tiny- for the host's tools *)
+  List.iter (fun (k, v) -> Hashtbl.replace vars k v) fixed;
   (* a backslash-newline continues a line, as ocamldep writes them *)
   let lines text =
     let n = String.length text and b = Buffer.create (String.length text) in
@@ -202,7 +208,9 @@ let parse (read : string -> string option) (text : string) :
           !found in
         match outside '=', outside ':' with
         | Some i, j when (match j with Some j -> i < j | None -> true) ->
-            Hashtbl.replace vars (String.trim (String.sub l 0 i)) (after i);
+            let name = String.trim (String.sub l 0 i) in
+            if not (List.mem_assoc name fixed) then
+              Hashtbl.replace vars name (after i);
             go rest
         | _, Some j ->
             let rec recipe acc = function
@@ -600,7 +608,7 @@ let run (caps : < caps; .. >) (argv : string array) : Exit.t =
   let file = ref "Buildfile" and jobs = ref 1 and dry = ref false
   and dot = ref false and timed = ref false in
   let began = TSys.millis caps in
-  let targets = ref [] in
+  let targets = ref [] and fixed = ref [] in
   (* old: Arg.parse_argv, for these four options *)
   let bad o =
     raise (Bad ("tiny-build: unknown option '" ^ o ^ "'\n" ^ usage
@@ -617,6 +625,11 @@ let run (caps : < caps; .. >) (argv : string array) : Exit.t =
     | "-g" :: rest -> dot := true; options rest
     | "-t" :: rest -> timed := true; options rest
     | o :: _ when o <> "" && o.[0] = '-' -> bad o
+    | a :: rest when String.contains a '=' ->
+        let i = String.index a '=' in
+        fixed := !fixed @ [ String.sub a 0 i,
+                            words (String.sub a (i + 1) (String.length a - i - 1)) ];
+        options rest
     | t :: rest -> targets := !targets @ [ t ]; options rest
     | [] -> ()
   in
@@ -627,7 +640,7 @@ let run (caps : < caps; .. >) (argv : string array) : Exit.t =
       | Some s -> s
       | None -> error ("no " ^ !file)
     in
-    let rules, vars = parse (read_file caps) text in
+    let rules, vars = parse !fixed (read_file caps) text in
     let targets =
       match !targets, rules with
       | [], r :: _ -> [ show_target r.target ]

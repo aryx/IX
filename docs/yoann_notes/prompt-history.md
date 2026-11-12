@@ -71738,3 +71738,82 @@ Claude removed the image's two `/lib` Buildfiles and switched the top Buildfile'
 Claude updated the examples Buildfile and `hello.c`'s comment, then re-recorded the emacscolors screen and toolchain session 28.
 Both `check` runs passed, with the toolchain session compiling `ping.c` by hand using `-I /lib/c`.
 Claude started a `build install` trial on a grown disk copy, and tiny-kernel's own run is still in progress.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 14:53
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the install change as `d1d70ffc`, covering 12 files for the `ix` tiny tree.
+Claude's `install` copies the runtime, calls, headers and library into `$LIB`, replacing the image's two `/lib` Buildfiles and the `libs` target.
+Claude made `user.h` include `libc.h` by name and switched the examples to `-I /lib/c`, updating the toolchain and session tests.
+`make check` and self-quick pass, and `build install` works on a throwaway tiny-kernel copy, with `hello` running against `/lib/c`.
+Open items remain: the fragile emacscolors checksum test and the roughly 510-line `tiny/Buildfile`.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 14:55
+
+**Yoann:**
+
+> can we have an hellodraw.c in examples/ ?
+
+------------------------------------------------------------------------
+
+## 2026-11-12 14:56
+
+**Yoann:**
+
+> and then hellodraw.ml too?
+
+------------------------------------------------------------------------
+
+## 2026-11-12 14:56
+
+**Yoann:**
+
+> and helloplay.ml
+
+------------------------------------------------------------------------
+
+## 2026-11-12 14:56
+
+**Yoann:**
+
+> and hellogui.ml
+
+------------------------------------------------------------------------
+
+## 2026-11-12 14:56
+
+**Yoann:**
+
+> or maybe no need for those hello prefix, something simpler
+
+------------------------------------------------------------------------
+
+## 2026-11-12 14:58
+
+**Yoann:**
+
+> and maybe one toy example for the network too? C and ml ? (I saw a net.c)
+
+------------------------------------------------------------------------
+
+## 2026-11-12 15:02
+
+**Yoann:**
+
+> why listing manually the EXAMPLES ? they are now simply all the files under examples/  no?
+
+**Claude (summary):**
+
+Claude added six new example programs under `tiny/examples/`, each a C and ML pair where both make sense, all building and running on tiny-kernel.
+Claude also added four ML libraries to `/lib/ml`, fixed the `draw.h` screen size, and moved session 28 to `build hello helloml`.
+Claude noted `boot.img` is now 9.15 MB, close to the Makefile's 10 MB limit, so future additions need that limit revisited.
+Claude proposed adding a glob to tiny-build to replace the `EXAMPLES` list, asking whether to add it or commit first.

@@ -1,15 +1,24 @@
 # Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyBuildSystem.ml)
 #
-# hello, from hello.c and square.s, helloml, from helloml.ml, and spin,
-# from spin.s, built on tiny-kernel by build in /examples (see hello.c,
-# helloml.ml and spin.s): all by default, or one by its name (build
-# helloml). /examples is this directory, the same files. What they link
-# besides their own objects is already built in /lib: /lib/c, C's
-# runtime and tiny-kernel's calls, start.o first (the machine starts
-# there); /lib/ml, ML's runtime (mlsys.o), the library (stdlib.a, its
-# units), and end.o, the program's end, last. They are built in /src
-# and copied there by its build install. -s puts the labels after the
-# image, the names debug shows; -map writes them beside it too.
+# Small programs to read, build and run on tiny-kernel, in /examples,
+# this directory, the same files; each its file's header:
+#
+#     C          ML           what
+#     hello.c    helloml.ml   a print (hello with square.s, in assembly)
+#     shapes.c   shapesml.ml  a picture drawn, the drawing's messages
+#     fetch.c    fetchml.ml   a document of another machine, by Gopher
+#                game.ml      a ball, on the playground (TinyLibPlayground)
+#                gui.ml       a counter, on the widgets (TinyLibGUI)
+#     spin.s                  prof's example, with spin.prof
+#
+# build: all of them; build gui: one by its name. What they link besides
+# their own objects is already built in /lib: /lib/c, C's runtime and
+# tiny-kernel's calls, start.o first (the machine starts there), drawing
+# and dialing; /lib/ml, ML's runtime (mlsys.o), the library (stdlib.a,
+# its units), the libraries a program that draws stands on, and end.o,
+# the program's end, last. They are built in /src and copied there by
+# its build install. -s puts the labels after the image, the names debug
+# shows; -map writes them beside it too.
 #
 # On the host, the same, the tools tiny-cc..., /lib tiny/lib (made by
 # tiny-build TINY=tiny- LIB=lib install in tiny/):
@@ -30,8 +39,19 @@ MLEND = ${LIB}/ml/end.o
 MLLIB = ${LIB}/ml
 # (user.h: the system's calls a C program makes, and libc.h)
 INC = ${LIB}/c
+# (draw.o: the drawing's messages, draw.h's)
+DRAW = ${LIB}/c/draw.o
+# (net.o: dial by an address or by a name, reach)
+NET = ${LIB}/c/net.o
+# the libraries an ML program that draws stands on, each after the ones
+# it uses: the system's calls, the drawing's messages, the playground,
+# the widgets
+SYS = ${LIB}/ml/TinyLibSystem.o
+DRAWLIB = ${LIB}/ml/TinyLibDraw.o
+PLAY = ${LIB}/ml/TinyLibPlayground.o
+GUI = ${LIB}/ml/TinyLibGUI.o
 
-all: hello helloml spin
+all: hello shapes fetch helloml shapesml fetchml game gui spin
 
 hello: hello.o square.o
 	$LD -map -s -n -o $target $CRT $prereq
@@ -41,12 +61,51 @@ hello.o: hello.c ${INC}/user.h
 square.o: square.s
 	$AS -o $target square.s
 
+shapes: $DRAW shapes.o
+	$LD -map -s -n -o $target $CRT $prereq
+shapes.o: shapes.c ${INC}/user.h ${INC}/draw.h
+	$CC -I $INC -o $target shapes.c
+
+fetch: $NET fetch.o
+	$LD -map -s -n -o $target $CRT $prereq
+fetch.o: fetch.c ${INC}/user.h
+	$CC -I $INC -o $target fetch.c
+
 helloml: helloml.o
 	$LD -map -s -n -o $target $CRT $MLRT $prereq $STDLIB $MLEND
 
 # (one unit: its code and its start in one object)
 helloml.o: helloml.ml
 	$ML -L $MLLIB -o $target helloml.ml
+
+# A program on libraries, as /src's: its unit compiled with their
+# interfaces (-I), its start made by ml from all its units (their
+# initializations in order, the globals' table), then linked by ld: the
+# runtimes, the start, the library, the units, the end
+%.o: %.ml
+	$ML -c -L $MLLIB -I $MLLIB -o $target $stem.ml
+%.start.o:
+	$ML -o $target $prereq
+
+SHAPESML_UNITS = $SYS $DRAWLIB shapesml.o
+shapesml.start.o: $STDLIB $SHAPESML_UNITS
+shapesml: $CRT $MLRT shapesml.start.o $STDLIB $SHAPESML_UNITS $MLEND
+	$LD -map -s -n -o $target $prereq
+
+FETCHML_UNITS = $SYS fetchml.o
+fetchml.start.o: $STDLIB $FETCHML_UNITS
+fetchml: $CRT $MLRT fetchml.start.o $STDLIB $FETCHML_UNITS $MLEND
+	$LD -map -s -n -o $target $prereq
+
+GAME_UNITS = $SYS $DRAWLIB $PLAY game.o
+game.start.o: $STDLIB $GAME_UNITS
+game: $CRT $MLRT game.start.o $STDLIB $GAME_UNITS $MLEND
+	$LD -map -s -n -o $target $prereq
+
+GUI_UNITS = $SYS $DRAWLIB $PLAY $GUI gui.o
+gui.start.o: $STDLIB $GUI_UNITS
+gui: $CRT $MLRT gui.start.o $STDLIB $GUI_UNITS $MLEND
+	$LD -map -s -n -o $target $prereq
 
 # spin alone, no runtime: prof's example, with spin.prof, where its
 # instructions went, which tiny-cpu -prof wrote on the host (tiny-kernel
@@ -62,4 +121,4 @@ spin.prof: spin
 	tiny-cpu -prof $target spin > /dev/null
 
 clean:
-	rm -f hello helloml spin *.o *.map
+	rm -f hello shapes fetch helloml shapesml fetchml game gui spin *.o *.tmi *.map

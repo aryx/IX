@@ -732,7 +732,7 @@ boot from what the image carries after the kernel:
 
     /bin        the programs (sh, rc, the utilities by their names, emacs, office, play, prof, db, vcs, build, trace, debug...)
     /dev        the devices: console, draw, mouse, audio (7.3)
-    /examples   tiny/examples/: programs to build (hello, helloml, spin and its profile), a page of the office's, a WAV
+    /examples   tiny/examples/: programs to build, in C and ML (hello, shapes, fetch; game, gui; spin and its profile), a page of the office's, a WAV
 
 A command without a `/` is a program of `/bin`, for `sh` and for `rc`
 (its `PATH`); the shell starts at `/`, where what is made goes until a

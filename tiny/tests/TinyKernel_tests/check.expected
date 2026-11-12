@@ -458,13 +458,12 @@ as -o square.o square.s
 ld -map -s -n -o hello /lib/c/start.o /lib/c/udivmod.o /lib/c/libc.o /lib/c/sys.o hello.o square.o
 ml -L /lib/ml -o helloml.o helloml.ml
 ld -map -s -n -o helloml /lib/c/start.o /lib/c/udivmod.o /lib/c/libc.o /lib/c/sys.o /lib/ml/mlsys.o helloml.o /lib/ml/stdlib.a /lib/ml/end.o
-as -o spin.o spin.s
-ld -map -o spin spin.o
 hello: the squares of 1 to 10 add up to 385
 sorted: 1 2 3 4 5 7 8 9
 the first over 5: 7
 200000 cells made, the last list from 2001 to 2100
-% tiny-build: all is up to date
+% tiny-build: hello is up to date
+tiny-build: helloml is up to date
 % hello: the squares of 1 to 10 add up to 385
 write(1, "hello: the squares of 1 to 10 ad"..., 44) = 44
 exit(0)

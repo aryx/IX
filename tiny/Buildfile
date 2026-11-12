@@ -431,18 +431,26 @@ UTILS = [ basename cat cmp cp date du echo grep kill ln ls mkdir mv ps pwd \
     rm seq sleep sort tail tee test touch walk wc xd
 # /examples: examples/, its files (sources, not what build makes there)
 EXAMPLES = examples/Buildfile examples/hello.c examples/square.s \
-    examples/helloml.ml examples/spin.s examples/spin.prof \
-    examples/report.ixd examples/korobeiniki.wav
+    examples/helloml.ml examples/shapes.c examples/shapesml.ml \
+    examples/fetch.c examples/fetchml.ml examples/game.ml examples/gui.ml \
+    examples/spin.s examples/spin.prof examples/report.ixd \
+    examples/korobeiniki.wav
 
 # /lib: what a program built on tiny-kernel links, already built here.
 # /lib/c, C's: the runtime, the system's calls, drawing and dialing,
 # and their headers (cc -I /lib/c: user.h, which includes libc.h).
-# /lib/ml, ML's: its runtime, the program's end, and the library, its
-# archive and its units' interfaces (ml -L /lib/ml)
+# /lib/ml, ML's: its runtime, the program's end, the library, its
+# archive and its units' interfaces (ml -L /lib/ml), and the libraries
+# a program that draws stands on, each its object and its interface
+# (ml -I /lib/ml): the system's calls, the drawing's messages, the
+# playground, the widgets
 LIBC = runtime/start.o runtime/udivmod.o runtime/libc.o \
     TinyKernel/libc/sys.o TinyKernel/libc/draw.o TinyKernel/libc/net.o \
     runtime/libc.h TinyKernel/libc/user.h TinyKernel/libc/draw.h
-LIBML = TinyLibSystem/tinykernel/mlsys.o TinyLibSystem/tinykernel/end.o
+MLLIBS = TinyLibSystem/tinykernel/TinyLibSystem.o TinyLibDraw.o \
+    TinyLibPlayground.o TinyLibGUI.o
+LIBML = TinyLibSystem/tinykernel/mlsys.o TinyLibSystem/tinykernel/end.o \
+    $MLLIBS ${MLLIBS:%.o=%.tmi}
 # (the .tmi made with stdlib.a, by TinyLibCore/Buildfile; not
 # prerequisites: this file's %.tmi would make them again)
 LIBUNITS = ${CORE:%=TinyLibCore/%.tmi} $STDLIB

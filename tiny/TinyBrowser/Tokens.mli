@@ -1,5 +1,5 @@
 (* The HTML tokenizer of TinyBrowser: a page's messages, as they come,
- * to its tags and its texts, which TinyBrowserHtml turns into lines.
+ * to its tags and its texts, which Html turns into lines.
  *
  * A message can end anywhere, even in the middle of a tag, of an
  * entity like &amp;, or of a multi-byte UTF-8 character. The reader
@@ -12,7 +12,7 @@
  * Comments, <!DOCTYPE> and <?xml?> are skipped; the content of <style>
  * and <script>, which is not HTML, is skipped to its end tag; of the
  * attributes only those the browser uses are kept (Parsoid's data-mw
- * can be kilobytes), their values made ASCII by TinyBrowserText.
+ * can be kilobytes), their values made ASCII by Charset.
  *
  * others:
  * the "tokenization" chapter of the HTML standard, a state machine,

@@ -161,7 +161,7 @@ local skeletons = import '../../skeletons.libsonnet';
         { at: 'comment:"This is the part of the web that the tiny machine does not do itself"', weight: 3 },
         { at: 'def:main', weight: 1 },
       ],
-      related: ['../TinyBrowser/TinyBrowserHttp.ml', '../../networking/'],
+      related: ['../TinyBrowser/Http.ml', '../../networking/'],
     },
     'TinyMachineFetch.ml': { digest: '88deb8eb3fde',
       summary: "The fetch: Http_client's GET, the body's framing undone; a picture decoded and reduced to the 256 colours.",

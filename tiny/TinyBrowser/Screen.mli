@@ -1,4 +1,4 @@
-(* TinyBrowserScreen: what www shows, and its drawing. TinyBrowser.ml's
+(* Screen: what www shows, and its drawing. TinyBrowser.ml's
  * browsing (where to go, what came, the keys and the mouse) changes the
  * records below and calls these to show it; the messages they make are
  * the kernel's drawing messages (TinyLibDraw), kept in [sc_msgs] and
@@ -93,7 +93,7 @@ type state =
   | Page_none of string
 
 type screen = {
-  mutable sc_page : TinyBrowserHtml.page;
+  mutable sc_page : Html.page;
   sc_nav : nav;
   sc_tools : tools;
   sc_cols : int;

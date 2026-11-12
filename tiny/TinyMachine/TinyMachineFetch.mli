@@ -9,10 +9,11 @@
  *     tiny-machine-fetch https://en.wikipedia.org/api/rest_v1/page/html/OCaml
  *
  * prints the answer on standard output, whatever the status (a 404's
- * page is a page), as TinyBrowserHttp's response: HTTP/1.0's status
- * line, the site's headers but those of the body's framing (its
- * length, gzip, chunks: undone here), then the body; and exits 0; if there is no answer at all, it prints why
- * on standard output, as one line starting with "www: ", and exits 1.
+ * page is a page), written by ix's Http.response_to_string: HTTP/1.0's
+ * status line, the site's headers but those of the body's framing (its
+ * length, gzip, chunks: undone here), then the body; and exits 0; if
+ * there is no answer at all, it prints why on standard output, as one
+ * line starting with "www: ", and exits 1.
  *
  *     tiny-machine-fetch -picture 250 188 https://.../250px-Award.jpg
  *

@@ -1,7 +1,5 @@
-(* The text of a page as tiny-machine's font can show it, and the few
- * string functions the reading needs: TinyBrowser's lowest part, under
- * TinyBrowserTokens (a tag's attributes, a page's text) and
- * TinyBrowserHtml (classes, styles, numbers).
+(* A page's characters as tiny-machine's font can show them: what
+ * Tokens reads a page's text with.
  *
  * The font has only 128 characters, so UTF-8 and HTML entities become
  * ASCII here: a dash becomes -, a curly quote a straight one, an
@@ -11,17 +9,6 @@
  *
  *     "Caf&eacute; &ndash; na\xc3\xafve"  ──►  "Cafe - naive"
  *)
-
-(* [find s pat i] is the position of pat in s, searching from i *)
-val find : string -> string -> int -> int option
-
-val is_space : char -> bool
-
-(* Is w one of the space-separated words of a class attribute? *)
-val has_class : string -> string -> bool
-
-(* an attribute's number, 0 when it is not one *)
-val number : string -> int
 
 (* Converts a text to ASCII: entities and UTF-8 characters become what
  * the font can show. *)

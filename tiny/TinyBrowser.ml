@@ -6,12 +6,12 @@ module TSys = TinyLibSystem
 open TinyLibDraw
 open TinyLibPlayground
 open TinyLibGUI
-open TinyBrowserText
-open TinyBrowserLines
-open TinyBrowserHtml
-open TinyBrowserAddress
-open TinyBrowserHttp
-open TinyBrowserScreen
+open Strings
+open Lines
+open Html
+open Url
+open Http
+open Screen
 
 (*****************************************************************************)
 (* The browsing *)

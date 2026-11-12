@@ -5,8 +5,7 @@
 (library
  (name tiny_browser_parts)
  (wrapped false)
- (modules TinyBrowserText TinyBrowserTokens TinyBrowserLines TinyBrowserHtml
-  TinyBrowserAddress TinyBrowserHttp))
+ (modules Strings Charset Tokens Lines Html Url Http))
 
 ; TinyBrowser.ml's screen: what it shows, drawn by TinyLibGUI's and the
 ; kernel's drawing messages (apart from the parts above, which the wire's
@@ -14,5 +13,5 @@
 (library
  (name tiny_browser_screen)
  (wrapped false)
- (modules TinyBrowserScreen)
+ (modules Screen)
  (libraries tiny_lib_gui tiny_browser_parts))

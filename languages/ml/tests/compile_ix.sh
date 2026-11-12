@@ -89,7 +89,10 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
   # build makes, TinyMLPrelude.ml: dune's)
   # (tiny/ and TinyLibSystem/, the interfaces, then its unix/: tiny-shell's TinyLibSystem is the Unix one, TinyLibSystem/tinykernel/'s is tiny-ml's)
   # (not TinyLibCore/: tiny-ml's standard library, whose List would be lib_core's)
-  tiny/*) incs[$root]="-I tiny -I tiny/TinyLibSystem -I tiny/TinyLibSystem/unix $(dirs tiny | sed -E 's|-I [^ ]*tiny/TinyLibCore ||g') -I _build/default/tiny";;
+  # (nor the directories of parts by short names, TinyML/ TinyC/ TinyOffice/ TinyBrowser/:
+  # each program's own, below, as tiny/Buildfile's X_INCLUDES; TinyBrowser/'s Http
+  # would be lib_networking's for tiny-machine-fetch)
+  tiny/*) incs[$root]="-I tiny -I tiny/TinyLibSystem -I tiny/TinyLibSystem/unix $(dirs tiny | sed -E 's#-I [^ ]*tiny/(TinyLibCore|TinyML|TinyC|TinyOffice|TinyBrowser) ##g') -I _build/default/tiny";;
   esac
   [ -z "${incs[$root]:-}" ] && incs[$root]=$(dirs $root)
   [ $root = kernels ] && [ -d $memdata ] && incs[$root]="${incs[$root]} -I $memdata"
@@ -120,9 +123,18 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
   [ $root = kernels/9pi/filesystems/user/dossrv ] && incs[$root]="$(dirs kernels/9pi/filesystems/user/dossrv) $(dirs kernels/9pi/filesystems/lib_fat)"
   # (lib_core/dotnet/: mini-ml -dotnet's runtime unit, whose externals
   # name .NET's members: compiled as -dotnet compiles it)
+  # (a tiny/ program's -I's, its parts' directory: a part finds its own first;
+  # user/office.ml too, mini-ml reading TinyOffice.mli's Model.office)
+  own=
+  case $f in
+  tiny/TinyML.ml) own="-I tiny/TinyML";;
+  tiny/TinyC.ml) own="-I tiny/TinyC";;
+  tiny/TinyOffice.ml|tiny/TinyTroff.ml|tiny/user/office.ml) own="-I tiny/TinyOffice";;
+  tiny/TinyBrowser.ml|tiny/TinyMachine.ml|tiny/TinyMachine/TinyMachinePeer.ml) own="-I tiny/TinyBrowser";;
+  esac
   case $f in
   lib_core/dotnet/*) err=$($ML -dotnet -L lib_core -o $W/dotnet.dll $f 2>&1 >/dev/null | head -1);;
-  *) err=$($ML -m 7 -o /dev/null ${incs[$root]} $shared $f 2>&1 >/dev/null | head -1);;
+  *) err=$($ML -m 7 -o /dev/null ${incs[$root]} $own $shared $f 2>&1 >/dev/null | head -1);;
   esac
   [ -z "$err" ] && continue
   bad[$d]=$((${bad[$d]:-0} + 1))

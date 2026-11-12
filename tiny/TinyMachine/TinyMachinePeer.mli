@@ -98,7 +98,7 @@ val lose : t -> int -> unit
 val messages : string -> string list
 
 (* A request "GET address HTTP/1.0" asks for a web page, for
- * tiny-kernel's browser (plan_tiny_browser.md; TinyBrowserHttp, a
+ * tiny-kernel's browser (plan_tiny_browser.md; TinyBrowser/Http.ml, a
  * proxy's request: the whole address on its line). The peer answers
  * with an HTTP/1.0 response: its status line and headers, the site's
  * (Content-Type, which www goes by), then the page's bytes, a message at
@@ -108,7 +108,7 @@ val messages : string -> string list
  * asks for, by [www_address], which turns what was typed into a URL. A
  * bare title (OCaml, Plan 9 from Bell Labs) is an English Wikipedia
  * article; a name with a dot and no scheme (example.com) is https://;
- * ?words a search (TinyBrowserAddress.absolute, www's own rules). A
+ * ?words a search (Url.absolute, www's own rules). A
  * Wikipedia article's address (/wiki/X) becomes its REST HTML
  * (/api/rest_v1/page/html/X): the article without the site's menus, and
  * the one a web page is allowed to fetch. A #fragment is dropped.
@@ -119,9 +119,9 @@ val messages : string -> string list
  * out. [www_kept_response] is the answer such a copy makes, its
  * Content-Type by its name's extension ([www_type]); [www_failed] the
  * answer when there is no page, a 502 whose text says why. *)
-val www_request : string -> TinyBrowserAddress.url option
-val www_address : string -> TinyBrowserAddress.url
-val www_kept : TinyBrowserAddress.url -> string option
+val www_request : string -> Url.url option
+val www_address : string -> Url.url
+val www_kept : Url.url -> string option
 val www_type : string -> string
 val www_kept_response : string -> string -> string
 val www_failed : string -> string
@@ -135,8 +135,8 @@ val www_failed : string -> string
  * name of the file that holds a kept copy: the address's last part,
  * without its ?query (250px-OCaml_Logo.svg.png). *)
 val www_picture_request :
-  string -> (int * int * TinyBrowserAddress.url) option
-val www_picture_kept : TinyBrowserAddress.url -> string option
+  string -> (int * int * Url.url) option
+val www_picture_kept : Url.url -> string option
 
 (* What "img w h address" is answered: a first message "t w h", then t
  * messages of text, then h messages of w bytes, a row of the picture

@@ -1,14 +1,18 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyBrowserHtml.mli *)
-open TinyBrowserText
-open TinyBrowserTokens
-open TinyBrowserLines
+(* See Html.mli *)
+open Strings
+open Tokens
+open Lines
 
 (*****************************************************************************)
 (* The tags *)
 (*****************************************************************************)
+
+(* Is w one of the space-separated words of a class attribute? *)
+let has_class classes w =
+  w <> "" && List.mem w (String.split_on_char ' ' classes)
 
 type got = Pic_unasked | Pic_asked | Pic_failed | Pic_rows of int
 

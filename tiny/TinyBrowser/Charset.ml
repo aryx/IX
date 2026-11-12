@@ -1,31 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyBrowserText.mli *)
-
-(*****************************************************************************)
-(* Strings *)
-(*****************************************************************************)
-
-let find s pat i : int option =
-  let n = String.length s and m = String.length pat in
-  let rec at j k = k >= m || (s.[j + k] = pat.[k] && at j (k + 1)) in
-  let rec go j =
-    if j + m > n then None else if at j 0 then Some j else go (j + 1) in
-  go i
-
-let is_space c = c = ' ' || c = '\n' || c = '\t' || c = '\r'
-
-(* Is w one of the space-separated words of a class attribute? *)
-let has_class classes w =
-  w <> "" && List.mem w (String.split_on_char ' ' classes)
-
-(* an attribute's number, 0 when it is not one *)
-let number s = match int_of_string_opt s with Some n -> n | None -> 0
-
-(*****************************************************************************)
-(* Characters *)
-(*****************************************************************************)
+(* See Charset.mli *)
 
 (* The Latin-1 letters from 0xc0 on, each without its accent; and
  * Latin Extended-A's, from 0x100 to 0x17f (the names of Central Europe:
@@ -109,7 +85,7 @@ let ascii s =
       let c = s.[!i] in
       if c = '&' then begin
         let j = ref (!i + 1) in
-        while !j < n && !j - !i < 12 && s.[!j] <> ';' && not (is_space s.[!j])
+        while !j < n && !j - !i < 12 && s.[!j] <> ';' && not (Strings.is_space s.[!j])
               && s.[!j] <> '&' do
           incr j
         done;
@@ -155,7 +131,7 @@ let ascii s =
 let safe_end s i n =
   let rec amp j =
     if j < i || j < n - 12 then n else if s.[j] = '&' then j
-    else if s.[j] = ';' || is_space s.[j] then n else amp (j - 1) in
+    else if s.[j] = ';' || Strings.is_space s.[j] then n else amp (j - 1) in
   let a = amp (n - 1) in
   let rec lead j =
     if j > i && j > n - 4 && Char.code s.[j] land 0xc0 = 0x80 then lead (j - 1)
@@ -164,5 +140,5 @@ let safe_end s i n =
   let l = if l < n && l + utf8_length (Char.code s.[l]) > n then l else n in
   (* Back up to just after the last space. *)
   let rec space j =
-    if j <= i then i else if is_space s.[j - 1] then j else space (j - 1) in
+    if j <= i then i else if Strings.is_space s.[j - 1] then j else space (j - 1) in
   space (min a l)

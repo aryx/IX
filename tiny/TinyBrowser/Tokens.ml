@@ -1,8 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyBrowserTokens.mli *)
-open TinyBrowserText
+(* See Tokens.mli *)
+open Strings
 
 (*****************************************************************************)
 (* Tokens *)
@@ -55,7 +55,7 @@ let tag s =
               let k = un j in
               j, k, k in
           if List.mem a wanted then
-            attrs next ((a, ascii (String.sub s v0 (v1 - v0))) :: acc)
+            attrs next ((a, Charset.ascii (String.sub s v0 (v1 - v0))) :: acc)
           else attrs next acc
         end
         else
@@ -126,10 +126,10 @@ let scan (r : reader) chunk last =
     else begin
       let j =
         match String.index_from_opt s i '<' with Some j -> j | None -> n in
-      let e = if j = n && not last then safe_end s i n else j in
+      let e = if j = n && not last then Charset.safe_end s i n else j in
       if e < j then keep e;
       let acc =
-        if e > i then Text (ascii (String.sub s i (e - i))) :: acc else acc in
+        if e > i then Text (Charset.ascii (String.sub s i (e - i))) :: acc else acc in
       if e < j then acc else go j acc
     end in
   List.rev (go 0 [])

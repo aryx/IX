@@ -1,14 +1,14 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyBrowserAddress.mli *)
-open TinyBrowserText
+(* See Url.mli *)
+open Strings
 
 (*****************************************************************************)
 (* Addresses *)
 (*****************************************************************************)
 
-(* an address, a URL's text (TinyBrowserAddress.mli) *)
+(* an address, a URL's text (Url.mli) *)
 type url = string
 
 (* an address and its #fragment, apart ("" when there is none) *)

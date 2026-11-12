@@ -1,8 +1,8 @@
 (* HTML, as TinyBrowser reads it: a page being read, the reading as a
  * whole (named after the language, as a browser's HTML parser is: what
- * each tag means is here). The tokens of TinyBrowserTokens given, one
+ * each tag means is here). The tokens of Tokens given, one
  * after the other, to a stack of open elements, and each word of a text
- * sent to TinyBrowserLines' flow (or to a table's cell, or to a large
+ * sent to Lines' flow (or to a table's cell, or to a large
  * heading). What the browser
  * keeps of a page is its lines, its title, its anchors and its
  * pictures; there is no tree.
@@ -47,7 +47,7 @@ val refresh : page -> string
 (* how many lines there are so far; the lines from the a-th to before
  * the b-th, from the top (what the screen shows) *)
 val count : page -> int
-val lines_between : page -> int -> int -> TinyBrowserLines.line list
+val lines_between : page -> int -> int -> Lines.line list
 
 (* the line where the element with that id starts, if it came *)
 val anchor : page -> string -> int option

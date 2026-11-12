@@ -1,13 +1,13 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyBrowserScreen.mli *)
+(* See Screen.mli *)
 module TSys = TinyLibSystem
 open TinyLibDraw
 open TinyLibPlayground
 open TinyLibGUI
-open TinyBrowserLines
-open TinyBrowserHtml
+open Lines
+open Html
 
 (*****************************************************************************)
 (* The screen *)

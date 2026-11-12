@@ -252,7 +252,7 @@ let fetch name k =
 let http_answer response bytes =
   let kind : Js.js_string Js.t Js.opt =
     call (get response "headers") "get" [| str "content-type" |] in
-  TinyBrowserHttp.response (get response "status")
+  Http.response (get response "status")
     (Js.Opt.case kind (fun () -> [])
        (fun k -> [ "Content-Type", Js.to_string k ]))
     bytes

@@ -169,10 +169,10 @@ let wikipedia url =
        | None -> None)
   | _ -> None
 
-(* (what was typed as www has it: TinyBrowserAddress.absolute) *)
+(* (what was typed as www has it: Url.absolute) *)
 let www_address typed =
   let url =
-    TinyBrowserAddress.absolute (fst (TinyBrowserAddress.fragment typed)) in
+    Url.absolute (fst (Url.fragment typed)) in
   match wikipedia url with
   | Some (host, title) -> "https://" ^ host ^ rest_prefix ^ title
   | None -> url
@@ -197,7 +197,7 @@ let www_picture_kept url =
   else Some name
 
 let www_kept url =
-  let engine = TinyBrowserAddress.search_engine in
+  let engine = Url.search_engine in
   let n = String.length engine in
   match wikipedia url with
   | Some (_, title)
@@ -215,7 +215,7 @@ let www_kept url =
       else Some ("search-" ^ words ^ ".html")
 
 let www_request line =
-  Option.map www_address (TinyBrowserHttp.asked line)
+  Option.map www_address (Http.asked line)
 
 let www_type name =
   match String.lowercase_ascii (Filename.extension name) with
@@ -228,10 +228,10 @@ let www_type name =
   | _ -> "application/octet-stream"
 
 let www_kept_response name body =
-  TinyBrowserHttp.response 200 [ "Content-Type", www_type name ] body
+  Http.response 200 [ "Content-Type", www_type name ] body
 
 let www_failed why =
-  TinyBrowserHttp.response 502 [ "Content-Type", "text/plain" ] why
+  Http.response 502 [ "Content-Type", "text/plain" ] why
 
 let out p packets =
   List.iter (fun packet ->

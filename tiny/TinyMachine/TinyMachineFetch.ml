@@ -66,7 +66,11 @@ let main (caps : < Cap.network; Cap.open_in; Cap.readdir; Cap.stdout; .. >)
             List.filter
               (fun (n, _) -> not (List.mem (String.lowercase_ascii n) framing))
               r.headers in
-          Console.print caps (TinyBrowserHttp.response r.status headers r.body);
+          (* written back by Http's own writer, the server's side (a
+           * Content-Length, Connection: close), in the HTTP/1.0 www
+           * asks in *)
+          Console.print caps
+            (Http.response_to_string { r with version = "HTTP/1.0"; headers });
           Exit.OK
       | Error why ->
           Console.print caps ("www: " ^ url ^ ": " ^ why ^ "\n"); Exit.Code 1)

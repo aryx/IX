@@ -47,8 +47,8 @@ T=tiny; S=$T/TinyLibSystem/unix/TinyLibSystem.ml; R=$T/TinyLibRegex.ml
 M=$T/TinyMachine
 L=$T/TinyLibMachine.ml
 CPU="$L $M/TinyMachineCPU.ml"
-BROWSER=$(for m in Text Tokens Lines Html Address Http; do
-  printf "%s " $T/TinyBrowser/TinyBrowser$m.ml; done)
+BROWSER=$(for m in Strings Charset Tokens Lines Html Url Http; do
+  printf "%s " $T/TinyBrowser/$m.ml; done)
 TML="$L "$(for m in Lexer Tree Formats Parser Types Machine Compile; do
   printf "%s " $T/TinyML/$m.ml; done)
 TC="$L "$(for m in Types Lexer Tree Lower Parser Machine; do
@@ -77,7 +77,7 @@ tiny-prof|-|$S $L $T/TinyProfiler.ml
 tiny-ml|-|$S $TML $T/TinyML.ml
 tiny-machine|-I lib_core/parallel|$CPU $S $M/TinyMachineDevices.ml $T/TinyKernel/TinyKernelNetwork.ml $BROWSER $M/TinyMachinePeer.ml $T/TinyMachine.ml
 tiny-machine-socket|-|$S $M/TinyMachineSocket.ml
-tiny-machine-fetch|$NET -I lib_graphics/core -I lib_graphics/images|$CPU $S $M/TinyMachineDevices.ml $BROWSER $M/TinyMachineFetch.ml
+tiny-machine-fetch|$NET -I lib_graphics/core -I lib_graphics/images|$CPU $S $M/TinyMachineDevices.ml $M/TinyMachineFetch.ml
 tiny-mkfat|-|$S $T/TinyKernel/steps/t6/TinyMkfat.ml
 mkfont|-I lib_graphics/core -I lib_graphics/geometry -I lib_graphics/fonts -I lib_graphics/software|$S $T/TinyKernel/fonts/Mkfont.ml
 windows|-|$S $T/TinyLibDraw.ml $T/TinyWindows.ml $T/user/windows.ml
@@ -90,7 +90,7 @@ emacs|-|$GUI $T/TinyEditorScreen.ml $T/user/emacs.ml
 office|-|$GUI $OFFICE $T/TinyOffice.ml $T/user/office.ml
 troff|-|$GUI $OFFICE $T/TinyTroff.ml $T/user/troff.ml
 play|-|$GUI $T/TinyPlay.ml $T/user/play.ml
-www|-|$GUI $BROWSER $T/TinyBrowser/TinyBrowserScreen.ml $T/TinyBrowser.ml $T/user/www.ml
+www|-|$GUI $BROWSER $T/TinyBrowser/Screen.ml $T/TinyBrowser.ml $T/user/www.ml
 trace|-|$S $T/TinyTracer.ml $T/user/trace.ml
 debug|-|$GUI $L $T/TinyDebugger.ml $T/user/debug.ml
 EOF

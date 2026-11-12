@@ -900,12 +900,12 @@ local prog(name, file, core) = chain(name, [
       bones+: [
         { at: 'user/www.ml', role: 'the program' },
         { at: 'TinyBrowser.ml:def:load', role: 'a page asked of the wire' },
-        { at: 'TinyBrowser/TinyBrowserHtml.ml', role: 'the reading: tags to lines' },
+        { at: 'TinyBrowser/Html.ml', role: 'the reading: tags to lines' },
       ],
       joints+: [
         { from: 'user/www.ml', to: 'TinyBrowser.ml:def:browse', say: 'an address' },
         { from: 'TinyBrowser.ml:def:on_mouse', to: 'TinyBrowser.ml:def:load', say: 'a link' },
-        { from: 'TinyBrowser.ml:def:take', to: 'TinyBrowser/TinyBrowserHtml.ml', say: 'bytes' },
+        { from: 'TinyBrowser.ml:def:take', to: 'TinyBrowser/Html.ml', say: 'bytes' },
       ],
     },
     {

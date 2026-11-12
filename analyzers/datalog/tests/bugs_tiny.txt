@@ -1,5 +1,5 @@
 # TinyWindows.ml's theirs: 15 windows at most (the kernel asked about 31 descriptors)
-tiny/TinyBrowser/TinyBrowserScreen.ml:121: stack: first calls itself, not a tail call, over a list
+tiny/TinyBrowser/Screen.ml:121: stack: first calls itself, not a tail call, over a list
 tiny/TinyC/TinyCLower.ml:120: stack: TinyCLower.lower calls itself, not a tail call, over a list
 tiny/TinyC/TinyCLower.ml:124: stack: TinyCLower.lower calls itself, not a tail call, over a list
 tiny/TinyC/TinyCLower.ml:129: stack: TinyCLower.lower calls itself, not a tail call, over a list

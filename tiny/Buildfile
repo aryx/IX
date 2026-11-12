@@ -323,11 +323,10 @@ troff: $CRT $MLRT troff.start.o $STDLIB $TROFF_UNITS $MLEND
 	$LD -map -s -n -o $target $prereq
 
 WWW_INCLUDES = -I TinyBrowser
-WWW_UNITS = $SYS $DRAWLIB $PLAYGROUND $GUI TinyBrowser/TinyBrowserText.o \
-    TinyBrowser/TinyBrowserTokens.o TinyBrowser/TinyBrowserLines.o \
-    TinyBrowser/TinyBrowserHtml.o TinyBrowser/TinyBrowserAddress.o \
-    TinyBrowser/TinyBrowserHttp.o TinyBrowser/TinyBrowserScreen.o \
-    TinyBrowser.o user/www.o
+WWW_UNITS = $SYS $DRAWLIB $PLAYGROUND $GUI TinyBrowser/Strings.o \
+    TinyBrowser/Charset.o TinyBrowser/Tokens.o TinyBrowser/Lines.o \
+    TinyBrowser/Html.o TinyBrowser/Url.o TinyBrowser/Http.o \
+    TinyBrowser/Screen.o TinyBrowser.o user/www.o
 TinyBrowser/&.o: TinyBrowser/&.ml $STDLIB
 	$MLC $WWW_INCLUDES -o $target TinyBrowser/$stem.ml
 TinyBrowser.o: TinyBrowser.ml $STDLIB

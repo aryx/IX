@@ -67,11 +67,12 @@ TinyOffice/Model.o: TinyLibGUI.tmi TinyOffice/Model.mli
 TinyOffice/Paint.o: TinyOffice/Model.tmi TinyLibPlayground.tmi TinyOffice/Paint.mli
 TinyOffice/Sheet.o: TinyOffice/Model.tmi TinyLibPlayground.tmi TinyOffice/Sheet.mli
 TinyOffice/Text.o: TinyOffice/Model.tmi TinyLibPlayground.tmi TinyOffice/Text.mli
-TinyBrowser.o: TinyBrowser/TinyBrowserAddress.tmi TinyBrowser/TinyBrowserHtml.tmi TinyBrowser/TinyBrowserHttp.tmi TinyBrowser/TinyBrowserLines.tmi TinyBrowser/TinyBrowserScreen.tmi TinyBrowser/TinyBrowserText.tmi TinyLibDraw.tmi TinyLibGUI.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyBrowser.mli
-TinyBrowser/TinyBrowserAddress.o: TinyBrowser/TinyBrowserText.tmi TinyBrowser/TinyBrowserAddress.mli
-TinyBrowser/TinyBrowserHtml.o: TinyBrowser/TinyBrowserLines.tmi TinyBrowser/TinyBrowserText.tmi TinyBrowser/TinyBrowserTokens.tmi TinyBrowser/TinyBrowserHtml.mli
-TinyBrowser/TinyBrowserHttp.o: TinyBrowser/TinyBrowserAddress.tmi TinyBrowser/TinyBrowserText.tmi TinyBrowser/TinyBrowserHttp.mli
-TinyBrowser/TinyBrowserLines.o: TinyBrowser/TinyBrowserLines.mli
-TinyBrowser/TinyBrowserScreen.o: TinyBrowser/TinyBrowserHtml.tmi TinyBrowser/TinyBrowserLines.tmi TinyLibDraw.tmi TinyLibGUI.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyBrowser/TinyBrowserScreen.mli
-TinyBrowser/TinyBrowserText.o: TinyBrowser/TinyBrowserText.mli
-TinyBrowser/TinyBrowserTokens.o: TinyBrowser/TinyBrowserText.tmi TinyBrowser/TinyBrowserTokens.mli
+TinyBrowser.o: TinyBrowser/Html.tmi TinyBrowser/Http.tmi TinyBrowser/Lines.tmi TinyBrowser/Screen.tmi TinyBrowser/Strings.tmi TinyLibDraw.tmi TinyLibGUI.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyBrowser/Url.tmi TinyBrowser.mli
+TinyBrowser/Charset.o: TinyBrowser/Strings.tmi TinyBrowser/Charset.mli
+TinyBrowser/Html.o: TinyBrowser/Lines.tmi TinyBrowser/Strings.tmi TinyBrowser/Tokens.tmi TinyBrowser/Html.mli
+TinyBrowser/Http.o: TinyBrowser/Strings.tmi TinyBrowser/Url.tmi TinyBrowser/Http.mli
+TinyBrowser/Lines.o: TinyBrowser/Lines.mli
+TinyBrowser/Screen.o: TinyBrowser/Html.tmi TinyBrowser/Lines.tmi TinyLibDraw.tmi TinyLibGUI.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyBrowser/Screen.mli
+TinyBrowser/Strings.o: TinyBrowser/Strings.mli
+TinyBrowser/Tokens.o: TinyBrowser/Charset.tmi TinyBrowser/Strings.tmi TinyBrowser/Tokens.mli
+TinyBrowser/Url.o: TinyBrowser/Strings.tmi TinyBrowser/Url.mli

@@ -74,9 +74,9 @@ $D/TinyMachine.$O: TinyMachine.ml
 	mkdir -p $D
 	$ML $INCLUDES $MACHINE_INCLUDES -o $target TinyMachine.ml
 # (what www types, which the wire's other end takes the same way)
-$D/TinyBrowser%.$O: TinyBrowser/TinyBrowser%.ml
+$D/%.$O: TinyBrowser/%.ml
 	mkdir -p $D
-	$ML $INCLUDES -o $target TinyBrowser/TinyBrowser$stem.ml
+	$ML $INCLUDES -o $target TinyBrowser/$stem.ml
 $D/TinyKernelNetwork.$O: TinyKernel/TinyKernelNetwork.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target TinyKernel/TinyKernelNetwork.ml
@@ -151,9 +151,9 @@ $D/tiny-vcs: $LIBA $D/TinyLibSystem.$O $D/TinyVCS.$O $LIBS
 $D/tiny-cpu: $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyMachineCPU.$O $D/TinyCPU.$O $LIBS
 	$START TinyLibSystem TinyLibMachine TinyMachineCPU TinyCPU Std_exit -o $D/TinyCPU.start.$O
 	$LINK -o $target $D/TinyCPU.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyMachineCPU.$O $D/TinyCPU.$O $STDEND
-$D/tiny-machine: $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyKernelNetwork.$O $D/TinyBrowserText.$O $D/TinyBrowserAddress.$O $D/TinyBrowserHttp.$O $D/TinyMachinePeer.$O $D/Parallel.$O $D/TinyMachine.$O $LIBS
-	$START TinyLibSystem TinyLibMachine TinyMachineCPU TinyMachineDevices TinyKernelNetwork TinyBrowserText TinyBrowserAddress TinyBrowserHttp TinyMachinePeer Parallel TinyMachine Std_exit -o $D/TinyMachine.start.$O
-	$LINK -o $target $D/TinyMachine.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyKernelNetwork.$O $D/TinyBrowserText.$O $D/TinyBrowserAddress.$O $D/TinyBrowserHttp.$O $D/TinyMachinePeer.$O $D/Parallel.$O $D/TinyMachine.$O $STDEND
+$D/tiny-machine: $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyKernelNetwork.$O $D/Strings.$O $D/Url.$O $D/Http.$O $D/TinyMachinePeer.$O $D/Parallel.$O $D/TinyMachine.$O $LIBS
+	$START TinyLibSystem TinyLibMachine TinyMachineCPU TinyMachineDevices TinyKernelNetwork Strings Url Http TinyMachinePeer Parallel TinyMachine Std_exit -o $D/TinyMachine.start.$O
+	$LINK -o $target $D/TinyMachine.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyKernelNetwork.$O $D/Strings.$O $D/Url.$O $D/Http.$O $D/TinyMachinePeer.$O $D/Parallel.$O $D/TinyMachine.$O $STDEND
 # (Parallel: the host's cores where OCaml has domains, -cores-parallel;
 # mini-ml has none: lib_core/parallel's file for OCaml 4.14, which dune
 # chooses by the compiler's version)
@@ -182,7 +182,6 @@ clean:V:
 # first: test-ix-fixpoint's builds differed, one in two or three)
 DEPOBJ=D
 DEPDIRS=. TinyMachine TinyBrowser TinyML TinyC TinyKernel TinyKernel/host TinyLibSystem/unix TinyKernel/steps/t6 $D
-DEPBROWSER=TinyBrowser/TinyBrowserText.ml TinyBrowser/TinyBrowserAddress.ml \
-  TinyBrowser/TinyBrowserHttp.ml
+DEPBROWSER=TinyBrowser/Strings.ml TinyBrowser/Url.ml TinyBrowser/Http.ml
 DEPUNITS=`{ls *.ml TinyMachine/*.ml $DEPBROWSER TinyML/*.ml TinyC/*.ml TinyKernel/TinyKernelNetwork.ml TinyKernel/host/*.ml TinyLibSystem/unix/*.ml TinyKernel/steps/t6/TinyMkfat.ml | sed 's,.*/,,; s,\.ml$,,'}
 <$TOP/mkfiles/mkdepend

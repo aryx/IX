@@ -7,10 +7,10 @@
  * they arrive, into the lines shown on the screen; it is most of what
  * follows, and the modules of TinyBrowser/. The browser around it, www,
  * this file, asks the wire's other end (TinyMachinePeer, which speaks
- * HTTPS for it) for the page in HTTP (TinyBrowserHttp) and then its
- * pictures, draws the lines as they come (TinyBrowserScreen, with
+ * HTTPS for it) for the page in HTTP (Http) and then its
+ * pictures, draws the lines as they come (Screen, with
  * TinyLibGUI's menus and an address field), and follows links
- * (TinyBrowserAddress finds where they go).
+ * (Url finds where they go).
  *
  * twin:
  * mini-netscape reads a page into a tree (html's Dom), styles it by its
@@ -48,9 +48,9 @@
  *                                          words are kept and laid out
  *                                          at </table>
  *
- *     (the tokens: TinyBrowserTokens; the open tags: TinyBrowserHtml;
- *     the words, the lines and the tables: TinyBrowserLines; and
- *     TinyBrowserText under them all, the entities and UTF-8 to ASCII)
+ *     (the tokens: Tokens; the open tags: Html;
+ *     the words, the lines and the tables: Lines; and
+ *     Charset, the entities and UTF-8 to ASCII; Strings under them all)
  *
  * A message can end anywhere, even in the middle of a tag, of an entity
  * like &amp;, or of a multi-byte UTF-8 character. The reader keeps the
@@ -94,7 +94,7 @@
  *)
 
 (* The program www: the page at [address] asked of the wire's other end
- * (HTTP's request "GET address HTTP/1.0" on port 70, TinyBrowserHttp:
+ * (HTTP's request "GET address HTTP/1.0" on port 70, Http:
  * TinyMachinePeer.www_address says what an address can be), and drawn
  * as it arrives on the screen, or in the window, the program's
  * descriptor 3. The answer's head says what its body is (Content-Type):
@@ -109,7 +109,7 @@
  * to go to; the pages seen before) and a toolbar: Back, the address in
  * a field (a click in it, or g, gives it the keys; Enter goes there),
  * Go. s gives the field a ?: what is typed after it is searched for
- * (TinyBrowserAddress.absolute). A page whose <meta> refresh sends us
+ * (Url.absolute). A page whose <meta> refresh sends us
  * on at once, as a search's results do, is followed when it is all
  * there.
  * Space and - show the next and the previous screenful, the arrows a

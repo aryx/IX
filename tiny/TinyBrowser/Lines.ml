@@ -1,13 +1,13 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyBrowserLines.mli *)
+(* See Lines.mli *)
 
 (*****************************************************************************)
 (* Lines *)
 (*****************************************************************************)
 
-(* a run's look, these bits (TinyBrowserLines.mli) *)
+(* a run's look, these bits (Lines.mli) *)
 type look = int
 let bold = 1
 let emph = 2

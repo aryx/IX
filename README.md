@@ -72,7 +72,7 @@ Each program in IX comes in two versions:
   make are the ones Plan 9's compiler and linker make. Together, the
   mini programs are **m-IX** (a nod to Knuth's MIX computer).
 - **tiny** (`tiny-build`, `tiny-shell`, `tiny-cc`, ...): a free
-  variant, in a single file under [`tiny/`](tiny/) (the largest
+  variant, in a file under [`tiny/`](tiny/) (the largest
   with their parts in a directory beside it). It is named after
   what it does, not after the original. It keeps the idea of the
   original and redesigns the rest, now that compatibility no longer
@@ -170,8 +170,9 @@ budget of 150,000 counts
 
 ## t-IX: the tiny programs
 
-Each program is a single `.ml` file in [`tiny/`](tiny/) (the kernel
-and the machine have a directory of parts beside theirs), with an `.mli`
+Each program is a `.ml` file in [`tiny/`](tiny/), the largest with a
+directory of their parts beside it (the compilers, the office, the
+browser, the machine) and the kernel a directory alone, with an `.mli`
 beside it that is where to start reading (the idea, a diagram, the
 history, and the types of `main` and of one function) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny)).
 [tiny/README.md](tiny/README.md) says what idea each one keeps from

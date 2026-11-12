@@ -25,6 +25,23 @@
  * infinite patterns (a rule like %: %.gz is used at most once on a
  * path).
  *
+ * mk's two wildcards, % and & (a stem with no / or .), for two kinds of
+ * rules. A rule whose recipe is the same everywhere is written once
+ * with %, and its stem crosses directories: tiny/Buildfile's %.o: %.c
+ * makes runtime/libc.o and TinyKernel/user/get.o, and its %.tmi: %.o
+ * makes TinyML/Lexer.tmi. A rule whose recipe depends on the directory
+ * is written with &: tiny-ml's parts are compiled with -I TinyML and
+ * the top's units without it, so TinyML/&.o and &.o each make their own
+ * directory's objects. With two % rules instead, %.o and TinyML/%.o
+ * would both match TinyML/Lexer.o, which is ambiguous. The . keeps &.o
+ * from making x.start.o (stem x.start), which is %.start.o's. A % that
+ * never crossed a / would need no &, but each rule of the first kind
+ * would then be written again for each directory (about ten rules in
+ * tiny/Buildfile), and the file would no longer be mk's. & is needed
+ * because one Buildfile makes all of tiny/'s directories: xix's omk
+ * leaves it out ("rarely found used, % is enough"), and with a mkfile
+ * in each directory, as Plan 9 has them, % is enough indeed.
+ *
  * The line <file includes a file if it exists (a generated .depend may
  * not exist the first time), and a backslash-newline continues a line,
  * which is how ocamldep writes its output. That is enough for a 13-line
@@ -156,6 +173,15 @@
  * everything that went into it, so outputs can be shared between
  * machines. Shake (Neil Mitchell, 2012) is a Haskell library that uses
  * verifying traces, as this file does.
+ *
+ * others:
+ * GNU make (since 3.82) settles two pattern rules that match the same
+ * target by the stem: the shorter one, the more specific rule, wins, so
+ * TinyML/%.o beats %.o with no & at all. It would be three lines here,
+ * but a Buildfile would then mean something else under mk and mini-mk,
+ * which have no such rule, and a rule added anywhere could silently
+ * take targets from a more general one, where here two candidates are
+ * an error (kept:, what it checks).
  *
  * wib:
  * make compares two times, the time of the target and the time of a

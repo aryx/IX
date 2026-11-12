@@ -154,6 +154,15 @@ fresh
 printf '%%: %%.gz\n\tgunzip -k $stem.gz\n' > Buildfile; touch foo.gz.gz
 check "a pattern once per path: no foo.gz.gz.gz..." "tiny-build: don't know how to make foo
 [exit 1]" "$TB" foo
+# mk's &: a stem with no / or ., so &.o is the top's x.o alone, and
+# sub/x.o is sub/&.o's (with % the two would be ambiguous)
+fresh
+mkdir sub
+printf '&.o: &.c\n\techo top $stem\nsub/&.o: sub/&.c\n\techo sub $stem\n' > Buildfile; touch x.c sub/x.c
+check "&: a directory's files" "echo top x
+top x" "$TB" x.o
+check "&: not another directory's" "echo sub x
+sub x" "$TB" sub/x.o
 
 # mk's substitution, ${X:from=to}: each word of X, the pattern's % its
 # stem; a word that does not match unchanged (mini-mk prints the same);

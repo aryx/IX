@@ -84,11 +84,20 @@ STDLIB = TinyLibCore/stdlib.a
 # with it, as Plan 9's mkfiles make every object depend on all the
 # headers), and the interfaces it reads, its line in .depend (at the
 # end); as mini-ml in m-ix, the compiler's arguments are not its
-# prerequisites. Its .tmi made with its .o
-INCLUDES = -I . -I TinyLibSystem/tinykernel -I TinyC -I TinyML -I TinyOffice \
-    -I TinyBrowser -I user
-%.o: %.ml $STDLIB
-	$ML -c -L TinyLibCore $INCLUDES -o $target $stem.ml
+# prerequisites. Its .tmi made with its .o. A rule for each directory
+# (mk's &, a stem with no / or .): here tiny/'s own units, user/'s and
+# the system's; a program with parts in a directory of their own
+# (TinyML/) has its rules in its section, with its own -I's (X_INCLUDES)
+# for its parts and its main file, so that two programs' parts may
+# have the same names (Lexer)
+INCLUDES = -I . -I TinyLibSystem/tinykernel
+MLC = $ML -c -L TinyLibCore $INCLUDES
+&.o: &.ml $STDLIB
+	$MLC -o $target $stem.ml
+user/&.o: user/&.ml $STDLIB
+	$MLC -o $target user/$stem.ml
+TinyLibSystem/tinykernel/&.o: TinyLibSystem/tinykernel/&.ml $STDLIB
+	$MLC -o $target TinyLibSystem/tinykernel/$stem.ml
 %.tmi: %.o
 
 # an ML program's start, what only the whole program can make (its
@@ -231,16 +240,26 @@ ar.start.o: $STDLIB $AR_UNITS
 ar: $CRT $MLRT ar.start.o $STDLIB $AR_UNITS $MLEND
 	$LD -map -s -n -a 4 -o $target $prereq
 
+CC_INCLUDES = -I TinyC
 CC_UNITS = $SYS $MACH TinyC/TinyCTypes.o TinyC/TinyCLexer.o \
     TinyC/TinyCTree.o TinyC/TinyCLower.o TinyC/TinyCParser.o \
     TinyC/TinyCMachine.o TinyC.o
+TinyC/&.o: TinyC/&.ml $STDLIB
+	$MLC $CC_INCLUDES -o $target TinyC/$stem.ml
+TinyC.o: TinyC.ml $STDLIB
+	$MLC $CC_INCLUDES -o $target TinyC.ml
 cc.start.o: $STDLIB $CC_UNITS
 cc: $CRT $MLRT cc.start.o $STDLIB $CC_UNITS $MLEND
 	$LD -map -s -n -a 16 -o $target $prereq
 
+ML_INCLUDES = -I TinyML
 ML_UNITS = $SYS $MACH TinyML/Lexer.o TinyML/Tree.o TinyML/Formats.o \
     TinyML/Parser.o TinyML/Types.o TinyML/Machine.o TinyML/Compile.o \
     TinyML/Link.o TinyML.o
+TinyML/&.o: TinyML/&.ml $STDLIB
+	$MLC $ML_INCLUDES -o $target TinyML/$stem.ml
+TinyML.o: TinyML.ml $STDLIB
+	$MLC $ML_INCLUDES -o $target TinyML.ml
 ml.start.o: $STDLIB $ML_UNITS
 ml: $CRT $MLRT ml.start.o $STDLIB $ML_UNITS $MLEND
 	$LD -map -s -n -a 32 -o $target $prereq
@@ -279,28 +298,41 @@ emacs.start.o: $STDLIB $EMACS_UNITS
 emacs: $CRT $MLRT emacs.start.o $STDLIB $EMACS_UNITS $MLEND
 	$LD -map -s -n -o $target $prereq
 
+# (office's and troff's)
+OFFICE_INCLUDES = -I TinyOffice
 OFFICE_PARTS = TinyOffice/TinyOfficeModel.o TinyOffice/TinyOfficeText.o \
     TinyOffice/TinyOfficeSheet.o TinyOffice/TinyOfficeDrawing.o \
     TinyOffice/TinyOfficePaint.o TinyOffice/TinyOfficeChart.o \
     TinyOffice/TinyOfficeFile.o
-# (office's and troff's)
+TinyOffice/&.o: TinyOffice/&.ml $STDLIB
+	$MLC $OFFICE_INCLUDES -o $target TinyOffice/$stem.ml
+
 OFFICE_UNITS = $SYS $DRAWLIB $PLAYGROUND $GUI $OFFICE_PARTS TinyOffice.o \
     user/office.o
+TinyOffice.o: TinyOffice.ml $STDLIB
+	$MLC $OFFICE_INCLUDES -o $target TinyOffice.ml
 office.start.o: $STDLIB $OFFICE_UNITS
 office: $CRT $MLRT office.start.o $STDLIB $OFFICE_UNITS $MLEND
 	$LD -map -s -n -o $target $prereq
 
 TROFF_UNITS = $SYS $DRAWLIB $PLAYGROUND $GUI $OFFICE_PARTS TinyTroff.o \
     user/troff.o
+TinyTroff.o: TinyTroff.ml $STDLIB
+	$MLC $OFFICE_INCLUDES -o $target TinyTroff.ml
 troff.start.o: $STDLIB $TROFF_UNITS
 troff: $CRT $MLRT troff.start.o $STDLIB $TROFF_UNITS $MLEND
 	$LD -map -s -n -o $target $prereq
 
+WWW_INCLUDES = -I TinyBrowser
 WWW_UNITS = $SYS $DRAWLIB $PLAYGROUND $GUI TinyBrowser/TinyBrowserText.o \
     TinyBrowser/TinyBrowserTokens.o TinyBrowser/TinyBrowserLines.o \
     TinyBrowser/TinyBrowserHtml.o TinyBrowser/TinyBrowserAddress.o \
     TinyBrowser/TinyBrowserHttp.o TinyBrowser/TinyBrowserScreen.o \
     TinyBrowser.o user/www.o
+TinyBrowser/&.o: TinyBrowser/&.ml $STDLIB
+	$MLC $WWW_INCLUDES -o $target TinyBrowser/$stem.ml
+TinyBrowser.o: TinyBrowser.ml $STDLIB
+	$MLC $WWW_INCLUDES -o $target TinyBrowser.ml
 www.start.o: $STDLIB $WWW_UNITS
 www: $CRT $MLRT www.start.o $STDLIB $WWW_UNITS $MLEND
 	$LD -map -s -n -a 10 -o $target $prereq
@@ -446,7 +478,9 @@ boot.img: TinyKernel/kernel.img $PROGS $STDLIB $LIBC $LIBML
 # The ML units' rules, in .depend: a unit's object, then the interfaces
 # of the units it names and its .mli, written by ml -depend as ocamldep
 # writes OCaml's (and m-ix's mini-ml -depend). Its sources are every
-# .ml of INCLUDES' directories (a unit added is found; the host's
+# .ml of INCLUDES' directories, then each program's with parts, by its
+# own -I's (its main file's line again, now with its parts; tiny-build
+# merges a target's lines) (a unit added is found; the host's
 # programs among them, TinyCPU.ml and TinyMachine.ml, are lines no
 # target asks for, or left out, said, when tiny-ml cannot read them).
 # The globs are written here, not in a variable: rc does not glob a *
@@ -455,7 +489,11 @@ boot.img: TinyKernel/kernel.img $PROGS $STDLIB $LIBC $LIBML
 # theirs, made again too): `build depend` makes it again after a unit
 # names another one, or a unit is added.
 depend:
-	$ML -depend $INCLUDES *.ml TinyLibSystem/tinykernel/*.ml TinyC/*.ml TinyML/*.ml TinyOffice/*.ml TinyBrowser/*.ml user/*.ml > .depend
+	$ML -depend $INCLUDES *.ml TinyLibSystem/tinykernel/*.ml user/*.ml > .depend
+	$ML -depend $INCLUDES $CC_INCLUDES TinyC.ml TinyC/*.ml >> .depend
+	$ML -depend $INCLUDES $ML_INCLUDES TinyML.ml TinyML/*.ml >> .depend
+	$ML -depend $INCLUDES $OFFICE_INCLUDES TinyOffice.ml TinyTroff.ml TinyOffice/*.ml >> .depend
+	$ML -depend $INCLUDES $WWW_INCLUDES TinyBrowser.ml TinyBrowser/*.ml >> .depend
 	@{ cd TinyLibCore && $BUILD ML=^$ML depend }
 	@{ cd TinyKernel && $BUILD ML=^$ML depend }
 

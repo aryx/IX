@@ -72231,3 +72231,80 @@ Claude wrote a twin, kept, dropped, twist summary into tiny/README.md, not yet c
 Claude had planned to stage only its own comment lines in tiny/Buildfile when asked to commit.
 Claude noted another session's TinyML rename had also changed the ML_UNITS line in that Buildfile.
 Claude would leave that half-done rename out, so it would not be committed under Claude's name.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 16:45
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the `tiny/README.md` whole-system `twin:`/`kept:`/`dropped:`/`twist:` block and the Buildfile header's `dropped:` line as `a9990d98`.
+Claude staged only its own Buildfile hunk, leaving the other session's `ML_UNITS` change unstaged.
+Claude committed from a separate index so the other session's TinyML rename, its 16 staged renames, stayed out of the commit.
+Claude left the shared index as the other session had it, including `prompt-history.md` staged by someone else.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 16:46
+
+**Yoann:**
+
+> The first paragraph 
+>
+> The tiny programs of ix (t-ix): the free variants of its mini
+> programs (m-ix), one `.ml` file each (but TinyCPU, whose CPU
+> is a library, `TinyMachineCPU.ml`, for TinyMachine.ml; and TinyMachine, whose machine is a library too,
+> `TinyMachineDevices.ml`, for `TinyMachineWeb.ml`, the same machine in a web
+> page by js_of_ocaml: `./tiny-machine -web dir tiny-kernel`), on tiny-kernel's
+> `/bin` as `build`, `rc`, ... and on the host as tiny-build,
+> tiny-shell, ... (the second column): what is left of a
+> program when compatibility is dropped and only its idea is kept,
+> written after its faithful twin and from what that one taught. The
+> files, children and pipes they share with the twins come from
+> `lib_core/` (`FS`, `Procs`), not copied into each.
+>
+>  seems outdated; TinyCPU is actually an executable now, and more progs are not a single file now
+
+------------------------------------------------------------------------
+
+## 2026-11-12 16:47
+
+**Yoann:**
+
+> might want to do full pass on tiny/README.md and update it
+
+------------------------------------------------------------------------
+
+## 2026-11-12 16:47
+
+**Yoann:**
+
+> and simplify it maybe
+
+**Claude (summary):**
+
+Claude cut the t-IX README from 227 to 188 lines, adding headings, and left the change uncommitted.
+Claude reorganized it into an intro, a reading guide, a "What is where" list, and a two-systems section.
+Claude kept the programs table in the middle, with building, testing, and the manual sections around it.
+Claude fixed the TinyCPU executable path, the garbled runtime sentence, and added the missing TinyArchiver row.
+Claude dropped the v6 history, assembler internals, and host-build paragraph, and left the TinyML part names alone.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 16:53
+
+**Yoann:**
+
+> is it better? Note that we also have the toplevel README.md which also talks about t-ix (but does not hurt to repeat things sometimes)
+
+**Claude (summary):**
+
+Claude judged the reworked tiny/README.md better: findable headings, corrected facts, and a shorter layout.
+Claude warned that the top-level README.md has the same staleness, since it repeats the single-file claim.
+Claude quoted line 75, which calls each tiny program a variant in a single file under tiny/.
+Claude also quoted line 173, which says each program is a single .ml file in tiny/.
+Claude noted both are wrong for TinyC, TinyML, TinyOffice, TinyBrowser, TinyMachine and the kernel, and offered to fix them and commit.

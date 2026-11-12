@@ -15,7 +15,7 @@ LIBDIRS=lib_crypto
 <$TOP/mkfiles/mklibs
 # (tiny/, where TinyLibSystem.mli is, before its Unix implementation:
 # TinyLibSystem/tinykernel/'s is tiny-ml's)
-INCLUDES=-I . -I TinyLibSystem/unix -I $D -I TinyMachine -I TinyKernel -I TinyBrowser -I TinyML -I TinyC -I ../lib_crypto $STDI
+INCLUDES=-I . -I TinyLibSystem/unix -I $D -I ../lib_crypto $STDI
 START=$ML -start $STD $COMMONS
 LINK=$LD -H7 -nofollow
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
@@ -59,23 +59,39 @@ $D/TinyMachine.$O: TinyMachine/TinyMachineDevices.ml TinyKernel/TinyKernelNetwor
 # (a blank line above: a # line right under a rule's head is its recipe,
 # and TinyMachinePeer's object was never compiled)
 # (tiny-machine's parts are in TinyMachine/, the kernel's stack, which
-# is the wire's other end, in TinyKernel/)
+# is the wire's other end, in TinyKernel/). A part finds the parts of
+# its own directory (mini-ml looks there first); the -I's are the
+# directories a program's files name besides, each program's own:
+# tiny-machine's, then tiny-cc's and tiny-ml's main files
+MACHINE_INCLUDES=-I TinyMachine -I TinyKernel -I TinyBrowser
 $D/TinyMachine%.$O: TinyMachine/TinyMachine%.ml
 	mkdir -p $D
-	$ML $INCLUDES -o $target TinyMachine/TinyMachine$stem.ml
+	$ML $INCLUDES $MACHINE_INCLUDES -o $target TinyMachine/TinyMachine$stem.ml
+$D/TinyCPU.$O: TinyCPU.ml
+	mkdir -p $D
+	$ML $INCLUDES $MACHINE_INCLUDES -o $target TinyCPU.ml
+$D/TinyMachine.$O: TinyMachine.ml
+	mkdir -p $D
+	$ML $INCLUDES $MACHINE_INCLUDES -o $target TinyMachine.ml
 # (what www types, which the wire's other end takes the same way)
 $D/TinyBrowser%.$O: TinyBrowser/TinyBrowser%.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target TinyBrowser/TinyBrowser$stem.ml
-$D/%.$O: TinyML/%.ml
-	mkdir -p $D
-	$ML $INCLUDES -o $target TinyML/$stem.ml
-$D/TinyC%.$O: TinyC/TinyC%.ml
-	mkdir -p $D
-	$ML $INCLUDES -o $target TinyC/TinyC$stem.ml
 $D/TinyKernelNetwork.$O: TinyKernel/TinyKernelNetwork.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target TinyKernel/TinyKernelNetwork.ml
+$D/%.$O: TinyML/%.ml
+	mkdir -p $D
+	$ML $INCLUDES -o $target TinyML/$stem.ml
+$D/TinyML.$O: TinyML.ml
+	mkdir -p $D
+	$ML $INCLUDES -I TinyML -o $target TinyML.ml
+$D/TinyC%.$O: TinyC/TinyC%.ml
+	mkdir -p $D
+	$ML $INCLUDES -o $target TinyC/TinyC$stem.ml
+$D/TinyC.$O: TinyC.ml
+	mkdir -p $D
+	$ML $INCLUDES -I TinyC -o $target TinyC.ml
 
 # (tiny-mkfat is t6's, a step before tiny-kernel: its file is there)
 $D/TinyMkfat.$O: TinyKernel/steps/t6/TinyMkfat.ml

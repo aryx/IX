@@ -32,6 +32,7 @@ A Buildfile's five kinds of lines, and that is all the syntax:
                                   blank, run by rc -e
   %.o: %.c                        a pattern: % is the stem
       cc -c $stem.c
+  lib/&.o: lib/&.c                & a stem with no / or ., one directory's
   <.depend                        an include, if the file exists
 
 tiny-build then makes hello (the first rule's target); a comment added to
@@ -42,8 +43,10 @@ world.c recompiles it, and relinks nothing: world.o came out the same.
 (* Types *)
 (*****************************************************************************)
 
-(* a rule's target: a name, or a pattern, the text around its % *)
-type target = Exact of string | Pattern of string * string
+(* a rule's target: a name, or a pattern, the text around its % or its
+ * & (mk's: a stem with no / or ., so x.o in one directory, not y/x.o;
+ * why both, the .mli's kept:) *)
+type target = Exact of string | Pattern of string * string | Amp of string * string
 
 type rule = {
   target : target;
@@ -69,12 +72,16 @@ type vars = (string, string list) Hashtbl.t
 type stamps = (string, Sha1.t) Hashtbl.t
 
 let target_of (s : string) : target =
-  match String.index_opt s '%' with
-  | None -> Exact s
-  | Some i ->
-      Pattern (String.sub s 0 i, String.sub s (i + 1) (String.length s - i - 1))
+  let around i = (String.sub s 0 i, String.sub s (i + 1) (String.length s - i - 1)) in
+  match String.index_opt s '%', String.index_opt s '&' with
+  | Some i, _ -> let pre, suf = around i in Pattern (pre, suf)
+  | None, Some i -> let pre, suf = around i in Amp (pre, suf)
+  | None, None -> Exact s
 
-let show_target = function Exact s -> s | Pattern (pre, suf) -> pre ^ "%" ^ suf
+let show_target = function
+  | Exact s -> s
+  | Pattern (pre, suf) -> pre ^ "%" ^ suf
+  | Amp (pre, suf) -> pre ^ "&" ^ suf
 
 
 type caps =
@@ -236,16 +243,27 @@ let parse (fixed : (string * string list) list) (read : string -> string option)
 
 (* does a target match name? the stem if so, "" for an exact one *)
 let matches (t : target) (name : string) : string option =
+  let around pre suf =
+    let n = String.length name and np = String.length pre
+    and ns = String.length suf in
+    if np + ns <= n && String.sub name 0 np = pre
+       && String.sub name (n - ns) ns = suf
+    then Some (String.sub name np (n - np - ns)) else None
+  in
   match t with
   | Exact s -> if s = name then Some "" else None
-  | Pattern (pre, suf) ->
-      let n = String.length name and np = String.length pre
-      and ns = String.length suf in
-      if np + ns <= n && String.sub name 0 np = pre
-         && String.sub name (n - ns) ns = suf
-      then Some (String.sub name np (n - np - ns)) else None
+  | Pattern (pre, suf) -> around pre suf
+  | Amp (pre, suf) ->
+      (match around pre suf with
+       | Some stem when not (String.contains stem '/' || String.contains stem '.') ->
+           Some stem
+       | _ -> None)
 
-let subst stem (p : string) = String.concat stem (String.split_on_char '%' p)
+(* a prerequisite's % and & made the stem *)
+let subst stem (p : string) =
+  String.concat stem
+    (List.map (fun q -> String.concat stem (String.split_on_char '&' q))
+       (String.split_on_char '%' p))
 
 (* From a target to its node: the rules naming it exactly, merged (at
  * most one with a recipe); if none has a recipe, the one pattern rule
@@ -256,14 +274,15 @@ let graph (rules : rule list) (exists : Fpath.t -> bool) (target : string) :
   let memo = Hashtbl.create 101 in
   let exact, patterns =
     List.partition
-      (fun r -> match r.target with Exact _ -> true | Pattern _ -> false) rules
+      (fun r -> match r.target with Exact _ -> true | _ -> false) rules
   in
   (* the patterns used on the way to a pattern's prerequisite: only one
    * with % carries them (a %: %.gz would make x.gz.gz...); a name given
    * as it is, by an exact rule (a .depend's line) or by a pattern
    * ($LIB's), starts afresh, as GNU make's: x.o by %.o, then y.tmi of
    * its .depend line by %.tmi, then y.o by %.o again *)
-  let along r used p = if String.contains p '%' then r :: used else [] in
+  let along r used p =
+    if String.contains p '%' || String.contains p '&' then r :: used else [] in
   let rec node path used name =
     match Hashtbl.find_opt memo name with
     | Some n -> n

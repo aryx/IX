@@ -49,7 +49,7 @@ NET = ${LIB}/c/net.o
 # the widgets
 SYS = ${LIB}/ml/TinyLibSystem.o
 DRAWLIB = ${LIB}/ml/TinyLibDraw.o
-PLAY = ${LIB}/ml/TinyLibPlayground.o
+PLAYGROUND = ${LIB}/ml/TinyLibPlayground.o
 GUI = ${LIB}/ml/TinyLibGUI.o
 
 all: hello shapes fetch procs helloml shapesml fetchml procsml game gui spin
@@ -108,12 +108,12 @@ procsml.start.o: $STDLIB $PROCSML_UNITS
 procsml: $CRT $MLRT procsml.start.o $STDLIB $PROCSML_UNITS $MLEND
 	$LD -map -s -n -o $target $prereq
 
-GAME_UNITS = $SYS $DRAWLIB $PLAY game.o
+GAME_UNITS = $SYS $DRAWLIB $PLAYGROUND game.o
 game.start.o: $STDLIB $GAME_UNITS
 game: $CRT $MLRT game.start.o $STDLIB $GAME_UNITS $MLEND
 	$LD -map -s -n -o $target $prereq
 
-GUI_UNITS = $SYS $DRAWLIB $PLAY $GUI gui.o
+GUI_UNITS = $SYS $DRAWLIB $PLAYGROUND $GUI gui.o
 gui.start.o: $STDLIB $GUI_UNITS
 gui: $CRT $MLRT gui.start.o $STDLIB $GUI_UNITS $MLEND
 	$LD -map -s -n -o $target $prereq

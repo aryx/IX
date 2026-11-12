@@ -5,7 +5,7 @@
  * tests/TinyMachine_test.sh, on v0's kernel and tests/TinyMachine_tests/
  *)
 
-let usage = {|usage: tiny-machine [-l | -d disk | -window | -rate n | -date n
+let usage = {|usage: tiny-machine [-l | -d disk [-d disk] | -window | -rate n | -date n
          | -seed n | -prof file | -screen ppm | -audio wav | -events file
          | -net dir | -net-trace | -net-lose n | -net-out | -net-forward h:m
          | -net-pcap f | -net-loop n | -cores n | -cores-parallel] image|}
@@ -24,6 +24,8 @@ and runs it; the same by hand, in tiny/TinyKernel/steps/v0/, for example:
       the listing: 0:  20100000  lui r1, 0x0
   tiny-machine -d fs.img kernel.img
       t6 (in TinyKernel/steps/t6/), fs.img its disk, written back at the halt
+  tiny-machine -d system.img -d src.img boot.img
+      two disks: the first at -32(r0), the second at -80(r0)
   tiny-machine -window kernel.img
       its screen (1024 by 768, at 0xf00000) in a window, whose keys and mouse
       are its
@@ -256,7 +258,7 @@ let window_poll w (m : TinyMachineCPU.machine)
 (*****************************************************************************)
 
 type options = {
-  disk_file : Fpath.t option; screen_file : Fpath.t option;
+  disk_files : Fpath.t list; screen_file : Fpath.t option;
   audio_file : Fpath.t option; events_file : Fpath.t option; window : bool;
   rate : int option; date : int option; seed : int option;
   net_loop : int option; net : Fpath.t option; net_trace : bool;
@@ -404,20 +406,20 @@ let run
      | None -> int_of_float (CapUnix.time caps ()) - 946684800);
   TinyMachineDevices.seed := (match o.seed with Some s -> s | None -> 0);
   TinyMachineDevices.cores := o.cores;
-  let disk_file = o.disk_file in
-  (* the disk: the file's, or a blank one of 8 MB when there is no such
-   * file; each block the kernel writes, written to it at once *)
-  let disk = match disk_file with
-    | Some f when CapSys.file_exists caps (Fpath.to_string f) ->
+  (* the disks, -d's in their order: each the file's, or a blank one
+   * of 8 MB when there is no such file; each block the kernel writes,
+   * written to it at once *)
+  let disks = List.map (fun f ->
+      if CapSys.file_exists caps (Fpath.to_string f) then
         Bytes.of_string (FS.read caps f)
-    | Some f ->
+      else begin
         let blank = Bytes.make (8 * 1024 * 1024) '\000' in
         FS.write caps f (Bytes.to_string blank);
         blank
-    | None -> Bytes.empty in
-  let disk_fd =
-    Option.map (fun f -> FS.open_device_fd caps (Fpath.to_string f))
-      disk_file in
+      end) o.disk_files in
+  let disk_fds =
+    List.map (fun f -> FS.open_device_fd caps (Fpath.to_string f))
+      o.disk_files in
   (* a session's keys are the console's input: the host's is then not
    * read, and a session's last event is its end. A window's keys are
    * the console's too, with the host's: a kernel that writes on the
@@ -445,7 +447,7 @@ let run
              (float_of_int mc.csr.(TinyMachineDevices.time) *. 1000.
               /. float_of_int !TinyMachineDevices.rate)
              dir (TinyMachinePeer.net_describe packet))) !machine in
-  (* -net dir: the peer (TinyMachinePeer: TinyKernelNetwork.ml as the kernel
+  (* -net dir: the peer (TinyMachinePeer: KNetwork.ml as the kernel
    * has it, at the other address), its documents the directory's files by
    * their names, no path; -net-lose: which of its packets are lost *)
   (* a file of the directory, by its name: no / in it (the names
@@ -604,12 +606,12 @@ let run
     end in
   let mc : TinyMachineDevices.machine =
     TinyMachineDevices.create ~put ~on_open:(console_open caps) ~send ~hear
-      ~disk ~events image in
+      ~disks ~events image in
   machine := Some mc;
-  Option.iter (fun fd -> mc.disk.wrote <- (fun b ->
+  List.iteri (fun n (fd, disk) -> mc.disks.(n).wrote <- (fun b ->
     ignore (Unix.lseek fd (b * TinyMachineDevices.bsize) Unix.SEEK_SET);
     ignore (Unix.write fd disk (b * TinyMachineDevices.bsize)
-              TinyMachineDevices.bsize))) disk_fd;
+              TinyMachineDevices.bsize))) (List.combine disk_fds disks);
   let m = mc.cpu and c = mc.csr in
   let env = TinyMachineDevices.env mc in
   (* -prof f: each instruction counted by where it was (the kernel's or
@@ -728,7 +730,7 @@ let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.open_in;
         let rec options o = function
           (* (the files' options as paths, here once) *)
           | "-d" :: f :: rest ->
-              options { o with disk_file = Some (Fpath.v f) } rest
+              options { o with disk_files = o.disk_files @ [ Fpath.v f ] } rest
           | "-screen" :: f :: rest ->
               options { o with screen_file = Some (Fpath.v f) } rest
           | "-audio" :: f :: rest ->
@@ -778,7 +780,7 @@ let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.open_in;
               (match run caps o (image files) with
                | 0 -> Exit.OK
                | n -> Exit.Code n) in
-        options { disk_file = None; screen_file = None; audio_file = None;
+        options { disk_files = []; screen_file = None; audio_file = None;
                   events_file = None; window = false; rate = None;
                   date = None; seed = None; net_loop = None; net = None;
                   net_trace = false; net_lose = []; net_out = false;

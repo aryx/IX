@@ -89,8 +89,9 @@ type console = {
   mutable queue : string; mutable next : int; mutable eof : bool;
   mutable opened : bool; mutable eof_read : bool;
 }
-(* the disk's block, 1 KB; [wrote], told of each block written (its
- * number), the host's to keep it *)
+(* a disk's block, 1 KB; [wrote], told of each block written (its
+ * number), the host's to keep it; the disks, two, the first's
+ * registers at -32(r0), the second's at -80(r0) *)
 val bsize : int
 type disk = {
   image : Bytes.t; mutable block : int; mutable addr : int;
@@ -108,7 +109,8 @@ type speaker = {
 }
 
 type machine = {
-  cpu : TinyMachineCPU.machine; csr : int array; cons : console; disk : disk;
+  cpu : TinyMachineCPU.machine; csr : int array; cons : console;
+  disks : disk array;
   mouse : mouse; net : net; speaker : speaker;
   mutable events : (int * string) list;
   put : char -> unit; on_open : console -> unit; send : string -> unit;
@@ -129,11 +131,13 @@ type machine = {
 (* A machine with an image at 0. [put] has each byte of the console's
  * output, [on_open] is called when a kernel first asks for its input,
  * [send], when there is a network, has each packet sent, [hear] the
- * speaker's samples, played; a disk's image, a session's events *)
+ * speaker's samples, played; the disks' images (none, one or two), a
+ * session's events *)
 val create :
   put:(char -> unit) -> on_open:(console -> unit) ->
   send:(string -> unit) option -> hear:(string -> unit) ->
-  disk:Bytes.t -> events:(int * string) list option -> string -> machine
+  disks:Bytes.t list -> events:(int * string) list option -> string ->
+  machine
 
 (* The speaker: a ring of [ring] samples in memory (a byte each, signed),
  * played at [hz] a second; [speaker_hear] gives [hear] the samples due

@@ -50,16 +50,29 @@ and i_net = 16 and i_ipi = 32
  * negative offset from r0: the console's output -16(r0), the halt
  * -12(r0); v6's in the 32 bytes below the top, the network's in the
  * 16 below those, the speaker's word below them, the date's, the
- * seed's, the cores' interrupt's *)
+ * seed's, the cores' interrupt's, and the second disk's 16 bytes *)
 (* old: 1 lsl 27, 128 MB, before the cores: four compilers of tiny-ml
  * at once, 32 MB each, did not fit *)
 let memsize = 1 lsl 28
 (* old: devices = memsize - 32, before the network's four words *)
 (* old: devices = memsize - 48, before the speaker's word *)
-let console = memsize - 16 and halt = memsize - 12 and devices = memsize - 64
+(* old: devices = memsize - 64, before the second disk *)
+let console = memsize - 16 and halt = memsize - 12 and devices = memsize - 80
 let console_in = memsize - 8
-let disk_block = memsize - 32 and disk_addr = memsize - 28
-and disk_cmd = memsize - 24 and disk_status = memsize - 20
+(* a disk's registers: the first's from -32(r0), the second's from
+ * -80(r0), each its block, its address, its command and its status
+ * (old: the first's alone, disk_block, disk_addr, disk_cmd,
+ * disk_status) *)
+let ndisks = 2
+let disk_base n = if n = 0 then memsize - 32 else memsize - 80
+(* the disk whose register w is, and which of its four *)
+let disk_at w =
+  let rec go n =
+    if n >= ndisks then None
+    else
+      let b = disk_base n in
+      if w >= b && w < b + 16 then Some (n, (w - b) / 4) else go (n + 1) in
+  go 0
 let mouse_dev = memsize - 4
 let net_addr = memsize - 48 and net_len = memsize - 44
 and net_cmd = memsize - 40 and net_status = memsize - 36
@@ -134,7 +147,9 @@ let console_read k =
 let console_waiting k =
   k.next < String.length k.queue || (k.eof && not k.eof_read)
 
-(* The disk: an image file (-d), in blocks of 1 KB. The kernel writes a
+(* A disk: an image file (-d; a second -d, the second disk), in blocks
+ * of 1 KB, its registers the first's from -32(r0), the second's from
+ * -80(r0). For the first: the kernel writes a
  * block's number at -32(r0), a physical address at -28(r0), then the
  * command at -24(r0), 1 to read the block into memory, 2 to write it
  * from memory; the transfer is done at once, and the disk's interrupt
@@ -371,7 +386,8 @@ let speaker_play (sp : speaker) (m : TinyMachineCPU.machine) time hear =
   end
 
 type machine = {
-  cpu : TinyMachineCPU.machine; csr : int array; cons : console; disk : disk;
+  cpu : TinyMachineCPU.machine; csr : int array; cons : console;
+  disks : disk array;
   mouse : mouse; net : net; speaker : speaker;
   mutable events : (int * string) list;
   (* the host's *)
@@ -402,7 +418,8 @@ let pending mc =
   lor (if not (first mc) then 0
        else
          (if console_waiting mc.cons then i_console else 0)
-         lor (if mc.disk.done_ then i_disk else 0)
+         lor (if Array.exists (fun (d : disk) -> d.done_) mc.disks then i_disk
+              else 0)
          lor (if mc.mouse.moved then i_mouse else 0)
          lor (if mc.net.waiting <> [] then i_net else 0))
 
@@ -535,8 +552,11 @@ let load mc m s a =
   | _ when not (first mc) -> raise (Trap (c_fault, a))
   | w when w = console_in ->
       mc.on_open mc.cons; console_read mc.cons
-  | w when w = disk_status -> if mc.disk.done_ then 1 else 0
-  | w when w = disk_block -> Bytes.length mc.disk.image / bsize
+  | w when disk_at w <> None ->
+      (match disk_at w with
+       | Some (n, 3) -> if mc.disks.(n).done_ then 1 else 0
+       | Some (n, 0) -> Bytes.length mc.disks.(n).image / bsize
+       | _ -> 0)
   | w when w = mouse_dev -> mc.mouse.moved <- false; mc.mouse.at
   | w when w = net_len ->
       (match mc.net.waiting with p :: _ -> String.length p | [] -> 0)
@@ -556,10 +576,13 @@ let store mc m s a v =
   | _ when not (first mc) -> raise (Trap (c_fault, a))
   | w when w = console -> mc.put (Char.chr (v land 0xff))
   | w when w = halt -> raise (Halt (v land 0xff))
-  | w when w = disk_block -> mc.disk.block <- v
-  | w when w = disk_addr -> mc.disk.addr <- v
-  | w when w = disk_cmd -> disk_command mc.disk m v
-  | w when w = disk_status -> mc.disk.done_ <- false
+  | w when disk_at w <> None ->
+      (match disk_at w with
+       | Some (n, 0) -> mc.disks.(n).block <- v
+       | Some (n, 1) -> mc.disks.(n).addr <- v
+       | Some (n, 2) -> disk_command mc.disks.(n) m v
+       | Some (n, _) -> mc.disks.(n).done_ <- false
+       | None -> ())
   | w when w = net_addr -> mc.net.naddr <- v
   | w when w = net_len -> mc.net.nlen <- v
   | w when w = net_cmd -> net_command mc.net m mc.send v
@@ -688,12 +711,12 @@ let show w =
 (*****************************************************************************)
 
 (* [put] writes a byte of the console's output, [on_open] is called
- * when a kernel first asks for the console's input; [disk] is the
- * disk's image, [events] a session's (then its keys are the console's
+ * when a kernel first asks for the console's input; [disks] are the
+ * disks' images, none, one or two, [events] a session's (then its keys are the console's
  * only input, and its last event the input's end); [send], when there
  * is a wire, is given each packet the machine sends; [hear] the
  * speaker's samples *)
-let create ~put ~on_open ~send ~hear ~disk ~events image =
+let create ~put ~on_open ~send ~hear ~disks ~events image =
   TinyMachineCPU.memsize := memsize;
   let m : TinyMachineCPU.machine = TinyMachineCPU.boot image in
   m.r.(TinyLibMachine.sp) <- devices;
@@ -706,7 +729,9 @@ let create ~put ~on_open ~send ~hear ~disk ~events image =
   { cpu = m; csr = c;
     cons = { queue = ""; next = 0; eof = events = Some [];
              opened = events <> None; eof_read = false };
-    disk = { image = disk; block = 0; addr = 0; done_ = false; wrote = ignore };
+    disks = Array.init ndisks (fun n ->
+      { image = (match List.nth_opt disks n with Some d -> d | None -> Bytes.empty);
+        block = 0; addr = 0; done_ = false; wrote = ignore });
     mouse = { at = 0; moved = false; cursor = 0 };
     events = (match events with Some l -> l | None -> []); put; on_open;
     net = { wired = send <> None; naddr = 0; nlen = 0; waiting = [];

@@ -72533,3 +72533,51 @@ Claude noted that session 28 can build and run `/examples` on the system's disk 
 Claude added this to the plan as a decision under decision 1 and a check in step 3.
 Claude's reasoning was that with `/src` on the same disk, a Buildfile could silently reach into the sources.
 The plan at `docs/plans/plan_tiny_boot_disk.md` is still uncommitted, and Claude asked whether to commit it and start step 0.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 18:57
+
+**Yoann:**
+
+> let's commit the plan
+
+**Claude (summary):**
+
+Claude committed the plan as `5f6b546c`, adding `prompt-history.md` to the repository.
+Claude recommended starting with step 0 as the first implementation step.
+Step 0 adds a second disk to tiny-machine and its web page, with the kernel mounting it at `/src`.
+Step 0 also turns TinyKernelFS's global state into one record per disk.
+Yoann's follow-up "let's do it" points to step 0 as the part he wants implemented next.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 18:59
+
+**Yoann:**
+
+> let's do it
+
+**Claude (summary):**
+
+Claude recommended threading the disk value through every KFS function instead of using a hidden "current disk" global.
+Claude noted that this touches most of KFS's 456 lines and its callers in KFiles, but is the cleanest option.
+Claude said KFiles' nodes, such as `Disk (tree, inode)`, would also need to record which disk they belong to.
+Claude argued against the global because it would reintroduce the order-dependent state just removed from tiny-ml.
+Claude's machine-side change collects several `-d` disks, each with its own file, and the build passed.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 19:04
+
+**Yoann:**
+
+> let's pass the fs; actually it's similar to passing a VFS struct in the linux kernel I think
+
+**Claude (summary):**
+
+Claude recommended passing an `fs` value through KFS and KFiles, following the Linux `super_block` and Plan 9 per-server pattern.
+Claude reported the machine side of step 0 passes: `make test` with 35 jobs and 0 failures, and the image's `check`.
+The machine change is ready as four files: TinyMachineDevices.ml/.mli, TinyMachine.ml, and TinyMachineWeb.ml.
+Its changes: a two-disk `disks` array, the second disk at `-80(r0)`, and `tiny-machine` accepting `-d` twice.
+Claude held the kernel side until the other session's 50-file kernel rename commits, and offered to commit the machine side now.

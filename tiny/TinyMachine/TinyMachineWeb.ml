@@ -550,7 +550,8 @@ let run image disk www =
       ~document:(peer_document www) ~store ~outside:None in
   let mc : TinyMachineDevices.machine =
     TinyMachineDevices.create ~put ~on_open
-      ~send:(Some (TinyMachinePeer.send peer)) ~hear:ignore ~disk ~events:None
+      ~send:(Some (TinyMachinePeer.send peer)) ~hear:ignore ~disks:[ disk ]
+      ~events:None
       image in
   machine := Some mc;
   (* the page's button: the peer's next packet is lost *)

@@ -35,16 +35,17 @@ beside its parts.
   tiny program names them (`Stdlib`, `List`, `Hashtbl`...), each a
   subset that OCaml checks.
 - `TinyAppXxx.ml` is an application on the playground or the widgets
-  (`calc`, `temp`, `tetris`, `square`); `user/` has the one-line main of
-  each ML program of tiny-kernel.
+  (`calc`, `temp`, `tetris`, `square`); `user/` has each program's main
+  on tiny-kernel: an ML program's one line, a C program whole (`sh.c`,
+  `ping.c`, `paint.c`...).
 - `runtime/` is what every compiled program is linked with, each
   language's in its directory, as the disk's `/lib/c` and `/lib/ml`:
   `c/`, C's start, its division, its library, the system's calls
   (`user.h`, `sys.s`), drawing and dialing (`draw.c`, `net.c`); `ml/`,
   ML's allocator and collector (`ml.c`), its glue to the system
   (`mlsys.c`) and the program's end (`end.s`).
-- `TinyKernel/` is the kernel: its parts in ML, its assembly and C,
-  its programs in C (`user/`), its Buildfile, and `Makefile`, which
+- `TinyKernel/` is the kernel and only it: its parts in ML, its
+  assembly and C, its Buildfile, and `Makefile`, which
   builds the image and the disk and runs the tests on tiny-machine;
   `steps/` has what ran before it (a C program on the bare CPU, `v0/` in
   assembly, `t6/` in C).
@@ -55,6 +56,28 @@ beside its parts.
 - `examples/` is tiny-kernel's `/examples`, the same files: small
   programs to read, build and run, in C and ML.
 - `tests/` has each program's tests, `tests/TinyXxx_test.sh`.
+
+## Conventions
+
+- A program's parts are named for what they are, their directory saying
+  whose: `TinyML/Lexer.ml`, `TinyBrowser/Http.ml`, not `TinyMLLexer`.
+  Two programs' parts may share a name (`Lexer`), since each program is
+  compiled with its own `-I`'s (the Buildfile's `X_INCLUDES`). The
+  kernel's parts, which other programs link too, carry a `K` (`KFS`,
+  `KProcs`), and its assembly and C a `k` (`kentry.s`, `kruntime.c`):
+  what goes in the kernel's image, not a program's.
+- Names are qualified, not opened: `Compile.bind`, `KFS.fs_read`,
+  `Strings.find`. A file opens `Common` (`|||`, `let*`, `Error`), and a
+  program its core vocabulary, the types all its parts speak: office's
+  `Model`, the kernel's `KProcs`, the browser's `Lines`. The apps'
+  libraries go by a letter, `module P = TinyLibPlayground`, `G =
+  TinyLibGUI`, `D = TinyLibDraw` (`P.Move (x, y, P.Rect ...)`, `msg
+  G.widget`). A test may open what it tests.
+- Another module's record or constructor is found by its type, given by
+  an annotation where nothing else says it (`(sc : Screen.screen)`,
+  `let fds : (int * KFiles.file) list = ...`), rather than by a prefix
+  on each label. tiny-ml takes no `_` in a type.
+- Lines at 80 columns, 85 now and then.
 
 ## One program, two systems
 

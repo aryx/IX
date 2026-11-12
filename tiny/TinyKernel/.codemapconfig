@@ -30,7 +30,7 @@ local kernel_color = '#c03030';
       summary: "tiny-kernel's design: each OS concept done by the road ML makes short; the header of all its parts.",
       important: [{ at: 'comment:"Why it is not a twin of an existing kernel."', say: 'the concepts kept, the roads changed', weight: 3 }],
     },
-    'runtime.c': { digest: '21b67c25ad73',
+    'kruntime.c': { digest: '21b67c25ad73',
       summary: "The kernel's runtime (tiny-cc): TinyML's core given the memory map, write and exit on the devices, the externals of bytes.",
       capitals: [
         { at: 'def:kmain', say: 'the heap given, then the kernel in ML, never back' },
@@ -47,7 +47,7 @@ local kernel_color = '#c03030';
     },
     // the machine's bytes, below the drawing
     'KRaw.ml': { digest: '798c55a87ab3',
-      summary: "KRaw on tiny-machine: bytes and rows as externals (runtime.c's, kdraw.s's); host/KRaw.ml is the host's.",
+      summary: "KRaw on tiny-machine: bytes and rows as externals (kruntime.c's, kdraw.s's); host/KRaw.ml is the host's.",
       capitals: [
         { at: 'def:peekb', say: 'a byte of the machine: what the drawing stands on' },
         { at: 'def:row_copy', say: "a row's loop in assembly (kdraw.s), fast" },
@@ -56,7 +56,7 @@ local kernel_color = '#c03030';
         { at: 'def:peekb', weight: 2 },
         { at: 'def:pokeb', weight: 2 },
         { at: 'def:row_mask', say: 'a colour where the mask is set: a character', weight: 1 },
-        { at: 'def:row_bytes', say: "runtime.c's k_blit under another name", weight: 1 },
+        { at: 'def:row_bytes', say: "kruntime.c's k_blit under another name", weight: 1 },
       ],
       related: ['host/KRaw.ml', 'kdraw.s'],
     },
@@ -166,7 +166,7 @@ local kernel_color = '#c03030';
       ],
     },
     'KMachine.ml': { digest: 'e36e583b08f8',
-      summary: "The kernel's machine: kentry.s's, kcopy.s's and runtime.c's externals, the devices' addresses at the top of memory.",
+      summary: "The kernel's machine: kentry.s's, kcopy.s's and kruntime.c's externals, the devices' addresses at the top of memory.",
       important: [
         { at: 'def:k_run', say: "kentry.s's: a process run, the trap's cause back", weight: 3 },
         { at: 'def:frame', say: "a slot's 68 bytes: where kentry.s saves registers", weight: 2 },
@@ -174,7 +174,7 @@ local kernel_color = '#c03030';
         { at: 'def:mailbox', say: "another core's: a process, its window, a slice", weight: 1 },
         { at: 'def:halt', say: 'the disk committed before the machine stops', weight: 1 },
       ],
-      related: ['kentry.s', 'kcopy.s', 'runtime.c'],
+      related: ['kentry.s', 'kcopy.s', 'kruntime.c'],
     },
     'KMachine.mli': { digest: '56f9f8fbd55a',
       summary: "What the kernel in ML reaches tiny-machine by: a process run until its trap, words read and written, devices' addresses.",
@@ -359,7 +359,7 @@ local kernel_color = '#c03030';
     {
       name: 'tiny-kernel: from kentry.s to the scheduler',
       bones: [
-        { at: 'runtime.c:def:kmain', role: "called by kentry.s's _entry" },
+        { at: 'kruntime.c:def:kmain', role: "called by kentry.s's _entry" },
         { at: '../runtime/ml.c:def:ml_run', role: "TinyML's runtime: the memory set, the program run" },
         { at: 'TinyKernel.ml:section:The boot', role: "the kernel's toplevel: files, /bin/sh" },
         { at: 'KScheduler.ml:def:schedule', role: 'the loop' },
@@ -367,7 +367,7 @@ local kernel_color = '#c03030';
         { at: 'KCalls.ml:def:syscall', role: 'a system call by number' },
       ],
       joints: [
-        { from: 'runtime.c:def:kmain', to: '../runtime/ml.c:def:ml_run', say: 'the heap, the value stack' },
+        { from: 'kruntime.c:def:kmain', to: '../runtime/ml.c:def:ml_run', say: 'the heap, the value stack' },
         { from: '../runtime/ml.c:def:ml_run', to: 'TinyKernel.ml:section:The boot', say: 'ml_start' },
         { from: 'TinyKernel.ml:section:The boot', to: 'KScheduler.ml:def:schedule', say: '/bin/sh' },
         { from: 'KScheduler.ml:def:schedule', to: 'KScheduler.ml:def:run', say: 'the next that can run' },

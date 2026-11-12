@@ -1,7 +1,7 @@
 # tiny-kernel's fonts
 
 The fonts t-IX draws its text with, on tiny-machine (tiny-kernel's
-`font.s`, made by the Makefile) and on the host (tiny-office,
+`kfont.s`, made by the Makefile) and on the host (tiny-office,
 tiny-emacs, tiny-www... in an SDL window: `../../user/sdl/`, its
 `TinyFont.ml`). `KGraphics.ml` makes a mask of each face, and
 a character is a draw through it.

@@ -5,7 +5,7 @@
  * and Cheney's copying collector, the primitives TinyLibCore names,
  * stdout's buffer, the uncaught exception. In C, compiled by tiny-cc,
  * #included by what gives it the memory (ml_run) and write and exit:
- * the kernel's ../TinyKernel/runtime.c, an ML program's of tiny-kernel
+ * the kernel's ../TinyKernel/kruntime.c, an ML program's of tiny-kernel
  * ../TinyLibSystem/tinykernel/mlsys.c, a test's own main
  * (tests/TinyML_test.sh). A word is intptr's: 4 bytes on tiny-machine.
  * (old: TinyMLRuntime/core.c; C's runtime beside it, start.s,

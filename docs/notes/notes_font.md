@@ -23,7 +23,7 @@ so that the second "e" costs less than the first.
 
 The headers of `Font.mli` and `Hershey.mli` tell each in full. The
 small systems have their own: the kernels' consoles a bitmap
-(`font1.bin`), tiny-kernel's a bitmap of its own (`font.s`, made
+(`font1.bin`), tiny-kernel's a bitmap of its own (`kfont.s`, made
 of `tiny.font`: section 7).
 
 A real system has the third kind for everything, and keeps the first

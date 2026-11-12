@@ -7,7 +7,7 @@
 // libc.h), linked first into every C program of tiny-cc's (tiny-kernel's,
 // ../TinyKernel/Makefile's ULIB; the steps'); and ML's, ml.c, #included
 // by what gives it the memory and write and exit:
-// ../TinyKernel/runtime.c (the kernel), ../TinyLibSystem/tinykernel/mlsys.c
+// ../TinyKernel/kruntime.c (the kernel), ../TinyLibSystem/tinykernel/mlsys.c
 // (tiny-kernel's ML programs), the tests' own mains
 // (../tests/TinyML_test.sh). The skeletons of tiny-ml that go through
 // ml.c are ../.codemapconfig's. A system's own calls are not here:
@@ -58,7 +58,7 @@
         { at: 'comment:"Writing goes twice over the value"', say: 'counted, then written: nothing allocated, nothing moves', weight: 2 },
         { at: 'def:sha_block', say: 'SHA-1 in C, on the machine words', weight: 1 },
       ],
-      related: ['../TinyKernel/runtime.c', '../TinyLibSystem/tinykernel/mlsys.c', '../TinyML.ml', '../TinyML/Compile.ml'],
+      related: ['../TinyKernel/kruntime.c', '../TinyLibSystem/tinykernel/mlsys.c', '../TinyML.ml', '../TinyML/Compile.ml'],
     },
   },
   skeletons: [

@@ -22,7 +22,7 @@
         { at: 'def:u_exec', say: 'an ML list of strings walked as C words', weight: 2 },
         { at: 'def:u_waits', say: 'pid and status in one ML integer', weight: 1 },
       ],
-      related: ['../../runtime/ml.c', '../../TinyKernel/libc/user.h', '../../TinyKernel/runtime.c'],
+      related: ['../../runtime/ml.c', '../../TinyKernel/libc/user.h', '../../TinyKernel/kruntime.c'],
     },
     'TinyLibSystem.ml': { digest: '7f294a1ded25',
       summary: "TinyLibSystem on tiny-machine: a tool's system over tiny-kernel's calls, what the kernel lacks made up here.",

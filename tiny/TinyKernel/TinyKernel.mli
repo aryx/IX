@@ -114,7 +114,7 @@
  * KCalls (the system calls), KScheduler. This file is
  * the boot.
  *
- * Here is how the kernel divides the machine's 256 MB (runtime.c has
+ * Here is how the kernel divides the machine's 256 MB (kruntime.c has
  * the numbers; a process sees only its own partition, starting at 0,
  * thanks to the machine's relocating window):
  *
@@ -210,7 +210,7 @@
  * code, C glue) cannot be:
  * - tiny-ml: the second back end of the stack machine (TinyML.ml);
  * - the runtime: runtime/ml.c, shared with every tiny-ml
- *   program, and runtime.c, which holds the kernel's memory layout and
+ *   program, and kruntime.c, which holds the kernel's memory layout and
  *   ten functions on bytes (peek, poke, copying a string from memory
  *   and to it);
  * - kentry.s, one page of assembly: k_run (which runs the process until
@@ -226,7 +226,7 @@
  * README), as mini-9pi is the mini one. It is not a new version of the
  * kernels that came before it on the same machine (v0 and t6 in
  * steps/, written in assembly and C). TinyKernel/ holds the rest:
- * kentry.s, runtime.c, the user programs, and the Makefile.
+ * kentry.s, kruntime.c, the user programs, and the Makefile.
  *
  * exercises:
  * Each cheap in this design:
@@ -316,5 +316,5 @@
  *)
 
 (* A program, and tiny-ml's alone: OCaml does not compile TinyKernel.ml
- * (its externals are kentry.s's and runtime.c's), so nothing checks
+ * (its externals are kentry.s's and kruntime.c's), so nothing checks
  * this file against it. It gives nothing to another file. *)

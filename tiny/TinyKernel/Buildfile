@@ -2,8 +2,8 @@
 #
 # tiny-kernel, kernel.img: TinyKernel.ml and its parts, in ML; the
 # assembly ML cannot say (kentry.s: the traps, the switch; kdraw.s and
-# kcopy.s, the pixels' and the memory's loops); runtime.c, ML's runtime
-# given the machine's memory; font.s, the font's pixels (made on the
+# kcopy.s, the pixels' and the memory's loops); kruntime.c, ML's runtime
+# given the machine's memory; kfont.s, the font's pixels (made on the
 # host by fonts/Mkfont.ml, on the image as it is); kend.s, the kernel's
 # end, where the files it carries start. Run by ../Buildfile at each
 # build (cd TinyKernel && build), after the library, which it links
@@ -42,11 +42,11 @@ all: kernel.img
 %.o: %.s
 	$AS -o $target $stem.s
 
-# the unsigned division tiny-cc calls (runtime.c's), the kernel's own
+# the unsigned division tiny-cc calls (kruntime.c's), the kernel's own
 # object of runtime/'s
 udivmod.o: ../runtime/udivmod.s
 	$AS -o $target ../runtime/udivmod.s
-runtime.o: runtime.c ../runtime/ml.c
+kruntime.o: kruntime.c ../runtime/ml.c
 
 # the units, each after the ones it names; the kernel's start made by
 # ml, as a program's (../TinyML/Link.mli). kentry.o first, at 0
@@ -55,7 +55,7 @@ UNITS = KRaw.o KGraphics.o KNetwork.o \
     KFiles.o KProcs.o KDevices.o KIO.o \
     KCalls.o KScheduler.o TinyKernel.o
 kernel.start.o: $STDLIB $UNITS
-kernel.img: kentry.o udivmod.o runtime.o kdraw.o kcopy.o font.o \
+kernel.img: kentry.o udivmod.o kruntime.o kdraw.o kcopy.o kfont.o \
     kernel.start.o $STDLIB $UNITS kend.o
 	$LD -map -o $target $prereq
 

@@ -23,7 +23,7 @@ _entry:
 	csrr	r1, core
 	bne	r1, zero, slave
 	la	sp, kstacktop
-	call	kmain			; runtime.c: the heap, then the ML toplevel
+	call	kmain			; kruntime.c: the heap, then the ML toplevel
 spin:
 	j	spin
 

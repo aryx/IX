@@ -6,7 +6,7 @@ open KRaw
 open KFS
 
 (*****************************************************************************)
-(* The machine: kentry.s's, kcopy.s's and runtime.c's functions *)
+(* The machine: kentry.s's, kcopy.s's and kruntime.c's functions *)
 (*****************************************************************************)
 
 external k_init : unit -> unit = "k_init"
@@ -30,7 +30,7 @@ external k_console : int -> int -> unit = "k_console"
 external k_font : unit -> int = "k_font"
 external k_font_size : unit -> int = "k_font_size"
 
-(* The memory. The first 32 MB are the kernel's (runtime.c says how they
+(* The memory. The first 32 MB are the kernel's (kruntime.c says how they
  * are used): its image, the processes' frames, the images it draws, the
  * screen, its heap. The processes' memory is above, KMemory's:
  * a partition of the size a program asks for (1 MB if it does not say),

@@ -5,7 +5,7 @@
 
 open KRaw
 
-(* kcopy.s's loops and runtime.c's words (TinyKernel.ml names them
+(* kcopy.s's loops and kruntime.c's words (TinyKernel.ml names them
  * too) *)
 external k_copy : int -> int -> int -> unit = "k_copy"
 external k_window : int -> int -> int -> int -> int -> unit = "k_window"

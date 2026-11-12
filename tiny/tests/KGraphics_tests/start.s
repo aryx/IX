@@ -1,7 +1,7 @@
 ; Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyMachine.ml)
 ;
 ; Picture.ml on tiny-machine, with no kernel: the machine starts here,
-; and TinyKernel/runtime.c's kmain gives the ML program its memory.
+; and TinyKernel/kruntime.c's kmain gives the ML program its memory.
 ; font_bits() is where the font is: KGraphics_test.sh puts its bytes
 ; after this file, at that label, and font_end after them; font_size()
 ; how many.

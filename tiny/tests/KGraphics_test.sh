@@ -33,7 +33,7 @@ failures=0
 fail() { echo "FAIL $1"; failures=$((failures + 1)); }
 
 # the machine's program, but for the font: the runtime, the program
-$TC -o $W/runtime.o $T/TinyKernel/runtime.c || fail "machine: tiny-cc runtime.c"
+$TC -o $W/kruntime.o $T/TinyKernel/kruntime.c || fail "machine: tiny-cc kruntime.c"
 # (-window: without the exit, the program ends in start.s's loop)
 sed -e 's/; exit 0$//' $T/tests/KGraphics_tests/machine.ml > $W/machine.ml
 [ "${1:-}" = -window ] || cp $T/tests/KGraphics_tests/machine.ml $W/machine.ml
@@ -60,7 +60,7 @@ picture() {
   # the machine's: start.s first (the machine starts at 0), the font's
   # bytes at its label, the runtime, the rows, the program
   (cat $T/tests/KGraphics_tests/start.s; echo 'font:'; od -An -v -tu1 $FONT | awk 'NF { printf "\t.byte\t%s", $1; for (i = 2; i <= NF; i++) printf ", %s", $i; print "" }'; printf 'font_end:\n\t.align\t4\n') > $R-start.s
-  link_tm $R.img $R-start.s $T/runtime/udivmod.s $W/runtime.o $T/TinyKernel/kdraw.s $W/picture.o $LIB_O || fail "machine: the link"
+  link_tm $R.img $R-start.s $T/runtime/udivmod.s $W/kruntime.o $T/TinyKernel/kdraw.s $W/picture.o $LIB_O || fail "machine: the link"
   [ "${WINDOW:-}" = 1 ] && { $MACHINE -window $R.img; exit; }
   timeout ${SLOW:-60} $MACHINE -screen $R-machine.ppm $R.img > $R-machine.out 2>&1 || fail "machine: the run"
   check machine

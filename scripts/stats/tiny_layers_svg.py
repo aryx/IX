@@ -102,7 +102,7 @@ COLUMNS = [
             "tiny/TinyLibCore/: the same modules"]),
         ("TinyML's runtime", "C, by tiny-cc", [
             "tiny/runtime/ml.c, the same;",
-            "included by TinyKernel/runtime.c (the",
+            "included by TinyKernel/kruntime.c (the",
             "kernel's memory, the console)"]),
         ("Its assembly", "tiny-cpu's", [
             "TinyKernel/kentry.s (the start, the",

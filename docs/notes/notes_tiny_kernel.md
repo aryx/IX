@@ -109,7 +109,7 @@ kernels have, so they run unchanged.
 |---|---|---|
 | `tiny/TinyKernel.ml` | the kernel, in tiny-ml's ML | 318 |
 | `tiny/TinyKernel/kentry.s` | `k_run`, the trap's entry, the timer, the window, copy and zero | 142 |
-| `tiny/TinyKernel/runtime.c` | the memory's layout, write and exit, peek and poke, strings to and from memory | 79 |
+| `tiny/TinyKernel/kruntime.c` | the memory's layout, write and exit, peek and poke, strings to and from memory | 79 |
 | `tiny/TinyKernel/user/`, `libc/` | `sh.c` (fork, exec, dup), `mltests.c`; `user.h`, `sys.s` | 435 |
 | the kernel, then | | **539** |
 

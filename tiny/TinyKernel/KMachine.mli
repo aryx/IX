@@ -1,6 +1,6 @@
 (* TinyKernel's machine: what the kernel in ML reaches tiny-machine by,
  * the externals of kentry.s (a process run until its trap, the timer,
- * the interrupts), kcopy.s (bytes copied, zeroed) and runtime.c (a
+ * the interrupts), kcopy.s (bytes copied, zeroed) and kruntime.c (a
  * word read and written, strings to and from memory), and the devices'
  * addresses at the top of memory.
  *
@@ -9,7 +9,7 @@
  *                        ──k_run──────►   a process, until its trap: the
  *                                         cause (Trap_sys, Trap_fault...) back
  *
- * The first 32 MB are the kernel's (runtime.c says how): its image,
+ * The first 32 MB are the kernel's (kruntime.c says how): its image,
  * the processes' frames, the images it draws, the screen, its heap;
  * the processes' memory is above, KMemory's. A device's
  * address is a negative number, which the machine takes modulo its
@@ -31,7 +31,7 @@ external k_tval : unit -> int = "k_tval"
 external k_timer : int -> unit = "k_timer"
 external k_clock : unit -> int = "k_clock"
 
-(* kcopy.s's and runtime.c's: n bytes copied, zeroed; where the image
+(* kcopy.s's and kruntime.c's: n bytes copied, zeroed; where the image
  * ends; a word read, written; bytes as a string, a string into memory;
  * a character on the console; the font's address, its size *)
 external k_copy : int -> int -> int -> unit = "k_copy"

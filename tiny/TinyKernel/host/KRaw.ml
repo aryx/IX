@@ -5,7 +5,7 @@
  * KGraphics.ml and the programs over it ask of a machine, so that
  * they run on the host too, where they are tested first
  * (plan_tiny_windows.md). On tiny-machine these names are externals,
- * functions of C (TinyKernel/runtime.c's peekb and pokeb) and of
+ * functions of C (TinyKernel/kruntime.c's peekb and pokeb) and of
  * assembly (TinyKernel/kdraw.s's rows); tiny-ml reads `open KRaw`
  * and leaves it. Here they are an array's, of the machine's 16 MB, an
  * address the same number in both: the screen's 1024 by 768 bytes are at

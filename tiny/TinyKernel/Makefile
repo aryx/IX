@@ -130,7 +130,7 @@ T = ../tests/TinyKernel_tests
 # ar, build, and rc's tiny-shell). The copy is made again at each make:
 # what changed, tiny-build makes again (by its digests). Before the
 # build, the file the host alone makes, put in the copy:
-# TinyKernel/font.s, the font's bytes. (old: this Makefile's own rules,
+# TinyKernel/kfont.s, the font's bytes. (old: this Makefile's own rules,
 # its lists of each program's units and of each unit's interfaces, the
 # Buildfile's said again; and a third build, the Buildfile this
 # Makefile wrote for tiny-kernel, /src/TinyKernel/Buildfile)
@@ -149,7 +149,7 @@ all: $(O)/boot.img $(O)/disk.img
 # many (ML integers): Plan 9's default font (FONT=fonts/grey.font,
 # Ubuntu Mono, two bits a pixel; fonts/README.md)
 FONT = fonts/plan9.font
-$(O)/font.s: $(FONT)
+$(O)/kfont.s: $(FONT)
 	@mkdir -p $(@D)
 	printf 'k_font:\n\tla\tr13, font\n\tshli\tr13, r13, 1\n\tori\tr13, r13, 1\n\tret\n' > $@
 	printf 'k_font_size:\n\tla\tr13, font_end\n\tla\tr12, font\n' >> $@
@@ -159,13 +159,13 @@ $(O)/font.s: $(FONT)
 
 # boot.img and kernel.img: the Buildfile's, copied out of the copy when
 # they changed (so that what stands on them is not made again)
-$(O)/boot.img: $(O)/font.s FORCE
+$(O)/boot.img: $(O)/kfont.s FORCE
 	mkdir -p $(O)/tools
 	for t in $(TML) $(TC) $(AS) $(LD) $(AR) $(BUILD) $(RC); do cksum < $$(command -v $$t); done > $(O)/tools.new
 	cmp -s $(O)/tools.new $(O)/tools.sum || rm -rf $(S); mv $(O)/tools.new $(O)/tools.sum
 	mkdir -p $(S)
 	tar -C .. $(COPY) -cf - . | tar -C $(S) -xf -
-	cp $(O)/font.s $(S)/TinyKernel/font.s
+	cp $(O)/kfont.s $(S)/TinyKernel/kfont.s
 	for t in ml:$(TML) cc:$(TC) as:$(AS) ld:$(LD) ar:$(AR) build:$(BUILD) tiny-shell:$(RC); do \
 	  ln -sf $$(command -v $${t#*:}) $(O)/tools/$${t%%:*}; done
 	cd $(S) && PATH=$(abspath $(O)/tools):$$PATH MEMORY=$(MEMORY) MEMSIZE=$(MEMSIZE) \
@@ -189,7 +189,7 @@ FORCE:
 $(O)/disk.img: $(O)/boot.img $(MKFSBIN)
 	rm -rf $(O)/disk; mkdir -p $(O)/disk/src
 	tar -C .. $(COPY) -cf - . | tar -C $(O)/disk/src -xf -
-	cp $(O)/font.s $(O)/disk/src/TinyKernel/font.s
+	cp $(O)/kfont.s $(O)/disk/src/TinyKernel/kfont.s
 	cd $(O)/disk && $(MKFS) -m 8 ../disk.new $$(find src -type f | LC_ALL=C sort | sed 's|.*|&=&|')
 	cmp -s $(O)/disk.new $@ && rm $(O)/disk.new || mv $(O)/disk.new $@
 	rm -rf $(O)/disk

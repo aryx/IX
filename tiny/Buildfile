@@ -414,7 +414,7 @@ TinyKernel/kernel.img: kernel
 # are on the disk, TinyKernel/Makefile's disk.img, made on the host).
 # The same recipe on the host and on tiny-kernel, in a copy of tiny/
 # (TinyKernel/Makefile's _make/src, the disk's /src). One file is made
-# on the host alone, before: TinyKernel/font.s, the font's bytes.
+# on the host alone, before: TinyKernel/kfont.s, the font's bytes.
 # MEMORY, from the environment (TinyKernel/Makefile's MEMORY=segments or
 # pages), the kernel's way of giving memory, in /lib/memory, with
 # MEMSIZE.

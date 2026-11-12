@@ -139,7 +139,7 @@
 <text x="968" y="489" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyML&#x27;s runtime</text>
 <text x="1238" y="489" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">C, by tiny-cc</text>
 <text x="968" y="510" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/runtime/ml.c, the same;</text>
-<text x="968" y="527" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">included by TinyKernel/runtime.c (the</text>
+<text x="968" y="527" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">included by TinyKernel/kruntime.c (the</text>
 <text x="968" y="544" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">kernel&#x27;s memory, the console)</text>
 <line x1="1102" y1="557" x2="1102" y2="575" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <rect x="954" y="577" width="296" height="91" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>

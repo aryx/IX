@@ -59,15 +59,15 @@ COLUMNS = [
             "TinyLibSystem/tinykernel/: the system,",
             "over the kernel's calls"]),
         ("TinyML's runtime", "C, by tiny-cc", [
-            "tiny/runtime/ml.c: the allocator,",
+            "tiny/runtime/ml/ml.c: the allocator,",
             "Cheney's collector, strings, compare;",
-            "included by TinyLibSystem/tinykernel/mlsys.c",
+            "included by runtime/ml/mlsys.c",
             "(the heap in the program's megabyte,",
             "the calls as C functions)"]),
         ("The C runtime", "C, assembly", [
-            "tiny/runtime/: start.s (the start),",
-            "udivmod.s (the division), libc.c;",
-            "TinyKernel/libc/sys.s: the system calls"]),
+            "tiny/runtime/c/: start.s (the start),",
+            "udivmod.s (the division), libc.c,",
+            "sys.s: the system calls"]),
         ("The system", "", [
             "tiny-kernel, on tiny-machine"]),
     ]),
@@ -76,15 +76,14 @@ COLUMNS = [
             "tiny/TinyKernel/user/sh.c, ls.c,",
             "paint.c...: one file each"]),
         ("What some of them add", "C", [
-            "TinyKernel/libc/draw.c, draw.h: the",
+            "runtime/c/draw.c, draw.h: the",
             "drawing's messages (paint, wiki);",
             "net.c: a machine reached by its name",
             "(get)"]),
         ("The C runtime", "C, assembly", [
-            "tiny/runtime/: libc.c and libc.h",
+            "tiny/runtime/c/: libc.c and libc.h",
             "(print, the strings, malloc), start.s,",
-            "udivmod.s;",
-            "TinyKernel/libc/sys.s: the system calls"]),
+            "udivmod.s, sys.s: the system calls"]),
         ("The system", "", [
             "tiny-kernel, on tiny-machine"]),
     ]),
@@ -101,13 +100,13 @@ COLUMNS = [
         ("The standard library", "ML", [
             "tiny/TinyLibCore/: the same modules"]),
         ("TinyML's runtime", "C, by tiny-cc", [
-            "tiny/runtime/ml.c, the same;",
+            "tiny/runtime/ml/ml.c, the same;",
             "included by TinyKernel/kruntime.c (the",
             "kernel's memory, the console)"]),
         ("Its assembly", "tiny-cpu's", [
             "TinyKernel/kentry.s (the start, the",
             "traps), kdraw.s (a row of pixels), the",
-            "font; runtime/udivmod.s"]),
+            "font; runtime/c/udivmod.s"]),
         ("The machine", "", [
             "tiny-machine (tiny/TinyMachine.ml,",
             "TinyMachine/): the CPU, the devices"]),

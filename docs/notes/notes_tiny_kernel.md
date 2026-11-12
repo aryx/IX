@@ -124,7 +124,7 @@ work as they did:
   expression stack, r12 is the value stack's top, and r13 is scratch
   and the result. Static data is written for 4-byte words, and
   `max_int` is 2^30 − 1.
-- `runtime/ml.c` (then `TinyMLRuntime/core.c`): the runtime's common part, split out of
+- `runtime/ml/ml.c` (then `TinyMLRuntime/core.c`): the runtime's common part, split out of
   `TinyMLRuntime/runtime.c` and word-size generic (`intptr`). Its includer
   gives it memory through `ml_run`: the host's arrays on arm64, or
   fixed addresses in the kernel.

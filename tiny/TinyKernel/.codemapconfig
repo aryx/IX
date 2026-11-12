@@ -24,7 +24,7 @@ local kernel_color = '#c03030';
         { at: 'comment:"the first process: /bin/sh"', say: 'five descriptors, as a window gives', weight: 3 },
         { at: 'code:"schedule ()"', weight: 3 },
       ],
-      related: ['KScheduler.ml', '../runtime/ml.c', '../../docs/notes/notes_tiny_kernel.md', '../../kernels/9pi/'],
+      related: ['KScheduler.ml', '../runtime/ml/ml.c', '../../docs/notes/notes_tiny_kernel.md', '../../kernels/9pi/'],
     },
     'TinyKernel.mli': { digest: 'ff10f0b87f96',
       summary: "tiny-kernel's design: each OS concept done by the road ML makes short; the header of all its parts.",
@@ -43,7 +43,7 @@ local kernel_color = '#c03030';
         { at: 'def:k_blit', weight: 1 },
         { at: 'def:write', say: 'the console: a byte a store to the device', weight: 1 },
       ],
-      related: ['TinyKernel.ml', '../runtime/ml.c', 'kentry.s', 'Makefile'],
+      related: ['TinyKernel.ml', '../runtime/ml/ml.c', 'kentry.s', 'Makefile'],
     },
     // the machine's bytes, below the drawing
     'KRaw.ml': { digest: '798c55a87ab3',
@@ -360,15 +360,15 @@ local kernel_color = '#c03030';
       name: 'tiny-kernel: from kentry.s to the scheduler',
       bones: [
         { at: 'kruntime.c:def:kmain', role: "called by kentry.s's _entry" },
-        { at: '../runtime/ml.c:def:ml_run', role: "TinyML's runtime: the memory set, the program run" },
+        { at: '../runtime/ml/ml.c:def:ml_run', role: "TinyML's runtime: the memory set, the program run" },
         { at: 'TinyKernel.ml:section:The boot', role: "the kernel's toplevel: files, /bin/sh" },
         { at: 'KScheduler.ml:def:schedule', role: 'the loop' },
         { at: 'KScheduler.ml:def:run', role: "a process run until its trap (kentry.s's k_run)" },
         { at: 'KCalls.ml:def:syscall', role: 'a system call by number' },
       ],
       joints: [
-        { from: 'kruntime.c:def:kmain', to: '../runtime/ml.c:def:ml_run', say: 'the heap, the value stack' },
-        { from: '../runtime/ml.c:def:ml_run', to: 'TinyKernel.ml:section:The boot', say: 'ml_start' },
+        { from: 'kruntime.c:def:kmain', to: '../runtime/ml/ml.c:def:ml_run', say: 'the heap, the value stack' },
+        { from: '../runtime/ml/ml.c:def:ml_run', to: 'TinyKernel.ml:section:The boot', say: 'ml_start' },
         { from: 'TinyKernel.ml:section:The boot', to: 'KScheduler.ml:def:schedule', say: '/bin/sh' },
         { from: 'KScheduler.ml:def:schedule', to: 'KScheduler.ml:def:run', say: 'the next that can run' },
         { from: 'KScheduler.ml:def:run', to: 'KCalls.ml:def:syscall', say: 'c_sys, its number' },
@@ -587,8 +587,8 @@ local kernel_color = '#c03030';
   ],
   views: [
     { name: 'tiny-kernel and mini-9pi', files: ['TinyKernel.ml', './', '../../kernels/9pi/'] },
-    { name: 'The drawing: kernel side, program side, the twin', files: ['KGraphics.ml', '../TinyLibDraw.ml', 'libc/draw.c', '../../lib_graphics/'] },
-    { name: 'The network: kernel and the wire end', files: ['KNetwork.ml', '../TinyMachine/TinyMachinePeer.ml', 'libc/net.c'] },
+    { name: 'The drawing: kernel side, program side, the twin', files: ['KGraphics.ml', '../TinyLibDraw.ml', '../runtime/c/draw.c', '../../lib_graphics/'] },
+    { name: 'The network: kernel and the wire end', files: ['KNetwork.ml', '../TinyMachine/TinyMachinePeer.ml', '../runtime/c/net.c'] },
   ],
   marks: [
     {

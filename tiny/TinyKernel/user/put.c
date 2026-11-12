@@ -14,7 +14,7 @@
 // not. The size comes first so that the other end knows where the file
 // ends: the file is read twice, once to count it, and is never all in
 // memory (a program has 1 MB).
-#include "../libc/user.h"
+#include "user.h"
 
 char buf[1024];
 

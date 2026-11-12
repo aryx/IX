@@ -32,11 +32,11 @@ MKFS=${MKFS:-$ROOT/_build/default/tiny/TinyKernel/host/TinyMkfs.exe}
 CAT=${CAT:-$ROOT/_build/default/tiny/tests/KFS_tests/Cat.exe}
 T=$ROOT/tiny
 want=$(printf '/a/\n/a/b/\n/a/b/start.s %d\n/tmp/\n/hello.c %d\n' \
-  $(wc -c < $T/runtime/start.s) $(wc -c < $T/examples/hello.c))
-if $MKFS -m 1 $W/d.img a/b/start.s=$T/runtime/start.s tmp/ hello.c=$T/examples/hello.c \
+  $(wc -c < $T/runtime/c/start.s) $(wc -c < $T/examples/hello.c))
+if $MKFS -m 1 $W/d.img a/b/start.s=$T/runtime/c/start.s tmp/ hello.c=$T/examples/hello.c \
    && [ "$($MKFS -l $W/d.img)" = "$want" ] \
-   && $CAT $W/d.img a/b/start.s | cmp -s - $T/runtime/start.s \
-   && $MKFS -m 1 $W/d2.img a/b/start.s=$T/runtime/start.s tmp/ hello.c=$T/examples/hello.c \
+   && $CAT $W/d.img a/b/start.s | cmp -s - $T/runtime/c/start.s \
+   && $MKFS -m 1 $W/d2.img a/b/start.s=$T/runtime/c/start.s tmp/ hello.c=$T/examples/hello.c \
    && cmp -s $W/d.img $W/d2.img \
    && truncate -s 4M $W/d.img && [ "$($MKFS -l $W/d.img)" = "$want" ] \
    && $CAT $W/d.img hello.c | cmp -s - $T/examples/hello.c

@@ -48,7 +48,7 @@
  * why.
  *
  * This module: the operators, the machine's and the runtime's
- * (runtime/ml.c's) as externals; option and the exceptions; the few
+ * (runtime/ml/ml.c's) as externals; option and the exceptions; the few
  * functions OCaml's Stdlib has that tiny programs name. max_int and
  * min_int are the target's, 31 bits. *)
 

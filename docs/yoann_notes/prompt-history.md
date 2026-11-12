@@ -72581,3 +72581,19 @@ Claude reported the machine side of step 0 passes: `make test` with 35 jobs and 
 The machine change is ready as four files: TinyMachineDevices.ml/.mli, TinyMachine.ml, and TinyMachineWeb.ml.
 Its changes: a two-disk `disks` array, the second disk at `-80(r0)`, and `tiny-machine` accepting `-d` twice.
 Claude held the kernel side until the other session's 50-file kernel rename commits, and offered to commit the machine side now.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 19:06
+
+**Yoann:**
+
+> let's commit the machine side
+
+**Claude (summary):**
+
+Claude committed the machine side of step 0 as `e5d39f65`, with the four tested files and `prompt-history.md`.
+Claude said the kernel side was waiting on the other session's rename of the kernel's parts, still staged and uncommitted.
+Claude planned for `KFS` to take an `fs` value holding each disk's I/O, counts, and superblock and map locations.
+Claude planned for `KFiles`' disk nodes to carry their `fs`, so every function can reach the right disk.
+Claude also planned for the boot to mount the second disk at `/src`, which tiny-machine now accepts via a second `-d`.

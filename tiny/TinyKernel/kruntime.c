@@ -23,7 +23,7 @@
 // partitions are above 32 MB (TinyKernel.ml). The devices are in the
 // last 48 bytes, reached by negative addresses, which the machine takes
 // modulo its memory size.
-#include "../runtime/ml.c"
+#include "../runtime/ml/ml.c"
 
 #define VSTACK 0xb00000
 #define HEAP0 0x1000000

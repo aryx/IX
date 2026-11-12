@@ -4,7 +4,7 @@
 (* helloml: tiny-ml's compiler and runtime tried on tiny-kernel, in
  * /examples (hello.c is C's). A variant and its recursive functions, a
  * closure, an exception caught, strings and lists of TinyLibCore; and
- * enough lists made and dropped that ../runtime/ml.c's collector runs.
+ * enough lists made and dropped that ../runtime/ml/ml.c's collector runs.
  * The Buildfile beside it builds it (tiny-ml, then the link with the C
  * runtime, mlsys.c and /lib/ml's library):
  *

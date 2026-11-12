@@ -109,11 +109,11 @@ TinyLibSystem/tinykernel/&.o: TinyLibSystem/tinykernel/&.ml $STDLIB
 %.start.o:
 	$ML -o $target $prereq
 
-# C, by tiny-cc, its #includes found beside the file, then in runtime/
+# C, by tiny-cc, its #includes found beside the file, then in runtime/c/
 # (libc.h, which user.h includes); assembly written by hand, by tiny-as
 # (the compilers write their objects themselves)
 %.o: %.c
-	$CC -I runtime -o $target $stem.c
+	$CC -I runtime/c -o $target $stem.c
 %.o: %.s
 	$AS -o $target $stem.s
 
@@ -122,19 +122,22 @@ TinyLibSystem/tinykernel/&.o: TinyLibSystem/tinykernel/&.ml $STDLIB
 # The runtimes: what a program links besides its own code
 #############################################################################
 
-# C's, on any system (runtime/): _start, which calls main, then exits,
-# linked first since the machine starts at 0; the unsigned division
-# tiny-cc calls; libc, print and the strings. Then tiny-kernel's calls
-# for C (TinyKernel/libc/: sys.s, a sys instruction each; draw.c and
-# net.c for the programs that draw or dial)
-CRT = runtime/start.o runtime/udivmod.o runtime/libc.o TinyKernel/libc/sys.o
+# Each language's in its directory, runtime/c/ and runtime/ml/, as the
+# image's /lib/c and /lib/ml (the TinyLibXxx.ml are libraries a
+# program chooses; these, every program links).
+#
+# C's: _start, which calls main, then exits, linked first since the
+# machine starts at 0; the unsigned division tiny-cc calls; libc, print
+# and the strings; tiny-kernel's calls, sys.s, a sys instruction each;
+# draw.c and net.c for the programs that draw or dial
+CRT = runtime/c/start.o runtime/c/udivmod.o runtime/c/libc.o runtime/c/sys.o
 
-# ML's: runtime/ml.c, the allocator and Cheney's collector, #included by
+# ML's: ml.c, the allocator and Cheney's collector, #included by
 # mlsys.c, which gives it tiny-kernel's memory and calls; end.s, the
 # program's end, where its value stack can start, linked last
-MLRT = TinyLibSystem/tinykernel/mlsys.o
-MLEND = TinyLibSystem/tinykernel/end.o
-TinyLibSystem/tinykernel/mlsys.o: TinyLibSystem/tinykernel/mlsys.c runtime/ml.c TinyKernel/libc/user.h
+MLRT = runtime/ml/mlsys.o
+MLEND = runtime/ml/end.o
+runtime/ml/mlsys.o: runtime/ml/mlsys.c runtime/ml/ml.c runtime/c/user.h
 
 
 #############################################################################
@@ -371,26 +374,26 @@ bigmem: $CRT $MLRT bigmem.start.o $STDLIB $BIGMEM_UNITS $MLEND
 # sh, the first shell (rc is the one used); mltests, a test of ML's
 # calls; ping, get, put and httpd, the network's (get and put with
 # net.c, which dials a name); paint, which draws (with draw.c)
-TinyKernel/user/sh.o: TinyKernel/user/sh.c TinyKernel/libc/user.h
+TinyKernel/user/sh.o: TinyKernel/user/sh.c runtime/c/user.h
 sh: $CRT TinyKernel/user/sh.o
 	$LD -map -s -n -o $target $prereq
-TinyKernel/user/mltests.o: TinyKernel/user/mltests.c TinyKernel/libc/user.h
+TinyKernel/user/mltests.o: TinyKernel/user/mltests.c runtime/c/user.h
 mltests: $CRT TinyKernel/user/mltests.o
 	$LD -map -s -n -o $target $prereq
-TinyKernel/user/ping.o: TinyKernel/user/ping.c TinyKernel/libc/user.h
+TinyKernel/user/ping.o: TinyKernel/user/ping.c runtime/c/user.h
 ping: $CRT TinyKernel/user/ping.o
 	$LD -map -s -n -o $target $prereq
-TinyKernel/user/get.o: TinyKernel/user/get.c TinyKernel/libc/user.h
-get: $CRT TinyKernel/libc/net.o TinyKernel/user/get.o
+TinyKernel/user/get.o: TinyKernel/user/get.c runtime/c/user.h
+get: $CRT runtime/c/net.o TinyKernel/user/get.o
 	$LD -map -s -n -o $target $prereq
-TinyKernel/user/put.o: TinyKernel/user/put.c TinyKernel/libc/user.h
-put: $CRT TinyKernel/libc/net.o TinyKernel/user/put.o
+TinyKernel/user/put.o: TinyKernel/user/put.c runtime/c/user.h
+put: $CRT runtime/c/net.o TinyKernel/user/put.o
 	$LD -map -s -n -o $target $prereq
-TinyKernel/user/httpd.o: TinyKernel/user/httpd.c TinyKernel/libc/user.h
+TinyKernel/user/httpd.o: TinyKernel/user/httpd.c runtime/c/user.h
 httpd: $CRT TinyKernel/user/httpd.o
 	$LD -map -s -n -o $target $prereq
-TinyKernel/user/paint.o: TinyKernel/user/paint.c TinyKernel/libc/user.h TinyKernel/libc/draw.h
-paint: $CRT TinyKernel/libc/draw.o TinyKernel/user/paint.o
+TinyKernel/user/paint.o: TinyKernel/user/paint.c runtime/c/user.h runtime/c/draw.h
+paint: $CRT runtime/c/draw.o TinyKernel/user/paint.o
 	$LD -map -s -n -o $target $prereq
 
 #############################################################################
@@ -429,11 +432,11 @@ UTILS = [ basename cat cmp cp date du echo grep kill ln ls mkdir mv ps pwd \
 # a program that draws stands on, each its object and its interface
 # (ml -I /lib/ml): the system's calls, the drawing's messages, the
 # playground, the widgets
-LIBC = runtime/start.o runtime/udivmod.o runtime/libc.o \
-    TinyKernel/libc/sys.o TinyKernel/libc/draw.o TinyKernel/libc/net.o \
-    runtime/libc.h TinyKernel/libc/user.h TinyKernel/libc/draw.h
+LIBC = runtime/c/start.o runtime/c/udivmod.o runtime/c/libc.o \
+    runtime/c/sys.o runtime/c/draw.o runtime/c/net.o \
+    runtime/c/libc.h runtime/c/user.h runtime/c/draw.h
 MLLIBS = $SYS $DRAWLIB $PLAYGROUND $GUI
-LIBML = TinyLibSystem/tinykernel/mlsys.o TinyLibSystem/tinykernel/end.o \
+LIBML = runtime/ml/mlsys.o runtime/ml/end.o \
     $MLLIBS ${MLLIBS:%.o=%.tmi}
 # (the .tmi made with stdlib.a, by TinyLibCore/Buildfile; not
 # prerequisites: this file's %.tmi would make them again)
@@ -505,11 +508,9 @@ depend:
 clean:
 	@{ cd TinyLibCore && $BUILD clean }
 	@{ cd TinyKernel && $BUILD clean }
-	rm -f lib/c/* lib/ml/*
 	rm -f *.o *.tmi TinyBrowser/*.o TinyBrowser/*.tmi TinyC/*.o TinyC/*.tmi \
-	    TinyKernel/libc/*.o \
-	    TinyKernel/libc/*.tmi TinyKernel/user/*.o TinyKernel/user/*.tmi \
-	    TinyLibSystem/tinykernel/*.o \
-	    TinyLibSystem/tinykernel/*.tmi TinyML/*.o TinyML/*.tmi TinyOffice/*.o \
-	    TinyOffice/*.tmi runtime/*.o runtime/*.tmi \
+	    TinyKernel/user/*.o TinyKernel/user/*.tmi \
+	    TinyLibSystem/tinykernel/*.o TinyLibSystem/tinykernel/*.tmi \
+	    TinyML/*.o TinyML/*.tmi TinyOffice/*.o TinyOffice/*.tmi \
+	    runtime/c/*.o runtime/ml/*.o \
 	    user/*.o user/*.tmi *.map $PROGS boot.img

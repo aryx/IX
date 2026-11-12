@@ -9,7 +9,7 @@
  *                  code to run), called in the link's order, in a
  *                  handler that says an exception nothing caught
  *     ml_globals   every unit's globals in one table, the collector's
- *                  roots (runtime/ml.c), and their count, ml_nglobals
+ *                  roots (runtime/ml/ml.c), and their count, ml_nglobals
  *     curry        the functions that apply a closure to some of its
  *                  arguments, for the arities the units use, once
  *

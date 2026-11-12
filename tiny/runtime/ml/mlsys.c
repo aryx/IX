@@ -23,8 +23,8 @@
 // The partition's size is found from the arguments: exec puts them at
 // its top, so the partition ends at the first megabyte boundary above
 // argv (partitions are whole megabytes).
-#include "../../runtime/ml.c"
-#include "../../TinyKernel/libc/user.h"
+#include "ml.c"
+#include "../c/user.h"
 
 #define VSTACK 0x60000
 

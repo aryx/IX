@@ -12,8 +12,8 @@
 // keys, until the ball's next move. Its pixels are the kernel's: it
 // writes messages to its descriptor 3 (draw.h) and reads its mouse, 4:
 // the screen's, or its window's.
-#include "../libc/user.h"
-#include "../libc/draw.h"
+#include "user.h"
+#include "draw.h"
 
 enum { Grey = 1, Black, Red, White, Blue, Yellow, Period = 50 };
 

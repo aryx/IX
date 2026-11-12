@@ -21,7 +21,7 @@ TML=${TML:-$ROOT/_build/default/tiny/TinyML.exe}
 TC=${TC:-$ROOT/_build/default/tiny/TinyC.exe}
 CPU=${CPU:-$ROOT/_build/default/tiny/TinyCPU.exe}
 . $ROOT/tiny/tests/link.sh
-L=$ROOT/tiny/runtime
+L=$ROOT/tiny/runtime/c
 T=$ROOT/tiny/tests/TinyOffice_tests
 # TinyOffice.ml's parts, in their order
 O=$ROOT/tiny/TinyOffice
@@ -39,7 +39,7 @@ if diff $T/pages.expected $W/host.out > $W/host.diff; then echo "ok pages: by OC
 # call reaches 128 KB, and the code on either side of it would be too
 # far apart, _start from main or main from the ML code)
 cat > $W/main.c <<END
-#include "$ROOT/tiny/runtime/ml.c"
+#include "$ROOT/tiny/runtime/ml/ml.c"
 extern value vstack[];
 extern value space0[];
 extern value space1[];

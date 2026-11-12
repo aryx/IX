@@ -15,7 +15,7 @@
 #
 # What it makes is in this directory, from its sources, so that no file
 # has two Buildfiles making it (a pattern takes any name that ends as
-# it says: ../runtime/udivmod.o here would be made again by this file's
+# it says: ../runtime/c/udivmod.o here would be made again by this file's
 # %.o).
 
 # the tools, tiny-kernel's names, the host's by TINY=tiny- (../Buildfile
@@ -44,9 +44,9 @@ all: kernel.img
 
 # the unsigned division tiny-cc calls (kruntime.c's), the kernel's own
 # object of runtime/'s
-udivmod.o: ../runtime/udivmod.s
-	$AS -o $target ../runtime/udivmod.s
-kruntime.o: kruntime.c ../runtime/ml.c
+udivmod.o: ../runtime/c/udivmod.s
+	$AS -o $target ../runtime/c/udivmod.s
+kruntime.o: kruntime.c ../runtime/ml/ml.c
 
 # the units, each after the ones it names; the kernel's start made by
 # ml, as a program's (../TinyML/Link.mli). kentry.o first, at 0

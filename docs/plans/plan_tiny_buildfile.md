@@ -33,7 +33,7 @@ So its sections follow t-IX's layers, from the bottom up, each with a
 few lines on what the layer is and what uses it:
 
     the runtimes      runtime/'s C and ML parts, tiny-kernel's calls
-                      (TinyKernel/libc/, mlsys.c)
+                      (runtime/c/, mlsys.c)
     the library       TinyLibCore/, in its order
     the libraries     TinyLibSystem, TinyLibMachine, TinyLibGUI...:
                       what several programs share
@@ -67,7 +67,7 @@ one place where all of t-IX's pieces are named together.
 - **The library built here too**, TinyLibCore/'s units in their order,
   ml -nostdlib with their own .tmi (not /lib/ml's: a change to List.ml
   is seen by the programs built after it); the runtimes from runtime/
-  and TinyKernel/libc/ (not /lib/c's, for the same reason).
+  and runtime/c/ (not /lib/c's, for the same reason).
 - **The kernel and the image** last: `build kernel.img`, `build
   boot.img`, which is what make self builds today.
 

@@ -37,11 +37,14 @@ beside its parts.
 - `TinyAppXxx.ml` is an application on the playground or the widgets
   (`calc`, `temp`, `tetris`, `square`); `user/` has the one-line main of
   each ML program of tiny-kernel.
-- `runtime/` is what a compiled program is linked with: C's start, its
-  division and its library; ML's allocator and collector (`ml.c`).
+- `runtime/` is what every compiled program is linked with, each
+  language's in its directory, as the image's `/lib/c` and `/lib/ml`:
+  `c/`, C's start, its division, its library, the system's calls
+  (`user.h`, `sys.s`), drawing and dialing (`draw.c`, `net.c`); `ml/`,
+  ML's allocator and collector (`ml.c`), its glue to the system
+  (`mlsys.c`) and the program's end (`end.s`).
 - `TinyKernel/` is the kernel: its parts in ML, its assembly and C,
-  its programs in C (`user/`) and their library (`libc/`: `user.h`,
-  `sys.s`, `draw.c`, `net.c`), its Buildfile, and `Makefile`, which
+  its programs in C (`user/`), its Buildfile, and `Makefile`, which
   builds the image and the disk and runs the tests on tiny-machine;
   `steps/` has what ran before it (a C program on the bare CPU, `v0/` in
   assembly, `t6/` in C).

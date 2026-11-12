@@ -1,7 +1,7 @@
 ; Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyC.ml)
 ;
 ; int read(int fd, void *buf, int n) is tiny-cpu's sys 2.
-; runtime/start.s does not have it, since its programs only write.
+; runtime/c/start.s does not have it, since its programs only write.
 read:
 	ldw	r1, 0(sp)
 	ldw	r2, 4(sp)

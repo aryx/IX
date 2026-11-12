@@ -22,7 +22,7 @@ TML=${TML:-$ROOT/_build/default/tiny/TinyML.exe}
 TC=${TC:-$ROOT/_build/default/tiny/TinyC.exe}
 CPU=${CPU:-$ROOT/_build/default/tiny/TinyCPU.exe}
 . $ROOT/tiny/tests/link.sh
-L=$ROOT/tiny/runtime
+L=$ROOT/tiny/runtime/c
 C=$ROOT/tiny/TinyLibCore
 T=$ROOT/tiny/tests/TinyLibCore_tests
 W=${W:-$(mktemp -d)}
@@ -41,7 +41,7 @@ done
 # main.c's statics they were between the runtime's code and ml_start,
 # further than a jal reaches)
 cat > $W/main.c <<END
-#include "$ROOT/tiny/runtime/ml.c"
+#include "$ROOT/tiny/runtime/ml/ml.c"
 extern value vstack[];
 extern value space0[];
 extern value space1[];

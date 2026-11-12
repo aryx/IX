@@ -29,7 +29,7 @@ functors nor labels) to an object of tiny-machine's code, for tiny-ld;
   for f in $L/start $L/udivmod exit; do tiny-as $f.s; done
   tiny-ld -o fact start.o udivmod.o exit.o fact.o main.o /lib/ml/stdlib.a
   tiny-cpu fact                            fact 10 = 3628800
-main.c includes tiny/runtime/ml.c and gives it memory (ml_run),
+main.c includes tiny/runtime/ml/ml.c and gives it memory (ml_run),
 exit.s is exit (sys 0), as tiny/tests/TinyML_test.sh makes them. The
 standard library, TinyLibCore/'s modules, is read from /lib/ml (-L: another
 directory), the interfaces of those a file names, Stdlib's always, and

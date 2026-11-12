@@ -82,11 +82,11 @@
 # the machine on them, and its tests.
 #
 # user/ has the programs in C, a file each (an ML one's file, one line,
-# its module's main run by TinyLibSystem.main, is ../user/'s); libc/ what
-# a C program is linked with to call this kernel (user.h, sys.s, draw.c,
-# net.c); ../TinyLibSystem/tinykernel/ the same for an ML one (mlsys.c,
-# TinyLibSystem.ml), beside the other systems' TinyLibSystem
-# (../TinyLibSystem/README.md).
+# its module's main run by TinyLibSystem.main, is ../user/'s). What a C
+# program is linked with to call this kernel (user.h, sys.s, draw.c,
+# net.c) is ../runtime/c/'s; an ML one's, ../runtime/ml/'s mlsys.c and
+# ../TinyLibSystem/tinykernel/TinyLibSystem.ml, beside the other
+# systems' TinyLibSystem (../TinyLibSystem/README.md).
 #
 # What is built goes to _make/ and nowhere else, so that this directory
 # shows the sources: _make/src, the copy built in, boot.img and

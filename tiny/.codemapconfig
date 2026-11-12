@@ -49,7 +49,7 @@ local prog(name, file, core) = chain(name, [
         { at: 'def:read_interface', weight: 1 },
         { at: 'def:main', weight: 2 },
       ],
-      related: ['TinyML/', 'runtime/ml.c', 'TinyLibCore/', 'tests/TinyML_test.sh', 'tests/TinyML_fuzz.py', '../languages/ml/'],
+      related: ['TinyML/', 'runtime/ml/ml.c', 'TinyLibCore/', 'tests/TinyML_test.sh', 'tests/TinyML_fuzz.py', '../languages/ml/'],
     },
     'TinyML.mli': { digest: 'd1ebc729cffb',
       summary: "tiny-ml's design: the passes, a value's layout, the value stack as the roots, Cheney's collector.",
@@ -618,11 +618,11 @@ local prog(name, file, core) = chain(name, [
     ]) + {
       bones+: [
         { at: 'TinyML.ml:def:write_interface', role: 'M.tmi, for the units after' },
-        { at: 'runtime/ml.c:def:ml_alloc', role: 'at run time: a block, or a collection' },
+        { at: 'runtime/ml/ml.c:def:ml_alloc', role: 'at run time: a block, or a collection' },
       ],
       joints+: [
         { from: 'TinyML.ml:def:main', to: 'TinyML.ml:def:write_interface', say: '-c: the unit typed' },
-        { from: 'TinyML/Compile.ml:def:value', to: 'runtime/ml.c:def:ml_alloc', say: 'blocks, at run time' },
+        { from: 'TinyML/Compile.ml:def:value', to: 'runtime/ml/ml.c:def:ml_alloc', say: 'blocks, at run time' },
       ],
     },
     // tiny-cc's and tiny-ml's own files: what their main does with the
@@ -1034,7 +1034,7 @@ local prog(name, file, core) = chain(name, [
   ],
   views: [
     { name: 'tiny-cc and its passes', files: ['TinyC.ml', 'TinyC/', 'runtime/'] },
-    { name: 'tiny-ml and its runtime', files: ['TinyML.ml', 'TinyML/', 'runtime/ml.c', 'TinyLibCore/'] },
+    { name: 'tiny-ml and its runtime', files: ['TinyML.ml', 'TinyML/', 'runtime/ml/ml.c', 'TinyLibCore/'] },
     { name: 'tiny-as, tiny-ld and the ISA', files: ['TinyAssembler.ml', 'TinyLinker.ml', 'TinyLibMachine.ml'] },
     { name: 'debug, trace, prof: looking at a program', files: ['TinyDebugger.ml', 'TinyTracer.ml', 'TinyProfiler.ml', 'TinyLibMachine.ml'] },
     { name: 'TinyLibGUI and its users', of: 'TinyLibGUI.ml', with: 'users' },

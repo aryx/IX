@@ -80,7 +80,7 @@ A tiny program is either the host's or the tiny machine's.
       runtime/              the C runtime
       TinyKernel/              a kernel in ML (TinyKernel.ml), and its programs
       TinyKernel/steps/v0, t6  the steps before it, in assembly and C
-      runtime/ml.c            the ML runtime, in C
+      runtime/ml/ml.c            the ML runtime, in C
 
 `TinyKernel/` is in `tiny/` beside the host's programs but is not
 one of them: OCaml never compiles `TinyKernel.ml`, tiny-ml does.
@@ -536,7 +536,7 @@ A file is a module, compiled alone or with the others: its names are
 `M.x` in the modules after it, or `x` after `open M`; its types and
 constructors are the program's, one name space. Integers are 31 bits (a value is `2n+1` or a
 pointer), so a constant beyond them is refused. The runtime is
-`runtime/ml.c`, compiled by `tiny-cc`, with a `main` that gives
+`runtime/ml/ml.c`, compiled by `tiny-cc`, with a `main` that gives
 it its memory. A C or assembly function is called as an `external`,
 with C's convention and ML's values. The standard library,
 `TinyLibCore/`'s modules, is compiled once (`tiny-ml -c -L .`, each
@@ -594,7 +594,7 @@ n MB: its three words are a magic number (`0x7a0ce5`), the image's size
 and the memory wanted. What follows the image is not loaded: the
 programs of `/bin` have their labels there (`tiny-ld -s`), for
 `debug`. A child of `fork` gets its parent's size. An ML
-program's heap grows up to what its partition leaves (`TinyLibSystem/tinykernel/mlsys.c`);
+program's heap grows up to what its partition leaves (`runtime/ml/mlsys.c`);
 `bigmem`, a test, keeps 3 MB alive in 8 MB.
 
 ### 7.2 TinyKernel.ml's system calls
@@ -714,7 +714,7 @@ answer's bytes; `ready` waits for one with a limit, as `ping` does
 
 A call that fails answers -1. Its C programs are in
 `tiny/TinyKernel/user/`; what they are linked with, `user.h` and
-`sys.s`, is in `tiny/TinyKernel/libc/`, and an ML program's side of
+`sys.s`, is in `tiny/runtime/c/`, and an ML program's side of
 the kernel in `tiny/TinyLibSystem/tinykernel/` (beside the interfaces, `tiny/TinyLibSystem/`).
 
 `ready` answers the first of `n` descriptors that a read would not
@@ -832,7 +832,7 @@ page that waits for the mouse, the keys and the clock at once. For ML,
 ### 7.4 tiny-windows
 
 `tiny/TinyWindows.ml`, a program of TinyKernel.ml's in ML (compiled by
-tiny-ml after `TinyLibDraw.ml`; `TinyLibSystem/tinykernel/mlsys.c` is an ML program's
+tiny-ml after `TinyLibDraw.ml`; `runtime/ml/mlsys.c` is an ML program's
 runtime and system calls), is the window system:
 
     ./tiny-machine -window tiny-kernel

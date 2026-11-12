@@ -21,9 +21,9 @@ let put fd s = try TSys.write fd s with Failure _ -> ()
  * order), and the kind of each argument: a number, a path, bytes
  * given (their length the next argument), bytes filled (as many as
  * the result says), an address.
- * coupling: TinyKernel/libc/user.h, its prototypes the arguments'
+ * coupling: runtime/c/user.h, its prototypes the arguments'
  * kinds (a char* a path or bytes, an int* or char** an address), and
- * TinyKernel/libc/sys.s, its sys n each call's index here; a call
+ * runtime/c/sys.s, its sys n each call's index here; a call
  * added to the kernel is added in the three places *)
 type arg = Num | Path | Given | Filled | Addr
 

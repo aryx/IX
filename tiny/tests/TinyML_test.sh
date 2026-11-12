@@ -30,10 +30,10 @@ progs=("$@")
 
 # the runtime: ml.c, its memory a main's (the heap from 4096 words,
 # or from 64), exit tiny-cpu's call
-L=$ROOT/tiny/runtime
+L=$ROOT/tiny/runtime/c
 for h in 4096 64; do
   cat > $W/main$h.c <<EOC
-#include "$ROOT/tiny/runtime/ml.c"
+#include "$ROOT/tiny/runtime/ml/ml.c"
 static value vstack[32768];
 static value space0[65536];
 static value space1[65536];

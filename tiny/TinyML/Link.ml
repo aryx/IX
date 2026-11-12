@@ -8,7 +8,7 @@ module M = TinyLibMachine
 (* ml_init, each unit's init in their order, in a handler that prints
  * an uncaught exception; the curry functions the units need; the
  * globals' tables one after the other, ml_globals, and their count,
- * ml_nglobals (what runtime/ml.c scans) *)
+ * ml_nglobals (what runtime/ml/ml.c scans) *)
 let compile_start (units : (string * int) list) (needed : int list) =
   Tree.unit_name := "ml";
   Compile.start_fun 1 1;

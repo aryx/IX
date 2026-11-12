@@ -13,7 +13,7 @@
  * The image is tiny-ld's: the objects one after the other, their
  * labels one namespace, the first at address 0, where the CPU starts.
  * The arguments are put where the main of a C program expects them
- * (the convention of tiny-cc, in runtime/start.s): the strings go
+ * (the convention of tiny-cc, in runtime/c/start.s): the strings go
  * at the top of memory, and sp points to argc, followed by argv.
  * argv[0] is the name of the image.
  *

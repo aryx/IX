@@ -6,7 +6,7 @@
 // from the standard input. The memory itself is in heap.c, which is
 // linked last: large arrays between the start and main would put main
 // out of reach of the start's call.
-#include "../../runtime/ml.c"
+#include "../../runtime/ml/ml.c"
 
 extern int read(int, char*, int);
 extern value vstack[], space0[], space1[];

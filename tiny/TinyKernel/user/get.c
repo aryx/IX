@@ -16,7 +16,7 @@
 // when the other end is the wire's (KNetwork.ml), cut anywhere when
 // it comes from the world. Written all of it: a write to a pipe may
 // take less.
-#include "../libc/user.h"
+#include "user.h"
 
 char buf[1024];
 

@@ -6,7 +6,7 @@
  * The Plan 9 equivalent is libdraw, the library used by programs,
  * while KGraphics.ml plays the role of the kernel's draw
  * device and of libmemdraw. For C programs, the equivalent is
- * TinyKernel/libc/draw.h.
+ * runtime/c/draw.h.
  *
  * The messages are described in the header of KGraphics.mli:
  * a letter, followed by signed 16-bit numbers, low byte first.

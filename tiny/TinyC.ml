@@ -15,7 +15,7 @@ let help = usage ^ {|
 A tiny C compiler: a C file to an object of TinyCPU's code, for tiny-ld
 and tiny-cpu, with its own libc; -S its assembly instead, -ir its stack
 machine's code, on stdout without -o. A fact.c that includes
-tiny/runtime/libc.h and prints fact(10):
+tiny/runtime/c/libc.h and prints fact(10):
   L=tiny/runtime
   tiny-cc $L/libc.c; tiny-cc fact.c         libc.o, fact.o
   for f in $L/start $L/udivmod; do tiny-as $f.s; done

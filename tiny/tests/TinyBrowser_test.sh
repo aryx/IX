@@ -29,7 +29,7 @@ CPU=${CPU:-$ROOT/_build/default/tiny/TinyCPU.exe}
 . $ROOT/tiny/tests/link.sh
 T=$ROOT/tiny/tests/TinyBrowser_tests
 B=$ROOT/tiny/TinyBrowser
-L=$ROOT/tiny/runtime
+L=$ROOT/tiny/runtime/c
 W=${W:-$(mktemp -d)}
 [ -n "${KEEP:-}" ] || trap 'rm -rf $W' EXIT
 failures=0

@@ -60,7 +60,7 @@ picture() {
   # the machine's: start.s first (the machine starts at 0), the font's
   # bytes at its label, the runtime, the rows, the program
   (cat $T/tests/KGraphics_tests/start.s; echo 'font:'; od -An -v -tu1 $FONT | awk 'NF { printf "\t.byte\t%s", $1; for (i = 2; i <= NF; i++) printf ", %s", $i; print "" }'; printf 'font_end:\n\t.align\t4\n') > $R-start.s
-  link_tm $R.img $R-start.s $T/runtime/udivmod.s $W/kruntime.o $T/TinyKernel/kdraw.s $W/picture.o $LIB_O || fail "machine: the link"
+  link_tm $R.img $R-start.s $T/runtime/c/udivmod.s $W/kruntime.o $T/TinyKernel/kdraw.s $W/picture.o $LIB_O || fail "machine: the link"
   [ "${WINDOW:-}" = 1 ] && { $MACHINE -window $R.img; exit; }
   timeout ${SLOW:-60} $MACHINE -screen $R-machine.ppm $R.img > $R-machine.out 2>&1 || fail "machine: the run"
   check machine

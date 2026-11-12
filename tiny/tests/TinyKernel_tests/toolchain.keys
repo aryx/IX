@@ -1,10 +1,10 @@
 rc
-cd /src/runtime; cc -o /libc.o libc.c
+cd /src/runtime/c; cc -o /libc.o libc.c
 cd /src/TinyKernel/user; cc -I /lib/c -o /ping.o ping.c
 cd /
-as -o start.o src/runtime/start.s
-as -o udivmod.o src/runtime/udivmod.s
-as -o sys.o src/TinyKernel/libc/sys.s
+as -o start.o src/runtime/c/start.s
+as -o udivmod.o src/runtime/c/udivmod.s
+as -o sys.o src/runtime/c/sys.s
 ld -s -n -o ping start.o udivmod.o libc.o sys.o ping.o
 cmp ping /bin/ping && echo ping: /bin/ping
 cd /src; ml -c -o /mach.o TinyLibMachine.ml; cd /

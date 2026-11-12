@@ -239,14 +239,14 @@ tiny_self() {
   timeout 120 $m -d $o/self.img $o/boot.img > $o/self.out <<'END'
 rc
 mkdir q; cd q
-cc -I /src/runtime -o ping.o /src/TinyKernel/user/ping.c
+cc -I /src/runtime/c -o ping.o /src/TinyKernel/user/ping.c
 ml -c -o Stdlib.o /src/TinyLibCore/Stdlib.ml
 cmp Stdlib.tmi /lib/ml/Stdlib.tmi && echo Stdlib.tmi: the host
 echo 'int main(void) { return 6 * 7; }' > m.c
 cc -o m.o m.c
-as -o start.o /src/runtime/start.s
-as -o udivmod.o /src/runtime/udivmod.s
-as -o sys.o /src/TinyKernel/libc/sys.s
+as -o start.o /src/runtime/c/start.s
+as -o udivmod.o /src/runtime/c/udivmod.s
+as -o sys.o /src/runtime/c/sys.s
 ld -n -o m start.o udivmod.o sys.o m.o
 ./m; echo m: status $status
 exit

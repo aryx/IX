@@ -1,4 +1,4 @@
-// tiny/TinyKernel/libc/: what the code map says of it (the code map:
+// tiny/runtime/c/: what the code map says of it (the code map:
 // tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there). sys.s (the
 // system calls' stubs: the arguments to r1-r3, sys n, r1 back) is
@@ -27,7 +27,7 @@
         { at: 'def:dial', weight: 2 },
         { at: 'code:"#define DRAW 3"', say: 'drawing and mouse: descriptors 3 and 4', weight: 2 },
       ],
-      related: ['sys.s', '../KCalls.ml', '../../runtime/libc.h', '../steps/t6/libc/user.h'],
+      related: ['sys.s', '../../TinyKernel/KCalls.ml', 'libc.h', '../../TinyKernel/steps/t6/libc/user.h'],
     },
     'draw.h': { digest: '6b780a281bbe',
       summary: "What a C program that draws has: KGraphics's messages as calls, a colour an image of one pixel.",
@@ -37,7 +37,7 @@
         { at: 'def:d_colour', weight: 1 },
         { at: 'def:d_text', weight: 1 },
       ],
-      related: ['../KGraphics.mli', '../../TinyLibDraw.ml'],
+      related: ['../../TinyKernel/KGraphics.mli', '../../TinyLibDraw.ml'],
     },
     'draw.c': { digest: 'd25cb4f86bba',
       summary: "The drawing messages gathered in a buffer, a letter then numbers of 16 bits, written whole to descriptor 3.",
@@ -47,14 +47,14 @@
         { at: 'def:d_put', say: 'a number: its low byte first', weight: 1 },
         { at: 'def:d_draw', weight: 2 },
       ],
-      related: ['../KGraphics.ml', '../user/paint.c'],
+      related: ['../../TinyKernel/KGraphics.ml', '../../TinyKernel/user/paint.c'],
     },
     'net.c': { digest: '7fdd94108963',
       summary: "reach: dial by an address or by a name, the name asked of the wire's other end on port 53: all of DNS here.",
       important: [
         { at: 'def:reach', weight: 3 },
       ],
-      related: ['../user/get.c', '../user/put.c'],
+      related: ['../../TinyKernel/user/get.c', '../../TinyKernel/user/put.c'],
     },
   },
   skeletons: [
@@ -64,14 +64,14 @@
         { at: 'user.h', role: 'the system calls, declared' },
         { at: 'draw.c', role: 'draw.h made: messages to descriptor 3' },
         { at: 'net.c', role: 'reach: dial by a name' },
-        { at: '../KCalls.ml:def:syscall', role: "the kernel's side (via sys.s)" },
-        { at: '../KGraphics.ml:def:messages', role: 'the messages decoded' },
+        { at: '../../TinyKernel/KCalls.ml:def:syscall', role: "the kernel's side (via sys.s)" },
+        { at: '../../TinyKernel/KGraphics.ml:def:messages', role: 'the messages decoded' },
       ],
       joints: [
         { from: 'draw.c', to: 'user.h', say: 'write(DRAW, ...)' },
         { from: 'net.c', to: 'user.h', say: 'dial' },
-        { from: 'user.h', to: '../KCalls.ml:def:syscall', say: 'sys n' },
-        { from: 'draw.c', to: '../KGraphics.ml:def:messages', say: 'the bytes' },
+        { from: 'user.h', to: '../../TinyKernel/KCalls.ml:def:syscall', say: 'sys n' },
+        { from: 'draw.c', to: '../../TinyKernel/KGraphics.ml:def:messages', say: 'the bytes' },
       ],
     },
   ],

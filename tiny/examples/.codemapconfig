@@ -18,7 +18,7 @@
       important: [
         { at: 'def:main', weight: 3 },
       ],
-      related: ['square.s', 'Buildfile', '../TinyKernel/libc/user.h'],
+      related: ['square.s', 'Buildfile', '../runtime/c/user.h'],
     },
     'helloml.ml': { digest: '27209abba42b',
       summary: "helloml: a tree, a closure, an exception, and 200,000 cells made and dropped, so tiny-ml's collector runs; built on tiny-kernel.",
@@ -31,7 +31,7 @@
         { at: 'def:first_over', say: 'an exception out of a List.iter', weight: 1 },
         { at: 'comment:"2,000 lists of 100, each dropped"', say: "more than the heap's half: a collection", weight: 2 },
       ],
-      related: ['Buildfile', '../runtime/ml.c', '../TinyLibSystem/tinykernel/mlsys.c'],
+      related: ['Buildfile', '../runtime/ml/ml.c', '../runtime/ml/mlsys.c'],
     },
   },
   skeletons: [

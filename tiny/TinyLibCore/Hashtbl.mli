@@ -1,5 +1,5 @@
 (* Hashtbl, OCaml's subset (see Stdlib.mli): an array of buckets, a
- * key's by its hash (runtime/ml.c's ml_hash: its integers, its strings'
+ * key's by its hash (runtime/ml/ml.c's ml_hash: its integers, its strings'
  * bytes, its blocks' tags and fields, ten values at most), twice as
  * many when there are twice as many bindings as buckets (old: a list
  * of pairs) *)

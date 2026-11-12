@@ -7,17 +7,17 @@
 // libc.h), linked first into every C program of tiny-cc's (tiny-kernel's,
 // ../TinyKernel/Makefile's ULIB; the steps'); and ML's, ml.c, #included
 // by what gives it the memory and write and exit:
-// ../TinyKernel/kruntime.c (the kernel), ../TinyLibSystem/tinykernel/mlsys.c
+// ../TinyKernel/kruntime.c (the kernel), ../runtime/ml/mlsys.c
 // (tiny-kernel's ML programs), the tests' own mains
 // (../tests/TinyML_test.sh). The skeletons of tiny-ml that go through
 // ml.c are ../.codemapconfig's. A system's own calls are not here:
-// ../TinyKernel/libc/ (C's on tiny-kernel), mlsys.c (ML's). (old:
+// ../runtime/c/ (C's on tiny-kernel), mlsys.c (ML's). (old:
 // TinyCRuntime/ and TinyMLRuntime/, ml.c core.c)
 {
   generated: { by: 'claude-opus-5-5', on: '2026-11-11' },
   summary: "What a program links besides its own code: C's start, division and libc, and tiny-ml's allocator, collector and primitives.",
   files: {
-    'libc.h': { digest: 'e037c8c3fe70',
+    'c/libc.h': { digest: 'e037c8c3fe70',
       summary: "What a tiny-cc program is given: start.s's write and exits, libc.c's print and strings; a long is 4 bytes.",
       capitals: [
         { at: 'def:print', say: "Plan 9's print, on every tiny kernel" },
@@ -28,9 +28,9 @@
         { at: 'def:print', weight: 2 },
         { at: 'def:malloc', weight: 1 },
       ],
-      related: ['libc.c'],
+      related: ['c/libc.c'],
     },
-    'libc.c': { digest: '899b308cb02a',
+    'c/libc.c': { digest: '899b308cb02a',
       summary: "Plan 9's libc, what libc.h declares, in the C tiny-cc takes: print's verbs as goken's, the strings, a heap that is a bump.",
       important: [
         { at: 'def:format', say: 'the verbs; a variadic call walks its arguments in memory', weight: 3 },
@@ -40,7 +40,7 @@
         { at: 'def:strcmp', weight: 1 },
       ],
     },
-    'ml.c': { digest: '2ba84f1af893',
+    'ml/ml.c': { digest: '2ba84f1af893',
       summary: "tiny-ml's runtime: the allocator, Cheney's copying collector, the primitives, stdout's buffer, Marshal and SHA-1 in C.",
       capitals: [
         { at: 'def:collect', say: 'Cheney: the value stack and the globals, all the roots' },
@@ -58,51 +58,51 @@
         { at: 'comment:"Writing goes twice over the value"', say: 'counted, then written: nothing allocated, nothing moves', weight: 2 },
         { at: 'def:sha_block', say: 'SHA-1 in C, on the machine words', weight: 1 },
       ],
-      related: ['../TinyKernel/kruntime.c', '../TinyLibSystem/tinykernel/mlsys.c', '../TinyML.ml', '../TinyML/Compile.ml'],
+      related: ['../TinyKernel/kruntime.c', '../runtime/ml/mlsys.c', '../TinyML.ml', '../TinyML/Compile.ml'],
     },
   },
   skeletons: [
     { name: 'The C runtime: libc.h declared, libc.c made, start.s below',
       bones: [
         { at: '../TinyKernel/user/', role: "tiny-kernel's C programs, linked with it" },
-        { at: 'libc.h', role: 'what a program includes' },
-        { at: 'libc.c', role: 'print, the strings, the bump heap' },
-        { at: 'libc.h:def:write', role: "start.s's system call (assembly)" },
+        { at: 'c/libc.h', role: 'what a program includes' },
+        { at: 'c/libc.c', role: 'print, the strings, the bump heap' },
+        { at: 'c/libc.h:def:write', role: "start.s's system call (assembly)" },
       ],
       joints: [
-        { from: '../TinyKernel/user/', to: 'libc.h', say: 'print, strlen...: libc.s linked in' },
-        { from: 'libc.h', to: 'libc.c', say: 'defined by' },
-        { from: 'libc.c', to: 'libc.h:def:write', say: 'bytes to fd 1' },
+        { from: '../TinyKernel/user/', to: 'c/libc.h', say: 'print, strlen...: libc.s linked in' },
+        { from: 'c/libc.h', to: 'c/libc.c', say: 'defined by' },
+        { from: 'c/libc.c', to: 'c/libc.h:def:write', say: 'bytes to fd 1' },
       ],
     },
-    { name: 'libc.c: print, its verbs, a write',
+    { name: 'c/libc.c: print, its verbs, a write',
       bones: [
-        { at: 'libc.c:def:print', role: 'the formatted text, written again if short' },
-        { at: 'libc.c:def:sprint', role: 'the same, into a buffer' },
-        { at: 'libc.c:def:format', role: 'the verbs, the arguments walked in memory' },
-        { at: 'libc.c:def:malloc', role: 'the heap: a bump of an array' },
-        { at: 'libc.h:def:write', role: "start.s's sys 1" },
+        { at: 'c/libc.c:def:print', role: 'the formatted text, written again if short' },
+        { at: 'c/libc.c:def:sprint', role: 'the same, into a buffer' },
+        { at: 'c/libc.c:def:format', role: 'the verbs, the arguments walked in memory' },
+        { at: 'c/libc.c:def:malloc', role: 'the heap: a bump of an array' },
+        { at: 'c/libc.h:def:write', role: "start.s's sys 1" },
       ],
       joints: [
-        { from: 'libc.c:def:print', to: 'libc.c:def:format', say: 'fmt and &fmt + 1' },
-        { from: 'libc.c:def:sprint', to: 'libc.c:def:format', say: 'fmt and &fmt + 1' },
-        { from: 'libc.c:def:print', to: 'libc.h:def:write', say: 'the text, to fd 1' },
+        { from: 'c/libc.c:def:print', to: 'c/libc.c:def:format', say: 'fmt and &fmt + 1' },
+        { from: 'c/libc.c:def:sprint', to: 'c/libc.c:def:format', say: 'fmt and &fmt + 1' },
+        { from: 'c/libc.c:def:print', to: 'c/libc.h:def:write', say: 'the text, to fd 1' },
       ],
     },
     {
       name: 'An allocation, a collection',
       bones: [
-        { at: 'ml.c:def:ml_run', role: "the includer's memory: value stack, two halves" },
-        { at: 'ml.c:def:ml_alloc', role: 'a block bumped from the current half' },
-        { at: 'ml.c:def:gc', role: 'no room: collect, then grow the half used' },
-        { at: 'ml.c:def:collect', role: "Cheney's: roots, then a breadth-first scan" },
-        { at: 'ml.c:def:copy', role: 'a block moved, its forward left' },
+        { at: 'ml/ml.c:def:ml_run', role: "the includer's memory: value stack, two halves" },
+        { at: 'ml/ml.c:def:ml_alloc', role: 'a block bumped from the current half' },
+        { at: 'ml/ml.c:def:gc', role: 'no room: collect, then grow the half used' },
+        { at: 'ml/ml.c:def:collect', role: "Cheney's: roots, then a breadth-first scan" },
+        { at: 'ml/ml.c:def:copy', role: 'a block moved, its forward left' },
       ],
       joints: [
-        { from: 'ml.c:def:ml_run', to: 'ml.c:def:ml_alloc', say: "the program's blocks" },
-        { from: 'ml.c:def:ml_alloc', to: 'ml.c:def:gc', say: 'no room' },
-        { from: 'ml.c:def:gc', to: 'ml.c:def:collect', say: 'the half full' },
-        { from: 'ml.c:def:collect', to: 'ml.c:def:copy', say: 'each root, each field' },
+        { from: 'ml/ml.c:def:ml_run', to: 'ml/ml.c:def:ml_alloc', say: "the program's blocks" },
+        { from: 'ml/ml.c:def:ml_alloc', to: 'ml/ml.c:def:gc', say: 'no room' },
+        { from: 'ml/ml.c:def:gc', to: 'ml/ml.c:def:collect', say: 'the half full' },
+        { from: 'ml/ml.c:def:collect', to: 'ml/ml.c:def:copy', say: 'each root, each field' },
       ],
     },
   ],

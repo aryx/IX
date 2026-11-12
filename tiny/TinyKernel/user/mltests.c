@@ -5,7 +5,7 @@
 // end seen when no writer is left, a big write in pieces), files,
 // directories and "..", a fault killed, the preemption, a process
 // traced.
-#include "../libc/user.h"
+#include "user.h"
 
 char buf[2048];
 int failed;

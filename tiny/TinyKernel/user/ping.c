@@ -5,7 +5,7 @@
 // second apart, each waited for a second: what answers and in how
 // long, by the kernel's clock (a tick is 2.5 ms). KNetwork.ml has
 // the question and the answer, TinyKernel.ml's dial the link.
-#include "../libc/user.h"
+#include "user.h"
 
 void
 main(int argc, char *argv[])

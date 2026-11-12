@@ -58,7 +58,7 @@ tiny-kernel. "The host" in t-ix's other files is the machine a
 program is built on, which is one of the first.
 
 What is not here: a C program of tiny-kernel calls the kernel through
-`../TinyKernel/libc/` (`user.h`, `sys.s`), as C programs only run
+`../runtime/c/` (`user.h`, `sys.s`), as C programs only run
 there. tiny-machine's memory for tiny-kernel's own parts tested on the
 host is `../TinyKernel/host/KRaw.ml`: no program uses it.
 TinyWindows.ml, tiny-kernel's window system, names the kernel's calls

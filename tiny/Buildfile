@@ -33,11 +33,17 @@
 # the library, TinyLibCore/, and the kernel, TinyKernel/. Each makes
 # the files of its own directory, and knows which to make again.
 #
-# Its problems, today's tools':
-# - CORE, the library's units, said here (the image's /lib/ml) and in
-#   TinyLibCore/Buildfile: tiny-build has no glob;
-# - the libraries shared by several programs (TinyLibSystem, TinyLibGUI)
-#   still their objects, named in each link.
+# What t-IX keeps and drops as a whole is README.md's (twin:, kept:,
+# dropped:, twist:). The build's own:
+#
+# dropped:
+# - no source is made: no lex, no yacc, every lexer and parser written
+#   by hand, so no rule here makes a .ml or a .c;
+# - no configure, no install prefix: build install copies into /lib;
+# - no glob: tiny-build has none, nor mk's backquotes in a variable
+#   (its .mli), so CORE, the library's units, is said here (the image's
+#   /lib/ml) and in TinyLibCore/Buildfile, and the image's /examples is
+#   rc's glob in its recipe, not prerequisites.
 
 
 # the programs, by their names in /bin; then the kernel (TinyKernel/)

@@ -221,6 +221,59 @@ TinyC's programs are `tests/TinyC_tests/`, with the host's cc's outputs, and `te
 the plans' Status logs (`docs/plans/`) tell how each was chosen and
 checked.
 
+The system as a whole, as a program's `.mli` says it of the program
+(`docs/tags.md`'s labels):
+
+twin: m-ix, the mini programs, each a faithful twin of its Plan 9 or
+Unix program, on Linux and on the Pi. t-ix is what remains of the whole
+system when compatibility is dropped: its CPU, its machine, its kernel,
+its formats are its own, and each program is its twin's idea.
+
+kept:
+- **Plan 9's ideas.** What a program uses is a file: it draws by
+  messages written on its descriptor 3 and reads its mouse on 4, a
+  window system passes them on as a pipe would; the disk is the root, in
+  a union with the boot image's files; rc is the shell, build is mk's
+  language, cc, as and ld make Plan 9's kind of a.out.
+- **Unix's conventions outside.** An object is a `.o`, a library a
+  `.a`, assembly a `.s`; programs in `/bin`, what they link in `/lib`,
+  the sources in `/src`; `start.o`, crt0, linked first and seen in every
+  link line. Inside the tools, anything simpler.
+- **The system builds itself.** tiny-kernel rebuilds its own image
+  from `/src` with its own tools, by the same Buildfile as the host, to
+  the same bytes (`make -C TinyKernel self`).
+- **One language.** The kernel, the tools and the programs are ML;
+  C is the runtime and a few programs; assembly is what ML cannot say
+  (`TinyKernel/entry.s`, the traps and the switch).
+
+dropped:
+- **Generated code.** No lex, no yacc, no tiny-lex or tiny-yacc: every
+  lexer and parser is written by hand, recursive descent (tiny-cc,
+  tiny-ml, rc, build...), so no build step makes a source.
+- **Configuration.** No configure, no install prefix: one Buildfile,
+  `build install` a copy into `/lib`.
+- **Dynamic linking and ELF.** Programs are linked statically into an
+  a.out whose header is three words; an object is tiny-as's items,
+  marshalled (`TinyLibMachine`), not ELF.
+- **Compatibility.** No POSIX: the system calls are the kernel's own,
+  the instructions TinyCPU's. tiny-ml has no floats, functors, labels
+  or objects (`TinyML.mli`).
+- **What the tools leave out of their twins**, each said in its
+  `.mli`: mk's backquotes in a variable (`TinyBuildSystem.mli`), a
+  naming pass in the compiler (`TinyML.mli`'s design)...
+
+twist:
+- **The machine is designed with the system.** TinyCPU and its
+  devices were made for this kernel and its programs, not inherited:
+  a screen of messages, a relocating window, a wire to the host.
+- **One program, two systems.** A program names `TinyLibSystem.mli`
+  alone, so it runs on tiny-kernel and on the host (its tests, a
+  window); the Buildfiles run on both, `TINY=tiny-` on the host.
+- **Up to date by content.** build's stamps are digests, so a comment
+  added to a unit recompiles it and links nothing again.
+- **A kernel in ML.** A waiting system call is a closure the scheduler
+  tries again: no kernel stack for each process, no sleep and wakeup.
+
 [`docs/notes/notes_tiny_spirit.md`](../docs/notes/notes_tiny_spirit.md) says where
 this directory departs from its own definition (a twin, an inherited
 machine, a contract from outside), what each departure buys, and what

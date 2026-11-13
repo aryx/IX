@@ -123,48 +123,54 @@ val equal: t -> t -> bool
 (** The equal function for floating-point numbers, compared using
     {!compare}. *)
 
-(* ix: OCaml's later functions, those ix's programs use *)
+(* ix: functions of later OCamls that ix's programs use *)
 
-(* a float's significand, of 0.5 to 1 (1 excluded), and its exponent *)
+(* The significand of a float, from 0.5 to 1 (1 excluded), and its
+ * exponent. *)
 val frexp : float -> float * int
 
 val is_nan : float -> bool
-(* neither an infinity nor a nan *)
+(* Whether the float is neither an infinity nor a nan. *)
 val is_finite : float -> bool
-(* a whole number (not an infinity, not a nan) *)
+(* Whether the float is a whole number (not an infinity, not a nan). *)
 val is_integer : float -> bool
 
 val pi : float
-(* the length of (x, y): sqrt (x *. x +. y *. y), computed so (infinity
- * where a square overflows, which C's hypot avoids) *)
+(* The length of (x, y), sqrt (x *. x +. y *. y), computed with that
+ * formula, so it gives infinity where a square overflows, which C's
+ * hypot avoids. *)
 val hypot : float -> float -> float
-(* x -. n *. y, n the quotient x /. y toward zero: x's sign (C's fmod) *)
+(* x -. n *. y, where n is the quotient x /. y rounded toward zero, so
+ * the result has the sign of x (as with C's fmod). *)
 val rem : float -> float -> float
 
-(* to an integer, toward zero; to the nearest, a half away from zero *)
+(* trunc rounds to an integer toward zero. round rounds to the nearest
+ * integer, with a half rounded away from zero. *)
 val trunc : float -> float
 val round : float -> float
 
-(* nan if one of the two is; -0.0 is less than 0.0 *)
+(* The result is nan if one of the two is nan, and -0.0 is less than
+ * 0.0. *)
 val min : float -> float -> float
 val max : float -> float -> float
 
-(* x * y + z, rounded once (not twice, as x *. y +. z) *)
+(* x * y + z, rounded once (and not twice, as x *. y +. z is). *)
 val fma : float -> float -> float -> float
 
-(* ix: no program of ix called these, taken out (to restore from OCaml
- * 4.14's float.ml): add, sub, mul, div (the operators are Pervasives's),
- * log10, acos, asin, cosh, sinh, tanh. Already out, in comments here before
- * (ocaml-light's compiler did not have them): copysign, modf,
- * ldexp, expm1, log1p, classify_float (and its type, fpclass),
- * of_string_opt. *)
+(* ix: no program of ix called these, so they are left out (they can be
+ * restored from OCaml 4.14's float.ml): add, sub, mul, div (the
+ * operators are Pervasives's), log10, acos, asin, cosh, sinh, tanh.
+ * These others were already left out, because ocaml-light's compiler
+ * did not have them: copysign, modf, ldexp, expm1, log1p,
+ * classify_float (and its type, fpclass), of_string_opt. *)
 
-(* Arrays of floats, the floats in the array itself, not each in a
- * block of its own as a [float array]'s are (mini-ml's runtime:
- * Double_array_tag): no new float when one is stored, none when one is
- * read where the compiled code keeps it in a register (mini-ml's
- * Unbox), and no pointer for the collector to follow. OCaml's
- * [floatarray], the same names. (plan_ml_floats.md, decision 3) *)
+(* Arrays of floats, with the floats in the array itself, and not each
+ * in a block of its own as in a [float array] (Double_array_tag in
+ * mini-ml's runtime). So no new float is made when one is stored, nor
+ * when one is read where the compiled code keeps it in a register
+ * (mini-ml's Unbox), and there is no pointer for the collector to
+ * follow. This is OCaml's [floatarray], with the same names (see
+ * plan_ml_floats.md, decision 3). *)
 module Array : sig
   type t
   external length : t -> int = "%floatarray_length"
@@ -172,7 +178,7 @@ module Array : sig
   external set : t -> int -> float -> unit = "%floatarray_safe_set"
   external unsafe_get : t -> int -> float = "%floatarray_unsafe_get"
   external unsafe_set : t -> int -> float -> unit = "%floatarray_unsafe_set"
-  (* its floats 0.0 here (OCaml's: anything) *)
+  (* Its floats are 0.0 here (in OCaml they can be anything). *)
   external create : int -> t = "caml_floatarray_create"
     [@@raise Invalid_argument]
   val make : int -> float -> t
@@ -184,6 +190,7 @@ module Array : sig
   val of_list : float list -> t
   val iter : (float -> unit) -> t -> unit
   val fold_left : ('a -> float -> 'a) -> 'a -> t -> 'a
-  (* ix: OCaml's others not here (append, concat, sub, iteri, map, the
-   * sorts, the sequences...): no program of ix calls them *)
+  (* ix: OCaml's other functions are not here (append, concat, sub,
+   * iteri, map, the sorts, the sequences...), because no program of ix
+   * calls them. *)
 end

@@ -18,15 +18,16 @@
    structure. *)
 
 (* ix: the part of ocaml-light's Format that ix uses, with OCaml 4.14's
-   names: the formatters and the functions on one (pp_...), fprintf and
-   printf. It is what a derived printer is made of ([@@deriving show]:
-   languages/ml/pp/Derive), and Logs's messages. The rest is listed at
-   the end, to restore from ocaml-light's stdlib/format.ml if needed. *)
+   names: the formatters, the functions on a formatter (pp_...), fprintf
+   and printf. Derived printers ([@@deriving show], in
+   languages/ml/pp/Derive) and Logs's messages are made of it. The rest
+   is listed at the end; it can be restored from ocaml-light's
+   stdlib/format.ml if needed. *)
 
 type formatter;;
         (* Abstract data type corresponding to a pretty-printer and all its
            machinery: its queue, its stack of boxes, its margin (78
-           columns), where it writes. *)
+           columns), and where it writes. *)
 
 val std_formatter : formatter;;
         (* The standard formatter: it writes to [stdout]. *)
@@ -54,8 +55,8 @@ val pp_open_hbox : formatter -> unit -> unit;;
 val pp_open_vbox : formatter -> int -> unit;;
         (* A ``vertical'' box: every break hint breaks the line. *)
 val pp_open_hvbox : formatter -> int -> unit;;
-        (* ``Horizontal-vertical'': an horizontal box if it fits on a single
-           line, a vertical one otherwise. *)
+        (* ``Horizontal-vertical'': the box is horizontal if it fits on a
+           single line, and vertical otherwise. *)
 val pp_open_hovbox : formatter -> int -> unit;;
         (* ``Horizontal or vertical'': a break hint breaks the line only if
            there is no more room on it. *)
@@ -74,11 +75,14 @@ val pp_print_bool : formatter -> bool -> unit;;
 (*** Break hints *)
 
 val pp_print_break : formatter -> int -> int -> unit;;
-        (* [pp_print_break ff nspaces offset]: the line may be split here. *)
+        (* [pp_print_break ff nspaces offset] says that the line may be
+           split here. *)
 val pp_print_space : formatter -> unit -> unit;;
-        (* [pp_print_break ff 1 0]: a space, or a new line ("@ "). *)
+        (* The same as [pp_print_break ff 1 0]: a space, or a new line
+           ("@ "). *)
 val pp_print_cut : formatter -> unit -> unit;;
-        (* [pp_print_break ff 0 0]: nothing, or a new line ("@,"). *)
+        (* The same as [pp_print_break ff 0 0]: nothing, or a new line
+           ("@,"). *)
 val pp_force_newline : formatter -> unit -> unit;;
         (* Force a newline in the current box. *)
 val pp_print_if_newline : formatter -> unit -> unit;;
@@ -100,14 +104,15 @@ val fprintf : formatter -> ('a, formatter, unit) format -> 'a;;
 val printf : ('a, formatter, unit) format -> 'a;;
         (* Same as [fprintf], but output on [std_formatter]. *)
 
-(* ix: OCaml's later functions, those ix's programs use *)
+(* ix: functions of later OCamls that ix's programs use *)
 
-(* a list's elements, pp_sep between two; its label is not optional
- * here (mini-ml has no optional argument) *)
+(* Prints the elements of a list, with pp_sep between two. Its label is
+ * not optional here (mini-ml has no optional argument). *)
 val pp_print_list : pp_sep:(formatter -> unit -> unit) -> (formatter -> 'a -> unit) -> formatter -> 'a list -> unit
 
 (* ix: what ocaml-light's Format has and this one dropped (2026-10-04;
- * nothing in ix called them), to restore from its stdlib/format.ml:
+ * nothing in ix called them). They can be restored from its
+ * stdlib/format.ml:
  * - the same functions on the standard formatter, without a formatter:
  *   open_box, open_hbox, open_vbox, open_hvbox, open_hovbox, close_box,
  *   print_string, print_as, print_int, print_float, print_char,
@@ -118,9 +123,10 @@ val pp_print_list : pp_sep:(formatter -> unit -> unit) -> (formatter -> 'a -> un
  * - the margin and the limits, read and set: (pp_)set_margin,
  *   get_margin, set_max_indent, get_max_indent, set_max_boxes,
  *   get_max_boxes, over_max_boxes, set_ellipsis_text,
- *   get_ellipsis_text. The margin is 78 columns, the boxes' depth has
- *   no limit (it was 35 in ocaml-light, as in OCaml before 4.14's
- *   max_int: a tree any deeper was printed as the ellipsis, ".");
+ *   get_ellipsis_text. The margin is 78 columns, and the depth of the
+ *   boxes has no limit (it was 35 in ocaml-light, as in OCaml before
+ *   4.14 made it max_int, and a deeper tree was printed as the
+ *   ellipsis, ".");
  * - where a formatter writes, changed after it is made:
  *   (pp_)set_formatter_out_channel, set_formatter_output_functions,
  *   get_formatter_output_functions. *)

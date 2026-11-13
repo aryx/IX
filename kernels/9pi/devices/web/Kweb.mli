@@ -1,8 +1,8 @@
 (* The keyboard and the mouse of the kernel built for a web page (make
- * WEB=1, plan_web.md): what the page's person types and points, asked
- * of the emulator at each tick of the clock, where a Raspberry Pi has
- * a USB controller, a hub, a keyboard and a mouse on it, and Kusb or
- * usbd asking them.
+ * WEB=1, plan_web.md). At each tick of the clock, the kernel asks the
+ * emulator what the person on the page typed and pointed at. On a
+ * Raspberry Pi, a USB controller has a hub with a keyboard and a mouse
+ * on it instead, and Kusb or usbd asks them.
  *
  *   the page's events --> the board's queue (Board.host_key, host_pointer)
  *        clock --> Kweb.clock --> Machine.web_input
@@ -10,15 +10,17 @@
  *                     the mouse's state   --> Devmouse.at
  *
  * design:
- * A USB mouse that moves cost 5 of the 6 million instructions a page
- * runs in a second: the controller's registers, the driver's process,
- * the cursor drawn again. An emulator's host has the mouse's place on
- * the screen already; here it gives it, and draws the cursor too
- * (Swcursor's load). The keys come as a USB keyboard's reports, so
- * that Hid's tables are the only ones.
+ * A USB mouse that moves cost 5 of the 6 million instructions that a
+ * page runs in a second: the controller's registers, the driver's
+ * process, and the cursor drawn again. An emulator's host already knows
+ * where the mouse is on the screen, so here the host gives that place,
+ * and it draws the cursor too (with the cursor that Swcursor's load
+ * gives it). The keys come as a USB keyboard's reports, so that Hid's
+ * tables are the only ones.
  *
- * On a Raspberry Pi, and under an emulator with no page, there is
- * never anything: a call each tick, and no more. *)
+ * On a Raspberry Pi, and under an emulator with no page, nothing ever
+ * comes: there is one call at each tick, and no more. *)
 
-(* at each tick: what was typed and pointed since the last *)
+(* called at each tick: takes what was typed and pointed at since the
+ * last tick *)
 val clock : unit -> unit

@@ -1,9 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See Parallel.mli: OCaml 5's, a domain a worker, and its standard
- * library's Mutex and Condition, which work between domains. The file
- * is lib_core/parallel/host/domains.ml.in, copied by dune. *)
+(* See Parallel.mli. This is the version for OCaml 5: each worker has a
+ * domain, and the locks are the Mutex and Condition of its standard
+ * library, which work between domains. The file is
+ * lib_core/parallel/host/domains.ml.in, which dune copies. *)
 
 let available = true
 let spawn (f : unit -> unit) : unit = ignore (Domain.spawn f : unit Domain.t)

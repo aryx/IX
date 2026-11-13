@@ -1,23 +1,26 @@
-(* ix: OCaml's Unix library on Plan 9, for mini-ml (plan_rio.md: ix's
- * programs on mini-9pi), in the place of ../Unix.ml, which is Linux's:
- * the part a shell asks (files, pipes, processes, the environment),
- * with OCaml's names and types, each function a system call of Plan
- * 9's made by one primitive of the runtime. What is not here Plan 9
- * has not, or not yet: a program that names it does not compile for
- * Plan 9.
+(* ix: OCaml's Unix library on Plan 9, for mini-ml (see plan_rio.md,
+ * which runs ix's programs on mini-9pi). It takes the place of
+ * ../Unix.ml, which is for Linux. It has the part that a shell needs
+ * (files, pipes, processes, the environment), with OCaml's names and
+ * types, and each function is a system call of Plan 9 made by one
+ * primitive of the runtime. What is not here, Plan 9 does not have, or
+ * not yet: a program that names it does not compile for Plan 9.
  *
  * Where Plan 9 is not Unix:
- * - an error is a string of the kernel's: [error_message] gives it
- *   back for the last call that failed, and [Unix_error]'s error is
- *   the errno a program may match (ENOENT, EINTR, ECHILD...) or
- *   EUNKNOWNERR 0;
- * - a process ends with a string: none is [WEXITED 0], one that ends
- *   in a number ("3", "ls 12: 3") that number, a note's name
- *   [WSIGNALED], any other [WEXITED 1]; [_exit n] says n's digits;
- * - the environment is /env's files, a list's words ended by a 0
- *   each: here "name=value" as plan9port's rc has them on Unix, the
- *   words separated by a \001; [execve] writes its environment there;
- * - a signal is a note: [kill] writes its name to /proc/pid/note. *)
+ * - An error is a string from the kernel. [error_message] gives back
+ *   the string of the last call that failed, and the error in
+ *   [Unix_error] is the errno that a program may match (ENOENT, EINTR,
+ *   ECHILD...), or EUNKNOWNERR 0.
+ * - A process ends with a string. No string gives [WEXITED 0]; a string
+ *   that ends in a number ("3", "ls 12: 3") gives that number; the name
+ *   of a note gives [WSIGNALED]; any other string gives [WEXITED 1].
+ *   [_exit n] ends with the digits of n.
+ * - The environment is the files of /env, each holding the words of a
+ *   list, each word ended by a 0. Here a variable is "name=value", as
+ *   plan9port's rc has it on Unix, with the words separated by a \001.
+ *   [execve] writes its environment there.
+ * - A signal is a note: [kill] writes the note's name to
+ *   /proc/pid/note. *)
 
 type error =
   | E2BIG | EACCES | EAGAIN | EBADF | EBUSY | ECHILD | EDEADLK | EDOM | EEXIST | EFAULT | EFBIG | EINTR | EINVAL | EIO
@@ -29,7 +32,8 @@ type error =
   | ECONNREFUSED | EHOSTDOWN | EHOSTUNREACH | ELOOP | EOVERFLOW
   | EUNKNOWNERR of int
 
-(* the error, the function's name, its argument (a file's name) or "" *)
+(* The error, the name of the function, and its argument (a file's name)
+ * or "". *)
 exception Unix_error of error * string * string
 val error_message : error -> string
 
@@ -40,8 +44,8 @@ val stdin : file_descr
 val stdout : file_descr
 val stderr : file_descr
 
-(* O_CREAT with O_TRUNC is Plan 9's create; O_CREAT alone opens the
- * file, or creates it; O_APPEND seeks to the end, once *)
+(* O_CREAT with O_TRUNC is Plan 9's create. O_CREAT alone opens the
+ * file, or creates it. O_APPEND seeks to the end, once. *)
 type open_flag =
   | O_RDONLY | O_WRONLY | O_RDWR | O_NONBLOCK | O_APPEND | O_CREAT | O_TRUNC | O_EXCL | O_NOCTTY | O_DSYNC | O_SYNC
   | O_RSYNC | O_SHARE_DELETE | O_CLOEXEC | O_KEEPEXEC
@@ -54,12 +58,14 @@ val write_substring : file_descr -> string -> int -> int -> int
 type seek_command = SEEK_SET | SEEK_CUR | SEEK_END
 val lseek : file_descr -> int -> seek_command -> int
 
-(* lseek's offset in 64 bits (an address of /proc/$pid/mem above 2^30) *)
+(* lseek with an offset of 64 bits (for an address of /proc/$pid/mem
+ * above 2^30). *)
 module LargeFile : sig
   val lseek : file_descr -> int64 -> seek_command -> int64
 end
 
-(* a pipe is S_FIFO, the console S_CHR; the fields Plan 9 has not are 0 *)
+(* A pipe is S_FIFO, and the console is S_CHR. The fields that Plan 9
+ * does not have are 0. *)
 type file_kind = S_REG | S_DIR | S_CHR | S_BLK | S_LNK | S_FIFO | S_SOCK
 type stats = {
   st_dev : int; st_ino : int; st_kind : file_kind; st_perm : file_perm; st_nlink : int; st_uid : int; st_gid : int;
@@ -67,19 +73,21 @@ type stats = {
 }
 val stat : string -> stats
 val fstat : file_descr -> stats
-(* the console *)
+(* Whether the descriptor is the console. *)
 val isatty : file_descr -> bool
 
-(* (cloexec, and O_CLOEXEC: kept here, the descriptors closed by execv
- * and execve; Plan 9's own is the open file's, kept by dup) *)
+(* (cloexec and O_CLOEXEC are kept here, in a list of the descriptors
+ * that execv and execve close. Plan 9's own flag belongs to the open
+ * file, and dup keeps it.) *)
 val dup : cloexec:bool -> file_descr -> file_descr
 val dup2 : file_descr -> file_descr -> unit
 val pipe : cloexec:bool -> unit -> file_descr * file_descr
 val in_channel_of_descr : file_descr -> in_channel
 val out_channel_of_descr : file_descr -> out_channel
 val chdir : string -> unit
-(* a directory made; a file, or an empty directory, removed (Plan 9's
- * remove is one call for the two); where the process is *)
+(* mkdir makes a directory. unlink and rmdir remove a file or an empty
+ * directory (Plan 9's remove is one call for both). getcwd tells where
+ * the process is. *)
 val mkdir : string -> file_perm -> unit
 val unlink : string -> unit
 val rmdir : string -> unit
@@ -87,22 +95,22 @@ val getcwd : unit -> string
 
 (* processes *)
 
-(* rfork: the descriptors copied; the environment is one for the two,
- * as it is for Plan 9's rc and its children *)
+(* An rfork that copies the descriptors. The two processes share one
+ * environment, as Plan 9's rc and its children do. *)
 val fork : unit -> int
 val execv : string -> string array -> 'a
 val execve : string -> string array -> string array -> 'a
 type process_status = WEXITED of int | WSIGNALED of int | WSTOPPED of int
 type wait_flag = WNOHANG | WUNTRACED
 val wait : unit -> int * process_status
-(* (the flags: none of them is Plan 9's) *)
+(* (Plan 9 has none of the flags.) *)
 val waitpid : wait_flag list -> int -> int * process_status
-(* not OCaml's (Sys_plan9's): a child waited for, its last words as
- * the kernel gave them *)
+(* This is not OCaml's; it is for Sys_plan9. It gives the last words of
+ * a child that was waited for, as the kernel gave them. *)
 val last_words : int -> string
-(* (and the time it took, as the kernel says with them: in the
- * program, in the kernel for it, and from its start to its end, in
- * milliseconds) *)
+(* (And the time the child took, which the kernel gives with its last
+ * words: in the program, in the kernel for it, and from its start to
+ * its end, in milliseconds.) *)
 val last_times : int -> int * int * int
 val kill : int -> int -> unit
 val getpid : unit -> int
@@ -113,10 +121,11 @@ val environment : unit -> string array
 (* time *)
 
 val time : unit -> float
-(* the seconds and their fraction *)
+(* The seconds, with their fraction. *)
 val gettimeofday : unit -> float
-(* the time a file was written set (the time it was read, the first, is
- * not kept: ignored); 0., 0.: now *)
+(* Sets the time when a file was written. The time when it was read
+ * (the first argument) is not kept, so it is ignored. With 0. and 0.,
+ * the time set is now. *)
 val utimes : string -> float -> float -> unit
 val sleepf : float -> unit
 type tm = {
@@ -125,22 +134,25 @@ type tm = {
 }
 val gmtime : float -> tm
 
-(* not OCaml's (Sys_plan9's): a system call of Plan 9's by its number,
- * with its six arguments (an int, or a string's or bytes' address);
- * its answer, or Unix_error (the function's name and argument given) *)
+(* This is not OCaml's; it is for Sys_plan9. It makes a system call of
+ * Plan 9 by its number, with its six arguments (each an int, or the
+ * address of a string or of bytes). It returns the kernel's answer, or
+ * raises Unix_error with the function's name and argument it is
+ * given. *)
 val plan9_call : string -> string -> int -> Obj.t array -> int
 
-(* a timer that sends a signal: here the note "alarm" once, after
- * [it_value] seconds (0: none), ignored so that the program goes on;
- * the system call it interrupts fails with EINTR *)
+(* A timer that sends a signal. Here it sends the note "alarm" once,
+ * after [it_value] seconds (0 means none). The note is ignored, so that
+ * the program goes on, and the system call it interrupts fails with
+ * EINTR. *)
 type interval_timer = ITIMER_REAL | ITIMER_VIRTUAL | ITIMER_PROF
 type interval_timer_status = { it_interval : float; it_value : float }
 val setitimer : interval_timer -> interval_timer_status -> interval_timer_status
 
-(* a named pipe, and the sockets: Plan 9 has neither (it dials, by
- * /net). The types are OCaml's, so that a function of both systems
- * (CapUnix's) names them; each call fails, Unix_error (ENOSYS), as
- * OCaml's Unix does on Windows for what Windows lacks *)
+(* A named pipe, and the sockets. Plan 9 has neither (it dials through
+ * /net). The types are OCaml's, so that a function written for both
+ * systems (in CapUnix) can name them. Each call fails with Unix_error
+ * (ENOSYS), as OCaml's Unix does on Windows for what Windows lacks. *)
 val mkfifo : string -> file_perm -> unit
 type socket_domain = PF_UNIX | PF_INET | PF_INET6
 type socket_type = SOCK_STREAM | SOCK_DGRAM | SOCK_RAW | SOCK_SEQPACKET

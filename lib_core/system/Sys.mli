@@ -95,25 +95,28 @@ val catch_break: bool -> unit
         (* [catch_break] governs whether interactive interrupt (ctrl-C)
            terminates the program or raises the [Break] exception. *)
 
-(* ix: OCaml's later functions, those ix's programs use *)
+(* ix: functions of later OCamls that ix's programs use *)
 
-(* an int's bits: 31 or 63 *)
+(* The number of bits in an int: 31 or 63. *)
 val int_size : int
 
-(* a directory's names, in no order, without . and ..; a directory made
- * with these permissions; an empty one removed *)
+(* readdir gives the names in a directory, in no order, without . and
+ * .. ; mkdir makes a directory with these permissions; rmdir removes an
+ * empty directory. *)
 external readdir : string -> string array = "sys_read_directory"
   [@@raise Sys_error]
 external mkdir : string -> int -> unit = "sys_mkdir" [@@raise Sys_error]
 val rmdir : string -> unit
 
-(* the name the program was run by *)
+(* The name by which the program was run. *)
 val executable_name : string
 
-(* ix: OCaml's signals and the system's (Linux's) numbers; the second of the first *)
+(* ix: OCaml's signals, each paired with the system's (Linux's) number.
+ * system_signal gives the system's number of an OCaml signal. *)
 val system_signals : (int * int) list
 val system_signal : int -> int
 
-(* ix: no program of ix called these, taken out (to restore from OCaml 4.14's sys.ml):
- * interactive, sigttin, sigttou, sigvtalrm, sigprof, sigpoll, sigsys,
- * sigtrap, sigurg, sigxcpu, sigxfsz. *)
+(* ix: no program of ix called these, so they are left out (they can
+ * be restored from OCaml 4.14's sys.ml): interactive, sigttin, sigttou,
+ * sigvtalrm, sigprof, sigpoll, sigsys, sigtrap, sigurg, sigxcpu,
+ * sigxfsz. *)

@@ -1,40 +1,45 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-mkbootdir: mini-9pi's bootdir, the files a kernel has in its own
- * image (9pi's kernel/conf/arm/pi's bootdir: /boot/boot the rc script,
- * rcmain, rc, echo, bind...), packed for Devroot, which serves them as
- * /boot: a line "9pi bootdir KERNDATE" (the time the devices' files say
- * they were made: 9pi's kerndate, its build's `date -n`), then for each
- * file a line "name size" and its bytes, then a line "end". The usage:
- * [help], what mini-mkbootdir -h prints.
+(* mini-mkbootdir makes mini-9pi's bootdir: the files a kernel has in
+ * its own image (as in 9pi's kernel/conf/arm/pi's bootdir: /boot/boot,
+ * which is the rc script, rcmain, rc, echo, bind...). It packs them
+ * for Devroot, which serves them as /boot:
+ * - a line "9pi bootdir KERNDATE", where KERNDATE is the time the
+ *   devices' files say they were made (9pi's kerndate, its build's
+ *   `date -n`);
+ * - then, for each file, a line "name size" and its bytes;
+ * - then a line "end".
+ * The usage is in [help], which is what mini-mkbootdir -h prints.
  *
- * The kerndate may be principia's directory instead: 9pi's own then
- * (its conf compiled with -DKERNDATE=`date -n`), for mini-9pi's devices
- * to have 9pi's dates: the little-endian word of 9pi's image in the
- * minute before its conf's object was written (pi.5's mtime; `date -n`
- * ran just before the compile); that mtime if none, the time now if
- * there is no 9pi. (old: conf/kerndate.py)
+ * The kerndate may be given as principia's directory instead, so that
+ * mini-9pi's devices have 9pi's own dates (9pi's conf is compiled with
+ * -DKERNDATE=`date -n`). The kerndate is then the little-endian word
+ * of 9pi's image that falls in the minute before its conf's object was
+ * written (pi.5's mtime, since `date -n` ran just before the compile);
+ * it is that mtime if there is no such word, and the time now if there
+ * is no 9pi.
  *
- * Lines and bytes, not a marshalled list: Devroot reads the files where
- * they are in the image, without a copy of them in the heap (rc alone
- * is 700 KB), and the kernel's runtime has no Marshal.
- * (old: conf/mkbootdir.py, 25 lines of Python: plan_rio.md, decision 5)
+ * The format is lines and bytes, not a marshalled list, because
+ * Devroot reads the files where they are in the image, without copying
+ * them into the heap (rc alone is 700 KB), and because the kernel's
+ * runtime has no Marshal.
  *
- * Where it stands: the kernel's first files. A kernel that has just
- * booted has no disk driver started and no file server to ask, and
- * must still find a first program to run. Plan 9 links a small
- * directory into the kernel itself: /boot/boot is run as the first
- * process and, being a script here (conf's boot.rc), does the rest
- * in the open: the devices bound where programs look for them, the
- * card's partition if there is one, then a shell.
+ * Where it stands: these are the kernel's first files. A kernel that
+ * has just booted has no disk driver started and no file server to
+ * ask, and must still find a first program to run. Plan 9 links a
+ * small directory into the kernel itself. /boot/boot is run as the
+ * first process and, since it is a script here (conf's boot.rc), it
+ * does the rest in the open: it binds the devices where programs look
+ * for them, mounts the card's partition if there is one, and then
+ * starts a shell.
  *
  * others:
- * Linux's initramfs is the same thing with an archive format: a
- * cpio file in the kernel's image (or beside it, loaded by the
- * boot loader), unpacked into a file system in memory, whose /init
- * is the first process. xv6 has no such stage: its kernel knows its
- * one disk and runs /init from it (mini-xv6's Main). *)
+ * Linux's initramfs is the same thing with an archive format: a cpio
+ * file in the kernel's image (or beside it, loaded by the boot
+ * loader) is unpacked into a file system in memory, whose /init is the
+ * first process. xv6 has no such stage: its kernel knows its one disk
+ * and runs /init from it (mini-xv6's Main). *)
 
 type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; Cap.clock >
 

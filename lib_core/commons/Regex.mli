@@ -1,6 +1,7 @@
-(* Regular expressions, in Plan 9's notation (regexp(7)), matched
- * leftmost-longest, with the submatches of the highest-priority way
- * among the longest -- libregexp's answers, by another algorithm.
+(* Regular expressions, in Plan 9's notation (regexp(7)). A match is the
+ * leftmost-longest one, and its submatches are those of the
+ * highest-priority way among the longest. These are libregexp's
+ * answers, found by another algorithm.
  *
  *     c  \c  .  [a-z]  [^a-z]  ^  $     a character, quoted, any, a class,
  *                                       its complement, start, end
@@ -14,25 +15,26 @@
  * specification, and they depend on how it works. It compiles the
  * pattern to a small program (regcomp.c: RUNE, ANY, CLASS, LBRA and
  * RBRA for the captures, OR, END), and runs it as a Thompson NFA with
- * captures -- the "Pike VM": a list of threads, each an instruction
- * with its own captures, advanced together a character at a time; of
- * two threads at the same instruction only the first is kept (or the
- * one that started earlier). The order of the list is not a priority:
- * an OR follows its left side at once and puts its right side at the
- * end of the list, and the left side of * + ? is the skip, of a|b the
- * b. With the dedup, that order shows in corner cases: ((x?)?)* on
- * xxb matches the empty string at 0 (checked on 9base), where a
- * priority-ordered matcher (a backtracker, RE2) matches xx.
+ * captures, the "Pike VM". That is a list of threads, where each
+ * thread is an instruction with its own captures, and the threads are
+ * advanced together, one character at a time. Of two threads at the
+ * same instruction, only the first is kept (or the one that started
+ * earlier). The order of the list is not a priority. An OR follows
+ * its left side at once and puts its right side at the end of the
+ * list; the left side of * + ? is the skip, and the left side of a|b
+ * is the b. Because of the dedup, that order shows in corner cases:
+ * ((x?)?)* on xxb matches the empty string at 0 (checked on 9base),
+ * where a priority-ordered matcher (a backtracker, RE2) matches xx.
  *
- * {b Lines and characters.} Positions are byte offsets; a step over a
- * character decodes UTF-8, so . takes an é whole. As in libregexp, .
- * and [^...] never match a newline, ^ matches after one and $ before
- * one: a line holds none, except while s is making several lines of
- * one (Command).
+ * {b Lines and characters.} Positions are byte offsets, and a step
+ * over a character decodes UTF-8, so . takes an é whole. As in
+ * libregexp, . and [^...] never match a newline, ^ matches after a
+ * newline, and $ before one. A line holds no newline, except while s
+ * is making several lines out of one (Command).
  *
  * {b A pattern's program, and its run.} [compile "ab*c"] makes five
- * instructions, each with the one that follows it (the numbers are
- * the order they are made in, the pattern's end first):
+ * instructions, each with the one that follows it (the numbers give
+ * the order they are made in, starting from the pattern's end):
  *
  *     4: RUNE a   then 2          --a-->(2)--------c-->(0) END
  *     2: OR       then 1, and 3          | ^
@@ -41,8 +43,9 @@
  *     0: END
  *
  * An OR is where the ways part: the skip of b* (1) is followed at
- * once, the body (3) is put on the list. On "abc", a list of threads
- * a character, each thread the instruction it waits at:
+ * once, and the body (3) is put on the list. On "abc" there is one
+ * list of threads for each character, and each thread is shown by the
+ * instruction it waits at:
  *
  *     a    {4}       RUNE a takes it                         -> {2}
  *     b    {2}       OR: 3 on the list; 1, RUNE c: not a c
@@ -51,61 +54,65 @@
  *          {3}       not a b
  *     end  {0}       END: the match, (0, 3)
  *
- * (a thread for a match that would start there is added at each
- * character, left out above). No character of the text is read
- * twice, whatever the pattern: the work at each is bounded by the
- * list's size, not by the ways there are through the pattern.
+ * (At each character, a thread is also added for a match that would
+ * start there; it is left out above.) No character of the text is
+ * read twice, whatever the pattern: the work at each character is
+ * bounded by the size of the list, not by the number of ways through
+ * the pattern.
  *
- * {b Where it stands.} One matcher for the programs that are Plan
- * 9's: ed's addresses and its s command, sed, grep, awk (its Re puts
- * awk's notation into this one), mini-emacs's search, the builder's
- * patterns. The shell's * and ? are not regular expressions and are
- * Glob's. A lexer's are compiled before the program runs, to a
- * table: Lexing.
+ * {b Where it stands.} It is the one matcher for the programs that
+ * come from Plan 9: ed's addresses and its s command, sed, grep, awk
+ * (its Re translates awk's notation into this one), mini-emacs's
+ * search, and the builder's patterns. The shell's * and ? are not
+ * regular expressions; Glob handles them. A lexer's regular
+ * expressions are compiled to a table before the program runs, by
+ * Lexing.
  *
  * cs-history:
  * Ken Thompson's "Regular Expression Search Algorithm" (CACM, 1968)
- * was written for QED on the IBM 7094: the expression was compiled
+ * was written for QED on the IBM 7094. The expression was compiled
  * to 7094 code that follows every state of the NFA at once, so a
- * search is linear in the text -- the list of threads here, run by
- * an interpreter instead of as machine code. ed kept the notation
- * and grep took its name from an ed command, g/re/p. Rob Pike's sam
- * gave each thread its own captures, which is the "Pike VM" of
- * libregexp and of this module (Russ Cox's name for it).
+ * search is linear in the text. That is the list of threads here,
+ * run by an interpreter instead of as machine code. ed kept the
+ * notation, and grep took its name from an ed command, g/re/p. Rob
+ * Pike's sam gave each thread its own captures, which is the "Pike
+ * VM" of libregexp and of this module (the name is Russ Cox's).
  *
  * others:
  * Perl's matcher, and those made after it (PCRE, Python's, Java's,
- * JavaScript's), try one way to its end and come back to try the
- * next: backtracking. It is what a back-reference in the pattern
- * needs, and it takes exponential time on a?a?a?aaa against aaa
- * made longer: Cox's 2007 article times it. RE2 (Google) and Go's
- * and Rust's libraries went back to Thompson's method and gave the
- * back-reference up.
+ * JavaScript's), try one way to its end and then come back to try the
+ * next one. This is backtracking. A back-reference in the pattern
+ * needs it, and it takes exponential time on a?a?a?aaa against aaa,
+ * as both are made longer; Cox's 2007 article times it. RE2 (Google)
+ * and Go's and Rust's libraries went back to Thompson's method and
+ * gave up the back-reference.
  *
  * terminology:
- * Leftmost-longest, here and in POSIX: of the matches that start
- * earliest, the longest, so o|on on "one" is "on". Leftmost-first,
- * Perl's: the first alternative that leads to a match, so "o". A
- * backtracker gets the second for free and the first only by trying
- * everything; the threads get either in one pass.
+ * Leftmost-longest, used here and in POSIX, picks the longest of the
+ * matches that start earliest, so o|on on "one" gives "on".
+ * Leftmost-first, Perl's rule, picks the first alternative that leads
+ * to a match, so it gives "o". A backtracker gets the second for free,
+ * and the first only by trying everything; the threads get either one
+ * in one pass.
  *
  * References: Ken Thompson, "Regular Expression Search Algorithm",
  * CACM 11(6), 1968; Russ Cox, "Regular Expression Matching Can Be
- * Simple And Fast" (2007), the two methods timed, and "Regular
- * Expression Matching: the Virtual Machine Approach" (2009), the
- * program and its threads, and how sam's captures came; regexp(7)
- * and principia's regcomp.c, regexec.c and regaux.c (libregexp),
- * whose functions Regex's comments name. *)
+ * Simple And Fast" (2007), which times the two methods, and "Regular
+ * Expression Matching: the Virtual Machine Approach" (2009), on the
+ * program and its threads and on where sam's captures came from;
+ * regexp(7) and principia's regcomp.c, regexec.c and regaux.c
+ * (libregexp), whose functions Regex's comments name. *)
 
 type t
 
-(* a pattern that isn't one: "missing operand", "malformed []", ... *)
+(* A pattern that isn't one: "missing operand", "malformed []", ... *)
 exception Error of string
 
-(* [compile p]: p as ed passes it, a \ still before what it quotes *)
+(* [compile p]: p as ed passes it, with a \ still before what it quotes *)
 val compile : string -> t
 
-(* [exec re s from]: the leftmost-longest match starting at [from] or
- * after (^ still only at 0 or after a newline): the whole match's span
- * then groups 1-8, (-1, -1) for a group that did not match *)
+(* [exec re s from]: the leftmost-longest match that starts at [from] or
+ * after (^ still matches only at 0 or after a newline). It gives the
+ * span of the whole match, then of groups 1-8, with (-1, -1) for a
+ * group that did not match. *)
 val exec : t -> string -> int -> (int * int) array option

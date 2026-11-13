@@ -36,7 +36,7 @@ val output: out_channel -> t -> unit
 val input: in_channel -> t
         (* Read a digest from the given input channel. *)
 
-(* ix: OCaml's later functions, those ix's programs use *)
+(* ix: functions of later OCamls that ix's programs use *)
 
-(* the digest's 16 bytes as 32 hexadecimal digits *)
+(* The 16 bytes of the digest as 32 hexadecimal digits. *)
 val to_hex : t -> string

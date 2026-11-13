@@ -13,13 +13,15 @@
 (* Module [Filename]: operations on file names *)
 
 val current_dir_name : string
-        (* The conventional name for the current directory (e.g. *)
+        (* The conventional name for the current directory (e.g. [.] in
+           Unix). *)
 val concat : string -> string -> string
         (* [concat dir file] returns a file name that designates file [file]
            in directory [dir]. *)
 val is_relative : string -> bool
         (* Return [true] if the file name is relative to the current
-           directory, [false] if it is absolute (i.e. *)
+           directory, [false] if it is absolute (i.e. in Unix, starts
+           with [/]). *)
 val is_implicit : string -> bool
         (* Return [true] if the file name is relative and does not start
            with an explicit reference to the current directory ([./] or
@@ -41,15 +43,16 @@ val temp_file: string -> string -> string
         (* [temp_file prefix suffix] returns the name of a non-existent
            temporary file in the temporary directory. *)
 
-(* ix: OCaml's later functions, those ix's programs use *)
+(* ix: functions of later OCamls that ix's programs use *)
 
-(* the name without its extension, or as it is *)
+(* The name without its extension, or the name as it is when it has
+ * none. *)
 val remove_extension : string -> string
 
-(* the extension of the name's last part, its dot first (".wav"), or ""
- * when it has none; a dot at the part's start is no extension
- * (".profile") *)
+(* The extension of the last part of the name, starting with its dot
+ * (".wav"), or "" when it has none. A dot at the start of the part does
+ * not start an extension (".profile"). *)
 val extension : string -> string
 
-(* the name as one word of a shell's command *)
+(* The name quoted so that a shell reads it as one word of a command. *)
 val quote : string -> string

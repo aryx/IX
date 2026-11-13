@@ -180,23 +180,26 @@ val rev_map : ('a -> 'b) -> 'a list -> 'b list
 (** [rev_map f l] gives the same result as {!rev}[ (]{!map}[ f l)], but is
     tail-recursive and more efficient. *)
 
-(* ix: OCaml's later functions, those ix's programs use *)
+(* ix: functions of later OCamls that ix's programs use *)
 
-(* a list as a sequence; a sequence read into a list *)
+(* to_seq gives the list as a sequence; of_seq reads a sequence into a
+ * list. *)
 val to_seq : 'a list -> 'a Seq.t
 val of_seq : 'a Seq.t -> 'a list
 
-(* the elements whose index and value p holds for *)
+(* The elements for whose index and value p holds. *)
 val filteri : (int -> 'a -> bool) -> 'a list -> 'a list
 
-(* sort, which keeps equal elements in their order; and sorted with one
- * of each group of equal elements *)
+(* stable_sort is sort, which keeps equal elements in their order.
+ * sort_uniq sorts too, keeping one element of each group of equal
+ * elements. *)
 val stable_sort : ('a -> 'a -> int) -> 'a list -> 'a list
 val sort_uniq : ('a -> 'a -> int) -> 'a list -> 'a list
 
-(* assq, None for Not_found; the list without x's first pair *)
+(* assq_opt is assq, with None instead of Not_found. remove_assoc gives
+ * the list without the first pair of x. *)
 val assq_opt : 'a -> ('a * 'b) list -> 'b option
 val remove_assoc : 'a -> ('a * 'b) list -> ('a * 'b) list
 
-(* ix: no program of ix called these, taken out (to restore from ocaml-light's list.ml):
- * sort_bool. *)
+(* ix: no program of ix called these, so they are left out (they can be
+ * restored from ocaml-light's list.ml): sort_bool. *)

@@ -1,7 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See Source.mli: OCaml's threads (a read waits alone: the others run) *)
+(* See Source.mli. This is the file for OCaml's threads, where a thread
+ * that waits in a read does not stop the others. *)
 
 let reader (_ : < Cap.fork; .. >) fd n =
   let ch = Event.new_channel () and buf = Bytes.create (min n 4000) in

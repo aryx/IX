@@ -3,16 +3,17 @@
 
 (* 9P2000, the file protocol (principia's fcall.h, convS2M/convM2S), as
  * xix's Protocol_9P designs it: a message is its tag and a request (T)
- * or a response (R), each a variant. Here the client's half: requests
- * encoded, responses decoded (devmnt). Offsets, counts, fids and qid
- * paths are ints (the Pi1's 31 bits: no file past 1GB).
+ * or a response (R), and each of those is a variant. Here is the
+ * client's half: requests are encoded and responses decoded (devmnt).
+ * Offsets, counts, fids and qid paths are ints (the Pi1's 31 bits, so
+ * no file is past 1GB).
  *
- * Thirteen requests, each with its response, or Rerror and a string.
- * A fid is a number the client chooses to name a file of the
- * server's from then on; a tag, a number it chooses to name a
- * request, so that answers may come in any order. What the kernel
- * sends for a program that reads a file of a mounted FAT (the fids'
- * and tags' numbers are an example's):
+ * There are thirteen requests, each with its response, or Rerror and a
+ * string. A fid is a number the client chooses to name a file of the
+ * server's from then on; a tag is a number it chooses to name a
+ * request, so that answers may come in any order. Here is what the
+ * kernel sends for a program that reads a file of a mounted FAT (the
+ * numbers of the fids and tags are only an example):
  *
  *     mount /srv/dos /mnt/fat          once, for the connection:
  *       T Version 8216 "9P2000"          R Version 8216 "9P2000"
@@ -29,32 +30,32 @@
  *       T Clunk 3                        R Clunk
  *
  * The walk from 1 to 2 is Kchan's clone of the mounted channel, the
- * walk's own copy of the directory it is in: a fid is never moved,
- * a new one is walked from it, and the one no longer needed is
- * clunked. The server keeps, for each fid, where it is and whether
- * it is open; the offset is the client's, sent with each read.
+ * walk's own copy of the directory it is in. A fid is never moved: a
+ * new one is walked from it, and the one no longer needed is clunked.
+ * The server keeps, for each fid, where it is and whether it is open;
+ * the offset is kept by the client, which sends it with each read.
  *
- * Who speaks it in ix: Devmnt is the kernel's client; the servers
- * are programs, on lib_networking's P9_server (mini-dossrv for a
+ * Who speaks it in ix: Devmnt is the kernel's client; the servers are
+ * programs, built on lib_networking's P9_server (mini-dossrv for a
  * FAT, mini-rio for its windows' files).
  *
  * cs-history:
- * 9P is Plan 9's one protocol: what the kernel says to a file
- * server on a disk, to a window system, to another machine. The
- * first editions' 9P had fixed-size messages and names of 28 bytes;
- * 9P2000, the fourth edition's (2002), is the one here: strings with
- * a length, a walk of several names in one message, a size the two
- * sides agree on first (Version), authentication as a file (Auth)
- * rather than fields of the attach.
+ * 9P is Plan 9's one protocol: it is what the kernel says to a file
+ * server on a disk, to a window system, and to another machine. The
+ * first editions' 9P had fixed-size messages and names of 28 bytes.
+ * 9P2000, the fourth edition's (2002), is the one here: it has strings
+ * with a length, a walk of several names in one message, a size the
+ * two sides agree on first (Version), and authentication as a file
+ * (Auth) rather than as fields of the attach.
  *
  * others:
  * NFS (Sun, 1984), Unix's remote files, has no open and no close: a
  * server remembers nothing of its clients, each request carries a
  * file handle and an offset, and a server that restarts is not
- * noticed. The price is everything that needs the server to know
- * who has what: a file removed while open, a lock, a device whose
- * read depends on who reads. 9P keeps state, a fid from walk to
- * clunk, because its files are mostly not files of a disk.
+ * noticed. The price is everything that needs the server to know who
+ * has what: a file removed while open, a lock, a device whose read
+ * depends on who reads. 9P keeps state, a fid from walk to clunk,
+ * because its files are mostly not files of a disk.
  *
  * modern:
  * 9P outlived its system as the simplest way to show one system's
@@ -62,9 +63,9 @@
  * a host's directory to its guest with it over virtio, and Windows
  * reaches its Linux subsystem's files with it (2019).
  *
- * References: intro(5) of the Plan 9 manual, then one page a
- * message: the whole protocol in a dozen pages. Rob Pike and others,
- * "Plan 9 from Bell Labs" (1995). Russel Sandberg and others,
+ * References: intro(5) of the Plan 9 manual, then one page for each
+ * message: the whole protocol fits in a dozen pages. Rob Pike and
+ * others, "Plan 9 from Bell Labs" (1995). Russel Sandberg and others,
  * "Design and Implementation of the Sun Network Filesystem" (USENIX
  * Summer 1985), for the other way. *)
 

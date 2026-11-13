@@ -86,11 +86,12 @@ external format : string -> t -> string = "int32_format"
       (* [Int32.format fmt n] return the string representation of the 32-bit
          integer [n] in the format specified by [fmt]. *)
 
-(* ix: OCaml's later functions, those ix's programs use *)
+(* ix: functions of later OCamls that ix's programs use *)
 
 val compare : t -> t -> int
 
-(* the bits of the single-precision float nearest to a float, IEEE's 32 *)
+(* The bits of the single-precision float (IEEE's 32-bit format) nearest
+ * to a float. *)
 external bits_of_float : float -> t = "int32_bits_of_float"
 external float_of_bits : t -> float = "int32_float_of_bits"
 external of_float : float -> t = "int32_of_float"

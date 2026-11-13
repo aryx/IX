@@ -9,9 +9,10 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* ix: Unix's and Plan 9's names only: ocaml-light's Filename also had
-   Windows's (a drive, a backslash) and the old MacOS's (a colon), each
-   function chosen by Sys.os_type. *)
+(* ix: only the file names of Unix and Plan 9 are handled here.
+   ocaml-light's Filename also handled those of Windows (a drive, a
+   backslash) and of the old MacOS (a colon), choosing each function by
+   Sys.os_type. *)
 
 let current_dir_name = "."
 

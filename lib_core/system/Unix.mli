@@ -1,21 +1,23 @@
-(* ix: OCaml's Unix library, the part ix's programs use, for mini-ml
- * (dune's builds take OCaml's: this directory is not dune's). Its
- * names, types and behaviour are OCaml's Unix's (unix.mli); it is
- * written again, in OCaml: each function is a system call of Linux's
- * (arm and arm64), made by one primitive of the runtime, with the
- * kernel's structures packed and read as bytes here. So there is no
- * C for it, and no libc under it: the same with goken's and with
- * glibc. A label that is optional in OCaml's (?cloexec) is given here.
+(* ix: the part of OCaml's Unix library that ix's programs use, for
+ * mini-ml (dune's builds take OCaml's, because this directory is not
+ * dune's). Its names, types and behaviour are those of OCaml's Unix
+ * (unix.mli), but it is written again, in OCaml. Each function is a
+ * system call of Linux (on arm and arm64), made by one primitive of the
+ * runtime, and the kernel's structures are packed and read as bytes
+ * here. So there is no C for it and no libc under it, and it works the
+ * same with goken's libc and with glibc. A label that is optional in
+ * OCaml's Unix (?cloexec) must be given here.
  *
  * A system call is the one door between a program and everything
- * outside its memory: the kernel does the thing, the program asks
- * by a number and up to six words. A call's way down, and back:
+ * outside its memory. The program asks with a number and up to six
+ * words, and the kernel does the thing. Here is a call's way down, and
+ * back:
  *
  *     Unix.openfile "notes" [ O_RDONLY ] 0
- *       |   the flags made bits, the path a string's address
+ *       |   the flags become bits, the path becomes an address
  *       v
  *     syscall 322 [| -100; "notes"; bits; 0; 0; 0 |]      openat: 322 on
- *       |   the one primitive, the runtime's            arm, 56 on arm64;
+ *       |   the runtime's one primitive                 arm, 56 on arm64;
  *       v                                               -100: from the
  *     the kernel, entered by the processor's trap       current directory
  *       |
@@ -23,37 +25,37 @@
  *     3, a descriptor;  or -2, and here
  *     Unix_error (ENOENT, "open", "notes")
  *
- * So the whole of the system's interface is a table of numbers, a
+ * So the whole interface of the system is a table of numbers, a
  * convention for the arguments, and the layout of a few structures
- * (stat's, a directory's entries, a time), all in the .ml: what a C
- * library's lowest layer is, read in one file. An error is the
- * kernel's negative number made an exception; C's errno, a global
- * variable to look at after a -1, is the library's doing, not the
- * kernel's.
+ * (stat's, a directory's entries, a time), all in the .ml. That is the
+ * lowest layer of a C library, read in one file. An error is the
+ * kernel's negative number turned into an exception. C's errno, a
+ * global variable to look at after a -1, is the library's doing, not
+ * the kernel's.
  *
- * Two things differ by the machine. The numbers: Linux gave arm64 a
- * new and shorter table, with no open (openat does it), no fork
- * (clone), no pipe (pipe2). And an int: on arm it has 31 bits, so a
- * file's size, its offset (LargeFile, in int64) and the seconds
- * since 1970 (floats, read from the kernel's words as int64) do not
- * go through one.
+ * Two things differ by machine. The first is the numbers: Linux gave
+ * arm64 a new and shorter table, with no open (openat does it), no fork
+ * (clone does it) and no pipe (pipe2 does it). The second is the int:
+ * on arm it has 31 bits, so a file's size, its offset (LargeFile, in
+ * int64) and the seconds since 1970 (floats, read from the kernel's
+ * words as int64) do not go through an int.
  *
- * Where it stands: under every program of ix compiled by mini-ml
- * for Linux: Console, FS and Procs call it, with a capability (Cap).
- * The same interface over Plan 9's system calls is the plan9
- * directory's Unix, for mini-9pi, where the kernel answered is ix's
- * own.
+ * Where it stands: it is under every program of ix that mini-ml
+ * compiles for Linux. Console, FS and Procs call it, with a capability
+ * (Cap). The same interface over Plan 9's system calls is the Unix of
+ * the plan9 directory, for mini-9pi, where the kernel that answers is
+ * ix's own.
  *
  * others:
- * Go does the same on Linux: its runtime makes the system calls
- * itself and links no C library. Most languages go through libc,
- * and on systems other than Linux they must, the numbers not being
- * a promise there: the C library is the interface, the kernel's
- * door behind it may change at a release.
+ * Go does the same on Linux: its runtime makes the system calls itself
+ * and links no C library. Most languages go through libc, and on
+ * systems other than Linux they must, because the numbers are not a
+ * promise there: the C library is the interface, and the kernel's door
+ * behind it may change at any release.
  *
- * References: syscall(2) and syscalls(2) of Linux's manual: the
- * convention by machine, the list; OCaml's unix.mli, whose comments
- * say what each function does. *)
+ * References: syscall(2) and syscalls(2) of Linux's manual, for the
+ * convention of each machine and the list of calls; OCaml's unix.mli,
+ * whose comments say what each function does. *)
 
 type error =
   | E2BIG | EACCES | EAGAIN | EBADF | EBUSY | ECHILD | EDEADLK | EDOM | EEXIST | EFAULT | EFBIG | EINTR | EINVAL | EIO
@@ -65,13 +67,14 @@ type error =
   | ECONNREFUSED | EHOSTDOWN | EHOSTUNREACH | ELOOP | EOVERFLOW
   | EUNKNOWNERR of int
 
-(* the error, the function's name, its argument (a file's name) or "" *)
+(* The error, the name of the function, and its argument (a file's name)
+ * or "". *)
 exception Unix_error of error * string * string
 val error_message : error -> string
 
 (* files *)
 
-(* an int, as the system's; abstract, as OCaml's *)
+(* An int, as in the system, but abstract, as in OCaml. *)
 type file_descr
 val stdin : file_descr
 val stdout : file_descr
@@ -85,7 +88,8 @@ type file_perm = int
 val openfile : string -> open_flag list -> file_perm -> file_descr
 val close : file_descr -> unit
 
-(* read: what is there, up to len bytes, into buf at ofs; write: all of them *)
+(* read reads what is there, up to len bytes, into buf at ofs. write
+ * writes all len bytes. *)
 val read : file_descr -> bytes -> int -> int -> int
 val write : file_descr -> bytes -> int -> int -> int
 val write_substring : file_descr -> string -> int -> int -> int
@@ -104,7 +108,7 @@ val lstat : string -> stats
 val fstat : file_descr -> stats
 val isatty : file_descr -> bool
 
-(* the same with a size and an offset of 64 bits *)
+(* The same functions, with a size and an offset of 64 bits. *)
 module LargeFile : sig
   val lseek : file_descr -> int64 -> seek_command -> int64
   type stats = {
@@ -125,7 +129,7 @@ type access_permission = R_OK | W_OK | X_OK | F_OK
 val access : string -> access_permission list -> unit
 val readlink : string -> string
 val realpath : string -> string
-(* both 0.0: now *)
+(* When both times are 0.0, the file gets the current time. *)
 val utimes : string -> float -> float -> unit
 
 val dup : cloexec:bool -> file_descr -> file_descr
@@ -147,7 +151,8 @@ val chdir : string -> unit
 val getcwd : unit -> string
 type dir_handle
 val opendir : string -> dir_handle
-(* the next name (. and .. too), End_of_file after the last *)
+(* The next name (. and .. included), or End_of_file after the last
+ * one. *)
 val readdir : dir_handle -> string
 val closedir : dir_handle -> unit
 
@@ -161,12 +166,14 @@ type process_status = WEXITED of int | WSIGNALED of int | WSTOPPED of int
 type wait_flag = WNOHANG | WUNTRACED
 val wait : unit -> int * process_status
 val waitpid : wait_flag list -> int -> int * process_status
-(* a signal as Sys's (Sys.sigint...), or the system's number *)
+(* The signal is one of Sys's (Sys.sigint...), or the system's
+ * number. *)
 val kill : int -> int -> unit
 val getpid : unit -> int
 val getppid : unit -> int
 val _exit : int -> 'a
-(* "NAME=value", from /proc/self/environ *)
+(* The environment as "NAME=value" strings, read from
+ * /proc/self/environ. *)
 val environment : unit -> string array
 val gethostname : unit -> string
 
@@ -189,7 +196,8 @@ type socket_type = SOCK_STREAM | SOCK_DGRAM | SOCK_RAW | SOCK_SEQPACKET
 type inet_addr
 val inet_addr_any : inet_addr
 val inet_addr_loopback : inet_addr
-(* of "a.b.c.d", or Failure; and back *)
+(* The address of "a.b.c.d", or Failure; and the string of an
+ * address. *)
 val inet_addr_of_string : string -> inet_addr
 val string_of_inet_addr : inet_addr -> string
 type sockaddr = ADDR_UNIX of string | ADDR_INET of inet_addr * int
@@ -198,35 +206,40 @@ val socket : socket_domain -> socket_type -> int -> file_descr
 val socketpair : socket_domain -> socket_type -> int -> file_descr * file_descr
 val bind : file_descr -> sockaddr -> unit
 val listen : file_descr -> int -> unit
-(* a socket's own address: the port the system chose, for a bind to 0 *)
+(* The socket's own address. It gives the port that the system chose
+ * after a bind to port 0. *)
 val getsockname : file_descr -> sockaddr
-(* OCaml's has ten: here the one that lets a server bind again the port
- * it just left *)
+(* OCaml's Unix has ten options. Here there is only the one that lets a
+ * server bind again to the port it just left. *)
 type socket_bool_option = SO_REUSEADDR
 val setsockopt : file_descr -> socket_bool_option -> bool -> unit
 val accept : file_descr -> file_descr * sockaddr
 val connect : file_descr -> sockaddr -> unit
-(* a datagram read with its sender's address, and one sent to an
- * address: a socket that is not connected (a UDP server's) *)
+(* recvfrom reads a datagram with the address of its sender, and
+ * sendto_substring sends one to an address. They are for a socket that
+ * is not connected (a UDP server's). *)
 type msg_flag = MSG_OOB | MSG_DONTROUTE | MSG_PEEK
 val recvfrom : file_descr -> bytes -> int -> int -> msg_flag list -> int * sockaddr
 val sendto_substring : file_descr -> string -> int -> int -> msg_flag list -> sockaddr -> int
 type shutdown_command = SHUTDOWN_RECEIVE | SHUTDOWN_SEND | SHUTDOWN_ALL
 val shutdown : file_descr -> shutdown_command -> unit
 
-(* a host's addresses: here a numeric one, "localhost", or a name of
- * /etc/hosts (no resolver: [] for another name); the service a number
- * or one of a few names *)
+(* The addresses of a host. Here the host is a numeric address,
+ * "localhost", or a name in /etc/hosts; there is no resolver, so
+ * another name gives []. The service is a number or one of a few
+ * names. *)
 type addr_info = { ai_family : socket_domain; ai_socktype : socket_type; ai_protocol : int; ai_addr : sockaddr; ai_canonname : string }
 type getaddrinfo_option =
   | AI_FAMILY of socket_domain | AI_SOCKTYPE of socket_type | AI_PROTOCOL of int | AI_NUMERICHOST | AI_CANONNAME | AI_PASSIVE
 val getaddrinfo : string -> string -> getaddrinfo_option list -> addr_info list
 
-(* the descriptors ready to be read, to be written, in error, of those
- * given, after at most that many seconds (negative: no limit) *)
+(* Of the descriptors given, the ones ready to be read, the ones ready
+ * to be written, and the ones in error, after at most that many seconds
+ * (a negative number means no limit). *)
 val select : file_descr list -> file_descr list -> file_descr list -> float -> file_descr list * file_descr list * file_descr list
 
-(* a terminal's settings (OCaml's record; the speeds are read, not set) *)
+(* The settings of a terminal. (This is OCaml's record; the speeds are
+ * read but not set.) *)
 
 type terminal_io = {
   mutable c_ignbrk : bool; mutable c_brkint : bool; mutable c_ignpar : bool; mutable c_parmrk : bool; mutable c_inpck : bool;
@@ -242,7 +255,7 @@ type setattr_when = TCSANOW | TCSADRAIN | TCSAFLUSH
 val tcgetattr : file_descr -> terminal_io
 val tcsetattr : file_descr -> setattr_when -> terminal_io -> unit
 
-(* a timer that sends a signal: SIGALRM for ITIMER_REAL *)
+(* A timer that sends a signal, SIGALRM for ITIMER_REAL. *)
 
 type interval_timer = ITIMER_REAL | ITIMER_VIRTUAL | ITIMER_PROF
 type interval_timer_status = { it_interval : float; it_value : float }

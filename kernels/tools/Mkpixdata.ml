@@ -1,17 +1,20 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-mkpixdata: the OCaml pixels' data, from principia's C where it is
- * data, not code: libmemdraw/cmap.c's default colour map (mkcmap.c's
- * output: cmap2rgb, 256 colours; rgb2cmap, 4096 entries by 4-bit red,
- * green, blue) and libdraw/defont.c's defontdata (lucm/latin1.9, the
- * default font, uncompressed), written as OCaml strings: the kernel's
- * Memdata.ml and its interface (lib_graphics/ocaml, PIXEL=ocaml), or,
- * with -font, the client's lib_graphics/Font_default.ml.
+(* mini-mkpixdata makes the OCaml pixels' data from principia's C,
+ * where that C is data and not code:
+ * - libmemdraw/cmap.c's default colour map (mkcmap.c's output):
+ *   cmap2rgb, of 256 colours, and rgb2cmap, of 4096 entries indexed by
+ *   a 4-bit red, green and blue;
+ * - libdraw/defont.c's defontdata (lucm/latin1.9, the default font),
+ *   uncompressed.
+ * It writes them as OCaml strings, into the kernel's Memdata.ml and its
+ * interface (kernels/9pi/lib_graphics/, for PIXEL=ocaml), or, with -font,
+ * into the client's lib_graphics/Font_default.ml.
  *
- * Run once: its output is in the repository, the build does not run
- * it, nor need principia; again only if principia's C changes.
- * (old: kernels/9pi/conf/mkpixdata.py and lib_graphics/tools/defont.py) *)
+ * It is run once: its output is in the repository, and the build
+ * neither runs it nor needs principia. It must be run again only if
+ * principia's C changes. *)
 
 type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 

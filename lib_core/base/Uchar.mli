@@ -67,10 +67,12 @@ val compare : t -> t -> int
 (** [compare u u'] is [Pervasives.compare u u']. *)
 
 
-(* ix: OCaml's later functions, those ix's programs use *)
+(* ix: functions of later OCamls that ix's programs use *)
 
-(* a decoded character: whether the bytes were one (else it is U+FFFD),
- * how many bytes were read, the character; and the two made *)
+(* A decoded character. It tells whether the bytes were a valid
+ * character (if not, the character is U+FFFD), how many bytes were
+ * read, and the character. The last two functions make a valid one and
+ * an invalid one. *)
 type utf_decode
 val utf_decode_is_valid : utf_decode -> bool
 val utf_decode_length : utf_decode -> int
@@ -78,5 +80,6 @@ val utf_decode_uchar : utf_decode -> t
 val utf_decode : int -> t -> utf_decode
 val utf_decode_invalid : int -> utf_decode
 
-(* ix: no program of ix called these, taken out (to restore from OCaml 4.14's uchar.ml):
- * bom, succ, pred, unsafe_to_char, hash. *)
+(* ix: no program of ix called these, so they are left out (they can be
+ * restored from OCaml 4.14's uchar.ml): bom, succ, pred, unsafe_to_char,
+ * hash. *)

@@ -1,10 +1,11 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* A value as bytes, and back: OCaml's format (ocaml-light's too). 20
- * bytes (the magic number, the data's length, the blocks' count, the
- * words they take on 32 and on 64 bits), then the value, depth first,
- * each thing a byte's code and what follows, the high byte first:
+(* Turns a value into bytes, and back, in OCaml's format (which is also
+ * ocaml-light's). First come 20 bytes (the magic number, the length of
+ * the data, the number of blocks, and the words they take on 32 and on
+ * 64 bits), then the value, depth first. Each thing is a code byte and
+ * what follows it, with the high byte first:
  *
  *   0x80 + tag + size * 16     a block of a few fields, then its fields
  *   0x40 + n                   an integer under 64
@@ -22,18 +23,21 @@
  *   0x12, 0x18, 0x19           a custom block: its name, "_j" an int64,
  *                              "_i" an int32, then its bytes
  *
- * The same bytes as OCaml's wherever a value is the same blocks in
- * both; not a constructor's inline record (here a block of its own),
- * a float array (here a block of floats, but Float.Array's as OCaml's),
- * a closure (refused).
+ * The bytes are the same as OCaml's wherever a value is made of the
+ * same blocks in both. They differ for a constructor's inline record
+ * (here it is a block of its own), for a float array (here it is a
+ * block of floats, but a Float.Array is written as in OCaml), and for a
+ * closure (which is refused).
  *
- * old: 478 lines of C in the runtime, its tables in memory of their own
- * (mmap); here they are values, which the collector moves: see [seen].
- * Reading and writing are 4 to 6 times slower than the C's (mini-cc's):
- * a link of mini-ml 16% longer, ix built by ix 12% (plan_ml_features.md,
- * 3, has the numbers). Tried, and not faster in that build: the
- * writer's bytes its own (not a Buffer's), the collection told by a
- * block's address (not a call), no bound checked, fewer calls a value. *)
+ * old: this was 478 lines of C in the runtime, with its tables in
+ * memory of their own (mmap). Here the tables are values, which the
+ * collector moves (see [seen]). Reading and writing are 4 to 6 times
+ * slower than with the C (compiled by mini-cc): a link of mini-ml takes
+ * 16% longer, and ix built by ix 12% longer (plan_ml_features.md,
+ * section 3, has the numbers). These were tried and were not faster in
+ * that build: the writer keeping its own bytes (instead of a Buffer's),
+ * the collection told by a block's address (instead of by a call), no
+ * bound checks, and fewer calls for each value. *)
 
 type extern_flags =
     No_sharing

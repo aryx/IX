@@ -47,9 +47,9 @@ val map : ('a -> 'b) -> 'a option -> 'b option
 (** [map f o] is [None] if [o] is [None] and [Some (f v)] is [o] is [Some
     v]. *)
 
-(* claude: real OCaml only added Option's let* / let+ much later (5.5,
-   as a nested Syntax submodule alongside a new "product" function) --
-   not backported here since we don't target OCaml 5 *)
+(* Real OCaml added Option's let* and let+ only much later (5.5, as a
+   nested Syntax submodule along with a new "product" function). They
+   are not backported here, because we do not target OCaml 5. *)
 
 (* val fold : none:'a -> some:('b -> 'a) -> 'b option -> 'a *)
 (** [fold ~none ~some o] is [none] if [o] is [None] and [some v] if [o] is

@@ -1,7 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See Arch.mli: the Pi4's (ARMv8, arm64; xv6 arm64-pi4's layout) *)
+(* See Arch.mli. This is the Pi4's implementation (ARMv8, arm64), with
+ * xv6 arm64-pi4's layout. *)
 
 open Page
 

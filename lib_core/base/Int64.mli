@@ -99,18 +99,19 @@ external format : string -> t -> string = "int64_format"
          integer [n] in the format specified by [fmt]. *)
 
 
-(* ix: OCaml's later functions, those ix's programs use *)
+(* ix: functions of later OCamls that ix's programs use *)
 
 val compare : t -> t -> int
 val of_string_opt : string -> t option
 
-(* the two as integers without a sign, of 0 to 2^64 - 1 *)
+(* These take the two numbers as integers without a sign, from 0 to
+ * 2^64 - 1. *)
 val unsigned_compare : t -> t -> int
 val unsigned_div : t -> t -> t
 val unsigned_rem : t -> t -> t
 
-(* a float's bits, IEEE's 64; a float cut to its integer part, an
- * integer as the nearest float *)
+(* The bits of a float (IEEE's 64-bit format); a float cut to its
+ * integer part; and an integer as the nearest float. *)
 external bits_of_float : float -> t = "int64_bits_of_float"
 external float_of_bits : t -> float = "int64_float_of_bits"
 external of_float : float -> t = "int64_of_float"

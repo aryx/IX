@@ -1,16 +1,20 @@
-(* '#p', the processes (principia's devproc.c): a directory per process
- * (its pid), its files procdir's. Here: status, args, fd, ns, noteid,
- * segment, ctl, note, notepg (notes posted), text (the program's
- * file, read by its runtime for its symbol table: a raise's frames
- * named), and a debugger's (plan_debugger.md, stage 7): mem and regs,
- * read and written (Plan 9 arm's Ureg), ctl's stop, start, startstop,
- * waitstop, hang besides kill, note read (the first, taken).
+(* '#p' holds the processes (principia's devproc.c). There is a directory
+ * for each process, named by its pid, and its files are those of
+ * devproc.c's procdir. Here they are:
+ * - status, args, fd, ns, noteid, segment, ctl, and note and notepg
+ *   (which post notes);
+ * - text, the program's file, which its runtime reads for its symbol
+ *   table, to name the frames of a raise;
+ * - and what a debugger needs (plan_debugger.md, stage 7): mem and regs,
+ *   read and written (regs is Plan 9 arm's Ureg); ctl's stop, start,
+ *   startstop, waitstop and hang besides kill; and note read, which
+ *   takes the first note.
  *
  *     /proc/63/status    the name, the user, the state (or the system
  *                        call it is in: Pread), times, memory in KB:
- *                        fields of fixed width, a line
+ *                        fields of fixed width, on one line
  *     /proc/63/args      the command line, quoted as rc reads it
- *     /proc/63/fd        the current directory, then a line a
+ *     /proc/63/fd        the current directory, then a line for each
  *                        descriptor: its number, r or w, the device's
  *                        letter, the qid, the offset, the name
  *     /proc/63/ns        the name space, as the binds that would
@@ -20,42 +24,42 @@
  *     /proc/63/notepg    written: posted to its whole note group
  *     /proc/63/ctl       written kill: the note "sys: killed"
  *
- * Nothing is kept for these files: a read computes its text from
- * the proc record at that moment (Types.proc), a write acts on it.
- * The directory itself is the processes' table read by pid, so ls
- * /proc is the list of processes.
+ * Nothing is kept for these files: a read computes its text from the
+ * proc record at that moment (Types.proc), and a write acts on it. The
+ * directory itself is the table of processes, read by pid, so ls /proc
+ * is the list of processes.
  *
  * plan9-is-cleaner:
- * ps is a loop of cat over /proc's status files, and kill prints
- * the echo commands that would do it, for the user to look at and
- * pipe to rc. Unix's ps of the time opened /dev/kmem, the kernel's
- * own memory, and decoded the process table from the kernel's symbol
- * file, as a program with root's rights that broke at each change of
- * a structure; kill, ptrace, getpriority, wait's cousins were calls.
- * And since these are files, another machine's processes are seen,
- * killed or debugged by mounting its /proc: the debugger knows
+ * ps is a loop of cat over /proc's status files, and kill prints the
+ * echo commands that would do it, for the user to look at and pipe to
+ * rc. Unix's ps of the time opened /dev/kmem, the kernel's own memory,
+ * and decoded the process table using the kernel's symbol file. It was
+ * a program with root's rights, and it broke at each change of a
+ * structure. kill, ptrace, getpriority and wait's cousins were system
+ * calls. And since these are files, another machine's processes are
+ * seen, killed or debugged by mounting its /proc, so the debugger knows
  * nothing of networks.
  *
  * cs-history:
- * Tom Killian's /proc for the eighth edition of Unix (1984): a file
- * a process, which was the process's memory, and ioctl for the rest,
- * made to replace ptrace for debuggers. Plan 9 turned the file into
- * a directory and the ioctls into files of text. Linux's /proc
- * (1992) took the directory, in text, and went on to put under the
- * same name whatever the kernel had to say (meminfo, cpuinfo,
- * mounts), which is why its newer /sys exists.
+ * Tom Killian made /proc for the eighth edition of Unix (1984), to
+ * replace ptrace for debuggers. It had a file for each process, which
+ * was the process's memory, and ioctl for the rest. Plan 9 turned the
+ * file into a directory and the ioctls into files of text. Linux's /proc
+ * (1992) took the directory, in text, and went on to put under the same
+ * name whatever the kernel had to say (meminfo, cpuinfo, mounts), which
+ * is why its newer /sys exists.
  *
  * References: proc(3), ps(1) and kill(1) in the Plan 9 manual. T. J.
  * Killian, "Processes as Files" (USENIX Summer 1984). principia's
  * Kernel.nw (devproc.c). *)
 
-(* another process's memory, for its debugger (Usermem's debug_read and
- * debug_write, set by Main) *)
+(* read and write another process's memory, for its debugger (Main sets
+ * them to Usermem's debug_read and debug_write) *)
 val mem_read : (Types.proc -> int -> int -> string) ref
 val mem_write : (Types.proc -> int -> string -> unit) ref
 
-(* how an image's bytes are read (Fault.read_image, set by Main) *)
+(* how an image's bytes are read (Main sets it to Fault.read_image) *)
 val read_image : (Types.chan -> int -> int -> string) ref
 
-(* the device registered *)
+(* registers the device *)
 val init : unit -> unit

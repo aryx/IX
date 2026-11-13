@@ -15,9 +15,10 @@ type ('a,'b) result = Ok of 'a | Error of 'b
 
 (* ported from ocaml 4.0 *)
 
-(* ix: externals, as OCaml's since 4.01: f @@ x and x |> f are the call
- * f x (mini-ml's Lower), x |> f a the call f a x, not a call of
- * Pervasives' function and then f's closure applied.
+(* ix: these are externals, as in OCaml since 4.01. f @@ x and x |> f
+ * become the call f x (in mini-ml's Lower), and x |> f a becomes the
+ * call f a x, instead of a call to a function of Pervasives that then
+ * applies the closure of f.
  * old: val ( @@ ) : ('a -> 'b) -> 'a -> 'b, and |>'s *)
 external ( @@ ) : ('a -> 'b) -> 'a -> 'b = "%apply"
 external ( |> ) : 'a -> ('a -> 'b) -> 'b = "%revapply"
@@ -26,7 +27,7 @@ external ( |> ) : 'a -> ('a -> 'b) -> 'b = "%revapply"
 
 (* ported from ocaml 3.12 *)
 
-(* ix: an external, as OCaml's: the value dropped, no call.
+(* ix: an external, as in OCaml: the value is dropped, with no call.
  * old: val ignore : 'a -> unit (*= "%ignore"*) *)
 external ignore : 'a -> unit = "%ignore"
 (** Discard the value of its argument and return [()]. *)
@@ -198,8 +199,9 @@ external (lor) : int -> int -> int = "%orint"
         (* Bitwise logical or. *)
 external (lxor) : int -> int -> int = "%xorint"
         (* Bitwise logical exclusive or. *)
-(* ix: an external (mini-ml's own primitive; OCaml's is a function
- * here too, its x lxor (-1) inlined): no call in another unit.
+(* ix: an external (mini-ml's own primitive; in OCaml it is a function
+ * here too, whose x lxor (-1) is inlined), so there is no call to
+ * another unit.
  * old: val lnot: int -> int *)
 external lnot : int -> int = "%lnot"
         (* Bitwise logical negation. *)
@@ -409,8 +411,9 @@ val output_byte : out_channel -> int -> unit
            on the given output channel. *)
 val output_binary_int : out_channel -> int -> unit
         (* Write one integer in binary format on the given output channel. *)
-(* ix: no output_value, nor input_value below: Marshal's to_channel and
- * from_channel, which are ML (this module is the first: it cannot name them) *)
+(* ix: there is no output_value here, nor input_value below. They are
+ * Marshal's to_channel and from_channel, which are written in ML (this
+ * module is the first one, so it cannot name them). *)
 val seek_out : out_channel -> int -> unit
         (* [seek_out chan pos] sets the current writing position to [pos]
            for channel [chan]. *)
@@ -511,18 +514,19 @@ external float_of_int : int -> float = "%floatofint"
 external int_of_float : float -> int = "%intoffloat"
 (** Truncate the given floating-point number to an integer. *)
 
-(* ix: OCaml's later functions: int_of_string and float_of_string, None
- * for a Failure *)
+(* ix: functions of later OCamls: int_of_string and float_of_string,
+ * giving None instead of a Failure *)
 val int_of_string_opt : string -> int option
 val float_of_string_opt : string -> float option
 
-(* open_in and open_out: a file is binary here, Unix's *)
+(* The same as open_in and open_out: a file is binary here, as on
+ * Unix. *)
 val open_in_bin : string -> in_channel
 val open_out_bin : string -> out_channel
 
-(* the floats' limits: the infinities, a float that is not a number,
- * the largest float, the smallest normal one, and 1.0's distance to
- * the next float *)
+(* The limits of floats: the infinities, a float that is not a number,
+ * the largest float, the smallest normal one, and the distance from 1.0
+ * to the next float. *)
 val infinity : float
 val neg_infinity : float
 val nan : float
@@ -530,18 +534,20 @@ val max_float : float
 val min_float : float
 val epsilon_float : float
 
-(* nothing: a file is binary here *)
+(* These do nothing, because a file is binary here. *)
 val set_binary_mode_in : in_channel -> bool -> unit
 val set_binary_mode_out : out_channel -> bool -> unit
 
-(* n characters of the channel, or End_of_file *)
+(* Reads n characters of the channel, or raises End_of_file. *)
 val really_input_string : in_channel -> int -> string
 
-(* stdout and stderr flushed (OCaml's: every channel open for writing) *)
+(* Flushes stdout and stderr (OCaml's flushes every channel open for
+ * writing). *)
 val flush_all : unit -> unit
 
-(* ix: signals (not OCaml's Stdlib's: Sys.signal's and Unix's own).
- * The handlers by the system's signal number, and those of the signals
- * noted since the last time, run: where a program waits. *)
+(* ix: signals. These are not in OCaml's Stdlib; they are for Sys.signal
+ * and for Unix. signal_handlers holds the handlers, by the system's
+ * signal number. run_signals runs the handlers of the signals noted
+ * since the last time; a program calls it where it waits. *)
 val signal_handlers : (int * (unit -> unit)) list ref
 val run_signals : unit -> unit

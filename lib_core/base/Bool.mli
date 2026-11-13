@@ -55,5 +55,5 @@ val to_string : bool -> string
 (** [to_string b] is ["true"] if [b] is [true] and ["false"] if [b] is
     [false]. *)
 
-(* ix: no program of ix called these, taken out (to restore from OCaml 4.14's bool.ml):
- * negate, to_float. *)
+(* ix: no program of ix called these, so they are left out (they can be
+ * restored from OCaml 4.14's bool.ml): negate, to_float. *)

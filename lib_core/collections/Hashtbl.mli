@@ -79,9 +79,10 @@ val find_opt : ('a, 'b) t -> 'a -> 'b option
 (** [Hashtbl.find_opt tbl x] returns the current binding of [x] in [tbl], or
     [None] if no such binding exists. *)
 
-(* ix: OCaml's later functions, those ix's programs use *)
+(* ix: functions of later OCamls that ix's programs use *)
 
-(* clear (OCaml's also shrinks the table to its first size) *)
+(* The same as clear (OCaml's reset also shrinks the table to its first
+ * size). *)
 val reset : ('a, 'b) t -> unit
 
 val filter_map_inplace : ('a -> 'b -> 'b option) -> ('a, 'b) t -> unit

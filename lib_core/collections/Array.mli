@@ -84,22 +84,23 @@ val fold_right: ('b -> 'a -> 'a) -> 'b array -> 'a -> 'a
 external unsafe_get: 'a array -> int -> 'a = "%array_unsafe_get"
 external unsafe_set: 'a array -> int -> 'a -> unit = "%array_unsafe_set"
 
-(* ix: OCaml's later functions, those ix's programs use *)
+(* ix: functions of later OCamls that ix's programs use *)
 
-(* an array as a sequence, its elements read when asked *)
+(* The array as a sequence, whose elements are read when asked for. *)
 val to_seq : 'a array -> 'a Seq.t
 
 val exists : ('a -> bool) -> 'a array -> bool
 val for_all : ('a -> bool) -> 'a array -> bool
-(* the same of two arrays' elements, one of each; Invalid_argument if
- * their lengths differ *)
+(* The same, on the elements of two arrays, one from each. It raises
+ * Invalid_argument if their lengths differ. *)
 val for_all2 : ('a -> 'b -> bool) -> 'a array -> 'b array -> bool
 val mem : 'a -> 'a array -> bool
 val find_opt : ('a -> bool) -> 'a array -> 'a option
 
-(* the array sorted in place; both keep equal elements in their order *)
+(* These sort the array in place; both keep equal elements in their
+ * order. *)
 val sort : ('a -> 'a -> int) -> 'a array -> unit
 val stable_sort : ('a -> 'a -> int) -> 'a array -> unit
 
-(* ix: no program of ix called these, taken out (to restore from ocaml-light's array.ml):
- * create_matrix. *)
+(* ix: no program of ix called these, so they are left out (they can be
+ * restored from ocaml-light's array.ml): create_matrix. *)

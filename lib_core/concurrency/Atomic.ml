@@ -14,9 +14,9 @@
 (**************************************************************************)
 
 
-(* From OCaml 4.14's camlinternalAtomic.ml, its sequential
-   implementation: mini-ml's threads are cooperative (Thread), so none
-   runs in the middle of one of these. *)
+(* This is the sequential implementation of OCaml 4.14's
+   camlinternalAtomic.ml. mini-ml's threads are cooperative (see Thread),
+   so no thread runs in the middle of one of these functions. *)
 
 type 'a t = {mutable v: 'a}
 

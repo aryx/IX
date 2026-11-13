@@ -91,21 +91,21 @@ val output_buffer : out_channel -> t -> unit
 (** [output_buffer oc b] writes the current contents of buffer [b] on the
     output channel [oc]. *)
 
-(* ix: OCaml's later functions, those ix's programs use *)
+(* ix: functions of later OCamls that ix's programs use *)
 
 val add_bytes : t -> bytes -> unit
 
-(* the buffer cut to its first len characters *)
+(* Cuts the buffer to its first len characters. *)
 val truncate : t -> int -> unit
 
-(* an integer's bytes added, the low one first *)
+(* Adds the bytes of an integer, the low byte first. *)
 val add_uint8 : t -> int -> unit
 val add_uint16_le : t -> int -> unit
 val add_int32_le : t -> int32 -> unit
 val add_int64_le : t -> int64 -> unit
 
-(* a character's UTF-8 bytes added *)
+(* Adds the UTF-8 bytes of a character. *)
 val add_utf_8_uchar : t -> Uchar.t -> unit
 
-(* ix: no program of ix called these, taken out (to restore from OCaml 4.14's buffer.ml):
- * add_substitute. *)
+(* ix: no program of ix called these, so they are left out (they can be
+ * restored from OCaml 4.14's buffer.ml): add_substitute. *)

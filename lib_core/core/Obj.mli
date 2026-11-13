@@ -24,7 +24,7 @@ external tag : t -> int = "obj_tag"
 external size : t -> int = "%obj_size"
 external field : t -> int -> t = "%obj_field"
 external set_field : t -> int -> t -> unit = "%obj_set_field"
-(* a block of that tag and that many fields, each 0 *)
+(* A block with that tag and that many fields, each 0. *)
 external new_block : int -> int -> t = "obj_block"
 
 (* from 3.0 *)
@@ -34,6 +34,6 @@ external is_int : t -> bool = "%obj_is_int"
 val string_tag : int
 val double_tag : int
 
-(* ix: no program of ix called these, taken out (to restore from ocaml-light's obj.ml):
- * no_scan_tag, closure_tag, infix_tag, object_tag,
- * abstract_tag, double_array_tag, final_tag. *)
+(* ix: no program of ix called these, so they are left out (they can be
+ * restored from ocaml-light's obj.ml): no_scan_tag, closure_tag,
+ * infix_tag, object_tag, abstract_tag, double_array_tag, final_tag. *)

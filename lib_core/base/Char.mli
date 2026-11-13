@@ -40,6 +40,6 @@ val compare: t -> t -> int
 val equal: t -> t -> bool
 (** The equal function for chars. *)
 
-(* ix: OCaml's later names: of ASCII's letters only *)
+(* ix: the names of later OCamls, for the letters of ASCII only *)
 val lowercase_ascii : char -> char
 val uppercase_ascii : char -> char

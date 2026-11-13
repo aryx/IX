@@ -77,6 +77,7 @@ val total_size : bytes -> int -> int
            size header and a variable-sized data part, whose size can be
            determined from the header. *)
 
-(* ix: OCaml's later names: to_string and from_string, for bytes *)
+(* ix: the names that later OCamls give to to_string and from_string,
+ * for bytes *)
 val to_bytes : 'a -> extern_flags list -> bytes
 val from_bytes : bytes -> int -> 'a

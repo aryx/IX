@@ -25,17 +25,17 @@ external full_major : unit -> unit = "gc_full_major"
 external compact : unit -> unit = "gc_compaction"
         (* Perform a full major collection and compact the heap. *)
 
-(* ix: no program of ix called these, and mini-ml's runtime did not have
- * them (to restore from ocaml-light's gc.ml): the types stat and control
- * (the counters and the parameters of ocaml-light's two generations),
- * stat, get, set, print_stat. *)
+(* ix: print_stat is left out, because no program of ix calls it (it can
+ * be restored from ocaml-light's gc.ml). The types control and stat are
+ * the parameters and the counters of ocaml-light's two generations. *)
 
 type control = { mutable minor_heap_size : int; mutable major_heap_increment : int; mutable space_overhead : int; mutable verbose : int }
         (* OCaml's record, as ocaml-light has it. Here [space_overhead]
-           is the one that is read: how much more than what is alive
-           the heap may be, in hundredths of it (100, the least: twice;
-           700: eight times, and a collection, which copies all that is
-           alive, that much less often). [minor_heap_size] is the
+           is the field that is read: it says how much larger than what
+           is alive the heap may be, in hundredths of what is alive. 100,
+           the least, allows twice as much; 700 allows eight times as
+           much, and then a collection, which copies all that is alive,
+           happens that much less often. [minor_heap_size] is the
            heap's size now, in words; [set] does not change it. *)
 external get : unit -> control = "gc_get"
 external set : control -> unit = "gc_set"
@@ -45,14 +45,16 @@ type stat = {
   minor_words : float; promoted_words : float; major_words : float; minor_collections : int; major_collections : int;
   heap_words : int; heap_chunks : int; live_words : int; live_blocks : int; free_words : int; free_blocks : int;
   largest_free : int; fragments : int; compactions : int; top_heap_words : int; stack_size : int; forced_major_collections : int }
-        (* OCaml's record. Here, of mini-ml's two halves: [heap_words]
-           a half's size now (the program holds both: twice that, once
-           both have been written), [top_heap_words] the largest so
-           far, [live_words] what was alive after the last collection
-           (OCaml's [stat] counts it now; [quick_stat] says 0),
-           [minor_collections] and [major_collections] the
-           collections; the counters mini-ml has not, 0 (the floats)
-           or what a heap of one piece says. *)
+        (* OCaml's record. Here it describes mini-ml's two halves.
+           [heap_words] is the size of a half now (the program holds
+           both, so twice that, once both have been written), and
+           [top_heap_words] is the largest size so far. [live_words] is
+           what was alive after the last collection (OCaml's [stat]
+           counts it now, and its [quick_stat] says 0).
+           [minor_collections] and [major_collections] count the
+           collections. The counters that mini-ml does not have are 0
+           (the floats), or what a heap of one piece would say. *)
 val stat : unit -> stat
 val quick_stat : unit -> stat
-        (* the same here: nothing is counted that is not kept *)
+        (* The same as [stat] here, because nothing is counted that is
+           not kept. *)

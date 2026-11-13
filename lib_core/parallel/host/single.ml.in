@@ -1,9 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See Parallel.mli: OCaml 4.14's, where one thread runs OCaml: no
- * worker, and a lock that the one who is there always gets. The file
- * is lib_core/parallel/host/single.ml.in, copied by dune. *)
+(* See Parallel.mli. This is the version for OCaml 4.14, where only one
+ * thread runs OCaml: there is no worker, and the only one who is there
+ * always gets the lock. The file is lib_core/parallel/host/single.ml.in,
+ * which dune copies. *)
 
 let available = false
 let spawn (_ : unit -> unit) : unit = invalid_arg "Parallel.spawn: this OCaml has no domains"

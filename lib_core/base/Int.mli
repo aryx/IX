@@ -89,11 +89,12 @@ val of_string : string -> int option
 val to_string : int -> string
 (** [to_string x] is the written representation of [x] in decimal. *)
 
-(* ix: OCaml's later functions, those ix's programs use *)
+(* ix: functions of later OCamls that ix's programs use *)
 
 val min : int -> int -> int
 val max : int -> int -> int
 
-(* ix: no program of ix called these, taken out (to restore from OCaml 4.14's int.ml):
- * neg, add, sub, mul, succ, pred, logand, logor, logxor, lognot,
- * shift_left, shift_right, shift_right_logical. *)
+(* ix: no program of ix called these, so they are left out (they can be
+ * restored from OCaml 4.14's int.ml): neg, add, sub, mul, succ, pred,
+ * logand, logor, logxor, lognot, shift_left, shift_right,
+ * shift_right_logical. *)

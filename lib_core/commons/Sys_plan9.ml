@@ -1,7 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See Sys_plan9.mli: not Plan 9's *)
+(* See Sys_plan9.mli. This is the file for the systems that are not
+ * Plan 9. *)
 
 let last_words (_ : int) = ""
 let last_times (_ : int) = 0, 0, 0

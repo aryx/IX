@@ -1,8 +1,9 @@
-(* Haskell's Prelude's classes, by mlpp's (plan_ml_bootstrap.md, "Type
- * classes"; mini-ml -pp): a class is a record type, an instance a value
- * of it, and a function with a constraint, Haskell's
- * (Show a) => a -> String, has a parameter [%using: 'a show], a
- * dictionary its calls don't write. So that a program says
+(* The classes of Haskell's Prelude, done the way mlpp does type classes
+ * (plan_ml_bootstrap.md, "Type classes"; mini-ml -pp). A class is a
+ * record type, and an instance is a value of that type. A function
+ * with a constraint, like Haskell's (Show a) => a -> String, has a
+ * parameter [%using: 'a show]: a dictionary that its calls don't
+ * write. So a program says
  *
  *   open Prelude
  *   let describe [%using: 'a show] (xs : 'a list) = show (List.length xs) ^ " of " ^ show xs
@@ -10,38 +11,41 @@
  *   ... if p == q then ... sort names ...
  *
  * and mlpp writes the dictionaries, from the types:
- * describe (show_option show_int) [ Some 1; None ]. A type of a
- * program's gets an instance in its unit:
+ * describe (show_option show_int) [ Some 1; None ]. A program's own
+ * type gets its instance in the type's unit:
  *
  *   let show_point : Point.t show = { show = (fun p -> ...) } [@@instance]
  *
- * open Prelude changes what three names mean: compare is the class's
- * (ord), and == and != its equality (eq), not the same block in memory
- * (Stdlib's ( == ), then). <, <=, max... stay OCaml's, polymorphic:
- * through a dictionary they would be a call each.
- * A unit using it is preprocessed by mini-ml -pp with the stdlib's and
- * this directory's -I (the dune file here).
+ * open Prelude changes what three names mean. compare is the class's
+ * compare (ord), and == and != are its equality (eq), not "the same
+ * block in memory" (which Stdlib's ( == ) means). <, <=, max... stay
+ * OCaml's polymorphic ones, because through a dictionary each would
+ * cost a call.
+ * A unit that uses this module is preprocessed by mini-ml -pp, with
+ * -L lib_core, so that it reads the stdlib's interfaces (see the dune
+ * file here).
  *
  * cs-history:
  * Type classes are Philip Wadler and Stephen Blott's (1989), made
  * for Haskell: a way to have == and show at many types without
  * building them into the language, as ML had done for equality
  * alone. Their paper already gives the translation used here: a
- * class is a record of functions, a dictionary, an instance a value
- * of it, and a constrained function takes the dictionary as one more
- * argument that the compiler writes. What Haskell's compiler does
- * inside, mlpp does as text before the compiler.
+ * class is a record of functions (a dictionary), an instance is a
+ * value of that record, and a constrained function takes the
+ * dictionary as one more argument, which the compiler writes. What
+ * Haskell's compiler does inside, mlpp does as text before the
+ * compiler runs.
  *
  * others:
- * OCaml has no classes of types: a polymorphic compare and = that
- * look at the values' representation as they run (and fail on a
- * function), printers written or derived by a ppx ([@@deriving
- * show]), and functors when a structure needs an order (Map.Make).
- * Modular implicits (White, Bour and Yallop, 2014) would have the
- * compiler find a module from the types, as here a dictionary; it
- * is not in OCaml. Scala's implicits and Rust's traits are the same
- * idea; Rust compiles a copy of the function for each type where
- * this passes a record.
+ * OCaml has no type classes. Instead it has a polymorphic compare and
+ * = that look at the values' representation as they run (and fail on
+ * a function), printers written by hand or derived by a ppx
+ * ([@@deriving show]), and functors when a structure needs an order
+ * (Map.Make). Modular implicits (White, Bour and Yallop, 2014) would
+ * have the compiler find a module from the types, as mlpp finds a
+ * dictionary here; they are not in OCaml. Scala's implicits and
+ * Rust's traits are the same idea; but Rust compiles a copy of the
+ * function for each type, where this module passes a record.
  *
  * References: P. Wadler and S. Blott, "How to make ad-hoc
  * polymorphism less ad hoc", POPL 1989; plan_ml_bootstrap.md, "Type
@@ -57,12 +61,12 @@ type 'a eq = { equal : 'a -> 'a -> bool } [@@class]
 type 'a ord = { compare : 'a -> 'a -> int } [@@class]
 
 val ( == ) : [%using: 'a eq] -> 'a -> 'a -> bool
-(* not equal: Haskell's, and OCaml's name for it *)
+(* Not equal, under Haskell's name and under OCaml's *)
 val ( /= ) : [%using: 'a eq] -> 'a -> 'a -> bool
 val ( != ) : [%using: 'a eq] -> 'a -> 'a -> bool
 
 val sort : [%using: 'a ord] -> 'a list -> 'a list
-(* of a list that is not empty *)
+(* The list must not be empty *)
 val maximum : [%using: 'a ord] -> 'a list -> 'a
 val minimum : [%using: 'a ord] -> 'a list -> 'a
 
@@ -102,7 +106,8 @@ val ord_string : string ord [@@instance]
 val ord_float : float ord [@@instance]
 val ord_unit : unit ord [@@instance]
 val ord_int64 : int64 ord [@@instance]
-(* as the words of a dictionary: the first difference, or the shorter first *)
+(* Ordered like the words of a dictionary: by the first difference, or
+ * the shorter list first *)
 val ord_list : [%using: 'a ord] -> 'a list ord [@@instance]
 (* None before Some *)
 val ord_option : [%using: 'a ord] -> 'a option ord [@@instance]

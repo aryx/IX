@@ -1,8 +1,9 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See Ureg.mli: the Pi4's, x0-x14, ELR (32), SPSR (33), their low 32
- * bits (the upper ones of an AArch32 process's x0-x14 are not its) *)
+(* See Ureg.mli. This is the Pi4's: the registers are the low 32 bits
+ * of x0-x14, ELR (32) and SPSR (33) (the upper bits of x0-x14 are not
+ * an AArch32 process's) *)
 
 let r0 = 0
 let sp = 13

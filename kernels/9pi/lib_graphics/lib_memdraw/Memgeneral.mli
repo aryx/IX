@@ -1,28 +1,30 @@
-(* The general loop of memdraw, apart: every pixel of the source and of
- * the mask read, composed with the destination's by the operator,
- * written (alphadraw.c's, without its buffers). Memdraw calls it when
- * none of its faster paths has the case.
+(* The general loop of memdraw, in a file of its own. It reads every
+ * pixel of the source and of the mask, composes it with the
+ * destination's by the operator, and writes the result (as alphadraw.c
+ * does, without its buffers). Memdraw calls it when none of its faster
+ * paths handles the case.
  *
  *     dst(x, y) <- fs * src + fd * dst      (each channel, MUL's rounding)
  *     SoverD:  fs = the mask's coverage, fd = 255 - MUL(src's alpha, coverage)
  *
  * design:
- * A file of its own because a machine's host can run it too. It reads
- * and writes an image's bytes through Memimage only, and an image's
- * bytes may be anyone's: mini-qemu's board, asked by the kernel built
- * for a web page (Memdraw's draw there, Hostdraw on the board's side),
- * runs this same file compiled for the host on the images where they
- * are in the board's memory. The pixels are then the same by
- * construction, and the loop is the host's and not the emulator's: a
- * menu of rio's was 20 million instructions here.
+ * It is a file of its own because a machine's host can run it too. It
+ * reads and writes an image's bytes through Memimage only, and those
+ * bytes may be anywhere. When the kernel is built for a web page, its
+ * Memdraw's draw asks mini-qemu's board to draw (Hostdraw on the
+ * board's side), and the board runs this same file, compiled for the
+ * host, on the images where they are in the board's memory. The pixels
+ * are then the same by construction, and the loop runs on the host and
+ * not in the emulator: one of rio's menus took 20 million instructions
+ * here.
  *
  * Pike, "draw - screen graphics" (Plan 9 manual, draw(2)); Porter and
  * Duff, "Compositing Digital Images" (SIGGRAPH 1984). *)
 
-(* MUL: x*y/255, memdraw's rounding *)
+(* MUL is x*y/255, with memdraw's rounding *)
 val mul : int -> int -> int
 
-(* the ops (draw.h's Drawop) *)
+(* the operators (draw.h's Drawop) *)
 val o_clear : int
 val o_douts : int
 val o_souts : int
@@ -35,11 +37,11 @@ val o_satopd : int
 val o_s : int
 val o_soverd : int
 
-(* a mask's coverage of a pixel (its r, g, b, a read): its alpha, or
- * else its grey *)
+(* how much a mask covers a pixel, given the r, g, b, a read from it:
+ * its alpha, or else its grey *)
 val coverage : Memimage.t -> int * int * int * int -> int
 
-(* [general dst r src sr mask mr op]: r of dst from sr of src through
- * mr of mask, the three already clipped and of one size (Memdraw's
- * drawclip) *)
+(* [general dst r src sr mask mr op] draws r of dst from sr of src
+ * through mr of mask. The three rectangles are already clipped and of
+ * one size (by Memdraw's drawclip). *)
 val general : Memimage.t -> Memimage.rect -> Memimage.t -> Memimage.rect -> Memimage.t -> Memimage.rect -> int -> unit

@@ -54,10 +54,11 @@
 
    *)
 
-(* ix: OCaml 4.14's bytes.mli, the functions ix's Bytes has (those ix's
- * programs and kernels call), each with its text; the primitives'
- * names are mini-ml's (%string_length for %bytes_length...: the same
- * block is under a string and under bytes). *)
+(* ix: OCaml 4.14's bytes.mli, for the functions that ix's Bytes has
+ * (those that ix's programs and kernels call), each with its text. The
+ * names of the primitives are mini-ml's (%string_length for
+ * %bytes_length...), because the same block is under a string and
+ * under bytes. *)
 
 external length : bytes -> int = "%string_length"
 (** Return the length (number of bytes) of the argument. *)

@@ -2,13 +2,14 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* mini-9pi's data (plan_9pi.md): Plan 9's kernel structures as records
- * and variants: the files (qids, directory entries, channels), the
- * namespace (mount points and their unions), the environment, the
- * processes and their segments; each group a process may share with
- * others (Plan 9's Pgrp, Egrp, Fgrp) a record the processes point to.
+ * and variants. They are the files (qids, directory entries,
+ * channels), the namespace (mount points and their unions), the
+ * environment, and the processes and their segments. Each group that a
+ * process may share with others (Plan 9's Pgrp, Egrp, Fgrp) is a
+ * record the processes point to.
  *
- * How they hold together, from a process down (an arrow is a field;
- * what two processes may point to together is marked shared):
+ * Here is how they hold together, from a process down (an arrow is a
+ * field; what two processes may point to together is marked shared):
  *
  *     proc --- fgrp ----- fds: 0 1 2 3 ...    each a chan     (shared)
  *      |-- pgrp ----- mnt: mhead, mhead, ...                  (shared)
@@ -27,16 +28,17 @@
  *           offset, opened            where a read is at, how opened
  *           fid                       a server's file: its number in 9P
  *
- * So everything a process has is a channel or a page, and a channel
- * is only a name for a file its device knows: the letter is looked up
- * in Dev's table at each use, and the device finds the rest by the
+ * So everything a process has is a channel or a page, and a channel is
+ * only a name for a file that its device knows: the letter is looked
+ * up in Dev's table at each use, and the device finds the rest by the
  * qid. rfork's flags (Sysproc) say, group by group, whether the child
  * gets the parent's record, a copy of it, or a new one: that is all a
  * thread, a process and a sandbox differ by.
  *
- * Read first by whoever reads the kernel: Kchan fills and walks the
- * name space, Proc the processes' states, Fault the segments' pages,
- * and each device (Dev) the channels that are its own.
+ * Whoever reads the kernel should read this first: Kchan fills and
+ * walks the name space, Proc keeps the processes' states, Fault the
+ * segments' pages, and each device (Dev) the channels that are its
+ * own.
  *
  * terminology:
  * A channel is not a pipe, nor another language's channel: Plan 9's

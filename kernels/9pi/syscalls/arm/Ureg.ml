@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See Ureg.mli: the Pi1's, the frame's words the registers *)
+(* See Ureg.mli. This is the Pi1's: the frame's words are the registers. *)
 
 let r0 = 0
 let sp = Arch.tf_sp

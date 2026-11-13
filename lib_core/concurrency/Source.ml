@@ -1,18 +1,20 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See ../commons/Source.mli: mini-ml's threads.
+(* See ../commons/Source.mli. This is the version for mini-ml's threads.
  *
- * A source is a process (fork: its memory is its own), that waits in
- * the system in the program's place and writes what comes to the one
- * pipe: a frame, the source's number (a byte), a length (two), the
- * bytes, in one write (whole, among the other sources': under 4 KB).
- * The program reads the pipe when no thread can run (Thread.idle), and
- * gives each frame to its source's pump, the thread that sends it on
- * the channel (a send waits for its receiver: the scheduler cannot).
- * So a program whose threads never all wait reads no source: they
- * wait on channels, in a program of events.
- * Plan 9's way: it has no select, a process waits for you. *)
+ * A source is a process (made by fork, so its memory is its own) that
+ * waits in the system in the program's place, and writes what comes to
+ * the one pipe. It writes a frame: the source's number (a byte), a
+ * length (two bytes), and the bytes. It does so in one write, which
+ * stays whole among the other sources' writes because it is under
+ * 4 KB. The program reads the pipe when no thread can run
+ * (Thread.idle), and gives each frame to the pump of its source, the
+ * thread that sends it on the channel (a send waits for its receiver,
+ * which the scheduler cannot do). So a program whose threads never all
+ * wait reads no source: its threads wait on channels, in a program of
+ * events. This is Plan 9's way: it has no select, so a process waits
+ * for you. *)
 
 type source = { pump : Thread.t; frames : bytes Queue.t }
 

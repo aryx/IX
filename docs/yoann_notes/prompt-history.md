@@ -73817,3 +73817,19 @@ Claude finished the languages/c pilot review by fixing two issues and leaving on
 Claude said the languages/c agent had added a new row to CLI.mli's diagram.
 Claude planned to read the diff section covering that CLI.mli diagram row next.
 Claude had not yet reported whether the CLI.mli diagram row was correct.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 21:15
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude pushed the pilot as commit 368c6a5d, covering 66 files including prompt-history.md.
+Claude split the next batch of about 306 header files, mostly kernels/9pi and lib_core, across six agents.
+Claude fixed the facts reported in lib_core/commons and the 9pi devices, files, and memory groups, such as Prelude.mli's `-L` flag and Devcons.mli's `start` behavior.
+Claude corrected Machine.mli, Kusb.mli, Kproc.mli, Proc.mli, and Mkpixdata.ml, and restored the cut-off Filename comments.
+Claude checked 163 files, all reporting "same", and is confirming that Printf.mli differs only in docstrings.

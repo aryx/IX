@@ -18,15 +18,19 @@ val fprintf : out_channel -> ('a, out_channel, unit) format -> 'a
     [argN] according to the format string [format], and outputs the
     resulting string on the channel [outchan].
 
-    The conversions, after [%], optional flags ([-], [+], space, [#], [0])
-    and an optional width and [.] precision (each may be [*], an argument):
-    - [d], [i], [u], [x], [X], [o]: an integer, signed or unsigned decimal,
-      hexadecimal, octal; after [l] an [int32], after [L] an [int64]
-    - [s], [c], [b]: a string, a character, a boolean; [S], [C]: as OCaml
-      writes them
-    - [f], [e], [E], [g], [G]: a float; [h]: in hexadecimal
-    - [a]: a printer and its argument; [t]: a printer alone
-    - [!]: no argument, the output flushed; [%]: one [%] character *)
+    A conversion comes after [%], optional flags ([-], [+], space, [#],
+    [0]), and an optional width and [.] precision (each may be [*], which
+    takes it from an argument). The conversions are:
+    - [d], [i], [u], [x], [X], [o] print an integer, as a signed or
+      unsigned decimal, in hexadecimal, or in octal; after [l] the
+      integer is an [int32], and after [L] an [int64].
+    - [s], [c], [b] print a string, a character, a boolean; [S] and [C]
+      print a string and a character as OCaml writes them.
+    - [f], [e], [E], [g], [G] print a float; [h] prints it in
+      hexadecimal.
+    - [a] takes a printer and its argument; [t] takes a printer alone.
+    - [!] takes no argument and flushes the output; [%] prints one [%]
+      character. *)
 
 val printf : ('a, out_channel, unit) format -> 'a
 (** Same as {!Printf.fprintf}, but output on [stdout]. *)
@@ -44,7 +48,7 @@ val bprintf : Buffer.t -> ('a, Buffer.t, unit) format -> 'a
     module {!Buffer}). *)
 
 val ksprintf : (string -> 'd) -> ('a, unit, string, 'd) format4 -> 'a
-(** Same as {!Print.sprintf}, but instead of returning the string as result,
+(** Same as {!Printf.sprintf}, but instead of returning the string as result,
     after doing the formatting, [ksprintf] will pass the result string as
     argument to its first argument ("k" stands for "continuation"). *)
 

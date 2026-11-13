@@ -1,17 +1,17 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* USB's data (principia's usb.h): devices and their endpoints, shared
- * by the device (Devusb: devusb.c) and the host controller's driver
- * (Usbdwc: usbdwc.c).
+(* USB's data (principia's usb.h): the devices and their endpoints,
+ * which the device (Devusb, for devusb.c) and the host controller's
+ * driver (Usbdwc, for usbdwc.c) share.
  *
- *     udev 3 (a keyboard) --- deps: ep 0   control: every device's
+ *     udev 3 (a keyboard) --- deps: ep 0   control: every device has it
  *       hub 2, port 1                ep 1   interrupt, in: its reports
  *
- * A device is little but its address and its endpoints; an endpoint
- * is what transfers are made on, and what #u shows as a directory
- * (ep3.1). Devusb's header draws the whole of USB here; Usbdwc's
- * tells the four kinds of transfer apart. *)
+ * A device is little more than its address and its endpoints. An
+ * endpoint is what transfers are made on, and what #u shows as a
+ * directory (ep3.1). Devusb's header draws the whole of USB here, and
+ * Usbdwc's header tells the four kinds of transfer apart. *)
 
 (* (No Usb.mli: the module is its types, and three small values.) *)
 

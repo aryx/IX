@@ -24,8 +24,9 @@ val is_right : ('a, 'b) t -> bool
 val find_left : ('a, 'b) t -> 'a option
 val find_right : ('a, 'b) t -> 'b option
 
-(* ix: the type and what tells its two cases apart; no program of ix
- * called more (2026-10-04). OCaml 4.14's either.ml also has, to restore
- * from it: left, right (the constructors as functions), map_left,
+(* ix: the type, and the functions that tell its two cases apart; no
+ * program of ix called more (2026-10-04). OCaml 4.14's either.ml also
+ * has these, which can be restored from it: left, right (the
+ * constructors as functions), map_left,
  * map_right, map, fold, iter, for_all (by labels ~left ~right), equal,
  * compare. *)

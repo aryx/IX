@@ -19,12 +19,12 @@ external get : string -> int -> char = "%string_safe_get"
            Raise [Invalid_argument] if [n] is ouside the range 0 to
            [(String.length s - 1)]. *)
 
-(* ix: no set, create or fill, as OCaml's since 4.06 (they were
- * ocaml-light's here): a string is not written. What is written is
- * bytes, a type of its own, with module Bytes: Bytes.create, Bytes.set,
- * then Bytes.to_string for a string (a copy; Bytes.unsafe_to_string is
- * none, for bytes no one writes again), and Bytes.of_string the other
- * way. *)
+(* ix: there is no set, create or fill, as in OCaml since 4.06
+ * (ocaml-light had them here), because a string cannot be written. What
+ * can be written is bytes, a type of its own, with the module Bytes:
+ * Bytes.create, Bytes.set, then Bytes.to_string to get a string (a
+ * copy; Bytes.unsafe_to_string makes none, for bytes that no one writes
+ * again), and Bytes.of_string the other way. *)
 val make : int -> char -> string
         (* [String.make n c] returns a fresh string of length [n], filled
            with the character [c]. *)
@@ -111,7 +111,8 @@ val map : (char -> char) -> string -> string
 (** [map f s] is the string resulting from applying [f] to all the
     characters of [s] in increasing order. *)
 
-(* the same, the function given each character's index too *)
+(* The same, with the function also given the index of each
+ * character. *)
 val mapi : (int -> char -> char) -> string -> string
 
 
@@ -137,10 +138,11 @@ val split_on_char : char -> string -> string list
 (** [split_on_char sep s] returns the list of all (possibly empty)
     substrings of [s] that are delimited by the [sep] character. *)
 
-(* ix: OCaml's later functions, those ix's programs use *)
+(* ix: functions of later OCamls that ix's programs use *)
 
-(* whether c is in s; the character's first, last, or first from i
- * index, or None (index, rindex and index_from raise Not_found) *)
+(* Whether c is in s; and the index of the character's first
+ * occurrence, last occurrence, or first occurrence from i, or None
+ * (index, rindex and index_from raise Not_found instead). *)
 val contains : string -> char -> bool
 val index_opt : string -> char -> int option
 val rindex_opt : string -> char -> int option
@@ -154,11 +156,11 @@ val fold_left : ('a -> char -> 'a) -> 'a -> string -> 'a
 val for_all : (char -> bool) -> string -> bool
 val exists : (char -> bool) -> string -> bool
 
-(* a string of n characters, the i-th f i *)
+(* A string of n characters, where the i-th is f i. *)
 val init : int -> (int -> char) -> string
 
-(* an integer in s at i, of 16, 32 or 64 bits, its low byte first (le)
- * or last (be): a binary format's field *)
+(* The integer in s at i, of 16, 32 or 64 bits, with its low byte first
+ * (le) or last (be), as in a field of a binary format. *)
 external get_uint16_le : string -> int -> int = "%caml_bytes_get16"
 val get_uint16_be : string -> int -> int
 external get_int32_le : string -> int -> int32 = "%caml_bytes_get32"
@@ -166,5 +168,5 @@ val get_int32_be : string -> int -> int32
 val get_int64_le : string -> int -> int64
 val get_int64_be : string -> int -> int64
 
-(* the UTF-8 character at i, decoded (Uchar.utf_decode_...) *)
+(* The UTF-8 character at i, decoded (see Uchar.utf_decode_...). *)
 val get_utf_8_uchar : string -> int -> Uchar.utf_decode

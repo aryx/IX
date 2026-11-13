@@ -1,15 +1,17 @@
-(* JSON: objects, arrays, strings, numbers, booleans, null: what mini-qemu's
- * QMP, the first user, says, and a forecast's temperatures (mini-maps).
+(* JSON: objects, arrays, strings, numbers, booleans and null. It is what
+ * mini-qemu's QMP speaks (QMP was the first user), and what a forecast's
+ * temperatures come in (mini-maps).
  *
  *   let j = of_text {|{"execute": "send-key", "arguments": {"keys": []}}|}
  *   member "execute" j = String "send-key"
  *   to_text j = {|{"execute":"send-key","arguments":{"keys":[]}}|}
  *
- * A value is a tree, and the type below is the whole grammar: the
- * parser is a function a case, by recursive descent, and the printer
- * a match. An object keeps its fields as a list, in the order read:
- * [member] walks it, which is right for a message of five fields and
- * would not be for a table.
+ * A value is a tree, and the type below is the whole grammar. The
+ * parser works by recursive descent, with one case for each kind of
+ * value, and the printer is one match. An object keeps its fields as
+ * a list, in the order they were read, and [member] walks that list.
+ * This is right for a message of five fields, but would not be for a
+ * table.
  *
  * cs-history:
  * JSON is the notation of JavaScript's own object and array
@@ -19,8 +21,8 @@
  * by having less: no attributes, no namespaces, no schema, six
  * kinds of value.
  *
- * References: RFC 8259 (2017), the grammar on a few pages; QEMU's
- * QMP specification for the messages Qmp sends. The browser's
+ * References: RFC 8259 (2017), which gives the grammar in a few pages;
+ * QEMU's QMP specification, for the messages Qmp sends. The browser's
  * JavaScript engine has its own JSON.parse, over its own values
  * (Js_json, where the history is longer). *)
 
@@ -28,24 +30,26 @@ type t = Null | Bool of bool | Int of int | Float of float | String of string | 
 
 exception Error of string
 
-(* one line of it, as QMP writes them *)
+(* The value as one line of text, as QMP writes its messages *)
 val to_text : t -> string
 
-(* Error if it isn't JSON, or has something after *)
+(* Error if the text isn't JSON, or has something after the value *)
 val of_text : string -> t
 
-(* the same, a long text: [turn ()] called at each value (mini-ml's threads:
- * a thread gives its turn, or the others wait for all of the text) *)
+(* The same, for a long text: [turn ()] is called at each value. This is
+ * for mini-ml's threads: a thread must give up its turn, or the others
+ * wait until all of the text is parsed. *)
 val of_text_turning : (unit -> unit) -> string -> t
 
-(* an object's field, Null when absent; Error for a non-object *)
+(* An object's field, or Null when it is absent; Error if the value is
+ * not an object *)
 val member : string -> t -> t
 
-(* the value, Error if it is of another kind *)
+(* The value inside; Error if it is of another kind *)
 val string : t -> string
 val int : t -> int
 
-(* a number, an Int too: 3 is as good a temperature as 3.5 *)
+(* A number, which may be an Int too: 3 is as good a temperature as 3.5 *)
 val float : t -> float
 val bool : t -> bool
 val list : t -> t list

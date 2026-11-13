@@ -1,9 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See ../../commons/Sys_plan9.mli: Plan 9's. Each function a system
- * call by its number (libc's sys.h), through Unix's (Unix.plan9_call:
- * the error it raises has the kernel's words). *)
+(* See ../../commons/Sys_plan9.mli: the system calls of Plan 9. Each
+ * function makes a system call by its number (from libc's sys.h),
+ * through Unix.plan9_call, so the error it raises has the kernel's
+ * words. *)
 
 let i (n : int) = Obj.repr n
 let s (x : string) = Obj.repr x

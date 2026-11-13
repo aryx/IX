@@ -1,10 +1,11 @@
-(* A USB device as the kernel gives it to a program (#u: principia's
- * devusb.c, ix's Devusb; usbd's library, its dev.c): a directory
- * #u/usb/epN.M for the endpoint M of the device of number N, with two
- * files. ctl takes the endpoint's settings, as words; data is the
- * endpoint itself: for an endpoint 0, a write is a control request
- * (its 8 bytes, then what it sends) and a read gives what the device
- * answered. What fails raises Failure (the kernel's words). *)
+(* A USB device, as the kernel gives it to a program (#u is principia's
+ * devusb.c and ix's Devusb; this module is usbd's library, its dev.c).
+ * It is a directory #u/usb/epN.M for the endpoint M of the device of
+ * number N, with two files. ctl takes the endpoint's settings, as
+ * words. data is the endpoint itself: for an endpoint 0, a write is a
+ * control request (its 8 bytes, then what it sends), and a read gives
+ * what the device answered. What fails raises Failure, with the
+ * kernel's words. *)
 
 type t = {
   name : string;                       (* ep3.0 *)
@@ -15,17 +16,19 @@ type t = {
 
 type caps = < Cap.open_in; Cap.open_out >
 
-(* an endpoint by its name, its ctl opened; its data, for reading (0)
- * or for both (2) *)
+(* [open_ caps name] opens an endpoint by its name, with its ctl.
+ * [open_data] opens its data, for reading (0) or for both (2). *)
 val open_ : < caps; .. > -> string -> t
 val open_data : < caps; .. > -> t -> int -> unit
 val close : t -> unit
 
-(* a line written to its ctl; what its ctl says *)
+(* [ctl] writes a line to the endpoint's ctl; [said] reads what its ctl
+ * says *)
 val ctl : t -> string -> unit
 val said : t -> string
 
-(* a control request to the device (Usbdesc.setup's arguments): one
- * with no answer; one with an answer, count bytes at most *)
+(* a control request to the device (with Usbdesc.setup's arguments):
+ * [send] makes one with no answer, and [ask] one with an answer of
+ * count bytes at most *)
 val send : t -> int -> int -> int -> int -> string -> unit
 val ask : t -> int -> int -> int -> int -> int -> string

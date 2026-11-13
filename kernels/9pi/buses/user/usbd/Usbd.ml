@@ -1,31 +1,34 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-usbd: the USB devices found and started (Plan 9's usbd, with
- * its kb: principia's kernel/buses/user/usb/usbd and kb), written
- * anew for what ix has: hubs, keyboards and mice.
+(* mini-usbd finds the USB devices and starts them (Plan 9's usbd, with
+ * its kb: principia's kernel/buses/user/usb/usbd and kb). It is
+ * written anew for what ix has: hubs, keyboards and mice.
  *
- * The kernel has the controller, and gives each endpoint as files
- * (#u: Usbdev); it knows no device. So a program does the rest: it
- * walks the bus from the root hub (../../lib_usb's Usbbus, which the
- * kernel can call too: "echo kernel > '#u/usb/ctl'" and no usbd), and
- * for each keyboard and each mouse starts a process that reads its
- * reports (Hid says what they mean) and writes the kernel's files:
- * scancodes, a PC keyboard's, to #Ι/kbin (the kernel's Kbd does the
- * rest: the characters, Shift, Alt), a line to #m/mousein, how far the
- * mouse moved and its buttons. So a device's driver is a program, and
- * the kernel has two files for it to write.
+ * The kernel has the controller, and gives each endpoint as files (#u,
+ * reached through Usbdev); it knows no device. So a program does the
+ * rest. It walks the bus from the root hub (with ../../lib_usb's
+ * Usbbus, which the kernel can call too, after "echo kernel >
+ * '#u/usb/ctl'" and with no usbd). For each keyboard and each mouse,
+ * it starts a process that reads the device's reports (Hid says what
+ * they mean) and writes the kernel's files:
+ * - a PC keyboard's scancodes go to #Ι/kbin (the kernel's Kbd does the
+ *   rest: the characters, Shift, Alt);
+ * - a line saying how far the mouse moved, and its buttons, goes to
+ *   #m/mousein.
+ * So a device's driver is a program, and the kernel has two files for
+ * it to write.
  *
  *     usbd        started by the boot script: when it returns, the
- *                 keyboard and the mouse found are working
+ *                 keyboard and the mouse it found are working
  *
- * It returns after it has looked at every port once; a process stays
- * and looks again four times a second: a device plugged later is
- * found, one unplugged is forgotten.
+ * It returns after it has looked at every port once. A process stays
+ * and looks again four times a second, so a device plugged later is
+ * found, and one unplugged is forgotten.
  *
- * Not usbd's other drivers (disks, serial lines, audio, ethernet: the
- * kernel has ethernet), nor its file server for drivers that are
- * other programs. *)
+ * What is not here: usbd's other drivers (disks, serial lines, audio,
+ * ethernet; the kernel has ethernet), and its file server for drivers
+ * that are other programs. *)
 
 type caps = < Usbdev.caps; Cap.fork; Cap.stderr; Cap.argv; Cap.clock >
 

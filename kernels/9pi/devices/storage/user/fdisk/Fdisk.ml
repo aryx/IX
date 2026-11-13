@@ -1,21 +1,22 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-fdisk: Plan 9's fdisk (principia's
- * kernel/devices/storage/user/386/prep/fdisk.c), its -p only: a disk's
- * partitions, read in its first sector (the MBR: four entries of 16
- * bytes at 446, each a type, a first sector, a number of sectors),
- * printed as the lines the disk's driver takes:
+(* mini-fdisk is Plan 9's fdisk (principia's
+ * kernel/devices/storage/user/386/prep/fdisk.c), with its -p only. It
+ * reads a disk's partitions in its first sector (the MBR: four entries
+ * of 16 bytes at 446, each with a type, a first sector and a number of
+ * sectors), and prints them as the lines that the disk's driver takes:
  *
  *     fdisk -p /dev/sdM0/data > /dev/sdM0/ctl
  *
- * and /dev/sdM0/dos is the FAT's partition, for dossrv. The kernel
- * knows nothing of partition tables: a program reads them and tells
- * it. A name is the type's (dos for a FAT, plan9, linux, other...),
- * with a number when it is taken (dos1; plan9.1).
+ * After that, /dev/sdM0/dos is the FAT's partition, for dossrv. The
+ * kernel knows nothing of partition tables: a program reads them and
+ * tells the kernel. A partition is named after its type (dos for a
+ * FAT, plan9, linux, other...), with a number when the name is already
+ * taken (dos1; plan9.1).
  *
- * Not fdisk's editor (its other 1,000 lines), nor the partitions
- * inside an extended one.
+ * fdisk's editor (its other 1,000 lines) is not here, nor are the
+ * partitions inside an extended one.
  *
  *     the first sector, 512 bytes
  *     0     the boot code                        446 bytes
@@ -31,19 +32,19 @@
  *     an entry of type 0c, first sector 8192, 524288 sectors,
  *     prints   part dos 8192 532480
  *
- * The three numbers a disk had to be given to find a sector
- * (cylinder, head, sector) are not read: every disk since takes a
- * sector's number.
+ * The three numbers that a disk once had to be given to find a sector
+ * (cylinder, head, sector) are not read, because every disk since takes
+ * a sector's number.
  *
  * cs-history:
- * This table is the IBM PC's, from PC DOS 2.0 (1983), when the XT
- * got a hard disk that several systems might share: four entries
- * because that is what fitted after the boot code, a type a byte
- * (a list no one owns: 0x39 is Plan 9's), 32 bits for a sector's
- * number, so 2 TB at most with sectors of 512 bytes. Its
- * replacement, GPT, came with EFI; SD cards, and so a Raspberry Pi's
- * firmware, still use this one, which is why ix reads it and
- * nothing else. *)
+ * This table is the IBM PC's, from PC DOS 2.0 (1983), when the XT got a
+ * hard disk that several systems might share. It has four entries
+ * because that is what fitted after the boot code. A type is a byte,
+ * from a list that no one owns (0x39 is Plan 9's). A sector's number is
+ * 32 bits, so a disk is 2 TB at most with sectors of 512 bytes. Its
+ * replacement, GPT, came with EFI. SD cards, and so a Raspberry Pi's
+ * firmware, still use this table, which is why ix reads it and nothing
+ * else. *)
 
 type caps = < Cap.open_in; Cap.stdout; Cap.stderr >
 

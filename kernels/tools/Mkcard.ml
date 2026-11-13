@@ -1,8 +1,9 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-mkcard: an SD card's image for a Raspberry Pi (plan_rio.md,
- * stage 3), made on the host. The card, in sectors of 512 bytes:
+(* mini-mkcard makes an SD card's image for a Raspberry Pi
+ * (plan_rio.md, stage 3), on the host. Here is the card, in sectors of
+ * 512 bytes:
  *
  *     0             the MBR: four partitions' entries (two used), and
  *                   its signature
@@ -14,7 +15,8 @@
  *                   system's image given as it is (-fs), or zeros: the
  *                   kernel's own file system's place
  *
- * The FAT16, the simplest that the firmware takes:
+ * The first partition is a FAT16, the simplest format the firmware
+ * takes:
  *
  *     0             the boot sector: the geometry (BPB)
  *     1 ..          the FAT, twice: 16 bits a cluster (4 sectors), the
@@ -24,52 +26,54 @@
  *                   a date, the first cluster, the length
  *     then          the clusters, numbered from 2
  *
- * Only what a card that is made once needs: files at the root, each in
- * consecutive clusters, names of 8.3 characters, each part in one case
- * (no long names, VFAT's: a name that does not fit is refused). The usage: [help].
+ * It does only what a card that is made once needs: files are at the
+ * root, each in consecutive clusters, with names of 8.3 characters and
+ * each part in one case. There are no long names (VFAT's), and a name
+ * that does not fit is refused. The usage is in [help].
  *
- * A file of three clusters starting at the fifth, in the table:
+ * Here is a file of three clusters starting at the fifth, in the
+ * table:
  *
  *     the directory's entry     KERNEL  IMG ... first cluster 5
  *     the FAT    index:   2    3    4    5    6    7     8
  *                        ...  ...  ...   6    7  0xffff  0
  *
- * The table is the file allocation table the format is named
- * after: one linked list a file, all the links in one place at the
- * disk's start, where xv6's format (mini-mkfs, and mini-xv6's Fs)
- * has a list of block numbers in each file's inode. Reading byte n
- * of a file follows n / 2048 links; a file has no number, only its
- * directory entry, so it cannot have two names.
+ * The table is the file allocation table that the format is named
+ * after. Each file is one linked list, and all the links are in one
+ * place at the disk's start, where xv6's format (mini-mkfs, and
+ * mini-xv6's Fs) has a list of block numbers in each file's inode.
+ * Reading byte n of a file follows n / 2048 links. A file has no
+ * number, only its directory entry, so it cannot have two names.
  *
- * Where it stands: the Pi's boot. The processor that starts is the
- * VideoCore; its ROM reads the first FAT partition of the card for
- * bootcode.bin, which loads the GPU's firmware (start_cd.elf
- * here), which reads config.txt and loads the file named there as
- * the ARM's kernel (kernels/firmware has these files and says
- * where they are from). So a card must begin this way
- * whatever the kernel's own file system is; mini-9pi then serves
- * this partition by its dossrv and the second by its Kfs.
+ * Where it stands: this is the Pi's boot. The processor that starts is
+ * the VideoCore. Its ROM reads the card's first FAT partition for
+ * bootcode.bin, which loads the GPU's firmware (start_cd.elf here),
+ * which reads config.txt and loads the file named there as the ARM's
+ * kernel (kernels/firmware has these files and says where they are
+ * from). So a card must begin this way, whatever the kernel's own file
+ * system is. mini-9pi then serves this partition by its dossrv, and
+ * the second by its Kfs.
  *
  * cs-history:
- * The table is Marc McDonald's, for Microsoft's Standalone Disk
- * BASIC (1977 or 1978), with 8 bits a cluster for floppy disks; Tim
- * Paterson took it with 12 bits for 86-DOS (1980), which became
- * MS-DOS. 16 bits came with the PC AT's hard disk (DOS 3.0, 1984),
- * 32 with Windows 95's second release (1996); the MBR's table of
- * four partitions is DOS 2.0's (1983), for the XT's 10 MB disk.
+ * The table is Marc McDonald's, made for Microsoft's Standalone Disk
+ * BASIC (1977 or 1978), with 8 bits a cluster for floppy disks. Tim
+ * Paterson took it, with 12 bits, for 86-DOS (1980), which became
+ * MS-DOS. 16 bits came with the PC AT's hard disk (DOS 3.0, 1984), and
+ * 32 with Windows 95's second release (1996). The MBR's table of four
+ * partitions is DOS 2.0's (1983), made for the XT's 10 MB disk.
  *
  * why-win:
  * A format with no owner, no permissions, no links, names of eleven
- * capitals and a table that is lost with one bad sector is what
- * every camera, firmware and operating system reads, forty years
- * on: because it is the one a boot ROM can read in a few hundred
+ * capitals, and a table that is lost with one bad sector is what every
+ * camera, firmware and operating system reads, forty years on. That is
+ * because it is the one a boot ROM can read in a few hundred
  * instructions, and the one everybody already read. UEFI's system
- * partition is a FAT for the same reason as the Pi's first.
+ * partition is a FAT for the same reason as the Pi's first partition.
  *
  * References: "Microsoft Extensible Firmware Initiative FAT32 File
- * System Specification" (version 1.03, 2000): the boot sector's
- * fields and the three FATs, the document every implementation
- * follows. The Raspberry Pi's documentation, "The boot folder" and
+ * System Specification" (version 1.03, 2000), the document every
+ * implementation follows, for the boot sector's fields and the three
+ * FATs. The Raspberry Pi's documentation, "The boot folder" and
  * "config.txt". plan_rio.md, stage 3. *)
 
 type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >

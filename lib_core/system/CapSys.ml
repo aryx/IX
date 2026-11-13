@@ -1,8 +1,9 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See CapSys.mli: the capability's type written, which -caps checks
- * against what the function does (capabilities.dl's lib_gate) *)
+(* See CapSys.mli. Each function writes the type of its capability, and
+ * -caps checks it against what the function does (see lib_gate in
+ * capabilities.dl). *)
 
 let argv (_ : < Cap.argv; .. >) = Sys.argv
 let set_signal (_ : < Cap.signal; .. >) = Sys.set_signal

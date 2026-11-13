@@ -1,9 +1,9 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See Fpath.mli: inspired by Daniel Bünzli's fpath, whose interface and
- * behaviour this follows; bundled here just for mini-ml (dune's builds
- * take the real library). *)
+(* See Fpath.mli. This is inspired by Daniel Bünzli's fpath, and follows
+ * its interface and behaviour. It is bundled here just for mini-ml
+ * (dune's builds take the real library). *)
 
 type t = string
 

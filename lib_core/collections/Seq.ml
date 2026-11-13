@@ -15,8 +15,8 @@
 
 (* Module [Seq]: functional iterators *)
 
-(* ix: OCaml 4.14's seq.ml, the part ix's programs use (its 77
- * functions are 11 here); the definitions as they are there *)
+(* ix: the part of OCaml 4.14's seq.ml that ix's programs use (14 of
+ * its 77 functions), with the definitions as they are there *)
 
 type 'a node =
   | Nil

@@ -1,8 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See Arch.mli: the Pi1's (ARMv6, arm32; xv6 arm-pi1's layout,
- * kernels/steps/step4) *)
+(* See Arch.mli. This is the Pi1's implementation (ARMv6, arm32), with
+ * xv6 arm-pi1's layout (kernels/steps/step4). *)
 
 open Page
 

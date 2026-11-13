@@ -2,46 +2,47 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* mini-dossrv: Plan 9's dossrv (principia's
- * kernel/filesystems/user/dossrv: here in the same place, under the
- * kernel it is for), a file server for MS-DOS's file
- * systems: it posts /srv/dos, and a mount of it with a device's file
- * as its tree (mount -c /srv/dos /n/c /dev/sdM0/dos) gives that
- * device's FAT as files. A program like another: the kernel speaks 9P
- * to this (lib_networking/9p), and what a FAT is is ../../lib_fat's (which the
- * kernel can use itself, with no program: Kdos, bind '#Fdos' /root).
+ * kernel/filesystems/user/dossrv; it is in the same place here, under
+ * the kernel it is for), a file server for MS-DOS's file systems. It
+ * posts /srv/dos, and a mount of it with a device's file as its tree
+ * (mount -c /srv/dos /n/c /dev/sdM0/dos) gives that device's FAT as
+ * files. It is a program like another: the kernel speaks 9P to it
+ * (lib_networking/9p), and what a FAT is is in ../../lib_fat (which
+ * the kernel can use itself, with no program: Kdos, bind '#Fdos'
+ * /root).
  *
  * Files are read, written, made and removed (Fat does it; a device
- * that cannot be opened for writing is served for reading); a wstat
- * changes a name, a time, and whether a file is only read. As dossrv, the files are bill's and trog's,
- * rw-rw-rw-, and a name is found whatever its letters' case; not as
- * dossrv, a name of 8.3 characters is shown in the case it was written
- * with (Fat).
+ * that cannot be opened for writing is served for reading only). A
+ * wstat changes a name, a time, and whether a file is read only. As in
+ * dossrv, the files are bill's and trog's, rw-rw-rw-, and a name is
+ * found whatever the case of its letters. Unlike dossrv, a name of 8.3
+ * characters is shown in the case it was written with (Fat).
  *
- *     dossrv                     a pipe made; one end posted as
+ *     dossrv                     makes a pipe; posts one end as
  *                                /srv/dos (Devsrv); a child serves
  *                                the other, and dossrv returns
  *     mount -c /srv/dos /mnt/fat /dev/sdM0/dos
- *                                the kernel: T Version, T Attach
- *                                with the device's name (Devmnt)
- *     the server, per message    T Walk: a name looked up (Fat)
+ *                                the kernel sends T Version, then
+ *                                T Attach with the device's name
+ *                                (Devmnt)
+ *     the server, per message    T Walk: a name is looked up (Fat)
  *                                T Read: a file's bytes (Fat), which
  *                                reads the partition's file itself
  *
- * A file server is a loop: a message read, its answer written
- * (lib_networking's P9_server does the loop and the bytes; this
- * file is what each message means for a FAT). It needs no
- * privilege and no place in the kernel: it opens the partition as
- * any program opens a file, and what it serves is whatever it says.
- * The kernel's other half of the conversation is Devmnt; P9 draws
- * the messages of an open and a read; Kdos is the same file system
- * with no server, to compare.
+ * A file server is a loop: it reads a message and writes its answer
+ * (lib_networking's P9_server does the loop and the bytes; this file
+ * is what each message means for a FAT). It needs no privilege and no
+ * place in the kernel: it opens the partition as any program opens a
+ * file, and what it serves is whatever it says. The kernel's half of
+ * the conversation is Devmnt; P9 draws the messages of an open and a
+ * read; Kdos is the same file system with no server, to compare.
  *
  * cs-history:
- * dossrv is from Plan 9's first years, and shows what the system
+ * dossrv is from Plan 9's first years, and it shows what the system
  * was after: reading a PC's floppy was not a feature of the kernel
- * but a program a user starts when there is a floppy. The same
- * shape serves an ISO 9660 CD (9660srv), a tar file (tarfs), an
- * FTP site (ftpfs). *)
+ * but a program a user starts when there is a floppy. The same shape
+ * serves an ISO 9660 CD (9660srv), a tar file (tarfs), and an FTP site
+ * (ftpfs). *)
 
 type caps = < Cap.open_in; Cap.open_out; Cap.fork; Cap.stderr; Cap.clock; Cap.pipe >
 

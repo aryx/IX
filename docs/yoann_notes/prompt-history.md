@@ -72730,3 +72730,35 @@ Claude planned to check that the tiny-kernel image built byte for byte matches t
 Claude noted that `docs/t-ix.html`'s `disk2` change is uncommitted and waits on Yoann running `make website` and pushing assets.
 Claude said the `?v=` number in that page still needs bumping before the change can land.
 Claude listed the next steps for tomorrow: tiny-kernel's `build install` onto its own disk, then `boot.rc`, then CORE's duplication.
+
+------------------------------------------------------------------------
+
+## 2026-11-12 22:04
+
+**Yoann:**
+
+> ok see you tomorrow
+
+**Claude (summary):**
+
+Claude reported that `make self` passed, with tiny-kernel rebuilding the whole system byte for byte.
+Claude left the disk2 edit in docs/t-ix.html uncommitted, since it waits on you running make website and pushing assets.
+Claude removed its worktree, leaving the shared tree at another session's commit 38e044d6.
+Claude left step 5 open: tiny-kernel running build install onto its own disk, so /bin holds its own programs.
+Claude asked whether you wanted step 5 next, the one piece of work still unfinished.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 08:25
+
+**Yoann:**
+
+> ok can I close this session?
+
+**Claude (summary):**
+
+Claude recommended committing docs/t-ix.html, the one-line disk2 change, after running make website.
+Claude said to push the assets and bump ?v= first, so the page doesn't request an offline src.img.
+Claude flagged that step 5 is unfinished: make self passed, but plan_tiny_boot_disk.md doesn't record it.
+Claude described the missing half as tiny-kernel running build install onto its own disk so /bin holds the built programs.
+Claude confirmed the session could close, since nothing is running and commits 6f532031 and be2f0aa8 are on main.

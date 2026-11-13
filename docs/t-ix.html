@@ -172,10 +172,11 @@ shows them all.
   var kernel = new URLSearchParams(location.search).get("kernel");
   var tiny_machine = kernel == "t6"
     ? { image: assets + "ix/" + kernel + "/kernel.img", disk: assets + "ix/" + kernel + "/fs.img" }
-    : { image: assets + "ix/tiny-kernel/boot.img", disk: assets + "ix/tiny-kernel/disk.img" };
+    : { image: assets + "ix/tiny-kernel/boot.img", disk: assets + "ix/tiny-kernel/disk.img",
+        disk2: assets + "ix/tiny-kernel/src.img" };
 </script>
 <!-- ?v=: a number to change when the program does (make website), so
      that a browser does not keep the one it has -->
-<script src="https://aryx.github.io/assets/js/ix/TinyMachineWeb.bc.js?v=10"></script>
+<script src="https://aryx.github.io/assets/js/ix/TinyMachineWeb.bc.js?v=11"></script>
 </body>
 </html>

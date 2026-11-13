@@ -73106,3 +73106,59 @@ It would document make self (hours) and make self-quick (about 3 minutes), and l
 **Yoann:**
 
 > yes
+
+------------------------------------------------------------------------
+
+## 2026-11-13 14:23
+
+**Yoann:**
+
+> and let's commit and push
+
+**Claude (summary):**
+
+Claude wrote a section in tiny/README.md after "Building and testing" and a pointer in the top README's Bootstrapping section.
+Claude then planned to commit and push, treating the change as docs-only so no build was needed.
+Yoann reacted to the README's LOC sentence, saying it claims `make loc` excludes comments and blank lines, but it actually counts them.
+The line in tiny/README.md stating code lines exclude comments, blank lines, .mli, and parts directories needs correcting.
+Claude's answer gave no detail on the LOC wording itself, so that correction is the focus of the follow-up.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 15:05
+
+**Yoann:**
+
+> in tiny/README.md there is "A program's lines are its code lines (no comment, no blank line), its .mli and its directory of parts included, as make loc counts them (2026-11-13)" but actually make loc is counting the comments and blank line when giving the LOC for a program
+
+**Claude (summary):**
+
+Claude reworded the tiny/README.md sentence; its numbers were already right, only the wording changed.
+Claude found the top README's tables disagree: m-IX uses make loc's first column, t-IX code lines only.
+That makes tiny-ml look like 2,860 lines against mini-ml's 8,400, though its first-column count is 3,885.
+Claude offered to switch both t-IX tables, top README and tiny/README.md, to the first column for direct comparison.
+Claude also offered a one-line caveat under the t-IX table as the simpler alternative, and left tiny/README.md uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 15:06
+
+**Yoann:**
+
+> I think we should put the first make loc column; that's our main focus usually when referencing LOC in .md documents I think
+
+------------------------------------------------------------------------
+
+## 2026-11-13 15:07
+
+**Yoann:**
+
+> we just make the exception about not counting the header comment in the .mli but beside that we usually count all Lines in a file
+
+**Claude (summary):**
+
+Claude recommended counting each program's full line total, excluding only its header comments.
+Claude reused loc.py's own header function in a small scratchpad counting script.
+Claude removed TinyMachineSDL from the tiny-machine count, since make loc skips SDL hosts.
+Claude found the libraries and runtimes total about 6,300 lines, not 4,600, rounded to tens.
+Claude updated all 20 rows in tiny/README.md and the top README's t-IX table sum.

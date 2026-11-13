@@ -203,8 +203,9 @@ not have.
 
 ### The system as a whole
 
-The table's columns, for t-IX as a whole, as a program's `.mli` says
-them of the program:
+The table above says, for each program, what it keeps of its twin,
+what it drops, and its twist. The same can be said of t-IX as a whole,
+with the same labels a program's `.mli` uses:
 
 twin: m-ix, the mini programs, each a faithful twin of its Plan 9 or
 Unix program, on Linux and on the Pi. t-ix is what remains of the whole

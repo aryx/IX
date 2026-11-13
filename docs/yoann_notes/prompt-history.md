@@ -73519,3 +73519,58 @@ Claude fixed the big table's program names to match the tables, adding `tiny-db`
 Claude took the host names from the dune files rather than inventing any, so the names are real.
 Claude also updated the explanatory sentence under the column so it now covers the four programs missing from the tables (emacs, play, debug, trace).
 Claude started with item 1, the playground exercise, but the answer does not show its outcome.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 16:15
+
+**Yoann:**
+
+> let's commit and push
+
+**Claude (summary):**
+
+Claude committed and pushed the four changes to main as b87fef8c, including the playground and naming fixes.
+Claude identified item 4, the libraries' row in the top README's t-IX table, as still open.
+Claude explained that item 4 needs a check that the four-column table fits GitHub without sideways scrolling.
+Claude noted that this check requires seeing the table rendered on GitHub, so it remains unverified.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 16:16
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended checking the "What each keeps, changes and drops" table on GitHub first.
+Claude noted the table might still scroll sideways because it has separate kept, changes and dropped columns.
+Claude suggested folding the dropped column into the kept cell as a second line.
+Claude called the table the only open item from its earlier list of follow-ups.
+Claude also proposed checking m-IX header order, logging the new counts in docs/loc.md, and adding a loc.py option.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 16:21
+
+**Yoann:**
+
+> "The table's columns, for t-IX as a whole, as a program's .mli says them of the program:
+>
+> " I don't understand this sentence; sounds like clipped style
+
+**Claude (summary):**
+
+Claude rewrote the clipped table sentence in full, explaining what each program keeps, drops, and twists.
+Claude applied the same plain wording to the t-IX-as-a-whole sentence, using the labels a program's `.mli` uses.
+Claude did not commit or push the rewrite yet, and asked whether Yoann wanted it committed and pushed.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 16:25
+
+**Yoann:**
+
+> yes, far clearer! so much clearer! Are there other really abusive use of this clipped style elsewhere in tiny/ in more generally in IX ?

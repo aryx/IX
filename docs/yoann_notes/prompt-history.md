@@ -72881,3 +72881,19 @@ Claude said the first was closing `plan_tiny_buildfile.md`, whose Status was sta
 It would mark the done steps and move the plan to `done/`, as was done for the boot disk plan.
 The second was deduplicating the TinyLibCore unit list, repeated in `tiny/Buildfile:76`, `tiny/TinyLibCore/Buildfile:21`, and `tests/link.sh`.
 Third was fixing union file creation so a `cp` of a new name goes to the disk, not the image copy.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 09:36
+
+**Yoann:**
+
+> let's do 1; for now 2 is fine. let's do 3 and close the leftovers, so we can then close this session
+
+**Claude (summary):**
+
+Claude found item 3's real gap: after `rm -rf /bin`, `mkdir /bin` was refused, so files went to memory.
+Claude changed `sys_mkdir` to check only the target directory, sharing a `fresh` helper with the `ln` fix.
+Claude tested by hand: `/bin` comes back on disk, `cp` and `ln` land there, and a repeat `mkdir` is refused.
+Claude also corrected the closed plan's leftover note to describe this mkdir gap, not the cp case.
+Claude moved item 1 to `done/plan_tiny_buildfile.md` and started checks in worktree `ix-check`, to commit once they pass.

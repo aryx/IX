@@ -204,7 +204,10 @@ done above. Left:
 - **`boot.rc`, postponed**: the boot's work out of the kernel, Plan 9's
   way, a script run by the image's rc that mounts the disks and binds
   the root, with `mount` and `bind` as system calls (What it becomes).
-- **A create in a union**: `cp` to a name the disk's directory lacks
-  but the image's has (`/bin/ls`, the disk's removed) writes the
-  image's copy, in memory, not the disk's; the link looks in the
-  union's first directory alone (step 5), a create could too.
+- **A new name in a union**, done after (2026-11-13): mkdir, as link
+  (step 5), looks for the name in the union's first directory alone,
+  so the disk's `/bin`, removed, is made again though the image's
+  shows through (old: refused, and a file written there went to the
+  image's `/bin`, in memory). A `cp` to a name the disk lacks and the
+  image has (`/bin/ls`) was already the disk's: sys_open makes it
+  there.

@@ -1,8 +1,9 @@
 # Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyBuildSystem.ml)
 #
-# t-IX built by tiny-build, under t-IX: this file is to be /src/Buildfile
-# on tiny-kernel's disk, where /src is tiny/; for now it is tried on the
-# host (docs/plans/plan_tiny_buildfile.md, its steps).
+# t-IX built by tiny-build, under t-IX: this file is /src/Buildfile on
+# tiny-kernel's second disk, where /src is tiny/; the host builds by it
+# too, in a copy of tiny/ (TinyKernel/Makefile; make self compares the
+# two builds' images).
 #
 #     cd /src
 #     build build          tiny-build itself, as /src/build, to run

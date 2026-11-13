@@ -436,12 +436,17 @@ let sys_listen p =
 
 let sys_dup p = let f = fd p (reg p 1) in share f; result p (fdalloc p f)
 
+(* A new name (mkdir's, link's) is looked for where it goes, the union's
+ * first directory, not in the whole union: so the disk's /bin, removed,
+ * is made again though the image's shows through, and a utility's link
+ * too (build install's rm -f /bin/ls; ln /bin/utils /bin/ls) *)
+let fresh dir last = String.length last <= 64 && KFiles.walk dir [ last ] = None
+
 let sys_mkdir p =
-  let ns = KFiles.names p.cwd (ustr p (reg p 1)) in
-  match KFiles.walk !KFiles.top ns, KFiles.dir_of ns with
-  | None, Some (Dir d, last) when String.length last <= 64 ->
+  match KFiles.dir_of (KFiles.names p.cwd (ustr p (reg p 1))) with
+  | Some ((Dir d as dir), last) when fresh dir last ->
       d := !d @ [ last, KFiles.Dir (ref []) ]; result p 0
-  | None, Some (Disk (fs, 0, i), last) when String.length last <= 64 ->
+  | Some ((Disk (fs, 0, i) as dir), last) when fresh dir last ->
       ignore (KFS.fs_create fs i last Fs_dir); result p 0
   | _ -> raise Bad
 
@@ -470,19 +475,13 @@ let sys_unlink p =
 let sys_link p =
   let old = KFiles.walk !KFiles.top (KFiles.names p.cwd (ustr p (reg p 1)))
   and ns = KFiles.names p.cwd (ustr p (reg p 2)) in
-  (* new is looked for where it goes, the union's first directory: a
-   * name of the image's /bin, removed from the disk's, made there again
-   * (build install's ln of the utilities) *)
-  let fresh dir last = KFiles.walk dir [ last ] = None in
   match old, KFiles.dir_of ns with
   | Some n, _ when KFiles.is_dir n -> raise Bad
   | Some (Disk (fs, 0, j)), Some ((Disk (dfs, 0, i) as dir), last)
-    when KFS.fs_disk fs = KFS.fs_disk dfs && String.length last <= 64
-         && fresh dir last ->
+    when KFS.fs_disk fs = KFS.fs_disk dfs && fresh dir last ->
       KFS.fs_link fs i last j; result p 0
   | Some (Disk _), _ -> raise Bad
-  | Some node, Some ((Dir d as dir), last)
-    when String.length last <= 64 && fresh dir last ->
+  | Some node, Some ((Dir d as dir), last) when fresh dir last ->
       d := !d @ [ last, node ]; result p 0
   | _ -> raise Bad
 

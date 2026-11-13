@@ -201,3 +201,19 @@ tiny/Buildfile (2026-11-11), its sections the layers from the bottom
 up, tried on the host by tiny-build with links named ml, cc, as and ld:
 its 31 programs and kernel.img the Makefile's bytes. Not yet on the
 image, nor tried on tiny-kernel (boot.img's recipe is rc's): step 3.
+
+2026-11-13: closed, moved to done/ (the author: "let's do 1", closing
+it). Its steps done since, by other plans' work: 0, tiny-ml's -I and
+-depend (mk's -M); 1 to 3, tiny/Buildfile builds every program, the
+kernel (TinyKernel/Buildfile, run by it) and boot.img, on the host
+(TinyKernel/Makefile runs `build boot.img install` in a copy of tiny/)
+and on tiny-kernel (make self: `cd /src; build all boot.img`, then
+`build install`, the image the host's byte for byte; plan
+done/plan_tiny_boot_disk.md); 4 and 6, moot, the Makefile having no
+lists of its own left to check or to generate; 5, the libraries by
+tiny-ar, not ml -a. The gaps: build's substitution done
+(`${CORE:%=TinyLibCore/%.tmi}`). The open questions settled: the short
+names by a directory of links on the PATH (the Makefile's _make/tools),
+the outputs in the copy, a program's main its own file in user/.
+Left: CORE said twice, tiny/Buildfile's and TinyLibCore/Buildfile's
+(and tests/link.sh's), kept for now (the author: "for now 2 is fine").

@@ -8,7 +8,7 @@
  * The rules crs and blev are empty: bc.y's CRS and BLEV, there for
  * what they do when the parser passes (a register taken for the body
  * that follows; the body ended). The for loop is Plan 9's bc.y's:
- * principia's has it left out, with its if and while (bugs/goken.md). */
+ * principia's refuses it, and its if and while too (bugs/goken.md). */
 %{
 open State
 %}

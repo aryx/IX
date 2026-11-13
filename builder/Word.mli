@@ -25,7 +25,8 @@
  *     SRC=Ast.ml Main.ml lexer.mll
  *     ${SRC:%.ml=%.cmo}    ->  ["Ast.cmo"; "Main.cmo"; "lexer.mll"]
  *                               (A="", B=".ml", C="", D=".cmo";
- *                                lexer.mll does not end in .ml: kept)
+ *                                lexer.mll does not end in .ml, so it
+ *                                is kept)
  *
  * Two quirks of the original are kept, because real mkfiles can
  * observe them: without a % on the right (${X:%.c=gone}) a matching
@@ -57,8 +58,9 @@
 
 type quoting = Rc | Sh
 
-(* The quoting of a shell command line, e.g. ["/bin/rc"; "-I"]: rc's if
- * its first word ends in "rc" or "rcsh", sh's otherwise (mk(1)). *)
+(* The quoting of a shell command line, such as ["/bin/rc"; "-I"]. It
+ * is rc's if its first word ends in "rc" or "rcsh", and sh's otherwise
+ * (mk(1)). *)
 val quoting_of_shell : string list -> quoting
 
 (* The characters that can be part of a variable name: everything above
@@ -71,14 +73,16 @@ exception Error of string
 (* Does this character open a quote (or, in sh, escape the next one)? *)
 val opens_quote : quoting -> char -> bool
 
-(* [find_unquoted q s ~from chars]: the index of the first character of
- * [chars] in [s] at or after [from], outside quotes and outside ${...}.
- * E.g. find_unquoted Rc "x='a:b' y:z" ~from:0 ":=" = Some 1, and in
- * "${SRC:%.ml=%.cmo}: foo" the first ':' found is the one at 17. *)
+(* [find_unquoted q s ~from chars] is the index of the first character
+ * of [chars] in [s] at or after [from], outside quotes and outside
+ * ${...}. For example, find_unquoted Rc "x='a:b' y:z" ~from:0 ":=" is
+ * Some 1, and in "${SRC:%.ml=%.cmo}: foo" the first ':' found is the
+ * one at 17. *)
 val find_unquoted : quoting -> string -> from:int -> string -> int option
 
-(* [split q ~lookup s]: the words of [s], variables expanded through
- * [lookup] (None: undefined). Quotes are removed. No word is ever the
- * empty string. E.g., with X = ["a"; "b"], split Rc "$X.o 'c d'" is
- * ["a"; "b.o"; "c d"]. Raises Error on a malformed reference. *)
+(* [split q ~lookup s] is the list of the words of [s], with variables
+ * expanded through [lookup] (None means undefined). Quotes are removed.
+ * No word is ever the empty string. For example, with X = ["a"; "b"],
+ * split Rc "$X.o 'c d'" is ["a"; "b.o"; "c d"]. Raises Error on a
+ * malformed reference. *)
 val split : quoting -> lookup:(string -> string list option) -> string -> string list

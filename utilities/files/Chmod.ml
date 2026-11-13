@@ -1,18 +1,21 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-chmod: Plan 9's chmod (principia's utilities/files/chmod.c):
- * chmod 644 file ..., the permissions in octal; or chmod [who]op[what]
- * file ...: who is letters of u, g, o, a (the owner, the group, the
- * others, all: all when none), op is + (given), - (taken) or = (these
- * and no other), what is letters of r, w, x and of a (append only), l
- * (one opener at a time), t (temporary), which are the file's and not
- * someone's.
+(* mini-chmod is Plan 9's chmod (principia's utilities/files/chmod.c).
+ * chmod 644 file ... gives the permissions in octal. chmod
+ * [who]op[what] file ... changes some of them:
+ * - who is letters among u, g, o and a (the owner, the group, the
+ *   others, all of them; all when there is none);
+ * - op is + (the bits are given), - (taken away) or = (these bits and
+ *   no other);
+ * - what is letters among r, w and x, and among a (append only), l
+ *   (one opener at a time) and t (temporary); these last three belong
+ *   to the file and not to someone.
  *
  * plan9-is-cleaner:
- * What is not there: Unix's set-user-id bit, by which a program runs
+ * What is not there is Unix's set-user-id bit, by which a program runs
  * with its owner's rights and not its caller's (Dennis Ritchie's
- * invention, and a patent of 1979), and with it the list of programs
+ * invention, and a patent of 1979). With it goes the list of programs
  * that are root for a moment and must not be fooled. Plan 9 has no
  * root: what needs a right is asked of a file server that has it.
  * The three bits it adds say how a file is used, not by whom: append

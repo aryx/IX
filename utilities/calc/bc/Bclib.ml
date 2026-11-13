@@ -1,7 +1,9 @@
-(* bc's library, what -l reads before the files: Plan 9's /sys/lib/bclib
- * as it is (principia's utilities/calc/misc/bclib), kept in the program
- * as mini-rc keeps rcmain. s(x), c(x), a(x), l(x), e(x), j(n,x): sine,
- * cosine, arctangent, natural logarithm, exponential, Bessel. *)
+(* bc's library, which -l reads before the files. It is Plan 9's
+ * /sys/lib/bclib as it is (principia's utilities/calc/misc/bclib), kept
+ * in the program as mini-rc keeps rcmain. Its functions are s(x),
+ * c(x), a(x), l(x), e(x) and j(n,x): the sine, the cosine, the
+ * arctangent, the natural logarithm, the exponential, and Bessel's
+ * function. *)
 let text = {|scale = 50
 define e(x) {
 	auto a, b, c, d, e, g, w, y, t, r

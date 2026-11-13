@@ -1,27 +1,30 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-tr: Plan 9's tr (principia's utilities/text/misc/tr.c): the
- * standard input's characters (UTF-8's, not its bytes), each of
- * string1 written as the one at its place in string2 (the last one of
- * string2 when it is shorter), the others as they are.
- * In a string: a-z, the characters from a to z; \ooo and \xhhhh, one by
- * its number, in octal or hexadecimal; \c, c itself.
- * -d: the characters of string1 are taken out; -c: string1 is every
- * character it does not have; -s: of the same character several times
- * in a row in the output, one, when it is of string2.
+(* mini-tr is Plan 9's tr (principia's utilities/text/misc/tr.c). It
+ * copies the standard input's characters (UTF-8 characters, not
+ * bytes), and writes each character of string1 as the one at its place
+ * in string2 (as the last one of string2 when string2 is shorter). The
+ * other characters are written as they are.
+ * In a string, a-z means the characters from a to z; \ooo and \xhhhh
+ * mean one character given by its number, in octal or hexadecimal; and
+ * \c means c itself.
+ * - -d takes out the characters of string1;
+ * - -c makes string1 every character that it does not have;
+ * - -s writes one character for several of the same in a row in the
+ *   output, when that character is in string2.
  *
  *     tr A-Z a-z                 capitals made small letters
- *     tr -cs A-Za-z '\012'       what is no letter made a newline, one
- *                                for several: a word a line (the
- *                                first step of Uniq's example)
+ *     tr -cs A-Za-z '\012'       what is not a letter made a newline,
+ *                                one for several: a word on each line
+ *                                (the first step of Uniq's example)
  *
  * others:
  * System V's tr wanted its ranges in brackets, tr '[a-z]' '[A-Z]',
- * where the Seventh Edition's and BSD's did not; a script written
- * for both kept the brackets, which the other tr then translated to
- * themselves. Plan 9's has no brackets, and since it works on
- * characters a range may be any of Unicode's. *)
+ * where the Seventh Edition's and BSD's did not. A script written for
+ * both kept the brackets, which the other tr then translated to
+ * themselves. Plan 9's tr has no brackets, and since it works on
+ * characters, a range may be any range of Unicode. *)
 
 type caps = < Cap.stdin; Cap.stdout; Cap.stderr >
 

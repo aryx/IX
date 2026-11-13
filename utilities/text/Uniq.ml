@@ -1,19 +1,22 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-uniq: Plan 9's uniq (principia's utilities/text/misc/uniq.c):
- * of the lines that follow each other and are the same, one (the
- * first); a file's, or the standard input's. -u: only the lines that
- * are alone; -d: only one of those that are not; -c: each with how
- * many they were. -N: the lines compared without their N first fields
- * (what spaces and tabs part); +N: without N characters more. As
- * uniq.c, a last line without its newline is not read.
+(* mini-uniq is Plan 9's uniq (principia's utilities/text/misc/uniq.c).
+ * It reads a file, or the standard input, and of the lines that follow
+ * each other and are the same it writes one (the first).
+ * - -u writes only the lines that are alone;
+ * - -d writes only one of each group of lines that are not alone;
+ * - -c writes each line with how many there were;
+ * - -N compares the lines without their first N fields (the fields are
+ *   parted by spaces and tabs);
+ * - +N compares them without N more characters.
+ * As in uniq.c, a last line without its newline is not read.
  *
  * design:
- * Only lines that follow each other: uniq keeps one line in memory,
- * whatever the input's size, and leaves bringing the same lines
- * together to the program that knows how, sort. Each tool does one
- * thing, and the pipe makes the program:
+ * uniq looks only at lines that follow each other. So it keeps one
+ * line in memory, whatever the input's size, and it leaves the job of
+ * bringing the same lines together to the program that knows how,
+ * sort. Each tool does one thing, and the pipe makes the program:
  *
  *     echo the cat and the dog and the bird |
  *       tr -cs A-Za-z '\012' | sort | uniq -c | sort -rn | sed 2q
@@ -21,14 +24,14 @@
  *        2 and
  *
  * cs-history:
- * That line, with a tr A-Z a-z more, is Doug McIlroy's. In 1986 Jon
- * Bentley asked Donald Knuth for a program in his literate style,
- * the n most frequent words of a text, for his column in the
- * Communications of the ACM; Knuth wrote several pages of Pascal,
- * with a data structure made for the task; McIlroy, asked to review
- * it, praised it and gave these six commands in its place, each a
- * tool that was already there. ("Programming Pearls: A Literate
- * Program", June 1986.) *)
+ * That line, with one more tr A-Z a-z, is Doug McIlroy's. In 1986,
+ * for his column in the Communications of the ACM, Jon Bentley asked
+ * Donald Knuth for a program in his literate style that finds the n
+ * most frequent words of a text. Knuth wrote several pages of Pascal,
+ * with a data structure made for the task. McIlroy, asked to review
+ * it, praised it and gave these six commands in its place, each of
+ * them a tool that was already there. ("Programming Pearls: A
+ * Literate Program", June 1986.) *)
 
 type caps = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr >
 

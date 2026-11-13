@@ -1,17 +1,19 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-pwd: Plan 9's pwd (principia's utilities/files/pwd.c; xix's
- * utilities/files/pwd.ml): the directory the process is in, as the
- * kernel names it (the name it was reached by: a bind does not show).
+(* mini-pwd is Plan 9's pwd (principia's utilities/files/pwd.c; xix's
+ * utilities/files/pwd.ml). It writes the directory the process is in,
+ * as the kernel names it: by the name it was reached by, so a bind
+ * does not show.
  *
  * cs-history:
  * Unix's kernel did not know a process's directory by name, only
- * which directory it was. pwd found the name by walking: stat ".",
- * open "..", read it for the entry with the same number, that is the
- * last part; then the same from "..", up to the root. It could fail
- * half way (a directory not readable), and a symbolic link made the
- * answer not the path one had typed.
+ * which directory it was. pwd found the name by walking: it did a stat
+ * of ".", opened "..", and read it for the entry with the same number,
+ * which is the last part of the name; then it did the same from "..",
+ * up to the root. It could fail half way (at a directory that is not
+ * readable), and a symbolic link made the answer differ from the path
+ * one had typed.
  *
  * plan9-is-cleaner:
  * With a name space made of bind and mount, walking up is not even

@@ -1,34 +1,35 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-test: Plan 9's test (principia's shells/misc/test.c): a
- * question, answered by the status and nothing else ("false" when
- * not): for a script's if.
+(* mini-test is Plan 9's test (principia's shells/misc/test.c). It
+ * answers a question by its status and nothing else (the status is
+ * "false" when the answer is no). It is for a script's if.
  *   -e f  -f f  -d f  -s f    f is there; a file; a directory; not empty
- *   -r f  -w f  -x f          may be read, written, run
- *   -A f  -L f  -T f          is append only, exclusive, temporary
- *   -t [fd]                   the descriptor (1) is the console
+ *   -r f  -w f  -x f          f may be read, written, run
+ *   -A f  -L f  -T f          f is append only, exclusive, temporary
+ *   -t [fd]                   the descriptor (1 by default) is the console
  *   s   -n s   -z s           the string is not empty; the same; is empty
- *   a = b   a != b            two strings
- *   m -eq n  -ne -gt -lt -ge -le     two numbers
+ *   a = b   a != b            two strings are equal, are not
+ *   m -eq n  -ne -gt -lt -ge -le     two numbers compare so
  *   f -older t                f was written before t (seconds since
- *                             1970, or ago: 3h, 2d, 1y, 30s...)
+ *                             1970, or a time ago: 3h, 2d, 1y, 30s...)
  *   f -nt g   f -ot g         f is newer, older, than g
  *   ! e   e -a e   e -o e   ( e )
- * Run as [ its last argument is ]. Not test.c's way for -r, -w and -x:
- * it tries to open the file; here the file's permissions are read.
+ * When it is run as [, its last argument must be ]. test.c's way for
+ * -r, -w and -x is not followed: test.c tries to open the file, and
+ * here the file's permissions are read.
  *
  * -A, -L and -T are Plan 9's: three bits of a file's mode that Unix
- * does not have (written at its end only; open by one process at a
- * time; not kept by the backup).
+ * does not have (the file is written at its end only; it is open by
+ * one process at a time; it is not kept by the backup).
  *
  * cs-history:
  * In the Sixth Edition if was a program, /bin/if: it worked out an
  * expression of this kind itself (-r file, s1 = s2) and ran the rest
- * of its arguments as a command when true. Bourne's shell (the
- * Seventh Edition, 1979) made if a part of the language, whose
- * condition is any command and its status; what was left of the old
- * if, the expression, became test. The name [ with a last ] is so
+ * of its arguments as a command when the expression was true. Bourne's
+ * shell (the Seventh Edition, 1979) made if a part of the language,
+ * whose condition is any command and its status; what was left of the
+ * old if, the expression, became test. The name [ with a last ] is so
  * that if [ -f x ] reads as syntax, which it is not: each word is
  * an argument, and the spaces are needed.
  *

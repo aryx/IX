@@ -1,13 +1,14 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-xargs: Plan 9's xargs (principia's utilities/pipe/xargs.c): a
- * command run with the standard input's lines as arguments after its
- * own, 10 lines at a time (-n lines: so many); as many times as it
- * takes. -p procs: so many of them at once (1). A line is one
- * argument, its blanks too. Nothing is run when there is no line.
+(* mini-xargs is Plan 9's xargs (principia's utilities/pipe/xargs.c).
+ * It runs a command with the standard input's lines as arguments after
+ * the command's own, 10 lines at a time (or as many as -n lines says),
+ * as many times as it takes. -p procs runs that many commands at once
+ * (1 by default). A line is one argument, with its blanks. Nothing is
+ * run when there is no line.
  *
- *     walk -f | grep '\.c$' | xargs wc -l      wc run on ten files,
+ *     walk -f | grep '\.c$' | xargs wc -l      runs wc on ten files,
  *                                              then on the next ten
  *
  * cs-history:
@@ -19,11 +20,11 @@
  *
  * others:
  * Unix's xargs cuts its input at blanks and reads quotes and
- * backslashes in it, so a file's name with a space in it is two
- * arguments; hence find -print0 and xargs -0, the names ended by a
- * zero byte (GNU's). Plan 9's takes a line for an argument, and only
- * a newline in a name defeats it. It counts lines and not bytes: ten
- * names fit. *)
+ * backslashes in it, so a file's name with a space in it becomes two
+ * arguments; hence find -print0 and xargs -0 (GNU's), where the names
+ * are ended by a zero byte. Plan 9's takes a line for an argument, and
+ * only a newline in a name defeats it. It counts lines and not bytes:
+ * ten names fit. *)
 
 type caps = < Cap.fork; Cap.exec; Cap.wait; Cap.stdin; Cap.stderr >
 

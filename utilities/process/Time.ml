@@ -1,12 +1,13 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-time: Plan 9's time (principia's profilers/misc/time.c): a
- * command run, then on the standard error the time it took: in the
- * program (u), in the kernel for it (s), from its start to its end (r),
- * in seconds, and the command (its first words); its status after,
- * when it has one. The times are the kernel's, said with the child's
- * last words (Sys_plan9.last_times): zeros on another system. *)
+(* mini-time is Plan 9's time (principia's profilers/misc/time.c). It
+ * runs a command, then writes on the standard error the time the
+ * command took: in the program (u), in the kernel for it (s), and from
+ * its start to its end (r), in seconds. It then writes the command (its
+ * first words), and after it the command's status, when there is one.
+ * The times are the kernel's, given with the child's last words
+ * (Sys_plan9.last_times), so they are zeros on another system. *)
 
 type caps = < Cap.fork; Cap.exec; Cap.wait; Cap.stderr >
 

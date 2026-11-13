@@ -1,20 +1,30 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-ls: Plan 9's ls (principia's utilities/files/ls.c), its output
- * byte for byte: a directory's entries, or a file's own, one a line,
- * sorted by name. What a line says is 9P's entry (Sys_plan9.dir), so
- * on another system it is what Unix's stat can fill of it.
+(* mini-ls is Plan 9's ls (principia's utilities/files/ls.c), and its
+ * output is ls.c's byte for byte. It lists a directory's entries, or a
+ * file's own entry, one on a line, sorted by name. What a line says is
+ * 9P's entry (Sys_plan9.dir), so on another system it is what Unix's
+ * stat can fill of that entry.
  *
- * Its options: -l the long line (the mode, the device's letter and
- * number, the owner and the group, the length, the date), -d a
- * directory itself and not its entries, -s the size in KB before, -m
- * who wrote it last, -q the qid, -T the temporary bit, -F a / after a
- * directory and a * after what can be run, -t by time and not by name
- * (-u: the time read, not written), -r the order reversed, -n not
- * sorted, -p no directory before the names, -Q the names never quoted.
+ * Its options:
+ * - -l writes the long line (the mode, the device's letter and number,
+ *   the owner and the group, the length, the date);
+ * - -d lists a directory itself and not its entries;
+ * - -s writes the size in KB before the name;
+ * - -m writes who wrote the file last;
+ * - -q writes the qid;
+ * - -T writes the temporary bit;
+ * - -F writes a / after a directory and a * after what can be run;
+ * - -t sorts by time and not by name (with -u, the time the file was
+ *   read, not written);
+ * - -r reverses the order;
+ * - -n does not sort;
+ * - -p writes no directory before the names;
+ * - -Q never quotes the names.
  *
- * The dates are GMT's: ls.c's ctime reads /env/timezone, not read here.
+ * The dates are in GMT: ls.c's ctime reads /env/timezone, which is not
+ * read here.
  *
  * cs-history:
  * The name is Multics's, where the command was list and its short
@@ -22,13 +32,13 @@
  * edition's manual (1971), with -l already.
  *
  * plan9-is-cleaner:
- * A directory is read as a file: its bytes are the entries, each
- * what stat gives for a file (9P's stat message), so ls needs no
- * call to read a directory and then one more a file to ask about
- * each, as Unix's readdir then stat. And the line's first columns
- * are the device's letter and number (M 8 for a mounted file server,
- * c for the console): who serves the file, since any program may be
- * serving the one you are looking at.
+ * A directory is read as a file. Its bytes are the entries, and each
+ * is what stat gives for a file (9P's stat message), so ls needs no
+ * call to read a directory and then one more call for each file to
+ * ask about it, as Unix's readdir then stat do. And the line's first
+ * columns are the device's letter and number (M 8 for a mounted file
+ * server, c for the console). They say who serves the file, since any
+ * program may be serving the one you are looking at.
  *
  * References: ls(1); stat(5) of Plan 9's manual, an entry's bytes. *)
 

@@ -1,32 +1,41 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-sort: Plan 9's sort (principia's utilities/text/misc/sort.c):
- * the lines of the files, or of the standard input, in order.
+(* mini-sort is Plan 9's sort (principia's utilities/text/misc/sort.c).
+ * It writes the lines of the files, or of the standard input, in
+ * order.
  *
  *   sort [-cmu] [-bdfinrw] [-t c] [-o file] [+pos1 [-pos2]] ... [file ...]
  *
- * Without an option the order is the bytes' (so the characters', in
- * UTF-8). -n: by the number a line starts with (its sign, its digits,
- * a point; -g: an exponent too); -f: capitals and small letters the
- * same; -d: only letters, digits and blanks count; -i: only the
- * visible ASCII; -w: blanks do not count; -b: nor the blanks at a
- * key's start; -r: the order reversed.
- * +pos1 -pos2: a key, from field pos1 to before field pos2 (the first
- * is 0; f.c: c characters into it), with its own letters of the above
- * after (+1n: the second field as a number); several keys, the first
- * decides. A field ends at blanks, or at the character of -t. Lines
- * that the keys do not part are then compared whole.
- * -u: of the lines the keys say equal, one; -c: nothing written, a
- * status that says whether the input is in order; -o file: written
- * there (which may be an input); -k is POSIX's way to say a key
- * (-k 2,3: from 1); -m, -T dir, -l n are taken and mean nothing here.
- * Not sort.c's -M (months).
+ * Without an option, the order is the order of the bytes (so of the
+ * characters, in UTF-8). The options change it:
+ * - -n sorts by the number that a line starts with (its sign, its
+ *   digits and a point; with -g, an exponent too);
+ * - -f compares capitals and small letters as the same;
+ * - -d counts only letters, digits and blanks;
+ * - -i counts only the visible ASCII characters;
+ * - -w does not count the blanks;
+ * - -b does not count the blanks at a key's start;
+ * - -r reverses the order.
+ * +pos1 -pos2 gives a key, from field pos1 to before field pos2. The
+ * first field is 0, and f.c means c characters into field f. The
+ * letters above may follow, for this key only (+1n is the second field
+ * as a number). With several keys, the first one has priority. A
+ * field ends at blanks, or at the character of -t. Lines that the keys
+ * do not tell apart are then compared whole.
+ * - -u writes only one of the lines that the keys say are equal;
+ * - -c writes nothing, and its status says whether the input is in
+ *   order;
+ * - -o file writes the output there (the file may be an input);
+ * - -k is POSIX's way to give a key (-k 2,3, counted from 1);
+ * - -m, -T dir and -l n are accepted and mean nothing here.
+ * sort.c's -M (months) is not here.
  *
- * As sort.c: a line's key is made of bytes, once, such that the keys'
- * order as bytes is the lines' (a number's digits after its sign and
- * its exponent, a reversed key's bytes complemented), and the keys are
- * sorted. Not its temporary files: all is in memory.
+ * As in sort.c, a line's key is made of bytes, once, so that the
+ * order of the keys as bytes is the order of the lines. For example, a
+ * number's digits come after its sign and its exponent, and a reversed
+ * key's bytes are complemented. Then the keys are sorted. sort.c's
+ * temporary files are left out: all is in memory.
  *
  *     the lines "b 10", "a 9", "c 100":
  *     sort             a 9    b 10   c 100      the bytes of the lines
@@ -35,28 +44,29 @@
  *     sort +1n         a 9    b 10   c 100      as numbers
  *
  * design:
- * The key made once is what keeps the comparison out of the sort.
+ * Making the key once is what keeps the comparison out of the sort.
  * With -n -f -d -r and several fields, comparing two lines is a
- * program; done at each of the n log n comparisons, it would cut the
- * fields and read the numbers again each time. Made bytes once a
- * line, the order is the bytes' and the sort knows nothing of the
- * options. The C library's strxfrm is the same idea for a language's
- * alphabetical order: a string made another whose bytes compare as
- * the words should.
+ * program. Done at each of the n log n comparisons, it would cut the
+ * fields and read the numbers again each time. When each line is made
+ * bytes once, the order is the order of the bytes, and the sort knows
+ * nothing of the options. The C library's strxfrm is the same idea for
+ * a language's alphabetical order: it makes a string into another one
+ * whose bytes compare as the words should.
  *
  * evolution:
- * +pos1 -pos2 is the Seventh Edition's way, fields counted from 0
- * and the end not included; POSIX's -k (1992) counts from 1 and
- * includes it, and the old one was later withdrawn. Plan 9's sort.c
- * takes both (its comment on -k: "what were they thinking?"), and so
- * does this one.
+ * +pos1 -pos2 is the Seventh Edition's way: the fields are counted
+ * from 0, and the end is not included. POSIX's -k (1992) counts from
+ * 1 and includes the end, and the old way was later withdrawn. Plan
+ * 9's sort.c takes both (its comment on -k says "what were they
+ * thinking?"), and so does this one.
  *
  * modern:
- * A file larger than the memory is sorted by runs: as much as fits
- * is sorted and written to a temporary file, and the files are then
- * merged, which reads them in order and needs a line of each at a
- * time. That is sort.c's temporary files and its -m, and what tape
- * sorting was; left out here, where the memory is taken as enough. *)
+ * A file larger than the memory is sorted by runs. As much as fits is
+ * sorted and written to a temporary file, and the files are then
+ * merged, which reads them in order and needs only one line of each
+ * at a time. That is what sort.c's temporary files and its -m are
+ * for, and what tape sorting was. It is left out here, where the
+ * memory is taken to be enough. *)
 
 type caps = < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr >
 

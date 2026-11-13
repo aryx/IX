@@ -1,8 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-emacs in a window of mini-rio's, under mini-9pi: Top_window's
- * program run by lib_terminal/hosts/draw's Window_draw. *)
+(* mini-emacs in a mini-rio window, under mini-9pi: Window_draw (in
+ * lib_terminal/hosts/draw) runs Top_window's program. *)
 
 let usage = "usage: emacs [-q] [-time] [file]   (-h: how)"
 

@@ -1,8 +1,9 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See Frame.mli. efuns' Frame is its design's source: a buffer, a
- * point, a first line, a status line; the rows are made another way. *)
+(* See Frame.mli. The design comes from efuns' Frame: a frame has a
+ * buffer, a point, a first line and a status line. The rows are made
+ * another way. *)
 open Efuns
 
 let create (caps : caps) (buf : buffer) : frame = {

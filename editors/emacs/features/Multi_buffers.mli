@@ -1,35 +1,38 @@
-(* The commands on buffers and their files. efuns' Multi_buffers, and
- * its names. *)
+(* The commands on buffers and their files. This is efuns'
+ * Multi_buffers, with its names. *)
 
-(* a file asked and shown in the frame (C-x C-f): its buffer if it has
- * one, or read; TAB completes the name from its directory's *)
+(* asks for a file and shows it in the frame (C-x C-f): its buffer if
+ * it has one, or else the file is read. TAB completes the name from
+ * the names in its directory. *)
 val load_buffer : Efuns.action
 
-(* [open_file frame file]: the same of a file named; a directory is
- * [open_directory]'s to show (Dired sets it; without: refused) *)
+(* [open_file frame file] does the same for a file named. A directory
+ * is shown by [open_directory] (Dired sets it; without Dired, a
+ * directory is refused). *)
 val open_file : Efuns.frame -> string -> unit
 val open_directory : (Efuns.frame -> string -> unit) ref
 val is_directory : Efuns.caps -> string -> bool
 
-(* the frame's buffer written to its file (C-x C-s), or to a file
- * asked, which is then its own (C-x C-w) *)
+(* writes the frame's buffer to its file (C-x C-s), or to a file
+ * asked for, which then becomes its file (C-x C-w) *)
 val save_buffer : Efuns.action
 val write_buffer : Efuns.action
 
-(* another buffer asked and shown (C-x b): by default the one shown
- * before; a name that is no buffer's makes one *)
+(* asks for another buffer and shows it (C-x b). By default it is the
+ * one shown before, and a name that is no buffer's makes a buffer. *)
 val change_buffer : Efuns.action
 
-(* the one shown before, not asked *)
+(* shows the buffer shown before, without asking *)
 val switch_to_other_buffer : Efuns.action
 
 (* the ends of the names that completion does not propose (.cmo) *)
 val ignored_extensions : string list ref
 
-(* a buffer no longer the editor's (C-x k), asked again if it was
- * modified; the frames that showed it show another *)
+(* makes a buffer no longer one of the editor's (C-x k), asking again
+ * if it was modified and has a file. The frames that showed it show
+ * another buffer. *)
 val kill_buffer : Efuns.action
 
-(* the editor's end (C-x C-c), asked again if a file's buffer was
+(* ends the editor (C-x C-c), asking again if a file's buffer was
  * modified *)
 val exit : Efuns.action

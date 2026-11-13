@@ -1,2 +1,2 @@
-(* The editor: one, a global, as efuns' and as Emacs's. *)
+(* The editor. There is one, a global, as in efuns and in Emacs. *)
 val editor : Efuns.editor

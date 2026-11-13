@@ -1,30 +1,32 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-spin: do several cores give several times the work? Not one of
- * Plan 9's programs. n processes do the same work at once, each on a
- * core if the machine has them, and the time all of them took is
- * said, to set beside one's: with cores that do not get in each
- * other's way, spin 4 takes the time of spin 1; with one thing that
- * all share, four times. The kinds of work are the things that may
- * be shared (the help below): nothing, the machine's memory, the
- * program's collector, the kernel.
+(* mini-spin asks whether several cores give several times the work.
+ * It is not one of Plan 9's programs. n processes do the same work at
+ * once, each on a core if the machine has them, and spin says the time
+ * all of them took, to be set beside the time of one. With cores that
+ * do not get in each other's way, spin 4 takes the time of spin 1;
+ * with one thing that all of them share, it takes four times as long.
+ * The kinds of work are the things that may be shared (the help
+ * below): nothing, the machine's memory, the program's collector, and
+ * the kernel.
  *
- * Written when mini-9pi first ran processes on the Pi 2's four cores
- * (docs/plans/plan_multicore.md): two games had each about half of
- * one's frames a second, stats (profilers/misc) showed every core busy,
- * and the question was what they waited for, the kernel's one lock or
- * the board's memory. An emulator answers for the lock and not for
- * the memory: QEMU's four cores are four threads of a host whose
- * memory is not the board's.
+ * It was written when mini-9pi first ran processes on the Pi 2's four
+ * cores (docs/plans/plan_multicore.md). Two games, run together, each
+ * had about half the frames a second of one game alone; stats
+ * (profilers/misc) showed every core busy, and the question was what
+ * the cores waited for: the kernel's one lock, or the board's memory.
+ * An emulator answers for the lock and not for the memory, since
+ * QEMU's four cores are four threads of a host whose memory is not the
+ * board's.
  *
- * history:
+ * cs-history:
  * The measure is as old as machines with two processors: run one
- * copy, run n, divide. Amdahl's argument (1967) is its reading: what
- * n copies cannot do at once bounds what n processors give, whatever
- * n. A kernel with one lock (Linux 2.0's "big kernel lock", 1996;
- * mini-9pi's) is the plain case: programs that compute scale, programs
- * that ask the kernel much do not. *)
+ * copy, run n, divide. Amdahl's argument (1967) is how to read it:
+ * what n copies cannot do at once bounds what n processors give,
+ * whatever n is. A kernel with one lock (Linux 2.0's "big kernel
+ * lock", 1996; mini-9pi's) is the plain case: programs that compute
+ * scale, and programs that ask much of the kernel do not. *)
 
 type caps = < Cap.fork; Cap.wait; Cap.stdout; Cap.stderr; Cap.clock >
 

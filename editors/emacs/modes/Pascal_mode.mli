@@ -1,3 +1,3 @@
-(* The mode of Pascal: its colors (Highlight_pascal), the matching
- * parenthesis shown, TAB that indents (Indent). *)
+(* The mode of Pascal: its colors come from Highlight_pascal, the
+ * matching parenthesis is shown, and TAB indents (Indent). *)
 val mode : Efuns.major_mode

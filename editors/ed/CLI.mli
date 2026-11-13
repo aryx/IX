@@ -1,57 +1,66 @@
 (* mini-ed: Plan 9's ed, the line editor. The text is a buffer of
- * numbered lines that is never shown; what is typed is commands, one a
- * line, each some addresses (which lines) and a letter (what to do
- * with them), and ed answers with the lines asked for, a count, or ?.
+ * numbered lines that is never shown. What you type is commands, one
+ * on each line. A command is some addresses (which lines) and a letter
+ * (what to do with them), and ed answers with the lines asked for, a
+ * count, or ?.
  *
- *     standard input                    the modules, a command's way
- *        | Input      a character at a time; g's command list in front
+ *     standard input                  the modules, in a command's order
+ *        | Input      reads a character at a time, with g's command
+ *        |            list in front
  *     1,3s/a/b/p
- *        | Address    1,3 read and evaluated at once: lines 1 to 3
- *        | Command    the letter s, which reads /a/b/ and p itself
- *        |-- Regex    a compiled and matched against each of the lines
- *        |            (lib_core's: Grep's, Sed's and awk's too)
- *        |-- Text     the lines: replaced, appended, deleted, moved,
- *        |            marked, written to a file and read from one
- *        '-- Out      the p: the last line changed, on standard output
+ *        | Address    reads 1,3 and evaluates it at once: lines 1 to 3
+ *        | Command    reads the letter s; the s command reads /a/b/ and
+ *        |            p itself
+ *        |-- Regex    compiles a, and matches it against each of the
+ *        |            lines (it is lib_core's, which Grep, Sed and awk
+ *        |            use too)
+ *        |-- Text     holds the lines: replaced, appended, deleted,
+ *        |            moved, marked, written to a file and read from one
+ *        '-- Out      prints, for the p, the last line changed on
+ *                     standard output
  *
- * There is no tree of a command and no screen to repair: each module
+ * There is no tree for a command and no screen to repair: each module
  * reads the characters it needs and acts at once. The session that
  * mini-ed -h prints shows the commands a first reader needs.
  *
- * It is the editor that asks nothing of the machine: no cursor to
- * move, no terminal to know, a console that prints lines is enough.
- * So it is the first editor mini-9pi has, before any window (ed on
- * its card), and one of the first programs ix builds by itself.
+ * It is the editor that asks nothing of the machine: there is no cursor
+ * to move and no terminal to know, and a console that prints lines is
+ * enough. So it is the first editor that mini-9pi has, before any
+ * window (ed is on its card), and one of the first programs that ix
+ * builds by itself.
  *
  * why-study:
  * An editor without a screen can be given its commands by a program.
- * Plan 9's compilers are built with one such script, mkenam: ed reads
- * the header that lists the assembler's instructions (5.out.h), v/re/d
- * deletes every line that is not one, three s commands turn each name
- * into a quoted string, 1i and $a put a C array's first and last lines
- * around them, and w writes enam.c (tests/mkenam.sh runs it here). A
- * screen editor does the same by hand, each time the header changes.
- * And much of Unix is ed's commands taken out of ed: s/re/new/ is
- * sed's, which is ed on a stream too long for a buffer; g/re/p, every
- * line that matches printed, is grep; diff -e writes its answer as an
- * ed script; a, i, d, s, w and q after a colon are still vi's.
+ * Plan 9's compilers are built with one such script, mkenam. In it, ed
+ * reads the header that lists the assembler's instructions (5.out.h);
+ * v/re/d deletes every line that is not one; three s commands turn
+ * each name into a quoted string; 1i and $a put a C array's first and
+ * last lines around them; and w writes enam.c (tests/mkenam.sh runs it
+ * here). With a screen editor, a person does the same by hand, each
+ * time the header changes. And much of Unix is ed's commands taken out
+ * of ed:
+ * - s/re/new/ is sed's, and sed is ed on a stream too long for a
+ *   buffer;
+ * - g/re/p, which prints every line that matches, is grep;
+ * - diff -e writes its answer as an ed script;
+ * - a, i, d, s, w and q after a colon are still vi's commands.
  *
  * evolution:
  * The line editor, from QED to sam. QED (L. Peter Deutsch and Butler
  * Lampson, Berkeley, 1965-66) was written for teletypes on a shared
- * machine: paper, ten characters a second, so a command had to be
- * short and print only what was asked. Ken Thompson wrote a QED for
- * CTSS and added regular expressions to it (Regex.mli has his paper
- * of 1968), then another for Multics, then for the first Unix a
- * smaller one, ed (1969): one buffer where QED had many, fewer
- * commands. At Queen Mary College George Coulouris made ed kinder
- * (em, "editor for mortals", 1976), and Bill Joy at Berkeley, who saw
- * it that summer, wrote ex, whose visual mode showed the buffer on a
- * screen: vi. In Plan 9 the same line goes on with Rob Pike's sam
- * (1987), whose commands are ed's but whose addresses are regular
- * expressions over the whole text, not lines, with every change
- * undone at will, and then acme (1994). ed itself was kept, with
- * runes for characters and libregexp's full expressions.
+ * machine. They printed on paper, at ten characters a second, so a
+ * command had to be short and print only what was asked. Ken Thompson
+ * wrote a QED for CTSS and added regular expressions to it (Regex.mli
+ * has his paper of 1968), then another for Multics, and then, for the
+ * first Unix, a smaller one, ed (1969), with one buffer where QED had
+ * many, and fewer commands. At Queen Mary College George Coulouris
+ * made ed kinder (em, "editor for mortals", 1976), and Bill Joy at
+ * Berkeley, who saw it that summer, wrote ex, whose visual mode showed
+ * the buffer on a screen: vi. In Plan 9 the same line goes on with Rob
+ * Pike's sam (1987), whose commands are ed's but whose addresses are
+ * regular expressions over the whole text, not lines, and where every
+ * change can be undone at will; then came acme (1994). ed itself was
+ * kept, with runes for characters and libregexp's full expressions.
  *
  * others:
  * GNU ed adds a prompt (-p) and messages in words (h, H) to the ?,
@@ -59,11 +68,11 @@
  * characters are UTF-8, a pattern may have ( ) and |, and the tests
  * compare each answer with 9base's ed, byte for byte.
  *
- * The command line: its usage and options are [help] in CLI.ml, what
- * mini-ed -h prints (-h and --help, not ed's).
+ * The command line's usage and options are in [help] in CLI.ml, which
+ * is what mini-ed -h prints (-h and --help are not ed's).
  *
  * An interrupt prints ? and goes back to the commands; a hangup writes
- * the buffer to ed.hup and quits. The exit status is 0, as ed.c's.
+ * the buffer to ed.hup and quits. The exit status is 0, as in ed.c.
  *
  * References: principia's editors/ed/ed.c and its book (the Editor
  * book, which starts with mkenam); ed(1) of the Plan 9 manual; Brian

@@ -1,19 +1,23 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-gunzip: Plan 9's gunzip (principia's
- * utilities/archive/gzip/gunzip.c): each file uncompressed into one of
- * the current directory, its name without its .gz (a .tgz's: .tar);
- * no file, the standard input to the standard output. -c: to the
- * standard output; -t: nothing written, the names of what is inside
- * listed (-v: with each one's length and time); -v otherwise: what is
- * uncompressed to what; -T: the output given the time in the header.
+(* mini-gunzip is Plan 9's gunzip (principia's
+ * utilities/archive/gzip/gunzip.c). It uncompresses each file into a
+ * file of the current directory, whose name is the file's without its
+ * .gz (for a .tgz, with .tar instead). With no file, it uncompresses
+ * the standard input to the standard output. Its options:
+ * - -c writes to the standard output;
+ * - -t writes nothing, and lists the names of what is inside (with -v,
+ *   with each one's length and time);
+ * - -v, otherwise, says what is uncompressed to what;
+ * - -T gives the output the time that is in the header.
  *
  * A file may be several gzip files end to end (cat a.gz b.gz), each
- * with its header and its trailer (Gzip's), all uncompressed in turn
- * into the one output. What follows the last one and is not one is
- * said and ignored: the bytes before it are good. When the first one
- * is bad, the output is removed.
+ * with its header and its trailer (drawn in Gzip), and all are
+ * uncompressed in turn into the one output. What follows the last one
+ * and is not a gzip file is reported and ignored, since the bytes
+ * before it are good. When the first one is bad, the output is
+ * removed.
  *
  * References: gzip(1) of Plan 9's manual; RFC 1952. *)
 

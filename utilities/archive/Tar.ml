@@ -1,47 +1,52 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-tar: Plan 9's tar (principia's utilities/archive/tar/tar.c), its
- * archives byte for byte: files and directories, whole trees, in one
- * file, and back.
+(* mini-tar is Plan 9's tar (principia's utilities/archive/tar/tar.c),
+ * and its archives are tar.c's byte for byte. It puts files and
+ * directories, whole trees, in one file, and takes them out again.
  *
- *    tar cf a.tar dir file    a new archive of them (c), in a file (f)
- *    tar rf a.tar more        added at the end of one (r)
- *    tar tvf a.tar            what is in it (t), each line long (v)
- *    tar xf a.tar [name...]   taken out (x): all, or what is under names
+ *    tar cf a.tar dir file    makes a new archive of them (c), in a file (f)
+ *    tar rf a.tar more        adds them at the end of one (r)
+ *    tar tvf a.tar            says what is in it (t), a long line each (v)
+ *    tar xf a.tar [name...]   takes out (x) all, or what is under the names
  *
- * The first argument is the letters, a dash or not; f, u and g take
- * the letters' rest or the next argument (the archive, an owner's
- * number, a group's). No f: the standard input or output. z:
- * compressed by gzip, and when reading, so is a .tgz or .tar.gz. k: a
- * file that is there kept; T: the archive's times and modes given to
- * what is taken out; R: names from / kept as they are (else under the
- * current directory); P: the old format (no owners' names, names of
- * 100 characters at most); s: past a bad header to the next good one;
- * v with c, r or x: the names on the standard error.
+ * The first argument is the letters, with a dash or not. f, u and g
+ * take the rest of the letters or the next argument (the archive, an
+ * owner's number, a group's number). Without f, the archive is the
+ * standard input or output. The other letters:
+ * - z: the archive is compressed by gzip; when reading, a .tgz or a
+ *   .tar.gz is taken as compressed even without z;
+ * - k: a file that is already there is kept;
+ * - T: what is taken out is given the archive's times and modes;
+ * - R: names that start at / are kept as they are (otherwise they go
+ *   under the current directory);
+ * - P: the old format (no owners' names, and names of 100 characters
+ *   at most);
+ * - s: a bad header is skipped, up to the next good one;
+ * - v with c, r or x: the names are written on the standard error.
  *
- * The archive is blocks of 512 bytes: for each file a header, then
- * its bytes, the last block's rest zeros; two zero blocks end it, and
- * it is written in records of 20 blocks, the last one filled with
- * zeros (a tape's records once):
+ * The archive is blocks of 512 bytes. Each file has a header, then
+ * its bytes, and the rest of its last block is zeros; two zero blocks
+ * end the archive. It is written in records of 20 blocks, the last one
+ * filled with zeros (these were a tape's records once):
  *
  *    | f1's header | f1's bytes | sub/'s header | sub/x's | x's bytes | 0 | 0 | 0...
  *
- * A header is text, each number in octal: the name (100 bytes), the
- * mode, the owners' numbers, the length, the time, the checksum (the
- * sum of the header's bytes, its own field counted as spaces), the
- * type (5: a directory, its name ending with /), then POSIX's ustar
- * part: the owners' names, and a prefix of 155 bytes for a longer
- * name, split at a slash.
+ * A header is text, with each number in octal. It has the name (100
+ * bytes), the mode, the owners' numbers, the length, the time, the
+ * checksum (the sum of the header's bytes, its own field counted as
+ * spaces), and the type (5 is a directory, whose name ends with /).
+ * Then comes POSIX's ustar part: the owners' names, and a prefix of
+ * 155 bytes for a longer name, split at a slash.
  *
  * wib:
  * The archive is read and written in memory, whole, where tar.c reads
- * and writes a record at a time: an archive must fit. -z is gzip's
- * only (Zlib's, in the process: tar.c runs gzip, compress or bzip2 in
- * a pipe). tar.c's tv prints its modes by %M, which its main leaves
- * uninstalled (an XXX), and its lines come out garbled: here they are
- * what it meant (mini-ls's modes). -i is taken and does nothing: a
- * read error ends the program.
+ * and writes a record at a time, so an archive must fit in memory. -z
+ * does gzip only (with Zlib, in the process), where tar.c runs gzip,
+ * compress or bzip2 in a pipe. tar.c's tv prints its modes with %M,
+ * which its main leaves uninstalled (an XXX), so its lines come out
+ * garbled; here they are what it meant (mini-ls's modes). -i is
+ * accepted and does nothing: a read error ends the program.
  *
  * cs-history:
  * tar, the tape archiver, came with Unix's seventh edition (1979),

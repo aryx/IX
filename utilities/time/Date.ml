@@ -1,25 +1,25 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-date: Plan 9's date (principia's utilities/time/date.c): the
- * time now, or of the seconds since 1970 given, as a line: the day,
- * the month, the hour, the year. -n: the seconds, as a number. The
- * time is GMT's (date.c's -u, taken): its ctime reads /env/timezone,
- * not read here.
+(* mini-date is Plan 9's date (principia's utilities/time/date.c). It
+ * writes the time now, or the time of the seconds since 1970 that are
+ * given, as a line: the day, the month, the hour, the year. With -n, it
+ * writes the seconds, as a number. The time is in GMT (date.c's -u is
+ * accepted): date.c's ctime reads /env/timezone, which is not read
+ * here.
  *
  *     date 0                Thu Jan  1 00:00:00 GMT 1970
  *     date 2147483647       Tue Jan 19 03:14:07 GMT 2038
  *
  * cs-history:
  * The time as one number, counted from a fixed instant, with the
- * day, the month and the zone left to a library: Unix's choice, and
- * everyone's since. The first edition counted sixtieths of a second
- * from 1971, which 32 bits hold for a little over two years; the
- * unit became the second and the start 1970 (the fourth edition,
- * 1973). The
- * second line above is the last second a signed number of 32 bits
- * holds: the year 2038 problem, for whatever still keeps the time
- * so. *)
+ * day, the month and the zone left to a library, was Unix's choice,
+ * and it has been everyone's since. The first edition counted
+ * sixtieths of a second from 1971, which 32 bits hold for a little
+ * over two years; the unit became the second, and the start 1970, in
+ * the fourth edition (1973). The second line above is the last second
+ * that a signed number of 32 bits holds: that is the year 2038
+ * problem, for whatever still keeps the time that way. *)
 
 type caps = < Cap.stdout; Cap.stderr; Cap.clock >
 

@@ -1,15 +1,17 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-free: the memory, who has it. Not one of Plan 9's programs (there
- * it is cat /dev/swap and ps); the name is Unix's. The board's memory
- * as the kernel divides it (its own, the processes', the swap: all,
- * taken, left), then a line a process: the memory it holds (the pages
- * it touched: /proc/n/segment's last column, mini-9pi's own), what it
- * asked for (its segments' sizes, as ps says), its name. A page shared
- * (a program's text, rfork's RFMEM) is counted for each that has it.
- * All of it read in /dev/swap and /proc: on another system there is
- * none. *)
+(* mini-free says what memory there is, and who has it. It is not one
+ * of Plan 9's programs (there, one runs cat /dev/swap and ps); the name
+ * is Unix's. It first writes the board's memory as the kernel divides
+ * it (the kernel's own, the processes', the swap), with how much there
+ * is of each, how much is taken and how much is left. Then it writes a
+ * line for each process: the memory it holds (the pages it touched,
+ * the last column of /proc/n/segment, which is mini-9pi's own), what
+ * it asked for (its segments' sizes, as ps says), and its name. A page
+ * that is shared (a program's text, or memory shared by rfork's RFMEM)
+ * is counted for each process that has it. All of it is read in
+ * /dev/swap and /proc, so on another system there is none. *)
 
 type caps = < Cap.readdir; Cap.open_in; Cap.stdout; Cap.stderr >
 

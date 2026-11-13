@@ -1,14 +1,18 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-du: Plan 9's du (principia's utilities/misc/du.c): how much a
- * directory holds, in KB, and each directory in it: its files'
- * lengths, each rounded up to a block (1 KB), added. -a: each file
- * too; -s: only what is asked; -n: in bytes, each file; -b size: the
- * block's, in bytes (4k: 4096); -f: nothing said of what cannot be
- * read. A directory reached twice (a union, a bind) is counted once.
- * Not du.c's -e, -h, -p (other units), -q, -t, -u (a file's qid or
- * times in place of its size), -r. *)
+(* mini-du is Plan 9's du (principia's utilities/misc/du.c). It says
+ * how much a directory holds, in KB, and how much each directory in it
+ * holds: the lengths of its files, each rounded up to a block (1 KB),
+ * added. Its options:
+ * - -a writes each file too;
+ * - -s writes only what is asked for;
+ * - -n writes in bytes, and each file;
+ * - -b size sets the block's size, in bytes (4k is 4096);
+ * - -f says nothing of what cannot be read.
+ * A directory reached twice (by a union, or a bind) is counted once.
+ * du.c's -e, -h and -p (other units), -q, -t and -u (a file's qid or
+ * times in place of its size), and -r are not here. *)
 
 type caps = < Cap.readdir; Cap.stdout; Cap.stderr >
 

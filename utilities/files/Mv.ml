@@ -1,27 +1,28 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-mv: Plan 9's mv (principia's utilities/files/mv.c): mv from to,
- * a file under another name; mv from ... dir, each in the directory.
- * In the same directory it is the name changed (a wstat: the file
- * stays, a directory too); in another, the file is copied there and
- * the old one removed: 9P has no way to move one, and a directory is
- * then refused. What is at the new name is removed first.
+(* mini-mv is Plan 9's mv (principia's utilities/files/mv.c). mv from to
+ * gives a file another name; mv from ... dir moves each file into the
+ * directory. In the same directory, only the name is changed, by a
+ * wstat: the file stays where it is, and so can a directory. Into
+ * another directory, the file is copied there and the old one is
+ * removed, because 9P has no way to move a file; a directory is then
+ * refused. What is at the new name is removed first.
  *
  * design:
  * A file's name is one of its attributes, with its mode and its
- * times, and wstat changes them: renaming needed no call of its own.
- * And a file belongs to one server, which alone knows where its
- * bytes are: between two directories that may be two servers, the
- * only move that always means something is a copy and a removal,
- * and mv does it in the open rather than a call doing it inside.
+ * times, and wstat changes them, so renaming needed no call of its
+ * own. And a file belongs to one server, which alone knows where its
+ * bytes are. Between two directories, which may be on two servers,
+ * the only move that always means something is a copy and a removal,
+ * and mv does it in the open rather than having a call do it inside.
  *
  * others:
  * Unix's first mv was a link under the new name and an unlink of
- * the old one, two calls that a crash could separate; rename(2)
- * (4.2BSD, 1983) made it one, atomic, and across directories of the
- * same file system -- and programs have relied on that since, to
- * replace a file by its new version in one step. *)
+ * the old one, two calls that a crash could separate. rename(2)
+ * (4.2BSD, 1983) made it one atomic call, which also works across
+ * directories of the same file system -- and programs have relied on
+ * that since, to replace a file by its new version in one step. *)
 
 type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr >
 

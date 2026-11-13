@@ -1,50 +1,58 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-grep: Plan 9's grep (principia's utilities/text/grep; xix's
- * utilities/text/grep is the author's in OCaml): the lines of each
- * file, or of the standard input, that a regular expression matches,
- * Plan 9's (Regex: regexp(7)'s, the one of mini-ed). Several patterns
- * (-e pattern, more than once; -f file, a pattern a line; a pattern of
- * several lines) are alternatives.
+(* mini-grep is Plan 9's grep (principia's utilities/text/grep; xix's
+ * utilities/text/grep is the author's grep in OCaml). It writes the
+ * lines of each file, or of the standard input, that a regular
+ * expression matches. The regular expressions are Plan 9's (Regex,
+ * regexp(7)'s notation, the same as mini-ed's). Several patterns are
+ * alternatives: -e pattern may be given more than once, -f file gives
+ * a pattern on each line, and a pattern may have several lines.
  *
- * -v: the lines that do not match; -i: whatever the letters' case; -n:
- * each with its line's number; -c: only how many; -l, -L: only the
- * names of the files with a match, without one; -s: nothing, the
- * status only; -h: no file's name before a line (with several files
- * it is there); -b is grep.c's (its output's buffer: no meaning here).
+ * - -v writes the lines that do not match;
+ * - -i matches whatever the letters' case;
+ * - -n writes each line with its line number;
+ * - -c writes only how many lines match;
+ * - -l writes only the names of the files with a match, and -L those
+ *   of the files without one;
+ * - -s writes nothing, and only the status says the result;
+ * - -h writes no file name before a line (without -h, the name is
+ *   written when there are several files);
+ * - -b is grep.c's option for its output's buffer, and has no meaning
+ *   here.
  *
- * Not grep.c's way: it makes one automaton of all the patterns and
- * runs it over the bytes as they are read; here a line is matched by
- * each pattern in turn, simpler and slower.
+ * This is not grep.c's way. grep.c makes one automaton of all the
+ * patterns, and runs it over the bytes as they are read. Here each
+ * pattern in turn is matched against a line, which is simpler and
+ * slower.
  *
  * cs-history:
- * The name is a command of ed: g/re/p, on all the lines (g, global)
- * that the regular expression matches, print. ed could do it only to
- * a file small enough for its buffer, so Ken Thompson made the
- * command a program that reads its input a line at a time (the
- * Fourth Edition, 1973). He had it for himself first: when Doug
- * McIlroy asked for such a tool he showed it the next day, hence
- * the tale of grep written overnight. The matcher was
- * already his: "Regular Expression Search Algorithm"
- * (Communications of the ACM, 1968), which follows all the ways a
- * pattern can match at once, so never goes back in the text.
+ * The name is a command of ed: g/re/p, which means "on all the lines
+ * (g, global) that the regular expression matches, print". ed could
+ * do it only on a file small enough for its buffer, so Ken Thompson
+ * made the command a program that reads its input a line at a time
+ * (the Fourth Edition, 1973). He had made it for himself first: when
+ * Doug McIlroy asked for such a tool, he showed it the next day, hence
+ * the tale of grep written overnight. The matcher was already his,
+ * from "Regular Expression Search Algorithm" (Communications of the
+ * ACM, 1968). It follows all the ways a pattern can match at once, so
+ * it never goes back in the text.
  *
  * evolution:
  * Then there were three. egrep (Alfred Aho) took the whole notation,
  * | and parentheses too, and built a deterministic automaton before
- * reading; fgrep took strings only, many at once (Aho and Corasick's
- * automaton, 1975); grep kept ed's notation, with \( \) to remember.
- * POSIX made them options, -E and -F. Plan 9 went back to one grep,
- * with the whole notation and an automaton built as the text asks
- * for its states. GNU's (Mike Haertel) added what makes it fast on a
- * plain word: Boyer and Moore's search, which does not look at every
- * byte.
+ * reading. fgrep took strings only, many at once (Aho and Corasick's
+ * automaton, 1975). grep kept ed's notation, with \( \) to remember a
+ * part. POSIX made them options, -E and -F. Plan 9 went back to one
+ * grep, with the whole notation, and an automaton whose states are
+ * built as the text asks for them. GNU's grep (Mike Haertel) added
+ * what makes it fast on a plain word: Boyer and Moore's search, which
+ * does not look at every byte.
  *
  * References: grep(1), regexp(7); Russ Cox, "Regular Expression
  * Matching Can Be Simple And Fast" (2007), for Thompson's method
- * against the one that goes back, and the history; Regex.mli for the
- * matcher here. *)
+ * compared with the one that goes back, and for the history;
+ * Regex.mli for the matcher used here. *)
 
 type caps = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr >
 

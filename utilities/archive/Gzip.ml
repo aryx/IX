@@ -1,27 +1,31 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-gzip: Plan 9's gzip (principia's utilities/archive/gzip/gzip.c):
- * each file compressed into one of the current directory, its name
- * with .gz after (a .tar's: .tgz), the file itself kept; no file, the
- * standard input to the standard output. -c: to the standard output;
- * -v: what is compressed to what, on the standard error; -1 to -9,
- * the level, taken.
+(* mini-gzip is Plan 9's gzip (principia's
+ * utilities/archive/gzip/gzip.c). It compresses each file into a file
+ * of the current directory, whose name is the file's with .gz after it
+ * (for a .tar, .tgz instead), and it keeps the file itself. With no
+ * file, it compresses the standard input to the standard output. Its
+ * options:
+ * - -c writes to the standard output;
+ * - -v says what is compressed to what, on the standard error;
+ * - -1 to -9, the level, are accepted.
  *
  * The file is RFC 1952's, deflate's blocks in an envelope (Zlib.gzip):
  *
  *    1f 8b 08 | flags | mtime (4) | 00 03 | name 00 | blocks | crc32 | length
  *
- * the flags saying whether a name follows (a file's, not the standard
- * input's), the time the file's (the standard input's: now), 03 Unix
- * as the system (gzip.h's GZOSINFERNO), the CRC-32 and the length of
- * the bytes before compression, each four bytes, the low first.
+ * The flags say whether a name follows (there is one for a file, not
+ * for the standard input). The time is the file's (for the standard
+ * input, now). 03 says that the system is Unix (gzip.h's
+ * GZOSINFERNO). The CRC-32 and the length are those of the bytes
+ * before compression, each in four bytes, the low byte first.
  *
  * wib:
- * The header and the trailer are gzip.c's bytes, the blocks are not:
- * Zlib's deflate writes fixed codes only and ignores the level, where
- * libflate's writes a block's own codes. Any gunzip reads both; ours
- * are bigger (Zlib.mli).
+ * The header and the trailer are gzip.c's bytes, but the blocks are
+ * not: Zlib's deflate writes fixed codes only and ignores the level,
+ * where libflate's writes each block with its own codes. Any gunzip
+ * reads both, but ours are bigger (Zlib.mli).
  *
  * cs-history:
  * Jean-loup Gailly wrote gzip in 1992 for the GNU project, to replace

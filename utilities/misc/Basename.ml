@@ -1,10 +1,12 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-basename: Plan 9's basename (principia's utilities/misc/basename.c):
- * a name's last part, what follows its last /, without a suffix when
- * one is given and it ends with it; -d: what is before that /, its
- * directory ("." when it has none). For a script. *)
+(* mini-basename is Plan 9's basename (principia's
+ * utilities/misc/basename.c). It writes a name's last part, what
+ * follows its last /, without the suffix when one is given and the
+ * part ends with it. With -d, it writes instead what is before that /,
+ * the name's directory ("." when the name has none). It is for a
+ * script. *)
 
 type caps = < Cap.stdout; Cap.stderr >
 

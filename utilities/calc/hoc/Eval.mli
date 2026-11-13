@@ -1,9 +1,11 @@
-(* The interpreter: what code.c's stack machine does, on the trees.
+(* The interpreter: it does what code.c's stack machine does, on the
+ * trees.
  *
- * A function's formals are not local names: for the time of a call the
- * formal's own symbol is the argument, and gets back what it was at
- * the return (so a function called from the body sees them). Both
- * operands of && and || are evaluated. A Symbol.Error stops the line.
+ * A function's formals are not local names. For the time of a call,
+ * the formal's own symbol holds the argument, and it gets back what it
+ * held before at the return (so a function called from the body sees
+ * the formals). Both operands of && and || are evaluated. A
+ * Symbol.Error stops the line.
  *
  *     func g() { return n }
  *     n = 5
@@ -15,28 +17,29 @@
  *
  * terminology:
  * That is dynamic scope: a name means what the last call still
- * running made it. It is the first Lisp's, and the shells' (a local
- * of rc's, x=1 cmd, is seen by what cmd calls), and costs one saved
- * value a call. Lexical scope, a name meaning what the text around
- * it says (Algol 60, Scheme, C, OCaml), wants an environment a call,
- * and a closure if a function is a value: mini-scheme's
- * interpreter has them (Scheme_eval).
+ * running made it mean. It is the first Lisp's scope, and the shells'
+ * (a local of rc's, as in x=1 cmd, is seen by what cmd calls), and it
+ * costs one saved value for each call. Lexical scope, where a name
+ * means what the text around it says (Algol 60, Scheme, C, OCaml),
+ * needs an environment for each call, and a closure if a function is
+ * a value: mini-scheme's interpreter has them (Scheme_eval).
  *
  * design:
- * Why a tree, or a machine's code, at all. The book's first three
+ * Why have a tree, or a machine's code, at all? The book's first three
  * hocs compute in the grammar's actions: when the parser has seen
- * 2 + 3 it adds. That holds until hoc5: a while's body must run many
- * times and a function's later, but an action runs once, when its
- * text is read. So hoc4 makes the actions write instructions for a
- * stack machine, run when the line is whole, and code.c is that
- * machine. A tree is the same thing kept in another shape, and the
- * one a language with variants makes easy: Ast is hoc.y's program,
- * and [run] a match where code.c has a function an instruction. *)
+ * 2 + 3, it adds. That works until hoc5: a while's body must run many
+ * times, and a function's body later, but an action runs once, when
+ * its text is read. So hoc4 makes the actions write instructions for a
+ * stack machine, which are run when the line is whole, and code.c is
+ * that machine. A tree is the same thing kept in another shape, and
+ * it is the shape that a language with variants makes easy: Ast is
+ * hoc.y's program, and [run] is a match where code.c has a function
+ * for each instruction. *)
 
 type caps = < Input.caps; Cap.stdout >
 
-(* a line run: a statement, or an expression whose value is printed and
- * kept as _ *)
+(* runs a line: a statement, or an expression whose value is printed
+ * and kept as _ *)
 val run : < caps; .. > -> Ast.line -> unit
 
 (* a number as hoc prints it: Plan 9's %.12g *)

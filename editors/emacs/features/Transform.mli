@@ -1,21 +1,22 @@
 (* The commands that change the text near the point into another form
- * of itself. efuns' Transform, and Emacs's keys. *)
+ * of itself. This is efuns' Transform, with Emacs's keys. *)
 
-(* the word after the point in capitals (M-u), in small letters (M-l),
- * its first letter a capital (M-c); the letters ASCII's *)
+(* puts the word after the point in capitals (M-u), in small letters
+ * (M-l), or makes its first letter a capital (M-c). Only ASCII's
+ * letters change. *)
 val upcase_word : Efuns.action
 val downcase_word : Efuns.action
 val capitalize_word : Efuns.action
 
-(* the two characters around the point exchanged, the point after
- * them (C-t): teh, the point after e, is the; at a line's end, the
- * two before it *)
+(* exchanges the two characters around the point, and puts the point
+ * after them (C-t): teh, with the point after e, becomes the. At a
+ * line's end, it exchanges the two characters before the point. *)
 val transpose_chars : Efuns.action
 
-(* the point's paragraph (the lines around it, to a blank one) made
- * again of lines of 70 columns at most, each starting as the first
- * does (M-q) *)
+(* makes the point's paragraph (the lines around it, up to a blank
+ * one) again, as lines of 70 columns at most, each starting as the
+ * first line does (M-q) *)
 val fill_paragraph : Efuns.action
 
-(* a line asked by its number (M-g g) *)
+(* goes to a line asked for by its number (M-g g) *)
 val goto_line : Efuns.action

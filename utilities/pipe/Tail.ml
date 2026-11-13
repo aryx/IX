@@ -1,16 +1,22 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-tail: Plan 9's tail (principia's utilities/pipe/tail.c): the
- * end of a file, or of the standard input: its last 10 lines.
- * -N, -n N: the last N lines; +N: from line N; -Nc, -c N: bytes, not
- * lines (b: of 1024); -r: the lines last first (all of them when no N);
- * -f: then what is written to the file after, looked for every 5
- * seconds, for ever. As tail.c, the letters may follow the number
- * (-20f, +3c).
+(* mini-tail is Plan 9's tail (principia's utilities/pipe/tail.c). It
+ * writes the end of a file, or of the standard input: its last 10
+ * lines. Its options:
+ * - -N or -n N writes the last N lines;
+ * - +N writes from line N on;
+ * - -Nc or -c N counts bytes, not lines (with b instead of c, blocks of
+ *   1024 bytes);
+ * - -r writes the lines with the last first (all of them when there is
+ *   no N);
+ * - -f then writes what is written to the file afterwards, looking for
+ *   it every 5 seconds, for ever.
+ * As in tail.c, the letters may follow the number (-20f, +3c).
  *
- * Not tail.c's way: it seeks to the file's end and reads back; here
- * the file is read whole, and what is asked cut from it. *)
+ * tail.c's way is not followed: it seeks to the file's end and reads
+ * back. Here the file is read whole, and what is asked for is cut from
+ * it. *)
 
 type caps = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; Cap.clock >
 

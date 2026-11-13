@@ -1,10 +1,11 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* hoc's programs as trees: what hoc.y compiles, while it parses, to the
- * code of a stack machine (code.c's prog, an array of pointers to
- * functions, its jumps patched once a statement is read), the parser
- * here gives as a statement, which Eval runs as it is. *)
+(* hoc's programs as trees. hoc.y compiles a statement, while it parses
+ * it, to the code of a stack machine (code.c's prog, an array of
+ * pointers to functions, whose jumps are patched once the statement is
+ * read). The parser here gives the statement as a tree instead, and
+ * Eval runs the tree as it is. *)
 
 (* A name and what it is now: hoc.h's Symbol, its type and its union.
  * A name is in the trees by its symbol, not its text: what it is can

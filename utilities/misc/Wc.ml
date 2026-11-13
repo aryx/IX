@@ -1,22 +1,25 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-wc: Plan 9's wc (principia's utilities/misc/wc.c; xix's
- * utilities/files/wc.ml is the author's in OCaml): each file's lines,
- * words and bytes, or the standard input's, and their total when there
- * are several. -l, -w, -c: only those; -r: the characters (UTF-8's,
- * not the bytes); -b: the bytes that are no character. A word is what
- * is between spaces, Unicode's.
+(* mini-wc is Plan 9's wc (principia's utilities/misc/wc.c; xix's
+ * utilities/files/wc.ml is the author's in OCaml). It counts each
+ * file's lines, words and bytes, or the standard input's, and writes
+ * their total when there are several files. Its options:
+ * - -l, -w and -c count only those;
+ * - -r counts the characters (UTF-8's, not the bytes);
+ * - -b counts the bytes that are not part of a character.
+ * A word is what is between spaces, Unicode's spaces.
  *
  * cs-history:
  * -r and -b are there because a character stopped being a byte.
- * UTF-8 is Ken Thompson's and Rob Pike's, of September 1992: ASCII
- * unchanged, the other characters as two bytes or more that are
- * never ASCII's, so that a program which looks for a newline or a
- * slash among bytes is right without a change. Plan 9 was turned to
- * it within days, and was the first system whose every program took
- * it; wc is where one sees what it cost, a count more. Their paper:
- * Pike and Thompson, "Hello World" (USENIX, Winter 1993). *)
+ * UTF-8 is Ken Thompson's and Rob Pike's, of September 1992. It keeps
+ * ASCII unchanged, and writes the other characters as two bytes or
+ * more that are never ASCII's, so that a program which looks for a
+ * newline or a slash among bytes is right without a change. Plan 9 was
+ * turned to it within days, and was the first system whose every
+ * program took it; wc is where one sees what it cost, one count more.
+ * Their paper is Pike and Thompson, "Hello World" (USENIX, Winter
+ * 1993). *)
 
 type caps = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr >
 

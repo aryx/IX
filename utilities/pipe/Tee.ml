@@ -1,12 +1,13 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-tee: Plan 9's tee (principia's utilities/pipe/tee.c): the
- * standard input copied to the standard output and to each file, made
- * or emptied; -a: written at their ends; -i: an interrupt is ignored.
- * A file that cannot be opened is said and the others written.
+(* mini-tee is Plan 9's tee (principia's utilities/pipe/tee.c). It
+ * copies the standard input to the standard output and to each file,
+ * which is made or emptied. With -a, the files are written at their
+ * ends; with -i, an interrupt is ignored. A file that cannot be opened
+ * is reported, and the others are written.
  *
- *     mk | tee log | grep warning      the middle of a pipeline, kept
+ *     mk | tee log | grep warning      the middle of a pipeline is kept
  *                                      in a file as it goes by
  *
  * terminology:

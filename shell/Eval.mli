@@ -1,12 +1,13 @@
-(* The evaluator: rc's syntax tree, walked.
+(* The evaluator walks rc's syntax tree.
  *
- * rc compiles each command to instructions for a small machine and
- * runs them on a queue of threads, one per nested . or function call
- * (principia's code.c and exec.c: a third of the C). Here the tree is
- * walked by recursion instead, and the two things the machine gave rc
- * come for free: . reads one command at a time and runs it (the
- * parser is asked for the next line), and after fork the child
- * evaluates the subtree it was forked for and exits with its status.
+ * rc compiles each command to instructions for a small machine, and
+ * runs them on a queue of threads, one for each nested . or function
+ * call (principia's code.c and exec.c, a third of the C). Here the
+ * tree is walked by recursion instead, and the two things that the
+ * machine gave rc come for free. First, . reads one command at a time
+ * and runs it (the parser is asked for the next line). Second, after
+ * fork, the child evaluates the subtree it was forked for and exits
+ * with its status.
  *
  *     Simple      expand, glob; a function, a builtin, or a program
  *     Pipe a|b    fork a with its fd 1 to a pipe; run b here, fd 0 from
@@ -19,32 +20,34 @@
  *
  * {b Errors.} A runtime error ("mismatched list lengths ...", "> requires
  * singleton") stops everything up to the nearest interactive input: a
- * script ends, the terminal gets its prompt back. A syntax error ends
- * the input it is in (a . file, a script). With -e, a command that
- * fails ends rc -- except in a condition (if, while, &&, ||, !), as in
- * code.c, which compiles those without the check.
+ * script ends, and the terminal gets its prompt back. A syntax error
+ * ends the input it is in (a . file, a script). With -e, a command
+ * that fails ends rc, except in a condition (if, while, &&, ||, !), as
+ * in code.c, which compiles those without the check.
  *
  * road-not-taken:
- * Threaded code. James Bell's idea (1973) is a program compiled to a
- * list of routine addresses, each run in turn: no instruction to
- * decode. It is what code.c makes of a command, run by main.c's
- * loop calling one Code cell's function after the other (rather
- * than by Bell's jump from routine to routine), and what mini-forth
- * is built on (languages/forth). A shell spends its time in fork
- * and exec, not in its own loop: the tree walked costs nothing one
- * can measure, and that third of the C is not written.
+ * Threaded code. In James Bell's idea (1973), a program is compiled to
+ * a list of routine addresses, each run in turn, so there is no
+ * instruction to decode. It is what code.c makes of a command, run by
+ * main.c's loop, which calls one Code cell's function after the other
+ * (rather than by Bell's jump from routine to routine). It is also
+ * what mini-forth is built on (languages/forth). But a shell spends
+ * its time in fork and exec, not in its own loop. Walking the tree
+ * costs nothing that one can measure, so that third of the C is not
+ * written here.
  *
  * design:
- * if not. An else would be the obvious syntax, and rc has none:
- * after if(c) cmd and a newline, an interactive shell must run the
- * command at once, and cannot wait to see whether an else follows.
- * So the else is a command of its own, if not, which looks at what
- * the last if found -- Duff's "admittedly feeble solution". A
- * grammar read a line at a time decides what a language can say.
+ * if not. An else would be the obvious syntax, and rc has none. After
+ * if(c) cmd and a newline, an interactive shell must run the command
+ * at once, and cannot wait to see whether an else follows. So the else
+ * is a command of its own, if not, which looks at what the last if
+ * found: Duff's "admittedly feeble solution". A grammar that is read a
+ * line at a time decides what a language can say.
  *
- * References: principia's code.c (outcode: what each construct
- * means), exec.c, simple.c, processes.c; Tom Duff, "Rc -- The Plan 9
- * Shell" (1990); James R. Bell, "Threaded Code" (CACM, 1973). *)
+ * References: principia's code.c (outcode, which says what each
+ * construct means), exec.c, simple.c, processes.c; Tom Duff, "Rc --
+ * The Plan 9 Shell" (1990); James R. Bell, "Threaded Code" (CACM,
+ * 1973). *)
 
 type caps = < Process.caps; Cap.chdir; Cap.env >
 
@@ -53,8 +56,8 @@ type t
 (* rc ends, with this status *)
 exception Exit of string
 
-(* a runtime error: rc (argv0): message; an empty one was printed
- * already, in its own words *)
+(* a runtime error, printed as rc (argv0): message. An empty message
+ * means the error was already printed, in its own words. *)
 exception Error of string
 
 val create : < caps; .. > -> argv0:string -> Env.t -> t
@@ -66,13 +69,13 @@ val argv0 : t -> string
 val run : t -> Ast.cmd -> unit
 
 (* [source t ~name ~interactive lx]: read and run commands until the
- * end of [lx] (what . and eval and rc itself do) *)
+ * end of [lx]. This is what ., eval and rc itself do. *)
 val source : t -> name:string option -> interactive:bool -> Lexer.t -> unit
 
 (* the expanded, globbed words of a list *)
 val words : t -> Ast.word list -> string list
 
-(* set by the SIGINT handler; acted on before the next command *)
+(* set by the SIGINT handler, and acted on before the next command *)
 val interrupted : bool ref
 
 (* the builtins, filled by Builtin *)

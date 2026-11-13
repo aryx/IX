@@ -4,10 +4,11 @@
 (* What bc's grammar keeps while it compiles (bc.y's globals), and where
  * its dc commands go.
  *
- * A function, an if's body and a loop are dc macros kept in registers:
- * a function f in the register of f's rank (<6>), a body in a register
- * taken in turn from 128 (<128>, <129>...). A break is a Q that leaves
- * as many macros as were entered since the loop: lev counts them. *)
+ * A function, an if's body and a loop are dc macros kept in registers.
+ * A function f is in the register of f's rank in the alphabet (<6>),
+ * and a body is in a register taken in turn from 128 on (<128>,
+ * <129>...). A break is a Q that leaves as many macros as were entered
+ * since the loop began, and lev counts them. *)
 
 (* the dc commands compiled: printed (bc -c), or run *)
 let emit : (string -> unit) ref = ref print_string

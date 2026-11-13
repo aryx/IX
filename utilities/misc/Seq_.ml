@@ -1,24 +1,24 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-seq: Plan 9's seq (principia's utilities/misc/seq.c; this file
- * Seq_: Seq is the standard library's): the
- * numbers from 1, or from the first given, to the last, by 1 or by
- * the increment given (which may go down), one a line, as %g writes
- * them. -w: all as wide, zeros before. For a script's loop. Not
- * seq.c's -f format: a format here is the compiler's, not a string
- * read when the program runs.
+(* mini-seq is Plan 9's seq (principia's utilities/misc/seq.c; this file
+ * is Seq_ because Seq is the standard library's). It writes the
+ * numbers from 1, or from the first one given, to the last one, by 1
+ * or by the increment given (which may go down), one on a line, as %g
+ * writes them. With -w, all are as wide, with zeros before. It is for a
+ * script's loop. seq.c's -f format is not here: a format here is the
+ * compiler's, not a string read when the program runs.
  *
  *     seq -w 8 10        08 09 10        (a line each)
  *     seq 1 .5 2         1 1.5 2
  *     for(i in `{seq 1 10}) echo $i
  *
  * design:
- * rc has no arithmetic and its for goes through a list, so counting
- * is a program that writes the list: the shell stays a language of
- * words and commands, and the numbers are a tool's (seq here, hoc or
- * bc for more). The Bourne shell did the same with expr. The seq of
- * Unix came with the Eighth Edition (1985). *)
+ * rc has no arithmetic, and its for goes through a list, so counting
+ * is done by a program that writes the list. The shell stays a
+ * language of words and commands, and the numbers are left to a tool
+ * (seq here, hoc or bc for more). The Bourne shell did the same with
+ * expr. The seq of Unix came with the Eighth Edition (1985). *)
 
 type caps = < Cap.stdout; Cap.stderr >
 

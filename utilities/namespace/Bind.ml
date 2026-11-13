@@ -1,38 +1,41 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-bind: Plan 9's bind (principia's kernel/files/user/bind.c):
- * bind new old, old is now also new, in this process's namespace (and
- * of those that share it: the shell's). -b, -a: new goes before, or
- * after, what old already is (a union); -c: files may be created
- * there; -q: quiet when it fails. One system call, Plan 9's own
- * (Sys_plan9.bind): on another system it only fails.
+(* mini-bind is Plan 9's bind (principia's kernel/files/user/bind.c).
+ * After bind new old, old is also new, in this process's name space
+ * (and in the name space of those that share it, such as the shell's).
+ * Its options:
+ * - -b and -a put new before, or after, what old already is (a union);
+ * - -c lets files be created there;
+ * - -q says nothing when bind fails.
+ * It is one system call, Plan 9's own (Sys_plan9.bind), so on another
+ * system it only fails.
  *
  *     bind -a $home/bin/rc /bin      /bin is the system's programs,
  *                                    then mine: no $PATH to search
  *     bind '#c' /dev                 a kernel's device, named by its
- *                                    letter, put in the tree
- *     bind -b /mnt/wsys /dev         a window's files before /dev's:
- *                                    /dev/cons is now the window
+ *                                    letter, is put in the tree
+ *     bind -b /mnt/wsys /dev         a window's files come before
+ *                                    /dev's: /dev/cons is now the window
  *
  * plan9-is-cleaner:
- * On Unix the tree of names is the machine's: one for all, changed
- * by root alone (mount), since changing it changes what every
- * program sees, the set-user-id ones too. In Plan 9 a name space is
- * a process's, inherited or copied at rfork, so anyone may arrange
- * his own, and it does no harm to another. What Unix does with a
- * variable, a convention or a special call each time is then one
- * mechanism: $PATH is a union at /bin, a chroot is a name space with
- * less in it, a window's terminal is /dev/cons bound over
- * (Processes_winshell, Fileserver), another machine's devices are
+ * On Unix the tree of names is the machine's: there is one for all,
+ * changed by root alone (mount), since changing it changes what every
+ * program sees, the set-user-id ones too. In Plan 9 a name space
+ * belongs to a process, which inherits it or copies it at rfork, so
+ * anyone may arrange his own, and it does no harm to another. What
+ * Unix does each time with a variable, a convention or a special call
+ * is then one mechanism: $PATH is a union at /bin, a chroot is a name
+ * space with less in it, a window's terminal is /dev/cons bound over
+ * (Processes_winshell, Fileserver), and another machine's devices are
  * its /dev mounted here.
  *
  * modern:
- * Linux has had a name space a process since 2002 (clone's
- * CLONE_NEWNS), bind mounts, and unions (overlayfs): the pieces a
- * container is made of. They came one at a time into a system whose
- * mount is still root's, so each needs a privilege or a helper
- * where Plan 9 needs nothing.
+ * Linux has had a name space for each process since 2002 (clone's
+ * CLONE_NEWNS), bind mounts, and unions (overlayfs): these are the
+ * pieces a container is made of. They came one at a time into a system
+ * whose mount is still root's, so each one needs a privilege or a
+ * helper where Plan 9 needs nothing.
  *
  * References: bind(1) and bind(2); Rob Pike, Dave Presotto, Ken
  * Thompson, Howard Trickey and Phil Winterbottom, "The Use of Name

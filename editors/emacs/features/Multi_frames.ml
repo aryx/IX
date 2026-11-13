@@ -1,8 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See Multi_frames.mli. (From the minibuffer's frame, which is in no
- * window, each fails: Window's Not_found.) *)
+(* See Multi_frames.mli. (Each command fails from the minibuffer's
+ * frame, which is in no window: Window raises Not_found.) *)
 open Efuns
 
 let cut_frame (frame : frame) (comb : window -> window -> window) : unit =

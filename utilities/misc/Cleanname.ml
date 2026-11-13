@@ -1,10 +1,11 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-cleanname: Plan 9's cleanname (principia's utilities/misc/cleanname.c):
- * each name as its shortest form (FS.cleanname: no "." nor empty part,
- * no ".." a name before it answers); -d pwd: a name that does not
- * start at the root is taken from that directory. For a script.
+(* mini-cleanname is Plan 9's cleanname (principia's
+ * utilities/misc/cleanname.c). It writes each name in its shortest
+ * form (FS.cleanname: with no "." and no empty part, and no ".." that
+ * a name before it can answer). With -d pwd, a name that does not
+ * start at the root is taken from that directory. It is for a script.
  *
  *     cleanname a//b/./c/../d            a/b/d
  *     cleanname ../../x                  ../../x

@@ -1,9 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-mtime: Plan 9's mtime (principia's utilities/files/mtime.c):
- * when each file was last written, seconds since 1970, and its name
- * (for a script: mk's own question). *)
+(* mini-mtime is Plan 9's mtime (principia's utilities/files/mtime.c).
+ * For each file, it writes when the file was last written, in seconds
+ * since 1970, and then its name. It is for a script: it asks mk's own
+ * question. *)
 
 type caps = < Cap.readdir; Cap.stdout; Cap.stderr >
 

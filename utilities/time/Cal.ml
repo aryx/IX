@@ -1,17 +1,18 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-cal: Plan 9's cal (principia's utilities/time/cal.c), its output
- * byte for byte: a month's days under the week's, or a year's twelve
- * months, three a row. Without an argument, this month; one argument
- * is a month of this year when it is 1 to 12 or a month's name (jan,
- * january), a year (1 to 9999) if not; two are a month and a year.
+(* mini-cal is Plan 9's cal (principia's utilities/time/cal.c), and its
+ * output is cal.c's byte for byte. It writes a month's days under the
+ * days of the week, or a year's twelve months, three on a row. Without
+ * an argument, it writes this month. One argument is a month of this
+ * year when it is 1 to 12 or a month's name (jan, january), and a year
+ * (1 to 9999) if not; two arguments are a month and a year.
  *
- * The calendar is England's: Julian until September 1752, which has 19
- * days (the 2nd, then the 14th), Gregorian after.
+ * The calendar is England's: it is Julian until September 1752, which
+ * has 19 days (the 2nd is followed by the 14th), and Gregorian after.
  *
- * "This month" is GMT's: cal.c's localtime reads /env/timezone, not
- * read here.
+ * "This month" is GMT's: cal.c's localtime reads /env/timezone, which
+ * is not read here.
  *
  *     cal 9 1752
  *        September 1752
@@ -23,14 +24,14 @@
  * cs-history:
  * The Julian calendar's year is a little too long, and by the 16th
  * century the seasons were ten days late on it. The Gregorian one
- * (1582) drops three leap years in four centuries and skipped the
+ * (1582) drops three leap years in four centuries, and it skipped the
  * ten days: in Rome and in Spain, October 4th, 1582 was followed by
- * the 15th. Britain and its colonies waited until 1752 (the
- * Calendar Act of 1750), by when eleven days were to skip; Russia
- * until 1918. So a date before the 20th century is in a calendar
- * that depends on the place, and a program must choose one: cal
- * took England's, and cal 10 1582 here is a whole month. A year is
- * the number as typed: cal 90 is the year 90, not 1990. *)
+ * the 15th. Britain and its colonies waited until 1752 (the Calendar
+ * Act of 1750), by when eleven days had to be skipped; Russia waited
+ * until 1918. So a date before the 20th century is in a calendar that
+ * depends on the place, and a program must choose one. cal took
+ * England's, and cal 10 1582 here is a whole month. A year is the
+ * number as typed: cal 90 is the year 90, not 1990. *)
 
 type caps = < Cap.stdout; Cap.stderr; Cap.clock >
 

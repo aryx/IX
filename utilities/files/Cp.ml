@@ -1,19 +1,20 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-cp: Plan 9's cp (principia's utilities/files/cp.c): cp from to,
- * a file's bytes in another, made with its permissions or emptied; cp
- * from ... dir, each in the directory under its own name. A directory
- * is not copied. Not cp.c's -g, -u and -x (the new file with the old
- * one's group, owner, time and mode): they are a wstat, which ix's
- * Unix does not have.
+(* mini-cp is Plan 9's cp (principia's utilities/files/cp.c). cp from to
+ * copies a file's bytes into another, which is made with the first
+ * one's permissions, or emptied if it is there. cp from ... dir copies
+ * each file into the directory, under its own name. A directory is not
+ * copied. cp.c's -g, -u and -x (which give the new file the old one's
+ * group, owner, time and mode) are not here: they need a wstat, which
+ * ix's Unix does not have.
  *
  * others:
  * Unix's cp grew -r, to copy a directory with what is under it, and
- * then the options to say what -r does of a link, a device, a time.
+ * then options to say what -r does with a link, a device, a time.
  * Plan 9 left the tree to a script, dircp, which is two tar's and a
- * pipe: one that writes the tree as an archive, one that reads it in
- * the other place. *)
+ * pipe: one tar writes the tree as an archive, and the other reads it
+ * in the other place. *)
 
 type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr >
 

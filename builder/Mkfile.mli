@@ -1,4 +1,5 @@
-(* Reading a mkfile: one pass, evaluated as read, no syntax tree.
+(* Reading a mkfile: in one pass, evaluated as it is read, with no
+ * syntax tree.
  *
  * A mkfile is a sequence of lines, and each is handled as soon as it is
  * read:
@@ -6,12 +7,14 @@
  *     backslash-newline    deleted (long lines may be folded)
  *     # to end of line     deleted, unless quoted
  *     `{cmd}  `cmd`        run now; its output replaces it in the line
- *     <file                the file is read here (a missing one: a warning)
+ *     <file                the file is read here (a missing one gives a
+ *                          warning)
  *     <|cmd args           the command's output is read here
- *     a tab or a space     in column 0: a recipe line of the rule above,
- *                          kept raw -- the shell reads it, not mk
- *     anything else        an assignment or a rule, by whichever of = and
- *                          : comes first unquoted (a < first: an include)
+ *     a tab or a space     in column 0 starts a recipe line of the rule
+ *                          above, kept raw: the shell reads it, not mk
+ *     anything else        is an assignment or a rule, depending on
+ *                          which of = and : comes first unquoted (an
+ *                          include if a < comes first)
  *
  * Rules and assignments carry attributes between colons or equal signs:
  *
@@ -35,8 +38,8 @@
  * in two passes.)
  *
  * {b Where a variable's value comes from}, weakest first: mk's
- * environment, the mkfile, the command line. A command-line X=v blocks
- * *every* assignment to X in the mkfiles. mk(1) says "the first (but
+ * environment, then the mkfile, then the command line. A command-line
+ * X=v blocks *every* assignment to X in the mkfiles. mk(1) says "the first (but
  * not any subsequent)", but 9base's mk, principia's (parse.c's
  * S_OVERRIDE) and omk all block every one, and the program is the
  * specification.
@@ -86,22 +89,24 @@ type t
 
 exception Error of string   (* "file:line: message" *)
 
-(* How reading reaches the outside world: to read a file (None: it
- * doesn't exist), and to run a shell command and get its output
- * ([~stdin:true] feeds [script] on its standard input, as backquotes
- * do; false runs it with -c, as <| does), with the environment the
- * recipes would get; and to print a warning. Tests pass fakes. *)
+(* How reading reaches the outside world. Tests pass fakes.
+ * - [read_file] reads a file (None if it does not exist).
+ * - [output] runs a shell command, with the environment the recipes
+ *   would get, and returns its output. [~stdin:true] feeds [script] on
+ *   its standard input, as backquotes do; false runs it with -c, as <|
+ *   does.
+ * - [warn] prints a warning. *)
 type io = {
   read_file : string -> string option;
   output : t -> shell:string list -> stdin:bool -> string -> string * bool;
   warn : string -> unit;
 }
 
-(* [create ~env ~default_shell]: no rules; the variables of [env] (mk
- * imports its environment, each value one word). *)
+(* [create ~env ~default_shell] has no rules, and has the variables of
+ * [env] (mk imports its environment, each value as one word). *)
 val create : env:(string * string) list -> default_shell:string list -> t
 
-(* [read io t ~file text]: read [text] as the mkfile [file]. With
+(* [read io t ~file text] reads [text] as the mkfile [file]. With
  * [~override:true] its assignments block later ones: that is how the
  * command line's X=v are read. Raises Error. *)
 val read : override:bool -> io -> t -> file:string -> string -> unit
@@ -111,7 +116,8 @@ val read : override:bool -> io -> t -> file:string -> string -> unit
 val lookup : t -> string -> string list option
 val set : t -> string -> string list -> unit
 (* set by the mkfile or the command line, not only inherited from the
- * environment: those are the ones a recipe is printed with expanded *)
+ * environment. These are the variables that are expanded when a recipe
+ * is printed. *)
 val set_here : t -> string -> bool
 val exported : t -> (string * string list) list   (* not U, sorted *)
 
@@ -119,16 +125,17 @@ val exported : t -> (string * string list) list   (* not U, sorted *)
 val rules_for : t -> string -> rule list
 (* every rule whose target is a pattern, in the order of the file *)
 val metarules : t -> rule list
-(* the targets of the first rule without % or &: what "mk" alone makes *)
+(* the targets of the first rule that is not :R: and has no % or &:
+ * what "mk" alone makes *)
 val default_targets : t -> string list
 
 (* the shell a file starts with (see MKSHELL above) *)
 val default_shell : t -> string list
 val set_default_shell : t -> string list -> unit
 
-(* [add_rule t ~targets ~prereqs ~recipe attrs]: a rule not read from a
- * file, e.g. the virtual "<command line arguments>" mk makes when given
- * several targets. *)
+(* [add_rule t ~targets ~prereqs ~recipe attrs] adds a rule that is not
+ * read from a file, such as the virtual "command line arguments" that
+ * mk makes when it is given several targets. *)
 val add_rule :
   t -> targets:string list -> prereqs:string list -> recipe:string -> attrs -> unit
 

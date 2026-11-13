@@ -1,29 +1,34 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-walk: what is under a directory, a path a line. Not one of
- * Plan 9's programs: 9front's walk, find's small cousin, written from
- * what it does and not from its source, so not byte for byte. The
- * selection is another program's (walk | grep '\.ml$'), as the action
- * (walk -f | xargs wc).
+(* mini-walk writes what is under a directory, one path on a line. It
+ * is not one of Plan 9's programs: it is 9front's walk, find's small
+ * cousin, written from what it does and not from its source, so it is
+ * not 9front's byte for byte. The selection is left to another program
+ * (walk | grep '\.ml$'), and so is the action (walk -f | xargs wc).
  *
- * A directory's entries, sorted by name, a directory before what it
- * holds; the directory named is not said itself, a file named is.
- * Without a name: the current directory's, the paths without "./".
- * -d only the directories, -f only the files, -n depth no deeper (1:
- * the entries, not theirs).
+ * A directory's entries are sorted by name, and a directory comes
+ * before what it holds. A directory that is named is not written
+ * itself, but a file that is named is. Without a name, walk writes the
+ * current directory's entries, with paths that do not start with
+ * "./". Its options:
+ * - -d writes only the directories;
+ * - -f writes only the files;
+ * - -n depth goes no deeper than depth (1 is the entries, and not
+ *   theirs).
  *
- * Not 9front's -n min,max, -e (what to say of each: the size, the
- * time...), -t, -x, -u. A link to a directory is walked as one.
+ * 9front's -n min,max, -e (what to say of each entry: the size, the
+ * time...), -t, -x and -u are not here. A link to a directory is
+ * walked as a directory.
  *
  * others:
- * Unix's find walks and also selects (-name, -newer, -type) and acts
+ * Unix's find walks, and also selects (-name, -newer, -type) and acts
  * (-print, -exec, -delete), by a small language of its own that no
  * other program shares, with its own and, or, not and parentheses.
- * Plan 9 never had find: du -a | grep was the idiom, du's sizes cut
- * off. walk is the walk alone, with the shell's other programs for
+ * Plan 9 never had find: du -a | grep was the idiom, with du's sizes
+ * cut off. walk is the walk alone, with the shell's other programs for
  * the rest; what is lost is a test on something a path does not say
- * (a file's time) without a program more. *)
+ * (a file's time) without one more program. *)
 
 type caps = < Cap.readdir; Cap.stdout; Cap.stderr >
 

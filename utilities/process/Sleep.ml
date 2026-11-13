@@ -1,10 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-sleep: Plan 9's sleep (principia's utilities/process/sleep.c):
- * the seconds given are waited, a second at a time (an interrupt ends
- * it within one), then the thousandths after a point (three digits at
- * most are read: sleep .5 is half a second). *)
+(* mini-sleep is Plan 9's sleep (principia's utilities/process/sleep.c).
+ * It waits for the seconds given, a second at a time (so an interrupt
+ * ends it within a second), then for the thousandths after a point (at
+ * most three digits are read, and sleep .5 is half a second). *)
 
 type caps = < Cap.stderr; Cap.clock >
 

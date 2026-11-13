@@ -1,7 +1,8 @@
 (* The graph: from a target to everything it depends on.
  *
- * For one target, which rules apply, and recursively for their
- * prerequisites. hello.mk (principia's own mk test), from hello:
+ * For one target, this module finds which rules apply, and does the
+ * same recursively for their prerequisites. Here is hello.mk
+ * (principia's own mk test), from hello:
  *
  *                 hello                 rule "hello: $OBJS"
  *                /     \
@@ -10,8 +11,8 @@
  *          hello.c     world.c          no rule: they must exist as files
  *
  * A node is a name; an arc goes from a node to one prerequisite through
- * the rule that asked for it (an arc with no prerequisite is a rule
- * with none: its recipe still counts). The lookup follows mk's policy
+ * the rule that asked for it (an arc with no prerequisite comes from a
+ * rule with none, whose recipe still counts). The lookup follows mk's policy
  * (principia's graph.c):
  *
  * 1. The rules whose target is the name itself apply first, all of
@@ -24,7 +25,7 @@
  * 3. A node is {e vacuous} if it doesn't exist, no rule of its own
  *    names it, and all its arcs were dropped; an arc from a metarule to
  *    a vacuous node is dropped -- unless another arc of the same rule
- *    stays, then they all stay. With %.5: %.c and %.5: %.s and only
+ *    stays, in which case they all stay. With %.5: %.c and %.5: %.s and only
  *    hello.c on disk, hello.5 is made from the .c.
  * 4. Two arcs with different recipes are ambiguous -- mk's "ambiguous
  *    recipes" error -- except that a rule naming the target beats a
@@ -42,10 +43,10 @@
  * a node reached only through an arc that is later dropped is never
  * checked (as in graph.c, where vacuous() runs before ambiguous()).
  *
- * Where it stands: Mkfile gives the rules and Pattern says which
- * match a name; this module asks the file system one thing, a
- * name's time, and only to know whether a file exists (rule 3) and
- * to keep the answer for Outofdate; Build walks what is built here
+ * Where it stands: Mkfile gives the rules, and Pattern says which of
+ * them match a name. This module asks the file system only one thing,
+ * a name's time, and only to know whether a file exists (rule 3) and
+ * to keep the answer for Outofdate. Build walks what is built here
  * and never adds to it.
  *
  * others:
@@ -55,9 +56,9 @@
  * said, and rule 3 prunes the chains that end on no file. Make's
  * suffix rules did not chain by themselves (a .y.o rule was written
  * beside .y.c and .c.o), and Hume's paper counts the transitive
- * closure on metarules among mk's gains; GNU make's
- * pattern rules chain, with NREP's guard built in and not
- * adjustable: no rule twice in one chain.
+ * closure on metarules among mk's gains. GNU make's pattern rules
+ * chain too, with NREP's guard built in and not adjustable: no rule
+ * is used twice in one chain.
  *
  * References: principia's graph.c (applyrules, vacuous, ambiguous,
  * cyclechk, attribute); mk(1) for NREP; Stuart Feldman, "Make -- A
@@ -69,10 +70,10 @@
  * rule 4, "Any non-metarule takes precedence over a metarule"; R. E.
  * Tarjan, "Depth-first search and linear graph algorithms" (SIAM
  * Journal on Computing, 1972): a cycle is an edge back to a node still
- * on the current path, and a node finished once is never walked again
- * -- here the path and the table of built nodes, where graph.c's
- * cyclechk clears its mark on the way out and so walks a shared
- * subgraph once per path to it. *)
+ * on the current path, and a node finished once is never walked
+ * again. Here these are the path and the table of built nodes, whereas
+ * graph.c's cyclechk clears its mark on the way out, and so walks a
+ * shared subgraph once for each path to it. *)
 
 type node = {
   name : string;
@@ -92,12 +93,13 @@ and arc = {
 exception Error of string
 
 (* The nodes built so far, shared between the targets of one run of
- * mk, as mk shares them; [stat] gives a file's time, 0 if missing. *)
+ * mk, as mk shares them. [stat] gives a file's time, or 0 if it is
+ * missing. *)
 type t
 
 val create : Mkfile.t -> stat:(string -> float) -> t
 
-(* [node g ~nrep target]: the graph from [target]. Raises Error on a
+(* [node g ~nrep target] is the graph from [target]. Raises Error on a
  * cycle or on ambiguous recipes. *)
 val node : t -> nrep:int -> string -> node
 

@@ -2,8 +2,8 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* The syntax tree of rc, as the parser builds it and the evaluator
- * walks it. Its printer is Show_ast. (No Ast.mli: the module is its
- * types.) *)
+ * walks it. Show_ast prints it. (There is no Ast.mli, because the
+ * module is only its types.) *)
 
 type word =
   | Word of string * bool           (* its text, and whether it was quoted *)

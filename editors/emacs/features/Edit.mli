@@ -1,21 +1,23 @@
-(* The commands that change the text at the point. efuns' Edit, and
- * its names. *)
+(* The commands that change the text at the point. This is efuns'
+ * Edit, with its names. *)
 
-(* [insert_string frame s]: s at the point, the point after it *)
+(* [insert_string frame s] inserts s at the point, and puts the point
+ * after it *)
 val insert_string : Efuns.frame -> string -> unit
 
-(* the key typed, a character, inserted: what a key bound to nothing
- * else does (Keymap.any_char) *)
+(* inserts the key typed, which is a character: this is what a key
+ * bound to nothing else does (Keymap.any_char) *)
 val self_insert_command : Efuns.action
 
-(* a new line (RET), a tab (TAB) *)
+(* inserts a new line (RET), or a tab (TAB) *)
 val insert_return : Efuns.action
 val insert_tab : Efuns.action
 
-(* the character at the point (C-d), the one before it (DEL) *)
+(* deletes the character at the point (C-d), or the one before it
+ * (DEL) *)
 val delete_char : Efuns.action
 val delete_backspace_char : Efuns.action
 
-(* the last command's changes taken back, then the one before's (C-_,
- * C-x u); a word typed is one *)
+(* takes back the last command's changes, then those of the command
+ * before (C-_, C-x u); a word typed counts as one command *)
 val undo : Efuns.action

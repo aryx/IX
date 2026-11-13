@@ -3,9 +3,9 @@
 
 (* mini-emacs's types (docs/plans/done/plan_emacs.md): the editor, its
  * buffers, the frames that show them, the windows that place the
- * frames on a screen, and the keymaps. One structure, changed in
- * place, as in efuns (Fabrice Le Fessant, INRIA, 1998), whose names
- * these are:
+ * frames on a screen, and the keymaps. They make one structure,
+ * changed in place, as in efuns (Fabrice Le Fessant, INRIA, 1998),
+ * whose names these are:
  *
  *     editor --- buffers: a text, its file, its modes
  *        |           ^
@@ -14,16 +14,17 @@
  *       a key in, cells out       (the screen split)    a buffer seen from a
  *                                                       line on, a cursor
  *
- * Not efuns': a window is the tree alone (a frame, or two windows side
- * by side or one over the other), with no link upward and no place of
- * its own: the places are the frames', given from the top each time
- * the tree or the screen changes (Window.place).
+ * One thing differs from efuns: a window is the tree alone (a frame,
+ * or two windows side by side or one over the other), with no link
+ * upward and no place of its own. The places belong to the frames,
+ * and they are given from the top each time the tree or the screen
+ * changes (Window.place).
  *
  * The same text in two frames is one buffer and two points: what is
- * typed in one shows in the other, and each keeps its own place.
- * That is why the cursor is the frame's (frm_point) and not the
- * buffer's, and why a position that must follow the text is a
- * Text.point, which the text itself moves, and not a number.
+ * typed in one frame shows in the other, and each frame keeps its own
+ * place. That is why the cursor belongs to the frame (frm_point) and
+ * not to the buffer, and why a position that must follow the text is
+ * a Text.point, which the text itself moves, and not a number.
  *
  *     C-x 2 on f.ml, C-x o to the lower frame, C-x b g.ml there:
  *
@@ -33,28 +34,30 @@
  *                      (buf_point, buf_start), for a frame to come
  *
  * terminology:
- * Window and frame are each other's in Emacs. There, a window is a
- * buffer seen in a part of the screen, with its mode line (here a
- * frame, and its status line), and a frame is what the window system
- * calls a window (here a top window). Emacs's words are older than
- * window systems: its windows were tiles of a terminal's screen, and
- * when it ran under X the outer thing needed another name. efuns
- * took the window system's meaning for the top window, kept window
- * for the tiling, and called frame the view; these are its names.
- * The other words are Emacs's: the point is where one types, a
- * place between two characters; the mark another such place, set
- * and left behind; the region the text between the two; to kill is
- * to take text out and keep it, to yank to put it back (Copy_paste).
+ * In Emacs, window and frame mean the opposite. There, a window is a
+ * buffer seen in a part of the screen, with its mode line (here it is
+ * a frame, with its status line), and a frame is what the window
+ * system calls a window (here it is a top window). Emacs's words are
+ * older than window systems: its windows were tiles of a terminal's
+ * screen, and when it ran under X the outer thing needed another
+ * name. efuns took the window system's meaning for the top window,
+ * kept window for the tiling, and called the view a frame; these are
+ * its names. The other words are Emacs's:
+ * - the point is where one types, a place between two characters;
+ * - the mark is another such place, set and left behind;
+ * - the region is the text between the two;
+ * - to kill is to take text out and keep it, and to yank is to put it
+ *   back (Copy_paste).
  *
  * design:
- * One record a concept and every field mutable, where the rest of
- * ix's programs for a terminal (mini-turbopascal's Turbo_model) are a
- * value an update replaces. An editor's commands are many and each
- * touches little: a function frame -> unit that changes one field
- * is the shortest way to write one, and it is efuns' and Emacs's
- * (a command there changes the current buffer). The cost is at the
- * edge: Tui wants a model that is another value when something
- * changed (Top_window.model). *)
+ * There is one record for each concept, and every field is mutable,
+ * while the rest of ix's programs for a terminal (mini-turbopascal's
+ * Turbo_model) are a value that an update replaces. An editor has
+ * many commands, and each touches little: a function frame -> unit
+ * that changes one field is the shortest way to write one, and it is
+ * the way of efuns and of Emacs (a command there changes the current
+ * buffer). The cost is at the edge: Tui wants a model that is another
+ * value when something changed (Top_window.model). *)
 
 (* what the commands may do: read and write files, list a directory *)
 type caps = < Cap.open_in ; Cap.open_out ; Cap.readdir >

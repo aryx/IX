@@ -1,33 +1,38 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-xd: Plan 9's xd (principia's utilities/byte/xd.c): a file's
- * bytes shown, 16 a line after their address; without an option as
- * numbers of 4 bytes in hexadecimal, the high byte first.
- * A format, and a line for each one given: -c the characters (a byte
- * that is none in hexadecimal); or a size, b or 1, w or 2, l or 4, v
- * or 8 bytes, with a base, o, d or x (-bx: bytes in hexadecimal).
- * -ao, -ad, -ax: the address's base; -r: lines the same as the one
- * before are a single *; -s: the bytes of each 4 turned around first;
- * -u is xd.c's (its output not kept). Not xd.c's -R (characters of
- * several bytes).
+(* mini-xd is Plan 9's xd (principia's utilities/byte/xd.c). It shows a
+ * file's bytes, 16 on a line after their address. Without an option
+ * it shows them as numbers of 4 bytes in hexadecimal, the high byte
+ * first. Each format given adds a line for each 16 bytes:
+ * - -c shows the characters (in hexadecimal for a byte that is not
+ *   one);
+ * - or a size, b or 1, w or 2, l or 4, v or 8 bytes, with a base, o, d
+ *   or x (-bx shows bytes in hexadecimal).
+ * The other options:
+ * - -ao, -ad and -ax set the address's base;
+ * - -r writes the lines that are the same as the one before as a
+ *   single *;
+ * - -s turns the bytes of each 4 around first;
+ * - -u is xd.c's unbuffered output, accepted here.
+ * xd.c's -R (characters of several bytes) is not here.
  *
  *     echo hello, world | xd -c -b
  *     0000000   h  e  l  l  o  ,     w  o  r  l  d \n
  *           0  68 65 6c 6c 6f 2c 20 77 6f 72 6c 64 0a
  *     000000d
  *
- * A line for each format, the address before the first; the last
- * line is the file's length. Without an option the same thirteen
- * bytes are 68656c6c 6f2c2077 6f726c64 0a000000: numbers of 4 bytes,
- * the last one filled with zeros.
+ * There is a line for each format, and the address is before the
+ * first; the last line is the file's length. Without an option, the
+ * same thirteen bytes are 68656c6c 6f2c2077 6f726c64 0a000000: numbers
+ * of 4 bytes, the last one filled with zeros.
  *
  * cs-history:
- * Unix's program is od, the octal dump, of its first edition. Octal
- * was the PDP-11's notation: an instruction's fields are of 3 bits
- * (a register, the way it is used), a digit each. A byte of 8 bits
- * is two hexadecimal digits whatever the word around it, and Plan 9
- * named its dump for that base and made it the one without an
+ * Unix's program is od, the octal dump, from its first edition. Octal
+ * was the PDP-11's notation: an instruction's fields are of 3 bits (a
+ * register, the way it is used), which is one octal digit each. A byte
+ * of 8 bits is two hexadecimal digits whatever the word around it, and
+ * Plan 9 named its dump for that base and made it the one without an
  * option. *)
 
 type caps = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr >

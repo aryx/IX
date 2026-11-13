@@ -1,17 +1,19 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-sed: Plan 9's sed (principia's utilities/text/misc/sed.c), the
- * stream editor: each line of the files, or of the standard input, is
- * put in the pattern space, the script's commands that its addresses
- * choose are run on it, and it is written (not with -n).
+(* mini-sed is Plan 9's sed (principia's utilities/text/misc/sed.c),
+ * the stream editor. Each line of the files, or of the standard input,
+ * is put in the pattern space. The script's commands whose addresses
+ * choose the line are run on it, and then it is written (not with -n).
  *
  *   sed [-n] [-g] [-e script] [-f file] [script] [file ...]
  *
- * An address: a line's number, $ (the last line), /regexp/ (Regex:
- * regexp(7)'s, mini-ed's and mini-grep's); two, a,b: from one to the
- * other; a ! after: the lines that are not. The commands (a ; or a
- * newline between two):
+ * An address is a line's number, $ (the last line), or /regexp/
+ * (Regex, regexp(7)'s notation, the same as mini-ed's and
+ * mini-grep's). Two addresses, a,b, choose the lines from one to the
+ * other. A ! after the address chooses the lines that it does not
+ * choose. Here are the commands (two commands are separated by a ; or
+ * a newline):
  *   p print     d delete, next line    q print and end     = the number
  *   s/re/new/[g][p][w file]   & the match, \1..\9 its groups (-g: all g)
  *   y/abc/xyz/  each character for the one at its place
@@ -24,35 +26,38 @@
  *   :label  b label  t label   a jump; t when an s changed the line
  *   { ... }     several commands for one address
  *
- * As sed.c, the script is a list of commands and { b t are jumps in it.
- * Its oddities kept, each said where it is: c writes its text only
- * with a line's number or a regexp for address; N at the last line
- * writes nothing; D ends the cycle and the rest is written.
+ * As in sed.c, the script is a list of commands, and { b and t are
+ * jumps in it. sed.c's oddities are kept, and each is commented where
+ * it is: c writes its text only when its address is a line's number
+ * or a regexp; N at the last line writes nothing; D ends the cycle,
+ * and the rest of the pattern space is written.
  *
  *     the lines one, two, three, four:
  *     sed -n '/two/,/three/p'      two three          a range printed
  *     sed 's/o/0/g;2q'             0ne tw0            and no more read
  *     sed -n '1!G;h;$p'            four three two one
  *
- * The last one is the hold space at work, sed's only memory from a
- * line to the next: each line but the first gets what is held added
- * after it (G), the whole is held (h), and at the last line it is
- * printed.
+ * The last one shows the hold space at work, which is sed's only
+ * memory from one line to the next. Each line but the first gets what
+ * is held added after it (G), the whole is held (h), and at the last
+ * line it is printed.
  *
  * cs-history:
- * Lee McMahon, Bell Labs, 1973-74. sed is ed with the person taken
- * away: the same addresses and the same commands (s, p, d, a, i, c
- * come from it), but read from a script, and run on each line as
- * it goes by where ed runs each command on a whole file held in its
- * buffer. So it edits a file of any size, and the middle of a
- * pipeline; grep had been one command of ed made a program, sed is
- * all of them. It was in the Seventh Edition (1979).
+ * Lee McMahon wrote sed at Bell Labs in 1973-74. sed is ed with the
+ * person taken away: it has the same addresses and the same commands
+ * (s, p, d, a, i and c come from ed), but they are read from a
+ * script, and run on each line as it goes by, where ed runs each
+ * command on a whole file held in its buffer. So sed edits a file of
+ * any size, and works in the middle of a pipeline. grep had been one
+ * command of ed made a program; sed is all of them. It was in the
+ * Seventh Edition (1979).
  *
  * evolution:
- * A line at a time with one buffer on the side is little: a script
- * past a few commands is a puzzle (the reversal above is a known
- * one). awk, a few years later, has fields, variables and arithmetic,
- * and took those jobs; sed is still what one types for s/old/new/. *)
+ * A line at a time, with one buffer on the side, is little: a script
+ * of more than a few commands is a puzzle (the reversal above is a
+ * known one). awk, a few years later, had fields, variables and
+ * arithmetic, and took those jobs. sed is still what one types for
+ * s/old/new/. *)
 
 type caps = < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr >
 

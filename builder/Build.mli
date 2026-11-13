@@ -4,8 +4,8 @@
  *
  *   loop:
  *     walk the graph from the target (work): a node whose prerequisites
- *       are all made and which is out of date gets a job, queued
- *       (dorecipe); a job starts as soon as one of the $NPROC slots is
+ *       are all made and which is out of date gets a job, which is
+ *       queued (dorecipe); a job starts as soon as one of the $NPROC slots is
  *       free
  *     if the walk queued nothing, wait for a running job to end, re-stat
  *       its targets (Outofdate.after_recipe), and mark them made
@@ -16,15 +16,16 @@
  *   time ->
  *   slot 0:  [ 5c -c hello.c ]            [ 5l -o hello hello.5 world.5 ]
  *   slot 1:  [ 5c -c world.c ]
- *                            ^ both .5 made: hello becomes ready
+ *                            ^ both .5 files are made, so hello
+ *                              becomes ready
  *
  * The walk is a function of the graph and of two tables, the only
  * mutable state of a build: each node's date stamp, and how far it has
  * got (not made, being made, made). mk and omk keep both inside the
- * nodes; here the graph stays as Graph built it. What "start a job"
- * means is where the modes live: -n prints the recipe and marks its
- * targets made as of now, -t touches them, and otherwise the shell is
- * forked. The re-walk costs a walk of the graph per job, as in mk.
+ * nodes; here the graph stays as Graph built it. The modes are in what
+ * "start a job" means: -n prints the recipe and marks its targets made
+ * as of now, -t touches them, and otherwise the shell is forked.
+ * Re-walking costs one walk of the graph for each job, as in mk.
  *
  * {b Why not plan everything first and then run it?} Because a recipe
  * may leave its target untouched, and then what depends on it is up to
@@ -37,19 +38,20 @@
  * order. Under NPROC=1 that is exactly what 9base's mk -n prints, and
  * the differential tests check it.
  *
- * This is the scheduler of "Build Systems a la Carte" (Mokhov,
- * Mitchell, Peyton Jones, 2018): a topological one, with Outofdate as
+ * This module is the scheduler of "Build Systems a la Carte" (Mokhov,
+ * Mitchell, Peyton Jones, 2018), a topological one, with Outofdate as
  * its rebuilder.
  *
  * others:
  * Parallel builds and recursion. $NPROC is a variable of the
  * environment, so a recipe that runs mk in a subdirectory starts a
  * mk with its own $NPROC slots, and a tree of n levels may run
- * NPROC to the n jobs. GNU make's -j has the same trouble and an
+ * NPROC to the power n jobs. GNU make's -j has the same trouble and an
  * answer, the jobserver: the top make puts j tokens in a pipe that
  * every make below inherits, and each takes a token to start a job
- * and puts it back. mk has no such thing; a Plan 9 tree is one mk
- * per directory, one after the other, each parallel inside.
+ * and puts it back. mk has no such thing: a Plan 9 tree is built by
+ * one mk per directory, one after the other, each one running its
+ * jobs in parallel.
  *
  * design:
  * The slots are processes and nothing more: a job is a shell forked
@@ -65,11 +67,12 @@
  * "When mk finds a recipe it can execute, it puts the recipe on a
  * queue. When the recipe terminates, mk updates the dependency graph";
  * R. L. Graham, "Bounds for certain multiprocessing anomalies" (Bell
- * System Technical Journal, 1966), list scheduling -- whenever a
- * processor is free, start the next ready task on the list -- is
- * never worse than twice the best order, yet more processors can make
- * it slower: the policy of the $NPROC slots, with the queue as the
- * list, in the walk's order and not the slowest first. *)
+ * System Technical Journal, 1966), which shows that list scheduling
+ * (whenever a processor is free, start the next ready task on the
+ * list) is never worse than twice the best order, yet that more
+ * processors can make it slower. List scheduling is the policy of the
+ * $NPROC slots, with the queue as the list, in the walk's order and
+ * not the slowest task first. *)
 
 type flags = {
   dry : bool;          (* -n *)
@@ -108,7 +111,7 @@ val create : hashes:Outofdate.hashes option -> Mkfile.t -> Graph.t -> io -> flag
  * Failed (after the message) unless -k. *)
 val make : t -> nproc:int -> nrep:int -> string -> unit
 
-(* wait for the jobs still running, e.g. after Failed *)
+(* waits for the jobs still running, for example after Failed *)
 val wait_all : t -> unit
 
 (* how many recipes failed under -k *)

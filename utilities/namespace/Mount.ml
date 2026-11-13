@@ -1,27 +1,30 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-mount: Plan 9's mount (principia's kernel/files/user/mount.c):
- * mount /srv/service dir [spec], dir is now the tree a 9P server gives
- * on the service's file (a pipe posted in /srv, a connection). bind's
- * -a, -b, -c, and -C (cached), -q (quiet when it fails). Without the
- * authentication: mount's -n always (no factotum to talk to), -n and
- * -k taken and unused. Plan 9's own (Sys_plan9.mount).
+(* mini-mount is Plan 9's mount (principia's kernel/files/user/mount.c).
+ * After mount /srv/service dir [spec], dir is the tree that a 9P
+ * server gives on the service's file (a pipe posted in /srv, or a
+ * connection). It takes bind's -a, -b and -c, and also -C (cached) and
+ * -q (quiet when it fails). There is no authentication: mount always
+ * does what its -n does (there is no factotum to talk to), and -n and
+ * -k are accepted and unused. The call is Plan 9's own
+ * (Sys_plan9.mount).
  *
  *     a program: open, read, write on a name under dir
  *         |
- *     the kernel: each call made a 9P message (walk, open, read...)
+ *     the kernel: makes each call a 9P message (walk, open, read...),
  *         |       written on the service's pipe or connection
  *     the server: any program that answers them
  *
  * plan9-is-cleaner:
- * Unix's mount puts a disk's file system, code of the kernel, in the
- * tree, and is root's. Here what is mounted is a conversation: the
- * server is a program like another (mini-rio serves its windows'
- * files so: Fileserver), on this machine or behind a connection, and
- * since the name space is the process's own (Bind) anyone may mount.
- * So a new kind of thing with names needs no new system call and no
- * code in the kernel: a server, and mount.
+ * Unix's mount puts a disk's file system, which is code of the kernel,
+ * in the tree, and it is root's. Here what is mounted is a
+ * conversation. The server is a program like another (mini-rio serves
+ * its windows' files that way, in Fileserver), on this machine or
+ * behind a connection, and since the name space is the process's own
+ * (Bind), anyone may mount. So a new kind of thing with names needs no
+ * new system call and no code in the kernel: only a server, and
+ * mount.
  *
  * modern:
  * FUSE (in Linux since 2005) is the same idea brought to Unix: the

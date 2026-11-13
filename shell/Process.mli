@@ -1,4 +1,4 @@
-(* Processes and file descriptors: what a shell asks of the kernel.
+(* Processes and file descriptors are what a shell asks of the kernel.
  *
  *     $ ls -l | wc -l
  *     pipe()            -> fds r, w
@@ -7,38 +7,38 @@
  *     wait for the child; $status = "ls's|wc's"
  *
  * A program is looked up in $path (a name with a / is used as is), and
- * exec'd with the environment of Env.export. If it can't be, the child
- * says why on standard error ("x: No such file or directory", as
- * 9base's rc) and exits 1.
+ * exec'd with the environment of Env.export. If it cannot be, the
+ * child says why on standard error ("x: No such file or directory",
+ * as 9base's rc does) and exits 1.
  *
- * {b Status.} A child's end is a string: "" for success, the exit
- * code otherwise, and for a signal plan9port's name for it, which rc
- * also prints with the pid (checked on 9base's rc):
+ * {b Status.} A child's end is a string. It is "" for success, and the
+ * exit code otherwise. For a signal it is plan9port's name for the
+ * signal, which rc also prints with the pid (checked on 9base's rc):
  *
  *     exit 3       3              kill -9      signal: sys: kill
  *     exit 300     44             kill -15     signal: kill
  *     SIGPIPE      signal: sys: write on closed pipe
  *
  * {b Redirections are done in the shell}, around the command, and
- * undone after: the fds a command changes are first copied away and
- * then put back. So a builtin or a function sees them as a program
- * does (rc only applies them before an exec).
+ * undone after it: the fds that a command changes are first copied
+ * away, and then put back. So a builtin or a function sees them as a
+ * program does (rc applies them only before an exec).
  *
  * design:
- * Two calls where other systems have one. A "spawn" that makes a
- * process running a program needs an argument for each thing the
- * child may have different from its parent: its files, its
+ * Unix has two calls where other systems have one. A "spawn" that
+ * makes a process running a program needs an argument for each thing
+ * that the child may have different from its parent: its files, its
  * directory, its environment, its signals. With fork and exec apart,
- * the child is the shell's own code for a moment, and uses the
- * ordinary calls (dup2, close, chdir) on itself before the exec:
- * the diagram above is that moment, and it is why a redirection
- * needed nothing new in the kernel.
+ * the child is the shell's own code for a moment, and it uses the
+ * ordinary calls (dup2, close, chdir) on itself before the exec. The
+ * diagram above shows that moment, and it is why a redirection needed
+ * nothing new in the kernel.
  *
  * cs-history:
- * Pipes. Doug McIlroy had asked since a memo of 1964 for a way of
- * "connecting programs like garden hose", and went on asking until
+ * Pipes. Since a memo of 1964, Doug McIlroy had asked for a way of
+ * "connecting programs like garden hose", and he went on asking until
  * Ken Thompson put pipe in the kernel and | in the shell in 1973, in
- * a night by McIlroy's account; the next day everyone had one-liners
+ * one night by McIlroy's account; the next day everyone had one-liners
  * to show. The ground was ready for it: programs already read their
  * standard input and wrote their standard output, since < and > had
  * taught them to, and those that did not were brought into line.
@@ -46,9 +46,9 @@
  * reframe:
  * The shell is an ordinary program. It has no call of its own and no
  * privilege: all it does is in the five lines above, and anyone can
- * write another (this directory is one). That was new with Multics
- * and Unix: on the systems before, the command language was part of
- * the supervisor.
+ * write another one (this directory is one). That was new with
+ * Multics and Unix: on the systems before them, the command language
+ * was part of the supervisor.
  *
  * References: D. M. Ritchie and K. Thompson, "The UNIX Time-Sharing
  * System" (CACM, 1974): process creation as two calls, fork and exec,
@@ -66,21 +66,23 @@ type fd = int
 (* [search ~path name]: the file to exec *)
 val search : path:string list -> string -> string option
 
-(* exec a program, never returning *)
+(* exec a program; it never returns *)
 val exec : < Cap.exec; .. > -> path:string list -> env:string array -> string list -> 'a
 
-(* [fork caps f]: f runs in a child, which exits with the code f
+(* [fork caps f]: f runs in a child, which exits with the code that f
  * returns; the parent gets the child's pid *)
 val fork : < Cap.fork; .. > -> (unit -> int) -> int
 
-(* wait for this child; its status *)
+(* wait for this child, and give its status *)
 val wait : < Cap.wait; .. > -> int -> string
 
-(* wait for any child: its pid and status, None if there is none *)
+(* wait for any child, and give its pid and status, or None if there
+ * is none *)
 val wait_any : < Cap.wait; .. > -> (int * string) option
 
-(* a status as an exit code: a true one ("" "0|0") 0, else its leading
- * number, as rc's atoi ("3|4" 3), or 1 if that is 0 or none ("0|4") *)
+(* a status as an exit code. A true status ("" or "0|0") gives 0.
+ * Otherwise it gives the status's leading number, as rc's atoi does
+ * ("3|4" gives 3), or 1 if that number is 0 or missing ("0|4"). *)
 val code : string -> int
 
 val pipe : < Cap.pipe; .. > -> fd * fd   (* read end, write end *)
@@ -96,5 +98,5 @@ val open_file : < Cap.open_in; Cap.open_out; .. > -> Ast.rkind -> string -> fd
 (* write a whole string to an fd *)
 val write : fd -> string -> unit
 
-(* everything a child writes to [f]'s standard output *)
+(* everything read from an fd until its end of file *)
 val read_all : fd -> string

@@ -1,20 +1,24 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-cmp: Plan 9's cmp (principia's utilities/compare/misc/cmp.c):
- * two files' bytes compared; nothing said and all is well when they
- * are the same, else the first byte that differs (counted from 1), or
- * which file ended first. -l: every byte that differs, its number and
- * the two bytes; -L: the line too; -s: nothing said, the status only.
- * After the names, where to start in each, in bytes.
+(* mini-cmp is Plan 9's cmp (principia's utilities/compare/misc/cmp.c).
+ * It compares two files' bytes. When they are the same, it says
+ * nothing and all is well; otherwise it says the first byte that
+ * differs (counted from 1), or which file ended first. Its options:
+ * - -l says every byte that differs, with its number and the two
+ *   bytes;
+ * - -L says the line too;
+ * - -s says nothing, and only the status answers.
+ * After the names, one or two numbers may say where to start in each file,
+ * in bytes.
  *
  * design:
- * Nothing said when there is nothing to say: the answer is the
+ * Nothing is said when there is nothing to say. The answer is the
  * status, which a script's if reads (if(cmp -s a b) ...), and the
- * words are for a person and only when something is wrong. A program
- * that says "the files are identical" must be silenced by each
- * script that uses it. cmp is for any bytes; what differs between
- * two texts, by lines, is diff's (mini-git's Diff). *)
+ * words are for a person, only when something is wrong. A program that
+ * says "the files are identical" must be silenced by each script that
+ * uses it. cmp is for any bytes; what differs between two texts, by
+ * lines, is diff's job (mini-git's Diff). *)
 
 type caps = < Cap.open_in; Cap.stdout; Cap.stderr >
 

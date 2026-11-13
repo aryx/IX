@@ -1,10 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-touch: Plan 9's touch (principia's utilities/files/touch.c):
- * each file's time written set to now, and a file that is not there
- * made, empty. -c: none is made; -t time: that time, seconds since
- * 1970, and not now. *)
+(* mini-touch is Plan 9's touch (principia's utilities/files/touch.c).
+ * It sets the time each file was written to now, and makes a file that
+ * is not there, empty. With -c, no file is made. With -t time, the
+ * time is that one, in seconds since 1970, and not now. *)
 
 type caps = < Cap.open_out; Cap.stderr; Cap.clock >
 

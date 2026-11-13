@@ -191,7 +191,7 @@ what it is, its lines, its mini twin and its file.
 | **the kernel** | tiny-kernel: processes, files, graphics, sound, network | 3,880 |
 | **the tools**, in its `/bin` | tiny-shell, tiny-editor, tiny-build, tiny-db, tiny-vcs, tiny-prof | 3,390 |
 | **the toolchain**, in its `/bin` too, each making what the host's makes, byte for byte | tiny-cc, tiny-ml, tiny-as, tiny-ld | 4,790 |
-| **the window system** and its programs | tiny-windows, tiny-playground, tiny-gui, tiny-tetris, tiny-calculator, tiny-temperature, tiny-office, tiny-troff, tiny-browser | 5,380 |
+| **the window system** and its programs | tiny-windows, tiny-playground, tiny-gui, tiny-tetris, tiny-calculator, tiny-temperature, tiny-office, tiny-troff, tiny-browser | 5,290 |
 
 A program is in what both OCaml and tiny-ml compile, and asks the
 system through one interface, `TinyLibSystem`, with a file for each

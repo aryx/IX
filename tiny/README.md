@@ -97,7 +97,10 @@ has the picture of what each kind of program stands on.
 
 A program's lines are its code lines (no comment, no blank line), its
 `.mli` and its directory of parts included, as `make loc` counts them
-(2026-11-13).
+(2026-11-13). The libraries the programs share (`TinyLibCore/`,
+`TinyLibSystem/`, `TinyLibMachine`, `TinyLibRegex`, `TinyLibDraw`) and
+the runtimes (`runtime/c/`, `runtime/ml/`) are not in a program's
+lines: about 4,600 more.
 
 **The machine**, the host's programs: what everything else runs on.
 
@@ -139,7 +142,7 @@ step 8 has t-IX built there.
 
 | program | what it is | lines | mini twin | file |
 |---|---|---:|---|---|
-| **tiny-windows** | a window system, a program in ML: a window looks like the machine, so it runs in one of its own windows | 490 | mini-rio | [`TinyWindows.ml`](TinyWindows.ml), [`TinyLibDraw.ml`](TinyLibDraw.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyWindows.ml)) |
+| **tiny-windows** | a window system, a program in ML: a window looks like the machine, so it runs in one of its own windows | 400 | mini-rio | [`TinyWindows.ml`](TinyWindows.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyWindows.ml)) |
 | **tiny-playground** | what a game is written on: a model, a view as shapes, a key, a frame; the loop and the drawing are the library's | 220 | the playground | [`TinyLibPlayground.ml`](TinyLibPlayground.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyLibPlayground.ml)) |
 | **tiny-gui** | what a program with buttons and fields is written on: widgets made from the model, each carrying the message it sends; the layout, the mouse, the keys' focus and the drawing are the library's | 520 | lib_gui | [`TinyLibGUI.ml`](TinyLibGUI.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyLibGUI.ml)) |
 | **tiny-tetris** | Tetris, in a window of tiny-windows | 200 | the playground's Tetris | [`TinyAppTetris.ml`](TinyAppTetris.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyAppTetris.ml)) |

@@ -195,54 +195,15 @@ have.
 | [the playground](TinyLibPlayground.ml)<br>lib_playground | a game a model and functions, with no loop and no drawing, so it is tested with no screen | a sound comes from what changed: two models give what is heard | floating-point transforms, circles and images, the mouse, subscriptions |
 | [`tetris`](TinyAppTetris.ml)<br>m-IX's Tetris | the well never changed once in a model; the background kept as shapes; m-IX's sounds and theme | each rotation 16 bits, so a fit is sixteen bit tests, with no case per piece | the shadow, holding a piece, wall kicks, the bag, pause, high scores |
 | [the GUI](TinyLibGUI.ml)<br>lib_gui; libpanel | an interface a value the model is turned into: widgets made again from each model | the state below the model three points of the mouse: the focus is a position, no widget needs a name | a moving caret, selection, sliders and lists, themes, resizing, time |
-| [`calc`](TinyAppCalculator.ml)<br>none | four operations; an error, not a trap, on overflow or a division by zero | a key is its button's message, so the keyboard and the mouse cannot differ | fractions, a sign key, a memory, priorities and parentheses |
-| [`temp`](TinyAppTemperature.ml)<br>lib_gui's 7GUIs | the model is the two texts, not a temperature; the message says which field, so nothing echoes | — | fractions, a red field for a text that is not a number |
 | [`www`](TinyBrowser.ml)<br>mini-netscape | a page's text, links and pictures, in the ASCII of the machine's font | read once as it arrives, straight into lines: no document tree, a tag a row in a table | style sheets, scripts, forms, a page's colours and fonts |
-| [`debug`](TinyDebugger.ml)<br>principia's acid | one descriptor and text commands; the kernel keeps the breakpoints; gdb's letters | a step is the timer's interrupt after one instruction, nothing decoded | watchpoints, conditional breakpoints, printing by type, debugging the kernel |
+| [`debug`](TinyDebugger.ml)<br>principia's acid | one descriptor and text commands; the kernel keeps the breakpoints; gdb's letters | a step is the timer's interrupt after one instruction, nothing decoded | the source: instructions only, no line of C or ML; watchpoints, conditional breakpoints, printing by type, the kernel |
 | [`trace`](TinyTracer.ml)<br>ratrace, strace | a stop before and after each call; the bytes as C strings, strace's way | the kernel decodes nothing, where ratrace's formats every call; children followed without parsing lines | strace's options (`-e`, `-t`, `-c`, `-s`), detaching |
 | [`vcs`](TinyVCS.ml)<br>mini-git; git9 | git's objects, trees and DAG; Myers' diff, diff3's merge; remotes as directories | the repository one hash, an operation log: every command atomic and undoable; no staging area | git's formats, packs, the wire protocol, the index, tags, rebase |
 
-## Building and testing
+### The system as a whole
 
-A file is built three ways:
-
-- by tiny-build for tiny-kernel, from [`Buildfile`](Buildfile), the
-  same file on the host (`tiny-build TINY=tiny-`) and on tiny-kernel,
-  which rebuilds its own image from `/src`;
-  `make -C TinyKernel run` builds the image and boots it, `make -C
-  TinyKernel check` runs the system's tests on tiny-machine;
-- by dune with OCaml for the host's programs and their tests;
-- by ix's `mini-mk` (`mkfile`), on `lib_core/`, as a test of m-IX's
-  compiler.
-
-`make test` here runs every `tests/TinyXxx_test.sh` and the system's
-smaller checks; TinyC's tests are compared with the host's cc, TinyML's
-(`../languages/ml/tests/tiny/`, `tests/TinyML_fuzz.py`) with OCaml.
-
-## Bootstrapping
-
-t-IX builds itself, on its own system. The first build is the host's:
-dune and OCaml make the tools (`tiny-ml`, `tiny-cc`, `tiny-as`,
-`tiny-ld`, `tiny-build`...), and those tools, by the
-[`Buildfile`](Buildfile), make tiny-kernel's image and its system:
-`/bin`, `/lib`, and a disk with the sources in `/src`. Then tiny-kernel,
-on tiny-machine, runs the same Buildfile in `/src` with its own `/bin`'s
-tools, the ones the host's made, and gives the same files: the image
-and every file of the system the host's, byte for byte. A difference is
-a bug of tiny-kernel's tools, of the runtime or of the kernel.
-
-```bash
-make -C TinyKernel self-quick   # a few targets (ping, the library) rebuilt on tiny-kernel, 3 minutes
-make -C TinyKernel self         # the whole image and system, hours
-make self-quick-tix             # the same, from the top directory
-```
-
-The plan and its history are in
-[plan_tiny_self_hosting.md](../docs/plans/done/plan_tiny_self_hosting.md).
-
-## The system as a whole
-
-As a program's `.mli` says it of the program:
+The table's columns, for t-IX as a whole, as a program's `.mli` says
+them of the program:
 
 twin: m-ix, the mini programs, each a faithful twin of its Plan 9 or
 Unix program, on Linux and on the Pi. t-ix is what remains of the whole
@@ -293,6 +254,44 @@ twist:
   added to a unit recompiles it and links nothing again.
 - **A kernel in ML.** A waiting system call is a closure the scheduler
   tries again: no kernel stack for each process, no sleep and wakeup.
+
+## Building and testing
+
+A file is built three ways:
+
+- by tiny-build for tiny-kernel, from [`Buildfile`](Buildfile), the
+  same file on the host (`tiny-build TINY=tiny-`) and on tiny-kernel,
+  which rebuilds its own image from `/src`;
+  `make -C TinyKernel run` builds the image and boots it, `make -C
+  TinyKernel check` runs the system's tests on tiny-machine;
+- by dune with OCaml for the host's programs and their tests;
+- by ix's `mini-mk` (`mkfile`), on `lib_core/`, as a test of m-IX's
+  compiler.
+
+`make test` here runs every `tests/TinyXxx_test.sh` and the system's
+smaller checks; TinyC's tests are compared with the host's cc, TinyML's
+(`../languages/ml/tests/tiny/`, `tests/TinyML_fuzz.py`) with OCaml.
+
+## Bootstrapping
+
+t-IX builds itself, on its own system. The first build is the host's:
+dune and OCaml make the tools (`tiny-ml`, `tiny-cc`, `tiny-as`,
+`tiny-ld`, `tiny-build`...), and those tools, by the
+[`Buildfile`](Buildfile), make tiny-kernel's image and its system:
+`/bin`, `/lib`, and a disk with the sources in `/src`. Then tiny-kernel,
+on tiny-machine, runs the same Buildfile in `/src` with its own `/bin`'s
+tools, the ones the host's made, and gives the same files: the image
+and every file of the system the host's, byte for byte. A difference is
+a bug of tiny-kernel's tools, of the runtime or of the kernel.
+
+```bash
+make -C TinyKernel self-quick   # a few targets (ping, the library) rebuilt on tiny-kernel, 3 minutes
+make -C TinyKernel self         # the whole image and system, hours
+make self-quick-tix             # the same, from the top directory
+```
+
+The plan and its history are in
+[plan_tiny_self_hosting.md](../docs/plans/done/plan_tiny_self_hosting.md).
 
 ## More
 

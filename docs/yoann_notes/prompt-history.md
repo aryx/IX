@@ -73390,3 +73390,85 @@ Yoann's follow-up says the `.mli` must also be updated to match the table change
 Claude agreed that the `.mli` must change along with the implementation, since the interface has to match.
 Claude said it would verify its claims about mini-ml before writing them, rather than assuming them.
 Claude had not yet made the edits; the reply only states the plan to check mini-ml first.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 15:48
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude made comment-only edits to the ix source files.
+Claude checked that every edited file still parses.
+Claude planned to run `loc.py -t` to catch misplaced labels.
+Claude intended to commit the changes once those checks passed.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 15:49
+
+**Yoann:**
+
+> in the big table, for the playground we dropped the mouse for tiny-playground??
+
+------------------------------------------------------------------------
+
+## 2026-11-13 15:49
+
+**Yoann:**
+
+> there is no circle?
+
+**Claude (summary):**
+
+Claude said it would check whether the exercise relies on KGraphics drawing circles.
+Yoann's follow-up asks to leave calc and temp out of the big table, so that is the part he reacted to.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 15:50
+
+**Yoann:**
+
+> no need to put calc and temp in the big table
+
+**Claude (summary):**
+
+Claude removed the calc and temp rows from the big table in tiny/README.md.
+Claude reported that the table now has 29 rows, with both programs still in the window system's table.
+Claude left the change uncommitted, so it exists only in the working tree for now.
+Claude offered to commit and push it, optionally together with the playground exercise fix.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 15:51
+
+**Yoann:**
+
+> for debug a big dropped: is that it's instruction only, no source (C/ML) debugging
+
+**Claude (summary):**
+
+Claude said it was checking that `b` accepts a function name, not only a raw address.
+Claude confirmed that an address can be a function's name plus an offset.
+Claude then turned to the table cell, the part Yoann's follow-up is about.
+Claude did not reach a stated conclusion on the table cell in this answer.
+Claude made no file edits in this exchange.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 15:54
+
+**Yoann:**
+
+> hmm now the section on "The system as a whole" seems too far from the big table which also talks about dropped, twist, and kept; maybe the text in this section should be put closer to the table
+
+**Claude (summary):**
+
+Claude moved the "The system as a whole" section closer to the big table of dropped, twist, and kept items.
+Claude confirmed the line count was unchanged and checked the seam between the section and the table.
+Claude found nothing linking to the old section anchor, so the move broke no references.
+Claude then rewrote the section's first line to explain how it relates to the table.

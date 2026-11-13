@@ -93,6 +93,10 @@
  *   instruction.
  *
  * dropped:
+ * {b The source.} It debugs machine instructions only: a breakpoint is
+ * an address or a function's name, a step is one instruction, and no
+ * line of C or ML is shown or stepped over, since neither tiny-cc nor
+ * tiny-ml writes a table from pcs to lines (tiny-ld has no -g).
  * Watchpoints; conditional breakpoints; printing a C variable or an ML
  * value according to its type (this needs the compilers to describe
  * their frames, which is acid's road); and debugging the kernel

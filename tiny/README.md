@@ -95,6 +95,61 @@ has the picture of what each kind of program stands on.
 
 ## The programs
 
+A program's lines are its code lines (no comment, no blank line), its
+`.mli` and its directory of parts included, as `make loc` counts them
+(2026-11-13).
+
+**The machine**, the host's programs: what everything else runs on.
+
+| program | what it is | lines | mini twin | file |
+|---|---|---:|---|---|
+| **tiny-cpu** | a CPU of our own design, for teaching | 220 | mini-5i, Knuth's MIX | [`TinyCPU.ml`](TinyCPU.ml), [`TinyMachineCPU.ml`](TinyMachine/TinyMachineCPU.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyCPU.ml)) |
+| **tiny-machine** | tiny-cpu with what a kernel needs: two modes, traps, a timer, protection, a console, a disk, a screen and a mouse ([run it in your browser](https://aryx.github.io/IX/t-ix.html)) | 2,530 | mini-qemu | [`TinyMachine.ml`](TinyMachine.ml), [`TinyMachine/`](TinyMachine/) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyMachine.ml)) |
+
+**The kernel**, and what it is made of.
+
+| program | what it is | lines | mini twin | file |
+|---|---|---:|---|---|
+| **tiny-kernel** | a kernel in ML for tiny-machine: fork and exec, preemption, pipes; files on a disk (the root, Plan 9's way: a union with the boot image's) where nothing is written over: a change copies its blocks up to the root and a commit is one block, so a crash needs no fsck, each boot's files kept in `/dump`; a screen that programs draw on by messages, one operation, `draw`, its loops in assembly; a network, Plan 9's IL over IP, for `ping`, `get`, `www` (a web page, its pictures painted as their packets arrive) and `httpd` (its files in a browser) | 3,880 | mini-9pi, mini-xv6's Fs | [`TinyKernel/`](TinyKernel/): [`TinyKernel.ml`](TinyKernel/TinyKernel.ml), [`KFS.ml`](TinyKernel/KFS.ml), [`KGraphics.ml`](TinyKernel/KGraphics.ml), [`KNetwork.ml`](TinyKernel/KNetwork.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyKernel)) |
+
+**The tools**, in tiny-kernel's `/bin` (`rc`, `ed`, `build`, `db`,
+`vcs`, `prof`).
+
+| program | what it is | lines | mini twin | file |
+|---|---|---:|---|---|
+| **tiny-shell** | a shell in rc's spirit: lists as the only value | 650 | mini-rc | [`TinyShell.ml`](TinyShell.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyShell.ml)) |
+| **tiny-editor** | an editor with sam's command language | 650 | mini-ed | [`TinyEditorLine.ml`](TinyEditorLine.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyEditorLine.ml)) |
+| **tiny-build** | a build system: rules, `%`, digests, `-j` | 530 | mini-mk | [`TinyBuildSystem.ml`](TinyBuildSystem.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyBuildSystem.ml)) |
+| **tiny-db** | a database whose query language is the relational algebra, over a copy-on-write B-tree | 670 | mini-chidb | [`TinyDatabase.ml`](TinyDatabase.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyDatabase.ml)) |
+| **tiny-vcs** | version control with git's objects, an undo log, and no staging area | 770 | mini-git | [`TinyVCS.ml`](TinyVCS.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyVCS.ml)) |
+| **tiny-prof** | a profiler: every instruction counted by its address, the kernel's and each program's apart, named by the linker's map | 120 | mini-prof | [`TinyProfiler.ml`](TinyProfiler.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyProfiler.ml)) |
+
+**The toolchain**, in tiny-kernel's `/bin` too (`cc`, `ml`, `as`,
+`ld`), where each makes what the host's makes, byte for byte;
+[plan_tiny_self_hosting.md](../docs/plans/done/plan_tiny_self_hosting.md)'s
+step 8 has t-IX built there.
+
+| program | what it is | lines | mini twin | file |
+|---|---|---:|---|---|
+| **tiny-cc** | a C subset compiler, to tiny-cpu | 1,410 | mini-cc | [`TinyC.ml`](TinyC.ml), [`TinyC/`](TinyC/) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyC.ml)) |
+| **tiny-ml** | an ML compiler (Hindley-Milner types, closures, exceptions, a garbage collector) to tiny-cpu | 2,860 | mini-ml | [`TinyML.ml`](TinyML.ml), [`TinyML/`](TinyML/) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyML.ml)) |
+| **tiny-as**, **tiny-ld** | tiny-machine's assembler, a file to an object (its words, its labels, the places a label's address goes), and its linker, objects to an image, filling each place by encoding again | 520 | mini-asm, mini-ld | [`TinyAssembler.ml`](TinyAssembler.ml), [`TinyLinker.ml`](TinyLinker.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyAssembler.ml)) |
+
+**The window system** and the programs in its windows.
+
+| program | what it is | lines | mini twin | file |
+|---|---|---:|---|---|
+| **tiny-windows** | a window system, a program in ML: a window looks like the machine, so it runs in one of its own windows | 490 | mini-rio | [`TinyWindows.ml`](TinyWindows.ml), [`TinyLibDraw.ml`](TinyLibDraw.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyWindows.ml)) |
+| **tiny-playground** | what a game is written on: a model, a view as shapes, a key, a frame; the loop and the drawing are the library's | 220 | the playground | [`TinyLibPlayground.ml`](TinyLibPlayground.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyLibPlayground.ml)) |
+| **tiny-gui** | what a program with buttons and fields is written on: widgets made from the model, each carrying the message it sends; the layout, the mouse, the keys' focus and the drawing are the library's | 520 | lib_gui | [`TinyLibGUI.ml`](TinyLibGUI.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyLibGUI.ml)) |
+| **tiny-tetris** | Tetris, in a window of tiny-windows | 200 | the playground's Tetris | [`TinyAppTetris.ml`](TinyAppTetris.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyAppTetris.ml)) |
+| **tiny-calculator**, **tiny-temperature** | two programs on it, in a window of tiny-windows: a calculator of four operations, sixteen buttons; two fields typed in, Celsius and Fahrenheit, each the other's answer | 80, 40 | lib_gui's 7GUIs | [`TinyAppCalculator.ml`](TinyAppCalculator.ml), [`TinyAppTemperature.ml`](TinyAppTemperature.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyAppCalculator.ml)) |
+| **tiny-office** | an office suite in one program: a document of pages of boxes, each a text edited as it is shown (bold, italic, large), a sheet with its formulas, a drawing, a paint or a chart that follows its sheet; pull-down menus; its file Markdown with a few LaTeX commands | 1,540 | mini-office | [`TinyOffice.ml`](TinyOffice.ml), [`TinyOffice/`](TinyOffice/) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyOffice.ml)) |
+| **tiny-troff** | the office's documents, or Markdown, printed as text, a web page or PDF | 460 | mini-troff | [`TinyTroff.ml`](TinyTroff.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyTroff.ml)) |
+| **tiny-browser** | a web browser, `www`: a page read as it arrives, its links followed, its pictures painted as their packets come, Wikipedia's articles fetched by the host | 1,830 | mini-netscape | [`TinyBrowser.ml`](TinyBrowser.ml), [`TinyBrowser/`](TinyBrowser/) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyBrowser.ml)) |
+
+### The idea each keeps
+
 | file | on tiny-kernel (on the host) | its twin | the idea kept |
 |---|---|---|---|
 | `TinyBuildSystem.ml` | `build` (tiny-build) | `builder/` (mini-mk, mk) | rules, `%`, stamps as digests, one pass with `-j` |

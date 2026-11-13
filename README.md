@@ -131,6 +131,7 @@ the windows, the browser, and the libraries under them.
 | **mini-ml** | the OCaml compiler (IX's subset), for arm and arm64; compiles all of IX | 12,000 | ocaml-light's `ocamlopt` | [`languages/ml/`](languages/ml/) ([map](https://aryx.github.io/IX/codemap.html?focus=languages/ml)) |
 | **mini-asm** | the assembler for arm and arm64 | 900 | `5a`, `7a` | [`assembler/`](assembler/) ([map](https://aryx.github.io/IX/codemap.html?focus=assembler)) |
 | **mini-ld** | the linker, to Plan 9's a.out, Linux's ELF and macOS's Mach-O (arm64); the same executables as the original's, byte for byte | 3,000 | `5l`, `7l` | [`linker/`](linker/) ([map](https://aryx.github.io/IX/codemap.html?focus=linker)) |
+| **lib_executable** | an executable read: ELF, DWARF, its symbols and stack frames, for the debugger, the profiler and the linker's tools | 800 | `libmach` | [`lib_executable/`](lib_executable/) ([map](https://aryx.github.io/IX/codemap.html?focus=lib_executable)) |
 | **mini-lex**, **mini-yacc** | the lexer and parser generators (ocamllex's and ocamlyacc's languages) | 1,100 | `lex`, `yacc` | [`generators/`](generators/) ([map](https://aryx.github.io/IX/codemap.html?focus=generators)) |
 | **mini-acid**, **mini-prof** | the debugger, by mini-9pi's `/proc` or Linux's `ptrace`; the profiler; mini-stats | 3,900 | `acid`, `prof`, `stats` | [`debuggers/`](debuggers/), [`profilers/`](profilers/) ([map](https://aryx.github.io/IX/codemap.html?focus=debuggers)) |
 | **mini-git**, **mini-diff**, **mini-merge3** | version control, compatible with git repositories | 4,400 | `git9`, `diff` | [`version_control/`](version_control/) ([map](https://aryx.github.io/IX/codemap.html?focus=version_control)) |
@@ -150,7 +151,6 @@ the windows, the browser, and the libraries under them.
 | **mini-5i** | an ARM emulator for user programs, arm32 and arm64, with Linux's or Plan 9's system calls | 4,800 | `5i` | [`machine/`](machine/) ([map](https://aryx.github.io/IX/codemap.html?focus=machine)) |
 | **mini-qemu** | a Raspberry Pi 1 and Pi 4 emulator, which boots xv6, Plan 9 and IX's kernels | 4,800 | QEMU's raspi machines | [`raspberry/`](raspberry/) ([map](https://aryx.github.io/IX/codemap.html?focus=raspberry)) |
 
-
 **Beyond the system**: the applications a developer, and anyone, use
 every day, the games, and other languages and systems (most of them
 not in Principia Softwarica).
@@ -159,16 +159,17 @@ not in Principia Softwarica).
 |---|---|---:|---|---|
 | **mini-office** | an office suite on lib_gui: rich text, a sheet with its formulas, drawing and painting | 5,000 | the author's playground's TinyOffice | [`apps/office/`](apps/office/) ([map](https://aryx.github.io/IX/codemap.html?focus=apps/office)) |
 | **mini-pim** | mail, calendar, people, tasks, notes and money, in one store where each item refers to the others | 10,200 | `upas`, `acme Mail` | [`apps/pim/`](apps/pim/) ([map](https://aryx.github.io/IX/codemap.html?focus=apps/pim)) |
-| **mini-files**, **mini-page**, **mini-play**, **mini-maps**, **mini-rebirth** | a file manager; a PDF's pages or a picture; a sound file played; a map moved and zoomed; a musc studio| 7,000 | `page`, `play` | [`apps/`](apps/) ([map](https://aryx.github.io/IX/codemap.html?focus=apps)) |
+| **mini-files**, **mini-page**, **mini-play**, **mini-maps**, **mini-rebirth** | a file manager; a PDF's pages or a picture; a sound file played; a map moved and zoomed; a music studio | 7,000 | `page`, `play` | [`apps/`](apps/) ([map](https://aryx.github.io/IX/codemap.html?focus=apps)) |
 | **the games** | on lib_playground, Tetris, Breakout and others; and by renderers of their own, **Doom**, **Quake** and **Virtua Racing** | 22,800 | `games/` | [`games/`](games/) ([map](https://aryx.github.io/IX/codemap.html?focus=games)) |
 | **the other languages** | mini-scheme, mini-smalltalk, mini-prolog, mini-datalog, mini-forth, mini-pascal, mini-tiger, and .NET's mini-dotnet and mini-csc; mini-drscheme and a Turbo Pascal | 41,500 | | [`languages/`](languages/) ([map](https://aryx.github.io/IX/codemap.html?focus=languages)) |
 | **mini-analyze** | IX's code analysed in Datalog: dead code, exceptions that escape, capabilities, bugs | 4,600 | | [`analyzers/`](analyzers/) ([map](https://aryx.github.io/IX/codemap.html?focus=analyzers)) |
 | **the other kernels** | mini-xv6, Oberon, Singularity, Squeak | 14,300 | xv6 | [`kernels/`](kernels/) ([map](https://aryx.github.io/IX/codemap.html?focus=kernels)) |
 
-The system, m-IX, is **about 170,400 lines** (203,600 with the header
+The system, m-IX, its rows above and two small libraries (lib_code,
+lib_mime), is **about 170,400 lines** (203,600 with the header
 comments). A system a person can read needs a limit set before it is
 full, and m-IX's is 175,000 of those lines: what is added has to fit,
-or something is trimmed first (today it is 4,000 under;
+or something is trimmed first (today it is 4,600 under;
 [docs/loc.md](docs/loc.md) logs the numbers and what moved them).
 Beyond the system, about 105,300 more, outside the budget.
 

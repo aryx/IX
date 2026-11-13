@@ -73162,3 +73162,25 @@ Claude reused loc.py's own header function in a small scratchpad counting script
 Claude removed TinyMachineSDL from the tiny-machine count, since make loc skips SDL hosts.
 Claude found the libraries and runtimes total about 6,300 lines, not 4,600, rounded to tens.
 Claude updated all 20 rows in tiny/README.md and the top README's t-IX table sum.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 15:09
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude found that 35 m-IX rows were expected but only 34 changed, and began tracking down the mismatch.
+Claude changed the budget to 175,000 ("4,000 under") and planned to rewrite the section intro and the table paragraph to match the new counts.
+Claude planned to commit and push the changes, including Yoann's own README edits, in the same commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 15:15
+
+**Yoann:**
+
+> ok let's add the lib_executable (but not lib_mime and the other which can go in the beyond system table (or just dropped). Please fix the musc and other small things and commit!

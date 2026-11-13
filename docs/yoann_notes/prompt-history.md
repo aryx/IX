@@ -73199,3 +73199,79 @@ Claude committed and pushed the earlier tiny/README.md change as `1def1b5f`, the
 Claude's answer on that table was cut off: it said all 30 rows were kept and every link resolved, then announced it was installing the new table.
 The new table's column widths were never shown or verified, so the scrolling problem Yoann raised may still be open.
 Yoann's follow-up asks Claude to commit and push that table change, which is the step Claude's answer was heading toward.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 15:19
+
+**Yoann:**
+
+> leet's commit and push
+
+**Claude (summary):**
+
+Claude committed the "idea each keeps" two-column table to main as `77cd9528` and pushed it.
+The commit contains `tiny/README.md` and `prompt-history.md`, the two files that hold the table.
+Claude left the untracked `tiny/docs/` directory out of the commit, since it does not belong to this change.
+Yoann's follow-up suggests the "idea each keeps" section needs a longer introductory paragraph, which Claude has not yet written.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 15:27
+
+**Yoann:**
+
+> maybe the section "idea each keeps" deserves a slightly longer intro paragraph
+
+------------------------------------------------------------------------
+
+## 2026-11-13 15:27
+
+**Yoann:**
+
+> and maybe we could have in this same table the possible twist column
+
+**Claude (summary):**
+
+Claude said the answer hinged on checking two claims against the code: rc's quoting and whether the `.mli` files carry `added:` paragraphs.
+Claude's focus was on verifying the existing paragraph's claim about rc's quoting rules.
+Claude also planned to confirm whether the `.mli` files actually contain `added:` paragraphs.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 15:27
+
+**Yoann:**
+
+> and dropped
+
+------------------------------------------------------------------------
+
+## 2026-11-13 15:27
+
+**Yoann:**
+
+> (maybe it was the case before?)
+
+------------------------------------------------------------------------
+
+## 2026-11-13 15:28
+
+**Yoann:**
+
+> what do you think? Wouldn't such table be more useful to the reader?
+
+------------------------------------------------------------------------
+
+## 2026-11-13 15:28
+
+**Yoann:**
+
+> to have this high level overview of the whole thing
+
+**Claude (summary):**
+
+Claude added a row for the kernel's file system to the overview table, since KFS.mli has a notable twist.
+Claude said the twin is mini-9pi's Kfs, which keeps xv6's inode and directory structures.
+Claude then corrected that row's claims before installing the table into the overview.
+Claude's answer was mid-stream, ending on a note that it was fixing the row and installing the table.

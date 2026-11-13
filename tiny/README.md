@@ -150,43 +150,57 @@ step 8 has t-IX built there.
 | **tiny-troff** | the office's documents, or Markdown, printed as text, a web page or PDF | 600 | mini-troff | [`TinyTroff.ml`](TinyTroff.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyTroff.ml)) |
 | **tiny-browser** | a web browser, `www`: a page read as it arrives, its links followed, its pictures painted as their packets come, Wikipedia's articles fetched by the host | 2,370 | mini-netscape | [`TinyBrowser.ml`](TinyBrowser.ml), [`TinyBrowser/`](TinyBrowser/) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyBrowser.ml)) |
 
-### The idea each keeps
+### What each keeps, changes and drops
 
-Each program by its name on tiny-kernel, a link to its file, and under
-it its twin.
+A tiny program is not a smaller copy of its twin: it starts from what
+the twin taught, keeps the idea that makes that kind of program work,
+and redesigns the rest, now that no file format, command line or
+output has to stay compatible. The table gives each program's choices
+in a few words: what it keeps of its twin; its twist, an idea of its
+own that the twin, bound to compatibility, could not take (tiny-build's
+stamps by content, not by time); and what it drops. Read together, the
+rows are an overview of the whole system, and a row next to its twin's
+code shows what is essential to that kind of program and what is
+accident. Each program's `.mli` says more, in its `twin:`, `kept:`,
+`twist:` and `dropped:` paragraphs ([docs/tags.md](../docs/tags.md)).
 
-| program | the idea kept |
-|---|---|
-| [`build`](TinyBuildSystem.ml)<br>mini-mk, mk | rules, `%`, stamps as digests, one pass with `-j` |
-| [`rc`](TinyShell.ml)<br>mini-rc, rc | lists as the only value, words joined by adjacency, redirections around the command |
-| [`utils`](TinyUtilities.ml)<br>mini-cat, mini-ls... | one executable with a name per utility (`cat`, `ls`, `wc`...), BusyBox's way; a filter is a function over its input's pieces, a walker one fold over a tree |
-| [`ed`, `sam`](TinyEditorLine.ml)<br>mini-ed, ed | sam's command language: dot a range, loops over matches, changes in parallel |
-| [`emacs`](TinyEditorScreen.ml)<br>mini-emacs | Emacs's keys on one text in one window, the text its lines split at the cursor (Emacs's gap, of values that cannot change), the editor a state and the keys that change it |
-| [`office`](TinyOffice.ml)<br>mini-office | a document of pages of boxes, each a kind of document whose data is text (a text edited as shown, a sheet, a drawing, a paint, a chart); its file Markdown with a few LaTeX commands ([`plan_tiny_office.md`](../docs/plans/done/plan_tiny_office.md)) |
-| [`play`](TinyPlay.ml)<br>mini-play | a WAV file to the speaker a block at a time, the kernel pacing it, each of the speaker's samples taken exactly by Bresenham's stepping |
-| [`troff`](TinyTroff.ml)<br>mini-troff | the office's documents, or Markdown, as text, HTML or PDF, read by the office's own functions; PDF in Courier, a standard font, 8 points a character at 13.33 points |
-| [`cc`](TinyC.ml)<br>mini-cc; 5c, 7c | a C subset through a stack machine of its own, the stack in registers, with its own runtime (`runtime/`); Plan 9's names, ANSI's rules |
-| [`ml`](TinyML.ml)<br>mini-ml; ocamlopt | an ML (variants, closures, exceptions, Hindley-Milner) through TinyC's stack machine; its roots on a stack of values of its own, so its collector, Cheney's, in C, needs no frame table |
-| [`db`](TinyDatabase.ml)<br>mini-chidb; chidb | the relational algebra as the query language, a pipeline (`t \| where ... \| group ... \| sort ...`); a copy-on-write B-tree, so every statement is atomic by one header write |
-| [tiny-cpu](TinyCPU.ml)<br>mini-5i; MIX, MMIX | a machine of our own design, for teaching: 16 registers, r0 zero, no flags, one instruction format, every case defined; the interpreter is its definition |
-| [`as`](TinyAssembler.ml), [`ld`](TinyLinker.ml)<br>mini-asm, mini-ld | a new machine's toolchain, since nothing else writes its words: a file to an object, objects to an image or an a.out, a place filled by encoding the word again so that `encode`'s checks hold |
-| [`ar`](TinyArchiver.ml)<br>mini-ar | objects in one library, in their order, with no index, date or owner, so that a library made twice has the same bytes |
-| [`prof`](TinyProfiler.ml)<br>mini-qemu's `-prof` | every instruction counted by its address, not sampled, so that two runs give the same profile; the kernel's and each program's apart, named by tiny-ld's map |
-| [tiny-machine](TinyMachine.ml)<br>mini-qemu; Oberon, RISC-V | TinyCPU with what a kernel needs, designed: two modes, one trap and eret, a timer counting instructions, protection by a window (base, bound); and, as options, a screen and a speaker that are memory, a mouse, a disk, a wire to a network |
-| [tiny-kernel](TinyKernel/TinyKernel.ml)<br>mini-9pi | a kernel in ML: the concepts kept (modes, system calls, preemption, fork and exec, pipes, files), each by the road ML makes short: the kernel a loop running a process to its next trap, a waiting call a closure the scheduler retries (no kernel stack per process); [`notes_tiny_kernel.md`](../docs/notes/notes_tiny_kernel.md) |
-| [its graphics](TinyKernel/KGraphics.ml)<br>libdraw, libmemdraw | one operation, `draw dst r src mask p`, on images a byte a pixel; a colour is an image of one pixel that repeats; the kernel has the pixels and a program says what, by messages naming images by its own numbers |
-| [its sound](TinyKernel/KAudio.ml)<br>lib_audio; SID, NES | the kernel has the samples, a program says what: a sound is a message of five numbers, made where it is played, so no samples cross a pipe ([`plan_tiny_audio.md`](../docs/plans/done/plan_tiny_audio.md)) |
-| [its network](TinyKernel/KNetwork.ml)<br>mini-9pi's IP | the stack is functions of strings, with no device and no clock, so the same file is the kernel's stack, its test on the host, and the other end of tiny-machine's wire; IP, the echo, and Plan 9's IL ([`plan_tiny_network.md`](../docs/plans/done/plan_tiny_network.md)) |
-| [`windows`](TinyWindows.ml)<br>mini-rio, rio | a window looks like the machine (a program's descriptors, given by the kernel or by the window system), so the window system runs in one of its own windows; forwarding a program's drawing is renumbering its images |
-| [the playground](TinyLibPlayground.ml)<br>lib_playground | a game is a model and functions (its view as shapes, a key, a frame, its sounds, its tune), with no loop and no drawing of its own, so a game is tested with no screen |
-| [`tetris`](TinyAppTetris.ml)<br>m-IX's Tetris | the game in integers, its ground kept in the model as shapes, so that a moving piece is five shapes; m-IX's sounds and theme (Korobeiniki) |
-| [the GUI](TinyLibGUI.ml)<br>lib_gui; libpanel | an interface is a value the model is turned into: widgets made again from each model, a button carrying the message it sends; the layout in two passes, and only the widgets that changed drawn |
-| [`calc`](TinyAppCalculator.ml)<br>none | the calculator of four operations: a number shown, a number kept, the operation that awaits; a key is its button's message |
-| [`temp`](TinyAppTemperature.ml)<br>lib_gui's 7GUIs | two fields, each the other's answer: the model is the two texts, not a temperature, since half of what is typed is not a number; the message says which field was typed in, so nothing echoes |
-| [`www`](TinyBrowser.ml)<br>mini-netscape | a page is read once, as it arrives, and turned directly into lines; there is no document tree and no style sheet, and the meaning of a tag is a row in a table; a table's cells are kept until the widths of its columns are known ([`plan_tiny_browser.md`](../docs/plans/done/plan_tiny_browser.md)) |
-| [`debug`](TinyDebugger.ml)<br>principia's acid | the program stopped, looked at and resumed by text lines on one descriptor, the kernel keeping the breakpoints; a step by the timer's interrupt after one instruction; gdb's letters ([`plan_tiny_debugger.md`](../docs/plans/done/plan_tiny_debugger.md)) |
-| [`trace`](TinyTracer.ml)<br>ratrace, strace | a stop before each system call and one after it, so the kernel keeps and decodes nothing: the tracer reads an exec's path before and a read's bytes after; a table of the calls and their arguments' kinds |
-| [`vcs`](TinyVCS.ml)<br>mini-git; git9 | git's objects, trees and DAG; the repository as one hash (an operation log, so every command is atomic and undoable); no staging area; merges that always succeed, conflicts committed as data |
+Each row gives the program by its name on tiny-kernel, linked to its
+file, with its twin under it; a "—" is a paragraph its `.mli` does not
+have.
+
+| program | kept | twist | dropped |
+|---|---|---|---|
+| [`build`](TinyBuildSystem.ml)<br>mini-mk, mk | mk's rules, `%` and `&`; cycles and ambiguous rules found before anything runs | up to date by content: a stamp is a digest of the recipe and the prerequisites, not a time | attributes, regular-expression rules, quoting, backquotes, several targets by one recipe |
+| [`rc`](TinyShell.ml)<br>mini-rc, rc | every value a list of strings, so `$x` needs no quotes; words joined by adjacency | — | switch, here documents, most builtins, functions in the environment, signals |
+| [`utils`](TinyUtilities.ml)<br>mini-cat, mini-ls... | one executable with a name per utility, BusyBox's way; the twins' output where it costs nothing | the walkers (du, rm, ls...) share one fold over the tree | most options, UTF-8, most of `ls -l`, each program's own wording of errors |
+| [`ed`, `sam`](TinyEditorLine.ml)<br>mini-ed, ed | sam's command language: dot a range of characters, loops over matches, changes in parallel | — | the screen, several files, the mark, `! < > \|`, cd |
+| [`emacs`](TinyEditorScreen.ml)<br>mini-emacs | Emacs's keys on one text in one window, the text its lines split at the cursor | — | several buffers and windows, undo, the region, query-replace, characters beyond ASCII |
+| [`office`](TinyOffice.ml)<br>mini-office | a document of pages of boxes: texts, sheets, drawings, paints, charts; its file Markdown with a few LaTeX commands | a sheet computed again at each view, with no dependency graph, so a chart follows it for free | charts other than bars, floats and functions but sum, fonts, text flowing between boxes |
+| [`play`](TinyPlay.ml)<br>mini-play | a WAV to the speaker a block at a time, the kernel pacing it | — | MOD, MIDI, MP3, a WAV's other encodings |
+| [`troff`](TinyTroff.ml)<br>mini-troff | the office's documents, or Markdown, as text, HTML or PDF | one format, the office's, read by the office's own functions: no roff, no LaTeX | text flowing onto the next page, a paint as a real image, colours and fonts in HTML |
+| [`cc`](TinyC.ml)<br>mini-cc; 5c, 7c | a C subset through a stack machine of its own, so the front end knows no instruction and the back end no C | — | floats, unions, bitfields, structs by value, goto, macros with arguments, `#if`, long long |
+| [`ml`](TinyML.ml)<br>mini-ml; ocamlopt | variants, closures, exceptions, Hindley-Milner; types checked, then forgotten: every value a word | — | — |
+| [`db`](TinyDatabase.ml)<br>mini-chidb; chidb | tables with a key, indexes, joins, a file that outlives the program | a query a pipeline of the relational algebra; a copy-on-write B-tree, so a statement commits by one write | SQL, NULL, the register machine, SQLite's file format |
+| [tiny-cpu](TinyCPU.ml)<br>mini-5i; MIX, MMIX | a machine of our own, for teaching: 16 registers, r0 zero, no flags, one format, every case defined | — | — |
+| [`as`](TinyAssembler.ml), [`ld`](TinyLinker.ml)<br>mini-asm, mini-ld | sizes known before addresses, so the link never moves what it placed | ld's sweep leaves out what nothing reaches, so an archive is linked whole; a place filled by encoding again | — |
+| [`ar`](TinyArchiver.ml)<br>mini-ar | objects in one library, in their order | — | all keys but `t`; the date, owner and mode, so a library made twice has the same bytes; the index |
+| [`prof`](TinyProfiler.ml)<br>mini-qemu's `-prof` | the kernel's counts and each program's apart, named by tiny-ld's map | every instruction counted, not sampled, so two runs give the same profile | — |
+| [tiny-machine](TinyMachine.ml)<br>mini-qemu; Oberon, RISC-V | what a kernel needs: two modes, one trap and eret, a timer counting instructions, protection by base and bound | — | — |
+| [tiny-kernel](TinyKernel/TinyKernel.ml)<br>mini-9pi | modes, system calls, preemption, fork and exec, pipes, files | a waiting call a closure the scheduler retries: no kernel stack per process, no lost wakeup | swapping, the kernel on several cores, users and permissions, signals but kill |
+| [its files](TinyKernel/KFS.ml)<br>mini-9pi's Kfs; xv6's fs | xv6's inode, its direct then indirect blocks; a directory a file of (name, number) pairs | nothing written over: a commit is one block, free blocks found by a collector, snapshots in `/dump` | — |
+| [its graphics](TinyKernel/KGraphics.ml)<br>libdraw, libmemdraw | one operation, `draw dst r src mask p`; a colour an image of one pixel; a program sends messages | — | depths but a byte, alpha, ellipses and polygons, fonts but the machine's |
+| [its sound](TinyKernel/KAudio.ml)<br>lib_audio; SID, NES | a sound a message of five numbers, made where it is played | the recipe and the mixing in the kernel: each open of `/dev/audio` a voice | — |
+| [its network](TinyKernel/KNetwork.ml)<br>mini-9pi's IP | IP, the echo, Plan 9's IL | the stack functions on strings: one file is the kernel's stack, its test, and the wire's other end | Ethernet, ARP, routes, fragments, IP options |
+| [`windows`](TinyWindows.ml)<br>mini-rio, rio | a window looks like the machine, so the window system runs in its own window; forwarding is renumbering | the kernel holds every pixel, so no layers; a mouse is a box that keeps only the last write | each window's menu, scrolling back, snarf and paste, resizing, the files rio serves |
+| [the playground](TinyLibPlayground.ml)<br>lib_playground | a game a model and functions, with no loop and no drawing, so it is tested with no screen | a sound comes from what changed: two models give what is heard | floating-point transforms, circles and images, the mouse, subscriptions |
+| [`tetris`](TinyAppTetris.ml)<br>m-IX's Tetris | the well never changed once in a model; the background kept as shapes; m-IX's sounds and theme | each rotation 16 bits, so a fit is sixteen bit tests, with no case per piece | the shadow, holding a piece, wall kicks, the bag, pause, high scores |
+| [the GUI](TinyLibGUI.ml)<br>lib_gui; libpanel | an interface a value the model is turned into: widgets made again from each model | the state below the model three points of the mouse: the focus is a position, no widget needs a name | a moving caret, selection, sliders and lists, themes, resizing, time |
+| [`calc`](TinyAppCalculator.ml)<br>none | four operations; an error, not a trap, on overflow or a division by zero | a key is its button's message, so the keyboard and the mouse cannot differ | fractions, a sign key, a memory, priorities and parentheses |
+| [`temp`](TinyAppTemperature.ml)<br>lib_gui's 7GUIs | the model is the two texts, not a temperature; the message says which field, so nothing echoes | — | fractions, a red field for a text that is not a number |
+| [`www`](TinyBrowser.ml)<br>mini-netscape | a page's text, links and pictures, in the ASCII of the machine's font | read once as it arrives, straight into lines: no document tree, a tag a row in a table | style sheets, scripts, forms, a page's colours and fonts |
+| [`debug`](TinyDebugger.ml)<br>principia's acid | one descriptor and text commands; the kernel keeps the breakpoints; gdb's letters | a step is the timer's interrupt after one instruction, nothing decoded | watchpoints, conditional breakpoints, printing by type, debugging the kernel |
+| [`trace`](TinyTracer.ml)<br>ratrace, strace | a stop before and after each call, the kernel decoding nothing; the bytes as C strings, strace's way | — | — |
+| [`vcs`](TinyVCS.ml)<br>mini-git; git9 | git's objects, trees and DAG; Myers' diff, diff3's merge; remotes as directories | the repository one hash, an operation log: every command atomic and undoable; no staging area | git's formats, packs, the wire protocol, the index, tags, rebase |
 
 ## Building and testing
 

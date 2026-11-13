@@ -85,6 +85,10 @@ kernels_9pi_tests_hog: Hog.ml: the toplevel may let Failure escape, raised in in
 kernels_oberon: Display.ml: the toplevel may let Failure escape, raised in read, MenuViewers.menu, MenuViewers.main, TextFrames.extend, width, Texts.scan, Viewers.locate, Viewers.filler, Viewers.open_track, after
 kernels_oberon: Main.ml: the toplevel may let Not_found escape, raised in runs, Viewers.track_of
 kernels_singularity_singml: Main.ml: the toplevel may let Failure escape, raised in target, Description:fun at line 139, Description:fun at line 156, Lexer.decimal, Lexer.hexa, Lexer.directive, Lexer.token, Parser:fun at line 367, Parser.last
+kernels_squeak: Main.ml: the toplevel may let Failure escape, raised in go, St_compile:fun at line 148, number, St_lexer.small_of_bytes, St_primitives.float_string
+kernels_squeak: Main.ml: the toplevel may let Not_found escape, raised in last, temp_of
+kernels_squeak: Main.ml: the toplevel may let St_boot.Error escape
+kernels_squeak: Main.ml: the toplevel may let St_chunk.Error escape
 languages_c: Main.ml: the toplevel may let Division_by_zero escape
 languages_c: Main.ml: the toplevel may let Failure escape, raised in CLI.main, Cgen.doswit, Emit:fun at line 205, value, Emit.p, pop, vreg, ir, Lexer.floating, Lexer.word, go, moves, machine, Writer.set_body, Writer.max_stack
 languages_c: Main.ml: the toplevel may let Il.Bad_il escape

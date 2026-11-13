@@ -178,9 +178,10 @@ history, and the types of `main` and of one function) ([map](https://aryx.github
 [tiny/README.md](tiny/README.md) says what idea each one keeps from
 its original and what it redesigns.
 
-Every program of t-IX runs on tiny-machine, under tiny-kernel; the
-host (Linux, macOS) is the machine itself, and a test bench where dune
-builds the same files with OCaml to try them.
+t-IX is made for tiny-machine: every program runs there, under
+tiny-kernel, and tiny-machine itself runs on the host (Linux, macOS)
+or in a browser. Most programs also run natively on the host, as
+programs of Linux or macOS (below, how).
 
 [tiny/README.md](tiny/README.md#the-programs) has each program's table:
 what it is, its lines, its mini twin and its file.

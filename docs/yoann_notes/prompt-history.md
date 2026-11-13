@@ -72913,3 +72913,19 @@ Claude said the session could be closed, but warned that `self-quick-tix` and th
 Claude then confirmed both runs passed: the install check matched the host byte-for-byte, and `self-quick-tix` passed.
 Claude removed the `ix-check` and `ix-self` worktrees, leaving ix one commit ahead of origin, ready for Yoann to push.
 Claude also noted the nightly CI runs the self builds, so closing early was acceptable.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 10:01
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude reported that the tiny/ items from today are done and two plans are closed.
+Claude recommended plan_tiny_twists.md as the main open tiny plan, to take up in a fresh session.
+Claude left the t6 and m-ix files out of today's assets commit because other sessions were editing their sources.
+Claude suggested publishing those files with make website once committed, including m-ix's ?v= page.
+Claude listed postponed items (boot.rc with mount and bind, and CORE in Buildfiles) and said to push abd38b0b first.

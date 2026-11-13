@@ -49,10 +49,7 @@ let line pa =
 let init () =
   let hdr, pa = line (Machine.fs_base ()) in
   if String.length hdr < 12 || String.sub hdr 0 12 <> "9pi bootdir " then ignore (Machine.panic "devroot: no bootdir");
-  (* The date, Unix's seconds, is past the Pi's max_int (2^30 - 1) since
-   * 2004: int_of_string fails on it, as OCaml's, and Int32.to_int keeps
-   * its low 31 bits *)
-  Dev.kerndate := Int32.to_int (Int32.of_string (String.sub hdr 12 (String.length hdr - 12)));
+  Dev.kerndate := int_of_string (String.sub hdr 12 (String.length hdr - 12));
   let rec files pa i =
     let l, data = line pa in
     if l <> "end" then begin

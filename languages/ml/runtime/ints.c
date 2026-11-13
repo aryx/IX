@@ -103,7 +103,7 @@ value int32_shift_right_unsigned(value a, value n) { return copy_int32(U32(a) >>
 value int32_of_int(value n) { return copy_int32((int)Long_val(n)); }
 value int32_to_int(value a) { return Val_int((value)Int32_val(a)); }
 value int32_format(value fmt, value a) { return format_num(fmt, Int32_val(a), 32); }
-value int32_of_string(value s) { return copy_int32((int)parse_int(s, 32, "Int32.of_string")); }
+value int32_of_string(value s) { return copy_int32((int)parse_int(s, "Int32.of_string")); }
 
 value
 int32_div(value a, value b)
@@ -158,7 +158,7 @@ value int64_to_int(value a) { return Val_int((value)Int64_val(a)); }
 value int64_of_int32(value a) { return copy_int64((vlong)Int32_val(a)); }
 value int64_to_int32(value a) { return copy_int32((int)Int64_val(a)); }
 value int64_format(value fmt, value a) { return format_num(fmt, Int64_val(a), 64); }
-value int64_of_string(value s) { return copy_int64(parse_int(s, 64, "Int64.of_string")); }
+value int64_of_string(value s) { return copy_int64(parse_int(s, "Int64.of_string")); }
 
 /* A float's bits as an int64 and back: the block's 8 bytes, no float's
  * instruction (so on arm too: Pervasives' infinity and nan are made of

@@ -84,10 +84,13 @@ let irq () =
     Syscall.notify p 0x12)
 
 (* a hex string's value (C's "0x%016lx"): its last 8 digits, the top
- * two bits dropped (the Pi1's ints; a user's address is below 1GB) *)
+ * two bits dropped (the Pi1's ints; a user's address is below 1GB).
+ * They are dropped from the first digit before int_of_string reads
+ * the rest, since it fails on a value past max_int, as OCaml's *)
 let hex s =
   let t = String.sub s (String.length s - 8) 8 in
-  int_of_string ("0x" ^ t) land 0x3fffffff
+  let top = int_of_string ("0x" ^ String.sub t 0 1) land 3 in
+  (top lsl 28) lor int_of_string ("0x" ^ String.sub t 1 7)
 
 (* a user's trap (runtime.c's user_fault: the class, the syndrome, the
  * pc, the address): a page fault resolved (Fault), or the note 9pi's

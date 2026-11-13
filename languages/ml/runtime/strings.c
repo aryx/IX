@@ -267,14 +267,18 @@ format_num(value fmt, vlong n, int bits)
 value format_int(value fmt, value arg) { return format_num(fmt, Long_val(arg), 8 * W - 1); }
 
 /* an integer's value: -, then 0x 0o 0b or decimal, _ between digits;
- * who is the function that fails */
+ * who is the function that fails. An integer too big for nbits bits
+ * fails, as OCaml's parse_intnat: a decimal one in the signed range
+ * (one more when negative), one in another base in the unsigned range,
+ * so that 0xFFFFFFFF is Int32's -1 */
 static vlong
-parse_int(value s, char *who)
+parse_int(value s, int nbits, char *who)
 {
 	uchar *p;
 	value neg, b, d, len, i;
-	uvlong n;
+	uvlong n, max, lim;
 
+	max = nbits == 64 ? ~(uvlong)0 : ((uvlong)1 << nbits) - 1;
 	p = Bytes(s);
 	len = length(s);
 	i = 0; neg = 0; n = 0; b = 10;
@@ -299,7 +303,14 @@ parse_int(value s, char *who)
 		else goto bad;
 		if(d >= b)
 			goto bad;
+		if(n > (max - d) / b)
+			goto bad;
 		n = n * b + d;
+	}
+	if(b == 10){
+		lim = (uvlong)1 << (nbits - 1);
+		if(neg ? n > lim : n >= lim)
+			goto bad;
 	}
 	return neg ? -(vlong)n : (vlong)n;
 bad:
@@ -307,4 +318,4 @@ bad:
 	return 0;
 }
 
-value int_of_string(value s) { return Val_int((value)parse_int(s, "int_of_string")); }
+value int_of_string(value s) { return Val_int((value)parse_int(s, 8 * W - 1, "int_of_string")); }

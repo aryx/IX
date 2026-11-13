@@ -31,7 +31,7 @@ $D/%.$O: %.ml
 
 $D/TinyMachineCPU.$O $D/TinyAssembler.$O $D/TinyLinker.$O $D/TinyArchiver.$O $D/TinyCPU.$O $D/TinyMachineDevices.$O $D/TinyMachine.$O: TinyLibMachine.ml
 $D/TinyCPU.$O $D/TinyMachineDevices.$O $D/TinyMachine.$O: TinyMachine/TinyMachineCPU.ml
-$D/TinyAssembler.$O $D/TinyLinker.$O $D/TinyArchiver.$O $D/TinyC.$O $D/TinyML.$O $D/TinyCPU.$O $D/TinyMachine.$O $D/TinyMkfat.$O: $D/TinyLibSystem.$O
+$D/TinyAssembler.$O $D/TinyLinker.$O $D/TinyArchiver.$O $D/cc/TinyC.$O $D/TinyML.$O $D/TinyCPU.$O $D/TinyMachine.$O $D/TinyMkfat.$O: $D/TinyLibSystem.$O
 
 # (tiny-ml's passes, TinyML/, each after the ones before it, after TinyLibMachine, the lines they make)
 MLC=TinyLibMachine Lexer Tree Formats Parser Types Machine Compile Link
@@ -46,7 +46,8 @@ $D/Link.$O: $D/Compile.$O
 $D/TinyML.$O: $D/Link.$O
 
 # (tiny-cc's passes, TinyC/, the same way, after TinyLibMachine, the lines they make;
-# their objects in $D/cc/, since tiny-ml's of the same names, Lexer..., are in $D)
+# their objects in $D/cc/, since tiny-ml's of the same names, Lexer..., are in $D;
+# TinyC.ml's too, so that its Lexer... are, for tests/depend_edges.sh, those of $D/cc)
 CCP=Types Lexer Tree Lower Parser Machine
 CCPO=$D/TinyLibMachine.$O ${CCP:%=$D/cc/%.$O}
 $D/cc/Lexer.$O: $D/cc/Types.$O
@@ -55,7 +56,7 @@ $D/cc/Lower.$O: $D/cc/Tree.$O
 $D/cc/Parser.$O: $D/cc/Lower.$O
 $D/cc/Machine.$O: $D/cc/Parser.$O $D/TinyLibMachine.$O
 $D/TinyAssembler.$O: $D/TinyLibMachine.$O
-$D/TinyC.$O: $D/cc/Machine.$O
+$D/cc/TinyC.$O: $D/cc/Machine.$O
 $D/TinyMachine.$O: TinyMachine/TinyMachineDevices.ml TinyKernel/KNetwork.ml TinyMachine/TinyMachinePeer.ml $D/Parallel.$O
 
 # (a blank line above: a # line right under a rule's head is its recipe,
@@ -94,8 +95,8 @@ CC_INCLUDES=-I TinyC -I $D/cc
 $D/cc/%.$O: TinyC/%.ml
 	mkdir -p $D/cc
 	$ML $CC_INCLUDES $INCLUDES -o $target TinyC/$stem.ml
-$D/TinyC.$O: TinyC.ml
-	mkdir -p $D
+$D/cc/TinyC.$O: TinyC.ml
+	mkdir -p $D/cc
 	$ML $CC_INCLUDES $INCLUDES -o $target TinyC.ml
 
 # (tiny-mkfat is t6's, a step before tiny-kernel: its file is there)
@@ -130,9 +131,9 @@ $D/TinyEditorLine.$O: $D/TinyLibSystem.$O $D/TinyLibRegex.$O TinyEditorLine.ml
 $D/tiny-editor: $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyEditorLine.$O $LIBS
 	$START TinyLibSystem TinyLibRegex TinyEditorLine Std_exit -o $D/TinyEditorLine.start.$O
 	$LINK -o $target $D/TinyEditorLine.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyEditorLine.$O $STDEND
-$D/tiny-cc: $D/TinyLibSystem.$O $CCPO $D/TinyC.$O $LIBS
+$D/tiny-cc: $D/TinyLibSystem.$O $CCPO $D/cc/TinyC.$O $LIBS
 	$START TinyLibSystem TinyLibMachine $CCP TinyC Std_exit -o $D/TinyC.start.$O
-	$LINK -o $target $D/TinyC.start.$O $STDOBJS $D/TinyLibSystem.$O $CCPO $D/TinyC.$O $STDEND
+	$LINK -o $target $D/TinyC.start.$O $STDOBJS $D/TinyLibSystem.$O $CCPO $D/cc/TinyC.$O $STDEND
 $D/tiny-ml: $D/TinyLibSystem.$O $MLCO $D/TinyML.$O $LIBS
 	$START TinyLibSystem $MLC TinyML Std_exit -o $D/TinyML.start.$O
 	$LINK -o $target $D/TinyML.start.$O $STDOBJS $D/TinyLibSystem.$O $MLCO $D/TinyML.$O $STDEND

@@ -26,7 +26,7 @@ MACHINE = tiny-machine
 MKFS = tiny-mkfat
 
 O = _make
-L = ../../../runtime
+L = ../../../runtime/c
 KERNEL = $(O)/entry.o $(O)/udivmod.o $(O)/main.o $(O)/proc.o $(O)/file.o
 UPROGS = init sh cat echo ls mkdir rm wc t6tests
 ULIB = $(O)/start.o $(O)/udivmod.o $(O)/libc.o $(O)/libc/sys.o

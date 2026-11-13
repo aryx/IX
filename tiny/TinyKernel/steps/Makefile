@@ -10,7 +10,7 @@
 #   t6/       a kernel in C: spawn, a partition a process, a FAT on a
 #             disk, one kernel stack (TinyKernel.ml has no disk). Six of
 #             its programs are tiny-kernel's own (links to ../user/).
-# They share the C runtime, ../../runtime/ (tiny-cc's: start.s,
+# They share the C runtime, ../../runtime/c/ (tiny-cc's: start.s,
 # udivmod.s, libc.c, libc.h), whose system calls are tiny-cpu's and
 # the kernels'. Not counted in t-ix's lines (make loc).
 # (old: tiny/TinyKernel/steps/, with v6/, xv6's structure and names in C, 3,400
@@ -34,7 +34,7 @@ AS = tiny-as
 LD = tiny-ld
 CPU = tiny-cpu
 VERSIONS = v0 t6
-L = ../../runtime
+L = ../../runtime/c
 
 O = _make
 

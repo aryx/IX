@@ -72817,3 +72817,67 @@ Claude appended a closing Status paragraph listing the work still open after the
 That list covers publishing the assets with `make website`, the postponed `boot.rc` moving boot work into a script.
 Claude also flagged a union bug: `cp` to a removed `/bin/ls` writes to memory, not the disk, so creates may need the same check.
 Claude left `ints.c` and `strings.c` out of the commit and reported `self-quick-tix` passing on e4f316f2.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 08:49
+
+**Yoann:**
+
+> ok let's make website then and commit
+
+**Claude (summary):**
+
+Claude recommended pushing the assets repo before ix, since the new site depends on it.
+Claude committed 90df0e3 in assets: tiny-kernel's boot.img shrunk from 2.7 to 1.3 MB, plus disk.img and src.img.
+It also added the new TinyMachineWeb.bc.js and two www documents, but left t6 and m-ix files out.
+Claude noted those old t6 and m-ix versions still run with the new JavaScript.
+Claude also committed 52e39dd8 in ix, moving the plan to done/, and didn't browser-test the page.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 09:11
+
+**Yoann:**
+
+> I pushed in assets
+
+**Claude (summary):**
+
+Claude confirmed the GitHub Pages deploy had finished and all four assets were served at their built sizes.
+Claude found the live t-ix.html was still the old version, with `?v=10` and no `disk2`.
+Claude identified that the website page needed the ix push, covering commits 81c58dc1, e4f316f2 and 52e39dd8.
+Claude asked whether Yoann wanted to push ix himself or have Claude do it.
+The page update stayed pending until that push, which Yoann has now made.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 09:23
+
+**Yoann:**
+
+> I already pushed ix
+
+**Claude (summary):**
+
+Claude checked the live ix page at aryx.github.io/IX/t-ix.html to confirm the pushed changes were online.
+Claude found the page now serves disk2 and ?v=11, with its assets online.
+Claude judged this from the page source and file sizes, without opening it in a browser.
+Claude reported that the full make self run was still running in the /Users/pad/github/ix-self worktree.
+Claude said it would report that result, then remove the worktree, and noted the plan moved to docs/plans/done.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 09:31
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude proposed three small cleanups and one larger plan, asking Yoann which to start with.
+Claude said the first was closing `plan_tiny_buildfile.md`, whose Status was stale since tiny-kernel self-built.
+It would mark the done steps and move the plan to `done/`, as was done for the boot disk plan.
+The second was deduplicating the TinyLibCore unit list, repeated in `tiny/Buildfile:76`, `tiny/TinyLibCore/Buildfile:21`, and `tests/link.sh`.
+Third was fixing union file creation so a `cp` of a new name goes to the disk, not the image copy.

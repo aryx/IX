@@ -47,7 +47,15 @@
  * machine. Programs compiled by tiny-cc run here with its libc (the
  * three calls made by start.s are the three calls provided here).
  * The same assembly, linked after a kernel, runs on TinyMachine, where
- * sys traps to that kernel instead of to OCaml. *)
+ * sys traps to that kernel instead of to OCaml.
+ *
+ * dropped:
+ * mini-5i's -t, -s and -y, which print each instruction as it runs,
+ * the count and the speed, and each system call. A program on tiny-cpu
+ * is watched through its output, or run under tiny-kernel with its
+ * debug. With three calls there are no files, processes or clock, so a
+ * program that opens a file runs only on tiny-machine, under the
+ * kernel. *)
 
 (* Loads the bytes of an image and runs it with its arguments, doing
  * its system calls here, and returns its exit status. With a profile,

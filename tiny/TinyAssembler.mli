@@ -74,6 +74,23 @@
  *   program. On tiny-cpu, or in a program on tiny-kernel, they are
  *   illegal words, as on a real machine in user mode.
  *
+ * dropped:
+ * Besides Plan 9's syntax and its two machines, mini-asm's -data, which
+ * puts a file's bytes in the object under a name, and labels private to
+ * a file (5a's name<>). Without -data, a file of bytes goes through the
+ * text: TinyKernel's Makefile turns the font into .byte lines with od
+ * and awk, a .s several times the font's size. Without private labels,
+ * a hand-written .s must choose names that no other file uses.
+ *
+ * twist:
+ * {b The text is a view of the lines, both ways.} tiny-as -S prints the
+ * lines it parsed with the printer of the compilers' -S, and
+ * tests/TinyAssembler_test.sh checks the law on every .s of tiny/ and
+ * on what the compilers write: the printed text assembles to the same
+ * object, and prints again to the same text. So a compiler hands its
+ * lines to the encoder and never writes text to read it back, where
+ * mini-ml writes its assembly and mini-asm's parser reads it again.
+ *
  * context:
  * People write the .s files (tiny-cc -S and tiny-ml -S print theirs,
  * to be read). tiny-ld reads the objects, both these and the

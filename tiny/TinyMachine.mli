@@ -252,6 +252,33 @@
  * there are, and which core handles which, is the board's business,
  * not the processor's.
  *
+ * dropped:
+ * Being a real board is left out, and with it what mini-qemu's
+ * likeness to one gives. No kernel written for another machine runs
+ * here, where mini-qemu boots xv6's Pi ports and principia's 9pi
+ * unchanged, their output checked against QEMU's
+ * (raspberry/tests/xv6.sh, 9pi.py). What a kernel learns here about
+ * devices does not carry over to real ones either: there is no SD
+ * card's protocol, no DMA controller, no interrupt controller of its
+ * own, no USB. Nor is there a monitor or QMP to look into a running
+ * machine or drive it from outside.
+ *
+ * twist:
+ * {b The machine is designed with its kernel}, where mini-qemu must
+ * copy a board as it is. A device is a few words at the top of memory:
+ * the disk is a block number, an address, a command and a status, and
+ * its transfer is done at once, where the Pi's SD card needs its host
+ * controller's commands and DMA's control blocks. The screen is memory
+ * at a fixed address, with no mailbox to ask the firmware for it. So a
+ * kernel's driver is a few stores, and the machine's side is as short.
+ *
+ * {b A session can be replayed.} -events gives the keys and the mouse
+ * at times counted in instructions, and -screen writes the screen at
+ * the halt, so a graphical session is a test whose result is a file,
+ * the same on every run. mini-qemu's sessions are driven from outside,
+ * through QMP's input-send-event and screendump, by a script that
+ * sleeps between them (raspberry/tests/9pi_graphics.py).
+ *
  * archi:
  * The machine itself is in TinyMachineDevices.ml (the control
  * registers, the traps, the pages, the state of the devices, and one

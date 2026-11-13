@@ -73275,3 +73275,118 @@ Claude added a row for the kernel's file system to the overview table, since KFS
 Claude said the twin is mini-9pi's Kfs, which keeps xv6's inode and directory structures.
 Claude then corrected that row's claims before installing the table into the overview.
 Claude's answer was mid-stream, ending on a note that it was fixing the row and installing the table.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 15:34
+
+**Yoann:**
+
+> let's commit and push
+
+**Claude (summary):**
+
+Claude pushed the new table to main as commit `d32e7c3a`, with a longer intro and kept, twist, and dropped columns.
+The same commit added a new KFS row and `prompt-history.md`.
+Claude said the four-column table still needs a check on GitHub, since it has not been seen rendered there.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 15:35
+
+**Yoann:**
+
+> fill in the missing twist and dropped in the .mli files (if they are actually implemented)
+
+**Claude (summary):**
+
+Claude launched three agents to write the missing paragraphs, each working on separate files.
+Claude gave the toolchain group tiny-cc, tiny-ml, tiny-as, tiny-ld, tiny-ar, and tiny-cpu.
+Claude gave the machine and kernel group tiny-machine, KGraphics, KFS, KAudio, tiny-prof, and trace.
+Claude gave the tools and apps group rc, ed, emacs, play, and temp, checking claims against code and twins.
+Claude said it would review the edits, fill the README table's dashes, and ask before committing.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 15:40
+
+**Yoann:**
+
+> /login
+
+------------------------------------------------------------------------
+
+## 2026-11-13 15:41
+
+**Yoann:**
+
+> resume
+
+**Claude (summary):**
+
+Claude resumed the toolchain and kernel agents, then added twist and dropped paragraphs to tiny-ml, tiny-as, tiny-ld and tiny-cpu.
+Claude skipped a tiny-cc twist, since its real twists were already listed under kept:.
+Claude found that mini-cc's simple back end is a stack machine, matching tiny-cc's -ir option.
+Claude flagged TinyC.mli's twin: line as wrongly implying mini-cc had no stack machine.
+Claude deferred fixing that line until the kernel agent finished editing TinyProfiler.mli.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 15:44
+
+**Yoann:**
+
+> for cc in the table maybe the twist is the use of this stack machine as registers? a la PCode?
+
+------------------------------------------------------------------------
+
+## 2026-11-13 15:45
+
+**Yoann:**
+
+> it's not part of the twin I think so not sure why it's the "kept" column right now
+
+------------------------------------------------------------------------
+
+## 2026-11-13 15:45
+
+**Yoann:**
+
+> for tiny-ml, for the dropped you can mention functors, classes, gadts, etc; they are not in mini-ml, but are in ocamlopt
+
+**Claude (summary):**
+
+Claude rewrote the tiny-cc README table row, with kept listing C's types and operators and twist naming the stack machine.
+Claude regrouped TinyC.mli's labels into docs/tags.md order, moving the four stack-machine points into twist.
+Claude updated the other table rows, including tiny-prof's twin now naming mini-prof and a narrower twist.
+Claude left four table cells as dashes for ed, emacs, ar and temp, having found no new true twist.
+Claude confirmed all edited .mli files parse, left everything uncommitted, and asked whether to commit and push.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 15:46
+
+**Yoann:**
+
+> (I'm talking in the table each time)
+
+**Claude (summary):**
+
+Claude undid its earlier `.mli` edit because Yoann asked only for a table change.
+Claude had made unverified claims about mini-ml in that `.mli` edit, so it reverted the file.
+Claude then moved the change into the table cell instead.
+Yoann's follow-up says the `.mli` must also be updated to match the table change.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 15:46
+
+**Yoann:**
+
+> (but yes the .mli must also be updated accordingly)
+
+**Claude (summary):**
+
+Claude agreed that the `.mli` must change along with the implementation, since the interface has to match.
+Claude said it would verify its claims about mini-ml before writing them, rather than assuming them.
+Claude had not yet made the edits; the reply only states the plan to check mini-ml first.

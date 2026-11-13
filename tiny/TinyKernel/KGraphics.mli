@@ -99,6 +99,17 @@
  * - Layers and windows (TinyWindows.ml composes whole images), and
  *   the screen's refresh.
  *
+ * twist:
+ * {b A text has a style, and the kernel makes its faces.} Plan 9's
+ * string message names a font that the program loaded, and gives the
+ * characters by their places in that font's cache (principia's
+ * drawmesg.c), so a bold or a large text is another font to load. Here
+ * t carries the characters themselves and a few bits of style. Bold and
+ * large are the font's own faces when it has them, else made from its
+ * one face the first time a text asks (each pixel doubled, or drawn
+ * twice a pixel apart), and italic is made by slanting. A word
+ * processor's styles then cost a program only a number.
+ *
  * context:
  * Below this module is KRaw (bytes, and three loops over a row).
  * Around it is TinyKernel, which gives each program a connection and

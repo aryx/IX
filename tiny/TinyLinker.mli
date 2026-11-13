@@ -54,6 +54,16 @@
  * the images of make check when the linker was split from the
  * assembler (plan_tiny_self_hosting.md, step 3).
  *
+ * dropped:
+ * Besides the work for its machine said above, mini-ld's -g, the tables
+ * from pcs to source lines that its debugger reads: tiny-kernel's debug
+ * and tiny-prof name a function, never a line. There is no -T nor -E:
+ * an image is linked at 0 and starts at its first word, so start.s or
+ * the kernel's entry must be the first object given. Nor are there
+ * names private to a file (5l's name<>) or weak ones: a compiler makes
+ * its statics unique with its file's name, and a name defined twice is
+ * an error.
+ *
  * twist:
  * What tiny-ld adds compared to its twin:
  * - {b The sweep}, which neither 5l nor mini-ld has (there, a library

@@ -236,6 +236,29 @@
  *   the others are ML code, in TinyLibCore/'s units, and only what the
  *   program uses is linked (see above).
  *
+ * dropped:
+ * Against OCaml's ocamlopt, the language that mini-ml leaves out too:
+ * functors, classes and objects (but the capabilities' object types,
+ * read and ignored), polymorphic variants, GADTs and optional
+ * arguments. Against mini-ml, its floats and labeled arguments (the
+ * language left out above), its help for debugging and its young
+ * generation. There is no -g: no table from pcs to the
+ * .ml's lines and no description of the values' types, so an uncaught
+ * exception is printed without the trace of its calls, and tiny-kernel's
+ * debug names functions, not lines. [@@deriving show] is read and
+ * dropped, where mini-ml's mlpp derives the printers, so a tree is
+ * printed by hand or on the host. Every collection copies all that is
+ * alive, which costs most to a program with many old blocks.
+ *
+ * twist:
+ * {b Printf without a type for formats.} A call of Printf.sprintf,
+ * ksprintf or bprintf whose format is a string written at the call is
+ * rewritten by the parser into the concatenation it makes (Formats), so
+ * the type checker never sees a format and nothing reads it at run time.
+ * mini-ml types a format as OCaml does, format4 computed from the
+ * string, and its Printf interprets it as the program runs. The price:
+ * a format must be written at the call, and only %d %s %c %x %S are read.
+ *
  * context:
  * tiny-ml compiles every ML program of tiny-kernel, starting with the
  * kernel and tiny-ml itself, and OCaml compiles the same files on the

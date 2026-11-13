@@ -36,6 +36,14 @@
  * for them), floats, a WAV's other encodings (24 or 32 bits, floats,
  * ADPCM, A-law), and the -c and -s options.
  *
+ * twist:
+ * The file is decoded as it is played. mini-play's Wav decodes the
+ * whole file into floats, resampled to 44,100 a second, before the
+ * first block is written: eight bytes a sample, at least four times
+ * the file's size. Here a block is taken from the file's bytes only
+ * once the kernel has taken the one before, so nothing but the file
+ * and one block is ever in memory.
+ *
  * cs-history:
  * WAV is a kind of RIFF, Microsoft's and IBM's format (1991), which is
  * itself Electronic Arts' IFF (1985, on the Amiga) with little-endian

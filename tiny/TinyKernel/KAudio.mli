@@ -44,6 +44,15 @@
  * principia's devaudio.c). A program makes and mixes its sounds itself,
  * with lib_audio's Sfx and Mixer.
  *
+ * dropped:
+ * Most of sfxr's recipe, which lib_audio's Sfx keeps: the sine wave,
+ * an attack and a sustain (a sound here only falls, after a fixed rise
+ * of 2 ms against the click), vibrato, a jump in pitch, the filters,
+ * the echo and the reverb. Voices are added and clamped, so loud ones
+ * together clip, where lib_audio's Mixer squeezes their sum through
+ * tanh. There is no /dev/volume as mini-9pi has: a program cannot
+ * turn the sound down.
+ *
  * twist:
  * Unlike the twin, the recipe and the mixing moved into the kernel, so
  * each open of /dev/audio is a voice and several programs are heard at

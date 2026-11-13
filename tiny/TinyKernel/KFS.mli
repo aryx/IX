@@ -30,6 +30,14 @@
  * mini-9pi's Kfs and in Unix, the kernel calls the file system as
  * functions.
  *
+ * dropped:
+ * xv6's buffer cache and its locks on inodes and buffers: a call runs
+ * to its end on core 0, and every transfer is instant, so no process
+ * ever waits in the middle of the file system. A slow disk would need
+ * both back. A directory has no entries for . and .. (the kernel
+ * resolves .. by the path's text), and a file is a directory or data,
+ * with no kind for a device such as xv6's mknod makes.
+ *
  * twist:
  * Unlike the twin:
  * - nothing is written in place, so a commit is one block, where

@@ -57,6 +57,24 @@
  *   for all of them.
  * - A fault stops the process, and trace then kills it.
  *
+ * dropped:
+ * strace's options: choosing which calls to show (-e), the time of
+ * each call or its length (-t, -T), a table of counts at the end (-c),
+ * the number of bytes shown (-s), and detaching to let the process go
+ * on untraced. Every call of the process is printed, so a long run is
+ * read with grep on trace's error output.
+ *
+ * twist:
+ * Unlike ratrace's kernel, which formats each call as a line of text
+ * (principia's syscallfmt.c, some 380 lines that know every call's
+ * arguments), tiny-kernel decodes nothing: it stops the process and
+ * gives the call's numbers, and trace reads the strings and bytes from
+ * the process's memory. So a new call changes trace's table and not
+ * the kernel. Following children needs no parsing of lines either:
+ * ratrace finds a fork by searching its line for Rfork and RFPROC,
+ * where here a child's stops are held until trace(pid) gives trace
+ * its descriptor.
+ *
  * others:
  * Linux's strace stops the process at each call's entry and exit with
  * ptrace's PTRACE_SYSCALL, as here; Solaris's truss reads /proc.

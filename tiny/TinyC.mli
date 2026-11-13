@@ -61,12 +61,41 @@
  * their trees, their code generator, and a record per machine. This
  * compiler is what is left when the code only needs to be correct.
  *
- * mini-cc has what this one leaves out: 7c's trees rewritten using
+ * mini-cc also has a stack machine, its simple back end
+ * (languages/c/simple/, printed by -dir as this one's by -ir), whose
+ * contract is the behavior, as here; but its main back end is 5c's and
+ * 7c's, with what this one leaves out: 7c's trees rewritten using
  * Sethi and Ullman's numbers, addressing modes, a register allocator, a
  * peephole pass, and an object file format.
  *
  * kept:
- * What makes it small while still being a C compiler:
+ * The language supported:
+ * - char, short, int, long (4 bytes, as in Plan 9), signed and
+ *   unsigned; pointers, arrays, structs (members, . and ->, but not
+ *   passed by value); enums; void;
+ * - globals with initializers (numbers, strings, addresses, and arrays
+ *   of them); static, extern, typedef;
+ * - functions and prototypes, and calls to variadic functions;
+ * - function pointers (C's inside-out declarators, and calls through
+ *   any expression, as needed by t6's system call table);
+ * - every operator, including op=, ++, --, ?:, casts, sizeof and the
+ *   comma, with constant expressions folded (for an array size or a
+ *   case);
+ * - if, while, do, for, switch, break, continue, return and blocks;
+ * - #include "file" and #define of a name.
+ *
+ * dropped:
+ * Each of these would cost too much here: floats, unions, bitfields,
+ * structs by value, goto, macros with arguments, and #if. long long is
+ * dropped too, because TinyCPU's registers are 32 bits: a 64-bit value
+ * would take two registers in the stack machine, and calls to the
+ * runtime for its multiplication and division. A variable declared
+ * long long is refused; a constant too wide for an int, or with the
+ * suffix ll, is computed in 32 bits.
+ *
+ * twist:
+ * What makes it small while still being a C compiler, where 5c's and
+ * 7c's trees go straight to instructions:
  *
  * - {b A stack machine in between} (Lower): expressions become
  *   pushes and operations on a stack, and statements become labels
@@ -99,30 +128,6 @@
  *   variadic function such as print walks them from the address of its
  *   last named argument. The result is in r13. The callee may use every
  *   register except sp.
- *
- * The language supported:
- * - char, short, int, long (4 bytes, as in Plan 9), signed and
- *   unsigned; pointers, arrays, structs (members, . and ->, but not
- *   passed by value); enums; void;
- * - globals with initializers (numbers, strings, addresses, and arrays
- *   of them); static, extern, typedef;
- * - functions and prototypes, and calls to variadic functions;
- * - function pointers (C's inside-out declarators, and calls through
- *   any expression, as needed by t6's system call table);
- * - every operator, including op=, ++, --, ?:, casts, sizeof and the
- *   comma, with constant expressions folded (for an array size or a
- *   case);
- * - if, while, do, for, switch, break, continue, return and blocks;
- * - #include "file" and #define of a name.
- *
- * dropped:
- * Each of these would cost too much here: floats, unions, bitfields,
- * structs by value, goto, macros with arguments, and #if. long long is
- * dropped too, because TinyCPU's registers are 32 bits: a 64-bit value
- * would take two registers in the stack machine, and calls to the
- * runtime for its multiplication and division. A variable declared
- * long long is refused; a constant too wide for an int, or with the
- * suffix ll, is computed in 32 bits.
  *
  * context:
  * Its usage, with examples, is in [help] in TinyC.ml, which is what

@@ -96,15 +96,26 @@
  * instruction fetched by its address, and with the program's symbol
  * table they print the count and share of each function ($ip; see
  * iprofile in principia's machine/5i/stats.c, whose columns are
- * cycles, %, symbol and file). mini-5i left it out.
+ * cycles, %, symbol and file). mini-5i has it too: its -prof counts
+ * every pc of one program, and m-ix's mini-prof (profilers/misc), this
+ * one's twin, reads that file as well as mini-qemu's.
+ *
+ * dropped:
+ * The functions are all it shows. m-ix's mini-prof (profilers/misc)
+ * can also list one function's instructions with their counts (-a),
+ * read from the program and decoded, which is what a compiler's back
+ * end is tuned on; here that means reading tiny-machine -l's listing
+ * beside the profile. Names come only from tiny-ld's maps, not from
+ * an executable's symbols. There is no source file (5i's iprofile
+ * prints each function's), nor who called whom (gprof's graph).
  *
  * twist:
- * Here every instruction is counted, where the twin samples: the
- * machine is slow enough for that to cost little more than running it,
- * and two runs give the same profile. The counts are a file of their
- * own, so that one run can be subtracted from another (-diff), and on
- * a machine with a kernel, the kernel's counts and each program's are
- * told apart.
+ * Every instruction is counted on a machine with a kernel, where
+ * mini-qemu, the twin that runs one, samples a pc in 1024: the machine
+ * is slow enough for that to cost little more than running it, and two
+ * runs give the same profile. mini-5i's -prof counts every instruction
+ * too, but of one program with no kernel; here the kernel's counts and
+ * the program's are told apart, named by their own maps (-k, -u).
  *
  * cs-history:
  * Unix's prof (1973 or so) counted where the program was at each tick

@@ -1,6 +1,7 @@
-(* A row's values, packed as bytes: a record.
+(* A record, which is a row's values packed as bytes.
  *
- * A header of types, then the values, no separators:
+ * A record is a header of types followed by the values, with no
+ * separators:
  *
  *      07 | 00 | 80 80 80 11 | 04 | 61 62 | 00 00 01 2c
  *      |    |    |             |    |       |
@@ -10,13 +11,14 @@
  *      |    NULL (the primary key, stored as the row's key instead)
  *      the header's size, this byte included
  *
- * (the row (1, "ab", 300) of t(id INTEGER PRIMARY KEY, name TEXT,
- * n INTEGER), as chidb writes it; checked). The types are SQLite's
- * serial types, cut to five: 0 NULL, 1, 2 and 4 for integers of 1, 2
- * and 4 bytes, big-endian and signed, and 2n+13 for a text of n bytes.
- * chidb writes a text's type as a varint of 4 bytes always (7 bits a
- * byte, the high bit set on all but the last), the others as 1 byte;
- * a reader takes a type with its high bit set as a varint.
+ * (This is the row (1, "ab", 300) of t(id INTEGER PRIMARY KEY, name
+ * TEXT, n INTEGER), as chidb writes it; checked.) The types are
+ * SQLite's serial types, cut down to five: 0 is NULL, 1, 2 and 4 are
+ * integers of 1, 2 and 4 bytes, big-endian and signed, and 2n+13 is a
+ * text of n bytes. chidb always writes a text's type as a varint of 4
+ * bytes (7 bits in each byte, with the high bit set on all but the
+ * last), and the other types as 1 byte. A reader takes a type with its
+ * high bit set as a varint.
  *
  * References: SQLite's record format ("The Database File Format",
  * section "Record Format", sqlite.org), where a varint takes from 1
@@ -39,7 +41,8 @@ val pack : value list -> string
 (* the record at [off] in the bytes *)
 val unpack : Bytes.t -> int -> value list
 
-(* its size in bytes, header included, from its header *)
+(* the record's size in bytes, header included, computed from its
+ * header *)
 val packed_size : Bytes.t -> int -> int
 
 (* 4-byte varints and big-endian integers, as chidb's util.c *)

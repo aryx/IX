@@ -3,7 +3,11 @@
 
 (* See Sfx.mli *)
 
-(* ix: the author's playground's libs/audio/Sfx.ml; its numbers drawn from Lehmer, where the stdlib's Random.State (other sounds for a seed, the same on every compiler) (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/Sfx.ml
+ * in the author's playground (docs/plans/plan_audio.md). Its random
+ * numbers are drawn from Lehmer, where the playground uses the stdlib's
+ * Random.State. So a seed gives other sounds than in the playground,
+ * but the same sounds with every compiler. *)
 
 type wave = Square | Sawtooth | Triangle | Sine | Noise
 

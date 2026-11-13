@@ -3,7 +3,8 @@
 
 (* See Layer2.mli *)
 
-(* ix: the author's playground's libs/audio/formats/mpeg_audio/Layer2.ml (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/formats/mpeg_audio/Layer2.ml
+ * in the author's playground (docs/plans/plan_audio.md). *)
 
 (*****************************************************************************)
 (* The bit allocation tables (Table B.2) *)

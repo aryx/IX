@@ -3,7 +3,8 @@
 
 (* See Modal.mli *)
 
-(* ix: the author's playground's libs/audio/instruments/Modal.ml (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/instruments/Modal.ml
+ * in the author's playground (docs/plans/plan_audio.md). *)
 
 let rate = float_of_int Signal.rate
 

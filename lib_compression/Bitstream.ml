@@ -3,7 +3,9 @@
 
 (* See Bitstream.mli *)
 
-(* ix: the author's playground's libs/compression/Bits.ml, as Bitstream (machine has a Bits); less its start codes, a video's (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/compression/Bits.ml in the author's playground,
+ * renamed Bitstream because machine has a Bits. Its start codes are
+ * kept for the MPEG-1 video reader (Mpeg1). *)
 
 
 type t = { s : string; mutable pos : int (* bits *) }

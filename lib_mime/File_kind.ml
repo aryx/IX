@@ -3,9 +3,9 @@
 
 (* See File_kind.mli *)
 
-(* ix: the author's playground's apps/media/Media.ml, its by_bytes and
- * by_name; content types where it had a variant, and the kinds that are
- * not media *)
+(* ix: copied from by_bytes and by_name of apps/media/Media.ml in the
+ * author's playground. Here they give content types where it had a
+ * variant, and there are also the kinds that are not media. *)
 
 let starts (s : string) (at : int) (magic : string) : bool =
   String.length s >= at + String.length magic && String.sub s at (String.length magic) = magic

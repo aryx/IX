@@ -1,7 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/crypto/Gcm.ml (docs/plans/plan_browser.md) *)
+(* ix: copied from libs/crypto/Gcm.ml in the author's playground
+ * (docs/plans/plan_browser.md) *)
 
 (* See Gcm.mli *)
 

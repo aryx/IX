@@ -1,12 +1,15 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* QEMU's machine protocol, the part xv6's graphical tests use
- * (scripts/qemu_graphics.py): on a Unix socket (-qmp unix:PATH,server,
- * nowait), JSON objects a line each; qmp_capabilities, query-status,
- * screendump (the framebuffer as a PPM file), send-key (keys by QEMU's
- * qcodes, held 100ms of the board's time, or hold-time), quit. Polled
- * between batches of instructions, never blocking. *)
+(* This is QEMU's machine protocol, the part of it that xv6's graphical
+ * tests use (scripts/qemu_graphics.py). It talks on a Unix socket
+ * (-qmp unix:PATH,server,nowait), with a JSON object on each line. The
+ * commands are qmp_capabilities, query-status, screendump (which
+ * writes the framebuffer as a PPM file), send-key (keys given by
+ * QEMU's qcodes, held for 100ms of the board's time, or for
+ * hold-time), input-send-event (mouse motion, buttons and keys), and
+ * quit. The socket is polled between batches of
+ * instructions, and never blocks. *)
 
 
 (* QEMU's qcodes, as USB HID usages *)

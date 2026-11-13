@@ -1,34 +1,41 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-man: a page of the manual found and shown, as Plan 9's man(1)
- * (an rc script round nroff there; round mini-troff's modules here).
+(* mini-man finds a page of the manual and shows it, as Plan 9's man(1)
+ * does. There, man is an rc script around nroff; here it is built
+ * around mini-troff's modules.
  *
  *   mini-man tr         every page named tr, of any section
  *   mini-man 2 open     the one of section 2
  *   mini-man 1          section 1 listed, its pages by groups
- *   mini-man            every section listed so
+ *   mini-man            every section listed in the same way
  *
- * A page is a file, dir/section/name (/sys/man/1/tr): the manual is a
- * tree, and finding a page is looking in eight directories. The tree
- * is /sys/man, Plan 9's place, or /lib/man where there is none (ix's
- * card: /sys is the kernel's there); -m dir: the manual is there
- * (principia's ROOT/docs/man; ix's own pages are docs/man, written in
- * the new format, which a page says by its first line). -T pdf: the page as a PDF file, on the standard output
- * (one page then). -v: what was not understood in the page is said,
- * on the standard error (mini-troff always says it).
+ * A page is a file, dir/section/name (/sys/man/1/tr). The manual is a
+ * tree, and finding a page means looking in eight directories. The
+ * tree is /sys/man, Plan 9's place, or /lib/man where there is none
+ * (on ix's card, /sys is the kernel's directory). With -m dir, the
+ * manual is in dir instead (principia's ROOT/docs/man; ix's own pages
+ * are in docs/man, written in the new format, which a page announces
+ * in its first line). With -T pdf, the page is written as a PDF file
+ * on the standard output. Each page found is its own PDF file, and
+ * they are written one after the other, so give only one page then
+ * if a reader is to open the output. With -v, what
+ * was not understood in the page is reported on the standard error
+ * (mini-troff always reports it).
  *
  * cs-history:
- * man was a shell script from the start: the pages were files, the
- * formatter a program, and the command the few lines that put the two
- * together. The sections' numbers are the first edition's (1971): 1
- * the commands, 2 the system calls, 3 the library, 4 the devices, 5
- * the file formats, 6 the games, 7 the rest, 8 for who maintains the
- * system. Plan 9 kept the order and changed what is in some (3 the
+ * man was a shell script from the start. The pages were files, the
+ * formatter was a program, and the command was the few lines that put
+ * the two together. The numbers of the sections are those of the first
+ * edition (1971): 1 for the commands, 2 for the system calls, 3 for
+ * the library, 4 for the devices, 5 for the file formats, 6 for the
+ * games, 7 for the rest, and 8 for those who maintain the system.
+ * Plan 9 kept the order but changed what is in some of them (3 is the
  * devices, 4 the file servers, 5 the protocol, 6 the formats).
  *
- * A section is listed by groups, a page in the new format saying its
- * own as the third part of its first line, \title{grep}{1}{text}:
+ * A section is listed by groups. A page in the new format gives its
+ * own group as the third part of its first line,
+ * \title{grep}{1}{text}:
  *
  *   files
  *     cat     one file after another, on the standard output
@@ -36,17 +43,17 @@
  *   text
  *     grep    the lines that match a pattern
  *
- * Section 1 is the /bin of the manual, a hundred commands in one
- * directory; the groups are what /progs's directories are on ix's
- * card, for the eye. A page that says none (Plan 9's, by man(6)'s
- * macros) is in "other", at the end.
+ * Section 1 is the /bin of the manual, with a hundred commands in one
+ * directory. The groups are what the directories of /progs are on
+ * ix's card, to help the eye. A page that gives no group (Plan 9's
+ * pages, written with man(6)'s macros) goes in "other", at the end.
  *
  * others:
  * Unix's man -k (apropos, 3BSD) looks for a word in a database of the
- * NAME lines (whatis, made by makewhatis); Plan 9's lookman, in an
- * index of the words. BSD's pages say a section's title in the
- * header's middle ("General Commands Manual"), as ix's say their
- * group. *)
+ * NAME lines (whatis, made by makewhatis); Plan 9's lookman looks in
+ * an index of the words. BSD's pages give the title of a section in
+ * the middle of the header ("General Commands Manual"), as ix's pages
+ * give their group. *)
 
 type caps = < Cap.open_in ; Cap.readdir ; Cap.stdout ; Cap.stderr >
 

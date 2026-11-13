@@ -3,7 +3,8 @@
 
 (* See Effect.mli *)
 
-(* ix: the author's playground's libs/audio/effects/Effect.ml (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/effects/Effect.ml
+ * in the author's playground (docs/plans/plan_audio.md). *)
 
 type knob = { name : string; control : Control.t; initial : float }
 type t = {

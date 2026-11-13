@@ -1,8 +1,9 @@
-(* A commit from the work tree (git9's git/save: treeify, mkcommit).
+(* Save makes a commit from the work tree (git9's git/save: treeify,
+ * mkcommit).
  *
- * Only the paths given change in HEAD's tree; the rest of the tree is
- * shared, subtree by subtree, with HEAD's (a tree is rewritten only
- * along the paths, as a persistent data structure is). For each path:
+ * Only the paths given change in HEAD's tree. The rest of the tree is
+ * shared with HEAD's, subtree by subtree: a tree is rewritten only
+ * along the paths, as in a persistent data structure. For each path:
  *
  *   gone from disk                          -> removed
  *   a file, tracked (not R in INDEX9)       -> its blob
@@ -11,8 +12,8 @@
  *   a directory on the way to other paths   -> its tree, recursively;
  *                                              removed if left empty
  *
- * The commit's author and committer dates are one date, in +0000, as
- * git9 writes them; the message is written as given. *)
+ * The commit's author and committer dates are the same date, in +0000,
+ * as git9 writes them. The message is written as given. *)
 
 type who = { name : string; email : string }
 
@@ -26,5 +27,6 @@ type commit = {
 
 exception Error of string
 
-(* the new commit's hash; [paths] relative to the root, cleaned *)
+(* the new commit's hash; [paths] are relative to the root, and
+ * cleaned *)
 val save : Repo.t -> commit -> string list -> Hash.t

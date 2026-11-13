@@ -3,7 +3,8 @@
 
 (* See Control.mli *)
 
-(* ix: the author's playground's libs/audio/Control.ml (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/Control.ml
+ * in the author's playground (docs/plans/plan_audio.md). *)
 
 type t = Knob of float * float | Switch | Selector of string list
 

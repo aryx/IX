@@ -1,22 +1,24 @@
 (* The polyphase filterbank: 32 subbands back into one sound -- the end
-   of every MPEG audio decoder, all three layers.
+   of every MPEG audio decoder, for all three layers.
 
-   An MPEG audio encoder first splits the sound into 32 **subbands**, 32
-   bands of frequencies of equal width (689 Hz each at 44,100 Hz), each
-   *decimated*: a band 1/32 of the spectrum wide needs only 1/32 of the
-   samples (Nyquist, Signal.mli), so 32 samples of sound become one
-   sample in each of the 32 bands -- as many numbers as before. The
-   point: the ear doesn't hear all bands alike (it is deaf to a quiet
-   band next to a loud one: *masking* is its name), so the encoder spends its bits
-   band by band, many where they are heard, none where they are not.
-   Layers I and II code the subband samples directly (Layer2.mli);
-   Layer III goes further, splitting each subband again (Layer3.mli).
+   An MPEG audio encoder first splits the sound into 32 **subbands**,
+   32 bands of frequencies of equal width (689 Hz each at 44,100 Hz).
+   Each band is *decimated*: a band 1/32 of the spectrum wide needs
+   only 1/32 of the samples (Nyquist, Signal.mli), so 32 samples of
+   sound become one sample in each of the 32 bands, as many numbers as
+   before. The point is that the ear does not hear all bands alike: it
+   is deaf to a quiet band next to a loud one, which is called
+   *masking*. So the encoder spends its bits band by band, many where
+   they are heard and none where they are not. Layers I and II code
+   the subband samples directly (Layer2.mli); Layer III goes further,
+   and splits each subband again (Layer3.mli).
 
-   The decoder undoes the split: each band's samples, 32 at a time (one
-   per band, a *time slot* of them), give back 32 samples of sound. Each band is
-   a cosine modulating one lowpass filter, the *prototype*, 512 taps
-   long (so the filterbank has memory: the 16 last time slots), the
-   standard's steps (ISO/IEC 11172-3, 2.4.3.2, figure A.2):
+   The decoder undoes the split: each band's samples, 32 at a time
+   (one for each band: a *time slot* of them), give back 32 samples of
+   sound. Each band is a cosine modulating one lowpass filter, the
+   *prototype*, which is 512 taps long (so the filterbank has a memory,
+   of the 16 last time slots). The standard's steps are these
+   (ISO/IEC 11172-3, 2.4.3.2, figure A.2):
 
      S[0..31], the time slot            V: the last 16 time slots,
         |                                  64 values each (1024)
@@ -30,12 +32,13 @@
      out[j] = sum over i of U[j + 32 i] D[j + 32 i], i from 0 to 15
                    (the window: the prototype, signs alternating)
 
-   D, the window (Table B.3), is the prototype filter h, 512 taps
-   symmetric about the middle, D[i] = h[i] with the sign flipped in
-   every other block of 64: the cosines of the matrixing make those
-   signs the right ones for each band. h isn't a formula, but a filter
-   the standard's authors designed (its passband 1/64 of the spectrum,
-   its first zeros 64 taps apart, like a sinc's):
+   D, the window (Table B.3), is the prototype filter h, whose 512 taps
+   are symmetric about the middle: D[i] = h[i], with the sign flipped
+   in every other block of 64, because the cosines of the matrixing
+   make those signs the right ones for each band. h is not a formula,
+   but a filter that the standard's authors designed (its passband is
+   1/64 of the spectrum, and its first zeros are 64 taps apart, like a
+   sinc's):
 
         1.14 |                   .
              |                  . .
@@ -45,27 +48,28 @@
                  ~0.15 below zero, ~64 taps each side of the peak
 
    Its 257 values are given here as the standard prints them, which
-   happens to be in steps of 2^-16 (the integers of [prototype]).
+   happen to be in steps of 2^-16 (the integers of [prototype]).
 
-   The cost, written as the standard does: 64 x 32 multiplications for
-   the matrixing and 512 for the window per 32 samples, 80 a sample.
-   Real decoders make the matrixing a fast DCT (Byeong Gi Lee, 1984:
-   80 multiplications instead of 2048) -- an exercise.
+   The cost, written as the standard does, is 64 x 32 multiplications
+   for the matrixing and 512 for the window, per 32 samples: 80 a
+   sample. Real decoders make the matrixing a fast DCT (Byeong Gi Lee,
+   1984: 80 multiplications instead of 2048); that is an exercise.
 
    References: ISO/IEC 11172-3 (1993), 2.4.3.2 and Table B.3; Peter
    Noll, "MPEG Digital Audio Coding", IEEE Signal Processing Magazine
    14 (1997); Davis Pan, "A Tutorial on MPEG/Audio Compression", IEEE
    Multimedia 2 (1995). *)
 
-(* ix: the author's playground's libs/audio/formats/mpeg_audio/Polyphase.mli (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/formats/mpeg_audio/Polyphase.mli
+ * in the author's playground (docs/plans/plan_audio.md). *)
 
-(* one channel's filterbank: its last 16 time slots *)
+(* one channel's filterbank, with its last 16 time slots *)
 type t
 
 val create : unit -> t
 
-(* [synthesize f slot out at]: the 32 subband samples of [slot] (a
- * time slot, the lowest band first) into the 32 samples of sound
+(* [synthesize f slot out at] turns the 32 subband samples of [slot]
+ * (a time slot, the lowest band first) into the 32 samples of sound
  * [out.(at)] to [out.(at + 31)] *)
 val synthesize : t -> float array -> float array -> int -> unit
 

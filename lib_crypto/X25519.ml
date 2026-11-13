@@ -1,7 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/crypto/X25519.ml (docs/plans/plan_browser.md) *)
+(* ix: copied from libs/crypto/X25519.ml in the author's playground
+ * (docs/plans/plan_browser.md) *)
 
 (* See X25519.mli *)
 

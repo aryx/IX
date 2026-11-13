@@ -3,7 +3,9 @@
 
 (* See Signal.mli *)
 
-(* ix: the author's playground's libs/audio/signal/Signal.ml; no Array.map2 (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/signal/Signal.ml
+ * in the author's playground (docs/plans/plan_audio.md). It does
+ * without Array.map2. *)
 
 type t = float array
 type stereo = { left : t; right : t }

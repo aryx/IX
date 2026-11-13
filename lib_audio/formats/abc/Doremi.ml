@@ -3,7 +3,8 @@
 
 (* See Doremi.mli *)
 
-(* ix: the author's playground's libs/audio/formats/abc/Doremi.ml (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/formats/abc/Doremi.ml
+ * in the author's playground (docs/plans/plan_audio.md). *)
 
 (* the syllables, and their semitones above do *)
 let syllables = [ ("do", 0); ("ut", 0); ("re", 2); ("ré", 2); ("mi", 4); ("fa", 5); ("sol", 7); ("la", 9); ("si", 11) ]

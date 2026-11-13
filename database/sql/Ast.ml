@@ -1,12 +1,13 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* SQL's statements, and the relational algebra a SELECT is (chidb's
- * chisql: its SRA, "sugared relational algebra").
+(* SQL's statements, and the relational algebra that a SELECT is
+ * written in (chidb's chisql calls it SRA, "sugared relational
+ * algebra").
  *
  * The parser builds a SELECT as operators on tables: Table(t),
- * Select(condition, r) -- sigma, SQL's WHERE --, Project(columns, r) --
- * pi --, the joins. .parse prints the tree as chidb does (checked):
+ * Select(condition, r) (sigma, SQL's WHERE), Project(columns, r) (pi),
+ * and the joins. .parse prints the tree as chidb does (checked):
  *
  *      SELECT a, t.b FROM t NATURAL JOIN u WHERE a = 3 AND b > 'x';
  *
@@ -19,10 +20,10 @@
  *      	)
  *      )
  *
- * (a one-character string is a char literal, chidb's grammar's
- * quirk). The grammar is chidb's whole grammar, outer joins, UNION,
- * GROUP BY, aggregates and DELETE included; the compiler compiles a
- * part of it (Codegen).
+ * (A one-character string is a char literal, which is a quirk of
+ * chidb's grammar.) The grammar is the whole of chidb's grammar,
+ * including outer joins, UNION, GROUP BY, aggregates and DELETE; the
+ * compiler compiles only a part of it (Codegen).
  *
  * References: E. F. Codd, "A Relational Model of Data for Large
  * Shared Data Banks" (CACM, 1970), the algebra; B.

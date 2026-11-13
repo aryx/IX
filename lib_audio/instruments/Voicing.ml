@@ -3,7 +3,9 @@
 
 (* See Voicing.mli *)
 
-(* ix: the author's playground's libs/audio/instruments/Voicing.ml its optional arguments are said (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/instruments/Voicing.ml
+ * in the author's playground (docs/plans/plan_audio.md). Its optional
+ * arguments are required here. *)
 
 type priority = Low | High | Last
 type event = Begin of int | Change of int | End | Nothing

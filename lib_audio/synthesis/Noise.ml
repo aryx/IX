@@ -3,7 +3,9 @@
 
 (* See Noise.mli *)
 
-(* ix: the author's playground's libs/audio/synthesis/Noise.ml; its optional arguments are said (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/synthesis/Noise.ml
+ * in the author's playground (docs/plans/plan_audio.md). Its optional
+ * arguments are required here. *)
 
 type mode = Long | Short
 

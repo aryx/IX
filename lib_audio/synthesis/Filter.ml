@@ -3,7 +3,10 @@
 
 (* See Filter.mli *)
 
-(* ix: the author's playground's libs/audio/synthesis/Filter.ml; biquad's and response's optional rate is biquad_at's and response_at's; no Array.map2 (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/synthesis/Filter.ml
+ * in the author's playground (docs/plans/plan_audio.md). The optional
+ * rate of biquad and response is given to biquad_at and response_at
+ * instead, and the code does without Array.map2. *)
 
 let rate = float_of_int Signal.rate
 

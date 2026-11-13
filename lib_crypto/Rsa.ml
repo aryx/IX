@@ -1,7 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/crypto/Rsa.ml (docs/plans/plan_browser.md) *)
+(* ix: copied from libs/crypto/Rsa.ml in the author's playground
+ * (docs/plans/plan_browser.md) *)
 
 (* See Rsa.mli *)
 

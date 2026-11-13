@@ -3,7 +3,8 @@
 
 (* See Pitch_effect.mli *)
 
-(* ix: the author's playground's libs/audio/Pitch_effect.ml (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/Pitch_effect.ml
+ * in the author's playground (docs/plans/plan_audio.md). *)
 
 type t =
   | Vibrato of { rate : float; depth : float }

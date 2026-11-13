@@ -1,10 +1,12 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ARM's 32-bit instructions (A32, ARM mode): a word decoded once into
- * a variant, and printed as binutils' objdump prints it (the decoder's
- * test: every word the corpus runs, machine/tests/words_arm.txt,
- * printed the same by both; plan_arm.md, phase 1).
+(* ARM's 32-bit instructions (A32, ARM mode). This file holds the
+ * variant into which Arm32.decode turns a word once; compat/Show_arm32
+ * prints it as binutils' objdump does. The
+ * decoder's test is that every word the corpus runs
+ * (machine/tests/words_arm.txt) is printed the same by both
+ * (plan_arm.md, phase 1).
  *
  *   e0823103   Dp {op = ADD; rd = 3; rn = 2; op2 = Sreg (3, By_imm (LSL, 2))}
  *              add  r3, r2, r3, lsl #2
@@ -13,18 +15,18 @@
  *   e8bd8010   Block {load; rn = 13; writeback; mode = IA; regs = r4, pc}
  *              pop  {r4, pc}
  *   1a000003   Branch {cond = NE; link = false; offset = 12}
- *              bne  0x14            (at address 0: the pc reads 8 ahead)
+ *              bne  0x14            (at address 0; the pc reads 8 ahead)
  *
  * A word's class is in bits 27-25 (data processing, loads and stores,
- * block transfers, branches, coprocessor and svc); inside class 000,
- * bits 7-4 separate multiplies (1001), halfword and signed transfers
- * (1xx1), and the miscellaneous instructions (bx, clz). A word no case
- * matches is [Undefined]: the corpus decides what is decoded
- * (plan_arm.md's principles).
+ * block transfers, branches, coprocessor and svc). Inside class 000,
+ * bits 7-4 separate the multiplies (1001), the halfword and signed
+ * transfers (1xx1), and the miscellaneous instructions (bx, clz). A
+ * word that no case matches is [Undefined], because the corpus decides
+ * what is decoded (plan_arm.md's principles).
  *
  * References: ARM Architecture Reference Manual, ARMv7-A and ARMv7-R
- * edition (ARM DDI 0406), the encodings; binutils'
- * objdump 2.42, run, the printed form. *)
+ * edition (ARM DDI 0406), for the encodings; binutils' objdump 2.42,
+ * run, for the printed form. *)
 
 (* (No Arm32_isa.mli: the module is the instruction set as types, the
  * ISA; decoding and running the instructions is Arm32.) *)

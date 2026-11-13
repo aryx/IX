@@ -2,10 +2,10 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* What a personality (Linux, Plan9) asks of the host: a record of
- * functions and their types. No Unix here, so that the machine runs
- * where OCaml runs, a browser included (plan_pi.md, decision 9); Host
- * implements it on Unix. File descriptors are the host's own, as
- * qemu-user has them. *)
+ * functions, and their types. There is no Unix here, so that the
+ * machine runs wherever OCaml runs, a browser included (plan_pi.md,
+ * decision 9). Host implements it on Unix. File descriptors are the
+ * host's own, as qemu-user has them. *)
 
 type errno = int
 type 'a r = ('a, errno) result

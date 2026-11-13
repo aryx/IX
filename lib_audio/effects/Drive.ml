@@ -3,7 +3,8 @@
 
 (* See Drive.mli *)
 
-(* ix: the author's playground's libs/audio/effects/Drive.ml (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/effects/Drive.ml
+ * in the author's playground (docs/plans/plan_audio.md). *)
 
 type shape = Hard | Tanh | Cubic | Asymmetric
 

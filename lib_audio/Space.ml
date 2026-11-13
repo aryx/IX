@@ -3,7 +3,8 @@
 
 (* See Space.mli *)
 
-(* ix: the author's playground's libs/audio/Space.ml (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/Space.ml
+ * in the author's playground (docs/plans/plan_audio.md). *)
 
 let clamp (p : float) : float = Float.max (-1.) (Float.min 1. p)
 

@@ -3,7 +3,8 @@
 
 (* See Instrument.mli *)
 
-(* ix: the author's playground's libs/audio/Instrument.ml (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/Instrument.ml
+ * in the author's playground (docs/plans/plan_audio.md). *)
 
 type t = {
   note_on : int -> float -> unit;

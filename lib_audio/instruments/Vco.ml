@@ -3,7 +3,9 @@
 
 (* See Vco.mli *)
 
-(* ix: the author's playground's libs/audio/instruments/Vco.ml its optional arguments are said (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/instruments/Vco.ml
+ * in the author's playground (docs/plans/plan_audio.md). Its optional
+ * arguments are required here. *)
 
 type shape = Sine | Triangle | Sawtooth | Pulse
 

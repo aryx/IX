@@ -3,7 +3,9 @@
 
 (* See Sequencer.mli *)
 
-(* ix: the author's playground's libs/audio/instruments/Sequencer.ml its optional arguments are said (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/instruments/Sequencer.ml
+ * in the author's playground (docs/plans/plan_audio.md). Its optional
+ * arguments are required here. *)
 
 type step = { note : int option; accent : bool; slide : bool; locks : (string * float) list }
 

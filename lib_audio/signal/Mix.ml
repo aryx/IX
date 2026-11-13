@@ -3,7 +3,9 @@
 
 (* See Mix.mli *)
 
-(* ix: the author's playground's libs/audio/signal/Mix.ml; its optional arguments are said (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/signal/Mix.ml
+ * in the author's playground (docs/plans/plan_audio.md). Its optional
+ * arguments are required here. *)
 
 let add (sounds : Signal.t list) : Signal.t =
   let n = List.fold_left (fun m s -> max m (Array.length s)) 0 sounds in

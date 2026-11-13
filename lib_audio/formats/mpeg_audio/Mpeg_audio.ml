@@ -3,7 +3,10 @@
 
 (* See Mpeg_audio.mli *)
 
-(* ix: the author's playground's libs/audio/formats/mpeg_audio/Mpeg_audio.ml; a decoder with a state (create, next: a frame when asked) is ix's, decode over it (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/formats/mpeg_audio/Mpeg_audio.ml
+ * in the author's playground (docs/plans/plan_audio.md). The decoder
+ * with a state (create, and next, which decodes a frame when it is
+ * asked for) is ix's own, and decode is written over it. *)
 
 (* ix: the decoder a frame at a time (create, next), where the whole
  * file at once; decode is over it, its samples the same *)

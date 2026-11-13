@@ -3,7 +3,13 @@
 
 (* See Vorbis.mli *)
 
-(* ix: the author's playground's libs/audio/formats/vorbis/Vorbis.ml; a float32 read in its three parts and the codes aligned to the longest one, not to 32 bits (ints of 31 bits on arm); the codes' tree its nodes' size; Float.ldexp, Fun.id, for _, a local 'a. and an array's pattern written otherwise (docs/plans/plan_quake.md) *)
+(* ix: copied from libs/audio/formats/vorbis/Vorbis.ml
+ * in the author's playground (docs/plans/plan_quake.md). A float32 is
+ * read in its three parts, and the codes are aligned to the longest
+ * one rather than to 32 bits, because an int has 31 bits on arm. The
+ * codes' tree has two slots for each node, rather than two for each
+ * bit of every code. Float.ldexp, Fun.id, for _, a local 'a. and a
+ * pattern on an array are written otherwise. *)
 
 let fail (what : string) = failwith ("Vorbis: " ^ what)
 

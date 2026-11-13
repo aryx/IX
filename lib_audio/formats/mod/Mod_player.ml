@@ -3,7 +3,9 @@
 
 (* See Mod_player.mli *)
 
-(* ix: the author's playground's libs/audio/formats/mod/Mod_player.ml; its optional arguments are said (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/formats/mod/Mod_player.ml
+ * in the author's playground (docs/plans/plan_audio.md). Its optional
+ * arguments are required here. *)
 
 (*****************************************************************************)
 (* Types *)

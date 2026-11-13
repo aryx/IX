@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See Ptrace.mli; the calls are linux/ptrace.c's *)
+(* See Ptrace.mli; the calls are implemented in linux/ptrace.c *)
 
 external spawn_ : string -> string array -> int = "ml_ptrace_spawn"
 external getregs : int -> string = "ml_ptrace_getregs"

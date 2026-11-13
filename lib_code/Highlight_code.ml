@@ -1,7 +1,11 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/code/highlight/Highlight_code.ml (docs/plans/done/plan_emacs.md): the categories and a file as lines of spans; without their colours (an editor's own: mini-emacs's Config), their names, and what a code map asks (occurrences, definitions, references) *)
+(* ix: copied from libs/code/highlight/Highlight_code.ml in the author's
+ * playground (docs/plans/done/plan_emacs.md): the categories, and a file
+ * as lines of spans. It is without the categories' colours (which are
+ * an editor's own: mini-emacs's Highlight), their names, and what a code
+ * map asks (occurrences, definitions, references). *)
 
 (* See Highlight_code.mli *)
 

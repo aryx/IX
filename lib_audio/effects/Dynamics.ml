@@ -3,7 +3,9 @@
 
 (* See Dynamics.mli *)
 
-(* ix: the author's playground's libs/audio/effects/Dynamics.ml its optional arguments are said (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/effects/Dynamics.ml
+ * in the author's playground (docs/plans/plan_audio.md). Its optional
+ * arguments are required here. *)
 
 type mode = Compressor | Limiter | Gate
 

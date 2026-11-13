@@ -3,7 +3,8 @@
 
 (* See Polyphase.mli *)
 
-(* ix: the author's playground's libs/audio/formats/mpeg_audio/Polyphase.ml (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/formats/mpeg_audio/Polyphase.ml
+ * in the author's playground (docs/plans/plan_audio.md). *)
 
 (* Table B.3's values times 2^16, the signs of every other block of 64
  * undone: h.(i) for i from 0 to 256, h.(512 - i) = h.(i) *)

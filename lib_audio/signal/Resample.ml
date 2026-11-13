@@ -3,7 +3,8 @@
 
 (* See Resample.mli *)
 
-(* ix: the author's playground's libs/audio/signal/Resample.ml (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/signal/Resample.ml
+ * in the author's playground (docs/plans/plan_audio.md). *)
 
 type kind = Nearest | Linear | Cubic
 

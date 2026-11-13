@@ -1,10 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* The database machine's bytecode (SQLite's word for its VDBE's
- * programs), as types: the instructions SQL is compiled to and the
- * values of the registers; Dbm runs it (its interface tells the
- * machine, and shows a program). *)
+(* The database machine's bytecode (SQLite's word for the programs of
+ * its VDBE), as types: the instructions that SQL is compiled to, and
+ * the values of the registers. Dbm runs it (its interface describes
+ * the machine and shows a program). *)
 
 (* a register's, a cursor's number *)
 type reg = R of int [@@unboxed]

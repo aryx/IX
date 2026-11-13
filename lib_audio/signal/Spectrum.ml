@@ -3,7 +3,9 @@
 
 (* See Spectrum.mli *)
 
-(* ix: the author's playground's libs/audio/signal/Spectrum.ml its optional arguments are said (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/signal/Spectrum.ml
+ * in the author's playground (docs/plans/plan_audio.md). Its optional
+ * arguments are required here. *)
 
 type complex = float * float
 

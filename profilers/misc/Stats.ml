@@ -1,51 +1,55 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-stats: Plan 9's stats (principia's profilers/misc/stats.c), of which
- * it keeps one graph, the one asked for (the author, 2026-10-12:
- * "an application to display the cpu activity, a bit like xosview on
- * linux", "so we can see the 4 cores activity, whether they are idle
- * or not", "I think plan9 had such an application actually"): a strip
- * for each core of the machine, how busy it was, the newest at the
- * right, the strip moving left five times a second; and (the author,
- * 2026-11-01: "not just display cpu stats but also memory, disk, etc.") one
- * for the memory taken, one for the network's packets, one for the bytes
- * of the disk, those that the machine has.
+(* mini-stats: Plan 9's stats (principia's profilers/misc/stats.c). It
+ * keeps one of its graphs, the one that was asked for (the author,
+ * 2026-10-12: "an application to display the cpu activity, a bit like
+ * xosview on linux", "so we can see the 4 cores activity, whether they
+ * are idle or not", "I think plan9 had such an application actually").
+ * That graph is a strip for each core of the machine that shows how
+ * busy it was, with the newest sample at the right, and the strip moves
+ * left five times a second. There are also (the author, 2026-11-01:
+ * "not just display cpu stats but also memory, disk, etc.") a strip for
+ * the memory taken, one for the network's packets, and one for the
+ * bytes of the disk, for those that the machine has.
  *
  *   cpu0  37% |        ..::||||::.            |
  *   mem   41% |______________________________.|
  *   net   12  |     .       ...               |
  *   disk 340K |  ...||..     .                |
  *
- * usage: stats [-cmed]: which: the cores, the memory, the ethernet, the disk;
- * all by default.
+ * usage: stats [-cmed]. The letters choose the strips: the cores, the
+ * memory, the ethernet, the disk; all of them by default.
  *
- * What it reads is the kernel's /dev/sysstat (Devcons), a line for
- * each core, ten numbers; the ninth is the percent of its time the
- * core had nothing to run. mini-9pi's is of the last fifth of a
- * second, which is why this reads five times a second. And /dev/swap,
- * /net/ether0/stats, /dev/sdM0/ctl: Sysinfo says what each says. The
- * network and the disk are on a scale of powers of ten, as Sysinfo says
- * why; the number beside is the real one, a second's. The right
- * button's menu has exit.
+ * It reads the kernel's /dev/sysstat (Devcons), which has a line for
+ * each core with ten numbers; the ninth is the percent of its time
+ * that the core had nothing to run. In mini-9pi this covers the last
+ * fifth of a second, which is why mini-stats reads it five times a
+ * second. It also reads /dev/swap, /net/ether0/stats and /dev/sdM0/ctl;
+ * Sysinfo says what each one says. The network and the disk are drawn
+ * on a scale of powers of ten (Sysinfo says why); the number beside a
+ * strip is the real one, for one second. The right button's menu has
+ * exit.
  *
- * What a core "busy" is here: running a process, or in the kernel,
- * or waiting for the kernel's lock (mini-9pi has one lock for its
- * kernel: plan_multicore.md). Two games that draw much show two cores
- * busy where one of them mostly waits for the other to leave the
- * kernel.
+ * Here is what "busy" means for a core: running a process, being in
+ * the kernel, or waiting for the kernel's lock (mini-9pi has one lock
+ * for its whole kernel: plan_multicore.md). Two games that draw a lot
+ * show two cores busy, where one of them mostly waits for the other to
+ * leave the kernel.
  *
- * Not Plan 9's: its other graphs (interrupts, system calls, the load:
- * mini-9pi's sysstat says 0 for most), the machines over the network, and
- * its letters (-l for the load, here -c). Its graphs have no disk, whose
- * counter here is ours.
+ * What is not kept from Plan 9's stats: its other graphs (interrupts,
+ * system calls, the load; mini-9pi's sysstat says 0 for most of them),
+ * the machines over the network, and its letters (its -c is for the
+ * context switches and -l for the load, where here -c gives the
+ * cores). Its graphs have no disk; the
+ * disk's counter here is ours.
  *
- * history:
+ * cs-history:
  * xosview (Mike Romberg, 1993) drew its meters for X from Linux's
- * /proc; Plan 9's stats (1990) reads /dev/sysstat and /dev/swap, the
- * same idea three years before: what the kernel counts is a file's
- * text, and the meter a program like any, that could as well be rc
- * and cat. *)
+ * /proc. Plan 9's stats (1990) reads /dev/sysstat and /dev/swap, which
+ * is the same idea three years earlier: what the kernel counts is the
+ * text of a file, and the meter is a program like any other, which
+ * could just as well be rc and cat. *)
 
 type caps = < Cap.draw; Cap.mouse; Cap.fork; Cap.open_in; Cap.stderr >
 

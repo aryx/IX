@@ -3,7 +3,8 @@
 
 (* See Envelope.mli *)
 
-(* ix: the author's playground's libs/audio/synthesis/Envelope.ml (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/synthesis/Envelope.ml
+ * in the author's playground (docs/plans/plan_audio.md). *)
 
 type t = { attack : float; decay : float; sustain : float; release : float }
 

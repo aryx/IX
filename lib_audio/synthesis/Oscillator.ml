@@ -3,7 +3,9 @@
 
 (* See Oscillator.mli *)
 
-(* ix: the author's playground's libs/audio/synthesis/Oscillator.ml; its optional arguments are said (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/synthesis/Oscillator.ml
+ * in the author's playground (docs/plans/plan_audio.md). Its optional
+ * arguments are required here. *)
 
 type waveform = Sine | Square | Triangle | Sawtooth
 

@@ -1,10 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* acid's tree (principia's acid.h: Node, and the Store of a constant,
- * one recursive structure: a value may be code, and code holds
- * constants). The values' meaning is Value's; the grammar is
- * Parser.mly, acid's dbg.y. *)
+(* acid's tree (principia's acid.h: Node, and the Store of a
+ * constant). Both are one recursive structure here, because a value
+ * may be code, and code holds constants. Value gives the meaning of the
+ * values, and the grammar is in Parser.mly, which is acid's dbg.y. *)
 
 type kind =
   | Int of int64

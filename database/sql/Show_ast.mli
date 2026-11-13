@@ -1,6 +1,7 @@
-(* A statement as chidb's shell prints it (.parse, .opt): the algebra's
- * tree, indented, chidb's own format: mini-chidb's output is compared
- * with chidb's, so this text is written by hand, not derived. *)
+(* Prints a statement as chidb's shell prints it (.parse, .opt): the
+ * tree of the algebra, indented, in chidb's own format. mini-chidb's
+ * output is compared with chidb's, so this printer is written by hand,
+ * not derived. *)
 
 (* what .parse prints, the final newline included *)
 val show : Ast.t -> string

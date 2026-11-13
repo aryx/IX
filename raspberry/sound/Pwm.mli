@@ -1,28 +1,29 @@
-(* The BCM2835's PWM (base + 0x20C000) and its clock: the sound of the
- * board's 3.5 mm jack.
+(* This is the BCM2835's PWM (base + 0x20C000) and its clock, which
+ * make the sound of the board's 3.5 mm jack.
  *
  * The jack is not a converter of numbers to voltages. It is two pins
  * that are only ever high or low, each behind a resistor and a
- * capacitor, and the trick of pulse width modulation: a pin that is
- * high for a part of a short period, over and over, is, once the
- * capacitor has smoothed it, a voltage that is that part of the
- * supply's. A period of [range] ticks of a fast clock, a number below
- * [range] for the ticks the pin is high:
+ * capacitor, and it uses the trick of pulse width modulation. A pin
+ * that is high for a part of a short period, over and over, becomes,
+ * once the capacitor has smoothed it, a voltage that is that part of
+ * the supply's voltage. A period is [range] ticks of a fast clock, and
+ * a number below [range] gives the ticks for which the pin is high:
  *
  *      range = 8, data = 2          range = 8, data = 6
  *      __      __      __           ______  ______  ______
  *     |  |____|  |____|  |____     |      ||      ||      |_
  *      a quarter of 3.3 V           three quarters
  *
- * A new number at each period is a sample; the periods a second are
- * the sampling rate. The clock manager (base + 0x1010A0) makes the
- * fast clock from one of the board's oscillators and a divisor; the
- * kernel that wants 44,100 samples a second of about 12 bits asks
- * PLLD's 500 MHz divided by 2, and a range of 5,669:
+ * The new number at each period is a sample, and the number of periods
+ * a second is the sampling rate. The clock manager (base + 0x1010A0)
+ * makes the fast clock from one of the board's oscillators and a
+ * divisor. A kernel that wants 44,100 samples a second of about 12
+ * bits asks for PLLD's 500 MHz divided by 2, and a range of 5,669:
  *
  *     250,000,000 / 5,669 = 44,099.5 periods a second
  *
- * The registers (Circle's names; the two channels are the two ears):
+ * Here are the registers (with Circle's names; the two channels are
+ * the two ears):
  *
  *     0x00 CTL    a channel on (PWEN1, PWEN2), fed by the FIFO (USEF1,
  *                 USEF2) or by its DAT register; CLRF1 empties the FIFO
@@ -36,29 +37,31 @@
  *                 channels on it, their words by turns, 1 then 2
  *
  * Nobody can write 88,200 words a second to FIF1 by hand and do
- * anything else. So the DMA controller does: a control block says
- * "these 4,096 words of memory to FIF1, when it asks" (TI's DEST_DREQ,
- * and PERMAP 5, this device's request line), and the controller moves
- * a word each time the FIFO has room, interrupting at the block's end
- * for the kernel to give the next. Here the FIFO's asking is this
- * module pulling from Dma, a period's words at a time, as the board's
- * time goes by ([advance]): **the sound is what paces the transfer**,
- * which is why Dma's transfers at once (enough for the SD card) were
- * not enough for it.
+ * anything else. So the DMA controller does it. A control block says
+ * "these 4,096 words of memory go to FIF1, when it asks" (TI's
+ * DEST_DREQ, and PERMAP 5, this device's request line). The controller
+ * moves a word each time the FIFO has room, and interrupts at the
+ * block's end for the kernel to give the next block. Here the FIFO's
+ * asking is this module pulling from Dma, a period's words at a time,
+ * as the board's time goes by ([advance]). **The sound is what paces
+ * the transfer**, which is why Dma's immediate transfers (enough for
+ * the SD card) were not enough for it.
  *
  * What is ours: a period is not drawn tick by tick. A sample is its
- * number over its range, given to [output] as 16 bits around zero,
- * with the rate, as a sound card would have it; so M/S and the PWM
- * algorithm (MSEN, which say where in the period the pin is high) are
- * the same here. The pins' function in the GPIO is not looked at (a
- * kernel that forgets it is heard here and not on the board). The
- * polarity, the serializer and the silence bit are not modelled.
+ * number divided by its range, given to [output] as 16 bits around
+ * zero, with the rate, as a sound card would have it. So the M/S
+ * algorithm and the PWM algorithm (MSEN chooses between them; they say
+ * where in the period the pin is high) sound the same here. The pins'
+ * function in the GPIO is not looked at, so a kernel that forgets to
+ * set it is heard here but not on the board. The polarity, the
+ * serializer and the silence bit are not modelled.
  *
  * others:
- * QEMU models this device as registers that remember, and its raspi
- * boards have no sound but a USB audio device plugged in. The Pi's
- * other ways out are the HDMI cable (the firmware's, by VCHIQ) and
- * I2S, a real converter on the header's pins.
+ * QEMU models this device as registers that remember what is written,
+ * and its raspi boards have no sound except a USB audio device
+ * plugged in. The Pi's other ways out are the HDMI cable (the
+ * firmware's, through VCHIQ) and I2S, a real converter on the
+ * header's pins.
  *
  * References: BCM2835 ARM Peripherals, chapter 9 (the PWM) and 6.3
  * (the clocks) (from memory); Circle's lib/sound/pwmsoundbasedevice.cpp,
@@ -67,28 +70,29 @@
 
 type t
 
-(* [create ~pi4 ~dma ~yield]: the device, its words asked of [dma] when
- * DMAC says so; [yield] is called when the guest finds the FIFO full
- * (the board ends its batch of instructions there: time passes a
- * batch at a time, and a guest that writes by hand would fill the 8
- * words at a batch's start and have no room for the 12 the batch
- * lasts); [pi4]: the Pi 4's clocks (PLLD 750 MHz, the oscillator 54)
- * and request line (1: its second PWM), where the Pi 1's (500 MHz,
- * 19.2; 5) *)
+(* [create ~pi4 ~dma ~yield] makes the device, which asks [dma] for its
+ * words when DMAC says so. [yield] is called when the guest finds the
+ * FIFO full, and the board then ends its batch of instructions. Time
+ * passes a batch at a time, so a guest that writes by hand would fill
+ * the 8 words at a batch's start and have no room for the 12 periods
+ * that the batch lasts. [pi4] chooses the Pi 4's clocks (PLLD at 750
+ * MHz, the oscillator at 54) and request line (1, for its second
+ * PWM), instead of the Pi 1's (500 MHz, 19.2, and line 5). *)
 val create : pi4:bool -> dma:Dma.t -> yield:(unit -> unit) -> t
 
-(* the PWM's registers, and the clock manager's two for it (CTL, DIV:
- * to map at the manager's base + 0xA0) *)
+(* the PWM's registers, and the clock manager's two registers for it
+ * (CTL and DIV, to be mapped at the manager's base + 0xA0) *)
 val device : t -> Memory.device
 val clock : t -> Memory.device
 
-(* where the samples go: the rate (periods a second, rounded), then the
- * first channel's and the second's, each -32768 to 32767; none at
- * first: the samples are dropped *)
+(* [set_output] says where the samples go. The function is given the
+ * rate (periods a second, rounded), then the first channel's sample
+ * and the second's, each from -32768 to 32767. At first there is no
+ * output, and the samples are dropped. *)
 val set_output : t -> (rate:int -> int -> int -> unit) -> unit
 
-(* the board's time moved on by microseconds: the periods that fit are
- * played *)
+(* [advance t us] moves the board's time on by [us] microseconds, and
+ * plays the periods that fit *)
 val advance : t -> int -> unit
 
 (* the microseconds until the DMA's block ends (its interrupt), for an

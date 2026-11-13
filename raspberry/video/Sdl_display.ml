@@ -1,18 +1,23 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* The display in an SDL window (tsdl): the framebuffer as a streaming
- * texture in its own format (RGB565 for 16 bits: no conversion), sized
- * at its first frame, drawn when it changed; the keys by SDL's
- * scancodes, which are USB HID usages (SDL took them from there); the
- * mouse, relative as a USB mouse is: a click grabs the host's pointer
- * (SDL's relative mode: its motion the guest's, the host cursor gone),
- * Ctrl-Alt-G lets it go, as QEMU's window does; or, [absolute], the
- * pointer left to the host and its place in the window given (for a
- * machine whose mouse is not a USB one: tiny-machine's window). The
- * window can be resized, the frame drawn as large as fits in it, its
- * proportions kept; [fit] starts it large (tiny-machine's 640 by 480
- * is small on a large screen). The one module of mini-qemu linking a C library (plan_pi.md, decision 9). *)
+(* This is the display in an SDL window (tsdl).
+ * - The framebuffer is a streaming texture in its own format (RGB565
+ *   for 16 bits, so there is no conversion). The texture is sized at
+ *   the first frame, and drawn when the frame changed.
+ * - The keys are read by SDL's scancodes, which are USB HID usages
+ *   (SDL took them from there).
+ * - The mouse is relative, as a USB mouse is. A click grabs the host's
+ *   pointer (SDL's relative mode: the pointer's motion goes to the
+ *   guest, and the host's cursor is gone), and Ctrl-Alt-G lets it go,
+ *   as QEMU's window does. Or, with [absolute], the pointer is left to
+ *   the host and its place in the window is given (for a machine whose
+ *   mouse is not a USB one, such as tiny-machine's window).
+ * The window can be resized. The frame is drawn as large as fits in
+ * it, keeping its proportions. [fit] starts the window large
+ * (tiny-machine's 640 by 480 is small on a large screen). This is the
+ * one module of mini-qemu that links a C library (plan_pi.md,
+ * decision 9). *)
 
 open Tsdl
 

@@ -1,14 +1,14 @@
 {
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
-(* The lexer: chidb's sql.l, in ocamllex. Keywords are
- * case-insensitive words, taken from the identifiers by a table (as
- * flex's case-insensitive keyword rules do, a keyword winning a tie);
- * the table is sql.l's, so CROSS, INTERSECT and EXCEPT, which sql.y
- * mentions but sql.l does not, are identifiers. A number with a sign
- * is one token (x -1 is x and -1). The line count is global, as flex's
- * yylineno: it goes on from one statement to the next, and so does
- * being inside a comment. *)
+(* The lexer, chidb's sql.l written in ocamllex. Keywords are
+ * case-insensitive words, picked out of the identifiers by a table (as
+ * flex's case-insensitive keyword rules do, where a keyword wins a
+ * tie). The table is sql.l's, so CROSS, INTERSECT and EXCEPT, which
+ * sql.y mentions but sql.l does not, are identifiers. A number with a
+ * sign is one token (x -1 is x followed by -1). The line count is
+ * global, like flex's yylineno: it goes on from one statement to the
+ * next, and so does the state of being inside a comment. *)
 open Parser
 
 let line = Ast.line

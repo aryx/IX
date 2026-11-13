@@ -1,36 +1,41 @@
-(* An a.out's symbol table and pc/line table, read back (principia's
- * debuggers/libmach, sym.c: syminit, fileline, pc2line, fileelem): what
- * mini-nm lists and what names an address, a function and an offset,
- * a file and a line (plan_debugger.md, stage 2). The tables' format is
- * the linker's, said in linker/Symtab.mli.
+(* This module reads back an a.out's symbol table and pc/line table
+ * (principia's debuggers/libmach, sym.c: syminit, fileline, pc2line,
+ * fileelem). They are what mini-nm lists, and what gives an address
+ * its name: a function and an offset, a file and a line
+ * (plan_debugger.md, stage 2). The tables' format is the linker's,
+ * described in linker/Symtab.mli.
  *
- * An address to its name and line, in three steps:
+ * An address gets its name and line in three steps:
  *
  *     0x10b4c   the text symbol at or before it      Tar.main+0x2c
  *               the pc/line table walked to it       global line 412
  *               the history of the function's        Tar.ml:412
  *               object: which file, which line in it
  *
- * The history is what makes one number a file and a line. Each object
- * counts its lines once over its files, an #include's lines inside its
- * includer's, and says where each file starts and ends:
+ * The history is what turns one number into a file and a line. Each
+ * object counts its lines once over all its files, with an #include's
+ * lines inside its includer's, and it says where each file starts and
+ * ends:
  *
  *     z 1   a.c        line 1 of the count is a.c's 1
  *     z 10  u.h        a.c's #include at its line 10: u.h from 10
  *     z 40             u.h ends: 30 lines; global 50 is a.c's 20
  *     z 80             a.c ends
  *
- * so a line is found by walking the history to it, a stack of the
- * files open there (libmach's fline, recursive; here a list).
+ * So a line is found by walking the history up to it, keeping a stack
+ * of the files open there (libmach's fline is recursive; here the
+ * stack is a list).
  *
- * Written with ocaml-light's library only: mini-9pi's kernel reads its
- * processes' tables (plan_debugger.md, stage 4).
+ * The module uses only ocaml-light's library, because mini-9pi's
+ * kernel reads its processes' tables with it (plan_debugger.md,
+ * stage 4).
  *
  * References: Plan 9's symbol(2) and a.out(6); principia's
  * debuggers/libmach/sym.c. *)
 
-(* an entry: its value, its letter (the 0x80 taken off), its name (a
- * path's, z: its files' numbers, as the table has them) *)
+(* an entry: its value, its letter (with the 0x80 taken off), and its
+ * name (for a path's z entry, the numbers of its files, as the table
+ * has them) *)
 type sym = { value : int; typ : char; name : string }
 
 type t = {
@@ -40,20 +45,23 @@ type t = {
   lines : string;           (* the pc/line table's bytes *)
 }
 
-(* the tables of an a.out for arm, from [read off len], its bytes from
- * off (fewer at its end): its header and its tables only, not its
- * text and data (a kernel's read of a dying process's file); None
- * when it is none, or has no symbol table (-s) *)
+(* the tables of an a.out for arm, from [read off len], which gives the
+ * file's bytes from off (fewer at its end). Only the header and the
+ * tables are read, not the text and data (as a kernel reads a dying
+ * process's file). It is None when the file is not an arm a.out, or has
+ * no symbol table (-s). *)
 val read_with : (int -> int -> string) -> t option
 
-(* the same from the file's bytes *)
+(* the same, from the file's bytes *)
 val read : string -> t option
 
-(* the tables from their bytes, the text's first address and end: an ELF's
- * sections .plan9.syms and .plan9.lines (mini-ld -g -H7) *)
+(* the tables from their bytes and from the text's first address and
+ * end, as in an ELF's sections .plan9.syms and .plan9.lines (mini-ld
+ * -g -H7) *)
 val of_tables : string -> string -> int -> int -> t
 
-(* a z entry's path: its components joined, cleaned (libmach's fileelem) *)
+(* a z entry's path: its components joined and cleaned (libmach's
+ * fileelem) *)
 val path : t -> sym -> string
 
 (* the function an address is in, and the offset in it *)
@@ -63,6 +71,6 @@ val func : t -> int -> (string * int) option
 val file_line : t -> int -> (string * int) option
 
 (* the first address of a file's line (libmach's file2pc; acid's
- * filepc): the file named by its path or by its last components
- * (Down.ml, arch/arm/rt0.s). The table walked once *)
+ * filepc). The file is named by its path or by its last components
+ * (Down.ml, arch/arm/rt0.s). The table is walked once. *)
 val file_pc : t -> string -> int -> int option

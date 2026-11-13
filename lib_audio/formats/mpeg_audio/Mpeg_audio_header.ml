@@ -3,7 +3,10 @@
 
 (* See Mpeg_audio_header.mli *)
 
-(* ix: the author's playground's libs/audio/formats/mpeg_audio/Mpeg_audio_header.ml; the header's 32 bits read as two halves, for an int of 31 bits (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/formats/mpeg_audio/Mpeg_audio_header.ml
+ * in the author's playground (docs/plans/plan_audio.md). The header's
+ * 32 bits are read as two halves, so that they fit in an int of 31
+ * bits. *)
 
 type version = Mpeg1 | Mpeg2 | Mpeg2_5
 type mode = Stereo | Joint_stereo | Dual_channel | Mono

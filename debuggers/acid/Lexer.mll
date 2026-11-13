@@ -2,13 +2,14 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* acid's lexer (principia's lex.c): its keywords, its numbers (decimal,
- * 0x hexadecimal, 0 octal, 0b binary, a float with its . or e), 'c'
- * characters, strings with C's escapes, a format after a backslash
- * (x\D), // comments to the line's end; M.x one name, a symbol of
- * mini-ml's (not acid's). At a terminal a newline ends a
- * statement (a ;) but inside braces, so that a definition may take
- * lines; in a file it is a blank. *)
+(* acid's lexer (principia's lex.c). It reads acid's keywords, its
+ * numbers (decimal, 0x hexadecimal, 0 octal, 0b binary, and floats with
+ * their . or e), 'c' characters, strings with C's escapes, a format
+ * after a backslash (x\D), and // comments to the end of the line. It
+ * also reads M.x as one name, a symbol of mini-ml's, which acid does
+ * not do. At a terminal, a newline ends a statement (like a ;) except
+ * inside braces, so that a definition may take several lines; in a
+ * file, a newline is a blank. *)
 
 open Parser
 

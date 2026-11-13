@@ -3,7 +3,14 @@
 
 (* See Wav.mli *)
 
-(* ix: the author's playground's libs/audio/formats/wav/Wav.ml; no file read or written here (write, read, write_stereo: the caller's, through its capabilities), stereo_to_string in their place, and stereo_of_string, a file's two channels kept; a sample of 16 bits read and written through the unsigned ones; a WAV of 8 bits read too (mini-quake's sounds) (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/formats/wav/Wav.ml
+ * in the author's playground (docs/plans/plan_audio.md). No file is
+ * read or written here: write, read and write_stereo are left to the
+ * caller, which has the capabilities. stereo_to_string is here in
+ * their place, and so is stereo_of_string, which keeps a file's two
+ * channels. A 16-bit sample is read and written with the
+ * functions for unsigned ones. A WAV of 8 bits is read too, for
+ * mini-quake's sounds. *)
 
 (* [channels] interleaved: the frames, each a sample per channel *)
 let to_string_channels (channels : Signal.t list) : string =

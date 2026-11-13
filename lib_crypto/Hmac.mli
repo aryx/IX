@@ -1,21 +1,24 @@
-(* Hmac: a hash with a key -- a tag that only who knows the key can make
-   (Mihir Bellare, Ran Canetti and Hugo Krawczyk, 1996; RFC 2104).
+(* Hmac: a hash with a key. It makes a tag that only someone who knows
+   the key can make (Mihir Bellare, Ran Canetti and Hugo Krawczyk,
+   1996; RFC 2104).
 
        HMAC(K, m) = H((K xor opad) || H((K xor ipad) || m))
 
-   K padded with zeros to the hash's block (64 bytes for SHA-256, 128
-   for SHA-384), or first hashed if longer; ipad the byte 0x36 repeated,
-   opad 0x5c. Two hashes, one inside the other, so that knowing H(K ||
-   m) -- which a Merkle-Damgard hash lets you extend to H(K || m || more)
-   without K, the *length extension* -- tells nothing.
+   K is padded with zeros to the hash's block (64 bytes for SHA-256,
+   128 for SHA-384), or first hashed if it is longer. ipad is the byte
+   0x36 repeated, and opad the byte 0x5c. There are two hashes, one
+   inside the other, so that knowing H(K || m) tells nothing. A
+   Merkle-Damgard hash lets you extend that to H(K || m || more)
+   without K: this is the *length extension*.
 
-   Worked example (RFC 4231's test case 2, checked by the tests): the key
-   "Jefe", "what do ya want for nothing?", HMAC-SHA-256 5bdcc146 bf60754e
-   6a042426 089575c7 5a003f08 9d273983 9dec58b9 64ec3843.
+   Worked example (RFC 4231's test case 2, checked by the tests): the
+   key "Jefe" and the message "what do ya want for nothing?" give the
+   HMAC-SHA-256 5bdcc146 bf60754e 6a042426 089575c7 5a003f08 9d273983
+   9dec58b9 64ec3843.
 
-   The extension, drawn: a Merkle-Damgard hash's result is its whole
-   state after the last block (Sha1.mli), so who has the result can go
-   on hashing from it:
+   Here is the extension, drawn. A Merkle-Damgard hash's result is its
+   whole state after the last block (Sha1.mli), so whoever has the
+   result can go on hashing from it:
 
        H(K || m)          = state after  [K m pad]
        H(K || m pad more) = state after  [K m pad][more pad']
@@ -27,23 +30,24 @@
    of anything.
 
    Where it stands: Tls13's Finished is an HMAC of the transcript, and
-   Hkdf, the key schedule, is HMAC twice over. [hmac] takes the hash
+   Hkdf, the key schedule, is HMAC twice over. Tls12's PRF is HMAC with
+   SHA-256 too. [hmac] takes the hash
    and its block size, so the two instances are two lines.
 
    cs-history:
    It was made for the internet's own protocols. In the mid-1990s IPsec
    and SSL each needed to authenticate a packet with a shared key and a
-   hash, and each had its recipe: the key before the message, after it,
-   on both sides ("keyed MD5") -- some of them broken by the length
-   extension above. Bellare, Canetti and Krawczyk, at IBM and UCSD,
-   gave one construction with a proof, which Bellare's of 2006 freed
-   of any need for collisions to be hard: as strong as the hash's
-   compression function is a good pseudo-random function, whatever
-   else is found about the hash. That is why HMAC-MD5 and
-   HMAC-SHA-1 outlived MD5 and SHA-1 themselves, and the IETF took it
-   at once (RFC 2104, February 1997). TLS's key schedule (Hkdf,
-   Tls13), a cookie signed by a site, an API's request signed by its
-   client: all of them this.
+   hash, and each had its own recipe: the key before the message, after
+   it, or on both sides ("keyed MD5"). Some of them were broken by the
+   length extension above. Bellare, Canetti and Krawczyk, at IBM and
+   UCSD, gave one construction with a proof. Bellare's proof of 2006
+   freed it of any need for collisions to be hard: HMAC is strong as
+   long as the hash's compression function is a good pseudo-random
+   function, whatever else is found about the hash. That is why
+   HMAC-MD5 and HMAC-SHA-1 outlived MD5 and SHA-1 themselves. The IETF
+   took it at once (RFC 2104, February 1997). TLS's key schedule (Hkdf,
+   Tls13), a cookie signed by a site, and an API's request signed by
+   its client all use it.
 
    References: RFC 2104 (1997); RFC 4231 (2005), the SHA-2 test vectors;
    Bellare, Canetti, Krawczyk, "Keying Hash Functions for Message

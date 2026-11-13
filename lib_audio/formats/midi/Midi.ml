@@ -3,7 +3,11 @@
 
 (* See Midi.mli *)
 
-(* ix: the author's playground's libs/audio/formats/midi/Midi.ml; its optional arguments are said; a track's events are a type, where polymorphic variants; a track cut short read to zeros, not to an exception (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/formats/midi/Midi.ml
+ * in the author's playground (docs/plans/plan_audio.md). Its optional
+ * arguments are required here. A track's events are a type, where they
+ * were polymorphic variants. A track cut short is read as zeros, not as
+ * an exception. *)
 
 type note = { start : float; length : float; key : int; velocity : int; channel : int; program : int }
 type score = { notes : note list; duration : float }

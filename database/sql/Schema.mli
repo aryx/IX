@@ -1,7 +1,7 @@
-(* The schema: page 1's table of tables and indexes.
+(* The schema, the table on page 1 that lists the tables and indexes.
  *
- * One row per table and per index, as SQLite's sqlite_master has
- * them (checked, the tutorial's §5):
+ * It has one row for each table and each index, as SQLite's
+ * sqlite_master has (checked in the tutorial's §5):
  *
  *      ("table", "t", "t", 2, "CREATE TABLE t(id INTEGER PRIMARY KEY, name TEXT, n INTEGER);")
  *      ("index", "iv", "t", 5, "CREATE INDEX iv ON t(v);")
@@ -16,9 +16,9 @@
  * compiles to an insertion into it (Codegen), so nothing in the file
  * is of another kind than rows in trees. One thing only is fixed in
  * the code and breaks the circle: the schema table's own columns,
- * and its root, page 1. System R kept its catalogs as tables one
- * could query, and the relational systems have since; a file system
- * whose root directory is at a known block is the same trick. *)
+ * and its root, page 1. System R kept its catalogs as tables that
+ * one could query, and relational systems have done so since. A file
+ * system whose root directory is at a known block uses the same trick. *)
 
 type item = {
   kind : Btree.tree;

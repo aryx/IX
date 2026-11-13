@@ -3,7 +3,10 @@
 
 (* See Music.mli *)
 
-(* ix: the author's playground's libs/audio/Music.ml; a constructor of Synth's said with its module where mini-ml asks; a score played a block at a time (play_score, fill_score) is ix's (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/Music.ml
+ * in the author's playground (docs/plans/plan_audio.md). A constructor
+ * of Synth is written with its module where mini-ml needs it. Playing a
+ * score a block at a time (play_score, fill_score) is ix's own. *)
 
 let midi_frequency (n : int) : float = 440. *. (2. ** (float_of_int (n - 69) /. 12.))
 

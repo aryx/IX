@@ -3,7 +3,8 @@
 
 (* See Paula.mli *)
 
-(* ix: the author's playground's libs/audio/formats/mod/Paula.ml (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/formats/mod/Paula.ml
+ * in the author's playground (docs/plans/plan_audio.md). *)
 
 type reading = Hold | Linear | Cubic
 

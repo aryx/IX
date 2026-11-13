@@ -1,55 +1,64 @@
-(* What acid looks at: the program (its a.out, its symbol and line
- * tables: lib_executable's Symbols) and the process run from it,
- * through Plan 9's /proc/$pid files (principia's acid: proc.c,
+(* What acid looks at: the program (its a.out, with its symbol and line
+ * tables, read by lib_executable's Symbols) and the process run from
+ * it, through Plan 9's /proc/$pid files (principia's acid: proc.c,
  * util.c's varsym and varreg, libmach's map.c), as on Plan 9 and under
  * mini-5i (plan_debugger.md, decision 12).
  *
- * The maps, libmach's: an address of the process, as * reads it, is in its
- * registers below the Ureg's size (/proc/$pid/regs: the variables R0,
- * PC, SP... hold their offsets there), in its text and its data up to
- * its stack's top (/proc/$pid/mem); without a process, and for @, in
- * the program's file (its text and data, as the a.out has them). The
- * symbols are acid's variables, each its address in X; symbols is the
- * list of them, {name, type, address}.
+ * The maps are libmach's. An address of the process, as * reads it, is
+ * in its registers when it is below the size of a Ureg (in
+ * /proc/$pid/regs, where the variables R0, PC, SP... hold their
+ * offsets), or in its text and its data up to the top of its stack (in
+ * /proc/$pid/mem). Without a process, and for @, an address is in the
+ * program's file (its text and data, as the a.out has them). Each
+ * symbol is an acid variable, whose value is its address in the X
+ * format; the variable symbols is the list of them, as {name, type,
+ * address}.
  *
- * A process: started by newproc, hung at its exec (ctl's hang) and
- * waited for; a stop (stop, startstop, waitstop) reads its notes
- * (notes) and calls the acid function stopped(pid), the library's
- * (port.acid prints where and why).
+ * A process is started by newproc, hung at its exec (with ctl's hang),
+ * and waited for. A stop (stop, startstop, waitstop) reads the
+ * process's notes (notes) and calls the acid function stopped(pid),
+ * which the library defines (port.acid's prints where the process
+ * stopped and why).
  *
- * On Linux (Ptrace.available: dune's mini-acid), the same by ptrace
- * (Ptrace.mli has the table): an ELF's program (gcc's, arm64), its
- * symbols moved where a PIE is put, /proc/$pid/mem, the registers
- * arm64's user_pt_regs and TYPE, the stop's signal; ctl's messages
- * are ptrace's calls, a note the signal's name. A frame's parameters
- * and locals (strace, f:v) by libmach's walk on arm, by Frame64's on
- * arm64: by the table's entries (7c's, mini-ld -g's .plan9.syms) or,
- * in a program of gcc's, by DWARF. *)
+ * On Linux (when Ptrace.available, in dune's mini-acid), the same is
+ * done with ptrace (Ptrace.mli has the table). The program is an ELF
+ * (gcc's, for arm64), and its symbols are moved to where a PIE is put.
+ * The memory is /proc/$pid/mem. The registers are arm64's user_pt_regs,
+ * followed by TYPE, which holds the signal of the stop. ctl's messages
+ * become calls to ptrace, and a note is the signal's name. A frame's
+ * parameters and locals (for strace and f:v) are found by libmach's
+ * walk on arm and by Frame64's on arm64, from the table's entries (7c's,
+ * or mini-ld -g's .plan9.syms) or, in a program built by gcc, from
+ * DWARF. *)
 
 type caps = < Cap.open_in; Cap.open_out; Cap.fork; Cap.exec; Cap.kill; Cap.env >
 
-(* the program read (the a.out's path): its variables made, the
- * registers' too; its line ("prog:arm plan 9 executable") printed *)
+(* reads the program (the a.out's path), makes its variables and the
+ * registers' variables, and prints its line ("prog:arm plan 9
+ * executable") *)
 val program : < caps; .. > -> string -> unit
 
-(* the symbols as variables (acid's varsym, after the libraries) *)
+(* makes the symbols into variables (acid's varsym, after the
+ * libraries) *)
 val symbols : unit -> unit
 
-(* the program's declarations of its types, acid's text: the data
- * .acid, mini-ld -g's of mini-cc -g's (and mini-ml's) *)
+(* the program's declarations of its types, as acid text: the data
+ * symbol .acid, which mini-ld -g writes for the programs of mini-cc -g
+ * (and of mini-ml), or, for a gcc ELF without .acid, its DWARF types
+ * (Acid_dwarf) *)
 val declarations : unit -> string option
 
-(* the registers' variables and bpinst, the default set without a
- * program (varreg) *)
+(* makes the registers' variables and bpinst, the default set when
+ * there is no program (varreg) *)
 val registers : unit -> unit
 
-(* the process attached (setproc) *)
+(* attaches the process (setproc) *)
 val attach : < caps; .. > -> int -> unit
 
-(* the processes attached, the last first (acid's proclist: at its end
- * it says how to kill them) *)
+(* the attached processes, the last one first (acid's proclist, which
+ * acid uses at its end to say how to kill them) *)
 val attached : unit -> int list
 
-(* the builtins of the program and the process put in Eval.builtins, the
- * maps put in Eval's load, store and symbol *)
+(* puts the builtins of the program and the process in Eval.builtins,
+ * and the maps in Eval's load, store and symbol *)
 val init : < caps; .. > -> unit

@@ -1,17 +1,19 @@
 /* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. */
-/* pic's grammar, the part that draws: an object a statement (a box, a
- * line, a text, a block of statements between brackets), with what is
- * said of it after its name; places by name and by corner; arithmetic.
- * Its macros are the lexer's (Pic_lexer): they are text put for text.
- * Not here: pic's programming (for, if, sprintf, sh).
+/* pic's grammar, the part that draws. Each statement is an object (a
+ * box, a line, a text, a block of statements between brackets), with
+ * what is said of it after its name. There are places, by name and by
+ * corner, and arithmetic. The macros are done in the lexer
+ * (Pic_lexer), as text put in place of text. pic's programming (for,
+ * if, sprintf, sh) is not here.
  *
- * Two things could be read two ways, and each is said (LOW: lower than
- * what could follow, so what follows is taken):
- *  - a number after a direction is how far (up 0.2), not a move of its
- *    own the way things were going (arrow 0.8); the same after dashed,
- *    dotted, fill and chop;
- *  - in "x, y + ..." the sum is y's. */
+ * Two things could be read two ways, and the grammar says which way
+ * each is read (LOW is lower than what could follow, so what follows
+ * is taken):
+ *  - a number after a direction is how far to go (up 0.2), not a move
+ *    of its own in the direction things were going (arrow 0.8); the
+ *    same holds after dashed, dotted, fill and chop;
+ *  - in "x, y + ..." the sum belongs to y. */
 %{
 open Pic_ast
 %}

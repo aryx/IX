@@ -3,7 +3,9 @@
 
 (* See Layer3.mli *)
 
-(* ix: the author's playground's libs/audio/formats/mpeg_audio/Layer3.ml; its lazy tables are made when first asked, by hand (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/formats/mpeg_audio/Layer3.ml
+ * in the author's playground (docs/plans/plan_audio.md). Its lazy
+ * tables are made by hand, when they are first asked for. *)
 
 type granule = {
   part2_3_length : int;

@@ -1,12 +1,13 @@
-(* Latex_math: mathematics, as far as words go -- letters in italic,
- * what is raised and lowered a size smaller, the symbols the PDF's
- * fonts have and a word for the others (Latex_names.symbols). No
- * fraction, no root's bar, nothing built in two dimensions: the
- * books have 352 lines with a $ and none of these
- * (docs/plans/done/plan_typesetting.md, stage 6, is the real thing). *)
+(* Latex_math: mathematics, as far as words go. Letters are in italic,
+ * what is raised and lowered is a size smaller, and there are the
+ * symbols that the PDF's fonts have, with a word for the others
+ * (Latex_names.symbols). There is no fraction, no bar over a root, and
+ * nothing built in two dimensions, because the books have 352 lines
+ * with a $ and none of these (docs/plans/done/plan_typesetting.md,
+ * stage 6, is the real thing). *)
 
-(* what is between two $, in the paragraph *)
+(* what is between two $, inside the paragraph *)
 val math : Latex_state.t -> string -> unit
 
-(* the same on a line of its own, in its middle *)
+(* the same, on a line of its own, in the middle *)
 val display : Latex_state.t -> string -> unit

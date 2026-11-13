@@ -1,6 +1,6 @@
-(* mini-git: git, after git9 (Ori Bernstein's git for Plan 9, in
- * 9front): the same repositories as git's, read and written, with
- * git9's fewer commands and their output.
+(* mini-git is git, after git9 (Ori Bernstein's git for Plan 9, in
+ * 9front). It reads and writes the same repositories as git, with
+ * git9's smaller set of commands and git9's output.
  *
  * A repository is a store of objects, each named by the SHA-1 of its
  * bytes (Hash), and a few names for some of them (Refs):
@@ -16,55 +16,57 @@
  *          |- lib ----> tree T4      lib ---> tree T3
  *                        |- a.c --> blob B3   |- a.c --> blob B2
  *
- * C2 changed lib/a.c. It has a new blob for it, a new tree for lib
- * and a new one for the root, and nothing else: README's blob is the
- * one C1 has. An object is never changed, since its name is its
- * content's hash; and as a tree holds its entries' hashes and a
- * commit its tree's and its parents', a commit's name fixes every
- * byte of every file of all the history behind it. A branch is a
- * file with forty hexadecimal digits in it.
+ * C2 changed lib/a.c. It has a new blob for that file, a new tree for
+ * lib and a new tree for the root, and nothing else: README's blob is
+ * the same one that C1 has. An object is never changed, since its name
+ * is the hash of its content. A tree holds the hashes of its entries,
+ * and a commit holds the hash of its tree and of its parents, so a
+ * commit's name fixes every byte of every file in all the history
+ * behind it. A branch is a file with forty hexadecimal digits in it.
  *
- * Its modules, from the store up:
+ * Here are its modules, from the store up:
  *
- *     Hash, Object       a name; the four kinds parsed and printed
- *     Loose, Pack, Delta where objects are: a file each, or many in
- *     Store              one file as differences; both behind Store
- *     Refs, Repo, Conf   the names, the .git found, its config
- *     Index9, Walk, Save the work tree: what changed; a commit made
+ *     Hash, Object       a name; the four kinds, parsed and printed
+ *     Loose, Pack, Delta where objects are: one file each, or many in
+ *     Store              one file as differences; Store hides both
+ *     Refs, Repo, Conf   the names; finding the .git; its config
+ *     Index9, Walk, Save the work tree: what changed; making a commit
  *     Query, Log, Fs     history: a..b, the ancestors, as paths
- *     Diff, Merge3       two texts compared; two changes joined
+ *     Diff, Merge3       comparing two texts; joining two changes
  *     Proto, Get, Send,  the other repository: what it has, what it
- *     Serve, Packer      lacks, packed and sent
+ *     Serve, Packer      lacks, and how to pack it and send it
  *     Commands, CLI      git9's scripts and programs, by name
  *
  * cs-history:
  * Version control went from the file to the tree to the copy. SCCS
  * (Marc Rochkind, Bell Labs, 1972) and RCS (Walter Tichy, 1982) keep
- * one file's versions, as differences, and a lock while it is
- * edited; CVS (from 1986) kept RCS files together for a whole tree,
- * later on a server, and merged where they had locked; Subversion
- * (2000) made the commit one change to the tree. All have one repository that
- * everyone writes to. In the distributed systems each copy has the
- * whole history and commits to itself, and histories are merged:
- * BitKeeper, which Linux used from 2002, then, in the same weeks of
- * April 2005 when its free use ended, Mercurial (Matt Mackall) and
- * git (Linus Torvalds), who called it "the stupid content tracker":
- * a store of content by hash first, the commands on top later.
- * Junio Hamano has maintained it since that July.
+ * the versions of one file, as differences, and a lock on the file
+ * while it is edited. CVS (from 1986) kept RCS files together for a
+ * whole tree, later on a server, and it merged changes where RCS
+ * locked. Subversion (2000) made the commit one change to the
+ * whole tree. All of them have one repository that everyone writes
+ * to. In the distributed systems, each copy has the whole history and
+ * commits to itself, and histories are merged. BitKeeper came first,
+ * and Linux used it from 2002. Then, in the same weeks of April 2005
+ * when its free use ended, came Mercurial (Matt Mackall) and git
+ * (Linus Torvalds). Torvalds called git "the stupid content tracker":
+ * it was a store of content by hash first, and the commands came on
+ * top later. Junio Hamano has maintained it since that July.
  *
  * plan9-is-cleaner:
- * git9 (2019) is not a port. It keeps the format, so
- * that it clones from any server, and little else: a few C programs
- * for what must be fast (the objects, the walk, the protocol), rc
- * scripts for the commands (Commands follows them line for line), no
- * staging area with content in it (Index9), and the history served
- * as a file system, so that the tools to look at an old version are
- * ls, cat and diff (Fs). 9,000 lines of C where git has several
- * hundred thousand.
+ * git9 (2019) is not a port. It keeps the format, so that it can
+ * clone from any server, and little else. It has a few C programs for
+ * what must be fast (the objects, the walk, the protocol), and rc
+ * scripts for the commands (Commands follows them line for line). Its
+ * index has no staging area with content in it (Index9), and it
+ * serves the history as a file system, so that the tools to look at
+ * an old version are ls, cat and diff (Fs). It has 9,000 lines of C,
+ * where git has several hundred thousand.
  *
- * The command line: mini-git CMD args, git9's programs and scripts,
- * git/CMD on Plan 9, as subcommands of one executable; how: [help]
- * in CLI.ml, what mini-git -h prints.
+ * The command line is mini-git CMD args. The commands are git9's
+ * programs and scripts, git/CMD on Plan 9, made subcommands of one
+ * executable. [help] in CLI.ml, which mini-git -h prints, shows how
+ * to use them.
  *
  * References: git's own "Git User's Manual" and gitcore-tutorial,
  * for the objects; Scott Chacon's "Pro Git", chapter 10, "Git

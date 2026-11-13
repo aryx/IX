@@ -3,7 +3,9 @@
 
 (* See Synth.mli *)
 
-(* ix: the author's playground's libs/audio/Synth.ml; its optional arguments are said (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/Synth.ml
+ * in the author's playground (docs/plans/plan_audio.md). Its optional
+ * arguments are required here. *)
 
 type source = Wave of Oscillator.waveform | Naive of Oscillator.waveform | Fm of { ratio : float; index : float } | Noise | Pluck
 

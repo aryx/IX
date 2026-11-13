@@ -1,10 +1,12 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ARM's 64-bit instructions (A64, AArch64): a word decoded once into a
- * variant, and printed as binutils' objdump prints it (the decoder's
- * test: the words the arm64 corpus runs, machine/tests/words_arm64.txt,
- * and random words of the decoded classes; plan_arm.md, phase 5).
+(* ARM's 64-bit instructions (A64, AArch64). This file holds the
+ * variant into which Arm64.decode turns a word once; compat/Show_arm64
+ * prints it as binutils' objdump does. The
+ * decoder is tested on the words the arm64 corpus runs
+ * (machine/tests/words_arm64.txt) and on random words of the decoded
+ * classes (plan_arm.md, phase 5).
  *
  *   910043ff   Add_imm {sub = false; rd = 31 (sp); rn = 31; imm = 16}
  *              add  sp, sp, #0x10
@@ -14,20 +16,21 @@
  *              mov  w0, w1        (objdump's alias)
  *
  * A64's word has its class in bits 28-25 (data processing with an
- * immediate, branches, loads and stores, data processing on registers;
- * SIMD and floating point are left undecoded, the corpus running
- * none). Register 31 is sp or the zero register (xzr, wzr), by
- * operand: the variant keeps 31, the printer and the executor know
- * which. [sf]: X, the 64-bit form, or W, the 32-bit one.
+ * immediate, branches, loads and stores, data processing on
+ * registers). The scalar floating point is decoded, and of SIMD only
+ * movi and the scalar shifts sshr and ushr. Register 31 is sp or the
+ * zero register (xzr, wzr), depending on the operand. The variant
+ * keeps 31, and the printer and the executor know which one it is.
+ * [sf] is X, the 64-bit form, or W, the 32-bit one.
  *
  * objdump prints many instructions under an alias (mov for orr, add
  * and movz; cmp for subs; lsl, asr, ubfx, sxtw for the bitfield moves;
- * cset for csinc; mul for madd...): the printer chooses them as
+ * cset for csinc; mul for madd...). The printer chooses them as
  * binutils does, by the rules of the ARMv8 ARM's alias conditions.
  *
  * References: ARM Architecture Reference Manual, ARMv8-A (ARM DDI
- * 0487), the encodings and the aliases' conditions;
- * binutils' objdump 2.42, run, the printed forms. *)
+ * 0487), for the encodings and the aliases' conditions; binutils'
+ * objdump 2.42, run, for the printed forms. *)
 
 (* (No Arm64_isa.mli: the module is the instruction set as types, the
  * ISA; decoding and running the instructions is Arm64.) *)

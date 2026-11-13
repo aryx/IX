@@ -1,36 +1,38 @@
-(* Tbl: a table read -- what is between .TS and .TE, tbl's language.
+(* Tbl reads a table: what is between .TS and .TE, in tbl's language.
  *
  *   .TS
  *   center, box;          the whole table: in the middle, in a box
- *   c s s                 its rows' formats, one line a row, the last
- *   l n n.                for the rows that are left: a column is l
- *   Table 1               (left), r, c (centered), n (numbers, their
- *   _                     points one under the other), or s (the cell
- *   Context switch	39	150     before it goes on across this one)
- *   System call	6	36
+ *   c s s                 the formats of its rows, one line for each
+ *   l n n.                row, the last one for the rows that are
+ *   Table 1               left. A column is l (left), r, c
+ *   _                     (centered), n (numbers, with their points
+ *   Context switch	39	150     one under the other), or s (the cell
+ *   System call	6	36      before it goes on across this one)
  *   .TE
  *
- * A row of the data is its cells with a tab between; a line that is
- * "_" or "=" is a rule. After a column's letter: fB or fCW its font,
- * w(1i) its width, p-2 its size; "|" between two is a line down the
- * table. A cell that ends with T{ is a text of several lines, to its
- * T}: filled in the column's width. .T& changes the formats part way.
+ * A row of the data is its cells, with a tab between them; a line that
+ * is "_" or "=" is a rule. After a column's letter, fB or fCW gives its
+ * font, w(1i) its width, and p-2 its size; a "|" between two columns
+ * is a line down the table. A cell that ends with T{ is a text of
+ * several lines, up to its T}, filled in the column's width. .T&
+ * changes the formats part way through.
  *
- * Read: the options center, box (allbox and doublebox as box) and
- * tab(c); the letters l r c n s (a as l, ^ as an empty cell), f, w
- * and p. Not kept: the lines down the table, a column's height or
- * space said by a number.
+ * What is read: the options center, box (allbox and doublebox are read
+ * as box) and tab(c); the letters l r c n s (a is read as l, and ^ as
+ * an empty cell), f, w and p. What is not kept: the lines down the
+ * table, and a column's height or space given by a number.
  *
  * cs-history:
- * tbl is Mike Lesk's (Bell Labs, 1975), a program that reads a
- * document, turns each table into the troff that draws it and leaves
- * the rest as it is: with eqn, of the year before, the first of the
- * "preprocessors", the way Unix had of adding a language to troff
+ * Mike Lesk wrote tbl (Bell Labs, 1975), a program that reads a
+ * document, turns each table into the troff that draws it, and leaves
+ * the rest as it is. With eqn, of the year before, it was the first of
+ * the "preprocessors", the way Unix had of adding a language to troff
  * without touching troff. Here a table is a value in the document,
  * read by the same pass. *)
 
-(* [read roff block]: called after a .TS, reads to its .TE. [block]
- * reads a text block's lines, to the line that starts with T}, and
- * gives its words and what follows T} on that line: it is the
- * package's, a text block having the package's macros in it. *)
+(* [read roff block] is called after a .TS, and reads up to its .TE.
+ * [block] reads the lines of a text block, up to the line that starts
+ * with T}, and gives its words and what follows T} on that line. It
+ * is the package's function, because a text block has the package's
+ * macros in it. *)
 val read : Roff.t -> (unit -> Doc.inline list * string) -> Doc.table

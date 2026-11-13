@@ -3,7 +3,8 @@
 
 (* See Diode_ladder.mli *)
 
-(* ix: the author's playground's libs/audio/instruments/Diode_ladder.ml (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/instruments/Diode_ladder.ml
+ * in the author's playground (docs/plans/plan_audio.md). *)
 
 (* ix: v1..v4 then the input before (the trapezoid's), in a flat array,
  * and the system's matrix, its right side and its answer made once: by

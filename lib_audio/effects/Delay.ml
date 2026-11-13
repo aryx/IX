@@ -3,7 +3,8 @@
 
 (* See Delay.mli *)
 
-(* ix: the author's playground's libs/audio/effects/Delay.ml (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/effects/Delay.ml
+ * in the author's playground (docs/plans/plan_audio.md). *)
 
 let beats ~(bpm : float) (b : float) : float = b *. 60. /. bpm
 let longest = 2.

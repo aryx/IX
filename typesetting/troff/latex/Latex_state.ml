@@ -2,10 +2,10 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* The state of Latex, the reader of simple LaTeX (Latex.mli): what is
- * being read, what is being made, what was defined. Its parts each
- * take it: Latex_input reads the text, Latex_output writes the
- * document, Noweb, Latex_math and Latex_table read a chunk, a formula
- * and a table, Latex the commands. *)
+ * being read, what is being made, and what was defined. Each of its
+ * parts takes it. Latex_input reads the text and Latex_output writes
+ * the document. Noweb, Latex_math and Latex_table read a chunk, a
+ * formula and a table, and Latex reads the commands. *)
 
 (* What is being read: a file, a macro's text put in its place, an
  * argument read apart ([stop]: the reading ends with it). *)

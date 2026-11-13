@@ -3,7 +3,9 @@
 
 (* See Pluck.mli *)
 
-(* ix: the author's playground's libs/audio/synthesis/Pluck.ml; its optional arguments are said (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/synthesis/Pluck.ml
+ * in the author's playground (docs/plans/plan_audio.md). Its optional
+ * arguments are required here. *)
 
 let period (frequency : float) : int =
   max 2 (int_of_float (Float.round ((float_of_int Signal.rate /. frequency) -. 0.5)))

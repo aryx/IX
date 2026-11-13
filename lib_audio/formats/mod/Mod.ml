@@ -3,7 +3,9 @@
 
 (* See Mod.mli *)
 
-(* ix: the author's playground's libs/audio/formats/mod/Mod.ml; an Option.value written out (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/formats/mod/Mod.ml
+ * in the author's playground (docs/plans/plan_audio.md). An
+ * Option.value is written out as the match it stands for. *)
 
 (*****************************************************************************)
 (* Types *)

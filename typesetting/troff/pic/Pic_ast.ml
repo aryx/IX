@@ -1,8 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* A picture as it is written, in pic's language: what Pic_parser makes
- * and Pic draws (see Pic.mli). *)
+(* A picture as it is written, in pic's language. Pic_parser makes it,
+ * and Pic draws it (see Pic.mli). *)
 
 (* n, s, e, w, ne, nw, se, sw, c, start, end *)
 type corner = string

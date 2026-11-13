@@ -3,7 +3,9 @@
 
 (* See Abc.mli *)
 
-(* ix: the author's playground's libs/audio/formats/abc/Abc.ml; an Option.value written out (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/formats/abc/Abc.ml
+ * in the author's playground (docs/plans/plan_audio.md). An
+ * Option.value is written out as the match it stands for. *)
 
 type event = { start : float; length : float; notes : int list }
 type tune = { title : string; voices : event list list; drums : bool list }

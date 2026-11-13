@@ -2,12 +2,12 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* acid's grammar (principia's dbg.y): a top-level statement run as
- * soon as it is read, by the grammar's own action (acid's bigstmnt's:
- * a parse that stopped after each would want the next token first);
- * an error in it ends the parse, and the caller starts another. Its
- * precedences as dbg.y's, a format (x\D) binding looser than the
- * operators *)
+(* acid's grammar (principia's dbg.y). A top-level statement is run as
+ * soon as it is read, by the grammar's own action (as acid's bigstmnt
+ * does), because a parse that stopped after each statement would want
+ * the next token first. An error in a statement ends the parse, and
+ * the caller starts another. The precedences are dbg.y's, with a
+ * format (x\D) binding looser than the operators. *)
 
 open Ast
 

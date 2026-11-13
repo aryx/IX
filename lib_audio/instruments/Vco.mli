@@ -1,61 +1,65 @@
 (* The VCO, a synthesizer's oscillator, played live (see notes_synth.md
  * section 3).
  *
- * Oscillator.mli has the waveforms, a formula of the phase, and
- * PolyBLEP; this is the oscillator of a synthesizer's voice, run a
- * block at a time (Instrument.mli's pattern), its phase kept from block
- * to block, with what the voice does to it:
+ * Oscillator.mli has the waveforms, each a formula of the phase, and
+ * PolyBLEP. This module is the oscillator of a synthesizer's voice. It
+ * runs a block at a time (the pattern of Instrument.mli) and keeps its
+ * phase from block to block, and it has what the voice does to it:
  *
- *  - its frequency given per *sample*, a block of them: a vibrato (an
- *    LFO), a glide, a pitch wheel move it smoothly within a block (the
- *    V in VCO: a voltage controlling the frequency, continuously);
- *  - the pulse's width given per sample too: pulse-width modulation, an
- *    LFO moving the width, so the harmonics' recipe (Oscillator.mli's
- *    |sin (pi k width)|) shifts all the time, one oscillator sounding
- *    like several (the Juno's strings);
- *  - hard sync: restarted by another oscillator, the master, at each of
- *    its periods.
+ *  - Its frequency is given per *sample*, as a block of frequencies. So
+ *    a vibrato (an LFO), a glide or a pitch wheel moves it smoothly
+ *    within a block. This is the V in VCO: a voltage controlling the
+ *    frequency, continuously.
+ *  - The pulse's width is given per sample too. This is pulse-width
+ *    modulation: an LFO moves the width, so the recipe of the harmonics
+ *    (|sin (pi k width)| in Oscillator.mli) shifts all the time, and one
+ *    oscillator sounds like several (the Juno's strings).
+ *  - Hard sync: the oscillator is restarted by another oscillator, the
+ *    master, at each of the master's periods.
  *
  * {1 Hard sync}
  *
- *     master  /|  /|  /|          the slave restarted at each of the
- *            / | / | / |          master's periods: the master's
- *     slave /|/|/|/|/|/|/         pitch, the slave's frequency now its
- *           ^   ^   ^             *shape* (how many of its periods fit,
- *           restarts              and where the last one is cut)
+ *     master  /|  /|  /|          the slave is restarted at each of the
+ *            / | / | / |          master's periods: the master sets the
+ *     slave /|/|/|/|/|/|/         pitch, and the slave's frequency now
+ *           ^   ^   ^             sets the *shape* (how many of its
+ *           restarts              periods fit, and where the last is cut)
  *
  * Sweeping the slave's frequency then sweeps the harmonics like a vowel,
- * the pitch staying put: the Prophet-5's sync lead (1978).
+ * while the pitch stays put. This is the Prophet-5's sync lead (1978).
  *
- * The restart is a jump, of height h = (the wave at 0) - (the wave where
+ * The restart is a jump of height h = (the wave at 0) - (the wave where
  * the slave was), and it falls *between* two samples: the master's phase
  * reaches 1 at a fraction of the step from one sample to the next. The
  * BLEP (Oscillator.mli) corrects a jump over the sample before and the
- * sample after; placed at the right fraction, with d the time from the
- * jump to the next sample (in samples, 0 to 1):
+ * sample after. Placed at the right fraction, with d the time from the
+ * jump to the next sample (in samples, 0 to 1), the corrections are:
  *
  *     the sample before:  + h/2 d^2
  *     the sample after:   + h/2 (2d - d^2 - 1)
  *
- * (PolyBLEP's two halves for a jump of 2, at u = d - 1 and u = d,
- * scaled by h/2.) The sample before is computed knowing the jump is
- * coming: the master says, at each sample, whether and where it wraps
- * before the next one. The slave's own jump at its phase 0 is then not
- * the one that happened, so its own correction is left out there.
+ * (These are PolyBLEP's two halves for a jump of 2, at u = d - 1 and
+ * u = d, scaled by h/2.) The sample before is computed knowing that the
+ * jump is coming, because the master says, at each sample, whether and
+ * where it wraps before the next one. The slave's own jump at its phase
+ * 0 is then not the jump that happened, so its own correction is left
+ * out there.
  *
- * Measured (Unit_vco): a sawtooth synced to a 1001 Hz master at 2.37
- * times its frequency, its loudest alias below 5 kHz from -29.5 dB
- * (naive) to -69.9 dB (corrected); corrected but as if the restart
- * fell on the next sample, -30.7, hardly better than naive: the
- * restarts land anywhere between samples, and a jump moved to the
- * sample is a jump at the wrong time, which is itself an alias. The
+ * Measured (the playground's Unit_vco): for a sawtooth synced to a 1001 Hz
+ * master, at 2.37 times the master's frequency, the loudest alias below 5 kHz
+ * goes from -29.5 dB (naive) to -69.9 dB (corrected). Corrected as if the
+ * restart fell on the next sample, it is -30.7, hardly better than
+ * naive. The restarts land anywhere between samples, and a jump moved to
+ * a sample is a jump at the wrong time, which is itself an alias. The
  * fraction is the point.
  *
  * References: Eli Brandt, "Hard Sync Without Aliasing", ICMC 2001;
  * Vesa Välimäki, Antti Huovilainen, "Oscillator and Filter Algorithms
  * for Virtual Analog Synthesis", Computer Music Journal 30(2), 2006. *)
 
-(* ix: the author's playground's libs/audio/instruments/Vco.mli its optional arguments are said (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/instruments/Vco.mli
+ * in the author's playground (docs/plans/plan_audio.md). Its optional
+ * arguments are required here. *)
 
 type shape = Sine | Triangle | Sawtooth | Pulse
 
@@ -64,21 +68,23 @@ val name : shape -> string
 
 type t
 
-(* at phase 0 *)
+(* creates an oscillator at phase 0 *)
 val create : unit -> t
 
-(* [fill ~band_limited ~width ~sync t shape ~frequency out]: the next
- * [Array.length out] samples of [t], [frequency] (in Hz) and [width]
- * (a pulse's, 0.5 when None: the square; kept within 0.01 and 0.99)
- * one per sample; restarted by [sync], filled for the same block just
- * before; band-limited unless [band_limited] is false (true is the
- * usual) *)
+(* [fill ~band_limited ~width ~sync t shape ~frequency out] fills [out]
+ * with the next [Array.length out] samples of [t]. [frequency] (in Hz)
+ * and [width] (a pulse's width, 0.5 when None, which is the square;
+ * kept within 0.01 and 0.99) are given one per sample. [t] is restarted
+ * by [sync], which must have been filled for the same block just
+ * before. The samples are band-limited unless [band_limited] is false
+ * (true is the usual). *)
 val fill :
   band_limited:bool -> width:Float.Array.t option -> sync:t option -> t ->
   shape -> frequency:Float.Array.t -> Float.Array.t -> unit
 
-(* [fill_sync_at_sample]: the same, the restarts' jumps corrected as if
- * they fell on the sample (Unit_vco's comparison) *)
+(* [fill_sync_at_sample] is the same, but it corrects the jumps of the
+ * restarts as if they fell on the sample (for the comparison in the
+ * playground's Unit_vco) *)
 val fill_sync_at_sample :
   width:Float.Array.t option -> sync:t -> t -> shape ->
   frequency:Float.Array.t -> Float.Array.t -> unit

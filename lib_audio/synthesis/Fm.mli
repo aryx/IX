@@ -6,10 +6,11 @@
  *
  *     out(t) = sin (2 pi fc t + I sin (2 pi fm t))
  *
- * fc the carrier (the pitch heard), fm the modulator, I the index (how
- * far it wobbles). Slow, it's a vibrato; as fast as the carrier, it's a
- * new timbre: the spectrum has the carrier and sidebands on each side,
- * at fc +- k fm, the k-th of amplitude J_k(I), a Bessel function:
+ * Here fc is the carrier (the pitch heard), fm is the modulator, and I
+ * is the index (how far it wobbles). When the modulator is slow, it is a
+ * vibrato. When it is as fast as the carrier, it is a new timbre: the
+ * spectrum has the carrier, and sidebands on each side at fc +- k fm,
+ * where the k-th one has the amplitude J_k(I), a Bessel function:
  *
  *     amplitude          fc = 400, fm = 100, I = 1
  *        |                   |
@@ -20,36 +21,40 @@
  *        +----+----+----+----+----+----+----> Hz
  *            100  200  300  400  500  600
  *
- * Two numbers then choose the sound: the ratio fm / fc, which sets
- * where the sidebands fall -- a whole number, on the harmonics (1: all
- * of them, brass; 2: the odd ones, a clarinet), otherwise between them,
- * inharmonic (1.4: a bell, a gong) -- and the index, how many sidebands
- * are loud (about I + 1 on each side): the brightness. Chowning's
- * insight was to make the index follow the envelope: a note bright
- * when struck, darker as it dies away, like every real instrument --
- * which Synth does for a fading FM voice. Sidebands falling below 0 Hz
- * fold back, inverted, onto the positive ones: part of the character.
+ * Two numbers then choose the sound. The ratio fm / fc sets where the
+ * sidebands fall. A whole number puts them on the harmonics (1 gives
+ * all of them, like brass; 2 gives the odd ones, like a clarinet), and
+ * any other ratio puts them between the harmonics, which is inharmonic
+ * (1.4 gives a bell, a gong). The index sets how many sidebands are loud
+ * (about I + 1 on each side), which is the brightness. Chowning's
+ * insight was to make the index follow the envelope, so that a note is
+ * bright when struck and darker as it dies away, like every real
+ * instrument; Synth does this for a fading FM voice. Sidebands that
+ * fall below 0 Hz fold back, inverted, onto the positive ones, and that
+ * is part of the character.
  *
- * Yamaha licensed it from Stanford: the DX7 (1983), six "operators"
- * wobbling each other, and the sound chips of the Sega Genesis and the
- * PC's AdLib and Sound Blaster (the OPL2, two operators per voice):
- * the sound of 1980s and early 1990s games after the NES's squares.
+ * Yamaha licensed FM from Stanford. It made the DX7 (1983), with six
+ * "operators" wobbling each other, and the sound chips of the Sega
+ * Genesis and of the PC's AdLib and Sound Blaster (the OPL2, with two
+ * operators per voice). This was the sound of the games of the 1980s
+ * and early 1990s, after the NES's squares.
  *
- * (Strictly this is phase modulation, the formula every "FM"
- * synthesizer since the DX7 computes: the same spectrum as modulating
- * the frequency itself, for a sine modulator.)
+ * (Strictly, this is phase modulation, the formula that every "FM"
+ * synthesizer since the DX7 computes. For a sine modulator it gives the
+ * same spectrum as modulating the frequency itself.)
  *
  * References: John Chowning, "The Synthesis of Complex Audio Spectra by
  * Means of Frequency Modulation", Journal of the Audio Engineering
  * Society 21(7), 1973; Curtis Roads, The Computer Music Tutorial,
  * 1996, chapter 6. *)
 
-(* ix: the author's playground's libs/audio/synthesis/Fm.mli (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/synthesis/Fm.mli
+ * in the author's playground (docs/plans/plan_audio.md). *)
 
-(* [wave ~index carrier modulator]: the formula above, the two phases
- * in [0, 1) *)
+(* [wave ~index carrier modulator] is the formula above, with the two
+ * phases in [0, 1) *)
 val wave : index:float -> float -> float -> float
 
-(* [render ~carrier ~ratio ~index seconds]: the modulator at [ratio]
- * times the carrier, both from phase 0 *)
+(* [render ~carrier ~ratio ~index seconds] renders the sound, with the
+ * modulator at [ratio] times the carrier, both from phase 0 *)
 val render : carrier:float -> ratio:float -> index:float -> float -> Signal.t

@@ -73905,3 +73905,83 @@ Claude found the reporting agent was itself wrong about MutationObserver, since 
 Claude also flagged two more misplaced comments and two stale README lines, planning to fix the comments itself.
 Claude then checked the two README lines and found them correct, as they sit in lists of what ix cut from mini-chrome.
 Claude moved on to the Script_types.mli comments, intending to fix them before showing the batch.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 22:32
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude's fixing agent fixed 17 of the 18 stale facts, and the 18th needed no change.
+One of those edits changed calc/bc/Parser.mly, a grammar file that comments_only.sh does not check.
+Claude decided to run ocamlyacc on Parser.mly itself, since the comment checker would miss grammar errors.
+Claude also planned to shorten the 81-column line in Frame.mli that exceeds the width limit.
+Earlier, Claude pushed the browser batch as 295b0926 and split the utilities batch across four agents.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 22:56
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude pushed the previous work as commit `0fe21feb` before starting the next measurement.
+Claude counted about 7,800 header lines across 402 files, with lib_audio alone at roughly 2,200 lines.
+Claude found that lib_audio splits naturally into a formats/ subdirectory and the remaining files.
+Claude planned to process the last batch with nine agents, one per chunk of the split.
+Claude had not yet launched those agents when Yoann asked what was currently in progress.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 23:01
+
+**Yoann:**
+
+> what are we currently doing?
+
+**Claude (summary):**
+
+Claude said the plain-prose comment pass over m-IX is on its last batch, with nine agents still rewriting about 7,800 header lines in 402 files.
+Claude said that when the agents report, one more agent will fix the stale facts they uncover before the result is checked.
+Claude said it will ask Yoann before committing the final batch, since no agent has reported yet.
+Claude listed six earlier batches already committed, from 41e39394 through 0fe21feb, covering about 150 stale facts fixed.
+Claude listed three code bugs and some out-of-pass comments to raise once the pass ends.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 23:03
+
+**Yoann:**
+
+> ok, tell me when it's done
+
+**Claude (summary):**
+
+Claude reported that the version control and lib_executable batch (31 files) and mini-5i (17 files) were done, each with stale facts logged.
+Claude reported typesetting (28 files), lib_compression/lib_code/lib_mime (20 files), and mini-qemu (23 files) as finished, with their stale facts added to the list.
+Claude reported lib_crypto (30 files, 5 stale facts) and the lib_audio formats (50 files, 4 stale facts plus one count to check) as done.
+Claude reported the debuggers, profilers and database group as done: 33 files plus four grammar files, 6 stale facts, which still build with dune.
+Claude said the stale-fact list now stands at 38 and only the rest of lib_audio is still running.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 23:17
+
+**Yoann:**
+
+> maybe you can do a pass to check for "clipped" comments in the Makefile, mkfile, and Buildfile, especially tiny/Buildfile
+
+**Claude (summary):**
+
+Claude finished the comment-only pass over ix, fixing 44 stale facts and running the checks.
+Claude had verified that all 273 files change only comments, and that the grammar files still build.
+Claude had not committed yet, and proposed committing the 273-file batch together with prompt-history.md.
+Claude proposed leaving out docs/plans/plan_tiny_self_speed.md and tiny/docs, which were not its own.
+Claude then asked whether to commit and push the batch, since pushing is outward-facing.

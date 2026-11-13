@@ -1,9 +1,11 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See Wide.mli. OCaml's (dune): the product's halves, none of which
- * overflows an int; lib_crypto/Wide.ml, mini-ml's, is the processor's.
- * The same as the runtime's ml_mul_high, in C *)
+(* See Wide.mli. This is OCaml's version, for dune. It multiplies the
+ * halves of a and b, and none of those products overflows an int;
+ * lib_crypto/Wide.ml, mini-ml's version, uses the processor's
+ * instruction. It computes the same as the runtime's ml_mul_high, in
+ * C. *)
 
 let mul_high (a : int) (b : int) : int =
   let n = Sys.int_size in

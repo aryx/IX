@@ -3,7 +3,8 @@
 
 (* See Vlc.mli *)
 
-(* ix: the author's playground's libs/compression/Vlc.ml; its Bits is Bitstream here (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/compression/Vlc.ml in the author's playground;
+ * its Bits module is Bitstream here (docs/plans/plan_audio.md) *)
 
 
 type 'a t = Leaf of 'a | Node of 'a t option * 'a t option

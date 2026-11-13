@@ -1,8 +1,9 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See Ptrace.mli: the mkfile's, mini-ml's, no ptrace (mini-acid on
- * Plan 9 reads /proc/$pid); later the runtime's primitives *)
+(* See Ptrace.mli. This is the mkfile's version, built by mini-ml, and
+ * it has no ptrace (mini-acid on Plan 9 reads /proc/$pid). Later it is
+ * to use the runtime's primitives. *)
 
 let available = false
 let none () = failwith "ptrace: not in this build (dune's mini-acid on Linux)"

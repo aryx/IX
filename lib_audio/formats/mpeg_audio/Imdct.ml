@@ -3,7 +3,8 @@
 
 (* See Imdct.mli *)
 
-(* ix: the author's playground's libs/audio/formats/mpeg_audio/Imdct.ml (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/formats/mpeg_audio/Imdct.ml
+ * in the author's playground (docs/plans/plan_audio.md). *)
 
 (* cos(pi / 2n (2i + 1 + n/2)(2k + 1)), for the two sizes *)
 let cosines (n : int) : float array array =

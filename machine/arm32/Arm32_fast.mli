@@ -1,13 +1,14 @@
-(* Faster: Arm32.execute for the instructions a kernel runs most, the
- * data-processing ones (but a rotated operand, a shift by a register,
- * an exception's return), the branches and the block transfers (but
- * those with ^), written so that nothing is allocated: Arm32's makes
- * two closures at each data-processing instruction (logical, arith: a
- * function inside a function, simple to read) and a list at each
- * block load. Every other instruction is Arm32.execute's. Compiled to
- * JavaScript that is most of what the collector had to take back
- * (plan_web.md, stage 2); Arm32.execute stays the definition, and
- * [on] chooses (Board.run). *)
+(* A faster Arm32.execute for the instructions a kernel runs most,
+ * written so that nothing is allocated. Those instructions are the
+ * data-processing ones (except with a rotated operand, a shift by a
+ * register, or an exception's return), the branches, and the block
+ * transfers (except those with ^). Arm32's version makes two closures
+ * at each data-processing instruction (logical and arith, a function
+ * inside a function, which is simple to read) and a list at each block
+ * load. Compiled to JavaScript, that was most of what the collector
+ * had to take back (plan_web.md, stage 2). Every other instruction is
+ * run by Arm32.execute, which stays the definition, and [on] chooses
+ * between the two (Board.run). *)
 
 val on : bool ref
 

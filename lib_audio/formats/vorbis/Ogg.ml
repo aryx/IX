@@ -3,7 +3,8 @@
 
 (* See Ogg.mli *)
 
-(* ix: the author's playground's libs/audio/formats/vorbis/Ogg.ml (docs/plans/plan_quake.md) *)
+(* ix: copied from libs/audio/formats/vorbis/Ogg.ml
+ * in the author's playground (docs/plans/plan_quake.md). *)
 
 let packets (s : string) : string list =
   let n = String.length s in

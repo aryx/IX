@@ -3,7 +3,8 @@
 
 (* See Fm.mli *)
 
-(* ix: the author's playground's libs/audio/synthesis/Fm.ml (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/synthesis/Fm.ml
+ * in the author's playground (docs/plans/plan_audio.md). *)
 
 let wave ~(index : float) (carrier : float) (modulator : float) : float =
   sin ((2. *. Float.pi *. carrier) +. (index *. sin (2. *. Float.pi *. modulator)))

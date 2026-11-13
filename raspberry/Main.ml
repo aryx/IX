@@ -1,11 +1,12 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-qemu: QEMU's command line, the part the Pi kernels' Makefiles use
- * (plan_pi.md, "The kernels it must boot"); its usage, the options and
- * examples: [help], what mini-qemu -h prints. -smp: the Pi4's cores
- * take turns (plan_pi.md decision 3); QEMU wants 4, mini-qemu defaults
- * to 1, the fastest. *)
+(* mini-qemu has QEMU's command line, the part of it that the Pi
+ * kernels' Makefiles use (plan_pi.md, "The kernels it must boot"). Its
+ * usage, options and examples are in [help], which is what mini-qemu
+ * -h prints. With -smp, the Pi4's cores take turns (plan_pi.md
+ * decision 3). QEMU wants 4 cores, but mini-qemu defaults to 1, which
+ * is the fastest. *)
 
 
 let usage = "usage: mini-qemu -M raspi1ap|raspi2b|raspi4b [-m size] [-smp n] [-nographic | -display none] (-kernel image | -device loader,file=F,addr=A | -bios F) [-drive file=F,if=sd] [-serial S]... [-audiodev wav,path=F] [-ips N] [-cores-parallel] [-d] [-trace N] [-prof F] [-status N] [-symbols ELF] [-meters [on|off]] [-qmp unix:path,server,nowait]"

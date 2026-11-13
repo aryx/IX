@@ -1,22 +1,24 @@
-(* Latex_names: the commands of LaTeX that a table says all of -- a
- * size, a look, a character, or nothing -- for Latex and Latex_math.
- * What a package gives is here as the few commands the books use of
- * it; a new one is a line. *)
+(* Latex_names: the LaTeX commands that a table describes completely,
+ * each being a size, a look, a character, or nothing. Latex and
+ * Latex_math use them. A package is here as the few of its commands
+ * that the books use, and a new one takes a line. *)
 
-(* \small, \Large...: points more than the text, or less *)
+(* \small, \Large...: how many points more than the text, or less *)
 val sizes : (string * int) list
 
-(* a command with a text is the declaration in a group: \emph{x} is
- * {\em x}; a name and its declaration *)
+(* A command with a text is its declaration in a group: \emph{x} is
+ * {\em x}. Each pair is a name and its declaration. *)
 val with_text : (string * string) list
 
-(* the commands that are a character, or a few (\ldots, \times): what
- * the PDF's fonts have, and a word for the rest (\alpha, \leq) *)
+(* the commands that are a character, or a few characters (\ldots,
+ * \times): what the PDF's fonts have, and a word for the rest
+ * (\alpha, \leq) *)
 val symbols : (string * string) list
 
-(* the commands that say nothing here, with what they take: m an
- * argument, o one that may not be there, * a star *)
+(* the commands that do nothing here, with what they take: m for an
+ * argument, o for one that may be missing, * for a star *)
 val nothing : (string * string) list
 
-(* an accent and its letter (\'e is "'e"), and the letter with it *)
+(* an accent and its letter (\'e is "'e"), with the letter that has
+ * the accent *)
 val accents : (string * string) list

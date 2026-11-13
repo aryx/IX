@@ -3,7 +3,8 @@
 
 (* See Svf.mli *)
 
-(* ix: the author's playground's libs/audio/instruments/Svf.ml (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/instruments/Svf.ml
+ * in the author's playground (docs/plans/plan_audio.md). *)
 
 type model = Chamberlin | Zero_delay
 type mode = Low_pass | Band_pass | High_pass | Notch

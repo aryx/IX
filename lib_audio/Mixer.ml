@@ -3,7 +3,9 @@
 
 (* See Mixer.mli *)
 
-(* ix: the author's playground's libs/audio/Mixer.ml; its optional arguments are said (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/Mixer.ml
+ * in the author's playground (docs/plans/plan_audio.md). Its optional
+ * arguments are required here. *)
 
 (* a one-shot: its samples, and how far it's been read.
  * ix: or a recording kept as it is, its volume, pan and far ear's delay

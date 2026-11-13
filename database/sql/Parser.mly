@@ -1,12 +1,12 @@
 /* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. */
-/* The grammar: chidb's sql.y, but its lists and its optional parts
- * where menhir's standard rules say them (list(x), option(x), x?...: the
- * grammar is menhir's for dune and mini-yacc's for the mkfile, which
- * reads those). A statement's
+/* The grammar, chidb's sql.y, except that its lists and its optional
+ * parts are written with menhir's standard rules (list(x), option(x),
+ * x?...). The grammar is read by menhir under dune and by mini-yacc
+ * under the mkfile, and mini-yacc reads those rules too. A statement's
  * value is Some statement, or None for an empty one, with its EXPLAIN
  * flag. The C's list builders are kept where their result shows
- * (Ast.chidb_append); key declarations are applied to their columns
+ * (Ast.chidb_append). Key declarations are applied to their columns
  * as Table_make does, with its messages. */
 %{
 open Ast

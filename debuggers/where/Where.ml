@@ -1,25 +1,27 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-where: the addresses of a trace named, by the program's own
- * symbol table and pc/line table (mini-ld -g's; lib_executable):
- * a function, the offset in it, and the file and the line.
+(* mini-where: names the addresses of a trace, using the program's own
+ * symbol table and pc/line table (written by mini-ld -g, read by
+ * lib_executable). Each address gets a function, the offset in it, and
+ * the file and the line.
  *
  *     mini-where tinybreakout 9c30 9cf0
  *     9c30 f12_brick_at<>+0x48 Breakout.ml:137
  *     9cf0 f12_move_ball<>+0x1c4 Breakout.ml:150
  *
- * An address is hexadecimal, 0x before it or not; what mini-9pi's
- * trace line has (lr=0x1698) and what an exception's (raised at:) can
- * be pasted, words that are no address left out. A line is the line of
- * the address's function, mini-ml's (plan_debugger.md, stage 1b), of
- * its instruction in an assembler's program.
+ * An address is hexadecimal, with or without 0x before it. You can
+ * paste what a trace line of mini-9pi has (lr=0x1698) or what an
+ * exception has (raised at:); the words that are not addresses are
+ * left out. In a mini-ml program, the line is the line of the
+ * address's function (plan_debugger.md, stage 1b); in an assembler's
+ * program, it is the line of the instruction.
  *
  * design:
  * The names come from the program that ran, not from a file beside it
- * that may be another link's (mini-ld -map's, which scripts/where.sh
- * read before): an executable says what it is (plan_debugger.md's
- * principles).
+ * that may come from another link (such as mini-ld -map's map, which
+ * scripts/where.sh used to read): an executable says what it is
+ * (plan_debugger.md's principles).
  *
  * References: Plan 9's src(1), which names a symbol's file and line
  * through acid. *)

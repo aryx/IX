@@ -3,7 +3,8 @@
 
 (* See Layer3_tables.mli *)
 
-(* ix: the author's playground's libs/audio/formats/mpeg_audio/Layer3_tables.ml (docs/plans/plan_audio.md) *)
+(* ix: copied from libs/audio/formats/mpeg_audio/Layer3_tables.ml
+ * in the author's playground (docs/plans/plan_audio.md). *)
 
 (*****************************************************************************)
 (* The Huffman codes (Table B.7) *)
@@ -13,7 +14,7 @@
  * size + y. Written from libmad's huffman.c (Rob Leslie's, whose tables
  * decode several bits at a time), its trees walked back into the codes
  * the standard prints, then checked: each table prefix-free and complete
- * (its Kraft sum 1, Unit_mpeg_audio.ml) *)
+ * (its Kraft sum 1, the playground's Unit_mpeg_audio.ml) *)
 
 (* 1: 2 x 2 *)
 let t1 =

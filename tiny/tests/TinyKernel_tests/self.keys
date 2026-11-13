@@ -3,6 +3,7 @@ mkdir /usr/glenda/self
 cd /src
 build all boot.img > /usr/glenda/self/first.log
 cp boot.img /usr/glenda/self/first.img
+build install > /usr/glenda/self/install.log
 echo '(* a comment *)' >> TinyLibRegex.ml
 build all boot.img > /usr/glenda/self/comment.log
 echo comment: compiled `{grep -c '^ml -c' /usr/glenda/self/comment.log} linked `{grep -c '^ld ' /usr/glenda/self/comment.log}

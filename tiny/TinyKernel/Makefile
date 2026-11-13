@@ -384,7 +384,9 @@ $(O)/check/wwwplay.sum: $(T)/wwwplay.events $(O)/boot.img
 # tiny-kernel building itself (plan_tiny_self_hosting.md, step 8): booted
 # on the two disks grown to 64 MB, the first shell runs build all
 # boot.img in /src, the Buildfile the host's build ran (self.keys), and
-# keeps the image in /usr/glenda/self; then a comment added to a module
+# keeps the image in /usr/glenda/self; build install puts what it built
+# in /bin, /lib and /examples, over the host's (so the builds after run
+# tiny-kernel's own tools); then a comment added to a module
 # (it is compiled again, its object the same: nothing more, no link), a
 # line to a program (compiled again, the program linked again; calc is
 # the disk's, so the image is not made again), and nothing (up to
@@ -397,7 +399,9 @@ $(O)/check/wwwplay.sum: $(T)/wwwplay.events $(O)/boot.img
 # KFS_tests' Cat, is _make/boot.img, byte for byte: the same
 # sources built by the host's tools and by tiny-kernel's, so a change
 # of the code changes both, and a difference is a tool of tiny-kernel's
-# (tiny-ml's code, the runtime, the kernel) wrong. Hours: not in check
+# (tiny-ml's code, the runtime, the kernel) wrong. And each file build
+# install put on the disk is the host's, _make/system's. Hours: not in
+# check
 FSCAT = $(abspath ../../_build/default/tiny/tests/KFS_tests/Cat.exe)
 self: $(O)/boot.img $(O)/disk.img $(O)/src.img
 	$(call grown,$(O)/disk.img,$(O)/self.img); $(call grown,$(O)/src.img,$(O)/selfsrc.img)
@@ -406,6 +410,8 @@ self: $(O)/boot.img $(O)/disk.img $(O)/src.img
 	  grep -q "$$f" $(O)/self.out || { echo "tiny-kernel: self: not \"$$f\":"; cat $(O)/self.out; exit 1; }; done
 	$(FSCAT) $(O)/self.img usr/glenda/self/first.img > $(O)/self.boot.img
 	cmp $(O)/boot.img $(O)/self.boot.img
+	cd $(SYSTEM) && for f in $$(find . -type f | sed 's|^\./||'); do \
+	  $(FSCAT) $(abspath $(O))/self.img $$f | cmp -s - $$f || { echo "tiny-kernel: self: /$$f not the host's"; exit 1; }; done
 	rm $(O)/self.img $(O)/selfsrc.img $(O)/self.out $(O)/self.boot.img && echo "tiny-kernel: self ok, its image the host's"
 
 # self in minutes: a few of the Buildfile's targets in /src, ping (cc,

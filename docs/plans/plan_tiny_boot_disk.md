@@ -125,7 +125,7 @@ copy of the disk, as 20 and 28 do already (step 3).
 
 ## Status
 
-Decided: two disks (1), the repair kit (2). Done: steps 0 to 4.
+Decided: two disks (1), the repair kit (2). Done: steps 0 to 5.
 
 Step 0, done (2026-11-12): tiny-machine's second disk at -80(r0), by a
 second -d (e5d39f65); KFS's state an `fs`, given to its functions as
@@ -182,4 +182,18 @@ the disks were step 1's. Checked: TinyMachineWeb_test.py in Chrome
 (`ls /` shows `src`, the second disk's), ./tiny-machine tiny-kernel.
 The assets themselves (make website) not yet published.
 
-Next: step 5, make self.
+Step 5, done (2026-11-13): make self, tiny-kernel's image of its own
+build the host's byte for byte (49 minutes, at be2f0aa8); then
+self.keys runs `build install`, so the disk's `/bin`, `/lib` and
+`/examples` are what tiny-kernel built, the builds after it running
+its own tools, and the self rule compares each file of `_make/system`
+with the disk's. The kernel's link (KCalls.ml's sys_link) looks for
+the new name in the directory it goes to, the union's first: the
+install's `rm -f /bin/ls; ln /bin/utils /bin/ls` failed, the image's
+`/bin/ls` showing through once the disk's was removed. Checked: make
+test, make -C tiny/TinyKernel check, the link on a disk; make self
+with the install committed before it ended (the author: "CI will
+catch a problem if there is one").
+
+Next, apart: the boot's work out of the kernel, a `boot.rc` with
+`mount` and `bind` system calls (What it becomes).

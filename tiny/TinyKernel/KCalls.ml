@@ -470,13 +470,19 @@ let sys_unlink p =
 let sys_link p =
   let old = KFiles.walk !KFiles.top (KFiles.names p.cwd (ustr p (reg p 1)))
   and ns = KFiles.names p.cwd (ustr p (reg p 2)) in
-  match old, KFiles.walk !KFiles.top ns, KFiles.dir_of ns with
-  | Some n, _, _ when KFiles.is_dir n -> raise Bad
-  | Some (Disk (fs, 0, j)), None, Some (Disk (dfs, 0, i), last)
-    when KFS.fs_disk fs = KFS.fs_disk dfs && String.length last <= 64 ->
+  (* new is looked for where it goes, the union's first directory: a
+   * name of the image's /bin, removed from the disk's, made there again
+   * (build install's ln of the utilities) *)
+  let fresh dir last = KFiles.walk dir [ last ] = None in
+  match old, KFiles.dir_of ns with
+  | Some n, _ when KFiles.is_dir n -> raise Bad
+  | Some (Disk (fs, 0, j)), Some ((Disk (dfs, 0, i) as dir), last)
+    when KFS.fs_disk fs = KFS.fs_disk dfs && String.length last <= 64
+         && fresh dir last ->
       KFS.fs_link fs i last j; result p 0
-  | Some (Disk _), _, _ -> raise Bad
-  | Some node, None, Some (Dir d, last) when String.length last <= 64 ->
+  | Some (Disk _), _ -> raise Bad
+  | Some node, Some ((Dir d as dir), last)
+    when String.length last <= 64 && fresh dir last ->
       d := !d @ [ last, node ]; result p 0
   | _ -> raise Bad
 

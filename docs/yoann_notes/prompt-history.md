@@ -72762,3 +72762,19 @@ Claude said to push the assets and bump ?v= first, so the page doesn't request a
 Claude flagged that step 5 is unfinished: make self passed, but plan_tiny_boot_disk.md doesn't record it.
 Claude described the missing half as tiny-kernel running build install onto its own disk so /bin holds the built programs.
 Claude confirmed the session could close, since nothing is running and commits 6f532031 and be2f0aa8 are on main.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 08:39
+
+**Yoann:**
+
+> ok let's commit t-ix.html and do step 5 then
+
+**Claude (summary):**
+
+Claude had planned to record step 5 in the plan only after make self passed.
+Claude had left make self running in the worktree /Users/pad/github/ix-self, expected to take about 50 minutes.
+Claude had gated the step 5 commit on make self, after make check and make test passed with 35 jobs.
+Claude had made self.keys run build install and compare each installed file against _make/system.
+Claude had committed t-ix.html as 81c58dc1 without pushing, and fixed sys_link in KCalls.ml.

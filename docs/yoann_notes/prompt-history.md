@@ -73184,3 +73184,18 @@ Claude planned to commit and push the changes, including Yoann's own README edit
 **Yoann:**
 
 > ok let's add the lib_executable (but not lib_mime and the other which can go in the beyond system table (or just dropped). Please fix the musc and other small things and commit!
+
+------------------------------------------------------------------------
+
+## 2026-11-13 15:16
+
+**Yoann:**
+
+> in the tiny/README.md I wonder if we can find a way to reduce the width of some columns of the last table (the idea each keeps) because I have ot scroll on the right to see the interesting part (the last column content)
+
+**Claude (summary):**
+
+Claude committed and pushed the earlier tiny/README.md change as `1def1b5f`, then started on the "idea each keeps" table.
+Claude's answer on that table was cut off: it said all 30 rows were kept and every link resolved, then announced it was installing the new table.
+The new table's column widths were never shown or verified, so the scrolling problem Yoann raised may still be open.
+Yoann's follow-up asks Claude to commit and push that table change, which is the step Claude's answer was heading toward.
